@@ -25,6 +25,7 @@ open Common
  * (see codegraph).
  * 
  * todo:
+ *  - https://medium.com/@Coder_HarryLee/the-way-static-analyzers-fight-against-false-positives-and-why-they-do-it-743de1f2a1bd#.x1ams12x6
  *  - more soft quality bugs, e.g. deadcode, dead parameter,
  *    passing whole structure when could just pass a subfield,
  *    wrong cohesion where a function should be in another file

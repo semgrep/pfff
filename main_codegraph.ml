@@ -143,6 +143,7 @@ module View = View3
  *  - generate a node-link graph for the current matrix configuration; use
  *    graphviz as a first step.
  *  - http://redotheweb.com/DependencyWheel/?
+ *  - https://github.com/graphistry/pygraphistry big graph visualizer
  * 
  * 
  * (comments that were in graph_modules_packages_ml.ml)
