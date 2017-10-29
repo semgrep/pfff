@@ -325,8 +325,8 @@ LPSRC=$(LPSRC1) $(LPSRCSHARED) $(LPSRC2)
 #------------------------------------------------------------------------------
 SYNCFLAGS=-md5sum_in_auxfile -less_marks
 
-SYNCWEB=~/c__syncweb/syncweb $(SYNCFLAGS)
-NOWEB=~/c__syncweb/scripts/noweblatex
+SYNCWEB=~/github/syncweb/syncweb $(SYNCFLAGS)
+NOWEB=~/github/syncweb/scripts/noweblatex
 OCAMLDOC=ocamldoc $(INCLUDES)
 
 PDFLATEX=pdflatex --shell-escape
