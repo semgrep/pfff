@@ -34,7 +34,7 @@ object(o)
 
   val counter = ref 0
   val cache = ref (new oassocb []) 
-  val dirty = ref (new osetb Set_poly.empty)
+  val dirty = ref (new osetb Set_.empty)
   val wrapped = ref cached
 
   method private myflush = 
@@ -48,7 +48,7 @@ object(o)
         pr2 "PBBBBBB: Out_of_memory in oassoc_buffer, but still empty cache";
         has_a_raised := true;
     );
-    dirty := (new osetb Set_poly.empty);
+    dirty := (new osetb Set_.empty);
     cache := (new oassocb []);
     counter := 0;
     if !has_a_raised then raise Out_of_memory

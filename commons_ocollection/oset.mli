@@ -14,7 +14,7 @@ object ('o)
   method is_equal : 'o -> bool
     
   method virtual toset : 'd
-  method tosetb : 'a Set_poly.t
+  method tosetb : 'a Set_.t
   method toseti : Seti.seti
   method tosetpt : SetPt.t
 end

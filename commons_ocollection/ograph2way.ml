@@ -53,8 +53,8 @@ object(o)
   method predecessors e = pred#find e
   method nodes = (* nods *)
     (*  could take pred,  same *)
-    (* caml typing sux, arrive pas a faire:  pred#fold (fun a (k,v) -> a#add k) (new osetb Set_poly.empty)  *)
-    let a = ref (new osetb Set_poly.empty) in
+    (* caml typing sux, arrive pas a faire:  pred#fold (fun a (k,v) -> a#add k) (new osetb Set_.empty)  *)
+    let a = ref (new osetb Set_.empty) in
     succ#iter (fun (k,v) -> a := !a#add k);
     !a
 

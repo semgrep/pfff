@@ -36,7 +36,7 @@ type nodei = int
 
 class ['a,'b] ograph_extended =
   let build_assoc () = new oassocb [] in (* opti?: = oassoch *)
-  let build_set ()   = new osetb Set_poly.empty in
+  let build_set ()   = new osetb Set_.empty in
 
   object(o)
     (* inherit ['a] ograph *)
@@ -134,7 +134,7 @@ class ['a,'b] ograph_extended =
 
 class ['a,'b] ograph_mutable =
   let build_assoc () = new oassocb [] in
-  let build_set ()   = new osetb Set_poly.empty in
+  let build_set ()   = new osetb Set_.empty in
 
   object(o)
       

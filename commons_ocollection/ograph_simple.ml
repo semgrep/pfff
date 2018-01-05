@@ -27,7 +27,7 @@ open Osetb
 
 class ['key, 'a,'b] ograph_mutable =
   let build_assoc () = new oassocb [] in
-  let build_set ()   = new osetb Set_poly.empty in
+  let build_set ()   = new osetb Set_.empty in
 
 object(o)
   

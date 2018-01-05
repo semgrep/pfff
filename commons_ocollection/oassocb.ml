@@ -6,20 +6,20 @@ class ['a,'b] oassocb xs =
   object(o)
     inherit ['a,'b] oassoc
 
-    val data = Map_poly.empty
+    val data = Map_.empty
 
-    method empty = {< data = Map_poly.empty >}
-    method add (k,v) = {< data = Map_poly.add k v data >}
-    method replkey (k,v) = {< data = Map_poly.add k v (Map_poly.remove k data) >}
-    method iter f = Map_poly.iter (Common2.curry f) data
+    method empty = {< data = Map_.empty >}
+    method add (k,v) = {< data = Map_.add k v data >}
+    method replkey (k,v) = {< data = Map_.add k v (Map_.remove k data) >}
+    method iter f = Map_.iter (Common2.curry f) data
     method view = raise Todo
 
-    method del (k,v) = {< data = Map_poly.remove k data >}
+    method del (k,v) = {< data = Map_.remove k data >}
     method mem e = raise Todo
-    method null = (Map_poly.is_empty data)
+    method null = (Map_.is_empty data)
 
-    method assoc k = Map_poly.find k data
-    method delkey k = {< data = Map_poly.remove k data >}
+    method assoc k = Map_.find k data
+    method delkey k = {< data = Map_.remove k data >}
 
     method keys = 
       List.map fst (o#tolist)

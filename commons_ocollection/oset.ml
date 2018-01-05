@@ -12,7 +12,7 @@ object(o: 'o)
   method virtual minus: 'o -> 'o
     
   (* allow binary methods tricks, generate exception when not good type *)
-  method  tosetb: 'a Set_poly.t = raise Impossible
+  method  tosetb: 'a Set_.t = raise Impossible
   method  tosetpt: SetPt.t = raise Impossible
   method  toseti: Seti.seti    = raise Impossible
   method virtual toset: 'b. 'b (* generic (not safe) tricks *)
