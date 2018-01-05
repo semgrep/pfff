@@ -7,8 +7,7 @@
  * include all their extensions over the standard lib (a more complete
  * List module, Arg, etc) 
 *)
-
-include Common
+include Common2
 
 include Oset
 include Oassoc
