@@ -227,7 +227,8 @@ val time_func : (unit -> 'a) -> 'a
 (* Test. But have a look at ounit.mli *)
 (*****************************************************************************)
 
-(*old: val example : bool -> unit *)
+(*old: val example : bool -> unit, PB with js_of_ocaml? *)
+val example : bool -> unit
 (* generate failwith <string> when pb *)
 val example2 : string -> bool -> unit 
 (* use Dumper to report when pb *)

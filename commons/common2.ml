@@ -548,12 +548,11 @@ let time_func f =
 (* See also OUnit *)
 
 (* commented because does not play well with js_of_ocaml
-let example b =
-  assert b
-  if b
- then ()
-  else failwith ("ASSERT FAILURE: " ^ (Printexc.get_backtrace ()))
 *)
+let example b =
+  if b
+  then ()
+  else failwith ("ASSERT FAILURE: " ^ (Printexc.get_backtrace ()))
 let _ex1 = assert (enum 1 4 = [1;2;3;4])
 
 let assert_equal a b =
