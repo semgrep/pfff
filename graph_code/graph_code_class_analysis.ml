@@ -17,7 +17,7 @@ open Common
 module G = Graph_code
 module E = Entity_code
 
-module Set = Set_poly
+module Set = Set_
 
 (*****************************************************************************)
 (* Prelude *)

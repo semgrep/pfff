@@ -6,7 +6,7 @@ type node =
   (* used to simplify code to provoke the call to toplevel functions *)
   | FakeRoot
 
-type callgraph = (node, node Set_poly.t) Map_poly.t
+type callgraph = (node, node Set_.t) Map_.t
 
 val add_graph: node -> node -> callgraph -> callgraph
 (* used as reduce step for the map-reduce computing the callgraph *)

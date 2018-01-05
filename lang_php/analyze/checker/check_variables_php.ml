@@ -163,7 +163,7 @@ type env = {
    * todo? use a list of Map.t to represent nested scopes?
    * (globals, methods/functions, nested blocks)? when in strict/block mode?
    *)
-  vars: (string, (Ast_php.tok * Scope_code.scope * int ref)) Map_poly.t ref;
+  vars: (string, (Ast_php.tok * Scope_code.scope * int ref)) Map_.t ref;
 
   (* to remember how to annotate Var in ast_php.ml *)
   scope_vars_used: (Ast_php.tok, Scope_code.scope) Hashtbl.t;
@@ -207,7 +207,7 @@ let unused_ok s =
   )
 
 let lookup_opt s vars =
-  Common2.optionise (fun () -> Map_poly.find s vars)
+  Common2.optionise (fun () -> Map_.find s vars)
 
 let s_tok_of_ident name =
   A.str_of_ident name, A.tok_of_ident name
@@ -321,7 +321,7 @@ let check_defined env name ~incr_count =
           then E.UseOfUndefinedVariableInLambda s
           else
             let allvars =
-              !(env.vars) +> Map_poly.to_list +> List.map fst in
+              !(env.vars) +> Map_.to_list +> List.map fst in
             let suggest = Suggest_fix_php.suggest s allvars in
             E.UseOfUndefinedVariable (s, suggest)
         in
@@ -332,7 +332,7 @@ let check_defined env name ~incr_count =
       if incr_count then incr access_count
 
 let check_used env vars =
-  vars +> Map_poly.iter (fun s (tok, scope, aref) ->
+  vars +> Map_.iter (fun s (tok, scope, aref) ->
     if !aref = 0
     then
       if unused_ok s
@@ -356,7 +356,7 @@ let create_new_local_if_necessary ~incr_count env name =
    * in the outer context. Jslint does the same.
    *)
   | None ->
-      env.vars := Map_poly.add s (tok, S.Local, ref 0) !(env.vars);
+      env.vars := Map_.add s (tok, S.Local, ref 0) !(env.vars);
       Hashtbl.add env.scope_vars_used tok S.Local;
 
   | Some (_tok, scope, access_count) ->
@@ -408,14 +408,14 @@ and func_def env def =
   let enclosing_vars =
     match def.f_kind with
     (* for ShortLambda enclosing variables can be accessed  *)
-    | ShortLambda -> Map_poly.to_list oldvars
+    | ShortLambda -> Map_.to_list oldvars
     (* fresh new scope *)
     | _ ->
       (Env_php.globals_builtins +> List.map (fun s ->
        "$" ^ s, (Ast_php.fakeInfo s, S.Global, ref 1)
       )) @
       (* $this is now implicitly passed in use() for closures *)
-      (try ["$this", Map_poly.find "$this" oldvars]
+      (try ["$this", Map_.find "$this" oldvars]
        with Not_found -> []
       )
   in
@@ -427,7 +427,7 @@ and func_def env def =
         s, (tok, S.Param, ref access_cnt)
       )) @
       enclosing_vars
-      ) +> Map_poly.of_list);
+      ) +> Map_.of_list);
 
     (* reinitialize bailout for each function/method *)
     bailout = ref false;
@@ -439,7 +439,7 @@ and func_def env def =
     (* don't reuse same access count reference; the variable has to be used
      * again in this new scope.
      *)
-    env.vars := Map_poly.add s (tok, S.Closed, ref 0) !(env.vars);
+    env.vars := Map_.add s (tok, S.Closed, ref 0) !(env.vars);
   );
   (* We put 1 as 'use_count' below because we are not interested
    * in error message related to $this. It's ok to not use $this
@@ -448,12 +448,12 @@ and func_def env def =
   if def.f_kind = Method && not (A.is_static def.m_modifiers)
   then begin
      let tok = (Ast_php.fakeInfo "$this") in
-     env.vars := Map_poly.add "$this" (tok, S.Class, ref 1) !(env.vars);
+     env.vars := Map_.add "$this" (tok, S.Class, ref 1) !(env.vars);
   end;
 
   List.iter (stmt env) def.f_body;
   let newvars =
-    enclosing_vars +> List.fold_left (fun acc (x, _) -> Map_poly.remove x acc)
+    enclosing_vars +> List.fold_left (fun acc (x, _) -> Map_.remove x acc)
       !(env.vars)
   in
   check_used env newvars
@@ -511,7 +511,7 @@ and stmt env = function
         Common.opt (expr env) eopt;
         let (s, tok) = s_tok_of_ident name in
         (* less: check if shadows something? *)
-        env.vars := Map_poly.add s (tok, S.Static, ref 0) !(env.vars);
+        env.vars := Map_.add s (tok, S.Static, ref 0) !(env.vars);
       )
   | Global xs ->
       xs +> List.iter (fun e ->
@@ -521,7 +521,7 @@ and stmt env = function
         match e with
         | Var name ->
             let (s, tok) = s_tok_of_ident name in
-            env.vars := Map_poly.add s (tok, S.Global, ref 0) !(env.vars);
+            env.vars := Map_.add s (tok, S.Global, ref 0) !(env.vars);
         (* todo: E.warning tok E.UglyGlobalDynamic *)
         | _ ->
             pr2 (str_of_any (Expr2 e));
@@ -538,7 +538,7 @@ and stmt env = function
  *)
 and catch env (_hint_type, name, xs) =
   let (s, tok) = s_tok_of_ident name in
-  env.vars := Map_poly.add s (tok, S.LocalExn, ref 0) !(env.vars);
+  env.vars := Map_.add s (tok, S.LocalExn, ref 0) !(env.vars);
   stmtl env xs
 
 and finally env (xs) =
@@ -574,7 +574,7 @@ and foreach_pattern env pattern =
       (* todo: if already in scope? shadowing? *)
       (* todo: if strict then introduce new scope here *)
       (* todo: scope_ref := S.LocalIterator; *)
-      env.vars := Map_poly.add s (tok, S.LocalIterator, shared_ref) !(env.vars)
+      env.vars := Map_.add s (tok, S.LocalIterator, shared_ref) !(env.vars)
     | Ref x -> aux x
     | Arrow (e1, e2) -> aux e1; aux e2
     | List xs -> List.iter aux xs
@@ -629,7 +629,7 @@ and expr env e =
                 let (s, tok) = s_tok_of_ident name in
                 (match lookup_opt s !(env.vars) with
                 | None ->
-                    env.vars := Map_poly.add s (tok, S.ListBinded, shared_ref)
+                    env.vars := Map_.add s (tok, S.ListBinded, shared_ref)
                       !(env.vars);
                 | Some (_tok, _scope, _access_cnt) ->
                     ()
@@ -760,7 +760,7 @@ and expr env e =
           | Arrow(String(param_string, tok_param), _typ_param) ->
               let s = "$" ^ prefix ^ param_string in
               let tok = A.tok_of_ident (param_string, tok_param) in
-              env.vars := Map_poly.add s (tok, S.Local, ref 0) !(env.vars);
+              env.vars := Map_.add s (tok, S.Local, ref 0) !(env.vars);
               (* less: display an error? weird argument to param_xxx func? *)
           | _ -> ()
           )
@@ -928,7 +928,7 @@ let check_and_annotate_program2 find_entity prog =
     (* less: should be a in globals field instead? *)
     vars = ref (Env_php.globals_builtins +> List.map (fun s ->
        "$" ^ s, (Ast_php.fakeInfo s, S.Global, ref 1)
-       ) +> Map_poly.of_list);
+       ) +> Map_.of_list);
     db = find_entity;
     in_class = None;
     in_long_lambda = false;

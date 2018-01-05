@@ -208,8 +208,8 @@ let test_callgraph_php file =
     [file] db
   in
   (* todo: could also show a dot? *)
-  g +> Map_poly.iter (fun n1 v ->
-    v +> Set_poly.iter (fun n2 ->
+  g +> Map_.iter (fun n1 v ->
+    v +> Set_.iter (fun n2 ->
       pr (spf "%s --> %s"
              (CG.string_of_node n1) (CG.string_of_node n2));
     )

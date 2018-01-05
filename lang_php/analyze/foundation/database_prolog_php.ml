@@ -629,8 +629,8 @@ let append_callgraph_to_prolog_db2 ?(show_progress=true) g file =
   Common2.with_open_outfile_append file (fun (pr, _chan) ->
     let pr s = pr (s ^ "\n") in
     pr "";
-    g +> Map_poly.iter (fun src xs ->
-      xs +> Set_poly.iter (fun target ->
+    g +> Map_.iter (fun src xs ->
+      xs +> Set_.iter (fun target ->
         let kind =
           match target with
           (* can't call a file ... *)

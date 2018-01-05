@@ -43,7 +43,7 @@ let callgraph_generation content =
   let (env, ast) = prepare content in
   Common.save_excursion Abstract_interpreter_php.extract_paths true (fun()->
   Common.save_excursion Abstract_interpreter_php.strict true (fun()->
-    Abstract_interpreter_php.graph := Map_poly.empty;
+    Abstract_interpreter_php.graph := Map_.empty;
     let _heap = Interp.program env Env.empty_heap ast in
     !(Abstract_interpreter_php.graph)
   ))
@@ -96,8 +96,8 @@ let assert_graph file xs =
     try
       let n = CG.node_of_string s in
       let actual_child = 
-        Map_poly.find n g 
-        +> Set_poly.elements 
+        Map_.find n g 
+        +> Set_.elements 
         +> List.map CG.string_of_node 
       in
       assert_equal
@@ -305,7 +305,7 @@ function bar() { foo(); }
 " in
       (* note: I don't use assert_graph for teaching purpose here *)
       let g = callgraph_generation file in
-      let xs = Map_poly.find (CG.Function "bar") g +> Set_poly.elements in
+      let xs = Map_.find (CG.Function "bar") g +> Set_.elements in
       assert_equal
         ~msg:"it should handle simple direct calls:"
         [CG.Function "foo"]

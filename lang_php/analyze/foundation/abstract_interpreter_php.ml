@@ -180,7 +180,7 @@ let _checkpoint_heap = ref
   (None: (Env_interpreter_php.heap * value SMap.t (* local vars *)) option)
 
 (* for callgraph generation *)
-let (graph: Callgraph_php2.callgraph ref) = ref Map_poly.empty
+let (graph: Callgraph_php2.callgraph ref) = ref Map_.empty
 
 (*****************************************************************************)
 (* Types *)

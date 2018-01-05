@@ -33,7 +33,7 @@ let create_graph ?(show_progress=false) ?(strict=false) files db =
 
   Common.save_excursion Abstract_interpreter_php.extract_paths true (fun()->
   Common.save_excursion Abstract_interpreter_php.strict strict (fun()->
-    Abstract_interpreter_php.graph := Map_poly.empty;
+    Abstract_interpreter_php.graph := Map_.empty;
 
     files +> Console.progress ~show:show_progress (fun k ->
      List.iter (fun file ->

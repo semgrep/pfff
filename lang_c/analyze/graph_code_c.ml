@@ -987,7 +987,7 @@ let build ?(verbose=true) root files =
 
   let conf = {
     types_dependencies = true;
-   (* TODO currently unused, we do not process felds :( *)
+   (* TODO currently unused, we do not process fields :( *)
     fields_dependencies = true; 
     macro_dependencies = false;
 
