@@ -1,4 +1,4 @@
 description = "jsonwheel"
 requires = "unix num str bigarray"
-archive(byte) = "lib.cma"
-archive(native) = "lib.cmxa"
+archive(byte) = "jsonwheel.cma"
+archive(native) = "jsonwheel.cmxa"

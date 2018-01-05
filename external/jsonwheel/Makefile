@@ -10,7 +10,7 @@ SRC= json_type.ml \
      json_in.ml \
      json_io.ml
 
-TARGET=lib
+TARGET=jsonwheel
 
 INCLUDES=
 #-I +camlp4
@@ -75,13 +75,12 @@ clean::
 ##############################################################################
 # install
 ##############################################################################
-LIBNAME=pfff-external-jsonwheel
+LIBNAME=jsonwheel
 EXPORTSRC=json_io.mli json_parser.mli json_type.mli
 
 install-findlib:
-	ocamlfind install $(LIBNAME) META   lib.cma lib.cmxa lib.a \
-          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) \
-	  $(SRC) json_in.cmi json_out.cmi
+	ocamlfind install $(LIBNAME) META   \
+   $(LIBNAME).cma $(LIBNAME).cmxa $(LIBNAME).a *.cmi $(EXPORTSRC)
 
 uninstall-findlib::
 	ocamlfind remove $(LIBNAME)
