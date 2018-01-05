@@ -52,12 +52,12 @@ OPTPROGS= $(PROGS:=.opt)
 #  endif
 
 JSONDIR=external/jsonwheel
-JSONCMA=external/jsonwheel/lib.cma
+JSONCMA=external/jsonwheel/jsonwheel.cma
 
 ifeq ($(FEATURE_VISUAL),1)
 GUIDIR=external/ocamlgtk
-GUICMD= $(MAKE) all -C $(GUIDIR) && $(MAKE) gui -C commons
-GUICMDOPT= $(MAKE) opt -C $(GUIDIR) && $(MAKE) gui.opt -C commons;
+GUICMD= $(MAKE) all -C $(GUIDIR) && $(MAKE) -C commons_wrappers/gui
+GUICMDOPT= $(MAKE) opt -C $(GUIDIR) && $(MAKE) all.opt -C commons_wrappers/gui;
 GTKINCLUDE=external/ocamlgtk/src
 
 CAIRODIR=external/ocamlcairo
@@ -67,10 +67,10 @@ VISUALDIRS=code_map code_graph
 endif
 
 # should be FEATURE_OCAMLGRAPH, or should give dependencies between features
-GRAPHCMA=external/ocamlgraph/ocamlgraph.cma commons/graph/lib.cma
+GRAPHCMA=external/ocamlgraph/ocamlgraph.cma commons_wrappers/graph/lib.cma
 GRAPHDIR=external/ocamlgraph
-GRAPHCMD= $(MAKE) all -C $(GRAPHDIR) && $(MAKE) -C commons/graph
-GRAPHCMDOPT= $(MAKE) all.opt -C $(GRAPHDIR) && $(MAKE) all.opt -C commons/graph
+GRAPHCMD= $(MAKE) all -C $(GRAPHDIR) && $(MAKE) -C commons_wrappers/graph
+GRAPHCMDOPT= $(MAKE) all.opt -C $(GRAPHDIR) && $(MAKE) all.opt -C commons_wrappers/graph
 
 ifeq ($(FEATURE_BYTECODE), 1)
 ZIPDIR=external/ocamlzip
@@ -104,7 +104,8 @@ SYSLIBS+=$(OCAMLCOMPILERCMA)
 
 # used for sgrep and other small utilities which I dont want to depend
 # on too much things
-BASICLIBS=commons/lib.cma \
+BASICLIBS=commons/commons.cma \
+ commons_core/commons_core.cma \
  $(JSONCMA) \
  globals/lib.cma \
  h_files-format/lib.cma \
@@ -136,12 +137,15 @@ BASICLIBS=commons/lib.cma \
 
 BASICSYSLIBS=nums.cma bigarray.cma str.cma unix.cma
 
+#       commons/commons_features.cma \
+
 # use for the other programs
-LIBS= commons/lib.cma \
+LIBS= commons/commons.cma \
+    commons_core/commons_core.cma \
+    commons_ocollection/commons_ocollection.cma \
        $(JSONCMA) \
        $(GRAPHCMA) \
        $(EXTLIBCMA) $(PTCMA) $(ZIPCMA) $(JAVALIBCMA) \
-       commons/commons_features.cma \
     globals/lib.cma \
     h_files-format/lib.cma \
     h_version-control/lib.cma \
@@ -198,8 +202,7 @@ LIBS= commons/lib.cma \
     lang_web/parsing/lib.cma \
     mini/lib.cma
 
-MAKESUBDIRS=commons \
-  commons/graph \
+MAKESUBDIRS=commons commons_ocollection commons_core \
   $(JSONDIR) \
   $(GRAPHDIR) \
   $(GUIDIR) $(CAIRODIR) \
@@ -261,8 +264,8 @@ MAKESUBDIRS=commons \
   demos
 
 INCLUDEDIRS=$(MAKESUBDIRS) \
- commons/ocamlextra commons/ocollection \
  $(GTKINCLUDE) $(CAIROINCLUDE) \
+ commons_wrappers/graph commons_wrappers/gui \
  $(OCAMLCOMPILERDIR)
 
 PP=-pp "cpp $(CLANG_HACK) -DFEATURE_BYTECODE=$(FEATURE_BYTECODE) -DFEATURE_CMT=$(FEATURE_CMT)"
@@ -290,18 +293,19 @@ opt:
 all.opt: opt
 top: $(TARGET).top
 
+#	$(MAKE) features -C commons
+#	$(MAKE) features.opt -C commons
+
 rec:
 	$(MAKE) -C commons
 	$(GRAPHCMD)
 	$(GUICMD)
-	$(MAKE) features -C commons
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all || exit 1; done
 
 rec.opt:
 	$(MAKE) all.opt -C commons
 	$(GRAPHCMDOPT)
 	$(GUICMDOPT)
-	$(MAKE) features.opt -C commons
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all.opt || exit 1; done
 
 
@@ -439,11 +443,11 @@ OBJS_CM=code_map/lib.cma
 
 GTKLOOP=gtkThread.cmo
 
-codemap: $(LIBS) commons/commons_gui.cma $(OBJS_CM) $(OBJS) main_codemap.cmo
+codemap: $(LIBS) commons_wrappers/gui/lib.cma $(OBJS_CM) $(OBJS) main_codemap.cmo
 	$(OCAMLC) -thread $(CUSTOM) -o $@ $(SYSLIBS) threads.cma \
             $(SYSLIBS_CM) $(GTKLOOP) $^
 
-codemap.opt: $(LIBS:.cma=.cmxa) commons/commons_gui.cmxa $(OBJS_CM:.cma=.cmxa) $(OPTOBJS) main_codemap.cmx
+codemap.opt: $(LIBS:.cma=.cmxa) commons_wrappers/gui/lib.cmxa $(OBJS_CM:.cma=.cmxa) $(OPTOBJS) main_codemap.cmx
 	$(OCAMLOPT) -thread $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) threads.cmxa\
           $(SYSLIBS_CM:.cma=.cmxa) $(GTKLOOP:.cmo=.cmx)  $^
 
@@ -457,11 +461,11 @@ clean::
 SYSLIBS_CG=$(SYSLIBS_CM)
 OBJS_CG=code_graph/lib.cma
 
-codegraph: $(LIBS) commons/commons_gui.cma $(OBJS_CG) $(OBJS) main_codegraph.cmo
+codegraph: $(LIBS) commons_wrappers/gui/lib.cma $(OBJS_CG) $(OBJS) main_codegraph.cmo
 	$(OCAMLC) -thread $(CUSTOM) -o $@ $(SYSLIBS) threads.cma \
            $(SYSLIBS_CG) $(GTKLOOP) $^
 
-codegraph.opt: $(LIBS:.cma=.cmxa) commons/commons_gui.cmxa $(OBJS_CG:.cma=.cmxa) $(OPTOBJS) main_codegraph.cmx
+codegraph.opt: $(LIBS:.cma=.cmxa) commons_wrappers/gui/lib.cmxa $(OBJS_CG:.cma=.cmxa) $(OPTOBJS) main_codegraph.cmx
 	$(OCAMLOPT) -thread $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) threads.cmxa\
           $(SYSLIBS_CG:.cma=.cmxa) $(GTKLOOP:.cmo=.cmx)  $^
 
