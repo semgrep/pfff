@@ -11,7 +11,7 @@ SYSLIBS= str.cma unix.cma
 LIBS=$(TOP)/commons/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons \
-  $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \
+  $(TOP)/commons_ocollection \
    $(TOP)/h_program-lang $(TOP)/h_version-control  \
    $(TOP)/globals \
    $(TOP)/lang_php/parsing \

@@ -23,7 +23,7 @@ SRC= flag_parsing_css.ml \
 SYSLIBS= str.cma unix.cma 
 LIBS=$(TOP)/commons/lib.cma
 
-INCLUDEDIRS= $(TOP)/commons $(TOP)/commons/ocamlextra \
+INCLUDEDIRS= $(TOP)/commons \
  $(TOP)/globals \
  $(TOP)/h_program-lang \
 

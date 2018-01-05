@@ -25,7 +25,8 @@ LIBS=$(TOP)/commons/lib.cma \
 # qa_test qa_code \
 
 INCLUDEDIRS= $(TOP)/commons \
-   $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \
+   $(TOP)/commons_ocollection \
+   $(TOP)/commons_core \
    $(TOP)/external/ \
    $(TOP)/h_program-lang $(TOP)/h_version-control  \
    $(TOP)/globals \

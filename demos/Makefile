@@ -32,6 +32,7 @@ clean::
 include ../Makefile.config
 
 LIBS= ../commons/lib.cma \
+      ../commons_core/commons_core.cma \
       ../h_version-control/lib.cma \
       ../h_program-lang/lib.cma \
       ../matcher/lib.cma \

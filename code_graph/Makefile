@@ -11,11 +11,13 @@ SRC=cairo_helpers3.ml \
 
 SYSLIBS=str.cma unix.cma dbm.cma threads.cma  lablgtk.cma
 
-LIBS=$(TOP)/commons/lib.cma $(TOP)/commons/commons_gui.cma \
-     $(TOP)/commons/commons_features.cma
+LIBS=$(TOP)/commons/lib.cma $(TOP)/commons_wrappers/gui/lib.cma \
+
+#     $(TOP)/commons/commons_features.cma
 
 
 INCLUDEDIRS=$(TOP)/commons $(TOP)/globals \
+    $(TOP)/commons_wrappers/gui \
 	$(TOP)/h_program-lang \
 	$(TOP)/graph_code \
 	$(TOP)/h_visualization \

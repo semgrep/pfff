@@ -30,7 +30,7 @@ MAKESUBDIRS=
 # qa_test qa_code \
 
 INCLUDEDIRS= $(TOP)/commons \
-   $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \
+   $(TOP)/commons_ocollection \
    $(TOP)/external/ \
    $(TOP)/h_program-lang $(TOP)/h_version-control  \
    $(TOP)/globals \

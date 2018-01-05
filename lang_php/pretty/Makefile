@@ -23,7 +23,6 @@ SYSLIBSOPT = $(SYSLIBS:.cma=.cmxa)
 
 INCLUDEDIRS= \
   $(TOP)/commons \
-  $(TOP)/commons/ocamlextra \
   $(TOP)/globals \
   $(TOP)/h_program-lang \
   $(TOP)/lang_php/parsing \

@@ -22,7 +22,8 @@ LIBS=$(TOP)/commons/lib.cma \
 MAKESUBDIRS=visual
 
 INCLUDEDIRS= $(TOP)/commons \
-   $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \
+   $(TOP)/commons_ocollection \
+   $(TOP)/commons_core \
    $(TOP)/globals \
    $(TOP)/external/ \
    $(TOP)/h_program-lang \

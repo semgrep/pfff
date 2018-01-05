@@ -14,8 +14,8 @@ SRC= flag_version_control.ml patch.ml lib_vcs.ml  \
 SRC+=subversion.ml
 
 
-LIBS=../commons/lib.cma ../globals/lib.cma
-INCLUDEDIRS= ../commons ../commons/ocamlextra ../globals
+LIBS=../commons/commons.cma ../commons_core/commons_core.cma ../globals/lib.cma
+INCLUDEDIRS= ../commons ../commons_core ../globals
 
 TARGET1=vcs
 

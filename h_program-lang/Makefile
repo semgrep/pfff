@@ -27,7 +27,6 @@ SRC= entity_code.ml scope_code.ml \
 SYSLIBS= str.cma unix.cma
 LIBS=../commons/lib.cma
 INCLUDEDIRS= $(TOP)/commons \
- $(TOP)/commons/ocamlextra \
  $(TOP)/external/jsonwheel \
  $(TOP)/h_files-format
 

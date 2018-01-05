@@ -33,10 +33,8 @@ $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 # install
 ##############################################################################
 LIBNAME=pfff-commons-graph
-EXPORTSRC=\
-  graph.mli
+EXPORTSRC= graph.mli
 
 install-findlib: all all.opt
 	ocamlfind install $(LIBNAME) META \
-          lib.cma lib.cmxa lib.a \
-          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi)
+          lib.cma lib.cmxa lib.a *.cmi $(EXPORTSRC) 

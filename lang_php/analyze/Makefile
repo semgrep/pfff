@@ -42,7 +42,8 @@ MAKESUBDIRS=foundation tools checker \
 #typing finder
 
 INCLUDEDIRS= $(TOP)/commons \
-   $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \
+   $(TOP)/commons_ocollection \
+   $(TOP)/commons_core \
    $(TOP)/external/jsonwheel \
    $(TOP)/h_program-lang $(TOP)/h_version-control  \
    $(TOP)/globals \

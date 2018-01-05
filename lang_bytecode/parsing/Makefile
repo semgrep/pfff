@@ -18,7 +18,7 @@ SYSLIBS= str.cma unix.cma
 LIBS= $(TOP)/commons/lib.cma \
  $(TOP)/h_program-lang/lib.cma \
 
-INCLUDEDIRS= $(TOP)/commons $(TOP)/commons/ocamlextra \
+INCLUDEDIRS= $(TOP)/commons\
   $(TOP)/h_program-lang \
   $(TOP)/globals \
   $(TOP)/external/extlib \

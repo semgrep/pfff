@@ -20,7 +20,7 @@ LIBS=$(TOP)/commons/lib.cma \
  $(TOP)/lang_c/parsing/lib.cma
 
 INCLUDEDIRS= \
- $(TOP)/commons $(TOP)/commons/ocamlextra \
+ $(TOP)/commons \
  $(TOP)/globals \
  $(TOP)/h_program-lang \
  $(TOP)/lang_cpp/parsing \

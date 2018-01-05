@@ -19,6 +19,7 @@ LIBS=../commons/lib.cma \
    ../h_program-lang/lib.cma \
 
 INCLUDEDIRS= ../commons \
+   ../commons_core \
    ../h_visualization \
    ../h_version-control \
    ../h_program-lang \
