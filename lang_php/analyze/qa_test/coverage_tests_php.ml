@@ -349,8 +349,11 @@ let coverage_tests
         Common.push (test_file, msg) pb_test_files;
   in
   let _res, not_done = 
+    failwith "TODO: Use Features.Distribution"
+(*
     Features.Distribution.map_reduce_lazy 
       ~fmap:mapper ~freduce:reducer () test_files_fn
+*)
   in
   not_done +> List.iter (fun test_file ->
     Common.push (test_file, "MPI error, see the full log") pb_test_files;
@@ -533,8 +536,12 @@ let actions () = [
       acc + e
     in
     let res, notdone = 
+    failwith "TODO: Use Features.Distribution"
+(*
       Features.Distribution.map_reduce ~fmap:map_ex ~freduce:reduce_ex 
-      0 [35;35;35;35] in
+      0 [35;35;35;35] 
+*)
+  in
     pr (spf "result = %d, #not_done = %d" res (List.length notdone));
   );
 ]
