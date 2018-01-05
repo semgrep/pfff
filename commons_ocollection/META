@@ -1,0 +1,4 @@
+description = "Generic functions from pfff, yet another extended stdlib"
+requires = "unix num"
+archive(byte) = "commons_ocollection.cma"
+archive(native) = "commons_ocollection.cmxa"
