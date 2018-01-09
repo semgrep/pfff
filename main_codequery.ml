@@ -207,12 +207,12 @@ let build_prolog_db lang root xs =
           Graph_code_bytecode.build ~verbose:!verbose ~graph_code_java 
             root files 
 #endif
-
+(*
         | "clang2" -> 
           Graph_code_clang.hook_use_edge :=
             Graph_code_prolog.hook_use_edge_for_prolog;
           Graph_code_clang.build ~verbose:!verbose root files
-
+*)
         | "c" ->
           Graph_code_c.hook_use_edge :=
             Graph_code_prolog.hook_use_edge_for_prolog;
