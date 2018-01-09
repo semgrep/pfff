@@ -173,7 +173,7 @@ type context =
   | CallCtx of Graph_code.node
   | AssignCtx of Graph_code.node
 
-let hook_use_edge_for_prolog ctx in_assign (src, dst) g =
+let hook_use_edge_for_prolog ctx in_assign (src, dst) g _loc =
   let kind = snd dst in
 
   (match kind with

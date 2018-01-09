@@ -56,7 +56,7 @@ module P = Graph_code_prolog
  * 
  * todo: 
  *  - fields!!!!!!! but need type information for expressions
- *  - the managment of dupes has become a bit complicated, easy to miss cases,
+ *  - the management of dupes has become a bit complicated, easy to miss cases,
  *    maybe should actually work at namespace level and consider dupes
  *    constant and functions as they are kind of in the same namespace
  *  - there is different "namespaces" in C?
@@ -130,12 +130,16 @@ type env = {
    *)
   typedefs_dependencies: bool;
   propagate_deps_def_to_decl: bool;
+
+  (* todo: readable_filenames_in_graph_nodeinfo *)
 }
 
 type kind_file = Source | Header
 
-(* for prolog *)
-let hook_use_edge = ref (fun _ctx _in_assign (_src, _dst) _g -> ())
+(* for prolog and other code indexer (e.g. syncweb's indexer) *)
+let hook_use_edge = ref (fun _ctx _in_assign (_src, _dst) _g _loc -> ())
+
+let hook_def_node = ref (fun _node _g -> ())
 
 (* for datalog *)
 let facts = ref None
@@ -223,7 +227,7 @@ let rec expand_typedefs env t =
   | TArray (eopt, x) -> TArray (eopt, expand_typedefs env x)
   | TFunction (ret, params) -> 
       TFunction (expand_typedefs env ret,
-                params +> List.map (fun p ->
+                params |> List.map (fun p ->
                   { p with p_type = expand_typedefs env p.p_type }
                 ))
 
@@ -241,16 +245,16 @@ let final_type env t =
 let find_existing_node_opt env name candidates last_resort =
   let s = Ast.str_of_name name in
   let kind_with_a_dupe =
-    candidates +> Common.find_opt (fun kind ->
+    candidates |> Common.find_opt (fun kind ->
       Hashtbl.mem env.dupes (s, kind)
       && kind <> E.Prototype && kind  <> E.GlobalExtern
     )
   in
   let existing_nodes =
-    candidates +> List.filter (fun kind -> G.has_node (s, kind) env.g)
+    candidates |> List.filter (fun kind -> G.has_node (s, kind) env.g)
   in
   let non_proto_existing_nodes =
-    existing_nodes +> Common.exclude (fun kind ->
+    existing_nodes |> Common.exclude (fun kind ->
       kind =*= E.Prototype || kind  =*= E.GlobalExtern
     )
   in
@@ -296,7 +300,7 @@ let is_local env s =
 
 (* less: could mv this conrete hooks in datalog_c at some point *)
 let with_datalog_env env f =
-  !facts +> Common.do_option (fun aref ->
+  !facts |> Common.do_option (fun aref ->
      let env2 = { Datalog_c.
        scope = fst env.current;
        c_file_readable = env.c_file_readable;
@@ -319,9 +323,9 @@ let hook_expr_toplevel env_orig x =
   then
    with_datalog_env env_orig (fun env ->
      let instrs = Datalog_c.instrs_of_expr env x in
-     instrs +> List.iter (fun instr ->
+     instrs |> List.iter (fun instr ->
        let facts = Datalog_c.facts_of_instr env instr in
-       facts +> List.iter (fun fact -> Common.push fact env.Datalog_c.facts);
+       facts |> List.iter (fun fact -> Common.push fact env.Datalog_c.facts);
      );
      if env_orig.in_return
      then
@@ -335,10 +339,11 @@ let hook_expr_toplevel env_orig x =
  *)
 let hook_def env def =
   if env.phase = Defs
-  then with_datalog_env env (fun env ->
-        let facts = Datalog_c.facts_of_def env def in
-        facts +> List.iter (fun fact -> Common.push fact env.Datalog_c.facts);
-       )
+  then 
+    with_datalog_env env (fun env ->
+      let facts = Datalog_c.facts_of_def env def in
+      facts |> List.iter (fun fact -> Common.push fact env.Datalog_c.facts);
+    )
    
 (*****************************************************************************)
 (* Add Node *)
@@ -422,7 +427,7 @@ let add_node_and_edge_if_defs_mode env (name, kind) typopt =
       (* try but should never happen, see comment below *)
       try
         let pos = Parse_info.token_location_of_info (snd name) in
-        let pos = { pos with Parse_info.file = env.c_file_readable } in
+(*        let pos = { pos with Parse_info.file = env.c_file_readable } in *)
         let nodeinfo = { Graph_code.
           pos; typ;
           props = [];
@@ -431,9 +436,10 @@ let add_node_and_edge_if_defs_mode env (name, kind) typopt =
          * with a different def kind and same name. But we should at
          * least warn about in find_existing_node_opt().
          *)
-        env.g +> G.add_node node;
-        env.g +> G.add_edge (env.current, node) G.Has;
-        env.g +> G.add_nodeinfo node nodeinfo;
+        env.g |> G.add_node node;
+        env.g |> G.add_edge (env.current, node) G.Has;
+        env.g |> G.add_nodeinfo node nodeinfo;
+        !hook_def_node node env.g;
       (* this should never happen, but it's better to give a good err msg *)
       with Not_found ->
         error ("Not_found:" ^ str) (snd name)
@@ -464,7 +470,11 @@ let add_use_edge env (name, kind) =
   (* the normal case *)
   | _ when G.has_node dst env.g ->
       G.add_edge (src, dst) G.Use env.g;
-      !hook_use_edge env.ctx env.in_assign (src, dst) env.g
+
+    let pos = Parse_info.token_location_of_info (snd name) in
+(*     let pos = { pos with Parse_info.file = env.c_file_readable } in *)
+    !hook_use_edge env.ctx env.in_assign (src, dst) env.g pos
+
   (* try to 'rekind'? we use find_existing_node now so no need to rekind *)
   | _ ->
     let prfn = 
@@ -495,8 +505,8 @@ let rec extract_defs_uses env ast =
     let dir = Common2.dirname env.c_file_readable in
     G.create_intermediate_directories_if_not_present env.g dir;
     let node = (env.c_file_readable, E.File) in
-    env.g +> G.add_node node;
-    env.g +> G.add_edge ((dir, E.Dir), node) G.Has;
+    env.g |> G.add_node node;
+    env.g |> G.add_edge ((dir, E.Dir), node) G.Has;
   end;
   let env = { env with current = (env.c_file_readable, E.File); } in
   toplevels env ast
@@ -520,7 +530,7 @@ and toplevel env x =
       let env = add_node_and_edge_if_defs_mode env (name, E.Macro) None in
       hook_def env x;
       let env = { env with locals = ref 
-            (params +> List.map (fun p -> Ast.str_of_name p, None(*TAny*)))
+            (params |> List.map (fun p -> Ast.str_of_name p, None(*TAny*)))
       } in
       if env.phase = Uses && env.conf.macro_dependencies
       then define_body env body
@@ -553,13 +563,13 @@ and toplevel env x =
           (* todo: when prototype and in .c, then it's probably a forward
            * decl that we could just skip?
            *)
-          add_node_and_edge_if_defs_mode env (name, kind) typ +> ignore
+          add_node_and_edge_if_defs_mode env (name, kind) typ |> ignore
       | E.Function -> 
           let name = if static then new_name_if_defs env name else name in
           let env = add_node_and_edge_if_defs_mode env (name, kind) typ in
           type_ env (TFunction def.f_type);
           hook_def env x;
-          let xs = snd def.f_type +> Common.map_filter (fun x -> 
+          let xs = snd def.f_type |> Common.map_filter (fun x -> 
             match x.p_name with 
             | None -> None 
             | Some n -> Some (Ast.str_of_name n, Some x.p_type)
@@ -599,7 +609,7 @@ and toplevel env x =
       | E.Prototype when static -> ()
       (* note that no need | E.GlobalExtern when static, it can't happen *)
       | E.Prototype | E.GlobalExtern -> 
-          add_node_and_edge_if_defs_mode env (name, kind) typ +> ignore
+          add_node_and_edge_if_defs_mode env (name, kind) typ |> ignore
       | E.Global ->
           let name = if static then new_name_if_defs env name else name in
           let env = add_node_and_edge_if_defs_mode env (name, kind) typ in
@@ -607,7 +617,7 @@ and toplevel env x =
           type_ env t;
           if env.phase = Uses
           then 
-            eopt +> Common.do_option (fun e ->
+            eopt |> Common.do_option (fun e ->
               let n = name in
               expr_toplevel env 
                 (Assign ((Ast_cpp.SimpleAssign, snd n), Id n, e))
@@ -642,23 +652,23 @@ and toplevel env x =
           let env = add_node_and_edge_if_defs_mode env (name, E.Type) None in
           hook_def env x;
           (* this is used for InitListExpr *)
-          let fields = flds +> Common.map_filter (function
+          let fields = flds |> Common.map_filter (function
             | { fld_name = Some name; _ } -> Some (Ast.str_of_name name)
             | _ -> None
           )
           in
           Hashtbl.replace env.fields (prefix ^ s) fields;
 
-          flds +> List.iter (fun { fld_name = nameopt; fld_type = t; } ->
-            nameopt +> Common.do_option (fun name ->
+          flds |> List.iter (fun { fld_name = nameopt; fld_type = t; } ->
+            nameopt |> Common.do_option (fun name ->
               add_node_and_edge_if_defs_mode env (name, E.Field) (Some t)
-              +>ignore;
+              |>ignore;
             )
           );
         end
       end else begin
         let env = add_node_and_edge_if_defs_mode env (name, E.Type) None in
-        flds +> List.iter (fun { fld_name = nameopt; fld_type = t; } ->
+        flds |> List.iter (fun { fld_name = nameopt; fld_type = t; } ->
           match nameopt with
           | Some name -> 
             let typ = Some t in
@@ -674,7 +684,7 @@ and toplevel env x =
   | EnumDef (name, xs) ->
       let name = add_prefix "E__" name in
       let env =  add_node_and_edge_if_defs_mode env (name, E.Type) None in
-      xs +> List.iter (fun (name, eopt) ->
+      xs |> List.iter (fun (name, eopt) ->
         let name = 
           if kind_file env=*=Source then new_name_if_defs env name else name in
         let env = add_node_and_edge_if_defs_mode env (name, E.Constructor) None in
@@ -759,7 +769,7 @@ and stmt env = function
       ()
 
   | Vars xs ->
-      xs +> List.iter (fun x ->
+      xs |> List.iter (fun x ->
         let { v_name = n; v_type = t; v_storage = sto; v_init = eopt } = x in
         if sto <> Extern
         then begin
@@ -820,7 +830,7 @@ and expr env = function
           ]
           (if looks_like_macro name then E.Constant else E.Global)
         in
-        kind_opt +> Common.do_option (fun kind -> add_use_edge env (name, kind))
+        kind_opt |> Common.do_option (fun kind -> add_use_edge env (name, kind))
 
   | Call (e, es) -> 
       (match e with
@@ -843,7 +853,7 @@ and expr env = function
             (* we don't call call like foo(bar(x)) to be counted
              * as special calls in prolog, hence the NoCtx here.
              *)
-            kind_opt +> Common.do_option (fun kind ->
+            kind_opt |> Common.do_option (fun kind ->
               add_use_edge { env with ctx = P.NoCtx } (name, kind);
               exprs { env with ctx = (P.CallCtx (fst name, kind)) } es
             )
@@ -883,12 +893,12 @@ and expr env = function
   | Sequence (e1, e2) -> exprs env [e1;e2]
 
   | ArrayInit xs -> 
-      xs +> List.iter (fun (eopt, init) ->
+      xs |> List.iter (fun (eopt, init) ->
         Common2.opt (expr env) eopt;
         expr env init
       )
   (* todo: add deps on field *)
-  | RecordInit xs -> xs +> List.map snd +> exprs env
+  | RecordInit xs -> xs |> List.map snd |> exprs env
 
   | SizeOf x ->
       (match x with
@@ -968,7 +978,7 @@ and type_ env typ =
           aux x
       | TFunction (t, xs) ->
         aux t;
-        xs +> List.iter (fun p -> aux p.p_type)
+        xs |> List.iter (fun p -> aux p.p_type)
     in
     aux t
   end
@@ -1032,7 +1042,7 @@ let build ?(verbose=true) root files =
    * names.
    *)
   let elems = 
-    files +> Console.progress ~show:verbose (fun k ->
+    files |> Console.progress ~show:verbose (fun k ->
       List.map (fun file ->
         k();
         let ast = parse ~show_parse_error:true file in
@@ -1045,7 +1055,7 @@ let build ?(verbose=true) root files =
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
   env.pr2_and_log "\nstep1: extract defs";
-  elems +> Console.progress ~show:verbose (fun k ->
+  elems |> Console.progress ~show:verbose (fun k ->
     List.iter (fun (ast, c_file_readable, local_rename) ->
       k();
       extract_defs_uses { env with 
@@ -1055,7 +1065,7 @@ let build ?(verbose=true) root files =
 
   (* step2: creating the 'Use' edges *)
   env.pr2_and_log "\nstep2: extract Uses";
-  elems +> Console.progress ~show:verbose (fun k ->
+  elems |> Console.progress ~show:verbose (fun k ->
     List.iter (fun (ast, c_file_readable, local_rename) ->
       k();
       extract_defs_uses { env with 
