@@ -64,10 +64,6 @@ open Common
  * program also depends on external files ?
  *)
 
-let verbose = ref false
-
-let lang = ref "c"
-
 let output_dir = ref "CODESLICER"
 
 (* action mode *)
@@ -399,13 +395,9 @@ let all_actions () =
   []
 
 let options () = [
-  "-verbose", Arg.Set verbose, 
-  " ";
   "-o", Arg.Set_string output_dir, 
   " <dir> generate codeslice in dir";
   
-  "-lang", Arg.Set_string lang, 
-  (spf " <str> choose language (default = %s)" !lang);
   ] @
   Flag_parsing_cpp.cmdline_flags_verbose () @
   Flag_parsing_cpp.cmdline_flags_debugging () @

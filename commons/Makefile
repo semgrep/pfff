@@ -28,13 +28,10 @@ all.opt: lib.cmxa lib.a
 
 lib.cma: $(LIBNAME).cma
 	cp $^ $@
-
 lib.cmxa: $(LIBNAME).cmxa
 	cp $^ $@
-
 lib.a: $(LIBNAME).a
 	cp $^ $@
-
 
 ##############################################################################
 # Developer rules
