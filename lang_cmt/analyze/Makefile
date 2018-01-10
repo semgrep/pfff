@@ -11,15 +11,12 @@ SRC= graph_code_cmt_helpers.ml graph_code_cmt.ml \
 
 OCAMLCOMPILERDIR=$(shell ocamlc -where)/compiler-libs
 
-INCLUDEDIRS= $(TOP)/commons \
+INCLUDEDIRS= $(TOP)/commons $(TOP)/commons_core \
  $(OCAMLCOMPILERDIR) \
  $(TOP)/globals \
  $(TOP)/h_program-lang $(TOP)/graph_code \
  $(TOP)/lang_cmt/parsing \
  $(TOP)/lang_ml/parsing \
-
-
-PP=-pp "cpp $(CLANG_HACK)  -DOCAML_VERSION=$(OCAMLVERSION)"
 
 ##############################################################################
 # Generic variables
@@ -43,6 +40,3 @@ $(TARGET).top: $(OBJS) $(LIBS)
 
 clean::
 	rm -f $(TARGET).top
-
-
-

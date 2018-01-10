@@ -41,8 +41,6 @@ $(TARGET).top: $(OBJS) $(LIBS)
 clean::
 	rm -f $(TARGET).top
 
-PP=-pp "cpp -DOCAML_VERSION=$(OCAMLVERSION)"
-
 ##############################################################################
 # Literate Programming rules
 ##############################################################################

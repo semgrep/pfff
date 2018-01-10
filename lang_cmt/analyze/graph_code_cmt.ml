@@ -48,7 +48,7 @@ open Typedtree
  *  - whole program analysis done by ocamlpro recently?
  *  - oug/odb http://odb-serv.forge.ocamlcore.org/
  * 
- * todo: nested let module X = Y in, ocaml 4.00 feature
+ * less: nested let module X = Y in, ocaml 4.00 feature
  *)
 
 (*****************************************************************************)
@@ -549,16 +549,22 @@ and structure_item env
 
 and  pattern env
   { pat_desc = v_pat_desc; pat_type = v_pat_type; 
-    pat_loc = _v_pat_loc; pat_extra = _v_pat_extra; pat_env = _v_pat_env } =
+    pat_loc = _v_pat_loc; pat_extra = _v_pat_extra; pat_env = _v_pat_env;
+    pat_attributes = _;
+  } =
   pattern_desc v_pat_type env v_pat_desc
 
 and expression env
     { exp_desc = v_exp_desc; exp_loc = _v_exp_loc;  exp_extra = __v_exp_extra;
-      exp_type = v_exp_type; exp_env = _v_exp_env } =
+      exp_type = v_exp_type; exp_env = _v_exp_env;
+      exp_attributes = _;
+    } =
   expression_desc v_exp_type env v_exp_desc
 and module_expr env
     { mod_desc = v_mod_desc; mod_loc = _v_mod_loc;
-      mod_type = v_mod_type; mod_env = _v_mod_env  } =
+      mod_type = v_mod_type; mod_env = _v_mod_env;
+      mod_attributes = _;
+    } =
   module_expr_desc env v_mod_desc;
   Types.module_type env v_mod_type
 
@@ -573,7 +579,7 @@ and sig_item env
 (* Structure *)
 (* ---------------------------------------------------------------------- *)
 and structure_item_desc env loc = function
-  | Tstr_eval v1 -> 
+  | Tstr_eval (v1, _attrs) -> 
     let full_ident = env.current_entity @ ["__toplevel__"] in
     let node = (full_ident, E.TopStmts) in
     let env = add_node_and_edge_if_defs_mode ~dupe_ok:true env node loc in
@@ -582,35 +588,38 @@ and structure_item_desc env loc = function
   | Tstr_value ((rec_flag, xs)) ->
       (* first pass *)
       if rec_flag = Asttypes.Recursive then begin
-        List.iter (fun (v1, v2) ->
-          match v1.pat_desc with
+        xs |> List.iter (fun vb ->
+          let pat = vb.vb_pat in
+          let exp = vb.vb_expr in
+          match pat.pat_desc with
           | Tpat_var(id, _loc) | Tpat_alias (_, id, _loc) ->
               let full_ident = env.current_entity @ [Ident.name id] in
               add_full_path_local env (Ident.name id, full_ident) 
-                (kind_of_type_expr v2.exp_type)
+                (kind_of_type_expr exp.exp_type)
           | _ -> ()
-        ) xs;
+        );
       end;
 
       (* second pass *)
-      List.iter (fun (v1, v2) ->
-        match v1.pat_desc with
+      xs |> List.iter (fun vb ->
+        let pat = vb.vb_pat in
+        let exp = vb.vb_expr in
+        match pat.pat_desc with
         | Tpat_var(id, loc) | Tpat_alias (_, id, loc) ->
             let full_ident = env.current_entity @ [Ident.name id] in
-            let node = (full_ident, kind_of_type_expr v2.exp_type) in
+            let node = (full_ident, kind_of_type_expr exp.exp_type) in
             (* some people do let foo = ... let foo = ... in the same file *)
             let env = add_node_and_edge_if_defs_mode ~dupe_ok:true env node 
               (unwrap loc) in
-            expression env v2
-#if OCAML_VERSION >= 4010
-#else
+            expression env exp
+(* TODO
         | Tpat_construct(p, loc, _ctor, [], false) when name_of_path p = ["()"]->
           let full_ident = env.current_entity @ ["__toplevel__"] in
           let node = (full_ident, E.TopStmts) in
           let env = 
             add_node_and_edge_if_defs_mode ~dupe_ok:true env node (unwrap loc)in
           expression env v2
-#endif         
+*)
         | Tpat_tuple xs ->
             let xdone = ref false in
             xs +> List.iter (fun p ->
@@ -625,35 +634,41 @@ and structure_item_desc env loc = function
                   (* arbitrarily choose the first one as the source for v2 *)
                   if not !xdone then begin
                     xdone := true;
-                    expression env v2
+                    expression env exp
                   end
               | _ -> 
                   pattern env p
             );
-            if not !xdone then expression env v2
+            if not !xdone then expression env exp
       
         | _ ->
             let env = {env with locals = env.locals } in
-            pattern env v1;
-            expression env v2 
-      ) xs
-  | Tstr_primitive ((id, loc, vd)) ->
+            pattern env pat;
+            expression env exp;
+      )
+  | Tstr_primitive vd ->
+      let id = vd.val_id in
+      let loc = vd.val_loc in
+
       let full_ident = env.current_entity @ [Ident.name id] in
       let node = (full_ident, kind_of_value_descr vd) in
-      let env = add_node_and_edge_if_defs_mode env node (unwrap loc) in
+      let env = add_node_and_edge_if_defs_mode env node loc in
       value_description env vd
   | Tstr_type xs ->
 
       (* first pass *)
-      xs +> List.iter (fun (id, _loc, _td) ->
+      xs |> List.iter (fun td ->
+        let id = td.typ_id in
         let full_ident = env.current_entity @ [Ident.name id] in
         add_full_path_local env (Ident.name id, full_ident) E.Type
       );
       (* second pass *)
-      xs +> List.iter (fun (id, loc, td) ->
+      xs +> List.iter (fun td -> 
+        let id = td.typ_id in
+        let loc = td.typ_loc in
         let full_ident = env.current_entity @ [Ident.name id] in
         let node = (full_ident, E.Type) in
-        let env = add_node_and_edge_if_defs_mode env node (unwrap loc) in
+        let env = add_node_and_edge_if_defs_mode env node (loc) in
 
         (match td.typ_kind, td.typ_manifest with
         | Ttype_abstract, Some ({ctyp_desc=Ttyp_constr (path, _lid, _xs); _}) ->
@@ -665,18 +680,28 @@ and structure_item_desc env loc = function
         );
         type_declaration env td
       )
-  | Tstr_exception ((id, loc, v3)) ->
+  | Tstr_exception ec ->
+      let id = ec.ext_id in
+      let loc = ec.ext_loc in
+      let v3  = ec.ext_type in
+
       let full_ident = env.current_entity @ ["exn";Ident.name id] in
       let node = (full_ident, E.Exception) in
       let env = 
-        add_node_and_edge_if_defs_mode ~dupe_ok:true env node (unwrap loc) in
+        add_node_and_edge_if_defs_mode ~dupe_ok:true env node (loc) in
       exception_declaration env v3
+(*
   | Tstr_exn_rebind ((id, loc, v3, _loc2)) ->
       let full_ident = env.current_entity @ ["exn";Ident.name id] in
       let node = (full_ident, E.Exception) in
       let env = add_node_and_edge_if_defs_mode env node (unwrap loc) in
       path_t env v3
-  | Tstr_module ((id, loc, modexpr)) ->
+*)
+  | Tstr_module mb  ->
+      let id = mb.mb_id in
+      let loc = mb.mb_loc in
+      let modexpr = mb.mb_expr in
+
       let full_ident = env.current_entity @ [Ident.name id] in
       let node = (full_ident, E.Module) in
       (match modexpr.mod_desc with
@@ -689,34 +714,36 @@ and structure_item_desc env loc = function
           end;
           add_full_path_local env (Ident.name id, full_ident) E.Module
       | _ -> 
-          let env = add_node_and_edge_if_defs_mode env node (unwrap loc) in
+          let env = add_node_and_edge_if_defs_mode env node (loc) in
           module_expr env modexpr
       )
   | Tstr_recmodule xs ->
-      List.iter (fun (id, loc, v3, v4) ->
+      List.iter (fun { mb_id = id; mb_loc = loc; mb_expr = me; _ } ->
         let full_ident = env.current_entity @ [Ident.name id] in
         let node = (full_ident, E.Module) in
-        let env = add_node_and_edge_if_defs_mode env node (unwrap loc) in
-        module_type env v3;
-        module_expr env v4;
+        let env = add_node_and_edge_if_defs_mode env node (loc) in
+        (* module_type env v3; *)
+        module_expr env me;
       ) xs
-  | Tstr_modtype ((v1, _loc, v3)) ->
-      let _ = Ident.t env v1
-      and _ = module_type env v3
-      in ()
+  | Tstr_modtype mtd  ->
+    let id = mtd.mtd_id in
+    let typ_opt = mtd.mtd_type in
+
+    let _ = Ident.t env id
+    and _ = v_option (module_type env) typ_opt
+    in ()
 
   (* opened names are resolved, no need to handle that I think *)
-#if OCAML_VERSION >= 4010
-  | Tstr_open ((_override, v1, _loc)) ->
-      path_t env v1 
-#else
-  | Tstr_open ((v1, _loc)) ->
-      path_t env v1 
-#endif
-  | Tstr_include ((v1, v2)) ->
+  | Tstr_open od  ->
+    let path = od.open_path in
+    path_t env path
+  | Tstr_include _incd ->
+(*
       let _ = module_expr env v1 and _ = List.iter (Ident.t env) v2 in ()
+*)
+    ()
 
-  | (Tstr_class _|Tstr_class_type _) -> 
+  | (Tstr_class _ | Tstr_class_type _ | Tstr_typext _ |Tstr_attribute _) -> 
     (*pr2_once (spf "TODO: str_class, %s" env.file)*)
     ()
 
@@ -724,7 +751,10 @@ and type_declaration env
     { typ_params = __v_typ_params; typ_type = v_typ_type;
       typ_cstrs = v_typ_cstrs; typ_kind = v_typ_kind;
       typ_private = _v_typ_private; typ_manifest = v_typ_manifest;
-      typ_variance = v_typ_variance; typ_loc = _v_typ_loc
+      typ_loc = _v_typ_loc;
+      typ_id = _;
+      typ_name = _;
+      typ_attributes = _;
     } =
   let _ = Types.type_declaration env v_typ_type in
   let _ =
@@ -736,30 +766,40 @@ and type_declaration env
       v_typ_cstrs in
   let _ = type_kind env v_typ_kind in
   let _ = v_option (core_type env) v_typ_manifest in
-  List.iter (fun (_bool, _bool2) -> ()) v_typ_variance;
   ()
 and type_kind env = function
   | Ttype_abstract -> ()
   | Ttype_variant xs ->
-      List.iter (fun (id, loc, v3, _loc2) ->
+      List.iter (fun cd  ->
+        let id = cd.cd_id in
+        let loc = cd.cd_loc in
+        let args = cd.cd_args in
         let full_ident = env.current_entity @ [Ident.name id] in
         let node = (full_ident, E.Constructor) in
-        let env = add_node_and_edge_if_defs_mode env node (unwrap loc) in
-        List.iter (core_type env) v3;
+        let env = add_node_and_edge_if_defs_mode env node (loc) in
+        List.iter (core_type env) args;
       ) xs
   | Ttype_record xs ->
-      List.iter  (fun (id, loc, _mutable_flag, v4, _loc2) ->
+      List.iter (fun ld ->
+        let id = ld.ld_id in
+        let loc = ld.ld_loc in
+        let typ = ld.ld_type in
         let full_ident = env.current_entity @ [Ident.name id] in
         let node = (full_ident, E.Field) in
-        let env = add_node_and_edge_if_defs_mode env node (unwrap loc) in
-        core_type env v4;
+        let env = add_node_and_edge_if_defs_mode env node (loc) in
+        core_type env typ;
       ) xs
+  | Ttype_open ->
+    failwith "GCC:Ttype_open"
 
-and exception_declaration env 
+and exception_declaration _env _x =
+  ()
+(* TODO
  { exn_params = v_exn_params; exn_exn = v_exn_exn; exn_loc = _v_exn_loc } =
   let _ = List.iter (core_type env) v_exn_params in
   let _ = Types.exception_declaration env v_exn_exn in
   ()
+*)
 
 (* ---------------------------------------------------------------------- *)
 (* Signature *)
@@ -782,11 +822,7 @@ and pattern_desc t env = function
       constant env v1
   | Tpat_tuple xs -> 
       List.iter (pattern env) xs
-#if OCAML_VERSION >= 4010
-  | Tpat_construct (lid, v3, v4, _v5)
-#else
-  | Tpat_construct (_path, lid, v3, v4, _v5) 
-#endif
+  | Tpat_construct (lid, v3, v4)
     ->
       add_use_edge_lid env lid t E.Constructor;
       let _ = constructor_description env v3
@@ -799,11 +835,7 @@ and pattern_desc t env = function
       in ()
   | Tpat_record ((xs, _closed_flag)) ->
       List.iter (fun 
-#if OCAML_VERSION >= 4010
         (lid, _v2, v3) 
-#else
-       (_path, lid, _v2, v3)
-#endif
       ->
         add_use_edge_lid env lid t E.Field;
         let _ = label_description env v3
@@ -836,26 +868,26 @@ and expression_desc t env =
   | Texp_let ((rec_flag, xs, v3)) ->
       (* first pass *)
       if rec_flag = Asttypes.Recursive then begin
-        xs +> List.iter (fun (v1, _v2) ->
-          match v1.pat_desc with
+        xs |> List.iter (fun { vb_pat = pat; vb_expr = _exp; _ } ->
+          match pat.pat_desc with
           | Tpat_var (id, _loc) | Tpat_alias (_, id, _loc) ->
               env.locals <- Ident.name id:: env.locals
           | _ -> ()
         );
       end;
       (* second pass *)
-      xs +> List.iter (fun (v1, v2) ->
-        pattern env v1;
-        expression env v2;
+      xs +> List.iter (fun { vb_pat = pat; vb_expr = exp; _ } ->
+        pattern env pat;
+        expression env exp;
       );
       expression env v3
   | Texp_function ((v1, v2, v3)) ->
       let _ = label env v1
-      and _ =
-        List.iter
-          (fun (v1, v2) ->
-             let _ = pattern env v1 and _ = expression env v2 in ())
-          v2
+      and _ = 
+        List.iter (fun { c_lhs = pat; c_rhs = exp; c_guard = _TODO } ->
+          let _ = pattern env pat and _ = expression env exp in ()
+        )
+        v2
       and _ = partial env v3
       in ()
   | Texp_apply ((v1, v2)) ->
@@ -869,29 +901,25 @@ and expression_desc t env =
              in ())
           v2
       in ()
-  | Texp_match ((v1, v2, v3)) ->
+  | Texp_match ((v1, v2, _v3, pa)) ->
       let _ = expression env v1
       and _ =
-        List.iter
-          (fun (v1, v2) ->
-             let _ = pattern env v1 and _ = expression env v2 in ())
-          v2
-      and _ = partial env v3
+        List.iter (fun { c_lhs = pat; c_rhs = exp; c_guard = _TODO } ->
+          let _ = pattern env pat and _ = expression env exp in ()
+        )
+        v2
+      and _ = partial env pa
       in ()
   | Texp_try ((v1, v2)) ->
       let _ = expression env v1
       and _ =
-        List.iter
-          (fun (v1, v2) ->
-             let _ = pattern env v1 and _ = expression env v2 in ())
+        List.iter (fun { c_lhs = pat; c_rhs = exp; c_guard = _TODO } ->
+          let _ = pattern env pat and _ = expression env exp in ()
+        )
           v2
       in ()
   | Texp_tuple v1 -> let _ = List.iter (expression env) v1 in ()
-#if OCAML_VERSION >= 4010
-  | Texp_construct (lid, v2, v3, _bool) 
-#else
-  | Texp_construct (_path, lid, v2, v3, _bool) 
-#endif
+  | Texp_construct (lid, v2, v3) 
     ->
       add_use_edge_lid env lid t E.Constructor;
       constructor_description env v2;
@@ -900,13 +928,7 @@ and expression_desc t env =
   | Texp_variant ((v1, v2)) ->
       let _ = label env v1 and _ = v_option (expression env) v2 in ()
   | Texp_record ((v1, v2)) ->
-      List.iter (fun 
-#if OCAML_VERSION >= 4010
-        (lid, v2, v3) 
-#else
-        (_path, lid, v2, v3) 
-#endif
-      ->
+      List.iter (fun (lid, v2, v3) ->
         add_use_edge_lid env lid t E.Field;
         path_t env lid;
         let _ = label_description env v2
@@ -914,21 +936,13 @@ and expression_desc t env =
         in ()
       ) v1;
       v_option (expression env) v2
-#if OCAML_VERSION >= 4010
   | Texp_field ((v1, lid, v2)) 
-#else
-  | Texp_field ((v1, _path, lid, v2)) 
-#endif
     ->
       expression env v1;
       add_use_edge_lid env lid v1.exp_type E.Field;
       label_description env v2
 
-#if OCAML_VERSION >= 4010
   | Texp_setfield ((v1, lid, v3, v4)) 
-#else
-  | Texp_setfield ((v1, _path, lid, v3, v4)) 
-#endif
     ->
       expression env v1;
       add_use_edge_lid env lid v1.exp_type E.Field;
@@ -952,9 +966,6 @@ and expression_desc t env =
       expression env v4;
       let env = { env with locals = Ident.name id::env.locals } in
       expression env v6
-  | Texp_when ((v1, v2)) ->
-      let _ = expression env v1 and _ = expression env v2 in ()
-
   | Texp_send ((v1, v2, v3)) ->
       let _ = expression env v1
       and _ = meth env v2
@@ -989,7 +1000,6 @@ and expression_desc t env =
       and _ = expression env v4
       in ()
   | Texp_assert v1 -> let _ = expression env v1 in ()
-  | Texp_assertfalse -> ()
   | Texp_lazy v1 -> let _ = expression env v1 in ()
   | Texp_object ((v1, v2)) ->
       let _ = class_structure env v1 and _ = List.iter v_string v2 in ()
@@ -1001,11 +1011,7 @@ and exp_extra env = function
       let _ = v_option (core_type env) v1
       and _ = v_option (core_type env) v2
       in ()
-#if OCAML_VERSION >= 4010
   | Texp_open (_override, path, lid, _env) 
-#else
-  | Texp_open (path, lid, _env)
-#endif
    ->
       path_t env path
   | Texp_poly v1 -> let _ = v_option (core_type env) v1 in ()
@@ -1045,7 +1051,9 @@ and module_expr_desc env =
 (* ---------------------------------------------------------------------- *)
 and core_type env
     { ctyp_desc = v_ctyp_desc; ctyp_type = __v_ctyp_type;
-      ctyp_env = _v_ctyp_env; ctyp_loc = _v_ctyp_loc } =
+      ctyp_env = _v_ctyp_env; ctyp_loc = _v_ctyp_loc;
+      ctyp_attributes = _;
+    } =
   core_type_desc env v_ctyp_desc
 and core_type_desc env =
   function
@@ -1063,11 +1071,14 @@ and core_type_desc env =
       let _ = path_t env path
       and _ = List.iter (core_type env) v3
       in ()
-  | Ttyp_object v1 -> let _ = List.iter (core_field_type env) v1 in ()
-  | Ttyp_class ((v1, _loc_longident, v3, v4)) ->
+  | Ttyp_object (v1, _closed) -> 
+    let _ = List.iter (fun (_str, _attrs, typ) -> 
+      core_type env typ
+    ) v1 
+    in ()
+  | Ttyp_class ((v1, _loc_longident, v3)) ->
       let _ = path_t env v1
       and _ = List.iter (core_type env) v3
-      and _ = List.iter (label env) v4
       in ()
   | Ttyp_alias ((v1, v2)) ->
       let _ = core_type env v1 and _ = v_string v2 in ()
@@ -1080,16 +1091,10 @@ and core_type_desc env =
   | Ttyp_package _v1 -> 
     pr2_once (spf "TODO: Ttyp_package, %s" env.cmt_file)
 
-and core_field_type env { field_desc = v_field_desc; field_loc = _v_field_loc }=
-  let _ = core_field_desc env v_field_desc in ()
-  
-and core_field_desc env =
-  function
-  | Tcfield ((v1, v2)) -> let _ = v_string v1 and _ = core_type env v2 in ()
-  | Tcfield_var -> ()
+ 
 and row_field env =
   function
-  | Ttag ((v1, _bool, v3)) ->
+  | Ttag ((v1, _attrs, _bool, v3)) ->
       let _ = label env v1
       and _ = List.iter (core_type env) v3
       in ()
@@ -1101,6 +1106,9 @@ and
                       val_val = v_val_val;
                       val_prim = v_val_prim;
                       val_loc = _v_val_loc;
+                      val_id = _;
+                      val_name = _;
+                      val_attributes = _;
                     } =
   let _ = core_type env v_val_desc in
   let _ = Types.value_description env v_val_val in

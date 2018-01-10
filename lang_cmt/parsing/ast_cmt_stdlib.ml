@@ -57,6 +57,13 @@ and commutable =
 
 (* with tarzan *)
 
+type variance =
+  | Covariant
+  | Contravariant
+  | Invariant
+(* with tarzan *)
+
+
 (***************************************************************************)
 (* Typedtree.ml *)
 (***************************************************************************)
@@ -308,12 +315,12 @@ and core_type_desc =
   | Ttyp_arrow of label * core_type * core_type
   | Ttyp_tuple of core_type list
   | Ttyp_constr of Path.t * Longident.t loc * core_type list
-  | Ttyp_object of core_field_type list
   | Ttyp_class of Path.t * Longident.t loc * core_type list * label list
   | Ttyp_alias of core_type * string
   | Ttyp_variant of row_field list * bool * label list option
   | Ttyp_poly of string list * core_type
   | Ttyp_package of package_type
+  | Ttyp_object of (string * attributes * core_type) list * closed_flag
 
 and package_type = {
   pack_name : Path.t;
@@ -403,7 +410,7 @@ and class_type_declaration =
 
 and 'a class_infos =
   { ci_virt: virtual_flag;
-    ci_params: string loc list * Location.t;
+    ci_params: (core_type * variance) list;
     ci_id_name : string loc;
     ci_id_class: Ident.t;
     ci_id_class_type : Ident.t;
@@ -412,7 +419,112 @@ and 'a class_infos =
     ci_expr: 'a;
     ci_decl: Types.class_declaration;
     ci_type_decl : Types.class_type_declaration;
-    ci_variance: (bool * bool) list;
     ci_loc: Location.t }
+
+(* with tarzan *)
+
+type module_binding =
+    {
+     mb_id: Ident.t;
+     mb_name: string loc;
+     mb_expr: module_expr;
+     mb_attributes: attributes;
+     mb_loc: Location.t;
+    }
+
+and value_binding =
+  {
+    vb_pat: pattern;
+    vb_expr: expression;
+    vb_attributes: attributes;
+    vb_loc: Location.t;
+  }
+
+and module_declaration =
+    {
+     md_id: Ident.t;
+     md_name: string loc;
+     md_type: module_type;
+     md_attributes: attributes;
+     md_loc: Location.t;
+    }
+
+and module_type_declaration =
+    {
+     mtd_id: Ident.t;
+     mtd_name: string loc;
+     mtd_type: module_type option;
+     mtd_attributes: attributes;
+     mtd_loc: Location.t;
+    }
+
+and open_description =
+    {
+     open_path: Path.t;
+     open_txt: Longident.t loc;
+     open_override: override_flag;
+     open_loc: Location.t;
+     open_attributes: attribute list;
+    }
+
+and 'a include_infos =
+    {
+     incl_mod: 'a;
+     incl_type: Types.signature;
+     incl_loc: Location.t;
+     incl_attributes: attribute list;
+    }
+
+and include_description = module_type include_infos
+
+and include_declaration = module_expr include_infos
+
+and extension_constructor =
+  {
+    ext_id: Ident.t;
+    ext_name: string loc;
+    ext_type : Types.extension_constructor;
+    ext_kind : extension_constructor_kind;
+    ext_loc : Location.t;
+    ext_attributes: attributes;
+  }
+
+and extension_constructor_kind =
+    Text_decl of core_type list * core_type option
+  | Text_rebind of Path.t * Longident.t loc
+
+and type_declaration =
+  {
+    typ_id: Ident.t;
+    typ_name: string loc;
+    typ_params: (core_type * variance) list;
+    typ_type: Types.type_declaration;
+    typ_cstrs: (core_type * core_type * Location.t) list;
+    typ_kind: type_kind;
+    typ_private: private_flag;
+    typ_manifest: core_type option;
+    typ_loc: Location.t;
+    typ_attributes: attributes;
+   }
+
+and constructor_declaration =
+    {
+     cd_id: Ident.t;
+     cd_name: string loc;
+     cd_args: core_type list;
+     cd_res: core_type option;
+     cd_loc: Location.t;
+     cd_attributes: attributes;
+    }
+
+and label_declaration =
+    {
+     ld_id: Ident.t;
+     ld_name: string loc;
+     ld_mutable: mutable_flag;
+     ld_type: core_type;
+     ld_loc: Location.t;
+     ld_attributes: attributes;
+    }
 
 (* with tarzan *)
