@@ -101,6 +101,10 @@ type env = {
 
 let s_of_n xs = Common.join "." xs
 
+(* for syncweb's indexer *)
+let hook_use_edge = ref (fun (_src, _dst) _g _loc -> ())
+let hook_def_node = ref (fun _node _g -> ())
+
 (*****************************************************************************)
 (* Parsing *)
 (*****************************************************************************)
@@ -200,17 +204,23 @@ let is_builtin_type s =
 (*****************************************************************************)
 
 let add_use_edge env dst =
+  let loc = raise Todo in
   let src = env.current in
   if G.has_node dst env.g
-  then G.add_edge (src, dst) G.Use env.g
+  then begin 
+    G.add_edge (src, dst) G.Use env.g;
+    !hook_use_edge (src, dst) env.g loc;
+  end
   else begin
     G.add_node dst env.g;
+    !hook_def_node dst env.g;
     let parent_target = G.not_found in
     pr2 (spf "PB: lookup fail on %s (in %s)" 
            (G.string_of_node dst) (G.string_of_node src));
     
     env.g +> G.add_edge (parent_target, dst) G.Has;
     env.g +> G.add_edge (src, dst) G.Use;
+    !hook_use_edge (src, dst) env.g loc;
   end
 
 let full_path_local_of_kind env kind =
@@ -253,7 +263,8 @@ let add_node_and_edge_if_defs_mode ?(dupe_ok=false) env name_node loc =
          props = [];
          typ = None; (* TODO *)
       } in
-      env.g +> G.add_nodeinfo node nodeinfo
+      env.g +> G.add_nodeinfo node nodeinfo;
+      !hook_def_node node env.g;
     end
   end;
   add_full_path_local env (Common2.list_last name, name) kind;
