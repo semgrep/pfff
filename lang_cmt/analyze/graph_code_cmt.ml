@@ -126,6 +126,16 @@ let parse file =
 let unwrap x = 
   x.Asttypes.loc
 
+let pos_of_loc loc file =
+  let  lexing_pos = loc.Location.loc_start in
+  { Parse_info.
+    str ="";
+    line = lexing_pos.Lexing.pos_lnum; 
+    charpos = lexing_pos.Lexing.pos_cnum;
+    column = lexing_pos.Lexing.pos_cnum - lexing_pos.Lexing.pos_bol;
+    file;
+  }
+
 let (name_of_longident_loc: Longident.t Asttypes.loc -> name) = fun lidloc ->
   let lid = lidloc.Asttypes.txt in
   Longident.flatten lid
@@ -203,13 +213,14 @@ let is_builtin_type s =
 (* Add edges *)
 (*****************************************************************************)
 
-let add_use_edge env dst =
-  let loc = raise Todo in
+let add_use_edge env dst loc =
+  let file = env.ml_file in
+  let pos = pos_of_loc loc file in
   let src = env.current in
   if G.has_node dst env.g
   then begin 
     G.add_edge (src, dst) G.Use env.g;
-    !hook_use_edge (src, dst) env.g loc;
+    !hook_use_edge (src, dst) env.g pos;
   end
   else begin
     G.add_node dst env.g;
@@ -220,7 +231,7 @@ let add_use_edge env dst =
     
     env.g +> G.add_edge (parent_target, dst) G.Has;
     env.g +> G.add_edge (src, dst) G.Use;
-    !hook_use_edge (src, dst) env.g loc;
+    !hook_use_edge (src, dst) env.g pos;
   end
 
 let full_path_local_of_kind env kind =
@@ -250,16 +261,10 @@ let add_node_and_edge_if_defs_mode ?(dupe_ok=false) env name_node loc =
       env.g +> G.add_node node;
       env.g +> G.add_edge (env.current, node) G.Has;
 
-      let lexing_pos = loc.Location.loc_start in
       let file = env.ml_file in
+      let pos = pos_of_loc loc file in
       let nodeinfo = { Graph_code.
-         pos = { Parse_info.
-            str ="";
-            line = lexing_pos.Lexing.pos_lnum; 
-            charpos = lexing_pos.Lexing.pos_cnum;
-            column = lexing_pos.Lexing.pos_cnum - lexing_pos.Lexing.pos_bol;
-            file;
-         };
+         pos = pos;
          props = [];
          typ = None; (* TODO *)
       } in
@@ -432,7 +437,7 @@ let add_use_edge_lid env (lid: Longident.t Asttypes.loc) texpr kind =
   let full_ident = tname @ [str] in
   let node = (s_of_n full_ident, kind) in
   if G.has_node node env.g
-  then add_use_edge env node
+  then add_use_edge env node (lid.Asttypes.loc)
   else begin
     (match tname with
     | ("unit" | "bool" | "list" | "option" | "exn")::_ -> ()
@@ -445,19 +450,19 @@ let add_use_edge_lid env (lid: Longident.t Asttypes.loc) texpr kind =
  end
 
 (* for identifiers of Function, Constant, etc *)
-let add_use_edge_name env name texpr =
+let add_use_edge_name env name loc texpr =
   if env.phase = Uses then begin
     let kind = kind_of_type_expr texpr in
     let name = path_resolve_locals env name kind in
     let name = path_resolve_aliases env name in
     let node = (s_of_n name, kind) in
     if G.has_node node env.g
-    then add_use_edge env node
+    then add_use_edge env node loc
     else 
       (match kind with
       (* ugly: the right fix is to resolve texpr *)
       | E.Constant when G.has_node (s_of_n name, E.Function) env.g ->
-          add_use_edge env (s_of_n name, E.Function)
+          add_use_edge env (s_of_n name, E.Function) loc
       | _ ->
           if use_of_undefined_ok name 
           then ()
@@ -466,7 +471,7 @@ let add_use_edge_name env name texpr =
   end
 
 (* for Type *)
-let add_use_edge_type env name = 
+let add_use_edge_type env name loc = 
   if env.phase = Uses then begin
     let kind = E.Type in
 
@@ -474,7 +479,7 @@ let add_use_edge_type env name =
     let name = path_type_resolve_aliases env name in
     let node = (s_of_n name, kind) in
     if G.has_node node env.g
-    then add_use_edge env node
+    then add_use_edge env node loc
     else 
       if use_of_undefined_ok name || is_builtin_type (fst node)
       then ()
@@ -868,12 +873,12 @@ and pattern_desc t env = function
 (* ---------------------------------------------------------------------- *)
 and expression_desc t env =
   function
-  | Texp_ident (path, _lid, _vd) ->
+  | Texp_ident (path, lid, _vd) ->
       let name = name_of_path path in
       let str = s_of_n name in
       if List.mem str env.locals
       then ()
-      else add_use_edge_name env name t
+      else add_use_edge_name env name lid.Asttypes.loc t
   | Texp_constant v1 -> 
       constant env v1
   | Texp_let ((rec_flag, xs, v3)) ->
@@ -1076,9 +1081,9 @@ and core_type_desc env =
       and _ = core_type env v3
       in ()
   | Ttyp_tuple v1 -> let _ = List.iter (core_type env) v1 in ()
-  | Ttyp_constr ((path, _lid, v3)) ->
+  | Ttyp_constr ((path, lid, v3)) ->
       let name = name_of_path path in
-      add_use_edge_type env name;
+      add_use_edge_type env name lid.Asttypes.loc;
       let _ = path_t env path
       and _ = List.iter (core_type env) v3
       in ()
