@@ -14,7 +14,6 @@ val filter_files:
 
 (* assumes given full paths *)
 val filter_files_if_skip_list:
-  ?verbose:bool ->
   Common.filename list -> Common.filename list
 
 val reorder_files_skip_errors_last:

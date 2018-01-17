@@ -270,7 +270,7 @@ let build_identifier_index lang xs =
     | _ ->
         let root = Common2.common_prefix_of_files_or_dirs xs in
         let files = 
-          Find_source.files_of_dir_or_files ~lang ~verbose:!verbose xs in
+          Find_source.files_of_dir_or_files ~lang xs in
         root, files
   in
 
@@ -333,7 +333,7 @@ let main_action xs =
 
   let xs = List.map Common.realpath xs in
   let lang = !lang in
-  let files = Find_source.files_of_dir_or_files ~lang ~verbose:!verbose xs in
+  let files = Find_source.files_of_dir_or_files ~lang xs in
 
   match lang with
   | "ocaml" | "java" | "c" | "php"     | "clang2"  ->

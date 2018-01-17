@@ -246,7 +246,7 @@ let main_action xs =
 
   let pattern = parse_pattern spatch_file in
   let files =
-    Find_source.files_of_dir_or_files ~lang:!lang ~verbose:!verbose xs in
+    Find_source.files_of_dir_or_files ~lang:!lang xs in
 
   files +> Console.progress ~show:!verbose (fun k -> 
    List.iter (fun file->

@@ -6,7 +6,7 @@ val files_of_root:
 
 (* will manage optional skip list at root of vcs *)
 val files_of_dir_or_files: 
-  lang:string -> verbose:bool ->
+  lang:string ->
   Common.path list -> Common.filename list
 
 

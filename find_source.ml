@@ -30,10 +30,10 @@ let skip_file dir =
   Filename.concat dir "skip_list.txt"
 
 
-let files_of_dir_or_files ~lang ~verbose xs =
+let files_of_dir_or_files ~lang xs =
   let finder = finder lang in
   let xs = List.map Common.realpath xs in
-  finder xs +> Skip_code.filter_files_if_skip_list ~verbose
+  finder xs |> Skip_code.filter_files_if_skip_list
 
 
 (* todo: factorize with filter_files_if_skip_list? *)

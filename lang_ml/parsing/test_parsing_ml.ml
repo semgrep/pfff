@@ -24,7 +24,7 @@ let test_parse_ml_or_mli xs =
 
   let fullxs = 
     Lib_parsing_ml.find_source_files_of_dir_or_files xs
-    +> Skip_code.filter_files_if_skip_list ~verbose:true
+    |> Skip_code.filter_files_if_skip_list
   in
   let stat_list = ref [] in
 
