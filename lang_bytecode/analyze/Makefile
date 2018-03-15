@@ -18,6 +18,7 @@ LIBS=$(TOP)/commons/lib.cma \
 MAKESUBDIRS=
 
 INCLUDEDIRS= $(TOP)/commons \
+   $(TOP)/commons_core \
    $(TOP)/commons_ocollection \
    $(TOP)/external/ \
    $(TOP)/external/extlib \
