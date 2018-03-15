@@ -222,7 +222,8 @@ val new_temp_file : string (* prefix *) -> string (* suffix *) -> filename
 val erase_temp_files : unit -> unit
 val erase_this_temp_file : filename -> unit
 
-val realpath: filename -> filename
+(* val realpath: filename -> filename *)
+val fullpath: filename -> filename
 
 val cache_computation : 
   ?verbose:bool -> ?use_cache:bool -> filename  -> string (* extension *) -> 
