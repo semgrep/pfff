@@ -331,7 +331,7 @@ let main_action xs =
   set_gc ();
   Logger.log Config_pfff.logger "scheck" None;
 
-  let xs = List.map Common.realpath xs in
+  let xs = List.map Common.fullpath xs in
   let lang = !lang in
   let files = Find_source.files_of_dir_or_files ~lang ~verbose:!verbose xs in
 
@@ -514,7 +514,7 @@ let type_inference _file =
 
 (* Dataflow analysis *)
 let dflow file_or_dir =
-  let file_or_dir = Common.realpath file_or_dir in
+  let file_or_dir = Common.fullpath file_or_dir in
   let files = Lib_parsing_php.find_source_files_of_dir_or_files [file_or_dir] in
   let dflow_of_func_def def =
     (try
@@ -569,7 +569,7 @@ let entities_of_ast ast =
 
 
 let test_index xs =
-  let xs = List.map Common.realpath xs in
+  let xs = List.map Common.fullpath xs in
   let hcnt, h = build_identifier_index "c++" xs in
 (*
   hcnt +> Common.hash_to_list +> Common.sort_by_val_lowfirst 

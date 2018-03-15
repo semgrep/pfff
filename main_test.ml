@@ -200,7 +200,7 @@ let pfff_extra_actions () = [
     print_string "\n";
   );
   "-mv_kernel", "<file1> <dirdst>", Common.mk_action_2_arg (fun file dirdst ->
-    let file = Common.realpath file in
+    let file = Common.fullpath file in
     let kerneldir = "/home/pad/plan9/sys/src/9" in
     let candidates = Common.cmd_to_list (spf "find %s -type l" kerneldir) in
     let fcandidates =
@@ -214,14 +214,14 @@ let pfff_extra_actions () = [
       cmd (spf "rm -f %s" x);
       cmd (spf "mv %s %s" file dirdst);
       let file = Filename.concat dirdst (Filename.basename file) in
-      let file = Common.realpath file in
+      let file = Common.fullpath file in
       cmd (spf "ln -s %s %s" file x);
       pr2 (spf "ln -s %s %s" file x);
     | _ -> failwith "too many candidates"
   );
 
   "-relativize", "<dir>", Common.mk_action_1_arg (fun dir ->
-    let dir = Common.realpath dir in
+    let dir = Common.fullpath dir in
     let candidates = Common.cmd_to_list (spf "find %s -type l" dir) in
     let root = "/Users/yoann.padioleau/github/xix/xix-plan9/" in
     candidates +> List.iter (fun link ->

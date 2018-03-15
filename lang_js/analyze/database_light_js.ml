@@ -100,7 +100,7 @@ let compute_database ?(verbose=false) files_or_dirs =
    * like PHP, the other database may use realpath for the path of the files
    * so we want to behave the same.
    *)
-  let files_or_dirs = files_or_dirs +> List.map Common.realpath in
+  let files_or_dirs = files_or_dirs +> List.map Common.fullpath in
 
   let root = Common2.common_prefix_of_files_or_dirs files_or_dirs in
   pr2 (spf "generating JS db_light with root = %s" root);

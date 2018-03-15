@@ -48,7 +48,7 @@ let test_parse xs  =
 
   let dirname_opt = 
     match xs with
-    | [x] when Common2.is_directory x -> Some (Common.realpath x)
+    | [x] when Common2.is_directory x -> Some (Common.fullpath x)
     | _ -> None
   in
   let score_path = Filename.concat Config_pfff.path "tmp" in

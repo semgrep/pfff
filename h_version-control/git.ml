@@ -384,7 +384,7 @@ let file_to_commits ~basedir commits =
  * responsible for the code in the file.
  *)
 let refactoring_commits ?(since="--since='1 year ago'") ?(threshold=50) repo =
-  let basedir = Common.realpath repo in
+  let basedir = Common.fullpath repo in
   let commits = commits ~basedir ~extra_args:since () in
   pr2 (spf "#commits = %d" (List.length commits));
   

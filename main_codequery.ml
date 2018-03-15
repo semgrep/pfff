@@ -148,7 +148,7 @@ let run_datalog root facts =
 (* Language specific, building the prolog db *)
 (*****************************************************************************)
 let build_prolog_db lang root xs =
-  let root = Common.realpath root +> Common2.chop_dirsymbol in
+  let root = Common.fullpath root +> Common2.chop_dirsymbol in
   let files = Find_source.files_of_dir_or_files ~lang ~verbose:!verbose xs in
   match lang with
   | "php" ->
@@ -259,14 +259,14 @@ let main_action xs =
 (*****************************************************************************)
 
 let test_compare_datalog file =
-  let file = Common.realpath file in
+  let file = Common.fullpath file in
 
   (* miniC *)
   let ast = Parse_minic.parse file in
   let facts_minic = Datalog_minic.generate_facts ast in
 
   (* C *)
-  let root = Sys.getcwd () +> Common.realpath in
+  let root = Sys.getcwd () +> Common.fullpath in
   Graph_code_c.facts := Some (ref []);
   let _g = Graph_code_c.build ~verbose:false root [file] in
   let facts_c = List.rev !(Common2.some (!Graph_code_c.facts)) in

@@ -32,7 +32,7 @@ let skip_file dir =
 
 let files_of_dir_or_files ~lang ~verbose xs =
   let finder = finder lang in
-  let xs = List.map Common.realpath xs in
+  let xs = List.map Common.fullpath xs in
   finder xs +> Skip_code.filter_files_if_skip_list ~verbose
 
 

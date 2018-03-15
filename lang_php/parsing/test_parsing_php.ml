@@ -64,7 +64,7 @@ let test_parse_php xs  =
   (*s: print regression testing results *)
     let score_path = Filename.concat Config_pfff.path "tmp" in
     dirname_opt +> Common.do_option (fun dirname -> 
-      let dirname = Common.realpath dirname in
+      let dirname = Common.fullpath dirname in
       pr2 "--------------------------------";
       pr2 "regression testing  information";
       pr2 "--------------------------------";

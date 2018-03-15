@@ -110,7 +110,7 @@ let filter_files xs =
 (* Main entry point *)
 (*****************************************************************************)
 let gen_nbauthors_layer ?(verbose=false) ~skip_revs dir ~output =
-  let dir = Common.realpath dir in
+  let dir = Common.fullpath dir in
   let hskip_revs = Common.hashset_of_list skip_revs in
 
   let files = Common.files_of_dir_or_files_no_vcs_nofilter [dir] in
@@ -161,7 +161,7 @@ let gen_nbauthors_layer ?(verbose=false) ~skip_revs dir ~output =
 
 
 let gen_age_layer ?(verbose=false) ~line_granularity ~skip_revs dir ~output =
-  let dir = Common.realpath dir in
+  let dir = Common.fullpath dir in
   let hskip_revs = Common.hashset_of_list skip_revs in
 
   let files = Common.files_of_dir_or_files_no_vcs_nofilter [dir] in

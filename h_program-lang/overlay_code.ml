@@ -60,18 +60,18 @@ let save_overlay overlay file =
 (*****************************************************************************)
 
 let check_overlay ~dir_orig ~dir_overlay =
-  let dir_orig = Common.realpath dir_orig in
+  let dir_orig = Common.fullpath dir_orig in
   let files = 
     Common.files_of_dir_or_files_no_vcs_nofilter [dir_orig] 
     +> Common.exclude (fun file -> file =~ ".*/OVERLAY/.*")
   in
 
-  let dir_overlay = Common.realpath dir_overlay in
+  let dir_overlay = Common.fullpath dir_overlay in
   let links = 
     Common.cmd_to_list (spf "find %s -type l" dir_overlay) in
 
   let links = links +> Common.map_filter (fun file ->
-    try Some (Common.realpath file)
+    try Some (Common.fullpath file)
     with Failure s ->
       pr2 s;
       None
@@ -111,8 +111,8 @@ let check_overlay ~dir_orig ~dir_overlay =
 (*****************************************************************************)
 
 let overlay_equivalences ~dir_orig ~dir_overlay  =
-  let dir_overlay = Common.realpath dir_overlay in
-  let dir_orig = Common.realpath dir_orig in
+  let dir_overlay = Common.fullpath dir_overlay in
+  let dir_orig = Common.fullpath dir_orig in
   
   let links = 
     Common.cmd_to_list (spf "find %s -type l" dir_overlay) in
@@ -125,7 +125,7 @@ let overlay_equivalences ~dir_orig ~dir_overlay  =
           let (children, _) = 
             Common2.cmd_to_list_and_status (spf 
               "cd %s; find * -type f" (link)) in
-          let dir = Common.realpath link in
+          let dir = Common.fullpath link in
           
           children +> List.map (fun child ->
             let overlay = Filename.concat link child in
@@ -133,7 +133,7 @@ let overlay_equivalences ~dir_orig ~dir_overlay  =
             overlay, orig
           )
       | Unix.S_REG ->
-          [(link, Common.realpath link)]
+          [(link, Common.fullpath link)]
       | _ ->
           []
     ) +> List.flatten
