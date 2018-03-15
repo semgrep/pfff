@@ -267,7 +267,7 @@ let build_model root =
     else Hashtbl.create 0
   in
   { Model.g_deprecated = g; gopti = gopti; 
-    root = Common.realpath root;
+    root = Common.fullpath root;
     constraints 
   }
 
@@ -285,7 +285,7 @@ let package_node xs =
  * to pfff_db, and neither codegraph nor codemap need them!
  *)
 let build_graph_code lang xs =
-  let xs = List.map Common.realpath xs in
+  let xs = List.map Common.fullpath xs in
   let root, files = 
     match xs with
     | [root] -> 

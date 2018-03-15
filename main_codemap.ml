@@ -432,7 +432,7 @@ let main_action xs =
  * and archi_code_lexer.mll which lower the important of some files?
  *)
 let test_loc print_top30 xs =
-  let xs = xs |> List.map Common.realpath in
+  let xs = xs |> List.map Common.fullpath in
   let root = Common2.common_prefix_of_files_or_dirs xs in
   let skip_file = !skip_file ||| Filename.concat root "skip_list.txt" in
   let skip_list =
@@ -483,7 +483,7 @@ let test_loc print_top30 xs =
 let test_treemap_dirs () =
   let paths = 
     ["commons/common.ml"; "h_visualization"; "code_graph"] 
-    +> List.map Common.realpath in
+    +> List.map Common.fullpath in
   let paths = List.sort String.compare paths in
   let tree = 
     paths +> Treemap.tree_of_dirs_or_files

@@ -114,8 +114,8 @@ let gen_layer ~root ~query file =
   let files_and_lines = toks +> List.map (fun tok ->
     let file = PI.file_of_info tok in
     let line = PI.line_of_info tok in
-    let file' = Common2.relative_to_absolute file in 
-    Common.readable root file', line
+    let file = Common2.relative_to_absolute file in 
+    Common.readable root file, line
   )
   in
   let group = Common.group_assoc_bykey_eff files_and_lines in

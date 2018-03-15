@@ -239,7 +239,7 @@ let test_include_require file =
 (*****************************************************************************)
 (* bin/pphp *)
 let test_prolog_php file query =
-  let file = Common.realpath file in
+  let file = Common.fullpath file in
   let xs = 
     Database_prolog_php.prolog_query ~verbose:true ~source_file:file ~query in
   pr2_gen xs

@@ -362,7 +362,7 @@ let extract_transitive_deps xs =
 
 
 let slice_dir_with_file file =
-  let file = Common.realpath file in
+  let file = Common.fullpath file in
   let dir = Filename.dirname file in
   let dotdir = Filename.dirname dir in
   let dst = Filename.concat dotdir "CODESLICER" in

@@ -1,8 +1,9 @@
+# -*- Makefile -*-
 ##############################################################################
 # Generic variables
 ##############################################################################
 
-OBJS = $(SRC:.ml=.cmo)
+OBJS    = $(SRC:.ml=.cmo)
 OPTOBJS = $(SRC:.ml=.cmx)
 
 INCLUDES=$(INCLUDEDIRS:%=-I %) $(INCLUDESEXTRA)

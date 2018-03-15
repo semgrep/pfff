@@ -173,10 +173,10 @@ let analyze_make_trace file =
       | Some f -> f
     in
     
-    let path = Common.realpath final_file in
+    let path = Common.fullpath final_file in
     (*let cmd = Str.global_replace (Str.regexp_string file) path s in *)
     J.Object [
-      "directory", J.String (Common.realpath directory);
+      "directory", J.String (Common.fullpath directory);
       "command", J.String s;
       "file", J.String path;
     ]

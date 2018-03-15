@@ -21,15 +21,15 @@ let actions () = [
   );
   "-uninclude_clang", "<src> ",
   Common.mk_action_1_arg (fun src ->
-    let root = Common.realpath src  in
+    let root = Common.fullpath src  in
     let files = Lib_parsing_clang.find_source_files_of_dir_or_files [root] in
     Uninclude_clang.uninclude ~verbose:true root files root;
   );
   "-uninclude_clang_debug", "<src> <file> <dst>",
   Common.mk_action_3_arg (fun src file dst ->
-    let root = Common.realpath src  in
-    let files = [Common.realpath file]  in
-    let dst = Common.realpath dst in
+    let root = Common.fullpath src  in
+    let files = [Common.fullpath file]  in
+    let dst = Common.fullpath dst in
     Uninclude_clang.uninclude ~verbose:true root files dst;
   );
   

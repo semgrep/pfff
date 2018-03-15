@@ -852,6 +852,11 @@ let write_file ~file s =
 let filemtime file =
   (Unix.stat file).Unix.st_mtime
 
+(*
+Using an external C functions complicates the linking process of
+programs using commons/. Thus, I replaced realpath() with an OCaml-only
+similar functions fullpath().
+
 external c_realpath: string -> string option = "caml_realpath"
 
 let realpath2 path =
@@ -861,6 +866,23 @@ let realpath2 path =
 
 let realpath path =
   profile_code "Common.realpath" (fun () -> realpath2 path)
+*)
+
+let fullpath file =
+  if not (Sys.file_exists file)
+  then failwith (spf "fullpath: file %s does not exist" file);
+  let dir, base =
+    if Sys.is_directory file
+    then file, None
+    else Filename.dirname file, Some (Filename.basename file)
+  in
+  let old = Sys.getcwd () in
+  Sys.chdir dir;
+  let here = Sys.getcwd () in
+  Sys.chdir old;
+  match base with
+  | None -> here
+  | Some x -> Filename.concat here x
 
 (* Why a use_cache argument ? because sometimes want disable it but dont
  * want put the cache_computation funcall in comment, so just easier to

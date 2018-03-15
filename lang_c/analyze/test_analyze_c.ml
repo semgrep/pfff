@@ -43,9 +43,8 @@ let test_dump_cil file =
   
 
 let test_dataflow_c file =
-
-  let file = Common.realpath file in
-  let root = Sys.getcwd () +> Common.realpath in
+  let file = Common.fullpath file in
+  let root = Sys.getcwd () +> Common.fullpath in
   Graph_code_c.facts := Some (ref []);
   Datalog_c.long_format := false; 
   let _g = Graph_code_c.build ~verbose:false root [file] in
