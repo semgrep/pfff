@@ -56,6 +56,7 @@ JSONCMA=external/jsonwheel/jsonwheel.cma
 
 ifeq ($(FEATURE_VISUAL),1)
 GUIDIR=external/ocamlgtk
+GUIDIRS=external/ocamlgtk commons_wrappers/gui
 GUICMD= $(MAKE) all -C $(GUIDIR) && $(MAKE) -C commons_wrappers/gui
 GUICMDOPT= $(MAKE) opt -C $(GUIDIR) && $(MAKE) all.opt -C commons_wrappers/gui;
 GTKINCLUDE=external/ocamlgtk/src
@@ -69,6 +70,7 @@ endif
 # should be FEATURE_OCAMLGRAPH, or should give dependencies between features
 GRAPHCMA=external/ocamlgraph/ocamlgraph.cma commons_wrappers/graph/lib.cma
 GRAPHDIR=external/ocamlgraph
+GRAPHDIRS=commons_wrappers/graph external/ocamlgraph
 GRAPHCMD= $(MAKE) all -C $(GRAPHDIR) && $(MAKE) -C commons_wrappers/graph
 GRAPHCMDOPT= $(MAKE) all.opt -C $(GRAPHDIR) && $(MAKE) all.opt -C commons_wrappers/graph
 
@@ -98,9 +100,7 @@ endif
 #------------------------------------------------------------------------------
 # Main variables
 #------------------------------------------------------------------------------
-SYSLIBS=nums.cma bigarray.cma str.cma unix.cma
-
-SYSLIBS+=$(OCAMLCOMPILERCMA)
+BASICSYSLIBS=nums.cma bigarray.cma str.cma unix.cma
 
 # used for sgrep and other small utilities which I dont want to depend
 # on too much things
@@ -135,9 +135,10 @@ BASICLIBS=commons/commons.cma \
  lang_sql/parsing/lib.cma \
  mini/lib.cma
 
-BASICSYSLIBS=nums.cma bigarray.cma str.cma unix.cma
-
 #       commons/commons_features.cma \
+
+SYSLIBS=nums.cma bigarray.cma str.cma unix.cma
+SYSLIBS+=$(OCAMLCOMPILERCMA)
 
 # use for the other programs
 LIBS= commons/commons.cma \
@@ -204,8 +205,8 @@ LIBS= commons/commons.cma \
 
 MAKESUBDIRS=commons commons_ocollection commons_core \
   $(JSONDIR) \
-  $(GRAPHDIR) \
-  $(GUIDIR) $(CAIRODIR) \
+  $(GRAPHDIRS) \
+  $(GUIDIRS) $(CAIRODIR) \
   $(ZIPDIR) $(EXTLIBDIR) $(PTDIR) $(JAVALIBDIR) \
   globals \
   h_version-control \
