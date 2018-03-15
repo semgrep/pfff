@@ -1,4 +1,3 @@
-
 This directory builds a common.cma library and also optionally
 multiple commons_xxx.cma small libraries. The reason not to just build
 a single one is that some functionnalities require external libraries

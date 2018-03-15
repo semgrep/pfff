@@ -1,4 +1,4 @@
-description = "Generic functions from pfff, yet another extended stdlib"
+description = "Generic functions from pfff. Yet another extended stdlib."
 requires = "unix num"
 archive(byte) = "commons.cma"
 archive(native) = "commons.cmxa"

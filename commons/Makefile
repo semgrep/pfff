@@ -2,7 +2,7 @@
 # Variables
 ##############################################################################
 
-# if part of pfff/ or other program with a Makefile.config
+# if part of pfff/ or other programs with a Makefile.config
 -include ../Makefile.config
 
 LIBNAME=commons
