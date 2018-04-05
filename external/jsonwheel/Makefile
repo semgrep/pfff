@@ -78,8 +78,8 @@ clean::
 LIBNAME=jsonwheel
 EXPORTSRC=json_io.mli json_parser.mli json_type.mli
 
-install-findlib:
-	ocamlfind install $(LIBNAME) META   \
+install-findlib: $(LIBNAME).cma $(LIBNAME).cmxa
+	ocamlfind install $(LIBNAME) META \
    $(LIBNAME).cma $(LIBNAME).cmxa $(LIBNAME).a *.cmi $(EXPORTSRC)
 
 uninstall-findlib::
