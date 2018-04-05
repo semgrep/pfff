@@ -293,7 +293,7 @@ let build_graph_code lang xs =
     | _ ->
         let root = Common2.common_prefix_of_files_or_dirs xs in
         let files = 
-          Find_source.files_of_dir_or_files ~lang ~verbose:!verbose xs in
+          Find_source.files_of_dir_or_files ~lang xs in
         root, files
   in
 

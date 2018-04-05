@@ -149,7 +149,7 @@ let run_datalog root facts =
 (*****************************************************************************)
 let build_prolog_db lang root xs =
   let root = Common.fullpath root +> Common2.chop_dirsymbol in
-  let files = Find_source.files_of_dir_or_files ~lang ~verbose:!verbose xs in
+  let files = Find_source.files_of_dir_or_files ~lang xs in
   match lang with
   | "php" ->
       (* 

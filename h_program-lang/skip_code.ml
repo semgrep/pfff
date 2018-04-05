@@ -124,7 +124,7 @@ let find_skip_file_from_root root =
     else None
   )
 
-let filter_files_if_skip_list ?(verbose=true) xs =
+let filter_files_if_skip_list xs =
   match xs with
   | [] -> []
   | x::_ ->
@@ -132,7 +132,7 @@ let filter_files_if_skip_list ?(verbose=true) xs =
         let root = find_vcs_root_from_absolute_path x in
         let skip_file = find_skip_file_from_root root in
         let skip_list = load skip_file in
-        if verbose then pr2 (spf "using skip list in %s" skip_file);
+        pr2 (spf "using skip list in %s" skip_file);
         filter_files skip_list root xs
       with Not_found -> xs
 
@@ -159,5 +159,3 @@ let reorder_files_skip_errors_last skip_list root xs =
     )
   in
   ok @ skip_errors
-
-

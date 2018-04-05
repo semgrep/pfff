@@ -263,7 +263,7 @@ let main_action xs =
   Logger.log Config_pfff.logger "sgrep" (Some query_string);
 
   let files = 
-    Find_source.files_of_dir_or_files ~lang:!lang ~verbose:!verbose xs in
+    Find_source.files_of_dir_or_files ~lang:!lang xs in
 
   files +> List.iter (fun file ->
     if !verbose then pr2 (spf "processing: %s" file);
