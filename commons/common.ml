@@ -863,6 +863,21 @@ let realpath2 path =
   match c_realpath path with
   | Some s -> s
   | None -> failwith (spf "problem with realpath on %s" path)
+*)
+
+let realpath2 path =
+  let stat = Unix.stat path in
+  let dir, suffix = 
+    match stat.Unix.st_kind with
+    | Unix.S_DIR -> path, ""
+    | _ -> Filename.dirname path, Filename.basename path
+  in
+
+  let oldpwd = Sys.getcwd () in
+  Sys.chdir dir;
+  let realpath_dir = Sys.getcwd () in
+  Sys.chdir oldpwd;
+  Filename.concat realpath_dir suffix
 
 let realpath path =
   profile_code "Common.realpath" (fun () -> realpath2 path)
