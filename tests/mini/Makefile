@@ -31,6 +31,5 @@ datalog:
 	../../codequery -lang c -datalog -build .
 
 clean::
-	rm -f facts.*
-	rm prolog_compiled_db pfff.log
-
+	rm -f facts.* *.explain
+	rm -f prolog_compiled_db pfff.log
