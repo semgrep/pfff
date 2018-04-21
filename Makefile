@@ -682,6 +682,19 @@ fbdepend:
 	$(MAKE) depend -C facebook
 
 ##############################################################################
+# Literate programming
+##############################################################################
+
+LPDIRS=\
+ h_visualization\
+ docs/ocaml \
+ lang_php/parsing lang_php/analyze \
+ code_map 
+
+lpclean::
+	set -e; for i in $(LPDIRS); do echo $$i; $(MAKE) -C $$i $@; done
+
+##############################################################################
 # Pad specific rules
 ##############################################################################
 
