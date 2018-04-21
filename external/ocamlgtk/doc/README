@@ -1,0 +1,10 @@
+                          LablGTK documents
+
+Currently, there is no real documentation for LablGTK.
+For information on how to use it, please have a look at README in the
+main directory.
+
+Documents with extension .mgp are MagicPoint presentations. They give
+some ideas about how lablgtk was made. You may read them directly.
+
+$Id: README 483 2001-02-09 16:06:57Z garrigue $
