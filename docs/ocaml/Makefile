@@ -30,8 +30,7 @@ pdf:
 	pdflatex $(TEX)
 
 lpclean::
+	rm -f *.aux *.toc *.log
 	rm -f $(TEX)
 
-clean::
-	rm -f *.aux *.toc *.log
-
+clean:: lpclean
