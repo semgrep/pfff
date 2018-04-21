@@ -49,7 +49,7 @@ $(TARGET1).opt: $(LIBS:.cma=.cmxa) $(EXTRALIBS:.cma=.cmxa) $(OBJS:.cmo=.cmx) mai
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) $^
 
 clean::
-	rm -f $(PROGS)
+	rm -f $(PROGS) $(PROGS).opt
 
 ##############################################################################
 # install

@@ -20,6 +20,8 @@ OCAMLMKLIB=ocamlc -a
 OCAMLMKLIBOPT=ocamlopt -a
 #ocamlmklib, does some weird things when you actually dont have C code
 
+SYSLIBS=unix.cma str.cma
+
 -include Makefile.common
 
 # too many code in pfff assume commons/lib.cma

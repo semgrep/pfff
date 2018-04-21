@@ -42,7 +42,7 @@ app.js
 *.mshark
 
 # docs, but some are valid ...
-*.pdf
+#*.pdf
 *.ps
 
 # Makefile, auto generated stuff
@@ -62,7 +62,7 @@ _darcs
 .svn
 .hg
 
-Fig_graph_ml.pdf
+#Fig_graph_ml.pdf
 
 # data
 /TAGS
@@ -112,7 +112,7 @@ gen-ocaml/
 gen-php/
 
 #not imported everything
-external/ocamlgtk
+#external/ocamlgtk
 
 /external/ocamlgraph/META
 /external/ocamlgraph/src/dot_lexer.ml
@@ -297,14 +297,7 @@ docs/ocaml/OCaml.log
 docs/ocaml/OCaml.tex
 docs/ocaml/OCaml.toc
 facebook/
-h_program-lang/old/dm_ml
-h_visualization/.md5sum_main_treemap.ml
-h_visualization/.md5sum_treemap.ml
-h_visualization/.md5sum_treemap.mli
-h_visualization/.md5sum_treemap_graphics.ml
-h_visualization/.md5sum_treemap_graphics.mli
-h_visualization/.md5sum_treemap_json.ml
-h_visualization/.md5sum_treemap_json.mli
+
 h_visualization/Treemap.tex
 lang_php/analyze/Analyze_php.tex
 lang_php/parsing/Parsing_php.tex
@@ -350,4 +343,5 @@ web/var/logs/warnings.log
 /data/php_stdlib/TAGS
 /data/php_stdlib/layer_bottomup.json
 /data/php_stdlib/layer_graphcode_stats.json
+
 /Makefile.user
