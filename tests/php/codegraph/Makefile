@@ -3,3 +3,6 @@ graph:
 	mv graph_code.marshall save_code.marshall
 	~/pfff/codegraph -adjust_graph save_code.marshall adjust_graph.txt info_whitelist.txt graph_code.marshall
 	cat pfff.log
+
+clean:
+	rm -f graph_code.marshall pfff.log graph_code.marshall.opti
