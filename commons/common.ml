@@ -863,7 +863,6 @@ let realpath2 path =
   match c_realpath path with
   | Some s -> s
   | None -> failwith (spf "problem with realpath on %s" path)
-*)
 
 let realpath2 path =
   let stat = Unix.stat path in
