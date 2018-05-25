@@ -14,7 +14,7 @@
  *)
 open Common
 
-open Graph_code
+module G = Graph_code
 module J = Json_type
 
 (*****************************************************************************)
@@ -22,8 +22,45 @@ module J = Json_type
 (*****************************************************************************)
 
 (*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+let string_of_entity_kind kind =
+  Entity_code.string_of_entity_kind kind
+
+let json_short_of_node (str, kind) =
+  J.Array [
+    J.String str;
+    J.String (string_of_entity_kind kind);
+  ]
+
+let json_of_node g (str, kind) =
+  J.Object [
+    "name_kind", json_short_of_node (str, kind);
+    "location", J.String (
+      try G.file_of_node (str, kind) g
+      (* 'Dir' entities have no location for example *)
+      with Not_found -> "UNKNOWN LOCATION"
+    );
+  ]
+
+
+(*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 
 let graph_to_json g =
-  raise Todo
+  J.Object [
+    "nodes", J.Array (
+      G.all_nodes g |> List.map (json_of_node g)
+    );
+    "edges_Use", J.Array (
+      G.all_use_edges g |> List.map (fun (src, dst) ->
+        J.Object [
+          "src", json_short_of_node src;
+          "dst", json_short_of_node dst;
+        ]
+      )
+    );
+    "edges_Has", J.String "TODO";
+  ]
+

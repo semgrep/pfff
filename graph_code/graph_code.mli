@@ -40,7 +40,7 @@ type dependency = (node * node)
 type whitelist = dependency list
 
 
-(* to bump when change of format. load() should detect when loading old graphs *)
+(* to bump when change of format. load() should detect when loading old graphs*)
 val version: int
 
 (* IO *)
