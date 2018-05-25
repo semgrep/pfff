@@ -9,6 +9,7 @@ SRC= graph_code.ml graph_code_opti.ml \
      graph_code_tags.ml graph_code_database.ml graph_code_prolog.ml \
      graph_code_class_analysis.ml graph_code_helpers.ml \
      graph_code_checker.ml \
+     graph_code_export.ml \
      layer_graph_code.ml \
      test_graph_code.ml unit_graph_code.ml
 
@@ -18,6 +19,7 @@ INCLUDEDIRS= $(TOP)/commons \
  $(TOP)/commons_core \
  $(TOP)/commons_wrappers/graph \
  $(TOP)/external/ocamlgraph $(TOP)/external/ocamlgraph/src \
+ $(TOP)/external/jsonwheel \
  $(TOP)/h_program-lang
 
 ##############################################################################

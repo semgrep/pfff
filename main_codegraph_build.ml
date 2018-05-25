@@ -16,6 +16,9 @@ module DMBuild = Dependencies_matrix_build
 (* This program builds the graph database needed by codegraph. 
  * See main_codegraph.ml for more information.
  * 
+ * todo?
+ *  - merge with pfff_db.ml?
+ * 
  * history:
  *  - split from main_codegraph.ml
  *)
@@ -48,9 +51,6 @@ let dep_file_of_dir dir =
 (* Language specific, building the graph *)
 (*****************************************************************************)
 
-(* less: maybe could be moved in pfff_db.ml? so that the -lang are isolated
- * to pfff_db, and neither codegraph nor codemap need them!
- *)
 let build_graph_code lang xs =
   let xs = List.map Common.fullpath xs in
   let root, files = 
@@ -59,8 +59,7 @@ let build_graph_code lang xs =
         root, Find_source.files_of_root ~lang root
     | _ ->
         let root = Common2.common_prefix_of_files_or_dirs xs in
-        let files = 
-          Find_source.files_of_dir_or_files ~lang xs in
+        let files = Find_source.files_of_dir_or_files ~lang xs in
         root, files
   in
 
@@ -76,21 +75,7 @@ let build_graph_code lang xs =
           Graph_code_cmt.build ~verbose:!verbose ~root ~cmt_files ~ml_files, 
           empty
 #endif
-
-    | "php" -> 
-      (* todo: better factorize *)
-      let skip_file = Filename.concat root "skip_list.txt" in
-      let skip_list =
-        if Sys.file_exists skip_file
-        then Skip_code.load skip_file
-        else []
-      in
-      let is_skip_error_file = Skip_code.build_filter_errors_file skip_list in
-      Graph_code_php.build 
-        ~verbose:!verbose ~is_skip_error_file 
-        ~class_analysis:!class_analysis
-        root files
-    | "web" -> raise Todo
+    | "lisp" -> Graph_code_lisp.build ~verbose:!verbose root files, empty
 
     | "c" -> 
         Parse_cpp.init_defs !Flag_parsing_cpp.macros_h;
@@ -112,7 +97,19 @@ let build_graph_code lang xs =
       empty
 #endif
 
-    | "lisp" -> Graph_code_lisp.build ~verbose:!verbose root files, empty
+    | "php" -> 
+      (* todo: better factorize *)
+      let skip_file = Filename.concat root "skip_list.txt" in
+      let skip_list =
+        if Sys.file_exists skip_file
+        then Skip_code.load skip_file
+        else []
+      in
+      let is_skip_error_file = Skip_code.build_filter_errors_file skip_list in
+      Graph_code_php.build 
+        ~verbose:!verbose ~is_skip_error_file 
+        ~class_analysis:!class_analysis
+        root files
 
     | "dot" -> 
       Graph_code.graph_of_dotfile (Filename.concat root "graph.dot"), empty
@@ -130,6 +127,7 @@ let build_graph_code lang xs =
   (* Save also TAGS, light db, prolog (TODO), layers. We could also do
    * that on demand when we run codemap and there is only a 
    * graph_code.marshall file.
+   * TODO: save in a .pfff/
    *)
   if !gen_derived_data then begin
     let p f = Filename.concat output_dir f in
@@ -210,9 +208,7 @@ let analyze_backward_deps graph_file =
   let file = graph_file ^ ".whitelist" in
   pr2 (spf "generating whitelist in %s" file);
   GC.save_whitelist edges file g;
-  
-  ()
-
+    ()
 
 
 (* Graph adjuster (overlay-ish) *)
@@ -371,8 +367,17 @@ let test_dotfile_of_dotdepend file =
 
 (* ---------------------------------------------------------------------- *)
 let extra_actions () = [
-  "-build", " <dirs> build a graph_code.marshall database",
-  Common.mk_action_n_arg (fun dirs -> build_graph_code !lang dirs);
+
+  "-to_json", " <graph file>", 
+  Common.mk_action_1_arg (fun file ->
+    let g = Graph_code.load file in
+    let json = Graph_code_export.graph_to_json g in
+    let dst = "graph_code.json" in
+    pr2 (spf "saving graph in JSON format in %s" dst);
+    Json_io.string_of_json ~compact:false ~recursive:false ~allow_nan:true json
+     |> Common.write_file ~file:dst
+  );
+
   "-build_stdlib", " <src> <dst>",
   Common.mk_action_2_arg (fun dir dst -> build_stdlib !lang dir dst);
   "-adjust_graph", " <graph> <adjust_file> <whitelist> <dstfile>\n",
@@ -401,7 +406,6 @@ let extra_actions () = [
   Common.mk_action_1_arg test_dotfile_of_deps;
   "-test_dotfile_of_dotdepend", " <file>",
   Common.mk_action_1_arg test_dotfile_of_dotdepend;
-
 ]
 
 (*****************************************************************************)
