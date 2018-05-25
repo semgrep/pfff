@@ -23,9 +23,8 @@ PROGS=pfff \
  scheck \
  codequery \
  codeslicer \
- pfff_db
-
-PROGS+=pfff_test
+ codegraph_build pfff_db \
+ pfff_test
 
 ifeq ($(FEATURE_VISUAL), 1)
 PROGS+=codemap codegraph
@@ -60,10 +59,8 @@ GUIDIRS=external/ocamlgtk commons_wrappers/gui
 GUICMD= $(MAKE) all -C $(GUIDIR) && $(MAKE) -C commons_wrappers/gui
 GUICMDOPT= $(MAKE) opt -C $(GUIDIR) && $(MAKE) all.opt -C commons_wrappers/gui;
 GTKINCLUDE=external/ocamlgtk/src
-
 CAIRODIR=external/ocamlcairo
 CAIROINCLUDE=external/ocamlcairo/src
-
 VISUALDIRS=code_map code_graph
 endif
 
@@ -83,7 +80,6 @@ PTDIR=external/ptrees
 PTCMA=external/ptrees/ptrees.cma
 JAVALIBDIR=external/javalib/src
 JAVALIBCMA=external/javalib/src/lib.cma
-
 BYTECODEDIRS=lang_bytecode/parsing lang_bytecode/analyze
 BYTECODECMAS=lang_bytecode/parsing/lib.cma lang_bytecode/analyze/lib.cma
 endif
@@ -91,10 +87,8 @@ endif
 ifeq ($(FEATURE_CMT), 1)
 OCAMLCOMPILERDIR=$(shell ocamlc -where)/compiler-libs
 OCAMLCOMPILERCMA=ocamlcommon.cma
-
 CMTDIRS=lang_cmt/parsing lang_cmt/analyze
 CMTCMAS=lang_cmt/parsing/lib.cma lang_cmt/analyze/lib.cma
-
 endif
 
 #------------------------------------------------------------------------------
@@ -465,13 +459,18 @@ OBJS_CG=code_graph/lib.cma
 codegraph: $(LIBS) commons_wrappers/gui/lib.cma $(OBJS_CG) $(OBJS) main_codegraph.cmo
 	$(OCAMLC) -thread $(CUSTOM) -o $@ $(SYSLIBS) threads.cma \
            $(SYSLIBS_CG) $(GTKLOOP) $^
-
 codegraph.opt: $(LIBS:.cma=.cmxa) commons_wrappers/gui/lib.cmxa $(OBJS_CG:.cma=.cmxa) $(OPTOBJS) main_codegraph.cmx
 	$(OCAMLOPT) -thread $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) threads.cmxa\
           $(SYSLIBS_CG:.cma=.cmxa) $(GTKLOOP:.cmo=.cmx)  $^
-
 clean::
 	rm -f codegraph
+
+codegraph_build: $(LIBS) $(OBJS) main_codegraph_build.cmo
+	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
+codegraph_build.opt: $(LIBS:.cma=.cmxa) $(OPTOBJS) main_codegraph_build.cmx
+	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) $^
+clean::
+	rm -f codegraph_build
 
 #------------------------------------------------------------------------------
 # pfff_test targets
@@ -660,28 +659,6 @@ archi:
 	rm -f Fig_graph_ml.ps
 
 ##############################################################################
-# Facebook specific rules
-##############################################################################
-
-fbpull:
-	proxycmd.sh git pull
-	cd facebook; git pull
-fbpush:
-	proxycmd.sh git push
-	cd facebook; git push
-
-fb:
-	$(MAKE)
-	$(MAKE) -C facebook
-fb.opt:
-	$(MAKE) opt
-	$(MAKE) opt -C facebook
-
-fbdepend:
-	$(MAKE) depend
-	$(MAKE) depend -C facebook
-
-##############################################################################
 # Literate programming
 ##############################################################################
 
@@ -693,24 +670,3 @@ LPDIRS=\
 
 lpclean::
 	set -e; for i in $(LPDIRS); do echo $$i; $(MAKE) -C $$i $@; done
-
-##############################################################################
-# Pad specific rules
-##############################################################################
-
-DARCSFORESTS=commons \
- ocamltarzan \
- h_version-control h_program-lang \
- lang_php/parsing \
- lang_php/analyze \
- gui \
- facebook
-
-update_darcs:
-	darcs pull
-	set -e; for i in $(DARCSFORESTS); do cd $$i; darcs pull; cd ..; done
-
-diff_darcs:
-	@echo "----- REPO:" top "----------------------"
-	darcs diff -u
-	set -e; for i in $(DARCSFORESTS); do cd $$i; echo "----- REPO:" $$i "-----------------"; darcs diff -u; cd $(TOP); done

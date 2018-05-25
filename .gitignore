@@ -1,3 +1,14 @@
+#temporarily ignored
+#not imported everything
+external/ocamlgtk
+
+# each user can have this own file
+/test.ml
+/Makefile.user
+
+# -----------------------------------------------------------------------------
+# Object files
+# -----------------------------------------------------------------------------
 
 # ocaml object files
 *.cm*
@@ -24,157 +35,15 @@
 # Makefile, auto generated stuff
 .depend
 
-# pad's configure
-/Makefile.config
-/commons/features.ml
-/globals/config.ml
-
-# autoconf
-config.log
-config.make
-config.status
-
 # ocaml code using OCamlMakefile
 ._d/
 ._ncdi/
 ._bcdi/
 
-
-# each user can have this own file
-/test.ml
-/Makefile.user
-
-
-# parsers
-
-/h_program-lang/archi_code_lexer.ml
-
-/lang_php/parsing/lexer_php.ml
-/lang_php/parsing/parser_php.ml
-/lang_php/parsing/parser_php.mli
-/lang_php/parsing/parser_php.output
-
-/lang_js/parsing/lexer_js.ml
-/lang_js/parsing/parser_js.ml
-/lang_js/parsing/parser_js.mli
-/lang_js/parsing/parser_js.output
-
-/lang_sql/parsing/parser_sql.ml
-/lang_sql/parsing/parser_sql.mli
-/lang_sql/parsing/parser_sql.output
-/lang_sql/parsing/lexer_sql.ml
-
-/lang_ml/parsing/lexer_ml.ml
-/lang_ml/parsing/parser_ml.ml
-/lang_ml/parsing/parser_ml.mli
-/lang_ml/parsing/parser_ml.output
-
-/lang_cpp/parsing/lexer_cpp.ml
-/lang_cpp/parsing/parser_cpp.ml
-/lang_cpp/parsing/parser_cpp.mli
-/lang_cpp/parsing/parser_cpp.output
-
-/lang_nw/parsing/lexer_nw.ml
-/lang_nw/parsing/parser_nw.output
-/lang_nw/parsing/parser_nw.mli
-/lang_nw/parsing/parser_nw.ml
-
-/lang_java/parsing/lexer_java.ml
-/lang_java/parsing/parser_java.ml
-/lang_java/parsing/parser_java.mli
-/lang_java/parsing/parser_java.output
-
-/lang_lisp/parsing/lexer_lisp.ml
-
-/lang_haskell/parsing/lexer_hs.ml
-
-/lang_python/parsing/lexer_python.ml
-/lang_python/parsing/parser_python.ml
-/lang_python/parsing/parser_python.mli
-/lang_python/parsing/parser_python.output
-
-/lang_csharp/parsing/lexer_csharp.ml
-/lang_csharp/parsing/parser_csharp.ml
-/lang_csharp/parsing/parser_csharp.mli
-/lang_csharp/parsing/parser_csharp.output
-
-/lang_erlang/parsing/lexer_erlang.ml
-/lang_erlang/parsing/parser_erlang.ml
-/lang_erlang/parsing/parser_erlang.mli
-/lang_erlang/parsing/parser_erlang.output
-
-/lang_html/parsing/lexer_html.ml
-/lang_html/parsing/parser_html.ml
-/lang_html/parsing/parser_html.mli
-/lang_html/parsing/parser_html.output
-
-/lang_css/parsing/lexer_css.ml
-/lang_css/parsing/parser_css.ml
-/lang_css/parsing/parser_css.mli
-/lang_css/parsing/parser_css.output
-
-/lang_clang/parsing/lexer_clang.ml
-/lang_clang/parsing/parser_clang.ml
-/lang_clang/parsing/parser_clang.mli
-/lang_clang/parsing/parser_clang.output
-
-/external/ocamlgraph/src/dot_lexer.ml
-/external/ocamlgraph/src/dot_parser.ml
-/external/ocamlgraph/src/dot_parser.mli
-/external/ocamlgraph/src/dot_parser.output
-
-/commons/lib-xml/xml_parser.output
-
-
-/lang_opa/parsing/parser_opa.output
-/lang_opa/parsing/lexer_opa.ml
-/lang_opa/parsing/parser_opa.ml
-/lang_opa/parsing/parser_opa.mli
-
-/lang_rust/parsing/lexer_rust.ml
-/lang_rust/parsing/parser_rust.ml
-/lang_rust/parsing/parser_rust.mli
-/lang_rust/parsing/parser_rust.output
-
-
-# binaries
-/pfff
-/pfff_db
-/pfff_db_light
-/pfff_db_heavy
-/pfff_misc
-/pfff_test
-/pfff.top
-
-/ppp
-
-/sgrep
-/spatch
-/stags
-/scheck
-/scheck_heavy
-
-/codegraph
-/codequery
-/codemap
-/codeslicer
-
-# test or other binaries
-/lang_php/parsing/show_function_calls1
-/lang_php/parsing/show_function_calls2
-/lang_php/parsing/show_function_calls3
-/h_version-control/vcs
-/h_visualization/treemap_viewer
-/meta/ffi
-/meta/gen_code
-
-
-# ocsigen
-_client
-_server
-app.js
-web/var/dbs
-
+# autoconf
+config.log
+config.make
+config.status
 
 # java object files
 #*.class
@@ -197,9 +66,112 @@ web/var/dbs
 #*prolog_compiled_db
 #/data/php_stdlib.defs_marshalled
 
+# -----------------------------------------------------------------------------
+# Documents
+# -----------------------------------------------------------------------------
+
 # docs, but some are valid ...
 #*.pdf
 #*.ps
+
+/Fig_graph_ml.pdf
+/code_map/Fig_graph_ml.pdf
+/code_map/Visual.pdf
+/commons_core/docs/Commons.pdf
+/docs/manual/Treemap.pdf
+/docs/manual/Visual.pdf
+/docs/ocaml/OCaml.pdf
+/h_visualization/Treemap.pdf
+/lang_php/parsing/Parsing_php.pdf
+
+##TODO maybe reput some
+#h_visualization/Treemap.tex
+#lang_php/analyze/Analyze_php.tex
+#lang_php/parsing/Parsing_php.tex
+#code_map/Visual.tex
+
+# -----------------------------------------------------------------------------
+# pad's configure
+# -----------------------------------------------------------------------------
+/Makefile.config
+/commons/features.ml
+/globals/config_pfff.ml
+
+# -----------------------------------------------------------------------------
+# Auto generated
+# -----------------------------------------------------------------------------
+
+# parsers
+lexer_*.ml
+parser_*.ml
+parser_*.mli
+parser_*.output
+
+/h_program-lang/archi_code_lexer.ml
+
+/external/ocamlgraph/src/dot_lexer.ml
+/external/ocamlgraph/src/dot_parser.ml
+/external/ocamlgraph/src/dot_parser.mli
+/external/ocamlgraph/src/dot_parser.output
+
+
+# -----------------------------------------------------------------------------
+# binaries
+# -----------------------------------------------------------------------------
+/pfff
+/pfff_db
+/pfff_db_light
+/pfff_db_heavy
+/pfff_misc
+/pfff_test
+/pfff.top
+
+/ppp
+
+/sgrep
+/spatch
+/stags
+/scheck
+/scheck_heavy
+
+/codegraph
+/codegraph_build
+/codequery
+/codemap
+/codeslicer
+
+/demos/simple_refactoring
+#/demos/pfff_linking
+#/demos/commons
+#/demos/send_mail_pattern.php
+#/demos/check_is_static_literal
+#/demos/find_methods_return_this
+#/demos/php_transducer.byte
+#/demos/show_function_calls1.byte
+#/demos/show_function_calls2.byte
+#/demos/show_function_calls3.byte
+#/demos/show_function_class_names.byte
+#/demos/show_function_class_names2.byte
+
+# test or other binaries
+/lang_php/parsing/show_function_calls1
+/lang_php/parsing/show_function_calls2
+/lang_php/parsing/show_function_calls3
+/h_version-control/vcs
+/h_visualization/treemap_viewer
+/meta/ffi
+/meta/gen_code
+/lang_php/pretty/prettyphp
+
+# ocsigen
+_client
+_server
+app.js
+web/var/dbs
+
+# -----------------------------------------------------------------------------
+# Other stuff
+# -----------------------------------------------------------------------------
 
 #pad stuff
 #tmp
@@ -214,9 +186,6 @@ web/var/dbs
 #gen-ocaml/
 # gen-php/
 
-#not imported everything
-#external/ocamlgtk
-
 #/external/ocamlgraph/META
 #/external/ocamlgraph/src/gml.ml
 #/external/ocamlgraph/src/version.ml
@@ -226,8 +195,6 @@ web/var/dbs
 #/external/ocamlcairo/autom4te.cache/traces.2
 #/external/ocamlcairo/autom4te.cache/traces.3
 #
-#/demos/commons
-#/demos/send_mail_pattern.php
 #
 #/lang_php/parsing/template_visitor
 #
@@ -252,13 +219,11 @@ web/var/dbs
 #/TODO-tests/xhp_pb_but_ok/end_script.php
 #/TODO-tests/xhp_pb_but_ok/xhp_fbdocs.php
 #
-#
-#
+
 #/lang_php/analyze/database_php_storage.ml
 #
 #
-#/demos/simple_refactoring
-#/demos/check_is_static_literal
+#
 #/lang_php/meta/ffi
 #/lang_php/meta/gen_code
 #
@@ -279,11 +244,6 @@ web/var/dbs
 #
 #facebook/
 #
-##TODO maybe reput some
-#h_visualization/Treemap.tex
-#lang_php/analyze/Analyze_php.tex
-#lang_php/parsing/Parsing_php.tex
-#code_map/Visual.tex
 #
 #tests/java/codegraph/Bar.java
 #tests/java/codegraph/TAGS
@@ -296,23 +256,16 @@ web/var/dbs
 #web/var/logs/access.log
 #web/var/logs/errors.log
 #web/var/logs/warnings.log
-#/demos/find_methods_return_this
 #/globals/config_pfff.ml
 #/facts_pl
 #/web/scripts/stat_web
-#/demos/php_transducer.byte
-#/demos/show_function_calls1.byte
-#/demos/show_function_calls2.byte
-#/demos/show_function_calls3.byte
-#/demos/show_function_class_names.byte
-#/demos/show_function_class_names2.byte
 #
 #/data/php_stdlib/hni
 #/data/php_stdlib/idl
 #/data/php_stdlib/stdlib
 #/data/php_stdlib/system
 #
-#/demos/pfff_linking
+
 #
 #/tests/php/codegraph/pfff_test.log
 
