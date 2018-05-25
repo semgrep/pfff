@@ -1,6 +1,7 @@
 #temporarily ignored
 #not imported everything
 external/ocamlgtk
+#facebook/
 
 # each user can have this own file
 /test.ml
@@ -45,6 +46,10 @@ config.log
 config.make
 config.status
 
+/external/ocamlgraph/META
+/external/ocamlgraph/src/gml.ml
+/external/ocamlgraph/src/version.ml
+
 # java object files
 #*.class
 
@@ -76,13 +81,15 @@ config.status
 
 /Fig_graph_ml.pdf
 /code_map/Fig_graph_ml.pdf
+
 /code_map/Visual.pdf
 /commons_core/docs/Commons.pdf
+/h_visualization/Treemap.pdf
+/lang_php/parsing/Parsing_php.pdf
+
 /docs/manual/Treemap.pdf
 /docs/manual/Visual.pdf
 /docs/ocaml/OCaml.pdf
-/h_visualization/Treemap.pdf
-/lang_php/parsing/Parsing_php.pdf
 
 ##TODO maybe reput some
 #h_visualization/Treemap.tex
@@ -120,24 +127,18 @@ parser_*.output
 # -----------------------------------------------------------------------------
 /pfff
 /pfff_db
-/pfff_db_light
-/pfff_db_heavy
-/pfff_misc
 /pfff_test
 /pfff.top
-
-/ppp
 
 /sgrep
 /spatch
 /stags
 /scheck
-/scheck_heavy
 
+/codemap
 /codegraph
 /codegraph_build
 /codequery
-/codemap
 /codeslicer
 
 /demos/simple_refactoring
@@ -186,15 +187,10 @@ web/var/dbs
 #gen-ocaml/
 # gen-php/
 
-#/external/ocamlgraph/META
-#/external/ocamlgraph/src/gml.ml
-#/external/ocamlgraph/src/version.ml
-#
 #/external/ocamlcairo/autom4te.cache/output.2
 #/external/ocamlcairo/autom4te.cache/output.3
 #/external/ocamlcairo/autom4te.cache/traces.2
 #/external/ocamlcairo/autom4te.cache/traces.3
-#
 #
 #/lang_php/parsing/template_visitor
 #
@@ -222,8 +218,6 @@ web/var/dbs
 
 #/lang_php/analyze/database_php_storage.ml
 #
-#
-#
 #/lang_php/meta/ffi
 #/lang_php/meta/gen_code
 #
@@ -233,21 +227,6 @@ web/var/dbs
 #/web/app_lxr_server.ml
 #/web/client
 #/web/client.js
-#
-#/tests/cpp/a.out
-#/pm_depend
-#/lang_php/pretty/prettyphp
-#
-#
-#/external/javalib/src/jManifest.ml
-#
-#
-#facebook/
-#
-#
-#tests/java/codegraph/Bar.java
-#tests/java/codegraph/TAGS
-#tests/ml/cmt/graph_code.marshall.opti
 #web/all_exn.patch
 #web/json_server_ml
 #web/old/Makefile.old
@@ -256,16 +235,17 @@ web/var/dbs
 #web/var/logs/access.log
 #web/var/logs/errors.log
 #web/var/logs/warnings.log
-#/globals/config_pfff.ml
-#/facts_pl
-#/web/scripts/stat_web
 #
+#/pm_depend
+#/external/javalib/src/jManifest.ml
+#
+#tests/java/codegraph/Bar.java
+#/web/scripts/stat_web
+
 #/data/php_stdlib/hni
 #/data/php_stdlib/idl
 #/data/php_stdlib/stdlib
 #/data/php_stdlib/system
-#
-
 #
 #/tests/php/codegraph/pfff_test.log
 
