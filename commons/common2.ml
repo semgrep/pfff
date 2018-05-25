@@ -5920,7 +5920,9 @@ module Infix = struct
   let (=~) = (=~)
 end
 
-(* based on code found in cameleon from maxence guesdon *)
+(* based on code found in cameleon from maxence guesdon 
+ * alt: use Digest.string! far faster!
+ *)
 let md5sum_of_string s =
   let com = spf "echo %s | md5sum | cut -d\" \" -f 1"
       (Filename.quote s)
