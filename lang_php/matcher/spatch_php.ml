@@ -66,7 +66,7 @@ type line_kind =
 *)
 
 (* just to test the backend part of spatch *)
-let (dumb_spatch_pattern: Ast_php.expr) = 
+let (_dumb_spatch_pattern: Ast_php.expr) = 
   (* ./pfff -dump_php_ml tests/php/spatch/1.php *)
   let i_1 = {
     PI.token =

@@ -326,7 +326,6 @@ let rec dump2 r =
     )
     else if t = abstract_tag then opaque "abstract"
     else if t = custom_tag then opaque "custom"
-    else if t = final_tag then opaque "final"
     else failwith ("dump: impossible tag (" ^ string_of_int t ^ ")")
   )
 
@@ -3002,7 +3001,7 @@ let read_file_orig file = cat file +> unlines
 let read_file file =
   let ic = open_in file  in
   let size = in_channel_length ic in
-  let buf = String.create size in
+  let buf = Bytes.create size in
   really_input ic buf 0 size;
   close_in ic;
   buf

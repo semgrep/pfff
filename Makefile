@@ -263,6 +263,8 @@ INCLUDEDIRS=$(MAKESUBDIRS) \
  commons_wrappers/graph commons_wrappers/gui \
  $(OCAMLCOMPILERDIR)
 
+# cpp causes some 'warning: missing terminating' errors
+CLANG_HACK=-Wno-invalid-pp-token
 PP=-pp "cpp $(CLANG_HACK) -DFEATURE_BYTECODE=$(FEATURE_BYTECODE) -DFEATURE_CMT=$(FEATURE_CMT)"
 
 ##############################################################################

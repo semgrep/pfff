@@ -590,8 +590,8 @@ let print_graph_generic ?(launch_gv=true) ?(extra_string="") ~str_of_key
     );
     pr "}\n" ;
     );
-  if launch_gv then 
-    failwith "TODO: Ograph_extended.launch_gv_cmd filename"
+  if launch_gv 
+  then failwith "TODO: Ograph_extended.launch_gv_cmd filename";
     (* Ograph_extended.launch_gv_cmd filename; *)
   ()
 

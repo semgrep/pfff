@@ -349,6 +349,7 @@ let coverage_tests
         Common.push (test_file, msg) pb_test_files;
   in
   let _res, not_done = 
+    (test_files_fn, reducer, mapper) |> ignore;
     failwith "TODO: Use Features.Distribution"
 (*
     Features.Distribution.map_reduce_lazy 
@@ -536,7 +537,8 @@ let actions () = [
       acc + e
     in
     let res, notdone = 
-    failwith "TODO: Use Features.Distribution"
+      (map_ex, reduce_ex) |> ignore;
+      failwith "TODO: Use Features.Distribution"
 (*
       Features.Distribution.map_reduce ~fmap:map_ex ~freduce:reduce_ex 
       0 [35;35;35;35] 

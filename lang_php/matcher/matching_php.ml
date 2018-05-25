@@ -29,7 +29,7 @@ module MVGen = Metavars_fuzzy
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2, pr2_once = Common2.mk_pr2_wrappers Flag_matcher_php.verbose
+let pr2, _pr2_once = Common2.mk_pr2_wrappers Flag_matcher_php.verbose
 
 (*****************************************************************************)
 (* The functor argument *)
