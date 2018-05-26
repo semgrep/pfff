@@ -40,3 +40,6 @@ cleandoc doc:
 # Documentation for release (INSTALL and README)
 cleandocr docr:
 	$(MAKE) -C doc $@
+
+depend:
+
