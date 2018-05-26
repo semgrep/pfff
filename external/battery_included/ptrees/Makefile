@@ -57,7 +57,7 @@ ptrees.cmxa:$(MODULES:.ml=.cmx)
 
 # Clean up
 clean:
-	$(RM) *.o *.a *.cm[iox] *~ *.annot .depend *.cma *.cmxa
+	$(RM) *.o *.a *.cm[iox] *~ *.annot *.cma *.cmxa
 
 depend:
 	$(OCAMLDEP) $(MODULE_INTERFACES) $(MODULES) > .depend
