@@ -3,7 +3,7 @@ TOP=..
 
 -include $(TOP)/Makefile.config
 
-MAKESUBDIRS=battery_included/empty battery_included/jsonwheel 
+MAKESUBDIRS=battery_included/empty battery_included/json-wheel 
 
 ifeq ($(FEATURE_VISUAL),1)
 MAKESUBDIRS+=battery_included/ocamlgtk
