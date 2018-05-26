@@ -8,7 +8,7 @@ TOP=..
 ##############################################################################
 
 INCLUDEDIRS= $(TOP)/commons \
-  $(TOP)/external/jsonwheel \
+  $(TOP)/external/json-wheel \
  $(TOP)/h_program-lang/ \
  $(TOP)/graph_code/ \
  $(TOP)/h_visualization/ \
@@ -52,7 +52,7 @@ OBJS_CLIENT= \
 # requiring in turn ocamlgraph :( hopefully it will not be too big for
 # js_of_ocaml and we don't send a too big js file on the wire
 LIBS_CLIENT2= $(TOP)/commons/lib.cma \
-  $(TOP)/external/jsonwheel/lib.cma \
+  $(TOP)/external/json-wheel/lib.cma \
   $(TOP)/external/ocamlgraph/ocamlgraph.cma \
   $(TOP)/commons/graph/lib.cma \
   $(TOP)/h_program-lang/lib.cma \

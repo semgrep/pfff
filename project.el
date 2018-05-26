@@ -19,7 +19,7 @@
    pad-ocaml-project-subdirs 
    (split-string 
     "commons globals
-     external/jsonwheel
+     external/json-wheel
      h_version-control
      h_visualization
      h_program-lang

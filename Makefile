@@ -32,8 +32,7 @@ endif
 
 OPTPROGS= $(PROGS:=.opt)
 
-JSONDIR=external/jsonwheel
-JSONCMA=external/jsonwheel/jsonwheel.cma
+JSONCMA=external/json-wheel/jsonwheel.cma
 
 ifeq ($(FEATURE_VISUAL),1)
 GTKINCLUDE=external/lablgtk2
@@ -168,7 +167,6 @@ LIBS= commons/commons.cma \
     mini/lib.cma
 
 MAKESUBDIRS=commons commons_ocollection commons_core \
-  $(JSONDIR) \
   $(GRAPHDIRS) \
   $(GUIDIRS) \
   globals \
@@ -228,6 +226,7 @@ MAKESUBDIRS=commons commons_ocollection commons_core \
   demos
 
 INCLUDEDIRS=$(MAKESUBDIRS) \
+ external/json-wheel \
  $(GTKINCLUDE) $(CAIROINCLUDE) \
  commons_wrappers/graph commons_wrappers/gui \
  $(OCAMLCOMPILERDIR)
@@ -453,8 +452,6 @@ INSTALL_SUBDIRS= \
   lang_java/parsing \
   lang_js/parsing lang_css/parsing lang_html/parsing \
   lang_nw/parsing lang_nw/analyze\
-  external/jsonwheel \
-  external/ocamlgraph \
   graph_code
 
 LIBNAME=pfff
