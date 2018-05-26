@@ -4,6 +4,8 @@ open Ast_clang
 module Ast = Ast_clang
 module Flag = Flag_parsing_clang
 module J = Json_type
+module Json_out = Json_io
+module Json_in = Json_io
 
 (*****************************************************************************)
 (* Subsystem testing *)

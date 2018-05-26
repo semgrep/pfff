@@ -342,7 +342,7 @@ let load_database2 file =
      *)
     let json = 
       Common.profile_code "Json_in.load_json" (fun () ->
-        Json_in.load_json file
+        Json_io.load_json file
       ) in
     database_of_json json
   else Common2.get_value file

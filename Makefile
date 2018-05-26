@@ -32,7 +32,9 @@ endif
 
 OPTPROGS= $(PROGS:=.opt)
 
-JSONCMA=external/json-wheel/jsonwheel.cma
+JSONCMA=external/netsys/netsys_oothr.cma external/netsys/netsys.cma\
+        external/netstring/netstring.cma\
+        external/json-wheel/jsonwheel.cma 
 
 ifeq ($(FEATURE_VISUAL),1)
 GTKINCLUDE=external/lablgtk2
@@ -226,6 +228,7 @@ MAKESUBDIRS=commons commons_ocollection commons_core \
   demos
 
 INCLUDEDIRS=$(MAKESUBDIRS) \
+ external/netsys \
  external/json-wheel \
  $(GTKINCLUDE) $(CAIROINCLUDE) \
  commons_wrappers/graph commons_wrappers/gui \

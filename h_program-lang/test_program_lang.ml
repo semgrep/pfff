@@ -3,6 +3,9 @@ open Common
 module Db = Database_code
 module E = Entity_code
 
+module Json_out = Json_io
+module Json_in = Json_io
+
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)

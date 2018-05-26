@@ -667,7 +667,9 @@ let json_of_test_result {
   let arg = J.String v_t_file in
   let bnd = ("t_file", arg) in let bnds = bnd :: bnds in J.Object bnds
 
-let json_of_test_results v = J.json_of_list json_of_test_result v
+let json_of_list of_a xs = J.Array(List.map of_a xs)
+
+let json_of_test_results v = json_of_list json_of_test_result v
 
 (*****************************************************************************)
 (* JSON input *)
