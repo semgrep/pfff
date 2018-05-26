@@ -3,9 +3,10 @@
 * 0.34 (Q2 2018) (codegraph_build)
 
 ** introduce codegraph_build
-extracted from codegraph, to avoid dependencies
+extracted from codegraph, to avoid dependencies to GUI
 
-*** added a -to_json option for people to easily play with the dependencies.
+*** added a -to_json option for people to easily play with the dependencies
+without having to know ocaml
 
 ** internals
 

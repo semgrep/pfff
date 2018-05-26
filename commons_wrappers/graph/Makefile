@@ -4,12 +4,11 @@ TOP=../..
 ##############################################################################
 TARGET=lib
 
-SRC= graph.ml
+SRC= graphe.ml
 SYSLIBS= str.cma unix.cma
-LIBS=../../external/ocamlgraph/ocamlgraph.cma
+LIBS=../../external/ocamlgraph/graph.cma
 INCLUDEDIRS= $(TOP)/commons \
  $(TOP)/external/ocamlgraph/ \
- $(TOP)/external/ocamlgraph/src \
 
 ##############################################################################
 # Generic variables
@@ -33,7 +32,7 @@ $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 # install
 ##############################################################################
 LIBNAME=pfff-commons-graph
-EXPORTSRC= graph.mli
+EXPORTSRC=graphe.mli
 
 install-findlib: all all.opt
 	ocamlfind install $(LIBNAME) META \

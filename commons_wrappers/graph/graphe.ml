@@ -107,7 +107,7 @@ open Common
  * use something more efficient, especially for G.pred,
  * see Imperative.ConcreteBidirectional for instance
  *)
-module OG = Ocamlgraph.Pack.Digraph
+module OG = Graph.Pack.Digraph
 
 (* Polymorphic graph *)
 type 'key graph = {

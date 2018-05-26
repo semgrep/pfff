@@ -60,9 +60,13 @@ config.log
 config.make
 config.status
 
-/external/ocamlgraph/META
-/external/ocamlgraph/src/gml.ml
-/external/ocamlgraph/src/version.ml
+/external/battery_included/ocamlgraph/META
+/external/battery_included/ocamlgraph/src/dot_lexer.ml
+/external/battery_included/ocamlgraph/src/dot_parser.ml
+/external/battery_included/ocamlgraph/src/dot_parser.mli
+/external/battery_included/ocamlgraph/src/dot_parser.output
+/external/battery_included/ocamlgraph/src/gml.ml
+/external/battery_included/ocamlgraph/src/version.ml
 
 # java object files
 #*.class
@@ -129,12 +133,6 @@ parser_*.mli
 parser_*.output
 
 /h_program-lang/archi_code_lexer.ml
-
-/external/ocamlgraph/src/dot_lexer.ml
-/external/ocamlgraph/src/dot_parser.ml
-/external/ocamlgraph/src/dot_parser.mli
-/external/ocamlgraph/src/dot_parser.output
-
 
 # -----------------------------------------------------------------------------
 # binaries

@@ -226,7 +226,7 @@ public function foo() { }
         let dag = Graph_code_class_analysis.class_hierarchy g in
         
         let node = ("A", E.Class) in
-        let children = Graph.succ node dag in
+        let children = Graphe.succ node dag in
         assert_equal ~msg:"it should find the direct children of a class"
           ["B"]
           (children +> List.map fst);

@@ -18,7 +18,7 @@ LIBS=../commons/lib.cma
 INCLUDEDIRS= $(TOP)/commons \
  $(TOP)/commons_core \
  $(TOP)/commons_wrappers/graph \
- $(TOP)/external/ocamlgraph $(TOP)/external/ocamlgraph/src \
+ $(TOP)/external/ocamlgraph \
  $(TOP)/external/json-wheel \
  $(TOP)/h_program-lang
 

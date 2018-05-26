@@ -28,7 +28,7 @@ module Set = Set_
 (*****************************************************************************)
 
 (* parent -> children *)
-type class_hierarchy = Graph_code.node Graph.graph
+type class_hierarchy = Graph_code.node Graphe.graph
 
 (*****************************************************************************)
 (* Helpers *)
@@ -106,21 +106,21 @@ let protected_to_private_candidates g =
 
 (* if B extends A then will have a node from A to B (children relation) *)
 let class_hierarchy g =
-  let dag = Graph.create () in
+  let dag = Graphe.create () in
   
   g +> G.iter_nodes (fun n1 ->
     (match snd n1 with
     | E.Class ->
-        dag +> Graph.add_vertex_if_not_present n1;
+        dag +> Graphe.add_vertex_if_not_present n1;
 
         (* explore if its extends/implements/uses another class/interf/trait *)
         let succ = g +> G.succ n1 G.Use in
         succ +> List.iter (fun n2 ->
           (match snd n2 with
           | E.Class ->
-              dag +> Graph.add_vertex_if_not_present n2;
+              dag +> Graphe.add_vertex_if_not_present n2;
               (* from parent to children *)
-              dag +> Graph.add_edge n2 n1
+              dag +> Graphe.add_edge n2 n1
           | _ -> 
               failwith (spf "class_hierarchy: impossible edge %s --> %s"
                           (G.string_of_node n1) (G.string_of_node n2))
@@ -134,7 +134,7 @@ let class_hierarchy g =
 
 let toplevel_methods g dag =
   (* in a clean language we could just start from the Object class *)
-  let start = Graph.entry_nodes dag in
+  let start = Graphe.entry_nodes dag in
 
   let env = Set.empty in
   let htoplevels = Hashtbl.create 101 in
@@ -165,7 +165,7 @@ let toplevel_methods g dag =
         else ()
     );
     let children_classes = 
-      Graph.succ n dag in
+      Graphe.succ n dag in
     (* todo? what if public overriding a private? *)
     let env = 
       methods_here +> List.fold_left (fun acc (s, _p, _) ->Set.add s acc) env in
@@ -190,12 +190,12 @@ let dispatched_methods2 g dag node =
     (if G.has_node node g
     then Common.push node res
     );
-    let children = Graph.succ (current_class, class_kind) dag in
+    let children = Graphe.succ (current_class, class_kind) dag in
     children +> List.iter aux
   in
   let node = (c, E.Class) in
   (if G.has_node node g 
-  then Graph.succ node dag +> List.iter aux
+  then Graphe.succ node dag +> List.iter aux
   else failwith (spf "could not find class %s" c)
   );
 

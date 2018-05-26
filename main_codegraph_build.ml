@@ -304,7 +304,7 @@ let test_layering graph_file =
 let test_xta graph_file = 
   let g = Graph_code.load graph_file in
   let dag = Graph_code_class_analysis.class_hierarchy g in
-  let hdepth = Graph.depth_nodes dag in
+  let hdepth = Graphe.depth_nodes dag in
   hdepth +> Hashtbl.iter (fun k v ->
     pr2 (spf "%s = %d" (Graph_code.string_of_node k) v);
   );

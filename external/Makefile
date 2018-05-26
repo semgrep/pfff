@@ -4,6 +4,7 @@ TOP=..
 -include $(TOP)/Makefile.config
 
 MAKESUBDIRS=battery_included/empty battery_included/json-wheel 
+MAKESUBDIRS+=battery_included/ocamlgraph
 
 ifeq ($(FEATURE_VISUAL),1)
 MAKESUBDIRS+=battery_included/ocamlgtk

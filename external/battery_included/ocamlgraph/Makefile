@@ -48,7 +48,7 @@ LIBDIR	= lib
 
 INCLUDES= -I $(SRCDIR) -I $(LIBDIR)
 BFLAGS = $(INCLUDES) -g -dtypes
-OFLAGS = $(INCLUDES) -for-pack Ocamlgraph
+OFLAGS = $(INCLUDES) -for-pack Graph
 
 
 # main target
@@ -77,8 +77,8 @@ CMO = 	version util blocks persistent imperative \
 CMO := $(LIB) $(patsubst %, $(SRCDIR)/%.cmo, $(CMO))
 
 CMX = $(CMO:.cmo=.cmx)
-CMA = ocamlgraph.cma
-CMXA = ocamlgraph.cmxa
+CMA = graph.cma
+CMXA = graph.cmxa
 
 CMI = sig sig_pack dot_ast
 CMI := $(patsubst %, src/%.cmi, $(CMI))
@@ -92,19 +92,19 @@ $(CMX): OFLAGS += #-for-pack Graph
 byte: $(CMA)
 opt: $(CMXA)
 
-ocamlgraph.cma: ocamlgraph.cmo
+graph.cma: graph.cmo
 	$(OCAMLC) $(INCLUDES) -a -g -o $@ $^
 
-ocamlgraph.cmxa: ocamlgraph.cmx
+graph.cmxa: graph.cmx
 	$(OCAMLOPT) $(INCLUDES) -a -g -o $@ $^
 
-ocamlgraph.cmi: ocamlgraph.cmo
+graph.cmi: graph.cmo
 graph.o: graph.cmx
 
-ocamlgraph.cmo: $(CMI) $(CMO)
+graph.cmo: $(CMI) $(CMO)
 	$(OCAMLC) $(INCLUDES) -pack -o $@ $^
 
-ocamlgraph.cmx: $(CMI) $(CMX)
+graph.cmx: $(CMI) $(CMX)
 	$(OCAMLOPT) $(INCLUDES) -pack -o $@ $^
 
 VERSION=1.8.3
@@ -341,7 +341,7 @@ endif
 
 install-byte:
 	mkdir -p $(INSTALL_LIBDIR)
-	cp -f ocamlgraph.cmo ocamlgraph.cmi $(CMA) $(INSTALL_LIBDIR)
+	cp -f graph.cmo graph.cmi $(CMA) $(INSTALL_LIBDIR)
 	cp -f $(SRCDIR)/*.mli $(INSTALL_LIBDIR)
 ifeq (no,yes)
 	mkdir -p $(BINDIR)
@@ -354,7 +354,7 @@ endif
 
 install-opt: install-byte
 	mkdir -p $(INSTALL_LIBDIR)
-	cp -f graph$(LIBEXT) ocamlgraph.cmi ocamlgraph.cmx $(CMXA) $(INSTALL_LIBDIR)
+	cp -f graph$(LIBEXT) graph.cmi graph.cmx $(CMXA) $(INSTALL_LIBDIR)
 	cp -f $(SRCDIR)/*.mli $(INSTALL_LIBDIR)
 ifeq (no,yes)
 	mkdir -p $(BINDIR)
@@ -378,7 +378,7 @@ ifeq (no,yes)
 else
 	$(OCAMLFIND) install ocamlgraph META \
 		$(SRCDIR)/*.mli $(VIEWER_DIR)/*.mli $(DGRAPH_DIR)/*.mli \
-		ocamlgraph$(LIBEXT) ocamlgraph.cmx ocamlgraph.cmo ocamlgraph.cmi $(CMA) $(CMXA)
+		ocamlgraph$(LIBEXT) graph.cmx graph.cmo graph.cmi $(CMA) $(CMXA)
 endif
 endif
 
@@ -566,7 +566,7 @@ clean:
 	  rm -f $$d/*.cm[iox] $$d/*$(OBJEXT) $$d/*~ $$d/*.annot; \
 	done
 	rm -f $(GENERATED) $(SRCDIR)/dot_parser.output
-	rm -f ocamlgraph.*a ocamlgraph.cm* ocamlgraph.o ocamlgraph$(LIBEXT)
+	rm -f graph.*a graph.cm* graph.o graph$(LIBEXT)
 	rm -f $(ED_DIR)/editor.byte $(ED_DIR)/editor.opt
 	rm -f $(VIEWER_DIR)/viewgraph.byte $(VIEWER_DIR)/viewgraph.opt
 	rm -f $(DGRAPH_DIR)/dgraph.byte $(DGRAPH_DIR)/dgraph.opt

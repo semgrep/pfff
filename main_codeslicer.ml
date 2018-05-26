@@ -100,14 +100,14 @@ let find_big_branching_factor graph_file =
   (* step1: find the big parents and the children candidates to remove *)
   
   let big_parents = 
-    hierarchy +> Graph.nodes +> List.filter (fun parent ->
-      let children = Graph.succ parent hierarchy in
+    hierarchy +> Graphe.nodes +> List.filter (fun parent ->
+      let children = Graphe.succ parent hierarchy in
       (* should modulate by the branching factor of the parent? *)
       List.length children > big_parent_branching_factor
     )
   in
 
-  let hierarchy_transitive = Graph.transitive_closure hierarchy in
+  let hierarchy_transitive = Graphe.transitive_closure hierarchy in
 
   (* initial set *)
   let dead_candidates () = 
@@ -115,7 +115,7 @@ let find_big_branching_factor graph_file =
     (* Inheritance transtive closure,
      * todo: could keep 1? the biggest one in terms of use? 
      *)
-    +> List.map (fun parent -> Graph.succ parent hierarchy_transitive)
+    +> List.map (fun parent -> Graphe.succ parent hierarchy_transitive)
     +> List.flatten 
     (* Has transitive closure, to also remove the fields, methods of a class *)
     +> List.map (fun node -> Graph_code.node_and_all_children node g)

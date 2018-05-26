@@ -5,7 +5,7 @@
  * of a class: Parent -> Children.
  * 
  *)
-type class_hierarchy = Graph_code.node Graph.graph
+type class_hierarchy = Graph_code.node Graphe.graph
 
 val class_hierarchy: Graph_code.graph -> class_hierarchy
 

@@ -44,9 +44,8 @@ VISUALDIRS=code_map code_graph
 endif
 
 # should be FEATURE_OCAMLGRAPH, or should give dependencies between features
-GRAPHCMA=external/ocamlgraph/ocamlgraph.cma commons_wrappers/graph/lib.cma
-GRAPHDIR=external/ocamlgraph
-GRAPHDIRS=external/ocamlgraph commons_wrappers/graph 
+GRAPHCMA=external/ocamlgraph/graph.cma commons_wrappers/graph/lib.cma
+GRAPHDIRS=commons_wrappers/graph 
 
 ifeq ($(FEATURE_BYTECODE), 1)
 #ZIPCMA=external/ocamlzip/zip.cma

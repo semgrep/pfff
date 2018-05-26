@@ -15,7 +15,7 @@
 open Common
 
 module E = Entity_code
-module G = Graph
+module G = Graphe
 
 (*****************************************************************************)
 (* Prelude *)
@@ -267,13 +267,13 @@ let version = 5
 
 let save g file =
   (* see ocamlgraph FAQ *)
-  Common2.write_value (g, !Ocamlgraph.Blocks.cpt_vertex, version) file
+  Common2.write_value (g, !Graph.Blocks.cpt_vertex, version) file
 
 let load file =
   let (g, serialized_cpt_vertex, version2) = Common2.get_value file in
   if version != version2
   then failwith (spf "your marshalled file has an old version, delete it");
-  Ocamlgraph.Blocks.after_unserialization serialized_cpt_vertex;
+  Graph.Blocks.after_unserialization serialized_cpt_vertex;
   g
 
 let default_filename =

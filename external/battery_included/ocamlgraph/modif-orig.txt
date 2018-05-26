@@ -4,6 +4,8 @@ version: 1.8.3 (cf src/version.ml)
 
 Changed graph.cma to ocamlgraph.cma as it conflict with commmons/graph.ml
 and so changed some open Graph into open Ocamlgraph in some .ml files
+update: reverted, so changed to commons/graphe.ml so I can more easily
+ switch between a battery_included ocamlgraph and an OPAM ocamlgraph
 
 Also removed the .opt infered compilers as some users do not have
 them.
