@@ -9,5 +9,3 @@ Here is a rough software architecture overview of pfff:
  - mini/ is useful to prototype
  - tests/ contain test data used by the many unit_xxx.ml in lang_xxx/
  - matcher/ is generic code supporting both sgrep and spatch
-
-

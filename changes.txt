@@ -1,12 +1,38 @@
--*- org -*-
+# -*- org -*-
+
+* 0.34 (Q2 2018) (codegraph_build)
+
+** introduce codegraph_build
+extracted from codegraph, to avoid dependencies
+
+*** added a -to_json option for people to easily play with the dependencies.
+
+** internals
+
+*** code reorg to depend less on battery included libs and more on OPAM libs
+
+*** adapt to ocaml 4.02.3, especially graph code for .cmt files
+
+* -----------------------------------------------------------
+
+* 0.33 (Q3 2017) (split commons)
+
+** internals
+
+*** split commons/ in many commons_xxx/ directories
+
+*** fork from facebook/pfff (commit privilege revoked, finally)
+
+* -----------------------------------------------------------
+
+* --- (2016) 
 
 * -----------------------------------------------------------
 
 * 0.32 (Q2 2015) ((principia parenthesis))
 extra: a lot
 
-** better coloring for noweb files, give priority to
-sections over chunks
+** better coloring for noweb files, give priority to sections over chunks
 
 * 0.31 (Q1 2015) ((principia parenthesis))
 extra: a lot

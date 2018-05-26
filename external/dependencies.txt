@@ -1,4 +1,4 @@
-stdlib/: used by everthing
+stdlib/: used by everything
 
 ocamlcairo/: used by codemap/codegraph, core graphics library.
 ocamlgtk/:   used by codemap/codegraph, mostly for interactive menus and basic
