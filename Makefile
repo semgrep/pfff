@@ -50,7 +50,7 @@ GRAPHDIRS=external/ocamlgraph commons_wrappers/graph
 ifeq ($(FEATURE_BYTECODE), 1)
 #ZIPCMA=external/ocamlzip/zip.cma
 EXTLIBCMA=external/extlib/extLib.cma
-#PTCMA=external/ptrees/ptrees.cma
+PTCMA=external/ptrees/ptrees.cma
 JAVALIBCMA=external/javalib/lib.cma
 BYTECODEDIRS=lang_bytecode/parsing lang_bytecode/analyze
 endif

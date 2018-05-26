@@ -20,12 +20,11 @@ MAKESUBDIRS=
 INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/commons_core \
    $(TOP)/commons_ocollection \
-   $(TOP)/external/ \
    $(TOP)/external/extlib \
+   $(TOP)/external/javalib \
    $(TOP)/h_program-lang $(TOP)/h_version-control  \
    $(TOP)/graph_code \
    $(TOP)/globals \
-   $(TOP)/external/javalib/src \
    $(TOP)/lang_java/parsing \
    $(TOP)/lang_java/analyze \
    ../parsing \

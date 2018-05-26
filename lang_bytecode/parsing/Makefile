@@ -22,7 +22,7 @@ INCLUDEDIRS= $(TOP)/commons\
   $(TOP)/h_program-lang \
   $(TOP)/globals \
   $(TOP)/external/extlib \
-  $(TOP)/external/javalib/src 
+  $(TOP)/external/javalib 
 
 ##############################################################################
 # Generic variables
