@@ -3,6 +3,20 @@
 external/battery_included/ocamlgtk
 #facebook/
 
+#TODO
+/code_map/thread_bug_ml
+/gitlog
+/h_program-lang/old/dm_ml
+/lang_rust/parsing/lexer_orig
+/pfff.spatch
+/pfff2.spatch
+/todo.txt
+
+*.json
+*.marshall
+*.opti
+pfff.log
+
 # each user can have this own file
 /test.ml
 /Makefile.user
