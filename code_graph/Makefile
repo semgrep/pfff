@@ -24,8 +24,8 @@ INCLUDEDIRS=$(TOP)/commons $(TOP)/globals \
 	$(TOP)/h_program-visual \
 
 SYSINCLUDES=\
-  -I $(TOP)/external/ocamlgtk/src \
-  -I $(TOP)/external/ocamlcairo/src \
+  -I $(TOP)/external/lablgtk2 \
+  -I $(TOP)/external/cairo \
 
 ##############################################################################
 # Generic variables

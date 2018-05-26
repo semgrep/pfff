@@ -1,7 +1,6 @@
 #!/usr/bin/perl
 use strict;
 
-# this is not available in some distro :(
 use Getopt::Long;
 use Pod::Usage;
 
@@ -11,13 +10,13 @@ use Pod::Usage;
 
 # Yes I know about autoconf ... and autoconf sucks.
 
-# We do not check for the following programs; we assume they are standard:
+# I do not check for the following programs; I assume they are standard:
 # - binutils, gcc, as, ld (the GNU toolchain)
 # - make, perl, bash
 # - diffutils, fileutils, findutils, grep, patchutils, sh-utils
 #
 #todo:
-# - findutils? we need a good GNU find, not the macos find
+# - findutils? we need a good GNU find, not the macOS find
 #   which adds some extra '//' in paths which bothers pfff
 # - sharutils still?, for obrowser/ocsigen use of uuencode
 #
@@ -36,6 +35,8 @@ my $projectcmdline =
 
 my $prefix="/usr/local";
 
+my $battery_included=1;
+
 # cairo/gtk, for codemap and codegraph
 my $visual=1; 
 
@@ -49,13 +50,10 @@ my $bytecode=1;
 #  a configuration option. 
 my $cmt=1;
 
-# todo: still used?
-my $facebook=0; 
-
 # adjusted automatically based on local ocaml configuration
 my $opt= ""; # ocamlc.opt?
 my $ocamlc_flags = ""; #ocamlc -bin-annot?
-my $ocaml_version = 3112;
+my $ocaml_version = 4023;
 
 
 my $man = 0;
@@ -70,10 +68,6 @@ GetOptions (
     "visual!" => \$visual,
     "bytecode!" => \$bytecode,
     "cmt!" => \$cmt,
-    "facebook" => sub { 
-        $facebook = 1;
-        $visual = 0;
-    },
     'help|?' => \$help, 
     'man' => \$man
     ) or pod2usage(2);
@@ -83,9 +77,6 @@ pod2usage(1) if $help;
 pod2usage(-exitstatus => 0, -verbose => 2) if $man;
 
 my $src="$prefix/share/$project";
-
-# Implicit dependencies:
-if ($facebook) { }
 
 ######################################################################
 # Helpers
@@ -203,10 +194,10 @@ if($ocaml_version >= 4000) {
     $ocamlc_flags="-bin-annot -absname";
 }
 
-#TODO: not yet ported to 4.02
-if($ocaml_version >= 4000 && $ocaml_version < 4020) {
+if($ocaml_version >= 4000 && $ocaml_version < 4024) {
     $cmt=1;
 } else {
+    #TODO: need to use parsetree-migrate 
     $cmt=0;
 }
 
@@ -245,13 +236,13 @@ if( ($arch =~ /FreeBSD/) || (($arch =~ /Darwin/) && ($BREW_PROGRAM)) ) {
 # and certain module names like Graph that conflicts with other pfff modules
 # so right now the Makefile is hand-crafted.
 
-if($visual) {
+if($visual && $battery_included) {
     pr2 "Configuring ocamlgtk (see /tmp/ocamlgtk.log).";
-    my $err = system("cd external/ocamlgtk; ./configure > /tmp/ocamlgtk.log");
+    my $err = system("cd external/battery_included/ocamlgtk; ./configure > /tmp/ocamlgtk.log");
     if ($err) { $visual = 0; $error2++; }
 
     pr2 "Configuring ocamlcairo (see /tmp/ocamlcairo.log).";
-    my $err = system("cd external/ocamlcairo; 
+    my $err = system("cd external/battery_included/ocamlcairo; 
             LABLGTKDIR=../../ocamlgtk/src ./configure --with-gtk > /tmp/ocamlcairo.log");
     if ($err) { $visual = 0; $error2++; }
 }
@@ -280,7 +271,6 @@ SHAREDIR=$src
 
 # Features
 FEATURE_VISUAL=$visual
-FEATURE_FACEBOOK=$facebook
 
 FEATURE_BYTECODE=$bytecode
 FEATURE_CMT=$cmt
@@ -291,16 +281,12 @@ OCAMLVERSION=$ocaml_version
 ";
 
 
-pr2 "Generating commons/features.ml";
-`cpp -DFEATURE_VISUAL=$visual commons/features.ml.in > commons/features.ml`;
+#pr2 "Generating commons/features.ml";
+#`cpp -DFEATURE_VISUAL=$visual commons/features.ml.in > commons/features.ml`;
 
 pr2 "Generating globals/config_pfff.ml";
 `perl -p -e 's#Not_found1.\*#Not_found->\\\"$src\\\"#' globals/config_pfff.ml.in > globals/config_pfff.ml`;
 
-if($facebook) {
-    my ($server) = `cat facebook/pfff_logger.config`;
-    `perl -p -i -e 's#Not_found2.\*#Not_found-> Some \\\"$server\\\"#' globals/config_pfff.ml`;
-}
 `perl -p -i -e 's#Not_found[0-9]#Not_found#' globals/config_pfff.ml`;
 
 if($error || $error2) { 
@@ -351,7 +337,6 @@ Options are:
 --[no]bytecode
 --[no]cmt
 --with-all
---facebook
 
 =head1 OPTIONS
 

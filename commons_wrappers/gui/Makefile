@@ -5,7 +5,7 @@ TOP=../..
 
 -include $(TOP)/Makefile.config
 
-INCLUDEDIRS=$(TOP)/commons $(TOP)/external/ocamlgtk/src
+INCLUDEDIRS=$(TOP)/commons $(TOP)/external/lablgtk2
 
 LIBNAME=lib
 

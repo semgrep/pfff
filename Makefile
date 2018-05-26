@@ -32,63 +32,33 @@ endif
 
 OPTPROGS= $(PROGS:=.opt)
 
-#------------------------------------------------------------------------------
-#package dependencies
-#------------------------------------------------------------------------------
-
-#format: XXXDIR, XXXCMD, XXXCMDOPT, XXXINCLUDE (if different XXXDIR), XXXCMA
-#template:
-#  ifeq ($(FEATURE_XXX), 1)
-#  XXXDIR=xxx
-#  XXXCMD= $(MAKE) -C xxx &&  $(MAKE) xxx -C commons
-#  XXXCMDOPT= $(MAKE) -C xxx &&  $(MAKE) xxx.opt -C commons
-#  XXXCMA=xxx/xxx.cma  commons/commons_xxx.cma
-#  XXXSYSCMA=xxx.cma
-#  XXXINCLUDE=xxx
-#  else
-#  XXXCMD=
-#  XXXCMDOPT=
-#  endif
-
 JSONDIR=external/jsonwheel
 JSONCMA=external/jsonwheel/jsonwheel.cma
 
 ifeq ($(FEATURE_VISUAL),1)
-GUIDIR=external/ocamlgtk
-GUIDIRS=external/ocamlgtk commons_wrappers/gui
-GUICMD= $(MAKE) all -C $(GUIDIR) && $(MAKE) -C commons_wrappers/gui
-GUICMDOPT= $(MAKE) opt -C $(GUIDIR) && $(MAKE) all.opt -C commons_wrappers/gui;
-GTKINCLUDE=external/ocamlgtk/src
-CAIRODIR=external/ocamlcairo
-CAIROINCLUDE=external/ocamlcairo/src
+GTKINCLUDE=external/lablgtk2
+CAIROINCLUDE=external/cairo
+GUIDIRS=commons_wrappers/gui
 VISUALDIRS=code_map code_graph
 endif
 
 # should be FEATURE_OCAMLGRAPH, or should give dependencies between features
 GRAPHCMA=external/ocamlgraph/ocamlgraph.cma commons_wrappers/graph/lib.cma
 GRAPHDIR=external/ocamlgraph
-GRAPHDIRS=commons_wrappers/graph external/ocamlgraph
-GRAPHCMD= $(MAKE) all -C $(GRAPHDIR) && $(MAKE) -C commons_wrappers/graph
-GRAPHCMDOPT= $(MAKE) all.opt -C $(GRAPHDIR) && $(MAKE) all.opt -C commons_wrappers/graph
+GRAPHDIRS=external/ocamlgraph commons_wrappers/graph 
 
 ifeq ($(FEATURE_BYTECODE), 1)
-ZIPDIR=external/ocamlzip
-ZIPCMA=external/ocamlzip/zip.cma
-EXTLIBDIR=external/extlib
+#ZIPCMA=external/ocamlzip/zip.cma
 EXTLIBCMA=external/extlib/extLib.cma
-PTDIR=external/ptrees
-PTCMA=external/ptrees/ptrees.cma
-JAVALIBDIR=external/javalib/src
-JAVALIBCMA=external/javalib/src/lib.cma
+#PTCMA=external/ptrees/ptrees.cma
+JAVALIBCMA=external/javalib/lib.cma
 BYTECODEDIRS=lang_bytecode/parsing lang_bytecode/analyze
-BYTECODECMAS=lang_bytecode/parsing/lib.cma lang_bytecode/analyze/lib.cma
 endif
 
 ifeq ($(FEATURE_CMT), 1)
 OCAMLCOMPILERDIR=$(shell ocamlc -where)/compiler-libs
 OCAMLCOMPILERCMA=ocamlcommon.cma
 CMTDIRS=lang_cmt/parsing lang_cmt/analyze
-CMTCMAS=lang_cmt/parsing/lib.cma lang_cmt/analyze/lib.cma
 endif
 
 #------------------------------------------------------------------------------
@@ -152,7 +122,7 @@ LIBS= commons/commons.cma \
     lang_ml/parsing/lib.cma \
      lang_ml/analyze/visual/lib.cma \
      lang_ml/analyze/lib.cma \
-    $(CMTCMAS) \
+    $(CMTDIRS:%=%/lib.cma) \
     lang_nw/parsing/lib.cma \
      lang_nw/analyze/lib.cma \
     lang_lisp/parsing/lib.cma \
@@ -179,7 +149,7 @@ LIBS= commons/commons.cma \
      lang_clang/analyze/lib.cma \
     lang_java/parsing/lib.cma \
      lang_java/analyze/lib.cma \
-    $(BYTECODECMAS) \
+    $(BYTECODEDIRS:%=%/lib.cma) \
     lang_python/parsing/lib.cma \
      lang_python/analyze/lib.cma \
     lang_csharp/parsing/lib.cma \
@@ -200,8 +170,7 @@ LIBS= commons/commons.cma \
 MAKESUBDIRS=commons commons_ocollection commons_core \
   $(JSONDIR) \
   $(GRAPHDIRS) \
-  $(GUIDIRS) $(CAIRODIR) \
-  $(ZIPDIR) $(EXTLIBDIR) $(PTDIR) $(JAVALIBDIR) \
+  $(GUIDIRS) \
   globals \
   h_version-control \
   h_visualization \
@@ -294,39 +263,22 @@ top: $(TARGET).top
 #	$(MAKE) features.opt -C commons
 
 rec:
-	$(MAKE) -C commons
-	$(GRAPHCMD)
-	$(GUICMD)
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all || exit 1; done
-
 rec.opt:
-	$(MAKE) all.opt -C commons
-	$(GRAPHCMDOPT)
-	$(GUICMDOPT)
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all.opt || exit 1; done
 
 
 $(TARGET): $(BASICLIBS) $(OBJS) main.cmo
 	$(OCAMLC) $(BYTECODE_STATIC) -o $@ $(SYSLIBS) $^
-
 $(TARGET).opt: $(BASICLIBS:.cma=.cmxa) $(OPTOBJS) main.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa)  $^
-
-
 $(TARGET).top: $(LIBS) $(OBJS)
 	$(OCAMLMKTOP) -o $@ $(SYSLIBS) threads.cma $^
 
 
-
-
 clean::
-	rm -f $(TARGET)
-clean::
-	rm -f $(TARGET).top
-clean::
+	rm -f $(PROGS) $(TARGET).top *.opt
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i clean; done
-clean::
-	rm -f *.opt
 
 depend::
 	set -e; for i in $(MAKESUBDIRS); do echo $$i; $(MAKE) -C $$i depend; done
@@ -364,8 +316,6 @@ stags: $(LIBS) $(OBJS) main_stags.cmo
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
 stags.opt: $(LIBS:.cma=.cmxa) $(OPTOBJS) main_stags.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) $^
-clean::
-	rm -f stags
 
 #------------------------------------------------------------------------------
 # sgrep/spatch targets
@@ -375,15 +325,11 @@ sgrep: $(BASICLIBS) $(OBJS) main_sgrep.cmo
 	$(OCAMLC) $(CUSTOM) -o $@ $(BASICSYSLIBS) $^
 sgrep.opt: $(BASICLIBS:.cma=.cmxa) $(OPTOBJS) main_sgrep.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(BASICSYSLIBS:.cma=.cmxa) $^
-clean::
-	rm -f sgrep
 
 spatch: $(BASICLIBS) $(OBJS) main_spatch.cmo
 	$(OCAMLC) $(CUSTOM) -o $@ $(BASICSYSLIBS) $^
 spatch.opt: $(BASICLIBS:.cma=.cmxa) $(OPTOBJS) main_spatch.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(BASICSYSLIBS:.cma=.cmxa) $^
-clean::
-	rm -f spatch
 
 #------------------------------------------------------------------------------
 # scheck targets
@@ -393,8 +339,6 @@ scheck: $(LIBS) $(OBJS) main_scheck.cmo
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
 scheck.opt: $(LIBS:.cma=.cmxa) $(OPTOBJS) main_scheck.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) $^
-clean::
-	rm -f scheck
 
 #------------------------------------------------------------------------------
 # codequery targets
@@ -404,8 +348,6 @@ codequery: $(LIBS) $(OBJS) main_codequery.cmo
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
 codequery.opt: $(LIBS:.cma=.cmxa) $(LIBS2:.cma=.cmxa) $(OBJS2:.cmo=.cmx) $(OPTOBJS) main_codequery.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa)   $^
-clean::
-	rm -f codequery
 
 #------------------------------------------------------------------------------
 # codeslicer targets
@@ -415,8 +357,6 @@ codeslicer: $(LIBS) $(OBJS) main_codeslicer.cmo
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
 codeslicer.opt: $(LIBS:.cma=.cmxa) $(OPTOBJS) main_codeslicer.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) $^
-clean::
-	rm -f codeslicer
 
 #------------------------------------------------------------------------------
 # pfff_db targets
@@ -426,16 +366,14 @@ pfff_db: $(LIBS) $(OBJS) main_db.cmo
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
 pfff_db.opt: $(LIBS:.cma=.cmxa) $(LIBS2:.cma=.cmxa) $(OBJS2:.cmo=.cmx) $(OPTOBJS) main_db.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa)   $^
-clean::
-	rm -f pfff_db
 
 #------------------------------------------------------------------------------
 # codemap target (was pfff_visual)
 #------------------------------------------------------------------------------
 SYSLIBS_CM= \
- external/ocamlgtk/src/lablgtk.cma \
- external/ocamlcairo/src/cairo.cma \
- external/ocamlcairo/src/cairo_lablgtk.cma
+ external/lablgtk2/lablgtk.cma \
+ external/cairo/cairo.cma \
+ external/cairo/cairo_lablgtk.cma
 OBJS_CM=code_map/lib.cma
 
 GTKLOOP=gtkThread.cmo
@@ -448,8 +386,6 @@ codemap.opt: $(LIBS:.cma=.cmxa) commons_wrappers/gui/lib.cmxa $(OBJS_CM:.cma=.cm
 	$(OCAMLOPT) -thread $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) threads.cmxa\
           $(SYSLIBS_CM:.cma=.cmxa) $(GTKLOOP:.cmo=.cmx)  $^
 
-clean::
-	rm -f codemap
 
 #------------------------------------------------------------------------------
 # codegraph (was pm_depend)
@@ -464,15 +400,11 @@ codegraph: $(LIBS) commons_wrappers/gui/lib.cma $(OBJS_CG) $(OBJS) main_codegrap
 codegraph.opt: $(LIBS:.cma=.cmxa) commons_wrappers/gui/lib.cmxa $(OBJS_CG:.cma=.cmxa) $(OPTOBJS) main_codegraph.cmx
 	$(OCAMLOPT) -thread $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) threads.cmxa\
           $(SYSLIBS_CG:.cma=.cmxa) $(GTKLOOP:.cmo=.cmx)  $^
-clean::
-	rm -f codegraph
 
 codegraph_build: $(LIBS) $(OBJS) main_codegraph_build.cmo
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
 codegraph_build.opt: $(LIBS:.cma=.cmxa) $(OPTOBJS) main_codegraph_build.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) $^
-clean::
-	rm -f codegraph_build
 
 #------------------------------------------------------------------------------
 # pfff_test targets
@@ -482,8 +414,6 @@ pfff_test: $(LIBS) $(OBJS) main_test.cmo
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
 pfff_test.opt: $(LIBS:.cma=.cmxa) $(OPTOBJS) main_test.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) $^
-clean::
-	rm -f pfff_test
 
 
 ##############################################################################
@@ -644,7 +574,7 @@ graph2:
 
 # TODO: replace all of that with a graphviz plugin for codegraph
 DSRC=$(SRC)
-DIRS= $(filter-out commons external/ocamlgtk/src external/ocamlcairo external/ocamlgraph facebook, $(MAKESUBDIRS))
+DIRS= $(filter-out commons external/battery_included/ocamlgtk external/battery_included/ocamlcairo external/ocamlgraph facebook, $(MAKESUBDIRS))
 #DIRS=lang_php/parsing
 DSRC+=$(DIRS:=/*.ml)
 DSRC+=$(wildcard main_*.ml)

@@ -1,6 +1,6 @@
 #temporarily ignored
 #not imported everything
-external/ocamlgtk
+external/battery_included/ocamlgtk
 #facebook/
 
 # each user can have this own file
