@@ -18,7 +18,7 @@ LIBS= \
   $(TOP)/matcher/lib.cma \
   $(TOP)/lang_php/parsing/lib.cma \
 
-SYSLIBS=bigarray.cma nums.cma str.cma unix.cma
+SYSLIBS=bigarray.cma str.cma unix.cma
 SYSLIBSOPT = $(SYSLIBS:.cma=.cmxa)
 
 INCLUDEDIRS= \

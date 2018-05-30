@@ -21,7 +21,7 @@ TARGET1=vcs
 
 PROGS=$(TARGET1)
 
-SYSLIBS1=nums.cma bigarray.cma str.cma unix.cma
+SYSLIBS1=bigarray.cma str.cma unix.cma
 SYSLIBS= $(SYSLIBS1)
 
 ##############################################################################
