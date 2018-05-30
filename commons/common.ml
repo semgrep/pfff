@@ -840,7 +840,7 @@ let read_file file =
   let buf = Bytes.create size in
   really_input ic buf 0 size;
   close_in ic;
-  buf
+  buf |> Bytes.to_string
 
 let write_file ~file s =
   let chan = open_out file in

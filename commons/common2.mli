@@ -757,8 +757,6 @@ val take_string_safe: int -> string -> string
 
 val split_on_char : char -> string -> string list
 
-val lowercase : string -> string
-
 val quote : string -> string
 val unquote : string -> string
 
