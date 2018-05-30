@@ -112,7 +112,7 @@ let build_index2 ?(case_sensitive=false) entities =
     let s = 
       if case_sensitive
       then s
-      else Common2.lowercase s
+      else String.lowercase s
     in
 
     Buffer.add_string buf s;
@@ -155,7 +155,7 @@ let find_position_marker_after start_pos str =
 let top_n_search2 ~top_n ~query idx =
 
   let query = 
-    if idx.case_sensitive then query else Common2.lowercase query
+    if idx.case_sensitive then query else String.lowercase query
   in
 
   let words = Str.split (Str.regexp "[ \t]+") query in

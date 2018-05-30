@@ -190,7 +190,7 @@ let check ast =
        *)
       | InstanceOf (e, tok, _classname) ->
         let str = Parse_info.str_of_info tok in
-        let lower = Common2.lowercase str in
+        let lower = String.lowercase str in
         if not (str =$= lower)
         then E.warning tok E.CaseSensitivityKeyword;
         k e

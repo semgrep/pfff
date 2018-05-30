@@ -66,14 +66,14 @@ type entity_poor_id =
 (*****************************************************************************)
 
 let is_pleac_file file = 
-  let file = Common2.lowercase file in
+  let file = String.lowercase file in
   file =~ ".*pleac*"
 
 (* todo? quite pad specific ... 
  * try detect when use OUnit ?
  *)
 let is_test_file file =
-  let file = Common2.lowercase file in
+  let file = String.lowercase file in
   (file =~ ".*/test_" || file =~ ".*/unit_")
 
 let is_test_or_pleac_file file = 
