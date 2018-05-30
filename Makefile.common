@@ -60,7 +60,7 @@ OCAMLC=ocamlc$(OPTBIN) $(OCAMLCFLAGS) $(PP) $(INCLUDES)
 OCAMLOPT=ocamlopt$(OPTBIN) $(OPTFLAGS) $(PP) $(INCLUDES)
 OCAMLLEX=ocamllex #-ml # -ml for debugging lexer, but slightly slower
 OCAMLYACC=ocamlyacc -v
-OCAMLDEP=ocamldep $(PP) $(INCLUDES)
+OCAMLDEP=ocamldep $(PP)
 OCAMLMKTOP=ocamlmktop -g -custom $(INCLUDES) -thread
 
 # can also be set via 'make static'
@@ -160,7 +160,12 @@ distclean::
 
 beforedepend::
 
+# see https://stackoverflow.com/questions/6145041/makefile-filter-out-strings-containing-a-character
+FILTER_OUT = $(foreach v,$(2),$(if $(findstring $(1),$(v)),,$(v)))
+INCLUDEDIRS2=$(call FILTER_OUT,external, $(INCLUDEDIRS))
+INCLUDES2=$(INCLUDEDIRS2:%=-I %)
+
 depend:: beforedepend
-	$(OCAMLDEP) *.mli *.ml > .depend
+	$(OCAMLDEP) $(INCLUDES2) *.mli *.ml > .depend
 
 -include .depend

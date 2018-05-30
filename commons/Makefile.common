@@ -33,7 +33,7 @@ OCAMLC =ocamlc$(OPTBIN) $(OCAMLCFLAGS) $(INCLUDES)
 OCAMLOPT=ocamlopt$(OPTBIN) $(OPTFLAGS) $(INCLUDES)
 OCAMLLEX = ocamllex$(OPTBIN)
 OCAMLYACC= ocamlyacc -v
-OCAMLDEP = ocamldep$(OPTBIN) $(INCLUDES)
+OCAMLDEP = ocamldep$(OPTBIN)
 OCAMLMKTOP=ocamlmktop -g -custom $(INCLUDES)
 
 OCAMLMKLIB ?= ocamlmklib
@@ -85,8 +85,15 @@ clean::
         cd ..; ) \
 	done
 
+# see https://stackoverflow.com/questions/6145041/makefile-filter-out-strings-containing-a-character
+FILTER_OUT = $(foreach v,$(2),$(if $(findstring $(1),$(v)),,$(v)))
+# we do not want to generate dependencies in the .depend towards external files
+# (which can cause to recompile some files in opam dirs that then cause pbs)
+INCLUDEDIRS2=$(call FILTER_OUT,external, $(INCLUDEDIRS))
+INCLUDES2=$(INCLUDEDIRS2:%=-I %)
+
 depend:
-	$(OCAMLDEP) *.mli *.ml  > .depend
+	$(OCAMLDEP) $(INCLUDES2) *.mli *.ml  > .depend
 	for i in $(SUBDIRS); do $(OCAMLDEP) $$i/*.ml $$i/*.mli >> .depend; done
 
 distclean::

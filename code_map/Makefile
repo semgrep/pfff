@@ -27,6 +27,8 @@ LIBS=$(TOP)/commons/lib.cma $(TOP)/commons_wrappers/gui/lib.cma \
 
 
 INCLUDEDIRS=$(TOP)/commons $(TOP)/globals \
+   $(TOP)/external/lablgtk2 \
+   $(TOP)/external/cairo \
     $(TOP)/commons_core \
     $(TOP)/commons_wrappers/gui \
 	$(TOP)/h_program-lang \
@@ -67,11 +69,6 @@ INCLUDEDIRS=$(TOP)/commons $(TOP)/globals \
         $(TOP)/lang_html/parsing \
          $(TOP)/lang_html/analyze \
         $(TOP)/lang_text \
-
-
-SYSINCLUDES=\
-  -I $(TOP)/external/lablgtk2 \
-  -I $(TOP)/external/cairo \
 
 ##############################################################################
 # Generic variables

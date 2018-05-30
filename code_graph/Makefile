@@ -22,10 +22,8 @@ INCLUDEDIRS=$(TOP)/commons $(TOP)/globals \
 	$(TOP)/graph_code \
 	$(TOP)/h_visualization \
 	$(TOP)/h_program-visual \
-
-SYSINCLUDES=\
-  -I $(TOP)/external/lablgtk2 \
-  -I $(TOP)/external/cairo \
+    $(TOP)/external/lablgtk2 \
+    $(TOP)/external/cairo \
 
 ##############################################################################
 # Generic variables
