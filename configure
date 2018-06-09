@@ -210,21 +210,22 @@ if($ocaml_version < 4000) {
     $cmt=0;
     #TODO: need fix javalib error about JClassflow
     $bytecode=0;
-    #LESS: I get many errors with ocaml 4.06; I would need to update packages
-    $battery_included=0;
 
-    $error += 
-     check_config("opam --version |",
-                 "^[12]\.[0-9]\.[0-9]",
-                 "OPAM the OCaml package manager is present.",
-                 "The program OPAM is missing or is not a good version.",
-                 );
-    show_error_msg_and_exit_if_error($error);
-    system("rm -f external/opam_lib");
-    $opam_lib = `opam config var lib`;
-    chomp($opam_lib);
-    pr2("Adjusting the external/opam_lib symlink to $opam_lib");
-    system("ln -s $opam_lib external/opam_lib");
+    #LESS: I get many errors with ocaml 4.06; I would need to update packages
+    #$battery_included=0;
+    #
+    #$error += 
+    # check_config("opam --version |",
+    #             "^[12]\.[0-9]\.[0-9]",
+    #             "OPAM the OCaml package manager is present.",
+    #             "The program OPAM is missing or is not a good version.",
+    #             );
+    #show_error_msg_and_exit_if_error($error);
+    #system("rm -f external/opam_lib");
+    #$opam_lib = `opam config var lib`;
+    #chomp($opam_lib);
+    #pr2("Adjusting the external/opam_lib symlink to $opam_lib");
+    #system("ln -s $opam_lib external/opam_lib");
 }
 
 #---------------------------------------------------------------
@@ -321,12 +322,16 @@ if($error2) {
     pr2 "All seems fine for $project.";
 }
 
-pr2 "
-To compile $project type:
+if($battery_included) {
+    pr2 "
+To compile $project, you first need to compile its dependencies with:
+  \$ $MAKE_PROGRAM -C external";
+}
+
+pr2"To compile $project type:
   \$ $MAKE_PROGRAM depend
   \$ $MAKE_PROGRAM 
-
-Then, to test $project simply type:
+To test $project simply type:
   \$ $projectcmdline
 
 If you want to use the analysis framework and code visualization tools
