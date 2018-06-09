@@ -92,7 +92,8 @@ $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 
 
 
-EXTRA_FLAGS=-w -3
+#TODO: switch to cairo2, or convert cairo to safe string
+EXTRA_FLAGS=-w -3 -unsafe-string
 cairo_helpers.cmo: cairo_helpers.ml
 	$(OCAMLC) $(EXTRA_FLAGS) -c $<
 

@@ -47,8 +47,8 @@ SRCDIR	= src
 LIBDIR	= lib
 
 INCLUDES= -I $(SRCDIR) -I $(LIBDIR)
-BFLAGS = $(INCLUDES) -g -dtypes
-OFLAGS = $(INCLUDES) -for-pack Graph
+BFLAGS = $(INCLUDES) -g -dtypes -unsafe-string
+OFLAGS = $(INCLUDES) -for-pack Graph -unsafe-string
 
 
 # main target

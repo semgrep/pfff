@@ -1,9 +1,9 @@
 # $Id: Makefile 1518 2010-06-25 09:23:44Z garrigue $
 # Makefile for lablgtk.
 
-COMPILER = $(CAMLC) $(MLFLAGS) $(MLBYTEFLAGS) $(OCAMLCFLAGS_EXTRA) -w s -c
+COMPILER = $(CAMLC) $(MLFLAGS) $(MLBYTEFLAGS) $(OCAMLCFLAGS_EXTRA) -w s -c -unsafe-string
 LINKER = $(CAMLC) $(MLFLAGS) $(MLBYTEFLAGS)
-COMPOPT = $(CAMLOPT) $(MLFLAGS) -w s -c
+COMPOPT = $(CAMLOPT) $(MLFLAGS) -w s -c -unsafe-string
 LINKOPT = $(CAMLOPT) $(MLFLAGS)
 LIBRARIAN = $(CAMLMKLIB) -verbose -ocamlc "$(CAMLC)" -ocamlopt "$(CAMLOPT)"
 TOPLEVEL = $(CAMLMKTOP) $(MLFLAGS)

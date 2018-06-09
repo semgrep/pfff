@@ -1,7 +1,7 @@
 %.cmo : %.ml
-	$(OCAMLC) -c $(OCAMLCFLAGS_EXTRA) $(INCFLAGS) $<
+	$(OCAMLC) -c $(OCAMLCFLAGS_EXTRA) -unsafe-string $(INCFLAGS) $<
 %.cmx : %.ml
-	$(OCAMLOPT) -c $(INCFLAGS) $<
+	$(OCAMLOPT) -c $(INCFLAGS) -unsafe-string $<
 %.cmi : %.mli
 	$(OCAMLC) $(INCFLAGS) $<
 %.o : %.c

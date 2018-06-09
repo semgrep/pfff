@@ -48,7 +48,8 @@ $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 clean::
 	rm -f $(TARGET).top
 
-EXTRA_FLAGS=-w -3
+#TODO: switch to cairo2, or convert cairo to safe string
+EXTRA_FLAGS=-w -3 -unsafe-string
 cairo_helpers3.cmo: cairo_helpers3.ml
 	$(OCAMLC) $(EXTRA_FLAGS) -c $<
 

@@ -53,15 +53,16 @@ let prepare_string s =
     s
   end
 
-
+(* TODO: fast enough with those of_string and to_string? *)
 let show_text2 cr s =
+  let s = Bytes.of_string s in
   (* this 'if' is only for compatibility with old versions of cairo
    * that returns some out_of_memory error when applied to empty strings
    *)
   if s = "" then () else 
   try 
     let s' = prepare_string s in
-    Cairo.show_text cr s'
+    Cairo.show_text cr (Bytes.to_string s')
   with _exn ->
     let status = Cairo.status cr in
     let s2 = Cairo.string_of_status status in
