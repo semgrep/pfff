@@ -16,7 +16,7 @@ all:: simple_refactoring
 simple_refactoring: simple_refactoring.ml
 	ocamlc -g -o simple_refactoring \
          -I ../commons -I ../lang_php/parsing -I ../h_program-lang \
-          str.cma unix.cma nums.cma bigarray.cma \
+          str.cma unix.cma bigarray.cma \
 	  ../commons/lib.cma ../h_program-lang/lib.cma ../matcher/lib.cma \
           ../lang_php/parsing/lib.cma \
           simple_refactoring.ml
@@ -41,7 +41,7 @@ LIBS= ../commons/lib.cma \
 INCLUDEDIRS=../commons \
             ../h_program-lang ../lang_php/parsing ../h_version-control
 
-SYSLIBS= str.cma unix.cma nums.cma bigarray.cma
+SYSLIBS= str.cma unix.cma bigarray.cma
 
 # If you want to embed pfff in your own application, uncomment the following
 # instead of the previous settings

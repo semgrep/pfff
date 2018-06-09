@@ -64,7 +64,7 @@ endif
 #------------------------------------------------------------------------------
 # Main variables
 #------------------------------------------------------------------------------
-BASICSYSLIBS=nums.cma bigarray.cma str.cma unix.cma
+BASICSYSLIBS=bigarray.cma str.cma unix.cma
 
 # used for sgrep and other small utilities which I dont want to depend
 # on too much things
@@ -101,7 +101,7 @@ BASICLIBS=commons/commons.cma \
 
 #       commons/commons_features.cma \
 
-SYSLIBS=nums.cma bigarray.cma str.cma unix.cma
+SYSLIBS=bigarray.cma str.cma unix.cma
 SYSLIBS+=$(OCAMLCOMPILERCMA)
 
 # use for the other programs
