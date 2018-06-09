@@ -11,7 +11,7 @@ use Pod::Usage;
 # Yes I know about autoconf ... and autoconf sucks.
 
 # I do not check for the following programs; I assume they are standard:
-# - binutils, gcc, as, ld (the GNU toolchain)
+# - gcc, as, ld (the GNU toolchain)
 # - make, perl, bash
 # - diffutils, fileutils, findutils, grep, patchutils, sh-utils
 #
@@ -19,10 +19,10 @@ use Pod::Usage;
 # - findutils? we need a good GNU find, not the macOS find
 #   which adds some extra '//' in paths which bothers pfff
 # - sharutils still?, for obrowser/ocsigen use of uuencode
-#
 # If you want to run the tests you will also need:
 # - swipl
 # - javac 
+
 
 my $project = 
     "pfff";
@@ -35,6 +35,7 @@ my $projectcmdline =
 
 my $prefix="/usr/local";
 
+# this does not require opam; it builds everything from scratch
 my $battery_included=1;
 
 # cairo/gtk, for codemap and codegraph
@@ -50,10 +51,13 @@ my $bytecode=1;
 #  a configuration option. 
 my $cmt=1;
 
+
+
 # adjusted automatically based on local ocaml configuration
 my $opt= ""; # ocamlc.opt?
 my $ocamlc_flags = ""; #ocamlc -bin-annot?
 my $ocaml_version = 4023;
+my $opam_lib = "";
 
 
 my $man = 0;
@@ -171,6 +175,7 @@ $error +=
                  );
 show_error_msg_and_exit_if_error($error);
 
+# setting $ocaml_version
 my $command = "echo \"1;;\\n\" | ocaml |";
 my $full = cat($command);
 my $res = join(" ", @{$full});
@@ -183,22 +188,43 @@ if ($res =~ /(Objective|OCaml)(.*) ([34])\.([0-9]+).([0-9]+)/) {
     die "wrong version of ocaml";
 }
 
+
 # allow to use ocamlc.opt instead of ocamlc, which speeds up compilation
 if (`which ocamlc.opt` && `which ocamlopt.opt`) {
     $opt = ".opt";
 }
 
 # -bin-annot is for codegraph, it needs ocaml 4.00,
-# -absname is for tuareg mode under my mac, it also needs ocaml 4.00
+# -absname is for tuareg mode under my mac; it also needs ocaml 4.00
 if($ocaml_version >= 4000) {
     $ocamlc_flags="-bin-annot -absname";
 }
 
-if($ocaml_version >= 4000 && $ocaml_version < 4024) {
+if($ocaml_version < 4000) {
+    $cmt=0;
+    # I'm not sure pfff compiles under 4.00
+} elsif($ocaml_version <= 4023) {
     $cmt=1;
 } else {
     #TODO: need to use parsetree-migrate 
     $cmt=0;
+    #TODO: need fix javalib error about JClassflow
+    $bytecode=0;
+    #LESS: I get many errors with ocaml 4.06; I would need to update packages
+    $battery_included=0;
+
+    $error += 
+     check_config("opam --version |",
+                 "^[12]\.[0-9]\.[0-9]",
+                 "OPAM the OCaml package manager is present.",
+                 "The program OPAM is missing or is not a good version.",
+                 );
+    show_error_msg_and_exit_if_error($error);
+    system("rm -f external/opam_lib");
+    $opam_lib = `opam config var lib`;
+    chomp($opam_lib);
+    pr2("Adjusting the external/opam_lib symlink to $opam_lib");
+    system("ln -s $opam_lib external/opam_lib");
 }
 
 #---------------------------------------------------------------
@@ -215,13 +241,9 @@ if($arch =~ /Darwin/) {
   $BREW_PROGRAM = `which brew`;
 }
 
-#---------------------------------------------------------------------
-# More developers tools
-#---------------------------------------------------------------------
-
-#---------------------------------------------------------------------
-# Libraries
-#---------------------------------------------------------------------
+#---------------------------------------------------------------
+# Installation directory
+#---------------------------------------------------------------
 
 # if darwin or cygwin then could just modify this variable ? enough ?
 my $prefix_distrib = "/usr";
@@ -232,9 +254,9 @@ if( ($arch =~ /FreeBSD/) || (($arch =~ /Darwin/) && ($BREW_PROGRAM)) ) {
     $prefix_distrib = "/opt/local";
 }
 
-# The default ocamlgraph configure generate Makefiles that uses some -pack
-# and certain module names like Graph that conflicts with other pfff modules
-# so right now the Makefile is hand-crafted.
+#---------------------------------------------------------------------
+# Libraries
+#---------------------------------------------------------------------
 
 if($visual && $battery_included) {
     pr2 "Configuring ocamlgtk (see /tmp/ocamlgtk.log).";
@@ -271,7 +293,6 @@ SHAREDIR=$src
 
 # Features
 FEATURE_VISUAL=$visual
-
 FEATURE_BYTECODE=$bytecode
 FEATURE_CMT=$cmt
 
@@ -281,21 +302,18 @@ OCAMLVERSION=$ocaml_version
 ";
 
 
-#pr2 "Generating commons/features.ml";
-#`cpp -DFEATURE_VISUAL=$visual commons/features.ml.in > commons/features.ml`;
-
 pr2 "Generating globals/config_pfff.ml";
 `perl -p -e 's#Not_found1.\*#Not_found->\\\"$src\\\"#' globals/config_pfff.ml.in > globals/config_pfff.ml`;
 
 `perl -p -i -e 's#Not_found[0-9]#Not_found#' globals/config_pfff.ml`;
 
-if($error || $error2) { 
-    pr2 "!!Problems during ./configure!!";
-}
-
 ######################################################################
 # Diagnostic 
 ######################################################################
+
+if($error || $error2) { 
+    pr2 "!!Problems during ./configure!!";
+}
 
 if($error2) { 
     show_missing_package_error_msg($error2);
