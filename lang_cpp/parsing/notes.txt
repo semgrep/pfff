@@ -1,5 +1,3 @@
-
-
 cf engler article about all the difficulty they had because
 had to find how to compile code!!
 
@@ -35,4 +33,3 @@ Maybe because of typedef inference is wrong. Had to extend heuristics.
 Maybe because template. Had to extend heuristics.
 
 Maybe because of macros. Had to extend macros.h
-
