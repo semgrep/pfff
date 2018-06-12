@@ -35,7 +35,7 @@ module R = Refactoring_code
  *    technique, see h_program-lang/ast_fuzzy.ml top comment
  * 
  * related: 
- *  - sed, perl, https://github.com/facebook/codemod
+ *  - sed, perl, codemod
  *  - http://www.jetbrains.com/idea/documentation/ssr.html
  *  - go has a replace option in its formating tool http://golang.org/cmd/gofmt/
  *    it has even an automatic API rewriter: http://golang.org/cmd/fix

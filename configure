@@ -325,6 +325,7 @@ if($error2) {
 if($battery_included) {
     pr2 "
 To compile $project, you first need to compile its dependencies with:
+  \$ $MAKE_PROGRAM -C external depend
   \$ $MAKE_PROGRAM -C external";
 }
 
