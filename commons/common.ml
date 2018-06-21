@@ -883,7 +883,7 @@ let realpath path =
 
 let fullpath file =
   if not (Sys.file_exists file)
-  then failwith (spf "fullpath: file %s does not exist" file);
+  then failwith (spf "fullpath: file (or directory) %s does not exist" file);
   let dir, base =
     if Sys.is_directory file
     then file, None

@@ -290,21 +290,22 @@ let main_action xs =
 
   let dir = 
     match xs with 
-    | [x] -> 
-        if x = "." 
-        (* getcwd() display a realpath *)
-        then List.hd (Common.cmd_to_list "pwd")
-        else
-          if Sys.is_directory(x)
-          then x
-          else failwith "not a valid directory: codegraph <dir/to/graph_code.marshall>"
-    | _ -> failwith "unable to parse directory: codegraph <dir/to/graph_code.marshall>"
+    | [x] -> Common.fullpath x
+    | _ -> failwith "codegraph expects a single directory argument"
   in
+  (* this is to allow to use codegraph from a subdir, see the comment
+   * below about "slice of the graph"
+   *)
   let inits = Common2.inits_of_absolute_dir dir in
   let root =
-    inits +> List.rev +> List.find (fun path -> 
-      Sys.file_exists (dep_file_of_dir path))
+    try 
+      inits +> List.rev +> List.find (fun path -> 
+        Sys.file_exists (dep_file_of_dir path))
+    with Not_found ->
+      failwith (spf "could not find the codegraph file from %s or its parent"
+                  dir);
   in
+  let file = dep_file_of_dir root in
   pr2 (spf "Using root = %s" root);
   let model = build_model root in
 

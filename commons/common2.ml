@@ -6015,8 +6015,10 @@ let _ = example
 
 
 let inits_of_absolute_dir dir =
-  assert (is_absolute dir);
-  assert (is_directory dir);
+  if not (is_absolute dir)
+  then failwith (spf "inits_of_absolute_dir: %s is not an absolute path" dir);
+  if not (is_directory dir)
+  then failwith (spf "inits_of_absolute_dir: %s is not a directory" dir);
   let dir = chop_dirsymbol dir in
 
   let dirs = split "/" dir in

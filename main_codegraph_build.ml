@@ -120,9 +120,11 @@ let build_graph_code lang xs =
       pr2 (Graph_code.string_of_error err);
       raise (Graph_code.Error err)
   in
-  let output_dir = !output_dir ||| (Sys.getcwd()) in
-  Graph_code.save g (dep_file_of_dir output_dir);
+  let output_dir = !output_dir ||| root in
+  let file = dep_file_of_dir output_dir in
+  Graph_code.save g file;
   Graph_code.print_statistics stats g;
+  Common.pr2 (spf "Saving codegraph file in %s" file);
 
   (* Save also TAGS, light db, prolog (TODO), layers. We could also do
    * that on demand when we run codemap and there is only a 
