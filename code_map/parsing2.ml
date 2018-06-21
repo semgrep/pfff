@@ -227,6 +227,7 @@ let tokens_with_categ_of_file file hentities =
         }
         file prefs hentities
 
+  (* works also for Fsharp; at least the tokenizer *)
   | FT.PL (FT.ML _) ->
       tokens_with_categ_of_file_helper 
         { parse = (parse_cache (fun file -> 
