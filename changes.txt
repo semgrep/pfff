@@ -1,6 +1,6 @@
 # -*- org -*-
 
-* 0.34 (Q2 2018) (codegraph_build)
+* 0.34 (Q2 2018) (codegraph_build, going towards OPAM friendly)
 
 ** introduce codegraph_build
 extracted from codegraph, to avoid dependencies to GUI
@@ -21,6 +21,7 @@ without having to know ocaml
 ** internals
 
 *** split commons/ in many commons_xxx/ directories
+motivated by magicator?
 
 *** fork from facebook/pfff (commit privilege revoked, finally)
 
