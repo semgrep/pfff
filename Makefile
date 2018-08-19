@@ -444,16 +444,16 @@ uninstall:
 
 
 INSTALL_SUBDIRS= \
-  commons \
-  commons/graph \
+  commons commons_core commons_wrappers/graph \
+  globals \
   h_program-lang    matcher \
   h_version-control h_files-format h_visualization \
-  lang_ml/parsing \
+  lang_ml/parsing  lang_ml/analyze/visual \
   lang_php/analyze lang_php/matcher lang_php/parsing  lang_php/pretty \
-  lang_cpp/parsing \
+  lang_cpp/parsing lang_cpp/analyze \
   lang_java/parsing \
-  lang_js/parsing lang_css/parsing lang_html/parsing \
-  lang_nw/parsing lang_nw/analyze\
+  lang_js/parsing  lang_css/parsing lang_html/parsing \
+  lang_nw/parsing  lang_nw/analyze\
   graph_code
 
 LIBNAME=pfff
