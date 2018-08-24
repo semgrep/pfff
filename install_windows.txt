@@ -1,0 +1,24 @@
+To install pfff under Windows, you must first install Cygwin (see https://www.cygwin.com/).
+
+Then, install a few cygwin packages:
+ - autoconf (needed to install from source many opam packages)
+ - automake
+ - xinit (which will put lots of other dependencies)
+ - lablgtk2-devel (which will pull lots of other dependencies)
+ - cairo
+ - opam
+
+Once opam is installed, you will need to install a compatible
+version of OCaml and a few OCaml packages:
+ - opam init
+ - opam switch 4.02.3
+ - opam install lablgtk2 ocamlgraph camlp4o
+
+Right now the OPAM package for cairo does not compile so you will
+need to use instead the 'battery-included' one under external/.
+
+Then to run codemap or codegraph you will need to start the Cygwin/X server.
+For example run startxwin in one window and in another window do:
+
+  $ export DISPLAY=:0
+  $ ./codemap.exe .
