@@ -21,6 +21,12 @@ let test_tokens_nw file =
 let test_parse_nw file =
   Parse_nw.parse file |> ignore
 
+let test_dump_nw file =
+  let ((trees, _toks), _stat) = Parse_nw.parse file in
+  let v = Ast_fuzzy.vof_trees trees in
+  let s = Ocaml.string_of_v v in
+  pr2 s
+
 (*****************************************************************************)
 (* Unit tests *)
 (*****************************************************************************)
@@ -34,4 +40,6 @@ let actions () = [
   Common.mk_action_1_arg test_tokens_nw;
   "-parse_nw", "   <file>", 
   Common.mk_action_1_arg test_parse_nw;
+  "-dump_nw", "   <file>", 
+  Common.mk_action_1_arg test_dump_nw;
 ]
