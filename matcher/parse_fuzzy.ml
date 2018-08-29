@@ -20,7 +20,7 @@ module PI = Parse_info
 (* Prelude *)
 (*****************************************************************************)
 (* A few helpers function to build Ast_fuzzy tree from a list of tokens.
- * It factorizes the language-independent part of those ast fuzzy builder.
+ * It factorizes the language-independent part of those AST fuzzy builder.
  *)
 
 (*****************************************************************************)
@@ -83,8 +83,9 @@ let mk_trees h xs =
   and look_close_brace tok_start accbody xs =
     match xs with
     | [] -> 
-        failwith (spf "PB look_close_brace (started at %d)" 
-                    (PI.line_of_info (h.tokf tok_start)))
+        failwith (spf "PB look_close_brace (started at line %d, col %d)" 
+                    (PI.line_of_info (h.tokf tok_start))
+                    (PI.col_of_info (h.tokf tok_start)))
     | x::xs -> 
         (match x with
         | tok when h.kind tok = PI.RBrace-> 
@@ -97,7 +98,7 @@ let mk_trees h xs =
   and look_close_paren tok_start accbody xs =
     match xs with
     | [] -> 
-        failwith (spf "PB look_close_paren (started at %d)" 
+        failwith (spf "PB look_close_paren (started at line %d)" 
                      (PI.line_of_info (h.tokf tok_start)))
     | x::xs -> 
         (match x with
