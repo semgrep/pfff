@@ -58,6 +58,7 @@ let visitor_info_of_tok f = function
   | TWord (s, ii) -> TWord (s, f ii)
   | TSymbol (s, ii) -> TSymbol (s, f ii)
   | TNumber (s, ii) -> TNumber (s, f ii)
+  | TUnit (s, ii) -> TUnit (s, f ii)
 
   | TBeginVerbatim ii -> TBeginVerbatim (f ii)
   | TEndVerbatim ii -> TEndVerbatim (f ii)
@@ -65,12 +66,11 @@ let visitor_info_of_tok f = function
 
   | TBeginNowebChunk ii -> TBeginNowebChunk (f ii)
   | TEndNowebChunk ii -> TEndNowebChunk (f ii)
-  | TNowebChunkLine (s, ii) -> TNowebChunkLine (s, f ii)
+  | TNowebChunkStr (s, ii) -> TNowebChunkStr (s, f ii)
 
-  | TBeginNowebChunkName ii -> TBeginNowebChunkName (f ii)
-  | TEndNowebChunkName ii -> TEndNowebChunkName (f ii)
-  | TNowebChunkName ii -> TNowebChunkName (f ii)
-  | TNowebAngle ii -> TNowebAngle (f ii)
+  | TNowebChunkName (s, ii) -> TNowebChunkName (s, f ii)
+  | TNowebCode (s, ii) -> TNowebCode (s, f ii)
+  | TNowebCodeLink (s, ii) -> TNowebCodeLink (s, f ii)
 
 
   | TUnknown ii -> TUnknown (f ii)

@@ -53,8 +53,6 @@ let tokens2 file =
             Lexer_nw.verbatim s lexbuf
         | Lexer_nw.IN_NOWEB_CHUNK ->
             Lexer_nw.noweb lexbuf
-        | Lexer_nw.IN_NOWEB_CHUNKNAME ->
-            Lexer_nw.noweb_chunkname lexbuf
         )
       in
       

@@ -2,6 +2,7 @@
 (* Yoann Padioleau
  *
  * Copyright (C) 2010, 2015 Facebook
+ * Copyright (C) 2018 Yoann Padioleau
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -25,10 +26,10 @@ module Flag = Flag_parsing_nw
  * Alternatives:
  *  - Hevea, but the code is quite complicated. I don't need all the
  *    features of TeX
- *  - extend the parser in syncweb, but it's not a parser. It is just
- *    a very specialized lexer that recognizes only noweb constructs
- *    update: actually I now parse more because I also do the -to_tex part
- *    of noweb.
+ *  - Extend the parser in syncweb, but it's not a parser; It is just
+ *    a very specialized lexer that recognizes only Noweb constructs
+ *    I now parse more because I also do the -to_tex part of noweb but
+ *    it is still not enough for the parsing and highlighting context here.
  *)
 
 (*****************************************************************************)
@@ -45,6 +46,8 @@ type token =
 
   | TWord of (string * Parse_info.info)
   | TNumber of (string * Parse_info.info)
+  (* e.g., 12pt *)
+  | TUnit of (string * Parse_info.info)
   | TSymbol of (string * Parse_info.info)
 
   (* \xxx *)
@@ -67,16 +70,14 @@ type token =
   (* <<...>>= and @ *)
   | TBeginNowebChunk of Parse_info.info 
   | TEndNowebChunk of Parse_info.info
-  | TNowebChunkLine of (string * Parse_info.info)
+  | TNowebChunkStr of (string * Parse_info.info)
+  (* << >> when on the same line and inside a noweb chunk *)
+  | TNowebChunkName of string * Parse_info.info 
 
-  (* << and >> when on the same line and inside a noweb chunk *)
-  | TBeginNowebChunkName of Parse_info.info 
-  | TEndNowebChunkName of Parse_info.info
-
-  | TNowebChunkName of Parse_info.info 
-  | TNowebAngle of Parse_info.info
-
-  (* TODO: noweb's [[ ]] and syncweb's specific [< >] *)
+  (* [[ ]] *)
+  | TNowebCode of string * Parse_info.info
+  (* syncweb-specific: *)
+  | TNowebCodeLink of string * Parse_info.info
 
   | TUnknown of Parse_info.info
   | EOF of Parse_info.info
@@ -126,8 +127,6 @@ type state_mode =
   | IN_VERBATIM of string
   (* started with <<xxx>>=, finished by @ *)
   | IN_NOWEB_CHUNK
-  (* started with <<, finished by >> when they are on the same line *)
-  | IN_NOWEB_CHUNKNAME
 
 let default_state = INITIAL
 
@@ -207,6 +206,8 @@ rule tex = parse
   (* ----------------------------------------------------------------------- *)
   (* Constant *)
   (* ----------------------------------------------------------------------- *)
+  | digit+ ("pt" | "cm" | "px") { TUnit(tok lexbuf, tokinfo lexbuf) }
+
   | digit+ { TNumber(tok lexbuf, tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
@@ -216,6 +217,14 @@ rule tex = parse
   | "<<" ([^'>']+ as _tagname) ">>=" {
       push_mode IN_NOWEB_CHUNK;
       TBeginNowebChunk (tokinfo lexbuf)
+    }
+
+  | "[[" ([^'\n' '\r' ']']+ as str) "]]" {
+      TNowebCode (str, tokinfo lexbuf);
+    }
+  (* syncweb: *)
+  | "[<" ([^'\n' '\r' '>']+ as str) ">]" {
+      TNowebCodeLink (str, tokinfo lexbuf);
     }
 
   (* ----------------------------------------------------------------------- *)
@@ -243,44 +252,18 @@ and noweb = parse
       pop_mode ();
       TEndNowebChunk (tokinfo lexbuf)
     }
-  (* bugfix: they have to be on the same line! otherwise C code using
-   * << will screw the parsing
-   *)
+  (* less: they should be alone on their line, with space and newline after *)
   | "<<" ([^'\n' '\r']+ as name) ">>" {
-      yyback (String.length name + 2) lexbuf;
-      push_mode IN_NOWEB_CHUNKNAME;
-      TBeginNowebChunkName (tokinfo lexbuf);
+      TNowebChunkName (name, tokinfo lexbuf);
     }
-  | ([^'\n''<']+ as line) { TNowebChunkLine (line, tokinfo lexbuf) }
+  | ([^'\n''<']+ as str) { TNowebChunkStr (str, tokinfo lexbuf) }
   | '\n' { TCommentNewline (tokinfo lexbuf) }
-  | '<'  { TNowebAngle (tokinfo lexbuf) }
+  | '<'  { TNowebChunkStr ("<", tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   | eof { EOF (tokinfo lexbuf +> Parse_info.rewrap_str "") }
   | _ { 
       error ("unrecognised symbol, in noweb chunkname rule:"^tok lexbuf);
-      TUnknown (tokinfo lexbuf)
-    }
-
-(*****************************************************************************)
-(* Rule in noweb chunkname *)
-(*****************************************************************************)
-and noweb_chunkname = parse
-  | ">>" { 
-      pop_mode ();
-      TEndNowebChunkName (tokinfo lexbuf)
-    }
-  | ([^'>']+) { TNowebChunkName (tokinfo lexbuf) }
-  | '>' { TNowebChunkName (tokinfo lexbuf) }
-  | '\n' { 
-         error ("impossible, should not get newline in chunkname");
-         TUnknown (tokinfo lexbuf)
-    }
-
-  (* ----------------------------------------------------------------------- *)
-  | eof { EOF (tokinfo lexbuf +> Parse_info.rewrap_str "") }
-  | _ { 
-      error ("unrecognised symbol, in noweb rule:"^tok lexbuf);
       TUnknown (tokinfo lexbuf)
     }
 
