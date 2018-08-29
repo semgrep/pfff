@@ -114,7 +114,7 @@ install: all all.opt
 
 install-findlib: all all.opt
 	ocamlfind install $(LIBNAME) META \
-    $(LIBNAME).cma $(LIBNAME).cmxa $(LIBNAME).a *.cmi $(EXPORTSRC) 
+    $(LIBNAME).cma $(LIBNAME).cmxa $(LIBNAME).a *.cmi *.cmt* $(EXPORTSRC) 
 
 uninstall-findlib:
 	ocamlfind remove $(LIBNAME)
