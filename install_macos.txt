@@ -1,11 +1,12 @@
-Install brew, see http://brew.sh
-(or install macports http://www.macports.org/)
+To install pfff under macOS, you must first install Brew (see http://brew.sh)
+or MacPorts (see http://www.macports.org/).
 
-Then
+Then, install a few packages, for example with Brew:
  $ brew install objective-caml camlp4
 
-For codemap and codegraph:
- install xquartz at http://xquartz.macosforge.org/landing/
+For codemap and codegraph, you need also to install an X11 server.
+Install xquartz at http://xquartz.macosforge.org/landing/ and then install
+a few more packages:
  $ brew install gtk+
  $ brew install cairo
 
