@@ -18,6 +18,9 @@ let test_tokens_nw file =
   toks +> List.iter (fun x -> pr2_gen x);
   ()
 
+let test_parse_nw file =
+  Parse_nw.parse file |> ignore
+
 (*****************************************************************************)
 (* Unit tests *)
 (*****************************************************************************)
@@ -29,4 +32,6 @@ let test_tokens_nw file =
 let actions () = [
   "-tokens_nw", "   <file>", 
   Common.mk_action_1_arg test_tokens_nw;
+  "-parse_nw", "   <file>", 
+  Common.mk_action_1_arg test_parse_nw;
 ]

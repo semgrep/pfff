@@ -20,21 +20,22 @@ module Flag = Flag_parsing_nw
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* A basic Tex/LaTeX/Noweb lexer. 
+(* A basic TeX/LaTeX/Noweb lexer. 
  *
  * Alternatives:
- *  - hevea, but the code is quite complicated. I don't need all the
+ *  - Hevea, but the code is quite complicated. I don't need all the
  *    features of TeX
  *  - extend the parser in syncweb, but it's not a parser. It is just
  *    a very specialized lexer that recognizes only noweb constructs
+ *    update: actually I now parse more because I also do the -to_tex part
+ *    of noweb.
  *)
 
 (*****************************************************************************)
 (* Type *)
 (*****************************************************************************)
-(* Was in parser_nw.mly but we don't really need an extra file. The
- * only "parsing" we could do is just to make a fuzzy AST by parentizing
- * braces.
+(* Was in parser_nw.mly but we don't really need an extra file. 
+ * The only "parsing" we do is just to make a fuzzy AST by parentizing braces.
  *)
 
 type token =
@@ -48,8 +49,10 @@ type token =
 
   (* \xxx *)
   | TCommand of (string * Parse_info.info)
+
   | TOBrace of Parse_info.info | TCBrace of Parse_info.info
   (* no TOParen/TCParen, they are not forced to be matching in TeX *)
+
   (* pad-specific: \t \f \l, see noweblatexpad  *)
   | TFootnote of char * Parse_info.info
 
@@ -73,6 +76,7 @@ type token =
   | TNowebChunkName of Parse_info.info 
   | TNowebAngle of Parse_info.info
 
+  (* TODO: noweb's [[ ]] and syncweb's specific [< >] *)
 
   | TUnknown of Parse_info.info
   | EOF of Parse_info.info
@@ -109,7 +113,7 @@ let tokinfo lexbuf  =
   Parse_info.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
 
 (* let keyword_table = Common.hash_of_list [] ? not needed. No keyword
- * in Tex, just commands.
+ * in TeX, just commands.
  *)
 
 (* ---------------------------------------------------------------------- *)
@@ -154,7 +158,7 @@ let letter = ['a'-'z''A'-'Z']
 let digit = ['0'-'9']
 
 (*****************************************************************************)
-(* Rule in Tex *)
+(* Rule in TeX *)
 (*****************************************************************************)
 rule tex = parse
   (* ----------------------------------------------------------------------- *)
@@ -163,7 +167,7 @@ rule tex = parse
   | "%" [^'\n' '\r']* { 
       TComment(tokinfo lexbuf)
     }
-  (* Actually in Tex the space and newlines have a meaning so I should perhaps
+  (* Actually in TeX the space and newlines have a meaning so I should perhaps
    * rename those tokens.
    *)
   | [' ''\t'] { TCommentSpace (tokinfo lexbuf) }

@@ -1,4 +1,4 @@
--*- org -*-
+# -*- org -*-
 
 * compared to Ast_ml?
 Comparing Graph_code_ml and Graph_code_cmt?
