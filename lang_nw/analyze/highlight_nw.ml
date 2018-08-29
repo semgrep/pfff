@@ -1,7 +1,7 @@
 (* Yoann Padioleau
  *
  * Copyright (C) 2010 Facebook
- * Copyright (C) 2015 Yoann Padioleau
+ * Copyright (C) 2015, 2018 Yoann Padioleau
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -16,9 +16,10 @@
 open Common
 
 module Ast = Ast_nw
-open Highlight_code
 module T = Lexer_nw
 module TH = Token_helpers_nw
+
+open Highlight_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -28,8 +29,8 @@ module TH = Token_helpers_nw
 (* Helpers *)
 (*****************************************************************************)
 
-(* todo: now that have a fuzzy AST for noweb, could use that
- * instead of those span_brace functions
+(* todo: now that we have a fuzzy AST for noweb, we could use that
+ * instead of some of those span_xxx functions.
  *)
 let span_close_brace xs = xs +> Common2.split_when (function 
   | T.TCBrace _ -> true | _ -> false)
@@ -37,8 +38,6 @@ let span_close_brace xs = xs +> Common2.split_when (function
 let span_newline xs = xs +> Common2.split_when (function 
   | T.TCommentNewline _ -> true | _ -> false)
 
-let span_end_bracket xs = xs +> Common2.split_when (function 
-  | T.TSymbol("]", _) -> true | _ -> false)
 
 let tag_all_tok_with ~tag categ xs = 
   xs +> List.iter (fun tok ->
@@ -52,16 +51,9 @@ let tag_all_tok_with ~tag categ xs =
 
 (* The idea of the code below is to visit the program either through its
  * AST or its list of tokens. The tokens are easier for tagging keywords,
- * number and basic entities. The Ast is better for tagging idents
- * to figure out what kind of ident it is.
+ * number and basic entities. The AST is better for other things.
  *)
-
-let visit_program
-    ~tag_hook
-    _prefs 
-    (*db_opt *)
-    (_program, toks)
-  =
+let visit_program ~tag_hook _prefs (_program, toks) =
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->
     tag_hook ii categ;
@@ -70,13 +62,14 @@ let visit_program
   in
 
   (* -------------------------------------------------------------------- *)
-  (* toks phase 1 *)
+  (* toks phase 1 (sequence of tokens) *)
   (* -------------------------------------------------------------------- *)
 
   let rec aux_toks xs = 
     match xs with
     | [] -> ()
-    (* a little bit pad specific *)
+
+    (* pad-specific: *)
     |   T.TComment(ii)
       ::T.TCommentNewline (_ii2)
       ::T.TComment(ii3)
@@ -103,80 +96,39 @@ let visit_program
         );
         aux_toks xs
 
-    |    T.TCommand(("chapter" | "chapter*"),_)
-      :: T.TOBrace _
-      :: xs 
-      ->
+    | T.TCommand(s,_):: T.TOBrace _:: xs ->
        let (before, _, _) = span_close_brace xs in
-       tag_all_tok_with ~tag CommentSection0 before;
-       (* repass on tokens, in case there are nested tex commands *)
-       aux_toks xs
+       let categ_opt =
+         match s with
+         | ("chapter" | "chapter*") -> Some CommentSection0
+         | "section" -> Some CommentSection1
+         | "subsection" -> Some CommentSection2
+         | "subsubsection" -> Some CommentSection3
 
-    |    T.TCommand("section",_):: T.TOBrace _:: xs 
-      ->
-       let (before, _, _) = span_close_brace xs in
-       tag_all_tok_with ~tag CommentSection1 before;
-       (* repass on tokens, in case there are nested tex commands *)
-       aux_toks xs
+         | "label" -> Some (Label Def)
+         | "ref" -> Some (Label Use)
+         | "cite" -> Some (Label Use)
 
-    |    T.TCommand("subsection",_):: T.TOBrace _:: xs 
-      ->
-       let (before, _, _) = span_close_brace xs in
-       tag_all_tok_with ~tag CommentSection2 before;
-       (* repass on tokens, in case there are nested tex commands *)
-       aux_toks xs
+         | "begin" | "end" -> Some KeywordExn (* TODO *)
+         | "input" | "usepackage" -> Some IncludeFilePath
+         | "url" | "furl" -> Some EmbededUrl
 
-    |    T.TCommand("subsubsection",_):: T.TOBrace _:: xs 
-      ->
-       let (before, _, _) = span_close_brace xs in
-       tag_all_tok_with ~tag CommentSection3 before;
-       (* repass on tokens, in case there are nested tex commands *)
-       aux_toks xs
-
-    |    T.TCommand("label",_):: T.TOBrace _:: xs 
-      ->
-       let (before, _, _) = span_close_brace xs in
-       tag_all_tok_with ~tag (Label Def) before;
-       (* repass on tokens, in case there are nested tex commands *)
-       aux_toks xs
-
-    |    T.TCommand("ref",_):: T.TOBrace _:: xs 
-      ->
-       let (before, _, _) = span_close_brace xs in
-       tag_all_tok_with ~tag (Label Use) before;
-       (* repass on tokens, in case there are nested tex commands *)
+         | _ -> Some (Parameter Use)
+       in
+       categ_opt |> Common.do_option (fun categ -> 
+         tag_all_tok_with ~tag categ  before;
+       );
+       (* repass on tokens, in case there are nested TeX commands *)
        aux_toks xs
 
 
-    (* noweb specific *)
-    |  T.TSymbol("[", ii)::T.TSymbol("[", _)::xs ->
-         let rest =
-           try 
-             let (before, middle, after) =
-               span_end_bracket xs
-             in
-             tag_all_tok_with 
-               ~tag:(fun ii categ -> 
-                 if not (Hashtbl.mem already_tagged ii)
-                 then tag ii categ
-               )
-               TypeVoid (* TODO *) before;
-             (middle::after)
-           with Not_found ->
-             pr2 (spf "PB span_end_bracket at %d" 
-                     (Parse_info.line_of_info ii));
-             xs
-         in
-         aux_toks (rest);
-
-    (* pad noweb specific *)
+    (* syncweb-specific: *)
     | T.TSymbol("#", _ii)::T.TWord("include", ii2)::xs ->
         tag ii2 Include;
         aux_toks xs
 
     (* specific to texinfo *)
-    |    T.TSymbol("@", _)
-      :: T.TWord(s, ii)::xs ->
+    | T.TSymbol("@", _)::T.TWord(s, ii)::xs ->
            let categ_opt = 
              (match s with
              | "title" -> Some CommentSection0
@@ -231,11 +183,11 @@ let visit_program
   aux_toks toks';
 
   (* -------------------------------------------------------------------- *)
-  (* ast phase 1 *) 
+  (* AST phase 1 *) 
   (* -------------------------------------------------------------------- *)
 
   (* -------------------------------------------------------------------- *)
-  (* toks phase 2 *)
+  (* toks phase 2 (individual tokens) *)
   (* -------------------------------------------------------------------- *)
 
   toks +> List.iter (fun tok -> 
@@ -246,7 +198,7 @@ let visit_program
          let s = Parse_info.str_of_info ii in
          (match s with
          | _ when s =~ "^%todo:" -> tag ii BadSmell
-         | _ -> tag ii Comment
+         | _ -> tag ii CommentImportance0
          )
     | T.TCommentSpace _ii -> ()
     | T.TCommentNewline _ii -> ()
@@ -257,55 +209,61 @@ let visit_program
           | s when s =~ "^if" -> KeywordConditional
           | s when s =~ ".*true$" -> Boolean
           | s when s =~ ".*false$" -> Boolean
+
           | "fi" -> KeywordConditional
-          | "input" -> Include
+          | "input" | "usepackage" -> Include
           | "appendix" -> CommentSection0
+
           | _ -> Keyword
           )
         in
         tag ii categ
       
-    | T.TWord (_, ii) ->
-        if not (Hashtbl.mem already_tagged ii)
-        then
-          ()
+    | T.TWord (s, ii) ->
+        (match s with
+        | "TODO" -> tag ii BadSmell
+        | _ -> ()
+        )
 
-    (* noweb specific obviously *)
+    (* noweb-specific: (obviously) *)
     | T.TBeginNowebChunk ii
     | T.TEndNowebChunk ii
       ->
         tag ii KeywordExn (* TODO *)
 
-    | T.TNowebChunkLine (_, ii) | T.TNowebAngle ii ->
+    | T.TNowebChunkStr (_, ii) ->
         tag ii EmbededCode
+    | T.TNowebCode (_, ii) ->
+        tag ii EmbededCode
+    | T.TNowebCodeLink (_, ii) ->
+        tag ii (StructName Use) (* TODO *)
 
-    | T.TBeginNowebChunkName ii
-    | T.TEndNowebChunkName ii
-      ->
+    | T.TNowebChunkName (_, ii) ->
         tag ii KeywordObject (* TODO *)
 
-    | T.TNowebChunkName (ii)  ->
-        tag ii KeywordObject (* TODO *)
-
-
-    | T.TBeginVerbatim ii
-    | T.TEndVerbatim ii
-        -> 
-        tag ii KeywordLoop
+    | T.TBeginVerbatim ii | T.TEndVerbatim ii -> tag ii Keyword
 
     | T.TVerbatimLine (_, ii) ->
         tag ii Verbatim
-    (* very pad specific *)
+    (* syncweb-specific: *)
     | T.TFootnote (c, ii) ->
         (match c with
         | 't' -> tag ii BadSmell
-        | _ -> tag ii Comment
+        | 'n' -> tag ii Comment
+        | 'l' -> tag ii CommentImportance1
+        | _ -> failwith (spf "syncweb \\x special macro not recognized:%c" c)
         )
 
-    | T.TNumber (_, ii) -> 
+    | T.TNumber (_, ii) | T.TUnit (_, ii) -> 
         if not (Hashtbl.mem already_tagged ii)
         then tag ii Number
-    | T.TSymbol (_, ii) -> tag ii Punctuation
+
+    | T.TSymbol (s, ii) -> 
+      (match s with
+      | "&" | "\\" ->
+        tag ii Punctuation
+      | _ -> ()
+      )
 
     | T.TOBrace ii | T.TCBrace ii ->  tag ii Punctuation
 
@@ -315,6 +273,6 @@ let visit_program
   );
 
   (* -------------------------------------------------------------------- *)
-  (* ast phase 2 *)  
+  (* AST phase 2 *)  
 
   ()

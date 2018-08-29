@@ -256,6 +256,9 @@ type category =
   | CommentEstet
   | CommentCopyright
   | CommentSyncweb
+  | CommentImportance0
+  | CommentImportance1
+  (* CommentImportance2 is Comment *)
 
   (* search and match *)
   | MatchGlimpse
@@ -516,8 +519,10 @@ let info_of_category = function
   | CommentSection4 -> [`FOREGROUND "gray";]
 
   | CommentEstet -> [`FOREGROUND "gray";]
-  | CommentCopyright -> [`FOREGROUND "gray";]
+  | CommentCopyright -> [`FOREGROUND "DimGray";]
   | CommentSyncweb -> [`FOREGROUND "DimGray";]
+  | CommentImportance0 -> [`FOREGROUND "DimGray";]
+  | CommentImportance1 -> [`FOREGROUND "gray45";]
 
 
   (* entities *)

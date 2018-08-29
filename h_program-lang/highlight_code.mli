@@ -49,6 +49,7 @@ type category =
   | CommentSection0 | CommentSection1 | CommentSection2 
   | CommentSection3 | CommentSection4
   | CommentEstet | CommentCopyright | CommentSyncweb
+  | CommentImportance0 | CommentImportance1
 
   | MatchGlimpse | MatchSmPL
   | MatchParent
