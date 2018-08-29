@@ -246,6 +246,7 @@ let full_path_local_of_kind env kind =
   | E.Field | E.Constructor -> ref []
   (* todo? *)
   | E.Class -> ref []
+  | E.Other _ -> ref []
   | _ -> raise Impossible
 
 let add_full_path_local env (s, name) kind =
@@ -398,8 +399,8 @@ let kind_of_core_type x =
   match x.ctyp_desc with
   | Ttyp_arrow _ -> E.Function
   | Ttyp_any  | Ttyp_var _
-      -> raise Todo
-  | _ -> raise Todo
+      -> E.Other "TODO:kind_of_core_type"
+  | _ -> E.Other "TODO:kind_of_core_type"
 
 let kind_of_value_descr vd =
   kind_of_core_type vd.val_desc
