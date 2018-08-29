@@ -18,6 +18,7 @@ open Common
 module Ast = Ast_nw
 module T = Lexer_nw
 module TH = Token_helpers_nw
+module F = Ast_fuzzy
 
 open Highlight_code
 
@@ -29,21 +30,18 @@ open Highlight_code
 (* Helpers *)
 (*****************************************************************************)
 
-(* todo: now that we have a fuzzy AST for noweb, we could use that
- * instead of some of those span_xxx functions.
- *)
-let span_close_brace xs = xs +> Common2.split_when (function 
-  | T.TCBrace _ -> true | _ -> false)
-
 let span_newline xs = xs +> Common2.split_when (function 
   | T.TCommentNewline _ -> true | _ -> false)
-
 
 let tag_all_tok_with ~tag categ xs = 
   xs +> List.iter (fun tok ->
     let info = TH.info_of_tok tok in
     tag info categ
   )
+
+let tag_all_tok_trees_with ~tag categ trees =
+  let xs = F.toks_of_trees trees in
+  xs |> List.iter (fun info -> tag info categ)
 
 (*****************************************************************************)
 (* Code highlighter *)
@@ -53,7 +51,7 @@ let tag_all_tok_with ~tag categ xs =
  * AST or its list of tokens. The tokens are easier for tagging keywords,
  * number and basic entities. The AST is better for other things.
  *)
-let visit_program ~tag_hook _prefs (_program, toks) =
+let visit_program ~tag_hook _prefs (trees, toks) =
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->
     tag_hook ii categ;
@@ -95,32 +93,6 @@ let visit_program ~tag_hook _prefs (_program, toks) =
             ()
         );
         aux_toks xs
-
-    | T.TCommand(s,_):: T.TOBrace _:: xs ->
-       let (before, _, _) = span_close_brace xs in
-       let categ_opt =
-         match s with
-         | ("chapter" | "chapter*") -> Some CommentSection0
-         | "section" -> Some CommentSection1
-         | "subsection" -> Some CommentSection2
-         | "subsubsection" -> Some CommentSection3
-
-         | "label" -> Some (Label Def)
-         | "ref" -> Some (Label Use)
-         | "cite" -> Some (Label Use)
-
-         | "begin" | "end" -> Some KeywordExn (* TODO *)
-         | "input" | "usepackage" -> Some IncludeFilePath
-         | "url" | "furl" -> Some EmbededUrl
-
-         | _ -> Some (Parameter Use)
-       in
-       categ_opt |> Common.do_option (fun categ -> 
-         tag_all_tok_with ~tag categ  before;
-       );
-       (* repass on tokens, in case there are nested TeX commands *)
-       aux_toks xs
-
 
     (* syncweb-specific: *)
     | T.TSymbol("#", _ii)::T.TWord("include", ii2)::xs ->
@@ -185,6 +157,47 @@ let visit_program ~tag_hook _prefs (_program, toks) =
   (* -------------------------------------------------------------------- *)
   (* AST phase 1 *) 
   (* -------------------------------------------------------------------- *)
+  trees |> F.mk_visitor { F.default_visitor with
+    F.ktrees = (fun (k, _v) trees ->
+      match trees with
+      | F.Tok (s, _)::F.Braces (_, brace_trees, _)::_ ->
+        let categ_opt = 
+          match s with
+
+          | ("\\chapter" | "\\chapter*") -> Some CommentSection0
+          | "\\section" -> Some CommentSection1
+          | "\\subsection" -> Some CommentSection2
+          | "\\subsubsection" -> Some CommentSection3
+
+          | "\\label" -> Some (Label Def)
+          | "\\ref" -> Some (Label Use)
+          | "\\cite" -> Some (Label Use)
+
+          | "\\begin" | "\\end" -> Some KeywordExn (* TODO *)
+          | "\\input" | "\\usepackage" -> Some IncludeFilePath
+          | "\\url" | "\\furl" -> Some EmbededUrl
+
+          | _ when s =~ "^\\" -> Some (Parameter Use)
+          | _ -> None
+        in
+       categ_opt |> Common.do_option (fun categ -> 
+         tag_all_tok_trees_with ~tag categ brace_trees;
+       );
+       k trees
+      | F.Braces (_, (F.Tok (s, _)::brace_trees),_)::_ ->
+        let categ_opt = 
+          match s with
+          | "\\em" -> Some CommentWordImportantNotion
+          | _ -> None
+        in
+        categ_opt |> Common.do_option (fun categ -> 
+          tag_all_tok_trees_with ~tag categ brace_trees;
+        );
+        k trees
+
+      | _ -> k trees
+    );
+  };
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 (individual tokens) *)

@@ -11,8 +11,8 @@ This is a chunk.
 <<chunk ref>>
 @
 
-This is not always [[simple]].
+This is not always [[bar]] as you can see [<foo()>].
 
-
+You can also {\em emphasize} or give \footnote{my note}.
 
 \end{document}

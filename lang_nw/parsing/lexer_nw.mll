@@ -187,12 +187,14 @@ rule tex = parse
   (* don't want ~\foo to be tokenized as ~\ *)
   | "~" { TSymbol (tok lexbuf, tokinfo lexbuf) }
 
-  | ['-' '+' '=' '\'' '\\' '.' '@' ',' '/' ':' '<' '>' '*' ';' '#' '"'
+  (* bugfix: '\\' can not be in the list below otherwise text like ''foo''\xxx
+   * will not parse \xxx as a command but instead ''\ as a symbol
+   *)
+  | ['-' '+' '=' '\'' '.' '@' ',' '/' ':' '<' '>' '*' ';' '#' '"'
      '_' '`' '?' '^' '|' '!' '&' ]+ {
       TSymbol (tok lexbuf, tokinfo lexbuf) 
     }
-
-
+ 
   (* ----------------------------------------------------------------------- *)
   (* Commands and words (=~ Keywords and indent in other PL) *)
   (* ----------------------------------------------------------------------- *)
@@ -202,6 +204,9 @@ rule tex = parse
 
   | "\\" ((letter+) as cmd) { TCommand (cmd, tokinfo lexbuf)}
   | letter+ { TWord(tok lexbuf, tokinfo lexbuf) }
+
+  | "\\\\" { TSymbol (tok lexbuf, tokinfo lexbuf) }
+  | "\\" { TSymbol (tok lexbuf, tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* Constant *)
