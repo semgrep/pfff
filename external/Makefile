@@ -1,5 +1,5 @@
 TOP=..
-# alternatives: battery_included, opam, godi
+# alternatives: battery_included, opam (still godi?)
 
 -include $(TOP)/Makefile.config
 
