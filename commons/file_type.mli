@@ -19,8 +19,8 @@ type file_type =
   | Erlang | Go | Rust
   | Beta
   | Pascal
-  | Haxe | Opa | Flash
   | Web of webpl_type
+  | Haxe | Opa | Flash
   | Bytecode of string
   | Asm
   | Thrift
@@ -30,7 +30,7 @@ type file_type =
 
    and webpl_type = 
      | Php of string
-     | Js | Coffee
+     | Js | Coffee | TypeScript
      | Css
      | Html | Xml | Json
      | Sql

@@ -191,7 +191,7 @@ let tokens_with_categ_of_file_helper
 (*****************************************************************************)
 
 (* coupling: right now if you add a language here, you need to whitelist it
- * also in draw_microlevel.draw_contents2.
+ * also in Draw_microlevel.draw_contents2.
  *)
 let tokens_with_categ_of_file file hentities = 
   let ftype = FT.file_type_of_file file in
@@ -362,7 +362,7 @@ let tokens_with_categ_of_file file hentities =
         }
         file prefs hentities
 
-  | FT.PL (FT.Web (FT.Js)) ->
+  | FT.PL (FT.Web (FT.Js | FT.Coffee | FT.TypeScript)) ->
       tokens_with_categ_of_file_helper 
         { parse = (parse_cache
           (fun file -> 

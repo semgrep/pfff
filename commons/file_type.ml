@@ -33,31 +33,41 @@ type file_type =
   | Archive of string (* tgz, rpm, etc *)
   | Other of string
 
+ (* programming languages *)
  and pl_type = 
   | ML of string  (* mli, ml, mly, mll *)
   | Haskell of string
   | Lisp of lisp_type
+
   | Prolog of string
+
   | Makefile
   | Script of string (* sh, csh, awk, sed, etc *)
+
   | C of string | Cplusplus of string | ObjectiveC of string 
   | Java | Csharp
+
   | Perl | Python | Ruby | Lua
+
   | Erlang | Go | Rust
   | Beta
   | Pascal
-  | Haxe | Opa | Flash
+
   | Web of webpl_type
+  | Haxe | Opa | Flash
+
   | Bytecode of string
   | Asm
+
   | Thrift
+
   | MiscPL of string
 
    and lisp_type = CommonLisp | Elisp | Scheme
 
    and webpl_type = 
      | Php of string (* php or phpt or script *)
-     | Js | Coffee
+     | Js | Coffee | TypeScript
      | Css
      | Html | Xml | Json
      | Sql
@@ -173,6 +183,7 @@ let file_type_of_file2 file =
   (* "javascript" | "es" | ? *)
   | "js" -> PL (Web Js)
   | "coffee" -> PL (Web Coffee)
+  | "ts" -> PL (Web TypeScript)
   | "html" | "htm" -> PL (Web Html)
   | "xml" -> PL (Web Xml)
   | "json" -> PL (Web Json)
