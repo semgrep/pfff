@@ -3,6 +3,7 @@ TOP=../..
 # Variables
 ##############################################################################
 TARGET=lib
+LIBNAME=pfff-lang_cpp
 
 -include $(TOP)/Makefile.config
 
@@ -36,7 +37,6 @@ INCLUDEDIRS= \
 ##############################################################################
 # Generic variables
 ##############################################################################
-
 -include $(TOP)/Makefile.common
 
 ##############################################################################
@@ -44,13 +44,10 @@ INCLUDEDIRS= \
 ##############################################################################
 all:: $(TARGET).cma
 all.opt:: $(TARGET).cmxa
-
 $(TARGET).cma: $(OBJS)
 	$(OCAMLC) -a -o $(TARGET).cma $(OBJS)
-
 $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $(TARGET).cmxa $(OPTOBJS)
-
 $(TARGET).top: $(OBJS) $(LIBS)
 	$(OCAMLMKTOP) -o $(TARGET).top $(SYSLIBS) $(LIBS) $(OBJS)
 
@@ -85,17 +82,3 @@ parsing_hacks_typedef.cmo: parsing_hacks_typedef.ml
 	$(OCAMLC) -w -9 -c $<
 token_views_context.cmo: token_views_context.ml
 	$(OCAMLC) -w -9 -c $<
-
-
-##############################################################################
-# install
-##############################################################################
-LIBNAME=pfff-lang_cpp
-EXPORTSRC=meta_ast_cpp.mli \
-   parser_cpp.mli parse_cpp.mli \
-   lib_parsing_cpp.mli visitor_cpp.mli \
-
-install-findlib:
-	ocamlfind install $(LIBNAME) META   lib.cma lib.cmxa lib.a \
-          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) \
-          ast_cpp.ml ast_cpp.cmi

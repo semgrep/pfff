@@ -51,10 +51,8 @@ top: $(LIBNAME).top
 
 $(LIB): $(OBJS) $(COBJS)
 	$(OCAMLMKLIB) -o $(LIBNAME).cma $(BUILTINLIBS) $^
-
 $(OPTLIB): $(OPTOBJS) $(COBJS)
 	$(OCAMLMKLIBOPT) -o $(LIBNAME).cmxa $(BUILTINLIBSOPT) $^
-
 $(LIBNAME).top: $(OBJS)
 	$(OCAMLMKTOP) -o $@ $(SYSLIBS) $^
 
@@ -105,19 +103,27 @@ distclean::
 # install
 ##############################################################################
 
-OCAMLSTDLIB=`ocamlc -where`
+#old: I used to have a EXPORTSRC variable, e.g., EXPORTSRC=$(SRC:%.ml=%.mli)
+# but with merlin and codegraph you sometimes want to jump to a source file,
+# so it simpler to just install *.ml*
 install: all all.opt
-	mkdir -p $(OCAMLSTDLIB)/$(LIBNAME)
-	cp $(LIBNAME).cma $(LIBNAME).cmxa \
-          common.mli ocaml.mli \
-          $(OCAMLSTDLIB)/$(LIBNAME)
-
-install-findlib: all all.opt
 	ocamlfind install $(LIBNAME) META \
-    $(LIBNAME).cma $(LIBNAME).cmxa $(LIBNAME).a *.cmi *.cmt* $(EXPORTSRC) 
+    $(LIBNAME).cma $(LIBNAME).cmxa $(LIBNAME).a *.cmi *.cmt* *.ml*
 
-uninstall-findlib:
+uninstall:
 	ocamlfind remove $(LIBNAME)
+
+install-lib: install
+uninstall-lib: uninstall
+
+#old: everybody uses OPAM now, where each package is in a separate
+# directory, even though the original scheme of OCaml was not bad either.
+#OCAMLSTDLIB=`ocamlc -where`
+#install: all all.opt
+#	mkdir -p $(OCAMLSTDLIB)/$(LIBNAME)
+#	cp $(LIBNAME).cma $(LIBNAME).cmxa \
+#          common.mli ocaml.mli \
+#          $(OCAMLSTDLIB)/$(LIBNAME)
 
 # note that the dlllib.so will be added in lib/stublibs/
 #          dlllib.so lib.a liblib.a \

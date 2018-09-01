@@ -3,18 +3,13 @@ TOP=../..
 # Variables
 ##############################################################################
 TARGET=lib
+LIBNAME=pfff-lang_nw-analyze
 
 SRC= \
      highlight_nw.ml \
      test_analyze_nw.ml
 
 -include $(TOP)/Makefile.config
-
-SYSLIBS= str.cma unix.cma $(PCRECMA)
-LIBS=$(TOP)/commons/lib.cma \
-     $(TOP)/h_program-lang/lib.cma \
-     $(TOP)/h_version-control/lib.cma \
-     ../parsing/lib.cma \
 
 MAKESUBDIRS=
 
@@ -24,6 +19,13 @@ INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/h_program-lang $(TOP)/h_version-control  \
    $(TOP)/globals \
    ../parsing \
+
+LIBS=$(TOP)/commons/lib.cma \
+     $(TOP)/h_program-lang/lib.cma \
+     $(TOP)/h_version-control/lib.cma \
+     ../parsing/lib.cma \
+
+SYSLIBS= str.cma unix.cma $(PCRECMA)
 
 ##############################################################################
 # Generic variables
@@ -51,29 +53,10 @@ depend::
 
 $(TARGET).cma: $(OBJS)
 	$(OCAMLC) -a -o $(TARGET).cma $(OBJS)
-
 $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $(TARGET).cmxa $(OPTOBJS)
-
 $(TARGET).top: $(OBJS) $(LIBS)
 	$(OCAMLMKTOP) -o $(TARGET).top $(SYSLIBS) $(LIBS) $(OBJS)
 
 clean::
 	rm -f $(TARGET).top
-
-
-##############################################################################
-# Literate Programming rules
-##############################################################################
-
-##############################################################################
-# install
-##############################################################################
-LIBNAME=pfff-lang_nw-analyze
-EXPORTSRC=\
-  highlight_nw.mli
-
-install-findlib: all all.opt
-	ocamlfind install $(LIBNAME) META \
-          lib.cma lib.cmxa lib.a \
-          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) \

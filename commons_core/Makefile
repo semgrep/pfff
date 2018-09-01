@@ -4,8 +4,6 @@
 
 -include ../Makefile.config
 
-INCLUDEDIRS=../commons
-
 LIBNAME=commons_core
 
 SRC=ANSITerminal.ml console.ml \
@@ -14,8 +12,7 @@ SRC=ANSITerminal.ml console.ml \
  logger.ml \
  parallel.ml \
 
-
-EXPORTSRC=$(SRC:%.ml=%.mli)
+INCLUDEDIRS=../commons
 
 OCAMLMKLIB=ocamlc -a
 OCAMLMKLIBOPT=ocamlopt -a

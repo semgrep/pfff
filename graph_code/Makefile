@@ -3,6 +3,7 @@ TOP=..
 # Variables
 ##############################################################################
 TARGET=lib
+LIBNAME=pfff-graph_code
 
 SRC= graph_code.ml graph_code_opti.ml \
      dependencies_matrix_code.ml dependencies_matrix_build.ml \
@@ -25,7 +26,6 @@ INCLUDEDIRS= $(TOP)/commons \
 ##############################################################################
 # Generic variables
 ##############################################################################
-
 -include $(TOP)/Makefile.common
 
 ##############################################################################
@@ -33,34 +33,7 @@ INCLUDEDIRS= $(TOP)/commons \
 ##############################################################################
 all:: $(TARGET).cma
 all.opt:: $(TARGET).cmxa
-
 $(TARGET).cma: $(OBJS)
 	$(OCAMLC) -a -o $(TARGET).cma $(OBJS)
-
 $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $(TARGET).cmxa $(OPTOBJS)
-
-##############################################################################
-# install
-##############################################################################
-LIBNAME=pfff-graph_code
-EXPORTSRC=\
-  dependencies_matrix_build.mli \
-  dependencies_matrix_code.mli \
-  graph_code_checker.mli \
-  graph_code_class_analysis.mli \
-  graph_code_database.mli \
-  graph_code_helpers.mli \
-  graph_code.mli \
-  graph_code_opti.mli \
-  graph_code_prolog.mli \
-  graph_code_tags.mli \
-  layer_graph_code.mli \
-  test_graph_code.mli \
-  unit_graph_code.mli \
-
-
-install-findlib: all all.opt
-	ocamlfind install $(LIBNAME) META \
-          lib.cma lib.cmxa lib.a \
-          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi)

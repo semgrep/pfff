@@ -3,6 +3,7 @@ TOP=../..
 # Variables
 ##############################################################################
 TARGET=lib
+LIBNAME=pfff-lang_cpp-analyze
 
 SRC= flag_analyze_cpp.ml \
      builtins_cpp.ml \
@@ -60,7 +61,6 @@ INCLUDEDIRS= $(TOP)/commons \
 ##############################################################################
 -include $(TOP)/Makefile.common
 
-
 ##############################################################################
 # Top rules
 ##############################################################################
@@ -81,26 +81,10 @@ depend::
 
 $(TARGET).cma: $(OBJS)
 	$(OCAMLC) -a -o $(TARGET).cma $(OBJS)
-
 $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $(TARGET).cmxa $(OPTOBJS)
-
 $(TARGET).top: $(OBJS) $(LIBS)
 	$(OCAMLMKTOP) -o $(TARGET).top $(SYSLIBS) $(LIBS) $(OBJS)
 
 clean::
 	rm -f $(TARGET).top
-
-##############################################################################
-# install
-##############################################################################
-LIBNAME=pfff-lang_cpp-analyze
-EXPORTSRC=\
-  check_variables_cpp.mli \
-  highlight_cpp.mli
-
-install-findlib: all all.opt
-	ocamlfind install $(LIBNAME) META \
-          lib.cma lib.cmxa lib.a \
-          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) \
-

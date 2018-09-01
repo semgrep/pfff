@@ -3,6 +3,7 @@ TOP=..
 # Variables
 ##############################################################################
 TARGET=lib
+LIBNAME=pfff-matcher
 
 SRC= flag_matcher.ml \
      parse_fuzzy.ml matching_report.ml lib_unparser.ml \
@@ -32,26 +33,12 @@ INCLUDEDIRS= $(TOP)/commons $(TOP)/commons_ocollection \
 ##############################################################################
 all:: $(TARGET).cma
 all.opt:: $(TARGET).cmxa
-
 $(TARGET).cma: $(OBJS)
 	$(OCAMLC) -a -o $(TARGET).cma $(OBJS)
-
 $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $(TARGET).cmxa $(OPTOBJS)
-
 $(TARGET).top: $(OBJS) $(LIBS)
 	$(OCAMLMKTOP) -o $(TARGET).top $(SYSLIBS) $(LIBS) $(OBJS)
 
 clean::
 	rm -f $(TARGET).top
-
-##############################################################################
-# install
-##############################################################################
-LIBNAME=pfff-matcher
-EXPORTSRC=
-
-install-findlib: all all.opt
-	ocamlfind install $(LIBNAME) META \
-          lib.cma lib.cmxa lib.a \
-

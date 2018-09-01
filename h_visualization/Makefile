@@ -2,13 +2,13 @@ TOP=..
 #############################################################################
 # Configuration section
 #############################################################################
-
 -include $(TOP)/Makefile.config
 
 ##############################################################################
 # Variables
 ##############################################################################
 TARGET=lib
+LIBNAME=pfff-h_visualization
 
 SRC= figures.ml simple_color.ml \
      plot_jgraph.ml \
@@ -45,11 +45,8 @@ endif
 ##############################################################################
 all:: $(TARGET).cma $(PROGS)
 all.opt: $(TARGET).cmxa $(PROGS:=.opt)
-
-
 $(TARGET).cma: $(OBJS) $(LIBS)
 	$(OCAMLC) -a -o $@ $(OBJS)
-
 $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $@ $(OPTOBJS)
 
@@ -61,17 +58,6 @@ treemap_viewer.opt: $(LIBS:.cma=.cmxa) $(EXTRALIBS:.cma=.cmxa) $(OBJS:.cmo=.cmx)
 
 clean::
 	rm -f $(PROGS) $(PROGS:=.opt)
-
-##############################################################################
-# install
-##############################################################################
-LIBNAME=pfff-h_visualization
-EXPORTSRC= figures.mli simple_color.mli treemap.mli
-
-install-findlib: all all.opt
-	ocamlfind install $(LIBNAME) META \
-          lib.cma lib.cmxa lib.a \
-          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) \
 
 ##############################################################################
 # Literate Programming rules

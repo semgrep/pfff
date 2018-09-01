@@ -5,11 +5,11 @@ TOP=../..
 
 -include $(TOP)/Makefile.config
 
-INCLUDEDIRS=$(TOP)/commons $(TOP)/external/lablgtk2
-
 LIBNAME=lib
 
 SRC=gui.ml
+
+INCLUDEDIRS=$(TOP)/commons $(TOP)/external/lablgtk2
 
 OCAMLMKLIB=ocamlc -a
 OCAMLMKLIBOPT=ocamlopt -a

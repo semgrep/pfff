@@ -14,8 +14,6 @@ SRC=common.ml common2.ml \
  set_.ml map_.ml \
  dumper.ml oUnit.ml
 
-EXPORTSRC=$(SRC:%.ml=%.mli)
-
 OCAMLMKLIB=ocamlc -a
 OCAMLMKLIBOPT=ocamlopt -a
 #ocamlmklib, does some weird things when you actually dont have C code
@@ -24,10 +22,9 @@ SYSLIBS=unix.cma str.cma
 
 -include Makefile.common
 
-# too many code in pfff assume commons/lib.cma
+# too much code in pfff assumes a commons/lib.cma
 all:: lib.cma
 all.opt: lib.cmxa lib.a
-
 lib.cma: $(LIBNAME).cma
 	cp $^ $@
 lib.cmxa: $(LIBNAME).cmxa
@@ -45,7 +42,7 @@ clean::
 forprofiling:
 	$(MAKE) OPTFLAGS="-p -inline 0 " opt
 
-# obsolete, use codegraph instead!
+#obsolete: use codegraph instead!
 dependencygraph:
 	ocamldep *.mli *.ml > /tmp/dependfull.depend
 	ocamldot -fullgraph /tmp/dependfull.depend > /tmp/dependfull.dot

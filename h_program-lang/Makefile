@@ -3,6 +3,7 @@ TOP=..
 # Variables
 ##############################################################################
 TARGET=lib
+LIBNAME=pfff-h_program-lang
 
 SRC= entity_code.ml scope_code.ml \
      parse_info.ml comment_code.ml \
@@ -37,7 +38,6 @@ INCLUDEDIRS= $(TOP)/commons \
 ##############################################################################
 # Generic variables
 ##############################################################################
-
 -include $(TOP)/Makefile.common
 
 ##############################################################################
@@ -45,13 +45,10 @@ INCLUDEDIRS= $(TOP)/commons \
 ##############################################################################
 all:: $(TARGET).cma
 all.opt:: $(TARGET).cmxa
-
 $(TARGET).cma: $(OBJS)
 	$(OCAMLC) -a -o $(TARGET).cma $(OBJS)
-
 $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $(TARGET).cmxa $(OPTOBJS)
-
 $(TARGET).top: $(OBJS) $(LIBS)
 	$(OCAMLMKTOP) -o $(TARGET).top $(SYSLIBS) $(LIBS) $(OBJS)
 
@@ -64,41 +61,3 @@ archi_code_lexer.ml: archi_code_lexer.mll
 clean::
 	rm -f archi_code_lexer.ml
 beforedepend:: archi_code_lexer.ml
-
-##############################################################################
-# install
-##############################################################################
-LIBNAME=pfff-h_program-lang
-EXPORTSRC=\
-  archi_code.mli \
-  archi_code_parse.mli \
-  ast_fuzzy.mli \
-  big_grep.mli \
-  comment_code.mli \
-  coverage_code.mli \
-  database_code.mli \
-  datalog_code.mli \
-  entity_code.mli \
-  errors_code.mli \
-  highlight_code.mli \
-  info_code.mli \
-  layer_code.mli \
-  layer_coverage.mli \
-  layer_parse_errors.mli \
-  meta_ast_generic.mli \
-  overlay_code.mli \
-  parse_info.mli \
-  pleac.mli \
-  prolog_code.mli \
-  refactoring_code.mli \
-  scope_code.mli \
-  skip_code.mli \
-  tags_file.mli \
-  test_program_lang.mli \
-  unit_program_lang.mli \
-
-install-findlib: all all.opt
-	ocamlfind install $(LIBNAME) META \
-          lib.cma lib.cmxa lib.a \
-          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) \
-	  pretty_print_code.cmi

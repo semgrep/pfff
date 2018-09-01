@@ -3,6 +3,7 @@ TOP=../..
 # Variables
 ##############################################################################
 TARGET=lib
+LIBNAME=pfff-lang_ml
 
 -include $(TOP)/Makefile.config
 
@@ -30,7 +31,6 @@ INCLUDEDIRS= $(TOP)/commons \
 ##############################################################################
 # Generic variables
 ##############################################################################
-
 -include $(TOP)/Makefile.common
 
 ##############################################################################
@@ -38,19 +38,15 @@ INCLUDEDIRS= $(TOP)/commons \
 ##############################################################################
 all:: $(TARGET).cma
 all.opt:: $(TARGET).cmxa
-
 $(TARGET).cma: $(OBJS)
 	$(OCAMLC) -a -o $(TARGET).cma $(OBJS)
-
 $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $(TARGET).cmxa $(OPTOBJS)
-
 $(TARGET).top: $(OBJS) $(LIBS)
 	$(OCAMLMKTOP) -o $(TARGET).top $(SYSLIBS) $(LIBS) $(OBJS)
 
 clean::
 	rm -f $(TARGET).top
-
 
 lexer_ml.ml: lexer_ml.mll
 	$(OCAMLLEX) $<
@@ -68,16 +64,3 @@ beforedepend:: parser_ml.ml parser_ml.mli
 
 visitor_ml.cmo: visitor_ml.ml
 	$(OCAMLC) -w y -c $<
-
-##############################################################################
-# install
-##############################################################################
-LIBNAME=pfff-lang_ml
-EXPORTSRC=meta_ast_ml.mli \
-   parser_ml.mli parse_ml.mli \
-   lib_parsing_ml.mli visitor_ml.mli \
-
-install-findlib:
-	ocamlfind install $(LIBNAME) META   lib.cma lib.cmxa lib.a \
-          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) \
-          ast_ml.ml ast_ml.cmi flag_parsing_ml.ml flag_parsing_ml.cmi

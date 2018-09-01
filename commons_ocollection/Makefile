@@ -1,10 +1,7 @@
 ##############################################################################
 # Variables
 ##############################################################################
-
 -include ../Makefile.config
-
-INCLUDEDIRS=../commons
 
 LIBNAME=commons_ocollection
 
@@ -18,7 +15,7 @@ SRC=objet.ml \
  oassoc_buffer.ml \
  ofullcommon.ml
 
-EXPORTSRC=$(wildcard *.mli)
+INCLUDEDIRS=../commons
 
 OCAMLMKLIB=ocamlc -a
 OCAMLMKLIBOPT=ocamlopt -a
