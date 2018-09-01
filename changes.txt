@@ -5,6 +5,12 @@
 ** You can now compile and run codemap, codegraph, etc. under Windows
 thanks to Cygwin and Cygwin/X. See install_windows.txt
 
+** internals
+
+*** use of merlin (via Efuns)
+
+*** factorized make install-libs
+
 * 0.34 (Q2 2018) (codegraph_build, going towards OPAM friendly)
 
 ** introduce codegraph_build
