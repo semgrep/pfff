@@ -36,6 +36,8 @@ let token_kind_of_tok t =
   match t with
   | TOBrace _ -> PI.LBrace
   | TCBrace _ -> PI.RBrace
+  | TOBracket _ -> PI.LBracket
+  | TCBracket _ -> PI.RBracket
   | TComment _ -> PI.Esthet PI.Comment
   | TCommentSpace _ -> PI.Esthet PI.Space
   | TCommentNewline _ -> PI.Esthet PI.Newline
@@ -54,6 +56,8 @@ let visitor_info_of_tok f = function
 
   | TOBrace ii -> TOBrace (f ii)
   | TCBrace ii -> TCBrace (f ii)
+  | TOBracket ii -> TOBracket (f ii)
+  | TCBracket ii -> TCBracket (f ii)
 
   | TWord (s, ii) -> TWord (s, f ii)
   | TSymbol (s, ii) -> TSymbol (s, f ii)

@@ -54,6 +54,7 @@ type token =
   | TCommand of (string * Parse_info.info)
 
   | TOBrace of Parse_info.info | TCBrace of Parse_info.info
+  | TOBracket of Parse_info.info | TCBracket of Parse_info.info
   (* no TOParen/TCParen, they are not forced to be matching in TeX *)
 
   (* pad-specific: \t \f \l, see noweblatexpad  *)
@@ -178,9 +179,9 @@ rule tex = parse
   | "{" { TOBrace (tokinfo lexbuf); }
   | "}" { TCBrace (tokinfo lexbuf); }
 
+  | '[' { TOBracket (tokinfo lexbuf) }
+  | ']' { TCBracket (tokinfo lexbuf) }
   (* they don't have to be matching in TeX, so no need for special tokens *)
-  | '[' { TSymbol (tok lexbuf, tokinfo lexbuf) }
-  | ']' { TSymbol (tok lexbuf, tokinfo lexbuf) }
   | '(' { TSymbol (tok lexbuf, tokinfo lexbuf) }
   | ')' { TSymbol (tok lexbuf, tokinfo lexbuf) }
 
