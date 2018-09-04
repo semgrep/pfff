@@ -34,7 +34,7 @@ let span_newline xs = xs +> Common2.split_when (function
   | T.TCommentNewline _ -> true | _ -> false)
 
 let tag_all_tok_with ~tag categ xs = 
-  xs +> List.iter (fun tok ->
+  xs |> List.iter (fun tok ->
     let info = TH.info_of_tok tok in
     tag info categ
   )
@@ -78,16 +78,13 @@ let visit_program ~tag_hook _prefs (trees, toks) =
         let s5 =  Parse_info.str_of_info ii5 in
         (match () with
         | _ when s =~ ".*\\*\\*\\*\\*" && s5 =~ ".*\\*\\*\\*\\*" ->
-          tag ii CommentEstet;
-          tag ii5 CommentEstet;
+          tag ii CommentEstet; tag ii5 CommentEstet;
           tag ii3 CommentSection0
         | _ when s =~ ".*------" && s5 =~ ".*------" ->
-          tag ii CommentEstet;
-          tag ii5 CommentEstet;
+          tag ii CommentEstet; tag ii5 CommentEstet;
           tag ii3 CommentSection1
         | _ when s =~ ".*####" && s5 =~ ".*####" ->
-          tag ii CommentEstet;
-          tag ii5 CommentEstet;
+          tag ii CommentEstet; tag ii5 CommentEstet;
           tag ii3 CommentSection2
         | _ ->
             ()
@@ -138,7 +135,7 @@ let visit_program ~tag_hook _prefs (trees, toks) =
       :: xs 
       ->
        let (before, _, _) = span_newline xs in
-       [ii1;iinum;ii2] +> List.iter (fun ii -> tag ii CommentSection0);
+       [ii1;iinum;ii2] |> List.iter (fun ii -> tag ii CommentSection0);
        tag_all_tok_with ~tag CommentSection0 before;
        (* repass on tokens, in case there are nested tex commands *)
        aux_toks xs
@@ -146,7 +143,7 @@ let visit_program ~tag_hook _prefs (trees, toks) =
     | _x::xs ->
         aux_toks xs
   in
-  let toks' = toks +> Common.exclude (function
+  let toks' = toks |> Common.exclude (function
     (* needed ? *)
     (* | T.TCommentSpace _ -> true *)
     | _ -> false
@@ -160,6 +157,7 @@ let visit_program ~tag_hook _prefs (trees, toks) =
   trees |> F.mk_visitor { F.default_visitor with
     F.ktrees = (fun (k, _v) trees ->
       match trees with
+      (* \xxx{...} *)
       | F.Tok (s, _)::F.Braces (_, brace_trees, _)::_ ->
         let categ_opt = 
           match s with
@@ -170,8 +168,10 @@ let visit_program ~tag_hook _prefs (trees, toks) =
           | "\\subsubsection" -> Some CommentSection3
 
           | "\\label" -> Some (Label Def)
-          | "\\ref" -> Some (Label Use)
-          | "\\cite" -> Some (Label Use)
+          | "\\ref" -> Some (Label Def)
+          | "\\cite" -> Some (Label Def)
+          (* principia-specific: *)
+          | "\\book" -> Some (Label Def)
 
           | "\\begin" | "\\end" -> Some KeywordExn (* TODO *)
           | "\\input" | "\\usepackage" -> Some IncludeFilePath
@@ -184,6 +184,15 @@ let visit_program ~tag_hook _prefs (trees, toks) =
          tag_all_tok_trees_with ~tag categ brace_trees;
        );
        k trees
+
+      (* \xxx[...]{...} *)
+      | F.Tok (s, _)::F.Bracket(_,params,_)::F.Braces (_,body, _)::_ ->
+         if s =~ "^\\" then begin
+           tag_all_tok_trees_with ~tag (Parameter Use) params;
+           tag_all_tok_trees_with ~tag (Parameter Use) body;
+         end;
+         k trees
+      (* {\xxx ... } *)
       | F.Braces (_, (F.Tok (s, _)::brace_trees),_)::_ ->
         let categ_opt = 
           match s with
@@ -203,7 +212,7 @@ let visit_program ~tag_hook _prefs (trees, toks) =
   (* toks phase 2 (individual tokens) *)
   (* -------------------------------------------------------------------- *)
 
-  toks +> List.iter (fun tok -> 
+  toks |> List.iter (fun tok -> 
     match tok with
     | T.TComment ii ->
         if not (Hashtbl.mem already_tagged ii)
@@ -249,7 +258,7 @@ let visit_program ~tag_hook _prefs (trees, toks) =
     | T.TNowebCode (_, ii) ->
         tag ii EmbededCode
     | T.TNowebCodeLink (_, ii) ->
-        tag ii (StructName Use) (* TODO *)
+        tag ii (Label Def) (* TODO *)
 
     | T.TNowebChunkName (_, ii) ->
         tag ii KeywordObject (* TODO *)
@@ -258,6 +267,7 @@ let visit_program ~tag_hook _prefs (trees, toks) =
 
     | T.TVerbatimLine (_, ii) ->
         tag ii Verbatim
+
     (* syncweb-specific: *)
     | T.TFootnote (c, ii) ->
         (match c with
@@ -271,14 +281,17 @@ let visit_program ~tag_hook _prefs (trees, toks) =
         if not (Hashtbl.mem already_tagged ii)
         then tag ii Number
 
+
     | T.TSymbol (s, ii) -> 
       (match s with
-      | "&" | "\\" ->
+      | "&" | "\\\\" ->
         tag ii Punctuation
       | _ -> ()
       )
 
-    | T.TOBrace ii | T.TCBrace ii ->  tag ii Punctuation
+    | T.TOBrace ii | T.TCBrace ii 
+    | T.TOBracket ii | T.TCBracket ii
+      ->  tag ii Punctuation
 
     | T.TUnknown ii -> tag ii Error
     | T.EOF _ii-> ()
