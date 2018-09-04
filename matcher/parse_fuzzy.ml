@@ -35,6 +35,15 @@ type 'tok hooks = {
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+let char_of_token_kind = function
+ | PI.RAngle -> '>'
+ | PI.RBracket -> ']'
+ | PI.RBrace -> '}'
+ | _ -> raise (Impossible)
+
+(*****************************************************************************)
+(* Entry point *)
+(*****************************************************************************)
 
 (*
  * less: I should also factorize with Parse_cpp.parse_fuzzy. 
@@ -58,8 +67,14 @@ let mk_trees h xs =
   let rec consume x xs =
     match x with
     | tok when h.kind tok = PI.LBrace -> 
-        let body, closing, rest = look_close_brace x [] xs in
+        let body, closing, rest = look_close PI.RBrace x [] xs in
         Ast_fuzzy.Braces (h.tokf x, body, h.tokf closing), rest
+    | tok when h.kind tok = PI.LBracket -> 
+        let body, closing, rest = look_close PI.RBracket x [] xs in
+        Ast_fuzzy.Bracket (h.tokf x, body, h.tokf closing), rest
+    | tok when h.kind tok = PI.LAngle -> 
+        let body, closing, rest = look_close PI.RAngle x [] xs in
+        Ast_fuzzy.Angle (h.tokf x, body, h.tokf closing), rest
     | tok when h.kind tok = PI.LPar ->
         let body, closing, rest = look_close_paren x [] xs in
         let body' = split_comma body in
@@ -80,19 +95,19 @@ let mk_trees h xs =
       let x', xs' = consume x xs in
       x'::aux xs'
 
-  and look_close_brace tok_start accbody xs =
+  and look_close close_kind tok_start accbody xs = 
     match xs with
     | [] -> 
-        failwith (spf "PB look_close_brace (started at line %d, col %d)" 
+        failwith (spf "PB look_close '%c' (started at line %d, col %d)"
+                    (char_of_token_kind close_kind)
                     (PI.line_of_info (h.tokf tok_start))
                     (PI.col_of_info (h.tokf tok_start)))
     | x::xs -> 
         (match x with
-        | tok when h.kind tok = PI.RBrace-> 
+        | tok when h.kind tok = close_kind -> 
           List.rev accbody, x, xs
-
         | _ -> let (x', xs') = consume x xs in
-               look_close_brace tok_start (x'::accbody) xs'
+               look_close close_kind tok_start (x'::accbody) xs'
         )
 
   and look_close_paren tok_start accbody xs =

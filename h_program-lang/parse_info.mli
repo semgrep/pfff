@@ -45,6 +45,8 @@ type info = token_mutable
 type token_kind =
   | LPar | RPar
   | LBrace | RBrace
+  | LBracket | RBracket
+  | LAngle | RAngle
   | Esthet of esthet
   | Eof
   | Other

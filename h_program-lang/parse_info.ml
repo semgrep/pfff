@@ -129,10 +129,10 @@ and transformation =
 
 type token_kind =
   (* for the fuzzy parser and sgrep/spatch fuzzy AST *)
-  | LPar
-  | RPar
-  | LBrace
-  | RBrace
+  | LPar | RPar
+  | LBrace | RBrace
+  | LBracket | RBracket
+  | LAngle | RAngle
   (* for the unparser helpers in spatch, and to filter
    * irrelevant tokens in the fuzzy parser
    *)

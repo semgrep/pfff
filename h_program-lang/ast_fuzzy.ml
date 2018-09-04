@@ -112,10 +112,11 @@ type tok = Parse_info.info
 type 'a wrap = 'a * tok
 
 type tree =
-  | Braces of tok * trees * tok
   (* todo: comma *)
   | Parens of tok * (trees, tok (* comma*)) Common.either list * tok
+  | Braces of tok * trees * tok
   | Angle  of tok * trees * tok
+  | Bracket  of tok * trees * tok
 
   (* note that gcc allows $ in identifiers, so using $ for metavariables
    * means we will not be able to match such identifiers. No big deal.
@@ -165,6 +166,8 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
       in ()
 
       | Angle ((v1, v2, v3)) ->
+        let _v1 = v_tok v1 and _v2 = v_trees v2 and _v3 = v_tok v3 in ()
+      | Bracket ((v1, v2, v3)) ->
         let _v1 = v_tok v1 and _v2 = v_trees v2 and _v3 = v_tok v3 in ()
       | Metavar v1 -> let _v1 = v_wrap v1 in ()
       | Dots v1 -> let _v1 = v_tok v1 in ()
@@ -216,6 +219,11 @@ let (mk_mapper: map_visitor -> (trees -> trees)) = fun hook ->
       and v2 = map_trees v2
       and v3 = map_tok v3
       in Angle ((v1, v2, v3))
+    | Bracket ((v1, v2, v3)) ->
+      let v1 = map_tok v1
+      and v2 = map_trees v2
+      and v3 = map_tok v3
+      in Bracket ((v1, v2, v3))
   | Metavar v1 -> let v1 = map_wrap v1 in Metavar ((v1))
   | Dots v1 -> let v1 = map_tok v1 in Dots ((v1))
   | Tok v1 -> let v1 = map_wrap v1 in Tok ((v1))
@@ -280,6 +288,11 @@ let rec vof_multi_grouped =
       and v2 = Ocaml.vof_list vof_multi_grouped v2
       and v3 = vof_token v3
       in Ocaml.VSum (("Angle", [ v1; v2; v3 ]))
+  | Bracket ((v1, v2, v3)) ->
+      let v1 = vof_token v1
+      and v2 = Ocaml.vof_list vof_multi_grouped v2
+      and v3 = vof_token v3
+      in Ocaml.VSum (("Bracket", [ v1; v2; v3 ]))
   | Metavar v1 -> let v1 = vof_wrap v1 in Ocaml.VSum (("Metavar", [ v1 ]))
   | Dots v1 -> let v1 = vof_token v1 in Ocaml.VSum (("Dots", [ v1 ]))
   | Tok v1 -> let v1 = vof_wrap v1 in Ocaml.VSum (("Tok", [ v1 ]))

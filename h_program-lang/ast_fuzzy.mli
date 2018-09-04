@@ -3,9 +3,10 @@ type tok = Parse_info.info
 type 'a wrap = 'a * tok
 
 type tree =
-  | Braces of tok * trees * tok
   | Parens of tok * (trees, tok (* comma*)) Common.either list * tok
+  | Braces of tok * trees * tok
   | Angle  of tok * trees * tok
+  | Bracket  of tok * trees * tok
 
   (* note that gcc allows $ in identifiers, so using $ for metavariables
    * means we will not be able to match such identifiers (but no big deal)
