@@ -3,6 +3,7 @@ TOP=../..
 # Variables
 ##############################################################################
 TARGET=lib
+OPAMPKG=pfff-lang_php-matcher
 
 SRC= flag_matcher_php.ml   \
      refactoring_code_php.ml \
@@ -42,32 +43,10 @@ all.opt:: $(TARGET).cmxa
 
 $(TARGET).cma: $(OBJS)
 	$(OCAMLC) -a -o $(TARGET).cma $(OBJS)
-
 $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $(TARGET).cmxa $(OPTOBJS)
-
 $(TARGET).top: $(OBJS) $(LIBS)
 	$(OCAMLMKTOP) -o $(TARGET).top $(SYSLIBS) $(LIBS) $(OBJS)
 
 clean::
 	rm -f $(TARGET).top
-
-##############################################################################
-# install
-##############################################################################
-LIBNAME=pfff-lang_php-matcher
-
-EXPORTSRC=\
-  matching_php.mli \
-  metavars_php.mli \
-  php_vs_php.mli \
-  refactoring_code_php.mli \
-  sgrep_php.mli \
-  spatch_php.mli \
-  transforming_php.mli \
-  unit_matcher_php.mli \
-
-install-findlib:
-	ocamlfind install $(LIBNAME) META   lib.cma lib.cmxa lib.a \
-          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) \
-	  $(SRC)

@@ -3,6 +3,7 @@ TOP=../../..
 # Variables
 ##############################################################################
 TARGET=lib
+OPAMPKG=pfff-lang_php-analyze-checker
 
 # mostly local analysis
 SRC= \
@@ -47,38 +48,10 @@ all.opt:: $(TARGET).cmxa
 
 $(TARGET).cma: $(OBJS)
 	$(OCAMLC) -a -o $(TARGET).cma $(OBJS)
-
 $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $(TARGET).cmxa $(OPTOBJS)
-
 $(TARGET).top: $(OBJS) $(LIBS)
 	$(OCAMLMKTOP) -o $(TARGET).top $(SYSLIBS) $(LIBS) $(OBJS)
 
 clean::
 	rm -f $(TARGET).top
-
-##############################################################################
-# install
-##############################################################################
-LIBNAME=pfff-lang_php-analyze-checker
-
-EXPORTSRC=\
-  auto_fix_php.mli \
-  check_all_php.mli \
-  check_cfg_php.mli \
-  check_micro_clones_php.mli \
-  check_classes_php.mli \
-  check_functions_php.mli \
-  check_includes_php.mli \
-  check_lint_php.mli \
-  check_misc_php.mli \
-  check_variables_php.mli \
-  error_php.mli \
-  layer_checker_php.mli \
-  suggest_fix_php.mli \
-  unit_checker_php.mli \
-
-install-findlib:
-	ocamlfind install $(LIBNAME) META   lib.cma lib.cmxa lib.a \
-          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) \
-	  $(SRC)

@@ -3,7 +3,7 @@ TOP=../../..
 # Variables
 ##############################################################################
 TARGET=lib
-LIBNAME=pfff-lang_ml-visual
+OPAMPKG=pfff-lang_ml-visual
 
 SRC= highlight_ml.ml
 

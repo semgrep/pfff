@@ -3,7 +3,7 @@ TOP=..
 # Variables
 ##############################################################################
 TARGET=lib
-LIBNAME=pfff-graph_code
+OPAMPKG=pfff-graph_code
 
 SRC= graph_code.ml graph_code_opti.ml \
      dependencies_matrix_code.ml dependencies_matrix_build.ml \

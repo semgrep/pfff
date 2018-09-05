@@ -3,6 +3,7 @@ TOP=../..
 # Variables
 ##############################################################################
 TARGET=lib
+OPAMPKG=pfff-lang_php
 
 SRC= flag_parsing_php.ml \
      scope_php.ml \
@@ -31,7 +32,6 @@ INCLUDEDIRS= $(TOP)/commons \
 ##############################################################################
 # Generic variables
 ##############################################################################
-
 -include $(TOP)/Makefile.common
 
 ##############################################################################
@@ -42,10 +42,8 @@ all.opt:: $(TARGET).cmxa
 
 $(TARGET).cma: $(OBJS)
 	$(OCAMLC) -a -o $(TARGET).cma $(OBJS)
-
 $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $(TARGET).cmxa $(OPTOBJS)
-
 $(TARGET).top: $(OBJS) $(LIBS)
 	$(OCAMLMKTOP) -o $(TARGET).top $(SYSLIBS) $(LIBS) $(OBJS)
 
@@ -71,20 +69,6 @@ visitor_php.cmo: visitor_php.ml
 
 pretty_print_php.cmo: pretty_print_php.ml
 	$(OCAMLC) -w y -c $<
-
-##############################################################################
-# install
-##############################################################################
-LIBNAME=pfff-lang_php
-EXPORTSRC=meta_ast_php.mli unparse_php.mli \
-   parser_php.mli parse_php.mli token_helpers_php.mli \
-   lib_parsing_php.mli visitor_php.mli scope_php.mli \
-
-install-findlib:
-	ocamlfind install $(LIBNAME) META   lib.cma lib.cmxa lib.a \
-          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) \
-          ast_php.ml ast_php.cmi ast_php.cmo ast_php.cmx \
-          flag_parsing_php.ml flag_parsing_php.cmi flag_parsing_php.cmo flag_parsing_php.cmx \
 
 ##############################################################################
 # Literate Programming rules

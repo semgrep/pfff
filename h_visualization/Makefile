@@ -8,7 +8,7 @@ TOP=..
 # Variables
 ##############################################################################
 TARGET=lib
-LIBNAME=pfff-h_visualization
+OPAMPKG=pfff-h_visualization
 
 SRC= figures.ml simple_color.ml \
      plot_jgraph.ml \

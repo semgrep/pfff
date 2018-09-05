@@ -3,6 +3,7 @@ TOP=../..
 # Variables
 ##############################################################################
 TARGET=lib
+OPAMPKG=pfff-lang_php-analyze
 
 include $(TOP)/Makefile.config
 
@@ -65,7 +66,6 @@ INCLUDEDIRS= $(TOP)/commons \
 ##############################################################################
 -include $(TOP)/Makefile.common
 
-
 ##############################################################################
 # Top rules
 ##############################################################################
@@ -86,30 +86,13 @@ depend::
 
 $(TARGET).cma: $(OBJS)
 	$(OCAMLC) -a -o $(TARGET).cma $(OBJS)
-
 $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $(TARGET).cmxa $(OPTOBJS)
-
 $(TARGET).top: $(OBJS) $(LIBS)
 	$(OCAMLMKTOP) -o $(TARGET).top $(SYSLIBS) $(LIBS) $(OBJS)
 
 clean::
 	rm -f $(TARGET).top
-
-##############################################################################
-# install
-##############################################################################
-LIBNAME=pfff-lang_php-analyze
-INSTALL_SUBDIRS=foundation checker
-
-install-findlib:: all all.opt
-	ocamlfind install $(LIBNAME) META; \
-	set -e; for i in $(INSTALL_SUBDIRS); do echo $$i; $(MAKE) -C $$i install-findlib; done
-
-uninstall-findlib::
-	ocamlfind remove $(LIBNAME) ; \
-	set -e; for i in $(INSTALL_SUBDIRS); do echo $$i; $(MAKE) -C $$i uninstall-findlib; done
-
 
 ##############################################################################
 # Literate Programming rules

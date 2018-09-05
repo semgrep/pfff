@@ -3,7 +3,7 @@ TOP=..
 # Variables
 ##############################################################################
 TARGET=lib
-LIBNAME=pfff-h_files-format
+OPAMPKG=pfff-h_files-format
 
 SRC= outline.ml simple_format.ml source_tree.ml
 

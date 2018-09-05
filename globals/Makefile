@@ -5,7 +5,7 @@ TOP=..
 # Variables
 ##############################################################################
 TARGET=lib
-LIBNAME=pfff-config
+OPAMPKG=pfff-config
 
 SRC= config_pfff.ml
 

@@ -3,7 +3,7 @@ TOP=../..
 # Variables
 ##############################################################################
 TARGET=lib
-LIBNAME=pfff-lang_nw
+OPAMPKG=pfff-lang_nw
 
 -include $(TOP)/Makefile.config
 

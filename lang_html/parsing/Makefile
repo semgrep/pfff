@@ -3,6 +3,7 @@ TOP=../..
 # Variables
 ##############################################################################
 TARGET=lib
+OPAMPKG=pfff-lang_html
 
 -include $(TOP)/Makefile.config
 
@@ -21,7 +22,6 @@ SRC= flag_parsing_html.ml \
      test_parsing_html.ml
 
 
-
 SYSLIBS= str.cma unix.cma 
 LIBS=$(TOP)/commons/lib.cma
 
@@ -35,7 +35,6 @@ INCLUDEDIRS= $(TOP)/commons \
 ##############################################################################
 # Generic variables
 ##############################################################################
-
 -include $(TOP)/Makefile.common
 
 ##############################################################################
@@ -46,10 +45,8 @@ all.opt:: $(TARGET).cmxa
 
 $(TARGET).cma: $(OBJS)
 	$(OCAMLC) -a -o $(TARGET).cma $(OBJS)
-
 $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $(TARGET).cmxa $(OPTOBJS)
-
 $(TARGET).top: $(OBJS) $(LIBS)
 	$(OCAMLMKTOP) -o $(TARGET).top $(SYSLIBS) $(LIBS) $(OBJS)
 
@@ -73,17 +70,3 @@ beforedepend:: parser_html.ml parser_html.mli
 
 visitor_html.cmo: visitor_html.ml
 	$(OCAMLC) -w y -c $<
-
-
-##############################################################################
-# install
-##############################################################################
-LIBNAME=pfff-lang_html
-EXPORTSRC=meta_ast_html.mli \
-   parser_html.mli parse_html.mli \
-   lib_parsing_html.mli visitor_html.mli \
-
-install-findlib:
-	ocamlfind install $(LIBNAME) META   lib.cma lib.cmxa lib.a \
-          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) \
-          ast_html.ml ast_html.cmi

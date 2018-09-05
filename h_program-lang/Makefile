@@ -3,7 +3,7 @@ TOP=..
 # Variables
 ##############################################################################
 TARGET=lib
-LIBNAME=pfff-h_program-lang
+OPAMPKG=pfff-h_program-lang
 
 SRC= entity_code.ml scope_code.ml \
      parse_info.ml comment_code.ml \

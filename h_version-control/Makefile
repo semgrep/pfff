@@ -3,7 +3,7 @@ TOP=..
 # Variables
 ##############################################################################
 TARGET=lib
-LIBNAME=pfff-h_version-control
+OPAMPKG=pfff-h_version-control
 
 SRC= flag_version_control.ml patch.ml lib_vcs.ml  \
      version_control.ml \
@@ -14,7 +14,7 @@ SRC= flag_version_control.ml patch.ml lib_vcs.ml  \
 #todo: empty for now
 SRC+=subversion.ml
 
-LIBS=../commons/commons.cma ../commons_core/commons_core.cma ../globals/lib.cma
+LIBS=../commons/lib.cma ../commons_core/lib.cma ../globals/lib.cma
 INCLUDEDIRS= ../commons ../commons_core ../globals
 
 TARGET1=vcs

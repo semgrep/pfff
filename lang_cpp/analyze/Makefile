@@ -3,7 +3,7 @@ TOP=../..
 # Variables
 ##############################################################################
 TARGET=lib
-LIBNAME=pfff-lang_cpp-analyze
+OPAMPKG=pfff-lang_cpp-analyze
 
 SRC= flag_analyze_cpp.ml \
      builtins_cpp.ml \

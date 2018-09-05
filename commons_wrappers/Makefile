@@ -265,35 +265,7 @@ commons_features.cmxa: features.cmx
 ##############################################################################
 # install
 ##############################################################################
-LIBNAME=pfff-commons
-EXPORTSRC=\
-  common.mli \
-  common2.mli \
-  ocaml.mli \
-  ocamlextra/oUnit.mli \
-  parallel.mli \
-  console.mli \
-  file_type.mli \
-  file_format.mli \
-
-OCAMLSTDLIB=`ocamlc -where`
-install: all all.opt
-	mkdir -p $(OCAMLSTDLIB)/$(LIBNAME)
-	cp lib.cma lib.cmxa \
-          dlllib.so lib.a liblib.a \
-          common.mli ocaml.mli \
-          $(OCAMLSTDLIB)/$(LIBNAME)
-
-#todo: $(EXPORTSRC:%.mli=%.cmt) but must be guarded by having bin-annot
-
-# note that the dlllib.so will be added in lib/stublibs/
-install-findlib: all all.opt
-	ocamlfind install $(LIBNAME) META  lib.cma lib.cmxa lib.a \
-          dlllib.so liblib.a \
-          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi)
-
-uninstall-findlib:
-	ocamlfind remove $(LIBNAME)
+OPAMPKG=pfff-wrappers
 
 ##############################################################################
 # Literate Programming rules

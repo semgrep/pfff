@@ -3,13 +3,13 @@ TOP=../..
 # Variables
 ##############################################################################
 TARGET=lib
-# for OPAM
-LIBNAME=pfff-commons-graph
 
 SRC= graphe.ml
 
 INCLUDEDIRS= $(TOP)/commons \
  $(TOP)/external/ocamlgraph/ \
+
+OPAMPKG=pfff-commons-graph
 
 #needed for make top
 LIBS=../../external/ocamlgraph/graph.cma

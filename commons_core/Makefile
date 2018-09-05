@@ -1,10 +1,7 @@
 ##############################################################################
 # Variables
 ##############################################################################
-
 -include ../Makefile.config
-
-LIBNAME=commons_core
 
 SRC=ANSITerminal.ml console.ml \
  int.ml \
@@ -13,6 +10,9 @@ SRC=ANSITerminal.ml console.ml \
  parallel.ml \
 
 INCLUDEDIRS=../commons
+
+LIBNAME=lib
+OPAMPKG=commons_core
 
 OCAMLMKLIB=ocamlc -a
 OCAMLMKLIBOPT=ocamlopt -a

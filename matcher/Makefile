@@ -3,7 +3,7 @@ TOP=..
 # Variables
 ##############################################################################
 TARGET=lib
-LIBNAME=pfff-matcher
+OPAMPKG=pfff-matcher
 
 SRC= flag_matcher.ml \
      parse_fuzzy.ml matching_report.ml lib_unparser.ml \

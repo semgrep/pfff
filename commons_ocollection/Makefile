@@ -3,8 +3,6 @@
 ##############################################################################
 -include ../Makefile.config
 
-LIBNAME=commons_ocollection
-
 SRC=objet.ml \
  ocollection.ml\
  seti.ml setPt.ml \
@@ -16,6 +14,9 @@ SRC=objet.ml \
  ofullcommon.ml
 
 INCLUDEDIRS=../commons
+
+LIBNAME=lib
+OPAMPKG=commons_ocollection
 
 OCAMLMKLIB=ocamlc -a
 OCAMLMKLIBOPT=ocamlopt -a

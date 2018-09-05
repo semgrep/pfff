@@ -3,7 +3,7 @@ TOP=../..
 # Variables
 ##############################################################################
 TARGET=lib
-LIBNAME=pfff-lang_nw-analyze
+OPAMPKG=pfff-lang_nw-analyze
 
 SRC= \
      highlight_nw.ml \
