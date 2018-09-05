@@ -25,7 +25,7 @@ OPTFLAGS=-thread
 # or setenv it to ".opt" in your startup script.
 OPTBIN ?= #.opt
 
-# coupling: ../Makefile.common, but want independent commons/
+#coupling: ../Makefile.common, but want independent commons/
 OCAMLCFLAGS ?= -g -dtypes $(OCAMLCFLAGS_EXTRA) -thread -w +9
 
 # The OCaml tools.
@@ -103,29 +103,38 @@ distclean::
 # install
 ##############################################################################
 
+#note: I used to have LIBNAME to always be 'lib', which simplifies things,
+# but it does not allow to use the standard OCaml library installation
+# procedure (installing in `ocamlc -where`). Note that with the prevalence
+# of OPAM this becomes less a problem though.
 #old: I used to have a EXPORTSRC variable, e.g., EXPORTSRC=$(SRC:%.ml=%.mli)
 # but with merlin and codegraph you sometimes want to jump to a source file,
 # so it simpler to just install *.ml*
+#note: installing the .ml can be useful for tools like codegraph or Merlin,
+# but if your 'make depend' is wrong and include directories under OPAM,
+# then you will possibly get issues with inconcistent definitions because
+# make will try to recompile the .ml from OPAM.
+
 install: all all.opt
-	ocamlfind install $(LIBNAME) META \
-    $(LIBNAME).cma $(LIBNAME).cmxa $(LIBNAME).a *.cmi *.cmt* *.ml*
+	ocamlfind install $(OPAMPKG) META *.mli \
+    $(LIBNAME).cma $(LIBNAME).cmxa $(LIBNAME).a *.cmi *.cmt* 
 
 uninstall:
-	ocamlfind remove $(LIBNAME)
+	ocamlfind remove $(OPAMPKG)
 
 install-lib: install
 uninstall-lib: uninstall
 
 #old: everybody uses OPAM now, where each package is in a separate
-# directory, even though the original scheme of OCaml was not bad either.
+# directory (even though the original scheme of OCaml was not bad either),
+# so those targets are now useless.
 #OCAMLSTDLIB=`ocamlc -where`
 #install: all all.opt
 #	mkdir -p $(OCAMLSTDLIB)/$(LIBNAME)
 #	cp $(LIBNAME).cma $(LIBNAME).cmxa \
 #          common.mli ocaml.mli \
 #          $(OCAMLSTDLIB)/$(LIBNAME)
-
 # note that the dlllib.so will be added in lib/stublibs/
 #          dlllib.so lib.a liblib.a \
 #          dlllib.so liblib.a\
-#todo: $(EXPORTSRC:%.mli=%.cmt) but must be guarded by having bin-annot
+#note that $(EXPORTSRC:%.mli=%.cmt) but must be guarded by having bin-annot

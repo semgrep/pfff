@@ -15,7 +15,7 @@
 #  - TEX
 
 # For (un)installation, it assumes:
-#  - LIBNAME
+#  - LIBNAME, OPAMPKG
 
 # this can set extra flags like -bin-annot that we want to be everywhere
 -include $(TOP)/Makefile.config
@@ -121,11 +121,15 @@ doti:
 # Install
 ##############################################################################
 
+# installing the .ml can be useful for tools like codegraph or Merlin,
+# but if your 'make depend' is wrong and include directories under OPAM,
+# then you will possibly get issues with inconcistent definitions because
+# make will try to recompile the .ml from OPAM.
 install-lib: all all.opt
-	ocamlfind install $(LIBNAME) META lib.cma lib.cmxa *.a *.cmi *.cmt* *.mli
+	ocamlfind install $(OPAMPKG) META lib.cma lib.cmxa *.a *.cmi *.cmt* *.mli
 
 uninstall-lib::
-	ocamlfind remove $(LIBNAME)
+	ocamlfind remove $(OPAMPKG)
 
 reinstall-lib:
 	$(MAKE) uninstall-lib

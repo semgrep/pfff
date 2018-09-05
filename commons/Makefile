@@ -2,45 +2,38 @@
 # Variables
 ##############################################################################
 
-# if part of pfff/ or other programs with a Makefile.config
+# Useful when commons is part of a program with a Makefile.config (e.g., pfff)
 -include ../Makefile.config
 
-LIBNAME=commons
-
-# note: if you add a file (a .mli or .ml), dont forget to redo a 'make depend'
+#note: if you add a file (a .mli or .ml), dont forget to 'make depend'
 SRC=common.ml common2.ml \
  ocaml.ml\
  file_type.ml\
  set_.ml map_.ml \
  dumper.ml oUnit.ml
 
-OCAMLMKLIB=ocamlc -a
-OCAMLMKLIBOPT=ocamlopt -a
-#ocamlmklib, does some weird things when you actually dont have C code
+# lib.cma
+LIBNAME=lib
+# ~/.opam/.../commons/lib.cma
+OPAMPKG=commons
 
+# for 'make top'
 SYSLIBS=unix.cma str.cma
 
--include Makefile.common
+OCAMLMKLIB=ocamlc -a
+OCAMLMKLIBOPT=ocamlopt -a
+#bug? ocamlmklib, does some weird things when you actually dont have C code
 
-# too much code in pfff assumes a commons/lib.cma
-all:: lib.cma
-all.opt: lib.cmxa lib.a
-lib.cma: $(LIBNAME).cma
-	cp $^ $@
-lib.cmxa: $(LIBNAME).cmxa
-	cp $^ $@
-lib.a: $(LIBNAME).a
-	cp $^ $@
+-include Makefile.common
 
 ##############################################################################
 # Developer rules
 ##############################################################################
 
-clean::
-	rm -f gmon.out
-
 forprofiling:
 	$(MAKE) OPTFLAGS="-p -inline 0 " opt
+clean::
+	rm -f gmon.out
 
 #obsolete: use codegraph instead!
 dependencygraph:

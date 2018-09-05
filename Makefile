@@ -13,6 +13,8 @@ SRC=find_source.ml
 
 TARGET=pfff
 
+OPAMPKG=pfff
+
 #------------------------------------------------------------------------------
 # Program related variables
 #------------------------------------------------------------------------------
@@ -68,8 +70,8 @@ BASICSYSLIBS=bigarray.cma str.cma unix.cma
 
 # used for sgrep and other small utilities which I dont want to depend
 # on too much things
-BASICLIBS=commons/commons.cma \
- commons_core/commons_core.cma \
+BASICLIBS=commons/lib.cma \
+ commons_core/lib.cma \
  $(JSONCMA) \
  globals/lib.cma \
  h_files-format/lib.cma \
@@ -105,9 +107,9 @@ SYSLIBS=bigarray.cma str.cma unix.cma
 SYSLIBS+=$(OCAMLCOMPILERCMA)
 
 # use for the other programs
-LIBS= commons/commons.cma \
-    commons_core/commons_core.cma \
-    commons_ocollection/commons_ocollection.cma \
+LIBS= commons/lib.cma \
+    commons_core/lib.cma \
+    commons_ocollection/lib.cma \
        $(JSONCMA) \
        $(GRAPHCMA) \
        $(EXTLIBCMA) $(PTCMA) $(ZIPCMA) $(JAVALIBCMA) \
@@ -429,7 +431,9 @@ pfff_test.opt: $(LIBS:.cma=.cmxa) $(OPTOBJS) main_test.cmx
 VERSION=$(shell cat globals/config_pfff.ml.in |grep version |perl -p -e 's/.*"(.*)".*/$$1/;')
 
 install: all
-	ocamlfind install $(LIBNAME) META
+	ocamlfind install $(OPAMPKG) META
+uninstall: all
+	ocamlfind remove $(OPAMPKG)
 
 #old:
 # note: don't remove DESTDIR, it can be set by package build system like ebuild
@@ -441,9 +445,9 @@ install: all
 #	@echo "You can also install pfff by copying the programs"
 #	@echo "available in this directory anywhere you want and"
 #	@echo "give it the right options to find its configuration files."
-
-uninstall:
-	rm -rf $(DESTDIR)$(SHAREDIR)/data
+#
+#uninstall:
+#	rm -rf $(DESTDIR)$(SHAREDIR)/data
 
 # Some of those libraries are needed by Efuns, magicator, syncweb
 INSTALL_SUBDIRS= \
@@ -461,7 +465,6 @@ TODO=\
   lang_java/parsing \
   lang_js/parsing  lang_css/parsing lang_html/parsing \
 
-LIBNAME=pfff
 install-libs:: all all.opt
 	set -e; for i in $(INSTALL_SUBDIRS); do echo $$i; $(MAKE) -C $$i install-lib; done
 
