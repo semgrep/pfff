@@ -139,6 +139,7 @@ let visit_program ~tag_hook _prefs (trees, toks) =
        tag_all_tok_with ~tag CommentSection0 before;
        (* repass on tokens, in case there are nested tex commands *)
        aux_toks xs
+    (* less: \item TWord => purple? or maybe purple until end of line *)
 
     | _x::xs ->
         aux_toks xs
@@ -174,7 +175,8 @@ let visit_program ~tag_hook _prefs (trees, toks) =
           | "\\book" -> Some (Label Def)
 
           | "\\begin" | "\\end" -> Some KeywordExn (* TODO *)
-          | "\\input" | "\\usepackage" -> Some IncludeFilePath
+          | "\\input" | "\\usepackage" | "\\bibliography" -> 
+            Some IncludeFilePath
           | "\\url" | "\\furl" -> Some EmbededUrl
 
           | _ when s =~ "^\\" -> Some (Parameter Use)
@@ -192,6 +194,12 @@ let visit_program ~tag_hook _prefs (trees, toks) =
            tag_all_tok_trees_with ~tag (Parameter Use) body;
          end;
          k trees
+      (* {...}{...} *)
+      | F.Braces (_, brace_trees1,_)::F.Braces (_, brace_trees2,_)::_ ->
+         tag_all_tok_trees_with ~tag (Parameter Use) brace_trees1;
+         tag_all_tok_trees_with ~tag (Parameter Use) brace_trees2;
+         k trees
+
       (* {\xxx ... } *)
       | F.Braces (_, (F.Tok (s, _)::brace_trees),_)::_ ->
         let categ_opt = 
@@ -217,7 +225,7 @@ let visit_program ~tag_hook _prefs (trees, toks) =
     | T.TComment ii ->
         if not (Hashtbl.mem already_tagged ii)
         then 
-         let s = Parse_info.str_of_info ii in
+         let s = Parse_info.str_of_info ii |> String.lowercase in
          (match s with
          | _ when s =~ "^%todo:" -> tag ii BadSmell
          | _ -> tag ii CommentImportance0

@@ -203,7 +203,7 @@ rule tex = parse
   | "\\" (['t''l''n'] as kind) [' ''\t'] [^'\n' '\r']*
       { TFootnote (kind, tokinfo lexbuf) }
 
-  | "\\" ((letter+) as cmd) { TCommand (cmd, tokinfo lexbuf)}
+  | "\\" ((letter (letter | '*')*) as cmd) { TCommand (cmd, tokinfo lexbuf)}
   | letter+ { TWord(tok lexbuf, tokinfo lexbuf) }
 
   | "\\\\" { TSymbol (tok lexbuf, tokinfo lexbuf) }
