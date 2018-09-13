@@ -41,9 +41,12 @@ let token_kind_of_tok t =
   | TCBrace _ -> PI.RBrace
   | TOParen _ -> PI.LPar
   | TCParen _ -> PI.RPar
+  (* less: also TOBracket? (and TOBracketAt...) *)
+
   | TComment _ | TCommentMisc _ -> PI.Esthet PI.Comment
   | TCommentSpace _ -> PI.Esthet PI.Space
   | TCommentNewline _ -> PI.Esthet PI.Newline
+
   | _ -> PI.Other
 
 (*****************************************************************************)
@@ -173,7 +176,11 @@ let info_of_tok = function
   | TPlusDot ii -> ii
   | TPlus ii -> ii
   | TMinus ii -> ii
-
+  | TBracketAt ii -> ii
+  | TBracketAtAt ii -> ii
+  | TBracketAtAtAt ii -> ii
+  | TBracketPercent ii -> ii
+  | TBracketPercentPercent ii -> ii
 
 let visitor_info_of_tok f = function
   | TCommentSpace ii -> TCommentSpace (f ii)
@@ -297,6 +304,11 @@ let visitor_info_of_tok f = function
   | TPlusDot (ii) -> TPlusDot (f ii)
   | TPlus (ii) -> TPlus (f ii)
   | TMinus (ii) -> TMinus (f ii)
+  | TBracketAt ii -> TBracketAt (f ii)
+  | TBracketAtAt ii -> TBracketAtAt (f ii)
+  | TBracketAtAtAt ii -> TBracketAtAtAt (f ii)
+  | TBracketPercent ii -> TBracketPercent (f ii)
+  | TBracketPercentPercent ii -> TBracketPercentPercent (f ii)
 
 (*****************************************************************************)
 (* Accessors *)

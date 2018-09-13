@@ -1,14 +1,20 @@
 
 type category =
-  | Comment 
-  | Null | Boolean | Number | String | Regexp
+  (* values *)
+  | Boolean | Number | String (* or Char *) | Regexp | Null
 
+  (* keywords *)
   | Keyword 
   | KeywordConditional | KeywordLoop 
   | KeywordExn | KeywordObject | KeywordModule
-  | Builtin | BuiltinCommentColor | BuiltinBoolean
-  | Operator | Punctuation
 
+  | Builtin 
+  | BuiltinCommentColor | BuiltinBoolean
+
+  | Operator 
+  | Punctuation
+
+  (* entities *)
   | Entity of Entity_code.entity_kind * usedef2
 
   | Local of usedef
@@ -29,27 +35,38 @@ type category =
 
   (* semantic visual feedback! highlight more! *)
   | BadSmell
+
   | UseOfRef
   | PointerCall
   | CallByRef
   | ParameterRef
+
   | IdentUnknown
 
+  (* cpp or macro related *)
   | Ifdef | Include | IncludeFilePath | Define | CppOther
+  | Attribute
 
+  (* embedded *)
   | EmbededCode (* e.g. javascript *)
   | EmbededUrl (* e.g. xhp *)
   | EmbededHtml (* e.g. xhp *) | EmbededHtmlAttr
   | EmbededStyle (* e.g. css *)
+
   | Verbatim (* for latex, noweb, html pre *)
 
-  | GrammarRule
-
+  (* comments *)
+  | Comment
   | CommentWordImportantNotion | CommentWordImportantModal
   | CommentSection0 | CommentSection1 | CommentSection2 
   | CommentSection3 | CommentSection4
   | CommentEstet | CommentCopyright | CommentSyncweb
-  | CommentImportance0 | CommentImportance1
+  (* higher means more important, and a regular comment is Importance2 *)
+  | CommentImportance0 | CommentImportance1 
+  | CommentImportance2 | CommentImportance3
+
+  (* misc *)
+  | GrammarRule
 
   | MatchGlimpse | MatchSmPL
   | MatchParent

@@ -47,12 +47,12 @@ module E = Entity_code
  * 
  * 
  * Why better to have such visualisation ? cf via_pram_readbyte example:
- * - better see that use global via1, and that global to module
- * - better see local macro
- * - better see that some func are local too, the via_pram_writebyte
- * - better see if local, or parameter
- * - better see in comments that important words such as interrupts, 
- *   and disabled, and must
+ * - better to see that use global via1, and that global to module
+ * - better to see local macro
+ * - better to see that some func are local too, the via_pram_writebyte
+ * - better to see if local, or parameter
+ * - better to see in comments that important words such as interrupts, 
+ *   and 'disabled', and 'must'
  * 
  * 
  * SEMI do first like gtk source view
@@ -75,7 +75,7 @@ module E = Entity_code
  * 
  * estet?: redundant with - place_code ?  - entity_c ?
  * 
- * related work:
+ * related-work:
  *  - http://pygments.org/
  *)
 
@@ -150,13 +150,11 @@ type usedef2 =
 
 (* color, foreground or background will be changed *)
 type category =  
-  | Comment
-
-  (* pad addons *)
-  | Null
+  (* pad' addons (actually Pixel added a special font in Emacs for numbers) *)
   | Boolean | Number
 
   | String | Regexp
+  | Null
 
   (* classic emacs mode *)
   | Keyword  (* SEMI multi *)
@@ -231,6 +229,8 @@ type category =
   | IncludeFilePath
   | Define 
   | CppOther
+  (* metaprogramming related *)
+  | Attribute
 
   (* web related *)
   | EmbededCode (* e.g. javascript *)
@@ -240,9 +240,8 @@ type category =
   | EmbededStyle (* e.g. css *)
   | Verbatim (* for latex, noweb, html pre *)
 
-  (* misc *)
-  | GrammarRule
-
+  (* comments *)
+  | Comment
   (* Ccomment *)
   | CommentWordImportantNotion
   | CommentWordImportantModal
@@ -256,9 +255,14 @@ type category =
   | CommentEstet
   | CommentCopyright
   | CommentSyncweb
+  (* higher means more important *)
   | CommentImportance0
   | CommentImportance1
-  (* CommentImportance2 is Comment *)
+  | CommentImportance2 (* same than Comment *)
+  | CommentImportance3
+
+  (* misc *)
+  | GrammarRule
 
   (* search and match *)
   | MatchGlimpse
@@ -523,6 +527,8 @@ let info_of_category = function
   | CommentSyncweb -> [`FOREGROUND "DimGray";]
   | CommentImportance0 -> [`FOREGROUND "DimGray";]
   | CommentImportance1 -> [`FOREGROUND "gray45";]
+  | CommentImportance2 -> [`FOREGROUND "gray";]
+  | CommentImportance3 -> [`FOREGROUND "red";]
 
 
   (* entities *)
@@ -673,6 +679,8 @@ let info_of_category = function
   | IncludeFilePath -> [`FOREGROUND "SpringGreen3";]
   | Define -> [`FOREGROUND "DarkOrange2";]
   | CppOther -> [`FOREGROUND "DarkOrange2";]
+
+  | Attribute -> [`FOREGROUND "DarkOrange2";]
 
 
   | Keyword -> [`FOREGROUND "orange";]

@@ -20,7 +20,7 @@
  *
  * other sources:
  * - http://caml.inria.fr/pub/docs/manual-ocaml/language.html
- *  (note that it unfortunately contains conflicts when translated into yacc).
+ *   (note that it unfortunately contains conflicts when translated into yacc).
  * - http://www.cs.ru.nl/~tews/htmlman-3.10/full-grammar.html
  *   itself derived from the official ocaml reference manual
  *   (also contains conflicts when translated into yacc).
@@ -62,6 +62,7 @@ let to_item xs =
 /*(*-----------------------------------------*)*/
 /*(*2 The space/comment tokens *)*/
 /*(*-----------------------------------------*)*/
+
 /*(* coupling: Token_helpers.is_real_comment *)*/
 %token <Parse_info.info> TCommentSpace TCommentNewline   TComment
 %token <Parse_info.info> TCommentMisc
@@ -108,6 +109,10 @@ let to_item xs =
 /*(* operators *)*/
 %token <Parse_info.info> TPlus TMinus TLess TGreater
 %token <string * Parse_info.info> TPrefixOperator TInfixOperator
+
+/*(* attributes *)*/
+%token <Parse_info.info> TBracketAt TBracketAtAt TBracketAtAtAt
+%token <Parse_info.info> TBracketPercent TBracketPercentPercent
 
 /*(*-----------------------------------------*)*/
 /*(*2 extra tokens: *)*/
@@ -218,6 +223,7 @@ let to_item xs =
  * - let/fun
  * - classes (not in AST)
  * - modules
+ * - attributes
  * - xxx_opt, xxx_list
  * 
  *)*/
@@ -238,7 +244,9 @@ signature:
  | signature signature_item                     { $1 @ [TopItem $2] }
  | signature signature_item TSemiColonSemiColon { $1 @ [TopItem $2; ScSc $3] }
 
-signature_item:
+signature_item: signature_item_noattr post_item_attributes { $1 }
+
+signature_item_noattr:
  | Ttype type_declarations
      { Type ($1, $2) }
  | Tval val_ident TColon core_type
@@ -295,7 +303,9 @@ structure_tail:
  | TSharpDirective structure_tail 
      { TopDirective $1::$2 }
 
-structure_item:
+structure_item: structure_item_noattr post_item_attributes { $1 }
+
+structure_item_noattr:
  /*(* as in signature_item *)*/
  | Ttype type_declarations
      { Type ($1, $2) }
@@ -1379,6 +1389,30 @@ module_expr:
       { ModuleTodo }
 
 /*(*************************************************************************)*/
+/*(*1 Attributes *)*/
+/*(*************************************************************************)*/
+
+/*(*pad: this is a limited implemen for now; just what I need for efuns *)*/
+
+single_attr_id:
+  | TLowerIdent { $1 }
+  | TUpperIdent { $1 }
+/*(* should also put all keywords here, but bad practice no? *)*/
+
+attr_id:
+  | single_attr_id {  }
+  | single_attr_id TDot attr_id { }
+
+post_item_attribute:
+  TBracketAtAt attr_id payload TCBracket { }
+
+/*(* in theory you can have a full structure here *)*/
+payload:
+  | /*(* empty*)*/ { }
+  | TString { }
+
+
+/*(*************************************************************************)*/
 /*(*1 xxx_opt, xxx_list *)*/
 /*(*************************************************************************)*/
 
@@ -1417,3 +1451,7 @@ class_descriptions:
 class_type_declarations:
   | class_type_declarations TAnd class_type_declaration  {  }
   | class_type_declaration                               { }
+
+post_item_attributes:
+  | /*(*empty*)*/  { [] }
+  | post_item_attribute post_item_attributes { $1 :: $2 }

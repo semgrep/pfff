@@ -27,7 +27,7 @@ module E = Entity_code
 (* Prelude *)
 (*****************************************************************************)
 (* 
- * Syntax highlighting for OCaml code for codemap.
+ * Syntax highlighting for OCaml code for codemap (and now also efuns).
  * 
  * This code can also be abused to generate the light database 
  * and the TAGS file (because codemap needs to know about
@@ -39,7 +39,7 @@ module E = Entity_code
 (* Helpers when have global analysis information *)
 (*****************************************************************************)
 
-(* quite pad specific ... see my ~/.emacs *)
+(* pad-specific: see my ~/.emacs *)
 let h_pervasives_pad = Common.hashset_of_list [
   "pr2";"pr";"pr2_gen";
   "sprintf";"i_to_s";
@@ -71,7 +71,6 @@ let disable_token_phase2 = false
 (* AST helpers *)
 (*****************************************************************************)
 
-
 let kind_of_body x =
   let def2 = Def2 fake_no_def2 in
   match Ast.uncomma x with
@@ -99,7 +98,7 @@ let kind_of_ty ty =
 
 (* The idea of the code below is to visit the program either through its
  * AST or its list of tokens. The tokens are easier for tagging keywords,
- * number and basic entities. The Ast is better for tagging idents
+ * number and basic entities. The AST is better for tagging idents
  * to figure out what kind of ident it is.
  *)
 let visit_program
@@ -114,7 +113,7 @@ let visit_program
   in
 
   (* -------------------------------------------------------------------- *)
-  (* ast phase 1 *) 
+  (* AST phase 1 *) 
   (* -------------------------------------------------------------------- *)
 
   (* try better colorize identifiers which can be many different things
@@ -359,17 +358,16 @@ let visit_program
   v (Program ast);
 
   (* -------------------------------------------------------------------- *)
-  (* toks phase 1 *)
+  (* toks phase 1 (sequence of tokens) *)
   (* -------------------------------------------------------------------- *)
-  (* 
-   * note: all TCommentSpace are filtered in xs so easier to write
-   * rules (but regular comments are kept as well as newlines).
+  (* note: all TCommentSpace are filtered in xs so it should be easier to
+   * write rules (but regular comments are kept as well as newlines).
    *)
   let rec aux_toks xs = 
     match xs with
     | [] -> ()
 
-    (* a little bit pad specific *)
+    (* pad-specific: *)
     |   T.TComment(ii)
       ::T.TCommentNewline (_ii2)
       ::T.TComment(ii3)
@@ -398,19 +396,21 @@ let visit_program
         aux_toks (T.TComment ii3::T.TCommentNewline ii4::T.TComment ii5::xs)
 
     |   T.TComment(ii)::xs when (PI.str_of_info ii) =~ "(\\*[ ]*coupling:" ->
-        tag ii CommentSection2;
+        tag ii CommentImportance3;
         aux_toks xs
 
 
-    (* If had a parse error, then the AST will not contain the definitions, but
+    (* When we get a parse error, the AST does not contain the definitions, but
      * we can still try to tag certain things. Here is a
-     * poor's man semantic tagger. Infer if ident is a func, or class,
-     * or module based on the few tokens around. 
+     * poor's man semantic tagger. We try to infer if an ident is a func, 
+     * or class, or module based on the few tokens around.
      * 
      * This may look ridiculous to do such semantic tagging using tokens 
-     * instead of the full ast but many ocaml files could not parse with
+     * instead of the full AST but many OCaml files could not parse with
      * the default parser because of camlp4 extensions so having
      * a solid token-based tagger is still useful as a last resort.
+     * update: with attributes this becomes less true as attributes have
+     *  a far more regular-syntax (that's what they were designed for)
      *)
     | T.Tlet(ii)::T.TLowerIdent(_s, ii3)::T.TEq _ii5::xs
         when PI.col_of_info ii = 0 ->
@@ -523,6 +523,17 @@ let visit_program
       when PI.col_of_info ii1 = 0 ->
         tag ii1 GrammarRule;
         aux_toks xs
+
+    (* attributes *)
+    | T.TBracketAtAt _::T.TLowerIdent (_, ii1)::
+      T.TDot _::T.TLowerIdent (_, ii2)::xs ->
+        tag ii1 Attribute;
+        tag ii2 Attribute;
+        aux_toks xs
+
+    | T.TBracketAtAt _::T.TLowerIdent (_, ii)::xs ->
+        tag ii Attribute;
+        aux_toks xs
        
     | _x::xs ->
         aux_toks xs
@@ -535,7 +546,7 @@ let visit_program
   aux_toks toks';
 
   (* -------------------------------------------------------------------- *)
-  (* toks phase 2 *)
+  (* toks phase 2 (individual tokens) *)
   (* -------------------------------------------------------------------- *)
 
   if not disable_token_phase2 then
@@ -624,6 +635,9 @@ let visit_program
 
     | T.TDot (ii)
     | T.TColon (ii)
+
+    | T.TBracketAt ii | T.TBracketAtAt ii | T.TBracketAtAtAt ii
+    | T.TBracketPercent ii | T.TBracketPercentPercent ii
         ->
         tag ii Punctuation
 
