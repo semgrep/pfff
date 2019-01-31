@@ -10,15 +10,15 @@ use Pod::Usage;
 
 # Yes I know about autoconf ... and autoconf sucks.
 
-# I do not check for the following programs; I assume they are standard:
+# I do not check for the following programs (I assume they are present):
 # - gcc, as, ld (the GNU toolchain)
 # - make, perl, bash
 # - diffutils, fileutils, findutils, grep, patchutils, sh-utils
-#
+
 #todo:
-# - findutils? we need a good GNU find, not the macOS find
+# - should check findutils? we need a good GNU find, not the macOS find
 #   which adds some extra '//' in paths which bothers pfff
-# - sharutils still?, for obrowser/ocsigen use of uuencode
+
 # If you want to run the tests you will also need:
 # - swipl
 # - javac 
@@ -35,15 +35,14 @@ my $projectcmdline =
 
 my $prefix="/usr/local";
 
-# this does not require opam; it builds everything from scratch
-my $battery_included=1;
-
-# cairo/gtk, for codemap and codegraph
+# code_map/ and code_graph/ bring many dependencies (lablgtk2, cairo2),
+# so it's a configuration option
+# (less: could auto detect)
 my $visual=1; 
 
 # lang_bytecode/ brings many dependencies (extlib, ptrees, ocamlzip), which
 # in turns require zlib.h, so it's a configuration option
-# (todo: could auto detect)
+# (less: could auto detect)
 my $bytecode=1;
 
 # lang_cmt/ also requires compiler-libs and with the many changes in the
@@ -57,16 +56,18 @@ my $cmt=1;
 my $opt= ""; # ocamlc.opt?
 my $ocamlc_flags = ""; #ocamlc -bin-annot?
 my $ocaml_version = 4023;
+
+#TODO
 my $opam_lib = "";
 
 
 my $man = 0;
 my $help = 0;
 
-# See http://perldoc.perl.org/Getopt/Long.html
-# coupling: if add options here, add an explanation at the bottom of this file
-#  too. Later you may also add something in the documentation latex file
-#  (or use LP).
+#see: http://perldoc.perl.org/Getopt/Long.html
+#coupling: if you add an option here, add also an explanation at the bottom
+# of this file
+#later: add something in the documentation latex file (or use LP).
 GetOptions (
     "prefix=s" => \$prefix,
     "visual!" => \$visual,
@@ -87,7 +88,7 @@ my $src="$prefix/share/$project";
 ######################################################################
 BEGIN { die "need Perl 5 or greater" if $] < 5 ; }
 
-#use Common;
+#A mini Common.pm
 sub pr2 { print STDERR "@_\n" }
 sub cat { 
     my ($what) = @_;
@@ -116,19 +117,13 @@ sub show_error_msg_and_exit_if_error {
     if($error) {
         pr2 "
 ----------------------------------------------------------------------
-!!!! There seems to have a problem, we have found a missing program.
+!!!! There is a problem. We have found a missing program.
 Have a look at install.txt and the install_xxx.txt corresponding to your
-OS.!!!!
+OS to fix the issue.!!!!
 ----------------------------------------------------------------------
 ";
         exit 1;
     }
-#plural($error) . ".
-#" .
-#" . (($error > 1) ? "Some of those packages" : "This package") . 
-#    " may be installed by picking " . ($error > 1 ? "them" : "it") . 
-#    " in $project-dependencies.tgz available
-#on the $project website. !!!!
 }
 
 sub show_missing_package_error_msg {
@@ -138,11 +133,6 @@ sub show_missing_package_error_msg {
 !!!! You can try to compile and test $project, 
 but some features or plugins may be missing. !!!!\n
 We have found $error2 missing package" . plural($error2) . ". " . 
-#(($error2 > 1) ? "Some of those packages" : "This package") . 
-#" may be installed 
-#by picking " . ($error2 > 1 ? "them" : "it") . 
-#" in $project-dependencies.tgz available on the $project website.
-#";
 "
 Have a look at the install_xxx.txt corresponding to your OS. 
 ";
@@ -154,9 +144,9 @@ Have a look at the install_xxx.txt corresponding to your OS.
 
 pr2 "Checking your configuration.\n";
 
-# hard error, missing programs
+# hard errors, missing programs
 my $error = 0;
-# soft error, missing libraries, can not probably compile every pfff components
+# soft errors, missing libraries, can not probably compile every pfff components
 my $error2 = 0;
 
 my $arch = `uname`;
@@ -165,7 +155,7 @@ my $arch = `uname`;
 # Compilers and runtimes
 #---------------------------------------------------------------------
 # We need at least 3.12 because I use the forall 'a. new typing feature 
-# as well as the '_' pattern in records (in my code but also in lib-sexp/)
+# as well as the '_' pattern in records.
 # We optionaly need 4.00 or 4.01 for codegraph for ocaml code using the .cmt
 $error += 
     check_config("echo \"1;;\\n\" | ocaml |",
@@ -175,7 +165,7 @@ $error +=
                  );
 show_error_msg_and_exit_if_error($error);
 
-# setting $ocaml_version
+# setting $ocaml_version so we can have finer checks and settings later
 my $command = "echo \"1;;\\n\" | ocaml |";
 my $full = cat($command);
 my $res = join(" ", @{$full});
@@ -202,9 +192,11 @@ if($ocaml_version >= 4000) {
 
 if($ocaml_version < 4000) {
     $cmt=0;
-    # I'm not sure pfff compiles under 4.00
+    # I'm actually not even sure pfff compiles under 4.00 now
 } elsif($ocaml_version <= 4023) {
     $cmt=1;
+    #TODO: need fix javalib error about JClassflow
+    $bytecode=0;
 } else {
     #TODO: need to use parsetree-migrate 
     $cmt=0;
@@ -212,21 +204,27 @@ if($ocaml_version < 4000) {
     $bytecode=0;
 
     #LESS: I get many errors with ocaml 4.06; I would need to update packages
-    #$battery_included=0;
-    #
-    #$error += 
-    # check_config("opam --version |",
-    #             "^[12]\.[0-9]\.[0-9]",
-    #             "OPAM the OCaml package manager is present.",
-    #             "The program OPAM is missing or is not a good version.",
-    #             );
-    #show_error_msg_and_exit_if_error($error);
-    #system("rm -f external/opam_lib");
-    #$opam_lib = `opam config var lib`;
-    #chomp($opam_lib);
-    #pr2("Adjusting the external/opam_lib symlink to $opam_lib");
-    #system("ln -s $opam_lib external/opam_lib");
 }
+
+#---------------------------------------------------------------------
+# Package manager
+#---------------------------------------------------------------------
+
+#TODO: check for OPAM (adjust OPAM_DIR later?)
+#alt: battery_included, godi (still exist?)
+pr2 "TODO: adjust OPAM_DIR";
+#$error += 
+# check_config("opam --version |",
+#             "^[12]\.[0-9]\.[0-9]",
+#             "OPAM the OCaml package manager is present.",
+#             "The program OPAM is missing or is not a good version.",
+#             );
+#show_error_msg_and_exit_if_error($error);
+#system("rm -f external/opam_lib");
+#$opam_lib = `opam config var lib`;
+#chomp($opam_lib);
+#pr2("Adjusting the external/opam_lib symlink to $opam_lib");
+#system("ln -s $opam_lib external/opam_lib");
 
 #---------------------------------------------------------------
 # Developers tools
@@ -259,15 +257,13 @@ if( ($arch =~ /FreeBSD/) || (($arch =~ /Darwin/) && ($BREW_PROGRAM)) ) {
 # Libraries
 #---------------------------------------------------------------------
 
-if($visual && $battery_included) {
-    pr2 "Configuring ocamlgtk (see /tmp/ocamlgtk.log).";
-    my $err = system("cd external/battery_included/ocamlgtk; ./configure > /tmp/ocamlgtk.log");
-    if ($err) { $visual = 0; $error2++; }
+if($visual) {
+    #TODO: check if lablgtk installed
+    #pr2 "Checking ocamlgtk.";
+    #if ($err) { $visual = 0; $error2++; }
 
-    pr2 "Configuring ocamlcairo (see /tmp/ocamlcairo.log).";
-    my $err = system("cd external/battery_included/ocamlcairo; 
-            LABLGTKDIR=../../ocamlgtk/src ./configure --with-gtk > /tmp/ocamlcairo.log");
-    if ($err) { $visual = 0; $error2++; }
+    #pr2 "Checking ocamlcairo.";
+    #if ($err) { $visual = 0; $error2++; }
 }
 
 ######################################################################
@@ -308,6 +304,8 @@ pr2 "Generating globals/config_pfff.ml";
 
 `perl -p -i -e 's#Not_found[0-9]#Not_found#' globals/config_pfff.ml`;
 
+#TODO? generating externals/OPAM_DIR here?
+
 ######################################################################
 # Diagnostic 
 ######################################################################
@@ -322,21 +320,14 @@ if($error2) {
     pr2 "All seems fine for $project.";
 }
 
-if($battery_included) {
-    pr2 "
-To compile $project, you first need to compile its dependencies with:
-  \$ $MAKE_PROGRAM -C external depend
-  \$ $MAKE_PROGRAM -C external";
-}
-
-pr2"To compile $project type:
+pr2 "To compile $project type:
   \$ $MAKE_PROGRAM depend
   \$ $MAKE_PROGRAM 
 To test $project simply type:
   \$ $projectcmdline
 
-If you want to use the analysis framework and code visualization tools
-see install.txt or type ./configure --help
+If you want to use the code visualization tools 
+see the readme.txt file.
 ";
 
 
@@ -349,7 +340,7 @@ __END__
 
 =head1 NAME
 
-configure - setting compilation options for pfff
+configure - checking and setting compilation options for pfff
 
 =head1 SYNOPSIS
 
@@ -380,7 +371,7 @@ Prints the manual page and exits.
 =head1 DESCRIPTION
 
 B<This program> will read command line options and generate
-a B<Makefile.config> and other files to set the compilation
+a B<Makefile.config> and a few files to set the compilation
 environment for pfff.
 
 =cut
