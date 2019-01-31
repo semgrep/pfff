@@ -1,5 +1,9 @@
 # -*- org -*-
 
+* 0.36 (Q1 2019)
+
+* -----------------------------------------------------------
+
 * 0.35 (Q3 2018) (support for windows)
 
 ** You can now compile and run codemap, codegraph, etc. under Windows
