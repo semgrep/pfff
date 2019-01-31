@@ -173,8 +173,8 @@ let draw_cells cr w ~interactive_regions =
           CairoH.set_font_size cr font_size;
           (* todo: optimize? *)
           let extent = CairoH.text_extents cr txt in
-          let tw = extent.Cairo.text_width in
-          let th = extent.Cairo.text_height in
+          let tw = extent.Cairo.width in
+          let th = extent.Cairo.height in
           let x = rect.p.x in
           let y = rect.p.y in
           
@@ -234,7 +234,7 @@ let draw_left_tree cr w ~interactive_regions =
         CairoH.set_source_color cr color ();
         CairoH.set_font_size cr font_size_default;
         let extent = CairoH.text_extents cr txt in
-        let w = extent.Cairo.text_width in
+        let w = extent.Cairo.width in
         let width_for_label = l.x_start_matrix_left - x in
         (* todo: could try different settings until it works? like in cm? *)
         let font_size_final =
@@ -246,7 +246,7 @@ let draw_left_tree cr w ~interactive_regions =
 
         (* align text on the left *)
         let extent = CairoH.text_extents cr txt in
-        let th = extent.Cairo.text_height in
+        let th = extent.Cairo.height in
         Cairo.move_to cr (x + 0.002) (y + (l.height_cell /2.) + (th / 2.0));
         CairoH.show_text cr txt;
         incr i
@@ -273,7 +273,7 @@ let draw_left_tree cr w ~interactive_regions =
 
         CairoH.set_font_size cr font_size_default;
         let extent = CairoH.text_extents cr txt in
-        let w = extent.Cairo.text_width in
+        let w = extent.Cairo.width in
 
         let width_for_label = n * l.height_cell in
         (* todo: could try different settings until it works? like in cm? *)
@@ -286,15 +286,15 @@ let draw_left_tree cr w ~interactive_regions =
 
         (* center the text *)
         let extent = CairoH.text_extents cr txt in
-        let th = extent.Cairo.text_height in
-        let tw = extent.Cairo.text_width in
+        let th = extent.Cairo.height in
+        let tw = extent.Cairo.width in
         let angle = -. (Common2.pi / 2.) in
         Cairo.move_to cr 
           ((x + l.width_vertical_label / 2.) + (th / 2.0))
           (y + ((n * l.height_cell) /2.) + (tw / 2.0));
-        Cairo.rotate cr ~angle;
+        Cairo.rotate cr angle;
         CairoH.show_text cr txt;
-        Cairo.rotate cr ~angle:(-. angle);
+        Cairo.rotate cr (-. angle);
         
         xs +> List.iter (aux (depth +.. 1))
   in
@@ -312,8 +312,8 @@ let draw_up_columns cr w ~interactive_regions =
 
   (* peh because it exercises the spectrum of high letters *)
   let extent = CairoH.text_extents cr "peh" in
-  let _base_tw = extent.Cairo.text_width / 3. in
-  let th = extent.Cairo.text_height in
+  let _base_tw = extent.Cairo.width / 3. in
+  let th = extent.Cairo.height in
 
   (* not -.. 1, cos we draw lines here, not rectangles *)
   for j = 0 to l.nb_elts do
@@ -338,12 +338,12 @@ let draw_up_columns cr w ~interactive_regions =
       let node = w.m.DM.i_to_name.(j) in
       Cairo.move_to cr (x + (l.width_cell / 2.0) + (th / 2.0)) (y - 0.001);
       let angle = -. (Common2.pi / 4.) in
-      Cairo.rotate cr ~angle:angle;
+      Cairo.rotate cr angle;
       let color = color_of_node node in
       let txt = txt_of_node node in
       CairoH.set_source_color cr color ();
       CairoH.show_text cr txt;
-      Cairo.rotate cr ~angle:(-. angle);
+      Cairo.rotate cr (-. angle);
     end;
   done;
   ()
@@ -431,8 +431,7 @@ let draw_matrix cr w =
     { p = { x = l.x_start_matrix_left; y = l.y_start_matrix_up };
       q = { x = l.x_end_matrix_right; y = 1.0 };
     };
-  Cairo.select_font_face cr "serif"
-    Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_BOLD;
+  Cairo.select_font_face cr "serif" ~weight:Cairo.Bold;
 
   let interactive_regions = ref [] in
 
@@ -518,14 +517,12 @@ let add_path x path = path @ [x]
 
 let button_action _da w ev =
   let (x, y) = GdkEvent.Button.x ev, GdkEvent.Button.y ev in
-  let pt = { Cairo. x = x; y = y } in
   pr2 (spf "button action device coord: %f, %f" x y);
 
   let cr = Cairo.create w.overlay in
   M.scale_coordinate_system cr w;
 
-  let pt2 = Cairo.device_to_user cr pt in
-  let (x, y) = (pt2.Cairo.x, pt2.Cairo.y) in
+  let (x, y) = Cairo.device_to_user cr x y in
   pr2 (spf "button action user coord: %f, %f" x y);
 
   (match M.find_region_at_user_point w ~x ~y with

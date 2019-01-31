@@ -120,7 +120,6 @@ let draw_green_yellow_dependent_rows ~cr w i =
 let motion_notify_refresher _da w ev () =
 
   let (x, y) = GdkEvent.Motion.x ev, GdkEvent.Motion.y ev in
-  let pt = { Cairo. x = x; y = y } in
   pr2 (spf "motion device coord: %f, %f" x y);
 
   let cr = Cairo.create w.overlay in
@@ -129,8 +128,7 @@ let motion_notify_refresher _da w ev () =
   (* clear overlay *)
   CairoH.clear cr;
 
-  let pt2 = Cairo.device_to_user cr pt in
-  let (x, y) = (pt2.Cairo.x, pt2.Cairo.y) in
+  let (x, y) = Cairo.device_to_user cr x y in
   pr2 (spf "motion user coord: %f, %f" x y);
 
   (* less: update status bar? *)

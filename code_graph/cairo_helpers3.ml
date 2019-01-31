@@ -63,9 +63,8 @@ let show_text2 cr s =
   try 
     let s' = prepare_string s in
     Cairo.show_text cr (Bytes.to_string s')
-  with _exn ->
-    let status = Cairo.status cr in
-    let s2 = Cairo.string_of_status status in
+  with Cairo.Error status ->
+    let s2 = Cairo.status_to_string status in
     failwith ("Cairo pb: " ^ s2 ^ " s = " ^ s)
 
 let show_text a b = 
@@ -83,18 +82,13 @@ let set_font_size cr font_size =
   )
 
 (*****************************************************************************)
-(* Distance conversion *)
-(*****************************************************************************)
-let origin = { Cairo. x = 0.; y = 0. }
-
-(*****************************************************************************)
 (* Drawing *)
 (*****************************************************************************)
 let clear cr =
   Cairo.set_source_rgba cr 0. 0. 0.   0.;
-  Cairo.set_operator cr Cairo.OPERATOR_SOURCE;
+  Cairo.set_operator cr Cairo.SOURCE;
   Cairo.paint cr;
-  Cairo.set_operator cr Cairo.OPERATOR_OVER;
+  Cairo.set_operator cr Cairo.OVER;
   ()
 
 let set_source_color ?(alpha=1.) ~cr ~color () = 

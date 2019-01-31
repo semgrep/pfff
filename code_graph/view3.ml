@@ -50,18 +50,18 @@ module View_overlays = View_overlays3
  * getting the final result.
  *)
 let assemble_layers cr_final w =
-  Cairo.set_operator cr_final Cairo.OPERATOR_OVER;
+  Cairo.set_operator cr_final Cairo.OVER;
   Cairo.set_source_surface cr_final w.base 0. 0.;
   Cairo.paint cr_final;
 
-  Cairo.set_operator cr_final Cairo.OPERATOR_OVER;
+  Cairo.set_operator cr_final Cairo.OVER;
   Cairo.set_source_surface cr_final w.overlay 0. 0.;
   Cairo.paint cr_final;
   ()
 
 let expose da w _ev = 
   let gwin = da#misc#window in
-  let cr = Cairo_lablgtk.create gwin in
+  let cr = Cairo_gtk.create gwin in
   assemble_layers cr w;
   true
 

@@ -65,8 +65,8 @@ type world = {
    *)
   mutable interactive_regions: (region * Figures.rectangle) list;
 
-  mutable base:    [ `Any ] Cairo.surface;
-  mutable overlay: [ `Any ] Cairo.surface;
+  mutable base:    Cairo.Surface.t;
+  mutable overlay: Cairo.Surface.t;
 
   (* viewport, device coordinates *)
   mutable width:  int;
@@ -86,12 +86,12 @@ let new_surface ~alpha ~width ~height =
   drawable#set_foreground `WHITE;
   drawable#rectangle ~x:0 ~y:0 ~width:1 ~height:1 ~filled:true ();
 
-  let cr = Cairo_lablgtk.create drawable#pixmap in
+  let cr = Cairo_gtk.create drawable#pixmap in
   let surface = Cairo.get_target cr in
-  Cairo.surface_create_similar surface
+  Cairo.Surface.create_similar surface
     (if alpha 
-    then Cairo.CONTENT_COLOR_ALPHA
-    else Cairo.CONTENT_COLOR
+    then Cairo.COLOR_ALPHA
+    else Cairo.COLOR
     ) width height
 
 (*****************************************************************************)
