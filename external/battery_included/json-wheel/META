@@ -1,4 +1,0 @@
-description = "jsonwheel"
-requires = "unix num str bigarray"
-archive(byte) = "jsonwheel.cma"
-archive(native) = "jsonwheel.cmxa"

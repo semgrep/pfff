@@ -1,1 +1,0 @@
-Dynlink.loadfile "foo";;
