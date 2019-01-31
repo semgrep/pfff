@@ -316,7 +316,6 @@ let main_action xs =
 
   (* this used to be done by linking with gtkInit.cmo, but better like this *)
   let _locale = GtkMain.Main.init () in
-  pr2 (spf "Using Cairo version: %s" Cairo.compile_time_version_string);
 
   let root = Common2.common_prefix_of_files_or_dirs xs in
   pr2 (spf "Using root = %s" root);
@@ -520,15 +519,14 @@ let test_draw cr =
   (* [0,0][1,1] world scaled to a width x height screen *)
   Cairo.scale cr (float_of_int width) (float_of_int height);
 
-  Cairo.set_source_rgba cr ~red:0.5 ~green:0.5 ~blue:0.5 ~alpha:0.5;
+  Cairo.set_source_rgba cr 0.5 0.5 0.5   0.5;
   Cairo.set_line_width cr 0.001;
 
   Cairo.move_to cr 0.5 0.5;
   Cairo.line_to cr 0.6 0.6;
   Cairo.stroke cr;
 
-  Cairo.select_font_face cr "serif"
-    Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_BOLD;
+  Cairo.select_font_face cr "serif" ~weight:Cairo.Bold;
   Cairo.set_font_size cr 0.1;
   Cairo.move_to cr 0.1 0.1;
   Cairo.show_text cr "THIS IS SOME TEXT";
@@ -538,7 +536,7 @@ let test_draw cr =
   Cairo.move_to cr 0.1 0.3;
   Cairo.show_text cr "THIS IS SOME TEXT";
 
-  Cairo.set_source_rgb cr ~red:0.1 ~green:0.1 ~blue:0.1;
+  Cairo.set_source_rgb cr 0.1 0.1 0.1;
   Cairo.move_to cr 0.1 0.1;
   Cairo.line_to cr 0.1 0.2;
   Cairo.stroke cr;
@@ -547,8 +545,7 @@ let test_draw cr =
 
   for _i = 0 to 3 do
     let end_ = !start +. 0.5 in
-    Cairo.arc cr ~xc:0.5 ~yc:0.5 ~radius:0.3 ~angle1:!start
-      ~angle2:end_;
+    Cairo.arc cr 0.5 0.5 ~r:0.3 ~a1:!start ~a2:end_;
     Cairo.stroke cr;
     start := end_;
   done;
@@ -562,7 +559,7 @@ let test_cairo () =
   let px = GDraw.pixmap ~width ~height ~window:w () in
   px#set_foreground `WHITE;
   px#rectangle ~x:0 ~y:0 ~width ~height ~filled:true ();
-  let cr = Cairo_lablgtk.create px#pixmap in
+  let cr = Cairo_gtk.create px#pixmap in
   test_draw cr;
   (GMisc.pixmap px ~packing:w#add ()) +> ignore;
   w#show ();
