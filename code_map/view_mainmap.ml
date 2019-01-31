@@ -70,11 +70,10 @@ let with_map dw f =
 let device_to_user_area dw = 
   with_map dw (fun cr ->
 
-    let device_point = { Cairo. x = 0.0; y = 0.0 } in
-    let user_point1 = Cairo.device_to_user cr device_point in
-    let device_point = { Cairo.x = float_of_int dw.width; 
-                         Cairo.y = float_of_int dw.height; } in
-    let user_point2 = Cairo.device_to_user cr device_point in
+    let user_point1 = Cairo.device_to_user cr 
+      0. 0. in
+    let user_point2 = Cairo.device_to_user cr 
+      (float_of_int dw.width) (float_of_int dw.height) in
     
     { F.p = CairoH.cairo_point_to_point user_point1;
       F.q = CairoH.cairo_point_to_point user_point2;
@@ -181,8 +180,8 @@ let button_action w ev =
   let dw = w.dw in
 
   let x, y = GdkEvent.Button.x ev, GdkEvent.Button.y ev in
-  let pt = { Cairo. x = x; y = y } in
-  let user = with_map dw (fun cr -> Cairo.device_to_user cr pt) in
+  let user = with_map dw (fun cr -> 
+    Cairo.device_to_user cr x y |> CairoH.cairo_point_to_point ) in
   let r_opt = M.find_rectangle_at_user_point user dw in
 
   match GdkEvent.get_type ev with

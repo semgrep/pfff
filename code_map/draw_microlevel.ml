@@ -63,7 +63,7 @@ type line_in_column = {
 
 type _pos = float (* x *) * float (* y *)
 
-type _point = Cairo.point
+type _point = Figures.point
 
 (*s: type draw_content_layout *)
 (*e: type draw_content_layout *)
@@ -132,8 +132,8 @@ let line_to_rectangle line r layout =
   }
 
 let point_to_line pt r layout =
-  let x = pt.Cairo.x - r.p.x in
-  let y = pt.Cairo.y - r.p.y in
+  let x = pt.Figures.x - r.p.x in
+  let y = pt.Figures.y - r.p.y in
   let line_in_column = floor (y / layout.height_per_line) in
   let column = floor (x / layout.width_per_column) in
   Line ((column * layout.nblines_per_column + line_in_column) +> int_of_float)
@@ -181,7 +181,7 @@ let glyphs_of_file ~font_size ~font_size_real model_async file
   : (glyph list) array option =
 
   (* real position is set later in draw_content *)
-  let pos = { Cairo.x = 0.; y = 0. } in
+  let pos = { Figures.x = 0.; y = 0. } in
 
   match FT.file_type_of_file file with
   | _ when use_fancy_highlighting file ->
@@ -370,8 +370,8 @@ let draw_content2 cr layout context tr =
       Cairo.move_to cr x y;
       
       glyphs.(line_0_indexed) +> List.iter (fun glyph ->
-        let pos = Cairo.get_current_point cr in
-        glyph.pos <- pos;
+        let (x, y) = Cairo.Path.get_current_point cr in
+        glyph.pos <- {Figures.x; y };
         Cairo.set_font_size cr glyph.M.font_size;
         let (r,g,b) = Color.rgbf_of_string glyph.color in
         Cairo.set_source_rgba cr r g b 1.;
@@ -464,8 +464,7 @@ let draw_treemap_rectangle_content_maybe2 cr clipping context tr  =
         in
         draw_column_bars cr layout r;
         
-        Cairo.select_font_face cr Style.font_text
-          Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
+        Cairo.select_font_face cr Style.font_text ~weight:Cairo.Normal;
     
         let font_size_real = CairoH.user_to_device_font_size cr font_size in
        (*pr2 (spf "file: %s, font_size_real = %f" file font_size_real);*)

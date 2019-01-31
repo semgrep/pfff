@@ -77,8 +77,7 @@ let rec draw_treemap_rectangle_label_maybe2 ~cr ~zoom ?(color=None) rect =
     | Some c -> c
   in
 
-  Cairo.select_font_face cr "serif"
-    Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_BOLD;
+  Cairo.select_font_face cr "serif" ~weight:Cairo.Bold;
 
   let font_size, minus_alpha = 
     if not !Flag.boost_label_size
@@ -162,8 +161,8 @@ and try_draw_label ~font_size_orig ~color ~alpha ~cr ~rect txt =
        Common.memoized _hmemo_text_extent (font_size, font_size_real) (fun ()->
          (* peh because it exercises the spectrum of high letters *)
          let extent = CairoH.text_extents cr "peh" in
-         let tw = extent.Cairo.text_width in
-         let th = extent.Cairo.text_height in
+         let tw = extent.Cairo.width in
+         let th = extent.Cairo.height in
          th, tw
        )
      in
@@ -228,18 +227,18 @@ and try_draw_label ~font_size_orig ~color ~alpha ~cr ~rect txt =
          Cairo.move_to cr x y;
    
            
-         Cairo.rotate cr ~angle:angle;
+         Cairo.rotate cr angle;
          CairoH.show_text cr txt;
-         Cairo.rotate cr ~angle:(-. angle);
+         Cairo.rotate cr (-. angle);
          
          if rect.T.tr_depth <= 2 then begin
            (let (r,g,b) = Color.rgbf_of_string "red" in
             Cairo.set_source_rgba cr r g b alpha;
            );
            Cairo.move_to cr x y;
-           Cairo.rotate cr ~angle:angle;
+           Cairo.rotate cr angle;
            CairoH.show_text cr (String.sub txt 0 1);
-           Cairo.rotate cr ~angle:(-. angle);
+           Cairo.rotate cr (-. angle);
          end;
 
 

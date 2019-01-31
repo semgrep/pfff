@@ -3,7 +3,7 @@
 (*s: draw_treemap_rectangle_content_maybe sig *)
 (* will render (maybe) the file content of treemap_rectangle.tr_label *)
 val draw_treemap_rectangle_content_maybe:
-  Cairo.t ->
+  Cairo.context ->
   Figures.rectangle ->
   Model2.context ->
   Treemap.treemap_rectangle -> 
@@ -15,5 +15,5 @@ val draw_treemap_rectangle_content_maybe:
 
 val draw_magnify_line:
   ?honor_color:bool ->
-  Cairo.t -> Model2.line -> Model2.microlevel -> unit
+  Cairo.context -> Model2.line -> Model2.microlevel -> unit
 (*e: draw_microlevel.mli *)

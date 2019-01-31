@@ -31,8 +31,7 @@ module L = Layer_code
 
 let draw_legend_of_color_string_pairs ~cr xs = 
 
-  Cairo.select_font_face cr "serif" 
-    Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
+  Cairo.select_font_face cr "serif" ~weight:Cairo.Normal;
   let size = 25.  in
 
   Cairo.set_font_size cr (size * 0.6);

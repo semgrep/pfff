@@ -70,13 +70,12 @@ let with_overlay dw f =
 (* assumes cr_overlay has not been zoom_pan_scale *)
 let draw_label_overlay ~cr_overlay ~x ~y txt =
 
-  Cairo.select_font_face cr_overlay "serif" 
-    Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
+  Cairo.select_font_face cr_overlay "serif" ~weight:Cairo.Normal;
   Cairo.set_font_size cr_overlay Style.font_size_filename_cursor;
       
   let extent = CairoH.text_extents cr_overlay txt in
-  let tw = extent.Cairo.text_width in
-  let th = extent.Cairo.text_height in
+  let tw = extent.Cairo.width in
+  let th = extent.Cairo.height in
 
   let refx = x - tw / 2. in
   let refy = y in
@@ -207,8 +206,7 @@ let draw_tooltip ~cr_overlay ~x ~y n g =
   let xs = Common2.lines str in
 
   (* copy paste of draw_label_overlay *)
-  Cairo.select_font_face cr_overlay "serif" 
-    Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
+  Cairo.select_font_face cr_overlay "serif" ~weight:Cairo.Normal;
   Cairo.set_font_size cr_overlay Style.font_size_filename_cursor;
 
   let template = "peh" in
@@ -216,8 +214,8 @@ let draw_tooltip ~cr_overlay ~x ~y n g =
     xs +> List.map (String.length) +> Common2.maximum +> float_of_int in
 
   let extent = CairoH.text_extents cr_overlay template in
-  let tw = extent.Cairo.text_width * ((max_length / 3.) +> ceil) in
-  let th = extent.Cairo.text_height * 1.2 in
+  let tw = extent.Cairo.width * ((max_length / 3.) +> ceil) in
+  let th = extent.Cairo.height * 1.2 in
 
   let nblines = List.length xs +> float_of_int in
   let refx = x - tw / 2. in
@@ -299,8 +297,8 @@ let motion_refresher ev w =
 
   (* some similarity with View_mainmap.button_action handler *)
   let x, y = GdkEvent.Motion.x ev, GdkEvent.Motion.y ev in
-  let pt = { Cairo. x = x; y = y } in
-  let user = View_mainmap.with_map dw (fun cr -> Cairo.device_to_user cr pt) in
+  let user = View_mainmap.with_map dw (fun cr -> 
+    Cairo.device_to_user cr x y |> CairoH.cairo_point_to_point) in
   let r_opt = M.find_rectangle_at_user_point user dw in
 
   r_opt +> Common.do_option (fun (tr, middle, r_englobing) ->

@@ -26,6 +26,9 @@ module Color = Simple_color
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
+(* See http://archimedes.forge.ocamlcore.org/cairo/ for a tutorial on 
+ * Cairo in OCaml.
+ *)
 
 (*****************************************************************************)
 (* Helpers *)
@@ -69,9 +72,8 @@ let show_text2 cr s =
   try 
     let s' = prepare_string s in
     Cairo.show_text cr s'
-  with _exn ->
-    let status = Cairo.status cr in
-    let s2 = Cairo.string_of_status status in
+  with Cairo.Error status ->
+    let s2 = Cairo.status_to_string status in
     failwith ("Cairo pb: " ^ s2 ^ " s = " ^ s)
 
 let show_text a b = 
@@ -102,44 +104,39 @@ let set_font_size cr font_size =
 (* Distance conversion *)
 (*****************************************************************************)
 
-let origin = { Cairo. x = 0.; y = 0. }
+let origin = { Figures. x = 0.; y = 0. }
 
 let device_to_user_distance_x cr deltax = 
-  let pt = Cairo.device_to_user_distance cr { origin with Cairo.x = deltax } in
-  pt.Cairo.x
+  let (x, _) = Cairo.device_to_user_distance cr deltax 0. in
+  x
 let device_to_user_distance_y cr deltay = 
-  let pt = Cairo.device_to_user_distance cr { origin with Cairo.y = deltay } in
-  pt.Cairo.y
+  let (_, y) = Cairo.device_to_user_distance cr 0. deltay in
+  y
 
 let user_to_device_distance_x cr deltax = 
-  let pt = Cairo.user_to_device_distance cr { origin with Cairo.x = deltax } in
-  pt.Cairo.x
+  let (x, _) = Cairo.user_to_device_distance cr deltax 0. in
+  x
 let user_to_device_distance_y cr deltay = 
-  let pt = Cairo.user_to_device_distance cr { origin with Cairo.y = deltay } in
-  pt.Cairo.y
+  let (_, y) = Cairo.user_to_device_distance cr 0. deltay in
+  y
 
 (* TODO: this is buggy, as we can move the map which can led to
  * some device_to_user to translate to x = 0
  *)
 let device_to_user_size cr size = 
-  let device = { Cairo.x = size; Cairo.y = 0.; } in
-  let user = Cairo.device_to_user cr device in
-  user.Cairo.x
+  let (x, _) = Cairo.device_to_user cr size 0. in
+  x
 
-(* still needed ? can just call device_to_user_size ? *)
+(* less: just call device_to_user_size ? *)
 let user_to_device_font_size cr font_size = 
-  let user_dist = { Cairo.x = font_size; Cairo.y = font_size } in
-  let device_dist = Cairo.user_to_device_distance cr user_dist in
-  device_dist.Cairo.x
+  let (x, _) = Cairo.user_to_device_distance cr font_size font_size in
+  x
 
-let cairo_point_to_point p = 
-  { F.x = p.Cairo.x;
-    F.y = p.Cairo.y;
-  }
+let cairo_point_to_point (x, y) = { F.x; y }
 
 let distance_points p1 p2 =
-  abs_float (p2.Cairo.x - p1.Cairo.x) + 
-  abs_float (p2.Cairo.y - p1.Cairo.y)
+  abs_float (p2.Figures.x - p1.Figures.x) + 
+  abs_float (p2.Figures.y - p1.Figures.y)
 
 (*****************************************************************************)
 (* Surface *)
@@ -148,13 +145,13 @@ let distance_points p1 p2 =
 (* see http://cairographics.org/FAQ/#clear_a_surface *)
 let clear cr =
   Cairo.set_source_rgba cr 0. 0. 0.   0.;
-  Cairo.set_operator cr Cairo.OPERATOR_SOURCE;
+  Cairo.set_operator cr Cairo.SOURCE;
   Cairo.paint cr;
-  Cairo.set_operator cr Cairo.OPERATOR_OVER;
+  Cairo.set_operator cr Cairo.OVER;
   ()
 
 let surface_of_pixmap pm =
-  let cr = Cairo_lablgtk.create pm#pixmap in
+  let cr = Cairo_gtk.create pm#pixmap in
   Cairo.get_target cr
 
 (*****************************************************************************)
@@ -207,16 +204,5 @@ let draw_rectangle_bis ~cr ~color ~line_width r =
   Cairo.stroke cr;
   ()
 (*e: cairo helpers functions *)
-
-(*****************************************************************************)
-(* Misc *)
-(*****************************************************************************)
-
-let is_old_cairo () = 
-  let s = Cairo.compile_time_version_string in
-  match () with
-  | _ when s =~ "1\\.[89]\\.*" -> false
-  | _ -> true
-
 
 (*e: cairo_helpers.ml *)

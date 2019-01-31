@@ -33,7 +33,7 @@ type macrolevel = Treemap.treemap_rendering
 
 
 type microlevel = {
-  point_to_line: Cairo.point -> line;
+  point_to_line: Figures.point -> line;
   line_to_rectangle: line -> Figures.rectangle;
   layout: layout;
   container: Treemap.treemap_rectangle;
@@ -61,7 +61,7 @@ type microlevel = {
     categ: Highlight_code.category option;
     font_size: float;
     color: Simple_color.emacs_color;
-    mutable pos: Cairo.point;
+    mutable pos: Figures.point;
   }
 
  (* Note that I don't use G.node because the string below is not fully
@@ -104,9 +104,9 @@ type drawing = {
   (*s: fields drawing main view *)
   (* device coordinates *)
   (* first cairo layer, for heavy computation e.g. the treemap and content*)
-  mutable base: [ `Any ] Cairo.surface;
+  mutable base: Cairo.Surface.t;
   (* second cairo layer, when move the mouse *)
-  mutable overlay: [ `Any ] Cairo.surface;
+  mutable overlay: Cairo.Surface.t;
   (* todo? third cairo layer? for animations and time related graphics such
    * as tooltips, glowing rectangles, etc?
    *)
@@ -172,14 +172,14 @@ val init_drawing :
 
 (*s: new_pixmap sig *)
 val new_surface: 
-  alpha:bool -> width:int -> height:int -> [ `Any ] Cairo.surface
+  alpha:bool -> width:int -> height:int -> Cairo.Surface.t
 (*e: new_pixmap sig *)
 
 (* point -> rectangle -> line -> glyph -> entity *)
 
 (*s: find_rectangle_at_user_point sig *)
 val find_rectangle_at_user_point :
-  Cairo.point -> drawing ->
+  Figures.point -> drawing ->
   (Treemap.treemap_rectangle * (* most precise *)
    Treemap.treemap_rectangle list * (* englobbing ones *)
    Treemap.treemap_rectangle (* top one *)
@@ -187,9 +187,9 @@ val find_rectangle_at_user_point :
 (*e: find_rectangle_at_user_point sig *)
 
 val find_line_in_rectangle_at_user_point:
-  Cairo.point -> Treemap.treemap_rectangle -> drawing -> line option
+  Figures.point -> Treemap.treemap_rectangle -> drawing -> line option
 val find_glyph_in_rectangle_at_user_point:
-  Cairo.point -> Treemap.treemap_rectangle -> drawing -> glyph option
+  Figures.point -> Treemap.treemap_rectangle -> drawing -> glyph option
 
 (* graph code integration *)
 

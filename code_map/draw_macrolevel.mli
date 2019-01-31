@@ -2,7 +2,7 @@
 
 (*s: draw_treemap_rectangle sig *)
 val draw_treemap_rectangle :
-  cr:Cairo.t -> 
+  cr:Cairo.context -> 
   ?color:Simple_color.emacs_color option -> 
   ?alpha:float -> 
   Treemap.treemap_rectangle -> 
@@ -10,7 +10,7 @@ val draw_treemap_rectangle :
 (*e: draw_treemap_rectangle sig *)
 
 val draw_trect_using_layers:
-  cr:Cairo.t ->
+  cr:Cairo.context ->
   Layer_code.layers_with_index ->
   Treemap.treemap_rectangle -> 
   unit

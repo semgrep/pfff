@@ -80,7 +80,7 @@ type macrolevel = Treemap.treemap_rendering
  *)
 
 type microlevel = {
-  point_to_line: Cairo.point -> line;
+  point_to_line: Figures.point -> line;
   line_to_rectangle: line -> Figures.rectangle;
   layout: layout;
   container: Treemap.treemap_rectangle;
@@ -102,7 +102,7 @@ type microlevel = {
     font_size: float;
     color: Simple_color.emacs_color;
     (* the lower left position, before calling Cairo.show_text str *)
-    mutable pos: Cairo.point;
+    mutable pos: Figures.point;
   }
   and layout = {
     lfont_size: float;
@@ -150,9 +150,9 @@ type drawing = {
   (*s: fields drawing main view *)
   (* device coordinates *)
   (* first cairo layer, for heavy computation e.g. the treemap and content*)
-  mutable base: [ `Any ] Cairo.surface;
+  mutable base: Cairo.Surface.t;
   (* second cairo layer, when move the mouse *)
-  mutable overlay: [ `Any ] Cairo.surface;
+  mutable overlay: Cairo.Surface.t;
   (* todo? third cairo layer? for animations and time related graphics such
    * as tooltips, glowing rectangles, etc?
    *)
@@ -207,12 +207,13 @@ let new_surface ~alpha ~width ~height =
   drawable#set_foreground `WHITE;
   drawable#rectangle ~x:0 ~y:0 ~width:1 ~height:1 ~filled:true ();
 
-  let cr = Cairo_lablgtk.create drawable#pixmap in
+
+  let cr = Cairo_gtk.create drawable#pixmap in
   let surface = Cairo.get_target cr in
-  Cairo.surface_create_similar surface
+  Cairo.Surface.create_similar surface
     (if alpha 
-    then Cairo.CONTENT_COLOR_ALPHA
-    else Cairo.CONTENT_COLOR
+    then Cairo.COLOR_ALPHA
+    else Cairo.COLOR
     ) width height
 
 
@@ -292,7 +293,6 @@ let context_of_drawing dw model = {
  * and check if it's inside.
  *)
 let find_rectangle_at_user_point2 user dw =
-  let user = CairoH.cairo_point_to_point user in
 
   let rects = dw.treemap in
   if List.length rects = 1
@@ -343,7 +343,7 @@ let find_glyph_in_rectangle_at_user_point user r dw =
         (* find the best one *)
         glyphs +> List.rev +> Common.find_opt (fun glyph ->
           let pos = glyph.pos in
-          user.Cairo.x >= pos.Cairo.x
+          user.Figures.x >= pos.Figures.x
         )
     )
   )

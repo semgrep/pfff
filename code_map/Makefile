@@ -23,12 +23,10 @@ SYSLIBS=str.cma unix.cma dbm.cma threads.cma  lablgtk.cma
 
 LIBS=$(TOP)/commons/lib.cma $(TOP)/commons_wrappers/gui/lib.cma \
 
-#     $(TOP)/commons/commons_features.cma 
-
-
 INCLUDEDIRS=$(TOP)/commons $(TOP)/globals \
    $(TOP)/external/lablgtk2 \
-   $(TOP)/external/cairo \
+   $(TOP)/external/cairo2 \
+   $(TOP)/external/cairo2-gtk \
     $(TOP)/commons_core \
     $(TOP)/commons_wrappers/gui \
 	$(TOP)/h_program-lang \

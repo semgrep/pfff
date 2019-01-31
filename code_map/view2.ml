@@ -75,11 +75,11 @@ let pr2, _pr2_once = Common2.mk_pr2_wrappers Flag.verbose_visual
 let assemble_layers cr_final dw =
   let surface_src = dw.base in
 
-  Cairo.set_operator cr_final Cairo.OPERATOR_OVER;
+  Cairo.set_operator cr_final Cairo.OVER;
   Cairo.set_source_surface cr_final surface_src 0. 0.;
   Cairo.paint cr_final;
 
-  Cairo.set_operator cr_final Cairo.OPERATOR_OVER;
+  Cairo.set_operator cr_final Cairo.OVER;
   Cairo.set_source_surface cr_final dw.overlay 0. 0.;
   Cairo.paint cr_final;
   ()
@@ -92,7 +92,7 @@ let assemble_layers cr_final dw =
 let expose2 da w _ev = 
   let dw = w.dw in
   let gwin = da#misc#window in
-  let cr = Cairo_lablgtk.create gwin in
+  let cr = Cairo_gtk.create gwin in
   assemble_layers cr dw;
   true
 
@@ -101,7 +101,7 @@ let expose a b c =
 (*e: expose *)
 
 (*s: configure *)
-let configure2_bis w ev = 
+let configure2 w ev = 
   let dw = w.dw in
   let width = GdkEvent.Configure.width ev in
   let height = GdkEvent.Configure.height ev in
@@ -112,16 +112,6 @@ let configure2_bis w ev =
   View_mainmap.paint dw w.model;
   true
 
-(* ugly: for some unknown reason configure get called twice at
- * the beginning of the program
- *)
-let first_call = ref true
-let configure2 a b =
-  (* should probably do is_old_gtk() *)
-  if !first_call && CairoH.is_old_cairo () 
-  then begin first_call := false; true end
-  else 
-    configure2_bis a b
 
 let configure a b =
   Common.profile_code "View.configure" (fun () -> configure2 a b)
@@ -133,7 +123,7 @@ let configure a b =
 (*s: expose_legend *)
 let expose_legend da w _ev = 
   let dw = w.dw in
-  let cr = Cairo_lablgtk.create da#misc#window in
+  let cr = Cairo_gtk.create da#misc#window in
 
   (* todo: make the architecture a layer so no need for special case *)
   (if not (Layer_code.has_active_layers dw.layers)
