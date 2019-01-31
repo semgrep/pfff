@@ -630,6 +630,8 @@ let options () = ([
     " boost size of labels";
     "-emacs_client", Arg.Set_string Editor_connection.emacsclient_path,
     " <path>";
+    "-efuns_client", Arg.Set_string Editor_connection.efunsclient_path,
+    " <path>";
 
   (*-------------------------------------------------------------------------*)
   (* debugging helpers *)

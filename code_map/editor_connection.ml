@@ -32,6 +32,7 @@ let emacsclient_path_mac =
 *)
 
 let emacsclient_path = ref "emacsclient"
+let efunsclient_path = ref "efunsclient"
 
 (* you need to have done a M-x server-start first *)
 let run_emacsclient ~file ~line =
@@ -40,6 +41,11 @@ let run_emacsclient ~file ~line =
     "%s -e '(with-current-buffer (window-buffer (selected-window)) (goto-line %d))'"
     !emacsclient_path line);
   ()
+
+(* you need to have done a M-x server_start first *)
+let run_efunsclient ~file ~line =
+  Common.command2 (spf "%s %s -line %d" !efunsclient_path file line)
+
 (*e: emacs configuration *)
 
 (*****************************************************************************)
@@ -53,8 +59,9 @@ let run_emacsclient ~file ~line =
 (*s: open_file_in_current_editor() *)
 let open_file_in_current_editor ~file ~line =
   let (Model2.Line line) = line in
-  (* emacs line numbers start at 1 *)
+  (* emacs/efuns line numbers start at 1 *)
   let line = line + 1 in
-  run_emacsclient ~file ~line
+  run_efunsclient ~file ~line;
+  run_emacsclient ~file ~line;
 (*e: open_file_in_current_editor() *)
 (*e: editor_connection.ml *)
