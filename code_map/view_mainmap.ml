@@ -50,7 +50,7 @@ module Ctl = Controller2
 (*s: zoom_pan_scale_map *)
 let zoom_pan_scale_map cr dw =
   Cairo.scale cr 
-    (float_of_int dw.width / T.xy_ratio)
+    (float_of_int dw.width / !T.xy_ratio)
     (float_of_int dw.height)
   ;
   (* I first scale and then translate as the xtrans are in user coordinates *)

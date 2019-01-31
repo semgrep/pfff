@@ -96,15 +96,19 @@ type rectangle1 =
 
 (* Now that my treemap visualizer uses a minimap, it does not completely
  * use the full width.
- * old: was 16/9 = 1.777777
+ * 16/9 = 1.777777
+ * 21/9 = 2.33
+ * I use 2510x1580 for the full codemap window, so it could be 1.58, but
+ * then there is a menu up and a status bar down so it should be 
+ * higher than 1.58.
  *)
-let xy_ratio = 1.71
+let xy_ratio = ref 1.71
 
 (* The dimentions are in a  [0.0-1.0] range for y and [0.0-xyratio] for x,
  * where xyratio is used to cope with most 16/9 screens.
   *)
-let rect_ortho = 
-  { p = {x = 0.0; y = 0.0; }; q = { x = xy_ratio; y = 1.0} }
+let rect_ortho () = 
+  { p = {x = 0.0; y = 0.0; }; q = { x = !xy_ratio; y = 1.0} }
 
 (* the dimentions are in a  [0.0-1.0] range
  * opti? have a quad tree instead of a list, can improve search time
@@ -532,7 +536,7 @@ let test_squarify () =
   pr2_xxxxxxxxxxxxxxxxx ();
   squarify squarified_list_area_ex dim_rect_orig +> ignore;
   pr2_xxxxxxxxxxxxxxxxx ();
-  squarify squarified_list_area_ex2 rect_ortho +> ignore;
+  squarify squarified_list_area_ex2 (rect_ortho()) +> ignore;
   ()
 (*e: function test_squarify *)
 
@@ -751,7 +755,7 @@ let orderify_children ?(pivotf=PivotBySize) xs rect =
 (*s: function test_orderify *)
 let test_orderify () = 
   let xs = children_ex_ordered_2001 +> List.map float_of_int in
-  let rect = rect_ortho in
+  let rect = rect_ortho () in
 
   let fake_treemap = () in
   let children = xs +> List.map (fun size -> size, fake_treemap) in
@@ -874,7 +878,7 @@ let render_treemap_algo2 = fun ?(algo=Classic) ?(big_borders=false) treemap ->
 
     )
   in
-  aux_treemap treemap rect_ortho ~depth:1;
+  aux_treemap treemap (rect_ortho()) ~depth:1;
   
   List.rev !treemap_rects
 

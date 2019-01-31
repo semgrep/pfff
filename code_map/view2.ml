@@ -151,6 +151,13 @@ let expose_legend da w _ev =
 let mk_gui ~screen_size ~legend test_mode w =
   let width, height, minimap_hpos, minimap_vpos = 
     Style.windows_params screen_size in
+  (* bugfix: can not set xy_ratio here because it's too late. We already
+   * computed the treemap with the old xy_ratio and changing xy_ratio now
+   * leads to the right part of the treemap to not be visible
+   * todo: why??
+  Treemap.xy_ratio := (float_of_int width) /. (float_of_int height);
+  pr2 (spf "using %f for xy_ratio" !Treemap.xy_ratio);
+   *)
 
   let win = GWindow.window 
     ~title:(Controller.title_of_path w.dw.current_root)

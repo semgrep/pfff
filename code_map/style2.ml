@@ -139,10 +139,12 @@ let windows_params screen_size =
     match screen_size with
     | 1 ->
         1350, 800, 1100, 150
+    (* on Apple Thunderbolt 27' display *)
     | 2 ->
         2560, 1580, 2350, 100 (* was 2200 and 280 *)
+    (* on LG 38' display with split codemap/efuns *)
     | 3 ->
-        7000, 4000, 6900, 100
+        2510, 1580, 0, 0
     | 4 ->
         16000, 9000, 15900, 100
     | 5 ->

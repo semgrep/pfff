@@ -41,9 +41,9 @@ type screen_dim = {
 }
 (*e: type screen_dim *)
 
-val xy_ratio : float
+val xy_ratio : float ref
 
-val rect_ortho: rectangle
+val rect_ortho: unit -> rectangle
 
 (*s: type algorithm *)
 type algorithm = 
