@@ -117,11 +117,11 @@ module Model = Model2
 (*****************************************************************************)
 
 (*s: main flags *)
-(* on Macos lion, X11 resizes the window to a smaller size so
+(* on macOS lion X11 resizes the window to a smaller size so
  * no point in starting with a big screen_size :(
  *)
 let screen_size = ref 1
-let legend = ref true
+let legend = ref false
 
 (* you can also put this in your ~/gtkrc-2.0
  * gtk-icon-theme-name = "Tango"
@@ -598,6 +598,8 @@ let options () = ([
   (*s: options *)
     "-screen_size", Arg.Set_int screen_size,
     " <int> (1 = small, 2 = big)";
+    "-legend", Arg.Set legend,
+    " display the legend";
     "-no_legend", Arg.Clear legend,
     " do not display the legend";
 
