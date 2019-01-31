@@ -34,32 +34,37 @@ endif
 
 OPTPROGS= $(PROGS:=.opt)
 
-JSONCMA=external/netsys/netsys_oothr.cma external/netsys/netsys.cma\
-        external/netstring/netstring.cma\
+# not a configuration option anymore; used by too many things
+JSONCMA=external/deps-netsys/netsys_oothr.cma external/deps-netsys/netsys.cma\
+        external/deps-netstring/netstring.cma\
         external/json-wheel/jsonwheel.cma 
 
 ifeq ($(FEATURE_VISUAL),1)
 GTKINCLUDE=external/lablgtk2
-CAIROINCLUDE=external/cairo
+CAIROINCLUDE=external/cairo2 external/cairo2-gtk
 GUIDIRS=commons_wrappers/gui
+
 VISUALDIRS=code_map code_graph
 endif
 
-# should be FEATURE_OCAMLGRAPH, or should give dependencies between features
+# could be FEATURE_OCAMLGRAPH, or should give dependencies between features
 GRAPHCMA=external/ocamlgraph/graph.cma commons_wrappers/graph/lib.cma
 GRAPHDIRS=commons_wrappers/graph 
 
 ifeq ($(FEATURE_BYTECODE), 1)
-#ZIPCMA=external/ocamlzip/zip.cma
-EXTLIBCMA=external/extlib/extLib.cma
-PTCMA=external/ptrees/ptrees.cma
+#still? ZIPCMA=external/ocamlzip/zip.cma
+EXTLIBCMA=external/deps-extlib/extLib.cma
+PTCMA=external/deps-ptrees/ptrees.cma
 JAVALIBCMA=external/javalib/lib.cma
+
 BYTECODEDIRS=lang_bytecode/parsing lang_bytecode/analyze
 endif
 
 ifeq ($(FEATURE_CMT), 1)
+#less: or use external/compiler-libs?
 OCAMLCOMPILERDIR=$(shell ocamlc -where)/compiler-libs
 OCAMLCOMPILERCMA=ocamlcommon.cma
+
 CMTDIRS=lang_cmt/parsing lang_cmt/analyze
 endif
 
@@ -68,7 +73,7 @@ endif
 #------------------------------------------------------------------------------
 BASICSYSLIBS=bigarray.cma str.cma unix.cma
 
-# used for sgrep and other small utilities which I dont want to depend
+# used for sgrep and other small utilities that I dont want to depend
 # on too much things
 BASICLIBS=commons/lib.cma \
  commons_core/lib.cma \
@@ -100,8 +105,6 @@ BASICLIBS=commons/lib.cma \
  lang_text/lib.cma \
  lang_sql/parsing/lib.cma \
  mini/lib.cma
-
-#       commons/commons_features.cma \
 
 SYSLIBS=bigarray.cma str.cma unix.cma
 SYSLIBS+=$(OCAMLCOMPILERCMA)
@@ -229,7 +232,7 @@ MAKESUBDIRS=commons commons_ocollection commons_core \
   demos
 
 INCLUDEDIRS=$(MAKESUBDIRS) \
- external/netsys \
+ external/deps-netsys \
  external/json-wheel \
  $(GTKINCLUDE) $(CAIROINCLUDE) \
  commons_wrappers/graph commons_wrappers/gui \
@@ -251,7 +254,7 @@ PP=-pp "cpp $(CLANG_HACK) -DFEATURE_BYTECODE=$(FEATURE_BYTECODE) -DFEATURE_CMT=$
 .PHONY:: all all.opt opt top clean distclean
 
 #note: old: was before all: rec $(EXEC) ... but can not do that cos make -j20
-#could try to compile $(EXEC) before rec. So here force sequentiality.
+#could try to compile $(EXEC) before rec. So here we force sequentiality.
 
 all:: Makefile.config
 	$(MAKE) rec
@@ -261,9 +264,6 @@ opt:
 	$(MAKE) $(OPTPROGS)
 all.opt: opt
 top: $(TARGET).top
-
-#	$(MAKE) features -C commons
-#	$(MAKE) features.opt -C commons
 
 rec:
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all || exit 1; done
@@ -375,8 +375,8 @@ pfff_db.opt: $(LIBS:.cma=.cmxa) $(LIBS2:.cma=.cmxa) $(OBJS2:.cmo=.cmx) $(OPTOBJS
 #------------------------------------------------------------------------------
 SYSLIBS_CM= \
  external/lablgtk2/lablgtk.cma \
- external/cairo/cairo.cma \
- external/cairo/cairo_lablgtk.cma
+ external/cairo2/cairo.cma \
+ external/cairo2-gtk/cairo_gtk.cma
 OBJS_CM=code_map/lib.cma
 
 GTKLOOP=gtkThread.cmo
@@ -404,6 +404,7 @@ codegraph.opt: $(LIBS:.cma=.cmxa) commons_wrappers/gui/lib.cmxa $(OBJS_CG:.cma=.
 	$(OCAMLOPT) -thread $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) threads.cmxa\
           $(SYSLIBS_CG:.cma=.cmxa) $(GTKLOOP:.cmo=.cmx)  $^
 
+# far simpler dependencies
 codegraph_build: $(LIBS) $(OBJS) main_codegraph_build.cmo
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
 codegraph_build.opt: $(LIBS:.cma=.cmxa) $(OPTOBJS) main_codegraph_build.cmx
@@ -449,7 +450,7 @@ uninstall: all
 #uninstall:
 #	rm -rf $(DESTDIR)$(SHAREDIR)/data
 
-# Some of those libraries are needed by Efuns, magicator, syncweb
+# Some of those libraries are needed by efuns, magicator, syncweb
 INSTALL_SUBDIRS= \
   commons commons_core commons_wrappers/graph \
   globals \
@@ -460,10 +461,10 @@ INSTALL_SUBDIRS= \
   lang_cpp/parsing lang_cpp/analyze \
   lang_nw/parsing  lang_nw/analyze\
 
-TODO=\
-  lang_php/analyze lang_php/matcher lang_php/parsing  lang_php/pretty \
-  lang_java/parsing \
-  lang_js/parsing  lang_css/parsing lang_html/parsing \
+#TODO:
+#  lang_php/analyze lang_php/matcher lang_php/parsing  lang_php/pretty \
+#  lang_java/parsing \
+#  lang_js/parsing  lang_css/parsing lang_html/parsing \
 
 install-libs:: all all.opt
 	set -e; for i in $(INSTALL_SUBDIRS); do echo $$i; $(MAKE) -C $$i install-lib; done
@@ -479,9 +480,6 @@ version:
 	@echo $(VERSION)
 
 
-install-bin:
-	cp $(PROGS) ../pfff-binaries/mac
-
 ##############################################################################
 # Package rules
 ##############################################################################
@@ -495,13 +493,13 @@ package:
 srctar:
 	make clean
 	cp -a .  $(TMP)/$(PACKAGE)
-	cd $(TMP); tar cvfz $(PACKAGE).tgz  --exclude=CVS --exclude=_darcs  $(PACKAGE)
+	cd $(TMP); tar cvfz $(PACKAGE).tgz $(PACKAGE)
 	rm -rf  $(TMP)/$(PACKAGE)
 
 #todo? automatically build binaries for Linux, Windows, etc?
 #http://stackoverflow.com/questions/2689813/cross-compile-windows-64-bit-exe-from-linux
 
-# making an OPAM package:
+#TODO: making an OPAM package:
 # - git push from pfff to github
 # - make a new release on github: https://github.com/facebook/pfff/releases
 # - get md5sum of new archive
@@ -546,7 +544,7 @@ prolog:
 	./codequery.opt -lang cmt -build .
 	mv facts.pl facts_pl
 
-# superseded by codegraph -derived_data above
+#old: superseded by codegraph -derived_data above
 tags:
 	./stags.opt -lang cmt .
 db:
@@ -558,9 +556,9 @@ layers:
 
 
 visual:
-	./codemap -no_legend -profile -screen_size 2 -filter pfff .
+	./codemap -no_legend -profile -screen_size 3 -filter pfff .
 loc:
-	./codemap -no_legend -profile -screen_size 2 -filter pfff -test_loc .
+	./codemap -no_legend -profile -screen_size 3 -filter pfff -test_loc .
 
 tests:
 	$(MAKE) rec && $(MAKE) pfff_test
