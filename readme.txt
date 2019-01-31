@@ -27,9 +27,10 @@ pfff is also made of few tools:
  - spatch, a syntactical patch
  - codemap, which is a gtk and cairo based source code
    visualizer/navigator/searcher leveraging
-   the information computed previously by pfff_db and codegraph.
- - codegraph, a source code indexer and package/module/class
-   dependency visualizer
+   the information computed by pfff_db and codegraph_build
+ - codegraph_build, a source code indexer 
+ - codegraph, a package/module/class dependency visualizer leveraging
+   the information computed previously by codegraph_build
  - codequery, an interactive tool a la SQL to query information
    about the structure of a codebase using Prolog as the query engine
  - pfff_db, which does some global analysis on a set of source files and
@@ -69,7 +70,7 @@ source code and perform some code search.
 Usage for codegraph:
 ------------------------
 
-  $ ./codegraph -lang cmt -build ~/pfff
+  $ ./codegraph_build -lang cmt ~/pfff
 
 to generate a graph_code.marshall file in ~/pfff containing
 all dependency information about the pfff codebase using the

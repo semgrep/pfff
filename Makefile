@@ -541,7 +541,7 @@ website:
 
 
 graph:
-	./codegraph.opt -derived_data -lang cmt -build .
+	./codegraph_build.opt -lang cmt .
 prolog:
 	./codequery.opt -lang cmt -build .
 	mv facts.pl facts_pl
