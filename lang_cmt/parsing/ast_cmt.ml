@@ -19,15 +19,18 @@
 (* 
  * This is mostly a wrapper around the OCaml compiler libs and its
  * typed OCaml tree. See the ast_cmt_stdlib.ml file in this directory for
- * a copy paste of what is in the OCaml compiler source (and what
- * was used to generate via ocamltarzan meta_ast_cmt.ml).
+ * a copy paste of what was in the OCaml 4.02 compiler source (and what
+ * was used to generate via ocamltarzan meta_ast_cmt.ml)
  * 
- * todo: starting from ocaml 4.02, you can use 
+ * Starting from ocaml 4.02, the library
  * https://github.com/ocaml-ppx/ocaml-migrate-parsetree
- * to migrate automatically .cmt from one version to another.
- * That way you can write code (e.g., in graph_code_cmt.ml) handling
- * the AST of OCaml 4.02 and the same code could work on 4.06
- * (by converting down the AST from 4.06 to 4.02).
+ * allows to migrate automatically AST from one version to another.
+ * Unfortunately, the library only migrate Parsetree, not Typedtree, which
+ * is the tree we are using here. Thus, I regularly need to update
+ * the code under lang_cmt/ to handle the changes in the Typedtree and
+ * thus .cmt format.
+ * alt: using #ifdef to handle multiple versions (4.02, 4.03, ...) but
+ * this is tedious.
  *)
 
 (*****************************************************************************)

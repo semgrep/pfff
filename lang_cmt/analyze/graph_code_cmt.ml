@@ -16,7 +16,6 @@ open Common
 
 module E = Entity_code
 module G = Graph_code
-module H = Graph_code_cmt_helpers
 
 open Cmt_format
 open Typedtree
@@ -48,7 +47,6 @@ open Typedtree
  *  - whole program analysis done by ocamlpro recently?
  *  - oug/odb http://odb-serv.forge.ocamlcore.org/
  * 
- * less: nested let module X = Y in, ocaml 4.00 feature
  *)
 
 (*****************************************************************************)
@@ -73,7 +71,7 @@ type env = {
 
   mutable locals: string list;
 
-  (* see notes_cmt.txt, the cmt files do not contain the full path
+  (* see notes_cmt.txt; the cmt files do not contain the full path
    * for locally referenced functions, types, or modules, so we have to resolve
    * them. Each time you add an Ident.t, add it there, and each
    * time you use a Path.t, use path_resolve_locals().
@@ -82,8 +80,8 @@ type env = {
    *)
   full_path_local_type: (string * name) list ref;
   full_path_local_value: (string * name) list ref;
-  (* this is less necessary as by convention module use uppercase and
-   * value/types only lowercase and so there is no shadowing risk.
+  (* this is less necessary because by convention modules use uppercase and
+   * values/types only lowercase and so there is no shadowing risk.
    *)
   full_path_local_module: (string * name) list ref;
 
@@ -109,7 +107,7 @@ let hook_def_node = ref (fun _node _g -> ())
 (* Parsing *)
 (*****************************************************************************)
 
-(* because we use a 2 pass process, should do like in PHP all in one pass *)
+(* because we use a 2 passes process (should do like in PHP all in one pass?) *)
 let _hmemo = Hashtbl.create 101
 let parse file =
   Common.memoized _hmemo file (fun () ->
@@ -158,6 +156,7 @@ let readable_path_of_ast ast root readable_cmt source_finder =
    * those cmt files have hardcoded paths to my ocaml installation
    * for their source, hence those hacks below to reconvert
    * those paths.
+   * todo: update: with opam and since 4.07? you have the .cmt for stdlib!
    *)
   let readable_opt = 
     try Some (Common.readable ~root fullpath)
@@ -671,7 +670,7 @@ and structure_item_desc env loc = function
       let node = (full_ident, kind_of_value_descr vd) in
       let env = add_node_and_edge_if_defs_mode env node loc in
       value_description env vd
-  | Tstr_type xs ->
+  | Tstr_type (_recTODO, xs) ->
 
       (* first pass *)
       xs |> List.iter (fun td ->
@@ -794,7 +793,7 @@ and type_kind env = function
         let full_ident = env.current_entity @ [Ident.name id] in
         let node = (full_ident, E.Constructor) in
         let env = add_node_and_edge_if_defs_mode env node (loc) in
-        List.iter (core_type env) args;
+        constructor_arguments env args
       ) xs
   | Ttype_record xs ->
       List.iter (fun ld ->
@@ -809,6 +808,13 @@ and type_kind env = function
   | Ttype_open ->
     failwith "GCC:Ttype_open"
 
+and constructor_arguments env = function
+  | Cstr_tuple (args) ->
+        List.iter (core_type env) args
+  | Cstr_record (_labels) ->
+    failwith "Cstr_record"
+
+
 and exception_declaration _env _x =
   ()
 (* TODO
@@ -822,7 +828,8 @@ and exception_declaration _env _x =
 (* Signature *)
 (* ---------------------------------------------------------------------- *)
 and sig_item_desc env loc = function
-  | Tsig_type xs -> structure_item_desc env loc (Tstr_type xs)
+  | Tsig_type (recflag, xs) -> 
+    structure_item_desc env loc (Tstr_type (recflag, xs))
   | _ -> pr2_once "TODO: sig_item_desc"
 
 (* ---------------------------------------------------------------------- *)
@@ -898,7 +905,7 @@ and expression_desc t env =
         expression env exp;
       );
       expression env v3
-  | Texp_function ((v1, v2, v3)) ->
+  | Texp_function ({ arg_label = v1; cases = v2; partial = v3; param = _TODO}) ->
       let _ = label env v1
       and _ = 
         List.iter (fun { c_lhs = pat; c_rhs = exp; c_guard = _TODO } ->
@@ -911,10 +918,9 @@ and expression_desc t env =
       let _ = expression env v1
       and _ =
         List.iter
-          (fun (v1, v2, v3) ->
+          (fun (v1, v2) ->
              let _ = label env v1
              and _ = v_option (expression env) v2
-             and _ = optional env v3
              in ())
           v2
       in ()
@@ -944,13 +950,17 @@ and expression_desc t env =
 
   | Texp_variant ((v1, v2)) ->
       let _ = label env v1 and _ = v_option (expression env) v2 in ()
-  | Texp_record ((v1, v2)) ->
-      List.iter (fun (lid, v2, v3) ->
-        add_use_edge_lid env lid t E.Field;
-        path_t env lid;
-        let _ = label_description env v2
-        and _ = expression env v3
-        in ()
+  | Texp_record ({ fields = v1; extended_expression = v2; representation = _TODO}) ->
+      Array.iter (fun (lbl_descr, rcrd_lbl_def) ->
+        match rcrd_lbl_def with
+        | Overridden (lid, e) -> 
+          add_use_edge_lid env lid t E.Field;
+          path_t env lid;
+          let _ = label_description env lbl_descr
+          and _ = expression env e
+          in ()
+        | Kept _ ->
+          failwith "Kept"
       ) v1;
       v_option (expression env) v2
   | Texp_field ((v1, lid, v2)) 
@@ -1021,6 +1031,13 @@ and expression_desc t env =
   | Texp_object ((v1, v2)) ->
       let _ = class_structure env v1 and _ = List.iter v_string v2 in ()
   | Texp_pack v1 -> let _ = module_expr env v1 in ()
+  | Texp_unreachable ->
+      failwith "Texp_unreachable"
+  | Texp_letexception (_, _) ->
+      failwith "Texp_letexception"
+  | Texp_extension_constructor (_, _) ->
+      failwith "Texp_extension_constructor"
+
 
 (*
 and exp_extra env = function
@@ -1089,9 +1106,7 @@ and core_type_desc env =
       and _ = List.iter (core_type env) v3
       in ()
   | Ttyp_object (v1, _closed) -> 
-    let _ = List.iter (fun (_str, _attrs, typ) -> 
-      core_type env typ
-    ) v1 
+    let _ = List.iter (object_field env) v1
     in ()
   | Ttyp_class ((v1, _loc_longident, v3)) ->
       let _ = path_t env v1
@@ -1107,6 +1122,14 @@ and core_type_desc env =
       let _ = List.iter v_string v1 and _ = core_type env v2 in ()
   | Ttyp_package _v1 -> 
     pr2_once (spf "TODO: Ttyp_package, %s" env.cmt_file)
+
+and object_field env = 
+  function
+  | OTtag (_str, _attrs, typ) -> 
+      core_type env typ
+  | OTinherit _ ->
+    failwith "OTinherit"
+
 
  
 and row_field env =
