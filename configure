@@ -206,6 +206,8 @@ if($ocaml_version < 4000) {
     #LESS: I get many errors with ocaml 4.06; I would need to update packages
 }
 
+#TODO: I also depend on camlp4
+
 #---------------------------------------------------------------------
 # Package manager
 #---------------------------------------------------------------------
@@ -265,6 +267,10 @@ if($visual) {
     #pr2 "Checking ocamlcairo.";
     #if ($err) { $visual = 0; $error2++; }
 }
+
+#TODO: should look if all external/ libs are installed,
+# just check if symlinks points to something value (File.exists) -f
+# and if not set the appropriate option when it's possible.
 
 ######################################################################
 # Generating the configuration
