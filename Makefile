@@ -61,8 +61,11 @@ BYTECODEDIRS=lang_bytecode/parsing lang_bytecode/analyze
 endif
 
 ifeq ($(FEATURE_CMT), 1)
-#less: or use external/compiler-libs?
-OCAMLCOMPILERDIR=$(shell ocamlc -where)/compiler-libs
+#bugfix: better to use external/compiler-libs otherwise
+# the filter-out in Makefile.common will not skip this dir,
+# which may lead to recompilation of .cmi in ocaml stdlib
+#old: OCAMLCOMPILERDIR=$(shell ocamlc -where)/compiler-libs
+OCAMLCOMPILERDIR=external/compiler-libs
 OCAMLCOMPILERCMA=ocamlcommon.cma
 
 CMTDIRS=lang_cmt/parsing lang_cmt/analyze

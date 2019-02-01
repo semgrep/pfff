@@ -9,14 +9,12 @@ TARGET=lib
 SRC= ast_cmt.ml meta_ast_cmt.ml \
   test_parsing_cmt.ml
 
-SYSLIBS= str.cma unix.cma
-
 #     test_analyze_ml.ml unit_analyze_ml.ml
 
-OCAMLCOMPILERDIR=$(shell ocamlc -where)/compiler-libs
+SYSLIBS= str.cma unix.cma
 
 INCLUDEDIRS= $(TOP)/commons \
-   $(OCAMLCOMPILERDIR) \
+   $(TOP)/external/compiler-libs \
 
 ##############################################################################
 # Generic variables

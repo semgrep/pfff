@@ -9,10 +9,8 @@ TARGET=lib
 SRC= graph_code_cmt_helpers.ml graph_code_cmt.ml \
  unit_analyze_cmt.ml
 
-OCAMLCOMPILERDIR=$(shell ocamlc -where)/compiler-libs
-
 INCLUDEDIRS= $(TOP)/commons $(TOP)/commons_core \
- $(OCAMLCOMPILERDIR) \
+ $(TOP)/external/compiler-libs \
  $(TOP)/globals \
  $(TOP)/h_program-lang $(TOP)/graph_code \
  $(TOP)/lang_cmt/parsing \
