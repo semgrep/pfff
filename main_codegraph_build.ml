@@ -32,7 +32,7 @@ let verbose = ref false
 let lang = ref "ml"
 
 let output_dir = ref None
-(* generate also tags, light db, layers, etc *)
+(* generate also tags, light db, layers, etc. *)
 let gen_derived_data = ref false
 (* not perfect ... *)
 let class_analysis = ref false
@@ -48,7 +48,7 @@ let dep_file_of_dir dir =
   Filename.concat dir Graph_code.default_filename
 
 (*****************************************************************************)
-(* Language specific, building the graph *)
+(* Language-specific, building the graph *)
 (*****************************************************************************)
 
 let build_graph_code lang xs =

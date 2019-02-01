@@ -17,6 +17,7 @@ open Common
  * 
  * todo: use this file for provide an interface to the layers generation
  * functions?
+ * todo: merge with main_codegraph_build.ml
  * 
  * We try to leverage multiple code artifacts:
  *  - the source code
