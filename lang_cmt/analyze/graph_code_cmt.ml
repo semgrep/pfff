@@ -169,12 +169,12 @@ let readable_path_of_ast ast root readable_cmt source_finder =
     | [readable] -> readable
     | xs -> 
       pr2 (spf "no matching source for %s, candidates = [%s]"
-                  readable_cmt (xs +> Common.join ", "));
+                  readable_cmt (xs |> Common.join ", "));
       "TODO"
     )
 
 let use_of_undefined_ok name =
-  name +> List.exists (function
+  name |> List.exists (function
     (* todo: need better n_of_s, or avoid n_of_s and have n_of_path *)
     | "ArithFloatInfix" | "|" -> true
     (* todo: need handle functor *)
@@ -228,8 +228,8 @@ let add_use_edge env dst loc =
     pr2 (spf "PB: lookup fail on %s (in %s)" 
            (G.string_of_node dst) (G.string_of_node src));
     
-    env.g +> G.add_edge (parent_target, dst) G.Has;
-    env.g +> G.add_edge (src, dst) G.Use;
+    env.g |> G.add_edge (parent_target, dst) G.Has;
+    env.g |> G.add_edge (src, dst) G.Use;
     !hook_use_edge (src, dst) env.g pos;
   end
 
@@ -258,8 +258,8 @@ let add_node_and_edge_if_defs_mode ?(dupe_ok=false) env name_node loc =
     if G.has_node node env.g && dupe_ok
     then () (* pr2 "already present entity" *)
     else begin
-      env.g +> G.add_node node;
-      env.g +> G.add_edge (env.current, node) G.Has;
+      env.g |> G.add_node node;
+      env.g |> G.add_edge (env.current, node) G.Has;
 
       let file = env.ml_file in
       let pos = pos_of_loc loc file in
@@ -268,7 +268,7 @@ let add_node_and_edge_if_defs_mode ?(dupe_ok=false) env name_node loc =
          props = [];
          typ = None; (* TODO *)
       } in
-      env.g +> G.add_nodeinfo node nodeinfo;
+      env.g |> G.add_nodeinfo node nodeinfo;
       !hook_def_node node env.g;
     end
   end;
@@ -318,7 +318,7 @@ let rec path_type_resolve_aliases env pt =
   | [t] -> List.rev (t::acc)
   | x::xs ->
       let reduced_candidates = 
-        module_aliases_candidates +> Common.map_filter (function
+        module_aliases_candidates |> Common.map_filter (function
         | (y::ys, v) when x =$= y -> Some (ys, v)
         | _ -> None
         )
@@ -346,7 +346,7 @@ let path_resolve_aliases env p =
   | [x] -> List.rev (x::acc)
   | x::xs ->
       let reduced_candidates = 
-        module_aliases_candidates +> Common.map_filter (function
+        module_aliases_candidates |> Common.map_filter (function
         | (y::ys, v) when x =$= y -> Some (ys, v)
         | _ -> None
         )
@@ -442,7 +442,7 @@ let add_use_edge_lid env (lid: Longident.t Asttypes.loc) texpr kind =
     (match tname with
     | ("unit" | "bool" | "list" | "option" | "exn")::_ -> ()
       (* todo: pfff specific, tofix *)
-    | _ when tname +> List.exists (function 
+    | _ when tname |> List.exists (function 
       "LIST" | "Array_id" | "dbty" -> true | _-> false) -> ()
     | _ -> pr2 (spf "%s in %s" (Common.dump node) env.cmt_file)
     )
@@ -526,11 +526,11 @@ let rec extract_defs_uses ~root env ast readable_cmt =
   if env.phase = Defs then begin
     let dir = Common2.dirname readable_cmt in
     G.create_intermediate_directories_if_not_present env.g dir;
-    env.g +> G.add_node env.current;
-    env.g +> G.add_edge ((dir, E.Dir), env.current) G.Has;
+    env.g |> G.add_node env.current;
+    env.g |> G.add_edge ((dir, E.Dir), env.current) G.Has;
   end;
   if env.phase = Uses then begin
-    ast.cmt_imports +> List.iter (fun (_s, _digest) ->
+    ast.cmt_imports |> List.iter (fun (_s, _digest) ->
       (* old: add_use_edge env (s, E.Module)
        * actually ocaml list as dependencies many things which are not.
        * Most modules will have in their import for instance Sexp,
@@ -638,7 +638,7 @@ and structure_item_desc env loc = function
 *)
         | Tpat_tuple xs ->
             let xdone = ref false in
-            xs +> List.iter (fun p ->
+            xs |> List.iter (fun p ->
               match p.pat_desc with
               | Tpat_var(id, loc) | Tpat_alias (_, id, loc) ->
                   let full_ident = env.current_entity @ [Ident.name id] in
@@ -679,7 +679,7 @@ and structure_item_desc env loc = function
         add_full_path_local env (Ident.name id, full_ident) E.Type
       );
       (* second pass *)
-      xs +> List.iter (fun td -> 
+      xs |> List.iter (fun td -> 
         let id = td.typ_id in
         let loc = td.typ_loc in
         let full_ident = env.current_entity @ [Ident.name id] in
@@ -900,7 +900,7 @@ and expression_desc t env =
         );
       end;
       (* second pass *)
-      xs +> List.iter (fun { vb_pat = pat; vb_expr = exp; _ } ->
+      xs |> List.iter (fun { vb_pat = pat; vb_expr = exp; _ } ->
         pattern env pat;
         expression env exp;
       );
@@ -1184,7 +1184,7 @@ let build ?(verbose=false) ~root ~cmt_files ~ml_files  =
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
   if verbose then pr2 "\nstep1: extract defs";
-  files +> Console.progress ~show:verbose (fun k -> 
+  files |> Console.progress ~show:verbose (fun k -> 
     List.iter (fun file ->
       k();
       let ast = parse file in
@@ -1194,7 +1194,7 @@ let build ?(verbose=false) ~root ~cmt_files ~ml_files  =
 
   (* step2: creating the 'Use' edges *)
   if verbose then pr2 "\nstep2: extract uses";
-  files +> Console.progress ~show:verbose (fun k -> 
+  files |> Console.progress ~show:verbose (fun k -> 
     List.iter (fun file ->
       k();
       let ast = parse file in
@@ -1206,9 +1206,9 @@ let build ?(verbose=false) ~root ~cmt_files ~ml_files  =
   if verbose then begin
     pr2 "";
     pr2 "module aliases";
-    !(env.module_aliases) +> List.iter pr2_gen;
+    !(env.module_aliases) |> List.iter pr2_gen;
     pr2 "type aliases";
-    !(env.type_aliases) +> List.iter pr2_gen;
+    !(env.type_aliases) |> List.iter pr2_gen;
   end;
 
   g
