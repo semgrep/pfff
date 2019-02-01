@@ -133,7 +133,10 @@ let (with_open_stringbuf: (((string -> unit) * Buffer.t) -> unit) -> string) =
   Buffer.contents buf
 
 
-let foldl1 p = function x::xs -> List.fold_left p x xs | _ -> failwith "foldl1"
+let foldl1 p xs = 
+  match xs with
+  | x::xs -> List.fold_left p x xs 
+  | [] -> failwith "foldl1: empty list"
 
 let rec repeat e n =
     let rec repeat_aux acc = function
