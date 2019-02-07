@@ -542,7 +542,7 @@ website:
 
 
 graph:
-	./codegraph_build.opt -lang cmt .
+	./codegraph_build -lang cmt -symlinks .
 prolog:
 	./codequery.opt -lang cmt -build .
 	mv facts.pl facts_pl
@@ -557,9 +557,9 @@ layers:
 #./pfff_db_heavy -gen_age_layer /home/pad/local/pfff-for-layers layer_age.marshall
 #./pfff_db_heavy -gen_age_layer /home/pad/local/pfff-for-layers layer_age.json
 
-
+EFUNSCLIENT=/home/pad/github/fork-efuns/efuns_client
 visual:
-	./codemap -no_legend -profile -screen_size 3 -filter pfff .
+	./codemap -screen_size 3 -filter pfff -efuns_client $(EFUNSCLIENT) .
 loc:
 	./codemap -no_legend -profile -screen_size 3 -filter pfff -test_loc .
 
