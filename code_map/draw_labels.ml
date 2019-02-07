@@ -267,7 +267,7 @@ and try_draw_label ~font_size_orig ~color ~alpha ~cr ~rect txt =
      | n -> 
          if n >= 12
          then ()
-         else aux ~step:(Pervasives.(+) n 1) ~font_size
+         else aux ~step:(n +.. 1) ~font_size
     end
   in
   aux ~font_size:font_size_orig ~step:1 

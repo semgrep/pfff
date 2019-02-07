@@ -244,7 +244,7 @@ let button_action w ev =
 
           let paths_of_readables xs = 
             xs 
-            +> List.sort Pervasives.compare
+            +> List.sort compare
             +> Common2.uniq
             (* todo: tfidf to filter files like common2.ml *)
             +> Common.exclude (fun readable -> 
