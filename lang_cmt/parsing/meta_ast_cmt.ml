@@ -213,7 +213,7 @@ and vof_commutable =
 
 let vof_type_expr_show_all x = vof_type_expr x
 
-let vof_type_expr _x = ()
+let __vof_type_expr _x = ()
 
 let rec vof_pattern {
                 pat_attributes = _v_pat_attributes;
@@ -522,7 +522,9 @@ and vof_meth =
 
 and vof_record_label_definition = 
   function
-  | Kept _ -> failwith "Kept"
+  | Kept v1 -> 
+    let v1 = vof_type_expr v1
+    in Ocaml.VSum (("Kept", [ v1 ]))
   | Overridden (v1, v2) -> 
     let v1 = vof_loc Longident.vof_t v1
     and v2 = vof_expression v2
@@ -1568,7 +1570,9 @@ and vof_constructor_declaration {
 
 and vof_constructor_arguments = function
   | Cstr_tuple xs -> Ocaml.vof_list vof_core_type xs
-  | Cstr_record _ -> failwith "Cstr_record"
+  | Cstr_record v1 -> 
+      let v1 = Ocaml.vof_list vof_label_declaration v1
+      in Ocaml.VSum (("Cstr_record", [ v1 ]))
 
 and vof_label_declaration {
                           ld_id = v_ld_id;

@@ -15,6 +15,7 @@ INCLUDEDIRS= $(TOP)/commons $(TOP)/commons_core \
  $(TOP)/h_program-lang $(TOP)/graph_code \
  $(TOP)/lang_cmt/parsing \
  $(TOP)/lang_ml/parsing \
+ $(TOP)/lang_ml/analyze \
 
 ##############################################################################
 # Generic variables
