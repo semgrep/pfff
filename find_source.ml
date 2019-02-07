@@ -36,7 +36,9 @@ let files_of_dir_or_files ~lang xs =
   finder xs |> Skip_code.filter_files_if_skip_list
 
 
-(* todo: factorize with filter_files_if_skip_list? *)
+(* todo: factorize with filter_files_if_skip_list?
+ * less: a ~verbose argument to not always display the pr2 below?
+ *)
 let files_of_root ~lang root =
   let finder = finder lang in
   let files = finder [root] in
@@ -44,7 +46,7 @@ let files_of_root ~lang root =
   let skip_list =
     if Sys.file_exists (skip_file root)
     then begin 
-      pr2 (spf "Using skip file: %s" (skip_file root));
+      pr2 (spf "Using skip file: %s (for lang = %s)" (skip_file root) lang);
       Skip_code.load (skip_file root);
     end
     else []
