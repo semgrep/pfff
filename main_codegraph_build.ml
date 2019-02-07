@@ -116,9 +116,9 @@ let build_graph_code lang xs =
 
     | _ -> failwith ("language not supported: " ^ lang)
     )
-    with Graph_code.Error err ->
+    with (Graph_code.Error err) as exn ->
       pr2 (Graph_code.string_of_error err);
-      raise (Graph_code.Error err)
+      raise exn
   in
   let output_dir = !output_dir ||| root in
   let file = dep_file_of_dir output_dir in
