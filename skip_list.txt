@@ -7,8 +7,11 @@
 # ignore for now
 dir: web
 dir: facebook
-#dir: external
+
+# to focus only on pfff code in codemap
 #dir: commons
+# this needs -symlink anyway
+#dir: external
 
 # -------------------------------------------------------------------------
 # parse errors
@@ -18,54 +21,64 @@ dir: tests/ml/parsing_errors
 dir: tests/ml/db/parsing_errors
 
 # -------------------------------------------------------------------------
-# cmt
+# cmt, for codegraph to skip
 # -------------------------------------------------------------------------
 
-dir: external/stdlib/4.00.1
+dir: external/OPAM_DIR
+
+#dir: external/FOR_MERLIN
+# I uppercased below the first letter of directories I don't want to skip 
+# (e.g., we want json-wheel, lablgtk, and ocaml hence JLO uppercase below)
+dir: external/FOR_MERLIN/[abcdefghiJkLmnOpqrstuvwxyz]
+# We skip cairo2 above because the external/ contains the .cmt (good citizen)
+dir: external/FOR_MERLIN/ocaml[abcdefghijklmnopqrstuvwxyz]
+# We want stdlib and otherlibs (unix/str)
+dir: external/FOR_MERLIN/ocaml-base-compiler.4.07.1/[abcdefghijklmnOpqrStuvwxyz]
+# complex cmt without a cmt_source_file field (weird)
+dir: external/FOR_MERLIN/ocaml-base-compiler.4.07.1/otherlibs/dynlink
+# dupes for condition/mutex/...
+dir: external/FOR_MERLIN/ocaml-base-compiler.4.07.1/otherlibs/threads
+# dupe with stdlib/bigarray.ml
+#dir: external/FOR_MERLIN/ocaml-base-compiler.4.07.1/otherlibs/bigarray
+#file: external/FOR_MERLIN/ocaml-base-compiler.4.07.1/stdlib/stdlib__bigarray.cmt
+# dupes
+dir: external/FOR_MERLIN/ocaml-base-compiler.4.07.1/ocamldoc/stdlib_non_prefixed
+dir: external/FOR_MERLIN/ocaml-base-compiler.4.07.1/ocamldoc
+# advanced constructs
+dir: external/FOR_MERLIN/ocaml-migrate-parsetree
+
+
+# already handled above
+dir: external/STDLIB
+#dir: external/STDLIB/camlp4
+#dir: external/STDLIB/compiler-libs
+# dupe
+#dir: external/STDLIB/vmthreads
+
+# use advanced constructs I do not handle yet in graph_code_cmt.ml
+dir: external/compiler-libs
 
 #dupes with external/stdlib and ok to skip because they are test files
 dir: tests/ml/cmt
 
-#less: dupes with external/extlib/, remove them
-#file: commons/ocamlextra/enum.cmt
-#file: commons/ocamlextra/dynArray.cmt
-file: external/extlib/enum.cmt
-file: external/extlib/dynArray.cmt
-
-# depends on compiler libs
+# depends on compiler libs, removed for codegraph_build to reduce
+# the number of lookup failures
 file: lang_cmt/parsing/meta_ast_cmt.cmt
 file: lang_cmt/analyze/graph_code_cmt.cmt
-
-# complex cmt
-file: external/stdlib/dynlinkaux.cmt
 
 # -------------------------------------------------------------------------
 # ml
 # -------------------------------------------------------------------------
 
-# contain dupes
-dir: external/ocamlgtk/examples
-dir: external/ocamlgtk/applications
-
-file: external/ocamlgraph/src/util.ml
-file: external/ocamlgraph/src/util.mli
-
-file: facebook/external/archimedes/src/utils.ml
-
-#huge
-file: facebook/clang/clang_callgraph_j.ml
-#dir: facebook/clang
-
 # -------------------------------------------------------------------------
 # old/
 # -------------------------------------------------------------------------
-# less: have a dir_element: old ?
+#less: have a dir_element: old ?
 
 # -------------------------------------------------------------------------
 # _build
 # -------------------------------------------------------------------------
 
-# todo: factorize in a 'dir_element: _build' ?
-dir: facebook/external/archimedes/_build
-dir: opa/_build
-dir: tests/opa/parsing/todo/_build
+#less: factorize in a 'dir_element: _build' ?
+#dir: opa/_build
+#dir: tests/opa/parsing/todo/_build
