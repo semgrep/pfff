@@ -20,6 +20,8 @@ module G = Graph_code
 open Cmt_format
 open Typedtree
 
+let debug = ref false
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -90,6 +92,9 @@ type env = {
    *)
   module_aliases: (name * name) list ref;
   type_aliases: (name * name) list ref;
+  
+  (* less: log and pr2_and_log fields like in other graphers? *)
+  lookup_fail: env -> Graph_code.node -> unit;
 }
  (* todo: what about names which are applications of functor? 
   * See Longident.t
@@ -140,23 +145,34 @@ let (name_of_longident_loc: Longident.t Asttypes.loc -> name) = fun lidloc ->
 
 let (name_of_path: Path.t -> name) = fun path ->
   let s = Path.name path in
-  Common.split "\\." s
+  let xs = Common.split "\\." s in
+  match xs with
+  (* ugly: since ocaml 4.07, the compiler transforms calls to
+   * List.xxx in Stdlib__list.xxx, but it does not do it for Bigarray
+   * hence this hack
+   *)
+  | "Bigarray"::xs -> "Stdlib__bigarray"::xs
+  (* ugly: moreover explicit calls to Pervasives.xxx do not get transformed
+   * either in simply Stdlib.xxx, hence this hack
+   *)
+  | "Stdlib"::"Pervasives"::xs -> "Stdlib"::xs
+  | _ -> xs
 
 let readable_path_of_ast ast root readable_cmt source_finder =
   let fullpath =
     Filename.concat ast.cmt_builddir
       (match ast.cmt_sourcefile with
       | Some file -> file
+      (* ex: dynlinkaux.cmt does not have a cmt_sourcefile (weird) *)
       | None -> failwith (spf "no cmt_source_file for %s" readable_cmt)
       )
   in
-  (* ugly: the OCaml distribution does not comes with .cmt for
-   * its standard library, so I had to generate them manually 
-   * and put them in pfff/external/stdlib. The problem is that
-   * those cmt files have hardcoded paths to my ocaml installation
-   * for their source, hence those hacks below to reconvert
-   * those paths.
-   * todo: update: with opam and since 4.07? you have the .cmt for stdlib!
+  (* ugly: the OCaml distribution and most of the OPAM libraries do not
+   * come with .cmt files, so I have to reference them via the FOR_MERLIN
+   * symlink pointing to ~/.opam/4.../.opam-switch/build/...
+   * The problem is that those cmt files have realpaths in ~/.opam/
+   * so Common.readable below will fail for them, hence the try
+   * and the use of source_finder below.
    *)
   let readable_opt = 
     try Some (Common.readable ~root fullpath)
@@ -165,12 +181,23 @@ let readable_path_of_ast ast root readable_cmt source_finder =
   match readable_opt with
   | Some readable when Sys.file_exists fullpath -> readable
   | _ ->
+    (* try our best to find the readable source *)
     (match source_finder (Filename.basename fullpath) with
     | [readable] -> readable
     | xs -> 
-      pr2 (spf "no matching source for %s, candidates = [%s]"
+      (* most of the time there are multiple candidates because
+       * the library or the ocaml source itself have multiple
+       * versions of the same file (e.g., ocaml/otherlibs/unix/unix.ml
+       * and ocaml/otherlibs/win32unix/unix.ml) in which case
+       * we look wether one of the .ml is in the same dir than the .cmt
+       *)
+      let dir_cmt = Filename.dirname readable_cmt in
+      try 
+        xs |> List.find (fun file -> Filename.dirname file = dir_cmt)
+      with Not_found ->
+        pr2 (spf "no matching source for %s, candidates = [%s]"
                   readable_cmt (xs |> Common.join ", "));
-      "TODO"
+        "TODO_NO_SOURCE_FOUND"
     )
 
 let use_of_undefined_ok name =
@@ -178,14 +205,6 @@ let use_of_undefined_ok name =
     (* todo: need better n_of_s, or avoid n_of_s and have n_of_path *)
     | "ArithFloatInfix" | "|" -> true
     (* todo: need handle functor *)
-    | "Set" | "Map"
-    | "SMap" | "IMap" | "ISet" | "SSet" 
-    | "StringSetOrig" | "IntMap" | "IntIntMap" | "StringSet" | "StrMap"
-    | "SetTestPath" | "Elt_Set"  | "AMap"
-    | "Build" | "PMap"
-    (* in dataflow_php.ml *)
-    | "VarMap" | "VarSet" | "NodeiSet"
-      -> true
     | s when s =~ ".*Set" -> true
     | s when s =~ ".*Map" -> true
     (* todo: need handle argument to functor *)
@@ -202,7 +221,9 @@ let use_of_undefined_ok name =
 
 let is_builtin_type s =
   match s with
-  | "unit" | "bool" | "int" | "float" | "char" | "string" | "int64"
+  | "unit" | "bool" 
+  | "int" | "int64" | "float" 
+  | "char" | "string"
   | "exn" 
   | "list" | "ref" | "option" | "array" 
     -> true
@@ -225,9 +246,7 @@ let add_use_edge env dst loc =
     G.add_node dst env.g;
     !hook_def_node dst env.g;
     let parent_target = G.not_found in
-    pr2 (spf "PB: lookup fail on %s (in %s)" 
-           (G.string_of_node dst) (G.string_of_node src));
-    
+    env.lookup_fail env dst;
     env.g |> G.add_edge (parent_target, dst) G.Has;
     env.g |> G.add_edge (src, dst) G.Use;
     !hook_use_edge (src, dst) env.g pos;
@@ -369,7 +388,7 @@ let path_resolve_aliases env p =
 (*****************************************************************************)
     
 let rec kind_of_type_desc x =
-  (* pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_desc x)); *)
+  if !debug then pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_desc x));
   match x with
   | Types.Tarrow _ -> 
       E.Function
@@ -409,7 +428,7 @@ let kind_of_value_descr vd =
 (*****************************************************************************)
 
 let typename_of_texpr x =
-  (* pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_expr_show_all x)); *)
+  if !debug then pr2(Ocaml.string_of_v(Meta_ast_cmt.vof_type_expr_show_all x));
   let rec aux x = 
     match x.Types.desc with
     | Types.Tconstr(path, _xs, _aref) -> path
@@ -444,7 +463,7 @@ let add_use_edge_lid env (lid: Longident.t Asttypes.loc) texpr kind =
       (* todo: pfff specific, tofix *)
     | _ when tname |> List.exists (function 
       "LIST" | "Array_id" | "dbty" -> true | _-> false) -> ()
-    | _ -> pr2 (spf "%s in %s" (Common.dump node) env.cmt_file)
+    | _ -> env.lookup_fail env node
     )
   end
  end
@@ -464,9 +483,8 @@ let add_use_edge_name env name loc texpr =
       | E.Constant when G.has_node (s_of_n name, E.Function) env.g ->
           add_use_edge env (s_of_n name, E.Function) loc
       | _ ->
-          if use_of_undefined_ok name 
-          then ()
-          else pr2 (spf "%s IN %s" (Common.dump node) env.cmt_file)
+          if not (use_of_undefined_ok name)
+          then env.lookup_fail env node
       )
   end
 
@@ -481,9 +499,8 @@ let add_use_edge_type env name loc =
     if G.has_node node env.g
     then add_use_edge env node loc
     else 
-      if use_of_undefined_ok name || is_builtin_type (fst node)
-      then ()
-      else pr2 (spf "%s in %s" (Common.dump node) env.cmt_file)
+      if not (use_of_undefined_ok name || is_builtin_type (fst node))
+      then env.lookup_fail env node
   end
 
 (*****************************************************************************)
@@ -722,7 +739,7 @@ and structure_item_desc env loc = function
       let node = (full_ident, E.Module) in
       (match modexpr.mod_desc with
       | Tmod_ident (path, _lid) ->
-          (* do not add nodes for module aliases in the graph, just *)
+          (* do not add nodes for module aliases in the graph *)
           if env.phase = Defs then begin
             let name = name_of_path path in
             Common.push (full_ident, path_resolve_locals env name E.Module) 
@@ -730,7 +747,17 @@ and structure_item_desc env loc = function
           end;
           add_full_path_local env (Ident.name id, full_ident) E.Module
       | _ -> 
-          let env = add_node_and_edge_if_defs_mode env node (loc) in
+          let env =
+            (* since ocaml 4.07 the stdlib has been reorganized with
+             * pervasives.ml becoming stdlib.ml with a nested
+             * module Pervasives = struct ... which we do not create
+             * here because calls to pervasives entities are transformed
+             * by the compiler in Stdlib.xxx, not Stdlib.Pervasives.xxx
+             *)
+            if Ident.name id = "Pervasives" 
+            then env
+            else add_node_and_edge_if_defs_mode env node (loc) 
+          in
           module_expr env modexpr
       )
   | Tstr_recmodule xs ->
@@ -811,8 +838,19 @@ and type_kind env = function
 and constructor_arguments env = function
   | Cstr_tuple (args) ->
         List.iter (core_type env) args
-  | Cstr_record (_labels) ->
-    failwith "Cstr_record"
+   (* ext: anonymous record, since ocaml 4.06? *)
+  | Cstr_record (lbls) ->
+    (* less: create a _anon_ parent type like for Tstr_type? *)
+    (* mostly copy paste of of Type_record above *)
+     lbls |> List.iter (fun ld ->
+        let id = ld.ld_id in
+        let loc = ld.ld_loc in
+        let typ = ld.ld_type in
+        let full_ident = env.current_entity @ [Ident.name id] in
+        let node = (full_ident, E.Field) in
+        let env = add_node_and_edge_if_defs_mode env node (loc) in
+        core_type env typ;
+      )
 
 
 and exception_declaration _env _x =
@@ -959,8 +997,11 @@ and expression_desc t env =
           let _ = label_description env lbl_descr
           and _ = expression env e
           in ()
+          (* less: in 4.07 { e with l1 = ...} is expanded and the
+           * kept fields are stored in the typed tree too.
+           *)
         | Kept _ ->
-          failwith "Kept"
+          ()
       ) v1;
       v_option (expression env) v2
   | Texp_field ((v1, lid, v2)) 
@@ -1165,6 +1206,9 @@ let build ?(verbose=false) ~root ~cmt_files ~ml_files  =
   let g = G.create () in
   G.create_initial_hierarchy g;
 
+  (* use Hashtbl.find_all property *)
+  let hstat_lookup_failures = Hashtbl.create 101 in
+
   let env = { 
     g;
     module_aliases = ref [];
@@ -1180,6 +1224,14 @@ let build ?(verbose=false) ~root ~cmt_files ~ml_files  =
     full_path_local_type = ref [];
     full_path_local_value = ref [];
     full_path_local_module = ref [];
+    lookup_fail = (fun env dst ->
+      let src = env.current in
+      if verbose
+      then pr2 (spf "PB: lookup_fail on %s (in %s, in file %s)"
+             (G.string_of_node dst) (G.string_of_node src) env.cmt_file);
+      (* less: could also use Hashtbl.replace to count entities only once *)
+      Hashtbl.add hstat_lookup_failures dst true;
+    );
   } in
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
@@ -1189,7 +1241,15 @@ let build ?(verbose=false) ~root ~cmt_files ~ml_files  =
       k();
       let ast = parse file in
       let readable_cmt = Common.readable ~root file in
+      try 
       extract_defs_uses ~root { env with phase = Defs } ast readable_cmt
+      with 
+      (* let main_codegraph_build catch it and print a nice error *)
+      | (Graph_code.Error err) as _exn -> 
+        failwith (spf "graph error with %s (exn = %s)" 
+         file (Graph_code.string_of_error err))
+      | exn ->
+        failwith (spf "exn with %s (exn = %s)" file (Common.exn_to_s exn))
     ));
 
   (* step2: creating the 'Use' edges *)
@@ -1199,16 +1259,30 @@ let build ?(verbose=false) ~root ~cmt_files ~ml_files  =
       k();
       let ast = parse file in
       let readable_cmt = Common.readable ~root file in
-      if readable_cmt =~ "^external" || readable_cmt =~ "^EXTERNAL"
+      (* pad: a bit pad specific *)
+      if readable_cmt =~ "^external"
       then ()
       else extract_defs_uses ~root { env with phase = Uses} ast readable_cmt
     ));
-  if verbose then begin
+  if !debug then begin
     pr2 "";
-    pr2 "module aliases";
+    pr2 "Module aliases";
     !(env.module_aliases) |> List.iter pr2_gen;
-    pr2 "type aliases";
+    pr2 "Type aliases";
     !(env.type_aliases) |> List.iter pr2_gen;
   end;
 
+  (* lookup failures summary *)
+  let xs = Common.hashset_to_list hstat_lookup_failures in
+  let modules = xs |> List.map
+    (fun node-> Module_ml.top_module_of_node node, ()) in
+  let counts = modules |> Common.group_assoc_bykey_eff 
+                       |> List.map (fun (x, xs)-> x, List.length xs) 
+                       |> Common.sort_by_val_highfirst
+                       |> Common.take_safe 20
+  in
+  pr2 "Top lookup failures per modules";
+  counts |> List.iter (fun (s, n) -> pr2 (spf "%-30s = %d" s n));
+
+  (* finally return the graph *)
   g
