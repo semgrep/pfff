@@ -14,8 +14,6 @@
  *)
 open Common
 
-module Ast = Ast_ml
-module Flag = Flag_parsing_ml
 module V = Visitor_ml
 
 (*****************************************************************************)
@@ -40,15 +38,17 @@ let find_ml_files_of_dir_or_files xs =
 
 let find_cmt_files_of_dir_or_files xs = 
   Common.files_of_dir_or_files_no_vcs_nofilter xs 
-   +> List.filter (fun filename->
+   |> List.filter (fun filename->
     match File_type.file_type_of_file filename with
     | File_type.Obj ("cmt" | "cmti") -> true
     | _ -> false
    )
+  (* ocaml 4.07 stdlib now has those .p.cmt files that cause dupe errors *)
+  |> Common.exclude (fun filename -> filename =~ ".*\\.p\\.cmt")
   (* sometimes there is just a .cmti and no corresponding .cmt because
    * people put the information only in a .mli
    *)
-  +> (fun xs ->
+  |> (fun xs ->
     let hfiles = Hashtbl.create 101 in
     xs +> List.iter (fun file ->
       let (d,b,e) = Common2.dbe_of_filename file in
@@ -66,7 +66,7 @@ let find_cmt_files_of_dir_or_files xs =
       | _ -> raise Impossible
       )
     )
-  ) +> Common.sort
+  ) |> Common.sort
 
 (*****************************************************************************)
 (* Extract infos *)
