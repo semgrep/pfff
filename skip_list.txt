@@ -1,9 +1,5 @@
 # -*- sh -*-
 
-##############################################################################
-# All
-##############################################################################
-
 # ignore for now
 dir: web
 dir: facebook
@@ -39,8 +35,6 @@ dir: external/FOR_MERLIN/ocaml-base-compiler.4.07.1/otherlibs/dynlink
 # dupes for condition/mutex/...
 dir: external/FOR_MERLIN/ocaml-base-compiler.4.07.1/otherlibs/threads
 # dupe with stdlib/bigarray.ml
-#dir: external/FOR_MERLIN/ocaml-base-compiler.4.07.1/otherlibs/bigarray
-#file: external/FOR_MERLIN/ocaml-base-compiler.4.07.1/stdlib/stdlib__bigarray.cmt
 # dupes
 dir: external/FOR_MERLIN/ocaml-base-compiler.4.07.1/ocamldoc/stdlib_non_prefixed
 dir: external/FOR_MERLIN/ocaml-base-compiler.4.07.1/ocamldoc
