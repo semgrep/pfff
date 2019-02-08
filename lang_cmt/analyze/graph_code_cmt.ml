@@ -73,12 +73,13 @@ type env = {
 
   mutable locals: string list;
 
-  (* see notes_cmt.txt; the cmt files do not contain the full path
+  (* The cmt files do not contain the full path
    * for locally referenced functions, types, or modules, so we have to resolve
    * them. Each time you add an Ident.t, add it there, and each
    * time you use a Path.t, use path_resolve_locals().
    * We use 3 different fields because those are different namespaces; we
    * don't want a value to shadow a type.
+   * See also notes_cmt.txt.
    *)
   full_path_local_type: (string * name) list ref;
   full_path_local_value: (string * name) list ref;
@@ -102,8 +103,6 @@ type env = {
  and name = string list
  and phase = Defs | Uses
 
-let s_of_n xs = Common.join "." xs
-
 (* for syncweb's indexer *)
 let hook_use_edge = ref (fun (_src, _dst) _g _loc -> ())
 let hook_def_node = ref (fun _node _g -> ())
@@ -112,19 +111,64 @@ let hook_def_node = ref (fun _node _g -> ())
 (* Parsing *)
 (*****************************************************************************)
 
-(* because we use a 2 passes process (should do like in PHP all in one pass?) *)
+(* because we use a 2 passes process (should do like in PHP all in 1 pass?) *)
 let _hmemo = Hashtbl.create 101
 let parse file =
   Common.memoized _hmemo file (fun () ->
     try 
       Cmt_format.read_cmt file
-    with
-      (Cmi_format.Error _) as exn ->
-        failwith (spf "PB with %s, exn = %s" file (Common.exn_to_s exn))
+    with (Cmi_format.Error _) as exn ->
+      failwith (spf "PB with %s, exn = %s" file (Common.exn_to_s exn))
   )
 
 (*****************************************************************************)
-(* Helpers *)
+(* Naming helpers *)
+(*****************************************************************************)
+
+let final_string_of_ident s =
+  s
+(* todo: does not work; get some lookup_fail
+   if s =~ "^[_A-Za-z].*"
+   then s
+   (* operator needs extra parenthesis so we get
+    * Stdlib.Pervasives.(+.) instead of Stdlib.Pervasives.+.
+    *)
+   else "(" ^ s ^ ")"
+*)
+
+let string_of_id id =
+   let s = Ident.name id in
+   final_string_of_ident s
+
+let s_of_n xs = 
+ xs |> List.map final_string_of_ident
+    |> Common.join "."
+
+
+let (name_of_path: Path.t -> name) = fun path ->
+  (* similar to Path.name *)
+  let rec aux = function
+  | Path.Pident id -> [string_of_id id]
+  | Path.Pdot (p, s, _pos) ->
+     s::aux p
+  | Path.Papply(p1, _p2TODO) -> 
+     aux p1
+  in
+  let xs = aux path |> List.rev in
+  match xs with
+  (* ugly: since ocaml 4.07, the compiler transforms calls to
+   * List.xxx in Stdlib__list.xxx, but it does not do it for Bigarray
+   * hence this hack
+   *)
+  | "Bigarray"::xs -> "Stdlib__bigarray"::xs
+  (* ugly: moreover explicit calls to Pervasives.xxx do not get transformed
+   * either in simply Stdlib.xxx, hence this hack
+   *)
+  | "Stdlib"::"Pervasives"::xs -> "Stdlib"::xs
+  | _ -> xs
+
+(*****************************************************************************)
+(* Other helpers *)
 (*****************************************************************************)
 let unwrap x = 
   x.Asttypes.loc
@@ -143,20 +187,6 @@ let (name_of_longident_loc: Longident.t Asttypes.loc -> name) = fun lidloc ->
   let lid = lidloc.Asttypes.txt in
   Longident.flatten lid
 
-let (name_of_path: Path.t -> name) = fun path ->
-  let s = Path.name path in
-  let xs = Common.split "\\." s in
-  match xs with
-  (* ugly: since ocaml 4.07, the compiler transforms calls to
-   * List.xxx in Stdlib__list.xxx, but it does not do it for Bigarray
-   * hence this hack
-   *)
-  | "Bigarray"::xs -> "Stdlib__bigarray"::xs
-  (* ugly: moreover explicit calls to Pervasives.xxx do not get transformed
-   * either in simply Stdlib.xxx, hence this hack
-   *)
-  | "Stdlib"::"Pervasives"::xs -> "Stdlib"::xs
-  | _ -> xs
 
 let readable_path_of_ast ast root readable_cmt source_finder =
   let fullpath =
@@ -202,8 +232,6 @@ let readable_path_of_ast ast root readable_cmt source_finder =
 
 let use_of_undefined_ok name =
   name |> List.exists (function
-    (* todo: need better n_of_s, or avoid n_of_s and have n_of_path *)
-    | "ArithFloatInfix" | "|" -> true
     (* todo: need handle functor *)
     | s when s =~ ".*Set" -> true
     | s when s =~ ".*Map" -> true
@@ -626,8 +654,8 @@ and structure_item_desc env loc = function
           let exp = vb.vb_expr in
           match pat.pat_desc with
           | Tpat_var(id, _loc) | Tpat_alias (_, id, _loc) ->
-              let full_ident = env.current_entity @ [Ident.name id] in
-              add_full_path_local env (Ident.name id, full_ident) 
+              let full_ident = env.current_entity @ [string_of_id id] in
+              add_full_path_local env (string_of_id id, full_ident) 
                 (kind_of_type_expr exp.exp_type)
           | _ -> ()
         );
@@ -639,7 +667,7 @@ and structure_item_desc env loc = function
         let exp = vb.vb_expr in
         match pat.pat_desc with
         | Tpat_var(id, loc) | Tpat_alias (_, id, loc) ->
-            let full_ident = env.current_entity @ [Ident.name id] in
+            let full_ident = env.current_entity @ [string_of_id id] in
             let node = (full_ident, kind_of_type_expr exp.exp_type) in
             (* some people do let foo = ... let foo = ... in the same file *)
             let env = add_node_and_edge_if_defs_mode ~dupe_ok:true env node 
@@ -658,7 +686,7 @@ and structure_item_desc env loc = function
             xs |> List.iter (fun p ->
               match p.pat_desc with
               | Tpat_var(id, loc) | Tpat_alias (_, id, loc) ->
-                  let full_ident = env.current_entity @ [Ident.name id] in
+                  let full_ident = env.current_entity @ [string_of_id id] in
                   let node = (full_ident, kind_of_type_expr p.pat_type) in
                   let env = 
                     add_node_and_edge_if_defs_mode ~dupe_ok:true env node 
@@ -683,7 +711,7 @@ and structure_item_desc env loc = function
       let id = vd.val_id in
       let loc = vd.val_loc in
 
-      let full_ident = env.current_entity @ [Ident.name id] in
+      let full_ident = env.current_entity @ [string_of_id id] in
       let node = (full_ident, kind_of_value_descr vd) in
       let env = add_node_and_edge_if_defs_mode env node loc in
       value_description env vd
@@ -692,14 +720,14 @@ and structure_item_desc env loc = function
       (* first pass *)
       xs |> List.iter (fun td ->
         let id = td.typ_id in
-        let full_ident = env.current_entity @ [Ident.name id] in
-        add_full_path_local env (Ident.name id, full_ident) E.Type
+        let full_ident = env.current_entity @ [string_of_id id] in
+        add_full_path_local env (string_of_id id, full_ident) E.Type
       );
       (* second pass *)
       xs |> List.iter (fun td -> 
         let id = td.typ_id in
         let loc = td.typ_loc in
-        let full_ident = env.current_entity @ [Ident.name id] in
+        let full_ident = env.current_entity @ [string_of_id id] in
         let node = (full_ident, E.Type) in
         let env = add_node_and_edge_if_defs_mode env node (loc) in
 
@@ -718,14 +746,14 @@ and structure_item_desc env loc = function
       let loc = ec.ext_loc in
       let v3  = ec.ext_type in
 
-      let full_ident = env.current_entity @ ["exn";Ident.name id] in
+      let full_ident = env.current_entity @ ["exn";string_of_id id] in
       let node = (full_ident, E.Exception) in
       let env = 
         add_node_and_edge_if_defs_mode ~dupe_ok:true env node (loc) in
       exception_declaration env v3
 (*
   | Tstr_exn_rebind ((id, loc, v3, _loc2)) ->
-      let full_ident = env.current_entity @ ["exn";Ident.name id] in
+      let full_ident = env.current_entity @ ["exn";string_of_id id] in
       let node = (full_ident, E.Exception) in
       let env = add_node_and_edge_if_defs_mode env node (unwrap loc) in
       path_t env v3
@@ -735,7 +763,7 @@ and structure_item_desc env loc = function
       let loc = mb.mb_loc in
       let modexpr = mb.mb_expr in
 
-      let full_ident = env.current_entity @ [Ident.name id] in
+      let full_ident = env.current_entity @ [string_of_id id] in
       let node = (full_ident, E.Module) in
       (match modexpr.mod_desc with
       | Tmod_ident (path, _lid) ->
@@ -745,7 +773,7 @@ and structure_item_desc env loc = function
             Common.push (full_ident, path_resolve_locals env name E.Module) 
               env.module_aliases
           end;
-          add_full_path_local env (Ident.name id, full_ident) E.Module
+          add_full_path_local env (string_of_id id, full_ident) E.Module
       | _ -> 
           let env =
             (* since ocaml 4.07 the stdlib has been reorganized with
@@ -754,7 +782,7 @@ and structure_item_desc env loc = function
              * here because calls to pervasives entities are transformed
              * by the compiler in Stdlib.xxx, not Stdlib.Pervasives.xxx
              *)
-            if Ident.name id = "Pervasives" 
+            if string_of_id id = "Pervasives" 
             then env
             else add_node_and_edge_if_defs_mode env node (loc) 
           in
@@ -762,7 +790,7 @@ and structure_item_desc env loc = function
       )
   | Tstr_recmodule xs ->
       List.iter (fun { mb_id = id; mb_loc = loc; mb_expr = me; _ } ->
-        let full_ident = env.current_entity @ [Ident.name id] in
+        let full_ident = env.current_entity @ [string_of_id id] in
         let node = (full_ident, E.Module) in
         let env = add_node_and_edge_if_defs_mode env node (loc) in
         (* module_type env v3; *)
@@ -817,7 +845,7 @@ and type_kind env = function
         let id = cd.cd_id in
         let loc = cd.cd_loc in
         let args = cd.cd_args in
-        let full_ident = env.current_entity @ [Ident.name id] in
+        let full_ident = env.current_entity @ [string_of_id id] in
         let node = (full_ident, E.Constructor) in
         let env = add_node_and_edge_if_defs_mode env node (loc) in
         constructor_arguments env args
@@ -827,7 +855,7 @@ and type_kind env = function
         let id = ld.ld_id in
         let loc = ld.ld_loc in
         let typ = ld.ld_type in
-        let full_ident = env.current_entity @ [Ident.name id] in
+        let full_ident = env.current_entity @ [string_of_id id] in
         let node = (full_ident, E.Field) in
         let env = add_node_and_edge_if_defs_mode env node (loc) in
         core_type env typ;
@@ -846,7 +874,7 @@ and constructor_arguments env = function
         let id = ld.ld_id in
         let loc = ld.ld_loc in
         let typ = ld.ld_type in
-        let full_ident = env.current_entity @ [Ident.name id] in
+        let full_ident = env.current_entity @ [string_of_id id] in
         let node = (full_ident, E.Field) in
         let env = add_node_and_edge_if_defs_mode env node (loc) in
         core_type env typ;
@@ -876,10 +904,10 @@ and sig_item_desc env loc = function
 and pattern_desc t env = function
   | Tpat_any -> ()
   | Tpat_var ((id, _loc)) ->
-      env.locals <- Ident.name id :: env.locals
+      env.locals <- string_of_id id :: env.locals
   | Tpat_alias ((v1, id, _loc)) ->
       pattern env v1;
-      env.locals <- Ident.name id :: env.locals
+      env.locals <- string_of_id id :: env.locals
   | Tpat_constant v1 -> 
       constant env v1
   | Tpat_tuple xs -> 
@@ -933,7 +961,7 @@ and expression_desc t env =
         xs |> List.iter (fun { vb_pat = pat; vb_expr = _exp; _ } ->
           match pat.pat_desc with
           | Tpat_var (id, _loc) | Tpat_alias (_, id, _loc) ->
-              env.locals <- Ident.name id:: env.locals
+              env.locals <- string_of_id id:: env.locals
           | _ -> ()
         );
       end;
@@ -1032,7 +1060,7 @@ and expression_desc t env =
   | Texp_for ((id, _loc_string, v3, v4, _direction_flag, v6)) ->
       expression env v3;
       expression env v4;
-      let env = { env with locals = Ident.name id::env.locals } in
+      let env = { env with locals = string_of_id id::env.locals } in
       expression env v6
   | Texp_send ((v1, v2, v3)) ->
       let _ = expression env v1
