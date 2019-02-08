@@ -3,13 +3,13 @@
 # Prelude 
 ##############################################################################
 
-# This file assumes the "includer" has set a few variables and then has done a
-# include Makefile.common. Here are those variables:
+# This file assumes the "includer" has set the variables below and then done
+# a 'include Makefile.common':
 #  - TOP
 #  - SRC
 #  - INCLUDEDIRS
 
-# For literate programming, it also assumes a few variables:
+# For literate programming, it assumes more variables:
 #  - SRCNW
 #  - TEXMAIN
 #  - TEX
@@ -95,8 +95,7 @@ lpclean::
 #old: otags -no-mli-tags -r  .  but does not work very well
 # better to use my own tagger :)
 otags:
-	echo "you should use pfff_tags"
-
+	echo "you should use stags (in pfff) or ocaml merlin"
 distclean::
 	rm -f TAGS
 
@@ -121,12 +120,14 @@ doti:
 # Install
 ##############################################################################
 
-# installing the .ml can be useful for tools like codegraph or Merlin,
+# Installing the .ml can be useful for tools like codegraph or Merlin,
 # but if your 'make depend' is wrong and include directories under OPAM,
 # then you will possibly get issues with inconcistent definitions because
-# make will try to recompile the .ml from OPAM.
+# make will try to recompile the .ml from OPAM! It would be good to
+# sandbox .opam/ with a read-only filesystem like OPAM 2 does when installing
+# new packages. In the mean time cp -a ~/.opam/ /tmp to back it up.
 install-lib: all all.opt
-	ocamlfind install $(OPAMPKG) META lib.cma lib.cmxa *.a *.cmi *.cmt* *.mli
+	ocamlfind install $(OPAMPKG) META lib.cma lib.cmxa *.a *.cmi *.cmt* *.mli *.ml
 
 uninstall-lib::
 	ocamlfind remove $(OPAMPKG)

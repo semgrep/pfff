@@ -116,7 +116,7 @@ distclean::
 # make will try to recompile the .ml from OPAM.
 
 install: all all.opt
-	ocamlfind install $(OPAMPKG) META *.mli \
+	ocamlfind install $(OPAMPKG) META *.mli *.ml \
     $(LIBNAME).cma $(LIBNAME).cmxa $(LIBNAME).a *.cmi *.cmt* 
 
 uninstall:
