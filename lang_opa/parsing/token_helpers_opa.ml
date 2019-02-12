@@ -17,7 +17,6 @@ open Common
 
 open Parser_opa
 
-module Ast = Ast_opa
 module PI = Parse_info
 
 (*****************************************************************************)

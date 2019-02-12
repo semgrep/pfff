@@ -16,7 +16,6 @@ open Common
 
 module TV = Token_views_cpp
 module TH = Token_helpers_cpp
-module Ast = Ast_cpp
 
 open Parser_cpp
 open Token_views_cpp

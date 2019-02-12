@@ -14,11 +14,8 @@
  *)
 open Common
 
-module Ast = Ast_csharp
-(*module V = Visitor_csharp *)
 open Entity_code open Highlight_code
 module T = Parser_csharp
-module TH = Token_helpers_csharp
 
 (*****************************************************************************)
 (* Prelude *)

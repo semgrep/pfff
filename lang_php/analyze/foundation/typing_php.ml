@@ -16,7 +16,6 @@ open Common
 
 open Ast_php_simple
 module A = Ast_php_simple
-module PI = Parse_info
 
 open Env_typing_php
 open Typing_helpers_php

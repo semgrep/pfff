@@ -1,6 +1,5 @@
 open Common
 
-module Ast = Ast_hs
 module Flag = Flag_parsing_hs
 
 (*****************************************************************************)

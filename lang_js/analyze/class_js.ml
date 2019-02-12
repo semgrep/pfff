@@ -16,7 +16,6 @@ open Common
 
 open Ast_js
 
-module Ast = Ast_js
 module V = Visitor_js
 module E = Entity_code
 

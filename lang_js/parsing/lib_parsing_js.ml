@@ -14,8 +14,6 @@
  *)
 open Common
 
-module Flag = Flag_parsing_js
-module Ast = Ast_js
 module V = Visitor_js
 module FT = File_type
 

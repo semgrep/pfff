@@ -14,10 +14,7 @@
  *)
 open Common
 
-module Ast = Ast_js
-module PI = Parse_info
 module E = Entity_code
-module Db = Database_code
 module Tags = Tags_file
 module Annot = Annotation_js
 

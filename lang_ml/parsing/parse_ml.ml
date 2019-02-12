@@ -14,8 +14,6 @@
 open Common 
 
 module Flag = Flag_parsing_ml
-module Ast = Ast_ml
-module T = Parser_ml
 module TH   = Token_helpers_ml
 module PI = Parse_info
 

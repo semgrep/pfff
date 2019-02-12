@@ -17,8 +17,6 @@
 (*e: Facebook copyright *)
 open Common
 
-module Flag = Flag_visual
-module CairoH = Cairo_helpers
 module F = Figures
 module T = Treemap
 module E = Entity_code
@@ -384,7 +382,7 @@ let find_def_entity_at_line_opt line tr dw model =
     ) +> List.map (fun (s, kind) -> ((s, kind), rank_entity_kind kind))
       +> Common.sort_by_val_highfirst
       +> List.hd +> fst +> (fun x -> Some x)
-  with Not_found | Failure "hd" -> None
+  with Not_found | Failure _ (* "hd"*) -> None
 
 let find_use_entity_at_line_and_glyph_opt line glyph tr dw model =
   model.g >>= (fun g ->

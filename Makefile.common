@@ -42,18 +42,18 @@ OPTOBJS?= $(SRC:.ml=.cmx)
 #-6  allow omit labels
 #-29 alow multiline strings
 #-45 allow shadowing open (TODO: fix them though)
-#-41 allow ambiguous constructor in 2 opned modules (TODO: fix them though)
+#-41 allow ambiguous constructor in 2 opened modules (TODO: fix them though)
 #-44 allow shadow module identifier (TODO: fix them)
-#-48 allow eliminating optional arguments, unclear how to fix without wide
-#    changes
-WARNING_FLAGS?=-w +A-4-6-29-41-44-45-48
+#-48 allow eliminating optional args, unclear how to fix without wide changes
+#-52 allow to match on Failure("hd")
+WARNING_FLAGS?=-w +a-4-6-29-41-44-45-48-52 -warn-error +a
 
-OCAMLCFLAGS=-g -thread -dtypes $(WARNING_FLAGS) $(OCAMLCFLAGS_EXTRA) 
+OCAMLCFLAGS=-g -thread $(WARNING_FLAGS) $(OCAMLCFLAGS_EXTRA) 
 
 # This flag is also used in subdirectories so don't change its name here
 # the -w y is to silence errors on the visitor_xxx files with the unused
 # variable false positive
-OPTFLAGS?=-thread -g -w y
+OPTFLAGS?=-thread
 
 OCAMLC=ocamlc$(OPTBIN) $(OCAMLCFLAGS) $(PP) $(INCLUDES)
 OCAMLOPT=ocamlopt$(OPTBIN) $(OPTFLAGS) $(PP) $(INCLUDES)

@@ -64,5 +64,9 @@ clean::
 beforedepend:: parser_js.ml parser_js.mli
 
 
+# to allow unused variable warnings
 visitor_js.cmo: visitor_js.ml
 	$(OCAMLC) -w y -c $<
+# to allow warning -58 on matching Failure("hd")
+lexer_js.cmo: lexer_js.ml
+	$(OCAMLC) -w -A -c $<

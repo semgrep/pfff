@@ -153,7 +153,8 @@ let parse_string = parse $ Stream.of_string
 (* php -> Serialized string *)
 (*****************************************************************************)
 
-module Out = struct
+(*
+module_Out = struct
 
 (** Combinators to build values of [php] type *)
 
@@ -165,6 +166,7 @@ module Out = struct
 
 
 end
+*)
 (*
 let to_string v =
   let out = Out.io_output_string () in

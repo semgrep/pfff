@@ -15,8 +15,6 @@
 open Common
 
 module MV = Metavars_fuzzy
-module A = Ast_fuzzy
-module B = Ast_fuzzy
 module PI = Parse_info
 
 (*****************************************************************************)

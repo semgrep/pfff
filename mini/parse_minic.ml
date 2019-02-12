@@ -15,7 +15,6 @@ open Common
 
 open Ast_cpp
 open Ast_c
-module C = Ast_c
 module M = Ast_minic
 
 (*****************************************************************************)

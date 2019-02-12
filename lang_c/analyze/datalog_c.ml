@@ -18,7 +18,6 @@ open Ast_c
 open Ast_cil
 module A = Ast_c
 module A2 = Ast_cpp
-module PI = Parse_info
 module D = Datalog_code
 module G = Graph_code
 module E = Entity_code

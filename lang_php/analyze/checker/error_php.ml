@@ -380,8 +380,8 @@ let rank_of_error_kind err_kind =
       | Some (s2, i) ->
           (match i with
           | 1 -> 
-              let s1 = String.lowercase s1 in
-              let s2 = String.lowercase s2 in
+              let s1 = String.lowercase_ascii s1 in
+              let s2 = String.lowercase_ascii s2 in
               if (s1 ^ "s" =$= s2) || (s1 =$= s2 ^ "s")
               then Less
               else ReallyImportant

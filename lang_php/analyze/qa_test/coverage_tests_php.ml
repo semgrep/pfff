@@ -19,10 +19,7 @@ open Ast_php
 
 open Coverage_code
 
-module Ast = Ast_php
 module V = Visitor_php
-
-module J = Json_type
 
 (*****************************************************************************)
 (* Prelude *)

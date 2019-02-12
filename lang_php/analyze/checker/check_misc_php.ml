@@ -111,7 +111,7 @@ let rec unargs args =
 let expr_is_T_or_F (expr : Ast.expr) =
   match expr with
   | Id(XName([QI(Name((str, _)))])) ->
-    let str_l = String.lowercase str in
+    let str_l = String.lowercase_ascii str in
     (str_l = "true") || (str_l = "false")
   | _ -> false
 
@@ -190,7 +190,7 @@ let check ast =
        *)
       | InstanceOf (e, tok, _classname) ->
         let str = Parse_info.str_of_info tok in
-        let lower = String.lowercase str in
+        let lower = String.lowercase_ascii str in
         if not (str =$= lower)
         then E.warning tok E.CaseSensitivityKeyword;
         k e

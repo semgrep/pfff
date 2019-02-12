@@ -14,9 +14,6 @@
  *)
 open Common
 
-module E = Entity_code
-module G = Graph_code
-
 open Ast_clang
 open Parser_clang
 module Ast = Ast_clang

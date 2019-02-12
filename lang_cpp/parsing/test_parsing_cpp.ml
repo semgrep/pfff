@@ -1,8 +1,6 @@
 open Common
 
-module Ast = Ast_cpp
 module Flag = Flag_parsing_cpp
-module TH = Token_helpers_cpp
 
 module Stat = Parse_info
 

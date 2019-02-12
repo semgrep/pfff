@@ -222,7 +222,7 @@ let property_of_modifiers modifiers =
 
 let normalize str =
   str
-  +> String.lowercase                         (* php is case insensitive *)
+  +> String.lowercase_ascii                   (* php is case insensitive *)
   +> Str.global_replace (Str.regexp "-") "_"  (* xhp is "dash" insensitive *)
 
 (*****************************************************************************)

@@ -305,7 +305,7 @@ let main_action xs =
       failwith (spf "could not find the codegraph file from %s or its parent"
                   dir);
   in
-  let file = dep_file_of_dir root in
+  (* let file = dep_file_of_dir root in *)
   pr2 (spf "Using root = %s" root);
   let model = build_model root in
 

@@ -16,7 +16,6 @@ open Common
 
 module E = Entity_code
 module G = Graph_code
-module PI = Parse_info
 module Error = Errors_code
 
 (*****************************************************************************)

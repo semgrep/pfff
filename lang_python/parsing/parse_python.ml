@@ -13,10 +13,8 @@
  *)
 open Common 
 
-module Ast = Ast_python
 module Flag = Flag_parsing_python
 module TH   = Token_helpers_python
-module T = Parser_python
 module PI = Parse_info
 
 (*****************************************************************************)

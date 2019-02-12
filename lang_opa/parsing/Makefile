@@ -68,6 +68,8 @@ beforedepend:: parser_opa.ml parser_opa.mli
 
 visitor_opa.cmo: visitor_opa.ml
 	$(OCAMLC) -w y -c $<
+lexer_opa.cmo: lexer_opa.ml
+	$(OCAMLC) -w -A -c $<
 
 ##############################################################################
 # Generic rules

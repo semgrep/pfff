@@ -21,7 +21,6 @@ module T = Parser_cpp
 module TH = Token_helpers_cpp
 module Lexer = Lexer_cpp
 module Semantic = Parser_cpp_mly_helper
-module Hack = Parsing_hacks_lib
 module FT = File_type
 
 (*****************************************************************************)

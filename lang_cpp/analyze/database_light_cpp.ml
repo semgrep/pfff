@@ -14,10 +14,8 @@
  *)
 open Common
 
-module Ast = Ast_cpp
 module Db = Database_code
 module HC = Highlight_code
-module T = Parser_cpp
 module PI = Parse_info
 
 (*****************************************************************************)

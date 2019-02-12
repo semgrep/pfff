@@ -17,7 +17,6 @@ open Common
 
 open Parser_css
 
-module Ast = Ast_css
 module PI = Parse_info
 
 

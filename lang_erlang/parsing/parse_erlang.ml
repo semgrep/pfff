@@ -13,10 +13,8 @@
  *)
 open Common 
 
-module Ast = Ast_erlang
 module Flag = Flag_parsing_erlang
 module TH   = Token_helpers_erlang
-module T = Parser_erlang
 module PI = Parse_info
 
 (*****************************************************************************)

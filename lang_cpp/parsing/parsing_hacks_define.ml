@@ -16,8 +16,6 @@ open Common
 
 open Parser_cpp
 
-module Ast = Ast_cpp
-module Parser = Parser_cpp
 module TH = Token_helpers_cpp
 module Hack = Parsing_hacks_lib
 module PI = Parse_info

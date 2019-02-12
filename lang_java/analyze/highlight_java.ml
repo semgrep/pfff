@@ -19,7 +19,6 @@ open Entity_code open Highlight_code
 module Ast = Ast_java
 module V = Visitor_java
 module T = Parser_java
-module TH = Token_helpers_java
 module HC = Highlight_code
 
 (*****************************************************************************)

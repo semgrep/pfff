@@ -13,10 +13,8 @@
  *)
 open Common 
 
-module Ast = Ast_rust
 module Flag = Flag_parsing_rust
 module TH   = Token_helpers_rust
-module T = Parser_rust
 module PI = Parse_info
 
 (*****************************************************************************)

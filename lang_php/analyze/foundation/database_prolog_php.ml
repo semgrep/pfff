@@ -17,7 +17,6 @@ open Common
 open Ast_php
 
 module Ast = Ast_php
-module EC = Entity_php
 module V = Visitor_php
 module E = Entity_code
 module CG = Callgraph_php2

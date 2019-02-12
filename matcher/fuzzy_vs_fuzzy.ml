@@ -21,8 +21,6 @@ open Common
 module A = Ast_fuzzy
 module B = Ast_fuzzy
 
-module MV = Metavars_fuzzy
-
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -291,6 +289,15 @@ and m_tree a b =
         B.Braces (b1, b2, b3)
       )
     )))
+  | A.Bracket (a1, a2, a3), B.Bracket (b1, b2, b3) ->
+    m_tok a1 b1 >>= (fun (a1, b1) ->
+    m_trees a2 b2 >>= (fun (a2, b2) ->
+    m_tok a3 b3 >>= (fun (a3, b3) ->
+      return (
+        A.Bracket (a1, a2, a3), 
+        B.Bracket (b1, b2, b3)
+      )
+    )))
   | A.Parens (a1, a2, a3), B.Parens (b1, b2, b3) ->
     m_tok a1 b1 >>= (fun (a1, b1) ->
     m_arguments a2 b2 >>= (fun (a2, b2) ->
@@ -318,6 +325,7 @@ and m_tree a b =
     )
 
   | A.Braces _, _
+  | A.Bracket _, _
   | A.Parens _, _
   | A.Angle _, _
   | A.Tok _, _

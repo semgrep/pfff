@@ -15,7 +15,6 @@
  *)
 open Common
 
-module Ast = Ast_nw
 module T = Lexer_nw
 module TH = Token_helpers_nw
 module F = Ast_fuzzy
@@ -225,7 +224,7 @@ let visit_program ~tag_hook _prefs (trees, toks) =
     | T.TComment ii ->
         if not (Hashtbl.mem already_tagged ii)
         then 
-         let s = Parse_info.str_of_info ii |> String.lowercase in
+         let s = Parse_info.str_of_info ii |> String.lowercase_ascii in
          (match s with
          | _ when s =~ "^%todo:" -> tag ii BadSmell
          | _ -> tag ii CommentImportance0

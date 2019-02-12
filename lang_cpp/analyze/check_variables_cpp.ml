@@ -17,7 +17,6 @@ open Common
 open Ast_cpp
 
 module Ast = Ast_cpp
-module Flag = Flag_analyze_cpp
 module V = Visitor_cpp
 module E = Errors_code
 module S = Scope_code

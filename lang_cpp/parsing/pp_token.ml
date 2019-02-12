@@ -16,7 +16,6 @@
 open Common
 
 module Ast = Ast_cpp
-module Flag = Flag_parsing_cpp
 module TH = Token_helpers_cpp
 module Parser = Parser_cpp
 module Hack = Parsing_hacks_lib

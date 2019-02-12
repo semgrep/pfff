@@ -1,6 +1,5 @@
 open Common
 
-module Ast = Ast_lisp
 module Flag = Flag_parsing_lisp
 
 (*****************************************************************************)

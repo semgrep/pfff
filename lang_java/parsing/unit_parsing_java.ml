@@ -1,7 +1,6 @@
 open Common
 
 open Ast_java
-module Ast = Ast_java
 module Vis = Visitor_java
 
 open OUnit

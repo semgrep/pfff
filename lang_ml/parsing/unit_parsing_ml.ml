@@ -2,7 +2,6 @@ open Common
 open OUnit
 
 open Ast_ml
-module Ast = Ast_ml
 module V = Visitor_ml
 
 (*****************************************************************************)

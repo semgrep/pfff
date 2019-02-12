@@ -14,9 +14,6 @@
  *)
 open Common
 
-module Flag = Flag_parsing_cpp
-module Ast = Ast_cpp
-
 module TH = Token_helpers_cpp
 module TV = Token_views_cpp
 module Parser = Parser_cpp

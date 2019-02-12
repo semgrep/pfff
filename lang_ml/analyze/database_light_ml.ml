@@ -14,7 +14,6 @@
  *)
 open Common
 
-module Ast = Ast_ml
 module Db = Database_code
 module HC = Highlight_code
 module T = Parser_ml
@@ -66,14 +65,14 @@ type entity_poor_id =
 (*****************************************************************************)
 
 let is_pleac_file file = 
-  let file = String.lowercase file in
+  let file = String.lowercase_ascii file in
   file =~ ".*pleac*"
 
 (* todo? quite pad specific ... 
  * try detect when use OUnit ?
  *)
 let is_test_file file =
-  let file = String.lowercase file in
+  let file = String.lowercase_ascii file in
   (file =~ ".*/test_" || file =~ ".*/unit_")
 
 let is_test_or_pleac_file file = 
@@ -323,7 +322,7 @@ let compute_database ?(verbose=false) files_or_dirs =
               in
               let module_entity = 
                 let (_d,b,_e) = Common2.dbe_of_filename file_entity in
-                String.capitalize b
+                String.capitalize_ascii b
               in
               
               if file_entity <> file && final_module_name = module_entity

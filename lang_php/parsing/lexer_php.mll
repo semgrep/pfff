@@ -65,7 +65,7 @@ let tok_add_s s ii  =
 let case_str s =
   if !Flag.case_sensitive
   then s
-  else String.lowercase s
+  else String.lowercase_ascii s
 
 
 let xhp_or_t_ident ii fii =
@@ -224,7 +224,7 @@ let keyword_table = Common.hash_of_list [
 ]
 
 let _ = assert ((Common2.hkeys keyword_table) +>
-                 List.for_all (fun s -> s = String.lowercase s))
+                 List.for_all (fun s -> s = String.lowercase_ascii s))
 
 (* ---------------------------------------------------------------------- *)
 (* Lexer State *)

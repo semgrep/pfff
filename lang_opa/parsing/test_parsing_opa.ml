@@ -1,6 +1,5 @@
 open Common
 
-module Ast = Ast_opa
 module Flag = Flag_parsing_opa
 module TH = Token_helpers_opa
 

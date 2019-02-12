@@ -14,7 +14,6 @@
  *)
 
 open Ast_php
-module Ast = Ast_php
 module V = Visitor_php
 module E = Error_php
 

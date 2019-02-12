@@ -19,7 +19,6 @@ module Ast = Ast_php
 module V = Visitor_php
 module E = Error_php
 module Ent = Entity_code
-module Flag = Flag_analyze_php
 module G = Graph_code
 
 (*****************************************************************************)

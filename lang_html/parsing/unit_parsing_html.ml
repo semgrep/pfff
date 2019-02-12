@@ -1,11 +1,7 @@
 open Common
 
 open Ast_html
-module Ast = Ast_html
-
 open OUnit
-
-module Flag = Flag_parsing_html
 
 (*****************************************************************************)
 (* Unit tests *)

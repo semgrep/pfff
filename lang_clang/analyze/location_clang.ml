@@ -16,7 +16,6 @@ open Common
 
 open Ast_clang
 open Parser_clang
-module Ast = Ast_clang
 
 (*****************************************************************************)
 (* Prelude *)

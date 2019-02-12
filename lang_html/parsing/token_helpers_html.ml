@@ -17,7 +17,6 @@ open Common
 
 open Parser_html
 
-module Ast = Ast_html
 module PI = Parse_info
 
 (*****************************************************************************)

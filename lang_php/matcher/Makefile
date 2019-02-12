@@ -31,7 +31,6 @@ INCLUDEDIRS= $(TOP)/commons \
 ##############################################################################
 # Generic variables
 ##############################################################################
-#BUG in ocamlc, false positive on unused value
 #WARNING_FLAGS=-w +A-4-29-6-45-32
 -include $(TOP)/Makefile.common
 
@@ -50,3 +49,7 @@ $(TARGET).top: $(OBJS) $(LIBS)
 
 clean::
 	rm -f $(TARGET).top
+
+#BUG in ocamlc, false positive on unused value
+php_vs_php.cmo: php_vs_php.ml
+	$(OCAMLC) -w -A -c $<

@@ -19,7 +19,6 @@ open Common
 
 module E = Entity_code
 module HC = Highlight_code
-module Flag = Flag_visual
 
 (*****************************************************************************)
 (* Visual style *)

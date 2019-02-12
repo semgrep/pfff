@@ -1,10 +1,6 @@
 open Common
 open OUnit
 
-module Ast = Ast_js
-module V = Visitor_js
-module Flag = Flag_parsing_js
-
 (*****************************************************************************)
 (* Unit tests *)
 (*****************************************************************************)

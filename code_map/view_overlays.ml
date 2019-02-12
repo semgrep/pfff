@@ -20,7 +20,6 @@ open Common
 open Common2.ArithFloatInfix
 
 open Model2
-module F = Figures
 module T = Treemap
 module CairoH = Cairo_helpers
 module M = Model2

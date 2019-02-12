@@ -17,7 +17,6 @@ open Common
 module Flag = Flag_parsing_js
 module Ast = Ast_js
 module TH   = Token_helpers_js
-module T = Parser_js
 module PI = Parse_info
 
 (*****************************************************************************)

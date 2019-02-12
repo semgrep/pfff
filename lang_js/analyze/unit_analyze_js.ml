@@ -1,6 +1,5 @@
 open Common
 
-module Ast = Ast_js
 module E = Entity_code
 
 open OUnit

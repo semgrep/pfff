@@ -13,10 +13,8 @@
  *)
 open Common 
 
-module Ast = Ast_csharp
 module Flag = Flag_parsing_csharp
 module TH   = Token_helpers_csharp
-module T = Parser_csharp
 module PI = Parse_info
 
 (*****************************************************************************)

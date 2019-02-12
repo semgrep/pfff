@@ -17,7 +17,6 @@ open Common
 open Ast_php
 
 module Ast = Ast_php
-module V = Visitor_php
 module E = Entity_code
 
 (*****************************************************************************)
@@ -46,7 +45,7 @@ let constructor_name = "__construct"
 
 let equal ~case_insensitive a b =
   if case_insensitive
-  then String.lowercase a =$= String.lowercase b
+  then String.lowercase_ascii a =$= String.lowercase_ascii b
   else a =$= b
 
 (* This is ugly. Some of the code requires to have a 'name' type

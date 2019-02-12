@@ -130,12 +130,12 @@ let parse_atts call_scan =
             | T.Name (tok2, v) ->
                 let toks, is_empty =
                   parse_atts_lookahead (skip_space false call_scan) in
-                ((Attr (String.lowercase n, tok1), Val (v, tok2)) :: toks, 
+                ((Attr (String.lowercase_ascii n, tok1), Val (v, tok2)) :: toks, 
                 is_empty)
             | T.Literal (tok2, v) ->
                 let toks, is_empty =
                   parse_atts_lookahead (skip_space false call_scan) in
-                ((Attr (String.lowercase n, tok1), Val (v, tok2))::toks, 
+                ((Attr (String.lowercase_ascii n, tok1), Val (v, tok2))::toks, 
                 is_empty)
             | T.EOF _ ->
                 raise End_of_scan
@@ -162,18 +162,18 @@ let parse_atts call_scan =
             raise End_of_scan
         | T.Relement _ ->
             (* <tag name> <==> <tag name="name"> *)
-            ([Attr (String.lowercase n, tok1), 
-              Val (String.lowercase n, Ast.fakeInfo())], false)
+            ([Attr (String.lowercase_ascii n, tok1), 
+              Val (String.lowercase_ascii n, Ast.fakeInfo())], false)
         | T.Relement_empty _ ->
             (* <tag name> <==> <tag name="name"> *)
-            ([Attr (String.lowercase n, tok1), 
-              Val (String.lowercase n, Ast.fakeInfo())], true)
+            ([Attr (String.lowercase_ascii n, tok1), 
+              Val (String.lowercase_ascii n, Ast.fakeInfo())], true)
         | next' ->
             (* assume <tag name ... > <==> <tag name="name" ...> *)
             let toks, is_empty = 
               parse_atts_lookahead next' in
-            ((Attr (String.lowercase n, tok1), 
-              Val (String.lowercase n, Ast.fakeInfo())) :: toks,
+            ((Attr (String.lowercase_ascii n, tok1), 
+              Val (String.lowercase_ascii n, Ast.fakeInfo())) :: toks,
             is_empty)
         )
     | T.EOF _ ->
@@ -202,7 +202,7 @@ let parse_special tag call_scan =
   let rec aux () = 
     match call_scan Lexer_html.scan_special with
     | T.Lelementend (_tok, n) ->
-        if String.lowercase n =$= name 
+        if String.lowercase_ascii n =$= name 
         then ""
         else "</" ^ n ^ aux ()
     | T.EOF _ -> raise End_of_scan
@@ -414,7 +414,7 @@ let parse2 file =
         parse_next()
 
     | T.Lelement (tok, name) ->
-        let name = Tag (String.lowercase name, tok) in
+        let name = Tag (String.lowercase_ascii name, tok) in
         let (_, model) = model_of ~dtd_hash name in
         (match model with
         | Dtd.Empty ->
@@ -475,7 +475,7 @@ let parse2 file =
         };
         parse_next()
     | T.Lelementend (tok, name) ->
-        let name = Tag (String.lowercase name, tok) in
+        let name = Tag (String.lowercase_ascii name, tok) in
         (* Read until ">" *)
         skip_element call_scan;
         (* Search the element to close on the stack: *)

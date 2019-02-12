@@ -287,7 +287,7 @@ let m_string a b =
 let m_string_case a b =
   if !case_sensitive
   then m_string a b
-  else m_string (String.lowercase a) (String.lowercase b)
+  else m_string (String.lowercase_ascii a) (String.lowercase_ascii b)
 
 (* iso on different indentation *)
 let m_string_xhp_text (sa, ta) (sb, tb) =

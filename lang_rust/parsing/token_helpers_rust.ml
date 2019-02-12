@@ -17,7 +17,6 @@ open Common
 
 open Parser_rust
 
-module Ast = Ast_rust
 module PI = Parse_info
 
 (*****************************************************************************)

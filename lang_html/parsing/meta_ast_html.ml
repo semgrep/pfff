@@ -1,7 +1,5 @@
 open Ast_html
 
-module Ast = Ast_html
-module PI = Parse_info
 module M = Meta_ast_generic
 
 let _current_precision = ref M.default_precision

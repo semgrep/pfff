@@ -20,12 +20,9 @@ open Common
 
 module G = Gui
 module K = GdkKeysyms
-module GR = Gdk.Rectangle
-module F = Figures
 module T = Treemap
 module CairoH = Cairo_helpers
 open Model2 (* for the fields *)
-module M = Model2
 module Controller = Controller2
 module Flag = Flag_visual
 module Style = Style2
@@ -416,7 +413,7 @@ let mk_gui ~screen_size ~legend test_mode w =
                 | None -> []
                 | Some re ->
                     rects |> List.filter (fun r -> 
-                      let label = r.T.tr_label |> String.lowercase in
+                      let label = r.T.tr_label |> String.lowercase_ascii in
                       label ==~ re
                     )
               in

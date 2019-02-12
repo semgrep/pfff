@@ -20,9 +20,6 @@ open Entity_code open Highlight_code
 module Ast = Ast_fuzzy_opa
 module HC = Highlight_code
 module T = Parser_opa
-module TH = Token_helpers_opa
-module TV = Token_views_opa
-module V = Visitor_opa
 
 (*****************************************************************************)
 (* Prelude *)

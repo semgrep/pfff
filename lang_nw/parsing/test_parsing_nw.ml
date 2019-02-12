@@ -1,6 +1,5 @@
 open Common
 
-module Ast = Ast_nw
 module Flag = Flag_parsing_nw
 
 (*****************************************************************************)

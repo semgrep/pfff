@@ -14,9 +14,7 @@
 
 open Common 
 
-module Ast = Ast_opa
 module Flag = Flag_parsing_opa
-module T = Parser_opa
 module TH   = Token_helpers_opa
 module PI = Parse_info
 

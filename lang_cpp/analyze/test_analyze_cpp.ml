@@ -1,7 +1,5 @@
 open Common
 
-module Ast = Ast_cpp
-module V = Visitor_cpp
 module PI = Parse_info
 
 (*****************************************************************************)

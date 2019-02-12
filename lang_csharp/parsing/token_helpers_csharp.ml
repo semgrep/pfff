@@ -17,7 +17,6 @@ open Common
 
 open Parser_csharp
 
-module Ast = Ast_csharp
 module PI = Parse_info
 
 (*****************************************************************************)

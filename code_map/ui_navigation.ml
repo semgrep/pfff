@@ -18,7 +18,6 @@
 open Common
 
 open Model2
-module G = Gui
 module Controller = Controller2
 
 (*****************************************************************************)

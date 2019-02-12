@@ -15,13 +15,9 @@
 
 open Common
 
-module Ast = Ast_python
-(*module V = Visitor_python *)
-
 open Entity_code open Highlight_code
 
 module T = Parser_python
-module TH = Token_helpers_python
 
 (*****************************************************************************)
 (* Prelude *)

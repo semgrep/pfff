@@ -1,6 +1,5 @@
 open Common
 
-module Ast = Ast_js
 module Flag = Flag_parsing_js
 
 (*****************************************************************************)

@@ -15,7 +15,6 @@
 open Common 
 
 open File_type
-module T = Treemap
 module PL = File_type
 module Color = Simple_color
 
@@ -158,7 +157,7 @@ let color_of_webpl_type kind =
 
 
   | PL.Css -> "yellow"
-  | PL.Js | PL.Coffee -> "SpringGreen"
+  | PL.Js | PL.Coffee | PL.TypeScript -> "SpringGreen"
   | PL.Html | PL.Xml | PL.Json -> "sienna"
 
 (*  | PL.Pic _ -> "RosyBrown" *)

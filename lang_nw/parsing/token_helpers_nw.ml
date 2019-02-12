@@ -16,7 +16,6 @@ open Common
 
 open Lexer_nw
 
-module Ast = Ast_nw
 module PI = Parse_info
 
 (*****************************************************************************)

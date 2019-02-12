@@ -14,9 +14,7 @@
  *)
 open Common
 
-module Ast = Ast_java
 module Flag = Flag_parsing_java
-module T = Parser_java
 module TH = Token_helpers_java
 module PI = Parse_info
 

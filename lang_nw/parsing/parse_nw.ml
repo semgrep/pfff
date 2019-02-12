@@ -13,9 +13,7 @@
  *)
 open Common 
 
-module Ast = Ast_nw
 module Flag = Flag_parsing_nw
-module T = Lexer_nw
 module TH   = Token_helpers_nw
 module PI = Parse_info
 

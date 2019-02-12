@@ -14,7 +14,6 @@
  *)
 open Common
 
-module E = Entity_code
 module G = Graph_code
 module G2 = Graph_code_opti
 

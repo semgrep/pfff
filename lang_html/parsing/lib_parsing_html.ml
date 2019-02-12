@@ -17,9 +17,6 @@ open Common
 
 open Ast_html
 
-module Ast = Ast_html
-module Flag = Flag_parsing_html
-
 module V = Visitor_html
 
 (*****************************************************************************)

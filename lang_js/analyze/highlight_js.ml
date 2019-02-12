@@ -15,9 +15,7 @@
 open Common
 
 open Entity_code open Highlight_code
-module Ast = Ast_js
 module T = Parser_js
-module TH = Token_helpers_js
 module E = Entity_code
 module HC = Highlight_code
 

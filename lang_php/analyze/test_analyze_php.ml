@@ -1,9 +1,6 @@
 (*s: test_analyze_php.ml *)
 open Common
 
-module Ast = Ast_php
-module V = Visitor_php
-module Json_out = Json_io
 module Json_in = Json_io
 
 (*****************************************************************************)

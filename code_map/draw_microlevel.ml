@@ -25,7 +25,6 @@ module M = Model2
 module T = Treemap
 module Color = Simple_color
 module CairoH = Cairo_helpers
-module HC = Highlight_code
 module Flag = Flag_visual
 module Style = Style2
 module FT = File_type

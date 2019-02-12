@@ -13,7 +13,6 @@
  *)
 open Common 
 
-module Ast = Ast_hs
 module Flag = Flag_parsing_hs
 module PI = Parse_info
 module TH = Parser_hs

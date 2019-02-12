@@ -19,7 +19,6 @@ module G = Graph_code
 
 open Ast_ml
 module V = Visitor_ml
-module Ast = Ast_ml
 
 (*****************************************************************************)
 (* Prelude *)

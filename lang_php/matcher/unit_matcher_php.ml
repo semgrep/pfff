@@ -2,8 +2,6 @@ open Common
 open OUnit
 
 open Ast_php
-module Ast = Ast_php
-module Flag = Flag_parsing_php
 
 (*****************************************************************************)
 (* Sgrep Unit tests *)
