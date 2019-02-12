@@ -356,6 +356,8 @@ let path_resolve_locals env name kind =
 (* algo: first resolve module aliases, then once have a full path for
  * a type, look for a type alias, and recurse.
  * opti: ?
+ * todo: does it handle module shadowing? see meta_ast_cmt.ml and the issue
+ * with Types module.
  *)
 let rec path_type_resolve_aliases env pt =
   let rec aux module_aliases_candidates acc pt =
@@ -433,6 +435,7 @@ let rec kind_of_type_desc x =
   | Types.Tvar _ -> E.Constant
   | Types.Tlink x -> kind_of_type_expr x
   | Types.Tobject _ -> E.Class
+  | Types.Tpackage _ -> E.Module
   | _ -> 
       pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_desc x));
       raise Todo
@@ -1102,8 +1105,9 @@ and expression_desc t env =
   | Texp_pack v1 -> let _ = module_expr env v1 in ()
   | Texp_unreachable ->
       failwith "Texp_unreachable"
-  | Texp_letexception (_, _) ->
-      failwith "Texp_letexception"
+  | Texp_letexception (_exn_ctorTODO, e) ->
+     (* todo: in theory we should define locally this exn *)
+      expression env e
   | Texp_extension_constructor (_, _) ->
       failwith "Texp_extension_constructor"
 

@@ -36,7 +36,11 @@ end
 module Primitive = struct
     let vof_description _x = Ocaml.VUnit
 end
-module Types = struct
+(* todo: in graph_code_cmt.ml path_resolve_module I think does not do
+ * a lookup, so if you use Types below you will get lots of lookup_fail
+ * when building the codegraph
+ *)
+module Types_ = struct
     let vof_value_description _x = Ocaml.VUnit
     let vof_class_declaration _x = Ocaml.VUnit
     let vof_class_type _x = Ocaml.VUnit
@@ -363,7 +367,7 @@ and vof_expression_desc =
   | Texp_ident ((v1, v2, v3)) ->
       let v1 = Path.vof_t v1
       and v2 = vof_loc Longident.vof_t v2
-      and v3 = Types.vof_value_description v3
+      and v3 = Types_.vof_value_description v3
       in Ocaml.VSum (("Texp_ident", [ v1; v2; v3 ]))
   | Texp_constant v1 ->
       let v1 = vof_constant v1 in Ocaml.VSum (("Texp_constant", [ v1 ]))
@@ -466,7 +470,7 @@ and vof_expression_desc =
   | Texp_new ((v1, v2, v3)) ->
       let v1 = Path.vof_t v1
       and v2 = vof_loc Longident.vof_t v2
-      and v3 = Types.vof_class_declaration v3
+      and v3 = Types_.vof_class_declaration v3
       in Ocaml.VSum (("Texp_new", [ v1; v2; v3 ]))
   | Texp_instvar ((v1, v2, v3)) ->
       let v1 = Path.vof_t v1
@@ -508,8 +512,10 @@ and vof_expression_desc =
       let v1 = vof_module_expr v1 in Ocaml.VSum (("Texp_pack", [ v1 ]))
   | Texp_unreachable ->
       failwith "Texp_unreachable"
-  | Texp_letexception (_, _) ->
-      failwith "Texp_letexception"
+  | Texp_letexception (v1, v2) ->
+    let v1 = vof_extension_constructor v1 in
+    let v2 = vof_expression v2 in
+    Ocaml.VSum (("Texp_letexception", [v1; v2]))
   | Texp_extension_constructor (_, _) ->
       failwith "Texp_extension_constructor"
 
@@ -543,7 +549,7 @@ and vof_class_expr {
   let arg = Env.vof_t v_cl_env in
   let bnd = ("cl_env", arg) in
   let bnds = bnd :: bnds in
-  let arg = Types.vof_class_type v_cl_type in
+  let arg = Types_.vof_class_type v_cl_type in
   let bnd = ("cl_type", arg) in
   let bnds = bnd :: bnds in
   let arg = Location.vof_t v_cl_loc in
@@ -621,7 +627,7 @@ and vof_class_structure {
   let arg = Meths.vof_t Ident.vof_t v_cstr_meths in
   let bnd = ("cstr_meths", arg) in
   let bnds = bnd :: bnds in
-  let arg = Types.vof_class_signature v_cstr_type in
+  let arg = Types_.vof_class_signature v_cstr_type in
   let bnd = ("cstr_type", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_list vof_class_field v_cstr_fields in
@@ -703,7 +709,7 @@ and vof_module_expr {
   let arg = Env.vof_t v_mod_env in
   let bnd = ("mod_env", arg) in
   let bnds = bnd :: bnds in
-  let arg = Types.vof_module_type v_mod_type in
+  let arg = Types_.vof_module_type v_mod_type in
   let bnd = ("mod_type", arg) in
   let bnds = bnd :: bnds in
   let arg = Location.vof_t v_mod_loc in
@@ -741,13 +747,13 @@ and vof_module_expr_desc =
       in Ocaml.VSum (("Tmod_apply", [ v1; v2; v3 ]))
   | Tmod_constraint ((v1, v2, v3, v4)) ->
       let v1 = vof_module_expr v1
-      and v2 = Types.vof_module_type v2
+      and v2 = Types_.vof_module_type v2
       and v3 = vof_module_type_constraint v3
       and v4 = vof_module_coercion v4
       in Ocaml.VSum (("Tmod_constraint", [ v1; v2; v3; v4 ]))
   | Tmod_unpack ((v1, v2)) ->
       let v1 = vof_expression v1
-      and v2 = Types.vof_module_type v2
+      and v2 = Types_.vof_module_type v2
       in Ocaml.VSum (("Tmod_unpack", [ v1; v2 ]))
 and vof_structure {
                   str_items = v_str_items;
@@ -758,7 +764,7 @@ and vof_structure {
   let arg = Env.vof_t v_str_final_env in
   let bnd = ("str_final_env", arg) in
   let bnds = bnd :: bnds in
-  let arg = Types.vof_signature v_str_type in
+  let arg = Types_.vof_signature v_str_type in
   let bnd = ("str_type", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_list vof_structure_item v_str_items in
@@ -872,7 +878,7 @@ and vof_module_type {
   let arg = Env.vof_t v_mty_env in
   let bnd = ("mty_env", arg) in
   let bnds = bnd :: bnds in
-  let arg = Types.vof_module_type v_mty_type in
+  let arg = Types_.vof_module_type v_mty_type in
   let bnd = ("mty_type", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_module_type_desc v_mty_desc in
@@ -918,7 +924,7 @@ and vof_signature {
   let arg = Env.vof_t v_sig_final_env in
   let bnd = ("sig_final_env", arg) in
   let bnds = bnd :: bnds in
-  let arg = Types.vof_signature v_sig_type in
+  let arg = Types_.vof_signature v_sig_type in
   let bnd = ("sig_type", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_list vof_signature_item v_sig_items in
@@ -1080,7 +1086,7 @@ and vof_package_type {
   let arg = vof_loc Longident.vof_t v_pack_txt in
   let bnd = ("pack_txt", arg) in
   let bnds = bnd :: bnds in
-  let arg = Types.vof_module_type v_pack_type in
+  let arg = Types_.vof_module_type v_pack_type in
   let bnd = ("pack_type", arg) in
   let bnds = bnd :: bnds in
   let arg =
@@ -1122,7 +1128,7 @@ and vof_value_description {
   let arg = Ocaml.vof_list Ocaml.vof_string v_val_prim in
   let bnd = ("val_prim", arg) in
   let bnds = bnd :: bnds in
-  let arg = Types.vof_value_description v_val_val in
+  let arg = Types_.vof_value_description v_val_val in
   let bnd = ("val_val", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_core_type v_val_desc in
@@ -1168,7 +1174,7 @@ and vof_type_declaration {
       v_typ_cstrs in
   let bnd = ("typ_cstrs", arg) in
   let bnds = bnd :: bnds in
-  let arg = Types.vof_type_declaration v_typ_type in
+  let arg = Types_.vof_type_declaration v_typ_type in
   let bnd = ("typ_type", arg) in
   let bnds = bnd :: bnds in
   let arg =
@@ -1213,7 +1219,7 @@ and vof_class_type {
   let arg = Env.vof_t v_cltyp_env in
   let bnd = ("cltyp_env", arg) in
   let bnds = bnd :: bnds in
-  let arg = Types.vof_class_type v_cltyp_type in
+  let arg = Types_.vof_class_type v_cltyp_type in
   let bnd = ("cltyp_type", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_class_type_desc v_cltyp_desc in
@@ -1245,7 +1251,7 @@ and vof_class_signature {
                         csig_type = v_csig_type;
                       } =
   let bnds = [] in
-  let arg = Types.vof_class_signature v_csig_type in
+  let arg = Types_.vof_class_signature v_csig_type in
   let bnd = ("csig_type", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_list vof_class_type_field v_csig_fields in
@@ -1328,10 +1334,10 @@ and vof_class_infos: 'a. ('a -> Ocaml.v) -> 'a class_infos -> Ocaml.v
   let arg = Location.vof_t v_ci_loc in
   let bnd = ("ci_loc", arg) in
   let bnds = bnd :: bnds in
-  let arg = Types.vof_class_type_declaration v_ci_type_decl in
+  let arg = Types_.vof_class_type_declaration v_ci_type_decl in
   let bnd = ("ci_type_decl", arg) in
   let bnds = bnd :: bnds in
-  let arg = Types.vof_class_declaration v_ci_decl in
+  let arg = Types_.vof_class_declaration v_ci_decl in
   let bnd = ("ci_decl", arg) in
   let bnds = bnd :: bnds in
   let arg = _of_a v_ci_expr in
@@ -1477,7 +1483,7 @@ and vof_include_infos: 'a. ('a -> Ocaml.v) -> 'a include_infos -> Ocaml.v
   let arg = Location.vof_t v_incl_loc in
   let bnd = ("incl_loc", arg) in
   let bnds = bnd :: bnds in
-  let arg = Types.vof_signature v_incl_type in
+  let arg = Types_.vof_signature v_incl_type in
   let bnd = ("incl_type", arg) in
   let bnds = bnd :: bnds in
   let arg = _of_a v_incl_mod in
@@ -1503,7 +1509,7 @@ and vof_extension_constructor {
   let arg = vof_extension_constructor_kind v_ext_kind in
   let bnd = ("ext_kind", arg) in
   let bnds = bnd :: bnds in
-  let arg = Types.vof_extension_constructor v_ext_type in
+  let arg = Types_.vof_extension_constructor v_ext_type in
   let bnd = ("ext_type", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_loc Ocaml.vof_string v_ext_name in

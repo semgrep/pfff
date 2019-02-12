@@ -27,9 +27,13 @@ dir: external/OPAM_DIR
 # (e.g., we want json-wheel, lablgtk, and ocaml hence JLO uppercase below)
 dir: external/FOR_MERLIN/[abcdefghiJkLmnOpqrstuvwxyz]
 # We skip cairo2 above because the external/ contains the .cmt (good citizen)
-dir: external/FOR_MERLIN/ocaml[abcdefghijklmnopqrstuvwxyz]
-# We want stdlib and otherlibs (unix/str)
-dir: external/FOR_MERLIN/ocaml-base-compiler.4.07.1/[abcdefghijklmnOpqrStuvwxyz]
+# we want ocamlgraph
+dir: external/FOR_MERLIN/ocaml[abcdefGhijklmnopqrstuvwxyz]
+# but actually we skip it because we get some "no cmt_source" error because
+# they use Packing I think
+dir: external/FOR_MERLIN/ocamlgraph
+# We want stdlib, otherlibs (unix, str), parsing, and typing (compiler-libs)
+dir: external/FOR_MERLIN/ocaml-base-compiler.4.07.1/[abcdefghijklmnOPqrSTuvwxyz]
 # complex cmt without a cmt_source_file field (weird)
 dir: external/FOR_MERLIN/ocaml-base-compiler.4.07.1/otherlibs/dynlink
 # dupes for condition/mutex/...
@@ -44,21 +48,13 @@ dir: external/FOR_MERLIN/ocaml-migrate-parsetree
 
 # already handled above
 dir: external/STDLIB
+dir: external/compiler-libs
 #dir: external/STDLIB/camlp4
-#dir: external/STDLIB/compiler-libs
 # dupe
 #dir: external/STDLIB/vmthreads
 
-# use advanced constructs I do not handle yet in graph_code_cmt.ml
-dir: external/compiler-libs
-
 #dupes with external/stdlib and ok to skip because they are test files
 dir: tests/ml/cmt
-
-# depends on compiler libs, removed for codegraph_build to reduce
-# the number of lookup failures
-file: lang_cmt/parsing/meta_ast_cmt.cmt
-file: lang_cmt/analyze/graph_code_cmt.cmt
 
 # -------------------------------------------------------------------------
 # ml
