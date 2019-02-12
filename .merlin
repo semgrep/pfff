@@ -138,5 +138,5 @@ B external/cairo2-gtk
 B commons_wrappers/graph
 B commons_wrappers/gui
 B external/compiler-libs
-B external/FOR_MERLIN/**
-S external/FOR_MERLIN/**
+#B external/FOR_MERLIN/**
+#S external/FOR_MERLIN/**
