@@ -84,20 +84,8 @@ opt: all.opt
 
 $(TARGET).cma: $(OBJS) $(LIBS)
 	$(OCAMLC) -a -o $(TARGET).cma $(OBJS)
-
 $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $(TARGET).cmxa $(OPTOBJS)
-
-
-
-#TODO: switch to cairo2, or convert cairo to safe string
-EXTRA_FLAGS=-w -3 -unsafe-string
-cairo_helpers.cmo: cairo_helpers.ml
-	$(OCAMLC) $(EXTRA_FLAGS) -c $<
-
-cairo_helpers.cmx: cairo_helpers.ml
-	$(OCAMLOPT) $(PP) $(EXTRA_FLAGS) -c $<
-
 
 clean::
 	rm -f $(TARGET).top
@@ -146,4 +134,3 @@ lpdistclean::
 
 clean::
 	rm -f *.aux *.toc *.log *.brf *.out
-

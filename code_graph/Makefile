@@ -13,9 +13,6 @@ SYSLIBS=str.cma unix.cma dbm.cma threads.cma  lablgtk.cma
 
 LIBS=$(TOP)/commons/lib.cma $(TOP)/commons_wrappers/gui/lib.cma \
 
-#     $(TOP)/commons/commons_features.cma
-
-
 INCLUDEDIRS=$(TOP)/commons $(TOP)/globals \
     $(TOP)/commons_wrappers/gui \
 	$(TOP)/h_program-lang \
@@ -42,20 +39,11 @@ opt: all.opt
 
 $(TARGET).cma: $(OBJS) $(LIBS)
 	$(OCAMLC) -a -o $(TARGET).cma $(OBJS)
-
 $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $(TARGET).cmxa $(OPTOBJS)
 
 clean::
 	rm -f $(TARGET).top
-
-#TODO: switch to cairo2, or convert cairo to safe string
-EXTRA_FLAGS=-w -3 -unsafe-string
-cairo_helpers3.cmo: cairo_helpers3.ml
-	$(OCAMLC) $(EXTRA_FLAGS) -c $<
-
-cairo_helpers3.cmx: cairo_helpers3.ml
-	$(OCAMLOPT) $(PP) $(EXTRA_FLAGS) -c $<
 
 ##############################################################################
 # Generic rules

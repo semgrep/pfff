@@ -33,7 +33,6 @@ module Color = Simple_color
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-let (==~) = Common2.(==~)
 
 (*****************************************************************************)
 (* Text related *)
@@ -41,37 +40,30 @@ let (==~) = Common2.(==~)
 
 (* May have to move this in commons/ at some point *)
 
-let re_space = Str.regexp "^[ ]+$"
-let re_tab = Str.regexp "^[\t]+$"
+let _re_space = Str.regexp "^[ ]+$"
+let _re_tab = Str.regexp "^[\t]+$"
 
 (*s: cairo helpers functions *)
-(* !does side effect on the (mutable) string! *)
 let prepare_string s = 
-  match s with
-  | _ when s ==~ re_space -> s ^ s (* double it *)
-  | _ when s ==~ re_tab -> 
-      Str.global_replace (Str.regexp "\t") "        " s
-  | _ ->
-    for i = 0 to String.length s -.. 1 do
-      let c = String.get s i in
-      if int_of_char c >= 128
-      then String.set s i 'Z'
-      else 
-        (* still useful now that have re_tab case above? *)
-        if c = '\t'
-        then String.set s i ' '
-      else ()
-    done;
-    s
+  let buf = Bytes.of_string s in
+(*  if s ==~ re_space then  s ^ s (* double it *) else  *)
+  for i = 0 to String.length s -.. 1 do
+    let c = String.get s i in
+    let final_c =
+      match c with
+      | _ when int_of_char c >= 128 -> 'Z'
+      | '\t'-> ' '
+      | _ -> c
+    in
+    Bytes.set buf i final_c
+  done;
+  Bytes.to_string buf
 
+(* TODO: fast enough with those of_string and to_string? *)
 let show_text2 cr s =
-  (* this 'if' is only for compatibility with old versions of cairo
-   * that returns some out_of_memory error when applied to empty strings
-   *)
-  if s = "" then () else 
   try 
-    let s' = prepare_string s in
-    Cairo.show_text cr s'
+    let s = prepare_string s in
+    Cairo.show_text cr s
   with Cairo.Error status ->
     let s2 = Cairo.status_to_string status in
     failwith ("Cairo pb: " ^ s2 ^ " s = " ^ s)

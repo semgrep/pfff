@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common2
 open Common
 (* floats are the norm in graphics *)
 open Common2.ArithFloatInfix
@@ -35,34 +34,26 @@ module Color = Simple_color
 
 let re_space = Str.regexp "^[ ]+$"
 
-(* !does side effect on the (mutable) string! *)
 let prepare_string s = 
-  if s ==~ re_space
-  then 
-    s ^ s (* double it *)
-  else begin
-    for i = 0 to String.length s -.. 1 do
-      let c = String.get s i in
-      if int_of_char c >= 128
-      then String.set s i 'Z'
-      else 
-        if c = '\t'
-        then String.set s i ' '
-      else ()
-    done;
-    s
-  end
+  let buf = Bytes.of_string s in
+(*  if s ==~ re_space then  s ^ s (* double it *) else  *)
+  for i = 0 to String.length s -.. 1 do
+    let c = String.get s i in
+    let final_c =
+      match c with
+      | _ when int_of_char c >= 128 -> 'Z'
+      | '\t'-> ' '
+      | _ -> c
+    in
+    Bytes.set buf i final_c
+  done;
+  Bytes.to_string buf
 
 (* TODO: fast enough with those of_string and to_string? *)
 let show_text2 cr s =
-  let s = Bytes.of_string s in
-  (* this 'if' is only for compatibility with old versions of cairo
-   * that returns some out_of_memory error when applied to empty strings
-   *)
-  if s = "" then () else 
   try 
-    let s' = prepare_string s in
-    Cairo.show_text cr (Bytes.to_string s')
+    let s = prepare_string s in
+    Cairo.show_text cr s
   with Cairo.Error status ->
     let s2 = Cairo.status_to_string status in
     failwith ("Cairo pb: " ^ s2 ^ " s = " ^ s)
