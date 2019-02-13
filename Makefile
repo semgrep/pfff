@@ -542,7 +542,7 @@ website:
 
 
 graph:
-	./codegraph_build -lang cmt -symlinks .
+	./codegraph_build -lang cmt -symlinks -derived_data -verbose .
 prolog:
 	./codequery.opt -lang cmt -build .
 	mv facts.pl facts_pl

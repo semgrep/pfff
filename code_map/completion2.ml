@@ -22,29 +22,19 @@ module E = Entity_code
 module Db = Database_code
 module BG = Big_grep
 module Flag = Flag_visual
-(* to optimize the completion by using a specialized fast ocaml-based model *)
-open Custom_list_generic
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
 (*
- * Gtk is quite "fragile". You change what looks to be an innoncent line
- * and then suddenly your performance goes down or you get some
- * gtk warnings at runtime. So take care when changing this file.
+ * Gtk (and lablgtk) is very fragile; if you change what looks like
+ * an innocent line, you might suddenly get performance regressions
+ * or new Gtk warnings at runtime. So take care when changing this file.
  *)
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-
-(*
-let is_prefix2 s1 s2 =
-  (String.length s1 <= String.length s2) && 
-  (String.sub s2 0 (String.length s1) = s1)
-let is_prefix a b = 
-  Common.profile_code "Completion.is_prefix" (fun () -> is_prefix2 a b)
-*)
 
 (*****************************************************************************)
 (*  *)
@@ -53,18 +43,10 @@ let is_prefix a b =
 (*s: build_completion_defs_index *)
 (* I was previously using a prefix-clustering optimisation but it
  * does not allow suffix search. Moreover it was still slow so
- * big_grep is just simpler and better.
+ * Big_grep is just simpler and better.
  *)
 
 let build_completion_defs_index all_entities = 
-  (* todo? compute stuff in background ?
-   *  Thread.create (fun () -> 
-   * while(true) do 
-   * Thread.delay 4.0;
-   * pr2 "thread1";
-   * done
-   * ) ();
-   *)
   BG.build_index all_entities
 (*e: build_completion_defs_index *)
 
@@ -78,7 +60,7 @@ let icon_of_kind kind has_test =
   | E.Function -> 
       if has_test then `YES else `NO
   
-  (* todo: do different symbols for unit tested class and methods ? 
+  (* less: do different symbols for unit tested class and methods ? 
    * or add another column in completion popup
    * todo? class vs interface ?
    *)
@@ -105,50 +87,46 @@ let icon_of_kind kind has_test =
 
   | (E.TopStmts | E.Other _ ) -> raise Todo
 
+(* less: could get rid of, just used in model_of_list_pair_string_with_icon *)
+type t = { 
+  mutable id: int;
+  mutable entity: Database_code.entity;
+  mutable text: string; 
+  mutable file: string; 
+  mutable count: string;
+  mutable kind: string;
+  mutable icon: GtkStock.id;
+}
 
-module L=struct
-  type t = { 
-    mutable entity: Database_code.entity;
-    mutable text: string; 
-    mutable file: string; 
-    mutable count: string;
-    mutable kind: string;
-    mutable icon: GtkStock.id;
-  }
+let column_list = new GTree.column_list
+(* old:
+ *  let col_full = (column_list#add Gobject.Data.caml: t GTree.column)
+ * this works only with a custom list model :( but those models seem to not
+ * work anymore inside completion boxes :( so instead I use a col_id
+ * and a store_id_to_entity hash to get equivalent functionality.
+ *)
+let col_id   = column_list#add Gobject.Data.int
+let col_text = column_list#add Gobject.Data.string
+let col_file = column_list#add Gobject.Data.string
+let col_count = column_list#add Gobject.Data.string
+let _col_kind = column_list#add Gobject.Data.string
+let col_icon = column_list#add GtkStock.conv
 
-  (** The columns in our custom model *)
-  let column_list = new GTree.column_list ;;
-  let col_full = (column_list#add Gobject.Data.caml: t GTree.column);;
 
-  let col_text = column_list#add Gobject.Data.string;;
-  let col_file = column_list#add Gobject.Data.string;;
-  let col_count = column_list#add Gobject.Data.string;;
-  let _col_kind = column_list#add Gobject.Data.string;;
-  let col_icon = column_list#add GtkStock.conv;;
+let model_of_list_pair_string_with_icon2 xs =
 
-  let custom_value _ t ~column = 
-    match column with
-    | 0 -> (* col_full *) `CAML (Obj.repr t)
-
-    | 1 -> (* col_text *) `STRING (Some t.text)
-    | 2 -> (* col_file *) `STRING (Some t.file)
-    | 3 -> (* col_count *) `STRING (Some t.count)
-    | 4 -> (* col_kind *) `STRING (Some t.kind)
-
-    (* pad: big hack, they use STRING to present stockid in gtkStock.ml *) 
-    | 5 -> (* col_icon *) `STRING (Some (GtkStock.convert_id t.icon))
-    | _ -> assert false
-
-end
-
-module MODEL=MAKE(L)
-
-let model_of_list_pair_string_with_icon2 _query xs =
-
-  let custom_list = MODEL.custom_list () in
+  (* old: I was using originally a custom_list 
+   * (see custom_list_generic.ml in lablgtk2/examples)
+   * to optimize things because GTree.tree_store used to be really slow.
+   * However, I am now unable to make it work with recent gtk/lablgtk2
+   * (I get some failure assertions regarding GtkModelFilter)
+   * so I reverted back to using the simpler tree_store.
+   *)
+  let model = GTree.tree_store column_list in
+  let store_id_to_entity = Hashtbl.create 101 in
 
   pr2 (spf "Size of model = %d" (List.length xs));
-  xs +> List.iter (fun e ->
+  xs |> Common2.index_list_0 |> List.iter (fun (e, id) ->
     let kind = e.Db.e_kind in
     
     let has_unit_test =
@@ -160,7 +138,8 @@ let model_of_list_pair_string_with_icon2 _query xs =
       try (String.sub name 0 30) ^ "..."
       with Invalid_argument _ -> name
     in
-    custom_list#insert {L. 
+    let t = { 
+      id = id;
       entity = e;                     
 
       (* had originally an ugly hack where we would artificially create
@@ -181,14 +160,24 @@ let model_of_list_pair_string_with_icon2 _query xs =
       count = i_to_s (e.Db.e_number_external_users);
       kind = E.string_of_entity_kind kind;
       icon = icon_of_kind kind has_unit_test;
-    };
+    }
+    in 
+    (* custom_list#insert *)
+    let row = model#append () in
+    model#set ~row ~column:col_id t.id;
+    model#set ~row ~column:col_text t.text;
+    model#set ~row ~column:col_count t.count;
+    model#set ~row ~column:col_file t.file;
+    model#set ~row ~column:col_icon t.icon;
+
+    Hashtbl.add store_id_to_entity id t.entity;
   );
-  (custom_list :> GTree.model)
+  model, store_id_to_entity
 
 
-let model_of_list_pair_string_with_icon query a =
+let model_of_list_pair_string_with_icon a =
   Common.profile_code "Completion2.model_of_list" (fun () ->
-    model_of_list_pair_string_with_icon2 query a
+    model_of_list_pair_string_with_icon2 a
   )
 
 let model_col_of_prefix prefix_or_suffix idx =
@@ -197,7 +186,7 @@ let model_col_of_prefix prefix_or_suffix idx =
       ~top_n:!Flag.top_n
       ~query:prefix_or_suffix idx
   in
-  model_of_list_pair_string_with_icon prefix_or_suffix xs
+  model_of_list_pair_string_with_icon xs
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -205,31 +194,30 @@ let model_col_of_prefix prefix_or_suffix idx =
 
 let add_renderer (completion : GEdit.entry_completion) =
 
-  let renderer = 
-    GTree.cell_renderer_pixbuf [ `STOCK_SIZE `BUTTON ] in
+  let renderer = GTree.cell_renderer_pixbuf [ `STOCK_SIZE `BUTTON ] in
   completion#pack (renderer :> GTree.cell_renderer);
   completion#add_attribute (renderer :> GTree.cell_renderer) 
-    "stock_id" L.col_icon;
+    "stock_id" col_icon;
 
   let renderer = GTree.cell_renderer_text [] in
   completion#pack (renderer :> GTree.cell_renderer);
   completion#add_attribute (renderer :> GTree.cell_renderer) 
-    "text" L.col_text;
+    "text" col_text;
 
   let renderer = GTree.cell_renderer_text [] in
   completion#pack (renderer :> GTree.cell_renderer);
   completion#add_attribute (renderer :> GTree.cell_renderer) 
-    "text" L.col_count;
+    "text" col_count;
 
   let renderer = GTree.cell_renderer_text [] in
   completion#pack (renderer :> GTree.cell_renderer);
   completion#add_attribute (renderer :> GTree.cell_renderer) 
-    "text" L.col_file;
+    "text" col_file;
 
   (* can omit this:
    *    completion#set_text_column L.col_text2; 
    * 
-   * but then must define a set_match_func otherwise will never
+   * but then must define a set_match_func otherwise you will never
    * see a popup
    *)
   ()
@@ -247,52 +235,57 @@ let fake_entity = {Database_code.
 
 let my_entry_completion_eff2 ~callback_selected ~callback_changed fn_idx = 
   
-  let entry = GEdit.entry ~width:500 () in
+  let entry = GEdit.entry ~width:1500 () in
   let completion = GEdit.entry_completion () in
   entry#set_completion completion;
 
   let xs = [ fake_entity ] in
-  let model_dumb = model_of_list_pair_string_with_icon "foo" xs in
-  let model = ref (model_dumb) in
+  let model_dumb, h_dumb = model_of_list_pair_string_with_icon xs in
+  let model = ref model_dumb in
+  let store_id_to_entity = ref h_dumb in
 
   add_renderer completion;
   completion#set_model (!model :> GTree.model);
 
-  (* we don't use the builtin gtk completion mechanism as we
-   * recompute the model each time using big_grep so where
-   * we just always return true. Moreover the builtin gtk
+  (* we don't use the builtin gtk completion mechanism because we
+   * recompute the model each time using big_grep so here
+   * we just always return true. Moreover, the builtin gtk
    * function would do a is_prefix check between the row
-   * and the current query which in our case would fail when
-   * we use the suffix-search ability of big_grep.
+   * and the current query which in our case would fail because
+   * we want the suffix-search ability of big_grep.
    *)
   completion#set_match_func (fun _key _row ->
     true
   );
   completion#set_minimum_key_length 2;
 
-  completion#connect#match_selected (fun model_filter row ->
-     (* note: the code below does not work; the row is relative to the
+  completion#connect#match_selected (fun _model_filter row ->
+     (* note: the code below used to not work; the row was relative to the
       * model_filter.
-      * let str = !model#get ~row ~column:col1 in
-      * let file = !model#get ~row ~column:col2 in
+      *  let str = !model#get ~row ~column:col1 in
+      *  let file = !model#get ~row ~column:col2 in
+      * update: I now get assetions failures when using model_filter so
+      *  I am now using back again !model.
+      * old: 
+      *  let model = model_filter#child_model in
+      *  let row = model_filter#convert_iter_to_child_iter row in
+      * does not work anymore
       *)
 
-      let str = 
-        model_filter#child_model#get 
-          ~row:(model_filter#convert_iter_to_child_iter row)
-          ~column:L.col_text
-      in
-      let file = 
-        model_filter#child_model#get 
-          ~row:(model_filter#convert_iter_to_child_iter row)
-          ~column:L.col_file
-      in
-      let t = 
-        model_filter#child_model#get 
-          ~row:(model_filter#convert_iter_to_child_iter row)
-          ~column:L.col_full
-      in
-      callback_selected entry str file t.L.entity
+      let str =  !model#get ~row ~column:col_text in
+      let file = !model#get ~row ~column:col_file in
+
+      (* old: 
+       * let t =   model#get ~row ~column:col_full in
+       * unfortunately this does seem to work only with custom list
+       *)
+      let id = !model#get ~row ~column:col_id in
+      let entity = Hashtbl.find !store_id_to_entity id in
+
+      pr2 str;
+      pr2 file;
+      callback_selected entry str file entity
+
   ) +> ignore;
 
   let current_timeout = ref None in
@@ -310,7 +303,9 @@ let my_entry_completion_eff2 ~callback_selected ~callback_changed fn_idx =
            ~callback:(fun _ -> 
             pr2 "changing model";
             let idx = fn_idx () in
-            model := model_col_of_prefix s idx;
+            let (m,h) = model_col_of_prefix s idx in
+            model := m;
+            store_id_to_entity := h;
             completion#set_model (!model :> GTree.model);
 
             callback_changed s;

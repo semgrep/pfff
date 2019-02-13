@@ -4,7 +4,7 @@ TOP=..
 ##############################################################################
 TARGET=lib
 
-SRC=cairo_helpers.ml custom_list_generic.ml async.ml \
+SRC=cairo_helpers.ml async.ml \
     flag_visual.ml style2.ml help.ml \
     parsing2.ml \
     editor_connection.ml \
