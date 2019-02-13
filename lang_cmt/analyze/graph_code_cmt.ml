@@ -251,7 +251,7 @@ let is_builtin_type s =
   match s with
   | "unit" | "bool" 
   | "int" | "int64" | "float" 
-  | "char" | "string"
+  | "char" | "string" | "bytes"
   | "exn" 
   | "list" | "ref" | "option" | "array" 
     -> true

@@ -160,7 +160,7 @@ let filters = [
         not ( 
                 (* file =~ ".*commons/" || *)
                 (* file =~ ".*external/" || *)
-                file =~ ".*_build/")
+                file =~ ".*\\.md5sum_.*")
     | _ -> false
   );
   "xix", (fun file ->
@@ -395,7 +395,7 @@ let main_action xs =
      * runtime, so let's do the heavy computation in another process
      * and here just have the thread waiting for it to be done.
      * This thread used to cause some Bus error on MacOS but now that
-     * we use invoke and do the job in another process things seems better :)
+     * we use invoke and do the job in another process things seem better :)
      *)
     let job () = build_model root db_file graph_file in
     let res = Parallel.invoke job () () in
