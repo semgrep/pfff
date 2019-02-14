@@ -131,8 +131,8 @@ let legend = ref false
  *)
 
 (* if not specified, codemap will try to use files in the current directory *)
-let db_file    = ref (None: Common.filename option)
 let graph_file = ref (None: Common.filename option)
+let db_file    = ref (None: Common.filename option)
 let layer_file = ref (None: Common.filename option)
 let layer_dir  = ref (None: Common.dirname option)
 
@@ -140,7 +140,7 @@ let layer_dir  = ref (None: Common.dirname option)
 let test_mode = ref (None: string option)
 (*e: main flags *)
 
-(* see filters below, which files we are interested in *)
+(* see filters below, which filter files we are interested in *)
 let filter = ref (fun _file -> true)
 let skip_file  = ref (None: Common.filename option)
 (* less: a config file: GtkMain.Rc.add_default_file "/.../pfff_browser.rc"; *)
@@ -156,8 +156,7 @@ let filters = [
   (* pad-specific: ocaml related files *)
   "pfff", (fun file ->
     match FT.file_type_of_file file with
-    | FT.PL (
-       (FT.ML _) | FT.Makefile | FT.Opa | FT.Prolog _ | FT.Web (FT.Php _)) -> 
+    | FT.PL (FT.ML _ | FT.Makefile | FT.Prolog _) -> 
         not ( 
                 (* file =~ ".*commons/" || *)
                 (* file =~ ".*external/" || *)
