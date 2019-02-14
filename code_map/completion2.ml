@@ -56,53 +56,72 @@ let build_completion_defs_index all_entities =
 (*****************************************************************************)
 
 (* reference:
+ * https://docs.microsoft.com/en-us/visualstudio/ide/class-view-and-object-browser-icons?view=vs-2015
  * http://help.eclipse.org/kepler/index.jsp?topic=/org.eclipse.jdt.doc.user/reference/ref-icons.htm
+ * https://www.jetbrains.com/help/idea/symbols.html
+ * https://github.com/patrys/vscode-code-outline/tree/master/resources/light
+ *  (just 8 icons, and not great one)
+ * https://atom.io/packages/structure-view
+ *  (very few icons too)
  *)
 
-let pixbuf = GdkPixbuf.from_file "/home/pad/package.gif"
+(* WEIRD: if remove this line then get some fatal error when starting codemap*)
+let _pixbuf = GdkPixbuf.from_file "/home/pad/Downloads/package.gif"
 
-let _icon_of_kind kind has_test =
+let hpixbuf = Hashtbl.create 101
+let get_pixbuf name =
+  try
+    Hashtbl.find hpixbuf name
+  with Not_found ->
+    let file = Filename.concat "/home/pad/Downloads" name in
+    pr2_gen file;
+    let pixbuf = GdkPixbuf.from_file file in
+    Hashtbl.add hpixbuf name pixbuf;
+    pixbuf
+
+
+
+let icon_of_kind kind _has_test =
   match kind with
   | E.Function -> 
-      if has_test then `YES else `NO
+      get_pixbuf "unknown_obj.png"
   
-  (* less: do different symbols for unit tested class and methods ? 
+  (* less: do different symbols for unit tested class and methods ?
    * or add another column in completion popup
-   * todo? class vs interface ?
    *)
-  | E.Class -> `CONNECT
-  | E.Module -> `DISCONNECT
-  | E.Package -> `DIRECTORY
-  | E.Type -> `PROPERTIES
-  | E.Constant -> `CONNECT
-  | E.Global -> `MEDIA_RECORD
-  | E.Method -> `CONVERT
+  | E.Class -> get_pixbuf "class_obj.png"
+  | E.Module -> get_pixbuf "unknown_obj.png"
+  | E.Package -> get_pixbuf "package_obj.png"
+  | E.Type -> get_pixbuf "unknown_obj.png"
+  | E.Constant -> get_pixbuf "unknown_obj.png"
+  | E.Global -> get_pixbuf "unknown_obj.png"
+  | E.Method -> get_pixbuf "compare_method.png"
+  | E.Field -> get_pixbuf "compare_field.png"
 
   (* less: could use github.com/file-icons/atom to give different icons
    * depending on the filename
    *)
-  | E.File -> `FILE
-  | E.Dir -> `DIRECTORY
-  | E.MultiDirs -> `QUIT
+  | E.File -> get_pixbuf "file_obj.png"
+  | E.Dir -> get_pixbuf "unknown_obj.png"
+  | E.MultiDirs -> get_pixbuf "unknown_obj.png"
 
-  (* todo *)
-  | E.ClassConstant -> `CONNECT
-  | E.Field -> `CONNECT
-  | E.Macro -> `CONNECT
-  | E.Exception -> `CONNECT
-  | E.Constructor -> `CONNECT
-  | E.Prototype -> `CONNECT
-  | E.GlobalExtern -> `CONNECT
+  | E.ClassConstant -> get_pixbuf "unknown_obj.png"
+  | E.Macro -> get_pixbuf "unknown_obj.png"
+  | E.Exception -> get_pixbuf "unknown_obj.png"
+  | E.Constructor -> get_pixbuf "unknown_obj.png"
+  | E.Prototype -> get_pixbuf "unknown_obj.png"
+  | E.GlobalExtern -> get_pixbuf "unknown_obj.png"
 
-  | (E.TopStmts | E.Other _ ) -> raise Todo
+  | (E.TopStmts | E.Other _ ) -> get_pixbuf "unknown_obj.png"
 
 (*****************************************************************************)
 (* Colors *)
 (*****************************************************************************)
 
 let color_of_entity_kind kind =
-  let fake_usedef2 = HC.Def2 (HC.NoUse) in
-  let props = HC.info_of_entity_kind_and_usedef2 kind fake_usedef2 in
+  (* less: could use count to even have color depending on count *)
+  let use = HC.SomeUse in
+  let props = HC.info_of_entity_kind_and_usedef2 kind (HC.Def2 use) in
   let color = 
     try props |> Common.find_some (function
         | `FOREGROUND s -> Some s
@@ -153,7 +172,7 @@ let model_of_list_pair_string_with_icon2 xs =
   pr2 (spf "Size of model = %d" (List.length xs));
   xs |> Common2.index_list_0 |> List.iter (fun (e, id) ->
    
-    let _has_unit_test =
+    let has_unit_test =
       List.length e.Db.e_good_examples_of_use >= 1
     in
     let name = e.Db.e_name in
@@ -182,8 +201,7 @@ let model_of_list_pair_string_with_icon2 xs =
     model#set ~row ~column:col_text final_name;
     model#set ~row ~column:col_count (i_to_s (e.Db.e_number_external_users));
     model#set ~row ~column:col_file e.Db.e_file;
-(* TODO icon_of_kind kind has_unit_test *)
-    model#set ~row ~column:col_icon pixbuf;
+    model#set ~row ~column:col_icon (icon_of_kind e.Db.e_kind has_unit_test);
     model#set ~row ~column:col_color color;
 
     Hashtbl.add store_id_to_entity id e;
@@ -315,6 +333,8 @@ let my_entry_completion_eff2 ~callback_selected ~callback_changed fn_idx =
         Some 
           (G.gmain_timeout_add ~ms:250
            ~callback:(fun _ -> 
+            (* bugfix: reset it otherwise get Glib errors *)
+            current_timeout := None;
             pr2 "changing model";
             let idx = fn_idx () in
             let (m,h) = model_col_of_prefix s idx in
@@ -323,8 +343,6 @@ let my_entry_completion_eff2 ~callback_selected ~callback_changed fn_idx =
             completion#set_model (!model :> GTree.model);
 
             callback_changed s;
-            (* bugfix: reset it otherwise get Glib errors *)
-            current_timeout := None;
             false
           ));
     end
