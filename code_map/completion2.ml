@@ -34,10 +34,6 @@ module HC = Highlight_code
  *)
 
 (*****************************************************************************)
-(* Helpers *)
-(*****************************************************************************)
-
-(*****************************************************************************)
 (* Code indexing *)
 (*****************************************************************************)
 
@@ -55,64 +51,23 @@ let build_completion_defs_index all_entities =
 (* Icons *)
 (*****************************************************************************)
 
-(* reference:
- * https://docs.microsoft.com/en-us/visualstudio/ide/class-view-and-object-browser-icons?view=vs-2015
- * http://help.eclipse.org/kepler/index.jsp?topic=/org.eclipse.jdt.doc.user/reference/ref-icons.htm
- * https://www.jetbrains.com/help/idea/symbols.html
- * https://github.com/patrys/vscode-code-outline/tree/master/resources/light
- *  (just 8 icons, and not great one)
- * https://atom.io/packages/structure-view
- *  (very few icons too)
+(* Many IDEs use icons to represent entities:
+ *  - https://docs.microsoft.com/en-us/visualstudio/ide/class-view-and-object-browser-icons?view=vs-2015
+ *  - http://help.eclipse.org/kepler/index.jsp?topic=/org.eclipse.jdt.doc.user/reference/ref-icons.htm
+ *  - https://www.jetbrains.com/help/idea/symbols.html
+ *  - https://github.com/patrys/vscode-code-outline/tree/master/resources/light
+ *    (just 8 icons, and not great one)
+ *  - https://atom.io/packages/structure-view
+ *    (very few icons too)
+ *
+ * I originally used icons to reprensent entities, first from Gtk Stock icons
+ * (ugly) and later from Eclipse, but in the end those icons were not
+ * super readable not universal, and were mostly for OO languages.
+ * Using the color scheme of info_of_entity_kind_and_usedef2 is simpler
+ * and better.
+ * If you want to bring back icons, look at the history of the file to
+ * get back the relevant code.
  *)
-
-(* WEIRD: if remove this line then get some fatal error when starting codemap*)
-let _pixbuf = GdkPixbuf.from_file "/home/pad/Downloads/package.gif"
-
-let hpixbuf = Hashtbl.create 101
-let get_pixbuf name =
-  try
-    Hashtbl.find hpixbuf name
-  with Not_found ->
-    let file = Filename.concat "/home/pad/Downloads" name in
-    pr2_gen file;
-    let pixbuf = GdkPixbuf.from_file file in
-    Hashtbl.add hpixbuf name pixbuf;
-    pixbuf
-
-
-
-let icon_of_kind kind _has_test =
-  match kind with
-  | E.Function -> 
-      get_pixbuf "unknown_obj.png"
-  
-  (* less: do different symbols for unit tested class and methods ?
-   * or add another column in completion popup
-   *)
-  | E.Class -> get_pixbuf "class_obj.png"
-  | E.Module -> get_pixbuf "unknown_obj.png"
-  | E.Package -> get_pixbuf "package_obj.png"
-  | E.Type -> get_pixbuf "unknown_obj.png"
-  | E.Constant -> get_pixbuf "unknown_obj.png"
-  | E.Global -> get_pixbuf "unknown_obj.png"
-  | E.Method -> get_pixbuf "compare_method.png"
-  | E.Field -> get_pixbuf "compare_field.png"
-
-  (* less: could use github.com/file-icons/atom to give different icons
-   * depending on the filename
-   *)
-  | E.File -> get_pixbuf "file_obj.png"
-  | E.Dir -> get_pixbuf "unknown_obj.png"
-  | E.MultiDirs -> get_pixbuf "unknown_obj.png"
-
-  | E.ClassConstant -> get_pixbuf "unknown_obj.png"
-  | E.Macro -> get_pixbuf "unknown_obj.png"
-  | E.Exception -> get_pixbuf "unknown_obj.png"
-  | E.Constructor -> get_pixbuf "unknown_obj.png"
-  | E.Prototype -> get_pixbuf "unknown_obj.png"
-  | E.GlobalExtern -> get_pixbuf "unknown_obj.png"
-
-  | (E.TopStmts | E.Other _ ) -> get_pixbuf "unknown_obj.png"
 
 (*****************************************************************************)
 (* Colors *)
@@ -148,12 +103,12 @@ let col_id   = column_list#add Gobject.Data.int
 let col_text = column_list#add Gobject.Data.string
 let col_file = column_list#add Gobject.Data.string
 let col_count = column_list#add Gobject.Data.string
-let col_icon = column_list#add (Gobject.Data.gobject_by_name "GdkPixbuf")
 (* To colorize the foreground of col_text.
  * less: could also colorize the background and could also colorize
  * col_file (using dircolors.ml color coding)
  *)
-let col_color = column_list#add Gobject.Data.string
+let col_color_fg = column_list#add Gobject.Data.string
+let col_color_bg = column_list#add Gobject.Data.string
 
 
 let model_of_list_pair_string_with_icon2 xs =
@@ -172,7 +127,7 @@ let model_of_list_pair_string_with_icon2 xs =
   pr2 (spf "Size of model = %d" (List.length xs));
   xs |> Common2.index_list_0 |> List.iter (fun (e, id) ->
    
-    let has_unit_test =
+    let _has_unit_test =
       List.length e.Db.e_good_examples_of_use >= 1
     in
     let name = e.Db.e_name in
@@ -201,8 +156,8 @@ let model_of_list_pair_string_with_icon2 xs =
     model#set ~row ~column:col_text final_name;
     model#set ~row ~column:col_count (i_to_s (e.Db.e_number_external_users));
     model#set ~row ~column:col_file e.Db.e_file;
-    model#set ~row ~column:col_icon (icon_of_kind e.Db.e_kind has_unit_test);
-    model#set ~row ~column:col_color color;
+    model#set ~row ~column:col_color_fg color;
+    model#set ~row ~column:col_color_bg "DarkSlateGray";
 
     Hashtbl.add store_id_to_entity id e;
   );
@@ -229,17 +184,14 @@ let model_col_of_prefix prefix_or_suffix idx =
 
 let add_renderer (completion : GEdit.entry_completion) =
   
-  let renderer = GTree.cell_renderer_pixbuf [ `STOCK_SIZE `LARGE_TOOLBAR ] in
-  completion#pack (renderer :> GTree.cell_renderer);
-  completion#add_attribute (renderer :> GTree.cell_renderer) 
-    "pixbuf" col_icon;
-
   let renderer = GTree.cell_renderer_text [] in
   completion#pack (renderer :> GTree.cell_renderer);
   completion#add_attribute (renderer :> GTree.cell_renderer) 
     "text" col_text;
   completion#add_attribute (renderer :> GTree.cell_renderer) 
-    "foreground" col_color;
+    "foreground" col_color_fg;
+  completion#add_attribute (renderer :> GTree.cell_renderer) 
+    "background" col_color_bg;
 
   let renderer = GTree.cell_renderer_text [`WIDTH 80] in
   completion#pack (renderer :> GTree.cell_renderer);
