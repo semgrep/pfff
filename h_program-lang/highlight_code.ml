@@ -464,76 +464,8 @@ let info_of_def_arity defarity =
 let info_of_place _defplace = 
   raise Todo
 
-(*****************************************************************************)
-(* Main entry point *)
-(*****************************************************************************)
-
-(* pad taste *)
-let info_of_category = function
-
-  (* `FAMILY "-misc-*-*-*-*-20-*-*-*-*-*-*"*)
-  (* `FONT "-misc-fixed-bold-r-normal--13-100-100-100-c-70-iso8859-1" *)
-
-  (* background *)
-  | BackGround -> [`BACKGROUND "DarkSlateGray"]
-  | ForeGround -> [`FOREGROUND "wheat";]
-      
-  | NotParsed -> [`BACKGROUND "grey42" (*"lightgray"*)]
-  | NoType ->    [`BACKGROUND "DimGray"]
-  | Passed ->    [`BACKGROUND "DarkSlateGray4"]
-  | Expanded ->  [`BACKGROUND "red"]
-  | Error ->     [`BACKGROUND "red2"]
-
-  (* a flashy one that hurts the eye :) *) 
-  | BadSmell -> [`FOREGROUND "magenta"] 
-
-  | UseOfRef -> [`FOREGROUND "magenta"]
-
-  | PointerCall -> 
-      [`FOREGROUND "firebrick";
-       `WEIGHT `BOLD; 
-       `SCALE `XX_LARGE;
-      ]
-
-  | ParameterRef -> [`FOREGROUND "magenta"]
-  | CallByRef ->   
-      [`FOREGROUND "orange"; 
-       `WEIGHT `BOLD; 
-       `SCALE `XX_LARGE;
-      ]
-  | IdentUnknown ->   [`FOREGROUND "red";]
-
-  (* searches, background *)
-  | MatchGlimpse -> [`BACKGROUND "grey46"]
-  | MatchSmPL ->    [`BACKGROUND "ForestGreen"]
-
-  | MatchParent -> [`BACKGROUND "blue"]
-
-  | MatchSmPLPositif -> [`BACKGROUND "ForestGreen"]
-  | MatchSmPLNegatif -> [`BACKGROUND "red"]
-
-
-  (* foreground *)
-  | Comment -> [`FOREGROUND "gray";]
-
-  | CommentSection0 -> [`FOREGROUND "coral";]
-  | CommentSection1 -> [`FOREGROUND "orange";]
-  | CommentSection2 -> [`FOREGROUND "LimeGreen";]
-  | CommentSection3 -> [`FOREGROUND "LightBlue3";]
-  | CommentSection4 -> [`FOREGROUND "gray";]
-
-  | CommentEstet -> [`FOREGROUND "gray";]
-  | CommentCopyright -> [`FOREGROUND "DimGray";]
-  | CommentSyncweb -> [`FOREGROUND "DimGray";]
-  | CommentImportance0 -> [`FOREGROUND "DimGray";]
-  | CommentImportance1 -> [`FOREGROUND "gray45";]
-  | CommentImportance2 -> [`FOREGROUND "gray";]
-  | CommentImportance3 -> [`FOREGROUND "red";]
-
-
-  (* entities *)
-  | Entity (kind, defkind) ->
-    (match kind, defkind with
+let info_of_entity_kind_and_usedef2 kind defkind =
+    match kind, defkind with
 
     | E.Type, (Def2 _) -> [`FOREGROUND "chartreuse";]
     | E.Type, (Use2 _) -> [`FOREGROUND "chartreuse";]
@@ -641,11 +573,90 @@ let info_of_category = function
     | E.Method, (Use2 _) -> [`FOREGROUND "gold3";]
 
     | E.Class, (Use2 _) -> [`FOREGROUND "coral"] @ info_of_usedef (Use)
+
+    (* this is for codemap completion search box *)
+    | E.Package, _ -> [`FOREGROUND "IndianRed"]
+    | E.File, _ -> [`FOREGROUND "black"]
+    (* see dircolors.ml *)
+    | E.Dir, _ -> [`FOREGROUND "CornFlowerBlue"]
+    | E.MultiDirs, _ -> [`FOREGROUND "DarkSlateBlue"]
         
     | _ -> 
-      failwith (spf "info_of_category: missing case for '%s'"
+      failwith (spf "info_of_entity_kind_and_usedef2: missing case for '%s'"
                   (Entity_code.string_of_entity_kind kind))
-    )
+    
+
+
+(*****************************************************************************)
+(* Main entry point *)
+(*****************************************************************************)
+
+(* pad taste *)
+let info_of_category = function
+
+  (* `FAMILY "-misc-*-*-*-*-20-*-*-*-*-*-*"*)
+  (* `FONT "-misc-fixed-bold-r-normal--13-100-100-100-c-70-iso8859-1" *)
+
+  (* background *)
+  | BackGround -> [`BACKGROUND "DarkSlateGray"]
+  | ForeGround -> [`FOREGROUND "wheat";]
+      
+  | NotParsed -> [`BACKGROUND "grey42" (*"lightgray"*)]
+  | NoType ->    [`BACKGROUND "DimGray"]
+  | Passed ->    [`BACKGROUND "DarkSlateGray4"]
+  | Expanded ->  [`BACKGROUND "red"]
+  | Error ->     [`BACKGROUND "red2"]
+
+  (* a flashy one that hurts the eye :) *) 
+  | BadSmell -> [`FOREGROUND "magenta"] 
+
+  | UseOfRef -> [`FOREGROUND "magenta"]
+
+  | PointerCall -> 
+      [`FOREGROUND "firebrick";
+       `WEIGHT `BOLD; 
+       `SCALE `XX_LARGE;
+      ]
+
+  | ParameterRef -> [`FOREGROUND "magenta"]
+  | CallByRef ->   
+      [`FOREGROUND "orange"; 
+       `WEIGHT `BOLD; 
+       `SCALE `XX_LARGE;
+      ]
+  | IdentUnknown ->   [`FOREGROUND "red";]
+
+  (* searches, background *)
+  | MatchGlimpse -> [`BACKGROUND "grey46"]
+  | MatchSmPL ->    [`BACKGROUND "ForestGreen"]
+
+  | MatchParent -> [`BACKGROUND "blue"]
+
+  | MatchSmPLPositif -> [`BACKGROUND "ForestGreen"]
+  | MatchSmPLNegatif -> [`BACKGROUND "red"]
+
+
+  (* foreground *)
+  | Comment -> [`FOREGROUND "gray";]
+
+  | CommentSection0 -> [`FOREGROUND "coral";]
+  | CommentSection1 -> [`FOREGROUND "orange";]
+  | CommentSection2 -> [`FOREGROUND "LimeGreen";]
+  | CommentSection3 -> [`FOREGROUND "LightBlue3";]
+  | CommentSection4 -> [`FOREGROUND "gray";]
+
+  | CommentEstet -> [`FOREGROUND "gray";]
+  | CommentCopyright -> [`FOREGROUND "DimGray";]
+  | CommentSyncweb -> [`FOREGROUND "DimGray";]
+  | CommentImportance0 -> [`FOREGROUND "DimGray";]
+  | CommentImportance1 -> [`FOREGROUND "gray45";]
+  | CommentImportance2 -> [`FOREGROUND "gray";]
+  | CommentImportance3 -> [`FOREGROUND "red";]
+
+
+  (* entities *)
+  | Entity (kind, defkind) ->
+   info_of_entity_kind_and_usedef2 kind defkind
 
   | FunctionDecl (_) -> [`FOREGROUND "gold2"; 
                          `WEIGHT `BOLD;`STYLE `ITALIC; `SCALE `MEDIUM;

@@ -111,6 +111,7 @@ val info_of_category :
    | `UNDERLINE of [> `DOUBLE | `SINGLE ]
    | `WEIGHT of [> `BOLD ] ]
   list
+
 (* use the same polymorphic variants than in ocamlgtk *)
 val info_of_usedef : 
   usedef -> 
@@ -119,6 +120,18 @@ val info_of_def_arity :
   def_arity ->
   [> `STRIKETHROUGH of bool | `UNDERLINE of [> `DOUBLE | `SINGLE ] ] list
 val info_of_place : 'a -> 'b
+
+val info_of_entity_kind_and_usedef2:
+  Entity_code.entity_kind ->
+  usedef2 ->
+  [> `FOREGROUND of string
+   | `SCALE of [> `MEDIUM | `X_LARGE ]
+   | `STRIKETHROUGH of bool
+   | `STYLE of [> `ITALIC ]
+   | `UNDERLINE of [> `DOUBLE | `SINGLE ]
+   | `WEIGHT of [> `BOLD ] ]
+  list
+
 
 val arity_ids : 'a list -> def_arity
 val rewrap_arity_def2_category: def_info -> category -> category
