@@ -184,26 +184,10 @@ let mk_gui ~screen_size ~legend test_mode w =
     (*-------------------------------------------------------------------*)
     hbox#pack (G.mk (GMenu.menu_bar) (fun m -> 
       let factory = new GMenu.factory m in
-(*
-      factory#add_submenu "_File" |> (fun menu -> 
-        let fc = new GMenu.factory menu ~accel_group in
-        (* todo? open Db ? *)
-        fc#add_item "_Open stuff from db" ~key:K._O ~callback:(fun () -> 
-          ();
-        ) |> ignore;
-        fc#add_separator () |> ignore;
-
-      factory#add_submenu "_Edit" |> (fun menu -> 
-        GToolbox.build_menu menu ~entries:[
-          `S;
-        ];
-      ) |> ignore;
-*)
 
       factory#add_submenu "_Move" |> (fun menu -> 
         let fc = new GMenu.factory menu ~accel_group in
 
-        (* todo? open Db ? *)
         fc#add_item "_Go back" ~key:K._B ~callback:(fun () -> 
           !Controller._go_back w;
         ) |> ignore;
@@ -232,7 +216,6 @@ let mk_gui ~screen_size ~legend test_mode w =
       factory#add_submenu "_Search" |> (fun menu -> 
         let fc = new GMenu.factory menu ~accel_group in
 
-        (* todo? open Db ? *)
         fc#add_item "_Git grep" ~key:K._G ~callback:(fun () -> 
 
           let res = Ui_search.dialog_search_def w.model in
@@ -286,8 +269,6 @@ let mk_gui ~screen_size ~legend test_mode w =
       factory#add_submenu "_Misc" |> (fun menu -> 
         let fc = new GMenu.factory menu ~accel_group in
 
-        (* todo? open Db ? *)
-
         fc#add_item "_Refresh" ~key:K._R ~callback:(fun () -> 
           let current_root = w.dw.current_root in
           let _old_dw = Common2.pop2 w.dw_stack in
@@ -328,24 +309,6 @@ let mk_gui ~screen_size ~legend test_mode w =
     (*-------------------------------------------------------------------*)
     hbox#pack ~padding:10 (G.mk (GButton.toolbar) (fun tb ->
 
-(*
-      tb#insert_widget (G.mk (GButton.button ~stock:`OPEN) (fun b -> 
-        b#connect#clicked ~callback:(fun () -> 
-          pr2 "OPEN";
-        );
-      ));
-      tb#insert_widget (G.mk (GButton.button ~stock:`SAVE) (fun b -> 
-        b#connect#clicked ~callback:(fun () -> 
-          pr2 "SAVE";
-        );
-      ));
-      tb#insert_space ();
-      tb#insert_button ~text:"SAVE THIS" ~callback:(fun () -> 
-        pr2 "SAVE THIS";
-      ) () |> ignore;
-      tb#insert_space ();
-
-*)
       let idx = (fun () -> 
         let model = Async.async_get w.model in
         model.Model2.big_grep_idx 
