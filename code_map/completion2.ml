@@ -164,6 +164,7 @@ let model_of_list_pair_string_with_icon2 xs =
     in 
     (* custom_list#insert *)
     let row = model#append () in
+
     model#set ~row ~column:col_id t.id;
     model#set ~row ~column:col_text t.text;
     model#set ~row ~column:col_count t.count;
@@ -184,7 +185,8 @@ let model_col_of_prefix prefix_or_suffix idx =
   let xs = 
     BG.top_n_search 
       ~top_n:!Flag.top_n
-      ~query:prefix_or_suffix idx
+      ~query:prefix_or_suffix 
+      idx
   in
   model_of_list_pair_string_with_icon xs
 
@@ -193,8 +195,8 @@ let model_col_of_prefix prefix_or_suffix idx =
 (*****************************************************************************)
 
 let add_renderer (completion : GEdit.entry_completion) =
-
-  let renderer = GTree.cell_renderer_pixbuf [ `STOCK_SIZE `BUTTON ] in
+  
+  let renderer = GTree.cell_renderer_pixbuf [ `STOCK_SIZE `LARGE_TOOLBAR ] in
   completion#pack (renderer :> GTree.cell_renderer);
   completion#add_attribute (renderer :> GTree.cell_renderer) 
     "stock_id" col_icon;
@@ -204,7 +206,7 @@ let add_renderer (completion : GEdit.entry_completion) =
   completion#add_attribute (renderer :> GTree.cell_renderer) 
     "text" col_text;
 
-  let renderer = GTree.cell_renderer_text [] in
+  let renderer = GTree.cell_renderer_text [`WIDTH 80] in
   completion#pack (renderer :> GTree.cell_renderer);
   completion#add_attribute (renderer :> GTree.cell_renderer) 
     "text" col_count;
@@ -213,13 +215,6 @@ let add_renderer (completion : GEdit.entry_completion) =
   completion#pack (renderer :> GTree.cell_renderer);
   completion#add_attribute (renderer :> GTree.cell_renderer) 
     "text" col_file;
-
-  (* can omit this:
-   *    completion#set_text_column L.col_text2; 
-   * 
-   * but then must define a set_match_func otherwise you will never
-   * see a popup
-   *)
   ()
 
 let fake_entity = {Database_code.
@@ -235,7 +230,7 @@ let fake_entity = {Database_code.
 
 let my_entry_completion_eff2 ~callback_selected ~callback_changed fn_idx = 
   
-  let entry = GEdit.entry ~width:1500 () in
+  let entry = GEdit.entry ~width:1100 () in
   let completion = GEdit.entry_completion () in
   entry#set_completion completion;
 
@@ -309,6 +304,8 @@ let my_entry_completion_eff2 ~callback_selected ~callback_changed fn_idx =
             completion#set_model (!model :> GTree.model);
 
             callback_changed s;
+            (* bugfix: reset it otherwise get Glib errors *)
+            current_timeout := None;
             false
           ));
     end
@@ -320,6 +317,5 @@ let my_entry_completion_eff2 ~callback_selected ~callback_changed fn_idx =
  
 let my_entry_completion_eff ~callback_selected ~callback_changed x = 
   my_entry_completion_eff2 ~callback_selected ~callback_changed x
-
 
 (*e: completion2.ml *)
