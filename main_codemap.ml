@@ -117,16 +117,17 @@ module Model = Model2
 (*****************************************************************************)
 
 (*s: main flags *)
-(* on macOS lion X11 resizes the window to a smaller size so
- * no point in starting with a big screen_size :(
+(* on macOS lion, X11 resizes the window to a smaller size so
+ * there is no point in starting with a big screen_size :(
  *)
 let screen_size = ref 1
 let legend = ref false
 
 (* you can also put this in your ~/gtkrc-2.0
- * gtk-icon-theme-name = "Tango"
- * gtk-theme-name = "Murrine-Gray"
- * gtk-font-name = "DejaVu Sans 16"
+ *  gtk-icon-theme-name = "Tango"
+ *  gtk-theme-name = "Murrine-Gray"
+ *  gtk-font-name = "DejaVu Sans 16"
+ * or not put anything and use the default Gtk theme.
  *)
 
 (* if not specified, codemap will try to use files in the current directory *)
@@ -152,7 +153,7 @@ let action = ref ""
 (*****************************************************************************)
 
 let filters = [
-  (* pad specific, ocaml related *)
+  (* pad-specific: ocaml related files *)
   "pfff", (fun file ->
     match FT.file_type_of_file file with
     | FT.PL (
@@ -261,9 +262,6 @@ let treemap_generator ~filter_file =
 let build_model2 root dbfile_opt graphfile_opt =   
 
   let db_opt = dbfile_opt +> Common.map_opt Database_code.load_database in
-  (* todo: and skip_list?
-   * less: opti by factorizing the 'find' with treemap_generator?
-  *)
   let files = 
     Common.files_of_dir_or_files_no_vcs_nofilter [root] +> List.filter !filter
   in
