@@ -27,7 +27,7 @@ module E = Entity_code
 (* Prelude *)
 (*****************************************************************************)
 (* 
- * Syntax highlighting for OCaml code for codemap (and now also efuns).
+ * Syntax highlighting for OCaml code for codemap (and now also for efuns).
  * 
  * This code can also be abused to generate the light database 
  * and the TAGS file (because codemap needs to know about
@@ -50,7 +50,7 @@ let h_pervasives_pad = Common.hashset_of_list [
 let h_builtin_modules = Common.hashset_of_list [
   "Pervasives"; "Common";
   "List"; "Hashtbl"; "Array"; "Stack";
-  "String"; "Str";
+  "String"; "Bytes"; "Str";
   "Sys"; "Unix"; "Gc";
   "Filename";
 ]
