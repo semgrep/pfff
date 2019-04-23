@@ -230,7 +230,6 @@ and v_litteral =
   | String v1 -> let v1 = v_wrap6 v_string v1 in ()
   | Regexp v1 -> let v1 = v_wrap6 v_string v1 in ()
   | Null v1 -> let v1 = v_tok v1 in ()
-  | Undefined -> ()
 and v_unop =
   function
   | U_new -> ()

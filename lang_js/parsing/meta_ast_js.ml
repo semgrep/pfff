@@ -162,7 +162,6 @@ and vof_litteral =
       let v1 = vof_wrap Ocaml.vof_string v1
       in Ocaml.VSum (("Regexp", [ v1 ]))
   | Null v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Null", [ v1 ]))
-  | Undefined -> Ocaml.VSum (("Undefined", []))
 and vof_unop =
   function
   | U_new -> Ocaml.VSum (("U_new", []))

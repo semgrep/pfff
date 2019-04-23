@@ -152,7 +152,11 @@ let info_of_tok = function
   | T_DOTS ii
   | T_DOLLARCURLY ii | T_BACKQUOTE ii
   | T_ENCAPSED_STRING (_, ii)
-    -> ii
+  | T_LET    ii -> ii
+  | T_YIELD  ii -> ii
+  | T_SUPER  ii -> ii
+  | T_IMPORT ii -> ii 
+  | T_EXPORT ii -> ii
 
 (* generated via emacs macro from type definition in parse_js.ml *)
 let visitor_info_of_tok f = function
@@ -260,6 +264,11 @@ let visitor_info_of_tok f = function
   | T_DOLLARCURLY ii -> T_DOLLARCURLY(f ii)
   | T_BACKQUOTE ii -> T_BACKQUOTE (f ii)
   | T_ENCAPSED_STRING (s, ii) -> T_ENCAPSED_STRING(s, f ii)
+  | T_LET    ii -> T_LET (f ii)
+  | T_YIELD  ii -> T_YIELD (f ii)
+  | T_SUPER  ii -> T_SUPER (f ii)
+  | T_IMPORT ii -> T_IMPORT (f ii) 
+  | T_EXPORT ii -> T_EXPORT (f ii)
 
 (*****************************************************************************)
 (* Accessors *)

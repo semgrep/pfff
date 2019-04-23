@@ -187,7 +187,8 @@ web/var/dbs
 # -----------------------------------------------------------------------------
 
 #pad stuff
-#tmp
+tmp
+
 #TODO-progs
 #_backup
 #_oldcstuff

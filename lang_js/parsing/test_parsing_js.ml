@@ -21,25 +21,61 @@ let test_parse_js xs  =
   let fullxs =
     Lib_parsing_js.find_source_files_of_dir_or_files ~include_scripts:false xs
   in
+  let dirname_opt, fullxs = 
+    match xs with
+    | [x] when Common2.is_directory x -> 
+      let skip_list =
+        if Sys.file_exists (x ^ "/skip_list.txt")
+        then Skip_code.load (x ^ "/skip_list.txt")
+        else []
+      in
+      Some x,  Skip_code.filter_files skip_list x fullxs
+    | _ -> None, fullxs
+  in
+
   let stat_list = ref [] in
+  let newscore  = Common2.empty_score () in
+
+  Common2.check_stack_nbfiles (List.length fullxs);
 
   fullxs +> Console.progress (fun k -> List.iter (fun file ->
     k();
 
-    if file =~ ".*/third_party" || file =~ ".*/wiki/extensions"
-    then pr2_once "IGNORING third party directory, bad unicode chars"
-    else begin
-      let (_xs, stat) =
+    let (_xs, stat) =
       Common.save_excursion Flag.error_recovery true (fun () ->
       Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
         Parse_js.parse file
       ))
-      in
-      Common.push stat stat_list;
-    end
+    in
+    Common.push stat stat_list;
+    let s = spf "bad = %d" stat.Parse_info.bad in
+    if stat.Parse_info.bad = 0
+    then Hashtbl.add newscore file (Common2.Ok)
+    else Hashtbl.add newscore file (Common2.Pb s)
   ));
   Parse_info.print_parsing_stat_list !stat_list;
+
+    let score_path = Filename.concat Config_pfff.path "tmp" in
+    dirname_opt +> Common.do_option (fun dirname -> 
+      let dirname = Common.fullpath dirname in
+      pr2 "--------------------------------";
+      pr2 "regression testing  information";
+      pr2 "--------------------------------";
+      let str = Str.global_replace (Str.regexp "/") "__" dirname in
+      Common2.regression_testing newscore 
+        (Filename.concat score_path
+         ("score_parsing__" ^str ^ "js.marshalled"))
+    );
+
   ()
+
+let test_dump_js file =
+  let ast = Parse_js.parse_program file in
+  let v = Meta_ast_js.vof_program ast in
+  let s = Ocaml.string_of_v v in
+  pr s
+
+
 (* see also:
  * git clone github.com/facebook/esprima
  * cd esprima/
@@ -47,11 +83,6 @@ let test_parse_js xs  =
  * /home/engshare/third-party-tools/node/bin/node tools/generate-test-fixture.js "foo();"
  * /home/engshare/third-party-tools/node/bin/node tools/generate-test-fixture.js "foo();"
  *)
-let test_dump_js file =
-  let ast = Parse_js.parse_program file in
-  let v = Meta_ast_js.vof_program ast in
-  let s = Ocaml.string_of_v v in
-  pr s
 
 (*
 let test_json_js file =

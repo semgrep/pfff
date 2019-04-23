@@ -1,8 +1,8 @@
 %{
 (* 
- * src: ocamlyaccified from Marcel Laverdet 'fbjs2' via emacs macros, itself
+ * src: ocamlyaccified from Marcel Laverdet 'fbjs2' via Emacs macros, itself
  * extracted from the official ECMAscript specification at:
- *  http://www.ecma-international.org/publications/standards/ecma-262.htm
+ * http://www.ecma-international.org/publications/standards/ecma-262.htm
  *
  *)
 

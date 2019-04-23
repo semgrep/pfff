@@ -1,6 +1,7 @@
 (* Yoann Padioleau
  *
  * Copyright (C) 2010, 2012, 2013 Facebook
+ * Copyright (C) 2019 Yoann Padioleau
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -19,14 +20,39 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* spec: http://www.ecmascript.org/ and the ecma-262 document.
+(* Abstract Syntax Tree for Javascript.
+ * 
+ * Specification: http://www.ecmascript.org/ and the ECMA-262 document.
  * See also http://en.wikipedia.org/wiki/ECMAScript
  *
- * See parser_js.mly top comment to see the Javascript extensions currently
- * supported.
+ * This AST (and parser) supports most ES6 features:
+ *  - ES6 classes, see
+ *   http://people.mozilla.org/~jorendorff/es6-draft.html#sec-class-definitions
+ *  - arrows (short lambdas), see
+ *    https://people.mozilla.org/~jorendorff/es6-draft.html#sec-arrow-function-definitions
+ *  - trailing commas
+ *  - variable number of parameters, e.g. 'function foo(...args)'
+ *  - interpolated strings, see
+ *    https://gist.github.com/lukehoban/9303054#template-strings
+ *  - import/export TODO
+ *  - let/const TODO
+ * See http://es6-features.org/ for explanations of those recent features
+ * (and also how they can be converted to ES5 code)
  *
- * todo:
- *  - imitate https://developer.mozilla.org/en-US/docs/SpiderMonkey/Parser_API ?
+ * This AST (and parser) supports a few more extensions:
+ *  - JSX: mostly imitating what was done for XHP in lang_php/,
+ *    but with tags possibly containing ':' in their names
+ *  - type annotations a la Flow and TypeScript, see
+ *    http://en.wikipedia.org/wiki/TypeScript
+ *
+ * less:
+ *  - imitate https://developer.mozilla.org/en-US/docs/SpiderMonkey/Parser_API
+ *
+ * related work:
+ *  - http://esprima.org/, js parser in js
+ *  - http://marijnhaverbeke.nl/parse-js/, js parser in common lisp
+ *    (which has been since ported to javascript by nodejs people)
+ *  - jslint
  *)
 
 (*****************************************************************************)
@@ -38,7 +64,7 @@ module PI = Parse_info
 
 (* Contains among other things the position of the token through
  * the Parse_info.token_location embedded inside it, as well as the
- * the transformation field that makes possible spatch on javascript code.
+ * the transformation field that makes possible spatch on Javascript code.
  *)
 type tok = Parse_info.info
 
@@ -49,7 +75,7 @@ and 'a paren   = tok * 'a * tok
 and 'a brace   = tok * 'a * tok
 and 'a bracket = tok * 'a * tok
 and 'a angle = tok * 'a * tok
-(* can now have a Right tok at the very end with trailing comma extension *)
+(* can now have a Right tok at the very end with the trailing comma extension*)
 and 'a comma_list = ('a, tok (* the comma *)) Common.either list
 
 (* semicolon. Can be None when was implicitely inserted during parsing *)
@@ -94,10 +120,11 @@ type expr =
    | Seq of expr * tok (* , *) * expr
 
    | Function of func_decl
-   (* es6-ext: aka short lambdas *)
+   (* es6: arrows, a.k.a short lambdas *)
    | Arrow of arrow_func
 
    | Encaps of name option * tok (* ` *) * encaps list * tok (* ` *)
+   (* facebook-ext: *)
    | XhpHtml of xhp_html
 
    (* unparser: *)
@@ -111,9 +138,12 @@ type expr =
        (* see also XhpText, EncapsString and XhpAttrString *)
        | String of string wrap
        | Regexp of string wrap (* todo? should split the flags *)
-       | Null of tok
 
-       | Undefined (* ?? *)
+       | Null of tok
+       (* There is also Undefined, but this is not considered a reserved
+        * keyword. It is probably treated as a builtin instead.
+        * (great language: have not just 1 billion dollar mistake but 2!
+        *)
 
      and unop =
        | U_new | U_delete
@@ -149,7 +179,7 @@ type expr =
        | P_field of property_name * tok (* : *) * expr
        | P_method of func_decl
 
- (* facebook-ext: JSX extension, similar to XHP for PHP *)
+ (* facebook-ext: JSX extension, similar to XHP for PHP (hence the name) *)
  and xhp_html =
    | Xhp of xhp_tag wrap * xhp_attribute list * tok (* > *) *
        xhp_body list * xhp_tag option wrap
@@ -165,7 +195,7 @@ type expr =
      | XhpExpr of expr option brace
      | XhpNested of xhp_html
 
- (* es6-ext: template string, aka interpolated/encapsulated strings *)
+ (* es6: template strings, a.k.a. interpolated/encapsulated strings *)
  and encaps =
  | EncapsString of string wrap
  (* could use 'expr brace', but it's not a regular brace for { *)
@@ -224,7 +254,7 @@ and st =
 (* ------------------------------------------------------------------------- *)
 (* Type *)
 (* ------------------------------------------------------------------------- *)
-(* facebook-ext: complex type annotation *)
+(* facebook-ext: complex type annotations for Flow *)
 and type_ =
   (* used for builtin types like 'void', 'number', 'string', 'any/mixed' *)
   | TName of nominal_type
@@ -284,7 +314,8 @@ and func_decl = {
   | DNone of tok (* ? *)
   | DSome of tok (* = *) * expr
 
-(* todo? could factorize with func_def, but this will require many
+(* es6: arrows.
+ * less: could factorize with func_def, but this will require many
  * elements to be fake token, e.g. the parenthesis for parameters
  * when have only one parameter, the brace and semicolon when the body
  * is a simple expression.
@@ -314,6 +345,7 @@ and variable_declaration = {
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)
 (* ------------------------------------------------------------------------- *)
+(* es6: finally classes built in the language *)
 and class_decl = {
   c_tok: tok;
   c_name: name;
@@ -342,6 +374,7 @@ and interface_decl = {
 (* ------------------------------------------------------------------------- *)
 and toplevel =
   | St of st
+
   | FunDecl of func_decl
   | ClassDecl of class_decl
   | InterfaceDecl of interface_decl
@@ -349,12 +382,17 @@ and toplevel =
  and program = toplevel list
  (* with tarzan *)
 
+(* ------------------------------------------------------------------------- *)
+(* Any *)
+(* ------------------------------------------------------------------------- *)
+
 type any =
   | Expr of expr
   | Stmt of st
   | Func of func_decl
   | Toplevel of toplevel
   | Program of program
+
  (* with tarzan *)
 
 (*****************************************************************************)

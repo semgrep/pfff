@@ -1,6 +1,7 @@
 (* Yoann Padioleau
  *
  * Copyright (C) 2010 Facebook
+ * Copyright (C) 2019 Yoann Padioleau
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -14,17 +15,17 @@
  *)
 open Common
 
-open Entity_code open Highlight_code
+open Entity_code 
+open Highlight_code
 module T = Parser_js
 module E = Entity_code
-module HC = Highlight_code
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
 
 (*****************************************************************************)
-(* Helpers when have global analysis information *)
+(* Helpers when have global-analysis information *)
 (*****************************************************************************)
 
 let fake_no_def2 = NoUse
@@ -63,35 +64,6 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
     match xs with
     | [] -> ()
 
-    (* the class extraction stuff as JX.install('ClassFoo'... )
-     * is not handled in class_js.ml
-     *)
-
-    (* todo: move pattern in Class_js ? *)
-    | T.T_IDENTIFIER ("JX", info)
-      ::T.T_PERIOD(_)
-      ::T.T_IDENTIFIER ("Stratcom", _)
-      ::T.T_PERIOD(_)
-      ::T.T_IDENTIFIER ("listen", _)
-      ::T.T_LPAREN(_)
-      ::xs ->
-        let rec find_first_string xs =
-          match xs with
-          | [] ->
-              pr2 (spf "PB: find_first_string: at %s"
-                      (Parse_info.string_of_info info)
-              );
-              raise Not_found
-          | T.T_STRING (_, ii)::_ -> ii
-          | _x::xs -> find_first_string xs
-        in
-        (try
-            let ii_string = find_first_string xs in
-            tag ii_string (HC.Entity (Method, (Def2 fake_no_def2)));
-          with Not_found -> ()
-        );
-        aux_toks xs
-
     | T.T_IDENTIFIER (_, ii2)
       ::T.T_COLON(_ii3)
       ::T.T_FUNCTION _
@@ -110,36 +82,6 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
         tag ii2 (Entity (Function, (Def2 NoUse)));
         aux_toks xs
 
-
-    | T.T_IDENTIFIER ("JX", ii1)
-      ::T.T_PERIOD(_)
-      ::T.T_IDENTIFIER (_, ii_last)
-      ::T.T_LPAREN(_)
-      ::xs when Parse_info.col_of_info ii1 = 0 ->
-
-        tag ii_last (Entity (Global, (Def2 NoUse)));
-        aux_toks xs
-
-    | T.T_IDENTIFIER ("JX", ii1)
-      ::T.T_PERIOD(_)
-      ::T.T_IDENTIFIER (_, ii_last)
-      ::T.T_LPAREN(_)
-      ::xs when Parse_info.col_of_info ii1 <> 0 ->
-
-        tag ii_last (Entity (Class, (Use2 fake_no_use2)));
-        aux_toks xs
-
-    | T.T_IDENTIFIER ("JX", ii1)
-      ::T.T_PERIOD(_)
-      ::T.T_IDENTIFIER (_, _ii2)
-      ::T.T_PERIOD(_)
-      ::T.T_IDENTIFIER (_, ii_last)
-      ::T.T_LPAREN(_)
-      ::xs when Parse_info.col_of_info ii1 = 0 ->
-
-        tag ii_last (Entity (Global, (Def2 NoUse)));
-        aux_toks xs
-
     | _x::xs ->
         aux_toks xs
   in
@@ -147,7 +89,7 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
 
 
   (* -------------------------------------------------------------------- *)
-  (* ast phase 1 *)
+  (* AST phase 1 *)
   (* TODO!! *)
 
   (* -------------------------------------------------------------------- *)
@@ -195,7 +137,7 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
     | T.T_BACKQUOTE ii -> tag ii String
     | T.T_DOLLARCURLY ii -> tag ii String
 
-    | T.T_REGEX (_, ii) -> tag ii String
+    | T.T_REGEX (_, ii) -> tag ii Regexp
 
     | T.T_IDENTIFIER (_, ii) ->
        if not (Hashtbl.mem already_tagged ii)
@@ -222,19 +164,32 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
 
     | T.T_FUNCTION (ii) ->  tag ii Keyword
 
+    | T.T_VAR (ii) ->  tag ii Keyword
+    | T.T_LET (ii) ->  tag ii Keyword
+    | T.T_CONST (ii) -> tag ii Keyword
+
+    
     | T.T_IF (ii)  | T.T_SWITCH (ii) | T.T_ELSE (ii) ->
         tag ii KeywordConditional
-
-    | T.T_IN (ii) | T.T_INSTANCEOF (ii) | T.T_RETURN (ii) | T.T_THIS (ii) ->
-         tag ii Keyword
-
-
+    | T.T_WHILE (ii) | T.T_DO (ii) | T.T_FOR (ii) -> 
+        tag ii KeywordLoop
+    | T.T_RETURN (ii)
+    | T.T_BREAK (ii)  | T.T_CONTINUE (ii)
+    | T.T_CASE (ii) | T.T_DEFAULT (ii)
+    | T.T_IN (ii) 
+      -> tag ii Keyword
+    | T.T_THIS (ii) | T.T_SUPER (ii) | T.T_INSTANCEOF (ii)
+    | T.T_NEW (ii)  | T.T_DELETE (ii)
+      -> tag ii KeywordObject
     | T.T_THROW (ii) | T.T_TRY (ii) | T.T_CATCH (ii) | T.T_FINALLY (ii) ->
         tag ii KeywordExn
+    | T.T_YIELD ii -> tag ii Keyword
+    | T.T_TYPEOF (ii) -> tag ii Keyword
 
     | T.T_CLASS ii | T.T_EXTENDS ii  -> tag ii KeywordObject
-
     | T.T_INTERFACE ii -> tag ii KeywordObject
+
+    | T.T_IMPORT ii | T.T_EXPORT ii -> tag ii KeywordModule
 
     | T.T_XHP_TEXT (_, ii) -> tag ii String
     | T.T_XHP_ATTR (_, ii) -> tag ii (Entity (Field, (Use2 fake_no_use2)))
@@ -245,22 +200,7 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
     | T.T_XHP_OPEN_TAG (_, ii) -> tag ii EmbededHtml
 
     | T.T_STATIC ii -> tag ii Keyword
-
-    | T.T_WHILE (ii) | T.T_DO (ii) | T.T_FOR (ii) -> tag ii KeywordLoop
-
-    | T.T_VAR (ii) ->
-        tag ii Keyword
-
-    | T.T_WITH (ii) ->
-        tag ii Keyword
-
-    | T.T_CONST (ii) ->
-        tag ii Keyword
-    | T.T_BREAK (ii)
-    | T.T_CASE (ii)
-    | T.T_CONTINUE (ii)
-    | T.T_DEFAULT (ii)
-    | T.T_NEW (ii)
+    | T.T_WITH (ii) -> tag ii Keyword
 
     | T.T_LCURLY (ii)
     | T.T_RCURLY (ii)
@@ -324,10 +264,6 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
     | T.T_INCR (ii)
     | T.T_DECR (ii)
         -> tag ii Punctuation
-
-    | T.T_DELETE (ii)
-    | T.T_TYPEOF (ii)
-        -> tag ii Keyword
 
     | T.T_VOID (ii) ->
         tag ii TypeVoid

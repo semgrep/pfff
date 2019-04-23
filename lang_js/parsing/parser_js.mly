@@ -1,6 +1,7 @@
 /* Yoann Padioleau
  *
  * Copyright (C) 2010, 2013, 2014 Facebook
+ * Copyright (C) 2019 Yoann Padioleau
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -14,34 +15,13 @@
  */
 %{
 (*
- * src: ocamlyaccified from Marcel Laverdet 'fbjs2' via emacs macros, itself
- * extracted from the official ECMAscript specification at:
+ * src: originally ocamlyaccified from Marcel Laverdet 'fbjs2' via Emacs
+ * macros, itself extracted from the official ECMAscript specification at:
  * http://www.ecma-international.org/publications/standards/ecma-262.htm
  *
  * See also http://en.wikipedia.org/wiki/ECMAScript_syntax
  *
- * related work:
- *  - http://esprima.org/, js parser in js
- *  - http://marijnhaverbeke.nl/parse-js/, js parser in common lisp
- *    (which has been since ported to javascript by nodejs people)
- *  - jslint
- *
- * updates:
- *  - support for ES6 class, see
- *    http://people.mozilla.org/~jorendorff/es6-draft.html#sec-class-definitions
- *  - support for JSX, mostly imitating what was done for XHP in lang_php/,
- *    but with tags possibly containing ':' in their name
- *  - support for type annotation a la TypeScript, see
- *    http://en.wikipedia.org/wiki/TypeScript, see also D911357 for the
- *    esprima related extension
- *  - support arrows (short lambdas), see
- *    https://people.mozilla.org/~jorendorff/es6-draft.html#sec-arrow-function-definitions
- *  - support trailing commas
- *  - variable number of parameters, e.g. 'function foo(...args)', es6 ext?
- *  - interpolated strings, see
- *    https://gist.github.com/lukehoban/9303054#template-strings
  *)
-
 open Common
 
 open Ast_js
@@ -81,14 +61,21 @@ let fake_tok s = {
 
 /*(* keywords tokens *)*/
 %token <Ast_js.tok>
- T_FUNCTION T_IF T_IN T_INSTANCEOF T_RETURN T_SWITCH T_THIS T_THROW T_TRY
- T_VAR T_WHILE T_WITH T_CONST T_NULL T_FALSE T_TRUE
- T_BREAK T_CASE T_CATCH T_CONTINUE T_DEFAULT T_DO T_FINALLY T_FOR
- T_CLASS T_EXTENDS T_STATIC T_INTERFACE
+ T_FUNCTION T_CONST T_VAR T_LET
+ T_IF T_ELSE
+ T_WHILE T_FOR T_DO T_CONTINUE T_BREAK
+ T_SWITCH T_CASE T_DEFAULT 
+ T_RETURN 
+ T_THROW T_TRY T_CATCH T_FINALLY
+ T_YIELD
+ T_NEW T_IN T_INSTANCEOF T_THIS T_SUPER T_WITH  
+ T_NULL T_FALSE T_TRUE
+ T_CLASS T_INTERFACE T_EXTENDS T_STATIC 
+ T_IMPORT T_EXPORT
 
-%token <Ast_js.tok> T_ELSE
+%token <Ast_js.tok> 
 
-%token <Ast_js.tok> T_NEW
+%token <Ast_js.tok> 
 
 /*(* syntax *)*/
 %token <Ast_js.tok>
@@ -413,11 +400,10 @@ function_body:
  | /*(* empty *)*/ { [] }
  | statement_list  { $1 }
 
-/*(*http://people.mozilla.org/~jorendorff/es6-draft.html#sec-class-definitions*)*/
-
 /*(*************************************************************************)*/
 /*(*1 Class declaration *)*/
 /*(*************************************************************************)*/
+
 class_declaration: T_CLASS binding_identifier generics_opt class_tail
    {
      let (extends, body) = $4 in

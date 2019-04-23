@@ -2,6 +2,7 @@
 (* Yoann Padioleau
  *
  * Copyright (C) 2010, 2013, 2014 Facebook
+ * Copyright (C) 2019 Yoann Padioleau
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -24,12 +25,12 @@ module PI = Parse_info
 (*****************************************************************************)
 (* The Javascript lexer.
  *
- * src: ocamllexified from Marcel Laverdet 'fbjs2'?
+ * src: originally ocamllexified from Marcel Laverdet 'fbjs2'
  *
  * There are a few tricks to go around ocamllex restrictions
  * because Javascript now have different lexing rules depending on some
  * "contexts", especially for JSX/XHP (this is similar to Perl,
- * e.g. the <<<END context).
+ * with its <<<END context).
  *)
 
 (*****************************************************************************)
@@ -95,13 +96,15 @@ let keyword_table = Common.hash_of_list [
   "throw",      (fun ii -> T_THROW ii);
   "try",        (fun ii -> T_TRY ii);
   "catch",      (fun ii -> T_CATCH ii);
+  "finally",    (fun ii -> T_FINALLY ii);
 
   "var",        (fun ii -> T_VAR ii);
   "function",   (fun ii -> T_FUNCTION ii);
   "const",      (fun ii -> T_CONST ii);
+  "let",        (fun ii -> T_LET ii);
 
-  "delete",     (fun ii -> T_DELETE ii);
   "new",        (fun ii -> T_NEW ii);
+  "delete",     (fun ii -> T_DELETE ii);
 
   "void",       (fun ii -> T_VOID ii);
   "null",       (fun ii -> T_NULL ii);
@@ -109,18 +112,23 @@ let keyword_table = Common.hash_of_list [
   "false",      (fun ii -> T_FALSE ii);
   "true",       (fun ii -> T_TRUE ii);
 
-  "finally",    (fun ii -> T_FINALLY ii);
   "in",         (fun ii -> T_IN ii);
   "instanceof", (fun ii -> T_INSTANCEOF ii);
   "this",       (fun ii -> T_THIS ii);
+  "super",       (fun ii -> T_SUPER ii);
   "typeof",     (fun ii -> T_TYPEOF ii);
   "with",       (fun ii -> T_WITH ii);
+  "yield",       (fun ii -> T_YIELD ii);
 
   "class",      (fun ii -> T_CLASS ii);
   "extends",    (fun ii -> T_EXTENDS ii);
+  "interface",      (fun ii -> T_INTERFACE ii);
+
   "static",     (fun ii -> T_STATIC ii);
 
-  "interface",      (fun ii -> T_INTERFACE ii);
+  "import",     (fun ii -> T_IMPORT ii);
+  "export",     (fun ii -> T_EXPORT ii);
+
 ]
 
 (* ---------------------------------------------------------------------- *)
