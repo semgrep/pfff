@@ -118,7 +118,10 @@ let keyword_table = Common.hash_of_list [
   "super",       (fun ii -> T_SUPER ii);
   "typeof",     (fun ii -> T_TYPEOF ii);
   "with",       (fun ii -> T_WITH ii);
+
   "yield",       (fun ii -> T_YIELD ii);
+  "async",       (fun ii -> T_ASYNC ii);
+  "await",       (fun ii -> T_AWAIT ii);
 
   "class",      (fun ii -> T_CLASS ii);
   "extends",    (fun ii -> T_EXTENDS ii);
@@ -129,6 +132,9 @@ let keyword_table = Common.hash_of_list [
   "import",     (fun ii -> T_IMPORT ii);
   "export",     (fun ii -> T_EXPORT ii);
 
+  (* less: declare, debugger, enum, of, opaque, package, 
+   * private/public/protected, type
+   *)
 ]
 
 (* ---------------------------------------------------------------------- *)

@@ -154,6 +154,8 @@ let info_of_tok = function
   | T_ENCAPSED_STRING (_, ii)
   | T_LET    ii -> ii
   | T_YIELD  ii -> ii
+  | T_ASYNC  ii -> ii
+  | T_AWAIT  ii -> ii
   | T_SUPER  ii -> ii
   | T_IMPORT ii -> ii 
   | T_EXPORT ii -> ii
@@ -266,6 +268,8 @@ let visitor_info_of_tok f = function
   | T_ENCAPSED_STRING (s, ii) -> T_ENCAPSED_STRING(s, f ii)
   | T_LET    ii -> T_LET (f ii)
   | T_YIELD  ii -> T_YIELD (f ii)
+  | T_ASYNC  ii -> T_ASYNC (f ii)
+  | T_AWAIT  ii -> T_AWAIT (f ii)
   | T_SUPER  ii -> T_SUPER (f ii)
   | T_IMPORT ii -> T_IMPORT (f ii) 
   | T_EXPORT ii -> T_EXPORT (f ii)

@@ -71,7 +71,7 @@ let fake_tok s = {
  T_SWITCH T_CASE T_DEFAULT 
  T_RETURN 
  T_THROW T_TRY T_CATCH T_FINALLY
- T_YIELD
+ T_YIELD T_ASYNC T_AWAIT
  T_NEW T_IN T_INSTANCEOF T_THIS T_SUPER T_WITH  
  T_NULL T_FALSE T_TRUE
  T_CLASS T_INTERFACE T_EXTENDS T_STATIC 
@@ -994,7 +994,7 @@ ident_keyword_bis:
  | T_SWITCH { $1 } | T_CASE { $1 } | T_DEFAULT { $1 }
  | T_RETURN { $1 }
  | T_THROW { $1 } | T_TRY { $1 } | T_CATCH { $1 } | T_FINALLY { $1 }
- | T_YIELD { $1 }
+ | T_YIELD { $1 } | T_ASYNC { $1 } | T_AWAIT { $1 }
  | T_NEW { $1 } | T_IN { $1 } | T_INSTANCEOF { $1 }
  | T_THIS { $1 } | T_SUPER { $1 }
  | T_WITH { $1 }

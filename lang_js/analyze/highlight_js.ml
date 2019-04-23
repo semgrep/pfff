@@ -183,7 +183,10 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
       -> tag ii KeywordObject
     | T.T_THROW (ii) | T.T_TRY (ii) | T.T_CATCH (ii) | T.T_FINALLY (ii) ->
         tag ii KeywordExn
-    | T.T_YIELD ii -> tag ii Keyword
+    | T.T_YIELD ii
+    | T.T_ASYNC ii
+    | T.T_AWAIT ii 
+      -> tag ii Keyword
     | T.T_TYPEOF (ii) -> tag ii Keyword
 
     | T.T_CLASS ii | T.T_EXTENDS ii  -> tag ii KeywordObject
