@@ -29,10 +29,11 @@ module PI = Parse_info
  *  - http://en.wikipedia.org/wiki/ECMAScript
  *
  * This AST (and parser) supports most ES6 features:
- *  - classes
+ *  - classes and interfaces
  *  - arrows (short lambdas)
- *  - trailing commas
+ *  - optional trailing commas
  *  - variable number of parameters, e.g. 'function foo(...args)'
+ *    and TODO append of parameters with [ ...arr, ]
  *  - interpolated strings, see
  *    https://gist.github.com/lukehoban/9303054#template-strings
  *  - import/export TODO

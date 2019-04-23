@@ -1,10 +1,16 @@
 # -*- org -*-
 
-* 0.36 (Q1 2019) (new OPAM release)
+* 0.37 (Q2 2019) (new OPAM release)
+
+** javascript
+
+*** handle more ES6 features and more code
 
 ** TODO new release on OPAM
 (I need some of the new code from pfff in efuns,
 which I want to release in OPAM)
+
+* 0.36 (Q1 2019) 
 
 ** ocaml
 

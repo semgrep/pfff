@@ -19,6 +19,7 @@
  * macros, itself extracted from the official ECMAscript specification at:
  * http://www.ecma-international.org/publications/standards/ecma-262.htm
  *
+ * See also https://en.wikipedia.org/wiki/JavaScript_syntax
  *)
 open Common
 
@@ -980,19 +981,42 @@ member_expression_no_statement:
 identifier:
  | T_IDENTIFIER { $1 }
 
+/*(*alt: use the _last_non_whitespace_like_token trick and look if
+   * previous token was a period to return a T_IDENTFIER
+   *)*/
+ident_keyword: ident_keyword_bis { PI.str_of_info $1, $1 }
+
+ident_keyword_bis:
+ | T_FUNCTION { $1 } | T_CONST { $1 } | T_VAR { $1 } | T_LET { $1 }
+ | T_IF { $1 } | T_ELSE { $1 }
+ | T_WHILE { $1 } | T_FOR { $1 } | T_DO { $1 }
+ | T_CONTINUE { $1 } | T_BREAK { $1 }
+ | T_SWITCH { $1 } | T_CASE { $1 } | T_DEFAULT { $1 }
+ | T_RETURN { $1 }
+ | T_THROW { $1 } | T_TRY { $1 } | T_CATCH { $1 } | T_FINALLY { $1 }
+ | T_YIELD { $1 }
+ | T_NEW { $1 } | T_IN { $1 } | T_INSTANCEOF { $1 }
+ | T_THIS { $1 } | T_SUPER { $1 }
+ | T_WITH { $1 }
+ | T_NULL { $1 }
+ | T_FALSE { $1 } | T_TRUE { $1 }
+ | T_CLASS { $1 } | T_INTERFACE { $1 } | T_EXTENDS { $1 } | T_STATIC { $1 }
+ | T_IMPORT { $1 } | T_EXPORT { $1 }
+
+
 field_name:
  | T_IDENTIFIER { $1 }
- | T_CLASS { "class", $1 }
+ | ident_keyword { $1 }
 
 method_name:
  | T_IDENTIFIER { $1 }
- | T_DEFAULT { "default", $1 }
+ | ident_keyword { $1 }
 
 property_name:
  | T_IDENTIFIER    { PN_String $1 }
  | string_literal  { PN_String $1 }
  | numeric_literal { PN_Num $1 }
- | T_CLASS         { PN_String ("class", $1) }
+ | ident_keyword   { PN_String $1 }
 
 /*(*************************************************************************)*/
 /*(*1 xxx_opt, xxx_list *)*/
