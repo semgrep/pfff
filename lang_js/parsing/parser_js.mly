@@ -19,8 +19,6 @@
  * macros, itself extracted from the official ECMAscript specification at:
  * http://www.ecma-international.org/publications/standards/ecma-262.htm
  *
- * See also http://en.wikipedia.org/wiki/ECMAScript_syntax
- *
  *)
 open Common
 
@@ -43,8 +41,11 @@ let fake_tok s = {
 /*(*1 Tokens *)*/
 /*(*************************************************************************)*/
 
+%token <Ast_js.tok> TUnknown  /*(* unrecognized token *)*/
+%token <Ast_js.tok> EOF
+
 /*(*-----------------------------------------*)*/
-/*(*2 The comment tokens *)*/
+/*(*2 The space/comment tokens *)*/
 /*(*-----------------------------------------*)*/
 /*(* coupling: Token_helpers.is_real_comment *)*/
 %token <Ast_js.tok> TCommentSpace TCommentNewline   TComment
@@ -59,7 +60,9 @@ let fake_tok s = {
 %token<string * Ast_js.tok> T_STRING T_ENCAPSED_STRING
 %token<string * Ast_js.tok> T_REGEX
 
-/*(* keywords tokens *)*/
+/*(*-----------------------------------------*)*/
+/*(*2 Keyword tokens *)*/
+/*(*-----------------------------------------*)*/
 %token <Ast_js.tok>
  T_FUNCTION T_CONST T_VAR T_LET
  T_IF T_ELSE
@@ -73,9 +76,9 @@ let fake_tok s = {
  T_CLASS T_INTERFACE T_EXTENDS T_STATIC 
  T_IMPORT T_EXPORT
 
-%token <Ast_js.tok> 
-
-%token <Ast_js.tok> 
+/*(*-----------------------------------------*)*/
+/*(*2 Punctuation tokens *)*/
+/*(*-----------------------------------------*)*/
 
 /*(* syntax *)*/
 %token <Ast_js.tok>
@@ -126,11 +129,6 @@ let fake_tok s = {
 /*(*-----------------------------------------*)*/
 
 %token <Ast_js.tok> T_VIRTUAL_SEMICOLON
-
-/*(* classic *)*/
-%token <Ast_js.tok> TUnknown
-%token <Ast_js.tok> EOF
-
 
 /*(*************************************************************************)*/
 /*(*1 Priorities *)*/
@@ -458,7 +456,7 @@ interface_declaration: T_INTERFACE binding_identifier generics_opt type_
      }
    }
 /*(*************************************************************************)*/
-/*(*1 Type *)*/
+/*(*1 Types *)*/
 /*(*************************************************************************)*/
 
 annotation: T_COLON type_ { TAnnot($1, $2) }
@@ -563,7 +561,7 @@ type_expression:
  | type_reference type_arguments { ($1, Some $2) }
 
 /*(*************************************************************************)*/
-/*(*1 Expression *)*/
+/*(*1 Expressions *)*/
 /*(*************************************************************************)*/
 
 expression:

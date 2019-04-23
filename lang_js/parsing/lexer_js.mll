@@ -139,6 +139,7 @@ let keyword_table = Common.hash_of_list [
 type state_mode =
   (* Regular Javascript mode *)
   | ST_IN_CODE
+
   (* started with <xx when preceded by a certain token (e.g. 'return' '<xx'),
    * finished by '>' by transiting to ST_IN_XHP_TEXT, or really finished
    * by '/>'.
@@ -146,6 +147,7 @@ type state_mode =
   | ST_IN_XHP_TAG of string (* the current tag, e,g, "x_frag" *)
   (* started with the '>' of an opening tag, finished when '</x>' *)
   | ST_IN_XHP_TEXT of string (* the current tag *)
+
   (* started with "`", finished with "`" *)
   | ST_IN_BACKQUOTE
 
@@ -252,26 +254,22 @@ rule initial = parse
     T_RCURLY (tokinfo lexbuf);
   }
 
-  | "(" { T_LPAREN (tokinfo lexbuf) }
-  | ")" { T_RPAREN (tokinfo lexbuf) }
+  | "(" { T_LPAREN (tokinfo lexbuf) } | ")" { T_RPAREN (tokinfo lexbuf) }
 
-  | "[" { T_LBRACKET (tokinfo lexbuf) }
-  | "]" { T_RBRACKET (tokinfo lexbuf) }
+  | "[" { T_LBRACKET (tokinfo lexbuf) } | "]" { T_RBRACKET (tokinfo lexbuf) }
   | "." { T_PERIOD (tokinfo lexbuf) }
   | ";" { T_SEMICOLON (tokinfo lexbuf) }
   | "," { T_COMMA (tokinfo lexbuf) }
   | ":" { T_COLON (tokinfo lexbuf) }
   | "?" { T_PLING (tokinfo lexbuf) }
-  | "&&" { T_AND (tokinfo lexbuf) }
-  | "||" { T_OR (tokinfo lexbuf) }
+  | "&&" { T_AND (tokinfo lexbuf) } | "||" { T_OR (tokinfo lexbuf) }
   | "===" { T_STRICT_EQUAL (tokinfo lexbuf) }
   | "!==" { T_STRICT_NOT_EQUAL (tokinfo lexbuf) }
   | "<=" { T_LESS_THAN_EQUAL (tokinfo lexbuf) }
   | ">=" { T_GREATER_THAN_EQUAL (tokinfo lexbuf) }
   | "==" { T_EQUAL (tokinfo lexbuf) }
   | "!=" { T_NOT_EQUAL (tokinfo lexbuf) }
-  | "++" { T_INCR (tokinfo lexbuf) }
-  | "--" { T_DECR (tokinfo lexbuf) }
+  | "++" { T_INCR (tokinfo lexbuf) } | "--" { T_DECR (tokinfo lexbuf) }
   | "<<=" { T_LSHIFT_ASSIGN (tokinfo lexbuf) }
   | "<<" { T_LSHIFT (tokinfo lexbuf) }
   | ">>=" { T_RSHIFT_ASSIGN (tokinfo lexbuf) }
@@ -303,7 +301,7 @@ rule initial = parse
 
   (* arrows (aka short lambdas) *)
   | "=>" { T_ARROW (tokinfo lexbuf) }
-  (* variable number of parameters, less: enforce directly attached to ident? *)
+  (* variable number of parameters, less: enforce directly attached to ident?*)
   | "..." { T_DOTS (tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)

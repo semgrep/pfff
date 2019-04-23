@@ -22,25 +22,27 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Abstract Syntax Tree for Javascript.
  * 
- * Specification: http://www.ecmascript.org/ and the ECMA-262 document.
- * See also http://en.wikipedia.org/wiki/ECMAScript
+ * Specification: 
+ *  http://www.ecma-international.org/publications/standards/Ecma-262.htm
+ * See also 
+ *  - https://en.wikipedia.org/wiki/JavaScript
+ *  - http://en.wikipedia.org/wiki/ECMAScript
  *
  * This AST (and parser) supports most ES6 features:
- *  - ES6 classes, see
- *   http://people.mozilla.org/~jorendorff/es6-draft.html#sec-class-definitions
- *  - arrows (short lambdas), see
- *    https://people.mozilla.org/~jorendorff/es6-draft.html#sec-arrow-function-definitions
+ *  - classes
+ *  - arrows (short lambdas)
  *  - trailing commas
  *  - variable number of parameters, e.g. 'function foo(...args)'
  *  - interpolated strings, see
  *    https://gist.github.com/lukehoban/9303054#template-strings
  *  - import/export TODO
- *  - let/const TODO
+ *  - let TODO
+ *  - const TODO
  * See http://es6-features.org/ for explanations of those recent features
  * (and also how they can be converted to ES5 code)
  *
  * This AST (and parser) supports a few more extensions:
- *  - JSX: mostly imitating what was done for XHP in lang_php/,
+ *  - JSX: I am mostly imitating what I have done for XHP in lang_php/,
  *    but with tags possibly containing ':' in their names
  *  - type annotations a la Flow and TypeScript, see
  *    http://en.wikipedia.org/wiki/TypeScript
@@ -50,9 +52,10 @@ module PI = Parse_info
  *
  * related work:
  *  - http://esprima.org/, js parser in js
+ *  - flow-lang.org, contains now its own parser (it started with this one)
  *  - http://marijnhaverbeke.nl/parse-js/, js parser in common lisp
  *    (which has been since ported to javascript by nodejs people)
- *  - jslint
+ *  - jslint, eslint
  *)
 
 (*****************************************************************************)

@@ -130,7 +130,7 @@ module PI = Parse_info
 %left T_IDENT
 %right T_ELLIPSIS
 /*(*-----------------------------------------*)*/
-/*(*2 Symbol tokens *)*/
+/*(*2 Punctuation tokens *)*/
 /*(*-----------------------------------------*)*/
 
 %token <Ast_php.info>
