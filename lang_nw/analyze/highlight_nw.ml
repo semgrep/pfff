@@ -76,13 +76,13 @@ let visit_program ~tag_hook _prefs (trees, toks) =
         let s = Parse_info.str_of_info ii in
         let s5 =  Parse_info.str_of_info ii5 in
         (match () with
-        | _ when s =~ ".*\\*\\*\\*\\*" && s5 =~ ".*\\*\\*\\*\\*" ->
+        | _ when s =~ "^%\\*\\*\\*\\*" && s5 =~ "^%\\*\\*\\*\\*" ->
           tag ii CommentEstet; tag ii5 CommentEstet;
           tag ii3 CommentSection0
-        | _ when s =~ ".*------" && s5 =~ ".*------" ->
+        | _ when s =~ "^%------" && s5 =~ "^%------" ->
           tag ii CommentEstet; tag ii5 CommentEstet;
           tag ii3 CommentSection1
-        | _ when s =~ ".*####" && s5 =~ ".*####" ->
+        | _ when s =~ "^%####" && s5 =~ "^%####" ->
           tag ii CommentEstet; tag ii5 CommentEstet;
           tag ii3 CommentSection2
         | _ ->

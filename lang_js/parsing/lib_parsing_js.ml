@@ -21,7 +21,7 @@ module FT = File_type
 (* Filemames *)
 (*****************************************************************************)
 
-(* copy paste of php code, not sure relevant for javascript *)
+(* copy paste of php code, not sure this is relevant for Javascript *)
 let is_js_script file = 
   Common.with_open_infile file (fun chan ->
     try 

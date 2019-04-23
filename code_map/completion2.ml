@@ -31,6 +31,9 @@ module HC = Highlight_code
  * Gtk (and lablgtk) is very fragile; if you change what looks like
  * an innocent line, you might suddenly get performance regressions
  * or new Gtk warnings at runtime. So take care when changing this file.
+ *
+ * todo:
+ *  - http://jeremymikkola.com/posts/2019_03_19_rules_for_autocomplete.html
  *)
 
 (*****************************************************************************)

@@ -28,6 +28,8 @@ module Flag = Flag_visual
 module M = Model2
 module Ctl = Controller2
 
+let debug = ref false
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -110,7 +112,8 @@ let lazy_paint user_rect dw model () =
     | [] -> ()
     | x::xs ->
         Ctl.current_rects_to_draw := xs;
-        pr2 (spf "Drawing: %s" (x.T.tr_label));
+        if !debug
+        then pr2 (spf "Drawing: %s" (x.T.tr_label));
         paint_content_maybe_rect ~user_rect dw model x;
   done;
   !Ctl._refresh_da ();
