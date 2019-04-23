@@ -3,18 +3,25 @@
 * 0.36 (Q1 2019) (new OPAM release)
 
 ** TODO new release on OPAM
-(I need some of the code in pfff in efuns which I want to release in OPAM)
+(I need some of the new code from pfff in efuns,
+which I want to release in OPAM)
 
 ** ocaml
 
-*** update to ocaml 4.07 graph_code_cmt.ml
+*** update graph_code_cmt.ml to handle ocaml 4.07 (partial)
+
+** codemap
+
+*** fix the completion dialog box and colorize entities like in the code
 
 ** internals
 
-*** remove battery_included, rely exclusively on OPAM now
+*** reduced the number of lookup failures when building the codegraph for pfff
+
+*** remove battery_included, rely on OPAM now
 
 *** switch to cairo2
-cairo was not working anymore with opam 2.0.2 or ocaml > 4.06
+(cairo was not working anymore with opam 2.0.2 or ocaml > 4.06)
 
 * -----------------------------------------------------------
 
@@ -40,7 +47,7 @@ them in codemap and efuns
 
 *** factorized make install-libs
 
-* 0.34 (Q2 2018) (codegraph_build, going towards OPAM friendly)
+* 0.34 (Q2 2018) (codegraph_build, going towards being OPAM friendly)
 
 ** introduce codegraph_build
 extracted from codegraph, to avoid dependencies to GUI
@@ -52,12 +59,11 @@ without having to know ocaml
 
 *** code reorg to depend less on battery included libs and more on OPAM libs
 
-*** adapt to ocaml 4.02.3, especially graph code for .cmt files
+*** adapted to ocaml 4.02.3, especially graph code for .cmt files
 
 * -----------------------------------------------------------
 
 * 0.33 (Q3 2017) (split commons)
-extra: giogio
 
 ** internals
 
@@ -73,12 +79,10 @@ motivated by magicator?
 * -----------------------------------------------------------
 
 * 0.32 (Q2 2015) ((principia parenthesis))
-extra: a lot
 
 ** better coloring for noweb files, give priority to sections over chunks
 
 * 0.31 (Q1 2015) ((principia parenthesis))
-extra: a lot
 
 ** lpizer (code now moved in syncweb)
 
@@ -87,7 +91,6 @@ extra: a lot
 * -----------------------------------------------------------
 
 * 0.30 (Q4 2014) ((principia parenthesis), lpizer)
-extra: a lot
 
 ** introduce lpizer
 
@@ -157,7 +160,6 @@ for graph_code_clang and also graph_code_c
 
 
 * 0.28 (Q2 2014) ((kernel.tex.nw parenthesis))
-extra: kernel.tex.nw
 
 ** codemap
 
@@ -218,7 +220,6 @@ for implicit fields
 use of spatch for ocaml :)
 
 * 0.27 (Q1 2014) ("hypertext" codemap, generalized scheck)
-extra: plan9, kencc
 
 ** codemap
 
@@ -304,7 +305,6 @@ skip list
 * -----------------------------------------------------------
 
 * 0.26 (Q4 2013) (basic OPAM package)
-extra: zamcov part2
 
 ** internal:
 
@@ -628,8 +628,6 @@ complete refactoring of the parser. Far less heuristics techniques.
 Closer to what was described in the CC'09 paper.
 
 * 0.15 (Q1 2011) (html/css parsers, ocsigen try)
-extra: mmm and meh (related to html/css parser)
-extra: zamcov part1 (I was working on php coverage for fb using hphp)
 
 ** introduce web-based source code navigator a la LXR using ocsigen
 first play with ocsigen.
@@ -647,7 +645,6 @@ update: not used
 * -----------------------------------------------------------
 
 * 0.14 (Q4 2010) (layers, spatch php, more language highlighters)
-extra: c-- (and first use of ocamldoc -dotall to visualize soft archi)
 
 ** codemap
 
@@ -872,10 +869,10 @@ and moved code from facebook/ to analyze_php/
 *** started to use OUnit.ml !
 unit tests for parsing, analysis, deadcode, callgraph, xdebug
 
-** first work on web gui
-extract and modularize php highlighting logic from gtk gui.
+** first work on web GUI
+extract and modularize php highlighting logic from gtk GUI.
 
-started integrate treemap and web gui.
+started integrate treemap and web GUI.
 
 ** first work on thrift interface to pfff services
 used by web ui of acrichton
@@ -998,8 +995,8 @@ deadcode analysis v1
 
 * 0.1
 
-** dead: introducing PHP gui (with ocamlgtk/)
-update: superseded by codemap, a fancy gui using cairo and gtk
+** dead: introducing PHP GUI (with ocamlgtk/)
+update: superseded by codemap, a fancy GUI using cairo and gtk
 
 * beta
 
