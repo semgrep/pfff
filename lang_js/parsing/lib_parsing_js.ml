@@ -37,6 +37,7 @@ let find_source_files_of_dir_or_files ?(include_scripts=true)xs =
   Common.files_of_dir_or_files_no_vcs_nofilter xs 
   +> List.filter (fun filename ->
     match FT.file_type_of_file filename with
+    (* less: could also consider Typescript files *)
     | FT.PL (FT.Web FT.Js) -> true
     | _ -> 
       if include_scripts then is_js_script filename else false

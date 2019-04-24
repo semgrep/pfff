@@ -28,9 +28,6 @@ let is_comment = function
   | TComment _ | TCommentSpace _ | TCommentNewline _ -> true
   | _ -> false
 
-let is_just_comment = function
-  | TComment _ -> true
-  | _ -> false
 
 let token_kind_of_tok t =
   match t with

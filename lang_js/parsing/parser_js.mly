@@ -48,7 +48,7 @@ let fake_tok s = {
 /*(*-----------------------------------------*)*/
 /*(*2 The space/comment tokens *)*/
 /*(*-----------------------------------------*)*/
-/*(* coupling: Token_helpers.is_real_comment *)*/
+/*(* coupling: Token_helpers.is_comment *)*/
 %token <Ast_js.tok> TCommentSpace TCommentNewline   TComment
 
 /*(*-----------------------------------------*)*/
@@ -76,6 +76,8 @@ let fake_tok s = {
  T_NULL T_FALSE T_TRUE
  T_CLASS T_INTERFACE T_EXTENDS T_STATIC 
  T_IMPORT T_EXPORT
+ T_IN T_INSTANCEOF T_TYPEOF
+ T_DELETE  T_VOID
 
 /*(*-----------------------------------------*)*/
 /*(*2 Punctuation tokens *)*/
@@ -86,32 +88,27 @@ let fake_tok s = {
  T_LCURLY T_RCURLY
  T_LPAREN T_RPAREN
  T_LBRACKET T_RBRACKET
- T_SEMICOLON
- T_COMMA
- T_PERIOD
- T_ARROW T_DOTS
+ T_SEMICOLON T_COMMA T_PERIOD T_COLON
+ T_PLING 
+ T_ARROW 
+ T_DOTS
  T_BACKQUOTE T_DOLLARCURLY
+
 
 /*(* operators *)*/
 %token <Ast_js.tok>
+ T_OR T_AND
+ T_BIT_OR T_BIT_XOR T_BIT_AND
+ T_PLUS T_MINUS
+ T_DIV T_MULT T_MOD
+ T_NOT T_BIT_NOT 
  T_RSHIFT3_ASSIGN T_RSHIFT_ASSIGN T_LSHIFT_ASSIGN
  T_BIT_XOR_ASSIGN T_BIT_OR_ASSIGN T_BIT_AND_ASSIGN T_MOD_ASSIGN T_DIV_ASSIGN
  T_MULT_ASSIGN T_MINUS_ASSIGN T_PLUS_ASSIGN T_ASSIGN
-
-%token <Ast_js.tok>
- T_PLING T_COLON
- T_OR
- T_AND
- T_BIT_OR
- T_BIT_XOR
- T_BIT_AND
  T_EQUAL T_NOT_EQUAL T_STRICT_EQUAL T_STRICT_NOT_EQUAL
  T_LESS_THAN_EQUAL T_GREATER_THAN_EQUAL T_LESS_THAN T_GREATER_THAN
- T_IN T_INSTANCEOF
  T_LSHIFT T_RSHIFT T_RSHIFT3
- T_PLUS T_MINUS
- T_DIV T_MULT T_MOD
- T_NOT T_BIT_NOT T_INCR T_DECR T_DELETE T_TYPEOF T_VOID
+ T_INCR T_DECR 
 
 /*(*-----------------------------------------*)*/
 /*(*2 XHP tokens *)*/
@@ -180,13 +177,17 @@ main: program EOF { $1 }
 
 program: statement_list { $1 }
 
+statement_list:
+ | source_element { [$1] }
+ | statement_list source_element { $1 @ [$2] }
+
 source_element:
- | statement            { St $1 }
+ | statement   { St $1 }
  | declaration { $1 }
 
 declaration:
- | function_declaration { FunDecl $1 }
- | class_declaration { ClassDecl $1 }
+ | function_declaration  { FunDecl $1 }
+ | class_declaration     { ClassDecl $1 }
  | interface_declaration { InterfaceDecl $1 }
 
 /*(*************************************************************************)*/
@@ -217,7 +218,7 @@ block:
 
 variable_statement:
  | T_VAR variable_declaration_list semicolon  { Variable ($1, $2, $3) }
- /*(* pad: not in original grammar *)*/
+ /*(* es6: *)*/
  | T_CONST variable_declaration_list semicolon { Const ($1, $2, $3) }
 
 variable_declaration:
@@ -226,6 +227,7 @@ variable_declaration:
 
 initializeur:
  | T_ASSIGN assignment_expression { $1, $2 }
+
 
 empty_statement:
  | semicolon { Nop $1 }
@@ -414,7 +416,7 @@ class_declaration: T_CLASS binding_identifier generics_opt class_tail
      }
    }
 
-class_tail: class_heritage_opt T_LCURLY class_body_opt T_RCURLY { $1,($2,$3,$4)}
+class_tail: class_heritage_opt T_LCURLY class_body_opt T_RCURLY {$1,($2,$3,$4)}
 
 /*(* extends arguments can be any expression according to ES6 *)*/
 /*(* however, this causes ambiguities with type arguments a la TypeScript *)*/
@@ -426,9 +428,9 @@ class_body: class_element_list { $1 }
 
 class_element:
  | identifier annotation semicolon { Field ($1, $2, $3) }
- | method_definition          { Method (None, $1) }
- | T_STATIC method_definition { Method (Some $1, $2) }
- | semicolon { ClassExtraSemiColon $1 }
+ | method_definition               { Method (None, $1) }
+ | T_STATIC method_definition      { Method (Some $1, $2) }
+ | semicolon                       { ClassExtraSemiColon $1 }
 
 binding_identifier: identifier { $1 }
 
@@ -671,15 +673,18 @@ primary_expression_no_statement:
  | boolean_literal { e(L(Bool $1)) }
  | numeric_literal { e(L(Num $1)) }
  | string_literal  { e(L(String $1)) }
+
  /*(* marcel: this isn't an expansion of literal in ECMA-262... mistake? *)*/
  | regex_literal                { e(L(Regexp $1)) }
  | array_literal                { e($1) }
+
  | T_LPAREN expression T_RPAREN { e(Paren ($1, $2, $3)) }
 
  /*(* xhp: do not put in 'expr', otherwise can't have xhp
     * in function arguments
     *)*/
  | xhp_html { XhpHtml $1 }
+
  /*(* templated string (aka interpolated strings) *)*/
  | T_BACKQUOTE encaps_list_opt T_BACKQUOTE
      { Encaps (None, $1, $2, $3) }
@@ -757,15 +762,13 @@ arguments:
  | T_LPAREN argument_list T_RPAREN { ($1, $2, $3) }
 
 argument_list:
-/*(* ES6 spread operator:
-     https://people.mozilla.org/~jorendorff/es6-draft.html#sec-argument-lists-runtime-semantics-argumentlistevaluation
-  *)*/
- | T_DOTS assignment_expression
-     { [Left (uop U_spread $1 $2)] }
  | assignment_expression
      { [Left $1] }
  | assignment_expression T_COMMA argument_list
      { (Left $1)::(Right $2)::$3 }
+/*(* es6: spread operator: *)*/
+ | T_DOTS assignment_expression
+     { [Left (uop U_spread $1 $2)] }
 
 /*(*----------------------------*)*/
 /*(*2 XHP embeded html *)*/
@@ -1032,9 +1035,6 @@ elison:
 
 
 
-statement_list:
- | source_element { [$1] }
- | statement_list source_element { $1 @ [$2] }
 
 class_element_list:
  | class_element { [$1] }

@@ -29,16 +29,19 @@ module PI = Parse_info
  *  - http://en.wikipedia.org/wiki/ECMAScript
  *
  * This AST (and parser) supports most ES6 features:
- *  - classes and interfaces
- *  - arrows (short lambdas)
+ *  - classes
+ *  - arrows (a.k.a short lambdas)
  *  - optional trailing commas
  *  - variable number of parameters, e.g. 'function foo(...args)'
  *    and TODO append of parameters with [ ...arr, ]
- *  - interpolated strings, see
+ *  - template strings (a.k.a interpolated strings), see
  *    https://gist.github.com/lukehoban/9303054#template-strings
  *  - import/export TODO
  *  - let TODO
  *  - const TODO
+ *  - destructuring patterns TODO
+ *  - generators (yield, async, await) TODO
+ *
  * See http://es6-features.org/ for explanations of those recent features
  * (and also how they can be converted to ES5 code)
  *
@@ -47,15 +50,16 @@ module PI = Parse_info
  *    but with tags possibly containing ':' in their names
  *  - type annotations a la Flow and TypeScript, see
  *    http://en.wikipedia.org/wiki/TypeScript
+ *  - interfaces a la flow and Typescript
  *
  * less:
  *  - imitate https://developer.mozilla.org/en-US/docs/SpiderMonkey/Parser_API
  *
  * related work:
- *  - http://esprima.org/, js parser in js
+ *  - http://esprima.org/, JS parser in JS
  *  - flow-lang.org, contains now its own parser (it started with this one)
- *  - http://marijnhaverbeke.nl/parse-js/, js parser in common lisp
- *    (which has been since ported to javascript by nodejs people)
+ *  - http://marijnhaverbeke.nl/parse-js/, JS parser in Common Lisp
+ *    (which has been since ported to Javascript by the nodejs people)
  *  - jslint, eslint
  *)
 
@@ -127,6 +131,7 @@ type expr =
    (* es6: arrows, a.k.a short lambdas *)
    | Arrow of arrow_func
 
+   (* es6: template (interpolated) strings *)
    | Encaps of name option * tok (* ` *) * encaps list * tok (* ` *)
    (* facebook-ext: *)
    | XhpHtml of xhp_html
@@ -137,47 +142,49 @@ type expr =
      and litteral =
        | Bool of bool wrap
        | Num of string wrap
-       (* todo?  | Float of float | Int of int32 *)
+       (* less:  | Float of float | Int of int32 *)
 
        (* see also XhpText, EncapsString and XhpAttrString *)
        | String of string wrap
        | Regexp of string wrap (* todo? should split the flags *)
 
-       | Null of tok
        (* There is also Undefined, but this is not considered a reserved
-        * keyword. It is probably treated as a builtin instead.
-        * (great language: have not just 1 billion dollar mistake but 2!
+        * keyword. It is treated as a builtin instead.
+        * (great language: have not just 1 billion dollar mistake but 2!)
         *)
+       | Null of tok
 
      and unop =
        | U_new | U_delete
-       | U_void | U_typeof
-       | U_bitnot
+       | U_typeof
+       | U_void 
        | U_pre_increment  | U_pre_decrement
        | U_post_increment | U_post_decrement
-       | U_plus | U_minus | U_not
+       | U_plus | U_minus | U_not | U_bitnot
+       (* es6: spread operator, ...xxx *)
        | U_spread
 
      and binop =
        | B_instanceof  | B_in
 
-       | B_mul  | B_div  | B_mod  | B_add  | B_sub
+       | B_add  | B_sub
+       | B_mul  | B_div  | B_mod  
        | B_le  | B_ge  | B_lt  | B_gt
        | B_lsr  | B_asr  | B_lsl
-       | B_equal
-       | B_notequal  | B_physequal  | B_physnotequal
+       | B_equal | B_notequal  | B_physequal  | B_physnotequal
        | B_bitand  | B_bitor  | B_bitxor
        | B_and  | B_or
 
      and property_name =
        | PN_String of name
-       | PN_Num of string (* todo? PN_Float of float | PN_Int of int32 *) wrap
+       | PN_Num of string wrap
 
      and assignment_operator =
        | A_eq
-       | A_mul  | A_div  | A_mod  | A_add  | A_sub
+       | A_add  | A_sub
+       | A_mul  | A_div  | A_mod  
        | A_lsl  | A_lsr  | A_asr
-       | A_and  | A_xor  | A_or
+       | A_and  | A_or | A_xor  
 
    and property =
        | P_field of property_name * tok (* : *) * expr
@@ -199,7 +206,7 @@ type expr =
      | XhpExpr of expr option brace
      | XhpNested of xhp_html
 
- (* es6: template strings, a.k.a. interpolated/encapsulated strings *)
+ (* es6: template strings (a.k.a. interpolated/encapsulated strings) *)
  and encaps =
  | EncapsString of string wrap
  (* could use 'expr brace', but it's not a regular brace for { *)
@@ -319,10 +326,10 @@ and func_decl = {
   | DSome of tok (* = *) * expr
 
 (* es6: arrows.
- * less: could factorize with func_def, but this will require many
- * elements to be fake token, e.g. the parenthesis for parameters
- * when have only one parameter, the brace and semicolon when the body
- * is a simple expression.
+ * note: we could factorize with func_def, but this would require many
+ * elements to become fake tokens, e.g. the parenthesis for parameters
+ * when have only one parameter, the braces and semicolon when the body
+ * is a simple expression, etc. so simpler to have a a different type.
  *)
 and arrow_func = {
   a_params: arrow_params;
@@ -338,7 +345,7 @@ and arrow_func = {
  | ABody of toplevel list brace
 
 (* ------------------------------------------------------------------------- *)
-(* Variables definition *)
+(* Variable definition *)
 (* ------------------------------------------------------------------------- *)
 and variable_declaration = {
   v_name: name;
@@ -361,11 +368,13 @@ and class_decl = {
   and class_stmt =
   | Method of tok option (* static *) * func_decl
   | Field of name * annotation * sc
+  (* unparser: *)
   | ClassExtraSemiColon of sc
 
 (* ------------------------------------------------------------------------- *)
 (* Interface definition *)
 (* ------------------------------------------------------------------------- *)
+(* typescript-ext: not in regular JS *)
 and interface_decl = {
   i_tok: tok;
   i_name: name;
@@ -381,6 +390,7 @@ and toplevel =
 
   | FunDecl of func_decl
   | ClassDecl of class_decl
+
   | InterfaceDecl of interface_decl
 
  and program = toplevel list
@@ -396,7 +406,6 @@ type any =
   | Func of func_decl
   | Toplevel of toplevel
   | Program of program
-
  (* with tarzan *)
 
 (*****************************************************************************)
