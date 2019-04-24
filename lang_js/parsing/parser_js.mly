@@ -1092,9 +1092,11 @@ member_expression_no_statement:
 /*(*************************************************************************)*/
 identifier:
  | T_IDENTIFIER { $1 }
- /*(* add here keywords which are not considered reserveds by ECMA *)*/
- | T_FROM { PI.str_of_info $1, $1 }
- | T_AS   { PI.str_of_info $1, $1 }
+ | ident_semi_keyword { PI.str_of_info $1, $1 }
+
+/*(* add here keywords which are not considered reserveds by ECMA *)*/
+ident_semi_keyword:
+ | T_FROM { $1 } | T_AS   { $1 }
 
 /*(*alt: use the _last_non_whitespace_like_token trick and look if
    * previous token was a period to return a T_IDENTFIER
