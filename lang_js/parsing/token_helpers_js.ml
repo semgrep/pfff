@@ -156,6 +156,7 @@ let info_of_tok = function
   | T_SUPER  ii -> ii
   | T_IMPORT ii -> ii 
   | T_EXPORT ii -> ii
+  | T_FROM ii -> ii
 
 (* generated via emacs macro from type definition in parse_js.ml *)
 let visitor_info_of_tok f = function
@@ -270,6 +271,7 @@ let visitor_info_of_tok f = function
   | T_SUPER  ii -> T_SUPER (f ii)
   | T_IMPORT ii -> T_IMPORT (f ii) 
   | T_EXPORT ii -> T_EXPORT (f ii)
+  | T_FROM ii -> T_FROM (f ii)
 
 (*****************************************************************************)
 (* Accessors *)

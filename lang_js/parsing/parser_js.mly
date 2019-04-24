@@ -65,6 +65,7 @@ let fake_tok s = {
 /*(*-----------------------------------------*)*/
 /*(*2 Keyword tokens *)*/
 /*(*-----------------------------------------*)*/
+/*(* coupling: if you add an element here, expand also ident_keyword_bis *)*/
 %token <Ast_js.tok>
  T_FUNCTION T_CONST T_VAR T_LET
  T_IF T_ELSE
@@ -76,7 +77,7 @@ let fake_tok s = {
  T_NEW T_IN T_INSTANCEOF T_THIS T_SUPER T_WITH  
  T_NULL T_FALSE T_TRUE
  T_CLASS T_INTERFACE T_EXTENDS T_STATIC 
- T_IMPORT T_EXPORT
+ T_IMPORT T_EXPORT T_FROM
  T_IN T_INSTANCEOF T_TYPEOF
  T_DELETE  T_VOID
 
@@ -178,12 +179,10 @@ main: program EOF { $1 }
 
 program: module_item_list { $1 }
 
+
 module_item:
  | item { It $1 }
-
-statement_list:
- | item { [$1] }
- | statement_list item { $1 @ [$2] }
+ | import_declaration { ImportTodo }
 
 item:
  | statement   { St $1 }
@@ -193,6 +192,25 @@ declaration:
  | function_declaration  { FunDecl $1 }
  | class_declaration     { ClassDecl $1 }
  | interface_declaration { InterfaceDecl $1 }
+
+/*(* item is also in statement_list, inside every blocks *)*/
+statement_list:
+ | item { [$1] }
+ | statement_list item { $1 @ [$2] }
+
+/*(*************************************************************************)*/
+/*(*1 Import/export *)*/
+/*(*************************************************************************)*/
+
+import_declaration: 
+ | T_IMPORT import_clause from_clause semicolon { }
+
+import_clause: binding_identifier { $1 }
+
+from_clause: T_FROM module_specifier { ($1, $2) }
+
+
+module_specifier: string_literal { $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Statement *)*/
@@ -483,20 +501,20 @@ type_:
 
 
 /*(* partial type annotations are not supported *)*/
-field_type: T_IDENTIFIER complex_annotation semicolon { ($1, $2, $3) }
+field_type: identifier complex_annotation semicolon { ($1, $2, $3) }
 
 field_type_list:
  | field_type { [$1] }
  | field_type_list field_type { $1 @ [$2] }
 
 /*(* partial type annotations are not supported *)*/
-param_type: T_IDENTIFIER complex_annotation
+param_type: identifier complex_annotation
   { (RequiredParam($1), $2) }
 
-optional_param_type: T_IDENTIFIER T_PLING complex_annotation
+optional_param_type: identifier T_PLING complex_annotation
   { (OptionalParam($1,$2), $3) }
 
-rest_param_type: T_DOTS T_IDENTIFIER complex_annotation
+rest_param_type: T_DOTS identifier complex_annotation
   { (RestParam($1,$2), $3) }
 
 param_type_list:
@@ -992,6 +1010,8 @@ member_expression_no_statement:
 /*(*************************************************************************)*/
 identifier:
  | T_IDENTIFIER { $1 }
+ /*(* add here keywords which are not considered reserveds by ECMA *)*/
+ | T_FROM { PI.str_of_info $1, $1 }
 
 /*(*alt: use the _last_non_whitespace_like_token trick and look if
    * previous token was a period to return a T_IDENTFIER
@@ -1013,7 +1033,7 @@ ident_keyword_bis:
  | T_NULL { $1 }
  | T_FALSE { $1 } | T_TRUE { $1 }
  | T_CLASS { $1 } | T_INTERFACE { $1 } | T_EXTENDS { $1 } | T_STATIC { $1 }
- | T_IMPORT { $1 } | T_EXPORT { $1 }
+ | T_IMPORT { $1 } | T_EXPORT { $1 } | T_FROM { $1 }
 
 
 field_name:
