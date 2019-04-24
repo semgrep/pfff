@@ -30,6 +30,7 @@ let bop op a b c = e(B(a, (op, b), c))
 let uop op a b = e(U((op,a), b))
 let mk_param x = { p_name = x; p_type = None; p_default = None; p_dots = None; }
 
+(* for missing closing > for generics *)
 let fake_tok s = {
   Parse_info.
   token = Parse_info.FakeTokStr (s, None);
@@ -659,6 +660,7 @@ member_expression:
  | member_expression T_PERIOD field_name              { e(Period ($1, $2, $3)) }
  | T_NEW member_expression arguments
      { e(Apply(uop U_new $1 $2, $3)) }
+
 
 primary_expression:
  | primary_expression_no_statement { $1 }
