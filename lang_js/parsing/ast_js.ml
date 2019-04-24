@@ -137,7 +137,10 @@ type expr =
    (* es6: arrows, a.k.a short lambdas *)
    | Arrow of arrow_func
 
-   (* es6: template (interpolated) strings *)
+   (* es6: template (interpolated) strings 
+    * less: you can get multiple EncapsString in encaps below; they
+    * are not flatten together, to simplify the lexer/parser.
+    *)
    | Encaps of name option * tok (* ` *) * encaps list * tok (* ` *)
    (* facebook-ext: *)
    | XhpHtml of xhp_html

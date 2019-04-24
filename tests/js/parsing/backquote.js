@@ -8,3 +8,10 @@ var name = "Bob", time = "today";
 var out = `Hello ${name}, how are you ${time}?`;
 
 var out = sanitize`Hello ${name}, how are you ${time}?`;
+
+const getTermLinkMarkdownBlock = termTitle => {
+  let anchor = util.getMarkDownAnchor(termTitle);
+  return `* [\`${termTitle}\`](#${anchor})` + '\n';
+};
+
+

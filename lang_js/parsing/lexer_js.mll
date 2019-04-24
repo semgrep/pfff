@@ -360,12 +360,15 @@ rule initial = parse
   | ("'"|'"') as quote {
       let info = tokinfo lexbuf in
       let buf = Buffer.create 127 in
+
       string_quote quote buf lexbuf;
+
       let s = Buffer.contents buf in
       let buf2 = Buffer.create 127 in
       Buffer.add_char buf2 quote;
       Buffer.add_string buf2 s;
       Buffer.add_char buf2 quote;
+
       (* s does not contain the enclosing "'" but the info does *)
       T_STRING (s, info +> PI.rewrap_str (Buffer.contents buf2))
     }
@@ -505,6 +508,9 @@ and string_quote q buf = parse
   | (_ as x) { Buffer.add_char buf x; string_quote q buf lexbuf }
   | eof      { error "WIERD end of file in quoted string" }
 
+(*****************************************************************************)
+(* Rule backquote *)
+(*****************************************************************************)
 
 and backquote = parse
   | "`" {
@@ -515,12 +521,17 @@ and backquote = parse
     push_mode ST_IN_CODE;
     T_DOLLARCURLY(tokinfo lexbuf)
   }
-  (* todo: what about escape \\ chars? can escape `? *)
-  | [^'`' '$']+ {
+  | [^'`' '$' '\\']+ {
       T_ENCAPSED_STRING(tok lexbuf, tokinfo lexbuf)
     }
   | "$" {
       T_ENCAPSED_STRING(tok lexbuf, tokinfo lexbuf)
+    }
+  | '\\' {
+      let buf = Buffer.create 127 in
+      let info = tokinfo lexbuf in
+      string_escape '`' buf lexbuf;
+      T_ENCAPSED_STRING(Buffer.contents buf, info)
     }
 
   | eof { EOF (tokinfo lexbuf +> PI.rewrap_str "") }
