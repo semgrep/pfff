@@ -77,8 +77,8 @@ let extract_complete_name_of_info ast =
     V.kstmt = (fun (k, _) st ->
       match st with
       (* var Foo = { ... } *)
-      | VarsDecl(_i_1, [Left { v_name = (class_name, info_class); v_type = _;
-          v_init = Some((_i_3, (Object(_body_object))))}], _scopt) ->
+      | VarsDecl(_i_1, [Left (VarClassic { v_name = (class_name, info_class); v_type = _;
+          v_init = Some((_i_3, (Object(_body_object))))})], _scopt) ->
        (* could restrict to only toplevel first column var declarations ? *)
 
           Hashtbl.add h info_class
@@ -89,11 +89,11 @@ let extract_complete_name_of_info ast =
             k st
           ))
       (* var Foo = (function() { ... })() *)
-      | VarsDecl(_i_1, [Left{ v_name = (class_name, info_class); v_type = _;
+      | VarsDecl(_i_1, [Left(VarClassic { v_name = (class_name, info_class); v_type = _;
          v_init = Some((_i_3,
                (Apply(
                   (Paren((_i_4, (Function(_body_func)), _i_11))),
-                 (_i_13, [], _i_14)))))}], _scopt) ->
+                 (_i_13, [], _i_14)))))})], _scopt) ->
 
           Hashtbl.add h info_class
             (E.Class, spf "Misc.%s" class_name);

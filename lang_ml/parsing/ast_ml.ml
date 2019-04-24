@@ -22,6 +22,7 @@ open Common
  * 
  * less: do an Abstract Syntax Tree as in ast_java.ml; need less CST
  * now that we use the fuzzy approach for sgrep and spatch?
+ * Keep just the Parse_info.info for the identifiers and literals.
  *)
 
 (*****************************************************************************)

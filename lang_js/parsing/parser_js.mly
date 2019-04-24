@@ -382,17 +382,18 @@ default_clause:
 /*(*1 Variable declaration *)*/
 /*(*************************************************************************)*/
 
+variable_statement:
+ | T_VAR variable_declaration_list semicolon  { VarsDecl ((Var, $1), $2, $3) }
+
 lexical_declaration:
  /*(* es6: *)*/
  | T_CONST variable_declaration_list semicolon { VarsDecl((Const, $1), $2,$3) }
  | T_LET variable_declaration_list semicolon { VarsDecl((Let, $1), $2,$3) }
 
-variable_statement:
- | T_VAR variable_declaration_list semicolon  { VarsDecl ((Var, $1), $2, $3) }
 
 variable_declaration:
  | identifier annotation_opt initializeur_opt
-     { { v_name = $1; v_type = $2; v_init = $3 } }
+     { VarClassic { v_name = $1; v_type = $2; v_init = $3 } }
 
 initializeur:
  | T_ASSIGN assignment_expression { $1, $2 }
@@ -400,9 +401,9 @@ initializeur:
 
 variable_declaration_no_in:
  | identifier initializer_no_in
-     { { v_name = $1; v_init = Some $2; v_type =None } }
+     { VarClassic { v_name = $1; v_init = Some $2; v_type =None } }
  | identifier
-     { { v_name = $1; v_init = None; v_type = None } }
+     { VarClassic { v_name = $1; v_init = None; v_type = None } }
 
 /*(*************************************************************************)*/
 /*(*1 Function declaration *)*/

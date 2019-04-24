@@ -328,7 +328,7 @@ and v_st x =
   let k x = match x with
   | VarsDecl ((v1, v2, v3)) ->
       let v1 = v_wrap v_var_kind v1
-      and v2 = v_comma_list3 v_variable_declaration v2
+      and v2 = v_comma_list3 v_var_binding v2
       and v3 = v_sc v3
       in ()
   | Block v1 -> let v1 = v_brace2 (v_list v_item) v1 in ()
@@ -412,7 +412,7 @@ and v_lhs_or_var =
   | LHS v1 -> let v1 = v_expr v1 in ()
   | Vars ((v1, v2)) ->
       let v1 = v_wrap v_var_kind v1 
-      and v2 = v_comma_list3 v_variable_declaration v2 
+      and v2 = v_comma_list3 v_var_binding v2 
       in ()
 and v_case_clause =
   function
@@ -530,6 +530,11 @@ and v_arrow_body =
   | AExpr v1 -> let v1 = v_expr v1 in ()
   | ABody v1 -> let v1 = v_brace (v_list v_item) v1 in ()
 and v_var_kind = function | Var -> () | Const -> () | Let -> ()
+
+and v_var_binding =
+  function
+  | VarClassic v1 -> let v1 = v_variable_declaration v1 in ()
+  | VarPatternTodo -> ()
 
 and v_variable_declaration {
                            v_name = v_v_name;

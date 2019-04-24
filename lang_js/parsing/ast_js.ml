@@ -226,7 +226,7 @@ type expr =
 (* Statement *)
 (* ------------------------------------------------------------------------- *)
 and st =
-  | VarsDecl of var_kind wrap * variable_declaration comma_list * sc
+  | VarsDecl of var_kind wrap * var_binding comma_list * sc
 
   | Block of item list brace
   | Nop of sc
@@ -264,7 +264,7 @@ and st =
   (* less: could unify with 'st', and explain additional constraints *)
   and lhs_or_var =
     | LHS of expr
-    | Vars of var_kind wrap * variable_declaration comma_list
+    | Vars of var_kind wrap * var_binding comma_list
 
   and case_clause =
     | Default of tok * tok (*:*) * item list
@@ -365,6 +365,10 @@ and var_kind =
   (* es6: *)
   | Const
   | Let
+
+and var_binding = 
+ | VarClassic of variable_declaration
+ | VarPatternTodo
 
 and variable_declaration = {
   v_name: name;

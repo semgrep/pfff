@@ -276,7 +276,7 @@ and vof_st =
   function
   | VarsDecl ((v1, v2, v3)) ->
       let v1 = vof_wrap vof_var_kind v1
-      and v2 = vof_comma_list vof_variable_declaration v2
+      and v2 = vof_comma_list vof_var_binding v2
       and v3 = vof_sc v3
       in Ocaml.VSum (("Variable", [ v1; v2; v3 ]))
   | Block v1 ->
@@ -391,7 +391,7 @@ and vof_lhs_or_var =
   | LHS v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("LHS", [ v1 ]))
   | Vars ((v1, v2)) ->
       let v1 = vof_wrap vof_var_kind v1
-      and v2 = vof_comma_list vof_variable_declaration v2
+      and v2 = vof_comma_list vof_var_binding v2
       in Ocaml.VSum (("Vars", [ v1; v2 ]))
 and vof_case_clause =
   function
@@ -563,8 +563,14 @@ and vof_var_kind =
   | Var -> Ocaml.VSum (("Var", []))
   | Const -> Ocaml.VSum (("Const", []))
   | Let -> Ocaml.VSum (("Let", []))
-and
-  vof_variable_declaration {
+
+and vof_var_binding =
+  function
+  | VarClassic v1 ->
+      let v1 = vof_variable_declaration v1
+      in Ocaml.VSum (("VarClassic", [ v1 ]))
+  | VarPatternTodo -> Ocaml.VSum (("VarPatternTodo", []))
+and vof_variable_declaration {
                              v_name = v_v_name;
                              v_init = v_v_init;
                              v_type = v_v_type
