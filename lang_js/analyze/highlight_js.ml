@@ -192,7 +192,12 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
     | T.T_CLASS ii | T.T_EXTENDS ii  -> tag ii KeywordObject
     | T.T_INTERFACE ii -> tag ii KeywordObject
 
-    | T.T_IMPORT ii | T.T_EXPORT ii | T.T_FROM ii -> tag ii KeywordModule
+    (* less: maybe should do that on AST as those can actually be
+     * also regular identifiers
+     *)
+    | T.T_IMPORT ii | T.T_EXPORT ii 
+    | T.T_FROM ii | T.T_AS ii
+      -> tag ii KeywordModule
 
     | T.T_XHP_TEXT (_, ii) -> tag ii String
     | T.T_XHP_ATTR (_, ii) -> tag ii (Entity (Field, (Use2 fake_no_use2)))

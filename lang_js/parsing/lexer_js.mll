@@ -132,6 +132,7 @@ let keyword_table = Common.hash_of_list [
   "import",     (fun ii -> T_IMPORT ii);
   "export",     (fun ii -> T_EXPORT ii);
   "from",       (fun ii -> T_FROM ii);
+  "as",       (fun ii -> T_AS ii);
 
   (* less: declare, debugger, enum, of, opaque, package, 
    * private/public/protected, type

@@ -77,7 +77,7 @@ let fake_tok s = {
  T_NEW T_IN T_INSTANCEOF T_THIS T_SUPER T_WITH  
  T_NULL T_FALSE T_TRUE
  T_CLASS T_INTERFACE T_EXTENDS T_STATIC 
- T_IMPORT T_EXPORT T_FROM
+ T_IMPORT T_EXPORT T_FROM T_AS
  T_IN T_INSTANCEOF T_TYPEOF
  T_DELETE  T_VOID
 
@@ -205,10 +205,20 @@ statement_list:
 import_declaration: 
  | T_IMPORT import_clause from_clause semicolon { }
 
-import_clause: binding_identifier { $1 }
+import_clause: 
+ | binding_identifier { }
+ | T_MULT T_AS binding_identifier { }
+ | T_LCURLY T_RCURLY { }
+ /*(* todo: remove those T_VIRTUAL_SEMICOLON; parsing_hack_js should not
+    * have inserted them in the first place *)*/
+ | T_LCURLY import_specifiers T_VIRTUAL_SEMICOLON         T_RCURLY { }
+ | T_LCURLY import_specifiers T_COMMA T_VIRTUAL_SEMICOLON T_RCURLY { }
 
 from_clause: T_FROM module_specifier { ($1, $2) }
 
+import_specifier:
+ | binding_identifier { }
+ | identifier T_AS binding_identifier { }
 
 module_specifier: string_literal { $1 }
 
@@ -760,9 +770,9 @@ element:
 object_literal:
  | T_LCURLY T_RCURLY
      { ($1, [], $2) }
- | T_LCURLY property_name_and_value_list T_VIRTUAL_SEMICOLON T_RCURLY
+ | T_LCURLY property_name_and_value_list         T_VIRTUAL_SEMICOLON T_RCURLY
      { ($1, $2, $4) }
- /*(* trailing comma 5.1? extension *)*/
+ /*(* es6?: trailing comma *)*/
  | T_LCURLY property_name_and_value_list T_COMMA T_VIRTUAL_SEMICOLON T_RCURLY
      { ($1, $2 @ [Right $3], $5) }
 
@@ -1012,6 +1022,7 @@ identifier:
  | T_IDENTIFIER { $1 }
  /*(* add here keywords which are not considered reserveds by ECMA *)*/
  | T_FROM { PI.str_of_info $1, $1 }
+ | T_AS   { PI.str_of_info $1, $1 }
 
 /*(*alt: use the _last_non_whitespace_like_token trick and look if
    * previous token was a period to return a T_IDENTFIER
@@ -1033,7 +1044,7 @@ ident_keyword_bis:
  | T_NULL { $1 }
  | T_FALSE { $1 } | T_TRUE { $1 }
  | T_CLASS { $1 } | T_INTERFACE { $1 } | T_EXTENDS { $1 } | T_STATIC { $1 }
- | T_IMPORT { $1 } | T_EXPORT { $1 } | T_FROM { $1 }
+ | T_IMPORT { $1 } | T_EXPORT { $1 } | T_FROM { $1 } | T_AS { $1 }
 
 
 field_name:
@@ -1101,6 +1112,12 @@ variable_declaration_list_no_in:
  | variable_declaration_no_in
      { [Left $1] }
  | variable_declaration_list_no_in T_COMMA variable_declaration_no_in
+     { $1 @ [Right $2; Left $3] }
+
+import_specifiers:
+ | import_specifier
+     { [Left $1]  }
+ | import_specifiers T_COMMA import_specifier
      { $1 @ [Right $2; Left $3] }
 
 

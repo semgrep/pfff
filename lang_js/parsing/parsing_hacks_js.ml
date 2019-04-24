@@ -19,6 +19,17 @@ module T = Parser_js
 module TH   = Token_helpers_js
 
 (*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+(* The goal of this module is to insert fake virtual semicolons.
+ * Those semicolons can be ommitted by the user (but really should not)
+ *
+ * todo: work on a parenthesized view? like in parsing_hacks_cpp.ml
+ *  would be easier to match whether we are in the right context
+ *  for inserting virtual semicolons.
+ *)
+
+(*****************************************************************************)
 (* Lexer tricks *)
 (*****************************************************************************)
 

@@ -13,7 +13,7 @@ let test_tokens_js file =
   Flag.verbose_lexing := true;
   Flag.verbose_parsing := true;
 
-  let toks = Parse_js.tokens file in
+  let toks = Parse_js.tokens file |> Parsing_hacks_js.fix_tokens in
   toks +> List.iter (fun x -> pr2_gen x);
   ()
 

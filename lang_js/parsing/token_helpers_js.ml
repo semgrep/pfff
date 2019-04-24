@@ -46,118 +46,6 @@ let token_kind_of_tok t =
 (* Visitors *)
 (*****************************************************************************)
 
-(* Ugly repetitive code but ocamlyacc force us to do it that way.
- * Indeed the ocamlyacc token  cant be a pair of a sum type, it must be
- * directly a sum type. Fortunately most of the code was generated via an
- * emacs macro working on the type definition of token in parser_js.mli
- *)
-let info_of_tok = function
-  | TUnknown ii -> ii
-  | TCommentSpace ii -> ii
-  | TCommentNewline ii -> ii
-  | TComment ii -> ii
-  | EOF ii -> ii
-
-  | T_NUMBER (_s, ii) -> ii
-  | T_IDENTIFIER (_s, ii) -> ii
-  | T_STRING (_s, ii) -> ii
-  | T_REGEX (_s, ii) -> ii
-
-  | T_FUNCTION ii -> ii
-  | T_IF ii -> ii
-  | T_IN ii -> ii
-  | T_INSTANCEOF ii -> ii
-  | T_RETURN ii -> ii
-  | T_SWITCH ii -> ii
-  | T_THIS ii -> ii
-  | T_THROW ii -> ii
-  | T_TRY ii -> ii
-  | T_VAR ii -> ii
-  | T_WHILE ii -> ii
-  | T_WITH ii -> ii
-  | T_CONST ii -> ii
-  | T_NULL ii -> ii
-  | T_FALSE ii -> ii
-  | T_TRUE ii -> ii
-  | T_BREAK ii -> ii
-  | T_CASE ii -> ii
-  | T_CATCH ii -> ii
-  | T_CONTINUE ii -> ii
-  | T_DEFAULT ii -> ii
-  | T_DO ii -> ii
-  | T_FINALLY ii -> ii
-  | T_FOR ii -> ii
-  | T_ELSE ii -> ii
-  | T_NEW ii -> ii
-  | T_LCURLY ii -> ii
-  | T_RCURLY ii -> ii
-  | T_LPAREN ii -> ii
-  | T_RPAREN ii -> ii
-  | T_LBRACKET ii -> ii
-  | T_RBRACKET ii -> ii
-  | T_SEMICOLON ii -> ii
-  | T_COMMA ii -> ii
-  | T_PERIOD ii -> ii
-  | T_RSHIFT3_ASSIGN ii -> ii
-  | T_RSHIFT_ASSIGN ii -> ii
-  | T_LSHIFT_ASSIGN ii -> ii
-  | T_BIT_XOR_ASSIGN ii -> ii
-  | T_BIT_OR_ASSIGN ii -> ii
-  | T_BIT_AND_ASSIGN ii -> ii
-  | T_MOD_ASSIGN ii -> ii
-  | T_DIV_ASSIGN ii -> ii
-  | T_MULT_ASSIGN ii -> ii
-  | T_MINUS_ASSIGN ii -> ii
-  | T_PLUS_ASSIGN ii -> ii
-  | T_ASSIGN ii -> ii
-  | T_PLING ii -> ii
-  | T_COLON ii -> ii
-  | T_OR ii -> ii
-  | T_AND ii -> ii
-  | T_BIT_OR ii -> ii
-  | T_BIT_XOR ii -> ii
-  | T_BIT_AND ii -> ii
-  | T_EQUAL ii -> ii
-  | T_NOT_EQUAL ii -> ii
-  | T_STRICT_EQUAL ii -> ii
-  | T_STRICT_NOT_EQUAL ii -> ii
-  | T_LESS_THAN_EQUAL ii -> ii
-  | T_GREATER_THAN_EQUAL ii -> ii
-  | T_LESS_THAN ii -> ii
-  | T_GREATER_THAN ii -> ii
-  | T_LSHIFT ii -> ii
-  | T_RSHIFT ii -> ii
-  | T_RSHIFT3 ii -> ii
-  | T_PLUS ii -> ii
-  | T_MINUS ii -> ii
-  | T_DIV ii -> ii
-  | T_MULT ii -> ii
-  | T_MOD ii -> ii
-  | T_NOT ii -> ii
-  | T_BIT_NOT ii -> ii
-  | T_INCR ii -> ii
-  | T_DECR ii -> ii
-  | T_DELETE ii -> ii
-  | T_TYPEOF ii -> ii
-  | T_VOID ii -> ii
-  | T_VIRTUAL_SEMICOLON ii -> ii
-  | T_CLASS ii | T_EXTENDS ii | T_STATIC ii -> ii
-  | T_INTERFACE ii -> ii
-  | T_XHP_OPEN_TAG (_,ii) | T_XHP_CLOSE_TAG (_,ii) | T_XHP_GT ii
-  | T_XHP_SLASH_GT ii | T_XHP_ATTR (_,ii) | T_XHP_TEXT (_,ii)
-  | T_ARROW ii
-  | T_DOTS ii
-  | T_DOLLARCURLY ii | T_BACKQUOTE ii
-  | T_ENCAPSED_STRING (_, ii)
-  | T_LET    ii -> ii
-  | T_YIELD  ii -> ii
-  | T_ASYNC  ii -> ii
-  | T_AWAIT  ii -> ii
-  | T_SUPER  ii -> ii
-  | T_IMPORT ii -> ii 
-  | T_EXPORT ii -> ii
-  | T_FROM ii -> ii
-
 (* generated via emacs macro from type definition in parse_js.ml *)
 let visitor_info_of_tok f = function
   | TUnknown ii -> TUnknown(f ii)
@@ -272,6 +160,12 @@ let visitor_info_of_tok f = function
   | T_IMPORT ii -> T_IMPORT (f ii) 
   | T_EXPORT ii -> T_EXPORT (f ii)
   | T_FROM ii -> T_FROM (f ii)
+  | T_AS ii -> T_AS (f ii)
+
+let info_of_tok tok = 
+  let res = ref None in
+  visitor_info_of_tok (fun ii -> res := Some ii; ii) tok |> ignore;
+  Common2.some !res
 
 (*****************************************************************************)
 (* Accessors *)
