@@ -336,7 +336,7 @@ and v_st x =
       and v2 = v_comma_list3 v_variable_declaration v2
       and v3 = v_sc v3
       in ()
-  | Block v1 -> let v1 = v_brace2 (v_list v_toplevel) v1 in ()
+  | Block v1 -> let v1 = v_brace2 (v_list v_item) v1 in ()
   | Nop v1 -> let v1 = v_sc v1 in ()
   | ExprStmt ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_sc v2 in ()
   | If ((v1, v2, v3, v4)) ->
@@ -420,12 +420,12 @@ and v_lhs_or_var =
 and v_case_clause =
   function
   | Default ((v1, v2, v3)) ->
-      let v1 = v_tok v1 and v2 = v_tok v2 and v3 = v_list v_toplevel v3 in ()
+      let v1 = v_tok v1 and v2 = v_tok v2 and v3 = v_list v_item v3 in ()
   | Case ((v1, v2, v3, v4)) ->
       let v1 = v_tok v1
       and v2 = v_expr v2
       and v3 = v_tok v3
-      and v4 = v_list v_toplevel v4
+      and v4 = v_list v_item v4
       in ()
 and v_arg v = v_wrap v_string v
 and v_type_ =
@@ -506,7 +506,7 @@ and  v_func_decl {
   let arg = v_paren (v_comma_list v_parameter) v_f_params in
   let arg = v_option (v_angle (v_comma_list v_name)) v_f_type_params in
   let arg = v_type_opt v_f_return_type in
-  let arg = v_brace (v_list v_toplevel) v_f_body in ()
+  let arg = v_brace (v_list v_item) v_f_body in ()
 
 and v_parameter { p_name = v_p_name; p_type = v_p_type; p_default; p_dots } =
   let arg = v_option v_default p_default in
@@ -531,7 +531,7 @@ and v_arrow_params =
 and v_arrow_body =
   function
   | AExpr v1 -> let v1 = v_expr v1 in ()
-  | ABody v1 -> let v1 = v_brace (v_list v_toplevel) v1 in ()
+  | ABody v1 -> let v1 = v_brace (v_list v_item) v1 in ()
 and v_variable_declaration {
                            v_name = v_v_name;
                            v_init = v_v_init;
@@ -581,18 +581,25 @@ and v_class_stmt =
       let v1 = v_option v_tok v1 and v2 = v_func_decl v2 in ()
   | ClassExtraSemiColon v1 -> let v1 = v_sc v1 in ()
 
-and v_toplevel =
+and v_item =
   function
   | St v1 -> let v1 = v_st v1 in ()
   | FunDecl v1 -> let v1 = v_func_decl v1 in ()
   | ClassDecl v1 -> let v1 = v_class_decl v1 in ()
   | InterfaceDecl v1 -> let v1 = v_interface_decl v1 in ()
-and v_program v = v_list v_toplevel v
+
+and v_module_item =
+  function
+  | It v1 -> let v1 = v_item v1 in ()
+  | ImportTodo -> ()
+  | ExportTodo -> ()
+
+and v_program v = v_list v_module_item v
 
 and v_any =  function
   | Expr v1 -> let v1 = v_expr v1 in ()
   | Stmt v1 -> let v1 = v_st v1 in ()
-  | Item v1 -> let v1 = v_toplevel v1 in ()
+  | Item v1 -> let v1 = v_item v1 in ()
   | Program v1 -> let v1 = v_program v1 in ()
 
 and all_functions x = v_any x

@@ -166,7 +166,7 @@ let fake_tok s = {
 /*(*************************************************************************)*/
 
 %start main
-%type <Ast_js.item list> main
+%type <Ast_js.module_item list> main
 
 %%
 
@@ -176,13 +176,16 @@ let fake_tok s = {
 
 main: program EOF { $1 }
 
-program: statement_list { $1 }
+program: module_item_list { $1 }
+
+module_item:
+ | item { It $1 }
 
 statement_list:
- | source_element { [$1] }
- | statement_list source_element { $1 @ [$2] }
+ | item { [$1] }
+ | statement_list item { $1 @ [$2] }
 
-source_element:
+item:
  | statement   { St $1 }
  | declaration { $1 }
 
@@ -1049,6 +1052,10 @@ class_element_list:
 encaps_list:
  | encaps { [$1] }
  | encaps_list encaps { $1 @ [$2] }
+
+module_item_list:
+ | module_item { [$1] }
+ | module_item_list module_item { $1 @ [$2] }
 
 
 case_clauses:

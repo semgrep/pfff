@@ -26,14 +26,14 @@ module PI = Parse_info
  *  http://www.ecma-international.org/publications/standards/Ecma-262.htm
  * See also 
  *  - https://en.wikipedia.org/wiki/JavaScript
- *  - http://en.wikipedia.org/wiki/ECMAScript
+ *  - https://en.wikipedia.org/wiki/ECMAScript
  *
  * This AST (and parser) supports most ES6 features:
  *  - classes
  *  - arrows (a.k.a short lambdas)
  *  - optional trailing commas
  *  - variable number of parameters, e.g. 'function foo(...args)'
- *    and TODO append of parameters with [ ...arr, ]
+ *    and spread of parameters with [ ...arr ]
  *  - template strings (a.k.a interpolated strings), see
  *    https://gist.github.com/lukehoban/9303054#template-strings
  *  - import/export TODO
@@ -50,7 +50,7 @@ module PI = Parse_info
  *    but with tags possibly containing ':' in their names
  *  - type annotations a la Flow and TypeScript, see
  *    http://en.wikipedia.org/wiki/TypeScript
- *  - interfaces a la flow and Typescript
+ *  - interfaces a la Flow and Typescript
  *
  * less:
  *  - imitate https://developer.mozilla.org/en-US/docs/SpiderMonkey/Parser_API
@@ -72,7 +72,7 @@ module PI = Parse_info
 
 (* Contains among other things the position of the token through
  * the Parse_info.token_location embedded inside it, as well as the
- * the transformation field that makes possible spatch on Javascript code.
+ * transformation field that makes possible spatch on Javascript code.
  *)
 type tok = Parse_info.info
 
@@ -98,6 +98,7 @@ type name = string wrap
  (* with tarzan *)
 
 type xhp_tag = string
+ (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Expression *)
@@ -111,8 +112,8 @@ type expr =
    | U of unop wrap * expr
    | B of expr * binop wrap * expr
 
-   | Bracket of expr * expr bracket
    | Period of expr * tok (* . *) * name
+   | Bracket of expr * expr bracket
 
    (* can have some trailing comma *)
    | Object of property comma_list brace
@@ -121,8 +122,8 @@ type expr =
 
    (* Call, see also Encaps that is a sort of call when 'name' is not None  *)
    | Apply of expr * expr comma_list paren
-   | Conditional of expr * tok (* ? *) * expr * tok (* : *) * expr
 
+   | Conditional of expr * tok (* ? *) * expr * tok (* : *) * expr
    (* bad language, should be in statements *)
    | Assign of expr * assignment_operator wrap * expr
    | Seq of expr * tok (* , *) * expr
@@ -383,17 +384,29 @@ and interface_decl = {
 }
 
 (* ------------------------------------------------------------------------- *)
-(* A Statement list item (often just at toplevel) *)
+(* A Statement list item (often just at the toplevel) *)
 (* ------------------------------------------------------------------------- *)
 and item =
+  (* contains Variable, which is a Decl *)
   | St of st
 
   | FunDecl of func_decl
+  (* es6-ext: *)
   | ClassDecl of class_decl
-
+  (* facebook-ext: *)
   | InterfaceDecl of interface_decl
 
- and program = item list
+(* ------------------------------------------------------------------------- *)
+(* Toplevel *)
+(* ------------------------------------------------------------------------- *)
+
+ and module_item = 
+  | It of item
+  (* es6-ext: *)
+  | ImportTodo
+  | ExportTodo
+
+ and program = module_item list
  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)

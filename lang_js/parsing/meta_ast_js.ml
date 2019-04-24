@@ -285,7 +285,7 @@ and vof_st =
       and v3 = vof_sc v3
       in Ocaml.VSum (("Const", [ v1; v2; v3 ]))
   | Block v1 ->
-      let v1 = vof_brace (Ocaml.vof_list vof_toplevel) v1
+      let v1 = vof_brace (Ocaml.vof_list vof_item) v1
       in Ocaml.VSum (("Block", [ v1 ]))
   | Nop v1 -> let v1 = vof_sc v1 in Ocaml.VSum (("Nop", [ v1 ]))
   | ExprStmt ((v1, v2)) ->
@@ -403,13 +403,13 @@ and vof_case_clause =
   | Default ((v1, v2, v3)) ->
       let v1 = vof_tok v1
       and v2 = vof_tok v2
-      and v3 = Ocaml.vof_list vof_toplevel v3
+      and v3 = Ocaml.vof_list vof_item v3
       in Ocaml.VSum (("Default", [ v1; v2; v3 ]))
   | Case ((v1, v2, v3, v4)) ->
       let v1 = vof_tok v1
       and v2 = vof_expr v2
       and v3 = vof_tok v3
-      and v4 = Ocaml.vof_list vof_toplevel v4
+      and v4 = Ocaml.vof_list vof_item v4
       in Ocaml.VSum (("Case", [ v1; v2; v3; v4 ]))
 and vof_arg v = vof_wrap Ocaml.vof_string v
 and vof_type_ =
@@ -493,7 +493,7 @@ and
                   f_body = v_f_body
                 } =
   let bnds = [] in
-  let arg = vof_brace (Ocaml.vof_list vof_toplevel) v_f_body in
+  let arg = vof_brace (Ocaml.vof_list vof_item) v_f_body in
   let bnd = ("f_body", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_type_opt v_f_return_type in
@@ -561,7 +561,7 @@ and vof_arrow_body =
   function
   | AExpr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("AExpr", [ v1 ]))
   | ABody v1 ->
-      let v1 = vof_brace (Ocaml.vof_list vof_toplevel) v1
+      let v1 = vof_brace (Ocaml.vof_list vof_item) v1
       in Ocaml.VSum (("ABody", [ v1 ]))
 and
   vof_variable_declaration {
@@ -583,7 +583,7 @@ and
   let arg = vof_name v_v_name in
   let bnd = ("v_name", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
 
-and vof_toplevel =
+and vof_item =
   function
   | St v1 -> let v1 = vof_st v1 in Ocaml.VSum (("St", [ v1 ]))
   | FunDecl v1 ->
@@ -660,13 +660,19 @@ and vof_class_stmt =
   | ClassExtraSemiColon v1 ->
       let v1 = vof_sc v1 in Ocaml.VSum (("ClassExtraSemiColon", [ v1 ]))
 
-and vof_program_orig v = Ocaml.vof_list vof_toplevel v
+and vof_module_item =
+  function
+  | ImportTodo -> Ocaml.VSum (("ImportTodo", []))
+  | ExportTodo -> Ocaml.VSum (("ExportTodo", []))
+  | It v1 -> let v1 = vof_item v1 in Ocaml.VSum (("It", [ v1 ]))
+
+and vof_program_orig v = Ocaml.vof_list vof_module_item v
 
 let vof_any_orig =
   function
   | Expr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Expr", [ v1 ]))
   | Stmt v1 -> let v1 = vof_st v1 in Ocaml.VSum (("Stmt", [ v1 ]))
-  | Item v1 -> let v1 = vof_toplevel v1 in Ocaml.VSum (("Item",[v1 ]))
+  | Item v1 -> let v1 = vof_item v1 in Ocaml.VSum (("Item",[v1 ]))
   | Program v1 -> let v1 = vof_program_orig v1 in Ocaml.VSum (("Program",[v1]))
 
 
