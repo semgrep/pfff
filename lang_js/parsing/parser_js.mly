@@ -1107,7 +1107,7 @@ ident_keyword_bis:
  | T_RETURN { $1 }
  | T_THROW { $1 } | T_TRY { $1 } | T_CATCH { $1 } | T_FINALLY { $1 }
  | T_YIELD { $1 } | T_ASYNC { $1 } | T_AWAIT { $1 }
- | T_NEW { $1 } | T_IN { $1 } | T_INSTANCEOF { $1 }
+ | T_NEW { $1 } | T_IN { $1 } | T_INSTANCEOF { $1 } | T_DELETE { $1 }
  | T_THIS { $1 } | T_SUPER { $1 }
  | T_WITH { $1 }
  | T_NULL { $1 }
