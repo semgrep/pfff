@@ -219,7 +219,7 @@ and st =
   | Variable of tok (* var *) * variable_declaration comma_list * sc
   | Const of tok (* const *) * variable_declaration comma_list * sc
 
-  | Block of toplevel list brace
+  | Block of item list brace
   | Nop of sc
   | ExprStmt of expr * sc
 
@@ -257,8 +257,8 @@ and st =
     | Vars of tok * variable_declaration comma_list
 
   and case_clause =
-    | Default of tok * tok (*:*) * toplevel list
-    | Case of tok * expr * tok (*:*) * toplevel list
+    | Default of tok * tok (*:*) * item list
+    | Case of tok * expr * tok (*:*) * item list
 
   and arg = string wrap
 
@@ -309,7 +309,7 @@ and func_decl = {
   f_type_params: type_parameters option;
   f_params: parameter comma_list paren;
   f_return_type: type_opt;
-  f_body: toplevel list brace;
+  f_body: item list brace;
 }
   and parameter = {
    p_name: name;
@@ -342,7 +342,7 @@ and arrow_func = {
  | AParams of parameter comma_list paren
  and arrow_body =
  | AExpr of expr
- | ABody of toplevel list brace
+ | ABody of item list brace
 
 (* ------------------------------------------------------------------------- *)
 (* Variable definition *)
@@ -383,9 +383,9 @@ and interface_decl = {
 }
 
 (* ------------------------------------------------------------------------- *)
-(* The toplevels elements *)
+(* A Statement list item (often just at toplevel) *)
 (* ------------------------------------------------------------------------- *)
-and toplevel =
+and item =
   | St of st
 
   | FunDecl of func_decl
@@ -393,7 +393,7 @@ and toplevel =
 
   | InterfaceDecl of interface_decl
 
- and program = toplevel list
+ and program = item list
  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
@@ -403,8 +403,7 @@ and toplevel =
 type any =
   | Expr of expr
   | Stmt of st
-  | Func of func_decl
-  | Toplevel of toplevel
+  | Item of item
   | Program of program
  (* with tarzan *)
 

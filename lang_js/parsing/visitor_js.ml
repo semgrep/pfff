@@ -592,8 +592,7 @@ and v_program v = v_list v_toplevel v
 and v_any =  function
   | Expr v1 -> let v1 = v_expr v1 in ()
   | Stmt v1 -> let v1 = v_st v1 in ()
-  | Func v1 -> let v1 = v_func_decl v1 in ()
-  | Toplevel v1 -> let v1 = v_toplevel v1 in ()
+  | Item v1 -> let v1 = v_toplevel v1 in ()
   | Program v1 -> let v1 = v_program v1 in ()
 
 and all_functions x = v_any x

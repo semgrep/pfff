@@ -166,7 +166,7 @@ let fake_tok s = {
 /*(*************************************************************************)*/
 
 %start main
-%type <Ast_js.toplevel list> main
+%type <Ast_js.item list> main
 
 %%
 

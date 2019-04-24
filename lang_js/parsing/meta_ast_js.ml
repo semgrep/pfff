@@ -666,10 +666,8 @@ let vof_any_orig =
   function
   | Expr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Expr", [ v1 ]))
   | Stmt v1 -> let v1 = vof_st v1 in Ocaml.VSum (("Stmt", [ v1 ]))
-  | Func v1 -> let v1 = vof_func_decl v1 in Ocaml.VSum (("Func", [ v1 ]))
-  | Toplevel v1 ->
-      let v1 = vof_toplevel v1 in Ocaml.VSum (("Toplevel", [ v1 ]))
-  | Program v1 -> let v1 = vof_program_orig v1 in Ocaml.VSum (("Program", [ v1 ]))
+  | Item v1 -> let v1 = vof_toplevel v1 in Ocaml.VSum (("Item",[v1 ]))
+  | Program v1 -> let v1 = vof_program_orig v1 in Ocaml.VSum (("Program",[v1]))
 
 
 (* end auto generation *)
