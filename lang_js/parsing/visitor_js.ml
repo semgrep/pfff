@@ -326,13 +326,8 @@ and v_encaps =
 
 and v_st x =
   let k x = match x with
-  | Variable ((v1, v2, v3)) ->
-      let v1 = v_tok v1
-      and v2 = v_comma_list3 v_variable_declaration v2
-      and v3 = v_sc v3
-      in ()
-  | Const ((v1, v2, v3)) ->
-      let v1 = v_tok v1
+  | VarsDecl ((v1, v2, v3)) ->
+      let v1 = v_wrap v_var_kind v1
       and v2 = v_comma_list3 v_variable_declaration v2
       and v3 = v_sc v3
       in ()
@@ -416,7 +411,9 @@ and v_lhs_or_var =
   function
   | LHS v1 -> let v1 = v_expr v1 in ()
   | Vars ((v1, v2)) ->
-      let v1 = v_tok v1 and v2 = v_comma_list3 v_variable_declaration v2 in ()
+      let v1 = v_wrap v_var_kind v1 
+      and v2 = v_comma_list3 v_variable_declaration v2 
+      in ()
 and v_case_clause =
   function
   | Default ((v1, v2, v3)) ->
@@ -532,6 +529,8 @@ and v_arrow_body =
   function
   | AExpr v1 -> let v1 = v_expr v1 in ()
   | ABody v1 -> let v1 = v_brace (v_list v_item) v1 in ()
+and v_var_kind = function | Var -> () | Const -> () | Let -> ()
+
 and v_variable_declaration {
                            v_name = v_v_name;
                            v_init = v_v_init;

@@ -192,6 +192,7 @@ item:
 declaration:
  | function_declaration  { FunDecl $1 }
  | class_declaration     { ClassDecl $1 }
+ /*(* facebook-ext: *)*/
  | interface_declaration { InterfaceDecl $1 }
 
 /*(* item is also in statement_list, inside every blocks *)*/
@@ -267,9 +268,9 @@ block:
 
 
 variable_statement:
- | T_VAR variable_declaration_list semicolon  { Variable ($1, $2, $3) }
+ | T_VAR variable_declaration_list semicolon  { VarsDecl ((Var, $1), $2, $3) }
  /*(* es6: *)*/
- | T_CONST variable_declaration_list semicolon { Const ($1, $2, $3) }
+ | T_CONST variable_declaration_list semicolon { VarsDecl((Const, $1), $2,$3) }
 
 variable_declaration:
  | identifier annotation_opt initializeur_opt
@@ -309,13 +310,13 @@ iteration_statement:
      expression_opt T_SEMICOLON
      expression_opt
      T_RPAREN statement
-     { For ($1, $2, Some (Vars ($3, $4)), $5, $6, $7, $8, $9, $10) }
+     { For ($1, $2, Some (Vars ((Var, $3), $4)), $5, $6, $7, $8, $9, $10) }
  | T_FOR T_LPAREN left_hand_side_expression T_IN expression T_RPAREN statement
      { ForIn ($1, $2, LHS $3, $4, $5, $6, $7) }
  | T_FOR
      T_LPAREN T_VAR variable_declaration_list_no_in T_IN expression T_RPAREN
      statement
-     { ForIn ($1, $2, Vars ($3, $4), $5, $6, $7, $8) }
+     { ForIn ($1, $2, Vars ((Var, $3), $4), $5, $6, $7, $8) }
 
 variable_declaration_no_in:
  | identifier initializer_no_in

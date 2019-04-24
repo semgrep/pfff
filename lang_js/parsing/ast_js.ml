@@ -100,6 +100,11 @@ type name = string wrap
 type xhp_tag = string
  (* with tarzan *)
 
+type property_name =
+   | PN_String of name
+   | PN_Num of string wrap
+ (* with tarzan *)
+
 (* ------------------------------------------------------------------------- *)
 (* Expression *)
 (* ------------------------------------------------------------------------- *)
@@ -176,10 +181,6 @@ type expr =
        | B_bitand  | B_bitor  | B_bitxor
        | B_and  | B_or
 
-     and property_name =
-       | PN_String of name
-       | PN_Num of string wrap
-
      and assignment_operator =
        | A_eq
        | A_add  | A_sub
@@ -187,9 +188,17 @@ type expr =
        | A_lsl  | A_lsr  | A_asr
        | A_and  | A_or | A_xor  
 
+(* ------------------------------------------------------------------------- *)
+(* Object properties *)
+(* ------------------------------------------------------------------------- *)
+
    and property =
        | P_field of property_name * tok (* : *) * expr
        | P_method of func_decl
+
+(* ------------------------------------------------------------------------- *)
+(* JSX (=~ XHP from PHP) and interporlated strings *)
+(* ------------------------------------------------------------------------- *)
 
  (* facebook-ext: JSX extension, similar to XHP for PHP (hence the name) *)
  and xhp_html =
@@ -217,8 +226,7 @@ type expr =
 (* Statement *)
 (* ------------------------------------------------------------------------- *)
 and st =
-  | Variable of tok (* var *) * variable_declaration comma_list * sc
-  | Const of tok (* const *) * variable_declaration comma_list * sc
+  | VarsDecl of var_kind wrap * variable_declaration comma_list * sc
 
   | Block of item list brace
   | Nop of sc
@@ -253,9 +261,10 @@ and st =
 
   and label = string wrap
 
+  (* less: could unify with 'st', and explain additional constraints *)
   and lhs_or_var =
     | LHS of expr
-    | Vars of tok * variable_declaration comma_list
+    | Vars of var_kind wrap * variable_declaration comma_list
 
   and case_clause =
     | Default of tok * tok (*:*) * item list
@@ -348,6 +357,15 @@ and arrow_func = {
 (* ------------------------------------------------------------------------- *)
 (* Variable definition *)
 (* ------------------------------------------------------------------------- *)
+(* in theory Const and Let can appear only in statement items, not in
+ * simple statements (st)
+ *)
+and var_kind =
+  | Var 
+  (* es6: *)
+  | Const
+  | Let
+
 and variable_declaration = {
   v_name: name;
   v_init: (tok (*=*) * expr) option;
@@ -387,7 +405,7 @@ and interface_decl = {
 (* A Statement list item (often just at the toplevel) *)
 (* ------------------------------------------------------------------------- *)
 and item =
-  (* contains Variable, which is a Decl *)
+  (* contains VarsDecl, which are a Decl *)
   | St of st
 
   | FunDecl of func_decl

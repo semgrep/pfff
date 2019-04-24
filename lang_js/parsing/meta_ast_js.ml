@@ -274,16 +274,11 @@ and vof_encaps =
 
 and vof_st =
   function
-  | Variable ((v1, v2, v3)) ->
-      let v1 = vof_tok v1
+  | VarsDecl ((v1, v2, v3)) ->
+      let v1 = vof_wrap vof_var_kind v1
       and v2 = vof_comma_list vof_variable_declaration v2
       and v3 = vof_sc v3
       in Ocaml.VSum (("Variable", [ v1; v2; v3 ]))
-  | Const ((v1, v2, v3)) ->
-      let v1 = vof_tok v1
-      and v2 = vof_comma_list vof_variable_declaration v2
-      and v3 = vof_sc v3
-      in Ocaml.VSum (("Const", [ v1; v2; v3 ]))
   | Block v1 ->
       let v1 = vof_brace (Ocaml.vof_list vof_item) v1
       in Ocaml.VSum (("Block", [ v1 ]))
@@ -395,7 +390,7 @@ and vof_lhs_or_var =
   function
   | LHS v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("LHS", [ v1 ]))
   | Vars ((v1, v2)) ->
-      let v1 = vof_tok v1
+      let v1 = vof_wrap vof_var_kind v1
       and v2 = vof_comma_list vof_variable_declaration v2
       in Ocaml.VSum (("Vars", [ v1; v2 ]))
 and vof_case_clause =
@@ -563,6 +558,11 @@ and vof_arrow_body =
   | ABody v1 ->
       let v1 = vof_brace (Ocaml.vof_list vof_item) v1
       in Ocaml.VSum (("ABody", [ v1 ]))
+and vof_var_kind =
+  function
+  | Var -> Ocaml.VSum (("Var", []))
+  | Const -> Ocaml.VSum (("Const", []))
+  | Let -> Ocaml.VSum (("Let", []))
 and
   vof_variable_declaration {
                              v_name = v_v_name;

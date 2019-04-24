@@ -21,8 +21,13 @@ module TH   = Token_helpers_js
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* The goal of this module is to insert fake virtual semicolons.
- * Those semicolons can be ommitted by the user (but really should not)
+(* The goal of this module is to insert fake virtual semicolons
+ * (a.k.a Automatic Semicolon Insertion, or ASI).
+ * Those semicolons can be ommitted by the user (but really should not).
+ *
+ * reference:
+ *  -http://www.bradoncode.com/blog/2015/08/26/javascript-semi-colon-insertion
+ *  -http://www.ecma-international.org/ecma-262/6.0/index.html#sec-automatic-semicolon-insertion
  *
  * todo: work on a parenthesized view? like in parsing_hacks_cpp.ml
  *  would be easier to match whether we are in the right context
