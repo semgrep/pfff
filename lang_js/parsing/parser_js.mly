@@ -717,16 +717,20 @@ string_literal:
 /*(*----------------------------*)*/
 
 array_literal:
- | T_LBRACKET elison T_RBRACKET              { Array($1, $2, $3) }
- | T_LBRACKET        T_RBRACKET              { Array($1, [], $2) }
- | T_LBRACKET element_list T_RBRACKET        { Array($1, $2, $3) }
- | T_LBRACKET element_list elison T_RBRACKET { Array($1, $2 @ $3, $4) }
+ | T_LBRACKET elision_opt T_RBRACKET              { Array($1, $2, $3) }
+ | T_LBRACKET element_list elision_opt T_RBRACKET { Array($1, $2 @ $3, $4) }
 
 element_list: element_list_rev { List.rev $1 }
 element_list_rev:
- | elison   assignment_expression { (Left $2)::$1 }
- |          assignment_expression { [Left $1] }
- | element_list_rev   elison   assignment_expression { [Left $3] @ $2 @ $1 }
+ | elision_opt   element { (Left $2)::$1 }
+ | element_list_rev T_COMMA elision_opt element 
+     { [Left $4] @ $3 @ [Right $2] @ $1 }
+
+element:
+ | assignment_expression { $1 }
+ /*(* es6: spread operator: *)*/
+ | T_DOTS assignment_expression
+     { e(uop U_spread $1 $2) }
 
 /*(*----------------------------*)*/
 /*(*2 object *)*/
@@ -1031,9 +1035,9 @@ semicolon:
  | T_SEMICOLON         { Some $1 }
  | T_VIRTUAL_SEMICOLON { None }
 
-elison:
+elision:
  | T_COMMA { [Right $1] }
- | elison T_COMMA { $1 @ [Right $2] }
+ | elision T_COMMA { $1 @ [Right $2] }
 
 
 
@@ -1117,6 +1121,8 @@ initializeur_opt:
  | /*(* empty *)*/ { None }
  | initializeur { Some $1 }
 
+
+
 field_type_list_opt:
  | /*(* empty *)*/ { [] }
  | field_type_list { $1 }
@@ -1124,3 +1130,7 @@ field_type_list_opt:
 param_type_list_opt:
  | /*(* empty *)*/ { [] }
  | param_type_list { $1 }
+
+elision_opt:
+ | /*(* empty *)*/ { [] }
+ | elision { $1 }
