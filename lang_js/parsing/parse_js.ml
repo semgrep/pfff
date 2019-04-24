@@ -76,10 +76,8 @@ let tokens2 file =
             match ii.PI.token with
             | PI.OriginTok pi ->
               PI.OriginTok (PI.complete_token_location_large file table pi)
-            | PI.FakeTokStr _
-            | PI.Ab  
-            | PI.ExpandedTok _
-              -> raise Impossible
+            | PI.FakeTokStr _ | PI.Ab  | PI.ExpandedTok _ ->
+              raise Impossible
         })
         in
 
@@ -126,8 +124,10 @@ exception Parse_error of Parse_info.info
 let parse2 filename =
 
   let stat = PI.default_stat filename in
+
   let toks = tokens filename in
   let toks = Parsing_hacks_js.fix_tokens toks in
+
   let tr = PI.mk_tokens_state toks in
   let checkpoint = TH.line_of_tok tr.PI.current in
   let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
@@ -147,6 +147,10 @@ let parse2 filename =
     let cur = tr.PI.current in
     if not !Flag.error_recovery
     then raise (Parse_error (TH.info_of_tok cur));
+    (* else? no real error recovery for now
+     * todo? could do the Automatic Semicolon Insertion here
+     * instead of in fix_tokens
+     *)
 
     if !Flag.show_parsing_error
     then begin
