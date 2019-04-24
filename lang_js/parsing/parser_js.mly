@@ -183,6 +183,7 @@ program: module_item_list { $1 }
 module_item:
  | item { It $1 }
  | import_declaration { ImportTodo }
+ | export_declaration { ExportTodo }
 
 item:
  | statement   { St $1 }
@@ -208,6 +209,7 @@ import_declaration:
 import_clause: 
  | binding_identifier { }
  | T_MULT T_AS binding_identifier { }
+
  | T_LCURLY T_RCURLY { }
  /*(* todo: remove those T_VIRTUAL_SEMICOLON; parsing_hack_js should not
     * have inserted them in the first place *)*/
@@ -221,6 +223,22 @@ import_specifier:
  | identifier T_AS binding_identifier { }
 
 module_specifier: string_literal { $1 }
+
+
+export_declaration:
+ | T_EXPORT export_body semicolon { }
+
+export_body:
+ | T_MULT        from_clause { }
+ | export_clause from_clause { }
+ | export_clause { }
+
+export_clause:
+ | T_LCURLY T_RCURLY { }
+ /*(* todo: remove those T_VIRTUAL_SEMICOLON; parsing_hack_js should not
+    * have inserted them in the first place *)*/
+ | T_LCURLY import_specifiers T_VIRTUAL_SEMICOLON         T_RCURLY { }
+ | T_LCURLY import_specifiers T_COMMA T_VIRTUAL_SEMICOLON T_RCURLY { }
 
 /*(*************************************************************************)*/
 /*(*1 Statement *)*/
