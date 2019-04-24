@@ -108,7 +108,10 @@ let rec vof_expr =
                  in Ocaml.VSum (("P_field", [ v1; v2; v3 ]))
              | P_method v1 ->
                  let v1 = vof_func_decl v1
-                 in Ocaml.VSum (("P_method", [v1]))))
+                 in Ocaml.VSum (("P_method", [v1]))
+             | P_shorthand v1 ->
+              let v1 = vof_name v1 in Ocaml.VSum (("P_shorthand", [ v1 ]))
+             ))
           v1
       in Ocaml.VSum (("Object", [ v1 ]))
   | Array v1 ->

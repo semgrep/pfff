@@ -851,6 +851,9 @@ property_name_and_value:
      { Left (P_field ($1, $2, $3)) }
  | method_definition
      { Left (P_method ($1)) }
+ /*(* es6: *)*/
+ | identifier
+     { Left (P_shorthand ($1)) }
 
 property_name_and_value_list:
  | property_name_and_value

@@ -220,6 +220,8 @@ and v_property x =
     | P_method v1 ->
         let v1 = v_func_decl v1
         in ()
+    | P_shorthand v1 -> let v1 = v_name v1 in ()
+
   in
   vin.kprop (k, all_functions) x
 

@@ -195,6 +195,9 @@ type expr =
    and property =
        | P_field of property_name * tok (* : *) * expr
        | P_method of func_decl
+       (* es6: similar to OCaml shorthands in records *)
+       | P_shorthand of name
+        
 
 (* ------------------------------------------------------------------------- *)
 (* JSX (=~ XHP from PHP) and interporlated strings *)
