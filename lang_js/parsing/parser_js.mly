@@ -207,6 +207,10 @@ statement_list:
 /*(*1 Import/export *)*/
 /*(*************************************************************************)*/
 
+/*(*----------------------------*)*/
+/*(*2 import *)*/
+/*(*----------------------------*)*/
+
 import_declaration: 
  | T_IMPORT import_clause from_clause semicolon { }
 
@@ -228,6 +232,9 @@ import_specifier:
 
 module_specifier: string_literal { $1 }
 
+/*(*----------------------------*)*/
+/*(*2 export *)*/
+/*(*----------------------------*)*/
 
 export_declaration:
  | T_EXPORT export_body semicolon { }
@@ -394,6 +401,8 @@ lexical_declaration:
 variable_declaration:
  | identifier annotation_opt initializeur_opt
      { VarClassic { v_name = $1; v_type = $2; v_init = $3 } }
+ | binding_pattern initializeur
+     { VarPatternTodo }
 
 initializeur:
  | T_ASSIGN assignment_expression { $1, $2 }
@@ -404,6 +413,35 @@ variable_declaration_no_in:
      { VarClassic { v_name = $1; v_init = Some $2; v_type =None } }
  | identifier
      { VarClassic { v_name = $1; v_init = None; v_type = None } }
+
+/*(*----------------------------*)*/
+/*(*2 pattern *)*/
+/*(*----------------------------*)*/
+
+binding_pattern:
+ | object_binding_pattern { }
+ | array_binding_pattern { }
+
+object_binding_pattern:
+ | T_LCURLY T_RCURLY { }
+ /*(* todo: remove those T_VIRTUAL_SEMICOLON; parsing_hack_js should not
+    * have inserted them in the first place *)*/
+ | T_LCURLY binding_property_list T_VIRTUAL_SEMICOLON         T_RCURLY { }
+ | T_LCURLY binding_property_list T_COMMA T_VIRTUAL_SEMICOLON T_RCURLY { }
+
+binding_property_list:
+ | binding_property
+     { [Left $1]  }
+ | binding_property_list T_COMMA binding_property
+     { $1 @ [Right $2; Left $3] }
+
+
+binding_property:
+ | binding_identifier { }
+
+
+array_binding_pattern:
+ | T_LBRACKET T_RBRACKET { }
 
 /*(*************************************************************************)*/
 /*(*1 Function declaration *)*/
