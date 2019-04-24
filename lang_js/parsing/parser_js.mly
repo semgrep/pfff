@@ -191,9 +191,12 @@ item:
 
 declaration:
  | function_declaration  { FunDecl $1 }
+ /*(* es6: *)*/
+ | lexical_declaration   { St $1 }
  | class_declaration     { ClassDecl $1 }
  /*(* facebook-ext: *)*/
  | interface_declaration { InterfaceDecl $1 }
+
 
 /*(* item is also in statement_list, inside every blocks *)*/
 statement_list:
@@ -267,19 +270,6 @@ block:
  | T_LCURLY T_RCURLY                { Block ($1, [], $2) }
 
 
-variable_statement:
- | T_VAR variable_declaration_list semicolon  { VarsDecl ((Var, $1), $2, $3) }
- /*(* es6: *)*/
- | T_CONST variable_declaration_list semicolon { VarsDecl((Const, $1), $2,$3) }
-
-variable_declaration:
- | identifier annotation_opt initializeur_opt
-     { { v_name = $1; v_type = $2; v_init = $3 } }
-
-initializeur:
- | T_ASSIGN assignment_expression { $1, $2 }
-
-
 empty_statement:
  | semicolon { Nop $1 }
 
@@ -318,11 +308,6 @@ iteration_statement:
      statement
      { ForIn ($1, $2, Vars ((Var, $3), $4), $5, $6, $7, $8) }
 
-variable_declaration_no_in:
- | identifier initializer_no_in
-     { { v_name = $1; v_init = Some $2; v_type =None } }
- | identifier
-     { { v_name = $1; v_init = None; v_type = None } }
 
 initializer_no_in:
  | T_ASSIGN assignment_expression_no_in { $1, $2 }
@@ -392,6 +377,32 @@ case_clause:
 default_clause:
  | T_DEFAULT T_COLON { Default ($1, $2, [])}
  | T_DEFAULT T_COLON statement_list { Default ($1, $2, $3) }
+
+/*(*************************************************************************)*/
+/*(*1 Variable declaration *)*/
+/*(*************************************************************************)*/
+
+lexical_declaration:
+ /*(* es6: *)*/
+ | T_CONST variable_declaration_list semicolon { VarsDecl((Const, $1), $2,$3) }
+ | T_LET variable_declaration_list semicolon { VarsDecl((Let, $1), $2,$3) }
+
+variable_statement:
+ | T_VAR variable_declaration_list semicolon  { VarsDecl ((Var, $1), $2, $3) }
+
+variable_declaration:
+ | identifier annotation_opt initializeur_opt
+     { { v_name = $1; v_type = $2; v_init = $3 } }
+
+initializeur:
+ | T_ASSIGN assignment_expression { $1, $2 }
+
+
+variable_declaration_no_in:
+ | identifier initializer_no_in
+     { { v_name = $1; v_init = Some $2; v_type =None } }
+ | identifier
+     { { v_name = $1; v_init = None; v_type = None } }
 
 /*(*************************************************************************)*/
 /*(*1 Function declaration *)*/
