@@ -422,10 +422,12 @@ and class_decl = {
 }
 
   and class_stmt =
-  | Method of tok option (* static *) * func_decl
+  | Method of static_opt * func_decl
   | Field of name * annotation * sc
   (* unparser: *)
   | ClassExtraSemiColon of sc
+
+  and static_opt = tok option (* static *)
 
 (* ------------------------------------------------------------------------- *)
 (* Interface definition *)
