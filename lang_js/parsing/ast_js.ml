@@ -272,8 +272,11 @@ and st =
   (* less: could unify with 'st', and explain additional constraints *)
   and lhs_or_vars =
     | LHS of expr
-    | Vars of (var_kind wrap * var_binding comma_list)
-  (* TODO: fix it! *)
+    | ForVars of (var_kind wrap * var_binding comma_list)
+
+  (* TODO: fix it! 
+   * the variable_declaration in ForVar has v_init = None.
+   *)
   and lhs_or_var = lhs_or_vars
 
   and case_clause =

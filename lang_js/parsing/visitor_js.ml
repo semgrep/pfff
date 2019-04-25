@@ -416,7 +416,7 @@ and v_label v = v_wrap v_string v
 and v_lhs_or_var =
   function
   | LHS v1 -> let v1 = v_expr v1 in ()
-  | Vars ((v1, v2)) ->
+  | ForVars ((v1, v2)) ->
       let v1 = v_wrap v_var_kind v1 
       and v2 = v_comma_list3 v_var_binding v2 
       in ()

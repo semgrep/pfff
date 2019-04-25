@@ -396,10 +396,10 @@ and vof_label v = vof_wrap Ocaml.vof_string v
 and vof_lhs_or_var =
   function
   | LHS v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("LHS", [ v1 ]))
-  | Vars ((v1, v2)) ->
+  | ForVars ((v1, v2)) ->
       let v1 = vof_wrap vof_var_kind v1
       and v2 = vof_comma_list vof_var_binding v2
-      in Ocaml.VSum (("Vars", [ v1; v2 ]))
+      in Ocaml.VSum (("ForVars", [ v1; v2 ]))
 and vof_case_clause =
   function
   | Default ((v1, v2, v3)) ->

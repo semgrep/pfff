@@ -309,12 +309,19 @@ iteration_statement:
      expression_opt T_SEMICOLON
      expression_opt
      T_RPAREN statement
-     { For ($1, $2, Some (Vars $3), $4, $5, $6, $7, $8, $9) }
+     { For ($1, $2, Some (ForVars $3), $4, $5, $6, $7, $8, $9) }
 
  | T_FOR T_LPAREN left_hand_side_expression T_IN expression T_RPAREN statement
      { ForIn ($1, $2, LHS $3, $4, $5, $6, $7) }
  | T_FOR T_LPAREN for_single_variable_decl T_IN expression T_RPAREN  statement
-     { ForIn ($1, $2, Vars $3, $4, $5, $6, $7) }
+     { ForIn ($1, $2, ForVars $3, $4, $5, $6, $7) }
+ /*(*TODO: ForOf *)*/
+ | T_FOR T_LPAREN left_hand_side_expression T_OF assignment_expression 
+         T_RPAREN statement
+     { ForIn ($1, $2, LHS $3, $4, $5, $6, $7) }
+ | T_FOR T_LPAREN for_single_variable_decl T_OF assignment_expression
+        T_RPAREN  statement
+     { ForIn ($1, $2, ForVars $3, $4, $5, $6, $7) }
 
 
 initializer_no_in:
@@ -423,13 +430,18 @@ variable_declaration_no_in:
  | identifier
      { VarClassic { v_name = $1; v_init = None; v_type = None } }
 
+/*(* TODO: do not return a list! *)*/
 for_single_variable_decl:
- | T_VAR variable_declaration_no_in { ((Var, $1), [Left $2]) }
+ | T_VAR for_binding { ((Var, $1), [Left $2]) }
  /*(* es6: *)*/
- | T_CONST variable_declaration_no_in { ((Const, $1), [Left $2]) }
- | T_LET variable_declaration_no_in   { ((Let, $1), [Left $2]) }
+ | T_CONST for_binding { ((Const, $1), [Left $2]) }
+ | T_LET for_binding   { ((Let, $1), [Left $2]) }
 
-
+for_binding:
+ | identifier annotation_opt 
+   { VarClassic { v_name = $1; v_type = $2; v_init = None; } }
+ | binding_pattern 
+   { VarPatternTodo }
 
 /*(*----------------------------*)*/
 /*(*2 pattern *)*/
