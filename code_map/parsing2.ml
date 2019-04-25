@@ -366,7 +366,7 @@ let tokens_with_categ_of_file file hentities =
       tokens_with_categ_of_file_helper 
         { parse = (parse_cache
           (fun file -> 
-            Common.save_excursion Flag_parsing_js.error_recovery true (fun () ->
+            Common.save_excursion Flag_parsing.error_recovery true (fun () ->
               Js (Parse_js.parse file +> fst))
           )
          (function 
