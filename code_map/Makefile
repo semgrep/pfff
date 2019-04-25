@@ -58,8 +58,6 @@ INCLUDEDIRS=$(TOP)/commons $(TOP)/globals \
          $(TOP)/lang_csharp/analyze \
         $(TOP)/lang_rust/parsing \
          $(TOP)/lang_rust/analyze \
-        $(TOP)/lang_opa/parsing \
-         $(TOP)/lang_opa/analyze \
         $(TOP)/lang_java/parsing \
          $(TOP)/lang_java/analyze \
         $(TOP)/lang_erlang/parsing \

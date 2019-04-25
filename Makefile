@@ -97,7 +97,6 @@ BASICLIBS=commons/lib.cma \
  lang_python/parsing/lib.cma \
  lang_csharp/parsing/lib.cma \
  lang_rust/parsing/lib.cma \
- lang_opa/parsing/lib.cma \
  lang_erlang/parsing/lib.cma \
  lang_haskell/parsing/lib.cma \
  lang_lisp/parsing/lib.cma \
@@ -164,8 +163,6 @@ LIBS= commons/lib.cma \
      lang_csharp/analyze/lib.cma \
     lang_rust/parsing/lib.cma \
      lang_rust/analyze/lib.cma \
-    lang_opa/parsing/lib.cma \
-     lang_opa/analyze/lib.cma \
     lang_erlang/parsing/lib.cma \
      lang_erlang/analyze/lib.cma \
     lang_text/lib.cma \
@@ -216,8 +213,6 @@ MAKESUBDIRS=commons commons_ocollection commons_core \
    lang_csharp/analyze \
   lang_rust/parsing \
    lang_rust/analyze \
-  lang_opa/parsing \
-   lang_opa/analyze \
   lang_erlang/parsing \
    lang_erlang/analyze \
   lang_php/analyze \

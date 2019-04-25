@@ -97,7 +97,6 @@ let all_actions () =
   Test_parsing_css.actions()@
   Test_parsing_web.actions()@
 
-  Test_parsing_opa.actions()@
   Test_parsing_sql.actions()@
 
 (*

@@ -50,7 +50,6 @@ type ast =
   | Html of Parse_html.program_and_tokens
   | Js  of Parse_js.program_and_tokens
   | Php of Parse_php.program_with_comments
-  | Opa of Parse_opa.program_and_tokens
 
   (* system *)
   | Cpp of Parse_cpp.toplevels_and_tokens
@@ -286,18 +285,6 @@ let tokens_with_categ_of_file file hentities =
         highlight_visit = (fun ~tag_hook prefs (ast, toks) -> 
           Highlight_rust.visit_program ~tag_hook prefs (ast, toks));
         info_of_tok = Token_helpers_rust.info_of_tok;
-        }
-        file prefs hentities
-
-  | FT.PL (FT.Opa) ->
-      tokens_with_categ_of_file_helper 
-        { parse = (parse_cache 
-         (fun file -> Opa (Parse_opa.parse_just_tokens file))
-         (function 
-         | Opa (ast, toks) -> [ast, toks] 
-         | _ -> raise Impossible));
-        highlight_visit = Highlight_opa.visit_toplevel;
-        info_of_tok = Token_helpers_opa.info_of_tok;
         }
         file prefs hentities
 
