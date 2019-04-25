@@ -20,7 +20,7 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Abstract Syntax Tree for Javascript.
+(* Concrete Syntax Tree for Javascript.
  * 
  * Specification: 
  *  http://www.ecma-international.org/publications/standards/Ecma-262.htm
@@ -33,14 +33,15 @@ module PI = Parse_info
  *  - classes
  *  - arrows (a.k.a short lambdas)
  *  - optional trailing commas
- *  - variable number of parameters, e.g. 'function foo(...args)'
+ *  - SEMI variable number of parameters, e.g. 'function foo(...args)'
  *    and spread of parameters with [ ...arr ]
  *  - template strings (a.k.a interpolated strings), see
  *    https://gist.github.com/lukehoban/9303054#template-strings
- *  - import/export TODO
- *  - let TODO
- *  - const TODO
- *  - destructuring patterns TODO
+ *  - import/export
+ *  - let lexical vars
+ *  - const declarations
+ *  - SEMI destructuring patterns
+ *  - iterators (for ... of )
  *  - generators (yield, async, await) TODO
  *
  * See http://es6-features.org/ for explanations of those recent features
@@ -466,6 +467,20 @@ and import =
    and import_default = name
    and import_name = name * (tok (* as *) * name) option
 
+and export = 
+  (* St in item can only be a VarsDecl *)
+  | ExportDecl of item
+  (* item can be only FunDecl or ClassDecl, no St *)
+  | ExportDefaultDecl of tok (* default *) * item
+  | ExportDefaultExpr of tok (* default *) * expr * sc
+
+  | ExportNames of import_name comma_list brace * sc
+  (* reexport *)
+  | ReExportNamespace of tok (* * *) * (tok (* from *) * module_path) * sc
+  | ReExportNames of import_name comma_list brace * 
+                      (tok (* from *) * module_path) * sc
+  
+
 (* ------------------------------------------------------------------------- *)
 (* Toplevel *)
 (* ------------------------------------------------------------------------- *)
@@ -474,7 +489,7 @@ and import =
   | It of item
   (* es6-ext: *)
   | Import of (tok (* import *) * import * sc)
-  | ExportTodo
+  | Export of (tok (* export *) * export)
 
  and program = module_item list
  (* with tarzan *)

@@ -731,6 +731,44 @@ and vof_import_name (v1, v2) =
       v2
   in Ocaml.VTuple [ v1; v2 ]
 
+and vof_export =
+  function
+  | ExportDecl v1 ->
+      let v1 = vof_item v1 in Ocaml.VSum (("ExportDecl", [ v1 ]))
+  | ExportDefaultDecl ((v1, v2)) ->
+      let v1 = vof_tok v1
+      and v2 = vof_item v2
+      in Ocaml.VSum (("ExportDefaultDecl", [ v1; v2 ]))
+  | ExportDefaultExpr ((v1, v2, v3)) ->
+      let v1 = vof_tok v1
+      and v2 = vof_expr v2
+      and v3 = vof_sc v3
+      in Ocaml.VSum (("ExportDefaultExpr", [ v1; v2; v3 ]))
+  | ExportNames ((v1, v2)) ->
+      let v1 = vof_brace (vof_comma_list vof_import_name) v1
+      and v2 = vof_sc v2
+      in Ocaml.VSum (("ExportNames", [ v1; v2 ]))
+  | ReExportNamespace ((v1, v2, v3)) ->
+      let v1 = vof_tok v1
+      and v2 =
+        (match v2 with
+         | (v1, v2) ->
+             let v1 = vof_tok v1
+             and v2 = vof_module_path v2
+             in Ocaml.VTuple [ v1; v2 ])
+      and v3 = vof_sc v3
+      in Ocaml.VSum (("ReExportNamespace", [ v1; v2; v3 ]))
+  | ReExportNames ((v1, v2, v3)) ->
+      let v1 = vof_brace (vof_comma_list vof_import_name) v1
+      and v2 =
+        (match v2 with
+         | (v1, v2) ->
+             let v1 = vof_tok v1
+             and v2 = vof_module_path v2
+             in Ocaml.VTuple [ v1; v2 ])
+      and v3 = vof_sc v3
+      in Ocaml.VSum (("ReExportNames", [ v1; v2; v3 ]))
+
 and vof_module_item =
   function
   | Import v1 ->
@@ -742,7 +780,15 @@ and vof_module_item =
              and v3 = vof_sc v3
              in Ocaml.VTuple [ v1; v2; v3 ])
       in Ocaml.VSum (("Import", [ v1 ]))
-  | ExportTodo -> Ocaml.VSum (("ExportTodo", []))
+  | Export v1 ->
+      let v1 =
+        (match v1 with
+         | (v1, v2) ->
+             let v1 = vof_tok v1
+             and v2 = vof_export v2
+             in Ocaml.VTuple [ v1; v2 ])
+      in Ocaml.VSum (("Export", [ v1 ]))
+
   | It v1 -> let v1 = vof_item v1 in Ocaml.VSum (("It", [ v1 ]))
 
 and vof_program_orig v = Ocaml.vof_list vof_module_item v

@@ -645,6 +645,31 @@ and v_import_name (v1, v2) =
   and v2 =
     v_option (fun (v1, v2) -> let v1 = v_tok v1 and v2 = v_name v2 in ()) v2
   in ()
+and v_export =
+  function
+  | ExportDecl v1 -> let v1 = v_item v1 in ()
+  | ExportDefaultDecl ((v1, v2)) ->
+      let v1 = v_tok v1 and v2 = v_item v2 in ()
+  | ExportDefaultExpr ((v1, v2, v3)) ->
+      let v1 = v_tok v1 and v2 = v_expr v2 and v3 = v_sc v3 in ()
+  | ExportNames ((v1, v2)) ->
+      let v1 = v_brace (v_comma_list v_import_name) v1
+      and v2 = v_sc v2
+      in ()
+  | ReExportNamespace ((v1, v2, v3)) ->
+      let v1 = v_tok v1
+      and v2 =
+        (match v2 with
+         | (v1, v2) -> let v1 = v_tok v1 and v2 = v_module_path v2 in ())
+      and v3 = v_sc v3
+      in ()
+  | ReExportNames ((v1, v2, v3)) ->
+      let v1 = v_brace (v_comma_list v_import_name) v1
+      and v2 =
+        (match v2 with
+         | (v1, v2) -> let v1 = v_tok v1 and v2 = v_module_path v2 in ())
+      and v3 = v_sc v3
+      in ()
 
 and v_module_item =
   function
@@ -655,7 +680,12 @@ and v_module_item =
          | (v1, v2, v3) ->
              let v1 = v_tok v1 and v2 = v_import v2 and v3 = v_sc v3 in ())
       in ()
-  | ExportTodo -> ()
+  | Export v1 ->
+      let v1 =
+        (match v1 with
+         | (v1, v2) -> let v1 = v_tok v1 and v2 = v_export v2 in ())
+      in ()
+
 
 and v_program v = v_list v_module_item v
 

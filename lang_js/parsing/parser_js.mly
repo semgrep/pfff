@@ -183,7 +183,7 @@ program: module_item_list { $1 }
 module_item:
  | item { It $1 }
  | import_declaration { Import $1 }
- | export_declaration { ExportTodo }
+ | export_declaration { Export $1 }
 
 item:
  | statement   { St $1 }
@@ -255,25 +255,29 @@ module_specifier: string_literal { $1 }
 /*(*----------------------------*)*/
 
 export_declaration:
- | T_EXPORT export_names semicolon { }
- | T_EXPORT variable_statement { }
- | T_EXPORT declaration { }
+ | T_EXPORT export_names       { $1, $2 }
+ | T_EXPORT variable_statement { $1, ExportDecl (St $2) }
+ | T_EXPORT declaration        { $1, ExportDecl $2 }
  /*(* in theory just func/gen/class, no lexical_decl *)*/
- | T_EXPORT T_DEFAULT declaration { }
- | T_EXPORT T_DEFAULT assignment_expression_no_statement semicolon { }
+ | T_EXPORT T_DEFAULT declaration { $1, ExportDefaultDecl ($2, $3) }
+ | T_EXPORT T_DEFAULT assignment_expression_no_statement semicolon 
+    { $1, ExportDefaultExpr ($2, $3, $4)  }
 
 
 export_names:
- | T_MULT        from_clause { }
- | export_clause from_clause { }
- | export_clause { }
+ | T_MULT        from_clause semicolon { ReExportNamespace ($1, $2, $3) }
+ | export_clause from_clause semicolon { ReExportNames ($1, $2, $3) }
+ | export_clause semicolon { ExportNames ($1, $2) }
 
 export_clause:
- | T_LCURLY T_RCURLY { }
+ | T_LCURLY T_RCURLY 
+   { ($1, [], $2) }
  /*(* todo: remove those T_VIRTUAL_SEMICOLON; parsing_hack_js should not
     * have inserted them in the first place *)*/
- | T_LCURLY import_specifiers T_VIRTUAL_SEMICOLON         T_RCURLY { }
- | T_LCURLY import_specifiers T_COMMA T_VIRTUAL_SEMICOLON T_RCURLY { }
+ | T_LCURLY import_specifiers T_VIRTUAL_SEMICOLON         T_RCURLY 
+   { ($1, $2, $4) }
+ | T_LCURLY import_specifiers T_COMMA T_VIRTUAL_SEMICOLON T_RCURLY 
+   { ($1, $2 @ [Right $3], $5) }
 
 /*(*************************************************************************)*/
 /*(*1 Statement *)*/
