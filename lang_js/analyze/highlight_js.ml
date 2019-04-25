@@ -192,6 +192,9 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
     | T.T_CLASS ii | T.T_EXTENDS ii  -> tag ii KeywordObject
     | T.T_INTERFACE ii -> tag ii KeywordObject
 
+    | T.T_GET ii | T.T_SET ii
+        -> tag ii KeywordObject
+
     (* less: maybe should do that on AST as those can actually be
      * also regular identifiers
      *)

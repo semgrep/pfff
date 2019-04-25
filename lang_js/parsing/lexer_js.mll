@@ -100,6 +100,7 @@ let keyword_table = Common.hash_of_list [
 
   "function",   (fun ii -> T_FUNCTION ii);
   "var",        (fun ii -> T_VAR ii);
+  (* es6: *)
   "const",      (fun ii -> T_CONST ii);
   "let",        (fun ii -> T_LET ii);
 
@@ -113,15 +114,19 @@ let keyword_table = Common.hash_of_list [
   "true",       (fun ii -> T_TRUE ii);
 
   "in",         (fun ii -> T_IN ii);
+  (* es6: *)
   "of",         (fun ii -> T_OF ii);
 
   "this",       (fun ii -> T_THIS ii);
+  (* es6: *)
   "super",       (fun ii -> T_SUPER ii);
 
   "instanceof", (fun ii -> T_INSTANCEOF ii);
   "typeof",     (fun ii -> T_TYPEOF ii);
 
   "with",       (fun ii -> T_WITH ii);
+
+  (* es6: *)
 
   "yield",       (fun ii -> T_YIELD ii);
   "async",       (fun ii -> T_ASYNC ii);
@@ -132,6 +137,9 @@ let keyword_table = Common.hash_of_list [
   "interface",      (fun ii -> T_INTERFACE ii);
 
   "static",     (fun ii -> T_STATIC ii);
+
+  "get",     (fun ii -> T_GET ii);
+  "get",     (fun ii -> T_SET ii);
 
   "import",     (fun ii -> T_IMPORT ii);
   "export",     (fun ii -> T_EXPORT ii);

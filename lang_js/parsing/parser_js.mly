@@ -76,7 +76,7 @@ let fake_tok s = {
  T_YIELD T_ASYNC T_AWAIT
  T_NEW T_IN T_OF T_INSTANCEOF T_THIS T_SUPER T_WITH  
  T_NULL T_FALSE T_TRUE
- T_CLASS T_INTERFACE T_EXTENDS T_STATIC 
+ T_CLASS T_INTERFACE T_EXTENDS T_STATIC T_GET T_SET
  T_IMPORT T_EXPORT T_FROM T_AS
  T_IN T_INSTANCEOF T_TYPEOF
  T_DELETE  T_VOID
@@ -1155,6 +1155,7 @@ identifier:
 /*(* add here keywords which are not considered reserveds by ECMA *)*/
 ident_semi_keyword:
  | T_FROM { $1 } | T_AS   { $1 } | T_OF { $1 }
+ | T_GET { $1 } | T_SET { $1 }
 
 /*(*alt: use the _last_non_whitespace_like_token trick and look if
    * previous token was a period to return a T_IDENTFIER
@@ -1178,6 +1179,7 @@ ident_keyword_bis:
  | T_CLASS { $1 } | T_INTERFACE { $1 } | T_EXTENDS { $1 } | T_STATIC { $1 }
  | T_IMPORT { $1 } | T_EXPORT { $1 } | T_FROM { $1 } 
  | T_AS { $1 } | T_OF { $1}
+ | T_GET { $1 } | T_SET { $1 }
 
 
 field_name:
