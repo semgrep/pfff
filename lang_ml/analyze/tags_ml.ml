@@ -15,6 +15,7 @@
 open Common
 
 open Highlight_code
+module Flag = Flag_parsing
 module Tags = Tags_file
 module E = Entity_code
 
@@ -58,7 +59,7 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
     k();
      let (ast, toks) = 
        try 
-         Common.save_excursion Flag_parsing_ml.show_parsing_error false(fun()->
+         Common.save_excursion Flag.show_parsing_error false(fun()->
            Parse_ml.parse file +> fst
          )
        with Parse_ml.Parse_error pos ->

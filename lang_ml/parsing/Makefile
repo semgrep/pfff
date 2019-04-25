@@ -7,8 +7,7 @@ OPAMPKG=pfff-lang_ml
 
 -include $(TOP)/Makefile.config
 
-SRC= flag_parsing_ml.ml \
-     ast_ml.ml \
+SRC= ast_ml.ml \
      meta_ast_ml.ml \
      visitor_ml.ml lib_parsing_ml.ml \
      parser_ml.ml lexer_ml.ml \

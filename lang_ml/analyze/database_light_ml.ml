@@ -14,10 +14,12 @@
  *)
 open Common
 
+module Flag = Flag_parsing
 module Db = Database_code
 module HC = Highlight_code
-module T = Parser_ml
 module PI = Parse_info
+
+module T = Parser_ml
 
 (*****************************************************************************)
 (* Prelude *)
@@ -99,8 +101,8 @@ let rank_and_filter_examples_of_use ~root ids entities_arr =
   +> List.map snd
 
 let parse file =
-  Common.save_excursion Flag_parsing_ml.error_recovery true (fun () ->
-  Common.save_excursion Flag_parsing_ml.show_parsing_error false (fun () ->
+  Common.save_excursion Flag.error_recovery true (fun () ->
+  Common.save_excursion Flag.show_parsing_error false (fun () ->
     Parse_ml.parse file 
   ))
 

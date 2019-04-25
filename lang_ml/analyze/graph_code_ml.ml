@@ -14,6 +14,7 @@
  *)
 open Common
 
+module Flag = Flag_parsing
 module E = Entity_code
 module G = Graph_code
 
@@ -65,8 +66,8 @@ module V = Visitor_ml
 (*****************************************************************************)
 
 let parse file =
-  Common.save_excursion Flag_parsing_ml.show_parsing_error false (fun ()->
-  Common.save_excursion Flag_parsing_ml.exn_when_lexical_error true (fun ()->
+  Common.save_excursion Flag.show_parsing_error false (fun ()->
+  Common.save_excursion Flag.exn_when_lexical_error true (fun ()->
     try 
       Parse_ml.parse_program file 
     with Parse_ml.Parse_error _ ->

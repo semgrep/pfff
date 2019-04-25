@@ -16,7 +16,7 @@
 open Common 
 
 module Ast = Ast_ml
-module Flag = Flag_parsing_ml
+module Flag = Flag_parsing
 
 open Parser_ml
 

@@ -231,7 +231,7 @@ let tokens_with_categ_of_file file hentities =
   | FT.PL (FT.ML _) ->
       tokens_with_categ_of_file_helper 
         { parse = (parse_cache (fun file -> 
-           Common.save_excursion Flag_parsing_ml.error_recovery true (fun()->
+           Common.save_excursion Flag_parsing.error_recovery true (fun()->
              ML (Parse_ml.parse file +> fst))
          )
          (function 

@@ -1,6 +1,6 @@
 open Common
 
-module Flag = Flag_parsing_ml
+module Flag = Flag_parsing
 
 (*****************************************************************************)
 (* Subsystem testing *)
@@ -12,7 +12,7 @@ let test_tokens_ml file =
 
   Flag.verbose_lexing := true;
   Flag.verbose_parsing := true;
-  Flag_parsing_ml.exn_when_lexical_error := true;
+  Flag.exn_when_lexical_error := true;
 
   let toks = Parse_ml.tokens file in
   toks +> List.iter (fun x -> pr2_gen x);
@@ -31,7 +31,7 @@ let test_parse_ml_or_mli xs =
     k();
 
     let (_xs, stat) = 
-      Common.save_excursion Flag_parsing_ml.error_recovery true (fun () ->
+      Common.save_excursion Flag.error_recovery true (fun () ->
         Parse_ml.parse file 
       )
       in

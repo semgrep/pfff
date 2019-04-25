@@ -13,7 +13,7 @@
  *)
 open Common 
 
-module Flag = Flag_parsing_ml
+module Flag = Flag_parsing
 module TH   = Token_helpers_ml
 module PI = Parse_info
 
