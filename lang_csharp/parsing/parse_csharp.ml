@@ -13,9 +13,9 @@
  *)
 open Common 
 
-module Flag = Flag_parsing_csharp
-module TH   = Token_helpers_csharp
+module Flag = Flag_parsing
 module PI = Parse_info
+module TH   = Token_helpers_csharp
 
 (*****************************************************************************)
 (* Prelude *)

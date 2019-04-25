@@ -15,7 +15,7 @@
 open Common
 
 module Ast = Ast_csharp
-module Flag = Flag_parsing_csharp
+module Flag = Flag_parsing
 (* module V = Visitor_csharp *)
 
 (*****************************************************************************)

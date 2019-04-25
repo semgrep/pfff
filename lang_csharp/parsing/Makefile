@@ -6,8 +6,7 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-SRC= flag_parsing_csharp.ml \
-     ast_csharp.ml \
+SRC= ast_csharp.ml \
      lib_parsing_csharp.ml \
      parser_csharp.ml lexer_csharp.ml \
      token_helpers_csharp.ml \

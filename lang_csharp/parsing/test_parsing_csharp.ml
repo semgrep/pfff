@@ -1,6 +1,6 @@
 open Common
 
-module Flag = Flag_parsing_csharp
+module Flag = Flag_parsing
 
 (*****************************************************************************)
 (* Subsystem testing *)
