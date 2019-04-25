@@ -1,6 +1,6 @@
 # -*- org -*-
 
-* 0.37 (Q2 2019) (new OPAM release)
+* 0.37 (Q2 2019) (new OPAM release??? better JS support)
 
 ** javascript
 
@@ -10,7 +10,13 @@
 (I need some of the new code from pfff in efuns,
 which I want to release in OPAM)
 
-* 0.36 (Q1 2019) 
+** internals
+
+*** factorized flag_parsing_xxx.ml
+
+*** removed support for OPA (lang_opa/)
+
+* 0.36 (Q1 2019) (port to OCaml 4.07, switch to OPAM and cairo2)
 
 ** ocaml
 
@@ -84,11 +90,11 @@ motivated by magicator?
 
 * -----------------------------------------------------------
 
-* 0.32 (Q2 2015) ((principia parenthesis))
+* 0.32 (Q2 2015) ()
 
 ** better coloring for noweb files, give priority to sections over chunks
 
-* 0.31 (Q1 2015) ((principia parenthesis))
+* 0.31 (Q1 2015) ()
 
 ** lpizer (code now moved in syncweb)
 
@@ -96,7 +102,7 @@ motivated by magicator?
 
 * -----------------------------------------------------------
 
-* 0.30 (Q4 2014) ((principia parenthesis), lpizer)
+* 0.30 (Q4 2014) (lpizer)
 
 ** introduce lpizer
 
@@ -165,7 +171,7 @@ can explore dependencies in emacs source :)
 for graph_code_clang and also graph_code_c
 
 
-* 0.28 (Q2 2014) ((kernel.tex.nw parenthesis))
+* 0.28 (Q2 2014) ()
 
 ** codemap
 
@@ -550,6 +556,7 @@ good basis then for graph_code_php.ml, new, check_variables_php.ml, etc.
 
 ** introduce lang_opa/
 basic support
+update: removed later
 
 ** introduce type inference for PHP (julien)
 

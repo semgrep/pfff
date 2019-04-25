@@ -6,8 +6,7 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-SRC= flag_parsing_web.ml \
-     ast_web.ml \
+SRC= ast_web.ml \
      parse_web.ml \
      test_parsing_web.ml \
 
