@@ -243,6 +243,7 @@ and st =
   | If of tok * expr paren * st * (tok (* else *) * st) option
   | Do of tok * st * tok (* while *) * expr paren * sc
   | While of tok * expr paren * st
+
   | For of tok * tok (* ( *) *
       lhs_or_vars option * tok (* ; *) *
       expr option * tok (* ; *) *
@@ -251,6 +252,9 @@ and st =
       st
   | ForIn of tok * tok (* ( *) * lhs_or_var * tok (* in *) *
       expr * tok (* ) *) * st
+  | ForOf of tok * tok (* ( *) * lhs_or_var * tok (* of *) *
+      expr * tok (* ) *) * st
+
   | Switch of tok * expr paren *
       case_clause list brace (* was   (case_clause list * st) list *)
 
@@ -271,13 +275,13 @@ and st =
 
   (* less: could unify with 'st', and explain additional constraints *)
   and lhs_or_vars =
-    | LHS of expr
+    | LHS1 of expr
     | ForVars of (var_kind wrap * var_binding comma_list)
 
-  (* TODO: fix it! 
-   * the variable_declaration in ForVar has v_init = None.
-   *)
-  and lhs_or_var = lhs_or_vars
+  and lhs_or_var = 
+    | LHS2 of expr
+    (* the variable_declaration in var_binding  has v_init = None. *)
+    | ForVar of (var_kind wrap * var_binding)
 
   and case_clause =
     | Default of tok * tok (*:*) * item list

@@ -360,7 +360,7 @@ and v_st x =
   | For ((v1, v2, v3, v4, v5, v6, v7, v8, v9)) ->
       let v1 = v_tok v1
       and v2 = v_tok v2
-      and v3 = v_option v_lhs_or_var v3
+      and v3 = v_option v_lhs_or_vars v3
       and v4 = v_tok v4
       and v5 = v_option v_expr v5
       and v6 = v_tok v6
@@ -369,6 +369,15 @@ and v_st x =
       and v9 = v_st v9
       in ()
   | ForIn ((v1, v2, v3, v4, v5, v6, v7)) ->
+      let v1 = v_tok v1
+      and v2 = v_tok v2
+      and v3 = v_lhs_or_var v3
+      and v4 = v_tok v4
+      and v5 = v_expr v5
+      and v6 = v_tok v6
+      and v7 = v_st v7
+      in ()
+  | ForOf ((v1, v2, v3, v4, v5, v6, v7)) ->
       let v1 = v_tok v1
       and v2 = v_tok v2
       and v3 = v_lhs_or_var v3
@@ -413,12 +422,19 @@ and v_st x =
   vin.kstmt (k, all_functions) x
 
 and v_label v = v_wrap v_string v
-and v_lhs_or_var =
+and v_lhs_or_vars =
   function
-  | LHS v1 -> let v1 = v_expr v1 in ()
+  | LHS1 v1 -> let v1 = v_expr v1 in ()
   | ForVars ((v1, v2)) ->
       let v1 = v_wrap v_var_kind v1 
       and v2 = v_comma_list3 v_var_binding v2 
+      in ()
+and v_lhs_or_var =
+  function
+  | LHS2 v1 -> let v1 = v_expr v1 in ()
+  | ForVar ((v1, v2)) ->
+      let v1 = v_wrap v_var_kind v1 
+      and v2 = v_var_binding v2 
       in ()
 and v_case_clause =
   function

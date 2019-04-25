@@ -303,7 +303,7 @@ iteration_statement:
      expression_opt T_SEMICOLON
      expression_opt
      T_RPAREN statement
-     { For ($1, $2, $3 +>Common2.fmap (fun x -> LHS x), $4, $5, $6, $7, $8, $9) }
+     { For ($1, $2, $3|>Common2.fmap (fun x -> LHS1 x), $4, $5, $6, $7,$8,$9)}
  | T_FOR T_LPAREN
      for_variable_declaration T_SEMICOLON
      expression_opt T_SEMICOLON
@@ -312,16 +312,15 @@ iteration_statement:
      { For ($1, $2, Some (ForVars $3), $4, $5, $6, $7, $8, $9) }
 
  | T_FOR T_LPAREN left_hand_side_expression T_IN expression T_RPAREN statement
-     { ForIn ($1, $2, LHS $3, $4, $5, $6, $7) }
+     { ForIn ($1, $2, LHS2 $3, $4, $5, $6, $7) }
  | T_FOR T_LPAREN for_single_variable_decl T_IN expression T_RPAREN  statement
-     { ForIn ($1, $2, ForVars $3, $4, $5, $6, $7) }
- /*(*TODO: ForOf *)*/
+     { ForIn ($1, $2, ForVar $3, $4, $5, $6, $7) }
  | T_FOR T_LPAREN left_hand_side_expression T_OF assignment_expression 
          T_RPAREN statement
-     { ForIn ($1, $2, LHS $3, $4, $5, $6, $7) }
+     { ForOf ($1, $2, LHS2 $3, $4, $5, $6, $7) }
  | T_FOR T_LPAREN for_single_variable_decl T_OF assignment_expression
         T_RPAREN  statement
-     { ForIn ($1, $2, ForVars $3, $4, $5, $6, $7) }
+     { ForOf ($1, $2, ForVar $3, $4, $5, $6, $7) }
 
 
 initializer_no_in:
@@ -432,10 +431,10 @@ variable_declaration_no_in:
 
 /*(* TODO: do not return a list! *)*/
 for_single_variable_decl:
- | T_VAR for_binding { ((Var, $1), [Left $2]) }
+ | T_VAR for_binding { ((Var, $1), $2) }
  /*(* es6: *)*/
- | T_CONST for_binding { ((Const, $1), [Left $2]) }
- | T_LET for_binding   { ((Let, $1), [Left $2]) }
+ | T_CONST for_binding { ((Const, $1), $2) }
+ | T_LET for_binding   { ((Let, $1), $2) }
 
 for_binding:
  | identifier annotation_opt 
