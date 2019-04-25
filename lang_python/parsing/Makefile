@@ -6,8 +6,7 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-SRC= flag_parsing_python.ml \
-     ast_python.ml \
+SRC= ast_python.ml \
      lib_parsing_python.ml \
      parser_python.ml lexer_python.ml \
      token_helpers_python.ml \

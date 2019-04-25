@@ -16,7 +16,7 @@
 open Common
 
 module Ast = Ast_python
-module Flag = Flag_parsing_python
+module Flag = Flag_parsing
 
 (* module V = Visitor_python *)
 
