@@ -272,7 +272,7 @@ and st =
   (* less: could unify with 'st', and explain additional constraints *)
   and lhs_or_vars =
     | LHS of expr
-    | Vars of var_kind wrap * var_binding comma_list
+    | Vars of (var_kind wrap * var_binding comma_list)
   (* TODO: fix it! *)
   and lhs_or_var = lhs_or_vars
 
