@@ -98,8 +98,8 @@ let keyword_table = Common.hash_of_list [
   "catch",      (fun ii -> T_CATCH ii);
   "finally",    (fun ii -> T_FINALLY ii);
 
-  "var",        (fun ii -> T_VAR ii);
   "function",   (fun ii -> T_FUNCTION ii);
+  "var",        (fun ii -> T_VAR ii);
   "const",      (fun ii -> T_CONST ii);
   "let",        (fun ii -> T_LET ii);
 
@@ -113,10 +113,14 @@ let keyword_table = Common.hash_of_list [
   "true",       (fun ii -> T_TRUE ii);
 
   "in",         (fun ii -> T_IN ii);
-  "instanceof", (fun ii -> T_INSTANCEOF ii);
+  "of",         (fun ii -> T_OF ii);
+
   "this",       (fun ii -> T_THIS ii);
   "super",       (fun ii -> T_SUPER ii);
+
+  "instanceof", (fun ii -> T_INSTANCEOF ii);
   "typeof",     (fun ii -> T_TYPEOF ii);
+
   "with",       (fun ii -> T_WITH ii);
 
   "yield",       (fun ii -> T_YIELD ii);

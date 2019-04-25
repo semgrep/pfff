@@ -176,7 +176,7 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
     | T.T_RETURN (ii)
     | T.T_BREAK (ii)  | T.T_CONTINUE (ii)
     | T.T_CASE (ii) | T.T_DEFAULT (ii)
-    | T.T_IN (ii) 
+    | T.T_IN (ii) | T.T_OF (ii)
       -> tag ii Keyword
     | T.T_THIS (ii) | T.T_SUPER (ii) | T.T_INSTANCEOF (ii)
     | T.T_NEW (ii)  | T.T_DELETE (ii)

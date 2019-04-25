@@ -165,6 +165,7 @@ let visitor_info_of_tok f = function
   | T_EXPORT ii -> T_EXPORT (f ii)
   | T_FROM ii -> T_FROM (f ii)
   | T_AS ii -> T_AS (f ii)
+  | T_OF ii -> T_OF (f ii)
 
 let info_of_tok tok = 
   let res = ref None in

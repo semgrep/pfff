@@ -74,7 +74,7 @@ let fake_tok s = {
  T_RETURN 
  T_THROW T_TRY T_CATCH T_FINALLY
  T_YIELD T_ASYNC T_AWAIT
- T_NEW T_IN T_INSTANCEOF T_THIS T_SUPER T_WITH  
+ T_NEW T_IN T_OF T_INSTANCEOF T_THIS T_SUPER T_WITH  
  T_NULL T_FALSE T_TRUE
  T_CLASS T_INTERFACE T_EXTENDS T_STATIC 
  T_IMPORT T_EXPORT T_FROM T_AS
@@ -297,6 +297,7 @@ iteration_statement:
      { Do ($1, $2, $3, ($4, $5, $6), $7) }
  | T_WHILE T_LPAREN expression T_RPAREN statement
      { While ($1, ($2, $3, $4), $5) }
+
  | T_FOR T_LPAREN
      expression_no_in_opt T_SEMICOLON
      expression_opt T_SEMICOLON
@@ -304,17 +305,16 @@ iteration_statement:
      T_RPAREN statement
      { For ($1, $2, $3 +>Common2.fmap (fun x -> LHS x), $4, $5, $6, $7, $8, $9) }
  | T_FOR T_LPAREN
-     T_VAR variable_declaration_list_no_in T_SEMICOLON
+     for_variable_declaration T_SEMICOLON
      expression_opt T_SEMICOLON
      expression_opt
      T_RPAREN statement
-     { For ($1, $2, Some (Vars ((Var, $3), $4)), $5, $6, $7, $8, $9, $10) }
+     { For ($1, $2, Some $3, $4, $5, $6, $7, $8, $9) }
+
  | T_FOR T_LPAREN left_hand_side_expression T_IN expression T_RPAREN statement
      { ForIn ($1, $2, LHS $3, $4, $5, $6, $7) }
- | T_FOR
-     T_LPAREN T_VAR variable_declaration_list_no_in T_IN expression T_RPAREN
-     statement
-     { ForIn ($1, $2, Vars ((Var, $3), $4), $5, $6, $7, $8) }
+ | T_FOR T_LPAREN for_variable_declaration T_IN expression T_RPAREN  statement
+     { ForIn ($1, $2, $3, $4, $5, $6, $7) }
 
 
 initializer_no_in:
@@ -399,6 +399,7 @@ lexical_declaration:
  | T_LET variable_declaration_list semicolon { VarsDecl((Let, $1), $2,$3) }
 
 
+
 variable_declaration:
  | identifier annotation_opt initializeur_opt
      { VarClassic { v_name = $1; v_type = $2; v_init = $3 } }
@@ -408,6 +409,10 @@ variable_declaration:
 initializeur:
  | T_ASSIGN assignment_expression { $1, $2 }
 
+
+
+for_variable_declaration:
+ | T_VAR variable_declaration_list_no_in { Vars ((Var, $1), $2) }
 
 variable_declaration_no_in:
  | identifier initializer_no_in
@@ -1098,7 +1103,7 @@ identifier:
 
 /*(* add here keywords which are not considered reserveds by ECMA *)*/
 ident_semi_keyword:
- | T_FROM { $1 } | T_AS   { $1 }
+ | T_FROM { $1 } | T_AS   { $1 } | T_OF { $1 }
 
 /*(*alt: use the _last_non_whitespace_like_token trick and look if
    * previous token was a period to return a T_IDENTFIER
@@ -1120,7 +1125,8 @@ ident_keyword_bis:
  | T_NULL { $1 }
  | T_FALSE { $1 } | T_TRUE { $1 }
  | T_CLASS { $1 } | T_INTERFACE { $1 } | T_EXTENDS { $1 } | T_STATIC { $1 }
- | T_IMPORT { $1 } | T_EXPORT { $1 } | T_FROM { $1 } | T_AS { $1 }
+ | T_IMPORT { $1 } | T_EXPORT { $1 } | T_FROM { $1 } 
+ | T_AS { $1 } | T_OF { $1}
 
 
 field_name:
