@@ -190,7 +190,9 @@ item:
  | declaration { $1 }
 
 declaration:
+ /*(* part of hoistable_declaration in the ECMA grammar *)*/
  | function_declaration  { FunDecl $1 }
+
  /*(* es6: *)*/
  | lexical_declaration   { St $1 }
  | class_declaration     { ClassDecl $1 }
@@ -253,9 +255,12 @@ module_specifier: string_literal { $1 }
 /*(*----------------------------*)*/
 
 export_declaration:
- | T_EXPORT export_body semicolon { }
+ | T_EXPORT export_names semicolon { }
+ | T_EXPORT variable_statement { }
+ | T_EXPORT declaration { }
 
-export_body:
+
+export_names:
  | T_MULT        from_clause { }
  | export_clause from_clause { }
  | export_clause { }
@@ -411,9 +416,11 @@ default_clause:
 /*(*1 Variable declaration *)*/
 /*(*************************************************************************)*/
 
+/*(* part of 'statement' *)*/
 variable_statement:
  | T_VAR variable_declaration_list semicolon  { VarsDecl ((Var, $1), $2, $3) }
 
+/*(* part of 'declaration' *)*/
 lexical_declaration:
  /*(* es6: *)*/
  | T_CONST variable_declaration_list semicolon { VarsDecl((Const, $1), $2,$3) }

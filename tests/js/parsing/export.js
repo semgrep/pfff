@@ -20,3 +20,5 @@ export {
 };
 
 //export default Header;
+
+export var six = 6;
