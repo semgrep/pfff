@@ -14,10 +14,10 @@ let error_recovery = ref false
 
 
 let cmdline_flags_verbose () = [
-  "-no_verbose_parsing_js", Arg.Clear verbose_parsing , "  ";
-  "-no_verbose_lexing_js", Arg.Clear verbose_lexing , "  ";
+  "-no_verbose_parsing", Arg.Clear verbose_parsing , "  ";
+  "-no_verbose_lexing", Arg.Clear verbose_lexing , "  ";
 ]
 let cmdline_flags_debugging () = [
-  "-debug_lexer_js",        Arg.Set  debug_lexer , " ";
+  "-debug_lexer",        Arg.Set  debug_lexer , " ";
 ]
 

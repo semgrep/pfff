@@ -1,6 +1,6 @@
 open Common
 
-module Flag = Flag_parsing_js
+module Flag = Flag_parsing
 
 (*****************************************************************************)
 (* Subsystem testing *)
