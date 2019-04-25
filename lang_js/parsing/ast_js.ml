@@ -244,7 +244,7 @@ and st =
   | Do of tok * st * tok (* while *) * expr paren * sc
   | While of tok * expr paren * st
   | For of tok * tok (* ( *) *
-      lhs_or_var option * tok (* ; *) *
+      lhs_or_vars option * tok (* ; *) *
       expr option * tok (* ; *) *
       expr option *
       tok (* ) *) *
@@ -270,9 +270,11 @@ and st =
   and label = string wrap
 
   (* less: could unify with 'st', and explain additional constraints *)
-  and lhs_or_var =
+  and lhs_or_vars =
     | LHS of expr
     | Vars of var_kind wrap * var_binding comma_list
+  (* TODO: fix it! *)
+  and lhs_or_var = lhs_or_vars
 
   and case_clause =
     | Default of tok * tok (*:*) * item list

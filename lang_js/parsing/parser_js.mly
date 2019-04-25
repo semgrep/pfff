@@ -313,7 +313,7 @@ iteration_statement:
 
  | T_FOR T_LPAREN left_hand_side_expression T_IN expression T_RPAREN statement
      { ForIn ($1, $2, LHS $3, $4, $5, $6, $7) }
- | T_FOR T_LPAREN for_variable_declaration T_IN expression T_RPAREN  statement
+ | T_FOR T_LPAREN for_single_variable_decl T_IN expression T_RPAREN  statement
      { ForIn ($1, $2, $3, $4, $5, $6, $7) }
 
 
@@ -413,12 +413,19 @@ initializeur:
 
 for_variable_declaration:
  | T_VAR variable_declaration_list_no_in { Vars ((Var, $1), $2) }
+ /*(* es6: *)*/
+ | T_CONST variable_declaration_list_no_in { Vars ((Const, $1), $2) }
+ | T_LET variable_declaration_list_no_in { Vars ((Let, $1), $2) }
 
 variable_declaration_no_in:
  | identifier initializer_no_in
      { VarClassic { v_name = $1; v_init = Some $2; v_type =None } }
  | identifier
      { VarClassic { v_name = $1; v_init = None; v_type = None } }
+
+for_single_variable_decl:
+  for_variable_declaration { $1 }
+
 
 /*(*----------------------------*)*/
 /*(*2 pattern *)*/
