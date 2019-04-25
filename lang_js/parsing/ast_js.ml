@@ -200,6 +200,8 @@ type expr =
        | P_method of func_decl
        (* es6: similar to OCaml shorthands in records *)
        | P_shorthand of name
+       (* es6: inlining of properties from another object *)
+       | P_spread of tok (* ... *) * expr
         
 
 (* ------------------------------------------------------------------------- *)

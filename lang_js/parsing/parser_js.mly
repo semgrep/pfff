@@ -840,6 +840,7 @@ element:
 object_literal:
  | T_LCURLY T_RCURLY
      { ($1, [], $2) }
+ /*(* todo: remove T_VIRTUAL_SEMICOLON *)*/
  | T_LCURLY property_name_and_value_list trailing_comma         T_VIRTUAL_SEMICOLON T_RCURLY
      { ($1, $2, $4) }
 
@@ -852,12 +853,14 @@ property_name_and_value:
  /*(* es6: *)*/
  | identifier
      { Left (P_shorthand ($1)) }
+ /*(* es6: spread operator: *)*/
+ | T_DOTS assignment_expression
+     { Left (P_spread ($1, $2)) }
 
 property_name_and_value_list:
- | property_name_and_value
+ | property_name_and_value     
      { [$1] }
- | property_name_and_value_list T_COMMA
-     property_name_and_value
+ | property_name_and_value_list T_COMMA  property_name_and_value
      { $1 @ [Right $2; $3] }
 
 /*(*----------------------------*)*/
@@ -906,7 +909,7 @@ xhp_attribute_value:
 /*(*----------------------------*)*/
 encaps:
  | T_ENCAPSED_STRING { EncapsString $1 }
- /*(* ugly: fix this T_VIRTUAL_SEMICOLON ugly hack *)*/
+ /*(* todo: fix this T_VIRTUAL_SEMICOLON ugly hack *)*/
  | T_DOLLARCURLY expression T_VIRTUAL_SEMICOLON T_RCURLY
      { EncapsExpr ($1, $2, $4) }
 

@@ -111,6 +111,10 @@ let rec vof_expr =
                  in Ocaml.VSum (("P_method", [v1]))
              | P_shorthand v1 ->
               let v1 = vof_name v1 in Ocaml.VSum (("P_shorthand", [ v1 ]))
+             | P_spread (v1, v2) ->
+                 let v1 = vof_tok v1 in
+                 let v2 = vof_expr v2 in
+                 Ocaml.VSum (("P_spread", [v1;v2]))
              ))
           v1
       in Ocaml.VSum (("Object", [ v1 ]))

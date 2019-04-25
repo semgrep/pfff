@@ -221,6 +221,10 @@ and v_property x =
         let v1 = v_func_decl v1
         in ()
     | P_shorthand v1 -> let v1 = v_name v1 in ()
+    | P_spread (v1, v2) ->
+        let v1 = v_tok v1 in
+        let v2 = v_expr v2 in
+        ()
 
   in
   vin.kprop (k, all_functions) x

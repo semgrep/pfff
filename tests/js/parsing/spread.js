@@ -12,3 +12,9 @@ const JSONtoCSV = (arr, columns, delimiter = ',') =>
       )
     )
   ].join('\n');
+
+  config.devServer = {
+    ...config.devServer,
+    hot: false,
+    inline: false
+  };
