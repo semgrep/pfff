@@ -84,8 +84,8 @@ let apply_patch = ref false
 let main files_or_dirs = 
   let files = Lib_parsing_php.find_source_files_of_dir_or_files files_or_dirs in
 
-  Flag_parsing_php.show_parsing_error := false;
-  Flag_parsing_php.verbose_lexing := false;
+  Flag_parsing.show_parsing_error := false;
+  Flag_parsing.verbose_lexing := false;
 
   files +> Common2.index_list_and_total +> List.iter (fun (file, i, total) ->
     pr2 (spf "processing: %s (%d/%d)" file i total);

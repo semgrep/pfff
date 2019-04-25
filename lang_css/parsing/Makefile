@@ -7,8 +7,7 @@ OPAMPKG=pfff-lang_css
 
 -include $(TOP)/Makefile.config
 
-SRC= flag_parsing_css.ml \
-     ast_css.ml \
+SRC= ast_css.ml \
      meta_ast_css.ml \
      lib_parsing_css.ml \
      export_ast_css.ml \

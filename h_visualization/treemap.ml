@@ -17,7 +17,6 @@
 (*e: Facebook copyright *)
 open Common2
 
-module F = Figures
 open Figures
 
 module Color = Simple_color
@@ -972,7 +971,7 @@ let tree_of_dir3
   let rec aux dir = 
     
     let children = Sys.readdir dir in
-    let children = Array.map (fun x -> String.lowercase x, x) children in
+    let children = Array.map (fun x -> String.lowercase_ascii x, x) children in
 
     Array.fast_sort (fun (a1, _b1) (a2, _b2) -> compare a1 a2) children;
 
