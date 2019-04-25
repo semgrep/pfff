@@ -6,8 +6,7 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-SRC= flag_parsing_erlang.ml \
-     ast_erlang.ml \
+SRC= ast_erlang.ml \
      lib_parsing_erlang.ml \
      parser_erlang.ml lexer_erlang.ml \
      token_helpers_erlang.ml \

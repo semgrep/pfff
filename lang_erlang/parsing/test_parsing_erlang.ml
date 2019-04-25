@@ -1,6 +1,6 @@
 open Common
 
-module Flag = Flag_parsing_erlang
+module Flag = Flag_parsing
 
 (*****************************************************************************)
 (* Subsystem testing *)

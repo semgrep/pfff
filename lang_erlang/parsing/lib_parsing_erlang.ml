@@ -16,7 +16,7 @@
 open Common
 
 module Ast = Ast_erlang
-module Flag = Flag_parsing_erlang
+module Flag = Flag_parsing
 
 (*****************************************************************************)
 (* Wrappers *)

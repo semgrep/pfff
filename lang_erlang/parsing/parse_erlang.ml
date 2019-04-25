@@ -13,9 +13,10 @@
  *)
 open Common 
 
-module Flag = Flag_parsing_erlang
-module TH   = Token_helpers_erlang
+module Flag = Flag_parsing
 module PI = Parse_info
+
+module TH   = Token_helpers_erlang
 
 (*****************************************************************************)
 (* Prelude *)
