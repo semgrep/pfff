@@ -13,7 +13,7 @@
  *)
 open Common 
 
-module Flag = Flag_parsing_clang
+module Flag = Flag_parsing
 module PI = Parse_info
 
 open Ast_clang

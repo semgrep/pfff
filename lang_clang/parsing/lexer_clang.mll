@@ -16,7 +16,7 @@
 open Common 
 
 open Parser_clang
-module Flag = Flag_parsing_clang
+module Flag = Flag_parsing
 
 (*****************************************************************************)
 (* Prelude *)
