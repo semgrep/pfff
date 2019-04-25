@@ -139,7 +139,7 @@ let keyword_table = Common.hash_of_list [
   "static",     (fun ii -> T_STATIC ii);
 
   "get",     (fun ii -> T_GET ii);
-  "get",     (fun ii -> T_SET ii);
+  "set",     (fun ii -> T_SET ii);
 
   "import",     (fun ii -> T_IMPORT ii);
   "export",     (fun ii -> T_EXPORT ii);

@@ -596,13 +596,30 @@ binding_identifier: identifier { $1 }
 /*(*2 class element *)*/
 /*(*----------------------------*)*/
 
+/*(* less: it's property_name, not identifier, but this cause conflicts *)*/
 method_definition:
-  identifier
+ | identifier
     generics_opt T_LPAREN formal_parameter_list_opt T_RPAREN annotation_opt
     T_LCURLY function_body T_RCURLY
   { { f_tok = None; f_name = Some $1; f_type_params = $2;
       f_params = ($3, $4, $5);
       f_return_type = $6; f_body =  ($7, $8, $9);
+  } }
+
+ | T_GET identifier
+    generics_opt T_LPAREN T_RPAREN annotation_opt
+    T_LCURLY function_body T_RCURLY
+  { { f_tok = None; f_name = Some $2; f_type_params = $3;
+      f_params = ($4, [], $5);
+      f_return_type = $6; f_body =  ($7, $8, $9);
+  } }
+
+ | T_SET identifier
+    generics_opt T_LPAREN formal_parameter T_RPAREN annotation_opt
+    T_LCURLY function_body T_RCURLY
+  { { f_tok = None; f_name = Some $2; f_type_params = $3;
+      f_params = ($4, [Left $5], $6);
+      f_return_type = $7; f_body =  ($8, $9, $10);
   } }
 
 /*(*************************************************************************)*/
