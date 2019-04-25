@@ -441,6 +441,18 @@ and item =
   | InterfaceDecl of interface_decl
 
 (* ------------------------------------------------------------------------- *)
+(* Module *)
+(* ------------------------------------------------------------------------- *)
+(*
+  (* import for its side effects only *)
+  | ImportFrom of import_clause * module_path
+  | ImportEffect of module_path
+  and import_clause = import_default option * name_import
+   and name_import =
+     | ImportNamespace
+     | ImportNames
+*)
+(* ------------------------------------------------------------------------- *)
 (* Toplevel *)
 (* ------------------------------------------------------------------------- *)
 

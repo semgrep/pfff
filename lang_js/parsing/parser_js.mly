@@ -216,7 +216,14 @@ import_declaration:
  | T_IMPORT module_specifier semicolon { }
 
 import_clause: 
+ | import_default { }
+ | import_default T_COMMA import_names { }
+ |                        import_names { }
+
+import_default:
  | binding_identifier { }
+
+import_names:
  | T_MULT T_AS binding_identifier { }
 
  | T_LCURLY T_RCURLY { }
@@ -1272,6 +1279,7 @@ identifier_opt:
 initializeur_opt:
  | /*(* empty *)*/ { None }
  | initializeur { Some $1 }
+
 
 
 
