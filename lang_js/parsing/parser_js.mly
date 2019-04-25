@@ -817,14 +817,15 @@ string_literal:
 /*(*----------------------------*)*/
 
 array_literal:
- | T_LBRACKET elision_opt T_RBRACKET              { Array($1, $2, $3) }
- | T_LBRACKET element_list elision_opt T_RBRACKET { Array($1, $2 @ $3, $4) }
+ | T_LBRACKET elision_opt T_RBRACKET              
+   { Array($1, $2, $3) }
+ | T_LBRACKET element_list_rev elision_opt T_RBRACKET 
+   { Array($1, List.rev $2 @ $3, $4) }
 
-element_list: element_list_rev { List.rev $1 }
 element_list_rev:
- | elision_opt   element { (Left $2)::$1 }
- | element_list_rev T_COMMA elision_opt element 
-     { [Left $4] @ $3 @ [Right $2] @ $1 }
+ | elision_opt   element                { (Left $2)::$1 }
+ | element_list_rev T_COMMA element     { (Left $3) :: [Right $2] @ $1 }
+ | element_list_rev T_COMMA elision element     { (Left $4) :: $3 @ [Right $2] @ $1 }
 
 element:
  | assignment_expression { $1 }
@@ -839,11 +840,8 @@ element:
 object_literal:
  | T_LCURLY T_RCURLY
      { ($1, [], $2) }
- | T_LCURLY property_name_and_value_list         T_VIRTUAL_SEMICOLON T_RCURLY
+ | T_LCURLY property_name_and_value_list trailing_comma         T_VIRTUAL_SEMICOLON T_RCURLY
      { ($1, $2, $4) }
- /*(* es6?: trailing comma *)*/
- | T_LCURLY property_name_and_value_list T_COMMA T_VIRTUAL_SEMICOLON T_RCURLY
-     { ($1, $2 @ [Right $3], $5) }
 
 
 property_name_and_value:
@@ -1147,6 +1145,10 @@ elision:
  | T_COMMA { [Right $1] }
  | elision T_COMMA { $1 @ [Right $2] }
 
+/*(* es6: *)*/
+trailing_comma:
+ | /*(*empty*)*/ { [] }
+ | T_COMMA { [Right $1] }
 
 
 
