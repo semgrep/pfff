@@ -16,7 +16,7 @@
 open Common 
 
 module Ast = Ast_rust
-module Flag = Flag_parsing_rust
+module Flag = Flag_parsing
 
 open Parser_rust
 

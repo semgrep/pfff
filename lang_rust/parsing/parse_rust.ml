@@ -13,7 +13,7 @@
  *)
 open Common 
 
-module Flag = Flag_parsing_rust
+module Flag = Flag_parsing
 module TH   = Token_helpers_rust
 module PI = Parse_info
 

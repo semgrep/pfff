@@ -6,8 +6,7 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-SRC= flag_parsing_rust.ml \
-     ast_rust.ml \
+SRC= ast_rust.ml \
      lib_parsing_rust.ml \
      parser_rust.ml lexer_rust.ml \
      token_helpers_rust.ml \
