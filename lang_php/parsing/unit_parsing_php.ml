@@ -4,7 +4,7 @@ open OUnit
 
 open Ast_php
 module Ast = Ast_php
-module Flag = Flag_parsing_php
+module Flag = Flag_parsing
 
 (*****************************************************************************)
 (* Helpers *)
@@ -64,7 +64,7 @@ let unittest =
     );
 
     "rejecting bad code" >:: (fun () ->
-      Flag_parsing_php.show_parsing_error := false;
+      Flag.show_parsing_error := false;
       try 
         let _ = Parse_php.program_of_string "echo 1+" in
         assert_failure "it should have thrown a Parse_error exception"
@@ -85,7 +85,7 @@ let unittest =
     );
 
     "rejecting variadic param with default" >:: (fun () ->
-      Flag_parsing_php.show_parsing_error := false;
+      Flag.show_parsing_error := false;
       try
         let _ = Parse_php.program_of_string "function foo($x, ...$rest=123) {}" in
         assert_failure "it should have thrown a Parse_error exception"
@@ -95,7 +95,7 @@ let unittest =
     );
 
     "rejecting multiple variadic params" >:: (fun () ->
-      Flag_parsing_php.show_parsing_error := false;
+      Flag.show_parsing_error := false;
       try
         let _ = Parse_php.program_of_string "function foo($x, ...$rest, ...$another) {}" in
         assert_failure "it should have thrown a Parse_error exception"
@@ -104,7 +104,7 @@ let unittest =
          ()
     );
     "rejecting non-tail variadic param without variable name" >:: (fun () ->
-      Flag_parsing_php.show_parsing_error := false;
+      Flag.show_parsing_error := false;
       try
         let _ = Parse_php.program_of_string "function foo($x, ..., ...$rest) {}" in
         assert_failure "it should have thrown a Parse_error exception"
@@ -114,7 +114,7 @@ let unittest =
     );
 
     "rejecting ellipsis with optional constructs" >:: (fun () ->
-      Flag_parsing_php.show_parsing_error := false;
+      Flag.show_parsing_error := false;
       try
         let _ = Parse_php.program_of_string "function foo(int ...) {}" in
         assert_failure "it should have thrown a Parse_error exception"

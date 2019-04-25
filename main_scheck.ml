@@ -382,8 +382,8 @@ let main_action xs =
 
   | "php2" ->
 
-    Flag_parsing_php.show_parsing_error := false;
-    Flag_parsing_php.verbose_lexing := false;
+    Flag_parsing.show_parsing_error := false;
+    Flag_parsing.verbose_lexing := false;
     Error_php.strict := !strict_scope;
     (* less: use a VCS.find... that is more general ?
      * infer PHP_ROOT? or take a --php_root?

@@ -1,6 +1,7 @@
 (*s: test_parsing_php.ml *)
 open Common
 
+module Flag = Flag_parsing
 module Ast = Ast_php
 
 (*****************************************************************************)
@@ -11,8 +12,8 @@ let test_tokens_php file =
   if not (file =~ ".*\\.php") 
   then pr2 "warning: seems not a .php file";
 
-  Flag_parsing_php.verbose_lexing := true;
-  Flag_parsing_php.verbose_parsing := true;
+  Flag.verbose_lexing := true;
+  Flag.verbose_parsing := true;
 
   let toks = Parse_php.tokens file in
   toks +> List.iter (fun x -> pr2_gen x);
@@ -46,7 +47,7 @@ let test_parse_php xs  =
      k ();
 
     let (_xs, stat) = 
-      Common.save_excursion Flag_parsing_php.error_recovery true (fun () ->
+      Common.save_excursion Flag.error_recovery true (fun () ->
         Parse_php.parse file 
       )
     in

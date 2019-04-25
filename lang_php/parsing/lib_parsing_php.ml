@@ -21,7 +21,7 @@ open Common
 open Ast_php 
 
 module Ast = Ast_php
-module Flag = Flag_parsing_php
+module Flag = Flag_parsing
 (*e: basic pfff module open and aliases *)
 module V = Visitor_php 
 module V2 = Map_php 

@@ -18,7 +18,8 @@ open Common
 open Parser_php
 
 module Ast = Ast_php
-module Flag = Flag_parsing_php
+module Flag = Flag_parsing
+module Flag_php = Flag_parsing_php
 module PI = Parse_info
 
 (*****************************************************************************)
@@ -37,7 +38,7 @@ module PI = Parse_info
 exception Lexical of string
 
 let error s =
-  if !Flag.strict_lexer
+  if !Flag_php.strict_lexer
   then raise (Lexical s)
   else
     if !Flag.verbose_lexing
@@ -63,18 +64,18 @@ let tok_add_s s ii  =
 
 (* all string passed to T_IDENT or T_VARIABLE should go through case_str *)
 let case_str s =
-  if !Flag.case_sensitive
+  if !Flag_php.case_sensitive
   then s
   else String.lowercase_ascii s
 
 
 let xhp_or_t_ident ii fii =
-  if !Flag.xhp_builtin
+  if !Flag_php.xhp_builtin
   then fii ii
   else T_IDENT(case_str (PI.str_of_info ii), ii)
 
 let lang_ext_or_t_ident ii fii =
-  if !Flag.facebook_lang_extensions
+  if !Flag_php.facebook_lang_extensions
   then fii ii
   else T_IDENT(case_str (PI.str_of_info ii), ii)
 
@@ -387,7 +388,7 @@ let is_in_binary_operator_position last_tok =
  * lead to some grammar ambiguities or require other parsing hacks anyway.
 *)
 let lang_ext_or_cast t lexbuf =
-  if !Flag.facebook_lang_extensions
+  if !Flag_php.facebook_lang_extensions
   then
     (match !_last_non_whitespace_like_token with
     | Some (T_FUNCTION _) ->
@@ -627,7 +628,7 @@ rule st_in_scripting = parse
     * lexical level.
     *)
     | ":" (XHPTAG as tag) {
-        if !Flag.xhp_builtin &&
+        if !Flag_php.xhp_builtin &&
           not (is_in_binary_operator_position !_last_non_whitespace_like_token)
         then
           let xs = Common.split ":" tag in
@@ -639,7 +640,7 @@ rule st_in_scripting = parse
       }
 
     | "%" (XHPTAG as tag) {
-        if !Flag.xhp_builtin &&
+        if !Flag_php.xhp_builtin &&
           not (is_in_binary_operator_position !_last_non_whitespace_like_token)
         then
           let xs = Common.split ":" tag in
@@ -687,7 +688,7 @@ rule st_in_scripting = parse
               | TQUESTION _ | TCOLON _
             )
           | None (* when in sgrep/spatch mode, < is the first token *)
-            when !Flag.xhp_builtin ->
+            when !Flag_php.xhp_builtin ->
               push_mode (ST_IN_XHP_TAG xs);
               T_XHP_OPEN_TAG(xs, tokinfo lexbuf)
           | _ ->
@@ -697,7 +698,7 @@ rule st_in_scripting = parse
 
     | "@required" {
          let s = tok lexbuf in
-         if !Flag.xhp_builtin
+         if !Flag_php.xhp_builtin
          then T_XHP_REQUIRED (tokinfo lexbuf)
          else begin
            yyback (String.length s - 1) lexbuf;

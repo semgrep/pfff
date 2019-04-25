@@ -116,10 +116,10 @@ let options () = [
   "-lang", Arg.Set_string lang, 
   (spf " <str> choose language (default = %s)" !lang);
   ] @
-  Flag_parsing_php.cmdline_flags_verbose () @
-  Flag_parsing_cpp.cmdline_flags_verbose () @
+  Flag_parsing.cmdline_flags_verbose () @
+  Flag_parsing.cmdline_flags_debugging () @
 
-  Flag_parsing_php.cmdline_flags_debugging () @
+  Flag_parsing_cpp.cmdline_flags_verbose () @
   Flag_parsing_cpp.cmdline_flags_debugging () @
 
   Flag_parsing_php.cmdline_flags_pp () @

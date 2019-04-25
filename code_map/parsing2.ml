@@ -201,7 +201,7 @@ let tokens_with_categ_of_file file hentities =
   | FT.PL (FT.Web (FT.Php _)) ->
       tokens_with_categ_of_file_helper 
         { parse = (parse_cache (fun file ->
-          Common.save_excursion Flag_parsing_php.error_recovery true (fun () ->
+          Common.save_excursion Flag_parsing.error_recovery true (fun () ->
             let ((ast, toks), _stat) = Parse_php.parse file in
             (* todo: use database_light if given? we could so that
              * variables are better annotated.

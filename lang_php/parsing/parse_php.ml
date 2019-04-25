@@ -15,7 +15,8 @@
 open Common 
 
 module Ast  = Ast_php
-module Flag = Flag_parsing_php
+module Flag = Flag_parsing
+module Flag_php = Flag_parsing_php
 module TH   = Token_helpers_php
 module PI = Parse_info
 
@@ -88,12 +89,12 @@ let tokens_from_changen ?(init_state=Lexer_php.INITIAL) changen =
 
             (* xhp: *)
             | Lexer_php.ST_IN_XHP_TAG current_tag ->
-                if not !Flag.xhp_builtin
+                if not !Flag_php.xhp_builtin
                 then raise Impossible;
 
                 Lexer_php.st_in_xhp_tag current_tag lexbuf
             | Lexer_php.ST_IN_XHP_TEXT current_tag ->
-                if not !Flag.xhp_builtin
+                if not !Flag_php.xhp_builtin
                 then raise Impossible;
 
                 Lexer_php.st_in_xhp_text current_tag lexbuf
@@ -173,7 +174,7 @@ let rec lexer_function tr = fun lexbuf ->
  *)
 exception Parse_error of PI.info
 
-let parse2 ?(pp=(!Flag.pp_default)) filename =
+let parse2 ?(pp=(!Flag_php.pp_default)) filename =
 
   let orig_filename = filename in
   let filename =
@@ -185,7 +186,7 @@ let parse2 ?(pp=(!Flag.pp_default)) filename =
     | Some cmd ->
         Common.profile_code "Parse_php.pp_maybe" (fun () ->
 
-          let pp_flag = if !Flag.verbose_pp then "-v" else "" in
+          let pp_flag = if !Flag_php.verbose_pp then "-v" else "" in
 
           (* The following requires the preprocessor command to
            * support the -q command line flag.
@@ -197,7 +198,7 @@ let parse2 ?(pp=(!Flag.pp_default)) filename =
            * case. *)
           let cmd_need_pp = 
             spf "%s -q %s %s" cmd pp_flag filename in
-          if !Flag.verbose_pp then pr2 (spf "executing %s" cmd_need_pp);
+          if !Flag_php.verbose_pp then pr2 (spf "executing %s" cmd_need_pp);
           let ret = Sys.command cmd_need_pp in
           if ret = 0 
           then orig_filename
@@ -206,7 +207,7 @@ let parse2 ?(pp=(!Flag.pp_default)) filename =
             let tmpfile = Common.new_temp_file "pp" ".pphp" in
             let fullcmd = 
               spf "%s %s %s > %s" cmd pp_flag filename tmpfile in
-            if !Flag.verbose_pp then pr2 (spf "executing %s" fullcmd);
+            if !Flag_php.verbose_pp then pr2 (spf "executing %s" fullcmd);
             let ret = Sys.command fullcmd in
             if ret <> 0
             then failwith "The preprocessor command returned an error code";
@@ -294,7 +295,7 @@ let parse2 ?(pp=(!Flag.pp_default)) filename =
       let checkpoint2 = Common.cat filename +> List.length in
 
 
-      if !Flag.show_parsing_error_full
+      if !Flag_php.show_parsing_error_full
       then PI.print_bad line_error (checkpoint, checkpoint2) filelines;
 
       stat.PI.bad     <- Common.cat filename +> List.length;
@@ -306,7 +307,7 @@ let parse2 ?(pp=(!Flag.pp_default)) filename =
 let _hmemo_parse_php = Hashtbl.create 101
 
 let parse_memo ?pp file = 
-  if not !Flag.caching_parsing
+  if not !Flag_php.caching_parsing
   then parse2 ?pp file
   else
     Common.memoized _hmemo_parse_php file (fun () -> 

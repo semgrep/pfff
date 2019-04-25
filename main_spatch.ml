@@ -294,8 +294,8 @@ let apply_transfo transfo xs =
   (* xhp and transformation was not mixing well, but now it's better
    * thanks to builtin xhp support
    *)
-  Flag_parsing_php.show_parsing_error := false;
-  Flag_parsing_php.verbose_lexing := false;
+  Flag_parsing.show_parsing_error := false;
+  Flag_parsing.verbose_lexing := false;
 
   files +> Console.progress (fun k -> List.iter (fun file ->
     let file = Common2.relative_to_absolute file in
@@ -371,8 +371,8 @@ let simple_transfo xs =
 
   let files = Lib_parsing_php.find_source_files_of_dir_or_files xs in
 
-  Flag_parsing_php.show_parsing_error := false;
-  Flag_parsing_php.verbose_lexing := false;
+  Flag_parsing.show_parsing_error := false;
+  Flag_parsing.verbose_lexing := false;
   files +> List.iter (fun file ->
     pr2 (spf "processing: %s" file);
 

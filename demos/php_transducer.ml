@@ -2,7 +2,7 @@ open Common
 
 open Ast_php
 module Ast = Ast_php
-module Flag = Flag_parsing_php
+module Flag = Flag_parsing
 module V = Visitor_php
 
 (*****************************************************************************)
