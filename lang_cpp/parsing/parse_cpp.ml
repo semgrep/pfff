@@ -13,15 +13,17 @@
  *)
 open Common
 
-module Ast = Ast_cpp
-module Flag = Flag_parsing_cpp
+module Flag = Flag_parsing
 module PI = Parse_info
 module Stat = Parse_info
+module FT = File_type
+
+module Ast = Ast_cpp
+module Flag_cpp = Flag_parsing_cpp
 module T = Parser_cpp
 module TH = Token_helpers_cpp
 module Lexer = Lexer_cpp
 module Semantic = Parser_cpp_mly_helper
-module FT = File_type
 
 (*****************************************************************************)
 (* Prelude *)
@@ -47,7 +49,7 @@ exception Parse_error of Parse_info.info
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2, _pr2_once = Common2.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing
+let pr2, _pr2_once = Common2.mk_pr2_wrappers Flag.verbose_parsing
 
 (*****************************************************************************)
 (* Error diagnostic *)
@@ -62,7 +64,7 @@ let error_msg_tok tok =
 
 let commentized xs = xs +> Common.map_filter (function
   | T.TComment_Pp (cppkind, ii) -> 
-      if !Flag.filter_classic_passed
+      if !Flag_cpp.filter_classic_passed
       then 
         (match cppkind with
         | Token_cpp.CppOther -> 
@@ -209,7 +211,7 @@ and multi_grouped_list_comma xs =
  * note: this is similar to what cpplint/fblint of andrei does? 
  *)
 let parse_fuzzy file =
-  Common.save_excursion Flag.sgrep_mode true (fun () ->
+  Common.save_excursion Flag_cpp.sgrep_mode true (fun () ->
   let toks_orig = tokens file in
   let toks = 
     toks_orig +> Common.exclude (fun x ->
@@ -230,7 +232,7 @@ let parse_fuzzy file =
  * can also be used to try to extract the macros defined in the file 
  * that we try to parse *)
 let extract_macros2 file = 
-  Common.save_excursion Flag_parsing_cpp.verbose_lexing false (fun () -> 
+  Common.save_excursion Flag.verbose_lexing false (fun () -> 
     let toks = tokens (* todo: ~profile:false *) file in
     let toks = Parsing_hacks_define.fix_tokens_define toks in
     Pp_token.extract_macros toks
@@ -338,7 +340,7 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
     try Parsing_hacks.fix_tokens ~macro_defs:_defs lang toks_orig
     with Token_views_cpp.UnclosedSymbol s ->
       pr2 s;
-      if !Flag.debug_cplusplus 
+      if !Flag_cpp.debug_cplusplus 
       then raise (Token_views_cpp.UnclosedSymbol s)
       else toks_orig
   in
@@ -416,7 +418,7 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
           let checkpoint2_file = PI.file_of_info info in
 
           was_define := passed_a_define tr;
-          (if !was_define && !Flag.filter_define_error
+          (if !was_define && !Flag_cpp.filter_define_error
            then ()
            else 
               (* bugfix: *)
@@ -456,7 +458,7 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
       stat.Stat.commentized + count_lines_commentized info;
     (match elem with
     | Some (Ast.NotParsedCorrectly _xs) -> 
-        if !was_define && !Flag.filter_define_error
+        if !was_define && !Flag_cpp.filter_define_error
         then stat.Stat.commentized <- stat.Stat.commentized + diffline
         else stat.Stat.bad     <- stat.Stat.bad     + diffline
 
@@ -475,12 +477,12 @@ let parse2 file =
   match File_type.file_type_of_file file with
   | FT.PL (FT.C _) ->
     (try 
-      parse_with_lang ~lang:Flag.C file
+      parse_with_lang ~lang:Flag_cpp.C file
     with _exn ->
-      parse_with_lang ~lang:Flag.Cplusplus file
+      parse_with_lang ~lang:Flag_cpp.Cplusplus file
     )
   | FT.PL (FT.Cplusplus _) ->
-    parse_with_lang ~lang:Flag.Cplusplus file
+    parse_with_lang ~lang:Flag_cpp.Cplusplus file
   | _ -> failwith (spf "not a C/C++ file: %s" file)
     
 

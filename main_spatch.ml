@@ -110,7 +110,7 @@ let spatch pattern file =
   | "c++", Right pattern ->
     let trees, toks =
       try 
-        Common.save_excursion Flag_parsing_cpp.verbose_lexing false (fun () ->
+        Common.save_excursion Flag_parsing.verbose_lexing false (fun () ->
           Parse_cpp.parse_fuzzy file
         )
       with exn ->
@@ -807,7 +807,7 @@ let test () =
           Parse_cpp.parse_fuzzy tmpfile +> fst
         ))
       ~parse_file:(fun file ->
-        Common.save_excursion Flag_parsing_cpp.verbose_lexing false (fun () ->
+        Common.save_excursion Flag_parsing.verbose_lexing false (fun () ->
           Parse_cpp.parse_fuzzy file
         ))
       ~kind_and_info_of_tok:(fun tok ->

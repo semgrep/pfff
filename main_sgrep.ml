@@ -163,7 +163,7 @@ let create_ast file =
     (try
       (match !lang with
       | ("c" | "c++") ->
-        Common.save_excursion Flag_parsing_cpp.verbose_lexing false (fun () ->
+        Common.save_excursion Flag_parsing.verbose_lexing false (fun () ->
           Parse_cpp.parse_fuzzy file +> fst
         )
       | "java" ->

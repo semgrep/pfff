@@ -14,12 +14,13 @@
  *)
 open Common
 
-open Ast_c
-module Ast = Ast_c
-module Flag = Flag_parsing_cpp
+module Flag = Flag_parsing
 module E = Entity_code
 module G = Graph_code
 module P = Graph_code_prolog
+
+open Ast_c
+module Ast = Ast_c
 
 (*****************************************************************************)
 (* Prelude *)

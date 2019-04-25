@@ -14,7 +14,8 @@
  *)
 open Common
 
-module Flag = Flag_parsing_cpp
+module Flag = Flag_parsing
+module Flag_cpp = Flag_parsing_cpp
 module PI = Parse_info
 module TH = Token_helpers_cpp
 
@@ -269,7 +270,7 @@ let rec mk_ifdef xs =
           let body, extra, xs = mk_ifdef_parameters [x] [] xs in
           
           (* if not passing, then consider a #if 0 as an ordinary #ifdef *)
-          if !Flag.if0_passing
+          if !Flag_cpp.if0_passing
           then Ifdefbool (b, body, extra)::mk_ifdef xs
           else Ifdef(body, extra)::mk_ifdef xs
 
@@ -306,7 +307,7 @@ and mk_ifdef_parameters extras acc_before_sep xs =
       | TIfdefBool (b,_) -> 
           let body, extrasnest, xs = mk_ifdef_parameters [x] [] xs in
 
-          if !Flag.if0_passing
+          if !Flag_cpp.if0_passing
           then
             mk_ifdef_parameters 
               extras (Ifdefbool (b, body, extrasnest)::acc_before_sep) xs

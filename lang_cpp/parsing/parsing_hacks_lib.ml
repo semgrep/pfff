@@ -14,10 +14,11 @@
  *)
 open Common
 
-module Flag = Flag_parsing_cpp
+module Flag = Flag_parsing
+module Flag_cpp = Flag_parsing_cpp
+module PI = Parse_info
 
 module TH = Token_helpers_cpp
-module PI = Parse_info
 
 open Parser_cpp
 open Token_views_cpp
@@ -25,7 +26,7 @@ open Token_views_cpp
 (*****************************************************************************)
 (* Wrappers  *)
 (*****************************************************************************)
-let pr2, _pr2_once = Common2.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing
+let pr2, _pr2_once = Common2.mk_pr2_wrappers Flag.verbose_parsing
 
 (*****************************************************************************)
 (* Helpers  *)
@@ -41,7 +42,7 @@ let pr2, _pr2_once = Common2.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing
  * there is no more (or not that much) hardcoded linux stuff.
  *)
 let msg_gen is_known printer s = 
-  if not (!Flag.filter_msg)
+  if not (!Flag_cpp.filter_msg)
   then printer s
   else
     if not (is_known s)
@@ -54,15 +55,15 @@ let pos ii = Parse_info.string_of_info ii
 (*****************************************************************************)
 
 let pr2_pp s = 
-  if !Flag.debug_pp
+  if !Flag_cpp.debug_pp
   then Common.pr2 ("PP-" ^ s)
 
 let pr2_cplusplus s = 
-  if !Flag.debug_cplusplus
+  if !Flag_cpp.debug_cplusplus
   then Common.pr2 ("C++-" ^ s)
 
 let pr2_typedef s = 
-  if !Flag.debug_typedef
+  if !Flag_cpp.debug_typedef
   then Common.pr2 ("TYPEDEF-" ^ s)
 
 

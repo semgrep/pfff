@@ -278,7 +278,7 @@ let build_identifier_index lang xs =
   let h = Hashtbl.create 101 in
   (* we don't here *)
   let hcnt = Hashtbl.create 101 in
-  Flag_parsing_cpp.verbose_lexing := false;
+  Flag_parsing.verbose_lexing := false;
   files +> List.iter (fun file ->
     let toks = Parse_cpp.tokens file in
        

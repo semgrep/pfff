@@ -20,7 +20,8 @@ open Common
 open Parser_cpp
 open Ast_cpp (* to factorise tokens with OpAssign, ... *)
 
-module Flag = Flag_parsing_cpp
+module Flag = Flag_parsing
+module Flag_cpp = Flag_parsing_cpp
 module Ast = Ast_cpp
 module PI = Parse_info
 
@@ -52,7 +53,7 @@ module PI = Parse_info
 exception Lexical of string
 
 let error s =
-  if !Flag.strict_lexer
+  if !Flag_cpp.strict_lexer
   then raise (Lexical s)
   else 
     if !Flag.verbose_lexing 
@@ -482,7 +483,7 @@ rule token = parse
   | (letter | '$') (letter | digit | '$')*
       { 
         let s = tok lexbuf in
-        if not !Flag.sgrep_mode
+        if not !Flag_cpp.sgrep_mode
         then error ("identifier with dollar: "  ^ s);
         TIdent (s, tokinfo lexbuf)
       }

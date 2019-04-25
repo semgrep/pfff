@@ -1,7 +1,7 @@
 open Common
 open OUnit
 
-module Flag = Flag_parsing_cpp
+module Flag = Flag_parsing
 
 (*****************************************************************************)
 (* Helpers *)

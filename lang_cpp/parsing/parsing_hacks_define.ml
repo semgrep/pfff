@@ -16,9 +16,11 @@ open Common
 
 open Parser_cpp
 
+module Flag = Flag_parsing
+module PI = Parse_info
+
 module TH = Token_helpers_cpp
 module Hack = Parsing_hacks_lib
-module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude  *)
@@ -63,7 +65,7 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2, _pr2_once = Common2.mk_pr2_wrappers Flag_parsing_cpp.verbose_lexing
+let pr2, _pr2_once = Common2.mk_pr2_wrappers Flag.verbose_lexing
 
 (*****************************************************************************)
 (* Helpers  *)

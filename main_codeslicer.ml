@@ -399,7 +399,7 @@ let options () = [
   " <dir> generate codeslice in dir";
   
   ] @
-  Flag_parsing_cpp.cmdline_flags_verbose () @
+  Flag_parsing.cmdline_flags_verbose () @
   Flag_parsing_cpp.cmdline_flags_debugging () @
   Flag_parsing_cpp.cmdline_flags_macrofile () @
 

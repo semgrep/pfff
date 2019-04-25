@@ -14,14 +14,16 @@
  *)
 open Common
 
+module Flag = Flag_parsing
+module PI = Parse_info
+
 module T = Parser_cpp
 module TH = Token_helpers_cpp
-module PI = Parse_info
 
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2_err, _pr2_once = Common2.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing 
+let pr2_err, _pr2_once = Common2.mk_pr2_wrappers Flag.verbose_parsing 
 
 let pr2_err s = pr2_err ("ERROR_RECOV: " ^s)
 

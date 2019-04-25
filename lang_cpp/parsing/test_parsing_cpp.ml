@@ -1,8 +1,9 @@
 open Common
 
-module Flag = Flag_parsing_cpp
-
+module Flag = Flag_parsing
 module Stat = Parse_info
+
+module Flag_cpp = Flag_parsing_cpp
 
 (*****************************************************************************)
 (* Subsystem testing *)
@@ -20,7 +21,7 @@ let test_parse_cpp ?lang xs  =
     Lib_parsing_cpp.find_source_files_of_dir_or_files xs
     +> Skip_code.filter_files_if_skip_list
   in
-  Parse_cpp.init_defs !Flag.macros_h;
+  Parse_cpp.init_defs !Flag_cpp.macros_h;
 
   let stat_list = ref [] in
   let newscore  = Common2.empty_score () in
@@ -71,14 +72,14 @@ let test_parse_cpp ?lang xs  =
   ()
 
 let test_dump_cpp file =
-  Parse_cpp.init_defs !Flag.macros_h;
+  Parse_cpp.init_defs !Flag_cpp.macros_h;
   let ast = Parse_cpp.parse_program file in
   let v = Meta_ast_cpp.vof_program ast in
   let s = Ocaml.string_of_v v in
   pr s
 
 let test_dump_cpp_full file =
-  Parse_cpp.init_defs !Flag.macros_h;
+  Parse_cpp.init_defs !Flag_cpp.macros_h;
   let ast = Parse_cpp.parse_program file in
   let toks = Parse_cpp.tokens file in
   let precision = { Meta_ast_generic.
@@ -99,7 +100,7 @@ let test_dump_cpp_full file =
   ()
 
 let test_dump_cpp_view file =
-  Parse_cpp.init_defs !Flag.macros_h;
+  Parse_cpp.init_defs !Flag_cpp.macros_h;
   let toks_orig = Parse_cpp.tokens file in
   let toks = 
     toks_orig +> Common.exclude (fun x ->
@@ -149,7 +150,7 @@ let actions () = [
     "-parse_cpp", "   <file or dir>", 
     Common.mk_action_n_arg test_parse_cpp;
     "-parse_cpp_c", "   <file or dir>", 
-    Common.mk_action_n_arg (test_parse_cpp ~lang:Flag.C);
+    Common.mk_action_n_arg (test_parse_cpp ~lang:Flag_cpp.C);
 
     "-dump_cpp", "   <file>", 
     Common.mk_action_1_arg test_dump_cpp;
