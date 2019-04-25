@@ -17,6 +17,11 @@ open Common
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
+(* Annotation extraction from comments.
+ *
+ * todo: might be very facebook specific and made obsolete by the
+ * new module features in ES6 (import/export).
+ *)
 
 (*****************************************************************************)
 (* Types *)

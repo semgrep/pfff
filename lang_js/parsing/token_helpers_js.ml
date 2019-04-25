@@ -35,6 +35,8 @@ let token_kind_of_tok t =
   | T_RCURLY _ -> PI.RBrace
   | T_LPAREN _ -> PI.LPar
   | T_RPAREN _ -> PI.RPar
+  | T_LBRACKET _ -> PI.LBracket
+  | T_RBRACKET _ -> PI.RBracket
 
   | TComment _ -> PI.Esthet PI.Comment
   | TCommentSpace _ -> PI.Esthet PI.Space
@@ -46,7 +48,7 @@ let token_kind_of_tok t =
 (* Visitors *)
 (*****************************************************************************)
 
-(* generated via emacs macro from type definition in parse_js.ml *)
+(* generated via an Emacs macro from the type definition in parser_js.mli *)
 let visitor_info_of_tok f = function
   | TUnknown ii -> TUnknown(f ii)
   | TCommentSpace ii -> TCommentSpace(f ii)
@@ -85,6 +87,7 @@ let visitor_info_of_tok f = function
   | T_FOR ii -> T_FOR (f ii)
   | T_ELSE ii -> T_ELSE (f ii)
   | T_NEW ii -> T_NEW (f ii)
+
   | T_LCURLY ii -> T_LCURLY (f ii)
   | T_RCURLY ii -> T_RCURLY (f ii)
   | T_LPAREN ii -> T_LPAREN (f ii)
@@ -133,6 +136,7 @@ let visitor_info_of_tok f = function
   | T_BIT_NOT ii -> T_BIT_NOT (f ii)
   | T_INCR ii -> T_INCR (f ii)
   | T_DECR ii -> T_DECR (f ii)
+
   | T_DELETE ii -> T_DELETE (f ii)
   | T_TYPEOF ii -> T_TYPEOF(f ii)
   | T_VOID ii -> T_VOID (f ii)

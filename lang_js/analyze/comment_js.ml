@@ -18,11 +18,10 @@ open Common
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
-(* 
- * A few types and helpers related to comment analysis. 
- * Should perhaps at one point parse even more comments and have 
- * tokens such as TWord, TAnnot, etc.
+(* A few types and helpers related to comment analysis. 
+ * 
+ * less: at one point we should parse more the comment and have 
+ * tokens such as TWord, TAnnot, etc. as in CComment.
  * 
  *)
 
@@ -30,8 +29,8 @@ open Common
 (* Helpers *)
 (*****************************************************************************)
 
-(* Copy paste of Comment_php.strip_comment_marks for now. Should maybe
- * factorize and put stuff in a h_program-lang/comment.ml file
+(* Copy paste of Comment_php.strip_comment_marks for now. 
+ * less: factorize and put stuff in a h_program-lang/comment.ml file
  *)
 let strip_comment_marks s = 
   match () with

@@ -19,14 +19,13 @@
 (* An Abstract Syntax Tree for a mini C.
  * 
  * This will help prototype program analysis by not having to deal with
- * the enormity of a real programming language. So now have ast_cpp.ml
- * -> ast_c.ml -> ast_minic.ml. 
+ * the enormity of a real programming language. So now we have:
+ *  ast_cpp.ml -> ast_c.ml -> ast_minic.ml. 
  * 
  * Here is a list of the simplications compared to ast_c.ml:
- * - types: no unions, no typedefs, no enum,
+ * - types: no unions, no typedefs, no enums,
  * - exprs: no infix, postfix, no -> vs ., just ->
- * - stmt: introduce intermediate instr type so have restricted forms of
- *   assigments
+ * - stmts: intermediate instr type so have restricted forms of assigments
  * - ...
  * 
  * Essentially a restricted set of C programs in A-normal form.
@@ -139,6 +138,7 @@ type toplevel =
   | StructDef of struct_def
   | FuncDef of func_def
   | Global of var_decl
+  (* from enums; no need the value for the analysis we do *)
   | Constant of name
 
 type program = toplevel list

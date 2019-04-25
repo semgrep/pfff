@@ -29,13 +29,16 @@ module TH   = Token_helpers_js
  *  -http://www.bradoncode.com/blog/2015/08/26/javascript-semi-colon-insertion
  *  -http://www.ecma-international.org/ecma-262/6.0/index.html#sec-automatic-semicolon-insertion
  *
- * todo: work on a parenthesized view? like in parsing_hacks_cpp.ml
- *  would be easier to match whether we are in the right context
- *  for inserting virtual semicolons.
+ * alt:
+ *  - insert semicolons during error recovery in parser_js.ml. After
+ *    all that was the spec says.
+ *  - work on a parenthesized view? like in parsing_hacks_cpp.ml.
+ *    It would be easier to match whether we are in the right context
+ *    for inserting virtual semicolons.
  *)
 
 (*****************************************************************************)
-(* Lexer tricks *)
+(* Helpers *)
 (*****************************************************************************)
 
 let rparens_of_if toks = 
@@ -63,6 +66,10 @@ let rparens_of_if toks =
     )
   );
   !rparens_if
+
+(*****************************************************************************)
+(* Entry point *)
+(*****************************************************************************)
 
 (* UGLYYYYYYYYYYYYYYYYYYY. Better would be to read section 7.6.2.
 *)
@@ -92,20 +99,15 @@ let fix_tokens xs =
       let f = (fun prev x ->
         match prev, x with
         | (T.T_LCURLY _ | T.T_SEMICOLON _ | T.T_VIRTUAL_SEMICOLON _), 
-        T.T_RCURLY _ ->
+          T.T_RCURLY _ ->
             Common.push x res;
-            (* also one after ? *)
-(*            Common.push2 (T.T_VIRTUAL_SEMICOLON (Ast.fakeInfo ())) res; *)
-
         | _, T.T_RCURLY _ ->
             let fake = Ast.fakeInfoAttach (TH.info_of_tok x) in
             Common.push (T.T_VIRTUAL_SEMICOLON fake) res;
             Common.push x res;
-            (* also one after ? *)
-(*            Common.push2 (T.T_VIRTUAL_SEMICOLON (Ast.fakeInfo ())) res; *)
             
         | (T.T_SEMICOLON _ | T.T_VIRTUAL_SEMICOLON _),
-            T.EOF _ ->
+           T.EOF _ ->
             Common.push x res;
         | _, T.EOF _ ->
             let fake = Ast.fakeInfoAttach (TH.info_of_tok x) in
@@ -114,15 +116,14 @@ let fix_tokens xs =
 
 
         | T.T_RCURLY _, 
-            (T.T_IDENTIFIER _ | 
-             T.T_IF _ | T.T_VAR _ | T.T_FOR _ | T.T_RETURN _ |
-             T.T_SWITCH _ |
-             T.T_FUNCTION _ | T.T_THIS _ |
-             T.T_BREAK _ | 
-             T.T_NEW _
-
-            ) 
-            ->
+          (T.T_IDENTIFIER _ | 
+           T.T_IF _ | T.T_VAR _ | T.T_FOR _ | T.T_RETURN _ |
+           T.T_SWITCH _ |
+           T.T_FUNCTION _ | T.T_THIS _ |
+           T.T_BREAK _ | 
+           T.T_NEW _
+          ) 
+          ->
             let line2 = TH.line_of_tok x in
             let line1 = TH.line_of_tok prev in
             if line2 <> line1
@@ -132,14 +133,12 @@ let fix_tokens xs =
             end;
             Common.push x res;
 
-        (* this is valid only if the RPAREN is not the closing paren
-         * of a if
-         *)
+        (* this is valid only if the RPAREN is not the closing paren of an if*)
         | T.T_RPAREN info, 
-            (T.T_VAR _ | T.T_IF _ | T.T_THIS _ | T.T_FOR _ | T.T_RETURN _ |
-             T.T_IDENTIFIER _ | T.T_CONTINUE _ 
-            ) when not (Hashtbl.mem hrparens_if info)
-            ->
+          (T.T_VAR _ | T.T_IF _ | T.T_THIS _ | T.T_FOR _ | T.T_RETURN _ |
+           T.T_IDENTIFIER _ | T.T_CONTINUE _ 
+          ) when not (Hashtbl.mem hrparens_if info)
+          ->
             let line2 = TH.line_of_tok x in
             let line1 = TH.line_of_tok prev in
             if line2 <> line1
@@ -151,8 +150,8 @@ let fix_tokens xs =
 
 
         | T.T_RBRACKET _, 
-            (T.T_FOR _ | T.T_IF _ | T.T_VAR _ | T.T_IDENTIFIER _)
-            ->
+          (T.T_FOR _ | T.T_IF _ | T.T_VAR _ | T.T_IDENTIFIER _)
+          ->
             let line2 = TH.line_of_tok x in
             let line1 = TH.line_of_tok prev in
             if line2 <> line1
@@ -166,10 +165,10 @@ let fix_tokens xs =
         | (T.T_IDENTIFIER _ | T.T_NULL _ | T.T_STRING _ | T.T_REGEX _
             | T.T_FALSE _ | T.T_TRUE _
           ), 
-              (T.T_VAR _ | T.T_IDENTIFIER _ | T.T_IF _ | T.T_THIS _ |
-                  T.T_RETURN _ | T.T_BREAK _ | T.T_ELSE _
-              )
-            ->
+           (T.T_VAR _ | T.T_IDENTIFIER _ | T.T_IF _ | T.T_THIS _ |
+            T.T_RETURN _ | T.T_BREAK _ | T.T_ELSE _
+           )
+          ->
             let line2 = TH.line_of_tok x in
             let line1 = TH.line_of_tok prev in
             if line2 <> line1
