@@ -15,7 +15,7 @@
 open Common 
 
 open Parser_java
-module Flag = Flag_parsing_java
+module Flag = Flag_parsing
 
 (*****************************************************************************)
 (* Prelude *)

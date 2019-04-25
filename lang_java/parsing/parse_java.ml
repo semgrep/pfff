@@ -14,9 +14,11 @@
  *)
 open Common
 
-module Flag = Flag_parsing_java
-module TH = Token_helpers_java
+module Flag = Flag_parsing
 module PI = Parse_info
+
+module TH = Token_helpers_java
+
 
 (*****************************************************************************)
 (* Prelude *)

@@ -31,7 +31,7 @@ let test_parse xs  =
   fullxs +> List.iter (fun file -> 
     pr2 ("PARSING: " ^ file);
     let (_xs, stat) = 
-      Common.save_excursion Flag_parsing_java.error_recovery true (fun () ->
+      Common.save_excursion Flag_parsing.error_recovery true (fun () ->
         Parse_java.parse file 
       )
     in
