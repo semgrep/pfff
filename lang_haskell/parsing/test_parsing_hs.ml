@@ -1,6 +1,6 @@
 open Common
 
-module Flag = Flag_parsing_hs
+module Flag = Flag_parsing
 
 (*****************************************************************************)
 (* Subsystem testing *)

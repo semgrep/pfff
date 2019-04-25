@@ -13,8 +13,9 @@
  *)
 open Common 
 
-module Flag = Flag_parsing_hs
+module Flag = Flag_parsing
 module PI = Parse_info
+
 module TH = Parser_hs
 
 (*****************************************************************************)

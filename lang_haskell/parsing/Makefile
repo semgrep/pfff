@@ -6,8 +6,7 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-SRC= flag_parsing_hs.ml \
-     ast_hs.ml \
+SRC= ast_hs.ml \
      parser_hs.ml lexer_hs.ml \
      parse_hs.ml \
      lib_parsing_hs.ml \

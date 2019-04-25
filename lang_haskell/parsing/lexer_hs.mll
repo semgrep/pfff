@@ -16,7 +16,7 @@
 
 open Common 
 
-module Flag = Flag_parsing_hs
+module Flag = Flag_parsing
 
 open Parser_hs
 
