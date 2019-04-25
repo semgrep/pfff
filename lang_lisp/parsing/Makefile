@@ -6,8 +6,7 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-SRC= flag_parsing_lisp.ml \
-     ast_lisp.ml \
+SRC= ast_lisp.ml \
      ast_scheme.ml \
      parser_lisp.ml lexer_lisp.ml \
      parse_lisp.ml \

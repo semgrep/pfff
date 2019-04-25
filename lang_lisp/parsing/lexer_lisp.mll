@@ -15,7 +15,7 @@
  *)
 open Common 
 
-module Flag = Flag_parsing_lisp
+module Flag = Flag_parsing
 open Parser_lisp
 
 (*****************************************************************************)
