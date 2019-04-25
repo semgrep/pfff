@@ -99,6 +99,7 @@ and sc = tok option
 type name = string wrap
  (* with tarzan *)
 
+(* facebook-ext: *)
 type xhp_tag = string
  (* with tarzan *)
 
@@ -107,7 +108,7 @@ type property_name =
    | PN_Num of string wrap
  (* with tarzan *)
 
-(* does not contain the enclosing "'" but the info does *)
+(* es6: note: does not contain the enclosing "'" but the info does *)
 type module_path = string wrap
  (* with tarzan *)
 
@@ -260,6 +261,7 @@ and st =
       st
   | ForIn of tok * tok (* ( *) * lhs_or_var * tok (* in *) *
       expr * tok (* ) *) * st
+  (* es6: iterators *)
   | ForOf of tok * tok (* ( *) * lhs_or_var * tok (* of *) *
       expr * tok (* ) *) * st
 
@@ -355,7 +357,7 @@ and func_decl = {
    (* if not None, then should be last parameter in a parameter comma_list *)
    p_dots: tok (* ... *) option;
   }
-
+  (* es6: *)
   and default =
   | DNone of tok (* ? *)
   | DSome of tok (* = *) * expr
@@ -393,6 +395,7 @@ and var_kind =
 
 and var_binding = 
  | VarClassic of variable_declaration
+ (* es6: *)
  | VarPatternTodo
 
 and variable_declaration = {
@@ -404,7 +407,7 @@ and variable_declaration = {
 (* ------------------------------------------------------------------------- *)
 (* Pattern (destructuring binding) *)
 (* ------------------------------------------------------------------------- *)
-(* TODO see VarPatternTodo *)
+(* es6: TODO see VarPatternTodo *)
 
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)
@@ -451,7 +454,7 @@ and item =
 (* ------------------------------------------------------------------------- *)
 (* Module *)
 (* ------------------------------------------------------------------------- *)
-
+(* es6: *)
 and import =
   | ImportFrom of (import_clause * (tok (* from *) * module_path))
   (* import for its side effects only *)
@@ -467,6 +470,7 @@ and import =
    and import_default = name
    and import_name = name * (tok (* as *) * name) option
 
+(* es6: *)
 and export = 
   (* St in item can only be a VarsDecl *)
   | ExportDecl of item
