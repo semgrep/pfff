@@ -1,5 +1,6 @@
-
 open Common
+
+module Flag = Flag_parsing
 
 (*****************************************************************************)
 (* Subsystem testing *)
@@ -9,8 +10,8 @@ let test_tokens_sql file =
   if not (file =~ ".*\\.sql") 
   then pr2 "warning: seems not a .sql file";
 
-  Flag_parsing_sql.verbose_lexing := true;
-  Flag_parsing_sql.verbose_parsing := true;
+  Flag.verbose_lexing := true;
+  Flag.verbose_parsing := true;
 
   let toks = Parse_sql.tokens file in
   toks +> List.iter (fun x -> pr2_gen x);

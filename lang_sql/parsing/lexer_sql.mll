@@ -17,7 +17,7 @@
 open Common 
 
 module Ast = Ast_sql
-module Flag = Flag_parsing_sql
+module Flag = Flag_parsing
 
 open Parser_sql
 

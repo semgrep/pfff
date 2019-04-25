@@ -6,8 +6,7 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-SRC= flag_parsing_sql.ml \
-     ast_sql.ml \
+SRC= ast_sql.ml \
      parser_sql.ml lexer_sql.ml \
      parse_sql.ml \
      test_parsing_sql.ml
