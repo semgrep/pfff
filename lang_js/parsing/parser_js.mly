@@ -227,7 +227,8 @@ import_default:
  | binding_identifier { $1 }
 
 import_names:
- | T_MULT T_AS binding_identifier { ImportNamespace ($1, $2, $3) }
+ | T_MULT T_AS binding_identifier 
+   { ImportNamespace ($1, $2, $3) }
 
  | T_LCURLY T_RCURLY 
    { ImportNames ($1, [], $2) }
@@ -238,6 +239,7 @@ import_names:
  | T_LCURLY import_specifiers T_COMMA T_VIRTUAL_SEMICOLON T_RCURLY 
    { ImportNames ($1, $2 @ [Right $3], $5) }
 
+/*(* also valid for export *)*/
 from_clause: T_FROM module_specifier { ($1, $2) }
 
 import_specifier:
