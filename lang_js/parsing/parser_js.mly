@@ -258,6 +258,9 @@ export_declaration:
  | T_EXPORT export_names semicolon { }
  | T_EXPORT variable_statement { }
  | T_EXPORT declaration { }
+ /*(* in theory just func/gen/class, no lexical_decl *)*/
+ | T_EXPORT T_DEFAULT declaration { }
+ | T_EXPORT T_DEFAULT assignment_expression_no_statement semicolon { }
 
 
 export_names:
