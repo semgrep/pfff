@@ -602,7 +602,7 @@ method_definition:
     T_LCURLY function_body T_RCURLY
   { { f_tok = None; f_name = Some $1; f_type_params = $2;
       f_params = ($3, $4, $5);
-      f_return_type = $6; f_body =  ($7, $8, $9)
+      f_return_type = $6; f_body =  ($7, $8, $9);
   } }
 
 /*(*************************************************************************)*/
