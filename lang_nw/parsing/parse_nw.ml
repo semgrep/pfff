@@ -13,7 +13,7 @@
  *)
 open Common 
 
-module Flag = Flag_parsing_nw
+module Flag = Flag_parsing
 module TH   = Token_helpers_nw
 module PI = Parse_info
 

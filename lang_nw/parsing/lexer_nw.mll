@@ -16,7 +16,7 @@
  *)
 open Common 
 
-module Flag = Flag_parsing_nw
+module Flag = Flag_parsing
 
 (*****************************************************************************)
 (* Prelude *)

@@ -7,8 +7,7 @@ OPAMPKG=pfff-lang_nw
 
 -include $(TOP)/Makefile.config
 
-SRC= flag_parsing_nw.ml \
-     ast_nw.ml \
+SRC= ast_nw.ml \
      lexer_nw.ml \
      token_helpers_nw.ml \
      parse_nw.ml \
