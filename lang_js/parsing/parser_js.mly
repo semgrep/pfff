@@ -213,6 +213,7 @@ statement_list:
 
 import_declaration: 
  | T_IMPORT import_clause from_clause semicolon { }
+ | T_IMPORT module_specifier semicolon { }
 
 import_clause: 
  | binding_identifier { }
