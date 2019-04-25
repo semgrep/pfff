@@ -27,6 +27,7 @@ module PI = Parse_info
  * See also 
  *  - https://en.wikipedia.org/wiki/JavaScript
  *  - https://en.wikipedia.org/wiki/ECMAScript
+ *  - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/
  *
  * This AST (and parser) supports most ES6 features:
  *  - classes
