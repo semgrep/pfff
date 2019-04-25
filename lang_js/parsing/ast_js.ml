@@ -106,6 +106,10 @@ type property_name =
    | PN_Num of string wrap
  (* with tarzan *)
 
+(* does not contain the enclosing "'" but the info does *)
+type module_path = string wrap
+ (* with tarzan *)
+
 (* ------------------------------------------------------------------------- *)
 (* Expression *)
 (* ------------------------------------------------------------------------- *)
@@ -154,8 +158,10 @@ type expr =
        | Num of string wrap
        (* less:  | Float of float | Int of int32 *)
 
+       (* does not contain the enclosing "'" but the info does *)
        (* see also XhpText, EncapsString and XhpAttrString *)
        | String of string wrap
+
        | Regexp of string wrap (* todo? should split the flags *)
 
        (* There is also Undefined, but this is not considered a reserved
@@ -269,7 +275,7 @@ and st =
 
   | Throw of tok * expr * sc
   | Try of tok * st (* always a block *) *
-      (tok * arg paren * st) option * (* catch *)
+      (tok * arg_catch paren * st) option * (* catch *)
       (tok * st) option (* finally *)
 
   and label = string wrap
@@ -288,7 +294,7 @@ and st =
     | Default of tok * tok (*:*) * item list
     | Case of tok * expr * tok (*:*) * item list
 
-  and arg = string wrap
+  and arg_catch = string wrap
 
 (* ------------------------------------------------------------------------- *)
 (* Type *)
@@ -397,6 +403,7 @@ and variable_declaration = {
 (* ------------------------------------------------------------------------- *)
 (* Pattern (destructuring binding) *)
 (* ------------------------------------------------------------------------- *)
+(* TODO see VarPatternTodo *)
 
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)
@@ -443,15 +450,22 @@ and item =
 (* ------------------------------------------------------------------------- *)
 (* Module *)
 (* ------------------------------------------------------------------------- *)
-(*
+
+and import =
+  | ImportFrom of (import_clause * (tok (* from *) * module_path))
   (* import for its side effects only *)
-  | ImportFrom of import_clause * module_path
   | ImportEffect of module_path
-  and import_clause = import_default option * name_import
+
+  (* less: if have Some, Some there is a comma between, but the token
+   * is not present in the AST.
+   *)
+  and import_clause = import_default option * name_import option
    and name_import =
-     | ImportNamespace
-     | ImportNames
-*)
+     | ImportNamespace of tok (* * *) * tok (* as *) * name
+     | ImportNames of import_name comma_list brace
+   and import_default = name
+   and import_name = name * (tok (* as *) * name) option
+
 (* ------------------------------------------------------------------------- *)
 (* Toplevel *)
 (* ------------------------------------------------------------------------- *)
@@ -459,7 +473,7 @@ and item =
  and module_item = 
   | It of item
   (* es6-ext: *)
-  | ImportTodo
+  | Import of (tok (* import *) * import * sc)
   | ExportTodo
 
  and program = module_item list

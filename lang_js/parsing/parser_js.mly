@@ -182,7 +182,7 @@ program: module_item_list { $1 }
 
 module_item:
  | item { It $1 }
- | import_declaration { ImportTodo }
+ | import_declaration { Import $1 }
  | export_declaration { ExportTodo }
 
 item:
@@ -212,31 +212,37 @@ statement_list:
 /*(*----------------------------*)*/
 
 import_declaration: 
- | T_IMPORT import_clause from_clause semicolon { }
- | T_IMPORT module_specifier semicolon { }
+ | T_IMPORT import_clause from_clause semicolon 
+   { $1, ImportFrom ($2, $3), $4 }
+ | T_IMPORT module_specifier semicolon 
+   { $1, ImportEffect $2, $3 }
 
 import_clause: 
- | import_default { }
- | import_default T_COMMA import_names { }
- |                        import_names { }
+ | import_default { Some $1, None }
+ /*(* less: add T_COMMA in AST? *)*/
+ | import_default T_COMMA import_names { Some $1, Some $3 }
+ |                        import_names { None, Some $1 }
 
 import_default:
- | binding_identifier { }
+ | binding_identifier { $1 }
 
 import_names:
- | T_MULT T_AS binding_identifier { }
+ | T_MULT T_AS binding_identifier { ImportNamespace ($1, $2, $3) }
 
- | T_LCURLY T_RCURLY { }
+ | T_LCURLY T_RCURLY 
+   { ImportNames ($1, [], $2) }
  /*(* todo: remove those T_VIRTUAL_SEMICOLON; parsing_hack_js should not
     * have inserted them in the first place *)*/
- | T_LCURLY import_specifiers T_VIRTUAL_SEMICOLON         T_RCURLY { }
- | T_LCURLY import_specifiers T_COMMA T_VIRTUAL_SEMICOLON T_RCURLY { }
+ | T_LCURLY import_specifiers T_VIRTUAL_SEMICOLON         T_RCURLY 
+   { ImportNames ($1, $2, $4) }
+ | T_LCURLY import_specifiers T_COMMA T_VIRTUAL_SEMICOLON T_RCURLY 
+   { ImportNames ($1, $2 @ [Right $3], $5) }
 
 from_clause: T_FROM module_specifier { ($1, $2) }
 
 import_specifier:
- | binding_identifier { }
- | identifier T_AS binding_identifier { }
+ | binding_identifier                 { $1, None }
+ | identifier T_AS binding_identifier { $1, Some ($2, $3) }
 
 module_specifier: string_literal { $1 }
 

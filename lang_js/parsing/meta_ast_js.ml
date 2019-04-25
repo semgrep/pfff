@@ -72,6 +72,7 @@ and vof_comma_list _of_a xs =
 and vof_sc v = Ocaml.vof_option vof_tok v
 
 let vof_name v = vof_wrap Ocaml.vof_string v
+let vof_module_path v = vof_wrap Ocaml.vof_string v
 
 let rec vof_expr =
   function
@@ -689,9 +690,58 @@ and vof_class_stmt =
   | ClassExtraSemiColon v1 ->
       let v1 = vof_sc v1 in Ocaml.VSum (("ClassExtraSemiColon", [ v1 ]))
 
+and vof_import =
+  function
+  | ImportFrom v1 ->
+      let v1 =
+        (match v1 with
+         | (v1, v2) ->
+             let v1 = vof_import_clause v1
+             and v2 =
+               (match v2 with
+                | (v1, v2) ->
+                    let v1 = vof_tok v1
+                    and v2 = vof_module_path v2
+                    in Ocaml.VTuple [ v1; v2 ])
+             in Ocaml.VTuple [ v1; v2 ])
+      in Ocaml.VSum (("ImportFrom", [ v1 ]))
+  | ImportEffect v1 ->
+      let v1 = vof_module_path v1 in Ocaml.VSum (("ImportEffect", [ v1 ]))
+and vof_import_clause (v1, v2) =
+  let v1 = Ocaml.vof_option vof_import_default v1
+  and v2 = Ocaml.vof_option vof_name_import v2
+  in Ocaml.VTuple [ v1; v2 ]
+and vof_name_import =
+  function
+  | ImportNamespace ((v1, v2, v3)) ->
+      let v1 = vof_tok v1
+      and v2 = vof_tok v2
+      and v3 = vof_name v3
+      in Ocaml.VSum (("ImportNamespace", [ v1; v2; v3 ]))
+  | ImportNames v1 ->
+      let v1 = vof_brace (vof_comma_list vof_import_name) v1
+      in Ocaml.VSum (("ImportNames", [ v1 ]))
+and vof_import_default v = vof_name v
+and vof_import_name (v1, v2) =
+  let v1 = vof_name v1
+  and v2 =
+    Ocaml.vof_option
+      (fun (v1, v2) ->
+         let v1 = vof_tok v1 and v2 = vof_name v2 in Ocaml.VTuple [ v1; v2 ])
+      v2
+  in Ocaml.VTuple [ v1; v2 ]
+
 and vof_module_item =
   function
-  | ImportTodo -> Ocaml.VSum (("ImportTodo", []))
+  | Import v1 ->
+      let v1 =
+        (match v1 with
+         | (v1, v2, v3) ->
+             let v1 = vof_tok v1
+             and v2 = vof_import v2
+             and v3 = vof_sc v3
+             in Ocaml.VTuple [ v1; v2; v3 ])
+      in Ocaml.VSum (("Import", [ v1 ]))
   | ExportTodo -> Ocaml.VSum (("ExportTodo", []))
   | It v1 -> let v1 = vof_item v1 in Ocaml.VSum (("It", [ v1 ]))
 

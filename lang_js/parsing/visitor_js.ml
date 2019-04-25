@@ -157,6 +157,7 @@ and v_comma_list10 _of_a xs =
 and v_sc v = v_option v_tok v
 
 and v_name v = v_wrap v_string v
+and v_module_path v = v_wrap v_string v
 
 and v_expr (x: expr) =
   (* tweak *)
@@ -614,10 +615,46 @@ and v_item =
   | ClassDecl v1 -> let v1 = v_class_decl v1 in ()
   | InterfaceDecl v1 -> let v1 = v_interface_decl v1 in ()
 
+and v_import =
+  function
+  | ImportFrom v1 ->
+      let v1 =
+        (match v1 with
+         | (v1, v2) ->
+             let v1 = v_import_clause v1
+             and v2 =
+               (match v2 with
+                | (v1, v2) ->
+                    let v1 = v_tok v1 and v2 = v_module_path v2 in ())
+             in ())
+      in ()
+  | ImportEffect v1 -> let v1 = v_module_path v1 in ()
+and v_import_clause (v1, v2) =
+  let v1 = v_option v_import_default v1
+  and v2 = v_option v_name_import v2
+  in ()
+and v_name_import =
+  function
+  | ImportNamespace ((v1, v2, v3)) ->
+      let v1 = v_tok v1 and v2 = v_tok v2 and v3 = v_name v3 in ()
+  | ImportNames v1 ->
+      let v1 = v_brace (v_comma_list v_import_name) v1 in ()
+and v_import_default v = v_name v
+and v_import_name (v1, v2) =
+  let v1 = v_name v1
+  and v2 =
+    v_option (fun (v1, v2) -> let v1 = v_tok v1 and v2 = v_name v2 in ()) v2
+  in ()
+
 and v_module_item =
   function
   | It v1 -> let v1 = v_item v1 in ()
-  | ImportTodo -> ()
+  | Import v1 ->
+      let v1 =
+        (match v1 with
+         | (v1, v2, v3) ->
+             let v1 = v_tok v1 and v2 = v_import v2 and v3 = v_sc v3 in ())
+      in ()
   | ExportTodo -> ()
 
 and v_program v = v_list v_module_item v
