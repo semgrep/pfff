@@ -687,10 +687,11 @@ class_heritage: T_EXTENDS type_expression { ($1, $2) }
 class_body: class_element_list { $1 }
 
 class_element:
- | identifier annotation semicolon { Field ($1, $2, $3) }
  | method_definition               { Method (None, $1) }
  | T_STATIC method_definition      { Method (Some $1, $2) }
  | semicolon                       { ClassExtraSemiColon $1 }
+ /*(* TODO: not part of ECMA *)*/
+ | identifier annotation semicolon { Field ($1, $2, $3) }
 
 binding_identifier: identifier { $1 }
 
