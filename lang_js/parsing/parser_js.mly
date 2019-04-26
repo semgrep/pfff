@@ -581,6 +581,16 @@ generator_declaration:
          f_return_type = $8; f_body = ($9, $10, $11)
      } }
 
+/*(* the identifier is optional here *)*/
+generator_expression:
+ | T_FUNCTION T_MULT identifier_opt generics_opt
+     T_LPAREN formal_parameter_list_opt T_RPAREN
+     annotation_opt
+     T_LCURLY function_body T_RCURLY
+     { e(Function { f_kind = Generator $2; f_tok = Some $1; f_name= $3; 
+                    f_type_params = $4; f_params= ($5, $6, $7);
+                    f_return_type = $8; f_body = ($9, $10, $11) }) }
+
 /*(*----------------------------*)*/
 /*(*2 asynchronous functions *)*/
 /*(*----------------------------*)*/
@@ -594,6 +604,16 @@ async_declaration:
          f_type_params = $4; f_params= ($5, $6, $7); 
          f_return_type = $8; f_body = ($9, $10, $11)
      } }
+
+/*(* the identifier is optional here *)*/
+async_function_expression:
+ | T_ASYNC T_FUNCTION identifier_opt generics_opt
+     T_LPAREN formal_parameter_list_opt T_RPAREN
+     annotation_opt
+     T_LCURLY function_body T_RCURLY
+     { e(Function { f_kind = Async $1; f_tok = Some $2; f_name= $3; 
+                    f_type_params = $4; f_params= ($5, $6, $7);
+                    f_return_type = $8; f_body = ($9, $10, $11) }) }
 
 /*(*----------------------------*)*/
 /*(*2 Method definition (in class or object literal) *)*/
@@ -632,6 +652,14 @@ method_definition:
       f_return_type = $7; f_body =  ($8, $9, $10);
   } }
 
+ /*(* es7: *)*/
+ | T_ASYNC identifier generics_opt 
+    T_LPAREN formal_parameter_list_opt T_RPAREN annotation_opt
+    T_LCURLY function_body T_RCURLY
+  { { f_kind = Async $1; f_tok = None; f_name = Some $2; 
+      f_type_params = $3; f_params = ($4, $5, $6);
+      f_return_type = $7; f_body =  ($8, $9, $10);
+  } }
 
 /*(*************************************************************************)*/
 /*(*1 Class declaration *)*/
@@ -801,6 +829,8 @@ assignment_expression:
  | T_YIELD                               { Yield ($1, None, None) }
  | T_YIELD assignment_expression         { Yield ($1, None, Some $2) }
  | T_YIELD T_MULT assignment_expression  { Yield ($1, Some $2, Some $3) }
+ /*(* es7: *)*/
+ | async_arrow_function { Arrow $1 }
 
 assignment_operator:
  | T_ASSIGN         { A_eq , $1 }
@@ -896,6 +926,10 @@ primary_expression:
  | primary_expression_no_statement { $1 }
  | object_literal                  { e(Object $1) }
  | function_expression             { $1 }
+ /*(* es6: *)*/
+ | generator_expression            { $1 }
+ /*(* es7: *)*/
+ | async_function_expression            { $1 }
 
 primary_expression_no_statement:
  | T_THIS          { e((This $1)) }
@@ -1095,6 +1129,9 @@ arrow_body:
      { match $1 with Block (a,b,c) -> ABody (a,b,c) | _ -> raise Impossible }
  /*(* see conflicts.txt for why the %prec *)*/
  | assignment_expression_no_statement %prec LOW_PRIORITY_RULE { AExpr $1 }
+
+async_arrow_function: 
+ | T_ASYNC arrow_function { $2 }
 
 /*(*----------------------------*)*/
 /*(*2 no in *)*/

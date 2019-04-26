@@ -347,6 +347,19 @@ rule initial = parse
       let info = tokinfo lexbuf in
       T_NUMBER (s, info)
     }
+  (* es6? *)
+  | "0" ['B''b'] ['0'-'1']+ {
+      let s = tok lexbuf in
+      let info = tokinfo lexbuf in
+      T_NUMBER (s, info)
+    }
+  (* es6? *)
+  | "0" ['O''o'] ['0'-'7']+ {
+      let s = tok lexbuf in
+      let info = tokinfo lexbuf in
+      T_NUMBER (s, info)
+    }
+
   | '0'['0'-'7']+ {
       let s = tok lexbuf in
       let info = tokinfo lexbuf in

@@ -167,6 +167,7 @@ type expr =
 
      and litteral =
        | Bool of bool wrap
+       (* float or int, in decimal/octal/binary/hexadecimal format *)
        | Num of string wrap
        (* less:  | Float of float | Int of int32 *)
 
@@ -381,9 +382,10 @@ and func_decl = {
   (* es6: *)
   | Get of tok
   | Set of tok
-  | Async of tok
-  (* f_body should contain a 'yield' *)
+  (* es6: f_body should contain a 'yield' *)
   | Generator of tok (* '*', but this token is after f_tok *)
+  (* es7: f_body should contain a 'await' *)
+  | Async of tok
 
 (* es6: arrows.
  * note: we could factorize with func_def, but this would require many
