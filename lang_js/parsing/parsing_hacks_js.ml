@@ -42,6 +42,12 @@ module TH   = Token_helpers_js
 (* Helpers *)
 (*****************************************************************************)
 
+let is_keyword = function
+ | T.T_IMPORT _ | T.T_EXPORT _ 
+(*  | T.T_VAR _ | T.T_LET _ | T.T_CONST _ | T.T_FUNCTION _ *)
+ -> true
+ | _ -> false
+
 let rparens_of_if toks = 
   let toks = Common.exclude TH.is_comment toks in
 
@@ -104,16 +110,17 @@ let fix_tokens xs =
     | (T.T_LCURLY _ | T.T_SEMICOLON _), 
       T.T_RCURLY _ ->
         Common.push x res;
-    (* <other> } *)
+    (* <not } or ;> } *)
     | _, 
       T.T_RCURLY _ ->
         push_sc_before_x x;
         Common.push x res;
         
-    (* EOF *)
+    (* ; EOF *)
     | (T.T_SEMICOLON _),
        T.EOF _ ->
         Common.push x res;
+    (* <not ;> EOF *)
     | _, T.EOF _ ->
         push_sc_before_x x;
         Common.push x res;
@@ -168,9 +175,25 @@ let fix_tokens xs =
         push_sc_before_x x;
         Common.push x res;
 
-    (* ???
-     * <keyword>
+    (* } or ;
+     * <keyword> col 0
      *)
+    | (T.T_RCURLY _ | T.T_SEMICOLON _),
+      _ 
+      when is_keyword x &&
+       TH.line_of_tok x <> TH.line_of_tok prev && TH.col_of_tok x = 0
+      ->
+       Common.push x res;
+
+    (* <no ; or }>
+     * <keyword> col 0
+     *)
+    | _, _
+      when is_keyword x &&
+       TH.line_of_tok x <> TH.line_of_tok prev && TH.col_of_tok x = 0
+      ->
+       push_sc_before_x x;
+       Common.push x res;
 
 
     (* else *)

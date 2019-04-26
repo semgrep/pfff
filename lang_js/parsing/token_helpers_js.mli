@@ -10,3 +10,4 @@ val visitor_info_of_tok :
   (Parse_info.info -> Parse_info.info) -> Parser_js.token -> Parser_js.token
 
 val line_of_tok  : Parser_js.token -> int
+val col_of_tok  : Parser_js.token -> int
