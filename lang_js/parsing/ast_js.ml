@@ -581,10 +581,10 @@ let al_info x =
 (*****************************************************************************)
 
 let fakeInfoAttach info =
-  let info = PI.rewrap_str "FAKE" info in
+  let info = PI.rewrap_str "';' (from ASI)" info in
   let pinfo = PI.token_location_of_info info in
   { PI.
-    token = PI.FakeTokStr ("FAKE", Some (pinfo, -1));
+    token = PI.FakeTokStr (";", Some (pinfo, -1));
     transfo = PI.NoTransfo;
   }
 
