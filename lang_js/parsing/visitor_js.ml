@@ -207,6 +207,12 @@ and v_expr (x: expr) =
       and v3 = v_list v_encaps v3
       and v4 = v_tok v4
       in ()
+  | Yield ((v1, v2, v3)) ->
+      let v1 = v_tok v1
+      and v2 = v_option v_tok v2
+      and v3 = v_option v_expr v3
+      in ()
+
 
   in
   vin.kexpr (k, all_functions) x

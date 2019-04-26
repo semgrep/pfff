@@ -185,6 +185,7 @@ module_item:
  | import_declaration { Import $1 }
  | export_declaration { Export $1 }
 
+/*(* item is also in statement_list, inside every blocks *)*/
 item:
  | statement   { St $1 }
  | declaration { $1 }
@@ -192,18 +193,14 @@ item:
 declaration:
  /*(* part of hoistable_declaration in the ECMA grammar *)*/
  | function_declaration  { FunDecl $1 }
+ /*(* es6: *)*/
+ | generator_declaration { FunDecl $1 }
 
  /*(* es6: *)*/
  | lexical_declaration   { St $1 }
  | class_declaration     { ClassDecl $1 }
  /*(* facebook-ext: *)*/
  | interface_declaration { InterfaceDecl $1 }
-
-
-/*(* item is also in statement_list, inside every blocks *)*/
-statement_list:
- | item { [$1] }
- | statement_list item { $1 @ [$2] }
 
 /*(*************************************************************************)*/
 /*(*1 Import/export *)*/
@@ -303,6 +300,10 @@ statement:
 block:
  | T_LCURLY statement_list T_RCURLY { Block ($1, $2, $3) }
  | T_LCURLY T_RCURLY                { Block ($1, [], $2) }
+
+statement_list:
+ | item { [$1] }
+ | statement_list item { $1 @ [$2] }
 
 
 empty_statement:
@@ -434,7 +435,7 @@ lexical_declaration:
  | T_LET variable_declaration_list semicolon { VarsDecl((Let, $1), $2,$3) }
 
 
-
+/*(* one var from a list of vars *)*/
 variable_declaration:
  | identifier annotation_opt initializeur_opt
      { VarClassic { v_name = $1; v_type = $2; v_init = $3 } }
@@ -458,7 +459,7 @@ variable_declaration_no_in:
  | identifier
      { VarClassic { v_name = $1; v_init = None; v_type = None } }
 
-/*(* TODO: do not return a list! *)*/
+/*(* for in and for of declare only one variable *)*/
 for_single_variable_decl:
  | T_VAR for_binding { ((Var, $1), $2) }
  /*(* es6: *)*/
@@ -524,6 +525,14 @@ function_expression:
                     f_type_params = $3; f_params= ($4, $5, $6);
                     f_return_type = $7; f_body = ($8, $9, $10) }) }
 
+function_body:
+ | /*(* empty *)*/ { [] }
+ | statement_list  { $1 }
+
+/*(*----------------------------*)*/
+/*(*2 parameters *)*/
+/*(*----------------------------*)*/
+
 formal_parameter:
  | identifier            { mk_param $1 }
  | identifier annotation { { (mk_param $1) with p_type = Some $2; } }
@@ -556,9 +565,56 @@ formal_optional_parameter_list:
  | formal_optional_parameter { [Left $1] }
  | formal_rest_parameter { [Left $1] }
 
-function_body:
- | /*(* empty *)*/ { [] }
- | statement_list  { $1 }
+/*(*----------------------------*)*/
+/*(*2 Method definition (in class or object literal) *)*/
+/*(*----------------------------*)*/
+/*(* es6: less: it's property_name, not identifier, but then conflicts*)*/
+method_definition:
+ | identifier generics_opt 
+    T_LPAREN formal_parameter_list_opt T_RPAREN annotation_opt
+    T_LCURLY function_body T_RCURLY
+  { { f_kind = Regular; f_tok = None; f_name = Some $1; 
+      f_type_params = $2; f_params = ($3, $4, $5);
+      f_return_type = $6; f_body =  ($7, $8, $9);
+  } }
+
+ | T_MULT identifier generics_opt 
+    T_LPAREN formal_parameter_list_opt T_RPAREN annotation_opt
+    T_LCURLY function_body T_RCURLY
+  { { f_kind = Generator $1; f_tok = None; f_name = Some $2; 
+      f_type_params = $3; f_params = ($4, $5, $6);
+      f_return_type = $7; f_body =  ($8, $9, $10);
+  } }
+
+ | T_GET identifier generics_opt 
+    T_LPAREN T_RPAREN annotation_opt
+    T_LCURLY function_body T_RCURLY
+  { { f_kind = Get $1; f_tok = None; f_name = Some $2; 
+      f_type_params = $3; f_params = ($4, [], $5);
+      f_return_type = $6; f_body =  ($7, $8, $9);
+  } }
+
+ | T_SET identifier generics_opt 
+    T_LPAREN formal_parameter T_RPAREN annotation_opt
+    T_LCURLY function_body T_RCURLY
+  { { f_kind = Set $1; f_tok = None; f_name = Some $2; 
+      f_type_params = $3; f_params = ($4, [Left $5], $6);
+      f_return_type = $7; f_body =  ($8, $9, $10);
+  } }
+
+/*(*----------------------------*)*/
+/*(*2 generators *)*/
+/*(*----------------------------*)*/
+/*(* TODO: identifier_opt in original grammar, why? *)*/
+generator_declaration:
+ | T_FUNCTION T_MULT identifier generics_opt
+     T_LPAREN formal_parameter_list_opt T_RPAREN
+     annotation_opt
+     T_LCURLY function_body T_RCURLY
+     { { f_kind = Generator $2; f_tok = Some $1; f_name= Some $3; 
+         f_type_params = $4; f_params= ($5, $6, $7); 
+         f_return_type = $8; f_body = ($9, $10, $11)
+     } }
 
 /*(*************************************************************************)*/
 /*(*1 Class declaration *)*/
@@ -593,35 +649,6 @@ class_element:
 
 binding_identifier: identifier { $1 }
 
-/*(*----------------------------*)*/
-/*(*2 class element *)*/
-/*(*----------------------------*)*/
-
-/*(* less: it's property_name, not identifier, but this cause conflicts *)*/
-method_definition:
- | identifier generics_opt 
-    T_LPAREN formal_parameter_list_opt T_RPAREN annotation_opt
-    T_LCURLY function_body T_RCURLY
-  { { f_kind = Regular; f_tok = None; f_name = Some $1; 
-      f_type_params = $2; f_params = ($3, $4, $5);
-      f_return_type = $6; f_body =  ($7, $8, $9);
-  } }
-
- | T_GET identifier generics_opt 
-    T_LPAREN T_RPAREN annotation_opt
-    T_LCURLY function_body T_RCURLY
-  { { f_kind = Get $1; f_tok = None; f_name = Some $2; 
-      f_type_params = $3; f_params = ($4, [], $5);
-      f_return_type = $6; f_body =  ($7, $8, $9);
-  } }
-
- | T_SET identifier generics_opt 
-    T_LPAREN formal_parameter T_RPAREN annotation_opt
-    T_LCURLY function_body T_RCURLY
-  { { f_kind = Set $1; f_tok = None; f_name = Some $2; 
-      f_type_params = $3; f_params = ($4, [Left $5], $6);
-      f_return_type = $7; f_body =  ($8, $9, $10);
-  } }
 
 /*(*************************************************************************)*/
 /*(*1 Interface declaration *)*/
@@ -751,7 +778,12 @@ assignment_expression:
  | conditional_expression { $1 }
  | left_hand_side_expression assignment_operator assignment_expression
      { e(Assign ($1, $2, $3)) }
+ /*(* es6: *)*/
  | arrow_function { Arrow $1 }
+ /*(* es6: *)*/
+ | T_YIELD                               { Yield ($1, None, None) }
+ | T_YIELD assignment_expression         { Yield ($1, None, Some $2) }
+ | T_YIELD T_MULT assignment_expression  { Yield ($1, Some $2, Some $3) }
 
 assignment_operator:
  | T_ASSIGN         { A_eq , $1 }
@@ -1090,6 +1122,11 @@ assignment_expression_no_statement:
  | conditional_expression_no_statement { $1 }
  | left_hand_side_expression_no_statement assignment_operator assignment_expression
      { e(Assign ($1, $2, $3)) }
+ /*(* es6: *)*/
+ | T_YIELD                               { Yield ($1, None, None) }
+ | T_YIELD assignment_expression   { Yield ($1, None, Some $2) }
+ | T_YIELD T_MULT assignment_expression { Yield ($1, Some $2, Some $3) }
+
 
 conditional_expression_no_statement:
  | post_in_expression_no_statement { $1 }

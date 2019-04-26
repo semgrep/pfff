@@ -31,19 +31,21 @@ module PI = Parse_info
  *
  * This AST (and its associated parser) supports most ES6 features:
  *  - classes
+ *  - import/export
  *  - arrows (a.k.a short lambdas)
+ *  - default parameters
  *  - SEMI variable number of parameters, e.g. 'function foo(...args)'
  *    and spread of parameters with [ ...arr ]
- *  - optional trailing commas
  *  - template strings (a.k.a interpolated strings), see
  *    https://gist.github.com/lukehoban/9303054#template-strings
- *  - import/export
  *  - let lexical vars
  *  - const declarations
  *  - SEMI destructuring patterns
  *  - getter/setter
  *  - iterators (for ... of )
- *  - generators (yield, async, await) TODO
+ *  - generators (yield, function* ) SEMI
+ *  - async/await TODO
+ *  - optional trailing commas
  *
  * See http://es6-features.org/ for explanations of those recent features
  * (and also how they can be converted to ES5 code)
@@ -121,14 +123,15 @@ type expr =
    | V of name
    | This of tok
 
-   (* includes new/delete/... *)
+   (* unop includes new/delete/... *)
    | U of unop wrap * expr
    | B of expr * binop wrap * expr
 
    | Period of expr * tok (* . *) * name
+   (* this is also used to access object computed-fields *)
    | Bracket of expr * expr bracket
 
-   (* can have some trailing comma *)
+   (* can have a trailing comma *)
    | Object of property comma_list brace
    (* The comma_list can have successive Left because of "elison" *)
    | Array of expr comma_list bracket
@@ -145,6 +148,8 @@ type expr =
    | Function of func_decl
    (* es6: arrows, a.k.a short lambdas *)
    | Arrow of arrow_func
+   (* es6: generators *)
+   | Yield of tok * tok option (* '*' *) * expr option
 
    (* es6: template (interpolated) strings 
     * less: you can get multiple EncapsString in encaps below; they
@@ -206,11 +211,13 @@ type expr =
 (* Object properties *)
 (* ------------------------------------------------------------------------- *)
    and property =
+       (* this includes also methods *)
        | P_field of property_name * tok (* : *) * expr
+       (* es6: method notation in object literals too *)
        | P_method of func_decl
        (* es6: similar to OCaml shorthands in records *)
        | P_shorthand of name
-       (* es6: inlining of properties from another object *)
+       (* es6: inlining of properties/array-elts/string/args *)
        | P_spread of tok (* ... *) * expr
 
 (* ------------------------------------------------------------------------- *)
@@ -365,12 +372,14 @@ and func_decl = {
   and default =
   | DNone of tok (* ? *)
   | DSome of tok (* = *) * expr
-  (* es6: *)
+
   and func_kind =
   | Regular
+  (* es6: *)
   | Get of tok
   | Set of tok
   | Async of tok
+  (* f_body should contain a 'yield' *)
   | Generator of tok (* '*', but this token is after f_tok *)
 
 (* es6: arrows.
