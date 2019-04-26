@@ -504,6 +504,7 @@ and vof_type_opt v =
   Ocaml.vof_option vof_annotation v
 and
   vof_func_decl {
+                  f_kind = v_f_kind;
                   f_tok = v_f_tok;
                   f_name = v_f_name;
                   f_params = v_f_params;
@@ -533,6 +534,9 @@ and
   let arg = Ocaml.vof_option vof_tok v_f_tok in
   let bnd = ("f_tok", arg) in
   let bnds = bnd :: bnds in
+  let arg = vof_func_kind v_f_kind in
+  let bnd = ("f_kind", arg) in 
+  let bnds = bnd :: bnds in
   Ocaml.VDict bnds
 and vof_parameter { p_name = v_p_name; p_type = v_p_type; p_default = v_default;
   p_dots = v_dots } =
@@ -553,6 +557,15 @@ and vof_parameter { p_name = v_p_name; p_type = v_p_type; p_default = v_default;
 and vof_default = function
   | DNone (v1) -> let v1 = vof_tok v1 in Ocaml.VSum (("DNone", [v1]))
   | DSome (v1,v2) -> let v1 = vof_tok v1 and v2 = vof_expr v2 in Ocaml.VSum (("DSome", [v1; v2]))
+
+and vof_func_kind =
+  function
+  | Regular -> Ocaml.VSum (("Regular", []))
+  | Get v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Get", [ v1 ]))
+  | Set v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Set", [ v1 ]))
+  | Async v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Async", [ v1 ]))
+  | Generator v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Generator", [ v1 ]))
+
 and
   vof_arrow_func { a_params = v_a_params; a_return_type = v_a_return_type;
                    a_tok = v_a_tok; a_body = v_a_body

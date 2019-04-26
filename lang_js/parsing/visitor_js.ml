@@ -514,6 +514,7 @@ and v_annotation = function
       in ()
 
 and  v_func_decl {
+                f_kind = v_f_kind;
                 f_tok = v_f_tok;
                 f_name = v_f_name;
                 f_params = v_f_params;
@@ -521,6 +522,8 @@ and  v_func_decl {
                 f_return_type = v_f_return_type;
                 f_body = v_f_body
               } =
+
+  let arg = v_func_kind v_f_kind in
   let arg = v_option v_tok v_f_tok in
   let arg = v_option v_name v_f_name in
   let arg = v_paren (v_comma_list v_parameter) v_f_params in
@@ -670,6 +673,15 @@ and v_export =
          | (v1, v2) -> let v1 = v_tok v1 and v2 = v_module_path v2 in ())
       and v3 = v_sc v3
       in ()
+
+        
+and v_func_kind =
+  function
+  | Regular -> ()
+  | Get v1 -> let v1 = v_tok v1 in ()
+  | Set v1 -> let v1 = v_tok v1 in ()
+  | Async v1 -> let v1 = v_tok v1 in ()
+  | Generator v1 -> let v1 = v_tok v1 in ()
 
 and v_module_item =
   function

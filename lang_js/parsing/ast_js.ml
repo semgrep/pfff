@@ -29,25 +29,26 @@ module PI = Parse_info
  *  - https://en.wikipedia.org/wiki/ECMAScript
  *  - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/
  *
- * This AST (and parser) supports most ES6 features:
+ * This AST (and its associated parser) supports most ES6 features:
  *  - classes
  *  - arrows (a.k.a short lambdas)
- *  - optional trailing commas
  *  - SEMI variable number of parameters, e.g. 'function foo(...args)'
  *    and spread of parameters with [ ...arr ]
+ *  - optional trailing commas
  *  - template strings (a.k.a interpolated strings), see
  *    https://gist.github.com/lukehoban/9303054#template-strings
  *  - import/export
  *  - let lexical vars
  *  - const declarations
  *  - SEMI destructuring patterns
+ *  - getter/setter
  *  - iterators (for ... of )
  *  - generators (yield, async, await) TODO
  *
  * See http://es6-features.org/ for explanations of those recent features
  * (and also how they can be converted to ES5 code)
  *
- * This AST (and parser) supports a few more extensions:
+ * This AST (and its associated parser) supports a few more extensions:
  *  - JSX: I am mostly imitating what I have done for XHP in lang_php/,
  *    but with tags possibly containing ':' in their names
  *  - type annotations a la Flow and TypeScript, see
@@ -140,6 +141,7 @@ type expr =
    | Assign of expr * assignment_operator wrap * expr
    | Seq of expr * tok (* , *) * expr
 
+   (* nested functions *)
    | Function of func_decl
    (* es6: arrows, a.k.a short lambdas *)
    | Arrow of arrow_func
@@ -203,7 +205,6 @@ type expr =
 (* ------------------------------------------------------------------------- *)
 (* Object properties *)
 (* ------------------------------------------------------------------------- *)
-
    and property =
        | P_field of property_name * tok (* : *) * expr
        | P_method of func_decl
@@ -211,7 +212,6 @@ type expr =
        | P_shorthand of name
        (* es6: inlining of properties from another object *)
        | P_spread of tok (* ... *) * expr
-        
 
 (* ------------------------------------------------------------------------- *)
 (* JSX (=~ XHP from PHP) and interporlated strings *)
@@ -302,7 +302,7 @@ and st =
 (* ------------------------------------------------------------------------- *)
 (* Type *)
 (* ------------------------------------------------------------------------- *)
-(* facebook-ext: complex type annotations for Flow *)
+(* typing-ext: facebook-ext: complex type annotations for Flow/Typescript *)
 and type_ =
   (* used for builtin types like 'void', 'number', 'string', 'any/mixed' *)
   | TName of nominal_type
@@ -338,29 +338,40 @@ and param_name =
   | RestParam of tok (* ... *) * name
 
 (* ------------------------------------------------------------------------- *)
-(* Function definition *)
+(* Function (or method) definition *)
 (* ------------------------------------------------------------------------- *)
 and func_decl = {
-  f_tok: tok option; (* None for methods *)
+  f_kind: func_kind;
+  f_tok: tok option; (* 'function', but None for methods *)
   f_name: name option; (* None for anonymous functions *)
+  (* typing-ext: *)
   f_type_params: type_parameters option;
   f_params: parameter comma_list paren;
+  (* typing-ext: *)
   f_return_type: type_opt;
   f_body: item list brace;
 }
   and parameter = {
    p_name: name;
+  (* typing-ext: *)
    p_type: type_opt;
-   (* if not None, then can be followed only by other default parameters or a
-      dots parameter in a parameter comma_list *)
+   (* es6: if not None, then can be followed only by other default parameters 
+      or a dots parameter in a parameter comma_list *)
    p_default: default option;
-   (* if not None, then should be last parameter in a parameter comma_list *)
+   (* es6: if <> None, then should be last param in a parameter comma_list *)
    p_dots: tok (* ... *) option;
   }
   (* es6: *)
   and default =
   | DNone of tok (* ? *)
   | DSome of tok (* = *) * expr
+  (* es6: *)
+  and func_kind =
+  | Regular
+  | Get of tok
+  | Set of tok
+  | Async of tok
+  | Generator of tok (* '*', but this token is after f_tok *)
 
 (* es6: arrows.
  * note: we could factorize with func_def, but this would require many
@@ -370,6 +381,7 @@ and func_decl = {
  *)
 and arrow_func = {
   a_params: arrow_params;
+  (* typing-ext: *)
   a_return_type: type_opt;
   a_tok: tok (* => *);
   a_body: arrow_body;
@@ -401,6 +413,7 @@ and var_binding =
 and variable_declaration = {
   v_name: name;
   v_init: (tok (*=*) * expr) option;
+  (* typing-ext: *)
   v_type: type_opt;
 }
 
@@ -414,8 +427,9 @@ and variable_declaration = {
 (* ------------------------------------------------------------------------- *)
 (* es6: finally classes built in the language *)
 and class_decl = {
-  c_tok: tok;
+  c_tok: tok; (* 'class' *)
   c_name: name;
+  (* typing-ext: *)
   c_type_params: type_parameter comma_list angle option;
   c_extends: (tok (* extends *) * nominal_type) option;
   c_body: class_stmt list brace;
@@ -432,9 +446,9 @@ and class_decl = {
 (* ------------------------------------------------------------------------- *)
 (* Interface definition *)
 (* ------------------------------------------------------------------------- *)
-(* typescript-ext: not in regular JS *)
+(* typing-ext: not in regular JS *)
 and interface_decl = {
-  i_tok: tok;
+  i_tok: tok; (* 'interface' *)
   i_name: name;
   i_type_params: type_parameter comma_list angle option;
   i_type: type_;
@@ -450,7 +464,7 @@ and item =
   | FunDecl of func_decl
   (* es6-ext: *)
   | ClassDecl of class_decl
-  (* facebook-ext: *)
+  (* typing-ext: *)
   | InterfaceDecl of interface_decl
 
 (* ------------------------------------------------------------------------- *)
