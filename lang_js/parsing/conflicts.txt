@@ -49,3 +49,13 @@ The latter expressions are common, and thus we prefer to parse them.
 
 Finally, we do not allow '<T>(x:T):T => ...' since the leading '<T>' looks like
 a JSX tag.
+
+* Import
+
+When we start to process 'import *' and we allow
+import as an identifier, then there is an ambiguity
+and we don't know yet if we need to reduce import to an identifier
+which starts a multiplication or to shift to allow an
+import namespace declaration.
+
+TODO how to solve the ambiguity? 

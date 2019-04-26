@@ -504,7 +504,7 @@ array_binding_pattern:
  | T_LBRACKET T_RBRACKET { }
 
 /*(*************************************************************************)*/
-/*(*1 Function declaration (and expressions) *)*/
+/*(*1 Function declarations (and expressions) *)*/
 /*(*************************************************************************)*/
 
 function_declaration:
@@ -1240,6 +1240,7 @@ identifier:
 ident_semi_keyword:
  | T_FROM { $1 } | T_AS   { $1 } | T_OF { $1 }
  | T_GET { $1 } | T_SET { $1 }
+/*(* TODO: would like to add T_IMPORT here, but cause conflicts *)*/
 
 /*(*alt: use the _last_non_whitespace_like_token trick and look if
    * previous token was a period to return a T_IDENTFIER
