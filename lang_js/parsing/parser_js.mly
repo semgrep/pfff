@@ -195,6 +195,8 @@ declaration:
  | function_declaration  { FunDecl $1 }
  /*(* es6: *)*/
  | generator_declaration { FunDecl $1 }
+ /*(* es7: *)*/
+ | async_declaration     { FunDecl $1 }
 
  /*(* es6: *)*/
  | lexical_declaration   { St $1 }
@@ -566,6 +568,33 @@ formal_optional_parameter_list:
  | formal_rest_parameter { [Left $1] }
 
 /*(*----------------------------*)*/
+/*(*2 generators *)*/
+/*(*----------------------------*)*/
+/*(* TODO: identifier_opt in original grammar, why? *)*/
+generator_declaration:
+ | T_FUNCTION T_MULT identifier generics_opt
+     T_LPAREN formal_parameter_list_opt T_RPAREN
+     annotation_opt
+     T_LCURLY function_body T_RCURLY
+     { { f_kind = Generator $2; f_tok = Some $1; f_name= Some $3; 
+         f_type_params = $4; f_params= ($5, $6, $7); 
+         f_return_type = $8; f_body = ($9, $10, $11)
+     } }
+
+/*(*----------------------------*)*/
+/*(*2 asynchronous functions *)*/
+/*(*----------------------------*)*/
+async_declaration:
+ | T_ASYNC T_FUNCTION identifier generics_opt
+     T_LPAREN formal_parameter_list_opt T_RPAREN
+     annotation_opt
+     T_LCURLY function_body T_RCURLY
+     { { f_kind = Async $1; f_tok = Some $2; f_name= Some $3; 
+         f_type_params = $4; f_params= ($5, $6, $7); 
+         f_return_type = $8; f_body = ($9, $10, $11)
+     } }
+
+/*(*----------------------------*)*/
 /*(*2 Method definition (in class or object literal) *)*/
 /*(*----------------------------*)*/
 /*(* es6: less: it's property_name, not identifier, but then conflicts*)*/
@@ -602,19 +631,6 @@ method_definition:
       f_return_type = $7; f_body =  ($8, $9, $10);
   } }
 
-/*(*----------------------------*)*/
-/*(*2 generators *)*/
-/*(*----------------------------*)*/
-/*(* TODO: identifier_opt in original grammar, why? *)*/
-generator_declaration:
- | T_FUNCTION T_MULT identifier generics_opt
-     T_LPAREN formal_parameter_list_opt T_RPAREN
-     annotation_opt
-     T_LCURLY function_body T_RCURLY
-     { { f_kind = Generator $2; f_tok = Some $1; f_name= Some $3; 
-         f_type_params = $4; f_params= ($5, $6, $7); 
-         f_return_type = $8; f_body = ($9, $10, $11)
-     } }
 
 /*(*************************************************************************)*/
 /*(*1 Class declaration *)*/

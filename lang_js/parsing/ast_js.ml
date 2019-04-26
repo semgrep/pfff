@@ -30,22 +30,23 @@ module PI = Parse_info
  *  - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/
  *
  * This AST (and its associated parser) supports most ES6 features:
- *  - classes
- *  - import/export
- *  - arrows (a.k.a short lambdas)
+ *  - classes: a nicer syntax to define classes than objects and prototypes
+ *  - import/export: cleaner namespace
+ *  - arrows: short lambdas
  *  - default parameters
  *  - SEMI variable number of parameters, e.g. 'function foo(...args)'
  *    and spread of parameters with [ ...arr ]
  *  - template strings (a.k.a interpolated strings), see
  *    https://gist.github.com/lukehoban/9303054#template-strings
- *  - let lexical vars
- *  - const declarations
- *  - SEMI destructuring patterns
- *  - getter/setter
+ *  - let: lexical vars
+ *  - const: immutable declarations
+ *  - get/set: sugar to define getter and setter methods
  *  - iterators (for ... of )
- *  - generators (yield, function* ) SEMI
- *  - async/await TODO
+ *  - generators (yield, function* ): a nice syntax to define iterators
  *  - optional trailing commas
+ * Support also for most ES7-ES9 features:
+ *  - SEMI destructuring patterns
+ *  - async/await: asynchronous functions and promises TODO
  *
  * See http://es6-features.org/ for explanations of those recent features
  * (and also how they can be converted to ES5 code)
