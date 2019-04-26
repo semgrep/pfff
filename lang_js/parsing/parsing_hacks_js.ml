@@ -76,112 +76,114 @@ let rparens_of_if toks =
 *)
 let fix_tokens xs =
 
+  let res = ref [] in
+  let rec aux prev f xs = 
+    match xs with
+    | [] -> ()
+    | e::l ->
+        if TH.is_comment e
+        then begin 
+          Common.push e res;
+          aux prev f l
+        end else begin
+          f prev e;
+          aux e f l
+        end
+  in
+  let push_sc_before_x x = 
+     let fake = Ast.fakeInfoAttach (TH.info_of_tok x) in
+     Common.push (T.T_VIRTUAL_SEMICOLON fake) res; 
+  in
+
   let rparens_if = rparens_of_if xs in
   let hrparens_if = Common.hashset_of_list rparens_if in
 
+  let f = (fun prev x ->
+    match prev, x with
+    (* { } or ; } TODO: source of many issues *)
+    | (T.T_LCURLY _ | T.T_SEMICOLON _), 
+      T.T_RCURLY _ ->
+        Common.push x res;
+    (* <other> } *)
+    | _, 
+      T.T_RCURLY _ ->
+        push_sc_before_x x;
+        Common.push x res;
+        
+    (* EOF *)
+    | (T.T_SEMICOLON _),
+       T.EOF _ ->
+        Common.push x res;
+    | _, T.EOF _ ->
+        push_sc_before_x x;
+        Common.push x res;
+
+    (* } 
+     * <keyword>
+     *)
+    | T.T_RCURLY _, 
+      (T.T_IDENTIFIER _
+       | T.T_IF _ | T.T_SWITCH _ | T.T_FOR _
+       | T.T_VAR _  | T.T_FUNCTION _ | T.T_LET _ | T.T_CONST _
+       | T.T_RETURN _
+       | T.T_BREAK _ | T.T_CONTINUE _
+       (* todo: sure? *)
+       | T.T_THIS _ | T.T_NEW _
+      ) when TH.line_of_tok x <> TH.line_of_tok prev ->
+        push_sc_before_x x;
+        Common.push x res
+
+    (* )
+     * <keyword>
+     *)
+    (* this is valid only if the RPAREN is not the closing paren of an if*)
+    | T.T_RPAREN info, 
+      (T.T_VAR _ | T.T_IF _ | T.T_THIS _ | T.T_FOR _ | T.T_RETURN _ |
+       T.T_IDENTIFIER _ | T.T_CONTINUE _ 
+      ) when TH.line_of_tok x <> TH.line_of_tok prev 
+             && not (Hashtbl.mem hrparens_if info) ->
+        push_sc_before_x x;
+        Common.push x res;
+
+
+    (* ]
+     * <keyword> 
+     *)
+    | T.T_RBRACKET _, 
+      (T.T_FOR _ | T.T_IF _ | T.T_VAR _ | T.T_IDENTIFIER _)
+      when TH.line_of_tok x <> TH.line_of_tok prev ->
+        push_sc_before_x x;
+        Common.push x res;
+
+    (* <literal> 
+     * <keyword> 
+     *)
+    | (T.T_IDENTIFIER _ 
+        | T.T_NULL _ | T.T_STRING _ | T.T_REGEX _
+        | T.T_FALSE _ | T.T_TRUE _
+      ), 
+       (T.T_VAR _ | T.T_IDENTIFIER _ | T.T_IF _ | T.T_THIS _ |
+        T.T_RETURN _ | T.T_BREAK _ | T.T_ELSE _
+      ) when TH.line_of_tok x <> TH.line_of_tok prev ->
+        push_sc_before_x x;
+        Common.push x res;
+
+    (* ???
+     * <keyword>
+     *)
+
+
+    (* else *)
+    | _, _ ->        
+        Common.push x res;
+  )
+  in
   match xs with
   | [] -> []
-  | y::ys ->
-      let res = ref [] in
-      Common.push y res;
-      let rec aux prev f xs = 
-        match xs with
-        | [] -> ()
-        | e::l ->
-            if TH.is_comment e
-            then begin 
-              Common.push e res;
-              aux prev f l
-            end else begin
-              f prev e;
-              aux e f l
-            end
+  | x::_ ->
+      let sentinel = 
+        let fake = Ast.fakeInfoAttach (TH.info_of_tok x) in
+        (T.T_SEMICOLON fake)
       in
-      let f = (fun prev x ->
-        match prev, x with
-        | (T.T_LCURLY _ | T.T_SEMICOLON _ | T.T_VIRTUAL_SEMICOLON _), 
-          T.T_RCURLY _ ->
-            Common.push x res;
-        | _, T.T_RCURLY _ ->
-            let fake = Ast.fakeInfoAttach (TH.info_of_tok x) in
-            Common.push (T.T_VIRTUAL_SEMICOLON fake) res;
-            Common.push x res;
-            
-        | (T.T_SEMICOLON _ | T.T_VIRTUAL_SEMICOLON _),
-           T.EOF _ ->
-            Common.push x res;
-        | _, T.EOF _ ->
-            let fake = Ast.fakeInfoAttach (TH.info_of_tok x) in
-            Common.push (T.T_VIRTUAL_SEMICOLON fake) res;
-            Common.push x res;
-
-
-        | T.T_RCURLY _, 
-          (T.T_IDENTIFIER _ | 
-           T.T_IF _ | T.T_VAR _ | T.T_FOR _ | T.T_RETURN _ |
-           T.T_SWITCH _ |
-           T.T_FUNCTION _ | T.T_THIS _ |
-           T.T_BREAK _ | 
-           T.T_NEW _
-          ) 
-          ->
-            let line2 = TH.line_of_tok x in
-            let line1 = TH.line_of_tok prev in
-            if line2 <> line1
-            then begin
-              let fake = Ast.fakeInfoAttach (TH.info_of_tok x) in
-              Common.push (T.T_VIRTUAL_SEMICOLON fake) res;
-            end;
-            Common.push x res;
-
-        (* this is valid only if the RPAREN is not the closing paren of an if*)
-        | T.T_RPAREN info, 
-          (T.T_VAR _ | T.T_IF _ | T.T_THIS _ | T.T_FOR _ | T.T_RETURN _ |
-           T.T_IDENTIFIER _ | T.T_CONTINUE _ 
-          ) when not (Hashtbl.mem hrparens_if info)
-          ->
-            let line2 = TH.line_of_tok x in
-            let line1 = TH.line_of_tok prev in
-            if line2 <> line1
-            then begin
-              let fake = Ast.fakeInfoAttach (TH.info_of_tok x) in
-              Common.push (T.T_VIRTUAL_SEMICOLON fake) res;
-            end;
-            Common.push x res;
-
-
-        | T.T_RBRACKET _, 
-          (T.T_FOR _ | T.T_IF _ | T.T_VAR _ | T.T_IDENTIFIER _)
-          ->
-            let line2 = TH.line_of_tok x in
-            let line1 = TH.line_of_tok prev in
-            if line2 <> line1
-            then begin
-              let fake = Ast.fakeInfoAttach (TH.info_of_tok x) in
-              Common.push (T.T_VIRTUAL_SEMICOLON fake) res;
-            end;
-            Common.push x res;
-
-
-        | (T.T_IDENTIFIER _ | T.T_NULL _ | T.T_STRING _ | T.T_REGEX _
-            | T.T_FALSE _ | T.T_TRUE _
-          ), 
-           (T.T_VAR _ | T.T_IDENTIFIER _ | T.T_IF _ | T.T_THIS _ |
-            T.T_RETURN _ | T.T_BREAK _ | T.T_ELSE _
-           )
-          ->
-            let line2 = TH.line_of_tok x in
-            let line1 = TH.line_of_tok prev in
-            if line2 <> line1
-            then begin
-              let fake = Ast.fakeInfoAttach (TH.info_of_tok x) in
-              Common.push (T.T_VIRTUAL_SEMICOLON fake) res;
-            end;
-            Common.push x res;
-
-        | _, _ ->        
-            Common.push x res;
-      )
-      in
-      aux y f ys;
+      aux sentinel f xs;
       List.rev !res
