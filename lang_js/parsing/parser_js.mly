@@ -166,8 +166,9 @@ let fake_tok s = {
 /*(*1 Rules type declaration *)*/
 /*(*************************************************************************)*/
 
-%start main
+%start main module_item_or_eof
 %type <Ast_js.module_item list> main
+%type <Ast_js.module_item option> module_item_or_eof
 
 %%
 
@@ -177,8 +178,11 @@ let fake_tok s = {
 
 main: program EOF { $1 }
 
-program: module_item_list_opt { $1 }
+module_item_or_eof:
+ | module_item { Some $1 }
+ | EOF { None }
 
+program: module_item_list_opt { $1 }
 
 module_item:
  | item { It $1 }
@@ -233,12 +237,10 @@ import_names:
 
  | T_LCURLY T_RCURLY 
    { ImportNames ($1, [], $2) }
- /*(* todo: remove those T_VIRTUAL_SEMICOLON; parsing_hack_js should not
-    * have inserted them in the first place *)*/
- | T_LCURLY import_specifiers T_VIRTUAL_SEMICOLON         T_RCURLY 
-   { ImportNames ($1, $2, $4) }
- | T_LCURLY import_specifiers T_COMMA T_VIRTUAL_SEMICOLON T_RCURLY 
-   { ImportNames ($1, $2 @ [Right $3], $5) }
+ | T_LCURLY import_specifiers          T_RCURLY 
+   { ImportNames ($1, $2, $3) }
+ | T_LCURLY import_specifiers T_COMMA  T_RCURLY 
+   { ImportNames ($1, $2 @ [Right $3], $4) }
 
 /*(* also valid for export *)*/
 from_clause: T_FROM module_specifier { ($1, $2) }
@@ -271,12 +273,10 @@ export_names:
 export_clause:
  | T_LCURLY T_RCURLY 
    { ($1, [], $2) }
- /*(* todo: remove those T_VIRTUAL_SEMICOLON; parsing_hack_js should not
-    * have inserted them in the first place *)*/
- | T_LCURLY import_specifiers T_VIRTUAL_SEMICOLON         T_RCURLY 
-   { ($1, $2, $4) }
- | T_LCURLY import_specifiers T_COMMA T_VIRTUAL_SEMICOLON T_RCURLY 
-   { ($1, $2 @ [Right $3], $5) }
+ | T_LCURLY import_specifiers          T_RCURLY 
+   { ($1, $2, $3) }
+ | T_LCURLY import_specifiers T_COMMA  T_RCURLY 
+   { ($1, $2 @ [Right $3], $4) }
 
 /*(*************************************************************************)*/
 /*(*1 Statement *)*/
@@ -484,10 +484,8 @@ binding_pattern:
 
 object_binding_pattern:
  | T_LCURLY T_RCURLY { }
- /*(* todo: remove those T_VIRTUAL_SEMICOLON; parsing_hack_js should not
-    * have inserted them in the first place *)*/
- | T_LCURLY binding_property_list T_VIRTUAL_SEMICOLON         T_RCURLY { }
- | T_LCURLY binding_property_list T_COMMA T_VIRTUAL_SEMICOLON T_RCURLY { }
+ | T_LCURLY binding_property_list          T_RCURLY { }
+ | T_LCURLY binding_property_list T_COMMA  T_RCURLY { }
 
 binding_property_list:
  | binding_property
@@ -1005,9 +1003,8 @@ element:
 object_literal:
  | T_LCURLY T_RCURLY
      { ($1, [], $2) }
- /*(* todo: remove T_VIRTUAL_SEMICOLON *)*/
- | T_LCURLY property_name_and_value_list trailing_comma         T_VIRTUAL_SEMICOLON T_RCURLY
-     { ($1, $2, $4) }
+ | T_LCURLY property_name_and_value_list trailing_comma T_RCURLY
+     { ($1, $2 @ $3, $4) }
 
 
 property_name_and_value:
@@ -1073,10 +1070,8 @@ xhp_attribute_value:
 /*(*2 interpolated strings *)*/
 /*(*----------------------------*)*/
 encaps:
- | T_ENCAPSED_STRING { EncapsString $1 }
- /*(* todo: fix this T_VIRTUAL_SEMICOLON ugly hack *)*/
- | T_DOLLARCURLY expression T_VIRTUAL_SEMICOLON T_RCURLY
-     { EncapsExpr ($1, $2, $4) }
+ | T_ENCAPSED_STRING                  { EncapsString $1 }
+ | T_DOLLARCURLY expression T_RCURLY  { EncapsExpr ($1, $2, $3) }
 
 /*(*----------------------------*)*/
 /*(*2 arrow (short lambda) *)*/

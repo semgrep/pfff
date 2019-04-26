@@ -1,6 +1,7 @@
 (* Yoann Padioleau
  *
  * Copyright (C) 2010, 2013 Facebook
+ * Copyright (C) 2019 Yoann Padioleau
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -15,6 +16,7 @@
 open Common 
 
 module Flag = Flag_parsing
+module Flag_js = Flag_parsing_js
 module Ast = Ast_js
 module TH   = Token_helpers_js
 module PI = Parse_info
@@ -22,7 +24,7 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Lots of copy paste with my other parsers (e.g. PHP, C, sql) but
+(* Lots of copy paste with my other parsers (e.g. PHP, C, ML) but
  * copy paste is sometimes ok.
  *)
 
@@ -39,6 +41,17 @@ type program_and_tokens =
 (*****************************************************************************)
 let error_msg_tok tok = 
   Parse_info.error_message_info (TH.info_of_tok tok)
+
+(*****************************************************************************)
+(* Helpers  *)
+(*****************************************************************************)
+let rec first_non_comment_line xs =
+  match xs with
+  | [] -> None
+  | x::xs ->
+    if TH.is_comment x
+    then first_non_comment_line xs
+    else Some (TH.line_of_tok x)
 
 (*****************************************************************************)
 (* Lexing only *)
@@ -65,7 +78,8 @@ let tokens2 file =
       in
       let rec tokens_aux acc = 
         let tok = jstoken lexbuf in
-        if !Flag.debug_lexer then Common.pr2_gen tok;
+        if !Flag.debug_lexer 
+        then Common.pr2_gen tok;
 
         if not (TH.is_comment tok)
         then Lexer_js._last_non_whitespace_like_token := Some tok;
@@ -122,54 +136,129 @@ let rec lexer_function tr = fun lexbuf ->
 exception Parse_error of Parse_info.info
 
 let parse2 filename =
-
   let stat = PI.default_stat filename in
 
   let toks = tokens filename in
-  let toks = Parsing_hacks_js.fix_tokens toks in
+  (*  let toks = Parsing_hacks_js.fix_tokens toks in *)
 
   let tr = PI.mk_tokens_state toks in
-  let checkpoint = TH.line_of_tok tr.PI.current in
+  let last_charpos_error = ref 0 in
   let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
 
-  try
-     (* -------------------------------------------------- *)
-     (* Call parser *)
-      (* -------------------------------------------------- *)
-    let xs =
-      Common.profile_code "Parser_js.main" (fun () ->
-        Parser_js.main (lexer_function tr) lexbuf_fake
-      )
+   Sys.set_signal Sys.sigalrm (Sys.Signal_handle (fun _ -> raise Timeout ));
+   ignore(Unix.alarm 5);
+
+  let rec parse_module_item_or_eof tr =
+    try 
+     let item = 
+       (* -------------------------------------------------- *)
+       (* Call parser *)
+       (* -------------------------------------------------- *)
+       Common.profile_code "Parser_js.module_item" (fun () ->
+         Parser_js.module_item_or_eof (lexer_function tr) lexbuf_fake
+       )
+     in
+     Left item
+   with 
+   | Lexer_js.Lexical s ->
+      let cur = tr.PI.current in
+      if !Flag.show_parsing_error
+      then pr2 ("lexical error " ^s^ "\n =" ^ error_msg_tok cur);
+      Right ()
+
+   | Parsing.Parse_error ->
+      let cur = tr.PI.current in
+      let info = TH.info_of_tok cur in
+      let charpos = Parse_info.pos_of_info info in
+
+      (* try Automatic Semicolon Insertion *)
+      if charpos > !last_charpos_error && 
+         tr.PI.passed <> [] &&
+         (match first_non_comment_line (List.tl tr.PI.passed) with
+         | None -> false
+         | Some line -> 
+            TH.line_of_tok cur > line ||
+            (match cur with 
+             | Parser_js.T_RCURLY _ -> true 
+             | Parser_js.EOF _ -> true
+             | _ -> false
+             )
+         )
+      then begin
+        match tr.PI.passed with
+        | [] -> raise Impossible
+        | x::xs ->
+          assert (x = cur);
+          let virtual_semi = 
+            Parser_js.T_VIRTUAL_SEMICOLON (Ast.fakeInfoAttach info) in
+          if !Flag_js.debug_asi
+          then pr2 (spf "insertion fake ';' at %s" (PI.string_of_info info));
+  
+          let toks = List.rev xs @ [virtual_semi; x] @ tr.PI.rest in
+          (* like in Parse_info.mk_tokens_state *)
+          tr.PI.rest <- toks;
+          tr.PI.current <- List.hd toks;
+          tr.PI.passed <- [];
+          (* try again! 
+           * This significantly slow-down parsing, but at least it's parsing
+           *)
+          last_charpos_error := charpos;
+          parse_module_item_or_eof tr
+      end else begin
+        if !Flag.show_parsing_error 
+        then pr2 ("parse error \n = " ^ error_msg_tok cur);
+        Right ()
+      end
+  in
+  let rec aux tr =
+    let line_start = TH.line_of_tok tr.PI.current in
+    let res = parse_module_item_or_eof tr in
+    let passed = tr.PI.passed in
+    tr.PI.passed <- [];
+    let lines =
+      try 
+        let (head, _middle, last) = Common2.head_middle_tail passed in
+        let line1 = TH.line_of_tok last in
+        let line2 = TH.line_of_tok head in
+        line2 - line1 (* +1? *)
+      with _ -> 1
     in
-    stat.PI.correct <- (Common.cat filename +> List.length);
-    (Some xs, toks), stat
-  with (Lexer_js.Lexical _ | Parsing.Parse_error) as exn ->
-    let cur = tr.PI.current in
-    if not !Flag.error_recovery
-    then raise (Parse_error (TH.info_of_tok cur));
-    (* else? no real error recovery for now
-     * todo? could do the Automatic Semicolon Insertion here
-     * instead of in fix_tokens
-     *)
-
-    if !Flag.show_parsing_error
-    then begin
-        (match exn with
-        (* Lexical is not anymore launched I think *)
-        | Lexer_js.Lexical s -> 
-            pr2 ("lexical error " ^s^ "\n =" ^ error_msg_tok cur)
-        | Parsing.Parse_error -> 
-            pr2 ("parse error \n = " ^ error_msg_tok cur)
-        | _e -> raise Impossible
-        );
-      let filelines = Common2.cat_array filename in
-      let checkpoint2 = Common.cat filename +> List.length in
-      let line_error = TH.line_of_tok cur in
-      PI.print_bad line_error (checkpoint, checkpoint2) filelines;
-    end;
-
-    stat.PI.bad     <- Common.cat filename +> List.length;
-    (None, toks), stat
+    match res with
+    (* EOF *)
+    | Left None -> 
+        stat.PI.correct <- stat.PI.correct + lines;
+        []
+    | Left (Some x) -> 
+        stat.PI.correct <- stat.PI.correct + lines;
+        x::aux tr 
+    | Right () ->
+       let max_line = Common.cat filename +> List.length in
+       if !Flag.show_parsing_error
+       then begin
+         let filelines = Common2.cat_array filename in
+         let cur = tr.PI.current in
+         let line_error = TH.line_of_tok cur in
+         PI.print_bad line_error (line_start, min max_line (line_error + 10))
+              filelines;
+       end;
+       (* todo? try to recover? call 'aux tr'? but then can be really slow *)
+       stat.PI.bad <- stat.PI.bad + (max_line - line_start);
+       []
+  in
+  let items = 
+   try 
+     aux tr 
+   with Timeout ->
+      ignore(Unix.alarm 0);
+      if !Flag.show_parsing_error
+      then pr2 (spf "TIMEOUT on %s" filename);
+      stat.PI.bad <- Common.cat filename |> List.length;
+      stat.PI.have_timeout <- true;
+      stat.PI.correct <- 0;
+      []
+  in
+  ignore(Unix.alarm 0);
+  (Some items, []), stat
 
 let parse a = 
   Common.profile_code "Parse_js.parse" (fun () -> parse2 a)
