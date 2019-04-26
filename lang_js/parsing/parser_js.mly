@@ -160,7 +160,7 @@ let fake_tok s = {
 %left T_LSHIFT T_RSHIFT T_RSHIFT3
 %left T_PLUS T_MINUS
 %left T_DIV T_MULT T_MOD
-%right T_NOT T_BIT_NOT T_INCR T_DECR T_DELETE T_TYPEOF T_VOID
+%right T_NOT T_BIT_NOT T_INCR T_DECR T_DELETE T_TYPEOF T_VOID T_AWAIT
 
 /*(*************************************************************************)*/
 /*(*1 Rules type declaration *)*/
@@ -584,6 +584,7 @@ generator_declaration:
 /*(*----------------------------*)*/
 /*(*2 asynchronous functions *)*/
 /*(*----------------------------*)*/
+/*(* TODO: identifier_opt in original grammar, why? *)*/
 async_declaration:
  | T_ASYNC T_FUNCTION identifier generics_opt
      T_LPAREN formal_parameter_list_opt T_RPAREN
@@ -844,19 +845,25 @@ post_in_expression:
  | post_in_expression T_AND post_in_expression                { bop B_and $1 $2 $3 }
  | post_in_expression T_OR post_in_expression                 { bop B_or $1 $2 $3 }
 
+/*(* called unary_expression and update_expression in ECMA *)*/
 pre_in_expression:
  | left_hand_side_expression                     { $1 }
+
  | pre_in_expression T_INCR %prec p_POSTFIX      { uop U_post_increment $2 $1 }
  | pre_in_expression T_DECR %prec p_POSTFIX      { uop U_post_decrement $2 $1 }
+ | T_INCR pre_in_expression                      { uop U_pre_increment $1 $2 }
+ | T_DECR pre_in_expression                      { uop U_pre_decrement $1 $2 }
+
  | T_DELETE pre_in_expression                    { uop U_delete $1 $2 }
  | T_VOID pre_in_expression                      { uop U_void $1 $2 }
  | T_TYPEOF pre_in_expression                    { uop U_typeof $1 $2 }
- | T_INCR pre_in_expression                      { uop U_pre_increment $1 $2 }
- | T_DECR pre_in_expression                      { uop U_pre_decrement $1 $2 }
+
  | T_PLUS pre_in_expression                      { uop U_plus $1 $2 }
  | T_MINUS pre_in_expression                     { uop U_minus $1 $2}
  | T_BIT_NOT pre_in_expression                   { uop U_bitnot $1 $2 }
  | T_NOT pre_in_expression                       { uop U_not $1 $2 }
+ /*(* es7: *)*/
+ | T_AWAIT pre_in_expression                     { Await ($1, $2) }
 
  | pre_in_expression T_MULT pre_in_expression    { bop B_mul $1 $2 $3 }
  | pre_in_expression T_DIV pre_in_expression     { bop B_div $1 $2 $3 }
@@ -1176,15 +1183,21 @@ pre_in_expression_no_statement:
  | left_hand_side_expression_no_statement                     { $1 }
  | pre_in_expression_no_statement T_INCR                      { uop U_post_increment $2 $1 }
  | pre_in_expression_no_statement T_DECR                      { uop U_post_decrement $2 $1 }
+ | T_INCR pre_in_expression                                   { uop U_pre_increment $1 $2 }
+ | T_DECR pre_in_expression                                   { uop U_pre_decrement $1 $2 }
+
  | T_DELETE pre_in_expression                                 { uop U_delete $1 $2 }
  | T_VOID pre_in_expression                                   { uop U_void $1 $2 }
  | T_TYPEOF pre_in_expression                                 { uop U_typeof $1 $2 }
- | T_INCR pre_in_expression                                   { uop U_pre_increment $1 $2 }
- | T_DECR pre_in_expression                                   { uop U_pre_decrement $1 $2 }
+
+
  | T_PLUS pre_in_expression                                   { uop U_plus $1 $2 }
  | T_MINUS pre_in_expression                                  { uop U_minus $1 $2}
  | T_BIT_NOT pre_in_expression                                { uop U_bitnot $1 $2 }
  | T_NOT pre_in_expression                                    { uop U_not $1 $2 }
+
+ /*(* es7: *)*/
+ | T_AWAIT pre_in_expression                     { Await ($1, $2) }
 
  | pre_in_expression_no_statement T_MULT pre_in_expression    { bop B_mul $1 $2 $3 }
  | pre_in_expression_no_statement T_DIV pre_in_expression     { bop B_div $1 $2 $3 }

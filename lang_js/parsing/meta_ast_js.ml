@@ -161,6 +161,10 @@ let rec vof_expr =
       and v2 = Ocaml.vof_option vof_tok v2
       and v3 = Ocaml.vof_option vof_expr v3
       in Ocaml.VSum (("Yield", [ v1; v2; v3 ]))
+  | Await ((v1, v2)) ->
+      let v1 = vof_tok v1
+      and v2 = vof_expr v2
+      in Ocaml.VSum (("Await", [ v1; v2 ]))
 
 and vof_litteral =
   function

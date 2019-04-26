@@ -212,6 +212,7 @@ and v_expr (x: expr) =
       and v2 = v_option v_tok v2
       and v3 = v_option v_expr v3
       in ()
+  | Await ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()
 
 
   in

@@ -151,6 +151,8 @@ type expr =
    | Arrow of arrow_func
    (* es6: generators *)
    | Yield of tok * tok option (* '*' *) * expr option
+   (* es7: promises *)
+   | Await of tok * expr
 
    (* es6: template (interpolated) strings 
     * less: you can get multiple EncapsString in encaps below; they
