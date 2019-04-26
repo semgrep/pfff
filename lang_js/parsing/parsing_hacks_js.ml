@@ -42,9 +42,10 @@ module TH   = Token_helpers_js
 (* Helpers *)
 (*****************************************************************************)
 
-let is_keyword = function
+let is_toplevel_keyword = function
  | T.T_IMPORT _ | T.T_EXPORT _ 
-(*  | T.T_VAR _ | T.T_LET _ | T.T_CONST _ | T.T_FUNCTION _ *)
+ | T.T_VAR _ | T.T_LET _ | T.T_CONST _
+ | T.T_FUNCTION _
  -> true
  | _ -> false
 
@@ -175,12 +176,12 @@ let fix_tokens xs =
         push_sc_before_x x;
         Common.push x res;
 
-    (* } or ;
+    (* } or ; or , or =
      * <keyword> col 0
      *)
-    | (T.T_RCURLY _ | T.T_SEMICOLON _),
+    | (T.T_RCURLY _ | T.T_SEMICOLON _ | T.T_COMMA _ | T.T_ASSIGN _),
       _ 
-      when is_keyword x &&
+      when is_toplevel_keyword x &&
        TH.line_of_tok x <> TH.line_of_tok prev && TH.col_of_tok x = 0
       ->
        Common.push x res;
@@ -189,7 +190,7 @@ let fix_tokens xs =
      * <keyword> col 0
      *)
     | _, _
-      when is_keyword x &&
+      when is_toplevel_keyword x &&
        TH.line_of_tok x <> TH.line_of_tok prev && TH.col_of_tok x = 0
       ->
        push_sc_before_x x;
