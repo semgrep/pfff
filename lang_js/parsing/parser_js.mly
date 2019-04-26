@@ -177,7 +177,7 @@ let fake_tok s = {
 
 main: program EOF { $1 }
 
-program: module_item_list { $1 }
+program: module_item_list_opt { $1 }
 
 
 module_item:
@@ -1402,6 +1402,10 @@ class_body_opt:
 formal_parameter_list_opt:
  | /*(*empty*)*/   { [] }
  | formal_parameter_list { $1 }
+
+module_item_list_opt:
+ | /*(*empty*)*/    { [] }
+ | module_item_list { $1 }
 
 case_clauses_opt:
  | /*(* empty *)*/ { [] }
