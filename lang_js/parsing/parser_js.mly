@@ -504,8 +504,20 @@ binding_element:
  | binding_identifier initializeur_opt { }
  | binding_pattern initializeur_opt { }
 
+
 array_binding_pattern:
- | T_LBRACKET T_RBRACKET { }
+ | T_LBRACKET binding_element_list T_RBRACKET { }
+
+binding_element_list:
+ | binding_elision_element { }
+ | binding_element_list T_COMMA binding_elision_element { }
+
+binding_elision_element:
+ |         binding_element { }
+ | elision binding_element { }
+ /*(* can appear only at the end of a binding_property_list in ECMA *)*/
+ | T_DOTS binding_identifier { }
+ | T_DOTS binding_pattern { }
 
 /*(*************************************************************************)*/
 /*(*1 Function declarations (and expressions) *)*/
