@@ -53,6 +53,42 @@ let rec first_non_comment_line xs =
     then first_non_comment_line xs
     else Some (TH.line_of_tok x)
 
+(* Now that we parse individual items separately, and that we do not
+ * rely on EOF as a final marker, we need to take care when
+ * running the parser on the next item. Indeed, certain
+ * items such as if and try have optional trailing element
+ * (an else branch, a finally stmt) that forces the parser to
+ * lookahead and consume an extra token in lexer_function to
+ * decide to reduce or not the current item.
+ * Before running the parser on the next item we need to put
+ * back this consumed token back in the stream!
+ * 
+ * alt:
+ *  - use ii_of_any and check if tr.current is in it
+ *  - match for If without else and Try without Finally in AST
+ *    (only cases?)
+ *
+ * see also top comment in tests/js/items.js
+ *)
+let put_back_lookahead_token_if_needed tr item_opt =
+  match item_opt with
+  | None -> ()
+  | Some item ->
+     let iis = Lib_parsing_js.ii_of_any (Ast.Program [item]) in
+     let current = tr.PI.current in
+     let info = TH.info_of_tok current in
+     (* bugfix: without test on is_origintok, the parser timeout
+      * TODO: why?
+      *)
+     if not (PI.is_origintok info) || List.mem info iis
+     then ()
+     else begin
+       if !Flag.debug_lexer
+       then pr2 (spf "putting back %s" (Common.dump current));
+       tr.PI.rest <- current::tr.PI.rest;
+       tr.PI.passed <- List.tl tr.PI.passed;
+     end
+
 (*****************************************************************************)
 (* Lexing only *)
 (*****************************************************************************)
@@ -158,6 +194,9 @@ let parse2 filename =
          Parser_js.module_item_or_eof (lexer_function tr) lexbuf_fake
        )
      in
+     (* this seems optional *)
+     Parsing.clear_parser ();
+     put_back_lookahead_token_if_needed tr item;
      Left item
    with 
    | Lexer_js.Lexical s ->
@@ -230,6 +269,10 @@ let parse2 filename =
         []
     | Left (Some x) -> 
         stat.PI.correct <- stat.PI.correct + lines;
+        if !Flag_js.debug_asi
+        then pr2 (spf "parsed: %s"
+                (Ast.Program [x] |> Meta_ast_js.vof_any |> Ocaml.string_of_v));
+
         x::aux tr 
     | Right () ->
        let max_line = Common.cat filename +> List.length in
