@@ -1049,7 +1049,7 @@ property_name_and_value_list:
 
 arguments:
  | T_LPAREN               T_RPAREN { ($1, [], $2) }
- | T_LPAREN argument_list T_RPAREN { ($1, $2, $3) }
+ | T_LPAREN argument_list trailing_comma2 T_RPAREN { ($1, $2 @ $3, $4) }
 
 argument_list:
  | assignment_expression
@@ -1348,6 +1348,9 @@ elision:
 
 /*(* es6: *)*/
 trailing_comma:
+ | /*(*empty*)*/ { [] }
+ | T_COMMA { [Right $1] }
+trailing_comma2:
  | /*(*empty*)*/ { [] }
  | T_COMMA { [Right $1] }
 

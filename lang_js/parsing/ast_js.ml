@@ -224,7 +224,7 @@ type expr =
    | PN_String of name
    (* less: could merge with PN_String *)
    | PN_Num of string wrap
-   (* es6? *)
+   (* es6: *)
    | PN_Computed of expr bracket
 
 (* ------------------------------------------------------------------------- *)
