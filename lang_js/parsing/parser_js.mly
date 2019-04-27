@@ -563,6 +563,7 @@ formal_parameter:
  | identifier initializeur
     { let (tok,e) = $2 in ParamClassic 
       { (mk_param $1) with p_default = Some(DSome(tok,e)); } }
+  /*(* until here this is mostly equivalent to the 'binding_element' rule *)*/
   | binding_pattern initializeur_opt { ParamPatternTodo }
 
  /*(* es6: spread *)*/
@@ -1057,6 +1058,7 @@ property_name_and_value_list:
 
 arguments:
  | T_LPAREN               T_RPAREN { ($1, [], $2) }
+ /*(* todo: the trailing_comma adds a new shift/reduce conflict *)*/
  | T_LPAREN argument_list trailing_comma2 T_RPAREN { ($1, $2 @ $3, $4) }
 
 argument_list:
