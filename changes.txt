@@ -4,7 +4,11 @@
 
 ** javascript
 
-*** handle more ES6 features and more code
+*** handle most ES6 features and more code
+
+*** better Automatic Semicolon Insertion algorithm
+do it via error recovery as stated in the spec instead of using
+a fix_token parsing hack strategy.
 
 ** TODO new release on OPAM
 (I need some of the new code from pfff in efuns,

@@ -67,6 +67,8 @@ let rec first_non_comment_line xs =
  *  - use ii_of_any and check if tr.current is in it
  *  - match for If without else and Try without Finally in AST
  *    (only cases?)
+ *  - less: ask on caml list if can access parser state?
+ *    but Parsing.parser_env is abstract and no much API around it.
  *
  * see also top comment in tests/js/items.js
  *)
@@ -182,6 +184,9 @@ let parse2 filename =
   let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
 
    Sys.set_signal Sys.sigalrm (Sys.Signal_handle (fun _ -> raise Timeout ));
+   (* todo: minimized files abusing ASI before '}' requires a very long time
+    * to parse 
+    *)
    ignore(Unix.alarm 5);
 
   let rec parse_module_item_or_eof tr =
@@ -239,7 +244,13 @@ let parse2 filename =
           tr.PI.current <- List.hd toks;
           tr.PI.passed <- [];
           (* try again! 
-           * This significantly slow-down parsing, but at least it's parsing
+           * This significantly slow-down parsing, especially on minimized
+           * files. Indeed, minimizers put all the code inside a giant
+           * function, which means no incremental parsing, and leverage ASI
+           * before right curly brace to save one character (hmmm). This means
+           * that we parse again and again the same series of tokens, just
+           * progressing a bit more everytime, and restarting from scratch.
+           * This is quadratic behavior.
            *)
           last_charpos_error := charpos;
           parse_module_item_or_eof tr
