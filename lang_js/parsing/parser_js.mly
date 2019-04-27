@@ -691,14 +691,9 @@ method_definition:
 /*(*************************************************************************)*/
 
 class_declaration: T_CLASS binding_identifier generics_opt class_tail
-   {
-     let (extends, body) = $4 in
-     { c_tok = $1;
-       c_name = $2;
-       c_type_params = $3;
-       c_extends =extends;
-       c_body = body
-     }
+   { let (extends, body) = $4 in
+     { c_tok = $1; c_name = Some $2; c_type_params = $3;
+       c_extends =extends; c_body = body }
    }
 
 class_tail: class_heritage_opt T_LCURLY class_body_opt T_RCURLY {$1,($2,$3,$4)}
@@ -719,6 +714,17 @@ class_element:
  | identifier annotation semicolon { Field ($1, $2, $3) }
 
 binding_identifier: identifier { $1 }
+binding_identifier_opt: 
+ | { None } 
+ | binding_identifier { Some $1 }
+
+
+class_expression: T_CLASS binding_identifier_opt generics_opt class_tail
+   {
+     let (extends, body) = $4 in
+     e(Class { c_tok = $1;  c_name = $2; c_type_params = $3;
+               c_extends =extends;c_body = body })
+   }
 
 
 /*(*************************************************************************)*/
@@ -952,6 +958,8 @@ primary_expression:
  | primary_expression_no_statement { $1 }
  | object_literal                  { e(Object $1) }
  | function_expression             { $1 }
+ /*(* es6: *)*/
+ | class_expression                { $1 }
  /*(* es6: *)*/
  | generator_expression            { $1 }
  /*(* es7: *)*/

@@ -143,6 +143,8 @@ type expr =
 
    (* nested functions *)
    | Function of func_decl
+   (* es6: class expressions (usually in module.exports = class {...};) *)
+   | Class of class_decl
    (* es6: arrows, a.k.a short lambdas *)
    | Arrow of arrow_func
    (* es6: generators *)
@@ -450,7 +452,7 @@ and variable_declaration = {
 (* es6: finally classes built in the language *)
 and class_decl = {
   c_tok: tok; (* 'class' *)
-  c_name: name;
+  c_name: name option; (* None for anon class (in class expression) *)
   (* typing-ext: *)
   c_type_params: type_parameter comma_list angle option;
   c_extends: (tok (* extends *) * nominal_type) option;

@@ -198,6 +198,7 @@ and v_expr (x: expr) =
   | Seq ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()
   | Function v1 -> let v1 = v_func_decl v1 in ()
+  | Class v1 -> let v1 = v_class_decl v1 in ()
   | Arrow v1 -> let v1 = v_arrow_func v1 in ()
   | Paren v1 -> let v1 = v_paren2 v_expr v1 in ()
   | XhpHtml v1 -> let v1 = v_xhp_html v1 in ()
@@ -596,7 +597,7 @@ and
                  c_body = v_c_body
                } =
   let arg = v_tok v_c_tok in
-  let arg = v_name v_c_name in
+  let arg = v_option v_name v_c_name in
   let arg = v_option (v_angle (v_comma_list v_name)) v_c_type_params in
   let arg =
     v_option

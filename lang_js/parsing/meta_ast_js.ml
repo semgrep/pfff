@@ -145,6 +145,7 @@ let rec vof_expr =
       in Ocaml.VSum (("Seq", [ v1; v2; v3 ]))
   | Function v1 ->
       let v1 = vof_func_decl v1 in Ocaml.VSum (("Function", [ v1 ]))
+  | Class v1 -> let v1 = vof_class_decl v1 in Ocaml.VSum (("Class", [ v1 ]))
   | Arrow v1 -> let v1 = vof_arrow_func v1 in Ocaml.VSum (("Arrow", [ v1 ]))
   | Paren v1 ->
       let v1 = vof_paren vof_expr v1 in Ocaml.VSum (("Paren", [ v1 ]))
@@ -680,7 +681,7 @@ and  vof_class_decl {
   in
   let bnd = ("c_type_params", arg) in
   let bnds = bnd :: bnds in
-  let arg = vof_name v_c_name in
+  let arg = Ocaml.vof_option vof_name v_c_name in
   let bnd = ("c_name", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_tok v_c_tok in
