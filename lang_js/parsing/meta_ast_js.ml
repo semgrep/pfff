@@ -537,7 +537,7 @@ and
   in
   let bnd = ("f_type_params", arg) in
   let bnds = bnd :: bnds in
-  let arg = vof_paren (vof_comma_list vof_parameter) v_f_params in
+  let arg = vof_paren (vof_comma_list vof_parameter_binding) v_f_params in
   let bnd = ("f_params", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_option vof_name v_f_name in
@@ -550,6 +550,12 @@ and
   let bnd = ("f_kind", arg) in 
   let bnds = bnd :: bnds in
   Ocaml.VDict bnds
+and vof_parameter_binding =
+  function
+  | ParamClassic v1 ->
+      let v1 = vof_parameter v1 in Ocaml.VSum (("ParamClassic", [ v1 ]))
+  | ParamPatternTodo -> Ocaml.VSum (("ParamPatternTodo", []))
+
 and vof_parameter { p_name = v_p_name; p_type = v_p_type; p_default = v_default;
   p_dots = v_dots } =
   let bnds = [] in
@@ -597,9 +603,9 @@ and
 and vof_arrow_params =
   function
   | ASingleParam v1 ->
-      let v1 = vof_parameter v1 in Ocaml.VSum (("ASingleParam", [ v1 ]))
+      let v1 = vof_parameter_binding v1 in Ocaml.VSum (("ASingleParam", [ v1 ]))
   | AParams v1 ->
-      let v1 = vof_paren (vof_comma_list vof_parameter) v1
+      let v1 = vof_paren (vof_comma_list vof_parameter_binding) v1
       in Ocaml.VSum (("AParams", [ v1 ]))
 and vof_arrow_body =
   function

@@ -360,12 +360,15 @@ and func_decl = {
   f_name: name option; (* None for anonymous functions *)
   (* typing-ext: *)
   f_type_params: type_parameters option;
-  f_params: parameter comma_list paren;
+  f_params: parameter_binding comma_list paren;
   (* typing-ext: *)
   f_return_type: type_opt;
   f_body: item list brace;
 }
-  (* TODO: have parameter_binding to differentiate decl from patterns *)
+  and parameter_binding =
+   | ParamClassic of parameter
+   | ParamPatternTodo
+
   and parameter = {
    p_name: name;
   (* typing-ext: *)
@@ -406,8 +409,8 @@ and arrow_func = {
   a_body: arrow_body;
  }
  and arrow_params =
- | ASingleParam of parameter
- | AParams of parameter comma_list paren
+ | ASingleParam of parameter_binding
+ | AParams of parameter_binding comma_list paren
  and arrow_body =
  | AExpr of expr
  | ABody of item list brace

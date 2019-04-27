@@ -50,7 +50,7 @@ The latter expressions are common, and thus we prefer to parse them.
 Finally, we do not allow '<T>(x:T):T => ...' since the leading '<T>' looks like
 a JSX tag.
 
-* Import
+* TODO Import
 
 When we start to process 'import *' and we allow
 import as an identifier, then there is an ambiguity

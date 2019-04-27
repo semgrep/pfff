@@ -534,10 +534,15 @@ and  v_func_decl {
   let arg = v_func_kind v_f_kind in
   let arg = v_option v_tok v_f_tok in
   let arg = v_option v_name v_f_name in
-  let arg = v_paren (v_comma_list v_parameter) v_f_params in
+  let arg = v_paren (v_comma_list v_parameter_binding) v_f_params in
   let arg = v_option (v_angle (v_comma_list v_name)) v_f_type_params in
   let arg = v_type_opt v_f_return_type in
   let arg = v_brace (v_list v_item) v_f_body in ()
+
+and v_parameter_binding =
+  function
+  | ParamClassic v1 -> let v1 = v_parameter v1 in ()
+  | ParamPatternTodo -> ()
 
 and v_parameter { p_name = v_p_name; p_type = v_p_type; p_default; p_dots } =
   let arg = v_option v_default p_default in
@@ -557,8 +562,8 @@ and
   let arg = v_tok v_a_tok in let arg = v_arrow_body v_a_body in ()
 and v_arrow_params =
   function
-  | ASingleParam v1 -> let v1 = v_parameter v1 in ()
-  | AParams v1 -> let v1 = v_paren (v_comma_list v_parameter) v1 in ()
+  | ASingleParam v1 -> let v1 = v_parameter_binding v1 in ()
+  | AParams v1 -> let v1 = v_paren (v_comma_list v_parameter_binding) v1 in ()
 and v_arrow_body =
   function
   | AExpr v1 -> let v1 = v_expr v1 in ()

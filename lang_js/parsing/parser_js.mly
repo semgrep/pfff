@@ -28,7 +28,8 @@ open Ast_js
 let e x = (x)
 let bop op a b c = e(B(a, (op, b), c))
 let uop op a b = e(U((op,a), b))
-let mk_param x = { p_name = x; p_type = None; p_default = None; p_dots = None; }
+let mk_param x = 
+  { p_name = x; p_type = None; p_default = None; p_dots = None; }
 
 (* for missing closing > for generics *)
 let fake_tok s = {
@@ -500,6 +501,7 @@ binding_property:
  | T_DOTS binding_identifier { }
  | T_DOTS binding_pattern { }
 
+/*(* in theory used also for formal parameter as is *)*/
 binding_element:
  | binding_identifier initializeur_opt { }
  | binding_pattern initializeur_opt { }
@@ -551,37 +553,43 @@ function_body:
 /*(*2 parameters *)*/
 /*(*----------------------------*)*/
 
+/*(* The ECMA grammar imposes more restrictions, but I simplified.
+   *  We could also factorize with binding_element as done by ECMA.
+   *)*/
 formal_parameter:
- | identifier            { mk_param $1 }
- | identifier annotation { { (mk_param $1) with p_type = Some $2; } }
-
-formal_optional_parameter:
- | identifier T_PLING
-     { { (mk_param $1) with p_default = Some(DNone $2); } }
- | identifier T_PLING annotation
-     { { (mk_param $1) with p_type = Some $3; p_default = Some(DNone $2); } }
+ | identifier            
+   { ParamClassic (mk_param $1) }
+ /*(* es6: default parameter *)*/
  | identifier initializeur
-     { let (tok,e) = $2 in { (mk_param $1) with p_default = Some(DSome(tok,e)); } }
- | identifier annotation initializeur
-     { let (tok,e) = $3 in { (mk_param $1) with p_type = Some $2; p_default = Some(DSome(tok,e)); } }
+    { let (tok,e) = $2 in ParamClassic 
+      { (mk_param $1) with p_default = Some(DSome(tok,e)); } }
+  | binding_pattern initializeur_opt { ParamPatternTodo }
 
-formal_rest_parameter:
- | T_DOTS identifier { { (mk_param $2) with p_dots = Some $1; } }
+ /*(* es6: spread *)*/
+ | T_DOTS identifier 
+    { ParamClassic { (mk_param $2) with p_dots = Some $1; } }
+
+ /*(* typing-ext: *)*/
+ | identifier annotation 
+    { ParamClassic { (mk_param $1) with p_type = Some $2; } }
+ | identifier T_PLING
+     { ParamClassic { (mk_param $1) with p_default = Some(DNone $2); } }
+ | identifier T_PLING annotation
+     { ParamClassic { (mk_param $1) with 
+                     p_type = Some $3; p_default = Some(DNone $2); } }
+ | identifier annotation initializeur
+     { let (tok,e) = $3 in ParamClassic 
+       { (mk_param $1) with 
+         p_type = Some $2; p_default = Some(DSome(tok,e)); } }
  | T_DOTS identifier annotation
-     { { (mk_param $2) with p_dots = Some $1; p_type = Some $3;
-       } }
+     { ParamClassic { (mk_param $2) 
+                      with p_dots = Some $1; p_type = Some $3; } }
+
 
 formal_parameter_list:
  | formal_parameter T_COMMA formal_parameter_list
      { (Left $1)::(Right $2)::$3 }
  | formal_parameter  { [Left $1] }
- | formal_optional_parameter_list { $1 }
-
-formal_optional_parameter_list:
- | formal_optional_parameter T_COMMA formal_optional_parameter_list
-     { (Left $1)::(Right $2)::$3 }
- | formal_optional_parameter { [Left $1] }
- | formal_rest_parameter { [Left $1] }
 
 /*(*----------------------------*)*/
 /*(*2 generators *)*/
@@ -1097,7 +1105,7 @@ encaps:
 
 arrow_function:
  | identifier T_ARROW arrow_body
-     { { a_params = ASingleParam (mk_param $1); a_return_type = None;
+     { { a_params = ASingleParam (ParamClassic (mk_param $1)); a_return_type = None;
          a_tok = $2; a_body = $3 } }
  /*(* can not factorize with TOPAR parameter_list TCPAR, see conflicts.txt *)*/
  /*(* generics_opt not supported, see conflicts.txt *)*/
@@ -1107,32 +1115,28 @@ arrow_function:
  | T_LPAREN expression T_RPAREN T_ARROW arrow_body
      { let param =
          match $2 with
-         | V name -> mk_param name
+         | V name -> ParamClassic (mk_param name)
          | _ -> raise (Parsing.Parse_error)
        in
        { a_params = AParams ($1, [Left param], $3); a_return_type = None;
          a_tok = $4; a_body = $5 }
      }
+ /*(*TODO: (...args) => *)*/
  | T_LPAREN identifier annotation T_RPAREN
      annotation_opt T_ARROW arrow_body
-     { let param = { (mk_param $2) with p_type = Some $3; } in
+     { let param = ParamClassic { (mk_param $2) with p_type = Some $3; } in
        let params = AParams ($1, [Left param], $4) in
        { a_params = params; a_return_type = $5; a_tok = $6; a_body = $7 }
      }
- | T_LPAREN formal_rest_parameter T_RPAREN annotation_opt T_ARROW arrow_body
-     { let param = $2 in
-       { a_params = AParams ($1, [Left param], $3); a_return_type = $4;
-         a_tok = $5; a_body = $6 }
-     }
  | T_LPAREN identifier T_COMMA formal_parameter_list T_RPAREN
      annotation_opt T_ARROW arrow_body
-     { let param = mk_param $2 in
+     { let param = ParamClassic (mk_param $2) in
        let params = AParams ($1, (Left param)::Right $3::$4, $5) in
        { a_params = params; a_return_type = $6; a_tok = $7; a_body = $8 }
      }
  | T_LPAREN identifier annotation T_COMMA formal_parameter_list T_RPAREN
      annotation_opt T_ARROW arrow_body
-     { let param = { (mk_param $2) with p_type = Some $3; } in
+     { let param = ParamClassic { (mk_param $2) with p_type = Some $3; } in
        let params = AParams ($1, (Left param)::Right $4::$5, $6) in
        { a_params = params; a_return_type = $7; a_tok = $8; a_body = $9 }
      }
