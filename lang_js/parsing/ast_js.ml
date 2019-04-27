@@ -28,6 +28,7 @@ module PI = Parse_info
  *  - https://en.wikipedia.org/wiki/JavaScript
  *  - https://en.wikipedia.org/wiki/ECMAScript
  *  - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/
+ *  - https://developer.mozilla.org/en-US/docs/SpiderMonkey/Parser_API
  *
  * This AST (and its associated parser) supports most ES6 features:
  *  - classes: a nicer syntax to define classes than objects and prototypes
@@ -46,11 +47,7 @@ module PI = Parse_info
  *  - optional trailing commas
  * Support also for most ES7-ES9 features:
  *  - SEMI destructuring patterns
- *  - async/await: asynchronous functions and promises TODO
- *
- * See http://es6-features.org/ for explanations of those recent features
- * (and also how they can be converted to ES5 code)
- *
+ *  - async/await: asynchronous functions and promises TODO 
  * This AST (and its associated parser) supports a few more extensions:
  *  - JSX: I am mostly imitating what I have done for XHP in lang_php/,
  *    but with tags possibly containing ':' in their names
@@ -58,11 +55,15 @@ module PI = Parse_info
  *    http://en.wikipedia.org/wiki/TypeScript
  *  - interfaces a la Flow and Typescript
  *
+ * See http://es6-features.org/ for explanations of those recent features
+ * (and also how they can be converted to ES5 code)
+ *
  * less:
  *  - imitate https://developer.mozilla.org/en-US/docs/SpiderMonkey/Parser_API
  *
  * related work:
- *  - http://esprima.org/, JS parser in JS
+ *  - http://esprima.org/: A JS parser in JS
+ *  - babel? a transpiler from JS to ES3 (JS compatible with most browser)
  *  - flow-lang.org, contains now its own parser (it started with this one)
  *  - http://marijnhaverbeke.nl/parse-js/, JS parser in Common Lisp
  *    (which has been since ported to Javascript by the nodejs people)
@@ -215,11 +216,12 @@ type expr =
 (* Object properties *)
 (* ------------------------------------------------------------------------- *)
    and property =
-       (* this includes also methods *)
+       (* this includes also methods when expr is a Function *)
        | P_field of property_name * tok (* : *) * expr
+       (* TODO: P_computed_field of expr bracket * tok * expr *)
        (* es6: method notation in object literals too *)
        | P_method of func_decl
-       (* es6: similar to OCaml shorthands in records *)
+       (* es6: { x } <=> { x: x} (similar to OCaml shorthands in records) *)
        | P_shorthand of name
        (* es6: inlining of properties/array-elts/string/args *)
        | P_spread of tok (* ... *) * expr
@@ -362,6 +364,7 @@ and func_decl = {
   f_return_type: type_opt;
   f_body: item list brace;
 }
+  (* TODO: have parameter_binding to differentiate decl from patterns *)
   and parameter = {
    p_name: name;
   (* typing-ext: *)
@@ -386,6 +389,7 @@ and func_decl = {
   | Generator of tok (* '*', but this token is after f_tok *)
   (* es7: f_body should contain a 'await' *)
   | Async of tok
+  (* todo: AsyncGenerator of tok * tok *)
 
 (* es6: arrows.
  * note: we could factorize with func_def, but this would require many
@@ -452,6 +456,7 @@ and class_decl = {
   and class_stmt =
   | Method of static_opt * func_decl
   | Field of name * annotation * sc
+  (* TODO: es6? FieldAssign of name * tok * expr * sc *)
   (* unparser: *)
   | ClassExtraSemiColon of sc
 

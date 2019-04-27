@@ -484,8 +484,7 @@ binding_pattern:
 
 object_binding_pattern:
  | T_LCURLY T_RCURLY { }
- | T_LCURLY binding_property_list          T_RCURLY { }
- | T_LCURLY binding_property_list T_COMMA  T_RCURLY { }
+ | T_LCURLY binding_property_list trailing_comma  T_RCURLY { }
 
 binding_property_list:
  | binding_property
@@ -495,8 +494,15 @@ binding_property_list:
 
 
 binding_property:
- | binding_identifier { }
+ | binding_identifier initializeur_opt { }
+ | property_name T_COLON binding_element { }
+ /*(* can appear only at the end of a binding_property_list in ECMA *)*/
+ | T_DOTS binding_identifier { }
+ | T_DOTS binding_pattern { }
 
+binding_element:
+ | binding_identifier initializeur_opt { }
+ | binding_pattern initializeur_opt { }
 
 array_binding_pattern:
  | T_LBRACKET T_RBRACKET { }
