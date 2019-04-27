@@ -288,6 +288,7 @@ and v_property_name =
   function
   | PN_String v1 -> let v1 = v_name v1 in ()
   | PN_Num v1 -> let v1 = v_wrap v_string v1 in ()
+  | PN_Computed v1 -> let v1 = v_bracket v_expr v1 in ()
 and v_assignment_operator =
   function
   | A_eq -> ()

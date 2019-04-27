@@ -227,6 +227,9 @@ and vof_property_name =
   | PN_Num v1 ->
       let v1 = vof_wrap Ocaml.vof_string v1
       in Ocaml.VSum (("PN_Num", [ v1 ]))
+  | PN_Computed v1 ->
+      let v1 = vof_bracket vof_expr v1
+      in Ocaml.VSum (("PN_Computed", [ v1 ]))
 and vof_assignment_operator =
   function
   | A_eq -> Ocaml.VSum (("A_eq", []))

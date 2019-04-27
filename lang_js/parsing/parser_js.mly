@@ -1331,6 +1331,8 @@ property_name:
  | string_literal  { PN_String $1 }
  | numeric_literal { PN_Num $1 }
  | ident_keyword   { PN_String $1 }
+ /*(* es6: *)*/
+ | T_LBRACKET assignment_expression T_RBRACKET { PN_Computed ($1, $2, $3) }
 
 /*(*************************************************************************)*/
 /*(*1 xxx_opt, xxx_list *)*/

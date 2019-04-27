@@ -47,7 +47,7 @@ module PI = Parse_info
  *  - optional trailing commas
  * Support also for most ES7-ES9 features:
  *  - SEMI destructuring patterns
- *  - async/await: asynchronous functions and promises TODO 
+ *  - SEMI async/await: asynchronous functions and promises
  * This AST (and its associated parser) supports a few more extensions:
  *  - JSX: I am mostly imitating what I have done for XHP in lang_php/,
  *    but with tags possibly containing ':' in their names
@@ -106,11 +106,6 @@ type name = string wrap
 
 (* facebook-ext: *)
 type xhp_tag = string
- (* with tarzan *)
-
-type property_name =
-   | PN_String of name
-   | PN_Num of string wrap
  (* with tarzan *)
 
 (* es6: note: does not contain the enclosing "'" but the info does *)
@@ -218,13 +213,19 @@ type expr =
    and property =
        (* this includes also methods when expr is a Function *)
        | P_field of property_name * tok (* : *) * expr
-       (* TODO: P_computed_field of expr bracket * tok * expr *)
        (* es6: method notation in object literals too *)
        | P_method of func_decl
        (* es6: { x } <=> { x: x} (similar to OCaml shorthands in records) *)
        | P_shorthand of name
        (* es6: inlining of properties/array-elts/string/args *)
        | P_spread of tok (* ... *) * expr
+
+   and property_name =
+   | PN_String of name
+   (* less: could merge with PN_String *)
+   | PN_Num of string wrap
+   (* es6? *)
+   | PN_Computed of expr bracket
 
 (* ------------------------------------------------------------------------- *)
 (* JSX (=~ XHP from PHP) and interporlated strings *)
