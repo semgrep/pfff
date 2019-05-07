@@ -485,8 +485,10 @@ variable_declaration_no_in:
      { VarClassic { v_name = $1; v_init = Some $2; v_type =None } }
  | identifier
      { VarClassic { v_name = $1; v_init = None; v_type = None } }
+ | binding_pattern initializer_no_in
+     { VarPatternTodo }
 
-/*(* for in and for of declare only one variable *)*/
+/*(* 'for ... in' and 'for ... of' declare only one variable *)*/
 for_single_variable_decl:
  | T_VAR for_binding { ((Var, $1), $2) }
  /*(* es6: *)*/
