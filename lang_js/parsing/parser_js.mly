@@ -131,6 +131,7 @@ let fake_tok s = {
  T_LESS_THAN_EQUAL T_GREATER_THAN_EQUAL T_LESS_THAN T_GREATER_THAN
  T_LSHIFT T_RSHIFT T_RSHIFT3
  T_INCR T_DECR 
+ T_EXPONENT
 
 /*(*-----------------------------------------*)*/
 /*(*2 XHP tokens *)*/
@@ -183,6 +184,7 @@ let fake_tok s = {
 %left T_LSHIFT T_RSHIFT T_RSHIFT3
 %left T_PLUS T_MINUS
 %left T_DIV T_MULT T_MOD
+%right T_EXPONENT
 %right T_NOT T_BIT_NOT T_INCR T_DECR T_DELETE T_TYPEOF T_VOID T_AWAIT
 
 /*(*************************************************************************)*/
@@ -957,6 +959,9 @@ pre_in_expression:
  | pre_in_expression T_LSHIFT pre_in_expression  { bop B_lsl $1 $2 $3 }
  | pre_in_expression T_RSHIFT pre_in_expression  { bop B_lsr $1 $2 $3 }
  | pre_in_expression T_RSHIFT3 pre_in_expression { bop B_asr $1 $2 $3 }
+
+ /*(* es7: *)*/
+ | pre_in_expression T_EXPONENT pre_in_expression { bop B_expo $1 $2 $3 }
 
 call_expression:
  | member_expression arguments                      { e(Apply ($1, $2)) }

@@ -267,6 +267,7 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
     | T.T_MINUS (ii)
     | T.T_DIV (ii)
     | T.T_MULT (ii)
+    | T.T_EXPONENT (ii)
     | T.T_MOD (ii)
     | T.T_NOT (ii)
     | T.T_BIT_NOT (ii)

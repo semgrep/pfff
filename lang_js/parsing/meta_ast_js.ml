@@ -201,6 +201,7 @@ and vof_binop =
   | B_instanceof -> Ocaml.VSum (("B_instanceof", []))
   | B_in -> Ocaml.VSum (("B_in", []))
   | B_mul -> Ocaml.VSum (("B_mul", []))
+  | B_expo -> Ocaml.VSum (("B_expo", []))
   | B_div -> Ocaml.VSum (("B_div", []))
   | B_mod -> Ocaml.VSum (("B_mod", []))
   | B_add -> Ocaml.VSum (("B_add", []))

@@ -47,9 +47,10 @@ module PI = Parse_info
  *  - optional trailing commas
  *
  * See http://es6-features.org/ for explanations of those recent features
- * (and also how they can be converted to ES5 code)
+ * (and also how they can be converted to ES5 code).
  *
  * This AST supports also most ES7-ES9 features:
+ *  - exponentiation ** operator
  *  - SEMI destructuring patterns
  *  - SEMI async/await: asynchronous functions and promises
  *
@@ -203,12 +204,16 @@ type expr =
        | B_instanceof  | B_in
 
        | B_add  | B_sub
-       | B_mul  | B_div  | B_mod  
+       | B_mul  | B_div  | B_mod
+       (* es7: *)
+       | B_expo
+
        | B_le  | B_ge  | B_lt  | B_gt
        | B_lsr  | B_asr  | B_lsl
        | B_equal | B_notequal  | B_physequal  | B_physnotequal
        | B_bitand  | B_bitor  | B_bitxor
        | B_and  | B_or
+
 
      and assignment_operator =
        | A_eq

@@ -29,7 +29,7 @@ module PI = Parse_info
  *
  * There are a few tricks to go around ocamllex restrictions
  * because Javascript now have different lexing rules depending on some
- * "contexts", especially for JSX/XHP (this is similar to Perl,
+ * "contexts", especially for JSX/XHP (this is similar to Perl
  * with its <<<END context).
  *)
 
@@ -319,11 +319,14 @@ rule initial = parse
   | "!" { T_NOT (tokinfo lexbuf) }
   | "~" { T_BIT_NOT (tokinfo lexbuf) }
   | "=" { T_ASSIGN (tokinfo lexbuf) }
+  (* es7: *)
+  | "**" { T_EXPONENT (tokinfo lexbuf) }
 
   (* arrows (aka short lambdas) *)
   | "=>" { T_ARROW (tokinfo lexbuf) }
   (* variable number of parameters, less: enforce directly attached to ident?*)
   | "..." { T_DOTS (tokinfo lexbuf) }
+
 
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)

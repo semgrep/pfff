@@ -266,6 +266,7 @@ and v_binop =
   | B_instanceof -> ()
   | B_in -> ()
   | B_mul -> ()
+  | B_expo -> ()
   | B_div -> ()
   | B_mod -> ()
   | B_add -> ()

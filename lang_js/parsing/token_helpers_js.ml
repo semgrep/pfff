@@ -169,6 +169,7 @@ let visitor_info_of_tok f = function
   | T_OF ii -> T_OF (f ii)
   | T_GET ii -> T_GET (f ii)
   | T_SET ii -> T_SET (f ii)
+  | T_EXPONENT ii -> T_EXPONENT (f ii)
 
 let info_of_tok tok = 
   let res = ref None in
