@@ -146,7 +146,10 @@ let fake_tok s = {
 /*(*2 Extra tokens: *)*/
 /*(*-----------------------------------------*)*/
 
+/*(* Automatically Inserted Semicolon (ASI), see parse_js.ml *)*/
 %token <Ast_js.tok> T_VIRTUAL_SEMICOLON
+/*(* '(' the opening parenthesis of the parameters preceding an arrow*)*/
+%token <Ast_js.tok> T_LPAREN_ARROW
 
 /*(*************************************************************************)*/
 /*(*1 Priorities *)*/
@@ -770,7 +773,7 @@ type_:
  | T_VOID        { TName (V("void", $1), None) }
  | nominal_type { TName($1) }
  | T_PLING type_ { TQuestion ($1, $2) }
- | T_LPAREN param_type_list_opt T_RPAREN T_ARROW type_
+ | T_LPAREN_ARROW param_type_list_opt T_RPAREN T_ARROW type_
      { TFun (($1, $2, $3), $4, $5) }
  | T_LCURLY field_type_list_opt T_RCURLY         { TObj ($1, $2, $3) }
 
@@ -1137,41 +1140,16 @@ encaps:
 
 arrow_function:
  | identifier T_ARROW arrow_body
-     { { a_params = ASingleParam (ParamClassic (mk_param $1)); a_return_type = None;
-         a_tok = $2; a_body = $3 } }
+     { { a_params = ASingleParam (ParamClassic (mk_param $1)); 
+         a_return_type = None; a_tok = $2; a_body = $3 } }
+
  /*(* can not factorize with TOPAR parameter_list TCPAR, see conflicts.txt *)*/
  /*(* generics_opt not supported, see conflicts.txt *)*/
- | T_LPAREN T_RPAREN annotation_opt T_ARROW arrow_body
-     { { a_params = AParams ($1, [], $2); a_return_type = $3;
-         a_tok = $4; a_body = $5 } }
- | T_LPAREN expression T_RPAREN T_ARROW arrow_body
-     { let param =
-         match $2 with
-         | V name -> ParamClassic (mk_param name)
-         | _ -> raise (Parsing.Parse_error)
-       in
-       { a_params = AParams ($1, [Left param], $3); a_return_type = None;
-         a_tok = $4; a_body = $5 }
-     }
- /*(*TODO: (...args) => *)*/
- | T_LPAREN identifier annotation T_RPAREN
-     annotation_opt T_ARROW arrow_body
-     { let param = ParamClassic { (mk_param $2) with p_type = Some $3; } in
-       let params = AParams ($1, [Left param], $4) in
-       { a_params = params; a_return_type = $5; a_tok = $6; a_body = $7 }
-     }
- | T_LPAREN identifier T_COMMA formal_parameter_list T_RPAREN
-     annotation_opt T_ARROW arrow_body
-     { let param = ParamClassic (mk_param $2) in
-       let params = AParams ($1, (Left param)::Right $3::$4, $5) in
-       { a_params = params; a_return_type = $6; a_tok = $7; a_body = $8 }
-     }
- | T_LPAREN identifier annotation T_COMMA formal_parameter_list T_RPAREN
-     annotation_opt T_ARROW arrow_body
-     { let param = ParamClassic { (mk_param $2) with p_type = Some $3; } in
-       let params = AParams ($1, (Left param)::Right $4::$5, $6) in
-       { a_params = params; a_return_type = $7; a_tok = $8; a_body = $9 }
-     }
+ | T_LPAREN_ARROW formal_parameter_list_opt T_RPAREN annotation_opt 
+    T_ARROW arrow_body 
+    { { a_params = AParams ($1, $2, $3); a_return_type = $4;
+        a_tok = $5; a_body = $6; } }
+
 
 /*(* was called consise body in spec *)*/
 arrow_body:

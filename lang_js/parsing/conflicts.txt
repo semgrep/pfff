@@ -1,13 +1,14 @@
--*- org -*-
+# -*- org -*-
 
 * short lambdas
-(this is mostly similar to lang_php/parsing/conflicts.txt#short_lambdas)
+#(this is similar to lang_php/parsing/conflicts.txt#short_lambdas)
 
-When we parse 'x => x + 1' it could potentially be parsed as
-'( x => x + 1)' or '(x => $x) + 1' but we don't
-want the second one, so we prefer to shift than reduce
+** short body
+When we parse 'x => x + 1', it could potentially be parsed as
+'( x => x + 1)' or '(x => x) + 1' but we don't
+want the second one, so we prefer to shift rather than reduce,
 hence the %prec (just like for the dangling else) attached
-to expr in:
+to 'expr' below:
 
 arrow_body:
  | block { }
@@ -18,17 +19,23 @@ An additional complexity in Javascript compared to PHP is that
 an 'expr' which does not allow object literal, that is
 'assignment_expression_no_statement'.
 
+** short parameters
+
 The other conflict is that when we see '(x)' in '(x) => ...'
 there is no way to know whether this is an expression (reduce) or
-the parameter specification of a lambda (shift). To solve the conflict
-one has to be more general and do:
+the parameter specification of a lambda (shift). 
+
+*** technique 1
+
+To solve the conflict one can be more general and do:
 
  | TOPAR expr TCPAR T_ARROW arrow_body
      { ... }
 
-but make sure that expr can only be an identifier.
+but you then need to make sure that expr can only be an identifier.
 
-A shift-reduce conflict currently exists when we see '(x,' and we prefer to
+
+A shift-reduce conflict then exists when we see '(x,' and we prefer to
 shift per the following rule, expecting something like '(x,y) => ...'
 
 arrow_function:
@@ -43,12 +50,20 @@ expression:
 This means that something like '(x,y) + ...' does not currently parse;
 fortunately, it is uncommon.
 
-On the other hand, we do not allow '(x?) => ...' or '(x=1) => ...'
-which cause similar shift-reduce conflicts with '(x?0:1)' or '(x=1)+0'.
-The latter expressions are common, and thus we prefer to parse them.
+*** technique 2
 
-Finally, we do not allow '<T>(x:T):T => ...' since the leading '<T>' looks like
+A better technique is to use a parsing hack and retag the '(' T_LPAREN
+in a T_LPAREN_ARROW when you see '( <xxx> ) =>' while matching
+a fuzzy AST of the JS tokens. Then there is no ambiguity
+and you can simply use formal_parameter_list_opt after this
+special T_LPAREN_ARROW.
+
+* TODO Types and JSX
+
+Flow does not allow '<T>(x:T):T => ...' since the leading '<T>' looks like
 a JSX tag.
+
+But Typescript has some files like that.
 
 * TODO Import
 
@@ -58,4 +73,9 @@ and we don't know yet if we need to reduce import to an identifier
 which starts a multiplication or to shift to allow an
 import namespace declaration.
 
-TODO how to solve the ambiguity? 
+How to solve the ambiguity? 
+You could use a parsing hack and looking if you are in the
+first column, but this does not always work.
+
+TODO: parsing hack on import() ? retag import
+as an identifier?

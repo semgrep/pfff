@@ -21,6 +21,7 @@ module PI = Parse_info
 module Ast = Ast_js
 module T = Parser_js
 module TH   = Token_helpers_js
+module F = Ast_fuzzy
 
 (*****************************************************************************)
 (* Prelude *)
@@ -87,14 +88,40 @@ let rparens_of_if toks =
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
+
+(* retagging:
+ *  - '(' when part of an arrow expression
+ *  - TODO '<' when part of a polymorphic type (aka generic)
+ *)
 let fix_tokens toks = 
  try 
-  let _trees = Parse_fuzzy.mk_trees { Parse_fuzzy.
+  let trees = Parse_fuzzy.mk_trees { Parse_fuzzy.
      tokf = TH.info_of_tok;
      kind = TH.token_kind_of_tok;
   } toks 
   in
-  toks
+  let retag_lparen = Hashtbl.create 101 in
+
+  (* visit and tag *)
+  let visitor = Ast_fuzzy.mk_visitor { Ast_fuzzy.default_visitor with
+    Ast_fuzzy.ktrees = (fun (k, _) xs ->
+      (match xs with
+      | F.Parens (i1, _, _)::F.Tok ("=>",_)::_res ->
+          Hashtbl.add retag_lparen i1 true
+      | _ -> ()
+      );
+      k xs
+    )
+  }
+  in
+  visitor trees;
+
+  (* use the tagged information and transform tokens *)
+  toks |> List.map (function
+    | T.T_LPAREN info when Hashtbl.mem retag_lparen info ->
+      T.T_LPAREN_ARROW (info)
+    | x -> x
+  )
 
   with Parse_fuzzy.Unclosed (msg, info) ->
    if !Flag.error_recovery

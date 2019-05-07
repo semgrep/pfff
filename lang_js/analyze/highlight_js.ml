@@ -215,7 +215,7 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
 
     | T.T_LCURLY (ii)
     | T.T_RCURLY (ii)
-    | T.T_LPAREN (ii)
+    | T.T_LPAREN (ii) | T.T_LPAREN_ARROW (ii)
     | T.T_RPAREN (ii)
     | T.T_LBRACKET (ii)
     | T.T_RBRACKET (ii)
