@@ -290,6 +290,9 @@ export_declaration:
  | T_EXPORT T_DEFAULT declaration { $1, ExportDefaultDecl ($2, $3) }
  | T_EXPORT T_DEFAULT assignment_expression_no_statement semicolon 
     { $1, ExportDefaultExpr ($2, $3, $4)  }
+ /*(* ugly hack because should use assignment_expression above instead*)*/
+ | T_EXPORT T_DEFAULT object_literal semicolon
+    { $1, ExportDefaultExpr ($2, Object $3, $4)  }
 
 
 export_names:
@@ -553,12 +556,16 @@ binding_elision_element:
 /*(*1 Function declarations (and expressions) *)*/
 /*(*************************************************************************)*/
 
+/*(* ugly: f_name is None only when part of an 'export default' decl 
+   * TODO: use other tech to enforce this? extra rule after
+   * T_EXPORT T_DEFAULT? but then many ambiguities.
+   *)*/
 function_declaration:
- | T_FUNCTION identifier generics_opt
+ | T_FUNCTION identifier_opt generics_opt
      T_LPAREN formal_parameter_list_opt T_RPAREN
      annotation_opt
      T_LCURLY function_body T_RCURLY
-     { { f_kind = Regular; f_tok = Some $1; f_name= Some $2; 
+     { { f_kind = Regular; f_tok = Some $1; f_name= $2; 
          f_type_params = $3; f_params= ($4, $5, $6); 
          f_return_type = $7; f_body = ($8, $9, $10)
      } }
@@ -717,7 +724,7 @@ method_definition:
 /*(*1 Class declaration *)*/
 /*(*************************************************************************)*/
 
-/*(* c_name is None only when part of an 'export default' decl 
+/*(* ugly: c_name is None only when part of an 'export default' decl 
    * TODO: use other tech to enforce this? extra rule after
    * T_EXPORT T_DEFAULT? but then many ambiguities.
    *)*/
