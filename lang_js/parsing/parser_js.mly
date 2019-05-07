@@ -667,9 +667,8 @@ async_function_expression:
 /*(*----------------------------*)*/
 /*(*2 Method definition (in class or object literal) *)*/
 /*(*----------------------------*)*/
-/*(* es6: less: it's property_name, not identifier, but then conflicts*)*/
 method_definition:
- | identifier generics_opt 
+ | method_name generics_opt 
     T_LPAREN formal_parameter_list_opt T_RPAREN annotation_opt
     T_LCURLY function_body T_RCURLY
   { { f_kind = Regular; f_tok = None; f_name = Some $1; 
@@ -1323,7 +1322,7 @@ identifier:
  | T_IDENTIFIER { $1 }
  | ident_semi_keyword { PI.str_of_info $1, $1 }
 
-/*(* add here keywords which are not considered reserveds by ECMA *)*/
+/*(* add here keywords which are not considered reserved by ECMA *)*/
 ident_semi_keyword:
  | T_FROM { $1 } | T_AS   { $1 } | T_OF { $1 }
  | T_GET { $1 } | T_SET { $1 }
@@ -1343,28 +1342,30 @@ ident_keyword_bis:
  | T_SWITCH { $1 } | T_CASE { $1 } | T_DEFAULT { $1 }
  | T_RETURN { $1 }
  | T_THROW { $1 } | T_TRY { $1 } | T_CATCH { $1 } | T_FINALLY { $1 }
- | T_YIELD { $1 } | T_ASYNC { $1 } | T_AWAIT { $1 }
+ | T_YIELD { $1 } | T_AWAIT { $1 }
  | T_NEW { $1 } | T_IN { $1 } | T_INSTANCEOF { $1 } | T_DELETE { $1 }
  | T_THIS { $1 } | T_SUPER { $1 }
  | T_WITH { $1 }
  | T_NULL { $1 }
  | T_FALSE { $1 } | T_TRUE { $1 }
  | T_CLASS { $1 } | T_INTERFACE { $1 } | T_EXTENDS { $1 } | T_STATIC { $1 }
- | T_IMPORT { $1 } | T_EXPORT { $1 } | T_FROM { $1 } 
- | T_AS { $1 } | T_OF { $1}
+ | T_IMPORT { $1 } | T_EXPORT { $1 } 
+/* already in identifier
+ | T_FROM { $1 } | T_AS { $1 } | T_OF { $1}
  | T_GET { $1 } | T_SET { $1 }
-
+ | T_ASYNC { $1 }
+*/
 
 field_name:
- | T_IDENTIFIER { $1 }
+ | identifier { $1 }
  | ident_keyword { $1 }
 
 method_name:
- | T_IDENTIFIER { $1 }
+ | identifier { $1 }
  | ident_keyword { $1 }
 
 property_name:
- | T_IDENTIFIER    { PN_String $1 }
+ | identifier    { PN_String $1 }
  | string_literal  { PN_String $1 }
  | numeric_literal { PN_Num $1 }
  | ident_keyword   { PN_String $1 }
