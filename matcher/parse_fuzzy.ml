@@ -32,6 +32,8 @@ type 'tok hooks = {
   tokf: 'tok -> Parse_info.info;
 }
 
+exception Unclosed of string * Parse_info.info (* starting point *)
+
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
@@ -98,10 +100,10 @@ let mk_trees h xs =
   and look_close close_kind tok_start accbody xs = 
     match xs with
     | [] -> 
-        failwith (spf "PB look_close '%c' (started at line %d, col %d)"
-                    (char_of_token_kind close_kind)
-                    (PI.line_of_info (h.tokf tok_start))
-                    (PI.col_of_info (h.tokf tok_start)))
+        raise (Unclosed (spf "look_close '%c'"
+                         (char_of_token_kind close_kind),
+                         h.tokf tok_start))
+
     | x::xs -> 
         (match x with
         | tok when h.kind tok = close_kind -> 
@@ -110,11 +112,11 @@ let mk_trees h xs =
                look_close close_kind tok_start (x'::accbody) xs'
         )
 
+  (* todo? diff with look_close PI.RPar ? *)
   and look_close_paren tok_start accbody xs =
     match xs with
     | [] -> 
-        failwith (spf "PB look_close_paren (started at line %d)" 
-                     (PI.line_of_info (h.tokf tok_start)))
+        raise (Unclosed ("look_close_paren", h.tokf tok_start))
     | x::xs -> 
         (match x with
         | tok when h.kind tok = PI.RPar -> 

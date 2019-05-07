@@ -4,4 +4,6 @@ type 'tok hooks = {
   tokf: 'tok -> Parse_info.info;
 }
 
+exception Unclosed of string (* msg *) * Parse_info.info (* starting point *)
+
 val mk_trees: 'tok hooks -> 'tok list -> Ast_fuzzy.trees
