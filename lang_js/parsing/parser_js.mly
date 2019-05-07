@@ -1214,6 +1214,8 @@ assignment_expression_no_statement:
  | T_YIELD                               { Yield ($1, None, None) }
  | T_YIELD assignment_expression   { Yield ($1, None, Some $2) }
  | T_YIELD T_MULT assignment_expression { Yield ($1, Some $2, Some $3) }
+ /*(* es6: *)*/
+ | arrow_function { Arrow $1 }
 
 
 conditional_expression_no_statement:
