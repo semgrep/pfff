@@ -977,6 +977,7 @@ new_expression:
  | member_expression    { $1 }
  | T_NEW new_expression { uop U_new $1 $2 }
 
+/*(* coupling: modify also member_expression_no_statement *)*/
 member_expression:
  | primary_expression                                 { $1 }
  | member_expression T_LBRACKET expression T_RBRACKET { e(Bracket($1, ($2, $3, $4))) }
@@ -1219,12 +1220,15 @@ assignment_expression_no_statement:
  | left_hand_side_expression_no_statement assignment_operator assignment_expression
      { e(Assign ($1, $2, $3)) }
  /*(* es6: *)*/
+ | arrow_function { Arrow $1 }
+ /*(* es6: *)*/
  | T_YIELD                               { Yield ($1, None, None) }
  | T_YIELD assignment_expression   { Yield ($1, None, Some $2) }
  | T_YIELD T_MULT assignment_expression { Yield ($1, Some $2, Some $3) }
- /*(* es6: *)*/
- | arrow_function { Arrow $1 }
 
+left_hand_side_expression_no_statement:
+ | new_expression_no_statement { $1 }
+ | call_expression_no_statement { $1 }
 
 conditional_expression_no_statement:
  | post_in_expression_no_statement { $1 }
@@ -1286,13 +1290,6 @@ pre_in_expression_no_statement:
  /*(* es7: *)*/
  | pre_in_expression_no_statement T_EXPONENT pre_in_expression { bop B_expo $1 $2 $3 }
 
-left_hand_side_expression_no_statement:
- | new_expression_no_statement { $1 }
- | call_expression_no_statement { $1 }
-
-new_expression_no_statement:
- | member_expression_no_statement { $1 }
- | T_NEW new_expression { uop U_new $1 $2 }
 
 call_expression_no_statement:
  | member_expression_no_statement arguments                      { e(Apply ($1, $2)) }
@@ -1302,16 +1299,26 @@ call_expression_no_statement:
  /*(* es6: *)*/
  | T_SUPER arguments { e(Apply(Super($1), $2)) }
 
+new_expression_no_statement:
+ | member_expression_no_statement { $1 }
+ | T_NEW new_expression { uop U_new $1 $2 }
+
 member_expression_no_statement:
  | primary_expression_no_statement                                 { $1 }
  | member_expression_no_statement T_LBRACKET expression T_RBRACKET { e(Bracket($1, ($2, $3, $4))) }
  | member_expression_no_statement T_PERIOD field_name              { e(Period ($1, $2, $3)) }
  | T_NEW member_expression arguments                               { e(Apply(uop U_new $1 $2, $3)) }
+ /*(* es6: *)*/
+ | T_SUPER T_LBRACKET expression T_RBRACKET { e(Bracket(Super($1),($2,$3,$4)))}
+ | T_SUPER T_PERIOD field_name { e(Period(Super($1), $2, $3)) }
 
+/*(* no primary_expression here with object_literal, function_expr, etc.
+   * directly primary_expression_no_statement *)*/
 
 /*(*************************************************************************)*/
 /*(*1 Entities, names *)*/
 /*(*************************************************************************)*/
+/*(* used for entities, parameters, labels, etc. *)*/
 identifier:
  | T_IDENTIFIER { $1 }
  | ident_semi_keyword { PI.str_of_info $1, $1 }
@@ -1320,6 +1327,7 @@ identifier:
 ident_semi_keyword:
  | T_FROM { $1 } | T_AS   { $1 } | T_OF { $1 }
  | T_GET { $1 } | T_SET { $1 }
+ | T_ASYNC { $1 }
 /*(* TODO: would like to add T_IMPORT here, but cause conflicts *)*/
 
 /*(*alt: use the _last_non_whitespace_like_token trick and look if
