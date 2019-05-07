@@ -932,6 +932,7 @@ post_in_expression:
  | post_in_expression T_OR post_in_expression                 { bop B_or $1 $2 $3 }
 
 /*(* called unary_expression and update_expression in ECMA *)*/
+/*(* coupling: modify also pre_in_expression_no_statement *)*/
 pre_in_expression:
  | left_hand_side_expression                     { $1 }
 
@@ -1280,6 +1281,9 @@ pre_in_expression_no_statement:
  | pre_in_expression_no_statement T_LSHIFT pre_in_expression  { bop B_lsl $1 $2 $3 }
  | pre_in_expression_no_statement T_RSHIFT pre_in_expression  { bop B_lsr $1 $2 $3 }
  | pre_in_expression_no_statement T_RSHIFT3 pre_in_expression { bop B_asr $1 $2 $3 }
+
+ /*(* es7: *)*/
+ | pre_in_expression_no_statement T_EXPONENT pre_in_expression { bop B_expo $1 $2 $3 }
 
 left_hand_side_expression_no_statement:
  | new_expression_no_statement { $1 }
