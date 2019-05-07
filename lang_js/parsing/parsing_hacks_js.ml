@@ -25,8 +25,8 @@ module TH   = Token_helpers_js
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* The goal of this module is to retag or insert certain tokens
- * (e.g., a T_LPAREN in T_LPAREN_ARROW, or a T_VIRTUAL_SEMICOLON) to
+(* The goal of this module is to retag (e.g., a T_LPAREN in T_LPAREN_ARROW)
+ * or insert certain tokens (e.g., T_VIRTUAL_SEMICOLON) to
  * help the grammar remains simple and unambiguous. See 
  * lang_cpp/parsing/parsing_hacks.ml for more information about
  * this technique.

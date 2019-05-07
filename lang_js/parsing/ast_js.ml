@@ -45,18 +45,22 @@ module PI = Parse_info
  *  - iterators (for ... of )
  *  - generators (yield, function* ): a nice syntax to define iterators
  *  - optional trailing commas
- * Support also for most ES7-ES9 features:
- *  - SEMI destructuring patterns
- *  - SEMI async/await: asynchronous functions and promises
- * This AST (and its associated parser) supports a few more extensions:
- *  - JSX: I am mostly imitating what I have done for XHP in lang_php/,
- *    but with tags possibly containing ':' in their names
- *  - type annotations a la Flow and TypeScript, see
- *    http://en.wikipedia.org/wiki/TypeScript
- *  - interfaces a la Flow and Typescript
  *
  * See http://es6-features.org/ for explanations of those recent features
  * (and also how they can be converted to ES5 code)
+ *
+ * This AST supports also most ES7-ES9 features:
+ *  - SEMI destructuring patterns
+ *  - SEMI async/await: asynchronous functions and promises
+ *
+ * This AST (and its associated parser) supports a few more extensions:
+ *  - JSX: I am mostly imitating what I have done for XHP in lang_php/,
+ *    but with tags possibly containing ':' or '.' in their names
+ *  - type annotations a la Flow and TypeScript, see
+ *    http://en.wikipedia.org/wiki/TypeScript
+ *  - interfaces a la Flow and Typescript
+ *  - TODO declaration files for Typescript (giving types to non TS files)
+ *
  *
  * less:
  *  - imitate https://developer.mozilla.org/en-US/docs/SpiderMonkey/Parser_API

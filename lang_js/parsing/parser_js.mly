@@ -14,12 +14,28 @@
  * license.txt for more details.
  */
 %{
-(*
+(* This file contains a grammar for Javascript (ES6 and more).
+ * See https://en.wikipedia.org/wiki/JavaScript_syntax
+ * 
  * src: originally ocamlyaccified from Marcel Laverdet 'fbjs2' via Emacs
  * macros, itself extracted from the official ECMAscript specification at:
  * http://www.ecma-international.org/publications/standards/ecma-262.htm
+ * back in the day (probably ES4 or ES3).
+ * 
+ * I heavily extended the grammar to provide the first parser for Flow.
+ * I extended it also to deal with many new Javascript features
+ * (see ast_js.ml top comment). 
  *
- * See also https://en.wikipedia.org/wiki/JavaScript_syntax
+ * The grammar is close to the ECMA grammar but I simplified things 
+ * when I could:
+ *  - less intermediate grammar rules for advanced features
+ *    (they are inlined in the original grammar rule)
+ *  - by using my retagging-tokens technique (see parsing_hacks_js.ml) 
+ *    I could also get rid of some of the ugliness in the ECMA grammar 
+ *    that has to deal with ambiguous constructs
+ *    (they conflate together expressions and arrow parameters, object
+ *    values and object matching, etc.). 
+ *    Instead, in this grammar things are clearly separated.
  *)
 open Common
 
@@ -95,7 +111,8 @@ let fake_tok s = {
  T_PLING 
  T_ARROW 
  T_DOTS
- T_BACKQUOTE T_DOLLARCURLY
+ T_BACKQUOTE 
+ T_DOLLARCURLY
 
 
 /*(* operators *)*/
