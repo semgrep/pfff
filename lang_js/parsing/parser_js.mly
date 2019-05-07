@@ -1096,13 +1096,14 @@ arguments:
  | T_LPAREN argument_list trailing_comma2 T_RPAREN { ($1, $2 @ $3, $4) }
 
 argument_list:
- | assignment_expression
-     { [Left $1] }
- | assignment_expression T_COMMA argument_list
-     { (Left $1)::(Right $2)::$3 }
-/*(* es6: spread operator: *)*/
+ | argument                         { [Left $1] }
+ | argument T_COMMA argument_list   { (Left $1)::(Right $2)::$3 }
+
+argument:
+ | assignment_expression { $1 }
+ /*(* es6: spread operator, allowed not only in last position *)*/
  | T_DOTS assignment_expression
-     { [Left (uop U_spread $1 $2)] }
+     { (uop U_spread $1 $2) }
 
 /*(*----------------------------*)*/
 /*(*2 XHP embeded html *)*/
