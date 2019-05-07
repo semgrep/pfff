@@ -964,6 +964,7 @@ pre_in_expression:
  /*(* es7: *)*/
  | pre_in_expression T_EXPONENT pre_in_expression { bop B_expo $1 $2 $3 }
 
+/*(* coupling: modify also call_expression_no_statement *)*/
 call_expression:
  | member_expression arguments                      { e(Apply ($1, $2)) }
  | call_expression arguments                        { e(Apply ($1, $2)) }
@@ -1298,6 +1299,8 @@ call_expression_no_statement:
  | call_expression_no_statement arguments                        { e(Apply ($1, $2)) }
  | call_expression_no_statement T_LBRACKET expression T_RBRACKET { e(Bracket($1, ($2, $3, $4))) }
  | call_expression_no_statement T_PERIOD method_name              { e(Period ($1, $2, $3)) }
+ /*(* es6: *)*/
+ | T_SUPER arguments { e(Apply(Super($1), $2)) }
 
 member_expression_no_statement:
  | primary_expression_no_statement                                 { $1 }
