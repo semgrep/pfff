@@ -372,7 +372,8 @@ and param_name =
 and func_decl = {
   f_kind: func_kind;
   f_tok: tok option; (* 'function', but None for methods *)
-  f_name: name option; (* None for anonymous functions *)
+  (* None for anonymous functions (in expressions or 'export default' decls) *)
+  f_name: name option; 
   (* typing-ext: *)
   f_type_params: type_parameters option;
   f_params: parameter_binding comma_list paren;
@@ -465,7 +466,8 @@ and variable_declaration = {
 (* es6: finally classes built in the language *)
 and class_decl = {
   c_tok: tok; (* 'class' *)
-  c_name: name option; (* None for anon class (in class expression) *)
+  (* None for anon classes in class expressions or 'export default' decls *)
+  c_name: name option; 
   (* typing-ext: *)
   c_type_params: type_parameter comma_list angle option;
   c_extends: (tok (* extends *) * nominal_type) option;

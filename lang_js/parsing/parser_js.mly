@@ -273,6 +273,8 @@ from_clause: T_FROM module_specifier { ($1, $2) }
 import_specifier:
  | binding_identifier                 { $1, None }
  | identifier T_AS binding_identifier { $1, Some ($2, $3) }
+ /*(* not in ECMA *)*/
+ | T_DEFAULT T_AS binding_identifier  { ("default",$1), Some ($2, $3) }
 
 module_specifier: string_literal { $1 }
 
@@ -567,9 +569,9 @@ function_expression:
      T_LPAREN formal_parameter_list_opt T_RPAREN
      annotation_opt
      T_LCURLY function_body T_RCURLY
-     { e(Function { f_kind = Regular; f_tok = Some $1; f_name= $2; 
+     { { f_kind = Regular; f_tok = Some $1; f_name= $2; 
                     f_type_params = $3; f_params= ($4, $5, $6);
-                    f_return_type = $7; f_body = ($8, $9, $10) }) }
+                    f_return_type = $7; f_body = ($8, $9, $10) } }
 
 function_body:
  | /*(* empty *)*/ { [] }
@@ -715,9 +717,13 @@ method_definition:
 /*(*1 Class declaration *)*/
 /*(*************************************************************************)*/
 
-class_declaration: T_CLASS binding_identifier generics_opt class_tail
+/*(* c_name is None only when part of an 'export default' decl 
+   * TODO: use other tech to enforce this? extra rule after
+   * T_EXPORT T_DEFAULT? but then many ambiguities.
+   *)*/
+class_declaration: T_CLASS binding_identifier_opt generics_opt class_tail
    { let (extends, body) = $4 in
-     { c_tok = $1; c_name = Some $2; c_type_params = $3;
+     { c_tok = $1; c_name = $2; c_type_params = $3;
        c_extends =extends; c_body = body }
    }
 
@@ -991,9 +997,9 @@ member_expression:
 
 
 primary_expression:
- | primary_expression_no_statement { $1 }
+ | primary_expression_no_braces { $1 }
  | object_literal                  { e(Object $1) }
- | function_expression             { $1 }
+ | function_expression             { e(Function $1) }
  /*(* es6: *)*/
  | class_expression                { $1 }
  /*(* es6: *)*/
@@ -1001,7 +1007,7 @@ primary_expression:
  /*(* es7: *)*/
  | async_function_expression            { $1 }
 
-primary_expression_no_statement:
+primary_expression_no_braces:
  | T_THIS          { e((This $1)) }
  | identifier      { e((V $1)) }
 
@@ -1167,6 +1173,8 @@ arrow_body:
      { match $1 with Block (a,b,c) -> ABody (a,b,c) | _ -> raise Impossible }
  /*(* see conflicts.txt for why the %prec *)*/
  | assignment_expression_no_statement %prec LOW_PRIORITY_RULE { AExpr $1 }
+ /*(* ugly *)*/
+ | function_expression { AExpr (Function $1) }
 
 async_arrow_function: 
  | T_ASYNC arrow_function { $2 }
@@ -1313,8 +1321,9 @@ member_expression_no_statement:
  | T_SUPER T_LBRACKET expression T_RBRACKET { e(Bracket(Super($1),($2,$3,$4)))}
  | T_SUPER T_PERIOD field_name { e(Period(Super($1), $2, $3)) }
 
-/*(* no primary_expression here with object_literal, function_expr, etc.
-   * directly primary_expression_no_statement *)*/
+/*(* no object_literal here *)*/
+primary_expression_no_statement:
+ | primary_expression_no_braces { $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Entities, names *)*/
