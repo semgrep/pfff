@@ -177,7 +177,7 @@ let parse2 filename =
   let stat = PI.default_stat filename in
 
   let toks = tokens filename in
-  (*  let toks = Parsing_hacks_js.fix_tokens toks in *)
+  let toks = Parsing_hacks_js.fix_tokens toks in
 
   let tr = PI.mk_tokens_state toks in
   let last_charpos_error = ref 0 in

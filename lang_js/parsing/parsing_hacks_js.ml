@@ -15,6 +15,9 @@
  *)
 open Common 
 
+module Flag = Flag_parsing
+module PI = Parse_info
+
 module Ast = Ast_js
 module T = Parser_js
 module TH   = Token_helpers_js
@@ -22,7 +25,13 @@ module TH   = Token_helpers_js
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* The goal of this module is to insert fake virtual semicolons
+(* The goal of this module is to retag or insert certain tokens
+ * (e.g., a T_LPAREN in T_LPAREN_ARROW, or a T_VIRTUAL_SEMICOLON) to
+ * help the grammar remains simple and unambiguous. See 
+ * lang_cpp/parsing/parsing_hacks.ml for more information about
+ * this technique.
+ *
+ * The original goal of this module was to insert fake virtual semicolons
  * (a.k.a Automatic Semicolon Insertion, or ASI).
  * Those semicolons can be ommitted by the user (but really should not).
  *
@@ -31,7 +40,7 @@ module TH   = Token_helpers_js
  *  -http://www.ecma-international.org/ecma-262/6.0/index.html#sec-automatic-semicolon-insertion
  *
  * alt:
- *  - insert semicolons during error recovery in parser_js.ml. After
+ *  - CURRENT insert semicolons during error recovery in parser_js.ml. After
  *    all that was the spec says.
  *  - work on a parenthesized view? like in parsing_hacks_cpp.ml.
  *    It would be easier to match whether we are in the right context
@@ -78,9 +87,27 @@ let rparens_of_if toks =
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
+let fix_tokens toks = 
+ try 
+  let _trees = Parse_fuzzy.mk_trees { Parse_fuzzy.
+     tokf = TH.info_of_tok;
+     kind = TH.token_kind_of_tok;
+  } toks 
+  in
+  toks
+
+  with Parse_fuzzy.Unclosed (msg, info) ->
+   if !Flag.error_recovery
+   then toks
+   else failwith (spf "%s (started at %s)" msg (PI.string_of_info info))
+
+
+(*****************************************************************************)
+(* ASI (obsolete) *)
+(*****************************************************************************)
 
 (* ugly: this is now superseded by ASI via error recovery in parse_js.ml *)
-let fix_tokens xs =
+let fix_tokens_ASI xs =
 
   let res = ref [] in
   let rec aux prev f xs = 
