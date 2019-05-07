@@ -21,7 +21,7 @@ an 'expr' which does not allow object literal, that is
 'assignment_expression_no_statement'
 (but do not forget to extend those mostly-copy-pasted rules
 with extensions such as arrows, or async, otherwise you can not
-even curry and write code like 'x => y => x + y'
+even curry and write code like 'x => y => x + y').
 
 ** short parameters
 
@@ -61,6 +61,9 @@ in a T_LPAREN_ARROW when you see '( <xxx> ) =>' while matching
 a fuzzy AST of the JS tokens. Then there is no ambiguity
 and you can simply use formal_parameter_list_opt after this
 special T_LPAREN_ARROW.
+
+The ECMA grammar uses the CoverParenthesizedExpressionAndArrowParameterList
+conflating rule which is ugly. The retag-token technique is far cleaner.
 
 * TODO Types and JSX
 

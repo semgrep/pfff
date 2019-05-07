@@ -76,7 +76,9 @@ let fake_tok s = {
 /*(* tokens with a value *)*/
 %token<string * Ast_js.tok> T_NUMBER
 %token<string * Ast_js.tok> T_IDENTIFIER
-%token<string * Ast_js.tok> T_STRING T_ENCAPSED_STRING
+
+%token<string * Ast_js.tok> T_STRING 
+%token<string * Ast_js.tok> T_ENCAPSED_STRING
 %token<string * Ast_js.tok> T_REGEX
 
 /*(*-----------------------------------------*)*/
@@ -1003,11 +1005,10 @@ primary_expression_no_statement:
  | regex_literal                { e(L(Regexp $1)) }
  | array_literal                { e($1) }
 
+ /*(* simple! ECMA mixes this rule with arrow parameters (bad) *)*/
  | T_LPAREN expression T_RPAREN { e(Paren ($1, $2, $3)) }
 
- /*(* xhp: do not put in 'expr', otherwise can't have xhp
-    * in function arguments
-    *)*/
+ /*(* xhp: do not put in 'expr', otherwise can't have xhp in function arg *)*/
  | xhp_html { XhpHtml $1 }
 
  /*(* templated string (aka interpolated strings) *)*/
@@ -1144,7 +1145,6 @@ arrow_function:
          a_return_type = None; a_tok = $2; a_body = $3 } }
 
  /*(* can not factorize with TOPAR parameter_list TCPAR, see conflicts.txt *)*/
- /*(* generics_opt not supported, see conflicts.txt *)*/
  | T_LPAREN_ARROW formal_parameter_list_opt T_RPAREN annotation_opt 
     T_ARROW arrow_body 
     { { a_params = AParams ($1, $2, $3); a_return_type = $4;
