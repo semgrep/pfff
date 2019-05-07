@@ -231,7 +231,8 @@ let set_mode mode =
 let NEWLINE = ("\r"|"\n"|"\r\n")
 let HEXA = ['0'-'9''a'-'f''A'-'F']
 
-let XHPLABEL =	['a'-'z''A'-'Z''_']['a'-'z''A'-'Z''0'-'9''_''-']*
+(* JSX allows also '.' *)
+let XHPLABEL =	['a'-'z''A'-'Z''_']['a'-'z''A'-'Z''0'-'9''_''-''.']*
 let XHPTAG = XHPLABEL (":" XHPLABEL)*
 let XHPATTR = XHPLABEL (":" XHPLABEL)*
 
@@ -468,7 +469,8 @@ rule initial = parse
     match !_last_non_whitespace_like_token with
     | Some (
         T_LPAREN _
-      | T_SEMICOLON _ | T_COMMA _
+      | T_SEMICOLON _ (* TODO: somes ambiguities with generics then! *)
+      | T_COMMA _
       | T_LCURLY _ | T_RCURLY _
       | T_RETURN _
       | T_ASSIGN _
