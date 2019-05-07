@@ -90,7 +90,9 @@ and 'a paren   = tok * 'a * tok
 and 'a brace   = tok * 'a * tok
 and 'a bracket = tok * 'a * tok
 and 'a angle = tok * 'a * tok
-(* can now have a Right tok at the very end with the trailing comma extension*)
+(* can now have a Right tok at the very end with the trailing comma extension
+ * and can even have multiple Right together with the elision extension.
+ *)
 and 'a comma_list = ('a, tok (* the comma *)) Common.either list
 
 (* semicolon. Can be None when was implicitely inserted during parsing *)
@@ -119,6 +121,8 @@ type expr =
    | L of litteral
    | V of name
    | This of tok
+   (* es6: can be part only of Period or Apply expressions *)
+   | Super of tok
 
    (* unop includes new/delete/... *)
    | U of unop wrap * expr
@@ -130,7 +134,7 @@ type expr =
 
    (* can have a trailing comma *)
    | Object of property comma_list brace
-   (* The comma_list can have successive Left because of "elison" *)
+   (* The comma_list can have successive Right because of "elision" *)
    | Array of expr comma_list bracket
 
    (* Call, see also Encaps that is a sort of call when 'name' is not None  *)

@@ -79,8 +79,7 @@ let rparens_of_if toks =
 (* Entry point *)
 (*****************************************************************************)
 
-(* UGLYYYYYYYYYYYYYYYYYYY. Better would be to read section 7.6.2.
-*)
+(* ugly: this is now superseded by ASI via error recovery in parse_js.ml *)
 let fix_tokens xs =
 
   let res = ref [] in

@@ -941,6 +941,8 @@ call_expression:
  | call_expression arguments                        { e(Apply ($1, $2)) }
  | call_expression T_LBRACKET expression T_RBRACKET { e(Bracket($1, ($2, $3, $4))) }
  | call_expression T_PERIOD method_name              { e(Period ($1, $2, $3)) }
+ /*(* es6: *)*/
+ | T_SUPER arguments { e(Apply(Super($1), $2)) }
 
 new_expression:
  | member_expression    { $1 }
@@ -952,6 +954,9 @@ member_expression:
  | member_expression T_PERIOD field_name              { e(Period ($1, $2, $3)) }
  | T_NEW member_expression arguments
      { e(Apply(uop U_new $1 $2, $3)) }
+ /*(* es6: *)*/
+ | T_SUPER T_LBRACKET expression T_RBRACKET { e(Bracket(Super($1),($2,$3,$4)))}
+ | T_SUPER T_PERIOD field_name { e(Period(Super($1), $2, $3)) }
 
 
 primary_expression:

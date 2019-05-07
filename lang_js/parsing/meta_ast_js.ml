@@ -79,6 +79,7 @@ let rec vof_expr =
   | L v1 -> let v1 = vof_litteral v1 in Ocaml.VSum (("L", [ v1 ]))
   | V v1 -> let v1 = vof_name v1 in Ocaml.VSum (("V", [ v1 ]))
   | This v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("This", [ v1 ]))
+  | Super v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Super", [ v1 ]))
   | U ((v1, v2)) ->
       let v1 = vof_wrap vof_unop v1
       and v2 = vof_expr v2
