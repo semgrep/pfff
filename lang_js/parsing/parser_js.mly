@@ -273,8 +273,9 @@ from_clause: T_FROM module_specifier { ($1, $2) }
 import_specifier:
  | binding_identifier                 { $1, None }
  | identifier T_AS binding_identifier { $1, Some ($2, $3) }
- /*(* not in ECMA *)*/
+ /*(* not in ECMA, not sure what it means *)*/
  | T_DEFAULT T_AS binding_identifier  { ("default",$1), Some ($2, $3) }
+ | T_DEFAULT  { ("default",$1), None }
 
 module_specifier: string_literal { $1 }
 
