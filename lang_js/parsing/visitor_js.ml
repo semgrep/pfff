@@ -166,6 +166,8 @@ and v_expr (x: expr) =
   | V v1 -> let v1 = v_name v1 in ()
   | This v1 -> let v1 = v_tok v1 in ()
   | Super v1 -> let v1 = v_tok v1 in ()
+  | NewTarget ((v1, v2, v3)) ->
+      let v1 = v_tok v1 and v2 = v_tok v2 and v3 = v_tok v3 in ()
   | U ((v1, v2)) -> let v1 = v_wrap2 v_unop v1 and v2 = v_expr v2 in ()
   | B ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_wrap3 v_binop v2 and v3 = v_expr v3 in ()

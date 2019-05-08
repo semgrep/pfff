@@ -80,6 +80,11 @@ let rec vof_expr =
   | V v1 -> let v1 = vof_name v1 in Ocaml.VSum (("V", [ v1 ]))
   | This v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("This", [ v1 ]))
   | Super v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Super", [ v1 ]))
+  | NewTarget ((v1, v2, v3)) ->
+      let v1 = vof_tok v1
+      and v2 = vof_tok v2
+      and v3 = vof_tok v3
+      in Ocaml.VSum (("NewTarget", [ v1; v2; v3 ]))
   | U ((v1, v2)) ->
       let v1 = vof_wrap vof_unop v1
       and v2 = vof_expr v2

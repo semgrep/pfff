@@ -64,7 +64,7 @@ module PI = Parse_info
  *    http://en.wikipedia.org/wiki/TypeScript
  *  - interfaces a la Flow and Typescript
  *  - TODO declaration files for Typescript (giving types to non TS files)
- *  - TODO class variables
+ *  - class variables
  *
  * less:
  *  - imitate https://developer.mozilla.org/en-US/docs/SpiderMonkey/Parser_API
@@ -163,6 +163,8 @@ type expr =
    | Yield of tok * tok option (* '*' *) * expr option
    (* es7: promises *)
    | Await of tok * expr
+   (* es6: meta property *)
+   | NewTarget of tok (* new *) * tok (* . *) * tok (* always "target" *)
 
    (* es6: template (interpolated) strings 
     * less: you can get multiple EncapsString in encaps below; they

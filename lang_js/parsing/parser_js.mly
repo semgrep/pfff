@@ -1010,6 +1010,11 @@ member_expression:
  /*(* es6: *)*/
  | T_SUPER T_LBRACKET expression T_RBRACKET { e(Bracket(Super($1),($2,$3,$4)))}
  | T_SUPER T_PERIOD field_name { e(Period(Super($1), $2, $3)) }
+ | T_NEW T_PERIOD identifier { 
+     if fst $3 = "target"
+     then e(NewTarget ($1, $2, snd $3))
+     else raise (Parsing.Parse_error)
+  }
 
 
 primary_expression:
