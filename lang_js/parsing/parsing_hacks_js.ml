@@ -101,6 +101,7 @@ let fix_tokens toks =
   } toks 
   in
   let retag_lparen = Hashtbl.create 101 in
+  let retag_keywords = Hashtbl.create 101 in
 
   (* visit and tag *)
   let visitor = Ast_fuzzy.mk_visitor { Ast_fuzzy.default_visitor with
@@ -108,6 +109,8 @@ let fix_tokens toks =
       (match xs with
       | F.Parens (i1, _, _)::F.Tok ("=>",_)::_res ->
           Hashtbl.add retag_lparen i1 true
+      | F.Tok("import", i1)::F.Parens _::_res ->
+          Hashtbl.add retag_keywords i1 true
       | _ -> ()
       );
       k xs
@@ -120,6 +123,8 @@ let fix_tokens toks =
   toks |> List.map (function
     | T.T_LPAREN info when Hashtbl.mem retag_lparen info ->
       T.T_LPAREN_ARROW (info)
+    | T.T_IMPORT info when Hashtbl.mem retag_keywords info ->
+      T.T_IDENTIFIER (PI.str_of_info info, info)
     | x -> x
   )
 
