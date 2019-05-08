@@ -65,6 +65,41 @@ special T_LPAREN_ARROW.
 The ECMA grammar uses the CoverParenthesizedExpressionAndArrowParameterList
 conflating rule which is ugly. The retag-token technique is far cleaner.
 
+* trailing commas
+
+Introducing trailing commas can introduce some shift/reduce conflicts
+on rules using lists written in a non-left recursive way. Indeed on this:
+
+formal_parameter_list_opt:
+ | /*(*empty*)*/   { }
+ | formal_parameter_list trailing_comma  { }
+
+formal_parameter_list:
+ | formal_parameter T_COMMA formal_parameter_list { }
+ | formal_parameter  { }
+
+Yacc generates this conflict:
+
+238: shift/reduce conflict (shift 517, reduce 139) on T_COMMA
+state 238
+	formal_parameter_list : formal_parameter . T_COMMA formal_parameter_list  (138)
+	formal_parameter_list : formal_parameter .  (139)
+
+	T_COMMA  shift 517
+
+because after one parameter and seeing a comma, it can not decide if this
+comma is introducing a new parameter (shift) or if it's part of the
+trailing comma after the formal_paramater_list (in which case it needs
+to reduce).
+
+You need to rewrite the rule left-recursive like this:
+
+formal_parameter_list:
+ | formal_parameter_list T_COMMA formal_parameter { }
+ | formal_parameter  { }
+
+Then after a comma it must always just reduce.
+
 * TODO Types and JSX
 
 Flow does not allow '<T>(x:T):T => ...' since the leading '<T>' looks like

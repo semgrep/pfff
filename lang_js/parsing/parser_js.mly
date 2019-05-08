@@ -589,6 +589,15 @@ function_body:
 /*(*2 parameters *)*/
 /*(*----------------------------*)*/
 
+formal_parameter_list_opt:
+ | /*(*empty*)*/   { [] }
+ | formal_parameter_list trailing_comma2  { List.rev ($2 @ $1)  }
+
+/*(* must be written in a left-recursive way (see conflicts.txt) *)*/
+formal_parameter_list:
+ | formal_parameter_list T_COMMA formal_parameter { (Left $3)::(Right $2)::$1 }
+ | formal_parameter                               { [Left $1] }
+
 /*(* The ECMA grammar imposes more restrictions, but I simplified.
    *  We could also factorize with binding_element as done by ECMA.
    *)*/
@@ -622,11 +631,6 @@ formal_parameter:
      { ParamClassic { (mk_param $2) 
                       with p_dots = Some $1; p_type = Some $3; } }
 
-
-formal_parameter_list:
- | formal_parameter T_COMMA formal_parameter_list
-     { (Left $1)::(Right $2)::$3 }
- | formal_parameter  { [Left $1] }
 
 /*(*----------------------------*)*/
 /*(*2 generators *)*/
@@ -1069,6 +1073,7 @@ array_literal:
  | T_LBRACKET element_list_rev elision_opt T_RBRACKET 
    { Array($1, List.rev $2 @ $3, $4) }
 
+/*(* TODO: conflict on T_COMMA *)*/
 element_list_rev:
  | elision_opt   element                { (Left $2)::$1 }
  | element_list_rev T_COMMA element     { (Left $3) :: [Right $2] @ $1 }
@@ -1113,15 +1118,18 @@ property_name_and_value_list:
 /*(*2 function call *)*/
 /*(*----------------------------*)*/
 
-arguments:
- | T_LPAREN               T_RPAREN { ($1, [], $2) }
- /*(* todo: the trailing_comma adds a new shift/reduce conflict *)*/
- | T_LPAREN argument_list trailing_comma2 T_RPAREN { ($1, $2 @ $3, $4) }
+arguments: T_LPAREN argument_list_opt T_RPAREN { ($1, $2 , $3) }
 
+argument_list_opt:
+ | /*(*empty*)*/   { [] }
+ | argument_list trailing_comma3  { List.rev ($2 @ $1)  }
+
+/*(* must be written in a left-recursive way (see conflicts.txt) *)*/
 argument_list:
  | argument                         { [Left $1] }
- | argument T_COMMA argument_list   { (Left $1)::(Right $2)::$3 }
+ | argument_list T_COMMA argument   { (Left $3)::(Right $2)::$1 }
 
+/*(* assignment_expr because expr supports sequence of exprs with ',' *)*/
 argument:
  | assignment_expression { $1 }
  /*(* es6: spread operator, allowed not only in last position *)*/
@@ -1413,6 +1421,9 @@ trailing_comma:
 trailing_comma2:
  | /*(*empty*)*/ { [] }
  | T_COMMA { [Right $1] }
+trailing_comma3:
+ | /*(*empty*)*/ { [] }
+ | T_COMMA { [Right $1] }
 
 
 
@@ -1476,10 +1487,6 @@ class_heritage_opt:
 class_body_opt:
  | /*(*empty*)*/   { [] }
  | class_body { $1 }
-
-formal_parameter_list_opt:
- | /*(*empty*)*/   { [] }
- | formal_parameter_list { $1 }
 
 module_item_list_opt:
  | /*(*empty*)*/    { [] }
