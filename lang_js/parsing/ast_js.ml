@@ -252,7 +252,10 @@ type expr =
        xhp_body list * xhp_tag option wrap
    | XhpSingleton of xhp_tag wrap * xhp_attribute list * tok (* /> *)
 
-   and xhp_attribute = xhp_attr_name * tok (* = *) * xhp_attr_value
+   and xhp_attribute = 
+      | XhpAttrClassic of xhp_attr_name * tok (* = *) * xhp_attr_value
+      (* not in XHP *)
+      | XhpAttrSpread of (tok * expr) brace
     and xhp_attr_name = string wrap (* e.g. task-bar *)
     and xhp_attr_value =
       | XhpAttrString of string wrap

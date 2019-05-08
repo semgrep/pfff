@@ -1146,11 +1146,14 @@ xhp_child:
      { XhpExpr ($1, None , $2) (*TODO$3*) }
 
 xhp_attribute:
- | T_XHP_ATTR T_ASSIGN xhp_attribute_value { $1, $2, $3 }
+ | T_XHP_ATTR T_ASSIGN xhp_attribute_value 
+    { XhpAttrClassic ($1, $2, $3) }
+ | T_LCURLY T_DOTS assignment_expression T_RCURLY 
+    { XhpAttrSpread ($1, ($2, $3), $4) }
 
 xhp_attribute_value:
  | T_STRING { XhpAttrString ($1) }
- | T_LCURLY expression semicolon T_RCURLY    { XhpAttrExpr ($1, $2, $4)(*TODO$3*) }
+ | T_LCURLY expression semicolon T_RCURLY { XhpAttrExpr ($1, $2, $4)(*TODO$3*)}
 
 /*(*----------------------------*)*/
 /*(*2 interpolated strings *)*/

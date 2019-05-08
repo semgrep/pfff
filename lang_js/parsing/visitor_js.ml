@@ -320,11 +320,18 @@ and v_xhp_html =
       and v2 = v_list v_xhp_attribute v2
       and v3 = v_tok v3
       in ()
-and v_xhp_attribute (v1, v2, v3) =
-  let v1 = v_xhp_attr_name v1
-  and v2 = v_tok v2
-  and v3 = v_xhp_attr_value v3
-  in ()
+and v_xhp_attribute =
+  function
+  | XhpAttrClassic ((v1, v2, v3)) ->
+      let v1 = v_xhp_attr_name v1
+      and v2 = v_tok v2
+      and v3 = v_xhp_attr_value v3
+      in ()
+  | XhpAttrSpread v1 ->
+      let v1 =
+        v_brace
+          (fun (v1, v2) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()) v1
+      in ()
 and v_xhp_attr_name v = v_wrap v_string v
 and v_xhp_attr_value =
   function
