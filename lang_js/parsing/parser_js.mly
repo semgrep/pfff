@@ -14,8 +14,12 @@
  * license.txt for more details.
  */
 %{
-(* This file contains a grammar for Javascript (ES6 and more).
- * See https://en.wikipedia.org/wiki/JavaScript_syntax
+(* This file contains a grammar for Javascript (ES6 and more), Flow,
+ * and Typescript.
+ * See:
+ *  - https://en.wikipedia.org/wiki/JavaScript_syntax
+ *  - http://www.ecma-international.org/publications/standards/Ecma-262.htm
+ *  - https://github.com/Microsoft/TypeScript/blob/master/doc/spec.md#A
  * 
  * src: originally ocamlyaccified from Marcel Laverdet 'fbjs2' via Emacs
  * macros, itself extracted from the official ECMAscript specification at:

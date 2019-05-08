@@ -20,10 +20,11 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Concrete Syntax Tree for Javascript.
+(* Concrete Syntax Tree for Javascript, Flow, and Typescript.
  * 
  * Specification: 
- *  http://www.ecma-international.org/publications/standards/Ecma-262.htm
+ *  - http://www.ecma-international.org/publications/standards/Ecma-262.htm
+ *  - https://github.com/Microsoft/TypeScript/blob/master/doc/spec.md#A
  * See also 
  *  - https://en.wikipedia.org/wiki/JavaScript
  *  - https://en.wikipedia.org/wiki/ECMAScript
@@ -31,20 +32,22 @@ module PI = Parse_info
  *  - https://developer.mozilla.org/en-US/docs/SpiderMonkey/Parser_API
  *
  * This AST (and its associated parser) supports most ES6 features:
- *  - classes: a nicer syntax to define classes than objects and prototypes
- *  - import/export: cleaner namespace
- *  - arrows: short lambdas
+ *  - classes  (nicer syntax to define classes than objects and prototypes)
+ *  - import/export (cleaner namespace)
+ *  - arrows  (short lambdas)
  *  - default parameters
  *  - SEMI variable number of parameters, e.g. 'function foo(...args)'
  *    and spread of parameters with [ ...arr ]
  *  - template strings (a.k.a interpolated strings), see
  *    https://gist.github.com/lukehoban/9303054#template-strings
- *  - let: lexical vars
- *  - const: immutable declarations
- *  - get/set: sugar to define getter and setter methods
+ *  - let (lexical vars)
+ *  - const (immutable declarations)
+ *  - get/set (sugar to define getter and setter methods)
  *  - iterators (for ... of )
- *  - generators (yield, function* ): a nice syntax to define iterators
- *  - optional trailing commas
+ *  - generators (yield, function* ), which provide a nice syntax 
+ *    to define iterators
+ *  - optional trailing commas in parameters, arguments, object literals,
+ *    and array literals.
  *
  * See http://es6-features.org/ for explanations of those recent features
  * (and also how they can be converted to ES5 code).
@@ -61,7 +64,7 @@ module PI = Parse_info
  *    http://en.wikipedia.org/wiki/TypeScript
  *  - interfaces a la Flow and Typescript
  *  - TODO declaration files for Typescript (giving types to non TS files)
- *
+ *  - TODO class variables
  *
  * less:
  *  - imitate https://developer.mozilla.org/en-US/docs/SpiderMonkey/Parser_API
