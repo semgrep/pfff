@@ -320,6 +320,11 @@ export_clause:
    { ($1, $2 @ [Right $3], $4) }
 
 /*(*************************************************************************)*/
+/*(*1 Declare (ambient) *)*/
+/*(*************************************************************************)*/
+/*(* typescript: *)*/
+
+/*(*************************************************************************)*/
 /*(*1 Statement *)*/
 /*(*************************************************************************)*/
 
@@ -759,13 +764,6 @@ class_heritage: T_EXTENDS type_expression { ($1, $2) }
 
 class_body: class_element_list { $1 }
 
-class_element:
- | method_definition               { Method (None, $1) }
- | T_STATIC method_definition      { Method (Some $1, $2) }
- | semicolon                       { ClassExtraSemiColon $1 }
- /*(* TODO: not part of ECMA *)*/
- | identifier annotation semicolon { Field ($1, $2, $3) }
-
 binding_identifier: identifier { $1 }
 binding_identifier_opt: 
  | { None } 
@@ -773,27 +771,39 @@ binding_identifier_opt:
 
 
 class_expression: T_CLASS binding_identifier_opt generics_opt class_tail
-   {
-     let (extends, body) = $4 in
+   { let (extends, body) = $4 in
      e(Class { c_tok = $1;  c_name = $2; c_type_params = $3;
-               c_extends =extends;c_body = body })
-   }
+               c_extends =extends;c_body = body }) }
+
+/*(*----------------------------*)*/
+/*(*2 Class elements *)*/
+/*(*----------------------------*)*/
+
+class_element:
+ | method_definition               { Method (None, $1) }
+ | T_STATIC method_definition      { Method (Some $1, $2) }
+ | semicolon                       { ClassExtraSemiColon $1 }
+ /*(* TODO: not part of ECMA *)*/
+ | identifier annotation semicolon { Field ($1, $2, $3) }
 
 
 /*(*************************************************************************)*/
 /*(*1 Interface declaration *)*/
 /*(*************************************************************************)*/
+/*(* typing-ext: *)*/
 interface_declaration: T_INTERFACE binding_identifier generics_opt type_
-   {
-     { i_tok = $1;
+   { { i_tok = $1;
        i_name = $2;
        i_type_params = $3;
-       i_type = $4;
-     }
-   }
+       i_type = $4; } }
 /*(*************************************************************************)*/
 /*(*1 Types *)*/
 /*(*************************************************************************)*/
+/*(* typing-ext: *)*/
+
+/*(*----------------------------*)*/
+/*(*2 Annotations *)*/
+/*(*----------------------------*)*/
 
 annotation: T_COLON type_ { TAnnot($1, $2) }
 
@@ -802,21 +812,51 @@ complex_annotation:
  | generics_opt T_LPAREN param_type_list_opt T_RPAREN T_COLON type_
      { TFunAnnot($1,($2,$3,$4),$5,$6) }
 
+/*(*----------------------------*)*/
+/*(*2 Types *)*/
+/*(*----------------------------*)*/
+
+/*(* can't use 'type'; generate syntax error in parser_js.ml *)*/
 type_:
- | T_VOID        { TName (V("void", $1), None) }
- | nominal_type { TName($1) }
- | T_PLING type_ { TQuestion ($1, $2) }
+ | primary_or_union_type { $1 }
  | T_LPAREN_ARROW param_type_list_opt T_RPAREN T_ARROW type_
      { TFun (($1, $2, $3), $4, $5) }
- | T_LCURLY field_type_list_opt T_RCURLY         { TObj ($1, $2, $3) }
+
+primary_or_union_type:
+ | primary_type { $1 }
+/* | union_type { $1 }*/
+
+primary_type:
+ | predefined_type { $1 }
+ | type_reference { TName($1) }
+/* | primary_type T_LBRACKET T_RBRACKET { TTodo }*/
+ | T_PLING type_ { TQuestion ($1, $2) }
+ | T_LCURLY field_type_list_opt T_RCURLY  
+     { TObj ($1, $2, $3) }
+
+predefined_type:
+ | T_ANY_TYPE      { TName (V("any", $1), None) }
+ | T_NUMBER_TYPE   { TName (V("number", $1), None) }
+ | T_BOOLEAN_TYPE  { TName (V("boolean", $1), None) }
+ | T_STRING_TYPE   { TName (V("string", $1), None) }
+ | T_VOID          { TName (V("void", $1), None) }
+
+/*(* was called nominal_type in Flow *)*/
+type_reference:
+ | type_name { ($1,None) }
+ | type_name type_arguments { ($1, Some $2) }
+
+/*(* was called type_reference in Flow *)*/
+type_name:
+ | T_IDENTIFIER { V($1) }
 
 
-/*(* partial type annotations are not supported *)*/
-field_type: identifier complex_annotation semicolon { ($1, $2, $3) }
+/*union_type: primary_or_union_type T_BIT_OR primary_type { TTodo }*/
 
-field_type_list:
- | field_type { [$1] }
- | field_type_list field_type { $1 @ [$2] }
+param_type_list:
+ | param_type T_COMMA param_type_list { (Left $1)::(Right $2)::$3 }
+ | param_type                         { [Left $1] }
+ | optional_param_type_list           { $1 }
 
 /*(* partial type annotations are not supported *)*/
 param_type: identifier complex_annotation
@@ -825,36 +865,39 @@ param_type: identifier complex_annotation
 optional_param_type: identifier T_PLING complex_annotation
   { (OptionalParam($1,$2), $3) }
 
-rest_param_type: T_DOTS identifier complex_annotation
-  { (RestParam($1,$2), $3) }
-
-param_type_list:
- | param_type T_COMMA param_type_list { (Left $1)::(Right $2)::$3 }
- | param_type                         { [Left $1] }
- | optional_param_type_list           { $1 }
-
 optional_param_type_list:
  | optional_param_type T_COMMA optional_param_type_list
      { (Left $1)::(Right $2)::$3 }
  | optional_param_type       { [Left $1] }
  | rest_param_type           { [Left $1] }
 
-type_variable:
- | identifier { $1 }
+rest_param_type: T_DOTS identifier complex_annotation
+  { (RestParam($1,$2), $3) }
+
+/*(* partial type annotations are not supported *)*/
+field_type: identifier complex_annotation semicolon { ($1, $2, $3) }
+
+field_type_list:
+ | field_type { [$1] }
+ | field_type_list field_type { $1 @ [$2] }
+
+/*(*----------------------------*)*/
+/*(*2 Type parameters (type variables) *)*/
+/*(*----------------------------*)*/
+
+generics:
+ | T_LESS_THAN type_variable_list T_GREATER_THAN { $1, $2, $3 }
 
 type_variable_list:
  | type_variable                            { [Left $1] }
  | type_variable_list T_COMMA type_variable { $1 @ [Right $2; Left $3] }
 
-generics:
- | T_LESS_THAN type_variable_list T_GREATER_THAN { $1, $2, $3 }
+type_variable:
+ | identifier { $1 }
 
-type_reference:
- | identifier { V($1) }
-
-nominal_type:
- | type_reference { ($1,None) }
- | type_reference type_arguments { ($1, Some $2) }
+/*(*----------------------------*)*/
+/*(*2 Type arguments *)*/
+/*(*----------------------------*)*/
 
 type_arguments:
  | T_LESS_THAN type_argument_list T_GREATER_THAN { $1, $2, $3 }
@@ -875,7 +918,7 @@ type_argument_list1:
  | type_argument_list T_COMMA nominal_type1 { $1 @ [Right $2; Left (TName $3)] }
 
 nominal_type1:
- | type_reference type_arguments1 { ($1, Some $2) }
+ | type_name type_arguments1 { ($1, Some $2) }
 
 /*(* missing 1 closing > *)*/
 type_arguments1:
@@ -886,15 +929,19 @@ type_argument_list2:
  | type_argument_list T_COMMA nominal_type2 { $1 @ [Right $2; Left (TName $3)] }
 
 nominal_type2:
- | type_reference type_arguments2 { ($1, Some $2) }
+ | type_name type_arguments2 { ($1, Some $2) }
 
 /*(* missing 2 closing > *)*/
 type_arguments2:
  | T_LESS_THAN type_argument_list1 { $1, $2, fake_tok ">" }
 
+/*(*----------------------------*)*/
+/*(*2 TODO *)*/
+/*(*----------------------------*)*/
+
 type_expression:
  | left_hand_side_expression_no_statement { ($1,None) }
- | type_reference type_arguments { ($1, Some $2) }
+ | type_name type_arguments { ($1, Some $2) }
 
 /*(*************************************************************************)*/
 /*(*1 Expressions *)*/

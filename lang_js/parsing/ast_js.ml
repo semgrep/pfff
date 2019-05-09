@@ -501,6 +501,7 @@ and interface_decl = {
   i_tok: tok; (* 'interface' *)
   i_name: name;
   i_type_params: type_parameter comma_list angle option;
+  (* usually a TObj *)
   i_type: type_;
 }
 
