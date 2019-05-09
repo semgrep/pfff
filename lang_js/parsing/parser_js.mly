@@ -242,6 +242,8 @@ declaration:
  | class_declaration     { ClassDecl $1 }
  /*(* facebook-ext: *)*/
  | interface_declaration { InterfaceDecl $1 }
+ /*(* typescript: *)*/
+ | type_alias_declaration { ItemTodo }
 
 /*(*************************************************************************)*/
 /*(*1 Import/export *)*/
@@ -790,7 +792,7 @@ class_element:
 /*(*************************************************************************)*/
 /*(*1 Interface declaration *)*/
 /*(*************************************************************************)*/
-/*(* typing-ext: *)*/
+/*(* typescript: *)*/
 /* TODO: use type_ at the end here and you get conflicts on '[' 
  * Why? because [] can follow an interface_declaration?
 */
@@ -799,9 +801,15 @@ interface_declaration: T_INTERFACE binding_identifier generics_opt object_type
        i_type_params = $3; i_type = $4; } }
 
 /*(*************************************************************************)*/
+/*(*1 Type declaration *)*/
+/*(*************************************************************************)*/
+/*(* typescript: *)*/
+type_alias_declaration: T_TYPE identifier T_ASSIGN type_ semicolon { }
+
+/*(*************************************************************************)*/
 /*(*1 Types *)*/
 /*(*************************************************************************)*/
-/*(* typing-ext: *)*/
+/*(* typescript: *)*/
 
 /*(*----------------------------*)*/
 /*(*2 Annotations *)*/
@@ -858,7 +866,7 @@ type_name:
 
 union_type: primary_or_union_type T_BIT_OR primary_type { TTodo }
 
-object_type: T_LCURLY field_type_list_opt T_RCURLY  { TObj ($1, $2, $3) } 
+object_type: T_LCURLY type_member_list_opt T_RCURLY  { TObj ($1, $2, $3) } 
 
 
 
@@ -883,25 +891,26 @@ optional_param_type_list:
 rest_param_type: T_DOTS identifier complex_annotation
   { (RestParam($1,$2), $3) }
 
-/*(* partial type annotations are not supported *)*/
-field_type: identifier complex_annotation semicolon { ($1, $2, $3) }
 
-field_type_list:
- | field_type { [$1] }
- | field_type_list field_type { $1 @ [$2] }
+/*(* partial type annotations are not supported *)*/
+type_member: identifier complex_annotation semicolon { ($1, $2, $3) }
+
+type_member_list:
+ | type_member { [$1] }
+ | type_member_list type_member { $1 @ [$2] }
 
 /*(*----------------------------*)*/
 /*(*2 Type parameters (type variables) *)*/
 /*(*----------------------------*)*/
 
 generics:
- | T_LESS_THAN type_variable_list T_GREATER_THAN { $1, $2, $3 }
+ | T_LESS_THAN type_parameter_list T_GREATER_THAN { $1, $2, $3 }
 
-type_variable_list:
- | type_variable                            { [Left $1] }
- | type_variable_list T_COMMA type_variable { $1 @ [Right $2; Left $3] }
+type_parameter_list:
+ | type_parameter                            { [Left $1] }
+ | type_parameter_list T_COMMA type_parameter { $1 @ [Right $2; Left $3] }
 
-type_variable:
+type_parameter:
  | T_IDENTIFIER { $1 }
 
 /*(*----------------------------*)*/
@@ -913,8 +922,10 @@ type_arguments:
  | mismatched_type_arguments { $1 }
 
 type_argument_list:
- | type_                            { [Left $1] }
- | type_argument_list T_COMMA type_ { $1 @ [Right $2; Left $3] }
+ | type_argument                            { [Left $1] }
+ | type_argument_list T_COMMA type_argument { $1 @ [Right $2; Left $3] }
+
+        type_argument: type_ { $1 }
 
 /*(* a sequence of 2 or 3 closing > will be tokenized as >> or >>> *)*/
 /*(* thus, we allow type arguments to omit 1 or 2 closing > to make it up *)*/
@@ -1601,9 +1612,9 @@ initializeur_opt:
 
 
 
-field_type_list_opt:
+type_member_list_opt:
  | /*(* empty *)*/ { [] }
- | field_type_list { $1 }
+ | type_member_list { $1 }
 
 param_type_list_opt:
  | /*(* empty *)*/ { [] }
