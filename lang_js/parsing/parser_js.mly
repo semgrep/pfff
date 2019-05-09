@@ -88,7 +88,9 @@ let fake_tok s = {
 /*(*-----------------------------------------*)*/
 /*(*2 Keyword tokens *)*/
 /*(*-----------------------------------------*)*/
-/*(* coupling: if you add an element here, expand also ident_keyword_bis *)*/
+/*(* coupling: if you add an element here, expand also ident_keyword_bis
+   * and also maybe the special hack for regexp in lexer_js.mll
+   *)*/
 %token <Ast_js.tok>
  T_FUNCTION T_CONST T_VAR T_LET
  T_IF T_ELSE
@@ -97,12 +99,16 @@ let fake_tok s = {
  T_RETURN 
  T_THROW T_TRY T_CATCH T_FINALLY
  T_YIELD T_ASYNC T_AWAIT
- T_NEW T_IN T_OF T_INSTANCEOF T_THIS T_SUPER T_WITH  
+ T_NEW T_IN T_OF T_INSTANCEOF T_THIS T_SUPER T_WITH
  T_NULL T_FALSE T_TRUE
- T_CLASS T_INTERFACE T_EXTENDS T_STATIC T_GET T_SET
+ T_CLASS T_INTERFACE T_EXTENDS T_IMPLEMENTS T_STATIC T_GET T_SET T_CONSTRUCTOR
  T_IMPORT T_EXPORT T_FROM T_AS
  T_IN T_INSTANCEOF T_TYPEOF
  T_DELETE  T_VOID
+ T_TYPE  T_ANY_TYPE T_NUMBER_TYPE T_BOOLEAN_TYPE T_STRING_TYPE  T_ENUM
+ T_DECLARE T_MODULE
+ T_PUBLIC T_PRIVATE T_PROTECTED
+ 
 
 /*(*-----------------------------------------*)*/
 /*(*2 Punctuation tokens *)*/
@@ -1366,6 +1372,16 @@ ident_semi_keyword:
  | T_FROM { $1 } | T_AS   { $1 } | T_OF { $1 }
  | T_GET { $1 } | T_SET { $1 }
  | T_ASYNC { $1 }
+ | T_IMPLEMENTS { $1 }
+ | T_CONSTRUCTOR { $1 }
+ | T_TYPE { $1 }
+ | T_ANY_TYPE { $1 } | T_NUMBER_TYPE { $1 } | T_BOOLEAN_TYPE { $1 }
+ | T_STRING_TYPE { $1 }
+ | T_ENUM { $1 }
+ | T_DECLARE { $1 }
+ | T_MODULE { $1 }
+ | T_PUBLIC { $1 } | T_PRIVATE { $1 } | T_PROTECTED { $1 }
+
 /*(* TODO: would like to add T_IMPORT here, but cause conflicts *)*/
 
 /*(*alt: use the _last_non_whitespace_like_token trick and look if
@@ -1423,10 +1439,11 @@ elision:
  | T_COMMA { [Right $1] }
  | elision T_COMMA { $1 @ [Right $2] }
 
-/*(* es6: *)*/
+/*(* es6: in object literals *)*/
 trailing_comma:
  | /*(*empty*)*/ { [] }
  | T_COMMA { [Right $1] }
+/*(* es8: in parameters and arguments *)*/
 trailing_comma2:
  | /*(*empty*)*/ { [] }
  | T_COMMA { [Right $1] }

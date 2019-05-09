@@ -170,6 +170,19 @@ let visitor_info_of_tok f = function
   | T_GET ii -> T_GET (f ii)
   | T_SET ii -> T_SET (f ii)
   | T_EXPONENT ii -> T_EXPONENT (f ii)
+  | T_IMPLEMENTS ii -> T_IMPLEMENTS (f ii) 
+  | T_CONSTRUCTOR ii -> T_CONSTRUCTOR (f ii)
+  | T_TYPE ii -> T_TYPE (f ii)
+  | T_ANY_TYPE ii -> T_ANY_TYPE (f ii)
+  | T_NUMBER_TYPE ii -> T_NUMBER_TYPE (f ii)
+  | T_BOOLEAN_TYPE ii -> T_BOOLEAN_TYPE (f ii)
+  | T_STRING_TYPE ii -> T_STRING_TYPE (f ii)
+  | T_ENUM ii -> T_ENUM (f ii)
+  | T_DECLARE ii -> T_DECLARE (f ii)
+  | T_MODULE ii -> T_MODULE (f ii)
+  | T_PUBLIC ii -> T_PUBLIC (f ii)
+  | T_PRIVATE ii -> T_PRIVATE (f ii)
+  | T_PROTECTED ii -> T_PROTECTED (f ii)
 
 let info_of_tok tok = 
   let res = ref None in

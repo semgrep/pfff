@@ -134,7 +134,6 @@ let keyword_table = Common.hash_of_list [
 
   "class",      (fun ii -> T_CLASS ii);
   "extends",    (fun ii -> T_EXTENDS ii);
-  "interface",      (fun ii -> T_INTERFACE ii);
 
   "static",     (fun ii -> T_STATIC ii);
 
@@ -146,9 +145,30 @@ let keyword_table = Common.hash_of_list [
   "from",       (fun ii -> T_FROM ii);
   "as",       (fun ii -> T_AS ii);
 
-  (* less: declare, debugger, enum, of, opaque, package, 
-   * private/public/protected, type
-   *)
+  (* typescript: *)
+
+  "interface",      (fun ii -> T_INTERFACE ii);
+  "implements",     (fun ii -> T_IMPLEMENTS ii);
+  "constructor",     (fun ii -> T_CONSTRUCTOR ii);
+
+  "public",     (fun ii -> T_PUBLIC ii);
+  "private",     (fun ii -> T_PRIVATE ii);
+  "protected",     (fun ii -> T_PROTECTED ii);
+
+  "type",     (fun ii -> T_TYPE ii);
+
+  "any",     (fun ii -> T_ANY_TYPE ii);
+  "number",     (fun ii -> T_NUMBER_TYPE ii);
+  "boolean",     (fun ii -> T_BOOLEAN_TYPE ii);
+  "string",     (fun ii -> T_STRING_TYPE ii);
+  (* void before *)
+
+  "enum",     (fun ii -> T_ENUM ii);
+
+  "module",     (fun ii -> T_MODULE ii);
+  "declare",     (fun ii -> T_DECLARE ii);
+
+  (* less: debugger, opaque, package, require *)
 ]
 
 (* ---------------------------------------------------------------------- *)
@@ -431,12 +451,14 @@ rule initial = parse
 
       match !_last_non_whitespace_like_token with
       | Some (
-            T_IDENTIFIER _
-          | T_NUMBER _ | T_STRING _ | T_REGEX _
+            T_NUMBER _ | T_STRING _ | T_REGEX _
           | T_FALSE _ | T_TRUE _ | T_NULL _
           | T_THIS _
           | T_INCR _ | T_DECR _
           | T_RBRACKET _ | T_RPAREN _
+          | T_IDENTIFIER _
+          (* typescript: ugly! keywords that are idents *)
+          | T_NUMBER_TYPE _ | T_BOOLEAN_TYPE _ | T_ANY_TYPE _ | T_STRING_TYPE _
         ) ->
           (match s with
           | "/" -> T_DIV (info)

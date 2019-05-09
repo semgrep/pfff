@@ -19,10 +19,7 @@ let test_tokens_js file =
   toks +> List.iter (fun x -> pr2_gen x);
   ()
 
-let test_parse_js xs  =
-  let fullxs =
-    Lib_parsing_js.find_source_files_of_dir_or_files ~include_scripts:false xs
-  in
+let test_parse_common xs fullxs ext  =
   let dirname_opt, fullxs = 
     match xs with
     | [x] when Common2.is_directory x -> 
@@ -66,10 +63,28 @@ let test_parse_js xs  =
       let str = Str.global_replace (Str.regexp "/") "__" dirname in
       Common2.regression_testing newscore 
         (Filename.concat score_path
-         ("score_parsing__" ^str ^ "js.marshalled"))
+         (spf "score_parsing__%s%s.marshalled" str ext))
     );
 
   ()
+
+let test_parse_js xs =
+  let fullxs =
+    Lib_parsing_js.find_source_files_of_dir_or_files ~include_scripts:false xs
+  in
+  test_parse_common xs fullxs "js"
+
+module FT = File_type
+let test_parse_ts xs =
+  let fullxs =
+   Common.files_of_dir_or_files_no_vcs_nofilter xs 
+  |> List.filter (fun filename ->
+    match FT.file_type_of_file filename with
+    | FT.PL (FT.Web FT.TypeScript) -> true
+    | _ -> false
+  ) |> Common.sort
+  in
+  test_parse_common xs fullxs "ts"
 
 let test_dump_js file =
   let ast = Parse_js.parse_program file in
@@ -77,30 +92,6 @@ let test_dump_js file =
   let s = Ocaml.string_of_v v in
   pr s
 
-
-(* see also:
- * git clone github.com/facebook/esprima
- * cd esprima/
- * git checkout fb-harmony
- * /home/engshare/third-party-tools/node/bin/node tools/generate-test-fixture.js "foo();"
- * /home/engshare/third-party-tools/node/bin/node tools/generate-test-fixture.js "foo();"
- *)
-
-(*
-let test_json_js file =
-  let ast = Parse_js.parse_program file in
-  let s = Export_ast_js.string_json_of_program ast in
-  pr s;
-  ()
-*)
-(*
-let test_esprima file = 
-  let json = Json_in.load_json file in
-  let ast = Esprima.convert json in
-  let v = Meta_ast_js.vof_program ast in
-  let s = Ocaml.string_of_v v in
-  pr s
-*)
 
 (*****************************************************************************)
 (* Main entry for Arg *)
@@ -111,10 +102,12 @@ let actions () = [
   Common.mk_action_1_arg test_tokens_js;
   "-parse_js", "   <file or dir>",
   Common.mk_action_n_arg test_parse_js;
+  "-parse_ts", "   <file or dir>",
+  Common.mk_action_n_arg test_parse_ts;
   "-dump_js", "   <file>",
   Common.mk_action_1_arg test_dump_js;
 
-(*
+(* old:
   "-json_js", "   <file> export the AST of file into JSON",
   Common.mk_action_1_arg test_json_js;
   "-parse_esprima_json", " <file> ",

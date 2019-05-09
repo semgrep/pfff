@@ -189,9 +189,11 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
       -> tag ii Keyword
     | T.T_TYPEOF (ii) -> tag ii Keyword
 
-    | T.T_CLASS ii | T.T_EXTENDS ii  -> tag ii KeywordObject
-    | T.T_INTERFACE ii -> tag ii KeywordObject
+    | T.T_CLASS ii | T.T_INTERFACE ii
+    | T.T_EXTENDS ii | T.T_IMPLEMENTS ii
+     -> tag ii KeywordObject
 
+    | T.T_CONSTRUCTOR ii 
     | T.T_GET ii | T.T_SET ii
         -> tag ii KeywordObject
 
@@ -277,8 +279,25 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
     | T.T_DECR (ii)
         -> tag ii Punctuation
 
+    | T.T_TYPE ii
+    | T.T_ENUM ii
+    | T.T_DECLARE ii
+      -> tag ii Keyword
+
     | T.T_VOID (ii) ->
         tag ii TypeVoid
+    | T.T_NUMBER_TYPE (ii) ->
+        tag ii TypeInt
+    | T.T_ANY_TYPE ii
+    | T.T_BOOLEAN_TYPE ii
+    | T.T_STRING_TYPE ii
+     -> tag ii (Entity (E.Type, Use2 fake_no_use2))
+
+    | T.T_MODULE ii ->
+        tag ii KeywordModule
+
+    | T.T_PUBLIC ii | T.T_PRIVATE ii | T.T_PROTECTED ii ->
+        tag ii KeywordObject
 
     | T.T_VIRTUAL_SEMICOLON (_ii)
         -> ()
