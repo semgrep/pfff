@@ -241,8 +241,8 @@ type expr =
        | P_spread of tok (* ... *) * expr
 
    and property_name =
-   | PN_String of name
-   (* less: could merge with PN_String *)
+   | PN_Id of name
+   | PN_String of string wrap
    | PN_Num of string wrap
    (* es6: *)
    | PN_Computed of expr bracket
@@ -345,8 +345,9 @@ and type_ =
   | TName of nominal_type
   | TQuestion of tok * type_
   | TFun of param_types * tok (* => *) * type_
-  (* comma_list or semicolons_list ?*)
-  | TObj of (name * annotation * sc) list brace
+  (* property_name here does not allow PN_Computed
+   * comma_list or semicolons_list ?*)
+  | TObj of (property_name * annotation * sc) list brace
   | TTodo
 
 (* Most of the time expr is a (V name),

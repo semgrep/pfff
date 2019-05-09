@@ -291,6 +291,7 @@ and v_binop =
   | B_or -> ()
 and v_property_name =
   function
+  | PN_Id v1 -> let v1 = v_name v1 in ()
   | PN_String v1 -> let v1 = v_name v1 in ()
   | PN_Num v1 -> let v1 = v_wrap v_string v1 in ()
   | PN_Computed v1 -> let v1 = v_bracket v_expr v1 in ()
@@ -490,7 +491,7 @@ and v_type_ =
         v_brace
           (v_list
              (fun (v1, v2, v3) ->
-                let v1 = v_name v1
+                let v1 = v_property_name v1
                 and v2 = v_annotation v2
                 and v3 = v_sc v3
                 in ()))

@@ -878,8 +878,22 @@ module_name:
 
 union_type: primary_or_union_type T_BIT_OR primary_type { TTodo }
 
+
 object_type: T_LCURLY type_member_list_opt T_RCURLY  { TObj ($1, $2, $3) } 
 
+/*(* partial type annotations are not supported *)*/
+type_member: 
+ | property_name_typescript complex_annotation semicolon 
+    { ($1, $2, $3) }
+ | property_name_typescript T_PLING complex_annotation semicolon 
+    { ($1, $3, $4) (* TODO $2*) }
+
+/*(* no [xxx] here *)*/
+property_name_typescript:
+ | identifier    { PN_Id $1 }
+ | string_literal  { PN_String $1 }
+ | numeric_literal { PN_Num $1 }
+ | ident_keyword   { PN_Id $1 }
 
 
 param_type_list:
@@ -903,13 +917,6 @@ optional_param_type_list:
 rest_param_type: T_DOTS identifier complex_annotation
   { (RestParam($1,$2), $3) }
 
-
-/*(* partial type annotations are not supported *)*/
-type_member: identifier complex_annotation semicolon { ($1, $2, $3) }
-
-type_member_list:
- | type_member { [$1] }
- | type_member_list type_member { $1 @ [$2] }
 
 /*(*----------------------------*)*/
 /*(*2 Type parameters (type variables) *)*/
@@ -1508,10 +1515,10 @@ method_name:
  | ident_keyword { $1 }
 
 property_name:
- | identifier    { PN_String $1 }
+ | identifier    { PN_Id $1 }
  | string_literal  { PN_String $1 }
  | numeric_literal { PN_Num $1 }
- | ident_keyword   { PN_String $1 }
+ | ident_keyword   { PN_Id $1 }
  /*(* es6: *)*/
  | T_LBRACKET assignment_expression T_RBRACKET { PN_Computed ($1, $2, $3) }
 
@@ -1552,6 +1559,10 @@ encaps_list:
 module_item_list:
  | module_item { [$1] }
  | module_item_list module_item { $1 @ [$2] }
+
+type_member_list:
+ | type_member { [$1] }
+ | type_member_list type_member { $1 @ [$2] }
 
 
 case_clauses:

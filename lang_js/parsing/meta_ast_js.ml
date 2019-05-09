@@ -229,6 +229,9 @@ and vof_binop =
   | B_or -> Ocaml.VSum (("B_or", []))
 and vof_property_name =
   function
+  | PN_Id v1 ->
+      let v1 = vof_wrap Ocaml.vof_string v1
+      in Ocaml.VSum (("PN_Id", [ v1 ]))
   | PN_String v1 ->
       let v1 = vof_wrap Ocaml.vof_string v1
       in Ocaml.VSum (("PN_String", [ v1 ]))
@@ -489,7 +492,7 @@ and vof_type_ =
         vof_brace
           (Ocaml.vof_list
              (fun (v1, v2, v3) ->
-                let v1 = vof_name v1
+                let v1 = vof_property_name v1
                 and v2 = vof_annotation v2
                 and v3 = vof_sc v3
                 in Ocaml.VTuple [ v1; v2; v3 ]))
