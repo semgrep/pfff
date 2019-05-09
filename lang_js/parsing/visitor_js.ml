@@ -470,6 +470,7 @@ and v_case_clause =
 and v_arg v = v_wrap v_string v
 and v_type_ =
   function
+  | TTodo -> ()
   | TName v1 -> let v1 = v_nominal_type v1 in ()
   | TQuestion ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_type_ v2 in ()
   | TFun ((v1, v2, v3)) ->
@@ -630,6 +631,7 @@ and
   ()
 and v_class_stmt =
   function
+  | ClassTodo -> ()
   | Field ((v1, v2, v3)) ->
       let v1 = v_name v1 and v2 = v_annotation v2 and v3 = v_sc v3 in ()
   | Method ((v1, v2)) ->
@@ -638,6 +640,7 @@ and v_class_stmt =
 
 and v_item =
   function
+  | ItemTodo -> ()
   | St v1 -> let v1 = v_st v1 in ()
   | FunDecl v1 -> let v1 = v_func_decl v1 in ()
   | ClassDecl v1 -> let v1 = v_class_decl v1 in ()

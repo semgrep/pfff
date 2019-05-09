@@ -153,7 +153,7 @@ type expr =
    | Assign of expr * assignment_operator wrap * expr
    | Seq of expr * tok (* , *) * expr
 
-   (* nested functions *)
+   (* lambdas *)
    | Function of func_decl
    (* es6: class expressions (usually in module.exports = class {...};) *)
    | Class of class_decl
@@ -347,6 +347,7 @@ and type_ =
   | TFun of param_types * tok (* => *) * type_
   (* comma_list or semicolons_list ?*)
   | TObj of (name * annotation * sc) list brace
+  | TTodo
 
 (* Most of the time expr is a (V name),
    but Javascript allows qualified names of the form Period(e,tok,name),
@@ -479,15 +480,16 @@ and class_decl = {
   (* typing-ext: *)
   c_type_params: type_parameter comma_list angle option;
   c_extends: (tok (* extends *) * nominal_type) option;
-  c_body: class_stmt list brace;
+  c_body: class_element list brace;
 }
 
-  and class_stmt =
+  and class_element =
   | Method of static_opt * func_decl
   | Field of name * annotation * sc
   (* TODO: es6? FieldAssign of name * tok * expr * sc *)
   (* unparser: *)
   | ClassExtraSemiColon of sc
+  | ClassTodo
 
   and static_opt = tok option (* static *)
 
@@ -514,6 +516,7 @@ and item =
   | ClassDecl of class_decl
   (* typing-ext: *)
   | InterfaceDecl of interface_decl
+  | ItemTodo
 
 (* ------------------------------------------------------------------------- *)
 (* Module *)

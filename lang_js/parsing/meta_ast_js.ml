@@ -464,6 +464,7 @@ and vof_case_clause =
 and vof_arg v = vof_wrap Ocaml.vof_string v
 and vof_type_ =
   function
+  | TTodo -> Ocaml.VSum (("TTodo", []))
   | TName v1 ->
       let v1 = vof_nominal_type v1 in
       Ocaml.VSum (("TName", [ v1 ]))
@@ -665,6 +666,7 @@ and vof_variable_declaration {
 
 and vof_item =
   function
+  | ItemTodo -> Ocaml.VSum (("ItemTodo", []))
   | St v1 -> let v1 = vof_st v1 in Ocaml.VSum (("St", [ v1 ]))
   | FunDecl v1 ->
       let v1 = vof_func_decl v1 in Ocaml.VSum (("FunDecl", [ v1 ]))
@@ -728,6 +730,7 @@ and  vof_interface_decl {
 
 and vof_class_stmt =
   function
+  | ClassTodo -> Ocaml.VSum (("ClassTodo", []))
   | Field ((v1, v2, v3)) ->
       let v1 = vof_name v1
       and v2 = vof_annotation v2
