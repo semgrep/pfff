@@ -821,26 +821,23 @@ complex_annotation:
 /*(* can't use 'type'; generate syntax error in parser_js.ml *)*/
 type_:
  | primary_or_union_type { $1 }
+ | T_PLING type_ { TQuestion ($1, $2) }
  | T_LPAREN_ARROW param_type_list_opt T_RPAREN T_ARROW type_
      { TFun (($1, $2, $3), $4, $5) }
 
 primary_or_union_type:
- | primary_type2 { $1 }
+ | primary_type { $1 }
  | union_type { $1 }
 
-/*(* I introduced those intermediate rules otherwise there are ambiguities *)*/
-primary_type2:
- | primary_type { $1 }
- | primary_type2 T_LBRACKET T_RBRACKET { TTodo }
-
+/*(* I introduced those intermediate rules to remove ambiguities *)*/
 primary_type:
+ | primary_type2 { $1 }
+ | primary_type T_LBRACKET T_RBRACKET { TTodo }
+
+primary_type2:
  | predefined_type { $1 }
  | type_reference { TName($1) }
- | T_PLING primary_type { TQuestion ($1, $2) }
  | object_type { $1 }
-
-object_type: T_LCURLY field_type_list_opt T_RCURLY  { TObj ($1, $2, $3) } 
-
 
 predefined_type:
  | T_ANY_TYPE      { TName (V("any", $1), None) }
@@ -860,6 +857,10 @@ type_name:
 
 
 union_type: primary_or_union_type T_BIT_OR primary_type { TTodo }
+
+object_type: T_LCURLY field_type_list_opt T_RCURLY  { TObj ($1, $2, $3) } 
+
+
 
 param_type_list:
  | param_type T_COMMA param_type_list { (Left $1)::(Right $2)::$3 }
