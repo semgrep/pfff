@@ -887,6 +887,12 @@ type_member:
     { ($1, $2, $3) }
  | property_name_typescript T_PLING complex_annotation semicolon 
     { ($1, $3, $4) (* TODO $2*) }
+ | T_LBRACKET T_IDENTIFIER T_COLON T_STRING_TYPE T_RBRACKET 
+   complex_annotation semicolon
+    { (* TODO *) (PN_Id $2, $6, $7)  }
+ | T_LBRACKET T_IDENTIFIER T_COLON T_NUMBER_TYPE T_RBRACKET 
+   complex_annotation semicolon
+    { (* TODO *) (PN_Id $2, $6, $7) }
 
 /*(* no [xxx] here *)*/
 property_name_typescript:

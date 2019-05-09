@@ -347,18 +347,28 @@ and type_ =
   | TFun of param_types * tok (* => *) * type_
   (* property_name here does not allow PN_Computed
    * comma_list or semicolons_list ?*)
-  | TObj of (property_name * annotation * sc) list brace
+  | TObj of obj_type_member list brace
   | TTodo
 
-(* Most of the time expr is a (V name),
-   but Javascript allows qualified names of the form Period(e,tok,name),
-   and other ways of dynamically computing types as well.
-*)
-and nominal_type =
-  expr * type_argument comma_list angle option
+  (* Most of the time expr is a (V name),
+     but Javascript allows qualified names of the form Period(e,tok,name),
+     and other ways of dynamically computing types as well.
+  *)
+  and nominal_type =
+    expr * type_argument comma_list angle option
+
+  and param_types = (param_name * annotation) comma_list paren
+    and param_name =
+      | RequiredParam of name
+      | OptionalParam of name * tok (* ? *)
+      | RestParam of tok (* ... *) * name
+
+  and obj_type_member = property_name * annotation * sc
+
 
 and type_argument = type_
 
+and type_parameters = type_parameter comma_list angle
 and type_parameter = name
 
 and type_opt = annotation option
@@ -367,14 +377,7 @@ and annotation =
   | TAnnot of tok (* : *) * type_
   | TFunAnnot of type_parameters option * param_types * tok (* : *) * type_
 
-and type_parameters = type_parameter comma_list angle
 
-and param_types = (param_name * annotation) comma_list paren
-
-and param_name =
-  | RequiredParam of name
-  | OptionalParam of name * tok (* ? *)
-  | RestParam of tok (* ... *) * name
 
 (* ------------------------------------------------------------------------- *)
 (* Function (or method) definition *)
@@ -434,12 +437,12 @@ and arrow_func = {
   a_tok: tok (* => *);
   a_body: arrow_body;
  }
- and arrow_params =
- | ASingleParam of parameter_binding
- | AParams of parameter_binding comma_list paren
- and arrow_body =
- | AExpr of expr
- | ABody of item list brace
+  and arrow_params =
+    | ASingleParam of parameter_binding
+    | AParams of parameter_binding comma_list paren
+  and arrow_body =
+    | AExpr of expr
+    | ABody of item list brace
 
 (* ------------------------------------------------------------------------- *)
 (* Variable definition *)
