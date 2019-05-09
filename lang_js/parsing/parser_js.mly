@@ -795,10 +795,8 @@ class_element:
  * Why? because [] can follow an interface_declaration?
 */
 interface_declaration: T_INTERFACE binding_identifier generics_opt object_type
-   { { i_tok = $1;
-       i_name = $2;
-       i_type_params = $3;
-       i_type = TTodo; } }
+   { { i_tok = $1;i_name = $2;
+       i_type_params = $3; i_type = $4; } }
 
 /*(*************************************************************************)*/
 /*(*1 Types *)*/
@@ -903,7 +901,7 @@ type_variable_list:
  | type_variable_list T_COMMA type_variable { $1 @ [Right $2; Left $3] }
 
 type_variable:
- | identifier { $1 }
+ | T_IDENTIFIER { $1 }
 
 /*(*----------------------------*)*/
 /*(*2 Type arguments *)*/

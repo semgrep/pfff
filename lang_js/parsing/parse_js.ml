@@ -65,6 +65,9 @@ let rec first_non_comment_line xs =
  * 
  * alt:
  *  - use ii_of_any and check if tr.current is in it
+ *    WARNING!: this requires that the last token of what is
+ *    parsed is in the CST! otherwise this will reintroduce in
+ *    the stream an extra token so take care!
  *  - match for If without else and Try without Finally in AST
  *    (only cases?)
  *  - less: ask on caml list if can access parser state?

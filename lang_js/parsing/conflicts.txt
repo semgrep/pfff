@@ -100,6 +100,7 @@ formal_parameter_list:
 
 Then after a comma it must always just reduce.
 
+
 * TODO Types and JSX
 
 Flow does not allow '<T>(x:T):T => ...' since the leading '<T>' looks like
