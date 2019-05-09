@@ -45,9 +45,8 @@ open Common
 
 open Ast_js
 
-let e x = (x)
-let bop op a b c = e(B(a, (op, b), c))
-let uop op a b = e(U((op,a), b))
+let bop op a b c = B(a, (op, b), c)
+let uop op a b = U((op,a), b)
 let mk_param x = 
   { p_name = x; p_type = None; p_default = None; p_dots = None; }
 
@@ -659,9 +658,9 @@ generator_expression:
      T_LPAREN formal_parameter_list_opt T_RPAREN
      annotation_opt
      T_LCURLY function_body T_RCURLY
-     { e(Function { f_kind = Generator $2; f_tok = Some $1; f_name= $3; 
+     { Function { f_kind = Generator $2; f_tok = Some $1; f_name= $3; 
                     f_type_params = $4; f_params= ($5, $6, $7);
-                    f_return_type = $8; f_body = ($9, $10, $11) }) }
+                    f_return_type = $8; f_body = ($9, $10, $11) } }
 
 /*(*----------------------------*)*/
 /*(*2 asynchronous functions *)*/
@@ -683,9 +682,9 @@ async_function_expression:
      T_LPAREN formal_parameter_list_opt T_RPAREN
      annotation_opt
      T_LCURLY function_body T_RCURLY
-     { e(Function { f_kind = Async $1; f_tok = Some $2; f_name= $3; 
+     { Function { f_kind = Async $1; f_tok = Some $2; f_name= $3; 
                     f_type_params = $4; f_params= ($5, $6, $7);
-                    f_return_type = $8; f_body = ($9, $10, $11) }) }
+                    f_return_type = $8; f_body = ($9, $10, $11) } }
 
 /*(*----------------------------*)*/
 /*(*2 Method definition (in class or object literal) *)*/
@@ -760,8 +759,8 @@ binding_identifier_opt:
 
 class_expression: T_CLASS binding_identifier_opt generics_opt class_tail
    { let (extends, body) = $4 in
-     e(Class { c_tok = $1;  c_name = $2; c_type_params = $3;
-               c_extends =extends;c_body = body }) }
+     Class { c_tok = $1;  c_name = $2; c_type_params = $3;
+               c_extends =extends;c_body = body } }
 
 /*(*----------------------------*)*/
 /*(*2 Class elements *)*/
@@ -993,12 +992,12 @@ type_or_expression:
 
 expression:
  | assignment_expression { $1 }
- | expression T_COMMA assignment_expression { e(Seq ($1, $2, $3)) }
+ | expression T_COMMA assignment_expression { Seq ($1, $2, $3) }
 
 assignment_expression:
  | conditional_expression { $1 }
  | left_hand_side_expression assignment_operator assignment_expression
-     { e(Assign ($1, $2, $3)) }
+     { Assign ($1, $2, $3) }
  /*(* es6: *)*/
  | arrow_function { Arrow $1 }
  /*(* es6: *)*/
@@ -1031,7 +1030,7 @@ conditional_expression:
  | post_in_expression
      T_PLING assignment_expression
      T_COLON assignment_expression
-     { e(Conditional ($1, $2, $3, $4, $5)) }
+     { Conditional ($1, $2, $3, $4, $5) }
 
 post_in_expression:
  | pre_in_expression { $1 }
@@ -1086,12 +1085,12 @@ pre_in_expression:
 
 /*(* coupling: modify also call_expression_no_statement *)*/
 call_expression:
- | member_expression arguments                      { e(Apply ($1, $2)) }
- | call_expression arguments                        { e(Apply ($1, $2)) }
- | call_expression T_LBRACKET expression T_RBRACKET { e(Bracket($1, ($2, $3, $4))) }
- | call_expression T_PERIOD method_name              { e(Period ($1, $2, $3)) }
+ | member_expression arguments                      { Apply ($1, $2) }
+ | call_expression arguments                        { Apply ($1, $2) }
+ | call_expression T_LBRACKET expression T_RBRACKET { Bracket($1, ($2, $3,$4))}
+ | call_expression T_PERIOD method_name             { Period ($1, $2, $3) }
  /*(* es6: *)*/
- | T_SUPER arguments { e(Apply(Super($1), $2)) }
+ | T_SUPER arguments { Apply(Super($1), $2) }
 
 new_expression:
  | member_expression    { $1 }
@@ -1100,24 +1099,23 @@ new_expression:
 /*(* coupling: modify also member_expression_no_statement *)*/
 member_expression:
  | primary_expression                                 { $1 }
- | member_expression T_LBRACKET expression T_RBRACKET { e(Bracket($1, ($2, $3, $4))) }
- | member_expression T_PERIOD field_name              { e(Period ($1, $2, $3)) }
- | T_NEW member_expression arguments
-     { e(Apply(uop U_new $1 $2, $3)) }
+ | member_expression T_LBRACKET expression T_RBRACKET { Bracket($1, ($2, $3, $4)) }
+ | member_expression T_PERIOD field_name              { Period ($1, $2, $3) }
+ | T_NEW member_expression arguments           { Apply(uop U_new $1 $2, $3) }
  /*(* es6: *)*/
- | T_SUPER T_LBRACKET expression T_RBRACKET { e(Bracket(Super($1),($2,$3,$4)))}
- | T_SUPER T_PERIOD field_name { e(Period(Super($1), $2, $3)) }
+ | T_SUPER T_LBRACKET expression T_RBRACKET { Bracket(Super($1),($2,$3,$4))}
+ | T_SUPER T_PERIOD field_name { Period(Super($1), $2, $3) }
  | T_NEW T_PERIOD identifier { 
      if fst $3 = "target"
-     then e(NewTarget ($1, $2, snd $3))
+     then NewTarget ($1, $2, snd $3)
      else raise (Parsing.Parse_error)
   }
 
 
 primary_expression:
  | primary_expression_no_braces { $1 }
- | object_literal                  { e(Object $1) }
- | function_expression             { e(Function $1) }
+ | object_literal                  { Object $1 }
+ | function_expression             { Function $1 }
  /*(* es6: *)*/
  | class_expression                { $1 }
  /*(* es6: *)*/
@@ -1126,20 +1124,20 @@ primary_expression:
  | async_function_expression            { $1 }
 
 primary_expression_no_braces:
- | T_THIS          { e((This $1)) }
- | identifier      { e((V $1)) }
+ | T_THIS          { This $1 }
+ | identifier      { V $1 }
 
- | null_literal    { e(L(Null $1)) }
- | boolean_literal { e(L(Bool $1)) }
- | numeric_literal { e(L(Num $1)) }
- | string_literal  { e(L(String $1)) }
+ | null_literal    { L(Null $1) }
+ | boolean_literal { L(Bool $1) }
+ | numeric_literal { L(Num $1) }
+ | string_literal  { L(String $1) }
 
  /*(* marcel: this isn't an expansion of literal in ECMA-262... mistake? *)*/
- | regex_literal                { e(L(Regexp $1)) }
- | array_literal                { e($1) }
+ | regex_literal                { L(Regexp $1) }
+ | array_literal                { $1 }
 
  /*(* simple! ECMA mixes this rule with arrow parameters (bad) *)*/
- | T_LPAREN expression T_RPAREN { e(Paren ($1, $2, $3)) }
+ | T_LPAREN expression T_RPAREN { Paren ($1, $2, $3) }
 
  /*(* xhp: do not put in 'expr', otherwise can't have xhp in function arg *)*/
  | xhp_html { XhpHtml $1 }
@@ -1189,7 +1187,7 @@ element:
  | assignment_expression { $1 }
  /*(* es6: spread operator: *)*/
  | T_DOTS assignment_expression
-     { e(uop U_spread $1 $2) }
+     { uop U_spread $1 $2 }
 
 /*(*----------------------------*)*/
 /*(*2 object *)*/
@@ -1309,19 +1307,19 @@ async_arrow_function:
 /*(*----------------------------*)*/
 expression_no_in:
  | assignment_expression_no_in { $1 }
- | expression_no_in T_COMMA assignment_expression_no_in { e(Seq ($1, $2, $3)) }
+ | expression_no_in T_COMMA assignment_expression_no_in { Seq ($1, $2, $3) }
 
 assignment_expression_no_in:
  | conditional_expression_no_in { $1 }
  | left_hand_side_expression assignment_operator assignment_expression_no_in
-     { e(Assign ($1, $2, $3)) }
+     { Assign ($1, $2, $3) }
 
 conditional_expression_no_in:
  | post_in_expression_no_in { $1 }
  | post_in_expression_no_in
      T_PLING assignment_expression_no_in
      T_COLON assignment_expression_no_in
-     { e(Conditional ($1, $2, $3, $4, $5)) }
+     { Conditional ($1, $2, $3, $4, $5) }
 
 post_in_expression_no_in:
  | pre_in_expression { $1 }
@@ -1347,12 +1345,12 @@ post_in_expression_no_in:
 /*(*----------------------------*)*/
 expression_no_statement:
  | assignment_expression_no_statement { $1 }
- | expression_no_statement T_COMMA assignment_expression { e(Seq ($1, $2, $3)) }
+ | expression_no_statement T_COMMA assignment_expression { Seq ($1, $2, $3) }
 
 assignment_expression_no_statement:
  | conditional_expression_no_statement { $1 }
  | left_hand_side_expression_no_statement assignment_operator assignment_expression
-     { e(Assign ($1, $2, $3)) }
+     { Assign ($1, $2, $3) }
  /*(* es6: *)*/
  | arrow_function { Arrow $1 }
  /*(* es6: *)*/
@@ -1369,7 +1367,7 @@ conditional_expression_no_statement:
  | post_in_expression_no_statement
      T_PLING assignment_expression
      T_COLON assignment_expression
-     { e(Conditional ($1, $2, $3, $4, $5)) }
+     { Conditional ($1, $2, $3, $4, $5) }
 
 
 
@@ -1426,12 +1424,12 @@ pre_in_expression_no_statement:
 
 
 call_expression_no_statement:
- | member_expression_no_statement arguments                      { e(Apply ($1, $2)) }
- | call_expression_no_statement arguments                        { e(Apply ($1, $2)) }
- | call_expression_no_statement T_LBRACKET expression T_RBRACKET { e(Bracket($1, ($2, $3, $4))) }
- | call_expression_no_statement T_PERIOD method_name              { e(Period ($1, $2, $3)) }
+ | member_expression_no_statement arguments                      { Apply ($1, $2) }
+ | call_expression_no_statement arguments                        { Apply ($1, $2) }
+ | call_expression_no_statement T_LBRACKET expression T_RBRACKET { Bracket($1, ($2, $3, $4)) }
+ | call_expression_no_statement T_PERIOD method_name              { Period ($1, $2, $3) }
  /*(* es6: *)*/
- | T_SUPER arguments { e(Apply(Super($1), $2)) }
+ | T_SUPER arguments { Apply(Super($1), $2) }
 
 new_expression_no_statement:
  | member_expression_no_statement { $1 }
@@ -1439,12 +1437,12 @@ new_expression_no_statement:
 
 member_expression_no_statement:
  | primary_expression_no_statement                                 { $1 }
- | member_expression_no_statement T_LBRACKET expression T_RBRACKET { e(Bracket($1, ($2, $3, $4))) }
- | member_expression_no_statement T_PERIOD field_name              { e(Period ($1, $2, $3)) }
- | T_NEW member_expression arguments                               { e(Apply(uop U_new $1 $2, $3)) }
+ | member_expression_no_statement T_LBRACKET expression T_RBRACKET { Bracket($1, ($2, $3, $4)) }
+ | member_expression_no_statement T_PERIOD field_name              { Period ($1, $2, $3) }
+ | T_NEW member_expression arguments                               { Apply(uop U_new $1 $2, $3) }
  /*(* es6: *)*/
- | T_SUPER T_LBRACKET expression T_RBRACKET { e(Bracket(Super($1),($2,$3,$4)))}
- | T_SUPER T_PERIOD field_name { e(Period(Super($1), $2, $3)) }
+ | T_SUPER T_LBRACKET expression T_RBRACKET { Bracket(Super($1),($2,$3,$4))}
+ | T_SUPER T_PERIOD field_name { Period(Super($1), $2, $3) }
 
 /*(* no object_literal here *)*/
 primary_expression_no_statement:
