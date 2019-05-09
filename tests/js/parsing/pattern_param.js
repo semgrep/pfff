@@ -8,3 +8,9 @@ function createCompiler({
   webpack,
 }) {
 }
+
+const x: Y = ({
+   repoSlug,
+   findings,
+   filePath
+}) => repoSlug;

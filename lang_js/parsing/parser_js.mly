@@ -606,8 +606,10 @@ formal_parameter_list:
  | formal_parameter_list T_COMMA formal_parameter { (Left $3)::(Right $2)::$1 }
  | formal_parameter                               { [Left $1] }
 
-/*(* The ECMA grammar imposes more restrictions, but I simplified.
-   *  We could also factorize with binding_element as done by ECMA.
+/*(* The ECMA and Typescript grammars imposes more restrictions
+   * (some require_parameter, optional_parameter, rest_parameter)
+   * but I simplified.
+   * We could also factorize with binding_element as done by ECMA.
    *)*/
 formal_parameter:
  | identifier            
@@ -617,7 +619,7 @@ formal_parameter:
     { let (tok,e) = $2 in ParamClassic 
       { (mk_param $1) with p_default = Some(DSome(tok,e)); } }
   /*(* until here this is mostly equivalent to the 'binding_element' rule *)*/
-  | binding_pattern initializeur_opt { ParamPatternTodo }
+  | binding_pattern annotation_opt initializeur_opt { ParamPatternTodo }
 
  /*(* es6: spread *)*/
  | T_DOTS identifier 
