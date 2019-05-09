@@ -777,13 +777,20 @@ class_expression: T_CLASS binding_identifier_opt generics_opt class_tail
 /*(*2 Class elements *)*/
 /*(*----------------------------*)*/
 
+/*(* can't factorize with static_opt, or access_modifier_opt; ambiguities*)*/
 class_element:
- | method_definition               { Method (None, $1) }
- | T_STATIC method_definition      { Method (Some $1, $2) }
+ |                 method_definition      { Method (None, $1) }
+ | T_STATIC        method_definition      { Method (Some $1, $2) }
+ | access_modifier method_definition      { Method (None, $2) (* TODO $1 *) }
+
  | semicolon                       { ClassExtraSemiColon $1 }
  /*(* TODO: not part of ECMA *)*/
  | identifier annotation semicolon { Field ($1, $2, $3) }
 
+access_modifier:
+ | T_PUBLIC { }
+ | T_PRIVATE { }
+ | T_PROTECTED { }
 
 /*(*************************************************************************)*/
 /*(*1 Interface declaration *)*/
@@ -852,6 +859,8 @@ predefined_type:
  | T_BOOLEAN_TYPE  { TName (V("boolean", $1), None) }
  | T_STRING_TYPE   { TName (V("string", $1), None) }
  | T_VOID          { TName (V("void", $1), None) }
+ /*(* not in Typescript grammar, but often part of union type *)*/
+ | T_NULL          { TName (V("null", $1), None) }
 
 /*(* was called nominal_type in Flow *)*/
 type_reference:
