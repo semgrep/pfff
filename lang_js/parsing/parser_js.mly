@@ -796,9 +796,12 @@ class_element:
 /* TODO: use type_ at the end here and you get conflicts on '[' 
  * Why? because [] can follow an interface_declaration?
 */
-interface_declaration: T_INTERFACE binding_identifier generics_opt object_type
-   { { i_tok = $1;i_name = $2;
-       i_type_params = $3; i_type = $4; } }
+interface_declaration: T_INTERFACE binding_identifier generics_opt 
+  interface_extends_opt object_type
+   { { i_tok = $1;i_name = $2; (* TODO: interface_extends! *)
+       i_type_params = $3; i_type = $5; } }
+
+interface_extends: T_EXTENDS type_reference_list { ($1, $2) }
 
 /*(*************************************************************************)*/
 /*(*1 Type declaration *)*/
@@ -1564,6 +1567,10 @@ import_specifiers:
  | import_specifiers T_COMMA import_specifier
      { $1 @ [Right $2; Left $3] }
 
+type_reference_list:
+ | type_reference { [Left $1]  }
+ | type_reference_list T_COMMA type_reference { $1 @ [Right $2; Left $3] }
+
 
 expression_opt:
  | /*(* empty *)*/ { None }
@@ -1608,6 +1615,10 @@ identifier_opt:
 initializeur_opt:
  | /*(* empty *)*/ { None }
  | initializeur { Some $1 }
+
+interface_extends_opt:
+ | /*(* empty *)*/ { None }
+ | interface_extends { Some $1 }
 
 
 

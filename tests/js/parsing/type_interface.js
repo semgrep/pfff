@@ -1,4 +1,4 @@
-interface PluralizedListProps<T> {
+interface PluralizedListProps<T> extends Foo<T> {
   items: T[];
   //className?: string;
   //noItems?: React.ReactNode;
