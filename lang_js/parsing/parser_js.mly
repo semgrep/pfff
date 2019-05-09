@@ -767,11 +767,17 @@ class_expression: T_CLASS binding_identifier_opt generics_opt class_tail
 class_element:
  |                 method_definition      { Method (None, $1) }
  | T_STATIC        method_definition      { Method (Some $1, $2) }
- | access_modifier method_definition      { Method (None, $2) (* TODO $1 *) }
+ /*(* typescript: *)*/
+ | access_modifier method_definition      { Method (None, $2) (* TODO $1 *) } 
+
+ |                  property_name annotation_opt initializeur_opt semicolon 
+    { ClassTodo }
+ | T_STATIC         property_name annotation_opt initializeur_opt semicolon 
+    { ClassTodo }
+ | access_modifier  property_name annotation_opt initializeur_opt semicolon 
+    { ClassTodo }
 
  | semicolon                       { ClassExtraSemiColon $1 }
- /*(* TODO: not part of ECMA *)*/
- | identifier annotation semicolon { Field ($1, $2, $3) }
 
 access_modifier:
  | T_PUBLIC { }
