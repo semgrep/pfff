@@ -489,7 +489,7 @@ lexical_declaration:
 variable_declaration:
  | identifier annotation_opt initializeur_opt
      { VarClassic { v_name = $1; v_type = $2; v_init = $3 } }
- | binding_pattern initializeur
+ | binding_pattern annotation_opt initializeur
      { VarPatternTodo }
 
 initializeur:
