@@ -758,11 +758,7 @@ class_declaration: T_CLASS binding_identifier_opt generics_opt class_tail
 
 class_tail: class_heritage_opt T_LCURLY class_body_opt T_RCURLY {$1,($2,$3,$4)}
 
-/*(* extends arguments can be any expression according to ES6 *)*/
-/*(* however, this causes ambiguities with type arguments a la TypeScript *)*/
-/*(* unfortunately, TypeScript enforces severe restrictions here, *)*/
-/*(* which e.g. do not admit mixins, which we want to support *)*/
-class_heritage: T_EXTENDS type_expression { ($1, $2) }
+class_heritage: T_EXTENDS type_or_expression { ($1, $2) }
 
 class_body: class_element_list { $1 }
 
@@ -863,9 +859,13 @@ type_reference:
  | type_name type_arguments { ($1, Some $2) }
 
 /*(* was called type_reference in Flow *)*/
-type_name:
+type_name: 
  | T_IDENTIFIER { V($1) }
+ | module_name T_PERIOD T_IDENTIFIER { V($3) }
 
+module_name:
+ | T_IDENTIFIER { V($1) }
+ | module_name T_PERIOD T_IDENTIFIER { V($3) (* TODO: $1 *) } 
 
 union_type: primary_or_union_type T_BIT_OR primary_type { TTodo }
 
@@ -959,12 +959,21 @@ type_arguments2:
  | T_LESS_THAN type_argument_list1 { $1, $2, fake_tok ">" }
 
 /*(*----------------------------*)*/
-/*(*2 TODO *)*/
+/*(*2 Type or expression *)*/
 /*(*----------------------------*)*/
 
-type_expression:
- | left_hand_side_expression_no_statement { ($1,None) }
+/*(* Extends arguments can be any expression according to ES6 *)*/
+/*(* however, this causes ambiguities with type arguments a la TypeScript *)*/
+/*(* unfortunately, TypeScript enforces severe restrictions here, *)*/
+/*(* which e.g. do not admit mixins, which we want to support *)*/
+/*(* TODO ambiguity Xxx.yyy, a Period expr or a module path in TypeScript *)*/
+type_or_expression:
+/* old: flow: 
+ | left_hand_side_expression_no_statement { ($1,None) } 
  | type_name type_arguments { ($1, Some $2) }
+*/
+ /*(* typescript: *)*/
+ | type_reference { $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Expressions *)*/
