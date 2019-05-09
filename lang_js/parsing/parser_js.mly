@@ -109,7 +109,6 @@ let fake_tok s = {
  T_DECLARE T_MODULE
  T_PUBLIC T_PRIVATE T_PROTECTED
  
-
 /*(*-----------------------------------------*)*/
 /*(*2 Punctuation tokens *)*/
 /*(*-----------------------------------------*)*/
@@ -125,7 +124,6 @@ let fake_tok s = {
  T_DOTS
  T_BACKQUOTE 
  T_DOLLARCURLY
-
 
 /*(* operators *)*/
 %token <Ast_js.tok>
@@ -188,12 +186,12 @@ let fake_tok s = {
 %left T_BIT_XOR
 %left T_BIT_AND
 %left T_EQUAL T_NOT_EQUAL T_STRICT_EQUAL T_STRICT_NOT_EQUAL
-%left
- T_LESS_THAN_EQUAL T_GREATER_THAN_EQUAL T_LESS_THAN T_GREATER_THAN
- T_IN T_INSTANCEOF
+%left T_LESS_THAN_EQUAL T_GREATER_THAN_EQUAL T_LESS_THAN T_GREATER_THAN
+      T_IN T_INSTANCEOF
 %left T_LSHIFT T_RSHIFT T_RSHIFT3
 %left T_PLUS T_MINUS
 %left T_DIV T_MULT T_MOD
+
 %right T_EXPONENT
 %right T_NOT T_BIT_NOT T_INCR T_DECR T_DELETE T_TYPEOF T_VOID T_AWAIT
 
@@ -213,11 +211,12 @@ let fake_tok s = {
 
 main: program EOF { $1 }
 
+program: module_item_list_opt { $1 }
+
+
 module_item_or_eof:
  | module_item { Some $1 }
  | EOF { None }
-
-program: module_item_list_opt { $1 }
 
 module_item:
  | item { It $1 }
@@ -240,9 +239,8 @@ declaration:
  /*(* es6: *)*/
  | lexical_declaration   { St $1 }
  | class_declaration     { ClassDecl $1 }
- /*(* facebook-ext: *)*/
- | interface_declaration { InterfaceDecl $1 }
  /*(* typescript: *)*/
+ | interface_declaration { InterfaceDecl $1 }
  | type_alias_declaration { ItemTodo }
 
 /*(*************************************************************************)*/
@@ -409,7 +407,6 @@ continue_statement:
  | T_CONTINUE identifier semicolon { Continue ($1, Some $2, $3) }
  | T_CONTINUE semicolon            { Continue ($1, None, $2) }
 
-
 break_statement:
  | T_BREAK identifier semicolon { Break ($1, Some $2, $3) }
  | T_BREAK semicolon            { Break ($1, None, $2) }
@@ -436,16 +433,13 @@ labelled_statement:
 throw_statement:
  | T_THROW expression semicolon { Throw ($1, $2, $3) }
 
-
 try_statement:
  | T_TRY block catch         { Try ($1, $2, Some $3, None)  }
  | T_TRY block       finally { Try ($1, $2, None, Some $3) }
  | T_TRY block catch finally { Try ($1, $2, Some $3, Some $4) }
 
-
 catch:
  | T_CATCH T_LPAREN identifier T_RPAREN block { $1, ($2, $3, $4), $5 }
-
 
 finally:
  | T_FINALLY block { $1, $2 }
@@ -460,11 +454,9 @@ case_block:
  | T_LCURLY case_clauses_opt default_clause case_clauses_opt T_RCURLY
      { ($1, $2 @ [$3] @ $4, $5) }
 
-
 case_clause:
  | T_CASE expression T_COLON statement_list { Case ($1, $2, $3, $4) }
  | T_CASE expression T_COLON { Case ($1, $2, $3, []) }
-
 
 default_clause:
  | T_DEFAULT T_COLON { Default ($1, $2, [])}
@@ -537,10 +529,8 @@ object_binding_pattern:
  | T_LCURLY binding_property_list trailing_comma  T_RCURLY { }
 
 binding_property_list:
- | binding_property
-     { [Left $1]  }
- | binding_property_list T_COMMA binding_property
-     { $1 @ [Right $2; Left $3] }
+ | binding_property                                { [Left $1]  }
+ | binding_property_list T_COMMA binding_property  { $1 @ [Right $2; Left $3] }
 
 
 binding_property:
@@ -950,7 +940,7 @@ type_argument_list:
  | type_argument                            { [Left $1] }
  | type_argument_list T_COMMA type_argument { $1 @ [Right $2; Left $3] }
 
-        type_argument: type_ { $1 }
+type_argument: type_ { $1 }
 
 /*(* a sequence of 2 or 3 closing > will be tokenized as >> or >>> *)*/
 /*(* thus, we allow type arguments to omit 1 or 2 closing > to make it up *)*/
