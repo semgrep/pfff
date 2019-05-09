@@ -791,11 +791,15 @@ class_element:
 /*(*1 Interface declaration *)*/
 /*(*************************************************************************)*/
 /*(* typing-ext: *)*/
-interface_declaration: T_INTERFACE binding_identifier generics_opt type_
+/* TODO: use type_ at the end here and you get conflicts on '[' 
+ * Why? because [] can follow an interface_declaration?
+*/
+interface_declaration: T_INTERFACE binding_identifier generics_opt object_type
    { { i_tok = $1;
        i_name = $2;
        i_type_params = $3;
-       i_type = $4; } }
+       i_type = TTodo; } }
+
 /*(*************************************************************************)*/
 /*(*1 Types *)*/
 /*(*************************************************************************)*/
@@ -823,16 +827,22 @@ type_:
      { TFun (($1, $2, $3), $4, $5) }
 
 primary_or_union_type:
+ | primary_type2 { $1 }
+ | union_type { $1 }
+
+/*(* I introduced those intermediate rules otherwise there are ambiguities *)*/
+primary_type2:
  | primary_type { $1 }
-/* | union_type { $1 }*/
+ | primary_type2 T_LBRACKET T_RBRACKET { TTodo }
 
 primary_type:
  | predefined_type { $1 }
  | type_reference { TName($1) }
-/* | primary_type T_LBRACKET T_RBRACKET { TTodo }*/
- | T_PLING type_ { TQuestion ($1, $2) }
- | T_LCURLY field_type_list_opt T_RCURLY  
-     { TObj ($1, $2, $3) }
+ | T_PLING primary_type { TQuestion ($1, $2) }
+ | object_type { $1 }
+
+object_type: T_LCURLY field_type_list_opt T_RCURLY  { TObj ($1, $2, $3) } 
+
 
 predefined_type:
  | T_ANY_TYPE      { TName (V("any", $1), None) }
@@ -851,7 +861,7 @@ type_name:
  | T_IDENTIFIER { V($1) }
 
 
-/*union_type: primary_or_union_type T_BIT_OR primary_type { TTodo }*/
+union_type: primary_or_union_type T_BIT_OR primary_type { TTodo }
 
 param_type_list:
  | param_type T_COMMA param_type_list { (Left $1)::(Right $2)::$3 }
