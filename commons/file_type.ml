@@ -184,6 +184,7 @@ let file_type_of_file2 file =
   | "js" -> PL (Web Js)
   | "coffee" -> PL (Web Coffee)
   | "ts" -> PL (Web TypeScript)
+  | "tsx" -> PL (Web TypeScript) (* Typescript with JSX enabled *)
   | "html" | "htm" -> PL (Web Html)
   | "xml" -> PL (Web Xml)
   | "json" -> PL (Web Json)

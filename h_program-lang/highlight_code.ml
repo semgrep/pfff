@@ -129,8 +129,9 @@ type usedef2 =
 (* Main type *)
 (*****************************************************************************)
 
-(* coupling: if add constructor, don't forget to add its handling in 2 places
- * below, for its color and associated string representation.
+(* coupling: if you add constructor, don't forget to add its
+ * handling in 2 places below, for its color and associated string
+ * representation.
  * 
  * If you look at usedef below, you should get all the way C programmer
  * can name things: 
@@ -150,7 +151,7 @@ type usedef2 =
 
 (* color, foreground or background will be changed *)
 type category =  
-  (* pad' addons (actually Pixel added a special font in Emacs for numbers) *)
+  (* pad's addons (actually Pixel added a special font in Emacs for numbers) *)
   | Boolean | Number
 
   | String | Regexp
