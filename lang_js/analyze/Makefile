@@ -5,6 +5,7 @@ TOP=../..
 TARGET=lib
 
 SRC= \
+  ast_js.ml \
   class_js.ml comment_js.ml annotation_js.ml \
   highlight_js.ml \
   database_light_js.ml \
