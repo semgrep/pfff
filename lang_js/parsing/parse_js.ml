@@ -45,13 +45,6 @@ let error_msg_tok tok =
 (*****************************************************************************)
 (* Helpers  *)
 (*****************************************************************************)
-let rec first_non_comment_line xs =
-  match xs with
-  | [] -> None
-  | x::xs ->
-    if TH.is_comment x
-    then first_non_comment_line xs
-    else Some (TH.line_of_tok x)
 
 (* Now that we parse individual items separately, and that we do not
  * rely on EOF as a final marker, we need to take care when
@@ -93,6 +86,58 @@ let put_back_lookahead_token_if_needed tr item_opt =
        tr.PI.rest <- current::tr.PI.rest;
        tr.PI.passed <- List.tl tr.PI.passed;
      end
+
+(*****************************************************************************)
+(* ASI (Automatic Semicolon Insertion) *)
+(*****************************************************************************)
+
+let rec first_non_comment_line xs =
+  match xs with
+  | [] -> None
+  | x::xs ->
+    if TH.is_comment x
+    then first_non_comment_line xs
+    else Some (TH.line_of_tok x)
+
+let asi_criteria charpos last_charpos_error cur tr = 
+  charpos > !last_charpos_error && tr.PI.passed <> [] &&
+     (match first_non_comment_line (List.tl tr.PI.passed) with
+     | None -> false
+     | Some line -> 
+            TH.line_of_tok cur > line ||
+            (match cur with 
+             | Parser_js.T_RCURLY _ -> true 
+             | Parser_js.EOF _ -> true
+             | _ -> false
+             )
+         )
+
+let asi_insert charpos last_charpos_error info cur tr =
+  match tr.PI.passed with
+  | [] -> raise Impossible
+  | x::xs ->
+    assert (x = cur);
+    let virtual_semi = 
+      Parser_js.T_VIRTUAL_SEMICOLON (Ast.fakeInfoAttach info) in
+    if !Flag_js.debug_asi
+    then pr2 (spf "insertion fake ';' at %s" (PI.string_of_info info));
+  
+    let toks = List.rev xs @ [virtual_semi; x] @ tr.PI.rest in
+    (* like in Parse_info.mk_tokens_state *)
+    tr.PI.rest <- toks;
+    tr.PI.current <- List.hd toks;
+    tr.PI.passed <- [];
+    (* try again! 
+     * This significantly slow-down parsing, especially on minimized
+     * files. Indeed, minimizers put all the code inside a giant
+     * function, which means no incremental parsing, and leverage ASI
+     * before right curly brace to save one character (hmmm). This means
+     * that we parse again and again the same series of tokens, just
+     * progressing a bit more everytime, and restarting from scratch.
+     * This is quadratic behavior.
+     *)
+    last_charpos_error := charpos
+
 
 (*****************************************************************************)
 (* Lexing only *)
@@ -219,43 +264,9 @@ let parse2 filename =
       let charpos = Parse_info.pos_of_info info in
 
       (* try Automatic Semicolon Insertion *)
-      if charpos > !last_charpos_error && 
-         tr.PI.passed <> [] &&
-         (match first_non_comment_line (List.tl tr.PI.passed) with
-         | None -> false
-         | Some line -> 
-            TH.line_of_tok cur > line ||
-            (match cur with 
-             | Parser_js.T_RCURLY _ -> true 
-             | Parser_js.EOF _ -> true
-             | _ -> false
-             )
-         )
+      if asi_criteria charpos last_charpos_error cur tr
       then begin
-        match tr.PI.passed with
-        | [] -> raise Impossible
-        | x::xs ->
-          assert (x = cur);
-          let virtual_semi = 
-            Parser_js.T_VIRTUAL_SEMICOLON (Ast.fakeInfoAttach info) in
-          if !Flag_js.debug_asi
-          then pr2 (spf "insertion fake ';' at %s" (PI.string_of_info info));
-  
-          let toks = List.rev xs @ [virtual_semi; x] @ tr.PI.rest in
-          (* like in Parse_info.mk_tokens_state *)
-          tr.PI.rest <- toks;
-          tr.PI.current <- List.hd toks;
-          tr.PI.passed <- [];
-          (* try again! 
-           * This significantly slow-down parsing, especially on minimized
-           * files. Indeed, minimizers put all the code inside a giant
-           * function, which means no incremental parsing, and leverage ASI
-           * before right curly brace to save one character (hmmm). This means
-           * that we parse again and again the same series of tokens, just
-           * progressing a bit more everytime, and restarting from scratch.
-           * This is quadratic behavior.
-           *)
-          last_charpos_error := charpos;
+          asi_insert charpos last_charpos_error info cur tr;
           parse_module_item_or_eof tr
       end else begin
         if !Flag.show_parsing_error 
