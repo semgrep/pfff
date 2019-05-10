@@ -846,6 +846,7 @@ primary_type2:
  | predefined_type { $1 }
  | type_reference { TName($1) }
  | object_type { $1 }
+ | T_LBRACKET type_list T_RBRACKET { TTodo }
  /*(* not in Typescript grammar *)*/
  | T_STRING { TTodo }
 
@@ -1602,6 +1603,10 @@ import_specifiers:
 type_reference_list:
  | type_reference { [Left $1]  }
  | type_reference_list T_COMMA type_reference { $1 @ [Right $2; Left $3] }
+
+type_list:
+ | type_ { [Left $1]  }
+ | type_list T_COMMA type_ { $1 @ [Right $2; Left $3] }
 
 
 expression_opt:
