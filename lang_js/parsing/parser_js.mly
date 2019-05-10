@@ -1038,6 +1038,8 @@ assignment_expression:
  | T_YIELD T_MULT assignment_expression  { Yield ($1, Some $2, Some $3) }
  /*(* es7: *)*/
  | async_arrow_function { Arrow $1 }
+ /*(* typescript: 1.6, because <> cant be used in TSX files *)*/
+ | left_hand_side_expression T_AS type_ { $1 (* TODO $2 $3 *) }
 
 assignment_operator:
  | T_ASSIGN         { A_eq , $1 }
@@ -1102,8 +1104,6 @@ pre_in_expression:
  | T_NOT pre_in_expression                       { uop U_not $1 $2 }
  /*(* es7: *)*/
  | T_AWAIT pre_in_expression                     { Await ($1, $2) }
- /*(* typescript: 1.6, because <> cant be used in TSX files *)*/
-/* TODO | pre_in_expression T_AS type_ { } */
 
  | pre_in_expression T_MULT pre_in_expression    { bop B_mul $1 $2 $3 }
  | pre_in_expression T_DIV pre_in_expression     { bop B_div $1 $2 $3 }
@@ -1492,7 +1492,7 @@ identifier:
 
 /*(* add here keywords which are not considered reserved by ECMA *)*/
 ident_semi_keyword:
- | T_FROM { $1 } | T_AS   { $1 } | T_OF { $1 }
+ | T_FROM { $1 } | T_OF { $1 }
  | T_GET { $1 } | T_SET { $1 }
  | T_ASYNC { $1 }
  | T_IMPLEMENTS { $1 }
@@ -1528,6 +1528,7 @@ ident_keyword_bis:
  | T_CLASS { $1 } | T_INTERFACE { $1 } | T_EXTENDS { $1 } | T_STATIC { $1 }
  | T_IMPORT { $1 } | T_EXPORT { $1 } 
  | T_ENUM { $1 }
+ | T_AS { $1 }
 
 field_name:
  | identifier { $1 }
