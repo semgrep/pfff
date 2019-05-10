@@ -883,15 +883,15 @@ object_type: T_LCURLY type_member_list_opt T_RCURLY  { TObj ($1, $2, $3) }
 
 /*(* partial type annotations are not supported *)*/
 type_member: 
- | property_name_typescript complex_annotation semicolon 
+ | property_name_typescript complex_annotation semicolon_or_comma
     { ($1, $2, $3) }
- | property_name_typescript T_PLING complex_annotation semicolon 
+ | property_name_typescript T_PLING complex_annotation semicolon_or_comma
     { ($1, $3, $4) (* TODO $2*) }
  | T_LBRACKET T_IDENTIFIER T_COLON T_STRING_TYPE T_RBRACKET 
-   complex_annotation semicolon
+   complex_annotation semicolon_or_comma
     { (* TODO *) (PN_Id $2, $6, $7)  }
  | T_LBRACKET T_IDENTIFIER T_COLON T_NUMBER_TYPE T_RBRACKET 
-   complex_annotation semicolon
+   complex_annotation semicolon_or_comma
     { (* TODO *) (PN_Id $2, $6, $7) }
 
 /*(* no [xxx] here *)*/
@@ -1536,6 +1536,10 @@ property_name:
 semicolon:
  | T_SEMICOLON         { Some $1 }
  | T_VIRTUAL_SEMICOLON { None }
+
+semicolon_or_comma:
+ | semicolon { $1 }
+ | T_COMMA { Some $1 }
 
 elision:
  | T_COMMA { [Right $1] }
