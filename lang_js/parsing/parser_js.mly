@@ -106,7 +106,8 @@ let fake_tok s = {
  T_DELETE  T_VOID
  T_TYPE  T_ANY_TYPE T_NUMBER_TYPE T_BOOLEAN_TYPE T_STRING_TYPE  T_ENUM
  T_DECLARE T_MODULE
- T_PUBLIC T_PRIVATE T_PROTECTED
+ T_PUBLIC T_PRIVATE T_PROTECTED  T_READONLY
+ 
  
 /*(*-----------------------------------------*)*/
 /*(*2 Punctuation tokens *)*/
@@ -785,6 +786,8 @@ access_modifier:
  | T_PUBLIC { }
  | T_PRIVATE { }
  | T_PROTECTED { }
+
+ | T_READONLY { }
 
 /*(*************************************************************************)*/
 /*(*1 Interface declaration *)*/
@@ -1479,7 +1482,7 @@ ident_semi_keyword:
  | T_ENUM { $1 }
  | T_DECLARE { $1 }
  | T_MODULE { $1 }
- | T_PUBLIC { $1 } | T_PRIVATE { $1 } | T_PROTECTED { $1 }
+ | T_PUBLIC { $1 } | T_PRIVATE { $1 } | T_PROTECTED { $1 } | T_READONLY { $1 }
 
 /*(* TODO: would like to add T_IMPORT here, but cause conflicts *)*/
 

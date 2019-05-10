@@ -155,6 +155,8 @@ let keyword_table = Common.hash_of_list [
   "private",     (fun ii -> T_PRIVATE ii);
   "protected",     (fun ii -> T_PROTECTED ii);
 
+  "readonly", (fun ii -> T_READONLY ii);
+
   "type",     (fun ii -> T_TYPE ii);
 
   "any",     (fun ii -> T_ANY_TYPE ii);

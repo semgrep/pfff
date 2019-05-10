@@ -183,6 +183,7 @@ let visitor_info_of_tok f = function
   | T_PUBLIC ii -> T_PUBLIC (f ii)
   | T_PRIVATE ii -> T_PRIVATE (f ii)
   | T_PROTECTED ii -> T_PROTECTED (f ii)
+  | T_READONLY ii -> T_READONLY (f ii)
 
 let info_of_tok tok = 
   let res = ref None in

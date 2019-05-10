@@ -298,6 +298,8 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
 
     | T.T_PUBLIC ii | T.T_PRIVATE ii | T.T_PROTECTED ii ->
         tag ii KeywordObject
+    | T.T_READONLY ii ->
+        tag ii Keyword
 
     | T.T_VIRTUAL_SEMICOLON (_ii)
         -> ()
