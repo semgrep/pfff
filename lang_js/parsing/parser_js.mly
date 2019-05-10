@@ -675,7 +675,7 @@ type_alias_declaration: T_TYPE identifier T_ASSIGN type_ semicolon {
  match $5 with Some t -> t | None -> $3 }
 
 enum_declaration: 
-  T_ENUM identifier T_LCURLY enum_member_list trailing_comma4 T_RCURLY { $6 }
+  const_opt T_ENUM identifier T_LCURLY enum_member_list trailing_comma4 T_RCURLY { $7 }
 
 enum_member:
  | property_name { }
@@ -1687,6 +1687,11 @@ initializeur_opt:
 interface_extends_opt:
  | /*(* empty *)*/ { None }
  | interface_extends { Some $1 }
+
+const_opt:
+ | /*(* empty *)*/ { None }
+ | T_CONST { Some $1 }
+
 
 
 
