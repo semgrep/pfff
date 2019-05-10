@@ -1312,6 +1312,7 @@ encaps:
 /*(*2 arrow (short lambda) *)*/
 /*(*----------------------------*)*/
 
+/*(* TODO conflict with async and as then in indent_keyword_bis *)*/
 arrow_function:
  | identifier T_ARROW arrow_body
      { { a_params = ASingleParam (ParamClassic (mk_param $1)); 
@@ -1494,7 +1495,6 @@ identifier:
 ident_semi_keyword:
  | T_FROM { $1 } | T_OF { $1 }
  | T_GET { $1 } | T_SET { $1 }
- | T_ASYNC { $1 }
  | T_IMPLEMENTS { $1 }
  | T_CONSTRUCTOR { $1 }
  | T_TYPE { $1 }
@@ -1503,8 +1503,10 @@ ident_semi_keyword:
  | T_DECLARE { $1 }
  | T_MODULE { $1 }
  | T_PUBLIC { $1 } | T_PRIVATE { $1 } | T_PROTECTED { $1 } | T_READONLY { $1 }
-
-/*(* TODO: would like to add T_IMPORT here, but cause conflicts *)*/
+ /*(* can have AS and ASYNC here but need to restrict arrow_function then *)*/
+ | T_AS { $1 }
+ | T_ASYNC { $1 }
+ /*(* TODO: would like to add T_IMPORT here, but cause conflicts *)*/
 
 /*(*alt: use the _last_non_whitespace_like_token trick and look if
    * previous token was a period to return a T_IDENTFIER
@@ -1528,7 +1530,6 @@ ident_keyword_bis:
  | T_CLASS { $1 } | T_INTERFACE { $1 } | T_EXTENDS { $1 } | T_STATIC { $1 }
  | T_IMPORT { $1 } | T_EXPORT { $1 } 
  | T_ENUM { $1 }
- | T_AS { $1 }
 
 field_name:
  | identifier { $1 }
