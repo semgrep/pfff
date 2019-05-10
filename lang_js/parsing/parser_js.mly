@@ -846,6 +846,8 @@ primary_type2:
  | predefined_type { $1 }
  | type_reference { TName($1) }
  | object_type { $1 }
+ /*(* not in Typescript grammar *)*/
+ | T_STRING { TTodo }
 
 predefined_type:
  | T_ANY_TYPE      { TName (V("any", $1), None) }
