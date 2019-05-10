@@ -1075,6 +1075,8 @@ pre_in_expression:
  | T_NOT pre_in_expression                       { uop U_not $1 $2 }
  /*(* es7: *)*/
  | T_AWAIT pre_in_expression                     { Await ($1, $2) }
+ /*(* typescript: 1.6, because <> cant be used in TSX files *)*/
+/* TODO | pre_in_expression T_AS type_ { } */
 
  | pre_in_expression T_MULT pre_in_expression    { bop B_mul $1 $2 $3 }
  | pre_in_expression T_DIV pre_in_expression     { bop B_div $1 $2 $3 }
@@ -1116,7 +1118,6 @@ member_expression:
      else raise (Parsing.Parse_error)
   }
 
-
 primary_expression:
  | primary_expression_no_braces { $1 }
  | object_literal                  { Object $1 }
@@ -1127,6 +1128,7 @@ primary_expression:
  | generator_expression            { $1 }
  /*(* es7: *)*/
  | async_function_expression            { $1 }
+
 
 primary_expression_no_braces:
  | T_THIS          { This $1 }
