@@ -244,7 +244,7 @@ declaration:
  | type_alias_declaration { ItemTodo }
 
 /*(*************************************************************************)*/
-/*(*1 Import/export *)*/
+/*(*1 Namespace *)*/
 /*(*************************************************************************)*/
 
 /*(*----------------------------*)*/
@@ -319,148 +319,6 @@ export_clause:
  | T_LCURLY import_specifiers T_COMMA  T_RCURLY 
    { ($1, $2 @ [Right $3], $4) }
 
-/*(*************************************************************************)*/
-/*(*1 Declare (ambient) *)*/
-/*(*************************************************************************)*/
-/*(* typescript: *)*/
-
-/*(*************************************************************************)*/
-/*(*1 Statement *)*/
-/*(*************************************************************************)*/
-
-statement:
- | block                { $1 }
- | variable_statement   { $1 }
- | empty_statement      { $1 }
- | expression_statement { $1 }
- | if_statement         { $1 }
- | iteration_statement  { $1 }
- | continue_statement   { $1 }
- | break_statement      { $1 }
- | return_statement     { $1 }
- | with_statement       { $1 }
- | labelled_statement   { $1 }
- | switch_statement     { $1 }
- | throw_statement      { $1 }
- | try_statement        { $1 }
-
-
-block:
- | T_LCURLY statement_list T_RCURLY { Block ($1, $2, $3) }
- | T_LCURLY T_RCURLY                { Block ($1, [], $2) }
-
-statement_list:
- | item { [$1] }
- | statement_list item { $1 @ [$2] }
-
-
-empty_statement:
- | semicolon { Nop $1 }
-
-expression_statement:
- | expression_no_statement semicolon { ExprStmt ($1, $2) }
-
-
-if_statement:
- | T_IF T_LPAREN expression T_RPAREN statement T_ELSE statement
-     { If ($1, ($2, $3, $4), $5, Some ($6, $7)) }
- | T_IF T_LPAREN expression T_RPAREN statement %prec p_IF
-     { If ($1, ($2, $3, $4), $5, None) }
-
-
-iteration_statement:
- | T_DO statement T_WHILE T_LPAREN expression T_RPAREN semicolon
-     { Do ($1, $2, $3, ($4, $5, $6), $7) }
- | T_WHILE T_LPAREN expression T_RPAREN statement
-     { While ($1, ($2, $3, $4), $5) }
-
- | T_FOR T_LPAREN
-     expression_no_in_opt T_SEMICOLON
-     expression_opt T_SEMICOLON
-     expression_opt
-     T_RPAREN statement
-     { For ($1, $2, $3|>Common2.fmap (fun x -> LHS1 x), $4, $5, $6, $7,$8,$9)}
- | T_FOR T_LPAREN
-     for_variable_declaration T_SEMICOLON
-     expression_opt T_SEMICOLON
-     expression_opt
-     T_RPAREN statement
-     { For ($1, $2, Some (ForVars $3), $4, $5, $6, $7, $8, $9) }
-
- | T_FOR T_LPAREN left_hand_side_expression T_IN expression T_RPAREN statement
-     { ForIn ($1, $2, LHS2 $3, $4, $5, $6, $7) }
- | T_FOR T_LPAREN for_single_variable_decl T_IN expression T_RPAREN  statement
-     { ForIn ($1, $2, ForVar $3, $4, $5, $6, $7) }
- | T_FOR T_LPAREN left_hand_side_expression T_OF assignment_expression 
-         T_RPAREN statement
-     { ForOf ($1, $2, LHS2 $3, $4, $5, $6, $7) }
- | T_FOR T_LPAREN for_single_variable_decl T_OF assignment_expression
-        T_RPAREN  statement
-     { ForOf ($1, $2, ForVar $3, $4, $5, $6, $7) }
-
-
-initializer_no_in:
- | T_ASSIGN assignment_expression_no_in { $1, $2 }
-
-
-continue_statement:
- | T_CONTINUE identifier semicolon { Continue ($1, Some $2, $3) }
- | T_CONTINUE semicolon            { Continue ($1, None, $2) }
-
-break_statement:
- | T_BREAK identifier semicolon { Break ($1, Some $2, $3) }
- | T_BREAK semicolon            { Break ($1, None, $2) }
-
-
-return_statement:
- | T_RETURN expression semicolon { Return ($1, Some $2, $3) }
- | T_RETURN semicolon            { Return ($1, None, $2) }
-
-
-with_statement:
- | T_WITH T_LPAREN expression T_RPAREN statement { With ($1, ($2, $3, $4), $5) }
-
-
-switch_statement:
- | T_SWITCH T_LPAREN expression T_RPAREN case_block { Switch ($1, ($2, $3, $4), $5) }
-
-
-
-labelled_statement:
- | identifier T_COLON statement { Labeled ($1, $2, $3) }
-
-
-throw_statement:
- | T_THROW expression semicolon { Throw ($1, $2, $3) }
-
-try_statement:
- | T_TRY block catch         { Try ($1, $2, Some $3, None)  }
- | T_TRY block       finally { Try ($1, $2, None, Some $3) }
- | T_TRY block catch finally { Try ($1, $2, Some $3, Some $4) }
-
-catch:
- | T_CATCH T_LPAREN identifier T_RPAREN block { $1, ($2, $3, $4), $5 }
-
-finally:
- | T_FINALLY block { $1, $2 }
-
-/*(*----------------------------*)*/
-/*(*2 auxillary statements *)*/
-/*(*----------------------------*)*/
-
-case_block:
- | T_LCURLY case_clauses_opt T_RCURLY
-     { ($1, $2, $3) }
- | T_LCURLY case_clauses_opt default_clause case_clauses_opt T_RCURLY
-     { ($1, $2 @ [$3] @ $4, $5) }
-
-case_clause:
- | T_CASE expression T_COLON statement_list { Case ($1, $2, $3, $4) }
- | T_CASE expression T_COLON { Case ($1, $2, $3, []) }
-
-default_clause:
- | T_DEFAULT T_COLON { Default ($1, $2, [])}
- | T_DEFAULT T_COLON statement_list { Default ($1, $2, $3) }
 
 /*(*************************************************************************)*/
 /*(*1 Variable declaration *)*/
@@ -689,47 +547,6 @@ async_function_expression:
          f_type_params = t; f_return_type = rt; 
        } }
 
-/*(*----------------------------*)*/
-/*(*2 Method definition (in class or object literal) *)*/
-/*(*----------------------------*)*/
-method_definition:
- | method_name call_signature T_LCURLY function_body T_RCURLY
-  { let (t, ps, rt) = $2 in  
-    { f_kind = Regular; f_tok = None; f_name = Some $1; 
-      f_params= ps; f_body = ($3, $4, $5);
-      f_type_params = t; f_return_type = rt; 
-  } }
-
- | T_MULT identifier call_signature T_LCURLY function_body T_RCURLY
-  { let (t, ps, rt) = $3 in  
-    { f_kind = Generator $1; f_tok = None; f_name = Some $2; 
-      f_params= ps; f_body = ($4, $5, $6);
-      f_type_params = t; f_return_type = rt; 
-  } }
-
- | T_GET identifier 
-    generics_opt T_LPAREN T_RPAREN annotation_opt
-    T_LCURLY function_body T_RCURLY
-  { { f_kind = Get $1; f_tok = None; f_name = Some $2; 
-      f_type_params = $3; f_params = ($4, [], $5);
-      f_return_type = $6; f_body =  ($7, $8, $9);
-  } }
-
- | T_SET identifier 
-    generics_opt  T_LPAREN formal_parameter T_RPAREN annotation_opt
-    T_LCURLY function_body T_RCURLY
-  { { f_kind = Set $1; f_tok = None; f_name = Some $2; 
-      f_type_params = $3; f_params = ($4, [Left $5], $6);
-      f_return_type = $7; f_body =  ($8, $9, $10);
-  } }
-
- /*(* es7: *)*/
- | T_ASYNC identifier call_signature  T_LCURLY function_body T_RCURLY
-  { let (t, ps, rt) = $3 in  
-    { f_kind = Async $1; f_tok = None; f_name = Some $2; 
-      f_params= ps; f_body = ($4, $5, $6);
-      f_type_params = t; f_return_type = rt; 
-  } }
 
 /*(*************************************************************************)*/
 /*(*1 Class declaration *)*/
@@ -793,6 +610,47 @@ access_modifier:
  | T_READONLY { }
 
 
+/*(*----------------------------*)*/
+/*(*2 Method definition (in class or object literal) *)*/
+/*(*----------------------------*)*/
+method_definition:
+ | method_name call_signature T_LCURLY function_body T_RCURLY
+  { let (t, ps, rt) = $2 in  
+    { f_kind = Regular; f_tok = None; f_name = Some $1; 
+      f_params= ps; f_body = ($3, $4, $5);
+      f_type_params = t; f_return_type = rt; 
+  } }
+
+ | T_MULT identifier call_signature T_LCURLY function_body T_RCURLY
+  { let (t, ps, rt) = $3 in  
+    { f_kind = Generator $1; f_tok = None; f_name = Some $2; 
+      f_params= ps; f_body = ($4, $5, $6);
+      f_type_params = t; f_return_type = rt; 
+  } }
+
+ | T_GET identifier 
+    generics_opt T_LPAREN T_RPAREN annotation_opt
+    T_LCURLY function_body T_RCURLY
+  { { f_kind = Get $1; f_tok = None; f_name = Some $2; 
+      f_type_params = $3; f_params = ($4, [], $5);
+      f_return_type = $6; f_body =  ($7, $8, $9);
+  } }
+
+ | T_SET identifier 
+    generics_opt  T_LPAREN formal_parameter T_RPAREN annotation_opt
+    T_LCURLY function_body T_RCURLY
+  { { f_kind = Set $1; f_tok = None; f_name = Some $2; 
+      f_type_params = $3; f_params = ($4, [Left $5], $6);
+      f_return_type = $7; f_body =  ($8, $9, $10);
+  } }
+
+ /*(* es7: *)*/
+ | T_ASYNC identifier call_signature  T_LCURLY function_body T_RCURLY
+  { let (t, ps, rt) = $3 in  
+    { f_kind = Async $1; f_tok = None; f_name = Some $2; 
+      f_params= ps; f_body = ($4, $5, $6);
+      f_type_params = t; f_return_type = rt; 
+  } }
 
 /*(*************************************************************************)*/
 /*(*1 Interface declaration *)*/
@@ -813,6 +671,11 @@ interface_extends: T_EXTENDS type_reference_list { ($1, $2) }
 /*(*************************************************************************)*/
 /*(* typescript: *)*/
 type_alias_declaration: T_TYPE identifier T_ASSIGN type_ semicolon { }
+
+/*(*************************************************************************)*/
+/*(*1 Declare (ambient) declaration *)*/
+/*(*************************************************************************)*/
+/*(* typescript: *)*/
 
 /*(*************************************************************************)*/
 /*(*1 Types *)*/
@@ -1007,6 +870,144 @@ type_or_expression:
 */
  /*(* typescript: *)*/
  | type_reference { $1 }
+
+/*(*************************************************************************)*/
+/*(*1 Statement *)*/
+/*(*************************************************************************)*/
+
+statement:
+ | block                { $1 }
+ | variable_statement   { $1 }
+ | empty_statement      { $1 }
+ | expression_statement { $1 }
+ | if_statement         { $1 }
+ | iteration_statement  { $1 }
+ | continue_statement   { $1 }
+ | break_statement      { $1 }
+ | return_statement     { $1 }
+ | with_statement       { $1 }
+ | labelled_statement   { $1 }
+ | switch_statement     { $1 }
+ | throw_statement      { $1 }
+ | try_statement        { $1 }
+
+
+block:
+ | T_LCURLY statement_list T_RCURLY { Block ($1, $2, $3) }
+ | T_LCURLY T_RCURLY                { Block ($1, [], $2) }
+
+statement_list:
+ | item { [$1] }
+ | statement_list item { $1 @ [$2] }
+
+
+empty_statement:
+ | semicolon { Nop $1 }
+
+expression_statement:
+ | expression_no_statement semicolon { ExprStmt ($1, $2) }
+
+
+if_statement:
+ | T_IF T_LPAREN expression T_RPAREN statement T_ELSE statement
+     { If ($1, ($2, $3, $4), $5, Some ($6, $7)) }
+ | T_IF T_LPAREN expression T_RPAREN statement %prec p_IF
+     { If ($1, ($2, $3, $4), $5, None) }
+
+
+iteration_statement:
+ | T_DO statement T_WHILE T_LPAREN expression T_RPAREN semicolon
+     { Do ($1, $2, $3, ($4, $5, $6), $7) }
+ | T_WHILE T_LPAREN expression T_RPAREN statement
+     { While ($1, ($2, $3, $4), $5) }
+
+ | T_FOR T_LPAREN
+     expression_no_in_opt T_SEMICOLON
+     expression_opt T_SEMICOLON
+     expression_opt
+     T_RPAREN statement
+     { For ($1, $2, $3|>Common2.fmap (fun x -> LHS1 x), $4, $5, $6, $7,$8,$9)}
+ | T_FOR T_LPAREN
+     for_variable_declaration T_SEMICOLON
+     expression_opt T_SEMICOLON
+     expression_opt
+     T_RPAREN statement
+     { For ($1, $2, Some (ForVars $3), $4, $5, $6, $7, $8, $9) }
+
+ | T_FOR T_LPAREN left_hand_side_expression T_IN expression T_RPAREN statement
+     { ForIn ($1, $2, LHS2 $3, $4, $5, $6, $7) }
+ | T_FOR T_LPAREN for_single_variable_decl T_IN expression T_RPAREN  statement
+     { ForIn ($1, $2, ForVar $3, $4, $5, $6, $7) }
+ | T_FOR T_LPAREN left_hand_side_expression T_OF assignment_expression 
+         T_RPAREN statement
+     { ForOf ($1, $2, LHS2 $3, $4, $5, $6, $7) }
+ | T_FOR T_LPAREN for_single_variable_decl T_OF assignment_expression
+        T_RPAREN  statement
+     { ForOf ($1, $2, ForVar $3, $4, $5, $6, $7) }
+
+
+initializer_no_in:
+ | T_ASSIGN assignment_expression_no_in { $1, $2 }
+
+
+continue_statement:
+ | T_CONTINUE identifier semicolon { Continue ($1, Some $2, $3) }
+ | T_CONTINUE semicolon            { Continue ($1, None, $2) }
+
+break_statement:
+ | T_BREAK identifier semicolon { Break ($1, Some $2, $3) }
+ | T_BREAK semicolon            { Break ($1, None, $2) }
+
+
+return_statement:
+ | T_RETURN expression semicolon { Return ($1, Some $2, $3) }
+ | T_RETURN semicolon            { Return ($1, None, $2) }
+
+
+with_statement:
+ | T_WITH T_LPAREN expression T_RPAREN statement { With ($1, ($2, $3, $4), $5) }
+
+
+switch_statement:
+ | T_SWITCH T_LPAREN expression T_RPAREN case_block { Switch ($1, ($2, $3, $4), $5) }
+
+
+
+labelled_statement:
+ | identifier T_COLON statement { Labeled ($1, $2, $3) }
+
+
+throw_statement:
+ | T_THROW expression semicolon { Throw ($1, $2, $3) }
+
+try_statement:
+ | T_TRY block catch         { Try ($1, $2, Some $3, None)  }
+ | T_TRY block       finally { Try ($1, $2, None, Some $3) }
+ | T_TRY block catch finally { Try ($1, $2, Some $3, Some $4) }
+
+catch:
+ | T_CATCH T_LPAREN identifier T_RPAREN block { $1, ($2, $3, $4), $5 }
+
+finally:
+ | T_FINALLY block { $1, $2 }
+
+/*(*----------------------------*)*/
+/*(*2 auxillary statements *)*/
+/*(*----------------------------*)*/
+
+case_block:
+ | T_LCURLY case_clauses_opt T_RCURLY
+     { ($1, $2, $3) }
+ | T_LCURLY case_clauses_opt default_clause case_clauses_opt T_RCURLY
+     { ($1, $2 @ [$3] @ $4, $5) }
+
+case_clause:
+ | T_CASE expression T_COLON statement_list { Case ($1, $2, $3, $4) }
+ | T_CASE expression T_COLON { Case ($1, $2, $3, []) }
+
+default_clause:
+ | T_DEFAULT T_COLON { Default ($1, $2, [])}
+ | T_DEFAULT T_COLON statement_list { Default ($1, $2, $3) }
 
 /*(*************************************************************************)*/
 /*(*1 Expressions *)*/
