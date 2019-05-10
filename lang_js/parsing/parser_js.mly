@@ -1530,6 +1530,7 @@ ident_keyword_bis:
  | T_CLASS { $1 } | T_INTERFACE { $1 } | T_EXTENDS { $1 } | T_STATIC { $1 }
  | T_IMPORT { $1 } | T_EXPORT { $1 } 
  | T_ENUM { $1 }
+ | T_TYPEOF { $1 }
 
 field_name:
  | identifier { $1 }
