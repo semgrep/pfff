@@ -837,8 +837,12 @@ type_:
      { TFun (($1, $2, $3), $4, $5) }
 
 primary_or_union_type:
- | primary_type { $1 }
+ | primary_or_intersect_type { $1 }
  | union_type { $1 }
+
+primary_or_intersect_type:
+ | primary_type { $1 }
+ | intersect_type { $1 }
 
 /*(* I introduced those intermediate rules to remove ambiguities *)*/
 primary_type:
@@ -876,7 +880,9 @@ module_name:
  | T_IDENTIFIER { V($1) }
  | module_name T_PERIOD T_IDENTIFIER { V($3) (* TODO: $1 *) } 
 
-union_type: primary_or_union_type T_BIT_OR primary_type { TTodo }
+union_type:     primary_or_union_type     T_BIT_OR primary_type { TTodo }
+
+intersect_type: primary_or_intersect_type T_BIT_AND primary_type { TTodo }
 
 
 object_type: T_LCURLY type_member_list_opt T_RCURLY  { TObj ($1, $2, $3) } 
