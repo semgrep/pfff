@@ -14,7 +14,7 @@
  *)
 open Common
 
-open Ast_js
+open Cst_js
 
 module V = Visitor_js
 module E = Entity_code
@@ -67,7 +67,7 @@ let extract_complete_name_of_info ast =
   let in_statics = ref false in
   let in_members = ref false in
 
-  let (h: (Ast_js.tok, Entity_code.entity_kind * string) Hashtbl.t) =
+  let (h: (Cst_js.tok, Entity_code.entity_kind * string) Hashtbl.t) =
     Hashtbl.create 101 in
 
   let v = V.mk_visitor { V.default_visitor with

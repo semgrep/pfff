@@ -15,7 +15,7 @@
 
 open Common
 
-module Ast = Ast_js
+module Ast = Cst_js
 module E = Entity_code
 module HC = Highlight_code
 module T = Parser_js

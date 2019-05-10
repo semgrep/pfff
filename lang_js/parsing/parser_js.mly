@@ -43,7 +43,7 @@
  *)
 open Common
 
-open Ast_js
+open Cst_js
 
 let bop op a b c = B(a, (op, b), c)
 let uop op a b = U((op,a), b)
@@ -63,26 +63,26 @@ let fake_tok s = {
 /*(*1 Tokens *)*/
 /*(*************************************************************************)*/
 
-%token <Ast_js.tok> TUnknown  /*(* unrecognized token *)*/
-%token <Ast_js.tok> EOF
+%token <Cst_js.tok> TUnknown  /*(* unrecognized token *)*/
+%token <Cst_js.tok> EOF
 
 /*(*-----------------------------------------*)*/
 /*(*2 The space/comment tokens *)*/
 /*(*-----------------------------------------*)*/
 /*(* coupling: Token_helpers.is_comment *)*/
-%token <Ast_js.tok> TCommentSpace TCommentNewline   TComment
+%token <Cst_js.tok> TCommentSpace TCommentNewline   TComment
 
 /*(*-----------------------------------------*)*/
 /*(*2 The normal tokens *)*/
 /*(*-----------------------------------------*)*/
 
 /*(* tokens with a value *)*/
-%token<string * Ast_js.tok> T_NUMBER
-%token<string * Ast_js.tok> T_IDENTIFIER
+%token<string * Cst_js.tok> T_NUMBER
+%token<string * Cst_js.tok> T_IDENTIFIER
 
-%token<string * Ast_js.tok> T_STRING 
-%token<string * Ast_js.tok> T_ENCAPSED_STRING
-%token<string * Ast_js.tok> T_REGEX
+%token<string * Cst_js.tok> T_STRING 
+%token<string * Cst_js.tok> T_ENCAPSED_STRING
+%token<string * Cst_js.tok> T_REGEX
 
 /*(*-----------------------------------------*)*/
 /*(*2 Keyword tokens *)*/
@@ -90,7 +90,7 @@ let fake_tok s = {
 /*(* coupling: if you add an element here, expand also ident_keyword_bis
    * and also maybe the special hack for regexp in lexer_js.mll
    *)*/
-%token <Ast_js.tok>
+%token <Cst_js.tok>
  T_FUNCTION T_CONST T_VAR T_LET
  T_IF T_ELSE
  T_WHILE T_FOR T_DO T_CONTINUE T_BREAK
@@ -114,7 +114,7 @@ let fake_tok s = {
 /*(*-----------------------------------------*)*/
 
 /*(* syntax *)*/
-%token <Ast_js.tok>
+%token <Cst_js.tok>
  T_LCURLY T_RCURLY
  T_LPAREN T_RPAREN
  T_LBRACKET T_RBRACKET
@@ -126,7 +126,7 @@ let fake_tok s = {
  T_DOLLARCURLY
 
 /*(* operators *)*/
-%token <Ast_js.tok>
+%token <Cst_js.tok>
  T_OR T_AND
  T_BIT_OR T_BIT_XOR T_BIT_AND
  T_PLUS T_MINUS
@@ -158,9 +158,9 @@ let fake_tok s = {
 /*(*-----------------------------------------*)*/
 
 /*(* Automatically Inserted Semicolon (ASI), see parse_js.ml *)*/
-%token <Ast_js.tok> T_VIRTUAL_SEMICOLON
+%token <Cst_js.tok> T_VIRTUAL_SEMICOLON
 /*(* '(' the opening parenthesis of the parameters preceding an arrow*)*/
-%token <Ast_js.tok> T_LPAREN_ARROW
+%token <Cst_js.tok> T_LPAREN_ARROW
 
 /*(*************************************************************************)*/
 /*(*1 Priorities *)*/
@@ -200,8 +200,8 @@ let fake_tok s = {
 /*(*************************************************************************)*/
 
 %start main module_item_or_eof
-%type <Ast_js.module_item list> main
-%type <Ast_js.module_item option> module_item_or_eof
+%type <Cst_js.module_item list> main
+%type <Cst_js.module_item option> module_item_or_eof
 
 %%
 

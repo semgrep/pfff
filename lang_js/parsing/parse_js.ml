@@ -17,7 +17,7 @@ open Common
 
 module Flag = Flag_parsing
 module Flag_js = Flag_parsing_js
-module Ast = Ast_js
+module Ast = Cst_js
 module TH   = Token_helpers_js
 module PI = Parse_info
 
@@ -34,7 +34,7 @@ module PI = Parse_info
 
 (* the token list contains also the comment-tokens *)
 type program_and_tokens = 
-  Ast_js.program option * Parser_js.token list
+  Cst_js.program option * Parser_js.token list
 
 (*****************************************************************************)
 (* Error diagnostic  *)
@@ -296,7 +296,7 @@ let parse2 filename =
         stat.PI.correct <- stat.PI.correct + lines;
         if !Flag_js.debug_asi
         then pr2 (spf "parsed: %s"
-                (Ast.Program [x] |> Meta_ast_js.vof_any |> Ocaml.string_of_v));
+                (Ast.Program [x] |> Meta_cst_js.vof_any |> Ocaml.string_of_v));
 
         x::aux tr 
     | Right () ->
@@ -343,7 +343,7 @@ let parse_string (w : string) : Ast.program =
 (* Sub parsers *)
 (*****************************************************************************)
 
-let (program_of_string: string -> Ast_js.program) = fun s -> 
+let (program_of_string: string -> Cst_js.program) = fun s -> 
   Common2.with_tmp_file ~str:s ~ext:"js" (fun file ->
     parse_program file
   )

@@ -88,7 +88,7 @@ let test_parse_ts xs =
 
 let test_dump_js file =
   let ast = Parse_js.parse_program file in
-  let v = Meta_ast_js.vof_program ast in
+  let v = Meta_cst_js.vof_program ast in
   let s = Ocaml.string_of_v v in
   pr s
 

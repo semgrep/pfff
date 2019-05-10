@@ -17,9 +17,9 @@
 
 (* pad: I've added a few tweaks because of module limitations in ocamltarzan *)
 
-open Ast_js
+open Cst_js
 module M = Meta_ast_generic
-module Ast = Ast_js
+module Ast = Cst_js
 
 let _current_precision = ref M.default_precision
 

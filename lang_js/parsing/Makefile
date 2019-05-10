@@ -8,8 +8,8 @@ OPAMPKG=pfff-lang_js
 -include $(TOP)/Makefile.config
 
 SRC= flag_parsing_js.ml \
-     ast_js.ml \
-     meta_ast_js.ml \
+     cst_js.ml \
+     meta_cst_js.ml \
      visitor_js.ml lib_parsing_js.ml \
      parser_js.ml lexer_js.ml \
      token_helpers_js.ml \

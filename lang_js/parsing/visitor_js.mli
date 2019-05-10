@@ -1,5 +1,5 @@
 
-open Ast_js
+open Cst_js
 
 (* the hooks *)
 type visitor_in = {

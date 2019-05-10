@@ -5,4 +5,4 @@ val find_source_files_of_dir_or_files:
   ?include_scripts:bool ->
   Common.path list -> Common.filename list
 
-val ii_of_any: Ast_js.any -> Ast_js.tok list
+val ii_of_any: Cst_js.any -> Cst_js.tok list

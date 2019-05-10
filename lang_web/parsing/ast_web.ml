@@ -28,9 +28,9 @@
 type web_document = {
   html: Ast_html.html_tree;
 
-  js: (Ast_html.info * Ast_js.program) list;
+  js: (Ast_html.info * Cst_js.program) list;
   css: (Ast_html.info * Ast_css.stylesheet) list;
-  stuff_in_js: (Ast_js.tok * web_document) list;
+  stuff_in_js: (Cst_js.tok * web_document) list;
 }
 
 (* move in tokens_web.ml ? or fake parser_web.mly ? or token_helpers.ml ? *)
