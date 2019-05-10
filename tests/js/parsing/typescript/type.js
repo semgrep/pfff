@@ -11,4 +11,4 @@ function id<T>(x:T):T { return x; }
 
 var o = {id: function<T>(x:T):T { return x; }}
 
-var f = (x,y:number):number => x
+

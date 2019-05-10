@@ -1,4 +1,4 @@
 dir: big
 dir: flow
 
-dir: typescript
+#dir: typescript
