@@ -768,26 +768,31 @@ class_expression: T_CLASS binding_identifier_opt generics_opt class_tail
 
 /*(* can't factorize with static_opt, or access_modifier_opt; ambiguities*)*/
 class_element:
- |                 method_definition      { Method (None, $1) }
- | T_STATIC        method_definition      { Method (Some $1, $2) }
- /*(* typescript: *)*/
- | access_modifier method_definition      { Method (None, $2) (* TODO $1 *) } 
+ |                  method_definition      { Method (None, $1) }
+ | access_modifiers method_definition      { Method (None, $2) (* TODO $1 *) } 
 
  |                  property_name annotation_opt initializeur_opt semicolon 
     { ClassTodo }
- | T_STATIC         property_name annotation_opt initializeur_opt semicolon 
-    { ClassTodo }
- | access_modifier  property_name annotation_opt initializeur_opt semicolon 
+ | access_modifiers property_name annotation_opt initializeur_opt semicolon 
     { ClassTodo }
 
  | semicolon                       { ClassExtraSemiColon $1 }
 
+access_modifiers: 
+ | access_modifiers access_modifier { }
+ | access_modifier { }
+
+/*(* less: should impose an order? *)*/
 access_modifier:
+ | T_STATIC { }
+ /*(* typescript: *)*/
  | T_PUBLIC { }
  | T_PRIVATE { }
  | T_PROTECTED { }
 
  | T_READONLY { }
+
+
 
 /*(*************************************************************************)*/
 /*(*1 Interface declaration *)*/
