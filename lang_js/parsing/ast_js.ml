@@ -521,7 +521,7 @@ and item =
   | ClassDecl of class_decl
   (* typing-ext: *)
   | InterfaceDecl of interface_decl
-  | ItemTodo
+  | ItemTodo of tok (* last tok, needed for ASI to work *)
 
 (* ------------------------------------------------------------------------- *)
 (* Module *)

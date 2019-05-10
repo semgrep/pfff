@@ -669,7 +669,7 @@ and vof_variable_declaration {
 
 and vof_item =
   function
-  | ItemTodo -> Ocaml.VSum (("ItemTodo", []))
+  | ItemTodo v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("ItemTodo", [v1]))
   | St v1 -> let v1 = vof_st v1 in Ocaml.VSum (("St", [ v1 ]))
   | FunDecl v1 ->
       let v1 = vof_func_decl v1 in Ocaml.VSum (("FunDecl", [ v1 ]))

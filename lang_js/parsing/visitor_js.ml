@@ -641,7 +641,7 @@ and v_class_stmt =
 
 and v_item =
   function
-  | ItemTodo -> ()
+  | ItemTodo v1 -> let v1 = v_tok v1 in ()
   | St v1 -> let v1 = v_st v1 in ()
   | FunDecl v1 -> let v1 = v_func_decl v1 in ()
   | ClassDecl v1 -> let v1 = v_class_decl v1 in ()

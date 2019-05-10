@@ -241,7 +241,8 @@ declaration:
  | class_declaration     { ClassDecl $1 }
  /*(* typescript: *)*/
  | interface_declaration { InterfaceDecl $1 }
- | type_alias_declaration { ItemTodo }
+ | type_alias_declaration { ItemTodo $1 }
+ | enum_declaration       { ItemTodo $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Namespace *)*/
@@ -670,7 +671,15 @@ interface_extends: T_EXTENDS type_reference_list { ($1, $2) }
 /*(*1 Type declaration *)*/
 /*(*************************************************************************)*/
 /*(* typescript: *)*/
-type_alias_declaration: T_TYPE identifier T_ASSIGN type_ semicolon { }
+type_alias_declaration: T_TYPE identifier T_ASSIGN type_ semicolon { 
+ match $5 with Some t -> t | None -> $3 }
+
+enum_declaration: 
+  T_ENUM identifier T_LCURLY enum_member_list trailing_comma4 T_RCURLY { $6 }
+
+enum_member:
+ | property_name { }
+ | property_name T_ASSIGN assignment_expression_no_statement { }
 
 /*(*************************************************************************)*/
 /*(*1 Declare (ambient) declaration *)*/
@@ -1491,7 +1500,6 @@ ident_semi_keyword:
  | T_TYPE { $1 }
  | T_ANY_TYPE { $1 } | T_NUMBER_TYPE { $1 } | T_BOOLEAN_TYPE { $1 }
  | T_STRING_TYPE { $1 }
- | T_ENUM { $1 }
  | T_DECLARE { $1 }
  | T_MODULE { $1 }
  | T_PUBLIC { $1 } | T_PRIVATE { $1 } | T_PROTECTED { $1 } | T_READONLY { $1 }
@@ -1519,11 +1527,7 @@ ident_keyword_bis:
  | T_FALSE { $1 } | T_TRUE { $1 }
  | T_CLASS { $1 } | T_INTERFACE { $1 } | T_EXTENDS { $1 } | T_STATIC { $1 }
  | T_IMPORT { $1 } | T_EXPORT { $1 } 
-/* already in identifier
- | T_FROM { $1 } | T_AS { $1 } | T_OF { $1}
- | T_GET { $1 } | T_SET { $1 }
- | T_ASYNC { $1 }
-*/
+ | T_ENUM { $1 }
 
 field_name:
  | identifier { $1 }
@@ -1566,6 +1570,10 @@ trailing_comma2:
  | /*(*empty*)*/ { [] }
  | T_COMMA { [Right $1] }
 trailing_comma3:
+ | /*(*empty*)*/ { [] }
+ | T_COMMA { [Right $1] }
+/*(* typescript: enums *)*/
+trailing_comma4:
  | /*(*empty*)*/ { [] }
  | T_COMMA { [Right $1] }
 
@@ -1626,6 +1634,10 @@ type_reference_list:
 type_list:
  | type_ { [Left $1]  }
  | type_list T_COMMA type_ { $1 @ [Right $2; Left $3] }
+
+enum_member_list:
+ | enum_member { [Left $1]  }
+ | enum_member_list T_COMMA enum_member { $1 @ [Right $2; Left $3] }
 
 
 expression_opt:
