@@ -100,6 +100,19 @@ formal_parameter_list:
 
 Then after a comma it must always just reduce.
 
+* ASI and continue, break, ++, --, etc.
+
+The fact that the parser allows ASI (Automatic Semicolon Insertion)
+introduces some ambiguities with the grammar. Indeed, given
+
+ if(true) continue
+ x;
+
+can be parsed either as a 'if (true) continue x;' or
+'if (true) continue; x;' with ASI. To avoid this ambiguity
+the standard allows newline just after a continue but in that
+case it always do an ASI. This means we need to have a fix_tokens
+phase that inserts those semicolons.
 
 * TODO Types and JSX
 

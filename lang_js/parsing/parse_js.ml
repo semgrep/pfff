@@ -88,20 +88,37 @@ let put_back_lookahead_token_if_needed tr item_opt =
      end
 
 (*****************************************************************************)
-(* ASI (Automatic Semicolon Insertion) *)
+(* ASI (Automatic Semicolon Insertion) part 2 *)
 (*****************************************************************************)
 
-let rec first_non_comment_line xs =
+(* To get the right to do an ASI, the parse error needs to be
+ * on a new line. In some cases though the current offending token might
+ * not be the first token on the line. Indeed in
+ *   if(true) continue
+ *   x = y;
+ * the parser does not generate a parse error at 'x' but at '=' because
+ * 'continue' can accept an identifier. 
+ * In fact, the situation is worse, because for
+ *   if(true) continue
+ *   x;
+ * we must generate two independent statements, even though it does
+ * look like a parse error. To handle those cases we
+ * need a parsing_hack phase that inserts semicolon after the
+ * continue if there is a newline after.
+ *)
+
+let rec line_previous_tok xs =
   match xs with
   | [] -> None
   | x::xs ->
     if TH.is_comment x
-    then first_non_comment_line xs
+    then line_previous_tok xs
     else Some (TH.line_of_tok x)
 
 let asi_criteria charpos last_charpos_error cur tr = 
-  charpos > !last_charpos_error && tr.PI.passed <> [] &&
-     (match first_non_comment_line (List.tl tr.PI.passed) with
+  charpos > !last_charpos_error && 
+  tr.PI.passed <> [] &&
+     (match line_previous_tok (List.tl tr.PI.passed) with
      | None -> false
      | Some line -> 
             TH.line_of_tok cur > line ||
@@ -226,6 +243,7 @@ let parse2 filename =
 
   let toks = tokens filename in
   let toks = Parsing_hacks_js.fix_tokens toks in
+  let toks = Parsing_hacks_js.fix_tokens_ASI toks in
 
   let tr = PI.mk_tokens_state toks in
   let last_charpos_error = ref 0 in

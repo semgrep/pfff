@@ -26,32 +26,34 @@ module F = Ast_fuzzy
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* The goal of this module is to retag (e.g., a T_LPAREN in T_LPAREN_ARROW)
- * or insert certain tokens (e.g., T_VIRTUAL_SEMICOLON) to
+(* The goal for this module is to retag tokens 
+ * (e.g., a T_LPAREN in T_LPAREN_ARROW)
+ * or insert tokens (e.g., T_VIRTUAL_SEMICOLON) to
  * help the grammar remains simple and unambiguous. See 
  * lang_cpp/parsing/parsing_hacks.ml for more information about
  * this technique.
  *
- * The original goal of this module was to insert fake virtual semicolons
- * (a.k.a Automatic Semicolon Insertion, or ASI).
+ * This module inserts fake virtual semicolons, which is known as
+ * Automatic Semicolon Insertion, or ASI for short.
  * Those semicolons can be ommitted by the user (but really should not).
- *
+ * ASI works in two steps:
+ *  - certain tokens can not be followed by a newline (e.g., continue)
+ *    and we detect those tokens in this file.
+ *  - we also insert semicolons during error recovery in parser_js.ml. After
+ *    all that was what the spec says.
+ * Note that we need both techniques. See parse_js.ml comment for 
+ * the limitations of using just the second technique.
+ *  
  * reference:
  *  -http://www.bradoncode.com/blog/2015/08/26/javascript-semi-colon-insertion
  *  -http://www.ecma-international.org/ecma-262/6.0/index.html#sec-automatic-semicolon-insertion
- *
- * alt:
- *  - CURRENT insert semicolons during error recovery in parser_js.ml. After
- *    all that was the spec says.
- *  - work on a parenthesized view? like in parsing_hacks_cpp.ml.
- *    It would be easier to match whether we are in the right context
- *    for inserting virtual semicolons.
  *)
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
 
+(* obsolete *)
 let is_toplevel_keyword = function
  | T.T_IMPORT _ | T.T_EXPORT _ 
  | T.T_VAR _ | T.T_LET _ | T.T_CONST _
@@ -59,6 +61,7 @@ let is_toplevel_keyword = function
  -> true
  | _ -> false
 
+(* obsolete *)
 let rparens_of_if toks = 
   let toks = Common.exclude TH.is_comment toks in
 
@@ -91,7 +94,8 @@ let rparens_of_if toks =
 
 (* retagging:
  *  - '(' when part of an arrow expression
- *  - TODO '<' when part of a polymorphic type (aka generic)
+ *  - less: '<' when part of a polymorphic type (aka generic)
+ *  - less: { when part of a pattern before an assignment
  *)
 let fix_tokens toks = 
  try 
@@ -109,6 +113,7 @@ let fix_tokens toks =
       (match xs with
       | F.Parens (i1, _, _)::F.Tok ("=>",_)::_res ->
           Hashtbl.add retag_lparen i1 true
+      (* TODO: also handle typed arrows! *)
       | F.Tok("import", i1)::F.Parens _::_res ->
           Hashtbl.add retag_keywords i1 true
       | _ -> ()
@@ -135,10 +140,9 @@ let fix_tokens toks =
 
 
 (*****************************************************************************)
-(* ASI (obsolete) *)
+(* ASI (Automatic Semicolon Insertion) part 1 *)
 (*****************************************************************************)
 
-(* ugly: this is now superseded by ASI via error recovery in parse_js.ml *)
 let fix_tokens_ASI xs =
 
   let res = ref [] in
@@ -155,15 +159,31 @@ let fix_tokens_ASI xs =
           aux e f l
         end
   in
+
   let push_sc_before_x x = 
      let fake = Ast.fakeInfoAttach (TH.info_of_tok x) in
      Common.push (T.T_VIRTUAL_SEMICOLON fake) res; 
   in
 
+  let f = (fun prev x ->
+     (match prev, x with
+     | (T.T_CONTINUE _ | T.T_BREAK _), _
+        when TH.line_of_tok x <> TH.line_of_tok prev ->
+        push_sc_before_x x;
+     | _ -> ()
+     );
+     Common.push x res;
+  ) in
+
+  (* obsolete *)
   let rparens_if = rparens_of_if xs in
   let hrparens_if = Common.hashset_of_list rparens_if in
 
-  let f = (fun prev x ->
+  (* history: this had too many false positives, which forced
+   * to rewrite the grammar to add extra virtual semicolons which
+   * then make the whole thing worse
+   *)
+  let _fobsolete = (fun prev x ->
     match prev, x with
     (* { } or ; } TODO: source of many issues *)
     | (T.T_LCURLY _ | T.T_SEMICOLON _), 
