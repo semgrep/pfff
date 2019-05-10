@@ -339,7 +339,9 @@ and st =
 (* ------------------------------------------------------------------------- *)
 (* Type *)
 (* ------------------------------------------------------------------------- *)
-(* typing-ext: facebook-ext: complex type annotations for Flow/Typescript *)
+(* typing-ext: facebook-ext: complex type annotations for Flow/Typescript
+ * See also https://www.typescriptlang.org/docs/handbook/advanced-types.html
+ *)
 and type_ =
   (* used for builtin types like 'void', 'number', 'string', 'any/mixed' *)
   | TName of nominal_type

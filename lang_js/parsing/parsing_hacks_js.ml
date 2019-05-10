@@ -170,6 +170,16 @@ let fix_tokens_ASI xs =
      | (T.T_CONTINUE _ | T.T_BREAK _), _
         when TH.line_of_tok x <> TH.line_of_tok prev ->
         push_sc_before_x x;
+     (* very conservative; should be any last(left_hand_side_expression) 
+      * but for that better to rely on ASI via parse-error recovery;
+      * no ambiguity like for continue because 
+      *    if(true) x
+      *    ++y;
+      * is not valid.
+      *)
+     | (T.T_IDENTIFIER _ | T.T_FALSE _ | T.T_TRUE _), (T.T_INCR _ | T.T_DECR _)
+        when TH.line_of_tok x <> TH.line_of_tok prev ->
+        push_sc_before_x x;
      | _ -> ()
      );
      Common.push x res;
