@@ -145,7 +145,9 @@ type expr =
    (* The comma_list can have successive Right because of "elision" *)
    | Array of expr comma_list bracket
 
-   (* Call, see also Encaps that is a sort of call when 'name' is not None  *)
+   (* Call, see also Encaps that is a sort of call when 'name' is not None.
+    * This covers Eval.
+    *)
    | Apply of expr * expr comma_list paren
 
    | Conditional of expr * tok (* ? *) * expr * tok (* : *) * expr

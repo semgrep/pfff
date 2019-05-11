@@ -21,7 +21,7 @@
  *
  * This file contains a simplified PHP abstract syntax tree. The original
  * PHP syntax tree (ast_php.ml) is good for code refactoring or
- * code visualization; the type used matches exactly the source. However,
+ * code visualization; the types used matches exactly the source. However,
  * for other algorithms, the nature of the AST makes the code a bit
  * redundant. Hence the idea of a SimpleAST which is the
  * original AST where certain constructions have been factorized
