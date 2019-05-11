@@ -126,7 +126,7 @@ type module_path = string wrap
 (* Expression *)
 (* ------------------------------------------------------------------------- *)
 type expr =
-   | L of litteral
+   | L of literal
    | V of name
    | This of tok
    (* es6: can be part only of Period or Apply expressions *)
@@ -179,7 +179,7 @@ type expr =
    (* unparser: *)
    | Paren of expr paren
 
-     and litteral =
+     and literal =
        | Bool of bool wrap
        (* float or int, in decimal/octal/binary/hexadecimal format *)
        | Num of string wrap

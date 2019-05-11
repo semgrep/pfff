@@ -100,7 +100,7 @@ type special =
 type property_name = 
   | PN of name
   (* especially useful for array objects, but also used for dynamic fields *)
-  | PN_computed of expr
+  | PN_Computed of expr
   
 
 (* ------------------------------------------------------------------------- *)
@@ -208,7 +208,7 @@ and class_ = {
 (* Program *)
 (* ------------------------------------------------------------------------- *)
 
-type program = stmt
+type program = stmt list
 
 (* ------------------------------------------------------------------------- *)
 (* Any *)
