@@ -46,9 +46,9 @@
  * 
  * 
  * todo:
- *  - import/export
  *  - add types information
  *  - ast_js_es5.ml? unsugar even more? remove classes, patterns, etc.?
+ *  - unsugar ES6 features, lift Var up, rename lexical vars, etc.
  *)
 
 (*****************************************************************************)
