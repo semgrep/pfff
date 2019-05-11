@@ -5,7 +5,7 @@ TOP=../..
 TARGET=lib
 
 SRC= \
-  ast_js.ml ast_js_build.ml \
+  ast_js.ml meta_ast_js.ml ast_js_build.ml \
   class_pre_es6.ml module_pre_es6.ml comment_js.ml annotation_js.ml \
   highlight_js.ml \
   database_light_js.ml \

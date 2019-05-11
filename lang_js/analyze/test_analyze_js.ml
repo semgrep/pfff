@@ -22,6 +22,12 @@ let test_parse_simple xs =
       )
   )
 
+let test_dump_ast file =
+  let cst = Parse_js.parse_program file in
+  let ast = Ast_js_build.program cst in
+  let v = Meta_ast_js.vof_program ast in
+  let s = Ocaml.string_of_v v in
+  pr s
 
 (*****************************************************************************)
 (* Main entry for Arg *)
@@ -30,4 +36,6 @@ let test_parse_simple xs =
 let actions () = [
   "-parse_js_simple", "   <files or dirs>",
   Common.mk_action_n_arg test_parse_simple;
+  "-dump_ast_js", "   <file>",
+  Common.mk_action_1_arg test_dump_ast;
 ]

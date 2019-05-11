@@ -56,13 +56,16 @@
 (*****************************************************************************)
 
 type tok = Parse_info.info
-type 'a wrap = 'a * tok
+and 'a wrap = 'a * tok
+ (* with tarzan *)
+
 
 (* ------------------------------------------------------------------------- *)
 (* Name *)
 (* ------------------------------------------------------------------------- *)
 
 type name = string wrap
+ (* with tarzan *)
 
 type special = 
   (* Special values *)
@@ -92,10 +95,13 @@ type special =
 
   (* less: should be in statement and unsugared in x+=1 or even x = x + 1 *)
   | Incr of bool (* true = pre *) | Decr of bool
+ (* with tarzan *)
 
 type label = string wrap
+ (* with tarzan *)
 
 type filename = string wrap
+ (* with tarzan *)
 
 let default_entity = "$default$"
 
@@ -103,7 +109,6 @@ type property_name =
   | PN of name
   (* especially useful for array objects, but also used for dynamic fields *)
   | PN_Computed of expr
-
 
 (* ------------------------------------------------------------------------- *)
 (* Expressions *)
@@ -204,20 +209,23 @@ and class_ = {
     | Static
     | Public | Private | Protected
 
+ (* with tarzan *)
 (* ------------------------------------------------------------------------- *)
 (* Toplevel *)
 (* ------------------------------------------------------------------------- *)
-and toplevel = 
+type toplevel = 
   | S of stmt
   (* 'name' can can be the special default_entity *)
   | Import of name * name (* 'name1 as name2', often name1=name2 *) * filename
   | Export of name * expr
+ (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Program *)
 (* ------------------------------------------------------------------------- *)
 
 type program = toplevel list
+ (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Any *)
@@ -227,6 +235,7 @@ type any =
   | Expr of expr
   | Stmt of stmt
   | Program of program
+ (* with tarzan *)
 
 (*****************************************************************************)
 (* Helpers *)
