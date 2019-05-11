@@ -20,7 +20,7 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Concrete Syntax Tree for Javascript, Flow, and Typescript.
+(* Concrete Syntax Tree for Javascript, Typescript, and Flow.
  * 
  * Specification: 
  *  - http://www.ecma-international.org/publications/standards/Ecma-262.htm
