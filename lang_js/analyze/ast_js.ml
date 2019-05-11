@@ -67,10 +67,14 @@ type name = string wrap
 type label = string wrap
 
 type special = 
+  (* Special values *)
   | Null | Undefined (* builtin not in grammar *)
+  | Nop
 
+  (* Special vars *)
   | This | Super
 
+  (* Special apply *)
   | New | NewTarget
   | Eval (* builtin not in grammar *)
   (* todo? | Require | Import *)
@@ -79,7 +83,9 @@ type special =
   | In | Delete | Void 
   | Spread
   | Yield | Await
+  | Concat (* Encaps *)
 
+  (* Special apply arithmetic and logic *)
   | Not | And | Or 
   | BitNot | BitAnd | BitOr | BitXor
   | Lsr | Asr | Lsl
@@ -90,9 +96,6 @@ type special =
   (* less: should be in statement and unsugared in x+=1 or even x = x + 1 *)
   | Incr of bool (* true = pre *) | Decr of bool
 
-  | Nop
-
-  | Concat
 
 type property_name = 
   | PN of name
@@ -120,7 +123,7 @@ and expr =
   (* could unify with Apply, but need Lazy special then *)
   | Conditional of expr * expr * expr
 
-  | Obj of property list
+  | Obj of obj_
   | Fun of fun_
   | Class of class_
 
@@ -181,6 +184,7 @@ and fun_ = {
   and fun_prop = 
     | Get | Set | Generator | Async
 
+and obj_ = property list
 
 and class_ = { 
   c_extends: expr option;
@@ -218,4 +222,3 @@ type any =
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-
