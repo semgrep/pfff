@@ -46,7 +46,7 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
 
   (* many class idions are recognized in Class_js *)
   let hcomplete_name_of_info =
-    Class_js.extract_complete_name_of_info ast
+    Class_pre_es6.extract_complete_name_of_info ast
   in
 
 

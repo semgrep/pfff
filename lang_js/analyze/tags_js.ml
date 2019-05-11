@@ -51,7 +51,7 @@ let tags_of_files_or_dirs ?(verbose=false) xs =
 
     (* many class idioms are recognized in Class_js *)
     let hcomplete_name_of_info = 
-      Class_js.extract_complete_name_of_info ast  in
+      Class_pre_es6.extract_complete_name_of_info ast  in
     
     let tags_classes = 
       hcomplete_name_of_info 

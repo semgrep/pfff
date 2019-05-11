@@ -134,7 +134,7 @@ let compute_database ?(verbose=false) files_or_dirs =
     let ast = astopt ||| [] in
 
     let hcomplete_name_of_info = 
-      Class_js.extract_complete_name_of_info ast 
+      Class_pre_es6.extract_complete_name_of_info ast 
     in
 
     let prefs = Highlight_code.default_highlighter_preferences in

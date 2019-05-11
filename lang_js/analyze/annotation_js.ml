@@ -28,8 +28,8 @@ open Common
 (*****************************************************************************)
 
 type annotation =
-  | ProvidesModule of Module_js.module_
-  | ProvidesLegacy of Module_js.module_
+  | ProvidesModule of Module_pre_es6.module_
+  | ProvidesLegacy of Module_pre_es6.module_
   | RunWhenReady
   | Other of string
 
