@@ -64,8 +64,6 @@ type 'a wrap = 'a * tok
 
 type name = string wrap
 
-type label = string wrap
-
 type special = 
   (* Special values *)
   | Null | Undefined (* builtin not in grammar *)
@@ -81,11 +79,11 @@ type special =
   | Typeof | Instanceof
   | In | Delete | Void 
   | Spread
-  | Yield | Await
+  | Yield | YieldStar | Await
   | Encaps of name option
 
   (* Special apply arithmetic and logic *)
-  | Not | And | Or 
+  | Not | And | Or | Xor
   | BitNot | BitAnd | BitOr | BitXor
   | Lsr | Asr | Lsl
   | Equal | PhysEqual 
@@ -95,11 +93,17 @@ type special =
   (* less: should be in statement and unsugared in x+=1 or even x = x + 1 *)
   | Incr of bool (* true = pre *) | Decr of bool
 
+type label = string wrap
+
+type filename = string wrap
+
+let default_entity = "$default$"
 
 type property_name = 
   | PN of name
   (* especially useful for array objects, but also used for dynamic fields *)
   | PN_Computed of expr
+
 
 (* ------------------------------------------------------------------------- *)
 (* Expressions *)
@@ -121,7 +125,7 @@ and expr =
   | Class of class_
   | ObjAccess of expr * property_name
 
-  | Fun of fun_
+  | Fun of fun_ * name option (* when recursive *)
   | Apply of expr * expr list
 
   (* could unify with Apply, but need Lazy special then *)
@@ -203,12 +207,17 @@ and class_ = {
 (* ------------------------------------------------------------------------- *)
 (* Toplevel *)
 (* ------------------------------------------------------------------------- *)
+and toplevel = 
+  | S of stmt
+  (* 'name' can can be the special default_entity *)
+  | Import of name * name (* 'name1 as name2', often name1=name2 *) * filename
+  | Export of name * expr
 
 (* ------------------------------------------------------------------------- *)
 (* Program *)
 (* ------------------------------------------------------------------------- *)
 
-type program = stmt list
+type program = toplevel list
 
 (* ------------------------------------------------------------------------- *)
 (* Any *)

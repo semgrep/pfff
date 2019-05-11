@@ -66,10 +66,67 @@ and module_items env xs =
   xs |> List.map (module_item env) |> List.flatten
 
 and module_item env = function
-  | C.It x -> item env x
-  | C.Import (tok, _, _)
-  | C.Export (tok, _)
-     -> raise (TodoConstruct ("namespace", tok))
+  | C.It x -> item env x |> List.map (fun x -> A.S x)
+  | C.Import (_, x, _) ->
+     import env x
+  | C.Export (tok, x) ->
+     export env tok x
+
+and import env = function
+  | C.ImportEffect ((_file, tok)) ->
+     raise (UnhandledConstruct ("import effect", tok))
+  | C.ImportFrom ((default_opt, names_opt) , (_, path)) ->
+    (match default_opt with
+    | Some n -> 
+       [A.Import ((A.default_entity, snd n),  name env n, path)]
+    | None -> []
+    ) @
+    (match names_opt with
+    | None -> []
+    | Some ni ->
+      (match ni with
+      | C.ImportNamespace (_, _, (_name, tok)) ->
+        raise (UnhandledConstruct ("import namespace", tok))
+      | C.ImportNames xs ->
+        xs |> paren |> comma_list |> List.map (fun (n1, n2opt) ->
+           let n1 = name env n1 in
+           let n2 = 
+              match n2opt with
+              | None -> n1
+              | Some (_, n2) -> name env n2
+           in
+           A.Import (n1, n2, path)
+         )
+       )
+     )
+
+and export env tok = function
+ | C.ExportDefaultExpr (tok, e, _)  -> 
+   let e = expr env e in
+   let n = A.default_entity, tok in
+   [A.Export (n, e)]
+ | C.ExportDecl x ->
+   let xs = item env x in
+   xs |> List.map (function
+    (* less: v_kind? *)
+    | A.VarDecl v -> A.Export (v.A.v_name, v.A.v_init)
+    | _ -> raise (UnhandledConstruct ("exporting a stmt", tok))
+   )
+ | C.ExportDefaultDecl (tok, x) ->
+   let xs = item env x in
+   xs |> List.map (function
+    | A.VarDecl v -> 
+        let n = A.default_entity, tok in (*v.A.v_name*)
+        (* less: v_kind? *)
+        A.Export (n, v.A.v_init)
+    | _ -> raise (UnhandledConstruct ("exporting a stmt", tok))
+   )
+ | C.ExportNames (_xs, _) ->
+   raise (UnhandledConstruct ("exporting names", tok))
+ | C.ReExportNamespace (_, _, _) ->
+   raise (UnhandledConstruct ("reexporting namespace", tok))
+ | C.ReExportNames (_, _, _) ->
+   raise (UnhandledConstruct ("reexporting names", tok))
 
 and item env = function
   | C.St x -> stmt env x
@@ -77,7 +134,8 @@ and item env = function
     let fun_ = func_decl env x in
     (match x.C.f_name with
     | Some x ->
-      [A.VarDecl {A.v_name = name env x; v_kind = Const; v_init = Fun fun_}]
+      [A.VarDecl {A.v_name = name env x; v_kind = A.Const; 
+                  v_init = A.Fun (fun_, None)}]
     | None ->
        raise (UnhandledConstruct ("weird anon func decl", fst3 x.C.f_params))
     )
@@ -85,7 +143,7 @@ and item env = function
     let class_ = class_decl env x in
     (match x.C.c_name with
     | Some x ->
-      [A.VarDecl {A.v_name = name env x; v_kind=Const;v_init=A.Class class_}]
+      [A.VarDecl {A.v_name = name env x; v_kind=A.Const;v_init=A.Class class_}]
     | None ->
        raise (UnhandledConstruct ("weird anon class decl", x.C.c_tok))
     )
@@ -93,13 +151,13 @@ and item env = function
   | C.InterfaceDecl x -> 
     raise (UnhandledConstruct ("Typescript", x.C.i_tok))
   | C.ItemTodo tok ->
-    raise (TodoConstruct ("Todo", tok))
+    raise (TodoConstruct ("ItemTodo", tok))
 
 (* ------------------------------------------------------------------------- *)
 (* Names *)
 (* ------------------------------------------------------------------------- *)
-and name env x = x
-and label env x = x
+and name _env x = x
+and label _env x = x
 
 and property_name env = function
   | C.PN_Id x       -> A.PN (name env x)
@@ -112,8 +170,9 @@ and property_name env = function
 (* ------------------------------------------------------------------------- *)
 
 and stmt env = function
-  | C.VarsDecl (_vkind, _vbindings, _) ->
-    raise Todo
+  | C.VarsDecl ((vkind,_), bindings, _) ->
+    bindings |> comma_list |> List.map (fun x -> 
+     A.VarDecl (var_binding env vkind x))
   | C.Block x -> 
     [A.Block (x |> paren |> List.map (item env) |> List.flatten)]
   | C.Nop _ -> 
@@ -139,7 +198,12 @@ and stmt env = function
      [A.While (e, st)]
   | C.For (_, _, lhs_vars_opt, _, e2opt, _, e3opt, _, st) ->
      let e1 = 
-       raise Todo 
+       match lhs_vars_opt with
+       | Some (C.LHS1 e) -> Right (expr env e)
+       | Some (C.ForVars (((vkind, _), vbindings))) ->
+         Left (vbindings |> comma_list |> List.map (fun x -> 
+             (var_binding env vkind x)))
+       | None -> Right (A.Nop)
      in
      let e2 = expr_opt env e2opt in
      let e3 = expr_opt env e3opt in
@@ -147,14 +211,18 @@ and stmt env = function
      [A.For (A.ForClassic (e1, e2, e3), st)]
   | C.ForIn (_, _, lhs_var, _, e2, _, st) ->
     let e1 =
-      raise Todo
+      match lhs_var with
+      | C.LHS2 e -> Right (expr env e)
+      | C.ForVar ((vkind,_), binding) -> Left (var_binding env vkind binding)
     in 
     let e2 = expr env e2 in
     let st = stmt1 env st in
     [A.For (A.ForIn (e1, e2), st)]
   | C.ForOf (_, _, lhs_var, _, e2, _, st) ->
     let e1 =
-      raise Todo
+      match lhs_var with
+      | C.LHS2 e -> Right (expr env e)
+      | C.ForVar ((vkind,_), binding) -> Left (var_binding env vkind binding)
     in 
     let e2 = expr env e2 in
     let st = stmt1 env st in
@@ -169,7 +237,7 @@ and stmt env = function
     [A.Break (opt label env lopt)]
   | C.Return (_, eopt, _) -> 
     [A.Return (expr_opt env eopt)]
-  | C.With (tok, e, st) ->
+  | C.With (tok, _e, _st) ->
     raise (TodoConstruct ("with", tok))
   | C.Labeled (lbl, _, st) ->
     let lbl = label env lbl in
@@ -231,10 +299,78 @@ and expr env = function
     binop env op e1 e2
   | C.Period (e, _, n) ->
     let e = expr env e in
-    A.ObjAccess (e, PN (name env n))
+    A.ObjAccess (e, A.PN (name env n))
   | C.Bracket (e, e2) ->
     let e = expr env e in
-    A.ObjAccess (e, PN_Computed (expr env (paren e2)))
+    A.ObjAccess (e, A.PN_Computed (expr env (paren e2)))
+  | C.Object xs ->
+    A.Obj (xs |> paren |> comma_list |> List.map (property env))
+  | C.Array (tok, xs, _) ->
+    A.Obj (array_obj env 0 tok xs)
+  | C.Apply (e, es) ->
+    let e = expr env e in
+    let es = List.map (expr env) (es |> paren |> comma_list) in
+    A.Apply (e, es)
+  | C.Conditional (e1, _, e2, _, e3) ->
+    let e1 = expr env e1 in
+    let e2 = expr env e2 in
+    let e3 = expr env e3 in
+    A.Conditional (e1, e2, e3)
+  | C.Assign (e1, (op, tok), e2) ->
+    let e1 = expr env e1 in
+    let e2 = expr env e2 in
+    (match op with
+    | C.A_eq -> A.Assign (e1, e2)
+    (* todo: should use intermediate? can unsugar like this? *)
+    | C.A_add -> A.Assign (e1, A.Apply(A.IdSpecial (A.Plus, tok), [e1;e2]))
+    | C.A_sub -> A.Assign (e1, A.Apply(A.IdSpecial (A.Minus, tok), [e1;e2]))
+    | C.A_mul -> A.Assign (e1, A.Apply(A.IdSpecial (A.Mul, tok), [e1;e2]))
+    | C.A_div -> A.Assign (e1, A.Apply(A.IdSpecial (A.Div, tok), [e1;e2]))
+    | C.A_mod -> A.Assign (e1, A.Apply(A.IdSpecial (A.Mod, tok), [e1;e2]))
+    | C.A_lsl -> A.Assign (e1, A.Apply(A.IdSpecial (A.Lsl, tok), [e1;e2]))
+    | C.A_lsr -> A.Assign (e1, A.Apply(A.IdSpecial (A.Lsr, tok), [e1;e2]))
+    | C.A_asr -> A.Assign (e1, A.Apply(A.IdSpecial (A.Asr, tok), [e1;e2]))
+    | C.A_and -> A.Assign (e1, A.Apply(A.IdSpecial (A.And, tok), [e1;e2]))
+    | C.A_or  -> A.Assign (e1, A.Apply(A.IdSpecial (A.Or, tok), [e1;e2]))
+    | C.A_xor -> A.Assign (e1, A.Apply(A.IdSpecial (A.Xor, tok), [e1;e2]))
+    )
+  | C.Seq (e1, tok, e2) ->
+    let e1 = expr env e1 in
+    let e2 = expr env e2 in
+    A.Apply (A.IdSpecial (A.Seq, tok), [e1;e2])
+  | C.Function x ->
+    let fun_ = func_decl env x in
+    (match x.C.f_name with
+    | None -> A.Fun (fun_, None)
+    | Some n -> A.Fun (fun_, Some (name env n))
+    )
+  | C.Class x ->
+    let class_ = class_decl env x in
+    (match x.C.c_name with
+    | None -> A.Class class_
+    | Some _ ->
+       raise (UnhandledConstruct ("weird named class expr", x.C.c_tok))
+    )
+  | C.Arrow x -> A.Fun (arrow_func env x, None)
+  | C.Yield (tok, star, eopt) ->
+    let special = 
+       if star = None
+       then A.Yield
+       else A.YieldStar 
+    in
+    let e = expr_opt env eopt in
+    A.Apply (A.IdSpecial (special, tok), [e])
+  | C.Await (tok, e) ->
+    let e = expr env e in
+    A.Apply (A.IdSpecial (A.Await, tok), [e])
+  | C.NewTarget (tok, _, _) ->
+    A.Apply (A.IdSpecial (A.NewTarget, tok), [])
+
+  | C.Encaps (name_opt, tok, xs, _) ->
+    let special = A.Encaps name_opt in
+    let xs = List.map (encaps env) xs in
+    A.Apply (A.IdSpecial (special, tok), xs)
+
   | C.XhpHtml x ->
     let tok = 
       match x with
@@ -244,20 +380,19 @@ and expr env = function
     raise (UnhandledConstruct ("xhp", tok))
   | C.Paren x ->
      expr env (paren x)
-  | _ -> raise Todo
 
 and expr_opt env = function
   | None -> A.Nop
   | Some e -> expr env e
 
-and literal env = function
+and literal _env = function
   | C.Bool x -> A.Bool x
   | C.Num x -> A.Num x
   | C.String x -> A.String x
   | C.Regexp x -> A.Regexp x
   | C.Null tok -> A.IdSpecial (A.Null, tok)
 
-and unop env = function
+and unop _env = function
   | C.U_new -> A.New
   | C.U_delete -> A.Delete
   | C.U_typeof -> A.Typeof
@@ -272,7 +407,7 @@ and unop env = function
   | C.U_bitnot -> A.BitNot
   | C.U_spread -> A.Spread
 
-and binop env (op,tok) e1 e2 = 
+and binop _env (op,tok) e1 e2 = 
   let res = 
     match op with
     | C.B_instanceof -> Left A.Instanceof
@@ -319,17 +454,147 @@ and binop env (op,tok) e1 e2 =
   | Left special ->A.Apply (A.IdSpecial (special, tok), [e1; e2])
   | Right x -> x
 
+and encaps env = function
+  | C.EncapsString x -> A.String x
+  | C.EncapsExpr (_, e, _) -> expr env e
 
 (* ------------------------------------------------------------------------- *)
 (* Entities *)
 (* ------------------------------------------------------------------------- *)
+and var_binding env vkind = function
+  | C.VarClassic x -> variable_declaration env vkind x
+  | C.VarPatternTodo -> raise Todo
+
+and variable_declaration env vkind x =
+  let n = name env x.C.v_name in
+  let init = 
+    match x.C.v_init with
+    (* less Undefined? *)
+    | None -> A.Nop
+    | Some (_, e) -> expr env e
+  in
+  let vkind = var_kind env vkind in
+  { A.v_name = n; v_init = init; v_kind = vkind }
+
+and var_kind _env = function
+  | C.Var -> A.Var
+  | C.Const -> A.Const
+  | C.Let -> A.Let
+
+
 
 and func_decl env x =
-  raise Todo
+  let props = func_kind env x.C.f_kind in
+  let params = 
+   x.C.f_params |> paren |> comma_list |> List.map (parameter_binding env) in
+  let body = stmt1_item_list env (x.C.f_body |> paren) in
+  { A.f_props = props; f_params = params; f_body = body }
+
+and func_kind _env = function
+ | C.Regular -> []
+ | C.Get _ -> [A.Get]
+ | C.Set _ -> [A.Set]
+ | C.Generator _ -> [A.Generator]
+ | C.Async _ -> [A.Async]
+
+and parameter_binding env = function
+ | C.ParamClassic p -> parameter env p
+ | C.ParamPatternTodo -> raise Todo
+
+and parameter env p =
+  let name = name env p.C.p_name in
+  let d = opt default env p.C.p_default in
+  let dots = p.C.p_dots <> None in
+  { A.p_name = name; p_default = d; p_dots = dots }
+
+and default env = function
+  (* less: use Undefined? *)
+  | C.DNone _ -> A.Nop
+  | C.DSome (_, e) -> expr env e
+
+and arrow_func env x =
+  (* todo: they can have some too, but not in CST for now *)
+  let props = [] in
+  let bindings = 
+    match x.C.a_params with
+    | C.ASingleParam x -> [x]
+    | C.AParams xs -> xs |> paren |> comma_list
+  in
+  let params = bindings |> List.map (parameter_binding env) in
+  let body = 
+    match x.C.a_body with
+    | C.AExpr e -> A.ExprStmt (expr env e)
+    | C.ABody xs -> stmt1_item_list env (xs |> paren)
+  in
+  { A.f_props = props; f_params = params; f_body = body }
+
+
+and property env = function
+ | C.P_field (pname, _, e) ->
+   let pname = property_name env pname in
+   let e = expr env e in
+   let props = [] in
+   A.Field (pname, props, e)
+ | C.P_method x ->
+    let fun_ = func_decl env x in
+   (* todo: could be a property_name already, should not use f_name *)
+    (match x.C.f_name with
+    | Some x ->
+      let pname = A.PN (name env x) in
+      A.Field (pname, [], A.Fun (fun_, None))
+    | None ->
+       raise (UnhandledConstruct ("weird anon method decl", fst3 x.C.f_params))
+    )
+  | C.P_shorthand n ->
+    let n = name env n in
+    A.Field (A.PN n, [], A.Id n)
+  | C.P_spread (_, e) ->
+    let e = expr env e in
+    A.FieldSpread e
+
+and array_obj env idx tok xs =
+  match xs with
+  | [] -> []
+  | x::xs -> 
+    (match x with
+    | Right tok -> array_obj env (idx+1) tok xs
+    | Left e ->
+      let n = A.PN (string_of_int idx, tok) in
+      let e = expr env e in
+      let elt = A.Field (n, [], e) in
+      elt::array_obj env idx tok xs
+    )
 
 and class_decl env x =
-  raise Todo
+  let extends = opt (fun env (_, typ) -> nominal_type env typ) env 
+    x.C.c_extends in
+  let xs = x.C.c_body |> paren |> List.map (class_element env) |> 
+    List.flatten in
+  { A.c_extends = extends; c_body = xs }
 
+and nominal_type env (e, _) = expr env e
+
+and class_element env = function
+  | C.Field (n, _, _) -> 
+    let n = name env n in
+    [A.Field (A.PN n, [], A.Nop)]
+  | C.Method (static_opt, x) ->
+    let fun_ = func_decl env x in
+    let props = 
+      match static_opt with
+      | None -> []
+      | Some _ -> [A.Static]
+    in
+   (* todo: could be a property_name already, should not use f_name *)
+    (match x.C.f_name with
+    | Some x ->
+      let pname = A.PN (name env x) in
+      [A.Field (pname, props, A.Fun (fun_, None))]
+    | None ->
+       raise (UnhandledConstruct ("weird anon method decl", fst3 x.C.f_params))
+    )
+  | C.ClassExtraSemiColon _ -> []
+  | C.ClassTodo -> raise Todo 
 
 (* ------------------------------------------------------------------------- *)
 (* Misc *)

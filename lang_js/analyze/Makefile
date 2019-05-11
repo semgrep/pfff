@@ -70,8 +70,8 @@ clean::
 	rm -f $(TARGET).top
 
 #temporary
-ast_js_build.cmo: ast_js_build.ml
-	$(OCAMLC) -w -A -c $<
+#ast_js_build.cmo: ast_js_build.ml
+#	$(OCAMLC) -w -A -c $<
 
 ##############################################################################
 # Literate Programming rules
