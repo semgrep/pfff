@@ -51,6 +51,17 @@ let hcommon_methods = Common.hashset_of_list [
 let is_common_method s = 
   Hashtbl.mem hcommon_methods s
 
+let remove_quotes_if_present s =
+  (* for JX the entity names are passed as strings when
+   * defining the entity (e.g. JX.Install('Typeahead'. ...)
+   * but use normally (e.g. var x = JX.Typeahead(...))
+   * so here we normalize.
+   *)
+  match s with
+  | _ when s =~ "'\\(.*\\)'$" -> Common.matched1 s
+  | _ when s =~ "\"\\(.*\\)\"$" -> Common.matched1 s
+  | _ -> s
+
 
 let mk_entity ~root ~hcomplete_name_of_info info categ =
 
@@ -58,7 +69,7 @@ let mk_entity ~root ~hcomplete_name_of_info info categ =
   (* when using frameworks like Javelin/JX, the defs are
    * actually in strings, as in JX.install("MyClass", { ... });
    *)
-  let s = Ast.remove_quotes_if_present s in
+  let s = remove_quotes_if_present s in
 
   (*pr2 (spf "mk_entity %s" s);*)
 

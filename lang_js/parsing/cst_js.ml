@@ -633,14 +633,3 @@ let fakeInfoAttach info =
     token = PI.FakeTokStr (";", Some (pinfo, -1));
     transfo = PI.NoTransfo;
   }
-
-let remove_quotes_if_present s =
-  (* for JX the entity names are passed as strings when
-   * defining the entity (e.g. JX.Install('Typeahead'. ...)
-   * but use normally (e.g. var x = JX.Typeahead(...))
-   * so here we normalize.
-   *)
-  match s with
-  | _ when s =~ "'\\(.*\\)'$" -> Common.matched1 s
-  | _ when s =~ "\"\\(.*\\)\"$" -> Common.matched1 s
-  | _ -> s
