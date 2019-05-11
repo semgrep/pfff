@@ -121,8 +121,16 @@ and export env tok = function
         A.Export (n, v.A.v_init)
     | _ -> raise (UnhandledConstruct ("exporting a stmt", tok))
    )
- | C.ExportNames (_xs, _) ->
-   raise (UnhandledConstruct ("exporting names", tok))
+ | C.ExportNames (xs, _) ->
+   xs |> paren |> comma_list |> List.map (fun (n1, n2opt) ->
+     let n1 = name env n1 in
+     let n2 = 
+       match n2opt with
+       | None -> n1
+       | Some (_, n2) -> name env n2
+     in
+     A.Export (n2, A.Id n1)
+  )
  | C.ReExportNamespace (_, _, _) ->
    raise (UnhandledConstruct ("reexporting namespace", tok))
  | C.ReExportNames (_, _, _) ->
