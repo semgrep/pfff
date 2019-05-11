@@ -69,7 +69,6 @@ type label = string wrap
 type special = 
   (* Special values *)
   | Null | Undefined (* builtin not in grammar *)
-  | Nop
 
   (* Special vars *)
   | This | Super
@@ -83,7 +82,7 @@ type special =
   | In | Delete | Void 
   | Spread
   | Yield | Await
-  | Concat (* Encaps *)
+  | Encaps of name option
 
   (* Special apply arithmetic and logic *)
   | Not | And | Or 
@@ -101,7 +100,6 @@ type property_name =
   | PN of name
   (* especially useful for array objects, but also used for dynamic fields *)
   | PN_Computed of expr
-  
 
 (* ------------------------------------------------------------------------- *)
 (* Expressions *)
@@ -114,18 +112,20 @@ and expr =
 
   | Id of name
   | IdSpecial of special wrap
+  | Nop
 
-  | ObjAccess of expr * property_name
-  | Apply of expr * expr list
   (* should be a statement *)
   | Assign of expr * expr
 
+  | Obj of obj_
+  | Class of class_
+  | ObjAccess of expr * property_name
+
+  | Fun of fun_
+  | Apply of expr * expr list
+
   (* could unify with Apply, but need Lazy special then *)
   | Conditional of expr * expr * expr
-
-  | Obj of obj_
-  | Fun of fun_
-  | Class of class_
 
 (* ------------------------------------------------------------------------- *)
 (* Statements *)
@@ -142,7 +142,7 @@ and stmt =
 
   | Switch of expr * case list
   | Continue of label option | Break of label option
-  | Return of expr option
+  | Return of expr
 
   | Label of label * stmt
  
@@ -166,7 +166,7 @@ and stmt =
 and var = { 
   v_name: name;
   v_kind: var_kind;
-  v_init: expr option;
+  v_init: expr;
 }
   and var_kind = Var | Let | Const
 
