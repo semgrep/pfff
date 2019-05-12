@@ -51,9 +51,12 @@ type env = {
   current: Graph_code.node;
   file_readable: Common.filename;
 
-  (*
-   locals
-  *)
+  (* covers also the parameters; the type_ is really only for datalog_c *)
+  locals: (string) list ref;
+
+  (* error reporting *)
+  dupes: (Graph_code.node, bool) Hashtbl.t;
+
   log: string -> unit;
   pr2_and_log: string -> unit;
 }
@@ -97,10 +100,74 @@ let error s tok =
 (*****************************************************************************)
 (* Add Node *)
 (*****************************************************************************)
+let add_node_and_edge_if_defs_mode env (name, kind) =
+  let str = Ast.str_of_name name in
+  let str' =
+    match env.current with
+    | (s, _) -> s ^ "::" ^ str
+  in
+  let node = (str', kind) in
+
+  if env.phase = Defs then begin
+    match () with
+    (* if parent is a dupe, then don't want to attach yourself to the
+     * original parent, mark this child as a dupe too.
+     *)
+    | _ when Hashtbl.mem env.dupes env.current ->
+        Hashtbl.replace env.dupes node true
+
+    (* already there? a dupe? *)
+    | _ when G.has_node node env.g ->
+              env.pr2_and_log (spf "DUPE entity: %s" (G.string_of_node node));
+              let orig_file = G.file_of_node node env.g in
+              env.log (spf " orig = %s" orig_file);
+              env.log (spf " dupe = %s" env.file_readable);
+              Hashtbl.replace env.dupes node true;
+    (* ok not a dupe, let's add it then *)
+    | _ ->
+      (* try but should never happen, see comment below *)
+      try
+        let pos = Parse_info.token_location_of_info (snd name) in
+        let typ = None in
+        let nodeinfo = { Graph_code.
+          pos; typ;
+          props = [];
+        } in
+        env.g |> G.add_node node;
+        env.g |> G.add_edge (env.current, node) G.Has;
+        env.g |> G.add_nodeinfo node nodeinfo;
+      (* this should never happen, but it's better to give a good err msg *)
+      with Not_found ->
+        error ("Not_found:" ^ str) (snd name)
+  end;
+  if Hashtbl.mem env.dupes node
+  then env
+  else { env with current = node }
 
 (*****************************************************************************)
 (* Add edges *)
 (*****************************************************************************)
+let add_use_edge env (name, kind) =
+  let s = Ast.str_of_name name in
+  let src = env.current in
+  let dst = (s, kind) in
+  match () with
+  | _ when Hashtbl.mem env.dupes src || Hashtbl.mem env.dupes dst ->
+      (* todo: stats *)
+      env.pr2_and_log (spf "skipping edge (%s -> %s), one of it is a dupe"
+                         (G.string_of_node src) (G.string_of_node dst));
+
+  | _ when not (G.has_node src env.g) ->
+      error (spf "SRC FAIL: %s (-> %s)" 
+               (G.string_of_node src) (G.string_of_node dst)) (snd name)
+  (* the normal case *)
+  | _ when G.has_node dst env.g ->
+      G.add_edge (src, dst) G.Use env.g;
+
+  | _ ->
+    env.pr2_and_log (spf "Lookup failure on %s (%s)"
+                       (G.string_of_node dst)
+                       (Parse_info.string_of_info (snd name)))
 
 (*****************************************************************************)
 (* Defs/Uses *)
@@ -126,7 +193,7 @@ let extract_defs_uses env ast =
 (* Main entry point *)
 (*****************************************************************************)
 
-let build ?(verbose=false) root files  =
+let build ?(verbose=false) root files =
   let g = G.create () in
   G.create_initial_hierarchy g;
 
@@ -137,11 +204,12 @@ let build ?(verbose=false) root files  =
     phase = Defs;
     current = G.pb;
     file_readable = "__filled_later__";
+    locals = ref [];
+    dupes = Hashtbl.create 101;
 
     log = (fun s -> output_string chan (s ^ "\n"); flush chan;);
     pr2_and_log = (fun s ->
-      (*if verbose then *)
-      pr2 s;
+      if verbose then pr2 s;
       output_string chan (s ^ "\n"); flush chan;
     );
   } in
@@ -151,9 +219,9 @@ let build ?(verbose=false) root files  =
     List.iter (fun file ->
       k();
       let ast = parse file in
-      let readable = Common.readable ~root file in
+      let file_readable = Common.readable ~root file in
       extract_defs_uses { env with 
-        phase = Defs; file_readable = readable; 
+        phase = Defs; file_readable; 
       } ast
     ));
 
@@ -163,9 +231,9 @@ let build ?(verbose=false) root files  =
     List.iter (fun file ->
       k();
       let ast = parse file in
-      let readable = Common.readable ~root file in
+      let file_readable = Common.readable ~root file in
       extract_defs_uses { env with 
-        phase = Uses; file_readable = readable;
+        phase = Uses; file_readable;
       } ast
 
     ));
