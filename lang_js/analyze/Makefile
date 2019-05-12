@@ -69,8 +69,8 @@ clean::
 	rm -f $(TARGET).top
 
 #temporary
-graph_code_js.cmo: graph_code_js.ml
-	$(OCAMLC) -w -A -c $<
+#graph_code_js.cmo: graph_code_js.ml
+#	$(OCAMLC) -w -A -c $<
 
 ##############################################################################
 # Literate Programming rules

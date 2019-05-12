@@ -95,7 +95,7 @@ let error s tok =
 (* File resolution *)
 (*****************************************************************************)
 (* TODO: resolve and normalize path *)
-let resolve_path env file =
+let resolve_path _env file =
   file
 
 (*****************************************************************************)
@@ -114,9 +114,9 @@ let add_node_and_edge_if_defs_mode env (name, kind) =
   let str = Ast.str_of_name name in
   let str' =
     match env.current with
-    | (s, File) -> 
-       let (d, b, e) = Common2.dbe_of_filename s in
-       let s = Common2.filename_of_dbe (s,b,"") in
+    | (s, E.File) -> 
+       let (d, b, _e) = Common2.dbe_of_filename s in
+       let s = Common2.filename_of_dbe (d,b,"") in
        s ^ "." ^ str
     | (s, _) -> s ^ "." ^ str
   in
@@ -161,7 +161,7 @@ let add_node_and_edge_if_defs_mode env (name, kind) =
 (*****************************************************************************)
 (* Add edges *)
 (*****************************************************************************)
-let add_use_edge env (name, kind) =
+let _add_use_edge env (name, kind) =
   let s = Ast.str_of_name name in
   let src = env.current in
   let dst = (s, kind) in
@@ -197,7 +197,6 @@ let rec extract_defs_uses env ast =
   end;
   let env = { env with current = (env.file_readable, E.File); } in
   toplevels env ast
-
 
 (* ---------------------------------------------------------------------- *)
 (* Toplevels *)
@@ -247,13 +246,13 @@ and name_expr env name v_kind e =
 (* ---------------------------------------------------------------------- *)
 (* Statements *)
 (* ---------------------------------------------------------------------- *)
-and stmt env st =
+and stmt _env _st =
   ()
 
 (* ---------------------------------------------------------------------- *)
 (* Expessions *)
 (* ---------------------------------------------------------------------- *)
-and expr env e =
+and expr _env _e =
   ()
 
 (*****************************************************************************)
