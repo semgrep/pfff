@@ -114,7 +114,11 @@ let add_node_and_edge_if_defs_mode env (name, kind) =
   let str = Ast.str_of_name name in
   let str' =
     match env.current with
-    | (s, _) -> s ^ "::" ^ str
+    | (s, File) -> 
+       let (d, b, e) = Common2.dbe_of_filename s in
+       let s = Common2.filename_of_dbe (s,b,"") in
+       s ^ "." ^ str
+    | (s, _) -> s ^ "." ^ str
   in
   let node = (str', kind) in
 
@@ -217,22 +221,40 @@ and toplevel env x =
        let str = Ast.str_of_name name in
        Hashtbl.replace env.exports env.file_readable (str::exports)
      end;
-     name_expr env name expr
-  | S stmt ->
-    ()
+     name_expr env name Const expr
+  | S st ->
+    (match st with
+    | VarDecl {v_name; v_kind; v_init} ->
+       name_expr env v_name v_kind v_init
+    | _ ->
+      if env.phase = Uses
+      then stmt env st
+    )
 
 and toplevels env xs = List.iter (toplevel env) xs
 
-and name_expr env name expr =
-  ()
+and name_expr env name v_kind e =
+  let kind =
+    match e with
+    | Fun _ -> E.Function
+    | Class _ -> E.Class
+    | Obj _ -> E.Class
+    | _ -> if v_kind = Const then E.Constant else E.Global
+  in
+  let env = add_node_and_edge_if_defs_mode env (name, kind) in
+  if env.phase = Uses 
+  then expr env e
 (* ---------------------------------------------------------------------- *)
 (* Statements *)
 (* ---------------------------------------------------------------------- *)
+and stmt env st =
+  ()
 
 (* ---------------------------------------------------------------------- *)
 (* Expessions *)
 (* ---------------------------------------------------------------------- *)
-
+and expr env e =
+  ()
 
 (*****************************************************************************)
 (* Main entry point *)
