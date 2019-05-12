@@ -173,12 +173,25 @@ let add_use_edge env (name, kind) =
 (* Defs/Uses *)
 (*****************************************************************************)
 
-let extract_defs_uses env ast =
-  ()
+let rec extract_defs_uses env ast =
+  if env.phase = Defs then begin
+    let dir = Common2.dirname env.file_readable in
+    G.create_intermediate_directories_if_not_present env.g dir;
+    let node = (env.file_readable, E.File) in
+    env.g |> G.add_node node;
+    env.g |> G.add_edge ((dir, E.Dir), node) G.Has;
+  end;
+  let env = { env with current = (env.file_readable, E.File); } in
+  toplevels env ast
+
 
 (* ---------------------------------------------------------------------- *)
 (* Toplevels *)
 (* ---------------------------------------------------------------------- *)
+and toplevel env x =
+  ()
+
+and toplevels env xs = List.iter (toplevel env) xs
 
 (* ---------------------------------------------------------------------- *)
 (* Statements *)
