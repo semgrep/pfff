@@ -51,9 +51,11 @@ type env = {
   current: Graph_code.node;
   file_readable: Common.filename;
 
-  (* covers also the parameters; the type_ is really only for datalog_c *)
+  imports: (string, (string (* orig name *) * Common.filename)) Hashtbl.t;
+  (* covers also the parameters *)
   locals: (string) list ref;
 
+  exports: (Common.filename, string list) Hashtbl.t;
   (* error reporting *)
   dupes: (Graph_code.node, bool) Hashtbl.t;
 
@@ -90,8 +92,16 @@ let error s tok =
   failwith (spf "%s: %s" (Parse_info.string_of_info tok) s)
 
 (*****************************************************************************)
-(* Naming helpers *)
+(* File resolution *)
 (*****************************************************************************)
+(* TODO: resolve and normalize path *)
+let resolve_path env file =
+  file
+
+(*****************************************************************************)
+(* Name resolution *)
+(*****************************************************************************)
+
 
 (*****************************************************************************)
 (* Other helpers *)
@@ -189,10 +199,32 @@ let rec extract_defs_uses env ast =
 (* Toplevels *)
 (* ---------------------------------------------------------------------- *)
 and toplevel env x =
-  ()
+  match x with
+  | Import (name1, name2, file) ->
+    if env.phase = Uses then begin
+      let str1 = Ast.str_of_name name1 in
+      let str2 = Ast.str_of_name name2 in
+      let readable = resolve_path env (Ast.unwrap file) in
+      Hashtbl.add env.imports str2 (str1, readable);
+    end
+  | Export (name, expr) -> 
+     if env.phase = Defs then begin
+       let exports =
+         try 
+           Hashtbl.find env.exports env.file_readable
+         with Not_found -> []
+       in
+       let str = Ast.str_of_name name in
+       Hashtbl.replace env.exports env.file_readable (str::exports)
+     end;
+     name_expr env name expr
+  | S stmt ->
+    ()
 
 and toplevels env xs = List.iter (toplevel env) xs
 
+and name_expr env name expr =
+  ()
 (* ---------------------------------------------------------------------- *)
 (* Statements *)
 (* ---------------------------------------------------------------------- *)
@@ -217,7 +249,9 @@ let build ?(verbose=false) root files =
     phase = Defs;
     current = G.pb;
     file_readable = "__filled_later__";
+    imports = Hashtbl.create 13;
     locals = ref [];
+    exports = Hashtbl.create 101;
     dupes = Hashtbl.create 101;
 
     log = (fun s -> output_string chan (s ^ "\n"); flush chan;);
@@ -234,7 +268,7 @@ let build ?(verbose=false) root files =
       let ast = parse file in
       let file_readable = Common.readable ~root file in
       extract_defs_uses { env with 
-        phase = Defs; file_readable; 
+        phase = Defs; file_readable; imports = Hashtbl.create 13;
       } ast
     ));
 
@@ -246,7 +280,8 @@ let build ?(verbose=false) root files =
       let ast = parse file in
       let file_readable = Common.readable ~root file in
       extract_defs_uses { env with 
-        phase = Uses; file_readable;
+        phase = Uses; file_readable; 
+        locals = ref[]; imports = Hashtbl.create 13; 
       } ast
 
     ));

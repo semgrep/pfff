@@ -216,6 +216,9 @@ type toplevel =
   | S of stmt
   (* 'name' can can be the special default_entity *)
   | Import of name * name (* 'name1 as name2', often name1=name2 *) * filename
+  (* todo: handle pure ExportNames? generate a VarDecl and separate
+   * export? 
+   *)
   | Export of name * expr
  (* with tarzan *)
 
