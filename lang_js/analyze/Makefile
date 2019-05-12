@@ -8,7 +8,7 @@ SRC= \
   ast_js.ml meta_ast_js.ml ast_js_build.ml \
   class_pre_es6.ml module_pre_es6.ml comment_js.ml annotation_js.ml \
   highlight_js.ml \
-  database_light_js.ml \
+  graph_code_js.ml database_light_js.ml \
   tags_js.ml \
   utils_js.ml \
   test_analyze_js.ml unit_analyze_js.ml
@@ -26,11 +26,10 @@ LIBS=$(TOP)/commons/lib.cma \
 # qa_test qa_code \
 
 INCLUDEDIRS= $(TOP)/commons \
-   $(TOP)/commons_ocollection \
-   $(TOP)/commons_core \
-   $(TOP)/external/ \
+   $(TOP)/commons_ocollection $(TOP)/commons_core \
    $(TOP)/h_program-lang $(TOP)/h_version-control  \
    $(TOP)/globals \
+   $(TOP)/graph_code \
    ../parsing \
 
 ##############################################################################
@@ -70,8 +69,8 @@ clean::
 	rm -f $(TARGET).top
 
 #temporary
-#ast_js_build.cmo: ast_js_build.ml
-#	$(OCAMLC) -w -A -c $<
+graph_code_js.cmo: graph_code_js.ml
+	$(OCAMLC) -w -A -c $<
 
 ##############################################################################
 # Literate Programming rules

@@ -13,7 +13,8 @@ module DMBuild = Dependencies_matrix_build
 (*****************************************************************************)
 (* Purpose *)
 (*****************************************************************************)
-(* This program builds the graph database needed by codegraph. 
+(* This program builds the graph database needed by codegraph (and also
+ * leveraged now by codemap).
  * See main_codegraph.ml for more information.
  * 
  * todo?
@@ -110,6 +111,7 @@ let build_graph_code lang xs =
         ~verbose:!verbose ~is_skip_error_file 
         ~class_analysis:!class_analysis
         root files
+    | "js" -> Graph_code_js.build ~verbose:!verbose root files, empty
 
     | "dot" -> 
       Graph_code.graph_of_dotfile (Filename.concat root "graph.dot"), empty
