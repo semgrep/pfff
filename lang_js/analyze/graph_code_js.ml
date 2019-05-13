@@ -41,6 +41,11 @@ module Ast = Ast_js
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
+(* For bar() in a/b/foo.js -> a/b/foo.bar. I remove the filename extension
+ * for codegraph which assumes the dot is a package separator, which is
+ * convenient to show shorter names when exploring a codebase.
+ *)
+type qualified_name = string
 
 (* for the extract_uses visitor *)
 type env = {
@@ -51,7 +56,7 @@ type env = {
   current: Graph_code.node;
   file_readable: Common.filename;
 
-  imports: (string, (string (* orig name *) * Common.filename)) Hashtbl.t;
+  imports: (string, qualified_name (* orig name *)) Hashtbl.t;
   (* covers also the parameters; I handle block scope by not using
    * a ref of mutable here! Just build a new list and passed it down.
    *)
@@ -99,14 +104,48 @@ let s_of_n n =
 (*****************************************************************************)
 (* File resolution *)
 (*****************************************************************************)
-(* TODO: resolve and normalize path *)
-let resolve_path _env file =
-  file
+
+let mk_qualified_name readable s =
+  assert (not (readable =~ "^\\./"));
+  let (d, b, _e) = Common2.dbe_of_filename readable in
+  let str = Common2.filename_of_dbe (d,b,"") in
+  str ^ "." ^ s
+
+(* resolve . and .. *)
+let normalize_path tok xs =
+  let rec aux acc xs =
+    match xs with 
+    | [] -> List.rev acc
+    | x::xs ->
+      (match x, acc with
+      | ".", _ -> aux acc xs
+      | "..", [] -> 
+        error "could not .." tok
+      | "..", _::acc -> aux acc xs
+      | s, acc -> aux (s::acc) xs
+      )
+  in
+  aux [] xs           
+
+let readable_of_path env (file, tok) =
+  let xs = Filename.dirname env.file_readable |> Str.split (Str.regexp "/") in
+  let ys = Str.split (Str.regexp "/") file in
+  pr2_gen (xs, ys);
+  let zs = normalize_path tok (xs @ ys) in
+  pr2_gen zs;
+  Common.join "/" zs
+
+let qualified_name env name =
+  (let s = s_of_n name in
+  if Hashtbl.mem env.imports s
+  then Hashtbl.find env.imports s
+  else s
+  )|> (fun s -> assert (not (s =~ "^\\./")); s)
+  
 
 (*****************************************************************************)
 (* Name resolution *)
 (*****************************************************************************)
-
 
 (*****************************************************************************)
 (* Other helpers *)
@@ -119,10 +158,7 @@ let add_node_and_edge_if_defs_mode env (name, kind) =
   let str = s_of_n name in
   let str' =
     match env.current with
-    | (s, E.File) -> 
-       let (d, b, _e) = Common2.dbe_of_filename s in
-       let s = Common2.filename_of_dbe (d,b,"") in
-       s ^ "." ^ str
+    | (readable, E.File) -> mk_qualified_name readable str
     | (s, _) -> s ^ "." ^ str
   in
   let node = (str', kind) in
@@ -163,7 +199,7 @@ let add_node_and_edge_if_defs_mode env (name, kind) =
 (* Add edges *)
 (*****************************************************************************)
 let add_use_edge env (name, kind) =
-  let s = s_of_n name in
+  let s = qualified_name env name in
   let src = env.current in
   let dst = (s, kind) in
   match () with
@@ -208,8 +244,8 @@ and toplevel env x =
     if env.phase = Uses then begin
       let str1 = s_of_n name1 in
       let str2 = s_of_n name2 in
-      let readable = resolve_path env (Ast.unwrap file) in
-      Hashtbl.add env.imports str2 (str1, readable);
+      let readable = readable_of_path env file in
+      Hashtbl.replace env.imports str2 (mk_qualified_name readable str1);
     end
   | Export (name, expr) -> 
      if env.phase = Defs then begin
@@ -239,11 +275,24 @@ and name_expr env name v_kind e =
     | Fun _ -> E.Function
     | Class _ -> E.Class
     | Obj _ -> E.Class
-    | _ -> if v_kind = Const then E.Constant else E.Global
+    | _ -> 
+          (* for now let's assume everything is an object *)
+          if v_kind = Const 
+          then E.Class
+          else E.Class
   in
   let env = add_node_and_edge_if_defs_mode env (name, kind) in
   if env.phase = Uses 
-  then expr env e
+  then begin
+    (* todo: order matters in JS? or need add to imports all list of
+     * entities in the file first? 
+     *)
+    let str = s_of_n name in
+    Hashtbl.replace env.imports str (mk_qualified_name env.file_readable str);
+    expr env e
+  end
+
+
 (* ---------------------------------------------------------------------- *)
 (* Statements *)
 (* ---------------------------------------------------------------------- *)
@@ -354,7 +403,7 @@ and expr env e =
     then ()
     else 
      (* the big one! *)
-     add_use_edge env (n, E.Global)
+     add_use_edge env (n, E.Class)
 
   | IdSpecial _ -> ()
   | Nop -> ()
@@ -375,12 +424,22 @@ and expr env e =
     );
     property_name env prop
 
-  | Fun (f, _nopt) ->
+  | Fun (f, nopt) ->
+    let env =
+      match nopt with
+      | None -> env
+      | Some n -> { env with locals = s_of_n n::env.locals}
+    in
     fun_ env f
   | Apply (e, es) ->
     (match e with
     | Id n when not (List.mem (s_of_n n) env.locals) ->
         add_use_edge env (n, E.Function) 
+    | IdSpecial (special, _tok) ->
+       (match special, es with
+       | New, _ -> (* TODO *) ()
+       | _ -> ()
+       )
     | _ ->
       expr env e
     );
