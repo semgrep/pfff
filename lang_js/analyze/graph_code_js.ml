@@ -93,6 +93,9 @@ let parse file =
 let error s tok =
   failwith (spf "%s: %s" (Parse_info.string_of_info tok) s)
 
+let s_of_n n = 
+  Ast.str_of_name n
+
 (*****************************************************************************)
 (* File resolution *)
 (*****************************************************************************)
@@ -113,7 +116,7 @@ let resolve_path _env file =
 (* Add Node *)
 (*****************************************************************************)
 let add_node_and_edge_if_defs_mode env (name, kind) =
-  let str = Ast.str_of_name name in
+  let str = s_of_n name in
   let str' =
     match env.current with
     | (s, E.File) -> 
@@ -160,7 +163,7 @@ let add_node_and_edge_if_defs_mode env (name, kind) =
 (* Add edges *)
 (*****************************************************************************)
 let _add_use_edge env (name, kind) =
-  let s = Ast.str_of_name name in
+  let s = s_of_n name in
   let src = env.current in
   let dst = (s, kind) in
   match () with
@@ -203,8 +206,8 @@ and toplevel env x =
   match x with
   | Import (name1, name2, file) ->
     if env.phase = Uses then begin
-      let str1 = Ast.str_of_name name1 in
-      let str2 = Ast.str_of_name name2 in
+      let str1 = s_of_n name1 in
+      let str2 = s_of_n name2 in
       let readable = resolve_path env (Ast.unwrap file) in
       Hashtbl.add env.imports str2 (str1, readable);
     end
@@ -215,7 +218,7 @@ and toplevel env x =
            Hashtbl.find env.exports env.file_readable
          with Not_found -> []
        in
-       let str = Ast.str_of_name name in
+       let str = s_of_n name in
        Hashtbl.replace env.exports env.file_readable (str::exports)
      end;
      name_expr env name Const expr
@@ -244,14 +247,184 @@ and name_expr env name v_kind e =
 (* ---------------------------------------------------------------------- *)
 (* Statements *)
 (* ---------------------------------------------------------------------- *)
-and stmt _env _st =
+and stmt env = function
+ | VarDecl v ->
+    expr {env with locals = s_of_n v.v_name::env.locals } v.v_init
+ | Block xs -> stmts env xs
+ | ExprStmt e -> expr env e
+ | If (e, st1, st2) ->
+   expr env e;
+   stmt env st1;
+   stmt env st2
+ | Do (st, e) ->
+   stmt env st;
+   expr env e;
+ | While (e, st) ->
+   expr env e;
+   stmt env st
+ | For (header, st) ->
+   let env = for_header env header in
+   stmt env st
+ | Switch (e, xs) ->
+   expr env e;
+   cases env xs
+ | Continue lopt ->
+   Common.opt (label env) lopt
+ | Break lopt ->
+   Common.opt (label env) lopt
+ | Return e ->
+   expr env e
+ | Label (l, st) ->
+   label env l;
+   stmt env st
+ | Throw e ->
+   expr env e
+ | Try (st1, catchopt, finalopt) ->
+   stmt env st1;
+   catchopt |> Common.opt (fun (_, st) -> stmt env st);
+   finalopt |> Common.opt (fun (st) -> stmt env st);
+
+and for_header env = function
+ | ForClassic (e1, e2, e3) ->
+   let env =
+     match e1 with
+     | Left vars ->
+       (* less: need fold_with_env? *)
+       vars |> List.iter (fun v -> stmt env (VarDecl v));
+       { env with locals = (vars |> List.map (fun v -> s_of_n v.v_name))
+                    @env.locals}
+     | Right e ->
+       expr env e;
+       env
+   in
+   expr env e2;
+   expr env e3;
+   env
+ | ForIn (e1, e2) | ForOf (e1, e2) ->
+   let env =
+     match e1 with
+     | Left var ->
+       (* less: need fold_with_env? *)
+       [var] |> List.iter (fun v -> stmt env (VarDecl v));
+       { env with locals = ([var] |> List.map (fun v -> s_of_n v.v_name))
+                    @env.locals}
+     | Right e ->
+       expr env e;
+       env
+   in
+   expr env e2;
+   env
+
+(* less: could check def/use of lbls, but less important *)
+and label _env _lbl =
   ()
+
+and cases env xs = List.iter (case env) xs
+
+and case env = function
+ | Case (e, st) ->
+   expr env e;
+   stmt env st
+ | Default st ->
+   stmt env st
+   
+and stmts env xs =
+  let rec aux env = function
+    | [] -> ()
+    | x::xs ->
+        stmt env x;
+        let env =
+          match x with
+          | VarDecl v ->
+              { env with locals = s_of_n v.v_name :: env.locals }
+          | _ -> env
+        in
+        aux env xs
+  in
+  aux env xs
 
 (* ---------------------------------------------------------------------- *)
 (* Expessions *)
 (* ---------------------------------------------------------------------- *)
-and expr _env _e =
-  ()
+and expr env e =
+  match e with
+  | Bool _ | Num _ | String _ | Regexp _ -> ()
+  | Id n -> 
+    if List.mem (s_of_n n) env.locals
+    then ()
+    else 
+     (* the big one! *)
+     raise Todo
+  | IdSpecial _ -> ()
+  | Nop -> ()
+  | Assign (e1, e2) ->
+    expr env e1;
+    expr env e2
+
+  | Obj o ->
+     obj_ env o
+  | Class c ->
+     class_ env c
+  | ObjAccess (e, prop) ->
+    (match e with
+    | Id _n -> 
+        (* todo: check if local *)
+        raise Todo
+    | _ -> 
+      expr env e
+    );
+    property_name env prop
+
+  | Fun (f, _nopt) ->
+    fun_ env f
+  | Apply (e, es) ->
+    (match e with
+    | Id n when not (List.mem (s_of_n n) env.locals) ->
+        (* todo: check if local *) 
+        raise Todo
+    | _ ->
+      expr env e
+    );
+    List.iter (expr env) es
+
+  | Conditional (e1, e2, e3) ->
+    List.iter (expr env) [e1;e2;e3]
+
+
+(* ---------------------------------------------------------------------- *)
+(* Entities *)
+(* ---------------------------------------------------------------------- *)
+
+(* todo: create nodes if global var? *)
+and obj_ env xs =
+  List.iter (property env) xs
+
+and class_ env c = 
+  Common.opt (expr env) c.c_extends;
+  List.iter (property env) c.c_body
+
+and property env = function
+  | Field (pname, _props, e) ->
+     property_name env pname;
+     expr env e
+  | FieldSpread e ->
+     expr env e
+
+and property_name env = function
+  | PN _n2 -> ()
+  | PN_Computed e -> 
+     expr env e
+
+and fun_ env f = 
+  (* less: need fold_with_env here? can not use previous param in p_default? *)
+  parameters env f.f_params;
+  let params = f.f_params |> List.map (fun p -> s_of_n p.p_name) in
+  let env = { env with locals = params @ env.locals} in
+  stmt env f.f_body
+
+and parameters env xs = List.iter (parameter env) xs
+and parameter env p =
+  Common.opt (expr env) p.p_default  
 
 (*****************************************************************************)
 (* Main entry point *)
