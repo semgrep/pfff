@@ -162,7 +162,7 @@ let add_node_and_edge_if_defs_mode env (name, kind) =
 (*****************************************************************************)
 (* Add edges *)
 (*****************************************************************************)
-let _add_use_edge env (name, kind) =
+let add_use_edge env (name, kind) =
   let s = s_of_n name in
   let src = env.current in
   let dst = (s, kind) in
@@ -354,7 +354,8 @@ and expr env e =
     then ()
     else 
      (* the big one! *)
-     raise Todo
+     add_use_edge env (n, E.Global)
+
   | IdSpecial _ -> ()
   | Nop -> ()
   | Assign (e1, e2) ->
@@ -367,9 +368,8 @@ and expr env e =
      class_ env c
   | ObjAccess (e, prop) ->
     (match e with
-    | Id _n -> 
-        (* todo: check if local *)
-        raise Todo
+    | Id n when not (List.mem (s_of_n n) env.locals) -> 
+       add_use_edge env (n, E.Class) 
     | _ -> 
       expr env e
     );
@@ -380,8 +380,7 @@ and expr env e =
   | Apply (e, es) ->
     (match e with
     | Id n when not (List.mem (s_of_n n) env.locals) ->
-        (* todo: check if local *) 
-        raise Todo
+        add_use_edge env (n, E.Function) 
     | _ ->
       expr env e
     );
