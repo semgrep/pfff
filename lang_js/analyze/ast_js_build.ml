@@ -31,7 +31,7 @@ type _env = unit
 let empty_env () = ()
 
 exception TodoConstruct of string * Parse_info.info
-(* The string is often "advanced es6" or "Typescript" usually *)
+(* The string is usually "advanced es6" or "Typescript" *)
 exception UnhandledConstruct of string * Parse_info.info
 
 (*****************************************************************************)
@@ -53,7 +53,6 @@ let fst3 (x, _, _) = x
 
 let noop = A.Block []
 
-
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
@@ -67,10 +66,8 @@ and module_items env xs =
 
 and module_item env = function
   | C.It x -> item env x |> List.map (fun x -> A.S x)
-  | C.Import (_, x, _) ->
-     import env x
-  | C.Export (tok, x) ->
-     export env tok x
+  | C.Import (_, x, _) -> import env x
+  | C.Export (tok, x) ->  export env tok x
 
 and import env = function
   | C.ImportEffect ((_file, tok)) ->
