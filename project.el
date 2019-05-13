@@ -726,6 +726,19 @@
      ))
    )
 
+  (setq
+   pad-ocaml-project-prog     "codegraph_build"
+   ;pad-ocaml-project-prog "gui/test"
+   pad-ocaml-project-args 
+   (join-string 
+    (list 
+     "-debugger"
+     (case 0
+       (0 "-verbose -lang js /home/pad/work/r2c/JSLint")
+       )
+     ))
+   )
+
   ; --------------------------------------------------------------------------
   ; pfff_test
   ; --------------------------------------------------------------------------

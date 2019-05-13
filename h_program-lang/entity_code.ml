@@ -50,7 +50,7 @@ type entity_kind =
   | File 
 
   | Function
-  | Class
+  | Class (* Less: Obj, because in JS it differs from Class *)
   | Type
   | Constant | Global
   | Macro
