@@ -401,43 +401,28 @@ and literal _env = function
   | C.Null tok -> A.IdSpecial (A.Null, tok)
 
 and unop _env = function
-  | C.U_new -> A.New
-  | C.U_delete -> A.Delete
+  | C.U_new -> A.New  | C.U_delete -> A.Delete
   | C.U_typeof -> A.Typeof
   | C.U_void  -> A.Void
-  | C.U_pre_increment -> A.Incr (true)
-  | C.U_pre_decrement -> A.Decr (true)
-  | C.U_post_increment -> A.Incr (false)
-  | C.U_post_decrement -> A.Decr (false)
-  | C.U_plus -> A.Plus
-  | C.U_minus -> A.Minus
-  | C.U_not -> A.Not 
-  | C.U_bitnot -> A.BitNot
-  | C.U_spread -> A.Spread
+  | C.U_pre_increment -> A.Incr (true)  | C.U_pre_decrement -> A.Decr (true)
+  | C.U_post_increment -> A.Incr (false) | C.U_post_decrement -> A.Decr (false)
+  | C.U_plus -> A.Plus | C.U_minus -> A.Minus
+  | C.U_not -> A.Not | C.U_bitnot -> A.BitNot | C.U_spread -> A.Spread
 
 and binop _env (op,tok) e1 e2 = 
   let res = 
     match op with
     | C.B_instanceof -> Left A.Instanceof
     | C.B_in -> Left A.In
-    | C.B_add -> Left A.Plus
-    | C.B_sub -> Left A.Minus
-    | C.B_mul -> Left A.Mul
-    | C.B_div -> Left A.Div
-    | C.B_mod -> Left A.Mod
+    | C.B_add -> Left A.Plus | C.B_sub -> Left A.Minus
+    | C.B_mul -> Left A.Mul | C.B_div -> Left A.Div | C.B_mod -> Left A.Mod
     | C.B_expo -> Left A.Expo
-    | C.B_lt -> Left A.Lower
-    | C.B_gt -> Left A.Greater
-    | C.B_lsr -> Left A.Lsr
-    | C.B_asr -> Left A.Asr
-    | C.B_lsl -> Left A.Lsl
-    | C.B_bitand -> Left A.BitAnd
-    | C.B_bitor -> Left A.BitOr
+    | C.B_lt -> Left A.Lower | C.B_gt -> Left A.Greater
+    | C.B_lsr -> Left A.Lsr | C.B_asr -> Left A.Asr | C.B_lsl -> Left A.Lsl
+    | C.B_bitand -> Left A.BitAnd | C.B_bitor -> Left A.BitOr
     | C.B_bitxor -> Left A.BitXor
-    | C.B_and -> Left A.And
-    | C.B_or -> Left A.Or
-    | C.B_equal -> Left A.Equal
-    | C.B_physequal -> Left A.PhysEqual
+    | C.B_and -> Left A.And | C.B_or -> Left A.Or
+    | C.B_equal -> Left A.Equal | C.B_physequal -> Left A.PhysEqual
 
     (* todo: e1 and e2 can have side effect, need intermediate var *)
     | C.B_le -> Right (

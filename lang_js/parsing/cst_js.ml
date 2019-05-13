@@ -70,12 +70,12 @@ module PI = Parse_info
  *  - imitate https://developer.mozilla.org/en-US/docs/SpiderMonkey/Parser_API
  *
  * related work:
- *  - http://esprima.org/: A JS parser in JS
+ *  - http://esprima.org/, acorn, cherow: JS parsers written in JS
  *  - babel? a transpiler from JS to ES3 (JS compatible with most browser)
  *  - flow-lang.org, contains now its own parser (it started with this one)
  *  - http://marijnhaverbeke.nl/parse-js/, JS parser in Common Lisp
  *    (which has been since ported to Javascript by the nodejs people)
- *  - jslint, eslint
+ *  - jslint, eslint, jshint, tslint
  *)
 
 (*****************************************************************************)
