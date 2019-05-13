@@ -217,6 +217,23 @@ let add_use_edge env (name, kind) =
                        (G.string_of_node dst)
                        (Parse_info.string_of_info (snd name)))
 
+let add_use_edge_candidates env (name, kind) =
+  let kind = 
+    let s = qualified_name env name in
+    let dst = (s, kind) in
+    if G.has_node dst env.g
+    then kind
+    else
+      let candidates = [E.Function; E.Class; E.Constant; E.Global] in
+      let valids = candidates |> List.filter (fun k -> 
+           G.has_node (s, k) env.g) in
+      (match valids with
+      | [x] -> x
+      | _ -> kind (* default to first kind, but could report error *)
+      )
+  in
+  add_use_edge env (name, kind)
+
 (*****************************************************************************)
 (* Defs/Uses *)
 (*****************************************************************************)
@@ -273,10 +290,12 @@ and name_expr env name v_kind e =
     | Class _ -> E.Class
     | Obj _ -> E.Class
     | _ -> 
-          (* for now let's assume everything is an object *)
+          (* without types, this might be wrong; a constant might
+           * actually refer to a function, and a global to an object
+           *)
           if v_kind = Const 
-          then E.Class
-          else E.Class
+          then E.Constant
+          else E.Global
   in
   let env = add_node_and_edge_if_defs_mode env (name, kind) in
   if env.phase = Uses 
@@ -400,7 +419,7 @@ and expr env e =
     then ()
     else 
      (* the big one! *)
-     add_use_edge env (n, E.Class)
+     add_use_edge_candidates env (n, E.Class)
 
   | IdSpecial _ -> ()
   | Nop -> ()
@@ -415,7 +434,7 @@ and expr env e =
   | ObjAccess (e, prop) ->
     (match e with
     | Id n when not (List.mem (s_of_n n) env.locals) -> 
-       add_use_edge env (n, E.Class) 
+       add_use_edge_candidates env (n, E.Class) 
     | _ -> 
       expr env e
     );
@@ -431,7 +450,7 @@ and expr env e =
   | Apply (e, es) ->
     (match e with
     | Id n when not (List.mem (s_of_n n) env.locals) ->
-        add_use_edge env (n, E.Function) 
+        add_use_edge_candidates env (n, E.Function) 
     | IdSpecial (special, _tok) ->
        (match special, es with
        | New, _ -> (* TODO *) ()
