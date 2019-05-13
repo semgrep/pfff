@@ -52,8 +52,10 @@ type env = {
   file_readable: Common.filename;
 
   imports: (string, (string (* orig name *) * Common.filename)) Hashtbl.t;
-  (* covers also the parameters *)
-  locals: (string) list ref;
+  (* covers also the parameters; I handle block scope by not using
+   * a ref of mutable here! Just build a new list and passed it down.
+   *)
+  locals: string list;
 
   exports: (Common.filename, string list) Hashtbl.t;
   (* error reporting *)
@@ -132,21 +134,17 @@ let add_node_and_edge_if_defs_mode env (name, kind) =
 
     (* already there? a dupe? *)
     | _ when G.has_node node env.g ->
-              env.pr2_and_log (spf "DUPE entity: %s" (G.string_of_node node));
-              let orig_file = G.file_of_node node env.g in
-              env.log (spf " orig = %s" orig_file);
-              env.log (spf " dupe = %s" env.file_readable);
-              Hashtbl.replace env.dupes node true;
+        env.pr2_and_log (spf "DUPE entity: %s" (G.string_of_node node));
+        let orig_file = G.file_of_node node env.g in
+        env.log (spf " orig = %s" orig_file);
+        env.log (spf " dupe = %s" env.file_readable);
+        Hashtbl.replace env.dupes node true;
     (* ok not a dupe, let's add it then *)
     | _ ->
       (* try but should never happen, see comment below *)
       try
         let pos = Parse_info.token_location_of_info (snd name) in
-        let typ = None in
-        let nodeinfo = { Graph_code.
-          pos; typ;
-          props = [];
-        } in
+        let nodeinfo = { Graph_code. pos; typ = None; props = []; } in
         env.g |> G.add_node node;
         env.g |> G.add_edge (env.current, node) G.Has;
         env.g |> G.add_nodeinfo node nodeinfo;
@@ -271,7 +269,7 @@ let build ?(verbose=false) root files =
     current = G.pb;
     file_readable = "__filled_later__";
     imports = Hashtbl.create 13;
-    locals = ref [];
+    locals = [];
     exports = Hashtbl.create 101;
     dupes = Hashtbl.create 101;
 
@@ -302,7 +300,7 @@ let build ?(verbose=false) root files =
       let file_readable = Common.readable ~root file in
       extract_defs_uses { env with 
         phase = Uses; file_readable; 
-        locals = ref[]; imports = Hashtbl.create 13; 
+        locals = []; imports = Hashtbl.create 13; 
       } ast
 
     ));
