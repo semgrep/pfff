@@ -107,8 +107,7 @@ let s_of_n n =
 
 let mk_qualified_name readable s =
   assert (not (readable =~ "^\\./"));
-  let (d, b, _e) = Common2.dbe_of_filename readable in
-  let str = Common2.filename_of_dbe (d,b,"") in
+  let str = Filename.chop_extension readable in
   str ^ "." ^ s
 
 (* resolve . and .. *)
@@ -130,9 +129,7 @@ let normalize_path tok xs =
 let readable_of_path env (file, tok) =
   let xs = Filename.dirname env.file_readable |> Str.split (Str.regexp "/") in
   let ys = Str.split (Str.regexp "/") file in
-  pr2_gen (xs, ys);
   let zs = normalize_path tok (xs @ ys) in
-  pr2_gen zs;
   Common.join "/" zs
 
 let qualified_name env name =
