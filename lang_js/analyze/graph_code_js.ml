@@ -273,7 +273,7 @@ let rec extract_defs_uses env ast =
   end;
   let env = { env with current = (env.file_readable, E.File); } in
   toplevels_entities_adjust_imports env ast;
-  toplevels env ast
+  toplevels env (Common.index_list ast)
 
 (* The order of toplevel declarations do not matter in Javascript.
  * It is a dynamic language without static checking; if in the body of
@@ -285,21 +285,17 @@ let rec extract_defs_uses env ast =
  *)
 and toplevels_entities_adjust_imports env xs =
   xs |> List.iter (function
-    | Import _ | Export _ -> ()
-    | S st ->
-    (match st with
-     | VarDecl v ->
+    | Import _ | Export _ | S _ -> ()
+    | V v ->
       let str = s_of_n v.v_name in
       Hashtbl.replace env.imports str 
         (mk_qualified_name env.file_readable str);
-     | _ -> ()
-     )
   )
         
 (* ---------------------------------------------------------------------- *)
 (* Toplevels *)
 (* ---------------------------------------------------------------------- *)
-and toplevel env x =
+and toplevel env (x, idx) =
   match x with
   | Import (name1, name2, file) ->
     if env.phase = Uses then begin
@@ -319,14 +315,14 @@ and toplevel env x =
        Hashtbl.replace env.exports env.file_readable (str::exports)
      end;
      name_expr env name Const expr
-  | S st ->
-    (match st with
-    | VarDecl {v_name; v_kind; v_init} ->
+  | V {v_name; v_kind; v_init} ->
        name_expr env v_name v_kind v_init
-    | _ ->
+  | S (tok, st) ->
+      let kind = E.TopStmts in
+      let name = spf "__top__%d" idx, tok in
+      let env = add_node_and_edge_if_defs_mode env (name, kind) in
       if env.phase = Uses
       then stmt env st
-    )
 
 and toplevels env xs = List.iter (toplevel env) xs
 
