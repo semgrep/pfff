@@ -61,8 +61,10 @@ let visit_program ~tag_hook _prefs (cst, toks) =
     if not (Hashtbl.mem already_tagged ii)
     then tag ii categ 
   in
-    
-
+  let tag_if_not_tagged ii categ =
+   if not (Hashtbl.mem already_tagged ii)    
+   then tag ii categ
+  in
   (* -------------------------------------------------------------------- *)
   (* AST phase 1 *)
   (* -------------------------------------------------------------------- *)
@@ -208,18 +210,19 @@ let visit_program ~tag_hook _prefs (cst, toks) =
        -> tag ii Keyword
     | T.T_TYPE ii | T.T_ENUM ii | T.T_DECLARE ii
       -> tag ii Keyword
-    | T.T_VOID (ii) ->
-        tag ii TypeVoid
-    | T.T_NUMBER_TYPE (ii) ->
-        tag ii TypeInt
-    | T.T_ANY_TYPE ii  | T.T_BOOLEAN_TYPE ii | T.T_STRING_TYPE ii
-     -> tag ii (Entity (E.Type, Use2 fake_no_use2))
     | T.T_MODULE ii ->
         tag ii KeywordModule
     | T.T_PUBLIC ii | T.T_PRIVATE ii | T.T_PROTECTED ii ->
         tag ii KeywordObject
     | T.T_READONLY ii ->
         tag ii Keyword
+
+    | T.T_VOID (ii) ->
+        tag ii TypeVoid
+    | T.T_NUMBER_TYPE (ii) ->
+        tag_if_not_tagged ii TypeInt
+    | T.T_ANY_TYPE ii  | T.T_BOOLEAN_TYPE ii | T.T_STRING_TYPE ii
+     -> tag_if_not_tagged ii (Entity (E.Type, Use2 fake_no_use2))
 
     | T.T_XHP_TEXT (_, ii) -> tag ii H.String
     | T.T_XHP_ATTR (_, ii) -> tag ii (Entity (E.Field, (Use2 fake_no_use2)))
