@@ -273,7 +273,7 @@ let rec extract_defs_uses env ast =
   end;
   let env = { env with current = (env.file_readable, E.File); } in
   toplevels_entities_adjust_imports env ast;
-  toplevels env (Common.index_list ast)
+  toplevels env ast
 
 (* The order of toplevel declarations do not matter in Javascript.
  * It is a dynamic language without static checking; if in the body of
@@ -295,7 +295,7 @@ and toplevels_entities_adjust_imports env xs =
 (* ---------------------------------------------------------------------- *)
 (* Toplevels *)
 (* ---------------------------------------------------------------------- *)
-and toplevel env (x, idx) =
+and toplevel env x =
   match x with
   | Import (name1, name2, file) ->
     if env.phase = Uses then begin
@@ -319,7 +319,9 @@ and toplevel env (x, idx) =
        name_expr env v_name v_kind v_init
   | S (tok, st) ->
       let kind = E.TopStmts in
-      let name = spf "__top__%d" idx, tok in
+      let s = spf "__top__%d:%d" 
+          (Parse_info.line_of_info tok) (Parse_info.col_of_info tok) in
+      let name = s, tok in
       let env = add_node_and_edge_if_defs_mode env (name, kind) in
       if env.phase = Uses
       then stmt env st
