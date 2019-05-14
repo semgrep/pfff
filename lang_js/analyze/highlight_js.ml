@@ -100,7 +100,7 @@ let visit_program ~tag_hook _prefs (cst, toks) =
          )
       | Id (name, scope_opt) ->
          (match scope_opt with
-         | None -> () (* TODO: Global? *)
+         | None -> tag_name name (Entity (E.Global, (Use2 fake_no_use2)))
          | Some (Scope_code.Local) -> tag_name name (Local Use)
          | Some (Scope_code.Param) -> tag_name name (Parameter Use)
          | _ -> ()
