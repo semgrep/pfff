@@ -65,10 +65,27 @@ let visit_program ~tag_hook _prefs (cst, toks) =
   let visitor = Visitor_ast_js.mk_visitor { Visitor_ast_js.default_visitor with
      Visitor_ast_js.ktop = (fun (k, _) t ->
        match t with
-       | V {v_name; v_kind; v_init } ->
+       | V {v_name = name; v_kind; v_init } ->
            let kind = Graph_code_js.kind_of_expr v_kind v_init in
-           tag_name v_name (Entity (kind, (Def2 fake_no_def2)))
+           tag_name name (Entity (kind, (Def2 fake_no_def2)));
+           k t
        | _ -> k t
+     );
+     Visitor_ast_js.kprop = (fun (k,_) x ->
+      match x with
+      | Field (PN name, _, _) ->
+          let kind = E.Field in
+          tag_name name (Entity (kind, (Def2 fake_no_def2)));
+          k x
+      | _ -> k x
+      );
+     Visitor_ast_js.kexpr = (fun (k,_) x ->
+      match x with
+      | ObjAccess (_, PN name) ->
+          let kind = E.Field in
+          tag_name name (Entity (kind, (Use2 fake_no_use2)));
+          k x
+      | _ -> k x
      );
     } in
   visitor (Program ast);

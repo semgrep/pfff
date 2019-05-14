@@ -26,6 +26,7 @@ type visitor_in = {
   kexpr: (expr  -> unit) * visitor_out -> expr  -> unit;
   kstmt: (stmt  -> unit) * visitor_out -> stmt  -> unit;
   ktop: (toplevel -> unit) * visitor_out -> toplevel -> unit;
+  kprop: (property  -> unit) * visitor_out -> property  -> unit;
   kinfo: (tok -> unit)  * visitor_out -> tok  -> unit;
 }
 and visitor_out = any -> unit
@@ -34,6 +35,7 @@ let default_visitor =
   { kexpr   = (fun (k,_) x -> k x);
     kstmt   = (fun (k,_) x -> k x);
     ktop   = (fun (k,_) x -> k x);
+    kprop   = (fun (k,_) x -> k x);
     kinfo = (fun (k,_) x -> k x);
   }
 
@@ -199,14 +201,18 @@ and v_obj_ v = v_list v_property v
 and v_class_ { c_extends = v_c_extends; c_body = v_c_body } =
   let arg = v_option v_expr v_c_extends in
   let arg = v_list v_property v_c_body in ()
-and v_property =
-  function
+and v_property x =
+  (* tweak *)
+  let k x =  match x with
   | Field ((v1, v2, v3)) ->
       let v1 = v_property_name v1
       and v2 = v_list v_property_prop v2
       and v3 = v_expr v3
       in ()
   | FieldSpread v1 -> let v1 = v_expr v1 in ()
+  in
+  vin.kprop (k, all_functions) x
+
 and v_property_prop =
   function | Static -> () | Public -> () | Private -> () | Protected -> ()
   
