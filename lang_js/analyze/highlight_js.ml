@@ -52,7 +52,10 @@ let visit_program ~tag_hook _prefs (cst, toks) =
     Hashtbl.add already_tagged ii true
   )
   in
-  let tag_name (_s, ii) categ = tag ii categ in
+  let tag_name (_s, ii) categ = 
+    if not (Hashtbl.mem already_tagged ii)
+    then tag ii categ 
+  in
     
 
   (* -------------------------------------------------------------------- *)
@@ -73,23 +76,43 @@ let visit_program ~tag_hook _prefs (cst, toks) =
      );
      Visitor_ast_js.kprop = (fun (k,_) x ->
       match x with
+      | Field (PN name, _, Fun _) ->
+          tag_name name (Entity (E.Method, (Def2 fake_no_def2)));
+          k x
       | Field (PN name, _, _) ->
-          let kind = E.Field in
-          tag_name name (Entity (kind, (Def2 fake_no_def2)));
+          tag_name name (Entity (E.Field, (Def2 fake_no_def2)));
           k x
       | _ -> k x
       );
      Visitor_ast_js.kexpr = (fun (k,_) x ->
       match x with
       | ObjAccess (_, PN name) ->
-          let kind = E.Field in
-          tag_name name (Entity (kind, (Use2 fake_no_use2)));
+          tag_name name (Entity (E.Field, (Use2 fake_no_use2)));
           k x
       | IdSpecial (special, ii) ->
          (match special with
          | Eval -> tag ii BadSmell
          | _ -> tag ii Builtin
          )
+      | Id (name, scope_opt) ->
+         (match scope_opt with
+         | None -> () (* TODO: Global? *)
+         | Some (Scope_code.Local) -> tag_name name (Local Use)
+         | Some (Scope_code.Param) -> tag_name name (Parameter Use)
+         | _ -> ()
+         );
+         k x
+      | Apply (Id (name, None), _) ->
+         tag_name name (Entity (E.Function, (Use2 fake_no_use2)));
+         k x;
+      | Apply (Id (name, Some _), _) ->
+         tag_name name PointerCall;
+         k x;
+      | Apply (ObjAccess (_, PN name), _) ->
+         tag_name name (Entity (E.Method, (Use2 fake_no_use2)));
+         k x;
+      | Fun (_, Some name) ->
+         tag_name name (Entity (E.Function, (Use2 fake_no_use2)));
       | _ -> k x
      );
      Visitor_ast_js.kstmt = (fun (k,_) x ->
