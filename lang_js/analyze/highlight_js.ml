@@ -85,6 +85,11 @@ let visit_program ~tag_hook _prefs (cst, toks) =
           let kind = E.Field in
           tag_name name (Entity (kind, (Use2 fake_no_use2)));
           k x
+      | IdSpecial (special, ii) ->
+         (match special with
+         | Eval -> tag ii BadSmell
+         | _ -> tag ii Builtin
+         )
       | _ -> k x
      );
      Visitor_ast_js.kstmt = (fun (k,_) x ->
