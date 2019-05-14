@@ -15,10 +15,11 @@
  *)
 open Common
 
-open Entity_code 
 open Highlight_code
+open Ast_js
 module T = Parser_js
 module E = Entity_code
+module H = Highlight_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -30,14 +31,14 @@ module E = Entity_code
 (* Helpers when have global-analysis information *)
 (*****************************************************************************)
 
-let _fake_no_def2 = NoUse
+let fake_no_def2 = NoUse
 let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 
 (*****************************************************************************)
 (* Code highlighter *)
 (*****************************************************************************)
 
-let visit_program ~tag_hook _prefs (_cst_opt, toks) =
+let visit_program ~tag_hook _prefs (cst, toks) =
 
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->
@@ -51,6 +52,8 @@ let visit_program ~tag_hook _prefs (_cst_opt, toks) =
     Hashtbl.add already_tagged ii true
   )
   in
+  let tag_name (_s, ii) categ = tag ii categ in
+    
 
   (* -------------------------------------------------------------------- *)
   (* AST phase 1 *)
@@ -58,7 +61,17 @@ let visit_program ~tag_hook _prefs (_cst_opt, toks) =
   (* try to better colorize identifiers which can be many different things
    * e.g. a field, a type, a function, a parameter, etc
    *)
-  (* TODO!! *)
+  let ast = Ast_js_build.program cst in
+  let visitor = Visitor_ast_js.mk_visitor { Visitor_ast_js.default_visitor with
+     Visitor_ast_js.ktop = (fun (k, _) t ->
+       match t with
+       | V {v_name; v_kind; v_init } ->
+           let kind = Graph_code_js.kind_of_expr v_kind v_init in
+           tag_name v_name (Entity (kind, (Def2 fake_no_def2)))
+       | _ -> k t
+     );
+    } in
+  visitor (Program ast);
 
   (* -------------------------------------------------------------------- *)
   (* token phase 1 (individual tokens) *)
@@ -78,7 +91,7 @@ let visit_program ~tag_hook _prefs (_cst_opt, toks) =
 
     (* values *)
 
-    | T.T_NULL (ii) -> tag ii Null
+    | T.T_NULL (ii) -> tag ii H.Null
     | T.T_FALSE (ii) | T.T_TRUE (ii) -> tag ii Boolean
     | T.T_NUMBER (_, ii) -> tag ii Number
 
@@ -86,12 +99,12 @@ let visit_program ~tag_hook _prefs (_cst_opt, toks) =
      * entities such as classes so have to look for both? *)
     | T.T_STRING (_, ii) | T.T_ENCAPSED_STRING(_, ii) ->
         if not (Hashtbl.mem already_tagged ii)
-        then tag ii String
+        then tag ii H.String
 
-    | T.T_BACKQUOTE ii -> tag ii String
-    | T.T_DOLLARCURLY ii -> tag ii String
+    | T.T_BACKQUOTE ii -> tag ii H.String
+    | T.T_DOLLARCURLY ii -> tag ii H.String
 
-    | T.T_REGEX (_, ii) -> tag ii Regexp
+    | T.T_REGEX (_, ii) -> tag ii H.Regexp
 
     (* all the name and varname should have been tagged by now. *)
     | T.T_IDENTIFIER (_, ii) ->
@@ -148,8 +161,8 @@ let visit_program ~tag_hook _prefs (_cst_opt, toks) =
     | T.T_READONLY ii ->
         tag ii Keyword
 
-    | T.T_XHP_TEXT (_, ii) -> tag ii String
-    | T.T_XHP_ATTR (_, ii) -> tag ii (Entity (Field, (Use2 fake_no_use2)))
+    | T.T_XHP_TEXT (_, ii) -> tag ii H.String
+    | T.T_XHP_ATTR (_, ii) -> tag ii (Entity (E.Field, (Use2 fake_no_use2)))
     | T.T_XHP_CLOSE_TAG (_, ii) -> tag ii EmbededHtml
     | T.T_XHP_SLASH_GT ii -> tag ii EmbededHtml
     | T.T_XHP_GT ii -> tag ii EmbededHtml

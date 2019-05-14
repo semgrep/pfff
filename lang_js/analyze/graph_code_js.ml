@@ -173,6 +173,19 @@ let add_locals env vs =
      ) in
   { env with locals = locals @ env.locals } 
 
+let kind_of_expr v_kind e =
+  match e with
+  | Fun _ -> E.Function
+  | Class _ -> E.Class
+  | Obj _ -> E.Class
+  | _ -> 
+        (* without types, this might be wrong; a constant might
+         * actually refer to a function, and a global to an object
+         *)
+        if v_kind = Const 
+        then E.Constant
+        else E.Global
+
 (*****************************************************************************)
 (* Add Node *)
 (*****************************************************************************)
@@ -328,21 +341,8 @@ and toplevel env x =
 
 and toplevels env xs = List.iter (toplevel env) xs
 
-and kind_of_expr _env v_kind e =
-  match e with
-  | Fun _ -> E.Function
-  | Class _ -> E.Class
-  | Obj _ -> E.Class
-  | _ -> 
-        (* without types, this might be wrong; a constant might
-         * actually refer to a function, and a global to an object
-         *)
-        if v_kind = Const 
-        then E.Constant
-        else E.Global
-
 and name_expr env name v_kind e =
-  let kind = kind_of_expr env v_kind e in
+  let kind = kind_of_expr v_kind e in
   let env = add_node_and_edge_if_defs_mode env (name, kind) in
   if env.phase = Uses 
   then expr env e
