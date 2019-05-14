@@ -155,7 +155,7 @@ and stmt =
   | Label of label * stmt
  
   | Throw of expr
-  | Try of stmt * (string wrap * stmt) option * stmt option
+  | Try of stmt * (name * stmt) option * stmt option
 
   (* less: could use some Special instead? *)
   and for_header = 

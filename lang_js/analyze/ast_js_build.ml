@@ -254,7 +254,7 @@ and stmt env = function
   | C.Try (_, st, catchopt, finally_opt) ->
     let st = stmt1 env st in
     let catchopt = opt (fun env (_, arg, st) ->
-       let arg = paren arg in
+       let arg = name env (paren arg) in
        let st = stmt1 env st in
        (arg, st)
        ) env catchopt in

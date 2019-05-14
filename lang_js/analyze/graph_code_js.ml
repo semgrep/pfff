@@ -346,7 +346,10 @@ and stmt env = function
    expr env e
  | Try (st1, catchopt, finalopt) ->
    stmt env st1;
-   catchopt |> Common.opt (fun (_, st) -> stmt env st);
+   catchopt |> Common.opt (fun (v, st) -> 
+     let env = { env with locals = s_of_n v::env.locals } in
+     stmt env st
+   );
    finalopt |> Common.opt (fun (st) -> stmt env st);
 
 and for_header env = function
