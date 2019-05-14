@@ -344,7 +344,7 @@ let parse2 filename =
       []
   in
   ignore(Unix.alarm 0);
-  (Some items, []), stat
+  (Some items, toks), stat
 
 let parse a = 
   Common.profile_code "Parse_js.parse" (fun () -> parse2 a)
