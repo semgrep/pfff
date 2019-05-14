@@ -5,7 +5,7 @@ TOP=../..
 TARGET=lib
 
 SRC= \
-  ast_js.ml meta_ast_js.ml ast_js_build.ml \
+  ast_js.ml meta_ast_js.ml visitor_ast_js.ml ast_js_build.ml \
   class_pre_es6.ml module_pre_es6.ml comment_js.ml annotation_js.ml \
   highlight_js.ml \
   stdlib_js.ml graph_code_js.ml database_light_js.ml \
@@ -71,6 +71,10 @@ clean::
 #temporary
 #graph_code_js.cmo: graph_code_js.ml
 #	$(OCAMLC) -w -A -c $<
+
+# to allow unused variable warnings
+visitor_ast_js.cmo: visitor_ast_js.ml
+	$(OCAMLC) -w y -c $<
 
 ##############################################################################
 # Literate Programming rules

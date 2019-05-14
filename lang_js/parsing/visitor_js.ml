@@ -22,7 +22,6 @@ open Cst_js
 
 (* hooks *)
 type visitor_in = {
-
   kexpr: (expr  -> unit) * visitor_out -> expr  -> unit;
   kstmt: (st  -> unit) * visitor_out -> st  -> unit;
   kprop: (property -> unit) * visitor_out -> property -> unit;
@@ -34,7 +33,6 @@ let default_visitor =
   { kexpr   = (fun (k,_) x -> k x);
     kstmt   = (fun (k,_) x -> k x);
     kinfo   = (fun (k,_) x -> k x);
-
     kprop = (fun (k,_) x -> k x);
   }
 

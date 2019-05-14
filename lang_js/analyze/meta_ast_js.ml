@@ -273,6 +273,7 @@ let vof_program v = Ocaml.vof_list vof_toplevel v
 let vof_any =
   function
   | Expr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Expr", [ v1 ]))
+  | Top v1 -> let v1 = vof_toplevel v1 in Ocaml.VSum (("Top", [ v1 ]))
   | Stmt v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("Stmt", [ v1 ]))
   | Program v1 -> let v1 = vof_program v1 in Ocaml.VSum (("Program", [ v1 ]))
   
