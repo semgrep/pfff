@@ -8,7 +8,7 @@ SRC= \
   ast_js.ml meta_ast_js.ml ast_js_build.ml \
   class_pre_es6.ml module_pre_es6.ml comment_js.ml annotation_js.ml \
   highlight_js.ml \
-  graph_code_js.ml database_light_js.ml \
+  stdlib_js.ml graph_code_js.ml database_light_js.ml \
   tags_js.ml \
   utils_js.ml \
   test_analyze_js.ml unit_analyze_js.ml
