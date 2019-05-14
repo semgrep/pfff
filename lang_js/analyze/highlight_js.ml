@@ -87,6 +87,20 @@ let visit_program ~tag_hook _prefs (cst, toks) =
           k x
       | _ -> k x
      );
+     Visitor_ast_js.kstmt = (fun (k,_) x ->
+      match x with
+      | VarDecl ({v_name = name; _}) ->
+          tag_name name (Local Def);
+          k x
+      | _ -> k x
+     );
+     Visitor_ast_js.kparam = (fun (k, _) x ->
+       match x with
+       | {p_name = name; _} ->
+           tag_name name (Parameter Def);
+           k x
+     );
+
     } in
   visitor (Program ast);
 

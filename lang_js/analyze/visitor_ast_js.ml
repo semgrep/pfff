@@ -27,6 +27,7 @@ type visitor_in = {
   kstmt: (stmt  -> unit) * visitor_out -> stmt  -> unit;
   ktop: (toplevel -> unit) * visitor_out -> toplevel -> unit;
   kprop: (property  -> unit) * visitor_out -> property  -> unit;
+  kparam: (parameter  -> unit) * visitor_out -> parameter  -> unit;
   kinfo: (tok -> unit)  * visitor_out -> tok  -> unit;
 }
 and visitor_out = any -> unit
@@ -36,6 +37,7 @@ let default_visitor =
     kstmt   = (fun (k,_) x -> k x);
     ktop   = (fun (k,_) x -> k x);
     kprop   = (fun (k,_) x -> k x);
+    kparam   = (fun (k,_) x -> k x);
     kinfo = (fun (k,_) x -> k x);
   }
 
@@ -190,10 +192,17 @@ and v_var_kind = function | Var -> () | Let -> () | Const -> ()
 and v_fun_ { f_props = v_f_props; f_params = v_f_params; f_body = v_f_body } =
   let arg = v_list v_fun_prop v_f_props in
   let arg = v_list v_parameter v_f_params in let arg = v_stmt v_f_body in ()
-and v_parameter { p_name = v_p_name; p_default = v_p_default; p_dots = v_p_dots
-              } =
+
+and v_parameter x =
+ let k x = 
+ match x with
+ { p_name = v_p_name; p_default = v_p_default; p_dots = v_p_dots
+              } ->
   let arg = v_name v_p_name in
   let arg = v_option v_expr v_p_default in let arg = v_bool v_p_dots in ()
+  in
+  vin.kparam (k, all_functions) x
+
 and v_fun_prop =
   function | Get -> () | Set -> () | Generator -> () | Async -> ()
 
