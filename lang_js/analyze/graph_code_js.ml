@@ -31,7 +31,7 @@ module Ast = Ast_js
  *                      -> Class (and Obj)
  *                            -> TODO Field
  *                      -> Const
- *                      -> Global
+ *                      -> Global TODO need type to know if not a func or class
  *       -> Dir -> SubDir -> ...
  *
  * todo: 
@@ -44,9 +44,11 @@ module Ast = Ast_js
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
-(* For bar() in a/b/foo.js -> a/b/foo.bar. I remove the filename extension
- * for codegraph which assumes the dot is a package separator, which is
- * convenient to show shorter names when exploring a codebase.
+(* For bar() in a/b/foo.js the qualified_name is 'a/b/foo.bar'. 
+ * I remove the filename extension for codegraph which assumes
+ * the dot is a package separator, which is convenient to show 
+ * shorter names when exploring a codebase (and maybe also when hovering
+ * a function in codemap).
  *)
 type qualified_name = string
 
@@ -108,12 +110,7 @@ let s_of_n n =
 (* File resolution *)
 (*****************************************************************************)
 
-let mk_qualified_name readable s =
-  assert (not (readable =~ "^\\./"));
-  let str = Filename.chop_extension readable in
-  str ^ "." ^ s
-
-(* resolve . and .. *)
+(* resolve . and .. to normalize path and qualified names in the end *)
 let normalize_path tok xs =
   let rec aux acc xs =
     match xs with 
@@ -135,17 +132,21 @@ let readable_of_path env (file, tok) =
   let zs = normalize_path tok (xs @ ys) in
   Common.join "/" zs
 
+(*****************************************************************************)
+(* Qualified Name *)
+(*****************************************************************************)
+
+let mk_qualified_name readable s =
+  assert (not (readable =~ "^\\./"));
+  let str = Filename.chop_extension readable in
+  str ^ "." ^ s
+
 let qualified_name env name =
   (let s = s_of_n name in
   if Hashtbl.mem env.imports s
   then Hashtbl.find env.imports s
   else s
   )|> (fun s -> assert (not (s =~ "^\\./")); s)
-  
-
-(*****************************************************************************)
-(* Name resolution *)
-(*****************************************************************************)
 
 (*****************************************************************************)
 (* Other helpers *)
