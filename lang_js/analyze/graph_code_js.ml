@@ -531,15 +531,26 @@ let build ?(verbose=false) root files =
   } in
   (* step1: creating the nodes and 'Has' edges, the defs *)
   env.pr2_and_log "\nstep1: extract defs";
-  files |> Console.progress ~show:verbose (fun k -> 
+  (Stdlib_js.path_stdlib::files) |> Console.progress ~show:verbose (fun k -> 
     List.iter (fun file ->
       k();
       let ast = parse file in
-      let file_readable = Common.readable ~root file in
+      let file_readable =
+         if file = Stdlib_js.path_stdlib
+         then "Stdlib.js"
+         else Common.readable ~root file 
+      in
       extract_defs_uses { env with 
         phase = Defs; file_readable; imports = Hashtbl.create 13;
       } ast
     ));
+  let default_import = 
+    let ast = parse Stdlib_js.path_stdlib in
+    let env = { env with phase = Uses; file_readable = "Stdlib.js"; 
+                locals = []; imports = Hashtbl.create 13; } in
+    extract_defs_uses env ast;
+    env.imports
+  in
 
   (* step2: creating the 'Use' edges *)
   env.pr2_and_log "\nstep2: extract uses";
@@ -550,14 +561,15 @@ let build ?(verbose=false) root files =
       let file_readable = Common.readable ~root file in
       extract_defs_uses { env with 
         phase = Uses; file_readable; 
-        locals = []; imports = Hashtbl.create 13; 
+        locals = []; imports = Hashtbl.copy default_import; 
       } ast
 
     ));
+
   env.pr2_and_log "\nstep3: adjusting";
   G.remove_empty_nodes g [G.not_found; G.dupe; G.pb];
 
-  (* lookup failures summary *)
+  (* less: lookup failures summary *)
 
   (* finally return the graph *)
   g
