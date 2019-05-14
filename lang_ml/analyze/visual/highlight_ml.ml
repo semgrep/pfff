@@ -26,8 +26,7 @@ module E = Entity_code
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* 
- * Syntax highlighting for OCaml code for codemap (and now also for efuns).
+(* Syntax highlighting for OCaml code for codemap (and now also for efuns).
  * 
  * This code can also be abused to generate the light database 
  * and the TAGS file (because codemap needs to know about
@@ -116,7 +115,7 @@ let visit_program
   (* AST phase 1 *) 
   (* -------------------------------------------------------------------- *)
 
-  (* try better colorize identifiers which can be many different things
+  (* try to better colorize identifiers which can be many different things
    * e.g. a field, a type, a function, a parameter, etc
    *)
   let in_let = ref false in
