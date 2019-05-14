@@ -61,12 +61,19 @@ type env = {
   current: Graph_code.node;
   file_readable: Common.filename;
 
+  (* imports of external entities and abused to create
+   * fake imports of the entities defined in the current file *)
   imports: (string, qualified_name (* orig name *)) Hashtbl.t;
   (* covers also the parameters; I handle block scope by not using
    * a ref of mutable here! Just build a new list and passed it down.
    *)
   locals: string list;
+  (* 'var' have a function scope.
+   * alt: lift var up in a ast_js_build.ml transforming phase
+   *)
+  vars: (string, bool) Hashtbl.t;
 
+  (* todo: use it *)
   exports: (Common.filename, string list) Hashtbl.t;
   (* error reporting *)
   dupes: (Graph_code.node, bool) Hashtbl.t;
@@ -151,6 +158,20 @@ let qualified_name env name =
 (*****************************************************************************)
 (* Other helpers *)
 (*****************************************************************************)
+let is_local env n =
+  let s = s_of_n n in
+  List.mem s env.locals || Hashtbl.mem env.vars s
+
+let add_locals env vs = 
+  let locals = vs |> Common.map_filter (fun v ->
+    let s = s_of_n v.v_name in
+    match v.v_kind with
+    | Let | Const -> Some s
+    | Var ->
+        Hashtbl.replace env.vars s true;
+        None
+     ) in
+  { env with locals = locals @ env.locals } 
 
 (*****************************************************************************)
 (* Add Node *)
@@ -333,7 +354,8 @@ and name_expr env name v_kind e =
 (* ---------------------------------------------------------------------- *)
 and stmt env = function
  | VarDecl v ->
-    expr {env with locals = s_of_n v.v_name::env.locals } v.v_init
+    let env = add_locals env [v] in
+    expr env v.v_init
  | Block xs -> stmts env xs
  | ExprStmt e -> expr env e
  | If (e, st1, st2) ->
@@ -365,8 +387,9 @@ and stmt env = function
    expr env e
  | Try (st1, catchopt, finalopt) ->
    stmt env st1;
-   catchopt |> Common.opt (fun (v, st) -> 
-     let env = { env with locals = s_of_n v::env.locals } in
+   catchopt |> Common.opt (fun (n, st) -> 
+     let v = { v_name = n; v_kind = Let; v_init = Nop } in
+     let env = add_locals env [v] in
      stmt env st
    );
    finalopt |> Common.opt (fun (st) -> stmt env st);
@@ -378,8 +401,7 @@ and for_header env = function
      | Left vars ->
        (* less: need fold_with_env? *)
        vars |> List.iter (fun v -> stmt env (VarDecl v));
-       { env with locals = (vars |> List.map (fun v -> s_of_n v.v_name))
-                    @env.locals}
+       add_locals env vars
      | Right e ->
        expr env e;
        env
@@ -393,8 +415,7 @@ and for_header env = function
      | Left var ->
        (* less: need fold_with_env? *)
        [var] |> List.iter (fun v -> stmt env (VarDecl v));
-       { env with locals = ([var] |> List.map (fun v -> s_of_n v.v_name))
-                    @env.locals}
+       add_locals env [var]
      | Right e ->
        expr env e;
        env
@@ -422,8 +443,7 @@ and stmts env xs =
         stmt env x;
         let env =
           match x with
-          | VarDecl v ->
-              { env with locals = s_of_n v.v_name :: env.locals }
+          | VarDecl v -> add_locals env [v]
           | _ -> env
         in
         aux env xs
@@ -437,11 +457,10 @@ and expr env e =
   match e with
   | Bool _ | Num _ | String _ | Regexp _ -> ()
   | Id n -> 
-    if List.mem (s_of_n n) env.locals
-    then ()
-    else 
+    if not (is_local env n)
+    then
      (* the big one! *)
-     add_use_edge_candidates env (n, E.Class)
+     add_use_edge_candidates env (n, E.Global)
 
   | IdSpecial _ -> ()
   | Nop -> ()
@@ -455,7 +474,7 @@ and expr env e =
      class_ env c
   | ObjAccess (e, prop) ->
     (match e with
-    | Id n when not (List.mem (s_of_n n) env.locals) -> 
+    | Id n when not (is_local env n) -> 
        add_use_edge_candidates env (n, E.Class) 
     | _ -> 
       expr env e
@@ -466,12 +485,14 @@ and expr env e =
     let env =
       match nopt with
       | None -> env
-      | Some n -> { env with locals = s_of_n n::env.locals}
+      | Some n -> 
+        let v = { v_name = n; v_kind = Let; v_init = Nop } in
+        add_locals env [v]
     in
     fun_ env f
   | Apply (e, es) ->
     (match e with
-    | Id n when not (List.mem (s_of_n n) env.locals) ->
+    | Id n when not (is_local env n) ->
         add_use_edge_candidates env (n, E.Function) 
     | IdSpecial (special, _tok) ->
        (match special, es with
@@ -515,7 +536,11 @@ and fun_ env f =
   (* less: need fold_with_env here? can not use previous param in p_default? *)
   parameters env f.f_params;
   let params = f.f_params |> List.map (fun p -> s_of_n p.p_name) in
-  let env = { env with locals = params @ env.locals} in
+  let env = { env with 
+        locals = params @ env.locals; 
+        (* new scope, but still inherits enclosing vars *)
+        vars = Hashtbl.copy env.vars;
+  } in
   stmt env f.f_body
 
 and parameters env xs = List.iter (parameter env) xs
@@ -537,8 +562,9 @@ let build ?(verbose=false) root files =
     phase = Defs;
     current = G.pb;
     file_readable = "__filled_later__";
-    imports = Hashtbl.create 13;
+    imports = Hashtbl.create 0;
     locals = [];
+    vars = Hashtbl.create 0;
     exports = Hashtbl.create 101;
     dupes = Hashtbl.create 101;
 
