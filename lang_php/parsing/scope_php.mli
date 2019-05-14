@@ -1,6 +1,6 @@
 (*s: scope_php.mli *)
 (*s: type phpscope *)
-type phpscope = Scope_code.scope
+type phpscope = Scope_code.t
 
  (*s: tarzan annotation *)
   (* with tarzan *)

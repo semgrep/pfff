@@ -1,5 +1,5 @@
 
-type scope = 
+type t = 
   | Global | Local  | Param | Static | Class
 
   | LocalExn | LocalIterator
@@ -8,5 +8,5 @@ type scope =
 
   | NoScope
 
-val string_of_scope: scope -> string
-val vof_scope: scope -> Ocaml.v
+val string_of_scope: t -> string
+val vof_scope: t -> Ocaml.v

@@ -295,7 +295,7 @@ and expression = expressionbis wrap
 
   (* see check_variables_cpp.ml *)
   and ident_info = {
-    mutable i_scope: Scope_code.scope;
+    mutable i_scope: Scope_code.t;
   }
 
   (* cppext: normmally just expression *)

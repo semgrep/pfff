@@ -30,7 +30,7 @@
  * be differerent for each language but they will also have stuff
  * in common which may be a good spot for open polymorphic variant.
  *)
-type scope = 
+type t = 
   | Global
   | Local 
   | Param

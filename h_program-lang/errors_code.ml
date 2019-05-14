@@ -85,7 +85,7 @@ type error = {
     * - UseOfUndefinedVariable
     * - UnusedVariable
     *)
-  | UnusedVariable of string * Scope_code.scope
+  | UnusedVariable of string * Scope_code.t
 
   (* classes *)
 

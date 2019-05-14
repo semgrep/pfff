@@ -163,10 +163,10 @@ type env = {
    * todo? use a list of Map.t to represent nested scopes?
    * (globals, methods/functions, nested blocks)? when in strict/block mode?
    *)
-  vars: (string, (Ast_php.tok * Scope_code.scope * int ref)) Map_.t ref;
+  vars: (string, (Ast_php.tok * Scope_code.t * int ref)) Map_.t ref;
 
   (* to remember how to annotate Var in ast_php.ml *)
-  scope_vars_used: (Ast_php.tok, Scope_code.scope) Hashtbl.t;
+  scope_vars_used: (Ast_php.tok, Scope_code.t) Hashtbl.t;
 
   (* todo: have a globals:? *)
 

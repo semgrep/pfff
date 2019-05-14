@@ -37,7 +37,7 @@ module PI = Parse_info
 (*****************************************************************************)
 
 type environment = 
-  (Ast.name * (Scope_code.scope * int ref)) list list 
+  (Ast.name * (Scope_code.t * int ref)) list list 
 
 (*****************************************************************************)
 (* Environment *)

@@ -79,7 +79,10 @@ and vof_expr =
   | Regexp v1 ->
       let v1 = vof_wrap Ocaml.vof_string v1
       in Ocaml.VSum (("Regexp", [ v1 ]))
-  | Id v1 -> let v1 = vof_name v1 in Ocaml.VSum (("Id", [ v1 ]))
+  | Id (v1, v2) -> 
+      let v1 = vof_name v1 in 
+      let v2 = Ocaml.vof_option Scope_code.vof_scope v2 in
+      Ocaml.VSum (("Id", [ v1; v2 ]))
   | IdSpecial v1 ->
       let v1 = vof_wrap vof_special v1 in Ocaml.VSum (("IdSpecial", [ v1 ]))
   | Nop -> Ocaml.VSum (("Nop", []))

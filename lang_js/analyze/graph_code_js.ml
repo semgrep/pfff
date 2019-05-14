@@ -454,7 +454,7 @@ and stmts env xs =
 and expr env e =
   match e with
   | Bool _ | Num _ | String _ | Regexp _ -> ()
-  | Id n -> 
+  | Id (n, _scope) -> 
     if not (is_local env n)
     then
      (* the big one! *)
@@ -472,7 +472,7 @@ and expr env e =
      class_ env c
   | ObjAccess (e, prop) ->
     (match e with
-    | Id n when not (is_local env n) -> 
+    | Id (n, _scope) when not (is_local env n) -> 
        add_use_edge_candidates env (n, E.Class) 
     | _ -> 
       expr env e
@@ -490,7 +490,7 @@ and expr env e =
     fun_ env f
   | Apply (e, es) ->
     (match e with
-    | Id n when not (is_local env n) ->
+    | Id (n, _scope) when not (is_local env n) ->
         add_use_edge_candidates env (n, E.Function) 
     | IdSpecial (special, _tok) ->
        (match special, es with

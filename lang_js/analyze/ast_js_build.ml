@@ -52,6 +52,7 @@ let paren (_, x, _) = x
 let fst3 (x, _, _) = x
 
 let noop = A.Block []
+let noscope = None
 
 exception Found of Parse_info.info
 
@@ -146,7 +147,7 @@ and export env tok = function
        | None -> n1
        | Some (_, n2) -> name env n2
      in
-     A.Export (n2, A.Id n1)
+     A.Export (n2, A.Id (n1, noscope))
   )
  | C.ReExportNamespace (_, _, _) ->
    raise (UnhandledConstruct ("reexporting namespace", tok))
@@ -309,7 +310,7 @@ and expr env = function
      | "eval" -> A.IdSpecial (A.Eval, tok)
      | "undefined" -> A.IdSpecial (A.Undefined, tok)
      (* todo? require? import? *)
-     | _ -> A.Id (s, tok)
+     | _ -> A.Id ((s, tok), noscope)
      )
   | C.This tok -> A.IdSpecial (A.This, tok)
   | C.Super tok -> A.IdSpecial (A.Super, tok)
@@ -557,7 +558,7 @@ and property env = function
     )
   | C.P_shorthand n ->
     let n = name env n in
-    A.Field (A.PN n, [], A.Id n)
+    A.Field (A.PN n, [], A.Id (n, noscope))
   | C.P_spread (_, e) ->
     let e = expr env e in
     A.FieldSpread e

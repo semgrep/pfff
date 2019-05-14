@@ -125,7 +125,7 @@ and v_expr (x: expr) =
   | Num v1 -> let v1 = v_wrap v_string v1 in ()
   | String v1 -> let v1 = v_wrap v_string v1 in ()
   | Regexp v1 -> let v1 = v_wrap v_string v1 in ()
-  | Id v1 -> let v1 = v_name v1 in ()
+  | Id (v1, _) -> let v1 = v_name v1 in ()
   | IdSpecial v1 -> let v1 = v_wrap v_special v1 in ()
   | Nop -> ()
   | Assign ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_expr v2 in ()

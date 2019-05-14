@@ -118,7 +118,7 @@ and expr =
   | String of string wrap
   | Regexp of string wrap
 
-  | Id of name
+  | Id of name * Scope_code.t option
   | IdSpecial of special wrap
   | Nop
 
