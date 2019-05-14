@@ -25,10 +25,24 @@ module C = Cst_js
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
-(* not used for now *)
-type _env = unit
+(* used only to tag Id to avoid repetition in the code highlighter 
+ * less: factorize code with graph_code_js?
+ *)
+type env = {
+  (* I handle block scope by not using
+   * a ref of mutable here! Just build a new list and passed it down.
+   *)
+  locals: (string * Scope_code.t) list;
+  (* 'var' have a function scope.
+   * alt: lift var up in a ast_js_build.ml transforming phase
+   *)
+  vars: (string, bool) Hashtbl.t;
+}
 
-let empty_env () = ()
+let empty_env () = {
+  locals = [];
+  vars = Hashtbl.create 0;
+}
 
 exception TodoConstruct of string * Parse_info.info
 (* The string is usually "advanced es6" or "Typescript" *)
@@ -67,6 +81,9 @@ let first_tok_of_item x =
       failwith "first_to_of_item: could not find a token";
     with Found tok -> tok
   end
+
+let _s_of_n n = 
+  Ast_js.str_of_name n
 
 (*****************************************************************************)
 (* Entry point *)
@@ -200,7 +217,7 @@ and stmt env = function
     bindings |> comma_list |> List.map (fun x -> 
      A.VarDecl (var_binding env vkind x))
   | C.Block x -> 
-    [A.Block (x |> paren |> List.map (item env) |> List.flatten)]
+    [stmt1_item_list env (paren x)]
   | C.Nop _ -> 
     []
   | C.ExprStmt (e, _) ->
