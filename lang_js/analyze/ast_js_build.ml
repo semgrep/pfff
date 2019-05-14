@@ -53,6 +53,20 @@ let fst3 (x, _, _) = x
 
 let noop = A.Block []
 
+exception Found of Parse_info.info
+
+let first_tok_of_item x =
+  let hooks = { Visitor_js.default_visitor with
+    Visitor_js.kinfo = (fun (_k, _) i -> raise (Found i));
+  } in
+  begin
+    let vout = Visitor_js.mk_visitor hooks in
+    try 
+      vout (C.Item x);
+      failwith "first_to_of_item: could not find a token";
+    with Found tok -> tok
+  end
+
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
@@ -65,7 +79,13 @@ and module_items env xs =
   xs |> List.map (module_item env) |> List.flatten
 
 and module_item env = function
-  | C.It x -> item env x |> List.map (fun x -> A.S x)
+  | C.It x -> item env x |> List.map (fun res -> 
+      match res with
+      | A.VarDecl var -> A.V var
+      | _ -> 
+         let tok = first_tok_of_item x in
+         A.S (tok, res)
+    )
   | C.Import (_, x, _) -> import env x
   | C.Export (tok, x) ->  export env tok x
 

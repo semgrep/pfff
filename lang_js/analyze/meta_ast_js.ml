@@ -252,7 +252,12 @@ and vof_property_prop =
   
 let vof_toplevel =
   function
-  | S v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("S", [ v1 ]))
+  | S (v1, v2) -> 
+     let v1 = vof_tok v1 in let v2 = vof_stmt v2 in
+     Ocaml.VSum (("S", [ v1; v2 ]))
+  | V v1 ->
+     let v1 = vof_var v1 in
+     Ocaml.VSum (("V", [v1]))
   | Import ((v1, v2, v3)) ->
       let v1 = vof_name v1
       and v2 = vof_name v2
