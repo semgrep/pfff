@@ -67,6 +67,7 @@ let visit_program ~tag_hook _prefs (_cst_opt, toks) =
     match tok with
     (* specials *)
 
+    (* less: could highlight certain words in the comment? *)
     | T.TComment ii ->
         if not (Hashtbl.mem already_tagged ii)
         then tag ii Comment
@@ -92,9 +93,10 @@ let visit_program ~tag_hook _prefs (_cst_opt, toks) =
 
     | T.T_REGEX (_, ii) -> tag ii Regexp
 
+    (* all the name and varname should have been tagged by now. *)
     | T.T_IDENTIFIER (_, ii) ->
        if not (Hashtbl.mem already_tagged ii)
-       then ()
+       then tag ii Error
 
     (* keywords *)
 
