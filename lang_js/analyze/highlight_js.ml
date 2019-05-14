@@ -53,6 +53,11 @@ let visit_program ~tag_hook _prefs (cst, toks) =
   )
   in
   let tag_name (_s, ii) categ = 
+    (* so treat the most specific in the enclosing code and then
+     * do not fear to write very general case patterns later because
+     * the specific will have priority over the general
+     * (e.g., a Method use vs a Field use)
+     *)
     if not (Hashtbl.mem already_tagged ii)
     then tag ii categ 
   in
@@ -67,28 +72,27 @@ let visit_program ~tag_hook _prefs (cst, toks) =
   let ast = Ast_js_build.program cst in
   let visitor = Visitor_ast_js.mk_visitor { Visitor_ast_js.default_visitor with
      Visitor_ast_js.ktop = (fun (k, _) t ->
-       match t with
+       (match t with
        | V {v_name = name; v_kind; v_init } ->
            let kind = Graph_code_js.kind_of_expr v_kind v_init in
            tag_name name (Entity (kind, (Def2 fake_no_def2)));
-           k t
-       | _ -> k t
+       | _ -> ()
+       );
+       k t
      );
      Visitor_ast_js.kprop = (fun (k,_) x ->
-      match x with
+      (match x with
       | Field (PN name, _, Fun _) ->
           tag_name name (Entity (E.Method, (Def2 fake_no_def2)));
-          k x
       | Field (PN name, _, _) ->
           tag_name name (Entity (E.Field, (Def2 fake_no_def2)));
-          k x
-      | _ -> k x
+      | _ -> ()
+      ); k x
       );
      Visitor_ast_js.kexpr = (fun (k,_) x ->
-      match x with
+      (match x with
       | ObjAccess (_, PN name) ->
           tag_name name (Entity (E.Field, (Use2 fake_no_use2)));
-          k x
       | IdSpecial (special, ii) ->
          (match special with
          | Eval -> tag ii BadSmell
@@ -101,32 +105,29 @@ let visit_program ~tag_hook _prefs (cst, toks) =
          | Some (Scope_code.Param) -> tag_name name (Parameter Use)
          | _ -> ()
          );
-         k x
       | Apply (Id (name, None), _) ->
          tag_name name (Entity (E.Function, (Use2 fake_no_use2)));
-         k x;
       | Apply (Id (name, Some _), _) ->
          tag_name name PointerCall;
-         k x;
       | Apply (ObjAccess (_, PN name), _) ->
          tag_name name (Entity (E.Method, (Use2 fake_no_use2)));
-         k x;
       | Fun (_, Some name) ->
          tag_name name (Entity (E.Function, (Use2 fake_no_use2)));
-      | _ -> k x
+      | _ -> ()
+      ); k x
      );
      Visitor_ast_js.kstmt = (fun (k,_) x ->
-      match x with
+      (match x with
       | VarDecl ({v_name = name; _}) ->
           tag_name name (Local Def);
-          k x
-      | _ -> k x
+      | _ -> ()
+      ); k x
      );
      Visitor_ast_js.kparam = (fun (k, _) x ->
-       match x with
+       (match x with
        | {p_name = name; _} ->
            tag_name name (Parameter Def);
-           k x
+       ); k x
      );
 
     } in
