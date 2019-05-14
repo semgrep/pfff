@@ -1,0 +1,2 @@
+type CloseCallback = () => void;
+
