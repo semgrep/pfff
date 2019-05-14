@@ -109,8 +109,9 @@ let visit_program ~tag_hook _prefs (cst, toks) =
          );
       | Apply (Id (name, None), _) ->
          tag_name name (Entity (E.Function, (Use2 fake_no_use2)));
-      | Apply (Id (name, Some _), _) ->
-         tag_name name PointerCall;
+      | Apply (Id (_name, Some _), _) ->
+         (* todo: tag_name name PointerCall; *)
+         ()
       | Apply (ObjAccess (_, PN name), _) ->
          tag_name name (Entity (E.Method, (Use2 fake_no_use2)));
       | Fun (_, Some name) ->
