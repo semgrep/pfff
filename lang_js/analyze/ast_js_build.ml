@@ -82,8 +82,28 @@ let first_tok_of_item x =
     with Found tok -> tok
   end
 
-let _s_of_n n = 
+let s_of_n n = 
   Ast_js.str_of_name n
+
+(* copy-paste of Graph_code_js.add_locals mostly *)
+let add_locals env vs = 
+  let locals = vs |> Common.map_filter (fun v ->
+    let s = s_of_n v.A.v_name in
+    match v.A.v_kind with
+    | A.Let | A.Const -> Some (s, Scope_code.Local)
+    | A.Var ->
+        Hashtbl.replace env.vars s true;
+        None
+     ) in
+  { env with locals = locals @ env.locals } 
+
+let add_params env ps = 
+  let params = ps |> List.map (fun p ->
+    let s = s_of_n p.A.p_name in
+    s, Scope_code.Param
+  ) in
+  { env with locals = params @ env.locals } 
+
 
 (*****************************************************************************)
 (* Entry point *)
@@ -312,10 +332,28 @@ and case_clause env = function
     A.Case (e, stmt1_item_list env xs)
 
 and stmt1_item_list env items =
-  match items |> List.map (item env) |> List.flatten with
+ let stmt1 xs = 
+  match xs with
   | [] -> A.Block []
   | [x] -> x
   | xs -> A.Block xs
+ in
+ let rec aux acc env = function
+    | [] -> List.rev acc |> List.flatten |> stmt1
+    | x::xs ->
+      let ys = item env x in
+      let env = 
+         let locals = ys |> Common.map_filter (fun x ->
+           match x with
+           | A.VarDecl v -> Some v
+           | _ -> None
+         ) in
+         add_locals env locals
+      in
+      aux (ys::acc) env xs
+ in
+ aux [] env items
+
   
 (* ------------------------------------------------------------------------- *)
 (* Expression *)
@@ -327,7 +365,16 @@ and expr env = function
      | "eval" -> A.IdSpecial (A.Eval, tok)
      | "undefined" -> A.IdSpecial (A.Undefined, tok)
      (* todo? require? import? *)
-     | _ -> A.Id ((s, tok), noscope)
+     | _ -> 
+         let scope = 
+           try
+             Some (List.assoc s env.locals)
+           with Not_found ->
+             if Hashtbl.mem env.vars s
+             then Some (Scope_code.Local)
+             else noscope
+         in
+         A.Id ((s, tok), scope)
      )
   | C.This tok -> A.IdSpecial (A.This, tok)
   | C.Super tok -> A.IdSpecial (A.Super, tok)
@@ -515,6 +562,7 @@ and func_decl env x =
   let props = func_kind env x.C.f_kind in
   let params = 
    x.C.f_params |> paren |> comma_list |> List.map (parameter_binding env) in
+  let env = add_params env params in
   let body = stmt1_item_list env (x.C.f_body |> paren) in
   { A.f_props = props; f_params = params; f_body = body }
 
@@ -549,6 +597,7 @@ and arrow_func env x =
     | C.AParams xs -> xs |> paren |> comma_list
   in
   let params = bindings |> List.map (parameter_binding env) in
+  let env = add_params env params in
   let body = 
     match x.C.a_body with
     | C.AExpr e -> A.ExprStmt (expr env e)
