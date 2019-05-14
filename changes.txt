@@ -4,11 +4,20 @@
 
 ** javascript
 
-*** handle most ES6 features and more code
+*** handle most ES6 features, a few ES7-ES9 featues
+and handle far more code. Far more robust Javascript parser.
+
+*** partial support for Typescript
 
 *** better Automatic Semicolon Insertion algorithm
-do it via error recovery as stated in the spec instead of using
-a fix_token parsing hack strategy.
+do it both via error recovery as stated in the spec,
+and by using a fix_token parsing hack strategy when needed.
+
+*** a real abstract syntax tree with simplified Javascript code
+
+*** basic codegraph for toplevel entities
+
+*** AST-based highliter
 
 ** TODO new release on OPAM
 (I need some of the new code from pfff in efuns,
