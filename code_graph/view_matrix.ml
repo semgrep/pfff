@@ -351,12 +351,19 @@ let draw_up_columns cr w ~interactive_regions =
 (*****************************************************************************)
 (* Semantic overlays *)
 (*****************************************************************************)
+(* do not highlight as dead top stmt; normal that noone depends on them *)
+let is_anon_topstmt i m =
+  let node = m.DM.i_to_name.(i) in
+  (match node with
+  | _, E.TopStmts -> true
+  | _ -> false
+  )
 
 let highlight_dead_columns cr w =
   let l = M.layout_of_w w in
   let mat = w.m.DM.matrix in
   for j = 0 to Array.length mat -.. 1 do
-    if DM.is_dead_column j w.m
+    if DM.is_dead_column j w.m && not (is_anon_topstmt j w.m)
     then begin
       CairoH.fill_rectangle ~cr ~alpha:0.1 ~color:"red" 
         (rect_of_column j l);
