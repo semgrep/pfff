@@ -28,12 +28,15 @@ module Ast = Ast_js
  * 
  * schema:
  *  Root -> Dir -> File -> Function
- *                      -> Class
- *                      -> Var
- *                          -> Obj
- *                            -> Field
+ *                      -> Class (and Obj)
+ *                            -> TODO Field
+ *                      -> Const
+ *                      -> Global
  *       -> Dir -> SubDir -> ...
+ *
  * todo: 
+ *  - look at the deadcode detected by codegraph on the graph built
+ *    by this file; they usually contains FP indicating bugs in this file
  *  - too many stuff
  *)
 (* TODO: flow/lib/ contains declarations of all JS builtins! *)
@@ -247,8 +250,30 @@ let rec extract_defs_uses env ast =
     env.g |> G.add_edge ((dir, E.Dir), node) G.Has;
   end;
   let env = { env with current = (env.file_readable, E.File); } in
+  toplevels_entities_adjust_imports env ast;
   toplevels env ast
 
+(* The order of toplevel declarations do not matter in Javascript.
+ * It is a dynamic language without static checking; if in the body of
+ * a function you use an entity declared further, nothing will complain
+ * about it. 
+ * So we need to first extract all those toplevel entities and 
+ * create an import for them to not get lookup failures otherwise 
+ * on those forward uses.
+ *)
+and toplevels_entities_adjust_imports env xs =
+  xs |> List.iter (function
+    | Import _ | Export _ -> ()
+    | S st ->
+    (match st with
+     | VarDecl v ->
+      let str = s_of_n v.v_name in
+      Hashtbl.replace env.imports str 
+        (mk_qualified_name env.file_readable str);
+     | _ -> ()
+     )
+  )
+        
 (* ---------------------------------------------------------------------- *)
 (* Toplevels *)
 (* ---------------------------------------------------------------------- *)
@@ -283,31 +308,24 @@ and toplevel env x =
 
 and toplevels env xs = List.iter (toplevel env) xs
 
+and kind_of_expr _env v_kind e =
+  match e with
+  | Fun _ -> E.Function
+  | Class _ -> E.Class
+  | Obj _ -> E.Class
+  | _ -> 
+        (* without types, this might be wrong; a constant might
+         * actually refer to a function, and a global to an object
+         *)
+        if v_kind = Const 
+        then E.Constant
+        else E.Global
+
 and name_expr env name v_kind e =
-  let kind =
-    match e with
-    | Fun _ -> E.Function
-    | Class _ -> E.Class
-    | Obj _ -> E.Class
-    | _ -> 
-          (* without types, this might be wrong; a constant might
-           * actually refer to a function, and a global to an object
-           *)
-          if v_kind = Const 
-          then E.Constant
-          else E.Global
-  in
+  let kind = kind_of_expr env v_kind e in
   let env = add_node_and_edge_if_defs_mode env (name, kind) in
   if env.phase = Uses 
-  then begin
-    (* todo: order matters in JS? or need add to imports all list of
-     * entities in the file first? 
-     *)
-    let str = s_of_n name in
-    Hashtbl.replace env.imports str (mk_qualified_name env.file_readable str);
-    expr env e
-  end
-
+  then expr env e
 
 (* ---------------------------------------------------------------------- *)
 (* Statements *)
@@ -548,7 +566,7 @@ let build ?(verbose=false) root files =
     let ast = parse Stdlib_js.path_stdlib in
     let env = { env with phase = Uses; file_readable = "Stdlib.js"; 
                 locals = []; imports = Hashtbl.create 13; } in
-    extract_defs_uses env ast;
+    toplevels_entities_adjust_imports env ast;
     env.imports
   in
 
