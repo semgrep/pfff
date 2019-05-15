@@ -404,19 +404,63 @@ and expr_ env heap x =
       let heap, v = Unify.value heap v1 v2 in
       heap, v
 
+  (* code for x = ..., o->fld = ..., etc *)
+  | Assign (e1, e2) ->
+      let heap, new_var_created, lval = lvalue env heap e1 in
+      let heap, rval = expr env heap e2 in
+      assign env heap new_var_created lval rval
+
+  (* expression call or method call (Call (Obj_get...)) or
+   * static method call (Call (Class_get ...))
+   *)
+  | Apply (e, el) ->
+      let heap, v = expr env heap e in
+      call env heap v el
+
+  | Id _ as lv ->
+      (* The lvalue will contain the pointer to val, e.g. &1{...}
+       * so someone can modify it. See also assign() below.
+       * But in an expr context, we actually want the value, hence
+       * the Ptr.get dereference, so we will return {...}
+       *)
+      let heap, _, x = lvalue env heap lv in
+      let heap, x = Ptr.get heap x in
+      heap, x
+
    | _ -> raise Todo
 
 (* ---------------------------------------------------------------------- *)
 (* Lvalue *)
 (* ---------------------------------------------------------------------- *)
+(* will return a boolean indicating whether a variable was created
+ * and will return the lvalue, that is the pointer value, and not
+ * the actual value, so that the caller can modify it.
+ * todo: Why do we care to return if a variable was created?
+ *)
+and lvalue env heap x =
+  match x with
+  | _ -> raise Todo
+  | _ ->
+    if !strict then failwith "lvalue not handled";
+    heap, false, Vany
 
 (* ---------------------------------------------------------------------- *)
 (* Assign *)
 (* ---------------------------------------------------------------------- *)
+and assign _env heap is_new root(*lvalue*) v_root(*rvalue*) =
+  raise Todo
 
 (* ---------------------------------------------------------------------- *)
 (* Call *)
 (* ---------------------------------------------------------------------- *)
+
+and call env heap v el =
+  match v with
+  | Vsum l -> sum_call env heap l   el
+  | x      -> sum_call env heap [x] el
+
+and sum_call env heap v el =
+  raise Todo
 
 (* ---------------------------------------------------------------------- *)
 (* Class *)
