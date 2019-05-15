@@ -1,4 +1,4 @@
-(* Yoann Padioleau
+(* Julien Verlaguet, Yoann Padioleau
  *
  * Copyright (C) 2019 Yoann Padioleau
  *
@@ -154,13 +154,15 @@ type value =
    *)
   | Vptr of int
 
+  (* pad: because of some imprecision, we actually have a set of addresses? *)
+  | Vref    of ISet.t
+
   (* less: try to differentiate the different usage of JS objects?
   | Vrecord of value SMap.t
   | Varray  of value list
   *)
-  (* tainting analysis for security 
+  (* tainting analysis for security *)
   | Vtaint of string
-  *)
 
   (* usually used when we don't handle certain constructs or when
    * the code is too dynamic
@@ -169,7 +171,8 @@ type value =
 
   and type_ =
     | Tbool
-    | Tnum
+    | Tint
+    | Tfloat
     | Tstring
 
 (* this could be one field of env too, close to .vars and .globals *)
@@ -266,7 +269,7 @@ let rec value ptrs o x =
   | Vnull -> o "Null"
   | Vundefined -> o "Undefined"
 
-(*  | Vtaint s -> o "PARAM:"; o s *)
+  | Vtaint s -> o "PARAM:"; o s
 
   | Vabstr ty -> type_ o ty
 
@@ -290,6 +293,18 @@ let rec value ptrs o x =
          *)
         o "rec"
 
+  | Vref s ->
+      o "&REF ";
+      let l = ISet.elements s in
+      list o (fun o x -> o (string_of_int x)) l;
+      let n = ISet.choose s in
+      (try
+          o "{";
+          value (IMap.remove n ptrs) o (IMap.find n ptrs);
+          o "}"
+      with Not_found -> o "rec"
+      )
+
   | Vobject m ->
       let vl = SMap.fold (fun x y acc -> (x, y) :: acc) m [] in
       o "object(";
@@ -304,7 +319,8 @@ let rec value ptrs o x =
 and type_ o x =
   match x with
   | Tbool -> o "bool"
-  | Tnum -> o "num"
+  | Tint -> o "int"
+  | Tfloat -> o "float"
   | Tstring -> o "string"
 
 (*****************************************************************************)
