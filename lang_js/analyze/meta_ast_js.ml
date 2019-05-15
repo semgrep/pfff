@@ -11,6 +11,14 @@ and vof_wrap _of_a (v1, v2) =
   v1
   
 let vof_name v = vof_wrap Ocaml.vof_string v
+
+let vof_resolved_name = function
+  | Local -> Ocaml.VSum (("Local", []))
+  | Param -> Ocaml.VSum (("Param", []))
+  | NotResolved -> Ocaml.VSum (("NotResolved", []))
+  | Global v1 -> 
+      let v1 = Ocaml.vof_string v1 in
+      Ocaml.VSum (("Global", [ v1 ]))
   
 let vof_special =
   function
@@ -81,7 +89,7 @@ and vof_expr =
       in Ocaml.VSum (("Regexp", [ v1 ]))
   | Id (v1, v2) -> 
       let v1 = vof_name v1 in 
-      let v2 = Ocaml.vof_option Scope_code.vof_scope v2 in
+      let v2 = Ocaml.vof_ref vof_resolved_name v2 in
       Ocaml.VSum (("Id", [ v1; v2 ]))
   | IdSpecial v1 ->
       let v1 = vof_wrap vof_special v1 in Ocaml.VSum (("IdSpecial", [ v1 ]))
@@ -181,8 +189,15 @@ and vof_case =
       and v2 = vof_stmt v2
       in Ocaml.VSum (("Case", [ v1; v2 ]))
   | Default v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("Default", [ v1 ]))
-and vof_var { v_name = v_v_name; v_kind = v_v_kind; v_init = v_v_init } =
+and vof_var { v_name = v_v_name; 
+              v_kind = v_v_kind; 
+              v_init = v_v_init;
+              v_resolved = v_v_resolved;
+             } =
   let bnds = [] in
+  let arg = Ocaml.vof_ref vof_resolved_name v_v_resolved in
+  let bnd = ("v_resolved", arg) in
+  let bnds = bnd :: bnds in
   let arg = vof_expr v_v_init in
   let bnd = ("v_init", arg) in
   let bnds = bnd :: bnds in
@@ -266,10 +281,9 @@ let vof_toplevel =
       and v2 = vof_name v2
       and v3 = vof_filename v3
       in Ocaml.VSum (("Import", [ v1; v2; v3 ]))
-  | Export ((v1, v2)) ->
+  | Export ((v1)) ->
       let v1 = vof_name v1
-      and v2 = vof_expr v2
-      in Ocaml.VSum (("Export", [ v1; v2 ]))
+      in Ocaml.VSum (("Export", [ v1 ]))
   
 let vof_program v = Ocaml.vof_list vof_toplevel v
   

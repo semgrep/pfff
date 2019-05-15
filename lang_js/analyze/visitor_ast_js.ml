@@ -184,9 +184,15 @@ and v_case =
   | Case ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_stmt v2 in ()
   | Default v1 -> let v1 = v_stmt v1 in ()
 
-and v_var { v_name = v_v_name; v_kind = v_v_kind; v_init = v_v_init } =
+and v_resolved_name _ = ()
+
+and v_var { v_name = v_v_name; v_kind = v_v_kind; v_init = v_v_init; 
+            v_resolved = v_v_resolved } =
   let arg = v_name v_v_name in
-  let arg = v_var_kind v_v_kind in let arg = v_expr v_v_init in ()
+  let arg = v_var_kind v_v_kind in 
+  let arg = v_expr v_v_init in 
+  let arg = v_ref v_resolved_name v_v_resolved in
+  ()
 and v_var_kind = function | Var -> () | Let -> () | Const -> ()
 
 and v_fun_ { f_props = v_f_props; f_params = v_f_params; f_body = v_f_body } =
@@ -232,7 +238,7 @@ and v_toplevel x =
   | S ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_stmt v2 in ()
   | Import ((v1, v2, v3)) ->
       let v1 = v_name v1 and v2 = v_name v2 and v3 = v_filename v3 in ()
-  | Export ((v1, v2)) -> let v1 = v_name v1 and v2 = v_expr v2 in ()
+  | Export ((v1)) -> let v1 = v_name v1 in ()
   in
   vin.ktop (k, all_functions) x
 

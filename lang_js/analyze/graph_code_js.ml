@@ -44,13 +44,6 @@ module Ast = Ast_js
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
-(* For bar() in a/b/foo.js the qualified_name is 'a/b/foo.bar'. 
- * I remove the filename extension for codegraph which assumes
- * the dot is a package separator, which is convenient to show 
- * shorter names when exploring a codebase (and maybe also when hovering
- * a function in codemap).
- *)
-type qualified_name = string
 
 (* for the extract_uses visitor *)
 type env = {
@@ -317,7 +310,7 @@ and toplevel env x =
       let readable = readable_of_path env file in
       Hashtbl.replace env.imports str2 (mk_qualified_name readable str1);
     end
-  | Export (name, expr) -> 
+  | Export (name) -> 
      if env.phase = Defs then begin
        let exports =
          try 
@@ -326,10 +319,9 @@ and toplevel env x =
        in
        let str = s_of_n name in
        Hashtbl.replace env.exports env.file_readable (str::exports)
-     end;
-     name_expr env name Const expr
-  | V {v_name; v_kind; v_init} ->
-       name_expr env v_name v_kind v_init
+     end
+  | V {v_name; v_kind; v_init; v_resolved} ->
+       name_expr env v_name v_kind v_init v_resolved
   | S (tok, st) ->
       let kind = E.TopStmts in
       let s = spf "__top__%d:%d" 
@@ -341,7 +333,7 @@ and toplevel env x =
 
 and toplevels env xs = List.iter (toplevel env) xs
 
-and name_expr env name v_kind e =
+and name_expr env name v_kind e _v_resolved =
   let kind = kind_of_expr v_kind e in
   let env = add_node_and_edge_if_defs_mode env (name, kind) in
   if env.phase = Uses 
@@ -386,7 +378,8 @@ and stmt env = function
  | Try (st1, catchopt, finalopt) ->
    stmt env st1;
    catchopt |> Common.opt (fun (n, st) -> 
-     let v = { v_name = n; v_kind = Let; v_init = Nop } in
+     let v = { v_name = n; v_kind = Let; v_init = Nop; 
+               v_resolved = ref Local } in
      let env = add_locals env [v] in
      stmt env st
    );
@@ -484,7 +477,8 @@ and expr env e =
       match nopt with
       | None -> env
       | Some n -> 
-        let v = { v_name = n; v_kind = Let; v_init = Nop } in
+        let v = { v_name = n; v_kind = Let; v_init = Nop; 
+                  v_resolved = ref Local}in
         add_locals env [v]
     in
     fun_ env f
@@ -572,6 +566,7 @@ let build ?(verbose=false) root files =
       output_string chan (s ^ "\n"); flush chan;
     );
   } in
+
   (* step1: creating the nodes and 'Has' edges, the defs *)
   env.pr2_and_log "\nstep1: extract defs";
   (Stdlib_js.path_stdlib::files) |> Console.progress ~show:verbose (fun k -> 

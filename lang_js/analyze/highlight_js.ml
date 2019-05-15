@@ -75,7 +75,7 @@ let visit_program ~tag_hook _prefs (cst, toks) =
   let visitor = Visitor_ast_js.mk_visitor { Visitor_ast_js.default_visitor with
      Visitor_ast_js.ktop = (fun (k, _) t ->
        (match t with
-       | V {v_name = name; v_kind; v_init } ->
+       | V {v_name = name; v_kind; v_init; v_resolved = _resolved } ->
            let kind = Graph_code_js.kind_of_expr v_kind v_init in
            tag_name name (Entity (kind, (Def2 fake_no_def2)));
        | _ -> ()
@@ -89,7 +89,8 @@ let visit_program ~tag_hook _prefs (cst, toks) =
       | Field (PN name, _, _) ->
           tag_name name (Entity (E.Field, (Def2 fake_no_def2)));
       | _ -> ()
-      ); k x
+      ); 
+      k x
       );
      Visitor_ast_js.kexpr = (fun (k,_) x ->
       (match x with
@@ -100,16 +101,16 @@ let visit_program ~tag_hook _prefs (cst, toks) =
          | Eval -> tag ii BadSmell
          | _ -> tag ii Builtin
          )
-      | Id (name, scope_opt) ->
-         (match scope_opt with
-         | None -> tag_name name (Entity (E.Global, (Use2 fake_no_use2)))
-         | Some (Scope_code.Local) -> tag_name name (Local Use)
-         | Some (Scope_code.Param) -> tag_name name (Parameter Use)
-         | _ -> ()
+      | Id (name, scope) ->
+         (match !scope with
+         | NotResolved | Global _ -> 
+            tag_name name (Entity (E.Global, (Use2 fake_no_use2)))
+         | Local -> tag_name name (H.Local Use)
+         | Param -> tag_name name (H.Parameter Use)
          );
-      | Apply (Id (name, None), _) ->
+      | Apply (Id (name, {contents = Global _ | NotResolved}), _) ->
          tag_name name (Entity (E.Function, (Use2 fake_no_use2)));
-      | Apply (Id (_name, Some _), _) ->
+      | Apply (Id (_name, {contents = Local | Param}), _) ->
          (* todo: tag_name name PointerCall; *)
          ()
       | Apply (ObjAccess (_, PN name), _) ->
@@ -122,14 +123,14 @@ let visit_program ~tag_hook _prefs (cst, toks) =
      Visitor_ast_js.kstmt = (fun (k,_) x ->
       (match x with
       | VarDecl ({v_name = name; _}) ->
-          tag_name name (Local Def);
+          tag_name name (H.Local Def);
       | _ -> ()
       ); k x
      );
      Visitor_ast_js.kparam = (fun (k, _) x ->
        (match x with
        | {p_name = name; _} ->
-           tag_name name (Parameter Def);
+           tag_name name (H.Parameter Def);
        ); k x
      );
 

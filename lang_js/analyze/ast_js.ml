@@ -66,6 +66,24 @@ and 'a wrap = 'a * tok
 type name = string wrap
  (* with tarzan *)
 
+(* For bar() in a/b/foo.js the qualified_name is 'a/b/foo.bar'. 
+ * I remove the filename extension for codegraph which assumes
+ * the dot is a package separator, which is convenient to show 
+ * shorter names when exploring a codebase (and maybe also when hovering
+ * a function in codemap).
+ * This is computed after ast_js_build in graph_code_js.ml
+ *)
+type qualified_name = string
+
+(* computed in graph_code_js.ml in a "naming" phase 
+ * alt: reuse Scope_code.t, but not really worth it.
+ *)
+type resolved_name = 
+  | Local
+  | Param
+  | Global of qualified_name
+  | NotResolved
+
 type special = 
   (* Special values *)
   | Null | Undefined (* builtin not in grammar *)
@@ -82,7 +100,7 @@ type special =
   | In | Delete | Void 
   | Spread
   | Yield | YieldStar | Await
-  | Encaps of name option
+  | Encaps of name option (* less: resolve? *)
 
   (* Special apply arithmetic and logic *)
   | Not | And | Or | Xor
@@ -118,7 +136,7 @@ and expr =
   | String of string wrap
   | Regexp of string wrap
 
-  | Id of name * Scope_code.t option
+  | Id of name * resolved_name ref (* set later in naming phase *)
   | IdSpecial of special wrap
   | Nop
 
@@ -175,6 +193,7 @@ and var = {
   v_name: name;
   v_kind: var_kind;
   v_init: expr;
+  v_resolved: resolved_name ref;
 }
   and var_kind = Var | Let | Const
 
@@ -215,12 +234,10 @@ and class_ = {
 type toplevel = 
   | V of var
   | S of tok (* for graph_code to build a toplevel entity *) * stmt
+
   (* 'name' can can be the special default_entity *)
   | Import of name * name (* 'name1 as name2', often name1=name2 *) * filename
-  (* todo: handle pure ExportNames? generate a VarDecl and separate
-   * export? 
-   *)
-  | Export of name * expr
+  | Export of name
  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)

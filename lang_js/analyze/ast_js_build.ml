@@ -32,7 +32,7 @@ type env = {
   (* I handle block scope by not using
    * a ref of mutable here! Just build a new list and passed it down.
    *)
-  locals: (string * Scope_code.t) list;
+  locals: (string * Ast_js.resolved_name (* Local or Param *)) list;
   (* 'var' have a function scope.
    * alt: lift var up in a ast_js_build.ml transforming phase
    *)
@@ -66,7 +66,7 @@ let paren (_, x, _) = x
 let fst3 (x, _, _) = x
 
 let noop = A.Block []
-let noscope = None
+let not_resolved () = ref A.NotResolved
 
 exception Found of Parse_info.info
 
@@ -90,7 +90,7 @@ let add_locals env vs =
   let locals = vs |> Common.map_filter (fun v ->
     let s = s_of_n v.A.v_name in
     match v.A.v_kind with
-    | A.Let | A.Const -> Some (s, Scope_code.Local)
+    | A.Let | A.Const -> Some (s, A.Local)
     | A.Var ->
         Hashtbl.replace env.vars s true;
         None
@@ -100,7 +100,7 @@ let add_locals env vs =
 let add_params env ps = 
   let params = ps |> List.map (fun p ->
     let s = s_of_n p.A.p_name in
-    s, Scope_code.Param
+    s, A.Param
   ) in
   { env with locals = params @ env.locals } 
 
@@ -159,33 +159,39 @@ and export env tok = function
  | C.ExportDefaultExpr (tok, e, _)  -> 
    let e = expr env e in
    let n = A.default_entity, tok in
-   [A.Export (n, e)]
+   let v = {A.v_name = n; v_kind = A.Const; v_init = e; 
+            v_resolved = not_resolved () } in
+   [A.V v; A.Export (n)]
  | C.ExportDecl x ->
    let xs = item env x in
    xs |> List.map (function
     (* less: v_kind? *)
-    | A.VarDecl v -> A.Export (v.A.v_name, v.A.v_init)
+    | A.VarDecl v -> 
+         [A.V v; A.Export (v.A.v_name)]
     | _ -> raise (UnhandledConstruct ("exporting a stmt", tok))
-   )
+   ) |> List.flatten
  | C.ExportDefaultDecl (tok, x) ->
    let xs = item env x in
    xs |> List.map (function
     | A.VarDecl v -> 
-        let n = A.default_entity, tok in (*v.A.v_name*)
-        (* less: v_kind? *)
-        A.Export (n, v.A.v_init)
+        (* todo: what was in v.A.v_name ?*)
+        let n = A.default_entity, tok in 
+        let v = { v with A.v_name = n } in
+        [A.V v;  A.Export (n)]
     | _ -> raise (UnhandledConstruct ("exporting a stmt", tok))
-   )
+   ) |> List.flatten
  | C.ExportNames (xs, _) ->
    xs |> paren |> comma_list |> List.map (fun (n1, n2opt) ->
      let n1 = name env n1 in
-     let n2 = 
-       match n2opt with
-       | None -> n1
-       | Some (_, n2) -> name env n2
-     in
-     A.Export (n2, A.Id (n1, noscope))
-  )
+     match n2opt with
+     | None -> [A.Export (n1)]
+     | Some (_, n2) -> 
+         let n2 = name env n2 in
+         let id = A.Id (n1, not_resolved ()) in
+         let v = { A.v_name = n2; v_kind = A.Const; v_init = id;
+                   v_resolved = not_resolved () } in
+         [A.V v; A.Export n2]
+  ) |> List.flatten
  | C.ReExportNamespace (_, _, _) ->
    raise (UnhandledConstruct ("reexporting namespace", tok))
  | C.ReExportNames (_, _, _) ->
@@ -198,7 +204,7 @@ and item env = function
     (match x.C.f_name with
     | Some x ->
       [A.VarDecl {A.v_name = name env x; v_kind = A.Const; 
-                  v_init = A.Fun (fun_, None)}]
+                  v_init = A.Fun (fun_, None); v_resolved = not_resolved()}]
     | None ->
        raise (UnhandledConstruct ("weird anon func decl", fst3 x.C.f_params))
     )
@@ -206,7 +212,8 @@ and item env = function
     let class_ = class_decl env x in
     (match x.C.c_name with
     | Some x ->
-      [A.VarDecl {A.v_name = name env x; v_kind=A.Const;v_init=A.Class class_}]
+      [A.VarDecl {A.v_name = name env x; v_kind=A.Const;
+                  v_init=A.Class class_; v_resolved = not_resolved ()}]
     | None ->
        raise (UnhandledConstruct ("weird anon class decl", x.C.c_tok))
     )
@@ -366,15 +373,15 @@ and expr env = function
      | "undefined" -> A.IdSpecial (A.Undefined, tok)
      (* todo? require? import? *)
      | _ -> 
-         let scope = 
+         let resolved = 
            try
-             Some (List.assoc s env.locals)
+             (List.assoc s env.locals)
            with Not_found ->
              if Hashtbl.mem env.vars s
-             then Some (Scope_code.Local)
-             else noscope
+             then A.Local
+             else A.NotResolved
          in
-         A.Id ((s, tok), scope)
+         A.Id ((s, tok), ref resolved)
      )
   | C.This tok -> A.IdSpecial (A.This, tok)
   | C.Super tok -> A.IdSpecial (A.Super, tok)
@@ -549,7 +556,7 @@ and variable_declaration env vkind x =
     | Some (_, e) -> expr env e
   in
   let vkind = var_kind env vkind in
-  { A.v_name = n; v_init = init; v_kind = vkind }
+  { A.v_name = n; v_init = init; v_kind = vkind; v_resolved = not_resolved ()}
 
 and var_kind _env = function
   | C.Var -> A.Var
@@ -624,7 +631,7 @@ and property env = function
     )
   | C.P_shorthand n ->
     let n = name env n in
-    A.Field (A.PN n, [], A.Id (n, noscope))
+    A.Field (A.PN n, [], A.Id (n, not_resolved ()))
   | C.P_spread (_, e) ->
     let e = expr env e in
     A.FieldSpread e
