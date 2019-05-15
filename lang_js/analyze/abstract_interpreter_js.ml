@@ -34,15 +34,15 @@ module H = Abstract_interpreter_js_helpers
  * values for variables instead of concrete values as in a regular
  * interpreter. See abstract_interpreter_js_env.ml
  *
- * For instance on 'if(cond()) { x = 42; } else { x = 3;}'
+ * For instance, on 'if(cond()) { x = 42; } else { x = 3;}'
  * the abstract interpreter will actually execute both branches and
  * merge/unify the different values for the variable in a more
  * abstract value. So, while processing the first branch the interpreter
- * will add a new local variable $x, allocate space in the abstract
+ * will add a new local variable x, allocate space in the abstract
  * heap, and sets its value to the precise (Vint 42). But after
  * both branches, the abstract interpreter will unify/merge/abstract
- * the different values for $x to a (Vabstr Tint) and from now on,
- * the value for $x will be that abstract.
+ * the different values for x to a (Vabstr Tint) and from now on,
+ * the value for x will be that abstract.
  *
  * Two key concepts are the different level of abstractions
  * (resulting from unification/generalization values), and
@@ -64,7 +64,7 @@ module H = Abstract_interpreter_js_helpers
  *  - BUT context sensitive, because we treat different calls
  *    to the same function differently (we unroll each call).
  *    There is a limit on the depth of the call stack though,
- *    see max_depth.
+ *    see max_depth below.
  *
  * To help you debug the interpreter you can put some
  * 'var_dump(x)' in the Javascript file to see the abstract
@@ -74,8 +74,7 @@ module H = Abstract_interpreter_js_helpers
  *  - strings are sometimes (ab)used to not only represent
  *    variables and entities but also special variables:
  *    * "*return*", to communicate the return value to the caller
- *    * "*array*, to build an array
- *    * "*myobj*, to build an object
+ *    * "*myobj*", to build an object
  *    * "*BUILD*", to call the 'new' method of a class
  *    * special "self"/"parent", in env.globals
  *    * "$this", also in env.globals
@@ -86,11 +85,10 @@ module H = Abstract_interpreter_js_helpers
  *    code of a parent method? The references to self and parent
  *    are in the closure of the method and are pointers to
  *    the fake object that represents the class.
- *  - the id() function semantic is hardcoded
  *
  * TODO:
  *  - ask juju about the many '??' in this file
- *  - the places where expect a VPtr, and so need to call Ptr.get,
+ *  - still? the places where expect a VPtr, and so need to call Ptr.get,
  *    or even a VptrVptr and so where need to call Ptr.get two times,
  *    and the places where expect a final value is not clear.
  *  - before processing the file, maybe should update the code database
@@ -98,16 +96,15 @@ module H = Abstract_interpreter_js_helpers
  *    many scripts have a main() or usage() but the code database
  *    stores only one.
  *  - $x++ is ignored (we don't really care about int for now)
- *  - many places where play with $ in s.(0)
  *  - C-s for Vany, it's usually a Todo
  *
  * TODO long term:
- *  - we could use the ia also to find bugs that my current
- *    checkers can't find (e.g. undefined methods in $o->m() because
+ *  - we could use the abstract interpreter to find bugs that my current
+ *    checkers can't find (e.g. undefined methods in o->m() because
  *    of the better interprocedural class analysis, wrong type,
- *    passing null, use of undeclared field in $o->fld, etc).
+ *    passing null, use of undeclared field in o->fld, etc).
  *    But the interpreter first needs to be correct
- *    and to work on www/ without so many exceptions.
+ *    and to work on programs without so many exceptions.
  *    TODO just go through all constructs and find opportunities
  *    to detect bugs?
  *  - It could also be used for program understanding purpose
@@ -203,7 +200,7 @@ exception LostControl
 (*****************************************************************************)
 
 (* add an edge in callgraph *)
-let save_path env target =
+let save_path _env _target =
   if !extract_paths
   then ()
  (*graph := CG.add_graph (List.hd !(env.path)) target !graph *)
@@ -228,7 +225,7 @@ let opt_to_list = function
 
 let rec program env heap program =
 
-  (** env.path := [CG.File !(env.file)]; *)
+  (* env.path := [CG.File !(env.file)]; *)
   let finalheap = toplevels env heap program in
   finalheap
 
@@ -238,25 +235,29 @@ let rec program env heap program =
 and toplevels env heap xs = List.fold_left (toplevel env) heap xs
 
 and toplevel env heap = function
-  (* safe to skip, we already did the naming phase in graph_code_js so
-   * now every names should be resolved
-  *)
-  | Import _ | Export _ -> heap
   | S (_tok, st) -> stmt env heap st
   | V v ->
      (match v.v_init with
      | Fun _ -> heap
-     | _ -> raise Todo
+     (* n: treat globals lazily? *)
+     | _ -> heap
      )
+  (* n: safe to skip, we already did the naming phase in graph_code_js so
+   * now every names should be resolved
+  *)
+  | Import _ | Export _ -> heap
 
 (* ---------------------------------------------------------------------- *)
 (* Stmt *)
 (* ---------------------------------------------------------------------- *)
 and stmt env heap x =
   match x with
+  | VarDecl _v ->
+     raise Todo
+
   (* special keywords in the code to debug the abstract interpreter state.
    * less: find a function so that one can easily run a JS test file
-   * with node or ajs and get both run working
+   * with node or 'pfff -test_ai_js' and get both run working
    *)
   | ExprStmt (Apply (Id ((("show" | "var_dump"),_),_), [e])) ->
       let heap, v = expr env heap e in
@@ -274,6 +275,9 @@ and stmt env heap x =
   | ExprStmt e ->
       let heap, _ = expr env heap e in
       heap
+
+  | Block xs ->
+      stmtl env heap xs
 
   (* With 'if(true) { x = 1; } else { x = 2; }'
    * we will endup with a heap with x = &1{int}.
@@ -297,15 +301,6 @@ and stmt env heap x =
       let heap = stmt env heap st2 in
       heap
 
-  | Block xs ->
-      stmtl env heap xs
-
-  | Return e ->
-      (* the special "*return*" variable is used in call_fun() below *)
-      let id = mk_id "*return*" Local in
-      let heap, _ = expr env heap (Assign (id, e)) in
-      heap
-
   (* this may seem incorrect to treat 'do' and 'while' in the same way,
    * because the evaluation of e does not happen at the same time.
    * But here we care about the pointfix of the values, and so
@@ -317,9 +312,22 @@ and stmt env heap x =
       let heap = stmt env heap st in
       heap
 
+  | For (_, _) -> raise Todo
+
   | Switch (e, cl) ->
       let heap, _ = expr env heap e in
       let heap = List.fold_left (case env) heap cl in
+      heap
+
+  (* n: we do not care about the control flow; we are flow-insensitive *)
+  | Continue _lblopt | Break _lblopt -> 
+     heap
+  | Label (_lbl, st) -> stmt env heap st
+
+  | Return e ->
+      (* the special "*return*" variable is used in call_fun() below *)
+      let id = mk_id "*return*" Local in
+      let heap, _ = expr env heap (Assign (id, e)) in
       heap
 
   | Throw e ->
@@ -331,8 +339,6 @@ and stmt env heap x =
       let heap = List.fold_left (catch env) heap (opt_to_list cl) in
       let heap = List.fold_left (finally env) heap (opt_to_list fl) in
       heap
-
-  | _ -> raise Todo
 
 (* What if break/continue/return/throw in the middle of the list of stmts?
  * Do we still abstract interpret the rest of the code? Yes because
@@ -351,7 +357,7 @@ and case env heap x =
       let heap = stmt env heap st in
       heap
 
-and catch env heap (name, st) =
+and catch env heap (_name, st) =
   (* TODO: add name as local *)
   stmt env heap st
 and finally env heap st =
@@ -437,17 +443,19 @@ and expr_ env heap x =
  * the actual value, so that the caller can modify it.
  * todo: Why do we care to return if a variable was created?
  *)
-and lvalue env heap x =
+and lvalue _env _heap x =
   match x with
-  | _ -> raise Todo
   | _ ->
+    raise Todo
+(*
     if !strict then failwith "lvalue not handled";
     heap, false, Vany
+*)
 
 (* ---------------------------------------------------------------------- *)
 (* Assign *)
 (* ---------------------------------------------------------------------- *)
-and assign _env heap is_new root(*lvalue*) v_root(*rvalue*) =
+and assign _env _heap _is_new _root(*lvalue*) _v_root(*rvalue*) =
   raise Todo
 
 (* ---------------------------------------------------------------------- *)
@@ -459,7 +467,7 @@ and call env heap v el =
   | Vsum l -> sum_call env heap l   el
   | x      -> sum_call env heap [x] el
 
-and sum_call env heap v el =
+and sum_call _env _heap _v _el =
   raise Todo
 
 (* ---------------------------------------------------------------------- *)

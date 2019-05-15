@@ -72,7 +72,7 @@ clean::
 	rm -f $(TARGET).top
 
 #temporary
-TEMP=abstract_interpreter_js
+TEMP=abstract_interpreter_js_XX
 $(TEMP).cmo: $(TEMP).ml
 	$(OCAMLC) -w -A -c $<
 
