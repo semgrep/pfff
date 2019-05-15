@@ -23,8 +23,7 @@ module SMap = Map.Make (String)
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(*
- * Main types and data structures used by the PHP abstract interpreter:
+(* Main types and data structures used by the PHP abstract interpreter:
  * The "environment" and the "heap".
  * 
  * In the abstract interpreter, all variables are pointers to pointers
