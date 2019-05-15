@@ -72,8 +72,9 @@ clean::
 	rm -f $(TARGET).top
 
 #temporary
-#graph_code_js.cmo: graph_code_js.ml
-#	$(OCAMLC) -w -A -c $<
+TEMP=abstract_interpreter_js
+$(TEMP).cmo: $(TEMP).ml
+	$(OCAMLC) -w -A -c $<
 
 # to allow unused variable warnings
 visitor_ast_js.cmo: visitor_ast_js.ml
