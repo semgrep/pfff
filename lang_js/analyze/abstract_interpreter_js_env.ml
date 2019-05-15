@@ -208,16 +208,16 @@ and env = {
    *)
   stack   : int SMap.t;
 
-  (* TODO opti: cache of already processed functions safe for tainting
+  (* TODO opti: cache of already processed functions safe for tainting *)
   safe    : value SMap.t ref;
-  *)
+  
   (* TODO call stack used for debugging when found an XSS hole and used also
    * for callgraph generation.
    * todo: could be put in the env too, next to 'stack' and 'safe'? take
    * care of save_excursion though.
-   *
-  path: Callgraph_php2.node list ref;
-  *)
+   *)
+  path: (*Callgraph_php2.node*) unit list ref;
+
 }
 
 (* The code of the abstract interpreter and tainting analysis used to be
@@ -246,10 +246,8 @@ let empty_env db file =
     vars = globals; 
     cfun = "*TOPLEVEL*";
     stack   = SMap.empty ;
-    (*
     safe = ref SMap.empty;
     path = ref [];
-    *)
   }
 
 (*****************************************************************************)
