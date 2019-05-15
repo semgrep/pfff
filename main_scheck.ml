@@ -336,7 +336,7 @@ let main_action xs =
   let files = Find_source.files_of_dir_or_files ~lang xs in
 
   match lang with
-  | "ocaml" | "java" | "c" | "php"     | "clang2"  ->
+  | "ocaml" | "java" | "c" | "php" | "clang2"  ->
     let graph_file, _root =
       match xs, !graph_code with
       | _,    Some file -> file, Filename.dirname file
