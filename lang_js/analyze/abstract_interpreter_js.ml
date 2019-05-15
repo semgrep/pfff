@@ -161,7 +161,7 @@ let max_depth = ref 4
 (* throw exn instead of passing-over silently unhandled constructs *)
 let strict = ref true
 
-let show_vardump = ref false
+let show_vardump = ref true
 
 (*****************************************************************************)
 (* Globals *)
@@ -255,7 +255,7 @@ and toplevel env heap = function
 and stmt env heap x =
   match x with
   (* special keywords in the code to debug the abstract interpreter state.
-   * TODO find a function so that one can easily run a JS test file
+   * less: find a function so that one can easily run a JS test file
    * with node or ajs and get both run working
    *)
   | ExprStmt (Apply (Id ((("show" | "var_dump"),_),_), [e])) ->
