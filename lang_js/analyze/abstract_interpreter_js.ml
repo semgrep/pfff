@@ -101,7 +101,6 @@ module H = Abstract_interpreter_js_helpers
  *  - many places where play with $ in s.(0)
  *  - C-s for Vany, it's usually a Todo
  *
- *
  * TODO long term:
  *  - we could use the ia also to find bugs that my current
  *    checkers can't find (e.g. undefined methods in $o->m() because
@@ -138,7 +137,6 @@ module H = Abstract_interpreter_js_helpers
  *    first have $i = Vint 1, but as soon as have $i=$i+1, we say it's a
  *    Vabstr Tint (and this is the fixpoint, in just one step).
  *  - handle objects and other constructs.
- *
  *  - all comments added by pad, split files, add mli, add unit tests,
  *    add tests/ia/*.php, fixed bugs, added strict mode, etc
  *)
@@ -210,23 +208,203 @@ let save_path env target =
   then ()
  (*graph := CG.add_graph (List.hd !(env.path)) target !graph *)
 
+let fake_info str = { Parse_info.
+  token = Parse_info.FakeTokStr (str, None);
+  transfo = Parse_info.NoTransfo;
+  }
+
+let mk_id s scope =
+  Id ((s, fake_info s), ref scope)
+
+let opt_to_list = function
+  | None -> []
+  | Some x -> [x]
+
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 
-(* module Interp = functor (Taint: Env_interpreter_php.TAINT) -> struct *)
+(*module Interp = functor (Taint: Env_interpreter_php.TAINT) -> struct *)
 
 let rec program env heap program =
-  raise Todo
 
+  (** env.path := [CG.File !(env.file)]; *)
+  let finalheap = toplevels env heap program in
+  finalheap
+
+(* ---------------------------------------------------------------------- *)
+(* Toplevel *)
+(* ---------------------------------------------------------------------- *)
+and toplevels env heap xs = List.fold_left (toplevel env) heap xs
+
+and toplevel env heap = function
+  (* safe to skip, we already did the naming phase in graph_code_js so
+   * now every names should be resolved
+  *)
+  | Import _ | Export _ -> heap
+  | S (_tok, st) -> stmt env heap st
+  | V v ->
+     (match v.v_init with
+     | Fun _ -> heap
+     | _ -> raise Todo
+     )
 
 (* ---------------------------------------------------------------------- *)
 (* Stmt *)
 (* ---------------------------------------------------------------------- *)
+and stmt env heap x =
+  match x with
+  (* special keywords in the code to debug the abstract interpreter state.
+   * TODO find a function so that one can easily run a JS test file
+   * with node or ajs and get both run working
+   *)
+  | ExprStmt (Apply (Id ((("show" | "var_dump"),_),_), [e])) ->
+      let heap, v = expr env heap e in
+      if !show_vardump then begin
+        Env.print_locals_and_globals print_string env heap;
+        pr (Env.string_of_value heap v);
+      end;
+      heap
+
+  (* used by unit testing *)
+  | ExprStmt (Apply (Id (("checkpoint",_),_), [])) ->
+      _checkpoint_heap := Some (heap, !(env.vars));
+      heap
+
+  | ExprStmt e ->
+      let heap, _ = expr env heap e in
+      heap
+
+  (* With 'if(true) { x = 1; } else { x = 2; }'
+   * we will endup with a heap with x = &1{int}.
+   * Going in first branch will populate the heap
+   * and env.vars with an entry for x, and when visiting
+   * the second branch the second assignment will
+   * cause a generalization for x to an int.
+   *)
+  | If (c, st1, st2) ->
+      (* todo: warn type error if value/type of c is not ok? *)
+      let heap, _ = expr env heap c in
+      (* TODO: what about var defined in only one branch? *)
+
+      (* not that we are not doing any path sensitivity here ...
+       * even if we can statically determine that c is always true,
+       * we just process both branches, and we actually process them
+       * sequentially (we used to process them independently
+       * and then merge/unify the resulting heaps).
+       *)
+      let heap = stmt env heap st1 in
+      let heap = stmt env heap st2 in
+      heap
+
+  | Block xs ->
+      stmtl env heap xs
+
+  | Return e ->
+      (* the special "*return*" variable is used in call_fun() below *)
+      let id = mk_id "*return*" Local in
+      let heap, _ = expr env heap (Assign (id, e)) in
+      heap
+
+  (* this may seem incorrect to treat 'do' and 'while' in the same way,
+   * because the evaluation of e does not happen at the same time.
+   * But here we care about the pointfix of the values, and so
+   * the order does not matter.
+   * todo: but need to process the stmts 2 times at least to get a fixpoint?
+   *)
+  | Do (st, e) | While (e, st) ->
+      let heap, _ = expr env heap e in
+      let heap = stmt env heap st in
+      heap
+
+  | Switch (e, cl) ->
+      let heap, _ = expr env heap e in
+      let heap = List.fold_left (case env) heap cl in
+      heap
+
+  | Throw e ->
+      let heap, _ = expr env heap e in
+      heap
+
+  | Try (st, cl, fl) ->
+      let heap = stmt env heap st in
+      let heap = List.fold_left (catch env) heap (opt_to_list cl) in
+      let heap = List.fold_left (finally env) heap (opt_to_list fl) in
+      heap
+
+  | _ -> raise Todo
+
+(* What if break/continue/return/throw in the middle of the list of stmts?
+ * Do we still abstract interpret the rest of the code? Yes because
+ * we care about the pointfix of the values, and so we don't really
+ * care about the control flow. The analysis is kinda of flow insensitive.
+ *)
+and stmtl env heap xs = List.fold_left (stmt env) heap xs
+
+and case env heap x =
+  match x with
+  | Case (e, st) ->
+      let heap, _ = expr env heap e in
+      let heap = stmt env heap st in
+      heap
+  | Default st ->
+      let heap = stmt env heap st in
+      heap
+
+and catch env heap (name, st) =
+  (* TODO: add name as local *)
+  stmt env heap st
+and finally env heap st =
+  stmt env heap st
 
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
 (* ---------------------------------------------------------------------- *)
+and expr env heap x =
+(*
+  if !Taint.taint_mode
+  then Taint.taint_expr env heap
+    (expr_, lvalue, get_dynamic_function, call_fun, call, assign) !(env.path) x
+   else 
+*)
+  expr_ env heap x
+
+(* will return a "concrete" value, or a pointer to a concrete value,
+ * STILL? or a pointer to a pointer to a concrete value when Ref.
+ *)
+and expr_ env heap x =
+  match x with
+  | Bool (b,_) -> heap, Vbool b
+  | Num (s, _) ->
+       (try 
+        let i = int_of_string s in
+        heap, Vint i
+       with _ ->
+        let f = float_of_string s in
+        heap, Vfloat f
+       )
+  | String (s,_) -> heap, Vstring s
+  | Regexp (s,_) -> heap, Vstring s
+
+  | IdSpecial (special, _) ->
+     (match special with
+     | Null -> heap, Vnull
+     | Undefined -> heap, Vundefined
+     | _ -> raise Todo
+    )
+
+
+  (* with 'x = (true)? 42 : "foo"' we will return a
+   * Tsum(Vint 42, Vstring "foo")
+   *)
+  | Conditional (e1, e2, e3) ->
+      let heap, _ = expr env heap e1 in
+      let heap, v1 = expr env heap e2 in
+      let heap, v2 = expr env heap e3 in
+      let heap, v = Unify.value heap v1 v2 in
+      heap, v
+
+   | _ -> raise Todo
 
 (* ---------------------------------------------------------------------- *)
 (* Lvalue *)

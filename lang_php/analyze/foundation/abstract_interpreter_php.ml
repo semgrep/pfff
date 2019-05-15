@@ -107,7 +107,6 @@ exception ForeachWithList of string
  *  - many places where play with $ in s.(0)
  *  - C-s for Vany, it's usually a Todo
  *
- *
  * TODO long term:
  *  - we could use the ia also to find bugs that my current
  *    checkers can't find (e.g. undefined methods in $o->m() because
@@ -569,7 +568,7 @@ and expr_ env heap x =
       heap, cast env heap ty v
 
 
-  (* with '$x = (true)? 45 : "foo"' we will return a
+  (* with '$x = (true)? 42 : "foo"' we will return a
    * Tsum(Vint 42, Vstring "foo")
    *)
   | CondExpr (e1, e2, e3) ->

@@ -27,16 +27,16 @@ module SMap = Map.Make (String)
  * (mostly the "environment" and the "heap").
  *
  * In the abstract interpreter, all variables are pointers to value.
- * So with '$x = 42;' we got $x = &1{42}.
- * In 'env.vars' we got "$x" = Vptr 0 and in the 'heap' we
- * then got [0 -> ...; 1 -> Vint 42]
- * meaning that $x is a variable with address 1, where the content
- * this cell is the value 42. 
+ * So with 'x = 42;' we have x = &1{42}.
+ * In 'env.vars' we have "x" = Vptr 1 and in the 'heap' we
+ * then have [0 -> ...; 1 -> Vint 42]
+ * meaning that x is a variable with address 1, where the content
+ * of this cell is the value 42. 
  *
  * Why this model? Why not having variables contain directly values,
- * that is $x = {42} without any Vptr? Because dealing with lvalues in the
- * interpreter would then be tedious. For instance with '$x = array(1,2,3);'
- * How would you handle '$x[0] = 1;' without any Vptr and a heap?
+ * that is x = {42} without any Vptr? Because dealing with lvalues in the
+ * interpreter would then be tedious. For instance with 'x = array(1,2,3);'
+ * How would you handle 'x[0] = 1;' without any Vptr and a heap?
  * You would need to use OCaml references to mimic those Vptr.
  *)
 
@@ -50,7 +50,7 @@ type code_database =
 (* The abstract interpreter manipulates "values" *)
 type value =
   (* Precise values. Maybe useful for Vstring for interprocedural
-   * analysis as people used strings to represent entities.
+   * analysis because people used strings to represent entities.
    * Maybe also useful for Vint when use ints for array indices
    * and we want the precise value in the array.
    *)
@@ -70,9 +70,9 @@ type value =
   | Vundefined
 
   (* TODO still valid comment?
-   * The first 'value' below is for '$this' which will be a pointer to
+   * The first 'value' below is for 'this' which will be a pointer to
    * the object. The only place where it's used is in Unify.value.
-   * Note that $this, as well as self/parent, are also handled
+   * Note that this, as well as self/parent, are also handled
    * via closures in make_method().
    * 
    * The integer key of the IMap below is a unique identifier for a 
@@ -86,11 +86,11 @@ type value =
    * make_method() builds the method closure with self/parent/this
    * correctly bind to the right class and object pointers.
    * 
-   * What is the value of $x given: 
+   * What is the value of x given: 
    *   class A { public function foo() { } }
-   *   $x = new A();
+   *   x = new A();
    * It should be:
-   * $x = &2{REF 1{Vobject (["foo"->Vmethod (&2{rec}, [0x42-> (<foo closure>)])])}}
+   * x = &2{REF 1{Vobject (["foo"->Vmethod (&2{rec}, [0x42-> (<foo closure>)])])}}
    *)
   | Vmethod of value * (env -> heap -> Ast.expr list -> heap * value) IMap.t
 
@@ -106,17 +106,17 @@ type value =
    * a constant, a field, a static variable, or a method. for instance with:
    * 
    *    class A {
-   *      public $fld = 1;
-   *      static public $fld2 = 2;
+   *      public fld = 1;
+   *      static public fld2 = 2;
    *      public function foo() { }
    *      static public function bar() { }
    *      const CST = 3;
    *    }
-   *    $o = new A();
+   *    o = new A();
    * 
    * we will get:
    * 
-   * $o = &2{&REF 16{object(
+   * o = &2{&REF 16{object(
    *   'fld' => &19{&18{1}}, 
    *   '$fld2' => &10{&9{2}})
    *   'foo' => method(&17{&REF 16{rec}), 
@@ -124,7 +124,7 @@ type value =
    *   'CST' => 2, 
    *   }}
    * 
-   * Note that static variables keep their $ in their name but not
+   * Note that static variables have $ in their name but not
    * regular fields. They are also shared by all objects of the class.
    * 
    * A class is actually also represented as a Vobject, with a special
@@ -185,14 +185,14 @@ and heap = {
 and env = {
   db: code_database;
 
-  (* local variables and parameters (will be pointer to pointer to values) *)
+  (* local variables and parameters (will be pointer to values) *)
   vars    : value SMap.t ref;
 
-  (* globals and static variables (prefixed with a "<function>**").
+  (* globals.
    * This is also used for classes which are considered as globals
    * pointing to a Vobject with a method *BUILD* that can build objects
    * of this class.
-   * 'globals' is also used for self/parent, and $this (set/unset
+   * 'globals' is also used for self/parent, and this (set/unset
    * respectively when entering/leaving the method)
    *)
   globals : value SMap.t ref;
@@ -286,7 +286,7 @@ let rec value ptrs o x =
       end else
         (* this happens for instance for objects which are pointers
          * to pointers to Vobject with for members a set of Vmethod
-         * where the first element, $this, backward points to the
+         * where the first element, this, backward points to the
          * object.
          *)
         o "rec"
