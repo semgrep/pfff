@@ -433,6 +433,10 @@ and expr_ env heap x =
       let heap, rval = expr env heap e2 in
       assign env heap lval rval
 
+  | Apply (IdSpecial (spec, _), xs) ->
+      let heap, vs = Utils.lfold (expr env) heap xs in
+      special heap env spec vs
+
   (* expression call or method call (Call (Obj_get...)) or
    * static method call (Call (Class_get ...))
    *)
@@ -456,6 +460,22 @@ and expr_ env heap x =
 
   | Fun (_, _)
     -> raise Todo
+
+(* ---------------------------------------------------------------------- *)
+(* Special *)
+(* ---------------------------------------------------------------------- *)
+and special heap _env spec vs =
+  match spec, vs with
+  | (Plus | Minus), 
+      [Vint _ | Vabstr Tint] 
+  | (Plus | Minus | Mul | Div | Mod | Expo), 
+     [Vint _ | Vabstr Tint; Vint _ | Vabstr Tint] 
+     -> heap, Vabstr Tint
+
+  | _ -> 
+    let s = Ocaml.string_of_v (Meta_ast_js.vof_special spec) in
+    let strs = vs |> List.map (Env.string_of_value heap) |> Common.join "," in
+    failwith (spf "Special: unsupported op: %s(%s)" s strs)
 
 (* ---------------------------------------------------------------------- *)
 (* Lvalue *)
