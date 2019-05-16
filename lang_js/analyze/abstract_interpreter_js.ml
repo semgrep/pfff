@@ -239,8 +239,17 @@ and toplevel env heap = function
   | V v ->
      (match v.v_init with
      | Fun _ -> heap
-     (* n: treat globals lazily? *)
-     | _ -> heap
+     | _ -> 
+        (match !(v.v_resolved) with
+        (* probably forgot graph_code_js naming phase, probably because
+         * we are in -test_ai_js; just consider it as a local
+         *)
+        | NotResolved ->
+          stmt env heap (VarDecl v)
+        | Local | Param -> raise Impossible
+        (* n: treat globals lazily? *)
+        | Global _ -> heap
+        )
      )
   (* n: safe to skip, we already did the naming phase in graph_code_js so
    * now every names should be resolved
@@ -252,7 +261,11 @@ and toplevel env heap = function
 (* ---------------------------------------------------------------------- *)
 and stmt env heap x =
   match x with
-  | VarDecl _v ->
+  | VarDecl v ->
+     (match !(v.v_resolved) with 
+     | Local | NotResolved -> ()
+     | Global _ | Param -> raise Impossible
+     );
      raise Todo
 
   (* special keywords in the code to debug the abstract interpreter state.
