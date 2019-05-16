@@ -1328,7 +1328,9 @@ and build_new env heap pname parent self c m =
 and build_new_ _env _heap _pname parent self c m =
  fun env heap args ->
   (* we should always call *BUILD* without arguments *)
-  if args <> [] then raise Common.Impossible;
+  if args <> [] 
+  then raise Common.Impossible;
+
   let heap, dparent = Ptr.get heap parent in
   let heap, dparent = Ptr.get heap dparent in
   let heap, ptr =

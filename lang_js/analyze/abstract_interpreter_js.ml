@@ -437,6 +437,10 @@ and expr_ env heap x =
       let heap, v = Unify.value heap v1 v2 in
       heap, v
 
+  (* build a method with this correctly binded *)
+  | Assign (ObjAccess(_e,_fld), Fun (_fun_, _nopt)) ->
+     todo_ast (Expr x)
+
   (* code for x = ..., o->fld = ..., etc *)
   | Assign (e1, e2) ->
       let heap, lval = lvalue env heap e1 in
@@ -485,12 +489,16 @@ and expr_ env heap x =
      ) heap xs in
      Var.unset env str;
      heap, v
+
   | Fun (fun_, nopt) -> 
-     let cls = make_method fun_ nopt in
+     (* todo: should build closure of vars? pass their reference
+      * and heap to make_fun? *)
+     let cls = make_fun fun_ nopt in
      let mid = Utils.fresh() in
      let v = Vnull in (* todo: this *)
      let v = Vmethod (v, IMap.add mid cls IMap.empty) in
      heap, v
+
   | Class _-> todo_ast (Expr x)
 
 and rvalue env heap x =
@@ -546,6 +554,7 @@ and lvalue env heap x =
         (try
            heap, SMap.find s members
         with Not_found ->
+          (* TODO: could look in e.prototype if not found? *)
           (* Javascript allows to access undeclared field *)
           let heap, k = Ptr.new_val heap Vnull in
           let heap = Ptr.set heap v (Vobject (SMap.add s k members)) in
@@ -699,8 +708,21 @@ and obj_get_members mem env heap v =
   | _x :: rl -> obj_get_members mem env heap rl
   )
 
-(* we use OCaml closures to deal with self/parent scoping issues *)
-and make_method (*mname parent self this *) def nopt =
+(* we use OCaml closures to deal with scoping issues *)
+
+(* todo: should pass values for all vars references from the body *)
+and make_fun (*mname *) def nopt =
+  fun env heap el ->
+   let name = 
+     match nopt with
+     | None -> "<anon>", fake_info "<anon>"
+     | Some n -> n
+   in
+   (* todo: handle $this, self, parent *)
+   let heap, res = call_def env heap name def el in
+   heap, res
+
+and make_method (*mname *) def nopt =
   fun env heap el ->
    let name = 
      match nopt with

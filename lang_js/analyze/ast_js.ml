@@ -143,6 +143,7 @@ and expr =
   (* should be a statement *)
   | Assign of expr * expr
 
+  (* less: could be transformed in a series of Assign(ObjAccess, ...) *)
   | Obj of obj_
   | Class of class_
   | ObjAccess of expr * property_name
