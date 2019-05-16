@@ -560,6 +560,7 @@ and call_qualified env heap qualified_name el =
   in
   call_def env heap var.v_name def el
 
+
 and call_def env heap name def el =
   let f = Ast.str_of_name name in
   let n = try SMap.find f env.stack with Not_found -> 0 in
@@ -569,20 +570,24 @@ and call_def env heap name def el =
   then
     heap, Vany
   else begin
-    (* ?? why keep old env.vars too? why not clean state? 
-     * and then why restrict back env.vars with fun_nspace?
+    (* we need to keep old env.vars while evaluating 'parameters()' below
+     * because the arguments may reference variables from the caller context.
+     * But, we usea new ref to not create the local vars for the parameters 
+     * in the caller.
      *)
     let env = { env with vars = ref !(env.vars); cfun = f } in
     let heap = parameters env heap def.f_params el in
+    (* once we have the parameter vars, we create a new
+     * environment with just those vars
+     *)
+    let vars = fun_nspace def !(env.vars) in
+    let env = { env with vars = ref vars } in
+
     let return_var = 
       { v_name = ("*return*", snd name); v_resolved = ref Local; v_kind = Let;
         v_init = Nop; } in
     let heap = stmt env heap (VarDecl return_var) in
     
-(*
-    let vars = fun_nspace def !(env.vars) in
-    let env = { env with vars = ref vars } in
-*)
     env.path := f :: !(env.path);
     let heap = stmt env heap def.f_body in
     env.path := List.tl !(env.path);
@@ -591,6 +596,14 @@ and call_def env heap name def el =
     let heap, v = Ptr.get heap r in
     heap, v
   end
+
+and fun_nspace f vars =
+  List.fold_left (fun acc p ->
+    try 
+      let s = Ast.str_of_name p.p_name in
+      SMap.add s (SMap.find s vars) acc
+    with Not_found -> acc
+  ) SMap.empty f.f_params
 
 and parameters env heap params args =
   match params, args with

@@ -956,9 +956,10 @@ and call_fun (def: A.func_def) env heap (el: A.expr list) =
     let heap, _ = assign env heap true v Vany in
     heap, v
   else begin
-    (* ?? why keep old env.vars too? *)
+    (* we evaluate parameters in the caller environment *)
     let env = { env with vars = ref !(env.vars); cfun = unw def.f_name } in
     let heap = parameters env heap def.f_params el in
+    (* we keep just the parameter variables created in the previous step *)
     let vars = fun_nspace def !(env.vars) in
     let env = { env with vars = ref vars } in
     env.path := (CG.node_of_string (unw def.f_name)) :: !(env.path);
@@ -1003,9 +1004,7 @@ and make_ref e =
   | _ when IsLvalue.expr e -> Ref e
   | _ -> e
 
-(* ???
- * could be moved in helper
- *)
+(* could be moved in helper*)
 and fun_nspace f roots =
   List.fold_left (
     fun acc p ->
