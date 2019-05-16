@@ -1,4 +1,6 @@
 #temporarily ignored
+tests/js/ai/todo1
+tests/js/ai/todo2
 #not imported everything
 external/battery_included/ocamlgtk
 #facebook/
