@@ -293,5 +293,3 @@ let vof_any =
   | Top v1 -> let v1 = vof_toplevel v1 in Ocaml.VSum (("Top", [ v1 ]))
   | Stmt v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("Stmt", [ v1 ]))
   | Program v1 -> let v1 = vof_program v1 in Ocaml.VSum (("Program", [ v1 ]))
-  
-

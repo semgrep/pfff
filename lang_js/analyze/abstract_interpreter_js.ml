@@ -217,10 +217,13 @@ let opt_to_list = function
   | None -> []
   | Some x -> [x]
 
-let todo_ast any = 
+let string_of_any any = 
   let v = Meta_ast_js.vof_any any in
   let s = Ocaml.string_of_v v in
-  failwith (spf "unsupported construct: %s" s)
+  s
+
+let todo_ast any = 
+  failwith (spf "unsupported construct: %s" (string_of_any any))
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -230,8 +233,11 @@ let todo_ast any =
 
 let rec program env heap program =
 
-  (* env.path := [CG.File !(env.file)]; *)
+  env.path := [!(env.file)];
   let finalheap = toplevels env heap program in
+
+  (* we return the heap so people can start from this heap to
+   * analyze another file *)
   finalheap
 
 (* ---------------------------------------------------------------------- *)
@@ -452,7 +458,7 @@ and expr_ env heap x =
           call_qualified env heap qualified_name xs
       | Local | Param ->
         let heap, v = expr env heap (Id (name, resolved)) in
-        call env heap v xs
+        call env heap v (Expr (Id (name, resolved))) xs
       )
 
   | Apply (IdSpecial (spec, _), xs) ->
@@ -464,29 +470,33 @@ and expr_ env heap x =
    *)
   | Apply (e, el) ->
       let heap, v = expr env heap e in
-      call env heap v el
+      call env heap v (Expr e) el
 
-  | Id _ as lv ->
-      (* The lvalue will contain the pointer to val, e.g. &1{...}
-       * so someone can modify it. See also assign() below.
-       * But in an expr context, we actually want the value, hence
-       * the Ptr.get dereference, so we will return {...}
-       *)
-      let heap, x = lvalue env heap lv in
-      let heap, x = Ptr.get heap x in
-      heap, x
+  (* IdSpecial (This | ...) *)
+  | ObjAccess (_, _)
+  | Id _ 
+    -> rvalue env heap x
 
   | Obj _
   | Class _
-  | ObjAccess (_, _)
-
   | Fun (_, _)
     -> todo_ast (Expr x)
+
+and rvalue env heap x =
+  (* The lvalue will contain the pointer to val, e.g. &1{...}
+   * so someone can modify it. See also assign() below.
+   * But in an expr context, we actually want the value, hence
+   * the Ptr.get dereference, so we will return {...}
+   *)
+   let heap, pt = lvalue env heap x in
+   let heap, v = Ptr.get heap pt in
+   heap, v
 
 (* ---------------------------------------------------------------------- *)
 (* Special *)
 (* ---------------------------------------------------------------------- *)
 and special heap _env spec vs =
+  (* less:  could be more precise when vs is precise *)
   match spec, vs with
   | (Plus | Minus), 
       [Vint _ | Vabstr Tint] 
@@ -559,7 +569,9 @@ and call_def env heap name def el =
   then
     heap, Vany
   else begin
-    (* ?? why keep old env.vars too? *)
+    (* ?? why keep old env.vars too? why not clean state? 
+     * and then why restrict back env.vars with fun_nspace?
+     *)
     let env = { env with vars = ref !(env.vars); cfun = f } in
     let heap = parameters env heap def.f_params el in
     let return_var = 
@@ -593,13 +605,35 @@ and parameters env heap params args =
       let heap = stmt env heap (VarDecl var) in
       parameters env heap ps es
 
-and call env heap v el =
+and call env heap v any el =
   match v with
-  | Vsum l -> sum_call env heap l   el
-  | x      -> sum_call env heap [x] el
+  | Vsum l -> sum_call env heap l   any   el
+  | x      -> sum_call env heap [x] any el
 
-and sum_call _env _heap _v _el =
-  raise Todo
+and sum_call env heap candidates any el =
+  match candidates with
+  | [] -> 
+    failwith (spf "sum_call: no candidates for %s"(string_of_any any))
+  (* todo: what about the other candidates??? *)
+  | Vmethod (_, fm) :: _ ->
+      let fl = IMap.fold (fun _ y acc -> y :: acc) fm [] in
+      call_methods env heap fl any el
+  | _ :: rl -> sum_call env heap rl any el
+
+
+and call_methods env heap fl any el =
+  match fl with
+  | [] -> 
+    failwith (spf "call_methods: no candidates for %s"(string_of_any any))
+  | [f] -> f env heap el
+  | f1 :: rl ->
+      let heap, v = f1 env heap el in
+      List.fold_left (call_method env el) (heap, v) rl
+
+and call_method env el (heap, v) f =
+  let heap, v' = f env heap el in
+  let heap, v = Unify.value heap v v' in
+  heap, v
 
 (* ---------------------------------------------------------------------- *)
 (* Class *)
