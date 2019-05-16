@@ -536,11 +536,10 @@ and lvalue env heap x =
 (* ---------------------------------------------------------------------- *)
 (* Assign *)
 (* ---------------------------------------------------------------------- *)
-and assign _env heap root(*lvalue*) v_root(*rvalue*) =
-  let ptr = root in
-  let heap, v' = Ptr.get heap ptr in
-  let heap, v = Unify.value heap v_root v' in
-  let heap = Ptr.set heap ptr v in
+and assign _env heap lvalue rvalue =
+  let heap, v' = Ptr.get heap lvalue in
+  let heap, v = Unify.value heap rvalue v' in
+  let heap = Ptr.set heap lvalue v in
   heap, v
 
 (* ---------------------------------------------------------------------- *)
@@ -647,6 +646,10 @@ and call_method env el (heap, v) f =
   let heap, v' = f env heap el in
   let heap, v = Unify.value heap v v' in
   heap, v
+
+(* ---------------------------------------------------------------------- *)
+(* Object *)
+(* ---------------------------------------------------------------------- *)
 
 (* ---------------------------------------------------------------------- *)
 (* Class *)
