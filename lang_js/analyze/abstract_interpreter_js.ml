@@ -277,10 +277,12 @@ and stmt env heap x =
      heap
 
   (* special keywords in the code to debug the abstract interpreter state.
-   * less: find a function so that one can easily run a JS test file
+   * Console.log is convenient because you can easily run a JS test file
    * with node or 'pfff -test_ai_js' and get both run working
    *)
-  | ExprStmt (Apply (Id ((("show" | "var_dump"),_),_), [e])) ->
+  | ExprStmt (Apply (Id ((("show" | "var_dump"),_),_), [e])) 
+  | ExprStmt (Apply (ObjAccess (Id (("console", _),_), PN (("log",_))),[e]))
+   ->
       let heap, v = expr env heap e in
       if !show_vardump then begin
         Env.print_locals_and_globals print_string env heap;
@@ -530,8 +532,61 @@ and assign _env heap root(*lvalue*) v_root(*rvalue*) =
 (* Call *)
 (* ---------------------------------------------------------------------- *)
 
-and call_qualified _env _heap _qualified_name _el =
-  raise Todo
+and call_qualified env heap qualified_name el =
+  let var = 
+    try Hashtbl.find env.db qualified_name
+    with Not_found ->
+      failwith (spf "call_qualified: could not find %s" qualified_name)
+  in
+  let def =
+    match var.v_init with
+    | Fun (def, _noptTODO) -> def
+    | _ -> failwith (spf "call_qualified: %s is not a function" qualified_name)
+  in
+  call_def env heap var.v_name def el
+
+and call_def env heap name def el =
+  let f = Ast.str_of_name name in
+  let n = try SMap.find f env.stack with Not_found -> 0 in
+  let env = { env with stack = SMap.add f (n+1) env.stack } in
+  if n >= 2 || List.length !(env.path) >= !max_depth (* && is_clean *)
+  (* || Sys.time() -. !time >= 1.0|| SMap.mem def.f_name !(env.safe) *)
+  then
+    heap, Vany
+  else begin
+    (* ?? why keep old env.vars too? *)
+    let env = { env with vars = ref !(env.vars); cfun = f } in
+    let heap = parameters env heap def.f_params el in
+    let return_var = 
+      { v_name = ("*return*", snd name); v_resolved = ref Local; v_kind = Let;
+        v_init = Nop; } in
+    let heap = stmt env heap (VarDecl return_var) in
+    
+(*
+    let vars = fun_nspace def !(env.vars) in
+    let env = { env with vars = ref vars } in
+*)
+    env.path := f :: !(env.path);
+    let heap = stmt env heap def.f_body in
+    env.path := List.tl !(env.path);
+
+    let heap, r = Var.get env heap "*return*" in
+    let heap, v = Ptr.get heap r in
+    heap, v
+  end
+
+and parameters env heap params args =
+  match params, args with
+  | [], _ -> heap
+  | _p :: _rl, [] ->
+      raise Todo
+  | p :: ps, e :: es ->
+      let s = Ast.str_of_name p.p_name in
+      Var.unset env s;
+      let var = { v_name = p.p_name; v_resolved = ref Local; v_kind = Let;
+                  v_init = e } in
+      let heap = stmt env heap (VarDecl var) in
+      parameters env heap ps es
 
 and call env heap v el =
   match v with

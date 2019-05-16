@@ -216,7 +216,7 @@ and env = {
    * todo: could be put in the env too, next to 'stack' and 'safe'? take
    * care of save_excursion though.
    *)
-  path: (*Callgraph_php2.node*) unit list ref;
+  path: (*Callgraph_php2.node*) Ast.qualified_name list ref;
 
 }
 
