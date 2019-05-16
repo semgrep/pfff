@@ -763,7 +763,7 @@
        (10 "-test_graph_code_ml /home/pad/pfff/commons")
        (11 "prolog:")
        (12 "-builtins_of_idl  /home/pad/local/fbcode/hphp/facebook/extensions/async_mysql/async_mysql.idl.json")
-       (13 "-test_ai_js  /home/pad/pfff/tests/js/ai/call.js")
+       (13 "-test_ai_js  /home/pad/pfff/tests/js/ai/obj.js")
        )
      ))
    )

@@ -199,12 +199,6 @@ exception LostControl
 (* Helpers *)
 (*****************************************************************************)
 
-(* add an edge in callgraph *)
-let save_path _env _target =
-  if !extract_paths
-  then ()
- (*graph := CG.add_graph (List.hd !(env.path)) target !graph *)
-
 let fake_info str = { Parse_info.
   token = Parse_info.FakeTokStr (str, None);
   transfo = Parse_info.NoTransfo;
@@ -477,7 +471,21 @@ and expr_ env heap x =
   | Id _ 
     -> rvalue env heap x
 
-  | Obj _
+  | Obj xs ->
+     let str = "*myobj*" in
+     let id = mk_id str Local in
+     let v = Vobject SMap.empty in
+     let heap, v = Ptr.new_val heap v in
+     Var.set env str v;
+     let heap = List.fold_left (fun heap prop  ->
+        match prop with
+        | Field (pname, _props, e) ->
+          stmt env heap (ExprStmt (Assign (ObjAccess (id, pname), e)))
+        | FieldSpread _ -> todo_ast (Expr (Obj xs))
+     ) heap xs in
+     Var.unset env str;
+     heap, v
+
   | Class _
   | Fun (_, _)
     -> todo_ast (Expr x)
@@ -526,6 +534,23 @@ and lvalue env heap x =
         (* do lazily? if Not_found then evalue for first time *)
         todo_ast (Expr x)
      )
+  | ObjAccess (e, prop) ->
+    (match prop with
+    | PN pname ->
+        let s = Ast.str_of_name pname in
+        let heap, v = lvalue env heap e in
+        let members = obj_get_members ISet.empty env heap [v] in
+        (try
+           heap, SMap.find s members
+        with Not_found ->
+          (* Javascript allows to access undeclared field *)
+          let heap, k = Ptr.new_val heap Vnull in
+          let heap = Ptr.set heap v (Vobject (SMap.add s k members)) in
+          heap, k
+        )
+    | PN_Computed _e ->
+        todo_ast (Expr x)
+    )
   | _ ->
     todo_ast (Expr x)
 (*
@@ -650,6 +675,26 @@ and call_method env el (heap, v) f =
 (* ---------------------------------------------------------------------- *)
 (* Object *)
 (* ---------------------------------------------------------------------- *)
+(* mem is for avoiding loops *)
+and obj_get_members mem env heap v =
+  (match v with
+  | [] -> SMap.empty
+  | Vref a :: rl ->
+      let l = ISet.fold (fun x acc -> x :: acc) a [] in
+      let vl = List.map (fun x -> Vptr x) l in
+      obj_get_members mem env heap (vl @ rl)
+  (* todo: and what about the rest? *)
+  | Vobject m :: _ -> m
+  | Vsum l :: l' ->
+      obj_get_members mem env heap (l@l')
+  | Vptr n :: rl when ISet.mem n mem ->
+      obj_get_members mem env heap rl
+  | Vptr n as x :: rl ->
+      let mem = ISet.add n mem in
+      let heap, x = Ptr.get heap x in
+      obj_get_members mem env heap (x :: rl)
+  | _x :: rl -> obj_get_members mem env heap rl
+  )
 
 (* ---------------------------------------------------------------------- *)
 (* Class *)
