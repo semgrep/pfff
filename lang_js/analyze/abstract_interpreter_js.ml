@@ -217,6 +217,11 @@ let opt_to_list = function
   | None -> []
   | Some x -> [x]
 
+let todo_ast any = 
+  let v = Meta_ast_js.vof_any any in
+  let s = Ocaml.string_of_v v in
+  failwith (spf "unsupported construct: %s" s)
+
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
@@ -335,7 +340,7 @@ and stmt env heap x =
       let heap = stmt env heap st in
       heap
 
-  | For (_, _) -> raise Todo
+  | For (_, _) -> todo_ast (Stmt x)
 
   | Switch (e, cl) ->
       let heap, _ = expr env heap e in
@@ -418,7 +423,7 @@ and expr_ env heap x =
      (match special with
      | Null -> heap, Vnull
      | Undefined -> heap, Vundefined
-     | _ -> raise Todo
+     | _ -> todo_ast (Expr x)
     )
 
 
@@ -476,7 +481,7 @@ and expr_ env heap x =
   | ObjAccess (_, _)
 
   | Fun (_, _)
-    -> raise Todo
+    -> todo_ast (Expr x)
 
 (* ---------------------------------------------------------------------- *)
 (* Special *)
@@ -509,10 +514,10 @@ and lvalue env heap x =
         Var.get env heap s
      | Global _qualified ->
         (* do lazily? if Not_found then evalue for first time *)
-        raise Todo
+        todo_ast (Expr x)
      )
   | _ ->
-    raise Todo
+    todo_ast (Expr x)
 (*
     if !strict then failwith "lvalue not handled";
     heap, false, Vany
