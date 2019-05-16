@@ -141,10 +141,15 @@ type value =
    * TODO, not sure why we get foo() here there too.
    *)
   | Vobject of value SMap.t
+  (* less: try to differentiate the different usage of JS objects?
+  | Vrecord of value SMap.t
+  | Varray  of value list
+  *)
 
   (* Union of possible types/values, ex: null | object, bool | string, etc.
    * This could grow a lot, so the abstract interpreter needs to turn
    * that into a Vany at some point ???
+   * todo: used also to record a list of possible function candidates
    *)
   | Vsum    of value list
 
@@ -157,10 +162,6 @@ type value =
   (* pad: because of some imprecision, we actually have a set of addresses? *)
   | Vref    of ISet.t
 
-  (* less: try to differentiate the different usage of JS objects?
-  | Vrecord of value SMap.t
-  | Varray  of value list
-  *)
   (* tainting analysis for security *)
   | Vtaint of string
 
@@ -192,18 +193,17 @@ and env = {
    * This is also used for classes which are considered as globals
    * pointing to a Vobject with a method *BUILD* that can build objects
    * of this class.
-   * 'globals' is also used for self/parent, and this (set/unset
+   * TODO 'globals' is also used for self/parent, and this (set/unset
    * respectively when entering/leaving the method)
    *)
   globals : value SMap.t ref;
 
   (* for debugging, to print for instance in which file we have XSS  *)
   file    : string ref;
-  (* current function processed, used for ? *)
+  (* current function processed, used for? *)
   cfun    : string;
 
-  (* number of recursive calls to a function f. if > 2 then stop, 
-   * for fixpoint. 
+  (* number of recursive calls to a function f. if >2 then stop, for fixpoint. 
    * todo: should not be called stack. Path above is actually the call stack.
    *)
   stack   : int SMap.t;
@@ -241,7 +241,9 @@ let empty_env db file =
     file = ref file;
     globals = globals;
     (* Why use same ref? because when we process toplevel statements,
-     * the vars are the globals.
+     * the vars are the globals?
+     * less: actually will quickly override env.globals := with a
+     * a new value so there will be no sharing.
      *)
     vars = globals; 
     cfun = "*TOPLEVEL*";

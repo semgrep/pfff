@@ -262,12 +262,16 @@ and toplevel env heap = function
 (* ---------------------------------------------------------------------- *)
 and stmt env heap x =
   match x with
-  | VarDecl v ->
-     (match !(v.v_resolved) with 
+  | VarDecl var ->
+     (match !(var.v_resolved) with 
      | Local | NotResolved -> ()
      | Global _ | Param -> raise Impossible
      );
-     raise Todo
+     let heap, v = expr env heap var.v_init in
+     let heap, v = Ptr.new_val heap v in
+     let str = Ast.str_of_name var.v_name in
+     Var.set env str v;
+     heap
 
   (* special keywords in the code to debug the abstract interpreter state.
    * less: find a function so that one can easily run a JS test file
@@ -449,6 +453,7 @@ and expr_ env heap x =
   | Obj _
   | Class _
   | ObjAccess (_, _)
+
   | Fun (_, _)
     -> raise Todo
 
@@ -458,8 +463,17 @@ and expr_ env heap x =
 (* will return the lvalue, that is the pointer value, and not
  * the actual value, so that the caller can modify it.
  *)
-and lvalue _env _heap x =
+and lvalue env heap x =
   match x with
+  | Id (name, resolved) ->
+     (match !resolved with
+     | Local | Param | NotResolved ->
+        let s = Ast.str_of_name name in
+        Var.get env heap s
+     | Global _qualified ->
+        (* do lazily? if Not_found then evalue for first time *)
+        raise Todo
+     )
   | _ ->
     raise Todo
 (*
@@ -470,8 +484,12 @@ and lvalue _env _heap x =
 (* ---------------------------------------------------------------------- *)
 (* Assign *)
 (* ---------------------------------------------------------------------- *)
-and assign _env _heap _root(*lvalue*) _v_root(*rvalue*) =
-  raise Todo
+and assign _env heap root(*lvalue*) v_root(*rvalue*) =
+  let ptr = root in
+  let heap, v' = Ptr.get heap ptr in
+  let heap, v = Unify.value heap v_root v' in
+  let heap = Ptr.set heap ptr v in
+  heap, v
 
 (* ---------------------------------------------------------------------- *)
 (* Call *)

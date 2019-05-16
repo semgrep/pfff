@@ -12,6 +12,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
+open Common
+
 open Ast_js
 open Abstract_interpreter_js_env (* IMap, ptrs field, etc *)
 module A = Ast_js
@@ -74,8 +76,9 @@ module Ptr = struct
       let v = IMap.find ptr heap.ptrs in
       heap, v
     with Not_found ->
-      (* todo: throw exn when in strict? *)
-      heap, Vnull
+      (* todo: throw exn when in strict! *)
+      (* heap, Vnull *)
+      failwith (spf "Ptr.get: could not find ptr %d" ptr)
 
   and set_ heap ptr v =
     { ptrs = IMap.add ptr v heap.ptrs }
@@ -115,15 +118,15 @@ end
 
 (* env.vars access *)
 module Var = struct
-
+(*
   let super_globals =
     let l = [
-      (* pad: ??? why they are considered as superglobals?
+      (* TODO pad: ??? why they are considered as superglobals?
        * todo: use A.special "self" ?
        *)
       "self";
       "parent";
-      (* todo? why consider this super globals? why not
+      (* TODO? why consider this super globals? why not
        * set $this in env.vars instead?
        *)
       "$this";
@@ -131,6 +134,7 @@ module Var = struct
     let h = Hashtbl.create 23 in
     List.iter (fun x -> Hashtbl.add h x true) l;
     h
+*)
 
   let set_global env s v =
     env.globals := SMap.add s v !(env.globals)
@@ -139,9 +143,12 @@ module Var = struct
     env.globals := SMap.remove s !(env.globals)
 
   let set env s v =
+(*
     if Hashtbl.mem super_globals s
     then set_global env s v
-    else env.vars := SMap.add s v !(env.vars)
+    else 
+*)
+      env.vars := SMap.add s v !(env.vars)
 
   let unset env s =
     env.vars := SMap.remove s !(env.vars)
@@ -158,26 +165,34 @@ module Var = struct
   let get env heap str =
     try
       let vars =
-        if Hashtbl.mem super_globals str
+        (*if Hashtbl.mem super_globals str
         then !(env.globals)
-        else !(env.vars)
+        else 
+        *)
+          !(env.vars)
       in
       let v = SMap.find str vars in
-      heap, false, v
+      heap, v
     with Not_found ->
+      (*
       let heap, x = Ptr.new_ heap in
       set env str x;
       heap, true, x
+      *)
+      failwith (spf "Var.get: could not find var %s" str)
 
   let get_global env heap str =
     try
       let vars = !(env.globals) in
       let v = SMap.find str vars in
-      heap, false, v
+      heap, v
     with Not_found ->
+      (*
       let heap, x = Ptr.new_ heap in
       set_global env str x;
       heap, true, x
+      *)
+      failwith (spf "Var.get_global: could not find var %s" str)
 
 end
 
