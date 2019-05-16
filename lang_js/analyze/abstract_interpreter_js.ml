@@ -26,16 +26,16 @@ module H = Abstract_interpreter_js_helpers
 (* Prelude *)
 (*****************************************************************************)
 (* Abstract interpreter for Javascript
- * TODO with hooks for tainting analysis, callgraph generation, typing
+ * TODO with hooks for tainting analysis, callgraph generation, typing.
  *
  * An abstract interpreter kinda mimics a normal interpreter by
  * also executing a program, in a top-down manner, modifying a heap,
- * managing local and global variables, etc, but maintains abstract
+ * managing local and global variables, but maintains abstract
  * values for variables instead of concrete values as in a regular
  * interpreter. See abstract_interpreter_js_env.ml
  *
  * For instance, on 'if(cond()) { x = 42; } else { x = 3;}'
- * the abstract interpreter will actually execute both branches and
+ * the abstract interpreter will actually "execute" both branches and
  * merge/unify the different values for the variable in a more
  * abstract value. So, while processing the first branch the interpreter
  * will add a new local variable x, allocate space in the abstract
@@ -232,7 +232,8 @@ let rec program env heap program =
 (* ---------------------------------------------------------------------- *)
 (* Toplevel *)
 (* ---------------------------------------------------------------------- *)
-and toplevels env heap xs = List.fold_left (toplevel env) heap xs
+and toplevels env heap xs = 
+  List.fold_left (toplevel env) heap xs
 
 and toplevel env heap = function
   | S (_tok, st) -> stmt env heap st
@@ -286,7 +287,7 @@ and stmt env heap x =
       heap
 
   | ExprStmt e ->
-      let heap, _ = expr env heap e in
+      let heap, _v = expr env heap e in
       heap
 
   | Block xs ->
@@ -301,7 +302,7 @@ and stmt env heap x =
    *)
   | If (c, st1, st2) ->
       (* todo: warn type error if value/type of c is not ok? *)
-      let heap, _ = expr env heap c in
+      let heap, _v = expr env heap c in
       (* TODO: what about var defined in only one branch? *)
 
       (* not that we are not doing any path sensitivity here ...
@@ -388,9 +389,7 @@ and expr env heap x =
 *)
   expr_ env heap x
 
-(* will return a "concrete" value, or a pointer to a concrete value,
- * STILL? or a pointer to a pointer to a concrete value when Ref.
- *)
+(* will return a "concrete" value, or a pointer to a concrete value *)
 and expr_ env heap x =
   match x with
   | Bool (b,_) -> heap, Vbool b
@@ -404,6 +403,7 @@ and expr_ env heap x =
        )
   | String (s,_) -> heap, Vstring s
   | Regexp (s,_) -> heap, Vstring s
+  | Nop -> heap, Vundefined
 
   | IdSpecial (special, _) ->
      (match special with
@@ -425,9 +425,9 @@ and expr_ env heap x =
 
   (* code for x = ..., o->fld = ..., etc *)
   | Assign (e1, e2) ->
-      let heap, new_var_created, lval = lvalue env heap e1 in
+      let heap, lval = lvalue env heap e1 in
       let heap, rval = expr env heap e2 in
-      assign env heap new_var_created lval rval
+      assign env heap lval rval
 
   (* expression call or method call (Call (Obj_get...)) or
    * static method call (Call (Class_get ...))
@@ -442,19 +442,21 @@ and expr_ env heap x =
        * But in an expr context, we actually want the value, hence
        * the Ptr.get dereference, so we will return {...}
        *)
-      let heap, _, x = lvalue env heap lv in
+      let heap, x = lvalue env heap lv in
       let heap, x = Ptr.get heap x in
       heap, x
 
-   | _ -> raise Todo
+  | Obj _
+  | Class _
+  | ObjAccess (_, _)
+  | Fun (_, _)
+    -> raise Todo
 
 (* ---------------------------------------------------------------------- *)
 (* Lvalue *)
 (* ---------------------------------------------------------------------- *)
-(* will return a boolean indicating whether a variable was created
- * and will return the lvalue, that is the pointer value, and not
+(* will return the lvalue, that is the pointer value, and not
  * the actual value, so that the caller can modify it.
- * todo: Why do we care to return if a variable was created?
  *)
 and lvalue _env _heap x =
   match x with
@@ -468,7 +470,7 @@ and lvalue _env _heap x =
 (* ---------------------------------------------------------------------- *)
 (* Assign *)
 (* ---------------------------------------------------------------------- *)
-and assign _env _heap _is_new _root(*lvalue*) _v_root(*rvalue*) =
+and assign _env _heap _root(*lvalue*) _v_root(*rvalue*) =
   raise Todo
 
 (* ---------------------------------------------------------------------- *)
