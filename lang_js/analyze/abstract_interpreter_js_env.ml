@@ -237,15 +237,11 @@ let empty_heap = {
 
 let empty_env db file =
   let globals = ref SMap.empty in
+  let locals = ref SMap.empty in
   { db = db;
     file = ref file;
     globals = globals;
-    (* Why use same ref? because when we process toplevel statements,
-     * the vars are the globals?
-     * less: actually will quickly override env.globals := with a
-     * a new value so there will be no sharing.
-     *)
-    vars = globals; 
+    vars = locals; 
     cfun = "*TOPLEVEL*";
     stack   = SMap.empty ;
     safe = ref SMap.empty;

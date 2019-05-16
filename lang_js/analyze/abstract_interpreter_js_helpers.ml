@@ -14,7 +14,6 @@
  *)
 open Common
 
-open Ast_js
 open Abstract_interpreter_js_env (* IMap, ptrs field, etc *)
 module A = Ast_js
 module Env = Abstract_interpreter_js_env
@@ -78,7 +77,7 @@ module Ptr = struct
     with Not_found ->
       (* todo: throw exn when in strict! *)
       (* heap, Vnull *)
-      failwith (spf "Ptr.get: could not find ptr %d" ptr)
+      failwith (spf "Ptr.get_: could not find ptr %d" ptr)
 
   and set_ heap ptr v =
     { ptrs = IMap.add ptr v heap.ptrs }
@@ -92,18 +91,8 @@ module Ptr = struct
     match ptr with
     | Vptr n -> get_ heap n
     | Vref s -> get_ heap (ISet.choose s)
-
-    (* Throw exception? no
-     * When we do '2 + $x' where $x = 3, the abstract interpreter will
-     * have for values for the operand of plus a (Vint 2) and a (Vptr 1)
-     * where 1 points to a (Vint 3). The Vint of $x is kinda boxed.
-     * But in the code of binaryOp we don't want to handle the many
-     * variations of having a Vptr or not, so in many places we
-     * call Ptr.get which will dereference the pointer when
-     * the value is a boxed integers, or return the value where we
-     * already have a "final" value
-     *)
-    | _ -> heap, ptr
+    | _ -> failwith (spf "Ptr.get: not a pointer %s" 
+                       (Env.string_of_value heap ptr))
 
   let set heap ptr v =
     match ptr with
@@ -112,7 +101,9 @@ module Ptr = struct
         (* todo: when need that? when have multiple elements here? *)
         let l = ISet.elements shared in
         List.fold_left (fun heap x -> set_ heap x v) heap l
-    | _ -> heap
+    | _ -> failwith (spf "Ptr.set: not a pointer %s" 
+                         (Env.string_of_value heap ptr))
+
 
 end
 
@@ -480,54 +471,3 @@ end
 (*****************************************************************************)
 (* Misc *)
 (*****************************************************************************)
-
-module Copy = struct
-  let rec value ptrs x =
-    match x with
-    | Vtaint _
-    | Vany
-    | Vnull
-    | Vundefined
-    | Vabstr _
-    | Vint _  | Vbool _ | Vfloat _| Vstring _
-    | Vref _
-    | Vsum _
-(*    | Vmap _ *)
-    | Vobject _ | Vmethod _
-      ->
-        ptrs, x
-    | Vptr n ->
-        let ptrs, v' = value ptrs (IMap.find n ptrs) in
-        let n' = Utils.fresh() in
-        let ptrs = IMap.add n' v' ptrs in
-        ptrs, Vptr n'
-(*
-    | Vrecord m ->
-        let ptrs, m' = SMap.fold (fun k v (ptrs, acc) ->
-            let ptrs, v' = value ptrs v in
-            ptrs, SMap.add k v' acc
-         ) m (ptrs, SMap.empty) in
-        ptrs, Vrecord m'
-    | Varray vl ->
-        let ptrs, vl = Utils.lfold value ptrs vl in
-        ptrs, Varray vl
-*)
-
-  let value heap v =
-    let ptrs, v = value heap.ptrs v in
-    { ptrs = ptrs }, v
-
-end
-
-module IsLvalue = struct
-
-  let expr e =
-    match e with
-    | Id _
-    | IdSpecial (This, _)
-    | IdSpecial ((Incr _ | Decr _), _)
-    | ObjAccess _
-      -> true
-    | _ ->
-        false
-end
