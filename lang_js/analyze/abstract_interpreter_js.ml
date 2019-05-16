@@ -237,16 +237,19 @@ and toplevels env heap xs =
 
 and toplevel env heap = function
   | S (_tok, st) -> stmt env heap st
-  | V v ->
-     (match v.v_init with
-     | Fun _ -> heap
+  | V var ->
+     (match var.v_init with
+     | Fun _ -> 
+        if !(var.v_resolved) = NotResolved
+        then Hashtbl.add env.db (Ast.str_of_name var.v_name) var;
+        heap
      | _ -> 
-        (match !(v.v_resolved) with
+        (match !(var.v_resolved) with
         (* probably forgot graph_code_js naming phase, probably because
          * we are in -test_ai_js; just consider it as a local
          *)
         | NotResolved ->
-          stmt env heap (VarDecl v)
+          stmt env heap (VarDecl var)
         | Local | Param -> raise Impossible
         (* n: treat globals lazily? *)
         | Global _ -> heap
@@ -433,6 +436,18 @@ and expr_ env heap x =
       let heap, rval = expr env heap e2 in
       assign env heap lval rval
 
+  | Apply (Id (name, resolved), xs) ->
+      (match !resolved with
+      | Global qualified_name ->
+          call_qualified env heap qualified_name xs
+      | NotResolved ->
+          let qualified_name = Ast.str_of_name name in
+          call_qualified env heap qualified_name xs
+      | Local | Param ->
+        let heap, v = expr env heap (Id (name, resolved)) in
+        call env heap v xs
+      )
+
   | Apply (IdSpecial (spec, _), xs) ->
       let heap, vs = Utils.lfold (expr env) heap xs in
       special heap env spec vs
@@ -514,6 +529,9 @@ and assign _env heap root(*lvalue*) v_root(*rvalue*) =
 (* ---------------------------------------------------------------------- *)
 (* Call *)
 (* ---------------------------------------------------------------------- *)
+
+and call_qualified _env _heap _qualified_name _el =
+  raise Todo
 
 and call env heap v el =
   match v with
