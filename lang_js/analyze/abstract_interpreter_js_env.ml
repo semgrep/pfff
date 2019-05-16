@@ -289,11 +289,11 @@ let rec value ptrs o x =
          *)
         o "rec"
 
-  | Vref s ->
+  | Vref set ->
       o "&REF ";
-      let l = ISet.elements s in
+      let l = ISet.elements set in
       list o (fun o x -> o (string_of_int x)) l;
-      let n = ISet.choose s in
+      let n = ISet.choose set in
       (try
           o "{";
           value (IMap.remove n ptrs) o (IMap.find n ptrs);
