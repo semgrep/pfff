@@ -485,10 +485,13 @@ and expr_ env heap x =
      ) heap xs in
      Var.unset env str;
      heap, v
-
-  | Class _
-  | Fun (_, _)
-    -> todo_ast (Expr x)
+  | Fun (fun_, nopt) -> 
+     let cls = make_method fun_ nopt in
+     let mid = Utils.fresh() in
+     let v = Vnull in (* todo: this *)
+     let v = Vmethod (v, IMap.add mid cls IMap.empty) in
+     heap, v
+  | Class _-> todo_ast (Expr x)
 
 and rvalue env heap x =
   (* The lvalue will contain the pointer to val, e.g. &1{...}
@@ -695,6 +698,18 @@ and obj_get_members mem env heap v =
       obj_get_members mem env heap (x :: rl)
   | _x :: rl -> obj_get_members mem env heap rl
   )
+
+(* we use OCaml closures to deal with self/parent scoping issues *)
+and make_method (*mname parent self this *) def nopt =
+  fun env heap el ->
+   let name = 
+     match nopt with
+     | None -> "<anon>", fake_info "<anon>"
+     | Some n -> n
+   in
+   (* todo: handle $this, self, parent *)
+   let heap, res = call_def env heap name def el in
+   heap, res
 
 (* ---------------------------------------------------------------------- *)
 (* Class *)
