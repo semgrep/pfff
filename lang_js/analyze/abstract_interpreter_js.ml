@@ -632,8 +632,15 @@ and call_def env heap name def el =
 and parameters env heap params args =
   match params, args with
   | [], _ -> heap
-  | _p :: _rl, [] ->
-      raise Todo
+  | p :: rl, [] ->
+      if p.p_dots
+      then todo_ast (Expr (Apply(Nop, args)));
+      (match p.p_default with
+      | None -> 
+         parameters env heap (p::rl) [IdSpecial (Null, fake_info "null")]
+      | Some e -> 
+         parameters env heap (p::rl) [e]
+      )
   | p :: ps, e :: es ->
       let (s,tok) =  p.p_name in
       let fresh_name = ("$fresh_" ^ s, tok) in
