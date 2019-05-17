@@ -92,15 +92,31 @@ type value =
   | Vfloat  of float
   | Vstring of string
 
+  (* could be useful for nullpointer analysis *)
+  | Vnull
+  | Vundefined
+
   (* We converge quickly to a very abstract value. Values are either
    * a single precise value (e.g. 42), or a type (e.g. int). No
    * intermediate range for instance.
    *)
   | Vabstr  of type_
 
-  (* could be useful for nullpointer analysis *)
-  | Vnull
-  | Vundefined
+  (* Union of possible types/values, ex: null | object, bool | string, etc.
+   * This could grow a lot, so the abstract interpreter needs to turn
+   * that into a Vany at some point ???
+   * todo: used also to record a list of possible function candidates
+   *)
+  | Vsum    of value list
+
+  (* A pointer is an int address in the heap. A variable is a pointer
+   * to a value. A field is also a pointer to a value. A class is a
+   * pointer to Vobject. An object too.
+   *)
+  | Vptr of int
+
+  (* pad: because of some imprecision, we actually have a set of addresses? *)
+  | Vref    of ISet.t
 
   (* TODO still valid comment?
    * Objects are represented as a set of members where a member can be
@@ -147,22 +163,6 @@ type value =
   | Varray  of value list
   *)
 
-  (* Union of possible types/values, ex: null | object, bool | string, etc.
-   * This could grow a lot, so the abstract interpreter needs to turn
-   * that into a Vany at some point ???
-   * todo: used also to record a list of possible function candidates
-   *)
-  | Vsum    of value list
-
-  (* A pointer is an int address in the heap. A variable is a pointer
-   * to a value. A field is also a pointer to a value. A class is a
-   * pointer to Vobject. An object too.
-   *)
-  | Vptr of int
-
-  (* pad: because of some imprecision, we actually have a set of addresses? *)
-  | Vref    of ISet.t
-
   (* TODO still valid comment?
    * The first 'value' below is for 'this' which will be a pointer to
    * the object. The only place where it's used is in Unify.value.
@@ -194,7 +194,6 @@ type value =
    * in the interpreter (but we don't for 'Call (Obj_get ...)', hence
    * this intermediate Vmethod value above).
    *)
-
 
   (* tainting analysis for security *)
   | Vtaint of string

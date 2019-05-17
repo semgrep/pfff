@@ -38,12 +38,11 @@
  *  - no field vs method. A method is just sugar to define
  *    a field with a lambda (some people even uses directly that forms
  *    thx to arrows).
- *  - no Period vs Bracket
- *  - no Object vs Array
+ *  - old: no Period vs Bracket (actually good to differentiate)
+ *  - old: no Object vs Array (actually good to differentiate)
  *  - no func vs method vs arrow
  *  - no class elements vs object elements
  *  - No Nop (EmptyStmt); transformed in an empty Block.
- * 
  * 
  * todo:
  *  - add types information
@@ -67,8 +66,8 @@ type name = string wrap
  (* with tarzan *)
 
 (* For bar() in a/b/foo.js the qualified_name is 'a/b/foo.bar'. 
- * I remove the filename extension for codegraph which assumes
- * the dot is a package separator, which is convenient to show 
+ * I remove the filename extension for codegraph (which assumes
+ * the dot is a package separator), which is convenient to show 
  * shorter names when exploring a codebase (and maybe also when hovering
  * a function in codemap).
  * This is computed after ast_js_build in graph_code_js.ml
@@ -78,7 +77,7 @@ type qualified_name = string
 (* computed in graph_code_js.ml in a "naming" phase 
  * alt: reuse Scope_code.t, but not really worth it.
  *)
-type resolved_name = 
+type resolved_name =
   | Local
   | Param
   | Global of qualified_name
