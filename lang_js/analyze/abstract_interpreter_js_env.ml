@@ -89,7 +89,7 @@ type value =
    *)
   | Vbool   of bool
   | Vint    of int
-  | Vfloat  of float (* not that useful *)
+  | Vfloat  of float
   | Vstring of string
 
   (* We converge quickly to a very abstract value. Values are either
@@ -205,8 +205,7 @@ type value =
 
   and type_ =
     | Tbool
-    | Tint
-    | Tfloat
+    | Tnum (* merge ot Tint and Tfloat *)
     | Tstring
 
 (* this could be one field of env too, close to .vars and .globals *)
@@ -348,8 +347,7 @@ let rec value ptrs o x =
 and type_ o x =
   match x with
   | Tbool -> o "bool"
-  | Tint -> o "int"
-  | Tfloat -> o "float"
+  | Tnum -> o "num"
   | Tstring -> o "string"
 
 (*****************************************************************************)

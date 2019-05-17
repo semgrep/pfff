@@ -206,7 +206,7 @@ module Order = struct
     (* project on corresponding type_ *)
     | Vint _ -> 2
     | Vbool _ -> 3
-    | Vfloat _ -> 4
+    | Vfloat _ -> 2 (* 4 *)
     | Vstring _ -> 5
 
     | Vptr _ -> 6
@@ -224,9 +224,9 @@ module Order = struct
 
   and type_ x =
     match x with
-    | Tint -> 2
+    | Tnum -> 2
     | Tbool -> 3
-    | Tfloat -> 4
+    (* | Tfloat -> 4 *)
     | Tstring -> 5
 
 end
@@ -347,13 +347,18 @@ module Unify = struct
 
     | Vint n1, Vint n2 when n1 = n2 ->
         ptrs, v1
-    | Vint _, Vabstr Tint | Vabstr Tint, Vint _ | Vint _, Vint _ ->
-        ptrs, Vabstr Tint
-
     | Vfloat f1, Vfloat f2 when f1 = f2 ->
         ptrs, v1
+(*
+    | Vint _, Vabstr Tint | Vabstr Tint, Vint _ | Vint _, Vint _ ->
+        ptrs, Vabstr Tint
     | Vfloat _, Vabstr Tfloat | Vabstr Tfloat, Vfloat _ | Vfloat _, Vfloat _ ->
         ptrs, Vabstr Tfloat
+*)
+    | Vint _, Vabstr Tnum | Vabstr Tnum, Vint _ | Vint _, Vint _ ->
+        ptrs, Vabstr Tnum
+    | Vfloat _, Vabstr Tnum | Vabstr Tnum, Vfloat _ | Vfloat _, Vfloat _ ->
+        ptrs, Vabstr Tnum
 
     | Vstring s1, Vstring s2 when s1 = s2 ->
         ptrs, v1

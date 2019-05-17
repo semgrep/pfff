@@ -331,7 +331,19 @@ and stmt env heap x =
       let heap = stmt env heap st in
       heap
 
-  | For (_, _) -> todo_ast (Stmt x)
+  | For (for_header, st) -> 
+    let sts = 
+       match for_header with
+       | ForClassic (either, e2, e3) ->
+         (match either with
+         | Left vars -> 
+           (vars |> List.map (fun v -> VarDecl v)) @ [ExprStmt e2; ExprStmt e3]
+         | Right e1 ->
+           [ExprStmt e1; ExprStmt e2; ExprStmt e3]
+         )
+       | ForIn _ | ForOf _ -> todo_ast (Stmt x)
+    in
+    stmtl env heap (sts @ [st])
 
   | Switch (e, cl) ->
       let heap, _ = expr env heap e in
@@ -505,16 +517,22 @@ and rvalue env heap x =
 (* ---------------------------------------------------------------------- *)
 (* Special *)
 (* ---------------------------------------------------------------------- *)
+(* less:  could be more precise when vs is precise *)
+(* less: could do more checks here too! typechecking! *)
 and special heap _env spec vs =
-  (* less:  could be more precise when vs is precise *)
   match spec, vs with
-  | (Plus | Minus), 
-      [Vint _ | Vabstr Tint | Vany] 
+  (* unary *)
+  | (Plus | Minus), [Vint _ | Vabstr Tnum] 
+  (* binary *)
   | (Plus | Minus | Mul | Div | Mod | Expo), 
-     [Vint _ | Vabstr Tint | Vany; Vint _ | Vabstr Tint | Vany] 
-     -> heap, Vabstr Tint
-  (* less: could do checks here *)
-  | (Equal | PhysEqual  | Lower | Greater), _ -> heap, Vabstr Tbool
+     [Vint _ | Vabstr Tnum; Vint _ | Vabstr Tnum] 
+     -> heap, Vabstr Tnum
+  | (Plus | Minus | Mul | Div | Mod | Expo), _ ->
+     heap, Vabstr Tnum (* or Vsum [Vnull; Vabstr Tint] ? *)
+  | (Equal | PhysEqual  | Lower | Greater), _ -> 
+     heap, Vabstr Tbool
+  | (Or | And | Not), _ -> 
+     heap, Vabstr Tbool 
 
   | _ -> 
     let s = Ocaml.string_of_v (Meta_ast_js.vof_special spec) in
