@@ -102,8 +102,10 @@ type special =
   | Yield | YieldStar | Await
   | Encaps of name option (* less: resolve? *)
 
+  (* todo? rewrite in CondExpr? have special behavior *)
+  | And | Or
   (* Special apply arithmetic and logic *)
-  | Not | And | Or | Xor
+  | Not | Xor
   | BitNot | BitAnd | BitOr | BitXor
   | Lsr | Asr | Lsl
   | Equal | PhysEqual 
