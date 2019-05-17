@@ -984,6 +984,12 @@ and parameters env heap l1 l2 =
       | Some e ->
           let e = if p.p_ref then make_ref e else e in
           let heap, v = expr env heap e in
+          (* in recursive calls we have parameters equal
+           * to variables used in the caller context.
+           * we must not confuse them.
+           * todo: what about if this parameter name in used
+           * with the other parameters????
+           *)
           Var.unset env (unw p.p_name);
           let heap, _, lv = lvalue env heap (Var p.p_name) in
           let heap, _ = assign env heap true lv v in

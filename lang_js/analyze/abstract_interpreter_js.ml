@@ -509,9 +509,9 @@ and special heap _env spec vs =
   (* less:  could be more precise when vs is precise *)
   match spec, vs with
   | (Plus | Minus), 
-      [Vint _ | Vabstr Tint] 
+      [Vint _ | Vabstr Tint | Vany] 
   | (Plus | Minus | Mul | Div | Mod | Expo), 
-     [Vint _ | Vabstr Tint; Vint _ | Vabstr Tint] 
+     [Vint _ | Vabstr Tint | Vany; Vint _ | Vabstr Tint | Vany] 
      -> heap, Vabstr Tint
   (* less: could do checks here *)
   | (Equal | PhysEqual  | Lower | Greater), _ -> heap, Vabstr Tbool
@@ -626,26 +626,27 @@ and call_def env heap name def el =
     heap, v
   end
 
-and fun_nspace f vars =
-  List.fold_left (fun acc p ->
-    try 
-      let s = Ast.str_of_name p.p_name in
-      SMap.add s (SMap.find s vars) acc
-    with Not_found -> acc
-  ) SMap.empty f.f_params
-
 and parameters env heap params args =
   match params, args with
   | [], _ -> heap
   | _p :: _rl, [] ->
       raise Todo
   | p :: ps, e :: es ->
-      let s = Ast.str_of_name p.p_name in
-      Var.unset env s;
-      let var = { v_name = p.p_name; v_resolved = ref Local; v_kind = Let;
+      let (s,tok) =  p.p_name in
+      let fresh_name = ("$fresh_" ^ s, tok) in
+      let var = { v_name = fresh_name; v_resolved = ref Local; v_kind = Let;
                   v_init = e } in
       let heap = stmt env heap (VarDecl var) in
       parameters env heap ps es
+
+and fun_nspace f vars =
+  List.fold_left (fun acc p ->
+    try 
+      let s =  Ast.str_of_name p.p_name in
+      let fresh_s = "$fresh_" ^ s in
+      SMap.add s (SMap.find fresh_s vars) acc
+    with Not_found -> acc
+  ) SMap.empty f.f_params
 
 and call env heap v any el =
   match v with

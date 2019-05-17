@@ -329,7 +329,11 @@ module Unify = struct
     | _, _ when v1 == v2 ->
         ptrs, v1
 
-    (* TODO: Vundefined *)
+    (* pad: I abuse undefined for *return* but I want the first assign
+     * to it to override the Vundefined that was in it before
+     *)
+    | Vundefined, x -> ptrs, x
+    | x, Vundefined -> ptrs, x
 
     | Vnull, Vnull ->
         ptrs, Vnull

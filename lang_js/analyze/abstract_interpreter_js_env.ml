@@ -16,9 +16,42 @@
 module Ast = Ast_js
 
 module ISet = Set.Make (Int)
-module IMap = Map.Make (Int)
 module SSet = Set.Make (String)
-module SMap = Map.Make (String)
+
+(* Use the modules below when you want to use ocamldebug and better 
+ * see the contents of env and heap *)
+module SMapDebug = struct
+  (* when want to use ocamldebug and better see the contents of env.vars *)
+  type 'a t = (string * 'a) list
+  let empty = []
+  let fold f xs acc = 
+    List.fold_left (fun acc (x, y) -> f x y acc) acc xs
+  let iter f xs = List.iter (fun (s,v) -> f s v) xs
+  let add s v xs = (s,v)::xs
+  let remove s xs = List.remove_assoc s xs
+  let find s xs = List.assoc s xs
+end
+
+module IMapDebug = struct
+
+  type 'a t = (int * 'a) list
+  let empty = []
+  let fold f xs acc = 
+    List.fold_left (fun acc (x, y) -> f x y acc) acc xs
+  let iter f xs = List.iter (fun (s,v) -> f s v) xs
+  let add s v xs = (s,v)::xs
+  let remove s xs = List.remove_assoc s xs
+  let find s xs = List.assoc s xs
+  let mem n xs = List.mem_assoc n xs
+end
+
+(* 
+module IMap = Map.Make (Int)
+module SMap =  Map.Make (String) 
+*)
+module IMap = IMapDebug
+module SMap = SMapDebug
+
 
 (*****************************************************************************)
 (* Prelude *)
