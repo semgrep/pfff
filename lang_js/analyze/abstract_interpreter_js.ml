@@ -482,9 +482,9 @@ and expr_ env heap x =
   | Obj xs ->
      let str = "*myobj*" in
      let id = mk_id str Local in
-     let v = Vobject SMap.empty in
-     let heap, v = Ptr.new_val heap v in
-     Var.set env str v;
+     let obj = Vobject SMap.empty in
+     let heap, pobj = Ptr.new_val heap obj in
+     Var.set env str pobj;
      let heap = List.fold_left (fun heap prop  ->
         match prop with
         | Field (pname, _props, e) ->
@@ -492,9 +492,23 @@ and expr_ env heap x =
         | FieldSpread _ -> todo_ast (Expr (Obj xs))
      ) heap xs in
      Var.unset env str;
-     heap, v
-  | Arr _xs ->
-     raise Todo
+     heap, pobj (* TODO: why not obj directly? *)
+  | Arr xs ->
+     let str = "*myarr*" in
+     let id = mk_id str Local in
+     let elem = Vundefined in
+     let heap, pelem = Ptr.new_val heap elem in
+     let arr = Varray pelem in
+     let heap, parr = Ptr.new_val heap arr in
+     Var.set env str parr;
+     let heap = List.fold_left (fun heap (e, idx)  ->
+          let s = string_of_int idx in
+          let eid = Num ((s, fake_info s)) in
+          stmt env heap (ExprStmt (Assign (ArrAccess (id, eid), e)))
+     ) heap (Common.index_list xs) in
+     Var.unset env str;
+     heap, parr (* TODO: why not arr directly? *)
+
 
   | Fun (fun_, nopt) -> 
      (* todo: should build closure of vars? pass their reference

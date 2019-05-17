@@ -158,10 +158,10 @@ type value =
    * TODO, not sure why we get foo() here there too.
    *)
   | Vobject of value SMap.t
-  (* less: try to differentiate the different usage of JS objects?
-  | Vrecord of value SMap.t
-  | Varray  of value list
-  *)
+
+  (* try to differentiate the different usage of JS objects *)
+  | Varray of value (* a ptr to a big union representing all the elts *)
+  (* Vrecord of value SMap.t *)
 
   (* TODO still valid comment?
    * The first 'value' below is for 'this' which will be a pointer to
@@ -339,6 +339,8 @@ let rec value ptrs o x =
       list o (fun o (x, v) -> o "'"; o x ; o "' => "; value ptrs o v) vl;
       o ")"
   | Vmethod (v, _imap) -> o "method("; value ptrs o v; o ")"
+  | Varray v ->
+      o "array("; value ptrs o v;  o ")";
   | Vsum vl ->
       o "choice(";
       list o (value ptrs) vl;

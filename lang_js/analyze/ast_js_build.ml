@@ -406,9 +406,9 @@ and expr env = function
     A.ArrAccess (e, e2)
   | C.Object xs ->
     A.Obj (xs |> paren |> comma_list |> List.map (property env))
-  | C.Array (xs) ->
+  | C.Array (tok, xs, _) ->
     (* A.Obj (array_obj env 0 tok xs) *)
-    A.Arr (xs |> paren |> comma_list |> List.map (expr env))
+    A.Arr (array_arr env tok xs)
   | C.Apply (e, es) ->
     let e = expr env e in
     let es = List.map (expr env) (es |> paren |> comma_list) in
@@ -653,6 +653,20 @@ and _array_obj env idx tok xs =
       let elt = A.Field (n, [], e) in
       elt::_array_obj env idx tok xs
     )
+
+and array_arr env tok xs =
+  match xs with
+  | [] -> []
+  | [Right _] -> []
+  | [Left e] -> [expr env e]
+  | (Left e)::(Right tok)::xs -> 
+     let e = expr env e in
+     e::array_arr env tok xs
+  | (Right _)::xs ->
+    let e = A.Nop in
+    e::array_arr env tok xs
+  | (Left _)::(Left _)::_ ->
+    raise (TodoConstruct ("array_arr, 2 left? impossible?", tok))
 
 and class_decl env x =
   let extends = opt (fun env (_, typ) -> nominal_type env typ) env 

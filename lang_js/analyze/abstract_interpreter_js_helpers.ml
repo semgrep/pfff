@@ -58,8 +58,7 @@ module Ptr = struct
 
   let new_val_ ptrs val_ =
     let x = Utils.fresh() in
-    let v = val_ in
-    let ptrs = IMap.add x v ptrs in
+    let ptrs = IMap.add x val_ ptrs in
     ptrs , Vptr x
 
   let new_val heap val_ =
@@ -212,9 +211,9 @@ module Order = struct
     | Vptr _ -> 6
     | Vref _ -> 6
 
+    | Varray _ -> 7
     (*
     | Vrecord _ -> 7
-    | Varray _ -> 7
     | Vmap _ -> 7
     *)
 
@@ -388,6 +387,11 @@ module Unify = struct
         let v1 = Vmap (v1, v2) in
         ptrs, v1
 *)
+    | Varray v1, Varray v2 ->
+       let ptrs, v = value stack ptrs v1 v2 in
+       ptrs, Varray v
+    (* TODO: Varray arr, Vobject m *)
+
     (* this is the only place where we use the 'this' of Vmethod,
      * but julien is not sure it's still useful
      *)
@@ -395,6 +399,7 @@ module Unify = struct
         let ptrs, st = value stack ptrs st1 st2 in
         let m = IMap.fold IMap.add m1 m2 in
         ptrs, Vmethod (st, m)
+
     | Vobject m1, Vobject m2 ->
         let ptrs, m = record stack ptrs m1 m2 in
         ptrs, Vobject m
