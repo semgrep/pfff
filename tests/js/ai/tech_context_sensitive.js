@@ -1,5 +1,5 @@
 function foo(x) {
-  Console.log(x);
+  console.log(x);
 }
 
 // The interpreter will run those multiple funcalls with different contexts

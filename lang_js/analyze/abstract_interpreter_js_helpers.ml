@@ -90,7 +90,7 @@ module Ptr = struct
     match ptr with
     | Vptr n -> get_ heap n
     | Vref s -> get_ heap (ISet.choose s)
-    | _ -> failwith (spf "Ptr.get: not a pointer %s" 
+    | _ -> failwith (spf "Ptr.get: not a pointer: |%s|" 
                        (Env.string_of_value heap ptr))
 
   let set heap ptr v =
@@ -100,7 +100,7 @@ module Ptr = struct
         (* todo: when need that? when have multiple elements here? *)
         let l = ISet.elements shared in
         List.fold_left (fun heap x -> set_ heap x v) heap l
-    | _ -> failwith (spf "Ptr.set: not a pointer %s" 
+    | _ -> failwith (spf "Ptr.set: not a pointer |%s|" 
                          (Env.string_of_value heap ptr))
 
 

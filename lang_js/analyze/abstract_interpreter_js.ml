@@ -617,6 +617,17 @@ and lvalue env heap x =
     | PN_Computed _e ->
         todo_ast (Expr x)
     )
+  | ArrAccess (e1, e2) ->
+     let heap, parr = lvalue env heap e1 in
+     let heap, arr = Ptr.get heap parr in
+     let heap, v = expr env heap e2 in
+     (match arr with 
+     | Varray ptr -> 
+        assign env heap ptr v
+     | _ -> failwith (spf "lvalue:ArrAccess not a Varray %s"
+                       (Env.string_of_value heap arr))
+     )
+
   | _ ->
     todo_ast (Expr x)
 (*
