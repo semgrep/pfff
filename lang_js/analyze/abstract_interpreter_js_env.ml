@@ -103,38 +103,6 @@ type value =
   | Vundefined
 
   (* TODO still valid comment?
-   * The first 'value' below is for 'this' which will be a pointer to
-   * the object. The only place where it's used is in Unify.value.
-   * Note that this, as well as self/parent, are also handled
-   * via closures in make_method().
-   * 
-   * The integer key of the IMap below is a unique identifier for a 
-   * method (we could have chosen the full name as in "A::foo"). The
-   * Imap is a set of methods because when we unify/merge objects,
-   * we merge methods and remember all possible values for this method.
-   * It's essentially a (closures Set.t) but because we can't compare
-   * for equality closures in OCaml we need this method id intermediate
-   * and IMap. See sum_call() in the interpreter and call_methods().
-   * 
-   * make_method() builds the method closure with self/parent/this
-   * correctly bind to the right class and object pointers.
-   * 
-   * What is the value of x given: 
-   *   class A { public function foo() { } }
-   *   x = new A();
-   * It should be:
-   * x = &2{REF 1{Vobject (["foo"->Vmethod (&2{rec}, [0x42-> (<foo closure>)])])}}
-   *)
-  | Vmethod of value * (env -> heap -> Ast.expr list -> heap * value) IMap.t
-
-  (* TODO still valid comment?
-   * We would need a Vfun too if we were handling Lambda. But for
-   * regular function calls, we just handle 'Call (Id "...")' specially
-   * in the interpreter (but we don't for 'Call (Obj_get ...)', hence
-   * this intermediate Vmethod value above).
-   *)
-
-  (* TODO still valid comment?
    * Objects are represented as a set of members where a member can be
    * a constant, a field, a static variable, or a method. for instance with:
    * 
@@ -194,6 +162,39 @@ type value =
 
   (* pad: because of some imprecision, we actually have a set of addresses? *)
   | Vref    of ISet.t
+
+  (* TODO still valid comment?
+   * The first 'value' below is for 'this' which will be a pointer to
+   * the object. The only place where it's used is in Unify.value.
+   * Note that this, as well as self/parent, are also handled
+   * via closures in make_method().
+   * 
+   * The integer key of the IMap below is a unique identifier for a 
+   * method (we could have chosen the full name as in "A::foo"). The
+   * Imap is a set of methods because when we unify/merge objects,
+   * we merge methods and remember all possible values for this method.
+   * It's essentially a (closures Set.t) but because we can't compare
+   * for equality closures in OCaml we need this method id intermediate
+   * and IMap. See sum_call() in the interpreter and call_methods().
+   * 
+   * make_method() builds the method closure with self/parent/this
+   * correctly bind to the right class and object pointers.
+   * 
+   * What is the value of x given: 
+   *   class A { public function foo() { } }
+   *   x = new A();
+   * It should be:
+   * x = &2{REF 1{Vobject (["foo"->Vmethod (&2{rec}, [0x42-> (<foo closure>)])])}}
+   *)
+  | Vmethod of value * (env -> heap -> Ast.expr list -> heap * value) IMap.t
+
+  (* TODO still valid comment?
+   * We would need a Vfun too if we were handling Lambda. But for
+   * regular function calls, we just handle 'Call (Id "...")' specially
+   * in the interpreter (but we don't for 'Call (Obj_get ...)', hence
+   * this intermediate Vmethod value above).
+   *)
+
 
   (* tainting analysis for security *)
   | Vtaint of string
