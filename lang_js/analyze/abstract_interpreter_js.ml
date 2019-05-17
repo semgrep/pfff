@@ -601,8 +601,11 @@ and call_def env heap name def el =
   else begin
     (* we need to keep old env.vars while evaluating 'parameters()' below
      * because the arguments may reference variables from the caller context.
-     * But, we usea new ref to not create the local vars for the parameters 
+     * But, we use a new ref to not create the local vars for the parameters 
      * in the caller.
+     * We also use fresh parameter names in parameters to not confuse
+     * them with possible variables in the caller using the same names
+     * (especially useful for recursive functions).
      *)
     let env = { env with vars = ref !(env.vars); cfun = f } in
     let heap = parameters env heap def.f_params el in
@@ -644,6 +647,7 @@ and fun_nspace f vars =
     try 
       let s =  Ast.str_of_name p.p_name in
       let fresh_s = "$fresh_" ^ s in
+      (* use back the original parameter name *)
       SMap.add s (SMap.find fresh_s vars) acc
     with Not_found -> acc
   ) SMap.empty f.f_params
