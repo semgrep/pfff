@@ -267,6 +267,11 @@ and stmt env heap x =
      | Global _ | Param -> raise Impossible
      );
      let heap, v = expr env heap var.v_init in
+     (* less: should look at v_kind; if Var then need look if already
+      * in env.vars? For Let/Const then need fresh names and rename?
+      * todo: do that in preprocessing phase? to simplify things.
+      * choose unique fresh names.
+     *)
      let heap, v = Ptr.new_val heap v in
      let str = Ast.str_of_name var.v_name in
      Var.set env str v;
@@ -473,7 +478,7 @@ and expr_ env heap x =
       let heap, v = expr env heap e in
       call env heap v (Expr e) el
 
-  (* IdSpecial (This | ...) *)
+  (* TODO: IdSpecial (This | ...) *)
   | ObjAccess (_, _)
   | ArrAccess (_, _)
   | Id _ 
@@ -513,8 +518,6 @@ and expr_ env heap x =
      Var.unset env str;
      let heap, arr = Ptr.get heap parr in
      heap, arr
-
-
 
   | Fun (fun_, nopt) -> 
      (* todo: should build closure of vars? pass their reference
