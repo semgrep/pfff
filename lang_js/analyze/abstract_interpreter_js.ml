@@ -534,6 +534,9 @@ and special heap _env spec vs =
   | (Or | And | Not), _ -> 
      heap, Vabstr Tbool 
 
+  | Encaps(None), _ ->
+     heap, Vabstr Tstring
+
   | _ -> 
     let s = Ocaml.string_of_v (Meta_ast_js.vof_special spec) in
     let strs = vs |> List.map (Env.string_of_value heap) |> Common.join "," in
