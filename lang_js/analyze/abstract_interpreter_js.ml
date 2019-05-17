@@ -522,18 +522,32 @@ and rvalue env heap x =
 and special heap _env spec vs =
   match spec, vs with
   (* unary *)
-  | (Plus | Minus), [Vint _ | Vabstr Tnum] 
+  | (Plus | Minus), [Vint _ | Vabstr Tnum] -> heap, Vabstr Tnum
+
+  | Plus, [Vstring _ | Vabstr Tstring; _]
+  | Plus, [_; Vstring _ | Vabstr Tstring] 
+    -> heap, Vabstr Tstring
+  | Plus, _ ->
+     heap, Vabstr Tnum (* or Vsum [Vnull; Vabstr Tint; Vabstr Tstring] ? *)
+
+
   (* binary *)
-  | (Plus | Minus | Mul | Div | Mod | Expo), 
-     [Vint _ | Vabstr Tnum; Vint _ | Vabstr Tnum] 
-     -> heap, Vabstr Tnum
-  | (Plus | Minus | Mul | Div | Mod | Expo), _ ->
+  | (Minus | Mul | Div | Mod | Expo), 
+     [Vint _ | Vabstr Tnum; Vint _ | Vabstr Tnum] ->
+     heap, Vabstr Tnum
+  | (Minus | Mul | Div | Mod | Expo), _ ->
      heap, Vabstr Tnum (* or Vsum [Vnull; Vabstr Tint] ? *)
   | (Equal | PhysEqual  | Lower | Greater), _ -> 
      heap, Vabstr Tbool
-  | (Or | And | Not), _ -> 
-     heap, Vabstr Tbool 
 
+  | Not, _ -> 
+     heap, Vabstr Tbool 
+  | (And | Or), [v1; v2] ->
+      let heap, v = Unify.value heap v1 v2 in
+      heap, v
+   
+  | Typeof, _ ->
+     heap, Vabstr Tstring
   | Encaps(None), _ ->
      heap, Vabstr Tstring
 
