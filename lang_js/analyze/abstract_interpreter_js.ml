@@ -492,8 +492,9 @@ and expr_ env heap x =
           stmt env heap (ExprStmt (Assign (ObjAccess (id, pname), e)))
         | FieldSpread _ -> todo_ast (Expr (Obj xs))
      ) heap xs in
-     let heap, obj = Ptr.get heap pobj in
      Var.unset env str;
+     (* bugfix: need to get the latest value, not the previous 'obj' *)
+     let heap, obj = Ptr.get heap pobj in
      heap, obj
 
   | Arr xs ->
@@ -510,7 +511,9 @@ and expr_ env heap x =
           stmt env heap (ExprStmt (Assign (ArrAccess (id, eid), e)))
      ) heap (Common.index_list xs) in
      Var.unset env str;
+     let heap, arr = Ptr.get heap parr in
      heap, arr
+
 
 
   | Fun (fun_, nopt) -> 
