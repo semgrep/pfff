@@ -87,18 +87,7 @@ module H = Abstract_interpreter_js_helpers
  *    the fake object that represents the class.
  *
  * TODO:
- *  - ask juju about the many '??' in this file
- *  - still? the places where expect a VPtr, and so need to call Ptr.get,
- *    or even a VptrVptr and so where need to call Ptr.get two times,
- *    and the places where expect a final value is not clear.
- *  - before processing the file, maybe should update the code database
- *    with all the entities in the file, cos when one process a script,
- *    many scripts have a main() or usage() but the code database
- *    stores only one.
- *  - $x++ is ignored (we don't really care about int for now)
  *  - C-s for Vany, it's usually a Todo
- *
- * TODO long term:
  *  - we could use the abstract interpreter to find bugs that my current
  *    checkers can't find (e.g. undefined methods in o->m() because
  *    of the better interprocedural class analysis, wrong type,
@@ -136,6 +125,8 @@ module H = Abstract_interpreter_js_helpers
  *  - handle objects and other constructs.
  *  - all comments added by pad, split files, add mli, add unit tests,
  *    add tests/ia/*.php, fixed bugs, added strict mode, etc
+ *  - revert to simple pointer to val in Javascript because Javascript does
+ *    have the concept of reference like in PHP. It simplifies a lot the code.
  *)
 
 (*****************************************************************************)
@@ -522,6 +513,8 @@ and special heap _env spec vs =
   | (Plus | Minus | Mul | Div | Mod | Expo), 
      [Vint _ | Vabstr Tint; Vint _ | Vabstr Tint] 
      -> heap, Vabstr Tint
+  (* less: could do checks here *)
+  | (Equal | PhysEqual  | Lower | Greater), _ -> heap, Vabstr Tbool
 
   | _ -> 
     let s = Ocaml.string_of_v (Meta_ast_js.vof_special spec) in
@@ -663,7 +656,7 @@ and sum_call env heap candidates any el =
   match candidates with
   | [] -> 
     failwith (spf "sum_call: no candidates for %s"(string_of_any any))
-  (* todo: what about the other candidates??? *)
+  (* todo: what about the other candidates?? *)
   | Vmethod (_, fm) :: _ ->
       let fl = IMap.fold (fun _ y acc -> y :: acc) fm [] in
       call_methods env heap fl any el

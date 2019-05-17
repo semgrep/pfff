@@ -749,7 +749,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 13
+     (case 14
        (0 "all")
        (1 "XXX")
        (2 "sgrep")
@@ -764,6 +764,7 @@
        (11 "prolog:")
        (12 "-builtins_of_idl  /home/pad/local/fbcode/hphp/facebook/extensions/async_mysql/async_mysql.idl.json")
        (13 "-test_ai_js  /home/pad/pfff/tests/js/ai/obj.js")
+       (14 "-test_ai_js  /home/pad/pfff/tests/js/eloquent/0/intro.js")
        )
      ))
    )
