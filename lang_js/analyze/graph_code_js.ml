@@ -461,6 +461,8 @@ and expr env e =
 
   | Obj o ->
      obj_ env o
+  | Arr xs ->
+     List.iter (expr env) xs
   | Class c ->
      class_ env c
   | ObjAccess (e, prop) ->
@@ -471,6 +473,14 @@ and expr env e =
       expr env e
     );
     property_name env prop
+  | ArrAccess (e1, e2) ->
+    (match e1 with
+    | Id (n, _scope) when not (is_local env n) -> 
+       add_use_edge_candidates env (n, E.Class) 
+    | _ -> 
+      expr env e1
+    );
+    expr env e2
 
   | Fun (f, nopt) ->
     let env =

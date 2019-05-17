@@ -129,12 +129,14 @@ and v_expr (x: expr) =
   | IdSpecial v1 -> let v1 = v_wrap v_special v1 in ()
   | Nop -> ()
   | Assign ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_expr v2 in ()
+  | ArrAccess ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_expr v2 in ()
   | Obj v1 -> let v1 = v_obj_ v1 in ()
   | Class v1 -> let v1 = v_class_ v1 in ()
   | ObjAccess ((v1, v2)) ->
       let v1 = v_expr v1 and v2 = v_property_name v2 in ()
   | Fun ((v1, v2)) -> let v1 = v_fun_ v1 and v2 = v_option v_name v2 in ()
   | Apply ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_list v_expr v2 in ()
+  | Arr ((v1)) -> let v1 = v_list v_expr v1 in ()
   | Conditional ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_expr v2 and v3 = v_expr v3 in ()
   in  

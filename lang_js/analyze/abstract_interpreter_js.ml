@@ -475,6 +475,7 @@ and expr_ env heap x =
 
   (* IdSpecial (This | ...) *)
   | ObjAccess (_, _)
+  | ArrAccess (_, _)
   | Id _ 
     -> rvalue env heap x
 
@@ -492,6 +493,8 @@ and expr_ env heap x =
      ) heap xs in
      Var.unset env str;
      heap, v
+  | Arr _xs ->
+     raise Todo
 
   | Fun (fun_, nopt) -> 
      (* todo: should build closure of vars? pass their reference

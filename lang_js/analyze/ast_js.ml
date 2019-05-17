@@ -148,6 +148,11 @@ and expr =
   | Obj of obj_
   | Class of class_
   | ObjAccess of expr * property_name
+  (* we could transform it in an Obj but can be useful to remember 
+   * the difference in further analysis (e.g., in the abstract interpreter) *)
+  | Arr of expr list  
+  (* this can also be used to access object fields dynamically *)
+  | ArrAccess of expr * expr
 
   | Fun of fun_ * name option (* when recursive *)
   | Apply of expr * expr list

@@ -398,12 +398,17 @@ and expr env = function
     let e = expr env e in
     A.ObjAccess (e, A.PN (name env n))
   | C.Bracket (e, e2) ->
-    let e = expr env e in
+    (* let e = expr env e in
     A.ObjAccess (e, A.PN_Computed (expr env (paren e2)))
+    *)
+    let e = expr env e in
+    let e2 = expr env (paren e2) in
+    A.ArrAccess (e, e2)
   | C.Object xs ->
     A.Obj (xs |> paren |> comma_list |> List.map (property env))
-  | C.Array (tok, xs, _) ->
-    A.Obj (array_obj env 0 tok xs)
+  | C.Array (xs) ->
+    (* A.Obj (array_obj env 0 tok xs) *)
+    A.Arr (xs |> paren |> comma_list |> List.map (expr env))
   | C.Apply (e, es) ->
     let e = expr env e in
     let es = List.map (expr env) (es |> paren |> comma_list) in
@@ -636,17 +641,17 @@ and property env = function
     let e = expr env e in
     A.FieldSpread e
 
-and array_obj env idx tok xs =
+and _array_obj env idx tok xs =
   match xs with
   | [] -> []
   | x::xs -> 
     (match x with
-    | Right tok -> array_obj env (idx+1) tok xs
+    | Right tok -> _array_obj env (idx+1) tok xs
     | Left e ->
       let n = A.PN (string_of_int idx, tok) in
       let e = expr env e in
       let elt = A.Field (n, [], e) in
-      elt::array_obj env idx tok xs
+      elt::_array_obj env idx tok xs
     )
 
 and class_decl env x =

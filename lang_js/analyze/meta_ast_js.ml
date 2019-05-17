@@ -77,6 +77,8 @@ let rec vof_property_name =
       let v1 = vof_expr v1 in Ocaml.VSum (("PN_Computed", [ v1 ]))
 and vof_expr =
   function
+  | Arr v1 ->
+     let v1 = Ocaml.vof_list vof_expr v1 in Ocaml.VSum (("Arr", [v1]))
   | Bool v1 ->
       let v1 = vof_wrap Ocaml.vof_bool v1 in Ocaml.VSum (("Bool", [ v1 ]))
   | Num v1 ->
@@ -98,6 +100,10 @@ and vof_expr =
       let v1 = vof_expr v1
       and v2 = vof_expr v2
       in Ocaml.VSum (("Assign", [ v1; v2 ]))
+  | ArrAccess ((v1, v2)) ->
+      let v1 = vof_expr v1
+      and v2 = vof_expr v2
+      in Ocaml.VSum (("ArrAccess", [ v1; v2 ]))
   | Obj v1 -> let v1 = vof_obj_ v1 in Ocaml.VSum (("Obj", [ v1 ]))
   | Class v1 -> let v1 = vof_class_ v1 in Ocaml.VSum (("Class", [ v1 ]))
   | ObjAccess ((v1, v2)) ->
