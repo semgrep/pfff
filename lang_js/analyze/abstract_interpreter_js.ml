@@ -485,14 +485,17 @@ and expr_ env heap x =
      let obj = Vobject SMap.empty in
      let heap, pobj = Ptr.new_val heap obj in
      Var.set env str pobj;
+
      let heap = List.fold_left (fun heap prop  ->
         match prop with
         | Field (pname, _props, e) ->
           stmt env heap (ExprStmt (Assign (ObjAccess (id, pname), e)))
         | FieldSpread _ -> todo_ast (Expr (Obj xs))
      ) heap xs in
+     let heap, obj = Ptr.get heap pobj in
      Var.unset env str;
-     heap, pobj (* TODO: why not obj directly? *)
+     heap, obj
+
   | Arr xs ->
      let str = "*myarr*" in
      let id = mk_id str Local in
@@ -507,7 +510,7 @@ and expr_ env heap x =
           stmt env heap (ExprStmt (Assign (ArrAccess (id, eid), e)))
      ) heap (Common.index_list xs) in
      Var.unset env str;
-     heap, parr (* TODO: why not arr directly? *)
+     heap, arr
 
 
   | Fun (fun_, nopt) -> 
