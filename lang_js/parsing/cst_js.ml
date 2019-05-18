@@ -400,7 +400,7 @@ and func_decl = {
 }
   and parameter_binding =
    | ParamClassic of parameter
-   | ParamPatternTodo
+   | ParamPattern of parameter_pattern
 
   and parameter = {
    p_name: name;
@@ -416,6 +416,12 @@ and func_decl = {
   and default =
   | DNone of tok (* ? *)
   | DSome of tok (* = *) * expr
+  (* es7: *)
+  and parameter_pattern = {
+   ppat: pattern;
+   ppat_type: type_opt;
+   ppat_default: (tok * expr) option;
+  }
 
   and func_kind =
   | Regular
@@ -463,7 +469,7 @@ and var_kind =
 and var_binding = 
  | VarClassic of variable_declaration
  (* es6: *)
- | VarPatternTodo
+ | VarPattern of variable_declaration_pattern
 
 and variable_declaration = {
   v_name: name;
@@ -472,10 +478,18 @@ and variable_declaration = {
   v_type: type_opt;
 }
 
+and variable_declaration_pattern = {
+  vpat: pattern;
+  vpat_init: (tok (*=*) * expr) option; (* None only when inside ForOf *)
+  (* typing-ext: *)
+  vpat_type: type_opt;
+}
+
 (* ------------------------------------------------------------------------- *)
 (* Pattern (destructuring binding) *)
 (* ------------------------------------------------------------------------- *)
-(* es6: TODO see VarPatternTodo *)
+(* es7?: *)
+and pattern = unit
 
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)

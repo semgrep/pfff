@@ -341,7 +341,7 @@ variable_declaration:
  | identifier annotation_opt initializeur_opt
      { VarClassic { v_name = $1; v_type = $2; v_init = $3 } }
  | binding_pattern annotation_opt initializeur
-     { VarPatternTodo }
+     { VarPattern { vpat = $1; vpat_type = $2; vpat_init = Some $3 } }
 
 initializeur:
  | T_ASSIGN assignment_expression { $1, $2 }
@@ -360,7 +360,7 @@ variable_declaration_no_in:
  | identifier
      { VarClassic { v_name = $1; v_init = None; v_type = None } }
  | binding_pattern initializer_no_in
-     { VarPatternTodo }
+     { VarPattern { vpat = $1; vpat_init = Some $2; vpat_type = None } }
 
 /*(* 'for ... in' and 'for ... of' declare only one variable *)*/
 for_single_variable_decl:
@@ -373,7 +373,7 @@ for_binding:
  | identifier annotation_opt 
    { VarClassic { v_name = $1; v_type = $2; v_init = None; } }
  | binding_pattern 
-   { VarPatternTodo }
+   { VarPattern { vpat = $1; vpat_type = None; vpat_init = None } }
 
 /*(*----------------------------*)*/
 /*(*2 pattern *)*/
@@ -479,7 +479,8 @@ formal_parameter:
     { let (tok,e) = $2 in ParamClassic 
       { (mk_param $1) with p_default = Some(DSome(tok,e)); } }
   /*(* until here this is mostly equivalent to the 'binding_element' rule *)*/
-  | binding_pattern annotation_opt initializeur_opt { ParamPatternTodo }
+  | binding_pattern annotation_opt initializeur_opt 
+    { ParamPattern { ppat = $1; ppat_type = $2; ppat_default = $3 } }
 
  /*(* es6: spread *)*/
  | T_DOTS identifier 

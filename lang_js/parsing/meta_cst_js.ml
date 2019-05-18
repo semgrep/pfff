@@ -577,7 +577,7 @@ and vof_parameter_binding =
   function
   | ParamClassic v1 ->
       let v1 = vof_parameter v1 in Ocaml.VSum (("ParamClassic", [ v1 ]))
-  | ParamPatternTodo -> Ocaml.VSum (("ParamPatternTodo", []))
+  | ParamPattern _ -> Ocaml.VSum (("ParamPatternTodo", []))
 
 and vof_parameter { p_name = v_p_name; p_type = v_p_type; p_default = v_default;
   p_dots = v_dots } =
@@ -647,7 +647,7 @@ and vof_var_binding =
   | VarClassic v1 ->
       let v1 = vof_variable_declaration v1
       in Ocaml.VSum (("VarClassic", [ v1 ]))
-  | VarPatternTodo -> Ocaml.VSum (("VarPatternTodo", []))
+  | VarPattern _ -> Ocaml.VSum (("VarPatternTodo", []))
 and vof_variable_declaration {
                              v_name = v_v_name;
                              v_init = v_v_init;

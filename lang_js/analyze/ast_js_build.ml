@@ -563,7 +563,7 @@ and encaps env = function
 (* ------------------------------------------------------------------------- *)
 and var_binding env vkind = function
   | C.VarClassic x -> variable_declaration env vkind x
-  | C.VarPatternTodo -> raise Todo
+  | C.VarPattern _ -> raise Todo
 
 and variable_declaration env vkind x =
   let n = name env x.C.v_name in
@@ -600,7 +600,7 @@ and func_kind _env = function
 
 and parameter_binding env = function
  | C.ParamClassic p -> parameter env p
- | C.ParamPatternTodo -> raise Todo
+ | C.ParamPattern _ -> raise Todo
 
 and parameter env p =
   let name = name env p.C.p_name in

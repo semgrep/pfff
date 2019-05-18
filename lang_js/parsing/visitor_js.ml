@@ -554,7 +554,7 @@ and  v_func_decl {
 and v_parameter_binding =
   function
   | ParamClassic v1 -> let v1 = v_parameter v1 in ()
-  | ParamPatternTodo -> ()
+  | ParamPattern _ -> ()
 
 and v_parameter { p_name = v_p_name; p_type = v_p_type; p_default; p_dots } =
   let arg = v_option v_default p_default in
@@ -585,7 +585,7 @@ and v_var_kind = function | Var -> () | Const -> () | Let -> ()
 and v_var_binding =
   function
   | VarClassic v1 -> let v1 = v_variable_declaration v1 in ()
-  | VarPatternTodo -> ()
+  | VarPattern _ -> ()
 
 and v_variable_declaration {
                            v_name = v_v_name;
