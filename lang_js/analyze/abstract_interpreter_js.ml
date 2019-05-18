@@ -620,10 +620,11 @@ and lvalue env heap x =
   | ArrAccess (e1, e2) ->
      let heap, parr = lvalue env heap e1 in
      let heap, arr = Ptr.get heap parr in
-     let heap, v = expr env heap e2 in
+     let heap, _v = expr env heap e2 in
+     (* todo: should look at v if a Vint or Tint  or a Vstring! *)
      (match arr with 
      | Varray ptr -> 
-        assign env heap ptr v
+       heap, ptr
      | _ -> failwith (spf "lvalue:ArrAccess not a Varray %s"
                        (Env.string_of_value heap arr))
      )
