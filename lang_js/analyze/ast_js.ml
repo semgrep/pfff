@@ -89,14 +89,17 @@ type special =
 
   (* Special vars *)
   | This | Super
+  (* CommonJS *)
+  | Exports | Module
 
   (* Special apply *)
   | New | NewTarget
   | Eval (* builtin not in grammar *)
-  (* todo? | Require | Import *)
-  | Seq
+  (* CommonJS *)
+  | Require
+  | Seq | Void
   | Typeof | Instanceof
-  | In | Delete | Void 
+  | In | Delete 
   | Spread
   | Yield | YieldStar | Await
   | Encaps of name option (* less: resolve? *)

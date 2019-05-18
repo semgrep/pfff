@@ -85,6 +85,12 @@ let first_tok_of_item x =
 let s_of_n n = 
   Ast_js.str_of_name n
 
+(*
+let is_local env n =
+  let s = s_of_n n in
+  List.mem_assoc s env.locals || Hashtbl.mem env.vars s
+*)
+
 (* copy-paste of Graph_code_js.add_locals mostly *)
 let add_locals env vs = 
   let locals = vs |> Common.map_filter (fun v ->
@@ -368,21 +374,28 @@ and stmt1_item_list env items =
 and expr env = function
   | C.L x -> literal env x
   | C.V (s, tok) -> 
-     (match s with
-     | "eval" -> A.IdSpecial (A.Eval, tok)
-     | "undefined" -> A.IdSpecial (A.Undefined, tok)
-     (* todo? require? import? *)
-     | _ -> 
-         let resolved = 
-           try
-             (List.assoc s env.locals)
-           with Not_found ->
-             if Hashtbl.mem env.vars s
-             then A.Local
-             else A.NotResolved
-         in
+      let resolved = 
+        try
+          (List.assoc s env.locals)
+        with Not_found ->
+         if Hashtbl.mem env.vars s
+         then A.Local
+         else A.NotResolved
+      in
+      (match resolved with
+      | A.Local | A.Param -> 
          A.Id ((s, tok), ref resolved)
-     )
+      | A.NotResolved | A.Global _ ->
+        (match s with
+        | "eval" -> A.IdSpecial (A.Eval, tok)
+        | "undefined" -> A.IdSpecial (A.Undefined, tok)
+        | "require"   -> A.IdSpecial (A.Require, tok)
+        | "exports"   -> A.IdSpecial (A.Exports, tok)
+        | "module"   -> A.IdSpecial (A.Module, tok)
+        | _ -> A.Id ((s, tok), ref resolved)
+        )
+      )
+      
   | C.This tok -> A.IdSpecial (A.This, tok)
   | C.Super tok -> A.IdSpecial (A.Super, tok)
  

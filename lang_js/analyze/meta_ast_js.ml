@@ -3,7 +3,10 @@
 
 open Ast_js
 
-let rec vof_tok v = Parse_info.vof_info v
+let rec vof_tok _v = 
+ (* Parse_info.vof_info v *)
+ Ocaml.VUnit
+
 and vof_wrap _of_a (v1, v2) =
   let v1 = _of_a v1 
   and _v2 = vof_tok v2 in 
@@ -26,6 +29,9 @@ let vof_special =
   | Undefined -> Ocaml.VSum (("Undefined", []))
   | This -> Ocaml.VSum (("This", []))
   | Super -> Ocaml.VSum (("Super", []))
+  | Require -> Ocaml.VSum (("Require", []))
+  | Exports -> Ocaml.VSum (("Exports", []))
+  | Module -> Ocaml.VSum (("Module", []))
   | New -> Ocaml.VSum (("New", []))
   | NewTarget -> Ocaml.VSum (("NewTarget", []))
   | Eval -> Ocaml.VSum (("Eval", []))

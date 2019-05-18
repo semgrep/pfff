@@ -89,6 +89,7 @@ let parse file =
   Common.memoized _hmemo file (fun () ->
     try 
       let cst = Parse_js.parse_program file in
+      (* far easier representation to work on than the CST *)
       Ast_js_build.program cst
     with
     | Timeout -> raise Timeout
