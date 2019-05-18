@@ -58,98 +58,19 @@ and v_tok v = v_info v
 
 and v_wrap: 'a. ('a -> unit) -> 'a wrap -> unit = fun _of_a (v1, v2) ->
   let v1 = _of_a v1 and v2 = v_info v2 in ()
-
 and v_angle: 'a. ('a -> unit) -> 'a angle -> unit = fun _of_a (v1, v2, v3) ->
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
-and v_angle2 _of_a (v1, v2, v3) =
-  let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
-
-and v_wrap2 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
-and v_wrap3 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
-and v_wrap4 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
-and v_wrap5 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
-and v_wrap6 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
-and v_wrap7 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
-and v_wrap8 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
-and v_wrap9 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
-and v_wrap10 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
-and v_wrap11 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
-
-
 and v_paren: 'a. ('a -> unit) -> 'a paren -> unit = fun _of_a (v1, v2, v3) ->
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
-
-and v_paren2 _of_a (v1, v2, v3) =
-  let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
-and v_paren3 _of_a (v1, v2, v3) =
-  let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
-and v_paren4 _of_a (v1, v2, v3) =
-  let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
-and v_paren5 _of_a (v1, v2, v3) =
-  let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
-and v_paren6 _of_a (v1, v2, v3) =
-  let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
-and v_paren7 _of_a (v1, v2, v3) =
-  let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
-and v_paren8 _of_a (v1, v2, v3) =
-  let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
-and v_paren9 _of_a (v1, v2, v3) =
-  let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
-and v_paren10 _of_a (v1, v2, v3) =
-  let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
-
-
 and v_brace: 'a. ('a -> unit) -> 'a brace -> unit = fun _of_a (v1, v2, v3) ->
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
-
-and v_brace2 _of_a (v1, v2, v3) =
-  let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
-and v_brace3 _of_a (v1, v2, v3) =
-  let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
-and v_brace4 _of_a (v1, v2, v3) =
-  let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
-and v_brace5 _of_a (v1, v2, v3) =
-  let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
-and v_brace6 _of_a (v1, v2, v3) =
-  let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
-
 and v_bracket: 'a. ('a -> unit) -> 'a bracket -> unit = fun _of_a (v1, v2, v3)->
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
-
 
 and v_comma x = v_tok x
 
 and v_comma_list: 'a. ('a -> unit) -> 'a comma_list -> unit = fun _of_a xs ->
   xs +> List.iter (function | Left x -> _of_a x | Right info -> v_comma info)
-
-
-and v_comma_list2 _of_a xs =
-  xs +> List.iter (function | Left x -> _of_a x | Right info -> v_comma info)
-
-and v_comma_list3 _of_a xs =
-  xs +> List.iter (function | Left x -> _of_a x | Right info -> v_comma info)
-
-and v_comma_list4 _of_a xs =
-  xs +> List.iter (function | Left x -> _of_a x | Right info -> v_comma info)
-
-and v_comma_list5 _of_a xs =
-  xs +> List.iter (function | Left x -> _of_a x | Right info -> v_comma info)
-
-and v_comma_list6 _of_a xs =
-  xs +> List.iter (function | Left x -> _of_a x | Right info -> v_comma info)
-
-and v_comma_list7 _of_a xs =
-  xs +> List.iter (function | Left x -> _of_a x | Right info -> v_comma info)
-
-and v_comma_list8 _of_a xs =
-  xs +> List.iter (function | Left x -> _of_a x | Right info -> v_comma info)
-
-and v_comma_list9 _of_a xs =
-  xs +> List.iter (function | Left x -> _of_a x | Right info -> v_comma info)
-
-and v_comma_list10 _of_a xs =
-  xs +> List.iter (function | Left x -> _of_a x | Right info -> v_comma info)
-
 
 and v_sc v = v_option v_tok v
 
@@ -165,9 +86,9 @@ and v_expr (x: expr) =
   | Super v1 -> let v1 = v_tok v1 in ()
   | NewTarget ((v1, v2, v3)) ->
       let v1 = v_tok v1 and v2 = v_tok v2 and v3 = v_tok v3 in ()
-  | U ((v1, v2)) -> let v1 = v_wrap2 v_unop v1 and v2 = v_expr v2 in ()
+  | U ((v1, v2)) -> let v1 = v_wrap v_unop v1 and v2 = v_expr v2 in ()
   | B ((v1, v2, v3)) ->
-      let v1 = v_expr v1 and v2 = v_wrap3 v_binop v2 and v3 = v_expr v3 in ()
+      let v1 = v_expr v1 and v2 = v_wrap v_binop v2 and v3 = v_expr v3 in ()
   | Bracket ((v1, v2)) ->
       let v1 = v_expr v1 and v2 = v_bracket v_expr v2 in ()
   | Period ((v1, v2, v3)) ->
@@ -180,9 +101,9 @@ and v_expr (x: expr) =
              )
           v1
       in ()
-  | Array v1 -> let v1 = v_bracket (v_comma_list2 v_expr) v1 in ()
+  | Array v1 -> let v1 = v_bracket (v_comma_list v_expr) v1 in ()
   | Apply ((v1, v2)) ->
-      let v1 = v_expr v1 and v2 = v_paren (v_comma_list2 v_expr) v2 in ()
+      let v1 = v_expr v1 and v2 = v_paren (v_comma_list v_expr) v2 in ()
   | Conditional ((v1, v2, v3, v4, v5)) ->
       let v1 = v_expr v1
       and v2 = v_tok v2
@@ -192,7 +113,7 @@ and v_expr (x: expr) =
       in ()
   | Assign ((v1, v2, v3)) ->
       let v1 = v_expr v1
-      and v2 = v_wrap4 v_assignment_operator v2
+      and v2 = v_wrap v_assignment_operator v2
       and v3 = v_expr v3
       in ()
   | Seq ((v1, v2, v3)) ->
@@ -200,7 +121,7 @@ and v_expr (x: expr) =
   | Function v1 -> let v1 = v_func_decl v1 in ()
   | Class v1 -> let v1 = v_class_decl v1 in ()
   | Arrow v1 -> let v1 = v_arrow_func v1 in ()
-  | Paren v1 -> let v1 = v_paren2 v_expr v1 in ()
+  | Paren v1 -> let v1 = v_paren v_expr v1 in ()
   | XhpHtml v1 -> let v1 = v_xhp_html v1 in ()
   | Encaps ((v1, v2, v3, v4)) ->
       let v1 = v_option v_name v1
@@ -240,10 +161,10 @@ and v_property x =
 
 and v_litteral =
   function
-  | Bool v1 -> let v1 = v_wrap5 v_bool v1 in ()
-  | Num v1 -> let v1 = v_wrap6 v_string v1 in ()
-  | String v1 -> let v1 = v_wrap6 v_string v1 in ()
-  | Regexp v1 -> let v1 = v_wrap6 v_string v1 in ()
+  | Bool v1 -> let v1 = v_wrap v_bool v1 in ()
+  | Num v1 -> let v1 = v_wrap v_string v1 in ()
+  | String v1 -> let v1 = v_wrap v_string v1 in ()
+  | Regexp v1 -> let v1 = v_wrap v_string v1 in ()
   | Null v1 -> let v1 = v_tok v1 in ()
 and v_unop =
   function
@@ -353,15 +274,15 @@ and v_st x =
   let k x = match x with
   | VarsDecl ((v1, v2, v3)) ->
       let v1 = v_wrap v_var_kind v1
-      and v2 = v_comma_list3 v_var_binding v2
+      and v2 = v_comma_list v_var_binding v2
       and v3 = v_sc v3
       in ()
-  | Block v1 -> let v1 = v_brace2 (v_list v_item) v1 in ()
+  | Block v1 -> let v1 = v_brace (v_list v_item) v1 in ()
   | Nop v1 -> let v1 = v_sc v1 in ()
   | ExprStmt ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_sc v2 in ()
   | If ((v1, v2, v3, v4)) ->
       let v1 = v_tok v1
-      and v2 = v_paren2 v_expr v2
+      and v2 = v_paren v_expr v2
       and v3 = v_st v3
       and v4 =
         v_option (fun (v1, v2) -> let v1 = v_tok v1 and v2 = v_st v2 in ())
@@ -371,11 +292,11 @@ and v_st x =
       let v1 = v_tok v1
       and v2 = v_st v2
       and v3 = v_tok v3
-      and v4 = v_paren2 v_expr v4
+      and v4 = v_paren v_expr v4
       and v5 = v_sc v5
       in ()
   | While ((v1, v2, v3)) ->
-      let v1 = v_tok v1 and v2 = v_paren2 v_expr v2 and v3 = v_st v3 in ()
+      let v1 = v_tok v1 and v2 = v_paren v_expr v2 and v3 = v_st v3 in ()
   | For ((v1, v2, v3, v4, v5, v6, v7, v8, v9)) ->
       let v1 = v_tok v1
       and v2 = v_tok v2
@@ -407,8 +328,8 @@ and v_st x =
       in ()
   | Switch ((v1, v2, v3)) ->
       let v1 = v_tok v1
-      and v2 = v_paren2 v_expr v2
-      and v3 = v_brace3 (v_list v_case_clause) v3
+      and v2 = v_paren v_expr v2
+      and v3 = v_brace (v_list v_case_clause) v3
       in ()
   | Continue ((v1, v2, v3)) ->
       let v1 = v_tok v1 and v2 = v_option v_label v2 and v3 = v_sc v3 in ()
@@ -417,7 +338,7 @@ and v_st x =
   | Return ((v1, v2, v3)) ->
       let v1 = v_tok v1 and v2 = v_option v_expr v2 and v3 = v_sc v3 in ()
   | With ((v1, v2, v3)) ->
-      let v1 = v_tok v1 and v2 = v_paren2 v_expr v2 and v3 = v_st v3 in ()
+      let v1 = v_tok v1 and v2 = v_paren v_expr v2 and v3 = v_st v3 in ()
   | Labeled ((v1, v2, v3)) ->
       let v1 = v_label v1 and v2 = v_tok v2 and v3 = v_st v3 in ()
   | Throw ((v1, v2, v3)) ->
@@ -429,7 +350,7 @@ and v_st x =
         v_option
           (fun (v1, v2, v3) ->
              let v1 = v_tok v1
-             and v2 = v_paren3 v_arg v2
+             and v2 = v_paren v_arg v2
              and v3 = v_st v3
              in ())
           v3
@@ -446,7 +367,7 @@ and v_lhs_or_vars =
   | LHS1 v1 -> let v1 = v_expr v1 in ()
   | ForVars ((v1, v2)) ->
       let v1 = v_wrap v_var_kind v1 
-      and v2 = v_comma_list3 v_var_binding v2 
+      and v2 = v_comma_list v_var_binding v2 
       in ()
 and v_lhs_or_var =
   function
