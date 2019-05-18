@@ -16,6 +16,7 @@ open Common
 
 module E = Entity_code
 module G = Graph_code
+module PI = Parse_info
 
 open Ast_js
 module Ast = Ast_js
@@ -105,6 +106,9 @@ let error s tok =
 
 let s_of_n n = 
   Ast.str_of_name n
+
+let pos_of_tok tok file =
+  { (Parse_info.token_location_of_info tok) with PI.file }
 
 (*****************************************************************************)
 (* File resolution *)
@@ -210,7 +214,7 @@ let add_node_and_edge_if_defs_mode env (name, kind) =
     | _ ->
       (* try but should never happen, see comment below *)
       try
-        let pos = Parse_info.token_location_of_info (snd name) in
+        let pos = pos_of_tok (snd name) env.file_readable in
         let nodeinfo = { Graph_code. pos; typ = None; props = []; } in
         env.g |> G.add_node node;
         env.g |> G.add_edge (env.current, node) G.Has;
