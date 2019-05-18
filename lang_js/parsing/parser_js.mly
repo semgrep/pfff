@@ -380,12 +380,14 @@ for_binding:
 /*(*----------------------------*)*/
 
 binding_pattern:
- | object_binding_pattern { }
- | array_binding_pattern { }
+ | object_binding_pattern { $1 }
+ | array_binding_pattern { $1 }
 
 object_binding_pattern:
- | T_LCURLY T_RCURLY { }
- | T_LCURLY binding_property_list trailing_comma  T_RCURLY { }
+ | T_LCURLY T_RCURLY 
+    { PatObj ($1, [], $2)  }
+ | T_LCURLY binding_property_list trailing_comma5  T_RCURLY 
+    { PatObj ($1, $2 @ $3, $4) }
 
 binding_property_list:
  | binding_property                                { [Left $1]  }
@@ -393,31 +395,32 @@ binding_property_list:
 
 
 binding_property:
- | binding_identifier initializeur_opt { }
- | property_name T_COLON binding_element { }
+ | binding_identifier initializeur_opt   { PatId ($1, $2) }
+ | property_name T_COLON binding_element { PatProp ($1, $2, $3) }
  /*(* can appear only at the end of a binding_property_list in ECMA *)*/
- | T_DOTS binding_identifier { }
- | T_DOTS binding_pattern { }
+ | T_DOTS binding_identifier { PatDots ($1, PatId ($2, None)) }
+ | T_DOTS binding_pattern    { PatDots ($1, PatNest ($2, None)) }
 
 /*(* in theory used also for formal parameter as is *)*/
 binding_element:
- | binding_identifier initializeur_opt { }
- | binding_pattern initializeur_opt { }
+ | binding_identifier initializeur_opt { PatId ($1, $2) }
+ | binding_pattern initializeur_opt    { PatNest ($1, $2) }
 
 
 array_binding_pattern:
- | T_LBRACKET binding_element_list T_RBRACKET { }
+ | T_LBRACKET binding_element_list T_RBRACKET { PatArr ($1, $2, $3) }
 
 binding_element_list:
- | binding_elision_element { }
- | binding_element_list T_COMMA binding_elision_element { }
+ | binding_elision_element { $1 }
+ | binding_element_list T_COMMA binding_elision_element 
+    {  $1 @ [Right $2] @ $3 }
 
 binding_elision_element:
- |         binding_element { }
- | elision binding_element { }
+ |         binding_element { [Left $1] }
+ | elision2 binding_element { $1 @ [Left $2] }
  /*(* can appear only at the end of a binding_property_list in ECMA *)*/
- | T_DOTS binding_identifier { }
- | T_DOTS binding_pattern { }
+ | T_DOTS binding_identifier { [Left (PatDots ($1, PatId ($2, None)))] }
+ | T_DOTS binding_pattern    { [Left (PatDots ($1, PatNest ($2, None)))] }
 
 /*(*************************************************************************)*/
 /*(*1 Function declarations (and expressions) *)*/
@@ -1565,6 +1568,10 @@ elision:
  | T_COMMA { [Right $1] }
  | elision T_COMMA { $1 @ [Right $2] }
 
+elision2:
+ | T_COMMA { [Right $1] }
+ | elision2 T_COMMA { $1 @ [Right $2] }
+
 /*(* es6: in object literals *)*/
 trailing_comma:
  | /*(*empty*)*/ { [] }
@@ -1578,6 +1585,10 @@ trailing_comma3:
  | T_COMMA { [Right $1] }
 /*(* typescript: enums *)*/
 trailing_comma4:
+ | /*(*empty*)*/ { [] }
+ | T_COMMA { [Right $1] }
+/*(* in patterns *)*/
+trailing_comma5:
  | /*(*empty*)*/ { [] }
  | T_COMMA { [Right $1] }
 

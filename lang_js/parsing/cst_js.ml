@@ -473,14 +473,15 @@ and var_binding =
 
 and variable_declaration = {
   v_name: name;
-  v_init: (tok (*=*) * expr) option;
+  v_init: init option;
   (* typing-ext: *)
   v_type: type_opt;
 }
+  and init = (tok (*=*) * expr)
 
 and variable_declaration_pattern = {
   vpat: pattern;
-  vpat_init: (tok (*=*) * expr) option; (* None only when inside ForOf *)
+  vpat_init: init option; (* None only when inside ForOf *)
   (* typing-ext: *)
   vpat_type: type_opt;
 }
@@ -489,7 +490,16 @@ and variable_declaration_pattern = {
 (* Pattern (destructuring binding) *)
 (* ------------------------------------------------------------------------- *)
 (* es7?: *)
-and pattern = unit
+and pattern = 
+  | PatObj of pattern comma_list brace 
+  | PatArr of pattern comma_list bracket
+
+  | PatId of name * init option
+  (* only in PatObj *)
+  | PatProp of property_name * tok (* : *) * pattern
+  | PatDots of tok (* ... *) * pattern
+
+  | PatNest of pattern * init option
 
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)
