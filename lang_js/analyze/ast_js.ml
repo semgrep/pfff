@@ -130,6 +130,7 @@ type property_name =
   | PN of name
   (* especially useful for array objects, but also used for dynamic fields *)
   | PN_Computed of expr
+  (* todo: Prototype *)
 
 (* ------------------------------------------------------------------------- *)
 (* Expressions *)

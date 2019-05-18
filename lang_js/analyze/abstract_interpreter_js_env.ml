@@ -82,10 +82,9 @@ type code_database =
 
 (* The abstract interpreter manipulates "values" *)
 type value =
-  (* Precise values. Maybe useful for Vstring for interprocedural
-   * analysis because people used strings to represent entities.
-   * Maybe also useful for Vint when use ints for array indices
-   * and we want the precise value in the array.
+  (* Precise values. 
+   * Vstring can be useful for Require?
+   * Vint can be useful for?
    *)
   | Vbool   of bool
   | Vint    of int
@@ -111,7 +110,8 @@ type value =
 
   (* A pointer is an int address in the heap. A variable is a pointer
    * to a value. A field is also a pointer to a value. A class is a
-   * pointer to Vobject. An object too.
+   * pointer to Vobject. An object too. By using this intermediate we
+   * can easily change the value of a variable by modifying the heap.
    *)
   | Vptr of int
 
@@ -157,10 +157,10 @@ type value =
    * 
    * TODO, not sure why we get foo() here there too.
    *)
-  | Vobject of value SMap.t
+  | Vobject of value SMap.t (* todo: and special value for prototype? *)
 
   (* try to differentiate the different usage of JS objects *)
-  | Varray of value (* a ptr to a big union representing all the elts *)
+  | Varray of value (* value is a ptr to a union representing all the elts *)
   (* Vrecord of value SMap.t *)
 
   (* TODO still valid comment?
@@ -205,7 +205,7 @@ type value =
 
   and type_ =
     | Tbool
-    | Tnum (* merge ot Tint and Tfloat *)
+    | Tnum (* merge of Tint and Tfloat *)
     | Tstring
 
 (* this could be one field of env too, close to .vars and .globals *)
