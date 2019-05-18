@@ -446,8 +446,10 @@ and expr_ env heap x =
       heap, v
 
   (* build a method with this correctly binded *)
+(* TODO
   | Assign (ObjAccess(_e,_fld), Fun (_fun_, _nopt)) ->
      todo_ast (Expr x)
+*)
 
   (* code for x = ..., o->fld = ..., etc *)
   | Assign (e1, e2) ->
