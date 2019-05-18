@@ -1,4 +1,3 @@
-
 (* returns a futur *)
 val invoke : 
   ('a -> 'b) -> 'a ->
@@ -13,3 +12,6 @@ type 'a jobs = ('a job) list
 val map_jobs: tasks:int -> 'a jobs -> 'a list
 (* This will create (tasks) forks *)
 val map_batch_jobs: tasks:int -> 'a jobs -> 'a list
+
+(* this helps debug exceptions in the invoked function *)
+val backtrace_when_exn: bool ref

@@ -24,6 +24,11 @@ open Common
  *)
 
 (*****************************************************************************)
+(* Globals *)
+(*****************************************************************************)
+let backtrace_when_exn = ref true
+
+(*****************************************************************************)
 (* Building block *)
 (*****************************************************************************)
 
@@ -41,7 +46,17 @@ let invoke2 f x =
   | 0 ->
       Unix.close input;
       let output = Unix.out_channel_of_descr output in
-      Marshal.to_channel output (try `Res(f x) with e -> `Exn e) [];
+      Marshal.to_channel output 
+          (try `Res(f x) 
+           with e -> 
+              if !backtrace_when_exn
+              then begin
+                let backtrace = Printexc.get_backtrace () in
+                pr2 (spf "Exception in invoked func: %s" (Common.exn_to_s e));
+                pr2 backtrace;
+              end;
+             `Exn e
+          ) [];
       close_out output;
       exit 0
   (* parent *)

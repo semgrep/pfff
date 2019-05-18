@@ -3,6 +3,7 @@ TOP=../..
 # Variables
 ##############################################################################
 TARGET=lib
+OPAMPKG=pfff-lang_js-analyze
 
 SRC= \
   ast_js.ml meta_ast_js.ml visitor_ast_js.ml ast_js_build.ml \

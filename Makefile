@@ -458,6 +458,7 @@ INSTALL_SUBDIRS= \
   lang_ml/parsing  lang_ml/analyze/visual \
   lang_cpp/parsing lang_cpp/analyze \
   lang_nw/parsing  lang_nw/analyze\
+  lang_js/parsing  lang_js/analyze\
 
 #TODO:
 #  lang_php/analyze lang_php/matcher lang_php/parsing  lang_php/pretty \
