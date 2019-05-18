@@ -577,7 +577,29 @@ and vof_parameter_binding =
   function
   | ParamClassic v1 ->
       let v1 = vof_parameter v1 in Ocaml.VSum (("ParamClassic", [ v1 ]))
-  | ParamPattern _ -> Ocaml.VSum (("ParamPatternTodo", []))
+  | ParamPattern v1 ->
+      let v1 = vof_parameter_pattern v1
+      in Ocaml.VSum (("ParamPattern", [ v1 ]))
+
+and
+  vof_parameter_pattern {
+                          ppat = v_ppat;
+                          ppat_type = v_ppat_type;
+                          ppat_default = v_ppat_default
+                        } =
+  let bnds = [] in
+  let arg =
+    Ocaml.vof_option
+      (fun (v1, v2) ->
+         let v1 = vof_tok v1 and v2 = vof_expr v2 in Ocaml.VTuple [ v1; v2 ])
+      v_ppat_default in
+  let bnd = ("ppat_default", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_type_opt v_ppat_type in
+  let bnd = ("ppat_type", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_pattern v_ppat in
+  let bnd = ("ppat", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
 
 and vof_parameter { p_name = v_p_name; p_type = v_p_type; p_default = v_default;
   p_dots = v_dots } =
@@ -647,7 +669,55 @@ and vof_var_binding =
   | VarClassic v1 ->
       let v1 = vof_variable_declaration v1
       in Ocaml.VSum (("VarClassic", [ v1 ]))
-  | VarPattern _ -> Ocaml.VSum (("VarPatternTodo", []))
+  | VarPattern v1 ->
+      let v1 = vof_variable_declaration_pattern v1
+      in Ocaml.VSum (("VarPattern", [ v1 ]))
+
+and
+  vof_variable_declaration_pattern {
+                                     vpat = v_vpat;
+                                     vpat_init = v_vpat_init;
+                                     vpat_type = v_vpat_type
+                                   } =
+  let bnds = [] in
+  let arg = vof_type_opt v_vpat_type in
+  let bnd = ("vpat_type", arg) in
+  let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_option vof_init v_vpat_init in
+  let bnd = ("vpat_init", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_pattern v_vpat in
+  let bnd = ("vpat", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+
+and vof_init (v1, v2) =
+  let v1 = vof_tok v1 and v2 = vof_expr v2 in Ocaml.VTuple [ v1; v2 ]
+
+and vof_pattern =
+  function
+  | PatObj v1 ->
+      let v1 = vof_brace (vof_comma_list vof_pattern) v1
+      in Ocaml.VSum (("PatObj", [ v1 ]))
+  | PatArr v1 ->
+      let v1 = vof_bracket (vof_comma_list vof_pattern) v1
+      in Ocaml.VSum (("PatArr", [ v1 ]))
+  | PatId ((v1, v2)) ->
+      let v1 = vof_name v1
+      and v2 = Ocaml.vof_option vof_init v2
+      in Ocaml.VSum (("PatId", [ v1; v2 ]))
+  | PatProp ((v1, v2, v3)) ->
+      let v1 = vof_property_name v1
+      and v2 = vof_tok v2
+      and v3 = vof_pattern v3
+      in Ocaml.VSum (("PatProp", [ v1; v2; v3 ]))
+  | PatDots ((v1, v2)) ->
+      let v1 = vof_tok v1
+      and v2 = vof_pattern v2
+      in Ocaml.VSum (("PatDots", [ v1; v2 ]))
+  | PatNest ((v1, v2)) ->
+      let v1 = vof_pattern v1
+      and v2 = Ocaml.vof_option vof_init v2
+      in Ocaml.VSum (("PatNest", [ v1; v2 ]))
+
 and vof_variable_declaration {
                              v_name = v_v_name;
                              v_init = v_v_init;

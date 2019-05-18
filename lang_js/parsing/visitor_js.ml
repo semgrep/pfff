@@ -78,6 +78,7 @@ and v_wrap11 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
 
 and v_paren: 'a. ('a -> unit) -> 'a paren -> unit = fun _of_a (v1, v2, v3) ->
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
+
 and v_paren2 _of_a (v1, v2, v3) =
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
 and v_paren3 _of_a (v1, v2, v3) =
@@ -112,9 +113,7 @@ and v_brace5 _of_a (v1, v2, v3) =
 and v_brace6 _of_a (v1, v2, v3) =
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
 
-and v_bracket _of_a (v1, v2, v3) =
-  let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
-and v_bracket2 _of_a (v1, v2, v3) =
+and v_bracket: 'a. ('a -> unit) -> 'a bracket -> unit = fun _of_a (v1, v2, v3)->
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
 
 
@@ -181,7 +180,7 @@ and v_expr (x: expr) =
              )
           v1
       in ()
-  | Array v1 -> let v1 = v_bracket2 (v_comma_list2 v_expr) v1 in ()
+  | Array v1 -> let v1 = v_bracket (v_comma_list2 v_expr) v1 in ()
   | Apply ((v1, v2)) ->
       let v1 = v_expr v1 and v2 = v_paren (v_comma_list2 v_expr) v2 in ()
   | Conditional ((v1, v2, v3, v4, v5)) ->
@@ -554,7 +553,20 @@ and  v_func_decl {
 and v_parameter_binding =
   function
   | ParamClassic v1 -> let v1 = v_parameter v1 in ()
-  | ParamPattern _ -> ()
+  | ParamPattern v1 -> let v1 = v_parameter_pattern v1 in ()
+and
+  v_parameter_pattern {
+                        ppat = v_ppat;
+                        ppat_type = v_ppat_type;
+                        ppat_default = v_ppat_default
+                      } =
+  let arg = v_pattern v_ppat in
+  let arg = v_type_opt v_ppat_type in
+  let arg =
+    v_option (fun (v1, v2) -> let v1 = v_tok v1 and v2 = v_expr v2 in ())
+      v_ppat_default
+  in ()
+
 
 and v_parameter { p_name = v_p_name; p_type = v_p_type; p_default; p_dots } =
   let arg = v_option v_default p_default in
@@ -585,7 +597,31 @@ and v_var_kind = function | Var -> () | Const -> () | Let -> ()
 and v_var_binding =
   function
   | VarClassic v1 -> let v1 = v_variable_declaration v1 in ()
-  | VarPattern _ -> ()
+  | VarPattern v1 -> let v1 = v_variable_declaration_pattern v1 in ()
+
+and v_init (v1, v2) = let v1 = v_tok v1 and v2 = v_expr v2 in ()
+and
+  v_variable_declaration_pattern {
+                                   vpat = v_vpat;
+                                   vpat_init = v_vpat_init;
+                                   vpat_type = v_vpat_type
+                                 } =
+  let arg = v_pattern v_vpat in
+  let arg = v_option v_init v_vpat_init in
+  let arg = v_type_opt v_vpat_type in ()
+and v_pattern =
+  function
+  | PatObj v1 -> let v1 = v_brace (v_comma_list v_pattern) v1 in ()
+  | PatArr v1 -> let v1 = v_bracket (v_comma_list v_pattern) v1 in ()
+  | PatId ((v1, v2)) -> let v1 = v_name v1 and v2 = v_option v_init v2 in ()
+  | PatProp ((v1, v2, v3)) ->
+      let v1 = v_property_name v1
+      and v2 = v_tok v2
+      and v3 = v_pattern v3
+      in ()
+  | PatDots ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_pattern v2 in ()
+  | PatNest ((v1, v2)) ->
+      let v1 = v_pattern v1 and v2 = v_option v_init v2 in ()
 
 and v_variable_declaration {
                            v_name = v_v_name;
