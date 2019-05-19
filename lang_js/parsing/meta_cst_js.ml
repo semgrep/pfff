@@ -537,42 +537,56 @@ and vof_nominal_type ((v1,v2)) =
   Ocaml.VTuple [ v1; v2 ]
 and vof_type_opt v =
   Ocaml.vof_option vof_annotation v
-and
-  vof_func_decl {
+and vof_func_decl {
                   f_kind = v_f_kind;
-                  f_tok = v_f_tok;
-                  f_name = v_f_name;
+                  f_properties = v_f_properties;
                   f_params = v_f_params;
+                  f_body = v_f_body;
                   f_type_params = v_f_type_params;
-                  f_return_type = v_f_return_type;
-                  f_body = v_f_body
+                  f_return_type = v_f_return_type
                 } =
   let bnds = [] in
-  let arg = vof_brace (Ocaml.vof_list vof_item) v_f_body in
-  let bnd = ("f_body", arg) in
-  let bnds = bnd :: bnds in
   let arg = vof_type_opt v_f_return_type in
   let bnd = ("f_return_type", arg) in
   let bnds = bnd :: bnds in
-  let arg =
-    Ocaml.vof_option
-      (vof_angle (vof_comma_list vof_name)) v_f_type_params
-  in
+  let arg = Ocaml.vof_option vof_type_parameters v_f_type_params in
   let bnd = ("f_type_params", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_brace (Ocaml.vof_list vof_item) v_f_body in
+  let bnd = ("f_body", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_paren (vof_comma_list vof_parameter_binding) v_f_params in
   let bnd = ("f_params", arg) in
   let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_option vof_name v_f_name in
-  let bnd = ("f_name", arg) in
-  let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_option vof_tok v_f_tok in
-  let bnd = ("f_tok", arg) in
+  let arg = Ocaml.vof_list vof_func_property v_f_properties in
+  let bnd = ("f_properties", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_func_kind v_f_kind in
-  let bnd = ("f_kind", arg) in 
-  let bnds = bnd :: bnds in
-  Ocaml.VDict bnds
+  let bnd = ("f_kind", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+
+and vof_type_parameters v = vof_angle (vof_comma_list vof_type_parameter) v
+and vof_type_parameter v = vof_name v
+
+and vof_func_kind =
+  function
+  | F_func ((v1, v2)) ->
+      let v1 = vof_tok v1
+      and v2 = Ocaml.vof_option vof_name v2
+      in Ocaml.VSum (("F_func", [ v1; v2 ]))
+  | F_method v1 ->
+      let v1 = vof_property_name v1 in Ocaml.VSum (("F_method", [ v1 ]))
+  | F_get ((v1, v2)) ->
+      let v1 = vof_tok v1
+      and v2 = vof_property_name v2
+      in Ocaml.VSum (("F_get", [ v1; v2 ]))
+  | F_set ((v1, v2)) ->
+      let v1 = vof_tok v1
+      and v2 = vof_property_name v2
+      in Ocaml.VSum (("F_set", [ v1; v2 ]))
+and vof_func_property =
+  function
+  | Generator v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Generator", [ v1 ]))
+  | Async v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Async", [ v1 ]))
 and vof_parameter_binding =
   function
   | ParamClassic v1 ->
@@ -620,14 +634,6 @@ and vof_parameter { p_name = v_p_name; p_type = v_p_type; p_default = v_default;
 and vof_default = function
   | DNone (v1) -> let v1 = vof_tok v1 in Ocaml.VSum (("DNone", [v1]))
   | DSome (v1,v2) -> let v1 = vof_tok v1 and v2 = vof_expr v2 in Ocaml.VSum (("DSome", [v1; v2]))
-
-and vof_func_kind =
-  function
-  | Regular -> Ocaml.VSum (("Regular", []))
-  | Get v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Get", [ v1 ]))
-  | Set v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Set", [ v1 ]))
-  | Async v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Async", [ v1 ]))
-  | Generator v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Generator", [ v1 ]))
 
 and
   vof_arrow_func { a_params = v_a_params; a_return_type = v_a_return_type;
@@ -803,18 +809,18 @@ and  vof_interface_decl {
 
 and vof_class_stmt =
   function
-  | ClassTodo -> Ocaml.VSum (("ClassTodo", []))
-  | Field ((v1, v2, v3)) ->
+  | C_todo -> Ocaml.VSum (("C_todo", []))
+  | C_field ((v1, v2, v3)) ->
       let v1 = vof_name v1
       and v2 = vof_annotation v2
       and v3 = vof_sc v3
-      in Ocaml.VSum (("Field", [ v1; v2; v3 ]))
-  | Method ((v1, v2)) ->
+      in Ocaml.VSum (("C_field", [ v1; v2; v3 ]))
+  | C_method ((v1, v2)) ->
       let v1 = Ocaml.vof_option vof_tok v1
       and v2 = vof_func_decl v2
-      in Ocaml.VSum (("Method", [ v1; v2 ]))
-  | ClassExtraSemiColon v1 ->
-      let v1 = vof_sc v1 in Ocaml.VSum (("ClassExtraSemiColon", [ v1 ]))
+      in Ocaml.VSum (("C_method", [ v1; v2 ]))
+  | C_extrasemicolon v1 ->
+      let v1 = vof_sc v1 in Ocaml.VSum (("C_extrasemicolon", [ v1 ]))
 
 and vof_import =
   function

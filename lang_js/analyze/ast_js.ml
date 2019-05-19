@@ -230,6 +230,7 @@ and class_ = {
 }
 
   and property = 
+    (* expr is a Fun for methods *)
     | Field of property_name * property_prop list * expr
     (* less: can unsugar? *)
     | FieldSpread of expr

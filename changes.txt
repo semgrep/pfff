@@ -4,8 +4,8 @@
 
 ** javascript
 
-*** handle most ES6 features, a few ES7-ES9 featues
-and handle far more code. Far more robust Javascript parser.
+*** update parser to handle ES6 features, and a few ES7-ES9 features
+handle far more code. Far more robust Javascript parser.
 
 *** partial support for Typescript
 
@@ -15,9 +15,13 @@ and by using a fix_token parsing hack strategy when needed.
 
 *** a real abstract syntax tree with simplified Javascript code
 
-*** basic codegraph for toplevel entities
+*** basic codegraph for toplevel entities handling JS modules
+TODO handle CommonJS modules
 
-*** AST-based highliter
+*** AST-based highlighter with different colors for locals, params
+and globals 
+
+*** basic abstract interpreter with taint tracking
 
 ** TODO new release on OPAM
 (I need some of the new code from pfff in efuns,

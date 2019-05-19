@@ -28,7 +28,7 @@
  * 
  * I heavily extended the grammar to provide the first parser for Flow.
  * I extended it also to deal with many new Javascript features
- * (see ast_js.ml top comment). 
+ * (see cst_js.ml top comment). 
  *
  * The grammar is close to the ECMA grammar but I simplified things 
  * when I could:
@@ -49,6 +49,9 @@ let bop op a b c = B(a, (op, b), c)
 let uop op a b = U((op,a), b)
 let mk_param x = 
   { p_name = x; p_type = None; p_default = None; p_dots = None; }
+let mk_func_decl kind props (t, ps, rt) (lc, xs, rc) = 
+  { f_kind = kind; f_params= ps; f_body = (lc, xs, rc);
+    f_type_params = t; f_return_type = rt; f_properties = props }
 
 (* for missing closing > for generics *)
 let fake_tok s = {
@@ -432,20 +435,12 @@ binding_elision_element:
    *)*/
 function_declaration:
  T_FUNCTION identifier_opt call_signature T_LCURLY function_body T_RCURLY
-     { let (t, ps, rt) = $3 in
-       { f_kind = Regular; f_tok = Some $1; f_name= $2; 
-         f_params= ps; f_body = ($4, $5, $6);
-         f_type_params = t; f_return_type = rt;
-       } }
+     { mk_func_decl (F_func ($1, $2)) [] $3 ($4, $5, $6) }
 
 /*(* the identifier is really optional here *)*/
 function_expression:
  T_FUNCTION identifier_opt call_signature  T_LCURLY function_body T_RCURLY
-     { let (t, ps, rt) = $3 in
-       { f_kind = Regular; f_tok = Some $1; f_name= $2; 
-         f_params= ps; f_body = ($4, $5, $6);
-         f_type_params = t; f_return_type = rt;
-       } }
+     { mk_func_decl (F_func ($1, $2)) [] $3 ($4, $5, $6) }
 
 /*(* typescript: *)*/
 call_signature: 
@@ -512,22 +507,12 @@ formal_parameter:
 /*(* TODO: identifier_opt in original grammar, why? *)*/
 generator_declaration:
   T_FUNCTION T_MULT identifier call_signature T_LCURLY function_body T_RCURLY
-     { let (t, ps, rt) = $4 in
-       { f_kind = Generator $2; f_tok = Some $1; f_name= Some $3; 
-         f_params= ps; f_body = ($5, $6, $7);
-         f_type_params = t; f_return_type = rt; 
-       } }
+     { mk_func_decl (F_func ($1, Some $3)) [Generator $2] $4 ($5, $6, $7) }
 
 /*(* the identifier is optional here *)*/
 generator_expression:
- T_FUNCTION T_MULT identifier_opt call_signature  
-  T_LCURLY function_body T_RCURLY
-     { let (t, ps, rt) = $4 in  
-       Function 
-       { f_kind = Generator $2; f_tok = Some $1; f_name= $3; 
-         f_params= ps; f_body = ($5, $6, $7);
-         f_type_params = t; f_return_type = rt; 
-       } }
+ T_FUNCTION T_MULT identifier_opt call_signature T_LCURLY function_body T_RCURLY
+     { mk_func_decl (F_func ($1, $3)) [Generator $2] $4 ($5, $6, $7) }
 
 /*(*----------------------------*)*/
 /*(*2 asynchronous functions *)*/
@@ -535,23 +520,12 @@ generator_expression:
 /*(* TODO: identifier_opt in original grammar, why? *)*/
 async_declaration:
  | T_ASYNC T_FUNCTION identifier call_signature T_LCURLY function_body T_RCURLY
-     { let (t, ps, rt) = $4 in  
-       { f_kind = Async $1; f_tok = Some $2; f_name= Some $3; 
-         f_params= ps; f_body = ($5, $6, $7);
-         f_type_params = t; f_return_type = rt; 
-       } }
+     { mk_func_decl (F_func ($2, Some $3)) [Async $1] $4 ($5, $6, $7) }
 
 /*(* the identifier is optional here *)*/
 async_function_expression:
- | T_ASYNC T_FUNCTION identifier_opt call_signature 
-    T_LCURLY function_body T_RCURLY
-     { let (t, ps, rt) = $4 in  
-       Function 
-       { f_kind = Async $1; f_tok = Some $2; f_name= $3; 
-         f_params= ps; f_body = ($5, $6, $7);
-         f_type_params = t; f_return_type = rt; 
-       } }
-
+ | T_ASYNC T_FUNCTION identifier_opt call_signature T_LCURLY function_body T_RCURLY
+     { mk_func_decl (F_func ($2, $3)) [Async $1] $4 ($5, $6, $7) }
 
 /*(*************************************************************************)*/
 /*(*1 Class declaration *)*/
@@ -590,15 +564,15 @@ class_expression: T_CLASS binding_identifier_opt generics_opt class_tail
 
 /*(* can't factorize with static_opt, or access_modifier_opt; ambiguities*)*/
 class_element:
- |                  method_definition      { Method (None, $1) }
- | access_modifiers method_definition      { Method (None, $2) (* TODO $1 *) } 
+ |                  method_definition      { C_method (None, $1) }
+ | access_modifiers method_definition      { C_method (None, $2) (* TODO $1 *) } 
 
  |                  property_name annotation_opt initializeur_opt semicolon 
-    { ClassTodo }
+    { C_todo }
  | access_modifiers property_name annotation_opt initializeur_opt semicolon 
-    { ClassTodo }
+    { C_todo }
 
- | semicolon                       { ClassExtraSemiColon $1 }
+ | semicolon                       { C_extrasemicolon $1 }
 
 access_modifiers: 
  | access_modifiers access_modifier { }
@@ -619,43 +593,26 @@ access_modifier:
 /*(*2 Method definition (in class or object literal) *)*/
 /*(*----------------------------*)*/
 method_definition:
- | method_name call_signature T_LCURLY function_body T_RCURLY
-  { let (t, ps, rt) = $2 in  
-    { f_kind = Regular; f_tok = None; f_name = Some $1; 
-      f_params= ps; f_body = ($3, $4, $5);
-      f_type_params = t; f_return_type = rt; 
-  } }
+ | property_name call_signature T_LCURLY function_body T_RCURLY
+  { mk_func_decl (F_method $1) [] $2 ($3, $4, $5) }
 
- | T_MULT identifier call_signature T_LCURLY function_body T_RCURLY
-  { let (t, ps, rt) = $3 in  
-    { f_kind = Generator $1; f_tok = None; f_name = Some $2; 
-      f_params= ps; f_body = ($4, $5, $6);
-      f_type_params = t; f_return_type = rt; 
-  } }
-
- | T_GET identifier 
+ | T_MULT property_name call_signature T_LCURLY function_body T_RCURLY
+  { mk_func_decl (F_method $2) [Generator $1] $3 ($4, $5, $6) }
+ /*(* we enforce 0 parameter here *)*/
+ | T_GET property_name
     generics_opt T_LPAREN T_RPAREN annotation_opt
     T_LCURLY function_body T_RCURLY
-  { { f_kind = Get $1; f_tok = None; f_name = Some $2; 
-      f_type_params = $3; f_params = ($4, [], $5);
-      f_return_type = $6; f_body =  ($7, $8, $9);
-  } }
+  { mk_func_decl (F_get ($1, $2)) [] ($3, ($4, [], $5), $6) ($7, $8, $9) }
 
- | T_SET identifier 
+ /*(* we enforce 1 parameter here *)*/
+ | T_SET property_name
     generics_opt  T_LPAREN formal_parameter T_RPAREN annotation_opt
     T_LCURLY function_body T_RCURLY
-  { { f_kind = Set $1; f_tok = None; f_name = Some $2; 
-      f_type_params = $3; f_params = ($4, [Left $5], $6);
-      f_return_type = $7; f_body =  ($8, $9, $10);
-  } }
+  { mk_func_decl (F_set ($1, $2)) [] ($3, ($4, [Left $5], $6), $7) ($8,$9,$10)}
 
  /*(* es7: *)*/
- | T_ASYNC identifier call_signature  T_LCURLY function_body T_RCURLY
-  { let (t, ps, rt) = $3 in  
-    { f_kind = Async $1; f_tok = None; f_name = Some $2; 
-      f_params= ps; f_body = ($4, $5, $6);
-      f_type_params = t; f_return_type = rt; 
-  } }
+ | T_ASYNC property_name call_signature  T_LCURLY function_body T_RCURLY
+  { mk_func_decl (F_method $2) [Async $1] $3 ($4, $5, $6) }
 
 /*(*************************************************************************)*/
 /*(*1 Interface declaration *)*/
@@ -1156,9 +1113,9 @@ primary_expression:
  /*(* es6: *)*/
  | class_expression                { $1 }
  /*(* es6: *)*/
- | generator_expression            { $1 }
+ | generator_expression            { Function $1 }
  /*(* es7: *)*/
- | async_function_expression            { $1 }
+ | async_function_expression       { Function $1 }
 
 
 primary_expression_no_braces:

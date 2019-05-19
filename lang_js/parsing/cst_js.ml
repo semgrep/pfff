@@ -43,7 +43,7 @@ module PI = Parse_info
  *  - let (lexical vars)
  *  - const (immutable declarations)
  *  - get/set (sugar to define getter and setter methods)
- *  - iterators (for ... of )
+ *  - iterators (for ... of and Symbol.iterator special name)
  *  - generators (yield, function* ), which provide a nice syntax 
  *    to define iterators
  *  - optional trailing commas in parameters, arguments, object literals,
@@ -388,16 +388,29 @@ and annotation =
 (* ------------------------------------------------------------------------- *)
 and func_decl = {
   f_kind: func_kind;
-  f_tok: tok option; (* 'function', but None for methods *)
-  (* None for anonymous functions (in expressions or 'export default' decls) *)
-  f_name: name option; 
+  f_properties: func_property list;
+
+  f_params: parameter_binding comma_list paren;
+  f_body: item list brace;
+
   (* typing-ext: *)
   f_type_params: type_parameters option;
-  f_params: parameter_binding comma_list paren;
-  (* typing-ext: *)
   f_return_type: type_opt;
-  f_body: item list brace;
 }
+
+  and func_kind =
+    (* None for anonymous functions (in expressions or 'export default' decl) *)
+    | F_func of tok * name option
+    | F_method of property_name
+    | F_get of tok * property_name
+    | F_set of tok * property_name
+
+  and func_property =
+  (* es6: f_body should contain a 'yield' *)
+  | Generator of tok (* '*', but this token is after f_tok *)
+  (* es7: f_body should contain a 'await' *)
+  | Async of tok
+
   and parameter_binding =
    | ParamClassic of parameter
    | ParamPattern of parameter_pattern
@@ -416,23 +429,13 @@ and func_decl = {
   and default =
   | DNone of tok (* ? *)
   | DSome of tok (* = *) * expr
+
   (* es7: *)
   and parameter_pattern = {
    ppat: pattern;
    ppat_type: type_opt;
    ppat_default: (tok * expr) option;
   }
-
-  and func_kind =
-  | Regular
-  (* es6: *)
-  | Get of tok
-  | Set of tok
-  (* es6: f_body should contain a 'yield' *)
-  | Generator of tok (* '*', but this token is after f_tok *)
-  (* es7: f_body should contain a 'await' *)
-  | Async of tok
-  (* todo: AsyncGenerator of tok * tok *)
 
 (* es6: arrows.
  * note: we could factorize with func_def, but this would require many
@@ -457,34 +460,35 @@ and arrow_func = {
 (* ------------------------------------------------------------------------- *)
 (* Variable definition *)
 (* ------------------------------------------------------------------------- *)
-(* in theory Const and Let can appear only in statement items, not in
- * simple statements (st)
- *)
-and var_kind =
-  | Var 
-  (* es6: *)
-  | Const
-  | Let
 
 and var_binding = 
  | VarClassic of variable_declaration
  (* es6: *)
  | VarPattern of variable_declaration_pattern
 
-and variable_declaration = {
-  v_name: name;
-  v_init: init option;
-  (* typing-ext: *)
-  v_type: type_opt;
-}
-  and init = (tok (*=*) * expr)
+  and variable_declaration = {
+    v_name: name;
+    v_init: init option;
+    (* typing-ext: *)
+    v_type: type_opt;
+  }
+    and init = (tok (*=*) * expr)
 
-and variable_declaration_pattern = {
-  vpat: pattern;
-  vpat_init: init option; (* None only when inside ForOf *)
-  (* typing-ext: *)
-  vpat_type: type_opt;
-}
+  (* in theory Const and Let can appear only in statement items, not in
+   * simple statements (st)
+   *)
+  and var_kind =
+    | Var 
+    (* es6: *)
+    | Const
+    | Let
+
+  and variable_declaration_pattern = {
+    vpat: pattern;
+    vpat_init: init option; (* None only when inside ForOf *)
+    (* typing-ext: *)
+    vpat_type: type_opt;
+  }
 
 (* ------------------------------------------------------------------------- *)
 (* Pattern (destructuring binding) *)
@@ -516,12 +520,12 @@ and class_decl = {
 }
 
   and class_element =
-  | Method of static_opt * func_decl
-  | Field of name * annotation * sc
+  | C_method of static_opt * func_decl
+  | C_field of name * annotation * sc
   (* TODO: es6? FieldAssign of name * tok * expr * sc *)
   (* unparser: *)
-  | ClassExtraSemiColon of sc
-  | ClassTodo
+  | C_extrasemicolon of sc
+  | C_todo
 
   and static_opt = tok option (* static *)
 
@@ -616,7 +620,6 @@ let unwrap = fst
 let unparen (_,x,_) = x
 let unbrace = unparen
 let unbracket = unparen
-
 let uncomma xs = Common.map_filter (function
   | Left e -> Some e
   | Right _info -> None
@@ -650,6 +653,7 @@ let al_info x =
 (* Helpers, could also be put in lib_parsing.ml instead *)
 (*****************************************************************************)
 
+(* used both by Parsing_hacks_js and Parse_js *)
 let fakeInfoAttach info =
   let info = PI.rewrap_str "';' (from ASI)" info in
   let pinfo = PI.token_location_of_info info in

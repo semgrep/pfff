@@ -453,23 +453,34 @@ and v_annotation = function
       and v4 = v_type_ v4
       in ()
 
-and  v_func_decl {
+and
+  v_func_decl {
                 f_kind = v_f_kind;
-                f_tok = v_f_tok;
-                f_name = v_f_name;
+                f_properties = v_f_properties;
                 f_params = v_f_params;
+                f_body = v_f_body;
                 f_type_params = v_f_type_params;
-                f_return_type = v_f_return_type;
-                f_body = v_f_body
+                f_return_type = v_f_return_type
               } =
-
   let arg = v_func_kind v_f_kind in
-  let arg = v_option v_tok v_f_tok in
-  let arg = v_option v_name v_f_name in
+  let arg = v_list v_func_property v_f_properties in
   let arg = v_paren (v_comma_list v_parameter_binding) v_f_params in
-  let arg = v_option (v_angle (v_comma_list v_name)) v_f_type_params in
-  let arg = v_type_opt v_f_return_type in
-  let arg = v_brace (v_list v_item) v_f_body in ()
+  let arg = v_brace (v_list v_item) v_f_body in
+  let arg = v_option v_type_parameters v_f_type_params in
+  let arg = v_type_opt v_f_return_type in ()
+and v_type_parameters v = v_angle (v_comma_list v_type_parameter) v
+and v_type_parameter v = v_name v
+
+and v_func_kind =
+  function
+  | F_func ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_option v_name v2 in ()
+  | F_method v1 -> let v1 = v_property_name v1 in ()
+  | F_get ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_property_name v2 in ()
+  | F_set ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_property_name v2 in ()
+and v_func_property =
+  function
+  | Generator v1 -> let v1 = v_tok v1 in ()
+  | Async v1 -> let v1 = v_tok v1 in ()
 
 and v_parameter_binding =
   function
@@ -587,12 +598,12 @@ and
   ()
 and v_class_stmt =
   function
-  | ClassTodo -> ()
-  | Field ((v1, v2, v3)) ->
+  | C_todo -> ()
+  | C_field ((v1, v2, v3)) ->
       let v1 = v_name v1 and v2 = v_annotation v2 and v3 = v_sc v3 in ()
-  | Method ((v1, v2)) ->
+  | C_method ((v1, v2)) ->
       let v1 = v_option v_tok v1 and v2 = v_func_decl v2 in ()
-  | ClassExtraSemiColon v1 -> let v1 = v_sc v1 in ()
+  | C_extrasemicolon v1 -> let v1 = v_sc v1 in ()
 
 and v_item =
   function
@@ -659,14 +670,6 @@ and v_export =
       in ()
 
         
-and v_func_kind =
-  function
-  | Regular -> ()
-  | Get v1 -> let v1 = v_tok v1 in ()
-  | Set v1 -> let v1 = v_tok v1 in ()
-  | Async v1 -> let v1 = v_tok v1 in ()
-  | Generator v1 -> let v1 = v_tok v1 in ()
-
 and v_module_item =
   function
   | It v1 -> let v1 = v_item v1 in ()
