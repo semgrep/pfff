@@ -207,12 +207,12 @@ and item env = function
   | C.St x -> stmt env x
   | C.FunDecl x -> 
     let fun_ = func_decl env x in
-    (match x.C.f_name with
-    | Some x ->
+    (match x.C.f_kind with
+    | C.F_func (_, Some x) ->
       [A.VarDecl {A.v_name = name env x; v_kind = A.Const; 
                   v_init = A.Fun (fun_, None); v_resolved = not_resolved()}]
-    | None ->
-       raise (UnhandledConstruct ("weird anon func decl", fst3 x.C.f_params))
+    | _ ->
+       raise (UnhandledConstruct ("weird func decl", fst3 x.C.f_params))
     )
   | C.ClassDecl x -> 
     let class_ = class_decl env x in
@@ -436,7 +436,7 @@ and expr env = function
     let e2 = expr env e2 in
     (match op with
     | C.A_eq -> A.Assign (e1, e2)
-    (* todo: should use intermediate? can unsugar like this? *)
+    (* less: should use intermediate? can unsugar like this? *)
     | C.A_add -> A.Assign (e1, A.Apply(A.IdSpecial (A.Plus, tok), [e1;e2]))
     | C.A_sub -> A.Assign (e1, A.Apply(A.IdSpecial (A.Minus, tok), [e1;e2]))
     | C.A_mul -> A.Assign (e1, A.Apply(A.IdSpecial (A.Mul, tok), [e1;e2]))
@@ -455,9 +455,10 @@ and expr env = function
     A.Apply (A.IdSpecial (A.Seq, tok), [e1;e2])
   | C.Function x ->
     let fun_ = func_decl env x in
-    (match x.C.f_name with
-    | None -> A.Fun (fun_, None)
-    | Some n -> A.Fun (fun_, Some (name env n))
+    (match x.C.f_kind with
+    | C.F_func (_, None) -> A.Fun (fun_, None)
+    | C.F_func (_, Some n) -> A.Fun (fun_, Some (name env n))
+    | _ -> raise (UnhandledConstruct ("weird lambda", fst3 x.C.f_params))
     )
   | C.Class x ->
     let class_ = class_decl env x in
@@ -531,7 +532,7 @@ and binop _env (op,tok) e1 e2 =
     | C.B_and -> Left A.And | C.B_or -> Left A.Or
     | C.B_equal -> Left A.Equal | C.B_physequal -> Left A.PhysEqual
 
-    (* todo: e1 and e2 can have side effect, need intermediate var *)
+    (* less: e1 and e2 can have side effect, need intermediate var *)
     | C.B_le -> Right (
       A.Apply (A.IdSpecial (A.Or, tok), [
           A.Apply (A.IdSpecial (A.Lower, tok), [e1;e2]);
@@ -584,19 +585,24 @@ and var_kind _env = function
 
 
 and func_decl env x =
-  let props = func_kind env x.C.f_kind in
+  let props = func_props env x.C.f_kind x.C.f_properties in
   let params = 
    x.C.f_params |> paren |> comma_list |> List.map (parameter_binding env) in
   let env = add_params env params in
   let body = stmt1_item_list env (x.C.f_body |> paren) in
   { A.f_props = props; f_params = params; f_body = body }
 
-and func_kind _env = function
- | C.Regular -> []
- | C.Get _ -> [A.Get]
- | C.Set _ -> [A.Set]
- | C.Generator _ -> [A.Generator]
- | C.Async _ -> [A.Async]
+and func_props _env kind props = 
+  (match kind with
+  | C.F_func _ -> []
+  | C.F_method _ -> []
+  | C.F_get _ -> [A.Get]
+  | C.F_set _ -> [A.Set]
+  ) @
+  (props |> List.map (function
+   | C.Generator _ -> A.Generator
+   | C.Async _ -> A.Async
+   ))
 
 and parameter_binding env = function
  | C.ParamClassic p -> parameter env p
@@ -639,13 +645,12 @@ and property env = function
    A.Field (pname, props, e)
  | C.P_method x ->
     let fun_ = func_decl env x in
-   (* todo: could be a property_name already, should not use f_name *)
-    (match x.C.f_name with
-    | Some x ->
-      let pname = A.PN (name env x) in
+    (match x.C.f_kind with
+    | C.F_method (pn) ->
+      let pname = property_name env pn in
       A.Field (pname, [], A.Fun (fun_, None))
-    | None ->
-       raise (UnhandledConstruct ("weird anon method decl", fst3 x.C.f_params))
+    | _ ->
+       raise (UnhandledConstruct ("weird method decl", fst3 x.C.f_params))
     )
   | C.P_shorthand n ->
     let n = name env n in
@@ -691,26 +696,25 @@ and class_decl env x =
 and nominal_type env (e, _) = expr env e
 
 and class_element env = function
-  | C.Field (n, _, _) -> 
+  | C.C_field (n, _, _) -> 
     let n = name env n in
     [A.Field (A.PN n, [], A.Nop)]
-  | C.Method (static_opt, x) ->
+  | C.C_method (static_opt, x) ->
     let fun_ = func_decl env x in
     let props = 
       match static_opt with
       | None -> []
       | Some _ -> [A.Static]
     in
-   (* todo: could be a property_name already, should not use f_name *)
-    (match x.C.f_name with
-    | Some x ->
-      let pname = A.PN (name env x) in
+    (match x.C.f_kind with
+    | C.F_method pn ->
+      let pname = property_name env pn in
       [A.Field (pname, props, A.Fun (fun_, None))]
-    | None ->
-       raise (UnhandledConstruct ("weird anon method decl", fst3 x.C.f_params))
+    | _ ->
+       raise (UnhandledConstruct ("weird method decl", fst3 x.C.f_params))
     )
-  | C.ClassExtraSemiColon _ -> []
-  | C.ClassTodo -> raise Todo 
+  | C.C_extrasemicolon _ -> []
+  | C.C_todo -> raise Todo 
 
 (* ------------------------------------------------------------------------- *)
 (* Misc *)
