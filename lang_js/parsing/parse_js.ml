@@ -115,31 +115,41 @@ let rec line_previous_tok xs =
     then line_previous_tok xs
     else Some (TH.line_of_tok x)
 
-let asi_criteria charpos last_charpos_error cur tr = 
-  charpos > !last_charpos_error && 
-  tr.PI.passed <> [] &&
-     (match line_previous_tok (List.tl tr.PI.passed) with
-     | None -> false
-     | Some line -> 
-            TH.line_of_tok cur > line ||
-            (match cur with 
-             | Parser_js.T_RCURLY _ -> true 
-             | Parser_js.EOF _ -> true
-             | _ -> false
-             )
-         )
-
-let asi_insert charpos last_charpos_error info cur tr =
+let asi_opportunity charpos last_charpos_error cur tr = 
   match tr.PI.passed with
-  | [] -> raise Impossible
-  | x::xs ->
-    assert (x = cur);
+  | _ when charpos <= !last_charpos_error -> None
+  | [] -> None
+  (* see tests/js/parsing/asi_incr_bis.js *)
+  | offending::((Parser_js.T_INCR _|Parser_js.T_DECR _) as real_offender)::xs ->
+    (match line_previous_tok xs, offending with
+    | Some line, _ when TH.line_of_tok real_offender > line ->
+       Some ([offending], real_offender, xs)
+    | _, (Parser_js.T_RCURLY _ | Parser_js.EOF _) -> 
+         Some ([], offending, (real_offender::xs))
+    | _ -> None
+    )
+  | offending::xs -> 
+     (match line_previous_tok xs, cur with
+     | Some line, _ when TH.line_of_tok cur > line -> Some ([], offending, xs)
+     | _, (Parser_js.T_RCURLY _ | Parser_js.EOF _) -> Some ([], offending, xs)
+     | _ -> None
+     )
+  
+
+let asi_insert charpos last_charpos_error tr 
+  (passed_before, passed_offending, passed_after) =
+
+    let info = TH.info_of_tok passed_offending in
     let virtual_semi = 
       Parser_js.T_VIRTUAL_SEMICOLON (Ast.fakeInfoAttach info) in
     if !Flag_js.debug_asi
     then pr2 (spf "insertion fake ';' at %s" (PI.string_of_info info));
   
-    let toks = List.rev xs @ [virtual_semi; x] @ tr.PI.rest in
+    let toks = List.rev passed_after @
+               [virtual_semi; passed_offending] @ 
+               passed_before @
+               tr.PI.rest 
+    in
     (* like in Parse_info.mk_tokens_state *)
     tr.PI.rest <- toks;
     tr.PI.current <- List.hd toks;
@@ -282,15 +292,16 @@ let parse2 filename =
       let charpos = Parse_info.pos_of_info info in
 
       (* try Automatic Semicolon Insertion *)
-      if asi_criteria charpos last_charpos_error cur tr
-      then begin
-          asi_insert charpos last_charpos_error info cur tr;
+      (match asi_opportunity charpos last_charpos_error cur tr with
+      | None -> 
+         if !Flag.show_parsing_error 
+         then pr2 ("parse error \n = " ^ error_msg_tok cur);
+         Right ()
+      | Some (passed_before, passed_offending, passed_after) ->
+          asi_insert charpos last_charpos_error tr
+             (passed_before, passed_offending, passed_after);
           parse_module_item_or_eof tr
-      end else begin
-        if !Flag.show_parsing_error 
-        then pr2 ("parse error \n = " ^ error_msg_tok cur);
-        Right ()
-      end
+      )
   in
   let rec aux tr =
     let line_start = TH.line_of_tok tr.PI.current in
