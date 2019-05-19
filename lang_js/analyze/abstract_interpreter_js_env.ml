@@ -297,7 +297,7 @@ let rec value ptrs o x =
   | Vnull -> o "Null"
   | Vundefined -> o "Undefined"
 
-  | Vtaint s -> o "PARAM:"; o s
+  | Vtaint s -> o "TAINT:"; o s
 
   | Vabstr ty -> type_ o ty
 

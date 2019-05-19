@@ -290,7 +290,6 @@ and stmt env heap x =
         pr (Env.string_of_value heap v);
       end;
       heap
-
   (* used by unit testing *)
   | ExprStmt (Apply (Id (("checkpoint",_),_), [])) ->
       _checkpoint_heap := Some (heap, !(env.vars));
@@ -456,6 +455,9 @@ and expr_ env heap x =
       let heap, lval = lvalue env heap e1 in
       let heap, rval = expr env heap e2 in
       assign env heap lval rval
+
+  | Apply (Id (("taint", _), _resolved), []) ->
+      heap, Vtaint "taint builtin"
 
   | Apply (Id (name, resolved), xs) ->
       (match !resolved with
@@ -655,7 +657,7 @@ and call_qualified env heap qualified_name el =
   let var = 
     try Hashtbl.find env.db qualified_name
     with Not_found ->
-      failwith (spf "call_qualified: could not find %s" qualified_name)
+      failwith (spf "call_qualified: could not find %s()" qualified_name)
   in
   let def =
     match var.v_init with
