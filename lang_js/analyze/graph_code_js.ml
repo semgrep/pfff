@@ -72,6 +72,10 @@ type env = {
   (* error reporting *)
   dupes: (Graph_code.node, bool) Hashtbl.t;
 
+  (* this is for the abstract interpreter *)
+  db: (Ast_js.qualified_name, Ast_js.var) Hashtbl.t;
+  asts: (Common.filename (* readable *)* Ast_js.program (* resolved*)) list ref;
+
   log: string -> unit;
   pr2_and_log: string -> unit;
 }
@@ -253,7 +257,7 @@ let add_use_edge env (name, kind) =
                        (G.string_of_node dst)
                        (Parse_info.string_of_info (snd name)))
 
-let add_use_edge_candidates env (name, kind) =
+let add_use_edge_candidates env (name, kind) scope =
   let kind = 
     let s = qualified_name env name in
     let dst = (s, kind) in
@@ -268,7 +272,11 @@ let add_use_edge_candidates env (name, kind) =
       | _ -> kind (* default to first kind, but could report error *)
       )
   in
-  add_use_edge env (name, kind)
+  add_use_edge env (name, kind);
+  let s = qualified_name env name in
+  scope := Global s;
+  ()
+
 
 (*****************************************************************************)
 (* Defs/Uses *)
@@ -338,11 +346,17 @@ and toplevel env x =
 
 and toplevels env xs = List.iter (toplevel env) xs
 
-and name_expr env name v_kind e _v_resolved =
+and name_expr env name v_kind e v_resolved =
   let kind = kind_of_expr v_kind e in
   let env = add_node_and_edge_if_defs_mode env (name, kind) in
   if env.phase = Uses 
-  then expr env e
+  then begin 
+    expr env e;
+    let (qualified, _kind) = env.current in
+    v_resolved := Global qualified;
+    Hashtbl.add env.db qualified
+     { v_name = name; v_kind; v_init = e; v_resolved }
+  end
 
 (* ---------------------------------------------------------------------- *)
 (* Statements *)
@@ -452,11 +466,12 @@ and stmts env xs =
 and expr env e =
   match e with
   | Bool _ | Num _ | String _ | Regexp _ -> ()
-  | Id (n, _scope) -> 
+  | Id (n, scope) -> 
     if not (is_local env n)
-    then
+    then 
      (* the big one! *)
-     add_use_edge_candidates env (n, E.Global)
+     add_use_edge_candidates env (n, E.Global) scope;
+
 
   | IdSpecial _ -> ()
   | Nop -> ()
@@ -472,16 +487,16 @@ and expr env e =
      class_ env c
   | ObjAccess (e, prop) ->
     (match e with
-    | Id (n, _scope) when not (is_local env n) -> 
-       add_use_edge_candidates env (n, E.Class) 
+    | Id (n, scope) when not (is_local env n) -> 
+       add_use_edge_candidates env (n, E.Class) scope
     | _ -> 
       expr env e
     );
     property_name env prop
   | ArrAccess (e1, e2) ->
     (match e1 with
-    | Id (n, _scope) when not (is_local env n) -> 
-       add_use_edge_candidates env (n, E.Class) 
+    | Id (n, scope) when not (is_local env n) -> 
+       add_use_edge_candidates env (n, E.Class) scope
     | _ -> 
       expr env e1
     );
@@ -499,8 +514,8 @@ and expr env e =
     fun_ env f
   | Apply (e, es) ->
     (match e with
-    | Id (n, _scope) when not (is_local env n) ->
-        add_use_edge_candidates env (n, E.Function) 
+    | Id (n, scope) when not (is_local env n) ->
+        add_use_edge_candidates env (n, E.Function) scope
     | IdSpecial (special, _tok) ->
        (match special, es with
        | New, _ -> (* TODO *) ()
@@ -558,7 +573,7 @@ and parameter env p =
 (* Main entry point *)
 (*****************************************************************************)
 
-let build ?(verbose=false) root files =
+let build_gen ?(verbose=false) root files =
   let g = G.create () in
   G.create_initial_hierarchy g;
 
@@ -574,6 +589,9 @@ let build ?(verbose=false) root files =
     vars = Hashtbl.create 0;
     exports = Hashtbl.create 101;
     dupes = Hashtbl.create 101;
+   
+    db = Hashtbl.create 101;
+    asts = ref [];
 
     log = (fun s -> output_string chan (s ^ "\n"); flush chan;);
     pr2_and_log = (fun s ->
@@ -615,7 +633,8 @@ let build ?(verbose=false) root files =
       extract_defs_uses { env with 
         phase = Uses; file_readable; 
         locals = []; imports = Hashtbl.copy default_import; 
-      } ast
+      } ast;
+      Common.push (file_readable, ast) env.asts;
 
     ));
 
@@ -625,4 +644,16 @@ let build ?(verbose=false) root files =
   (* less: lookup failures summary *)
 
   (* finally return the graph *)
+  g, env.db, !(env.asts)
+
+
+let build ?verbose root files =
+  let (g, _, _) = build_gen ?verbose root files in
   g
+
+(*****************************************************************************)
+(* For abstract interpreter *)
+(*****************************************************************************)
+let build_for_ai root files =
+  let (_, db, asts) = build_gen ~verbose:false root files in
+  db, asts
