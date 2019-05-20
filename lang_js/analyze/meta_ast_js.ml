@@ -25,6 +25,7 @@ let vof_resolved_name = function
   
 let vof_special =
   function
+  | UseStrict -> Ocaml.VSum (("UseStrict", []))
   | Null -> Ocaml.VSum (("Null", []))
   | Undefined -> Ocaml.VSum (("Undefined", []))
   | This -> Ocaml.VSum (("This", []))

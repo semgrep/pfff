@@ -69,6 +69,7 @@ and v_filename v = v_wrap v_string v
 
 and v_special =
   function
+  | UseStrict -> ()
   | Null -> ()
   | Undefined -> ()
   | This -> ()

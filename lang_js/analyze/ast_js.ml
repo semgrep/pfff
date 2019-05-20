@@ -104,6 +104,8 @@ type special =
   | Yield | YieldStar | Await
   | Encaps of name option (* less: resolve? *)
 
+  | UseStrict
+
   (* todo? rewrite in CondExpr? have special behavior *)
   | And | Or
   (* Special apply arithmetic and logic *)

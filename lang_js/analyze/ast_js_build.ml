@@ -254,7 +254,12 @@ and stmt env = function
   | C.Nop _ -> 
     []
   | C.ExprStmt (e, _) ->
-    [A.ExprStmt (expr env e)]
+    let  e = expr env e in
+    (match e with
+    | A.String("use strict", tok) -> 
+      [A.ExprStmt (A.Apply(A.IdSpecial (A.UseStrict, tok), []))]
+    | _ -> [A.ExprStmt e]
+    )
   | C.If (_, e, then_, elseopt) ->
     let e = e |> paren |> expr env in
     let then_ = stmt1 env then_ in
