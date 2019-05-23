@@ -17,6 +17,8 @@ SRC= \
   utils_js.ml \
   test_analyze_js.ml unit_analyze_js.ml
 
+#jil.ml
+
 -include $(TOP)/Makefile.config
 
 SYSLIBS= str.cma unix.cma $(PCRECMA)
