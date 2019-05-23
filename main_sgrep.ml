@@ -265,12 +265,14 @@ let main_action xs =
   let files = 
     Find_source.files_of_dir_or_files ~lang:!lang xs in
 
+  Matching_report.print_header !match_format;
   files +> List.iter (fun file ->
     if !verbose then pr2 (spf "processing: %s" file);
     let ast = create_ast file in
     let sgrep pattern = sgrep_ast pattern ast in
     List.iter sgrep patterns
   );
+  Matching_report.print_trailer !match_format;
 
   !layer_file +> Common.do_option (fun file ->
     let root = Common2.common_prefix_of_files_or_dirs xs in
@@ -339,6 +341,8 @@ let options () =
     " print matches on the same line than the match position";
     "-oneline", Arg.Unit (fun () -> match_format := Matching_report.OneLine),
     " print matches on one line, in normalized form";
+    "-json", Arg.Unit (fun () -> match_format := Matching_report.Json),
+    " print matches in a Json format for the r2c platform";
 
     "-pvar", Arg.String (fun s -> mvars := Common.split "," s),
     " <metavars> print the metavariables, not the matched code";
