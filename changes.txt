@@ -2,6 +2,11 @@
 
 * 0.37 (Q2 2019) (new OPAM release??? better JS support)
 
+** sgrep
+
+*** a new -json option to output results in a JSON format
+(for r2c)
+
 ** javascript
 
 *** update parser to handle ES6 features, and a few ES7-ES9 features
