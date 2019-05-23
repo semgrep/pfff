@@ -177,7 +177,7 @@ let tokens2 file =
     let lexbuf = Lexing.from_channel chan in
 
     Lexer_js.reset();
-    try 
+
       let jstoken lexbuf = 
         match Lexer_js.current_mode() with
         | Lexer_js.ST_IN_CODE ->
@@ -213,11 +213,6 @@ let tokens2 file =
         else tokens_aux (tok::acc)
     in
     tokens_aux []
-  with
-  | Lexer_js.Lexical s -> 
-    failwith ("lexical error " ^ s ^ "\n =" ^ 
-                 (PI.error_message file (PI.lexbuf_to_strpos lexbuf)))
-  | e -> raise e
  )
 
 let tokens a = 
@@ -280,11 +275,11 @@ let parse2 filename =
      put_back_lookahead_token_if_needed tr item;
      Left item
    with 
-   | Lexer_js.Lexical s ->
+   | Lexer_js.Lexical_error (s, _) ->
       let cur = tr.PI.current in
       if !Flag.show_parsing_error
       then pr2 ("lexical error " ^s^ "\n =" ^ error_msg_tok cur);
-      Right ()
+      Right cur
 
    | Parsing.Parse_error ->
       let cur = tr.PI.current in
@@ -296,7 +291,7 @@ let parse2 filename =
       | None -> 
          if !Flag.show_parsing_error 
          then pr2 ("parse error \n = " ^ error_msg_tok cur);
-         Right ()
+         Right cur
       | Some (passed_before, passed_offending, passed_after) ->
           asi_insert charpos last_charpos_error tr
              (passed_before, passed_offending, passed_after);
@@ -328,7 +323,7 @@ let parse2 filename =
                 (Ast.Program [x] |> Meta_cst_js.vof_any |> Ocaml.string_of_v));
 
         x::aux tr 
-    | Right () ->
+    | Right err_tok ->
        let max_line = Common.cat filename +> List.length in
        if !Flag.show_parsing_error
        then begin
@@ -338,9 +333,13 @@ let parse2 filename =
          PI.print_bad line_error (line_start, min max_line (line_error + 10))
               filelines;
        end;
-       (* todo? try to recover? call 'aux tr'? but then can be really slow *)
-       stat.PI.bad <- stat.PI.bad + (max_line - line_start);
-       []
+       if !Flag.error_recovery
+       then begin
+        (* todo? try to recover? call 'aux tr'? but then can be really slow *)
+        stat.PI.bad <- stat.PI.bad + (max_line - line_start);
+        []
+       end 
+       else raise (Parse_error (TH.info_of_tok err_tok))
   in
   let items = 
    try 
@@ -355,6 +354,12 @@ let parse2 filename =
       []
   in
   ignore(Unix.alarm 0);
+  (* the correct count is accurate because items do not fall always
+   * on clean line boundaries so we may count multiple times the same line
+   *)
+  if stat.PI.bad = 0
+  then stat.PI.correct <- Common.cat filename |> List.length;
+
   (Some items, toks), stat
 
 let parse a = 

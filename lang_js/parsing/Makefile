@@ -25,6 +25,7 @@ LIBS=$(TOP)/commons/lib.cma \
 INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/commons_core \
   $(TOP)/globals \
+  $(TOP)/external/json-wheel \
   $(TOP)/h_program-lang \
   $(TOP)/matcher \
 

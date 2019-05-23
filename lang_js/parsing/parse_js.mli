@@ -5,7 +5,10 @@ type program_and_tokens =
 
 exception Parse_error of Parse_info.info
 
-(* This is the main function *)
+(* This is the main function. It may raise 
+ *  - Parse_error if Flag_parsing.error_recovery is false
+ *  - Lexer_js.Lexical_error if Flag_parsing.exn_when_lexical_error is true.
+ *)
 val parse: 
   Common.filename -> (program_and_tokens * Parse_info.parsing_stat)
 

@@ -2,6 +2,9 @@ open Common
 
 module Flag = Flag_parsing
 
+module J = Json_type
+module PI = Parse_info
+
 (*****************************************************************************)
 (* Subsystem testing *)
 (*****************************************************************************)
@@ -94,6 +97,69 @@ let test_dump_js file =
 
 
 (*****************************************************************************)
+(* JSON output *)
+(*****************************************************************************)
+
+let info_to_json_range info =
+  let loc = PI.token_location_of_info info in
+  J.Object [
+    "line", J.Int loc.PI.line;
+    "col", J.Int loc.PI.column;
+  ],
+  J.Object [
+    "line", J.Int loc.PI.line;
+    "col", J.Int (loc.PI.column + String.length loc.PI.str);
+  ]
+
+let parse_js_r2c xs = 
+  let fullxs = 
+    Lib_parsing_js.find_source_files_of_dir_or_files ~include_scripts:false xs
+  in
+  let json = J.Array (fullxs |> Common.map_filter (fun file ->
+    let nblines = Common.cat file |> List.length in
+    try 
+     let (_xs, _stat) =
+      Common.save_excursion Flag.error_recovery false (fun () ->
+      Common.save_excursion Flag.exn_when_lexical_error true (fun () ->
+      Common.save_excursion Flag.show_parsing_error true (fun () ->
+        Parse_js.parse file
+      )))
+      in
+      (* only return a finding if there was a parse error so we can
+       * sort by the number of parse errors in the triage tool
+       *)
+      None
+    with (Parse_js.Parse_error (info) | Lexer_js.Lexical_error (_, info)) 
+      as exn ->
+     let (startp, endp) = info_to_json_range info in
+     let message = 
+       match exn with
+       | Parse_js.Parse_error _ -> "parse error"
+       | Lexer_js.Lexical_error (s, _) -> "lexical error: " ^ s
+       | _ -> raise Impossible
+     in
+     Some (J.Object [
+      "check_id", J.String "pfff-parse_js_r2c";
+      "path", J.String file;
+      "start", startp;
+      "end", endp;
+      "extra", J.Object [
+         "size", J.Int nblines;
+         "message", J.String message;
+(*
+         "correct", J.Int stat.PI.correct; 
+         "bad", J.Int stat.PI.bad;
+         "timeout", J.Bool stat.PI.have_timeout;
+*)
+        ]
+     ])
+    ))
+  in
+  let json = J.Object ["results", json] in
+  let s = Json_io.string_of_json json in
+  pr s
+
+(*****************************************************************************)
 (* Main entry for Arg *)
 (*****************************************************************************)
 
@@ -106,6 +172,9 @@ let actions () = [
   Common.mk_action_n_arg test_parse_ts;
   "-dump_js", "   <file>",
   Common.mk_action_1_arg test_dump_js;
+
+  "-parse_js_r2c", "   <file or dir>",
+  Common.mk_action_n_arg parse_js_r2c;
 
 (* old:
   "-json_js", "   <file> export the AST of file into JSON",

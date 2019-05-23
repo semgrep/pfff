@@ -36,16 +36,16 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-exception Lexical of string
+exception Lexical_error of string * Parse_info.info
 
 let tok     lexbuf  =
   Lexing.lexeme lexbuf
 let tokinfo lexbuf  =
   PI.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
 
-let error s =
+let error s lexbuf =
   if !Flag.exn_when_lexical_error
-  then raise (Lexical (s))
+  then raise (Lexical_error (s, tokinfo lexbuf))
   else
     if !Flag.verbose_lexing
     then pr2_once ("LEXER: " ^ s)
@@ -560,7 +560,7 @@ and string_quote q buf = parse
       string_quote q buf lexbuf
     }
   | (_ as x) { Buffer.add_char buf x; string_quote q buf lexbuf }
-  | eof      { error "WIERD end of file in quoted string" }
+  | eof      { error "WIERD end of file in quoted string" lexbuf }
 
 (*****************************************************************************)
 (* Rule backquote *)
@@ -629,7 +629,7 @@ and st_comment buf = parse
   (* noteopti: *)
   | [^'*']+ { Buffer.add_string buf (tok lexbuf); st_comment buf lexbuf }
   | "*"     { Buffer.add_string buf (tok lexbuf); st_comment buf lexbuf }
-  | eof     { error "end of file in comment" }
+  | eof     { error "end of file in comment" lexbuf }
   | _  {
       let s = tok lexbuf in
       error ("unrecognised symbol in comment:"^s);
@@ -718,7 +718,8 @@ and st_in_xhp_text current_tag = parse
 
   | "<" "/" (XHPTAG as tag) ">" {
       if (tag <> current_tag)
-      then error (spf "XHP: wrong closing tag for, %s != %s" tag current_tag);
+      then error (spf "XHP: wrong closing tag for, %s != %s" tag current_tag)
+            lexbuf;
       pop_mode ();
       T_XHP_CLOSE_TAG(Some tag, tokinfo lexbuf)
 
