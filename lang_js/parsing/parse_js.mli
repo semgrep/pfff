@@ -14,10 +14,16 @@ val parse:
 
 val parse_program:
   Common.filename -> Cst_js.program
-
 val parse_string : 
   string -> Cst_js.program
 
+(* other parsers *)
+
+(* for sgrep_js *)
+val any_of_string:
+  string -> Cst_js.any
+
+(* for sgrep via fuzzy AST *)
 val parse_fuzzy:
   Common.filename -> Ast_fuzzy.trees * Parser_js.token list
 

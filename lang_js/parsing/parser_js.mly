@@ -202,9 +202,10 @@ let fake_tok s = {
 /*(*1 Rules type declaration *)*/
 /*(*************************************************************************)*/
 
-%start main module_item_or_eof
+%start main module_item_or_eof sgrep_spatch_pattern
 %type <Cst_js.module_item list> main
 %type <Cst_js.module_item option> module_item_or_eof
+%type <Cst_js.any> sgrep_spatch_pattern
 
 %%
 
@@ -246,6 +247,10 @@ declaration:
  | interface_declaration { InterfaceDecl $1 }
  | type_alias_declaration { ItemTodo $1 }
  | enum_declaration       { ItemTodo $1 }
+
+sgrep_spatch_pattern:
+ | assignment_expression_no_statement EOF      { Expr $1 }
+ | statement EOF { Stmt $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Namespace *)*/
