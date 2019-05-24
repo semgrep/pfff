@@ -67,11 +67,11 @@ let rec join_with_space_if_needed xs =
       then x ^ " " ^ (join_with_space_if_needed (y::xs))
       else x ^ (join_with_space_if_needed (y::xs))
 
-let info_to_json info = 
+let info_to_json col_offset info = 
   let loc = PI.token_location_of_info info in
   J.Object [
     "line", J.Int loc.PI.line;
-    "col", J.Int loc.PI.column;
+    "col", J.Int (loc.PI.column + col_offset);
   ]
 
 (*****************************************************************************)
@@ -106,8 +106,8 @@ let print_match ?(format = Normal) ii =
         (* r2c: quite specific to r2c *)
         "check_id", J.String "pfff-parse_js_r2c";
         "path", J.String file;
-        "start", info_to_json mini;
-        "end", info_to_json maxi;
+        "start", info_to_json 0 mini;
+        "end", info_to_json (PI.str_of_info maxi |> String.length) maxi;
         "extra", J.Object [
           "matched_str", J.String matched_str;
           (* todo: put metavars content *)
