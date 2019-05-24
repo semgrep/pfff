@@ -29,7 +29,7 @@ open Common
  * using OCaml pad-style reflection (see commons/ocaml.ml) on
  * parsing_php/ast_php.ml.
  *
- * An alternative is be to transform ast_php.ml
+ * An alternative is to transform ast_php.ml
  * in a very simple term language and do the 1-vs-1 match
  * on this term language. But depending on the construct, a PHP variable,
  * a string, we may want to do special things so maybe it is better to work
