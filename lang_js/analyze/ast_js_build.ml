@@ -724,3 +724,11 @@ and class_element env = function
 (* ------------------------------------------------------------------------- *)
 (* Misc *)
 (* ------------------------------------------------------------------------- *)
+
+let any x =
+  let env = empty_env () in
+  match x with
+  | C.Expr x -> A.Expr (expr env x)
+  | C.Stmt x -> A.Stmt (stmt1 env x)
+  | C.Item _x -> raise Todo
+  | C.Program _x -> raise Todo
