@@ -468,13 +468,13 @@
    )
 
   (setq
-   pad-ocaml-project-prog     "meta/gen_code"
+   pad-ocaml-project-prog     "lang_js/meta/gen_code"
    pad-ocaml-project-args 
    (join-string 
     (list 
-     "-debugger"
-     (case 21
-       (0 "/home/pad/c-pfff/demos/foo0.php")
+     ""
+     (case 0
+       (0 "-gen_matcher stmt")
        (1 "/home/pad/c-pfff/tests/dependencies/thrift.php")
        ;(1 "-python_gen exprbis")
        (2 "-python_gen program")
