@@ -57,6 +57,20 @@ let action = ref ""
 (* Helpers *)
 (*****************************************************************************)
 
+let set_gc () =
+(*
+  if !Flag.debug_gc
+  then Gc.set { (Gc.get()) with Gc.verbose = 0x01F };
+*)
+  (* only relevant in bytecode, in native the stacklimit is the os stacklimit *)
+  Gc.set {(Gc.get ()) with Gc.stack_limit = 1000 * 1024 * 1024};
+  (* see www.elehack.net/michael/blog/2010/06/ocaml-memory-tuning *)
+  Gc.set { (Gc.get()) with Gc.minor_heap_size = 4_000_000 };
+  Gc.set { (Gc.get()) with Gc.major_heap_increment = 8_000_000 };
+  Gc.set { (Gc.get()) with Gc.space_overhead = 300 };
+  ()
+
+
 (* for -gen_layer *)
 let _matching_tokens = ref []
 
@@ -148,6 +162,7 @@ let ast_fuzzy_of_string str =
 type ast_t =
   | Fuzzy of Ast_fuzzy.tree list
   | Php of Ast_php.program
+  | Js of Ast_js.program
 
 let create_ast file =
   match !lang with
@@ -156,6 +171,18 @@ let create_ast file =
     (try
       (Parse_php.parse_program file)
     with Parse_php.Parse_error _err ->
+      Common.pr2 (spf "warning: parsing problem in %s" file);
+      [])
+  | "js" ->
+    Js
+    (try
+      let cst = Parse_js.parse_program file in
+      Ast_js_build.program cst
+    with Parse_js.Parse_error _ | Lexer_js.Lexical_error _
+      | Common.Todo 
+      | Ast_js_build.TodoConstruct _ | Ast_js_build.UnhandledConstruct _
+      | Stack_overflow 
+     ->
       Common.pr2 (spf "warning: parsing problem in %s" file);
       [])
   | _ ->
@@ -174,20 +201,28 @@ let create_ast file =
         Parse_ml.parse_fuzzy file +> fst
       | "phpfuzzy" ->
         Parse_php.parse_fuzzy file +> fst
+      | "jsfuzzy" ->
+        Parse_js.parse_fuzzy file +> fst
       | _ ->
         failwith ("unsupported language: " ^ !lang))
     with exn ->
       pr2 (spf "PB with %s, exn = %s"  file (Common.exn_to_s exn));
       [])
 
+type pattern =
+  | PatPhp of Sgrep_php.pattern
+  | PatJs of Sgrep_js.pattern
+  | PatFuzzy of Ast_fuzzy.tree list
+
 let parse_pattern str =
   match !lang with
-  | "php" -> Left (Sgrep_php.parse str)
+  | "php" -> PatPhp (Sgrep_php.parse str)
+  | "js" -> PatJs (Sgrep_js.parse str)
   (* for now we abuse the fuzzy parser of cpp for ml for the pattern as
    * we should not use comments in patterns
    *)
-  | "c" | "c++" | "ml" | "java" | "js" | "phpfuzzy" -> 
-    Right (ast_fuzzy_of_string str)
+  | "c" | "c++" | "ml" | "java" | "jsfuzzy" | "phpfuzzy" -> 
+    PatFuzzy (ast_fuzzy_of_string str)
   | _ -> failwith ("unsupported language: " ^ !lang)
 
 let read_patterns name =
@@ -201,38 +236,44 @@ let read_patterns name =
 
 let sgrep_ast pattern any_ast =
   match !lang, pattern, any_ast with
-  | ("c" | "c++"), Right pattern, Fuzzy ast ->
+  | ("c" | "c++"), PatFuzzy pattern, Fuzzy ast ->
     Sgrep_fuzzy.sgrep
       ~hook:(fun env matched_tokens ->
         print_match !mvars env Ast_fuzzy.toks_of_trees matched_tokens
       )
       pattern ast
-  | "java", Right pattern, Fuzzy ast ->
+  | "java", PatFuzzy pattern, Fuzzy ast ->
     Sgrep_fuzzy.sgrep
       ~hook:(fun env matched_tokens ->
         print_match !mvars env Ast_fuzzy.toks_of_trees matched_tokens
       )
       pattern ast
-  | "js", Right pattern, Fuzzy ast ->
+  | "js", PatJs pattern, Js ast ->
+    Sgrep_js.sgrep_ast
+      ~hook:(fun env matched_tokens ->
+        print_match !mvars env Lib_analyze_js.ii_of_any matched_tokens
+      )
+      pattern ast
+  | "jsfuzzy", PatFuzzy pattern, Fuzzy ast ->
     Sgrep_fuzzy.sgrep
       ~hook:(fun env matched_tokens ->
         print_match !mvars env Ast_fuzzy.toks_of_trees matched_tokens
       )
       pattern ast
-  | "ml", Right pattern, Fuzzy ast ->
+  | "ml", PatFuzzy pattern, Fuzzy ast ->
     Sgrep_fuzzy.sgrep
       ~hook:(fun env matched_tokens ->
         print_match !mvars env Ast_fuzzy.toks_of_trees matched_tokens
       )
       pattern ast
-  | "php", Left pattern, Php ast ->
+  | "php", PatPhp pattern, Php ast ->
     Sgrep_php.sgrep_ast
       ~case_sensitive:!case_sensitive
       ~hook:(fun env matched_tokens ->
         print_match !mvars env Lib_parsing_php.ii_of_any matched_tokens
       )
       pattern ast
-  | "phpfuzzy", Right pattern, Fuzzy ast ->
+  | "phpfuzzy", PatFuzzy pattern, Fuzzy ast ->
     Sgrep_fuzzy.sgrep
       ~hook:(fun env matched_tokens ->
         print_match !mvars env Ast_fuzzy.toks_of_trees matched_tokens
@@ -245,6 +286,7 @@ let sgrep_ast pattern any_ast =
 (* Main action *)
 (*****************************************************************************)
 let main_action xs =
+  set_gc ();
   let patterns, query_string =
     match !pattern_file, !pattern_string, !use_multiple_patterns with
     | "", "", _ ->
@@ -263,14 +305,21 @@ let main_action xs =
   Logger.log Config_pfff.logger "sgrep" (Some query_string);
 
   let files = 
-    Find_source.files_of_dir_or_files ~lang:!lang xs in
+    match xs with
+    | [x] when Sys.is_directory x ->
+       Find_source.files_of_root ~lang:!lang x
+    | _ -> 
+       Find_source.files_of_dir_or_files ~lang:!lang xs
+  in
 
   Matching_report.print_header !match_format;
   files +> List.iter (fun file ->
     if !verbose then pr2 (spf "processing: %s" file);
-    let ast = create_ast file in
-    let sgrep pattern = sgrep_ast pattern ast in
-    List.iter sgrep patterns
+    try 
+      let ast = create_ast file in
+      let sgrep pattern = sgrep_ast pattern ast in
+      List.iter sgrep patterns
+    with Stack_overflow -> ()
   );
   Matching_report.print_trailer !match_format;
 
