@@ -353,7 +353,9 @@ rule initial = parse
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)
   (* ----------------------------------------------------------------------- *)
-  (* note that a Javascript identifier can have a leading '$' *)
+  (* note that a Javascript identifier can have a leading '$', which means
+   * sgrep for JS will have some limitations.
+   *)
   | ['a'-'z''A'-'Z' '$' '_']['a'-'z''A'-'Z''$''_''0'-'9']* {
       let s = tok lexbuf in
       let info = tokinfo lexbuf in
