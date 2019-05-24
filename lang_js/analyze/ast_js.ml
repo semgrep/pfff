@@ -73,6 +73,7 @@ type name = string wrap
  * This is computed after ast_js_build in graph_code_js.ml
  *)
 type qualified_name = string
+ (* with tarzan *)
 
 (* computed in graph_code_js.ml in a "naming" phase 
  * alt: reuse Scope_code.t, but not really worth it.
@@ -82,6 +83,7 @@ type resolved_name =
   | Param
   | Global of qualified_name
   | NotResolved
+ (* with tarzan *)
 
 type special = 
   (* Special values *)
@@ -186,17 +188,22 @@ and stmt =
   | Label of label * stmt
  
   | Throw of expr
-  | Try of stmt * (name * stmt) option * stmt option
+  | Try of stmt * catch option * stmt option
+
+  and catch = name * stmt
 
   (* less: could use some Special instead? *)
   and for_header = 
-   | ForClassic of (var list, expr) Common.either * expr * expr
-   | ForIn of (var, expr) Common.either * expr
-   | ForOf of (var, expr) Common.either * expr
+   | ForClassic of vars_or_expr * expr * expr
+   | ForIn of var_or_expr * expr
+   | ForOf of var_or_expr * expr
 
   and case = 
    | Case of expr * stmt
    | Default of stmt
+ 
+  and vars_or_expr = (var list, expr) Common.either
+  and var_or_expr = (var, expr) Common.either
 
 (* ------------------------------------------------------------------------- *)
 (* Entities *)
