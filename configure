@@ -15,9 +15,9 @@ use Pod::Usage;
 # - make, perl, bash
 # - diffutils, fileutils, findutils, grep, patchutils, sh-utils
 
-#todo:
-# - should check findutils? we need a good GNU find, not the macOS find
-#   which adds some extra '//' in paths which bothers pfff
+#less:
+# - should we check findutils? we need a good GNU find, not the macOS find
+#   which adds some extra '//' in paths, which bothers pfff
 
 # If you want to run the tests you will also need:
 # - swipl
@@ -57,8 +57,7 @@ my $opt= ""; # ocamlc.opt?
 my $ocamlc_flags = ""; #ocamlc -bin-annot?
 my $ocaml_version = 4023;
 
-#TODO
-my $opam_lib = "";
+my $opam_dir = "";
 
 
 my $man = 0;
@@ -212,21 +211,16 @@ if($ocaml_version < 4000) {
 # Package manager
 #---------------------------------------------------------------------
 
-#TODO: check for OPAM (adjust OPAM_DIR later?)
 #alt: battery_included, godi (still exist?)
-pr2 "TODO: adjust OPAM_DIR";
-#$error += 
-# check_config("opam --version |",
-#             "^[12]\.[0-9]\.[0-9]",
-#             "OPAM the OCaml package manager is present.",
-#             "The program OPAM is missing or is not a good version.",
-#             );
-#show_error_msg_and_exit_if_error($error);
-#system("rm -f external/opam_lib");
-#$opam_lib = `opam config var lib`;
-#chomp($opam_lib);
-#pr2("Adjusting the external/opam_lib symlink to $opam_lib");
-#system("ln -s $opam_lib external/opam_lib");
+$error += 
+ check_config("opam --version |",
+             "^[12]\.[0-9]\.[0-9]",
+             "OPAM the OCaml package manager is present.",
+             "The program OPAM is missing or is not a good version.",
+             );
+show_error_msg_and_exit_if_error($error);
+$opam_dir = `opam config var prefix`;
+chomp($opam_dir);
 
 #---------------------------------------------------------------
 # Developers tools
@@ -310,7 +304,10 @@ pr2 "Generating globals/config_pfff.ml";
 
 `perl -p -i -e 's#Not_found[0-9]#Not_found#' globals/config_pfff.ml`;
 
-#TODO? generating externals/OPAM_DIR here?
+pr2 "Generating external/OPAM_DIR";
+system("rm -f external/OPAM_DIR");
+system("ln -s \"$opam_dir\" external/OPAM_DIR");
+
 
 ######################################################################
 # Diagnostic 
@@ -323,7 +320,7 @@ if($error || $error2) {
 if($error2) { 
     show_missing_package_error_msg($error2);
 } else {
-    pr2 "All seems fine for $project.";
+    pr2 "\nAll seems fine for $project.";
 }
 
 pr2 "To compile $project type:
@@ -332,8 +329,7 @@ pr2 "To compile $project type:
 To test $project simply type:
   \$ $projectcmdline
 
-If you want to use the code visualization tools 
-see the readme.txt file.
+If you want to use the code visualization tools see the readme.txt file.
 ";
 
 
