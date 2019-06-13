@@ -29,4 +29,4 @@ function factorial(n) {
 
 //pad:
 console.log(factorial(8));
-//console.log(sum(range(1, 10)));
+console.log(sum(range(1, 10)));
