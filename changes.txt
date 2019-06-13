@@ -1,6 +1,6 @@
 # -*- org -*-
 
-* 0.37 (Q2 2019) (new OPAM release??? better JS support)
+* 0.37 (Q2 2019) (new OPAM release, better JS support)
 
 ** sgrep
 
@@ -26,11 +26,9 @@ TODO handle CommonJS modules
 *** AST-based highlighter with different colors for locals, params
 and globals 
 
-*** basic abstract interpreter with taint tracking
-
-** TODO new release on OPAM
+** new OPAM release
 (I need some of the new code from pfff in efuns,
-which I want to release in OPAM)
+which I also want to release in OPAM)
 
 ** internals
 

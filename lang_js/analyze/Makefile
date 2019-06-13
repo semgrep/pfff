@@ -13,8 +13,6 @@ SRC= \
   stdlib_js.ml graph_code_js.ml \
   highlight_js.ml \
   database_light_js.ml \
-  abstract_interpreter_js_env.ml abstract_interpreter_js_helpers.ml \
-  abstract_interpreter_js.ml \
   tags_js.ml \
   utils_js.ml \
   test_analyze_js.ml unit_analyze_js.ml
