@@ -71,7 +71,11 @@ let visit_program ~tag_hook _prefs (cst, toks) =
   (* try to better colorize identifiers which can be many different things
    * e.g. a field, a type, a function, a parameter, etc
    *)
-  let ast = Ast_js_build.program cst in
+  let ast = 
+     try Ast_js_build.program cst 
+     with Ast_js_build.TodoConstruct _ | Ast_js_build.UnhandledConstruct _ 
+       -> []
+  in
   let visitor = Visitor_ast_js.mk_visitor { Visitor_ast_js.default_visitor with
      Visitor_ast_js.ktop = (fun (k, _) t ->
        (match t with
