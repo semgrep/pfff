@@ -1,5 +1,11 @@
 # -*- org -*-
 
+* 0.38 (Q3 2019) (???)
+
+** javascript
+
+*** TODO handle CommonJS modules
+
 * 0.37 (Q2 2019) (new OPAM release, better JS support)
 
 ** sgrep
@@ -21,7 +27,6 @@ and by using a fix_token parsing hack strategy when needed.
 *** a real abstract syntax tree with simplified Javascript code
 
 *** basic codegraph for toplevel entities handling JS modules
-TODO handle CommonJS modules
 
 *** AST-based highlighter with different colors for locals, params
 and globals 
