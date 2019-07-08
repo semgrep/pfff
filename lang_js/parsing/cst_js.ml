@@ -260,8 +260,9 @@ type expr =
    | XhpSingleton of xhp_tag wrap * xhp_attribute list * tok (* /> *)
 
    and xhp_attribute = 
-      | XhpAttrClassic of xhp_attr_name * tok (* = *) * xhp_attr_value
+      | XhpAttrValue of xhp_attr_name * tok (* = *) * xhp_attr_value
       (* not in XHP *)
+      | XhpAttrNoValue of xhp_attr_name
       | XhpAttrSpread of (tok * expr) brace
     and xhp_attr_name = string wrap (* e.g. task-bar *)
     and xhp_attr_value =

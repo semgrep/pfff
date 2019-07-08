@@ -272,11 +272,14 @@ and vof_xhp_html =
       in Ocaml.VSum (("XhpSingleton", [ v1; v2; v3 ]))
 and vof_xhp_attribute =
   function
-  | XhpAttrClassic ((v1, v2, v3)) ->
+  | XhpAttrValue ((v1, v2, v3)) ->
       let v1 = vof_xhp_attr_name v1
       and v2 = vof_tok v2
       and v3 = vof_xhp_attr_value v3
-      in Ocaml.VSum (("XhpAttrClassic", [ v1; v2; v3 ]))
+      in Ocaml.VSum (("XhpAttrValue", [ v1; v2; v3 ]))
+  | XhpAttrNoValue ((v1)) ->
+      let v1 = vof_xhp_attr_name v1
+      in Ocaml.VSum (("XhpAttrNoValue", [ v1 ]))
   | XhpAttrSpread v1 ->
       let v1 =
         vof_brace

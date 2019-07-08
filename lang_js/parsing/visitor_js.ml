@@ -243,10 +243,13 @@ and v_xhp_html =
       in ()
 and v_xhp_attribute =
   function
-  | XhpAttrClassic ((v1, v2, v3)) ->
+  | XhpAttrValue ((v1, v2, v3)) ->
       let v1 = v_xhp_attr_name v1
       and v2 = v_tok v2
       and v3 = v_xhp_attr_value v3
+      in ()
+  | XhpAttrNoValue ((v1)) ->
+      let v1 = v_xhp_attr_name v1
       in ()
   | XhpAttrSpread v1 ->
       let v1 =

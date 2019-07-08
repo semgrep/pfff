@@ -1259,9 +1259,12 @@ xhp_child:
 
 xhp_attribute:
  | T_XHP_ATTR T_ASSIGN xhp_attribute_value 
-    { XhpAttrClassic ($1, $2, $3) }
+    { XhpAttrValue ($1, $2, $3) }
  | T_LCURLY T_DOTS assignment_expression T_RCURLY 
     { XhpAttrSpread ($1, ($2, $3), $4) }
+ /*(* jsxext: not in XHP *)*/
+ | T_XHP_ATTR
+    { XhpAttrNoValue ($1) }
 
 xhp_attribute_value:
  | T_STRING { XhpAttrString ($1) }
