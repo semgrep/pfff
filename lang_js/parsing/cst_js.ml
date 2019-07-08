@@ -610,6 +610,7 @@ and export =
 type any =
   | Expr of expr
   | Stmt of st
+  | Pattern of pattern
   | Item of item
   | Program of program
  (* with tarzan *)

@@ -569,7 +569,9 @@ and encaps env = function
 (* ------------------------------------------------------------------------- *)
 and var_binding env vkind = function
   | C.VarClassic x -> variable_declaration env vkind x
-  | C.VarPattern _ -> raise Todo
+  | C.VarPattern x -> 
+    raise (TodoConstruct("VarPattern", 
+      (C.Pattern x.C.vpat) |> Lib_parsing_js.ii_of_any |> List.hd))
 
 and variable_declaration env vkind x =
   let n = name env x.C.v_name in
@@ -730,5 +732,6 @@ let any x =
   match x with
   | C.Expr x -> A.Expr (expr env x)
   | C.Stmt x -> A.Stmt (stmt1 env x)
+  | C.Pattern _x -> raise Todo
   | C.Item _x -> raise Todo
   | C.Program _x -> raise Todo
