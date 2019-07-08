@@ -134,8 +134,10 @@ and module_item env = function
   | C.Export (tok, x) ->  export env tok x
 
 and import env = function
-  | C.ImportEffect ((_file, tok)) ->
-     raise (UnhandledConstruct ("import effect", tok))
+  | C.ImportEffect ((file, tok)) ->
+     if file =~ ".*\\.css$"
+     then [A.ImportCss (file, tok)]
+     else raise (UnhandledConstruct ("import effect", tok))
   | C.ImportFrom ((default_opt, names_opt) , (_, path)) ->
     (match default_opt with
     | Some n -> 

@@ -295,6 +295,13 @@ and map_toplevel =
       and v2 = map_name v2
       and v3 = map_filename v3
       in Import ((v1, v2, v3))
+  | ImportCss ((v1)) ->
+      let v1 = map_name v1
+      in ImportCss ((v1))
+  | ModuleAlias ((v1, v2)) ->
+      let v1 = map_name v1
+      and v2 = map_filename v2
+      in ModuleAlias ((v1, v2))
   | Export v1 -> let v1 = map_name v1 in Export ((v1))
   
 and map_program v = map_of_list map_toplevel v

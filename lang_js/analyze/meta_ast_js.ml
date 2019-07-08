@@ -294,6 +294,13 @@ let vof_toplevel =
       and v2 = vof_name v2
       and v3 = vof_filename v3
       in Ocaml.VSum (("Import", [ v1; v2; v3 ]))
+  | ModuleAlias ((v1, v2)) ->
+      let v1 = vof_name v1
+      and v2 = vof_filename v2
+      in Ocaml.VSum (("ModuleAlias", [ v1; v2 ]))
+  | ImportCss ((v1)) ->
+      let v1 = vof_filename v1
+      in Ocaml.VSum (("ImportCss", [ v1 ]))
   | Export ((v1)) ->
       let v1 = vof_name v1
       in Ocaml.VSum (("Export", [ v1 ]))

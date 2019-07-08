@@ -128,6 +128,7 @@ type label = string wrap
 type filename = string wrap
  (* with tarzan *)
 
+(* when doing export default Foo and import Bar, ... *)
 let default_entity = "$default$"
 
 type property_name = 
@@ -256,9 +257,13 @@ type toplevel =
   | V of var
   | S of tok (* for graph_code to build a toplevel entity *) * stmt
 
-  (* 'name' can can be the special default_entity *)
+  (* 'name' can can be the special Ast_js.default_entity above *)
   | Import of name * name (* 'name1 as name2', often name1=name2 *) * filename
   | Export of name
+
+  (* hard to unsugar in Import because we do not have the list of names *)
+  | ModuleAlias of name * filename (* import * as 'name' from 'file' *)
+  | ImportCss of filename
  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)

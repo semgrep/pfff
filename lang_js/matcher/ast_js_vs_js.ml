@@ -1260,6 +1260,10 @@ let m_toplevel a b =
        B.Export(b1)
     )
     )
+  | A.ImportCss _, _
+  | A.ModuleAlias _, _
+    -> raise Todo
+
   | A.V _, _
   | A.S _, _
   | A.Import _, _
