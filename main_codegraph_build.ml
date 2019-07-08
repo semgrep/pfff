@@ -48,11 +48,37 @@ let action = ref ""
 let dep_file_of_dir dir = 
   Filename.concat dir Graph_code.default_filename
 
+let set_gc () =
+  (* only relevant in bytecode, in native the stacklimit is the os stacklimit*)
+  Gc.set {(Gc.get ()) with Gc.stack_limit = 1000 * 1024 * 1024};
+  (* see www.elehack.net/michael/blog/2010/06/ocaml-memory-tuning *)
+  Gc.set { (Gc.get()) with Gc.minor_heap_size = 4_000_000 };
+  (* goes from 5300s to 3000s for building db for www *)
+  Gc.set { (Gc.get()) with Gc.major_heap_increment = 8_000_000 };
+  Gc.set { (Gc.get()) with Gc.space_overhead = 300 };
+  ()
+
 (*****************************************************************************)
-(* Language-specific, building the graph *)
+(* Building stdlib *)
+(*****************************************************************************)
+let build_stdlib lang root dst =
+  let files = Find_source.files_of_root ~lang root in
+  match lang with
+  | "java" ->
+      Builtins_java.extract_from_sources ~src:root ~dst files
+  | "clang" ->
+      Uninclude_clang.uninclude ~verbose:!verbose root files dst
+  | _ -> failwith ("language not supported: " ^ lang)
+
+
+(*****************************************************************************)
+(* Main action, building the graph *)
 (*****************************************************************************)
 
-let build_graph_code lang xs =
+let main_action xs =
+  set_gc ();
+  let lang = !lang in
+
   let xs = List.map Common.fullpath xs in
   let root, files = 
     match xs with
@@ -148,26 +174,6 @@ let build_graph_code lang xs =
     Database_code.save_database db (p "PFFF_DB.json");
   end;
   ()
-
-(*****************************************************************************)
-(* Language specific, building stdlib *)
-(*****************************************************************************)
-let build_stdlib lang root dst =
-  let files = Find_source.files_of_root ~lang root in
-  match lang with
-  | "java" ->
-      Builtins_java.extract_from_sources ~src:root ~dst files
-  | "clang" ->
-      Uninclude_clang.uninclude ~verbose:!verbose root files dst
-  | _ -> failwith ("language not supported: " ^ lang)
-
-
-(*****************************************************************************)
-(* Main action, building the graph *)
-(*****************************************************************************)
-
-let main_action xs =
-  build_graph_code !lang xs
 
 (*****************************************************************************)
 (* Extra Actions *)

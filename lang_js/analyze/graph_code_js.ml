@@ -81,6 +81,9 @@ type env = {
 }
  and phase = Defs | Uses
 
+(* useful to evaluate the amount of constructs not yet handled *)
+let error_recovery = ref true
+
 (*****************************************************************************)
 (* Parsing *)
 (*****************************************************************************)
@@ -97,9 +100,19 @@ let parse file =
       Ast_js_build.program cst
     with
     | Timeout -> raise Timeout
+    | Ast_js_build.TodoConstruct (s, tok)
+    | Ast_js_build.UnhandledConstruct (s, tok)
+      -> 
+        pr2 s;
+        pr2 (Parse_info.error_message_info tok);
+        if !error_recovery
+        then []
+        else failwith s
     | exn ->
       pr2 (spf "PARSE ERROR with %s, exn = %s" file (Common.exn_to_s exn));
-      raise exn
+      if !error_recovery 
+      then []
+      else raise exn
   )
 
 (*****************************************************************************)
@@ -147,7 +160,11 @@ let readable_of_path env (file, tok) =
 
 let mk_qualified_name readable s =
   assert (not (readable =~ "^\\./"));
-  let str = Filename.chop_extension readable in
+  let str = 
+    try Filename.chop_extension readable 
+    with Invalid_argument _ -> 
+     failwith (spf "readable filename without any extension: %s" readable)
+  in
   str ^ "." ^ s
 
 let qualified_name env name =
