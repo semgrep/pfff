@@ -494,13 +494,7 @@ and expr env = function
     let xs = List.map (encaps env) xs in
     A.Apply (A.IdSpecial (special, tok), xs)
 
-  | C.XhpHtml x ->
-    let tok = 
-      match x with
-      | C.Xhp ((_, tok), _, _, _, _) -> tok
-      | C.XhpSingleton ((_, tok), _, _) -> tok
-    in
-    raise (UnhandledConstruct ("xhp", tok))
+  | C.XhpHtml x -> Transpile_js.xhp (expr env) x
   | C.Paren x ->
      expr env (paren x)
 
