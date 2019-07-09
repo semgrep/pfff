@@ -733,8 +733,9 @@
    (join-string 
     (list 
      "-debugger"
-     (case 0
+     (case 1
        (0 "-verbose -lang js /home/pad/work/r2c/JSLint")
+       (1 "-verbose -lang js /home/pad/r2c/repos/r2c-web")
        )
      ))
    )

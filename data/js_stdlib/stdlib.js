@@ -1,4 +1,5 @@
 //src: 
+//TODO: flow/lib/ contains declarations of all JS builtins!
 
 class Object { }
 class Boolean { }

@@ -40,7 +40,6 @@ module Ast = Ast_js
  *    by this file; they usually contains FP indicating bugs in this file
  *  - too many stuff
  *)
-(* TODO: flow/lib/ contains declarations of all JS builtins! *)
 
 (*****************************************************************************)
 (* Types *)
@@ -54,6 +53,7 @@ type env = {
 
   current: Graph_code.node;
   file_readable: Common.filename;
+  root: Common.dirname; (* to find node_modules/ *)
 
   (* imports of external entities and abused to create
    * fake imports of the entities defined in the current file *)
@@ -127,32 +127,6 @@ let s_of_n n =
 
 let pos_of_tok tok file =
   { (Parse_info.token_location_of_info tok) with PI.file }
-
-(*****************************************************************************)
-(* File resolution *)
-(*****************************************************************************)
-
-(* resolve . and .. to normalize path and qualified names in the end *)
-let normalize_path tok xs =
-  let rec aux acc xs =
-    match xs with 
-    | [] -> List.rev acc
-    | x::xs ->
-      (match x, acc with
-      | ".", _ -> aux acc xs
-      | "..", [] -> 
-        error "could not .." tok
-      | "..", _::acc -> aux acc xs
-      | s, acc -> aux (s::acc) xs
-      )
-  in
-  aux [] xs           
-
-let readable_of_path env (file, tok) =
-  let xs = Filename.dirname env.file_readable |> Str.split (Str.regexp "/") in
-  let ys = Str.split (Str.regexp "/") file in
-  let zs = normalize_path tok (xs @ ys) in
-  Common.join "/" zs
 
 (*****************************************************************************)
 (* Qualified Name *)
@@ -333,12 +307,21 @@ and toplevels_entities_adjust_imports env xs =
 (* ---------------------------------------------------------------------- *)
 and toplevel env x =
   match x with
-  | Import (name1, name2, file) ->
+  | Import (name1, name2, (file, tok)) ->
     if env.phase = Uses then begin
       let str1 = s_of_n name1 in
       let str2 = s_of_n name2 in
-      let readable = readable_of_path env file in
-      Hashtbl.replace env.imports str2 (mk_qualified_name readable str1);
+      let path_opt = Module_path_js.resolve_path
+        ~root:env.root
+        ~pwd:(Filename.dirname env.file_readable)
+        file in
+      let readable = 
+        match path_opt with
+        | None -> 
+          error (spf "could not resolve path %s" file) tok;
+        | Some fullpath -> Common.readable env.root fullpath
+      in
+      Hashtbl.replace env.imports str2 (mk_qualified_name readable str1)
     end
   | Export (name) -> 
      if env.phase = Defs then begin
@@ -604,6 +587,7 @@ let build_gen ?(verbose=false) root files =
     phase = Defs;
     current = G.pb;
     file_readable = "__filled_later__";
+    root;
     imports = Hashtbl.create 0;
     locals = [];
     vars = Hashtbl.create 0;

@@ -10,6 +10,7 @@ SRC= \
   lib_analyze_js.ml \
   transpile_js.ml ast_js_build.ml \
   class_pre_es6.ml module_pre_es6.ml comment_js.ml annotation_js.ml \
+  module_path_js.ml \
   stdlib_js.ml graph_code_js.ml \
   highlight_js.ml \
   database_light_js.ml \

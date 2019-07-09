@@ -889,10 +889,15 @@ let fullpath file =
     then file, None
     else Filename.dirname file, Some (Filename.basename file)
   in
+  (* save *)
   let old = Sys.getcwd () in
+
   Sys.chdir dir;
   let here = Sys.getcwd () in
+
+  (* restore *)
   Sys.chdir old;
+
   match base with
   | None -> here
   | Some x -> Filename.concat here x
