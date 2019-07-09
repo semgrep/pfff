@@ -580,14 +580,15 @@ and var_binding env vkind = function
 
 and variable_declaration env vkind x =
   let n = name env x.C.v_name in
-  let init = 
-    match x.C.v_init with
-    (* less Undefined? *)
-    | None -> A.Nop
-    | Some (_, e) -> expr env e
-  in
+  let init = init_opt env x.C.v_init in 
   let vkind = var_kind env vkind in
   { A.v_name = n; v_init = init; v_kind = vkind; v_resolved = not_resolved ()}
+
+and init_opt env ini = 
+  match ini with
+  (* less Undefined? *)
+  | None -> A.Nop
+  | Some (_, e) -> expr env e
 
 and var_kind _env = function
   | C.Var -> A.Var
@@ -708,9 +709,11 @@ and class_decl env x =
 and nominal_type env (e, _) = expr env e
 
 and class_element env = function
-  | C.C_field (n, _, _) -> 
-    let n = name env n in
-    [A.Field (A.PN n, [], A.Nop)]
+  | C.C_field (fld, _) -> 
+    let pn = property_name env fld.C.fld_name in
+    let props = [] in (* TODO fld.fld_static *)
+    let e = init_opt env fld.C.fld_init in
+    [A.Field (pn, props, e)]
   | C.C_method (static_opt, x) ->
     let fun_ = func_decl env x in
     let props = 
@@ -726,7 +729,6 @@ and class_element env = function
        raise (UnhandledConstruct ("weird method decl", fst3 x.C.f_params))
     )
   | C.C_extrasemicolon _ -> []
-  | C.C_todo -> raise Todo 
 
 (* ------------------------------------------------------------------------- *)
 (* Misc *)

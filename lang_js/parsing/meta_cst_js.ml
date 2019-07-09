@@ -810,14 +810,33 @@ and  vof_interface_decl {
   let arg = vof_tok v_i_tok in
   let bnd = ("i_tok", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
 
+and  vof_field_decl {
+                   fld_static = v_fld_static;
+                   fld_name = v_fld_name;
+                   fld_type = v_fld_type;
+                   fld_init = v_fld_init
+                 } =
+  let bnds = [] in
+  let arg = Ocaml.vof_option vof_init v_fld_init in
+  let bnd = ("fld_init", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_type_opt v_fld_type in
+  let bnd = ("fld_type", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_property_name v_fld_name in
+  let bnd = ("fld_name", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_static_opt v_fld_static in
+  let bnd = ("fld_static", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+
+and vof_static_opt v = Ocaml.vof_option vof_tok v
+
 and vof_class_stmt =
   function
-  | C_todo -> Ocaml.VSum (("C_todo", []))
-  | C_field ((v1, v2, v3)) ->
-      let v1 = vof_name v1
-      and v2 = vof_annotation v2
-      and v3 = vof_sc v3
-      in Ocaml.VSum (("C_field", [ v1; v2; v3 ]))
+  | C_field ((v1, v2)) ->
+      let v1 = vof_field_decl v1
+      and v2 = vof_sc v2
+      in Ocaml.VSum (("C_field", [ v1; v2 ]))
   | C_method ((v1, v2)) ->
       let v1 = Ocaml.vof_option vof_tok v1
       and v2 = vof_func_decl v2

@@ -573,9 +573,13 @@ class_element:
  | access_modifiers method_definition      { C_method (None, $2) (* TODO $1 *) } 
 
  |                  property_name annotation_opt initializeur_opt semicolon 
-    { C_todo }
+    { C_field ({ fld_static = None; fld_name = $1; fld_type = $2;
+                fld_init = $3 }, $4)
+    }
  | access_modifiers property_name annotation_opt initializeur_opt semicolon 
-    { C_todo }
+    { C_field ({ fld_static = None(*TODO $1*); fld_name = $2; fld_type = $3;
+                fld_init = $4 }, $5)
+    }
 
  | semicolon                       { C_extrasemicolon $1 }
 

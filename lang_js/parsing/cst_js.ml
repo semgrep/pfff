@@ -524,13 +524,19 @@ and class_decl = {
 
   and class_element =
   | C_method of static_opt * func_decl
-  | C_field of name * annotation * sc
-  (* TODO: es6? FieldAssign of name * tok * expr * sc *)
+  | C_field of field_decl * sc
   (* unparser: *)
   | C_extrasemicolon of sc
-  | C_todo
 
+  (* es6: *)
   and static_opt = tok option (* static *)
+  (* es6: *)
+  and field_decl = {
+    fld_static: static_opt;
+    fld_name: property_name;
+    fld_type: type_opt;
+    fld_init: init option;
+  }
 
 (* ------------------------------------------------------------------------- *)
 (* Interface definition *)

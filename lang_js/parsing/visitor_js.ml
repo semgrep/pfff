@@ -599,11 +599,23 @@ and
   let arg = v_option (v_angle (v_comma_list v_name)) v_i_type_params in
   let arg = v_type_ v_i_type in
   ()
+
+and v_static_opt v = v_option v_tok v
+and
+  v_field_decl {
+                 fld_static = v_fld_static;
+                 fld_name = v_fld_name;
+                 fld_type = v_fld_type;
+                 fld_init = v_fld_init
+               } =
+  let arg = v_static_opt v_fld_static in
+  let arg = v_property_name v_fld_name in
+  let arg = v_type_opt v_fld_type in
+  let arg = v_option v_init v_fld_init in ()
+
 and v_class_stmt =
   function
-  | C_todo -> ()
-  | C_field ((v1, v2, v3)) ->
-      let v1 = v_name v1 and v2 = v_annotation v2 and v3 = v_sc v3 in ()
+  | C_field ((v1, v2)) -> let v1 = v_field_decl v1 and v2 = v_sc v2 in ()
   | C_method ((v1, v2)) ->
       let v1 = v_option v_tok v1 and v2 = v_func_decl v2 in ()
   | C_extrasemicolon v1 -> let v1 = v_sc v1 in ()
