@@ -31,6 +31,12 @@ let navigator;
 function fetch() { }
 
 class URL { }
+class Error { }
+
+// Testing
+function expect() { }
+function it() { }
+function describe() { }
 
 // JSX
 function svg() { }
@@ -48,3 +54,4 @@ function li() { }
 
 function img() { }
 function iframe() { }
+
