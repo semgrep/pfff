@@ -110,6 +110,12 @@ let add_params env ps =
   ) in
   { env with locals = params @ env.locals } 
 
+(* we would like to remove leading ./ and possibly add 
+ * some node_modules/xxx/index.js but we can not do that here.
+ * See graph_code_js and module_path_js for filename resolving.
+ *)
+let path_to_file (path, tok) =
+  path, tok
 
 (*****************************************************************************)
 (* Entry point *)
@@ -139,9 +145,12 @@ and import env = function
      then [A.ImportCss (file, tok)]
      else raise (UnhandledConstruct ("import effect", tok))
   | C.ImportFrom ((default_opt, names_opt) , (_, path)) ->
+    let file = 
+      path_to_file path
+    in
     (match default_opt with
     | Some n -> 
-       [A.Import ((A.default_entity, snd n),  name env n, path)]
+       [A.Import ((A.default_entity, snd n),  name env n, file)]
     | None -> []
     ) @
     (match names_opt with
@@ -158,7 +167,7 @@ and import env = function
               | None -> n1
               | Some (_, n2) -> name env n2
            in
-           A.Import (n1, n2, path)
+           A.Import (n1, n2, file)
          )
        )
      )

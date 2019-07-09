@@ -43,9 +43,11 @@
  *  - no func vs method vs arrow
  *  - no class elements vs object elements
  *  - No Nop (EmptyStmt); transformed in an empty Block.
+ *  - TODO no patterns (they are transpiled, see transpile_js.ml)
+ *  - no JSX (see transpile_js.ml)
  * 
  * todo:
- *  - add types information
+ *  - add back type information? useful for many analysis.
  *  - ast_js_es5.ml? unsugar even more? remove classes, patterns, etc.?
  *  - unsugar ES6 features, lift Var up, rename lexical vars, etc.
  *)
@@ -125,6 +127,9 @@ type special =
 type label = string wrap
  (* with tarzan *)
 
+(* the filename is not "resolved".
+ * alt: use a reference like for resolved_name set in graph_code_js.ml and
+ * module_path_js.ml? *)
 type filename = string wrap
  (* with tarzan *)
 
@@ -257,7 +262,11 @@ type toplevel =
   | V of var
   | S of tok (* for graph_code to build a toplevel entity *) * stmt
 
-  (* 'name' can can be the special Ast_js.default_entity above *)
+  (* 'name' can be the special Ast_js.default_entity, 
+   * 'filename' is not "resolved" 
+   * (you may need to add node_modules/xxx/index.js
+   * when you do 'import "react"' to get a resolved path).
+   *)
   | Import of name * name (* 'name1 as name2', often name1=name2 *) * filename
   | Export of name
 

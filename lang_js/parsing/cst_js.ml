@@ -118,7 +118,9 @@ type name = string wrap
 type xhp_tag = string
  (* with tarzan *)
 
-(* es6: note: does not contain the enclosing "'" but the info does *)
+(* es6: note: does not contain the enclosing "'" but the info does 
+ * can contain './' as a prefix and can omit '.js' as an extension.
+ *)
 type module_path = string wrap
  (* with tarzan *)
 
