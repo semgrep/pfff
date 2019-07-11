@@ -15,6 +15,10 @@ use Pod::Usage;
 # - make, perl, bash
 # - diffutils, fileutils, findutils, grep, patchutils, sh-utils
 
+#todo: I now depend by default on a few OPAM packages:
+# - json-wheel
+# - ocamlgraph
+
 #less:
 # - should we check findutils? we need a good GNU find, not the macOS find
 #   which adds some extra '//' in paths, which bothers pfff
