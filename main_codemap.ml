@@ -79,6 +79,7 @@ module Model = Model2
  *  - codesonar, very nice interactive zoomable call graph visualizer
  *    https://www.youtube.com/watch?v=EqDhtRoorGU also very deep semantic analysis
  *    with control flow and data flow
+ *  - CodeCompass https://github.com/Ericsson/CodeCompass/
  * 
  * features of IDE we do want (e.g. see the list at http://xamarin.com/studio):
  *  - smart syntax highlighting (we do even more: semantic highlighting!)
