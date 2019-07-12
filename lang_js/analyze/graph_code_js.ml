@@ -32,7 +32,7 @@ module Ast = Ast_js
  *                      -> Class (and Obj)
  *                            -> TODO Field
  *                      -> Const
- *                      -> Global TODO need type to know if not a func or class
+ *                      -> Global TODO need type to know if not a func|class?
  *       -> Dir -> SubDir -> ...
  *
  * todo: 
@@ -55,20 +55,21 @@ type env = {
   file_readable: Common.filename;
   root: Common.dirname; (* to find node_modules/ *)
 
-  (* imports of external entities and abused to create
+  (* imports of external entities; also abused to create
    * fake imports of the entities defined in the current file *)
   imports: (string, qualified_name (* orig name *)) Hashtbl.t;
-  (* covers also the parameters; I handle block scope by not using
+  (* 'locals' covers also the parameters; I handle block scope by not using
    * a ref of mutable here! Just build a new list and passed it down.
    *)
   locals: string list;
-  (* 'var' have a function scope.
+  (* 'var' has a function scope.
    * alt: lift var up in a ast_js_build.ml transforming phase
    *)
   vars: (string, bool) Hashtbl.t;
 
-  (* todo: use it *)
+  (* less: use it? could use to check if the import match the exports *)
   exports: (Common.filename, string list) Hashtbl.t;
+
   (* error reporting *)
   dupes: (Graph_code.node, bool) Hashtbl.t;
 
@@ -351,8 +352,12 @@ and module_directive env x =
        let str = s_of_n name in
        Hashtbl.replace env.exports env.file_readable (str::exports)
      end
-  | ModuleAlias (_name, _file) ->
-      raise Todo
+  | ModuleAlias (name, _fileTODO) ->
+      (* for now just add name as a local; anyway we do not
+       * generate dependencies for fields yet
+       *)
+      let s = s_of_n name in
+      Hashtbl.replace env.vars s true;
   | ImportCss (_file) -> ()
   | ImportEffect (_file) -> ()
 

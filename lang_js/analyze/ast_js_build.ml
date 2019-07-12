@@ -139,9 +139,7 @@ and import env = function
      then [A.ImportCss (file, tok)]
      else [A.ImportEffect (file, tok)]
   | C.ImportFrom ((default_opt, names_opt) , (_, path)) ->
-    let file = 
-      path_to_file path
-    in
+    let file = path_to_file path in
     (match default_opt with
     | Some n -> 
        [A.Import ((A.default_entity, snd n),  name env n, file)]
@@ -151,8 +149,9 @@ and import env = function
     | None -> []
     | Some ni ->
       (match ni with
-      | C.ImportNamespace (_, _, (_name, tok)) ->
-        raise (UnhandledConstruct ("import namespace", tok))
+      | C.ImportNamespace (_star, _as, n1) ->
+        let n1 = name env n1 in
+        [A.ModuleAlias (n1, file)]
       | C.ImportNames xs ->
         xs |> C.unparen |> C.uncomma |> List.map (fun (n1, n2opt) ->
            let n1 = name env n1 in
@@ -205,8 +204,25 @@ and export env tok = function
   ) |> List.flatten
  | C.ReExportNamespace (_, _, _) ->
    raise (UnhandledConstruct ("reexporting namespace", tok))
- | C.ReExportNames (_, _, _) ->
-   raise (UnhandledConstruct ("reexporting names", tok))
+ | C.ReExportNames (xs, (_from, path), _) ->
+   xs |> C.unbrace |> C.uncomma |> List.map (fun (n1, n2opt) ->
+     let n1 = name env n1 in
+     let tmpname = ("!tmp_" ^ fst n1, snd n1) in
+     let file = path_to_file path in
+     let import = A.Import (n1, tmpname, file) in
+     let id = A.Id (tmpname, not_resolved()) in
+     match n2opt with
+     | None -> 
+       let v = { A.v_name = n1; v_kind = A.Const; v_init = id; 
+                  v_resolved = not_resolved () } in
+       [A.M import; A.V v; A.M (A.Export n1)]
+     | Some (_, n2) ->
+       let n2 = name env n2 in
+       let v = { A.v_name = n2; v_kind = A.Const; v_init = id; 
+                  v_resolved = not_resolved () } in
+       [A.M import; A.V v; A.M (A.Export n2)]
+
+   ) |> List.flatten
 
 and item env = function
   | C.St x -> stmt env x
@@ -410,6 +426,7 @@ and expr env = function
         (match s with
         | "eval" -> A.IdSpecial (A.Eval, tok)
         | "undefined" -> A.IdSpecial (A.Undefined, tok)
+        (* commonJS *)
         | "require"   -> A.IdSpecial (A.Require, tok)
         | "exports"   -> A.IdSpecial (A.Exports, tok)
         | "module"   -> A.IdSpecial (A.Module, tok)
