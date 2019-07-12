@@ -12,7 +12,6 @@ class Function { }
 class JSON { }
 
 
-
 let document;
 let window;
 let console;
@@ -39,19 +38,29 @@ function it() { }
 function describe() { }
 
 // JSX
-function svg() { }
-function path() { }
-function rect() { }
-
-function div() { }
-function span() { }
-function a() { }
 function p() { }
 function br() { }
-function input() { }
+function a() { }
 function ul() { }
 function li() { }
+function pre() { }
+function div() { }
+function span() { }
+function main() { }
+
+function input() { }
+function form() { }
+function button() { }
+
+function header() { }
+function footer() { }
 
 function img() { }
 function iframe() { }
+
+
+
+function svg() { }
+function path() { }
+function rect() { }
 

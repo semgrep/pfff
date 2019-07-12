@@ -78,6 +78,7 @@ type env = {
 
   log: string -> unit;
   pr2_and_log: string -> unit;
+  lookup_fail: env -> Graph_code.node -> Parse_info.info -> unit;
 }
  and phase = Defs | Uses
 
@@ -127,6 +128,11 @@ let s_of_n n =
 
 let pos_of_tok tok file =
   { (Parse_info.token_location_of_info tok) with PI.file }
+
+let is_undefined_ok (s, _kind) =
+  s =~ "^node_modules/.*" ||
+  (* r2c: too specific? *)
+  s =~ "^src/images/"
 
 (*****************************************************************************)
 (* Qualified Name *)
@@ -230,6 +236,7 @@ let add_use_edge env (name, kind) =
   let s = qualified_name env name in
   let src = env.current in
   let dst = (s, kind) in
+  let loc = snd name in
   match () with
   | _ when Hashtbl.mem env.dupes src || Hashtbl.mem env.dupes dst ->
       (* todo: stats *)
@@ -238,15 +245,12 @@ let add_use_edge env (name, kind) =
 
   | _ when not (G.has_node src env.g) ->
       error (spf "SRC FAIL: %s (-> %s)" 
-               (G.string_of_node src) (G.string_of_node dst)) (snd name)
+               (G.string_of_node src) (G.string_of_node dst)) loc
   (* the normal case *)
   | _ when G.has_node dst env.g ->
       G.add_edge (src, dst) G.Use env.g;
-
-  | _ ->
-    env.pr2_and_log (spf "Lookup failure on %s (%s)"
-                       (G.string_of_node dst)
-                       (Parse_info.string_of_info (snd name)))
+  (* error *)
+  | _ -> env.lookup_fail env dst loc
 
 let add_use_edge_candidates env (name, kind) scope =
   let kind = 
@@ -580,6 +584,9 @@ let build_gen ?(verbose=false) root files =
   let g = G.create () in
   G.create_initial_hierarchy g;
 
+  (* use Hashtbl.find_all property *)
+  let hstat_lookup_failures = Hashtbl.create 101 in
+
   let chan = open_out (Filename.concat root "pfff.log") in
 
   let env = { 
@@ -588,12 +595,13 @@ let build_gen ?(verbose=false) root files =
     current = G.pb;
     file_readable = "__filled_later__";
     root;
+
     imports = Hashtbl.create 0;
     locals = [];
     vars = Hashtbl.create 0;
     exports = Hashtbl.create 101;
+
     dupes = Hashtbl.create 101;
-   
     db = Hashtbl.create 101;
     asts = ref [];
 
@@ -602,6 +610,20 @@ let build_gen ?(verbose=false) root files =
       if verbose then pr2 s;
       output_string chan (s ^ "\n"); flush chan;
     );
+    lookup_fail = (fun env dst loc ->
+      let src = env.current in
+      let fprinter =
+        if not verbose || is_undefined_ok dst
+        then env.log
+        else env.pr2_and_log
+      in
+      fprinter (spf "PB: lookup_fail on %s (in %s, at %s)"
+             (G.string_of_node dst) (G.string_of_node src) 
+             (Parse_info.string_of_info loc));
+      (* less: could also use Hashtbl.replace to count entities only once *)
+      Hashtbl.add hstat_lookup_failures dst true;
+    );
+
   } in
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
@@ -646,6 +668,18 @@ let build_gen ?(verbose=false) root files =
   G.remove_empty_nodes g [G.not_found; G.dupe; G.pb];
 
   (* less: lookup failures summary *)
+(*
+  let xs = Common.hashset_to_list hstat_lookup_failures in
+  let modules = xs |> List.map
+    (fun node-> Module_ml.top_module_of_node node, ()) in
+  let counts = modules |> Common.group_assoc_bykey_eff 
+                       |> List.map (fun (x, xs)-> x, List.length xs) 
+                       |> Common.sort_by_val_highfirst
+                       |> Common.take_safe 20
+  in
+  pr2 "Top lookup failures per modules";
+  counts |> List.iter (fun (s, n) -> pr2 (spf "%-30s = %d" s n));
+*)
 
   (* finally return the graph *)
   g, env.db, !(env.asts)
