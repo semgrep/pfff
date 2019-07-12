@@ -299,7 +299,8 @@ let rec extract_defs_uses env ast =
  *)
 and toplevels_entities_adjust_imports env xs =
   xs |> List.iter (function
-    | Import _ | Export _ | S _ | ImportCss _ | ModuleAlias _ -> ()
+    | Import _ | Export _ | S _ 
+    | ImportCss _ | ModuleAlias _ | ImportEffect _ -> ()
     | V v ->
       let str = s_of_n v.v_name in
       Hashtbl.replace env.imports str 
@@ -350,6 +351,7 @@ and toplevel env x =
   | ModuleAlias (_name, _file) ->
       raise Todo
   | ImportCss (_file) -> ()
+  | ImportEffect (_file) -> ()
 
 and toplevels env xs = List.iter (toplevel env) xs
 

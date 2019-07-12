@@ -246,6 +246,8 @@ and v_toplevel x =
       let v1 = v_name v1 and v2 = v_name v2 and v3 = v_filename v3 in ()
   | ImportCss ((v1)) ->
       let v1 = v_name v1 in ()
+  | ImportEffect ((v1)) ->
+      let v1 = v_name v1 in ()
   | ModuleAlias ((v1, v2)) ->
       let v1 = v_name v1 and v2 = v_filename v2 in ()
   | Export ((v1)) -> let v1 = v_name v1 in ()

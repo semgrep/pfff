@@ -298,6 +298,9 @@ and map_toplevel =
   | ImportCss ((v1)) ->
       let v1 = map_name v1
       in ImportCss ((v1))
+  | ImportEffect ((v1)) ->
+      let v1 = map_name v1
+      in ImportEffect ((v1))
   | ModuleAlias ((v1, v2)) ->
       let v1 = map_name v1
       and v2 = map_filename v2

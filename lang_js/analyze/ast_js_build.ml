@@ -137,7 +137,7 @@ and import env = function
   | C.ImportEffect ((file, tok)) ->
      if file =~ ".*\\.css$"
      then [A.ImportCss (file, tok)]
-     else raise (UnhandledConstruct ("import effect", tok))
+     else [A.ImportEffect (file, tok)]
   | C.ImportFrom ((default_opt, names_opt) , (_, path)) ->
     let file = 
       path_to_file path

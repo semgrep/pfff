@@ -301,6 +301,9 @@ let vof_toplevel =
   | ImportCss ((v1)) ->
       let v1 = vof_filename v1
       in Ocaml.VSum (("ImportCss", [ v1 ]))
+  | ImportEffect ((v1)) ->
+      let v1 = vof_filename v1
+      in Ocaml.VSum (("ImportEffect", [ v1 ]))
   | Export ((v1)) ->
       let v1 = vof_name v1
       in Ocaml.VSum (("Export", [ v1 ]))

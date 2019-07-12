@@ -266,6 +266,7 @@ type toplevel =
    * 'filename' is not "resolved" 
    * (you may need to add node_modules/xxx/index.js
    * when you do 'import "react"' to get a resolved path).
+   * See Module_path_js to resolve path.
    *)
   | Import of name * name (* 'name1 as name2', often name1=name2 *) * filename
   | Export of name
@@ -273,6 +274,8 @@ type toplevel =
   (* hard to unsugar in Import because we do not have the list of names *)
   | ModuleAlias of name * filename (* import * as 'name' from 'file' *)
   | ImportCss of filename
+  (* those should not exist *)
+  | ImportEffect of filename
  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)

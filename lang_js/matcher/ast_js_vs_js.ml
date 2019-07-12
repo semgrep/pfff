@@ -1261,6 +1261,7 @@ let m_toplevel a b =
     )
     )
   | A.ImportCss _, _
+  | A.ImportEffect _, _
   | A.ModuleAlias _, _
     -> raise Todo
 
