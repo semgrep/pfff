@@ -567,6 +567,9 @@ and item =
 (* ------------------------------------------------------------------------- *)
 (* Module *)
 (* ------------------------------------------------------------------------- *)
+(* ES6 module directives can appear only at the toplevel (but note that 
+ * CommomJS require() can appear also inside statements)
+ *)
 (* es6: *)
 and import =
   | ImportFrom of (import_clause * (tok (* from *) * module_path))

@@ -43,7 +43,7 @@
  *  - no func vs method vs arrow
  *  - no class elements vs object elements
  *  - No Nop (EmptyStmt); transformed in an empty Block.
- *  - TODO no patterns (they are transpiled, see transpile_js.ml)
+ *  - no patterns (they are transpiled, see transpile_js.ml)
  *  - no JSX (see transpile_js.ml)
  * 
  * todo:
@@ -196,6 +196,11 @@ and stmt =
   | Throw of expr
   | Try of stmt * catch option * stmt option
 
+  (* todo? ES6 modules can appear only at the toplevel
+  *  but CommonJS require can be inside ifs
+  *  ModuleDirective of module_directive 
+  *)
+
   and catch = name * stmt
 
   (* less: could use some Special instead? *)
@@ -255,27 +260,39 @@ and class_ = {
     | Public | Private | Protected
 
  (* with tarzan *)
-(* ------------------------------------------------------------------------- *)
-(* Toplevel *)
-(* ------------------------------------------------------------------------- *)
-type toplevel = 
-  | V of var
-  | S of tok (* for graph_code to build a toplevel entity *) * stmt
 
-  (* 'name' can be the special Ast_js.default_entity, 
-   * 'filename' is not "resolved" 
+(* ------------------------------------------------------------------------- *)
+(* Module *)
+(* ------------------------------------------------------------------------- *)
+(* this should be only at the toplevel in clean code, but some packages
+ * like react have dynamic imports (to select dynamically which code to
+ * load depending on whether you run in production or development environment)
+ *)
+type module_directive = 
+  (* 'name' can be the special Ast_js.default_entity.
+   * 'filename' is not "resolved"
    * (you may need to add node_modules/xxx/index.js
    * when you do 'import "react"' to get a resolved path).
-   * See Module_path_js to resolve path.
+   * See Module_path_js to resolve paths.
    *)
   | Import of name * name (* 'name1 as name2', often name1=name2 *) * filename
   | Export of name
 
   (* hard to unsugar in Import because we do not have the list of names *)
   | ModuleAlias of name * filename (* import * as 'name' from 'file' *)
+
   | ImportCss of filename
   (* those should not exist *)
   | ImportEffect of filename
+
+(* ------------------------------------------------------------------------- *)
+(* Toplevel *)
+(* ------------------------------------------------------------------------- *)
+type toplevel = 
+  | V of var
+  (* the tok is for graph_code to build a toplevel entity with a location *)
+  | S of tok  * stmt
+  | M of module_directive
  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)

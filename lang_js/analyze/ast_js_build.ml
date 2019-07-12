@@ -130,7 +130,7 @@ and module_item env = function
          let tok = first_tok_of_item x in
          A.S (tok, res)
     )
-  | C.Import (_, x, _) -> import env x
+  | C.Import (_, x, _) -> import env x |> List.map (fun x -> A.M x)
   | C.Export (tok, x) ->  export env tok x
 
 and import env = function
@@ -172,13 +172,13 @@ and export env tok = function
    let n = A.default_entity, tok in
    let v = {A.v_name = n; v_kind = A.Const; v_init = e; 
             v_resolved = not_resolved () } in
-   [A.V v; A.Export (n)]
+   [A.V v; A.M (A.Export (n))]
  | C.ExportDecl x ->
    let xs = item env x in
    xs |> List.map (function
     (* less: v_kind? *)
     | A.VarDecl v -> 
-         [A.V v; A.Export (v.A.v_name)]
+         [A.V v; A.M (A.Export (v.A.v_name))]
     | _ -> raise (UnhandledConstruct ("exporting a stmt", tok))
    ) |> List.flatten
  | C.ExportDefaultDecl (tok, x) ->
@@ -188,20 +188,20 @@ and export env tok = function
         (* todo: what was in v.A.v_name ?*)
         let n = A.default_entity, tok in 
         let v = { v with A.v_name = n } in
-        [A.V v;  A.Export (n)]
+        [A.V v;  A.M (A.Export (n))]
     | _ -> raise (UnhandledConstruct ("exporting a stmt", tok))
    ) |> List.flatten
  | C.ExportNames (xs, _) ->
    xs |> C.unparen |> C.uncomma |> List.map (fun (n1, n2opt) ->
      let n1 = name env n1 in
      match n2opt with
-     | None -> [A.Export (n1)]
+     | None -> [A.M (A.Export (n1))]
      | Some (_, n2) -> 
          let n2 = name env n2 in
          let id = A.Id (n1, not_resolved ()) in
          let v = { A.v_name = n2; v_kind = A.Const; v_init = id;
                    v_resolved = not_resolved () } in
-         [A.V v; A.Export n2]
+         [A.V v; A.M (A.Export n2)]
   ) |> List.flatten
  | C.ReExportNamespace (_, _, _) ->
    raise (UnhandledConstruct ("reexporting namespace", tok))

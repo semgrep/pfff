@@ -299,8 +299,7 @@ let rec extract_defs_uses env ast =
  *)
 and toplevels_entities_adjust_imports env xs =
   xs |> List.iter (function
-    | Import _ | Export _ | S _ 
-    | ImportCss _ | ModuleAlias _ | ImportEffect _ -> ()
+    | M _ | S _ -> ()
     | V v ->
       let str = s_of_n v.v_name in
       Hashtbl.replace env.imports str 
@@ -311,6 +310,20 @@ and toplevels_entities_adjust_imports env xs =
 (* Toplevels *)
 (* ---------------------------------------------------------------------- *)
 and toplevel env x =
+  match x with
+  | V {v_name; v_kind; v_init; v_resolved} ->
+       name_expr env v_name v_kind v_init v_resolved
+  | S (tok, st) ->
+      let kind = E.TopStmts in
+      let s = spf "__top__%d:%d" 
+          (Parse_info.line_of_info tok) (Parse_info.col_of_info tok) in
+      let name = s, tok in
+      let env = add_node_and_edge_if_defs_mode env (name, kind) in
+      if env.phase = Uses
+      then stmt env st
+  | M x -> module_directive env x
+
+and module_directive env x =
   match x with
   | Import (name1, name2, (file, tok)) ->
     if env.phase = Uses then begin
@@ -338,16 +351,6 @@ and toplevel env x =
        let str = s_of_n name in
        Hashtbl.replace env.exports env.file_readable (str::exports)
      end
-  | V {v_name; v_kind; v_init; v_resolved} ->
-       name_expr env v_name v_kind v_init v_resolved
-  | S (tok, st) ->
-      let kind = E.TopStmts in
-      let s = spf "__top__%d:%d" 
-          (Parse_info.line_of_info tok) (Parse_info.col_of_info tok) in
-      let name = s, tok in
-      let env = add_node_and_edge_if_defs_mode env (name, kind) in
-      if env.phase = Uses
-      then stmt env st
   | ModuleAlias (_name, _file) ->
       raise Todo
   | ImportCss (_file) -> ()

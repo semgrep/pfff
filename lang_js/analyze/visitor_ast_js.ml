@@ -242,6 +242,12 @@ and v_toplevel x =
   match x with
   | V v1 -> let v1 = v_var v1 in ()
   | S ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_stmt v2 in ()
+  | M v1 -> let v1 = v_module_directive v1 in ()
+  in
+  vin.ktop (k, all_functions) x
+
+and v_module_directive x = 
+  match x with
   | Import ((v1, v2, v3)) ->
       let v1 = v_name v1 and v2 = v_name v2 and v3 = v_filename v3 in ()
   | ImportCss ((v1)) ->
@@ -251,8 +257,6 @@ and v_toplevel x =
   | ModuleAlias ((v1, v2)) ->
       let v1 = v_name v1 and v2 = v_filename v2 in ()
   | Export ((v1)) -> let v1 = v_name v1 in ()
-  in
-  vin.ktop (k, all_functions) x
 
 and v_any =
   function

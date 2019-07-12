@@ -290,6 +290,10 @@ and map_toplevel =
   function
   | V v1 -> let v1 = map_var v1 in V ((v1))
   | S ((v1, v2)) -> let v1 = map_tok v1 and v2 = map_stmt v2 in S ((v1, v2))
+  | M v1 -> let v1 = map_module_directive v1 in M ((v1))
+
+and map_module_directive =
+  function 
   | Import ((v1, v2, v3)) ->
       let v1 = map_name v1
       and v2 = map_name v2

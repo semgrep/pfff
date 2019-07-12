@@ -1224,26 +1224,11 @@ and m_parameter a b =
   )))
 
 (* ------------------------------------------------------------------------- *)
-(* Toplevel *)
+(* Module *)
 (* ------------------------------------------------------------------------- *)
 
-let m_toplevel a b = 
+let m_module_directive a b = 
   match a, b with
-  | A.V(a1), B.V(b1) ->
-    m_var a1 b1 >>= (fun (a1, b1) -> 
-    return (
-       A.V(a1),
-       B.V(b1)
-    )
-    )
-  | A.S(a1, a2), B.S(b1, b2) ->
-    m_tok a1 b1 >>= (fun (a1, b1) -> 
-    m_stmt a2 b2 >>= (fun (a2, b2) -> 
-    return (
-       A.S(a1, a2),
-       B.S(b1, b2)
-    )
-    ))
   | A.Import(a1, a2, a3), B.Import(b1, b2, b3) ->
     m_name a1 b1 >>= (fun (a1, b1) -> 
     m_name a2 b2 >>= (fun (a2, b2) -> 
@@ -1260,16 +1245,49 @@ let m_toplevel a b =
        B.Export(b1)
     )
     )
+  | A.Import _, _
+  | A.Export _, _
+    -> fail ()
+
   | A.ImportCss _, _
   | A.ImportEffect _, _
   | A.ModuleAlias _, _
     -> raise Todo
 
+(* ------------------------------------------------------------------------- *)
+(* Toplevel *)
+(* ------------------------------------------------------------------------- *)
+
+let m_toplevel a b = 
+  match a, b with
+  | A.V(a1), B.V(b1) ->
+    m_var a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.V(a1),
+       B.V(b1)
+    )
+    )
+  | A.M(a1), B.M(b1) ->
+    m_module_directive a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.M(a1),
+       B.M(b1)
+    )
+    )
+  | A.S(a1, a2), B.S(b1, b2) ->
+    m_tok a1 b1 >>= (fun (a1, b1) -> 
+    m_stmt a2 b2 >>= (fun (a2, b2) -> 
+    return (
+       A.S(a1, a2),
+       B.S(b1, b2)
+    )
+    ))
+
   | A.V _, _
   | A.S _, _
-  | A.Import _, _
-  | A.Export _, _
+  | A.M _, _
    -> fail ()
+
 
 
 let m_program a b = 

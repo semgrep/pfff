@@ -280,15 +280,9 @@ and vof_property_prop =
   | Public -> Ocaml.VSum (("Public", []))
   | Private -> Ocaml.VSum (("Private", []))
   | Protected -> Ocaml.VSum (("Protected", []))
-  
-let vof_toplevel =
+
+let vof_module_directive =
   function
-  | S (v1, v2) -> 
-     let v1 = vof_tok v1 in let v2 = vof_stmt v2 in
-     Ocaml.VSum (("S", [ v1; v2 ]))
-  | V v1 ->
-     let v1 = vof_var v1 in
-     Ocaml.VSum (("V", [v1]))
   | Import ((v1, v2, v3)) ->
       let v1 = vof_name v1
       and v2 = vof_name v2
@@ -307,6 +301,19 @@ let vof_toplevel =
   | Export ((v1)) ->
       let v1 = vof_name v1
       in Ocaml.VSum (("Export", [ v1 ]))
+  
+let vof_toplevel =
+  function
+  | S (v1, v2) -> 
+     let v1 = vof_tok v1 in let v2 = vof_stmt v2 in
+     Ocaml.VSum (("S", [ v1; v2 ]))
+  | V v1 ->
+     let v1 = vof_var v1 in
+     Ocaml.VSum (("V", [v1]))
+  | M v1 ->
+     let v1 = vof_module_directive v1 in
+     Ocaml.VSum (("V", [v1]))
+
   
 let vof_program v = Ocaml.vof_list vof_toplevel v
   
