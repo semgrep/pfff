@@ -57,12 +57,6 @@ let opt f env x =
   | None -> None
   | Some x -> Some (f env x)
 
-let rec comma_list = function
-  | [] -> []
-  | Common.Left x  :: rl -> x :: comma_list rl
-  | Common.Right _ :: rl -> comma_list rl
-
-let paren (_, x, _) = x
 let fst3 (x, _, _) = x
 
 let noop = A.Block []
@@ -160,7 +154,7 @@ and import env = function
       | C.ImportNamespace (_, _, (_name, tok)) ->
         raise (UnhandledConstruct ("import namespace", tok))
       | C.ImportNames xs ->
-        xs |> paren |> comma_list |> List.map (fun (n1, n2opt) ->
+        xs |> C.unparen |> C.uncomma |> List.map (fun (n1, n2opt) ->
            let n1 = name env n1 in
            let n2 = 
               match n2opt with
@@ -198,7 +192,7 @@ and export env tok = function
     | _ -> raise (UnhandledConstruct ("exporting a stmt", tok))
    ) |> List.flatten
  | C.ExportNames (xs, _) ->
-   xs |> paren |> comma_list |> List.map (fun (n1, n2opt) ->
+   xs |> C.unparen |> C.uncomma |> List.map (fun (n1, n2opt) ->
      let n1 = name env n1 in
      match n2opt with
      | None -> [A.Export (n1)]
@@ -250,7 +244,7 @@ and property_name env = function
   | C.PN_Id x       -> A.PN (name env x)
   | C.PN_String x   -> A.PN (name env x)
   | C.PN_Num x      -> A.PN (name env x)
-  | C.PN_Computed x -> A.PN_Computed (x |> paren |> expr env)
+  | C.PN_Computed x -> A.PN_Computed (x |> C.unparen |> expr env)
 
 (* ------------------------------------------------------------------------- *)
 (* Statement *)
@@ -258,10 +252,11 @@ and property_name env = function
 
 and stmt env = function
   | C.VarsDecl ((vkind,_), bindings, _) ->
-    bindings |> comma_list |> List.map (fun x -> 
-     A.VarDecl (var_binding env vkind x))
+    bindings |> C.uncomma |> List.map (fun x -> 
+     let vars = var_binding env vkind x in
+     vars |> List.map (fun var -> A.VarDecl var)) |> List.flatten
   | C.Block x -> 
-    [stmt1_item_list env (paren x)]
+    [stmt1_item_list env (C.unparen x)]
   | C.Nop _ -> 
     []
   | C.ExprStmt (e, _) ->
@@ -272,7 +267,7 @@ and stmt env = function
     | _ -> [A.ExprStmt e]
     )
   | C.If (_, e, then_, elseopt) ->
-    let e = e |> paren |> expr env in
+    let e = e |> C.unparen |> expr env in
     let then_ = stmt1 env then_ in
     let else_ = 
       match elseopt with
@@ -282,10 +277,10 @@ and stmt env = function
     [A.If (e, then_, else_)]
   | C.Do (_, st, _, e, _) ->
      let st = stmt1 env st in
-     let e = e |> paren |> expr env in
+     let e = e |> C.unparen |> expr env in
      [A.Do (st, e)]
   | C.While (_, e, st) ->
-     let e = e |> paren |> expr env in
+     let e = e |> C.unparen |> expr env in
      let st = stmt1 env st in
      [A.While (e, st)]
   | C.For (_, _, lhs_vars_opt, _, e2opt, _, e3opt, _, st) ->
@@ -293,8 +288,8 @@ and stmt env = function
        match lhs_vars_opt with
        | Some (C.LHS1 e) -> Right (expr env e)
        | Some (C.ForVars (((vkind, _), vbindings))) ->
-         Left (vbindings |> comma_list |> List.map (fun x -> 
-             (var_binding env vkind x)))
+         Left (vbindings |> C.uncomma |> List.map (fun x -> 
+             (var_binding env vkind x)) |> List.flatten)
        | None -> Right (A.Nop)
      in
      let e2 = expr_opt env e2opt in
@@ -305,7 +300,12 @@ and stmt env = function
     let e1 =
       match lhs_var with
       | C.LHS2 e -> Right (expr env e)
-      | C.ForVar ((vkind,_), binding) -> Left (var_binding env vkind binding)
+      | C.ForVar ((vkind,tok), binding) -> 
+        let vars = var_binding env vkind binding in
+        (match vars with
+        | [var] -> Left var
+        | _ -> raise (TodoConstruct ("For in with (pattern) vars?", tok))
+        )
     in 
     let e2 = expr env e2 in
     let st = stmt1 env st in
@@ -314,14 +314,19 @@ and stmt env = function
     let e1 =
       match lhs_var with
       | C.LHS2 e -> Right (expr env e)
-      | C.ForVar ((vkind,_), binding) -> Left (var_binding env vkind binding)
+      | C.ForVar ((vkind,tok), binding) -> 
+        let vars = var_binding env vkind binding in
+        (match vars with
+        | [var] -> Left var
+        | _ -> raise (TodoConstruct ("For in with (pattern) vars?", tok))
+        )
     in 
     let e2 = expr env e2 in
     let st = stmt1 env st in
     [A.For (A.ForOf (e1, e2), st)]
   | C.Switch (_, e, xs) ->
-    let e = e |> paren |> expr env in
-    let xs = xs |> paren |> List.map (case_clause env) in
+    let e = e |> C.unparen |> expr env in
+    let xs = xs |> C.unparen |> List.map (case_clause env) in
     [A.Switch (e, xs)]
   | C.Continue (_, lopt, _) -> 
     [A.Continue (opt label env lopt)]
@@ -341,7 +346,7 @@ and stmt env = function
   | C.Try (_, st, catchopt, finally_opt) ->
     let st = stmt1 env st in
     let catchopt = opt (fun env (_, arg, st) ->
-       let arg = name env (paren arg) in
+       let arg = name env (C.unparen arg) in
        let st = stmt1 env st in
        (arg, st)
        ) env catchopt in
@@ -431,16 +436,16 @@ and expr env = function
     A.ObjAccess (e, A.PN_Computed (expr env (paren e2)))
     *)
     let e = expr env e in
-    let e2 = expr env (paren e2) in
+    let e2 = expr env (C.unparen e2) in
     A.ArrAccess (e, e2)
   | C.Object xs ->
-    A.Obj (xs |> paren |> comma_list |> List.map (property env))
+    A.Obj (xs |> C.unparen |> C.uncomma |> List.map (property env))
   | C.Array (tok, xs, _) ->
     (* A.Obj (array_obj env 0 tok xs) *)
     A.Arr (array_arr env tok xs)
   | C.Apply (e, es) ->
     let e = expr env e in
-    let es = List.map (expr env) (es |> paren |> comma_list) in
+    let es = List.map (expr env) (es |> C.unparen |> C.uncomma) in
     A.Apply (e, es)
   | C.Conditional (e1, _, e2, _, e3) ->
     let e1 = expr env e1 in
@@ -505,7 +510,7 @@ and expr env = function
 
   | C.XhpHtml x -> Transpile_js.xhp (expr env) x
   | C.Paren x ->
-     expr env (paren x)
+     expr env (C.unparen x)
 
 and expr_opt env = function
   | None -> A.Nop
@@ -573,10 +578,13 @@ and encaps env = function
 (* Entities *)
 (* ------------------------------------------------------------------------- *)
 and var_binding env vkind = function
-  | C.VarClassic x -> variable_declaration env vkind x
+  | C.VarClassic x -> [variable_declaration env vkind x]
   | C.VarPattern x -> 
-    raise (TodoConstruct("VarPattern", 
-      (C.Pattern x.C.vpat) |> Lib_parsing_js.ii_of_any |> List.hd))
+    (try Transpile_js.var_pattern (expr env, name env, property_name env) x
+     with Failure s ->
+       raise (TodoConstruct(spf "VarPattern:%s" s, 
+        (C.Pattern x.C.vpat) |> Lib_parsing_js.ii_of_any |> List.hd))
+     )
 
 and variable_declaration env vkind x =
   let n = name env x.C.v_name in
@@ -600,9 +608,9 @@ and var_kind _env = function
 and func_decl env x =
   let props = func_props env x.C.f_kind x.C.f_properties in
   let params = 
-   x.C.f_params |> paren |> comma_list |> List.map (parameter_binding env) in
+   x.C.f_params |> C.unparen |> C.uncomma |> List.map (parameter_binding env) in
   let env = add_params env params in
-  let body = stmt1_item_list env (x.C.f_body |> paren) in
+  let body = stmt1_item_list env (x.C.f_body |> C.unparen) in
   { A.f_props = props; f_params = params; f_body = body }
 
 and func_props _env kind props = 
@@ -638,14 +646,14 @@ and arrow_func env x =
   let bindings = 
     match x.C.a_params with
     | C.ASingleParam x -> [x]
-    | C.AParams xs -> xs |> paren |> comma_list
+    | C.AParams xs -> xs |> C.unparen |> C.uncomma
   in
   let params = bindings |> List.map (parameter_binding env) in
   let env = add_params env params in
   let body = 
     match x.C.a_body with
     | C.AExpr e -> A.ExprStmt (expr env e)
-    | C.ABody xs -> stmt1_item_list env (xs |> paren)
+    | C.ABody xs -> stmt1_item_list env (xs |> C.unparen)
   in
   { A.f_props = props; f_params = params; f_body = body }
 
@@ -702,7 +710,7 @@ and array_arr env tok xs =
 and class_decl env x =
   let extends = opt (fun env (_, typ) -> nominal_type env typ) env 
     x.C.c_extends in
-  let xs = x.C.c_body |> paren |> List.map (class_element env) |> 
+  let xs = x.C.c_body |> C.unparen |> List.map (class_element env) |> 
     List.flatten in
   { A.c_extends = extends; c_body = xs }
 

@@ -23,11 +23,22 @@ let test_parse_simple xs =
   )
 
 let test_dump_ast file =
-  let cst = Parse_js.parse_program file in
-  let ast = Ast_js_build.program cst in
-  let v = Meta_ast_js.vof_program ast in
-  let s = Ocaml.string_of_v v in
-  pr s
+  try 
+    let cst = Parse_js.parse_program file in
+    let ast = Ast_js_build.program cst in
+    let v = Meta_ast_js.vof_program ast in
+    let s = Ocaml.string_of_v v in
+    pr s
+   with exn ->
+      (match exn with
+      | Ast_js_build.TodoConstruct (s, tok)
+      | Ast_js_build.UnhandledConstruct (s, tok)
+        -> 
+        pr2 s;
+        pr2 (Parse_info.error_message_info tok);
+
+      | _ -> raise exn
+      )
 
 (*****************************************************************************)
 (* Main entry for Arg *)
