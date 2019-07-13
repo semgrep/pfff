@@ -786,9 +786,17 @@ let (error_messagebis: filename -> (string * int) -> int -> string)=
   let charpos = lexstart      + decalage in
   let tok = lexeme in
   let (line, pos, linecontent) =  info_from_charpos charpos filename in
+  let s = Common2.chop linecontent in
+  let s = 
+     (* this happens in Javascript for minified files *)
+     if String.length s > 200
+     then (String.sub s 0 100)  ^ " (TOO LONG, SHORTEN!)..."
+     else s
+  in
   spf "File \"%s\", line %d, column %d,  charpos = %d
     around = '%s', whole content = %s"
-    filename line pos charpos tok (Common2.chop linecontent)
+    filename line pos charpos tok s
+     
 
 let error_message = fun filename (lexeme, lexstart) ->
   try error_messagebis filename (lexeme, lexstart) 0
@@ -831,7 +839,14 @@ let print_bad line_error (start_line, end_line) filelines  =
     pr2 ("badcount: " ^ i_to_s (end_line - start_line));
 
     for i = start_line to end_line do
-      let line = filelines.(i) in
+      let s = filelines.(i) in
+      let line = 
+        (* this happens in Javascript for minified files *)
+        if String.length s > 200
+        then (String.sub s 0 100)  ^ " (TOO LONG, SHORTEN!)..."
+        else s
+      in
+
 
       if i =|= line_error
       then  pr2 ("BAD:!!!!!" ^ " " ^ line)
