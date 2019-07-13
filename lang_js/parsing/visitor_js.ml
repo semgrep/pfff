@@ -652,6 +652,8 @@ and v_name_import =
       let v1 = v_tok v1 and v2 = v_tok v2 and v3 = v_name v3 in ()
   | ImportNames v1 ->
       let v1 = v_brace (v_comma_list v_import_name) v1 in ()
+  | ImportTypes (v1, v2) ->
+      let v1 = v_tok v1 and v2 = v_brace (v_comma_list v_import_name) v2 in ()
 and v_import_default v = v_name v
 and v_import_name (v1, v2) =
   let v1 = v_name v1

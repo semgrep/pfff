@@ -162,6 +162,9 @@ and import env = function
            in
            A.Import (n1, n2, file)
          )
+      | C.ImportTypes (_tok, _xs) ->
+         (* ignore for now *)
+         []
        )
      )
 

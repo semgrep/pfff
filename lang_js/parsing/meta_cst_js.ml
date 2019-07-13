@@ -875,6 +875,10 @@ and vof_name_import =
   | ImportNames v1 ->
       let v1 = vof_brace (vof_comma_list vof_import_name) v1
       in Ocaml.VSum (("ImportNames", [ v1 ]))
+  | ImportTypes (v1, v2) ->
+      let v1 = vof_tok v1 in
+      let v2 = vof_brace (vof_comma_list vof_import_name) v2
+      in Ocaml.VSum (("ImportTypes", [ v1; v2 ]))
 and vof_import_default v = vof_name v
 and vof_import_name (v1, v2) =
   let v1 = vof_name v1

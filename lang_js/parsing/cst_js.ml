@@ -583,6 +583,8 @@ and import =
    and name_import =
      | ImportNamespace of tok (* * *) * tok (* as *) * name
      | ImportNames of import_name comma_list brace
+     (* typing-ext: *)
+     | ImportTypes of tok (* 'type' *) * import_name comma_list brace
    and import_default = name
    and import_name = name * (tok (* as *) * name) option
 

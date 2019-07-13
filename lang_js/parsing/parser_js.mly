@@ -278,13 +278,19 @@ import_default:
 import_names:
  | T_MULT T_AS binding_identifier 
    { ImportNamespace ($1, $2, $3) }
+ | named_imports 
+   { ImportNames $1 }
+ /*(* typing-ext: *)*/
+ | T_TYPE named_imports
+   { ImportTypes ($1, $2) }
 
+named_imports:
  | T_LCURLY T_RCURLY 
-   { ImportNames ($1, [], $2) }
+   { ($1, [], $2) }
  | T_LCURLY import_specifiers          T_RCURLY 
-   { ImportNames ($1, $2, $3) }
+   { ($1, $2, $3) }
  | T_LCURLY import_specifiers T_COMMA  T_RCURLY 
-   { ImportNames ($1, $2 @ [Right $3], $4) }
+   { ($1, $2 @ [Right $3], $4) }
 
 /*(* also valid for export *)*/
 from_clause: T_FROM module_specifier { ($1, $2) }
