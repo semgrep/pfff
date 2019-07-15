@@ -500,7 +500,16 @@ and expr env e =
      obj_ env o
   | Arr xs ->
      List.iter (expr env) xs
-  | Class c ->
+  | Class (c, nopt) ->
+     let env =
+      match nopt with
+      | None -> env
+      | Some n -> 
+        let v = { v_name = n; v_kind = Let; v_init = Nop; (* TODO *)
+                  v_resolved = ref Local}
+        in
+        add_locals env [v]
+     in
      class_ env c
   | ObjAccess (e, prop) ->
     (match e with
@@ -524,8 +533,9 @@ and expr env e =
       match nopt with
       | None -> env
       | Some n -> 
-        let v = { v_name = n; v_kind = Let; v_init = Nop; 
-                  v_resolved = ref Local}in
+        let v = { v_name = n; v_kind = Let; v_init = Nop; (* TODO *)
+                  v_resolved = ref Local}
+        in
         add_locals env [v]
     in
     fun_ env f

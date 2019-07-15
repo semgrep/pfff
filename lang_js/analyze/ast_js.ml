@@ -93,20 +93,20 @@ type special =
 
   (* Special vars *)
   | This | Super
-  (* CommonJS *)
+  (* CommonJS part1 *)
   | Exports | Module
 
   (* Special apply *)
   | New | NewTarget
   | Eval (* builtin not in grammar *)
-  (* CommonJS *)
-  | Require
   | Seq | Void
   | Typeof | Instanceof
   | In | Delete 
   | Spread
   | Yield | YieldStar | Await
   | Encaps of name option (* less: resolve? *)
+  (* CommonJS part2 *)
+  | Require
 
   | UseStrict
 
@@ -134,7 +134,7 @@ type filename = string wrap
  (* with tarzan *)
 
 (* when doing export default Foo and import Bar, ... *)
-let default_entity = "$default$"
+let default_entity = "!default!"
 
 type property_name = 
   | PN of name
@@ -160,7 +160,7 @@ and expr =
 
   (* less: could be transformed in a series of Assign(ObjAccess, ...) *)
   | Obj of obj_
-  | Class of class_
+  | Class of class_ * name option (* when part of module.exports = ... *)
   | ObjAccess of expr * property_name
   (* we could transform it in an Obj but can be useful to remember 
    * the difference in further analysis (e.g., in the abstract interpreter) *)
@@ -245,6 +245,7 @@ and fun_ = {
 and obj_ = property list
 
 and class_ = { 
+  (* usually simply an Id *)
   c_extends: expr option;
   c_body: property list;
 }

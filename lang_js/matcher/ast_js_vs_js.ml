@@ -682,13 +682,14 @@ and m_expr a b =
        B.Obj(b1)
     )
     )
-  | A.Class(a1), B.Class(b1) ->
+  | A.Class(a1, a2), B.Class(b1, b2) ->
     m_class_ a1 b1 >>= (fun (a1, b1) -> 
+    (m_option m_name) a2 b2 >>= (fun (a2, b2) -> 
     return (
-       A.Class(a1),
-       B.Class(b1)
+       A.Class(a1, a2),
+       B.Class(b1, b2)
     )
-    )
+    ))
   | A.ObjAccess(a1, a2), B.ObjAccess(b1, b2) ->
     m_expr a1 b1 >>= (fun (a1, b1) -> 
     m_property_name a2 b2 >>= (fun (a2, b2) -> 

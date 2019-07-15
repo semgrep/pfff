@@ -112,7 +112,10 @@ and vof_expr =
       and v2 = vof_expr v2
       in Ocaml.VSum (("ArrAccess", [ v1; v2 ]))
   | Obj v1 -> let v1 = vof_obj_ v1 in Ocaml.VSum (("Obj", [ v1 ]))
-  | Class v1 -> let v1 = vof_class_ v1 in Ocaml.VSum (("Class", [ v1 ]))
+  | Class (v1, v2) -> 
+     let v1 = vof_class_ v1 in 
+     let v2 = Ocaml.vof_option vof_name v2 in
+     Ocaml.VSum (("Class", [ v1; v2 ]))
   | ObjAccess ((v1, v2)) ->
       let v1 = vof_expr v1
       and v2 = vof_property_name v2

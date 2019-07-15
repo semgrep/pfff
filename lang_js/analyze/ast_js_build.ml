@@ -123,7 +123,7 @@ and module_items env xs =
   xs |> List.map (module_item env) |> List.flatten
 
 and module_item env = function
-  | C.It x -> item env x |> List.map (fun res -> 
+  | C.It x -> item None env x |> List.map (fun res -> 
       match res with
       | A.VarDecl var -> A.V var
       | _ -> 
@@ -176,21 +176,18 @@ and export env tok = function
             v_resolved = not_resolved () } in
    [A.V v; A.M (A.Export (n))]
  | C.ExportDecl x ->
-   let xs = item env x in
+   let xs = item None env x in
    xs |> List.map (function
-    (* less: v_kind? *)
     | A.VarDecl v -> 
          [A.V v; A.M (A.Export (v.A.v_name))]
     | _ -> raise (UnhandledConstruct ("exporting a stmt", tok))
    ) |> List.flatten
  | C.ExportDefaultDecl (tok, x) ->
-   let xs = item env x in
+   (* this is ok to have anonymous entities here *)
+   let xs = item (Some tok) env x in
    xs |> List.map (function
     | A.VarDecl v -> 
-        (* todo: what was in v.A.v_name ?*)
-        let n = A.default_entity, tok in 
-        let v = { v with A.v_name = n } in
-        [A.V v;  A.M (A.Export (n))]
+        [A.V v;  A.M (A.Export (v.A.v_name))]
     | _ -> raise (UnhandledConstruct ("exporting a stmt", tok))
    ) |> List.flatten
  | C.ExportNames (xs, _) ->
@@ -205,8 +202,6 @@ and export env tok = function
                    v_resolved = not_resolved () } in
          [A.V v; A.M (A.Export n2)]
   ) |> List.flatten
- | C.ReExportNamespace (_, _, _) ->
-   raise (UnhandledConstruct ("reexporting namespace", tok))
  | C.ReExportNames (xs, (_from, path), _) ->
    xs |> C.unbrace |> C.uncomma |> List.map (fun (n1, n2opt) ->
      let n1 = name env n1 in
@@ -224,30 +219,43 @@ and export env tok = function
        let v = { A.v_name = n2; v_kind = A.Const; v_init = id; 
                   v_resolved = not_resolved () } in
        [A.M import; A.V v; A.M (A.Export n2)]
-
    ) |> List.flatten
 
-and item env = function
+ | C.ReExportNamespace (_, _, _) ->
+   raise (UnhandledConstruct ("reexporting namespace", tok))
+
+
+and item default_opt env = function
   | C.St x -> stmt env x
   | C.FunDecl x -> 
     let fun_ = func_decl env x in
-    (match x.C.f_kind with
-    | C.F_func (_, Some x) ->
-      [A.VarDecl {A.v_name = name env x; v_kind = A.Const; 
+    (match x.C.f_kind, default_opt with
+    | C.F_func (_, Some x), None ->
+      let n = name env x in
+      [A.VarDecl {A.v_name = n; v_kind = A.Const; 
+                  v_init = A.Fun (fun_, None); v_resolved = not_resolved()}]
+
+    | C.F_func (_, None), Some tok ->
+      let n = A.default_entity, tok in 
+      [A.VarDecl {A.v_name = n; v_kind = A.Const; 
                   v_init = A.Fun (fun_, None); v_resolved = not_resolved()}]
     | _ ->
        raise (UnhandledConstruct ("weird func decl", fst3 x.C.f_params))
     )
   | C.ClassDecl x -> 
     let class_ = class_decl env x in
-    (match x.C.c_name with
-    | Some x ->
-      [A.VarDecl {A.v_name = name env x; v_kind=A.Const;
-                  v_init=A.Class class_; v_resolved = not_resolved ()}]
-    | None ->
-       raise (UnhandledConstruct ("weird anon class decl", x.C.c_tok))
+    (match x.C.c_name, default_opt with
+    | Some x, None ->
+      let n = name env x in
+      [A.VarDecl {A.v_name = n; v_kind=A.Const;
+                  v_init=A.Class (class_, None); v_resolved = not_resolved ()}]
+    | None, Some tok ->
+      let n = A.default_entity, tok in 
+      [A.VarDecl {A.v_name = n; v_kind=A.Const;
+                  v_init=A.Class (class_, None); v_resolved = not_resolved ()}]
+    | _ ->
+       raise (UnhandledConstruct ("weird class decl", x.C.c_tok))
     )
-
   | C.InterfaceDecl x -> 
     raise (UnhandledConstruct ("Typescript", x.C.i_tok))
   | C.ItemTodo tok ->
@@ -394,7 +402,7 @@ and stmt1_item_list env items =
  let rec aux acc env = function
     | [] -> List.rev acc |> List.flatten |> stmt1
     | x::xs ->
-      let ys = item env x in
+      let ys = item None env x in
       let env = 
          let locals = ys |> Common.map_filter (fun x ->
            match x with
@@ -504,9 +512,8 @@ and expr env = function
   | C.Class x ->
     let class_ = class_decl env x in
     (match x.C.c_name with
-    | None -> A.Class class_
-    | Some _ ->
-       raise (UnhandledConstruct ("weird named class expr", x.C.c_tok))
+    | None -> A.Class (class_, None)
+    | Some n -> A.Class (class_, Some (name env n))
     )
   | C.Arrow x -> A.Fun (arrow_func env x, None)
   | C.Yield (tok, star, eopt) ->
@@ -690,6 +697,7 @@ and property env = function
     | C.F_method (pn) ->
       let pname = property_name env pn in
       A.Field (pname, [], A.Fun (fun_, None))
+    (* TODO: get/set *)
     | _ ->
        raise (UnhandledConstruct ("weird method decl", fst3 x.C.f_params))
     )
@@ -753,6 +761,7 @@ and class_element env = function
     | C.F_method pn ->
       let pname = property_name env pn in
       [A.Field (pname, props, A.Fun (fun_, None))]
+    (* TODO: get/set methods *)
     | _ ->
        raise (UnhandledConstruct ("weird method decl", fst3 x.C.f_params))
     )

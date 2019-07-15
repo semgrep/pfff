@@ -152,7 +152,10 @@ and map_expr =
   | Assign ((v1, v2)) ->
       let v1 = map_expr v1 and v2 = map_expr v2 in Assign ((v1, v2))
   | Obj v1 -> let v1 = map_obj_ v1 in Obj ((v1))
-  | Class v1 -> let v1 = map_class_ v1 in Class ((v1))
+  | Class (v1, v2) -> 
+    let v1 = map_class_ v1 in
+    let v2 = map_option map_name v2 in
+    Class ((v1, v2))
   | ObjAccess ((v1, v2)) ->
       let v1 = map_expr v1
       and v2 = map_property_name v2
