@@ -32,7 +32,7 @@
  *    The only token information kept is for identifiers for error reporting.
  *    See wrap() below.
  *
- *  - no types
+ *  - no types (but could revisit this decision)
  *  - no Typescript (no interface)
  *  - no U, B, Yield, Await, Seq, ... just Apply (and Special Id)
  *  - no field vs method. A method is just sugar to define
@@ -40,11 +40,15 @@
  *    thx to arrows).
  *  - old: no Period vs Bracket (actually good to differentiate)
  *  - old: no Object vs Array (actually good to differentiate)
- *  - no func vs method vs arrow
+ *  - no func vs method vs arrow, just fun_
  *  - no class elements vs object elements
- *  - No Nop (EmptyStmt); transformed in an empty Block.
+ *  - No Nop (EmptyStmt); transformed in an empty Block,
+ *    (but a new Nop for empty expressions)
  *  - no patterns (they are transpiled, see transpile_js.ml)
  *  - no JSX (see transpile_js.ml)
+ *  - no ExportDefaultDecl, ExportDefaultExpr, just unsugared in
+ *    separate variable declarations and an Export name
+ *    (using 'default_entity' special name)
  * 
  * todo:
  *  - add back type information? useful for many analysis.
@@ -160,7 +164,7 @@ and expr =
 
   (* less: could be transformed in a series of Assign(ObjAccess, ...) *)
   | Obj of obj_
-  | Class of class_ * name option (* when part of module.exports = ... *)
+  | Class of class_ * name option (* when assigned in module.exports  *)
   | ObjAccess of expr * property_name
   (* we could transform it in an Obj but can be useful to remember 
    * the difference in further analysis (e.g., in the abstract interpreter) *)
@@ -168,7 +172,7 @@ and expr =
   (* this can also be used to access object fields dynamically *)
   | ArrAccess of expr * expr
 
-  | Fun of fun_ * name option (* when recursive *)
+  | Fun of fun_ * name option (* when recursive or assigned in module.exports*)
   | Apply of expr * expr list
 
   (* could unify with Apply, but need Lazy special then *)
@@ -196,9 +200,9 @@ and stmt =
   | Throw of expr
   | Try of stmt * catch option * stmt option
 
-  (* todo? ES6 modules can appear only at the toplevel
+  (* todo? ModuleDirective of module_directive 
+   * ES6 modules can appear only at the toplevel
   *  but CommonJS require can be inside ifs
-  *  ModuleDirective of module_directive 
   *)
 
   and catch = name * stmt
