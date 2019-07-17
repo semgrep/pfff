@@ -205,20 +205,21 @@ and stmt =
   *  but CommonJS require can be inside ifs
   *)
 
-  and catch = name * stmt
-
   (* less: could use some Special instead? *)
   and for_header = 
    | ForClassic of vars_or_expr * expr * expr
    | ForIn of var_or_expr * expr
    | ForOf of var_or_expr * expr
 
+    (* the expr is usually just an assign *)
+    and vars_or_expr = (var list, expr) Common.either
+    and var_or_expr = (var, expr) Common.either
+
   and case = 
    | Case of expr * stmt
    | Default of stmt
- 
-  and vars_or_expr = (var list, expr) Common.either
-  and var_or_expr = (var, expr) Common.either
+
+  and catch = name * stmt
 
 (* ------------------------------------------------------------------------- *)
 (* Entities *)
