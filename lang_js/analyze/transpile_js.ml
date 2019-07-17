@@ -20,10 +20,11 @@ module C = Cst_js
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Helpers for Ast_js_build.
+(* Poor's man Javascript transpiler! 
+ * Probably incorrect and incomplete but good enough for codegraph.
  *
  * You can test the babel transpiler and see live how it transpiles code
- * here: https://babeljs.io/repl which is a great ressource.
+ * here: https://babeljs.io/repl (great ressource).
  *
  * alt:
  *  - just call babel?
@@ -36,7 +37,8 @@ module C = Cst_js
 (*****************************************************************************)
 (* Xhp *)
 (*****************************************************************************)
-(* poor's man transpiler! probably incorrect but good enough for codegraph *)
+(* TODO probably incomplete *)
+
 let id_of_tag tag =
   A.Id (tag, ref A.NotResolved)
 
@@ -82,6 +84,10 @@ and xhp_body expr x =
 (*****************************************************************************)
 (* Patterns *)
 (*****************************************************************************)
+(* TODO incomplete, handle all patterns, and compare with
+ * what babel actually does.
+ *)
+
 (* mostly a dupe of graph_code.ml, but avoid deps and take a tok *)
 let cnt = ref 0
 let gensym_name s tok =
@@ -137,3 +143,42 @@ let var_pattern (expr, fname, fpname) x =
         intermediate, [var]
     in
     vars @ compile_pattern (expr, fname, fpname) vname x.C.vpat
+
+(*****************************************************************************)
+(* Iterator for of *)
+(*****************************************************************************)
+(* for (xx of yy) -~> 
+ *   for (var _iterator = yy[Symbol.iterator](), _step;
+ *        !(_step = _iterator.next()).done;;) {
+ *     xx = _step.value;
+ * TODO probably incomplete.
+ *)
+
+let forof (lhs_var, _tokof, e2, st) (expr, stmt) =
+  let _e2 = expr e2 in
+  let _st = stmt st in
+
+  let _iterator = raise Todo in
+  let _step = raise Todo in
+
+  let for_init = raise Todo in
+  let for_cond = raise Todo in
+  let _step_value = raise Todo in
+
+  let _vars_or_assign_stmts =
+   match lhs_var with
+   | C.LHS2 _e -> 
+    (* Right (expr env e) *) 
+     raise Todo
+   | C.ForVar ((_vkind,_tok), _binding) -> 
+      raise Todo
+      (*
+        let vars = var_binding env vkind binding in
+        (match vars with
+        | [var] -> Left var
+        | _ -> raise (TodoConstruct ("For in with (pattern) vars?", tok))
+        )
+       *)
+    in 
+    let finalst = raise Todo in
+    [A.For (A.ForClassic (for_init, for_cond, A.Nop), finalst)]

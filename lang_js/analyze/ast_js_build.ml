@@ -355,20 +355,8 @@ and stmt env = function
     let e2 = expr env e2 in
     let st = stmt1 env st in
     [A.For (A.ForIn (e1, e2), st)]
-  | C.ForOf (_, _, lhs_var, _, e2, _, st) ->
-    let e1 =
-      match lhs_var with
-      | C.LHS2 e -> Right (expr env e)
-      | C.ForVar ((vkind,tok), binding) -> 
-        let vars = var_binding env vkind binding in
-        (match vars with
-        | [var] -> Left var
-        | _ -> raise (TodoConstruct ("For in with (pattern) vars?", tok))
-        )
-    in 
-    let e2 = expr env e2 in
-    let st = stmt1 env st in
-    [A.For (A.ForOf (e1, e2), st)]
+  | C.ForOf (_, _, lhs_var, tokof, e2, _, st) ->
+    Transpile_js.forof (lhs_var, tokof, e2, st) (expr env, stmt1 env)
   | C.Switch (_, e, xs) ->
     let e = e |> C.unparen |> expr env in
     let xs = xs |> C.unparen |> List.map (case_clause env) in
