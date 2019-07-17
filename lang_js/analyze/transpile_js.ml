@@ -154,22 +154,43 @@ let var_pattern (expr, fname, fpname) x =
  * TODO probably incomplete.
  *)
 
-let forof (lhs_var, _tokof, e2, st) (expr, stmt) =
-  let _e2 = expr e2 in
-  let _st = stmt st in
+let forof (lhs_var, tok, e2, st) (expr, stmt) =
+  let e2 = expr e2 in
+  let st = stmt st in
 
-  let _iterator = raise Todo in
-  let _step = raise Todo in
+  let iterator = "!iterator!", tok in
+  let step = "!step!", tok in
+  let symbol_iterator = 
+    A.ObjAccess (A.Id (("Symbol", tok), ref A.NotResolved),
+                 A.PN ("iterator", tok))
+  in
 
-  let for_init = raise Todo in
-  let for_cond = raise Todo in
-  let _step_value = raise Todo in
+  let for_init = 
+    Left [
+      { A.v_name = iterator; v_kind = A.Let; v_resolved = ref A.NotResolved;
+        v_init = A.Apply (A.ArrAccess (e2, symbol_iterator), []) };
+      { A.v_name = step; v_kind = A.Let; v_resolved = ref A.NotResolved;
+        v_init = A.Nop; }
+    ]
+  in
+  let for_cond = 
+    A.Apply (A.IdSpecial (A.Not, tok), [
+      A.ObjAccess (A.Assign (A.Id (step, ref A.NotResolved),
+                          A.Apply (A.ObjAccess (A.Id (iterator, 
+                                                      ref A.NotResolved),
+                                                A.PN ("next", tok)),
+                                   [])),
+        A.PN ("done", tok))
+       ])
+  in
+  let step_value = A.ObjAccess (A.Id (step, ref A.NotResolved),
+                               A.PN ("value", tok)) in
 
-  let _vars_or_assign_stmts =
+  let vars_or_assign_stmts =
    match lhs_var with
-   | C.LHS2 _e -> 
-    (* Right (expr env e) *) 
-     raise Todo
+   | C.LHS2 e -> 
+     let e = expr e in
+     [A.ExprStmt (A.Assign (e, step_value))]
    | C.ForVar ((_vkind,_tok), _binding) -> 
       raise Todo
       (*
@@ -179,6 +200,6 @@ let forof (lhs_var, _tokof, e2, st) (expr, stmt) =
         | _ -> raise (TodoConstruct ("For in with (pattern) vars?", tok))
         )
        *)
-    in 
-    let finalst = raise Todo in
-    [A.For (A.ForClassic (for_init, for_cond, A.Nop), finalst)]
+  in 
+  let finalst = vars_or_assign_stmts @ st  in
+  [A.For (A.ForClassic (for_init, for_cond, A.Nop), A.Block finalst)]
