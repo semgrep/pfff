@@ -284,44 +284,44 @@ type expr =
 (* ------------------------------------------------------------------------- *)
 (* Statement *)
 (* ------------------------------------------------------------------------- *)
-and st =
+and stmt =
   | VarsDecl of var_kind wrap * var_binding comma_list * sc
 
   | Block of item list brace
   | Nop of sc
   | ExprStmt of expr * sc
 
-  | If of tok * expr paren * st * (tok (* else *) * st) option
-  | Do of tok * st * tok (* while *) * expr paren * sc
-  | While of tok * expr paren * st
+  | If of tok * expr paren * stmt * (tok (* else *) * stmt) option
+  | Do of tok * stmt * tok (* while *) * expr paren * sc
+  | While of tok * expr paren * stmt
 
   | For of tok * tok (* ( *) *
       lhs_or_vars option * tok (* ; *) *
       expr option * tok (* ; *) *
       expr option *
       tok (* ) *) *
-      st
+      stmt
   | ForIn of tok * tok (* ( *) * lhs_or_var * tok (* in *) *
-      expr * tok (* ) *) * st
+      expr * tok (* ) *) * stmt
   (* es6: iterators *)
   | ForOf of tok * tok (* ( *) * lhs_or_var * tok (* of *) *
-      expr * tok (* ) *) * st
+      expr * tok (* ) *) * stmt
 
   | Switch of tok * expr paren *
-      case_clause list brace (* was   (case_clause list * st) list *)
+      case_clause list brace (* was   (case_clause list * stmt) list *)
 
   | Continue of tok * label option * sc
   | Break of tok * label option * sc
 
   | Return of tok * expr option * sc
 
-  | With of tok * expr paren * st
-  | Labeled of label * tok (*:*) * st
+  | With of tok * expr paren * stmt
+  | Labeled of label * tok (*:*) * stmt
 
   | Throw of tok * expr * sc
-  | Try of tok * st (* always a block *) *
-      (tok * arg_catch paren * st) option * (* catch *)
-      (tok * st) option (* finally *)
+  | Try of tok * stmt (* always a block *) *
+      (tok * arg_catch paren * stmt) option * (* catch *)
+      (tok * stmt) option (* finally *)
 
   and label = string wrap
 
@@ -478,7 +478,7 @@ and var_binding =
     and init = (tok (*=*) * expr)
 
   (* in theory Const and Let can appear only in statement items, not in
-   * simple statements (st)
+   * simple statements (stmt)
    *)
   and var_kind =
     | Var 
@@ -555,7 +555,7 @@ and interface_decl = {
 (* ------------------------------------------------------------------------- *)
 and item =
   (* contains VarsDecl, which are a Decl *)
-  | St of st
+  | St of stmt
 
   | FunDecl of func_decl
   (* es6-ext: *)
@@ -622,7 +622,7 @@ and export =
 
 type any =
   | Expr of expr
-  | Stmt of st
+  | Stmt of stmt
   | Pattern of pattern
   | Item of item
   | Program of program

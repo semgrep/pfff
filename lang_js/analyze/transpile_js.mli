@@ -11,7 +11,7 @@ val var_pattern:
   Cst_js.variable_declaration_pattern -> Ast_js.var list
 
 val forof:
-  (Cst_js.lhs_or_var * Cst_js.tok * Cst_js.expr * Cst_js.st) ->
+  (Cst_js.lhs_or_var * Cst_js.tok * Cst_js.expr * Cst_js.stmt) ->
    ((Cst_js.expr -> Ast_js.expr) *
-    (Cst_js.st -> Ast_js.stmt)) ->
+    (Cst_js.stmt -> Ast_js.stmt)) ->
    Ast_js.stmt list

@@ -23,7 +23,7 @@ open Cst_js
 (* hooks *)
 type visitor_in = {
   kexpr: (expr  -> unit) * visitor_out -> expr  -> unit;
-  kstmt: (st  -> unit) * visitor_out -> st  -> unit;
+  kstmt: (stmt  -> unit) * visitor_out -> stmt  -> unit;
   kprop: (property -> unit) * visitor_out -> property -> unit;
   kinfo: (tok -> unit)  * visitor_out -> tok  -> unit;
 }
