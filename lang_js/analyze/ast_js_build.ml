@@ -356,7 +356,12 @@ and stmt env = function
     let st = stmt1 env st in
     [A.For (A.ForIn (e1, e2), st)]
   | C.ForOf (_, _, lhs_var, tokof, e2, _, st) ->
-    Transpile_js.forof (lhs_var, tokof, e2, st) (expr env, stmt env)
+    (try 
+      Transpile_js.forof (lhs_var, tokof, e2, st) 
+        (expr env, stmt env, var_binding env)
+     with Failure s ->
+       raise (TodoConstruct(spf "ForOf:%s" s, tokof))
+    )
   | C.Switch (_, e, xs) ->
     let e = e |> C.unparen |> expr env in
     let xs = xs |> C.unparen |> List.map (case_clause env) in

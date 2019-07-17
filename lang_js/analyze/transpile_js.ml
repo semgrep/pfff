@@ -154,7 +154,7 @@ let var_pattern (expr, fname, fpname) x =
  * TODO probably incomplete.
  *)
 
-let forof (lhs_var, tok, e2, st) (expr, stmt) =
+let forof (lhs_var, tok, e2, st) (expr, stmt, var_binding) =
   let e2 = expr e2 in
   let st = stmt st in
 
@@ -184,22 +184,30 @@ let forof (lhs_var, tok, e2, st) (expr, stmt) =
        ])
   in
   let step_value = A.ObjAccess (A.Id (step, ref A.NotResolved),
-                               A.PN ("value", tok)) in
+                               A.PN ("value", tok)) 
+  in
+  let step_value_cst = 
+    C.Period (C.V step, tok, ("value", tok)) 
+  in
 
   let vars_or_assign_stmts =
    match lhs_var with
    | C.LHS2 e -> 
      let e = expr e in
      [A.ExprStmt (A.Assign (e, step_value))]
-   | C.ForVar ((_vkind,_tok), _binding) -> 
-      raise Todo
-      (*
-        let vars = var_binding env vkind binding in
-        (match vars with
-        | [var] -> Left var
-        | _ -> raise (TodoConstruct ("For in with (pattern) vars?", tok))
-        )
-       *)
+   | C.ForVar ((vkind,_tok), binding) -> 
+      let binding = 
+        match binding with
+        | C.VarClassic x -> 
+            if x.C.v_init <> None
+            then failwith "for-of loop variable can not have an initializer";
+            C.VarClassic { x with C.v_init = Some (tok, step_value_cst) }
+        | C.VarPattern x ->
+            if x.C.vpat_init <> None
+            then failwith "for-of loop variable can not have an initializer";
+            C.VarPattern { x with C.vpat_init = Some (tok, step_value_cst) }
+      in
+      var_binding vkind binding |> List.map (fun var -> A.VarDecl var)
   in 
   let finalst = vars_or_assign_stmts @ st  in
   [A.For (A.ForClassic (for_init, for_cond, A.Nop), A.Block finalst)]
