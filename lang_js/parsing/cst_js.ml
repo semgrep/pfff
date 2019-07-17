@@ -499,11 +499,13 @@ and var_binding =
 (* es7?: *)
 and pattern = 
   | PatObj of pattern comma_list brace 
+  (* the comma_list can contain multiple Right in a row because of elision *)
   | PatArr of pattern comma_list bracket
 
   | PatId of name * init option
   (* only in PatObj *)
   | PatProp of property_name * tok (* : *) * pattern
+  (* only in PatArr *)
   | PatDots of tok (* ... *) * pattern
 
   | PatNest of pattern * init option

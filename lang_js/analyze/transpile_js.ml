@@ -94,36 +94,76 @@ let gensym_name s tok =
   incr cnt;
   spf "!%s__%d!" s !cnt, tok
 
+
+let var_of_simple_pattern (fname) init_builder pat =
+  match pat with
+  (* { x, y } = varname; *)
+  | C.PatId (name, None) ->
+    let name = fname name in
+    let init = init_builder name in
+    { A.v_name = name; v_kind = A.Let; v_init = init;
+      v_resolved = ref A.NotResolved;
+    }
+  | _ -> failwith "TODO: simple pattern not handled"
+
+
 let compile_pattern (_expr, fname, fpname) varname pat =
   match pat with
+  (* 'var { x, y } = varname'  -~> 'var x = varname.x; var y = varname.y;' *)
   | C.PatObj x ->
     x |> C.unbrace |> C.uncomma |> List.map (fun pat ->
+     (match pat with
+     | C.PatId _ ->
+       let init_builder name = 
+         A.ObjAccess (A.Id (varname, ref A.NotResolved), A.PN name)
+       in
+       var_of_simple_pattern (fname) init_builder pat 
+     (* { x: y, z } = varname; *)
+     | C.PatProp (pname, _tok, pat) ->
+       let pname = fpname pname in
+       (match pat with
+       | C.PatId (name, None) ->
+         let name = fname name in
+         let init = 
+           A.ObjAccess (A.Id (varname, ref A.NotResolved), pname) in
+         { A.v_name = name; v_kind = A.Let; v_init = init;
+           v_resolved = ref A.NotResolved;
+         }
+       | _ -> failwith "TODO: PatObj pattern not handled"
+       )
+     | _ -> failwith "TODO: PatObj pattern not handled"
+    ))
+  (* 'var [x,y] = varname' -~> 'var x = varname[0]; var y = varname[1] *)
+  | C.PatArr x ->
+    let xs = x |> C.unbrace in
+    let idx = ref 0 in
+    let aux_pat pat =
       match pat with
-      (* { x, y } = varname; *)
-      | C.PatId (name, None) ->
-        let name = fname name in
-        let init = A.ObjAccess (A.Id (varname, ref A.NotResolved),
-                                A.PN name)
+      | C.PatId _ ->
+        let init_builder (_name, tok) = 
+          A.ArrAccess (A.Id (varname, ref A.NotResolved), 
+                       A.Num (string_of_int !idx, tok))
         in
-        { A.v_name = name; v_kind = A.Let; v_init = init;
-          v_resolved = ref A.NotResolved;
-        }
-      (* { x: y, z } = varname; *)
-      | C.PatProp (pname, _tok, pat) ->
-        let pname = fpname pname in
-        (match pat with
-        | C.PatId (name, None) ->
-          let name = fname name in
-          let init = A.ObjAccess (A.Id (varname, ref A.NotResolved),
-                                  pname)
-          in
-          { A.v_name = name; v_kind = A.Let; v_init = init;
-            v_resolved = ref A.NotResolved;
-          }
-        | _ -> failwith "TODO: pattern not handled"
-        )
-      | _ -> failwith "TODO: pattern not handled"
-    )
+        var_of_simple_pattern (fname) init_builder pat
+      | C.PatDots _ -> raise Todo
+      | _ -> failwith "TODO: PatArr pattern not handled"
+    in
+    let rec aux xs = 
+      match xs with
+      | [] -> []
+      | [Right _] -> failwith "useless comma"
+      | [Left pat] -> [aux_pat pat]
+      | (Left pat)::(Right _)::xs -> 
+           let var = aux_pat pat in
+           incr idx;
+           var :: aux xs
+      (* elision *)
+      | (Right _)::xs -> 
+           incr idx;
+           aux xs
+      | Left _::Left _::_ -> failwith "Impossible Left Left"
+    in
+    aux xs
   | _ -> failwith "TODO: pattern not handled"
         
    
