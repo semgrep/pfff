@@ -145,7 +145,13 @@ let compile_pattern (_expr, fname, fpname) varname pat =
                        A.Num (string_of_int !idx, tok))
         in
         var_of_simple_pattern (fname) init_builder pat
-      | C.PatDots _ -> raise Todo
+      | C.PatDots (tok, pat) -> 
+         let init_builder (_name, _tok) = 
+          A.Apply(A.ObjAccess (A.Id (varname, ref A.NotResolved),
+                              (A.PN (("slice", tok)))),
+                  [A.Num (string_of_int !idx, tok)])
+        in
+        var_of_simple_pattern (fname) init_builder pat
       | _ -> failwith "TODO: PatArr pattern not handled"
     in
     let rec aux xs = 
