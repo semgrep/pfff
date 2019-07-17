@@ -22,6 +22,9 @@ module C = Cst_js
 (*****************************************************************************)
 (* Helpers for Ast_js_build.
  *
+ * You can test the babel transpiler and see live how it transpiles code
+ * here: https://babeljs.io/repl which is a great ressource.
+ *
  * alt:
  *  - just call babel?
  *  - r2s's transpiler (calls babel internally?)
@@ -33,6 +36,7 @@ module C = Cst_js
 (*****************************************************************************)
 (* Xhp *)
 (*****************************************************************************)
+(* poor's man transpiler! probably incorrect but good enough for codegraph *)
 let id_of_tag tag =
   A.Id (tag, ref A.NotResolved)
 
