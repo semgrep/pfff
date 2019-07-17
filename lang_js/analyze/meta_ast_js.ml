@@ -194,10 +194,6 @@ and vof_for_header =
       let v1 = Ocaml.vof_either vof_var vof_expr v1
       and v2 = vof_expr v2
       in Ocaml.VSum (("ForIn", [ v1; v2 ]))
-  | ForOf ((v1, v2)) ->
-      let v1 = Ocaml.vof_either vof_var vof_expr v1
-      and v2 = vof_expr v2
-      in Ocaml.VSum (("ForOf", [ v1; v2 ]))
 and vof_case =
   function
   | Case ((v1, v2)) ->

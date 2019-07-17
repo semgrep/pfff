@@ -182,8 +182,6 @@ and v_for_header =
       in ()
   | ForIn ((v1, v2)) ->
       let v1 = v_either v_var v_expr v1 and v2 = v_expr v2 in ()
-  | ForOf ((v1, v2)) ->
-      let v1 = v_either v_var v_expr v1 and v2 = v_expr v2 in ()
 
 and v_case =
   function

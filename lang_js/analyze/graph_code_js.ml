@@ -436,7 +436,7 @@ and for_header env = function
    expr env e2;
    expr env e3;
    env
- | ForIn (e1, e2) | ForOf (e1, e2) ->
+ | ForIn (e1, e2) ->
    let env =
      match e1 with
      | Left var ->

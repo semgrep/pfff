@@ -49,6 +49,7 @@
  *  - no ExportDefaultDecl, ExportDefaultExpr, just unsugared in
  *    separate variable declarations and an Export name
  *    (using 'default_entity' special name)
+ *  - no ForOf (see transpile_js.ml)
  * 
  * todo:
  *  - add back type information? useful for many analysis.
@@ -209,7 +210,6 @@ and stmt =
   and for_header = 
    | ForClassic of vars_or_expr * expr * expr
    | ForIn of var_or_expr * expr
-   | ForOf of var_or_expr * expr
 
     (* the expr is usually just an assign *)
     and vars_or_expr = (var list, expr) Common.either

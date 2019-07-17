@@ -978,17 +978,8 @@ and m_for_header a b =
        B.ForIn(b1, b2)
     )
     ))
-  | A.ForOf(a1, a2), B.ForOf(b1, b2) ->
-    m_var_or_expr a1 b1 >>= (fun (a1, b1) -> 
-    m_expr a2 b2 >>= (fun (a2, b2) -> 
-    return (
-       A.ForOf(a1, a2),
-       B.ForOf(b1, b2)
-    )
-    ))
   | A.ForClassic _, _
   | A.ForIn _, _
-  | A.ForOf _, _
    -> fail ()
 
 (* ------------------------------------------------------------------------- *)

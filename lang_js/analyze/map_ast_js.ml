@@ -222,10 +222,6 @@ and map_for_header =
       let v1 = Ocaml.map_of_either map_var map_expr v1
       and v2 = map_expr v2
       in ForIn ((v1, v2))
-  | ForOf ((v1, v2)) ->
-      let v1 = Ocaml.map_of_either map_var map_expr v1
-      and v2 = map_expr v2
-      in ForOf ((v1, v2))
 and map_case =
   function
   | Case ((v1, v2)) ->
