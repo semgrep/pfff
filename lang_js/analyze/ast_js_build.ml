@@ -239,6 +239,15 @@ and item default_opt env = function
       let n = A.default_entity, tok in 
       [A.VarDecl {A.v_name = n; v_kind = A.Const; 
                   v_init = A.Fun (fun_, None); v_resolved = not_resolved()}]
+    | C.F_func (_, Some x), Some tok ->
+      let n1 = A.default_entity, tok in 
+      let n2 = name env x in
+      [A.VarDecl {A.v_name = n1; v_kind = A.Const; 
+                  v_init = A.Fun (fun_, Some n2); v_resolved = not_resolved()}]
+
+    | C.F_func (_, None), None ->
+       raise (UnhandledConstruct ("weird: anonymous func decl", 
+                fst3 x.C.f_params))
     | _ ->
        raise (UnhandledConstruct ("weird func decl", fst3 x.C.f_params))
     )
@@ -253,8 +262,14 @@ and item default_opt env = function
       let n = A.default_entity, tok in 
       [A.VarDecl {A.v_name = n; v_kind=A.Const;
                   v_init=A.Class (class_, None); v_resolved = not_resolved ()}]
-    | _ ->
-       raise (UnhandledConstruct ("weird class decl", x.C.c_tok))
+    | Some x, Some tok ->
+      let n1 = A.default_entity, tok in 
+      let n2 = name env x in
+      [A.VarDecl {A.v_name = n1; v_kind=A.Const;
+                  v_init=A.Class (class_, Some n2); 
+                  v_resolved = not_resolved ()}]
+    | None, None ->
+       raise (UnhandledConstruct ("weird: anonymous class decl", x.C.c_tok))
     )
   | C.InterfaceDecl x -> 
     raise (UnhandledConstruct ("Typescript", x.C.i_tok))
