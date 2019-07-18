@@ -95,19 +95,29 @@ let gensym_name s tok =
   spf "!%s__%d!" s !cnt, tok
 
 
-let var_of_simple_pattern (fname) init_builder pat =
+let var_of_simple_pattern (expr, fname) init_builder pat =
   match pat with
-  (* { x, y } = varname; *)
+  (* { x } = varname; -~> x = varname.x *)
   | C.PatId (name, None) ->
     let name = fname name in
     let init = init_builder name in
     { A.v_name = name; v_kind = A.Let; v_init = init;
       v_resolved = ref A.NotResolved;
     }
+  (* { x = y } = varname; -~> x = pfff_builtin_default(varname.x, y) *)
+  | C.PatId (name, Some (tok, e)) ->
+    let name = fname name in
+    let e = expr e in
+    let init1 = init_builder name in
+    let init = A.Apply (A.Id (("pfff_builtin_default", tok),ref A.NotResolved),
+                       [init1; e]) in
+    { A.v_name = name; v_kind = A.Let; v_init = init;
+      v_resolved = ref A.NotResolved;
+    }
   | _ -> failwith "TODO: simple pattern not handled"
 
 
-let compile_pattern (_expr, fname, fpname) varname pat =
+let compile_pattern (expr, fname, fpname) varname pat =
   match pat with
   (* 'var { x, y } = varname'  -~> 'var x = varname.x; var y = varname.y;' *)
   | C.PatObj x ->
@@ -117,20 +127,14 @@ let compile_pattern (_expr, fname, fpname) varname pat =
        let init_builder name = 
          A.ObjAccess (A.Id (varname, ref A.NotResolved), A.PN name)
        in
-       var_of_simple_pattern (fname) init_builder pat 
+       var_of_simple_pattern (expr, fname) init_builder pat 
      (* { x: y, z } = varname; *)
      | C.PatProp (pname, _tok, pat) ->
        let pname = fpname pname in
-       (match pat with
-       | C.PatId (name, None) ->
-         let name = fname name in
-         let init = 
-           A.ObjAccess (A.Id (varname, ref A.NotResolved), pname) in
-         { A.v_name = name; v_kind = A.Let; v_init = init;
-           v_resolved = ref A.NotResolved;
-         }
-       | _ -> failwith "TODO: PatObj pattern not handled"
-       )
+       let init_builder _name = 
+         A.ObjAccess (A.Id (varname, ref A.NotResolved), pname)
+       in
+       var_of_simple_pattern (expr, fname) init_builder pat
      | _ -> failwith "TODO: PatObj pattern not handled"
     ))
   (* 'var [x,y] = varname' -~> 'var x = varname[0]; var y = varname[1] *)
@@ -144,14 +148,14 @@ let compile_pattern (_expr, fname, fpname) varname pat =
           A.ArrAccess (A.Id (varname, ref A.NotResolved), 
                        A.Num (string_of_int !idx, tok))
         in
-        var_of_simple_pattern (fname) init_builder pat
+        var_of_simple_pattern (expr, fname) init_builder pat
       | C.PatDots (tok, pat) -> 
          let init_builder (_name, _tok) = 
           A.Apply(A.ObjAccess (A.Id (varname, ref A.NotResolved),
                               (A.PN (("slice", tok)))),
                   [A.Num (string_of_int !idx, tok)])
         in
-        var_of_simple_pattern (fname) init_builder pat
+        var_of_simple_pattern (expr, fname) init_builder pat
       | _ -> failwith "TODO: PatArr pattern not handled"
     in
     let rec aux xs = 
