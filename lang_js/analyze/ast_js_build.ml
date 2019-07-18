@@ -703,15 +703,7 @@ and property env = function
    let props = [] in
    A.Field (pname, props, e)
  | C.P_method x ->
-    let fun_ = func_decl env x in
-    (match x.C.f_kind with
-    | C.F_method (pn) ->
-      let pname = property_name env pn in
-      A.Field (pname, [], A.Fun (fun_, None))
-    (* TODO: get/set *)
-    | _ ->
-       raise (UnhandledConstruct ("weird method decl", fst3 x.C.f_params))
-    )
+    method_ env [] x
   | C.P_shorthand n ->
     let n = name env n in
     A.Field (A.PN n, [], A.Id (n, not_resolved ()))
@@ -762,21 +754,30 @@ and class_element env = function
     let e = init_opt env fld.C.fld_init in
     [A.Field (pn, props, e)]
   | C.C_method (static_opt, x) ->
-    let fun_ = func_decl env x in
     let props = 
       match static_opt with
       | None -> []
       | Some _ -> [A.Static]
     in
-    (match x.C.f_kind with
-    | C.F_method pn ->
-      let pname = property_name env pn in
-      [A.Field (pname, props, A.Fun (fun_, None))]
-    (* TODO: get/set methods *)
-    | _ ->
-       raise (UnhandledConstruct ("weird method decl", fst3 x.C.f_params))
-    )
+    [method_ env props x]
   | C.C_extrasemicolon _ -> []
+
+and method_ env props x =
+  let fun_ = func_decl env x in
+  let pname, fprops = 
+    match x.C.f_kind with
+    | C.F_method pn ->
+      property_name env pn, []
+    | C.F_get (_, pn) ->
+      property_name env pn, [A.Get]
+    | C.F_set (_, pn) ->
+      property_name env pn, [A.Set]
+    | C.F_func _ ->
+      raise (UnhandledConstruct ("weird method decl: unexpected F_func", 
+                                  fst3 x.C.f_params))
+  in
+  let fun_ = { fun_ with A.f_props = fprops @ fun_.A.f_props } in
+  A.Field (pname, props, A.Fun (fun_, None))
 
 (* ------------------------------------------------------------------------- *)
 (* Misc *)
