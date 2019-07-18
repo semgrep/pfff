@@ -31,7 +31,6 @@
  *    braces, angles, commas, semicolons, etc. No ParenExpr.
  *    The only token information kept is for identifiers for error reporting.
  *    See wrap() below.
- *
  *  - no types (but could revisit this decision)
  *  - no Typescript (no interface)
  *  - no U, B, Yield, Await, Seq, ... just Apply (and Special Id)
@@ -46,15 +45,15 @@
  *    (but a new Nop for empty expressions)
  *  - no patterns (they are transpiled, see transpile_js.ml)
  *  - no JSX (see transpile_js.ml)
+ *  - no ForOf (see transpile_js.ml)
  *  - no ExportDefaultDecl, ExportDefaultExpr, just unsugared in
  *    separate variable declarations and an Export name
  *    (using 'default_entity' special name)
- *  - no ForOf (see transpile_js.ml)
  * 
  * todo:
- *  - add back type information? useful for many analysis.
- *  - ast_js_es5.ml? unsugar even more? remove classes, patterns, etc.?
- *  - unsugar ES6 features, lift Var up, rename lexical vars, etc.
+ *  - add back type information? useful for many analysis!
+ *  - ast_js_es5.ml? unsugar even more? remove classes, get/set, etc.?
+ *  - unsugar ES6 features? lift Var up, rename lexical vars, etc.
  *)
 
 (*****************************************************************************)
@@ -243,9 +242,11 @@ and fun_ = {
     p_default: expr option;
     p_dots: bool;
   }
-
+  (* less: could transpile *)
   and fun_prop = 
-    | Get | Set | Generator | Async
+    | Generator | Async
+    (* only inside classes *)
+    | Get | Set 
 
 and obj_ = property list
 
