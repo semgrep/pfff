@@ -1,4 +1,4 @@
-let version = "0.36"
+let version = "0.38"
 
 let path = 
   try (Sys.getenv "PFFF_HOME") 

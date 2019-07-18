@@ -4,6 +4,12 @@
 
 ** javascript
 
+*** better AST JS builder thanks to transpiler
+
+*** poor's man transpiler
+transpile JSX, patterns, generators, just enough for codegraph
+to work on most node_modules/
+
 *** TODO handle CommonJS modules
 
 * 0.37 (Q2 2019) (new OPAM release, better JS support)

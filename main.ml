@@ -7,8 +7,7 @@ open Common
 (*****************************************************************************)
 (* Purpose *)
 (*****************************************************************************)
-(*  
- * A "driver" for the different parsers in pfff.
+(* A "driver" for the different parsers in pfff.
  * 
  * Also useful to dump the AST of a language (-dump_xxx).
  * related: https://astexplorer.net/, supports many languages, many parsers
