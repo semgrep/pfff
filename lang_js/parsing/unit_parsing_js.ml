@@ -10,7 +10,12 @@ let unittest =
 
     "regression files" >:: (fun () ->
       let dir = Filename.concat Config_pfff.path "/tests/js/parsing" in
-      let files = Common2.glob (spf "%s/*.js" dir) in
+      let files = 
+        Common2.glob (spf "%s/*.js" dir) @
+        Common2.glob (spf "%s/jsx/*.js" dir) @
+        Common2.glob (spf "%s/typescript/*.js" dir) @
+        []
+      in
       files +> List.iter (fun file ->
         try
           let _ = Parse_js.parse_program file in

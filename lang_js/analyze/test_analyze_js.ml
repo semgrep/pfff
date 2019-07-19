@@ -31,12 +31,13 @@ let test_dump_ast file =
     pr s
    with exn ->
       (match exn with
+      | Lexer_js.Lexical_error (s, tok)
       | Ast_js_build.TodoConstruct (s, tok)
       | Ast_js_build.UnhandledConstruct (s, tok)
         -> 
         pr2 s;
         pr2 (Parse_info.error_message_info tok);
-
+        raise exn
       | _ -> raise exn
       )
 
