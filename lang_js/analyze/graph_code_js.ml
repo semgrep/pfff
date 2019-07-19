@@ -640,7 +640,7 @@ let build_gen ?(verbose=false) root files =
       fprinter (spf "PB: lookup_fail on %s (in %s, at %s)"
              (G.string_of_node dst) (G.string_of_node src) 
              (Parse_info.string_of_info loc));
-      (* less: could also use Hashtbl.replace to count entities only once *)
+      (* note: could also use Hashtbl.replace to count entities only once *)
       Hashtbl.add hstat_lookup_failures dst true;
     );
 
@@ -661,6 +661,9 @@ let build_gen ?(verbose=false) root files =
         phase = Defs; file_readable; imports = Hashtbl.create 13;
       } ast
     ));
+
+  (* step2: creating the 'Use' edges *)
+
   let default_import = 
     let ast = parse Stdlib_js.path_stdlib in
     let env = { env with phase = Uses; file_readable = "Stdlib.js"; 
@@ -669,7 +672,6 @@ let build_gen ?(verbose=false) root files =
     env.imports
   in
 
-  (* step2: creating the 'Use' edges *)
   env.pr2_and_log "\nstep2: extract uses";
   files |> Console.progress ~show:verbose (fun k -> 
     List.iter (fun file ->
@@ -688,18 +690,16 @@ let build_gen ?(verbose=false) root files =
   G.remove_empty_nodes g [G.not_found; G.dupe; G.pb];
 
   (* less: lookup failures summary *)
-(*
-  let xs = Common.hashset_to_list hstat_lookup_failures in
-  let modules = xs |> List.map
-    (fun node-> Module_ml.top_module_of_node node, ()) in
-  let counts = modules |> Common.group_assoc_bykey_eff 
-                       |> List.map (fun (x, xs)-> x, List.length xs) 
-                       |> Common.sort_by_val_highfirst
-                       |> Common.take_safe 20
+  let xs = Common2.hkeys hstat_lookup_failures in
+  let counts = 
+     xs |> List.map (fun (x)-> 
+         G.string_of_node x, 
+         List.length (Hashtbl.find_all hstat_lookup_failures x))
+        |> Common.sort_by_val_highfirst
+        |> Common.take_safe 20
   in
   pr2 "Top lookup failures per modules";
   counts |> List.iter (fun (s, n) -> pr2 (spf "%-30s = %d" s n));
-*)
 
   (* finally return the graph *)
   g, env.db, !(env.asts)
@@ -712,6 +712,10 @@ let build ?verbose root files =
 (*****************************************************************************)
 (* For abstract interpreter *)
 (*****************************************************************************)
+(* todo: actually probably better to generate the code database on demand
+ * while abstract-interpreting the code and its import/require so we
+ * can actually even handle some dynamic imports.
+ *)
 let build_for_ai root files =
   let (_, db, asts) = build_gen ~verbose:false root files in
   db, asts

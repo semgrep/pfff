@@ -10,32 +10,31 @@ class Math { }
 class Date { }
 class Function { }
 class JSON { }
-
+class URL { }
+class Error { }
 
 let document;
 let window;
 let console;
+
+let process;
+let navigator;
 
 let module;
 
 const NaN;
 const Infinity;
 
+// ??
 function addEventListener(a,b) { }
 function requestAnimationFrame(a) { }
-
-let process;
-let navigator;
-
 function fetch() { }
-
-class URL { }
-class Error { }
 
 // Testing
 function expect() { }
 function it() { }
 function describe() { }
+function test() { }
 
 // JSX
 function p() { }
@@ -58,9 +57,6 @@ function footer() { }
 function img() { }
 function iframe() { }
 
-
-
 function svg() { }
 function path() { }
 function rect() { }
-
