@@ -87,7 +87,10 @@ let test_parse_ts xs =
     | _ -> false
   ) |> Common.sort
   in
-  test_parse_common xs fullxs "ts"
+  (* typescript and JSX have lexing conflicts *)
+  Common.save_excursion Flag_parsing_js.jsx false (fun () ->
+    test_parse_common xs fullxs "ts"
+  )
 
 let test_dump_js file =
   let ast = Parse_js.parse_program file in
@@ -95,6 +98,14 @@ let test_dump_js file =
   let s = Ocaml.string_of_v v in
   pr s
 
+let test_dump_ts file =
+ (* typescript and JSX have lexing conflicts *)
+ Common.save_excursion Flag_parsing_js.jsx false (fun () ->
+  let ast = Parse_js.parse_program file in
+  let v = Meta_cst_js.vof_program ast in
+  let s = Ocaml.string_of_v v in
+  pr s
+ )
 
 (*****************************************************************************)
 (* JSON output *)
@@ -166,12 +177,16 @@ let parse_js_r2c xs =
 let actions () = [
   "-tokens_js", "   <file>",
   Common.mk_action_1_arg test_tokens_js;
+
   "-parse_js", "   <file or dir>",
   Common.mk_action_n_arg test_parse_js;
   "-parse_ts", "   <file or dir>",
   Common.mk_action_n_arg test_parse_ts;
+
   "-dump_js", "   <file>",
   Common.mk_action_1_arg test_dump_js;
+  "-dump_ts", "   <file>",
+  Common.mk_action_1_arg test_dump_ts;
 
   "-parse_js_r2c", "   <file or dir>",
   Common.mk_action_n_arg parse_js_r2c;
