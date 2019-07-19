@@ -38,6 +38,10 @@ let token_kind_of_tok t =
   | T_LBRACKET _ -> PI.LBracket
   | T_RBRACKET _ -> PI.RBracket
 
+  (* note: if at some point you want to add < > do not forget to also
+   * handle T_XHP_OPEN_TAG
+   *)
+
   | TComment _ -> PI.Esthet PI.Comment
   | TCommentSpace _ -> PI.Esthet PI.Space
   | TCommentNewline _ -> PI.Esthet PI.Newline
