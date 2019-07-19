@@ -16,11 +16,28 @@
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Define the Javascript standard library entities for graph_code_js *)
+(* This module gives access to the Javascript standard library entities,
+ * which is especially useful for Graph_code_js.
+ *
+ * related: 
+ *  - Flow standard lib definitions (small set)
+ *    https://github.com/facebook/flow/tree/master/lib
+ *  - Typescript standard lib definitions (bigger set)
+ *    https://github.com/microsoft/TypeScript/tree/master/src/lib
+ *  - TypeScript generator, which generates the .generated.d.ts above
+ *    https://github.com/Microsoft/TSJS-lib-generator
+ *
+ *  - TypeScript definition manager (deprecated)
+ *    https://github.com/typings/typings
+ *  - High quality Typescript type definitions (looks like the new standard)
+ *    http://definitelytyped.org/ especially
+ *    https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/node/globals.d.ts
+ *
+ * src: https://stackoverflow.com/questions/46696266/where-can-i-find-documentation-for-typescripts-built-in-types-and-standard-libr
+ *)
 
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
 let path_stdlib = 
   Filename.concat Config_pfff.path "data/js_stdlib/stdlib.js"
-
