@@ -143,12 +143,14 @@ let file_type_of_file2 file =
 
   (* Perl or Prolog ... I made my choice *)
   | "pl" -> PL (Prolog "pl")
-  | "logic" -> PL (Prolog "logic") (* datalog of logicblox *)
-  | "dtl" -> PL (Prolog "dtl") (* bddbddb *)
-  | "dl" -> PL (Prolog "dl") (* datalog *)
   | "perl" -> PL Perl 
   | "py" -> PL Python
   | "rb" -> PL Ruby
+
+  | "logic" -> PL (Prolog "logic") (* datalog of logicblox *)
+  | "dtl" -> PL (Prolog "dtl") (* bddbddb *)
+  | "dl" -> PL (Prolog "dl") (* datalog *)
+  | "ql" | "qll" -> PL (MiscPL e) (* Semmle Query language *)
 
   | "clp" -> PL (Prolog e)
 
