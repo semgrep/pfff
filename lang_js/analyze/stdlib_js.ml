@@ -13,8 +13,9 @@
  * license.txt for more details.
  *)
 open Common
-module T = Parser_js
+module TH = Token_helpers_js
 module E = Entity_code
+module F = Ast_fuzzy
 
 (*****************************************************************************)
 (* Prelude *)
@@ -63,18 +64,38 @@ let extract_defs file =
      Parse_js.tokens file 
     )
   in
-  let toks = Common.exclude Token_helpers_js.is_comment toks in
+  let toks = Common.exclude TH.is_comment toks in
+  let trees = Parse_fuzzy.mk_trees { Parse_fuzzy.
+     tokf = TH.info_of_tok;
+     kind = TH.token_kind_of_tok;
+  } toks 
+  in
+  (* process only toplevel elements, not the one
+   * under 'declare module xx { ... }', by not recursing inside
+   * F.Braces
+   *)
   let rec aux acc = function
     | [] -> List.rev acc
-    | T.T_FUNCTION _::T.T_IDENTIFIER (s, _)::xs ->
+    | F.Tok("function", _)::F.Tok (s, _)::xs ->
        aux ((E.Function, s)::acc) xs
-    | T.T_VAR _::T.T_IDENTIFIER (s, _)::xs ->
+    | F.Tok("var",_)::F.Tok(s, _)::xs ->
        aux ((E.Global, s)::acc) xs
-    | T.T_CLASS _::T.T_IDENTIFIER (s, _)::xs ->
+    | F.Tok("class",_)::F.Tok(s, _)::xs ->
        aux ((E.Class, s)::acc) xs
     | _x::xs -> aux acc xs
   in
-  aux [] toks
+  aux [] trees
+
+let add_and_report_if_already_there already file str =
+  if Hashtbl.mem already str
+  then begin
+    let dupfile = Hashtbl.find already str in
+    pr2 (spf "entity %s defined both in %s and %s" str dupfile file);
+    true
+  end else begin
+    Hashtbl.replace already str file;
+    false
+  end
 
 (*****************************************************************************)
 (* Stdlib.js generator *)
@@ -88,6 +109,7 @@ let extract_from_sources files dst =
     files |> List.map (fun file -> file, extract_defs file) in
   let dstfile = Filename.concat dst "stdlib.js" in
   let auxfile = Filename.concat dst "aux.js" in
+  let already = Hashtbl.create 101 in
   let lines = 
     defs |> List.map (fun (file, xs) ->
      ["";
@@ -95,18 +117,23 @@ let extract_from_sources files dst =
       spf "// from %s" file;
       "// ------------------------------------------------------";
      ] @
-     (xs |> List.map (fun (kind, s) ->
-      match kind with
-      | E.Function -> spf "function %s() { }" s
-      | E.Class -> spf "class %s { }" s
-      | E.Global -> spf "var %s;" s
-      | _ -> failwith (spf "extract_from_source: unrecognized kind %s" 
-                         (E.string_of_entity_kind kind))
+     (xs |> Common.map_filter (fun (kind, s) ->
+      let str = 
+        match kind with
+        | E.Function -> spf "function %s() { }" s
+        | E.Class -> spf "class %s { }" s
+        | E.Global -> spf "var %s;" s
+        | _ -> failwith (spf "extract_from_source: unrecognized kind %s" 
+                           (E.string_of_entity_kind kind))
+      in
+     (* Flow allow some overloading so the same function can be defined twice
+      * but with different types. Codegraph does not like that.
+      * Flow also have the same function name or class in different files.
+      *)
+      if add_and_report_if_already_there already file str
+      then None
+      else Some str
      )
-    (* Flow allow some overloading so the same function can be defined twice
-     * but with different types. Codegraph does not like that.
-     *)
-    |> Common2.uniq
     )
    ) |> List.flatten
  in
