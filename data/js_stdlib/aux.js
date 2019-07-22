@@ -1,34 +1,19 @@
-//src: 
-//TODO: flow/lib/ contains declarations of all JS builtins!
+// This file should only contain definitions for entities
+// not covered yet in flow/lib/ or TypeScript/lib/
 
-class Object { }
-class Boolean { }
-class Number { }
-class String { }
-class Array { }
-class Math { }
-class Date { }
-class Function { }
-class JSON { }
-class URL { }
-class Error { }
+//class URL { }
+//
+//let document;
+//let window;
+//let process;
+//let navigator;
+//
+//let module;
 
-let document;
-let window;
-let console;
-
-let process;
-let navigator;
-
-let module;
-
-const NaN;
-const Infinity;
-
-// ??
+// for lang-js/15_game
 function addEventListener(a,b) { }
-function requestAnimationFrame(a) { }
-function fetch() { }
+//function requestAnimationFrame(a) { }
+//function fetch() { }
 
 // Testing
 function expect() { }

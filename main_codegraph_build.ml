@@ -68,6 +68,8 @@ let build_stdlib lang root dst =
       Builtins_java.extract_from_sources ~src:root ~dst files
   | "clang" ->
       Uninclude_clang.uninclude ~verbose:!verbose root files dst
+  | "js" ->
+      Stdlib_js.extract_from_sources files dst
   | _ -> failwith ("language not supported: " ^ lang)
 
 
