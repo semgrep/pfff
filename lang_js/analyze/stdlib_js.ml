@@ -26,6 +26,10 @@
  *    https://github.com/microsoft/TypeScript/tree/master/src/lib
  *  - TypeScript generator, which generates the .generated.d.ts above
  *    https://github.com/Microsoft/TSJS-lib-generator
+ *  - Closure compiler lib definitions (untyped)
+ *    https://github.com/google/closure-compiler/tree/master/externs
+ *    extended in Semmle
+ *    https://github.com/Semmle/ql/tree/master/javascript/externs
  *
  *  - TypeScript definition manager (deprecated)
  *    https://github.com/typings/typings

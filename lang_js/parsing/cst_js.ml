@@ -30,6 +30,7 @@ module PI = Parse_info
  *  - https://en.wikipedia.org/wiki/ECMAScript
  *  - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/
  *  - https://developer.mozilla.org/en-US/docs/SpiderMonkey/Parser_API
+ *  - https://es5.github.io/ (annotated spec)
  *
  * This AST (and its associated parser) supports most ES6 features:
  *  - classes  (nicer syntax to define classes than objects and prototypes)
