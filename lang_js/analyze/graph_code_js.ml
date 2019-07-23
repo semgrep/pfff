@@ -122,7 +122,10 @@ let parse file =
 (*****************************************************************************)
 
 let error s tok =
-  failwith (spf "%s: %s" (Parse_info.string_of_info tok) s)
+  let err = spf "%s: %s" (Parse_info.string_of_info tok) s in 
+  if !error_recovery 
+  then pr2 err
+  else failwith err
 
 let s_of_n n = 
   Ast.str_of_name n
@@ -338,6 +341,7 @@ and module_directive env x =
         match path_opt with
         | None -> 
           error (spf "could not resolve path %s" file) tok;
+          spf "NOTFOUND-|%s|.js" file
         | Some fullpath -> Common.readable env.root fullpath
       in
       Hashtbl.replace env.imports str2 (mk_qualified_name readable str1)
