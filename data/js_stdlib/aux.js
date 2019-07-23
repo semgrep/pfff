@@ -1,35 +1,24 @@
-// This file should only contain definitions for entities
+// This file should only contain definitions of entities
 // not covered yet in flow/lib/ or TypeScript/lib/
 
 // used by transpile_js.ml
 function pfff_builtin_default() { }
 
-//class URL { }
-//
-//let document;
-//let window;
-//let process;
-//let navigator;
-//
-//let module;
-
 // for lang-js/15_game
 function addEventListener(a,b) { }
-//function requestAnimationFrame(a) { }
-//function fetch() { }
 
 // for jquery
 function jQuery() { }
 
-// Testing
+// Unit testing implicits
 function expect() { }
 function it() { }
 function describe() { }
 function test() { }
 function before() { }
-
+function beforeEach() { }
 var QUnit;
-
+var jest;
 
 // JSX
 function p() { }

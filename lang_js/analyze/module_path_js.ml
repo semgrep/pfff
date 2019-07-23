@@ -61,6 +61,10 @@ let resolve_path ~root ~pwd str =
     )
     in 
     Some (Common.fullpath found)
-  with Not_found -> None
+  with Not_found -> 
+    (* TODO: should look in package.json of package
+     * in root/package or root/node_modules/package
+     *)
+   None
 
               
