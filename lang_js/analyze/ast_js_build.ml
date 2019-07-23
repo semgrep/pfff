@@ -671,11 +671,30 @@ and func_props _env kind props =
    | C.Async _ -> A.Async
    ))
 
-and parameter_binding env _idx = function
+and parameter_binding env idx = function
  | C.ParamClassic p -> parameter env p, []
  | C.ParamPattern x -> 
      let tok = (C.Pattern x.C.ppat) |> Lib_parsing_js.ii_of_any |> List.hd in
-     raise (TodoConstruct("ParamPattern", tok))
+     let intermediate = spf "!arg%d!" idx, tok in
+     let pat = x.C.ppat in
+     (try 
+       let vars = 
+         Transpile_js.compile_pattern (expr env, name env, property_name env) 
+            intermediate pat in
+        let p = { C.p_name = intermediate;
+                  C.p_type = x.C.ppat_type;
+                  C.p_dots = None;
+                  C.p_default = 
+                   match x.C.ppat_default with
+                   | None -> None;
+                   | Some (tok, e) -> Some (C.DSome (tok, e))
+                 } 
+         in
+         let p = parameter env p in
+         p, vars |> List.map (fun x -> A.VarDecl x)
+     with Failure s ->
+       raise (TodoConstruct(spf "ParamPattern:%s" s, tok))
+     )
 
 and parameter env p =
   let name = name env p.C.p_name in

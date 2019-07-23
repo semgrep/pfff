@@ -1,3 +1,6 @@
+function foo({a,b}, [c,d]) { 
+}
+
 function createCompiler({
   appName,
   config,
