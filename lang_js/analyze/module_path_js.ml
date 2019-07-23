@@ -49,8 +49,10 @@ let resolve_path ~root ~pwd str =
      Filename.concat root (Filename.concat pwd (spf "%s.js" str));
      Filename.concat root (spf "node_modules/%s" str);
      Filename.concat root (spf "node_modules/%s/index.js" str);
+
      (* TODO: should look in package.json of package *)
      Filename.concat root (spf "node_modules/%s/lib/index.js" str);
+     Filename.concat root (spf "node_modules/%s/lib/api.js" str); (* eslint *)
    ]
   in
   try 

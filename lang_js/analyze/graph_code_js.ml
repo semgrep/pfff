@@ -123,9 +123,7 @@ let parse file =
 
 let error s tok =
   let err = spf "%s: %s" (Parse_info.string_of_info tok) s in 
-  if !error_recovery 
-  then pr2 err
-  else failwith err
+  failwith err
 
 let s_of_n n = 
   Ast.str_of_name n
@@ -133,10 +131,11 @@ let s_of_n n =
 let pos_of_tok tok file =
   { (Parse_info.token_location_of_info tok) with PI.file }
 
-let is_undefined_ok (s, _kind) =
-  s =~ "^node_modules/.*" ||
+let is_undefined_ok (src, _kindsrc) (dst, _kinddst) =
+  src =~ "^node_modules/.*" ||
+  (*dst =~ "^NOTFOUND-.*" || *)
   (* r2c: too specific? *)
-  s =~ "^src/images/"
+  dst =~ "^src/images/"
 
 (*****************************************************************************)
 (* Qualified Name *)
@@ -340,7 +339,8 @@ and module_directive env x =
       let readable = 
         match path_opt with
         | None -> 
-          error (spf "could not resolve path %s" file) tok;
+          env.pr2_and_log (spf "could not resolve path %s at %s" file
+                               (Parse_info.string_of_info tok));
           spf "NOTFOUND-|%s|.js" file
         | Some fullpath -> Common.readable env.root fullpath
       in
@@ -637,7 +637,7 @@ let build_gen ?(verbose=false) root files =
     lookup_fail = (fun env dst loc ->
       let src = env.current in
       let fprinter =
-        if not verbose || is_undefined_ok dst
+        if not verbose || is_undefined_ok src dst
         then env.log
         else env.pr2_and_log
       in

@@ -18,11 +18,18 @@ function addEventListener(a,b) { }
 //function requestAnimationFrame(a) { }
 //function fetch() { }
 
+// for jquery
+function jQuery() { }
+
 // Testing
 function expect() { }
 function it() { }
 function describe() { }
 function test() { }
+function before() { }
+
+var QUnit;
+
 
 // JSX
 function p() { }
