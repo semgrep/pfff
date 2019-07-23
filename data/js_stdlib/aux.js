@@ -1,6 +1,9 @@
 // This file should only contain definitions for entities
 // not covered yet in flow/lib/ or TypeScript/lib/
 
+// used by transpile_js.ml
+function pfff_builtin_default() { }
+
 //class URL { }
 //
 //let document;
