@@ -99,6 +99,10 @@ type special =
   | This | Super
   (* CommonJS part1 *)
   | Exports | Module
+  (* Asynchronous Module Definition (AMD) *)
+  | Define
+  (* Reflection *)
+  | Arguments
 
   (* Special apply *)
   | New | NewTarget

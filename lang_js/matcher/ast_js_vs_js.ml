@@ -315,6 +315,16 @@ let m_special a b =
        A.Module,
        B.Module
     )
+  | A.Define, B.Define ->
+    return (
+       A.Define,
+       B.Define
+    )
+  | A.Arguments, B.Arguments ->
+    return (
+       A.Arguments,
+       B.Arguments
+    )
   | A.New, B.New ->
     return (
        A.New,
@@ -522,6 +532,8 @@ let m_special a b =
   | A.Super, _
   | A.Exports, _
   | A.Module, _
+  | A.Define, _
+  | A.Arguments, _
   | A.New, _
   | A.NewTarget, _
   | A.Eval, _

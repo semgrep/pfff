@@ -33,6 +33,8 @@ let vof_special =
   | Require -> Ocaml.VSum (("Require", []))
   | Exports -> Ocaml.VSum (("Exports", []))
   | Module -> Ocaml.VSum (("Module", []))
+  | Define -> Ocaml.VSum (("Define", []))
+  | Arguments -> Ocaml.VSum (("Arguments", []))
   | New -> Ocaml.VSum (("New", []))
   | NewTarget -> Ocaml.VSum (("NewTarget", []))
   | Eval -> Ocaml.VSum (("Eval", []))

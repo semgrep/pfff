@@ -77,6 +77,8 @@ and v_special =
   | Require -> ()
   | Exports -> ()
   | Module -> ()
+  | Define -> ()
+  | Arguments -> ()
   | New -> ()
   | NewTarget -> ()
   | Eval -> ()

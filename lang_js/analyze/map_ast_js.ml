@@ -89,6 +89,8 @@ and map_special =
   | Super -> Super
   | Exports -> Exports
   | Module -> Module
+  | Define -> Define
+  | Arguments -> Arguments
   | New -> New
   | NewTarget -> NewTarget
   | Eval -> Eval

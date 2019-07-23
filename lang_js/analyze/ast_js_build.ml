@@ -452,6 +452,10 @@ and expr env = function
         | "require"   -> A.IdSpecial (A.Require, tok)
         | "exports"   -> A.IdSpecial (A.Exports, tok)
         | "module"   -> A.IdSpecial (A.Module, tok)
+        (* AMD *)
+        | "define"   -> A.IdSpecial (A.Define, tok)
+        (* reflection *)
+        | "arguments"   -> A.IdSpecial (A.Arguments, tok)
         | _ -> A.Id ((s, tok), ref resolved)
         )
       )
@@ -665,7 +669,9 @@ and func_props _env kind props =
 
 and parameter_binding env = function
  | C.ParamClassic p -> parameter env p
- | C.ParamPattern _ -> raise Todo
+ | C.ParamPattern x -> 
+       raise (TodoConstruct("ParamPattern", 
+        (C.Pattern x.C.ppat) |> Lib_parsing_js.ii_of_any |> List.hd))
 
 and parameter env p =
   let name = name env p.C.p_name in
