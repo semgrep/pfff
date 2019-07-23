@@ -391,11 +391,14 @@ and stmt env = function
     let finally_opt = opt (fun env (_, st) -> stmt1 env st) env finally_opt in
     [A.Try (st, catchopt, finally_opt)]
 
-and stmt1 env st =
-  match stmt env st with
+and stmt_of_stmts xs = 
+  match xs with
   | [] -> A.Block []
   | [x] -> x
   | xs -> A.Block xs
+
+and stmt1 env st =
+  stmt env st |> stmt_of_stmts
 
 and case_clause env = function
   | C.Default (_, _, xs) -> A.Default (stmt1_item_list env xs)
@@ -403,15 +406,9 @@ and case_clause env = function
     let e = expr env e in
     A.Case (e, stmt1_item_list env xs)
 
-and stmt1_item_list env items =
- let stmt1 xs = 
-  match xs with
-  | [] -> A.Block []
-  | [x] -> x
-  | xs -> A.Block xs
- in
+and stmt_item_list env items =
  let rec aux acc env = function
-    | [] -> List.rev acc |> List.flatten |> stmt1
+    | [] -> List.rev acc |> List.flatten
     | x::xs ->
       let ys = item None env x in
       let env = 
@@ -426,6 +423,8 @@ and stmt1_item_list env items =
  in
  aux [] env items
 
+and stmt1_item_list env items = 
+  stmt_item_list env items |> stmt_of_stmts
   
 (* ------------------------------------------------------------------------- *)
 (* Expression *)
@@ -649,10 +648,15 @@ and var_kind _env = function
 
 and func_decl env x =
   let props = func_props env x.C.f_kind x.C.f_properties in
-  let params = 
-   x.C.f_params |> C.unparen |> C.uncomma |> List.map (parameter_binding env) in
+  let params_and_vars = 
+   x.C.f_params |> C.unparen |> C.uncomma |> Common.index_list_0 |>
+    List.map (fun (p, idx) -> parameter_binding env idx p)
+  in
+  let params = params_and_vars |> List.map fst in
+  let vars = params_and_vars |> List.map snd |> List.flatten in
   let env = add_params env params in
-  let body = stmt1_item_list env (x.C.f_body |> C.unparen) in
+  let xs = stmt_item_list env (x.C.f_body |> C.unparen) in
+  let body = stmt_of_stmts (vars @ xs) in
   { A.f_props = props; f_params = params; f_body = body }
 
 and func_props _env kind props = 
@@ -667,11 +671,11 @@ and func_props _env kind props =
    | C.Async _ -> A.Async
    ))
 
-and parameter_binding env = function
- | C.ParamClassic p -> parameter env p
+and parameter_binding env _idx = function
+ | C.ParamClassic p -> parameter env p, []
  | C.ParamPattern x -> 
-       raise (TodoConstruct("ParamPattern", 
-        (C.Pattern x.C.ppat) |> Lib_parsing_js.ii_of_any |> List.hd))
+     let tok = (C.Pattern x.C.ppat) |> Lib_parsing_js.ii_of_any |> List.hd in
+     raise (TodoConstruct("ParamPattern", tok))
 
 and parameter env p =
   let name = name env p.C.p_name in
@@ -692,13 +696,18 @@ and arrow_func env x =
     | C.ASingleParam x -> [x]
     | C.AParams xs -> xs |> C.unparen |> C.uncomma
   in
-  let params = bindings |> List.map (parameter_binding env) in
+  let params_and_vars = 
+        bindings |> Common.index_list_0 
+        |> List.map (fun (p, idx) -> parameter_binding env idx p) in
+  let params = params_and_vars |> List.map fst in
+  let vars = params_and_vars |> List.map snd |> List.flatten in
   let env = add_params env params in
-  let body = 
+  let xs = 
     match x.C.a_body with
-    | C.AExpr e -> A.ExprStmt (expr env e)
-    | C.ABody xs -> stmt1_item_list env (xs |> C.unparen)
+    | C.AExpr e -> [A.ExprStmt (expr env e)]
+    | C.ABody xs -> stmt_item_list env (xs |> C.unparen)
   in
+  let body = stmt_of_stmts (vars @ xs) in
   { A.f_props = props; f_params = params; f_body = body }
 
 
