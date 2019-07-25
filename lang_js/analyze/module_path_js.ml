@@ -13,11 +13,12 @@
  * license.txt for more details.
  *)
 open Common
+module J = Json_type
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Resolving paths mentioned in imports (returning a canonical form).
+(* Resolving paths mentioned in imports (andreturning a canonical form).
  *
  * You can do:
  *  - import './xxx.js'
@@ -30,6 +31,7 @@ open Common
  *  - xxx/yyy.js
  *  - node_modules/xxx/yyy.js
  *  - node_modules/xxx/index.js
+ *  - node_modules/xxx/api/dist.js
  *
  * By resolving paths we can have canonical names for imports
  * and so reference the same module entity in codegraph even
@@ -40,6 +42,22 @@ open Common
  *)
 
 (*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+let main_entry_of_package_json file json =
+  match json with
+  | J.Object (xs) -> 
+          (try 
+             (match List.assoc "main" xs with
+             | J.String s -> s
+             | _ -> raise Not_found
+             )
+           with Not_found -> failwith (spf "no main entry in %s" file)
+          )
+  | _ -> failwith (spf "wrong package.json format for %s" file)
+  
+
+(*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
 
@@ -47,12 +65,11 @@ let resolve_path ~root ~pwd str =
   let candidates = 
     [Filename.concat root (Filename.concat pwd str);
      Filename.concat root (Filename.concat pwd (spf "%s.js" str));
-     Filename.concat root (spf "node_modules/%s" str);
-     Filename.concat root (spf "node_modules/%s/index.js" str);
 
-     (* TODO: should look in package.json of package *)
-     Filename.concat root (spf "node_modules/%s/lib/index.js" str);
-     Filename.concat root (spf "node_modules/%s/lib/api.js" str); (* eslint *)
+     (* less: should always look at package.json? or useful opti? *)
+     Filename.concat root (spf "node_modules/%s" str);
+     Filename.concat root (spf "node_modules/%s.js" str);
+     Filename.concat root (spf "node_modules/%s/index.js" str);
    ]
   in
   try 
@@ -62,9 +79,24 @@ let resolve_path ~root ~pwd str =
     in 
     Some (Common.fullpath found)
   with Not_found -> 
-    (* TODO: should look in package.json of package
-     * in root/package or root/node_modules/package
-     *)
-   None
-
-              
+    (* look in package.json (of root/package or root/node_modules/package) *)
+    let package_json_candidates = 
+      [ Filename.concat root (spf "%s/package.json" str);
+        Filename.concat root (spf "node_modules/%s/package.json" str);
+      ]
+    in
+    (try
+      let package_json = 
+        package_json_candidates |> List.find Sys.file_exists in
+      let json = Json_io.load_json package_json in
+      let main_path = main_entry_of_package_json package_json json in
+      let dir = Filename.dirname package_json in
+      let file = Filename.concat dir main_path in
+ 
+      let candidates = [file; spf "%s.js" file] in
+      candidates |> Common.find_opt (fun path ->
+       Sys.file_exists path && not (Sys.is_directory path))
+    with Not_found ->
+      pr2 (spf "could not find a package.json for %s" str);
+      None
+    )
