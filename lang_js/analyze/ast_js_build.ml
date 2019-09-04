@@ -647,6 +647,8 @@ and var_kind _env = function
 
 
 and func_decl env x =
+  (* bugfix: each function has its own vars *)
+  let env = { env with vars = Hashtbl.copy env.vars } in
   let props = func_props env x.C.f_kind x.C.f_properties in
   let params_and_vars = 
    x.C.f_params |> C.unparen |> C.uncomma |> Common.index_list_0 |>
