@@ -36,8 +36,8 @@ type env = {
    * a ref of mutable here! Just build a new list and passed it down.
    *)
   locals: (string * Ast_js.resolved_name (* Local or Param *)) list;
-  (* 'var' have a function scope.
-   * alt: lift var up in a ast_js_build.ml transforming phase
+  (* 'var's have a function scope.
+   * alt: lift Var up in a ast_js_build.ml transforming phase
    *)
   vars: (string, bool) Hashtbl.t;
 }

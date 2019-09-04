@@ -30,7 +30,7 @@
  *  - no purely syntactical tokens in the AST like parenthesis, brackets,
  *    braces, angles, commas, semicolons, etc. No ParenExpr.
  *    The only token information kept is for identifiers for error reporting.
- *    See wrap() below.
+ *    See 'wrap' below.
  *  - no types (but could revisit this decision)
  *  - no Typescript (no interface)
  *  - no U, B, Yield, Await, Seq, ... just Apply (and Special Id)
@@ -81,13 +81,14 @@ type name = string wrap
 type qualified_name = string
  (* with tarzan *)
 
-(* computed in graph_code_js.ml in a "naming" phase 
- * alt: reuse Scope_code.t, but not really worth it.
- *)
+(* alt: reuse Scope_code.t, but not really worth it.*)
 type resolved_name =
+  (* this can be computed by ast_js_build.ml *)
   | Local
   | Param
+  (* this is computed in graph_code_js.ml in a "naming" phase *)
   | Global of qualified_name
+  (* default case *)
   | NotResolved
  (* with tarzan *)
 
@@ -148,7 +149,7 @@ type property_name =
   | PN of name
   (* especially useful for array objects, but also used for dynamic fields *)
   | PN_Computed of expr
-  (* todo: Prototype *)
+  (* less: Prototype *)
 
 (* ------------------------------------------------------------------------- *)
 (* Expressions *)
@@ -159,7 +160,10 @@ and expr =
   | String of string wrap
   | Regexp of string wrap
 
-  | Id of name * resolved_name ref (* set later in naming phase *)
+  (* For Global the ref is set after ast_js_build in a naming phase in 
+   * graph_code_js, hence the use of a ref.
+   *)
+  | Id of name * resolved_name ref 
   | IdSpecial of special wrap
   | Nop
 
@@ -204,9 +208,9 @@ and stmt =
   | Throw of expr
   | Try of stmt * catch option * stmt option
 
-  (* todo? ModuleDirective of module_directive 
+  (* less: ModuleDirective of module_directive 
    * ES6 modules can appear only at the toplevel
-  *  but CommonJS require can be inside ifs
+  *  but CommonJS require() can be inside ifs
   *)
 
   (* less: could use some Special instead? *)
@@ -275,14 +279,16 @@ and class_ = {
 (* ------------------------------------------------------------------------- *)
 (* Module *)
 (* ------------------------------------------------------------------------- *)
-(* this should be only at the toplevel in clean code, but some packages
- * like react have dynamic imports (to select dynamically which code to
- * load depending on whether you run in production or development environment)
+(* ES6 module directives appear only at the toplevel. However, for 
+ * CommomJS directives, some packages like react have dynamic imports
+ * (to select dynamically which code to load depending on whether you run
+ * in production or development environment) which means those directives
+ * can be inside ifs.
  *)
 type module_directive = 
   (* 'name' can be the special Ast_js.default_entity.
    * 'filename' is not "resolved"
-   * (you may need to add node_modules/xxx/index.js
+   * (you may need for example to add node_modules/xxx/index.js
    * when you do 'import "react"' to get a resolved path).
    * See Module_path_js to resolve paths.
    *)
