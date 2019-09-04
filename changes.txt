@@ -12,6 +12,10 @@ to work on most node_modules/
 
 *** TODO handle CommonJS modules
 
+** ocaml
+
+*** handle {| |} string literals
+
 * 0.37 (Q2 2019) (new OPAM release, better JS support)
 
 ** sgrep
