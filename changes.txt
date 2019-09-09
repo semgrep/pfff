@@ -1,10 +1,13 @@
 # -*- org -*-
 
+* 0.39 (Q4 2019) (???)
+10 years of Pfff! Started in November 2009 (while at Facebook).
+
 * 0.38 (Q3 2019) (???)
 
 ** javascript
 
-*** better AST JS builder thanks to transpiler
+*** better AST JS builder thanks to transpiler below
 
 *** poor's man transpiler
 transpile JSX, patterns, generators, just enough for codegraph
