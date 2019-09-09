@@ -334,4 +334,6 @@ type any =
 (* Helpers *)
 (*****************************************************************************)
 let str_of_name (s, _) = s
+let tok_of_name (_, tok) = tok
+
 let unwrap x = fst x
