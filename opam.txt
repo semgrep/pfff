@@ -1,2 +1,0 @@
-The description file for the pfff package is in the OPAM repository
-(ex: https://github.com/ocaml/opam-repository/blob/master/packages/pfff/pfff.0.29/opam)
