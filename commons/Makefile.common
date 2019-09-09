@@ -117,7 +117,7 @@ distclean::
 
 install: all all.opt
 	ocamlfind install $(OPAMPKG) META *.mli *.ml \
-    $(LIBNAME).cma $(LIBNAME).cmxa $(LIBNAME).a *.cmi *.cmt* 
+    $(LIBNAME).cma $(LIBNAME).cmxa $(LIBNAME).a *.cmi *.cmt*  *.cmx
 
 uninstall:
 	ocamlfind remove $(OPAMPKG)

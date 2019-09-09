@@ -128,7 +128,7 @@ doti:
 # new packages. In the mean time cp -a ~/.opam/ /tmp to back it up.
 install-lib: all all.opt .merlin_opam
 	cp .merlin_opam .merlin; 
-	ocamlfind install $(OPAMPKG) META lib.cma lib.cmxa *.a *.cmi *.cmt* *.mli *.ml .merlin
+	ocamlfind install $(OPAMPKG) META lib.cma lib.cmxa *.a *.cmi *.cmt* *.cmx *.mli *.ml .merlin
 	rm -f .merlin
 
 uninstall-lib::
