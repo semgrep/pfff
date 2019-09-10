@@ -38,4 +38,5 @@ depends: [
   "num"
   "ocamlgraph"
   "json-wheel"
+  "conf-perl"
 ]

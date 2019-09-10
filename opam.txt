@@ -1,0 +1,9 @@
+adjust pfff.opam
+commit everything
+
+$ git tag -a 0.37.4
+$ git push origin 0.37.4
+$ opam publish
+
+See also http://opam.ocaml.org/doc/Packaging.html
+and https://github.com/ocaml/opam-publish
