@@ -725,7 +725,8 @@ and arrow_func env x =
   let env = add_params env params in
   let xs = 
     match x.C.a_body with
-    | C.AExpr e -> [A.ExprStmt (expr env e)]
+    (* Javascript has implicit returns for arrows like that *)
+    | C.AExpr e -> [A.Return (expr env e)]
     | C.ABody xs -> stmt_item_list env (xs |> C.unparen)
   in
   let body = stmt_of_stmts (vars @ xs) in
