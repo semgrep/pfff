@@ -1,6 +1,6 @@
 opam-version: "2.0"
 name: "pfff"
-version: "0.37.4"
+version: "0.37.5"
 synopsis: "Tools and APIs for program analysis, code visualization, refactoring"
 description: """
 pfff is a set of tools and APIs to perform some static analysis,
@@ -33,7 +33,7 @@ install: [
   [make "install-libs"]
 ]
 depends: [
-  "ocaml" {>= "4.03.0"}
+  "ocaml" {>= "4.03.0" & < "4.09.0"}
   "camlp4"
   "num"
   "ocamlgraph"
