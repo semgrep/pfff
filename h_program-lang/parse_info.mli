@@ -57,6 +57,7 @@ type token_kind =
 
 
 val fake_token_location : token_location
+val fake_info : string -> info
 
 val str_of_info   : info -> string
 val line_of_info  : info -> int

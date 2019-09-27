@@ -650,6 +650,9 @@ let do_option f = function
   | None -> ()
   | Some x -> f x
 let opt = do_option
+let opt_to_list : 'a option -> 'a list = function
+  | None -> []
+  | Some x -> [x]
 
 (* not sure why but can't use let (?:) a b = ... then at use time ocaml yells*)
 let (|||) a b =
@@ -1176,8 +1179,14 @@ type 'a hashset = ('a, bool) Hashtbl.t
 let hashset_to_list h =
   hash_to_list h +> List.map fst
 
-let hashset_of_list xs =
-  xs +> List.map (fun x -> x, true) +> hash_of_list
+(* old: slightly slower?
+ * let hashset_of_list xs =
+ *   xs +> List.map (fun x -> x, true) +> hash_of_list
+*)
+let hashset_of_list (xs: 'a list) : ('a, bool) Hashtbl.t =
+  let h = Hashtbl.create (List.length xs) in
+  xs |> List.iter (fun k -> Hashtbl.replace h k true);
+  h
 
 let hkeys h =
   let hkey = Hashtbl.create 101 in

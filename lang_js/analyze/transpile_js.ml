@@ -27,8 +27,8 @@ module C = Cst_js
  * here: https://babeljs.io/repl (great ressource).
  *
  * alt:
- *  - just call babel?
- *  - r2s's transpiler (calls babel internally?)
+ *  - just call babel
+ *  - r2s's transpiler (calls babel internally)
  *
  * related:
  *  - babel and its "polyfill"

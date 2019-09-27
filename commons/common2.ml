@@ -2156,20 +2156,50 @@ let replace_ext file oldext newext =
   filename_of_dbe (d,b,newext)
 
 
-let normalize_path file =
-  let (dir, filename) = Filename.dirname file, Filename.basename file in
-  let xs = split "/" dir in
+(* Given a file name, normalize it by removing "." and "..".  This works
+ * exclusively by processing the string, not relying on any file system
+ * state.
+ *
+ * This is intended to work on both absolute and relative paths, but I
+ * have not tested the latter. 
+ *
+ * Compared to a previous version of normalize_path,
+ * this function normalizes "a/." to "a" and does not drop the leading "/" 
+ * on absolute paths. It also does not crash on "/..".
+ *
+ * author: Scott McPeak.
+ *)
+let normalize_path (file: string) : string =
+  let is_rel = Filename.is_relative file in
+  let xs = split "/" file in
   let rec aux acc = function
     | [] -> List.rev acc
     | x::xs ->
         (match x with
         | "." -> aux acc xs
-        | ".." -> aux (List.tl acc) xs
+        | ".." ->
+            (match acc with
+            | [] ->
+                if is_rel then
+                  (* Keep leading ".." on relative paths. *)
+                  aux (x::acc) xs
+                else
+                  (* Strip leading ".." on absolute paths.  The ".."
+                   * directory entry on "/" points to "/". *)
+                  aux acc xs
+            | [".."] ->
+                (* If we kept "..", this must be a relative path that
+                 * effectively starts with "..", so keep accumulating
+                 * them.  ("../.." does not become "".) *)
+                assert is_rel;
+                aux (x::acc) xs
+            | _ -> aux (List.tl acc) xs
+            )
         | x -> aux (x::acc) xs
         )
   in
   let xs' = aux [] xs in
-  Filename.concat (join "/" xs') filename
+  (if is_rel then "" else "/") ^ (join "/" xs')
 
 
 
@@ -3405,10 +3435,15 @@ let timeout_function_opt timeoutvalopt f =
   | Some x -> timeout_function x f
 
 
-let with_tmp_file ~str ~ext f =
+let with_tmp_file ~(str: string) ~(ext: string) (f: string -> 'a) : 'a =
   let tmpfile = Common.new_temp_file "tmp" ("." ^ ext) in
   write_file ~file:tmpfile str;
-  f tmpfile
+  Common.finalize (fun () ->
+    f tmpfile
+  ) (fun() ->
+    Unix.unlink tmpfile
+  )
+
 
 let with_tmp_dir f =
   let tmp_dir = Filename.temp_file (spf "with-tmp-dir-%d" (Unix.getpid())) "" in

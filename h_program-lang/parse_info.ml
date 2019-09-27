@@ -54,6 +54,7 @@ let fake_token_location = {
   charpos = -1; str = ""; line = -1; column = -1; file = "";
 }
 
+
 type token_origin =
     (* Present both in the AST and list of tokens *)
     | OriginTok  of token_location
@@ -126,6 +127,12 @@ and transformation =
     | AddNewlineAndIdent
 
  (* with tarzan *)
+
+(* Synthesize a token. *)
+let fake_info str : token_mutable = {
+  token = FakeTokStr (str, None);
+  transfo = NoTransfo;
+  }
 
 type token_kind =
   (* for the fuzzy parser and sgrep/spatch fuzzy AST *)

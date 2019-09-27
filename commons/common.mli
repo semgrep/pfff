@@ -1,4 +1,5 @@
 
+(* TODO: should deprecate that! you can now use |> in recent OCaml *)
 val (+>) : 'a -> ('a -> 'b) -> 'b
 
 val (=|=) : int    -> int    -> bool
@@ -110,6 +111,7 @@ val hashset_to_list : 'a hashset -> 'a list
 val map_opt: ('a -> 'b) -> 'a option -> 'b option
 val opt: ('a -> unit) -> 'a option -> unit
 val do_option : ('a -> unit) -> 'a option -> unit
+val opt_to_list: 'a option -> 'a list
 val (>>=): 'a option -> ('a -> 'b option) -> 'b option
 val (|||): 'a option -> 'a -> 'a
 

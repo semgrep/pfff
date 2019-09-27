@@ -862,7 +862,7 @@ val filename_of_dbe : string * string * string -> filename
 (* ex: replace_ext "toto.c" "c" "var" *)
 val replace_ext: filename -> string -> string -> filename
 
-(* remove the ., .. *)
+(* remove the ., .., when it can *)
 val normalize_path : filename -> filename
 
 val relative_to_absolute : filename -> filename
