@@ -32,11 +32,9 @@ build: [
 install: [
   [make "install-libs"]
 ]
-remove: [
-  [make "uninstall-libs"]
-]
 depends: [
   "ocaml" {>= "4.03.0" & < "4.09.0"}
+  "ocamlfind" {build}
   "camlp4"
   "num"
   "ocamlgraph"
