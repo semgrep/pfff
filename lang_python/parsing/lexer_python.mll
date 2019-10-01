@@ -31,10 +31,11 @@ open Parser_python
  *  - https://github.com/m2ym/ocaml-pythonlib/blob/master/src/lexer.mll
  *  - some code stolen from pyre-check python lexer (itself started
  *    from ocaml-pythonlib)
+ * reference:
+ *    - http://docs.python.org/release/2.5.4/ref/ref.html
  * old src: 
  *  - http://inst.eecs.berkeley.edu/~cs164/sp10/python-grammar.html
- *    which was itself from the python reference manual at:
- *    http://docs.python.org/release/2.5.4/ref/ref.html
+ *    which was itself from the python reference manual
  *)
 
 (*****************************************************************************)

@@ -20,9 +20,11 @@
  *
  * original src: 
  *  https://github.com/m2ym/ocaml-pythonlib/blob/master/src/python2_parser.mly
+ * reference:
+ *  - https://docs.python.org/3/reference/grammar.html
+ *  - http://docs.python.org/release/2.5.2/ref/grammar.txt
  * old src: 
  *  - http://inst.eecs.berkeley.edu/~cs164/sp10/python-grammar.html
- *  - http://docs.python.org/release/2.5.2/ref/grammar.txt
  *)
 open Common
 open Ast_python

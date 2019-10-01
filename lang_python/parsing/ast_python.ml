@@ -24,7 +24,7 @@
  * Tomohiro Matsuyama in ocaml-pythonlib, which itself derives from
  * the official grammar definition of Python.
  *
- * specification: http://docs.python.org/3/library/ast.html 
+ * reference: http://docs.python.org/3/library/ast.html 
  *
  * See also:
  *  - http://trevorjim.com/python-is-not-context-free/
@@ -168,8 +168,13 @@ type stmt =
 and excepthandler = ExceptHandler of expr option (* type *) * expr option (* name *) * stmt list (* body *)
 
 (* ------------------------------------------------------------------------- *)
-(* Type *)
+(* Types *)
 (* ------------------------------------------------------------------------- *)
+(* see https://docs.python.org/3/library/typing.html for the semantic
+ * and https://www.python.org/dev/peps/pep-3107/ (function annotations)
+ * for https://www.python.org/dev/peps/pep-0526/ (variable annotations)
+ * for its syntax.
+ *)
 
 (* ------------------------------------------------------------------------- *)
 (* Function (or method) definition *)
