@@ -28,7 +28,9 @@ open Parser_python
 (* The Python lexer.
  *
  * original src:
- *  https://github.com/m2ym/ocaml-pythonlib/blob/master/src/lexer.mll
+ *  - https://github.com/m2ym/ocaml-pythonlib/blob/master/src/lexer.mll
+ *  - some code stolen from pyre-check python lexer (itself started
+ *    from ocaml-pythonlib)
  * old src: 
  *  - http://inst.eecs.berkeley.edu/~cs164/sp10/python-grammar.html
  *    which was itself from the python reference manual at:
@@ -154,7 +156,11 @@ let exponentfloat = (intpart | pointfloat) exponent
 let floatnumber = pointfloat | exponentfloat
 let imagnumber = (floatnumber | intpart) ['j' 'J']
 
-let stringprefix = ('u' | 'U')? ('r' | 'R')?
+let kind = 'b' | 'B' | 'f' | 'F'
+let encoding = 'u' | 'U' | 'r' | 'R'
+(* (encoding encoding) for python2 legacy support *)
+let stringprefix = (encoding | kind | (encoding kind) | (kind encoding) | (encoding encoding))?
+
 let escapeseq = '\\' _
 
 let identifier = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
