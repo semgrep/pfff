@@ -230,6 +230,7 @@ rule category = parse
   | "third-party"
   | "third_party" 
   | "3rdparty"
+  | "vendor"
       { ThirdParty }
 
   | "external" { ThirdParty }

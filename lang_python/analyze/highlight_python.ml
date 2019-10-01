@@ -1,6 +1,7 @@
 (* Yoann Padioleau
  *
  * Copyright (C) 2010 Facebook
+ * Copyright (C) 2019 Yoann Padioleau
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -12,19 +13,21 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
-open Entity_code open Highlight_code
+open Entity_code
+open Highlight_code
 
 module T = Parser_python
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
+(* Syntax highlighting for Python code for codemap (and now also efuns)
+ *)
 
 (*****************************************************************************)
-(* Helpers *)
+(* Helpers when have global-analysis information *)
 (*****************************************************************************)
 
 (* we generate fake value here because the real one are computed in a
@@ -47,16 +50,11 @@ let builtin_functions = Common.hashset_of_list [
 
 (* The idea of the code below is to visit the program either through its
  * AST or its list of tokens. The tokens are easier for tagging keywords,
- * number and basic entities. The Ast is better for tagging idents
+ * number and basic entities. The AST is better for tagging idents
  * to figure out what kind of ident it is.
  *)
 
-let visit_toplevel 
-    ~tag_hook
-    _prefs 
-    (*db_opt *)
-    (_toplevel, toks)
-  =
+let visit_program ~tag_hook _prefs (_program, toks) =
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->
     tag_hook ii categ;
@@ -65,10 +63,12 @@ let visit_toplevel
   in
 
   (* -------------------------------------------------------------------- *)
-  (* ast phase 1 *) 
+  (* AST phase 1 *) 
+  (* -------------------------------------------------------------------- *)
 
   (* -------------------------------------------------------------------- *)
-  (* toks phase 1 *)
+  (* tokens phase 1 (list of tokens) *)
+  (* -------------------------------------------------------------------- *)
 
   let rec aux_toks xs = 
     match xs with
@@ -181,7 +181,8 @@ let visit_toplevel
 
 
   (* -------------------------------------------------------------------- *)
-  (* toks phase 2 *)
+  (* Tokens phase 2 (individual tokens) *)
+  (* -------------------------------------------------------------------- *)
 
   toks +> List.iter (fun tok -> 
     match tok with
@@ -321,8 +322,5 @@ let visit_toplevel
         | _ -> ()
 
   );
-
-  (* -------------------------------------------------------------------- *)
-  (* ast phase 2 *)  
 
   ()

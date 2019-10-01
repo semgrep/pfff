@@ -261,7 +261,7 @@ let tokens_with_categ_of_file file hentities =
          (fun file -> Python (Parse_python.parse file +> fst))
          (function Python x -> [x] | _ -> raise Impossible));
         highlight_visit = (fun ~tag_hook prefs (ast, toks) -> 
-          Highlight_python.visit_toplevel ~tag_hook prefs (ast, toks));
+          Highlight_python.visit_program ~tag_hook prefs (ast, toks));
         info_of_tok = Token_helpers_python.info_of_tok;
         }
         file prefs hentities

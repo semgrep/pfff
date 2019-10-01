@@ -1,7 +1,6 @@
 #############################################################################
 # Configuration section
 #############################################################################
-
 -include Makefile.config
 
 ##############################################################################
@@ -252,7 +251,6 @@ PP=-pp "cpp $(CLANG_HACK) -DFEATURE_BYTECODE=$(FEATURE_BYTECODE) -DFEATURE_CMT=$
 ##############################################################################
 # Top rules
 ##############################################################################
-
 .PHONY:: all all.opt opt top clean distclean
 
 #note: old: was before all: rec $(EXEC) ... but can not do that cos make -j20
@@ -395,7 +393,6 @@ codemap.opt: $(LIBS:.cma=.cmxa) commons_wrappers/gui/lib.cmxa $(OBJS_CM:.cma=.cm
 #------------------------------------------------------------------------------
 # codegraph (was pm_depend)
 #------------------------------------------------------------------------------
-
 SYSLIBS_CG=$(SYSLIBS_CM)
 OBJS_CG=code_graph/lib.cma
 
@@ -415,7 +412,6 @@ codegraph_build.opt: $(LIBS:.cma=.cmxa) $(OPTOBJS) main_codegraph_build.cmx
 #------------------------------------------------------------------------------
 # pfff_test targets
 #------------------------------------------------------------------------------
-
 pfff_test: $(LIBS) $(OBJS) main_test.cmo
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
 pfff_test.opt: $(LIBS:.cma=.cmxa) $(OPTOBJS) main_test.cmx
@@ -430,7 +426,6 @@ pfff_test.opt: $(LIBS:.cma=.cmxa) $(OPTOBJS) main_test.cmx
 ##############################################################################
 # Install
 ##############################################################################
-
 VERSION=$(shell cat globals/config_pfff.ml.in |grep version |perl -p -e 's/.*"(.*)".*/$$1/;')
 
 install: all
@@ -463,11 +458,7 @@ INSTALL_SUBDIRS= \
   lang_cpp/parsing lang_cpp/analyze \
   lang_nw/parsing  lang_nw/analyze\
   lang_js/parsing  lang_js/analyze\
-
-#TODO:
-#  lang_php/analyze lang_php/matcher lang_php/parsing  lang_php/pretty \
-#  lang_java/parsing \
-#  lang_js/parsing  lang_css/parsing lang_html/parsing \
+  lang_python/parsing  lang_python/analyze\
 
 install-libs:: all all.opt
 	set -e; for i in $(INSTALL_SUBDIRS); do echo $$i; $(MAKE) -C $$i install-lib; done
@@ -482,11 +473,9 @@ reinstall-libs:
 version:
 	@echo $(VERSION)
 
-
 ##############################################################################
 # Package rules
 ##############################################################################
-
 PACKAGE=$(TARGET)-$(VERSION)
 TMP=/tmp
 
@@ -514,7 +503,6 @@ srctar:
 ##############################################################################
 # Website rules
 ##############################################################################
-
 # see also ~/github/pfff-wiki/
 WEBSITE=/home/pad/mobile/homepage/software/project-pfff
 
@@ -529,7 +517,6 @@ website:
 ##############################################################################
 # Developer rules
 ##############################################################################
-
 .PHONY:: tags graph prolog  db layers visual   tests test .merlin
 
 .merlin:
@@ -575,11 +562,9 @@ pull:
 	git pull
 	cd facebook; git pull
 
-
 ##############################################################################
 # Other/Old developer rules
 ##############################################################################
-
 visual2:
 	./codemap -no_legend -profile -ss 2 \
 	   -with_info DB_LIGHT.marshall -with_layers . .
@@ -613,7 +598,6 @@ archi:
 ##############################################################################
 # Literate programming
 ##############################################################################
-
 LPDIRS=\
  h_visualization\
  docs/ocaml \
