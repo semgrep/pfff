@@ -20,6 +20,7 @@ LIBS=$(TOP)/commons/lib.cma \
  $(TOP)/h_program-lang/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons \
+  $(TOP)/commons_core \
   $(TOP)/globals \
   $(TOP)/h_program-lang \
 

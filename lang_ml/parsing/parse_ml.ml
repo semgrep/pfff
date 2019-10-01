@@ -105,6 +105,7 @@ let parse2 filename =
 
   let stat = Parse_info.default_stat filename in
   let toks = tokens filename in
+
   let tr = Parse_info.mk_tokens_state toks in
   let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
 

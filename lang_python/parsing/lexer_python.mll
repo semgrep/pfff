@@ -163,17 +163,20 @@ let nonidchar = [^ 'a'-'z' 'A'-'Z' '0'-'9' '_']
 (*****************************************************************************)
 
 rule token state = parse
-  | e { let curr_offset = state.curr_offset in
+  | e { 
+        let curr_offset = state.curr_offset in
         let last_offset = Stack.top state.offset_stack in
           if curr_offset < last_offset
           then (ignore (Stack.pop state.offset_stack); DEDENT)
           else if curr_offset > last_offset
           then (Stack.push curr_offset state.offset_stack; INDENT)
-          else _token state lexbuf }
+          else _token state lexbuf 
+      }
 
 and _token state = parse
   | ((whitespace* comment? newline)* whitespace* comment?) newline
-      { let lines = count_lines (Lexing.lexeme lexbuf) in
+      { 
+        let lines = count_lines (Lexing.lexeme lexbuf) in
         let pos = lexbuf.lex_curr_p in
           lexbuf.lex_curr_p <-
             { pos with
@@ -184,14 +187,17 @@ and _token state = parse
           offset state lexbuf;
           NEWLINE
         end else
-          _token state lexbuf }
+          _token state lexbuf 
+       }
   | '\\' newline whitespace*
-      { let pos = lexbuf.lex_curr_p in
+      { 
+          let pos = lexbuf.lex_curr_p in
           lexbuf.lex_curr_p <-
             { pos with
                 pos_bol = pos.pos_cnum;
                 pos_lnum = pos.pos_lnum + 1 };
-          _token state lexbuf }
+          _token state lexbuf 
+      }
 
   | whitespace+
       { _token state lexbuf }

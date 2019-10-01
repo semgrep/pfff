@@ -34,7 +34,7 @@ let test_parse_ml_or_mli xs =
       Common.save_excursion Flag.error_recovery true (fun () ->
         Parse_ml.parse file 
       )
-      in
+    in
     Common.push stat stat_list;
   ));
   Parse_info.print_parsing_stat_list !stat_list;

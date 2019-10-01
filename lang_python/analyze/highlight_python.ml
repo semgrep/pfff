@@ -15,10 +15,11 @@
  *)
 open Common
 
+(*
 open Entity_code
 open Highlight_code
-
 module T = Parser_python
+*)
 
 (*****************************************************************************)
 (* Prelude *)
@@ -33,6 +34,7 @@ module T = Parser_python
 (* we generate fake value here because the real one are computed in a
  * later phase in rewrite_categ_using_entities in pfff_visual.
  *)
+(*
 let fake_no_def2 = NoUse
 let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 
@@ -44,6 +46,7 @@ let builtin_functions = Common.hashset_of_list [
   "set";
   "dict";
 ]
+*)
 (*****************************************************************************)
 (* Code highlighter *)
 (*****************************************************************************)
@@ -54,9 +57,9 @@ let builtin_functions = Common.hashset_of_list [
  * to figure out what kind of ident it is.
  *)
 
-let visit_program ~tag_hook _prefs (_program, toks) =
+let visit_program ~tag_hook _prefs (_program, _toks) =
   let already_tagged = Hashtbl.create 101 in
-  let tag = (fun ii categ ->
+  let _tag = (fun ii categ ->
     tag_hook ii categ;
     Hashtbl.replace already_tagged ii true
   )
@@ -69,7 +72,7 @@ let visit_program ~tag_hook _prefs (_program, toks) =
   (* -------------------------------------------------------------------- *)
   (* tokens phase 1 (list of tokens) *)
   (* -------------------------------------------------------------------- *)
-
+(*
   let rec aux_toks xs = 
     match xs with
     | [] -> ()
@@ -178,12 +181,13 @@ let visit_program ~tag_hook _prefs (_program, toks) =
   )
   in
   aux_toks toks';
-
+*)
 
   (* -------------------------------------------------------------------- *)
   (* Tokens phase 2 (individual tokens) *)
   (* -------------------------------------------------------------------- *)
 
+(*
   toks +> List.iter (fun tok -> 
     match tok with
 
@@ -322,5 +326,6 @@ let visit_program ~tag_hook _prefs (_program, toks) =
         | _ -> ()
 
   );
-
+*)
+   pr2 "TODO";
   ()

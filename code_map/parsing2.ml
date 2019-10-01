@@ -257,9 +257,16 @@ let tokens_with_categ_of_file file hentities =
 
   | FT.PL (FT.Python) ->
       tokens_with_categ_of_file_helper 
-        { parse = (parse_cache 
-         (fun file -> Python (Parse_python.parse file +> fst))
-         (function Python x -> [x] | _ -> raise Impossible));
+        { parse = (parse_cache (fun file -> 
+           Common.save_excursion Flag_parsing.error_recovery true (fun()->
+             Python (Parse_python.parse file +> fst))
+         )
+         (function 
+         | Python (astopt, toks) -> 
+             let ast = astopt ||| [] in
+             [ast, toks] 
+         | _ -> raise Impossible
+         ));
         highlight_visit = (fun ~tag_hook prefs (ast, toks) -> 
           Highlight_python.visit_program ~tag_hook prefs (ast, toks));
         info_of_tok = Token_helpers_python.info_of_tok;
