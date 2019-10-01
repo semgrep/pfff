@@ -125,11 +125,13 @@ let visitor_info_of_tok f = function
 
   | INDENT -> INDENT
   | DEDENT -> DEDENT
-  | NEWLINE -> NEWLINE
+  | NEWLINE (ii) -> NEWLINE (f ii)
 
 
 let info_of_tok tok = 
   let res = ref None in
   visitor_info_of_tok (fun ii -> res := Some ii; ii) tok +> ignore;
-  Common2.some !res
+  match !res with
+  | Some x -> x
+  | None -> Parse_info.fake_info "NOTOK"
 

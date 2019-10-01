@@ -29,6 +29,7 @@
 open Common
 open Ast_python
 
+
 let singleton e = Left e
 and tuple e = Right [e]
 and cons e = function
@@ -82,11 +83,11 @@ let tuple_expr_store l =
 /*(*-----------------------------------------*)*/
 
 /*(* tokens with "values" *)*/
-%token <string * Ast_python.tok>   NAME
-%token <int * Ast_python.tok>      INT LONGINT
-%token <float * Ast_python.tok>    FLOAT
-%token <string * Ast_python.tok>   IMAG
-%token <string * Ast_python.tok>   STR
+%token <string * Ast_python.tok> NAME
+%token <int    * Ast_python.tok> INT LONGINT
+%token <float  * Ast_python.tok> FLOAT
+%token <string * Ast_python.tok> IMAG
+%token <string * Ast_python.tok> STR
 
 /*(*-----------------------------------------*)*/
 /*(*2 Keyword tokens *)*/
@@ -146,7 +147,7 @@ let tuple_expr_store l =
 
 /* layout */
 %token INDENT DEDENT 
-%token NEWLINE
+%token <Ast_python.tok>NEWLINE
 
 /*(*************************************************************************)*/
 /*(*1 Priorities *)*/
@@ -171,13 +172,14 @@ file_input:
   | nl_stmt_list EOF
       { Module ($1) }
 
-/*(*************************************************************************)*/
-/*(*1 Namespace *)*/
-/*(*************************************************************************)*/
+nl_stmt_list:
+  | { [] }
+  | NEWLINE nl_stmt_list { $2 }
+  | stmt    nl_stmt_list { $1 @ $2 }
 
-/*(*----------------------------*)*/
-/*(*2 import *)*/
-/*(*----------------------------*)*/
+/*(*************************************************************************)*/
+/*(*1 Import *)*/
+/*(*************************************************************************)*/
 
 import_stmt:
   | import_name { $1 }
@@ -224,21 +226,58 @@ dotted_name:
   | name { $1 }
   | name DOT dotted_name { $1 ^ "." ^ $3 }
 
-/*(*----------------------------*)*/
-/*(*2 export *)*/
-/*(*----------------------------*)*/
+/*(*************************************************************************)*/
+/*(*1 Variable definition *)*/
+/*(*************************************************************************)*/
 
-/*(*************************************************************************)*/
-/*(*1 Variable declaration *)*/
-/*(*************************************************************************)*/
+expr_stmt:
+  | testlist_expr 
+    { ExprStmt ($1) }
+  | expr_stmt_lhs COLON test
+    { ExprStmt $1 (* TODO *)} 
+  | expr_stmt_lhs COLON test EQ test
+    { ExprStmt $1 (* TODO *)} 
+  | expr_stmt_lhs augassign expr_stmt_rhs 
+    { AugAssign ($1, fst $2, $3) }
+  | expr_stmt_lhs EQ        expr_stmt_rhs_list 
+    { Assign ($1::(fst $3), snd $3) }
+      
+expr_stmt_lhs:
+  | testlist { tuple_expr_store $1 }
+
+expr_stmt_rhs:
+  | yield_expr { $1 }
+  | testlist_expr { $1 }
+
+expr_stmt_rhs_list:
+  | expr_stmt_rhs { [], $1 }
+  | expr_stmt_lhs EQ expr_stmt_rhs_list { $1::(fst $3), snd $3 }
+
+augassign:
+  | ADDEQ   { Add, $1 }
+  | SUBEQ   { Sub, $1 }
+  | MULTEQ  { Mult, $1 }
+  | DIVEQ   { Div, $1 }
+  | POWEQ   { Pow, $1 }
+  | MODEQ   { Mod, $1 }
+  | LSHEQ   { LShift, $1 }
+  | RSHEQ   { RShift, $1 }
+  | OREQ    { BitOr, $1 }
+  | XOREQ   { BitXor, $1 }
+  | ANDEQ   { BitAnd, $1 }
+  | FDIVEQ  { FloorDiv, $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Function definition *)*/
 /*(*************************************************************************)*/
 
 funcdef:
-  | decorators DEF name parameters COLON suite
-      { FunctionDef ($3, $4, $6, $1) }
+  | decorators DEF name parameters return_type_opt COLON suite
+      { FunctionDef ($3, $4, $7, $1) }
+
+return_type_opt: 
+  | /*(* empty *)*/ { }
+  | SUB GT test { }
 
 /*(*----------------------------*)*/
 /*(*2 parameters *)*/
@@ -249,11 +288,13 @@ parameters:
 
 varargslist:
   | { [], None, None, [] }
+
   | fpdef { [$1], None, None, [] }
   | fpdef COMMA varargslist
       { match $3 with
         | args, varargs, kwargs, defaults  ->
             $1::args, varargs, kwargs, defaults }
+
   | fpdef EQ test
       {
         (* TODO check default arguments come after
@@ -263,12 +304,14 @@ varargslist:
       { match $5 with
         | args, varargs, kwargs, defaults  ->
             $1::args, varargs, kwargs, $3::defaults }
+
   | fpvarargs
       { [], fst $1, snd $1, [] }
 
 fpdef:
   | NAME { Name (fst $1, Param) }
   | LPAREN fplist RPAREN { tuple_expr_store $2 }
+  | NAME COLON test { Name (fst $1, Param) (* TODO *) }
 
 fplist:
   | fpdef { singleton $1 }
@@ -291,14 +334,6 @@ classdef:
   | decorators CLASS name COLON suite { ClassDef ($3, [], $5, $1) }
   | decorators CLASS name LPAREN RPAREN COLON suite { ClassDef ($3, [], $7, $1) }
   | decorators CLASS name LPAREN testlist RPAREN COLON suite { ClassDef ($3, to_list $5, $8, $1) }
-
-/*(*----------------------------*)*/
-/*(*2 Class elements *)*/
-/*(*----------------------------*)*/
-
-/*(*----------------------------*)*/
-/*(*2 Method definition *)*/
-/*(*----------------------------*)*/
 
 /*(*************************************************************************)*/
 /*(*1 Type declaration *)*/
@@ -339,19 +374,19 @@ stmt:
   | simple_stmt { $1 }
   | compound_stmt { [$1] }
 
+suite:
+  | simple_stmt { $1 }
+  | NEWLINE INDENT stmt_list DEDENT { $3 }
+
 stmt_list:
   | { [] }
   | stmt stmt_list { $1 @ $2 }
-
-nl_stmt_list:
-  | { [] }
-  | NEWLINE nl_stmt_list { $2 }
-  | stmt nl_stmt_list { $1 @ $2 }
 
 simple_stmt:
   | small_stmt NEWLINE { [$1] }
   | small_stmt SEMICOL NEWLINE { [$1] }
   | small_stmt SEMICOL simple_stmt { $1::$3 }
+
 
 small_stmt:
   | expr_stmt   { $1 }
@@ -361,38 +396,10 @@ small_stmt:
   | flow_stmt   { $1 }
   | import_stmt { $1 }
   | global_stmt { $1 }
-  | exec_stmt   { $1 }
   | assert_stmt { $1 }
-
-expr_stmt:
-  | expr_stmt_lhs EQ expr_stmt_rhs_list { Assign ($1::(fst $3), snd $3) }
-  | expr_stmt_lhs augassign expr_stmt_rhs { AugAssign ($1, fst $2, $3) }
-  | testlist_expr { ExprStmt ($1) }
-      
-expr_stmt_lhs:
-  | testlist { tuple_expr_store $1 }
-
-expr_stmt_rhs:
-  | yield_expr { $1 }
-  | testlist_expr { $1 }
-
-expr_stmt_rhs_list:
-  | expr_stmt_rhs { [], $1 }
-  | expr_stmt_lhs EQ expr_stmt_rhs_list { $1::(fst $3), snd $3 }
-
-augassign:
-  | ADDEQ   { Add, $1 }
-  | SUBEQ   { Sub, $1 }
-  | MULTEQ  { Mult, $1 }
-  | DIVEQ   { Div, $1 }
-  | POWEQ   { Pow, $1 }
-  | MODEQ   { Mod, $1 }
-  | LSHEQ   { LShift, $1 }
-  | RSHEQ   { RShift, $1 }
-  | OREQ    { BitOr, $1 }
-  | XOREQ   { BitXor, $1 }
-  | ANDEQ   { BitAnd, $1 }
-  | FDIVEQ  { FloorDiv, $1 }
+/*
+  | exec_stmt   { $1 }
+*/
 
 print_stmt:
   | PRINT
@@ -407,11 +414,13 @@ print_testlist:
   | COMMA test COMMA { [$2], false }
   | COMMA test print_testlist { $2::(fst $3), snd $3 }
 
+
 del_stmt:
   | DEL exprlist { Delete (List.map expr_del (to_list $2)) }
 
 pass_stmt:
   | PASS { Pass }
+
 
 flow_stmt:
   | break_stmt    { $1 }
@@ -439,6 +448,7 @@ raise_stmt:
   | RAISE test COMMA test { Raise (Some $2, Some $4, None) }
   | RAISE test COMMA test COMMA test { Raise (Some $2, Some $4, Some $6) }
 
+
 global_stmt:
   | GLOBAL name_list { Global ($2) }
 
@@ -446,14 +456,18 @@ name_list:
   | name { [$1] }
   | name COMMA name_list { $1::$3 }
 
+/*
 exec_stmt:
   | EXEC expr { Exec ($2, None, None) }
   | EXEC expr IN test { Exec ($2, Some $4, None) }
   | EXEC expr IN test COMMA test { Exec ($2, Some $4, Some $6) }
+*/
 
 assert_stmt:
   | ASSERT test { Assert ($2, None) }
   | ASSERT test COMMA test { Assert ($2, Some $4) }
+
+
 
 compound_stmt:
   | if_stmt     { $1 }
@@ -464,6 +478,7 @@ compound_stmt:
   | funcdef     { $1 }
   | classdef    { $1 }
 
+
 if_stmt:
   | IF test COLON suite elif_stmt_list { If ($2, $4, $5) }
 
@@ -472,15 +487,18 @@ elif_stmt_list:
   | ELIF test COLON suite elif_stmt_list { [If ($2, $4, $5)] }
   | ELSE COLON suite { $3 }
 
+
 while_stmt:
   | WHILE test COLON suite { While ($2, $4, []) }
   | WHILE test COLON suite ELSE COLON suite { While ($2, $4, $7) }
+
 
 for_stmt:
   | FOR exprlist IN testlist COLON suite
       { For (tuple_expr_store $2, tuple_expr $4, $6, []) }
   | FOR exprlist IN testlist COLON suite ELSE COLON suite
       { For (tuple_expr_store $2, tuple_expr $4, $6, $9) }
+
 
 try_stmt:
   | TRY COLON suite excepthandler_list
@@ -504,13 +522,10 @@ excepthandler_list:
   | excepthandler { [$1] }
   | excepthandler excepthandler_list { $1::$2 }
 
+
 with_stmt:
   | WITH test COLON suite { With ($2, None, $4) }
   | WITH test AS expr COLON suite { With ($2, Some $4, $6) }
-
-suite:
-  | simple_stmt { $1 }
-  | NEWLINE INDENT stmt_list DEDENT { $3 }
 
 /*(*----------------------------*)*/
 /*(*2 auxillary statements *)*/
@@ -520,9 +535,16 @@ suite:
 /*(*1 Expressions *)*/
 /*(*************************************************************************)*/
 
+exprlist:
+  | expr { singleton $1 }
+  | expr COMMA { tuple $1 }
+  | expr COMMA exprlist { cons $1 $3 }
+
+
 expr:
   | xor_expr { $1 }
-  | expr BITOR xor_expr{ BinOp ($1, BitOr, $3) }
+  | expr BITOR xor_expr { BinOp ($1, BitOr, $3) }
+
 
 xor_expr:
   | and_expr { $1 }
@@ -531,6 +553,7 @@ xor_expr:
 and_expr:
   | shift_expr { $1 }
   | shift_expr BITAND and_expr { BinOp ($1, BitAnd, $3) }
+
 
 shift_expr:
   | arith_expr { $1 }
@@ -541,6 +564,7 @@ arith_expr:
   | term { $1 }
   | arith_expr ADD term { BinOp ($1, Add, $3) }
   | arith_expr SUB term { BinOp ($1, Sub, $3) }
+
 
 term:
   | factor { $1 }
@@ -573,19 +597,30 @@ power:
   | atom_trailer { $1 }
   | atom_trailer POW factor { BinOp ($1, Pow, $3) }
 
+/*(*----------------------------*)*/
+/*(*2 Atom trailer *)*/
+/*(*----------------------------*)*/
+
 atom_trailer:
   | atom { $1 }
+
   | atom_trailer LPAREN RPAREN { Call ($1, [], [], None, None) }
   | atom_trailer LPAREN arglist RPAREN
       { match $3 with
         | args, keywords, starargs, kwargs ->
             Call ($1, args, keywords, starargs, kwargs) }
+
   | atom_trailer LBRACK subscriptlist RBRACK
       { match $3 with
           (* TODO test* => Index (Tuple (elts)) *)
         | [s] -> Subscript ($1, s, Load)
         | l -> Subscript ($1, ExtSlice (l), Load) }
+
   | atom_trailer DOT NAME { Attribute ($1, fst $3, Load) }
+
+/*(*----------------------------*)*/
+/*(*2 Atom *)*/
+/*(*----------------------------*)*/
 
 atom:
   | atom_tuple  { $1 }
@@ -593,11 +628,34 @@ atom:
   | atom_dict   { $1 }
   | atom_repr   { $1 }
   | atom_name   { $1 }
+
   | INT         { Num (Int (fst $1)) }
   | LONGINT     { Num (LongInt (fst $1)) }
   | FLOAT       { Num (Float (fst $1)) }
   | IMAG        { Num (Imag (fst $1)) }
+
   | string_list { Str (String.concat "" (fst $1)) }
+
+atom_repr:
+  | BACKQUOTE testlist1 BACKQUOTE { Repr (tuple_expr $2) }
+
+testlist1:
+  | test { singleton $1 }
+  | test COMMA testlist1 { cons $1 $3 }
+
+
+atom_name:
+  | NAME { Name (fst $1, Load) }
+
+
+string_list:
+  | STR { ([fst $1], snd $1) }
+  | STR string_list { (fst $1::fst $2, snd $1) }
+
+
+/*(*----------------------------*)*/
+/*(*2 containers *)*/
+/*(*----------------------------*)*/
 
 atom_tuple:
   | LPAREN RPAREN { Tuple ([], Load) }
@@ -614,23 +672,16 @@ atom_dict:
   | LBRACE RBRACE { Dict ([], []) }
   | LBRACE dictmaker RBRACE { Dict (fst $2, snd $2) }
 
-atom_repr:
-  | BACKQUOTE testlist1 BACKQUOTE { Repr (tuple_expr $2) }
-
-atom_name:
-  | NAME { Name (fst $1, Load) }
-
 dictmaker:
   | test COLON test { [$1], [$3] }
   | test COLON test COMMA { [$1], [$3] }
   | test COLON test COMMA dictmaker { $1::(fst $5), $3::(snd $5) }
+  | POW expr { [], [] }
+  | POW expr COMMA { [], [] }
 
-string_list:
-  | STR { ([fst $1], snd $1) }
-  | STR string_list { (fst $1::fst $2, snd $1) }
-
-lambdadef:
-  | LAMBDA varargslist COLON test { Lambda ($2, $4) }
+/*(*----------------------------*)*/
+/*(*2 Array access *)*/
+/*(*----------------------------*)*/
 
 subscriptlist:
   | subscript { [$1] }
@@ -643,10 +694,9 @@ subscript:
   | test_opt COLON test_opt { Slice ($1, $3, None) }
   | test_opt COLON test_opt COLON test_opt { Slice ($1, $3, $5) }
 
-exprlist:
-  | expr { singleton $1 }
-  | expr COMMA { tuple $1 }
-  | expr COMMA exprlist { cons $1 $3 }
+/*(*----------------------------*)*/
+/*(*2 test *)*/
+/*(*----------------------------*)*/
 
 testlist:
   | test { singleton $1 }
@@ -656,54 +706,6 @@ testlist:
 testlist_expr:
   | testlist { tuple_expr $1 }
 
-list_for:
-  | list_for1 { [$1] }
-  | list_for1 list_for { $1::$2 }
-
-list_for1:
-  | FOR exprlist IN testlist_safe list_if_list { tuple_expr_store $2, tuple_expr $4, $5 }
-
-list_if:
-  | IF old_test { $2 }
-
-list_if_list:
-  | { [] }
-  | list_if list_if_list { $1::$2 }
-
-gen_for:
-  | gen_for1 { [$1] }
-  | gen_for1 gen_for { $1::$2 }
-
-gen_for1:
-  | FOR exprlist IN or_test gen_if_list { tuple_expr_store $2, $4, $5 }
-
-gen_if:
-  | IF old_test { $2 }
-
-gen_if_list:
-  | { [] }
-  | gen_if gen_if_list { $1::$2 }
-
-testlist1:
-  | test { singleton $1 }
-  | test COMMA testlist1 { cons $1 $3 }
-
-yield_expr:
-  | YIELD { Yield (None) }
-  | YIELD testlist_expr { Yield (Some $2) }
-
-
-testlist_safe:
-  | old_test { singleton $1 }
-  | old_test COMMA { tuple $1 }
-  | old_test COMMA testlist_safe { cons $1 $3 }
-
-old_test:
-  | or_test { $1 }
-  | old_lambdadef { $1 }
-
-old_lambdadef:
-  | LAMBDA varargslist COLON old_test { Lambda ($2, $4) }
 
 test:
   | or_test { $1 }
@@ -754,17 +756,67 @@ comp_op:
   | IN      { In, $1 }
   | NOT IN  { NotIn, $1 }
 
-
 /*(*----------------------------*)*/
-/*(*2 scalar *)*/
-/*(*----------------------------*)*/
-
-/*(*----------------------------*)*/
-/*(*2 array *)*/
+/*(*2 Advanced features *)*/
 /*(*----------------------------*)*/
 
+yield_expr:
+  | YIELD { Yield (None) }
+  | YIELD testlist_expr { Yield (Some $2) }
+
+lambdadef:
+  | LAMBDA varargslist COLON test { Lambda ($2, $4) }
+
 /*(*----------------------------*)*/
-/*(*2 function call and arguments *)*/
+/*(*2 Comprehensions *)*/
+/*(*----------------------------*)*/
+
+list_for:
+  | list_for1 { [$1] }
+  | list_for1 list_for { $1::$2 }
+
+list_for1:
+  | FOR exprlist IN testlist_safe list_if_list { tuple_expr_store $2, tuple_expr $4, $5 }
+
+list_if:
+  | IF old_test { $2 }
+
+list_if_list:
+  | { [] }
+  | list_if list_if_list { $1::$2 }
+
+testlist_safe:
+  | old_test { singleton $1 }
+  | old_test COMMA { tuple $1 }
+  | old_test COMMA testlist_safe { cons $1 $3 }
+
+old_test:
+  | or_test { $1 }
+  | old_lambdadef { $1 }
+
+old_lambdadef:
+  | LAMBDA varargslist COLON old_test { Lambda ($2, $4) }
+
+/*(*----------------------------*)*/
+/*(*2 Generators *)*/
+/*(*----------------------------*)*/
+
+gen_for:
+  | gen_for1 { [$1] }
+  | gen_for1 gen_for { $1::$2 }
+
+gen_for1:
+  | FOR exprlist IN or_test gen_if_list { tuple_expr_store $2, $4, $5 }
+
+gen_if:
+  | IF old_test { $2 }
+
+gen_if_list:
+  | { [] }
+  | gen_if gen_if_list { $1::$2 }
+
+/*(*----------------------------*)*/
+/*(*2 Arguments *)*/
 /*(*----------------------------*)*/
 
 arglist:
@@ -779,12 +831,6 @@ arglist:
 argument:
   | test { $1 }
   | test gen_for { GeneratorExp ($1, $2) }
-
-keyword:
-  | test EQ test
-      { match $1 with
-        | Name (id, _) -> (id, $3)
-        | _ -> raise Parsing.Parse_error }
 
 starargs:
   | MULT test { [], [], Some $2, None }
@@ -803,9 +849,11 @@ keywords:
             args, $1::keywords, starargs, kwargs }
   | POW test { [], [], None, Some $2 }
 
-/*(*----------------------------*)*/
-/*(*2 interpolated strings *)*/
-/*(*----------------------------*)*/
+keyword:
+  | test EQ test
+      { match $1 with
+        | Name (id, _) -> (id, $3)
+        | _ -> raise Parsing.Parse_error }
 
 /*(*************************************************************************)*/
 /*(*1 Entities, names *)*/

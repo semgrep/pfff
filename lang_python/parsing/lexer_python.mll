@@ -194,6 +194,7 @@ and _token state = parse
   (* ----------------------------------------------------------------------- *)
   | ((whitespace* comment? newline)* whitespace* comment?) newline
       { 
+        let info = tokinfo lexbuf in
         let lines = count_lines (Lexing.lexeme lexbuf) in
         let pos = lexbuf.lex_curr_p in
           lexbuf.lex_curr_p <-
@@ -203,7 +204,7 @@ and _token state = parse
         if state.nl_ignore <= 0 then begin
           state.curr_offset <- 0;
           offset state lexbuf;
-          NEWLINE
+          NEWLINE info
         end else
           _token state lexbuf 
        }
@@ -296,7 +297,7 @@ and _token state = parse
         | "elif"     -> ELIF (tokinfo lexbuf)
         | "else"     -> ELSE (tokinfo lexbuf)
         | "except"   -> EXCEPT (tokinfo lexbuf)
-        | "exec"     -> EXEC (tokinfo lexbuf)
+(*        | "exec"     -> EXEC (tokinfo lexbuf) *)
         | "finally"  -> FINALLY (tokinfo lexbuf)
         | "for"      -> FOR (tokinfo lexbuf)
         | "from"     -> FROM (tokinfo lexbuf)
