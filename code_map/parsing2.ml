@@ -263,7 +263,7 @@ let tokens_with_categ_of_file file hentities =
          )
          (function 
          | Python (astopt, toks) -> 
-             let ast = astopt ||| [] in
+             let ast = astopt ||| Ast_python.Module [] in
              [ast, toks] 
          | _ -> raise Impossible
          ));

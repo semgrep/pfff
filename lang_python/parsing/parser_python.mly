@@ -81,8 +81,7 @@ let tuple_expr_store l =
 
 /*(* tokens with "values" *)*/
 %token <string * Ast_python.tok>   NAME
-%token <int * Ast_python.tok>      INT
-%token <int * Ast_python.tok>      LONGINT
+%token <int * Ast_python.tok>      INT LONGINT
 %token <float * Ast_python.tok>    FLOAT
 %token <string * Ast_python.tok>   IMAG
 %token <string * Ast_python.tok>   STR
@@ -90,99 +89,61 @@ let tuple_expr_store l =
 /*(*-----------------------------------------*)*/
 /*(*2 Keyword tokens *)*/
 /*(*-----------------------------------------*)*/
-%token <Ast_python.tok> AND
-%token <Ast_python.tok> AS
-%token <Ast_python.tok> ASSERT
-%token <Ast_python.tok> BREAK
-%token <Ast_python.tok> CLASS
-%token <Ast_python.tok> CONTINUE
-%token <Ast_python.tok> DEF
-%token <Ast_python.tok> DEL
-%token <Ast_python.tok> ELIF
-%token <Ast_python.tok> ELSE
-%token <Ast_python.tok> EXCEPT
-%token <Ast_python.tok> EXEC
-%token <Ast_python.tok> FINALLY
-%token <Ast_python.tok> FOR
-%token <Ast_python.tok> FROM
-%token <Ast_python.tok> GLOBAL
-%token <Ast_python.tok> IF
-%token <Ast_python.tok> IMPORT
-%token <Ast_python.tok> IN
-%token <Ast_python.tok> IS
-%token <Ast_python.tok> LAMBDA
-%token <Ast_python.tok> NOT
-%token <Ast_python.tok> OR
-%token <Ast_python.tok> PASS
-%token <Ast_python.tok> PRINT
-%token <Ast_python.tok> RAISE
-%token <Ast_python.tok> RETURN
-%token <Ast_python.tok> TRY
-%token <Ast_python.tok> WHILE
-%token <Ast_python.tok> WITH
-%token <Ast_python.tok> YIELD
+%token <Ast_python.tok> 
+ IF ELIF ELSE
+ WHILE FOR
+ RETURN CONTINUE BREAK PASS
+ DEF LAMBDA CLASS GLOBAL
+ TRY FINALLY EXCEPT RAISE
+ AND NOT OR
+ PRINT EXEC ASSERT
+ IMPORT FROM AS
+ DEL IN IS WITH YIELD
 
 /*(*-----------------------------------------*)*/
 /*(*2 Punctuation tokens *)*/
 /*(*-----------------------------------------*)*/
  
 /*(* syntax *)*/
-%token <Ast_python.tok> LPAREN         /* ( */
-%token <Ast_python.tok> RPAREN         /* ) */
-%token <Ast_python.tok> LBRACK         /* [ */
-%token <Ast_python.tok> RBRACK         /* ] */
-%token <Ast_python.tok> LBRACE         /* { */
-%token <Ast_python.tok> RBRACE         /* } */
-%token <Ast_python.tok> COLON          /* : */
-%token <Ast_python.tok> SEMICOL        /* ; */
-%token <Ast_python.tok> DOT            /* . */
-%token <Ast_python.tok> COMMA          /* , */
-%token <Ast_python.tok> BACKQUOTE      /* ` */
-%token <Ast_python.tok> AT             /* @ */
+%token <Ast_python.tok> 
+ LPAREN         /* ( */ RPAREN         /* ) */
+ LBRACK         /* [ */ RBRACK         /* ] */
+ LBRACE         /* { */ RBRACE         /* } */
+ COLON          /* : */
+ SEMICOL        /* ; */
+ DOT            /* . */
+ COMMA          /* , */
+ BACKQUOTE      /* ` */
+ AT             /* @ */
 
 /*(* operators *)*/
-%token <Ast_python.tok> ADD            /* + */
-%token <Ast_python.tok> SUB            /* - */
-%token <Ast_python.tok> MULT           /* * */
-%token <Ast_python.tok> DIV            /* / */
-%token <Ast_python.tok> MOD            /* % */
-%token <Ast_python.tok> POW            /* ** */
-%token <Ast_python.tok> FDIV           /* // */
-%token <Ast_python.tok> BITOR          /* | */
-%token <Ast_python.tok> BITAND         /* & */
-%token <Ast_python.tok> BITXOR         /* ^ */
-%token <Ast_python.tok> BITNOT         /* ~ */
-%token <Ast_python.tok> LSHIFT         /* << */
-%token <Ast_python.tok> RSHIFT         /* >> */
+%token <Ast_python.tok> 
+  ADD            /* + */  SUB            /* - */
+  MULT           /* * */  DIV            /* / */
+  MOD            /* % */
+  POW            /* ** */  FDIV           /* // */
+  BITOR          /* | */  BITAND         /* & */  BITXOR         /* ^ */
+  BITNOT         /* ~ */  LSHIFT         /* << */  RSHIFT         /* >> */
 
-%token <Ast_python.tok> EQ             /* = */
-%token <Ast_python.tok> ADDEQ          /* += */
-%token <Ast_python.tok> SUBEQ          /* -= */
-%token <Ast_python.tok> MULTEQ         /* *= */
-%token <Ast_python.tok> DIVEQ          /* /= */
-%token <Ast_python.tok> MODEQ          /* %= */
-%token <Ast_python.tok> POWEQ          /* **= */
-%token <Ast_python.tok> FDIVEQ         /* //= */
-%token <Ast_python.tok> ANDEQ          /* &= */
-%token <Ast_python.tok> OREQ           /* |= */
-%token <Ast_python.tok> XOREQ          /* ^= */
-%token <Ast_python.tok> LSHEQ          /* <<= */
-%token <Ast_python.tok> RSHEQ          /* >>= */
+%token <Ast_python.tok> 
+  EQ             /* = */
+  ADDEQ          /* += */ SUBEQ          /* -= */
+  MULTEQ         /* *= */ DIVEQ          /* /= */
+  MODEQ          /* %= */
+  POWEQ          /* **= */ FDIVEQ         /* //= */
+  ANDEQ          /* &= */ OREQ           /* |= */ XOREQ          /* ^= */
+  LSHEQ          /* <<= */ RSHEQ          /* >>= */
 
-%token <Ast_python.tok> EQUAL          /* == */
-%token <Ast_python.tok> NOTEQ          /* !=, <> */
-%token <Ast_python.tok> LT             /* < */
-%token <Ast_python.tok> GT             /* > */
-%token <Ast_python.tok> LEQ            /* <= */
-%token <Ast_python.tok> GEQ            /* >= */
+  EQUAL          /* == */ NOTEQ          /* !=, <> */
+  LT             /* < */ GT             /* > */
+  LEQ            /* <= */ GEQ            /* >= */
 
 /*(*-----------------------------------------*)*/
 /*(*2 Extra tokens: *)*/
 /*(*-----------------------------------------*)*/
 
 /* layout */
-%token INDENT
-%token DEDENT
+%token INDENT DEDENT 
 %token NEWLINE
 
 /*(*************************************************************************)*/
@@ -202,7 +163,7 @@ let tuple_expr_store l =
 /*(*1 Toplevel *)*/
 /*(*************************************************************************)*/
 
-main: file_input { [] }
+main: file_input { $1 }
 
 file_input:
   | nl_stmt_list EOF

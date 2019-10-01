@@ -200,7 +200,7 @@ and modl =
   | Suite of stmt list
   (* with tarzan *)
 
-type program = modl list
+type program = modl
 
 (* ------------------------------------------------------------------------- *)
 (* Any *)
