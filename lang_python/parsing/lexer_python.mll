@@ -140,10 +140,12 @@ let digit = ['0'-'9']
 let octdigit = ['0'-'7']
 let hexdigit = ['0'-'9' 'a'-'f' 'A'-'F']
 let nonzerodigit = ['1'-'9']
+
 let longintpostfix = ['l' 'L']
 let decimalinteger = nonzerodigit digit*
 let octinteger = '0' octdigit+
 let hexinteger = '0' ['x' 'X'] hexdigit+
+
 let intpart = digit+
 let fraction = '.' digit+
 let pointfloat = intpart? fraction | intpart '.'
@@ -173,7 +175,16 @@ rule token state = parse
           else _token state lexbuf 
       }
 
+and offset state = parse
+  | e { }
+  | ' '  { state.curr_offset <- state.curr_offset + 1; offset state lexbuf }
+  | '\t' { state.curr_offset <- state.curr_offset + 8; offset state lexbuf }
+
 and _token state = parse
+
+  (* ----------------------------------------------------------------------- *)
+  (* spacing/comments *)
+  (* ----------------------------------------------------------------------- *)
   | ((whitespace* comment? newline)* whitespace* comment?) newline
       { 
         let lines = count_lines (Lexing.lexeme lexbuf) in
@@ -201,6 +212,68 @@ and _token state = parse
 
   | whitespace+
       { _token state lexbuf }
+
+  (* ----------------------------------------------------------------------- *)
+  (* symbols *)
+  (* ----------------------------------------------------------------------- *)
+  (* symbols *)
+  | "+="    { ADDEQ (tokinfo lexbuf) }
+  | "-="    { SUBEQ (tokinfo lexbuf) }
+  | "*="    { MULTEQ (tokinfo lexbuf) }
+  | "/="    { DIVEQ (tokinfo lexbuf) }
+  | "%="    { MODEQ (tokinfo lexbuf) }
+  | "**="   { POWEQ (tokinfo lexbuf) }
+  | "//="   { FDIVEQ (tokinfo lexbuf) }
+  | "&="    { ANDEQ (tokinfo lexbuf) }
+  | "|="    { OREQ (tokinfo lexbuf) }
+  | "^="    { XOREQ (tokinfo lexbuf) }
+  | "<<="   { LSHEQ (tokinfo lexbuf) }
+  | ">>="   { RSHEQ (tokinfo lexbuf) }
+
+  | "=="    { EQUAL (tokinfo lexbuf) }
+  | "!="    { NOTEQ (tokinfo lexbuf) }
+  | "<>"    { NOTEQ (tokinfo lexbuf) }
+  | "<="    { LEQ (tokinfo lexbuf) }
+  | ">="    { GEQ (tokinfo lexbuf) }
+  | '<'     { LT (tokinfo lexbuf) }
+  | '>'     { GT (tokinfo lexbuf) }
+
+  | '='     { EQ (tokinfo lexbuf) }
+
+  | "**"    { POW (tokinfo lexbuf) }
+  | "//"    { FDIV (tokinfo lexbuf) }
+
+  | '+'     { ADD (tokinfo lexbuf) }
+  | '-'     { SUB (tokinfo lexbuf) }
+  | '*'     { MULT (tokinfo lexbuf) }
+  | '/'     { DIV (tokinfo lexbuf) }
+  | '%'     { MOD (tokinfo lexbuf) }
+
+  | '|'     { BITOR (tokinfo lexbuf) }
+  | '&'     { BITAND (tokinfo lexbuf) }
+  | '^'     { BITXOR (tokinfo lexbuf) }
+  | '~'     { BITNOT (tokinfo lexbuf) }
+
+  | "<<"    { LSHIFT (tokinfo lexbuf) }
+  | ">>"    { RSHIFT (tokinfo lexbuf) }
+
+  | '('     { ignore_nl state; LPAREN (tokinfo lexbuf) }
+  | ')'     { aware_nl state; RPAREN (tokinfo lexbuf) }
+  | '['     { ignore_nl state; LBRACK (tokinfo lexbuf) }
+  | ']'     { aware_nl state; RBRACK (tokinfo lexbuf) }
+  | '{'     { ignore_nl state; LBRACE (tokinfo lexbuf) }
+  | '}'     { aware_nl state; RBRACE (tokinfo lexbuf) }
+
+  | ':'     { COLON (tokinfo lexbuf) }
+  | ';'     { SEMICOL (tokinfo lexbuf) }
+  | '.'     { DOT (tokinfo lexbuf) }
+  | ','     { COMMA (tokinfo lexbuf) }
+  | '`'     { BACKQUOTE (tokinfo lexbuf) }
+  | '@'     { AT (tokinfo lexbuf) }
+
+  (* ----------------------------------------------------------------------- *)
+  (* Keywords and ident *)
+  (* ----------------------------------------------------------------------- *)
 
   (* keywords *)
   | identifier as id
@@ -238,56 +311,9 @@ and _token state = parse
         | "yield"    -> YIELD (tokinfo lexbuf)
         | _          -> NAME (id, (tokinfo lexbuf)) }
 
-  (* symbols *)
-  | "+="    { ADDEQ (tokinfo lexbuf) }
-  | "-="    { SUBEQ (tokinfo lexbuf) }
-  | "*="    { MULTEQ (tokinfo lexbuf) }
-  | "/="    { DIVEQ (tokinfo lexbuf) }
-  | "%="    { MODEQ (tokinfo lexbuf) }
-  | "**="   { POWEQ (tokinfo lexbuf) }
-  | "//="   { FDIVEQ (tokinfo lexbuf) }
-  | "&="    { ANDEQ (tokinfo lexbuf) }
-  | "|="    { OREQ (tokinfo lexbuf) }
-  | "^="    { XOREQ (tokinfo lexbuf) }
-  | "<<="   { LSHEQ (tokinfo lexbuf) }
-  | ">>="   { RSHEQ (tokinfo lexbuf) }
-
-  | "=="    { EQUAL (tokinfo lexbuf) }
-  | "!="    { NOTEQ (tokinfo lexbuf) }
-  | "<>"    { NOTEQ (tokinfo lexbuf) }
-  | "<="    { LEQ (tokinfo lexbuf) }
-  | ">="    { GEQ (tokinfo lexbuf) }
-  | '<'     { LT (tokinfo lexbuf) }
-  | '>'     { GT (tokinfo lexbuf) }
-
-  | '='     { EQ (tokinfo lexbuf) }
-
-  | "**"    { POW (tokinfo lexbuf) }
-  | "//"    { FDIV (tokinfo lexbuf) }
-  | '+'     { ADD (tokinfo lexbuf) }
-  | '-'     { SUB (tokinfo lexbuf) }
-  | '*'     { MULT (tokinfo lexbuf) }
-  | '/'     { DIV (tokinfo lexbuf) }
-  | '%'     { MOD (tokinfo lexbuf) }
-  | '|'     { BITOR (tokinfo lexbuf) }
-  | '&'     { BITAND (tokinfo lexbuf) }
-  | '^'     { BITXOR (tokinfo lexbuf) }
-  | '~'     { BITNOT (tokinfo lexbuf) }
-  | "<<"    { LSHIFT (tokinfo lexbuf) }
-  | ">>"    { RSHIFT (tokinfo lexbuf) }
-
-  | '('     { ignore_nl state; LPAREN (tokinfo lexbuf) }
-  | ')'     { aware_nl state; RPAREN (tokinfo lexbuf) }
-  | '['     { ignore_nl state; LBRACK (tokinfo lexbuf) }
-  | ']'     { aware_nl state; RBRACK (tokinfo lexbuf) }
-  | '{'     { ignore_nl state; LBRACE (tokinfo lexbuf) }
-  | '}'     { aware_nl state; RBRACE (tokinfo lexbuf) }
-  | ':'     { COLON (tokinfo lexbuf) }
-  | ';'     { SEMICOL (tokinfo lexbuf) }
-  | '.'     { DOT (tokinfo lexbuf) }
-  | ','     { COMMA (tokinfo lexbuf) }
-  | '`'     { BACKQUOTE (tokinfo lexbuf) }
-  | '@'     { AT (tokinfo lexbuf) }
+  (* ----------------------------------------------------------------------- *)
+  (* Constant *)
+  (* ----------------------------------------------------------------------- *)
 
   (* literals *)
   | decimalinteger as n longintpostfix
@@ -311,6 +337,10 @@ and _token state = parse
   | '0'
       { INT (0, tokinfo lexbuf) }
 
+  (* ----------------------------------------------------------------------- *)
+  (* Strings *)
+  (* ----------------------------------------------------------------------- *)
+
   | stringprefix '\''
       { sq_shortstrlit state (tokinfo lexbuf) lexbuf }
   | stringprefix '"'
@@ -320,6 +350,9 @@ and _token state = parse
   | stringprefix "\"\"\""
       { dq_longstrlit state (tokinfo lexbuf) lexbuf }
 
+  (* ----------------------------------------------------------------------- *)
+  (* eof *)
+  (* ----------------------------------------------------------------------- *)
   (* eof *)
   | eof { EOF (tokinfo lexbuf) }
 
@@ -329,37 +362,8 @@ and _token state = parse
       TUnknown (tokinfo lexbuf)
     }
 
-and offset state = parse
-  | e { }
-  | ' '  { state.curr_offset <- state.curr_offset + 1; offset state lexbuf }
-  | '\t' { state.curr_offset <- state.curr_offset + 8; offset state lexbuf }
-
-  (* ----------------------------------------------------------------------- *)
-  (* spacing/comments *)
-  (* ----------------------------------------------------------------------- *)
-
-  (* ----------------------------------------------------------------------- *)
-  (* symbols *)
-  (* ----------------------------------------------------------------------- *)
-
-  (* ----------------------------------------------------------------------- *)
-  (* Keywords and ident *)
-  (* ----------------------------------------------------------------------- *)
-
-  (* ----------------------------------------------------------------------- *)
-  (* Constant *)
-  (* ----------------------------------------------------------------------- *)
-
-  (* ----------------------------------------------------------------------- *)
-  (* Strings *)
-  (* ----------------------------------------------------------------------- *)
-
-  (* ----------------------------------------------------------------------- *)
-  (* eof *)
-  (* ----------------------------------------------------------------------- *)
-
 (*****************************************************************************)
-(* Rule string *)
+(* Rules on strings *)
 (*****************************************************************************)
 
 and sq_shortstrlit state pos = parse
@@ -381,4 +385,3 @@ and dq_longstrlit state pos = shortest
         let curpos = lexbuf.lex_curr_p in
           lexbuf.lex_curr_p <- { curpos with pos_lnum = curpos.pos_lnum + lines };
           STR (unescaped s, pos) }
-
