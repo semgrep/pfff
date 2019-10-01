@@ -67,7 +67,6 @@ type name = string wrap
 (* ------------------------------------------------------------------------- *)
 (* Expression *)
 (* ------------------------------------------------------------------------- *)
-
 type expr =
   | Num of number (* n *)
   | Str of string (* s *)
@@ -132,8 +131,6 @@ and arguments = expr list (* args *) * name option (* varargs *) * name option (
 (* ------------------------------------------------------------------------- *)
 (* Statement *)
 (* ------------------------------------------------------------------------- *)
-
-
 type stmt =
   | FunctionDef of name (* name *) * arguments (* args *) * stmt list (* body *) * expr list (* decorator_list *)
   | ClassDef of name (* name *) * expr list (* bases *) * stmt list (* body *) * expr list (* decorator_list *)
@@ -208,6 +205,12 @@ type program = modl list
 (* ------------------------------------------------------------------------- *)
 (* Any *)
 (* ------------------------------------------------------------------------- *)
+type any =
+  | Expr of expr
+  | Stmt of stmt
+  | Modl of modl
+  | Program of program
+ (* with tarzan *)
 
 (*****************************************************************************)
 (* Wrappers *)
