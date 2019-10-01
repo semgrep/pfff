@@ -1,6 +1,7 @@
 (* Yoann Padioleau
  * 
  * Copyright (C) 2010 Facebook
+ * Copyright (C) 2019 Yoann Padioleau
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
@@ -27,7 +28,6 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
-
 type program_and_tokens = Ast_python.program * Parser_python.token list
 
 (*****************************************************************************)
@@ -40,13 +40,14 @@ let tokens2 file =
   Common.with_open_infile file (fun chan -> 
     let lexbuf = Lexing.from_channel chan in
 
-    try 
-      let mltoken lexbuf = 
-        Lexer_python.token lexbuf
+      let state = Lexer_python.create () in
+
+      let token lexbuf = 
+        Lexer_python.token state lexbuf
       in
       
       let rec tokens_aux acc = 
-        let tok = mltoken lexbuf in
+        let tok = token lexbuf in
         if !Flag.debug_lexer then Common.pr2_gen tok;
 
         let tok = tok +> TH.visitor_info_of_tok (fun ii -> 
@@ -65,13 +66,7 @@ let tokens2 file =
         else tokens_aux (tok::acc)
       in
       tokens_aux []
-  with
-  | Lexer_python.Lexical s -> 
-      failwith ("lexical error " ^ s ^ "\n =" ^ 
-                 (PI.error_message file (PI.lexbuf_to_strpos lexbuf)))
-  | e -> raise e
- )
-          
+  )          
 
 let tokens a = 
   Common.profile_code "Parse_python.tokens" (fun () -> tokens2 a)

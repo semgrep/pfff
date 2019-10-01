@@ -61,7 +61,7 @@ and 'a wrap = 'a * tok
 (* ------------------------------------------------------------------------- *)
 (* Name *)
 (* ------------------------------------------------------------------------- *)
-type name = string wrap
+type name = string (* TODO wrap *)
  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
@@ -159,7 +159,7 @@ type stmt =
   | Exec of expr (* body *) * expr option (* globals *) * expr option (* locals *)
 
   | Global of name list (* names *)
-  | Expr of expr (* value *)
+  | ExprStmt of expr (* value *)
 
   | Pass
   | Break
@@ -193,11 +193,11 @@ and alias = name (* name *) * name option (* asname *)
 (* Toplevel *)
 (* ------------------------------------------------------------------------- *)
 and modl =
-  | Module of stmt list (* body *)
-  | Interactive of stmt list (* body *)
-  | Expression of expr (* body *)
+  | Module of stmt list
+  | Interactive of stmt list
+  | Expression of expr
 
-  | Suite of stmt list (* body *)
+  | Suite of stmt list
   (* with tarzan *)
 
 type program = modl list
@@ -216,4 +216,13 @@ type any =
 (* Wrappers *)
 (*****************************************************************************)
 
-
+(*****************************************************************************)
+(* Accessors *)
+(*****************************************************************************)
+let context_of_expr = function
+  | Attribute (_, _, ctx) -> Some ctx
+  | Subscript (_, _, ctx) -> Some ctx
+  | Name (_, ctx)         -> Some ctx
+  | List (_, ctx)         -> Some ctx
+  | Tuple (_, ctx)        -> Some ctx
+  | _                        -> None
