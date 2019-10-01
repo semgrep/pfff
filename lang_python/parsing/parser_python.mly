@@ -190,7 +190,7 @@ import_name:
 
 import_from:
   | FROM name_and_level IMPORT MULT
-      { ImportFrom (fst $2, ["*", None], snd $2) }
+      { ImportFrom (fst $2, [("*", $1(*TODO*)), None], snd $2) }
   | FROM name_and_level IMPORT LPAREN import_as_names RPAREN
       { ImportFrom (fst $2, $5, snd $2) }
   | FROM name_and_level IMPORT import_as_names
@@ -199,7 +199,7 @@ import_from:
 name_and_level:
   | dotted_name { $1, Some 0 }
   | dot_level dotted_name { $2, Some $1 }
-  | DOT dot_level { "", Some (1 + $2) }
+  | DOT dot_level { ("",$1(*TODO*)), Some (1 + $2) }
 
 dot_level:
   | { 0 }
@@ -224,7 +224,7 @@ dotted_as_names:
 
 dotted_name:
   | name { $1 }
-  | name DOT dotted_name { $1 ^ "." ^ $3 }
+  | name DOT dotted_name { (fst $1 ^ "." ^ fst $3, $2)(*TODO*) }
 
 /*(*************************************************************************)*/
 /*(*1 Variable definition *)*/
@@ -309,9 +309,9 @@ varargslist:
       { [], fst $1, snd $1, [] }
 
 fpdef:
-  | NAME { Name (fst $1, Param) }
+  | NAME { Name ($1, Param) }
   | LPAREN fplist RPAREN { tuple_expr_store $2 }
-  | NAME COLON test { Name (fst $1, Param) (* TODO *) }
+  | NAME COLON test { Name ($1, Param) (* TODO *) }
 
 fplist:
   | fpdef { singleton $1 }
@@ -352,7 +352,7 @@ decorator:
 
 decorator_name:
   | atom_name { $1 }
-  | atom_name DOT NAME { Attribute ($1, fst $3, Load) }
+  | atom_name DOT NAME { Attribute ($1, $3, Load) }
 
 decorator_expr:
   | decorator_name { $1 }
@@ -616,7 +616,7 @@ atom_trailer:
         | [s] -> Subscript ($1, s, Load)
         | l -> Subscript ($1, ExtSlice (l), Load) }
 
-  | atom_trailer DOT NAME { Attribute ($1, fst $3, Load) }
+  | atom_trailer DOT NAME { Attribute ($1, $3, Load) }
 
 /*(*----------------------------*)*/
 /*(*2 Atom *)*/
@@ -645,7 +645,7 @@ testlist1:
 
 
 atom_name:
-  | NAME { Name (fst $1, Load) }
+  | NAME { Name ($1, Load) }
 
 
 string_list:
@@ -860,7 +860,7 @@ keyword:
 /*(*************************************************************************)*/
 
 name:
-  | NAME { fst $1 }
+  | NAME { $1 }
 
 /*(*************************************************************************)*/
 /*(*1 xxx_opt, xxx_list *)*/
