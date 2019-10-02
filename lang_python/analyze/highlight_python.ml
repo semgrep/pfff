@@ -156,8 +156,18 @@ let visit_program ~tag_hook _prefs (program, toks) =
        );
        k x
      | Ast_python.Attribute (_e, name, _ctx) ->
-        let kind = E.Field in
-        tag_name name (Entity (kind, (Use2 fake_no_use2)));
+         (match () with
+         | _ when !in_type ->
+          (match fst name with
+          | "int" -> tag_name name TypeInt
+          | _ ->
+            let kind = E.Type in
+            tag_name name (Entity (kind, (Use2 fake_no_use2)))
+          )
+         | _ ->
+           let kind = E.Field in
+           tag_name name (Entity (kind, (Use2 fake_no_use2)));
+         );
         k x
      | _ -> k x
     );
