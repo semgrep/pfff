@@ -150,7 +150,7 @@ and comprehension =
 and expr_context = 
   | Load | Store 
   | Del 
-  | AugLoad | AugStore 
+  | AugLoad | AugStore
   | Param
 
 and keyword = name (* arg *) * expr (* value *)
@@ -283,6 +283,7 @@ type any =
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
+let str_of_name = fst
 
 (*****************************************************************************)
 (* Accessors *)
