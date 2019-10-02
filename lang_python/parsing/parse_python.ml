@@ -109,6 +109,7 @@ exception Parse_error of Parse_info.info
 let parse2 filename = 
   let stat = Parse_info.default_stat filename in
   let toks = tokens filename in
+  let toks_final = toks |> Common.exclude TH.is_special in
 
   let tr = Parse_info.mk_tokens_state toks in
   let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
@@ -124,7 +125,7 @@ let parse2 filename =
       )
     in
     stat.PI.correct <- (Common.cat filename +> List.length);
-    (Some xs, toks), stat
+    (Some xs, toks_final), stat
 
   with (Lexer_python.Lexical_error _ | Parsing.Parse_error) as exn   ->
 
@@ -150,7 +151,7 @@ let parse2 filename =
     end;
 
     stat.PI.bad     <- Common.cat filename +> List.length;
-    (None, toks), stat
+    (None, toks_final), stat
 
 let parse a = 
   Common.profile_code "Parse_python.parse" (fun () -> parse2 a)

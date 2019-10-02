@@ -1,6 +1,7 @@
 (* Yoann Padioleau
  *
  * Copyright (C) 2010 Facebook
+ * Copyright (C) 2019 Yoann Padioleau
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -19,7 +20,6 @@ open Parser_python
 (*****************************************************************************)
 (* Token Helpers *)
 (*****************************************************************************)
-
 let is_eof = function
   | EOF _ -> true
   | _ -> false
@@ -27,6 +27,10 @@ let is_eof = function
 let is_comment = function
   | TComment _ | TCommentSpace _ -> true
   | _ -> false 
+
+let is_special = function
+  | INDENT | DEDENT -> true
+  | _ -> false
 
 (*****************************************************************************)
 (* Visitors *)
@@ -127,11 +131,9 @@ let visitor_info_of_tok f = function
   | DEDENT -> DEDENT
   | NEWLINE (ii) -> NEWLINE (f ii)
 
-
 let info_of_tok tok = 
   let res = ref None in
   visitor_info_of_tok (fun ii -> res := Some ii; ii) tok +> ignore;
   match !res with
   | Some x -> x
   | None -> Parse_info.fake_info "NOTOK"
-

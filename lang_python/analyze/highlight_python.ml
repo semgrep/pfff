@@ -13,13 +13,9 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common
 
-(*
-open Entity_code
 open Highlight_code
 module T = Parser_python
-*)
 
 (*****************************************************************************)
 (* Prelude *)
@@ -57,17 +53,33 @@ let builtin_functions = Common.hashset_of_list [
  * to figure out what kind of ident it is.
  *)
 
-let visit_program ~tag_hook _prefs (_program, _toks) =
+let visit_program ~tag_hook _prefs (_program, toks) =
   let already_tagged = Hashtbl.create 101 in
-  let _tag = (fun ii categ ->
+  let tag = (fun ii categ ->
     tag_hook ii categ;
     Hashtbl.replace already_tagged ii true
   )
+  in
+  let _tag_name (_s, ii) categ = 
+    (* so treat the most specific in the enclosing code and then
+     * do not fear to write very general case patterns later because
+     * the specific will have priority over the general
+     * (e.g., a Method use vs a Field use)
+     *)
+    if not (Hashtbl.mem already_tagged ii)
+    then tag ii categ 
+  in
+  let tag_if_not_tagged ii categ =
+   if not (Hashtbl.mem already_tagged ii)    
+   then tag ii categ
   in
 
   (* -------------------------------------------------------------------- *)
   (* AST phase 1 *) 
   (* -------------------------------------------------------------------- *)
+  (* try to better colorize identifiers which can be many different things
+   * e.g. a field, a type, a function, a parameter, etc
+   *)
 
   (* -------------------------------------------------------------------- *)
   (* tokens phase 1 (list of tokens) *)
@@ -187,145 +199,138 @@ let visit_program ~tag_hook _prefs (_program, _toks) =
   (* Tokens phase 2 (individual tokens) *)
   (* -------------------------------------------------------------------- *)
 
-(*
-  toks +> List.iter (fun tok -> 
+  toks |> List.iter (fun tok -> 
     match tok with
 
+    (* specials *)
+    | T.TUnknown ii -> 
+       tag ii Error
+    | T.EOF _ii -> 
+       ()
+    | T.INDENT | T.DEDENT -> 
+       () (* raise Impossible *)
+
     (* comments *)
-
-    | T.TComment ii ->
-        if not (Hashtbl.mem already_tagged ii)
-        then
-          tag ii Comment
-
-    | T.TCommentSpace ii ->
-        if not (Hashtbl.mem already_tagged ii)
-        then ()
-        else ()
-
-    | T.TCommentNewline _ii | T.TCommentMisc _ii -> ()
-
-    | T.TUnknown ii -> tag ii Error
-    | T.EOF _ii -> ()
+    | T.TComment ii -> 
+       tag_if_not_tagged ii Comment
+    | T.TCommentSpace _ii -> 
+       ()
+    | T.NEWLINE _ii -> 
+       ()
 
     (* values  *)
-
-    | T.TString (_s,ii) ->
+    | T.STR (_s,ii) ->
         tag ii String
-    | T.TChar (_s, ii) ->
-        tag ii String
-    | T.TFloat (_s,ii) | T.TInt (_s,ii) ->
+    | T.FLOAT (_,ii) | T.INT (_,ii) | T.LONGINT (_,ii) ->
         tag ii Number
-
-    | T.TComplex (_, ii) ->
+    | T.IMAG (_, ii) ->
         tag ii Number
-
-
+(*
     | T.TLongString (_s,ii) ->
         (* most of the time they are used as documentation strings *)
         tag ii Comment
+*)
+
+    (* ident  *)
+    | T.NAME (s, ii) -> 
+        (match s with
+        | "None" -> tag ii Null
+        | "True" | "False" -> tag ii Boolean
+        | "self" -> tag ii KeywordObject
+        | _ -> tag_if_not_tagged ii Error
+        )
 
     (* keywords  *)
-    | T.Tdef ii | T.Tlambda ii ->
+    | T.DEF ii | T.LAMBDA ii ->
         tag ii Keyword
-
-    | T.Tif ii | T.Telif ii | T.Telse ii ->
+    | T.IF ii | T.ELIF ii | T.ELSE ii ->
         tag ii KeywordConditional
-
-    | T.Tfor ii | T.Twhile ii
+    | T.FOR ii | T.WHILE ii
       -> tag ii KeywordLoop
-
-    | T.Ttry ii  | T.Tfinally ii | T.Traise ii| T.Texcept ii
+    | T.TRY ii  | T.FINALLY ii | T.RAISE ii| T.EXCEPT ii
       -> tag ii KeywordExn
-
-    | T.Tclass ii
+    | T.CLASS ii
         -> tag ii KeywordObject
-
-    | T.Timport ii  | T.Tas ii | T.Tfrom ii
+    | T.IMPORT ii  | T.AS ii | T.FROM ii
         -> tag ii KeywordModule
 
-    | T.Tcontinue ii
-    | T.Tbreak ii
-    | T.Tyield ii
-    | T.Treturn ii
+    | T.CONTINUE ii | T.BREAK ii
+    | T.YIELD ii
+    | T.RETURN ii
         -> tag ii Keyword
 
-    | T.Tis ii | T.Tin ii  | T.Texec ii
-    | T.Tprint ii 
-    | T.Tpass ii
-    | T.Tassert ii
-    | T.Twith ii
-    | T.Tdel ii
-    | T.Tglobal ii
+    | T.IS ii | T.IN ii
+    | T.PRINT ii 
+    | T.EXEC ii 
+    | T.PASS ii
+    | T.ASSERT ii
+    | T.WITH ii
+    | T.DEL ii
+    | T.GLOBAL ii
         -> tag ii Keyword
 
-    | T.Tnot ii
-    | T.Tand ii
-    | T.Tor ii
-        -> tag ii BuiltinBoolean
+    | T.NOT ii  | T.AND ii | T.OR ii -> 
+       tag ii BuiltinBoolean
 
 
     (* symbols *)
-    | T.TEq ii ->
-        if not (Hashtbl.mem already_tagged ii)
-        then
-          tag ii Punctuation
+    | T.EQ ii ->
+        tag ii Punctuation
 
-      
-    | T.TOBracket ii | T.TCBracket ii
-    | T.TOBrace ii | T.TCBrace ii
-    | T.TOParen ii | T.TCParen ii
-          -> tag ii Punctuation
+    | T.ADDEQ ii | T.SUBEQ ii | T.MULTEQ ii | T.DIVEQ ii 
+    | T.MODEQ ii  | T.POWEQ ii | T.FDIVEQ ii 
+    | T.ANDEQ ii | T.OREQ ii | T.XOREQ ii 
+    | T.LSHEQ ii | T.RSHEQ ii 
+       -> tag ii Punctuation
 
+    | T.LBRACE ii | T.RBRACE ii
+    | T.LBRACK ii | T.RBRACK ii
+    | T.LPAREN ii | T.RPAREN ii
+        -> tag ii Punctuation
 
-    | T.TPlus ii | T.TMinus ii
-    | T.TLess ii | T.TMore ii
+    | T.ADD ii ->
+        tag ii Punctuation
+    | T.SUB ii ->
+        tag ii Punctuation
 
-    | T.TDot (ii)
-    | T.TColon (ii)
+    | T.MULT ii
+    | T.DIV ii
+    | T.MOD ii
+    | T.FDIV ii
+    | T.POW ii
+
+    | T.LSHIFT ii
+    | T.RSHIFT ii
+
+    | T.BITXOR ii
+    | T.BITOR ii
+    | T.BITAND ii
+    | T.BITNOT ii
+
+    | T.EQUAL ii 
+    | T.NOTEQ ii 
+    | T.LT ii 
+    | T.GT ii
+    | T.LEQ ii
+    | T.GEQ ii
+
+    | T.DOT (ii)
+    | T.COLON (ii)
+    | T.COMMA ii
+    | T.SEMICOL ii
+    | T.BACKQUOTE ii
+
+    | T.AT ii
         ->
         tag ii Punctuation
 
 
 
-
-    | T.TTilde ii
-    | T.TStar ii
-      -> tag ii Punctuation
-
-    | T.TBackQuote ii
-    | T.TAnd ii
-        -> tag ii Punctuation
-
-    | T.TAugOp (_, ii) -> tag ii Punctuation
-
-    | T.TAt ii
-    | T.TNotEq ii
-    | T.TDiff ii
-    | T.TLessEq ii
-    | T.TMoreEq ii
-    | T.TEqEq ii
-    | T.TXor ii
-    | T.TOr ii
-    | T.TPercent ii
-    | T.TSlashSlash ii
-    | T.TSlash ii
-    | T.TStarStar ii
+(*
     | T.TEllipsis ii
-    | T.TComma ii
-    | T.TCAngle ii
-    | T.TOAngle ii
         -> tag ii Punctuation
+*)
 
-
-    | T.TIdent (s, ii) -> 
-        match s with
-        | "None" -> tag ii Null
-        | "True" | "False" -> tag ii Boolean
-        | "self" -> tag ii KeywordObject
-        | _ -> ()
 
   );
-*)
-   pr2 "TODO";
   ()

@@ -1,6 +1,7 @@
 
 val is_eof          : Parser_python.token -> bool
 val is_comment      : Parser_python.token -> bool
+val is_special      : Parser_python.token -> bool
 
 val info_of_tok : 
   Parser_python.token -> Parse_info.info
