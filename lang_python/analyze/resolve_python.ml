@@ -104,7 +104,8 @@ let resolve prog =
               with_new_context InFunction env (fun () ->
                k x              
             ))
-     | ClassDef (_name, _bases, _body, _decorators) ->
+     | ClassDef (name, _bases, _body, _decorators) ->
+           env |> add_name_env name ImportedEntity; (* could be more precise *)
            with_new_context InClass env (fun () ->
                k x              
             )
