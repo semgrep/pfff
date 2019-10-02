@@ -19,8 +19,9 @@ open Common
 
 open Lexing
 
-module Flag = Flag_parsing
 open Parser_python
+module PI = Parse_info
+module Flag = Flag_parsing
 
 (*****************************************************************************)
 (* Prelude *)
@@ -404,21 +405,32 @@ and _token state = parse
 (*****************************************************************************)
 
 and sq_shortstrlit state pos = parse
-  | (([^ '\\' '\r' '\n' '\''] | escapeseq)* as s) '\'' { STR (unescaped s, pos) }
+  | (([^ '\\' '\r' '\n' '\''] | escapeseq)* as s) '\'' 
+     { 
+       let full_str = Lexing.lexeme lexbuf in
+       STR (unescaped s, PI.tok_add_s full_str pos) }
 
 and sq_longstrlit state pos = shortest
 | (([^ '\\'] | escapeseq)* as s) "'''"
-    { let lines = count_lines s in
+    { 
+      let full_str = Lexing.lexeme lexbuf in
+      let lines = count_lines s in
       let curpos = lexbuf.lex_curr_p in
-        lexbuf.lex_curr_p <- { curpos with pos_lnum = curpos.pos_lnum + lines };
-        STR (unescaped s, pos) }
+      lexbuf.lex_curr_p <- { curpos with pos_lnum = curpos.pos_lnum + lines};
+      STR (unescaped s, PI.tok_add_s full_str pos) 
+    }
 
 and dq_shortstrlit state pos = parse
-  | (([^ '\\' '\r' '\n' '\"'] | escapeseq)* as s) '"' { STR (unescaped s, pos) }
+  | (([^ '\\' '\r' '\n' '\"'] | escapeseq)* as s) '"' 
+     { 
+       let full_str = Lexing.lexeme lexbuf in
+       STR (unescaped s, PI.tok_add_s full_str pos) }
 
 and dq_longstrlit state pos = shortest
   | (([^ '\\'] | escapeseq)* as s) "\"\"\""
-      { let lines = count_lines s in
+      { 
+        let full_str = Lexing.lexeme lexbuf in
+        let lines = count_lines s in
         let curpos = lexbuf.lex_curr_p in
-          lexbuf.lex_curr_p <- { curpos with pos_lnum = curpos.pos_lnum + lines };
-          STR (unescaped s, pos) }
+        lexbuf.lex_curr_p <- { curpos with pos_lnum = curpos.pos_lnum + lines};
+        STR (unescaped s, PI.tok_add_s full_str pos) }

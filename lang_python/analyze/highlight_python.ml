@@ -13,6 +13,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
+open Common
 
 open Highlight_code
 module T = Parser_python
@@ -208,7 +209,7 @@ let visit_program ~tag_hook _prefs (_program, toks) =
     | T.EOF _ii -> 
        ()
     | T.INDENT | T.DEDENT -> 
-       () (* raise Impossible *)
+       raise Impossible (* filtered in parse_python.ml with is_special *)
 
     (* comments *)
     | T.TComment ii -> 
