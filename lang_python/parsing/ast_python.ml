@@ -37,7 +37,6 @@
  *    typechecker and taint-tracker for Python, written in OCaml from facebook
  *  - https://github.com/mattgreen/hython
  *    Python3 interpreter written in Haskell
- *    
  *)
 
 (*****************************************************************************)
@@ -64,6 +63,17 @@ and 'a wrap = 'a * tok
 type name = string wrap
  (* with tarzan *)
 
+type resolved_name =
+  (* this can be computed by a visitor *)
+  | LocalVar
+  | Parameter
+  | ImportedModule
+  | ImportedGlobal
+
+  (* default case *)
+  | NotResolved
+ (* with tarzan *)
+
 (* ------------------------------------------------------------------------- *)
 (* Expression *)
 (* ------------------------------------------------------------------------- *)
@@ -71,10 +81,11 @@ type expr =
   | Num of number (* n *)
   | Str of string (* s *)
 
-  | Name of name (* id *) * expr_context (* ctx *)
+  | Name of name (* id *) * expr_context (* ctx *) *
+     type_ option * resolved_name ref
 
-  | Tuple of expr list (* elts *) * expr_context (* ctx *)
-  | List of expr list (* elts *) * expr_context (* ctx *)
+  | Tuple of expr list (* elts *)  * expr_context (* ctx *)
+  | List of expr list (* elts *)   * expr_context (* ctx *)
   | Dict of expr list (* keys *) * expr list (* values *)
   | ListComp of expr (* elt *) * comprehension list (* generators *)
 
@@ -83,11 +94,16 @@ type expr =
   | UnaryOp of unaryop (* op *) * expr (* operand *)
   | Compare of expr (* left *) * cmpop list (* ops *) * expr list (* comparators *)
 
-  | Call of expr (* func *) * expr list (* args *) * keyword list (* keywords *) * expr option (* starargs *) * expr option (* kwargs *)
+  | Call of 
+        expr (* func *) * 
+        expr list (* args *) * 
+        keyword list (* keywords *) * 
+        expr option (* starargs *) * 
+        expr option (* kwargs *)
 
   | Subscript of expr (* value *) * slice (* slice *) * expr_context (* ctx *)
 
-  | Lambda of arguments (* args *) * expr (* body *)
+  | Lambda of parameters (* args *) * expr (* body *)
 
   | IfExp of expr (* test *) * expr (* body *) * expr (* orelse *)
 
@@ -106,17 +122,31 @@ and number =
 
 and boolop = And | Or
 
-and operator = Add | Sub | Mult | Div | Mod | Pow | LShift
-               | RShift | BitOr | BitXor | BitAnd | FloorDiv
+and operator = 
+  | Add | Sub | Mult | Div 
+  | Mod | Pow | FloorDiv
+  | LShift | RShift 
+  | BitOr | BitXor | BitAnd 
 
 and unaryop = Invert | Not | UAdd | USub
 
-and cmpop = Eq | NotEq | Lt | LtE | Gt | GtE | Is | IsNot | In | NotIn
+and cmpop = 
+  | Eq | NotEq 
+  | Lt | LtE | Gt | GtE 
+  | Is | IsNot 
+  | In | NotIn
 
-and comprehension = expr (* target *) * expr (* iter *) * expr list (* ifs *)
+and comprehension = 
+  expr (* target *) * 
+  expr (* iter *) * 
+  expr list (* ifs *)
 
 (* AugLoad and AugStore are not used *)
-and expr_context = Load | Store | Del | AugLoad | AugStore | Param
+and expr_context = 
+  | Load | Store 
+  | Del 
+  | AugLoad | AugStore 
+  | Param
 
 and keyword = name (* arg *) * expr (* value *)
 
@@ -126,20 +156,45 @@ and slice =
   | ExtSlice of slice list (* dims *)
   | Index of expr (* value *)
 
-and arguments = expr list (* args *) * name option (* varargs *) * name option (* kwargs *) * expr list (* defaults *)
+and parameters = 
+    expr list (* args *) * 
+    name option (* varargs *) * 
+    name option (* kwargs *) * 
+    expr list (* defaults *)
+
+(* ------------------------------------------------------------------------- *)
+(* Types *)
+(* ------------------------------------------------------------------------- *)
+(* see https://docs.python.org/3/library/typing.html for the semantic
+ * and https://www.python.org/dev/peps/pep-3107/ (function annotations)
+ * for https://www.python.org/dev/peps/pep-0526/ (variable annotations)
+ * for its syntax.
+ *)
+and type_ = expr
 
 (* ------------------------------------------------------------------------- *)
 (* Statement *)
 (* ------------------------------------------------------------------------- *)
 type stmt =
-  | FunctionDef of name (* name *) * arguments (* args *) * stmt list (* body *) * expr list (* decorator_list *)
-  | ClassDef of name (* name *) * expr list (* bases *) * stmt list (* body *) * expr list (* decorator_list *)
+  | FunctionDef of 
+       name (* name *) * 
+       parameters (* args *) * 
+       type_ option *
+       stmt list (* body *) * 
+       decorator list (* decorator_list *)
+
+  | ClassDef of 
+        name (* name *) * 
+        expr list (* bases *) * 
+        stmt list (* body *) * 
+        decorator list (* decorator_list *)
+
+  | Assign of expr list (* targets *) * expr (* value *)
+  | AugAssign of expr (* target *) * operator (* op *) * expr (* value *)
 
   | Return of expr option (* value *)
 
   | Delete of expr list (* targets *)
-  | Assign of expr list (* targets *) * expr (* value *)
-  | AugAssign of expr (* target *) * operator (* op *) * expr (* value *)
 
   | Print of expr option (* dest *) * expr list (* values *) * bool (* nl *)
 
@@ -165,16 +220,17 @@ type stmt =
   | Break
   | Continue
 
-and excepthandler = ExceptHandler of expr option (* type *) * expr option (* name *) * stmt list (* body *)
+and excepthandler = 
+  ExceptHandler of 
+    type_ option (* type *) * 
+    expr option (* name *) * 
+    stmt list (* body *)
+
 
 (* ------------------------------------------------------------------------- *)
-(* Types *)
+(* Decorators (a.k.a annotations) *)
 (* ------------------------------------------------------------------------- *)
-(* see https://docs.python.org/3/library/typing.html for the semantic
- * and https://www.python.org/dev/peps/pep-3107/ (function annotations)
- * for https://www.python.org/dev/peps/pep-0526/ (variable annotations)
- * for its syntax.
- *)
+and decorator = expr
 
 (* ------------------------------------------------------------------------- *)
 (* Function (or method) definition *)
@@ -191,7 +247,6 @@ and excepthandler = ExceptHandler of expr option (* type *) * expr option (* nam
 (* ------------------------------------------------------------------------- *)
 (* Module import/export *)
 (* ------------------------------------------------------------------------- *)
-
 and alias = name (* name *) * name option (* asname *)
 
 (* ------------------------------------------------------------------------- *)
@@ -227,7 +282,7 @@ type any =
 let context_of_expr = function
   | Attribute (_, _, ctx) -> Some ctx
   | Subscript (_, _, ctx) -> Some ctx
-  | Name (_, ctx)         -> Some ctx
+  | Name (_, ctx, _, _)         -> Some ctx
   | List (_, ctx)         -> Some ctx
   | Tuple (_, ctx)        -> Some ctx
   | _                        -> None

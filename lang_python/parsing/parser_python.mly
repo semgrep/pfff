@@ -26,29 +26,35 @@
  * old src: 
  *  - http://inst.eecs.berkeley.edu/~cs164/sp10/python-grammar.html
  *)
-open Common
 open Ast_python
 
+type single_or_tuple =
+  | Single of expr
+  | Tup of expr list
 
-let singleton e = Left e
-and tuple e = Right [e]
+let singleton e = Single e
+
+and tuple e = Tup [e]
+
 and cons e = function
-  | Left e' -> Right (e::[e'])
-  | Right l -> Right (e::l)
+  | Single e' -> Tup (e::[e'])
+  | Tup l -> Tup (e::l)
+
 and tuple_expr = function
-  | Left e -> e
-  | Right l -> Tuple (l, Load)
+  | Single e -> e
+  | Tup l -> Tuple (l, Load)
+
 and to_list = function
-  | Left e -> [e]
-  | Right l -> l
+  | Single e -> [e]
+  | Tup l -> l
 
 let rec set_expr_ctx ctx = function
   | Attribute (value, attr, _) ->
       Attribute (value, attr, ctx)
   | Subscript (value, slice, _) ->
       Subscript (value, slice, ctx)
-  | Name (id, _) ->
-      Name (id, ctx)
+  | Name (id, _, x, y) ->
+      Name (id, ctx, x, y)
   | List (elts, _) ->
       List (List.map (set_expr_ctx ctx) elts, ctx)
   | Tuple (elts, _) ->
@@ -60,7 +66,7 @@ and expr_del = set_expr_ctx Del
 
 let tuple_expr_store l =
   let e = tuple_expr l in
-    match context_of_expr e with
+    match Ast_python.context_of_expr e with
     | Some Param -> e
     | _ -> expr_store e
 
@@ -273,11 +279,11 @@ augassign:
 
 funcdef:
   | decorators DEF name parameters return_type_opt COLON suite
-      { FunctionDef ($3, $4, $7, $1) }
+      { FunctionDef ($3, $4, $5, $7, $1) }
 
 return_type_opt: 
-  | /*(* empty *)*/ { }
-  | SUB GT test { }
+  | /*(* empty *)*/ { None }
+  | SUB GT test { Some $3 }
 
 /*(*----------------------------*)*/
 /*(*2 parameters *)*/
@@ -309,9 +315,9 @@ varargslist:
       { [], fst $1, snd $1, [] }
 
 fpdef:
-  | NAME { Name ($1, Param) }
+  | NAME { Name ($1, Param, None, ref Parameter) }
   | LPAREN fplist RPAREN { tuple_expr_store $2 }
-  | NAME COLON test { Name ($1, Param) (* TODO *) }
+  | NAME COLON test { Name ($1, Param, Some $3, ref Parameter) }
 
 fplist:
   | fpdef { singleton $1 }
@@ -645,7 +651,7 @@ testlist1:
 
 
 atom_name:
-  | NAME { Name ($1, Load) }
+  | NAME { Name ($1, Load, None, ref NotResolved) }
 
 
 string_list:
@@ -852,7 +858,7 @@ keywords:
 keyword:
   | test EQ test
       { match $1 with
-        | Name (id, _) -> (id, $3)
+        | Name (id, _, _, _) -> (id, $3)
         | _ -> raise Parsing.Parse_error }
 
 /*(*************************************************************************)*/
