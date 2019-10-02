@@ -263,8 +263,7 @@ let tokens_with_categ_of_file file hentities =
          )
          (function 
          | Python (astopt, toks) -> 
-             let ast = astopt ||| Ast_python.Module [] in
-             [ast, toks] 
+             [astopt, toks] 
          | _ -> raise Impossible
          ));
         highlight_visit = (fun ~tag_hook prefs (ast, toks) -> 

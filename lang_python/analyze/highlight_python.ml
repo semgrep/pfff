@@ -16,6 +16,7 @@
 open Common
 
 open Highlight_code
+open Entity_code
 module T = Parser_python
 
 (*****************************************************************************)
@@ -31,11 +32,8 @@ module T = Parser_python
 (* we generate fake value here because the real one are computed in a
  * later phase in rewrite_categ_using_entities in pfff_visual.
  *)
-(*
 let fake_no_def2 = NoUse
 let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
-
-let lexer_based_tagger = true
 
 
 let builtin_functions = Common.hashset_of_list [
@@ -43,7 +41,7 @@ let builtin_functions = Common.hashset_of_list [
   "set";
   "dict";
 ]
-*)
+
 (*****************************************************************************)
 (* Code highlighter *)
 (*****************************************************************************)
@@ -54,7 +52,7 @@ let builtin_functions = Common.hashset_of_list [
  * to figure out what kind of ident it is.
  *)
 
-let visit_program ~tag_hook _prefs (_program, toks) =
+let visit_program ~tag_hook _prefs (program, toks) =
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->
     tag_hook ii categ;
@@ -75,6 +73,7 @@ let visit_program ~tag_hook _prefs (_program, toks) =
    then tag ii categ
   in
 
+  let lexer_based_tagger = (program = None) in
   (* -------------------------------------------------------------------- *)
   (* AST phase 1 *) 
   (* -------------------------------------------------------------------- *)
@@ -85,11 +84,11 @@ let visit_program ~tag_hook _prefs (_program, toks) =
   (* -------------------------------------------------------------------- *)
   (* tokens phase 1 (list of tokens) *)
   (* -------------------------------------------------------------------- *)
-(*
   let rec aux_toks xs = 
     match xs with
     | [] -> ()
     (* a little bit pad specific *)
+(*
     |   T.TComment(ii)
       ::T.TCommentNewline (_ii2)
       ::T.TComment(ii3)
@@ -115,16 +114,17 @@ let visit_program ~tag_hook _prefs (_program, toks) =
             ()
         );
         aux_toks xs
+*)
 
     (* poor's man identifier tagger *)
 
     (* defs *)
-    | T.Tclass _ii1::T.TIdent (_s, ii2)::xs ->
+    | T.CLASS _ii1::T.NAME (_s, ii2)::xs ->
         if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
         then tag ii2 (Entity (Class, (Def2 fake_no_def2)));
         aux_toks xs
 
-    | T.Tdef _ii1::T.TIdent (_s, ii2)::xs ->
+    | T.DEF _ii1::T.NAME (_s, ii2)::xs ->
         (* todo: actually could be a method if in class scope *)
         if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
         then tag ii2 (Entity (Function, (Def2 fake_no_def2)));
@@ -133,7 +133,7 @@ let visit_program ~tag_hook _prefs (_program, toks) =
 
     (* uses *)
 
-    | T.TIdent (_s, ii1)::T.TDot _::T.TIdent (_s3, ii3)::T.TOParen _::xs ->
+    | T.NAME (_s, ii1)::T.DOT _::T.NAME (_s3, ii3)::T.LPAREN _::xs ->
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
         then begin 
           tag ii3 (Entity (Method, (Use2 fake_no_use2)));
@@ -142,7 +142,7 @@ let visit_program ~tag_hook _prefs (_program, toks) =
         end;
         aux_toks xs
 
-    | T.TIdent (s, ii1)::T.TOParen _::xs ->
+    | T.NAME (s, ii1)::T.LPAREN _::xs ->
         if not (Hashtbl.mem already_tagged ii1) && lexer_based_tagger
         then 
           (if Hashtbl.mem builtin_functions s
@@ -151,9 +151,9 @@ let visit_program ~tag_hook _prefs (_program, toks) =
           );
         aux_toks xs
 
-    | T.TIdent (_s, ii1)::T.TDot _::T.TIdent (s3, ii3)::xs ->
+    | T.NAME (_s, ii1)::T.DOT _::T.NAME (s3, ii3)::xs ->
         (match xs with
-        | (T.TDot _)::_ ->
+        | (T.DOT _)::_ ->
 
             if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
             then tag ii3 (Entity (Field, (Use2 fake_no_use2)));
@@ -161,7 +161,7 @@ let visit_program ~tag_hook _prefs (_program, toks) =
             if not (Hashtbl.mem already_tagged ii1)
             then tag ii1 (Local Use);
 
-            aux_toks (T.TIdent (s3, ii3)::xs)
+            aux_toks (T.NAME (s3, ii3)::xs)
 
         | _ ->
           if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
@@ -174,7 +174,7 @@ let visit_program ~tag_hook _prefs (_program, toks) =
             aux_toks xs
         )
 
-    | T.TIdent (_s, _ii1)::xs ->
+    | T.NAME (_s, _ii1)::xs ->
         (*
         if s =~ "[a-z]" then begin
           if not (Hashtbl.mem already_tagged ii1) && lexer_based_tagger
@@ -194,7 +194,7 @@ let visit_program ~tag_hook _prefs (_program, toks) =
   )
   in
   aux_toks toks';
-*)
+
 
   (* -------------------------------------------------------------------- *)
   (* Tokens phase 2 (individual tokens) *)
