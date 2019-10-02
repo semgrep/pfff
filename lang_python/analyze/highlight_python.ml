@@ -213,10 +213,13 @@ let visit_program ~tag_hook _prefs (_program, toks) =
     (* comments *)
     | T.TComment ii -> 
        tag_if_not_tagged ii Comment
-    | T.TCommentSpace _ii -> 
-       ()
-    | T.NEWLINE _ii -> 
-       ()
+    (* in lexer_python.mll comments and space and newlines are sometimes 
+     * put together *)
+    | T.TCommentSpace ii -> 
+       tag_if_not_tagged ii Comment
+    | T.NEWLINE ii -> 
+       tag_if_not_tagged ii Comment
+
 
     (* values  *)
     | T.STR (_s,ii) ->
