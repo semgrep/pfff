@@ -239,10 +239,11 @@ dotted_name:
 expr_stmt:
   | testlist_expr 
     { ExprStmt ($1) }
-  | expr_stmt_lhs COLON test
-    { ExprStmt $1 (* TODO *)} 
-  | expr_stmt_lhs COLON test EQ test
-    { ExprStmt $1 (* TODO *)} 
+ /*(* name -> expr_stmt_lhs *)*/
+  | name COLON test
+    { ExprStmt (Name ($1, Store, Some $3, ref NotResolved))} 
+  | name COLON test EQ test
+    { Assign ([Name ($1, Store, Some $3, ref NotResolved)], $5)} 
   | expr_stmt_lhs augassign expr_stmt_rhs 
     { AugAssign ($1, fst $2, $3) }
   | expr_stmt_lhs EQ        expr_stmt_rhs_list 
