@@ -73,6 +73,8 @@ and v_resolved_name =
   function
   | LocalVar -> ()
   | Parameter -> ()
+  | GlobalVar -> ()
+  | ClassField -> ()
   | ImportedModule -> ()
   | ImportedEntity -> ()
   | NotResolved -> ()

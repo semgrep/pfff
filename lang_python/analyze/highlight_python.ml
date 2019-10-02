@@ -102,6 +102,22 @@ let visit_program ~tag_hook _prefs (program, toks) =
            tag_name name Highlight_code.Attribute
         | Ast_python.Parameter ->
              tag_name name (Highlight_code.Parameter Use)
+        | GlobalVar ->
+            let usedef = 
+              match ctx with
+              | Store -> Def2 fake_no_def2
+              | Load -> Use2 fake_no_use2
+              | _ -> Use2 fake_no_use2 (* TODO *)
+            in
+            tag_name name (Entity (E.Global, usedef))
+        | ClassField ->
+            let usedef = 
+              match ctx with
+              | Store -> Def2 fake_no_def2
+              | Load -> Use2 fake_no_use2
+              | _ -> Use2 fake_no_use2 (* TODO *)
+            in
+            tag_name name (Entity (E.Field, usedef))
         | LocalVar ->
             let usedef = 
               match ctx with

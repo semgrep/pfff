@@ -70,6 +70,8 @@ type resolved_name =
   (* this can be computed by a visitor *)
   | LocalVar
   | Parameter
+  | GlobalVar
+  | ClassField
   | ImportedModule
   | ImportedEntity
 
