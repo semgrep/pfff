@@ -205,7 +205,7 @@ import_from:
 name_and_level:
   | dotted_name { $1, Some 0 }
   | dot_level dotted_name { $2, Some $1 }
-  | DOT dot_level { ("",$1(*TODO*)), Some (1 + $2) }
+  | DOT dot_level { [("",$1(*TODO*))], Some (1 + $2) }
 
 dot_level:
   | { 0 }
@@ -229,8 +229,8 @@ dotted_as_names:
   | dotted_as_name COMMA dotted_as_names { $1::$3 }
 
 dotted_name:
-  | name { $1 }
-  | name DOT dotted_name { (fst $1 ^ "." ^ fst $3, $2)(*TODO*) }
+  | name { [$1] }
+  | name DOT dotted_name { $1::$3 }
 
 /*(*************************************************************************)*/
 /*(*1 Variable definition *)*/

@@ -63,12 +63,15 @@ and 'a wrap = 'a * tok
 type name = string wrap
  (* with tarzan *)
 
+type dotted_name = name list
+ (* with tarzan *)
+
 type resolved_name =
   (* this can be computed by a visitor *)
   | LocalVar
   | Parameter
   | ImportedModule
-  | ImportedGlobal
+  | ImportedEntity
 
   (* default case *)
   | NotResolved
@@ -209,8 +212,8 @@ type stmt =
   | TryFinally of stmt list (* body *) * stmt list (* finalbody *)
   | Assert of expr (* test *) * expr option (* msg *)
 
-  | Import of alias list (* names *)
-  | ImportFrom of name (* module *) * alias list (* names *) * int option (* level *)
+  | Import of alias_dotted list (* names *)
+  | ImportFrom of dotted_name (* module *) * alias list (* names *) * int option (* level *)
 
   | Exec of expr (* body *) * expr option (* globals *) * expr option (* locals *)
 
@@ -249,6 +252,7 @@ and decorator = expr
 (* Module import/export *)
 (* ------------------------------------------------------------------------- *)
 and alias = name (* name *) * name option (* asname *)
+and alias_dotted = dotted_name (* name *) * name option (* asname *)
 
 (* ------------------------------------------------------------------------- *)
 (* Toplevel *)

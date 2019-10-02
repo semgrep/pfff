@@ -67,12 +67,14 @@ and v_wrap: 'a. ('a -> unit) -> 'a wrap -> unit = fun _of_a (v1, v2) ->
 
 and v_name v = v_wrap v_string v
 
+and v_dotted_name v = v_list v_name v
+
 and v_resolved_name =
   function
   | LocalVar -> ()
   | Parameter -> ()
   | ImportedModule -> ()
-  | ImportedGlobal -> ()
+  | ImportedEntity -> ()
   | NotResolved -> ()
 
 and v_expr (x: expr) =
@@ -254,9 +256,9 @@ and v_stmt x =
   | TryFinally ((v1, v2)) ->
       let v1 = v_list v_stmt v1 and v2 = v_list v_stmt v2 in ()
   | Assert ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_option v_expr v2 in ()
-  | Import v1 -> let v1 = v_list v_alias v1 in ()
+  | Import v1 -> let v1 = v_list v_alias2 v1 in ()
   | ImportFrom ((v1, v2, v3)) ->
-      let v1 = v_name v1
+      let v1 = v_dotted_name v1
       and v2 = v_list v_alias v2
       and v3 = v_option v_int v3
       in ()
@@ -288,6 +290,7 @@ and v_decorator v =
   vin.kdecorator (k, all_functions) v
 
 and v_alias (v1, v2) = let v1 = v_name v1 and v2 = v_option v_name v2 in ()
+and v_alias2 (v1, v2) = let v1 = v_dotted_name v1 and v2 = v_option v_name v2 in ()
 and v_modl =
   function
   | Module v1 -> let v1 = v_list v_stmt v1 in ()
