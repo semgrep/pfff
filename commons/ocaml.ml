@@ -477,6 +477,7 @@ let rec (map_v: f:( k:(v -> v) -> v -> v) -> v -> v) =
 let v_unit x = ()
 let v_bool x = ()
 let v_int x = ()
+let v_float x = ()
 let v_string (s:string) = ()
 let v_ref aref x = () (* dont go into ref *)
 let v_option v_of_a v = 

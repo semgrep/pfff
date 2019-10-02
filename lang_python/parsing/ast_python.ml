@@ -79,7 +79,7 @@ type resolved_name =
 (* ------------------------------------------------------------------------- *)
 type expr =
   | Num of number (* n *)
-  | Str of string (* s *)
+  | Str of string * tok list (* s *)
 
   | Name of name (* id *) * expr_context (* ctx *) *
      type_ option * resolved_name ref
@@ -115,10 +115,10 @@ type expr =
   | Attribute of expr (* value *) * name (* attr *) * expr_context (* ctx *)
 
 and number =
-  | Int of int
-  | LongInt of int
-  | Float of float
-  | Imag of string
+  | Int of int wrap
+  | LongInt of int wrap
+  | Float of float wrap
+  | Imag of string wrap
 
 and boolop = And | Or
 
@@ -171,6 +171,7 @@ and parameters =
  * for its syntax.
  *)
 and type_ = expr
+  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Statement *)
@@ -261,6 +262,7 @@ and modl =
   (* with tarzan *)
 
 type program = modl
+  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Any *)

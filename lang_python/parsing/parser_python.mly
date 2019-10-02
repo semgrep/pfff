@@ -591,10 +591,10 @@ factor:
              Num (n=-x)
            if possible. *)
         match $2 with
-        | Num (Int (n))        -> Num (Int (-n))
-        | Num (LongInt (n))    -> Num (LongInt (-n))
-        | Num (Float (n))      -> Num (Float (-.n))
-        | Num (Imag (n))       -> Num (Imag ("-" ^ n))
+        | Num (Int (n, x))        -> Num (Int (-n, x))
+        | Num (LongInt (n, x))    -> Num (LongInt (-n, x))
+        | Num (Float (n, x))      -> Num (Float (-.n, x))
+        | Num (Imag (n, x))       -> Num (Imag ("-" ^ n, x))
         | _                       -> UnaryOp (USub, $2) }
   | BITNOT factor { UnaryOp (Invert, $2) }
   | power { $1 }
@@ -635,12 +635,16 @@ atom:
   | atom_repr   { $1 }
   | atom_name   { $1 }
 
-  | INT         { Num (Int (fst $1)) }
-  | LONGINT     { Num (LongInt (fst $1)) }
-  | FLOAT       { Num (Float (fst $1)) }
-  | IMAG        { Num (Imag (fst $1)) }
+  | INT         { Num (Int ($1)) }
+  | LONGINT     { Num (LongInt ($1)) }
+  | FLOAT       { Num (Float ($1)) }
+  | IMAG        { Num (Imag ($1)) }
 
-  | string_list { Str (String.concat "" (fst $1)) }
+  | string_list { 
+     let xs = $1 in
+     let s = xs |> List.map fst |> String.concat "" in
+     Str (s, List.map snd xs) 
+     }
 
 atom_repr:
   | BACKQUOTE testlist1 BACKQUOTE { Repr (tuple_expr $2) }
@@ -655,9 +659,8 @@ atom_name:
 
 
 string_list:
-  | STR { ([fst $1], snd $1) }
-  | STR string_list { (fst $1::fst $2, snd $1) }
-
+  | STR { [$1] }
+  | STR string_list { $1::$2 }
 
 /*(*----------------------------*)*/
 /*(*2 containers *)*/
