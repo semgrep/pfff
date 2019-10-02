@@ -5,7 +5,7 @@ TOP=../..
 TARGET=lib
 OPAMPKG=pfff-lang_python-analyze
 
-SRC= \
+SRC= resolve_python.ml \
      highlight_python.ml \
      database_light_python.ml \
      test_analyze_python.ml

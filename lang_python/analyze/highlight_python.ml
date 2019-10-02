@@ -76,6 +76,8 @@ let visit_program ~tag_hook _prefs (program, toks) =
   in
 
   let lexer_based_tagger = (program = None) in
+  program |> Common.do_option Resolve_python.resolve;
+
   (* -------------------------------------------------------------------- *)
   (* AST phase 1 *) 
   (* -------------------------------------------------------------------- *)
