@@ -47,8 +47,20 @@ let tokens2 file =
     let lexbuf = Lexing.from_channel chan in
     try 
       let state = Lexer_python.create () in
+
       let token lexbuf = 
-        Lexer_python.token state lexbuf
+        match state.Lexer_python.mode with
+        | Lexer_python.STATE_TOKEN -> 
+            Lexer_python.token state lexbuf
+        | Lexer_python.STATE_OFFSET -> 
+            raise (Impossible)
+        | Lexer_python.STATE_UNDERSCORE_TOKEN -> 
+            let tok = Lexer_python._token state lexbuf in
+            (match tok with
+            | Parser_python.TCommentSpace _ -> ()
+            | _ -> state.Lexer_python.mode <- Lexer_python.STATE_TOKEN
+            );
+            tok
       in
       
       let rec tokens_aux acc = 

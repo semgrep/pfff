@@ -106,10 +106,18 @@ let count_lines s =
 (* Lexer state *)
 (* ---------------------------------------------------------------------- *)
 
+(* this is to return space/comment tokens *)
+type state_mode = 
+  | STATE_TOKEN
+  | STATE_OFFSET
+  | STATE_UNDERSCORE_TOKEN
+
 type lexer_state = {
   mutable curr_offset : int;
   offset_stack : int Stack.t;
   mutable nl_ignore : int;
+
+  mutable mode: state_mode;
 }
 
 let create () =
@@ -117,7 +125,8 @@ let create () =
   Stack.push 0 stack;
   { curr_offset = 0;
     offset_stack = stack;
-    nl_ignore = 0 
+    nl_ignore = 0;
+    mode = STATE_TOKEN;
   }
 
 let ignore_nl t =
@@ -175,17 +184,29 @@ rule token state = parse
   | e { 
         let curr_offset = state.curr_offset in
         let last_offset = Stack.top state.offset_stack in
-          if curr_offset < last_offset
-          then (ignore (Stack.pop state.offset_stack); DEDENT)
-          else if curr_offset > last_offset
-          then (Stack.push curr_offset state.offset_stack; INDENT)
-          else _token state lexbuf 
+        match () with
+        | _ when curr_offset < last_offset ->
+            ignore (Stack.pop state.offset_stack); 
+            DEDENT
+        | _ when curr_offset > last_offset ->
+            Stack.push curr_offset state.offset_stack; 
+            INDENT
+        | _ -> _token state lexbuf 
       }
 
+(* this is just used to adjuste the state *)
 and offset state = parse
-  | e { }
-  | ' '  { state.curr_offset <- state.curr_offset + 1; offset state lexbuf }
-  | '\t' { state.curr_offset <- state.curr_offset + 8; offset state lexbuf }
+  | e { "" }
+  | ' '  
+     { 
+       state.curr_offset <- state.curr_offset + 1; 
+       " " ^ offset state lexbuf 
+     }
+  | '\t' 
+     { 
+       state.curr_offset <- state.curr_offset + 8; 
+       "\t" ^ offset state lexbuf 
+     }
 
 and _token state = parse
 
@@ -203,23 +224,31 @@ and _token state = parse
                 pos_lnum = pos.pos_lnum + lines };
         if state.nl_ignore <= 0 then begin
           state.curr_offset <- 0;
-          offset state lexbuf;
-          NEWLINE info
-        end else
-          _token state lexbuf 
+          let s = offset state lexbuf in
+          NEWLINE (Parse_info.tok_add_s s info)
+        end else begin
+         state.mode <- STATE_UNDERSCORE_TOKEN;
+         TCommentSpace info
+        end
        }
   | '\\' newline whitespace*
       { 
+          let info = tokinfo lexbuf in
           let pos = lexbuf.lex_curr_p in
           lexbuf.lex_curr_p <-
             { pos with
                 pos_bol = pos.pos_cnum;
                 pos_lnum = pos.pos_lnum + 1 };
-          _token state lexbuf 
+          state.mode <- STATE_UNDERSCORE_TOKEN;
+          TCommentSpace info
       }
 
   | whitespace+
-      { _token state lexbuf }
+      { 
+        let info = tokinfo lexbuf in
+        state.mode <- STATE_UNDERSCORE_TOKEN;
+        TCommentSpace info
+      }
 
   (* ----------------------------------------------------------------------- *)
   (* symbols *)
