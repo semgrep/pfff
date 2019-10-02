@@ -25,6 +25,7 @@ type visitor_in = {
   kstmt: (stmt  -> unit) * visitor_out -> stmt  -> unit;
   ktype_: (type_  -> unit) * visitor_out -> type_  -> unit;
   kdecorator: (decorator  -> unit) * visitor_out -> decorator  -> unit;
+  kparameters: (parameters  -> unit) * visitor_out -> parameters  -> unit;
   kinfo: (tok -> unit)  * visitor_out -> tok  -> unit;
 }
 and visitor_out = any -> unit
@@ -34,6 +35,7 @@ let default_visitor =
     kstmt   = (fun (k,_) x -> k x);
     ktype_   = (fun (k,_) x -> k x);
     kdecorator   = (fun (k,_) x -> k x);
+    kparameters   = (fun (k,_) x -> k x);
     kinfo   = (fun (k,_) x -> k x);
   }
 
@@ -177,12 +179,15 @@ and v_slice =
       in ()
   | ExtSlice v1 -> let v1 = v_list v_slice v1 in ()
   | Index v1 -> let v1 = v_expr v1 in ()
-and v_parameters (v1, v2, v3, v4) =
+and v_parameters x =
+  let k (v1, v2, v3, v4) =
   let v1 = v_list v_expr v1
   and v2 = v_option v_name v2
   and v3 = v_option v_name v3
   and v4 = v_list v_expr v4
   in ()
+  in
+  vin.kparameters (k, all_functions) x
 
 and v_type_ v = 
   let k x =

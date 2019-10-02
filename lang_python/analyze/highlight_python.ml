@@ -15,9 +15,11 @@
  *)
 open Common
 
+open Ast_python
 open Highlight_code
 open Entity_code
 module T = Parser_python
+module V = Visitor_python
 
 (*****************************************************************************)
 (* Prelude *)
@@ -80,6 +82,16 @@ let visit_program ~tag_hook _prefs (program, toks) =
   (* try to better colorize identifiers which can be many different things
    * e.g. a field, a type, a function, a parameter, etc
    *)
+  let visitor = V.mk_visitor { V.default_visitor with
+    V.kexpr = (fun (k, _) x ->
+     match x with
+     | _ -> k x
+    );
+  }
+  in
+  program |> Common.do_option (fun prog ->
+    visitor (Program prog);
+  );
 
   (* -------------------------------------------------------------------- *)
   (* tokens phase 1 (list of tokens) *)
@@ -297,26 +309,16 @@ let visit_program ~tag_hook _prefs (program, toks) =
     | T.SUB ii ->
         tag ii Punctuation
 
-    | T.MULT ii
-    | T.DIV ii
-    | T.MOD ii
-    | T.FDIV ii
-    | T.POW ii
+    | T.MULT ii | T.DIV ii
+    | T.MOD ii | T.FDIV ii | T.POW ii
 
-    | T.LSHIFT ii
-    | T.RSHIFT ii
+    | T.LSHIFT ii | T.RSHIFT ii
 
-    | T.BITXOR ii
-    | T.BITOR ii
-    | T.BITAND ii
-    | T.BITNOT ii
+    | T.BITXOR ii | T.BITOR ii | T.BITAND ii | T.BITNOT ii
 
-    | T.EQUAL ii 
-    | T.NOTEQ ii 
-    | T.LT ii 
-    | T.GT ii
-    | T.LEQ ii
-    | T.GEQ ii
+    | T.EQUAL ii | T.NOTEQ ii 
+    | T.LT ii  | T.GT ii
+    | T.LEQ ii | T.GEQ ii
 
     | T.DOT (ii)
     | T.COLON (ii)
@@ -327,14 +329,9 @@ let visit_program ~tag_hook _prefs (program, toks) =
     | T.AT ii
         ->
         tag ii Punctuation
-
-
-
 (*
     | T.TEllipsis ii
         -> tag ii Punctuation
 *)
-
-
   );
   ()
