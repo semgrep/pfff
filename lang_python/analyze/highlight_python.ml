@@ -84,6 +84,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
    *)
   let in_class = ref false in
   let in_type = ref false in
+  let in_decorator = ref false in
 
   let visitor = V.mk_visitor { V.default_visitor with
     V.kexpr = (fun (k, _) x ->
@@ -97,6 +98,8 @@ let visit_program ~tag_hook _prefs (program, toks) =
             let kind = E.Type in
             tag_name name (Entity (kind, (Use2 fake_no_use2)))
           )
+        | _ when !in_decorator -> 
+           tag_name name Highlight_code.Attribute
         | Ast_python.Parameter ->
              tag_name name (Highlight_code.Parameter Use)
         | LocalVar ->
@@ -107,15 +110,18 @@ let visit_program ~tag_hook _prefs (program, toks) =
               | _ -> Use (* TODO *)
              in
              tag_name name (Local usedef)
-        | NotResolved ->
-            let kind = E.Global in
-            tag_name name (Entity (kind, (Use2 fake_no_use2)))
         | ImportedEntity ->
             let kind = E.Function in
             tag_name name (Entity (kind, (Use2 fake_no_use2)))
         | ImportedModule ->
             let kind = E.Module in
             tag_name name (Entity (kind, (Use2 fake_no_use2)))
+        | NotResolved ->
+            (*
+            let kind = E.Global in
+            tag_name name (Entity (kind, (Use2 fake_no_use2)))
+            *)
+            ()
         );
         k x
      | Call (f, _args, keywords, _starargs, _kwargs) ->
@@ -129,8 +135,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
        | _ -> ()
        );
        keywords |> List.iter (fun (name, _) ->
-          let kind = E.Field in
-          tag_name name (Entity (kind, Use2 fake_no_use2))
+          tag_name name Comment
        );
        k x
      | Ast_python.Attribute (_e, name, _ctx) ->
@@ -179,6 +184,10 @@ let visit_program ~tag_hook _prefs (program, toks) =
     );
     V.ktype_ = (fun (k, _) x ->
        Common.save_excursion in_type true (fun () -> 
+          k x);
+    );
+    V.kdecorator = (fun (k, _) x ->
+       Common.save_excursion in_decorator true (fun () -> 
           k x);
     );
     V.kparameters = (fun (k, _) x ->
