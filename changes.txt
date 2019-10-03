@@ -1,9 +1,17 @@
 # -*- org -*-
 
-* 0.39 (Q4 2019) (???)
+* 0.39 (Q4 2019) (better Python support)
 10 years of Pfff! Started in November 2009 (while at Facebook).
 
-* 0.38 (Q3 2019) (???)
+** python
+
+*** use a real parser, based on ocaml-pythonlib
+
+*** AST-based highlighter and later tag names to
+differentiate imported modules, entities, locals, params, globals!
+semantic highlighting!
+
+* 0.38 (Q3 2019) (a real AST for Javascript)
 
 ** javascript
 
@@ -751,6 +759,7 @@ based on joust
 ** introducing lang_haskell/
 
 ** introducing lang_python/
+just a lexer-based highlighter. No real parser yet.
 
 ** introducing lang_csharp/
 
