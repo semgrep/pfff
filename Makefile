@@ -85,6 +85,7 @@ BASICLIBS=commons/lib.cma \
  h_program-lang/lib.cma \
  matcher/lib.cma \
  lang_ml/parsing/lib.cma \
+ lang_skip/parsing/lib.cma \
  lang_nw/parsing/lib.cma \
  lang_php/parsing/lib.cma \
   lang_php/matcher/lib.cma \
@@ -130,6 +131,8 @@ LIBS= commons/lib.cma \
     lang_ml/parsing/lib.cma \
      lang_ml/analyze/visual/lib.cma \
      lang_ml/analyze/lib.cma \
+    lang_skip/parsing/lib.cma \
+     lang_skip/analyze/lib.cma \
     $(CMTDIRS:%=%/lib.cma) \
     lang_nw/parsing/lib.cma \
      lang_nw/analyze/lib.cma \
@@ -187,6 +190,8 @@ MAKESUBDIRS=commons commons_ocollection commons_core \
   matcher \
   lang_ml/parsing \
    lang_ml/analyze \
+  lang_skip/parsing \
+   lang_skip/analyze \
   $(CMTDIRS) \
   lang_nw/parsing \
    lang_nw/analyze \

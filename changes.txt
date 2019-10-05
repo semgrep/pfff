@@ -3,6 +3,9 @@
 * 0.39 (Q4 2019) (better Python support)
 10 years of Pfff! Started in November 2009 (while at Facebook).
 
+** introducing lang_skip/
+basic lexer and highlighter.
+
 ** python
 
 *** use a real parser, based on ocaml-pythonlib

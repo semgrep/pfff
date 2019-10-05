@@ -45,6 +45,7 @@ type ast =
   | Hs  of Parse_hs.program_and_tokens
   | Lisp of Parse_lisp.program_and_tokens
   | Erlang of Parse_erlang.program_and_tokens
+  | Skip  of Parse_skip.program_and_tokens
 
   (* web *)
   | Html of Parse_html.program_and_tokens
@@ -244,6 +245,22 @@ let tokens_with_categ_of_file file hentities =
         }
         file prefs hentities
 
+  | FT.PL (FT.Skip) ->
+      tokens_with_categ_of_file_helper 
+        { parse = (parse_cache (fun file -> 
+           Common.save_excursion Flag_parsing.error_recovery true (fun()->
+             Skip (Parse_skip.parse file +> fst))
+         )
+         (function 
+         | Skip (astopt, toks) -> 
+             [astopt, toks] 
+         | _ -> raise Impossible));
+        highlight_visit = (fun ~tag_hook prefs (ast, toks) -> 
+          Highlight_skip.visit_program ~tag_hook prefs (ast, toks));
+        info_of_tok = Token_helpers_skip.info_of_tok;
+        }
+        file prefs hentities
+
   | FT.PL (FT.Haskell _) ->
       tokens_with_categ_of_file_helper 
         { parse = (parse_cache 
@@ -342,13 +359,14 @@ let tokens_with_categ_of_file file hentities =
       tokens_with_categ_of_file_helper 
         { parse = (parse_cache 
          (fun file -> 
+          Common.save_excursion Flag_parsing.error_recovery true (fun () ->
            let (ast2, _stat) = Parse_cpp.parse file in
            let ast = Parse_cpp.program_of_program2 ast2 in
            (* work by side effect on ast2 too *)
            Check_variables_cpp.check_and_annotate_program
              ast;
            Cpp ast2
-         )
+         ))
          (function Cpp x -> x | _ -> raise Impossible));
         highlight_visit = Highlight_cpp.visit_toplevel;
         info_of_tok = Token_helpers_cpp.info_of_tok;

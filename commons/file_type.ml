@@ -38,6 +38,7 @@ type file_type =
   | ML of string  (* mli, ml, mly, mll *)
   | Haskell of string
   | Lisp of lisp_type
+  | Skip
 
   | Prolog of string
 
@@ -108,6 +109,7 @@ let file_type_of_file2 file =
 
   | "hx" | "hxp" | "hxml" -> PL Haxe
   | "opa" -> PL Opa
+  | "sk" -> PL Skip
 
   | "as" -> PL Flash
 

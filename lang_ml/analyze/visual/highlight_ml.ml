@@ -63,7 +63,7 @@ let h_builtin_bool = Common.hashset_of_list [
 let fake_no_def2 = NoUse
 let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 
-(* set to true when want to debug the ast based tagger *)
+(* set to true when want to debug the AST based tagger *)
 let disable_token_phase2 = false
 
 (*****************************************************************************)

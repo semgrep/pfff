@@ -42,6 +42,8 @@ INCLUDEDIRS=$(TOP)/commons $(TOP)/globals \
         $(TOP)/lang_ml/parsing \
          $(TOP)/lang_ml/analyze \
          $(TOP)/lang_ml/analyze/visual \
+        $(TOP)/lang_skip/parsing \
+         $(TOP)/lang_skip/analyze \
         $(TOP)/lang_haskell/parsing \
          $(TOP)/lang_haskell/analyze \
         $(TOP)/lang_nw/parsing \

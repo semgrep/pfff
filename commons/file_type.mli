@@ -10,7 +10,7 @@ type file_type =
   | Other of string
 
  and pl_type = 
-  | ML of string | Haskell of string | Lisp of lisp_type
+  | ML of string | Haskell of string | Lisp of lisp_type | Skip
   | Prolog of string
   | Makefile
   | Script of string
