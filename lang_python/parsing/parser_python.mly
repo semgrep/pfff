@@ -207,11 +207,11 @@ name_and_level:
   | DOT dot_level         { [("",$1(*TODO*))], Some (1 + $2) }
 
 dot_level:
-  | { 0 }
-  | DOT dot_level { 1 + $2 }
+  | /*(*empty *)*/ { 0 }
+  | DOT dot_level  { 1 + $2 }
 
 import_as_name:
-  | NAME { $1, None }
+  | NAME         { $1, None }
   | NAME AS NAME { $1, Some $3 }
 
 /*(*************************************************************************)*/
@@ -307,7 +307,7 @@ fpvarargs:
 
 fpkwargs:
   | POW NAME { Some $2 }
-/*XXX  | POW NAME COLON test { Some $2 } */
+  | POW NAME COLON test { Some $2 }
 
 /*(*************************************************************************)*/
 /*(*1 Class definition *)*/
@@ -610,10 +610,10 @@ dictmaker:
   | test COLON test { [$1], [$3] }
   | test COLON test COMMA { [$1], [$3] }
   | test COLON test COMMA dictmaker { $1::(fst $5), $3::(snd $5) }
-/*XXX
+
   | POW expr { [], [] }
   | POW expr COMMA { [], [] }
-*/
+
 
 /*(*----------------------------*)*/
 /*(*2 Array access *)*/
