@@ -92,7 +92,6 @@ type expr =
   | Tuple of expr list (* elts *)  * expr_context (* ctx *)
   | List of expr list (* elts *)   * expr_context (* ctx *)
   | Dict of expr list (* keys *) * expr list (* values *)
-  | ListComp of expr (* elt *) * comprehension list (* generators *)
 
   | BoolOp of boolop (* op *) * expr list (* values *)
   | BinOp of expr (* left *) * operator (* op *) * expr (* right *)
@@ -112,7 +111,9 @@ type expr =
 
   | IfExp of expr (* test *) * expr (* body *) * expr (* orelse *)
 
+  | ListComp     of expr (* elt *) * comprehension list (* generators *)
   | GeneratorExp of expr (* elt *) * comprehension list (* generators *)
+
   | Yield of expr option (* value *)
 
   | Repr of expr (* value *)
@@ -276,6 +277,7 @@ type program = modl
 type any =
   | Expr of expr
   | Stmt of stmt
+  | Stmts of stmt list
   | Modl of modl
   | Program of program
  (* with tarzan *)

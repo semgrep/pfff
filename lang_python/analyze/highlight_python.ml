@@ -34,8 +34,8 @@ module E = Entity_code
 (* we generate fake value here because the real one are computed in a
  * later phase in rewrite_categ_using_entities in pfff_visual.
  *)
-let fake_no_def2 = NoUse
-let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
+let def2 = Def2 NoUse
+let use2 = Use2 (NoInfoPlace, UniqueDef, MultiUse)
 
 
 let builtin_functions = Common.hashset_of_list [
@@ -88,6 +88,11 @@ let visit_program ~tag_hook _prefs (program, toks) =
   let in_decorator = ref false in
 
   let visitor = V.mk_visitor { V.default_visitor with
+    (* use 'k x' as much as possible below. No need to 
+     * do v (Stmt st1); v (Expr e); ... Go deep to tag
+     * special stuff (e.g., a local var in an exception handler) but then
+     * just recurse from the top with 'k x'
+     *)
     V.kexpr = (fun (k, _) x ->
      match x with
      | Name (name, ctx, _typ, resolved) ->
@@ -97,7 +102,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
           | "int" -> tag_name name TypeInt
           | _ ->
             let kind = E.Type in
-            tag_name name (Entity (kind, (Use2 fake_no_use2)))
+            tag_name name (Entity (kind, use2))
           )
         | _ when !in_decorator -> 
            tag_name name Highlight_code.Attribute
@@ -106,17 +111,17 @@ let visit_program ~tag_hook _prefs (program, toks) =
         | GlobalVar ->
             let usedef = 
               match ctx with
-              | Store -> Def2 fake_no_def2
-              | Load -> Use2 fake_no_use2
-              | _ -> Use2 fake_no_use2 (* TODO *)
+              | Store -> def2
+              | Load -> use2
+              | _ -> use2 (* TODO *)
             in
             tag_name name (Entity (E.Global, usedef))
         | ClassField ->
             let usedef = 
               match ctx with
-              | Store -> Def2 fake_no_def2
-              | Load -> Use2 fake_no_use2
-              | _ -> Use2 fake_no_use2 (* TODO *)
+              | Store -> def2
+              | Load -> use2
+              | _ -> use2 (* TODO *)
             in
             tag_name name (Entity (E.Field, usedef))
         | LocalVar ->
@@ -129,10 +134,10 @@ let visit_program ~tag_hook _prefs (program, toks) =
              tag_name name (Local usedef)
         | ImportedEntity ->
             let kind = E.Function in
-            tag_name name (Entity (kind, (Use2 fake_no_use2)))
+            tag_name name (Entity (kind, use2))
         | ImportedModule ->
             let kind = E.Module in
-            tag_name name (Entity (kind, (Use2 fake_no_use2)))
+            tag_name name (Entity (kind, use2))
         | NotResolved ->
             (*
             let kind = E.Global in
@@ -145,10 +150,10 @@ let visit_program ~tag_hook _prefs (program, toks) =
        (match f with
        | Name (name, _ctx, _typ, _resolved) ->
            let kind = E.Function in
-           tag_name name (Entity (kind, Use2 fake_no_use2))
+           tag_name name (Entity (kind, use2))
        | Ast_python.Attribute (_e, name, _ctx) ->
            let kind = E.Method in
-           tag_name name (Entity (kind, Use2 fake_no_use2))
+           tag_name name (Entity (kind, use2))
        | _ -> ()
        );
        keywords |> List.iter (fun (name, _) ->
@@ -162,34 +167,46 @@ let visit_program ~tag_hook _prefs (program, toks) =
           | "int" -> tag_name name TypeInt
           | _ ->
             let kind = E.Type in
-            tag_name name (Entity (kind, (Use2 fake_no_use2)))
+            tag_name name (Entity (kind, use2))
           )
          | _ ->
            let kind = E.Field in
-           tag_name name (Entity (kind, (Use2 fake_no_use2)));
+           tag_name name (Entity (kind, use2));
          );
         k x
+
+      | ListComp (_, xs) | GeneratorExp (_, xs) ->
+          xs |> List.iter (fun (target, _iter, _ifs) ->
+            match target with
+            | Name (name, _ctx, _typ, _res) -> 
+              tag_name name (Local Def);
+            (* tuples? *)
+            | _ -> ()
+          );
+         k x
+
+     (* the general case *)
      | _ -> k x
     );
     V.kstmt = (fun (k, _) x ->
      match x with
      | FunctionDef (name, _params, _typopt, _body, _decorators) ->
        let kind = if !in_class then E.Method else E.Function in
-       tag_name name (Entity (kind, (Def2 fake_no_def2)));
+       tag_name name (Entity (kind, def2));
        k x
      | ClassDef (name, _bases, _body, _decorators) ->
        let kind = E.Class in
-       tag_name name (Entity (kind, (Def2 fake_no_def2)));
+       tag_name name (Entity (kind, def2));
        Common.save_excursion in_class true (fun () -> 
           k x);
      | Import (aliases) ->
          aliases |> List.iter (fun (dotted_name, asname_opt) ->
            let kind = E.Module in
            dotted_name |> List.iter (fun name ->
-             tag_name name (Entity (kind, (Use2 fake_no_use2)));
+             tag_name name (Entity (kind, use2));
            );
            asname_opt |> Common.do_option (fun asname ->
-             tag_name asname (Entity (kind, (Def2 fake_no_def2)));
+             tag_name asname (Entity (kind, def2));
            );
          );
          k x
@@ -197,16 +214,38 @@ let visit_program ~tag_hook _prefs (program, toks) =
      | ImportFrom (dotted_name, aliases, _) ->
          let kind = E.Module in
          dotted_name |> List.iter (fun name ->
-           tag_name name (Entity (kind, (Use2 fake_no_use2)));
+           tag_name name (Entity (kind, use2));
          );
          aliases |> List.iter (fun (name, asname_opt) ->
            let kind = E.Function in
-           tag_name name (Entity (kind, (Use2 fake_no_use2)));
+           tag_name name (Entity (kind, use2));
            asname_opt |> Common.do_option (fun asname ->
-             tag_name asname (Entity (kind, (Def2 fake_no_def2)));
+             tag_name asname (Entity (kind, def2));
            );
          );
          k x
+
+     | With (_e, eopt, _stmts) ->
+       eopt |> Common.do_option (fun e ->
+          match e with
+         | Name (name, _ctx, _typ, _res) ->
+            tag_name name (Local Def);
+         (* todo: tuples? *)
+         | _ -> ()
+       );
+       k x
+     | TryExcept (_stmts1, excepts, _stmts2) ->
+       excepts |> List.iter (fun (ExceptHandler (_typ, e, _)) ->
+         match e with
+         | None -> ()
+         | Some (Name (name, _ctx, _typ, _res)) ->
+           tag_name name (Local Def)
+         (* tuples? *)
+         | Some _ -> ()
+       );
+       k x
+
+     (* general case *)
      | _ -> k x
     );
     V.ktype_ = (fun (k, _) x ->
@@ -279,13 +318,13 @@ let visit_program ~tag_hook _prefs (program, toks) =
     (* defs *)
     | T.CLASS _ii1::T.NAME (_s, ii2)::xs ->
         if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
-        then tag ii2 (Entity (E.Class, (Def2 fake_no_def2)));
+        then tag ii2 (Entity (E.Class, def2));
         aux_toks xs
 
     | T.DEF _ii1::T.NAME (_s, ii2)::xs ->
         (* todo: actually could be a method if in class scope *)
         if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
-        then tag ii2 (Entity (E.Function, (Def2 fake_no_def2)));
+        then tag ii2 (Entity (E.Function, def2));
         aux_toks xs
 
 
@@ -294,7 +333,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
     | T.NAME (_s, ii1)::T.DOT _::T.NAME (_s3, ii3)::T.LPAREN _::xs ->
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
         then begin 
-          tag ii3 (Entity (E.Method, (Use2 fake_no_use2)));
+          tag ii3 (Entity (E.Method, use2));
           if not (Hashtbl.mem already_tagged ii1)
           then tag ii1 (Local Use);
         end;
@@ -305,7 +344,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
         then 
           (if Hashtbl.mem builtin_functions s
           then tag ii1 Builtin
-          else tag ii1 (Entity (E.Function, (Use2 fake_no_use2)))
+          else tag ii1 (Entity (E.Function, use2))
           );
         aux_toks xs
 
@@ -314,7 +353,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
         | (T.DOT _)::_ ->
 
             if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
-            then tag ii3 (Entity (E.Field, (Use2 fake_no_use2)));
+            then tag ii3 (Entity (E.Field, use2));
 
             if not (Hashtbl.mem already_tagged ii1)
             then tag ii1 (Local Use);
@@ -324,7 +363,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
         | _ ->
           if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
           then begin 
-            tag ii3 (Entity (E.Field, (Use2 fake_no_use2)));
+            tag ii3 (Entity (E.Field, use2));
             (* TODO *)
             if not (Hashtbl.mem already_tagged ii1)
             then tag ii1 (Local Use);
@@ -399,6 +438,14 @@ let visit_program ~tag_hook _prefs (program, toks) =
         | "None" -> tag ii Null
         | "True" | "False" -> tag ii Boolean
         | "self" -> tag ii KeywordObject
+
+        | "str" | "list" | "int" | "bool" 
+        | "object"
+        | "Exception"
+           ->  tag_if_not_tagged ii (Entity (E.Type, use2))
+
+        | "__file__" | "__dir__" | "__package__" | "__name__"
+            -> tag_if_not_tagged ii CppOther
         | _ -> tag_if_not_tagged ii Error
         )
 
