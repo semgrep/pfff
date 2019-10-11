@@ -186,11 +186,11 @@ import_name: IMPORT dotted_as_name_list { Import ($2) }
 
 dotted_as_name:
   | dotted_name         { $1, None }
-  | dotted_name AS name { $1, Some $3 }
+  | dotted_name AS NAME { $1, Some $3 }
 
 dotted_name:
-  | name { [$1] }
-  | name DOT dotted_name { $1::$3 }
+  | NAME { [$1] }
+  | NAME DOT dotted_name { $1::$3 }
 
 
 import_from:
@@ -211,8 +211,8 @@ dot_level:
   | DOT dot_level { 1 + $2 }
 
 import_as_name:
-  | name { $1, None }
-  | name AS name { $1, Some $3 }
+  | NAME { $1, None }
+  | NAME AS NAME { $1, Some $3 }
 
 /*(*************************************************************************)*/
 /*(*1 Variable definition *)*/
@@ -222,9 +222,9 @@ expr_stmt:
   | testlist
     { ExprStmt (tuple_expr $1) }
  /*(* name -> expr_stmt_lhs *)*/
-  | name COLON test
+  | NAME COLON test
     { ExprStmt (Name ($1, Store, Some $3, ref NotResolved))} 
-  | name COLON test EQ test
+  | NAME COLON test EQ test
     { Assign ([Name ($1, Store, Some $3, ref NotResolved)], $5)} 
   | expr_stmt_lhs augassign expr_stmt_rhs 
     { AugAssign ($1, fst $2, $3) }
@@ -260,7 +260,7 @@ augassign:
 /*(*1 Function definition *)*/
 /*(*************************************************************************)*/
 
-funcdef: decorator_list DEF name parameters return_type_opt COLON suite
+funcdef: decorator_list DEF NAME parameters return_type_opt COLON suite
     { FunctionDef ($3, $4, $5, $7, $1) }
 
 return_type_opt: 
@@ -297,23 +297,23 @@ varargslist:
 fpdef:
   | NAME { Name ($1, Param, None, ref Parameter) }
   | LPAREN fpdef_list RPAREN { tuple_expr_store $2 }
-/*XXX  | NAME COLON test { Name ($1, Param, Some $3, ref Parameter) } */
+  | NAME COLON test { Name ($1, Param, Some $3, ref Parameter) }
 
 
 fpvarargs:
-  | MULT name { Some $2, None }
-  | MULT name COMMA fpkwargs { Some $2, $4 }
+  | MULT NAME { Some $2, None }
+  | MULT NAME COMMA fpkwargs { Some $2, $4 }
   | fpkwargs { None, $1 }
 
 fpkwargs:
-  | POW name { Some $2 }
-/*XXX  | POW name COLON test { Some $2 } */
+  | POW NAME { Some $2 }
+/*XXX  | POW NAME COLON test { Some $2 } */
 
 /*(*************************************************************************)*/
 /*(*1 Class definition *)*/
 /*(*************************************************************************)*/
 
-classdef: decorator_list CLASS name testlist_paren_opt COLON suite 
+classdef: decorator_list CLASS NAME testlist_paren_opt COLON suite 
    { ClassDef ($3, $4, $6, $1) }
 
 testlist_paren_opt: 
@@ -479,7 +479,6 @@ exprlist:
   | expr                { Single $1 }
   | expr COMMA          { Tup [$1] }
   | expr COMMA exprlist { cons $1 $3 }
-
 
 expr:
   | xor_expr            { $1 }
@@ -759,11 +758,6 @@ keyword: test EQ test
       }
 
 /*(*************************************************************************)*/
-/*(*1 Entities, names *)*/
-/*(*************************************************************************)*/
-name: NAME { $1 }
-
-/*(*************************************************************************)*/
 /*(*1 xxx_opt, xxx_list *)*/
 /*(*************************************************************************)*/
 
@@ -823,8 +817,8 @@ dotted_as_name_list:
   | dotted_as_name COMMA dotted_as_name_list { $1::$3 }
 
 name_list:
-  | name                 { [$1] }
-  | name COMMA name_list { $1::$3 }
+  | NAME                 { [$1] }
+  | NAME COMMA name_list { $1::$3 }
 
 testlist1:
   | test                 { Single $1 }
