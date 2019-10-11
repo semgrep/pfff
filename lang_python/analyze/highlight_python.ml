@@ -264,10 +264,10 @@ let visit_program ~tag_hook _prefs (program, toks) =
           tag_name name (Parameter Def);
         | _ -> ()
       );
-      varargs |> Common.do_option (fun varargs ->
+      varargs |> Common.do_option (fun (varargs, _t) ->
         tag_name varargs (Parameter Def);
       );
-      kwargs |> Common.do_option (fun kwargs ->
+      kwargs |> Common.do_option (fun (kwargs, _t) ->
         tag_name kwargs (Parameter Def);
       );
       k x

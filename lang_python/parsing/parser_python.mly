@@ -67,6 +67,9 @@ let tuple_expr_store l =
     | Some Param -> e
     | _ -> expr_store e
 
+let mk_param (name, t) = 
+  Name (name, Param, t, ref Parameter)
+
 %}
 
 /*(*************************************************************************)*/
@@ -276,27 +279,27 @@ parameters: LPAREN typedargslist RPAREN { $2 }
 typedargslist:
   | /*(*empty*)*/              { [], None, None, [] }
 
-  | tfpdef                     { [$1], None, None, [] }
+  | tfpdef                     { [mk_param $1], None, None, [] }
   | tfpdef COMMA typedargslist { let (args, varargs, kwargs, defaults) = $3 in
-                                 $1::args, varargs, kwargs, defaults }
+                                 mk_param $1::args, varargs, kwargs, defaults }
   /*(* TODO check default args come after variable args later *)*/
-  | tfpdef EQ test             { [$1], None, None, [$3] }
+  | tfpdef EQ test             { [mk_param $1], None, None, [$3] }
   | tfpdef EQ test COMMA typedargslist 
       { let (args, varargs, kwargs, defaults) = $5 in
-        $1::args, varargs, kwargs, $3::defaults }
+        mk_param $1::args, varargs, kwargs, $3::defaults }
 
   | tfpvarargs                  { [], fst $1, snd $1, [] }
 
 tfpdef:
-  | NAME            { Name ($1, Param, None,    ref Parameter) }
-  | NAME COLON test { Name ($1, Param, Some $3, ref Parameter) }
+  | NAME            { $1, None }
+  | NAME COLON test { $1, Some $3 }
 
 tfpvarargs:
-  | MULT NAME                 { Some $2, None }
-  | MULT NAME COMMA tfpkwargs { Some $2, $4 }
-  | tfpkwargs                 { None, $1 }
+  | MULT tfpdef                 { Some $2, None }
+  | MULT tfpdef COMMA tfpkwargs { Some $2, $4 }
+  | tfpkwargs                   { None, $1 }
 
-tfpkwargs: POW NAME { Some $2 }
+tfpkwargs: POW tfpdef { Some $2 }
 
 
 /*(* without types, as in lambda *)*/
@@ -320,15 +323,12 @@ vfpdef:
 /*(* still? *)*/
   | LPAREN vfpdef_list RPAREN { tuple_expr_store $2 }
 
-
-
 fpvarargs:
-  | MULT NAME                { Some $2, None }
-  | MULT NAME COMMA fpkwargs { Some $2, $4 }
+  | MULT NAME                { Some ($2, None), None }
+  | MULT NAME COMMA fpkwargs { Some ($2, None), $4 }
   | fpkwargs                 { None, $1 }
 
-fpkwargs: POW NAME { Some $2 }
-
+fpkwargs: POW NAME { Some ($2, None) }
 
 /*(*************************************************************************)*/
 /*(*1 Class definition *)*/

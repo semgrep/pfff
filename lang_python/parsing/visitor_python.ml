@@ -186,12 +186,16 @@ and v_slice =
 and v_parameters x =
   let k (v1, v2, v3, v4) =
   let v1 = v_list v_expr v1
-  and v2 = v_option v_name v2
-  and v3 = v_option v_name v3
+  and v2 = v_option v_name_and_type v2
+  and v3 = v_option v_name_and_type v3
   and v4 = v_list v_expr v4
   in ()
   in
   vin.kparameters (k, all_functions) x
+
+and v_name_and_type (v1, v2) =
+  v_name v1;
+  v_option v_type_ v2;
 
 and v_type_ v = 
   let k x =

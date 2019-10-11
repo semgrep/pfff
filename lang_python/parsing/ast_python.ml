@@ -164,8 +164,8 @@ and slice =
 
 and parameters = 
     expr list (* args *) * 
-    name option (* varargs *) * 
-    name option (* kwargs *) * 
+    (name * type_ option) option (* varargs *) * 
+    (name * type_ option) option (* kwargs *) * 
     expr list (* defaults *)
 
 (* ------------------------------------------------------------------------- *)
@@ -186,7 +186,7 @@ type stmt =
   | FunctionDef of 
        name (* name *) * 
        parameters (* args *) * 
-       type_ option *
+       type_ option * (* return type *)
        stmt list (* body *) * 
        decorator list (* decorator_list *)
 
