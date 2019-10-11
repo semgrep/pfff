@@ -32,21 +32,18 @@ type single_or_tuple =
   | Single of expr
   | Tup of expr list
 
-let singleton e = Single e
-
-and tuple e = Tup [e]
-
-and cons e = function
+let cons e = function
   | Single e' -> Tup (e::[e'])
   | Tup l -> Tup (e::l)
 
-and tuple_expr = function
+let tuple_expr = function
   | Single e -> e
   | Tup l -> Tuple (l, Load)
 
-and to_list = function
+let to_list = function
   | Single e -> [e]
   | Tup l -> l
+
 
 let rec set_expr_ctx ctx = function
   | Attribute (value, attr, _) ->
@@ -317,11 +314,11 @@ varargslist:
 fpdef:
   | NAME { Name ($1, Param, None, ref Parameter) }
   | LPAREN fplist RPAREN { tuple_expr_store $2 }
-  | NAME COLON test { Name ($1, Param, Some $3, ref Parameter) }
+/*XXX  | NAME COLON test { Name ($1, Param, Some $3, ref Parameter) } */
 
 fplist:
-  | fpdef { singleton $1 }
-  | fpdef COMMA { tuple $1 }
+  | fpdef { Single $1 }
+  | fpdef COMMA { Tup [$1] }
   | fpdef COMMA fplist { cons $1 $3 }
 
 
@@ -332,7 +329,7 @@ fpvarargs:
 
 fpkwargs:
   | POW name { Some $2 }
-  | POW name COLON test { Some $2 }
+/*XXX  | POW name COLON test { Some $2 } */
 
 /*(*************************************************************************)*/
 /*(*1 Class definition *)*/
@@ -366,9 +363,8 @@ decorator_expr:
   | decorator_name { $1 }
   | decorator_name LPAREN RPAREN { Call ($1, [], [], None, None) }
   | decorator_name LPAREN arglist RPAREN
-      { match $3 with
-        | args, keywords, starargs, kwargs ->
-            Call ($1, args, keywords, starargs, kwargs) }
+      { let (args, keywords, starargs, kwargs) = $3 in
+        Call ($1, args, keywords, starargs, kwargs) }
 
 decorators:
   | { [] }
@@ -544,8 +540,8 @@ with_stmt:
 /*(*************************************************************************)*/
 
 exprlist:
-  | expr { singleton $1 }
-  | expr COMMA { tuple $1 }
+  | expr { Single $1 }
+  | expr COMMA { Tup [$1] }
   | expr COMMA exprlist { cons $1 $3 }
 
 
@@ -614,9 +610,8 @@ atom_trailer:
 
   | atom_trailer LPAREN RPAREN { Call ($1, [], [], None, None) }
   | atom_trailer LPAREN arglist RPAREN
-      { match $3 with
-        | args, keywords, starargs, kwargs ->
-            Call ($1, args, keywords, starargs, kwargs) }
+      { let args, keywords, starargs, kwargs = $3 in
+        Call ($1, args, keywords, starargs, kwargs) }
 
   | atom_trailer LBRACK subscriptlist RBRACK
       { match $3 with
@@ -652,7 +647,7 @@ atom_repr:
   | BACKQUOTE testlist1 BACKQUOTE { Repr (tuple_expr $2) }
 
 testlist1:
-  | test { singleton $1 }
+  | test { Single $1 }
   | test COMMA testlist1 { cons $1 $3 }
 
 
@@ -687,8 +682,10 @@ dictmaker:
   | test COLON test { [$1], [$3] }
   | test COLON test COMMA { [$1], [$3] }
   | test COLON test COMMA dictmaker { $1::(fst $5), $3::(snd $5) }
+/*XXX
   | POW expr { [], [] }
   | POW expr COMMA { [], [] }
+*/
 
 /*(*----------------------------*)*/
 /*(*2 Array access *)*/
@@ -710,8 +707,8 @@ subscript:
 /*(*----------------------------*)*/
 
 testlist:
-  | test { singleton $1 }
-  | test COMMA { tuple $1 }
+  | test { Single $1 }
+  | test COMMA { Tup [$1] }
   | test COMMA testlist { cons $1 $3 }
 
 testlist_expr:
@@ -797,8 +794,8 @@ list_if_list:
   | list_if list_if_list { $1::$2 }
 
 testlist_safe:
-  | old_test { singleton $1 }
-  | old_test COMMA { tuple $1 }
+  | old_test { Single $1 }
+  | old_test COMMA { Tup [$1] }
   | old_test COMMA testlist_safe { cons $1 $3 }
 
 old_test:
@@ -834,9 +831,8 @@ arglist:
   | argument { [$1], [], None, None }
   | argument COMMA { [$1], [], None, None }
   | argument COMMA arglist
-      { match $3 with
-        | args, keywords, starargs, kwargs ->
-            $1::args, keywords, starargs, kwargs }
+      { let args, keywords, starargs, kwargs = $3 in
+         $1::args, keywords, starargs, kwargs }
   | starargs { $1 }
 
 argument:
@@ -846,18 +842,16 @@ argument:
 starargs:
   | MULT test { [], [], Some $2, None }
   | MULT test COMMA keywords
-      { match $4 with
-        | args, keywords, _, kwargs ->
-            args, keywords, Some $2, kwargs }
+      { let args, keywords, _, kwargs = $4 in
+        args, keywords, Some $2, kwargs }
   | keywords { $1 }
 
 keywords:
   | keyword { [], [$1], None, None }
   | keyword COMMA { [], [$1], None, None }
   | keyword COMMA keywords
-      { match $3 with
-        | args, keywords, starargs, kwargs ->
-            args, $1::keywords, starargs, kwargs }
+      { let args, keywords, starargs, kwargs = $3 in
+        args, $1::keywords, starargs, kwargs }
   | POW test { [], [], None, Some $2 }
 
 keyword:
