@@ -294,23 +294,22 @@ parameters:
   | LPAREN varargslist RPAREN { $2 }
 
 varargslist:
-  | { [], None, None, [] }
+  | /*(*empty*)*/
+     { [], None, None, [] }
 
-  | fpdef { [$1], None, None, [] }
+  | fpdef 
+     { [$1], None, None, [] }
   | fpdef COMMA varargslist
-      { match $3 with
-        | args, varargs, kwargs, defaults  ->
-            $1::args, varargs, kwargs, defaults }
+      { let (args, varargs, kwargs, defaults) = $3 in
+        $1::args, varargs, kwargs, defaults }
 
   | fpdef EQ test
-      {
-        (* TODO check default arguments come after
+      { (* TODO check default arguments come after
            variable arguments with semantic analysis. *)
         [$1], None, None, [$3] }
   | fpdef EQ test COMMA varargslist
-      { match $5 with
-        | args, varargs, kwargs, defaults  ->
-            $1::args, varargs, kwargs, $3::defaults }
+      { let (args, varargs, kwargs, defaults) = $5 in
+        $1::args, varargs, kwargs, $3::defaults }
 
   | fpvarargs
       { [], fst $1, snd $1, [] }
@@ -325,6 +324,7 @@ fplist:
   | fpdef COMMA { tuple $1 }
   | fpdef COMMA fplist { cons $1 $3 }
 
+
 fpvarargs:
   | MULT name { Some $2, None }
   | MULT name COMMA fpkwargs { Some $2, $4 }
@@ -332,6 +332,7 @@ fpvarargs:
 
 fpkwargs:
   | POW name { Some $2 }
+  | POW name COLON test { Some $2 }
 
 /*(*************************************************************************)*/
 /*(*1 Class definition *)*/
