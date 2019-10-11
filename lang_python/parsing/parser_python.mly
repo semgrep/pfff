@@ -271,43 +271,64 @@ return_type_opt:
 /*(*2 parameters *)*/
 /*(*----------------------------*)*/
 
-parameters: LPAREN varargslist RPAREN { $2 }
+parameters: LPAREN typedargslist RPAREN { $2 }
 
-varargslist:
-  | /*(*empty*)*/
-     { [], None, None, [] }
+typedargslist:
+  | /*(*empty*)*/              { [], None, None, [] }
 
-  | fpdef 
-     { [$1], None, None, [] }
-  | fpdef COMMA varargslist
-      { let (args, varargs, kwargs, defaults) = $3 in
-        $1::args, varargs, kwargs, defaults }
-
-  | fpdef EQ test
-      { (* TODO check default arguments come after
-           variable arguments with semantic analysis. *)
-        [$1], None, None, [$3] }
-  | fpdef EQ test COMMA varargslist
+  | tfpdef                     { [$1], None, None, [] }
+  | tfpdef COMMA typedargslist { let (args, varargs, kwargs, defaults) = $3 in
+                                 $1::args, varargs, kwargs, defaults }
+  /*(* TODO check default args come after variable args later *)*/
+  | tfpdef EQ test             { [$1], None, None, [$3] }
+  | tfpdef EQ test COMMA typedargslist 
       { let (args, varargs, kwargs, defaults) = $5 in
         $1::args, varargs, kwargs, $3::defaults }
 
-  | fpvarargs
-      { [], fst $1, snd $1, [] }
+  | tfpvarargs                  { [], fst $1, snd $1, [] }
 
-fpdef:
-  | NAME { Name ($1, Param, None, ref Parameter) }
-  | LPAREN fpdef_list RPAREN { tuple_expr_store $2 }
+tfpdef:
+  | NAME            { Name ($1, Param, None,    ref Parameter) }
   | NAME COLON test { Name ($1, Param, Some $3, ref Parameter) }
+
+tfpvarargs:
+  | MULT NAME                 { Some $2, None }
+  | MULT NAME COMMA tfpkwargs { Some $2, $4 }
+  | tfpkwargs                 { None, $1 }
+
+tfpkwargs: POW NAME { Some $2 }
+
+
+/*(* without types, as in lambda *)*/
+varargslist:
+  | /*(*empty*)*/               { [], None, None, [] }
+
+  | vfpdef                      { [$1], None, None, [] }
+  | vfpdef COMMA varargslist    { let (args, varargs, kwargs, defaults) = $3 in
+                                  $1::args, varargs, kwargs, defaults }
+
+  /*(* TODO check default args come after variable args later *)*/
+  | vfpdef EQ test              { [$1], None, None, [$3] }
+  | vfpdef EQ test COMMA varargslist 
+     { let (args, varargs, kwargs, defaults) = $5 in
+        $1::args, varargs, kwargs, $3::defaults }
+
+  | fpvarargs                    { [], fst $1, snd $1, [] }
+
+vfpdef:
+  | NAME { Name ($1, Param, None, ref Parameter) }
+/*(* still? *)*/
+  | LPAREN vfpdef_list RPAREN { tuple_expr_store $2 }
+
 
 
 fpvarargs:
-  | MULT NAME { Some $2, None }
+  | MULT NAME                { Some $2, None }
   | MULT NAME COMMA fpkwargs { Some $2, $4 }
-  | fpkwargs { None, $1 }
+  | fpkwargs                 { None, $1 }
 
-fpkwargs:
-  | POW NAME { Some $2 }
-  | POW NAME COLON test { Some $2 }
+fpkwargs: POW NAME { Some $2 }
+
 
 /*(*************************************************************************)*/
 /*(*1 Class definition *)*/
@@ -794,10 +815,10 @@ import_as_name_list:
   | import_as_name COMMA                     { [$1] }
   | import_as_name COMMA import_as_name_list { $1::$3 }
 
-fpdef_list:
-  | fpdef                  { Single $1 }
-  | fpdef COMMA            { Tup [$1] }
-  | fpdef COMMA fpdef_list { cons $1 $3 }
+vfpdef_list:
+  | vfpdef                  { Single $1 }
+  | vfpdef COMMA            { Tup [$1] }
+  | vfpdef COMMA vfpdef_list { cons $1 $3 }
 
 /*(* was called testlife_safe originally *)*/
 old_test_list:
