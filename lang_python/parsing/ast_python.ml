@@ -98,12 +98,7 @@ type expr =
   | UnaryOp of unaryop (* op *) * expr (* operand *)
   | Compare of expr (* left *) * cmpop list (* ops *) * expr list (* comparators *)
 
-  | Call of 
-        expr (* func *) * 
-        expr list (* args *) * 
-        keyword list (* keywords *) * 
-        expr option (* starargs *) * 
-        expr option (* kwargs *)
+  | Call of expr (* func *) * argument list (* args *)
 
   | Subscript of expr (* value *) * slice (* slice *) * expr_context (* ctx *)
 
@@ -120,58 +115,62 @@ type expr =
 
   | Attribute of expr (* value *) * name (* attr *) * expr_context (* ctx *)
 
-and number =
-  | Int of int wrap
-  | LongInt of int wrap
-  | Float of float wrap
-  | Imag of string wrap
-
-and boolop = And | Or
-
-and operator = 
-  | Add | Sub | Mult | Div 
-  | Mod | Pow | FloorDiv
-  | LShift | RShift 
-  | BitOr | BitXor | BitAnd 
-
-and unaryop = Invert | Not | UAdd | USub
-
-and cmpop = 
-  | Eq | NotEq 
-  | Lt | LtE | Gt | GtE 
-  | Is | IsNot 
-  | In | NotIn
-
-and comprehension =
-  expr (* target *) * 
-  expr (* iter *) * 
-  expr list (* ifs *)
-
-and dictorset_elt = 
-  | KeyVal of expr * expr
-  | Key of expr
-  | PowInline of expr
-
-(* AugLoad and AugStore are not used *)
-and expr_context = 
-  | Load | Store 
-  | Del 
-  | AugLoad | AugStore
-  | Param
-
-and keyword = name (* arg *) * expr (* value *)
-
-and slice =
-  | Ellipsis
-  | Slice of expr option (* lower *) * expr option (* upper *) * expr option (* step *)
-  | ExtSlice of slice list (* dims *)
-  | Index of expr (* value *)
-
-and parameters = 
-    expr list (* args *) * 
-    (name * type_ option) option (* varargs *) * 
-    (name * type_ option) option (* kwargs *) * 
-    expr list (* defaults *)
+  and number =
+    | Int of int wrap
+    | LongInt of int wrap
+    | Float of float wrap
+    | Imag of string wrap
+  
+  and boolop = And | Or
+  
+  and operator = 
+    | Add | Sub | Mult | Div 
+    | Mod | Pow | FloorDiv
+    | LShift | RShift 
+    | BitOr | BitXor | BitAnd 
+  
+  and unaryop = Invert | Not | UAdd | USub
+  
+  and cmpop = 
+    | Eq | NotEq 
+    | Lt | LtE | Gt | GtE 
+    | Is | IsNot 
+    | In | NotIn
+  
+  and comprehension =
+    expr (* target *) * 
+    expr (* iter *) * 
+    expr list (* ifs *)
+  
+  and dictorset_elt = 
+    | KeyVal of expr * expr
+    | Key of expr
+    | PowInline of expr
+  
+  (* AugLoad and AugStore are not used *)
+  and expr_context = 
+    | Load | Store 
+    | Del 
+    | AugLoad | AugStore
+    | Param
+  
+  and slice =
+    | Ellipsis
+    | Slice of expr option (* lower *) * expr option (* upper *) * expr option (* step *)
+    | ExtSlice of slice list (* dims *)
+    | Index of expr (* value *)
+  
+  and parameters = 
+      expr list (* args *) * 
+      (name * type_ option) option (* varargs *) * 
+      (name * type_ option) option (* kwargs *) * 
+      expr list (* defaults *)
+  
+  and argument = 
+    | Arg of expr
+    | ArgKwd of name (* arg *) * expr (* value *)
+    | ArgStar of expr
+    | ArgPow of expr
 
 (* ------------------------------------------------------------------------- *)
 (* Types *)
@@ -298,7 +297,7 @@ let str_of_name = fst
 let context_of_expr = function
   | Attribute (_, _, ctx) -> Some ctx
   | Subscript (_, _, ctx) -> Some ctx
-  | Name (_, ctx, _, _)         -> Some ctx
+  | Name (_, ctx, _, _)   -> Some ctx
   | List (_, ctx)         -> Some ctx
   | Tuple (_, ctx)        -> Some ctx
-  | _                        -> None
+  | _                     -> None

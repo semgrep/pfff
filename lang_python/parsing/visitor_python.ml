@@ -106,13 +106,7 @@ and v_expr (x: expr) =
       and v2 = v_list v_cmpop v2
       and v3 = v_list v_expr v3
       in ()
-  | Call ((v1, v2, v3, v4, v5)) ->
-      let v1 = v_expr v1
-      and v2 = v_list v_expr v2
-      and v3 = v_list v_keyword v3
-      and v4 = v_option v_expr v4
-      and v5 = v_option v_expr v5
-      in ()
+  | Call (v1, v2) -> v_expr v1; v_list v_argument v2
   | Subscript ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_slice v2 and v3 = v_expr_context v3 in ()
   | Lambda ((v1, v2)) -> let v1 = v_parameters v1 and v2 = v_expr v2 in ()
@@ -126,6 +120,12 @@ and v_expr (x: expr) =
       let v1 = v_expr v1 and v2 = v_name v2 and v3 = v_expr_context v3 in ()
   in
   vin.kexpr (k, all_functions) x
+
+and v_argument = function
+  | Arg e -> v_expr e
+  | ArgPow e -> v_expr e
+  | ArgStar e -> v_expr e
+  | ArgKwd (n, e) -> v_name n; v_expr e
 
 and v_dictorset_elt = function
   | KeyVal (v1, v2) -> v_expr v1; v_expr v2

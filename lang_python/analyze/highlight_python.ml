@@ -146,7 +146,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
             ()
         );
         k x
-     | Call (f, _args, keywords, _starargs, _kwargs) ->
+     | Call (f, args) ->
        (match f with
        | Name (name, _ctx, _typ, _resolved) ->
            let kind = E.Function in
@@ -156,8 +156,9 @@ let visit_program ~tag_hook _prefs (program, toks) =
            tag_name name (Entity (kind, use2))
        | _ -> ()
        );
-       keywords |> List.iter (fun (name, _) ->
-          tag_name name Comment
+       args |> List.iter (function
+          | ArgKwd (name, _) -> tag_name name Comment
+          | _ -> ();
        );
        k x
      | Ast_python.Attribute (_e, name, _ctx) ->

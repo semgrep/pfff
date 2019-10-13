@@ -355,10 +355,8 @@ decorator_name:
 
 arglist_paren_opt:
   | /*(* empty*)*/        { fun x -> x }
-  | LPAREN RPAREN         { fun x -> Call (x, [], [], None, None) }
-  | LPAREN arglist RPAREN { fun x -> 
-        let (args, keywords, starargs, kwargs) = $2 in
-        Call (x, args, keywords, starargs, kwargs) }
+  | LPAREN RPAREN         { fun x -> Call (x, []) }
+  | LPAREN arg_list RPAREN { fun x -> Call (x, $2) }
 
 /*(*************************************************************************)*/
 /*(*1 Statement *)*/
@@ -566,10 +564,8 @@ power:
 atom_trailer:
   | atom { $1 }
 
-  | atom_trailer LPAREN         RPAREN { Call ($1, [], [], None, None) }
-  | atom_trailer LPAREN arglist RPAREN
-      { let args, keywords, starargs, kwargs = $3 in
-        Call ($1, args, keywords, starargs, kwargs) }
+  | atom_trailer LPAREN         RPAREN { Call ($1, []) }
+  | atom_trailer LPAREN arg_list RPAREN { Call ($1, $3) }
 
   | atom_trailer LBRACK subscript_list RBRACK
       { match $3 with
@@ -743,37 +739,14 @@ gen_if: IF old_test { $2 }
 /*(*2 Arguments *)*/
 /*(*----------------------------*)*/
 
-arglist:
-  | argument                { [$1], [], None, None }
-  | argument COMMA          { [$1], [], None, None }
-  | argument COMMA arglist  { let args, keywords, starargs, kwargs = $3 in
-                              $1::args, keywords, starargs, kwargs }
-
-  | starargs { $1 }
-
 argument:
-  | test         { $1 }
-  | test gen_for { GeneratorExp ($1, $2) }
-
-starargs:
-  | MULT test                 { [], [], Some $2, None }
-  | MULT test COMMA keywords  { let args, keywords, _, kwargs = $4 in
-                                 args, keywords, Some $2, kwargs }
-
-  | keywords                  { $1 }
-
-keywords:
-  | keyword                 { [], [$1], None, None }
-  | keyword COMMA           { [], [$1], None, None }
-  | keyword COMMA keywords  { let args, keywords, starargs, kwargs = $3 in
-                              args, $1::keywords, starargs, kwargs }
-
-  | POW test                 { [], [], None, Some $2 }
-  | POW test COMMA           { [], [], None, Some $2 }
-
-keyword: test EQ test
+  | test           { Arg $1 }
+  | test gen_for   { Arg (GeneratorExp ($1, $2)) }
+  | MULT test      { ArgStar $2 }
+  | POW test       { ArgPow $2 }
+  | test EQ test
       { match $1 with
-        | Name (id, _, _, _) -> (id, $3)
+        | Name (id, _, _, _) -> ArgKwd (id, $3)
         | _ -> raise Parsing.Parse_error 
       }
 
@@ -830,6 +803,11 @@ subscript_list:
   | subscript                      { [$1] }
   | subscript COMMA                { [$1] }
   | subscript COMMA subscript_list { $1::$3 }
+
+arg_list:
+  | argument                { [$1] }
+  | argument COMMA          { [$1] }
+  | argument COMMA arg_list  { $1::$3 }
 
 /*(* was called dictorsetmaker originally *)*/
 dictorset_elem_list:
