@@ -371,6 +371,8 @@ stmt:
 suite:
   | simple_stmt { $1 }
   | NEWLINE INDENT stmt_list DEDENT { $3 }
+  /*(* in .pyi files *)*/
+  | DOT DOT DOT NEWLINE { [] }
 
 simple_stmt:
   | small_stmt NEWLINE { [$1] }
@@ -767,6 +769,7 @@ keywords:
                               args, $1::keywords, starargs, kwargs }
 
   | POW test                 { [], [], None, Some $2 }
+  | POW test COMMA           { [], [], None, Some $2 }
 
 keyword: test EQ test
       { match $1 with
