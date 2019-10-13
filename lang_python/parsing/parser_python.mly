@@ -369,8 +369,6 @@ stmt:
 suite:
   | simple_stmt { $1 }
   | NEWLINE INDENT stmt_list DEDENT { $3 }
-  /*(* in .pyi files *)*/
-  | DOT DOT DOT NEWLINE { [] }
 
 simple_stmt:
   | small_stmt NEWLINE { [$1] }
@@ -387,6 +385,8 @@ small_stmt:
   | import_stmt { $1 }
   | global_stmt { $1 }
   | assert_stmt { $1 }
+  /*(* in .pyi files *)*/
+  | DOT DOT DOT { Pass (* TODO? *) }
 
 print_stmt:
   | PRINT                     { Print (None, [], true) }
