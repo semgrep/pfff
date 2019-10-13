@@ -91,7 +91,7 @@ type expr =
 
   | Tuple of expr list (* elts *)  * expr_context (* ctx *)
   | List of expr list (* elts *)   * expr_context (* ctx *)
-  | Dict of expr list (* keys *) * expr list (* values *)
+  | DictOrSet of dictorset_elt list
 
   | BoolOp of boolop (* op *) * expr list (* values *)
   | BinOp of expr (* left *) * operator (* op *) * expr (* right *)
@@ -142,10 +142,15 @@ and cmpop =
   | Is | IsNot 
   | In | NotIn
 
-and comprehension = 
+and comprehension =
   expr (* target *) * 
   expr (* iter *) * 
   expr list (* ifs *)
+
+and dictorset_elt = 
+  | KeyVal of expr * expr
+  | Key of expr
+  | PowInline of expr
 
 (* AugLoad and AugStore are not used *)
 and expr_context = 

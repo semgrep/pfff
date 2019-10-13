@@ -5,3 +5,4 @@ def no_auth_get(
     headers = {**_get_default_headers(), **headers}
     r = requests.get(url, headers=headers, params=params, **kwargs)
     return r
+

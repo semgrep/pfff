@@ -94,8 +94,7 @@ and v_expr (x: expr) =
       let v1 = v_list v_expr v1 and v2 = v_expr_context v2 in ()
   | List ((v1, v2)) ->
       let v1 = v_list v_expr v1 and v2 = v_expr_context v2 in ()
-  | Dict ((v1, v2)) ->
-      let v1 = v_list v_expr v1 and v2 = v_list v_expr v2 in ()
+  | DictOrSet (v) -> v_list v_dictorset_elt v
   | ListComp ((v1, v2)) ->
       let v1 = v_expr v1 and v2 = v_list v_comprehension v2 in ()
   | BoolOp ((v1, v2)) -> let v1 = v_boolop v1 and v2 = v_list v_expr v2 in ()
@@ -127,6 +126,11 @@ and v_expr (x: expr) =
       let v1 = v_expr v1 and v2 = v_name v2 and v3 = v_expr_context v3 in ()
   in
   vin.kexpr (k, all_functions) x
+
+and v_dictorset_elt = function
+  | KeyVal (v1, v2) -> v_expr v1; v_expr v2
+  | Key (v1) -> v_expr v1
+  | PowInline (v1) -> v_expr v1
   
 and v_number =
   function

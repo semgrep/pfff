@@ -624,17 +624,13 @@ atom_list:
   | LBRACK test list_for RBRACK { ListComp ($2, $3) }
 
 atom_dict:
-  | LBRACE           RBRACE { Dict ([], []) }
-  | LBRACE dictmaker RBRACE { Dict (fst $2, snd $2) }
+  | LBRACE                RBRACE { DictOrSet [] }
+  | LBRACE dictorset_elem_list RBRACE { DictOrSet $2 }
 
-dictmaker:
-  | test COLON test { [$1], [$3] }
-  | test COLON test COMMA { [$1], [$3] }
-  | test COLON test COMMA dictmaker { $1::(fst $5), $3::(snd $5) }
-
-  | POW expr { [], [] }
-  | POW expr COMMA { [], [] }
-
+dictorset_elem:
+  | test COLON test { KeyVal ($1, $3) }
+  | test            { Key $1 }
+  | POW expr        { PowInline $2 }
 
 /*(*----------------------------*)*/
 /*(*2 Array access *)*/
@@ -803,6 +799,7 @@ decorator_list:
   | /*(* empty *)*/          { [] }
   | decorator decorator_list { $1::$2 }
 
+
 /*(* basic lists, at least one element *)*/
 excepthandler_list:
   | excepthandler                    { [$1] }
@@ -830,6 +827,12 @@ subscript_list:
   | subscript                      { [$1] }
   | subscript COMMA                { [$1] }
   | subscript COMMA subscript_list { $1::$3 }
+
+/*(* was called dictorsetmaker originally *)*/
+dictorset_elem_list:
+  | dictorset_elem                            { [$1] }
+  | dictorset_elem COMMA                      { [$1] }
+  | dictorset_elem COMMA dictorset_elem_list { $1::$3 }
 
 
 /*(* list with commas, but without trailing comma *)*/

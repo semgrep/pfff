@@ -146,7 +146,7 @@ let file_type_of_file2 file =
   (* Perl or Prolog ... I made my choice *)
   | "pl" -> PL (Prolog "pl")
   | "perl" -> PL Perl 
-  | "py" -> PL Python
+  | "py" | "pyi" -> PL Python
   | "rb" -> PL Ruby
 
   | "logic" -> PL (Prolog "logic") (* datalog of logicblox *)
