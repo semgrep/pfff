@@ -17,7 +17,8 @@ open Common
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* 
+(* Sexp-like data structure to represent programs.
+ *
  * When searching for or refactoring code, regexps are good enough most of 
  * the time; tools such as 'grep' or 'sed' are great. But certain regexps
  * are tedious to write when one needs to handle variations in spacing,
@@ -88,8 +89,10 @@ open Common
  *    but as a tree as we want for instance '$X->foo()' to match
  *    whole expression like 'this->bar()->foo()', or we want
  *    '$X' to match '1+1' (and not only in Parens context)
+ *    updated: or use ast_generic.ml for that?
  *  - same for function calls? so maybe we need to transform our
  *    original program in a lisp like AST where things are more uniform
+ *    updated: or use ast_generic.ml for that?
  *  - how to handle isomorphisms like 'order of attributes don't matter'
  *    as in XHP? or class that can be mentioned anywhere in the arguments
  *    to implements? or how can we make 'class X { ... }' to also match

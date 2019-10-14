@@ -35,14 +35,18 @@
  *  - later: add Ruby, Rust, Scala.
  *  - later: add C++, C.
  *  - dogfooding: add OCaml!
+ *  - see ast_fuzzy.ml TODOs for ideas to use ast_generic for sgrep.
  *
  * related work:
- *  - ast_fuzzy.ml
+ *  - ast_fuzzy.ml (in this directory)
  *  - github semantic
  *    https://github.com/github/semantic
  *  - Coverity common program representation?
- *  - Semmle internal common represetation?
+ *  - Semmle internal common representation?
  *  - Infer SIL (for C++, Java, Objective-C)
+ *  - Dawson Engler and Fraser Brown micro-checkers for multiple languages
+ *  - https://tabnine.com/ which supports multiple languages
+ *  - Lightweight Multi-language syntax transformation paper 
  *
  * design choices to have a generic data structure:
  *  - add some 'a, 'b, 'c around expr/stmt/...
