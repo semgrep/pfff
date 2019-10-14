@@ -22,10 +22,10 @@
  *
  * rational: In the end, programming languages have a lot in common.
  * Even though most interesting analysis are probably better done on a
- * per-language basis, many analysis are trivial and requires just an
+ * per-language basis, many useful analysis are trivial and require just an
  * AST and a visitor. One could duplicate those analysis for each language
  * or design ast_generic to be generic enough and precise enough to 
- * factorize those analysis (e.g., checked_return).
+ * factorize all those analysis (e.g., checked_return).
  * 
  * TODO:
  *  - initial goal: factorize Python, Javascript
@@ -75,8 +75,16 @@ type 'a wrap = 'a * tok
 type name = string wrap
  (* with tarzan *)
 
+type dotted_name = name list
+ (* with tarzan *)
+
+type module_name =
+  | Filepath of string wrap (* ex: Javascript *)
+  | ModuleName of dotted_name (* ex: Python *)
+ (* with tarzan *)
+
 (* todo? modules? namespaces? *)
-type qualified_name = name
+type qualified_name = dotted_name
  (* with tarzan *)
 
 (* todo: see also scope_code.ml *)
@@ -85,6 +93,9 @@ type resolved_name =
   | Param
   | Global of qualified_name
   | NotResolved
+  | OtherResolved of other_resolved_name
+
+  and other_resolved_name = string
  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
@@ -101,6 +112,7 @@ type expr =
   (* less: Regexp of string wrap, Imag of string wrap *)
 
   (* composite values *)
+  | Tuple (* special case of Container *)
   | Container of container_operator * expr list
 
   | Nop
@@ -113,7 +125,12 @@ type expr =
   | UnaryOp of unary_operator * expr
   | Call of expr * argument list * other_arguments
 
+  (* should be in statement, but many languages allow this at expr level *)
+  | Assign of expr * expr
+  | AssignOp of expr * binary_operator * expr
+
   | ObjAccess of expr * name
+  (* less: slice *)
   | ArrayAccess of expr * expr
 
   | Lambda of parameters * stmt
@@ -122,8 +139,8 @@ type expr =
   | OtherExpr of other_expr_operator * any list
 
   and binary_operator = 
-    | Add | Sub | Mult | Div | Mod 
-    (* less:  Pow  | FloorDiv *)
+    | Add | Sub | Mult | Div | Mod | Pow
+    (* less:  FloorDiv *)
     | LShift | RShift 
     | BitOr | BitXor | BitAnd 
     | And | Or
@@ -134,20 +151,26 @@ type expr =
     | UPlus | USub | UNot
 
   and container_operator = 
-    | Tuple
-    | Array
-    | List
-    | Dict
-    | Set
+    (* Tuple is lift up *)
+    | Array | List
+    | Dict | Set
 
   and argument =
     | Arg of expr
     | ArgKwd of name * expr
 
-  and other_arguments = XXXOA
+  and other_arguments = (other_argument_operator * any list) list
+    and other_argument_operator =
+      (* Python *)
+      | OA_ArgStar | OA_ArgPow
 
-  and other_expr_operator = XXX1
-
+  and other_expr_operator = 
+    (* Javascript *)
+    | OE_Regexp
+    (* Python *)
+    | OE_Imag | OE_FloorDiv 
+    | OE_Is | OE_IsNot | OE_In | OE_NotIn
+    | OE_Ellipsis | OE_Slice | OE_ExtSlice
 
 (* ------------------------------------------------------------------------- *)
 (* Type *)
@@ -156,29 +179,48 @@ and type_ =
   | TBuiltin of string wrap
   | OtherType of other_type_operator * any list
 
-  and other_type_operator = XXOTO
+  and other_type_operator = 
+  (* Python *)
+  | OT_Expr
 
 (* ------------------------------------------------------------------------- *)
-(* Annotation *)
+(* Attribute *)
 (* ------------------------------------------------------------------------- *)
+(* a.k.a decorators, annotations *)
+and attribute = name * any list
 
 (* ------------------------------------------------------------------------- *)
 (* Statement *)
 (* ------------------------------------------------------------------------- *)
 and stmt =
+  (* later: lift Call and Assign here *)
   | ExprStmt of expr
+
   | Block of stmt list
 
   | If of expr * stmt * stmt
+  | While of expr * stmt
+  | DoWhile of stmt * expr
+  | For of (expr * expr * expr) * stmt
 
+  | Assert of expr
+  | Return of expr
+  | Continue of expr | Break of expr
+
+  | Raise of expr
   | Try of stmt * catch list * finally option
 
   | OtherStmt of other_stmt_operator * any list
 
-  and catch = stmt
+  and catch = parameter * stmt
   and finally = stmt
 
-  and other_stmt_operator = XXX2
+  and other_stmt_operator = 
+    (* Python *)
+    | OS_Delete | OS_Print
+    | OS_ForOrElse | OS_WhileOrElse | OS_TryOrElse
+    | OS_With | OsGlobal 
+    | OS_Pass
   
 (* ------------------------------------------------------------------------- *)
 (* Function (or method) definition *)
@@ -188,6 +230,7 @@ and function_definition = {
  fparams: parameters;
  ftype: type_ option; (* return type *)
  fbody: stmt;
+ fattrs: attribute list;
 }
   and parameters = parameter list * other_parameters
 
@@ -195,8 +238,12 @@ and function_definition = {
      pname: name;
      pdefault: expr option;
      ptype: type_ option;
+     pattrs: attribute list;
     }
-  and other_parameters = XXXOP
+  and other_parameters = (other_parameter_operator * any list) list
+   and other_parameter_operator =
+     | VarParam
+     | KwdParam
 
 (* ------------------------------------------------------------------------- *)
 (* Variable definition *)
@@ -205,6 +252,15 @@ and variable_definition = {
   vname: name;
   vinit: expr option;
   vtype: type_ option;
+  vattrs: attribute list;
+}
+
+(* ------------------------------------------------------------------------- *)
+(* Type definition *)
+(* ------------------------------------------------------------------------- *)
+and type_definition = { 
+  ttname: name;
+  tattrs: attribute list;
 }
 
 (* ------------------------------------------------------------------------- *)
@@ -214,13 +270,21 @@ and class_definition = {
   cname: name;
   cparents: expr list;
   cbody: stmt;
+  cattrs: attribute list;
 }
 
 (* ------------------------------------------------------------------------- *)
 (* Module import/export *)
 (* ------------------------------------------------------------------------- *)
 and import = 
-  | ImportXXX
+  | Import of module_name * alias list
+  | ImportAll of module_name * name option
+
+  | OtherImport of other_import_operator * any list
+
+  and alias = name * name option
+
+  and other_import_operator = XXX4
 
 (* ------------------------------------------------------------------------- *)
 (* Toplevel *)
@@ -233,7 +297,7 @@ and item =
   | IClassDef of class_definition
   | IImport of import
 
-  | IOther of other_item_operator * any list
+  | OtherItem of other_item_operator * any list
   and other_item_operator = XXX3
 
 and program = item list

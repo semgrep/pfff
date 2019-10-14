@@ -48,13 +48,13 @@
 
 (* Contains among other things the position of the token through
  * the Parse_info.token_location embedded inside it, as well as the
- * transformation field that makes possible spatch on Javascript code.
+ * transformation field that makes possible spatch on the code.
  *)
 type tok = Parse_info.info
+ (* with tarzan *)
 
 (* a shortcut to annotate some information with token/position information *)
-and 'a wrap = 'a * tok
-
+type 'a wrap = 'a * tok
  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
