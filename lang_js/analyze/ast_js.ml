@@ -60,8 +60,15 @@
 (* The AST related types *)
 (*****************************************************************************)
 
+(* Contains among other things the position of the token through
+ * the Parse_info.token_location embedded inside it, as well as the
+ * transformation field that makes possible spatch on the code.
+ *)
 type tok = Parse_info.info
-and 'a wrap = 'a * tok
+ (* with tarzan *)
+
+(* a shortcut to annotate some information with token/position information *)
+type 'a wrap = 'a * tok
  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)

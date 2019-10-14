@@ -112,7 +112,7 @@ type expr =
   | Yield of expr option (* value *)
 
   | Repr of expr (* value *)
-
+  (* =~ ObjAccess *)
   | Attribute of expr (* value *) * name (* attr *) * expr_context (* ctx *)
 
   and number =
