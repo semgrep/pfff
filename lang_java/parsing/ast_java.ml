@@ -30,7 +30,8 @@
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
 type tok = Parse_info.info
-and 'a wrap  = 'a * tok
+  (* with tarzan *)
+type 'a wrap  = 'a * tok
   (* with tarzan *)
 
 type 'a list1 = 'a list (* really should be 'a * 'a list *)
@@ -196,7 +197,7 @@ and op = string
 (* ------------------------------------------------------------------------- *)
 
 and stmt =
-  | Empty
+  | Empty (* could be Block [] *)
   | Block of stmts
   | Expr of expr
 

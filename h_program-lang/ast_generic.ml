@@ -114,6 +114,7 @@ type expr =
   | Bool of bool wrap
   | Int of string wrap
   | Float of string wrap
+  | Char of string wrap
   | String of string wrap
   | Regexp of string wrap
   | Null of string wrap | Undefined of string wrap
@@ -132,7 +133,7 @@ type expr =
 
   | Nop
 
-  | Id of name * resolved_name ref
+  | Id of name * id_info
   | IdSpecial of special
   (* less: IdSpecial *)
 
@@ -153,6 +154,8 @@ type expr =
 
   | Conditional of expr * expr * expr
   | Yield of expr
+
+  | Cast of type_ * expr
 
   | OtherExpr of other_expr_operator * any list
 
@@ -186,6 +189,7 @@ type expr =
         | OA_ArgStar | OA_ArgPow
 
   and other_expr_operator = 
+    (* Javascript *)
     | OE_Exports | OE_Module | OE_Define | OE_Arguments | OE_NewTarget
     | OE_Seq | OE_Void
     | OE_Delete | OE_Spread | OE_YieldStar | OE_Await
@@ -198,6 +202,8 @@ type expr =
     | OE_Ellipsis | OE_Slice | OE_ExtSlice
     | OE_ListComp | OE_GeneratorExpr 
     | OE_Repr
+    (* Java *)
+    | OE_NameOrClassType | OE_ClassLiteral
 
   and special = 
    (* special vars *)
@@ -206,25 +212,51 @@ type expr =
    | Eval
    | Typeof | Instanceof 
 
+and id_info =
+  { id_resolved: resolved_name ref; (* variable tagger (naming) *)
+    id_typeargs: type_arguments option; (* Java *)
+    id_context: unit (* Python *);
+    id_type: type_ option ref; (* type checker (typing) *)
+  }
+
 (* ------------------------------------------------------------------------- *)
 (* Type *)
 (* ------------------------------------------------------------------------- *)
 and type_ =
-  | TBuiltin of string wrap
+  | TBasic of string wrap
+  | TFun of type_ list * type_ (* not curried *)
+  (* covers tuples, list, etc. *)
+  | TApply of name * type_arguments
+  (* a special case of TApply *)
+  | TArray of type_
+
   | OtherType of other_type_operator * any list
+  
+
+  and type_arguments = type_argument list * other_type_arguments
+    and type_argument = type_
+    and other_type_arguments = other_type_argument_operator * any list
+      and other_type_argument_operator =
+       | OTA_Question
 
   and other_type_operator = 
   (* Python *)
   | OT_Expr
+
+and type_parameter = name * type_parameter_constraints
+  and type_parameter_constraints = type_parameter_constraint list
+   and type_parameter_constraint = 
+     | Extends of type_
 
 (* ------------------------------------------------------------------------- *)
 (* Attribute *)
 (* ------------------------------------------------------------------------- *)
 (* a.k.a decorators, annotations *)
 and attribute = 
-  | Static
+  | Static | Volatile
   (* for class fields *)
   | Public | Private | Protected
+  | Abstract | Final
   (* for vars *)
   | Var | Let | Const
   (* for functions *)
@@ -236,7 +268,11 @@ and attribute =
 
   | OtherAttribute of other_attribute_operator * any list
 
-  and other_attribute_operator = string
+  and other_attribute_operator = 
+    (* Java *)
+    | StrictFP | Transient | Synchronized | Native
+    | AnnotJavaOther of string
+    | AnnotThrow
 
 (* ------------------------------------------------------------------------- *)
 (* Statement *)
@@ -250,19 +286,34 @@ and stmt =
   | If of expr * stmt * stmt
   | While of expr * stmt
   | DoWhile of stmt * expr
-  | For of (expr * expr * expr) * stmt
+  | For of for_header * stmt
+
+  | Switch of expr * (case list * stmt) list
 
   | Assert of expr
   | Return of expr
   | Continue of expr | Break of expr
+
+  | Label of label  * stmt
+  | Goto of label
 
   | Raise of expr
   | Try of stmt * catch list * finally option
 
   | OtherStmt of other_stmt_operator * any list
 
+  and case  =
+    | Case of expr
+    | Default
+
   and catch = parameter * stmt
   and finally = stmt
+
+  and label = name
+
+  and for_header = 
+    | ForClassic of expr * expr * expr
+    | Foreach of variable_definition * expr
 
   and other_stmt_operator = 
     (* Python *)
@@ -270,7 +321,9 @@ and stmt =
     | OS_ForOrElse | OS_WhileOrElse | OS_TryOrElse
     | OS_With | OsGlobal 
     | OS_Pass
-  
+    (* Java *)
+    | OS_Sync
+ 
 (* ------------------------------------------------------------------------- *)
 (* Function (or method) definition *)
 (* ------------------------------------------------------------------------- *)
@@ -307,6 +360,10 @@ and variable_definition = {
 }
 
 (* ------------------------------------------------------------------------- *)
+(* Enum/ADT *)
+(* ------------------------------------------------------------------------- *)
+
+(* ------------------------------------------------------------------------- *)
 (* Type definition *)
 (* ------------------------------------------------------------------------- *)
 and type_definition = { 
@@ -326,10 +383,15 @@ and field = {
 (* ------------------------------------------------------------------------- *)
 and class_definition = {
   cname: name;
-  cparents: expr list;
+  ckind: class_kind;
+  cextends: type_ list;
+  cimplements: type_ list;
   cbody: stmt;
   cattrs: attribute list;
 }
+  and class_kind = 
+    | ClassRegular 
+    | Interface
 
 (* ------------------------------------------------------------------------- *)
 (* Module import/export *)
@@ -343,7 +405,16 @@ and import =
   and alias = name * name option
 
   and other_import_operator = 
+  (* Javascript *)
   | OI_Export | OI_ImportCss | OI_ImportEffect
+  (* Java *)
+  | OI_Package
+
+(* ------------------------------------------------------------------------- *)
+(* Definitions *)
+(* ------------------------------------------------------------------------- *)
+and def = (* or decl *)
+  | 
 
 (* ------------------------------------------------------------------------- *)
 (* Toplevel *)
@@ -368,6 +439,7 @@ and any =
   | N of name
   | E of expr
   | S of stmt
+  | T of type_
   | I of item
 
   | P of program

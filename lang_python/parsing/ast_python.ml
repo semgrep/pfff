@@ -37,6 +37,10 @@
  *    typechecker and taint-tracker for Python, written in OCaml from facebook
  *  - https://github.com/mattgreen/hython
  *    Python3 interpreter written in Haskell
+ * 
+ * history:
+ *  - 2019 port to the pfff infrastructure.
+ *  - 2019 modified to support types, and many other Python 3 features
  *)
 
 (*****************************************************************************)
