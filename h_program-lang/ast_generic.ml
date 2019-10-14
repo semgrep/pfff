@@ -30,8 +30,7 @@
  * very general but imprecise tree of nodes).
  * 
  * TODO:
- *  - initial goal: factorize Python, Javascript
- *  - later: add Go, Java.
+ *  - later: add Go
  *  - later: add Ruby, Rust, Scala.
  *  - later: add C++, C.
  *  - dogfooding: add OCaml!
@@ -53,6 +52,9 @@
  *  - functorize and add some type hole (type tstmt; type texpr; ...)
  *  - data-type a la carte like in github-semantic? Seems too high-level,
  *    astronaut-style architecture (too abstract, too advanced features).
+ *
+ * history:
+ *  - start with crossproduct of Javascript, Python, and Java
  *)
 
 (*****************************************************************************)
@@ -83,14 +85,13 @@ type name = string wrap
 
 type dotted_name = name list
  (* with tarzan *)
-
-type module_name =
-  | FileName of string wrap (* ex: Javascript *)
-  | DottedName of dotted_name (* ex: Python *)
- (* with tarzan *)
-
 (* todo? module_name * name? *)
 type qualified_name = dotted_name
+ (* with tarzan *)
+
+type module_name =
+  | FileName of string wrap   (* ex: Javascript *)
+  | DottedName of dotted_name (* ex: Python *)
  (* with tarzan *)
 
 (* todo: see also scope_code.ml *)
@@ -112,18 +113,16 @@ type resolved_name =
 type expr = 
   (* basic values (literals) *)
   | Bool of bool wrap
-  | Int of string wrap
-  | Float of string wrap
-  | Char of string wrap
-  | String of string wrap
-  | Regexp of string wrap
-  | Null of string wrap | Undefined of string wrap
+  | Int of string wrap | Float of string wrap
+  | Char of string wrap | String of string wrap | Regexp of string wrap
+  | Null of string wrap | Undefined of string wrap (* JS *)
 
   (* composite values *)
   | Tuple (* special case of Container *)
   | Container of container_operator * expr list
+
   (* And type *)
-  | Record of field list
+  | Record of (name * expr) list
   (* Or type (could be used instead of Container, Cons, Nil, etc.) *)
   | Constructor of name * expr list
 
@@ -135,13 +134,12 @@ type expr =
 
   | Id of name * id_info
   | IdSpecial of special
-  (* less: IdSpecial *)
 
   (* operators and function application *)
   | BinaryOp of expr * binary_operator wrap * expr
   | UnaryOp of unary_operator * expr
   | Call of expr * arguments
-  (* advanced "calls" *)
+  (* advanced "calls", see also Call with IdSpecial *)
   | New of name * arguments
 
   (* should be in statement, but many languages allow this at expr level *)
@@ -159,9 +157,16 @@ type expr =
 
   | OtherExpr of other_expr_operator * any list
 
+  and id_info =
+  { id_qualifier: dotted_name option;
+    id_typeargs: type_arguments option; (* Java *)
+    id_resolved: resolved_name ref; (* variable tagger (naming) *)
+    id_type: type_ option ref; (* type checker (typing) *)
+    id_context: unit (* Python *);
+  }
+
   and binary_operator = 
     | Add | Sub | Mult | Div | Mod | Pow
-    (* less:  FloorDiv *)
     | LShift | RShift 
     | BitOr | BitXor | BitAnd 
     | And | Or
@@ -174,16 +179,23 @@ type expr =
     | Incr of bool | Decr of bool (* true = prefix, false = postfix *)
 
   and container_operator = 
-    (* Tuple is lift up *)
-    | Array | List
-    | Dict | Set
+    (* Tuple was lifted up *)
+    | Array | List | Set
+    | Dict (* a.k.a Hash, a.k.a Map (combine with Tuple to get Key/value pair)*)
 
-  and arguments = argument list * other_arguments
+  and special = 
+   (* special vars *)
+   | This | Super
+   (* special apply *)
+   | Eval
+   | Typeof | Instanceof
+
+  and arguments = argument list
     and argument =
       | Arg of expr
       | ArgKwd of name * expr
+      | ArgOther of other_argument_operator * any list
 
-     and other_arguments = (other_argument_operator * any list) list
        and other_argument_operator =
         (* Python *)
         | OA_ArgStar | OA_ArgPow
@@ -205,26 +217,13 @@ type expr =
     (* Java *)
     | OE_NameOrClassType | OE_ClassLiteral
 
-  and special = 
-   (* special vars *)
-   | This | Super
-   (* special apply *)
-   | Eval
-   | Typeof | Instanceof 
-
-and id_info =
-  { id_resolved: resolved_name ref; (* variable tagger (naming) *)
-    id_typeargs: type_arguments option; (* Java *)
-    id_context: unit (* Python *);
-    id_type: type_ option ref; (* type checker (typing) *)
-  }
 
 (* ------------------------------------------------------------------------- *)
 (* Type *)
 (* ------------------------------------------------------------------------- *)
 and type_ =
   | TBasic of string wrap
-  | TFun of type_ list * type_ (* not curried *)
+  | TFun of type_ list (* args (not curried) *) * type_ (* return type *)
   (* covers tuples, list, etc. *)
   | TApply of name * type_arguments
   (* a special case of TApply *)
@@ -233,9 +232,11 @@ and type_ =
   | OtherType of other_type_operator * any list
   
 
-  and type_arguments = type_argument list * other_type_arguments
-    and type_argument = type_
-    and other_type_arguments = other_type_argument_operator * any list
+  and type_arguments = type_argument list
+    and type_argument = 
+      | TypeArg of type_
+      | OtherTypeArg of other_type_argument_operator * any list
+
       and other_type_argument_operator =
        | OTA_Question
 
@@ -280,6 +281,7 @@ and attribute =
 and stmt =
   (* later: lift Call and Assign here *)
   | ExprStmt of expr
+  | LocalDef of def
 
   | Block of stmt list
 
@@ -290,9 +292,9 @@ and stmt =
 
   | Switch of expr * (case list * stmt) list
 
-  | Assert of expr
+  | Assert of expr * expr option (* message *)
   | Return of expr
-  | Continue of expr | Break of expr
+  | Continue of expr | Break of expr (* can be Nop, can be a label *)
 
   | Label of label  * stmt
   | Goto of label
@@ -323,6 +325,15 @@ and stmt =
     | OS_Pass
     (* Java *)
     | OS_Sync
+
+(* ------------------------------------------------------------------------- *)
+(* definitions *)
+(* ------------------------------------------------------------------------- *)
+and def = (* (or decl) *)
+  | FuncDef of function_definition
+  | VarDef of variable_definition
+  | ClassDef of class_definition
+  | TypeDef of type_definition
  
 (* ------------------------------------------------------------------------- *)
 (* Function (or method) definition *)
@@ -360,24 +371,14 @@ and variable_definition = {
 }
 
 (* ------------------------------------------------------------------------- *)
-(* Enum/ADT *)
-(* ------------------------------------------------------------------------- *)
-
-(* ------------------------------------------------------------------------- *)
 (* Type definition *)
 (* ------------------------------------------------------------------------- *)
 and type_definition = { 
   ttname: name;
   tattrs: attribute list;
 }
+(* TODO record, or enum/ADT, or typedef *)
 
-(* ------------------------------------------------------------------------- *)
-(* Field definition *)
-(* ------------------------------------------------------------------------- *)
-and field = {
-  fldname: name;
-  fldattrs: attribute list;
-}
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)
 (* ------------------------------------------------------------------------- *)
@@ -386,7 +387,7 @@ and class_definition = {
   ckind: class_kind;
   cextends: type_ list;
   cimplements: type_ list;
-  cbody: stmt;
+  cbody: def list;
   cattrs: attribute list;
 }
   and class_kind = 
@@ -411,20 +412,11 @@ and import =
   | OI_Package
 
 (* ------------------------------------------------------------------------- *)
-(* Definitions *)
-(* ------------------------------------------------------------------------- *)
-and def = (* or decl *)
-  | 
-
-(* ------------------------------------------------------------------------- *)
 (* Toplevel *)
 (* ------------------------------------------------------------------------- *)
 and item = 
   | IStmt of stmt
-
-  | IFuncDef of function_definition
-  | IVarDef of variable_definition
-  | IClassDef of class_definition
+  | IDef of def
   | IImport of import
 
   | OtherItem of other_item_operator * any list
@@ -439,6 +431,7 @@ and any =
   | N of name
   | E of expr
   | S of stmt
+  | D of def
   | T of type_
   | I of item
 
