@@ -126,7 +126,7 @@ type expr =
   (* todo? XML (XHP, JSX) or transpile? *)
 
   (* And type *)
-  | Record of (name * expr) list
+  | Record of field list
   (* Or type (could be used instead of Container, Cons, Nil, etc.) *)
   | Constructor of name * expr list
 
@@ -454,6 +454,8 @@ and variable_definition = {
   vtype: type_ option;
   vattrs: attribute list;
 }
+
+and field = variable_definition
 
 (* ------------------------------------------------------------------------- *)
 (* Type definition *)
