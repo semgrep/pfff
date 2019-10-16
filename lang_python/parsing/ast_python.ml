@@ -2,7 +2,7 @@
  *
  * Copyright (C) 2010 Facebook
  * Copyright (C) 2011-2015 Tomohiro Matsuyama
- * Copyright (C) 2019 Yoann Padioleau
+ * Copyright (C) 2019 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
