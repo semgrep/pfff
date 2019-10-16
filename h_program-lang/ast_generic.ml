@@ -18,14 +18,14 @@
 (*****************************************************************************)
 (* A generic AST, to be used by a generic visitor to factorize
  * similar analysis in different programming languages
- * (e.g., checked_return). 
+ * (e.g., scheck, checked_return). 
  *
  * rational: In the end, programming languages have a lot in common.
  * Even though most interesting analysis are probably better done on a
  * per-language basis, many useful analysis are trivial and require just an
  * AST and a visitor. One could duplicate those analysis for each language
  * or design a generic AST (this file) to be generic enough to
- * factorize all those analysis (e.g., checked_return), while still remaining
+ * factorize all those analysis (e.g., unused entity), while still remaining
  * as precise as possible (not as generic as ast_fuzzy.ml for example or a
  * very general but imprecise tree of nodes).
  * 
@@ -94,7 +94,7 @@ type qualified_name = dotted_name
  (* with tarzan *)
 
 type module_name =
-  | FileName of string wrap   (* ex: Javascript *)
+  | FileName of string wrap   (* ex: Javascript import, C include *)
   | DottedName of dotted_name (* ex: Python *)
  (* with tarzan *)
 
@@ -122,12 +122,11 @@ type expr =
 
   (* composite values *)
   | Container of container_operator * expr list
-  | Tuple (* special case of Container *)
-  (* todo? XML (XHP, JSX) or transpile? *)
+  | Tuple of expr list (* special case of Container *) 
 
-  (* And type *)
+  (* And-type (field.v_init should be a Some) *)
   | Record of field list
-  (* Or type (could be used instead of Container, Cons, Nil, etc.) *)
+  (* Or-type (could be used instead of Container, Cons, Nil, etc.) *)
   | Constructor of name * expr list
 
   (* very special value *)
@@ -140,6 +139,7 @@ type expr =
 
   (* operators and function application *)
   | Call of expr * arguments
+  (* less: XML (XHP, JSX) or transpile? *)
 
   (* less: should be in stmt, but many languages allow this at expr level *)
   | Assign of expr * expr
@@ -167,10 +167,18 @@ type expr =
   | OtherExpr of other_expr_operator * any list
 
   and literal = 
+    | Unit of tok (* a.k.a Void *)
     | Bool of bool wrap
     | Int of string wrap | Float of string wrap
     | Char of string wrap | String of string wrap | Regexp of string wrap
     | Null of tok | Undefined of tok (* JS *)
+
+  and container_operator = 
+    (* Tuple was lifted up *)
+    | Array (* todo? designator? *)
+    | List | Set
+    | Dict (* a.k.a Hash or Map (combine with Tuple to get Key/value pair) *)
+
 
   and id_info =
   { id_qualifier: dotted_name option;
@@ -207,12 +215,6 @@ type expr =
       | PhysEq | NotPhysEq (* less: could be desugared to Not PhysEq *)
       | Lt | LtE | Gt | GtE  (* less: could be desugared to Or (Eq Lt) *)
     
-  and container_operator = 
-    (* Tuple was lifted up *)
-    | Array (* todo? designator? *)
-    | List | Set
-    | Dict (* a.k.a Hash, a.k.a Map (combine with Tuple to get Key/value pair)*)
-
 
   and arguments = argument list
 
@@ -221,6 +223,7 @@ type expr =
       | Arg of expr (* can be Call (IdSpecial Spread, Id foo) *)
       (* keyword argument *)
       | ArgKwd of name * expr
+
       | ArgOther of other_argument_operator * any list
 
        and other_argument_operator =
@@ -229,8 +232,9 @@ type expr =
 
   and other_expr_operator = 
     (* Javascript *)
-    | OE_Exports | OE_Module | OE_Define | OE_Arguments | OE_NewTarget
-    | OE_Void (* todo: unit? in Literal *)
+    | OE_Exports | OE_Module 
+    | OE_Define | OE_Arguments 
+    | OE_NewTarget
     | OE_Delete | OE_YieldStar | OE_Await
     | OE_Require (* todo: lift to Import? *) 
     | OE_UseStrict (* less: lift up to program attribute/directive? *)
@@ -239,7 +243,8 @@ type expr =
     | OE_ExprClass (* anon class (similar to anon func) *)
     (* Python *)
     | OE_Imag | OE_FloorDiv 
-    | OE_Is | OE_IsNot | OE_In | OE_NotIn
+    | OE_Is | OE_IsNot 
+    | OE_In | OE_NotIn
     | OE_Ellipsis | OE_Slice | OE_ExtSlice
     | OE_ListComp | OE_GeneratorExpr 
     | OE_Repr
@@ -409,23 +414,25 @@ and pattern =
 (* definitions *)
 (* ------------------------------------------------------------------------- *)
 and def = (* (or decl) *)
-  | FuncDef of function_definition
-  | VarDef of variable_definition
+  | FuncDef of function_definition (* valid for methods too *)
+  | VarDef of variable_definition  (* valid for constants and fields too *)
   | ClassDef of class_definition
   | TypeDef of type_definition
  
 (* ------------------------------------------------------------------------- *)
 (* Function (or method) definition *)
 (* ------------------------------------------------------------------------- *)
+(* less: could be merged with variable_definition *)
 and function_definition = {
  fname: name; (* can be fake and gensymed for anonymous functions? *)
  fparams: parameters;
- ftype: type_ option; (* return type *)
+ frettype: type_ option; (* return type *)
  fbody: stmt;
  fattrs: attribute list;
 }
   and parameters = parameter list
 
+    (* less: could be merged with variable_definition *)
     and parameter = { 
      pname: name;
      pdefault: expr option;
@@ -443,12 +450,12 @@ and function_definition = {
 (* Variable definition *)
 (* ------------------------------------------------------------------------- *)
 (* Also used for constant_definition with vattrs = [Const].
+ * Also used for field definition in a class (and record).
  * Could also use for function_definition with vinit = Some (Lambda (...))
- * Also used for field definition in a class (and record?)
  *)
 and variable_definition = {
   vname: name;
-  (* could remove function_definition as expr can be a Lambda but maybe
+  (* less: could remove function_definition as expr can be a Lambda but maybe
    * useful to explicitely makes the difference for now? *)
   vinit: expr option;
   vtype: type_ option;
@@ -462,8 +469,8 @@ and field = variable_definition
 (* ------------------------------------------------------------------------- *)
 and type_definition = { 
   ttname: name;
-  tattrs: attribute list;
   tbody: type_definition_kind;
+  tattrs: attribute list;
   tother: other_type_definition_operator;
 }
   and type_definition_kind = 
@@ -484,7 +491,7 @@ and type_definition = {
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)
 (* ------------------------------------------------------------------------- *)
-(* could be a special kind of type_definition *)
+(* less: could be a special kind of type_definition *)
 and class_definition = {
   cname: name;
   ckind: class_kind;
@@ -502,7 +509,7 @@ and class_definition = {
 (* Directives (Module import/export, macros) *)
 (* ------------------------------------------------------------------------- *)
 and directive = 
-  | Import of module_name * alias list
+  | Import    of module_name * alias list
   | ImportAll of module_name * name option (* as name *)
 
   | OtherDirective of other_directive_operator * any list
@@ -531,7 +538,7 @@ and item =
 
   | OtherItem of other_item_operator * any list
 
-  and other_item_operator = XXX3
+  and other_item_operator = XXX2
 
 and program = item list
 
