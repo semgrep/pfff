@@ -129,7 +129,7 @@ type special =
   (* todo? rewrite in CondExpr? have special behavior *)
   | And | Or
   (* Special apply arithmetic and logic *)
-  | Not | Xor
+  | Not
   | BitNot | BitAnd | BitOr | BitXor
   | Lsr | Asr | Lsl
   | Equal | PhysEqual 

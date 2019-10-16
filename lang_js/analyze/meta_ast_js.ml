@@ -54,7 +54,6 @@ let vof_special =
   | Not -> Ocaml.VSum (("Not", []))
   | And -> Ocaml.VSum (("And", []))
   | Or -> Ocaml.VSum (("Or", []))
-  | Xor -> Ocaml.VSum (("Xor", []))
   | BitNot -> Ocaml.VSum (("BitNot", []))
   | BitAnd -> Ocaml.VSum (("BitAnd", []))
   | BitOr -> Ocaml.VSum (("BitOr", []))

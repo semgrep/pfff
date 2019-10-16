@@ -508,9 +508,9 @@ and expr env = function
     | C.A_lsl -> A.Assign (e1, A.Apply(A.IdSpecial (A.Lsl, tok), [e1;e2]))
     | C.A_lsr -> A.Assign (e1, A.Apply(A.IdSpecial (A.Lsr, tok), [e1;e2]))
     | C.A_asr -> A.Assign (e1, A.Apply(A.IdSpecial (A.Asr, tok), [e1;e2]))
-    | C.A_and -> A.Assign (e1, A.Apply(A.IdSpecial (A.And, tok), [e1;e2]))
-    | C.A_or  -> A.Assign (e1, A.Apply(A.IdSpecial (A.Or, tok), [e1;e2]))
-    | C.A_xor -> A.Assign (e1, A.Apply(A.IdSpecial (A.Xor, tok), [e1;e2]))
+    | C.A_and -> A.Assign (e1, A.Apply(A.IdSpecial (A.BitAnd, tok), [e1;e2]))
+    | C.A_or  -> A.Assign (e1, A.Apply(A.IdSpecial (A.BitOr, tok), [e1;e2]))
+    | C.A_xor -> A.Assign (e1, A.Apply(A.IdSpecial (A.BitXor, tok), [e1;e2]))
     )
   | C.Seq (e1, tok, e2) ->
     let e1 = expr env e1 in

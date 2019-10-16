@@ -96,7 +96,6 @@ and v_special =
   | Not -> ()
   | And -> ()
   | Or -> ()
-  | Xor -> ()
   | BitNot -> ()
   | BitAnd -> ()
   | BitOr -> ()

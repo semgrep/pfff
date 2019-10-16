@@ -422,11 +422,6 @@ let m_special a b =
        A.Not,
        B.Not
     )
-  | A.Xor, B.Xor ->
-    return (
-       A.Xor,
-       B.Xor
-    )
   | A.BitNot, B.BitNot ->
     return (
        A.BitNot,
@@ -553,7 +548,6 @@ let m_special a b =
   | A.And, _
   | A.Or, _
   | A.Not, _
-  | A.Xor, _
   | A.BitNot, _
   | A.BitAnd, _
   | A.BitOr, _

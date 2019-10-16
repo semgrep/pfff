@@ -110,7 +110,6 @@ and map_special =
   | And -> And
   | Or -> Or
   | Not -> Not
-  | Xor -> Xor
   | BitNot -> BitNot
   | BitAnd -> BitAnd
   | BitOr -> BitOr
