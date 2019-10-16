@@ -30,7 +30,6 @@
  * very general but imprecise tree of nodes).
  * 
  * TODO:
- *  - later: add PHP
  *  - later: add Go
  *  - later: add Ruby, Rust, Scala.
  *  - later: add C++
@@ -55,7 +54,7 @@
  *    astronaut-style architecture (too abstract, too advanced features).
  *
  * history:
- *  - start with crossproduct of Javascript, Python, Java, and C
+ *  - start with crossproduct of Javascript, Python, PHP, Java, and C.
  *)
 
 (*****************************************************************************)
@@ -117,15 +116,12 @@ type resolved_name =
 (* big mutually recursive types because of the use of 'any' in OtherXxx *)
 
 type expr = 
-  (* basic values (literals) *)
-  | Bool of bool wrap
-  | Int of string wrap | Float of string wrap
-  | Char of string wrap | String of string wrap | Regexp of string wrap
-  | Null of string wrap | Undefined of string wrap (* JS *)
+  | L of literal
 
   (* composite values *)
   | Tuple (* special case of Container *)
   | Container of container_operator * expr list
+  (* todo? XML (XHP, JSX) or transpile? *)
 
   (* And type *)
   | Record of (name * expr) list
@@ -153,15 +149,29 @@ type expr =
   | AssignOp of expr * binary_operator * expr
 
   | ObjAccess of expr * name
+  (* todo? ClassAccess? ModuleAccess? *)
   (* less: slice *)
   | ArrayAccess of expr * expr
 
   | Conditional of expr * expr * expr
+  | Match of expr * (pattern * expr) list
+  (* TryFunctional *)
+
   | Yield of expr
 
   | Cast of type_ * expr
 
+  | Ref of expr (* &, address of *)
+  | DeRef of expr (* '*' *)
+
   | OtherExpr of other_expr_operator * any list
+
+  and literal = 
+    (* basic values (literals) *)
+    | Bool of bool wrap
+    | Int of string wrap | Float of string wrap
+    | Char of string wrap | String of string wrap | Regexp of string wrap
+    | Null of string wrap | Undefined of string wrap (* JS *)
 
   and id_info =
   { id_qualifier: dotted_name option;
@@ -192,6 +202,7 @@ type expr =
   and special = 
    (* special vars *)
    | This | Super
+   | Self | Parent (* different from This/Super? *)
    (* special apply *)
    | Eval
    | Typeof | Instanceof
@@ -225,20 +236,24 @@ type expr =
     (* C *)
     | OE_RecordPtAccess (* -> *) | OE_Sequence | OE_SizeOf
     | OE_ArrayInitDesignator | OE_GccConstructor
-
+    (* PHP *)
+    | OE_Unpack
 
 (* ------------------------------------------------------------------------- *)
 (* Type *)
 (* ------------------------------------------------------------------------- *)
 and type_ =
-  | TBuiltin of string wrap (* int, bool, etc. could be TApply with no args *)
-  | TFun of type_ list (* use parameter? args (not curried) *) * 
+  | TyBuiltin of string wrap (* int, bool, etc. could be TApply with no args *)
+  | TyFun of type_ list (* use parameter? args (not curried) *) * 
             type_ (* return type *)
   (* covers tuples, list, etc. *)
-  | TApply of name * type_arguments
+  | TyApply of name * type_arguments
+  | TyVar of name
   (* a special case of TApply, also a special case of TPointer *)
-  | TArray of (* const_expr *) expr option * type_
-  | TPointer of type_
+  | TyArray of (* const_expr *) expr option * type_
+  | TyPointer of type_
+  | TyTuple of type_ list
+  | TyQuestion of type_ (* option type *)
 
   | OtherType of other_type_operator * any list
   
@@ -256,6 +271,8 @@ and type_ =
   | OT_Expr
   (* C *)
   | OT_StructName | OT_UnionName | OT_EnumName
+  (* PHP *)
+  | OT_Shape | OT_Variadic
 
 and type_parameter = name * type_parameter_constraints
   and type_parameter_constraints = type_parameter_constraint list
@@ -295,6 +312,7 @@ and stmt =
   (* later: lift Call and Assign here *)
   | ExprStmt of expr
   | LocalDef of def
+  | LocalDirective of directive
 
   | Block of stmt list
 
@@ -317,6 +335,7 @@ and stmt =
 
   | OtherStmt of other_stmt_operator * any list
 
+  (* less: could be merged with pattern *)
   and case  =
     | Case of expr
     | Default
@@ -328,18 +347,42 @@ and stmt =
 
   and for_header = 
     | ForClassic of expr * expr * expr
-    | Foreach of variable_definition * expr
+    | Foreach of expr * pattern
 
   and other_stmt_operator = 
     (* Python *)
     | OS_Delete | OS_Print
     | OS_ForOrElse | OS_WhileOrElse | OS_TryOrElse
-    | OS_With | OsGlobal 
+    | OS_With | OS_Global 
     | OS_Pass
     (* Java *)
     | OS_Sync
     (* C *)
     | OS_Asm
+
+(* ------------------------------------------------------------------------- *)
+(* Pattern *)
+(* ------------------------------------------------------------------------- *)
+and pattern = 
+  | PatVar of name
+  | PatLiteral of literal
+  | PatConstructor of name * pattern list
+
+  (* special cases of PatConstructor *)
+  | PatTuple of pattern list
+  | PatList of pattern list
+  | PatKeyVal of pattern * pattern
+
+  (* special case of PatVar *)
+  | PatUnderscore of tok
+
+  | PatDisj of pattern * pattern
+  | PatTyped of pattern * type_
+
+  | PatOther of other_pattern_operator * any list
+
+  and other_pattern_operator =
+  | XXX1
 
 (* ------------------------------------------------------------------------- *)
 (* definitions *)
@@ -370,12 +413,15 @@ and function_definition = {
      pother: other_parameter_operator;
     }
   and other_parameter_operator =
-     | OPO_VarParam
-     | OPO_KwdParam
+     (* Python *)
+     | OPO_VarParam | OPO_KwdParam
+     (* PHP *)
+     | OPO_Variadic | OPO_Ref
 
 (* ------------------------------------------------------------------------- *)
 (* Variable definition *)
 (* ------------------------------------------------------------------------- *)
+(* also used for constant_definition with vattrs = [Const] *)
 and variable_definition = {
   vname: name;
   (* could remove function_definition as expr can be a Lambda but maybe
@@ -424,6 +470,7 @@ and class_definition = {
   and class_kind = 
     | Class
     | Interface
+    | Trait
 
 (* ------------------------------------------------------------------------- *)
 (* Directives (Module import/export, macros) *)
@@ -449,6 +496,7 @@ and directive =
 (* ------------------------------------------------------------------------- *)
 and item = 
   | IStmt of stmt
+  (* could be removed since they are as LocalDef and LocalDirective in stmt *)
   | IDef of def
   | IDir of directive
 
@@ -465,11 +513,14 @@ and any =
   | E of expr
   | S of stmt
   | T of type_
+  | P of pattern
   | D of def
   | Di of directive
   | I of item
 
-  | P of program
+  | Pa of parameter
+
+  | Pr of program
 
  (* with tarzan *)
 
