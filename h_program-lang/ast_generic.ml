@@ -30,9 +30,10 @@
  * very general but imprecise tree of nodes).
  * 
  * TODO:
+ *  - later: add PHP
  *  - later: add Go
  *  - later: add Ruby, Rust, Scala.
- *  - later: add C++, C.
+ *  - later: add C++
  *  - dogfooding: add OCaml!
  *  - see ast_fuzzy.ml TODOs for ideas to use ast_generic for sgrep.
  *
@@ -54,7 +55,7 @@
  *    astronaut-style architecture (too abstract, too advanced features).
  *
  * history:
- *  - start with crossproduct of Javascript, Python, and Java
+ *  - start with crossproduct of Javascript, Python, Java, and C
  *)
 
 (*****************************************************************************)
@@ -85,7 +86,10 @@ type name = string wrap
 
 type dotted_name = name list
  (* with tarzan *)
-(* todo? module_name * name? *)
+
+(* todo? module_name * name? 
+ * todo? not enough in OCaml with functor and type arguments? 
+*)
 type qualified_name = dotted_name
  (* with tarzan *)
 
@@ -100,9 +104,11 @@ type resolved_name =
   | Param
   | Global of qualified_name
   | NotResolved
-  | OtherResolved of other_resolved_name
 
-  and other_resolved_name = string
+  | Macro
+  | EnumConstant
+  | ImportedModule
+
  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
@@ -162,7 +168,6 @@ type expr =
     id_typeargs: type_arguments option; (* Java *)
     id_resolved: resolved_name ref; (* variable tagger (naming) *)
     id_type: type_ option ref; (* type checker (typing) *)
-    id_context: unit (* Python *);
   }
 
   and binary_operator = 
@@ -180,7 +185,8 @@ type expr =
 
   and container_operator = 
     (* Tuple was lifted up *)
-    | Array | List | Set
+    | Array (* todo? designator? *)
+    | List | Set
     | Dict (* a.k.a Hash, a.k.a Map (combine with Tuple to get Key/value pair)*)
 
   and special = 
@@ -216,18 +222,23 @@ type expr =
     | OE_Repr
     (* Java *)
     | OE_NameOrClassType | OE_ClassLiteral
+    (* C *)
+    | OE_RecordPtAccess (* -> *) | OE_Sequence | OE_SizeOf
+    | OE_ArrayInitDesignator | OE_GccConstructor
 
 
 (* ------------------------------------------------------------------------- *)
 (* Type *)
 (* ------------------------------------------------------------------------- *)
 and type_ =
-  | TBasic of string wrap
-  | TFun of type_ list (* args (not curried) *) * type_ (* return type *)
+  | TBuiltin of string wrap (* int, bool, etc. could be TApply with no args *)
+  | TFun of type_ list (* use parameter? args (not curried) *) * 
+            type_ (* return type *)
   (* covers tuples, list, etc. *)
   | TApply of name * type_arguments
-  (* a special case of TApply *)
-  | TArray of type_
+  (* a special case of TApply, also a special case of TPointer *)
+  | TArray of (* const_expr *) expr option * type_
+  | TPointer of type_
 
   | OtherType of other_type_operator * any list
   
@@ -243,6 +254,8 @@ and type_ =
   and other_type_operator = 
   (* Python *)
   | OT_Expr
+  (* C *)
+  | OT_StructName | OT_UnionName | OT_EnumName
 
 and type_parameter = name * type_parameter_constraints
   and type_parameter_constraints = type_parameter_constraint list
@@ -254,7 +267,7 @@ and type_parameter = name * type_parameter_constraints
 (* ------------------------------------------------------------------------- *)
 (* a.k.a decorators, annotations *)
 and attribute = 
-  | Static | Volatile
+  | Static | Volatile | Extern
   (* for class fields *)
   | Public | Private | Protected
   | Abstract | Final
@@ -296,7 +309,7 @@ and stmt =
   | Return of expr
   | Continue of expr | Break of expr (* can be Nop, can be a label *)
 
-  | Label of label  * stmt
+  | Label of label * stmt
   | Goto of label
 
   | Raise of expr
@@ -325,6 +338,8 @@ and stmt =
     | OS_Pass
     (* Java *)
     | OS_Sync
+    (* C *)
+    | OS_Asm
 
 (* ------------------------------------------------------------------------- *)
 (* definitions *)
@@ -345,18 +360,18 @@ and function_definition = {
  fbody: stmt;
  fattrs: attribute list;
 }
-  and parameters = parameter list * other_parameters
+  and parameters = parameter list
 
     and parameter = { 
      pname: name;
      pdefault: expr option;
      ptype: type_ option;
      pattrs: attribute list;
+     pother: other_parameter_operator;
     }
-  and other_parameters = (other_parameter_operator * any list) list
-   and other_parameter_operator =
-     | VarParam
-     | KwdParam
+  and other_parameter_operator =
+     | OPO_VarParam
+     | OPO_KwdParam
 
 (* ------------------------------------------------------------------------- *)
 (* Variable definition *)
@@ -376,12 +391,28 @@ and variable_definition = {
 and type_definition = { 
   ttname: name;
   tattrs: attribute list;
+  tbody: type_definition_kind;
+  tother: other_type_definition_operator;
 }
-(* TODO record, or enum/ADT, or typedef *)
+  and type_definition_kind = 
+   | OrType  of (name * type_ list) list  (* enum/ADTs *)           
+   | AndType of (name * type_)     list (* record/struct/union *) 
+   | AliasType of type_
+
+   | OtherTypeKind of other_type_kind_operator * any list
+    and other_type_kind_operator = 
+     (* C *)
+     | OTKO_EnumWithValue
+
+  and other_type_definition_operator = 
+   (* C *)
+   | OTDO_Struct | OTDO_Union | OTDO_Enum
+
 
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)
 (* ------------------------------------------------------------------------- *)
+(* could be a special kind of type_definition *)
 and class_definition = {
   cname: name;
   ckind: class_kind;
@@ -391,25 +422,27 @@ and class_definition = {
   cattrs: attribute list;
 }
   and class_kind = 
-    | ClassRegular 
+    | Class
     | Interface
 
 (* ------------------------------------------------------------------------- *)
-(* Module import/export *)
+(* Directives (Module import/export, macros) *)
 (* ------------------------------------------------------------------------- *)
-and import = 
+and directive = 
   | Import of module_name * alias list
-  | ImportAll of module_name * name option
+  | ImportAll of module_name * name option (* as name *)
 
-  | OtherImport of other_import_operator * any list
+  | OtherDirective of other_directive_operator * any list
 
-  and alias = name * name option
+  and alias = name * name option (* as name *)
 
-  and other_import_operator = 
+  and other_directive_operator = 
   (* Javascript *)
   | OI_Export | OI_ImportCss | OI_ImportEffect
   (* Java *)
   | OI_Package
+  (* C *)
+  | OI_Define | OI_Macro | OI_Prototype
 
 (* ------------------------------------------------------------------------- *)
 (* Toplevel *)
@@ -417,7 +450,7 @@ and import =
 and item = 
   | IStmt of stmt
   | IDef of def
-  | IImport of import
+  | IDir of directive
 
   | OtherItem of other_item_operator * any list
   and other_item_operator = XXX3
@@ -431,11 +464,13 @@ and any =
   | N of name
   | E of expr
   | S of stmt
-  | D of def
   | T of type_
+  | D of def
+  | Di of directive
   | I of item
 
   | P of program
+
  (* with tarzan *)
 
 (*****************************************************************************)
