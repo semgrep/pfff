@@ -30,9 +30,9 @@
  * very general but imprecise tree of nodes).
  * 
  * TODO:
- *  - later: add Go
- *  - later: add Ruby, Rust, Scala.
- *  - later: add C++
+ *  - later: add Go (easy)
+ *  - later: add Ruby, Rust, Scala (difficult)
+ *  - later: add C++ (argh)
  *  - dogfooding: add OCaml!
  *  - see ast_fuzzy.ml TODOs for ideas to use ast_generic for sgrep.
  *
@@ -54,7 +54,8 @@
  *    astronaut-style architecture (too abstract, too advanced features).
  *
  * history:
- *  - start with crossproduct of Javascript, Python, PHP, Java, and C.
+ *  - started with crossproduct of Javascript, Python, PHP, Java, and C
+ *    (and a bit of OCaml)
  *)
 
 (*****************************************************************************)
@@ -116,11 +117,12 @@ type resolved_name =
 (* big mutually recursive types because of the use of 'any' in OtherXxx *)
 
 type expr = 
+  (* basic (atomic) values *)
   | L of literal
 
   (* composite values *)
-  | Tuple (* special case of Container *)
   | Container of container_operator * expr list
+  | Tuple (* special case of Container *)
   (* todo? XML (XHP, JSX) or transpile? *)
 
   (* And type *)
@@ -129,8 +131,7 @@ type expr =
   | Constructor of name * expr list
 
   (* very special value *)
-  (* less: reuse function_definition? *)
-  | Lambda of parameters * stmt
+  | Lambda of parameters * stmt (* less: reuse function_definition? *)
 
   | Nop
 
@@ -138,40 +139,38 @@ type expr =
   | IdSpecial of special
 
   (* operators and function application *)
-  | BinaryOp of expr * binary_operator wrap * expr
-  | UnaryOp of unary_operator * expr
   | Call of expr * arguments
-  (* advanced "calls", see also Call with IdSpecial *)
-  | New of name * arguments
 
-  (* should be in statement, but many languages allow this at expr level *)
+  (* less: should be in stmt, but many languages allow this at expr level *)
   | Assign of expr * expr
-  | AssignOp of expr * binary_operator * expr
+  (* less: should desugar in Assign, should be only binary_operator *)
+  | AssignOp of expr * arithmetic_operator * expr
 
   | ObjAccess of expr * name
   (* todo? ClassAccess? ModuleAccess? *)
-  (* less: slice *)
-  | ArrayAccess of expr * expr
+  | ArrayAccess of expr * expr (* less: slice *)
 
   | Conditional of expr * expr * expr
   | Match of expr * (pattern * expr) list
-  (* TryFunctional *)
+  (* less: TryFunctional *)
 
   | Yield of expr
 
   | Cast of type_ * expr
+  (* less: should be in statement *)
+  | Seq of expr list
 
+  (* less: could be in Special *)
   | Ref of expr (* &, address of *)
   | DeRef of expr (* '*' *)
 
   | OtherExpr of other_expr_operator * any list
 
   and literal = 
-    (* basic values (literals) *)
     | Bool of bool wrap
     | Int of string wrap | Float of string wrap
     | Char of string wrap | String of string wrap | Regexp of string wrap
-    | Null of string wrap | Undefined of string wrap (* JS *)
+    | Null of tok | Undefined of tok (* JS *)
 
   and id_info =
   { id_qualifier: dotted_name option;
@@ -179,25 +178,6 @@ type expr =
     id_resolved: resolved_name ref; (* variable tagger (naming) *)
     id_type: type_ option ref; (* type checker (typing) *)
   }
-
-  and binary_operator = 
-    | Add | Sub | Mult | Div | Mod | Pow
-    | LShift | RShift 
-    | BitOr | BitXor | BitAnd 
-    | And | Or
-    | Eq | NotEq 
-    | PhysEq | NotPhysEq
-    | Lt | LtE | Gt | GtE 
-  
-  and unary_operator =
-    | UPlus | USub | UNot 
-    | Incr of bool | Decr of bool (* true = prefix, false = postfix *)
-
-  and container_operator = 
-    (* Tuple was lifted up *)
-    | Array (* todo? designator? *)
-    | List | Set
-    | Dict (* a.k.a Hash, a.k.a Map (combine with Tuple to get Key/value pair)*)
 
   and special = 
    (* special vars *)
@@ -207,24 +187,56 @@ type expr =
    | Eval
    | Typeof | Instanceof
 
+   | New  (* todo? lift up? of name? of expr? *)
+
+   | Concat (* used for interpolated strings constructs *)
+   | Spread (* inline list var, in Container or call context *)
+
+   | ArithOp of arithmetic_operator
+   (* should be lift up and transformed in Assign at stmt level *)
+   | IncrDecr of bool (* true = Incr, false = Decr *) * 
+                 bool (* true = prefix, false = postfix *)
+
+    (* mostly binary operator *)
+    and arithmetic_operator = 
+      | Plus | Minus (* unary too *) | Mult | Div | Mod | Pow
+      | LSL | LSR | ASR (* L = logic, A = Arithmetic, SL = shift left *) 
+      | BitOr | BitXor | BitAnd | BitNot (* unary *)
+      | And | Or | Not (* unary *)
+      | Eq     | NotEq     (* less: could be desugared to Not Eq *)
+      | PhysEq | NotPhysEq (* less: could be desugared to Not PhysEq *)
+      | Lt | LtE | Gt | GtE  (* less: could be desugared to Or (Eq Lt) *)
+    
+  and container_operator = 
+    (* Tuple was lifted up *)
+    | Array (* todo? designator? *)
+    | List | Set
+    | Dict (* a.k.a Hash, a.k.a Map (combine with Tuple to get Key/value pair)*)
+
+
   and arguments = argument list
+
     and argument =
-      | Arg of expr
+      (* regular argument *)
+      | Arg of expr (* can be Call (IdSpecial Spread, Id foo) *)
+      (* keyword argument *)
       | ArgKwd of name * expr
       | ArgOther of other_argument_operator * any list
 
        and other_argument_operator =
         (* Python *)
-        | OA_ArgStar | OA_ArgPow
+        | OA_ArgPow (* a kind of Spread, but for Dict instead of List *)
 
   and other_expr_operator = 
     (* Javascript *)
     | OE_Exports | OE_Module | OE_Define | OE_Arguments | OE_NewTarget
-    | OE_Seq | OE_Void
-    | OE_Delete | OE_Spread | OE_YieldStar | OE_Await
-    | OE_Require | OE_UseStrict
+    | OE_Void (* todo: unit? in Literal *)
+    | OE_Delete | OE_YieldStar | OE_Await
+    | OE_Require (* todo: lift to Import? *) 
+    | OE_UseStrict (* less: lift up to program attribute/directive? *)
     | OE_ObjAccess_PN_Computed
-    | OE_Obj_FieldSpread | OE_Obj_FieldProps
+    | OE_Obj_FieldSpread | OE_Obj_FieldProps (* ?? *)
+    | OE_ExprClass (* anon class (similar to anon func) *)
     (* Python *)
     | OE_Imag | OE_FloorDiv 
     | OE_Is | OE_IsNot | OE_In | OE_NotIn
@@ -232,9 +244,10 @@ type expr =
     | OE_ListComp | OE_GeneratorExpr 
     | OE_Repr
     (* Java *)
-    | OE_NameOrClassType | OE_ClassLiteral
+    | OE_NameOrClassType | OE_ClassLiteral (* XXX.class? *)
     (* C *)
-    | OE_RecordPtAccess (* -> *) | OE_Sequence | OE_SizeOf
+    | OE_RecordPtAccess (* -> *) (* less: or desugar? *) 
+    | OE_SizeOf
     | OE_ArrayInitDesignator | OE_GccConstructor
     (* PHP *)
     | OE_Unpack
@@ -245,10 +258,11 @@ type expr =
 and type_ =
   | TyBuiltin of string wrap (* int, bool, etc. could be TApply with no args *)
   | TyFun of type_ list (* use parameter? args (not curried) *) * 
-            type_ (* return type *)
+             type_ (* return type *)
   (* covers tuples, list, etc. *)
   | TyApply of name * type_arguments
   | TyVar of name
+
   (* a special case of TApply, also a special case of TPointer *)
   | TyArray of (* const_expr *) expr option * type_
   | TyPointer of type_
@@ -259,6 +273,7 @@ and type_ =
   
 
   and type_arguments = type_argument list
+
     and type_argument = 
       | TypeArg of type_
       | OtherTypeArg of other_type_argument_operator * any list
@@ -275,7 +290,9 @@ and type_ =
   | OT_Shape | OT_Variadic
 
 and type_parameter = name * type_parameter_constraints
+
   and type_parameter_constraints = type_parameter_constraint list
+
    and type_parameter_constraint = 
      | Extends of type_
 
@@ -293,7 +310,10 @@ and attribute =
   (* for functions *)
   | Generator | Async
   (* for methods *)
+  | Ctor | Dtor
   | Getter | Setter
+  (* for parameters *)
+  | Variadic
   (* for general @annotations *)
   | NamedAttr of name * any list
 
@@ -309,8 +329,9 @@ and attribute =
 (* Statement *)
 (* ------------------------------------------------------------------------- *)
 and stmt =
-  (* later: lift Call and Assign here *)
+  (* later: lift Call/Assign/Seq here *)
   | ExprStmt of expr
+
   | LocalDef of def
   | LocalDirective of directive
 
@@ -325,12 +346,12 @@ and stmt =
 
   | Assert of expr * expr option (* message *)
   | Return of expr
-  | Continue of expr | Break of expr (* can be Nop, can be a label *)
+  | Continue of expr option | Break of expr option (* todo? switch to label? *)
 
   | Label of label * stmt
   | Goto of label
 
-  | Raise of expr
+  | Throw of expr (* a.k.a raise *)
   | Try of stmt * catch list * finally option
 
   | OtherStmt of other_stmt_operator * any list
@@ -410,18 +431,21 @@ and function_definition = {
      pdefault: expr option;
      ptype: type_ option;
      pattrs: attribute list;
-     pother: other_parameter_operator;
+     pother: other_parameter_operator list;
     }
   and other_parameter_operator =
      (* Python *)
-     | OPO_VarParam | OPO_KwdParam
+     | OPO_KwdParam
      (* PHP *)
-     | OPO_Variadic | OPO_Ref
+     | OPO_Ref (* less: or encode in type? *)
 
 (* ------------------------------------------------------------------------- *)
 (* Variable definition *)
 (* ------------------------------------------------------------------------- *)
-(* also used for constant_definition with vattrs = [Const] *)
+(* Also used for constant_definition with vattrs = [Const].
+ * Could also use for function_definition with vinit = Some (Lambda (...))
+ * Also used for field definition in a class (and record?)
+ *)
 and variable_definition = {
   vname: name;
   (* could remove function_definition as expr can be a Lambda but maybe
@@ -490,17 +514,21 @@ and directive =
   | OI_Package
   (* C *)
   | OI_Define | OI_Macro | OI_Prototype
+  (* PHP *)
+  | OI_Namespace
 
 (* ------------------------------------------------------------------------- *)
 (* Toplevel *)
 (* ------------------------------------------------------------------------- *)
 and item = 
   | IStmt of stmt
+
   (* could be removed since they are as LocalDef and LocalDirective in stmt *)
   | IDef of def
   | IDir of directive
 
   | OtherItem of other_item_operator * any list
+
   and other_item_operator = XXX3
 
 and program = item list
