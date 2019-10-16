@@ -556,3 +556,23 @@ and any =
 (* Wrappers *)
 (*****************************************************************************)
 let str_of_name = fst
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+let empty_info () = {
+   id_qualifier = None;
+   id_typeargs = None;
+   id_resolved = ref NotResolved;
+   id_type = ref None;
+ }
+
+let basic_param name = { 
+    pname = name;
+    pdefault = None;
+    ptype = None;
+    pattrs = [];
+    pother = [];
+}
+
