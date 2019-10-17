@@ -50,8 +50,8 @@
  * design choices to have a generic data structure:
  *  - add some 'a, 'b, 'c around expr/stmt/...
  *  - functorize and add some type hole (type tstmt; type texpr; ...)
- *  - data-type a la carte like in github-semantic? Seems too high-level,
- *    astronaut-style architecture (too abstract, too advanced features).
+ *  - data-type a la carte like in github-semantic but Seems too high-level
+ *    with astronaut-style architecture (too abstract, too advanced features).
  *
  * history:
  *  - started with crossproduct of Javascript, Python, PHP, Java, and C
@@ -73,7 +73,7 @@
 type tok = Parse_info.info
  (* with tarzan *)
 
-(* a shortcut to annotate some information with token/position information *)
+(* a shortcut to annotate some information with position information *)
 type 'a wrap = 'a * tok
  (* with tarzan *)
 
@@ -88,11 +88,12 @@ type dotted_name = name list
  (* with tarzan *)
 
 (* todo? module_name * name? 
- * todo? not enough in OCaml with functor and type arguments? 
+ * todo? not enough in OCaml with functor and type arguments or C++ templates? 
 *)
 type qualified_name = dotted_name
  (* with tarzan *)
 
+(* can also be used for packages *)
 type module_name =
   | FileName of string wrap   (* ex: Javascript import, C include *)
   | DottedName of dotted_name (* ex: Python *)
@@ -141,17 +142,24 @@ type expr =
   | Call of expr * arguments
   (* less: XML (XHP, JSX) or transpile? *)
 
-  (* less: should be in stmt, but many languages allow this at expr level *)
+  (* The left part should be an lvalue (id, ObjAccess, ArrayAccess, Deref)
+   * but it can also be a pattern (Tuple, Container)? or use Let for that.
+   * It can be abused to declare new variables, but you should use
+   * variable_definition for that instead.
+   * less: differentiate Assign from Let with pattern?
+   * less: should be in stmt, but many languages allow this at expr level 
+   *)
   | Assign of expr * expr
   (* less: should desugar in Assign, should be only binary_operator *)
   | AssignOp of expr * arithmetic_operator * expr
+  | LetPattern of pattern * expr
 
   | ObjAccess of expr * name
   (* todo? ClassAccess? ModuleAccess? *)
   | ArrayAccess of expr * expr (* less: slice *)
 
   | Conditional of expr * expr * expr
-  | Match of expr * (pattern * expr) list
+  | MatchPattern of expr * (pattern * expr) list
   (* less: TryFunctional *)
 
   | Yield of expr
@@ -207,10 +215,10 @@ type expr =
 
     (* mostly binary operator *)
     and arithmetic_operator = 
-      | Plus | Minus (* unary too *) | Mult | Div | Mod | Pow
+      | Plus | Minus (* unary too *) | Mult | Div | Mod | Pow | FloorDiv
       | LSL | LSR | ASR (* L = logic, A = Arithmetic, SL = shift left *) 
       | BitOr | BitXor | BitAnd | BitNot (* unary *)
-      | And | Or | Not (* unary *)
+      | And | Or (* also shortcut operator *) | Not (* unary *)
       | Eq     | NotEq     (* less: could be desugared to Not Eq *)
       | PhysEq | NotPhysEq (* less: could be desugared to Not PhysEq *)
       | Lt | LtE | Gt | GtE  (* less: could be desugared to Or (Eq Lt) *)
@@ -242,9 +250,10 @@ type expr =
     | OE_Obj_FieldSpread | OE_Obj_FieldProps (* ?? *)
     | OE_ExprClass (* anon class (similar to anon func) *)
     (* Python *)
-    | OE_Imag | OE_FloorDiv 
+    | OE_Imag
     | OE_Is | OE_IsNot 
     | OE_In | OE_NotIn
+    | OE_Invert
     | OE_Ellipsis | OE_Slice | OE_ExtSlice
     | OE_ListComp | OE_GeneratorExpr 
     | OE_Repr

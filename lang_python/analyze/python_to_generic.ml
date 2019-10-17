@@ -62,18 +62,32 @@ let dotted_name v = list name v
 
 let resolved_name =
   function
-  | LocalVar -> ()
-  | Parameter -> ()
-  | GlobalVar -> ()
-  | ClassField -> ()
-  | ImportedModule -> ()
-  | ImportedEntity -> ()
-  | NotResolved -> ()
+  | LocalVar -> G.Local
+  | Parameter -> G.Param
+  | GlobalVar -> G.Global [] (* TODO? *)
+  | ClassField -> G.NotResolved
+  | ImportedModule -> G.ImportedModule
+  | ImportedEntity -> G.Global [] (* TODO? *)
+  | NotResolved -> G.NotResolved
+
+let expr_context =
+  function
+  | Load -> ()
+  | Store -> ()
+  | Del -> ()
+  | AugLoad -> ()
+  | AugStore -> ()
+  | Param -> ()
+
 
 let rec expr (x: expr) =
   match x with
-  | Num v1 -> let v1 = number v1 in ()
-  | Str ((v1, v2)) -> let v1 = string v1 and v2 = list tok v2 in ()
+  | Num v1 -> let v1 = number v1 in v1
+  | Str ((v1, v2)) -> 
+    let v1 = string v1 
+    and v2 = list tok v2 in 
+    ()
+
   | Name ((v1, v2, v3, v4)) ->
       let v1 = name v1
       and v2 = expr_context v2
@@ -84,9 +98,15 @@ let rec expr (x: expr) =
       let v1 = list expr v1 and v2 = expr_context v2 in ()
   | List ((v1, v2)) ->
       let v1 = list expr v1 and v2 = expr_context v2 in ()
+  | Subscript ((v1, v2, v3)) ->
+      let v1 = expr v1 and v2 = slice v2 and v3 = expr_context v3 in ()
+  | Attribute ((v1, v2, v3)) ->
+      let v1 = expr v1 and v2 = name v2 and v3 = expr_context v3 in ()
+
   | DictOrSet (v) -> let v = list dictorset_elt v in ()
   | ListComp ((v1, v2)) ->
       let v1 = expr v1 and v2 = list comprehension v2 in ()
+
   | BoolOp ((v1, v2)) -> let v1 = boolop v1 and v2 = list expr v2 in ()
   | BinOp ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = operator v2 and v3 = expr v3 in ()
@@ -96,9 +116,10 @@ let rec expr (x: expr) =
       and v2 = list cmpop v2
       and v3 = list expr v3
       in ()
+
   | Call (v1, v2) -> let v1 = expr v1 in let v2 = list argument v2 in ()
-  | Subscript ((v1, v2, v3)) ->
-      let v1 = expr v1 and v2 = slice v2 and v3 = expr_context v3 in ()
+
+
   | Lambda ((v1, v2)) -> let v1 = parameters v1 and v2 = expr v2 in ()
   | IfExp ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in ()
@@ -106,8 +127,6 @@ let rec expr (x: expr) =
       let v1 = expr v1 and v2 = list comprehension v2 in ()
   | Yield v1 -> let v1 = option expr v1 in ()
   | Repr v1 -> let v1 = expr v1 in ()
-  | Attribute ((v1, v2, v3)) ->
-      let v1 = expr v1 and v2 = name v2 and v3 = expr_context v3 in ()
 
 and argument = function
   | Arg e -> expr e
@@ -116,63 +135,64 @@ and argument = function
   | ArgKwd (n, e) -> let n = name n in let e = expr e in ()
 
 and dictorset_elt = function
-  | KeyVal (v1, v2) -> expr v1; expr v2
+  | KeyVal (v1, v2) -> let v1 = expr v1 in let v2 =  expr v2 in ()
   | Key (v1) -> expr v1
   | PowInline (v1) -> expr v1
   
 and number =
   function
-  | Int v1 -> let v1 = wrap int v1 in ()
+  | Int v1     -> let v1 = wrap int v1 in ()
   | LongInt v1 -> let v1 = wrap int v1 in ()
-  | Float v1 -> let v1 = wrap float v1 in ()
-  | Imag v1 -> let v1 = wrap string v1 in ()
+  | Float v1   -> let v1 = wrap float v1 in ()
+  | Imag v1    -> let v1 = wrap string v1 in ()
 
-and boolop = function | And -> () | Or -> ()
+
+and boolop = function 
+  | And -> G.And
+  | Or  -> G.Or
 
 and operator =
   function
-  | Add -> ()
-  | Sub -> ()
-  | Mult -> ()
-  | Div -> ()
-  | Mod -> ()
-  | Pow -> ()
-  | FloorDiv -> ()
-  | LShift -> ()
-  | RShift -> ()
-  | BitOr -> ()
-  | BitXor -> ()
-  | BitAnd -> ()
+  | Add      -> G.Plus
+  | Sub      -> G.Minus
+  | Mult     -> G.Mult
+  | Div      -> G.Div
+  | Mod      -> G.Mod
+  | Pow      -> G.Pow
+  | FloorDiv -> G.FloorDiv
+  | LShift   -> G.LSL
+  | RShift   -> G.LSR
+  | BitOr    -> G.BitOr
+  | BitXor   -> G.BitXor
+  | BitAnd   -> G.BitAnd
 
-and unaryop = function | Invert -> () | Not -> () | UAdd -> () | USub -> ()
+and unaryop = function 
+  | Invert -> Right G.OE_Invert
+  | Not    -> Left G.Not
+  | UAdd   -> Left G.Plus
+  | USub   -> Left G.Minus
+
 and cmpop =
   function
-  | Eq -> ()
-  | NotEq -> ()
-  | Lt -> ()
-  | LtE -> ()
-  | Gt -> ()
-  | GtE -> ()
-  | Is -> ()
-  | IsNot -> ()
-  | In -> ()
-  | NotIn -> ()
+  | Eq    -> Left G.Eq
+  | NotEq -> Left G.NotEq
+  | Lt    -> Left G.Lt
+  | LtE   -> Left G.LtE
+  | Gt    -> Left G.Gt
+  | GtE   -> Left G.GtE
+  | Is    -> Right G.OE_Is
+  | IsNot -> Right G.OE_IsNot
+  | In    -> Right G.OE_In
+  | NotIn -> Right G.OE_NotIn
 
 and comprehension (v1, v2, v3) =
   let v1 = expr v1 and v2 = expr v2 and v3 = list expr v3 in ()
-and expr_context =
-  function
-  | Load -> ()
-  | Store -> ()
-  | Del -> ()
-  | AugLoad -> ()
-  | AugStore -> ()
-  | Param -> ()
 
 and keyword (v1, v2) = let v1 = name v1 and v2 = expr v2 in ()
 
 and slice =
   function
+  | Index v1 -> let v1 = expr v1 in ()
   | Ellipsis -> ()
   | Slice ((v1, v2, v3)) ->
       let v1 = option expr v1
@@ -180,7 +200,6 @@ and slice =
       and v3 = option expr v3
       in ()
   | ExtSlice v1 -> let v1 = list slice v1 in ()
-  | Index v1 -> let v1 = expr v1 in ()
 
 and parameters x =
   let (v1, v2, v3, v4) = x in
@@ -213,16 +232,20 @@ and stmt x =
       and v3 = list stmt v3
       and v4 = list decorator v4
       in ()
+
   | Assign ((v1, v2)) -> let v1 = list expr v1 and v2 = expr v2 in ()
   | AugAssign ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = operator v2 and v3 = expr v3 in ()
+
   | Return v1 -> let v1 = option expr v1 in ()
+
   | Delete v1 -> let v1 = list expr v1 in ()
   | Print ((v1, v2, v3)) ->
       let v1 = option expr v1
       and v2 = list expr v2
       and v3 = bool v3
       in ()
+
   | For ((v1, v2, v3, v4)) ->
       let v1 = expr v1
       and v2 = expr v2
@@ -239,11 +262,13 @@ and stmt x =
       and v2 = list stmt v2
       and v3 = list stmt v3
       in ()
+
   | With ((v1, v2, v3)) ->
       let v1 = expr v1
       and v2 = option expr v2
       and v3 = list stmt v3
       in ()
+
   | Raise ((v1, v2, v3)) ->
       let v1 = option expr v1
       and v2 = option expr v2
@@ -256,20 +281,26 @@ and stmt x =
       in ()
   | TryFinally ((v1, v2)) ->
       let v1 = list stmt v1 and v2 = list stmt v2 in ()
+
   | Assert ((v1, v2)) -> let v1 = expr v1 and v2 = option expr v2 in ()
+
   | Import v1 -> let v1 = list alias2 v1 in ()
   | ImportFrom ((v1, v2, v3)) ->
       let v1 = dotted_name v1
       and v2 = list alias v2
       and v3 = option int v3
       in ()
+
   | Exec ((v1, v2, v3)) ->
       let v1 = expr v1
       and v2 = option expr v2
       and v3 = option expr v3
       in ()
+
   | Global v1 -> let v1 = list name v1 in ()
+
   | ExprStmt v1 -> let v1 = expr v1 in ()
+
   | Pass -> ()
   | Break -> ()
   | Continue -> ()
@@ -287,6 +318,7 @@ and decorator v = expr v
 
 and alias (v1, v2) = let v1 = name v1 and v2 = option name v2 in ()
 and alias2 (v1, v2) = let v1 = dotted_name v1 and v2 = option name v2 in ()
+
 and modl =
   function
   | Module v1 -> let v1 = list stmt v1 in ()
