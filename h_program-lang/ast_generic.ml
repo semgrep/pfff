@@ -124,7 +124,7 @@ type expr =
   | Container of container_operator * expr list
   | Tuple of expr list (* special case of Container *) 
 
-  (* And-type (field.v_init should be a Some) *)
+  (* And-type (field.vinit should be a Some) *)
   | Record of field list
   (* Or-type (could be used instead of Container, Cons, Nil, etc.) *)
   | Constructor of name * expr list
@@ -238,7 +238,7 @@ type expr =
     | OE_Delete | OE_YieldStar | OE_Await
     | OE_Require (* todo: lift to Import? *) 
     | OE_UseStrict (* less: lift up to program attribute/directive? *)
-    | OE_ObjAccess_PN_Computed
+    | OE_ObjAccess_PN_Computed (* less: convert to ArrayAccess *)
     | OE_Obj_FieldSpread | OE_Obj_FieldProps (* ?? *)
     | OE_ExprClass (* anon class (similar to anon func) *)
     (* Python *)
@@ -462,7 +462,16 @@ and variable_definition = {
   vattrs: attribute list;
 }
 
-and field = variable_definition
+(* ------------------------------------------------------------------------- *)
+(* Field definition *)
+(* ------------------------------------------------------------------------- *)
+(* less: could be merged with variable_definition *)
+and field = 
+  | FieldVar of variable_definition
+  | FieldMethod of function_definition
+
+  | FieldDynamic of expr * attribute list * expr
+  | FieldSpread of expr
 
 (* ------------------------------------------------------------------------- *)
 (* Type definition *)
@@ -475,7 +484,8 @@ and type_definition = {
 }
   and type_definition_kind = 
    | OrType  of (name * type_ list) list  (* enum/ADTs *)           
-   | AndType of (name * type_)     list (* record/struct/union *) 
+   (* field.vtype should be defined here *)
+   | AndType of field list (* record/struct/union *) 
    | AliasType of type_
 
    | OtherTypeKind of other_type_kind_operator * any list
@@ -497,7 +507,7 @@ and class_definition = {
   ckind: class_kind;
   cextends: type_ list;
   cimplements: type_ list;
-  cbody: def list;
+  cbody: field list;
   cattrs: attribute list;
 }
   and class_kind = 
@@ -584,4 +594,3 @@ let basic_param name = {
     pattrs = [];
     pother = [];
 }
-

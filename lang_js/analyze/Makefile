@@ -7,6 +7,7 @@ OPAMPKG=pfff-lang_js-analyze
 
 SRC= \
   ast_js.ml meta_ast_js.ml visitor_ast_js.ml map_ast_js.ml \
+  js_to_generic.ml \
   lib_analyze_js.ml \
   transpile_js.ml ast_js_build.ml \
   class_pre_es6.ml module_pre_es6.ml comment_js.ml annotation_js.ml \
@@ -85,6 +86,10 @@ $(TEMP).cmo: $(TEMP).ml
 # to allow unused variable warnings
 visitor_ast_js.cmo: visitor_ast_js.ml
 	$(OCAMLC) -w y -c $<
+
+js_to_generic.cmo: js_to_generic.ml
+	ocamlc $(INCLUDES) -w y -c $<
+
 
 ##############################################################################
 # Literate Programming rules
