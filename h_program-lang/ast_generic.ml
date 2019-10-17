@@ -133,7 +133,7 @@ type expr =
   (* very special value *)
   | Lambda of parameters * stmt (* less: reuse function_definition? *)
 
-  | Nop
+  | Nop (* less: could be merged with L Unit *)
 
   | Id of name * id_info
   | IdSpecial of special
@@ -143,10 +143,10 @@ type expr =
   (* less: XML (XHP, JSX) or transpile? *)
 
   (* The left part should be an lvalue (id, ObjAccess, ArrayAccess, Deref)
-   * but it can also be a pattern (Tuple, Container)? or use Let for that.
-   * It can be abused to declare new variables, but you should use
-   * variable_definition for that instead.
-   * less: differentiate Assign from Let with pattern?
+   * but it can also be a pattern (Tuple, Container), but
+   * you should really use LetPattern for that.
+   * Assign can also be abused to declare new variables, but you should use
+   * variable_definition for that.
    * less: should be in stmt, but many languages allow this at expr level 
    *)
   | Assign of expr * expr
@@ -154,8 +154,8 @@ type expr =
   | AssignOp of expr * arithmetic_operator * expr
   | LetPattern of pattern * expr
 
+  (* can also be used for ClassAccess, ModuleAccess depending on expr *)
   | ObjAccess of expr * name
-  (* todo? ClassAccess? ModuleAccess? *)
   | ArrayAccess of expr * expr (* less: slice *)
 
   | Conditional of expr * expr * expr
@@ -247,7 +247,6 @@ type expr =
     | OE_Require (* todo: lift to Import? *) 
     | OE_UseStrict (* less: lift up to program attribute/directive? *)
     | OE_ObjAccess_PN_Computed (* less: convert to ArrayAccess *)
-    | OE_Obj_FieldSpread | OE_Obj_FieldProps (* ?? *)
     | OE_ExprClass (* anon class (similar to anon func) *)
     (* Python *)
     | OE_Imag
@@ -297,7 +296,7 @@ and type_ =
 
   and other_type_operator = 
   (* Python *)
-  | OT_Expr
+  | OT_Expr (* todo: should transform in type_ when can *)
   (* C *)
   | OT_StructName | OT_UnionName | OT_EnumName
   (* PHP *)
@@ -335,9 +334,11 @@ and attribute =
 
   and other_attribute_operator = 
     (* Java *)
-    | StrictFP | Transient | Synchronized | Native
-    | AnnotJavaOther of string
-    | AnnotThrow
+    | OA_StrictFP | OA_Transient | OA_Synchronized | OA_Native
+    | OA_AnnotJavaOther of string
+    | OA_AnnotThrow
+    (* Python *)
+    | OA_Expr (* todo: should transform in NamedAttr when can *)
 
 (* ------------------------------------------------------------------------- *)
 (* Statement *)
@@ -356,9 +357,9 @@ and stmt =
   | DoWhile of stmt * expr
   | For of for_header * stmt
 
+  (* less: could be merged with ExprStmt (MatchPattern ...) *)
   | Switch of expr * (case list * stmt) list
 
-  | Assert of expr * expr option (* message *)
   | Return of expr
   | Continue of expr option | Break of expr option (* todo? switch to label? *)
 
@@ -367,6 +368,7 @@ and stmt =
 
   | Throw of expr (* a.k.a raise *)
   | Try of stmt * catch list * finally option
+  | Assert of expr * expr option (* message *)
 
   | OtherStmt of other_stmt_operator * any list
 
@@ -375,20 +377,21 @@ and stmt =
     | Case of expr
     | Default
 
-  and catch = parameter * stmt
+  and catch = pattern * stmt
   and finally = stmt
 
   and label = name
 
   and for_header = 
-    | ForClassic of expr * expr * expr
-    | Foreach of expr * pattern
+    | ForClassic of expr (* init *) * expr (* cond *) * expr (* next *)
+    | ForEach of pattern * expr (* pattern 'in' expr *)
 
   and other_stmt_operator = 
     (* Python *)
-    | OS_Delete | OS_Print
+    | OS_Delete 
+    | OS_Print (* less: could generalize with console.log? *)
     | OS_ForOrElse | OS_WhileOrElse | OS_TryOrElse
-    | OS_With | OS_Global 
+    | OS_With | OS_ThrowMulti | OS_Global 
     | OS_Pass
     (* Java *)
     | OS_Sync
@@ -414,10 +417,11 @@ and pattern =
   | PatDisj of pattern * pattern
   | PatTyped of pattern * type_
 
-  | PatOther of other_pattern_operator * any list
+  | OtherPat of other_pattern_operator * any list
 
   and other_pattern_operator =
-  | XXX1
+  (* Python *)
+  | OP_Expr (* todo: should transform in pattern when can *)
 
 (* ------------------------------------------------------------------------- *)
 (* definitions *)
@@ -440,14 +444,18 @@ and function_definition = {
  fattrs: attribute list;
 }
   and parameters = parameter list
+    and parameter =
+     | ParamClassic of parameter_classic
+     | ParamPattern of pattern
 
-    (* less: could be merged with variable_definition *)
-    and parameter = { 
+     | OtherParam of other_parameter_operator * any list
+
+    (* less: could be merged with variable_definition, or pattern *)
+    and parameter_classic = { 
      pname: name;
      pdefault: expr option;
      ptype: type_ option;
      pattrs: attribute list;
-     pother: other_parameter_operator list;
     }
   and other_parameter_operator =
      (* Python *)
@@ -472,15 +480,20 @@ and variable_definition = {
 }
 
 (* ------------------------------------------------------------------------- *)
-(* Field definition *)
+(* Field definition and use *)
 (* ------------------------------------------------------------------------- *)
-(* less: could be merged with variable_definition *)
+(* less: could be merged with variable_definition,
+ * I don't call it field_definition because it's used both to
+ * define the shape of a field (a definition), and when creating
+ * an actual field (a value)
+ *)
 and field = 
   | FieldVar of variable_definition
   | FieldMethod of function_definition
 
   | FieldDynamic of expr * attribute list * expr
   | FieldSpread of expr
+  | FieldStmt of stmt
 
 (* ------------------------------------------------------------------------- *)
 (* Type definition *)
@@ -514,8 +527,7 @@ and type_definition = {
 and class_definition = {
   cname: name;
   ckind: class_kind;
-  cextends: type_ list;
-  cimplements: type_ list;
+  cextends: type_ list; cimplements: type_ list;
   cbody: field list;
   cattrs: attribute list;
 }
@@ -554,10 +566,6 @@ and item =
   (* could be removed since they are as LocalDef and LocalDirective in stmt *)
   | IDef of def
   | IDir of directive
-
-  | OtherItem of other_item_operator * any list
-
-  and other_item_operator = XXX2
 
 and program = item list
 
@@ -601,5 +609,25 @@ let basic_param name = {
     pdefault = None;
     ptype = None;
     pattrs = [];
-    pother = [];
 }
+
+let expr_to_arg e = 
+  Arg e
+
+let opt_to_nop opt =
+  match opt with
+  | None -> Nop
+  | Some e -> e
+
+let stmt_to_field st = 
+  match st with
+  | LocalDef (VarDef def) -> FieldVar def
+  | LocalDef (FuncDef def) -> FieldMethod def
+  | _ -> FieldStmt st
+
+(* less: could be a Block containing LocalDef or LocalDirective *)
+let stmt_to_item st =
+  match st with
+  | LocalDef def -> IDef def
+  | LocalDirective dir -> IDir dir
+  | _ -> IStmt st
