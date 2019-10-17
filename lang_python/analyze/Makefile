@@ -7,6 +7,7 @@ OPAMPKG=pfff-lang_python-analyze
 
 SRC= resolve_python.ml \
      highlight_python.ml \
+     python_to_generic.ml \
      database_light_python.ml \
      test_analyze_python.ml
 
@@ -44,3 +45,6 @@ $(TARGET).top: $(OBJS) $(LIBS)
 
 clean::
 	rm -f $(TARGET).top
+
+python_to_generic.cmo: python_to_generic.ml
+	ocamlc $(INCLUDES) -w y -c $<
