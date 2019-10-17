@@ -7,8 +7,8 @@ OPAMPKG=pfff-h_program-lang
 
 SRC= entity_code.ml scope_code.ml \
      parse_info.ml flag_parsing.ml comment_code.ml \
-     ast_fuzzy.ml meta_ast_generic.ml \
-     ast_generic.ml \
+     ast_fuzzy.ml \
+     ast_generic.ml meta_ast_generic.ml visitor_generic.ml \
      highlight_code.ml \
      archi_code.ml archi_code_lexer.ml archi_code_parse.ml \
      skip_code.ml \
@@ -62,3 +62,7 @@ archi_code_lexer.ml: archi_code_lexer.mll
 clean::
 	rm -f archi_code_lexer.ml
 beforedepend:: archi_code_lexer.ml
+
+
+visitor_generic.cmo: visitor_generic.ml
+	ocamlc $(INCLUDES) -w y -c $<

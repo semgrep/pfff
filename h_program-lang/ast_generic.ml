@@ -269,6 +269,7 @@ type expr =
 (* Type *)
 (* ------------------------------------------------------------------------- *)
 and type_ =
+  (* todo? a type_builtin = TInt | TBool | ...? see Literal *)
   | TyBuiltin of string wrap (* int, bool, etc. could be TApply with no args *)
   | TyFun of type_ list (* use parameter? args (not curried) *) * 
              type_ (* return type *)
@@ -302,6 +303,7 @@ and type_ =
   (* PHP *)
   | OT_Shape | OT_Variadic
 
+(* TODO: unused *)
 and type_parameter = name * type_parameter_constraints
 
   and type_parameter_constraints = type_parameter_constraint list
@@ -572,6 +574,7 @@ and program = item list
 (* ------------------------------------------------------------------------- *)
 (* Any *)
 (* ------------------------------------------------------------------------- *)
+(* mentioned in many OtherXxx so must be part of the mutually recursive type *)
 and any =
   | N of name
   | E of expr
@@ -583,6 +586,7 @@ and any =
   | I of item
 
   | Pa of parameter
+  | A of attribute
 
   | Pr of program
 
