@@ -99,7 +99,7 @@ let special (x, tok) =
   | Yield -> SR_NeedArgs (fun args -> 
           match args with
           | [e] -> G.Yield e
-          | _ -> error tok "Too many arguments to Yield"
+          | _ -> error tok "Impossible: Too many arguments to Yield"
           )
   | YieldStar -> SR_Other G.OE_YieldStar
   | Await -> SR_Other G.OE_Await
@@ -107,7 +107,7 @@ let special (x, tok) =
       (match v1 with
       | None -> SR_NeedArgs (fun args -> 
           G.Call (G.IdSpecial G.Concat, args |> List.map (fun e -> G.Arg e)))
-      | Some _ -> error tok "Encaps with name, TODO"
+      | Some _ -> error tok "Todo: Encaps with name, TODO"
       )
   | Not -> SR_Special (G.ArithOp G.Not)
   | And -> SR_Special (G.ArithOp G.And)
@@ -154,7 +154,7 @@ and expr (x: expr) =
       (match x with
       | SR_Special v -> IdSpecial v
       | SR_NeedArgs _ -> 
-          error (snd v1) "should have been matched in Call first"
+          error (snd v1) "Impossible: should have been matched in Call first"
       | SR_Literal l -> G.L l
       | SR_Other x -> G.OtherExpr (x, [])
       )
@@ -182,6 +182,20 @@ and expr (x: expr) =
       let v1 = fun_ n attrs v1 in
       (* todo? assert no attr? *)
       G.Lambda (v1.G.fparams, v1.G.fbody)
+
+  | Apply ((IdSpecial v1, v2)) -> 
+      let x = special v1 in
+      let v2 = list expr v2 in 
+      (match x with
+      | SR_Special v -> 
+        G.Call (IdSpecial v, v2 |> List.map (fun e -> G.Arg e))
+      | SR_Literal _ ->
+        error (snd v1) "Weird: literal in call position"
+      | SR_Other _ -> 
+        error (snd v1) "Weird: OtherExpr in call position"
+      | SR_NeedArgs f ->
+        f v2
+      )
   | Apply ((v1, v2)) -> let v1 = expr v1 and v2 = list expr v2 in 
       G.Call (v1, v2 |> List.map (fun e -> G.Arg e))
   | Arr ((v1)) -> let v1 = list expr v1 in G.Container (G.Array, v1)
@@ -218,7 +232,7 @@ and stmt x =
       and v2 =
         option (fun (v1, v2) -> 
            let v1 = name v1 and v2 = stmt v2 in
-           G.basic_param v1, v2
+           G.PatVar v1, v2
        ) v2
       and v3 = option stmt v3 in
       G.Try (v1, Common.opt_to_list v2, v3)
@@ -272,9 +286,8 @@ and parameter x =
   let v1 = name p_name in
   let v2 = option expr p_default in 
   let v3 = bool p_dots in
-  { G.pname = v1; pdefault = v2; ptype = None;
-    pattrs = if v3 then [Variadic] else [];
-    pother = [];
+  G.ParamClassic { G.pname = v1; pdefault = v2; ptype = None;
+        pattrs = if v3 then [Variadic] else [];
   }
   
 
@@ -353,4 +366,3 @@ let any =
   | Stmt v1 -> let v1 = stmt v1 in G.S v1
   | Top v1 -> let v1 = toplevel v1 in G.I v1
   | Program v1 -> let v1 = program v1 in G.Pr v1
-
