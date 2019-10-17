@@ -163,7 +163,7 @@ let test_parse_generic file =
     | FT.PL (FT.Python) ->
       let ast = Parse_python.parse_program file in
       Resolve_python.resolve ast;
-      raise Common.Todo
+      Python_to_generic.program ast
     | _ -> failwith "file type not supported"
   in
   pr2_gen gen
