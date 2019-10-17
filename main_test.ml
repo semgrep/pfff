@@ -1,9 +1,8 @@
 (*
- * Please imagine a long and boring gnu-style copyright notice 
+ * Please imagine a long and boring GNU-style copyright notice 
  * appearing just here.
  *)
-(*open Common*)
-open Common2
+open Common
 
 open OUnit 
 
@@ -31,7 +30,7 @@ let action = ref ""
 
 let ast_fuzzy_of_string str =
   Common2.with_tmp_file ~str ~ext:"cpp" (fun tmpfile ->
-    Parse_cpp.parse_fuzzy tmpfile +> fst
+    Parse_cpp.parse_fuzzy tmpfile |> fst
   )
 
 let graph_of_string str =
@@ -98,9 +97,9 @@ let test regexp =
     then tests
     else
       let paths = 
-        OUnit.test_case_paths tests +> List.map OUnit.string_of_path in
+        OUnit.test_case_paths tests |> List.map OUnit.string_of_path in
       let keep = paths 
-        +> List.filter (fun path -> 
+        |> List.filter (fun path -> 
           pr2 path;
           path =~ (".*" ^ regexp)) 
       in
@@ -109,7 +108,7 @@ let test regexp =
     
   let results = OUnit.run_test_tt ~verbose:!verbose suite in
   let has_an_error = 
-    results +> List.exists (function
+    results |> List.exists (function
     | OUnit.RSuccess _ | OUnit.RSkip _ | OUnit.RTodo _ -> false
     | OUnit.RFailure _ | OUnit.RError _ -> true
     )
@@ -151,12 +150,32 @@ let test_json_bench file =
     pr2 (Common2.memory_stat ());
   )
 
+module FT = File_type
+
+let test_parse_generic file =
+  let typ = File_type.file_type_of_file file in
+  let gen = 
+    match typ with
+    | FT.PL (FT.Web (FT.Js)) ->
+      let cst = Parse_js.parse_program file in
+      let ast = Ast_js_build.program cst in
+      Js_to_generic.program ast
+    | FT.PL (FT.Python) ->
+      let ast = Parse_python.parse_program file in
+      Resolve_python.resolve ast;
+      raise Common.Todo
+    | _ -> failwith "file type not supported"
+  in
+  pr2_gen gen
+
 (* ---------------------------------------------------------------------- *)
 let pfff_extra_actions () = [
   "-json_pp", " <file>",
   Common.mk_action_1_arg test_json_pretty_printer;
   "-json_bench", " <file>",
   Common.mk_action_1_arg test_json_bench;
+  "-parse_generic", " <file>",
+  Common.mk_action_1_arg test_parse_generic;
   
   "-check_overlay", " <dir_orig> <dir_overlay>",
   Common.mk_action_2_arg (fun dir_orig dir_overlay ->
@@ -187,7 +206,7 @@ let pfff_extra_actions () = [
 
   (* TODO: move this outside pfff :) *)
   "-action2", "<files>", Common.mk_action_n_arg (fun xs ->
-    xs +> List.iter (fun file ->
+    xs |> List.iter (fun file ->
       let (_d,b,_e) = Common2.dbe_of_filename file in
       let (d,b,e) = "/home/pad/plan9/sys/src/include", b, "h.clang2" in
       let file = Common2.filename_of_dbe (d,b,e) in
@@ -208,7 +227,7 @@ let pfff_extra_actions () = [
     | [] -> failwith "No candidate found"
     | [x] -> 
       let x = "/" ^ x in
-      let cmd s = Sys.command s +> ignore in
+      let cmd s = Sys.command s |> ignore in
       cmd (spf "cp %s /tmp" x);
       cmd (spf "rm -f %s" x);
       cmd (spf "mv %s %s" file dirdst);
@@ -223,7 +242,7 @@ let pfff_extra_actions () = [
     let dir = Common.fullpath dir in
     let candidates = Common.cmd_to_list (spf "find %s -type l" dir) in
     let root = "/Users/yoann.padioleau/github/xix/xix-plan9/" in
-    candidates +> List.iter (fun link ->
+    candidates |> List.iter (fun link ->
       let dst = Unix.readlink link in
       if not (Filename.is_relative dst)
       then begin
@@ -240,28 +259,29 @@ let pfff_extra_actions () = [
     let f file = 
       Common.cat file
 
-      +> List.map (fun s ->
+      |> List.map (fun s ->
         if s =~ "^\\([A-Za-z_0-9][A-Za-z_0-9][A-Za-z_0-9][A-Za-z_0-9]\\)"
         then Common.matched1 s
         else s
       )
 
-      +> Common2.set 
+      |> Common2.set 
     in
     let s1 = f t1 in
     let s2 = f t2 in
     let s3 = f t3 in
 
     let s6 = f s6 in
+    let ($*$) = Common2.($*$) in
 
     pr2 "------- s6 * t1 * t2 * t3 -------";
-    (s6 $*$  s1 $*$ s2 $*$ s3) +> List.iter pr;
+    (s6 $*$  s1 $*$ s2 $*$ s3) |> List.iter pr;
     pr2 "------- s6 * t1 -------";
-    (s6 $*$ s1) +> List.iter pr;
+    (s6 $*$ s1) |> List.iter pr;
     pr2 "------- s6 * t2 -------";
-    (s6 $*$ s2) +> List.iter pr;
+    (s6 $*$ s2) |> List.iter pr;
     pr2 "------- s6 * t3 -------";
-    (s6 $*$ s3) +> List.iter pr;
+    (s6 $*$ s3) |> List.iter pr;
   );
 ]
 
