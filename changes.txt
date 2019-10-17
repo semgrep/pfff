@@ -1,7 +1,11 @@
 # -*- org -*-
 
-* 0.39 (Q4 2019) (better Python support)
+* 0.39 (Q4 2019) (better Python support, a generic AST)
 10 years of Pfff! Started in November 2009 (while at Facebook).
+
+** introducing ast_generic.ml
+a generic AST helping factorize AST/visitor-based analysis
+across multiple languages.
 
 ** introducing lang_skip/
 basic lexer and highlighter.
@@ -23,8 +27,6 @@ semantic highlighting!
 *** poor's man transpiler
 transpile JSX, patterns, generators, just enough for codegraph
 to work on most node_modules/
-
-*** TODO handle CommonJS modules
 
 ** ocaml
 
