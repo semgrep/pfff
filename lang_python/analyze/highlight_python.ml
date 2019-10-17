@@ -258,8 +258,8 @@ let visit_program ~tag_hook _prefs (program, toks) =
           k x);
     );
     V.kparameters = (fun (k, _) x ->
-      let (args, varargs, kwargs, _defaults) = x in
-      args |> List.iter (fun arg ->
+      let (args, varargs, kwargs) = x in
+      args |> List.iter (fun (arg, _optval) ->
         match arg with
         | Name (name, _ctx, _typ, _resolved) ->
           tag_name name (Parameter Def);
@@ -471,7 +471,6 @@ let visit_program ~tag_hook _prefs (program, toks) =
 
     | T.IS ii | T.IN ii
     | T.PRINT ii 
-    | T.EXEC ii 
     | T.PASS ii
     | T.ASSERT ii
     | T.WITH ii

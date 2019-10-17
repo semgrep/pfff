@@ -61,7 +61,6 @@ let visitor_info_of_tok f = function
   | ELIF (ii) -> ELIF (f ii)
   | ELSE (ii) -> ELSE (f ii)
   | EXCEPT (ii) -> EXCEPT (f ii)
-  | EXEC (ii) -> EXEC (f ii)
   | FINALLY (ii) -> FINALLY (f ii)
   | FOR (ii) -> FOR (f ii)
   | FROM (ii) -> FROM (f ii)

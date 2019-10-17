@@ -323,7 +323,6 @@ and _token state = parse
         | "elif"     -> ELIF (tokinfo lexbuf)
         | "else"     -> ELSE (tokinfo lexbuf)
         | "except"   -> EXCEPT (tokinfo lexbuf)
-(*        | "exec"     -> EXEC (tokinfo lexbuf) *)
         | "finally"  -> FINALLY (tokinfo lexbuf)
         | "for"      -> FOR (tokinfo lexbuf)
         | "from"     -> FROM (tokinfo lexbuf)

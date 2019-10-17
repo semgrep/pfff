@@ -83,7 +83,7 @@ and v_expr (x: expr) =
   (* tweak *)
   let k x =  match x with
   | Num v1 -> let v1 = v_number v1 in ()
-  | Str ((v1, v2)) -> let v1 = v_string v1 and v2 = v_list v_tok v2 in ()
+  | Str (v1) -> let v1 = v_list v_name v1 in ()
   | Name ((v1, v2, v3, v4)) ->
       let v1 = v_name v1
       and v2 = v_expr_context v2
@@ -188,15 +188,18 @@ and v_slice =
   | ExtSlice v1 -> let v1 = v_list v_slice v1 in ()
   | Index v1 -> let v1 = v_expr v1 in ()
 and v_parameters x =
-  let k (v1, v2, v3, v4) =
-  let v1 = v_list v_expr v1
-  and v2 = v_option v_name_and_type v2
-  and v3 = v_option v_name_and_type v3
-  and v4 = v_list v_expr v4
-  in ()
+  let k (v1, v2, v3) =
+   let v1 = v_list v_expr_and_opt_expr v1
+   and v2 = v_option v_name_and_type v2
+   and v3 = v_option v_name_and_type v3
+   in ()
   in
   vin.kparameters (k, all_functions) x
 
+and v_expr_and_opt_expr (v1, opt) = 
+  let v1 = v_expr v1 in
+  let opt = v_option v_expr opt in
+  ()
 and v_name_and_type (v1, v2) =
   v_name v1;
   v_option v_type_ v2;
@@ -272,11 +275,6 @@ and v_stmt x =
       and v2 = v_list v_alias v2
       and v3 = v_option v_int v3
       in ()
-  | Exec ((v1, v2, v3)) ->
-      let v1 = v_expr v1
-      and v2 = v_option v_expr v2
-      and v3 = v_option v_expr v3
-      in ()
   | Global v1 -> let v1 = v_list v_name v1 in ()
   | ExprStmt v1 -> let v1 = v_expr v1 in ()
   | Pass -> ()
@@ -301,21 +299,14 @@ and v_decorator v =
 
 and v_alias (v1, v2) = let v1 = v_name v1 and v2 = v_option v_name v2 in ()
 and v_alias2 (v1, v2) = let v1 = v_dotted_name v1 and v2 = v_option v_name v2 in ()
-and v_modl =
-  function
-  | Module v1 -> let v1 = v_list v_stmt v1 in ()
-  | Interactive v1 -> let v1 = v_list v_stmt v1 in ()
-  | Expression v1 -> let v1 = v_expr v1 in ()
-  | Suite v1 -> let v1 = v_list v_stmt v1 in ()
   
-and v_program v = v_modl v
+and v_program v = v_list v_stmt v
 
 and v_any =
   function
   | Expr v1 -> let v1 = v_expr v1 in ()
   | Stmt v1 -> let v1 = v_stmt v1 in ()
   | Stmts v1 -> let v1 = v_list v_stmt v1 in ()
-  | Modl v1 -> let v1 = v_modl v1 in ()
   | Program v1 -> let v1 = v_program v1 in ()
   
 and all_functions x = v_any x

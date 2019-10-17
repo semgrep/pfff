@@ -108,7 +108,7 @@ let mk_param (name, t) =
  AND NOT OR
  IMPORT FROM AS
  DEL IN IS WITH YIELD
- PRINT EXEC ASSERT
+ PRINT ASSERT
 
 /*(*-----------------------------------------*)*/
 /*(*2 Punctuation tokens *)*/
@@ -170,7 +170,7 @@ let mk_param (name, t) =
 
 main: file_input EOF { $1 }
 
-file_input: nl_or_stmt_list { Module $1 }
+file_input: nl_or_stmt_list { $1 }
 
 nl_or_stmt:
  | NEWLINE { [] }
@@ -277,18 +277,17 @@ return_type_opt:
 parameters: LPAREN typedargslist RPAREN { $2 }
 
 typedargslist:
-  | /*(*empty*)*/              { [], None, None, [] }
+  | /*(*empty*)*/              { [], None, None }
 
-  | tfpdef                     { [mk_param $1], None, None, [] }
-  | tfpdef COMMA typedargslist { let (args, varargs, kwargs, defaults) = $3 in
-                                 mk_param $1::args, varargs, kwargs, defaults }
+  | tfpdef                     { [mk_param $1, None], None, None }
+  | tfpdef COMMA typedargslist { let (args, varargs, kwargs) = $3 in
+                                 (mk_param $1, None)::args, varargs, kwargs }
   /*(* TODO check default args come after variable args later *)*/
-  | tfpdef EQ test             { [mk_param $1], None, None, [$3] }
-  | tfpdef EQ test COMMA typedargslist 
-      { let (args, varargs, kwargs, defaults) = $5 in
-        mk_param $1::args, varargs, kwargs, $3::defaults }
+  | tfpdef EQ test                     { [mk_param $1, Some $3], None, None }
+  | tfpdef EQ test COMMA typedargslist { let (args, varargs, kwargs) = $5 in
+        (mk_param $1, Some $3)::args, varargs, kwargs }
 
-  | tfpvarargs                  { [], fst $1, snd $1, [] }
+  | tfpvarargs                  { [], fst $1, snd $1 }
 
 tfpdef:
   | NAME            { $1, None }
@@ -304,19 +303,18 @@ tfpkwargs: POW tfpdef { Some $2 }
 
 /*(* without types, as in lambda *)*/
 varargslist:
-  | /*(*empty*)*/               { [], None, None, [] }
+  | /*(*empty*)*/               { [], None, None }
 
-  | vfpdef                      { [$1], None, None, [] }
-  | vfpdef COMMA varargslist    { let (args, varargs, kwargs, defaults) = $3 in
-                                  $1::args, varargs, kwargs, defaults }
+  | vfpdef                      { [$1, None], None, None }
+  | vfpdef COMMA varargslist    { let (args, varargs, kwargs) = $3 in
+                                  ($1, None)::args, varargs, kwargs }
 
   /*(* TODO check default args come after variable args later *)*/
-  | vfpdef EQ test              { [$1], None, None, [$3] }
-  | vfpdef EQ test COMMA varargslist 
-     { let (args, varargs, kwargs, defaults) = $5 in
-        $1::args, varargs, kwargs, $3::defaults }
+  | vfpdef EQ test                   { [$1, Some $3], None, None }
+  | vfpdef EQ test COMMA varargslist { let (args, varargs, kwargs) = $5 in
+                                        ($1, Some $3)::args, varargs, kwargs }
 
-  | fpvarargs                    { [], fst $1, snd $1, [] }
+  | fpvarargs                    { [], fst $1, snd $1 }
 
 vfpdef:
   | NAME { Name ($1, Param, None, ref Parameter) }
@@ -591,11 +589,7 @@ atom:
   | FLOAT       { Num (Float ($1)) }
   | IMAG        { Num (Imag ($1)) }
 
-  | string_list { 
-     let xs = $1 in
-     let s = xs |> List.map fst |> String.concat "" in
-     Str (s, List.map snd xs) 
-     }
+  | string_list { Str $1 }
 
 atom_repr: BACKQUOTE testlist1 BACKQUOTE { Repr (tuple_expr $2) }
 

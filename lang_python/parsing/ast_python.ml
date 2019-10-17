@@ -88,7 +88,7 @@ type resolved_name =
 (* ------------------------------------------------------------------------- *)
 type expr =
   | Num of number (* n *)
-  | Str of string * tok list (* s *)
+  | Str of (string wrap) list (* s *)
 
   | Name of name (* id *) * expr_context (* ctx *) *
      type_ option * resolved_name ref
@@ -165,10 +165,10 @@ type expr =
     | Index of expr (* value *)
   
   and parameters = 
-      expr list (* args *) * 
+      (* the first expr can be only a Name or a Tuple (pattern?) *)
+      (expr * expr option (* default value *)) list (* args *) * 
       (name * type_ option) option (* varargs *) * 
-      (name * type_ option) option (* kwargs *) * 
-      expr list (* defaults *)
+      (name * type_ option) option (* kwargs *)
   
   and argument = 
     | Arg of expr
@@ -200,7 +200,7 @@ type stmt =
 
   | ClassDef of 
         name (* name *) * 
-        expr list (* bases *) * 
+        type_ list (* bases *) * 
         stmt list (* body *) * 
         decorator list (* decorator_list *)
 
@@ -213,7 +213,8 @@ type stmt =
 
   | Print of expr option (* dest *) * expr list (* values *) * bool (* nl *)
 
-  | For of expr (* target *) * expr (* iter *) * stmt list (* body *) * stmt list (* orelse *)
+  | For of expr (* target (pattern) *) * expr (* 'in' iter *) * 
+           stmt list (* body *) * stmt list (* orelse *)
   | While of expr (* test *) * stmt list (* body *) * stmt list (* orelse *)
   | If of expr (* test *) * stmt list (* body *) * stmt list (* orelse *)
   | With of expr (* context_expr *) * expr option (* optional_vars *) * stmt list (* body *)
@@ -225,8 +226,6 @@ type stmt =
 
   | Import of alias_dotted list (* names *)
   | ImportFrom of dotted_name (* module *) * alias list (* names *) * int option (* level *)
-
-  | Exec of expr (* body *) * expr option (* globals *) * expr option (* locals *)
 
   | Global of name list (* names *)
   | ExprStmt of expr (* value *)
@@ -268,15 +267,7 @@ and alias_dotted = dotted_name (* name *) * name option (* asname *)
 (* ------------------------------------------------------------------------- *)
 (* Toplevel *)
 (* ------------------------------------------------------------------------- *)
-and modl =
-  | Module of stmt list
-  | Interactive of stmt list
-  | Expression of expr
-
-  | Suite of stmt list
-  (* with tarzan *)
-
-type program = modl
+type program = stmt list
   (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
@@ -286,7 +277,6 @@ type any =
   | Expr of expr
   | Stmt of stmt
   | Stmts of stmt list
-  | Modl of modl
   | Program of program
  (* with tarzan *)
 
