@@ -1,9 +1,9 @@
-TOP=../..
+TOP=..
 ##############################################################################
 # Variables
 ##############################################################################
 TARGET=lib
-OPAMPKG=pfff-lang_js-meta
+OPAMPKG=pfff-meta
 
 BIN=gen_code
 
@@ -19,15 +19,15 @@ SYSLIBS= str.cma unix.cma $(PCRECMA)
 LIBS=$(TOP)/commons/lib.cma \
      $(TOP)/h_program-lang/lib.cma \
      $(TOP)/h_version-control/lib.cma \
-     ../parsing/lib.cma \
+     $(TOP)/lang_js/parsing/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/commons_ocollection $(TOP)/commons_core \
    $(TOP)/h_program-lang $(TOP)/h_version-control  \
    $(TOP)/globals \
    $(TOP)/graph_code \
-   ../parsing \
-   ../analyze \
+   $(TOP)/lang_js/parsing \
+   $(TOP)/lang_js/analyze \
 
 ##############################################################################
 # Generic variables
@@ -38,14 +38,8 @@ INCLUDEDIRS= $(TOP)/commons \
 ##############################################################################
 # Top rules
 ##############################################################################
-all:: rec $(TARGET).cma $(BIN)
-all.opt:: rec.opt $(TARGET).cmxa
-
-rec:
-	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all || exit 1; done
-
-rec.opt:
-	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all.opt || exit 1; done
+all:: $(TARGET).cma $(BIN)
+all.opt:: $(TARGET).cmxa
 
 clean::
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i clean; done

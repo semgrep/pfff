@@ -234,6 +234,7 @@ MAKESUBDIRS=commons commons_ocollection commons_core \
   lang_web/parsing \
   lang_text \
   mini \
+  meta \
   $(VISUALDIRS) \
   demos
 
