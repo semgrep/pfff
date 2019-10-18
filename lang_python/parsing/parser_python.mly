@@ -568,8 +568,8 @@ atom_trailer:
   | atom_trailer LBRACK subscript_list RBRACK
       { match $3 with
           (* TODO test* => Index (Tuple (elts)) *)
-        | [s] -> Subscript ($1, s, Load)
-        | l -> Subscript ($1, ExtSlice (l), Load) }
+        | [s] -> Subscript ($1, [s], Load)
+        | l -> Subscript ($1, (l), Load) }
 
   | atom_trailer DOT NAME { Attribute ($1, $3, Load) }
 

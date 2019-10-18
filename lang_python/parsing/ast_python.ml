@@ -104,7 +104,8 @@ type expr =
 
   | Call of expr (* func *) * argument list (* args *)
 
-  | Subscript of expr (* value *) * slice (* slice *) * expr_context (* ctx *)
+  | Subscript of expr (* value *) * slice list (* slice *) * 
+                 expr_context (* ctx *)
 
   | Lambda of parameters (* args *) * expr (* body *)
 
@@ -161,7 +162,6 @@ type expr =
   and slice =
     | Ellipsis
     | Slice of expr option (* lower *) * expr option (* upper *) * expr option (* step *)
-    | ExtSlice of slice list (* dims *)
     | Index of expr (* value *)
   
   and parameters = 
