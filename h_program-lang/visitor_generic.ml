@@ -227,6 +227,8 @@ and v_argument =
 and v_other_argument_operator = function | OA_ArgPow -> ()
 and v_other_expr_operator =
   function
+  | OE_Encaps -> ()
+  | OE_CmpOps -> ()
   | OE_Exports -> ()
   | OE_Module -> ()
   | OE_Define -> ()
@@ -378,8 +380,16 @@ and v_label v = v_name v
 and v_for_header =
   function
   | ForClassic ((v1, v2, v3)) ->
-      let v1 = v_expr v1 and v2 = v_expr v2 and v3 = v_expr v3 in ()
+      let v1 = v_list v_for_var_or_expr v1
+      and v2 = v_expr v2
+      and v3 = v_expr v3
+      in ()
   | ForEach ((v1, v2)) -> let v1 = v_pattern v1 and v2 = v_expr v2 in ()
+and v_for_var_or_expr =
+  function
+  | ForInitVar ((v1, v2)) ->
+      let v1 = v_entity v1 and v2 = v_variable_definition v2 in ()
+  | ForInitExpr v1 -> let v1 = v_expr v1 in ()
 and v_other_stmt_operator =
   function
   | OS_Delete -> ()
@@ -410,7 +420,10 @@ and v_pattern x =
       let v1 = v_other_pattern_operator v1 and v2 = v_list v_any v2 in ()
   in
   vin.kpattern (k, all_functions) x
-and v_other_pattern_operator = function | OP_Expr -> ()
+and v_other_pattern_operator = function 
+ | OP_Expr -> ()
+ | OP_Var -> ()
+
 and v_def x =
   let k x =
     let (v1, v2) = x in

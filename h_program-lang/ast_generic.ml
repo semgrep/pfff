@@ -244,6 +244,7 @@ type expr =
     | OE_Define | OE_Arguments 
     | OE_NewTarget
     | OE_Delete | OE_YieldStar | OE_Await
+    | OE_Encaps (* less: convert to regular funcall? *)
     | OE_Require (* todo: lift to Import? *) 
     | OE_UseStrict (* less: lift up to program attribute/directive? *)
     | OE_ObjAccess_PN_Computed (* less: convert to ArrayAccess *)
@@ -254,6 +255,7 @@ type expr =
     | OE_In | OE_NotIn
     | OE_Invert
     | OE_Slice | OE_SliceIndex | OE_SliceEllipsis | OE_SliceRange
+    | OE_CmpOps
     | OE_ListComp | OE_GeneratorExpr 
     | OE_Repr
     (* Java *)
@@ -376,8 +378,14 @@ and stmt =
   and label = name
 
   and for_header = 
-    | ForClassic of expr (* init *) * expr (* cond *) * expr (* next *)
+    | ForClassic of for_var_or_expr list (* init *) * 
+                    expr (* cond *) * 
+                    expr (* next *)
     | ForEach of pattern * expr (* pattern 'in' expr *)
+
+    and for_var_or_expr = 
+    | ForInitVar of entity * variable_definition
+    | ForInitExpr of expr
 
   and other_stmt_operator = 
     (* Python *)
@@ -415,6 +423,8 @@ and pattern =
   and other_pattern_operator =
   (* Python *)
   | OP_Expr (* todo: should transform in pattern when can *)
+  (* Javascript *)
+  | OP_Var (* todo: should transform in pattern when can *)
 
 (* ------------------------------------------------------------------------- *)
 (* definitions *)
@@ -498,8 +508,9 @@ and field =
   | FieldVar of entity * variable_definition
   | FieldMethod of entity * function_definition
 
-  | FieldDynamic of expr * attribute list * expr
-  | FieldSpread of expr
+  | FieldDynamic of expr (* dynamic name *) * attribute list * expr (* value*)
+  | FieldSpread of expr (* usually a Name *)
+
   | FieldStmt of stmt
 
 (* ------------------------------------------------------------------------- *)

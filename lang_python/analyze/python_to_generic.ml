@@ -167,7 +167,14 @@ let rec expr (x: expr) =
         G.Call (G.IdSpecial (ArithOp op), [v1;e] |> List.map G.expr_to_arg)
       | [Right oe], [e] ->
         G.OtherExpr (oe, [G.E v1; G.E e])
-      | _ -> raise Todo (* todo: fold cmpops *)
+      | _ ->  
+        let anyops = 
+           v2 |> List.map (function
+            | Left arith -> G.E (G.IdSpecial (G.ArithOp arith))
+            | Right other -> G.E (G.OtherExpr (other, []))
+            ) in
+        let any = anyops @ (v3 |> List.map (fun e -> G.E e)) in
+        G.OtherExpr (G.OE_CmpOps, any)
       )
   | Call (v1, v2) -> let v1 = expr v1 in let v2 = list argument v2 in 
       G.Call (v1, v2)

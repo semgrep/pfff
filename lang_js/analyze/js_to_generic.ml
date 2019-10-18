@@ -107,7 +107,10 @@ let special (x, tok) =
       (match v1 with
       | None -> SR_NeedArgs (fun args -> 
           G.Call (G.IdSpecial G.Concat, args |> List.map (fun e -> G.Arg e)))
-      | Some _ -> error tok "Todo: Encaps with name, TODO"
+      | Some n -> 
+            let n = name n in
+            SR_NeedArgs (fun args ->
+            G.OtherExpr (G.OE_Encaps,(G.N n)::(args|>List.map(fun e ->G.E e))))
       )
   | Not -> SR_Special (G.ArithOp G.Not)
   | And -> SR_Special (G.ArithOp G.And)
@@ -179,7 +182,7 @@ and expr (x: expr) =
       (* todo? assert more_attrs = []? *)
       G.Lambda (def.G.fparams, def.G.fbody)
 
-  | Apply ((IdSpecial v1, v2)) -> 
+  | Apply ((IdSpecial v1, v2)) ->
       let x = special v1 in
       let v2 = list expr v2 in 
       (match x with
@@ -187,8 +190,8 @@ and expr (x: expr) =
         G.Call (IdSpecial v, v2 |> List.map (fun e -> G.Arg e))
       | SR_Literal _ ->
         error (snd v1) "Weird: literal in call position"
-      | SR_Other _ -> 
-        error (snd v1) "Weird: OtherExpr in call position"
+      | SR_Other x -> (* ex: NewTarget *)
+        G.Call (G.OtherExpr (x, []), v2 |> List.map (fun e -> G.Arg e))
       | SR_NeedArgs f ->
         f v2
       )
@@ -236,16 +239,33 @@ and stmt x =
 and for_header =
   function
   | ForClassic ((v1, v2, v3)) ->
-      let v1 = (*either (list def_of_var) expr v1*) raise Todo
-      and v2 = expr v2
-      and v3 = expr v3 
-      in
-      raise Todo
+      let v2 = expr v2 in
+      let v3 = expr v3 in
+      (match v1 with
+      | Left vars ->
+            let vars = vars |> List.map (fun x -> 
+                  let (a,b) = var_of_var x in
+                  G.ForInitVar (a, b)
+            )
+            in
+            G.ForClassic (vars, v2, v3)
+      | Right e ->
+         let e = expr e in
+         G.ForClassic ([G.ForInitExpr e], v2, v3)
+      )
       
   | ForIn ((v1, v2)) ->
-      let v1 = (* either def_of_var expr v1  *) raise Todo
-      and v2 = expr v2 in
-      raise Todo
+      let v2 = expr v2 in
+      let pattern = 
+        match v1 with
+        | Left v -> 
+            let v = def_of_var v in
+            G.OtherPat (G.OP_Var, [G.D v])
+        | Right e ->
+            let e = expr e in
+            G.OtherPat (G.OP_Expr, [G.E e])
+      in
+      G.ForEach (pattern, v2)
 
 and case =
   function
@@ -271,6 +291,17 @@ and def_of_var { v_name = x_name; v_kind = x_kind;
        let v4TODO = vref resolved_name x_resolved in
        ent, VarDef { G.vinit = Some v3; G.vtype = None }
    )
+
+and var_of_var { v_name = x_name; v_kind = x_kind; 
+                 v_init = x_init; v_resolved = x_resolved } =
+  let v1 = name x_name in
+  let v2 = var_kind x_kind in 
+  let ent = G.basic_entity v1 [v2] in
+
+  let v3 = expr x_init in 
+  let v4TODO = vref resolved_name x_resolved in
+  ent, { G.vinit = Some v3; G.vtype = None }
+
 
 and var_kind = function | Var -> G.Var | Let -> G.Let | Const -> G.Const
 
