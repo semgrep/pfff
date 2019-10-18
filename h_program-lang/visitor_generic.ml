@@ -589,7 +589,8 @@ and v_any =
   | Dk v1 -> let v1 = v_def_kind v1 in ()
   | I v1 -> let v1 = v_item v1 in ()
   | Pa v1 -> let v1 = v_parameter v1 in ()
-  | A v1 -> let v1 = v_attribute v1 in ()
+  | Ar v1 -> let v1 = v_argument v1 in ()
+  | At v1 -> let v1 = v_attribute v1 in ()
   | Pr v1 -> let v1 = v_program v1 in ()
   
 

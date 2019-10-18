@@ -602,7 +602,8 @@ and any =
   | I of item
 
   | Pa of parameter
-  | A of attribute
+  | Ar of argument
+  | At of attribute
   | Dk of definition_kind
 
   | Pr of program
