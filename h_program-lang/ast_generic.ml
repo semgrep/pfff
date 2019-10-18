@@ -253,7 +253,7 @@ type expr =
     | OE_Is | OE_IsNot 
     | OE_In | OE_NotIn
     | OE_Invert
-    | OE_Ellipsis | OE_Slice | OE_ExtSlice
+    | OE_Slice | OE_SliceIndex | OE_SliceEllipsis | OE_SliceRange
     | OE_ListComp | OE_GeneratorExpr 
     | OE_Repr
     (* Java *)
@@ -285,7 +285,6 @@ and type_ =
 
   | OtherType of other_type_operator * any list
   
-
   and type_arguments = type_argument list
 
     and type_argument = 
@@ -302,14 +301,6 @@ and type_ =
   | OT_StructName | OT_UnionName | OT_EnumName
   (* PHP *)
   | OT_Shape | OT_Variadic
-
-(* TODO: unused *)
-and type_parameter = name * type_parameter_constraints
-
-  and type_parameter_constraints = type_parameter_constraint list
-
-   and type_parameter_constraint = 
-     | Extends of type_
 
 (* ------------------------------------------------------------------------- *)
 (* Attribute *)
@@ -349,7 +340,7 @@ and stmt =
   (* later: lift Call/Assign/Seq here *)
   | ExprStmt of expr
 
-  | LocalDef of def
+  | LocalDef of definition
   | LocalDirective of directive
 
   | Block of stmt list
@@ -428,22 +419,37 @@ and pattern =
 (* ------------------------------------------------------------------------- *)
 (* definitions *)
 (* ------------------------------------------------------------------------- *)
-and def = (* (or decl) *)
-  | FuncDef of function_definition (* valid for methods too *)
-  | VarDef of variable_definition  (* valid for constants and fields too *)
-  | ClassDef of class_definition
-  | TypeDef of type_definition
+and definition = entity * definition_kind (* (or decl) *)
+  and entity = {
+    name: name;
+    attrs: attribute list;
+    type_: type_ option; (* less: use ref to enable typechecking *)
+    tparams: type_parameter list;
+  }
+
+  and definition_kind =
+    | FuncDef of function_definition (* valid for methods too *)
+    | VarDef of variable_definition  (* valid for constants and fields too *)
+    | ClassDef of class_definition
+    | TypeDef of type_definition
+
+(* template/generics/polymorphic *)
+and type_parameter = name * type_parameter_constraints
+
+  and type_parameter_constraints = type_parameter_constraint list
+
+   and type_parameter_constraint = 
+     | Extends of type_
  
 (* ------------------------------------------------------------------------- *)
 (* Function (or method) definition *)
 (* ------------------------------------------------------------------------- *)
 (* less: could be merged with variable_definition *)
 and function_definition = {
- fname: name; (* can be fake and gensymed for anonymous functions? *)
+ (* less: could be merged in entity.type_ *)
  fparams: parameters;
  frettype: type_ option; (* return type *)
  fbody: stmt;
- fattrs: attribute list;
 }
   and parameters = parameter list
     and parameter =
@@ -468,17 +474,16 @@ and function_definition = {
 (* ------------------------------------------------------------------------- *)
 (* Variable definition *)
 (* ------------------------------------------------------------------------- *)
-(* Also used for constant_definition with vattrs = [Const].
+(* Also used for constant_definition with attrs = [Const].
  * Also used for field definition in a class (and record).
  * Could also use for function_definition with vinit = Some (Lambda (...))
  *)
 and variable_definition = {
-  vname: name;
   (* less: could remove function_definition as expr can be a Lambda but maybe
    * useful to explicitely makes the difference for now? *)
   vinit: expr option;
+  (* less: could merge in entity.type_ *)
   vtype: type_ option;
-  vattrs: attribute list;
 }
 
 (* ------------------------------------------------------------------------- *)
@@ -490,8 +495,8 @@ and variable_definition = {
  * an actual field (a value)
  *)
 and field = 
-  | FieldVar of variable_definition
-  | FieldMethod of function_definition
+  | FieldVar of entity * variable_definition
+  | FieldMethod of entity * function_definition
 
   | FieldDynamic of expr * attribute list * expr
   | FieldSpread of expr
@@ -501,9 +506,7 @@ and field =
 (* Type definition *)
 (* ------------------------------------------------------------------------- *)
 and type_definition = { 
-  ttname: name;
   tbody: type_definition_kind;
-  tattrs: attribute list;
   tother: other_type_definition_operator;
 }
   and type_definition_kind = 
@@ -527,11 +530,10 @@ and type_definition = {
 (* ------------------------------------------------------------------------- *)
 (* less: could be a special kind of type_definition *)
 and class_definition = {
-  cname: name;
   ckind: class_kind;
-  cextends: type_ list; cimplements: type_ list;
+  cextends: type_ list; 
+  cimplements: type_ list;
   cbody: field list;
-  cattrs: attribute list;
 }
   and class_kind = 
     | Class
@@ -566,7 +568,7 @@ and item =
   | IStmt of stmt
 
   (* could be removed since they are as LocalDef and LocalDirective in stmt *)
-  | IDef of def
+  | IDef of definition
   | IDir of directive
 
 and program = item list
@@ -577,16 +579,20 @@ and program = item list
 (* mentioned in many OtherXxx so must be part of the mutually recursive type *)
 and any =
   | N of name
+  | En of entity
+
   | E of expr
   | S of stmt
   | T of type_
   | P of pattern
-  | D of def
+
+  | D of definition
   | Di of directive
   | I of item
 
   | Pa of parameter
   | A of attribute
+  | Dk of definition_kind
 
   | Pr of program
 
@@ -615,6 +621,13 @@ let basic_param name = {
     pattrs = [];
 }
 
+let basic_entity name attrs = {
+  name = name;
+  attrs = attrs;
+  type_ = None;
+  tparams = [];
+}
+
 let expr_to_arg e = 
   Arg e
 
@@ -625,8 +638,8 @@ let opt_to_nop opt =
 
 let stmt_to_field st = 
   match st with
-  | LocalDef (VarDef def) -> FieldVar def
-  | LocalDef (FuncDef def) -> FieldMethod def
+  | LocalDef (entity, VarDef def) -> FieldVar (entity, def)
+  | LocalDef (entity, FuncDef def) -> FieldMethod (entity, def)
   | _ -> FieldStmt st
 
 (* less: could be a Block containing LocalDef or LocalDirective *)
