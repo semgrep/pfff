@@ -324,5 +324,4 @@ let any =
   | AClass v1 -> let v1 = class_decl v1 in ()
   | ADecl v1 -> let v1 = decl v1 in ()
   | AProgram v1 -> let v1 = program v1 in ()
-  
 *)
