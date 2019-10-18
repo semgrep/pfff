@@ -7,12 +7,14 @@ type visitor_in = {
   ktype_: (type_  -> unit) * visitor_out -> type_  -> unit;
   kpattern: (pattern  -> unit) * visitor_out -> pattern  -> unit;
 
-  kdef: (def  -> unit) * visitor_out -> def  -> unit;
+  kdef: (definition  -> unit) * visitor_out -> definition  -> unit;
   kdir: (directive  -> unit) * visitor_out -> directive  -> unit;
   kitem: (item  -> unit) * visitor_out -> item  -> unit;
 
   kattr: (attribute  -> unit) * visitor_out -> attribute  -> unit;
   kparam: (parameter  -> unit) * visitor_out -> parameter  -> unit;
+  kname: (name -> unit)  * visitor_out -> name  -> unit;
+  kentity: (entity -> unit)  * visitor_out -> entity  -> unit;
 
   kinfo: (tok -> unit)  * visitor_out -> tok  -> unit;
 }

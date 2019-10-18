@@ -26,12 +26,14 @@ type visitor_in = {
   ktype_: (type_  -> unit) * visitor_out -> type_  -> unit;
   kpattern: (pattern  -> unit) * visitor_out -> pattern  -> unit;
 
-  kdef: (def  -> unit) * visitor_out -> def  -> unit;
+  kdef: (definition  -> unit) * visitor_out -> definition  -> unit;
   kdir: (directive  -> unit) * visitor_out -> directive  -> unit;
   kitem: (item  -> unit) * visitor_out -> item  -> unit;
 
   kattr: (attribute  -> unit) * visitor_out -> attribute  -> unit;
   kparam: (parameter  -> unit) * visitor_out -> parameter  -> unit;
+  kname: (name -> unit)  * visitor_out -> name  -> unit;
+  kentity: (entity -> unit)  * visitor_out -> entity  -> unit;
 
   kinfo: (tok -> unit)  * visitor_out -> tok  -> unit;
 }
@@ -49,6 +51,8 @@ let default_visitor =
 
     kattr   = (fun (k,_) x -> k x);
     kparam   = (fun (k,_) x -> k x);
+    kname   = (fun (k,_) x -> k x);
+    kentity   = (fun (k,_) x -> k x);
 
     kinfo   = (fun (k,_) x -> k x);
   }
@@ -78,7 +82,11 @@ and v_tok v = v_info v
 and v_wrap: 'a. ('a -> unit) -> 'a wrap -> unit = fun _of_a (v1, v2) ->
   let v1 = _of_a v1 and v2 = v_info v2 in ()
 
-and v_name v = v_wrap v_string v
+and v_name v = 
+  let k x =
+    v_wrap v_string x
+  in
+  vin.kname (k, all_functions) v
 
 and v_dotted_name v = v_list v_name v
 
@@ -237,9 +245,10 @@ and v_other_expr_operator =
   | OE_In -> ()
   | OE_NotIn -> ()
   | OE_Invert -> ()
-  | OE_Ellipsis -> ()
   | OE_Slice -> ()
-  | OE_ExtSlice -> ()
+  | OE_SliceEllipsis -> ()
+  | OE_SliceRange -> ()
+  | OE_SliceIndex -> ()
   | OE_ListComp -> ()
   | OE_GeneratorExpr -> ()
   | OE_Repr -> ()
@@ -404,25 +413,44 @@ and v_pattern x =
 and v_other_pattern_operator = function | OP_Expr -> ()
 and v_def x =
   let k x =
-  match x with
+    let (v1, v2) = x in
+    let v1 = v_entity v1 and v2 = v_def_kind v2 in ()
+  in
+  vin.kdef (k, all_functions) x
+and v_entity x =
+
+  let k x =
+   let {
+             name = x_name;
+             attrs = v_attrs;
+             type_ = x_type_;
+             tparams = v_tparams
+           } = x in
+   let arg = v_name x_name in
+   let arg = v_list v_attribute v_attrs in
+   let arg = v_option v_type_ x_type_ in
+   let arg = v_list v_type_parameter v_tparams in ()
+  in
+  vin.kentity (k, all_functions) x
+
+and v_def_kind =
+  function
   | FuncDef v1 -> let v1 = v_function_definition v1 in ()
   | VarDef v1 -> let v1 = v_variable_definition v1 in ()
   | ClassDef v1 -> let v1 = v_class_definition v1 in ()
   | TypeDef v1 -> let v1 = v_type_definition v1 in ()
-  in
-  vin.kdef (k, all_functions) x
+
+
 and
   v_function_definition {
-                          fname = v_fname;
                           fparams = v_fparams;
                           frettype = v_frettype;
                           fbody = v_fbody;
-                          fattrs = v_fattrs
                         } =
-  let arg = v_name v_fname in
   let arg = v_parameters v_fparams in
   let arg = v_option v_type_ v_frettype in
-  let arg = v_stmt v_fbody in let arg = v_list v_attribute v_fattrs in ()
+  let arg = v_stmt v_fbody in 
+  ()
 and v_parameters v = v_list v_parameter v
 and v_parameter x =
   let k x =
@@ -448,19 +476,19 @@ and v_other_parameter_operator =
   function | OPO_KwdParam -> () | OPO_Ref -> ()
 and
   v_variable_definition {
-                          vname = v_vname;
                           vinit = v_vinit;
                           vtype = v_vtype;
-                          vattrs = v_vattrs
                         } =
-  let arg = v_name v_vname in
   let arg = v_option v_expr v_vinit in
   let arg = v_option v_type_ v_vtype in
-  let arg = v_list v_attribute v_vattrs in ()
+  ()
+
 and v_field =
   function
-  | FieldVar v1 -> let v1 = v_variable_definition v1 in ()
-  | FieldMethod v1 -> let v1 = v_function_definition v1 in ()
+  | FieldVar ((v1, v2)) ->
+      let v1 = v_entity v1 and v2 = v_variable_definition v2 in ()
+  | FieldMethod ((v1, v2)) ->
+      let v1 = v_entity v1 and v2 = v_function_definition v2 in ()
   | FieldDynamic ((v1, v2, v3)) ->
       let v1 = v_expr v1
       and v2 = v_list v_attribute v2
@@ -470,14 +498,10 @@ and v_field =
   | FieldStmt v1 -> let v1 = v_stmt v1 in ()
 and
   v_type_definition {
-                      ttname = v_ttname;
                       tbody = v_tbody;
-                      tattrs = v_tattrs;
                       tother = v_tother
                     } =
-  let arg = v_name v_ttname in
   let arg = v_type_definition_kind v_tbody in
-  let arg = v_list v_attribute v_tattrs in
   let arg = v_other_type_definition_operator v_tother in ()
 and v_type_definition_kind =
   function
@@ -497,19 +521,16 @@ and v_other_type_definition_operator =
   function | OTDO_Struct -> () | OTDO_Union -> () | OTDO_Enum -> ()
 and
   v_class_definition {
-                       cname = v_cname;
                        ckind = v_ckind;
                        cextends = v_cextends;
                        cimplements = v_cimplements;
                        cbody = v_cbody;
-                       cattrs = v_cattrs
                      } =
-  let arg = v_name v_cname in
   let arg = v_class_kind v_ckind in
   let arg = v_list v_type_ v_cextends in
   let arg = v_list v_type_ v_cimplements in
   let arg = v_list v_field v_cbody in
-  let arg = v_list v_attribute v_cattrs in ()
+  ()
 and v_class_kind = function | Class -> () | Interface -> () | Trait -> ()
 and v_directive x =
   let k x = 
@@ -545,17 +566,20 @@ and v_program v = v_list v_item v
 and v_any =
   function
   | N v1 -> let v1 = v_name v1 in ()
+  | En v1 -> let v1 = v_entity v1 in ()
   | E v1 -> let v1 = v_expr v1 in ()
   | S v1 -> let v1 = v_stmt v1 in ()
   | T v1 -> let v1 = v_type_ v1 in ()
   | P v1 -> let v1 = v_pattern v1 in ()
   | D v1 -> let v1 = v_def v1 in ()
   | Di v1 -> let v1 = v_directive v1 in ()
+  | Dk v1 -> let v1 = v_def_kind v1 in ()
   | I v1 -> let v1 = v_item v1 in ()
   | Pa v1 -> let v1 = v_parameter v1 in ()
   | A v1 -> let v1 = v_attribute v1 in ()
   | Pr v1 -> let v1 = v_program v1 in ()
   
+
 and all_functions x = v_any x
 in
 all_functions
