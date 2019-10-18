@@ -87,10 +87,5 @@ $(TEMP).cmo: $(TEMP).ml
 visitor_ast_js.cmo: visitor_ast_js.ml
 	$(OCAMLC) -w y -c $<
 
-js_to_generic.cmo: js_to_generic.ml
-	ocamlc $(INCLUDES) -g -w y -c $<
-
-
-##############################################################################
-# Literate Programming rules
-##############################################################################
+#js_to_generic.cmo: js_to_generic.ml
+#	ocamlc $(INCLUDES) -g -w y -c $<

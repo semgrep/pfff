@@ -14,10 +14,8 @@
  *)
 open Common
 
-module A = Ast_js
-module G = Ast_generic
-
 open Ast_js
+module G = Ast_generic
 
 (*****************************************************************************)
 (* Prelude *)
@@ -76,7 +74,7 @@ type special_result =
 
 let special (x, tok) = 
   match x with
-  | UseStrict -> SR_Other OE_UseStrict
+  | UseStrict -> SR_Other G.OE_UseStrict
   | Null -> SR_Literal (G.Null tok) 
   | Undefined -> SR_Literal (G.Undefined tok)
   | This -> SR_Special G.This
@@ -95,7 +93,7 @@ let special (x, tok) =
   | In -> SR_Other G.OE_In
   | Delete -> SR_Other G.OE_Delete
   | Void -> SR_Literal (G.Unit tok)
-  | Spread -> SR_Special Spread
+  | Spread -> SR_Special G.Spread
   | Yield -> SR_NeedArgs (fun args -> 
           match args with
           | [e] -> G.Yield e
@@ -155,7 +153,7 @@ and expr (x: expr) =
   | IdSpecial v1 -> 
       let x = special v1 in
       (match x with
-      | SR_Special v -> IdSpecial v
+      | SR_Special v -> G.IdSpecial v
       | SR_NeedArgs _ -> 
           error (snd v1) "Impossible: should have been matched in Call first"
       | SR_Literal l -> G.L l
@@ -166,10 +164,10 @@ and expr (x: expr) =
       G.Assign (v1, v2)
   | ArrAccess ((v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in 
       G.ArrayAccess (v1, v2)
-  | Obj v1 -> let flds = obj_ v1 in Record flds
+  | Obj v1 -> let flds = obj_ v1 in G.Record flds
   | Class (v1, _v2TODO) -> 
       let def, _more_attrsTODOEMPTY  = class_ v1 in
-      G.OtherExpr (OE_ExprClass, [G.Dk (G.ClassDef def)])
+      G.OtherExpr (G.OE_ExprClass, [G.Dk (G.ClassDef def)])
   | ObjAccess ((v1, v2)) ->
       let v1 = expr v1 in
       let v2 = property_name v2 in
@@ -177,8 +175,8 @@ and expr (x: expr) =
       | Left n -> G.ObjAccess (v1, n)
       | Right e -> G.OtherExpr (G.OE_ObjAccess_PN_Computed, [G.E v1; G.E e])
       )
-  | Fun ((v1, v2TODO)) -> 
-      let def, more_attrs   = fun_ v1 in
+  | Fun ((v1, _v2TODO)) -> 
+      let def, _more_attrs   = fun_ v1 in
       (* todo? assert more_attrs = []? *)
       G.Lambda (def.G.fparams, def.G.fbody)
 
@@ -187,7 +185,7 @@ and expr (x: expr) =
       let v2 = list expr v2 in 
       (match x with
       | SR_Special v -> 
-        G.Call (IdSpecial v, v2 |> List.map (fun e -> G.Arg e))
+        G.Call (G.IdSpecial v, v2 |> List.map (fun e -> G.Arg e))
       | SR_Literal _ ->
         error (snd v1) "Weird: literal in call position"
       | SR_Other x -> (* ex: NewTarget *)
@@ -282,14 +280,14 @@ and def_of_var { v_name = x_name; v_kind = x_kind;
   (match x_init with
   | Fun (v3, _nTODO)   -> 
       let def, more_attrs = fun_ v3 in
-      { ent with G.attrs = ent.attrs @ more_attrs}, FuncDef def
+      { ent with G.attrs = ent.G.attrs @ more_attrs}, G.FuncDef def
   | Class (v3, _nTODO) -> 
       let def, more_attrs = class_ v3 in
-      { ent with G.attrs = ent.attrs @ more_attrs}, ClassDef def
+      { ent with G.attrs = ent.G.attrs @ more_attrs}, G.ClassDef def
   | _ -> 
        let v3 = expr x_init in 
-       let v4TODO = vref resolved_name x_resolved in
-       ent, VarDef { G.vinit = Some v3; G.vtype = None }
+       let _v4TODO = vref resolved_name x_resolved in
+       ent, G.VarDef { G.vinit = Some v3; G.vtype = None }
    )
 
 and var_of_var { v_name = x_name; v_kind = x_kind; 
@@ -299,7 +297,7 @@ and var_of_var { v_name = x_name; v_kind = x_kind;
   let ent = G.basic_entity v1 [v2] in
 
   let v3 = expr x_init in 
-  let v4TODO = vref resolved_name x_resolved in
+  let _v4TODO = vref resolved_name x_resolved in
   ent, { G.vinit = Some v3; G.vtype = None }
 
 
@@ -318,7 +316,7 @@ and parameter x =
   let v2 = option expr p_default in 
   let v3 = bool p_dots in
   G.ParamClassic { G.pname = v1; pdefault = v2; ptype = None;
-        pattrs = if v3 then [Variadic] else [];
+        pattrs = if v3 then [G.Variadic] else [];
   }
   
 
@@ -338,7 +336,7 @@ and class_ { c_extends = c_extends; c_body = c_body } =
     | None -> [] 
     | Some e -> [G.OtherType (G.OT_Expr, [G.E e])]
   in
-  { ckind = G.Class; cextends = extends; cimplements = []; cbody = v2;}, []
+  { G.ckind = G.Class; cextends = extends; cimplements = []; cbody = v2;}, []
 and property x =
    match x with
   | Field ((v1, v2, v3)) ->
@@ -350,13 +348,13 @@ and property x =
       | Left n ->
         let ent = G.basic_entity n v2 in
        (* todo: could be a Lambda in which case we should return a FuncDef? *)
-        FieldVar (ent, { vinit = Some v3; vtype = None })
+        G.FieldVar (ent, { G.vinit = Some v3; vtype = None })
       | Right e ->
-        FieldDynamic (e, v2, v3)
+        G.FieldDynamic (e, v2, v3)
       )
   | FieldSpread v1 -> 
       let v1 = expr v1 in 
-      FieldSpread v1
+      G.FieldSpread v1
 
 and property_prop =
   function 
@@ -367,7 +365,7 @@ and property_prop =
 let rec toplevel x =
   match x with
   | V v1 -> let v1 = def_of_var v1 in G.IDef v1
-  | S ((v1, v2)) -> let v1TODO = tok v1 and v2 = stmt v2 in G.IStmt v2
+  | S ((v1, v2)) -> let _v1TODO = tok v1 and v2 = stmt v2 in G.IStmt v2
   | M v1 -> let v1 = module_directive v1 in G.IDir v1
 
 
@@ -381,14 +379,15 @@ and module_directive x =
       G.ImportAll (G.FileName v2, Some v1)
   | ImportCss ((v1)) ->
       let v1 = name v1 in
-      G.OtherDirective (OI_ImportCss, [G.N v1])
+      G.OtherDirective (G.OI_ImportCss, [G.N v1])
   | ImportEffect ((v1)) ->
       let v1 = name v1 in
-      G.OtherDirective (OI_ImportEffect, [G.N v1])
+      G.OtherDirective (G.OI_ImportEffect, [G.N v1])
   | Export ((v1)) -> let v1 = name v1 in
-      G.OtherDirective (OI_Export, [G.N v1])
+      G.OtherDirective (G.OI_Export, [G.N v1])
 
 and program v = list toplevel v
+
 
 (*
 let any =

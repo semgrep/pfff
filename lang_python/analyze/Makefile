@@ -46,5 +46,5 @@ $(TARGET).top: $(OBJS) $(LIBS)
 clean::
 	rm -f $(TARGET).top
 
-python_to_generic.cmo: python_to_generic.ml
-	ocamlc $(INCLUDES) -g -w y -c $<
+#python_to_generic.cmo: python_to_generic.ml
+#	ocamlc $(INCLUDES) -g -w y -c $<

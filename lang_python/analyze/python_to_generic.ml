@@ -14,10 +14,8 @@
  *)
 open Common
 
-module A = Ast_python
-module G = Ast_generic
-
 open Ast_python
+module G = Ast_generic
 
 (*****************************************************************************)
 (* Prelude *)
@@ -51,7 +49,6 @@ let error tok msg =
 (*****************************************************************************)
 
 let info x = x
-let tok v = info v
 
 let wrap = fun _of_a (v1, v2) ->
   let v1 = _of_a v1 and v2 = info v2 in 
@@ -107,21 +104,21 @@ let rec expr (x: expr) =
       in 
       G.Id (v1, 
             { (G.empty_info ()) with 
-               id_type = ref v3;
+               G.id_type = ref v3;
                id_resolved = v4 })
           
   | Tuple ((v1, v2)) ->
       let v1 = list expr v1 
-      and v2TODO = expr_context v2 in 
+      and _v2TODO = expr_context v2 in 
       G.Tuple v1
   | List ((v1, v2)) ->
       let v1 = list expr v1 
-      and v2TODO = expr_context v2 in 
+      and _v2TODO = expr_context v2 in 
       G.Container (G.List, v1)
   | Subscript ((v1, v2, v3)) ->
       let v1 = expr v1 
       and v2 = list slice v2 
-      and v3TODO = expr_context v3 in 
+      and _v3TODO = expr_context v3 in 
       (match v2 with
       | [G.OE_SliceIndex, e] -> G.ArrayAccess (v1, e)
       | xs -> 
@@ -132,7 +129,7 @@ let rec expr (x: expr) =
   | Attribute ((v1, v2, v3)) ->
       let v1 = expr v1 
       and v2 = name v2 
-      and v3TODO = expr_context v3 in 
+      and _v3TODO = expr_context v3 in 
       G.ObjAccess (v1, v2)
 
   | DictOrSet (v) -> 
@@ -164,7 +161,7 @@ let rec expr (x: expr) =
       and v3 = list expr v3 in
       (match v2, v3 with
       | [Left op], [e] ->
-        G.Call (G.IdSpecial (ArithOp op), [v1;e] |> List.map G.expr_to_arg)
+        G.Call (G.IdSpecial (G.ArithOp op), [v1;e] |> List.map G.expr_to_arg)
       | [Right oe], [e] ->
         G.OtherExpr (oe, [G.E v1; G.E e])
       | _ ->  
@@ -265,8 +262,6 @@ and comprehension (v1, v2, v3) =
   let v1 = expr v1 and v2 = expr v2 and v3 = list expr v3 in
   G.E (G.Tuple [v1; v2; G.Container (G.List, v3)])
 
-
-and keyword (v1, v2) = let v1 = name v1 and v2 = expr v2 in ()
 
 and slice =
   function
@@ -485,7 +480,7 @@ and excepthandler =
 
 and decorator v = 
   let v = expr v in
-  OtherAttribute (OA_Expr, [G.E v])
+  G.OtherAttribute (G.OA_Expr, [G.E v])
 
 and alias (v1, v2) = 
   let v1 = name v1 and v2 = option name v2 in 
