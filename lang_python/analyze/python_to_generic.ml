@@ -39,10 +39,12 @@ let string = id
 let int_to_string = string_of_int
 let float_to_string = string_of_float
 
+(*
 exception Error of string * Parse_info.info
 
 let error tok msg = 
   raise (Error (msg, tok))
+*)
 
 (*****************************************************************************)
 (* Entry point *)
@@ -103,7 +105,6 @@ let rec expr (x: expr) =
       and v3 = option type_ v3
       and v4 = vref resolved_name v4
       in 
-      (* TODO: assert expr_context = Load ? *)
       G.Id (v1, 
             { (G.empty_info ()) with 
                id_type = ref v3;
@@ -119,11 +120,14 @@ let rec expr (x: expr) =
       G.Container (G.List, v1)
   | Subscript ((v1, v2, v3)) ->
       let v1 = expr v1 
-      and v2 = slice v2 
+      and v2 = list slice v2 
       and v3TODO = expr_context v3 in 
       (match v2 with
-      | Left e -> G.ArrayAccess (v1, e)
-      | Right (other) -> other v1
+      | [G.OE_SliceIndex, e] -> G.ArrayAccess (v1, e)
+      | xs -> 
+        G.OtherExpr (G.OE_Slice, 
+                     xs |> List.map (fun (other, e) ->
+                       G.E (G.OtherExpr (other, [G.E e]))))
       )
   | Attribute ((v1, v2, v3)) ->
       let v1 = expr v1 
@@ -259,18 +263,15 @@ and keyword (v1, v2) = let v1 = name v1 and v2 = expr v2 in ()
 
 and slice =
   function
-  | Index v1 -> let v1 = expr v1 in Left v1
-  | Ellipsis -> Right (fun arg1 -> G.OtherExpr (G.OE_Ellipsis, [G.E arg1]))
+  | Index v1 -> let v1 = expr v1 in G.OE_SliceIndex, v1
+  | Ellipsis -> G.OE_SliceEllipsis, G.Nop
   | Slice ((v1, v2, v3)) ->
       let v1 = option expr v1
       and v2 = option expr v2
       and v3 = option expr v3
       in
       let tuple = G.Tuple ([v1;v2;v3] |> List.map G.opt_to_nop) in
-      Right (fun arg1 -> G.OtherExpr (G.OE_Slice, [G.E tuple]))
-  | ExtSlice v1 -> let v1 = list slice v1 in 
-      (* todo: call a slice2 function *)
-      raise Todo
+      G.OE_SliceRange, tuple
 
 and parameters x =
   let (v1, v2, v3) = x in
@@ -322,24 +323,24 @@ and stmt x =
       and v4 = list_stmt1 v4
       and v5 = list decorator v5
       in
-      let def = { G.fname = v1; fparams = v2; frettype = v3; fbody = v4;
-                  fattrs = v5 } in
+      let ent = G.basic_entity v1 v5 in
+      let def = { G.fparams = v2; frettype = v3; fbody = v4; } in
       (* will be lift up to a IDef later *)
-      G.LocalDef (G.FuncDef def)
+      G.LocalDef (ent, G.FuncDef def)
   | ClassDef ((v1, v2, v3, v4)) ->
       let v1 = name v1
       and v2 = list type_ v2
       and v3 = list stmt v3
       and v4 = list decorator v4
       in 
-      let def = { G.cname = v1; ckind = G.Class; 
-                  cextends = v2; cimplements = [];
+      let ent = G.basic_entity v1 v4 in
+      let def = { G.ckind = G.Class; cextends = v2; cimplements = [];
                   cbody = List.map G.stmt_to_field v3;
-                  cattrs = v4; } in
+                } in
       (* will be lift up to a IDef later *)
-      G.LocalDef (G.ClassDef def)
+      G.LocalDef (ent, G.ClassDef def)
 
-  (* todo: should turn some of those in GLocalDef (G.VarDef ! ) *)
+  (* TODO: should turn some of those in G.LocalDef (G.VarDef ! ) *)
   | Assign ((v1, v2)) -> let v1 = list expr v1 and v2 = expr v2 in
       G.ExprStmt (G.Assign (G.Tuple v1, v2))
   | AugAssign ((v1, v2, v3)) ->

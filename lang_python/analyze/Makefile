@@ -47,4 +47,4 @@ clean::
 	rm -f $(TARGET).top
 
 python_to_generic.cmo: python_to_generic.ml
-	ocamlc $(INCLUDES) -w y -c $<
+	ocamlc $(INCLUDES) -g -w y -c $<
