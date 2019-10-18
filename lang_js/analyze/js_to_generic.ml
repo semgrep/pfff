@@ -165,10 +165,8 @@ and expr (x: expr) =
       G.ArrayAccess (v1, v2)
   | Obj v1 -> let flds = obj_ v1 in Record flds
   | Class (v1, _v2TODO) -> 
-      let n = "AnonClass", Parse_info.fake_info "AnonClass" in
-      let attrs = [] in
-      let v1 = class_ n attrs v1 in
-      G.OtherExpr (OE_ExprClass, [D (ClassDef v1)])
+      let def, _more_attrsTODOEMPTY  = class_ v1 in
+      G.OtherExpr (OE_ExprClass, [G.Dk (G.ClassDef def)])
   | ObjAccess ((v1, v2)) ->
       let v1 = expr v1 in
       let v2 = property_name v2 in
@@ -177,11 +175,9 @@ and expr (x: expr) =
       | Right e -> G.OtherExpr (G.OE_ObjAccess_PN_Computed, [G.E v1; G.E e])
       )
   | Fun ((v1, v2TODO)) -> 
-      let n = "AnonClass", Parse_info.fake_info "AnonClass" in
-      let attrs = [] in
-      let v1 = fun_ n attrs v1 in
-      (* todo? assert no attr? *)
-      G.Lambda (v1.G.fparams, v1.G.fbody)
+      let def, more_attrs   = fun_ v1 in
+      (* todo? assert more_attrs = []? *)
+      G.Lambda (def.G.fparams, def.G.fbody)
 
   | Apply ((IdSpecial v1, v2)) -> 
       let x = special v1 in
@@ -262,23 +258,27 @@ and def_of_var { v_name = x_name; v_kind = x_kind;
                  v_init = x_init; v_resolved = x_resolved } =
   let v1 = name x_name in
   let v2 = var_kind x_kind in 
+  let ent = G.basic_entity v1 [v2] in
   (match x_init with
-  | Fun (v3, _nTODO)   -> FuncDef (fun_ v1 [v2] v3)
-  | Class (v3, _nTODO) -> ClassDef (class_ v1 [v2] v3)
+  | Fun (v3, _nTODO)   -> 
+      let def, more_attrs = fun_ v3 in
+      { ent with G.attrs = ent.attrs @ more_attrs}, FuncDef def
+  | Class (v3, _nTODO) -> 
+      let def, more_attrs = class_ v3 in
+      { ent with G.attrs = ent.attrs @ more_attrs}, ClassDef def
   | _ -> 
        let v3 = expr x_init in 
        let v4TODO = vref resolved_name x_resolved in
-       VarDef { G.vname = v1; vinit = Some v3; vtype = None; vattrs = [v2] }
+       ent, VarDef { G.vinit = Some v3; G.vtype = None }
    )
 
 and var_kind = function | Var -> G.Var | Let -> G.Let | Const -> G.Const
 
-and fun_ n attrs { f_props = f_props; f_params = f_params; f_body = f_body } =
+and fun_ { f_props = f_props; f_params = f_params; f_body = f_body } =
   let v1 = list fun_prop f_props in
   let v2 = list parameter f_params in 
   let v3 = stmt f_body in
-  { G.fname = n; fparams = v2; frettype = None; fbody = v3; 
-    fattrs = attrs @ v1 }
+  { G.fparams = v2; frettype = None; fbody = v3; }, v1
 
 and parameter x =
  match x with
@@ -298,7 +298,7 @@ and fun_prop =
 
 and obj_ v = list property v
 
-and class_ n attrs { c_extends = c_extends; c_body = c_body } =
+and class_ { c_extends = c_extends; c_body = c_body } =
   let v1 = option expr c_extends in
   let v2 = list property c_body in 
   (* todo: could analyze arg to look for Id *)
@@ -307,9 +307,7 @@ and class_ n attrs { c_extends = c_extends; c_body = c_body } =
     | None -> [] 
     | Some e -> [G.OtherType (G.OT_Expr, [G.E e])]
   in
-  { G.cname = n; ckind = G.Class; cextends = extends; cimplements = [];
-    cattrs = attrs; cbody = v2;
-  }
+  { ckind = G.Class; cextends = extends; cimplements = []; cbody = v2;}, []
 and property x =
    match x with
   | Field ((v1, v2, v3)) ->
@@ -319,8 +317,9 @@ and property x =
       in 
       (match v1 with
       | Left n ->
+        let ent = G.basic_entity n v2 in
        (* todo: could be a Lambda in which case we should return a FuncDef? *)
-        FieldVar { G.vname = n; vinit = Some v3; vtype = None; vattrs = v2 }
+        FieldVar (ent, { vinit = Some v3; vtype = None })
       | Right e ->
         FieldDynamic (e, v2, v3)
       )
