@@ -15,6 +15,7 @@ SRC= flag_analyze_php.ml \
      class_php.ml include_require_php.ml  \
 # used to be in ast_simple/
 SRC+= ast_php_simple.ml ast_php_simple_build.ml meta_ast_php_simple.ml
+SRC+= php_to_generic.ml
 SRC+= pil.ml
 #note: tools/phpmanual_xml.ml is related to builtins_php.ml
 SRC+= defs_uses_php.ml \
@@ -90,3 +91,6 @@ clean::
 
 visitor_pil.cmo: visitor_pil.ml
 	$(OCAMLC) -w y -c $<
+
+php_to_generic.cmo: php_to_generic.ml
+	ocamlc $(INCLUDES) -g -w y -c $<

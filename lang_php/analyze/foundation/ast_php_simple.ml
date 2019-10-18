@@ -117,16 +117,21 @@
  * 380MB.
  *)
 type 'a wrap = 'a * Ast_php.tok option
+ (* with tarzan *)
 
 type ident = string wrap
+ (* with tarzan *)
 type var = string wrap
+ (* with tarzan *)
 
 (* The keyword 'namespace' can be in a leading position. The special
  * ident 'ROOT' can also be leading.
  *)
 type qualified_ident = ident list
+ (* with tarzan *)
 
 type name = qualified_ident
+ (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Program *)
@@ -416,7 +421,8 @@ and type_def = {
   | Alias of hint_type
   | Newtype of hint_type
   | ClassConstType of hint_type option
- (* with tarzan *)
+
+(* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Any *)
