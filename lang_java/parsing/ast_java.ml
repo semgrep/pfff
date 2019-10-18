@@ -35,6 +35,7 @@ type 'a wrap  = 'a * tok
   (* with tarzan *)
 
 type 'a list1 = 'a list (* really should be 'a * 'a list *)
+  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Ident, qualifier *)
@@ -70,7 +71,7 @@ type typ =
     * things.
     *)
     and ref_type = typ
-    (* with tarzan *)
+ (* with tarzan *)
 
 type type_parameter =
   | TParam of ident * ref_type list (* extends *)

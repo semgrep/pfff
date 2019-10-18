@@ -390,9 +390,11 @@ and module_directive x =
 
 and program v = list toplevel v
 
+(*
 let any =
   function
   | Expr v1 -> let v1 = expr v1 in G.E v1
   | Stmt v1 -> let v1 = stmt v1 in G.S v1
   | Top v1 -> let v1 = toplevel v1 in G.I v1
   | Program v1 -> let v1 = program v1 in G.Pr v1
+*)

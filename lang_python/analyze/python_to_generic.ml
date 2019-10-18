@@ -498,9 +498,11 @@ let program v =
   let v = list stmt v in
   v |> List.map G.stmt_to_item
 
+(*
 let any =
   function
   | Expr v1 -> let v1 = expr v1 in ()
   | Stmt v1 -> let v1 = stmt v1 in ()
   | Stmts v1 -> let v1 = list stmt v1 in ()
   | Program v1 -> let v1 = program v1 in ()
+*)
