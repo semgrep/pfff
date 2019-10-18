@@ -152,9 +152,13 @@ let test_json_bench file =
 
 module FT = File_type
 
-let test_parse_generic file =
-  let typ = File_type.file_type_of_file file in
-  let gen = 
+let test_parse_generic xs =
+  let xs = List.map Common.fullpath xs in
+  let files = Common.files_of_dir_or_files_no_vcs_nofilter xs in
+  files |> List.iter (fun file ->
+   pr2 file;
+   let typ = File_type.file_type_of_file file in
+   let gen = 
     match typ with
     | FT.PL (FT.Web (FT.Js)) ->
       let cst = Parse_js.parse_program file in
@@ -167,6 +171,7 @@ let test_parse_generic file =
     | _ -> failwith "file type not supported"
   in
   pr2_gen gen
+  )
 
 (* ---------------------------------------------------------------------- *)
 let pfff_extra_actions () = [
@@ -174,8 +179,8 @@ let pfff_extra_actions () = [
   Common.mk_action_1_arg test_json_pretty_printer;
   "-json_bench", " <file>",
   Common.mk_action_1_arg test_json_bench;
-  "-parse_generic", " <file>",
-  Common.mk_action_1_arg test_parse_generic;
+  "-parse_generic", " <dirs_or_files>",
+  Common.mk_action_n_arg test_parse_generic;
   
   "-check_overlay", " <dir_orig> <dir_overlay>",
   Common.mk_action_2_arg (fun dir_orig dir_overlay ->
