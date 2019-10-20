@@ -275,11 +275,9 @@ and slice =
       let tuple = G.Tuple ([v1;v2;v3] |> List.map G.opt_to_nop) in
       G.OE_SliceRange, tuple
 
-and parameters x =
-  let (v1, v2, v3) = x in
-  let varargs = option name_and_type v2 in
-  let kwargs = option name_and_type v3 in
-  (v1 |> List.map (fun (e, eopt) ->
+and parameters xs =
+  xs |> List.map (function
+   | ParamClassic (e, eopt) ->
     (match e with
     | Name (n, _ctx, typopt, _resolved) ->
       let typopt = option type_ typopt in
@@ -292,20 +290,18 @@ and parameters x =
       let e2 = option expr eopt |> G.opt_to_nop in
       G.ParamPattern (G.OtherPat (G.OP_Expr, [G.E e1; G.E e2]))
     )
-  )) @
-  (match varargs with None -> [] | Some (n, topt) ->
-     [G.ParamClassic { (G.basic_param n) with
-       G.ptype = topt; pattrs = [G.Variadic]; }]) @
-  (match kwargs with None -> [] | Some (n, topt) ->
-     [G.OtherParam (G.OPO_KwdParam, 
-            [G.N n] @ (match topt with None -> [] | Some t -> [G.T t]))]) @
-  []
+  | ParamStar (n, topt) ->
+     let n = name n in
+     let topt = option type_ topt in
+     G.ParamClassic { (G.basic_param n) with
+       G.ptype = topt; pattrs = [G.Variadic]; }
+   | ParamPow (n, topt) ->
+     let n = name n in
+     let topt = option type_ topt in
+     G.OtherParam (G.OPO_KwdParam, 
+            [G.N n] @ (match topt with None -> [] | Some t -> [G.T t]))
+  )
  
-
-and name_and_type (v1, v2) =
-  let v1 = name v1 in
-  let v2 = option type_ v2 in
-  v1, v2
 
 and type_ v = 
   let v = expr v in

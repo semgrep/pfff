@@ -257,19 +257,16 @@ let visit_program ~tag_hook _prefs (program, toks) =
        Common.save_excursion in_decorator true (fun () -> 
           k x);
     );
-    V.kparameters = (fun (k, _) x ->
-      let (args, varargs, kwargs) = x in
-      args |> List.iter (fun (arg, _optval) ->
-        match arg with
+    V.kparameter = (fun (k, _) x ->
+      (match x with
+      | ParamClassic (arg, _optval) ->
+        (match arg with
         | Name (name, _ctx, _typ, _resolved) ->
           tag_name name (Parameter Def);
         | _ -> ()
-      );
-      varargs |> Common.do_option (fun (varargs, _t) ->
-        tag_name varargs (Parameter Def);
-      );
-      kwargs |> Common.do_option (fun (kwargs, _t) ->
-        tag_name kwargs (Parameter Def);
+        );
+      | ParamStar (name, _) | ParamPow (name, _) ->
+        tag_name name (Parameter Def);
       );
       k x
     );

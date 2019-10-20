@@ -25,7 +25,7 @@ type visitor_in = {
   kstmt: (stmt  -> unit) * visitor_out -> stmt  -> unit;
   ktype_: (type_  -> unit) * visitor_out -> type_  -> unit;
   kdecorator: (decorator  -> unit) * visitor_out -> decorator  -> unit;
-  kparameters: (parameters  -> unit) * visitor_out -> parameters  -> unit;
+  kparameter: (parameter  -> unit) * visitor_out -> parameter  -> unit;
   kinfo: (tok -> unit)  * visitor_out -> tok  -> unit;
 }
 and visitor_out = any -> unit
@@ -35,7 +35,7 @@ let default_visitor =
     kstmt   = (fun (k,_) x -> k x);
     ktype_   = (fun (k,_) x -> k x);
     kdecorator   = (fun (k,_) x -> k x);
-    kparameters   = (fun (k,_) x -> k x);
+    kparameter   = (fun (k,_) x -> k x);
     kinfo   = (fun (k,_) x -> k x);
   }
 
@@ -186,14 +186,18 @@ and v_slice =
       and v3 = v_option v_expr v3
       in ()
   | Index v1 -> let v1 = v_expr v1 in ()
-and v_parameters x =
-  let k (v1, v2, v3) =
-   let v1 = v_list v_expr_and_opt_expr v1
-   and v2 = v_option v_name_and_type v2
-   and v3 = v_option v_name_and_type v3
-   in ()
+and v_parameters v = v_list v_parameter v
+and v_parameter x =
+  let k x = 
+  match x with
+  | ParamClassic ((v1, v2)) ->
+      let v1 = v_expr v1 and v2 = v_option v_expr v2 in ()
+  | ParamStar ((v1, v2)) ->
+      let v1 = v_name v1 and v2 = v_option v_type_ v2 in ()
+  | ParamPow ((v1, v2)) ->
+      let v1 = v_name v1 and v2 = v_option v_type_ v2 in ()
   in
-  vin.kparameters (k, all_functions) x
+  vin.kparameter (k, all_functions) x
 
 and v_expr_and_opt_expr (v1, opt) = 
   let v1 = v_expr v1 in

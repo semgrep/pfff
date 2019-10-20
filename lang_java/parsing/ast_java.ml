@@ -20,6 +20,8 @@
  *
  * todo:
  *  - support generic methods (there is support for generic classes though)
+ *  - Look for featherweight Java
+ *  - look for middleweight Java (mentioned in Coccinelle4J paper)
  *)
 
 (*****************************************************************************)

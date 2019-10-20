@@ -107,6 +107,7 @@ type expr =
   | Subscript of expr (* value *) * slice list (* slice *) * 
                  expr_context (* ctx *)
 
+  (* the parameters do not have types here *)
   | Lambda of parameters (* args *) * expr (* body *)
 
   | IfExp of expr (* test *) * expr (* body *) * expr (* orelse *)
@@ -164,11 +165,14 @@ type expr =
     | Slice of expr option (* lower *) * expr option (* upper *) * expr option (* step *)
     | Index of expr (* value *)
   
-  and parameters = 
-      (* the first expr can be only a Name or a Tuple (pattern?) *)
-      (expr * expr option (* default value *)) list (* args *) * 
-      (name * type_ option) option (* varargs *) * 
-      (name * type_ option) option (* kwargs *)
+  and parameters = parameter list
+   and parameter = 
+      (* the first expr can be only a Name or a Tuple (pattern?),
+       * and the Name can have a type associated with it
+       *)
+     | ParamClassic of expr * expr option (* default value *)
+     | ParamStar of name * type_ option
+     | ParamPow  of name * type_ option
   
   and argument = 
     | Arg of expr
@@ -263,6 +267,7 @@ and decorator = expr
 (* ------------------------------------------------------------------------- *)
 and alias = name (* name *) * name option (* asname *)
 and alias_dotted = dotted_name (* name *) * name option (* asname *)
+  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Toplevel *)
