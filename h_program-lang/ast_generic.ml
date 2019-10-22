@@ -392,7 +392,7 @@ and stmt =
     | OS_Delete 
     | OS_Print (* less: could generalize with console.log? *)
     | OS_ForOrElse | OS_WhileOrElse | OS_TryOrElse
-    | OS_With | OS_ThrowMulti | OS_Global 
+    | OS_With | OS_ThrowFrom | OS_ThrowNothing | OS_Global 
     | OS_Pass
     (* Java *)
     | OS_Sync

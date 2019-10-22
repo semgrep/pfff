@@ -290,6 +290,7 @@ and v_type_argument =
 and v_other_type_argument_operator = function | OTA_Question -> ()
 and v_other_type_operator =
   function
+  | OT_Arg -> ()
   | OT_Expr -> ()
   | OT_StructName -> ()
   | OT_UnionName -> ()
@@ -398,7 +399,8 @@ and v_other_stmt_operator =
   | OS_WhileOrElse -> ()
   | OS_TryOrElse -> ()
   | OS_With -> ()
-  | OS_ThrowMulti -> ()
+  | OS_ThrowFrom -> ()
+  | OS_ThrowNothing -> ()
   | OS_Global -> ()
   | OS_Pass -> ()
   | OS_Sync -> ()

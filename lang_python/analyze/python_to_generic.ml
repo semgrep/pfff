@@ -402,17 +402,17 @@ and stmt x =
       let anys = [G.E v1; G.E (G.opt_to_nop v2); G.S v3] in
       G.OtherStmt (G.OS_With, anys)
 
-  | Raise ((v1, v2, v3)) ->
-      let v1 = option expr v1
-      and v2 = option expr v2
-      and v3 = option expr v3
-      in
-      (match v1, v2, v3 with
-      | Some e, None, None -> 
-        G.Throw e
-      | _ ->
-        let tuple = G.Tuple ([v1;v2;v3] |> List.map G.opt_to_nop) in
-        G.OtherStmt (G.OS_ThrowMulti, [G.E tuple])
+  | Raise (v1) ->
+      (match v1 with
+      | Some (e, None) -> 
+        let e = expr e in G.Throw e
+      | Some (e, Some from) -> 
+        let e = expr e in
+        let from = expr from in
+        let st = G.Throw e in
+        G.OtherStmt (G.OS_ThrowFrom, [G.E from; G.S st])
+      | None ->
+        G.OtherStmt (G.OS_ThrowNothing, [])
       )
                   
   | TryExcept ((v1, v2, v3)) ->

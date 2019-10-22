@@ -405,10 +405,9 @@ return_stmt:
 yield_stmt: yield_expr { ExprStmt ($1) }
 
 raise_stmt:
-  | RAISE                            { Raise (None, None, None) }
-  | RAISE test                       { Raise (Some $2, None, None) }
-  | RAISE test COMMA test            { Raise (Some $2, Some $4, None) }
-  | RAISE test COMMA test COMMA test { Raise (Some $2, Some $4, Some $6) }
+  | RAISE                           { Raise (None) }
+  | RAISE test                      { Raise (Some ($2, None)) }
+  | RAISE test FROM test            { Raise (Some ($2, Some $4)) }
 
 
 global_stmt: GLOBAL name_list { Global ($2) }

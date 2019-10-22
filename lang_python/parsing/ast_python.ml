@@ -189,11 +189,11 @@ type expr =
  * for its syntax.
  *)
 and type_ = expr
-  (* with tarzan *)
 
 (* used in inheritance, to allow default value for metaclass *)
 and type_parent = argument
-
+  (* with tarzan *)
+  
 (* ------------------------------------------------------------------------- *)
 (* Statement *)
 (* ------------------------------------------------------------------------- *)
@@ -226,7 +226,7 @@ type stmt =
   | If of expr (* test *) * stmt list (* body *) * stmt list (* orelse *)
   | With of expr (* context_expr *) * expr option (* optional_vars *) * stmt list (* body *)
 
-  | Raise of expr option (* type *) * expr option (* inst *) * expr option (* tback *)
+  | Raise of (expr * expr option (* from *)) option
   | TryExcept of stmt list (* body *) * excepthandler list (* handlers *) * stmt list (* orelse *)
   | TryFinally of stmt list (* body *) * stmt list (* finalbody *)
   | Assert of expr (* test *) * expr option (* msg *)
