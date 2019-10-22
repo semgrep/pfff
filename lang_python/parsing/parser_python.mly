@@ -352,9 +352,8 @@ decorator:
   | AT decorator_name arglist_decorator_paren_opt NEWLINE { $3 $2 }
 
 decorator_name:
-  | NAME { Name ($1, Load, ref NotResolved) }
-  | NAME DOT NAME { 
-       Attribute (Name ($1, Load, ref NotResolved), $3, Load) }
+  | NAME                    { Name ($1, Load, ref NotResolved) }
+  | decorator_name DOT NAME { Attribute ($1, $3, Load) }
 
 arglist_decorator_paren_opt:
   | /*(* empty*)*/        { fun x -> x }
