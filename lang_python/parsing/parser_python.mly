@@ -109,7 +109,7 @@ let mk_name_param (name, t) =
  AND NOT OR
  IMPORT FROM AS
  DEL IN IS WITH YIELD
- PRINT ASSERT
+ ASSERT
 
 /*(*-----------------------------------------*)*/
 /*(*2 Punctuation tokens *)*/
@@ -380,7 +380,6 @@ simple_stmt:
 
 small_stmt:
   | expr_stmt   { $1 }
-  | print_stmt  { $1 }
   | del_stmt    { $1 }
   | pass_stmt   { $1 }
   | flow_stmt   { $1 }
@@ -389,17 +388,6 @@ small_stmt:
   | assert_stmt { $1 }
   /*(* in .pyi files *)*/
   | DOT DOT DOT { Pass (* TODO? *) }
-
-print_stmt:
-  | PRINT                     { Print (None, [], true) }
-  | PRINT test print_testlist { Print (None, $2::(fst $3), snd $3) }
-  | PRINT RSHIFT test { Print (Some $3, [], true) }
-  | PRINT RSHIFT test COMMA test print_testlist { Print (Some $3, $5::(fst $6), snd $6) }
-
-print_testlist:
-  | /*(* empty *)*/  { [], true }
-  | COMMA test COMMA { [$2], false }
-  | COMMA test print_testlist { $2::(fst $3), snd $3 }
 
 
 del_stmt: DEL exprlist { Delete (List.map expr_del (to_list $2)) }

@@ -73,7 +73,6 @@ let visitor_info_of_tok f = function
   | NOT (ii) -> NOT (f ii)
   | OR (ii) -> OR (f ii)
   | PASS (ii) -> PASS (f ii)
-  | PRINT (ii) -> PRINT (f ii)
   | RAISE (ii) -> RAISE (f ii)
   | RETURN (ii) -> RETURN (f ii)
   | TRY (ii) -> TRY (f ii)

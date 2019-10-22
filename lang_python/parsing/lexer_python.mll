@@ -344,7 +344,6 @@ and _token state = parse
         | "not"      -> NOT (tokinfo lexbuf)
         | "or"       -> OR (tokinfo lexbuf)
         | "pass"     -> PASS (tokinfo lexbuf)
-        | "print"    -> PRINT (tokinfo lexbuf)
         | "raise"    -> RAISE (tokinfo lexbuf)
         | "return"   -> RETURN (tokinfo lexbuf)
         | "try"      -> TRY (tokinfo lexbuf)

@@ -468,7 +468,6 @@ let visit_program ~tag_hook _prefs (program, toks) =
         -> tag ii Keyword
 
     | T.IS ii | T.IN ii
-    | T.PRINT ii 
     | T.PASS ii
     | T.ASSERT ii
     | T.WITH ii
