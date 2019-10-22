@@ -90,12 +90,15 @@ type expr =
   | Num of number (* n *)
   | Str of (string wrap) list (* s *)
 
-  | Name of name (* id *) * expr_context (* ctx *) *
-     type_ option * resolved_name ref
+  | Name of name (* id *) * expr_context (* ctx *) * resolved_name ref
 
   | Tuple of expr list (* elts *)  * expr_context (* ctx *)
   | List of expr list (* elts *)   * expr_context (* ctx *)
   | DictOrSet of dictorset_elt list
+  | ExprStar of expr (* less: expr_context? always Store anyway no? *)
+
+  (* inside an Assign (or ExprStmt) *)
+  | TypedExpr of expr * type_
 
   | BoolOp of boolop (* op *) * expr list (* values *)
   | BinOp of expr (* left *) * operator (* op *) * expr (* right *)
@@ -170,16 +173,18 @@ type expr =
       (* the first expr can be only a Name or a Tuple (pattern?),
        * and the Name can have a type associated with it
        *)
-     | ParamClassic of expr * expr option (* default value *)
-     | ParamStar of name * type_ option
-     | ParamPow  of name * type_ option
+     | ParamClassic of (name * type_ option) * expr option (* default value *)
+     | ParamTuple of expr (* a Tuple *) * expr option
+     | ParamStar of (name * type_ option)
+     | ParamPow  of (name * type_ option)
   
   and argument = 
     | Arg of expr
     | ArgKwd of name (* arg *) * expr (* value *)
     | ArgStar of expr
     | ArgPow of expr
-
+ 
+  
 (* ------------------------------------------------------------------------- *)
 (* Types *)
 (* ------------------------------------------------------------------------- *)
@@ -211,6 +216,11 @@ type stmt =
         stmt list (* body *) * 
         decorator list (* decorator_list *)
 
+  (* the left expr should be an lvalue: Name, List, Tuple, Subscript,
+   * or Attribute, or ExprStar, which are anything with an expr_context
+   * (see also Parser_python.set_expr_ctx).
+   * todo: why take an expr list? can reuse Tuple for tuple assignment
+   *)
   | Assign of expr list (* targets *) * expr (* value *)
   | AugAssign of expr (* target *) * operator (* op *) * expr (* value *)
 
@@ -299,7 +309,7 @@ let str_of_name = fst
 let context_of_expr = function
   | Attribute (_, _, ctx) -> Some ctx
   | Subscript (_, _, ctx) -> Some ctx
-  | Name (_, ctx, _, _)   -> Some ctx
+  | Name (_, ctx, _)   -> Some ctx
   | List (_, ctx)         -> Some ctx
   | Tuple (_, ctx)        -> Some ctx
   | _                     -> None

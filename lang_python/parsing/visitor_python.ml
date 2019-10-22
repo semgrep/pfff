@@ -84,12 +84,17 @@ and v_expr (x: expr) =
   let k x =  match x with
   | Num v1 -> let v1 = v_number v1 in ()
   | Str (v1) -> let v1 = v_list v_name v1 in ()
-  | Name ((v1, v2, v3, v4)) ->
+  | Name ((v1, v2, v3)) ->
       let v1 = v_name v1
       and v2 = v_expr_context v2
-      and v3 = v_option v_type_ v3
-      and v4 = v_ref v_resolved_name v4
+      and v3 = v_ref v_resolved_name v3
       in ()
+  | TypedExpr ((v1, v2)) ->
+     let v1 = v_expr v1 in
+     let v2 = v_type_ v2 in
+     ()
+  | ExprStar ((v1)) ->
+      let v1 = v_expr v1 in ()
   | Tuple ((v1, v2)) ->
       let v1 = v_list v_expr v1 and v2 = v_expr_context v2 in ()
   | List ((v1, v2)) ->
@@ -192,6 +197,8 @@ and v_parameter x =
   let k x = 
   match x with
   | ParamClassic ((v1, v2)) ->
+      let v1 = v_name_and_type v1 and v2 = v_option v_expr v2 in ()
+  | ParamTuple ((v1, v2)) ->
       let v1 = v_expr v1 and v2 = v_option v_expr v2 in ()
   | ParamStar ((v1, v2)) ->
       let v1 = v_name v1 and v2 = v_option v_type_ v2 in ()
@@ -200,13 +207,13 @@ and v_parameter x =
   in
   vin.kparameter (k, all_functions) x
 
+and v_name_and_type (v1, v2) =
+  let v1 = v_name v1 and v2 = v_option v_type_ v2 in ()
+
 and v_expr_and_opt_expr (v1, opt) = 
   let v1 = v_expr v1 in
   let opt = v_option v_expr opt in
   ()
-and v_name_and_type (v1, v2) =
-  v_name v1;
-  v_option v_type_ v2;
 
 and v_type_ v = 
   let k x =

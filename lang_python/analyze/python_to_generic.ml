@@ -93,17 +93,23 @@ let rec expr (x: expr) =
               xs |> List.map (fun x -> let x = wrap string x in
                   G.Arg (G.L (G.String x))))
     )
+  | TypedExpr (v1, v2) ->
+     let v1 = expr v1 in
+     let v2 = type_ v2 in
+     G.Cast (v2, v1)
+  | ExprStar v1 ->
+    let v1 = expr v1 in
+    G.Call (G.IdSpecial G.Spread, [G.expr_to_arg v1])
 
-  | Name ((v1, v2, v3, v4)) ->
+  | Name ((v1, v2, v3)) ->
       let v1 = name v1
       and _v2TODO = expr_context v2
-      and v3 = option type_ v3
-      and v4 = vref resolved_name v4
+      and v3 = vref resolved_name v3
       in 
       G.Id (v1, 
             { (G.empty_info ()) with 
-               G.id_type = ref v3;
-               id_resolved = v4 })
+               G.id_type = ref None;
+               id_resolved = v3 })
           
   | Tuple ((v1, v2)) ->
       let v1 = list expr v1 
@@ -275,19 +281,22 @@ and slice =
 
 and parameters xs =
   xs |> List.map (function
-   | ParamClassic (e, eopt) ->
+   | ParamTuple (e, eopt) ->
     (match e with
-    | Name (n, _ctx, typopt, _resolved) ->
-      let typopt = option type_ typopt in
+    | Name (n, _ctx, _resolved) ->
       let eopt = option expr eopt in
       let n = name n in
-      G.ParamClassic { (G.basic_param n) with
-        G.ptype = typopt; pdefault = eopt; }
+      G.ParamClassic { (G.basic_param n) with G.pdefault = eopt; }
     | _ -> 
       let e1 = expr e in
       let e2 = option expr eopt |> G.opt_to_nop in
       G.ParamPattern (G.OtherPat (G.OP_Expr, [G.E e1; G.E e2]))
     )
+  | ParamClassic ((n, topt), eopt) ->
+     let n = name n in
+     let topt = option type_ topt in
+     let eopt = option expr eopt in
+     G.ParamClassic { (G.basic_param n) with G.ptype = topt; pdefault = eopt; }
   | ParamStar (n, topt) ->
      let n = name n in
      let topt = option type_ topt in

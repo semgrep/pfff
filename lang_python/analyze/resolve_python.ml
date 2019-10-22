@@ -63,13 +63,15 @@ let with_new_context ctx env f =
 
 let params_of_parameters params =
   params |> Common.map_filter (function
-    | ParamClassic (arg, _optval) ->
+    | ParamTuple (arg, _optval) ->
       (match arg with
-      | Name (name, _ctx, _typ, _resolved) -> Some name
+      | Name (name, _ctx, _resolved) -> Some name
       (* todo: tuples? *)
       | _ -> None
      )
-    | ParamStar (name, _) | ParamPow (name, _) -> Some name
+    | ParamClassic ((name, _), _)
+    | ParamStar (name, _) | ParamPow (name, _) 
+    -> Some name
    )
 
 (*****************************************************************************)
@@ -86,7 +88,7 @@ let resolve prog =
      *)
     V.kexpr = (fun (k, v) x ->
       match x with
-      | Name (name, ctx, _typ, resolved) ->
+      | Name (name, ctx, resolved) ->
           (match ctx with
           | Load | AugLoad ->
             (* assert resolved = NotResolved *)
@@ -115,7 +117,7 @@ let resolve prog =
         let new_vars = 
           xs |> Common.map_filter (fun (target, _iter, _ifs) ->
             match target with
-            | Name (name, _ctx, _typ, _res) -> Some name
+            | Name (name, _ctx, _res) -> Some name
             (* tuples? *)
             | _ -> None
            ) in
@@ -178,7 +180,7 @@ let resolve prog =
        v (Expr e);
        (match eopt with
        | None -> v (Stmts stmts)
-       | Some (Name (name, _ctx, _typ, _res)) ->
+       | Some (Name (name, _ctx, _res)) ->
           (* the scope of name is valid only inside the body, but the
            * body may define variables that are used then outside the with
            * so simpler to use add_name_env() here, not with_add_env()
@@ -199,7 +201,7 @@ let resolve prog =
        excepts |> List.iter (fun (ExceptHandler (_typ, e, body)) ->
          match e with
          | None -> v (Stmts body)
-         | Some (Name (name, _ctx, _typ, _res)) ->
+         | Some (Name (name, _ctx, _res)) ->
            let new_names = (fst name, LocalVar)::!(env.names) in
            with_added_env new_names env (fun () ->
              v (Stmts body)

@@ -95,7 +95,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
      *)
     V.kexpr = (fun (k, _) x ->
      match x with
-     | Name (name, ctx, _typ, resolved) ->
+     | Name (name, ctx, resolved) ->
         (match !resolved with
         | _ when !in_type -> 
           (match fst name with
@@ -148,7 +148,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
         k x
      | Call (f, args) ->
        (match f with
-       | Name (name, _ctx, _typ, _resolved) ->
+       | Name (name, _ctx, _resolved) ->
            let kind = E.Function in
            tag_name name (Entity (kind, use2))
        | Ast_python.Attribute (_e, name, _ctx) ->
@@ -179,7 +179,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
       | ListComp (_, xs) | GeneratorExp (_, xs) ->
           xs |> List.iter (fun (target, _iter, _ifs) ->
             match target with
-            | Name (name, _ctx, _typ, _res) -> 
+            | Name (name, _ctx, _res) -> 
               tag_name name (Local Def);
             (* tuples? *)
             | _ -> ()
@@ -229,7 +229,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
      | With (_e, eopt, _stmts) ->
        eopt |> Common.do_option (fun e ->
           match e with
-         | Name (name, _ctx, _typ, _res) ->
+         | Name (name, _ctx, _res) ->
             tag_name name (Local Def);
          (* todo: tuples? *)
          | _ -> ()
@@ -239,7 +239,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
        excepts |> List.iter (fun (ExceptHandler (_typ, e, _)) ->
          match e with
          | None -> ()
-         | Some (Name (name, _ctx, _typ, _res)) ->
+         | Some (Name (name, _ctx, _res)) ->
            tag_name name (Local Def)
          (* tuples? *)
          | Some _ -> ()
@@ -259,12 +259,13 @@ let visit_program ~tag_hook _prefs (program, toks) =
     );
     V.kparameter = (fun (k, _) x ->
       (match x with
-      | ParamClassic (arg, _optval) ->
+      | ParamTuple (arg, _optval) ->
         (match arg with
-        | Name (name, _ctx, _typ, _resolved) ->
+        | Name (name, _ctx, _resolved) ->
           tag_name name (Parameter Def);
         | _ -> ()
         );
+      | ParamClassic ((name, _), _)
       | ParamStar (name, _) | ParamPow (name, _) ->
         tag_name name (Parameter Def);
       );

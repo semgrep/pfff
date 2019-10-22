@@ -28,6 +28,7 @@
  *)
 open Ast_python
 
+(* intermediate helper type *)
 type single_or_tuple =
   | Single of expr
   | Tup of expr list
@@ -46,12 +47,12 @@ let to_list = function
 
 
 let rec set_expr_ctx ctx = function
+  | Name (id, _, x) ->
+      Name (id, ctx, x)
   | Attribute (value, attr, _) ->
       Attribute (value, attr, ctx)
   | Subscript (value, slice, _) ->
       Subscript (value, slice, ctx)
-  | Name (id, _, x, y) ->
-      Name (id, ctx, x, y)
   | List (elts, _) ->
       List (List.map (set_expr_ctx ctx) elts, ctx)
   | Tuple (elts, _) ->
@@ -68,7 +69,7 @@ let tuple_expr_store l =
     | _ -> expr_store e
 
 let mk_name_param (name, t) =
-  Name (name, Param, t, ref Parameter)
+  name, t
 
 %}
 
@@ -221,29 +222,41 @@ import_as_name:
 /*(*1 Variable definition *)*/
 /*(*************************************************************************)*/
 
-expr_stmt:
-  | testlist
-    { ExprStmt (tuple_expr $1) }
- /*(* name -> expr_stmt_lhs *)*/
-  | NAME COLON test
-    { ExprStmt (Name ($1, Store, Some $3, ref NotResolved))} 
-  | NAME COLON test EQ test
-    { Assign ([Name ($1, Store, Some $3, ref NotResolved)], $5)} 
-  | expr_stmt_lhs augassign expr_stmt_rhs 
-    { AugAssign ($1, fst $2, $3) }
-  | expr_stmt_lhs EQ        expr_stmt_rhs_list 
-    { Assign ($1::(fst $3), snd $3) }
-      
-expr_stmt_lhs:
-  | testlist { tuple_expr_store $1 }
+expr_stmt: 
+  | testlist_star_expr                       
+      { ExprStmt (tuple_expr $1) }
+  | testlist_star_expr COLON test
+      { ExprStmt (TypedExpr (tuple_expr $1, $3)) }
+  | testlist_star_expr COLON test EQ test
+      { Assign ([TypedExpr (tuple_expr_store $1, $3)], $5) }
+  | testlist_star_expr augassign yield_expr  
+      { AugAssign (tuple_expr_store $1, fst $2, $3) }
+  | testlist_star_expr augassign testlist    
+      { AugAssign (tuple_expr_store $1, fst $2, tuple_expr $3) }
+  | testlist_star_expr EQ expr_stmt_rhs_list 
+      { Assign ((tuple_expr_store $1)::(fst $3), snd $3) }
 
-expr_stmt_rhs:
-  | yield_expr { $1 }
-  | testlist { tuple_expr $1 }
+testlist_star_expr:
+  | test_or_star_expr                          { Single $1 }
+  | test_or_star_expr COMMA                    { Tup [$1] }
+  | test_or_star_expr COMMA testlist_star_expr { cons $1 $3 }
+
+test_or_star_expr:
+  | test      { $1 }
+  | star_expr { $1 }
+
+star_expr: MULT expr { ExprStar $2 }
 
 expr_stmt_rhs_list:
-  | expr_stmt_rhs { [], $1 }
-  | expr_stmt_lhs EQ expr_stmt_rhs_list { $1::(fst $3), snd $3 }
+  | expr_stmt_rhs                       
+     { [], $1 }
+  | expr_stmt_rhs EQ expr_stmt_rhs_list 
+     { (expr_store $1)::(fst $3), snd $3 }
+
+expr_stmt_rhs:
+  | yield_expr         { $1 }
+  | testlist_star_expr { tuple_expr $1 }
+ 
 
 augassign:
   | ADDEQ   { Add, $1 }
@@ -302,13 +315,19 @@ varargslist:
   | parameter COMMA varargslist { $1::$3 }
 
 parameter:
-  | vfpdef         { ParamClassic ($1, None) }
-  | vfpdef EQ test { ParamClassic ($1, Some $3) }
+  | vfpdef         
+      { match $1 with 
+        | Name (n, _, _) -> ParamClassic ((n, None), None)
+        | x -> ParamTuple (x, None) }
+  | vfpdef EQ test 
+     {  match $1 with 
+        | Name (n, _, _) -> ParamClassic ((n, None), Some $3)
+        | x -> ParamTuple (x, Some $3) } 
   | MULT NAME      { ParamStar ($2, None) }
   | POW NAME       { ParamPow ($2, None) }
 
 vfpdef:
-  | NAME { Name ($1, Param, None, ref Parameter) }
+  | NAME { Name ($1, Param, ref Parameter) }
 /*(* still? *)*/
   | LPAREN vfpdef_list RPAREN { tuple_expr_store $2 }
 
@@ -333,8 +352,9 @@ decorator:
   | AT decorator_name arglist_decorator_paren_opt NEWLINE { $3 $2 }
 
 decorator_name:
-  | atom_name { $1 }
-  | atom_name DOT NAME { Attribute ($1, $3, Load) }
+  | NAME { Name ($1, Load, ref NotResolved) }
+  | NAME DOT NAME { 
+       Attribute (Name ($1, Load, ref NotResolved), $3, Load) }
 
 arglist_decorator_paren_opt:
   | /*(* empty*)*/        { fun x -> x }
@@ -562,11 +582,7 @@ atom_trailer:
 /*(*----------------------------*)*/
 
 atom:
-  | atom_tuple  { $1 }
-  | atom_list   { $1 }
-  | atom_dict   { $1 }
-  | atom_repr   { $1 }
-  | atom_name   { $1 }
+  | NAME        { Name ($1, Load, ref NotResolved) }
 
   | INT         { Num (Int ($1)) }
   | LONGINT     { Num (LongInt ($1)) }
@@ -575,14 +591,17 @@ atom:
 
   | string_list { Str $1 }
 
-atom_repr: BACKQUOTE testlist1 BACKQUOTE { Repr (tuple_expr $2) }
+  | atom_tuple  { $1 }
+  | atom_list   { $1 }
+  | atom_dict   { $1 }
 
-atom_name: NAME { Name ($1, Load, None, ref NotResolved) }
-
+  | atom_repr   { $1 }
 
 string_list:
   | STR { [$1] }
   | STR string_list { $1::$2 }
+
+atom_repr: BACKQUOTE testlist1 BACKQUOTE { Repr (tuple_expr $2) }
 
 /*(*----------------------------*)*/
 /*(*2 containers *)*/
@@ -724,7 +743,7 @@ argument:
   | POW test       { ArgPow $2 }
   | test EQ test
       { match $1 with
-        | Name (id, _, _, _) -> ArgKwd (id, $3)
+        | Name (id, _, _) -> ArgKwd (id, $3)
         | _ -> raise Parsing.Parse_error 
       }
 
