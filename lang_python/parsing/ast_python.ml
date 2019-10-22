@@ -122,9 +122,9 @@ type expr =
   | Attribute of expr (* value *) * name (* attr *) * expr_context (* ctx *)
 
   and number =
-    | Int of int wrap
-    | LongInt of int wrap
-    | Float of float wrap
+    | Int of string wrap
+    | LongInt of string wrap
+    | Float of string wrap
     | Imag of string wrap
   
   and boolop = And | Or

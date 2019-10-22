@@ -34,8 +34,6 @@ let list = List.map
 let vref f x = ref (f !x)
 
 let string = id
-let int_to_string = string_of_int
-let float_to_string = string_of_float
 
 (*
 exception Error of string * Parse_info.info
@@ -212,9 +210,9 @@ and dictorset_elt = function
   
 and number =
   function
-  | Int v1     -> let v1 = wrap int_to_string v1 in Left (G.Int v1)
-  | LongInt v1 -> let v1 = wrap int_to_string v1 in Left (G.Int v1)
-  | Float v1   -> let v1 = wrap float_to_string v1 in Left (G.Float v1)
+  | Int v1     -> let v1 = wrap id v1 in Left (G.Int v1)
+  | LongInt v1 -> let v1 = wrap id v1 in Left (G.Int v1)
+  | Float v1   -> let v1 = wrap id v1 in Left (G.Float v1)
   | Imag v1    -> 
       let v1 = wrap string v1 in 
       Right (G.OtherExpr (G.OE_Imag, [G.E (G.L (G.Int v1))]))

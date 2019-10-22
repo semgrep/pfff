@@ -91,8 +91,8 @@ let mk_name_param (name, t) =
 
 /*(* tokens with "values" *)*/
 %token <string * Ast_python.tok> NAME
-%token <int    * Ast_python.tok> INT LONGINT
-%token <float  * Ast_python.tok> FLOAT
+%token <string    * Ast_python.tok> INT LONGINT
+%token <string  * Ast_python.tok> FLOAT
 %token <string * Ast_python.tok> IMAG
 %token <string * Ast_python.tok> STR
 
@@ -528,9 +528,9 @@ factor:
              Num (n=-x)
            if possible. *)
         match $2 with
-        | Num (Int (n, x))        -> Num (Int (-n, x))
-        | Num (LongInt (n, x))    -> Num (LongInt (-n, x))
-        | Num (Float (n, x))      -> Num (Float (-.n, x))
+        | Num (Int (n, x))        -> Num (Int ("-" ^ n, x))
+        | Num (LongInt (n, x))    -> Num (LongInt ("-" ^ n, x))
+        | Num (Float (n, x))      -> Num (Float ("-" ^ n, x))
         | Num (Imag (n, x))       -> Num (Imag ("-" ^ n, x))
         | _                       -> UnaryOp (USub, $2) }
   | BITNOT factor { UnaryOp (Invert, $2) }

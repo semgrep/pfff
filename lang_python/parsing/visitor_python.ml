@@ -134,9 +134,10 @@ and v_dictorset_elt = function
   
 and v_number =
   function
-  | Int v1 -> let v1 = v_wrap v_int v1 in ()
-  | LongInt v1 -> let v1 = v_wrap v_int v1 in ()
-  | Float v1 -> let v1 = v_wrap v_float v1 in ()
+  | Int v1 -> let v1 = v_wrap v_string
+                v1 in ()
+  | LongInt v1 -> let v1 = v_wrap v_string v1 in ()
+  | Float v1 -> let v1 = v_wrap v_string v1 in ()
   | Imag v1 -> let v1 = v_wrap v_string v1 in ()
 and v_boolop = function | And -> () | Or -> ()
 and v_operator =

@@ -151,9 +151,15 @@ let hexdigit = ['0'-'9' 'a'-'f' 'A'-'F']
 let nonzerodigit = ['1'-'9']
 
 let longintpostfix = ['l' 'L']
-let decimalinteger = nonzerodigit digit*
-let octinteger = '0' octdigit+
-let hexinteger = '0' ['x' 'X'] hexdigit+
+
+(* from Pyre-check *)
+let integer =
+  ('0' ['b' 'B'] ('_'? ['0'-'1'])+) | (* Binary. *)
+  ('0' ['o' 'O'] ('_'? ['0'-'7'])+) | (* Octal. *)
+  ('0' ['x' 'X'] ('_'? hexdigit)+) | (* Hexadecimal. *)
+  (['1' - '9'] ('_'? digit)* | '0' ('_'? '0')* ) |  (* Decimal. *)
+  ('0' digit+) (* Valid before python 3.6 *)
+
 
 let intpart = digit+
 let fraction = '.' digit+
@@ -161,6 +167,7 @@ let pointfloat = intpart? fraction | intpart '.'
 let exponent = ['e' 'E'] ['+' '-']? digit+
 let exponentfloat = (intpart | pointfloat) exponent
 let floatnumber = pointfloat | exponentfloat
+
 let imagnumber = (floatnumber | intpart) ['j' 'J']
 
 let kind = 'b' | 'B' | 'f' | 'F'
@@ -171,6 +178,7 @@ let stringprefix = (encoding | kind | (encoding kind) | (kind encoding) | (encod
 let escapeseq = '\\' _
 
 let identifier = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
+
 let nonidchar = [^ 'a'-'z' 'A'-'Z' '0'-'9' '_']
 
 (*****************************************************************************)
@@ -349,26 +357,16 @@ and _token state = parse
   (* ----------------------------------------------------------------------- *)
 
   (* literals *)
-  | decimalinteger as n longintpostfix
-      { LONGINT (int_of_string n, tokinfo lexbuf) }
-  | decimalinteger as n
-      { INT (int_of_string n, tokinfo lexbuf) }
-  | octinteger as n longintpostfix
-      { LONGINT (int_of_string ("0o" ^ n), tokinfo lexbuf) }
-  | octinteger as n
-      { INT (int_of_string ("0o" ^ n), tokinfo lexbuf) }
-  | hexinteger as n longintpostfix
-      { LONGINT (int_of_string n, tokinfo lexbuf) }
-  | hexinteger as n
-      { INT (int_of_string n, tokinfo lexbuf) }
+  | integer as n longintpostfix
+      { LONGINT (n, tokinfo lexbuf) }
+  | integer as n
+      { INT (n, tokinfo lexbuf) }
+
   | floatnumber as n
-      { FLOAT (float_of_string n, tokinfo lexbuf) }
+      { FLOAT (n, tokinfo lexbuf) }
+
   | imagnumber as n
       { IMAG (n, tokinfo lexbuf) }
-  | '0' longintpostfix
-      { LONGINT (0, tokinfo lexbuf) }
-  | '0'
-      { INT (0, tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* Strings *)
