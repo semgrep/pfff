@@ -317,26 +317,26 @@ vfpdef:
 /*(*1 Class definition *)*/
 /*(*************************************************************************)*/
 
-classdef: decorator_list CLASS NAME testlist_paren_opt COLON suite 
+classdef: decorator_list CLASS NAME arglist_paren_opt COLON suite 
    { ClassDef ($3, $4, $6, $1) }
 
-testlist_paren_opt: 
+arglist_paren_opt: 
  | /*(* empty *)*/ { [] }
  | LPAREN RPAREN   { [] }
- | LPAREN testlist RPAREN { to_list $2 }
+ | LPAREN arg_list RPAREN { $2 }
 
 /*(*************************************************************************)*/
 /*(*1 Annotations *)*/
 /*(*************************************************************************)*/
 
 decorator:
-  | AT decorator_name arglist_paren_opt NEWLINE { $3 $2 }
+  | AT decorator_name arglist_decorator_paren_opt NEWLINE { $3 $2 }
 
 decorator_name:
   | atom_name { $1 }
   | atom_name DOT NAME { Attribute ($1, $3, Load) }
 
-arglist_paren_opt:
+arglist_decorator_paren_opt:
   | /*(* empty*)*/        { fun x -> x }
   | LPAREN RPAREN         { fun x -> Call (x, []) }
   | LPAREN arg_list RPAREN { fun x -> Call (x, $2) }

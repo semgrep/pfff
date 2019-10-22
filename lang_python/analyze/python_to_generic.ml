@@ -305,6 +305,10 @@ and type_ v =
   let v = expr v in
   G.OtherType (G.OT_Expr, [G.E v])
 
+and type_parent v = 
+  let v = argument v in
+  G.OtherType (G.OT_Arg, [G.Ar v])
+
 and list_stmt1 xs =
   match (list stmt xs) with
   | [e] -> e
@@ -325,7 +329,7 @@ and stmt x =
       G.LocalDef (ent, G.FuncDef def)
   | ClassDef ((v1, v2, v3, v4)) ->
       let v1 = name v1
-      and v2 = list type_ v2
+      and v2 = list type_parent v2
       and v3 = list stmt v3
       and v4 = list decorator v4
       in 

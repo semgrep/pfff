@@ -191,6 +191,9 @@ type expr =
 and type_ = expr
   (* with tarzan *)
 
+(* used in inheritance, to allow default value for metaclass *)
+and type_parent = argument
+
 (* ------------------------------------------------------------------------- *)
 (* Statement *)
 (* ------------------------------------------------------------------------- *)
@@ -204,7 +207,7 @@ type stmt =
 
   | ClassDef of 
         name (* name *) * 
-        type_ list (* bases *) * 
+        type_parent list (* bases *) * 
         stmt list (* body *) * 
         decorator list (* decorator_list *)
 

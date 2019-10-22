@@ -213,6 +213,7 @@ and v_type_ v =
     v_expr x
   in
   vin.ktype_ (k, all_functions) v
+and v_type_parent v = v_argument v
 
 and v_stmt x =
   let k x = match x with
@@ -225,7 +226,7 @@ and v_stmt x =
       in ()
   | ClassDef ((v1, v2, v3, v4)) ->
       let v1 = v_name v1
-      and v2 = v_list v_expr v2
+      and v2 = v_list v_type_parent v2
       and v3 = v_list v_stmt v3
       and v4 = v_list v_decorator v4
       in ()

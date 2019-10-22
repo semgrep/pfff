@@ -298,7 +298,7 @@ and type_ =
 
   and other_type_operator = 
   (* Python *)
-  | OT_Expr (* todo: should transform in type_ when can *)
+  | OT_Expr | OT_Arg (* todo: should transform in type_ when can *)
   (* C *)
   | OT_StructName | OT_UnionName | OT_EnumName
   (* PHP *)
