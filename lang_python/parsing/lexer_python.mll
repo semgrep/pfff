@@ -147,8 +147,9 @@ let comment = '#' [^ '\n' '\r']*
 
 let digit = ['0'-'9']
 let octdigit = ['0'-'7']
+let digipart = digit (('_'? digit)* )
+
 let hexdigit = ['0'-'9' 'a'-'f' 'A'-'F']
-let nonzerodigit = ['1'-'9']
 
 let longintpostfix = ['l' 'L']
 
@@ -161,10 +162,10 @@ let integer =
   ('0' digit+) (* Valid before python 3.6 *)
 
 
-let intpart = digit+
-let fraction = '.' digit+
+let intpart = digipart
+let fraction = '.' digipart
 let pointfloat = intpart? fraction | intpart '.'
-let exponent = ['e' 'E'] ['+' '-']? digit+
+let exponent = ['e' 'E'] ['+' '-']? digipart
 let exponentfloat = (intpart | pointfloat) exponent
 let floatnumber = pointfloat | exponentfloat
 

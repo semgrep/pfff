@@ -45,7 +45,7 @@ let to_list = function
   | Single e -> [e]
   | Tup l -> l
 
-
+(* TODO: TypedExpr? ExprStar? then can appear as lvalue *)
 let rec set_expr_ctx ctx = function
   | Name (id, _, x) ->
       Name (id, ctx, x)

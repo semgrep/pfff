@@ -8,6 +8,9 @@ TASK_ID = 324_345
 COMMIT_HASH = "d964cbce7c25dce59bd69a7da4bc5386c80cdd7c"
 TIMESTAMP_1 = 1_532_290_043
 
+# also floats
+TIMESTAMP_1 = 1_532_290_043.197_244
+
 def foo():
     time.sleep(10_000_000)
 
