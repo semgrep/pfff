@@ -225,10 +225,12 @@ import_as_name:
 expr_stmt: 
   | testlist_star_expr                       
       { ExprStmt (tuple_expr $1) }
+  /*(* typing-ext: *)*/
   | testlist_star_expr COLON test
       { ExprStmt (TypedExpr (tuple_expr $1, $3)) }
   | testlist_star_expr COLON test EQ test
       { Assign ([TypedExpr (tuple_expr_store $1, $3)], $5) }
+
   | testlist_star_expr augassign yield_expr  
       { AugAssign (tuple_expr_store $1, fst $2, $3) }
   | testlist_star_expr augassign testlist    
@@ -245,6 +247,7 @@ test_or_star_expr:
   | test      { $1 }
   | star_expr { $1 }
 
+/*(* python3-ext: *)*/
 star_expr: MULT expr { ExprStar $2 }
 
 expr_stmt_rhs_list:
@@ -279,6 +282,7 @@ augassign:
 funcdef: decorator_list DEF NAME parameters return_type_opt COLON suite
     { FunctionDef ($3, $4, $5, $7, $1) }
 
+/*(* typing-ext: *)*/
 return_type_opt: 
   | /*(* empty *)*/ { None }
   | SUB GT test     { Some $3 }
@@ -289,6 +293,7 @@ return_type_opt:
 
 parameters: LPAREN typedargslist RPAREN { $2 }
 
+/*(* typing-ext: *)*/
 typedargslist:
   | /*(*empty*)*/                       { [] }
   | typed_parameter                     { [$1] }
@@ -305,6 +310,7 @@ typed_parameter:
 
 tfpdef:
   | NAME            { $1, None }
+  /*(* typing-ext: *)*/
   | NAME COLON test { $1, Some $3 }
 
 
@@ -314,6 +320,7 @@ varargslist:
   | parameter                   { [$1] }
   | parameter COMMA varargslist { $1::$3 }
 
+/*(* python3-ext: can be in any order, ParamStar before or after Classic *)*/
 parameter:
   | vfpdef         
       { match $1 with 
@@ -342,6 +349,7 @@ classdef: decorator_list CLASS NAME arglist_paren_opt COLON suite
 arglist_paren_opt: 
  | /*(* empty *)*/ { [] }
  | LPAREN RPAREN   { [] }
+ /*(* python3-ext: was expr_list before *)*/
  | LPAREN arg_list RPAREN { $2 }
 
 /*(*************************************************************************)*/
@@ -377,7 +385,7 @@ simple_stmt:
   | small_stmt SEMICOL NEWLINE { [$1] }
   | small_stmt SEMICOL simple_stmt { $1::$3 }
 
-
+/*(* python3-ext: there was a print_stmt before but got generalized *)*/
 small_stmt:
   | expr_stmt   { $1 }
   | del_stmt    { $1 }
@@ -386,7 +394,8 @@ small_stmt:
   | import_stmt { $1 }
   | global_stmt { $1 }
   | assert_stmt { $1 }
-  /*(* in .pyi files *)*/
+
+  /*(* typing-ext: in .pyi typing stub files *)*/
   | DOT DOT DOT { Pass (* TODO? *) }
 
 
@@ -414,6 +423,7 @@ yield_stmt: yield_expr { ExprStmt ($1) }
 raise_stmt:
   | RAISE                           { Raise (None) }
   | RAISE test                      { Raise (Some ($2, None)) }
+  /*(* python3-ext: *)*/
   | RAISE test FROM test            { Raise (Some ($2, Some $4)) }
 
 
@@ -612,6 +622,7 @@ atom_dict:
 dictorset_elem:
   | test COLON test { KeyVal ($1, $3) }
   | test            { Key $1 }
+  /*(* python3-ext: *)*/
   | POW expr        { PowInline $2 }
 
 /*(*----------------------------*)*/
@@ -723,11 +734,15 @@ gen_if: IF old_test { $2 }
 /*(*2 Arguments *)*/
 /*(*----------------------------*)*/
 
+/*(* python3-ext: can be any order, ArgStar before or after ArgKwd *)*/
 argument:
   | test           { Arg $1 }
   | test gen_for   { Arg (GeneratorExp ($1, $2)) }
+
+  /*(* python3-ext: *)*/
   | MULT test      { ArgStar $2 }
   | POW test       { ArgPow $2 }
+
   | test EQ test
       { match $1 with
         | Name (id, _, _) -> ArgKwd (id, $3)

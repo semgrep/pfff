@@ -147,13 +147,14 @@ let comment = '#' [^ '\n' '\r']*
 
 let digit = ['0'-'9']
 let octdigit = ['0'-'7']
+(* python3-ext: underscore in numbers *)
 let digipart = digit (('_'? digit)* )
 
 let hexdigit = ['0'-'9' 'a'-'f' 'A'-'F']
 
 let longintpostfix = ['l' 'L']
 
-(* from Pyre-check *)
+(* python3-ext: underscore in numbers (src: Pyre-check) *)
 let integer =
   ('0' ['b' 'B'] ('_'? ['0'-'1'])+) | (* Binary. *)
   ('0' ['o' 'O'] ('_'? ['0'-'7'])+) | (* Octal. *)
