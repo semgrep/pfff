@@ -102,8 +102,6 @@ and v_expr (x: expr) =
   | List ((v1, v2)) ->
       let v1 = v_list v_expr v1 and v2 = v_expr_context v2 in ()
   | DictOrSet (v) -> v_list v_dictorset_elt v
-  | ListComp ((v1, v2)) ->
-      let v1 = v_expr v1 and v2 = v_list v_comprehension v2 in ()
   | BoolOp ((v1, v2)) -> let v1 = v_boolop v1 and v2 = v_list v_expr v2 in ()
   | BinOp ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_operator v2 and v3 = v_expr v3 in ()
@@ -119,9 +117,8 @@ and v_expr (x: expr) =
   | Lambda ((v1, v2)) -> let v1 = v_parameters v1 and v2 = v_expr v2 in ()
   | IfExp ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_expr v2 and v3 = v_expr v3 in ()
-  | GeneratorExp ((v1, v2)) ->
-      let v1 = v_expr v1 and v2 = v_list v_comprehension v2 in ()
   | Yield v1 -> let v1 = v_option v_expr v1 in ()
+  | Await v1 -> let v1 = v_expr v1 in ()
   | Repr v1 -> let v1 = v_expr v1 in ()
   | Attribute ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_name v2 and v3 = v_expr_context v3 in ()
@@ -241,11 +238,6 @@ and v_stmt x =
       let v1 = v_expr v1 and v2 = v_operator v2 and v3 = v_expr v3 in ()
   | Return v1 -> let v1 = v_option v_expr v1 in ()
   | Delete v1 -> let v1 = v_list v_expr v1 in ()
-  | Print ((v1, v2, v3)) ->
-      let v1 = v_option v_expr v1
-      and v2 = v_list v_expr v2
-      and v3 = v_bool v3
-      in ()
   | For ((v1, v2, v3, v4)) ->
       let v1 = v_expr v1
       and v2 = v_expr v2

@@ -87,18 +87,22 @@ type resolved_name =
 (* Expression *)
 (* ------------------------------------------------------------------------- *)
 type expr =
-  | Bool of bool wrap
   | Num of number (* n *)
   | Str of (string wrap) list (* s *)
+  (* python3-ext: *)
+  | Bool of bool wrap
   | ExprNone of tok
 
   | Name of name (* id *) * expr_context (* ctx *) * resolved_name ref
 
-  | Tuple of expr list (* elts *)  * expr_context (* ctx *)
-  | List of expr list (* elts *)   * expr_context (* ctx *)
-  | DictOrSet of dictorset_elt list
+  | Tuple of expr comprehension (* elts *)  * expr_context (* ctx *)
+  | List of expr comprehension (* elts *)   * expr_context (* ctx *)
+  | DictOrSet of dictorset_elt comprehension
+
+  (* python3-ext: *)
   | ExprStar of expr (* less: expr_context? always Store anyway no? *)
 
+  (* python3-ext: *)
   (* inside an Assign (or ExprStmt) *)
   | TypedExpr of expr * type_
 
@@ -117,10 +121,9 @@ type expr =
 
   | IfExp of expr (* test *) * expr (* body *) * expr (* orelse *)
 
-  | ListComp     of expr (* elt *) * comprehension list (* generators *)
-  | GeneratorExp of expr (* elt *) * comprehension list (* generators *)
-
   | Yield of expr option (* value *)
+  (* python3-ext: *)
+  | Await of expr
 
   | Repr of expr (* value *)
   (* =~ ObjAccess *)
@@ -148,14 +151,12 @@ type expr =
     | Is | IsNot 
     | In | NotIn
   
-  and comprehension =
-    expr (* target *) * 
-    expr (* iter *) * 
-    expr list (* ifs *)
+  and 'a comprehension = 'a list
   
   and dictorset_elt = 
     | KeyVal of expr * expr
     | Key of expr
+    (* python3-ext: *)
     | PowInline of expr
   
   (* AugLoad and AugStore are not used *)
@@ -182,6 +183,7 @@ type expr =
     | Arg of expr
     | ArgKwd of name (* arg *) * expr (* value *)
     | ArgStar of expr
+    (* python3-ext: *)
     | ArgPow of expr
  
   
@@ -203,6 +205,8 @@ and type_parent = argument
 (* Statement *)
 (* ------------------------------------------------------------------------- *)
 type stmt =
+  | ExprStmt of expr (* value *)
+
   | FunctionDef of 
        name (* name *) * 
        parameters (* args *) * 
@@ -224,17 +228,15 @@ type stmt =
   | Assign of expr list (* targets *) * expr (* value *)
   | AugAssign of expr (* target *) * operator (* op *) * expr (* value *)
 
-  | Return of expr option (* value *)
-
-  | Delete of expr list (* targets *)
-
-  | Print of expr option (* dest *) * expr list (* values *) * bool (* nl *)
-
   | For of expr (* target (pattern) *) * expr (* 'in' iter *) * 
            stmt list (* body *) * stmt list (* orelse *)
   | While of expr (* test *) * stmt list (* body *) * stmt list (* orelse *)
   | If of expr (* test *) * stmt list (* body *) * stmt list (* orelse *)
   | With of expr (* context_expr *) * expr option (* optional_vars *) * stmt list (* body *)
+
+  | Return of expr option (* value *)
+  | Break | Continue
+  | Pass
 
   | Raise of (expr * expr option (* from *)) option
   | TryExcept of stmt list (* body *) * excepthandler list (* handlers *) * stmt list (* orelse *)
@@ -245,12 +247,10 @@ type stmt =
   | ImportFrom of dotted_name (* module *) * alias list (* names *) * int option (* level *)
 
   | Global of name list (* names *)
+  | Delete of expr list (* targets *)
+  (* python3-ext: *)
   | NonLocal of name list (* names *)
-  | ExprStmt of expr (* value *)
 
-  | Pass
-  | Break
-  | Continue
 
 and excepthandler = 
   ExceptHandler of 

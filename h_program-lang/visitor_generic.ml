@@ -141,6 +141,7 @@ and v_expr x =
           (fun (v1, v2) -> let v1 = v_pattern v1 and v2 = v_expr v2 in ()) v2
       in ()
   | Yield v1 -> let v1 = v_expr v1 in ()
+  | Await v1 -> let v1 = v_expr v1 in ()
   | Cast ((v1, v2)) -> let v1 = v_type_ v1 and v2 = v_expr v2 in ()
   | Seq v1 -> let v1 = v_list v_expr v1 in ()
   | Ref v1 -> let v1 = v_expr v1 in ()

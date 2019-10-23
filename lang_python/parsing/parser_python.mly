@@ -246,6 +246,10 @@ test_or_star_expr:
   | test      { $1 }
   | star_expr { $1 }
 
+star_expr_or_expr:
+  | expr      { $1 }
+  | star_expr { $1 }
+
 expr_stmt_rhs_list:
   | expr_stmt_rhs                       
      { [], $1 }
@@ -534,7 +538,9 @@ power:
 /*(*2 Atom expr *)*/
 /*(*----------------------------*)*/
 
-atom_expr: atom_and_trailers { $1 }
+atom_expr: 
+  | atom_and_trailers        { $1 }
+  | AWAIT atom_and_trailers  { Await $2 }
 
 atom_and_trailers:
   | atom { $1 }
@@ -598,11 +604,14 @@ atom_dict:
   | LBRACE                RBRACE { DictOrSet [] }
   | LBRACE dictorsetmaker RBRACE { Tuple ([], Load) (* TODO *) }
 
-dictorsetmaker: dictorset_elem_list { $1 }
+dictorsetmaker: 
+  | dictorset_elem comp_for { }
+  | dictorset_elem_list { }
 
 dictorset_elem:
   | test COLON test { KeyVal ($1, $3) }
   | test            { Key $1 }
+  | star_expr       { Key $1 }
   /*(* python3-ext: *)*/
   | POW expr        { PowInline $2 }
 
@@ -674,9 +683,13 @@ lambdadef: LAMBDA varargslist COLON test { Lambda ($2, $4) }
 
 testlist_comp:
   | test_or_star_expr comp_for { }
-  | testlist_star_expr { }
+  | testlist_star_expr         { }
 
-comp_for:
+comp_for: 
+ | sync_comp_for       { }
+ | ASYNC sync_comp_for { }
+
+sync_comp_for:
   | FOR exprlist IN or_test { }
   | FOR exprlist IN or_test comp_iter { }
 
@@ -756,16 +769,15 @@ arg_list:
   | argument COMMA          { [$1] }
   | argument COMMA arg_list  { $1::$3 }
 
-/*(* was called dictorsetmaker originally *)*/
 dictorset_elem_list:
   | dictorset_elem                            { [$1] }
   | dictorset_elem COMMA                      { [$1] }
   | dictorset_elem COMMA dictorset_elem_list { $1::$3 }
 
 exprlist:
-  | expr                { Single $1 }
-  | expr COMMA          { Tup [$1] }
-  | expr COMMA exprlist { cons $1 $3 }
+  | star_expr_or_expr                { Single $1 }
+  | star_expr_or_expr COMMA          { Tup [$1] }
+  | star_expr_or_expr COMMA exprlist { cons $1 $3 }
 
 testlist:
   | test                { Single $1 }

@@ -147,10 +147,6 @@ let rec expr (x: expr) =
       let v = list dictorset_elt v in 
       (* less: could be a Set if alls are Key *)
       G.Container (G.Dict, v)
-  | ListComp ((v1, v2)) ->
-      let v1 = expr v1 
-      and v2 = list comprehension v2 in 
-      G.OtherExpr (G.OE_ListComp, (G.E v1)::v2)
 
   | BoolOp ((v1, v2)) -> 
       let v1 = boolop v1 
@@ -192,11 +188,10 @@ let rec expr (x: expr) =
   | IfExp ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in
       G.Conditional (v1, v2, v3)
-  | GeneratorExp ((v1, v2)) ->
-      let v1 = expr v1 and v2 = list comprehension v2 in 
-      G.OtherExpr (G.OE_GeneratorExpr, (G.E v1)::v2)
   | Yield v1 -> let v1 = option expr v1 in
       G.Yield (G.opt_to_nop v1)
+  | Await v1 -> let v1 = expr v1 in
+      G.Await v1
   | Repr v1 -> let v1 = expr v1 in
       G.OtherExpr (G.OE_Repr, [G.E v1])
 
@@ -355,17 +350,6 @@ and stmt x =
 
   | Delete v1 -> let v1 = list expr v1 in
       G.OtherStmt (G.OS_Delete, v1 |> List.map (fun x -> G.E x))
-  | Print ((v1, v2, v3)) ->
-      let v1 = option expr v1
-      and v2 = list expr v2
-      in
-      let tuple = G.Tuple [
-          G.opt_to_nop v1;
-          G.Container (G.List, v2);
-          G.L (G.Bool (v3, Parse_info.fake_info ""))] 
-      in
-      G.OtherStmt (G.OS_Print, [G.E tuple])
-
   | If ((v1, v2, v3)) ->
       let v1 = expr v1
       and v2 = list_stmt1 v2

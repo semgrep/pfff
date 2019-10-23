@@ -163,6 +163,7 @@ type expr =
   (* less: TryFunctional *)
 
   | Yield of expr
+  | Await of expr
 
   | Cast of type_ * expr
   (* less: should be in statement *)
