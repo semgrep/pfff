@@ -350,16 +350,11 @@ arglist_paren_opt:
 /*(*************************************************************************)*/
 
 decorator:
-  | AT decorator_name arglist_decorator_paren_opt NEWLINE { $3 $2 }
+  | AT decorator_name arglist_paren_opt NEWLINE { Call ($2, $3) }
 
 decorator_name:
   | NAME                    { Name ($1, Load, ref NotResolved) }
   | decorator_name DOT NAME { Attribute ($1, $3, Load) }
-
-arglist_decorator_paren_opt:
-  | /*(* empty*)*/        { fun x -> x }
-  | LPAREN RPAREN         { fun x -> Call (x, []) }
-  | LPAREN arg_list RPAREN { fun x -> Call (x, $2) }
 
 /*(*************************************************************************)*/
 /*(*1 Statement *)*/
