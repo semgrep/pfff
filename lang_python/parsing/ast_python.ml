@@ -87,8 +87,10 @@ type resolved_name =
 (* Expression *)
 (* ------------------------------------------------------------------------- *)
 type expr =
+  | Bool of bool wrap
   | Num of number (* n *)
   | Str of (string wrap) list (* s *)
+  | ExprNone of tok
 
   | Name of name (* id *) * expr_context (* ctx *) * resolved_name ref
 

@@ -110,6 +110,9 @@ let mk_name_param (name, t) =
  IMPORT FROM AS
  DEL IN IS WITH YIELD
  ASSERT
+ NONE TRUE FALSE
+ ASYNC AWAIT
+ NONLOCAL
 
 /*(*-----------------------------------------*)*/
 /*(*2 Punctuation tokens *)*/
@@ -335,9 +338,6 @@ parameter:
 
 vfpdef:
   | NAME { Name ($1, Param, ref Parameter) }
-/*(* still? *)*/
-  | LPAREN vfpdef_list RPAREN { tuple_expr_store $2 }
-
 
 /*(*************************************************************************)*/
 /*(*1 Class definition *)*/
@@ -553,12 +553,14 @@ factor:
   | power { $1 }
 
 power:
-  | atom_trailer            { $1 }
-  | atom_trailer POW factor { BinOp ($1, Pow, $3) }
+  | atom_expr            { $1 }
+  | atom_expr POW factor { BinOp ($1, Pow, $3) }
 
 /*(*----------------------------*)*/
-/*(*2 Atom trailer *)*/
+/*(*2 Atom expr *)*/
 /*(*----------------------------*)*/
+
+atom_expr: atom_trailer { $1 }
 
 atom_trailer:
   | atom { $1 }
@@ -585,6 +587,11 @@ atom:
   | LONGINT     { Num (LongInt ($1)) }
   | FLOAT       { Num (Float ($1)) }
   | IMAG        { Num (Imag ($1)) }
+  
+  | TRUE        { Bool (true, $1) }
+  | FALSE       { Bool (false, $1) }
+
+  | NONE        { ExprNone $1 }
 
   | string_list { Str $1 }
 

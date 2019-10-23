@@ -50,6 +50,13 @@ let visitor_info_of_tok f = function
   | IMAG (x, ii) -> IMAG (x, f ii)
   | STR (x, ii) -> STR (x, f ii)
 
+  | NONE (ii) -> NONE (f ii)
+  | TRUE (ii) -> TRUE (f ii)
+  | FALSE (ii) -> FALSE (f ii)
+  | ASYNC (ii) -> ASYNC (f ii)
+  | AWAIT (ii) -> AWAIT (f ii)
+  | NONLOCAL (ii) -> NONLOCAL (f ii)
+
   | AND (ii) -> AND (f ii)
   | AS (ii) -> AS (f ii)
   | ASSERT (ii) -> ASSERT (f ii)

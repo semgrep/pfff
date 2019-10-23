@@ -322,35 +322,54 @@ and _token state = parse
   (* keywords *)
   | identifier as id
       { match id with
-        | "and"      -> AND (tokinfo lexbuf)
-        | "as"       -> AS (tokinfo lexbuf)
-        | "assert"   -> ASSERT (tokinfo lexbuf)
-        | "break"    -> BREAK (tokinfo lexbuf)
-        | "class"    -> CLASS (tokinfo lexbuf)
-        | "continue" -> CONTINUE (tokinfo lexbuf)
-        | "def"      -> DEF (tokinfo lexbuf)
-        | "del"      -> DEL (tokinfo lexbuf)
+
+        | "if"       -> IF (tokinfo lexbuf)
         | "elif"     -> ELIF (tokinfo lexbuf)
         | "else"     -> ELSE (tokinfo lexbuf)
+
+        | "for"      -> FOR (tokinfo lexbuf)
+        | "while"    -> WHILE (tokinfo lexbuf)
+
+        | "return"   -> RETURN (tokinfo lexbuf)
+        | "break"    -> BREAK (tokinfo lexbuf)
+        | "continue" -> CONTINUE (tokinfo lexbuf)
+        | "pass"     -> PASS (tokinfo lexbuf)
+
+        | "raise"    -> RAISE (tokinfo lexbuf)
+        | "try"      -> TRY (tokinfo lexbuf)
         | "except"   -> EXCEPT (tokinfo lexbuf)
         | "finally"  -> FINALLY (tokinfo lexbuf)
-        | "for"      -> FOR (tokinfo lexbuf)
-        | "from"     -> FROM (tokinfo lexbuf)
-        | "global"   -> GLOBAL (tokinfo lexbuf)
-        | "if"       -> IF (tokinfo lexbuf)
+
+        | "def"      -> DEF (tokinfo lexbuf)
+        | "class"    -> CLASS (tokinfo lexbuf)
+        | "lambda"   -> LAMBDA (tokinfo lexbuf)
+
+        | "and"      -> AND (tokinfo lexbuf)
+        | "or"       -> OR (tokinfo lexbuf)
+        | "not"      -> NOT (tokinfo lexbuf)
+
         | "import"   -> IMPORT (tokinfo lexbuf)
+        | "from"     -> FROM (tokinfo lexbuf)
+
+        | "as"       -> AS (tokinfo lexbuf)
         | "in"       -> IN (tokinfo lexbuf)
         | "is"       -> IS (tokinfo lexbuf)
-        | "lambda"   -> LAMBDA (tokinfo lexbuf)
-        | "not"      -> NOT (tokinfo lexbuf)
-        | "or"       -> OR (tokinfo lexbuf)
-        | "pass"     -> PASS (tokinfo lexbuf)
-        | "raise"    -> RAISE (tokinfo lexbuf)
-        | "return"   -> RETURN (tokinfo lexbuf)
-        | "try"      -> TRY (tokinfo lexbuf)
-        | "while"    -> WHILE (tokinfo lexbuf)
+        | "assert"   -> ASSERT (tokinfo lexbuf)
+        | "del"      -> DEL (tokinfo lexbuf)
+        | "global"   -> GLOBAL (tokinfo lexbuf)
         | "with"     -> WITH (tokinfo lexbuf)
         | "yield"    -> YIELD (tokinfo lexbuf)
+      
+        (* python3-ext: *)
+        | "None"    -> NONE (tokinfo lexbuf)
+        | "True"    -> TRUE (tokinfo lexbuf)
+        | "False"    -> FALSE (tokinfo lexbuf)
+        | "async"    -> ASYNC (tokinfo lexbuf)
+        | "await"    -> AWAIT (tokinfo lexbuf)
+        | "nonlocal"    -> NONLOCAL (tokinfo lexbuf)
+
+        (* python3-ext: no more: print, exec *)
+ 
         | _          -> NAME (id, (tokinfo lexbuf)) }
 
   (* ----------------------------------------------------------------------- *)

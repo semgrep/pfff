@@ -425,6 +425,9 @@ let visit_program ~tag_hook _prefs (program, toks) =
         tag ii Number
     | T.IMAG (_, ii) ->
         tag ii Number
+    | T.TRUE (ii) | T.FALSE (ii) ->
+        tag ii Boolean
+    | T.NONE (ii) -> tag ii Null
 (*
     | T.TLongString (_s,ii) ->
         (* most of the time they are used as documentation strings *)
@@ -434,8 +437,6 @@ let visit_program ~tag_hook _prefs (program, toks) =
     (* ident  *)
     | T.NAME (s, ii) -> 
         (match s with
-        | "None" -> tag ii Null
-        | "True" | "False" -> tag ii Boolean
         | "self" -> tag ii KeywordObject
 
         | "str" | "list" | "int" | "bool" 
@@ -465,6 +466,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
     | T.CONTINUE ii | T.BREAK ii
     | T.YIELD ii
     | T.RETURN ii
+    | T.ASYNC ii | T.AWAIT ii
         -> tag ii Keyword
 
     | T.IS ii | T.IN ii
@@ -472,7 +474,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
     | T.ASSERT ii
     | T.WITH ii
     | T.DEL ii
-    | T.GLOBAL ii
+    | T.GLOBAL ii | T.NONLOCAL ii
         -> tag ii Keyword
 
     | T.NOT ii  | T.AND ii | T.OR ii -> 
