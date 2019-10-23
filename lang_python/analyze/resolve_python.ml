@@ -63,12 +63,6 @@ let with_new_context ctx env f =
 
 let params_of_parameters params =
   params |> Common.map_filter (function
-    | ParamTuple (arg, _optval) ->
-      (match arg with
-      | Name (name, _ctx, _resolved) -> Some name
-      (* todo: tuples? *)
-      | _ -> None
-     )
     | ParamClassic ((name, _), _)
     | ParamStar (name, _) | ParamPow (name, _) 
     -> Some name

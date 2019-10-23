@@ -200,8 +200,6 @@ and v_parameter x =
   match x with
   | ParamClassic ((v1, v2)) ->
       let v1 = v_name_and_type v1 and v2 = v_option v_expr v2 in ()
-  | ParamTuple ((v1, v2)) ->
-      let v1 = v_expr v1 and v2 = v_option v_expr v2 in ()
   | ParamStar ((v1, v2)) ->
       let v1 = v_name v1 and v2 = v_option v_type_ v2 in ()
   | ParamPow ((v1, v2)) ->

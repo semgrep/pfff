@@ -259,12 +259,6 @@ let visit_program ~tag_hook _prefs (program, toks) =
     );
     V.kparameter = (fun (k, _) x ->
       (match x with
-      | ParamTuple (arg, _optval) ->
-        (match arg with
-        | Name (name, _ctx, _resolved) ->
-          tag_name name (Parameter Def);
-        | _ -> ()
-        );
       | ParamClassic ((name, _), _)
       | ParamStar (name, _) | ParamPow (name, _) ->
         tag_name name (Parameter Def);

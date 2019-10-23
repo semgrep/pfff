@@ -325,19 +325,12 @@ varargslist:
 
 /*(* python3-ext: can be in any order, ParamStar before or after Classic *)*/
 parameter:
-  | vfpdef         
-      { match $1 with 
-        | Name (n, _, _) -> ParamClassic ((n, None), None)
-        | x -> ParamTuple (x, None) }
-  | vfpdef EQ test 
-     {  match $1 with 
-        | Name (n, _, _) -> ParamClassic ((n, None), Some $3)
-        | x -> ParamTuple (x, Some $3) } 
+  | vfpdef         { ParamClassic (($1, None), None) }
+  | vfpdef EQ test { ParamClassic (($1, None), Some $3) }
   | MULT NAME      { ParamStar ($2, None) }
   | POW NAME       { ParamPow ($2, None) }
 
-vfpdef:
-  | NAME { Name ($1, Param, ref Parameter) }
+vfpdef: NAME { $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Class definition *)*/

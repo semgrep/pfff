@@ -176,7 +176,6 @@ type expr =
        * and the Name can have a type associated with it
        *)
      | ParamClassic of (name * type_ option) * expr option (* default value *)
-     | ParamTuple of expr (* a Tuple *) * expr option
      | ParamStar of (name * type_ option)
      | ParamPow  of (name * type_ option)
   

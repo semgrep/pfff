@@ -288,17 +288,6 @@ and slice =
 
 and parameters xs =
   xs |> List.map (function
-   | ParamTuple (e, eopt) ->
-    (match e with
-    | Name (n, _ctx, _resolved) ->
-      let eopt = option expr eopt in
-      let n = name n in
-      G.ParamClassic { (G.basic_param n) with G.pdefault = eopt; }
-    | _ -> 
-      let e1 = expr e in
-      let e2 = option expr eopt |> G.opt_to_nop in
-      G.ParamPattern (G.OtherPat (G.OP_Expr, [G.E e1; G.E e2]))
-    )
   | ParamClassic ((n, topt), eopt) ->
      let n = name n in
      let topt = option type_ topt in
