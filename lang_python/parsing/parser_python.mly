@@ -46,7 +46,9 @@ let to_list = function
   | Single e -> [e]
   | Tup l -> l
 
-(* TODO: TypedExpr? ExprStar? then can appear as lvalue *)
+(* TODO: TypedExpr? ExprStar? then can appear as lvalue 
+ * what about CompForIf?
+*)
 let rec set_expr_ctx ctx = function
   | Name (id, _, x) ->
       Name (id, ctx, x)
@@ -595,20 +597,20 @@ atom_repr: BACKQUOTE testlist1 BACKQUOTE { Repr (tuple_expr $2) }
 
 atom_tuple:
   | LPAREN               RPAREN { Tuple (CompList [], Load) }
+  | LPAREN testlist_comp RPAREN { Tuple ($2, Load) }
   | LPAREN yield_expr    RPAREN { $2 }
-  | LPAREN testlist_comp RPAREN {  Tuple (CompList [], Load) (* TODO *) }
 
 atom_list:
   | LBRACK               RBRACK { List (CompList [], Load) }
-  | LBRACK testlist_comp RBRACK { Tuple (CompList [], Load) (* TODO *) }
+  | LBRACK testlist_comp RBRACK { List ($2, Load) }
 
 atom_dict:
   | LBRACE                RBRACE { DictOrSet (CompList []) }
-  | LBRACE dictorsetmaker RBRACE { Tuple (CompList [], Load) (* TODO *) }
+  | LBRACE dictorsetmaker RBRACE { DictOrSet ($2) }
 
 dictorsetmaker: 
-  | dictorset_elem comp_for { }
-  | dictorset_elem_list { }
+  | dictorset_elem comp_for { CompForIf ($1, $2) }
+  | dictorset_elem_list     { CompList $1 }
 
 dictorset_elem:
   | test COLON test { KeyVal ($1, $3) }
@@ -684,30 +686,32 @@ lambdadef: LAMBDA varargslist COLON test { Lambda ($2, $4) }
 /*(*----------------------------*)*/
 
 testlist_comp:
-  | test_or_star_expr comp_for { }
-  | testlist_star_expr         { }
+  | test_or_star_expr comp_for { CompForIf ($1, $2) }
+  | testlist_star_expr         { CompList (to_list $1) }
 
 comp_for: 
- | sync_comp_for       { }
- | ASYNC sync_comp_for { }
+ | sync_comp_for       { $1 }
+ | ASYNC sync_comp_for { (* TODO *) $2 }
 
 sync_comp_for:
-  | FOR exprlist IN or_test { }
-  | FOR exprlist IN or_test comp_iter { }
+  | FOR exprlist IN or_test           
+    { [CompFor (tuple_expr_store $2, $4)] }
+  | FOR exprlist IN or_test comp_iter 
+    { [CompFor (tuple_expr_store $2, $4)] @ $5 }
 
 comp_iter:
-  | comp_for { } 
-  | comp_if { }
+  | comp_for { $1 } 
+  | comp_if  { $1 }
 
 comp_if:
-  | IF test_nocond { }
-  | IF test_nocond comp_iter { }
+  | IF test_nocond           { [CompIf ($2)] }
+  | IF test_nocond comp_iter { [CompIf ($2)] @ $3 }
 
 test_nocond:
-  | or_test { }
-  | lambdadef_nocond { }
+  | or_test          { $1 }
+  | lambdadef_nocond { $1 }
 
-lambdadef_nocond: LAMBDA varargslist COLON test_nocond { }
+lambdadef_nocond: LAMBDA varargslist COLON test_nocond { Lambda ($2, $4) }
 
 
 /*(*----------------------------*)*/

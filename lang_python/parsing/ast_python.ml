@@ -155,7 +155,7 @@ type expr =
     | CompList of 'a list
     | CompForIf of 'a * for_if list
     and for_if =
-     | CompFor of expr list * (* in *) expr
+     | CompFor of expr * (* in *) expr
      | CompIf of expr
   
   and dictorset_elt = 
