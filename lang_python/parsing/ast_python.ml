@@ -305,6 +305,8 @@ type any =
   | Stmt of stmt
   | Stmts of stmt list
   | Program of program
+
+  | DictElem of dictorset_elt
  (* with tarzan *)
 
 (*****************************************************************************)

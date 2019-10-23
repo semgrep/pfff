@@ -332,6 +332,8 @@ and v_any =
   | Stmt v1 -> let v1 = v_stmt v1 in ()
   | Stmts v1 -> let v1 = v_list v_stmt v1 in ()
   | Program v1 -> let v1 = v_program v1 in ()
+
+  | DictElem x -> v_dictorset_elt x
   
 and all_functions x = v_any x
 in

@@ -61,4 +61,4 @@ clean::
 beforedepend:: parser_python.ml parser_python.mli
 
 visitor_python.cmo: visitor_python.ml
-	$(OCAMLC) -w y -c $<
+	ocamlc $(INCLUDES) -w y -c $<

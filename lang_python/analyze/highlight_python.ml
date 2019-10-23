@@ -176,7 +176,8 @@ let visit_program ~tag_hook _prefs (program, toks) =
          );
         k x
 
-      | ListComp (_, xs) | GeneratorExp (_, xs) ->
+(* TODO
+      | ListComp (_, xs) ->
           xs |> List.iter (fun (target, _iter, _ifs) ->
             match target with
             | Name (name, _ctx, _res) -> 
@@ -185,6 +186,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
             | _ -> ()
           );
          k x
+*)
 
      (* the general case *)
      | _ -> k x

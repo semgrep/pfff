@@ -74,6 +74,34 @@ let params_of_parameters params =
 
 let resolve prog =
   let env = default_env () in
+
+  (* helper to factorize code related to (polymorphic comprehension) *)
+  let comprehension ke v (e, xs) =
+    let new_vars = 
+      xs |> Common.map_filter (function
+        | CompFor (target, _) -> 
+            (match target with
+            | Name (name, _ctx, _res) -> Some name
+            (* tuples? *)
+            | _ -> None
+            )
+        | CompIf _ -> None
+     )
+   in 
+   let new_names = new_vars |> List.map (fun name ->
+       Ast.str_of_name name, Ast.LocalVar
+   ) in
+   with_added_env new_names env (fun () -> ke e);
+
+   (* TODO: should fold and use new env *)
+   xs |> List.iter (function
+     | CompFor (e1, e2) -> 
+          v (Expr e1); v (Expr e2)
+     | CompIf e ->
+          v (Expr e)
+    )
+  in    
+
   (* would be better to use a classic recursive with environment visit *)
   let visitor = V.mk_visitor { V.default_visitor with
     (* No need to resolve at the definition sites (for parameters, locals).
@@ -107,26 +135,15 @@ let resolve prog =
             resolved := Parameter; (* optional *)
           );
           k x
-      | ListComp (e, xs) | GeneratorExp (e, xs) ->
-        let new_vars = 
-          xs |> Common.map_filter (fun (target, _iter, _ifs) ->
-            match target with
-            | Name (name, _ctx, _res) -> Some name
-            (* tuples? *)
-            | _ -> None
-           ) in
-        let new_names = new_vars |> List.map (fun name ->
-            Ast.str_of_name name, Ast.LocalVar
-        ) in
-        with_added_env new_names env (fun () ->
-          v (Expr e);
-        );
-        xs |> List.iter (fun (target, iter, ifs) ->
-           v (Expr target);
-           v (Expr iter);
-           ifs |> List.iter (fun if_ -> v (Expr if_))
-        );
-        
+      | Tuple (CompForIf x, _)
+      | List (CompForIf x, _)
+        (* bugfix: do not pass just k here, because we want to intercept
+         * the processing of e too!
+         *)
+        -> comprehension (fun e -> v (Expr e)) v x
+      | DictOrSet (CompForIf x) -> 
+        comprehension (fun elt -> v (DictElem elt)) v x
+
       (* general case *)
       | _ -> k x
     );
