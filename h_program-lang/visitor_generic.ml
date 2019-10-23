@@ -393,6 +393,7 @@ and v_for_var_or_expr =
   | ForInitExpr v1 -> let v1 = v_expr v1 in ()
 and v_other_stmt_operator =
   function
+  | OS_NonLocal -> ()
   | OS_Delete -> ()
   | OS_Print -> ()
   | OS_ForOrElse -> ()

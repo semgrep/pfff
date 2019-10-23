@@ -247,6 +247,7 @@ type stmt =
   | ImportFrom of dotted_name (* module *) * alias list (* names *) * int option (* level *)
 
   | Global of name list (* names *)
+  | NonLocal of name list (* names *)
   | ExprStmt of expr (* value *)
 
   | Pass

@@ -292,6 +292,7 @@ and v_stmt x =
       and v3 = v_option v_int v3
       in ()
   | Global v1 -> let v1 = v_list v_name v1 in ()
+  | NonLocal v1 -> let v1 = v_list v_name v1 in ()
   | ExprStmt v1 -> let v1 = v_expr v1 in ()
   | Pass -> ()
   | Break -> ()

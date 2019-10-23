@@ -393,11 +393,13 @@ small_stmt:
   | flow_stmt   { $1 }
   | import_stmt { $1 }
   | global_stmt { $1 }
+  | nonlocal_stmt { $1 }
   | assert_stmt { $1 }
 
   /*(* typing-ext: in .pyi typing stub files *)*/
   | DOT DOT DOT { Pass (* TODO? *) }
 
+/*(* for expr_stmt see above *)*/
 
 del_stmt: DEL exprlist { Delete (List.map expr_del (to_list $2)) }
 
@@ -428,6 +430,9 @@ raise_stmt:
 
 
 global_stmt: GLOBAL name_list { Global ($2) }
+
+/*(* python3-ext: *)*/
+nonlocal_stmt: NONLOCAL name_list { NonLocal $2 }
 
 assert_stmt:
   | ASSERT test            { Assert ($2, None) }
@@ -793,11 +798,6 @@ import_as_name_list:
   | import_as_name                           { [$1] }
   | import_as_name COMMA                     { [$1] }
   | import_as_name COMMA import_as_name_list { $1::$3 }
-
-vfpdef_list:
-  | vfpdef                  { Single $1 }
-  | vfpdef COMMA            { Tup [$1] }
-  | vfpdef COMMA vfpdef_list { cons $1 $3 }
 
 /*(* was called testlife_safe originally *)*/
 old_test_list:

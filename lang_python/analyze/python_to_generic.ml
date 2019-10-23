@@ -466,6 +466,8 @@ and stmt x =
 
   | Global v1 -> let v1 = list name v1 in
       G.OtherStmt (G.OS_Global, v1 |> List.map (fun x -> G.N x))
+  | NonLocal v1 -> let v1 = list name v1 in
+      G.OtherStmt (G.OS_NonLocal, v1 |> List.map (fun x -> G.N x))
 
   | ExprStmt v1 -> let v1 = expr v1 in G.ExprStmt v1
 
