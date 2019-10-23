@@ -100,7 +100,11 @@ let special (x, tok) =
           | _ -> error tok "Impossible: Too many arguments to Yield"
           )
   | YieldStar -> SR_Other G.OE_YieldStar
-  | Await -> SR_Other G.OE_Await
+  | Await -> SR_NeedArgs (fun args ->
+          match args with
+          | [e] -> G.Await e
+          | _ -> error tok "Impossible: Too many arguments to Await"
+          )
   | Encaps v1 -> 
       (match v1 with
       | None -> SR_NeedArgs (fun args -> 

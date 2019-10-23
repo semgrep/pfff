@@ -225,9 +225,16 @@ and v_argument =
   | ArgKwd ((v1, v2)) -> let v1 = v_name v1 and v2 = v_expr v2 in ()
   | ArgOther ((v1, v2)) ->
       let v1 = v_other_argument_operator v1 and v2 = v_list v_any v2 in ()
-and v_other_argument_operator = function | OA_ArgPow -> ()
+and v_other_argument_operator = function 
+ | OA_ArgPow -> ()
+ | OA_ArgComp -> ()
+
 and v_other_expr_operator =
   function
+  | OE_CompForIf -> ()
+  | OE_CompIf -> ()
+  | OE_CompFor -> ()
+
   | OE_Encaps -> ()
   | OE_CmpOps -> ()
   | OE_Exports -> ()
@@ -237,7 +244,6 @@ and v_other_expr_operator =
   | OE_NewTarget -> ()
   | OE_Delete -> ()
   | OE_YieldStar -> ()
-  | OE_Await -> ()
   | OE_Require -> ()
   | OE_UseStrict -> ()
   | OE_ObjAccess_PN_Computed -> ()
@@ -249,11 +255,8 @@ and v_other_expr_operator =
   | OE_NotIn -> ()
   | OE_Invert -> ()
   | OE_Slice -> ()
-  | OE_SliceEllipsis -> ()
   | OE_SliceRange -> ()
   | OE_SliceIndex -> ()
-  | OE_ListComp -> ()
-  | OE_GeneratorExpr -> ()
   | OE_Repr -> ()
   | OE_NameOrClassType -> ()
   | OE_ClassLiteral -> ()

@@ -98,10 +98,12 @@ and v_expr (x: expr) =
   | ExprStar ((v1)) ->
       let v1 = v_expr v1 in ()
   | Tuple ((v1, v2)) ->
-      let v1 = v_comprehension v_expr v1 and v2 = v_expr_context v2 in ()
+      let v1 = v_list_or_comprehension v_expr v1 
+      and v2 = v_expr_context v2 in ()
   | List ((v1, v2)) ->
-      let v1 = v_comprehension v_expr v1 and v2 = v_expr_context v2 in ()
-  | DictOrSet (v) -> v_comprehension v_dictorset_elt v
+      let v1 = v_list_or_comprehension v_expr v1 
+      and v2 = v_expr_context v2 in ()
+  | DictOrSet (v) -> v_list_or_comprehension v_dictorset_elt v
   | BoolOp ((v1, v2)) -> let v1 = v_boolop v1 and v2 = v_list v_expr v2 in ()
   | BinOp ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_operator v2 and v3 = v_expr v3 in ()
@@ -130,6 +132,7 @@ and v_argument = function
   | ArgPow e -> v_expr e
   | ArgStar e -> v_expr e
   | ArgKwd (n, e) -> v_name n; v_expr e
+  | ArgComp ((e, xs)) -> v_comprehension v_expr (e, xs)
 
 and v_dictorset_elt = function
   | KeyVal (v1, v2) -> v_expr v1; v_expr v2
@@ -172,12 +175,16 @@ and v_cmpop =
   | In -> ()
   | NotIn -> ()
 
-and v_comprehension: 'a. ('a -> unit) -> 'a comprehension -> unit = 
- fun _of_a ->
+and v_list_or_comprehension: 'a. ('a -> unit) -> 'a list_or_comprehension -> unit = 
+ fun of_a ->
   function
-  | CompList v1 -> let v1 = v_list _of_a v1 in ()
-  | CompForIf ((v1, v2)) ->
-      let v1 = _of_a v1 and v2 = v_list v_for_if v2 in ()
+  | CompList v1 -> let v1 = v_list of_a v1 in ()
+  | CompForIf v1 ->
+        v_comprehension of_a v1
+
+and v_comprehension: 'a. ('a -> unit) -> 'a comprehension -> unit = fun of_a ->
+   fun ((v1, v2)) ->
+     let v1 = of_a v1 and v2 = v_list v_for_if v2 in ()
 
 and v_for_if =
   function

@@ -118,14 +118,26 @@ let rec expr (x: expr) =
                G.id_type = ref None;
                id_resolved = v3 })
           
-  | Tuple ((v1, v2)) ->
+  | Tuple ((CompList v1, v2)) ->
       let v1 = list expr v1 
       and _v2TODO = expr_context v2 in 
       G.Tuple v1
-  | List ((v1, v2)) ->
+
+  | Tuple ((CompForIf (v1, v2), v3)) ->
+      let e1 = comprehension expr v1 v2 in
+      let _v4TODO = expr_context v3 in 
+      G.Tuple e1
+
+  | List ((CompList v1, v2)) ->
       let v1 = list expr v1 
       and _v2TODO = expr_context v2 in 
       G.Container (G.List, v1)
+
+  | List ((CompForIf (v1, v2), v3)) ->
+      let e1 = comprehension expr v1 v2 in
+      let _v3TODO = expr_context v3 in 
+      G.Container (G.List, e1)
+
   | Subscript ((v1, v2, v3)) ->
       let v1 = expr v1 
       and v2 = list slice v2 
@@ -143,10 +155,14 @@ let rec expr (x: expr) =
       and _v3TODO = expr_context v3 in 
       G.ObjAccess (v1, v2)
 
-  | DictOrSet (v) -> 
+  | DictOrSet (CompList v) -> 
       let v = list dictorset_elt v in 
       (* less: could be a Set if alls are Key *)
       G.Container (G.Dict, v)
+
+  | DictOrSet (CompForIf (v1, v2)) -> 
+      let e1 = comprehension2 dictorset_elt v1 v2 in
+      G.Container (G.Dict, e1)
 
   | BoolOp ((v1, v2)) -> 
       let v1 = boolop v1 
@@ -205,6 +221,18 @@ and argument = function
       G.ArgOther (G.OA_ArgPow, [G.E e])
   | ArgKwd (n, e) -> let n = name n in let e = expr e in
       G.ArgKwd (n, e)
+  | ArgComp (e, xs) ->
+      let e = expr e in
+      G.ArgOther (G.OA_ArgComp, (G.E e)::list for_if xs)
+
+and for_if = function
+  | CompFor (e1, e2) -> 
+      let e1 = expr e1 in let e2 = expr e2 in
+      G.E (G.OtherExpr (G.OE_CompFor, [G.E e1; G.E e2]))
+  | CompIf (e1) -> 
+      let e1 = expr e1 in
+      G.E (G.OtherExpr (G.OE_CompIf, [G.E e1]))
+
 
 and dictorset_elt = function
   | KeyVal (v1, v2) -> let v1 = expr v1 in let v2 =  expr v2 in 
@@ -264,10 +292,15 @@ and cmpop =
   | In    -> Right G.OE_In
   | NotIn -> Right G.OE_NotIn
 
-and comprehension (v1, v2, v3) =
-  let v1 = expr v1 and v2 = expr v2 and v3 = list expr v3 in
-  G.E (G.Tuple [v1; v2; G.Container (G.List, v3)])
+and comprehension f v1 v2 =
+  let v1 = f v1 in
+  let v2 = list for_if v2 in
+  [G.OtherExpr (G.OE_CompForIf, (G.E v1)::v2)]
 
+and comprehension2 f v1 v2 =
+  let v1 = f v1 in
+  let v2 = list for_if v2 in
+  [G.OtherExpr (G.OE_CompForIf, (G.E v1)::v2)]
 
 and slice =
   function

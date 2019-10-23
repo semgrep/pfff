@@ -89,15 +89,16 @@ type resolved_name =
 type expr =
   | Num of number (* n *)
   | Str of (string wrap) list (* s *)
-  (* python3-ext: *)
+  (* python3-ext: officially reserved keywords in python3 *)
   | Bool of bool wrap
   | ExprNone of tok
 
+  (* introduce new vars when expr_context = Store *)
   | Name of name (* id *) * expr_context (* ctx *) * resolved_name ref
 
-  | Tuple of expr comprehension (* elts *)  * expr_context (* ctx *)
-  | List of expr comprehension (* elts *)   * expr_context (* ctx *)
-  | DictOrSet of dictorset_elt comprehension
+  | Tuple of expr list_or_comprehension (* elts *)  * expr_context (* ctx *)
+  | List of expr list_or_comprehension (* elts *)   * expr_context (* ctx *)
+  | DictOrSet of dictorset_elt list_or_comprehension
 
   (* python3-ext: *)
   | ExprStar of expr (* less: expr_context? always Store anyway no? *)
@@ -113,8 +114,7 @@ type expr =
 
   | Call of expr (* func *) * argument list (* args *)
 
-  | Subscript of expr (* value *) * slice list (* slice *) * 
-                 expr_context (* ctx *)
+  | Subscript of expr (* value *) * slice list (* slice *) * expr_context
 
   (* the parameters do not have types here *)
   | Lambda of parameters (* args *) * expr (* body *)
@@ -151,12 +151,14 @@ type expr =
     | Is | IsNot 
     | In | NotIn
   
-  and 'a comprehension = 
+  and 'a list_or_comprehension = 
     | CompList of 'a list
-    | CompForIf of 'a * for_if list
-    and for_if =
-     | CompFor of expr * (* in *) expr
-     | CompIf of expr
+    | CompForIf of 'a comprehension
+
+    and 'a comprehension = 'a * for_if list
+      and for_if =
+      | CompFor of expr (* introduce new vars *) * (* in *) expr
+      | CompIf of expr
   
   and dictorset_elt = 
     | KeyVal of expr * expr
@@ -188,8 +190,8 @@ type expr =
     | Arg of expr
     | ArgKwd of name (* arg *) * expr (* value *)
     | ArgStar of expr
-    (* python3-ext: *)
     | ArgPow of expr
+    | ArgComp of expr * for_if list
  
   
 (* ------------------------------------------------------------------------- *)
@@ -228,12 +230,13 @@ type stmt =
   (* the left expr should be an lvalue: Name, List, Tuple, Subscript,
    * or Attribute, or ExprStar, which are anything with an expr_context
    * (see also Parser_python.set_expr_ctx).
+   * This can introduce new vars.
    * todo: why take an expr list? can reuse Tuple for tuple assignment
    *)
   | Assign of expr list (* targets *) * expr (* value *)
   | AugAssign of expr (* target *) * operator (* op *) * expr (* value *)
 
-  | For of expr (* target (pattern) *) * expr (* 'in' iter *) * 
+  | For of expr (* (pattern) introduce new vars *) * expr (* 'in' iter *) * 
            stmt list (* body *) * stmt list (* orelse *)
   | While of expr (* test *) * stmt list (* body *) * stmt list (* orelse *)
   | If of expr (* test *) * stmt list (* body *) * stmt list (* orelse *)
@@ -260,7 +263,7 @@ type stmt =
 and excepthandler = 
   ExceptHandler of 
     type_ option (* type *) * 
-    expr option (* name *) * 
+    expr option (* name, introduce new var *) * 
     stmt list (* body *)
 
 

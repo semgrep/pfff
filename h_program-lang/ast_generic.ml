@@ -238,13 +238,14 @@ type expr =
        and other_argument_operator =
         (* Python *)
         | OA_ArgPow (* a kind of Spread, but for Dict instead of List *)
+        | OA_ArgComp
 
   and other_expr_operator = 
     (* Javascript *)
     | OE_Exports | OE_Module 
     | OE_Define | OE_Arguments 
     | OE_NewTarget
-    | OE_Delete | OE_YieldStar | OE_Await
+    | OE_Delete | OE_YieldStar
     | OE_Encaps (* less: convert to regular funcall? *)
     | OE_Require (* todo: lift to Import? *) 
     | OE_UseStrict (* less: lift up to program attribute/directive? *)
@@ -252,12 +253,12 @@ type expr =
     | OE_ExprClass (* anon class (similar to anon func) *)
     (* Python *)
     | OE_Imag
-    | OE_Is | OE_IsNot 
-    | OE_In | OE_NotIn
+    | OE_Is | OE_IsNot (* less: could be part of a set_operator? *)
+    | OE_In | OE_NotIn (* less: could be part of a obj_operator? *)
     | OE_Invert
-    | OE_Slice | OE_SliceIndex | OE_SliceEllipsis | OE_SliceRange
+    | OE_Slice | OE_SliceIndex | OE_SliceRange
+    | OE_CompForIf | OE_CompFor | OE_CompIf
     | OE_CmpOps
-    | OE_ListComp | OE_GeneratorExpr 
     | OE_Repr
     (* Java *)
     | OE_NameOrClassType | OE_ClassLiteral (* XXX.class? *)
