@@ -586,19 +586,19 @@ atom_repr: BACKQUOTE testlist1 BACKQUOTE { Repr (tuple_expr $2) }
 /*(*----------------------------*)*/
 
 atom_tuple:
-  | LPAREN              RPAREN { Tuple ([], Load) }
-  | LPAREN testlist     RPAREN { tuple_expr $2 }
-  | LPAREN yield_expr   RPAREN { $2 }
-  | LPAREN test gen_for RPAREN { GeneratorExp ($2, $3) }
+  | LPAREN               RPAREN { Tuple ([], Load) }
+  | LPAREN yield_expr    RPAREN { $2 }
+  | LPAREN testlist_comp RPAREN {  Tuple ([], Load) (* TODO *) }
 
 atom_list:
   | LBRACK               RBRACK { List ([], Load) }
-  | LBRACK testlist      RBRACK { List (to_list $2, Load) }
-  | LBRACK test list_for RBRACK { ListComp ($2, $3) }
+  | LBRACK testlist_comp RBRACK { Tuple ([], Load) (* TODO *) }
 
 atom_dict:
   | LBRACE                RBRACE { DictOrSet [] }
-  | LBRACE dictorset_elem_list RBRACE { DictOrSet $2 }
+  | LBRACE dictorsetmaker RBRACE { Tuple ([], Load) (* TODO *) }
+
+dictorsetmaker: dictorset_elem_list { $1 }
 
 dictorset_elem:
   | test COLON test { KeyVal ($1, $3) }
@@ -672,31 +672,28 @@ lambdadef: LAMBDA varargslist COLON test { Lambda ($2, $4) }
 /*(*2 Comprehensions *)*/
 /*(*----------------------------*)*/
 
-list_for:
-  | list_for1 { [$1] }
-  | list_for1 list_for { $1::$2 }
+testlist_comp:
+  | test_or_star_expr comp_for { }
+  | testlist_star_expr { }
 
-list_for1: FOR exprlist IN old_test_list list_if_list 
-  { tuple_expr_store $2, tuple_expr $4, $5 }
-list_if: IF old_test { $2 }
+comp_for:
+  | FOR exprlist IN or_test { }
+  | FOR exprlist IN or_test comp_iter { }
 
+comp_iter:
+  | comp_for { } 
+  | comp_if { }
 
-old_test:
-  | or_test { $1 }
-  | old_lambdadef { $1 }
+comp_if:
+  | IF test_nocond { }
+  | IF test_nocond comp_iter { }
 
-old_lambdadef: LAMBDA varargslist COLON old_test { Lambda ($2, $4) }
+test_nocond:
+  | or_test { }
+  | lambdadef_nocond { }
 
-/*(*----------------------------*)*/
-/*(*2 Generators *)*/
-/*(*----------------------------*)*/
+lambdadef_nocond: LAMBDA varargslist COLON test_nocond { }
 
-gen_for:
-  | gen_for1 { [$1] }
-  | gen_for1 gen_for { $1::$2 }
-
-gen_for1: FOR exprlist IN or_test gen_if_list { tuple_expr_store $2, $4, $5 }
-gen_if: IF old_test { $2 }
 
 /*(*----------------------------*)*/
 /*(*2 Arguments *)*/
@@ -705,7 +702,7 @@ gen_if: IF old_test { $2 }
 /*(* python3-ext: can be any order, ArgStar before or after ArgKwd *)*/
 argument:
   | test           { Arg $1 }
-  | test gen_for   { Arg (GeneratorExp ($1, $2)) }
+  | test comp_for  { Arg $1 (* TODO *) }
 
   /*(* python3-ext: *)*/
   | MULT test      { ArgStar $2 }
@@ -730,13 +727,6 @@ stmt_list:
   | /*(* empty *)*/ { [] }
   | stmt stmt_list  { $1 @ $2 }
 
-list_if_list:
-  | /*(*empty*)*/        { [] }
-  | list_if list_if_list { $1::$2 }
-
-gen_if_list:
-  | /*(*empty*)*/      { [] }
-  | gen_if gen_if_list { $1::$2 }
 
 decorator_list:
   | /*(* empty *)*/          { [] }
@@ -755,11 +745,6 @@ import_as_name_list:
   | import_as_name COMMA                     { [$1] }
   | import_as_name COMMA import_as_name_list { $1::$3 }
 
-/*(* was called testlife_safe originally *)*/
-old_test_list:
-  | old_test                     { Single $1 }
-  | old_test COMMA               { Tup [$1] }
-  | old_test COMMA old_test_list { cons $1 $3 }
 
 subscript_list:
   | subscript                      { [$1] }
