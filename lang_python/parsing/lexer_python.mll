@@ -315,6 +315,7 @@ and _token state = parse
   | ','     { COMMA (tokinfo lexbuf) }
   | '`'     { BACKQUOTE (tokinfo lexbuf) }
   | '@'     { AT (tokinfo lexbuf) }
+  | "..."   { ELLIPSES (tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)

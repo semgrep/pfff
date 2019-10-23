@@ -173,6 +173,8 @@ type expr =
   | Ref of expr (* &, address of *)
   | DeRef of expr (* '*' *)
 
+  | Ellipses of tok (* for sgrep, and also types in Python *)
+
   | OtherExpr of other_expr_operator * any list
 
   and literal = 

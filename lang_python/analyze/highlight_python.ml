@@ -513,6 +513,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
     | T.COMMA ii
     | T.SEMICOL ii
     | T.BACKQUOTE ii
+    | T.ELLIPSES ii
 
     | T.AT ii
         ->

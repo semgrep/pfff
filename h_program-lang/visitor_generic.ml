@@ -112,6 +112,7 @@ and v_expr x =
   let k x = 
   match x with
   | L v1 -> let v1 = v_literal v1 in ()
+  | Ellipses v1 -> let v1 = v_tok v1 in ()
   | Container ((v1, v2)) ->
       let v1 = v_container_operator v1 and v2 = v_list v_expr v2 in ()
   | Tuple v1 -> let v1 = v_list v_expr v1 in ()

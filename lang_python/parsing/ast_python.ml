@@ -106,6 +106,7 @@ type expr =
   (* python3-ext: *)
   (* inside an Assign (or ExprStmt) *)
   | TypedExpr of expr * type_
+  | Ellipses of tok (* should be only in .pyi or types like Dict[str,...] *)
 
   | BoolOp of boolop (* op *) * expr list (* values *)
   | BinOp of expr (* left *) * operator (* op *) * expr (* right *)

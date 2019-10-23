@@ -134,6 +134,7 @@ let mk_name_param (name, t) =
  COMMA          /* , */
  BACKQUOTE      /* ` */
  AT             /* @ */
+ ELLIPSES       /* ... */
 
 /*(* operators *)*/
 %token <Ast_python.tok> 
@@ -385,9 +386,6 @@ small_stmt:
   | nonlocal_stmt { $1 }
   | assert_stmt { $1 }
 
-  /*(* typing-ext: in .pyi typing stub files *)*/
-  | DOT DOT DOT { Pass (* TODO? *) }
-
 /*(* for expr_stmt see above *)*/
 
 del_stmt: DEL exprlist { Delete (List.map expr_del (to_list $2)) }
@@ -584,6 +582,8 @@ atom:
   | atom_dict   { $1 }
 
   | atom_repr   { $1 }
+ 
+  | ELLIPSES    { Ellipses $1 }
 
 string_list:
   | STR { [$1] }

@@ -85,6 +85,9 @@ let rec expr (x: expr) =
   | ExprNone x ->
      let x = info x in
      G.L (G.Null x)
+  | Ellipses x ->
+     let x = info x in
+     G.Ellipses x
   | Num v1 -> 
       let v1 = number v1 in 
       (match v1 with
