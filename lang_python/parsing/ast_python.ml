@@ -151,7 +151,12 @@ type expr =
     | Is | IsNot 
     | In | NotIn
   
-  and 'a comprehension = 'a list
+  and 'a comprehension = 
+    | CompList of 'a list
+    | CompForIf of 'a * for_if list
+    and for_if =
+     | CompFor of expr list * (* in *) expr
+     | CompIf of expr
   
   and dictorset_elt = 
     | KeyVal of expr * expr

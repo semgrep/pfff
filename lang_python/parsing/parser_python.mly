@@ -40,7 +40,7 @@ let cons e = function
 
 let tuple_expr = function
   | Single e -> e
-  | Tup l -> Tuple (l, Load)
+  | Tup l -> Tuple (CompList l, Load)
 
 let to_list = function
   | Single e -> [e]
@@ -54,10 +54,12 @@ let rec set_expr_ctx ctx = function
       Attribute (value, attr, ctx)
   | Subscript (value, slice, _) ->
       Subscript (value, slice, ctx)
-  | List (elts, _) ->
-      List (List.map (set_expr_ctx ctx) elts, ctx)
-  | Tuple (elts, _) ->
-      Tuple (List.map (set_expr_ctx ctx) elts, ctx)
+
+  | List (CompList elts, _) ->
+      List (CompList (List.map (set_expr_ctx ctx) elts), ctx)
+  | Tuple (CompList elts, _) ->
+      Tuple (CompList (List.map (set_expr_ctx ctx) elts), ctx)
+
   | e -> e
 
 let expr_store = set_expr_ctx Store
@@ -592,17 +594,17 @@ atom_repr: BACKQUOTE testlist1 BACKQUOTE { Repr (tuple_expr $2) }
 /*(*----------------------------*)*/
 
 atom_tuple:
-  | LPAREN               RPAREN { Tuple ([], Load) }
+  | LPAREN               RPAREN { Tuple (CompList [], Load) }
   | LPAREN yield_expr    RPAREN { $2 }
-  | LPAREN testlist_comp RPAREN {  Tuple ([], Load) (* TODO *) }
+  | LPAREN testlist_comp RPAREN {  Tuple (CompList [], Load) (* TODO *) }
 
 atom_list:
-  | LBRACK               RBRACK { List ([], Load) }
-  | LBRACK testlist_comp RBRACK { Tuple ([], Load) (* TODO *) }
+  | LBRACK               RBRACK { List (CompList [], Load) }
+  | LBRACK testlist_comp RBRACK { Tuple (CompList [], Load) (* TODO *) }
 
 atom_dict:
-  | LBRACE                RBRACE { DictOrSet [] }
-  | LBRACE dictorsetmaker RBRACE { Tuple ([], Load) (* TODO *) }
+  | LBRACE                RBRACE { DictOrSet (CompList []) }
+  | LBRACE dictorsetmaker RBRACE { Tuple (CompList [], Load) (* TODO *) }
 
 dictorsetmaker: 
   | dictorset_elem comp_for { }
