@@ -16,7 +16,8 @@
  * license.txt for more details.
  *)
 
-(* This file contains a grammar for Python (2 and 3).
+(* This file contains a grammar for Python 3 
+ * (which is mostly a superset of Python 2).
  *
  * original src: 
  *  https://github.com/m2ym/ocaml-pythonlib/blob/master/src/python2_parser.mly
@@ -241,17 +242,9 @@ expr_stmt:
   | testlist_star_expr EQ expr_stmt_rhs_list 
       { Assign ((tuple_expr_store $1)::(fst $3), snd $3) }
 
-testlist_star_expr:
-  | test_or_star_expr                          { Single $1 }
-  | test_or_star_expr COMMA                    { Tup [$1] }
-  | test_or_star_expr COMMA testlist_star_expr { cons $1 $3 }
-
 test_or_star_expr:
   | test      { $1 }
   | star_expr { $1 }
-
-/*(* python3-ext: *)*/
-star_expr: MULT expr { ExprStar $2 }
 
 expr_stmt_rhs_list:
   | expr_stmt_rhs                       
@@ -436,6 +429,7 @@ compound_stmt:
   | with_stmt   { $1 }
   | funcdef     { $1 }
   | classdef    { $1 }
+  | async_stmt  { $1 }
 
 
 if_stmt: IF test COLON suite elif_stmt_list { If ($2, $4, $5) }
@@ -480,18 +474,16 @@ with_stmt:
   | WITH test         COLON suite { With ($2, None, $4) }
   | WITH test AS expr COLON suite { With ($2, Some $4, $6) }
 
-/*(*----------------------------*)*/
-/*(*2 auxillary statements *)*/
-/*(*----------------------------*)*/
+/*(* python3-ext: *)*/
+/* TODO: add ASYNC in AST */
+async_stmt: 
+  | ASYNC funcdef   { $2 }
+  | ASYNC with_stmt { $2 } 
+  | ASYNC for_stmt  { $2 }
 
 /*(*************************************************************************)*/
 /*(*1 Expressions *)*/
 /*(*************************************************************************)*/
-
-exprlist:
-  | expr                { Single $1 }
-  | expr COMMA          { Tup [$1] }
-  | expr COMMA exprlist { cons $1 $3 }
 
 expr:
   | xor_expr            { $1 }
@@ -529,21 +521,10 @@ term_op:
   | FDIV    { FloorDiv, $1 }
 
 factor:
-  | ADD factor { UnaryOp (UAdd, $2) }
-  | SUB factor
-      { (* CPython converts
-             UnaryOp (op=Sub (), operand=Num (n=x))
-           to
-             Num (n=-x)
-           if possible. *)
-        match $2 with
-        | Num (Int (n, x))        -> Num (Int ("-" ^ n, x))
-        | Num (LongInt (n, x))    -> Num (LongInt ("-" ^ n, x))
-        | Num (Float (n, x))      -> Num (Float ("-" ^ n, x))
-        | Num (Imag (n, x))       -> Num (Imag ("-" ^ n, x))
-        | _                       -> UnaryOp (USub, $2) }
+  | ADD factor    { UnaryOp (UAdd, $2) }
+  | SUB factor    { UnaryOp (USub, $2) }
   | BITNOT factor { UnaryOp (Invert, $2) }
-  | power { $1 }
+  | power         { $1 }
 
 power:
   | atom_expr            { $1 }
@@ -553,21 +534,21 @@ power:
 /*(*2 Atom expr *)*/
 /*(*----------------------------*)*/
 
-atom_expr: atom_trailer { $1 }
+atom_expr: atom_and_trailers { $1 }
 
-atom_trailer:
+atom_and_trailers:
   | atom { $1 }
 
-  | atom_trailer LPAREN         RPAREN { Call ($1, []) }
-  | atom_trailer LPAREN arg_list RPAREN { Call ($1, $3) }
+  | atom_and_trailers LPAREN          RPAREN { Call ($1, []) }
+  | atom_and_trailers LPAREN arg_list RPAREN { Call ($1, $3) }
 
-  | atom_trailer LBRACK subscript_list RBRACK
+  | atom_and_trailers LBRACK subscript_list   RBRACK
       { match $3 with
           (* TODO test* => Index (Tuple (elts)) *)
         | [s] -> Subscript ($1, [s], Load)
         | l -> Subscript ($1, (l), Load) }
 
-  | atom_trailer DOT NAME { Attribute ($1, $3, Load) }
+  | atom_and_trailers DOT NAME { Attribute ($1, $3, Load) }
 
 /*(*----------------------------*)*/
 /*(*2 Atom *)*/
@@ -630,7 +611,6 @@ dictorset_elem:
 /*(*----------------------------*)*/
 
 subscript:
-  | DOT DOT DOT { Ellipsis }
   | test { Index ($1) }
   | test_opt COLON test_opt { Slice ($1, $3, None) }
   | test_opt COLON test_opt COLON test_opt { Slice ($1, $3, $5) }
@@ -638,11 +618,6 @@ subscript:
 /*(*----------------------------*)*/
 /*(*2 test *)*/
 /*(*----------------------------*)*/
-
-testlist:
-  | test                { Single $1 }
-  | test COMMA          { Tup [$1] }
-  | test COMMA testlist { cons $1 $3 }
 
 test:
   | or_test                      { $1 }
@@ -658,25 +633,14 @@ and_test:
   | not_test                   { $1 }
   | not_test AND not_test_list { BoolOp (And, $1::$3) }
 
-and_test_list:
-  | and_test                  { [$1] }
-  | and_test OR and_test_list { $1::$3 }
 
 not_test:
   | NOT not_test { UnaryOp (Not, $2) }
   | comparison   { $1 }
 
-not_test_list:
-  | not_test                   { [$1] }
-  | not_test AND not_test_list { $1::$3 }
-
 comparison:
   | expr                         { $1 }
   | expr comp_op comparison_list { Compare ($1, (fst $2)::(fst $3), snd $3) }
-
-comparison_list:
-  | expr                         { [], [$1] }
-  | expr comp_op comparison_list { (fst $2)::(fst $3), $1::(snd $3) }
 
 comp_op:
   | EQUAL   { Eq, $1 }
@@ -693,6 +657,10 @@ comp_op:
 /*(*----------------------------*)*/
 /*(*2 Advanced features *)*/
 /*(*----------------------------*)*/
+
+/*(* python3-ext: *)*/
+star_expr: MULT expr { ExprStar $2 }
+
 
 yield_expr:
   | YIELD          { Yield (None) }
@@ -809,6 +777,21 @@ dictorset_elem_list:
   | dictorset_elem COMMA                      { [$1] }
   | dictorset_elem COMMA dictorset_elem_list { $1::$3 }
 
+exprlist:
+  | expr                { Single $1 }
+  | expr COMMA          { Tup [$1] }
+  | expr COMMA exprlist { cons $1 $3 }
+
+testlist:
+  | test                { Single $1 }
+  | test COMMA          { Tup [$1] }
+  | test COMMA testlist { cons $1 $3 }
+
+
+testlist_star_expr:
+  | test_or_star_expr                          { Single $1 }
+  | test_or_star_expr COMMA                    { Tup [$1] }
+  | test_or_star_expr COMMA testlist_star_expr { cons $1 $3 }
 
 /*(* list with commas, but without trailing comma *)*/
 dotted_as_name_list:
@@ -822,6 +805,20 @@ name_list:
 testlist1:
   | test                 { Single $1 }
   | test COMMA testlist1 { cons $1 $3 }
+
+
+/*(* list with special separator (not comma) *)*/
+and_test_list:
+  | and_test                  { [$1] }
+  | and_test OR and_test_list { $1::$3 }
+
+not_test_list:
+  | not_test                   { [$1] }
+  | not_test AND not_test_list { $1::$3 }
+
+comparison_list:
+  | expr                         { [], [$1] }
+  | expr comp_op comparison_list { (fst $2)::(fst $3), $1::(snd $3) }
 
 /*(* opt *)*/
 test_opt:

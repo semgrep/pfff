@@ -276,6 +276,7 @@ and _token state = parse
 
   | "=="    { EQUAL (tokinfo lexbuf) }
   | "!="    { NOTEQ (tokinfo lexbuf) }
+  (* != equivalent to <>? *)
   | "<>"    { NOTEQ (tokinfo lexbuf) }
   | "<="    { LEQ (tokinfo lexbuf) }
   | ">="    { GEQ (tokinfo lexbuf) }

@@ -187,7 +187,6 @@ and v_expr_context =
 and v_keyword (v1, v2) = let v1 = v_name v1 and v2 = v_expr v2 in ()
 and v_slice =
   function
-  | Ellipsis -> ()
   | Slice ((v1, v2, v3)) ->
       let v1 = v_option v_expr v1
       and v2 = v_option v_expr v2

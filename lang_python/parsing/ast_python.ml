@@ -166,7 +166,6 @@ type expr =
     | Param
   
   and slice =
-    | Ellipsis
     | Slice of expr option (* lower *) * expr option (* upper *) * expr option (* step *)
     | Index of expr (* value *)
   

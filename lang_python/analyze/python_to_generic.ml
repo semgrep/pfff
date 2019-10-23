@@ -277,7 +277,6 @@ and comprehension (v1, v2, v3) =
 and slice =
   function
   | Index v1 -> let v1 = expr v1 in G.OE_SliceIndex, v1
-  | Ellipsis -> G.OE_SliceEllipsis, G.Nop
   | Slice ((v1, v2, v3)) ->
       let v1 = option expr v1
       and v2 = option expr v2
