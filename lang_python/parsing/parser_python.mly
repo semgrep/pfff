@@ -188,7 +188,7 @@ nl_or_stmt:
  | stmt    { $1 }
 
 sgrep_spatch_pattern:
- | expr EOF { Expr $1 }
+ | test EOF { Expr $1 }
  | stmt EOF { Stmts $1 }
 
 /*(*************************************************************************)*/
