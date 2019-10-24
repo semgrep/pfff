@@ -7,10 +7,10 @@ OPAMPKG=pfff-meta
 
 BIN=gen_code
 
-SRC= ast_js_tof.ml \
+SRC= ast_js_tof.ml ast_generic_tof.ml \
   pretty_printer_indent.ml \
   gen_ml_code.ml \
-  test_meta_js.ml
+  test_meta.ml
 
 
 -include $(TOP)/Makefile.config

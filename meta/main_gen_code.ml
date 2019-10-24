@@ -33,7 +33,75 @@ let test_matcher_gen s =
   Gen_ml_code.gen_matcher (s, t)
 
 let test_matcher_all () = 
+
   let all_types = [
+    "tok";
+    "wrap";
+    "name";
+    "dotted_name";
+    "qualified_name";
+    "module_name";
+    "resolved_name";
+
+    "constructor_definition";
+    "action";
+    "case_and_body";
+    "any";
+    "program";
+    "item";
+    "other_directive_operator";
+    "alias";
+    "directive";
+    "class_kind";
+    "class_definition";
+    "other_type_definition_operator";
+    "other_type_kind_operator";
+    "type_definition_kind";
+    "type_definition";
+    "field";
+    "variable_definition";
+    "other_parameter_operator";
+    "parameter_classic";
+    "parameter";
+    "parameters";
+    "function_definition";
+    "type_parameter_constraint";
+    "type_parameter_constraints";
+    "type_parameter";
+    "definition_kind";
+    "entity";
+    "definition";
+    "other_pattern_operator";
+    "pattern";
+    "other_stmt_operator";
+    "for_var_or_expr";
+    "for_header";
+    "label";
+    "finally";
+    "catch";
+    "case";
+    "stmt";
+    "other_attribute_operator";
+    "attribute";
+    "other_type_operator";
+    "other_type_argument_operator";
+    "type_argument";
+    "type_arguments";
+    "type_";
+    "other_expr_operator";
+    "other_argument_operator";
+    "argument";
+    "arguments";
+    "arithmetic_operator";
+    "special";
+    "id_info";
+    "container_operator";
+    "literal";
+    "expr";
+  ] in
+
+
+  let _all_types_js = [
 
     "parse_info";
 

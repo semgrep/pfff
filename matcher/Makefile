@@ -6,10 +6,17 @@ TARGET=lib
 OPAMPKG=pfff-matcher
 
 SRC= flag_matcher.ml \
-     parse_fuzzy.ml matching_report.ml lib_unparser.ml \
+     parse_fuzzy.ml \
+     matching_report.ml lib_unparser.ml \
+     \
      metavars_fuzzy.ml fuzzy_vs_fuzzy.ml \
      matching_fuzzy.ml transforming_fuzzy.ml \
      sgrep_fuzzy.ml spatch_fuzzy.ml \
+     \
+     metavars_generic.ml generic_vs_generic.ml \
+     matching_generic.ml \
+     sgrep_generic.ml \
+     \
      unit_matcher.ml
 
 #todo: refactoring_code_fuzzy.ml

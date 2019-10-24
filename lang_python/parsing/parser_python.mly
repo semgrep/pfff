@@ -582,7 +582,8 @@ atom:
   | atom_dict   { $1 }
 
   | atom_repr   { $1 }
- 
+
+  /*(* typing-ext: sgrep-ext: *)*/
   | ELLIPSES    { Ellipses $1 }
 
 string_list:
