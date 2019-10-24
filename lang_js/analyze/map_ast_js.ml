@@ -23,8 +23,10 @@ open Ast_js
 (* hooks *)
 
 type visitor_in = {
+(*
   kexpr: (expr  -> expr) * visitor_out -> expr  -> expr;
   kstmt: (stmt -> stmt) * visitor_out -> stmt -> stmt;
+*)
   kinfo: (tok -> tok) * visitor_out -> tok -> tok;
 
 }
@@ -39,8 +41,11 @@ let map_option = Common2.map_option
 let map_scope x = x
 
 let default_visitor =
-  { kexpr   = (fun (k,_) x -> k x);
+  { 
+(*
+    kexpr   = (fun (k,_) x -> k x);
     kstmt = (fun (k,_) x -> k x);
+*)
     kinfo = (fun (k,_) x -> k x);
   }
 

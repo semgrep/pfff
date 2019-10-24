@@ -1,23 +1,23 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2019 Yoann Padioleau
+ * Copyright (C) 2019 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- *
+ * 
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-module V = Visitor_ast_js
-module M = Map_ast_js
 
+module V = Visitor_ast_generic
+module M = Map_ast_generic
 
 (*****************************************************************************)
-(* Prelude *)
+(* Extract infos *)
 (*****************************************************************************)
 
 let extract_info_visitor recursor = 
@@ -39,7 +39,7 @@ let ii_of_any any =
 (* Abstract position *)
 (*****************************************************************************)
 let abstract_position_visitor recursor = 
-  let hooks = { (*M.default_visitor with *)
+  let hooks = { (* M.default_visitor with *)
     M.kinfo = (fun (_k, _) i -> 
       { i with Parse_info.token = Parse_info.Ab }
     )
