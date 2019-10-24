@@ -211,7 +211,7 @@ and multi_grouped_list_comma xs =
  * note: this is similar to what cpplint/fblint of andrei does? 
  *)
 let parse_fuzzy file =
-  Common.save_excursion Flag_cpp.sgrep_mode true (fun () ->
+  Common.save_excursion Flag_parsing.sgrep_mode true (fun () ->
   let toks_orig = tokens file in
   let toks = 
     toks_orig +> Common.exclude (fun x ->

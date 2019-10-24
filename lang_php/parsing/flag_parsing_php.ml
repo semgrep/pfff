@@ -39,7 +39,7 @@ let obsolete_merge_tokens_xhp = ref false
 let caching_parsing = ref false
 
 open Common
-let sgrep_mode = ref false
+
 (* coupling: copy paste of Php_vs_php *)
 let is_metavar_name s = 
   s =~ "[A-Z]\\([0-9]?_[A-Z]*\\)?"

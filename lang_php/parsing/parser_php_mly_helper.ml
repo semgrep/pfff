@@ -138,7 +138,7 @@ let failwith_xhp_ambiguity_percent info =
 (* Sgrep *)
 (*****************************************************************************)
 let sgrep_guard v = 
-  if !Flag_parsing_php.sgrep_mode
+  if !Flag_parsing.sgrep_mode
   then v
   else raise Parsing.Parse_error
 

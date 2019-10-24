@@ -483,7 +483,7 @@ rule token = parse
   | (letter | '$') (letter | digit | '$')*
       { 
         let s = tok lexbuf in
-        if not !Flag_cpp.sgrep_mode
+        if not !Flag_parsing.sgrep_mode
         then error ("identifier with dollar: "  ^ s);
         TIdent (s, tokinfo lexbuf)
       }

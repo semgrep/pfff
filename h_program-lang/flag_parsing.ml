@@ -12,6 +12,7 @@ let show_parsing_error = ref true
  *)
 let error_recovery = ref false
 
+let sgrep_mode = ref false
 
 let cmdline_flags_verbose () = [
   "-no_verbose_parsing", Arg.Clear verbose_parsing , "  ";

@@ -128,7 +128,7 @@ let parse file =
   (* pr2 spatch_without_patch_annot; *)
 
   let pattern = 
-    Common.save_excursion Flag_parsing_php.sgrep_mode true (fun () ->
+    Common.save_excursion Flag_parsing.sgrep_mode true (fun () ->
       try 
         Parse_php.any_of_string spatch_without_patch_annot
       with Parsing.Parse_error ->
