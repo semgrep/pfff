@@ -24,7 +24,7 @@ module Ast = Ast_js
 (* Types *)
 (*****************************************************************************)
 
-(* mostly copy of metavars_fuzzy.ml *)
+(* mostly a copy-paste of metavars_fuzzy.ml *)
 
 (* todo? could want to remember the position in the pattern of the metavar
  * for error reporting ? so use a 'string Ast_js.wrap' ?
@@ -33,17 +33,11 @@ type mvar = string
 
 type metavars_binding = (mvar, Ast_js.any) Common.assoc
 
-(* bugfix: don't forget \\b, otherwise a string like FBredirect would
- * match such regexp (the starting F) even if it's not a metavar at all.
- * 
- * examples: $X, $X1, $X1_ILOVEPUPPIES
- *)
 let metavar_regexp_string = 
-  "^\\([A-Z]\\)$"
+  "^\\($[A-Z]\\)$"
 
-(* examples: $X *)
 let metavar_variable_regexp_string = 
-  "^\\(\\$[A-Z]\\)$"
+  "^\\(\\$[a-z]\\)$"
 
 (* 
  * Hacks abusing existing constructs to encode extra constructions.
