@@ -243,8 +243,10 @@ let parse_pattern str =
   | "js" -> PatJs (Sgrep_js.parse str)
 
   | "python" ->
-      let any = Parse_python.any_of_string str in
-      PatGen (Python_to_generic.any any)
+      Common.save_excursion Flag_parsing.sgrep_mode true (fun () ->
+       let any = Parse_python.any_of_string str in
+       PatGen (Python_to_generic.any any)
+      )
   | "jsgen" ->
       let any_cst = Parse_js.any_of_string str in
       let any = Ast_js_build.any any_cst in

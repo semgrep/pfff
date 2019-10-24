@@ -372,7 +372,16 @@ and _token state = parse
 
         (* python3-ext: no more: print, exec *)
  
-        | _          -> NAME (id, (tokinfo lexbuf)) }
+        | _          -> NAME (id, (tokinfo lexbuf)) 
+    }
+
+  (* sgrep-ext: *)
+  | '$' identifier 
+    { let s = tok lexbuf in
+      if not !Flag_parsing.sgrep_mode
+      then error ("identifier with dollar: "  ^ s) lexbuf;
+      NAME (s, tokinfo lexbuf)
+    }
 
   (* ----------------------------------------------------------------------- *)
   (* Constant *)
