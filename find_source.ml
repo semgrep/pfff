@@ -17,7 +17,7 @@ let finder lang =
     Lib_parsing_ml.find_cmt_files_of_dir_or_files
   | "java" -> 
     Lib_parsing_java.find_source_files_of_dir_or_files
-  | "js"  -> 
+  | "js" | "jsfuzzy" | "jsgen"  -> 
     Lib_parsing_js.find_source_files_of_dir_or_files ~include_scripts:false
   | "python"  -> 
     Lib_parsing_python.find_source_files_of_dir_or_files

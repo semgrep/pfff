@@ -169,8 +169,7 @@ let create_ast file =
   match !lang with
   | "php" ->
     Php
-    (try
-      (Parse_php.parse_program file)
+    (try Parse_php.parse_program file
     with Parse_php.Parse_error _err ->
       Common.pr2 (spf "warning: parsing problem in %s" file);
       [])
@@ -186,12 +185,25 @@ let create_ast file =
      ->
       Common.pr2 (spf "warning: parsing problem in %s" file);
       [])
+
   | "python" ->
       Gen
       (try
         let ast = Parse_python.parse_program file in
         Python_to_generic.program ast
        with Parse_python.Parse_error _ | Lexer_python.Lexical_error _ ->
+        Common.pr2 (spf "warning: parsing problem in %s" file);
+        [])
+  | "jsgen" ->
+      Gen
+      (try
+        let cst = Parse_js.parse_program file in
+        let ast = Ast_js_build.program cst in
+        Js_to_generic.program ast
+      with Parse_js.Parse_error _ | Lexer_js.Lexical_error _
+       | Common.Todo 
+       | Ast_js_build.TodoConstruct _ | Ast_js_build.UnhandledConstruct _
+       ->
         Common.pr2 (spf "warning: parsing problem in %s" file);
         [])
   | _ ->
@@ -204,8 +216,6 @@ let create_ast file =
         )
       | "java" ->
         Parse_java.parse_fuzzy file +> fst
-      | "js" ->
-        Parse_js.parse_fuzzy file +> fst
       | "ml" ->
         Parse_ml.parse_fuzzy file +> fst
       | "phpfuzzy" ->
@@ -231,9 +241,15 @@ let parse_pattern str =
   match !lang with
   | "php" -> PatPhp (Sgrep_php.parse str)
   | "js" -> PatJs (Sgrep_js.parse str)
+
   | "python" ->
       let any = Parse_python.any_of_string str in
       PatGen (Python_to_generic.any any)
+  | "jsgen" ->
+      let any_cst = Parse_js.any_of_string str in
+      let any = Ast_js_build.any any_cst in
+      PatGen (Js_to_generic.any any)
+
   (* for now we abuse the fuzzy parser of cpp for ml for the pattern as
    * we should not use comments in patterns
    *)
@@ -279,6 +295,12 @@ let sgrep_ast pattern any_ast =
     Sgrep_fuzzy.sgrep
       ~hook:(fun env matched_tokens ->
         print_match !mvars env Ast_fuzzy.toks_of_trees matched_tokens
+      )
+      pattern ast
+  | "jsgen", PatGen pattern, Gen ast ->
+    Sgrep_generic.sgrep_ast
+      ~hook:(fun env matched_tokens ->
+        print_match !mvars env Lib_ast_generic.ii_of_any matched_tokens
       )
       pattern ast
   | "python", PatGen pattern, Gen ast ->
