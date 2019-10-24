@@ -34,7 +34,7 @@ type mvar = string
 type metavars_binding = (mvar, Ast_js.any) Common.assoc
 
 let metavar_regexp_string = 
-  "^\\($[A-Z]\\)$"
+  "^\\(\\$[A-Z]\\)$"
 
 let metavar_variable_regexp_string = 
   "^\\(\\$[a-z]\\)$"

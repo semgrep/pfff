@@ -369,7 +369,9 @@ let main_action xs =
     if !verbose then pr2 (spf "processing: %s" file);
     try 
       let ast = create_ast file in
-      let sgrep pattern = sgrep_ast pattern ast in
+      let sgrep pattern = 
+        sgrep_ast pattern ast 
+      in
       List.iter sgrep patterns
     with Stack_overflow -> ()
   );

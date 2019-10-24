@@ -33,7 +33,7 @@ type metavars_binding = (mvar, Ast_generic.any) Common.assoc
 
 (* ex: $X *)
 let metavar_regexp_string = 
-  "^\\($[A-Z]\\)$"
+  "^\\(\\$[A-Z]\\)$"
 
 (* ex: $x *)
 let metavar_variable_regexp_string = 

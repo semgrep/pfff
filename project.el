@@ -232,7 +232,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 10
+     (case 7
        
        (0 "-e 1 /home/pad/c-pfff/tests/")
        (1 "-f /home/pad/c-pfff/tests/semantic_grep/method_call.php  /home/pad/c-pfff/tests/method_call.php")
@@ -241,6 +241,7 @@
        (4 " -f /home/pad/pfff/tests/php/sgrep/foreach.sgrep /home/pad/pfff/tests/php/sgrep/foreach.php")
        (5 " -f /tmp/try.sgrep /home/pad/pfff/tests/php/sgrep/xhp_metavar2.php")
        (6 " -lang c++ -f /home/pad/pfff/tests/cpp/sgrep/namespace.sgrep /home/pad/pfff/tests/cpp/sgrep/namespace.cpp")
+       (7 " -lang python -f /home/pad/pfff/tests/python/sgrep/metavar.sgrep /home/pad/pfff/tests/python/sgrep/test.py")
        (10 "-test")
        )
      )

@@ -327,9 +327,20 @@ let m_resolved_name a b =
 (* Expression *)
 (* ------------------------------------------------------------------------- *)
 
-
 let rec m_expr a b = 
   match a, b with
+
+  (* special case, metavars !! *)
+  | A.Id ((str,tok), id_info),          e2 when MV.is_metavar_name str ->
+      X.envf (str, tok) (B.E (e2)) >>= (function
+      | ((str, tok), B.E (e2))  ->
+        return (
+          (A.Id ((str,tok), id_info)),
+          e2
+        )
+      | _ -> raise Impossible
+      )
+
   | A.L(a1), B.L(b1) ->
     m_literal a1 b1 >>= (fun (a1, b1) -> 
     return (

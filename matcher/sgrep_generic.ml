@@ -84,20 +84,3 @@ let sgrep_ast ~hook pattern ast =
   in
   (* opti ? dont analyze func if no constant in it ?*)
   (V.mk_visitor hook) (Pr ast)
-
-(*
-let sgrep ~hook pattern file =
-  let ast = 
-    try 
-      let cst = Parse_js.parse_program file in
-      Ast_js_build.program cst
-    with Parse_js.Parse_error _ | Lexer_js.Lexical_error _ | Common.Todo ->
-      (* we usually do sgrep on a set of files or directories,
-       * so we don't want on error in one file to stop the
-       * whole process.
-       *)
-      Common.pr2 (spf "warning: parsing problem in %s" file);
-      []
-  in
-  sgrep_ast ~hook pattern ast
-*)
