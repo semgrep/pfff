@@ -35,7 +35,7 @@ open Common
  * for instance constants starting with a big $X are considered metavars
  * for expression.
  *
- * C-s "pad" or "iso" or any comment
+ * C-s  "iso" or any comment
  *
  *)
 
@@ -58,6 +58,16 @@ module MV = Metavars_generic
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+
+let is_NoTransfo tok =
+  match tok.Parse_info.transfo with
+  | Parse_info.NoTransfo -> true
+  | _ -> false
+
+let is_Remove tok =
+  match tok.Parse_info.transfo with
+  | Parse_info.Remove -> true
+  | _ -> false
 
 (*****************************************************************************)
 (* Functor parameter combinators *)
@@ -242,6 +252,7 @@ let m_wrap f a b =
 (* ---------------------------------------------------------------------- *)
 
 let m_name a b = 
+  (* TODO: iso on name *)
   match a, b with
   (a, b) -> (m_wrap m_string) a b
 
@@ -560,6 +571,41 @@ let rec m_expr a b =
 
 and m_literal a b = 
   match a, b with
+
+  (* iso on string *)
+  | A.String("...", a), B.String(s, b) ->
+      m_info a b >>= (fun (a, b) ->
+        return (
+          A.String ("...", a),
+          B.String (s, b)
+        ))
+
+  (* iso allowing regexp *)
+  | A.String(name, info_name), B.String(sb, info_sb)
+      when name =~ "^=~/\\(.*\\)/$" ->
+      let s = Common.matched1 name in
+(* TODO
+      let rex = Pcre.regexp s in
+      if Pcre.pmatch ~rex sb
+*)
+      if sb =~ s
+      then
+        m_info info_name info_sb >>= (fun (info_name, info_sb) ->
+        return (
+          A.String(name, info_name),
+          B.String(sb, info_sb)
+        ))
+      else fail ()
+
+  | A.String(a1), B.String(b1) ->
+    (m_wrap m_string) a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.String(a1),
+       B.String(b1)
+    )
+    )
+
+
   | A.Unit(a1), B.Unit(b1) ->
     m_tok a1 b1 >>= (fun (a1, b1) -> 
     return (
@@ -595,13 +641,7 @@ and m_literal a b =
        B.Char(b1)
     )
     )
-  | A.String(a1), B.String(b1) ->
-    (m_wrap m_string) a1 b1 >>= (fun (a1, b1) -> 
-    return (
-       A.String(a1),
-       B.String(b1)
-    )
-    )
+
   | A.Regexp(a1), B.Regexp(b1) ->
     (m_wrap m_string) a1 b1 >>= (fun (a1, b1) -> 
     return (
@@ -1154,7 +1194,56 @@ and m_other_expr_operator a b =
 
 and m_arguments a b = 
   match a, b with
-  (a, b) -> (m_list m_argument) a b
+  (a, b) -> (m_list__m_argument) a b
+
+and m_list__m_argument (xsa: A.argument list) (xsb: A.argument list) =
+  match xsa, xsb with
+  | [], [] ->
+      return ([], [])
+
+  (* '...' can match no argument.
+   * this is ok in sgrep mode, but in spatch mode the comma
+   * or SgrepExprDots could carry some transfo. What should we do?
+   * Maybe just print warning.
+   *)
+  | [A.Arg (A.Ellipses i)], [] ->
+    if is_NoTransfo i || is_Remove i
+    then
+      return (
+        xsa,
+        xsb
+      )
+    else failwith
+      ("transformation (- or +) on ',' not allowed when used with " ^
+       "'...'. Rewrite your spatch: put your trailing comma on the line " ^
+       "with the '...'. See also " ^
+       "https://github.com/facebook/pfff/wiki/Spatch#wiki-spacing-issues")
+
+  (* iso on ... *)
+  | [A.Arg (A.Ellipses i)], _bbs ->
+    (* todo: if remove could apply the transfo on bbs *)
+    if is_NoTransfo i then
+      return (
+        xsa,
+        xsb
+      )
+    else failwith
+      ("transformation (- or +) on '...' not allowed, rewrite your spatch")
+
+
+  (* the general case *)
+  | xa::aas, xb::bbs ->
+      m_argument xa xb >>= (fun (xa, xb) ->
+      m_list__m_argument aas bbs >>= (fun (aas, bbs) ->
+        return (
+          xa::aas,
+          xb::bbs
+        )
+      )
+      )
+  | [], _
+  | _::_, _ ->
+      fail ()
 
 
 and m_argument a b = 
@@ -1166,6 +1255,9 @@ and m_argument a b =
        B.Arg(b1)
     )
     )
+
+  (* TODO: iso on keyword argument, keyword is optional in pattern *)
+
   | A.ArgKwd(a1, a2), B.ArgKwd(b1, b2) ->
     m_name a1 b1 >>= (fun (a1, b1) -> 
     m_expr a2 b2 >>= (fun (a2, b2) -> 
