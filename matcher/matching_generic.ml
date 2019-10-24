@@ -85,7 +85,7 @@ module XMATCH = struct
          *)
         let xs = m1 tin in
         (* try m2 on each possible returned bindings *)
-        let xxs = xs +> List.map (fun ((a,b), binding) -> 
+        let xxs = xs |> List.map (fun ((a,b), binding) -> 
           m2 (a, b) binding
         ) in
         List.flatten xxs
@@ -187,7 +187,7 @@ type ('a, 'b) matcher = 'a -> 'b ->
   MV.metavars_binding list
 
 let (extract_bindings: 'a XMATCH.tout -> MV.metavars_binding list) = fun tout ->
-  tout +> List.map (fun (_term, env) -> env)
+  tout |> List.map (fun (_term, env) -> env)
   
 (* todo: should maybe have a match_any_any *)
 
