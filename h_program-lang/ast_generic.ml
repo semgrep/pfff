@@ -18,7 +18,7 @@
 (*****************************************************************************)
 (* A generic AST, to be used by a generic visitor to factorize
  * similar analysis in different programming languages
- * (e.g., scheck, checked_return). 
+ * (e.g., scheck, sgrep, checked_return). 
  *
  * rational: In the end, programming languages have a lot in common.
  * Even though most interesting analysis are probably better done on a
@@ -159,7 +159,7 @@ type expr =
   | ArrayAccess of expr * expr (* less: slice *)
 
   | Conditional of expr * expr * expr
-  | MatchPattern of expr * (pattern * expr) list
+  | MatchPattern of expr * action list
   (* less: TryFunctional *)
 
   | Yield of expr
@@ -241,6 +241,8 @@ type expr =
         (* Python *)
         | OA_ArgPow (* a kind of Spread, but for Dict instead of List *)
         | OA_ArgComp
+
+  and action = pattern * expr
 
   and other_expr_operator = 
     (* Javascript *)
@@ -357,7 +359,7 @@ and stmt =
   | For of for_header * stmt
 
   (* less: could be merged with ExprStmt (MatchPattern ...) *)
-  | Switch of expr * (case list * stmt) list
+  | Switch of expr * case_and_body list
 
   | Return of expr
   | Continue of expr option | Break of expr option (* todo? switch to label? *)
@@ -371,10 +373,12 @@ and stmt =
 
   | OtherStmt of other_stmt_operator * any list
 
-  (* less: could be merged with pattern *)
-  and case  =
+  and case_and_body = case list * stmt
+   (* less: could be merged with pattern *)
+    and case  =
     | Case of expr
     | Default
+
 
   and catch = pattern * stmt
   and finally = stmt
@@ -431,7 +435,7 @@ and pattern =
   | OP_Var (* todo: should transform in pattern when can *)
 
 (* ------------------------------------------------------------------------- *)
-(* definitions *)
+(* Definitions *)
 (* ------------------------------------------------------------------------- *)
 and definition = entity * definition_kind (* (or decl) *)
   and entity = {
@@ -525,7 +529,7 @@ and type_definition = {
   tother: other_type_definition_operator;
 }
   and type_definition_kind = 
-   | OrType  of (name * type_ list) list  (* enum/ADTs *)           
+   | OrType  of constructor_definition list  (* enum/ADTs *)           
    (* field.vtype should be defined here *)
    | AndType of field list (* record/struct/union *) 
    | AliasType of type_
@@ -534,6 +538,8 @@ and type_definition = {
     and other_type_kind_operator = 
      (* C *)
      | OTKO_EnumWithValue
+
+  and constructor_definition = name * type_ list
 
   and other_type_definition_operator = 
    (* C *)
