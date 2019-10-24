@@ -171,3 +171,40 @@ let parse a =
 let parse_program file = 
   let ((astopt, _toks), _stat) = parse file in
   Common2.some astopt
+
+(*****************************************************************************)
+(* Sub parsers *)
+(*****************************************************************************)
+
+let (program_of_string: string -> Ast_python.program) = fun s -> 
+  Common2.with_tmp_file ~str:s ~ext:"py" (fun file ->
+    parse_program file
+  )
+
+(* for sgrep/spatch *)
+let any_of_string s = 
+  Common2.with_tmp_file ~str:s ~ext:"py" (fun file ->
+    let toks = tokens file in
+    let tr = PI.mk_tokens_state toks in
+    let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
+       (* -------------------------------------------------- *)
+       (* Call parser *)
+       (* -------------------------------------------------- *)
+       Parser_python.sgrep_spatch_pattern (lexer_function tr) lexbuf_fake
+  )
+
+
+(*****************************************************************************)
+(* Fuzzy parsing *)
+(*****************************************************************************)
+
+(*
+let parse_fuzzy file =
+  let toks = tokens file in
+  let trees = Parse_fuzzy.mk_trees { Parse_fuzzy.
+     tokf = TH.info_of_tok;
+     kind = TH.token_kind_of_tok;
+  } toks 
+  in
+  trees, toks
+*)

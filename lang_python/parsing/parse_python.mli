@@ -12,5 +12,22 @@ val parse:
 val parse_program:
   Common.filename -> Ast_python.program
 
+(* other parsers *)
+
+(* for sgrep_js *)
+val any_of_string:
+  string -> Ast_python.any
+
+(* for sgrep via fuzzy AST *)
+(*
+val parse_fuzzy:
+  Common.filename -> Ast_fuzzy.trees * Parser_python.token list
+*)
+
+(* to help write test code *)
+val program_of_string: string -> Ast_python.program
+
+
 (* internal *)
 val tokens: Common.filename -> Parser_python.token list
+

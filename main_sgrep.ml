@@ -16,8 +16,8 @@ module S = Scope_code
 (*****************************************************************************)
 (* 
  * A syntactical grep. https://github.com/facebook/pfff/wiki/Sgrep
- * Right now there is support for PHP, C/C++/ObjectiveC, OCaml, Java, and 
- * Javascript.
+ * Right now there is good support for PHP, Javascript, and Python
+ * and partial support (fuzzy matcher) for C/C++/ObjectiveC, OCaml, and Java.
  * 
  * opti: git grep foo | xargs sgrep -e 'foo(...)'
  * 
@@ -159,8 +159,9 @@ let ast_fuzzy_of_string str =
 (* Language specific *)
 (*****************************************************************************)
 
-type ast_t =
+type ast =
   | Fuzzy of Ast_fuzzy.tree list
+  | Gen of Ast_generic.program
   | Php of Ast_php.program
   | Js of Ast_js.program
 
@@ -185,6 +186,14 @@ let create_ast file =
      ->
       Common.pr2 (spf "warning: parsing problem in %s" file);
       [])
+  | "python" ->
+      Gen
+      (try
+        let ast = Parse_python.parse_program file in
+        Python_to_generic.program ast
+       with Parse_python.Parse_error _ | Lexer_python.Lexical_error _ ->
+        Common.pr2 (spf "warning: parsing problem in %s" file);
+        [])
   | _ ->
     Fuzzy
     (try
@@ -210,20 +219,32 @@ let create_ast file =
       [])
 
 type pattern =
+  | PatFuzzy of Ast_fuzzy.tree list
+  | PatGen of Sgrep_generic.pattern
+
   | PatPhp of Sgrep_php.pattern
   | PatJs of Sgrep_js.pattern
-  | PatFuzzy of Ast_fuzzy.tree list
+
 
 let parse_pattern str =
+ try (
   match !lang with
   | "php" -> PatPhp (Sgrep_php.parse str)
   | "js" -> PatJs (Sgrep_js.parse str)
+  | "python" ->
+      let any = Parse_python.any_of_string str in
+      PatGen (Python_to_generic.any any)
   (* for now we abuse the fuzzy parser of cpp for ml for the pattern as
    * we should not use comments in patterns
    *)
-  | "c" | "c++" | "ml" | "java" | "jsfuzzy" | "phpfuzzy" -> 
+  | "c" | "c++" | "ml" | "java" 
+  | "jsfuzzy" | "phpfuzzy" -> 
     PatFuzzy (ast_fuzzy_of_string str)
   | _ -> failwith ("unsupported language: " ^ !lang)
+ ) with 
+  | Parsing.Parse_error -> 
+      failwith (spf "fail to parse pattern: '%s' in lang %s" str !lang)
+
 
 let read_patterns name =
   let ic = open_in name in
@@ -260,6 +281,13 @@ let sgrep_ast pattern any_ast =
         print_match !mvars env Ast_fuzzy.toks_of_trees matched_tokens
       )
       pattern ast
+  | "python", PatGen pattern, Gen ast ->
+    Sgrep_generic.sgrep_ast
+      ~hook:(fun env matched_tokens ->
+        print_match !mvars env Lib_ast_generic.ii_of_any matched_tokens
+      )
+      pattern ast
+
   | "ml", PatFuzzy pattern, Fuzzy ast ->
     Sgrep_fuzzy.sgrep
       ~hook:(fun env matched_tokens ->

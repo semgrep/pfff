@@ -22,7 +22,7 @@ let test_parse_python xs =
   let xs = List.map Common.fullpath xs in
 
   let fullxs = 
-    Lib_parsing_python.find_python_files_of_dir_or_files xs 
+    Lib_parsing_python.find_source_files_of_dir_or_files xs 
     |> Skip_code.filter_files_if_skip_list
   in
   let stat_list = ref [] in

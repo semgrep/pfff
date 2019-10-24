@@ -95,6 +95,7 @@ BASICLIBS=commons/lib.cma \
  lang_clang/parsing/lib.cma \
  lang_java/parsing/lib.cma \
  lang_python/parsing/lib.cma \
+  lang_python/analyze/lib.cma \
  lang_csharp/parsing/lib.cma \
  lang_rust/parsing/lib.cma \
  lang_erlang/parsing/lib.cma \

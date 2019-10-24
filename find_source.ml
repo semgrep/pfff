@@ -19,6 +19,8 @@ let finder lang =
     Lib_parsing_java.find_source_files_of_dir_or_files
   | "js"  -> 
     Lib_parsing_js.find_source_files_of_dir_or_files ~include_scripts:false
+  | "python"  -> 
+    Lib_parsing_python.find_source_files_of_dir_or_files
   | "clang2" ->
     Lib_parsing_clang.find_source2_files_of_dir_or_files    
   | "lisp" ->

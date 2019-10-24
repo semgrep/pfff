@@ -170,8 +170,9 @@ let mk_name_param (name, t) =
 /*(*1 Rules type declaration *)*/
 /*(*************************************************************************)*/
 
-%start main
+%start main sgrep_spatch_pattern
 %type <Ast_python.program> main
+%type <Ast_python.any>     sgrep_spatch_pattern
 %%
 
 /*(*************************************************************************)*/
@@ -185,6 +186,10 @@ file_input: nl_or_stmt_list { $1 }
 nl_or_stmt:
  | NEWLINE { [] }
  | stmt    { $1 }
+
+sgrep_spatch_pattern:
+ | expr EOF { Expr $1 }
+ | stmt EOF { Stmts $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Import *)*/
