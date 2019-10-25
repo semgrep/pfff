@@ -59,16 +59,6 @@ module MV = Metavars_generic
 (* Helpers *)
 (*****************************************************************************)
 
-let is_NoTransfo tok =
-  match tok.Parse_info.transfo with
-  | Parse_info.NoTransfo -> true
-  | _ -> false
-
-let is_Remove tok =
-  match tok.Parse_info.transfo with
-  | Parse_info.Remove -> true
-  | _ -> false
-
 (*****************************************************************************)
 (* Functor parameter combinators *)
 (*****************************************************************************)
@@ -1201,35 +1191,19 @@ and m_list__m_argument (xsa: A.argument list) (xsb: A.argument list) =
   | [], [] ->
       return ([], [])
 
-  (* '...' can match no argument.
-   * this is ok in sgrep mode, but in spatch mode the comma
-   * or SgrepExprDots could carry some transfo. What should we do?
-   * Maybe just print warning.
-   *)
-  | [A.Arg (A.Ellipses i)], [] ->
-    if is_NoTransfo i || is_Remove i
-    then
+  (* iso '...', it can also match no argument *)
+  | [A.Arg (A.Ellipses _i)], [] ->
       return (
         xsa,
         xsb
       )
-    else failwith
-      ("transformation (- or +) on ',' not allowed when used with " ^
-       "'...'. Rewrite your spatch: put your trailing comma on the line " ^
-       "with the '...'. See also " ^
-       "https://github.com/facebook/pfff/wiki/Spatch#wiki-spacing-issues")
 
   (* iso on ... *)
-  | [A.Arg (A.Ellipses i)], _bbs ->
-    (* todo: if remove could apply the transfo on bbs *)
-    if is_NoTransfo i then
+  | [A.Arg (A.Ellipses _i)], _bbs ->
       return (
         xsa,
         xsb
       )
-    else failwith
-      ("transformation (- or +) on '...' not allowed, rewrite your spatch")
-
 
   (* the general case *)
   | xa::aas, xb::bbs ->
