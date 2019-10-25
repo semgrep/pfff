@@ -215,19 +215,6 @@ and type_parent = argument
 type stmt =
   | ExprStmt of expr (* value *)
 
-  | FunctionDef of 
-       name (* name *) * 
-       parameters (* args *) * 
-       type_ option * (* return type *)
-       stmt list (* body *) * 
-       decorator list (* decorator_list *)
-
-  | ClassDef of 
-        name (* name *) * 
-        type_parent list (* bases *) * 
-        stmt list (* body *) * 
-        decorator list (* decorator_list *)
-
   (* the left expr should be an lvalue: Name, List, Tuple, Subscript,
    * or Attribute, or ExprStar, which are anything with an expr_context
    * (see also Parser_python.set_expr_ctx).
@@ -259,6 +246,20 @@ type stmt =
   | Delete of expr list (* targets *)
   (* python3-ext: *)
   | NonLocal of name list (* names *)
+
+  (* should be allowed just at the toplevel *)
+  | FunctionDef of 
+       name (* name *) * 
+       parameters (* args *) * 
+       type_ option * (* return type *)
+       stmt list (* body *) * 
+       decorator list (* decorator_list *)
+
+  | ClassDef of 
+        name (* name *) * 
+        type_parent list (* bases *) * 
+        stmt list (* body *) * 
+        decorator list (* decorator_list *)
 
 
 and excepthandler = 
