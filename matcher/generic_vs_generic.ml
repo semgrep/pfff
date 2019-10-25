@@ -244,7 +244,16 @@ let m_wrap f a b =
 let m_name a b = 
   (* TODO: iso on name *)
   match a, b with
-  (a, b) -> (m_wrap m_string) a b
+  | (str, tok), b when MV.is_metavar_name str ->
+      X.envf (str, tok) (B.N b) >>= (function
+      | ((str, tok), B.N (b))  ->
+        return (
+          (str, tok),
+          b
+        )
+      | _ -> raise Impossible
+      )
+  | (a, b) -> (m_wrap m_string) a b
 
 let m_dotted_name a b = 
   match a, b with
