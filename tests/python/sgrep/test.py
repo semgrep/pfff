@@ -14,6 +14,7 @@ def bar():
         foo()
     if(x == x):
         foo()
+        bar()
     
 
 def funcs():

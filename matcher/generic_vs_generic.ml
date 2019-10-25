@@ -242,7 +242,7 @@ let m_wrap f a b =
 (* ---------------------------------------------------------------------- *)
 
 let m_name a b = 
-  (* TODO: iso on name *)
+  (* iso on name *)
   match a, b with
   | (str, tok), b when MV.is_metavar_name str ->
       X.envf (str, tok) (B.N b) >>= (function
@@ -257,6 +257,7 @@ let m_name a b =
 
 let m_dotted_name a b = 
   match a, b with
+  (* TODO: [$X] should match any list *)
   (a, b) -> (m_list m_name) a b
 
 let m_qualified_name a b = 
@@ -1447,6 +1448,8 @@ and m_other_type_argument_operator a b =
 (* Attribute *)
 (* ------------------------------------------------------------------------- *)
 
+(* TODO: should sort attributes and allow subset *)
+
 and m_attribute a b = 
   match a, b with
   | A.Static, B.Static ->
@@ -1630,9 +1633,13 @@ and m_other_attribute_operator a b =
 (* Statement *)
 (* ------------------------------------------------------------------------- *)
 
-
 and m_stmt a b = 
   match a, b with
+
+  (* iso on ..., allow to match any statememt *)
+  | A.ExprStmt(A.Ellipses _i), b ->
+      return (a, b)
+
   | A.ExprStmt(a1), B.ExprStmt(b1) ->
     m_expr a1 b1 >>= (fun (a1, b1) -> 
     return (
@@ -1654,6 +1661,8 @@ and m_stmt a b =
        B.LocalDirective(b1)
     )
     )
+
+  (* TODO: ... should also allow a subset of stmts *)
   | A.Block(a1), B.Block(b1) ->
     (m_list m_stmt) a1 b1 >>= (fun (a1, b1) -> 
     return (
