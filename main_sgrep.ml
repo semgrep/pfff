@@ -41,7 +41,7 @@ let pattern_file = ref ""
 let pattern_string = ref ""
 
 (* todo: infer from basename argv(0) ? *)
-let lang = ref "php"
+let lang = ref "python"
 
 let case_sensitive = ref false
 let match_format = ref Matching_report.Normal

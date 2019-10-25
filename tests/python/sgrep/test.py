@@ -1,3 +1,5 @@
+import foo
+
 def foo():
     #x = { "fld1": "eval" }
     #x.fld2 = "eval"
@@ -20,3 +22,7 @@ def funcs():
     foo(1, 2, 3)
 
 
+def cond():
+    if True:
+        bar()
+    return False
