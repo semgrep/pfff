@@ -121,6 +121,7 @@ module XMATCH = struct
     match a, b with
     | Ast.E _, Ast.E _ 
     | Ast.N _, Ast.N _
+    | Ast.S _, Ast.S _
       ->
         (* Note that because we want to retain the position information
          * of the matched code in the environment (e.g. for the -pvar

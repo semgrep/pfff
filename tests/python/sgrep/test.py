@@ -15,7 +15,12 @@ def bar():
     if(x == x):
         foo()
         bar()
-    
+    if(True)
+        foo()
+    foo()    
+    if(True)
+        foo()
+        foo()
 
 def funcs():
     foo(1)

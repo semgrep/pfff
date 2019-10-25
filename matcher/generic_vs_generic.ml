@@ -1636,6 +1636,17 @@ and m_other_attribute_operator a b =
 and m_stmt a b = 
   match a, b with
 
+  (* special case metavar! *)
+  | A.ExprStmt(A.Id ((str,tok), id_info)), b when MV.is_metavar_name str ->
+      X.envf (str, tok) (B.S b) >>= (function
+      | ((str, tok), B.S (b))  ->
+        return (
+          A.ExprStmt((A.Id ((str,tok), id_info))),
+          b
+        )
+      | _ -> raise Impossible
+      )
+
   (* iso on ..., allow to match any statememt *)
   | A.ExprStmt(A.Ellipses _i), b ->
       return (a, b)
