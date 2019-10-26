@@ -257,7 +257,7 @@ and vof_other_expr_operator =
   | OE_Repr -> Ocaml.VSum (("OE_Repr", []))
   | OE_NameOrClassType -> Ocaml.VSum (("OE_NameOrClassType", []))
   | OE_ClassLiteral -> Ocaml.VSum (("OE_ClassLiteral", []))
-  | OE_RecordPtAccess -> Ocaml.VSum (("OE_RecordPtAccess", []))
+  | OE_GetRefLabel -> Ocaml.VSum (("OE_GetRefLabel", []))
   | OE_SizeOf -> Ocaml.VSum (("OE_SizeOf", []))
   | OE_ArrayInitDesignator -> Ocaml.VSum (("OE_ArrayInitDesignator", []))
   | OE_GccConstructor -> Ocaml.VSum (("OE_GccConstructor", []))
@@ -605,17 +605,10 @@ and vof_field =
       let v1 = vof_expr v1 in Ocaml.VSum (("FieldSpread", [ v1 ]))
   | FieldStmt v1 ->
       let v1 = vof_stmt v1 in Ocaml.VSum (("FieldStmt", [ v1 ]))
-and vof_type_definition { tbody = v_tbody; tother = v_tother } =
-  let bnds = [] in
-  let arg = vof_other_type_definition_operator v_tother in
-  let bnd = ("tother", arg) in
-  let bnds = bnd :: bnds in
-  let arg = vof_type_definition_kind v_tbody in
-  let bnd = ("tbody", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
-and vof_type_definition_kind =
+and vof_type_definition =
   function
   | OrType v1 ->
-      let v1 = Ocaml.vof_list vof_constructor_definition v1
+      let v1 = Ocaml.vof_list vof_or_type_element v1
       in Ocaml.VSum (("OrType", [ v1 ]))
   | AndType v1 ->
       let v1 = Ocaml.vof_list vof_field v1
@@ -628,15 +621,20 @@ and vof_type_definition_kind =
       in Ocaml.VSum (("OtherTypeKind", [ v1; v2 ]))
 and vof_other_type_kind_operator =
   function | OTKO_EnumWithValue -> Ocaml.VSum (("OTKO_EnumWithValue", []))
-and vof_constructor_definition (v1, v2) =
-  let v1 = vof_name v1
-  and v2 = Ocaml.vof_list vof_type_ v2
-  in Ocaml.VTuple [ v1; v2 ]
-and vof_other_type_definition_operator =
+and vof_or_type_element =
   function
-  | OTDO_Struct -> Ocaml.VSum (("OTDO_Struct", []))
-  | OTDO_Union -> Ocaml.VSum (("OTDO_Union", []))
-  | OTDO_Enum -> Ocaml.VSum (("OTDO_Enum", []))
+  | OrConstructor ((v1, v2)) ->
+      let v1 = vof_name v1
+      and v2 = Ocaml.vof_list vof_type_ v2
+      in Ocaml.VSum (("OrConstructor", [ v1; v2 ]))
+  | OrEnum ((v1, v2)) ->
+      let v1 = vof_name v1
+      and v2 = vof_expr v2
+      in Ocaml.VSum (("OrEnum", [ v1; v2 ]))
+  | OrUnion ((v1, v2)) ->
+      let v1 = vof_name v1
+      and v2 = vof_type_ v2
+      in Ocaml.VSum (("OrUnion", [ v1; v2 ]))
 and
   vof_class_definition {
                          ckind = v_ckind;

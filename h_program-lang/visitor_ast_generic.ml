@@ -261,7 +261,7 @@ and v_other_expr_operator =
   | OE_Repr -> ()
   | OE_NameOrClassType -> ()
   | OE_ClassLiteral -> ()
-  | OE_RecordPtAccess -> ()
+  | OE_GetRefLabel -> ()
   | OE_SizeOf -> ()
   | OE_ArrayInitDesignator -> ()
   | OE_GccConstructor -> ()
@@ -517,29 +517,24 @@ and v_field =
       in ()
   | FieldSpread v1 -> let v1 = v_expr v1 in ()
   | FieldStmt v1 -> let v1 = v_stmt v1 in ()
-and
-  v_type_definition {
-                      tbody = v_tbody;
-                      tother = v_tother
-                    } =
-  let arg = v_type_definition_kind v_tbody in
-  let arg = v_other_type_definition_operator v_tother in ()
-and v_type_definition_kind =
+and v_type_definition =
   function
   | OrType v1 ->
-      let v1 =
-        v_list
-          (fun (v1, v2) ->
-             let v1 = v_name v1 and v2 = v_list v_type_ v2 in ())
-          v1
+      let v1 = v_list v_or_type_element v1
       in ()
   | AndType v1 -> let v1 = v_list v_field v1 in ()
   | AliasType v1 -> let v1 = v_type_ v1 in ()
   | OtherTypeKind ((v1, v2)) ->
       let v1 = v_other_type_kind_operator v1 and v2 = v_list v_any v2 in ()
 and v_other_type_kind_operator = function | OTKO_EnumWithValue -> ()
-and v_other_type_definition_operator =
-  function | OTDO_Struct -> () | OTDO_Union -> () | OTDO_Enum -> ()
+
+and v_or_type_element =
+  function
+  | OrConstructor ((v1, v2)) ->
+      let v1 = v_name v1 and v2 = v_list v_type_ v2 in ()
+  | OrEnum ((v1, v2)) -> let v1 = v_name v1 and v2 = v_expr v2 in ()
+  | OrUnion ((v1, v2)) -> let v1 = v_name v1 and v2 = v_type_ v2 in ()
+
 and
   v_class_definition {
                        ckind = v_ckind;

@@ -1127,10 +1127,10 @@ and m_other_expr_operator a b =
        A.OE_ClassLiteral,
        B.OE_ClassLiteral
     )
-  | A.OE_RecordPtAccess, B.OE_RecordPtAccess ->
+  | A.OE_GetRefLabel, B.OE_GetRefLabel ->
     return (
-       A.OE_RecordPtAccess,
-       B.OE_RecordPtAccess
+       A.OE_GetRefLabel,
+       B.OE_GetRefLabel
     )
   | A.OE_SizeOf, B.OE_SizeOf ->
     return (
@@ -1180,7 +1180,7 @@ and m_other_expr_operator a b =
   | A.OE_Repr, _
   | A.OE_NameOrClassType, _
   | A.OE_ClassLiteral, _
-  | A.OE_RecordPtAccess, _
+  | A.OE_GetRefLabel, _
   | A.OE_SizeOf, _
   | A.OE_ArrayInitDesignator, _
   | A.OE_GccConstructor, _
@@ -2414,32 +2414,8 @@ and m_field a b =
 
 and m_type_definition a b = 
   match a, b with
-  { A. 
-  tbody = a1;
-  tother = a2;
-  },
-  { B. 
-  tbody = b1;
-  tother = b2;
-  } -> 
-    m_type_definition_kind a1 b1 >>= (fun (a1, b1) -> 
-    m_other_type_definition_operator a2 b2 >>= (fun (a2, b2) -> 
-    return (
-      { A. 
-      tbody = a1;
-      tother = a2;
-      },
-      { B.
-      tbody = b1;
-      tother = b2;
-      } 
-    )
-  ))
-
-and m_type_definition_kind a b = 
-  match a, b with
   | A.OrType(a1), B.OrType(b1) ->
-    (m_list m_constructor_definition) a1 b1 >>= (fun (a1, b1) -> 
+    (m_list m_or_type) a1 b1 >>= (fun (a1, b1) -> 
     return (
        A.OrType(a1),
        B.OrType(b1)
@@ -2473,39 +2449,38 @@ and m_type_definition_kind a b =
   | A.OtherTypeKind _, _
    -> fail ()
 
-and m_constructor_definition a b = 
+and m_or_type a b = 
   match a, b with
-  | (a1, a2), (b1, b2) ->
-    m_name a1 b1 >>= (fun (a1, b1) -> 
+  | A.OrConstructor(a1, a2), B.OrConstructor(b1, b2) ->
+    (m_name) a1 b1 >>= (fun (a1, b1) -> 
     (m_list m_type_) a2 b2 >>= (fun (a2, b2) -> 
     return (
-       (a1, a2),
-       (b1, b2)
+       A.OrConstructor(a1, a2),
+       B.OrConstructor(b1, b2)
     )
     ))
-
-
-and m_other_type_definition_operator a b = 
-  match a, b with
-  | A.OTDO_Struct, B.OTDO_Struct ->
+  | A.OrEnum(a1, a2), B.OrEnum(b1, b2) ->
+    m_name a1 b1 >>= (fun (a1, b1) -> 
+    (m_expr) a2 b2 >>= (fun (a2, b2) -> 
     return (
-       A.OTDO_Struct,
-       B.OTDO_Struct
+       A.OrEnum(a1, a2),
+       B.OrEnum(b1, b2)
     )
-  | A.OTDO_Union, B.OTDO_Union ->
+    ))
+  | A.OrUnion(a1, a2), B.OrUnion(b1, b2) ->
+    m_name a1 b1 >>= (fun (a1, b1) -> 
+    (m_type_) a2 b2 >>= (fun (a2, b2) -> 
     return (
-       A.OTDO_Union,
-       B.OTDO_Union
+       A.OrUnion(a1, a2),
+       B.OrUnion(b1, b2)
     )
-  | A.OTDO_Enum, B.OTDO_Enum ->
-    return (
-       A.OTDO_Enum,
-       B.OTDO_Enum
-    )
-  | A.OTDO_Struct, _
-  | A.OTDO_Union, _
-  | A.OTDO_Enum, _
+    ))
+  | A.OrConstructor _, _
+  | A.OrEnum _, _
+  | A.OrUnion _, _
    -> fail ()
+
+
 
 and m_other_type_kind_operator a b = 
   match a, b with

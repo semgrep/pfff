@@ -274,7 +274,7 @@ and map_other_expr_operator =
   | OE_Repr -> OE_Repr
   | OE_NameOrClassType -> OE_NameOrClassType
   | OE_ClassLiteral -> OE_ClassLiteral
-  | OE_RecordPtAccess -> OE_RecordPtAccess
+  | OE_GetRefLabel -> OE_GetRefLabel
   | OE_SizeOf -> OE_SizeOf
   | OE_ArrayInitDesignator -> OE_ArrayInitDesignator
   | OE_GccConstructor -> OE_GccConstructor
@@ -590,15 +590,10 @@ and map_field =
   | FieldSpread v1 -> let v1 = map_expr v1 in FieldSpread ((v1))
   | FieldStmt v1 -> let v1 = map_stmt v1 in FieldStmt ((v1))
 
-and map_type_definition { tbody = v_tbody; tother = v_tother } =
-  let v_tother = map_other_type_definition_operator v_tother in
-  let v_tbody = map_type_definition_kind v_tbody in 
-  { tbody = v_tbody; tother = v_tother }
-
-and map_type_definition_kind =
+and map_type_definition =
   function
   | OrType v1 ->
-      let v1 = map_of_list map_constructor_definition v1 in OrType ((v1))
+      let v1 = map_of_list map_or_type_element v1 in OrType ((v1))
   | AndType v1 -> let v1 = map_of_list map_field v1 in AndType ((v1))
   | AliasType v1 -> let v1 = map_type_ v1 in AliasType ((v1))
   | OtherTypeKind ((v1, v2)) ->
@@ -609,14 +604,16 @@ and map_type_definition_kind =
 and map_other_type_kind_operator =
   function | OTKO_EnumWithValue -> OTKO_EnumWithValue
 
-and map_constructor_definition (v1, v2) =
-  let v1 = map_name v1 and v2 = map_of_list map_type_ v2 in (v1, v2)
-
-and map_other_type_definition_operator =
+and map_or_type_element =
   function
-  | OTDO_Struct -> OTDO_Struct
-  | OTDO_Union -> OTDO_Union
-  | OTDO_Enum -> OTDO_Enum
+  | OrConstructor ((v1, v2)) ->
+      let v1 = map_name v1
+      and v2 = map_of_list map_type_ v2
+      in OrConstructor ((v1, v2))
+  | OrEnum ((v1, v2)) ->
+      let v1 = map_name v1 and v2 = map_expr v2 in OrEnum ((v1, v2))
+  | OrUnion ((v1, v2)) ->
+      let v1 = map_name v1 and v2 = map_type_ v2 in OrUnion ((v1, v2))
 
 and
   map_class_definition {

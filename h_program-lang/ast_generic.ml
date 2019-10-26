@@ -267,9 +267,9 @@ type expr =
     (* Java *)
     | OE_NameOrClassType | OE_ClassLiteral (* XXX.class? *)
     (* C *)
-    | OE_RecordPtAccess (* -> *) (* less: or desugar? *) 
     | OE_SizeOf
-    | OE_ArrayInitDesignator | OE_GccConstructor
+    | OE_GetRefLabel
+    | OE_ArrayInitDesignator | OE_GccConstructor (* transform in New? *)
     (* PHP *)
     | OE_Unpack
 
@@ -281,9 +281,9 @@ and type_ =
   | TyBuiltin of string wrap (* int, bool, etc. could be TApply with no args *)
   | TyFun of type_ list (* use parameter? args (not curried) *) * 
              type_ (* return type *)
-  (* covers tuples, list, etc. *)
+  (* covers tuples, list, etc. and also regular typedefs *)
   | TyApply of name * type_arguments
-  | TyVar of name
+  | TyVar of name (* typedef? no type variable in polymorphic type*)
 
   (* a special case of TApply, also a special case of TPointer *)
   | TyArray of (* const_expr *) expr option * type_
@@ -524,12 +524,8 @@ and field =
 (* ------------------------------------------------------------------------- *)
 (* Type definition *)
 (* ------------------------------------------------------------------------- *)
-and type_definition = { 
-  tbody: type_definition_kind;
-  tother: other_type_definition_operator;
-}
-  and type_definition_kind = 
-   | OrType  of constructor_definition list  (* enum/ADTs *)           
+  and type_definition = 
+   | OrType  of or_type_element list  (* enum/ADTs *)           
    (* field.vtype should be defined here *)
    | AndType of field list (* record/struct/union *) 
    | AliasType of type_
@@ -537,13 +533,11 @@ and type_definition = {
    | OtherTypeKind of other_type_kind_operator * any list
     and other_type_kind_operator = 
      (* C *)
-     | OTKO_EnumWithValue
-
-  and constructor_definition = name * type_ list
-
-  and other_type_definition_operator = 
-   (* C *)
-   | OTDO_Struct | OTDO_Union | OTDO_Enum
+     | OTKO_EnumWithValue (* obsolete actually now that has OrEnum *)
+  and or_type_element =
+    | OrConstructor of name * type_ list
+    | OrEnum of name * expr
+    | OrUnion of name * type_
 
 
 (* ------------------------------------------------------------------------- *)
@@ -650,6 +644,10 @@ let basic_entity name attrs = {
   tparams = [];
 }
 
+let basic_field name typeopt =
+  let entity = basic_entity name [] in
+  FieldVar (entity, { vinit = None; vtype = typeopt})
+
 let expr_to_arg e = 
   Arg e
 
@@ -657,6 +655,17 @@ let opt_to_nop opt =
   match opt with
   | None -> Nop
   | Some e -> e
+
+let opt_to_name opt =
+  match opt with
+  | None -> "FakeNAME", Parse_info.fake_info "FakeNAME"
+  | Some n -> n
+
+let stmt1 xs =
+  match xs with
+  | [] -> Block []
+  | [st] -> st
+  | xs -> Block xs
 
 let stmt_to_field st = 
   match st with
