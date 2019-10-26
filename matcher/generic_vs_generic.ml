@@ -1914,10 +1914,10 @@ and m_other_stmt_operator a b =
        A.OS_Delete,
        B.OS_Delete
     )
-  | A.OS_Print, B.OS_Print ->
+  | A.OS_Async, B.OS_Async ->
     return (
-       A.OS_Print,
-       B.OS_Print
+       A.OS_Async,
+       B.OS_Async
     )
   | A.OS_ForOrElse, B.OS_ForOrElse ->
     return (
@@ -1975,7 +1975,7 @@ and m_other_stmt_operator a b =
        B.OS_Asm
     )
   | A.OS_Delete, _
-  | A.OS_Print, _
+  | A.OS_Async, _
   | A.OS_ForOrElse, _
   | A.OS_WhileOrElse, _
   | A.OS_TryOrElse, _

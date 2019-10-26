@@ -479,6 +479,14 @@ and stmt x =
 
   | ExprStmt v1 -> let v1 = expr v1 in G.ExprStmt v1
 
+  | Async x ->
+      let x = stmt x in
+      (match x with
+      | G.LocalDef (ent, func) ->
+          G.LocalDef ({ ent with G.attrs = G.Async::ent.G.attrs}, func)
+      | _ -> G.OtherStmt (G.OS_Async, [G.S x])
+      )
+
   | Pass -> G.OtherStmt (G.OS_Pass, [])
   | Break -> G.Break (None)
   | Continue -> G.Continue (None)

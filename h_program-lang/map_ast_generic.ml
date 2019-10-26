@@ -445,7 +445,7 @@ and map_for_var_or_expr =
 and map_other_stmt_operator =
   function
   | OS_Delete -> OS_Delete
-  | OS_Print -> OS_Print
+  | OS_Async -> OS_Async
   | OS_ForOrElse -> OS_ForOrElse
   | OS_WhileOrElse -> OS_WhileOrElse
   | OS_TryOrElse -> OS_TryOrElse

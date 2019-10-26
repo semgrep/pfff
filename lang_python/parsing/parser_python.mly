@@ -489,11 +489,10 @@ with_stmt:
   | WITH test AS expr COLON suite { With ($2, Some $4, $6) }
 
 /*(* python3-ext: *)*/
-/* TODO: add ASYNC in AST */
 async_stmt: 
-  | ASYNC funcdef   { $2 }
-  | ASYNC with_stmt { $2 } 
-  | ASYNC for_stmt  { $2 }
+  | ASYNC funcdef   { Async $2 }
+  | ASYNC with_stmt { Async $2 } 
+  | ASYNC for_stmt  { Async $2 }
 
 /*(*************************************************************************)*/
 /*(*1 Expressions *)*/

@@ -438,7 +438,7 @@ and vof_for_var_or_expr =
 and vof_other_stmt_operator =
   function
   | OS_Delete -> Ocaml.VSum (("OS_Delete", []))
-  | OS_Print -> Ocaml.VSum (("OS_Print", []))
+  | OS_Async -> Ocaml.VSum (("OS_Async", []))
   | OS_ForOrElse -> Ocaml.VSum (("OS_ForOrElse", []))
   | OS_WhileOrElse -> Ocaml.VSum (("OS_WhileOrElse", []))
   | OS_TryOrElse -> Ocaml.VSum (("OS_TryOrElse", []))

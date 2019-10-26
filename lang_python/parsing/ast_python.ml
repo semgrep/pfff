@@ -247,6 +247,9 @@ type stmt =
   (* python3-ext: *)
   | NonLocal of name list (* names *)
 
+  (* python3-ext: for With, For, and FunctionDef *)
+  | Async of stmt
+
   (* should be allowed just at the toplevel *)
   | FunctionDef of 
        name (* name *) * 

@@ -257,6 +257,7 @@ and v_stmt x =
       let v1 = v_expr v1 and v2 = v_operator v2 and v3 = v_expr v3 in ()
   | Return v1 -> let v1 = v_option v_expr v1 in ()
   | Delete v1 -> let v1 = v_list v_expr v1 in ()
+  | Async v1 -> let v1 = v_stmt v1 in ()
   | For ((v1, v2, v3, v4)) ->
       let v1 = v_expr v1
       and v2 = v_expr v2

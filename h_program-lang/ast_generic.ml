@@ -398,10 +398,10 @@ and stmt =
   and other_stmt_operator = 
     (* Python *)
     | OS_Delete 
-    | OS_Print (* less: could generalize with console.log? *)
     | OS_ForOrElse | OS_WhileOrElse | OS_TryOrElse
     | OS_With | OS_ThrowFrom | OS_ThrowNothing | OS_Global | OS_NonLocal
     | OS_Pass
+    | OS_Async
     (* Java *)
     | OS_Sync
     (* C *)

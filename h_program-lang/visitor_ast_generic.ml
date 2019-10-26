@@ -400,7 +400,7 @@ and v_other_stmt_operator =
   function
   | OS_NonLocal -> ()
   | OS_Delete -> ()
-  | OS_Print -> ()
+  | OS_Async -> ()
   | OS_ForOrElse -> ()
   | OS_WhileOrElse -> ()
   | OS_TryOrElse -> ()
