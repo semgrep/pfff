@@ -1,5 +1,5 @@
 (*
- * Please imagine a long and boring gnu-style copyright notice 
+ * Please imagine a long and boring GNU-style copyright notice 
  * appearing just here.
  *)
 open Common
@@ -50,8 +50,6 @@ let test_json_pretty_printer file =
   let json = Json_io.load_json file in
   let s = Json_io.string_of_json json in
   pr s
-
-
 
 (* ---------------------------------------------------------------------- *)
 let pfff_extra_actions () = [
