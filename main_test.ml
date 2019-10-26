@@ -163,6 +163,9 @@ let ast_generic_of_file file =
     let ast = Parse_python.parse_program file in
     Resolve_python.resolve ast;
     Python_to_generic.program ast
+ | FT.PL (FT.C ("c" | "h" )) ->
+    let ast = Parse_c.parse_program file in
+    C_to_generic.program ast
  | _ -> failwith "file type not supported"
 
 let test_parse_generic xs =
