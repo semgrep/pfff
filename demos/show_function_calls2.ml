@@ -2,7 +2,7 @@
 
 (*s: basic pfff modules open *)
 open Common
-open Ast_php
+open Cst_php
 (*e: basic pfff modules open *)
 module V = Visitor_php
 
@@ -17,8 +17,8 @@ let show_function_calls file =
         match e with
         | Call (Id funcname, args) ->
             (*s: print funcname *)
-            let s = Ast_php.str_of_name funcname in
-            let info = Ast_php.info_of_name funcname in
+            let s = Cst_php.str_of_name funcname in
+            let info = Cst_php.info_of_name funcname in
             let line = Parse_info.line_of_info info in
             pr2 (spf "Call to %s at line %d" s line);
             (* to handle calls inside calls *)

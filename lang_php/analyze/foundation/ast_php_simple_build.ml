@@ -14,7 +14,7 @@
  *)
 open Common
 
-open Ast_php
+open Cst_php
 module A = Ast_php_simple
 
 (*****************************************************************************)
@@ -31,8 +31,8 @@ type _env = unit
 
 let empty_env () = ()
 
-exception ObsoleteConstruct of Ast_php.info
-exception TodoConstruct of string * Ast_php.info
+exception ObsoleteConstruct of Cst_php.info
+exception TodoConstruct of string * Cst_php.info
 
 (* Whether or not we want to store position information in the Ast_simple
  * built here.
@@ -698,7 +698,7 @@ and xhp_attr_inherit env st acc =
     (comma_list xal) +> List.fold_left (fun acc xhp_attr ->
       match xhp_attr with
       | XhpAttrInherit (source, tok) ->
-        A.Hint [ident env (Ast_php.XhpName (source, tok))]::acc
+        A.Hint [ident env (Cst_php.XhpName (source, tok))]::acc
       | XhpAttrDecl _ -> acc
      ) acc
   | _ -> acc
@@ -738,7 +738,7 @@ and method_def env m =
   let implicit_assigns =
     implicits +> List.map (fun (var, _, _) ->
       let (str_with_dollar, tok) = dname var in
-      let str_without_dollar = Ast_php.str_of_dname var in
+      let str_without_dollar = Cst_php.str_of_dname var in
       A.Expr (
         A.Assign (None, A.Obj_get(A.This ("$this", tok),
                                   A.Id [str_without_dollar, tok]),

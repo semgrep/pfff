@@ -1,1 +1,1 @@
-val check: Ast_php.program -> unit
+val check: Cst_php.program -> unit

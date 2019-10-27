@@ -14,8 +14,8 @@
  *)
 open Common
 
-open Ast_php
-module Ast = Ast_php
+open Cst_php
+module Ast = Cst_php
 module V = Visitor_php
 module T = Parser_php
 
@@ -606,7 +606,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
   let visitor = V.mk_visitor hooks in
   (try
     visitor (Program ast)
-  with Ast_php.TodoNamespace _ -> ()
+  with Cst_php.TodoNamespace _ -> ()
   );
 
   (* -------------------------------------------------------------------- *)

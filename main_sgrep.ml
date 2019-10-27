@@ -162,7 +162,7 @@ let ast_fuzzy_of_string str =
 type ast =
   | Fuzzy of Ast_fuzzy.tree list
   | Gen of Ast_generic.program
-  | Php of Ast_php.program
+  | Php of Cst_php.program
   | Js of Ast_js.program
 
 let create_ast file =
@@ -392,10 +392,6 @@ let main_action xs =
 (*****************************************************************************)
 (* Extra actions *)
 (*****************************************************************************)
-let dump_sgrep_php_pattern file =
-  let any = Parse_php.parse_any file in
-  let s = Export_ast_php.ml_pattern_string_of_any any in
-  pr s
 
 (*---------------------------------------------------------------------------*)
 (* Regression testing *)

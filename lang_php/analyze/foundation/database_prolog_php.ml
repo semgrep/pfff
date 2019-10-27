@@ -14,9 +14,9 @@
  *)
 open Common
 
-open Ast_php
+open Cst_php
 
-module Ast = Ast_php
+module Ast = Cst_php
 module V = Visitor_php
 module E = Entity_code
 module CG = Callgraph_php2
@@ -317,7 +317,7 @@ let visit ~add readable ast =
        * for the right parameter. So need an entity_finder?
        *)
       | Call (Id callname, args) ->
-          let str = Ast_php.str_of_name callname in
+          let str = Cst_php.str_of_name callname in
           let args = args +> Ast.unparen +> Ast.uncomma in
           (match str, args with
           (* Many entities (functions, classes) in PHP are passed as
@@ -361,7 +361,7 @@ let visit ~add readable ast =
       | Call (ObjGet (e, _, Id name), args)
       | Call (ClassGet (e, _, Id name), args)
         ->
-          let str = Ast_php.str_of_name name in
+          let str = Cst_php.str_of_name name in
           (* use a different namespace than func? *)
           if not (Hashtbl.mem h str)
           then begin
@@ -377,7 +377,7 @@ let visit ~add readable ast =
                 (match name2 with
                 | XName _name ->
                   add (P.Misc (spf "docall(%s, ('%s','%s'), method)"
-                           !current (Ast_php.str_of_name name2) str))
+                           !current (Cst_php.str_of_name name2) str))
                 (* this should have been desugared while building the
                  * code database, except for traits code ...
                  *)
@@ -406,8 +406,8 @@ let visit ~add readable ast =
            (match name with
            | XName[QI (classname)] ->
              add (P.Misc (spf "use(%s, ('%s','%s'), constant, read)"
-                   !current (Ast_php.str_of_ident classname)
-                   (Ast_php.str_of_name cstname)))
+                   !current (Cst_php.str_of_ident classname)
+                   (Cst_php.str_of_name cstname)))
              (* this should have been desugared while building the
               * code database, except for traits code ...
               *)
@@ -423,7 +423,7 @@ let visit ~add readable ast =
 
       (* the context should be anything except Call *)
       | ObjGet (_, _tok, Id name) ->
-          let str = Ast_php.str_of_name name in
+          let str = Cst_php.str_of_name name in
           (* use a different namespace than func? *)
           if not (Hashtbl.mem h str)
           then begin
@@ -451,7 +451,7 @@ let visit ~add readable ast =
         | Id name ->(* TODO: currently ignoring type args *)
           (match name with
           | XName [QI name] ->
-            let str = Ast_php.str_of_ident name in
+            let str = Cst_php.str_of_ident name in
           (* use a different namespace than func? *)
             if not (Hashtbl.mem h str)
             then begin
@@ -483,7 +483,7 @@ let visit ~add readable ast =
       | Xhp (xhp_tag, _attrs, _tok, _, _)
       | XhpSingleton (xhp_tag, _attrs, _tok)
         ->
-          let str = Ast_php.str_of_ident (Ast_php.XhpName xhp_tag) in
+          let str = Cst_php.str_of_ident (Cst_php.XhpName xhp_tag) in
           (* use a different namespace than func? *)
           if not (Hashtbl.mem h str)
           then begin
@@ -578,7 +578,7 @@ let build2 ?(show_progress=true) root files =
 
        let ast = Unsugar_php.unsugar_self_parent_program ast in
        visit ~add readable ast;
-     with Parse_php.Parse_error _ | Ast_php.TodoNamespace _ ->
+     with Parse_php.Parse_error _ | Cst_php.TodoNamespace _ ->
        add (P.Misc (spf "problem('%s', parse_error)" file))
    );
 

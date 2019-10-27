@@ -1,15 +1,15 @@
 (*s: phpunit.mli *)
 
 val is_phpunit_derived_class_heuristics: 
-  Ast_php.class_def -> bool
+  Cst_php.class_def -> bool
 
 (* todo: not yet implemented *)
 val is_phpunit_derived_class: 
-  Ast_php.class_def -> (*Database_php.database -> *) bool
+  Cst_php.class_def -> (*Database_php.database -> *) bool
 
 val find_testcase_class_if_any: 
   is_phpunit_base_class_name:(string -> bool) ->
-  Ast_php.toplevel list -> Ast_php.class_def option
+  Cst_php.toplevel list -> Cst_php.class_def option
 
 
 (* a poor's man test result database ... *)

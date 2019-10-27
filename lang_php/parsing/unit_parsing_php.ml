@@ -2,8 +2,8 @@
 open Common
 open OUnit
 
-open Ast_php
-module Ast = Ast_php
+open Cst_php
+module Ast = Cst_php
 module Flag = Flag_parsing
 
 (*****************************************************************************)

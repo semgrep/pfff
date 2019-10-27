@@ -13,7 +13,7 @@
  * license.txt for more details.
  *)
 
-open Ast_php 
+open Cst_php 
 
 (* see also scoping_php.ml.
  * redundant ?
@@ -35,8 +35,8 @@ type dnameS =
 
 
 let name_to_nameS_wrap name =
-  let s = Ast_php.str_of_name name in
-  let ii  = Ast_php.info_of_name name in 
+  let s = Cst_php.str_of_name name in
+  let ii  = Cst_php.info_of_name name in 
   NameS s, ii
 
 let dnameS_of_dname (DName (s,_ii)) = DNameS s

@@ -272,7 +272,7 @@ module type TAINT =
 
     (* main entry point to warn when found XSS *)
     val check_danger :  env -> heap ->
-      string -> Ast_php.info option -> Callgraph_php2.node list (* path *) -> 
+      string -> Cst_php.info option -> Callgraph_php2.node list (* path *) -> 
       value -> unit
 
     val taint_expr : env -> heap ->

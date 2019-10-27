@@ -14,7 +14,7 @@
  *)
 open Common
 
-module Ast = Ast_php
+module Ast = Cst_php
 module MV = Metavars_php
 module MVGen = Metavars_fuzzy
 
@@ -157,7 +157,7 @@ module XMATCH = struct
         (* first time the metavar is binded, just add it to the environment *)
         Some (Common2.insert_assoc (mvar, valu) tin)
 
-  let (envf: (Metavars_php.mvar Ast_php.wrap, Ast_php.any) matcher) =
+  let (envf: (Metavars_php.mvar Cst_php.wrap, Cst_php.any) matcher) =
    fun (mvar, imvar) any  -> fun tin ->
     match check_and_add_metavar_binding (mvar, any) tin with
     | None ->
@@ -167,7 +167,7 @@ module XMATCH = struct
         pr2 (spf "envf: success, %s" mvar);
         return ((mvar, imvar), any) new_binding
 
-  let (envf2: (Metavars_php.mvar Ast_php.wrap, Ast_php.any * Ast_php.any) matcher) =
+  let (envf2: (Metavars_php.mvar Cst_php.wrap, Cst_php.any * Cst_php.any) matcher) =
    fun (mvar, imvar) (any1, any2)  -> fun tin ->
     match check_and_add_metavar_binding (mvar, any1) tin with
     | None ->

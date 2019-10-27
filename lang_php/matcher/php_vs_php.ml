@@ -56,8 +56,8 @@ open Common
  * subtle: use 'b' for to report errors, 'a' is the sgrep pattern and it
  * has no file information usually.
  *)
-module A = Ast_php
-module B = Ast_php
+module A = Cst_php
+module B = Cst_php
 
 module MV = Metavars_php
 
@@ -166,9 +166,9 @@ module type PARAM =
 
     val tokenf : (A.info, B.info) matcher
 
-    val envf : (Metavars_php.mvar Ast_php.wrap, Ast_php.any) matcher
+    val envf : (Metavars_php.mvar Cst_php.wrap, Cst_php.any) matcher
     (* ugly hack for the "A" string metavariables *)
-    val envf2 : (Metavars_php.mvar Ast_php.wrap, Ast_php.any * Ast_php.any) matcher
+    val envf2 : (Metavars_php.mvar Cst_php.wrap, Cst_php.any * Cst_php.any) matcher
   end
 
 (*****************************************************************************)

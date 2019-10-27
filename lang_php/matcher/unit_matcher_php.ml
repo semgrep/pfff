@@ -1,7 +1,7 @@
 open Common
 open OUnit
 
-open Ast_php
+open Cst_php
 
 (*****************************************************************************)
 (* Sgrep Unit tests *)

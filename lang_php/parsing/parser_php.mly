@@ -54,8 +54,8 @@
  *)
 open Common
 
-open Ast_php
-module Ast = Ast_php
+open Cst_php
+module Ast = Cst_php
 module H = Parser_php_mly_helper
 module PI = Parse_info
 
@@ -65,25 +65,25 @@ module PI = Parse_info
 /*(*1 Tokens *)*/
 /*(*************************************************************************)*/
 
-%token <Ast_php.info> TUnknown /*(* unrecognized token *)*/
-%token <Ast_php.info> EOF
+%token <Cst_php.info> TUnknown /*(* unrecognized token *)*/
+%token <Cst_php.info> EOF
 
 /*(*-----------------------------------------*)*/
 /*(*2 The space/comment tokens *)*/
 /*(*-----------------------------------------*)*/
 /*(* coupling: Token_helpers.is_real_comment *)*/
-%token <Ast_php.info> TSpaces TNewline
+%token <Cst_php.info> TSpaces TNewline
 
 /*(* not mentionned in this grammar. filtered in parse_php.ml *)*/
-%token <Ast_php.info> T_COMMENT T_DOC_COMMENT
+%token <Cst_php.info> T_COMMENT T_DOC_COMMENT
 
 /*(* when use preprocessor and want to mark removed tokens as commented *)*/
-%token <Ast_php.info> TCommentPP
+%token <Cst_php.info> TCommentPP
 
 /*(*-----------------------------------------*)*/
 /*(*2 The normal tokens *)*/
 /*(*-----------------------------------------*)*/
-%token <string * Ast_php.info>
+%token <string * Cst_php.info>
  T_LNUMBER T_DNUMBER
  /*(* T_IDENT is for a regular ident and  T_VARIABLE is for a dollar ident.
    * Note that with XHP if you want to add a rule using T_IDENT, you should
@@ -94,13 +94,13 @@ module PI = Parse_info
  /*(* used only for offset of array access inside strings *)*/
  T_NUM_STRING
  T_STRING_VARNAME
-/*(*in original: %token <Ast_php.info> T_CHARACTER T_BAD_CHARACTER *)*/
+/*(*in original: %token <Cst_php.info> T_CHARACTER T_BAD_CHARACTER *)*/
 
 /*(*-----------------------------------------*)*/
 /*(*2 Keyword tokens *)*/
 /*(*-----------------------------------------*)*/
 
-%token <Ast_php.info>
+%token <Cst_php.info>
  T_IF T_ELSE T_ELSEIF T_ENDIF
  T_DO  T_WHILE   T_ENDWHILE  T_FOR     T_ENDFOR T_FOREACH T_ENDFOREACH
  T_SWITCH  T_ENDSWITCH T_CASE T_DEFAULT    T_BREAK T_CONTINUE
@@ -133,7 +133,7 @@ module PI = Parse_info
 /*(*2 Punctuation tokens *)*/
 /*(*-----------------------------------------*)*/
 
-%token <Ast_php.info>
+%token <Cst_php.info>
  T_OBJECT_OPERATOR T_ARROW T_DOUBLE_ARROW
  T_OPEN_TAG  T_CLOSE_TAG T_OPEN_TAG_WITH_ECHO T_CLOSE_TAG_OF_ECHO
  T_START_HEREDOC    T_END_HEREDOC
@@ -173,45 +173,45 @@ module PI = Parse_info
 /*(*-----------------------------------------*)*/
 /*(*2 Extra tokens: *)*/
 /*(*-----------------------------------------*)*/
-%token <Ast_php.info> T_CLASS_XDEBUG  T_RESOURCE_XDEBUG
+%token <Cst_php.info> T_CLASS_XDEBUG  T_RESOURCE_XDEBUG
 
 /*(*-----------------------------------------*)*/
 /*(*2 PHP language extensions: *)*/
 /*(*-----------------------------------------*)*/
-%token <Ast_php.info> T_YIELD
-%token <Ast_php.info> T_AWAIT
-%token <Ast_php.info> T_SUPER
+%token <Cst_php.info> T_YIELD
+%token <Cst_php.info> T_AWAIT
+%token <Cst_php.info> T_SUPER
 
 /*(* phpext: for hack and also for sgrep *)*/
-%token <Ast_php.info> T_ELLIPSIS
+%token <Cst_php.info> T_ELLIPSIS
 
 /*(* lexing hack to parse lambda params properly *)*/
-%token <Ast_php.info> T_LAMBDA_OPAR T_LAMBDA_CPAR
+%token <Cst_php.info> T_LAMBDA_OPAR T_LAMBDA_CPAR
 
 /*(*-----------------------------------------*)*/
 /*(*2 XHP tokens *)*/
 /*(*-----------------------------------------*)*/
 
 /*(* xhp: token for ':frag:foo'; quite similiar to T_IDENT *)*/
-%token <string list * Ast_php.info> T_XHP_COLONID_DEF
+%token <string list * Cst_php.info> T_XHP_COLONID_DEF
 /*(* xhp: token for '%frag:foo' *)*/
-%token <string list * Ast_php.info> T_XHP_PERCENTID_DEF
+%token <string list * Cst_php.info> T_XHP_PERCENTID_DEF
 
 /*(* xhp: e.g. for '<x:frag', note that the real end of the tag is
    * in another token, either T_XHP_GT or T_XHP_SLASH_GT.
    *)*/
-%token <Ast_php.xhp_tag * Ast_php.info> T_XHP_OPEN_TAG
+%token <Cst_php.xhp_tag * Cst_php.info> T_XHP_OPEN_TAG
 
 /*(* ending part of the opening tag *)*/
-%token <Ast_php.info> T_XHP_GT T_XHP_SLASH_GT
+%token <Cst_php.info> T_XHP_GT T_XHP_SLASH_GT
 
 /*(* xhp: e.g. for '</x:frag>'. The 'option' is for closing tags like </> *)*/
-%token <Ast_php.xhp_tag option * Ast_php.info> T_XHP_CLOSE_TAG
+%token <Cst_php.xhp_tag option * Cst_php.info> T_XHP_CLOSE_TAG
 
-%token <string * Ast_php.info> T_XHP_ATTR T_XHP_TEXT
+%token <string * Cst_php.info> T_XHP_ATTR T_XHP_TEXT
 
 /*(* xhp keywords. If you add one don't forget to update the 'ident' rule. *)*/
-%token <Ast_php.info>
+%token <Cst_php.info>
  T_XHP_ATTRIBUTE T_XHP_CHILDREN T_XHP_CATEGORY
  T_ENUM T_XHP_REQUIRED
  T_XHP_ANY /*(* T_XHP_EMPTY is T_EMPTY *)*/
@@ -284,8 +284,8 @@ module PI = Parse_info
 /*(*1 Rules type declaration *)*/
 /*(*************************************************************************)*/
 %start main sgrep_spatch_pattern
-%type <Ast_php.toplevel list> main
-%type <Ast_php.any>           sgrep_spatch_pattern
+%type <Cst_php.toplevel list> main
+%type <Cst_php.any>           sgrep_spatch_pattern
 
 %%
 

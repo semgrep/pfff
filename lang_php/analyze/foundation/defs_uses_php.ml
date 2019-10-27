@@ -14,9 +14,9 @@
  *)
 open Common
 
-open Ast_php
+open Cst_php
 
-module Ast = Ast_php
+module Ast = Cst_php
 module V = Visitor_php
 module E = Entity_code
 
@@ -49,10 +49,10 @@ module E = Entity_code
  *)
 
 type def = 
-  Ast_php.ident * Ast_php.ident option * Entity_code.entity_kind
+  Cst_php.ident * Cst_php.ident option * Entity_code.entity_kind
 
 type use = 
-  Ast_php.name * Entity_code.entity_kind
+  Cst_php.name * Entity_code.entity_kind
 
 (*****************************************************************************)
 (* Helpers *)
@@ -68,7 +68,7 @@ type use =
  *  - TODO database_php_build.ml ?
  *)
 let defs_of_any any =
-  let current_class = ref (None: Ast_php.ident option) in
+  let current_class = ref (None: Cst_php.ident option) in
 
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
 

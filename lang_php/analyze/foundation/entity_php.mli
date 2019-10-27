@@ -14,7 +14,7 @@
  * in "Foo::method".
  *)
 type id_kind = Entity_code.entity_kind
-type entity_finder = (id_kind * string) -> Ast_php.entity list
+type entity_finder = (id_kind * string) -> Cst_php.entity list
 
 (* note: use global hcache_entities, so may need to reset it *)
 val entity_finder_of_graph_code: 
@@ -22,7 +22,7 @@ val entity_finder_of_graph_code:
   Graph_code.graph -> 
   Common.dirname -> entity_finder
 (* use the Hashtbl.find_all property *)
-(* val hcache_entities: (string * id_kind, Ast_php.entity) Hashtbl.t *)
+(* val hcache_entities: (string * id_kind, Cst_php.entity) Hashtbl.t *)
 
 type method_identifier = (string * string)
 (*

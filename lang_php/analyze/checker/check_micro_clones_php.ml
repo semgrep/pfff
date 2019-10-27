@@ -20,7 +20,7 @@
  * patching.
  *)
 
-module Ast = Ast_php
+module Ast = Cst_php
 module Error = Error_php
 
 (* A small module for boolean expressions. It maintains the invariant that a)
@@ -86,7 +86,7 @@ end
 
 open Boolean
 
-type php_exp = Ast_php.expr * Ast_php.tok option
+type php_exp = Cst_php.expr * Cst_php.tok option
 
 let op_to_string = function
   | And -> "And"
@@ -101,7 +101,7 @@ let to_string exp =
   let (!) = Unparse_php.string_of_expr in
   let rec exp_to_string =
     function
-    | Atom (Ast_php.IdVar (Ast_php.DName(v,_),_),_) -> sprintf "%s" v
+    | Atom (Cst_php.IdVar (Cst_php.DName(v,_),_),_) -> sprintf "%s" v
     | Atom (x,_) -> !x
     | List (op,l) -> sprintf "%s(%s)" (op_to_string op) (list_to_string l)
   and

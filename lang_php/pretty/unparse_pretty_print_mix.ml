@@ -46,14 +46,14 @@ module PI = Parse_info
 (* A union of Ast.toplevel and Ast.class_stmt *)
 type chunk =
   (* toplevel *)
-  | Stmts of Ast_php.stmt list
-  | Func of Ast_php.func_def
-  | ClassHeader of Ast_php.class_def (* no body *)
-  | ClassFooter of Ast_php.info (* just the closing brace *)
+  | Stmts of Cst_php.stmt list
+  | Func of Cst_php.func_def
+  | ClassHeader of Cst_php.class_def (* no body *)
+  | ClassFooter of Cst_php.info (* just the closing brace *)
 
-  | FinalDef of Ast_php.info
+  | FinalDef of Cst_php.info
   (* class_stmt *)
-  | ClassStmt of Ast_php.class_stmt
+  | ClassStmt of Cst_php.class_stmt
 
 type chunks = (chunk * Parser_php.token list) list
 
@@ -107,36 +107,36 @@ let split_chunks tokens ast =
   let rec aux xs toks =
   match xs with
   | [] -> raise Impossible
-  | [Ast_php.FinalDef e] -> 
+  | [Cst_php.FinalDef e] -> 
       (* assert (null toks) ? no cos can have whitespace tokens *)
       [FinalDef e, toks]
   | ast::xs ->
-      let ii = Lib_parsing_php.ii_of_any (Ast_php.Toplevel ast) in
+      let ii = Lib_parsing_php.ii_of_any (Cst_php.Toplevel ast) in
       let (toks_before_max, toks_after) = toks_before_after_ii ii toks in
       match ast with
-      | Ast_php.StmtList stmts ->
+      | Cst_php.StmtList stmts ->
           (Stmts stmts, toks_before_max)::aux xs toks_after
-      | Ast_php.FuncDef def ->
+      | Cst_php.FuncDef def ->
           (Func def, toks_before_max)::aux xs toks_after
-      | Ast_php.ConstantDef _ ->
+      | Cst_php.ConstantDef _ ->
           raise Common.Todo
-      | Ast_php.TypeDef _ ->
+      | Cst_php.TypeDef _ ->
           raise Common.Todo
-      | Ast_php.NamespaceDef _  | Ast_php.NamespaceBracketDef _
-      | Ast_php.NamespaceUse _
+      | Cst_php.NamespaceDef _  | Cst_php.NamespaceBracketDef _
+      | Cst_php.NamespaceUse _
         ->
           raise Common.Todo
-      | Ast_php.ClassDef def ->
+      | Cst_php.ClassDef def ->
 
           let toks = toks_before_max in
           let toks_after_class = toks_after in
 
-          let (obrace, body, cbrace) = def.Ast_php.c_body in
-          let just_class = { def with Ast_php.c_body = (obrace, [], cbrace) }in
+          let (obrace, body, cbrace) = def.Cst_php.c_body in
+          let just_class = { def with Cst_php.c_body = (obrace, [], cbrace) }in
           
           let ii_header = 
             Lib_parsing_php.ii_of_any 
-              (Ast_php.Toplevel (Ast_php.ClassDef just_class)) 
+              (Cst_php.Toplevel (Cst_php.ClassDef just_class)) 
             (* don't count ending } *)
             +> Common2.list_init
           in
@@ -146,7 +146,7 @@ let split_chunks tokens ast =
           let chunks_body, toks =
             body +> List.fold_left (fun (acc, toks) class_stmt ->
               let ii = 
-                Lib_parsing_php.ii_of_any (Ast_php.ClassStmt class_stmt) in
+                Lib_parsing_php.ii_of_any (Cst_php.ClassStmt class_stmt) in
               let (toks_before_max, toks) = toks_before_after_ii ii toks in
               (ClassStmt class_stmt, toks_before_max)::acc, toks
             ) ([], toks)
@@ -161,8 +161,8 @@ let split_chunks tokens ast =
           [ClassFooter ii_footer, toks_footer] @
           rest
 
-      | Ast_php.FinalDef _ 
-      | Ast_php.NotParsedCorrectly _
+      | Cst_php.FinalDef _ 
+      | Cst_php.NotParsedCorrectly _
         -> raise Impossible
   in
   aux ast tokens
@@ -172,14 +172,14 @@ let pretty_print _buf env chunk =
   let (chunk, toks) = chunk in
   match chunk with
   | Func def ->
-      let ast = Ast_pp_build.toplevels toks [Ast_php.FuncDef def] in
+      let ast = Ast_pp_build.toplevels toks [Cst_php.FuncDef def] in
       Pretty_print.stmts env ast
   | Stmts xs ->
-      let ast = Ast_pp_build.toplevels toks [Ast_php.StmtList xs] in
+      let ast = Ast_pp_build.toplevels toks [Cst_php.StmtList xs] in
       Pretty_print.stmts env ast
 
   | ClassHeader def ->
-      let ast = Ast_pp_build.toplevels toks [Ast_php.ClassDef def] in
+      let ast = Ast_pp_build.toplevels toks [Cst_php.ClassDef def] in
       Pretty_print.class_header env ast
 
   | ClassFooter _ -> 

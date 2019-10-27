@@ -1,18 +1,18 @@
 (*s: include_require_php.mli *)
 (*x: include_require_php.mli *)
 type increq = 
-  increq_kind * Ast_php.tok * increq_expr 
+  increq_kind * Cst_php.tok * increq_expr 
 
  and increq_expr = 
    | Direct of Common.filename 
-   | ConcatVar of Ast_php.dname * Common.filename
-   | ConcatConstant of Ast_php.ident * Common.filename
-   | ConcatArrrayVar of Ast_php.dname * string * Common.filename
+   | ConcatVar of Cst_php.dname * Common.filename
+   | ConcatConstant of Cst_php.ident * Common.filename
+   | ConcatArrrayVar of Cst_php.dname * string * Common.filename
    | ConcatDirname of Common.filename
    | ConcatRealpathDirname of Common.filename
 
-   | SimpleVar of Ast_php.dname
-   | Other of Ast_php.expr
+   | SimpleVar of Cst_php.dname
+   | Other of Cst_php.expr
 
  and increq_kind = 
    | Include
@@ -20,9 +20,9 @@ type increq =
    | Require
    | RequireOnce
 
-val top_increq_of_program: Ast_php.program -> increq list
-val all_increq_of_any: Ast_php.any -> increq list
-val increq_expr_of_expr: Ast_php.expr -> increq_expr
+val top_increq_of_program: Cst_php.program -> increq list
+val all_increq_of_any: Cst_php.any -> increq list
+val increq_expr_of_expr: Cst_php.expr -> increq_expr
 
 val resolve_path: 
   Env_php.env * Common.dirname (* pwd of file *) -> increq_expr -> 

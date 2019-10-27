@@ -3,4 +3,4 @@ val printf_like_functions_list: (string * int) list
 
 (* modifies Error_php._errors by side effect *)
 val check:
-   Ast_php.program -> unit
+   Cst_php.program -> unit

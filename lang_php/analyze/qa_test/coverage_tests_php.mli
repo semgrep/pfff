@@ -41,8 +41,8 @@ val lines_coverage_from_tests:
 
 (* for percentage statistics per file *)
 val get_all_calls: 
-  ?is_directive_to_filter:(string -> bool) -> Ast_php.any -> 
-  (string option * Ast_php.tok) list
+  ?is_directive_to_filter:(string -> bool) -> Cst_php.any -> 
+  (string option * Cst_php.tok) list
 
 val get_all_call_lines_with_sanity_check:
   ?is_directive_to_filter:(string -> bool) ->

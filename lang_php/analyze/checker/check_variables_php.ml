@@ -163,10 +163,10 @@ type env = {
    * todo? use a list of Map.t to represent nested scopes?
    * (globals, methods/functions, nested blocks)? when in strict/block mode?
    *)
-  vars: (string, (Ast_php.tok * Scope_code.t * int ref)) Map_.t ref;
+  vars: (string, (Cst_php.tok * Scope_code.t * int ref)) Map_.t ref;
 
   (* to remember how to annotate Var in ast_php.ml *)
-  scope_vars_used: (Ast_php.tok, Scope_code.t) Hashtbl.t;
+  scope_vars_used: (Cst_php.tok, Scope_code.t) Hashtbl.t;
 
   (* todo: have a globals:? *)
 
@@ -227,7 +227,7 @@ let str_of_any any =
  * the definition of the function/method called, hence the need for a
  * entity_finder in env.db.
  *
- * note that it currently returns an Ast_php.func_def, not
+ * note that it currently returns an Cst_php.func_def, not
  * an Ast_php_simple.func_def because the database currently
  * stores concrete ASTs, not simple ASTs.
  *)
@@ -240,7 +240,7 @@ let funcdef_of_call_or_new_opt env e =
           (* simple function call *)
             let (s, tok) = s_tok_of_ident name in
             (match find_entity (Ent.Function, s) with
-            | [Ast_php.FunctionE def] -> Some def
+            | [Cst_php.FunctionE def] -> Some def
             (* normally those errors should be triggered in
              * check_functions_php.ml, but right now this file uses
              * ast_php.ml and not ast_php_simple.ml, so there are some
@@ -412,7 +412,7 @@ and func_def env def =
     (* fresh new scope *)
     | _ ->
       (Env_php.globals_builtins +> List.map (fun s ->
-       "$" ^ s, (Ast_php.fakeInfo s, S.Global, ref 1)
+       "$" ^ s, (Cst_php.fakeInfo s, S.Global, ref 1)
       )) @
       (* $this is now implicitly passed in use() for closures *)
       (try ["$this", Map_.find "$this" oldvars]
@@ -447,7 +447,7 @@ and func_def env def =
    *)
   if def.f_kind = Method && not (A.is_static def.m_modifiers)
   then begin
-     let tok = (Ast_php.fakeInfo "$this") in
+     let tok = (Cst_php.fakeInfo "$this") in
      env.vars := Map_.add "$this" (tok, S.Class, ref 1) !(env.vars);
   end;
 
@@ -467,7 +467,7 @@ and stmt env = function
   | ConstantDef def -> constant_def env def
   | TypeDef def -> typedef_def env def
   | NamespaceDef (qu, _) | NamespaceUse (qu, _) ->
-    raise (Ast_php.TodoNamespace (A.tok_of_name qu))
+    raise (Cst_php.TodoNamespace (A.tok_of_name qu))
 
   | Expr e -> expr env e
   (* todo: block scope checking when in strict mode? *)
@@ -567,7 +567,7 @@ and foreach_pattern env pattern =
   let shared_ref = ref 0 in
 
   let rec aux e =
-    (* look Ast_php.foreach_pattern to see the kinds of constructs allowed *)
+    (* look Cst_php.foreach_pattern to see the kinds of constructs allowed *)
     match e with
     | Var name ->
       let (s, tok) = s_tok_of_ident name in
@@ -778,7 +778,7 @@ and expr env e =
             es +> List.map (fun e -> e, None)
         | Some def ->
             let params =
-              def.Ast_php.f_params +> Ast_php.unparen +> Ast_php.uncomma_dots
+              def.Cst_php.f_params +> Cst_php.unparen +> Cst_php.uncomma_dots
             in
             let rec zip args params =
               match args, params with
@@ -803,7 +803,7 @@ and expr env e =
         | Assign (None, Var _name, e2), _ ->
             expr env e2
         (* a variable passed by reference, this can considered a new decl *)
-        | Var name, Some {Ast_php.p_ref = Some _;_} ->
+        | Var name, Some {Cst_php.p_ref = Some _;_} ->
 
             (* if was already assigned and passed by refs,
              * increment its use counter then.
@@ -927,7 +927,7 @@ let check_and_annotate_program2 find_entity prog =
   let env = {
     (* less: should be a in globals field instead? *)
     vars = ref (Env_php.globals_builtins +> List.map (fun s ->
-       "$" ^ s, (Ast_php.fakeInfo s, S.Global, ref 1)
+       "$" ^ s, (Cst_php.fakeInfo s, S.Global, ref 1)
        ) +> Map_.of_list);
     db = find_entity;
     in_class = None;
@@ -940,12 +940,12 @@ let check_and_annotate_program2 find_entity prog =
   program env ast;
 
   (* annotating the scope of Var *)
-  (Ast_php.Program prog) +>
+  (Cst_php.Program prog) +>
     Visitor_php.mk_visitor { Visitor_php.default_visitor with
     Visitor_php.kexpr = (fun (k, _) x ->
       match x with
-      | Ast_php.IdVar (dname, aref) ->
-          let tok = Ast_php.info_of_dname dname in
+      | Cst_php.IdVar (dname, aref) ->
+          let tok = Cst_php.info_of_dname dname in
           (try
             aref := Hashtbl.find env.scope_vars_used tok
           (* keep NoScope *)

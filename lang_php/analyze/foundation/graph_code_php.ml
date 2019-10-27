@@ -204,20 +204,20 @@ let privacy_of_modifiers modifiers =
   (* yes, default is public ... I love PHP *)
   let p = ref E.Public in
   modifiers +> List.iter (function
-  | Ast_php.Public -> p := E.Public
-  | Ast_php.Private -> p := E.Private
-  | Ast_php.Protected -> p := E.Protected
+  | Cst_php.Public -> p := E.Public
+  | Cst_php.Private -> p := E.Private
+  | Cst_php.Protected -> p := E.Protected
   | _ -> ()
   );
   !p
 
 let property_of_modifiers modifiers =
   modifiers +> Common.map_filter (function
-  | Ast_php.Public | Ast_php.Private | Ast_php.Protected -> None
-  | Ast_php.Static -> Some E.Static
-  | Ast_php.Abstract -> Some E.Abstract
-  | Ast_php.Async -> Some E.Async
-  | Ast_php.Final -> None
+  | Cst_php.Public | Cst_php.Private | Cst_php.Protected -> None
+  | Cst_php.Static -> Some E.Static
+  | Cst_php.Abstract -> Some E.Abstract
+  | Cst_php.Async -> Some E.Async
+  | Cst_php.Final -> None
   )
 
 let normalize str =

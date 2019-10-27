@@ -14,9 +14,9 @@
  *)
 open Common
 
-open Ast_php
+open Cst_php
 
-module Ast = Ast_php
+module Ast = Cst_php
 module V = Visitor_php
 
 module Env = Env_php
@@ -37,17 +37,17 @@ module Env = Env_php
 (*****************************************************************************)
 
 type increq = 
-  increq_kind * Ast_php.tok * increq_expr
+  increq_kind * Cst_php.tok * increq_expr
 
  and increq_expr = 
    (* e.g. require 'master_include.php'; *)
    | Direct of Common.filename 
    (* e.g. require $BASEPATH .'/lib/init/ajax.php'; *)
-   | ConcatVar of Ast_php.dname * Common.filename
+   | ConcatVar of Cst_php.dname * Common.filename
    (* e.g. require BASEPATH .'/lib/init/ajax.php'; *)
-   | ConcatConstant of Ast_php.ident * Common.filename
+   | ConcatConstant of Cst_php.ident * Common.filename
    (* e.g. require $_SERVER['PHP_ROOT'].'/lib/init/ajax.php'; *)
-   | ConcatArrrayVar of Ast_php.dname * string * Common.filename
+   | ConcatArrrayVar of Cst_php.dname * string * Common.filename
    (* e.g. require dirname(__FILE__).'/master_include.php'; *)
    | ConcatDirname of Common.filename
    (* e.g. require realpath(dirname(__FILE__)).'/master_include.php'; 
@@ -55,9 +55,9 @@ type increq =
     *)
    | ConcatRealpathDirname of Common.filename
    (* e.g. require $file; *)
-   | SimpleVar of Ast_php.dname
+   | SimpleVar of Cst_php.dname
 
-   | Other of Ast_php.expr
+   | Other of Cst_php.expr
 
  and increq_kind = 
    | Include

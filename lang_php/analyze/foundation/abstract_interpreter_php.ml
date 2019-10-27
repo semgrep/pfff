@@ -542,7 +542,7 @@ and expr_ env heap x =
           heap, Vany
        )
 
-  | Id ((_s,tok)::_) -> raise (Ast_php.TodoNamespace (Common2.some tok))
+  | Id ((_s,tok)::_) -> raise (Cst_php.TodoNamespace (Common2.some tok))
   | Id [] -> raise Impossible
 
   (* will probably return some Vabstr (Tint|Tbool|...) *)
@@ -693,42 +693,42 @@ and expr_ env heap x =
 (* related to Unify *)
 and binaryOp env heap bop v1 v2 =
   match bop with
-  | Ast_php.Arith _aop ->
+  | Cst_php.Arith _aop ->
       (match v1, v2 with
       | (Vint _ | Vabstr Tint), (Vint _ | Vabstr Tint) -> Vabstr Tint
       (* todo: warn on type error? why vnull? *)
       | _ -> Vsum [Vnull; Vabstr Tint]
       )
-  | Ast_php.Logical _lop -> Vabstr Tbool
-  | Ast_php.BinaryConcat ->
+  | Cst_php.Logical _lop -> Vabstr Tbool
+  | Cst_php.BinaryConcat ->
       (* Vabstr Tstring by default *)
       Taint.binary_concat env heap v1 v2 !(env.path)
-  | Ast_php.Pipe ->
+  | Cst_php.Pipe ->
      failwith "Not supported"
-  | Ast_php.CombinedComparison -> Vabstr Tint
+  | Cst_php.CombinedComparison -> Vabstr Tint
 
 and unaryOp uop v =
   match uop, v with
-  | Ast_php.UnPlus, Vint n       -> Vint n
-  | Ast_php.UnPlus, Vabstr Tint  -> Vabstr Tint
-  | Ast_php.UnPlus, _            -> Vsum [Vnull; Vabstr Tint]
-  | Ast_php.UnMinus, Vint n      -> Vint (-n)
-  | Ast_php.UnMinus, Vabstr Tint -> Vabstr Tint
-  | Ast_php.UnMinus, _           -> Vsum [Vnull; Vabstr Tint]
-  | Ast_php.UnBang, Vbool b      -> Vbool (not b)
-  | Ast_php.UnBang, Vabstr Tbool -> Vabstr Tbool
-  | Ast_php.UnBang, _            -> Vsum [Vnull; Vabstr Tbool]
-  | Ast_php.UnTilde, Vint n      -> Vint (lnot n)
-  | Ast_php.UnTilde, Vabstr Tint -> Vabstr Tint
-  | Ast_php.UnTilde, _           -> Vsum [Vnull; Vabstr Tint]
+  | Cst_php.UnPlus, Vint n       -> Vint n
+  | Cst_php.UnPlus, Vabstr Tint  -> Vabstr Tint
+  | Cst_php.UnPlus, _            -> Vsum [Vnull; Vabstr Tint]
+  | Cst_php.UnMinus, Vint n      -> Vint (-n)
+  | Cst_php.UnMinus, Vabstr Tint -> Vabstr Tint
+  | Cst_php.UnMinus, _           -> Vsum [Vnull; Vabstr Tint]
+  | Cst_php.UnBang, Vbool b      -> Vbool (not b)
+  | Cst_php.UnBang, Vabstr Tbool -> Vabstr Tbool
+  | Cst_php.UnBang, _            -> Vsum [Vnull; Vabstr Tbool]
+  | Cst_php.UnTilde, Vint n      -> Vint (lnot n)
+  | Cst_php.UnTilde, Vabstr Tint -> Vabstr Tint
+  | Cst_php.UnTilde, _           -> Vsum [Vnull; Vabstr Tint]
 
 and cast _env _heap ty v =
   match ty, v with
-  | Ast_php.BoolTy, (Vbool _ | Vabstr Tbool) -> v
-  | Ast_php.IntTy, (Vint _ | Vabstr Tint) -> v
-  | Ast_php.DoubleTy, (Vfloat _ | Vabstr Tfloat) -> v
-  | Ast_php.StringTy, (Vstring _ | Vabstr Tstring) -> v
-  | Ast_php.ArrayTy, (Varray _ | Vrecord _) -> v
+  | Cst_php.BoolTy, (Vbool _ | Vabstr Tbool) -> v
+  | Cst_php.IntTy, (Vint _ | Vabstr Tint) -> v
+  | Cst_php.DoubleTy, (Vfloat _ | Vabstr Tfloat) -> v
+  | Cst_php.StringTy, (Vstring _ | Vabstr Tstring) -> v
+  | Cst_php.ArrayTy, (Varray _ | Vrecord _) -> v
   (* pad: ?? should be more ty? raise exception? warn type error? *)
   | _ -> v
 
@@ -1170,7 +1170,7 @@ and xhp_attr env heap x =
 
       let heap, vl = Utils.lfold Ptr.get heap vl in
       let v = Taint.fold_slist vl in
-      Taint.check_danger env heap "xhp attribute" (Some (Ast_php.fakeInfo ""))
+      Taint.check_danger env heap "xhp attribute" (Some (Cst_php.fakeInfo ""))
         !(env.path) v;
 
       heap

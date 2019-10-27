@@ -14,7 +14,7 @@
  *)
 open Common
 
-open Ast_php
+open Cst_php
 open Parse_info
 module V = Visitor_php
 module PI = Parse_info
@@ -49,7 +49,7 @@ module PI = Parse_info
 (*****************************************************************************)
 
 (* right now only Expr and Stmt are supported *)
-type pattern = Ast_php.any
+type pattern = Cst_php.any
 
 type line_kind = 
   | XContext
@@ -65,7 +65,7 @@ type line_kind =
 *)
 
 (* just to test the backend part of spatch *)
-let (_dumb_spatch_pattern: Ast_php.expr) = 
+let (_dumb_spatch_pattern: Cst_php.expr) = 
   (* ./pfff -dump_php_ml tests/php/spatch/1.php *)
   let i_1 = {
     PI.token =
@@ -302,8 +302,8 @@ let spatch ?(case_sensitive=false) pattern file =
         );
       }
 
-    | _ -> failwith (spf "pattern not yet supported:" ^ 
-                       Export_ast_php.ml_pattern_string_of_any pattern)
+    | _ -> failwith (spf "pattern not yet supported:" ^ "TODO"
+                      (* Export_ast_php.ml_pattern_string_of_any pattern*))
   in
   Common.save_excursion Php_vs_php.case_sensitive case_sensitive (fun() ->
     (V.mk_visitor hook) (Program ast)

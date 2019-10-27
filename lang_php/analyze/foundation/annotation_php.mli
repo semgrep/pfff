@@ -32,7 +32,7 @@ type annotation =
    | Method of string
    | MethodExternal of string (* class *) * string
 
-exception AnnotationPb of string * Ast_php.info
+exception AnnotationPb of string * Cst_php.info
 
 (* The returned parse_info is the one associated with the whole comment.
  * We use it in cmf to raise errors like use of undefined function when
@@ -40,15 +40,15 @@ exception AnnotationPb of string * Ast_php.info
  * a test.
  *)
 val annotations_of_program_with_comments: 
-  Parse_php.program_with_comments -> (annotation * Ast_php.info) list
+  Parse_php.program_with_comments -> (annotation * Cst_php.info) list
 
 (* Helper. The string is the string of a comment (with its markers). *)
-val extract_annotations: string -> Ast_php.info -> annotation list
+val extract_annotations: string -> Cst_php.info -> annotation list
 
 val vof_annotation: annotation -> Ocaml.v
 val str_debug_of_annotation: annotation -> string
 
-val annotations_before: Ast_php.tok -> Parser_php.token list -> annotation list
-val annotations_after: Ast_php.tok -> Parser_php.token list -> annotation list
+val annotations_before: Cst_php.tok -> Parser_php.token list -> annotation list
+val annotations_after: Cst_php.tok -> Parser_php.token list -> annotation list
 (*x: annotation_php.mli *)
 (*e: annotation_php.mli *)

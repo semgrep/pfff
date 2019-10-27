@@ -1,3 +1,5 @@
+open Cst_php
+
 (*s: lib_parsing_php.mli *)
 val is_php_filename: Common.filename -> bool
 
@@ -12,27 +14,27 @@ val find_source_files_of_dir_or_files:
 
 (*x: lib_parsing_php.mli *)
 (* returns only origin tokens, filter fake tokens *)
-val ii_of_any: Ast_php.any -> Ast_php.tok list
+val ii_of_any: Cst_php.any -> Cst_php.tok list
 (*x: lib_parsing_php.mli *)
 (* do via side effects *)
-val abstract_position_info_any: Ast_php.any -> Ast_php.any
+val abstract_position_info_any: Cst_php.any -> Cst_php.any
 
 (*x: lib_parsing_php.mli *)
-val range_of_origin_ii: Ast_php.tok list -> (int * int) option
+val range_of_origin_ii: tok list -> (int * int) option
 
 (*x: lib_parsing_php.mli *)
-val get_funcalls_any         : Ast_php.any -> string list
-val get_constant_strings_any : Ast_php.any -> string list
-val get_vars_any              : Ast_php.any -> Ast_php.dname list
-val get_static_vars_any       : Ast_php.any -> Ast_php.dname list
-val get_returns_any           : Ast_php.any -> Ast_php.expr list
-val get_vars_assignements_any : Ast_php.any -> (string * Ast_php.expr list) list
+val get_funcalls_any         : any -> string list
+val get_constant_strings_any : any -> string list
+val get_vars_any              : any -> dname list
+val get_static_vars_any       : any -> dname list
+val get_returns_any           : any -> expr list
+val get_vars_assignements_any : any -> (string * expr list) list
 
 val top_statements_of_program: 
-  Ast_php.program -> Ast_php.stmt list
+  program -> stmt list
 
 val functions_methods_or_topstms_of_program:
-  Ast_php.program -> 
-  (Ast_php.func_def list * Ast_php.method_def list * Ast_php.stmt list list) 
+  program -> 
+  (func_def list * method_def list * stmt list list) 
 
 (*e: lib_parsing_php.mli *)

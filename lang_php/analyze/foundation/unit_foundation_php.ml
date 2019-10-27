@@ -1,7 +1,7 @@
 open Common
 open OUnit
 
-module Ast = Ast_php
+module Ast = Cst_php
 module A = Annotation_php
 module E = Entity_code
 module G = Graph_code

@@ -14,7 +14,7 @@
  *)
 open Common 
 
-module Ast  = Ast_php
+module Ast  = Cst_php
 module Flag = Flag_parsing_php
 module TH   = Token_helpers_php
 module PI = Parse_info

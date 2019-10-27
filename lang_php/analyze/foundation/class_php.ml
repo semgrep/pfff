@@ -14,9 +14,9 @@
  *)
 open Common
 
-open Ast_php
+open Cst_php
 
-module Ast = Ast_php
+module Ast = Cst_php
 module E = Entity_code
 
 (*****************************************************************************)

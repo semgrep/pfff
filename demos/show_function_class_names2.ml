@@ -1,17 +1,17 @@
 open Common
-open Ast_php
+open Cst_php
 
 module V = Visitor_php
 
 let pr_func_def func_def =
-  let s = Ast_php.str_of_ident func_def.f_name in
-  let info = Ast_php.info_of_ident func_def.f_name in
+  let s = Cst_php.str_of_ident func_def.f_name in
+  let info = Cst_php.info_of_ident func_def.f_name in
   let line = Parse_info.line_of_info info in
   pr2 (spf "Define function %s at line %d" s line)
 
 let pr_class_def class_def =
-  let s = Ast_php.str_of_ident class_def.c_name in
-  let info = Ast_php.info_of_ident class_def.c_name in
+  let s = Cst_php.str_of_ident class_def.c_name in
+  let info = Cst_php.info_of_ident class_def.c_name in
   let line = Parse_info.line_of_info info in
   pr2 (spf "Define class %s at line %d" s line)
 

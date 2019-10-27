@@ -1,7 +1,7 @@
 (*s: show_function_calls3.ml *)
 (*s: basic pfff modules open *)
 open Common
-open Ast_php
+open Cst_php
 (*e: basic pfff modules open *)
 module V = Visitor_php
 
@@ -23,8 +23,8 @@ let show_function_calls file =
         | Call (Id funcname, args) ->
 
             (*s: print funcname and nbargs *)
-            let f = Ast_php.str_of_name funcname in
-            let nbargs = List.length (Ast_php.unparen args) in
+            let f = Cst_php.str_of_name funcname in
+            let nbargs = List.length (Cst_php.unparen args) in
             pr2 (spf "Call to %s with %d arguments" f nbargs);
             (*e: print funcname and nbargs *)
 

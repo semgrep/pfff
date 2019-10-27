@@ -17,8 +17,8 @@
 (*e: Facebook copyright *)
 open Common
 
-open Ast_php
-module Ast = Ast_php
+open Cst_php
+module Ast = Cst_php
 module F = Controlflow_php
 
 (*****************************************************************************)
@@ -68,7 +68,7 @@ type state = {
 (*e: type state *)
 
 (*s: type Controlflow_build_php.error *)
-type error = error_kind * Ast_php.info
+type error = error_kind * Cst_php.info
  and error_kind =
   | DeadCode of Controlflow_php.node_kind
   | NoEnclosingLoop
@@ -683,7 +683,7 @@ and cfg_colon_stmt state previ colon =
  *)
 and (cfg_cases:
     (nodei * nodei) -> state ->
-    nodei option -> Ast_php.case list -> nodei option) =
+    nodei option -> Cst_php.case list -> nodei option) =
  fun (switchi, endswitchi) state previ cases ->
 
    let state = { state with
@@ -724,7 +724,7 @@ and (cfg_cases:
  * a new False Node.
  *)
 
-and (cfg_catches: state -> nodei -> nodei -> Ast_php.catch list -> nodei) =
+and (cfg_catches: state -> nodei -> nodei -> Cst_php.catch list -> nodei) =
  fun state previ tryendi catches ->
    catches +> List.fold_left (fun previ catch ->
      let (t, e_paren, stmt_or_defs) = catch in

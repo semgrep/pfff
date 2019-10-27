@@ -1,5 +1,5 @@
 open Common
-open Ast_php
+open Cst_php
 
 module PI=Parse_info
 module V=Visitor_php

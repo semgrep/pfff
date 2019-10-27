@@ -214,7 +214,7 @@ let tokens_with_categ_of_file file hentities =
             Check_variables_php.check_and_annotate_program
               find_entity
               ast
-             with Ast_php.TodoNamespace _ | Common.Impossible -> ()
+             with Cst_php.TodoNamespace _ | Common.Impossible -> ()
             );
             Php ((ast, toks))
           ))

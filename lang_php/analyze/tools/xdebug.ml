@@ -18,9 +18,9 @@
 open Common2
 open Common
 
-open Ast_php
+open Cst_php
 
-module Ast = Ast_php
+module Ast = Cst_php
 
 (*****************************************************************************)
 (* Prelude *)
@@ -80,8 +80,8 @@ type call_trace = {
   f_call: kind_call;
   f_file: Common.filename;
   f_line: int;
-  f_params: Ast_php.expr list;
-  f_return: Ast_php.expr option;
+  f_params: Cst_php.expr list;
+  f_return: Cst_php.expr option;
 
 (* f_type: *)
 }

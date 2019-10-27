@@ -15,8 +15,8 @@
 open Common
 
 module MV = Metavars_php
-module A = Ast_php
-module B = Ast_php
+module A = Cst_php
+module B = Cst_php
 module PI = Parse_info
 
 (*****************************************************************************)
@@ -247,7 +247,7 @@ module XMATCH = struct
     | PI.AddArgsBefore _ -> raise Todo
     )
 
-  let (envf: (Metavars_php.mvar Ast_php.wrap, Ast_php.any) matcher) =
+  let (envf: (Metavars_php.mvar Cst_php.wrap, Cst_php.any) matcher) =
    fun (mvar, imvar) any  -> fun tin ->
     match check_and_add_metavar_binding (mvar, any) tin with
     | None ->
@@ -266,7 +266,7 @@ module XMATCH = struct
    * we want to add in the environment and the any we want
    * to match against and transform.
    *)
-  let (envf2: (Metavars_php.mvar Ast_php.wrap, (Ast_php.any * Ast_php.any)) matcher) =
+  let (envf2: (Metavars_php.mvar Cst_php.wrap, (Cst_php.any * Cst_php.any)) matcher) =
    fun (mvar, imvar) (any1, any2)  -> fun tin ->
     match check_and_add_metavar_binding (mvar, any1) tin with
     | None ->

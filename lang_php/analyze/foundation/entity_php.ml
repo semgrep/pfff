@@ -14,7 +14,7 @@
  *)
 open Common
 
-module Ast = Ast_php
+module Ast = Cst_php
 module G = Graph_code
 module Flag = Flag_analyze_php
 module E = Entity_code
@@ -100,7 +100,7 @@ type id_kind = Entity_code.entity_kind
  * The caller needs for instance to show two witnesses.
  *)
 
-type entity_finder = (id_kind * string) -> Ast_php.entity list
+type entity_finder = (id_kind * string) -> Cst_php.entity list
 
 type method_identifier = (string * string)
 

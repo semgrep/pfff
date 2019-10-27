@@ -18,9 +18,9 @@
 
 open Common
 
-open Ast_php
+open Cst_php
 
-module Ast = Ast_php
+module Ast = Cst_php
 module J = Json_type
 
 (*****************************************************************************)
@@ -316,7 +316,7 @@ let is_phpunit_derived_class _def (*db*) =
 
 let (find_testcase_class_if_any: 
       is_phpunit_base_class_name:(string -> bool) ->
-      Ast_php.toplevel list -> Ast_php.class_def option) = 
+      Cst_php.toplevel list -> Cst_php.class_def option) = 
  fun ~is_phpunit_base_class_name asts ->
   try 
     let x = asts +> Common.find_some (fun ast_toplevel -> 

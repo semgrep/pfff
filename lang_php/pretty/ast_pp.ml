@@ -109,11 +109,11 @@ and expr =
   | Obj_get of expr * expr
   | Class_get of expr * expr
 
-  | Assign of Ast_php.binaryOp option * expr * expr
-  | Infix of Ast_php.fixOp * expr
-  | Postfix of Ast_php.fixOp * expr
-  | Binop of Ast_php.binaryOp * expr * expr
-  | Unop of Ast_php.unaryOp * expr
+  | Assign of Cst_php.binaryOp option * expr * expr
+  | Infix of Cst_php.fixOp * expr
+  | Postfix of Cst_php.fixOp * expr
+  | Binop of Cst_php.binaryOp * expr * expr
+  | Unop of Cst_php.unaryOp * expr
 
   | Call of expr * expr list
 
@@ -129,7 +129,7 @@ and expr =
   | InstanceOf of expr * expr
 
   | CondExpr of expr * expr * expr
-  | Cast of Ast_php.ptype * expr
+  | Cast of Cst_php.ptype * expr
 
   | Lambda of lambda_def
 

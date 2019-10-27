@@ -14,8 +14,8 @@
  *)
 open Common
 
-open Ast_php
-module Ast = Ast_php
+open Cst_php
+module Ast = Cst_php
 module E = Entity_code
 
 (*****************************************************************************)
@@ -50,7 +50,7 @@ let strict = ref false
  *)
 type error = {
   typ: error_kind;
-  loc: Ast_php.info;
+  loc: Cst_php.info;
   (* less: maybe severity should be inferred from the error_kind. That
    * way it will also avoid the need for 2 functions fatal()/warning()
    * and just have error().
@@ -533,8 +533,8 @@ let (h_already_error: ((Entity_php.id_kind * string, bool) Hashtbl.t)) =
   Hashtbl.create 101 
 
 let (find_entity_and_warn:
-  Entity_php.entity_finder -> (Entity_php.id_kind * Ast_php.name) ->
-  (Ast_php.entity -> unit) -> unit) =
+  Entity_php.entity_finder -> (Entity_php.id_kind * Cst_php.name) ->
+  (Cst_php.entity -> unit) -> unit) =
  fun find_entity (kind, name) callback ->
 
    let str = Ast.str_of_name name in

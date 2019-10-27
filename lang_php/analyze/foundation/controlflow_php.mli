@@ -9,7 +9,7 @@ type node = {
    *)
   n: node_kind;
   (* for error report *)
-  i: Ast_php.info option;
+  i: Cst_php.info option;
 } 
 (*e: type node *)
 (*s: type node_kind *)
@@ -30,25 +30,25 @@ type node = {
       | BlockEnd of tok (* } *)
     *)
   (*x: node_kind constructors *)
-      | IfHeader of Ast_php.expr
+      | IfHeader of Cst_php.expr
       (* not used for now
       | Else
       | Elsif
       *) 
   (*x: node_kind constructors *)
-      | WhileHeader of Ast_php.expr
+      | WhileHeader of Cst_php.expr
       | DoHeader
-      | DoWhileTail of Ast_php.expr
+      | DoWhileTail of Cst_php.expr
       | ForHeader (* the exprs are put in extra nodes around *)
-      | ForeachHeader (* TODO  of Ast_php.foreach_variable list *)
+      | ForeachHeader (* TODO  of Cst_php.foreach_variable list *)
 
   (*x: node_kind constructors *)
-      | SwitchHeader of Ast_php.expr
+      | SwitchHeader of Cst_php.expr
       | SwitchEnd
       | Case
       | Default
   (*x: node_kind constructors *)
-      | Return of Ast_php.expr option
+      | Return of Cst_php.expr option
   (*x: node_kind constructors *)
       | Break
       | Continue
@@ -57,13 +57,13 @@ type node = {
       | CatchStart
       | Catch
       | TryEnd
-      | Throw of Ast_php.expr
+      | Throw of Cst_php.expr
   (*x: node_kind constructors *)
       | Join
       (* for the dataflow, it's convenient to have parameters as
        * nodes.
        *)
-      | Parameter of Ast_php.dname
+      | Parameter of Cst_php.dname
       (* statements without multiple outgoing or ingoing edges, such
        * as echo, expression statements, etc.
        *)
@@ -71,7 +71,7 @@ type node = {
   (*e: node_kind constructors *)
   (*s: node_kind aux types *)
      and simple_stmt = 
-         | ExprStmt of Ast_php.expr * use_status
+         | ExprStmt of Cst_php.expr * use_status
          | TodoSimpleStmt
          (* TODO? expr includes Exit, Eval, Include, etc which
           * also have an influence on the control flow ...

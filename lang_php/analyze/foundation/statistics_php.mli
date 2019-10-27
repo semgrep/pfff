@@ -11,7 +11,7 @@ type stat_hooks = {
 }
 (* works by side effect on stat2 hash *)
 val stat_of_program: 
-  ?hooks:stat_hooks -> stat -> Common.filename -> Ast_php.program -> unit
+  ?hooks:stat_hooks -> stat -> Common.filename -> Cst_php.program -> unit
 
 
 type stat2 = {
@@ -32,7 +32,7 @@ type php_file_kind =
 
 val default_stat2: unit -> stat2
 val string_of_stat: stat2 -> string
-val stat2_of_program: Ast_php.program -> stat2
+val stat2_of_program: Cst_php.program -> stat2
 
 
 (* helpers *)

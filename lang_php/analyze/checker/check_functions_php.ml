@@ -15,8 +15,8 @@
 
 open Common
 
-open Ast_php
-module Ast = Ast_php
+open Cst_php
+module Ast = Cst_php
 module V = Visitor_php
 module E = Error_php
 module Ent = Entity_code
@@ -68,7 +68,7 @@ let is_var_args_function def =
 
 let check_args_vs_params (callname, all_args) (defname, all_params) =
 
-  let info = Ast_php.info_of_name callname in
+  let info = Cst_php.info_of_name callname in
   let str_def = Ast.str_of_ident defname in
 
   let rec aux args params = 
@@ -138,7 +138,7 @@ let visit_and_check_funcalls find_entity prog =
       match x with
       | Call (Id callname, args)  ->
          E.find_entity_and_warn find_entity (Ent.Function, callname)
-         (function Ast_php.FunctionE def ->
+         (function Cst_php.FunctionE def ->
            (* todo? memoize ? *)
            if is_var_args_function def ||
               contain_func_name_args_like (Body def.f_body)

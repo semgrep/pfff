@@ -17,7 +17,7 @@ open Common
 
 open Parser_php
 
-module Ast = Ast_php
+module Ast = Cst_php
 module Flag = Flag_parsing
 module Flag_php = Flag_parsing_php
 module PI = Parse_info
@@ -286,9 +286,9 @@ type state_mode =
    * finished by '>' by transiting to ST_IN_XHP_TEXT, or really finished
    * by '/>'.
    *)
-  | ST_IN_XHP_TAG of Ast_php.xhp_tag (* the current tag, e,g, ["x";"frag"] *)
+  | ST_IN_XHP_TAG of Cst_php.xhp_tag (* the current tag, e,g, ["x";"frag"] *)
   (* started with the '>' of an opening tag, finished when '</x>' *)
-  | ST_IN_XHP_TEXT of Ast_php.xhp_tag (* the current tag *)
+  | ST_IN_XHP_TEXT of Cst_php.xhp_tag (* the current tag *)
 
 
 let default_state = INITIAL

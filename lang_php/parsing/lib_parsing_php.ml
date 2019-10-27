@@ -18,9 +18,9 @@
 open Common
 
 (*s: basic pfff module open and aliases *)
-open Ast_php 
+open Cst_php 
 
-module Ast = Ast_php
+module Ast = Cst_php
 module Flag = Flag_parsing
 (*e: basic pfff module open and aliases *)
 module V = Visitor_php 
@@ -157,7 +157,7 @@ let abstract_position_info_any x =
 (*s: max min range *)
 (*x: max min range *)
 
-let (range_of_origin_ii: Ast_php.tok list -> (int * int) option) = 
+let (range_of_origin_ii: Cst_php.tok list -> (int * int) option) = 
  fun ii -> 
   let ii = List.filter Parse_info.is_origintok ii in
   try 
@@ -183,7 +183,7 @@ let get_funcalls_any any =
     V.kexpr = (fun (k,_vx) x ->
       match x with
       | Call (Id callname, _args) ->
-          let str = Ast_php.str_of_name callname in
+          let str = Cst_php.str_of_name callname in
           Hashtbl.replace h str true;
           k x
       | _ -> k x

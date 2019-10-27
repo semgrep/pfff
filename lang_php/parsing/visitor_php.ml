@@ -17,7 +17,7 @@ open Common
 
 open Ocaml (* for v_int, v_bool, etc *)
 
-open Ast_php
+open Cst_php
 
 (*****************************************************************************)
 (* Prelude *)
@@ -410,7 +410,7 @@ and v_static_scalar_affect (v1, v2) =
   let v1 = v_tok v1 and v2 = v_static_scalar v2 in ()
 and v_constant x =
   let k x =  match x with
-  | Ast_php.Int v1 -> let v1 = v_wrap v_string v1 in ()
+  | Cst_php.Int v1 -> let v1 = v_wrap v_string v1 in ()
   | Double v1 -> let v1 = v_wrap v_string v1 in ()
   | String v1 -> let v1 = v_wrap v_string v1 in ()
   | PreProcess v1 -> let v1 = v_wrap v_cpp_directive v1 in ()

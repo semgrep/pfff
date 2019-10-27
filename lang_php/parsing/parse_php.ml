@@ -14,7 +14,7 @@
  *)
 open Common 
 
-module Ast  = Ast_php
+module Ast  = Cst_php
 module Flag = Flag_parsing
 module Flag_php = Flag_parsing_php
 module TH   = Token_helpers_php
@@ -35,7 +35,7 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
-type program_with_comments = Ast_php.program * Parser_php.token list
+type program_with_comments = Cst_php.program * Parser_php.token list
 
 (*****************************************************************************)
 (* Error diagnostic  *)
@@ -389,7 +389,7 @@ let any_of_string s =
  * This function is useful not only to test but also in our own code
  * as a shortcut to build complex expressions
  *)
-let (expr_of_string: string -> Ast_php.expr) = fun s ->
+let (expr_of_string: string -> Cst_php.expr) = fun s ->
   let tmpfile = Common.new_temp_file "pfff_expr_of_s" "php" in
   Common.write_file tmpfile ("<?php \n" ^ s ^ ";\n");
 
@@ -409,7 +409,7 @@ let (expr_of_string: string -> Ast_php.expr) = fun s ->
  * file. You don't have to open extra files to understand the test
  * data. This function is useful mostly for our unit tests 
 *)
-let (program_of_string: string -> Ast_php.program) = fun s -> 
+let (program_of_string: string -> Cst_php.program) = fun s -> 
   let tmpfile = Common.new_temp_file "pfff_expr_of_s" "php" in
   Common.write_file tmpfile ("<?php \n" ^ s ^ "\n");
   let ast = parse_program tmpfile in
@@ -434,7 +434,7 @@ let (tokens_of_string: string -> Parser_php.token list) = fun s ->
 
 (* A fast-path parser of xdebug expressions in xdebug dumpfiles. 
  * See xdebug.ml *)
-let (xdebug_expr_of_string: string -> Ast_php.expr) = fun _s ->
+let (xdebug_expr_of_string: string -> Cst_php.expr) = fun _s ->
 (*
   let lexbuf = Lexing.from_string s in
   let expr = Parser_php.expr basic_lexer_skip_comments lexbuf in

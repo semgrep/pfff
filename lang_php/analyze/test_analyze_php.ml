@@ -98,7 +98,7 @@ let test_type_php file =
 let test_cfg_php file =
   let ast = Parse_php.parse_program file in
   ast +> List.iter (function
-  | Ast_php.FuncDef def ->
+  | Cst_php.FuncDef def ->
       (try
         let flow = Controlflow_build_php.cfg_of_func def in
         Controlflow_php.display_flow flow;
@@ -123,12 +123,12 @@ let test_dflow_php file =
   in
   let ast = Parse_php.parse_program file in
   ast +> List.iter (function
-  | Ast_php.FuncDef def ->
+  | Cst_php.FuncDef def ->
     dflow_of_func_def def
-  | Ast_php.ClassDef def ->
-    Ast_php.unbrace def.Ast_php.c_body +> List.iter
+  | Cst_php.ClassDef def ->
+    Cst_php.unbrace def.Cst_php.c_body +> List.iter
       (function
-      | Ast_php.Method def -> dflow_of_func_def def
+      | Cst_php.Method def -> dflow_of_func_def def
       | _ -> ())
   | _ -> ()
   )
@@ -142,22 +142,22 @@ let test_cyclomatic_php _file =
   let (ast2,_stat) = Parse_php.parse file in
   let ast = Parse_php.program_of_program2 ast2 in
   ast +> List.iter (function
-  | Ast_php.FuncDef def ->
-      let name = Ast_php.str_of_ident def.Ast_php.f_name in
+  | Cst_php.FuncDef def ->
+      let name = Cst_php.str_of_ident def.Cst_php.f_name in
       let n = Cyclomatic_php.cyclomatic_complexity_func ~verbose:true def in
       pr2 (spf "cyclomatic complexity for function %s is %d" name n);
-  | Ast_php.ClassDef def ->
-      let class_stmts = Ast_php.unbrace def.Ast_php.c_body in
-      let class_name = Ast_php.str_of_ident def.Ast_php.c_name in
+  | Cst_php.ClassDef def ->
+      let class_stmts = Cst_php.unbrace def.Cst_php.c_body in
+      let class_name = Cst_php.str_of_ident def.Cst_php.c_name in
       class_stmts +> List.iter (function
-      | Ast_php.Method def ->
-          let name = Ast_php.str_of_ident def.Ast_php.f_name in
+      | Cst_php.Method def ->
+          let name = Cst_php.str_of_ident def.Cst_php.f_name in
           let n = Cyclomatic_php.cyclomatic_complexity_func ~verbose:true def in
           pr2 (spf "cyclomatic complexity for method %s::%s is %d"
                   class_name name n);
-      | Ast_php.ClassConstants _ | Ast_php.ClassVariables _ ->
+      | Cst_php.ClassConstants _ | Cst_php.ClassVariables _ ->
           ()
-      | Ast_php.XhpDecl _ | Ast_php.UseTrait _ ->
+      | Cst_php.XhpDecl _ | Cst_php.UseTrait _ ->
           ()
       )
   | _ -> ()
@@ -278,8 +278,10 @@ let test_stat_php xs =
 
 let test_unsugar_php file = 
   let ast = Parse_php.parse_program file in
-  let ast = Unsugar_php.unsugar_self_parent_program ast in
-  let s = Export_ast_php.ml_pattern_string_of_program ast in
+  let _ast = Unsugar_php.unsugar_self_parent_program ast in
+  let s = raise Todo
+   (*  Export_ast_php.ml_pattern_string_of_program ast  *)
+  in
   pr2 s
 
 (*****************************************************************************)

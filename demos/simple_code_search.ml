@@ -1,7 +1,7 @@
 open Common
 
-open Ast_php
-module Ast = Ast_php
+open Cst_php
+module Ast = Cst_php
 module V = Visitor_php
 module PI = Parse_info
 

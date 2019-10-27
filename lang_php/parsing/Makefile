@@ -7,8 +7,7 @@ OPAMPKG=pfff-lang_php
 
 SRC= flag_parsing_php.ml \
      scope_php.ml \
-     ast_php.ml meta_ast_php.ml \
-     export_ast_php.ml \
+     cst_php.ml meta_cst_php.ml \
      visitor_php.ml map_php.ml \
      lib_parsing_php.ml \
      parser_php_mly_helper.ml \

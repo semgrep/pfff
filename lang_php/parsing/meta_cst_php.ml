@@ -2,7 +2,7 @@
 
 open Common
 
-open Ast_php
+open Cst_php
 
 let vof_string = Ocaml.vof_string
 let vof_list = Ocaml.vof_list
@@ -77,12 +77,12 @@ and vof_class_name_or_selfparent =
   | Parent v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Parent", [ v1 ]))
   | LateStatic v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("LateStatic", [ v1 ]))
 and vof_type_args v = vof_single_angle (vof_comma_list vof_hint_type) v
-and (vof_fully_qualified_class_name: Ast_php.class_name -> Ocaml.v) = fun
+and (vof_fully_qualified_class_name: Cst_php.class_name -> Ocaml.v) = fun
  v -> vof_hint_type v
 
-and (vof_type_params: Ast_php.type_params -> Ocaml.v) = fun v ->
+and (vof_type_params: Cst_php.type_params -> Ocaml.v) = fun v ->
   vof_single_angle (vof_comma_list vof_type_param) v
-and (vof_type_param: Ast_php.type_param -> Ocaml.v) =
+and (vof_type_param: Cst_php.type_param -> Ocaml.v) =
   function
   | TParam v1 -> let v1 = vof_ident v1 in Ocaml.VSum (("TParam", [ v1 ]))
   | TParamConstraint ((v1, v2, v3)) ->

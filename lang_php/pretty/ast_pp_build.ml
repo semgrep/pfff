@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Ast_php
+open Cst_php
 
 module A = Ast_pp
 module PI = Parse_info
@@ -283,7 +283,7 @@ let rec toplevel env st acc =
 
 and (name: env -> name -> string) = fun env -> function
    | XName [QI fqcn] -> ident env fqcn
-   | XName qu -> raise (TodoNamespace (Ast_php.info_of_qualified_ident qu))
+   | XName qu -> raise (TodoNamespace (Cst_php.info_of_qualified_ident qu))
    | Self _ -> "self"
    | Parent _ -> "parent"
    | LateStatic _ -> "static"

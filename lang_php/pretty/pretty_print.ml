@@ -78,44 +78,44 @@ type assoc =
   | NonAssoc
 
 let rec binaryOp = function
-  | Ast_php.Arith aop    -> arithOp aop
-  | Ast_php.Logical lop  -> logicalOp lop
-  | Ast_php.BinaryConcat -> 17 , Left
-  | Ast_php.Pipe         -> -1, Left
-  | Ast_php.CombinedComparison -> 14, NonAssoc
+  | Cst_php.Arith aop    -> arithOp aop
+  | Cst_php.Logical lop  -> logicalOp lop
+  | Cst_php.BinaryConcat -> 17 , Left
+  | Cst_php.Pipe         -> -1, Left
+  | Cst_php.CombinedComparison -> 14, NonAssoc
 
 and arithOp = function
-  | Ast_php.Plus
-  | Ast_php.Minus        -> 17 , Left
-  | Ast_php.Mul
-  | Ast_php.Div
-  | Ast_php.Mod          -> 18 , Left
-  | Ast_php.DecLeft
-  | Ast_php.DecRight     -> 16 , Left
-  | Ast_php.And          -> 13 , Left
-  | Ast_php.Or           -> 11 , Left
-  | Ast_php.Xor          -> 12 , Left
+  | Cst_php.Plus
+  | Cst_php.Minus        -> 17 , Left
+  | Cst_php.Mul
+  | Cst_php.Div
+  | Cst_php.Mod          -> 18 , Left
+  | Cst_php.DecLeft
+  | Cst_php.DecRight     -> 16 , Left
+  | Cst_php.And          -> 13 , Left
+  | Cst_php.Or           -> 11 , Left
+  | Cst_php.Xor          -> 12 , Left
 
 and logicalOp = function
-  | Ast_php.Inf
-  | Ast_php.Sup
-  | Ast_php.InfEq
-  | Ast_php.SupEq        -> 15 , NonAssoc
-  | Ast_php.Eq
-  | Ast_php.NotEq
-  | Ast_php.Identical
-  | Ast_php.NotIdentical -> 14 , NonAssoc
-  | Ast_php.AndLog       -> 5  , Left
-  | Ast_php.OrLog        -> 3  , Left
-  | Ast_php.XorLog       -> 4  , Left
-  | Ast_php.AndBool      -> 10 , Left
-  | Ast_php.OrBool       -> 9  , Left
+  | Cst_php.Inf
+  | Cst_php.Sup
+  | Cst_php.InfEq
+  | Cst_php.SupEq        -> 15 , NonAssoc
+  | Cst_php.Eq
+  | Cst_php.NotEq
+  | Cst_php.Identical
+  | Cst_php.NotIdentical -> 14 , NonAssoc
+  | Cst_php.AndLog       -> 5  , Left
+  | Cst_php.OrLog        -> 3  , Left
+  | Cst_php.XorLog       -> 4  , Left
+  | Cst_php.AndBool      -> 10 , Left
+  | Cst_php.OrBool       -> 9  , Left
 
 and unaryOp = function
-  | Ast_php.UnPlus       -> 21 , Right
-  | Ast_php.UnMinus      -> 21 , Right
-  | Ast_php.UnBang       -> 19 , Right
-  | Ast_php.UnTilde      -> 21 , Right
+  | Cst_php.UnPlus       -> 21 , Right
+  | Cst_php.UnMinus      -> 21 , Right
+  | Cst_php.UnBang       -> 19 , Right
+  | Cst_php.UnTilde      -> 21 , Right
 
 let expr_priority = function
   | A.Int _ | A.Double _ | A.String _ | A.Id _
@@ -142,34 +142,34 @@ let expr_priority = function
 (*****************************************************************************)
 
 let rec binaryOp = function
-  | Ast_php.Arith aop    -> arithOp aop
-  | Ast_php.Logical lop  -> logicalOp lop
-  | Ast_php.BinaryConcat -> "."
-  | Ast_php.Pipe         -> "|>"
-  | Ast_php.CombinedComparison -> "<=>"
+  | Cst_php.Arith aop    -> arithOp aop
+  | Cst_php.Logical lop  -> logicalOp lop
+  | Cst_php.BinaryConcat -> "."
+  | Cst_php.Pipe         -> "|>"
+  | Cst_php.CombinedComparison -> "<=>"
 
 and arithOp = function
-  | Ast_php.Plus         -> "+"  | Ast_php.Minus        -> "-"
-  | Ast_php.Mul          -> "*"  | Ast_php.Div          -> "/"
-  | Ast_php.Mod          -> "%"
-  | Ast_php.DecLeft      -> "<<" | Ast_php.DecRight     -> ">>"
-  | Ast_php.And          -> "&"  | Ast_php.Or           -> "|"
-  | Ast_php.Xor          -> "^"
+  | Cst_php.Plus         -> "+"  | Cst_php.Minus        -> "-"
+  | Cst_php.Mul          -> "*"  | Cst_php.Div          -> "/"
+  | Cst_php.Mod          -> "%"
+  | Cst_php.DecLeft      -> "<<" | Cst_php.DecRight     -> ">>"
+  | Cst_php.And          -> "&"  | Cst_php.Or           -> "|"
+  | Cst_php.Xor          -> "^"
 
 and logicalOp = function
-  | Ast_php.Inf          -> "<"   | Ast_php.Sup          -> ">"
-  | Ast_php.InfEq        -> "<="  | Ast_php.SupEq        -> ">="
-  | Ast_php.Eq           -> "=="  | Ast_php.NotEq        -> "!="
-  | Ast_php.Identical    -> "===" | Ast_php.NotIdentical -> "!=="
-  | Ast_php.AndLog       -> "AND" | Ast_php.OrLog        -> "OR"
-  | Ast_php.AndBool      -> "&&"  | Ast_php.OrBool       -> "||"
-  | Ast_php.XorLog       -> "XOR"
+  | Cst_php.Inf          -> "<"   | Cst_php.Sup          -> ">"
+  | Cst_php.InfEq        -> "<="  | Cst_php.SupEq        -> ">="
+  | Cst_php.Eq           -> "=="  | Cst_php.NotEq        -> "!="
+  | Cst_php.Identical    -> "===" | Cst_php.NotIdentical -> "!=="
+  | Cst_php.AndLog       -> "AND" | Cst_php.OrLog        -> "OR"
+  | Cst_php.AndBool      -> "&&"  | Cst_php.OrBool       -> "||"
+  | Cst_php.XorLog       -> "XOR"
 
 let unaryOp = function
-  | Ast_php.UnPlus       -> ""
-  | Ast_php.UnMinus      -> "-"
-  | Ast_php.UnBang       -> "!"
-  | Ast_php.UnTilde      -> "~"
+  | Cst_php.UnPlus       -> ""
+  | Cst_php.UnMinus      -> "-"
+  | Cst_php.UnBang       -> "!"
+  | Cst_php.UnTilde      -> "~"
 
 
 let visibility _env = function
@@ -197,12 +197,12 @@ let rec hint_type env = function
   | A.HintVariadic (Some hint) -> Printf.sprintf "%s" (hint_type env hint)
 
 let ptype = function
-  | Ast_php.BoolTy   -> "bool"
-  | Ast_php.IntTy    -> "int"
-  | Ast_php.DoubleTy -> "double"
-  | Ast_php.StringTy -> "string"
-  | Ast_php.ArrayTy  -> "array"
-  | Ast_php.ObjectTy -> "object"
+  | Cst_php.BoolTy   -> "bool"
+  | Cst_php.IntTy    -> "int"
+  | Cst_php.DoubleTy -> "double"
+  | Cst_php.StringTy -> "string"
+  | Cst_php.ArrayTy  -> "array"
+  | Cst_php.ObjectTy -> "object"
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -532,7 +532,7 @@ and expr_ env = function
       assignOp env bop;
       Pp.print env " ";
       expr env e2
-  | Binop (Ast_php.BinaryConcat, e1, e2) ->
+  | Binop (Cst_php.BinaryConcat, e1, e2) ->
       Pp.nestc env (fun env ->
       Pp.choice_left env (
         fun env ->
@@ -699,8 +699,8 @@ and expr_ env = function
 
 
 and fixop env = function
-  | Ast_php.Inc -> Pp.print env "++"
-  | Ast_php.Dec -> Pp.print env "--"
+  | Cst_php.Inc -> Pp.print env "++"
+  | Cst_php.Dec -> Pp.print env "--"
 
 and array_value pad env = function
   | Aval e ->

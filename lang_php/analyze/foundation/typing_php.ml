@@ -104,8 +104,8 @@ exception UnknownEntity of string
 (* stuff that is used by chiara's code, to remove. I think
  * The AEnv stuff should be removed too.
  *)
-let pi = Some (Ast_php.fakeInfo "todo")
-let pi_loc = Ast_php.fakeInfo "todo"
+let pi = Some (Cst_php.fakeInfo "todo")
+let pi_loc = Cst_php.fakeInfo "todo"
 
 (*****************************************************************************)
 (* Preparing work *)
@@ -676,40 +676,40 @@ and array_declaration env id pi = function
       t
 
 and ptype _env = function
-  | Ast_php.BoolTy -> bool
-  | Ast_php.IntTy -> int
-  | Ast_php.DoubleTy -> float
-  | Ast_php.StringTy -> string
-  | Ast_php.ArrayTy -> Tsum [Trecord SMap.empty]
-  | Ast_php.ObjectTy -> Tsum [Tobject SMap.empty]
+  | Cst_php.BoolTy -> bool
+  | Cst_php.IntTy -> int
+  | Cst_php.DoubleTy -> float
+  | Cst_php.StringTy -> string
+  | Cst_php.ArrayTy -> Tsum [Trecord SMap.empty]
+  | Cst_php.ObjectTy -> Tsum [Tobject SMap.empty]
 
 and binaryOp env t1 t2 = function
-  | Ast_php.Arith _ ->
+  | Cst_php.Arith _ ->
       Unify.unify env t1 t2
-  | Ast_php.Logical lop ->
+  | Cst_php.Logical lop ->
       logicalOp env t1 t2 lop;
       bool
-  | Ast_php.BinaryConcat ->
+  | Cst_php.BinaryConcat ->
       Unify.unify env t1 t2
-  | Ast_php.Pipe ->
+  | Cst_php.Pipe ->
      failwith "Not supported"
-  | Ast_php.CombinedComparison ->
+  | Cst_php.CombinedComparison ->
       Unify.unify env t1 t2 |> ignore;
       int
 
 and logicalOp env t1 t2 = function
-  | Ast_php.Inf | Ast_php.Sup | Ast_php.InfEq | Ast_php.SupEq
-  | Ast_php.Eq | Ast_php.NotEq
-  | Ast_php.Identical | Ast_php.NotIdentical ->
+  | Cst_php.Inf | Cst_php.Sup | Cst_php.InfEq | Cst_php.SupEq
+  | Cst_php.Eq | Cst_php.NotEq
+  | Cst_php.Identical | Cst_php.NotIdentical ->
       ignore (Unify.unify env t1 t2)
-  | Ast_php.AndLog | Ast_php.OrLog | Ast_php.XorLog
-  | Ast_php.AndBool | Ast_php.OrBool ->
+  | Cst_php.AndLog | Cst_php.OrLog | Cst_php.XorLog
+  | Cst_php.AndBool | Cst_php.OrBool ->
       (* ?? why nothing there? *)
       ()
 
 and unaryOp = function
-  | Ast_php.UnPlus | Ast_php.UnMinus | Ast_php.UnTilde -> int
-  | Ast_php.UnBang -> bool
+  | Cst_php.UnPlus | Cst_php.UnMinus | Cst_php.UnTilde -> int
+  | Cst_php.UnBang -> bool
 
 and xhp env = function
   | XhpText _ -> ()

@@ -15,7 +15,7 @@
 open Common2
 open Common
 
-open Ast_php
+open Cst_php
 
 open Coverage_code
 
@@ -101,7 +101,7 @@ let get_all_calls ?(is_directive_to_filter= (fun _ -> false)) =
           k x;
 
       | Call (Id callname, (_, _args, rp)) ->
-          let str = Ast_php.str_of_name callname in
+          let str = Cst_php.str_of_name callname in
           
           (* filter the require_module stuff that already skip
            * when generating the file coverage data
@@ -115,7 +115,7 @@ let get_all_calls ?(is_directive_to_filter= (fun _ -> false)) =
       | Call (ClassGet(_var, _t1, Id methname), (_lp, _args, rp))
       | Call (ObjGet(_var, _t1, Id methname), (_lp, _args, rp)) 
         ->
-          let str = Ast_php.str_of_name methname in
+          let str = Cst_php.str_of_name methname in
           Common.push (Some str, rp) aref;
           k x
 

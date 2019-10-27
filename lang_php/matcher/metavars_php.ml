@@ -14,7 +14,7 @@
  *)
 open Common
 
-module Ast = Ast_php
+module Ast = Cst_php
 module V = Visitor_php
 
 (*****************************************************************************)
@@ -32,7 +32,7 @@ module V = Visitor_php
  *)
 type mvar = string 
 
-type metavars_binding = (mvar, Ast_php.any) Common.assoc
+type metavars_binding = (mvar, Cst_php.any) Common.assoc
 
 (* bugfix: don't forget \\b, otherwise a string like FBredirect would
  * match such regexp (the starting F) even if it's not a metavar at all.

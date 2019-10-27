@@ -2,7 +2,7 @@
 open Common
 
 module Flag = Flag_parsing
-module Ast = Ast_php
+module Ast = Cst_php
 
 (*****************************************************************************)
 (* Lexing/Parsing *)
@@ -101,9 +101,12 @@ let test_json_fast_php file =
 (*e: test_json_php *)
 
 let test_dump_php file =
-  let ast = Parse_php.parse_program file in
+  let _ast = Parse_php.parse_program file in
+  raise Todo
+(*
   let s = Export_ast_php.ml_pattern_string_of_program ast in
   pr s
+*)
 
 (*****************************************************************************)
 (* Misc *)
@@ -120,7 +123,7 @@ let test_visit_php file =
 
     Visitor_php.kexpr = (fun (k, _) e -> 
       match e with
-      | Ast_php.Sc _ ->
+      | Cst_php.Sc _ ->
           pr2 "scalar";
           k e
       | _ -> k e

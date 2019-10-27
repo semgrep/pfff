@@ -281,7 +281,7 @@ type transformation = {
   (* Works by side effect on the tokens in the AST, see the transfo field.
    * It returns a boolean indicating whether any transformation was done.
    *)
-  trans_func: Ast_php.program -> bool;
+  trans_func: Cst_php.program -> bool;
   (* optimisation; if a file does not contain certain keywords we don't
    * even have to parse it
    *)
@@ -360,7 +360,7 @@ let apply_refactoring refactoring file =
 (* Extra actions *)
 (*****************************************************************************)
 
-open Ast_php
+open Cst_php
 module V = Visitor_php
 
 (* -------------------------------------------------------------------------*)

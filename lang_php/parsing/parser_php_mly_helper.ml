@@ -1,7 +1,7 @@
 (*s: parser_php_mly_helper.ml *)
 open Common
 
-open Ast_php
+open Cst_php
 
 (*****************************************************************************)
 (* Parse helpers functions *)
@@ -168,7 +168,7 @@ let mk_e e = e
 let mk_var (s, tok) = 
   match s with
   | "this" -> This tok
-  | _ -> IdVar (DName(s, tok), Ast_php.noScope())
+  | _ -> IdVar (DName(s, tok), Cst_php.noScope())
 
 let rec validate_parameter_list = function
   | [] -> ()

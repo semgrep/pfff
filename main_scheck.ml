@@ -532,12 +532,12 @@ let dflow file_or_dir =
     (try
        let ast = Parse_php.parse_program file in
        ast +> List.iter (function
-       | Ast_php.FuncDef def ->
+       | Cst_php.FuncDef def ->
          dflow_of_func_def def
-       | Ast_php.ClassDef def ->
-         Ast_php.unbrace def.Ast_php.c_body +> List.iter
+       | Cst_php.ClassDef def ->
+         Cst_php.unbrace def.Cst_php.c_body +> List.iter
            (function
-           | Ast_php.Method def -> dflow_of_func_def def
+           | Cst_php.Method def -> dflow_of_func_def def
            | _ -> ())
        | _ -> ())
      with _ -> pr2 (spf "fail: %s" file)

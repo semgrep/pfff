@@ -8,9 +8,9 @@ type dnameS =
   | DNameS of string (* without the dollar *)
 
 
-val name_to_nameS_wrap: Ast_php.name -> nameS Ast_php.wrap
+val name_to_nameS_wrap: Cst_php.name -> nameS Cst_php.wrap
 
-val dnameS_of_dname: Ast_php.dname -> dnameS
+val dnameS_of_dname: Cst_php.dname -> dnameS
 
 val nameS: nameS -> string
 val dnameS: dnameS -> string

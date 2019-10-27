@@ -1,5 +1,5 @@
 (*s: visitor_php.mli *)
-open Ast_php
+open Cst_php
 
 (*s: type visitor_in *)
 (* the hooks *)

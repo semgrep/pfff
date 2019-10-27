@@ -14,8 +14,8 @@
  *)
 open Common
 
-open Ast_php
-module Ast = Ast_php
+open Cst_php
+module Ast = Cst_php
 module M = Map_php
 
 (*****************************************************************************)
@@ -130,7 +130,7 @@ let unsugar_self_parent_any2 any =
         | Some x -> 
             failwith ("Warning: unknown extends clause\n" ^
                        (Ocaml.string_of_v 
-                          (Meta_ast_php.vof_any (Hint2 (snd x)))))
+                          (Meta_cst_php.vof_any (Hint2 (snd x)))))
       in
 
       match def.c_type with

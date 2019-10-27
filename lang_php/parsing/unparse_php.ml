@@ -17,7 +17,7 @@
 (*e: Facebook copyright *)
 open Common 
 
-open Ast_php 
+open Cst_php 
 module V = Visitor_php
 module TH = Token_helpers_php
 

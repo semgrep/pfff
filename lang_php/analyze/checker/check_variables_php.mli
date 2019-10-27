@@ -10,4 +10,4 @@
  * to remove false positives because of variables passed by reference.
  *)
 val check_and_annotate_program: 
-  Entity_php.entity_finder option -> Ast_php.program -> unit
+  Entity_php.entity_finder option -> Cst_php.program -> unit

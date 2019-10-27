@@ -1,6 +1,6 @@
 
 (* right now only Expr and Stmt are supported *)
-type pattern = Ast_php.any
+type pattern = Cst_php.any
 
 val parse: 
  Common.filename -> pattern

@@ -18,7 +18,7 @@
 
 open Common 
 
-open Ast_php
+open Cst_php
 
 (*****************************************************************************)
 (* Prelude *)
@@ -38,7 +38,7 @@ type node = {
    *)
   n: node_kind;
   (* for error report *)
-  i: Ast_php.info option;
+  i: Cst_php.info option;
 } 
 (*e: type node *)
 (*s: type node_kind *)
@@ -77,7 +77,7 @@ type node = {
       | Case
       | Default
   (*x: node_kind constructors *)
-      | Return of Ast_php.expr option
+      | Return of Cst_php.expr option
 
   (*x: node_kind constructors *)
       | Break
@@ -98,7 +98,7 @@ type node = {
   (*e: node_kind constructors *)
   (*s: node_kind aux types *)
      and simple_stmt = 
-         | ExprStmt of Ast_php.expr * use_status
+         | ExprStmt of Cst_php.expr * use_status
          | TodoSimpleStmt
          (* TODO? expr includes Exit, Eval, Include, etc which
           * also have an influence on the control flow ...

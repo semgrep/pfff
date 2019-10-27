@@ -21,8 +21,8 @@ val comment_style_new_line: comment -> string
 
 val index_comment: comment -> (int * string) list
 
-val comments_of_file: Common.filename -> Ast_php.info list
-val comment_before: Ast_php.tok -> Parser_php.token list -> Ast_php.tok option
-val comment_after: Ast_php.tok -> Parser_php.token list -> Ast_php.tok option
+val comments_of_file: Common.filename -> Cst_php.info list
+val comment_before: Cst_php.tok -> Parser_php.token list -> Cst_php.tok option
+val comment_after: Cst_php.tok -> Parser_php.token list -> Cst_php.tok option
 
 (*e: comment_php.mli *)

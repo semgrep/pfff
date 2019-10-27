@@ -42,7 +42,7 @@ module Deps = struct
 
   and stmt acc = function
     | NamespaceDef (qu,_) | NamespaceUse (qu, _) ->
-      raise (Ast_php.TodoNamespace (tok_of_name qu))
+      raise (Cst_php.TodoNamespace (tok_of_name qu))
     (* adding names of entities *)
     | ClassDef c -> SSet.add (unwrap c.c_name) acc
     | FuncDef f -> SSet.add (unwrap f.f_name) acc
@@ -92,7 +92,7 @@ module Deps = struct
 
   and expr acc = function
     | Id [(s, _)] -> SSet.add s acc
-    | Id name ->       raise (Ast_php.TodoNamespace (tok_of_name name))
+    | Id name ->       raise (Cst_php.TodoNamespace (tok_of_name name))
     | Var _ -> acc
 
     | Int _ | Double _ | String _ -> acc
@@ -120,7 +120,7 @@ module Deps = struct
       let acc = SSet.add n acc in
       array_valuel acc mel
     | Collection (name, _mel) ->
-      raise (Ast_php.TodoNamespace (tok_of_name name))
+      raise (Cst_php.TodoNamespace (tok_of_name name))
     | List el -> exprl acc el
     | New (e, el) -> exprl (expr acc e) el
     | CondExpr (e1, e2, e3) ->
@@ -171,7 +171,7 @@ module Deps = struct
   and hint_type_ acc = function
     (* not sure a type hints counts as a dependency *)
     | Hint [(s, _)] -> SSet.add s acc
-    | Hint name -> raise (Ast_php.TodoNamespace (tok_of_name name))
+    | Hint name -> raise (Cst_php.TodoNamespace (tok_of_name name))
 
     | HintArray -> acc
     | HintQuestion t -> hint_type_ acc t

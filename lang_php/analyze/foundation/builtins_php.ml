@@ -636,7 +636,7 @@ let generate_php_stdlib ~src (* ~phpmanual_dir *) ~dest =
         );
         let ast = Parse_php.parse_program target in
         (match ast with
-        | [Ast_php.FinalDef _] ->
+        | [Cst_php.FinalDef _] ->
           Common.command2 (spf "rm -f %s" target);
         | _ -> ()
         );

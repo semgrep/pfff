@@ -14,7 +14,7 @@
  *)
 open Common
 
-module Ast = Ast_php
+module Ast = Cst_php
 module IR = Include_require_php
 module E = Error_php
 

@@ -13,7 +13,7 @@
  * license.txt for more details.
  *)
 
-open Ast_php
+open Cst_php
 module V = Visitor_php
 module E = Error_php
 

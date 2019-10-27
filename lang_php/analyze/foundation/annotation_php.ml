@@ -104,7 +104,7 @@ type annotation =
    | MethodExternal of string (* class *) * string
  (* with tarzan *)
 
-exception AnnotationPb of string * Ast_php.info
+exception AnnotationPb of string * Cst_php.info
 
 (*****************************************************************************)
 (* string -> annotation *)

@@ -116,7 +116,7 @@
  * Right now with None the marshalled AST for www is 190MB instead of
  * 380MB.
  *)
-type 'a wrap = 'a * Ast_php.tok option
+type 'a wrap = 'a * Cst_php.tok option
  (* with tarzan *)
 
 type ident = string wrap
@@ -242,7 +242,7 @@ and expr =
   (* pad: could perhaps be at the statement level? The left expr
    * must be an lvalue (e.g. a variable).
    *)
-  | Assign of Ast_php.binaryOp option * expr * expr
+  | Assign of Cst_php.binaryOp option * expr * expr
   (* really a destructuring tuple let; always used as part of an Assign or
    * in foreach_pattern.
    *)
@@ -263,10 +263,10 @@ and expr =
   | Call of expr * expr list
 
   (* todo? transform into Call (builtin ...) ? *)
-  | Infix of Ast_php.fixOp * expr
-  | Postfix of Ast_php.fixOp * expr
-  | Binop of Ast_php.binaryOp * expr * expr
-  | Unop of Ast_php.unaryOp * expr
+  | Infix of Cst_php.fixOp * expr
+  | Postfix of Cst_php.fixOp * expr
+  | Binop of Cst_php.binaryOp * expr * expr
+  | Unop of Cst_php.unaryOp * expr
   | Guil of expr list
 
   | ConsArray of array_value list
@@ -274,7 +274,7 @@ and expr =
   | Xhp of xml
 
   | CondExpr of expr * expr * expr
-  | Cast of Ast_php.ptype * expr
+  | Cast of Cst_php.ptype * expr
 
   (* yeah! PHP 5.3 is becoming a real language *)
   | Lambda of func_def
@@ -360,7 +360,7 @@ and func_def = {
    }
 
   (* for methods, and below for fields too *)
-  and modifier = Ast_php.modifier
+  and modifier = Cst_php.modifier
 
   (* normally either an Id or Call with only static arguments *)
   and attribute = expr
@@ -439,7 +439,7 @@ type any =
 (*****************************************************************************)
 
 let unwrap x = fst x
-let wrap s = s, Some (Ast_php.fakeInfo s)
+let wrap s = s, Some (Cst_php.fakeInfo s)
 
 (* builtin() is used for:
  *  - 'eval', and implicitly generated eval/reflection like functions:
@@ -468,8 +468,8 @@ let special x = "__special__" ^ x
 
 (* AST helpers *)
 let has_modifier cv = List.length cv.cv_modifiers > 0
-let is_static modifiers  = List.mem Ast_php.Static  modifiers
-let is_private modifiers = List.mem Ast_php.Private modifiers
+let is_static modifiers  = List.mem Cst_php.Static  modifiers
+let is_private modifiers = List.mem Cst_php.Private modifiers
 
 let string_of_xhp_tag xs = ":" ^ Common.join ":" xs
 
@@ -482,7 +482,7 @@ let tok_of_ident (s, x) =
 let str_of_name = function
   | [id] -> str_of_ident id
   | [] -> raise Common.Impossible
-  | x::_xs -> raise (Ast_php.TodoNamespace (tok_of_ident x))
+  | x::_xs -> raise (Cst_php.TodoNamespace (tok_of_ident x))
 
 let tok_of_name = function
   | [id] -> tok_of_ident id
@@ -503,5 +503,5 @@ let name_of_class_name x =
   match x with
   | Hint ([name]) -> name
   | Hint [] -> raise Common.Impossible
-  | Hint name -> raise (Ast_php.TodoNamespace (tok_of_name name))
+  | Hint name -> raise (Cst_php.TodoNamespace (tok_of_name name))
   | _ -> raise Common.Impossible

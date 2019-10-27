@@ -1,5 +1,5 @@
 (*s: map_php.mli *)
-open Ast_php
+open Cst_php
 (* hooks *)
 type visitor_in = {
   kexpr: (expr  -> expr) * visitor_out -> expr  -> expr;

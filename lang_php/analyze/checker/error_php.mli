@@ -83,8 +83,8 @@ exception Error of error
 val _errors: error list ref
 
 (* modifies _errors by side effect *)
-val fatal: Ast_php.info -> error_kind -> unit
-val warning: Ast_php.info -> error_kind -> unit
+val fatal: Cst_php.info -> error_kind -> unit
+val warning: Cst_php.info -> error_kind -> unit
 
 val report_error : error -> unit
 val report_all_errors: unit -> unit
@@ -105,7 +105,7 @@ val show_10_most_recurring_unused_variable_names: unit -> unit
  *)
 val find_entity_and_warn: 
   Entity_php.entity_finder ->
-  (Entity_php.id_kind * Ast_php.name) ->
+  (Entity_php.id_kind * Cst_php.name) ->
    (* callback, will be passed the found entity *)
-   (Ast_php.entity -> unit) ->
+   (Cst_php.entity -> unit) ->
    unit

@@ -14,8 +14,8 @@
  *)
 open Common
 
-open Ast_php
-module Ast = Ast_php
+open Cst_php
+module Ast = Cst_php
 module V = Visitor_php
 module E = Error_php
 module Ent = Entity_code
@@ -246,7 +246,7 @@ let visit_and_check  find_entity prog =
       | New (_tok, ((Id (class_name))), _args) ->
           (* todo: use lookup_method *)
           E.find_entity_and_warn find_entity (Ent.Class, class_name)
-          (function Ast_php.ClassE _def ->
+          (function Cst_php.ClassE _def ->
             (*
               Check_functions_php.check_args_vs_params
               (callname,   args +> Ast.unparen +> Ast.uncomma)

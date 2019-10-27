@@ -14,8 +14,8 @@
  *)
 open Common
 
-open Ast_php
-module Ast = Ast_php
+open Cst_php
+module Ast = Cst_php
 module V = Visitor_php
 module PI = Parse_info
 module R = Refactoring_code
@@ -47,7 +47,7 @@ let last_token_classes classnames =
     (* we do allow trailing commas in interface list? *)
     raise Impossible
   | Left classname ->
-    let any = Ast_php.Hint2 classname in
+    let any = Cst_php.Hint2 classname in
     let toks = Lib_parsing_php.ii_of_any any in
     Common2.list_last toks
       
