@@ -85,6 +85,7 @@ BASICLIBS=commons/lib.cma \
  h_program-lang/lib.cma \
  matcher/lib.cma \
  lang_ml/parsing/lib.cma \
+  lang_ml/analyze/lib.cma \
  lang_skip/parsing/lib.cma \
  lang_nw/parsing/lib.cma \
  lang_php/parsing/lib.cma \
@@ -130,7 +131,6 @@ LIBS= commons/lib.cma \
     graph_code/lib.cma \
     matcher/lib.cma \
     lang_ml/parsing/lib.cma \
-     lang_ml/analyze/visual/lib.cma \
      lang_ml/analyze/lib.cma \
     lang_skip/parsing/lib.cma \
      lang_skip/analyze/lib.cma \
@@ -459,7 +459,7 @@ INSTALL_SUBDIRS= \
   h_program-lang    matcher \
   h_version-control h_files-format h_visualization \
   graph_code \
-  lang_ml/parsing  lang_ml/analyze/visual \
+  lang_ml/parsing  lang_ml/analyze \
   lang_cpp/parsing lang_cpp/analyze \
   lang_nw/parsing  lang_nw/analyze\
   lang_js/parsing  lang_js/analyze\
