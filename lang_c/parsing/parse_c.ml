@@ -36,7 +36,7 @@ let parse file =
   let ast = ast2 +> List.map fst in
   let toks = ast2 +> List.map snd +> List.flatten in
   let ast_opt, stat = 
-    try Some (Ast_c_simple_build.program ast), stat
+    try Some (Ast_c_build.program ast), stat
     with exn ->
       pr2 (spf "PB: Ast_c_build, on %s (exn = %s)" file (Common.exn_to_s exn));
       (*None, { stat with Stat.bad = stat.Stat.bad + stat.Stat.correct } *)
@@ -50,5 +50,5 @@ let parse_program file =
 
 let any_of_string str =
   let any = Parse_cpp.any_of_string Flag_parsing_cpp.C str in
-  Ast_c_simple_build.any any
+  Ast_c_build.any any
 
