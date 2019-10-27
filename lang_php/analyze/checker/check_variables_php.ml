@@ -14,8 +14,8 @@
  *)
 open Common
 
-open Ast_php_simple
-module A = Ast_php_simple
+open Ast_php
+module A = Ast_php
 module E = Error_php
 module S = Scope_code
 module Ent = Entity_code
@@ -135,7 +135,7 @@ module PI = Parse_info
  *    related to those weird scoping rules. So I've put all variable scope
  *    related stuff in this file and removed the duplication in scoping_php.ml.
  *  - I was using ast_php.ml and a visitor approach but then I rewrote it
- *    to use ast_php_simple and an "env" approach because the code was
+ *    to use ast_php and an "env" approach because the code was
  *    getting ugly and was containing false positives that were hard to fix.
  *    As a side effect of the refactoring, some bugs disappeared (nested
  *    assigns in if, list() not at the toplevel of an expression, undefined
@@ -214,7 +214,7 @@ let s_tok_of_ident name =
 
 (* to help debug *)
 let str_of_any any =
-  let v = Meta_ast_php_simple.vof_any any in
+  let v = Meta_ast_php.vof_any any in
   Ocaml.string_of_v v
 
 (*****************************************************************************)
@@ -228,7 +228,7 @@ let str_of_any any =
  * entity_finder in env.db.
  *
  * note that it currently returns an Cst_php.func_def, not
- * an Ast_php_simple.func_def because the database currently
+ * an Ast_php.func_def because the database currently
  * stores concrete ASTs, not simple ASTs.
  *)
 let funcdef_of_call_or_new_opt env e =
@@ -243,7 +243,7 @@ let funcdef_of_call_or_new_opt env e =
             | [Cst_php.FunctionE def] -> Some def
             (* normally those errors should be triggered in
              * check_functions_php.ml, but right now this file uses
-             * ast_php.ml and not ast_php_simple.ml, so there are some
+             * ast_php.ml and not ast_php.ml, so there are some
              * differences in the logic so we double check things here.
              *)
             | [] ->
@@ -670,7 +670,7 @@ and expr env e =
       exprl env [e1;e2]
 
   | List _xs ->
-      let tok = Meta_ast_php_simple.toks_of_any (Expr2 e) +> List.hd in
+      let tok = Meta_ast_php.toks_of_any (Expr2 e) +> List.hd in
       failwith (spf "list(...) should be used only in an Assign context at %s"
                   (PI.string_of_info tok))
   (* Arrow used to be allowed only in Array and Foreach context, but now
@@ -936,7 +936,7 @@ let check_and_annotate_program2 find_entity prog =
     scope_vars_used = Hashtbl.create 101;
   }
   in
-  let ast = Ast_php_simple_build.program_with_position_information prog in
+  let ast = Ast_php_build.program_with_position_information prog in
   program env ast;
 
   (* annotating the scope of Var *)

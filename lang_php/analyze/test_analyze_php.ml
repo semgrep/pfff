@@ -15,12 +15,12 @@ let test_parse_simple xs =
   fullxs +> List.iter (fun file ->
     try 
       let ast = Parse_php.parse_program file in
-      let _ast = Ast_php_simple_build.program ast in
+      let _ast = Ast_php_build.program ast in
       ()
     with exn ->
       (match exn with
-      | Ast_php_simple_build.TodoConstruct (_, tok)
-      | Ast_php_simple_build.ObsoleteConstruct tok
+      | Ast_php_build.TodoConstruct (_, tok)
+      | Ast_php_build.ObsoleteConstruct tok
         ->
         pr2 (Parse_info.error_message_info tok);
 
@@ -31,14 +31,14 @@ let test_parse_simple xs =
 let test_dump_simple file =
   try 
     let ast = Parse_php.parse_program file in
-    let ast = Ast_php_simple_build.program ast in
-    let v = Meta_ast_php_simple.vof_program ast in
+    let ast = Ast_php_build.program ast in
+    let v = Meta_ast_php.vof_program ast in
     let s = Ocaml.string_of_v v in
     pr s
   with exn ->
     (match exn with
-    | Ast_php_simple_build.TodoConstruct (_, tok)
-    | Ast_php_simple_build.ObsoleteConstruct tok
+    | Ast_php_build.TodoConstruct (_, tok)
+    | Ast_php_build.ObsoleteConstruct tok
       ->
         pr2 (Parse_info.error_message_info tok);
         raise exn
@@ -47,7 +47,7 @@ let test_dump_simple file =
 
 let test_pp_simple file =
   let cst = Parse_php.parse_program file in
-  let ast = Ast_php_simple_build.program cst in
+  let ast = Ast_php_build.program cst in
   let s = Pretty_print_php_simple.string_of_program ast in
   pr s
 
@@ -77,7 +77,7 @@ let test_scope_php file =
 (* bin/iphp *)
 let test_type_php file =
   let ast = 
-    Parse_php.parse_program file +> Ast_php_simple_build.program 
+    Parse_php.parse_program file +> Ast_php_build.program 
   in
   let env = { (Env_typing_php.make_env ()) with Env_typing_php.
     verbose = true;
@@ -174,7 +174,7 @@ module Interp = Abstract_interpreter_php.Interp (Tainting_fake_php.Taint)
 (* bin/aphp *)
 let test_abstract_interpreter file depth =
   let ast = 
-    Ast_php_simple_build.program (Parse_php.parse_program file) in
+    Ast_php_build.program (Parse_php.parse_program file) in
   let jujudb = 
     Database_juju_php.juju_db_of_files ~show_progress:false [file] in
   let db = 

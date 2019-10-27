@@ -16,7 +16,7 @@
 module SSet = Set.Make(String)
 module SMap = Map.Make(String)
 
-module Ast = Ast_php_simple
+module Ast = Ast_php
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -32,7 +32,7 @@ module Ast = Ast_php_simple
 (*****************************************************************************)
 
 module Deps = struct
-  open Ast_php_simple
+  open Ast_php
 
   let rec program acc stl =
     stmtl acc stl

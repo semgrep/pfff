@@ -24,7 +24,7 @@ module Interp: functor (Taint: Env_interpreter_php.TAINT) -> sig
    *)
   val program:
     Env_interpreter_php.env -> Env_interpreter_php.heap ->
-    Ast_php_simple.program ->
+    Ast_php.program ->
     Env_interpreter_php.heap
 end
 

@@ -1,7 +1,7 @@
 open Common
 open OUnit
 
-module Ast = Ast_php_simple
+module Ast = Ast_php
 module Env = Env_typing_php
 module Infer  = Typing_php
 module InferH = Typing_helpers_php
@@ -24,7 +24,7 @@ let get_signature file =
   let ast = 
     Parse_php.tmp_php_file_from_string file
     +> Parse_php.parse_program
-    +> Ast_php_simple_build.program 
+    +> Ast_php_build.program 
   in
   let env = { (Env_typing_php.make_env ()) with Env_typing_php.
     verbose = false;

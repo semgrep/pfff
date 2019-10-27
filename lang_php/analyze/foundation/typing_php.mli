@@ -14,13 +14,13 @@ val infer_using_topological_sort_dependencies_and_save_typingbin:
   Env_typing_php.env -> unit
 
 val stmtl:
-  Env_typing_php.env -> Ast_php_simple.program -> unit
+  Env_typing_php.env -> Ast_php.program -> unit
 (* used by unit testing *)
 val func_def:
-  Env_typing_php.env -> Ast_php_simple.func_def -> unit
+  Env_typing_php.env -> Ast_php.func_def -> unit
 val class_def:
-  Env_typing_php.env -> Ast_php_simple.class_def -> unit
+  Env_typing_php.env -> Ast_php.class_def -> unit
 
 (* preparing env for infer_using_topological_sort_dependencies *)
 val add_defs_code_database_and_update_dependencies: 
-  Env_typing_php.env -> Ast_php_simple.program -> unit
+  Env_typing_php.env -> Ast_php.program -> unit

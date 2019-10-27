@@ -159,7 +159,7 @@ let visit_f_body f_body current_class graph=
       match e with
       | XhpHtml(Xhp((xhp_tag, loc), xhp_attr_list, _, _, _))
       | XhpHtml(XhpSingleton((xhp_tag, loc), xhp_attr_list, _)) ->
-        let xhp_str = Ast_php_simple.string_of_xhp_tag xhp_tag in
+        let xhp_str = Ast_php.string_of_xhp_tag xhp_tag in
         let xhp_node = (xhp_str, Ent.Class) in
         if (G.has_node xhp_node graph)
         then

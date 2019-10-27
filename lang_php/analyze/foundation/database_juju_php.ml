@@ -14,8 +14,8 @@
  *)
 open Common
 
-open Ast_php_simple
-module A = Ast_php_simple
+open Ast_php
+module A = Ast_php
 module Env = Env_interpreter_php
 module SMap = Map.Make (String)
 
@@ -32,9 +32,9 @@ module SMap = Map.Make (String)
 (*****************************************************************************)
 
 type database = {
-  funs_juju    : Ast_php_simple.func_def Common2.cached SMap.t ref;
-  classes_juju : Ast_php_simple.class_def Common2.cached SMap.t ref;
-  constants_juju: Ast_php_simple.constant_def Common2.cached SMap.t ref;
+  funs_juju    : Ast_php.func_def Common2.cached SMap.t ref;
+  classes_juju : Ast_php.class_def Common2.cached SMap.t ref;
+  constants_juju: Ast_php.constant_def Common2.cached SMap.t ref;
 }
 
 (*****************************************************************************)
@@ -54,7 +54,7 @@ let juju_db_of_files ?(show_progress=false) xs =
     k();
     try
       let cst = Parse_php.parse_program file in		
-      let ast = Ast_php_simple_build.program cst in
+      let ast = Ast_php_build.program cst in
       List.iter (fun x ->
         (* print warning when duplicate class/func *)
         let add aref name c =

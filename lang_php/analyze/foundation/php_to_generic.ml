@@ -15,7 +15,7 @@
 open Common
 
 open Cst_php
-open Ast_php_simple
+open Ast_php
 module G = Ast_generic
 
 (*****************************************************************************)

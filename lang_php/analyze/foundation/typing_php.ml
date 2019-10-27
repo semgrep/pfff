@@ -14,8 +14,8 @@
  *)
 open Common
 
-open Ast_php_simple
-module A = Ast_php_simple
+open Ast_php
+module A = Ast_php
 
 open Env_typing_php
 open Typing_helpers_php

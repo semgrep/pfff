@@ -14,11 +14,11 @@
  *)
 open Common
 
-open Ast_php_simple
+open Ast_php
 open Env_interpreter_php
 open Abstract_interpreter_php_helpers
 
-module A = Ast_php_simple
+module A = Ast_php
 module Env = Env_interpreter_php
 module H = Abstract_interpreter_php_helpers
 module CG = Callgraph_php2
@@ -244,7 +244,7 @@ let rec program env heap program =
    * be populated with all the necessary functions/classes/constants.
    *
    * Note that Include/Require are transformed into __builtin__require()
-   * calls in ast_php_simple and we will silently skip them below
+   * calls in ast_php and we will silently skip them below
    * (because the definitions of those __builtin__ are empty in
    * pfff/data/php_stdlib/pfff.php).
    *)

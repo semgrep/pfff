@@ -14,8 +14,8 @@
  *)
 open Common
 
-open Ast_php_simple
-module Ast = Ast_php_simple
+open Ast_php
+module Ast = Ast_php
 module E = Entity_code
 module G = Graph_code
 
@@ -128,8 +128,8 @@ type env = {
    node: Graph_code.node;
    readable: Common.filename;
    (* namespace *)
-   qualifier: Ast_php_simple.qualified_ident;
-   import_rules: (string * Ast_php_simple.qualified_ident) list;
+   qualifier: Ast_php.qualified_ident;
+   import_rules: (string * Ast_php.qualified_ident) list;
    (* oo *)
    (* this is not resolved, so use also qualifier for this *)
    self:   string;                (* "NOSELF" when outside a class *)
@@ -147,10 +147,10 @@ let (==~) = Common2.(==~)
 
 let parse env file =
   try
-    Common.save_excursion Ast_php_simple_build.store_position true (fun () ->
+    Common.save_excursion Ast_php_build.store_position true (fun () ->
     Common.save_excursion Flag_parsing_php.strict_lexer true (fun () ->
     let cst = Parse_php.parse_program file in
-    let ast = Ast_php_simple_build.program cst in
+    let ast = Ast_php_build.program cst in
     ast
     ))
   with
@@ -229,7 +229,7 @@ let normalize str =
 (* Namespace *)
 (*****************************************************************************)
 
-(* todo: move to Ast_php_simple.name_of_class_name at some point *)
+(* todo: move to Ast_php.name_of_class_name at some point *)
 let (name_of_class_name: Ast.hint_type -> name) = fun x ->
   match x with
   | Hint name -> name
@@ -961,7 +961,7 @@ and expr env x =
           exprl env es
         )
     | _ ->
-      let tok = Meta_ast_php_simple.toks_of_any (Expr2 e) +> List.hd in
+      let tok = Meta_ast_php.toks_of_any (Expr2 e) +> List.hd in
       env.stats.G.unresolved_calls +> Common.push tok;
       expr env e;
       exprl env es
@@ -1000,7 +1000,7 @@ and expr env x =
          env.stats.G.unresolved_class_access +> Common.push tok;
          expr env e1;
      | _ ->
-         let tok = Meta_ast_php_simple.toks_of_any (Expr2 e1) +> List.hd in
+         let tok = Meta_ast_php.toks_of_any (Expr2 e1) +> List.hd in
          env.stats.G.unresolved_class_access +> Common.push tok;
          exprl env [e1; e2]
       )
@@ -1017,13 +1017,13 @@ and expr env x =
           env.stats.G.field_access +> Common.push (tok, false);
           expr env e1;
       | _ ->
-          let tok = Meta_ast_php_simple.toks_of_any (Expr2 e1) +> List.hd in
+          let tok = Meta_ast_php.toks_of_any (Expr2 e1) +> List.hd in
           env.stats.G.unresolved_class_access +> Common.push tok;
           exprl env [e1; e2]
       )
 
   | New (e, es) ->
-      let tok = Meta_ast_php_simple.toks_of_any (Expr2 e) +> List.hd in
+      let tok = Meta_ast_php.toks_of_any (Expr2 e) +> List.hd in
       expr env (Call (Class_get(e, Id[ ("__construct", Some tok)]), es))
 
   (* -------------------------------------------------- *)
@@ -1033,7 +1033,7 @@ and expr env x =
       (* less: add deps? *)
       | Id name -> add_use_edge_instanceof env (name, E.Class)
       | _ ->
-          let tok = Meta_ast_php_simple.toks_of_any (Expr2 e1) +> List.hd in
+          let tok = Meta_ast_php.toks_of_any (Expr2 e1) +> List.hd in
           env.stats.G.unresolved_class_access +> Common.push tok;
           expr env e2
       )

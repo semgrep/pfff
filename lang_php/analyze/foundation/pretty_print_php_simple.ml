@@ -14,8 +14,8 @@
  *)
 open Common
 
-open Ast_php_simple
-module Ast = Ast_php_simple
+open Ast_php
+module Ast = Ast_php
 
 (*****************************************************************************)
 (* Prelude *)

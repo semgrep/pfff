@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Ast_php_simple
+open Ast_php
 open Env_typing_php
 
 module Pp = Pretty_print_code
@@ -42,11 +42,11 @@ let get_marked_id env s =
 (*****************************************************************************)
 
 module Classes: sig
-  val add: env -> string -> Ast_php_simple.class_def -> unit
-  val get: env -> string -> Ast_php_simple.class_def
+  val add: env -> string -> Ast_php.class_def -> unit
+  val get: env -> string -> Ast_php.class_def
   val mem: env -> string -> bool
   val remove: env -> string -> unit
-  val iter: env -> (Ast_php_simple.class_def -> unit) -> unit
+  val iter: env -> (Ast_php.class_def -> unit) -> unit
 end = struct
 
   let add env n x =
@@ -64,11 +64,11 @@ end = struct
 end
 
 module Functions: sig
-  val add: env -> string -> Ast_php_simple.func_def -> unit
-  val get: env -> string -> Ast_php_simple.func_def
+  val add: env -> string -> Ast_php.func_def -> unit
+  val get: env -> string -> Ast_php.func_def
   val mem: env -> string -> bool
   val remove: env -> string -> unit
-  val iter: env -> (Ast_php_simple.func_def -> unit) -> unit
+  val iter: env -> (Ast_php.func_def -> unit) -> unit
 end = struct
 
   let add env n x =
@@ -186,8 +186,8 @@ module AEnv = struct
     match id with 
     | (e, f, c) -> 
         Printf.printf "In %s %s, " c f;
-        let stmt = Ast_php_simple.Expr(e) in
-        let v = Meta_ast_php_simple.vof_program [stmt] in
+        let stmt = Ast_php.Expr(e) in
+        let v = Meta_ast_php.vof_program [stmt] in
         let s = Ocaml.string_of_v v in
         Common.pr s
 

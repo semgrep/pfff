@@ -18,7 +18,7 @@ module G = Graph_code
 (* Ast simple *)
 (*---------------------------------------------------------------------------*)
 
-let ast_simple_unittest =
+let ast_unittest =
   "ast_simple regression files" >:: (fun () ->
     let dir1 = Filename.concat Config_pfff.path "/tests/php/parsing" in
     let dir2 = Filename.concat Config_pfff.path "/tests/php/semantic" in
@@ -28,7 +28,7 @@ let ast_simple_unittest =
     files +> List.iter (fun file ->
       try
         let cst = Parse_php.parse_program file in
-        let _ast = Ast_php_simple_build.program cst in
+        let _ast = Ast_php_build.program cst in
         ()
       with exn ->
         assert_failure (spf "it should correctly parse %s, exn = %s"
@@ -424,7 +424,7 @@ let include_unittest =
 
 let unittest =
   "foundation_php" >::: [
-    ast_simple_unittest;
+    ast_unittest;
     defs_uses_unittest;
     tags_unittest;
     codegraph_unittest;

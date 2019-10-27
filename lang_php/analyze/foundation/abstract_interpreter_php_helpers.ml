@@ -12,9 +12,9 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Ast_php_simple
+open Ast_php
 open Env_interpreter_php (* IMap, ptrs field, etc *)
-module A = Ast_php_simple
+module A = Ast_php
 module Env = Env_interpreter_php
 
 (*****************************************************************************)
@@ -556,8 +556,8 @@ end
 (*****************************************************************************)
 
 (* shortcuts *)
-let unw = Ast_php_simple.unwrap
-let w = Ast_php_simple.wrap
+let unw = Ast_php.unwrap
+let w = Ast_php.wrap
 
 (* Allez ... pour faire plaisir a yoyo.
  * pad: not sure we need that.

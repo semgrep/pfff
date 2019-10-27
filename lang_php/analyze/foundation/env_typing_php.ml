@@ -94,8 +94,8 @@ type t =
 
 (* todo: reuse Env_interpreter_php.code_database? *)
 type code_database = {
-    classes: Ast_php_simple.class_def Common2.cached SMap.t ref;
-    funcs: Ast_php_simple.func_def Common2.cached SMap.t ref;
+    classes: Ast_php.class_def Common2.cached SMap.t ref;
+    funcs: Ast_php.func_def Common2.cached SMap.t ref;
     (* todo: constants?? *)
 }
 
@@ -104,7 +104,7 @@ type code_database = {
  *)
 module Array_id = 
 struct
-  type t  = Ast_php_simple.expr * string * string
+  type t  = Ast_php.expr * string * string
 
   let compare a b = 
     match a, b with 

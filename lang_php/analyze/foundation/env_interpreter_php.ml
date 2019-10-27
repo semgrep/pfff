@@ -13,7 +13,7 @@
  * license.txt for more details.
  *)
 
-module Ast = Ast_php_simple
+module Ast = Ast_php
 
 module ISet = Set.Make (Int)
 module IMap = Map.Make (Int)
@@ -276,15 +276,15 @@ module type TAINT =
       value -> unit
 
     val taint_expr : env -> heap ->
-      (env -> heap -> Ast_php_simple.expr -> heap * value) *
-      (env -> heap -> Ast_php_simple.expr -> heap * bool * value) *
+      (env -> heap -> Ast_php.expr -> heap * value) *
+      (env -> heap -> Ast_php.expr -> heap * bool * value) *
       (env -> heap -> value -> 'a * 'b) *
-      ('b -> env -> 'a -> Ast_php_simple.expr list -> heap * value) *
-      (env -> heap -> value -> Ast_php_simple.expr list -> heap * value) *
+      ('b -> env -> 'a -> Ast_php.expr list -> heap * value) *
+      (env -> heap -> value -> Ast_php.expr list -> heap * value) *
       (env -> heap -> bool -> value -> value -> heap * value)
       ->
       Callgraph_php2.node list ->
-      Ast_php_simple.expr -> 
+      Ast_php.expr -> 
       heap * value
 
     val binary_concat : env -> heap ->

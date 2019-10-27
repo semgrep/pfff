@@ -25,7 +25,7 @@ let prepare content =
   let env = 
     Env.empty_env db tmp_file in
   let ast = 
-    Ast_php_simple_build.program (Parse_php.parse_program tmp_file) in
+    Ast_php_build.program (Parse_php.parse_program tmp_file) in
   env, ast
 
 let heap_of_program_at_checkpoint content =
