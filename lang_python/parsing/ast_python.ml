@@ -37,6 +37,8 @@
  *    typechecker and taint-tracker for Python, written in OCaml from facebook
  *  - https://github.com/mattgreen/hython
  *    Python3 interpreter written in Haskell
+ *  - libCST (a concrete syntax tree, better for program transformation)
+ *    by Instagram
  * 
  * history:
  *  - 2019 port to the pfff infrastructure.
@@ -106,7 +108,7 @@ type expr =
   (* python3-ext: *)
   (* inside an Assign (or ExprStmt) *)
   | TypedExpr of expr * type_
-  | Ellipses of tok (* should be only in .pyi or types like Dict[str,...] *)
+  | Ellipses of tok (* should be only in .pyi, types Dict[str,...], or sgrep *)
 
   | BoolOp of boolop (* op *) * expr list (* values *)
   | BinOp of expr (* left *) * operator (* op *) * expr (* right *)
@@ -208,6 +210,12 @@ and type_ = expr
 (* used in inheritance, to allow default value for metaclass *)
 and type_parent = argument
   (* with tarzan *)
+
+(* ------------------------------------------------------------------------- *)
+(* Patterns *)
+(* ------------------------------------------------------------------------- *)
+(* Name, or Tuple? or more? *)
+type pattern = expr
   
 (* ------------------------------------------------------------------------- *)
 (* Statement *)
@@ -224,7 +232,7 @@ type stmt =
   | Assign of expr list (* targets *) * expr (* value *)
   | AugAssign of expr (* target *) * operator (* op *) * expr (* value *)
 
-  | For of expr (* (pattern) introduce new vars *) * expr (* 'in' iter *) * 
+  | For of pattern (* (pattern) introduce new vars *) * expr (* 'in' iter *) * 
            stmt list (* body *) * stmt list (* orelse *)
   | While of expr (* test *) * stmt list (* body *) * stmt list (* orelse *)
   | If of expr (* test *) * stmt list (* body *) * stmt list (* orelse *)
@@ -239,9 +247,6 @@ type stmt =
   | TryFinally of stmt list (* body *) * stmt list (* finalbody *)
   | Assert of expr (* test *) * expr option (* msg *)
 
-  | Import of alias_dotted list (* names *)
-  | ImportFrom of dotted_name (* module *) * alias list (* names *) * int option (* level *)
-
   | Global of name list (* names *)
   | Delete of expr list (* targets *)
   (* python3-ext: *)
@@ -249,6 +254,9 @@ type stmt =
 
   (* python3-ext: for With, For, and FunctionDef *)
   | Async of stmt
+
+  | Import of alias_dotted list (* names *)
+  | ImportFrom of dotted_name (* module *) * alias list (* names *) * int option (* level *)
 
   (* should be allowed just at the toplevel *)
   | FunctionDef of 
