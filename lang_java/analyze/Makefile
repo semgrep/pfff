@@ -4,8 +4,7 @@ TOP=../..
 ##############################################################################
 TARGET=lib
 
-SRC= ast_java_simple.ml \
-     java_to_generic.ml \
+SRC= java_to_generic.ml \
      highlight_java.ml \
      package_java.ml graph_code_java.ml \
      builtins_java.ml \
