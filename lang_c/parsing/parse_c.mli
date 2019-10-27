@@ -11,3 +11,9 @@ val parse:
 
 val parse_program:
   Common.filename -> Ast_c.program
+
+(* other parsers *)
+
+(* for sgrep *)
+val any_of_string:
+  string -> Ast_c.any

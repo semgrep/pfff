@@ -770,3 +770,14 @@ and struct_kind _env = function
   | Struct -> A.Struct
   | Union -> A.Union
   | Class -> raise CplusplusConstruct
+
+(*****************************************************************************)
+(* Other entry points *)
+(*****************************************************************************)
+let any any =
+  let env = empty_env () in
+
+  match any with
+  | Expr x -> A.Expr (expr env x)
+  | Stmt x -> A.Stmt (stmt env x)
+  | _ -> failwith "Ast_c_simple_build.any: only Expr and Stmt handled"

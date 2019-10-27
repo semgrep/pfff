@@ -47,3 +47,8 @@ let parse file =
 let parse_program file =
   let (program_and_tokens, _stat) = parse file in
   Common2.some (fst program_and_tokens)
+
+let any_of_string str =
+  let any = Parse_cpp.any_of_string Flag_parsing_cpp.C str in
+  Ast_c_simple_build.any any
+

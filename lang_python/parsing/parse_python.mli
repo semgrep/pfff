@@ -14,7 +14,7 @@ val parse_program:
 
 (* other parsers *)
 
-(* for sgrep_js *)
+(* for sgrep *)
 val any_of_string:
   string -> Ast_python.any
 

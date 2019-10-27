@@ -188,6 +188,14 @@ let create_ast file =
         Common.pr2 (spf "warning: parsing problem in %s" file);
         [])
 
+  | "c" ->
+      Gen
+      (try
+        let ast = Parse_c.parse_program file in
+        C_to_generic.program ast
+       with _exn ->
+        Common.pr2 (spf "warning: problem in %s" file);
+        [])
   | "php" ->
     Php
     (try Parse_php.parse_program file
@@ -211,7 +219,7 @@ let create_ast file =
     Fuzzy
     (try
       (match !lang with
-      | ("c" | "c++") ->
+      | ("cfuzzy" | "c++") ->
         Common.save_excursion Flag_parsing.verbose_lexing false (fun () ->
           Parse_cpp.parse_fuzzy file +> fst
         )
@@ -240,32 +248,32 @@ type pattern =
 
 let parse_pattern str =
  try (
-  match !lang with
-  | "python" ->
-      Common.save_excursion Flag_parsing.sgrep_mode true (fun () ->
+  Common.save_excursion Flag_parsing.sgrep_mode true (fun () ->
+   match !lang with
+   | "python" ->
        let any = Parse_python.any_of_string str in
        PatGen (Python_to_generic.any any)
-      )
-  | "js" ->
-      let any_cst = Parse_js.any_of_string str in
-      let any = Ast_js_build.any any_cst in
-      PatGen (Js_to_generic.any any)
-
+   | "js" ->
+       let any_cst = Parse_js.any_of_string str in
+       let any = Ast_js_build.any any_cst in
+       PatGen (Js_to_generic.any any)
+   | "c" ->
+      let any = Parse_c.any_of_string str in
+      PatGen (C_to_generic.any any)
   | "php" -> PatPhp (Sgrep_php.parse str)
   | "jsold" -> PatJs (Sgrep_js.parse str)
-
 
   (* for now we abuse the fuzzy parser of cpp for ml for the pattern as
    * we should not use comments in patterns
    *)
-  | "c" | "c++" | "ml" | "java" 
-  | "jsfuzzy" | "phpfuzzy" -> 
+  | "c++" | "ml" | "java" 
+  | "cfuzzy" | "jsfuzzy" | "phpfuzzy" -> 
     PatFuzzy (ast_fuzzy_of_string str)
   | _ -> failwith ("unsupported language: " ^ !lang)
- ) with 
+ )) with 
   | Parsing.Parse_error -> 
       failwith (spf "fail to parse pattern: '%s' in lang %s" str !lang)
-
+ 
 
 let read_patterns name =
   let ic = open_in name in
@@ -278,20 +286,14 @@ let read_patterns name =
 
 let sgrep_ast pattern any_ast =
   match !lang, pattern, any_ast with
-  | "js", PatGen pattern, Gen ast ->
-    Sgrep_generic.sgrep_ast
-      ~hook:(fun env matched_tokens ->
-        print_match !mvars env Lib_ast_generic.ii_of_any matched_tokens
-      )
-      pattern ast
-  | "python", PatGen pattern, Gen ast ->
+  | ("js" | "python" | "c"), PatGen pattern, Gen ast ->
     Sgrep_generic.sgrep_ast
       ~hook:(fun env matched_tokens ->
         print_match !mvars env Lib_ast_generic.ii_of_any matched_tokens
       )
       pattern ast
 
-  | ("c" | "c++"), PatFuzzy pattern, Fuzzy ast ->
+  | ("cfuzzy" | "c++"), PatFuzzy pattern, Fuzzy ast ->
     Sgrep_fuzzy.sgrep
       ~hook:(fun env matched_tokens ->
         print_match !mvars env Ast_fuzzy.toks_of_trees matched_tokens

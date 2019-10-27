@@ -220,10 +220,12 @@ open Parser_cpp_mly_helper
 /*(*************************************************************************)*/
 /*(*1 Rules type declaration *)*/
 /*(*************************************************************************)*/
-%start main toplevel statement expr type_id
+%start main toplevel sgrep_spatch_pattern
 
 %type <Ast_cpp.program> main
 %type <Ast_cpp.toplevel option> toplevel
+%type <Ast_cpp.any> sgrep_spatch_pattern
+
 %type <Ast_cpp.statement> statement
 %type <Ast_cpp.expression> expr
 %type <Ast_cpp.fullType> type_id
@@ -269,6 +271,14 @@ translation_unit:
 external_declaration: 
  | function_definition            { Func (FunctionOrMethod $1) }
  | block_declaration              { BlockDecl $1 }
+
+/*(*************************************************************************)*/
+/*(*1 sgrep *)*/
+/*(*************************************************************************)*/
+sgrep_spatch_pattern:
+ | expr EOF      { Expr $1 }
+ | statement EOF { Stmt $1 }
+
 
 /*(*************************************************************************)*/
 /*(*1 Ident, scope *)*/

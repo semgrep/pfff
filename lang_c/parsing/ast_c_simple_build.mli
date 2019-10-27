@@ -10,3 +10,6 @@ exception MacroInCase
  *)
 val program: 
   Ast_cpp.program -> Ast_c.program
+
+val any:
+  Ast_cpp.any -> Ast_c.any

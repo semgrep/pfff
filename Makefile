@@ -92,6 +92,7 @@ BASICLIBS=commons/lib.cma \
   lang_php/pretty/lib.cma \
  lang_cpp/parsing/lib.cma \
  lang_c/parsing/lib.cma \
+  lang_c/analyze/lib.cma \
  lang_clang/parsing/lib.cma \
  lang_java/parsing/lib.cma \
  lang_python/parsing/lib.cma \

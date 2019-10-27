@@ -18,6 +18,10 @@ val parse_with_lang:
   ?lang:Flag_parsing_cpp.language ->
   Common.filename -> (toplevels_and_tokens * Parse_info.parsing_stat)
 
+(* other parsers *)
+val any_of_string: 
+ Flag_parsing_cpp.language -> string -> Ast_cpp.any
+
 val parse_fuzzy:
   Common.filename -> Ast_fuzzy.tree list * Parser_cpp.token list
 
@@ -40,4 +44,3 @@ val tokens:      Common.filename -> Parser_cpp.token list
 
 (* a few helpers *)
 val program_of_program2: toplevels_and_tokens -> Ast_cpp.program
-

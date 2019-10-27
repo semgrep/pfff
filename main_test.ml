@@ -166,7 +166,7 @@ let ast_generic_of_file file =
  | FT.PL (FT.C ("c" | "h" )) ->
     let ast = Parse_c.parse_program file in
     C_to_generic.program ast
- | _ -> failwith "file type not supported"
+ | _ -> failwith (spf "file type not supported for %s" file)
 
 let test_parse_generic xs =
   let xs = List.map Common.fullpath xs in
