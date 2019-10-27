@@ -17,7 +17,7 @@
  *)
 open Common
 
-open Ast_cpp
+open Cst_cpp
 open Parser_cpp_mly_helper
 
 (* see todo_mly for stuff temporarily commented out *)
@@ -59,8 +59,8 @@ open Parser_cpp_mly_helper
 /*(*-----------------------------------------*)*/
 
 %token <string * Parse_info.info>                       TInt
-%token <(string * Ast_cpp.floatType) * Parse_info.info> TFloat
-%token <(string * Ast_cpp.isWchar) * Parse_info.info>   TChar TString
+%token <(string * Cst_cpp.floatType) * Parse_info.info> TFloat
+%token <(string * Cst_cpp.isWchar) * Parse_info.info>   TChar TString
 
 %token <string * Parse_info.info> TIdent 
 /*(* fresh_token: appear after some fix_tokens in parsing_hack.ml *)*/
@@ -74,7 +74,7 @@ open Parser_cpp_mly_helper
 %token <Parse_info.info> TOPar TCPar TOBrace TCBrace TOCro TCCro 
 
 %token <Parse_info.info> TDot TComma TPtrOp     TInc TDec
-%token <Ast_cpp.assignOp * Parse_info.info> TAssign 
+%token <Cst_cpp.assignOp * Parse_info.info> TAssign 
 %token <Parse_info.info> TEq  TWhy  TTilde TBang  TEllipsis  TCol  TPtVirg
 %token <Parse_info.info> 
   TOrLog TAndLog TOr TXor TAnd  TEqEq TNotEq TInfEq TSupEq
@@ -222,15 +222,15 @@ open Parser_cpp_mly_helper
 /*(*************************************************************************)*/
 %start main toplevel sgrep_spatch_pattern
 
-%type <Ast_cpp.program> main
-%type <Ast_cpp.toplevel option> toplevel
-%type <Ast_cpp.any> sgrep_spatch_pattern
+%type <Cst_cpp.program> main
+%type <Cst_cpp.toplevel option> toplevel
+%type <Cst_cpp.any> sgrep_spatch_pattern
 
-%type <Ast_cpp.statement> statement
-%type <Ast_cpp.expression> expr
-%type <Ast_cpp.fullType> type_id
-%type <(Ast_cpp.name) * (Ast_cpp.fullType -> Ast_cpp.fullType)> declarator
-%type <(Ast_cpp.name)> type_cplusplus_id
+%type <Cst_cpp.statement> statement
+%type <Cst_cpp.expression> expr
+%type <Cst_cpp.fullType> type_id
+%type <(Cst_cpp.name) * (Cst_cpp.fullType -> Cst_cpp.fullType)> declarator
+%type <(Cst_cpp.name)> type_cplusplus_id
 %%
 
 /*(*************************************************************************)*/

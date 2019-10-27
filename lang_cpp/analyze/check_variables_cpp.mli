@@ -12,4 +12,4 @@
  *)
 val check_and_annotate_program: 
   (*?find_entity: Ast_entity_php.entity_finder option -> *)
-  Ast_cpp.program -> unit
+  Cst_cpp.program -> unit

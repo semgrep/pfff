@@ -1,6 +1,6 @@
 
 (* the token list contains also the comment-tokens *)
-type toplevels_and_tokens = (Ast_cpp.toplevel * Parser_cpp.token list) list
+type toplevels_and_tokens = (Cst_cpp.toplevel * Parser_cpp.token list) list
 
 (* actually covers Lexical, Parsing, and Semantic errors *)
 exception Parse_error of Parse_info.info
@@ -13,14 +13,14 @@ val parse:
   Common.filename -> (toplevels_and_tokens * Parse_info.parsing_stat)
 
 val parse_program:  
-  Common.filename -> Ast_cpp.program
+  Common.filename -> Cst_cpp.program
 val parse_with_lang:
   ?lang:Flag_parsing_cpp.language ->
   Common.filename -> (toplevels_and_tokens * Parse_info.parsing_stat)
 
 (* other parsers *)
 val any_of_string: 
- Flag_parsing_cpp.language -> string -> Ast_cpp.any
+ Flag_parsing_cpp.language -> string -> Cst_cpp.any
 
 val parse_fuzzy:
   Common.filename -> Ast_fuzzy.tree list * Parser_cpp.token list
@@ -43,4 +43,4 @@ val extract_macros:
 val tokens:      Common.filename -> Parser_cpp.token list
 
 (* a few helpers *)
-val program_of_program2: toplevels_and_tokens -> Ast_cpp.program
+val program_of_program2: toplevels_and_tokens -> Cst_cpp.program

@@ -14,10 +14,9 @@
  *)
 open Common
 
-module A = Ast_c
 module G = Ast_generic
 
-open Ast_cpp
+open Cst_cpp
 open Ast_c
 
 (*****************************************************************************)
@@ -34,17 +33,12 @@ open Ast_c
 let id = fun x -> x
 let option = Common.map_opt
 let list = List.map
-let vref f x = ref (f !x)
 let either f g x = 
   match x with 
   | Left x -> Left (f x) 
   | Right x -> Right (g x)
 
 let string = id
-let bool = id
-let int = id
-let int_to_string = string_of_int
-let float_to_string = string_of_float
 
 (*
 exception Error of string * Parse_info.info
@@ -58,7 +52,6 @@ let error tok msg =
 (*****************************************************************************)
 
 let info x = x
-let tok v = info v
 
 let wrap = fun _of_a (v1, v2) ->
   let v1 = _of_a v1 and v2 = info v2 in 
@@ -71,10 +64,10 @@ let rec unaryOp =
   function
   | GetRef -> (fun e -> G.Ref e)
   | DeRef -> (fun e -> G.DeRef e)
-  | UnPlus -> (fun e -> G.Call (G.IdSpecial (G.ArithOp G.Plus), [Arg e]))
-  | UnMinus -> (fun e -> G.Call (G.IdSpecial (G.ArithOp G.Minus), [Arg e]))
-  | Tilde -> (fun e -> G.Call (G.IdSpecial (G.ArithOp G.BitNot), [Arg e]))
-  | Not ->  (fun e -> G.Call (G.IdSpecial (G.ArithOp G.Not), [Arg e]))
+  | UnPlus -> (fun e -> G.Call (G.IdSpecial (G.ArithOp G.Plus), [G.Arg e]))
+  | UnMinus -> (fun e -> G.Call (G.IdSpecial (G.ArithOp G.Minus), [G.Arg e]))
+  | Tilde -> (fun e -> G.Call (G.IdSpecial (G.ArithOp G.BitNot), [G.Arg e]))
+  | Not ->  (fun e -> G.Call (G.IdSpecial (G.ArithOp G.Not), [G.Arg e]))
   | GetRefLabel -> (fun e -> G.OtherExpr (G.OE_GetRefLabel, [G.E e]))
 and assignOp =
   function 
@@ -181,7 +174,7 @@ and expr =
       let v1 = expr v1
       and v2 = wrap binaryOp v2
       and v3 = expr v3
-      in G.Call (G.IdSpecial (G.ArithOp (fst v2)), [Arg v1; Arg v3])
+      in G.Call (G.IdSpecial (G.ArithOp (fst v2)), [G.Arg v1; G.Arg v3])
   | CondExpr ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in
       G.Conditional (v1, v2, v3)
@@ -299,7 +292,7 @@ let func_def {
   let v4 = if f_static then [G.Static] else [] in
   let entity = G.basic_entity v1 v4 in
   entity, G.FuncDef {
-    fparams = params |> List.map (fun (t, nameopt) ->
+    G.fparams = params |> List.map (fun (t, nameopt) ->
         G.ParamClassic {
           (G.basic_param (nameopt |> G.opt_to_name)) with
           G.ptype = Some t;
@@ -359,15 +352,15 @@ let toplevel =
   | Include v1 -> let v1 = wrap string v1 in 
       G.IDir (G.ImportAll (G.FileName v1, None))
   | Define ((v1, v2)) -> let v1 = name v1 and v2 = define_body v2 in
-      G.IDir (G.OtherDirective (G.OI_Define, [v2]))
+      G.IDir (G.OtherDirective (G.OI_Define, [G.N v1; v2]))
   | Macro ((v1, v2, v3)) ->
       let v1 = name v1
       and v2 = list name v2
       and v3 = define_body v3
       in
       G.IDir (
-        G.OtherDirective (G.OI_Macro, (
-            (v2 |> List.map (fun n -> G.N n)) @ [v3])))
+        G.OtherDirective (G.OI_Macro, 
+          [G.N v1] @  (v2 |> List.map (fun n -> G.N n)) @ [v3]))
   | StructDef v1 -> let v1 = struct_def v1 in
       G.IDef v1
   | TypeDef v1 -> let v1 = type_def v1 in

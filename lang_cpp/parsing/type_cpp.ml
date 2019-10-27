@@ -13,9 +13,9 @@
  * license.txt for more details.
  *)
 
-open Ast_cpp
+open Cst_cpp
 
-module Ast = Ast_cpp
+module Ast = Cst_cpp
 
 (*****************************************************************************)
 (* Prelude *)

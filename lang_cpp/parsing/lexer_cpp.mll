@@ -18,11 +18,11 @@
 open Common
 
 open Parser_cpp
-open Ast_cpp (* to factorise tokens with OpAssign, ... *)
+open Cst_cpp (* to factorise tokens with OpAssign, ... *)
 
 module Flag = Flag_parsing
 module Flag_cpp = Flag_parsing_cpp
-module Ast = Ast_cpp
+module Ast = Cst_cpp
 module PI = Parse_info
 
 (*****************************************************************************)

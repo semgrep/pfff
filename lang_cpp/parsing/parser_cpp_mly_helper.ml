@@ -1,8 +1,8 @@
 open Common
 
-open Ast_cpp
+open Cst_cpp
 
-module Ast = Ast_cpp
+module Ast = Cst_cpp
 module Flag = Flag_parsing
 
 (*****************************************************************************)
@@ -15,7 +15,7 @@ let warning s v =
   then Common2.warning ("PARSING: " ^ s) v
   else v
 
-exception Semantic of string * Ast_cpp.tok
+exception Semantic of string * Cst_cpp.tok
 
 (*****************************************************************************)
 (* Parse helpers functions *)

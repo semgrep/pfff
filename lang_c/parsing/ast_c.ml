@@ -75,7 +75,7 @@ open Common2.Infix
 (* The AST related types *)
 (*****************************************************************************)
 
-type 'a wrap = 'a * Ast_cpp.tok
+type 'a wrap = 'a * Cst_cpp.tok
  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
@@ -130,7 +130,7 @@ and expr =
   | Call of expr * argument list
 
   (* should be a statement ... but see Datalog_c.instr *)
-  | Assign of Ast_cpp.assignOp wrap * expr * expr
+  | Assign of Cst_cpp.assignOp wrap * expr * expr
 
   | ArrayAccess of expr * expr (* x[y] *)
   (* Why x->y instead of x.y choice? it's easier then with datalog
@@ -142,11 +142,11 @@ and expr =
   | Cast of type_ * expr
 
   (* less: transform into Call (builtin ...) ? *)
-  | Postfix of expr * Ast_cpp.fixOp wrap
-  | Infix of expr * Ast_cpp.fixOp wrap
+  | Postfix of expr * Cst_cpp.fixOp wrap
+  | Infix of expr * Cst_cpp.fixOp wrap
   (* contains GetRef and Deref!! todo: lift up? *)
-  | Unary of expr * Ast_cpp.unaryOp wrap
-  | Binary of expr * Ast_cpp.binaryOp wrap * expr
+  | Unary of expr * Cst_cpp.unaryOp wrap
+  | Binary of expr * Cst_cpp.binaryOp wrap * expr
 
   | CondExpr of expr * expr * expr
   (* should be a statement ... *)

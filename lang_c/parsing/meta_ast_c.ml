@@ -11,50 +11,50 @@ let vof_wrap _of_a (v1, v2) =
 
 and vof_unaryOp =
   function
-  | Ast_cpp.GetRef -> Ocaml.VSum (("GetRef", []))
-  | Ast_cpp.DeRef -> Ocaml.VSum (("DeRef", []))
-  | Ast_cpp.UnPlus -> Ocaml.VSum (("UnPlus", []))
-  | Ast_cpp.UnMinus -> Ocaml.VSum (("UnMinus", []))
-  | Ast_cpp.Tilde -> Ocaml.VSum (("Tilde", []))
-  | Ast_cpp.Not -> Ocaml.VSum (("Not", []))
-  | Ast_cpp.GetRefLabel -> Ocaml.VSum (("GetRefLabel", []))
+  | Cst_cpp.GetRef -> Ocaml.VSum (("GetRef", []))
+  | Cst_cpp.DeRef -> Ocaml.VSum (("DeRef", []))
+  | Cst_cpp.UnPlus -> Ocaml.VSum (("UnPlus", []))
+  | Cst_cpp.UnMinus -> Ocaml.VSum (("UnMinus", []))
+  | Cst_cpp.Tilde -> Ocaml.VSum (("Tilde", []))
+  | Cst_cpp.Not -> Ocaml.VSum (("Not", []))
+  | Cst_cpp.GetRefLabel -> Ocaml.VSum (("GetRefLabel", []))
 
 let rec vof_assignOp =
   function
-  | Ast_cpp.SimpleAssign -> Ocaml.VSum (("SimpleAssign", []))
-  | Ast_cpp.OpAssign v1 ->
+  | Cst_cpp.SimpleAssign -> Ocaml.VSum (("SimpleAssign", []))
+  | Cst_cpp.OpAssign v1 ->
       let v1 = vof_arithOp v1 in Ocaml.VSum (("OpAssign", [ v1 ]))
 and vof_fixOp =
   function
-  | Ast_cpp.Dec -> Ocaml.VSum (("Dec", []))
-  | Ast_cpp.Inc -> Ocaml.VSum (("Inc", []))
+  | Cst_cpp.Dec -> Ocaml.VSum (("Dec", []))
+  | Cst_cpp.Inc -> Ocaml.VSum (("Inc", []))
 and vof_binaryOp =
   function
-  | Ast_cpp.Arith v1 -> let v1 = vof_arithOp v1 in Ocaml.VSum (("Arith", [ v1 ]))
-  | Ast_cpp.Logical v1 ->
+  | Cst_cpp.Arith v1 -> let v1 = vof_arithOp v1 in Ocaml.VSum (("Arith", [ v1 ]))
+  | Cst_cpp.Logical v1 ->
       let v1 = vof_logicalOp v1 in Ocaml.VSum (("Logical", [ v1 ]))
 and vof_arithOp =
   function
-  | Ast_cpp.Plus -> Ocaml.VSum (("Plus", []))
-  | Ast_cpp.Minus -> Ocaml.VSum (("Minus", []))
-  | Ast_cpp.Mul -> Ocaml.VSum (("Mul", []))
-  | Ast_cpp.Div -> Ocaml.VSum (("Div", []))
-  | Ast_cpp.Mod -> Ocaml.VSum (("Mod", []))
-  | Ast_cpp.DecLeft -> Ocaml.VSum (("DecLeft", []))
-  | Ast_cpp.DecRight -> Ocaml.VSum (("DecRight", []))
-  | Ast_cpp.And -> Ocaml.VSum (("And", []))
-  | Ast_cpp.Or -> Ocaml.VSum (("Or", []))
-  | Ast_cpp.Xor -> Ocaml.VSum (("Xor", []))
+  | Cst_cpp.Plus -> Ocaml.VSum (("Plus", []))
+  | Cst_cpp.Minus -> Ocaml.VSum (("Minus", []))
+  | Cst_cpp.Mul -> Ocaml.VSum (("Mul", []))
+  | Cst_cpp.Div -> Ocaml.VSum (("Div", []))
+  | Cst_cpp.Mod -> Ocaml.VSum (("Mod", []))
+  | Cst_cpp.DecLeft -> Ocaml.VSum (("DecLeft", []))
+  | Cst_cpp.DecRight -> Ocaml.VSum (("DecRight", []))
+  | Cst_cpp.And -> Ocaml.VSum (("And", []))
+  | Cst_cpp.Or -> Ocaml.VSum (("Or", []))
+  | Cst_cpp.Xor -> Ocaml.VSum (("Xor", []))
 and vof_logicalOp =
   function
-  | Ast_cpp.Inf -> Ocaml.VSum (("Inf", []))
-  | Ast_cpp.Sup -> Ocaml.VSum (("Sup", []))
-  | Ast_cpp.InfEq -> Ocaml.VSum (("InfEq", []))
-  | Ast_cpp.SupEq -> Ocaml.VSum (("SupEq", []))
-  | Ast_cpp.Eq -> Ocaml.VSum (("Eq", []))
-  | Ast_cpp.NotEq -> Ocaml.VSum (("NotEq", []))
-  | Ast_cpp.AndLog -> Ocaml.VSum (("AndLog", []))
-  | Ast_cpp.OrLog -> Ocaml.VSum (("OrLog", []))
+  | Cst_cpp.Inf -> Ocaml.VSum (("Inf", []))
+  | Cst_cpp.Sup -> Ocaml.VSum (("Sup", []))
+  | Cst_cpp.InfEq -> Ocaml.VSum (("InfEq", []))
+  | Cst_cpp.SupEq -> Ocaml.VSum (("SupEq", []))
+  | Cst_cpp.Eq -> Ocaml.VSum (("Eq", []))
+  | Cst_cpp.NotEq -> Ocaml.VSum (("NotEq", []))
+  | Cst_cpp.AndLog -> Ocaml.VSum (("AndLog", []))
+  | Cst_cpp.OrLog -> Ocaml.VSum (("OrLog", []))
 
 
 let vof_name v = vof_wrap Ocaml.vof_string v

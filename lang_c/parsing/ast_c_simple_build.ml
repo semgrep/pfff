@@ -14,7 +14,7 @@
  *)
 open Common
 
-open Ast_cpp
+open Cst_cpp
 module A = Ast_c
 
 (*****************************************************************************)
@@ -66,7 +66,7 @@ let empty_env () = {
 (*****************************************************************************)
 
 let debug any =
-  let v = Meta_ast_cpp.vof_any any in
+  let v = Meta_cst_cpp.vof_any any in
   let s = Ocaml.string_of_v v in
   pr2 s
 
@@ -274,7 +274,7 @@ and onedecl env d =
         env.typedefs_toadd <- def :: env.typedefs_toadd;
         None
     | None, NoSto ->
-        (match Ast_cpp.unwrap_typeC ft with
+        (match Cst_cpp.unwrap_typeC ft with
         (* it's ok to not have any var decl as long as a type
          * was defined. struct_defs_toadd should not be empty then.
          *)

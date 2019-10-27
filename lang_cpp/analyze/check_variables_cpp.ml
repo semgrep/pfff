@@ -14,9 +14,9 @@
  *)
 open Common
 
-open Ast_cpp
+open Cst_cpp
 
-module Ast = Ast_cpp
+module Ast = Cst_cpp
 module V = Visitor_cpp
 module E = Errors_code
 module S = Scope_code

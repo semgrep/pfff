@@ -26,7 +26,7 @@ open Ast_c
 (* hooks *)
 type visitor_in = {
   kexpr: Ast_c.expr vin;
-  kinfo: Ast_cpp.tok vin;
+  kinfo: Cst_cpp.tok vin;
 }
 and visitor_out = any -> unit
 and 'a vin = ('a  -> unit) * visitor_out -> 'a  -> unit

@@ -8,9 +8,9 @@ OPAMPKG=pfff-lang_cpp
 -include $(TOP)/Makefile.config
 
 SRC= flag_parsing_cpp.ml \
-     token_cpp.ml ast_cpp.ml \
+     token_cpp.ml cst_cpp.ml \
      type_cpp.ml \
-     meta_ast_cpp.ml \
+     meta_cst_cpp.ml \
      visitor_cpp.ml lib_parsing_cpp.ml \
      parser_cpp_mly_helper.ml parser_cpp.ml lexer_cpp.ml \
      token_helpers_cpp.ml token_views_cpp.ml token_views_context.ml \

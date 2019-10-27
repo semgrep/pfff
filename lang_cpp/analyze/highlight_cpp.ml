@@ -14,13 +14,13 @@
  *)
 open Common
 
-open Ast_cpp
+open Cst_cpp
 open Entity_code
 open Highlight_code
 
 module S = Scope_code
 module PI = Parse_info
-module Ast = Ast_cpp
+module Ast = Cst_cpp
 module V = Visitor_cpp
 module Lib = Lib_parsing_cpp
 module T = Parser_cpp
@@ -344,7 +344,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
           );
           k x
 
-      | Ast_cpp.EnumName (_tok, (_s, ii)) ->
+      | Cst_cpp.EnumName (_tok, (_s, ii)) ->
           tag ii (Entity (Type, Use2 fake_no_use2))
 
       | StructUnionName (_su, (_s, ii)) ->

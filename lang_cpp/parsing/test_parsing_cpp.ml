@@ -74,7 +74,7 @@ let test_parse_cpp ?lang xs  =
 let test_dump_cpp file =
   Parse_cpp.init_defs !Flag_cpp.macros_h;
   let ast = Parse_cpp.parse_program file in
-  let v = Meta_ast_cpp.vof_program ast in
+  let v = Meta_cst_cpp.vof_program ast in
   let s = Ocaml.string_of_v v in
   pr s
 
@@ -86,7 +86,7 @@ let test_dump_cpp_full file =
      full_info = true; type_info = false; token_info = true;
   }
   in
-  let v = Meta_ast_cpp.vof_program ~precision ast in
+  let v = Meta_cst_cpp.vof_program ~precision ast in
   let s = Ocaml.string_of_v v in
   pr s;
   toks +> List.iter (fun tok ->

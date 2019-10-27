@@ -9,7 +9,7 @@ exception MacroInCase
  * so this function may return a different program given the same input
  *)
 val program: 
-  Ast_cpp.program -> Ast_c.program
+  Cst_cpp.program -> Ast_c.program
 
 val any:
-  Ast_cpp.any -> Ast_c.any
+  Cst_cpp.any -> Ast_c.any
