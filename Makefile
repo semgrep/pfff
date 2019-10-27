@@ -105,7 +105,6 @@ BASICLIBS=commons/lib.cma \
  lang_html/parsing/lib.cma \
  lang_js/parsing/lib.cma \
   lang_js/analyze/lib.cma \
-  lang_js/matcher/lib.cma \
  lang_css/parsing/lib.cma \
  lang_web/parsing/lib.cma \
  lang_text/lib.cma \
@@ -154,7 +153,6 @@ LIBS= commons/lib.cma \
     lang_sql/parsing/lib.cma \
     lang_js/parsing/lib.cma \
      lang_js/analyze/lib.cma \
-     lang_js/matcher/lib.cma \
     lang_cpp/parsing/lib.cma \
      lang_cpp/analyze/lib.cma \
     lang_c/parsing/lib.cma \
@@ -207,7 +205,6 @@ MAKESUBDIRS=commons commons_ocollection commons_core \
   lang_sql/parsing \
   lang_js/parsing \
    lang_js/analyze \
-   lang_js/matcher \
   lang_cpp/parsing \
    lang_cpp/analyze \
   lang_c/parsing \

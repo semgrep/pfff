@@ -253,6 +253,7 @@ let m_name a b =
         )
       | _ -> raise Impossible
       )
+  (* general case *)
   | (a, b) -> (m_wrap m_string) a b
 
 let m_dotted_name a b = 
@@ -1214,6 +1215,23 @@ and m_list__m_argument (xsa: A.argument list) (xsb: A.argument list) =
         xsa,
         xsb
       )
+
+(* TODO
+  (* spread metavariable to match any arity *)
+  | [A.Apply(A.IdSpecial (A.Spread, info_spread_TODO), 
+        [A.Id((name, info_name), aref)])], 
+    bbs 
+    when MV.is_metavar_name name ->
+      X.envf (name, info_name) (B.Expr (B.Apply (B.Nop, bbs))) >>= (function
+      | ((name, info_name), (B.Expr (B.Apply (B.Nop, bbs))))  ->
+        return (
+          [A.Apply(A.IdSpecial (A.Spread, info_spread_TODO), 
+              [A.Id((name, info_name), aref)])], 
+          bbs 
+        )
+      | _ -> raise Impossible
+      )
+    *)
 
   (* the general case *)
   | xa::aas, xb::bbs ->

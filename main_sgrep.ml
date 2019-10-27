@@ -243,7 +243,6 @@ type pattern =
   | PatGen of Sgrep_generic.pattern
 
   | PatPhp of Sgrep_php.pattern
-  | PatJs of Sgrep_js.pattern
 
 
 let parse_pattern str =
@@ -261,7 +260,6 @@ let parse_pattern str =
       let any = Parse_c.any_of_string str in
       PatGen (C_to_generic.any any)
   | "php" -> PatPhp (Sgrep_php.parse str)
-  | "jsold" -> PatJs (Sgrep_js.parse str)
 
   (* for now we abuse the fuzzy parser of cpp for ml for the pattern as
    * we should not use comments in patterns
@@ -305,12 +303,7 @@ let sgrep_ast pattern any_ast =
         print_match !mvars env Ast_fuzzy.toks_of_trees matched_tokens
       )
       pattern ast
-  | "jsold", PatJs pattern, Js ast ->
-    Sgrep_js.sgrep_ast
-      ~hook:(fun env matched_tokens ->
-        print_match !mvars env Lib_analyze_js.ii_of_any matched_tokens
-      )
-      pattern ast
+
   | "jsfuzzy", PatFuzzy pattern, Fuzzy ast ->
     Sgrep_fuzzy.sgrep
       ~hook:(fun env matched_tokens ->
