@@ -36,7 +36,7 @@
  *)
 open Common
 
-open Ast_ml
+open Cst_ml
 
 let (qufix: long_name -> tok -> (string wrap) -> long_name) = 
  fun longname dottok ident ->
@@ -193,8 +193,8 @@ let to_item xs =
 /*(*************************************************************************)*/
 
 %start interface  implementation
-%type <Ast_ml.toplevel list> interface
-%type <Ast_ml.toplevel list> implementation
+%type <Cst_ml.toplevel list> interface
+%type <Cst_ml.toplevel list> implementation
 
 %%
 

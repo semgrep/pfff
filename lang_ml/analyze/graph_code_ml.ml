@@ -18,7 +18,7 @@ module Flag = Flag_parsing
 module E = Entity_code
 module G = Graph_code
 
-open Ast_ml
+open Cst_ml
 module V = Visitor_ml
 
 (*****************************************************************************)

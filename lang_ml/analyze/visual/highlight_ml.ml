@@ -14,8 +14,8 @@
  *)
 open Common
 
-open Ast_ml
-module Ast = Ast_ml
+open Cst_ml
+module Ast = Cst_ml
 open Highlight_code
 module V = Visitor_ml
 module PI = Parse_info

@@ -29,7 +29,7 @@ module PI = Parse_info
 (*****************************************************************************)
 
 type program_and_tokens = 
-  Ast_ml.program option * Parser_ml.token list
+  Cst_ml.program option * Parser_ml.token list
 
 (*****************************************************************************)
 (* Error diagnostic  *)
