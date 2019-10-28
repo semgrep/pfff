@@ -14,10 +14,8 @@
  *)
 open Common
 
-module A = Ast_java
-module G = Ast_generic
-
 open Ast_java
+module G = Ast_generic
 
 (*****************************************************************************)
 (* Prelude *)
@@ -123,7 +121,9 @@ and element_value =
   | AnnotArrayInit v1 -> let v1 = list element_value v1 in ()
 and annotation_pair (v1, v2) =
   let v1 = ident v1 and v2 = element_value v2 in ()
+
 and name_or_class_type v = list identifier_ v
+
 and identifier_ =
   function
   | Id v1 -> let v1 = ident v1 in ()
@@ -131,11 +131,13 @@ and identifier_ =
       let v1 = ident v1 and v2 = list type_argument v2 in ()
   | TypeArgs_then_Id ((v1, v2)) ->
       let v1 = list type_argument v1 and v2 = identifier_ v2 in ()
+
 and name v =
   list1
     (fun (v1, v2) ->
        let v1 = list type_argument v1 and v2 = ident v2 in ())
     v
+
 and expr =
   function
   | Name v1 -> let v1 = name v1 in ()
@@ -172,8 +174,11 @@ and expr =
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in ()
   | Assignment ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = op v2 and v3 = expr v3 in ()
+
 and arguments v = list expr v
+
 and op v = string v
+
 and stmt =
   function
   | Empty -> ()
@@ -204,9 +209,13 @@ and stmt =
   | LocalVar v1 -> let v1 = var_with_init v1 in ()
   | LocalClass v1 -> let v1 = class_decl v1 in ()
   | Assert ((v1, v2)) -> let v1 = expr v1 and v2 = option expr v2 in ()
+
 and stmts v = list stmt v
+
 and case = function | Case v1 -> let v1 = expr v1 in () | Default -> ()
+
 and cases v = list case v
+
 and for_control =
   function
   | ForClassic ((v1, v2, v3)) ->
@@ -215,22 +224,28 @@ and for_control =
       and v3 = list expr v3
       in ()
   | Foreach ((v1, v2)) -> let v1 = var v1 and v2 = expr v2 in ()
+
 and for_init =
   function
   | ForInitVars v1 -> let v1 = list var_with_init v1 in ()
   | ForInitExprs v1 -> let v1 = list expr v1 in ()
+
 and catch (v1, v2) = let v1 = var v1 and v2 = stmt v2 in ()
 and catches v = list catch v
+
 and var { v_name = name; v_mods = mods; v_type = xtyp } =
   let arg = ident name in
   let arg = modifiers mods in let arg = typ xtyp in ()
+
 and vars v = list var v
 and var_with_init { f_var = f_var; f_init = f_init } =
   let arg = var f_var in let arg = option init f_init in ()
+
 and init =
   function
   | ExprInit v1 -> let v1 = expr v1 in ()
   | ArrayInit v1 -> let v1 = list init v1 in ()
+
 and
   method_decl {
                   m_var = m_var;
@@ -242,9 +257,10 @@ and
   let arg = vars m_formals in
   let arg = list qualified_ident m_throws in
   let arg = stmt m_body in ()
+
 and field v = var_with_init v
-and
-  enum_decl {
+
+and enum_decl {
                 en_name = en_name;
                 en_mods = en_mods;
                 en_impls = en_impls;
@@ -258,6 +274,7 @@ and
     | (v1, v2) ->
         let v1 = list enum_constant v1 and v2 = decls v2 in ()
   in ()
+
 and enum_constant =
   function
   | EnumSimple v1 -> let v1 = ident v1 in ()
@@ -265,8 +282,8 @@ and enum_constant =
       let v1 = ident v1 and v2 = arguments v2 in ()
   | EnumWithMethods ((v1, v2)) ->
       let v1 = ident v1 and v2 = list method_decl v2 in ()
-and
-  class_decl {
+
+and class_decl {
                  cl_name = cl_name;
                  cl_kind = cl_kind;
                  cl_tparams = cl_tparams;
