@@ -11,9 +11,9 @@
 (* Prelude *)
 (*****************************************************************************)
 (*
- * A simple AST for Java.
+ * An AST for Java.
  *
- * For Java we directly do a simple AST, as opposed to a CST (Concrete
+ * For Java we directly do an AST, as opposed to a CST (Concrete
  * Syntax Tree) as in lang_php/. This should be enough for higlight_java.ml
  * I think (we just need the full list of tokens + the AST with position
  * for the identifiers).
@@ -193,6 +193,7 @@ and expr =
 
 and arguments = expr list
 
+(* todo: split in more precise *)
 and op = string
 
 (* ------------------------------------------------------------------------- *)

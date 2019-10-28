@@ -39,12 +39,10 @@ let int = id
 let int_to_string = string_of_int
 let float_to_string = string_of_float
 
-(*
 exception Error of string * Parse_info.info
 
 let error tok msg = 
   raise (Error (msg, tok))
-*)
 
 (*****************************************************************************)
 (* Entry point *)
@@ -65,55 +63,75 @@ let qualified_ident v = list ident v
 
 let rec typ =
   function
-  | TBasic v1 -> let v1 = wrap string v1 in ()
-  | TClass v1 -> let v1 = class_type v1 in ()
-  | TArray v1 -> let v1 = typ v1 in ()
+  | TBasic v1 -> let v1 = wrap string v1 in G.TyBuiltin v1
+  | TClass v1 -> let v1 = class_type v1 in v1
+  | TArray v1 -> let v1 = typ v1 in G.TyArray (None, v1)
 and class_type v =
-  list1
+  let res = list1
     (fun (v1, v2) ->
-       let v1 = ident v1 and v2 = list type_argument v2 in ())
+       let v1 = ident v1 and v2 = list type_argument v2 in (v1, v2))
     v
+  in
+  (match res with
+  | [name, type_args] ->
+        G.TyApply (name, type_args)
+  | [] -> raise Impossible (* list1 *)
+  | ((_, info), _)::_ ->
+        error info "class type name not handled, more than one element"
+  )
 and type_argument =
   function
-  | TArgument v1 -> let v1 = ref_type v1 in ()
+  | TArgument v1 -> let v1 = ref_type v1 in G.TypeArg v1
   | TQuestion v1 ->
       let v1 =
         option
-          (fun (v1, v2) -> let v1 = bool v1 and v2 = ref_type v2 in ())
+          (fun (v1, v2) -> let v1 = bool v1 and v2 = ref_type v2 in (v1,v2))
           v1
-      in ()
+      in
+      let anys = 
+        match v1 with
+        | None ->  []
+        | Some (_boolTODO, t) -> [G.T t]
+      in
+      G.OtherTypeArg (G.OTA_Question, anys)
 and ref_type v = typ v
+
 
 let type_parameter =
   function
   | TParam ((v1, v2)) ->
-      let v1 = ident v1 and v2 = list ref_type v2 in ()
+      let v1 = ident v1 and v2 = list ref_type v2 in
+      v1, (v2 |> List.map (fun t -> G.Extends t))
 
 let rec modifier =
   function
-  | Public -> ()
-  | Protected -> ()
-  | Private -> ()
-  | Abstract -> ()
-  | Static -> ()
-  | Final -> ()
-  | StrictFP -> ()
-  | Transient -> ()
-  | Volatile -> ()
-  | Synchronized -> ()
-  | Native -> ()
-  | Annotation v1 -> let v1 = annotation v1 in ()
+  | Public -> G.Public
+  | Protected -> G.Protected
+  | Private -> G.Private
+  | Abstract -> G.Abstract
+  | Static -> G.Static
+  | Final -> G.Final
+  | StrictFP -> G.OtherAttribute (G.OA_StrictFP, [])
+  | Transient -> G.OtherAttribute (G.OA_Transient, [])
+  | Volatile -> G.Volatile
+  | Synchronized -> G.OtherAttribute (G.OA_Synchronized, [])
+  | Native -> G.OtherAttribute (G.OA_Native, [])
+  | Annotation v1 -> 
+      let v1TODO = annotation v1 in
+      G.OtherAttribute (G.OA_AnnotJavaOther, [])
   
 and annotation (v1, v2) =
   let v1 = name_or_class_type v1
   and v2 = option annotation_element v2
   in ()
-and modifiers v = list (wrap modifier) v
+and modifiers v = list (wrap modifier) v |> List.map fst
+
 and annotation_element =
   function
   | AnnotArgValue v1 -> let v1 = element_value v1 in ()
   | AnnotArgPairInit v1 -> let v1 = list annotation_pair v1 in ()
   | EmptyAnnotArg -> ()
+
 and element_value =
   function
   | AnnotExprInit v1 -> let v1 = expr v1 in ()
@@ -121,6 +139,8 @@ and element_value =
   | AnnotArrayInit v1 -> let v1 = list element_value v1 in ()
 and annotation_pair (v1, v2) =
   let v1 = ident v1 and v2 = element_value v2 in ()
+
+
 
 and name_or_class_type v = list identifier_ v
 
@@ -133,86 +153,149 @@ and identifier_ =
       let v1 = list type_argument v1 and v2 = identifier_ v2 in ()
 
 and name v =
-  list1
+  let res = list1
     (fun (v1, v2) ->
-       let v1 = list type_argument v1 and v2 = ident v2 in ())
+       let v1 = list type_argument v1 and v2 = ident v2 in (v1, v2))
     v
+  in
+  (match res with
+  | [type_args, name] ->
+        let info = { (G.empty_info ()) with
+            G.id_typeargs = Some type_args } in
+        (name, info)
+  | [] -> raise Impossible (* list1 *)
+  | (_, (_, info))::_ ->
+        error info "name not handled, more than one element"
+  )
+
 
 and expr =
   function
-  | Name v1 -> let v1 = name v1 in ()
-  | NameOrClassType v1 -> let v1 = name_or_class_type v1 in ()
-  | Literal v1 -> let v1 = wrap string v1 in ()
-  | ClassLiteral v1 -> let v1 = typ v1 in ()
+  | Name v1 -> let (a,b) = name v1 in G.Id (a,b)
+  | NameOrClassType v1 -> let v1 = name_or_class_type v1 in 
+      raise Todo
+  | Literal v1 -> let v1 = wrap string v1 in
+      (* TODO split in more precise values *)
+      G.L (G.Float v1)
+  | ClassLiteral v1 -> let v1 = typ v1 in
+      G.OtherExpr (G.OE_ClassLiteral, [T v1])
   | NewClass ((v1, v2, v3)) ->
       let v1 = typ v1
       and v2 = arguments v2
       and v3 = option decls v3
-      in ()
+      in
+      raise Todo
   | NewArray ((v1, v2, v3, v4)) ->
       let v1 = typ v1
       and v2 = arguments v2
       and v3 = int v3
       and v4 = option init v4
-      in ()
+      in 
+      raise Todo
   | NewQualifiedClass ((v1, v2, v3, v4)) ->
       let v1 = expr v1
       and v2 = ident v2
       and v3 = arguments v3
       and v4 = option decls v4
-      in ()
-  | Call ((v1, v2)) -> let v1 = expr v1 and v2 = arguments v2 in ()
-  | Dot ((v1, v2)) -> let v1 = expr v1 and v2 = ident v2 in ()
-  | ArrayAccess ((v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in ()
-  | Postfix ((v1, v2)) -> let v1 = expr v1 and v2 = op v2 in ()
-  | Prefix ((v1, v2)) -> let v1 = op v1 and v2 = expr v2 in ()
+      in 
+      raise Todo
+  | Call ((v1, v2)) -> let v1 = expr v1 and v2 = arguments v2 in
+      G.Call (v1, v2)
+  | Dot ((v1, v2)) -> let v1 = expr v1 and v2 = ident v2 in 
+      G.ObjAccess (v1, v2)
+  | ArrayAccess ((v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in
+      G.ArrayAccess (v1, v2)
+  | Postfix ((v1, v2)) -> let v1 = expr v1 and v2 = fix_op v2 in
+      G.Call (G.IdSpecial (G.IncrDecr (fst v2, false)), [G.Arg v1]) 
+  | Prefix ((v1, v2)) -> let v1 = fix_op v1 and v2 = expr v2 in
+      G.Call (G.IdSpecial (G.IncrDecr (fst v1, true)), [G.Arg v2]) 
   | Infix ((v1, v2, v3)) ->
-      let v1 = expr v1 and v2 = op v2 and v3 = expr v3 in ()
-  | Cast ((v1, v2)) -> let v1 = typ v1 and v2 = expr v2 in ()
-  | InstanceOf ((v1, v2)) -> let v1 = expr v1 and v2 = ref_type v2 in ()
+      let v1 = expr v1 and v2 = binary_op v2 and v3 = expr v3 in
+      G.Call (G.IdSpecial (G.ArithOp (fst v2)), [G.Arg v1; G.Arg v3])
+  | Cast ((v1, v2)) -> let v1 = typ v1 and v2 = expr v2 in
+    G.Cast (v1, v2)
+  | InstanceOf ((v1, v2)) -> let v1 = expr v1 and v2 = ref_type v2 in
+    Call (G.IdSpecial (G.Instanceof), 
+        [Arg v1; G.ArgOther (G.OA_ArgType, [G.T v2])])
   | Conditional ((v1, v2, v3)) ->
-      let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in ()
+      let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in
+      G.Conditional (v1, v2, v3)
   | Assignment ((v1, v2, v3)) ->
-      let v1 = expr v1 and v2 = op v2 and v3 = expr v3 in ()
+      let v1 = expr v1 and v2 = assign_op v2 and v3 = expr v3 in
+      raise Todo
 
-and arguments v = list expr v
+and arguments v = list expr v |> List.map (fun e -> G.Arg e)
 
-and op v = string v
+and fix_op v = 
+  let v = string v in
+  raise Todo
+
+and binary_op v = 
+  let v = string v in
+  raise Todo
+
+and assign_op v = 
+  let v = string v in
+  raise Todo
 
 and stmt =
   function
-  | Empty -> ()
-  | Block v1 -> let v1 = stmts v1 in ()
-  | Expr v1 -> let v1 = expr v1 in ()
+  | Empty -> G.Block []
+  | Block v1 -> let v1 = stmts v1 in G.Block v1
+  | Expr v1 -> let v1 = expr v1 in G.ExprStmt v1
   | If ((v1, v2, v3)) ->
-      let v1 = expr v1 and v2 = stmt v2 and v3 = stmt v3 in ()
+      let v1 = expr v1 and v2 = stmt v2 and v3 = stmt v3 in
+      G.If (v1, v2, v3)
   | Switch ((v1, v2)) ->
       let v1 = expr v1
       and v2 =
         list
-          (fun (v1, v2) -> let v1 = cases v1 and v2 = stmts v2 in ()) v2
-      in ()
-  | While ((v1, v2)) -> let v1 = expr v1 and v2 = stmt v2 in ()
-  | Do ((v1, v2)) -> let v1 = stmt v1 and v2 = expr v2 in ()
-  | For ((v1, v2)) -> let v1 = for_control v1 and v2 = stmt v2 in ()
-  | Break v1 -> let v1 = option ident v1 in ()
-  | Continue v1 -> let v1 = option ident v1 in ()
-  | Return v1 -> let v1 = option expr v1 in ()
-  | Label ((v1, v2)) -> let v1 = ident v1 and v2 = stmt v2 in ()
-  | Sync ((v1, v2)) -> let v1 = expr v1 and v2 = stmt v2 in ()
+          (fun (v1, v2) -> let v1 = cases v1 and v2 = stmts v2 in 
+            v1, G.stmt1 v2
+        ) v2
+      in
+      G.Switch (v1, v2)
+  | While ((v1, v2)) -> let v1 = expr v1 and v2 = stmt v2 in
+      G.While (v1, v2)
+  | Do ((v1, v2)) -> let v1 = stmt v1 and v2 = expr v2 in
+      G.DoWhile (v1, v2)
+  | For ((v1, v2)) -> let v1 = for_control v1 and v2 = stmt v2 in
+      G.For (v1, v2)
+  | Break v1 -> let v1 = option ident_label v1 in
+      G.Break v1
+  | Continue v1 -> let v1 = option ident_label v1 in
+      G.Continue v1
+  | Return v1 -> let v1 = option expr v1 in
+      G.Return (G.opt_to_nop v1)
+  | Label ((v1, v2)) -> let v1 = ident v1 and v2 = stmt v2 in
+      G.Label (v1, v2)
+  | Sync ((v1, v2)) -> 
+      let v1 = expr v1 and v2 = stmt v2 in
+      G.OtherStmt (G.OS_Sync, [G.E v1; G.S v2])
   | Try ((v1, v2, v3)) ->
       let v1 = stmt v1
       and v2 = catches v2
       and v3 = option stmt v3
-      in ()
-  | Throw v1 -> let v1 = expr v1 in ()
-  | LocalVar v1 -> let v1 = var_with_init v1 in ()
-  | LocalClass v1 -> let v1 = class_decl v1 in ()
-  | Assert ((v1, v2)) -> let v1 = expr v1 and v2 = option expr v2 in ()
+      in
+      G.Try (v1, v2, v3)
+  | Throw v1 -> let v1 = expr v1 in
+      G.Throw v1
+  | LocalVar v1 -> let (ent, v) = var_with_init v1 in
+      G.LocalDef (ent, G.VarDef v)
+  | LocalClass v1 -> let (ent, cdef) = class_decl v1 in
+      G.LocalDef (ent, G.ClassDef cdef)
+  | Assert ((v1, v2)) -> let v1 = expr v1 and v2 = option expr v2 in
+      G.Assert (v1, v2)
+
+and ident_label x =
+  let x = ident x in
+  G.Id (x, G.empty_info ())
 
 and stmts v = list stmt v
 
-and case = function | Case v1 -> let v1 = expr v1 in () | Default -> ()
+and case = function 
+  | Case v1 -> let v1 = expr v1 in G.Case v1
+  | Default -> G.Default
 
 and cases v = list case v
 
@@ -222,30 +305,49 @@ and for_control =
       let v1 = for_init v1
       and v2 = list expr v2
       and v3 = list expr v3
-      in ()
-  | Foreach ((v1, v2)) -> let v1 = var v1 and v2 = expr v2 in ()
+      in 
+      G.ForClassic (v1, G.Seq v2, G.Seq v3)
+  | Foreach ((v1, v2)) -> let ent = var v1 and v2 = expr v2 in
+      let pat = G.OtherPat (OP_Var, [G.En ent]) in
+      G.ForEach (pat, v2)
 
 and for_init =
   function
-  | ForInitVars v1 -> let v1 = list var_with_init v1 in ()
-  | ForInitExprs v1 -> let v1 = list expr v1 in ()
-
-and catch (v1, v2) = let v1 = var v1 and v2 = stmt v2 in ()
-and catches v = list catch v
+  | ForInitVars v1 -> let v1 = list var_with_init v1 in
+      v1 |> List.map (fun (ent,v) -> G.ForInitVar (ent, v))
+  | ForInitExprs v1 -> let v1 = list expr v1 in
+      v1 |> List.map (fun e -> G.ForInitExpr e)
 
 and var { v_name = name; v_mods = mods; v_type = xtyp } =
-  let arg = ident name in
-  let arg = modifiers mods in let arg = typ xtyp in ()
+  let v1 = ident name in
+  let v2 = modifiers mods in 
+  let v3 = typ xtyp in
+  { G.name = v1; G.attrs = v2; G.type_ = Some v3; tparams = [] }
+
+and catch (v1, v2) = let (ent: G.entity) = var v1 and v2 = stmt v2 in
+  let pat = G.OtherPat (G.OP_Var, [G.En ent]) in
+  pat, v2
+and catches v = list catch v
+
 
 and vars v = list var v
+
 and var_with_init { f_var = f_var; f_init = f_init } =
-  let arg = var f_var in let arg = option init f_init in ()
+  let ent = var f_var in 
+  let init = option init f_init in
+  ent, {G.vinit = init; vtype = None }
 
 and init =
   function
-  | ExprInit v1 -> let v1 = expr v1 in ()
-  | ArrayInit v1 -> let v1 = list init v1 in ()
+  | ExprInit v1 -> let v1 = expr v1 in
+      v1
+  | ArrayInit v1 -> let v1 = list init v1 in
+      G.Container (G.Array, v1)
 
+and params v = 
+  let v = vars v in
+  v |> List.map (fun ent ->
+      G.ParamClassic ( G.entity_to_param ent))
 and
   method_decl {
                   m_var = m_var;
@@ -253,10 +355,16 @@ and
                   m_throws = m_throws;
                   m_body = m_body
                 } =
-  let arg = var m_var in
-  let arg = vars m_formals in
-  let arg = list qualified_ident m_throws in
-  let arg = stmt m_body in ()
+  let v1 = var m_var in
+  let rett = match v1.G.type_ with None -> raise Impossible | Some x -> x in
+  let v2 = params m_formals in
+  let v3 = list qualified_ident m_throws in
+  let v4 = stmt m_body in
+  let throws = v3 |> List.map (fun qu_id ->
+        G.OtherAttribute (G.OA_AnnotThrow, [G.Dn qu_id]))
+  in
+  { v1 with G.attrs = v1.G.attrs @ throws },
+  { G.fparams = v2; frettype  = Some rett; fbody = v4 }
 
 and field v = var_with_init v
 
@@ -266,10 +374,10 @@ and enum_decl {
                 en_impls = en_impls;
                 en_body = en_body
               } =
-  let arg = ident en_name in
-  let arg = modifiers en_mods in
-  let arg = list ref_type en_impls in
-  let arg =
+  let v1 = ident en_name in
+  let v2 = modifiers en_mods in
+  let v3 = list ref_type en_impls in
+  let v4 =
     match en_body with
     | (v1, v2) ->
         let v1 = list enum_constant v1 and v2 = decls v2 in ()
@@ -292,22 +400,41 @@ and class_decl {
                  cl_impls = cl_impls;
                  cl_body = cl_body
                } =
-  let arg = ident cl_name in
-  let arg = class_kind cl_kind in
-  let arg = list type_parameter cl_tparams in
-  let arg = modifiers cl_mods in
-  let arg = option typ cl_extends in
-  let arg = list ref_type cl_impls in let arg = decls cl_body in ()
+  let v1 = ident cl_name in
+  let v2 = class_kind cl_kind in
+  let v3 = list type_parameter cl_tparams in
+  let v4 = modifiers cl_mods in
+  let v5 = option typ cl_extends in
+  let v6 = list ref_type cl_impls in 
+  let v7 = decls cl_body in 
+  let fields = List.map G.stmt_to_field v7 in
+  let ent = { (G.basic_entity v1 v4) with
+      G.tparams = v3 } in
+  let cdef = { G.
+      ckind = v2;
+      cextends = Common.opt_to_list v5;
+      cimplements = v6;
+      cbody = fields;
+    } in
+  ent, cdef
 
-and class_kind = function | ClassRegular -> () | Interface -> ()
+
+and class_kind = function 
+  | ClassRegular ->  G.Class
+  | Interface -> G.Interface
 
 and decl =
   function
-  | Class v1 -> let v1 = class_decl v1 in ()
-  | Method v1 -> let v1 = method_decl v1 in ()
-  | Field v1 -> let v1 = field v1 in ()
-  | Enum v1 -> let v1 = enum_decl v1 in ()
-  | Init ((v1, v2)) -> let v1 = bool v1 and v2 = stmt v2 in ()
+  | Class v1 -> let (ent, def) = class_decl v1 in
+      G.LocalDef (ent, G.ClassDef def)
+  | Method v1 -> let (ent, def) = method_decl v1 in 
+      G.LocalDef (ent, G.FuncDef def)
+  | Field v1 -> let (ent, def) = field v1 in 
+      G.LocalDef (ent, G.VarDef def)
+  | Enum v1 -> let v1 = enum_decl v1 in
+      raise Todo
+  | Init ((v1, v2)) -> let v1TODO = bool v1 and v2 = stmt v2 in
+      v2
 
 and decls v = list decl v
 
@@ -316,29 +443,43 @@ let compilation_unit {
                          imports = imports;
                          decls = xdecls
                        } =
-  let arg = option qualified_ident package in
-  let arg =
+  let v1 = option qualified_ident package in
+  let v2 =
     list
-      (fun (v1, v2) -> let v1 = bool v1 and v2 = qualified_ident v2 in ())
+      (fun (v1, v2) -> let v1TODO = bool v1 and v2 = qualified_ident v2 in 
+        match List.rev v2 with
+        | ("*", _)::xs ->
+           G.ImportAll (G.DottedName (List.rev xs), None)
+        | [] -> raise Impossible
+        | x::xs ->
+          G.Import (G.DottedName (List.rev xs), [(x, None)])
+        )
       imports in
-  let arg = decls xdecls in ()
+  let v3 = decls xdecls in
+  (match v1 with
+  | None -> []
+  | Some qu -> [G.IDir (G.OtherDirective (G.OI_Package, [G.Dn qu]))]
+  ) @
+  (v2 |> List.map (fun import -> G.IDir import)) @
+  (v3 |> List.map G.stmt_to_item)
 
 let program v = 
-  (* compilation_unit v *)
-  raise Todo
+  compilation_unit v
 
-(*
 let any =
   function
-  | AIdent v1 -> let v1 = ident v1 in ()
-  | AExpr v1 -> let v1 = expr v1 in ()
-  | AStmt v1 -> let v1 = stmt v1 in ()
-  | ATyp v1 -> let v1 = typ v1 in ()
-  | AVar v1 -> let v1 = var v1 in ()
-  | AInit v1 -> let v1 = init v1 in ()
-  | AMethod v1 -> let v1 = method_decl v1 in ()
-  | AField v1 -> let v1 = field v1 in ()
-  | AClass v1 -> let v1 = class_decl v1 in ()
-  | ADecl v1 -> let v1 = decl v1 in ()
-  | AProgram v1 -> let v1 = program v1 in ()
-*)
+  | AIdent v1 -> let v1 = ident v1 in G.N v1
+  | AExpr v1 -> let v1 = expr v1 in G.E v1
+  | AStmt v1 -> let v1 = stmt v1 in G.S v1
+  | ATyp v1 -> let v1 = typ v1 in G.T v1
+  | AVar v1 -> let v1 = var v1 in G.En v1
+  | AInit v1 -> let v1 = init v1 in G.E v1
+  | AMethod v1 -> let (ent, def) = method_decl v1 in 
+      G.D (ent, G.FuncDef def)
+  | AField v1 -> let (ent, def) = field v1 in
+      G.D (ent, G.VarDef def)
+  | AClass v1 -> let (ent, def) = class_decl v1 in
+      G.D (ent, G.ClassDef def)
+  | ADecl v1 -> let v1 = decl v1 in G.S v1
+  | AProgram v1 -> let v1 = program v1 in G.Pr v1
+
