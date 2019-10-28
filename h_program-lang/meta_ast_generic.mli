@@ -9,3 +9,7 @@ type precision = {
 }
 val default_precision: precision
 
+
+(* reused in other dumpers *)
+val vof_arithmetic_operator: Ast_generic.arithmetic_operator -> Ocaml.v
+

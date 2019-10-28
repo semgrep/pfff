@@ -174,7 +174,7 @@ and vof_expr =
       in Ocaml.VSum (("Prefix", [ v1; v2 ]))
   | Infix ((v1, v2, v3)) ->
       let v1 = vof_expr v1
-      and v2 = vof_op v2
+      and v2 = Meta_ast_generic.vof_arithmetic_operator v2
       and v3 = vof_expr v3
       in Ocaml.VSum (("Infix", [ v1; v2; v3 ]))
   | Cast ((v1, v2)) ->

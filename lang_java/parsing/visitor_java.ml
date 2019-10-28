@@ -173,7 +173,7 @@ and v_expr (x : expr) =
     | Postfix ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_op v2 in ()
     | Prefix ((v1, v2)) -> let v1 = v_op v1 and v2 = v_expr v2 in ()
     | Infix ((v1, v2, v3)) ->
-      let v1 = v_expr v1 and v2 = v_op v2 and v3 = v_expr v3 in ()
+      let v1 = v_expr v1 and v2 = v_arith_op v2 and v3 = v_expr v3 in ()
     | Cast ((v1, v2)) -> let v1 = v_typ v1 and v2 = v_expr v2 in ()
     | InstanceOf ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_ref_type v2 in ()
     | Conditional ((v1, v2, v3)) ->
@@ -184,6 +184,7 @@ and v_expr (x : expr) =
   vin.kexpr (k, all_functions) x
 
 and v_ref_type v = v_typ v
+and v_arith_op _v = ()
 
 and v_arguments v = v_list v_expr v
 and v_stmt (x : stmt) =

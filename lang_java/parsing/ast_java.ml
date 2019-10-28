@@ -180,7 +180,7 @@ and expr =
 
   | Postfix of expr * op
   | Prefix of op * expr
-  | Infix of expr * op * expr
+  | Infix of expr * Ast_generic.arithmetic_operator * expr
 
   | Cast of typ * expr
 

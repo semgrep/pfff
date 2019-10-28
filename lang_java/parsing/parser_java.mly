@@ -21,6 +21,7 @@
  */
 %{
 open Common
+open Ast_generic (* for the arithmetic operator *)
 open Ast_java
 
 (*****************************************************************************)
@@ -512,70 +513,70 @@ cast_expression:
 /* 15.17 */
 multiplicative_expression:
  | unary_expression  { $1 }
- | multiplicative_expression TIMES unary_expression { Infix ($1, "*", $3) }
- | multiplicative_expression DIV unary_expression   { Infix ($1, "/", $3) }
- | multiplicative_expression MOD unary_expression   { Infix ($1, "%", $3) }
+ | multiplicative_expression TIMES unary_expression { Infix ($1, Mult , $3) }
+ | multiplicative_expression DIV unary_expression   { Infix ($1, Div, $3) }
+ | multiplicative_expression MOD unary_expression   { Infix ($1, Mod, $3) }
 
 
 /* 15.18 */
 additive_expression:
  | multiplicative_expression  { $1 }
- | additive_expression PLUS multiplicative_expression { Infix ($1, "+", $3) }
- | additive_expression MINUS multiplicative_expression { Infix ($1, "-", $3) }
+ | additive_expression PLUS multiplicative_expression { Infix ($1, Plus, $3) }
+ | additive_expression MINUS multiplicative_expression { Infix ($1, Minus, $3) }
 
 
 /* 15.19 */
 shift_expression:
  | additive_expression  { $1 }
- | shift_expression LS additive_expression  { Infix ($1, "<<", $3) }
- | shift_expression SRS additive_expression  { Infix ($1, ">>", $3) }
- | shift_expression URS additive_expression  { Infix ($1, ">>>", $3) }
+ | shift_expression LS additive_expression  { Infix ($1, LSL, $3) }
+ | shift_expression SRS additive_expression  { Infix ($1, LSR, $3) }
+ | shift_expression URS additive_expression  { Infix ($1, ASR, $3) }
 
 
 /* 15.20 */
 relational_expression:
  | shift_expression  { $1 }
  /*(* possible many conflicts if don't use a LT2 *)*/
- | relational_expression LT shift_expression  { Infix ($1, "<", $3) }
- | relational_expression GT shift_expression  { Infix ($1, ">", $3) }
- | relational_expression LE shift_expression  { Infix ($1, "<=", $3) }
- | relational_expression GE shift_expression  { Infix ($1, ">=", $3) }
+ | relational_expression LT shift_expression  { Infix ($1, Lt, $3) }
+ | relational_expression GT shift_expression  { Infix ($1, Gt, $3) }
+ | relational_expression LE shift_expression  { Infix ($1, LtE, $3) }
+ | relational_expression GE shift_expression  { Infix ($1, GtE, $3) }
  | relational_expression INSTANCEOF reference_type  { InstanceOf ($1, $3) }
 
 
 /* 15.21 */
 equality_expression:
  | relational_expression  { $1 }
- | equality_expression EQ_EQ relational_expression  { Infix ($1, "==", $3) }
- | equality_expression NOT_EQ relational_expression { Infix ($1, "!=", $3) }
+ | equality_expression EQ_EQ relational_expression  { Infix ($1, Eq, $3) }
+ | equality_expression NOT_EQ relational_expression { Infix ($1, NotEq, $3) }
 
 
 /* 15.22 */
 and_expression:
  | equality_expression  { $1 }
- | and_expression AND equality_expression  { Infix ($1, "&", $3) }
+ | and_expression AND equality_expression  { Infix ($1, BitAnd, $3) }
 
 exclusive_or_expression:
  | and_expression  { $1 }
- | exclusive_or_expression XOR and_expression  { Infix ($1, "^", $3) }
+ | exclusive_or_expression XOR and_expression  { Infix ($1, BitXor, $3) }
 
 
 inclusive_or_expression:
  | exclusive_or_expression  { $1 }
- | inclusive_or_expression OR exclusive_or_expression  { Infix ($1, "|", $3) }
+ | inclusive_or_expression OR exclusive_or_expression  { Infix ($1, BitOr, $3) }
 
 /* 15.23 */
 conditional_and_expression:
  | inclusive_or_expression  { $1 }
  | conditional_and_expression AND_AND inclusive_or_expression
-     { Infix($1,"&&",$3) }
+     { Infix($1,And,$3) }
 
 
 /* 15.24 */
 conditional_or_expression:
  | conditional_and_expression  { $1 }
  | conditional_or_expression OR_OR conditional_and_expression
-     { Infix ($1, "||", $3) }
+     { Infix ($1, Or, $3) }
 
 /*(*----------------------------*)*/
 /*(*2 Ternary *)*/

@@ -218,7 +218,7 @@ and expr =
       G.Call (G.IdSpecial (G.IncrDecr (fst v1, true)), [G.Arg v2]) 
   | Infix ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = binary_op v2 and v3 = expr v3 in
-      G.Call (G.IdSpecial (G.ArithOp (fst v2)), [G.Arg v1; G.Arg v3])
+      G.Call (G.IdSpecial (G.ArithOp (v2)), [G.Arg v1; G.Arg v3])
   | Cast ((v1, v2)) -> let v1 = typ v1 and v2 = expr v2 in
     G.Cast (v1, v2)
   | InstanceOf ((v1, v2)) -> let v1 = expr v1 and v2 = ref_type v2 in
@@ -237,9 +237,9 @@ and fix_op v =
   let v = string v in
   raise Todo
 
-and binary_op v = 
-  let v = string v in
-  raise Todo
+(* Ast_java reuse Ast_generic.arithmetic_operator *)
+and binary_op v = v
+  
 
 and assign_op v = 
   let v = string v in
