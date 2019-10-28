@@ -223,14 +223,14 @@ type expr =
 
     (* mostly binary operator *)
     and arithmetic_operator = 
-      | Plus | Minus (* unary too *) | Mult | Div | Mod | Pow | FloorDiv
+      | Plus | Minus (* unary too *) | Mult | Div | Mod 
+      | Pow | FloorDiv (* not in all PLs, in Python *)
       | LSL | LSR | ASR (* L = logic, A = Arithmetic, SL = shift left *) 
       | BitOr | BitXor | BitAnd | BitNot (* unary *)
       | And | Or (* also shortcut operator *) | Not (* unary *)
       | Eq     | NotEq     (* less: could be desugared to Not Eq *)
       | PhysEq | NotPhysEq (* less: could be desugared to Not PhysEq *)
       | Lt | LtE | Gt | GtE  (* less: could be desugared to Or (Eq Lt) *)
-    
 
   and arguments = argument list
 
