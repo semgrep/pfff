@@ -879,6 +879,11 @@ and m_special a b =
        A.Instanceof,
        B.Instanceof
     )
+  | A.Sizeof, B.Sizeof ->
+    return (
+       A.Sizeof,
+       B.Sizeof
+    )
   | A.New, B.New ->
     return (
        A.New,
@@ -916,6 +921,7 @@ and m_special a b =
   | A.Eval, _
   | A.Typeof, _
   | A.Instanceof, _
+  | A.Sizeof, _
   | A.New, _
   | A.Concat, _
   | A.Spread, _
@@ -988,210 +994,12 @@ and m_container_operator a b =
 
 and m_other_expr_operator a b = 
   match a, b with
-  | A.OE_Exports, B.OE_Exports ->
-    return (
-       A.OE_Exports,
-       B.OE_Exports
-    )
-  | A.OE_Module, B.OE_Module ->
-    return (
-       A.OE_Module,
-       B.OE_Module
-    )
-  | A.OE_Define, B.OE_Define ->
-    return (
-       A.OE_Define,
-       B.OE_Define
-    )
-  | A.OE_Arguments, B.OE_Arguments ->
-    return (
-       A.OE_Arguments,
-       B.OE_Arguments
-    )
-  | A.OE_NewTarget, B.OE_NewTarget ->
-    return (
-       A.OE_NewTarget,
-       B.OE_NewTarget
-    )
-  | A.OE_Delete, B.OE_Delete ->
-    return (
-       A.OE_Delete,
-       B.OE_Delete
-    )
-  | A.OE_YieldStar, B.OE_YieldStar ->
-    return (
-       A.OE_YieldStar,
-       B.OE_YieldStar
-    )
-  | A.OE_Encaps, B.OE_Encaps ->
-    return (
-       A.OE_Encaps,
-       B.OE_Encaps
-    )
-  | A.OE_Require, B.OE_Require ->
-    return (
-       A.OE_Require,
-       B.OE_Require
-    )
-  | A.OE_UseStrict, B.OE_UseStrict ->
-    return (
-       A.OE_UseStrict,
-       B.OE_UseStrict
-    )
-  | A.OE_ObjAccess_PN_Computed, B.OE_ObjAccess_PN_Computed ->
-    return (
-       A.OE_ObjAccess_PN_Computed,
-       B.OE_ObjAccess_PN_Computed
-    )
-  | A.OE_ExprClass, B.OE_ExprClass ->
-    return (
-       A.OE_ExprClass,
-       B.OE_ExprClass
-    )
-  | A.OE_Imag, B.OE_Imag ->
-    return (
-       A.OE_Imag,
-       B.OE_Imag
-    )
-  | A.OE_Is, B.OE_Is ->
-    return (
-       A.OE_Is,
-       B.OE_Is
-    )
-  | A.OE_IsNot, B.OE_IsNot ->
-    return (
-       A.OE_IsNot,
-       B.OE_IsNot
-    )
-  | A.OE_In, B.OE_In ->
-    return (
-       A.OE_In,
-       B.OE_In
-    )
-  | A.OE_NotIn, B.OE_NotIn ->
-    return (
-       A.OE_NotIn,
-       B.OE_NotIn
-    )
-  | A.OE_Invert, B.OE_Invert ->
-    return (
-       A.OE_Invert,
-       B.OE_Invert
-    )
-  | A.OE_Slice, B.OE_Slice ->
-    return (
-       A.OE_Slice,
-       B.OE_Slice
-    )
-  | A.OE_SliceIndex, B.OE_SliceIndex ->
-    return (
-       A.OE_SliceIndex,
-       B.OE_SliceIndex
-    )
-  | A.OE_SliceRange, B.OE_SliceRange ->
-    return (
-       A.OE_SliceRange,
-       B.OE_SliceRange
-    )
-  | A.OE_CompForIf, B.OE_CompForIf ->
-    return (
-       A.OE_CompForIf,
-       B.OE_CompForIf
-    )
-  | A.OE_CompFor, B.OE_CompFor ->
-    return (
-       A.OE_CompFor,
-       B.OE_CompFor
-    )
-  | A.OE_CompIf, B.OE_CompIf ->
-    return (
-       A.OE_CompIf,
-       B.OE_CompIf
-    )
-  | A.OE_CmpOps, B.OE_CmpOps ->
-    return (
-       A.OE_CmpOps,
-       B.OE_CmpOps
-    )
-  | A.OE_Repr, B.OE_Repr ->
-    return (
-       A.OE_Repr,
-       B.OE_Repr
-    )
-  | A.OE_NameOrClassType, B.OE_NameOrClassType ->
-    return (
-       A.OE_NameOrClassType,
-       B.OE_NameOrClassType
-    )
-  | A.OE_ClassLiteral, B.OE_ClassLiteral ->
-    return (
-       A.OE_ClassLiteral,
-       B.OE_ClassLiteral
-    )
-  | A.OE_GetRefLabel, B.OE_GetRefLabel ->
-    return (
-       A.OE_GetRefLabel,
-       B.OE_GetRefLabel
-    )
-  | A.OE_SizeOf, B.OE_SizeOf ->
-    return (
-       A.OE_SizeOf,
-       B.OE_SizeOf
-    )
-  | A.OE_ArrayInitDesignator, B.OE_ArrayInitDesignator ->
-    return (
-       A.OE_ArrayInitDesignator,
-       B.OE_ArrayInitDesignator
-    )
-  | A.OE_GccConstructor, B.OE_GccConstructor ->
-    return (
-       A.OE_GccConstructor,
-       B.OE_GccConstructor
-    )
-  | A.OE_Unpack, B.OE_Unpack ->
-    return (
-       A.OE_Unpack,
-       B.OE_Unpack
-    )
-  | A.OE_Exports, _
-  | A.OE_Module, _
-  | A.OE_Define, _
-  | A.OE_Arguments, _
-  | A.OE_NewTarget, _
-  | A.OE_Delete, _
-  | A.OE_YieldStar, _
-  | A.OE_Encaps, _
-  | A.OE_Require, _
-  | A.OE_UseStrict, _
-  | A.OE_ObjAccess_PN_Computed, _
-  | A.OE_ExprClass, _
-  | A.OE_Imag, _
-  | A.OE_Is, _
-  | A.OE_IsNot, _
-  | A.OE_In, _
-  | A.OE_NotIn, _
-  | A.OE_Invert, _
-  | A.OE_Slice, _
-  | A.OE_SliceIndex, _
-  | A.OE_SliceRange, _
-  | A.OE_CompForIf, _
-  | A.OE_CompFor, _
-  | A.OE_CompIf, _
-  | A.OE_CmpOps, _
-  | A.OE_Repr, _
-  | A.OE_NameOrClassType, _
-  | A.OE_ClassLiteral, _
-  | A.OE_GetRefLabel, _
-  | A.OE_SizeOf, _
-  | A.OE_ArrayInitDesignator, _
-  | A.OE_GccConstructor, _
-  | A.OE_Unpack, _
-   -> fail ()
+  | a, b when a =*= b -> return (a,b)
+  | _ -> fail ()
 
 (*---------------------------------------------------------------------------*)
 (* Arguments list iso *)
 (*---------------------------------------------------------------------------*)
-
 
 and m_arguments a b = 
   match a, b with
@@ -1283,19 +1091,8 @@ and m_argument a b =
 
 and m_other_argument_operator a b = 
   match a, b with
-  | A.OA_ArgPow, B.OA_ArgPow ->
-    return (
-       A.OA_ArgPow,
-       B.OA_ArgPow
-    )
-  | A.OA_ArgComp, B.OA_ArgComp ->
-    return (
-       A.OA_ArgComp,
-       B.OA_ArgComp
-    )
-  | A.OA_ArgPow, _
-  | A.OA_ArgComp, _
-   -> fail ()
+  | (a,b) when a =*= b -> return (a,b)
+  | _ -> fail ()
 
 (* ------------------------------------------------------------------------- *)
 (* Type *)
@@ -1410,49 +1207,8 @@ and m_type_argument a b =
 
 and m_other_type_operator a b = 
   match a, b with
-  | A.OT_Expr, B.OT_Expr ->
-    return (
-       A.OT_Expr,
-       B.OT_Expr
-    )
-  | A.OT_Arg, B.OT_Arg ->
-    return (
-       A.OT_Arg,
-       B.OT_Arg
-    )
-  | A.OT_StructName, B.OT_StructName ->
-    return (
-       A.OT_StructName,
-       B.OT_StructName
-    )
-  | A.OT_UnionName, B.OT_UnionName ->
-    return (
-       A.OT_UnionName,
-       B.OT_UnionName
-    )
-  | A.OT_EnumName, B.OT_EnumName ->
-    return (
-       A.OT_EnumName,
-       B.OT_EnumName
-    )
-  | A.OT_Shape, B.OT_Shape ->
-    return (
-       A.OT_Shape,
-       B.OT_Shape
-    )
-  | A.OT_Variadic, B.OT_Variadic ->
-    return (
-       A.OT_Variadic,
-       B.OT_Variadic
-    )
-  | A.OT_Expr, _
-  | A.OT_Arg, _
-  | A.OT_StructName, _
-  | A.OT_UnionName, _
-  | A.OT_EnumName, _
-  | A.OT_Shape, _
-  | A.OT_Variadic, _
-   -> fail ()
+  | a, b when a =*= b -> return (a,b)
+  | _ -> fail ()
 
 and m_other_type_argument_operator a b = 
   match a, b with
@@ -1600,52 +1356,8 @@ and m_attribute a b =
 
 and m_other_attribute_operator a b = 
   match a, b with
-  | A.OA_StrictFP, B.OA_StrictFP ->
-    return (
-       A.OA_StrictFP,
-       B.OA_StrictFP
-    )
-  | A.OA_Transient, B.OA_Transient ->
-    return (
-       A.OA_Transient,
-       B.OA_Transient
-    )
-  | A.OA_Synchronized, B.OA_Synchronized ->
-    return (
-       A.OA_Synchronized,
-       B.OA_Synchronized
-    )
-  | A.OA_Native, B.OA_Native ->
-    return (
-       A.OA_Native,
-       B.OA_Native
-    )
-  | A.OA_AnnotJavaOther(a1), B.OA_AnnotJavaOther(b1) ->
-    m_string a1 b1 >>= (fun (a1, b1) -> 
-    return (
-       A.OA_AnnotJavaOther(a1),
-       B.OA_AnnotJavaOther(b1)
-    )
-    )
-  | A.OA_AnnotThrow, B.OA_AnnotThrow ->
-    return (
-       A.OA_AnnotThrow,
-       B.OA_AnnotThrow
-    )
-  | A.OA_Expr, B.OA_Expr ->
-    return (
-       A.OA_Expr,
-       B.OA_Expr
-    )
-  | A.OA_StrictFP, _
-  | A.OA_Transient, _
-  | A.OA_Synchronized, _
-  | A.OA_Native, _
-  | A.OA_AnnotJavaOther _, _
-  | A.OA_AnnotThrow, _
-  | A.OA_Expr, _
-   -> fail ()
-
+  | (a,b) when a =*= b -> return (a,b)
+  | _ -> fail ()
 
 (* ------------------------------------------------------------------------- *)
 (* Statement *)
@@ -1927,85 +1639,8 @@ and m_case a b =
 
 and m_other_stmt_operator a b = 
   match a, b with
-  | A.OS_Delete, B.OS_Delete ->
-    return (
-       A.OS_Delete,
-       B.OS_Delete
-    )
-  | A.OS_Async, B.OS_Async ->
-    return (
-       A.OS_Async,
-       B.OS_Async
-    )
-  | A.OS_ForOrElse, B.OS_ForOrElse ->
-    return (
-       A.OS_ForOrElse,
-       B.OS_ForOrElse
-    )
-  | A.OS_WhileOrElse, B.OS_WhileOrElse ->
-    return (
-       A.OS_WhileOrElse,
-       B.OS_WhileOrElse
-    )
-  | A.OS_TryOrElse, B.OS_TryOrElse ->
-    return (
-       A.OS_TryOrElse,
-       B.OS_TryOrElse
-    )
-  | A.OS_With, B.OS_With ->
-    return (
-       A.OS_With,
-       B.OS_With
-    )
-  | A.OS_ThrowFrom, B.OS_ThrowFrom ->
-    return (
-       A.OS_ThrowFrom,
-       B.OS_ThrowFrom
-    )
-  | A.OS_ThrowNothing, B.OS_ThrowNothing ->
-    return (
-       A.OS_ThrowNothing,
-       B.OS_ThrowNothing
-    )
-  | A.OS_Global, B.OS_Global ->
-    return (
-       A.OS_Global,
-       B.OS_Global
-    )
-  | A.OS_NonLocal, B.OS_NonLocal ->
-    return (
-       A.OS_NonLocal,
-       B.OS_NonLocal
-    )
-  | A.OS_Pass, B.OS_Pass ->
-    return (
-       A.OS_Pass,
-       B.OS_Pass
-    )
-  | A.OS_Sync, B.OS_Sync ->
-    return (
-       A.OS_Sync,
-       B.OS_Sync
-    )
-  | A.OS_Asm, B.OS_Asm ->
-    return (
-       A.OS_Asm,
-       B.OS_Asm
-    )
-  | A.OS_Delete, _
-  | A.OS_Async, _
-  | A.OS_ForOrElse, _
-  | A.OS_WhileOrElse, _
-  | A.OS_TryOrElse, _
-  | A.OS_With, _
-  | A.OS_ThrowFrom, _
-  | A.OS_ThrowNothing, _
-  | A.OS_Global, _
-  | A.OS_NonLocal, _
-  | A.OS_Pass, _
-  | A.OS_Sync, _
-  | A.OS_Asm, _
-   -> fail ()
+  | a,b when a =*= b -> return (a,b)
+  | _ -> fail ()
 
 (* ------------------------------------------------------------------------- *)
 (* Pattern *)
@@ -2618,55 +2253,8 @@ and m_alias a b =
 
 and m_other_directive_operator a b = 
   match a, b with
-  | A.OI_Export, B.OI_Export ->
-    return (
-       A.OI_Export,
-       B.OI_Export
-    )
-  | A.OI_ImportCss, B.OI_ImportCss ->
-    return (
-       A.OI_ImportCss,
-       B.OI_ImportCss
-    )
-  | A.OI_ImportEffect, B.OI_ImportEffect ->
-    return (
-       A.OI_ImportEffect,
-       B.OI_ImportEffect
-    )
-  | A.OI_Package, B.OI_Package ->
-    return (
-       A.OI_Package,
-       B.OI_Package
-    )
-  | A.OI_Define, B.OI_Define ->
-    return (
-       A.OI_Define,
-       B.OI_Define
-    )
-  | A.OI_Macro, B.OI_Macro ->
-    return (
-       A.OI_Macro,
-       B.OI_Macro
-    )
-  | A.OI_Prototype, B.OI_Prototype ->
-    return (
-       A.OI_Prototype,
-       B.OI_Prototype
-    )
-  | A.OI_Namespace, B.OI_Namespace ->
-    return (
-       A.OI_Namespace,
-       B.OI_Namespace
-    )
-  | A.OI_Export, _
-  | A.OI_ImportCss, _
-  | A.OI_ImportEffect, _
-  | A.OI_Package, _
-  | A.OI_Define, _
-  | A.OI_Macro, _
-  | A.OI_Prototype, _
-  | A.OI_Namespace, _
-   -> fail ()
+  | a, b when a =*= b -> return (a,b)
+  | _ -> fail ()
 
 (* ------------------------------------------------------------------------- *)
 (* Toplevel *)

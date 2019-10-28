@@ -173,6 +173,7 @@ and vof_special =
   | Eval -> Ocaml.VSum (("Eval", []))
   | Typeof -> Ocaml.VSum (("Typeof", []))
   | Instanceof -> Ocaml.VSum (("Instanceof", []))
+  | Sizeof -> Ocaml.VSum (("Sizeof", []))
   | New -> Ocaml.VSum (("New", []))
   | Concat -> Ocaml.VSum (("Concat", []))
   | Spread -> Ocaml.VSum (("Spread", []))
@@ -225,6 +226,7 @@ and vof_other_argument_operator =
   function
   | OA_ArgPow -> Ocaml.VSum (("OA_ArgPow", []))
   | OA_ArgComp -> Ocaml.VSum (("OA_ArgComp", []))
+  | OA_ArgType -> Ocaml.VSum (("OA_ArgType", []))
 and vof_action (v1, v2) =
   let v1 = vof_pattern v1 and v2 = vof_expr v2 in Ocaml.VTuple [ v1; v2 ]
 and vof_other_expr_operator =
@@ -258,7 +260,6 @@ and vof_other_expr_operator =
   | OE_NameOrClassType -> Ocaml.VSum (("OE_NameOrClassType", []))
   | OE_ClassLiteral -> Ocaml.VSum (("OE_ClassLiteral", []))
   | OE_GetRefLabel -> Ocaml.VSum (("OE_GetRefLabel", []))
-  | OE_SizeOf -> Ocaml.VSum (("OE_SizeOf", []))
   | OE_ArrayInitDesignator -> Ocaml.VSum (("OE_ArrayInitDesignator", []))
   | OE_GccConstructor -> Ocaml.VSum (("OE_GccConstructor", []))
   | OE_Unpack -> Ocaml.VSum (("OE_Unpack", []))
@@ -344,9 +345,7 @@ and vof_other_attribute_operator =
   | OA_Transient -> Ocaml.VSum (("OA_Transient", []))
   | OA_Synchronized -> Ocaml.VSum (("OA_Synchronized", []))
   | OA_Native -> Ocaml.VSum (("OA_Native", []))
-  | OA_AnnotJavaOther v1 ->
-      let v1 = Ocaml.vof_string v1
-      in Ocaml.VSum (("OA_AnnotJavaOther", [ v1 ]))
+  | OA_AnnotJavaOther -> Ocaml.VSum (("OA_AnnotJavaOther", [ ]))
   | OA_AnnotThrow -> Ocaml.VSum (("OA_AnnotThrow", []))
   | OA_Expr -> Ocaml.VSum (("OA_Expr", []))
 and vof_stmt =
@@ -703,6 +702,7 @@ and vof_any =
   | P v1 -> let v1 = vof_pattern v1 in Ocaml.VSum (("P", [ v1 ]))
   | D v1 -> let v1 = vof_definition v1 in Ocaml.VSum (("D", [ v1 ]))
   | Di v1 -> let v1 = vof_directive v1 in Ocaml.VSum (("Di", [ v1 ]))
+  | Dn v1 -> let v1 = vof_dotted_name v1 in Ocaml.VSum (("Dn", [ v1 ]))
   | I v1 -> let v1 = vof_item v1 in Ocaml.VSum (("I", [ v1 ]))
   | Pa v1 -> let v1 = vof_parameter v1 in Ocaml.VSum (("Pa", [ v1 ]))
   | Ar v1 -> let v1 = vof_argument v1 in Ocaml.VSum (("Ar", [ v1 ]))

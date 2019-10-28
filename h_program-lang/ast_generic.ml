@@ -56,6 +56,11 @@
  * history:
  *  - started with crossproduct of Javascript, Python, PHP, Java, and C
  *    (and a bit of OCaml)
+ *
+ * invariants:
+ *  - all the other_xxx types should contain only simple constructors (enums)
+ *    without any parameter. I rely on that to simplify the code 
+ *    of the generic mapper and matcher.
  *)
 
 (*****************************************************************************)
@@ -204,7 +209,7 @@ type expr =
    | Self | Parent (* different from This/Super? *)
    (* special apply *)
    | Eval
-   | Typeof | Instanceof
+   | Typeof | Instanceof | Sizeof
 
    | New  (* todo? lift up? of name? of expr? *)
 
@@ -241,6 +246,10 @@ type expr =
         (* Python *)
         | OA_ArgPow (* a kind of Spread, but for Dict instead of List *)
         | OA_ArgComp
+        (* Java, C *)
+        (* could lift up as ArgType of type_ *)
+        | OA_ArgType (* for Instanceof, for sizeof, Typeof, macros *)
+          
 
   and action = pattern * expr
 
@@ -267,7 +276,6 @@ type expr =
     (* Java *)
     | OE_NameOrClassType | OE_ClassLiteral (* XXX.class? *)
     (* C *)
-    | OE_SizeOf
     | OE_GetRefLabel
     | OE_ArrayInitDesignator | OE_GccConstructor (* transform in New? *)
     (* PHP *)
@@ -336,7 +344,7 @@ and attribute =
   and other_attribute_operator = 
     (* Java *)
     | OA_StrictFP | OA_Transient | OA_Synchronized | OA_Native
-    | OA_AnnotJavaOther of string
+    | OA_AnnotJavaOther
     | OA_AnnotThrow
     (* Python *)
     | OA_Expr (* todo: should transform in NamedAttr when can *)
@@ -578,6 +586,7 @@ and directive =
 (* ------------------------------------------------------------------------- *)
 (* Toplevel *)
 (* ------------------------------------------------------------------------- *)
+(* less: should merge stmt, item, and field? *)
 and item = 
   | IStmt of stmt
 
@@ -608,6 +617,7 @@ and any =
   | Ar of argument
   | At of attribute
   | Dk of definition_kind
+  | Dn of dotted_name
 
   | Pr of program
 
@@ -647,8 +657,18 @@ let basic_field name typeopt =
   let entity = basic_entity name [] in
   FieldVar (entity, { vinit = None; vtype = typeopt})
 
+let empty_var () = 
+  { vinit = None; vtype = None }
+
 let expr_to_arg e = 
   Arg e
+
+let entity_to_param { name; attrs; type_; tparams = _unused } = 
+  { pname = name;
+    pdefault = None;
+    ptype = type_;
+    pattrs = attrs;
+  }
 
 let opt_to_nop opt =
   match opt with
@@ -666,6 +686,7 @@ let stmt1 xs =
   | [st] -> st
   | xs -> Block xs
 
+(* todo? sign that should merge field with item and stmt? *)
 let stmt_to_field st = 
   match st with
   | LocalDef (entity, VarDef def) -> FieldVar (entity, def)

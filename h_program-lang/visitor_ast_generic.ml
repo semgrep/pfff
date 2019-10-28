@@ -187,6 +187,7 @@ and v_special =
   | Eval -> ()
   | Typeof -> ()
   | Instanceof -> ()
+  | Sizeof -> ()
   | New -> ()
   | Concat -> ()
   | Spread -> ()
@@ -226,46 +227,11 @@ and v_argument =
   | ArgKwd ((v1, v2)) -> let v1 = v_name v1 and v2 = v_expr v2 in ()
   | ArgOther ((v1, v2)) ->
       let v1 = v_other_argument_operator v1 and v2 = v_list v_any v2 in ()
-and v_other_argument_operator = function 
- | OA_ArgPow -> ()
- | OA_ArgComp -> ()
 
-and v_other_expr_operator =
-  function
-  | OE_CompForIf -> ()
-  | OE_CompIf -> ()
-  | OE_CompFor -> ()
+and v_other_argument_operator _x = ()
 
-  | OE_Encaps -> ()
-  | OE_CmpOps -> ()
-  | OE_Exports -> ()
-  | OE_Module -> ()
-  | OE_Define -> ()
-  | OE_Arguments -> ()
-  | OE_NewTarget -> ()
-  | OE_Delete -> ()
-  | OE_YieldStar -> ()
-  | OE_Require -> ()
-  | OE_UseStrict -> ()
-  | OE_ObjAccess_PN_Computed -> ()
-  | OE_ExprClass -> ()
-  | OE_Imag -> ()
-  | OE_Is -> ()
-  | OE_IsNot -> ()
-  | OE_In -> ()
-  | OE_NotIn -> ()
-  | OE_Invert -> ()
-  | OE_Slice -> ()
-  | OE_SliceRange -> ()
-  | OE_SliceIndex -> ()
-  | OE_Repr -> ()
-  | OE_NameOrClassType -> ()
-  | OE_ClassLiteral -> ()
-  | OE_GetRefLabel -> ()
-  | OE_SizeOf -> ()
-  | OE_ArrayInitDesignator -> ()
-  | OE_GccConstructor -> ()
-  | OE_Unpack -> ()
+and v_other_expr_operator _x = ()
+
 and v_type_ x =
   let k x = 
   match x with
@@ -293,15 +259,9 @@ and v_type_argument =
       and v2 = v_list v_any v2
       in ()
 and v_other_type_argument_operator = function | OTA_Question -> ()
-and v_other_type_operator =
-  function
-  | OT_Arg -> ()
-  | OT_Expr -> ()
-  | OT_StructName -> ()
-  | OT_UnionName -> ()
-  | OT_EnumName -> ()
-  | OT_Shape -> ()
-  | OT_Variadic -> ()
+
+and v_other_type_operator _ = ()
+
 and v_type_parameter (v1, v2) =
   let v1 = v_name v1 and v2 = v_type_parameter_constraints v2 in ()
 and v_type_parameter_constraints v = v_list v_type_parameter_constraint v
@@ -334,15 +294,8 @@ and v_attribute x =
   in
   vin.kattr (k, all_functions) x
 
-and v_other_attribute_operator =
-  function
-  | OA_StrictFP -> ()
-  | OA_Transient -> ()
-  | OA_Synchronized -> ()
-  | OA_Native -> ()
-  | OA_AnnotJavaOther v1 -> let v1 = v_string v1 in ()
-  | OA_AnnotThrow -> ()
-  | OA_Expr -> ()
+and v_other_attribute_operator _ = ()
+
 and v_stmt x =
   let k x =
   match x with
@@ -396,21 +349,8 @@ and v_for_var_or_expr =
   | ForInitVar ((v1, v2)) ->
       let v1 = v_entity v1 and v2 = v_variable_definition v2 in ()
   | ForInitExpr v1 -> let v1 = v_expr v1 in ()
-and v_other_stmt_operator =
-  function
-  | OS_NonLocal -> ()
-  | OS_Delete -> ()
-  | OS_Async -> ()
-  | OS_ForOrElse -> ()
-  | OS_WhileOrElse -> ()
-  | OS_TryOrElse -> ()
-  | OS_With -> ()
-  | OS_ThrowFrom -> ()
-  | OS_ThrowNothing -> ()
-  | OS_Global -> ()
-  | OS_Pass -> ()
-  | OS_Sync -> ()
-  | OS_Asm -> ()
+and v_other_stmt_operator _x = ()
+
 and v_pattern x =
   let k x = 
   match x with
@@ -590,6 +530,7 @@ and v_any =
   | D v1 -> let v1 = v_def v1 in ()
   | Di v1 -> let v1 = v_directive v1 in ()
   | Dk v1 -> let v1 = v_def_kind v1 in ()
+  | Dn v1 -> let v1 = v_dotted_name v1 in ()
   | I v1 -> let v1 = v_item v1 in ()
   | Pa v1 -> let v1 = v_parameter v1 in ()
   | Ar v1 -> let v1 = v_argument v1 in ()

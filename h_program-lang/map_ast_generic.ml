@@ -191,6 +191,7 @@ and map_special =
   | Eval -> Eval
   | Typeof -> Typeof
   | Instanceof -> Instanceof
+  | Sizeof -> Sizeof
   | New -> New
   | Concat -> Concat
   | Spread -> Spread
@@ -238,47 +239,12 @@ and map_argument =
       and v2 = map_of_list map_any v2
       in ArgOther ((v1, v2))
 
-and map_other_argument_operator =
-  function | OA_ArgPow -> OA_ArgPow | OA_ArgComp -> OA_ArgComp
+and map_other_argument_operator x = x
 
 and map_action (v1, v2) =
   let v1 = map_pattern v1 and v2 = map_expr v2 in (v1, v2)
 
-and map_other_expr_operator =
-  function
-  | OE_Exports -> OE_Exports
-  | OE_Module -> OE_Module
-  | OE_Define -> OE_Define
-  | OE_Arguments -> OE_Arguments
-  | OE_NewTarget -> OE_NewTarget
-  | OE_Delete -> OE_Delete
-  | OE_YieldStar -> OE_YieldStar
-  | OE_Encaps -> OE_Encaps
-  | OE_Require -> OE_Require
-  | OE_UseStrict -> OE_UseStrict
-  | OE_ObjAccess_PN_Computed -> OE_ObjAccess_PN_Computed
-  | OE_ExprClass -> OE_ExprClass
-  | OE_Imag -> OE_Imag
-  | OE_Is -> OE_Is
-  | OE_IsNot -> OE_IsNot
-  | OE_In -> OE_In
-  | OE_NotIn -> OE_NotIn
-  | OE_Invert -> OE_Invert
-  | OE_Slice -> OE_Slice
-  | OE_SliceIndex -> OE_SliceIndex
-  | OE_SliceRange -> OE_SliceRange
-  | OE_CompForIf -> OE_CompForIf
-  | OE_CompFor -> OE_CompFor
-  | OE_CompIf -> OE_CompIf
-  | OE_CmpOps -> OE_CmpOps
-  | OE_Repr -> OE_Repr
-  | OE_NameOrClassType -> OE_NameOrClassType
-  | OE_ClassLiteral -> OE_ClassLiteral
-  | OE_GetRefLabel -> OE_GetRefLabel
-  | OE_SizeOf -> OE_SizeOf
-  | OE_ArrayInitDesignator -> OE_ArrayInitDesignator
-  | OE_GccConstructor -> OE_GccConstructor
-  | OE_Unpack -> OE_Unpack
+and map_other_expr_operator x = x
 
 and map_type_ =
   function
@@ -356,16 +322,7 @@ and map_attribute =
       and v2 = map_of_list map_any v2
       in OtherAttribute ((v1, v2))
 
-and map_other_attribute_operator =
-  function
-  | OA_StrictFP -> OA_StrictFP
-  | OA_Transient -> OA_Transient
-  | OA_Synchronized -> OA_Synchronized
-  | OA_Native -> OA_Native
-  | OA_AnnotJavaOther v1 ->
-      let v1 = map_of_string v1 in OA_AnnotJavaOther ((v1))
-  | OA_AnnotThrow -> OA_AnnotThrow
-  | OA_Expr -> OA_Expr
+and map_other_attribute_operator x  = x
 
 and map_stmt =
   function
@@ -442,21 +399,7 @@ and map_for_var_or_expr =
       in ForInitVar ((v1, v2))
   | ForInitExpr v1 -> let v1 = map_expr v1 in ForInitExpr ((v1))
 
-and map_other_stmt_operator =
-  function
-  | OS_Delete -> OS_Delete
-  | OS_Async -> OS_Async
-  | OS_ForOrElse -> OS_ForOrElse
-  | OS_WhileOrElse -> OS_WhileOrElse
-  | OS_TryOrElse -> OS_TryOrElse
-  | OS_With -> OS_With
-  | OS_ThrowFrom -> OS_ThrowFrom
-  | OS_ThrowNothing -> OS_ThrowNothing
-  | OS_Global -> OS_Global
-  | OS_NonLocal -> OS_NonLocal
-  | OS_Pass -> OS_Pass
-  | OS_Sync -> OS_Sync
-  | OS_Asm -> OS_Asm
+and map_other_stmt_operator x = x
 
 and map_pattern =
   function
@@ -480,8 +423,7 @@ and map_pattern =
       and v2 = map_of_list map_any v2
       in OtherPat ((v1, v2))
 
-and map_other_pattern_operator =
-  function | OP_Expr -> OP_Expr | OP_Var -> OP_Var
+and map_other_pattern_operator x = x
 
 and map_definition (v1, v2) =
 
@@ -564,8 +506,7 @@ and
                           pattrs = v_pattrs
                         }
 
-and map_other_parameter_operator =
-  function | OPO_KwdParam -> OPO_KwdParam | OPO_Ref -> OPO_Ref
+and map_other_parameter_operator x = x
 
 and map_variable_definition { vinit = v_vinit; vtype = v_vtype } =
   let v_vtype = map_of_option map_type_ v_vtype in
@@ -654,16 +595,7 @@ and map_directive =
 and map_alias (v1, v2) =
   let v1 = map_name v1 and v2 = map_of_option map_name v2 in (v1, v2)
 
-and map_other_directive_operator =
-  function
-  | OI_Export -> OI_Export
-  | OI_ImportCss -> OI_ImportCss
-  | OI_ImportEffect -> OI_ImportEffect
-  | OI_Package -> OI_Package
-  | OI_Define -> OI_Define
-  | OI_Macro -> OI_Macro
-  | OI_Prototype -> OI_Prototype
-  | OI_Namespace -> OI_Namespace
+and map_other_directive_operator x = x
 
 and map_item =
   function
@@ -683,6 +615,7 @@ and map_any =
   | P v1 -> let v1 = map_pattern v1 in P ((v1))
   | D v1 -> let v1 = map_definition v1 in D ((v1))
   | Di v1 -> let v1 = map_directive v1 in Di ((v1))
+  | Dn v1 -> let v1 = map_dotted_name v1 in Dn ((v1))
   | I v1 -> let v1 = map_item v1 in I ((v1))
   | Pa v1 -> let v1 = map_parameter v1 in Pa ((v1))
   | Ar v1 -> let v1 = map_argument v1 in Ar ((v1))

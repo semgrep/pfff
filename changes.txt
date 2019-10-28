@@ -1,6 +1,6 @@
 # -*- org -*-
 
-* 0.39 (Q4 2019) (better Python support, a generic AST)
+* 0.39 (Q4 2019) (real Python parser, a generic AST, a generic sgrep)
 10 years of Pfff! Started in November 2009 (while at Facebook).
 
 ** introducing ast_generic.ml
@@ -12,11 +12,17 @@ basic lexer and highlighter.
 
 ** python
 
-*** use a real parser, based on ocaml-pythonlib
+*** use a real parser, based on ocaml-pythonlib, and extend
+to fully support Python3 (especially type annotations)
 
 *** AST-based highlighter and later tag names to
 differentiate imported modules, entities, locals, params, globals!
 semantic highlighting!
+
+** sgrep
+
+*** add support for AST generic to sgrep precisely over Python, Javascript,
+C, and Java.
 
 * 0.38 (Q3 2019) (a real AST for Javascript)
 
@@ -32,7 +38,7 @@ to work on most node_modules/
 
 *** handle {| |} string literals
 
-* 0.37 (Q2 2019) (new OPAM release, better JS support)
+* 0.37 (Q2 2019) (new OPAM release, better JS parser for ES6)
 
 ** sgrep
 

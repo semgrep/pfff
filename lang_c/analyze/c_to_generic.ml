@@ -181,10 +181,10 @@ and expr =
   | Sequence ((v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in
       G.Seq [v1;v2]
   | SizeOf v1 -> let v1 = either expr type_ v1 in
-      G.OtherExpr (G.OE_SizeOf, 
+      G.Call (G.IdSpecial G.Sizeof, 
        (match v1 with
-       | Left e -> [G.E e]
-       | Right t -> [G.T t]
+       | Left e -> [G.Arg e]
+       | Right t -> [G.ArgOther (G.OA_ArgType, [G.T t])]
        ))
   | ArrayInit v1 ->
       let v1 =
