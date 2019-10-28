@@ -44,7 +44,6 @@ let tokinfo lexbuf  =
 (* ---------------------------------------------------------------------- *)
 (* Keywords *)
 (* ---------------------------------------------------------------------- *)
-let literal v = (v, (fun ii -> LITERAL (v,ii)))
 let primitive_type t = (t, (fun ii -> PRIMITIVE_TYPE (t, ii)))
 
 let keyword_table = Common.hash_of_list [
@@ -96,10 +95,6 @@ let keyword_table = Common.hash_of_list [
   "void", (fun ii -> VOID ii);
   "volatile", (fun ii -> VOLATILE ii);
   "while", (fun ii -> WHILE ii);
-
-  literal "true";
-  literal "false";
-  literal "null";
 
   primitive_type "byte";
   primitive_type "short";
@@ -218,16 +213,6 @@ let StringLiteral = '"' (StringCharacter | EscapeSequence)* '"'
 
 let NullLiteral = "null"
 
-(* 3.10 Literals *)
-
-let Literal =
-  IntegerLiteral
-| FloatingPointLiteral
-| BooleanLiteral
-| CharacterLiteral
-| StringLiteral
-| NullLiteral
-
 (* Assignment operators, except '=', from section 3.12 *)
 
 let AssignmentOperator =
@@ -270,7 +255,21 @@ rule token = parse
 
 
   (* ----------------------------------------------------------------------- *)
-  (* Keywords and ident *)
+  (* Constant *)
+  (* ----------------------------------------------------------------------- *)
+
+(* 3.10 Literals *)
+
+| IntegerLiteral       { TInt (tok lexbuf, tokinfo lexbuf) }
+| FloatingPointLiteral { TFloat (tok lexbuf, tokinfo lexbuf) }
+| CharacterLiteral     { TChar (tok lexbuf, tokinfo lexbuf) }
+| StringLiteral        { TString (tok lexbuf, tokinfo lexbuf) }
+| "true"               { TBool (true, tokinfo lexbuf) }
+| "false"              { TBool (false, tokinfo lexbuf) }
+| NullLiteral          { TNull (tokinfo lexbuf) }
+
+  (* ----------------------------------------------------------------------- *)
+  (* Keywords and ident (must be after "true"|"false" above) *)
   (* ----------------------------------------------------------------------- *)
 | Identifier
     { 
@@ -282,17 +281,6 @@ rule token = parse
       | None -> IDENTIFIER (s, info)
           
     }
-
-  (* ----------------------------------------------------------------------- *)
-  (* Constant *)
-  (* ----------------------------------------------------------------------- *)
-
-| IntegerLiteral  { TInt (tok lexbuf, tokinfo lexbuf) }
-| FloatingPointLiteral { TFloat (tok lexbuf, tokinfo lexbuf) }
-| CharacterLiteral { TChar (tok lexbuf, tokinfo lexbuf) }
-| StringLiteral { TString (tok lexbuf, tokinfo lexbuf) }
-| BooleanLiteral { LITERAL (tok lexbuf, tokinfo lexbuf) }
-| NullLiteral { LITERAL (tok lexbuf, tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* Symbols *)

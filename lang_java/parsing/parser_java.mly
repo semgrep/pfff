@@ -118,8 +118,9 @@ let constructor_invocation name args =
 %token <string * Parse_info.info> TFloat
 %token <string * Parse_info.info> TChar
 %token <string * Parse_info.info> TString
+%token <bool * Parse_info.info> TBool
+%token <Parse_info.info> TNull
 
-%token <(string * Parse_info.info)> LITERAL
 
 %token <(string * Parse_info.info)> IDENTIFIER
 %token <(string * Parse_info.info)> PRIMITIVE_TYPE
@@ -347,12 +348,12 @@ primary_no_new_array:
 
 /* 3.10 */
 literal:
- | LITERAL { Literal ($1) }
-
- | TInt    { Literal ($1) }
- | TFloat  { Literal ($1) }
- | TChar   { Literal ($1) }
- | TString { Literal ($1) }
+ | TBool   { Literal (Bool ($1)) }
+ | TInt    { Literal (Int ($1)) }
+ | TFloat  { Literal (Float ($1)) }
+ | TChar   { Literal (Char ($1)) }
+ | TString { Literal (String ($1)) }
+ | TNull   { Literal (Null $1) }
 
 /* 15.8.2 */
 class_literal:

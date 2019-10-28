@@ -37,121 +37,6 @@ let token_kind_of_tok t =
 (* Because ocamlyacc force us to do it that way. The ocamlyacc token 
  * cant be a pair of a sum type, it must be directly a sum type.
  *)
-let info_of_tok = function
-  | TUnknown ii -> ii
-  | TComment ii -> ii
-  | TCommentSpace ii -> ii
-  | TCommentNewline ii -> ii
-
-  | TInt (_s, ii) -> ii
-  | TFloat (_s, ii) -> ii
-  | TChar (_s, ii) -> ii
-  | TString (_s, ii) -> ii
-
-  | IDENTIFIER (_id,ii) -> ii
-  | PRIMITIVE_TYPE (_s, ii) -> ii
-  | LITERAL (_s, ii) -> ii
-
-  | OPERATOR_EQ (_op, ii) -> ii
-
-  (* 3.11 Separators *)
-  | LP (ii) -> ii
-  | RP (ii) -> ii
-  | LC (ii) -> ii
-  | RC (ii) -> ii
-  | LB (ii) -> ii
-  | RB (ii) -> ii
-  | SM (ii) -> ii
-  | CM (ii) -> ii
-  | DOT (ii) -> ii
-
-  | LB_RB (ii) -> ii
-
-  (* 3.12 Operators *)
-  | EQ (ii) -> ii
-  | GT (ii) -> ii
-  | LT (ii) -> ii
-  | LT2 (ii) -> ii
-  | NOT (ii) -> ii
-  | COMPL (ii) -> ii
-  | COND (ii) -> ii
-  | COLON (ii) -> ii
-  | EQ_EQ (ii) -> ii
-  | LE (ii) -> ii
-  | GE (ii) -> ii
-  | NOT_EQ (ii) -> ii
-  | AND_AND (ii) -> ii
-  | OR_OR (ii) -> ii
-  | INCR (ii) -> ii
-  | DECR (ii) -> ii
-  | PLUS (ii) -> ii
-  | MINUS (ii) -> ii
-  | TIMES (ii) -> ii
-  | DIV (ii) -> ii
-  | AND (ii) -> ii
-  | OR (ii) -> ii
-  | XOR (ii) -> ii
-  | MOD (ii) -> ii
-  | LS (ii) -> ii
-  | SRS (ii) -> ii
-  | URS (ii) -> ii
-
-  | AT (ii) -> ii
-  | DOTS (ii) -> ii
-
-  | ABSTRACT (ii) -> ii
-  | BOOLEAN (ii) -> ii
-  | BREAK (ii) -> ii
-  | BYTE (ii) -> ii
-  | CASE (ii) -> ii
-  | CATCH (ii) -> ii
-  | CHAR (ii) -> ii
-  | CLASS (ii) -> ii
-  | CONST (ii) -> ii
-  | CONTINUE (ii) -> ii
-  | DEFAULT (ii) -> ii
-  | DO (ii) -> ii
-  | DOUBLE (ii) -> ii
-  | ELSE (ii) -> ii
-  | EXTENDS (ii) -> ii
-  | FINAL (ii) -> ii
-  | FINALLY (ii) -> ii
-  | FLOAT (ii) -> ii
-  | FOR (ii) -> ii
-  | GOTO (ii) -> ii
-  | IF (ii) -> ii
-  | IMPLEMENTS (ii) -> ii
-  | IMPORT (ii) -> ii
-  | INSTANCEOF (ii) -> ii
-  | INT (ii) -> ii
-  | INTERFACE (ii) -> ii
-  | LONG (ii) -> ii
-  | NATIVE (ii) -> ii
-  | NEW (ii) -> ii
-  | PACKAGE (ii) -> ii
-  | PRIVATE (ii) -> ii
-  | PROTECTED (ii) -> ii
-  | PUBLIC (ii) -> ii
-  | RETURN (ii) -> ii
-  | SHORT (ii) -> ii
-  | STATIC (ii) -> ii
-  | STRICTFP (ii) -> ii
-  | SUPER (ii) -> ii
-  | SWITCH (ii) -> ii
-  | SYNCHRONIZED (ii) -> ii
-  | THIS (ii) -> ii
-  | THROW (ii) -> ii
-  | THROWS (ii) -> ii
-  | TRANSIENT (ii) -> ii
-  | TRY (ii) -> ii
-  | VOID (ii) -> ii
-  | VOLATILE (ii) -> ii
-  | WHILE (ii) -> ii
-
-  | ASSERT (ii) -> ii
-  | ENUM (ii) -> ii
-
-  | EOF (ii) -> ii
 
 (* used by tokens to complete the parse_info with filename, line, col infos *)
 let visitor_info_of_tok f = function
@@ -165,10 +50,11 @@ let visitor_info_of_tok f = function
   | TFloat (s, ii) -> TFloat (s, f ii)
   | TChar (s, ii) -> TChar (s, f ii)
   | TString (s, ii) -> TString (s, f ii)
+  | TBool (s, ii) -> TBool (s, f ii)
+  | TNull (ii) -> TNull (f ii)
 
   | IDENTIFIER (id,ii) -> IDENTIFIER (id, f ii)
   | PRIMITIVE_TYPE (s, ii) -> PRIMITIVE_TYPE (s, f ii)
-  | LITERAL (s, ii) -> LITERAL (s, f ii)
 
   | OPERATOR_EQ (op, ii) -> OPERATOR_EQ (op, f ii)
 
@@ -270,6 +156,14 @@ let visitor_info_of_tok f = function
 
   | EOF (ii) -> EOF (f ii)
 
+
+let info_of_tok tok = 
+  let res = ref None in
+  visitor_info_of_tok (fun ii -> res := Some ii; ii) tok |> ignore;
+  match !res with
+  | Some x -> x
+  | None -> Parse_info.fake_info "NOTOK"
+  
 (*****************************************************************************)
 (* Accessors *)
 (*****************************************************************************)

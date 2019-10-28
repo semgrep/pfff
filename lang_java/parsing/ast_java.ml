@@ -144,8 +144,7 @@ and expr =
  (* This is used only in the context of annotations *)
   | NameOrClassType of name_or_class_type
 
-  (* less: split in constant type with Int | Float | String | Char | Bool *)
-  | Literal of string wrap
+  | Literal of literal
 
   (* Xxx.class *)
   | ClassLiteral of typ
@@ -190,6 +189,14 @@ and expr =
   | Conditional of expr * expr * expr
   (* ugly java, like in C assignement is an expression not a statement :( *)
   | Assignment of expr * op * expr
+
+  and literal = 
+  | Int of string wrap
+  | Float of string wrap
+  | String of string wrap
+  | Char of string wrap
+  | Bool of bool wrap
+  | Null of tok
 
 and arguments = expr list
 

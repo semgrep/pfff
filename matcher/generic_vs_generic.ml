@@ -2305,6 +2305,13 @@ and m_any a b =
        B.N(b1)
     )
     )
+  | A.Dn(a1), B.Dn(b1) ->
+    m_dotted_name a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.Dn(a1),
+       B.Dn(b1)
+    )
+    )
   | A.En(a1), B.En(b1) ->
     m_entity a1 b1 >>= (fun (a1, b1) -> 
     return (
@@ -2397,6 +2404,7 @@ and m_any a b =
     )
     )
   | A.N _, _
+  | A.Dn _, _
   | A.En _, _
   | A.E _, _
   | A.S _, _

@@ -56,7 +56,11 @@ let default_visitor = {
 
 let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 
-let rec v_wrap _of_a (v1, _v2) =  _of_a v1; ()
+let rec v_wrap: 'a. ('a -> unit) -> 'a wrap -> unit = fun _of_a (v1, v2) ->
+  let v1 = _of_a v1 and v2 = v_info v2 in ()
+
+and v_info _x = ()
+and v_tok x = v_info x
 
 and v_op = v_string
 
@@ -131,11 +135,20 @@ and v_type_argument =
           v1
       in ()
 
+and v_literal =
+  function
+  | Bool v1 -> let v1 = v_wrap v_bool v1 in ()
+  | Int v1 -> let v1 = v_wrap v_string v1 in ()
+  | Float v1 -> let v1 = v_wrap v_string v1 in ()
+  | Char v1 -> let v1 = v_wrap v_string v1 in ()
+  | String v1 -> let v1 = v_wrap v_string v1 in ()
+  | Null v1 -> let v1 = v_tok v1 in ()
+
 and v_expr (x : expr) =
   let k x = match x with
     | Name v1 -> let v1 = v_name v1 in ()
     | NameOrClassType v1 -> let v1 = v_name_or_class_type v1 in ()
-    | Literal v1 -> let v1 = v_wrap v_string v1 in ()
+    | Literal v1 -> let v1 = v_literal v1 in ()
     | ClassLiteral v1 -> let v1 = v_typ v1 in ()
     | NewClass ((v1, v2, v3)) ->
       let v1 = v_typ v1

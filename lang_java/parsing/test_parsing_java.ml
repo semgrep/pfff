@@ -82,8 +82,8 @@ let test_visitor file =
   let visitor = V.mk_visitor { V.default_visitor with
     V.kexpr = (fun (k, _) e -> 
       match e with
-      | Ast_java.Literal (s,_) -> 
-          pr2 ("lit:" ^ s);
+      | Ast_java.Literal (Ast_java.Int (s,_)) -> 
+          pr2 ("int:" ^ s);
           k e
       | Ast_java.Dot (e, (_s,_)) -> 
           pr2 "dot: s";

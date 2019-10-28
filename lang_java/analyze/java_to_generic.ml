@@ -169,14 +169,21 @@ and name v =
   )
 
 
+and literal = function
+  | Int v1 -> let v1 = wrap string v1 in (G.Int v1)
+  | Float v1 -> let v1 = wrap string v1 in (G.Float v1)
+  | String v1 -> let v1 = wrap string v1 in (G.String v1)
+  | Char v1 -> let v1 = wrap string v1 in (G.Char v1)
+  | Null v1 -> let v1 = tok v1 in (G.Null v1)
+  | Bool v1 -> let v1 = wrap bool v1 in (G.Bool v1)
+
 and expr =
   function
   | Name v1 -> let (a,b) = name v1 in G.Id (a,b)
   | NameOrClassType v1 -> let v1 = name_or_class_type v1 in 
       raise Todo
-  | Literal v1 -> let v1 = wrap string v1 in
-      (* TODO split in more precise values *)
-      G.L (G.Float v1)
+  | Literal v1 -> let v1 = literal v1 in
+      G.L v1
   | ClassLiteral v1 -> let v1 = typ v1 in
       G.OtherExpr (G.OE_ClassLiteral, [T v1])
   | NewClass ((v1, v2, v3)) ->

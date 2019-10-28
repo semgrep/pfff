@@ -108,6 +108,22 @@ and vof_name v =
        and v2 = vof_ident v2
        in Ocaml.VTuple [ v1; v2 ])
     v
+and vof_literal =
+  function
+  | Bool v1 ->
+      let v1 = vof_wrap Ocaml.vof_bool v1 in Ocaml.VSum (("Bool", [ v1 ]))
+  | Int v1 ->
+      let v1 = vof_wrap Ocaml.vof_string v1 in Ocaml.VSum (("Int", [ v1 ]))
+  | Float v1 ->
+      let v1 = vof_wrap Ocaml.vof_string v1 in Ocaml.VSum (("Float", [ v1 ]))
+  | Char v1 ->
+      let v1 = vof_wrap Ocaml.vof_string v1 in Ocaml.VSum (("Char", [ v1 ]))
+  | String v1 ->
+      let v1 = vof_wrap Ocaml.vof_string v1
+      in Ocaml.VSum (("String", [ v1 ]))
+  | Null v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Null", [ v1 ]))
+
+
 and vof_expr =
   function
   | Name v1 -> let v1 = vof_name v1 in Ocaml.VSum (("Name", [ v1 ]))
@@ -115,7 +131,7 @@ and vof_expr =
       let v1 = vof_name_or_class_type v1
       in Ocaml.VSum (("NameOrClassType", [ v1 ]))
   | Literal v1 ->
-      let v1 = vof_wrap Ocaml.vof_string v1
+      let v1 = vof_literal v1
       in Ocaml.VSum (("Literal", [ v1 ]))
   | ClassLiteral v1 ->
       let v1 = vof_typ v1 in Ocaml.VSum (("ClassLiteral", [ v1 ]))
