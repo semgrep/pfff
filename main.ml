@@ -9,7 +9,7 @@ open Common
 (*****************************************************************************)
 (* A "driver" for the different parsers in pfff.
  * 
- * Also useful to dump the AST of a language (-dump_xxx).
+ * Also useful to dump the CST or AST of a language (-dump_xxx).
  * related: https://astexplorer.net/, supports many languages, many parsers
  *)
 
@@ -72,14 +72,13 @@ let all_actions () =
 
   Test_parsing_php.actions()@
   Test_parsing_js.actions()@
+  Test_parsing_python.actions()@
 
   Test_parsing_c.actions()@
   Test_parsing_cpp.actions()@
   Test_parsing_clang.actions()@
   Test_mini.actions()@
-(*
-  Test_parsing_bytecode.actions()++
-*)
+(*Test_parsing_bytecode.actions()@*)
   Test_parsing_java.actions()@
 
   Test_parsing_nw.actions()@
@@ -87,7 +86,6 @@ let all_actions () =
   Test_parsing_lisp.actions()@
   Test_parsing_hs.actions()@
 
-  Test_parsing_python.actions()@
   Test_parsing_csharp.actions()@
 
   Test_parsing_rust.actions()@
