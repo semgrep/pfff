@@ -218,8 +218,7 @@ type expr =
 
    | ArithOp of arithmetic_operator
    (* should be lift up and transformed in Assign at stmt level *)
-   | IncrDecr of bool (* true = Incr, false = Decr *) * 
-                 bool (* true = prefix, false = postfix *)
+   | IncrDecr of (incr_decr * prefix_postfix)
 
     (* mostly binary operator *)
     and arithmetic_operator = 
@@ -231,6 +230,8 @@ type expr =
       | Eq     | NotEq     (* less: could be desugared to Not Eq *)
       | PhysEq | NotPhysEq (* less: could be desugared to Not PhysEq *)
       | Lt | LtE | Gt | GtE  (* less: could be desugared to Or (Eq Lt) *)
+    and incr_decr = Incr | Decr
+    and prefix_postfix = Prefix | Postfix
 
   and arguments = argument list
 

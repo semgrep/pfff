@@ -197,7 +197,10 @@ and map_special =
   | Spread -> Spread
   | ArithOp v1 -> let v1 = map_arithmetic_operator v1 in ArithOp ((v1))
   | IncrDecr ((v1, v2)) ->
-      let v1 = map_of_bool v1 and v2 = map_of_bool v2 in IncrDecr ((v1, v2))
+      let v1 = map_of_incdec v1 and v2 = map_of_prepost v2 in IncrDecr ((v1, v2))
+
+and map_of_incdec x = x
+and map_of_prepost x = x
 
 and map_arithmetic_operator =
   function

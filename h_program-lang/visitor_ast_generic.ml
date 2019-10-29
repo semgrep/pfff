@@ -192,7 +192,9 @@ and v_special =
   | Concat -> ()
   | Spread -> ()
   | ArithOp v1 -> let v1 = v_arithmetic_operator v1 in ()
-  | IncrDecr ((v1, v2)) -> let v1 = v_bool v1 and v2 = v_bool v2 in ()
+  | IncrDecr ((v1, v2)) -> let v1 = v_incr_decr v1 and v2 = v_prepost v2 in ()
+and v_incr_decr _ = ()
+and v_prepost _ = ()
 and v_arithmetic_operator =
   function
   | Plus -> ()

@@ -179,10 +179,25 @@ and vof_special =
   | Spread -> Ocaml.VSum (("Spread", []))
   | ArithOp v1 ->
       let v1 = vof_arithmetic_operator v1 in Ocaml.VSum (("ArithOp", [ v1 ]))
-  | IncrDecr ((v1, v2)) ->
-      let v1 = Ocaml.vof_bool v1
-      and v2 = Ocaml.vof_bool v2
-      in Ocaml.VSum (("IncrDecr", [ v1; v2 ]))
+  | IncrDecr (v) ->
+      let v = vof_inc_dec v in
+      Ocaml.VSum (("IncrDecr", [ v]))
+
+and vof_inc_dec (v1, v2) =
+      let v1 = vof_incr_decr v1
+      and v2 = vof_prepost v2
+      in Ocaml.VTuple [ v1; v2 ]
+
+and vof_incr_decr =
+  function
+  | Incr -> Ocaml.VSum (("Incr", []))
+  | Decr -> Ocaml.VSum (("Decr", []))
+
+and vof_prepost =
+  function
+  | Prefix -> Ocaml.VSum (("Prefix", []))
+  | Postfix -> Ocaml.VSum (("Postfix", []))
+
 and vof_arithmetic_operator =
   function
   | Plus -> Ocaml.VSum (("Plus", []))
