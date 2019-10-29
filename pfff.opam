@@ -1,14 +1,14 @@
 opam-version: "2.0"
 name: "pfff"
-version: "0.37.6"
+version: "0.39.1"
 synopsis: "Tools and APIs for program analysis, code visualization, refactoring"
 description: """
 pfff is a set of tools and APIs to perform some static analysis,
 dynamic analysis, code visualizations, code navigations, or
 style-preserving source-to-source transformations such as refactorings
-on source code. For now the effort is focused on PHP but there is also
-good support for C, C++, Java, HTML, Javascript, Css, and preliminary
-support for Erlang, Python, C#, Lisp, Scheme, Haskell, OPA, Sql, and
+on source code. For now the effort is focused on Javascript and Python
+but there is also good support for C, C++, Java, PHP, HTML, Css, and
+preliminary support for Erlang, C#, Lisp, Scheme, Haskell, Skip, Sql, and
 even TeX. There is also very good support for OCaml and noweb
 (literate programming) so that pfff can be used on the code of pfff
 itself.
