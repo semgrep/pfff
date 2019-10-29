@@ -640,9 +640,11 @@ let visit_program
         ->
         tag ii Punctuation
 
-    | T.TUpperIdent (_s, ii) ->
-        if not (Hashtbl.mem already_tagged ii)
-        then () (* tag ii Constructor *)
+    | T.TUpperIdent (s, ii) ->
+          (match s with
+          | "Todo" -> tag ii BadSmell
+          | _ -> () (* tag ii Constructor *)
+           )
 
     | T.TLabelDecl (_s, ii) ->tag ii (Parameter Def)
 
