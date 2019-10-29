@@ -762,7 +762,7 @@ and expr env = function
       expr env e;
 
   | ArrayAccess (e1, e2) -> exprs env [e1;e2]
-  | Postfix (e, _op) | Prefix (_op, e) -> expr env e
+  | Postfix (e, _) | Prefix (_, e) | Unary (_, e) -> expr env e
   | Infix (e1, _op, e2) -> exprs env [e1;e2]
   | Conditional (e1, e2, e3) -> exprs env [e1;e2;e3]
   | AssignOp (e1, _op, e2) -> exprs env [e1;e2]

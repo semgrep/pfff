@@ -62,7 +62,7 @@ let rec v_wrap: 'a. ('a -> unit) -> 'a wrap -> unit = fun _of_a (v1, v2) ->
 and v_info _x = ()
 and v_tok x = v_info x
 
-and v_op = v_string
+and v_incr_decr _x = ()
 
 and v_modifiers _ = ()
 
@@ -170,8 +170,9 @@ and v_expr (x : expr) =
     | Call ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_arguments v2 in ()
     | Dot ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_ident v2 in ()
     | ArrayAccess ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_expr v2 in ()
-    | Postfix ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_op v2 in ()
-    | Prefix ((v1, v2)) -> let v1 = v_op v1 and v2 = v_expr v2 in ()
+    | Postfix ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_incr_decr v2 in ()
+    | Prefix ((v1, v2)) -> let v1 = v_incr_decr v1 and v2 = v_expr v2 in ()
+    | Unary ((v1, v2)) -> let v1 = v_arith_op v1 and v2 = v_expr v2 in ()
     | Infix ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_arith_op v2 and v3 = v_expr v3 in ()
     | Cast ((v1, v2)) -> let v1 = v_typ v1 and v2 = v_expr v2 in ()

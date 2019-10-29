@@ -168,6 +168,10 @@ and vof_expr =
       let v1 = vof_expr v1
       and v2 = vof_op v2
       in Ocaml.VSum (("Postfix", [ v1; v2 ]))
+  | Unary ((v1, v2)) ->
+      let v1 = Meta_ast_generic.vof_arithmetic_operator v1
+      and v2 = vof_expr v2
+      in Ocaml.VSum (("Unary", [ v1; v2 ]))
   | Prefix ((v1, v2)) ->
       let v1 = vof_op v1
       and v2 = vof_expr v2
@@ -200,7 +204,7 @@ and vof_expr =
       and v3 = vof_expr v3
       in Ocaml.VSum (("AssignOp", [ v1; v2; v3 ]))
 and vof_arguments v = Ocaml.vof_list vof_expr v
-and vof_op v = Ocaml.vof_string v
+and vof_op v = Meta_ast_generic.vof_incr_decr v
 and vof_stmt =
   function
   | Empty -> Ocaml.VSum (("Empty", []))

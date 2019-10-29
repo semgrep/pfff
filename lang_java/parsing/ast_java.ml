@@ -178,8 +178,9 @@ and expr =
 
   | ArrayAccess of expr * expr
 
-  | Postfix of expr * op
-  | Prefix of op * expr
+  | Unary of Ast_generic.arithmetic_operator (* +/-/~/! *) * expr
+  | Postfix of expr * Ast_generic.incr_decr
+  | Prefix of Ast_generic.incr_decr * expr
   | Infix of expr * Ast_generic.arithmetic_operator * expr
 
   | Cast of typ * expr

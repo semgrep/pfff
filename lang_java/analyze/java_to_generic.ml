@@ -213,9 +213,11 @@ and expr =
   | ArrayAccess ((v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in
       G.ArrayAccess (v1, v2)
   | Postfix ((v1, v2)) -> let v1 = expr v1 and v2 = fix_op v2 in
-      G.Call (G.IdSpecial (G.IncrDecr (fst v2, false)), [G.Arg v1]) 
+      G.Call (G.IdSpecial (G.IncrDecr (v2, G.Postfix)), [G.Arg v1]) 
   | Prefix ((v1, v2)) -> let v1 = fix_op v1 and v2 = expr v2 in
-      G.Call (G.IdSpecial (G.IncrDecr (fst v1, true)), [G.Arg v2]) 
+      G.Call (G.IdSpecial (G.IncrDecr (v1, G.Prefix)), [G.Arg v2]) 
+  | Unary ((v1, v2)) -> let v1 = v1 and v2 = expr v2 in
+      G.Call (G.IdSpecial (G.ArithOp (v1)), [G.Arg v2]) 
   | Infix ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = v2 and v3 = expr v3 in
       G.Call (G.IdSpecial (G.ArithOp (v2)), [G.Arg v1; G.Arg v3])
@@ -236,9 +238,7 @@ and expr =
 
 and arguments v = list expr v |> List.map (fun e -> G.Arg e)
 
-and fix_op v = 
-  let v = string v in
-  raise Todo
+and fix_op v = v
 
 and stmt =
   function
