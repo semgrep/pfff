@@ -132,8 +132,9 @@ and map_special =
   | Div -> Div
   | Mod -> Mod
   | Expo -> Expo
-  | Incr v1 -> let v1 = map_of_bool v1 in Incr ((v1))
-  | Decr v1 -> let v1 = map_of_bool v1 in Decr ((v1))
+  | IncrDecr v -> let v = map_of_inc_dec v in IncrDecr ((v))
+
+and map_of_inc_dec x = x
   
 and map_label v = map_wrap map_of_string v
   

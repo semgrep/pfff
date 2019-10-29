@@ -16,6 +16,7 @@ open Common
 
 module A = Ast_js
 module C = Cst_js
+module G = Ast_generic (* for the operators *)
 
 (*****************************************************************************)
 (* Prelude *)
@@ -568,8 +569,10 @@ and unop _env = function
   | C.U_new -> A.New  | C.U_delete -> A.Delete
   | C.U_typeof -> A.Typeof
   | C.U_void  -> A.Void
-  | C.U_pre_increment -> A.Incr (true)  | C.U_pre_decrement -> A.Decr (true)
-  | C.U_post_increment -> A.Incr (false) | C.U_post_decrement -> A.Decr (false)
+  | C.U_pre_increment -> A.IncrDecr (G.Incr, G.Prefix)  
+  | C.U_pre_decrement -> A.IncrDecr (G.Decr, G.Prefix)
+  | C.U_post_increment -> A.IncrDecr (G.Incr, G.Postfix) 
+  | C.U_post_decrement -> A.IncrDecr (G.Decr, G.Postfix)
   | C.U_plus -> A.Plus | C.U_minus -> A.Minus
   | C.U_not -> A.Not | C.U_bitnot -> A.BitNot | C.U_spread -> A.Spread
 

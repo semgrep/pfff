@@ -134,8 +134,7 @@ let special (x, tok) =
   | Div -> SR_Special (G.ArithOp G.Div)
   | Mod -> SR_Special (G.ArithOp G.Mod)
   | Expo -> SR_Special (G.ArithOp G.Pow)
-  | Incr v1 -> SR_Special (G.IncrDecr (true, v1))
-  | Decr v1 -> SR_Special (G.IncrDecr (false, v1))
+  | IncrDecr v -> SR_Special (G.IncrDecr v)
 
 let rec property_name =
   function

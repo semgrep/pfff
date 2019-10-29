@@ -71,8 +71,8 @@ let vof_special =
   | Div -> Ocaml.VSum (("Div", []))
   | Mod -> Ocaml.VSum (("Mod", []))
   | Expo -> Ocaml.VSum (("Expo", []))
-  | Incr v1 -> let v1 = Ocaml.vof_bool v1 in Ocaml.VSum (("Incr", [ v1 ]))
-  | Decr v1 -> let v1 = Ocaml.vof_bool v1 in Ocaml.VSum (("Decr", [ v1 ]))
+  | IncrDecr v1 -> let v1 = Meta_ast_generic.vof_inc_dec v1 in 
+      Ocaml.VSum (("IncrDecr", [ v1 ]))
   
 let vof_label v = vof_wrap Ocaml.vof_string v
   

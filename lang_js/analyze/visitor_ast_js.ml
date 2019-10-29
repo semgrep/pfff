@@ -113,8 +113,9 @@ and v_special =
   | Div -> ()
   | Mod -> ()
   | Expo -> ()
-  | Incr v1 -> let v1 = v_bool v1 in ()
-  | Decr v1 -> let v1 = v_bool v1 in ()
+  | IncrDecr v -> let v = v_inc_dec v in ()
+
+and v_inc_dec _ = ()
 
 and v_property_name =
   function

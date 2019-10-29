@@ -137,7 +137,7 @@ type special =
   | Plus | Minus | Mul | Div | Mod | Expo
 
   (* less: should be in statement and unsugared in x+=1 or even x = x + 1 *)
-  | Incr of bool (* true = pre *) | Decr of bool
+  | IncrDecr of (Ast_generic.incr_decr * Ast_generic.prefix_postfix)
  (* with tarzan *)
 
 type label = string wrap
