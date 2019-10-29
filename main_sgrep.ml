@@ -171,6 +171,7 @@ let create_ast file =
       Gen
       (try
         let ast = Parse_python.parse_program file in
+        Resolve_python.resolve ast;
         Python_to_generic.program ast
        with Parse_python.Parse_error _ | Lexer_python.Lexical_error _ ->
         Common.pr2 (spf "warning: parsing problem in %s" file);

@@ -66,4 +66,4 @@ beforedepend:: archi_code_lexer.ml
 
 
 visitor_ast_generic.cmo: visitor_ast_generic.ml
-	ocamlc $(INCLUDES) -w y -c $<
+	$(OCAMLC) -w y -c $<

@@ -37,8 +37,6 @@ and visitor_out = {
   vany: any -> any;
 }
 
-let map_option = Common2.map_option
-
 let default_visitor =
   { 
 (*
