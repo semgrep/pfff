@@ -53,7 +53,7 @@ type error = {
   sev: severity;
 }
  (* less: Advice | Noisy | Meticulous ? *)
- and severity = Fatal | Warning
+ and severity = Error | Warning
 
  and error_kind =
   (* entities *)
@@ -96,6 +96,10 @@ type error = {
 
   (* lint *)
 
+  (* sgrep lint rules *)
+
+  | SgrepLint of (string (* title/code *) * string (* msg *))
+
   (* other *)
 
  (* todo: should be merged with Graph_code.entity or put in Database_code?*)
@@ -136,6 +140,7 @@ let string_of_error_kind error_kind =
   | UnusedVariable (name, scope) ->
       spf "Unused variable %s, scope = %s" name 
         (Scope_code.string_of_scope scope)
+  | SgrepLint (title, message) -> spf "%s: %s" title message
 
 (*
 let loc_of_node root n g =
@@ -158,8 +163,8 @@ let string_of_error err =
 
 let g_errors = ref []
 
-let fatal loc err =
-  Common.push { loc = loc; typ = err; sev = Fatal } g_errors
+let error loc err =
+  Common.push { loc = loc; typ = err; sev = Error } g_errors
 let warning loc err = 
   Common.push { loc = loc; typ = err; sev = Warning } g_errors
 
@@ -189,6 +194,7 @@ let rank_of_error err =
   (* we want to simplify interfaces as much as possible! *)
   | UnusedExport _ -> ReallyImportant
   | UnusedVariable _ -> Less
+  | SgrepLint _ -> Important
   
 
 let score_of_error err =
