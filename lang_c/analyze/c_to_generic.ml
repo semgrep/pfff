@@ -74,7 +74,7 @@ and assignOp =
   | SimpleAssign -> None
   | OpAssign v1 -> let v1 = arithOp v1 in Some v1
 
-and fixOp = function | Dec -> false | Inc -> true
+and fixOp = function | Dec -> G.Decr | Inc -> G.Incr
 and binaryOp =
   function
   | Arith v1 -> let v1 = arithOp v1 in v1
@@ -163,10 +163,10 @@ and expr =
       G.Cast (v1, v2)
   | Postfix ((v1, v2)) ->
       let v1 = expr v1 and v2 = wrap fixOp v2 in 
-      G.Call (G.IdSpecial (G.IncrDecr (fst v2, false)), [G.Arg v1]) 
+      G.Call (G.IdSpecial (G.IncrDecr (fst v2, G.Postfix)), [G.Arg v1]) 
   | Infix ((v1, v2)) ->
       let v1 = expr v1 and v2 = wrap fixOp v2 in
-      G.Call (G.IdSpecial (G.IncrDecr (fst v2, true)), [G.Arg v1]) 
+      G.Call (G.IdSpecial (G.IncrDecr (fst v2, G.Prefix)), [G.Arg v1]) 
   | Unary ((v1, v2)) ->
       let v1 = expr v1 and v2 = wrap unaryOp v2 in 
       (fst v2) v1
