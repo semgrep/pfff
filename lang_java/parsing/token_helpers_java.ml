@@ -50,8 +50,9 @@ let visitor_info_of_tok f = function
   | TFloat (s, ii) -> TFloat (s, f ii)
   | TChar (s, ii) -> TChar (s, f ii)
   | TString (s, ii) -> TString (s, f ii)
-  | TBool (s, ii) -> TBool (s, f ii)
-  | TNull (ii) -> TNull (f ii)
+  | TRUE (ii) -> TRUE (f ii)
+  | FALSE (ii) -> FALSE (f ii)
+  | NULL (ii) -> NULL (f ii)
 
   | IDENTIFIER (id,ii) -> IDENTIFIER (id, f ii)
   | PRIMITIVE_TYPE (s, ii) -> PRIMITIVE_TYPE (s, f ii)

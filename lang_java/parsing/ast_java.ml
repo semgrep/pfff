@@ -188,7 +188,8 @@ and expr =
 
   | Conditional of expr * expr * expr
   (* ugly java, like in C assignement is an expression not a statement :( *)
-  | Assignment of expr * op * expr
+  | Assign of expr * expr
+  | AssignOp of expr * Ast_generic.arithmetic_operator * expr
 
   and literal = 
   | Int of string wrap

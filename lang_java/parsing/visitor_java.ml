@@ -178,8 +178,10 @@ and v_expr (x : expr) =
     | InstanceOf ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_ref_type v2 in ()
     | Conditional ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_expr v2 and v3 = v_expr v3 in ()
-    | Assignment ((v1, v2, v3)) ->
-      let v1 = v_expr v1 and v2 = v_op v2 and v3 = v_expr v3 in ()
+    | AssignOp ((v1, v2, v3)) ->
+      let v1 = v_expr v1 and v2 = v_arith_op v2 and v3 = v_expr v3 in ()
+    | Assign ((v1, v2)) ->
+      let v1 = v_expr v1 and v2 = v_expr v2 in ()
   in
   vin.kexpr (k, all_functions) x
 

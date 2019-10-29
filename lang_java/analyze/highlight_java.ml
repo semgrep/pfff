@@ -209,8 +209,8 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
     | T.TFloat (_s,ii) | T.TInt (_s,ii) ->
         tag ii Number
 
-    | T.TBool (_, ii) -> tag ii Boolean
-    | T.TNull ii -> tag ii Null
+    | T.TRUE (ii) | T.FALSE ii -> tag ii Boolean
+    | T.NULL ii -> tag ii Null
 
     | T.PRIMITIVE_TYPE (s, ii) ->
         (match s with

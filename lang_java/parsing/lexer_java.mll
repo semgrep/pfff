@@ -14,6 +14,7 @@
  *)
 open Common 
 
+open Ast_generic (* for arithmetic operators *)
 open Parser_java
 module Flag = Flag_parsing
 
@@ -95,6 +96,10 @@ let keyword_table = Common.hash_of_list [
   "void", (fun ii -> VOID ii);
   "volatile", (fun ii -> VOLATILE ii);
   "while", (fun ii -> WHILE ii);
+
+  "true", (fun ii -> TRUE ii);
+  "false", (fun ii -> FALSE ii);
+  "null", (fun ii -> NULL ii);
 
   primitive_type "byte";
   primitive_type "short";
@@ -213,9 +218,19 @@ let StringLiteral = '"' (StringCharacter | EscapeSequence)* '"'
 
 let NullLiteral = "null"
 
+(* 3.10 Literals *)
+
+let _Literal =
+  IntegerLiteral
+| FloatingPointLiteral
+| CharacterLiteral
+| StringLiteral
+| BooleanLiteral
+| NullLiteral
+
 (* Assignment operators, except '=', from section 3.12 *)
 
-let AssignmentOperator =
+let _AssignmentOperator =
   ('+' | '-' | '*' | '/' | '&' | '|' | '^' | '%' | "<<" | ">>" | ">>>") '='
 
 
@@ -264,9 +279,7 @@ rule token = parse
 | FloatingPointLiteral { TFloat (tok lexbuf, tokinfo lexbuf) }
 | CharacterLiteral     { TChar (tok lexbuf, tokinfo lexbuf) }
 | StringLiteral        { TString (tok lexbuf, tokinfo lexbuf) }
-| "true"               { TBool (true, tokinfo lexbuf) }
-| "false"              { TBool (false, tokinfo lexbuf) }
-| NullLiteral          { TNull (tokinfo lexbuf) }
+(* bool and null literals are keywords, see below *)
 
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident (must be after "true"|"false" above) *)
@@ -279,7 +292,6 @@ rule token = parse
       match Common2.optionise (fun () -> Hashtbl.find keyword_table s) with
       | Some f -> f info
       | None -> IDENTIFIER (s, info)
-          
     }
 
   (* ----------------------------------------------------------------------- *)
@@ -325,11 +337,17 @@ rule token = parse
 (* ext: ?? *)
 | "..."  { DOTS(tokinfo lexbuf) }
 
-| AssignmentOperator  { 
-    let info = tokinfo lexbuf in
-    let s = tok lexbuf in
-    OPERATOR_EQ (s, info) 
-  }
+| "+="  { OPERATOR_EQ (Plus, tokinfo lexbuf) }
+| "-="  { OPERATOR_EQ (Minus, tokinfo lexbuf) }
+| "*="  { OPERATOR_EQ (Mult, tokinfo lexbuf) }
+| "/="  { OPERATOR_EQ (Div, tokinfo lexbuf) }
+| "%="  { OPERATOR_EQ (Mod, tokinfo lexbuf) }
+| "&="  { OPERATOR_EQ (BitAnd, tokinfo lexbuf) }
+| "|="  { OPERATOR_EQ (BitOr, tokinfo lexbuf) }
+| "^="  { OPERATOR_EQ (BitXor, tokinfo lexbuf) }
+| "<<=" { OPERATOR_EQ (LSL, tokinfo lexbuf) }
+| ">>=" { OPERATOR_EQ (LSR, tokinfo lexbuf) }
+| ">>>="{ OPERATOR_EQ (ASR, tokinfo lexbuf) }
 
 | SUB? eof { EOF (tokinfo lexbuf +> Parse_info.rewrap_str "") }
 

@@ -119,8 +119,6 @@ let constructor_invocation name args =
 %token <string * Parse_info.info> TFloat
 %token <string * Parse_info.info> TChar
 %token <string * Parse_info.info> TString
-%token <bool * Parse_info.info> TBool
-%token <Parse_info.info> TNull
 
 
 %token <(string * Parse_info.info)> IDENTIFIER
@@ -178,7 +176,8 @@ let constructor_invocation name args =
 /*(* Those fresh tokens are created in parsing_hacks_java.ml *)*/
 %token <Parse_info.info> LT2		/* < */
 
-%token <(string * Parse_info.info)> OPERATOR_EQ	/* += -= *= /= &= |= ^= %= <<= >>= >>>= */
+%token <(Ast_generic.arithmetic_operator * Parse_info.info)> OPERATOR_EQ
+	/* += -= *= /= &= |= ^= %= <<= >>= >>>= */
 
 /*(* keywords tokens *)*/
 /*
@@ -194,6 +193,7 @@ let constructor_invocation name args =
  /*(* javaext: *)*/
  ASSERT
  ENUM
+ TRUE FALSE NULL
 
 /*(*-----------------------------------------*)*/
 /*(*2 Extra tokens: *)*/
@@ -349,12 +349,13 @@ primary_no_new_array:
 
 /* 3.10 */
 literal:
- | TBool   { Literal (Bool ($1)) }
+ | TRUE   { Literal (Bool (true, $1)) }
+ | FALSE   { Literal (Bool (false, $1)) }
  | TInt    { Literal (Int ($1)) }
  | TFloat  { Literal (Float ($1)) }
  | TChar   { Literal (Char ($1)) }
  | TString { Literal (String ($1)) }
- | TNull   { Literal (Null $1) }
+ | NULL   { Literal (Null $1) }
 
 /* 15.8.2 */
 class_literal:
@@ -599,7 +600,7 @@ assignment_expression:
  | assignment              { $1 }
 
 assignment: left_hand_side assignment_operator assignment_expression
-    { Assignment ($1, fst $2, $3) }
+    { $2 $1 $3 }
 
 
 left_hand_side:
@@ -608,8 +609,8 @@ left_hand_side:
  | array_access  { $1 }
 
 assignment_operator:
- | EQ  { "=", $1  }
- | OPERATOR_EQ  { $1 }
+ | EQ  { (fun e1 e2 -> Assign (e1, e2))  }
+ | OPERATOR_EQ  { (fun e1 e2 -> AssignOp (e1, fst $1, e2)) }
 
 
 /*(*----------------------------*)*/
