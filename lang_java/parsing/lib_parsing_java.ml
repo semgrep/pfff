@@ -12,6 +12,7 @@
 open Common
 
 module FT = File_type
+module V = Visitor_java
 
 (*****************************************************************************)
 (* Filenames *)
@@ -24,3 +25,21 @@ let find_source_files_of_dir_or_files xs =
     | FT.PL (FT.Java) -> true
     | _ -> false
   ) +> Common.sort
+
+(*****************************************************************************)
+(* Extract infos *)
+(*****************************************************************************)
+
+let extract_info_visitor recursor = 
+  let globals = ref [] in
+  let hooks = { V.default_visitor with
+    V.kinfo = (fun (_k, _) i -> Common.push i globals)
+  } in
+  begin
+    let vout = V.mk_visitor hooks in
+    recursor vout;
+    List.rev !globals
+  end
+
+let ii_of_any any = 
+  extract_info_visitor (fun visitor -> visitor any)

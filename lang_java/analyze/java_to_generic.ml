@@ -74,7 +74,7 @@ and class_type v =
         G.TyApply (name, type_args)
   | [] -> raise Impossible (* list1 *)
   | ((_, info), _)::_ ->
-        error info "class type name not handled, more than one element"
+        error info "TODO: class type name not handled, more than one element"
   )
 and type_argument =
   function
@@ -162,7 +162,7 @@ and name v =
         (name, info)
   | [] -> raise Impossible (* list1 *)
   | (_, (_, info))::_ ->
-        error info "name not handled, more than one element"
+        error info "TODO: name not handled, more than one element"
   )
 
 
@@ -174,11 +174,12 @@ and literal = function
   | Null v1 -> let v1 = tok v1 in (G.Null v1)
   | Bool v1 -> let v1 = wrap bool v1 in (G.Bool v1)
 
-and expr =
-  function
+and expr e =
+  match e with
   | Name v1 -> let (a,b) = name v1 in G.Id (a,b)
-  | NameOrClassType v1 -> let _v1 = name_or_class_type v1 in 
-      raise Todo
+  | NameOrClassType _v1 -> 
+      let ii = Lib_parsing_java.ii_of_any (AExpr e) in
+      error (List.hd ii) "TODO: NameOrClassType not handled yet" 
   | Literal v1 -> let v1 = literal v1 in
       G.L v1
   | ClassLiteral v1 -> let v1 = typ v1 in
@@ -189,7 +190,13 @@ and expr =
       and v3 = option decls v3 in
       (match v3 with
       | None -> G.Call (G.IdSpecial G.New, (G.ArgType v1)::v2)
-      | Some _decls -> raise Todo
+      | Some decls -> 
+         let anonclass = G.AnonClass { G.
+                ckind = G.Class;
+                cextends = [v1];
+                cimplements = [];
+                cbody = List.map G.stmt_to_field decls } in
+         G.Call (G.IdSpecial G.New, (G.Arg anonclass)::v2)
       )
   | NewArray ((v1, v2, v3, v4)) ->
       let v1 = typ v1
@@ -207,7 +214,9 @@ and expr =
       let t = mk_array v3 in
       (match v4 with
       | None -> G.Call (G.IdSpecial G.New, (G.ArgType t)::v2)
-      | Some _decls -> raise Todo
+      | Some _decls -> 
+         let ii = Lib_parsing_java.ii_of_any (AExpr e) in
+         error (List.hd ii) "TODO: NewArray with initializer not handled yet" 
       )
 
   (* x.new Y(...) {...} *)
@@ -442,8 +451,8 @@ and class_kind = function
   | ClassRegular ->  G.Class
   | Interface -> G.Interface
 
-and decl =
-  function
+and decl decl =
+  match decl with
   | Class v1 -> let (ent, def) = class_decl v1 in
       G.LocalDef (ent, G.ClassDef def)
   | Method v1 -> let (ent, def) = method_decl v1 in 
@@ -451,7 +460,8 @@ and decl =
   | Field v1 -> let (ent, def) = field v1 in 
       G.LocalDef (ent, G.VarDef def)
   | Enum v1 -> let _v1 = enum_decl v1 in
-      raise Todo
+      let ii = Lib_parsing_java.ii_of_any (ADecl decl) in
+      error (List.hd ii) "TODO: Enum not handled yet" 
   | Init ((v1, v2)) -> let _v1TODO = bool v1 and v2 = stmt v2 in
       v2
 

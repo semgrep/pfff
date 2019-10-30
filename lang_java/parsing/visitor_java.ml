@@ -36,6 +36,9 @@ type visitor_in = {
   kclass:   (class_decl  -> unit) * visitor_out -> class_decl  -> unit;
   kdecl:    (decl        -> unit) * visitor_out -> decl        -> unit;
   kprogram: (program     -> unit) * visitor_out -> program     -> unit;
+
+  kinfo: (tok -> unit) * visitor_out -> tok -> unit;
+
 }
 and visitor_out = any -> unit
 
@@ -51,6 +54,7 @@ let default_visitor = {
   kclass   = (fun (k,_) x -> k x);
   kdecl    = (fun (k,_) x -> k x);
   kprogram = (fun (k,_) x -> k x);
+  kinfo = (fun (k,_) x -> k x);
 }
 
 
@@ -59,7 +63,10 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 let rec v_wrap: 'a. ('a -> unit) -> 'a wrap -> unit = fun _of_a (v1, v2) ->
   let v1 = _of_a v1 and v2 = v_info v2 in ()
 
-and v_info _x = ()
+and v_info x = 
+  let k _x = () in
+  vin.kinfo (k, all_functions) x
+
 and v_tok x = v_info x
 
 and v_incr_decr _x = ()

@@ -25,6 +25,8 @@ type visitor_in = {
   kclass:   (class_decl  -> unit) * visitor_out -> class_decl  -> unit;
   kdecl:    (decl        -> unit) * visitor_out -> decl        -> unit;
   kprogram: (program     -> unit) * visitor_out -> program     -> unit;
+
+  kinfo: (tok -> unit) * visitor_out -> tok -> unit;
 }
 
 and visitor_out = any -> unit
