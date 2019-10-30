@@ -233,6 +233,7 @@ and map_arguments v = map_of_list map_argument v
 and map_argument =
   function
   | Arg v1 -> let v1 = map_expr v1 in Arg ((v1))
+  | ArgType v1 -> let v1 = map_type_ v1 in ArgType ((v1))
   | ArgKwd ((v1, v2)) ->
       let v1 = map_name v1 and v2 = map_expr v2 in ArgKwd ((v1, v2))
   | ArgOther ((v1, v2)) ->

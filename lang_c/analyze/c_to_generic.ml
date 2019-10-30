@@ -184,7 +184,7 @@ and expr =
       G.Call (G.IdSpecial G.Sizeof, 
        (match v1 with
        | Left e -> [G.Arg e]
-       | Right t -> [G.ArgOther (G.OA_ArgType, [G.T t])]
+       | Right t -> [G.ArgType t]
        ))
   | ArrayInit v1 ->
       let v1 =

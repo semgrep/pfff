@@ -31,13 +31,10 @@ module G = Ast_generic
 let id = fun x -> x
 let option = Common.map_opt
 let list = List.map
-let vref f x = ref (f !x)
 
 let string = id
 let bool = id
 let int = id
-let int_to_string = string_of_int
-let float_to_string = string_of_float
 
 exception Error of string * Parse_info.info
 
@@ -117,28 +114,28 @@ let rec modifier =
   | Synchronized -> G.OtherAttribute (G.OA_Synchronized, [])
   | Native -> G.OtherAttribute (G.OA_Native, [])
   | Annotation v1 -> 
-      let v1TODO = annotation v1 in
+      let _v1TODO = annotation v1 in
       G.OtherAttribute (G.OA_AnnotJavaOther, [])
   
 and annotation (v1, v2) =
-  let v1 = name_or_class_type v1
-  and v2 = option annotation_element v2
+  let _v1 = name_or_class_type v1
+  and _v2 = option annotation_element v2
   in ()
 and modifiers v = list (wrap modifier) v |> List.map fst
 
 and annotation_element =
   function
-  | AnnotArgValue v1 -> let v1 = element_value v1 in ()
-  | AnnotArgPairInit v1 -> let v1 = list annotation_pair v1 in ()
+  | AnnotArgValue v1 -> let _v1 = element_value v1 in ()
+  | AnnotArgPairInit v1 -> let _v1 = list annotation_pair v1 in ()
   | EmptyAnnotArg -> ()
 
 and element_value =
   function
-  | AnnotExprInit v1 -> let v1 = expr v1 in ()
-  | AnnotNestedAnnot v1 -> let v1 = annotation v1 in ()
-  | AnnotArrayInit v1 -> let v1 = list element_value v1 in ()
+  | AnnotExprInit v1 -> let _v1 = expr v1 in ()
+  | AnnotNestedAnnot v1 -> let _v1 = annotation v1 in ()
+  | AnnotArrayInit v1 -> let _v1 = list element_value v1 in ()
 and annotation_pair (v1, v2) =
-  let v1 = ident v1 and v2 = element_value v2 in ()
+  let _v1 = ident v1 and _v2 = element_value v2 in ()
 
 
 
@@ -146,11 +143,11 @@ and name_or_class_type v = list identifier_ v
 
 and identifier_ =
   function
-  | Id v1 -> let v1 = ident v1 in ()
+  | Id v1 -> let _v1 = ident v1 in ()
   | Id_then_TypeArgs ((v1, v2)) ->
-      let v1 = ident v1 and v2 = list type_argument v2 in ()
+      let _v1 = ident v1 and _v2 = list type_argument v2 in ()
   | TypeArgs_then_Id ((v1, v2)) ->
-      let v1 = list type_argument v1 and v2 = identifier_ v2 in ()
+      let _v1 = list type_argument v1 and _v2 = identifier_ v2 in ()
 
 and name v =
   let res = list1
@@ -180,30 +177,30 @@ and literal = function
 and expr =
   function
   | Name v1 -> let (a,b) = name v1 in G.Id (a,b)
-  | NameOrClassType v1 -> let v1 = name_or_class_type v1 in 
+  | NameOrClassType v1 -> let _v1 = name_or_class_type v1 in 
       raise Todo
   | Literal v1 -> let v1 = literal v1 in
       G.L v1
   | ClassLiteral v1 -> let v1 = typ v1 in
-      G.OtherExpr (G.OE_ClassLiteral, [T v1])
+      G.OtherExpr (G.OE_ClassLiteral, [G.T v1])
   | NewClass ((v1, v2, v3)) ->
-      let v1 = typ v1
-      and v2 = arguments v2
-      and v3 = option decls v3
+      let _v1 = typ v1
+      and _v2 = arguments v2
+      and _v3 = option decls v3
       in
       raise Todo
   | NewArray ((v1, v2, v3, v4)) ->
-      let v1 = typ v1
-      and v2 = arguments v2
-      and v3 = int v3
-      and v4 = option init v4
+      let _v1 = typ v1
+      and _v2 = arguments v2
+      and _v3 = int v3
+      and _v4 = option init v4
       in 
       raise Todo
   | NewQualifiedClass ((v1, v2, v3, v4)) ->
-      let v1 = expr v1
-      and v2 = ident v2
-      and v3 = arguments v3
-      and v4 = option decls v4
+      let _v1 = expr v1
+      and _v2 = ident v2
+      and _v3 = arguments v3
+      and _v4 = option decls v4
       in 
       raise Todo
   | Call ((v1, v2)) -> let v1 = expr v1 and v2 = arguments v2 in
@@ -224,8 +221,8 @@ and expr =
   | Cast ((v1, v2)) -> let v1 = typ v1 and v2 = expr v2 in
     G.Cast (v1, v2)
   | InstanceOf ((v1, v2)) -> let v1 = expr v1 and v2 = ref_type v2 in
-    Call (G.IdSpecial (G.Instanceof), 
-        [Arg v1; G.ArgOther (G.OA_ArgType, [G.T v2])])
+    G.Call (G.IdSpecial (G.Instanceof), 
+        [G.Arg v1; G.ArgType v2])
   | Conditional ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in
       G.Conditional (v1, v2, v3)
@@ -310,7 +307,7 @@ and for_control =
       in 
       G.ForClassic (v1, G.Seq v2, G.Seq v3)
   | Foreach ((v1, v2)) -> let ent = var v1 and v2 = expr v2 in
-      let pat = G.OtherPat (OP_Var, [G.En ent]) in
+      let pat = G.OtherPat (G.OP_Var, [G.En ent]) in
       G.ForEach (pat, v2)
 
 and for_init =
@@ -376,22 +373,22 @@ and enum_decl {
                 en_impls = en_impls;
                 en_body = en_body
               } =
-  let v1 = ident en_name in
-  let v2 = modifiers en_mods in
-  let v3 = list ref_type en_impls in
-  let v4 =
+  let _v1 = ident en_name in
+  let _v2 = modifiers en_mods in
+  let _v3 = list ref_type en_impls in
+  let _v4 =
     match en_body with
     | (v1, v2) ->
-        let v1 = list enum_constant v1 and v2 = decls v2 in ()
+        let _v1 = list enum_constant v1 and _v2 = decls v2 in ()
   in ()
 
 and enum_constant =
   function
-  | EnumSimple v1 -> let v1 = ident v1 in ()
+  | EnumSimple v1 -> let _v1 = ident v1 in ()
   | EnumConstructor ((v1, v2)) ->
-      let v1 = ident v1 and v2 = arguments v2 in ()
+      let _v1 = ident v1 and _v2 = arguments v2 in ()
   | EnumWithMethods ((v1, v2)) ->
-      let v1 = ident v1 and v2 = list method_decl v2 in ()
+      let _v1 = ident v1 and _v2 = list method_decl v2 in ()
 
 and class_decl {
                  cl_name = cl_name;
@@ -433,9 +430,9 @@ and decl =
       G.LocalDef (ent, G.FuncDef def)
   | Field v1 -> let (ent, def) = field v1 in 
       G.LocalDef (ent, G.VarDef def)
-  | Enum v1 -> let v1 = enum_decl v1 in
+  | Enum v1 -> let _v1 = enum_decl v1 in
       raise Todo
-  | Init ((v1, v2)) -> let v1TODO = bool v1 and v2 = stmt v2 in
+  | Init ((v1, v2)) -> let _v1TODO = bool v1 and v2 = stmt v2 in
       v2
 
 and decls v = list decl v
@@ -448,7 +445,7 @@ let compilation_unit {
   let v1 = option qualified_ident package in
   let v2 =
     list
-      (fun (v1, v2) -> let v1TODO = bool v1 and v2 = qualified_ident v2 in 
+      (fun (v1, v2) -> let _v1TODO = bool v1 and v2 = qualified_ident v2 in 
         match List.rev v2 with
         | ("*", _)::xs ->
            G.ImportAll (G.DottedName (List.rev xs), None)
@@ -484,4 +481,3 @@ let any =
       G.D (ent, G.ClassDef def)
   | ADecl v1 -> let v1 = decl v1 in G.S v1
   | AProgram v1 -> let v1 = program v1 in G.Pr v1
-

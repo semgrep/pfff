@@ -232,6 +232,7 @@ and vof_argument =
       let v1 = vof_name v1
       and v2 = vof_expr v2
       in Ocaml.VSum (("ArgKwd", [ v1; v2 ]))
+  | ArgType v1 -> let v1 = vof_type_ v1 in Ocaml.VSum (("ArgType", [ v1 ]))
   | ArgOther ((v1, v2)) ->
       let v1 = vof_other_argument_operator v1
       and v2 = Ocaml.vof_list vof_any v2
@@ -240,7 +241,6 @@ and vof_other_argument_operator =
   function
   | OA_ArgPow -> Ocaml.VSum (("OA_ArgPow", []))
   | OA_ArgComp -> Ocaml.VSum (("OA_ArgComp", []))
-  | OA_ArgType -> Ocaml.VSum (("OA_ArgType", []))
 and vof_action (v1, v2) =
   let v1 = vof_pattern v1 and v2 = vof_expr v2 in Ocaml.VTuple [ v1; v2 ]
 and vof_other_expr_operator =

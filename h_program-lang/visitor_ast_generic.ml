@@ -226,6 +226,7 @@ and v_arguments v = v_list v_argument v
 and v_argument =
   function
   | Arg v1 -> let v1 = v_expr v1 in ()
+  | ArgType v1 -> let v1 = v_type_ v1 in ()
   | ArgKwd ((v1, v2)) -> let v1 = v_name v1 and v2 = v_expr v2 in ()
   | ArgOther ((v1, v2)) ->
       let v1 = v_other_argument_operator v1 and v2 = v_list v_any v2 in ()

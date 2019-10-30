@@ -212,7 +212,7 @@ type expr =
    | Typeof | Instanceof | Sizeof
    (* note that certain languages do not have a 'new' keyword (e.g., Python),
     * instead certain 'Call' are really 'New' *)
-   | New  (* todo? lift up? of name? of expr? *)
+   | New  (* usually associated with Call(New, [ArgType _;...]) *)
 
    | Concat (* used for interpolated strings constructs *)
    | Spread (* inline list var, in Container or call context *)
@@ -241,6 +241,8 @@ type expr =
       | Arg of expr (* can be Call (IdSpecial Spread, Id foo) *)
       (* keyword argument *)
       | ArgKwd of name * expr
+      (* Java, C *)
+      | ArgType of type_ (* for New, instanceof/sizeof/typeof, macros, *)
 
       | ArgOther of other_argument_operator * any list
 
@@ -248,9 +250,6 @@ type expr =
         (* Python *)
         | OA_ArgPow (* a kind of Spread, but for Dict instead of List *)
         | OA_ArgComp
-        (* Java, C *)
-        (* could lift up as ArgType of type_ *)
-        | OA_ArgType (* for Instanceof, for sizeof, Typeof, macros *)
           
 
   and action = pattern * expr

@@ -1064,6 +1064,14 @@ and m_argument a b =
     )
     )
 
+  | A.ArgType(a1), B.ArgType(b1) ->
+    m_type_ a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.ArgType(a1),
+       B.ArgType(b1)
+    )
+    )
+
   (* TODO: iso on keyword argument, keyword is optional in pattern *)
 
   | A.ArgKwd(a1, a2), B.ArgKwd(b1, b2) ->
@@ -1084,6 +1092,7 @@ and m_argument a b =
     ))
   | A.Arg _, _
   | A.ArgKwd _, _
+  | A.ArgType _, _
   | A.ArgOther _, _
    -> fail ()
 
