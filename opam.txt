@@ -7,3 +7,7 @@ $ opam publish
 
 See also http://opam.ocaml.org/doc/Packaging.html
 and https://github.com/ocaml/opam-publish
+
+Note that if someone requests a change just to pfff.opam, there
+is no need to retag and repush. Just adjust pfff.opam, and
+rerun opam publish; it will update the existing pull request.
