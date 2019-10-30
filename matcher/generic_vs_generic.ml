@@ -396,6 +396,12 @@ let rec m_expr a b =
        A.Lambda(a1),
        B.Lambda(b1)
     ))
+  | A.AnonClass(a1), B.AnonClass(b1) ->
+    m_class_definition a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.AnonClass(a1),
+       B.AnonClass(b1)
+    ))
   | A.Nop, B.Nop ->
     return (
        A.Nop,
@@ -546,6 +552,7 @@ let rec m_expr a b =
   | A.Record _, _
   | A.Constructor _, _
   | A.Lambda _, _
+  | A.AnonClass _, _
   | A.Nop, _
   | A.Id _, _
   | A.IdSpecial _, _

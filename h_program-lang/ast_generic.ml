@@ -137,6 +137,8 @@ type expr =
 
   (* very special value *)
   | Lambda of function_definition
+  (* usually an argument of a New (used in Java, Javascript) *)
+  | AnonClass of class_definition
 
   | Nop (* less: could be merged with L Unit *)
 
@@ -241,15 +243,15 @@ type expr =
       | Arg of expr (* can be Call (IdSpecial Spread, Id foo) *)
       (* keyword argument *)
       | ArgKwd of name * expr
-      (* Java, C *)
-      | ArgType of type_ (* for New, instanceof/sizeof/typeof, macros, *)
+      (* type argument for New, instanceof/sizeof/typeof, C macros *)
+      | ArgType of type_
 
       | ArgOther of other_argument_operator * any list
 
        and other_argument_operator =
         (* Python *)
         | OA_ArgPow (* a kind of Spread, but for Dict instead of List *)
-        | OA_ArgComp
+        | OA_ArgComp (* comprehension *)
           
 
   and action = pattern * expr
@@ -264,7 +266,6 @@ type expr =
     | OE_Require (* todo: lift to Import? *) 
     | OE_UseStrict (* less: lift up to program attribute/directive? *)
     | OE_ObjAccess_PN_Computed (* less: convert to ArrayAccess *)
-    | OE_ExprClass (* anon class (similar to anon func) *)
     (* Python *)
     | OE_Imag
     | OE_Is | OE_IsNot (* less: could be part of a set_operator? *)
@@ -275,7 +276,7 @@ type expr =
     | OE_CmpOps
     | OE_Repr
     (* Java *)
-    | OE_NameOrClassType | OE_ClassLiteral (* XXX.class? *)
+    | OE_NameOrClassType | OE_ClassLiteral | OE_NewQualifiedClass
     (* C *)
     | OE_GetRefLabel
     | OE_ArrayInitDesignator | OE_GccConstructor (* transform in New? *)

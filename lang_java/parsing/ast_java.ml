@@ -151,6 +151,7 @@ and expr =
 
   (* the 'decls option' is for anon classes *)
   | NewClass of typ * arguments * decls option
+  (* the int counts the number of [], new Foo[][] => 2 *)
   | NewArray of typ * arguments * int * init option
   (* see tests/java/parsing/NewQualified.java *)
   | NewQualifiedClass of expr * ident * arguments * decls option

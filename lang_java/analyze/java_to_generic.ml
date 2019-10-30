@@ -184,25 +184,45 @@ and expr =
   | ClassLiteral v1 -> let v1 = typ v1 in
       G.OtherExpr (G.OE_ClassLiteral, [G.T v1])
   | NewClass ((v1, v2, v3)) ->
-      let _v1 = typ v1
-      and _v2 = arguments v2
-      and _v3 = option decls v3
-      in
-      raise Todo
+      let v1 = typ v1
+      and v2 = arguments v2
+      and v3 = option decls v3 in
+      (match v3 with
+      | None -> G.Call (G.IdSpecial G.New, (G.ArgType v1)::v2)
+      | Some _decls -> raise Todo
+      )
   | NewArray ((v1, v2, v3, v4)) ->
-      let _v1 = typ v1
-      and _v2 = arguments v2
-      and _v3 = int v3
-      and _v4 = option init v4
+      let v1 = typ v1
+      and v2 = arguments v2
+      and v3 = int v3
+      and v4 = option init v4
       in 
-      raise Todo
+      let rec mk_array n =
+        if n <1 
+        then raise Impossible; (* see parser_java.mly dims rule *)
+        if n = 1
+        then G.TyArray (None, v1) 
+        else G.TyArray (None, mk_array (n - 1))
+      in
+      let t = mk_array v3 in
+      (match v4 with
+      | None -> G.Call (G.IdSpecial G.New, (G.ArgType t)::v2)
+      | Some _decls -> raise Todo
+      )
+
+  (* x.new Y(...) {...} *)
   | NewQualifiedClass ((v1, v2, v3, v4)) ->
-      let _v1 = expr v1
-      and _v2 = ident v2
-      and _v3 = arguments v3
-      and _v4 = option decls v4
+      let v1 = expr v1
+      and v2 = ident v2
+      and v3 = arguments v3
+      and v4 = option decls v4
       in 
-      raise Todo
+      let any = 
+        [G.E v1; G.N v2] @ (v3 |> List.map (fun arg -> G.Ar arg)) @
+        (Common.opt_to_list v4 |> List.flatten |> List.map
+            (fun st -> G.S st)) in
+       G.OtherExpr (G.OE_NewQualifiedClass, any)
+
   | Call ((v1, v2)) -> let v1 = expr v1 and v2 = arguments v2 in
       G.Call (v1, v2)
   | Dot ((v1, v2)) -> let v1 = expr v1 and v2 = ident v2 in 

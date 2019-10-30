@@ -120,6 +120,7 @@ and v_expr x =
   | Constructor ((v1, v2)) ->
       let v1 = v_name v1 and v2 = v_list v_expr v2 in ()
   | Lambda ((v1)) -> let v1 = v_function_definition v1 in ()
+  | AnonClass ((v1)) -> let v1 = v_class_definition v1 in ()
   | Nop -> ()
   | Id ((v1, v2)) -> let v1 = v_name v1 and v2 = v_id_info v2 in ()
   | IdSpecial v1 -> let v1 = v_special v1 in ()

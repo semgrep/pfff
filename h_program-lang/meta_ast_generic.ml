@@ -62,6 +62,9 @@ let rec vof_expr =
   | Lambda v1 ->
       let v1 = vof_function_definition v1
       in Ocaml.VSum (("Lambda", [ v1 ]))
+  | AnonClass v1 ->
+      let v1 = vof_class_definition v1
+      in Ocaml.VSum (("AnonClass", [ v1 ]))
   | Nop -> Ocaml.VSum (("Nop", []))
   | Id ((v1, v2)) ->
       let v1 = vof_name v1
@@ -256,7 +259,6 @@ and vof_other_expr_operator =
   | OE_Require -> Ocaml.VSum (("OE_Require", []))
   | OE_UseStrict -> Ocaml.VSum (("OE_UseStrict", []))
   | OE_ObjAccess_PN_Computed -> Ocaml.VSum (("OE_ObjAccess_PN_Computed", []))
-  | OE_ExprClass -> Ocaml.VSum (("OE_ExprClass", []))
   | OE_Imag -> Ocaml.VSum (("OE_Imag", []))
   | OE_Is -> Ocaml.VSum (("OE_Is", []))
   | OE_IsNot -> Ocaml.VSum (("OE_IsNot", []))
@@ -273,6 +275,7 @@ and vof_other_expr_operator =
   | OE_Repr -> Ocaml.VSum (("OE_Repr", []))
   | OE_NameOrClassType -> Ocaml.VSum (("OE_NameOrClassType", []))
   | OE_ClassLiteral -> Ocaml.VSum (("OE_ClassLiteral", []))
+  | OE_NewQualifiedClass -> Ocaml.VSum (("OE_NewQualifiedClass", []))
   | OE_GetRefLabel -> Ocaml.VSum (("OE_GetRefLabel", []))
   | OE_ArrayInitDesignator -> Ocaml.VSum (("OE_ArrayInitDesignator", []))
   | OE_GccConstructor -> Ocaml.VSum (("OE_GccConstructor", []))

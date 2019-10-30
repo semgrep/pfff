@@ -170,7 +170,7 @@ and expr (x: expr) =
   | Obj v1 -> let flds = obj_ v1 in G.Record flds
   | Class (v1, _v2TODO) -> 
       let def, _more_attrsTODOEMPTY  = class_ v1 in
-      G.OtherExpr (G.OE_ExprClass, [G.Dk (G.ClassDef def)])
+      G.AnonClass def
   | ObjAccess ((v1, v2)) ->
       let v1 = expr v1 in
       let v2 = property_name v2 in

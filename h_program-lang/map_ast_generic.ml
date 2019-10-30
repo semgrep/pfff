@@ -108,6 +108,8 @@ and map_expr =
       in Constructor ((v1, v2))
   | Lambda ((v1)) ->
       let v1 = map_function_definition v1 in Lambda ((v1))
+  | AnonClass ((v1)) ->
+      let v1 = map_class_definition v1 in AnonClass ((v1))
   | Nop -> Nop
   | Id ((v1, v2)) ->
       let v1 = map_name v1 and v2 = map_id_info v2 in Id ((v1, v2))
