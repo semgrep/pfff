@@ -59,10 +59,9 @@ let rec vof_expr =
       let v1 = vof_name v1
       and v2 = Ocaml.vof_list vof_expr v2
       in Ocaml.VSum (("Constructor", [ v1; v2 ]))
-  | Lambda ((v1, v2)) ->
-      let v1 = vof_parameters v1
-      and v2 = vof_stmt v2
-      in Ocaml.VSum (("Lambda", [ v1; v2 ]))
+  | Lambda v1 ->
+      let v1 = vof_function_definition v1
+      in Ocaml.VSum (("Lambda", [ v1 ]))
   | Nop -> Ocaml.VSum (("Nop", []))
   | Id ((v1, v2)) ->
       let v1 = vof_name v1

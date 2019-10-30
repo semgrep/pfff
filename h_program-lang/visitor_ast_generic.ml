@@ -119,7 +119,7 @@ and v_expr x =
   | Record v1 -> let v1 = v_list v_field v1 in ()
   | Constructor ((v1, v2)) ->
       let v1 = v_name v1 and v2 = v_list v_expr v2 in ()
-  | Lambda ((v1, v2)) -> let v1 = v_parameters v1 and v2 = v_stmt v2 in ()
+  | Lambda ((v1)) -> let v1 = v_function_definition v1 in ()
   | Nop -> ()
   | Id ((v1, v2)) -> let v1 = v_name v1 and v2 = v_id_info v2 in ()
   | IdSpecial v1 -> let v1 = v_special v1 in ()

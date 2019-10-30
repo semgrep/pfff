@@ -136,7 +136,7 @@ type expr =
   | Constructor of name * expr list
 
   (* very special value *)
-  | Lambda of parameters * stmt (* less: reuse function_definition? *)
+  | Lambda of function_definition
 
   | Nop (* less: could be merged with L Unit *)
 
@@ -210,7 +210,8 @@ type expr =
    (* special apply *)
    | Eval
    | Typeof | Instanceof | Sizeof
-
+   (* note that certain languages do not have a 'new' keyword (e.g., Python),
+    * instead certain 'Call' are really 'New' *)
    | New  (* todo? lift up? of name? of expr? *)
 
    | Concat (* used for interpolated strings constructs *)

@@ -115,6 +115,8 @@ type expr =
   | UnaryOp of unaryop (* op *) * expr (* operand *)
   | Compare of expr (* left *) * cmpop list (* ops *) * expr list (* comparators *)
 
+  (* note that Python does not have a 'new' keyword, a call with the name
+   * of a class is a New *)
   | Call of expr (* func *) * argument list (* args *)
 
   | Subscript of expr (* value *) * slice list (* slice *) * expr_context

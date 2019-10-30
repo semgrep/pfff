@@ -203,7 +203,7 @@ let rec expr (x: expr) =
       G.Call (v1, v2)
 
   | Lambda ((v1, v2)) -> let v1 = parameters v1 and v2 = expr v2 in 
-      G.Lambda (v1, G.ExprStmt v2)
+      G.Lambda ({G.fparams = v1; fbody = G.ExprStmt v2; frettype = None})
   | IfExp ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in
       G.Conditional (v1, v2, v3)

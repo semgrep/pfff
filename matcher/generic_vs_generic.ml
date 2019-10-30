@@ -390,13 +390,11 @@ let rec m_expr a b =
        B.Constructor(b1, b2)
     )
     ))
-  | A.Lambda(a1, a2), B.Lambda(b1, b2) ->
-    m_parameters a1 b1 >>= (fun (a1, b1) -> 
-    m_stmt a2 b2 >>= (fun (a2, b2) -> 
+  | A.Lambda(a1), B.Lambda(b1) ->
+    m_function_definition a1 b1 >>= (fun (a1, b1) -> 
     return (
-       A.Lambda(a1, a2),
-       B.Lambda(b1, b2)
-    )
+       A.Lambda(a1),
+       B.Lambda(b1)
     ))
   | A.Nop, B.Nop ->
     return (

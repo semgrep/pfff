@@ -181,7 +181,7 @@ and expr (x: expr) =
   | Fun ((v1, _v2TODO)) -> 
       let def, _more_attrs   = fun_ v1 in
       (* todo? assert more_attrs = []? *)
-      G.Lambda (def.G.fparams, def.G.fbody)
+      G.Lambda (def)
 
   | Apply ((IdSpecial v1, v2)) ->
       let x = special v1 in

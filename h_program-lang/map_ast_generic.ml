@@ -106,8 +106,8 @@ and map_expr =
       let v1 = map_name v1
       and v2 = map_of_list map_expr v2
       in Constructor ((v1, v2))
-  | Lambda ((v1, v2)) ->
-      let v1 = map_parameters v1 and v2 = map_stmt v2 in Lambda ((v1, v2))
+  | Lambda ((v1)) ->
+      let v1 = map_function_definition v1 in Lambda ((v1))
   | Nop -> Nop
   | Id ((v1, v2)) ->
       let v1 = map_name v1 and v2 = map_id_info v2 in Id ((v1, v2))
