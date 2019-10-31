@@ -138,6 +138,7 @@ and expr =
   | Char v1 -> let v1 = wrap string v1 in G.L (G.Char v1)
 
   | Id v1 -> let v1 = name v1 in G.Name (v1, G.empty_info())
+  | Ellipses v1 -> let v1 = info v1 in G.Ellipses (v1)
   | Call ((v1, v2)) -> let v1 = expr v1 and v2 = list argument v2 in
       G.Call (v1, v2)
   | Assign ((v1, v2, v3)) ->

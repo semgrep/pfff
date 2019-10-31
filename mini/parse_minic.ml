@@ -260,6 +260,7 @@ and expr e =
   (* handled only in malloc call context *)
   | SizeOf _
   | ArrayInit _ | RecordInit _ | GccConstructor _
+  | Ellipses _
     -> error_any "expected an expr, not a C expr" (Expr e)
 
 (*****************************************************************************)

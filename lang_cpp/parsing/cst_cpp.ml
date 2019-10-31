@@ -291,6 +291,9 @@ and expression = expressionbis wrap
   (* forunparser: *)
   | ParenExpr of expression paren
 
+  (* sgrep-ext: *)
+  | Ellipses of tok
+
   | ExprTodo
 
   (* see check_variables_cpp.ml *)

@@ -75,7 +75,10 @@ open Common2.Infix
 (* The AST related types *)
 (*****************************************************************************)
 
-type 'a wrap = 'a * Cst_cpp.tok
+type tok = Parse_info.info
+ (* with tarzan *)
+
+type 'a wrap = 'a * tok
  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
@@ -159,6 +162,9 @@ and expr =
   | RecordInit of (name * expr) list
   (* gccext: kenccext: *)
   | GccConstructor  of type_ * expr (* always an ArrayInit (or RecordInit?) *)
+
+  (* sgrep-ext: *)
+  | Ellipses of tok
 
 and argument = expr
 

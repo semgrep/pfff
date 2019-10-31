@@ -520,6 +520,7 @@ and expr env e =
   | C cst -> constant env toks cst
 
   | Id (n, _) -> A.Id (name env n)
+  | Ellipses tok -> A.Ellipses tok
 
   | RecordAccess (e, n) ->
       A.RecordPtAccess (A.Unary (expr env e, (GetRef,List.hd toks)), name env n)

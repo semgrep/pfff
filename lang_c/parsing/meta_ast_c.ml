@@ -3,6 +3,7 @@
 open Ast_c
 
 let vof_info x = Parse_info.vof_info x
+let vof_tok x = vof_info x
 let vof_wrap _of_a (v1, v2) =
   let v1 = _of_a v1
   and _v2TODO = vof_info v2
@@ -106,6 +107,7 @@ and vof_expr =
   | Char v1 ->
       let v1 = vof_wrap Ocaml.vof_string v1 in Ocaml.VSum (("Char", [ v1 ]))
   | Id v1 -> let v1 = vof_name v1 in Ocaml.VSum (("Id", [ v1 ]))
+  | Ellipses v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Ellipses", [ v1 ]))
   | Call ((v1, v2)) ->
       let v1 = vof_expr v1
       and v2 = Ocaml.vof_list vof_expr v2

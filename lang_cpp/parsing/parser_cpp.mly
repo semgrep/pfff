@@ -276,7 +276,7 @@ external_declaration:
 /*(*1 sgrep *)*/
 /*(*************************************************************************)*/
 sgrep_spatch_pattern:
- | expr EOF      { Expr $1 }
+ | expr      EOF { Expr $1 }
  | statement EOF { Stmt $1 }
 
 
@@ -651,6 +651,9 @@ argument:
 /*(* cppext: *)*/
 /*(* actually this can happen also when have a wrong typedef inference ...*)*/
  | type_id { Right (ArgType $1)  }
+ /*(* sgrep-ext: *)*/
+ | TEllipsis { Flag_parsing.sgrep_guard (Left (Ellipses $1, noii)) }
+
 /* see todo_mly */
 
 /*(*----------------------------*)*/
@@ -705,6 +708,9 @@ statement:
 
  /*(* c++ext: *)*/
  | try_block { $1 }
+
+ /*(* sgrep-ext: *)*/
+ | TEllipsis   { Flag_parsing.sgrep_guard (ExprStatement (Some (Ellipses $1,noii)),noii)}
 
 
 compound: 

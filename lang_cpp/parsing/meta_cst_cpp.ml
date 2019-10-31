@@ -245,6 +245,7 @@ and vof_expressionbis =
       and v2 = vof_ident_info v2
       in Ocaml.VSum (("Id", [ v1; v2 ]))
   | C v1 -> let v1 = vof_constant v1 in Ocaml.VSum (("C", [ v1 ]))
+  | Ellipses v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Ellipses", [ v1 ]))
   | Call ((v1, v2)) ->
       let v1 = vof_expression v1
       and v2 = vof_paren (vof_comma_list vof_argument) v2

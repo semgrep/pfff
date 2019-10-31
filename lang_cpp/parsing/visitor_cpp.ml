@@ -210,6 +210,7 @@ and v_expressionbis =
   function
   | Id ((v1, v2)) -> let v1 = v_name v1 and v2 = v_ident_info v2 in ()
   | C v1 -> let v1 = v_constant v1 in ()
+  | Ellipses v1 -> let v1 = v_tok v1 in ()
   | Call ((v1, v2)) ->
       let v1 = v_expression v1
       and v2 = v_paren (v_comma_list v_argument) v2
