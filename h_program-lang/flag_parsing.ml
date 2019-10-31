@@ -22,3 +22,7 @@ let cmdline_flags_debugging () = [
   "-debug_lexer",        Arg.Set  debug_lexer , " ";
 ]
 
+let sgrep_guard v = 
+  if !sgrep_mode
+  then v
+  else raise Parsing.Parse_error

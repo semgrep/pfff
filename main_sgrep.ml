@@ -181,6 +181,9 @@ let create_ast file =
   | "c" ->
     let ast = Parse_c.parse_program file in
     Gen (C_to_generic.program ast)
+  | "java" ->
+    let ast = Parse_java.parse_program file in
+    Gen (Java_to_generic.program ast)
   | "php" ->
     Php (Parse_php.parse_program file)
   | "jsold" ->
@@ -193,11 +196,11 @@ let create_ast file =
         Common.save_excursion Flag_parsing.verbose_lexing false (fun () ->
           Parse_cpp.parse_fuzzy file +> fst
         )
-      | "java" ->
-        Parse_java.parse_fuzzy file +> fst
       | "ml" ->
         Parse_ml.parse_fuzzy file +> fst
 
+      | "javafuzzy" ->
+        Parse_java.parse_fuzzy file +> fst
       | "phpfuzzy" ->
         Parse_php.parse_fuzzy file +> fst
       | "jsfuzzy" ->
@@ -230,13 +233,16 @@ let parse_pattern str =
    | "c" ->
       let any = Parse_c.any_of_string str in
       PatGen (C_to_generic.any any)
-  | "php" -> PatPhp (Sgrep_php.parse str)
+   | "java" ->
+      let any = Parse_java.any_of_string str in
+      PatGen (Java_to_generic.any any)
+   | "php" -> PatPhp (Sgrep_php.parse str)
 
   (* for now we abuse the fuzzy parser of cpp for ml for the pattern as
    * we should not use comments in patterns
    *)
-  | "c++" | "ml" | "java" 
-  | "cfuzzy" | "jsfuzzy" | "phpfuzzy" -> 
+  | "c++" | "ml" 
+  | "cfuzzy" | "jsfuzzy" | "phpfuzzy" | "javafuzzy"  -> 
     PatFuzzy (ast_fuzzy_of_string str)
   | _ -> failwith ("unsupported language: " ^ !lang)
  )) with 
@@ -256,7 +262,7 @@ let read_patterns name =
 let sgrep_ast pattern any_ast =
   match !lang, pattern, any_ast with
   | _, _, NoAST -> () (* skipping *)
-  | ("js" | "python" | "c"), PatGen pattern, Gen ast ->
+  | ("js" | "python" | "c" | "java"), PatGen pattern, Gen ast ->
     Sgrep_generic.sgrep_ast
       ~hook:(fun env matched_tokens ->
         print_match !mvars env Lib_ast_generic.ii_of_any matched_tokens
@@ -269,7 +275,7 @@ let sgrep_ast pattern any_ast =
         print_match !mvars env Ast_fuzzy.toks_of_trees matched_tokens
       )
       pattern ast
-  | "java", PatFuzzy pattern, Fuzzy ast ->
+  | "javafuzzy", PatFuzzy pattern, Fuzzy ast ->
     Sgrep_fuzzy.sgrep
       ~hook:(fun env matched_tokens ->
         print_match !mvars env Ast_fuzzy.toks_of_trees matched_tokens

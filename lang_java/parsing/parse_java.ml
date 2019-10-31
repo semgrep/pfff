@@ -166,6 +166,24 @@ let parse_string (w : string)
   Common2.with_tmp_file ~str:w ~ext:"java" parse
 
 (*****************************************************************************)
+(* Sub parsers *)
+(*****************************************************************************)
+
+(* for sgrep/spatch *)
+let any_of_string s = 
+  Common2.with_tmp_file ~str:s ~ext:"java" (fun file ->
+    let toks = tokens file in
+    let toks = Parsing_hacks_java.fix_tokens toks in
+
+    let tr = PI.mk_tokens_state toks in
+    let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
+       (* -------------------------------------------------- *)
+       (* Call parser *)
+       (* -------------------------------------------------- *)
+       Parser_java.sgrep_spatch_pattern (lexer_function tr) lexbuf_fake
+  )
+
+(*****************************************************************************)
 (* Fuzzy parsing *)
 (*****************************************************************************)
 

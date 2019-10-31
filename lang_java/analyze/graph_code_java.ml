@@ -774,6 +774,7 @@ and expr env = function
   | InstanceOf (e, tref) ->
       expr env e;
       typ env (tref);
+  | Ellipses _ -> ()
 
 
 and exprs env xs = List.iter (expr env) xs

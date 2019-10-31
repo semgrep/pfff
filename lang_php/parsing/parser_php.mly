@@ -1178,7 +1178,7 @@ expr:
  | T_AWAIT expr { Await ($1, $2) }
 
  /*(* sgrep_ext: *)*/
- | T_ELLIPSIS { H.sgrep_guard (SgrepExprDots $1) }
+ | T_ELLIPSIS { Flag_parsing.sgrep_guard (SgrepExprDots $1) }
 
  | T_INCLUDE      expr 		       { Include($1,$2) }
  | T_INCLUDE_ONCE expr 	               { IncludeOnce($1,$2) }
@@ -1399,7 +1399,7 @@ xhp_attribute_value:
     * XHP mode which means every ident is transformed in a xhp attribute
     *)*/
  /*(* sgrep_ext: *)*/
- | T_XHP_ATTR { H.sgrep_guard (SgrepXhpAttrValueMvar ($1)) }
+ | T_XHP_ATTR { Flag_parsing.sgrep_guard (SgrepXhpAttrValueMvar ($1)) }
 
 /*(*----------------------------*)*/
 /*(*2 Lambda: succinct closure syntax *)*/

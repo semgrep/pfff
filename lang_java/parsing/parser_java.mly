@@ -216,8 +216,9 @@ let constructor_invocation name args =
  * because ocamlyacc defines the parsing function with that name.
  *)
 */
-%start goal
+%start goal sgrep_spatch_pattern
 %type <Ast_java.program> goal
+%type <Ast_java.any>     sgrep_spatch_pattern
 
 %%
 
@@ -246,6 +247,10 @@ goal: compilation_unit EOF  { $1 }
 compilation_unit:
   package_declaration_opt import_declarations_opt type_declarations_opt
   { { package = $1; imports = $2; decls = $3; } }
+
+sgrep_spatch_pattern:
+ | expression EOF { AExpr $1 }
+ | statement EOF { AStmt $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Package, Import, Type *)*/
@@ -432,6 +437,13 @@ method_invocation:
 	{ Call ((Dot (Name [super_ident $1], $3)), $5) }
  | name DOT SUPER DOT identifier LP argument_list_opt RP
 	{ Call (Dot (Name (name $1 @ [super_ident $3]), $5), $7)}
+
+argument: 
+ | expression { $1 }
+ /*(* sgrep-ext: *)*/
+ | DOTS { Flag_parsing.sgrep_guard (Ellipses $1) }
+
+
 
 /*(*----------------------------*)*/
 /*(*2 Arithmetic *)*/
@@ -635,6 +647,8 @@ statement:
  | if_then_else_statement  { $1 }
  | while_statement  { $1 }
  | for_statement  { $1 }
+ /*(* sgrep-ext: *)*/
+ | DOTS           { Flag_parsing.sgrep_guard (Expr (Ellipses $1))}
 
 statement_without_trailing_substatement:
  | block  { $1 }
@@ -1327,8 +1341,8 @@ catches_opt:
 
 
 argument_list:
- | expression  { [$1] }
- | argument_list CM expression  { $3 :: $1 }
+ | argument  { [$1] }
+ | argument_list CM argument  { $3 :: $1 }
 
 argument_list_opt:
  | /*(*empty*)*/  { [] }

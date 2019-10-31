@@ -13,6 +13,9 @@ val parse_program:
 val parse_string:
   string -> (program_and_tokens * Parse_info.parsing_stat)
 
+(* for sgrep *)
+val any_of_string: string -> Ast_java.any
+
 (* for generalized sgrep/spatch patterns *)
 val parse_fuzzy:
   Common.filename -> Ast_fuzzy.tree list * Parser_java.token list

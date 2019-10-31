@@ -193,6 +193,9 @@ and expr =
   | Assign of expr * expr
   | AssignOp of expr * Ast_generic.arithmetic_operator * expr
 
+  (* sgrep-ext: *)
+  | Ellipses of tok
+
   and literal = 
   | Int of string wrap
   | Float of string wrap

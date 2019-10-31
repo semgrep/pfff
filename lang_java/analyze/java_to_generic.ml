@@ -110,15 +110,18 @@ let rec modifier =
   | Volatile -> G.Volatile
   | Synchronized -> G.OtherAttribute (G.OA_Synchronized, [])
   | Native -> G.OtherAttribute (G.OA_Native, [])
-  | Annotation v1 -> 
-      let _v1TODO = annotation v1 in
+  | Annotation _v1 -> 
+      (* let _v1TODO = annotation v1 in *)
       G.OtherAttribute (G.OA_AnnotJavaOther, [])
-  
+
+and modifiers v = list (wrap modifier) v |> List.map fst
+
+(*  
 and annotation (v1, v2) =
   let _v1 = name_or_class_type v1
   and _v2 = option annotation_element v2
   in ()
-and modifiers v = list (wrap modifier) v |> List.map fst
+  ()
 
 and annotation_element =
   function
@@ -134,8 +137,6 @@ and element_value =
 and annotation_pair (v1, v2) =
   let _v1 = ident v1 and _v2 = element_value v2 in ()
 
-
-
 and name_or_class_type v = list identifier_ v
 
 and identifier_ =
@@ -145,21 +146,26 @@ and identifier_ =
       let _v1 = ident v1 and _v2 = list type_argument v2 in ()
   | TypeArgs_then_Id ((v1, v2)) ->
       let _v1 = list type_argument v1 and _v2 = identifier_ v2 in ()
+*)
+
+
+
 
 and name v =
   let res = list1
     (fun (v1, v2) ->
-       let v1 = list type_argument v1 and v2 = ident v2 in (v1, v2))
+       let _v1TODO = list type_argument v1 
+        and v2 = ident v2 in (v2))
     v
   in
-  (match res with
-  | [type_args, name] ->
-        let info = { (G.empty_info ()) with
-            G.id_typeargs = Some type_args } in
-        (name, info)
+  (match List.rev res with
   | [] -> raise Impossible (* list1 *)
-  | (_, (_, info))::_ ->
-        error info "TODO: name not handled, more than one element"
+  | name::xs ->
+        let info = { (G.empty_info ()) with G.
+            id_typeargs = None; (* could be v1TODO above *)
+            id_qualifier = Some (List.rev xs);
+          } in
+        (name, info)
   )
 
 
@@ -173,10 +179,12 @@ and literal = function
 
 and expr e =
   match e with
+  | Ellipses v1 -> let v1 = tok v1 in G.Ellipses v1
   | Name v1 -> let (a,b) = name v1 in G.Id (a,b)
   | NameOrClassType _v1 -> 
       let ii = Lib_parsing_java.ii_of_any (AExpr e) in
-      error (List.hd ii) "TODO: NameOrClassType not handled yet" 
+      error (List.hd ii) 
+      "NameOrClassType should only appear in (ignored) annotations" 
   | Literal v1 -> let v1 = literal v1 in
       G.L v1
   | ClassLiteral v1 -> let v1 = typ v1 in
@@ -399,22 +407,27 @@ and enum_decl {
                 en_impls = en_impls;
                 en_body = en_body
               } =
-  let _v1 = ident en_name in
-  let _v2 = modifiers en_mods in
-  let _v3 = list ref_type en_impls in
-  let _v4 =
-    match en_body with
-    | (v1, v2) ->
-        let _v1 = list enum_constant v1 and _v2 = decls v2 in ()
-  in ()
+  let v1 = ident en_name in
+  let v2 = modifiers en_mods in
+  let _v3TODO = list ref_type en_impls in
+  let (v4, v5) = en_body in
+  let v4 = list enum_constant v4 in
+  let _v5TODO = decls v5 in
+  let ent = G.basic_entity v1 v2 in
+  let tdef = G.OrType v4 in
+  ent, tdef
 
 and enum_constant =
   function
-  | EnumSimple v1 -> let _v1 = ident v1 in ()
+  | EnumSimple v1 -> let v1 = ident v1 in 
+      G.OrConstructor (v1, [])
   | EnumConstructor ((v1, v2)) ->
-      let _v1 = ident v1 and _v2 = arguments v2 in ()
+      let v1 = ident v1 and _v2TODO = arguments v2 in
+      G.OrConstructor (v1, [])
+      
   | EnumWithMethods ((v1, v2)) ->
-      let _v1 = ident v1 and _v2 = list method_decl v2 in ()
+      let v1 = ident v1 and _v2TODO = list method_decl v2 in
+      G.OrConstructor (v1, [])
 
 and class_decl {
                  cl_name = cl_name;
@@ -456,9 +469,8 @@ and decl decl =
       G.LocalDef (ent, G.FuncDef def)
   | Field v1 -> let (ent, def) = field v1 in 
       G.LocalDef (ent, G.VarDef def)
-  | Enum v1 -> let _v1 = enum_decl v1 in
-      let ii = Lib_parsing_java.ii_of_any (ADecl decl) in
-      error (List.hd ii) "TODO: Enum not handled yet" 
+  | Enum v1 -> let (ent, def) = enum_decl v1 in
+      G.LocalDef (ent, G.TypeDef def)
   | Init ((v1, v2)) -> let _v1TODO = bool v1 and v2 = stmt v2 in
       v2
 

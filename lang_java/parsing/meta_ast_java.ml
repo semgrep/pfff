@@ -126,6 +126,7 @@ and vof_literal =
 
 and vof_expr =
   function
+  | Ellipses v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Ellipses", [ v1 ]))
   | Name v1 -> let v1 = vof_name v1 in Ocaml.VSum (("Name", [ v1 ]))
   | NameOrClassType v1 ->
       let v1 = vof_name_or_class_type v1

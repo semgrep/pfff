@@ -283,6 +283,14 @@ rule token = parse
       | None -> IDENTIFIER (s, info)
     }
 
+  (* sgrep-ext: *)
+  | '$' Identifier 
+    { let s = tok lexbuf in
+      if not !Flag_parsing.sgrep_mode
+      then error ("identifier with dollar: "  ^ s) lexbuf;
+      IDENTIFIER (s, tokinfo lexbuf)
+    }
+
   (* ----------------------------------------------------------------------- *)
   (* Symbols *)
   (* ----------------------------------------------------------------------- *)
@@ -323,7 +331,7 @@ rule token = parse
 
 (* ext: annotations *)
 | "@" { AT(tokinfo lexbuf) }
-(* ext: ?? *)
+(* ext: ?? sgrep-ext: *)
 | "..."  { DOTS(tokinfo lexbuf) }
 
 | "+="  { OPERATOR_EQ (Plus, tokinfo lexbuf) }

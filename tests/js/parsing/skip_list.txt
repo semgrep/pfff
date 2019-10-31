@@ -1,4 +1,6 @@
 dir: big
 dir: flow
 
-#dir: typescript
+dir: typescript
+dir: jsx
+dir: todo

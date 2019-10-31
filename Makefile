@@ -96,6 +96,7 @@ BASICLIBS=commons/lib.cma \
   lang_c/analyze/lib.cma \
  lang_clang/parsing/lib.cma \
  lang_java/parsing/lib.cma \
+  lang_java/analyze/lib.cma \
  lang_python/parsing/lib.cma \
   lang_python/analyze/lib.cma \
  lang_csharp/parsing/lib.cma \

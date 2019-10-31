@@ -192,7 +192,7 @@ type expr =
      | ParamPow  of (name * type_ option)
   
   and argument = 
-    | Arg of expr
+    | Arg of expr (* this can be Ellipses for sgrep *)
     | ArgKwd of name (* arg *) * expr (* value *)
     | ArgStar of expr
     | ArgPow of expr

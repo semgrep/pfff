@@ -326,7 +326,8 @@ rule initial = parse
 
   (* arrows (aka short lambdas) *)
   | "=>" { T_ARROW (tokinfo lexbuf) }
-  (* variable number of parameters, less: enforce directly attached to ident?*)
+  (* variable number of parameters (and sgrep-ext)
+   * less: enforce directly attached to ident? *)
   | "..." { T_DOTS (tokinfo lexbuf) }
 
 
