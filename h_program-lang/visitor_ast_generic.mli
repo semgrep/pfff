@@ -13,7 +13,7 @@ type visitor_in = {
 
   kattr: (attribute  -> unit) * visitor_out -> attribute  -> unit;
   kparam: (parameter  -> unit) * visitor_out -> parameter  -> unit;
-  kname: (name -> unit)  * visitor_out -> name  -> unit;
+  kident: (ident -> unit)  * visitor_out -> ident  -> unit;
   kentity: (entity -> unit)  * visitor_out -> entity  -> unit;
 
   kinfo: (tok -> unit)  * visitor_out -> tok  -> unit;

@@ -19,11 +19,11 @@ let vof_tok v = Parse_info.vof_info v
 let vof_wrap _of_a (v1, v2) =
   let v1 = _of_a v1 and v2 = vof_tok v2 in Ocaml.VTuple [ v1; v2 ]
   
-let vof_name v = vof_wrap Ocaml.vof_string v
+let vof_ident v = vof_wrap Ocaml.vof_string v
   
-let vof_dotted_name v = Ocaml.vof_list vof_name v
+let vof_dotted_name v = Ocaml.vof_list vof_ident v
   
-let vof_qualified_name v = vof_dotted_name v
+let vof_qualified_ident v = vof_dotted_name v
   
 let vof_module_name =
   function
@@ -38,13 +38,16 @@ let vof_resolved_name =
   | Local -> Ocaml.VSum (("Local", []))
   | Param -> Ocaml.VSum (("Param", []))
   | Global v1 ->
-      let v1 = vof_qualified_name v1 in Ocaml.VSum (("Global", [ v1 ]))
+      let v1 = vof_qualified_ident v1 in Ocaml.VSum (("Global", [ v1 ]))
   | NotResolved -> Ocaml.VSum (("NotResolved", []))
   | Macro -> Ocaml.VSum (("Macro", []))
   | EnumConstant -> Ocaml.VSum (("EnumConstant", []))
   | ImportedModule -> Ocaml.VSum (("ImportedModule", []))
-  
-let rec vof_expr =
+
+let rec vof_name (v1, v2) =
+  let v1 = vof_ident v1 and v2 = vof_id_info v2 in Ocaml.VTuple [ v1; v2 ]
+
+and vof_expr =
   function
   | L v1 -> let v1 = vof_literal v1 in Ocaml.VSum (("L", [ v1 ]))
   | Container ((v1, v2)) ->
@@ -66,10 +69,9 @@ let rec vof_expr =
       let v1 = vof_class_definition v1
       in Ocaml.VSum (("AnonClass", [ v1 ]))
   | Nop -> Ocaml.VSum (("Nop", []))
-  | Id ((v1, v2)) ->
+  | Name ((v1)) ->
       let v1 = vof_name v1
-      and v2 = vof_id_info v2
-      in Ocaml.VSum (("Id", [ v1; v2 ]))
+      in Ocaml.VSum (("Name", [ v1 ]))
   | IdSpecial v1 ->
       let v1 = vof_special v1 in Ocaml.VSum (("IdSpecial", [ v1 ]))
   | Call ((v1, v2)) ->
@@ -91,7 +93,7 @@ let rec vof_expr =
       in Ocaml.VSum (("LetPattern", [ v1; v2 ]))
   | ObjAccess ((v1, v2)) ->
       let v1 = vof_expr v1
-      and v2 = vof_name v2
+      and v2 = vof_ident v2
       in Ocaml.VSum (("ObjAccess", [ v1; v2 ]))
   | ArrayAccess ((v1, v2)) ->
       let v1 = vof_expr v1
@@ -232,7 +234,7 @@ and vof_argument =
   function
   | Arg v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Arg", [ v1 ]))
   | ArgKwd ((v1, v2)) ->
-      let v1 = vof_name v1
+      let v1 = vof_ident v1
       and v2 = vof_expr v2
       in Ocaml.VSum (("ArgKwd", [ v1; v2 ]))
   | ArgType v1 -> let v1 = vof_type_ v1 in Ocaml.VSum (("ArgType", [ v1 ]))
@@ -293,7 +295,7 @@ and vof_type_ =
       let v1 = vof_name v1
       and v2 = vof_type_arguments v2
       in Ocaml.VSum (("TyApply", [ v1; v2 ]))
-  | TyVar v1 -> let v1 = vof_name v1 in Ocaml.VSum (("TyVar", [ v1 ]))
+  | TyVar v1 -> let v1 = vof_ident v1 in Ocaml.VSum (("TyVar", [ v1 ]))
   | TyArray ((v1, v2)) ->
       let v1 = Ocaml.vof_option vof_expr v1
       and v2 = vof_type_ v2
@@ -349,7 +351,7 @@ and vof_attribute =
   | Setter -> Ocaml.VSum (("Setter", []))
   | Variadic -> Ocaml.VSum (("Variadic", []))
   | NamedAttr ((v1, v2)) ->
-      let v1 = vof_name v1
+      let v1 = vof_ident v1
       and v2 = Ocaml.vof_list vof_any v2
       in Ocaml.VSum (("NamedAttr", [ v1; v2 ]))
   | OtherAttribute ((v1, v2)) ->
@@ -431,7 +433,7 @@ and vof_case =
 and vof_catch (v1, v2) =
   let v1 = vof_pattern v1 and v2 = vof_stmt v2 in Ocaml.VTuple [ v1; v2 ]
 and vof_finally v = vof_stmt v
-and vof_label v = vof_name v
+and vof_label v = vof_ident v
 and vof_for_header =
   function
   | ForClassic ((v1, v2, v3)) ->
@@ -468,7 +470,7 @@ and vof_other_stmt_operator =
   | OS_Asm -> Ocaml.VSum (("OS_Asm", []))
 and vof_pattern =
   function
-  | PatVar v1 -> let v1 = vof_name v1 in Ocaml.VSum (("PatVar", [ v1 ]))
+  | PatVar v1 -> let v1 = vof_ident v1 in Ocaml.VSum (("PatVar", [ v1 ]))
   | PatLiteral v1 ->
       let v1 = vof_literal v1 in Ocaml.VSum (("PatLiteral", [ v1 ]))
   | PatConstructor ((v1, v2)) ->
@@ -524,7 +526,7 @@ and
   let arg = Ocaml.vof_list vof_attribute v_attrs in
   let bnd = ("attrs", arg) in
   let bnds = bnd :: bnds in
-  let arg = vof_name v_name in
+  let arg = vof_ident v_name in
   let bnd = ("name", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
 and vof_definition_kind =
   function
@@ -537,7 +539,7 @@ and vof_definition_kind =
   | TypeDef v1 ->
       let v1 = vof_type_definition v1 in Ocaml.VSum (("TypeDef", [ v1 ]))
 and vof_type_parameter (v1, v2) =
-  let v1 = vof_name v1
+  let v1 = vof_ident v1
   and v2 = vof_type_parameter_constraints v2
   in Ocaml.VTuple [ v1; v2 ]
 and vof_type_parameter_constraints v =
@@ -589,7 +591,7 @@ and
   let arg = Ocaml.vof_option vof_expr v_pdefault in
   let bnd = ("pdefault", arg) in
   let bnds = bnd :: bnds in
-  let arg = vof_name v_pname in
+  let arg = vof_ident v_pname in
   let bnd = ("pname", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
 and vof_other_parameter_operator =
   function
@@ -621,7 +623,11 @@ and vof_field =
       let v1 = vof_expr v1 in Ocaml.VSum (("FieldSpread", [ v1 ]))
   | FieldStmt v1 ->
       let v1 = vof_stmt v1 in Ocaml.VSum (("FieldStmt", [ v1 ]))
-and vof_type_definition =
+and vof_type_definition { tbody = v_tbody } =
+  let bnds = [] in
+  let arg = vof_type_definition_kind v_tbody in
+  let bnd = ("tbody", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+and vof_type_definition_kind =
   function
   | OrType v1 ->
       let v1 = Ocaml.vof_list vof_or_type_element v1
@@ -640,17 +646,25 @@ and vof_other_type_kind_operator =
 and vof_or_type_element =
   function
   | OrConstructor ((v1, v2)) ->
-      let v1 = vof_name v1
+      let v1 = vof_ident v1
       and v2 = Ocaml.vof_list vof_type_ v2
       in Ocaml.VSum (("OrConstructor", [ v1; v2 ]))
   | OrEnum ((v1, v2)) ->
-      let v1 = vof_name v1
+      let v1 = vof_ident v1
       and v2 = vof_expr v2
       in Ocaml.VSum (("OrEnum", [ v1; v2 ]))
   | OrUnion ((v1, v2)) ->
-      let v1 = vof_name v1
+      let v1 = vof_ident v1
       and v2 = vof_type_ v2
       in Ocaml.VSum (("OrUnion", [ v1; v2 ]))
+  | OtherOr ((v1, v2)) ->
+      let v1 = vof_other_or_type_element_operator v1
+      and v2 = Ocaml.vof_list vof_any v2
+      in Ocaml.VSum (("OtherOr", [ v1; v2 ]))
+and vof_other_or_type_element_operator =
+  function
+  | OOTEO_EnumWithMethods -> Ocaml.VSum (("OOTEO_EnumWithMethods", []))
+  | OOTEO_EnumWithArguments -> Ocaml.VSum (("OOTEO_EnumWithArguments", []))
 and
   vof_class_definition {
                          ckind = v_ckind;
@@ -683,15 +697,15 @@ and vof_directive =
       in Ocaml.VSum (("Import", [ v1; v2 ]))
   | ImportAll ((v1, v2)) ->
       let v1 = vof_module_name v1
-      and v2 = Ocaml.vof_option vof_name v2
+      and v2 = Ocaml.vof_option vof_ident v2
       in Ocaml.VSum (("ImportAll", [ v1; v2 ]))
   | OtherDirective ((v1, v2)) ->
       let v1 = vof_other_directive_operator v1
       and v2 = Ocaml.vof_list vof_any v2
       in Ocaml.VSum (("OtherDirective", [ v1; v2 ]))
 and vof_alias (v1, v2) =
-  let v1 = vof_name v1
-  and v2 = Ocaml.vof_option vof_name v2
+  let v1 = vof_ident v1
+  and v2 = Ocaml.vof_option vof_ident v2
   in Ocaml.VTuple [ v1; v2 ]
 and vof_other_directive_operator =
   function
@@ -717,10 +731,11 @@ and vof_any =
   | S v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("S", [ v1 ]))
   | T v1 -> let v1 = vof_type_ v1 in Ocaml.VSum (("T", [ v1 ]))
   | P v1 -> let v1 = vof_pattern v1 in Ocaml.VSum (("P", [ v1 ]))
-  | D v1 -> let v1 = vof_definition v1 in Ocaml.VSum (("D", [ v1 ]))
-  | Di v1 -> let v1 = vof_directive v1 in Ocaml.VSum (("Di", [ v1 ]))
-  | Dn v1 -> let v1 = vof_dotted_name v1 in Ocaml.VSum (("Dn", [ v1 ]))
+  | Def v1 -> let v1 = vof_definition v1 in Ocaml.VSum (("D", [ v1 ]))
+  | Dir v1 -> let v1 = vof_directive v1 in Ocaml.VSum (("Di", [ v1 ]))
+  | Di v1 -> let v1 = vof_dotted_name v1 in Ocaml.VSum (("Dn", [ v1 ]))
   | I v1 -> let v1 = vof_item v1 in Ocaml.VSum (("I", [ v1 ]))
+  | Id v1 -> let v1 = vof_ident v1 in Ocaml.VSum (("Id", [ v1 ]))
   | Pa v1 -> let v1 = vof_parameter v1 in Ocaml.VSum (("Pa", [ v1 ]))
   | Ar v1 -> let v1 = vof_argument v1 in Ocaml.VSum (("Ar", [ v1 ]))
   | At v1 -> let v1 = vof_attribute v1 in Ocaml.VSum (("At", [ v1 ]))

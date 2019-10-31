@@ -72,9 +72,9 @@ let rec map_tok v =
 and map_wrap:'a. ('a -> 'a) -> 'a wrap -> 'a wrap = fun _of_a (v1, v2) ->
   let v1 = _of_a v1 and v2 = map_tok v2 in (v1, v2)
   
-and map_name v = map_wrap map_of_string v
+and map_ident v = map_wrap map_of_string v
   
-and map_dotted_name v = map_of_list map_name v
+and map_dotted_name v = map_of_list map_ident v
   
 and map_qualified_name v = map_dotted_name v
   
@@ -92,6 +92,9 @@ and map_resolved_name =
   | Macro -> Macro
   | EnumConstant -> EnumConstant
   | ImportedModule -> ImportedModule
+
+and map_name (v1, v2) =
+  let v1 = map_ident v1 and v2 = map_id_info v2 in (v1, v2)
   
 and map_expr =
   function
@@ -111,8 +114,8 @@ and map_expr =
   | AnonClass ((v1)) ->
       let v1 = map_class_definition v1 in AnonClass ((v1))
   | Nop -> Nop
-  | Id ((v1, v2)) ->
-      let v1 = map_name v1 and v2 = map_id_info v2 in Id ((v1, v2))
+  | Name ((v1)) ->
+      let v1 = map_name v1 in Name ((v1))
   | IdSpecial v1 -> let v1 = map_special v1 in IdSpecial ((v1))
   | Call ((v1, v2)) ->
       let v1 = map_expr v1 and v2 = map_arguments v2 in Call ((v1, v2))
@@ -126,7 +129,7 @@ and map_expr =
   | LetPattern ((v1, v2)) ->
       let v1 = map_pattern v1 and v2 = map_expr v2 in LetPattern ((v1, v2))
   | ObjAccess ((v1, v2)) ->
-      let v1 = map_expr v1 and v2 = map_name v2 in ObjAccess ((v1, v2))
+      let v1 = map_expr v1 and v2 = map_ident v2 in ObjAccess ((v1, v2))
   | ArrayAccess ((v1, v2)) ->
       let v1 = map_expr v1 and v2 = map_expr v2 in ArrayAccess ((v1, v2))
   | Conditional ((v1, v2, v3)) ->
@@ -237,7 +240,7 @@ and map_argument =
   | Arg v1 -> let v1 = map_expr v1 in Arg ((v1))
   | ArgType v1 -> let v1 = map_type_ v1 in ArgType ((v1))
   | ArgKwd ((v1, v2)) ->
-      let v1 = map_name v1 and v2 = map_expr v2 in ArgKwd ((v1, v2))
+      let v1 = map_ident v1 and v2 = map_expr v2 in ArgKwd ((v1, v2))
   | ArgOther ((v1, v2)) ->
       let v1 = map_other_argument_operator v1
       and v2 = map_of_list map_any v2
@@ -261,7 +264,7 @@ and map_type_ =
       let v1 = map_name v1
       and v2 = map_type_arguments v2
       in TyApply ((v1, v2))
-  | TyVar v1 -> let v1 = map_name v1 in TyVar ((v1))
+  | TyVar v1 -> let v1 = map_ident v1 in TyVar ((v1))
   | TyArray ((v1, v2)) ->
       let v1 = map_of_option map_expr v1
       and v2 = map_type_ v2
@@ -318,7 +321,7 @@ and map_attribute =
   | Setter -> Setter
   | Variadic -> Variadic
   | NamedAttr ((v1, v2)) ->
-      let v1 = map_name v1
+      let v1 = map_ident v1
       and v2 = map_of_list map_any v2
       in NamedAttr ((v1, v2))
   | OtherAttribute ((v1, v2)) ->
@@ -383,7 +386,7 @@ and map_catch (v1, v2) =
 
 and map_finally v = map_stmt v
 
-and map_label v = map_name v
+and map_label v = map_ident v
 
 and map_for_header =
   function
@@ -407,7 +410,7 @@ and map_other_stmt_operator x = x
 
 and map_pattern =
   function
-  | PatVar v1 -> let v1 = map_name v1 in PatVar ((v1))
+  | PatVar v1 -> let v1 = map_ident v1 in PatVar ((v1))
   | PatLiteral v1 -> let v1 = map_literal v1 in PatLiteral ((v1))
   | PatConstructor ((v1, v2)) ->
       let v1 = map_name v1
@@ -443,7 +446,8 @@ and
   let v_tparams = map_of_list map_type_parameter v_tparams in
   let v_type_ = map_of_option map_type_ v_type_ in
   let v_attrs = map_of_list map_attribute v_attrs in
-  let v_name = map_name v_name in { 
+  let v_name = map_ident v_name 
+  in { 
                name = v_name;
                attrs = v_attrs;
                type_ = v_type_;
@@ -457,7 +461,7 @@ and map_definition_kind =
   | TypeDef v1 -> let v1 = map_type_definition v1 in TypeDef ((v1))
 
 and map_type_parameter (v1, v2) =
-  let v1 = map_name v1 and v2 = map_type_parameter_constraints v2 in (v1, v2)
+  let v1 = map_ident v1 and v2 = map_type_parameter_constraints v2 in (v1, v2)
 
 and map_type_parameter_constraints v =
   map_of_list map_type_parameter_constraint v
@@ -502,7 +506,7 @@ and
   let v_pattrs = map_of_list map_attribute v_pattrs in
   let v_ptype = map_of_option map_type_ v_ptype in
   let v_pdefault = map_of_option map_expr v_pdefault in
-  let v_pname = map_name v_pname in 
+  let v_pname = map_ident v_pname in 
   { 
                           pname = v_pname;
                           pdefault = v_pdefault;
@@ -535,7 +539,11 @@ and map_field =
   | FieldSpread v1 -> let v1 = map_expr v1 in FieldSpread ((v1))
   | FieldStmt v1 -> let v1 = map_stmt v1 in FieldStmt ((v1))
 
-and map_type_definition =
+and map_type_definition { tbody = v_tbody } =
+  let v_tbody = map_type_definition_kind v_tbody in { 
+    tbody = v_tbody
+  }
+and map_type_definition_kind =
   function
   | OrType v1 ->
       let v1 = map_of_list map_or_type_element v1 in OrType ((v1))
@@ -552,13 +560,18 @@ and map_other_type_kind_operator =
 and map_or_type_element =
   function
   | OrConstructor ((v1, v2)) ->
-      let v1 = map_name v1
+      let v1 = map_ident v1
       and v2 = map_of_list map_type_ v2
       in OrConstructor ((v1, v2))
   | OrEnum ((v1, v2)) ->
-      let v1 = map_name v1 and v2 = map_expr v2 in OrEnum ((v1, v2))
+      let v1 = map_ident v1 and v2 = map_expr v2 in OrEnum ((v1, v2))
   | OrUnion ((v1, v2)) ->
-      let v1 = map_name v1 and v2 = map_type_ v2 in OrUnion ((v1, v2))
+      let v1 = map_ident v1 and v2 = map_type_ v2 in OrUnion ((v1, v2))
+  | OtherOr ((v1, v2)) ->
+      let v1 = map_other_or_type_element_operator v1
+      and v2 = map_of_list map_any v2
+      in OtherOr ((v1, v2))
+and map_other_or_type_element_operator x = x
 
 and
   map_class_definition {
@@ -589,7 +602,7 @@ and map_directive =
       in Import ((v1, v2))
   | ImportAll ((v1, v2)) ->
       let v1 = map_module_name v1
-      and v2 = map_of_option map_name v2
+      and v2 = map_of_option map_ident v2
       in ImportAll ((v1, v2))
   | OtherDirective ((v1, v2)) ->
       let v1 = map_other_directive_operator v1
@@ -597,7 +610,7 @@ and map_directive =
       in OtherDirective ((v1, v2))
 
 and map_alias (v1, v2) =
-  let v1 = map_name v1 and v2 = map_of_option map_name v2 in (v1, v2)
+  let v1 = map_ident v1 and v2 = map_of_option map_ident v2 in (v1, v2)
 
 and map_other_directive_operator x = x
 
@@ -611,15 +624,16 @@ and map_program v = map_of_list map_item v
 
 and map_any =
   function
+  | Id v1 -> let v1 = map_ident v1 in Id ((v1))
   | N v1 -> let v1 = map_name v1 in N ((v1))
   | En v1 -> let v1 = map_entity v1 in En ((v1))
   | E v1 -> let v1 = map_expr v1 in E ((v1))
   | S v1 -> let v1 = map_stmt v1 in S ((v1))
   | T v1 -> let v1 = map_type_ v1 in T ((v1))
   | P v1 -> let v1 = map_pattern v1 in P ((v1))
-  | D v1 -> let v1 = map_definition v1 in D ((v1))
-  | Di v1 -> let v1 = map_directive v1 in Di ((v1))
-  | Dn v1 -> let v1 = map_dotted_name v1 in Dn ((v1))
+  | Def v1 -> let v1 = map_definition v1 in Def ((v1))
+  | Dir v1 -> let v1 = map_directive v1 in Dir ((v1))
+  | Di v1 -> let v1 = map_dotted_name v1 in Di ((v1))
   | I v1 -> let v1 = map_item v1 in I ((v1))
   | Pa v1 -> let v1 = map_parameter v1 in Pa ((v1))
   | Ar v1 -> let v1 = map_argument v1 in Ar ((v1))

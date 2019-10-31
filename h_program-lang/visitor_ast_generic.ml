@@ -32,7 +32,7 @@ type visitor_in = {
 
   kattr: (attribute  -> unit) * visitor_out -> attribute  -> unit;
   kparam: (parameter  -> unit) * visitor_out -> parameter  -> unit;
-  kname: (name -> unit)  * visitor_out -> name  -> unit;
+  kident: (ident -> unit)  * visitor_out -> ident  -> unit;
   kentity: (entity -> unit)  * visitor_out -> entity  -> unit;
 
   kinfo: (tok -> unit)  * visitor_out -> tok  -> unit;
@@ -51,7 +51,7 @@ let default_visitor =
 
     kattr   = (fun (k,_) x -> k x);
     kparam   = (fun (k,_) x -> k x);
-    kname   = (fun (k,_) x -> k x);
+    kident   = (fun (k,_) x -> k x);
     kentity   = (fun (k,_) x -> k x);
 
     kinfo   = (fun (k,_) x -> k x);
@@ -82,13 +82,13 @@ and v_tok v = v_info v
 and v_wrap: 'a. ('a -> unit) -> 'a wrap -> unit = fun _of_a (v1, v2) ->
   let v1 = _of_a v1 and v2 = v_info v2 in ()
 
-and v_name v = 
+and v_ident v = 
   let k x =
     v_wrap v_string x
   in
-  vin.kname (k, all_functions) v
+  vin.kident (k, all_functions) v
 
-and v_dotted_name v = v_list v_name v
+and v_dotted_name v = v_list v_ident v
 
 and v_qualified_name v = v_dotted_name v
 
@@ -108,6 +108,7 @@ and v_resolved_name =
   | EnumConstant -> ()
   | ImportedModule -> ()
 
+and v_name (v1, v2) = let v1 = v_ident v1 and v2 = v_id_info v2 in ()
 and v_expr x =
   let k x = 
   match x with
@@ -122,7 +123,7 @@ and v_expr x =
   | Lambda ((v1)) -> let v1 = v_function_definition v1 in ()
   | AnonClass ((v1)) -> let v1 = v_class_definition v1 in ()
   | Nop -> ()
-  | Id ((v1, v2)) -> let v1 = v_name v1 and v2 = v_id_info v2 in ()
+  | Name ((v1)) -> let v1 = v_name v1 in  ()
   | IdSpecial v1 -> let v1 = v_special v1 in ()
   | Call ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_arguments v2 in ()
   | Assign ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_expr v2 in ()
@@ -132,7 +133,7 @@ and v_expr x =
       and v3 = v_expr v3
       in ()
   | LetPattern ((v1, v2)) -> let v1 = v_pattern v1 and v2 = v_expr v2 in ()
-  | ObjAccess ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_name v2 in ()
+  | ObjAccess ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_ident v2 in ()
   | ArrayAccess ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_expr v2 in ()
   | Conditional ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_expr v2 and v3 = v_expr v3 in ()
@@ -228,7 +229,7 @@ and v_argument =
   function
   | Arg v1 -> let v1 = v_expr v1 in ()
   | ArgType v1 -> let v1 = v_type_ v1 in ()
-  | ArgKwd ((v1, v2)) -> let v1 = v_name v1 and v2 = v_expr v2 in ()
+  | ArgKwd ((v1, v2)) -> let v1 = v_ident v1 and v2 = v_expr v2 in ()
   | ArgOther ((v1, v2)) ->
       let v1 = v_other_argument_operator v1 and v2 = v_list v_any v2 in ()
 
@@ -243,7 +244,7 @@ and v_type_ x =
   | TyFun ((v1, v2)) -> let v1 = v_list v_type_ v1 and v2 = v_type_ v2 in ()
   | TyApply ((v1, v2)) ->
       let v1 = v_name v1 and v2 = v_type_arguments v2 in ()
-  | TyVar v1 -> let v1 = v_name v1 in ()
+  | TyVar v1 -> let v1 = v_ident v1 in ()
   | TyArray ((v1, v2)) ->
       let v1 = v_option v_expr v1 and v2 = v_type_ v2 in ()
   | TyPointer v1 -> let v1 = v_type_ v1 in ()
@@ -267,7 +268,7 @@ and v_other_type_argument_operator = function | OTA_Question -> ()
 and v_other_type_operator _ = ()
 
 and v_type_parameter (v1, v2) =
-  let v1 = v_name v1 and v2 = v_type_parameter_constraints v2 in ()
+  let v1 = v_ident v1 and v2 = v_type_parameter_constraints v2 in ()
 and v_type_parameter_constraints v = v_list v_type_parameter_constraint v
 and v_type_parameter_constraint =
   function | Extends v1 -> let v1 = v_type_ v1 in ()
@@ -292,7 +293,7 @@ and v_attribute x =
   | Getter -> ()
   | Setter -> ()
   | Variadic -> ()
-  | NamedAttr ((v1, v2)) -> let v1 = v_name v1 and v2 = v_list v_any v2 in ()
+  | NamedAttr ((v1, v2)) -> let v1 = v_ident v1 and v2 = v_list v_any v2 in ()
   | OtherAttribute ((v1, v2)) ->
       let v1 = v_other_attribute_operator v1 and v2 = v_list v_any v2 in ()
   in
@@ -339,7 +340,7 @@ and v_stmt x =
 and v_case = function | Case v1 -> let v1 = v_expr v1 in () | Default -> ()
 and v_catch (v1, v2) = let v1 = v_pattern v1 and v2 = v_stmt v2 in ()
 and v_finally v = v_stmt v
-and v_label v = v_name v
+and v_label v = v_ident v
 and v_for_header =
   function
   | ForClassic ((v1, v2, v3)) ->
@@ -358,7 +359,7 @@ and v_other_stmt_operator _x = ()
 and v_pattern x =
   let k x = 
   match x with
-  | PatVar v1 -> let v1 = v_name v1 in ()
+  | PatVar v1 -> let v1 = v_ident v1 in ()
   | PatLiteral v1 -> let v1 = v_literal v1 in ()
   | PatConstructor ((v1, v2)) ->
       let v1 = v_name v1 and v2 = v_list v_pattern v2 in ()
@@ -391,7 +392,7 @@ and v_entity x =
              type_ = x_type_;
              tparams = v_tparams
            } = x in
-   let arg = v_name x_name in
+   let arg = v_ident x_name in
    let arg = v_list v_attribute v_attrs in
    let arg = v_option v_type_ x_type_ in
    let arg = v_list v_type_parameter v_tparams in ()
@@ -433,7 +434,7 @@ and
                         ptype = v_ptype;
                         pattrs = v_pattrs
                       } =
-  let arg = v_name v_pname in
+  let arg = v_ident v_pname in
   let arg = v_option v_expr v_pdefault in
   let arg = v_option v_type_ v_ptype in
   let arg = v_list v_attribute v_pattrs in ()
@@ -461,7 +462,10 @@ and v_field =
       in ()
   | FieldSpread v1 -> let v1 = v_expr v1 in ()
   | FieldStmt v1 -> let v1 = v_stmt v1 in ()
-and v_type_definition =
+
+and v_type_definition { tbody = v_tbody } =
+  let arg = v_type_definition_kind v_tbody in ()
+and v_type_definition_kind =
   function
   | OrType v1 ->
       let v1 = v_list v_or_type_element v1
@@ -475,9 +479,14 @@ and v_other_type_kind_operator = function | OTKO_EnumWithValue -> ()
 and v_or_type_element =
   function
   | OrConstructor ((v1, v2)) ->
-      let v1 = v_name v1 and v2 = v_list v_type_ v2 in ()
-  | OrEnum ((v1, v2)) -> let v1 = v_name v1 and v2 = v_expr v2 in ()
-  | OrUnion ((v1, v2)) -> let v1 = v_name v1 and v2 = v_type_ v2 in ()
+      let v1 = v_ident v1 and v2 = v_list v_type_ v2 in ()
+  | OrEnum ((v1, v2)) -> let v1 = v_ident v1 and v2 = v_expr v2 in ()
+  | OrUnion ((v1, v2)) -> let v1 = v_ident v1 and v2 = v_type_ v2 in ()
+  | OtherOr ((v1, v2)) ->
+      let v1 = v_other_or_type_element_operator v1
+      and v2 = v_list v_any v2
+      in ()
+and v_other_or_type_element_operator _x = ()
 
 and
   v_class_definition {
@@ -498,12 +507,12 @@ and v_directive x =
   | Import ((v1, v2)) ->
       let v1 = v_module_name v1 and v2 = v_list v_alias v2 in ()
   | ImportAll ((v1, v2)) ->
-      let v1 = v_module_name v1 and v2 = v_option v_name v2 in ()
+      let v1 = v_module_name v1 and v2 = v_option v_ident v2 in ()
   | OtherDirective ((v1, v2)) ->
       let v1 = v_other_directive_operator v1 and v2 = v_list v_any v2 in ()
   in
   vin.kdir (k, all_functions) x
-and v_alias (v1, v2) = let v1 = v_name v1 and v2 = v_option v_name v2 in ()
+and v_alias (v1, v2) = let v1 = v_ident v1 and v2 = v_option v_ident v2 in ()
 and v_other_directive_operator =
   function
   | OI_Export -> ()
@@ -531,15 +540,16 @@ and v_any =
   | S v1 -> let v1 = v_stmt v1 in ()
   | T v1 -> let v1 = v_type_ v1 in ()
   | P v1 -> let v1 = v_pattern v1 in ()
-  | D v1 -> let v1 = v_def v1 in ()
-  | Di v1 -> let v1 = v_directive v1 in ()
+  | Def v1 -> let v1 = v_def v1 in ()
+  | Dir v1 -> let v1 = v_directive v1 in ()
   | Dk v1 -> let v1 = v_def_kind v1 in ()
-  | Dn v1 -> let v1 = v_dotted_name v1 in ()
+  | Di v1 -> let v1 = v_dotted_name v1 in ()
   | I v1 -> let v1 = v_item v1 in ()
   | Pa v1 -> let v1 = v_parameter v1 in ()
   | Ar v1 -> let v1 = v_argument v1 in ()
   | At v1 -> let v1 = v_attribute v1 in ()
   | Pr v1 -> let v1 = v_program v1 in ()
+  | Id v1 -> let v1 = v_ident v1 in ()
   
 
 and all_functions x = v_any x

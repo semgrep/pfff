@@ -52,6 +52,7 @@
  *  - functorize and add some type hole (type tstmt; type texpr; ...)
  *  - data-type a la carte like in github-semantic but Seems too high-level
  *    with astronaut-style architecture (too abstract, too advanced features).
+ *  - the OtherXxx strategy used in this file (simple)
  *
  * history:
  *  - started with crossproduct of Javascript, Python, PHP, Java, and C
@@ -83,32 +84,32 @@ type 'a wrap = 'a * tok
  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
-(* Name *)
+(* Names *)
 (* ------------------------------------------------------------------------- *)
 
-type name = string wrap
+type ident = string wrap
  (* with tarzan *)
 
-type dotted_name = name list
+type dotted_ident = ident list (* at least 1 element *)
  (* with tarzan *)
 
 (* todo? module_name * name? 
  * todo? not enough in OCaml with functor and type arguments or C++ templates? 
 *)
-type qualified_name = dotted_name
+type qualified_ident = dotted_ident
  (* with tarzan *)
 
 (* can also be used for packages *)
 type module_name =
   | FileName of string wrap   (* ex: Javascript import, C include *)
-  | DottedName of dotted_name (* ex: Python *)
+  | DottedName of dotted_ident (* ex: Python *)
  (* with tarzan *)
 
 (* todo: see also scope_code.ml *)
 type resolved_name =
   | Local
   | Param
-  | Global of qualified_name
+  | Global of qualified_ident (* or just name? *)
   | NotResolved
 
   | Macro
@@ -117,12 +118,21 @@ type resolved_name =
 
  (* with tarzan *)
 
+(* big mutually recursive types because of the use of 'any' in OtherXxx *)
+
+type name = ident * id_info
+  and id_info =
+  { id_qualifier: dotted_ident option;
+    id_typeargs: type_arguments option; (* Java *)
+    id_resolved: resolved_name ref; (* variable tagger (naming) *)
+    id_type: type_ option ref; (* type checker (typing) *)
+  }
+
 (* ------------------------------------------------------------------------- *)
 (* Expression *)
 (* ------------------------------------------------------------------------- *)
-(* big mutually recursive types because of the use of 'any' in OtherXxx *)
 
-type expr = 
+and expr = 
   (* basic (atomic) values *)
   | L of literal
 
@@ -142,7 +152,7 @@ type expr =
 
   | Nop (* less: could be merged with L Unit *)
 
-  | Id of name * id_info
+  | Name of name
   | IdSpecial of special
 
   (* operators and function application *)
@@ -162,7 +172,7 @@ type expr =
   | LetPattern of pattern * expr
 
   (* can also be used for ClassAccess, ModuleAccess depending on expr *)
-  | ObjAccess of expr * name
+  | ObjAccess of expr * ident
   | ArrayAccess of expr * expr (* less: slice *)
 
   | Conditional of expr * expr * expr
@@ -185,11 +195,10 @@ type expr =
   | OtherExpr of other_expr_operator * any list
 
   and literal = 
-    | Unit of tok (* a.k.a Void *)
     | Bool of bool wrap
     | Int of string wrap | Float of string wrap
     | Char of string wrap | String of string wrap | Regexp of string wrap
-    | Null of tok | Undefined of tok (* JS *)
+    | Unit of tok (* a.k.a Void *) | Null of tok | Undefined of tok (* JS *)
 
   and container_operator = 
     (* Tuple was lifted up *)
@@ -198,17 +207,11 @@ type expr =
     | Dict (* a.k.a Hash or Map (combine with Tuple to get Key/value pair) *)
 
 
-  and id_info =
-  { id_qualifier: dotted_name option;
-    id_typeargs: type_arguments option; (* Java *)
-    id_resolved: resolved_name ref; (* variable tagger (naming) *)
-    id_type: type_ option ref; (* type checker (typing) *)
-  }
-
   and special = 
    (* special vars *)
    | This | Super
    | Self | Parent (* different from This/Super? *)
+
    (* special apply *)
    | Eval
    | Typeof | Instanceof | Sizeof
@@ -226,7 +229,7 @@ type expr =
     (* mostly binary operator *)
     and arithmetic_operator = 
       | Plus | Minus (* unary too *) | Mult | Div | Mod 
-      | Pow | FloorDiv (* not in all PLs, in Python *)
+      | Pow | FloorDiv (* Python *)
       | LSL | LSR | ASR (* L = logic, A = Arithmetic, SL = shift left *) 
       | BitOr | BitXor | BitAnd | BitNot (* unary *)
       | And | Or (* also shortcut operator *) | Not (* unary *)
@@ -242,7 +245,7 @@ type expr =
       (* regular argument *)
       | Arg of expr (* can be Call (IdSpecial Spread, Id foo) *)
       (* keyword argument *)
-      | ArgKwd of name * expr
+      | ArgKwd of ident * expr
       (* type argument for New, instanceof/sizeof/typeof, C macros *)
       | ArgType of type_
 
@@ -293,7 +296,7 @@ and type_ =
              type_ (* return type *)
   (* covers tuples, list, etc. and also regular typedefs *)
   | TyApply of name * type_arguments
-  | TyVar of name (* typedef? no type variable in polymorphic type*)
+  | TyVar of ident (* typedef? no type variable in polymorphic type*)
 
   (* a special case of TApply, also a special case of TPointer *)
   | TyArray of (* const_expr *) expr option * type_
@@ -339,7 +342,7 @@ and attribute =
   (* for parameters *)
   | Variadic
   (* for general @annotations *)
-  | NamedAttr of name * any list
+  | NamedAttr of ident * any list
 
   | OtherAttribute of other_attribute_operator * any list
 
@@ -393,7 +396,7 @@ and stmt =
   and catch = pattern * stmt
   and finally = stmt
 
-  and label = name
+  and label = ident
 
   and for_header = 
     | ForClassic of for_var_or_expr list (* init *) * 
@@ -421,7 +424,7 @@ and stmt =
 (* Pattern *)
 (* ------------------------------------------------------------------------- *)
 and pattern = 
-  | PatVar of name
+  | PatVar of ident
   | PatLiteral of literal
   | PatConstructor of name * pattern list
 
@@ -449,7 +452,7 @@ and pattern =
 (* ------------------------------------------------------------------------- *)
 and definition = entity * definition_kind (* (or decl) *)
   and entity = {
-    name: name;
+    name: ident;
     attrs: attribute list;
     type_: type_ option; (* less: use ref to enable typechecking *)
     tparams: type_parameter list;
@@ -462,7 +465,7 @@ and definition = entity * definition_kind (* (or decl) *)
     | TypeDef of type_definition
 
 (* template/generics/polymorphic *)
-and type_parameter = name * type_parameter_constraints
+and type_parameter = ident * type_parameter_constraints
 
   and type_parameter_constraints = type_parameter_constraint list
 
@@ -488,7 +491,7 @@ and function_definition = {
 
     (* less: could be merged with variable_definition, or pattern *)
     and parameter_classic = { 
-     pname: name;
+     pname: ident;
      pdefault: expr option;
      ptype: type_ option;
      pattrs: attribute list;
@@ -534,7 +537,11 @@ and field =
 (* ------------------------------------------------------------------------- *)
 (* Type definition *)
 (* ------------------------------------------------------------------------- *)
-  and type_definition = 
+and type_definition = {
+   tbody: type_definition_kind;
+  }
+
+  and type_definition_kind = 
    | OrType  of or_type_element list  (* enum/ADTs *)           
    (* field.vtype should be defined here *)
    | AndType of field list (* record/struct/union *) 
@@ -545,9 +552,13 @@ and field =
      (* C *)
      | OTKO_EnumWithValue (* obsolete actually now that has OrEnum *)
   and or_type_element =
-    | OrConstructor of name * type_ list
-    | OrEnum of name * expr
-    | OrUnion of name * type_
+    | OrConstructor of ident * type_ list
+    | OrEnum of ident * expr
+    | OrUnion of ident * type_
+    | OtherOr of other_or_type_element_operator * any list
+      and other_or_type_element_operator =
+      (* Java *)
+      | OOTEO_EnumWithMethods | OOTEO_EnumWithArguments
 
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)
@@ -569,11 +580,11 @@ and class_definition = {
 (* ------------------------------------------------------------------------- *)
 and directive = 
   | Import    of module_name * alias list
-  | ImportAll of module_name * name option (* as name *)
+  | ImportAll of module_name * ident option (* as name *)
 
   | OtherDirective of other_directive_operator * any list
 
-  and alias = name * name option (* as name *)
+  and alias = ident * ident option (* as name *)
 
   and other_directive_operator = 
   (* Javascript *)
@@ -603,6 +614,7 @@ and program = item list
 (* ------------------------------------------------------------------------- *)
 (* mentioned in many OtherXxx so must be part of the mutually recursive type *)
 and any =
+  | Id of ident
   | N of name
   | En of entity
 
@@ -611,15 +623,15 @@ and any =
   | T of type_
   | P of pattern
 
-  | D of definition
-  | Di of directive
+  | Def of definition
+  | Dir of directive
   | I of item
 
   | Pa of parameter
   | Ar of argument
   | At of attribute
   | Dk of definition_kind
-  | Dn of dotted_name
+  | Di of dotted_ident
 
   | Pr of program
 
@@ -651,22 +663,22 @@ let empty_info () = {
    id_type = ref None;
  }
 
-let basic_param name = { 
-    pname = name;
+let basic_param id = { 
+    pname = id;
     pdefault = None;
     ptype = None;
     pattrs = [];
 }
 
-let basic_entity name attrs = {
-  name = name;
+let basic_entity id attrs = {
+  name = id;
   attrs = attrs;
   type_ = None;
   tparams = [];
 }
 
-let basic_field name typeopt =
-  let entity = basic_entity name [] in
+let basic_field id typeopt =
+  let entity = basic_entity id [] in
   FieldVar (entity, { vinit = None; vtype = typeopt})
 
 let empty_var () = 
