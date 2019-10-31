@@ -63,16 +63,20 @@ let rec typ =
 and class_type v =
   let res = list1
     (fun (v1, v2) ->
-       let v1 = ident v1 and v2 = list type_argument v2 in (v1, v2))
+       let v1 = ident v1 and _v2TODO = list type_argument v2 in 
+        (v1))
     v
   in
-  (match res with
-  | [name, type_args] ->
-        G.TyApply (name, type_args)
+  (match List.rev res with
   | [] -> raise Impossible (* list1 *)
-  | ((_, info), _)::_ ->
-        error info "TODO: class type name not handled, more than one element"
+  | name::xs ->
+        let info = { (G.empty_info ()) with G.
+            id_typeargs = None; (* could be v1TODO above *)
+            id_qualifier = Some (List.rev xs);
+          } in
+        G.TyApply ((name, info), [])
   )
+
 and type_argument =
   function
   | TArgument v1 -> let v1 = ref_type v1 in G.TypeArg v1
@@ -180,7 +184,7 @@ and literal = function
 and expr e =
   match e with
   | Ellipses v1 -> let v1 = tok v1 in G.Ellipses v1
-  | Name v1 -> let (a,b) = name v1 in G.Id (a,b)
+  | Name v1 -> let (a,b) = name v1 in G.Name (a,b)
   | NameOrClassType _v1 -> 
       let ii = Lib_parsing_java.ii_of_any (AExpr e) in
       error (List.hd ii) 
@@ -232,7 +236,7 @@ and expr e =
       and v4 = option decls v4
       in 
       let any = 
-        [G.E v1; G.N v2] @ (v3 |> List.map (fun arg -> G.Ar arg)) @
+        [G.E v1; G.Id v2] @ (v3 |> List.map (fun arg -> G.Ar arg)) @
         (Common.opt_to_list v4 |> List.flatten |> List.map
             (fun st -> G.S st)) in
        G.OtherExpr (G.OE_NewQualifiedClass, any)
@@ -322,7 +326,7 @@ and stmt =
 
 and ident_label x =
   let x = ident x in
-  G.Id (x, G.empty_info ())
+  G.Name (x, G.empty_info ())
 
 and stmts v = list stmt v
 
@@ -394,7 +398,7 @@ and
   let v3 = list qualified_ident m_throws in
   let v4 = stmt m_body in
   let throws = v3 |> List.map (fun qu_id ->
-        G.OtherAttribute (G.OA_AnnotThrow, [G.Dn qu_id]))
+        G.OtherAttribute (G.OA_AnnotThrow, [G.Di qu_id]))
   in
   { v1 with G.attrs = v1.G.attrs @ throws },
   { G.fparams = v2; frettype  = Some rett; fbody = v4 }
@@ -414,7 +418,7 @@ and enum_decl {
   let v4 = list enum_constant v4 in
   let _v5TODO = decls v5 in
   let ent = G.basic_entity v1 v2 in
-  let tdef = G.OrType v4 in
+  let tdef = {G.tbody = G.OrType v4 } in
   ent, tdef
 
 and enum_constant =
@@ -496,7 +500,7 @@ let compilation_unit {
   let v3 = decls xdecls in
   (match v1 with
   | None -> []
-  | Some qu -> [G.IDir (G.OtherDirective (G.OI_Package, [G.Dn qu]))]
+  | Some qu -> [G.IDir (G.OtherDirective (G.OI_Package, [G.Di qu]))]
   ) @
   (v2 |> List.map (fun import -> G.IDir import)) @
   (v3 |> List.map G.stmt_to_item)
@@ -506,17 +510,17 @@ let program v =
 
 let any =
   function
-  | AIdent v1 -> let v1 = ident v1 in G.N v1
+  | AIdent v1 -> let v1 = ident v1 in G.Id v1
   | AExpr v1 -> let v1 = expr v1 in G.E v1
   | AStmt v1 -> let v1 = stmt v1 in G.S v1
   | ATyp v1 -> let v1 = typ v1 in G.T v1
   | AVar v1 -> let v1 = var v1 in G.En v1
   | AInit v1 -> let v1 = init v1 in G.E v1
   | AMethod v1 -> let (ent, def) = method_decl v1 in 
-      G.D (ent, G.FuncDef def)
+      G.Def (ent, G.FuncDef def)
   | AField v1 -> let (ent, def) = field v1 in
-      G.D (ent, G.VarDef def)
+      G.Def (ent, G.VarDef def)
   | AClass v1 -> let (ent, def) = class_decl v1 in
-      G.D (ent, G.ClassDef def)
+      G.Def (ent, G.ClassDef def)
   | ADecl v1 -> let v1 = decl v1 in G.S v1
   | AProgram v1 -> let v1 = program v1 in G.Pr v1

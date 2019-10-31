@@ -109,7 +109,7 @@ let rec expr (x: expr) =
       and _v2TODO = expr_context v2
       and v3 = vref resolved_name v3
       in 
-      G.Id (v1, 
+      G.Name (v1, 
             { (G.empty_info ()) with 
                G.id_type = ref None;
                id_resolved = v3 })
@@ -325,7 +325,7 @@ and parameters xs =
      let n = name n in
      let topt = option type_ topt in
      G.OtherParam (G.OPO_KwdParam, 
-            [G.N n] @ (match topt with None -> [] | Some t -> [G.T t]))
+            [G.Id n] @ (match topt with None -> [] | Some t -> [G.T t]))
   )
  
 
@@ -466,9 +466,9 @@ and stmt x =
       G.LocalDirective (G.Import (G.DottedName v1, v2))
 
   | Global v1 -> let v1 = list name v1 in
-      G.OtherStmt (G.OS_Global, v1 |> List.map (fun x -> G.N x))
+      G.OtherStmt (G.OS_Global, v1 |> List.map (fun x -> G.Id x))
   | NonLocal v1 -> let v1 = list name v1 in
-      G.OtherStmt (G.OS_NonLocal, v1 |> List.map (fun x -> G.N x))
+      G.OtherStmt (G.OS_NonLocal, v1 |> List.map (fun x -> G.Id x))
 
   | ExprStmt v1 -> let v1 = expr v1 in G.ExprStmt v1
 

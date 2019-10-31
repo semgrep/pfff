@@ -110,11 +110,12 @@ let rec type_ =
       G.TyFun (params, ret)
   | TStructName ((v1, v2)) ->
       let v1 = struct_kind v1 and v2 = name v2 in
-      G.OtherType (v1, [G.N v2])
+      G.OtherType (v1, [G.Id v2])
   | TEnumName v1 -> let v1 = name v1 in
-      G.OtherType (G.OT_EnumName, [G.N v1])
-  | TTypeName v1 -> let v1 = name v1 in 
-      G.TyApply (v1, [])
+      G.OtherType (G.OT_EnumName, [G.Id v1])
+  | TTypeName v1 -> 
+      let v1 = name v1 in 
+      G.TyApply ((v1, G.empty_info()), [])
 
 and function_type (v1, v2) =
   let v1 = type_ v1 and v2 = list parameter v2 in 
@@ -136,7 +137,7 @@ and expr =
   | String v1 -> let v1 = wrap string v1 in G.L (G.String v1)
   | Char v1 -> let v1 = wrap string v1 in G.L (G.Char v1)
 
-  | Id v1 -> let v1 = name v1 in G.Id (v1, G.empty_info())
+  | Id v1 -> let v1 = name v1 in G.Name (v1, G.empty_info())
   | Call ((v1, v2)) -> let v1 = expr v1 and v2 = list argument v2 in
       G.Call (v1, v2)
   | Assign ((v1, v2, v3)) ->
@@ -304,11 +305,11 @@ let rec
   | Struct -> 
         let fields = v3 |> List.map (fun (n, t) -> 
               G.basic_field n (Some t)) in
-        entity, G.TypeDef (G.AndType fields)
+        entity, G.TypeDef ({ G.tbody = G.AndType fields })
   | Union ->
         let ctors = v3 |> List.map (fun (n, t) -> 
               G.OrUnion (n,t))  in
-        entity, G.TypeDef (G.OrType ctors)
+        entity, G.TypeDef ({ G.tbody = G.OrType ctors })
   )
 
   
@@ -329,11 +330,11 @@ let enum_def (v1, v2) =
   let entity = G.basic_entity v1 [] in
   let ors = v2 |> List.map (fun (n, eopt) -> G.OrEnum (n, G.opt_to_nop eopt))
   in
-  entity, G.TypeDef (G.OrType ors)
+  entity, G.TypeDef ({ G.tbody = G.OrType ors})
 
 let type_def (v1, v2) = let v1 = name v1 and v2 = type_ v2 in
   let entity = G.basic_entity v1 [] in
-  entity, G.TypeDef (G.AliasType v2)
+  entity, G.TypeDef ({ G.tbody = G.AliasType v2 })
 
 let define_body =
   function
@@ -345,7 +346,7 @@ let toplevel =
   | Include v1 -> let v1 = wrap string v1 in 
       G.IDir (G.ImportAll (G.FileName v1, None))
   | Define ((v1, v2)) -> let v1 = name v1 and v2 = define_body v2 in
-      G.IDir (G.OtherDirective (G.OI_Define, [G.N v1; v2]))
+      G.IDir (G.OtherDirective (G.OI_Define, [G.Id v1; v2]))
   | Macro ((v1, v2, v3)) ->
       let v1 = name v1
       and v2 = list name v2
@@ -353,7 +354,7 @@ let toplevel =
       in
       G.IDir (
         G.OtherDirective (G.OI_Macro, 
-          [G.N v1] @  (v2 |> List.map (fun n -> G.N n)) @ [v3]))
+          [G.Id v1] @  (v2 |> List.map (fun n -> G.Id n)) @ [v3]))
   | StructDef v1 -> let v1 = struct_def v1 in
       G.IDef v1
   | TypeDef v1 -> let v1 = type_def v1 in

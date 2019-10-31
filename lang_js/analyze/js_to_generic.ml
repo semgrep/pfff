@@ -109,7 +109,7 @@ let special (x, tok) =
       | Some n -> 
             let n = name n in
             SR_NeedArgs (fun args ->
-            G.OtherExpr (G.OE_Encaps,(G.N n)::(args|>List.map(fun e ->G.E e))))
+            G.OtherExpr (G.OE_Encaps,(G.Id n)::(args|>List.map(fun e ->G.E e))))
       )
   | Not -> SR_Special (G.ArithOp G.Not)
   | And -> SR_Special (G.ArithOp G.And)
@@ -148,7 +148,7 @@ and expr (x: expr) =
       let v1 = name v1 in
       let v2 = { (G.empty_info ()) with 
                  G.id_resolved = vref resolved_name refresolved } in
-      G.Id (v1, v2)
+      G.Name (v1, v2)
 
   | IdSpecial v1 -> 
       let x = special v1 in
@@ -217,9 +217,9 @@ and stmt x =
   | Switch ((v1, v2)) -> let v1 = expr v1 and v2 = list case v2 in
       G.Switch (v1, v2)
   | Continue v1 -> let v1 = option label v1 in 
-     G.Continue (v1 |> option (fun n -> G.Id (n, G.empty_info ())))
+     G.Continue (v1 |> option (fun n -> G.Name (n, G.empty_info ())))
   | Break v1 -> let v1 = option label v1 in
-     G.Break (v1 |> option (fun n -> G.Id (n, G.empty_info ())))
+     G.Break (v1 |> option (fun n -> G.Name (n, G.empty_info ())))
   | Return v1 -> let v1 = expr v1 in G.Return v1
   | Label ((v1, v2)) -> let v1 = label v1 and v2 = stmt v2 in
       G.Label (v1, v2)
@@ -258,7 +258,7 @@ and for_header =
         match v1 with
         | Left v -> 
             let v = def_of_var v in
-            G.OtherPat (G.OP_Var, [G.D v])
+            G.OtherPat (G.OP_Var, [G.Def v])
         | Right e ->
             let e = expr e in
             G.OtherPat (G.OP_Expr, [G.E e])
@@ -379,12 +379,12 @@ and module_directive x =
       G.ImportAll (G.FileName v2, Some v1)
   | ImportCss ((v1)) ->
       let v1 = name v1 in
-      G.OtherDirective (G.OI_ImportCss, [G.N v1])
+      G.OtherDirective (G.OI_ImportCss, [G.Id v1])
   | ImportEffect ((v1)) ->
       let v1 = name v1 in
-      G.OtherDirective (G.OI_ImportEffect, [G.N v1])
+      G.OtherDirective (G.OI_ImportEffect, [G.Id v1])
   | Export ((v1)) -> let v1 = name v1 in
-      G.OtherDirective (G.OI_Export, [G.N v1])
+      G.OtherDirective (G.OI_Export, [G.Id v1])
 
 and program v = list toplevel v
 
