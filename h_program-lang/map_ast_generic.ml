@@ -116,14 +116,14 @@ and map_expr =
   | Nop -> Nop
   | Name ((v1)) ->
       let v1 = map_name v1 in Name ((v1))
-  | IdSpecial v1 -> let v1 = map_special v1 in IdSpecial ((v1))
+  | IdSpecial v1 -> let v1 = map_wrap map_special v1 in IdSpecial ((v1))
   | Call ((v1, v2)) ->
       let v1 = map_expr v1 and v2 = map_arguments v2 in Call ((v1, v2))
   | Assign ((v1, v2)) ->
       let v1 = map_expr v1 and v2 = map_expr v2 in Assign ((v1, v2))
   | AssignOp ((v1, v2, v3)) ->
       let v1 = map_expr v1
-      and v2 = map_arithmetic_operator v2
+      and v2 = map_wrap map_arithmetic_operator v2
       and v3 = map_expr v3
       in AssignOp ((v1, v2, v3))
   | LetPattern ((v1, v2)) ->

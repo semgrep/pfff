@@ -153,7 +153,7 @@ and expr =
   | Nop (* less: could be merged with L Unit *)
 
   | Name of name
-  | IdSpecial of special
+  | IdSpecial of special wrap
 
   (* operators and function application *)
   | Call of expr * arguments
@@ -168,7 +168,7 @@ and expr =
    *)
   | Assign of expr * expr
   (* less: should desugar in Assign, should be only binary_operator *)
-  | AssignOp of expr * arithmetic_operator * expr
+  | AssignOp of expr * arithmetic_operator wrap * expr
   | LetPattern of pattern * expr
 
   (* can also be used for ClassAccess, ModuleAccess depending on expr *)

@@ -73,7 +73,7 @@ and vof_expr =
       let v1 = vof_name v1
       in Ocaml.VSum (("Name", [ v1 ]))
   | IdSpecial v1 ->
-      let v1 = vof_special v1 in Ocaml.VSum (("IdSpecial", [ v1 ]))
+      let v1 = vof_wrap vof_special v1 in Ocaml.VSum (("IdSpecial", [ v1 ]))
   | Call ((v1, v2)) ->
       let v1 = vof_expr v1
       and v2 = vof_arguments v2
@@ -84,7 +84,7 @@ and vof_expr =
       in Ocaml.VSum (("Assign", [ v1; v2 ]))
   | AssignOp ((v1, v2, v3)) ->
       let v1 = vof_expr v1
-      and v2 = vof_arithmetic_operator v2
+      and v2 = vof_wrap vof_arithmetic_operator v2
       and v3 = vof_expr v3
       in Ocaml.VSum (("AssignOp", [ v1; v2; v3 ]))
   | LetPattern ((v1, v2)) ->

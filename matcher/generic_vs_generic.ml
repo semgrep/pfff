@@ -421,7 +421,7 @@ and m_expr a b =
        B.Name(b1)
     ))
   | A.IdSpecial(a1), B.IdSpecial(b1) ->
-    m_special a1 b1 >>= (fun (a1, b1) -> 
+    m_wrap m_special a1 b1 >>= (fun (a1, b1) -> 
     return (
        A.IdSpecial(a1),
        B.IdSpecial(b1)
@@ -445,7 +445,7 @@ and m_expr a b =
     ))
   | A.AssignOp(a1, a2, a3), B.AssignOp(b1, b2, b3) ->
     m_expr a1 b1 >>= (fun (a1, b1) -> 
-    m_arithmetic_operator a2 b2 >>= (fun (a2, b2) -> 
+    m_wrap m_arithmetic_operator a2 b2 >>= (fun (a2, b2) -> 
     m_expr a3 b3 >>= (fun (a3, b3) -> 
     return (
        A.AssignOp(a1, a2, a3),
