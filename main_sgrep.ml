@@ -160,10 +160,10 @@ let ast_fuzzy_of_string str =
 (*****************************************************************************)
 
 type ast =
-  | Fuzzy of Ast_fuzzy.tree list
   | Gen of Ast_generic.program
+  | Fuzzy of Ast_fuzzy.tree list
+
   | Php of Cst_php.program
-  | Js of Ast_js.program
 
   | NoAST
 
@@ -184,11 +184,9 @@ let create_ast file =
   | "java" ->
     let ast = Parse_java.parse_program file in
     Gen (Java_to_generic.program ast)
+
   | "php" ->
     Php (Parse_php.parse_program file)
-  | "jsold" ->
-      let cst = Parse_js.parse_program file in
-      Js (Ast_js_build.program cst)
   | _ ->
     Fuzzy
       (match !lang with
@@ -236,6 +234,7 @@ let parse_pattern str =
    | "java" ->
       let any = Parse_java.any_of_string str in
       PatGen (Java_to_generic.any any)
+
    | "php" -> PatPhp (Sgrep_php.parse str)
 
   (* for now we abuse the fuzzy parser of cpp for ml for the pattern as
