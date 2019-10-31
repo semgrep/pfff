@@ -559,7 +559,7 @@ and expr env e =
 
   | Conditional (e1, e2, e3) ->
     List.iter (expr env) [e1;e2;e3]
-
+  | Ellipses _ -> ()
 
 (* ---------------------------------------------------------------------- *)
 (* Entities *)

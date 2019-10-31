@@ -176,6 +176,10 @@ type expr =
     * are not flatten together, to simplify the lexer/parser.
     *)
    | Encaps of name option * tok (* ` *) * encaps list * tok (* ` *)
+ 
+   (* sgrep-ext: *)
+   | Ellipses of tok
+
    (* facebook-ext: *)
    | XhpHtml of xhp_html
 

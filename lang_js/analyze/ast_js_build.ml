@@ -553,6 +553,8 @@ and expr env = function
   | C.XhpHtml x -> Transpile_js.xhp (expr env) x
   | C.Paren x ->
      expr env (C.unparen x)
+  | C.Ellipses x ->
+     A.Ellipses x
 
 and expr_opt env = function
   | None -> A.Nop

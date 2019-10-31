@@ -82,6 +82,7 @@ and v_expr (x: expr) =
   let k x =  match x with
   | L v1 -> let v1 = v_litteral v1 in ()
   | V v1 -> let v1 = v_name v1 in ()
+  | Ellipses v1 -> let v1 = v_tok v1 in ()
   | This v1 -> let v1 = v_tok v1 in ()
   | Super v1 -> let v1 = v_tok v1 in ()
   | NewTarget ((v1, v2, v3)) ->

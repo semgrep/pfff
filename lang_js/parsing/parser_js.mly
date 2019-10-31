@@ -1249,6 +1249,7 @@ argument:
  /*(* es6: spread operator, allowed not only in last position *)*/
  | T_DOTS assignment_expression
      { (uop U_spread $1 $2) }
+ | T_DOTS { Ellipses $1 }
 
 /*(*----------------------------*)*/
 /*(*2 XHP embeded html *)*/

@@ -193,6 +193,9 @@ and expr =
   (* could unify with Apply, but need Lazy special then *)
   | Conditional of expr * expr * expr
 
+  (* sgrep-ext: *)
+  | Ellipses of tok
+
 (* ------------------------------------------------------------------------- *)
 (* Statements *)
 (* ------------------------------------------------------------------------- *)
