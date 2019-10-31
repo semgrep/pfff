@@ -36,13 +36,6 @@ let vref f x = ref (f !x)
 let string = id
 let bool = id
 
-(*
-exception Error of string * Parse_info.info
-
-let error tok msg = 
-  raise (Error (msg, tok))
-*)
-
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)

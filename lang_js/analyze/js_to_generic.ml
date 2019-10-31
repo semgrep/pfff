@@ -36,10 +36,7 @@ let vref f x = ref (f !x)
 let bool = id
 let string = id
 
-exception Error of string * Parse_info.info
-
-let error tok msg = 
-  raise (Error (msg, tok))
+let error = Ast_generic.error
 
 (*****************************************************************************)
 (* Entry point *)

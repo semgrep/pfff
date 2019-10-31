@@ -40,13 +40,6 @@ let either f g x =
 
 let string = id
 
-(*
-exception Error of string * Parse_info.info
-
-let error tok msg = 
-  raise (Error (msg, tok))
-*)
-
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)

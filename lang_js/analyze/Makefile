@@ -86,6 +86,3 @@ $(TEMP).cmo: $(TEMP).ml
 # to allow unused variable warnings
 visitor_ast_js.cmo: visitor_ast_js.ml
 	$(OCAMLC) -w y -c $<
-
-#js_to_generic.cmo: js_to_generic.ml
-#	ocamlc $(INCLUDES) -g -w y -c $<

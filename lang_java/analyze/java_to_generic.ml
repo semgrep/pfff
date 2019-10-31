@@ -36,10 +36,7 @@ let string = id
 let bool = id
 let int = id
 
-exception Error of string * Parse_info.info
-
-let error tok msg = 
-  raise (Error (msg, tok))
+let error = Ast_generic.error
 
 (*****************************************************************************)
 (* Entry point *)

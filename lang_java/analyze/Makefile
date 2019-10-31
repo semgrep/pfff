@@ -50,7 +50,3 @@ $(TARGET).top: $(OBJS) $(LIBS)
 
 clean::
 	rm -f $(TARGET).top
-
-
-#java_to_generic.cmo: java_to_generic.ml
-#	ocamlc $(INCLUDES) -g -w y -c $<
