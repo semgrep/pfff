@@ -40,6 +40,8 @@ let either f g x =
 
 let string = id
 
+let fake_info () = Parse_info.fake_info "FAKE"
+
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
@@ -53,14 +55,18 @@ let wrap = fun _of_a (v1, v2) ->
 let name v = wrap string v
 
 
-let rec unaryOp =
-  function
+let rec unaryOp (a, tok) =
+  match a with
   | GetRef -> (fun e -> G.Ref e)
   | DeRef -> (fun e -> G.DeRef e)
-  | UnPlus -> (fun e -> G.Call (G.IdSpecial (G.ArithOp G.Plus), [G.Arg e]))
-  | UnMinus -> (fun e -> G.Call (G.IdSpecial (G.ArithOp G.Minus), [G.Arg e]))
-  | Tilde -> (fun e -> G.Call (G.IdSpecial (G.ArithOp G.BitNot), [G.Arg e]))
-  | Not ->  (fun e -> G.Call (G.IdSpecial (G.ArithOp G.Not), [G.Arg e]))
+  | UnPlus -> (fun e -> 
+          G.Call (G.IdSpecial (G.ArithOp G.Plus, tok), [G.Arg e]))
+  | UnMinus -> (fun e -> 
+          G.Call (G.IdSpecial (G.ArithOp G.Minus, tok), [G.Arg e]))
+  | Tilde -> (fun e -> 
+          G.Call (G.IdSpecial (G.ArithOp G.BitNot, tok), [G.Arg e]))
+  | Not ->  (fun e -> 
+          G.Call (G.IdSpecial (G.ArithOp G.Not, tok), [G.Arg e]))
   | GetRefLabel -> (fun e -> G.OtherExpr (G.OE_GetRefLabel, [G.E e]))
 and assignOp =
   function 
@@ -68,8 +74,7 @@ and assignOp =
   | OpAssign v1 -> let v1 = arithOp v1 in Some v1
 
 and fixOp = function | Dec -> G.Decr | Inc -> G.Incr
-and binaryOp =
-  function
+and binaryOp = function
   | Arith v1 -> let v1 = arithOp v1 in v1
   | Logical v1 -> let v1 = logicalOp v1 in v1
 and arithOp =
@@ -148,7 +153,7 @@ and expr =
       in
       (match v1 with
       | None, _ -> G.Assign (v2, v3)
-      | Some op, _ -> G.AssignOp (v2, op, v3)
+      | Some op, tok -> G.AssignOp (v2, (op, tok), v3)
       )
   | ArrayAccess ((v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in
       G.ArrayAccess (v1, v2) 
@@ -156,27 +161,27 @@ and expr =
       G.ObjAccess (G.DeRef v1, v2)
   | Cast ((v1, v2)) -> let v1 = type_ v1 and v2 = expr v2 in
       G.Cast (v1, v2)
-  | Postfix ((v1, v2)) ->
-      let v1 = expr v1 and v2 = wrap fixOp v2 in 
-      G.Call (G.IdSpecial (G.IncrDecr (fst v2, G.Postfix)), [G.Arg v1]) 
-  | Infix ((v1, v2)) ->
-      let v1 = expr v1 and v2 = wrap fixOp v2 in
-      G.Call (G.IdSpecial (G.IncrDecr (fst v2, G.Prefix)), [G.Arg v1]) 
+  | Postfix ((v1, (v2, v3))) ->
+      let v1 = expr v1 and v2 = fixOp v2 in 
+      G.Call (G.IdSpecial (G.IncrDecr (v2, G.Postfix), v3), [G.Arg v1]) 
+  | Infix ((v1, (v2, v3))) ->
+      let v1 = expr v1 and v2 = fixOp v2 in
+      G.Call (G.IdSpecial (G.IncrDecr (v2, G.Prefix), v3), [G.Arg v1]) 
   | Unary ((v1, v2)) ->
-      let v1 = expr v1 and v2 = wrap unaryOp v2 in 
-      (fst v2) v1
-  | Binary ((v1, v2, v3)) ->
+      let v1 = expr v1 and v2 = unaryOp v2 in 
+      v2 v1
+  | Binary ((v1, (v2, tok), v3)) ->
       let v1 = expr v1
-      and v2 = wrap binaryOp v2
+      and v2 = binaryOp v2
       and v3 = expr v3
-      in G.Call (G.IdSpecial (G.ArithOp (fst v2)), [G.Arg v1; G.Arg v3])
+      in G.Call (G.IdSpecial (G.ArithOp v2, tok), [G.Arg v1; G.Arg v3])
   | CondExpr ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in
       G.Conditional (v1, v2, v3)
   | Sequence ((v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in
       G.Seq [v1;v2]
   | SizeOf v1 -> let v1 = either expr type_ v1 in
-      G.Call (G.IdSpecial G.Sizeof, 
+      G.Call (G.IdSpecial (G.Sizeof, fake_info()), 
        (match v1 with
        | Left e -> [G.Arg e]
        | Right t -> [G.ArgType t]

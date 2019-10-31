@@ -38,6 +38,8 @@ let string = id
 
 let error = Ast_generic.error
 
+let fake_info () = Parse_info.fake_info "FAKE"
+
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
@@ -105,7 +107,8 @@ let special (x, tok) =
   | Encaps v1 -> 
       (match v1 with
       | None -> SR_NeedArgs (fun args -> 
-          G.Call (G.IdSpecial G.Concat, args |> List.map (fun e -> G.Arg e)))
+          G.Call (G.IdSpecial (G.Concat, fake_info ()), 
+                  args |> List.map (fun e -> G.Arg e)))
       | Some n -> 
             let n = name n in
             SR_NeedArgs (fun args ->
@@ -150,10 +153,10 @@ and expr (x: expr) =
                  G.id_resolved = vref resolved_name refresolved } in
       G.Name (v1, v2)
 
-  | IdSpecial v1 -> 
+  | IdSpecial (v1) -> 
       let x = special v1 in
       (match x with
-      | SR_Special v -> G.IdSpecial v
+      | SR_Special v -> G.IdSpecial (v, snd v1)
       | SR_NeedArgs _ -> 
           error (snd v1) "Impossible: should have been matched in Call first"
       | SR_Literal l -> G.L l
@@ -186,7 +189,7 @@ and expr (x: expr) =
       let v2 = list expr v2 in 
       (match x with
       | SR_Special v -> 
-        G.Call (G.IdSpecial v, v2 |> List.map (fun e -> G.Arg e))
+        G.Call (G.IdSpecial (v, snd v1), v2 |> List.map (fun e -> G.Arg e))
       | SR_Literal _ ->
         error (snd v1) "Weird: literal in call position"
       | SR_Other x -> (* ex: NewTarget *)

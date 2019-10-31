@@ -249,9 +249,9 @@ expr_stmt:
       { Assign ([TypedExpr (tuple_expr_store $1, $3)], $5) }
 
   | testlist_star_expr augassign yield_expr  
-      { AugAssign (tuple_expr_store $1, fst $2, $3) }
+      { AugAssign (tuple_expr_store $1, $2, $3) }
   | testlist_star_expr augassign testlist    
-      { AugAssign (tuple_expr_store $1, fst $2, tuple_expr $3) }
+      { AugAssign (tuple_expr_store $1, $2, tuple_expr $3) }
   | testlist_star_expr EQ expr_stmt_rhs_list 
       { Assign ((tuple_expr_store $1)::(fst $3), snd $3) }
 
@@ -500,32 +500,32 @@ async_stmt:
 
 expr:
   | xor_expr            { $1 }
-  | expr BITOR xor_expr { BinOp ($1, BitOr, $3) }
+  | expr BITOR xor_expr { BinOp ($1, (BitOr,$2), $3) }
 
 
 xor_expr:
   | and_expr                 { $1 }
-  | xor_expr BITXOR and_expr { BinOp ($1, BitXor, $3) }
+  | xor_expr BITXOR and_expr { BinOp ($1, (BitXor,$2), $3) }
 
 and_expr:
   | shift_expr                 { $1 }
-  | shift_expr BITAND and_expr { BinOp ($1, BitAnd, $3) }
+  | shift_expr BITAND and_expr { BinOp ($1, (BitAnd,$2), $3) }
 
 
 shift_expr:
   | arith_expr                   { $1 }
-  | shift_expr LSHIFT arith_expr { BinOp ($1, LShift, $3) }
-  | shift_expr RSHIFT arith_expr { BinOp ($1, RShift, $3) }
+  | shift_expr LSHIFT arith_expr { BinOp ($1, (LShift,$2), $3) }
+  | shift_expr RSHIFT arith_expr { BinOp ($1, (RShift,$2), $3) }
 
 arith_expr:
   | term                { $1 }
-  | arith_expr ADD term { BinOp ($1, Add, $3) }
-  | arith_expr SUB term { BinOp ($1, Sub, $3) }
+  | arith_expr ADD term { BinOp ($1, (Add,$2), $3) }
+  | arith_expr SUB term { BinOp ($1, (Sub,$2), $3) }
 
 
 term:
   | factor              { $1 }
-  | factor term_op term { BinOp ($1, fst $2, $3) }
+  | factor term_op term { BinOp ($1, $2, $3) }
 
 term_op:
   | MULT    { Mult, $1 }
@@ -534,14 +534,14 @@ term_op:
   | FDIV    { FloorDiv, $1 }
 
 factor:
-  | ADD factor    { UnaryOp (UAdd, $2) }
-  | SUB factor    { UnaryOp (USub, $2) }
-  | BITNOT factor { UnaryOp (Invert, $2) }
+  | ADD factor    { UnaryOp ((UAdd,$1), $2) }
+  | SUB factor    { UnaryOp ((USub,$1), $2) }
+  | BITNOT factor { UnaryOp ((Invert,$1), $2) }
   | power         { $1 }
 
 power:
   | atom_expr            { $1 }
-  | atom_expr POW factor { BinOp ($1, Pow, $3) }
+  | atom_expr POW factor { BinOp ($1, (Pow,$2), $3) }
 
 /*(*----------------------------*)*/
 /*(*2 Atom expr *)*/
@@ -648,20 +648,20 @@ test:
 
 or_test:
   | and_test                  { $1 }
-  | and_test OR and_test_list { BoolOp (Or, $1::$3) }
+  | and_test OR and_test_list { BoolOp ((Or,$2), $1::$3) }
 
 and_test:
   | not_test                   { $1 }
-  | not_test AND not_test_list { BoolOp (And, $1::$3) }
+  | not_test AND not_test_list { BoolOp ((And,$2), $1::$3) }
 
 
 not_test:
-  | NOT not_test { UnaryOp (Not, $2) }
+  | NOT not_test { UnaryOp ((Not,$1), $2) }
   | comparison   { $1 }
 
 comparison:
   | expr                         { $1 }
-  | expr comp_op comparison_list { Compare ($1, (fst $2)::(fst $3), snd $3) }
+  | expr comp_op comparison_list { Compare ($1, ($2)::(fst $3), snd $3) }
 
 comp_op:
   | EQUAL   { Eq, $1 }
@@ -829,7 +829,7 @@ not_test_list:
 
 comparison_list:
   | expr                         { [], [$1] }
-  | expr comp_op comparison_list { (fst $2)::(fst $3), $1::(snd $3) }
+  | expr comp_op comparison_list { ($2)::(fst $3), $1::(snd $3) }
 
 /*(* opt *)*/
 test_opt:

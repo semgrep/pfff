@@ -38,6 +38,8 @@ let int = id
 
 let error = Ast_generic.error
 
+let fake_info () = Parse_info.fake_info "FAKE"
+
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
@@ -198,14 +200,14 @@ and expr e =
       and v2 = arguments v2
       and v3 = option decls v3 in
       (match v3 with
-      | None -> G.Call (G.IdSpecial G.New, (G.ArgType v1)::v2)
+      | None -> G.Call (G.IdSpecial (G.New, fake_info()), (G.ArgType v1)::v2)
       | Some decls -> 
          let anonclass = G.AnonClass { G.
                 ckind = G.Class;
                 cextends = [v1];
                 cimplements = [];
                 cbody = List.map G.stmt_to_field decls } in
-         G.Call (G.IdSpecial G.New, (G.Arg anonclass)::v2)
+         G.Call (G.IdSpecial (G.New, fake_info()), (G.Arg anonclass)::v2)
       )
   | NewArray ((v1, v2, v3, v4)) ->
       let v1 = typ v1
@@ -222,7 +224,7 @@ and expr e =
       in
       let t = mk_array v3 in
       (match v4 with
-      | None -> G.Call (G.IdSpecial G.New, (G.ArgType t)::v2)
+      | None -> G.Call (G.IdSpecial (G.New, fake_info()), (G.ArgType t)::v2)
       | Some _decls -> 
          let ii = Lib_parsing_java.ii_of_any (AExpr e) in
          error (List.hd ii) "TODO: NewArray with initializer not handled yet" 
@@ -247,19 +249,19 @@ and expr e =
       G.ObjAccess (v1, v2)
   | ArrayAccess ((v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in
       G.ArrayAccess (v1, v2)
-  | Postfix ((v1, v2)) -> let v1 = expr v1 and v2 = fix_op v2 in
-      G.Call (G.IdSpecial (G.IncrDecr (v2, G.Postfix)), [G.Arg v1]) 
-  | Prefix ((v1, v2)) -> let v1 = fix_op v1 and v2 = expr v2 in
-      G.Call (G.IdSpecial (G.IncrDecr (v1, G.Prefix)), [G.Arg v2]) 
-  | Unary ((v1, v2)) -> let v1 = v1 and v2 = expr v2 in
-      G.Call (G.IdSpecial (G.ArithOp (v1)), [G.Arg v2]) 
-  | Infix ((v1, v2, v3)) ->
+  | Postfix ((v1, (v2, tok))) -> let v1 = expr v1 and v2 = fix_op v2 in
+      G.Call (G.IdSpecial (G.IncrDecr (v2, G.Postfix), tok), [G.Arg v1]) 
+  | Prefix (((v1, tok), v2)) -> let v1 = fix_op v1 and v2 = expr v2 in
+      G.Call (G.IdSpecial (G.IncrDecr (v1, G.Prefix), tok), [G.Arg v2]) 
+  | Unary ((v1, v2)) -> let (v1, tok) = v1 and v2 = expr v2 in
+      G.Call (G.IdSpecial (G.ArithOp v1, tok), [G.Arg v2]) 
+  | Infix ((v1, (v2, tok), v3)) ->
       let v1 = expr v1 and v2 = v2 and v3 = expr v3 in
-      G.Call (G.IdSpecial (G.ArithOp (v2)), [G.Arg v1; G.Arg v3])
+      G.Call (G.IdSpecial (G.ArithOp (v2), tok), [G.Arg v1; G.Arg v3])
   | Cast ((v1, v2)) -> let v1 = typ v1 and v2 = expr v2 in
     G.Cast (v1, v2)
   | InstanceOf ((v1, v2)) -> let v1 = expr v1 and v2 = ref_type v2 in
-    G.Call (G.IdSpecial (G.Instanceof), 
+    G.Call (G.IdSpecial (G.Instanceof, fake_info ()), 
         [G.Arg v1; G.ArgType v2])
   | Conditional ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in
@@ -267,9 +269,9 @@ and expr e =
   | Assign ((v1, v2)) ->
       let v1 = expr v1 and v2 = expr v2 in
       G.Assign (v1, v2)
-  | AssignOp ((v1, v2, v3)) ->
+  | AssignOp ((v1, (v2, tok), v3)) ->
       let v1 = expr v1 and v3 = expr v3 in
-      G.AssignOp (v1, v2, v3)
+      G.AssignOp (v1, (v2, tok), v3)
 
 and arguments v = list expr v |> List.map (fun e -> G.Arg e)
 

@@ -105,13 +105,13 @@ and v_expr (x: expr) =
       let v1 = v_list_or_comprehension v_expr v1 
       and v2 = v_expr_context v2 in ()
   | DictOrSet (v) -> v_list_or_comprehension v_dictorset_elt v
-  | BoolOp ((v1, v2)) -> let v1 = v_boolop v1 and v2 = v_list v_expr v2 in ()
+  | BoolOp ((v1, v2)) -> let v1 = v_wrap v_boolop v1 and v2 = v_list v_expr v2 in ()
   | BinOp ((v1, v2, v3)) ->
-      let v1 = v_expr v1 and v2 = v_operator v2 and v3 = v_expr v3 in ()
-  | UnaryOp ((v1, v2)) -> let v1 = v_unaryop v1 and v2 = v_expr v2 in ()
+      let v1 = v_expr v1 and v2 = v_wrap v_operator v2 and v3 = v_expr v3 in ()
+  | UnaryOp ((v1, v2)) -> let v1 = v_wrap v_unaryop v1 and v2 = v_expr v2 in ()
   | Compare ((v1, v2, v3)) ->
       let v1 = v_expr v1
-      and v2 = v_list v_cmpop v2
+      and v2 = v_list (v_wrap v_cmpop) v2
       and v3 = v_list v_expr v3
       in ()
   | Call (v1, v2) -> v_expr v1; v_list v_argument v2
@@ -254,7 +254,7 @@ and v_stmt x =
       in ()
   | Assign ((v1, v2)) -> let v1 = v_list v_expr v1 and v2 = v_expr v2 in ()
   | AugAssign ((v1, v2, v3)) ->
-      let v1 = v_expr v1 and v2 = v_operator v2 and v3 = v_expr v3 in ()
+      let v1 = v_expr v1 and v2 = v_wrap v_operator v2 and v3 = v_expr v3 in ()
   | Return v1 -> let v1 = v_option v_expr v1 in ()
   | Delete v1 -> let v1 = v_list v_expr v1 in ()
   | Async v1 -> let v1 = v_stmt v1 in ()

@@ -470,26 +470,30 @@ postfix_expression:
  | post_decrement_expression  { $1 }
 
 /* 15.14.1 */
-post_increment_expression: postfix_expression INCR  { Postfix ($1, Ast_generic.Incr) }
+post_increment_expression: postfix_expression INCR  
+  { Postfix ($1, (Ast_generic.Incr, $2)) }
 /* 15.14.2 */
-post_decrement_expression: postfix_expression DECR  { Postfix ($1, Ast_generic.Decr) }
+post_decrement_expression: postfix_expression DECR  
+  { Postfix ($1, (Ast_generic.Decr, $2)) }
 
 /* 15.15 */
 unary_expression:
  | pre_increment_expression  { $1 }
  | pre_decrement_expression  { $1 }
- | PLUS unary_expression  { Unary (Ast_generic.Plus, $2) }
- | MINUS unary_expression  { Unary (Ast_generic.Minus, $2) }
+ | PLUS unary_expression  { Unary ((Ast_generic.Plus,$1), $2) }
+ | MINUS unary_expression  { Unary ((Ast_generic.Minus,$1), $2) }
  | unary_expression_not_plus_minus  { $1 }
 
-pre_increment_expression: INCR unary_expression  { Prefix (Ast_generic.Incr, $2) }
+pre_increment_expression: INCR unary_expression  
+  { Prefix ((Ast_generic.Incr, $1), $2) }
 
-pre_decrement_expression: DECR unary_expression  { Prefix (Ast_generic.Decr, $2) }
+pre_decrement_expression: DECR unary_expression  
+  { Prefix ((Ast_generic.Decr, $1), $2) }
 
 unary_expression_not_plus_minus:
  | postfix_expression  { $1 }
- | COMPL unary_expression  { Unary (Ast_generic.BitNot, $2) }
- | NOT unary_expression    { Unary (Ast_generic.Not, $2) }
+ | COMPL unary_expression  { Unary ((Ast_generic.BitNot,$1), $2) }
+ | NOT unary_expression    { Unary ((Ast_generic.Not,$1), $2) }
  | cast_expression  { $1 }
 
 /* 15.16 */
@@ -526,70 +530,70 @@ cast_expression:
 /* 15.17 */
 multiplicative_expression:
  | unary_expression  { $1 }
- | multiplicative_expression TIMES unary_expression { Infix ($1, Mult , $3) }
- | multiplicative_expression DIV unary_expression   { Infix ($1, Div, $3) }
- | multiplicative_expression MOD unary_expression   { Infix ($1, Mod, $3) }
+ | multiplicative_expression TIMES unary_expression { Infix ($1, (Mult,$2) , $3) }
+ | multiplicative_expression DIV unary_expression   { Infix ($1, (Div,$2), $3) }
+ | multiplicative_expression MOD unary_expression   { Infix ($1, (Mod,$2), $3) }
 
 
 /* 15.18 */
 additive_expression:
  | multiplicative_expression  { $1 }
- | additive_expression PLUS multiplicative_expression { Infix ($1, Plus, $3) }
- | additive_expression MINUS multiplicative_expression { Infix ($1, Minus, $3) }
+ | additive_expression PLUS multiplicative_expression { Infix ($1, (Plus,$2), $3) }
+ | additive_expression MINUS multiplicative_expression { Infix ($1, (Minus,$2), $3) }
 
 
 /* 15.19 */
 shift_expression:
  | additive_expression  { $1 }
- | shift_expression LS additive_expression  { Infix ($1, LSL, $3) }
- | shift_expression SRS additive_expression  { Infix ($1, LSR, $3) }
- | shift_expression URS additive_expression  { Infix ($1, ASR, $3) }
+ | shift_expression LS additive_expression  { Infix ($1, (LSL,$2), $3) }
+ | shift_expression SRS additive_expression  { Infix ($1, (LSR,$2), $3) }
+ | shift_expression URS additive_expression  { Infix ($1, (ASR,$2), $3) }
 
 
 /* 15.20 */
 relational_expression:
  | shift_expression  { $1 }
  /*(* possible many conflicts if don't use a LT2 *)*/
- | relational_expression LT shift_expression  { Infix ($1, Lt, $3) }
- | relational_expression GT shift_expression  { Infix ($1, Gt, $3) }
- | relational_expression LE shift_expression  { Infix ($1, LtE, $3) }
- | relational_expression GE shift_expression  { Infix ($1, GtE, $3) }
+ | relational_expression LT shift_expression  { Infix ($1, (Lt,$2), $3) }
+ | relational_expression GT shift_expression  { Infix ($1, (Gt,$2), $3) }
+ | relational_expression LE shift_expression  { Infix ($1, (LtE,$2), $3) }
+ | relational_expression GE shift_expression  { Infix ($1, (GtE,$2), $3) }
  | relational_expression INSTANCEOF reference_type  { InstanceOf ($1, $3) }
 
 
 /* 15.21 */
 equality_expression:
  | relational_expression  { $1 }
- | equality_expression EQ_EQ relational_expression  { Infix ($1, Eq, $3) }
- | equality_expression NOT_EQ relational_expression { Infix ($1, NotEq, $3) }
+ | equality_expression EQ_EQ relational_expression  { Infix ($1, (Eq,$2), $3) }
+ | equality_expression NOT_EQ relational_expression { Infix ($1, (NotEq,$2), $3) }
 
 
 /* 15.22 */
 and_expression:
  | equality_expression  { $1 }
- | and_expression AND equality_expression  { Infix ($1, BitAnd, $3) }
+ | and_expression AND equality_expression  { Infix ($1, (BitAnd,$2), $3) }
 
 exclusive_or_expression:
  | and_expression  { $1 }
- | exclusive_or_expression XOR and_expression  { Infix ($1, BitXor, $3) }
+ | exclusive_or_expression XOR and_expression  { Infix ($1, (BitXor,$2), $3) }
 
 
 inclusive_or_expression:
  | exclusive_or_expression  { $1 }
- | inclusive_or_expression OR exclusive_or_expression  { Infix ($1, BitOr, $3) }
+ | inclusive_or_expression OR exclusive_or_expression  { Infix ($1, (BitOr,$2), $3) }
 
 /* 15.23 */
 conditional_and_expression:
  | inclusive_or_expression  { $1 }
  | conditional_and_expression AND_AND inclusive_or_expression
-     { Infix($1,And,$3) }
+     { Infix($1,(And,$2),$3) }
 
 
 /* 15.24 */
 conditional_or_expression:
  | conditional_and_expression  { $1 }
  | conditional_or_expression OR_OR conditional_and_expression
-     { Infix ($1, Or, $3) }
+     { Infix ($1, (Or, $2), $3) }
 
 /*(*----------------------------*)*/
 /*(*2 Ternary *)*/
@@ -622,7 +626,7 @@ left_hand_side:
 
 assignment_operator:
  | EQ  { (fun e1 e2 -> Assign (e1, e2))  }
- | OPERATOR_EQ  { (fun e1 e2 -> AssignOp (e1, fst $1, e2)) }
+ | OPERATOR_EQ  { (fun e1 e2 -> AssignOp (e1, $1, e2)) }
 
 
 /*(*----------------------------*)*/

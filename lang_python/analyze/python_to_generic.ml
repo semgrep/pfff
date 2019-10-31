@@ -36,6 +36,8 @@ let vref f x = ref (f !x)
 let string = id
 let bool = id
 
+let fake_info () = Parse_info.fake_info "FAKE"
+
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
@@ -92,7 +94,7 @@ let rec expr (x: expr) =
     | [x] -> 
       let x = wrap string x in
       G.L (G.String (x))
-    | xs -> G.Call (G.IdSpecial G.Concat, 
+    | xs -> G.Call (G.IdSpecial (G.Concat, fake_info ()), 
               xs |> List.map (fun x -> let x = wrap string x in
                   G.Arg (G.L (G.String x))))
     )
@@ -102,7 +104,7 @@ let rec expr (x: expr) =
      G.Cast (v2, v1)
   | ExprStar v1 ->
     let v1 = expr v1 in
-    G.Call (G.IdSpecial G.Spread, [G.expr_to_arg v1])
+    G.Call (G.IdSpecial (G.Spread, fake_info()), [G.expr_to_arg v1])
 
   | Name ((v1, v2, v3)) ->
       let v1 = name v1
@@ -160,17 +162,17 @@ let rec expr (x: expr) =
       let e1 = comprehension2 dictorset_elt v1 v2 in
       G.Container (G.Dict, e1)
 
-  | BoolOp ((v1, v2)) -> 
+  | BoolOp (((v1,tok), v2)) -> 
       let v1 = boolop v1 
       and v2 = list expr v2 in 
-      G.Call (G.IdSpecial (G.ArithOp v1), v2 |> List.map G.expr_to_arg)
-  | BinOp ((v1, v2, v3)) ->
+      G.Call (G.IdSpecial (G.ArithOp v1, tok), v2 |> List.map G.expr_to_arg)
+  | BinOp ((v1, (v2, tok), v3)) ->
       let v1 = expr v1 and v2 = operator v2 and v3 = expr v3 in
-      G.Call (G.IdSpecial (G.ArithOp v2), [v1;v3] |> List.map G.expr_to_arg)
-  | UnaryOp ((v1, v2)) -> let v1 = unaryop v1 and v2 = expr v2 in 
+      G.Call (G.IdSpecial (G.ArithOp v2, tok), [v1;v3] |> List.map G.expr_to_arg)
+  | UnaryOp (((v1, tok), v2)) -> let v1 = unaryop v1 and v2 = expr v2 in 
       (match v1 with
       | Left op ->
-            G.Call (G.IdSpecial (G.ArithOp op), [v2] |> List.map G.expr_to_arg)
+            G.Call (G.IdSpecial (G.ArithOp op, tok), [v2] |> List.map G.expr_to_arg)
       | Right oe ->
             G.OtherExpr (oe, [G.E v2])
       )
@@ -179,15 +181,15 @@ let rec expr (x: expr) =
       and v2 = list cmpop v2
       and v3 = list expr v3 in
       (match v2, v3 with
-      | [Left op], [e] ->
-        G.Call (G.IdSpecial (G.ArithOp op), [v1;e] |> List.map G.expr_to_arg)
-      | [Right oe], [e] ->
+      | [Left op, tok], [e] ->
+        G.Call (G.IdSpecial (G.ArithOp op, tok), [v1;e] |> List.map G.expr_to_arg)
+      | [Right oe, _tok], [e] ->
         G.OtherExpr (oe, [G.E v1; G.E e])
       | _ ->  
         let anyops = 
            v2 |> List.map (function
-            | Left arith -> G.E (G.IdSpecial (G.ArithOp arith))
-            | Right other -> G.E (G.OtherExpr (other, []))
+            | Left arith, tok -> G.E (G.IdSpecial (G.ArithOp arith, tok))
+            | Right other, _tok -> G.E (G.OtherExpr (other, []))
             ) in
         let any = anyops @ (v3 |> List.map (fun e -> G.E e)) in
         G.OtherExpr (G.OE_CmpOps, any)
@@ -211,7 +213,7 @@ and argument = function
   | Arg e -> let e = expr e in 
       G.Arg e
   | ArgStar e -> let e = expr e in
-      G.Arg (G.Call (G.IdSpecial G.Spread, [G.expr_to_arg e]))
+      G.Arg (G.Call (G.IdSpecial (G.Spread, fake_info()), [G.expr_to_arg e]))
   | ArgPow e -> 
       let e = expr e in
       G.ArgOther (G.OA_ArgPow, [G.E e])
@@ -238,7 +240,7 @@ and dictorset_elt = function
       v1
   | PowInline (v1) -> 
       let v1 = expr v1 in
-      G.Call (G.IdSpecial G.Spread, [G.expr_to_arg v1])
+      G.Call (G.IdSpecial (G.Spread, fake_info()), [G.expr_to_arg v1])
   
 and number =
   function
@@ -275,18 +277,18 @@ and unaryop = function
   | UAdd   -> Left G.Plus
   | USub   -> Left G.Minus
 
-and cmpop =
-  function
-  | Eq    -> Left G.Eq
-  | NotEq -> Left G.NotEq
-  | Lt    -> Left G.Lt
-  | LtE   -> Left G.LtE
-  | Gt    -> Left G.Gt
-  | GtE   -> Left G.GtE
-  | Is    -> Right G.OE_Is
-  | IsNot -> Right G.OE_IsNot
-  | In    -> Right G.OE_In
-  | NotIn -> Right G.OE_NotIn
+and cmpop (a,b) =
+  match a with
+  | Eq    -> Left G.Eq, b
+  | NotEq -> Left G.NotEq, b
+  | Lt    -> Left G.Lt, b
+  | LtE   -> Left G.LtE, b
+  | Gt    -> Left G.Gt, b
+  | GtE   -> Left G.GtE, b
+  | Is    -> Right G.OE_Is, b
+  | IsNot -> Right G.OE_IsNot, b
+  | In    -> Right G.OE_In, b
+  | NotIn -> Right G.OE_NotIn, b
 
 and comprehension f v1 v2 =
   let v1 = f v1 in
@@ -371,9 +373,9 @@ and stmt x =
   (* TODO: should turn some of those in G.LocalDef (G.VarDef ! ) *)
   | Assign ((v1, v2)) -> let v1 = list expr v1 and v2 = expr v2 in
       G.ExprStmt (G.Assign (G.Tuple v1, v2))
-  | AugAssign ((v1, v2, v3)) ->
+  | AugAssign ((v1, (v2, tok), v3)) ->
       let v1 = expr v1 and v2 = operator v2 and v3 = expr v3 in
-      G.ExprStmt (G.AssignOp (v1, v2, v3))
+      G.ExprStmt (G.AssignOp (v1, (v2, tok), v3))
   | Return v1 -> let v1 = option expr v1 in 
       G.Return (G.opt_to_nop v1)
 

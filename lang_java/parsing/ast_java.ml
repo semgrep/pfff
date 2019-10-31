@@ -179,10 +179,10 @@ and expr =
 
   | ArrayAccess of expr * expr
 
-  | Unary of Ast_generic.arithmetic_operator (* +/-/~/! *) * expr
-  | Postfix of expr * Ast_generic.incr_decr
-  | Prefix of Ast_generic.incr_decr * expr
-  | Infix of expr * Ast_generic.arithmetic_operator * expr
+  | Unary of Ast_generic.arithmetic_operator (* +/-/~/! *) wrap * expr
+  | Postfix of expr * Ast_generic.incr_decr wrap
+  | Prefix of Ast_generic.incr_decr wrap * expr
+  | Infix of expr * Ast_generic.arithmetic_operator wrap * expr
 
   | Cast of typ * expr
 
@@ -191,7 +191,7 @@ and expr =
   | Conditional of expr * expr * expr
   (* ugly java, like in C assignement is an expression not a statement :( *)
   | Assign of expr * expr
-  | AssignOp of expr * Ast_generic.arithmetic_operator * expr
+  | AssignOp of expr * Ast_generic.arithmetic_operator wrap * expr
 
   (* sgrep-ext: *)
   | Ellipses of tok

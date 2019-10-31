@@ -180,15 +180,15 @@ and v_expr (x : expr) =
     | ArrayAccess ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_expr v2 in ()
     | Postfix ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_incr_decr v2 in ()
     | Prefix ((v1, v2)) -> let v1 = v_incr_decr v1 and v2 = v_expr v2 in ()
-    | Unary ((v1, v2)) -> let v1 = v_arith_op v1 and v2 = v_expr v2 in ()
+    | Unary ((v1, v2)) -> let v1 = v_wrap v_arith_op v1 and v2 = v_expr v2 in ()
     | Infix ((v1, v2, v3)) ->
-      let v1 = v_expr v1 and v2 = v_arith_op v2 and v3 = v_expr v3 in ()
+      let v1 = v_expr v1 and v2 = v_wrap v_arith_op v2 and v3 = v_expr v3 in ()
     | Cast ((v1, v2)) -> let v1 = v_typ v1 and v2 = v_expr v2 in ()
     | InstanceOf ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_ref_type v2 in ()
     | Conditional ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_expr v2 and v3 = v_expr v3 in ()
     | AssignOp ((v1, v2, v3)) ->
-      let v1 = v_expr v1 and v2 = v_arith_op v2 and v3 = v_expr v3 in ()
+      let v1 = v_expr v1 and v2 = v_wrap v_arith_op v2 and v3 = v_expr v3 in ()
     | Assign ((v1, v2)) ->
       let v1 = v_expr v1 and v2 = v_expr v2 in ()
   in

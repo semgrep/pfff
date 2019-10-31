@@ -110,10 +110,10 @@ type expr =
   | TypedExpr of expr * type_
   | Ellipses of tok (* should be only in .pyi, types Dict[str,...], or sgrep *)
 
-  | BoolOp of boolop (* op *) * expr list (* values *)
-  | BinOp of expr (* left *) * operator (* op *) * expr (* right *)
-  | UnaryOp of unaryop (* op *) * expr (* operand *)
-  | Compare of expr (* left *) * cmpop list (* ops *) * expr list (* comparators *)
+  | BoolOp of boolop wrap (* op *) * expr list (* values *)
+  | BinOp of expr (* left *) * operator wrap (* op *) * expr (* right *)
+  | UnaryOp of unaryop wrap (* op *) * expr (* operand *)
+  | Compare of expr (* left *) * cmpop wrap list (* ops *) * expr list (* comparators *)
 
   (* note that Python does not have a 'new' keyword, a call with the name
    * of a class is a New *)
@@ -139,7 +139,8 @@ type expr =
     | LongInt of string wrap
     | Float of string wrap
     | Imag of string wrap
-  
+
+  (* less: could reuse Ast_generic.arithmetic_operator *)
   and boolop = And | Or
   
   and operator = 
@@ -232,7 +233,7 @@ type stmt =
    * todo: why take an expr list? can reuse Tuple for tuple assignment
    *)
   | Assign of expr list (* targets *) * expr (* value *)
-  | AugAssign of expr (* target *) * operator (* op *) * expr (* value *)
+  | AugAssign of expr (* target *) * operator wrap (* op *) * expr (* value *)
 
   | For of pattern (* (pattern) introduce new vars *) * expr (* 'in' iter *) * 
            stmt list (* body *) * stmt list (* orelse *)
