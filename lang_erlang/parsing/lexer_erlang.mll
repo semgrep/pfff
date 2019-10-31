@@ -21,11 +21,9 @@ module Flag = Flag_parsing
 
 open Parser_erlang
 
-
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (*
  * http://www.erlang.org/download/erl_spec47.ps.gz appendix E
  * and erlang-otp/lib/compiler/src/core_scan.erl
@@ -34,12 +32,10 @@ open Parser_erlang
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-exception Lexical of string
-
-let tok     lexbuf  = 
-  Lexing.lexeme lexbuf
-let tokinfo lexbuf  = 
-  Parse_info.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
+(* shortcuts *)
+let tok = Lexing.lexeme
+let tokinfo = Parse_info.tokinfo
+let error = Parse_info.lexical_error
 
 (* ---------------------------------------------------------------------- *)
 let keyword_table = Common.hash_of_list [

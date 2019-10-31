@@ -23,7 +23,6 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* Lots of copy paste with my other parsers (e.g. C++, PHP, sql) but
  * copy paste is sometimes ok.
  *)
@@ -34,22 +33,12 @@ module PI = Parse_info
 
 type program2 = Ast.stylesheet * T.token list
 
-exception Parse_error of Parse_info.info
-
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-let token_to_strpos tok = 
-  (TH.str_of_tok tok, TH.pos_of_tok tok)
 
-(*****************************************************************************)
-(* Error diagnostic  *)
-(*****************************************************************************)
 let error_msg_tok tok = 
-  let file = TH.file_of_tok tok in
-  if !Flag.verbose_parsing
-  then Parse_info.error_message file (token_to_strpos tok) 
-  else ("error in " ^ file  ^ "set verbose_parsing for more info")
+  Parse_info.error_message_info (TH.info_of_tok tok)
 
 (*****************************************************************************)
 (* Lexing only *)
@@ -61,7 +50,6 @@ let tokens2 file =
   Common.with_open_infile file (fun chan -> 
     let lexbuf = Lexing.from_channel chan in
 
-    try 
       let mltoken lexbuf = 
         Lexer_css.token lexbuf
       in
@@ -84,11 +72,6 @@ let tokens2 file =
         else tokens_aux (tok::acc)
       in
       tokens_aux []
-  with
-  | Lexer_css.Lexical s -> 
-      failwith ("lexical error " ^ s ^ "\n =" ^ 
-                 (PI.error_message file (PI.lexbuf_to_strpos lexbuf)))
-  | e -> raise e
   )
 
 let tokens a = 
@@ -131,25 +114,14 @@ let parse2 filename =
     (Common.profile_code "Parser_css.main" (fun () ->
       Parser_css.stylesheet (lexer_function tr) lexbuf_fake, toks
     ))
-  with exn ->
+  with Parsing.Parse_error ->
     let current = tr.PI.current in
 
     if not !Flag.error_recovery 
-    then raise (Parse_error (TH.info_of_tok current));
+    then raise (Parse_info.Parsing_error (TH.info_of_tok current));
 
     if !Flag.show_parsing_error
-    then 
-      (match exn with
-      (* Lexical is not anymore launched I think *)
-      | Lexer_css.Lexical s -> 
-          pr2 ("lexical error " ^s^ "\n =" ^ error_msg_tok current)
-      | Parsing.Parse_error -> 
-          pr2 ("parse error \n = " ^ error_msg_tok current)
-            (* | Semantic_java.Semantic (s, i) -> 
-               pr2 ("semantic error " ^s^ "\n ="^ error_msg_tok tr.current)
-            *)
-      | _e -> raise Impossible
-      );
+    then pr2 ("parse error \n = " ^ error_msg_tok current);
     [], toks
 
 let parse a = 

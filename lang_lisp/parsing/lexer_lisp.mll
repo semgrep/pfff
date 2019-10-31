@@ -23,20 +23,13 @@ open Parser_lisp
 (*****************************************************************************)
 
 (*****************************************************************************)
-(* Wrappers *)
-(*****************************************************************************)
-let pr2, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_lexing 
-
-(*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-exception Lexical of string
+(* shortcuts *)
+let tok = Lexing.lexeme
+let tokinfo = Parse_info.tokinfo
+let error = Parse_info.lexical_error
 
-(* ---------------------------------------------------------------------- *)
-let tok     lexbuf  = 
-  Lexing.lexeme lexbuf
-let tokinfo lexbuf  = 
-  Parse_info.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
 }
 
 (*****************************************************************************)

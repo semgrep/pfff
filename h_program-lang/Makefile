@@ -6,7 +6,7 @@ TARGET=lib
 OPAMPKG=pfff-h_program-lang
 
 SRC= entity_code.ml scope_code.ml \
-     parse_info.ml flag_parsing.ml comment_code.ml \
+     flag_parsing.ml parse_info.ml comment_code.ml \
      ast_fuzzy.ml \
      ast_generic.ml meta_ast_generic.ml \
      visitor_ast_generic.ml map_ast_generic.ml lib_ast_generic.ml \

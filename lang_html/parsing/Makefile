@@ -7,8 +7,7 @@ OPAMPKG=pfff-lang_html
 
 -include $(TOP)/Makefile.config
 
-SRC= flag_parsing_html.ml \
-     ast_html.ml \
+SRC= ast_html.ml \
      meta_ast_html.ml \
      visitor_html.ml \
      lib_parsing_html.ml \

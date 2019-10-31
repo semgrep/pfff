@@ -42,7 +42,7 @@ let tokens2 file =
     let lexbuf = Lexing.from_channel chan in
 
     Lexer_nw.reset();
-    try 
+
       let mytokenizer lexbuf = 
         (match Lexer_nw.current_mode () with
         | Lexer_nw.INITIAL -> 
@@ -73,11 +73,6 @@ let tokens2 file =
         else tokens_aux (tok::acc)
       in
       tokens_aux []
-  with
-  | Lexer_nw.Lexical s -> 
-      failwith ("lexical error " ^ s ^ "\n =" ^ 
-                 (PI.error_message file (PI.lexbuf_to_strpos lexbuf)))
-  | e -> raise e
  )
 
 let tokens a = 

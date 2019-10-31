@@ -31,7 +31,7 @@ let test_dump_ast file =
     pr s
    with exn ->
       (match exn with
-      | Lexer_js.Lexical_error (s, tok)
+      | Parse_info.Lexical_error (s, tok)
       | Ast_js_build.TodoConstruct (s, tok)
       | Ast_js_build.UnhandledConstruct (s, tok)
         -> 

@@ -241,8 +241,6 @@ let rec lexer_function tr = fun lexbuf ->
 (* Main entry point *)
 (*****************************************************************************)
 
-exception Parse_error of Parse_info.info
-
 let parse2 filename =
   let stat = PI.default_stat filename in
 
@@ -274,14 +272,7 @@ let parse2 filename =
      Parsing.clear_parser ();
      put_back_lookahead_token_if_needed tr item;
      Left item
-   with 
-   | Lexer_js.Lexical_error (s, _) ->
-      let cur = tr.PI.current in
-      if !Flag.show_parsing_error
-      then pr2 ("lexical error " ^s^ "\n =" ^ error_msg_tok cur);
-      Right cur
-
-   | Parsing.Parse_error ->
+   with Parsing.Parse_error ->
       let cur = tr.PI.current in
       let info = TH.info_of_tok cur in
       let charpos = Parse_info.pos_of_info info in
@@ -339,7 +330,7 @@ let parse2 filename =
         stat.PI.bad <- stat.PI.bad + (max_line - line_start);
         []
        end 
-       else raise (Parse_error (TH.info_of_tok err_tok))
+       else raise (PI.Parsing_error (TH.info_of_tok err_tok))
   in
   let items = 
    try 

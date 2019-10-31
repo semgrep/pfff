@@ -6,12 +6,12 @@ TARGET=lib
 OPAMPKG=pfff-lang_java
 
 SRC= ast_java.ml meta_ast_java.ml \
+     visitor_java.ml \
      lib_parsing_java.ml \
      parser_java.ml lexer_java.ml \
      token_helpers_java.ml \
      parsing_hacks_java.ml \
      parse_java.ml \
-     visitor_java.ml \
      test_parsing_java.ml unit_parsing_java.ml
 
 SYSLIBS= str.cma unix.cma

@@ -3,8 +3,6 @@
 type program_and_tokens = 
   Ast_skip.program option * Parser_skip.token list
 
-exception Parse_error of Parse_info.info
-
 (* This is the main function. See flag_parsing for settings. *)
 val parse:
   Common.filename -> (program_and_tokens * Parse_info.parsing_stat)

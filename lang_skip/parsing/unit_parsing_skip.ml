@@ -15,7 +15,7 @@ let unittest =
         try
           let _ = Parse_skip.parse_program file in
           ()
-        with Parse_skip.Parse_error _ ->
+        with Parse_info.Parsing_error _ ->
           assert_failure (spf "it should correctly parse %s" file)
       )
     );

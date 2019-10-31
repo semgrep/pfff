@@ -3,11 +3,8 @@
 type program_and_tokens =
     Ast_java.program option * Parser_java.token list
 
-exception Parse_error of Parse_info.info
-
 (* This is the main function *)
-val parse:
-  Common.filename (*javafile*) -> (program_and_tokens * Parse_info.parsing_stat)
+val parse: Common.filename -> (program_and_tokens * Parse_info.parsing_stat)
 
 (* may raise (Failure "just:pb") when parse return None when have parse error *)
 val parse_program:

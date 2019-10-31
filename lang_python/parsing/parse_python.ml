@@ -45,8 +45,8 @@ let tokens2 file =
   let table     = Parse_info.full_charpos_to_pos_large file in
   Common.with_open_infile file (fun chan -> 
     let lexbuf = Lexing.from_channel chan in
-    try 
-      let state = Lexer_python.create () in
+
+    let state = Lexer_python.create () in
 
       let token lexbuf = 
         match state.Lexer_python.mode with
@@ -82,12 +82,7 @@ let tokens2 file =
         else tokens_aux (tok::acc)
       in
       tokens_aux []
-  with
-  | Lexer_python.Lexical_error (s, _info) -> 
-      failwith ("lexical error " ^ s ^ "\n =" ^ 
-                 (PI.error_message file (PI.lexbuf_to_strpos lexbuf)))
-  | e -> raise e
-  )          
+  )
 
 let tokens a = 
   Common.profile_code "Parse_python.tokens" (fun () -> tokens2 a)
@@ -116,10 +111,9 @@ let rec lexer_function tr = fun lexbuf ->
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
-exception Parse_error of Parse_info.info
-
 let parse2 filename = 
   let stat = Parse_info.default_stat filename in
+  (* this can throw Parse_info.Lexical_error *)
   let toks = tokens filename in
   let toks_final = toks |> Common.exclude TH.is_special in
 
@@ -127,7 +121,6 @@ let parse2 filename =
   let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
 
   try 
-
     (* -------------------------------------------------- *)
     (* Call parser *)
     (* -------------------------------------------------- *)
@@ -139,22 +132,15 @@ let parse2 filename =
     stat.PI.correct <- (Common.cat filename +> List.length);
     (Some xs, toks_final), stat
 
-  with (Lexer_python.Lexical_error _ | Parsing.Parse_error) as exn   ->
+  with Parsing.Parse_error ->
 
     let cur = tr.PI.current in
     if not !Flag.error_recovery
-    then raise (Parse_error (TH.info_of_tok cur));
+    then raise (PI.Parsing_error (TH.info_of_tok cur));
 
     if !Flag.show_parsing_error
     then begin
-      (match exn with
-      (* Lexical is not anymore launched I think *)
-      | Lexer_python.Lexical_error (s, _) -> 
-          pr2 ("lexical error " ^s^ "\n =" ^ error_msg_tok cur)
-      | Parsing.Parse_error -> 
-          pr2 ("parse error \n = " ^ error_msg_tok cur)
-      | _e -> raise Impossible
-      );
+      pr2 ("parse error \n = " ^ error_msg_tok cur);
 
       let filelines = Common2.cat_array filename in
       let checkpoint2 = Common.cat filename +> List.length in

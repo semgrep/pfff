@@ -39,7 +39,7 @@ let unittest =
        try
          let _ast = parse file in
          ()
-       with Parse_cpp.Parse_error _ ->
+       with Parse_info.Parsing_error _ ->
          assert_failure (spf "it should correctly parse %s" file)
      )
    );
@@ -52,7 +52,7 @@ let unittest =
          let _ast = parse file in
          assert_failure (spf "it should have thrown a Parse_error %s" file)
        with
-       | Parse_cpp.Parse_error _ -> ()
+       | Parse_info.Parsing_error _ -> ()
        | exn -> assert_failure (spf "throwing wrong exn %s on %s"
                                    (Common.exn_to_s exn) file)
      )
@@ -68,7 +68,7 @@ let unittest =
        try
          let _ast = parse file in
          ()
-       with Parse_cpp.Parse_error _ ->
+       with Parse_info.Parsing_error _ ->
          assert_failure (spf "it should correctly parse %s" file)
      )
    );

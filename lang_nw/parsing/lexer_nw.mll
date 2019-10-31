@@ -84,35 +84,13 @@ type token =
   | EOF of Parse_info.info
 
 (*****************************************************************************)
-(* Wrappers *)
-(*****************************************************************************)
-let pr2, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_lexing 
-
-(*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-exception Lexical of string
 
-let error s =
-  if !Flag.verbose_lexing
-  then pr2_once ("LEXER: " ^ s)
-
-(* pad: hack around ocamllex to emulate the yyless() of flex. The semantic
- * is not exactly the same than yyless(), so I use yyback() instead.
- * http://my.safaribooksonline.com/book/programming/flex/9780596805418/a-reference-for-flex-specifications/yyless
- *)
-let yyback n lexbuf =
-  lexbuf.Lexing.lex_curr_pos <- lexbuf.Lexing.lex_curr_pos - n;
-  let currp = lexbuf.Lexing.lex_curr_p in
-  lexbuf.Lexing.lex_curr_p <- { currp with
-    Lexing.pos_cnum = currp.Lexing.pos_cnum - n;
-  }
-
-(* ---------------------------------------------------------------------- *)
-let tok     lexbuf  = 
-  Lexing.lexeme lexbuf
-let tokinfo lexbuf  = 
-  Parse_info.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
+(* shortcuts *)
+let tok = Lexing.lexeme
+let tokinfo = Parse_info.tokinfo
+let error = Parse_info.lexical_error
 
 (* let keyword_table = Common.hash_of_list [] ? not needed. No keyword
  * in TeX, just commands.

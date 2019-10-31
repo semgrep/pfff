@@ -42,21 +42,11 @@ module Flag = Flag_parsing
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-exception Lexical_error of string * Parse_info.info
 
-let tok     lexbuf  = 
-  Lexing.lexeme lexbuf
-let tokinfo lexbuf  = 
-  Parse_info.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
-
-let error s lexbuf =
-  if !Flag.exn_when_lexical_error
-  then raise (Lexical_error (s, tokinfo lexbuf))
-  else
-    if !Flag.verbose_lexing
-    then pr2_once ("LEXER: " ^ s)
-    else ()
-
+(* shortcuts *)
+let tok = Lexing.lexeme
+let tokinfo = Parse_info.tokinfo
+let error = Parse_info.lexical_error
 
 let unescaped s =
   let buf = Buffer.create (String.length s) in

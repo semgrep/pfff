@@ -44,8 +44,6 @@ type toplevels_and_tokens = (Ast.toplevel * Parser_cpp.token list) list
 let program_of_program2 xs = 
   xs +> List.map fst
 
-exception Parse_error of Parse_info.info
-
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
@@ -125,7 +123,7 @@ let tokens2 file =
 
  Common.with_open_infile file (fun chan -> 
   let lexbuf = Lexing.from_channel chan in
-  try 
+
     let rec tokens_aux () = 
       let tok = Lexer.token lexbuf in
       (* fill in the line and col information *)
@@ -150,11 +148,6 @@ let tokens2 file =
       else tok::(tokens_aux ())
     in
     tokens_aux ()
-  with
-  | Lexer.Lexical s -> 
-    failwith (spf "lexical error %s \n = %s"
-                s (PI.error_message file (PI.lexbuf_to_strpos lexbuf)))
-  | e -> raise e
  )
    
 let tokens a = 
@@ -376,13 +369,10 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
           Parser_cpp.toplevel (lexer_function tr) lexbuf_fake
         with e -> 
           if not !Flag.error_recovery 
-          then raise (Parse_error (TH.info_of_tok tr.PI.current));
+          then raise (Parse_info.Parsing_error (TH.info_of_tok tr.PI.current));
 
           if !Flag.show_parsing_error then
             (match e with
-            (* Lexical is not anymore launched I think *)
-            | Lexer.Lexical s -> 
-              pr2 ("lexical error " ^s^ "\n =" ^ error_msg_tok tr.PI.current)
             | Parsing.Parse_error -> 
               pr2 ("parse error \n = " ^ error_msg_tok tr.PI.current)
             | Semantic.Semantic (s, _i) -> 

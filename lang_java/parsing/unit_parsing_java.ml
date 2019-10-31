@@ -19,7 +19,7 @@ let unittest =
         try
           let _ = Parse_java.parse file in
           ()
-        with Parse_java.Parse_error _ ->
+        with Parse_info.Parsing_error _ ->
           assert_failure (spf "it should correctly parse %s" file)
       )
     );

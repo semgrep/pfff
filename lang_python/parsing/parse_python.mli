@@ -3,9 +3,8 @@
 type program_and_tokens = 
   Ast_python.program option * Parser_python.token list
 
-exception Parse_error of Parse_info.info
-
-(* This is the main function *)
+(* This is the main function.
+ * can throw Parse_info.Lexical_error and Parse_info.Parsing_error *)
 val parse:
   Common.filename -> (program_and_tokens * Parse_info.parsing_stat)
 
@@ -30,4 +29,3 @@ val program_of_string: string -> Ast_python.program
 
 (* internal *)
 val tokens: Common.filename -> Parser_python.token list
-

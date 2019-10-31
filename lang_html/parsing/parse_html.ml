@@ -18,14 +18,11 @@ open Common
 
 open Ast_html
 
+module Flag = Flag_parsing
 module Ast = Ast_html
-module Flag = Flag_parsing_html
 module TH   = Token_helpers_html
-
 module T = Parser_html
-
 module PI = Parse_info
-
 module Dtd = Dtd_simple
 
 (* While porting the original html parser to return an AST with line 
@@ -62,12 +59,9 @@ let (<>) () () = false
 
 type program_and_tokens = Ast_html.html_tree * Parser_html.token list
 
-exception Parse_error of Parse_info.info
-
 (*****************************************************************************)
 (* Lexing only *)
 (*****************************************************************************)
-
 (* 
  * For many languages I have tokens() and parse() functions, but for
  * HTML because the lexical rules are so tied to the parsing rules,
@@ -140,20 +134,20 @@ let parse_atts call_scan =
             | T.EOF _ ->
                 raise End_of_scan
             | T.Relement ii ->
-                if !Flag.strict
-                then raise (Parse_error (ii))
+                if !Flag.exn_when_lexical_error
+                then raise (Parse_info.Parsing_error (ii))
                 else 
                  (* Illegal *)
                  ( [], false )
             | T.Relement_empty ii ->
-                if !Flag.strict
-                then raise (Parse_error (ii))
+                if !Flag.exn_when_lexical_error
+                then raise (Parse_info.Parsing_error (ii))
                 else 
                   (* Illegal *)
                   ( [], true )
             | t ->
-                if !Flag.strict
-                then raise (Parse_error (TH.info_of_tok t))
+                if !Flag.exn_when_lexical_error
+                then raise (Parse_info.Parsing_error (TH.info_of_tok t))
                 else 
                   (* Illegal *)
                   parse_atts_lookahead (skip_space false call_scan)
@@ -179,8 +173,8 @@ let parse_atts call_scan =
     | T.EOF _ ->
         raise End_of_scan
     | t ->
-        if !Flag.strict
-        then raise (Parse_error (TH.info_of_tok t))
+        if !Flag.exn_when_lexical_error
+        then raise (Parse_info.Parsing_error (TH.info_of_tok t))
         else 
          (* Illegal *)
          parse_atts_lookahead (skip_space false call_scan)
@@ -210,8 +204,8 @@ let parse_special tag call_scan =
         (if !first_tok =*= None then first_tok := Some tok);
         s ^ aux ()
     | t ->
-        if !Flag.strict
-        then raise (Parse_error (TH.info_of_tok t))
+        if !Flag.exn_when_lexical_error
+        then raise (Parse_info.Parsing_error (TH.info_of_tok t))
         else 
          (* Illegal *)
          aux ()

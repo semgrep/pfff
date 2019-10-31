@@ -136,7 +136,7 @@ let fix_tokens toks =
   with Parse_fuzzy.Unclosed (msg, info) ->
    if !Flag.error_recovery
    then toks
-   else raise (Lexer_js.Lexical_error (msg, info))
+   else raise (Parse_info.Lexical_error (msg, info))
 
 
 (*****************************************************************************)

@@ -36,31 +36,11 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-exception Lexical_error of string * Parse_info.info
 
-let tok     lexbuf  =
-  Lexing.lexeme lexbuf
-let tokinfo lexbuf  =
-  PI.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
-
-let error s lexbuf =
-  if !Flag.exn_when_lexical_error
-  then raise (Lexical_error (s, tokinfo lexbuf))
-  else
-    if !Flag.verbose_lexing
-    then pr2_once ("LEXER: " ^ s)
-    else ()
-
-(* pad: hack around ocamllex to emulate the yyless() of flex. The semantic
- * is not exactly the same than yyless(), so I use yyback() instead.
- * http://my.safaribooksonline.com/book/programming/flex/9780596805418/a-reference-for-flex-specifications/yyless
- *)
-let yyback n lexbuf =
-  lexbuf.Lexing.lex_curr_pos <- lexbuf.Lexing.lex_curr_pos - n;
-  let currp = lexbuf.Lexing.lex_curr_p in
-  lexbuf.Lexing.lex_curr_p <- { currp with
-    Lexing.pos_cnum = currp.Lexing.pos_cnum - n;
-  }
+(* shortcuts *)
+let tok = Lexing.lexeme
+let tokinfo = Parse_info.tokinfo
+let error = Parse_info.lexical_error
 
 (* less: should use Buffer and not ^ so we should not need that *)
 let tok_add_s s ii  =
@@ -214,7 +194,7 @@ let rec current_mode () =
   try
     Common2.top !_mode_stack
   with Failure("hd") ->
-    error("mode_stack is empty, defaulting to INITIAL");
+    pr2("mode_stack is empty, defaulting to INITIAL");
     reset();
     current_mode ()
 
@@ -512,7 +492,7 @@ rule initial = parse
       push_mode (ST_IN_XHP_TAG tag);
       T_XHP_OPEN_TAG(tag, tokinfo lexbuf)
     | _ ->
-      yyback (String.length tag) lexbuf;
+      Parse_info.yyback (String.length tag) lexbuf;
       T_LESS_THAN(tokinfo lexbuf)
   }
 
@@ -523,7 +503,7 @@ rule initial = parse
   | eof { EOF (tokinfo lexbuf) }
 
   | _ {
-      error ("unrecognised symbol, in token rule:"^tok lexbuf);
+      error ("unrecognised symbol, in token rule:"^tok lexbuf) lexbuf;
       TUnknown (tokinfo lexbuf)
     }
 
@@ -592,7 +572,7 @@ and backquote = parse
 
   | eof { EOF (tokinfo lexbuf +> PI.rewrap_str "") }
   | _  {
-      error ("unrecognised symbol, in backquote string:"^tok lexbuf);
+      error ("unrecognised symbol, in backquote string:"^tok lexbuf) lexbuf;
       TUnknown (tokinfo lexbuf)
     }
 
@@ -608,7 +588,7 @@ and regexp buf = parse
                     regexp buf lexbuf }
   | '[' { Buffer.add_char buf '['; regexp_class buf lexbuf }
   | (_ as x)       { Buffer.add_char buf x; regexp buf lexbuf }
-  | eof { error "WIERD end of file in regexp"; ()}
+  | eof { error "WIERD end of file in regexp" lexbuf; ()}
 
 
 and regexp_class buf = parse
@@ -634,7 +614,7 @@ and st_comment buf = parse
   | eof     { error "end of file in comment" lexbuf }
   | _  {
       let s = tok lexbuf in
-      error ("unrecognised symbol in comment:"^s);
+      error ("unrecognised symbol in comment:"^s) lexbuf;
       Buffer.add_string buf s;
       st_comment buf lexbuf
     }
@@ -704,7 +684,7 @@ and st_in_xhp_tag current_tag = parse
 
   | eof { EOF (tokinfo lexbuf +> PI.rewrap_str "") }
   | _  {
-        error("unrecognised symbol, in XHP tag:"^tok lexbuf);
+        error("unrecognised symbol, in XHP tag:"^tok lexbuf) lexbuf;
         TUnknown (tokinfo lexbuf)
     }
 
@@ -750,7 +730,7 @@ and st_in_xhp_text current_tag = parse
 
   | eof { EOF (tokinfo lexbuf +> PI.rewrap_str "") }
   | _  {
-      error ("unrecognised symbol, in XHP text:"^tok lexbuf);
+      error ("unrecognised symbol, in XHP text:"^tok lexbuf) lexbuf;
       TUnknown (tokinfo lexbuf)
     }
 
@@ -758,9 +738,9 @@ and st_xhp_comment = parse
   | "-->" { tok lexbuf }
   | [^'-']+ { let s = tok lexbuf in s ^ st_xhp_comment lexbuf }
   | "-"     { let s = tok lexbuf in s ^ st_xhp_comment lexbuf }
-  | eof { error "end of file in xhp comment"; "-->"}
+  | eof { error "end of file in xhp comment" lexbuf; "-->"}
   | _  {
       let s = tok lexbuf in
-      error("unrecognised symbol in xhp comment:"^s);
+      error ("unrecognised symbol in xhp comment:"^s) lexbuf;
       s ^ st_xhp_comment lexbuf
     }

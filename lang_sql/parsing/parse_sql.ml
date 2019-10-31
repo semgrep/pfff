@@ -62,8 +62,6 @@ let parse2 file =
 let parse a = 
   Common.profile_code "Parse_sql.parse" (fun () -> parse2 a)
 
-
-
 let parse_string str = 
   let lexbuf = Lexing.from_string str in
   let expr = Parser_sql.main Lexer_sql.lexer lexbuf in

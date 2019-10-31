@@ -50,22 +50,11 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-exception Lexical of string
 
-let error s =
-  if !Flag_cpp.strict_lexer
-  then raise (Lexical s)
-  else 
-    if !Flag.verbose_lexing 
-    then pr2 ("LEXER: " ^ s)
-    else ()
-
-let tok     lexbuf = 
-  Lexing.lexeme lexbuf
-
-let tokinfo lexbuf = 
-  Parse_info.tokinfo_str_pos (tok lexbuf) (Lexing.lexeme_start lexbuf)
-
+(* shortcuts *)
+let tok = Lexing.lexeme
+let tokinfo = Parse_info.tokinfo
+let error = Parse_info.lexical_error
 let tok_add_s = Parse_info.tok_add_s
 
 (* ---------------------------------------------------------------------- *)
@@ -484,7 +473,7 @@ rule token = parse
       { 
         let s = tok lexbuf in
         if not !Flag_parsing.sgrep_mode
-        then error ("identifier with dollar: "  ^ s);
+        then error ("identifier with dollar: "  ^ s) lexbuf;
         TIdent (s, tokinfo lexbuf)
       }
 
@@ -534,17 +523,17 @@ rule token = parse
   | (real as x)           { TFloat ((x, CDouble),     tokinfo lexbuf) }
 
   | ['0'] ['0'-'9']+  
-      { error (error_radix "octal" ^ tok lexbuf); 
+      { error (error_radix "octal" ^ tok lexbuf) lexbuf; 
         TUnknown (tokinfo lexbuf)
       }
   | ("0x" |"0X") ['0'-'9' 'a'-'z' 'A'-'Z']+ 
-      { error (error_radix "hexa" ^ tok lexbuf);
+      { error (error_radix "hexa" ^ tok lexbuf) lexbuf;
         TUnknown (tokinfo lexbuf)
       }
 
  (* !put after other rules! otherwise 0xff will be parsed as an ident *)
   | ['0'-'9']+ letter (letter | digit) *  
-      { error ("ZARB integer_string, certainly a macro:" ^ tok lexbuf);
+      { error ("ZARB integer_string, certainly a macro:" ^ tok lexbuf) lexbuf;
         TUnknown (tokinfo lexbuf)
       } 
 
@@ -557,7 +546,7 @@ rule token = parse
   | eof { EOF (tokinfo lexbuf +> PI.rewrap_str "") }
 
   | _ { 
-      error("unrecognised symbol, in token rule:" ^ tok lexbuf);
+      error("unrecognised symbol, in token rule:" ^ tok lexbuf) lexbuf;
       TUnknown (tokinfo lexbuf)
     }
 
@@ -610,11 +599,11 @@ and char = parse
 
          (* cppext:  can have   \ for multiline in string too *)
          | '\n' -> () 
-         | _ -> error ("unrecognised symbol in char:"^tok lexbuf);
+         | _ -> error ("unrecognised symbol in char:"^tok lexbuf) lexbuf;
 	 );
           x ^ char lexbuf
        }
-  | eof { error "WEIRD end of file in char"; ""}
+  | eof { error "WEIRD end of file in char" lexbuf; ""}
 
 (*****************************************************************************)
 (* Rule string *)
@@ -642,11 +631,11 @@ and string  = parse
 
          (* cppext:  can have   \ for multiline in string too *)
          | '\n' -> () 
-         | _ -> error ("unrecognised symbol in string:"^tok lexbuf);
+         | _ -> error ("unrecognised symbol in string:"^tok lexbuf) lexbuf;
 	 );
           x ^ string lexbuf
        }
-  | eof { error "WEIRD end of file in string"; ""}
+  | eof { error "WEIRD end of file in string" lexbuf; ""}
 
  (* Bug if add following code, cos match also the '"' that is needed
   * to finish the string, and so go until end of file.
@@ -670,10 +659,10 @@ and comment = parse
   | [ '*']   { let s = tok lexbuf in s ^ comment lexbuf }
   | _  
       { let s = tok lexbuf in
-        error ("unrecognised symbol in comment:"^s);
+        error ("unrecognised symbol in comment:"^s) lexbuf;
         s ^ comment lexbuf
       }
-  | eof { error "WEIRD end of file in comment"; ""}
+  | eof { error "WEIRD end of file in comment" lexbuf; ""}
 
 (*****************************************************************************)
 (* Rule cpp_eat_until_nl *)
@@ -707,5 +696,5 @@ and cpp_eat_until_nl = parse
   | [^ '\n' '\\'      '/' '*'  ]+ 
      { let s = tok lexbuf in s ^ cpp_eat_until_nl lexbuf } 
 
-  | eof { error "end of file in cpp_eat_until_nl"; ""}
+  | eof { error "end of file in cpp_eat_until_nl" lexbuf; ""}
   | _   { let s = tok lexbuf in s ^ cpp_eat_until_nl lexbuf }  

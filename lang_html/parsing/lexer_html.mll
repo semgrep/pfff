@@ -18,12 +18,10 @@ open Common
 
 open Parser_html
 module Ast = Ast_html
-module Flag = Flag_parsing_html
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
  * src: many of the code in this file comes from ocamlnet/netstring/.
  * The original CVS ID is:
@@ -38,18 +36,13 @@ module Flag = Flag_parsing_html
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-(* unused for now *)
-exception Lexical of string
 
-let tok     lexbuf  = 
-  Lexing.lexeme lexbuf
-let tokinfo lexbuf  = 
-  Parse_info.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
+(* shortcuts *)
+let tok = Lexing.lexeme
+let tokinfo = Parse_info.tokinfo
+let error = Parse_info.lexical_error
+let tok_add_s = Parse_info.tok_add_s
 
-let tok_add_s s ii  =
-  Parse_info.rewrap_str ((Parse_info.str_of_info ii) ^ s) ii
-
-(* ---------------------------------------------------------------------- *)
 }
 
 (*****************************************************************************)
@@ -98,10 +91,8 @@ rule scan_document = parse
   | "<" (name as s)  { Lelement (tokinfo lexbuf, s) }
   | "</" (name as s) { Lelementend (tokinfo lexbuf, s) }
   | "<" (* misplaced "<" *) { 
-      if !Flag.strict
-      then raise (Lexical ("wrong < token "))
-      else 
-        Cdata (tokinfo lexbuf, "<")
+      error ("wrong < token ") lexbuf;
+      Cdata (tokinfo lexbuf, "<")
     }
   | [^ '<' ]+               { Cdata (tokinfo lexbuf, tok lexbuf) }
 

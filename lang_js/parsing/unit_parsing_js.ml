@@ -20,7 +20,7 @@ let unittest =
         try
           let _ = Parse_js.parse_program file in
           ()
-        with Parse_js.Parse_error _ ->
+        with Parse_info.Parsing_error _ ->
           assert_failure (spf "it should correctly parse %s" file)
       )
     );
@@ -32,7 +32,7 @@ let unittest =
          let _ = Parse_js.program_of_string "echo 1+" in
          assert_failure "it should have thrown a Parse_error exception"
         )
-      with Parse_js.Parse_error _ -> ()
+      with Parse_info.Parsing_error _ -> ()
     );
 (*
     "the javascript AST mapper" >:: (fun () ->

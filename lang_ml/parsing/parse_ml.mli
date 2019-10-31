@@ -3,8 +3,6 @@
 type program_and_tokens = 
   Cst_ml.program option * Parser_ml.token list
 
-exception Parse_error of Parse_info.info
-
 (* This is the main function. See flag_parsing_ml for settings. *)
 val parse:
   Common.filename -> (program_and_tokens * Parse_info.parsing_stat)

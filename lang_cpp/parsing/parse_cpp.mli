@@ -2,9 +2,6 @@
 (* the token list contains also the comment-tokens *)
 type toplevels_and_tokens = (Cst_cpp.toplevel * Parser_cpp.token list) list
 
-(* actually covers Lexical, Parsing, and Semantic errors *)
-exception Parse_error of Parse_info.info
-
 (* This is the main function. It uses _defs below which often comes 
  * from a standard.h macro file. It will raise Parse_error unless
  * Flag_parsing_cpp.error_recovery is set.

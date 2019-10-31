@@ -41,8 +41,6 @@ module TH = Parser_lisp
 type program_and_tokens = 
   Ast_lisp.program option * Parser_lisp.token list
 
-exception Parse_error of string * Parse_info.info
-
 (*****************************************************************************)
 (* Lexing only *)
 (*****************************************************************************)
@@ -56,7 +54,6 @@ let tokens2 file =
   Common.with_open_infile file (fun chan -> 
     let lexbuf = Lexing.from_channel chan in
 
-    try 
       let ftoken lexbuf = 
         Lexer_lisp.token lexbuf
       in
@@ -81,11 +78,6 @@ let tokens2 file =
         else tokens_aux (tok::acc)
       in
       tokens_aux []
-  with
-  | Lexer_lisp.Lexical s -> 
-      failwith ("lexical error " ^ s ^ "\n =" ^ 
-                 (PI.error_message file (PI.lexbuf_to_strpos lexbuf)))
-  | e -> raise e
  )
 
 let tokens a = 
@@ -122,7 +114,7 @@ and sexp toks =
       (match rest with
       | TCParen t2::rest ->
           Sexp ((t1, xs, t2)), rest
-      | _ -> raise (Parse_error ("unclosed parenthesis", t1))
+      | _ -> raise (PI.Other_error ("unclosed parenthesis", t1))
       )
 
     | TOBracket t1 -> 
@@ -130,11 +122,11 @@ and sexp toks =
       (match rest with
       | TCBracket t2::rest ->
           Sexp ((t1, xs, t2)), rest
-      | _ -> raise (Parse_error ("unclosed bracket", t1))
+      | _ -> raise (PI.Other_error ("unclosed bracket", t1))
       )
 
     | TCParen t | TCBracket t ->
-      raise (Parse_error ("closing bracket/paren without opening one", t))
+      raise (PI.Other_error ("closing bracket/paren without opening one", t))
 
     | TQuote t ->
       let (s, rest) = sexp xs in
@@ -154,7 +146,7 @@ and sexp toks =
       Atom (String (PI.str_of_info t, t)), xs
 
     | EOF t ->
-      raise (Parse_error ("unexpected eof", t))
+      raise (PI.Other_error ("unexpected eof", t))
     )
       
 
@@ -177,10 +169,10 @@ let parse2 filename =
         stat.PI.correct <- nblines;
         Some xs
       | _, x::_xs ->
-        raise (Parse_error ("trailing constructs", (TH.info_of_tok x)))
+        raise (PI.Other_error ("trailing constructs", (TH.info_of_tok x)))
       )
     with
-    | Parse_error (s, info) ->
+    | PI.Other_error (s, info) ->
       pr2 (spf "Parse error: %s, {%s} at %s" 
              s 
              (PI.str_of_info info)

@@ -3,11 +3,9 @@
 type program_and_tokens = 
   Cst_js.program option * Parser_js.token list
 
-exception Parse_error of Parse_info.info
-
 (* This is the main function. It may raise 
- *  - Parse_error if Flag_parsing.error_recovery is false
- *  - Lexer_js.Lexical_error if Flag_parsing.exn_when_lexical_error is true.
+ *  - Parse_info.Parsing_error if Flag_parsing.error_recovery is false
+ *  - Parse_info.Lexical_error if Flag_parsing.exn_when_lexical_error is true.
  *)
 val parse: 
   Common.filename -> (program_and_tokens * Parse_info.parsing_stat)

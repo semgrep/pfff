@@ -165,60 +165,29 @@ type ast =
   | Php of Cst_php.program
   | Js of Ast_js.program
 
+  | NoAST
+
 let create_ast file =
+ try (
   match !lang with
   | "python" ->
-      Gen
-      (try
-        let ast = Parse_python.parse_program file in
-        Resolve_python.resolve ast;
-        Python_to_generic.program ast
-       with Parse_python.Parse_error _ | Lexer_python.Lexical_error _ ->
-        Common.pr2 (spf "warning: parsing problem in %s" file);
-        [])
+    let ast = Parse_python.parse_program file in
+    Resolve_python.resolve ast;
+    Gen (Python_to_generic.program ast)
   | "js" ->
-      Gen
-      (try
-        let cst = Parse_js.parse_program file in
-        let ast = Ast_js_build.program cst in
-        Js_to_generic.program ast
-      with Parse_js.Parse_error _ | Lexer_js.Lexical_error _
-       | Common.Todo 
-       | Ast_js_build.TodoConstruct _ | Ast_js_build.UnhandledConstruct _
-       ->
-        Common.pr2 (spf "warning: parsing problem in %s" file);
-        [])
-
+    let cst = Parse_js.parse_program file in
+    let ast = Ast_js_build.program cst in
+    Gen (Js_to_generic.program ast)
   | "c" ->
-      Gen
-      (try
-        let ast = Parse_c.parse_program file in
-        C_to_generic.program ast
-       with _exn ->
-        Common.pr2 (spf "warning: problem in %s" file);
-        [])
+    let ast = Parse_c.parse_program file in
+    Gen (C_to_generic.program ast)
   | "php" ->
-    Php
-    (try Parse_php.parse_program file
-    with Parse_php.Parse_error _err ->
-      Common.pr2 (spf "warning: parsing problem in %s" file);
-      [])
+    Php (Parse_php.parse_program file)
   | "jsold" ->
-    Js
-    (try
       let cst = Parse_js.parse_program file in
-      Ast_js_build.program cst
-    with Parse_js.Parse_error _ | Lexer_js.Lexical_error _
-      | Common.Todo 
-      | Ast_js_build.TodoConstruct _ | Ast_js_build.UnhandledConstruct _
-      | Stack_overflow 
-     ->
-      Common.pr2 (spf "warning: parsing problem in %s" file);
-      [])
-
+      Js (Ast_js_build.program cst)
   | _ ->
     Fuzzy
-    (try
       (match !lang with
       | ("cfuzzy" | "c++") ->
         Common.save_excursion Flag_parsing.verbose_lexing false (fun () ->
@@ -235,9 +204,10 @@ let create_ast file =
         Parse_js.parse_fuzzy file +> fst
       | _ ->
         failwith ("unsupported language: " ^ !lang))
-    with exn ->
-      pr2 (spf "PB with %s, exn = %s"  file (Common.exn_to_s exn));
-      [])
+  )
+  with exn ->
+    pr2 (spf "PB parsing with %s, exn = %s"  file (Common.exn_to_s exn));
+    NoAST
 
 type pattern =
   | PatFuzzy of Ast_fuzzy.tree list
@@ -285,6 +255,7 @@ let read_patterns name =
 
 let sgrep_ast pattern any_ast =
   match !lang, pattern, any_ast with
+  | _, _, NoAST -> () (* skipping *)
   | ("js" | "python" | "c"), PatGen pattern, Gen ast ->
     Sgrep_generic.sgrep_ast
       ~hook:(fun env matched_tokens ->
@@ -332,7 +303,7 @@ let sgrep_ast pattern any_ast =
       )
       pattern ast
   | _ ->
-    failwith ("unsupported language: " ^ !lang)
+    failwith ("unsupported language or combination: " ^ !lang)
 
 (*****************************************************************************)
 (* Main action *)

@@ -33,7 +33,7 @@ let test_parse_html xs =
     try 
       let _tree = Parse_html.parse file in
       ()
-    with Parse_html.Parse_error info ->
+    with Parse_info.Parsing_error info ->
       pr2 (Parse_info.error_message_info info)
   );
   ()

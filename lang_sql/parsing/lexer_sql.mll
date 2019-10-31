@@ -24,13 +24,10 @@ open Parser_sql
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-
-exception Lexical of string
-
-let tok     lexbuf  = 
-  Lexing.lexeme lexbuf
-let tokinfo lexbuf  = 
-  Parse_info.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
+(* shortcuts *)
+let tok = Lexing.lexeme
+let tokinfo = Parse_info.tokinfo
+let _error = Parse_info.lexical_error
 
 
 let keyword_table = Common.hash_of_list [

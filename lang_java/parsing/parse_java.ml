@@ -49,7 +49,7 @@ let tokens2 file =
 
  Common.with_open_infile file (fun chan ->
   let lexbuf = Lexing.from_channel chan in
-  try
+
     let rec tokens_aux () =
       let tok = Lexer_java.token lexbuf in
       if !Flag.debug_lexer then Common.pr2_gen tok;
@@ -72,11 +72,6 @@ let tokens2 file =
       else tok::(tokens_aux ())
     in
     tokens_aux ()
-  with
-    | Lexer_java.Lexical s ->
-        failwith ("lexical error " ^ s ^ "\n =" ^
-                  (PI.error_message file (PI.lexbuf_to_strpos lexbuf)))
-    | e -> raise e
  )
 
 let tokens a =
@@ -104,9 +99,6 @@ let rec lexer_function tr = fun lexbuf ->
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
-
-exception Parse_error of Parse_info.info
-
 let parse2 filename =
 
   let stat = Parse_info.default_stat filename in
@@ -128,7 +120,7 @@ let parse2 filename =
         (Common.profile_code "Parser_java.main" (fun () ->
           Parser_java.goal (lexer_function tr) lexbuf_fake
         ))
-    ) with e ->
+    ) with Parsing.Parse_error ->
 
       let line_error = TH.line_of_tok tr.PI.current in
 
@@ -140,7 +132,7 @@ let parse2 filename =
 
       let info_of_bads = Common2.map_eff_rev TH.info_of_tok tr.PI.passed in
 
-      Right (info_of_bads, line_error, current, e)
+      Right (info_of_bads, line_error, current)
   in
 
   match elems with
@@ -148,27 +140,13 @@ let parse2 filename =
       stat.PI.correct <- (Common.cat filename +> List.length);
       (Some xs, toks), stat
 
-  | Right (_info_of_bads, line_error, cur, exn) ->
+  | Right (_info_of_bads, line_error, cur) ->
 
       if not !Flag.error_recovery
-      then raise (Parse_error (TH.info_of_tok cur));
-
-      (match exn with
-      | Lexer_java.Lexical _ | Parsing.Parse_error (*|Semantic_c.Semantic _  *)
-        -> ()
-      | e -> raise e
-      );
+      then raise (PI.Parsing_error (TH.info_of_tok cur));
 
       if !Flag.show_parsing_error
-      then
-        (match exn with
-        (* Lexical is not anymore launched I think *)
-        | Lexer_java.Lexical s ->
-            pr2 ("lexical error " ^s^ "\n =" ^ error_msg_tok cur)
-        | Parsing.Parse_error ->
-            pr2 ("parse error \n = " ^ error_msg_tok cur)
-        | _e -> raise Impossible
-        );
+      then pr2 ("parse error \n = " ^ error_msg_tok cur);
       let checkpoint2 = Common.cat filename +> List.length in
 
       if !Flag.show_parsing_error

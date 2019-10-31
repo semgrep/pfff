@@ -13,7 +13,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common 
 
 open Parser_clang
 module Flag = Flag_parsing
@@ -25,19 +24,11 @@ module Flag = Flag_parsing
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+(* shortcuts *)
+let tok = Lexing.lexeme
+let tokinfo = Parse_info.tokinfo
+let error = Parse_info.lexical_error
 
-exception Lexical of string
-
-let tok     lexbuf  = 
-  Lexing.lexeme lexbuf
-
-let error s =
-  if !Flag.exn_when_lexical_error
-  then raise (Lexical (s))
-  else 
-    if !Flag.verbose_lexing
-    then pr2_once ("LEXER: " ^ s)
-    else ()
 
 let line = ref 0
 
@@ -153,8 +144,8 @@ rule token = parse
   | eof { EOF }
 
   | _ { 
-    error ("unrecognised symbol, in token rule:"^tok lexbuf);
-    (* TUnknown (tok lexbuf) *)
-    raise (Lexical (tok lexbuf))
+    error ("unrecognised symbol, in token rule:"^tok lexbuf) lexbuf;
+    TUnknown (tok lexbuf)
+    (*raise (Lexical (tok lexbuf))*)
     }
 

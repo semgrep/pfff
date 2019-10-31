@@ -41,6 +41,8 @@ type token_mutable = {
 (* shortcut *)
 type info = token_mutable
 
+
+
 (* mostly for the fuzzy AST builder *)
 type token_kind =
   | LPar | RPar
@@ -55,6 +57,16 @@ type token_kind =
    | Newline
    | Space
 
+(* see also Parsing.Parse_error and Failure "empty token" raised by Lexing *)
+exception Lexical_error of string * info
+(* better than Parsing.Parse_error, which does not have location information *)
+exception Parsing_error of info
+(* when convert from CST to AST *)
+exception Ast_builder_error of string * info
+(* other stuff *)
+exception Other_error of string * info
+
+val lexical_error: string -> Lexing.lexbuf -> unit
 
 val fake_token_location : token_location
 val fake_info : string -> info
@@ -77,6 +89,7 @@ val get_original_token_location: token_origin -> token_location
 
 val compare_pos: info -> info -> int
 val min_max_ii_by_pos: info list -> info * info
+
 
 type parsing_stat = {
   filename: Common.filename;
@@ -103,8 +116,12 @@ val mk_tokens_state: 'tok list -> 'tok tokens_state
 
 val tokinfo_str_pos: 
   string -> int -> info
+val tokinfo:
+  Lexing.lexbuf -> info
 val lexbuf_to_strpos:
   Lexing.lexbuf -> string * int
+val yyback: int -> Lexing.lexbuf -> unit
+
 val rewrap_str: string -> info -> info
 val tok_add_s: string -> info -> info
 

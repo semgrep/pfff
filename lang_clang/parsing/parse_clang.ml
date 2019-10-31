@@ -14,7 +14,6 @@
 open Common 
 
 module Flag = Flag_parsing
-module PI = Parse_info
 
 open Ast_clang
 open Parser_clang
@@ -134,7 +133,6 @@ let tokens2 file =
   Common.with_open_infile file (fun chan -> 
     let lexbuf = Lexing.from_channel chan in
 
-    try 
       let a_token lexbuf = 
         Lexer_clang.token lexbuf
       in
@@ -148,11 +146,6 @@ let tokens2 file =
         else tokens_aux (tok::acc)
       in
       tokens_aux []
-  with
-  | Lexer_clang.Lexical s -> 
-      failwith ("lexical error " ^ s ^ "\n =" ^ 
-                   (PI.error_message file (PI.lexbuf_to_strpos lexbuf)))
-  | e -> raise e
  )
 
 let tokens_of_string s =

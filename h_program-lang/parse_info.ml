@@ -28,7 +28,8 @@ open Common
 (* Types *)
 (*****************************************************************************)
 
-(* Currently core/lexing.ml does not handle the line number position.
+(* Currently, lexing.ml in the standard OCaml libray does not handle
+ * the line number position.
  * Even if there are certain fields in the lexing structure, they are not
  * maintained by the lexing engine so the following code does not work:
  *
@@ -239,6 +240,42 @@ let tokinfo_str_pos str pos =
     };
     transfo = NoTransfo;
   }
+
+(* pad: hack around ocamllex to emulate the yyless() of flex. The semantic
+ * is not exactly the same than yyless(), so I use yyback() instead.
+ * http://my.safaribooksonline.com/book/programming/flex/9780596805418/a-reference-for-flex-specifications/yyless
+ *)
+let yyback n lexbuf =
+  lexbuf.Lexing.lex_curr_pos <- lexbuf.Lexing.lex_curr_pos - n;
+  let currp = lexbuf.Lexing.lex_curr_p in
+  lexbuf.Lexing.lex_curr_p <- { currp with
+    Lexing.pos_cnum = currp.Lexing.pos_cnum - n;
+  }
+
+(*****************************************************************************)
+(* Errors *)
+(*****************************************************************************)
+(* this can be used in the different lexer/parsers in pfff *)
+exception Lexical_error of string * info
+exception Parsing_error of info
+exception Ast_builder_error of string * info
+exception Other_error of string * info
+
+let tokinfo lexbuf  = 
+  tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
+
+let lexical_error s lexbuf =
+  if !Flag_parsing.exn_when_lexical_error
+  then raise (Lexical_error (s, tokinfo lexbuf))
+  else
+    if !Flag_parsing.verbose_lexing
+    then pr2_once ("LEXER: " ^ s)
+    else ()
+
+
+(*****************************************************************************)
+(* Misc *)
+(*****************************************************************************)
 
 (*
 val rewrap_token_location : token_location.token_location -> info -> info

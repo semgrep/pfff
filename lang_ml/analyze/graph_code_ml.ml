@@ -70,7 +70,7 @@ let parse file =
   Common.save_excursion Flag.exn_when_lexical_error true (fun ()->
     try 
       Parse_ml.parse_program file 
-    with Parse_ml.Parse_error _ ->
+    with Parse_info.Parsing_error _ ->
       pr2 ("PARSING problem in: " ^ file);
       []
   ))

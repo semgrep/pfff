@@ -18,7 +18,7 @@ let unittest =
         try
           let _ = Parse_ml.parse_program file in
           ()
-        with Parse_ml.Parse_error _ ->
+        with Parse_info.Parsing_error _ ->
           assert_failure (spf "it should correctly parse %s" file)
       )
     );

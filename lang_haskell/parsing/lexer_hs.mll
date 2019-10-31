@@ -23,25 +23,18 @@ open Parser_hs
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* src:
  * http://www.haskell.org/onlinereport/lexemes.html#sect2
  *)
-(*****************************************************************************)
-(* Wrappers *)
-(*****************************************************************************)
-let pr2, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_lexing 
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-exception Lexical of string
 
-(* ---------------------------------------------------------------------- *)
-let tok     lexbuf  = 
-  Lexing.lexeme lexbuf
-let tokinfo lexbuf  = 
-  Parse_info.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
+(* shortcuts *)
+let tok = Lexing.lexeme
+let tokinfo = Parse_info.tokinfo
+let error = Parse_info.lexical_error
 
 (* ---------------------------------------------------------------------- *)
 let keyword_table = Common.hash_of_list [

@@ -43,7 +43,6 @@ let tokens2 file =
   Common.with_open_infile file (fun chan -> 
     let lexbuf = Lexing.from_channel chan in
 
-    try 
       let mltoken lexbuf = 
         Lexer_rust.token lexbuf
       in
@@ -68,11 +67,6 @@ let tokens2 file =
         else tokens_aux (tok::acc)
       in
       tokens_aux []
-  with
-  | Lexer_rust.Lexical s -> 
-      failwith ("lexical error " ^ s ^ "\n =" ^ 
-                 (PI.error_message file (PI.lexbuf_to_strpos lexbuf)))
-  | e -> raise e
  )
 
 let tokens a = 
@@ -87,7 +81,6 @@ let parse2 filename =
   let toks_orig = tokens filename in
   (* TODO *)
   ((), toks_orig), stat
-
 
 let parse a = 
   Common.profile_code "Parse_rust.parse" (fun () -> parse2 a)
