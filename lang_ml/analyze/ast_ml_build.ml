@@ -24,7 +24,7 @@ module A = Ast_ml
  *)
 
 (*****************************************************************************)
-(* Types *)
+(* Helpers *)
 (*****************************************************************************)
 
 let xxx_list of_a xs =
@@ -48,6 +48,7 @@ let opt_to_nop = function
   | None -> A.Nop
   | Some x -> x
 
+let fake_info () = Parse_info.fake_info "FAKE"
 
 let rec v_info x = x
 and v_tok v = v_info v
@@ -273,8 +274,8 @@ and v_field_and_expr x =
       let v1 = v_long_name v1 and _v2 = v_tok v2 and v3 = v_expr v3 in 
       v1, v3
   | FieldImplicitExpr v1 -> 
-    let _v1 = v_long_name v1 in 
-    raise Common.Todo
+    let v1 = v_long_name v1 in 
+    v1, A.Name v1 (* remove qualifier? *)
 
 
 and v_argument v =
@@ -284,8 +285,8 @@ and v_argument v =
     let v1 = v_name v1 and v2 = v_expr v2 in 
     A.ArgKwd (v1, v2)
   | ArgImplicitTildeExpr ((v1, v2)) ->
-    let _v1 = v_tok v1 and __v2 = v_name v2 in 
-    raise Todo
+    let _v1 = v_tok v1 and v2 = v_name v2 in 
+    A.ArgKwd (v2, A.Name ([],v2))
   | ArgLabelQuestion ((v1, v2)) -> 
     let __v1 = v_name v1 and __v2 = v_expr v2 in 
     raise Todo
@@ -368,16 +369,16 @@ and v_field_pattern x =
   | PatField ((v1, v2, v3)) ->
       let v1 = v_long_name v1 and _v2 = v_tok v2 and v3 = v_pattern v3 in 
       v1, v3
-  | PatImplicitField v1 -> let _v1 = v_long_name v1 in 
-                           raise Todo
+  | PatImplicitField v1 -> let v1 = v_long_name v1 in 
+                           v1, A.PatVar (snd v1)
 
 and v_signed_constant =
   function
   | C2 v1 -> let v1 = v_constant v1 in v1
-  | CMinus ((v1, v2)) -> let _v1 = v_tok v1 and _v2 = v_constant v2 in 
-                         raise Todo
-  | CPlus ((v1, v2)) -> let _v1 = v_tok v1 and __v2 = v_constant v2 in 
-                        raise Todo
+  | CMinus ((v1, v2)) -> let _v1 = v_tok v1 and v2 = v_constant v2 in 
+                         v2 (* TODO: should append - to literal? *)
+  | CPlus ((v1, v2)) -> let _v1 = v_tok v1 and v2 = v_constant v2 in 
+                        v2
 
 and v_let_binding x =
   match x with
@@ -467,8 +468,9 @@ and v_toplevel x =
   match x with
   | TopItem v1 -> let v1 = v_item v1 in [v1]
   | ScSc v1 -> let _v1 = v_info v1 in []
-  | TopSeqExpr v1 -> let _v1 = v_seq_expr v1 in 
-                     raise Todo
+  | TopSeqExpr v1 -> 
+    let v1 = v_seq_expr1 v1 in 
+    [A.Let (None, [A.LetPattern (A.PatUnderscore (fake_info()), v1)])]
   | TopDirective v1 -> let _v1 = v_info v1 in []
 
 and v_program v = List.map v_toplevel v |> List.flatten
