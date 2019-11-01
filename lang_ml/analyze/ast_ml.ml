@@ -119,8 +119,8 @@ type expr =
 
  and argument = 
    | Arg of expr
-   | ArgKwd of name * expr
-   | ArgQuestion of name  * expr
+   | ArgKwd of ident * expr
+   | ArgQuestion of ident  * expr
 
  and match_case =
   pattern * match_action
@@ -221,7 +221,7 @@ and item =
   | Exception of ident * type_ list
   | External  of ident * type_ * string wrap list (* primitive declarations *)
       
-  | IOpen of name
+  | Open of name
       
   (* only in sig_item *)
   | Val of ident * type_

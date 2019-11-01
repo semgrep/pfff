@@ -1,0 +1,494 @@
+(* Yoann Padioleau
+ *
+ * Copyright (C) 2019 r2c
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1 as published by the Free Software Foundation, with the
+ * special exception on linking described in file license.txt.
+ * 
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
+ * license.txt for more details.
+ *)
+open Common
+
+open Cst_ml
+module A = Ast_ml
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+(*
+ *)
+
+(*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
+
+let xxx_list of_a xs =
+  xs |> Common.map_filter (function
+    | Common.Left x -> Some (of_a x)
+    | Common.Right _ -> None)
+
+let v_paren of_a (_, x, _) = of_a x
+let v_brace = v_paren
+let v_bracket = v_paren
+
+let v_star_list = xxx_list
+let v_pipe_list = xxx_list
+let v_semicolon_list = xxx_list
+let v_comma_list = xxx_list
+let v_and_list = xxx_list
+
+let v_string x = x
+
+let opt_to_nop = function
+  | None -> A.Nop
+  | Some x -> x
+
+
+let rec v_info x = x
+and v_tok v = v_info v
+
+and v_wrap: 'a. ('a -> 'b) -> 'a wrap -> 'b wrap = fun  _of_a (v1, v2) ->
+  let v1 = _of_a v1 and v2 = v_info v2 in v1, v2
+  
+and v_name = function 
+  | Name v1 -> v1
+                                   
+  
+and v_long_name (v1, v2) =
+  let v1 = v_qualifier v1 and v2 = v_name v2 in v1, v2
+and v_qualifier v =
+    v |> List.map (fun (v1, v2) -> let v1 = v_name v1 and _v2 = v_tok v2 in v1)
+
+  
+and v_ty x =
+    match x with
+  | TyName v1 -> let v1 = v_long_name v1 in A.TyName v1
+  | TyVar ((v1, v2)) -> let _v1 = v_tok v1 and v2 = v_name v2 in A.TyVar v2
+  | TyTuple v1 -> let v1 = v_star_list v_ty v1 in A.TyTuple v1
+  | TyTuple2 v1 -> let v1 = v_paren (v_star_list v_ty) v1 in A.TyTuple v1
+  | TyFunction ((v1, v2, v3)) ->
+      let v1 = v_ty v1 and _v2 = v_tok v2 and v3 = v_ty v3 in 
+      A.TyFunction (v1, v3)
+  | TyApp ((v1, v2)) -> let v1 = v_ty_args v1 and v2 = v_long_name v2 in 
+                        A.TyApp (v1, v2)
+  | TyTodo -> failwith "TyTodo"
+
+
+and v_type_declaration x =
+    match x with
+  | TyAbstract ((v1, v2)) -> let v1 = v_ty_params v1 and v2 = v_name v2 in 
+                             { A.tname = v2; tparams = v1; 
+                               tbody = A.AbstractType }
+  | TyDef ((v1, v2, v3, v4)) ->
+      let v1 = v_ty_params v1
+      and v2 = v_name v2
+      and _v3 = v_tok v3
+      and v4 = v_type_def_kind v4
+      in
+      { A.tname = v2; tparams = v1; tbody = v4 }
+
+and v_type_def_kind =
+  function
+  | TyCore v1 -> let v1 = v_ty v1 in A.CoreType v1
+  | TyAlgebric v1 -> let v1 = v_pipe_list v_constructor_declaration v1 in
+                     A.AlgebricType v1
+  | TyRecord v1 ->
+      let v1 = v_brace (v_semicolon_list v_label_declaration) v1 in
+      A.RecordType v1
+                                                                 
+and v_constructor_declaration (v1, v2) =
+  let v1 = v_name v1 and v2 = v_constructor_arguments v2 in 
+  v1, v2
+
+and v_constructor_arguments =
+  function
+  | NoConstrArg -> []
+  | Of ((v1, v2)) -> let _v1 = v_tok v1 and v2 = v_star_list v_ty v2 in 
+                     v2
+and
+  v_label_declaration x = 
+     match x with {
+       fld_mutable = v_fld_mutable;
+       fld_name = v_fld_name;
+       fld_tok = v_fld_tok;
+       fld_type = v_fld_type
+     } ->
+     let v1 = v_fld_mutable in
+     let v2 = v_name v_fld_name in
+     let _v3 = v_tok v_fld_tok in 
+     let v4 = v_ty v_fld_type in
+     v2, v4, v1
+
+and v_ty_args =
+  function
+  | TyArg1 v1 -> let v1 = v_ty v1 in [v1]
+  | TyArgMulti v1 -> let v1 = v_paren (v_comma_list v_ty) v1 in v1
+
+and v_ty_params =
+  function
+  | TyNoParam -> []
+  | TyParam1 v1 -> let v1 = v_ty_parameter v1 in [v1]
+  | TyParamMulti v1 ->
+      let v1 = v_paren (v_comma_list v_ty_parameter) v1 in v1
+and v_ty_parameter (v1, v2) = let _v1 = v_tok v1 and v2 = v_name v2 in 
+                              v2
+
+and v_expr v =
+    match v with
+
+  | C v1 -> let v1 = v_constant v1 in A.L v1
+  | L v1 -> let v1 = v_long_name v1 in A.Name v1
+  | Constr ((v1, v2)) ->
+      let v1 = v_long_name v1 and v2 = Common.map_opt v_expr v2 in 
+      A.Constructor (v1, v2)
+  | Tuple v1 -> let v1 = v_comma_list v_expr v1 in A.Tuple v1
+  | List v1 -> let v1 = v_bracket (v_semicolon_list v_expr) v1 in A.List v1
+  | ParenExpr v1 -> let v1 = v_paren v_expr v1 in v1
+  | Sequence v1 -> let v1 = v_paren v_seq_expr v1 in A.Sequence v1
+  | Prefix ((v1, v2)) ->
+      let v1 = v_wrap v_string v1 and v2 = v_expr v2 in A.Prefix (v1, v2)
+  | Infix ((v1, v2, v3)) ->
+      let v1 = v_expr v1
+      and v2 = v_wrap v_string v2
+      and v3 = v_expr v3
+      in A.Infix (v1, v2, v3)
+  | FunCallSimple ((v1, v2)) ->
+      let v1 = v_long_name v1 and v2 = List.map v_argument v2 in 
+      A.Call (A.Name v1, v2)
+  | FunCall ((v1, v2)) ->
+      let v1 = v_expr v1 and v2 = List.map v_argument v2 in 
+      A.Call (v1, v2)
+  | RefAccess ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_expr v2 in 
+                            A.RefAccess (v1, v2)
+  | RefAssign ((v1, v2, v3)) ->
+      let v1 = v_expr v1 and v2 = v_tok v2 and v3 = v_expr v3 in 
+      A.RefAssign (v1, v2, v3)
+  | FieldAccess ((v1, v2, v3)) ->
+      let v1 = v_expr v1 and _v2 = v_tok v2 and v3 = v_long_name v3 in
+      A.FieldAccess (v1, v3)
+  | FieldAssign ((v1, v2, v3, v4, v5)) ->
+      let v1 = v_expr v1
+      and _v2 = v_tok v2
+      and v3 = v_long_name v3
+      and _v4 = v_tok v4
+      and v5 = v_expr v5
+      in 
+      A.FieldAssign (v1, v3, v5)
+  | Record v1 -> let (a,b) = v_brace v_record_expr v1 in 
+                 A.Record (a,b)
+  | ObjAccess ((v1, v2, v3)) ->
+      let v1 = v_expr v1 and _v2 = v_tok v2 and v3 = v_name v3 in 
+      A.ObjAccess (v1, v3)
+  | New ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_long_name v2 in 
+                      A.New (v1, v2)
+  | LetIn ((v1, v2, v3, v4, v5)) ->
+      let _v1 = v_tok v1
+      and v2 = v_rec_opt v2
+      and v3 = v_and_list v_let_binding v3
+      and _v4 = v_tok v4
+      and v5 = v_seq_expr1 v5
+      in
+      A.LetIn (v3, v5, v2)
+  | Fun ((v1, v2, v3)) ->
+      let _v1 = v_tok v1
+      and __v2 = List.map v_parameter v2
+      and __v3 = v_match_action v3
+      in raise Todo
+  | Function ((v1, v2)) ->
+      let _v1 = v_tok v1 and __v2 = v_pipe_list v_match_case v2 in 
+      raise Common.Todo
+  | If ((v1, v2, v3, v4, v5)) ->
+      let _v1 = v_tok v1
+      and v2 = v_seq_expr1 v2
+      and _v3 = v_tok v3
+      and v4 = v_expr v4
+      and v5 =
+        Common.map_opt (fun (v1, v2) -> let _v1 = v_tok v1 and v2 = v_expr v2 in v2)
+          v5
+      in
+      A.If (v2, v4, v5 |> opt_to_nop)
+  | Match ((v1, v2, v3, v4)) ->
+      let _v1 = v_tok v1
+      and v2 = v_seq_expr1 v2
+      and _v3 = v_tok v3
+      and v4 = v_pipe_list v_match_case v4
+      in 
+      A.Match (v2, v4)
+  | Try ((v1, v2, v3, v4)) ->
+      let _v1 = v_tok v1
+      and v2 = v_seq_expr1 v2
+      and _v3 = v_tok v3
+      and v4 = v_pipe_list v_match_case v4
+      in 
+      A.Try (v2, v4)
+  | While ((v1, v2, v3, v4, v5)) ->
+      let _v1 = v_tok v1
+      and v2 = v_seq_expr1 v2
+      and _v3 = v_tok v3
+      and v4 = v_seq_expr1 v4
+      and _v5 = v_tok v5
+      in
+      A.While (v2, v4)
+  | For ((v1, v2, v3, v4, v5, v6, v7, v8, v9)) ->
+      let _v1 = v_tok v1
+      and v2 = v_name v2
+      and _v3 = v_tok v3
+      and v4 = v_seq_expr1 v4
+      and v5 = v_for_direction v5
+      and v6 = v_seq_expr1 v6
+      and _v7 = v_tok v7
+      and v8 = v_seq_expr1 v8
+      and _v9 = v_tok v9
+      in 
+      A.For (v2, v4, v5, v6, v8)
+  | ExprTodo -> failwith "ExprTodo"
+
+
+and v_constant =
+  function
+  | Int v1 -> let v1 = v_wrap v_string v1 in A.Int v1
+  | Float v1 -> let v1 = v_wrap v_string v1 in A.Float v1
+  | Char v1 -> let v1 = v_wrap v_string v1 in A.Char v1
+  | String v1 -> let v1 = v_wrap v_string v1 in A.String v1
+
+and v_record_expr =
+  function
+  | RecordNormal v1 -> let v1 = v_semicolon_list v_field_and_expr v1 in 
+                       None, v1
+  | RecordWith ((v1, v2, v3)) ->
+      let v1 = v_expr v1
+      and _v2 = v_tok v2
+      and v3 = v_semicolon_list v_field_and_expr v3
+      in 
+      Some v1, v3
+
+and v_field_and_expr x =
+    match x with
+  | FieldExpr ((v1, v2, v3)) ->
+      let v1 = v_long_name v1 and _v2 = v_tok v2 and v3 = v_expr v3 in 
+      v1, v3
+  | FieldImplicitExpr v1 -> 
+    let _v1 = v_long_name v1 in 
+    raise Common.Todo
+
+
+and v_argument v =
+  match v with
+  | ArgExpr v1 -> let v1 = v_expr v1 in A.Arg v1
+  | ArgLabelTilde ((v1, v2)) -> 
+    let v1 = v_name v1 and v2 = v_expr v2 in 
+    A.ArgKwd (v1, v2)
+  | ArgImplicitTildeExpr ((v1, v2)) ->
+    let _v1 = v_tok v1 and __v2 = v_name v2 in 
+    raise Todo
+  | ArgLabelQuestion ((v1, v2)) -> 
+    let __v1 = v_name v1 and __v2 = v_expr v2 in 
+    raise Todo
+  | ArgImplicitQuestionExpr ((v1, v2)) ->
+    let _v1 = v_tok v1 and __v2 = v_name v2 in 
+    raise Todo
+
+
+and v_match_action =
+  function
+  | Action ((v1, v2)) -> let _v1 = v_tok v1 and v2 = v_seq_expr1 v2 in 
+                         v2, None
+  | WhenAction ((v1, v2, v3, v4)) ->
+      let _v1 = v_tok v1
+      and v2 = v_seq_expr1 v2
+      and _v3 = v_tok v3
+      and v4 = v_seq_expr1 v4
+      in 
+      v4, Some v2
+and v_match_case (v1, v2) =
+  let v1 = v_pattern v1 and v2 = v_match_action v2 in v1, v2
+
+and v_for_direction =
+  function
+  | To v1 -> let v1 = v_tok v1 in A.To v1
+  | Downto v1 -> let v1 = v_tok v1 in A.Downto v1
+
+and v_seq_expr v = v_semicolon_list v_expr v
+
+and v_seq_expr1 xs = 
+   match v_seq_expr xs with
+   | [] -> raise Common.Impossible
+   | [x] -> x
+   | xs -> A.Sequence xs
+
+and v_pattern x =
+  match x with
+  | PatVar v1 -> let v1 = v_name v1 in A.PatVar v1
+  | PatConstant v1 -> let v1 = v_signed_constant v1 in A.PatLiteral v1
+  | PatConstr ((v1, v2)) ->
+      let v1 = v_long_name v1 and v2 = Common.map_opt v_pattern v2 in
+      A.PatConstructor (v1, v2)
+  | PatConsInfix ((v1, v2, v3)) ->
+      let v1 = v_pattern v1 and v2 = v_tok v2 and v3 = v_pattern v3 in 
+      A.PatConsInfix (v1, v2, v3)
+  | PatTuple v1 -> let v1 = v_comma_list v_pattern v1 in 
+                   A.PatTuple v1
+  | PatList v1 -> let v1 = v_bracket (v_semicolon_list v_pattern) v1 in 
+                  A.PatList v1
+  | PatUnderscore v1 -> let v1 = v_tok v1 in A.PatUnderscore v1
+  | PatRecord v1 ->
+      let v1 = v_brace (v_semicolon_list v_field_pattern) v1 in 
+      A.PatRecord v1
+  | PatAs ((v1, v2, v3)) ->
+      let v1 = v_pattern v1 and _v2 = v_tok v2 and v3 = v_name v3 in 
+      A.PatAs (v1, v3)
+  | PatDisj ((v1, v2, v3)) ->
+      let v1 = v_pattern v1 and _v2 = v_tok v2 and v3 = v_pattern v3 in 
+      A.PatDisj (v1, v3)
+  | PatTyped ((v1, v2, v3, v4, v5)) ->
+      let _v1 = v_tok v1
+      and v2 = v_pattern v2
+      and _v3 = v_tok v3
+      and v4 = v_ty v4
+      and _v5 = v_tok v5
+      in 
+      A.PatTyped (v2, v4)
+  | ParenPat v1 -> let v1 = v_paren v_pattern v1 in v1
+  | PatTodo -> failwith "PatTodo"
+
+and v_labeled_simple_pattern v = v_parameter v
+and v_parameter x =
+    match x with
+    | ParamPat v1 -> let v1 = v_pattern v1 in v1
+    | ParamTodo -> failwith "ParamTodo"
+
+
+and v_field_pattern x =
+  match x with
+  | PatField ((v1, v2, v3)) ->
+      let v1 = v_long_name v1 and _v2 = v_tok v2 and v3 = v_pattern v3 in 
+      v1, v3
+  | PatImplicitField v1 -> let _v1 = v_long_name v1 in 
+                           raise Todo
+
+and v_signed_constant =
+  function
+  | C2 v1 -> let v1 = v_constant v1 in v1
+  | CMinus ((v1, v2)) -> let _v1 = v_tok v1 and _v2 = v_constant v2 in 
+                         raise Todo
+  | CPlus ((v1, v2)) -> let _v1 = v_tok v1 and __v2 = v_constant v2 in 
+                        raise Todo
+
+and v_let_binding x =
+  match x with
+  | LetClassic v1 -> let v1 = v_let_def v1 in A.LetClassic v1
+  | LetPattern ((v1, v2, v3)) ->
+      let v1 = v_pattern v1 and _v2 = v_tok v2 and v3 = v_seq_expr1 v3 in
+      A.LetPattern (v1, v3)
+
+and
+  v_let_def x =
+    match x with
+ {
+              l_name = v_l_name;
+              l_params = v_l_args;
+              l_tok = v_l_tok;
+              l_body = v_l_body
+            } ->
+  let v1 = v_name v_l_name in
+  let v2 = List.map v_labeled_simple_pattern v_l_args in
+  let _v3 = v_tok v_l_tok in 
+  let v4 = v_seq_expr1 v_l_body in
+  { A.lname = v1; lparams = v2; lbody = v4 }
+
+and v_module_expr v = 
+  match v with
+  | ModuleName v1 ->
+      let v1 = v_long_name v1 in
+      A.ModuleName v1
+  | ModuleStruct (v1, v2, v3) ->
+      let _v1 = v_tok v1 in
+      let v2 = List.map v_item v2 in
+      let _v3 = v_tok v3 in
+      A.ModuleStruct v2
+  | ModuleTodo ->
+      failwith "ModuleTodo"
+
+and v_item x =
+    match x with
+  | Type ((v1, v2)) ->
+      let _v1 = v_tok v1 and v2 = v_and_list v_type_declaration v2 in
+      A.Type v2
+  | Exception ((v1, v2, v3)) ->
+      let _v1 = v_tok v1
+      and v2 = v_name v2
+      and v3 = v_constructor_arguments v3
+      in 
+      A.Exception (v2, v3)
+  | External ((v1, v2, v3, v4, v5, v6)) ->
+      let _v1 = v_tok v1
+      and v2 = v_name v2
+      and _v3 = v_tok v3
+      and v4 = v_ty v4
+      and _v5 = v_tok v5
+      and v6 = List.map (v_wrap v_string) v6
+      in 
+      A.External (v2, v4, v6)
+  | Open ((v1, v2)) -> let _v1 = v_tok v1 and v2 = v_long_name v2 in 
+                       A.Open (v2)
+  | Val ((v1, v2, v3, v4)) ->
+      let _v1 = v_tok v1
+      and v2 = v_name v2
+      and _v3 = v_tok v3
+      and v4 = v_ty v4
+      in 
+      A.Val (v2, v4)
+  | Let ((v1, v2, v3)) ->
+      let _v1 = v_tok v1
+      and v2 = v_rec_opt v2
+      and v3 = v_and_list v_let_binding v3
+      in 
+      A.Let (v2, v3)
+  | Module ((v1, v2, v3, v4)) ->
+      let _v1 = v_tok v1
+      and v2 = v_name v2
+      and _v3 = v_tok v3
+      and v4 = v_module_expr v4
+      in 
+      A.Module ({A.mname = v2; mbody = v4 })
+
+  | ItemTodo _v -> 
+    failwith "ItemTodo"
+
+and v_rec_opt v = Common.map_opt v_tok v
+
+
+and v_toplevel x =
+  match x with
+  | TopItem v1 -> let v1 = v_item v1 in [v1]
+  | ScSc v1 -> let _v1 = v_info v1 in []
+  | TopSeqExpr v1 -> let _v1 = v_seq_expr v1 in 
+                     raise Todo
+  | TopDirective v1 -> let _v1 = v_info v1 in []
+
+and v_program v = List.map v_toplevel v |> List.flatten
+
+(*
+and v_any = function
+  | Ty v1 -> let v1 = v_ty v1 in ()
+  | Expr v1 -> let v1 = v_expr v1 in ()
+  | Pattern v1 -> let v1 = v_pattern v1 in ()
+  | Item v1 -> let v1 = v_item v1 in ()
+  | Toplevel v1 -> let v1 = v_toplevel v1 in ()
+  | Program v1 -> let v1 = v_program v1 in ()
+  | TypeDeclaration v1 -> let v1 = v_type_declaration v1 in ()
+  | TypeDefKind v1 -> let v1 = v_type_def_kind v1 in ()
+  | MatchCase v1 -> let v1 = v_match_case v1 in ()
+  | FieldDeclaration v1 -> let v1 = v_label_declaration v1 in ()
+  | LetBinding v1 -> let v1 = v_let_binding v1 in ()
+  | Constant v1 -> let v1 = v_constant v1 in ()
+  | Argument v1 -> let v1 = v_argument v1 in ()
+  | Body v1 -> let v1 = v_seq_expr v1 in ()
+  | Info v1 -> let v1 = v_info v1 in ()
+  | InfoList v1 -> let v1 = Ocaml.v_list v_info v1 in ()
+*)
