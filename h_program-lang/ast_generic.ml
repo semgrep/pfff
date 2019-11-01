@@ -296,7 +296,7 @@ and type_ =
              type_ (* return type *)
   (* covers tuples, list, etc. and also regular typedefs *)
   | TyApply of name * type_arguments
-  | TyVar of ident (* typedef? no type variable in polymorphic type*)
+  | TyVar of ident (* typedef? no type variable in polymorphic type *)
 
   (* a special case of TApply, also a special case of TPointer *)
   | TyArray of (* const_expr *) expr option * type_

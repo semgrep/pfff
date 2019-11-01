@@ -1,0 +1,263 @@
+(* Yoann Padioleau
+ *
+ * Copyright (C) 2019 r2c
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1 as published by the Free Software Foundation, with the
+ * special exception on linking described in file license.txt.
+ * 
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
+ * license.txt for more details.
+ *)
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+(* An Abstract Syntax Tree for OCaml.
+ *
+ * See cst_ml.ml for a Concrete Syntax Tree for OCaml (better for program
+ * transformation purpose).
+ *)
+
+(*****************************************************************************)
+(* The AST related types *)
+(*****************************************************************************)
+
+(* ------------------------------------------------------------------------- *)
+(* Token/info *)
+(* ------------------------------------------------------------------------- *)
+type tok = Parse_info.info
+
+(* a shortcut to annotate some information with token/position information *)
+and 'a wrap = 'a * tok
+
+(* ------------------------------------------------------------------------- *)
+(* Names  *)
+(* ------------------------------------------------------------------------- *)
+
+type ident = string wrap
+ (* with tarzan *)
+
+type name = qualifier * ident
+ and qualifier = ident list (* TODO: functor? *)
+ (* with tarzan *)
+
+(* ------------------------------------------------------------------------- *)
+(* Types *)
+(* ------------------------------------------------------------------------- *)
+
+type type_ = 
+  | TyName of name (* include builtins *)
+  | TyVar of ident
+
+  | TyFunction of type_ * type_
+  | TyApp of type_ list * name (* less: could be merged with TyName *)
+
+  | TyTuple of type_ list (* at least 2 *)
+
+ (* with tarzan *)
+
+(* ------------------------------------------------------------------------- *)
+(* Expressions *)
+(* ------------------------------------------------------------------------- *)
+
+(* start of big recursive type *)
+type expr =
+  | L of literal
+  | Name of name
+
+  | Constructor of name * expr option
+  (* special case of Constr *)
+  | Tuple of expr list
+  | List  of expr list
+
+  (* can be empty *) 
+  | Sequence of expr list
+
+  | Prefix of string wrap * expr
+  | Infix of expr * string wrap * expr
+
+  | Call of expr * argument list
+
+  (* could be factorized with Prefix but it's not a usual prefix operator! *)
+  | RefAccess of tok (* ! *) * expr
+  | RefAssign of expr * tok (* := *) * expr
+
+  (* special case of RefAccess and RefAssign *)
+  | FieldAccess of expr * name
+  | FieldAssign of expr * name * (* <- *) expr
+
+  | Record of expr option (* with *) * (name * expr) list
+
+  | New of tok * name
+  | ObjAccess of expr * ident
+  
+
+  (* > 1 elt for mutually recursive let (let x and y and z) *)
+  | LetIn of let_binding list * expr * rec_opt
+  | Fun of parameter list (* at least one *) * expr
+
+  (* statement-like expressions *)
+  | Nop (* for empty else *)
+
+  | If of expr * expr * expr
+  | Match of expr * match_case list
+
+  | Try of expr * match_case list 
+
+  | While of expr * expr
+  | For of ident * expr * for_direction * expr *   expr
+
+ and literal =
+   | Int    of string wrap
+   | Float  of string wrap
+   | Char   of string wrap
+   | String of string wrap
+
+ and argument = 
+   | Arg of expr
+   | ArgKwd of name * expr
+   | ArgQuestion of name  * expr
+
+ and match_case =
+  pattern * match_action
+
+  and match_action = expr * expr option (* when *)
+
+ and for_direction =
+  | To of tok
+  | Downto of tok
+
+ and rec_opt = tok option
+
+(* ------------------------------------------------------------------------- *)
+(* Patterns *)
+(* ------------------------------------------------------------------------- *)
+and pattern = 
+  | PatVar of ident
+  | PatLiteral of literal (* can be signed *)
+  | PatConstructor of name * pattern option
+ 
+  (* special cases of PatConstructor *)
+  | PatConsInfix of pattern * tok (* :: *) * pattern
+  | PatTuple of pattern list
+  | PatList of pattern list
+
+  | PatUnderscore of tok
+  | PatRecord of (name * pattern) list
+
+  | PatAs of pattern * ident
+  (* ocaml disjunction patterns extension *)
+  | PatDisj of pattern * pattern
+  | PatTyped of pattern * type_
+
+(* ------------------------------------------------------------------------- *)
+(* Let binding (global/local/function definition) *)
+(* ------------------------------------------------------------------------- *)
+
+and let_binding =
+  | LetClassic of let_def
+  | LetPattern of pattern * expr
+
+ (* was called fun_binding in the grammar *)
+ and let_def = {
+   lname: ident;
+   lparams: parameter list; (* can be empty *)
+   lbody: expr;
+ }
+
+ and parameter = pattern
+
+(* ------------------------------------------------------------------------- *)
+(* Type declaration *)
+(* ------------------------------------------------------------------------- *)
+
+type type_declaration = {
+  tname: ident;
+  tparams: type_parameter list;
+  tbody: type_def_kind;
+}
+
+ and type_parameter = ident (* a TyVar, e.g., 'a *)
+
+ and type_def_kind =
+   | AbstractType
+   | CoreType of type_
+   (* or type *)
+   | AlgebricType of (ident * type_ list) list
+   (* and type *)
+   | RecordType   of (ident * type_ * tok option (* mutable *)) list
+
+(* ------------------------------------------------------------------------- *)
+(* Class *)
+(* ------------------------------------------------------------------------- *)
+
+(* ------------------------------------------------------------------------- *)
+(* Module *)
+(* ------------------------------------------------------------------------- *)
+and module_declaration = {
+  mname: ident;
+  mbody: module_expr;
+}
+
+  (* mutually recursive with item *)
+  and module_expr =
+  | ModuleName of name (* alias *)
+  | ModuleStruct of item list
+
+(* ------------------------------------------------------------------------- *)
+(* Signature/Structure items *)
+(* ------------------------------------------------------------------------- *)
+
+(* could split in sig_item and struct_item but many constructions are
+ * valid in both contexts.
+ *)
+and item = 
+  | Type of type_declaration list (* mutually recursive *)
+
+  | Exception of ident * type_ list
+  | External  of ident * type_ * string wrap list (* primitive declarations *)
+      
+  | IOpen of name
+      
+  (* only in sig_item *)
+  | Val of ident * type_
+      
+  (* only in struct_item *)
+  | Let of rec_opt * let_binding list
+
+  | Module of module_declaration
+
+ (* with tarzan *)
+      
+type program = item list
+
+ (* with tarzan *)
+
+(*****************************************************************************)
+(* Any *)
+(*****************************************************************************)
+
+type any =
+  | T of type_
+  | E of expr
+  | P of pattern
+
+  | I of item
+  | Pr of program
+
+  (* with tarzan *)
+
+(*****************************************************************************)
+(* Wrappers *)
+(*****************************************************************************)
+
+let str_of_ident (s,_) = s
+let info_of_ident (_,info) = info
+
+let ident_of_name (_, ident) = ident
+let qualifier_of_name (qu, _) = 
+  qu |> List.map str_of_ident |> Common.join "."

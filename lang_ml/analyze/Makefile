@@ -5,7 +5,8 @@ TOP=../..
 TARGET=lib
 OPAMPKG=pfff-lang_ml-analyze
 
-SRC= highlight_ml.ml \
+SRC= ast_ml.ml \
+     highlight_ml.ml \
 	 module_ml.ml \
      graph_code_ml.ml \
      tags_ml.ml \
