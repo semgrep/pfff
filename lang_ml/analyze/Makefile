@@ -5,7 +5,7 @@ TOP=../..
 TARGET=lib
 OPAMPKG=pfff-lang_ml-analyze
 
-SRC= ast_ml.ml ast_ml_build.ml \
+SRC= ast_ml.ml ast_ml_build.ml ml_to_generic.ml \
      highlight_ml.ml \
 	 module_ml.ml \
      graph_code_ml.ml \
@@ -71,3 +71,6 @@ $(TARGET).top: $(OBJS) $(LIBS)
 
 clean::
 	rm -f $(TARGET).top
+
+ml_to_generic.cmo: ml_to_generic.ml
+	ocamlc $(INCLUDES) -c $^

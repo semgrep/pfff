@@ -30,9 +30,11 @@
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
 type tok = Parse_info.info
+ (* with tarzan *)
 
 (* a shortcut to annotate some information with token/position information *)
-and 'a wrap = 'a * tok
+type 'a wrap = 'a * tok
+ (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Names  *)
@@ -171,6 +173,8 @@ and let_binding =
 
  and parameter = pattern
 
+ (* with tarzan *)
+
 (* ------------------------------------------------------------------------- *)
 (* Type declaration *)
 (* ------------------------------------------------------------------------- *)
@@ -191,6 +195,8 @@ type type_declaration = {
    (* and type *)
    | RecordType   of (ident * type_ * tok option (* mutable *)) list
 
+ (* with tarzan *)
+
 (* ------------------------------------------------------------------------- *)
 (* Class *)
 (* ------------------------------------------------------------------------- *)
@@ -198,7 +204,7 @@ type type_declaration = {
 (* ------------------------------------------------------------------------- *)
 (* Module *)
 (* ------------------------------------------------------------------------- *)
-and module_declaration = {
+type module_declaration = {
   mname: ident;
   mbody: module_expr;
 }
