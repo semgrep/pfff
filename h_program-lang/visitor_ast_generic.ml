@@ -286,6 +286,7 @@ and v_attribute x =
   | Var -> ()
   | Let -> ()
   | Const -> ()
+  | Mutable -> ()
   | Generator -> ()
   | Async -> ()
   | Ctor -> ()
@@ -369,6 +370,7 @@ and v_pattern x =
   | PatUnderscore v1 -> let v1 = v_tok v1 in ()
   | PatDisj ((v1, v2)) -> let v1 = v_pattern v1 and v2 = v_pattern v2 in ()
   | PatTyped ((v1, v2)) -> let v1 = v_pattern v1 and v2 = v_type_ v2 in ()
+  | PatWhen ((v1, v2)) -> let v1 = v_pattern v1 and v2 = v_expr v2 in ()
   | OtherPat ((v1, v2)) ->
       let v1 = v_other_pattern_operator v1 and v2 = v_list v_any v2 in ()
   in
@@ -474,7 +476,7 @@ and v_type_definition_kind =
   | AliasType v1 -> let v1 = v_type_ v1 in ()
   | OtherTypeKind ((v1, v2)) ->
       let v1 = v_other_type_kind_operator v1 and v2 = v_list v_any v2 in ()
-and v_other_type_kind_operator = function | OTKO_EnumWithValue -> ()
+and v_other_type_kind_operator _x = ()
 
 and v_or_type_element =
   function

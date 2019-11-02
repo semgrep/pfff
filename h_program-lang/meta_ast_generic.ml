@@ -246,6 +246,7 @@ and vof_other_argument_operator =
   function
   | OA_ArgPow -> Ocaml.VSum (("OA_ArgPow", []))
   | OA_ArgComp -> Ocaml.VSum (("OA_ArgComp", []))
+  | OA_ArgQuestion -> Ocaml.VSum (("OA_ArgQuestion", []))
 and vof_action (v1, v2) =
   let v1 = vof_pattern v1 and v2 = vof_expr v2 in Ocaml.VTuple [ v1; v2 ]
 and vof_other_expr_operator =
@@ -282,6 +283,9 @@ and vof_other_expr_operator =
   | OE_ArrayInitDesignator -> Ocaml.VSum (("OE_ArrayInitDesignator", []))
   | OE_GccConstructor -> Ocaml.VSum (("OE_GccConstructor", []))
   | OE_Unpack -> Ocaml.VSum (("OE_Unpack", []))
+  | OE_FieldAccessQualified -> Ocaml.VSum (("OE_FieldAccessQualified", []))
+  | OE_RecordWith -> Ocaml.VSum (("OE_RecordWith", []))
+  
 and vof_type_ =
   function
   | TyBuiltin v1 ->
@@ -343,6 +347,7 @@ and vof_attribute =
   | Var -> Ocaml.VSum (("Var", []))
   | Let -> Ocaml.VSum (("Let", []))
   | Const -> Ocaml.VSum (("Const", []))
+  | Mutable -> Ocaml.VSum (("Mutable", []))
   | Generator -> Ocaml.VSum (("Generator", []))
   | Async -> Ocaml.VSum (("Async", []))
   | Ctor -> Ocaml.VSum (("Ctor", []))
@@ -477,6 +482,10 @@ and vof_pattern =
       let v1 = vof_name v1
       and v2 = Ocaml.vof_list vof_pattern v2
       in Ocaml.VSum (("PatConstructor", [ v1; v2 ]))
+  | PatWhen ((v1, v2)) ->
+      let v1 = vof_pattern v1
+      and v2 = vof_expr v2
+      in Ocaml.VSum (("PatWhen", [ v1; v2 ]))
   | PatTuple v1 ->
       let v1 = Ocaml.vof_list vof_pattern v1
       in Ocaml.VSum (("PatTuple", [ v1 ]))
@@ -642,7 +651,9 @@ and vof_type_definition_kind =
       and v2 = Ocaml.vof_list vof_any v2
       in Ocaml.VSum (("OtherTypeKind", [ v1; v2 ]))
 and vof_other_type_kind_operator =
-  function | OTKO_EnumWithValue -> Ocaml.VSum (("OTKO_EnumWithValue", []))
+  function 
+    | OTKO_EnumWithValue -> Ocaml.VSum (("OTKO_EnumWithValue", []))
+    | OTKO_AbstractType -> Ocaml.VSum (("OTKO_AbstractType", []))
 and vof_or_type_element =
   function
   | OrConstructor ((v1, v2)) ->

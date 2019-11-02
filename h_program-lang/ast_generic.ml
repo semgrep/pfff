@@ -171,7 +171,7 @@ and expr =
   | AssignOp of expr * arithmetic_operator wrap * expr
   | LetPattern of pattern * expr
 
-  (* can also be used for ClassAccess, ModuleAccess depending on expr *)
+  (* can also be used for Record, ClassAccess, ModuleAccess depending on expr *)
   | ObjAccess of expr * ident
   | ArrayAccess of expr * expr (* less: slice *)
 
@@ -255,6 +255,8 @@ and expr =
         (* Python *)
         | OA_ArgPow (* a kind of Spread, but for Dict instead of List *)
         | OA_ArgComp (* comprehension *)
+        (* OCaml *)
+        | OA_ArgQuestion
           
 
   and action = pattern * expr
@@ -285,6 +287,8 @@ and expr =
     | OE_ArrayInitDesignator | OE_GccConstructor (* transform in New? *)
     (* PHP *)
     | OE_Unpack
+    (* OCaml *)
+    | OE_FieldAccessQualified | OE_RecordWith
 
 (* ------------------------------------------------------------------------- *)
 (* Type *)
@@ -332,8 +336,10 @@ and attribute =
   (* for class fields *)
   | Public | Private | Protected
   | Abstract | Final
-  (* for vars *)
-  | Var | Let | Const
+  (* for vars (JS) *)
+  | Var | Let
+  (* for fields *)
+  | Mutable | Const
   (* for functions *)
   | Generator | Async
   (* for methods *)
@@ -438,6 +444,7 @@ and pattern =
 
   | PatDisj of pattern * pattern
   | PatTyped of pattern * type_
+  | PatWhen of pattern * expr (* OCaml *)
 
   | OtherPat of other_pattern_operator * any list
 
@@ -551,6 +558,8 @@ and type_definition = {
     and other_type_kind_operator = 
      (* C *)
      | OTKO_EnumWithValue (* obsolete actually now that has OrEnum *)
+     (* OCaml *)
+     | OTKO_AbstractType
   and or_type_element =
     | OrConstructor of ident * type_ list
     | OrEnum of ident * expr

@@ -313,6 +313,7 @@ and map_attribute =
   | Var -> Var
   | Let -> Let
   | Const -> Const
+  | Mutable -> Mutable
   | Generator -> Generator
   | Async -> Async
   | Ctor -> Ctor
@@ -425,6 +426,8 @@ and map_pattern =
       let v1 = map_pattern v1 and v2 = map_pattern v2 in PatDisj ((v1, v2))
   | PatTyped ((v1, v2)) ->
       let v1 = map_pattern v1 and v2 = map_type_ v2 in PatTyped ((v1, v2))
+  | PatWhen ((v1, v2)) ->
+      let v1 = map_pattern v1 and v2 = map_expr v2 in PatWhen ((v1, v2))
   | OtherPat ((v1, v2)) ->
       let v1 = map_other_pattern_operator v1
       and v2 = map_of_list map_any v2
@@ -554,8 +557,7 @@ and map_type_definition_kind =
       and v2 = map_of_list map_any v2
       in OtherTypeKind ((v1, v2))
 
-and map_other_type_kind_operator =
-  function | OTKO_EnumWithValue -> OTKO_EnumWithValue
+and map_other_type_kind_operator x = x
 
 and map_or_type_element =
   function
