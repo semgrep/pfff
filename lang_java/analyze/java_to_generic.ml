@@ -500,12 +500,17 @@ let compilation_unit {
         )
       imports in
   let v3 = decls xdecls in
+  let items = v3 |> List.map G.stmt_to_item in
+  let imports = v2 |> List.map (fun import -> G.IDir import) in
   (match v1 with
-  | None -> []
-  | Some qu -> [G.IDir (G.OtherDirective (G.OI_Package, [G.Di qu]))]
-  ) @
-  (v2 |> List.map (fun import -> G.IDir import)) @
-  (v3 |> List.map G.stmt_to_item)
+  | None -> items @ imports
+  | Some [] -> raise Impossible
+  | Some xs -> 
+    let id = Common2.list_last xs in
+    let ent = G.basic_entity id [] in
+    [G.IDef (ent, G.ModuleDef { G.mbody = 
+        G.ModuleStruct (None, items @ imports) })]
+  )
 
 let program v = 
   compilation_unit v

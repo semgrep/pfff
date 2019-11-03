@@ -351,16 +351,17 @@ let toplevel =
   function
   | Include v1 -> let v1 = wrap string v1 in 
       G.IDir (G.ImportAll (G.FileName v1, None))
-  | Define ((v1, v2)) -> let v1 = name v1 and v2 = define_body v2 in
-      G.IDir (G.OtherDirective (G.OI_Define, [G.Id v1; v2]))
+  | Define ((v1, v2)) -> 
+    let v1 = name v1 and v2 = define_body v2 in
+    let ent = G.basic_entity v1 [] in
+    G.IDef (ent, G.MacroDef { G.macroparams = []; G.macrobody = [v2]})
   | Macro ((v1, v2, v3)) ->
       let v1 = name v1
       and v2 = list name v2
       and v3 = define_body v3
       in
-      G.IDir (
-        G.OtherDirective (G.OI_Macro, 
-          [G.Id v1] @  (v2 |> List.map (fun n -> G.Id n)) @ [v3]))
+      let ent = G.basic_entity v1 [] in
+      G.IDef (ent, G.MacroDef { G.macroparams = v2; G.macrobody = [v3]})
   | StructDef v1 -> let v1 = struct_def v1 in
       G.IDef v1
   | TypeDef v1 -> let v1 = type_def v1 in
