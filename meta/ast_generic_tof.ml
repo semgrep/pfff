@@ -26,6 +26,8 @@ let tof_resolved_name =
        [ ("Local", []); ("Param", []);
          ("Global", [ Ocaml.Var "qualified_name" ]); ("NotResolved", []);
          ("Macro", []); ("EnumConstant", []); ("ImportedModule", []) ])
+
+let tof_xml = Ocaml.add_new_type "xml" (Ocaml.List (Ocaml.Var "any"))
   
 let tof_any =
   Ocaml.add_new_type "any"
@@ -39,6 +41,8 @@ let tof_any =
          ("At", [ Ocaml.Var "attribute" ]);
          ("Dk", [ Ocaml.Var "definition_kind" ]);
          ("Pr", [ Ocaml.Var "program" ]) ])
+
+
 and tof_program =
   Ocaml.add_new_type "program" (Ocaml.List (Ocaml.Var "item"))
 and tof_item =
@@ -157,7 +161,33 @@ and tof_definition_kind =
        [ ("FuncDef", [ Ocaml.Var "function_definition" ]);
          ("VarDef", [ Ocaml.Var "variable_definition" ]);
          ("ClassDef", [ Ocaml.Var "class_definition" ]);
-         ("TypeDef", [ Ocaml.Var "type_definition" ]) ])
+         ("TypeDef", [ Ocaml.Var "type_definition" ]);
+         ("ModuleDef", [ Ocaml.Var "module_definition" ]);
+         ("MacroDef", [ Ocaml.Var "macro_definition" ]);
+         ("Signature", [ Ocaml.Var "type_" ]);
+ ])
+
+and tof_macro_definition =
+  Ocaml.add_new_type "macro_definition"
+    (Ocaml.Dict
+       [ ("macroparams", `RO, (Ocaml.List (Ocaml.Var "ident")));
+         ("macrobody", `RO, (Ocaml.List (Ocaml.Var "any"))) ])
+and tof_other_module_operator =
+  Ocaml.add_new_type "other_module_operator"
+    (Ocaml.Sum [ ("OMO_Functor", []) ])
+and tof_module_definition_kind =
+  Ocaml.add_new_type "module_definition_kind"
+    (Ocaml.Sum
+       [ ("ModuleAlias", [ Ocaml.Var "name" ]);
+         ("ModuleStruct",
+          [ Ocaml.Option (Ocaml.Var "dotted_ident");
+            Ocaml.List (Ocaml.Var "item") ]);
+         ("OtherModule",
+          [ Ocaml.Var "other_module_operator"; Ocaml.List (Ocaml.Var "any") ]) ])
+and tof_module_definition =
+  Ocaml.add_new_type "module_definition"
+    (Ocaml.Dict [ ("mbody", `RO, (Ocaml.Var "module_definition_kind")) ])
+
 and tof_entity =
   Ocaml.add_new_type "entity"
     (Ocaml.Dict
@@ -376,6 +406,7 @@ and tof_expr =
          ("Nop", []); ("Id", [ Ocaml.Var "name"; Ocaml.Var "id_info" ]);
          ("IdSpecial", [ Ocaml.Var "special" ]);
          ("Call", [ Ocaml.Var "expr"; Ocaml.Var "arguments" ]);
+         ("Xml", [ Ocaml.Var "xml" ]);
          ("Assign", [ Ocaml.Var "expr"; Ocaml.Var "expr" ]);
          ("AssignOp",
           [ Ocaml.Var "expr"; Ocaml.Var "arithmetic_operator";

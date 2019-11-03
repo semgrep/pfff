@@ -47,8 +47,11 @@ let vof_resolved_name =
 let rec vof_name (v1, v2) =
   let v1 = vof_ident v1 and v2 = vof_id_info v2 in Ocaml.VTuple [ v1; v2 ]
 
+and vof_xml x = Ocaml.vof_list vof_any x
+
 and vof_expr =
   function
+  | Xml v1 -> let v1 = vof_xml v1 in Ocaml.VSum (("Xml", [ v1 ]))
   | L v1 -> let v1 = vof_literal v1 in Ocaml.VSum (("L", [ v1 ]))
   | Container ((v1, v2)) ->
       let v1 = vof_container_operator v1
@@ -486,6 +489,10 @@ and vof_pattern =
       let v1 = vof_pattern v1
       and v2 = vof_expr v2
       in Ocaml.VSum (("PatWhen", [ v1; v2 ]))
+  | PatAs ((v1, v2)) ->
+      let v1 = vof_pattern v1
+      and v2 = vof_ident v2
+      in Ocaml.VSum (("PatAs", [ v1; v2 ]))
   | PatTuple v1 ->
       let v1 = Ocaml.vof_list vof_pattern v1
       in Ocaml.VSum (("PatTuple", [ v1 ]))
@@ -547,6 +554,42 @@ and vof_definition_kind =
       let v1 = vof_class_definition v1 in Ocaml.VSum (("ClassDef", [ v1 ]))
   | TypeDef v1 ->
       let v1 = vof_type_definition v1 in Ocaml.VSum (("TypeDef", [ v1 ]))
+  | ModuleDef v1 ->
+      let v1 = vof_module_definition v1 in Ocaml.VSum (("ModuleDef", [ v1 ]))
+  | MacroDef v1 ->
+      let v1 = vof_macro_definition v1 in Ocaml.VSum (("MacroDef", [ v1 ]))
+  | Signature v1 ->
+      let v1 = vof_type_ v1 in Ocaml.VSum (("Signature", [ v1 ]))
+
+and vof_module_definition { mbody = v_mbody } =
+  let bnds = [] in
+  let arg = vof_module_definition_kind v_mbody in
+  let bnd = ("mbody", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+and vof_module_definition_kind =
+  function
+  | ModuleAlias v1 ->
+      let v1 = vof_name v1 in Ocaml.VSum (("ModuleAlias", [ v1 ]))
+  | ModuleStruct ((v1, v2)) ->
+      let v1 = Ocaml.vof_option vof_dotted_name v1
+      and v2 = Ocaml.vof_list vof_item v2
+      in Ocaml.VSum (("ModuleStruct", [ v1; v2 ]))
+  | OtherModule ((v1, v2)) ->
+      let v1 = vof_other_module_operator v1
+      and v2 = Ocaml.vof_list vof_any v2
+      in Ocaml.VSum (("OtherModule", [ v1; v2 ]))
+and vof_other_module_operator =
+  function | OMO_Functor -> Ocaml.VSum (("OMO_Functor", []))
+and
+  vof_macro_definition { macroparams = v_macroparams; macrobody = v_macrobody
+                       } =
+  let bnds = [] in
+  let arg = Ocaml.vof_list vof_any v_macrobody in
+  let bnd = ("macrobody", arg) in
+  let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_list vof_ident v_macroparams in
+  let bnd = ("macroparams", arg) in
+  let bnds = bnd :: bnds in Ocaml.VDict bnds
+
 and vof_type_parameter (v1, v2) =
   let v1 = vof_ident v1
   and v2 = vof_type_parameter_constraints v2
@@ -646,6 +689,10 @@ and vof_type_definition_kind =
       in Ocaml.VSum (("AndType", [ v1 ]))
   | AliasType v1 ->
       let v1 = vof_type_ v1 in Ocaml.VSum (("AliasType", [ v1 ]))
+  | Exception ((v1, v2)) ->
+      let v1 = vof_ident v1
+      and v2 = Ocaml.vof_list vof_type_ v2
+      in Ocaml.VSum (("Exception", [ v1; v2 ]))
   | OtherTypeKind ((v1, v2)) ->
       let v1 = vof_other_type_kind_operator v1
       and v2 = Ocaml.vof_list vof_any v2
@@ -723,11 +770,6 @@ and vof_other_directive_operator =
   | OI_Export -> Ocaml.VSum (("OI_Export", []))
   | OI_ImportCss -> Ocaml.VSum (("OI_ImportCss", []))
   | OI_ImportEffect -> Ocaml.VSum (("OI_ImportEffect", []))
-  | OI_Package -> Ocaml.VSum (("OI_Package", []))
-  | OI_Define -> Ocaml.VSum (("OI_Define", []))
-  | OI_Macro -> Ocaml.VSum (("OI_Macro", []))
-  | OI_Prototype -> Ocaml.VSum (("OI_Prototype", []))
-  | OI_Namespace -> Ocaml.VSum (("OI_Namespace", []))
 and vof_item =
   function
   | IStmt v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("IStmt", [ v1 ]))

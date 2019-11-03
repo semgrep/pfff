@@ -109,6 +109,8 @@ and v_resolved_name =
   | ImportedModule -> ()
 
 and v_name (v1, v2) = let v1 = v_ident v1 and v2 = v_id_info v2 in ()
+and v_xml xs = v_list v_any xs
+
 and v_expr x =
   let k x = 
   match x with
@@ -123,6 +125,7 @@ and v_expr x =
   | Lambda ((v1)) -> let v1 = v_function_definition v1 in ()
   | AnonClass ((v1)) -> let v1 = v_class_definition v1 in ()
   | Nop -> ()
+  | Xml v1 -> let v1 = v_xml v1 in ()
   | Name ((v1)) -> let v1 = v_name v1 in  ()
   | IdSpecial v1 -> let v1 = v_wrap v_special v1 in ()
   | Call ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_arguments v2 in ()
@@ -370,6 +373,7 @@ and v_pattern x =
   | PatUnderscore v1 -> let v1 = v_tok v1 in ()
   | PatDisj ((v1, v2)) -> let v1 = v_pattern v1 and v2 = v_pattern v2 in ()
   | PatTyped ((v1, v2)) -> let v1 = v_pattern v1 and v2 = v_type_ v2 in ()
+  | PatAs ((v1, v2)) -> let v1 = v_pattern v1 and v2 = v_ident v2 in ()
   | PatWhen ((v1, v2)) -> let v1 = v_pattern v1 and v2 = v_expr v2 in ()
   | OtherPat ((v1, v2)) ->
       let v1 = v_other_pattern_operator v1 and v2 = v_list v_any v2 in ()
@@ -407,6 +411,9 @@ and v_def_kind =
   | VarDef v1 -> let v1 = v_variable_definition v1 in ()
   | ClassDef v1 -> let v1 = v_class_definition v1 in ()
   | TypeDef v1 -> let v1 = v_type_definition v1 in ()
+  | ModuleDef v1 -> let v1 = v_module_definition v1 in ()
+  | MacroDef v1 -> let v1 = v_macro_definition v1 in ()
+  | Signature v1 -> let v1 = v_type_ v1 in ()
 
 
 and
@@ -474,6 +481,8 @@ and v_type_definition_kind =
       in ()
   | AndType v1 -> let v1 = v_list v_field v1 in ()
   | AliasType v1 -> let v1 = v_type_ v1 in ()
+  | Exception ((v1, v2)) ->
+      let v1 = v_ident v1 and v2 = v_list v_type_ v2 in ()
   | OtherTypeKind ((v1, v2)) ->
       let v1 = v_other_type_kind_operator v1 and v2 = v_list v_any v2 in ()
 and v_other_type_kind_operator _x = ()
@@ -503,6 +512,23 @@ and
   let arg = v_list v_field v_cbody in
   ()
 and v_class_kind = function | Class -> () | Interface -> () | Trait -> ()
+
+and v_module_definition { mbody = v_mbody } =
+  let arg = v_module_definition_kind v_mbody in ()
+and v_module_definition_kind =
+  function
+  | ModuleAlias v1 -> let v1 = v_name v1 in ()
+  | ModuleStruct ((v1, v2)) ->
+      let v1 = v_option v_dotted_name v1 and v2 = v_list v_item v2 in ()
+  | OtherModule ((v1, v2)) ->
+      let v1 = v_other_module_operator v1 and v2 = v_list v_any v2 in ()
+and v_other_module_operator = function | OMO_Functor -> ()
+and
+  v_macro_definition { macroparams = v_macroparams; macrobody = v_macrobody }
+                     =
+  let arg = v_list v_ident v_macroparams in
+  let arg = v_list v_any v_macrobody in ()
+
 and v_directive x =
   let k x = 
   match x with
@@ -520,11 +546,6 @@ and v_other_directive_operator =
   | OI_Export -> ()
   | OI_ImportCss -> ()
   | OI_ImportEffect -> ()
-  | OI_Package -> ()
-  | OI_Define -> ()
-  | OI_Macro -> ()
-  | OI_Prototype -> ()
-  | OI_Namespace -> ()
 and v_item x =
   let k x = 
   match x with

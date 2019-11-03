@@ -65,7 +65,7 @@
  *)
 
 (*****************************************************************************)
-(* Types *)
+(* Names *)
 (*****************************************************************************)
 
 (* ------------------------------------------------------------------------- *)
@@ -128,9 +128,9 @@ type name = ident * id_info
     id_type: type_ option ref; (* type checker (typing) *)
   }
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* Expression *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 
 and expr = 
   (* basic (atomic) values *)
@@ -157,7 +157,8 @@ and expr =
 
   (* operators and function application *)
   | Call of expr * arguments
-  (* less: XML (XHP, JSX) or transpile? *)
+  (* (XHP, JSX, TSX), could transpile also *)
+  | Xml of xml
 
   (* The left part should be an lvalue (id, ObjAccess, ArrayAccess, Deref)
    * but it can also be a pattern (Tuple, Container), but
@@ -261,6 +262,9 @@ and expr =
 
   and action = pattern * expr
 
+  (* TODO *)
+  and xml = any list
+
   and other_expr_operator = 
     (* Javascript *)
     | OE_Exports | OE_Module 
@@ -273,7 +277,7 @@ and expr =
     | OE_ObjAccess_PN_Computed (* less: convert to ArrayAccess *)
     (* Python *)
     | OE_Imag
-    | OE_Is | OE_IsNot (* less: could be part of a set_operator? *)
+    | OE_Is | OE_IsNot (* less: could be part of a set_operator? or PhysEq? *)
     | OE_In | OE_NotIn (* less: could be part of a obj_operator? *)
     | OE_Invert
     | OE_Slice | OE_SliceIndex | OE_SliceRange
@@ -290,79 +294,9 @@ and expr =
     (* OCaml *)
     | OE_FieldAccessQualified | OE_RecordWith
 
-(* ------------------------------------------------------------------------- *)
-(* Type *)
-(* ------------------------------------------------------------------------- *)
-and type_ =
-  (* todo? a type_builtin = TInt | TBool | ...? see Literal *)
-  | TyBuiltin of string wrap (* int, bool, etc. could be TApply with no args *)
-  | TyFun of type_ list (* use parameter? args (not curried) *) * 
-             type_ (* return type *)
-  (* covers tuples, list, etc. and also regular typedefs *)
-  | TyApply of name * type_arguments
-  | TyVar of ident (* typedef? no type variable in polymorphic type *)
-
-  (* a special case of TApply, also a special case of TPointer *)
-  | TyArray of (* const_expr *) expr option * type_
-  | TyPointer of type_
-  | TyTuple of type_ list
-  | TyQuestion of type_ (* option type *)
-
-  | OtherType of other_type_operator * any list
-  
-  and type_arguments = type_argument list
-
-    and type_argument = 
-      | TypeArg of type_
-      | OtherTypeArg of other_type_argument_operator * any list
-
-      and other_type_argument_operator =
-       | OTA_Question
-
-  and other_type_operator = 
-  (* Python *)
-  | OT_Expr | OT_Arg (* todo: should transform in type_ when can *)
-  (* C *)
-  | OT_StructName | OT_UnionName | OT_EnumName
-  (* PHP *)
-  | OT_Shape | OT_Variadic
-
-(* ------------------------------------------------------------------------- *)
-(* Attribute *)
-(* ------------------------------------------------------------------------- *)
-(* a.k.a decorators, annotations *)
-and attribute = 
-  | Static | Volatile | Extern
-  (* for class fields *)
-  | Public | Private | Protected
-  | Abstract | Final
-  (* for vars (JS) *)
-  | Var | Let
-  (* for fields *)
-  | Mutable | Const
-  (* for functions *)
-  | Generator | Async
-  (* for methods *)
-  | Ctor | Dtor
-  | Getter | Setter
-  (* for parameters *)
-  | Variadic
-  (* for general @annotations *)
-  | NamedAttr of ident * any list
-
-  | OtherAttribute of other_attribute_operator * any list
-
-  and other_attribute_operator = 
-    (* Java *)
-    | OA_StrictFP | OA_Transient | OA_Synchronized | OA_Native
-    | OA_AnnotJavaOther
-    | OA_AnnotThrow
-    (* Python *)
-    | OA_Expr (* todo: should transform in NamedAttr when can *)
-
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* Statement *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 and stmt =
   (* later: lift Call/Assign/Seq here *)
   | ExprStmt of expr
@@ -426,9 +360,9 @@ and stmt =
     (* C *)
     | OS_Asm
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* Pattern *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 and pattern = 
   | PatVar of ident
   | PatLiteral of literal
@@ -437,14 +371,16 @@ and pattern =
   (* special cases of PatConstructor *)
   | PatTuple of pattern list
   | PatList of pattern list
-  | PatKeyVal of pattern * pattern
+  | PatKeyVal of pattern * pattern (* a kind of PatTuple *)
 
   (* special case of PatVar *)
   | PatUnderscore of tok
 
-  | PatDisj of pattern * pattern
+  (* OCaml *)
+  | PatDisj  of pattern * pattern
   | PatTyped of pattern * type_
-  | PatWhen of pattern * expr (* OCaml *)
+  | PatWhen  of pattern * expr
+  | PatAs    of pattern * ident
 
   | OtherPat of other_pattern_operator * any list
 
@@ -454,10 +390,83 @@ and pattern =
   (* Javascript *)
   | OP_Var (* todo: should transform in pattern when can *)
 
+(*****************************************************************************)
+(* Type *)
+(*****************************************************************************)
+
+and type_ =
+  (* todo? a type_builtin = TInt | TBool | ...? see Literal *)
+  | TyBuiltin of string wrap (* int, bool, etc. could be TApply with no args *)
+  | TyFun of type_ list (* use parameter? args (not curried) *) * 
+             type_ (* return type *)
+  (* covers tuples, list, etc. and also regular typedefs *)
+  | TyApply of name * type_arguments
+  | TyVar of ident (* typedef? no type variable in polymorphic type *)
+
+  (* a special case of TApply, also a special case of TPointer *)
+  | TyArray of (* const_expr *) expr option * type_
+  | TyPointer of type_
+  | TyTuple of type_ list
+  | TyQuestion of type_ (* option type *)
+
+  | OtherType of other_type_operator * any list
+  
+  and type_arguments = type_argument list
+
+    and type_argument = 
+      | TypeArg of type_
+
+      | OtherTypeArg of other_type_argument_operator * any list
+
+      and other_type_argument_operator =
+       | OTA_Question
+
+  and other_type_operator = 
+  (* Python *)
+  | OT_Expr | OT_Arg (* todo: should transform in type_ when can *)
+  (* C *)
+  | OT_StructName | OT_UnionName | OT_EnumName
+  (* PHP *)
+  | OT_Shape | OT_Variadic
+
 (* ------------------------------------------------------------------------- *)
+(* Attribute *)
+(* ------------------------------------------------------------------------- *)
+(* a.k.a decorators, annotations *)
+and attribute = 
+  | Static | Volatile | Extern
+  (* for class fields *)
+  | Public | Private | Protected
+  | Abstract | Final
+  (* for vars (JS) *)
+  | Var | Let
+  (* for fields *)
+  | Mutable | Const
+  (* for functions *)
+  | Generator | Async
+  (* for methods *)
+  | Ctor | Dtor
+  | Getter | Setter
+  (* for parameters *)
+  | Variadic
+  (* for general @annotations *)
+  | NamedAttr of ident * any list
+
+  | OtherAttribute of other_attribute_operator * any list
+
+  and other_attribute_operator = 
+    (* Java *)
+    | OA_StrictFP | OA_Transient | OA_Synchronized | OA_Native
+    | OA_AnnotJavaOther
+    | OA_AnnotThrow
+    (* Python *)
+    | OA_Expr (* todo: should transform in NamedAttr when can *)
+
+(*****************************************************************************)
 (* Definitions *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 and definition = entity * definition_kind (* (or decl) *)
+
   and entity = {
     name: ident;
     attrs: attribute list;
@@ -465,11 +474,18 @@ and definition = entity * definition_kind (* (or decl) *)
     tparams: type_parameter list;
   }
 
+  (* can have empty "body" when the definition is actually a declaration
+   * in a header file *)
   and definition_kind =
-    | FuncDef of function_definition (* valid for methods too *)
-    | VarDef of variable_definition  (* valid for constants and fields too *)
-    | ClassDef of class_definition
-    | TypeDef of type_definition
+    | FuncDef   of function_definition (* valid for methods too *)
+    | VarDef    of variable_definition  (* valid for constants and fields too *)
+
+    | TypeDef   of type_definition
+    | ClassDef  of class_definition
+
+    | ModuleDef of module_definition
+    | MacroDef of macro_definition
+    | Signature of type_
 
 (* template/generics/polymorphic *)
 and type_parameter = ident * type_parameter_constraints
@@ -525,23 +541,6 @@ and variable_definition = {
 }
 
 (* ------------------------------------------------------------------------- *)
-(* Field definition and use *)
-(* ------------------------------------------------------------------------- *)
-(* less: could be merged with variable_definition,
- * I don't call it field_definition because it's used both to
- * define the shape of a field (a definition), and when creating
- * an actual field (a value)
- *)
-and field = 
-  | FieldVar of entity * variable_definition
-  | FieldMethod of entity * function_definition
-
-  | FieldDynamic of expr (* dynamic name *) * attribute list * expr (* value*)
-  | FieldSpread of expr (* usually a Name *)
-
-  | FieldStmt of stmt
-
-(* ------------------------------------------------------------------------- *)
 (* Type definition *)
 (* ------------------------------------------------------------------------- *)
 and type_definition = {
@@ -553,21 +552,41 @@ and type_definition = {
    (* field.vtype should be defined here *)
    | AndType of field list (* record/struct/union *) 
    | AliasType of type_
+   | Exception of ident (* same name than entity *) * type_ list
 
    | OtherTypeKind of other_type_kind_operator * any list
-    and other_type_kind_operator = 
-     (* C *)
-     | OTKO_EnumWithValue (* obsolete actually now that has OrEnum *)
-     (* OCaml *)
-     | OTKO_AbstractType
+
   and or_type_element =
     | OrConstructor of ident * type_ list
     | OrEnum of ident * expr
     | OrUnion of ident * type_
     | OtherOr of other_or_type_element_operator * any list
+
       and other_or_type_element_operator =
       (* Java *)
       | OOTEO_EnumWithMethods | OOTEO_EnumWithArguments
+
+  (* Field definition and use, for classes and records *)
+
+ (* less: could be merged with variable_definition,
+  * I don't call it field_definition because it's used both to
+  * define the shape of a field (a definition), and when creating
+  * an actual field (a value)
+  *)
+  and field = 
+    | FieldVar of entity * variable_definition
+    | FieldMethod of entity * function_definition
+
+    | FieldDynamic of expr (* dynamic name *) * attribute list * expr (* value*)
+    | FieldSpread of expr (* usually a Name *)
+
+    | FieldStmt of stmt
+
+  and other_type_kind_operator = 
+     (* C *)
+     | OTKO_EnumWithValue (* obsolete actually now that has OrEnum *)
+     (* OCaml *)
+     | OTKO_AbstractType
 
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)
@@ -585,8 +604,33 @@ and class_definition = {
     | Trait
 
 (* ------------------------------------------------------------------------- *)
-(* Directives (Module import/export, macros) *)
+(* Module definition (a.k.a package, a.k.a namespace)  *)
 (* ------------------------------------------------------------------------- *)
+and module_definition = {
+  mbody: module_definition_kind;
+}
+
+  and module_definition_kind =
+    | ModuleAlias of name
+    | ModuleStruct of dotted_ident option * item list
+
+    | OtherModule of other_module_operator * any list
+
+  and other_module_operator =
+   (* OCaml *)
+   | OMO_Functor
+
+(* ------------------------------------------------------------------------- *)
+(* Macro definition *)
+(* ------------------------------------------------------------------------- *)
+and macro_definition = {
+  macroparams: ident list;
+  macrobody: any list;
+}
+
+(*****************************************************************************)
+(* Directives (Module import/export, macros) *)
+(*****************************************************************************)
 and directive = 
   | Import    of module_name * alias list
   | ImportAll of module_name * ident option (* as name *)
@@ -598,16 +642,10 @@ and directive =
   and other_directive_operator = 
   (* Javascript *)
   | OI_Export | OI_ImportCss | OI_ImportEffect
-  (* Java *)
-  | OI_Package
-  (* C *)
-  | OI_Define | OI_Macro | OI_Prototype
-  (* PHP *)
-  | OI_Namespace
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* Toplevel *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* less: should merge stmt, item, and field? *)
 and item = 
   | IStmt of stmt
@@ -618,9 +656,10 @@ and item =
 
 and program = item list
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* Any *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
+
 (* mentioned in many OtherXxx so must be part of the mutually recursive type *)
 and any =
   | Id of ident

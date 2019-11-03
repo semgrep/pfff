@@ -98,6 +98,10 @@ let test_matcher_all () =
     "container_operator";
     "literal";
     "expr";
+    "module_definition";
+    "module_definition_kind";
+    "macro_definition";
+    "xml";
   ] in
 
 

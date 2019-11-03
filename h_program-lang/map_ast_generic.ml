@@ -95,7 +95,8 @@ and map_resolved_name =
 
 and map_name (v1, v2) =
   let v1 = map_ident v1 and v2 = map_id_info v2 in (v1, v2)
-  
+
+and map_xml v1 = map_of_list map_any v1  
 and map_expr =
   function
   | L v1 -> let v1 = map_literal v1 in L ((v1))
@@ -114,6 +115,7 @@ and map_expr =
   | AnonClass ((v1)) ->
       let v1 = map_class_definition v1 in AnonClass ((v1))
   | Nop -> Nop
+  | Xml v1 -> let v1 = map_xml v1 in Xml v1
   | Name ((v1)) ->
       let v1 = map_name v1 in Name ((v1))
   | IdSpecial v1 -> let v1 = map_wrap map_special v1 in IdSpecial ((v1))
@@ -426,6 +428,8 @@ and map_pattern =
       let v1 = map_pattern v1 and v2 = map_pattern v2 in PatDisj ((v1, v2))
   | PatTyped ((v1, v2)) ->
       let v1 = map_pattern v1 and v2 = map_type_ v2 in PatTyped ((v1, v2))
+  | PatAs ((v1, v2)) ->
+      let v1 = map_pattern v1 and v2 = map_ident v2 in PatAs ((v1, v2))
   | PatWhen ((v1, v2)) ->
       let v1 = map_pattern v1 and v2 = map_expr v2 in PatWhen ((v1, v2))
   | OtherPat ((v1, v2)) ->
@@ -462,6 +466,31 @@ and map_definition_kind =
   | VarDef v1 -> let v1 = map_variable_definition v1 in VarDef ((v1))
   | ClassDef v1 -> let v1 = map_class_definition v1 in ClassDef ((v1))
   | TypeDef v1 -> let v1 = map_type_definition v1 in TypeDef ((v1))
+  | ModuleDef v1 -> let v1 = map_module_definition v1 in ModuleDef ((v1))
+  | MacroDef v1 -> let v1 = map_macro_definition v1 in MacroDef ((v1))
+  | Signature v1 -> let v1 = map_type_ v1 in Signature ((v1))
+
+and map_module_definition { mbody = v_mbody } =
+  let v_mbody = map_module_definition_kind v_mbody in 
+  { mbody = v_mbody; }
+and map_module_definition_kind =
+  function
+  | ModuleAlias v1 -> let v1 = map_name v1 in ModuleAlias ((v1))
+  | ModuleStruct ((v1, v2)) ->
+      let v1 = map_of_option map_dotted_name v1
+      and v2 = map_of_list map_item v2
+      in ModuleStruct ((v1, v2))
+  | OtherModule ((v1, v2)) ->
+      let v1 = map_other_module_operator v1
+      and v2 = map_of_list map_any v2
+      in OtherModule ((v1, v2))
+and map_other_module_operator = function | OMO_Functor -> OMO_Functor
+and
+  map_macro_definition { macroparams = v_macroparams; macrobody = v_macrobody
+                       } =
+  let v_macrobody = map_of_list map_any v_macrobody in
+  let v_macroparams = map_of_list map_ident v_macroparams in 
+  { macroparams = v_macroparams; macrobody = v_macrobody }
 
 and map_type_parameter (v1, v2) =
   let v1 = map_ident v1 and v2 = map_type_parameter_constraints v2 in (v1, v2)
@@ -552,7 +581,11 @@ and map_type_definition_kind =
       let v1 = map_of_list map_or_type_element v1 in OrType ((v1))
   | AndType v1 -> let v1 = map_of_list map_field v1 in AndType ((v1))
   | AliasType v1 -> let v1 = map_type_ v1 in AliasType ((v1))
-  | OtherTypeKind ((v1, v2)) ->
+   | Exception ((v1, v2)) ->
+      let v1 = map_ident v1
+      and v2 = map_of_list map_type_ v2
+      in Exception ((v1, v2))
+ | OtherTypeKind ((v1, v2)) ->
       let v1 = map_other_type_kind_operator v1
       and v2 = map_of_list map_any v2
       in OtherTypeKind ((v1, v2))

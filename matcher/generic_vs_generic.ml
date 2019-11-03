@@ -435,6 +435,13 @@ and m_expr a b =
        B.Call(b1, b2)
     )
     ))
+  | A.Xml(a1), B.Xml(b1) ->
+    m_xml a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.Xml(a1),
+       B.Xml(b1)
+    )
+    )
   | A.Assign(a1, a2), B.Assign(b1, b2) ->
     m_expr a1 b1 >>= (fun (a1, b1) -> 
     m_expr a2 b2 >>= (fun (a2, b2) -> 
@@ -562,6 +569,7 @@ and m_expr a b =
   | A.Name _, _
   | A.IdSpecial _, _
   | A.Call _, _
+  | A.Xml _, _
   | A.Assign _, _
   | A.AssignOp _, _
   | A.LetPattern _, _
@@ -1007,6 +1015,10 @@ and m_other_expr_operator a b =
   | a, b when a =*= b -> return (a,b)
   | _ -> fail ()
 
+and m_xml a b = 
+  match a, b with
+  (a, b) -> (m_list m_any) a b
+
 (*---------------------------------------------------------------------------*)
 (* Arguments list iso *)
 (*---------------------------------------------------------------------------*)
@@ -1300,6 +1312,11 @@ and m_attribute a b =
        A.Const,
        B.Const
     )
+  | A.Mutable, B.Mutable ->
+    return (
+       A.Mutable,
+       B.Mutable
+    )
   | A.Generator, B.Generator ->
     return (
        A.Generator,
@@ -1362,6 +1379,7 @@ and m_attribute a b =
   | A.Var, _
   | A.Let, _
   | A.Const, _
+  | A.Mutable, _
   | A.Generator, _
   | A.Async, _
   | A.Ctor, _
@@ -1726,12 +1744,28 @@ and m_pattern a b =
        B.PatDisj(b1, b2)
     )
     ))
+  | A.PatAs(a1, a2), B.PatAs(b1, b2) ->
+    m_pattern a1 b1 >>= (fun (a1, b1) -> 
+    m_ident a2 b2 >>= (fun (a2, b2) -> 
+    return (
+       A.PatAs(a1, a2),
+       B.PatAs(b1, b2)
+    )
+    ))
   | A.PatTyped(a1, a2), B.PatTyped(b1, b2) ->
     m_pattern a1 b1 >>= (fun (a1, b1) -> 
     m_type_ a2 b2 >>= (fun (a2, b2) -> 
     return (
        A.PatTyped(a1, a2),
        B.PatTyped(b1, b2)
+    )
+    ))
+  | A.PatWhen(a1, a2), B.PatWhen(b1, b2) ->
+    m_pattern a1 b1 >>= (fun (a1, b1) -> 
+    m_expr a2 b2 >>= (fun (a2, b2) -> 
+    return (
+       A.PatWhen(a1, a2),
+       B.PatWhen(b1, b2)
     )
     ))
   | A.OtherPat(a1, a2), B.OtherPat(b1, b2) ->
@@ -1750,6 +1784,8 @@ and m_pattern a b =
   | A.PatKeyVal _, _
   | A.PatUnderscore _, _
   | A.PatDisj _, _
+  | A.PatWhen _, _
+  | A.PatAs _, _
   | A.PatTyped _, _
   | A.OtherPat _, _
    -> fail ()
@@ -1849,10 +1885,34 @@ and m_definition_kind a b =
        B.TypeDef(b1)
     )
     )
+  | A.ModuleDef(a1), B.ModuleDef(b1) ->
+    m_module_definition a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.ModuleDef(a1),
+       B.ModuleDef(b1)
+    )
+    )
+  | A.MacroDef(a1), B.MacroDef(b1) ->
+    m_macro_definition a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.MacroDef(a1),
+       B.MacroDef(b1)
+    )
+    )
+  | A.Signature(a1), B.Signature(b1) ->
+    m_type_ a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.Signature(a1),
+       B.Signature(b1)
+    )
+    )
   | A.FuncDef _, _
   | A.VarDef _, _
   | A.ClassDef _, _
   | A.TypeDef _, _
+  | A.ModuleDef _, _
+  | A.MacroDef _, _
+  | A.Signature _, _
    -> fail ()
 
 
@@ -2125,6 +2185,14 @@ and m_type_definition_kind a b =
        B.AliasType(b1)
     )
     )
+  | A.Exception(a1, a2), B.Exception(b1, b2) ->
+    m_ident a1 b1 >>= (fun (a1, b1) -> 
+    (m_list m_type_) a2 b2 >>= (fun (a2, b2) -> 
+    return (
+       A.Exception(a1, a2),
+       B.Exception(b1, b2)
+    )
+    ))
   | A.OtherTypeKind(a1, a2), B.OtherTypeKind(b1, b2) ->
     m_other_type_kind_operator a1 b1 >>= (fun (a1, b1) -> 
     (m_list m_any) a2 b2 >>= (fun (a2, b2) -> 
@@ -2136,6 +2204,7 @@ and m_type_definition_kind a b =
   | A.OrType _, _
   | A.AndType _, _
   | A.AliasType _, _
+  | A.Exception _, _
   | A.OtherTypeKind _, _
    -> fail ()
 
@@ -2252,6 +2321,92 @@ and m_class_kind a b =
   | A.Interface, _
   | A.Trait, _
    -> fail ()
+
+(* ------------------------------------------------------------------------- *)
+(* Module definition *)
+(* ------------------------------------------------------------------------- *)
+
+and m_module_definition a b = 
+  match a, b with
+  { A. 
+  mbody = a1;
+  },
+  { B. 
+  mbody = b1;
+  } -> 
+    m_module_definition_kind a1 b1 >>= (fun (a1, b1) -> 
+    return (
+      { A. 
+      mbody = a1;
+      },
+      { B.
+      mbody = b1;
+      } 
+    )
+  )
+
+and m_module_definition_kind a b = 
+  match a, b with
+  | A.ModuleAlias(a1), B.ModuleAlias(b1) ->
+    m_name a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.ModuleAlias(a1),
+       B.ModuleAlias(b1)
+    )
+    )
+  | A.ModuleStruct(a1, a2), B.ModuleStruct(b1, b2) ->
+    (m_option m_dotted_name) a1 b1 >>= (fun (a1, b1) -> 
+    (m_list m_item) a2 b2 >>= (fun (a2, b2) -> 
+    return (
+       A.ModuleStruct(a1, a2),
+       B.ModuleStruct(b1, b2)
+    )
+    ))
+  | A.OtherModule(a1, a2), B.OtherModule(b1, b2) ->
+    m_other_module_operator a1 b1 >>= (fun (a1, b1) -> 
+    (m_list m_any) a2 b2 >>= (fun (a2, b2) -> 
+    return (
+       A.OtherModule(a1, a2),
+       B.OtherModule(b1, b2)
+    )
+    ))
+  | A.ModuleAlias _, _
+  | A.ModuleStruct _, _
+  | A.OtherModule _, _
+   -> fail ()
+
+and m_other_module_operator a b =
+  match a, b with
+  | a, b when a =*= b -> return (a,b)
+  | _ -> fail ()
+
+(* ------------------------------------------------------------------------- *)
+(* Macro definition *)
+(* ------------------------------------------------------------------------- *)
+
+and m_macro_definition a b = 
+  match a, b with
+  { A. 
+  macroparams = a1;
+  macrobody = a2;
+  },
+  { B. 
+  macroparams = b1;
+  macrobody = b2;
+  } -> 
+    (m_list m_ident) a1 b1 >>= (fun (a1, b1) -> 
+    (m_list m_any) a2 b2 >>= (fun (a2, b2) -> 
+    return (
+      { A. 
+      macroparams = a1;
+      macrobody = a2;
+      },
+      { B.
+      macroparams = b1;
+      macrobody = b2;
+      } 
+    )
+  ))
 
 (* ------------------------------------------------------------------------- *)
 (* Directives (Module import/export, macros) *)
