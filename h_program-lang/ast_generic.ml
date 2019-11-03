@@ -292,7 +292,8 @@ and expr =
     (* PHP *)
     | OE_Unpack
     (* OCaml *)
-    | OE_FieldAccessQualified | OE_RecordWith
+    | OE_FieldAccessQualified | OE_RecordWith 
+    | OE_StmtExpr (* OCaml has just expressions, no statements *)
 
 (*****************************************************************************)
 (* Statement *)
@@ -366,7 +367,11 @@ and stmt =
 and pattern = 
   | PatVar of ident
   | PatLiteral of literal
+
+  (* Or-Type *)
   | PatConstructor of name * pattern list
+  (* And-Type *)
+  | PatRecord of field_pattern list
 
   (* special cases of PatConstructor *)
   | PatTuple of pattern list
@@ -383,6 +388,8 @@ and pattern =
   | PatAs    of pattern * ident
 
   | OtherPat of other_pattern_operator * any list
+
+  and field_pattern = name * pattern
 
   and other_pattern_operator =
   (* Python *)
@@ -443,7 +450,8 @@ and attribute =
   (* for fields *)
   | Mutable | Const
   (* for functions *)
-  | Generator | Async
+  | Generator | Async 
+  | Recursive | MutuallyRecursive
   (* for methods *)
   | Ctor | Dtor
   | Getter | Setter

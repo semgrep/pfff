@@ -201,6 +201,11 @@ and tof_definition =
 and tof_other_pattern_operator =
   Ocaml.add_new_type "other_pattern_operator"
     (Ocaml.Sum [ ("OP_Expr", []); ("OP_Var", []) ])
+
+and tof_field_pattern =
+  Ocaml.add_new_type "field_pattern"
+    (Ocaml.Tuple [ Ocaml.Var "name"; Ocaml.Var "pattern" ])
+
 and tof_pattern =
   Ocaml.add_new_type "pattern"
     (Ocaml.Sum
@@ -209,6 +214,7 @@ and tof_pattern =
          ("PatConstructor",
           [ Ocaml.Var "name"; Ocaml.List (Ocaml.Var "pattern") ]);
          ("PatTuple", [ Ocaml.List (Ocaml.Var "pattern") ]);
+         ("PatRecord", [ Ocaml.List (Ocaml.Var "field_pattern") ]);
          ("PatList", [ Ocaml.List (Ocaml.Var "pattern") ]);
          ("PatKeyVal", [ Ocaml.Var "pattern"; Ocaml.Var "pattern" ]);
          ("PatUnderscore", [ Ocaml.Var "tok" ]);

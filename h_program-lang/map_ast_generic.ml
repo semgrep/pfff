@@ -304,6 +304,8 @@ and map_other_type_operator =
 
 and map_attribute =
   function
+    | Recursive -> Recursive
+    | MutuallyRecursive -> MutuallyRecursive
   | Static -> Static
   | Volatile -> Volatile
   | Extern -> Extern
@@ -413,6 +415,13 @@ and map_other_stmt_operator x = x
 
 and map_pattern =
   function
+  | PatRecord v1 ->
+      let v1 =
+        map_of_list
+          (fun (v1, v2) ->
+             let v1 = map_name v1 and v2 = map_pattern v2 in (v1, v2))
+          v1
+      in PatRecord ((v1))
   | PatVar v1 -> let v1 = map_ident v1 in PatVar ((v1))
   | PatLiteral v1 -> let v1 = map_literal v1 in PatLiteral ((v1))
   | PatConstructor ((v1, v2)) ->

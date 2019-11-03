@@ -254,6 +254,7 @@ and vof_action (v1, v2) =
   let v1 = vof_pattern v1 and v2 = vof_expr v2 in Ocaml.VTuple [ v1; v2 ]
 and vof_other_expr_operator =
   function
+  | OE_StmtExpr -> Ocaml.VSum (("OE_StmtExpr", []))
   | OE_Exports -> Ocaml.VSum (("OE_Exports", []))
   | OE_Module -> Ocaml.VSum (("OE_Module", []))
   | OE_Define -> Ocaml.VSum (("OE_Define", []))
@@ -353,6 +354,8 @@ and vof_attribute =
   | Mutable -> Ocaml.VSum (("Mutable", []))
   | Generator -> Ocaml.VSum (("Generator", []))
   | Async -> Ocaml.VSum (("Async", []))
+  | Recursive -> Ocaml.VSum (("Recursive", []))
+  | MutuallyRecursive -> Ocaml.VSum (("MutuallyRecursive", []))
   | Ctor -> Ocaml.VSum (("Ctor", []))
   | Dtor -> Ocaml.VSum (("Dtor", []))
   | Getter -> Ocaml.VSum (("Getter", []))
@@ -481,6 +484,15 @@ and vof_pattern =
   | PatVar v1 -> let v1 = vof_ident v1 in Ocaml.VSum (("PatVar", [ v1 ]))
   | PatLiteral v1 ->
       let v1 = vof_literal v1 in Ocaml.VSum (("PatLiteral", [ v1 ]))
+  | PatRecord v1 ->
+      let v1 =
+        Ocaml.vof_list
+          (fun (v1, v2) ->
+             let v1 = vof_name v1
+             and v2 = vof_pattern v2
+             in Ocaml.VTuple [ v1; v2 ])
+          v1
+      in Ocaml.VSum (("PatRecord", [ v1 ]))
   | PatConstructor ((v1, v2)) ->
       let v1 = vof_name v1
       and v2 = Ocaml.vof_list vof_pattern v2

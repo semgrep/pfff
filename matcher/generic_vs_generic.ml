@@ -1257,6 +1257,16 @@ and m_other_type_argument_operator a b =
 
 and m_attribute a b = 
   match a, b with
+  | A.Recursive, B.Recursive ->
+    return (
+       A.Recursive,
+       B.Recursive
+    )
+  | A.MutuallyRecursive, B.MutuallyRecursive ->
+    return (
+       A.MutuallyRecursive,
+       B.MutuallyRecursive
+    )
   | A.Static, B.Static ->
     return (
        A.Static,
@@ -1368,6 +1378,8 @@ and m_attribute a b =
        B.OtherAttribute(b1, b2)
     )
     ))
+  | A.Recursive, _
+  | A.MutuallyRecursive, _
   | A.Static, _
   | A.Volatile, _
   | A.Extern, _
@@ -1721,6 +1733,13 @@ and m_pattern a b =
        B.PatList(b1)
     )
     )
+  | A.PatRecord(a1), B.PatRecord(b1) ->
+    (m_list m_field_pattern) a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.PatRecord(a1),
+       B.PatRecord(b1)
+    )
+    )
   | A.PatKeyVal(a1, a2), B.PatKeyVal(b1, b2) ->
     m_pattern a1 b1 >>= (fun (a1, b1) -> 
     m_pattern a2 b2 >>= (fun (a2, b2) -> 
@@ -1781,6 +1800,7 @@ and m_pattern a b =
   | A.PatConstructor _, _
   | A.PatTuple _, _
   | A.PatList _, _
+  | A.PatRecord _, _
   | A.PatKeyVal _, _
   | A.PatUnderscore _, _
   | A.PatDisj _, _
@@ -1789,6 +1809,17 @@ and m_pattern a b =
   | A.PatTyped _, _
   | A.OtherPat _, _
    -> fail ()
+
+and m_field_pattern a b = 
+  match a, b with
+  | (a1, a2), (b1, b2) ->
+    m_name a1 b1 >>= (fun (a1, b1) -> 
+    m_pattern a2 b2 >>= (fun (a2, b2) -> 
+    return (
+       (a1, a2),
+       (b1, b2)
+    )
+    ))
 
 and m_other_pattern_operator a b = 
   match a, b with

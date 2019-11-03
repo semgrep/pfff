@@ -102,6 +102,7 @@ let test_matcher_all () =
     "module_definition_kind";
     "macro_definition";
     "xml";
+    "field_pattern";
   ] in
 
 

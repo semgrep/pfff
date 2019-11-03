@@ -278,6 +278,7 @@ and v_type_parameter_constraint =
 and v_attribute x =
   let k x = 
   match x with
+  | Recursive | MutuallyRecursive -> ()
   | Static -> ()
   | Volatile -> ()
   | Extern -> ()
@@ -363,6 +364,11 @@ and v_other_stmt_operator _x = ()
 and v_pattern x =
   let k x = 
   match x with
+  | PatRecord v1 ->
+      let v1 =
+        v_list
+          (fun (v1, v2) -> let v1 = v_name v1 and v2 = v_pattern v2 in ()) v1
+      in ()
   | PatVar v1 -> let v1 = v_ident v1 in ()
   | PatLiteral v1 -> let v1 = v_literal v1 in ()
   | PatConstructor ((v1, v2)) ->
