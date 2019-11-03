@@ -143,8 +143,12 @@ and expr =
       and v3 = rec_opt v3
       in 
       raise Todo
-  | Fun ((v1, v2)) -> let v1 = list parameter v1 and v2 = expr v2 in 
-                      raise Todo
+  | Fun ((v1, v2)) -> 
+    let v1 = list parameter v1 
+    and v2 = expr v2 in 
+    let def = { G.fparams = v1; frettype = None; fbody = G.ExprStmt v2 } in
+    G.Lambda def
+
   | Nop -> G.Nop
   | If ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in 
@@ -154,18 +158,32 @@ and expr =
       G.MatchPattern (v1, v2)
   | Try ((v1, v2)) ->
       let v1 = expr v1 and v2 = list match_case v2 in 
-      raise Todo
+      let catches = v2 |> List.map (fun (pat, e) -> pat, G.ExprStmt e) in
+      let st = G.Try (G.ExprStmt v1, catches, None) in
+      G.OtherExpr (G.OE_StmtExpr, [G.S st])
+
   | While ((v1, v2)) -> 
     let v1 = expr v1 and v2 = expr v2 in 
-    raise Todo
+    let st = G.While (v1, G.ExprStmt v2) in
+    G.OtherExpr (G.OE_StmtExpr, [G.S st])
+    
   | For ((v1, v2, v3, v4, v5)) ->
       let v1 = ident v1
       and v2 = expr v2
-      and v3 = for_direction v3
+      and (tok, nextop, condop) = for_direction v3
       and v4 = expr v4
       and v5 = expr v5
       in 
-      raise Todo
+      let ent = G.basic_entity v1 [] in
+      let var = { G.vinit = Some v2; vtype = None } in
+      let n = G.Name (v1, G.empty_info()) in
+      let next = (G.AssignOp (n, (nextop, tok), G.L (G.Int ("1", tok)))) in
+      let cond = G.Call (G.IdSpecial (G.ArithOp condop, tok),
+                         [G.Arg n; G.Arg v4]) in
+      let header = G.ForClassic ([G.ForInitVar (ent, var)],
+                                 cond, next) in
+      let st = G.For (header, G.ExprStmt v5) in
+      G.OtherExpr (G.OE_StmtExpr, [G.S st])
   
 and literal =
   function
@@ -193,8 +211,8 @@ and match_case (v1, (v2, v3)) =
 
 and for_direction =
   function
-  | To v1 -> let v1 = tok v1 in ()
-  | Downto v1 -> let v1 = tok v1 in ()
+  | To v1 -> let v1 = tok v1 in v1, G.Plus, G.LtE
+  | Downto v1 -> let v1 = tok v1 in v1, G.Minus, G.GtE
 
 and rec_opt v = option tok v
 
@@ -216,14 +234,18 @@ and pattern =
   | PatRecord v1 ->
       let v1 =
         list
-          (fun (v1, v2) -> let v1 = name v1 and v2 = pattern v2 in ()) v1
-      in raise Todo
-  | PatAs ((v1, v2)) -> let v1 = pattern v1 and v2 = ident v2 in 
-                        raise Todo
-  | PatDisj ((v1, v2)) -> let v1 = pattern v1 and v2 = pattern v2 in 
-                          G.PatDisj (v1, v2)
-  | PatTyped ((v1, v2)) -> let v1 = pattern v1 and v2 = type_ v2 in 
-                           G.PatTyped (v1, v2)
+          (fun (v1, v2) -> let v1 = name v1 and v2 = pattern v2 in v1, v2) v1
+      in 
+      G.PatRecord v1
+  | PatAs ((v1, v2)) -> 
+    let v1 = pattern v1 and v2 = ident v2 in 
+    G.PatAs (v1, v2)
+  | PatDisj ((v1, v2)) -> 
+    let v1 = pattern v1 and v2 = pattern v2 in 
+    G.PatDisj (v1, v2)
+  | PatTyped ((v1, v2)) -> 
+    let v1 = pattern v1 and v2 = type_ v2 in 
+    G.PatTyped (v1, v2)
 
 and let_binding =
   function
@@ -235,7 +257,7 @@ and let_def { lname = lname; lparams = lparams; lbody = lbody } =
   let arg = ident lname in
   let arg = list parameter lparams in let arg = expr lbody in ()
 
-and parameter v = pattern v
+and parameter v = G.ParamPattern (pattern v)
   
 and type_declaration { tname = tname; tparams = tparams; tbody = tbody
                      } =
