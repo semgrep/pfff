@@ -84,16 +84,16 @@ and expr =
                          G.Call (G.Name n, [G.Arg v2])
   | Infix ((v1, v2, v3)) ->
     let n = v2, G.empty_info () in
-      let v1 = expr v1 and v2 = wrap string v2 and v3 = expr v3 in
+      let v1 = expr v1 and v3 = expr v3 in
       G.Call (G.Name n, [G.Arg v1; G.Arg v3])
 
   | Call ((v1, v2)) -> let v1 = expr v1 and v2 = list argument v2 in
                        G.Call (v1, v2)
   | RefAccess ((v1, v2)) -> 
-    let v1 = tok v1 and v2 = expr v2 in
+    let _v1 = tok v1 and v2 = expr v2 in
     G.DeRef (v2)
   | RefAssign ((v1, v2, v3)) ->
-      let v1 = expr v1 and v2 = tok v2 and v3 = expr v3 in
+      let v1 = expr v1 and _v2 = tok v2 and v3 = expr v3 in
       G.Assign (G.DeRef v1, v3)
   | FieldAccess ((v1, v2)) -> 
     let v1 = expr v1 in
@@ -114,9 +114,25 @@ and expr =
   | Record ((v1, v2)) ->
       let v1 = option expr v1
       and v2 =
-        list (fun (v1, v2) -> let v1 = name v1 and v2 = expr v2 in ())
+        list (fun (v1, v2) -> let v2 = expr v2 in
+          (match v1 with
+          | [], id -> let id = ident id in
+                      let ent = G.basic_entity id [] in
+                      G.FieldVar (ent, {G.vinit = Some v2; vtype = None})
+          | _ -> let v1 = name v1 in
+                 let e = 
+                   G.OtherExpr (G.OE_FieldAccessQualified, [G.N v1; G.E v2]) in
+                 let st = G.ExprStmt e in
+                 G.FieldStmt (st)
+          )
+        )
           v2
-      in raise Todo
+      in 
+      let obj = G.Record v2 in
+      (match v1 with
+      | None -> obj
+      | Some e -> G.OtherExpr (G.OE_RecordWith, [G.E e; G.E obj])
+      )
   | New ((v1, v2)) -> let v1 = tok v1 and v2 = name v2 in 
                       G.Call (G.IdSpecial (G.New, v1), [G.Arg (G.Name v2)])
   | ObjAccess ((v1, v2)) -> let v1 = expr v1 and v2 = ident v2 in
