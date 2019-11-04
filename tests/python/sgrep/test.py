@@ -15,10 +15,10 @@ def bar():
     if(x == x):
         foo()
         bar()
-    if(True)
+    if(True):
         foo()
     foo()    
-    if(True)
+    if(True):
         foo()
         foo()
 
