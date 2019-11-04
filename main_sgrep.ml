@@ -206,7 +206,15 @@ let create_ast file =
       | _ ->
         failwith ("unsupported language: " ^ !lang))
   )
-  with exn ->
+  with
+   | Parse_info.Lexical_error (_, tok)
+   | Parse_info.Parsing_error tok
+   | Parse_info.Ast_builder_error (_, tok)
+   | Parse_info.Other_error (_, tok)
+   -> 
+      pr2 (Parse_info.error_message_info tok);
+      NoAST
+   | exn ->
     pr2 (spf "PB parsing with %s, exn = %s"  file (Common.exn_to_s exn));
     NoAST
 
