@@ -2,13 +2,13 @@ open Common
 open OUnit
 
 (*****************************************************************************)
-(* Sgrep Unit tests *)
+(* Sgrep Fuzzy Unit tests *)
 (*****************************************************************************)
 
 (* See https://github.com/facebook/pfff/wiki/Sgrep *)
 
-(* run by sgrep -test *)
-let sgrep_unittest ~ast_fuzzy_of_string =
+(* run also by sgrep -test *)
+let sgrep_fuzzy_unittest ~ast_fuzzy_of_string =
   "sgrep features" >:: (fun () ->
 
     (* spec: pattern string, code string, should_match boolean *)
@@ -43,7 +43,7 @@ let sgrep_unittest ~ast_fuzzy_of_string =
 (* this will work though: "->method();"  ,  "$this->foo()->method();", true; *)
 
       (* "linear" patterns, a la Prolog *)
-      "$X && $X;", "(a || b) && (a || b);", true;
+      "$X & $X;", "(a | b) & (a | b);", true;
       "foo($X, $X);", "foo(a, a);", true;
       "foo($X, $X);", "foo(a, b);", false;
 
@@ -113,6 +113,139 @@ let sgrep_unittest ~ast_fuzzy_of_string =
     )
   )
 
+
+(*****************************************************************************)
+(* Sgrep generic Unit tests *)
+(*****************************************************************************)
+
+let sgrep_gen_unittest ~any_gen_of_string =
+  "sgrep features" >:: (fun () ->
+
+    (* spec: pattern string, code string, should_match boolean *)
+    let triples = [
+      (* right now any_gen_of_string use the Python sgrep_spatch_pattern
+       * parser so the syntax below must be valid Python code  
+       *)
+
+      (* ------------ *)
+      (* spacing *)  
+      (* ------------ *)
+   
+      (* basic string-match of course *)
+      "foo(1,2)", "foo(1,2)", true;
+      "foo(1,3)", "foo(1,2)", false;
+
+      (* matches even when space or newline differs *)
+      "foo(1,2)", "foo(1,     2)", true;
+      "foo(1,2)", "foo(1,     
+                        2)", true;
+      (* matches even when have comments in the middle *)
+      "foo(1,2)", "foo(1, #foo
+                       2)", true;
+
+      (* ------------ *)
+      (* metavariables *)
+      (* ------------ *)
+
+      (* for identifiers *)
+      "import $X", "import Foo", true;
+      "x.$X", "x.foo", true;
+
+      (* for expressions *)
+      "foo($X)",  "foo(1)", true;
+      "foo($X)",  "foo(1+1)", true;
+
+      (* for lvalues *)
+      "$X.method()",  "foo.method()", true;
+      "$X.method()"  ,  "foo.bar.method()", true;
+
+      (* "linear" patterns, a la Prolog *)
+      "$X & $X", "(a | b) & (a | b)", true;
+      "foo($X, $X)", "foo(a, a)", true;
+      "foo($X, $X)", "foo(a, b)", false;
+
+      (* metavariable on function name *)
+      "$X(1,2)", "foo(1,2)", true;
+      (* metavariable on method call *)
+      "$X.foo()", "Bar.foo()", true;
+      (* should not match infix expressions though, even if those
+       * are transformed internally in Calls *)
+      "$X(...)", "a+b", false;
+
+      (* metavariable for statements *)
+      "if($X):
+ $S
+",
+       "if(True):
+  return 1
+", true;
+
+      (* metavariable string for identifiers *)
+(*     "foo('X');", "foo('a_func');", true; *)
+      (* many arguments metavariables *)
+(*      "foo($MANYARGS);", "foo(1,2,3);", true; *)
+
+      (* ------------ *)
+      (* '...' *)
+      (* ------------ *)
+
+      (* '...' in funcall *)
+      "foo(...)", "foo()", true;
+      "foo(...)", "foo(1)", true;
+      "foo(...)", "foo(1,2)", true;
+      "foo($X,...)", "foo(1,2)", true;
+
+      (* ... also match when there is no additional arguments *)
+      "foo($X,...)", "foo(1)", true;
+      (* TODO: foo(..., 3, ...), foo(1,2,3,4) *)
+
+      (* ... in more complex expressions *)
+      "strstr(...) == False", "strstr(x)==False", true;
+
+      (* in strings *)
+      "foo(\"...\")", "foo(\"this is a long string\")", true;
+
+      (* for stmts *)
+(*      "class Foo { ... }", "class Foo { int x; }", true; *)
+      (* '...' in strings *)
+(*      "foo(\"...\");", "foo(\"a string\");", true; *)
+(*      "foo(\"...\");", "foo(\"a string\" . \"another string\");", true;*)
+      (* '...' in new *)
+(*      "new Foo(...);","new Foo(1);", true;*)
+(*      "new Foo(...);","new Foo();", true; *)
+      (* '...' in arrays *)
+(*      "foo($X, array(...));",  "foo(1, array(2, 3));", true; *)
+
+      (* ------------ *)
+      (* Misc isomorphisms *)
+      (* ------------ *)
+
+      (* regexp matching in strings *)
+      "foo(\"=~/a+/\")", "foo(\"aaaa\")", true;
+      "foo(\"=~/a+/\")", "foo(\"bbbb\")", false;
+(*      "new Foo(...);","new Foo;", true; *)
+
+    ]
+    in
+    triples +> List.iter (fun (spattern, scode, should_match) ->
+     try 
+      let pattern = any_gen_of_string spattern in
+      let code    = any_gen_of_string scode in
+      let matches_with_env = 
+            Sgrep_generic.match_any_any pattern code in
+      if should_match
+      then
+        assert_bool (spf "pattern:|%s| should match |%s" spattern scode)
+          (matches_with_env <> [])
+      else
+        assert_bool (spf "pattern:|%s| should not match |%s" spattern scode)
+          (matches_with_env = [])
+     with
+      Parsing.Parse_error -> 
+              failwith (spf "problem parsing %s or %s" spattern scode)
+    )
+  )
+
 (*****************************************************************************)
 (* Spatch Unit tests *)
 (*****************************************************************************)
@@ -120,7 +253,7 @@ let sgrep_unittest ~ast_fuzzy_of_string =
 (* See https://github.com/facebook/pfff/wiki/Spatch *)
 
 (* run by spatch -test *)
-let spatch_unittest 
+let spatch_fuzzy_unittest 
     ~ast_fuzzy_of_string ~parse_file ~kind_and_info_of_tok = 
   "spatch regressions files" >:: (fun () ->
 

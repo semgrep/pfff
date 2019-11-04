@@ -60,7 +60,7 @@ let test regexp =
       Unit_program_lang.unittest;
       Unit_graph_code.unittest ~graph_of_string;
       Unit_version_control.unittest;
-      Unit_matcher.sgrep_unittest ~ast_fuzzy_of_string;
+      Unit_matcher.sgrep_fuzzy_unittest ~ast_fuzzy_of_string;
       (* todo: Unit_matcher.spatch_unittest ~xxx *)
 
       (* PHP related tests *)

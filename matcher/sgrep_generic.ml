@@ -31,15 +31,13 @@ module GG = Generic_vs_generic
 (* Type *)
 (*****************************************************************************)
 
-(* right now only Expr are actually supported *)
+(* right now only Expr and Stmt are supported *)
 type pattern = Ast.any
 
 type ('a, 'b) matcher = 'a -> 'b ->
   Metavars_generic.metavars_binding list
 
  
-(* todo: should maybe have a match_any_any *)
-
 let match_e_e pattern e = 
   let env = GG.empty_environment () in
   GG.m_expr pattern e env
@@ -48,6 +46,11 @@ let match_st_st pattern e =
   let env = GG.empty_environment () in
   GG.m_stmt pattern e env
 
+(* for unit testing *)
+let match_any_any pattern e = 
+  let env = GG.empty_environment () in
+  GG.m_any pattern e env
+
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
@@ -55,13 +58,14 @@ let match_st_st pattern e =
 let sgrep_ast ~hook pattern ast =
   let hook =
     match pattern with
+    (* depending on the pattern, we visit every relevant nodes
+     * and try the pattern on it.
+     *)
 
     | E pattern_expr ->
         { V.default_visitor with
           V.kexpr = (fun (k, _) x ->
-            let matches_with_env =
-              match_e_e pattern_expr  x
-            in
+            let matches_with_env = match_e_e pattern_expr  x in
             if matches_with_env = []
             then k x
             else begin
@@ -79,9 +83,7 @@ let sgrep_ast ~hook pattern ast =
     | S pattern ->
         { V.default_visitor with
           V.kstmt = (fun (k, _) x ->
-            let matches_with_env =
-              match_st_st pattern x
-            in
+            let matches_with_env = match_st_st pattern x in
             if matches_with_env = []
             then k x
             else begin
@@ -98,5 +100,10 @@ let sgrep_ast ~hook pattern ast =
 
     | _ -> failwith (spf "pattern not yet supported:" )
   in
-  (* opti ? dont analyze func if no constant in it ?*)
+  (* TODO? opti: dont analyze certain ASTs if it does not contain
+   * certain constants that interect with the pattern?
+   * But this requires to analyze the pattern to extract those
+   * constants (name of function, field, etc.)
+   *)
+
   (V.mk_visitor hook) (Pr ast)

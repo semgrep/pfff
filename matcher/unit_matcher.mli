@@ -16,12 +16,16 @@ val unittest: OUnit.test
  *)
 
 (* subsystems unittest *)
-val sgrep_unittest: 
+val sgrep_fuzzy_unittest: 
   ast_fuzzy_of_string:(string -> Ast_fuzzy.trees) -> 
   OUnit.test
 
-val spatch_unittest: 
+val spatch_fuzzy_unittest: 
   ast_fuzzy_of_string:(string -> Spatch_fuzzy.pattern) ->
   parse_file:(string -> Ast_fuzzy.trees * 'tok list) ->
   kind_and_info_of_tok:('tok -> Parse_info.token_kind * Parse_info.info) ->
+  OUnit.test
+
+val sgrep_gen_unittest: 
+  any_gen_of_string:(string -> Ast_generic.any) -> 
   OUnit.test

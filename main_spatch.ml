@@ -802,7 +802,7 @@ let test () =
 
   let suite = "spatch" >::: [
   (* ugly: todo: use a toy fuzzy parser instead of the one in lang_cpp/ *)
-    Unit_matcher.spatch_unittest
+    Unit_matcher.spatch_fuzzy_unittest
       ~ast_fuzzy_of_string:(fun str ->
         Common2.with_tmp_file ~str ~ext:"cpp" (fun tmpfile ->
           Parse_cpp.parse_fuzzy tmpfile +> fst

@@ -155,6 +155,12 @@ let ast_fuzzy_of_string str =
     Parse_cpp.parse_fuzzy tmpfile +> fst
   )
 
+let any_gen_of_string str =
+  Common.save_excursion Flag_parsing.sgrep_mode true (fun () ->
+  let any = Parse_python.any_of_string str in
+  Python_to_generic.any any
+  )
+
 (*****************************************************************************)
 (* Language specific *)
 (*****************************************************************************)
@@ -378,7 +384,8 @@ open OUnit
 let test () =
   let suite = "sgrep" >::: [
    (* ugly: todo: use a toy fuzzy parser instead of the one in lang_cpp/ *)
-    Unit_matcher.sgrep_unittest ~ast_fuzzy_of_string;
+    Unit_matcher.sgrep_fuzzy_unittest ~ast_fuzzy_of_string;
+    Unit_matcher.sgrep_gen_unittest ~any_gen_of_string;
     Unit_matcher_php.sgrep_unittest;
   ]
   in
