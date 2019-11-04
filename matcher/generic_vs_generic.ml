@@ -727,22 +727,14 @@ and m_list__m_argument (xsa: A.argument list) (xsb: A.argument list) =
   | [A.Arg (A.Ellipses _i)], [] ->
       return ()
 
-  (* '...' can match anything *)
-  | [A.Arg (A.Ellipses _i)], _bbs ->
-      return ()
+  | A.Arg (A.Ellipses i)::xsa, xb::xsb ->
+      (* can match nothing *)
+      (m_list__m_argument xsa (xb::xsb)) >||>
+      (* can match one *)
+      (m_list__m_argument xsa xsb) >||>
+      (* can match more *)
+      (m_list__m_argument ((A.Arg (A.Ellipses i))::xsa) xsb)
 
-(* TODO
-  (* spread metavariable to match any arity *)
-  | [A.Apply(A.IdSpecial (A.Spread, info_spread_TODO), 
-        [A.Id((name, info_name), aref)])], 
-    bbs 
-    when MV.is_metavar_name name ->
-      X.envf (name, info_name) (B.Expr (B.Apply (B.Nop, bbs))) >>= (function
-      | ()  ->
-        return ()
-      | _ -> raise Impossible
-      )
-    *)
 
   (* the general case *)
   | xa::aas, xb::bbs ->

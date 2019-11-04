@@ -197,7 +197,7 @@ let sgrep_gen_unittest ~any_gen_of_string =
 
       (* ... also match when there is no additional arguments *)
       "foo($X,...)", "foo(1)", true;
-      (* TODO: foo(..., 3, ...), foo(1,2,3,4) *)
+      "foo(..., 3, ...)", "foo(1,2,3,4)", true;
 
       (* ... in more complex expressions *)
       "strstr(...) == False", "strstr(x)==False", true;
@@ -208,7 +208,6 @@ let sgrep_gen_unittest ~any_gen_of_string =
       (* for stmts *)
 (*      "class Foo { ... }", "class Foo { int x; }", true; *)
       (* '...' in strings *)
-(*      "foo(\"...\");", "foo(\"a string\");", true; *)
 (*      "foo(\"...\");", "foo(\"a string\" . \"another string\");", true;*)
       (* '...' in new *)
 (*      "new Foo(...);","new Foo(1);", true;*)
