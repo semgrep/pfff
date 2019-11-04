@@ -43,10 +43,7 @@ module Lib = Lib_ast_generic
  *
  * See pfff/matcher/fuzzy_vs_fuzzy.ml for another approach.
  *
- * I then hardcoded a few "isomorphisms" by abusing some existing constructs,
- * for instance variables starting with a big $X are considered metavars
- * for expressions.
- * There are four main features to allow a pattern to match some code:
+ * There are four main features allowing a "pattern" to match some "code":
  *  - metavariables can match anything
  *  - '...' can match any sequence
  *  - simple constructs match complex constructs having more details
@@ -55,7 +52,6 @@ module Lib = Lib_ast_generic
  *  - we do not care about differences in spaces/indentations/comments.
  *    we work at the AST-level.
  *)
-
 
 (*****************************************************************************)
 (* Globals *)
@@ -88,8 +84,8 @@ let pr2, _pr2_once = Common2.mk_pr2_wrappers verbose
    * version2:
    *   type ('a, 'b) matcher = 'a -> 'b -> binding -> binding list
    * 
-   *   Why not returning a binding option ? because I may need at some
-   *   point to return multiple possible bindings for one matching code.
+   *   Why not returning a binding option ? because we need sometimes
+   *   to return multiple possible bindings for one matching code.
    *   For instance with the pattern do 'f(..., X, ...)', X could be binded
    *   to different parts of the code.
    * 
@@ -99,7 +95,6 @@ let pr2, _pr2_once = Common2.mk_pr2_wrappers verbose
    *   type ('a, 'b) matcher = 'a -> 'b -> tin -> ('a,'b) tout
    * 
    * version4: back to simpler
-   *
    *   type ('a, 'b) matcher = 'a -> 'b -> tin -> tout
    *)
 
@@ -134,12 +129,6 @@ let pr2, _pr2_once = Common2.mk_pr2_wrappers verbose
       (tin -> tout)) = 
     fun m1 m2 ->
       fun tin ->
-        (* old:
-           match m1 tin with
-           | None -> None
-           | Some (a,b) ->
-           m2 (a, b) tin
-        *)
         (* let's get a list of possible environment match (could be 
          * the empty list when it didn't match, playing the role None
          * had before)
@@ -150,7 +139,6 @@ let pr2, _pr2_once = Common2.mk_pr2_wrappers verbose
           m2 () binding
         ) in
         List.flatten xxs
-
 
     (* the disjunctive combinator *)
     let ((>||>) :
@@ -166,22 +154,19 @@ let pr2, _pr2_once = Common2.mk_pr2_wrappers verbose
     (* opti? use set instead of list *)
     m1 tin @ m2 tin
 
-
     (* The classical monad combinators *)
     let (return : tin -> tout) = fun tin ->
-    (* old: Some (a,b) *)
     [tin]
       
     let (fail : tin -> tout) = fun _tin ->
-    (* old: None *)
     []
 
   (* ------------------------------------------------------------------------*)
   (* Environment *) 
   (* ------------------------------------------------------------------------*)
 
-  (* pre: both 'a' and 'b' contains only regular JS code. There is no
-   * metavariables in them.
+  (* pre: both 'a' and 'b' contains only regular code; there are no
+   * metavariables inside them.
    *)
   let equal_ast_binded_code a b =
     match a, b with
@@ -201,17 +186,17 @@ let pr2, _pr2_once = Common2.mk_pr2_wrappers verbose
         let a = Lib.abstract_position_info_any a in
         let b = Lib.abstract_position_info_any b in
         a =*= b
-        
+
     | _, _ -> 
         false
 
   let check_and_add_metavar_binding((mvar:MV.mvar), valu) = fun tin ->
     match Common2.assoc_opt mvar tin with
     | Some valu' ->
-        (* Should we use php_vs_php itself for comparing the binded code ?
+        (* Should we use generic_vs_generic itself for comparing the code?
          * Hmmm, we can't because it leads to a circular dependencies.
-         * Moreover here we know both valu and valu' are regular PHP code,
-         * not PHP patterns, so we can just use the generic '=' of OCaml.
+         * Moreover here we know both valu and valu' are regular code,
+         * not patterns, so we can just use the generic '=' of OCaml.
          *)
         if equal_ast_binded_code valu valu'
         then Some tin
@@ -231,7 +216,6 @@ let pr2, _pr2_once = Common2.mk_pr2_wrappers verbose
         return new_binding
 
   let empty_environment () = []
-
 
 (*****************************************************************************)
 (* Boilerplate code, "AST Generic vs AST Generic" *)
@@ -276,19 +260,22 @@ let rec m_list f a b =
       fail ()
 
 
-let m_bool a b = if a = b then return () else fail ()
+let m_bool a b = 
+  if a = b then return () else fail ()
 
-(* ---------------------------------------------------------------------- *)
-(* m_string *)
-(* ---------------------------------------------------------------------- *)
 let m_string a b =
   if a =$= b then return () else fail ()
+
+let m_other_xxx a b = 
+  match a, b with
+  | a, b when a =*= b -> return ()
+  | _ -> fail ()
 
 (* ---------------------------------------------------------------------- *)
 (* Token *)
 (* ---------------------------------------------------------------------- *)
 
-(* we dont care about position, space/indent/comment isomorphism
+(* we do not care about position! or differences in space/indent/comment!
  * so we can just  'return ()'
  *)
 let m_info _a _b = return ()
@@ -308,10 +295,11 @@ let m_wrap f a b =
 (* ---------------------------------------------------------------------- *)
 
 let m_ident a b = 
-  (* iso on ident *)
+  (* metavariable! *)
   match a, b with
   | (str, tok), b when MV.is_metavar_name str ->
       envf (str, tok) (B.Id b)
+
   (* general case *)
   | (a, b) -> (m_wrap m_string) a b
 
@@ -365,6 +353,7 @@ let m_resolved_name a b =
   | A.ImportedModule, _
    -> fail ()
 
+
 (* start of recursive need *)
 let rec m_name a b =
   match a,b with
@@ -382,13 +371,13 @@ and m_expr a b =
   match a, b with
 
 
-  (* special case, metavars !! *)
   (* $X should not match an IdSpecial otherwise $X(...) could match
    * a+b because this is transformed in a Call(IdSpecial Plus, ...) 
    *)
   | A.Name ((str,_tok), _id_info), B.IdSpecial _ when MV.is_metavar_name str ->
       fail ()
 
+  (* metavariable! *)
   | A.Name ((str,tok), _id_info), e2 when MV.is_metavar_name str ->
       envf (str, tok) (B.E (e2))
 
@@ -509,45 +498,25 @@ and m_expr a b =
     (m_list m_any) a2 b2 >>= (fun () -> 
     return ()
     ))
-  | A.L _, _
-  | A.Container _, _
-  | A.Tuple _, _
-  | A.Record _, _
-  | A.Constructor _, _
-  | A.Lambda _, _
-  | A.AnonClass _, _
-  | A.Nop, _
-  | A.Name _, _
-  | A.IdSpecial _, _
-  | A.Call _, _
-  | A.Xml _, _
-  | A.Assign _, _
-  | A.AssignOp _, _
-  | A.LetPattern _, _
-  | A.ObjAccess _, _
-  | A.ArrayAccess _, _
-  | A.Conditional _, _
-  | A.MatchPattern _, _
-  | A.Yield _, _
-  | A.Await _, _
-  | A.Cast _, _
-  | A.Seq _, _
-  | A.Ref _, _
-  | A.DeRef _, _
-  | A.Ellipses _, _
-  | A.OtherExpr _, _
+  | A.L _, _  | A.Container _, _  | A.Tuple _, _  | A.Record _, _
+  | A.Constructor _, _  | A.Lambda _, _  | A.AnonClass _, _  | A.Nop, _
+  | A.Name _, _  | A.IdSpecial _, _  | A.Call _, _  | A.Xml _, _
+  | A.Assign _, _  | A.AssignOp _, _  | A.LetPattern _, _  | A.ObjAccess _, _
+  | A.ArrayAccess _, _  | A.Conditional _, _  | A.MatchPattern _, _
+  | A.Yield _, _  | A.Await _, _  | A.Cast _, _  | A.Seq _, _  | A.Ref _, _
+  | A.DeRef _, _  | A.Ellipses _, _  | A.OtherExpr _, _
    -> fail ()
 
 
 and m_literal a b = 
   match a, b with
 
-  (* iso on string *)
+  (* '...' on string *)
   | A.String("...", a), B.String(_s, b) ->
       m_info a b >>= (fun () ->
         return ())
 
-  (* iso allowing regexp *)
+  (* regexp matching *)
   | A.String(name, info_name), B.String(sb, info_sb)
       when name =~ "^=~/\\(.*\\)/$" ->
       let s = Common.matched1 name in
@@ -565,7 +534,6 @@ and m_literal a b =
     (m_wrap m_string) a1 b1 >>= (fun () -> 
     return ()
     )
-
 
   | A.Unit(a1), B.Unit(b1) ->
     m_tok a1 b1 >>= (fun () -> 
@@ -600,15 +568,8 @@ and m_literal a b =
     m_tok a1 b1 >>= (fun () -> 
     return ()
     )
-  | A.Unit _, _
-  | A.Bool _, _
-  | A.Int _, _
-  | A.Float _, _
-  | A.Char _, _
-  | A.String _, _
-  | A.Regexp _, _
-  | A.Null _, _
-  | A.Undefined _, _
+  | A.Unit _, _  | A.Bool _, _  | A.Int _, _  | A.Float _, _  | A.Char _, _
+  | A.String _, _  | A.Regexp _, _  | A.Null _, _  | A.Undefined _, _
    -> fail ()
 
 
@@ -673,31 +634,11 @@ and m_arithmetic_operator a b =
     return ()
   | A.GtE, B.GtE ->
     return ()
-  | A.Plus, _
-  | A.Minus, _
-  | A.Mult, _
-  | A.Div, _
-  | A.Mod, _
-  | A.Pow, _
-  | A.FloorDiv, _
-  | A.LSL, _
-  | A.LSR, _
-  | A.ASR, _
-  | A.BitOr, _
-  | A.BitXor, _
-  | A.BitAnd, _
-  | A.BitNot, _
-  | A.And, _
-  | A.Or, _
-  | A.Not, _
-  | A.Eq, _
-  | A.NotEq, _
-  | A.PhysEq, _
-  | A.NotPhysEq, _
-  | A.Lt, _
-  | A.LtE, _
-  | A.Gt, _
-  | A.GtE, _
+  | A.Plus, _  | A.Minus, _  | A.Mult, _  | A.Div, _  | A.Mod, _  | A.Pow, _
+  | A.FloorDiv, _  | A.LSL, _  | A.LSR, _  | A.ASR, _  | A.BitOr, _
+  | A.BitXor, _  | A.BitAnd, _  | A.BitNot, _  | A.And, _  | A.Or, _
+  | A.Not, _  | A.Eq, _  | A.NotEq, _  | A.PhysEq, _  | A.NotPhysEq, _
+  | A.Lt, _  | A.LtE, _  | A.Gt, _  | A.GtE, _
    -> fail ()
 
 and m_special a b = 
@@ -733,35 +674,16 @@ and m_special a b =
     m_bool a2 b2 >>= (fun () -> 
     return ()
     ))
-  | A.This, _
-  | A.Super, _
-  | A.Self, _
-  | A.Parent, _
-  | A.Eval, _
-  | A.Typeof, _
-  | A.Instanceof, _
-  | A.Sizeof, _
-  | A.New, _
-  | A.Concat, _
-  | A.Spread, _
-  | A.ArithOp _, _
-  | A.IncrDecr _, _
+  | A.This, _  | A.Super, _  | A.Self, _  | A.Parent, _  | A.Eval, _
+  | A.Typeof, _  | A.Instanceof, _  | A.Sizeof, _  | A.New, _
+  | A.Concat, _  | A.Spread, _  | A.ArithOp _, _  | A.IncrDecr _, _
    -> fail ()
 
 and m_id_info a b = 
   match a, b with
-  { A. 
-  id_qualifier = a1;
-  id_typeargs = a2;
-  id_resolved = a3;
-  id_type = a4;
-  },
-  { B. 
-  id_qualifier = b1;
-  id_typeargs = b2;
-  id_resolved = b3;
-  id_type = b4;
-  } -> 
+  { A. id_qualifier = a1; id_typeargs = a2; id_resolved = a3; id_type = a4; },
+  { B. id_qualifier = b1; id_typeargs = b2; id_resolved = b3; id_type = b4; }
+   -> 
     (m_option m_dotted_name) a1 b1 >>= (fun () -> 
     (m_option m_type_arguments) a2 b2 >>= (fun () -> 
     (m_ref m_resolved_name) a3 b3 >>= (fun () -> 
@@ -779,17 +701,10 @@ and m_container_operator a b =
     return ()
   | A.Dict, B.Dict ->
     return ()
-  | A.Array, _
-  | A.List, _
-  | A.Set, _
-  | A.Dict, _
+  | A.Array, _  | A.List, _  | A.Set, _  | A.Dict, _
    -> fail ()
 
-
-and m_other_expr_operator a b = 
-  match a, b with
-  | a, b when a =*= b -> return ()
-  | _ -> fail ()
+and m_other_expr_operator = m_other_xxx
 
 and m_xml a b = 
   match a, b with
@@ -808,11 +723,11 @@ and m_list__m_argument (xsa: A.argument list) (xsb: A.argument list) =
   | [], [] ->
       return ()
 
-  (* iso '...', it can also match no argument *)
+  (* '...', can also match no argument *)
   | [A.Arg (A.Ellipses _i)], [] ->
       return ()
 
-  (* iso on ... *)
+  (* '...' can match anything *)
   | [A.Arg (A.Ellipses _i)], _bbs ->
       return ()
 
@@ -865,16 +780,10 @@ and m_argument a b =
     (m_list m_any) a2 b2 >>= (fun () -> 
     return ()
     ))
-  | A.Arg _, _
-  | A.ArgKwd _, _
-  | A.ArgType _, _
-  | A.ArgOther _, _
+  | A.Arg _, _  | A.ArgKwd _, _  | A.ArgType _, _  | A.ArgOther _, _
    -> fail ()
 
-and m_other_argument_operator a b = 
-  match a, b with
-  | (a,b) when a =*= b -> return ()
-  | _ -> fail ()
+and m_other_argument_operator = m_other_xxx
 
 (* ------------------------------------------------------------------------- *)
 (* Type *)
@@ -922,14 +831,8 @@ and m_type_ a b =
     (m_list m_any) a2 b2 >>= (fun () -> 
     return ()
     ))
-  | A.TyBuiltin _, _
-  | A.TyFun _, _
-  | A.TyApply _, _
-  | A.TyVar _, _
-  | A.TyArray _, _
-  | A.TyPointer _, _
-  | A.TyTuple _, _
-  | A.TyQuestion _, _
+  | A.TyBuiltin _, _  | A.TyFun _, _  | A.TyApply _, _  | A.TyVar _, _
+  | A.TyArray _, _  | A.TyPointer _, _ | A.TyTuple _, _  | A.TyQuestion _, _
   | A.OtherType _, _
    -> fail ()
 
@@ -950,19 +853,12 @@ and m_type_argument a b =
     (m_list m_any) a2 b2 >>= (fun () -> 
     return ()
     ))
-  | A.TypeArg _, _
-  | A.OtherTypeArg _, _
+  | A.TypeArg _, _  | A.OtherTypeArg _, _
    -> fail ()
 
-and m_other_type_operator a b = 
-  match a, b with
-  | a, b when a =*= b -> return ()
-  | _ -> fail ()
+and m_other_type_operator = m_other_xxx
 
-and m_other_type_argument_operator a b = 
-  match a, b with
-  | A.OTA_Question, B.OTA_Question ->
-    return ()
+and m_other_type_argument_operator = m_other_xxx
 
 (* ------------------------------------------------------------------------- *)
 (* Attribute *)
@@ -1024,35 +920,16 @@ and m_attribute a b =
     (m_list m_any) a2 b2 >>= (fun () -> 
     return ()
     ))
-  | A.Recursive, _
-  | A.MutuallyRecursive, _
-  | A.Static, _
-  | A.Volatile, _
-  | A.Extern, _
-  | A.Public, _
-  | A.Private, _
-  | A.Protected, _
-  | A.Abstract, _
-  | A.Final, _
-  | A.Var, _
-  | A.Let, _
-  | A.Const, _
-  | A.Mutable, _
-  | A.Generator, _
-  | A.Async, _
-  | A.Ctor, _
-  | A.Dtor, _
-  | A.Getter, _
-  | A.Setter, _
-  | A.Variadic, _
-  | A.NamedAttr _, _
-  | A.OtherAttribute _, _
+  | A.Recursive, _  | A.MutuallyRecursive, _  
+  | A.Static, _  | A.Volatile, _  | A.Extern, _  
+  | A.Public, _  | A.Private, _ | A.Protected, _
+  | A.Abstract, _  | A.Final, _  | A.Var, _  | A.Let, _
+  | A.Const, _  | A.Mutable, _  | A.Generator, _  | A.Async, _
+  | A.Ctor, _  | A.Dtor, _  | A.Getter, _  | A.Setter, _
+  | A.Variadic, _  | A.NamedAttr _, _  | A.OtherAttribute _, _
    -> fail ()
 
-and m_other_attribute_operator a b = 
-  match a, b with
-  | (a,b) when a =*= b -> return ()
-  | _ -> fail ()
+and m_other_attribute_operator = m_other_xxx
 
 (* ------------------------------------------------------------------------- *)
 (* Statement *)
@@ -1061,11 +938,11 @@ and m_other_attribute_operator a b =
 and m_stmt a b = 
   match a, b with
 
-  (* special case metavar! *)
+  (* metavariable! *)
   | A.ExprStmt(A.Name ((str,tok), _id_info)), b when MV.is_metavar_name str ->
       envf (str, tok) (B.S b)
 
-  (* iso on ..., allow to match any statememt *)
+  (* '...' can to match any statememt *)
   | A.ExprStmt(A.Ellipses _i), _b ->
       return ()
 
@@ -1154,23 +1031,10 @@ and m_stmt a b =
     (m_list m_any) a2 b2 >>= (fun () -> 
     return ()
     ))
-  | A.ExprStmt _, _
-  | A.LocalDef _, _
-  | A.LocalDirective _, _
-  | A.Block _, _
-  | A.If _, _
-  | A.While _, _
-  | A.DoWhile _, _
-  | A.For _, _
-  | A.Switch _, _
-  | A.Return _, _
-  | A.Continue _, _
-  | A.Break _, _
-  | A.Label _, _
-  | A.Goto _, _
-  | A.Throw _, _
-  | A.Try _, _
-  | A.Assert _, _
+  | A.ExprStmt _, _  | A.LocalDef _, _  | A.LocalDirective _, _
+  | A.Block _, _  | A.If _, _  | A.While _, _  | A.DoWhile _, _  | A.For _, _
+  | A.Switch _, _  | A.Return _, _  | A.Continue _, _  | A.Break _, _
+  | A.Label _, _  | A.Goto _, _  | A.Throw _, _  | A.Try _, _  | A.Assert _, _
   | A.OtherStmt _, _
    -> fail ()
 
@@ -1188,8 +1052,7 @@ and m_for_header a b =
     m_expr a2 b2 >>= (fun () -> 
     return ()
     ))
-  | A.ForClassic _, _
-  | A.ForEach _, _
+  | A.ForClassic _, _  | A.ForEach _, _
    -> fail ()
 
 
@@ -1204,8 +1067,7 @@ and m_for_var_or_expr a b =
     m_expr a1 b1 >>= (fun () -> 
     return ()
     )
-  | A.ForInitVar _, _
-  | A.ForInitExpr _, _
+  | A.ForInitVar _, _  | A.ForInitExpr _, _
    -> fail ()
 
 
@@ -1242,15 +1104,11 @@ and m_case a b =
     )
   | A.Default, B.Default ->
     return ()
-  | A.Case _, _
-  | A.Default, _
+  | A.Case _, _  | A.Default, _
    -> fail ()
 
 
-and m_other_stmt_operator a b = 
-  match a, b with
-  | a,b when a =*= b -> return ()
-  | _ -> fail ()
+and m_other_stmt_operator = m_other_xxx
 
 (* ------------------------------------------------------------------------- *)
 (* Pattern *)
@@ -1317,19 +1175,10 @@ and m_pattern a b =
     (m_list m_any) a2 b2 >>= (fun () -> 
     return ()
     ))
-  | A.PatVar _, _
-  | A.PatLiteral _, _
-  | A.PatConstructor _, _
-  | A.PatTuple _, _
-  | A.PatList _, _
-  | A.PatRecord _, _
-  | A.PatKeyVal _, _
-  | A.PatUnderscore _, _
-  | A.PatDisj _, _
-  | A.PatWhen _, _
-  | A.PatAs _, _
-  | A.PatTyped _, _
-  | A.OtherPat _, _
+  | A.PatVar _, _  | A.PatLiteral _, _  | A.PatConstructor _, _
+  | A.PatTuple _, _  | A.PatList _, _  | A.PatRecord _, _  | A.PatKeyVal _, _
+  | A.PatUnderscore _, _  | A.PatDisj _, _  | A.PatWhen _, _  | A.PatAs _, _
+  | A.PatTyped _, _  | A.OtherPat _, _
    -> fail ()
 
 and m_field_pattern a b = 
@@ -1340,15 +1189,7 @@ and m_field_pattern a b =
     return ()
     ))
 
-and m_other_pattern_operator a b = 
-  match a, b with
-  | A.OP_Expr, B.OP_Expr ->
-    return ()
-  | A.OP_Var, B.OP_Var ->
-    return ()
-  | A.OP_Expr, _
-  | A.OP_Var, _
-   -> fail ()
+and m_other_pattern_operator = m_other_xxx
 
 (* ------------------------------------------------------------------------- *)
 (* Definitions *)
@@ -1364,18 +1205,8 @@ and m_definition a b =
 
 and m_entity a b = 
   match a, b with
-  { A. 
-  name = a1;
-  attrs = a2;
-  type_ = a3;
-  tparams = a4;
-  },
-  { B. 
-  name = b1;
-  attrs = b2;
-  type_ = b3;
-  tparams = b4;
-  } -> 
+  { A. name = a1; attrs = a2; type_ = a3; tparams = a4; },
+  { B. name = b1; attrs = b2; type_ = b3; tparams = b4; } -> 
     m_ident a1 b1 >>= (fun () -> 
     (m_list m_attribute) a2 b2 >>= (fun () -> 
     (m_option m_type_) a3 b3 >>= (fun () -> 
@@ -1413,13 +1244,8 @@ and m_definition_kind a b =
     m_type_ a1 b1 >>= (fun () -> 
     return ()
     )
-  | A.FuncDef _, _
-  | A.VarDef _, _
-  | A.ClassDef _, _
-  | A.TypeDef _, _
-  | A.ModuleDef _, _
-  | A.MacroDef _, _
-  | A.Signature _, _
+  | A.FuncDef _, _ | A.VarDef _, _  | A.ClassDef _, _  | A.TypeDef _, _
+  | A.ModuleDef _, _  | A.MacroDef _, _  | A.Signature _, _
    -> fail ()
 
 
@@ -1448,16 +1274,8 @@ and m_type_parameter a b =
 
 and m_function_definition a b = 
   match a, b with
-  { A. 
-  fparams = a1;
-  frettype = a2;
-  fbody = a3;
-  },
-  { B. 
-  fparams = b1;
-  frettype = b2;
-  fbody = b3;
-  } -> 
+  { A. fparams = a1; frettype = a2; fbody = a3; },
+  { B. fparams = b1; frettype = b2; fbody = b3; } -> 
     m_parameters a1 b1 >>= (fun () -> 
     (m_option m_type_) a2 b2 >>= (fun () -> 
     m_stmt a3 b3 >>= (fun () -> 
@@ -1483,26 +1301,14 @@ and m_parameter a b =
     (m_list m_any) a2 b2 >>= (fun () -> 
     return ()
     ))
-  | A.ParamClassic _, _
-  | A.ParamPattern _, _
-  | A.OtherParam _, _
+  | A.ParamClassic _, _  | A.ParamPattern _, _  | A.OtherParam _, _
    -> fail ()
 
 
 and m_parameter_classic a b = 
   match a, b with
-  { A. 
-  pname = a1;
-  pdefault = a2;
-  ptype = a3;
-  pattrs = a4;
-  },
-  { B. 
-  pname = b1;
-  pdefault = b2;
-  ptype = b3;
-  pattrs = b4;
-  } -> 
+  { A. pname = a1; pdefault = a2; ptype = a3; pattrs = a4; },
+  { B. pname = b1; pdefault = b2; ptype = b3; pattrs = b4; } -> 
     m_ident a1 b1 >>= (fun () -> 
     (m_option m_expr) a2 b2 >>= (fun () -> 
     (m_option m_type_) a3 b3 >>= (fun () -> 
@@ -1511,16 +1317,7 @@ and m_parameter_classic a b =
   ))))
 
 
-and m_other_parameter_operator a b = 
-  match a, b with
-  | A.OPO_KwdParam, B.OPO_KwdParam ->
-    return ()
-  | A.OPO_Ref, B.OPO_Ref ->
-    return ()
-  | A.OPO_KwdParam, _
-  | A.OPO_Ref, _
-   -> fail ()
-
+and m_other_parameter_operator = m_other_xxx
 
 (* ------------------------------------------------------------------------- *)
 (* Variable definition *)
@@ -1528,14 +1325,8 @@ and m_other_parameter_operator a b =
 
 and m_variable_definition a b = 
   match a, b with
-  { A. 
-  vinit = a1;
-  vtype = a2;
-  },
-  { B. 
-  vinit = b1;
-  vtype = b2;
-  } -> 
+  { A. vinit = a1; vtype = a2; },
+  { B. vinit = b1; vtype = b2; } -> 
     (m_option m_expr) a1 b1 >>= (fun () -> 
     (m_option m_type_) a2 b2 >>= (fun () -> 
     return ()
@@ -1571,11 +1362,8 @@ and m_field a b =
     m_stmt a1 b1 >>= (fun () -> 
     return ()
     )
-  | A.FieldVar _, _
-  | A.FieldMethod _, _
-  | A.FieldDynamic _, _
-  | A.FieldSpread _, _
-  | A.FieldStmt _, _
+  | A.FieldVar _, _ | A.FieldMethod _, _ | A.FieldDynamic _, _
+  | A.FieldSpread _, _ | A.FieldStmt _, _
    -> fail ()
 
 (* ------------------------------------------------------------------------- *)
@@ -1583,12 +1371,8 @@ and m_field a b =
 (* ------------------------------------------------------------------------- *)
 and m_type_definition a b = 
   match a, b with
-  { A. 
-  tbody = a1;
-  },
-  { B. 
-  tbody = b1;
-  } -> 
+  { A. tbody = a1;},
+  { B. tbody = b1; } -> 
     m_type_definition_kind a1 b1 >>= (fun () -> 
     return ()
   )
@@ -1617,10 +1401,7 @@ and m_type_definition_kind a b =
     (m_list m_any) a2 b2 >>= (fun () -> 
     return ()
     ))
-  | A.OrType _, _
-  | A.AndType _, _
-  | A.AliasType _, _
-  | A.Exception _, _
+  | A.OrType _, _ | A.AndType _, _ | A.AliasType _, _ | A.Exception _, _
   | A.OtherTypeKind _, _
    -> fail ()
 
@@ -1646,25 +1427,12 @@ and m_or_type a b =
     (m_list m_any) a2 b2 >>= (fun () -> 
     return ()
     ))
-  | A.OrConstructor _, _
-  | A.OrEnum _, _
-  | A.OrUnion _, _
-  | A.OtherOr _, _
+  | A.OrConstructor _, _ | A.OrEnum _, _ | A.OrUnion _, _ | A.OtherOr _, _
    -> fail ()
 
+and m_other_type_kind_operator = m_other_xxx
 
-
-and m_other_type_kind_operator a b = 
-  match a, b with
-  | a,b when a =*= b -> return ()
-  | _ -> fail ()
-
-and m_other_or_type_element_operator a b = 
-  match a, b with
-  | a,b when a =*= b -> return ()
-  | _ -> fail ()
-
-
+and m_other_or_type_element_operator = m_other_xxx
 
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)
@@ -1672,18 +1440,8 @@ and m_other_or_type_element_operator a b =
 
 and m_class_definition a b = 
   match a, b with
-  { A. 
-  ckind = a1;
-  cextends = a2;
-  cimplements = a3;
-  cbody = a4;
-  },
-  { B. 
-  ckind = b1;
-  cextends = b2;
-  cimplements = b3;
-  cbody = b4;
-  } -> 
+  { A. ckind = a1; cextends = a2; cimplements = a3; cbody = a4; },
+  { B. ckind = b1; cextends = b2; cimplements = b3; cbody = b4; } -> 
     m_class_kind a1 b1 >>= (fun () -> 
     (m_list m_type_) a2 b2 >>= (fun () -> 
     (m_list m_type_) a3 b3 >>= (fun () -> 
@@ -1699,9 +1457,7 @@ and m_class_kind a b =
     return ()
   | A.Trait, B.Trait ->
     return ()
-  | A.Class, _
-  | A.Interface, _
-  | A.Trait, _
+  | A.Class, _ | A.Interface, _ | A.Trait, _
    -> fail ()
 
 (* ------------------------------------------------------------------------- *)
@@ -1710,12 +1466,8 @@ and m_class_kind a b =
 
 and m_module_definition a b = 
   match a, b with
-  { A. 
-  mbody = a1;
-  },
-  { B. 
-  mbody = b1;
-  } -> 
+  { A. mbody = a1; },
+  { B. mbody = b1; } -> 
     m_module_definition_kind a1 b1 >>= (fun () -> 
     return ()
   )
@@ -1736,15 +1488,10 @@ and m_module_definition_kind a b =
     (m_list m_any) a2 b2 >>= (fun () -> 
     return ()
     ))
-  | A.ModuleAlias _, _
-  | A.ModuleStruct _, _
-  | A.OtherModule _, _
+  | A.ModuleAlias _, _ | A.ModuleStruct _, _ | A.OtherModule _, _
    -> fail ()
 
-and m_other_module_operator a b =
-  match a, b with
-  | a, b when a =*= b -> return ()
-  | _ -> fail ()
+and m_other_module_operator = m_other_xxx
 
 (* ------------------------------------------------------------------------- *)
 (* Macro definition *)
@@ -1752,14 +1499,8 @@ and m_other_module_operator a b =
 
 and m_macro_definition a b = 
   match a, b with
-  { A. 
-  macroparams = a1;
-  macrobody = a2;
-  },
-  { B. 
-  macroparams = b1;
-  macrobody = b2;
-  } -> 
+  { A. macroparams = a1; macrobody = a2; },
+  { B. macroparams = b1; macrobody = b2; } -> 
     (m_list m_ident) a1 b1 >>= (fun () -> 
     (m_list m_any) a2 b2 >>= (fun () -> 
     return ()
@@ -1786,9 +1527,7 @@ and m_directive a b =
     (m_list m_any) a2 b2 >>= (fun () -> 
     return ()
     ))
-  | A.Import _, _
-  | A.ImportAll _, _
-  | A.OtherDirective _, _
+  | A.Import _, _ | A.ImportAll _, _ | A.OtherDirective _, _
    -> fail ()
 
 and m_alias a b = 
@@ -1799,10 +1538,7 @@ and m_alias a b =
     return ()
     ))
 
-and m_other_directive_operator a b = 
-  match a, b with
-  | a, b when a =*= b -> return ()
-  | _ -> fail ()
+and m_other_directive_operator = m_other_xxx
 
 (* ------------------------------------------------------------------------- *)
 (* Toplevel *)
@@ -1822,9 +1558,7 @@ and m_item a b =
     m_directive a1 b1 >>= (fun () -> 
     return ()
     )
-  | A.IStmt _, _
-  | A.IDef _, _
-  | A.IDir _, _
+  | A.IStmt _, _ | A.IDef _, _ | A.IDir _, _
    -> fail ()
 
 and m_program a b = 
@@ -1901,21 +1635,7 @@ and m_any a b =
     m_ident a1 b1 >>= (fun () -> 
     return ()
     )
-  | A.Id _, _
-  | A.N _, _
-  | A.Di _, _
-  | A.En _, _
-  | A.E _, _
-  | A.S _, _
-  | A.T _, _
-  | A.P _, _
-  | A.Def _, _
-  | A.Dir _, _
-  | A.I _, _
-  | A.Pa _, _
-  | A.Ar _, _
-  | A.At _, _
-  | A.Dk _, _
-  | A.Pr _, _
+  | A.Id _, _  | A.N _, _  | A.Di _, _  | A.En _, _  | A.E _, _
+  | A.S _, _  | A.T _, _  | A.P _, _  | A.Def _, _  | A.Dir _, _
+  | A.I _, _  | A.Pa _, _  | A.Ar _, _  | A.At _, _  | A.Dk _, _ | A.Pr _, _
    -> fail ()
-
