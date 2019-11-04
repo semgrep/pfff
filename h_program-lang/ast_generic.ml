@@ -99,9 +99,9 @@ type dotted_ident = ident list (* at least 1 element *)
 type qualified_ident = dotted_ident
  (* with tarzan *)
 
-(* can also be used for packages *)
+(* can also be used for packages, or namespaces *)
 type module_name =
-  | FileName of string wrap   (* ex: Javascript import, C include *)
+  | FileName of string wrap   (* ex: Javascript import, C #include *)
   | DottedName of dotted_ident (* ex: Python *)
  (* with tarzan *)
 
@@ -172,7 +172,7 @@ and expr =
   | AssignOp of expr * arithmetic_operator wrap * expr
   | LetPattern of pattern * expr
 
-  (* can also be used for Record, ClassAccess, ModuleAccess depending on expr *)
+  (* can also be used for Record, Class, or Module access depending on expr *)
   | ObjAccess of expr * ident
   | ArrayAccess of expr * expr (* less: slice *)
 
@@ -365,13 +365,13 @@ and stmt =
 (* Pattern *)
 (*****************************************************************************)
 and pattern = 
-  | PatVar of ident
   | PatLiteral of literal
-
   (* Or-Type *)
   | PatConstructor of name * pattern list
   (* And-Type *)
   | PatRecord of field_pattern list
+
+  | PatVar of ident
 
   (* special cases of PatConstructor *)
   | PatTuple of pattern list
@@ -559,6 +559,7 @@ and type_definition = {
    | OrType  of or_type_element list  (* enum/ADTs *)           
    (* field.vtype should be defined here *)
    | AndType of field list (* record/struct/union *) 
+
    | AliasType of type_
    | Exception of ident (* same name than entity *) * type_ list
 
@@ -568,6 +569,7 @@ and type_definition = {
     | OrConstructor of ident * type_ list
     | OrEnum of ident * expr
     | OrUnion of ident * type_
+
     | OtherOr of other_or_type_element_operator * any list
 
       and other_or_type_element_operator =
