@@ -1054,6 +1054,10 @@ val cmd_to_list_and_status : ?verbose:bool -> string -> string list * Unix.proce
 val process_output_to_list : ?verbose:bool -> string -> string list
 val cmd_to_list :            ?verbose:bool -> string -> string list (* alias *)
 
+(* will not raise CmdError *)
+val process_output_to_list2 : ?verbose:bool -> string -> 
+  string list * Unix.process_status
+
 val command2 : string -> unit
 val _batch_mode: bool ref
 val command_safe: ?verbose:bool -> 

@@ -48,7 +48,7 @@ module Lib = Lib_ast_generic
  *  - '...' can match any sequence
  *  - simple constructs match complex constructs having more details
  *    (e.g., the absence of attribute in a pattern will still match functions
- *     having many attributes)
+ *     having many attributes), "less-is-more"
  *  - we do not care about differences in spaces/indentations/comments.
  *    we work at the AST-level.
  *)

@@ -665,6 +665,16 @@ let append_callgraph_to_prolog_db ?show_progress a b =
 (* Query helpers *)
 (*****************************************************************************)
 
+(* copy paste of Common.cmd_to_list *)
+let cmd_to_list_exit_1_ok command =
+  let (l,exit_status) = Common2.process_output_to_list2 command in
+  match exit_status with
+  (* swipl uses 1 for error code when use fail *)
+  | Unix.WEXITED (0 | 1) -> l
+  | _ -> raise (CmdError (exit_status,
+                         (spf "CMD = %s, RESULT = %s"
+                             command (String.concat "\n" l))))
+
 (* used for testing *)
 let prolog_query ?(verbose=false) ~source_file ~query =
   let facts_pl_file = Common.new_temp_file "prolog_php_db" ".pl" in
@@ -704,5 +714,5 @@ let prolog_query ?(verbose=false) ~source_file ~query =
     spf "swipl -s %s -f %s -t halt --quiet -g \"%s ,fail\""
       facts_pl_file helpers_pl_file query
   in
-  let xs = Common.cmd_to_list cmd in
+  let xs = cmd_to_list_exit_1_ok cmd in
   xs

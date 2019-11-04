@@ -338,10 +338,7 @@ let files_involved_in_diff ~basedir commitid =
   let cmd = goto_dir basedir ^
     spf "git show --name-status --pretty=\"format:\" %s" str_commit in
   let xs = Common.cmd_to_list cmd in
-
-  assert(List.hd xs = "");
-  (* the previous command has a first empty line before the list of files *)
-  List.tl xs +> List.map Lib_vcs.parse_file_status
+  xs +> List.map Lib_vcs.parse_file_status
 
 (*****************************************************************************)
 (* multiple commits operations  *)
