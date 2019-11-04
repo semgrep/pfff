@@ -18,6 +18,8 @@ open Ast_generic
 module Ast = Ast_generic
 module V = Visitor_ast_generic
 
+module GG = Generic_vs_generic
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -32,6 +34,20 @@ module V = Visitor_ast_generic
 (* right now only Expr are actually supported *)
 type pattern = Ast.any
 
+type ('a, 'b) matcher = 'a -> 'b ->
+  Metavars_generic.metavars_binding list
+
+ 
+(* todo: should maybe have a match_any_any *)
+
+let match_e_e pattern e = 
+  let env = GG.empty_environment () in
+  GG.m_expr pattern e env
+
+let match_st_st pattern e = 
+  let env = GG.empty_environment () in
+  GG.m_stmt pattern e env
+
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
@@ -44,7 +60,7 @@ let sgrep_ast ~hook pattern ast =
         { V.default_visitor with
           V.kexpr = (fun (k, _) x ->
             let matches_with_env =
-              Matching_generic.match_e_e pattern_expr  x
+              match_e_e pattern_expr  x
             in
             if matches_with_env = []
             then k x
@@ -64,7 +80,7 @@ let sgrep_ast ~hook pattern ast =
         { V.default_visitor with
           V.kstmt = (fun (k, _) x ->
             let matches_with_env =
-              Matching_generic.match_st_st pattern x
+              match_st_st pattern x
             in
             if matches_with_env = []
             then k x
