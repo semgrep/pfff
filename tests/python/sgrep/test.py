@@ -1,4 +1,4 @@
-import foo
+import foobar
 
 def foo():
     #x = { "fld1": "eval" }

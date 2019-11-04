@@ -64,13 +64,13 @@ module XMATCH = struct
    *)
 
   type tin = MV.metavars_binding
-  type 'x tout = ('x * MV.metavars_binding) list
-  type ('a, 'b) matcher = 'a -> 'b  -> tin -> ('a * 'b) tout
+  type tout = MV.metavars_binding list
+  type ('a, 'b) matcher = 'a -> 'b  -> tin -> tout
 
   let ((>>=):
-          (tin -> ('a * 'b) tout)  -> 
-          (('a * 'b) -> (tin -> ('c * 'd) tout)) -> 
-          (tin -> ('c * 'd) tout)) = 
+          (tin -> tout)  -> 
+          (unit -> (tin -> tout)) -> 
+          (tin -> tout)) = 
     fun m1 m2 ->
       fun tin ->
         (* old:
@@ -85,8 +85,8 @@ module XMATCH = struct
          *)
         let xs = m1 tin in
         (* try m2 on each possible returned bindings *)
-        let xxs = xs |> List.map (fun ((a,b), binding) -> 
-          m2 (a, b) binding
+        let xxs = xs |> List.map (fun binding -> 
+          m2 () binding
         ) in
         List.flatten xxs
 
@@ -102,9 +102,9 @@ module XMATCH = struct
     m1 tin @ m2 tin
 
            
-  let return (a,b) = fun tin ->
+  let return = fun tin ->
     (* old: Some (a,b) *)
-    [(a,b), tin]
+    [tin]
       
   let fail = fun _tin ->
     (* old: None *)
@@ -155,28 +155,18 @@ module XMATCH = struct
         Some (Common2.insert_assoc (mvar, valu) tin)
 
   let (envf: (MV.mvar Ast.wrap, Ast.any) matcher) =
-   fun (mvar, imvar) any  -> fun tin ->
+   fun (mvar, _imvar) any  -> fun tin ->
     match check_and_add_metavar_binding (mvar, any) tin with
     | None ->
         pr2 (spf "envf: fail, %s" mvar);
         fail tin
     | Some new_binding ->
         pr2 (spf "envf: success, %s" mvar);
-        return ((mvar, imvar), any) new_binding
+        return new_binding
 
-  let (envf2: (MV.mvar Ast.wrap, Ast.any * Ast.any) matcher) =
-   fun (mvar, imvar) (any1, any2)  -> fun tin ->
-    match check_and_add_metavar_binding (mvar, any1) tin with
-    | None ->
-        pr2 (spf "envf2: fail, %s" mvar);
-        fail tin
-    | Some new_binding ->
-        pr2 (spf "envf2: success, %s" mvar);
-        return ((mvar, imvar), (any1, any2)) new_binding
-
-  let tokenf a b = 
+  let tokenf _a _b = 
     (* dont care about position, space/indent/comment isomorphism *)
-    return (a, b)
+    return ()
 end
 
 (*****************************************************************************)
@@ -188,8 +178,8 @@ module MATCH  = Generic_vs_generic.GENERIC_VS_GENERIC (XMATCH)
 type ('a, 'b) matcher = 'a -> 'b ->
   MV.metavars_binding list
 
-let (extract_bindings: 'a XMATCH.tout -> MV.metavars_binding list) = fun tout ->
-  tout |> List.map (fun (_term, env) -> env)
+let (extract_bindings: XMATCH.tout -> MV.metavars_binding list) = fun tout ->
+  tout
   
 (* todo: should maybe have a match_any_any *)
 
