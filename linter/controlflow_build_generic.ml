@@ -121,6 +121,10 @@ let (lookup_some_ctx:
    in
    aux 1 xs
 
+let info_opt any =
+  match Lib_ast_generic.ii_of_any any with
+  | [] -> None
+  | x::_xs -> Some x
 
 (*****************************************************************************)
 (* Algorithm *)
@@ -147,7 +151,7 @@ let (lookup_some_ctx:
 let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
  fun state previ stmt ->
 
-   let i () = Some (List.hd (Lib_ast_generic.ii_of_any (S stmt))) in
+   let i () = info_opt (S stmt) in
 
    match stmt with
    | Label _ | Goto _ -> raise Todo
@@ -651,7 +655,7 @@ and (cfg_cases:
        | _ -> F.Case
       in
 
-     let i () = Some (List.hd (Lib_ast_generic.ii_of_any (S stmt))) in
+     let i () = info_opt (S stmt) in
 
      let newi = state.g#add_node { F.n = node; i=i() } in
      state.g |> add_arc_opt (previ, newi);
@@ -679,7 +683,7 @@ and (cfg_catches: state -> nodei -> nodei -> Ast.catch list -> nodei) =
    catches |> List.fold_left (fun previ catch ->
      let (_pattern, stmt) = catch in
 
-     let i () = Some (List.hd (Lib_ast_generic.ii_of_any (S stmt))) in
+     let i () = info_opt (S stmt) in
 
      let newi = state.g#add_node { F.n = F.Catch; i= i() } in
      state.g |> add_arc (previ, newi);
@@ -705,7 +709,7 @@ and (cfg_catches: state -> nodei -> nodei -> Ast.catch list -> nodei) =
    ) previ
 
 and cfg_expr state kind previ expr =
-  let i = Some (List.hd (Lib_ast_generic.ii_of_any (E expr))) in
+  let i = info_opt (E expr) in
   let newi = state.g#add_node { 
     F.n = F.SimpleStmt (F.ExprStmt (expr, kind)); 
     i=i 
