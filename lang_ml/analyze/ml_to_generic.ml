@@ -55,7 +55,7 @@ let rec ident v = wrap string v
 
 and name (v1, v2) = 
   let v1 = qualifier v1 and v2 = ident v2 in 
-  v2, { (G.empty_info ()) with id_qualifier = Some v1 }
+  v2, { (G.empty_info ()) with G.id_qualifier = Some v1 }
 
 and qualifier v = list ident v
 
@@ -138,9 +138,9 @@ and expr =
   | ObjAccess ((v1, v2)) -> let v1 = expr v1 and v2 = ident v2 in
                             G.ObjAccess (v1, v2)
   | LetIn ((v1, v2, v3)) ->
-      let v1 = list let_binding v1
-      and v2 = expr v2
-      and v3 = rec_opt v3
+      let _v1 = list let_binding v1
+      and _v2 = expr v2
+      and _v3 = rec_opt v3
       in 
       raise Todo
   | Fun ((v1, v2)) -> 
@@ -249,13 +249,15 @@ and pattern =
 
 and let_binding =
   function
-  | LetClassic v1 -> let v1 = let_def v1 in raise Todo
+  | LetClassic v1 -> let _v1 = let_def v1 in raise Todo
   | LetPattern ((v1, v2)) -> let v1 = pattern v1 and v2 = expr v2 in 
                              G.LetPattern (v1, v2)
 
 and let_def { lname = lname; lparams = lparams; lbody = lbody } =
-  let arg = ident lname in
-  let arg = list parameter lparams in let arg = expr lbody in ()
+  let _v1 = ident lname in
+  let _v2 = list parameter lparams in 
+  let _v3 = expr lbody in
+  ()
 
 and parameter v = G.ParamPattern (pattern v)
   
@@ -297,31 +299,32 @@ and type_def_kind =
       in G.AndType v1
   
 and module_declaration { mname = mname; mbody = mbody } =
-  let arg = ident mname in 
-  let arg = module_expr mbody in
+  let _v1 = ident mname in 
+  let _v2 = module_expr mbody in
   ()
 
 and module_expr =
   function
-  | ModuleName v1 -> let v1 = name v1 in ()
-  | ModuleStruct v1 -> let v1 = list item v1 in ()
+  | ModuleName v1 -> let _v1 = name v1 in ()
+  | ModuleStruct v1 -> let _v1 = list item v1 in ()
 
 and item =
   function
-  | Type v1 -> let v1 = list type_declaration v1 in ()
+  | Type v1 -> let _v1 = list type_declaration v1 in ()
 
   | Exception ((v1, v2)) ->
-      let v1 = ident v1 and v2 = list type_ v2 in ()
+      let _v1 = ident v1 and _v2 = list type_ v2 in ()
   | External ((v1, v2, v3)) ->
-      let v1 = ident v1
-      and v2 = type_ v2
-      and v3 = list (wrap string) v3
+      let _v1 = ident v1
+      and _v2 = type_ v2
+      and _v3 = list (wrap string) v3
       in ()
-  | Open v1 -> let v1 = name v1 in ()
+  | Open v1 -> let _v1 = name v1 in ()
 
-  | Val ((v1, v2)) -> let v1 = ident v1 and v2 = type_ v2 in ()
+  | Val ((v1, v2)) -> let _v1 = ident v1 and _v2 = type_ v2 in ()
   | Let ((v1, v2)) ->
-      let v1 = rec_opt v1 and v2 = list let_binding v2 in ()
+      let _v1 = rec_opt v1 and _v2 = list let_binding v2 in ()
 
-  | Module v1 -> let v1 = module_declaration v1 in ()
+  | Module v1 -> let _v1 = module_declaration v1 in ()
 
+and program xs = List.map item xs

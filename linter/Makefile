@@ -5,7 +5,10 @@ TOP=..
 TARGET=lib
 OPAMPKG=pfff-linter
 
-SRC= controlflow_generic.ml
+SRC= flag_linter.ml \
+   entity_generic.ml \
+   check_all_generic.ml \
+   unit_linter.ml
 
 SYSLIBS= str.cma unix.cma
 LIBS=$(TOP)/commons/lib.cma \

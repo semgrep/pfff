@@ -72,5 +72,5 @@ $(TARGET).top: $(OBJS) $(LIBS)
 clean::
 	rm -f $(TARGET).top
 
-ml_to_generic.cmo: ml_to_generic.ml
-	ocamlc $(INCLUDES) -c $^
+#ml_to_generic.cmo: ml_to_generic.ml
+#	ocamlc $(INCLUDES) -c $^

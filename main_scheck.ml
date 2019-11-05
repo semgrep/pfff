@@ -8,6 +8,8 @@
  *)
 open Common
 
+module E = Errors_code
+
 (*****************************************************************************)
 (* Purpose *)
 (*****************************************************************************)
@@ -18,7 +20,7 @@ open Common
  * 
  * Note that scheck is mostly for generic bugs (which sometimes
  * requires global analysis). For API-specific bugs, use 'sgrep'.
- * todo: implement SgrepLint for scheck (port it from the facebook repo).
+ * todo: implement SgrepLint for scheck.
  * 
  * 'scheck' can leverage expensive global analysis results to find more 
  * bugs. It can use a light database (see pfff_db) or a graph_code database
@@ -117,7 +119,7 @@ open Common
 (*****************************************************************************)
 
 (* less: infer from basename argv(0) ? *)
-let lang = ref "php"
+let lang = ref "python"
 
 (* show only bugs with "rank" super to this *)
 let filter = ref 2
@@ -192,6 +194,52 @@ let set_gc () =
   Gc.set { (Gc.get()) with Gc.minor_heap_size = 2_000_000 };
   Gc.set { (Gc.get()) with Gc.space_overhead = 200 };
   ()
+
+let ast_of_file file =
+  let prog = Parse_python.parse_program file in
+  Python_to_generic.program prog
+
+(* copy-paste: main_sgrep.ml *)
+let create_ast file =
+ try (
+  match !lang with
+  | "py" | "python" ->
+    let ast = Parse_python.parse_program file in
+    Resolve_python.resolve ast;
+    Python_to_generic.program ast
+  | "js" | "javascript" ->
+    let cst = Parse_js.parse_program file in
+    let ast = Ast_js_build.program cst in
+    Js_to_generic.program ast
+  | "c" ->
+    let ast = Parse_c.parse_program file in
+    C_to_generic.program ast
+  | "java" ->
+    let ast = Parse_java.parse_program file in
+    Java_to_generic.program ast
+  | "ml" | "ocaml" ->
+    let cst = Parse_ml.parse_program file in
+    let ast = Ast_ml_build.program cst in
+    let _ = Ml_to_generic.program ast in
+    raise Todo
+  | s -> failwith (spf "unsupported language: %s" s)
+  )
+  with
+   | Parse_info.Lexical_error (s, tok) ->
+      E.error tok (E.LexicalError s);
+      []
+   | Parse_info.Parsing_error tok ->
+      E.error tok (E.ParseError);
+      []
+   | Parse_info.Ast_builder_error (s, tok) ->
+      E.error tok (E.AstbuilderError s);
+      []
+   | Parse_info.Other_error (s, tok) ->
+      E.error tok (E.OtherParsingError s);
+      []
+   | exn ->
+    failwith (spf "PB parsing with %s, exn = %s"  file (Common.exn_to_s exn))
+
 
 (*****************************************************************************)
 (* Language specific *)
@@ -279,10 +327,10 @@ let build_identifier_index lang xs =
   (* we don't here *)
   let hcnt = Hashtbl.create 101 in
   Flag_parsing.verbose_lexing := false;
-  files +> List.iter (fun file ->
+  files |> List.iter (fun file ->
     let toks = Parse_cpp.tokens file in
        
-    toks +> List.iter (fun tok ->
+    toks |> List.iter (fun tok ->
       match tok with
       | T.TIdent (s, info) ->
           if Hashtbl.mem hcnt s
@@ -306,7 +354,7 @@ let build_identifier_index lang xs =
  * if was recursive function
  *)
 let false_positive_detector hidentifier g errors =
-  errors +> Common.exclude (fun err ->
+  errors |> Common.exclude (fun err ->
     match err.Errors_code.typ with
     | Errors_code.Deadcode ((s, Entity_code.Function) as n) ->
         let short = Graph_code.shortname_of_node n in
@@ -329,13 +377,56 @@ let false_positive_detector hidentifier g errors =
 
 let main_action xs =
   set_gc ();
-  Logger.log Config_pfff.logger "scheck" None;
 
   let xs = List.map Common.fullpath xs in
   let lang = !lang in
   let files = Find_source.files_of_dir_or_files ~lang xs in
 
   match lang with
+  | "py" | "python" 
+  | "js" | "javascript" ->
+      let find_entity = None in
+      
+      files |> Console.progress ~show:!show_progress (fun k -> 
+        List.iter (fun file ->
+          k();
+          try 
+            pr2_dbg (spf "processing: %s" file);
+            let ast = create_ast file in
+            Check_all_generic.check_file ~find_entity ast;
+
+            let errs = 
+              !E.g_errors 
+              |> List.rev 
+              |> List.filter (fun x -> 
+                E.score_of_rank (E.rank_of_error x) >= !filter
+              )
+            in
+            if not !rank
+            then begin 
+              errs |> List.iter (fun err -> pr (E.string_of_error err));
+              (*if !auto_fix then errs|>List.iter Auto_fix_php.try_auto_fix;*)
+              E.g_errors := []
+            end
+          with 
+            | (Timeout | UnixExit _) as exn -> raise exn
+            (*  | (Unix.Unix_error(_, "waitpid", "")) as exn -> raise exn *)
+            | exn ->
+              pr2 (spf "PB with %s, exn = %s" file (Common.exn_to_s exn));
+              if !Common.debugger then raise exn
+        ));
+
+    if !rank then begin
+      let errs = 
+        !E.g_errors 
+        |> List.map (fun x -> x, E.rank_of_error x)
+        |> Common.sort_by_val_highfirst 
+        |> List.map fst
+        |> Common.take_safe 20 
+      in
+      errs |> List.iter (fun err -> pr (E.string_of_error err));
+    end
+
   | "ocaml" | "java" | "c" | "php" | "clang2"  ->
     let graph_file, _root =
       match xs, !graph_code with
@@ -354,26 +445,26 @@ let main_action xs =
     (* todo: make this more lazy? it's pretty slow *)
     let hidentifier =
       if lang = "clang2" (* not for "c"! graph_code_c is robust enough :) *)
-      then build_identifier_index (if lang = "clang2" then "c++" else lang) xs +> snd
+      then build_identifier_index (if lang = "clang2" then "c++" else lang) xs |> snd
       else Hashtbl.create 0
     in
 
     let errs = 
       errs 
-      +> false_positive_detector hidentifier g
-      +> Errors_code.adjust_errors
-      +> List.filter (fun err -> (Errors_code.score_of_error err) >= !filter)
+      |> false_positive_detector hidentifier g
+      |> Errors_code.adjust_errors
+      |> List.filter (fun err -> (Errors_code.score_of_error err) >= !filter)
     in
     let errs = 
       if !rank 
       then
-        errs +> List.map (fun err -> err, Errors_code.rank_of_error err)
-        +> Common.sort_by_val_highfirst
-        +> Common.take_safe 40
-        +> List.map fst
+        errs |> List.map (fun err -> err, Errors_code.rank_of_error err)
+        |> Common.sort_by_val_highfirst
+        |> Common.take_safe 40
+        |> List.map fst
       else errs
     in
-    errs +> List.iter (fun err ->
+    errs |> List.iter (fun err ->
       (* less: confront annotation and error kind *)
       if Errors_code.annotation_at err.Errors_code.loc <> None
       then pr2_dbg (spf "%s (Skipping @)" (Errors_code.string_of_error err))
@@ -388,7 +479,7 @@ let main_action xs =
     (* less: use a VCS.find... that is more general ?
      * infer PHP_ROOT? or take a --php_root?
      *)
-    let an_arg = List.hd xs +> Common2.relative_to_absolute in
+    let an_arg = List.hd xs |> Common2.relative_to_absolute in
     let root = 
       try Git.find_root_from_absolute_path an_arg 
       with Not_found -> "/"
@@ -412,7 +503,7 @@ let main_action xs =
     in
   
     Common.save_excursion Flag_parsing_php.caching_parsing !cache_parse (fun ()->
-      files +> Console.progress ~show:!show_progress (fun k -> 
+      files |> Console.progress ~show:!show_progress (fun k -> 
         List.iter (fun file ->
           k();
           try 
@@ -425,8 +516,8 @@ let main_action xs =
             );
             let errs = 
               !Error_php._errors 
-              +> List.rev 
-              +> List.filter (fun x -> 
+              |> List.rev 
+              |> List.filter (fun x -> 
                 Error_php.score_of_rank
                   (Error_php.rank_of_error_kind x.Error_php.typ) >= 
                   !filter
@@ -434,8 +525,8 @@ let main_action xs =
             in
             if not !rank 
             then begin 
-              errs +> List.iter (fun err -> pr (Error_php.string_of_error err));
-              if !auto_fix then errs +> List.iter Auto_fix_php.try_auto_fix;
+              errs |> List.iter (fun err -> pr (Error_php.string_of_error err));
+              if !auto_fix then errs |> List.iter Auto_fix_php.try_auto_fix;
               Error_php._errors := []
             end
           with 
@@ -449,18 +540,18 @@ let main_action xs =
     if !rank then begin
       let errs = 
         !Error_php._errors 
-        +> List.rev
-        +> Error_php.rank_errors
-        +> Common.take_safe 20 
+        |> List.rev
+        |> Error_php.rank_errors
+        |> Common.take_safe 20 
       in
-      errs +> List.iter (fun err -> pr (Error_php.string_of_error err));
+      errs |> List.iter (fun err -> pr (Error_php.string_of_error err));
       Error_php.show_10_most_recurring_unused_variable_names ();
       pr2 (spf "total errors = %d" (List.length !Error_php._errors));
       pr2 "";
       pr2 "";
     end;
     
-    !layer_file +> Common.do_option (fun file ->
+    !layer_file |> Common.do_option (fun file ->
       (*  a layer needs readable paths, hence the root *)
       let root = Common2.common_prefix_of_files_or_dirs xs in
       Layer_checker_php.gen_layer ~root ~output:file !Error_php._errors
@@ -531,11 +622,11 @@ let dflow file_or_dir =
   List.iter (fun file ->
     (try
        let ast = Parse_php.parse_program file in
-       ast +> List.iter (function
+       ast |> List.iter (function
        | Cst_php.FuncDef def ->
          dflow_of_func_def def
        | Cst_php.ClassDef def ->
-         Cst_php.unbrace def.Cst_php.c_body +> List.iter
+         Cst_php.unbrace def.Cst_php.c_body |> List.iter
            (function
            | Cst_php.Method def -> dflow_of_func_def def
            | _ -> ())
@@ -547,7 +638,7 @@ let dflow file_or_dir =
 (* Poor's man token-based Deadcode detector for C/C++/...  *)
 (*---------------------------------------------------------------------------*)
 module PI = Parse_info
-module E = Entity_code
+module Ent = Entity_code
 module Ast = Ast_fuzzy
 
 let entities_of_ast ast =
@@ -556,7 +647,7 @@ let entities_of_ast ast =
     Ast_fuzzy.ktrees = (fun (k, _) xs ->
       (match xs with
       | Ast.Tok (s, _)::Ast.Parens _::Ast.Braces _::_res ->
-          Common.push (s, E.Function) res;
+          Common.push (s, Ent.Function) res;
       | _ ->  ()
       );
       k xs
@@ -572,10 +663,10 @@ let test_index xs =
   let xs = List.map Common.fullpath xs in
   let hcnt, h = build_identifier_index "c++" xs in
 (*
-  hcnt +> Common.hash_to_list +> Common.sort_by_val_lowfirst 
-  +> Common.take_safe 50 +> List.iter pr2_gen
+  hcnt |> Common.hash_to_list |> Common.sort_by_val_lowfirst 
+  |> Common.take_safe 50 |> List.iter pr2_gen
 *)
-  hcnt +> Common.hash_to_list +> List.iter (fun (s, cnt) ->
+  hcnt |> Common.hash_to_list |> List.iter (fun (s, cnt) ->
     if cnt = 1 then
       let info = Hashtbl.find h s in
       let file = PI.file_of_info info in
@@ -590,7 +681,7 @@ let test_index xs =
     in
         let entities = entities_of_ast ast in
         (match Common2.assoc_opt s entities with
-        | Some E.Function ->
+        | Some Ent.Function ->
             pr2 (spf "DEAD FUNCTION? %s in %s" s file)
         | _ -> ()
         )
@@ -600,9 +691,15 @@ let test_index xs =
 (*---------------------------------------------------------------------------*)
 (* Regression testing *)
 (*---------------------------------------------------------------------------*)
+open OUnit
+
 let test () =
-  let suite = Unit_checker_php.unittest in
-  OUnit.run_test_tt suite +> ignore;
+  let suite = "scheck" >:::[
+      Unit_linter.unittest ~ast_of_file;
+      Unit_checker_php.unittest;
+  ]
+  in
+  OUnit.run_test_tt suite |> ignore;
   ()
      
 (*---------------------------------------------------------------------------*)
@@ -618,7 +715,7 @@ let extra_actions () = [
   Common.mk_action_1_arg dflow;
   "-test_unprogress", " ",
   Common.mk_action_1_arg (fun file ->
-    Common.cat file +> List.iter (fun s ->
+    Common.cat file |> List.iter (fun s ->
       if s =~ ".*\\(flib/[^ ]+ CHECK: [^\n]+\\)"
       then pr (Common.matched1 s)
       else ()

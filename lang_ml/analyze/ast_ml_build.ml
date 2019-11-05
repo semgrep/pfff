@@ -473,7 +473,7 @@ and v_toplevel x =
     [A.Let (None, [A.LetPattern (A.PatUnderscore (fake_info()), v1)])]
   | TopDirective v1 -> let _v1 = v_info v1 in []
 
-and v_program v = List.map v_toplevel v |> List.flatten
+and program v = List.map v_toplevel v |> List.flatten
 
 (*
 and v_any = function
