@@ -131,6 +131,7 @@ LIBS= commons/lib.cma \
     h_program-visual/lib.cma \
     graph_code/lib.cma \
     matcher/lib.cma \
+    linter/lib.cma \
     lang_ml/parsing/lib.cma \
      lang_ml/analyze/lib.cma \
     lang_skip/parsing/lib.cma \
@@ -189,6 +190,7 @@ MAKESUBDIRS=commons commons_ocollection commons_core \
   graph_code \
   h_program-visual \
   matcher \
+  linter \
   lang_ml/parsing \
    lang_ml/analyze \
   lang_skip/parsing \
@@ -457,7 +459,7 @@ uninstall: all
 INSTALL_SUBDIRS= \
   commons commons_core commons_wrappers/graph \
   globals \
-  h_program-lang    matcher \
+  h_program-lang    matcher linter \
   h_version-control h_files-format h_visualization \
   graph_code \
   lang_ml/parsing  lang_ml/analyze \
