@@ -20,7 +20,6 @@ module Ast = Cst_cpp
 module V = Visitor_cpp
 module E = Errors_code
 module S = Scope_code
-module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude *)
@@ -126,7 +125,7 @@ let do_in_new_scope_and_check f =
     then 
       let s = Ast.string_of_name_tmp name in
       let ii = List.hd (Ast.ii_of_id_name name) in
-      E.error (PI.token_location_of_info ii) (E.UnusedVariable (s, scope))
+      E.error ii (E.UnusedVariable (s, scope))
   );
   res
 

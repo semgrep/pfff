@@ -56,12 +56,18 @@ type error = {
  and severity = Error | Warning
 
  and error_kind =
+  (* parsing related *)
+  | LexicalError of string
+  | ParseError (* aka SyntaxError *)
+  | AstbuilderError of string
+  | OtherParsingError of string
+
   (* entities *)
    (* done while building the graph:
     *  - UndefinedEntity (UseOfUndefined)
     *  - MultiDefinedEntity (DupeEntity)
     *)
- (* As done by my PHP global analysis checker.
+ (* global analysis checker.
   * Never done by compilers, and unusual for linters to do that.
   *  
   * note: OCaml 4.01 now does that partially by locally checking if 
@@ -97,7 +103,6 @@ type error = {
   (* lint *)
 
   (* sgrep lint rules *)
-
   | SgrepLint of (string (* title/code *) * string (* msg *))
 
   (* other *)
@@ -142,6 +147,11 @@ let string_of_error_kind error_kind =
         (Scope_code.string_of_scope scope)
   | SgrepLint (title, message) -> spf "%s: %s" title message
 
+  | LexicalError s -> spf "Lexical error: %s" s
+  | ParseError -> "Syntax error"
+  | AstbuilderError s -> spf "AST generation error: %s" s
+  | OtherParsingError s -> spf "Other parsing error: %s" s
+
 (*
 let loc_of_node root n g =
   try 
@@ -163,9 +173,16 @@ let string_of_error err =
 
 let g_errors = ref []
 
-let error loc err =
+let error tok err =
+  let loc = PI.token_location_of_info tok in
   Common.push { loc = loc; typ = err; sev = Error } g_errors
-let warning loc err = 
+let warning tok err = 
+  let loc = PI.token_location_of_info tok in
+  Common.push { loc = loc; typ = err; sev = Warning } g_errors
+
+let error_loc loc err =
+  Common.push { loc = loc; typ = err; sev = Error } g_errors
+let warning_loc loc err = 
   Common.push { loc = loc; typ = err; sev = Warning } g_errors
 
 (*****************************************************************************)
@@ -195,17 +212,21 @@ let rank_of_error err =
   | UnusedExport _ -> ReallyImportant
   | UnusedVariable _ -> Less
   | SgrepLint _ -> Important
+
+  (* usually issues in my parsers *)
+  | LexicalError _ | ParseError | AstbuilderError _ | OtherParsingError _
+   -> OnlyStrict
   
 
 let score_of_error err =
-  err +> rank_of_error +> score_of_rank
+  err |> rank_of_error |> score_of_rank
 
 (*****************************************************************************)
 (* False positives *)
 (*****************************************************************************)
 
 let adjust_errors xs =
-  xs +> Common.exclude (fun err ->
+  xs |> Common.exclude (fun err ->
     let file = err.loc.PI.file in
     
     match err.typ with

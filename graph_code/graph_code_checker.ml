@@ -54,7 +54,7 @@ let check_imperative g =
         (match n with
         | s, E.Function when s =$= "main" || s =~ "^main__.*" -> ()
         | _ ->
-          Error.warning info.G.pos (Error.Deadcode n);
+          Error.warning_loc info.G.pos (Error.Deadcode n);
         );
 
       (* todo: factorize with graph_code_clang, put in database_code? *)
@@ -75,7 +75,7 @@ let check_imperative g =
           if (G.has_node (fst n_def, E.Function) g)
           then ()
           else
-            Error.warning info.G.pos (Error.UndefinedDefOfDecl n_decl)
+            Error.warning_loc info.G.pos (Error.UndefinedDefOfDecl n_decl)
       );
 
       let n_decl_opt =
@@ -99,14 +99,14 @@ let check_imperative g =
           )
           in
           if users_outside = [] && ps <> [] && is_header_file file_decl
-          then Error.warning info_decl.G.pos 
+          then Error.warning_loc info_decl.G.pos 
             (Error.UnusedExport (n_decl, file_def));
 
           (* for clang I usually add a Use edge between the def and the decl
            * so the decl would not have been marked as dead without this:
            *)
           if ps = [] 
-          then Error.warning info_decl.G.pos (Error.Deadcode n_decl);
+          then Error.warning_loc info_decl.G.pos (Error.Deadcode n_decl);
         end
       );
   ))

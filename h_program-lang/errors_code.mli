@@ -7,14 +7,22 @@ type error = {
  and severity = Error | Warning
 
  and error_kind =
- | Deadcode of entity
+  (* parsing related *)
+  | LexicalError of string
+  | ParseError (* aka SyntaxError *)
+  | AstbuilderError of string
+  | OtherParsingError of string
 
- | UndefinedDefOfDecl of entity
- | UnusedExport of entity * Common.filename
- | UnusedVariable of string * Scope_code.t
+  (* global analysis *)
+  | Deadcode of entity
 
- (* sgrep lint rules *)
- | SgrepLint of (string (* title/code *) * string (* msg *))
+  (* use/def entities *)
+  | UndefinedDefOfDecl of entity
+  | UnusedExport of entity * Common.filename
+  | UnusedVariable of string * Scope_code.t
+
+  (* sgrep lint rules *)
+  | SgrepLint of (string (* title/code *) * string (* msg *))
 
  and entity = (string * Entity_code.entity_kind)
 
@@ -33,8 +41,11 @@ val string_of_error_kind: error_kind -> string
 
 val g_errors: error list ref
 (* !modify g_errors! *)
-val error: Parse_info.token_location -> error_kind -> unit
-val warning: Parse_info.token_location -> error_kind -> unit
+val error: Parse_info.info -> error_kind -> unit
+val warning: Parse_info.info -> error_kind -> unit
+
+val error_loc: Parse_info.token_location -> error_kind -> unit
+val warning_loc: Parse_info.token_location -> error_kind -> unit
 
 type rank =
  | Never
