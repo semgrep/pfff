@@ -50,11 +50,8 @@ let check_file ?(verbose=true) ?(find_entity=None) _ast =
 
 
 (*
-  Check_includes_php.check env file ast;
   Check_cfg_php.check_program ast;
   (* not ready yet: Check_dfg_php.check_program ?find_entity ast; *)
-  Check_misc_php.check ast;
-  Check_lint_php.check ast;
   Check_micro_clones_php.check ast;
 *)
   (* work only when have a find_entity; requires a global view of the code *)

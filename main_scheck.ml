@@ -16,7 +16,8 @@ module E = Errors_code
 (* 
  * A lint-like checker. https://github.com/facebook/pfff/wiki/Scheck
  * Right now there is support mainly for PHP, as well as for 
- * C, Java, and OCaml (via graph_code_checker.ml).
+ * C, Java, and OCaml (via graph_code_checker.ml), and for Python
+ * and Javascript (via the generic AST).
  * 
  * Note that scheck is mostly for generic bugs (which sometimes
  * requires global analysis). For API-specific bugs, use 'sgrep'.
@@ -121,7 +122,7 @@ module E = Errors_code
 (* less: infer from basename argv(0) ? *)
 let lang = ref "python"
 
-(* show only bugs with "rank" super to this *)
+(* show only bugs with "rank" superior to this *)
 let filter = ref 2
 (* rank errors *)
 let rank = ref false
@@ -239,7 +240,6 @@ let create_ast file =
       []
    | exn ->
     failwith (spf "PB parsing with %s, exn = %s"  file (Common.exn_to_s exn))
-
 
 (*****************************************************************************)
 (* Language specific *)
@@ -383,6 +383,11 @@ let main_action xs =
   let files = Find_source.files_of_dir_or_files ~lang xs in
 
   match lang with
+
+(*---------------------------------------------------------------------------*)
+(* AST generic checker *)
+(*---------------------------------------------------------------------------*)
+
   | "py" | "python" 
   | "js" | "javascript" ->
       let find_entity = None in
@@ -405,12 +410,10 @@ let main_action xs =
             if not !rank
             then begin 
               errs |> List.iter (fun err -> pr (E.string_of_error err));
-              (*if !auto_fix then errs|>List.iter Auto_fix_php.try_auto_fix;*)
               E.g_errors := []
             end
           with 
             | (Timeout | UnixExit _) as exn -> raise exn
-            (*  | (Unix.Unix_error(_, "waitpid", "")) as exn -> raise exn *)
             | exn ->
               pr2 (spf "PB with %s, exn = %s" file (Common.exn_to_s exn));
               if !Common.debugger then raise exn
@@ -426,6 +429,10 @@ let main_action xs =
       in
       errs |> List.iter (fun err -> pr (E.string_of_error err));
     end
+
+(*---------------------------------------------------------------------------*)
+(* Graphcode-based checker *)
+(*---------------------------------------------------------------------------*)
 
   | "ocaml" | "java" | "c" | "php" | "clang2"  ->
     let graph_file, _root =
@@ -470,6 +477,10 @@ let main_action xs =
       then pr2_dbg (spf "%s (Skipping @)" (Errors_code.string_of_error err))
       else pr2 (Errors_code.string_of_error err)
     )
+
+(*---------------------------------------------------------------------------*)
+(* PHP checker *)
+(*---------------------------------------------------------------------------*)
 
   | "php2" ->
 
@@ -556,6 +567,7 @@ let main_action xs =
       let root = Common2.common_prefix_of_files_or_dirs xs in
       Layer_checker_php.gen_layer ~root ~output:file !Error_php._errors
     );
+
 
   | _ -> failwith ("unsupported language: " ^ lang)
   
@@ -657,8 +669,6 @@ let entities_of_ast ast =
   visitor ast;
   !res
 
-
-
 let test_index xs =
   let xs = List.map Common.fullpath xs in
   let hcnt, h = build_identifier_index "c++" xs in
@@ -688,9 +698,9 @@ let test_index xs =
       end
   )
 
-(*---------------------------------------------------------------------------*)
+(*****************************************************************************)
 (* Regression testing *)
-(*---------------------------------------------------------------------------*)
+(*****************************************************************************)
 open OUnit
 
 let test () =
@@ -701,10 +711,11 @@ let test () =
   in
   OUnit.run_test_tt suite |> ignore;
   ()
+
+(*****************************************************************************)
+(* Flags *)
+(*****************************************************************************)
      
-(*---------------------------------------------------------------------------*)
-(* the command line flags *)
-(*---------------------------------------------------------------------------*)
 let extra_actions () = [
   "-test", " run regression tests",
   Common.mk_action_0_arg test;
