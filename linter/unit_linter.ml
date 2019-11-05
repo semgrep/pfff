@@ -25,7 +25,10 @@ let unittest ~ast_of_file =
   in
 
   let test_files = [
-    p "foo.py"
+    p "foo.py";
+
+    p "cfg.py";
+
 (*
     p "builtins.php";
     p "common.php";
@@ -49,7 +52,6 @@ let unittest ~ast_of_file =
     p "namespaces_uses.php";
 *)
 
-    p "cfg.php";
     p "references.php";
     p "xhp.php";
     p "typing.php";

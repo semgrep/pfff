@@ -93,6 +93,9 @@ type error = {
     *)
   | UnusedVariable of string * Scope_code.t
 
+  (* CFG *)
+ | CFGError of string
+
   (* classes *)
 
   (* files (include/import) *)
@@ -151,6 +154,7 @@ let string_of_error_kind error_kind =
   | ParseError -> "Syntax error"
   | AstbuilderError s -> spf "AST generation error: %s" s
   | OtherParsingError s -> spf "Other parsing error: %s" s
+  | CFGError s -> spf "Control flow error: %s" s
 
 (*
 let loc_of_node root n g =
@@ -212,6 +216,7 @@ let rank_of_error err =
   | UnusedExport _ -> ReallyImportant
   | UnusedVariable _ -> Less
   | SgrepLint _ -> Important
+  | CFGError _ -> Important
 
   (* usually issues in my parsers *)
   | LexicalError _ | ParseError | AstbuilderError _ | OtherParsingError _

@@ -7,6 +7,8 @@ OPAMPKG=pfff-linter
 
 SRC= flag_linter.ml \
    entity_generic.ml \
+   controlflow_generic.ml controlflow_build_generic.ml \
+   check_cfg_generic.ml \
    check_all_generic.ml \
    unit_linter.ml
 

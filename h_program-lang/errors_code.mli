@@ -21,6 +21,9 @@ type error = {
   | UnusedExport of entity * Common.filename
   | UnusedVariable of string * Scope_code.t
 
+  (* CFG *)
+ | CFGError of string
+
   (* sgrep lint rules *)
   | SgrepLint of (string (* title/code *) * string (* msg *))
 

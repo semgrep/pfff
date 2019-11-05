@@ -36,7 +36,7 @@
 (* Main entry points *)
 (*****************************************************************************)
 
-let check_file ?(verbose=true) ?(find_entity=None) _ast =
+let check_file ?(verbose=true) ?(find_entity=None) ast =
 
  Common.save_excursion Flag_linter.verbose_checking verbose (fun() ->
 
@@ -48,9 +48,9 @@ let check_file ?(verbose=true) ?(find_entity=None) _ast =
    *)
   (* Check_variables_php.check_and_annotate_program find_entity ast; *)
 
+  Check_cfg_generic.check_program ast;
 
 (*
-  Check_cfg_php.check_program ast;
   (* not ready yet: Check_dfg_php.check_program ?find_entity ast; *)
   Check_micro_clones_php.check ast;
 *)
