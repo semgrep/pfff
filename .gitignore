@@ -5,6 +5,9 @@ tests/js/ai/todo2
 external/battery_included/ocamlgtk
 #facebook/
 
+todo
+lang_go
+
 #TODO
 /code_map/thread_bug_ml
 /gitlog
