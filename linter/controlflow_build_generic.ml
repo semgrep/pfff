@@ -686,12 +686,14 @@ and (cfg_catches: state -> nodei -> nodei -> Ast.catch list -> nodei) =
 (*
      let ei = cfg_var_def state (Some newi) name in
 *)
+     let ei = Some newi in
+
      let truei = state.g#add_node { F.n = F.TrueNode;i=None } in
      let falsei = state.g#add_node { F.n = F.FalseNode;i=None } in
-(*
+
      state.g |> add_arc_opt (ei, truei);
      state.g |> add_arc_opt (ei, falsei);
-*)
+
 
      (* the stmts can contain 'throw' that will be linked to an upper try or
       * exit node *)
@@ -771,10 +773,10 @@ let (deadcode_detection : F.flow -> unit) = fun flow ->
       (match node.F.n with
       | F.Enter -> ()
       | _ ->
-          let info = node.F.i in
-          (match info with
+          (match node.F.i with
           | None ->
-              pr2 "CFG: PB, found dead node but cant trace to location";
+              pr2 (spf "CFG: PB, found dead node but no loc: %s"
+                   (Controlflow_generic.short_string_of_node node))
           | Some info ->
               raise (Error (DeadCode node.F.n, Some info))
           )
