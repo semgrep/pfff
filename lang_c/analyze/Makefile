@@ -3,6 +3,7 @@ TOP=../..
 # Variables
 ##############################################################################
 TARGET=lib
+OPAMPKG=pfff-lang_c-analyze
 
 SRC= ast_cil.ml meta_ast_cil.ml \
      c_to_generic.ml \

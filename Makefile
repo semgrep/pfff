@@ -470,9 +470,13 @@ INSTALL_SUBDIRS= \
   graph_code \
   lang_ml/parsing  lang_ml/analyze \
   lang_cpp/parsing lang_cpp/analyze \
+  lang_c/parsing lang_c/analyze \
   lang_nw/parsing  lang_nw/analyze\
+  lang_java/parsing  lang_java/analyze\
   lang_js/parsing  lang_js/analyze\
   lang_python/parsing  lang_python/analyze\
+  lang_GENERIC/parsing  lang_GENERIC/analyze\
+
 
 install-libs:: all all.opt
 	set -e; for i in $(INSTALL_SUBDIRS); do echo $$i; $(MAKE) -C $$i install-lib; done

@@ -3,6 +3,7 @@ TOP=../..
 # Variables
 ##############################################################################
 TARGET=lib
+OPAMPKG=pfff-lang_c
 
 -include $(TOP)/Makefile.config
 

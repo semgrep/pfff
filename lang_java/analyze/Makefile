@@ -3,6 +3,7 @@ TOP=../..
 # Variables
 ##############################################################################
 TARGET=lib
+OPAMPKG=pfff-lang_java-analyze
 
 SRC= java_to_generic.ml \
      highlight_java.ml \
