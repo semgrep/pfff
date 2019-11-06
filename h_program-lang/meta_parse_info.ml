@@ -97,3 +97,18 @@ let vof_info
   let bnds = bnd :: bnds in 
   Ocaml.VDict bnds
 
+
+(* todo? could also do via a post processing phase with a OCaml.map_v ? *)
+let _current_precision = ref default_dumper_precision
+
+let vof_info_adjustable_precision x =
+  if !_current_precision.full_info
+  then vof_info x
+  else if !_current_precision.token_info
+       then 
+        Ocaml.VDict [
+          "line", Ocaml.VInt (line_of_info x);
+          "col", Ocaml.VInt (col_of_info x);
+        ]
+      else Ocaml.VUnit
+

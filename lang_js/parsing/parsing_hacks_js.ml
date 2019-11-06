@@ -99,7 +99,7 @@ let rparens_of_if toks =
  *)
 let fix_tokens toks = 
  try 
-  let trees = Parse_fuzzy.mk_trees { Parse_fuzzy.
+  let trees = Lib_ast_fuzzy.mk_trees { Lib_ast_fuzzy.
      tokf = TH.info_of_tok;
      kind = TH.token_kind_of_tok;
   } toks 
@@ -108,8 +108,8 @@ let fix_tokens toks =
   let retag_keywords = Hashtbl.create 101 in
 
   (* visit and tag *)
-  let visitor = Ast_fuzzy.mk_visitor { Ast_fuzzy.default_visitor with
-    Ast_fuzzy.ktrees = (fun (k, _) xs ->
+  let visitor = Lib_ast_fuzzy.mk_visitor { Lib_ast_fuzzy.default_visitor with
+    Lib_ast_fuzzy.ktrees = (fun (k, _) xs ->
       (match xs with
       | F.Parens (i1, _, _)::F.Tok ("=>",_)::_res ->
           Hashtbl.add retag_lparen i1 true
@@ -133,7 +133,7 @@ let fix_tokens toks =
     | x -> x
   )
 
-  with Parse_fuzzy.Unclosed (msg, info) ->
+  with Lib_ast_fuzzy.Unclosed (msg, info) ->
    if !Flag.error_recovery
    then toks
    else raise (Parse_info.Lexical_error (msg, info))

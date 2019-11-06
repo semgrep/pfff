@@ -2,23 +2,8 @@
 
 open Cst_ml
 
-module PI = Parse_info
-
-let _current_precision = ref PI.default_dumper_precision
-
-let rec vof_info x =
-  if !_current_precision.PI.full_info
-  then Parse_info.vof_info x
-  else if !_current_precision.PI.token_info
-       then 
-        Ocaml.VDict [
-          "line", Ocaml.VInt (PI.line_of_info x);
-          "col", Ocaml.VInt (PI.col_of_info x);
-        ]
-      else Ocaml.VUnit
-
-
-and vof_tok v = vof_info v
+let rec vof_info v = Meta_parse_info.vof_info_adjustable_precision v
+and vof_tok x = vof_info x
 and vof_wrap _of_a (v1, v2) =
   let v1 = _of_a v1 and v2 = vof_info v2 in Ocaml.VTuple [ v1; v2 ]
 and vof_paren _of_a (v1, v2, v3) =

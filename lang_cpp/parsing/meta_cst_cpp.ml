@@ -17,22 +17,10 @@
 
 open Cst_cpp
 module Ast = Cst_cpp
-module PI = Parse_info
+module MPI = Meta_parse_info
 
-(* todo? could also do via a post processing phase with a OCaml.map_v ? *)
-let _current_precision = ref PI.default_dumper_precision
 
-let rec vof_info x = 
-  if !_current_precision.PI.full_info
-  then Parse_info.vof_info x
-  else if !_current_precision.PI.token_info
-       then 
-        Ocaml.VDict [
-          "line", Ocaml.VInt (Parse_info.line_of_info x);
-          "col", Ocaml.VInt (Parse_info.col_of_info x);
-        ]
-      else Ocaml.VUnit
-
+let rec vof_info x = Meta_parse_info.vof_info_adjustable_precision x
 and vof_tok v = vof_info v
 and vof_wrap _of_a (v1, v2) =
   let v1 = _of_a v1
@@ -42,21 +30,21 @@ and vof_wrap2 _of_a (v1, v2) =
   let v1 = _of_a v1 and v2 = vof_info v2 in Ocaml.VTuple [ v1; v2 ]
 
 and vof_paren _of_a (v1, v2, v3) =
-  if !_current_precision.PI.token_info then
+  if !MPI._current_precision.MPI.token_info then
   let v1 = vof_tok v1
   and v2 = _of_a v2
   and v3 = vof_tok v3
   in Ocaml.VTuple [ v1; v2; v3 ]
   else _of_a v2
 and vof_brace _of_a (v1, v2, v3) =
-  if !_current_precision.PI.token_info then
+  if !MPI._current_precision.MPI.token_info then
   let v1 = vof_tok v1
   and v2 = _of_a v2
   and v3 = vof_tok v3
   in Ocaml.VTuple [ v1; v2; v3 ]
   else _of_a v2
 and vof_bracket _of_a (v1, v2, v3) =
-  if !_current_precision.PI.token_info then
+  if !MPI._current_precision.MPI.token_info then
   let v1 = vof_tok v1
   and v2 = _of_a v2
   and v3 = vof_tok v3
@@ -69,7 +57,7 @@ and vof_angle _of_a (v1, v2, v3) =
   in Ocaml.VTuple [ v1; v2; v3 ]
 
 and vof_comma_list _of_a  xs= 
-  if !_current_precision.PI.token_info
+  if !MPI._current_precision.MPI.token_info
   then Ocaml.vof_list (vof_wrap _of_a) xs
   else Ocaml.vof_list _of_a (Ast.uncomma xs)
 
@@ -227,7 +215,7 @@ and vof_enum_elem { e_name = v_e_name; e_val = v_e_val } =
 
 
 and vof_typeQualifier { const = v_const; volatile = v_volatile } =
- if not !_current_precision.PI.type_info
+ if not !MPI._current_precision.MPI.type_info
  then Ocaml.VUnit
  else
   let bnds = [] in
@@ -1135,13 +1123,13 @@ and vof_any =
   
 (* end auto generation *)
 
-let vof_program ?(precision=PI.default_dumper_precision) x = 
-  Common.save_excursion _current_precision precision (fun () ->
+let vof_program ?(precision=MPI.default_dumper_precision) x = 
+  Common.save_excursion MPI._current_precision precision (fun () ->
     vof_program x
   )
 
-let vof_any ?(precision=PI.default_dumper_precision) x = 
-  Common.save_excursion _current_precision precision (fun () ->
+let vof_any ?(precision=MPI.default_dumper_precision) x = 
+  Common.save_excursion MPI._current_precision precision (fun () ->
     vof_any x
   )
 

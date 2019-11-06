@@ -20,39 +20,28 @@
 open Cst_js
 module Ast = Cst_js
 
-let _current_precision = ref PI.default_dumper_precision
+module MPI = Meta_parse_info
 
-
-let rec vof_info x =
-  if !_current_precision.PI.full_info
-  then Parse_info.vof_info x
-  else if !_current_precision.PI.token_info
-       then
-        Ocaml.VDict [
-          "line", Ocaml.VInt (PI.line_of_info x);
-          "col", Ocaml.VInt (PI.col_of_info x);
-        ]
-      else Ocaml.VUnit
-
+let rec vof_info x = Meta_parse_info.vof_info_adjustable_precision x
 and vof_tok v = vof_info v
 and vof_wrap _of_a (v1, v2) =
   let v1 = _of_a v1 and v2 = vof_info v2 in Ocaml.VTuple [ v1; v2 ]
 and vof_paren _of_a (v1, v2, v3) =
-  if !_current_precision.PI.token_info then
+  if !MPI._current_precision.MPI.token_info then
   let v1 = vof_tok v1
   and v2 = _of_a v2
   and v3 = vof_tok v3
   in Ocaml.VTuple [ v1; v2; v3 ]
   else _of_a v2
 and vof_brace _of_a (v1, v2, v3) =
-  if !_current_precision.PI.token_info then
+  if !MPI._current_precision.MPI.token_info then
   let v1 = vof_tok v1
   and v2 = _of_a v2
   and v3 = vof_tok v3
   in Ocaml.VTuple [ v1; v2; v3 ]
   else _of_a v2
 and vof_bracket _of_a (v1, v2, v3) =
-  if !_current_precision.PI.token_info then
+  if !MPI._current_precision.MPI.token_info then
   let v1 = vof_tok v1
   and v2 = _of_a v2
   and v3 = vof_tok v3
@@ -64,7 +53,7 @@ and vof_angle _of_a (v1, v2, v3) =
   and v3 = vof_tok v3
   in Ocaml.VTuple [ v1; v2; v3 ]
 and vof_comma_list _of_a xs =
-  if !_current_precision.PI.token_info
+  if !MPI._current_precision.MPI.token_info
   then Ocaml.vof_list (Ocaml.vof_either _of_a vof_tok) xs
   else Ocaml.vof_list _of_a (Ast.uncomma xs)
 
@@ -962,12 +951,12 @@ let vof_any_orig =
 
 (* end auto generation *)
 
-let vof_any ?(precision=PI.default_dumper_precision) x =
-  Common.save_excursion _current_precision precision (fun () ->
+let vof_any ?(precision=MPI.default_dumper_precision) x =
+  Common.save_excursion MPI._current_precision precision (fun () ->
     vof_any_orig x
   )
 
-let vof_program ?(precision=PI.default_dumper_precision) x =
-  Common.save_excursion _current_precision precision (fun () ->
+let vof_program ?(precision=MPI.default_dumper_precision) x =
+  Common.save_excursion MPI._current_precision precision (fun () ->
     vof_program_orig x
   )

@@ -16,7 +16,7 @@ open Common
 
 module PI = Parse_info
 open Parse_info
-module V = Ast_fuzzy
+module V = Lib_ast_fuzzy
 
 (*****************************************************************************)
 (* Prelude *)

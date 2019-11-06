@@ -652,11 +652,11 @@ let dflow file_or_dir =
 module PI = Parse_info
 module Ent = Entity_code
 module Ast = Ast_fuzzy
-
+module V = Lib_ast_fuzzy
 let entities_of_ast ast =
   let res = ref [] in
-  let visitor = Ast_fuzzy.mk_visitor { Ast_fuzzy.default_visitor with
-    Ast_fuzzy.ktrees = (fun (k, _) xs ->
+  let visitor = V.mk_visitor { V.default_visitor with
+    V.ktrees = (fun (k, _) xs ->
       (match xs with
       | Ast.Tok (s, _)::Ast.Parens _::Ast.Braces _::_res ->
           Common.push (s, Ent.Function) res;

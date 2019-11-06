@@ -272,7 +272,7 @@ let spatch_fuzzy_unittest
         let pattern =
           Spatch_fuzzy.parse
             ~pattern_of_string:ast_fuzzy_of_string
-            ~ii_of_pattern:Ast_fuzzy.toks_of_trees
+            ~ii_of_pattern:Lib_ast_fuzzy.toks_of_trees
             spatchfile
         in
         let trees, toks = 

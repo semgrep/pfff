@@ -97,7 +97,7 @@ raise Todo
       in
       Right (Spatch_fuzzy.parse 
                 ~pattern_of_string:parse
-                ~ii_of_pattern:Ast_fuzzy.toks_of_trees
+                ~ii_of_pattern:Lib_ast_fuzzy.toks_of_trees
                 file)
   | _ -> failwith ("unsupported language: " ^ !lang)
 

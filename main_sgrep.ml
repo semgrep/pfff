@@ -289,7 +289,7 @@ let sgrep_ast pattern any_ast =
     PatFuzzy pattern, Fuzzy ast ->
     Sgrep_fuzzy.sgrep
       ~hook:(fun env matched_tokens ->
-        print_match !mvars env Ast_fuzzy.toks_of_trees matched_tokens
+        print_match !mvars env Lib_ast_fuzzy.toks_of_trees matched_tokens
       )
       pattern ast
 

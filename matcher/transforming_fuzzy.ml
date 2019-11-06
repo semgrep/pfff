@@ -167,8 +167,8 @@ module XMATCH = struct
      * 
      * less: optimize by caching the abstract_lined ?
      *)
-    let a = Ast_fuzzy.abstract_position_trees a in
-    let b = Ast_fuzzy.abstract_position_trees b in
+    let a = Lib_ast_fuzzy.abstract_position_trees a in
+    let b = Lib_ast_fuzzy.abstract_position_trees b in
     a =*= b
 
 
@@ -216,7 +216,7 @@ module XMATCH = struct
    *)
 
   let distribute_transfo transfo any env = 
-    let ii = Ast_fuzzy.toks_of_trees any in
+    let ii = Lib_ast_fuzzy.toks_of_trees any in
 
     (match transfo with
     | PI.NoTransfo -> ()

@@ -82,7 +82,7 @@ let test_dump_cpp_full file =
   Parse_cpp.init_defs !Flag_cpp.macros_h;
   let ast = Parse_cpp.parse_program file in
   let toks = Parse_cpp.tokens file in
-  let precision = { Parse_info.
+  let precision = { Meta_parse_info.
      full_info = true; type_info = false; token_info = true;
   }
   in
@@ -92,7 +92,7 @@ let test_dump_cpp_full file =
   toks +> List.iter (fun tok ->
     match tok with
     | Parser_cpp.TComment (ii) ->
-        let v = Parse_info.vof_info ii in
+        let v = Meta_parse_info.vof_info_adjustable_precision ii in
         let s = Ocaml.string_of_v v in
         pr s
     | _ -> ()
@@ -135,7 +135,7 @@ let test_parse_cpp_fuzzy xs =
 
 let test_dump_cpp_fuzzy file =
   let fuzzy, _toks = Parse_cpp.parse_fuzzy file in
-  let v = Ast_fuzzy.vof_trees fuzzy in
+  let v = Meta_ast_fuzzy.vof_trees fuzzy in
   let s = Ocaml.string_of_v v in
   pr2 s
   

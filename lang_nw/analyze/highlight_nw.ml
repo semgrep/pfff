@@ -18,6 +18,7 @@ open Common
 module T = Lexer_nw
 module TH = Token_helpers_nw
 module F = Ast_fuzzy
+module LF = Lib_ast_fuzzy
 
 open Highlight_code
 
@@ -39,7 +40,7 @@ let tag_all_tok_with ~tag categ xs =
   )
 
 let tag_all_tok_trees_with ~tag categ trees =
-  let xs = F.toks_of_trees trees in
+  let xs = Lib_ast_fuzzy.toks_of_trees trees in
   xs |> List.iter (fun info -> tag info categ)
 
 (*****************************************************************************)
@@ -154,8 +155,8 @@ let visit_program ~tag_hook _prefs (trees, toks) =
   (* -------------------------------------------------------------------- *)
   (* AST phase 1 *) 
   (* -------------------------------------------------------------------- *)
-  trees |> F.mk_visitor { F.default_visitor with
-    F.ktrees = (fun (k, _v) trees ->
+  trees |> LF.mk_visitor { LF.default_visitor with
+    LF.ktrees = (fun (k, _v) trees ->
       match trees with
       (* \xxx{...} *)
       | F.Tok (s, _)::F.Braces (_, brace_trees, _)::_ ->

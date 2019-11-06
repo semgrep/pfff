@@ -3,7 +3,7 @@
 
 open Ast_generic
 
-let vof_tok v = Parse_info.vof_info v
+let vof_tok v = Meta_parse_info.vof_info_adjustable_precision v
   
 let vof_wrap _of_a (v1, v2) =
   let v1 = _of_a v1 and v2 = vof_tok v2 in Ocaml.VTuple [ v1; v2 ]

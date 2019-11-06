@@ -65,7 +65,7 @@ let extract_defs file =
     )
   in
   let toks = Common.exclude TH.is_comment toks in
-  let trees = Parse_fuzzy.mk_trees { Parse_fuzzy.
+  let trees = Lib_ast_fuzzy.mk_trees { Lib_ast_fuzzy.
      tokf = TH.info_of_tok;
      kind = TH.token_kind_of_tok;
   } toks 

@@ -139,8 +139,8 @@ module XMATCH = struct
      * 
      * less: optimize by caching the abstract_lined ?
      *)
-    let a = Ast_fuzzy.abstract_position_trees a in
-    let b = Ast_fuzzy.abstract_position_trees b in
+    let a = Lib_ast_fuzzy.abstract_position_trees a in
+    let b = Lib_ast_fuzzy.abstract_position_trees b in
     a =*= b
 
 
