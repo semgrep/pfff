@@ -38,9 +38,13 @@ let parse_pattern lang str =
       let any_cst = Parse_js.any_of_string str in
       let any = Ast_js_build.any any_cst in
       Js_to_generic.any any
-  | Lang.C 
-  | Lang.Java
-  | Lang.ML
-   -> raise Todo
+  | Lang.C ->
+      let any = Parse_c.any_of_string str in
+      C_to_generic.any any
+  | Lang.Java ->
+      let any = Parse_java.any_of_string str in
+      Java_to_generic.any any
+  | Lang.ML -> 
+      raise Todo
   )
 

@@ -176,21 +176,8 @@ type ast =
 let create_ast file =
  try (
   match !lang with
-  | "python" ->
-    let ast = Parse_python.parse_program file in
-    Resolve_python.resolve ast;
-    Gen (Python_to_generic.program ast)
-  | "js" ->
-    let cst = Parse_js.parse_program file in
-    let ast = Ast_js_build.program cst in
-    Gen (Js_to_generic.program ast)
-  | "c" ->
-    let ast = Parse_c.parse_program file in
-    Gen (C_to_generic.program ast)
-  | "java" ->
-    let ast = Parse_java.parse_program file in
-    Gen (Java_to_generic.program ast)
-
+  | s when Lang.lang_of_string_opt s <> None ->
+    Gen (Parse_generic.parse_program file)
   | "php" ->
     Php (Parse_php.parse_program file)
   | _ ->
@@ -204,7 +191,6 @@ raise Todo
         )
       | "ml" ->
         Parse_ml.parse_fuzzy file +> fst
-
       | "javafuzzy" ->
         Parse_java.parse_fuzzy file +> fst
       | "phpfuzzy" ->
@@ -237,31 +223,23 @@ type pattern =
 let parse_pattern str =
  try (
   Common.save_excursion Flag_parsing.sgrep_mode true (fun () ->
-   match !lang with
-   | "python" ->
-       let any = Parse_python.any_of_string str in
-       PatGen (Python_to_generic.any any)
-   | "js" ->
-       let any_cst = Parse_js.any_of_string str in
-       let any = Ast_js_build.any any_cst in
-       PatGen (Js_to_generic.any any)
-   | "c" ->
-      let any = Parse_c.any_of_string str in
-      PatGen (C_to_generic.any any)
-   | "java" ->
-      let any = Parse_java.any_of_string str in
-      PatGen (Java_to_generic.any any)
+   match Lang.lang_of_string_opt !lang with
+   | Some lang ->
+       PatGen (Parse_generic.parse_pattern lang str)
+   | None ->
+    (match !lang with
+    | "php" -> PatPhp (Sgrep_php.parse str)
 
-   | "php" -> PatPhp (Sgrep_php.parse str)
-
-  (* for now we abuse the fuzzy parser of cpp for ml for the pattern as
-   * we should not use comments in patterns
-   *)
-  | "c++" | "ml" 
-  | "cfuzzy" | "jsfuzzy" | "phpfuzzy" | "javafuzzy"  -> 
-    PatFuzzy (ast_fuzzy_of_string str)
-  | _ -> failwith ("unsupported language: " ^ !lang)
- )) with 
+    (* for now we abuse the fuzzy parser of cpp for ml for the pattern as
+     * we should not use comments in patterns
+    *)
+    | "c++" | "ml" 
+    | "cfuzzy" | "jsfuzzy" | "phpfuzzy" | "javafuzzy"  -> 
+      PatFuzzy (ast_fuzzy_of_string str)
+    | _ -> failwith ("unsupported language: " ^ !lang)
+    )
+  )) 
+  with 
   | Parsing.Parse_error -> 
       failwith (spf "fail to parse pattern: '%s' in lang %s" str !lang)
  
