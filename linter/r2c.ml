@@ -13,7 +13,7 @@
  *)
 module J = Json_type
 module PI = Parse_info
-module E = Errors_code
+module E = Error_code
 
 (*****************************************************************************)
 (* JSON *)
@@ -45,7 +45,7 @@ let error_to_json err =
    let file = err.E.loc.PI.file in
    let lines = lines_of_file file in
    let _nblines = Array.length lines in
-   let (startp, endp, line) = loc_to_json_range err.loc in
+   let (startp, endp, line) = loc_to_json_range err.E.loc in
    let message = E.string_of_error err in
    let extra_extra =
      match err.E.typ with
@@ -61,4 +61,3 @@ let error_to_json err =
          "line", J.String (try lines.(line - 1) with _ -> "NO LINE");
           ] @ extra_extra);
    ]
-

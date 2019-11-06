@@ -11,7 +11,7 @@ SRC= lang.ml \
      ast.ml meta_ast.ml \
      visitor_ast.ml map_ast.ml \
      lib_ast.ml \
-     parse.ml \
+     parse_generic.ml \
      test_parsing_generic.ml
 
 SYSLIBS= str.cma unix.cma 

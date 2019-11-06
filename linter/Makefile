@@ -9,6 +9,7 @@ SRC= flag_linter.ml \
    entity_generic.ml \
    check_cfg_generic.ml \
    check_all_generic.ml \
+   r2c.ml \
    unit_linter.ml
 
 SYSLIBS= str.cma unix.cma

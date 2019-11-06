@@ -4,13 +4,15 @@ let test_parse_generic xs =
   let xs = List.map Common.fullpath xs in
   let files = Common.files_of_dir_or_files_no_vcs_nofilter xs in
   files |> List.iter (fun file ->
-    pr2 file;
-    let _ast = Parse.parse_program file in
-    ()
+    match Lang.lang_of_filename_opt file with
+    | None -> pr2 (spf "skipping %s" file)
+    | Some _ -> 
+          let _ast = Parse_generic.parse_program file in
+          ()
   )
 
 let test_dump_generic file =
-  let ast = Parse.parse_program file in
+  let ast = Parse_generic.parse_program file in
   let v = Meta_ast.vof_any (Ast_generic.Pr ast) in
   let s = Ocaml.string_of_v v in
   pr2 s
