@@ -23,6 +23,16 @@ INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/commons_core \
   $(TOP)/globals \
   $(TOP)/h_program-lang \
+  $(TOP)/lang_python/parsing \
+   $(TOP)/lang_python/analyze \
+  $(TOP)/lang_js/parsing \
+   $(TOP)/lang_js/analyze \
+  $(TOP)/lang_c/parsing \
+   $(TOP)/lang_c/analyze \
+  $(TOP)/lang_java/parsing \
+   $(TOP)/lang_java/analyze \
+  $(TOP)/lang_ml/parsing \
+   $(TOP)/lang_ml/analyze \
 
 ##############################################################################
 # Generic variables
