@@ -81,14 +81,6 @@ val file_of_info  : info -> Common.filename
 
 (* small error reporting, for longer reports use error_message above *)
 val string_of_info: info -> string
-(* meta *)
-val vof_info: info -> Ocaml.v
-type dumper_precision = {
-  full_info: bool;
-  token_info: bool;
-  type_info: bool;
-}
-val default_dumper_precision : dumper_precision
 
 val is_origintok: info -> bool
 
