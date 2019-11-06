@@ -1,5 +1,5 @@
 
-type tok = Parse_info.info
+type tok = Parse_info.t
 type 'a wrap = 'a * tok
 
 type tree =
@@ -25,19 +25,3 @@ and trees = tree list
 (* see matcher/parse_fuzzy.mli for helpers to build such trees *)
 
 val is_metavar: string -> bool
-
-(* visitors, dumpers, extractors, abstractors, mappers *)
-
-val abstract_position_trees: trees -> trees
-val toks_of_trees: trees -> tok list
-val vof_trees: trees -> Ocaml.v
-
-type visitor_out = trees -> unit
-type visitor_in = {
-  ktree: (tree -> unit) * visitor_out -> tree -> unit;
-  ktrees: (trees -> unit) * visitor_out -> trees -> unit;
-  ktok: (tok -> unit) * visitor_out -> tok -> unit;
-}
-
-val default_visitor: visitor_in
-val mk_visitor: visitor_in -> visitor_out

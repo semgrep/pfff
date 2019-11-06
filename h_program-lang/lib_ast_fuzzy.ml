@@ -13,7 +13,7 @@
  * license.txt for more details.
  *)
 open Common
-
+open Ast_fuzzy
 module PI = Parse_info
 
 (*****************************************************************************)
@@ -149,143 +149,134 @@ let mk_trees h xs =
   aux xs
 
 
-(* 
-
 (*****************************************************************************)
-(* Fuzzy parsing *)
+(* Visitor *)
 (*****************************************************************************)
 
-PHP
+type visitor_out = trees -> unit
 
-(* for generalized sgrep/spatch patterns *)
-val parse_fuzzy:
-  Common.filename -> Ast_fuzzy.tree list * Parser_php.token list
+type visitor_in = {
+  ktree: (tree -> unit) * visitor_out -> tree -> unit;
+  ktrees: (trees -> unit) * visitor_out -> trees -> unit;
+  ktok: (tok -> unit) * visitor_out -> tok -> unit;
+}
 
+let (default_visitor : visitor_in) = 
+  { ktree = (fun (k, _) x -> k x);
+    ktok  = (fun (k, _) x -> k x);
+    ktrees = (fun (k, _) x -> k x);
+  }
 
-let parse_fuzzy file =
-  let toks = tokens file in
-  let trees = Parse_fuzzy.mk_trees { Parse_fuzzy.
-     tokf = TH.info_of_tok;
-     kind = TH.token_kind_of_tok;
-  } toks 
+let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
+
+  let rec v_tree x =
+    let k x = match x with
+      | Braces ((v1, v2, v3)) ->
+        let _v1 = v_tok v1 and _v2 = v_trees v2 and _v3 = v_tok v3 in ()
+      | Parens ((v1, v2, v3)) ->
+        let _v1 = v_tok v1
+        and _v2 = Ocaml.v_list (Ocaml.v_either v_trees v_tok) v2
+        and _v3 = v_tok v3
+      in ()
+
+      | Angle ((v1, v2, v3)) ->
+        let _v1 = v_tok v1 and _v2 = v_trees v2 and _v3 = v_tok v3 in ()
+      | Bracket ((v1, v2, v3)) ->
+        let _v1 = v_tok v1 and _v2 = v_trees v2 and _v3 = v_tok v3 in ()
+      | Metavar v1 -> let _v1 = v_wrap v1 in ()
+      | Dots v1 -> let _v1 = v_tok v1 in ()
+      | Tok v1 -> let _v1 = v_wrap v1 in ()
+    in
+    vin.ktree (k, all_functions) x
+ and v_trees a = 
+    let k xs =
+      match xs with
+      | [] -> ()
+      | x::xs ->
+        v_tree x;
+        v_trees xs;
+    in
+    vin.ktrees (k, all_functions) a
+
+ and v_wrap (_s, x) = v_tok x
+        
+ and v_tok x =
+    let k _x = () in
+    vin.ktok (k, all_functions) x
+
+  and all_functions x = v_trees x in
+  all_functions
+
+(*****************************************************************************)
+(* Map *)
+(*****************************************************************************)
+
+type map_visitor = {
+  mtok: (tok -> tok) -> tok -> tok;
+}
+
+let (mk_mapper: map_visitor -> (trees -> trees)) = fun hook ->
+  let rec map_tree =
+    function
+    | Braces ((v1, v2, v3)) ->
+      let v1 = map_tok v1
+      and v2 = map_trees v2
+      and v3 = map_tok v3
+      in Braces ((v1, v2, v3))
+    | Parens ((v1, v2, v3)) ->
+      let v1 = map_tok v1
+      and v2 = List.map (Ocaml.map_of_either map_trees map_tok) v2
+      and v3 = map_tok v3
+      in Parens ((v1, v2, v3))
+    | Angle ((v1, v2, v3)) ->
+      let v1 = map_tok v1
+      and v2 = map_trees v2
+      and v3 = map_tok v3
+      in Angle ((v1, v2, v3))
+    | Bracket ((v1, v2, v3)) ->
+      let v1 = map_tok v1
+      and v2 = map_trees v2
+      and v3 = map_tok v3
+      in Bracket ((v1, v2, v3))
+  | Metavar v1 -> let v1 = map_wrap v1 in Metavar ((v1))
+  | Dots v1 -> let v1 = map_tok v1 in Dots ((v1))
+  | Tok v1 -> let v1 = map_wrap v1 in Tok ((v1))
+  and map_trees v = List.map map_tree v
+  and map_tok v = 
+    let k v = v in
+    hook.mtok k v
+  and map_wrap (s, t) = (s, map_tok t)
   in
-  trees, toks
-     parse_fuzzy.ml \
-
-ML
-(*****************************************************************************)
-(* Fuzzy parsing *)
-(*****************************************************************************)
-
-(* This is similar to what I did for OPA. This is also similar
- * to what I do for parsing hacks for C++, but this fuzzy AST can be useful
- * on its own, e.g. for a not too bad sgrep/spatch.
- *)
-let parse_fuzzy file =
-  let toks = tokens file in
-  let trees = Parse_fuzzy.mk_trees { Parse_fuzzy.
-     tokf = TH.info_of_tok;
-     kind = TH.token_kind_of_tok;
-  } toks 
-  in
-  trees, toks
-
-
-
-
-let test_parse_ml_fuzzy dir_or_file =
-  let fullxs = 
-    Lib_parsing_ml.find_source_files_of_dir_or_files [dir_or_file] 
-    +> Skip_code.filter_files_if_skip_list
-  in
-  fullxs +> Console.progress (fun k -> List.iter (fun file -> 
-     k ();
-      try 
-        let _fuzzy = Parse_ml.parse_fuzzy file in
-        ()
-      with _exn ->
-        (* pr2 (spf "PB with: %s, exn = %s" file (Common.exn_to_s exn)); *)
-        pr2 file;
-  ));
-  ()
-
-let test_dump_ml_fuzzy file =
-  let fuzzy, _toks = Parse_ml.parse_fuzzy file in
-  let v = Ast_fuzzy.vof_trees fuzzy in
-  let s = Ocaml.string_of_v v in
-  pr2 s
-
-  "-parse_ml_fuzzy", "   <file or dir>", 
-  Common.mk_action_1_arg test_parse_ml_fuzzy;
-  "-dump_ml_fuzzy", "   <file>", 
-  Common.mk_action_1_arg test_dump_ml_fuzzy;
-
-
-SKIP
-(*****************************************************************************)
-(* Fuzzy parsing *)
-(*****************************************************************************)
-
-val parse_fuzzy:
-  Common.filename -> Ast_fuzzy.tree list * Parser_skip.token list
-
-let parse_fuzzy file =
-  let toks = tokens file in
-  let trees = Parse_fuzzy.mk_trees { Parse_fuzzy.
-     tokf = TH.info_of_tok;
-     kind = TH.token_kind_of_tok;
-  } toks 
-  in
-  trees, toks
-
-
-
-let test_parse_fuzzy dir_or_file =
-  let fullxs = 
-    Lib_parsing_skip.find_source_files_of_dir_or_files [dir_or_file] 
-    +> Skip_code.filter_files_if_skip_list
-  in
-  fullxs +> Console.progress (fun k -> List.iter (fun file -> 
-     k ();
-      try 
-        let _fuzzy = Parse_skip.parse_fuzzy file in
-        ()
-      with _exn ->
-        (* pr2 (spf "PB with: %s, exn = %s" file (Common.exn_to_s exn)); *)
-        pr2 file;
-  ));
-  ()
-
-let test_dump_fuzzy file =
-  let fuzzy, _toks = Parse_skip.parse_fuzzy file in
-  let v = Ast_fuzzy.vof_trees fuzzy in
-  let s = Ocaml.string_of_v v in
-  pr2 s
-
-
-  "-parse_sk_fuzzy", "   <file or dir>", 
-  Common.mk_action_1_arg test_parse_fuzzy;
-  "-dump_sk_fuzzy", "   <file>", 
-  Common.mk_action_1_arg test_dump_fuzzy;
-
-JAVA
+  map_trees
 
 (*****************************************************************************)
-(* Fuzzy parsing *)
+(* Extractor *)
 (*****************************************************************************)
 
-(* for generalized sgrep/spatch patterns *)
-val parse_fuzzy:
-  Common.filename -> Ast_fuzzy.tree list * Parser_java.token list
+let (toks_of_trees: trees -> Parse_info.info list) = fun trees ->
+  let globals = ref [] in
+  let hooks = { default_visitor with
+    ktok = (fun (_k, _) i -> Common.push i globals)
+  } in
+  begin
+    let vout = mk_visitor hooks in
+    vout trees;
+    List.rev !globals
+  end
 
-let parse_fuzzy file =
-  let toks = tokens file in
-  let trees = Parse_fuzzy.mk_trees { Parse_fuzzy.
-     tokf = TH.info_of_tok;
-     kind = TH.token_kind_of_tok;
-  } toks
-  in
-  trees, toks
+(*****************************************************************************)
+(* Abstract position *)
+(*****************************************************************************)
+
+let abstract_position_trees trees = 
+  let hooks = { 
+    mtok = (fun (_k) i -> 
+      { i with Parse_info.token = Parse_info.Ab }
+    )
+  } in
+  let mapper = mk_mapper hooks in
+  mapper trees
 
 
-*)
+
+
