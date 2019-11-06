@@ -201,47 +201,6 @@ let ast_of_file file =
   let prog = Parse_python.parse_program file in
   Python_to_generic.program prog
 
-(* copy-paste: main_sgrep.ml *)
-let create_ast file =
- try (
-  match !lang with
-  | "py" | "python" ->
-    let ast = Parse_python.parse_program file in
-    Resolve_python.resolve ast;
-    Python_to_generic.program ast
-  | "js" | "javascript" ->
-    let cst = Parse_js.parse_program file in
-    let ast = Ast_js_build.program cst in
-    Js_to_generic.program ast
-  | "c" ->
-    let ast = Parse_c.parse_program file in
-    C_to_generic.program ast
-  | "java" ->
-    let ast = Parse_java.parse_program file in
-    Java_to_generic.program ast
-  | "ml" | "ocaml" ->
-    let cst = Parse_ml.parse_program file in
-    let ast = Ast_ml_build.program cst in
-    let _ = Ml_to_generic.program ast in
-    raise Todo
-  | s -> failwith (spf "unsupported language: %s" s)
-  )
-  with
-   | Parse_info.Lexical_error (s, tok) ->
-      E.error tok (E.LexicalError s);
-      []
-   | Parse_info.Parsing_error tok ->
-      E.error tok (E.ParseError);
-      []
-   | Parse_info.Ast_builder_error (s, tok) ->
-      E.error tok (E.AstbuilderError s);
-      []
-   | Parse_info.Other_error (s, tok) ->
-      E.error tok (E.OtherParsingError s);
-      []
-   | exn ->
-    failwith (spf "PB parsing with %s, exn = %s"  file (Common.exn_to_s exn))
-
 (*****************************************************************************)
 (* Language specific *)
 (*****************************************************************************)
@@ -384,13 +343,11 @@ let main_action xs =
   let files = Find_source.files_of_dir_or_files ~lang xs in
 
   match lang with
-
+  | s when Lang.lang_of_string_opt s <> None ->
 (*---------------------------------------------------------------------------*)
 (* AST generic checker *)
 (*---------------------------------------------------------------------------*)
 
-  | "py" | "python" 
-  | "js" | "javascript" ->
       let find_entity = None in
       
       files |> Console.progress ~show:!show_progress (fun k -> 
@@ -398,7 +355,7 @@ let main_action xs =
           k();
           try 
             pr2_dbg (spf "processing: %s" file);
-            let ast = create_ast file in
+            let ast = Parse_generic.parse_program file in
             Check_all_generic.check_file ~find_entity ast;
 
             let errs = 
@@ -414,8 +371,16 @@ let main_action xs =
               E.g_errors := []
             end
           with 
-            | (Timeout | UnixExit _) as exn -> raise exn
-            | exn ->
+          | Parse_info.Lexical_error (s, tok) ->
+            E.error tok (E.LexicalError s)
+          | Parse_info.Parsing_error tok ->
+            E.error tok (E.ParseError);
+          | Parse_info.Ast_builder_error (s, tok) ->
+            E.error tok (E.AstbuilderError s);
+          | Parse_info.Other_error (s, tok) ->
+            E.error tok (E.OtherParsingError s);
+          | (Timeout | UnixExit _) as exn -> raise exn
+          | exn ->
               pr2 (spf "PB with %s, exn = %s" file (Common.exn_to_s exn));
               if !Common.debugger then raise exn
         ));

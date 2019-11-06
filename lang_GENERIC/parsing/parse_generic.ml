@@ -2,20 +2,24 @@ open Common
 
 let parse_with_lang lang file = 
   match lang with
-  | Lang.Javascript ->
-    let cst = Parse_js.parse_program file in
-    let ast = Ast_js_build.program cst in
-    Js_to_generic.program ast
   | Lang.Python ->
     let ast = Parse_python.parse_program file in
     Resolve_python.resolve ast;
     Python_to_generic.program ast
+  | Lang.Javascript ->
+    let cst = Parse_js.parse_program file in
+    let ast = Ast_js_build.program cst in
+    Js_to_generic.program ast
   | Lang.C ->
     let ast = Parse_c.parse_program file in
     C_to_generic.program ast
   | Lang.Java ->
-    raise Todo
+    let ast = Parse_java.parse_program file in
+    Java_to_generic.program ast
   | Lang.ML ->
+    let cst = Parse_ml.parse_program file in
+    let ast = Ast_ml_build.program cst in
+    let _ = Ml_to_generic.program ast in
     raise Todo
 
 let parse_program file =
