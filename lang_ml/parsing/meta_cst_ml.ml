@@ -2,15 +2,14 @@
 
 open Cst_ml
 
-module M = Meta_ast_generic
 module PI = Parse_info
 
-let _current_precision = ref M.default_precision
+let _current_precision = ref PI.default_dumper_precision
 
 let rec vof_info x =
-  if !_current_precision.M.full_info
+  if !_current_precision.PI.full_info
   then Parse_info.vof_info x
-  else if !_current_precision.M.token_info
+  else if !_current_precision.PI.token_info
        then 
         Ocaml.VDict [
           "line", Ocaml.VInt (PI.line_of_info x);

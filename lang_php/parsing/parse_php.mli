@@ -26,10 +26,6 @@ val ast_and_tokens:
 val parse_any:
   Common.filename -> Cst_php.any
 
-(* for generalized sgrep/spatch patterns *)
-val parse_fuzzy:
-  Common.filename -> Ast_fuzzy.tree list * Parser_php.token list
-
 val parse_fast:
   Common.filename -> Cst_php.program
 

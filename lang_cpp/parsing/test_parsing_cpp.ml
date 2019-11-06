@@ -82,7 +82,7 @@ let test_dump_cpp_full file =
   Parse_cpp.init_defs !Flag_cpp.macros_h;
   let ast = Parse_cpp.parse_program file in
   let toks = Parse_cpp.tokens file in
-  let precision = { Meta_ast_generic.
+  let precision = { Parse_info.
      full_info = true; type_info = false; token_info = true;
   }
   in

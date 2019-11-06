@@ -8,7 +8,7 @@
  *)
 open Common
 
-module E = Errors_code
+module E = Error_code
 
 (*****************************************************************************)
 (* Purpose *)
@@ -355,8 +355,8 @@ let build_identifier_index lang xs =
  *)
 let false_positive_detector hidentifier g errors =
   errors |> Common.exclude (fun err ->
-    match err.Errors_code.typ with
-    | Errors_code.Deadcode ((s, Entity_code.Function) as n) ->
+    match err.Error_code.typ with
+    | Error_code.Deadcode ((s, Entity_code.Function) as n) ->
         let short = Graph_code.shortname_of_node n in
         let occurences = Hashtbl.find_all hidentifier short in
         let expected_minimum =
@@ -366,7 +366,7 @@ let false_positive_detector hidentifier g errors =
         in
         let fp = List.length occurences > expected_minimum in
         if fp
-        then pr2_dbg (spf "%s (FP deadcode?)" (Errors_code.string_of_error err));
+        then pr2_dbg (spf "%s (FP deadcode?)" (Error_code.string_of_error err));
         fp
     | _ -> false
   )
@@ -459,13 +459,13 @@ let main_action xs =
     let errs = 
       errs 
       |> false_positive_detector hidentifier g
-      |> Errors_code.adjust_errors
-      |> List.filter (fun err -> (Errors_code.score_of_error err) >= !filter)
+      |> Error_code.adjust_errors
+      |> List.filter (fun err -> (Error_code.score_of_error err) >= !filter)
     in
     let errs = 
       if !rank 
       then
-        errs |> List.map (fun err -> err, Errors_code.rank_of_error err)
+        errs |> List.map (fun err -> err, Error_code.rank_of_error err)
         |> Common.sort_by_val_highfirst
         |> Common.take_safe 40
         |> List.map fst
@@ -473,9 +473,9 @@ let main_action xs =
     in
     errs |> List.iter (fun err ->
       (* less: confront annotation and error kind *)
-      if Errors_code.annotation_at err.Errors_code.loc <> None
-      then pr2_dbg (spf "%s (Skipping @)" (Errors_code.string_of_error err))
-      else pr2 (Errors_code.string_of_error err)
+      if Error_code.annotation_at err.Error_code.loc <> None
+      then pr2_dbg (spf "%s (Skipping @)" (Error_code.string_of_error err))
+      else pr2 (Error_code.string_of_error err)
     )
 
 (*---------------------------------------------------------------------------*)

@@ -47,28 +47,6 @@ let test_dump_ml file =
   pr s
 
 
-let test_parse_ml_fuzzy dir_or_file =
-  let fullxs = 
-    Lib_parsing_ml.find_source_files_of_dir_or_files [dir_or_file] 
-    +> Skip_code.filter_files_if_skip_list
-  in
-  fullxs +> Console.progress (fun k -> List.iter (fun file -> 
-     k ();
-      try 
-        let _fuzzy = Parse_ml.parse_fuzzy file in
-        ()
-      with _exn ->
-        (* pr2 (spf "PB with: %s, exn = %s" file (Common.exn_to_s exn)); *)
-        pr2 file;
-  ));
-  ()
-
-let test_dump_ml_fuzzy file =
-  let fuzzy, _toks = Parse_ml.parse_fuzzy file in
-  let v = Ast_fuzzy.vof_trees fuzzy in
-  let s = Ocaml.string_of_v v in
-  pr2 s
-
 (*****************************************************************************)
 (* One shot *)
 (*****************************************************************************)
@@ -123,11 +101,6 @@ let actions () = [
   Common.mk_action_n_arg test_parse_ml_or_mli;
   "-dump_ml", "   <file>", 
   Common.mk_action_1_arg test_dump_ml;
-
-  "-parse_ml_fuzzy", "   <file or dir>", 
-  Common.mk_action_1_arg test_parse_ml_fuzzy;
-  "-dump_ml_fuzzy", "   <file>", 
-  Common.mk_action_1_arg test_dump_ml_fuzzy;
 
   "-refactor_grammar", "   <subst_file> <file>", 
   Common.mk_action_2_arg refactor_grammar;

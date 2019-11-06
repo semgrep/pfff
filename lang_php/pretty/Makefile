@@ -16,7 +16,6 @@ LIBS= \
   $(TOP)/commons/lib.cma \
   $(TOP)/h_program-lang/lib.cma \
   $(TOP)/globals/lib.cma \
-  $(TOP)/matcher/lib.cma \
   $(TOP)/lang_php/parsing/lib.cma \
 
 SYSLIBS=bigarray.cma str.cma unix.cma

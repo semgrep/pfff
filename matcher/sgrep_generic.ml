@@ -16,7 +16,7 @@ open Common
 
 open Ast_generic
 module Ast = Ast_generic
-module V = Visitor_ast_generic
+module V = Visitor_ast
 
 module GG = Generic_vs_generic
 
@@ -72,7 +72,7 @@ let sgrep_ast ~hook pattern ast =
               (* could also recurse to find nested matching inside
                * the matched code itself.
                *)
-              let matched_tokens = Lib_ast_generic.ii_of_any (E x) in
+              let matched_tokens = Lib_ast.ii_of_any (E x) in
               matches_with_env +> List.iter (fun env ->
                 hook env matched_tokens
               )
@@ -90,7 +90,7 @@ let sgrep_ast ~hook pattern ast =
               (* could also recurse to find nested matching inside
                * the matched code itself.
                *)
-              let matched_tokens = Lib_ast_generic.ii_of_any (S x) in
+              let matched_tokens = Lib_ast.ii_of_any (S x) in
               matches_with_env +> List.iter (fun env ->
                 hook env matched_tokens
               )

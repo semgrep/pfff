@@ -33,7 +33,6 @@
  *  - later: add Go (easy)
  *  - later: add Ruby, Rust, Scala (difficult)
  *  - later: add C++ (argh)
- *  - dogfooding: add OCaml!
  *  - see ast_fuzzy.ml TODOs for ideas to use ast_generic for sgrep.
  *
  * related work:
@@ -62,6 +61,8 @@
  *  - all the other_xxx types should contain only simple constructors (enums)
  *    without any parameter. I rely on that to simplify the code 
  *    of the generic mapper and matcher.
+ *
+ * See also pfff/lang_GENERIC/
  *)
 
 (*****************************************************************************)

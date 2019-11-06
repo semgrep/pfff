@@ -179,7 +179,7 @@ let test_parse_generic xs =
 
 let test_dump_generic file =
   let ast = ast_generic_of_file file in
-  let v = Meta_ast_generic.vof_any (Ast_generic.Pr ast) in
+  let v = Meta_ast.vof_any (Ast_generic.Pr ast) in
   let s = Ocaml.string_of_v v in
   pr2 s
 

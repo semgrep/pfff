@@ -83,7 +83,6 @@ BASICLIBS=commons/lib.cma \
  globals/lib.cma \
  h_files-format/lib.cma \
  h_program-lang/lib.cma \
- matcher/lib.cma \
  lang_ml/parsing/lib.cma \
   lang_ml/analyze/lib.cma \
  lang_skip/parsing/lib.cma \
@@ -111,6 +110,9 @@ BASICLIBS=commons/lib.cma \
  lang_web/parsing/lib.cma \
  lang_text/lib.cma \
  lang_sql/parsing/lib.cma \
+ lang_GENERIC/parsing/lib.cma \
+  lang_GENERIC/analyze/lib.cma \
+ matcher/lib.cma \
  mini/lib.cma
 
 SYSLIBS=bigarray.cma str.cma unix.cma
@@ -130,8 +132,6 @@ LIBS= commons/lib.cma \
     h_visualization/lib.cma \
     h_program-visual/lib.cma \
     graph_code/lib.cma \
-    matcher/lib.cma \
-    linter/lib.cma \
     lang_ml/parsing/lib.cma \
      lang_ml/analyze/lib.cma \
     lang_skip/parsing/lib.cma \
@@ -177,6 +177,10 @@ LIBS= commons/lib.cma \
      lang_html/analyze/lib.cma \
     lang_css/parsing/lib.cma \
     lang_web/parsing/lib.cma \
+    lang_GENERIC/parsing/lib.cma \
+     lang_GENERIC/analyze/lib.cma \
+    linter/lib.cma \
+    matcher/lib.cma \
     mini/lib.cma
 
 MAKESUBDIRS=commons commons_ocollection commons_core \
@@ -189,8 +193,6 @@ MAKESUBDIRS=commons commons_ocollection commons_core \
   h_program-lang \
   graph_code \
   h_program-visual \
-  matcher \
-  linter \
   lang_ml/parsing \
    lang_ml/analyze \
   lang_skip/parsing \
@@ -235,6 +237,10 @@ MAKESUBDIRS=commons commons_ocollection commons_core \
   lang_css/parsing \
   lang_web/parsing \
   lang_text \
+  lang_GENERIC/parsing \
+   lang_GENERIC/analyze \
+  matcher \
+  linter \
   mini \
   meta \
   $(VISUALDIRS) \

@@ -224,11 +224,12 @@ let test_include_require file =
   let ast = Parse_php.parse_program file in
 
   let increqs = Include_require_php.top_increq_of_program ast in
-  increqs +> List.iter (fun (_inckind, tok, incexpr) ->
+  increqs +> List.iter (fun (_inckind, _tok, incexpr) ->
     match incexpr with
     | Include_require_php.SimpleVar _
     | Include_require_php.Other _ ->
-        Matching_report.print_match [tok]
+        (* Matching_report.print_match [tok] *)
+      failwith "Matching_report.print_match dependency to fix"
     | _ -> ()
   );
   ()

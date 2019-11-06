@@ -21,7 +21,6 @@ LIBS= $(TOP)/commons/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/h_program-lang \
-  $(TOP)/matcher \
   $(TOP)/globals \
 
 ##############################################################################

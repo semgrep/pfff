@@ -6,8 +6,7 @@ TARGET=lib
 OPAMPKG=pfff-matcher
 
 SRC= flag_matcher.ml \
-     parse_fuzzy.ml \
-     matching_report.ml lib_unparser.ml \
+     matching_report.ml \
      \
      metavars_fuzzy.ml fuzzy_vs_fuzzy.ml \
      matching_fuzzy.ml transforming_fuzzy.ml \
@@ -29,6 +28,7 @@ INCLUDEDIRS= $(TOP)/commons $(TOP)/commons_ocollection \
    $(TOP)/h_program-lang $(TOP)/h_version-control  \
    $(TOP)/globals \
    $(TOP)/external/ \
+   $(TOP)/lang_GENERIC/parsing \
 
 ##############################################################################
 # Generic variables

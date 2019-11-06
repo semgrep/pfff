@@ -1,8 +1,8 @@
 open Ast_html
 
-module M = Meta_ast_generic
+module PI = Parse_info
 
-let _current_precision = ref M.default_precision
+let _current_precision = ref PI.default_dumper_precision
 
 let rec vof_info v = 
   Parse_info.vof_info v

@@ -21,7 +21,7 @@ SRC= ast_nw.ml \
 
 INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/globals \
-  $(TOP)/h_program-lang $(TOP)/matcher \
+  $(TOP)/h_program-lang \
 
 # globals.cma is used only for Config.patch in test_parse_nw
 LIBS=$(TOP)/commons/lib.cma \

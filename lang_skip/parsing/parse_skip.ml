@@ -138,15 +138,3 @@ let parse_program file =
   let ((astopt, _toks), _stat) = parse file in
   Common2.some astopt
 
-(*****************************************************************************)
-(* Fuzzy parsing *)
-(*****************************************************************************)
-
-let parse_fuzzy file =
-  let toks = tokens file in
-  let trees = Parse_fuzzy.mk_trees { Parse_fuzzy.
-     tokf = TH.info_of_tok;
-     kind = TH.token_kind_of_tok;
-  } toks 
-  in
-  trees, toks

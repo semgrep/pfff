@@ -84,13 +84,15 @@ let parse_pattern file =
       Left (Spatch_php.parse file)
   | "c++" | "ml" | "js" | "java" | "phpfuzzy" -> 
       let parse str =
-        Common2.with_tmp_file ~str ~ext:"cpp" (fun tmpfile ->
+        Common2.with_tmp_file ~str ~ext:"cpp" (fun _tmpfile ->
           (* for now we abuse the fuzzy parser of C++ for other languages
            * as the pattern should be the same in all those languages
            * (the main difference between those languages from the 
            * fuzzy parser point of view is the syntax for comments).
            *)
-          Parse_cpp.parse_fuzzy tmpfile +> fst
+raise Todo
+(*
+          Parse_cpp.parse_fuzzy tmpfile +> fst *)
         )
       in
       Right (Spatch_fuzzy.parse 
@@ -108,6 +110,7 @@ let spatch pattern file =
       failwith ("PARSING PB: " ^ Parse_info.error_message_info tok);
     )
 
+(* TODO
   | "c++", Right pattern ->
     let trees, toks =
       try 
@@ -209,6 +212,7 @@ let spatch pattern file =
     if was_modified
     then Some (unparse toks)
     else None
+*)
 
   | _ -> failwith ("unsupported language: " ^ !lang)
 

@@ -25,7 +25,6 @@ INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/commons_core \
   $(TOP)/globals \
   $(TOP)/h_program-lang \
-  $(TOP)/matcher \
 
 ##############################################################################
 # Generic variables

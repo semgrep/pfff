@@ -140,19 +140,3 @@ let parse_program file =
   let ((astopt, _toks), _stat) = parse file in
   Common2.some astopt
 
-(*****************************************************************************)
-(* Fuzzy parsing *)
-(*****************************************************************************)
-
-(* This is similar to what I did for OPA. This is also similar
- * to what I do for parsing hacks for C++, but this fuzzy AST can be useful
- * on its own, e.g. for a not too bad sgrep/spatch.
- *)
-let parse_fuzzy file =
-  let toks = tokens file in
-  let trees = Parse_fuzzy.mk_trees { Parse_fuzzy.
-     tokf = TH.info_of_tok;
-     kind = TH.token_kind_of_tok;
-  } toks 
-  in
-  trees, toks

@@ -13,8 +13,8 @@
  * license.txt for more details.
  *)
 
-module V = Visitor_ast_generic
-module M = Map_ast_generic
+module V = Visitor_ast
+module M = Map_ast
 
 (*****************************************************************************)
 (* Extract infos *)

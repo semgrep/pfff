@@ -197,6 +197,8 @@ let create_ast file =
     Fuzzy
       (match !lang with
       | ("cfuzzy" | "c++") ->
+raise Todo
+(*
         Common.save_excursion Flag_parsing.verbose_lexing false (fun () ->
           Parse_cpp.parse_fuzzy file +> fst
         )
@@ -209,6 +211,7 @@ let create_ast file =
         Parse_php.parse_fuzzy file +> fst
       | "jsfuzzy" ->
         Parse_js.parse_fuzzy file +> fst
+*)
       | _ ->
         failwith ("unsupported language: " ^ !lang))
   )
@@ -278,47 +281,23 @@ let sgrep_ast pattern any_ast =
   | ("js" | "python" | "c" | "java"), PatGen pattern, Gen ast ->
     Sgrep_generic.sgrep_ast
       ~hook:(fun env matched_tokens ->
-        print_match !mvars env Lib_ast_generic.ii_of_any matched_tokens
+        print_match !mvars env Lib_ast.ii_of_any matched_tokens
       )
       pattern ast
 
-  | ("cfuzzy" | "c++"), PatFuzzy pattern, Fuzzy ast ->
-    Sgrep_fuzzy.sgrep
-      ~hook:(fun env matched_tokens ->
-        print_match !mvars env Ast_fuzzy.toks_of_trees matched_tokens
-      )
-      pattern ast
-  | "javafuzzy", PatFuzzy pattern, Fuzzy ast ->
+  | ("cfuzzy" | "c++" | "javafuzzy" | "jsfuzzy" | "mlfuzzy" | "phpfuzzy"), 
+    PatFuzzy pattern, Fuzzy ast ->
     Sgrep_fuzzy.sgrep
       ~hook:(fun env matched_tokens ->
         print_match !mvars env Ast_fuzzy.toks_of_trees matched_tokens
       )
       pattern ast
 
-  | "jsfuzzy", PatFuzzy pattern, Fuzzy ast ->
-    Sgrep_fuzzy.sgrep
-      ~hook:(fun env matched_tokens ->
-        print_match !mvars env Ast_fuzzy.toks_of_trees matched_tokens
-      )
-      pattern ast
-
-  | "ml", PatFuzzy pattern, Fuzzy ast ->
-    Sgrep_fuzzy.sgrep
-      ~hook:(fun env matched_tokens ->
-        print_match !mvars env Ast_fuzzy.toks_of_trees matched_tokens
-      )
-      pattern ast
   | "php", PatPhp pattern, Php ast ->
     Sgrep_php.sgrep_ast
       ~case_sensitive:!case_sensitive
       ~hook:(fun env matched_tokens ->
         print_match !mvars env Lib_parsing_php.ii_of_any matched_tokens
-      )
-      pattern ast
-  | "phpfuzzy", PatFuzzy pattern, Fuzzy ast ->
-    Sgrep_fuzzy.sgrep
-      ~hook:(fun env matched_tokens ->
-        print_match !mvars env Ast_fuzzy.toks_of_trees matched_tokens
       )
       pattern ast
   | _ ->

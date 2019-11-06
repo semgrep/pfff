@@ -17,7 +17,7 @@ open Common
 
 open Ast_generic
 module Ast = Ast_generic
-module F = Controlflow_generic
+module F = Controlflow
 
 (*****************************************************************************)
 (* Prelude *)
@@ -58,7 +58,7 @@ type state = {
 
 type error = error_kind * Parse_info.info option
  and error_kind =
-  | DeadCode of Controlflow_generic.node_kind
+  | DeadCode of Controlflow.node_kind
   | NoEnclosingLoop
   | DynamicBreak
 
@@ -122,7 +122,7 @@ let (lookup_some_ctx:
    aux 1 xs
 
 let info_opt any =
-  match Lib_ast_generic.ii_of_any any with
+  match Lib_ast.ii_of_any any with
   | [] -> None
   | x::_xs -> Some x
 
@@ -780,7 +780,7 @@ let (deadcode_detection : F.flow -> unit) = fun flow ->
           (match node.F.i with
           | None ->
               pr2 (spf "CFG: PB, found dead node but no loc: %s"
-                   (Controlflow_generic.short_string_of_node node))
+                   (Controlflow.short_string_of_node node))
           | Some info ->
               raise (Error (DeadCode node.F.n, Some info))
           )

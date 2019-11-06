@@ -16,7 +16,7 @@ open Common
 
 module E = Entity_code
 module G = Graph_code
-module Error = Errors_code
+module Error = Error_code
 
 (*****************************************************************************)
 (* Prelude *)

@@ -18,7 +18,10 @@ type token_origin =
   | Ab (* abstract token, see parse_info.ml comment *)
 
 (* to allow source to source transformation via token "annotations", 
- * see the documentation for spatch
+ * see the documentation for spatch.
+ * Technically speaking this is not a token, because we do not have
+ * the kind of the token (e.g., PLUS | IDENT | IF | ...).
+ * It's just a lexeme, but the word lexeme is not as known as token.
  *)
 type token_mutable = {
   token: token_origin; 
@@ -39,9 +42,8 @@ type token_mutable = {
     | AddNewlineAndIdent
 
 (* shortcut *)
-type info = token_mutable
-
-
+type t = token_mutable
+type info = t
 
 (* mostly for the fuzzy AST builder *)
 type token_kind =
@@ -81,6 +83,12 @@ val file_of_info  : info -> Common.filename
 val string_of_info: info -> string
 (* meta *)
 val vof_info: info -> Ocaml.v
+type dumper_precision = {
+  full_info: bool;
+  token_info: bool;
+  type_info: bool;
+}
+val default_dumper_precision : dumper_precision
 
 val is_origintok: info -> bool
 

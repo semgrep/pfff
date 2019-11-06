@@ -26,7 +26,7 @@ module B = Ast_generic
 
 module MV = Metavars_generic
 module Ast = Ast_generic
-module Lib = Lib_ast_generic
+module Lib = Lib_ast
 
 (*****************************************************************************)
 (* Prelude *)

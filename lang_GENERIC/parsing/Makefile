@@ -3,34 +3,30 @@ TOP=../..
 # Variables
 ##############################################################################
 TARGET=lib
-OPAMPKG=pfff-lang_php-matcher
+OPAMPKG=pfff-lang_GENERIC
 
-SRC= flag_matcher_php.ml   \
-     refactoring_code_php.ml \
-     metavars_php.ml \
-     php_vs_php.ml \
-     matching_php.ml \
-     transforming_php.ml \
-     sgrep_php.ml \
-     spatch_php.ml \
-     unit_matcher_php.ml \
+-include $(TOP)/Makefile.config
 
-SYSLIBS= str.cma unix.cma
+SRC= lang.ml \
+     ast.ml meta_ast.ml \
+     visitor_ast.ml map_ast.ml \
+     lib_ast.ml \
+     parse.ml \
+     test_parsing_generic.ml
+
+SYSLIBS= str.cma unix.cma 
+
 LIBS=$(TOP)/commons/lib.cma \
-     $(TOP)/h_program-lang/lib.cma \
-     ../parsing/lib.cma \
+ $(TOP)/h_program-lang/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons \
-   $(TOP)/commons_ocollection \
-   $(TOP)/h_program-lang $(TOP)/h_version-control  \
-   $(TOP)/globals \
-   $(TOP)/external/ \
-   ../parsing
+  $(TOP)/commons_core \
+  $(TOP)/globals \
+  $(TOP)/h_program-lang \
 
 ##############################################################################
 # Generic variables
 ##############################################################################
-#WARNING_FLAGS=-w +A-4-29-6-45-32
 -include $(TOP)/Makefile.common
 
 ##############################################################################
@@ -49,6 +45,6 @@ $(TARGET).top: $(OBJS) $(LIBS)
 clean::
 	rm -f $(TARGET).top
 
-#BUG in ocamlc, false positive on unused value
-php_vs_php.cmo: php_vs_php.ml
-	$(OCAMLC) -w -A -c $<
+
+visitor_ast.cmo: visitor_ast.ml
+	ocamlc $(INCLUDES) -w y -c $<

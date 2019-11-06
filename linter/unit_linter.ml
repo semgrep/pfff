@@ -1,7 +1,7 @@
 open Common
 open OUnit
 
-module E = Errors_code
+module E = Error_code
 module PI = Parse_info
 
 (*****************************************************************************)

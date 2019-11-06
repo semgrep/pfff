@@ -15,8 +15,8 @@
  *)
 
 open Ast_generic
-module V = Visitor_ast_generic
-module E = Errors_code
+module V = Visitor_ast
+module E = Error_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -39,11 +39,11 @@ let check_program2 prog =
       (match def with
       | FuncDef fdef ->
         (try 
-          let flow = Controlflow_build_generic.cfg_of_func fdef in
-          Controlflow_build_generic.deadcode_detection flow;
-        with Controlflow_build_generic.Error (err, loc) ->
+          let flow = Controlflow_build.cfg_of_func fdef in
+          Controlflow_build.deadcode_detection flow;
+        with Controlflow_build.Error (err, loc) ->
           loc |> Common.do_option (fun loc ->
-            let s = Controlflow_build_generic.string_of_error_kind err in
+            let s = Controlflow_build.string_of_error_kind err in
             E.error loc (E.CFGError s);
           )
         )

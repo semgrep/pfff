@@ -18,7 +18,7 @@ open Cst_cpp
 
 module Ast = Cst_cpp
 module V = Visitor_cpp
-module E = Errors_code
+module E = Error_code
 module S = Scope_code
 
 (*****************************************************************************)

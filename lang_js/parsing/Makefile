@@ -27,7 +27,6 @@ INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/globals \
   $(TOP)/external/json-wheel \
   $(TOP)/h_program-lang \
-  $(TOP)/matcher \
 
 ##############################################################################
 # Generic variables

@@ -162,7 +162,8 @@ type token_kind =
    | Space
 
 (* shortcut *)
-type info = token_mutable
+type t = token_mutable
+type info = t
 
 
 type parsing_stat = {
@@ -635,6 +636,17 @@ let vof_info
   let bnd = ("token", arg) in 
   let bnds = bnd :: bnds in 
   Ocaml.VDict bnds
+
+type dumper_precision = {
+  full_info: bool;
+  token_info: bool;
+  type_info: bool;
+}
+let default_dumper_precision = {
+  full_info = false;
+  token_info = false;
+  type_info = false;
+}
 
 
 (*****************************************************************************)
