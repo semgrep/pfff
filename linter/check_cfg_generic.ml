@@ -44,7 +44,7 @@ let check_program2 prog =
         with Controlflow_build.Error (err, loc) ->
           loc |> Common.do_option (fun loc ->
             let s = Controlflow_build.string_of_error_kind err in
-            E.error loc (E.CFGError s);
+            E.error loc (E.UnreachableStatement s);
           )
         )
       | _ -> ()

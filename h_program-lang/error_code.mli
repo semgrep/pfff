@@ -22,6 +22,7 @@ type error = {
   | UnusedVariable of string * Scope_code.t
 
   (* CFG *)
+ | UnreachableStatement of string
  | CFGError of string
 
   (* sgrep lint rules *)

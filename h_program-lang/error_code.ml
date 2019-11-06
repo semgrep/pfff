@@ -67,17 +67,17 @@ type error = {
     *  - UndefinedEntity (UseOfUndefined)
     *  - MultiDefinedEntity (DupeEntity)
     *)
- (* global analysis checker.
-  * Never done by compilers, and unusual for linters to do that.
-  *  
-  * note: OCaml 4.01 now does that partially by locally checking if 
-  * an entity is unused and not exported (which does not require
-  * global analysis)
-  *)
- | Deadcode of entity
- | UndefinedDefOfDecl of entity
- (* really a special case of Deadcode decl *)
- | UnusedExport of entity (* tge decl*) * Common.filename (* file of def *)
+  (* global analysis checker.
+   * Never done by compilers, and unusual for linters to do that.
+   *  
+   * note: OCaml 4.01 now does that partially by locally checking if 
+   * an entity is unused and not exported (which does not require a
+   * global analysis)
+   *)
+  | Deadcode of entity
+  | UndefinedDefOfDecl of entity
+  (* really a special case of Deadcode decl *)
+  | UnusedExport of entity (* tge decl*) * Common.filename (* file of def *)
 
   (* call sites *)
    (* should be done by the compiler (ocaml does):
@@ -93,7 +93,11 @@ type error = {
     *)
   | UnusedVariable of string * Scope_code.t
 
-  (* CFG *)
+  (* CFG.
+   * Again unreachable statements are rarely checked by compilers or linters,
+   * but it can be really useful (see https://www.wired.com/2014/02/gotofail/)
+   *)
+ | UnreachableStatement of string
  | CFGError of string
 
   (* classes *)
@@ -149,6 +153,8 @@ let string_of_error_kind error_kind =
       spf "Unused variable %s, scope = %s" name 
         (Scope_code.string_of_scope scope)
   | SgrepLint (title, message) -> spf "%s: %s" title message
+
+  | UnreachableStatement s -> spf "unreachable statement: %s" s
 
   | LexicalError s -> spf "Lexical error: %s" s
   | ParseError -> "Syntax error"
@@ -216,6 +222,7 @@ let rank_of_error err =
   | UnusedExport _ -> ReallyImportant
   | UnusedVariable _ -> Less
   | SgrepLint _ -> Important
+  | UnreachableStatement _ -> Important
   | CFGError _ -> Important
 
   (* usually issues in my parsers *)
