@@ -55,6 +55,9 @@ let fake_token_location = {
   charpos = -1; str = ""; line = -1; column = -1; file = "";
 }
 
+let first_loc_of_file file = {
+  charpos = 0; str = ""; line = 1; column = 0; file = file;
+}
 
 type token_origin =
     (* Present both in the AST and list of tokens *)

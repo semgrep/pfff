@@ -73,6 +73,7 @@ val lexical_error: string -> Lexing.lexbuf -> unit
 
 val fake_token_location : token_location
 val fake_info : string -> t
+val first_loc_of_file: Common.filename -> token_location
 
 val str_of_info   : t -> string
 val line_of_info  : t -> int

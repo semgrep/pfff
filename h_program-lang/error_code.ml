@@ -94,8 +94,8 @@ type error = {
   | UnusedVariable of string * Scope_code.t
 
   (* CFG.
-   * Again unreachable statements are rarely checked by compilers or linters,
-   * but it can be really useful (see https://www.wired.com/2014/02/gotofail/)
+   * Again, unreachable statements are rarely checked by compilers or linters,
+   * but they really should (see https://www.wired.com/2014/02/gotofail/)
    *)
  | UnreachableStatement of string
  | CFGError of string
@@ -113,6 +113,7 @@ type error = {
   | SgrepLint of (string (* title/code *) * string (* msg *))
 
   (* other *)
+  | FatalError of string (* missing file, OCaml errors, etc. *)
 
  (* todo: should be merged with Graph_code.entity or put in Database_code?*)
  and entity = (string * Entity_code.entity_kind)
@@ -161,6 +162,7 @@ let string_of_error_kind error_kind =
   | AstbuilderError s -> spf "AST generation error: %s" s
   | OtherParsingError s -> spf "Other parsing error: %s" s
   | CFGError s -> spf "Control flow error: %s" s
+  | FatalError s -> spf "Fatal Error: %s" s
 
 (*
 let loc_of_node root n g =
@@ -227,6 +229,9 @@ let rank_of_error err =
 
   (* usually issues in my parsers *)
   | LexicalError _ | ParseError | AstbuilderError _ | OtherParsingError _
+   -> OnlyStrict
+  (* usually a bug somewhere in my code *)
+  | FatalError _
    -> OnlyStrict
   
 

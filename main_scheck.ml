@@ -353,23 +353,10 @@ let main_action xs =
       files |> Console.progress ~show:!show_progress (fun k -> 
         List.iter (fun file ->
           k();
-          try 
+          (try 
             pr2_dbg (spf "processing: %s" file);
             let ast = Parse_generic.parse_program file in
             Check_all_generic.check_file ~find_entity ast;
-
-            let errs = 
-              !E.g_errors 
-              |> List.rev 
-              |> List.filter (fun x -> 
-                E.score_of_rank (E.rank_of_error x) >= !filter
-              )
-            in
-            if not !rank
-            then begin 
-              errs |> List.iter (fun err -> pr (E.string_of_error err));
-              E.g_errors := []
-            end
           with 
           | Parse_info.Lexical_error (s, tok) ->
             E.error tok (E.LexicalError s)
@@ -381,9 +368,23 @@ let main_action xs =
             E.error tok (E.OtherParsingError s);
           | (Timeout | UnixExit _) as exn -> raise exn
           | exn ->
-              pr2 (spf "PB with %s, exn = %s" file (Common.exn_to_s exn));
-              if !Common.debugger then raise exn
-        ));
+            let loc = Parse_info.first_loc_of_file file in
+            E.error_loc loc (E.FatalError (Common.exn_to_s exn));
+          );
+          let errs = 
+            !E.g_errors 
+            |> List.rev 
+            |> List.filter (fun x -> 
+              E.score_of_rank (E.rank_of_error x) >= !filter
+            )
+          in
+          if not !rank
+          then begin 
+            errs |> List.iter (fun err -> pr (E.string_of_error err));
+            E.g_errors := []
+          end
+        )
+    );
 
     if !rank then begin
       let errs = 

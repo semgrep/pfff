@@ -28,6 +28,9 @@ type error = {
   (* sgrep lint rules *)
   | SgrepLint of (string (* title/code *) * string (* msg *))
 
+  (* other *)
+  | FatalError of string
+
  and entity = (string * Entity_code.entity_kind)
 
 
