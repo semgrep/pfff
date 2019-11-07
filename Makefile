@@ -479,6 +479,7 @@ INSTALL_SUBDIRS= \
   lang_js/parsing  lang_js/analyze\
   lang_python/parsing  lang_python/analyze\
   lang_GENERIC/parsing  lang_GENERIC/analyze\
+  lang_fuzzy/parsing \
 
 
 install-libs:: all all.opt
