@@ -148,6 +148,8 @@ let mk_trees h xs =
   in
   aux xs
 
+let mk_tokens hooks toks =
+  toks |> List.map (fun tok -> hooks.kind tok, hooks.tokf tok)
 
 (*****************************************************************************)
 (* Visitor *)
@@ -276,7 +278,4 @@ let abstract_position_trees trees =
   } in
   let mapper = mk_mapper hooks in
   mapper trees
-
-
-
 

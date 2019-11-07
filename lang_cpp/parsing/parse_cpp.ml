@@ -214,7 +214,12 @@ let parse_fuzzy file =
   let extended = toks +> List.map Token_views_cpp.mk_token_extended in
   Parsing_hacks_cpp.find_template_inf_sup extended;
   let groups = Token_views_cpp.mk_multi extended in
-  multi_grouped_list groups, toks_orig
+  let trees = multi_grouped_list groups in
+  let hooks = { Lib_ast_fuzzy.
+     kind = TH.token_kind_of_tok;
+     tokf = TH.info_of_tok
+  } in
+  trees, Lib_ast_fuzzy.mk_tokens hooks toks_orig
   )
 
 (*****************************************************************************)

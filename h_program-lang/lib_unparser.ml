@@ -159,8 +159,8 @@ let elts_of_add_args_before acc xs =
 (*****************************************************************************)
 (* Elts of any *)
 (*****************************************************************************)
-let elt_and_info_of_tok ~kind_and_info_of_tok tok =
-  let (kind, info) = kind_and_info_of_tok tok in
+let elt_and_info_of_tok tok =
+  let (kind, info) = tok in
   let str = PI.str_of_info info in
   let elt = 
     match kind with
@@ -169,12 +169,12 @@ let elt_and_info_of_tok ~kind_and_info_of_tok tok =
   in
   elt, info
 
-let elts_of_any ~kind_and_info_of_tok toks =
+let elts_of_any toks =
   let rec aux acc toks =
     match toks with
     | [] -> List.rev acc
     | tok::t -> 
-        let elt, info = elt_and_info_of_tok ~kind_and_info_of_tok tok in
+        let elt, info = elt_and_info_of_tok tok in
         (match info.token with
         | Ab | FakeTokStr _ | ExpandedTok _ ->
             raise Impossible
@@ -303,12 +303,12 @@ let rec drop_useless_space xs  =
  * also want to remove the spaces between so we need a few heuristics
  * to maintain some good style.
  *)
-let string_of_toks_using_transfo ~kind_and_info_of_tok toks =
+let string_of_toks_using_transfo toks =
 
   Common2.with_open_stringbuf (fun (_pr_with_nl, buf) ->
     let pp s = Buffer.add_string buf s in
 
-    let xs = elts_of_any ~kind_and_info_of_tok toks in
+    let xs = elts_of_any toks in
 
     if !debug 
     then xs +> List.iter (fun x -> pr2 (Ocaml.string_of_v (vof_elt x)));

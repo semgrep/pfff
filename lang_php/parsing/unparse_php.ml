@@ -154,8 +154,7 @@ let string_of_expr x = string_of_any (Expr x)
  *)
 
 let string_of_program_with_comments_using_transfo (_ast, toks) =
-  toks +> Lib_unparser.string_of_toks_using_transfo 
-    ~kind_and_info_of_tok:(fun tok ->
-      TH.token_kind_of_tok tok, TH.info_of_tok tok
-    )
+  let toks' = toks |> List.map (fun tok ->
+      TH.token_kind_of_tok tok, TH.info_of_tok tok ) in
+  Lib_unparser.string_of_toks_using_transfo toks'
 (*e: unparse_php.ml *)

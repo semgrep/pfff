@@ -7,9 +7,7 @@ type elt =
 
 (* helpers *)
 val elts_of_any:
-  kind_and_info_of_tok:('tok -> Parse_info.token_kind * Parse_info.t) ->
-  'tok list ->
-  elt list
+  (Parse_info.token_kind * Parse_info.t) list -> elt list
 
 (* debugging *)
 val vof_elt: elt -> Ocaml.v
@@ -22,6 +20,4 @@ val debug: bool ref
 
 (* main entry point *)
 val string_of_toks_using_transfo:
-  kind_and_info_of_tok:('tok -> Parse_info.token_kind * Parse_info.t) ->
-  'tok list ->
-  string
+  (Parse_info.token_kind * Parse_info.t) list -> string

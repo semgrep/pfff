@@ -252,8 +252,7 @@ let sgrep_gen_unittest ~any_gen_of_string =
 (* See https://github.com/facebook/pfff/wiki/Spatch *)
 
 (* run by spatch -test *)
-let spatch_fuzzy_unittest 
-    ~ast_fuzzy_of_string ~parse_file ~kind_and_info_of_tok = 
+let spatch_fuzzy_unittest ~ast_fuzzy_of_string ~parse_file = 
   "spatch regressions files" >:: (fun () ->
 
     let testdir = Filename.concat Config_pfff.path "tests/fuzzy/spatch/" in
@@ -279,13 +278,9 @@ let spatch_fuzzy_unittest
           parse_file srcfile
         in
         let was_modified = Spatch_fuzzy.spatch pattern trees in
-
-        let unparse toks = 
-          Lib_unparser.string_of_toks_using_transfo ~kind_and_info_of_tok toks
-        in
         let resopt =
           if was_modified
-          then Some (unparse toks)
+          then Some (Lib_unparser.string_of_toks_using_transfo toks)
           else None
         in
 

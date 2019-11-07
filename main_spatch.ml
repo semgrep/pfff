@@ -79,142 +79,54 @@ let pr2 s =
 (*****************************************************************************)
  
 let parse_pattern file =
-  match !lang with
-  | "php" -> 
-      Left (Spatch_php.parse file)
-  | "c++" | "ml" | "js" | "java" | "phpfuzzy" -> 
+  match Lang_fuzzy.lang_of_string_opt !lang with
+  | Some _lang ->
       let parse str =
-        Common2.with_tmp_file ~str ~ext:"cpp" (fun _tmpfile ->
+        Common2.with_tmp_file ~str ~ext:"cpp" (fun tmpfile ->
           (* for now we abuse the fuzzy parser of C++ for other languages
            * as the pattern should be the same in all those languages
            * (the main difference between those languages from the 
            * fuzzy parser point of view is the syntax for comments).
            *)
-raise Todo
-(*
-          Parse_cpp.parse_fuzzy tmpfile +> fst *)
+          Parse_cpp.parse_fuzzy tmpfile +> fst
         )
       in
       Right (Spatch_fuzzy.parse 
                 ~pattern_of_string:parse
                 ~ii_of_pattern:Lib_ast_fuzzy.toks_of_trees
                 file)
-  | _ -> failwith ("unsupported language: " ^ !lang)
-
-let spatch pattern file =
-  match !lang, pattern with
-  | "php", Left pattern -> 
-    (try 
-      Spatch_php.spatch ~case_sensitive:!case_sensitive pattern file
-    with Parse_php.Parse_error tok ->
-      failwith ("PARSING PB: " ^ Parse_info.error_message_info tok);
+  | None ->
+    (match !lang with
+    | "php" -> 
+        Left (Spatch_php.parse file)
+    | _ -> failwith ("unsupported language for the pattern: " ^ !lang)
     )
 
-(* TODO
-  | "c++", Right pattern ->
-    let trees, toks =
-      try 
-        Common.save_excursion Flag_parsing.verbose_lexing false (fun () ->
-          Parse_cpp.parse_fuzzy file
-        )
-      with exn ->
-        pr2 (spf "PB with %s, exn = %s"  file (Common.exn_to_s exn));
-        [], []
-    in
-    let was_modified = Spatch_fuzzy.spatch pattern trees in
+let spatch pattern file =
+ try (
+  match Lang_fuzzy.lang_of_string_opt !lang, pattern with
+  | Some lang, Right pattern ->
+     let trees, toks = Parse_fuzzy.parse_and_tokens_with_lang lang file in 
+     let was_modified = Spatch_fuzzy.spatch pattern trees in
+     if was_modified
+     then Some (Lib_unparser.string_of_toks_using_transfo toks)
+     else None
 
-    let kind_and_info_of_tok tok =
-      Token_helpers_cpp.token_kind_of_tok tok, Token_helpers_cpp.info_of_tok tok
-    in
-    let unparse toks = 
-      Lib_unparser.string_of_toks_using_transfo ~kind_and_info_of_tok toks
-    in
-    if was_modified
-    then Some (unparse toks)
-    else None
-  | "ml", Right pattern ->
-    let trees, toks =
-      try 
-          Parse_ml.parse_fuzzy file
-      with exn ->
-        pr2 (spf "PB with %s, exn = %s"  file (Common.exn_to_s exn));
-        [], []
-    in
-    let was_modified = Spatch_fuzzy.spatch pattern trees in
+  | None, Left pattern ->
+    (match !lang with
+    | "php" -> 
+      (try 
+        Spatch_php.spatch ~case_sensitive:!case_sensitive pattern file
+      with Parse_php.Parse_error tok ->
+        failwith ("PARSING PB: " ^ Parse_info.error_message_info tok);
+      )
+    | _ -> failwith ("unsupported language: " ^ !lang)
+    )
+  | _ -> raise Impossible
+  ) with exn ->
+     pr2 (spf "PB with %s, exn = %s"  file (Common.exn_to_s exn));
+     None
 
-    let kind_and_info_of_tok tok =
-      Token_helpers_ml.token_kind_of_tok tok, Token_helpers_ml.info_of_tok tok
-    in
-    let unparse toks = 
-      Lib_unparser.string_of_toks_using_transfo ~kind_and_info_of_tok toks
-    in
-    if was_modified
-    then Some (unparse toks)
-    else None
-
-  | "phpfuzzy", Right pattern ->
-    let trees, toks =
-      try 
-          Parse_php.parse_fuzzy file
-      with exn ->
-        pr2 (spf "PB with %s, exn = %s"  file (Common.exn_to_s exn));
-        [], []
-    in
-    let was_modified = Spatch_fuzzy.spatch pattern trees in
-
-    let kind_and_info_of_tok tok =
-      Token_helpers_php.token_kind_of_tok tok, Token_helpers_php.info_of_tok tok
-    in
-    let unparse toks = 
-      Lib_unparser.string_of_toks_using_transfo ~kind_and_info_of_tok toks
-    in
-    if was_modified
-    then Some (unparse toks)
-    else None
-
-  | "java", Right pattern ->
-    let trees, toks =
-      try 
-          Parse_java.parse_fuzzy file
-      with exn ->
-        pr2 (spf "PB with %s, exn = %s"  file (Common.exn_to_s exn));
-        [], []
-    in
-    let was_modified = Spatch_fuzzy.spatch pattern trees in
-
-    let kind_and_info_of_tok tok =
-      Token_helpers_java.token_kind_of_tok tok, 
-      Token_helpers_java.info_of_tok tok
-    in
-    let unparse toks = 
-      Lib_unparser.string_of_toks_using_transfo ~kind_and_info_of_tok toks
-    in
-    if was_modified
-    then Some (unparse toks)
-    else None
-
-  | "js", Right pattern ->
-    let trees, toks =
-      try 
-          Parse_js.parse_fuzzy file
-      with exn ->
-        pr2 (spf "PB with %s, exn = %s"  file (Common.exn_to_s exn));
-        [], []
-    in
-    let was_modified = Spatch_fuzzy.spatch pattern trees in
-
-    let kind_and_info_of_tok tok =
-      Token_helpers_js.token_kind_of_tok tok, Token_helpers_js.info_of_tok tok
-    in
-    let unparse toks = 
-      Lib_unparser.string_of_toks_using_transfo ~kind_and_info_of_tok toks
-    in
-    if was_modified
-    then Some (unparse toks)
-    else None
-*)
-
-  | _ -> failwith ("unsupported language: " ^ !lang)
 
 (*****************************************************************************)
 (* Main action *)
@@ -815,11 +727,7 @@ let test () =
         Common.save_excursion Flag_parsing.verbose_lexing false (fun () ->
           Parse_cpp.parse_fuzzy file
         ))
-      ~kind_and_info_of_tok:(fun tok ->
-        Token_helpers_cpp.token_kind_of_tok tok, 
-        Token_helpers_cpp.info_of_tok tok
-      )
-    ;
+        ;
     Unit_matcher_php.spatch_unittest;
     Unit_matcher_php.refactoring_unittest;
   ]

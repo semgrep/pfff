@@ -30,42 +30,51 @@ open Common
  * on its own, e.g. for a not too bad sgrep/spatch.
  *)
 
-let parse_with_lang lang file =
+let parse_and_tokens_with_lang lang file =
   match lang with
   | Lang_fuzzy.PHP ->
      let toks = Parse_php.tokens file in
-     Lib_ast_fuzzy.mk_trees { Lib_ast_fuzzy.
+     let hooks = { Lib_ast_fuzzy.
        tokf = Token_helpers_php.info_of_tok;
        kind = Token_helpers_php.token_kind_of_tok;
-     } toks 
+     } in
+     Lib_ast_fuzzy.mk_trees hooks toks, Lib_ast_fuzzy.mk_tokens hooks toks
+
   | Lang_fuzzy.ML ->
     let toks = Parse_ml.tokens file in
-    Lib_ast_fuzzy.mk_trees { Lib_ast_fuzzy.
+    let hooks = { Lib_ast_fuzzy.
      tokf = Token_helpers_ml.info_of_tok;
      kind = Token_helpers_ml.token_kind_of_tok;
-    } toks 
+    } in
+    Lib_ast_fuzzy.mk_trees hooks toks, Lib_ast_fuzzy.mk_tokens hooks toks
   | Lang_fuzzy.Skip ->
     let toks = Parse_skip.tokens file in
-    Lib_ast_fuzzy.mk_trees { Lib_ast_fuzzy.
+    let hooks = { Lib_ast_fuzzy.
      tokf = Token_helpers_skip.info_of_tok;
      kind = Token_helpers_skip.token_kind_of_tok;
-    } toks 
+    } in
+    Lib_ast_fuzzy.mk_trees hooks toks, Lib_ast_fuzzy.mk_tokens hooks toks
   | Lang_fuzzy.Java ->
     let toks = Parse_java.tokens file in
-    Lib_ast_fuzzy.mk_trees { Lib_ast_fuzzy.
+    let hooks = { Lib_ast_fuzzy.
      tokf = Token_helpers_java.info_of_tok;
      kind = Token_helpers_java.token_kind_of_tok;
-    } toks
+    } in
+    Lib_ast_fuzzy.mk_trees hooks toks, Lib_ast_fuzzy.mk_tokens hooks toks
   | Lang_fuzzy.Javascript ->
     let toks = Parse_js.tokens file in
-    Lib_ast_fuzzy.mk_trees { Lib_ast_fuzzy.
+    let hooks = { Lib_ast_fuzzy.
      tokf = Token_helpers_js.info_of_tok;
      kind = Token_helpers_js.token_kind_of_tok;
-    } toks 
+    } in
+    Lib_ast_fuzzy.mk_trees hooks toks, Lib_ast_fuzzy.mk_tokens hooks toks
   | Lang_fuzzy.Cpp ->
     Common.save_excursion Flag_parsing.verbose_lexing false (fun () ->
-      Parse_cpp.parse_fuzzy file |> fst
+      Parse_cpp.parse_fuzzy file
     )
+
+let parse_with_lang lang file =
+  parse_and_tokens_with_lang lang file |> fst
 
 let parse file =
   match Lang_fuzzy.lang_of_filename_opt file with

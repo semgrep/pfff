@@ -20,7 +20,8 @@ val any_of_string:
  Flag_parsing_cpp.language -> string -> Cst_cpp.any
 
 val parse_fuzzy:
-  Common.filename -> Ast_fuzzy.tree list * Parser_cpp.token list
+  Common.filename -> 
+  Ast_fuzzy.trees * (Parse_info.token_kind * Parse_info.t) list
 
 (* usually correspond to what is inside your macros.h *)
 val _defs : (string, Pp_token.define_body) Hashtbl.t
