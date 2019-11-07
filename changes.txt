@@ -1,6 +1,6 @@
 # -*- org -*-
 
-* 0.39 (Q4 2019) (real Python parser, a generic AST, a generic sgrep)
+* 0.39 (Q4 2019) (real Python parser, a generic AST, a generic sgrep/scheck)
 10 years of Pfff! Started in November 2009 (while at Facebook).
 
 ** introducing ast_generic.ml
@@ -9,6 +9,12 @@ across multiple languages.
 
 ** introducing lang_skip/
 basic lexer and highlighter.
+
+** introducing lang_GENERIC/
+to factorize analysis on generic AST (e.g., control flow graph).
+
+** introducing lang_FUZZY/
+to gather all fuzzy parsing code.
 
 ** python
 
@@ -23,6 +29,11 @@ semantic highlighting!
 
 *** add support for AST generic to sgrep precisely over Python, Javascript,
 C, and Java.
+
+** scheck
+
+*** add support for AST generic to factorize checks over multiple langages,
+e.g., unreachable statement detection using a generic control flow graph.
 
 * 0.38 (Q3 2019) (a real AST for Javascript)
 
