@@ -404,7 +404,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
 
        let nodei_to_jump_to =
          state.ctx |> lookup_some_ctx
-           ~level:0
+           ~level:1
            ~ctx_filter:(function
            | LoopCtx (headi, endi) ->
                if is_continue
