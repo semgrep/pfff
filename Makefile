@@ -112,6 +112,7 @@ BASICLIBS=commons/lib.cma \
  lang_sql/parsing/lib.cma \
  lang_GENERIC/parsing/lib.cma \
   lang_GENERIC/analyze/lib.cma \
+ lang_FUZZY/parsing/lib.cma \
  matcher/lib.cma \
  mini/lib.cma
 
@@ -179,6 +180,7 @@ LIBS= commons/lib.cma \
     lang_web/parsing/lib.cma \
     lang_GENERIC/parsing/lib.cma \
      lang_GENERIC/analyze/lib.cma \
+    lang_FUZZY/parsing/lib.cma \
     linter/lib.cma \
     matcher/lib.cma \
     mini/lib.cma
@@ -239,6 +241,7 @@ MAKESUBDIRS=commons commons_ocollection commons_core \
   lang_text \
   lang_GENERIC/parsing \
    lang_GENERIC/analyze \
+  lang_FUZZY/parsing \
   matcher \
   linter \
   mini \
