@@ -77,7 +77,7 @@
  * the Parse_info.token_location embedded inside it, as well as the
  * transformation field that makes possible spatch on the code.
  *)
-type tok = Parse_info.info
+type tok = Parse_info.t
  (* with tarzan *)
 
 (* a shortcut to annotate some information with position information *)
@@ -706,7 +706,7 @@ let str_of_name = fst
 (*****************************************************************************)
 
 (* this can be used in the xxx_to_generic.ml file to signal limitations *)
-exception Error of string * Parse_info.info
+exception Error of string * Parse_info.t
 
 let error tok msg = 
   raise (Error (msg, tok))

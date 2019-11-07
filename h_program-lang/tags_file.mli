@@ -28,4 +28,4 @@ val footer: string
 
 (* helpers used by language taggers *)
 val tag_of_info: 
-  string array -> Parse_info.info -> Entity_code.entity_kind -> tag
+  string array -> Parse_info.t -> Entity_code.entity_kind -> tag

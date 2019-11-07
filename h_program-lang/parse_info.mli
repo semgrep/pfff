@@ -43,7 +43,7 @@ type token_mutable = {
 
 (* shortcut *)
 type t = token_mutable
-type info = t
+type info_ = t
 
 (* mostly for the fuzzy AST builder *)
 type token_kind =
@@ -60,35 +60,35 @@ type token_kind =
    | Space
 
 (* see also Parsing.Parse_error and Failure "empty token" raised by Lexing *)
-exception Lexical_error of string * info
+exception Lexical_error of string * t
 (* better than Parsing.Parse_error, which does not have location information *)
-exception Parsing_error of info
+exception Parsing_error of t
 (* when convert from CST to AST *)
-exception Ast_builder_error of string * info
+exception Ast_builder_error of string * t
 (* other stuff *)
-exception Other_error of string * info
+exception Other_error of string * t
 
 val lexical_error: string -> Lexing.lexbuf -> unit
 
 val fake_token_location : token_location
-val fake_info : string -> info
+val fake_info : string -> t
 
-val str_of_info   : info -> string
-val line_of_info  : info -> int
-val col_of_info   : info -> int
-val pos_of_info   : info -> int
-val file_of_info  : info -> Common.filename
+val str_of_info   : t -> string
+val line_of_info  : t -> int
+val col_of_info   : t -> int
+val pos_of_info   : t -> int
+val file_of_info  : t -> Common.filename
 
 (* small error reporting, for longer reports use error_message above *)
-val string_of_info: info -> string
+val string_of_info: t -> string
 
-val is_origintok: info -> bool
+val is_origintok: t -> bool
 
-val token_location_of_info: info -> token_location
+val token_location_of_info: t -> token_location
 val get_original_token_location: token_origin -> token_location
 
-val compare_pos: info -> info -> int
-val min_max_ii_by_pos: info list -> info * info
+val compare_pos: t -> t -> int
+val min_max_ii_by_pos: t list -> t * t
 
 
 type parsing_stat = {
@@ -115,15 +115,15 @@ type 'tok tokens_state = {
 val mk_tokens_state: 'tok list -> 'tok tokens_state
 
 val tokinfo_str_pos: 
-  string -> int -> info
+  string -> int -> t
 val tokinfo:
-  Lexing.lexbuf -> info
+  Lexing.lexbuf -> t
 val lexbuf_to_strpos:
   Lexing.lexbuf -> string * int
 val yyback: int -> Lexing.lexbuf -> unit
 
-val rewrap_str: string -> info -> info
-val tok_add_s: string -> info -> info
+val rewrap_str: string -> t -> t
+val tok_add_s: string -> t -> t
 
 (* f(i) will contain the (line x col) of the i char position *)
 val full_charpos_to_pos_large: 
@@ -134,7 +134,7 @@ val complete_token_location_large :
   Common.filename -> (int -> (int * int))  -> token_location -> token_location
 
 val error_message : Common.filename -> (string * int) -> string
-val error_message_info :  info -> string
+val error_message_info :  t -> string
 val print_bad: int -> int * int -> string array -> unit
 
 (* channel, size, source *)

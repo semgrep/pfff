@@ -45,8 +45,8 @@ val string_of_error_kind: error_kind -> string
 
 val g_errors: error list ref
 (* !modify g_errors! *)
-val error: Parse_info.info -> error_kind -> unit
-val warning: Parse_info.info -> error_kind -> unit
+val error: Parse_info.t -> error_kind -> unit
+val warning: Parse_info.t -> error_kind -> unit
 
 val error_loc: Parse_info.token_location -> error_kind -> unit
 val warning_loc: Parse_info.token_location -> error_kind -> unit

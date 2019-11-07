@@ -54,7 +54,7 @@ val simple_layer_of_parse_infos:
   root:Common.dirname ->
   title:string ->
   ?description:string ->
-  (Parse_info.info * kind) list ->
+  (Parse_info.t * kind) list ->
   (kind * color) list ->
   layer
 

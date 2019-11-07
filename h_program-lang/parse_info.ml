@@ -163,7 +163,7 @@ type token_kind =
 
 (* shortcut *)
 type t = token_mutable
-type info = t
+type info_ = t
 
 
 type parsing_stat = {
@@ -257,10 +257,10 @@ let yyback n lexbuf =
 (* Errors *)
 (*****************************************************************************)
 (* this can be used in the different lexer/parsers in pfff *)
-exception Lexical_error of string * info
-exception Parsing_error of info
-exception Ast_builder_error of string * info
-exception Other_error of string * info
+exception Lexical_error of string * t
+exception Parsing_error of t
+exception Ast_builder_error of string * t
+exception Other_error of string * t
 
 let tokinfo lexbuf  = 
   tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)

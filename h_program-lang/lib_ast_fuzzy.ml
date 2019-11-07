@@ -29,10 +29,10 @@ module PI = Parse_info
 
 type 'tok hooks = {
   kind: 'tok -> Parse_info.token_kind;
-  tokf: 'tok -> Parse_info.info;
+  tokf: 'tok -> Parse_info.t;
 }
 
-exception Unclosed of string * Parse_info.info (* starting point *)
+exception Unclosed of string * Parse_info.t (* starting point *)
 
 (*****************************************************************************)
 (* Helpers *)
@@ -253,7 +253,7 @@ let (mk_mapper: map_visitor -> (trees -> trees)) = fun hook ->
 (* Extractor *)
 (*****************************************************************************)
 
-let (toks_of_trees: trees -> Parse_info.info list) = fun trees ->
+let (toks_of_trees: trees -> Parse_info.t list) = fun trees ->
   let globals = ref [] in
   let hooks = { default_visitor with
     ktok = (fun (_k, _) i -> Common.push i globals)

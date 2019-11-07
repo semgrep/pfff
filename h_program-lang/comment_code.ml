@@ -30,7 +30,7 @@ module PI = Parse_info
 (* todo: duplicate of matcher/parse_fuzzy.ml *)
 type 'tok hooks = {
   kind: 'tok -> Parse_info.token_kind;
-  tokf: 'tok -> Parse_info.info;
+  tokf: 'tok -> Parse_info.t;
 }
 
 (*****************************************************************************)
