@@ -384,17 +384,3 @@ let any_of_string s =
        (* -------------------------------------------------- *)
        Parser_js.sgrep_spatch_pattern (lexer_function tr) lexbuf_fake
   )
-
-
-(*****************************************************************************)
-(* Fuzzy parsing *)
-(*****************************************************************************)
-
-let parse_fuzzy file =
-  let toks = tokens file in
-  let trees = Lib_ast_fuzzy.mk_trees { Lib_ast_fuzzy.
-     tokf = TH.info_of_tok;
-     kind = TH.token_kind_of_tok;
-  } toks 
-  in
-  trees, toks

@@ -178,28 +178,11 @@ let create_ast file =
   match !lang with
   | s when Lang.lang_of_string_opt s <> None ->
     Gen (Parse_generic.parse_program file)
+  | s when Lang_fuzzy.lang_of_string_opt s <> None ->
+    Fuzzy (Parse_fuzzy.parse file)
   | "php" ->
     Php (Parse_php.parse_program file)
-  | _ ->
-    Fuzzy
-      (match !lang with
-      | ("cfuzzy" | "c++") ->
-raise Todo
-(*
-        Common.save_excursion Flag_parsing.verbose_lexing false (fun () ->
-          Parse_cpp.parse_fuzzy file +> fst
-        )
-      | "ml" ->
-        Parse_ml.parse_fuzzy file +> fst
-      | "javafuzzy" ->
-        Parse_java.parse_fuzzy file +> fst
-      | "phpfuzzy" ->
-        Parse_php.parse_fuzzy file +> fst
-      | "jsfuzzy" ->
-        Parse_js.parse_fuzzy file +> fst
-*)
-      | _ ->
-        failwith ("unsupported language: " ^ !lang))
+  | _ -> failwith ("unsupported language: " ^ !lang)
   )
   with
    | Parse_info.Lexical_error (_, tok)
@@ -227,18 +210,19 @@ let parse_pattern str =
    | Some lang ->
        PatGen (Parse_generic.parse_pattern lang str)
    | None ->
-    (match !lang with
-    | "php" -> PatPhp (Sgrep_php.parse str)
-
-    (* for now we abuse the fuzzy parser of cpp for ml for the pattern as
-     * we should not use comments in patterns
-    *)
-    | "c++" | "ml" 
-    | "cfuzzy" | "jsfuzzy" | "phpfuzzy" | "javafuzzy"  -> 
-      PatFuzzy (ast_fuzzy_of_string str)
-    | _ -> failwith ("unsupported language: " ^ !lang)
-    )
-  )) 
+     (match Lang_fuzzy.lang_of_string_opt !lang with
+     | Some _lang ->
+       (* for now we abuse the fuzzy parser of cpp for ml for the pattern as
+        * we should not use comments in patterns
+        *)
+       PatFuzzy (ast_fuzzy_of_string str)
+     | None ->
+       (match !lang with
+       | "php" -> PatPhp (Sgrep_php.parse str)
+       | _ -> failwith ("unsupported language for the pattern: " ^ !lang)
+       )
+     )
+  ))
   with 
   | Parsing.Parse_error -> 
       failwith (spf "fail to parse pattern: '%s' in lang %s" str !lang)

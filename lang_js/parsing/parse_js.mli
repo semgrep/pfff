@@ -21,10 +21,6 @@ val parse_string :
 val any_of_string:
   string -> Cst_js.any
 
-(* for sgrep via fuzzy AST *)
-val parse_fuzzy:
-  Common.filename -> Ast_fuzzy.trees * Parser_js.token list
-
 (* to help write test code *)
 val program_of_string: string -> Cst_js.program
 

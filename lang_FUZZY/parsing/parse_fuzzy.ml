@@ -1,143 +1,73 @@
-
-
-(* 
+(* Yoann Padioleau
+ *
+ * Copyright (C) 2019 r2c
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1 as published by the Free Software Foundation, with the
+ * special exception on linking described in file license.txt.
+ * 
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
+ * license.txt for more details.
+ *)
+open Common
 
 (*****************************************************************************)
-(* Fuzzy parsing *)
+(* Prelude *)
 (*****************************************************************************)
+(* Wrappers around many languages to transform them in a fuzzy AST
+ * (see ast_fuzzy.ml)
+ *)
 
-PHP
-
-(* for generalized sgrep/spatch patterns *)
-val parse_fuzzy:
-  Common.filename -> Ast_fuzzy.tree list * Parser_php.token list
-
-
-let parse_fuzzy file =
-  let toks = tokens file in
-  let trees = Parse_fuzzy.mk_trees { Parse_fuzzy.
-     tokf = TH.info_of_tok;
-     kind = TH.token_kind_of_tok;
-  } toks 
-  in
-  trees, toks
-     parse_fuzzy.ml \
-
-ML
 (*****************************************************************************)
-(* Fuzzy parsing *)
+(* Entry point *)
 (*****************************************************************************)
 
 (* This is similar to what I did for OPA. This is also similar
  * to what I do for parsing hacks for C++, but this fuzzy AST can be useful
  * on its own, e.g. for a not too bad sgrep/spatch.
  *)
-let parse_fuzzy file =
-  let toks = tokens file in
-  let trees = Parse_fuzzy.mk_trees { Parse_fuzzy.
-     tokf = TH.info_of_tok;
-     kind = TH.token_kind_of_tok;
-  } toks 
-  in
-  trees, toks
 
+let parse_with_lang lang file =
+  match lang with
+  | Lang_fuzzy.PHP ->
+     let toks = Parse_php.tokens file in
+     Lib_ast_fuzzy.mk_trees { Lib_ast_fuzzy.
+       tokf = Token_helpers_php.info_of_tok;
+       kind = Token_helpers_php.token_kind_of_tok;
+     } toks 
+  | Lang_fuzzy.ML ->
+    let toks = Parse_ml.tokens file in
+    Lib_ast_fuzzy.mk_trees { Lib_ast_fuzzy.
+     tokf = Token_helpers_ml.info_of_tok;
+     kind = Token_helpers_ml.token_kind_of_tok;
+    } toks 
+  | Lang_fuzzy.Skip ->
+    let toks = Parse_skip.tokens file in
+    Lib_ast_fuzzy.mk_trees { Lib_ast_fuzzy.
+     tokf = Token_helpers_skip.info_of_tok;
+     kind = Token_helpers_skip.token_kind_of_tok;
+    } toks 
+  | Lang_fuzzy.Java ->
+    let toks = Parse_java.tokens file in
+    Lib_ast_fuzzy.mk_trees { Lib_ast_fuzzy.
+     tokf = Token_helpers_java.info_of_tok;
+     kind = Token_helpers_java.token_kind_of_tok;
+    } toks
+  | Lang_fuzzy.Javascript ->
+    let toks = Parse_js.tokens file in
+    Lib_ast_fuzzy.mk_trees { Lib_ast_fuzzy.
+     tokf = Token_helpers_js.info_of_tok;
+     kind = Token_helpers_js.token_kind_of_tok;
+    } toks 
+  | Lang_fuzzy.Cpp ->
+    Common.save_excursion Flag_parsing.verbose_lexing false (fun () ->
+      Parse_cpp.parse_fuzzy file |> fst
+    )
 
-
-
-let test_parse_ml_fuzzy dir_or_file =
-  let fullxs = 
-    Lib_parsing_ml.find_source_files_of_dir_or_files [dir_or_file] 
-    +> Skip_code.filter_files_if_skip_list
-  in
-  fullxs +> Console.progress (fun k -> List.iter (fun file -> 
-     k ();
-      try 
-        let _fuzzy = Parse_ml.parse_fuzzy file in
-        ()
-      with _exn ->
-        (* pr2 (spf "PB with: %s, exn = %s" file (Common.exn_to_s exn)); *)
-        pr2 file;
-  ));
-  ()
-
-let test_dump_ml_fuzzy file =
-  let fuzzy, _toks = Parse_ml.parse_fuzzy file in
-  let v = Ast_fuzzy.vof_trees fuzzy in
-  let s = Ocaml.string_of_v v in
-  pr2 s
-
-  "-parse_ml_fuzzy", "   <file or dir>", 
-  Common.mk_action_1_arg test_parse_ml_fuzzy;
-  "-dump_ml_fuzzy", "   <file>", 
-  Common.mk_action_1_arg test_dump_ml_fuzzy;
-
-
-SKIP
-(*****************************************************************************)
-(* Fuzzy parsing *)
-(*****************************************************************************)
-
-val parse_fuzzy:
-  Common.filename -> Ast_fuzzy.tree list * Parser_skip.token list
-
-let parse_fuzzy file =
-  let toks = tokens file in
-  let trees = Parse_fuzzy.mk_trees { Parse_fuzzy.
-     tokf = TH.info_of_tok;
-     kind = TH.token_kind_of_tok;
-  } toks 
-  in
-  trees, toks
-
-
-
-let test_parse_fuzzy dir_or_file =
-  let fullxs = 
-    Lib_parsing_skip.find_source_files_of_dir_or_files [dir_or_file] 
-    +> Skip_code.filter_files_if_skip_list
-  in
-  fullxs +> Console.progress (fun k -> List.iter (fun file -> 
-     k ();
-      try 
-        let _fuzzy = Parse_skip.parse_fuzzy file in
-        ()
-      with _exn ->
-        (* pr2 (spf "PB with: %s, exn = %s" file (Common.exn_to_s exn)); *)
-        pr2 file;
-  ));
-  ()
-
-let test_dump_fuzzy file =
-  let fuzzy, _toks = Parse_skip.parse_fuzzy file in
-  let v = Ast_fuzzy.vof_trees fuzzy in
-  let s = Ocaml.string_of_v v in
-  pr2 s
-
-
-  "-parse_sk_fuzzy", "   <file or dir>", 
-  Common.mk_action_1_arg test_parse_fuzzy;
-  "-dump_sk_fuzzy", "   <file>", 
-  Common.mk_action_1_arg test_dump_fuzzy;
-
-JAVA
-
-(*****************************************************************************)
-(* Fuzzy parsing *)
-(*****************************************************************************)
-
-(* for generalized sgrep/spatch patterns *)
-val parse_fuzzy:
-  Common.filename -> Ast_fuzzy.tree list * Parser_java.token list
-
-let parse_fuzzy file =
-  let toks = tokens file in
-  let trees = Parse_fuzzy.mk_trees { Parse_fuzzy.
-     tokf = TH.info_of_tok;
-     kind = TH.token_kind_of_tok;
-  } toks
-  in
-  trees, toks
-
-
-*)
-
+let parse file =
+  match Lang_fuzzy.lang_of_filename_opt file with
+  | Some lang -> parse_with_lang lang file
+  | None -> failwith (spf "unsupported file for fuzzy AST: %s" file)

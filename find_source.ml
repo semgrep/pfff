@@ -10,11 +10,11 @@ let finder lang =
     Lib_parsing_cpp.find_source_files_of_dir_or_files
   | "c" -> 
     Lib_parsing_c.find_source_files_of_dir_or_files
-  | "ml" | "ocaml" -> 
+  | "ml" | "ocaml" | "mlfuzzy" -> 
     Lib_parsing_ml.find_source_files_of_dir_or_files
   | "cmt"  -> 
     Lib_parsing_ml.find_cmt_files_of_dir_or_files
-  | "java" -> 
+  | "java" | "javafuzzy" -> 
     Lib_parsing_java.find_source_files_of_dir_or_files
   | "js" | "jsfuzzy" | "jsgen"  -> 
     Lib_parsing_js.find_source_files_of_dir_or_files ~include_scripts:false
