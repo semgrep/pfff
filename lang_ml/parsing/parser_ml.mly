@@ -55,29 +55,29 @@ let to_item xs =
 /*(*************************************************************************)*/
 
 /*(* unrecognized token, will generate parse error *)*/
-%token <Parse_info.info> TUnknown
+%token <Parse_info.t> TUnknown
 
-%token <Parse_info.info> EOF
+%token <Parse_info.t> EOF
 
 /*(*-----------------------------------------*)*/
 /*(*2 The space/comment tokens *)*/
 /*(*-----------------------------------------*)*/
 
 /*(* coupling: Token_helpers.is_real_comment *)*/
-%token <Parse_info.info> TCommentSpace TCommentNewline   TComment
-%token <Parse_info.info> TCommentMisc
+%token <Parse_info.t> TCommentSpace TCommentNewline   TComment
+%token <Parse_info.t> TCommentMisc
 
 /*(*-----------------------------------------*)*/
 /*(*2 The normal tokens *)*/
 /*(*-----------------------------------------*)*/
 
 /*(* tokens with "values" *)*/
-%token <string * Parse_info.info> TInt TFloat TChar TString
-%token <string * Parse_info.info> TLowerIdent TUpperIdent
-%token <string * Parse_info.info> TLabelUse TLabelDecl TOptLabelUse TOptLabelDecl
+%token <string * Parse_info.t> TInt TFloat TChar TString
+%token <string * Parse_info.t> TLowerIdent TUpperIdent
+%token <string * Parse_info.t> TLabelUse TLabelDecl TOptLabelUse TOptLabelDecl
 
 /*(* keywords tokens *)*/
-%token <Parse_info.info>
+%token <Parse_info.t>
  Tfun Tfunction Trec Ttype Tof Tif Tthen Telse
  Tmatch Twith Twhen
  Tlet Tin Tas
@@ -93,7 +93,7 @@ let to_item xs =
  Tor Tmod Tlor Tlsl Tlsr Tlxor Tasr Tland
 
 /*(* syntax *)*/
-%token <Parse_info.info> 
+%token <Parse_info.t> 
  TOParen TCParen TOBrace TCBrace TOBracket TCBracket
  TOBracketPipe TPipeCBracket  TOBracketLess TGreaterCBracket
  TOBraceLess TGreaterCBrace
@@ -107,17 +107,17 @@ let to_item xs =
  TMinusDot TPlusDot
 
 /*(* operators *)*/
-%token <Parse_info.info> TPlus TMinus TLess TGreater
-%token <string * Parse_info.info> TPrefixOperator TInfixOperator
+%token <Parse_info.t> TPlus TMinus TLess TGreater
+%token <string * Parse_info.t> TPrefixOperator TInfixOperator
 
 /*(* attributes *)*/
-%token <Parse_info.info> TBracketAt TBracketAtAt TBracketAtAtAt
-%token <Parse_info.info> TBracketPercent TBracketPercentPercent
+%token <Parse_info.t> TBracketAt TBracketAtAt TBracketAtAtAt
+%token <Parse_info.t> TBracketPercent TBracketPercentPercent
 
 /*(*-----------------------------------------*)*/
 /*(*2 extra tokens: *)*/
 /*(*-----------------------------------------*)*/
-%token <Parse_info.info> TSharpDirective
+%token <Parse_info.t> TSharpDirective
 
 /*(*************************************************************************)*/
 /*(*1 Priorities *)*/

@@ -29,7 +29,7 @@
 (* ------------------------------------------------------------------------- *)
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
-type tok = Parse_info.info
+type tok = Parse_info.t
  (* with tarzan *)
 
 (* a shortcut to annotate some information with token/position information *)

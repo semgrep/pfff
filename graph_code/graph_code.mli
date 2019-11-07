@@ -24,11 +24,11 @@ val string_of_error: error -> string
 type statistics = {
   parse_errors: Common.filename list ref;
  (* could be Parse_info.token_location*)
-  lookup_fail: (Parse_info.info * node) list ref; 
-  method_calls: (Parse_info.info * resolved) list ref;
-  field_access: (Parse_info.info * resolved) list ref;
-  unresolved_class_access: Parse_info.info list ref;
-  unresolved_calls: Parse_info.info list ref;
+  lookup_fail: (Parse_info.t * node) list ref; 
+  method_calls: (Parse_info.t * resolved) list ref;
+  field_access: (Parse_info.t * resolved) list ref;
+  unresolved_class_access: Parse_info.t list ref;
+  unresolved_calls: Parse_info.t list ref;
 }
  and resolved = bool
 val empty_statistics: unit -> statistics

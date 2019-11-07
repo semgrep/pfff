@@ -22,27 +22,27 @@
 /*(*************************************************************************)*/
 
 /*(* unrecognized token, will generate parse error *)*/
-%token <Parse_info.info> TUnknown
+%token <Parse_info.t> TUnknown
 
-%token <Parse_info.info> EOF
+%token <Parse_info.t> EOF
 
 /*(*-----------------------------------------*)*/
 /*(*2 The space/comment tokens *)*/
 /*(*-----------------------------------------*)*/
 
 /*(* coupling: Token_helpers.is_real_comment *)*/
-%token <Parse_info.info> TCommentSpace TCommentNewline   TComment
+%token <Parse_info.t> TCommentSpace TCommentNewline   TComment
 
 /*(*-----------------------------------------*)*/
 /*(*2 The normal tokens *)*/
 /*(*-----------------------------------------*)*/
 
 /*(* tokens with "values" *)*/
-%token <string * Parse_info.info> TInt TFloat TChar TString
-%token <string * Parse_info.info> TLowerIdent TUpperIdent
+%token <string * Parse_info.t> TInt TFloat TChar TString
+%token <string * Parse_info.t> TLowerIdent TUpperIdent
 
 /*(* keywords tokens *)*/
-%token <Parse_info.info>
+%token <Parse_info.t>
  Tconst Tfun   
  Talias
  Tasync Tawait   
@@ -89,7 +89,7 @@
 
 
 /*(* syntax *)*/
-%token <Parse_info.info> 
+%token <Parse_info.t> 
  TEq TEqDot
  TOParen TCParen TOBrace TCBrace TOBracket TCBracket
  TDot  TArrow TTildeArrow TEqualArrow
@@ -100,7 +100,7 @@
  TQuestion TAt TSharp TDollar TBackquote
 
 /*(* operators *)*/
-%token <Parse_info.info> 
+%token <Parse_info.t> 
   TPlus TMinus TStar TDiv TMod
   TEqEq TBangEq
   TLess TGreater TLessEq TGreaterEq

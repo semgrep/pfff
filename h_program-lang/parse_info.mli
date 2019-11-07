@@ -43,7 +43,7 @@ type token_mutable = {
 
 (* shortcut *)
 type t = token_mutable
-type info_ = t
+type info = t
 
 (* mostly for the fuzzy AST builder *)
 type token_kind =

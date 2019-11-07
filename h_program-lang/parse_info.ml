@@ -163,7 +163,7 @@ type token_kind =
 
 (* shortcut *)
 type t = token_mutable
-type info_ = t
+type info = t
 
 
 type parsing_stat = {
