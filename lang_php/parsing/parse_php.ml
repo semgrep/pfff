@@ -172,7 +172,7 @@ let rec lexer_function tr = fun lexbuf ->
 (* could move that in h_program-lang/, but maybe clearer to put it closer
  * to the parsing function.
  *)
-exception Parse_error of PI.info
+exception Parse_error of PI.t
 
 let parse2 ?(pp=(!Flag_php.pp_default)) filename =
 
