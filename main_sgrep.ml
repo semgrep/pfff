@@ -238,24 +238,23 @@ let read_patterns name =
   loop []
 
 let sgrep_ast pattern any_ast =
-  match !lang, pattern, any_ast with
-  | _, _, NoAST -> () (* skipping *)
-  | ("js" | "python" | "c" | "java"), PatGen pattern, Gen ast ->
+  match pattern, any_ast with
+  |  _, NoAST -> () (* skipping *)
+  | PatGen pattern, Gen ast ->
     Sgrep_generic.sgrep_ast
       ~hook:(fun env matched_tokens ->
         print_match !mvars env Lib_ast.ii_of_any matched_tokens
       )
       pattern ast
 
-  | ("cfuzzy" | "c++" | "javafuzzy" | "jsfuzzy" | "mlfuzzy" | "phpfuzzy"), 
-    PatFuzzy pattern, Fuzzy ast ->
+  | PatFuzzy pattern, Fuzzy ast ->
     Sgrep_fuzzy.sgrep
       ~hook:(fun env matched_tokens ->
         print_match !mvars env Lib_ast_fuzzy.toks_of_trees matched_tokens
       )
       pattern ast
 
-  | "php", PatPhp pattern, Php ast ->
+  | PatPhp pattern, Php ast ->
     Sgrep_php.sgrep_ast
       ~case_sensitive:!case_sensitive
       ~hook:(fun env matched_tokens ->
