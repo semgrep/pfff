@@ -27,7 +27,7 @@ open Ast_html
 (*****************************************************************************)
 type program2 = Ast_web.web_document * Ast_web.token list
 
-exception Parse_error of Parse_info.info
+exception Parse_error of Parse_info.t
 
 (*****************************************************************************)
 (* Main entry point *)

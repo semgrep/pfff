@@ -1,7 +1,7 @@
 
-exception ObsoleteConstruct of string * Parse_info.info
+exception ObsoleteConstruct of string * Parse_info.t
 exception CplusplusConstruct
-exception TodoConstruct of string * Parse_info.info
+exception TodoConstruct of string * Parse_info.t
 exception CaseOutsideSwitch
 exception MacroInCase
 

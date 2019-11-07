@@ -27,7 +27,7 @@ module type PARAM =
     (* -------------------------------------------------------------------- *)
     (* Tokens tagging *)
     (* -------------------------------------------------------------------- *)
-    val tokenf :     (Parse_info.info,  Parse_info.info) matcher
+    val tokenf :     (Parse_info.t,  Parse_info.t) matcher
 
     (* -------------------------------------------------------------------- *)
     (* Distr_f functions, to tag a range of tokens *)
@@ -36,7 +36,7 @@ module type PARAM =
     (* -------------------------------------------------------------------- *)
     (* Environment manipulation. Extract info from tin, the "something" *)
     (* -------------------------------------------------------------------- *)
-    val envf : (Metavars_fuzzy.mvar * Parse_info.info, Ast_fuzzy.trees)
+    val envf : (Metavars_fuzzy.mvar * Parse_info.t, Ast_fuzzy.trees)
       matcher
   end
 

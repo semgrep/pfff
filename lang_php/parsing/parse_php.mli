@@ -1,7 +1,7 @@
 
 type program_with_comments = Cst_php.program * Parser_php.token list
 
-exception Parse_error of Parse_info.info
+exception Parse_error of Parse_info.t
 
 val _hmemo_parse_php: 
   (Common.filename, program_with_comments * Parse_info.parsing_stat) Hashtbl.t

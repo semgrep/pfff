@@ -90,7 +90,7 @@ module PI = Parse_info
  * the Parse_info.token_location embedded inside it, as well as the
  * transformation field that makes possible spatch on Javascript code.
  *)
-type tok = Parse_info.info
+type tok = Parse_info.t
 
 (* a shortcut to annotate some information with token/position information *)
 and 'a wrap = 'a * tok

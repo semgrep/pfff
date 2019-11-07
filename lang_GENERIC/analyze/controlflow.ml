@@ -41,7 +41,7 @@ type node = {
    *)
   n: node_kind;
   (* for error report *)
-  i: Parse_info.info option;
+  i: Parse_info.t option;
 } 
 
   and node_kind = 

@@ -159,7 +159,7 @@ module XMATCH = struct
         (* first time the metavar is binded, just add it to the environment *)
         Some (Common2.insert_assoc (mvar, valu) tin)
 
-  let (envf: (Metavars_fuzzy.mvar * Parse_info.info, Ast_fuzzy.trees) matcher) =
+  let (envf: (Metavars_fuzzy.mvar * Parse_info.t, Ast_fuzzy.trees) matcher) =
    fun (mvar, tok) any  -> fun tin ->
     match check_and_add_metavar_binding (mvar, any) tin with
     | None ->

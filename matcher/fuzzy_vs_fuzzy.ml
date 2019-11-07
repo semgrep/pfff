@@ -88,9 +88,9 @@ module type PARAM =
     val return : ('a * 'b) -> tin -> ('a *'b) tout
     val fail : tin -> ('a * 'b) tout
 
-    val tokenf : (Parse_info.info, Parse_info.info) matcher
+    val tokenf : (Parse_info.t, Parse_info.t) matcher
 
-    val envf : (Metavars_fuzzy.mvar * Parse_info.info, Ast_fuzzy.trees)
+    val envf : (Metavars_fuzzy.mvar * Parse_info.t, Ast_fuzzy.trees)
       matcher
 
   end

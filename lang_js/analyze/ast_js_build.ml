@@ -48,9 +48,9 @@ let empty_env () = {
   vars = Hashtbl.create 0;
 }
 
-exception TodoConstruct of string * Parse_info.info
+exception TodoConstruct of string * Parse_info.t
 (* The string is usually "advanced es6" or "Typescript" *)
-exception UnhandledConstruct of string * Parse_info.info
+exception UnhandledConstruct of string * Parse_info.t
 
 (*****************************************************************************)
 (* Helpers *)
@@ -66,7 +66,7 @@ let fst3 (x, _, _) = x
 let noop = A.Block []
 let not_resolved () = ref A.NotResolved
 
-exception Found of Parse_info.info
+exception Found of Parse_info.t
 
 let first_tok_of_item x =
   let hooks = { Visitor_js.default_visitor with
@@ -142,7 +142,7 @@ and import env = function
      if file =~ ".*\\.css$"
      then [A.ImportCss (file, tok)]
      else [A.ImportEffect (file, tok)]
-  | C.ImportFrom ((default_opt, names_opt) , (_, path)) ->
+  | C.ImportFrom ((default_opt, names_opt), (_, path)) ->
     let file = path_to_file path in
     (match default_opt with
     | Some n -> 

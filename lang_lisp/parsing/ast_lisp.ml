@@ -24,7 +24,7 @@
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
 
-type info = Parse_info.info
+type info = Parse_info.t
 type tok = info
 
 type 'a wrap = 'a * tok

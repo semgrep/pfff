@@ -83,7 +83,7 @@ module PI = Parse_info
 (*****************************************************************************)
 
 type pinfo = Parse_info.token_origin
-type info = Parse_info.info
+type info = Parse_info.t
 and tok = info
 and 'a wrap = 'a * info
  (* with tarzan *)

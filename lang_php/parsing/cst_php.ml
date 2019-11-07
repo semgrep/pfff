@@ -61,7 +61,7 @@ open Common
  * the Parse_info.parse_info embedded inside it, as well as the
  * transformation field that makes possible spatch.
  *)
-type tok = Parse_info.info
+type tok = Parse_info.t
 and info = tok
 
 (* shortcuts to annotate some information with token/position information *)

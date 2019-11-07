@@ -158,7 +158,7 @@ type env = {
      * aenv to determine the arrays which are parameters *)
     aenv_params: Array_id.t list ref;
 
-    aenv_funs: (string * string * Parse_info.info) list ref; (*function, class, file*)
+    aenv_funs: (string * string * Parse_info.t) list ref; (*function, class, file*)
     
     (* The typing environment (pad: mapping type variables to types?) *)
     tenv: t IMap.t ref;
@@ -201,7 +201,7 @@ type env = {
 
 (* This is used to describe the type of interactions with an array, and the
  * location of this interaction. *)
-and arr_info = Parse_info.info option * arr_access
+and arr_info = Parse_info.t option * arr_access
 
 (* Type signifying the kind of interactions with arrays seen in the ast *)
 and arr_access = 

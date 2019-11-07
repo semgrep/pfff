@@ -239,7 +239,7 @@ module XMATCH = struct
     )
 
 
-  let (envf: (Metavars_fuzzy.mvar * Parse_info.info, Ast_fuzzy.trees) matcher) =
+  let (envf: (Metavars_fuzzy.mvar * Parse_info.t, Ast_fuzzy.trees) matcher) =
    fun (mvar, tok) any  -> fun tin ->
     match check_and_add_metavar_binding (mvar, any) tin with
     | None ->

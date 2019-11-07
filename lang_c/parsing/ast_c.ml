@@ -75,7 +75,7 @@ open Common2.Infix
 (* The AST related types *)
 (*****************************************************************************)
 
-type tok = Parse_info.info
+type tok = Parse_info.t
  (* with tarzan *)
 
 type 'a wrap = 'a * tok

@@ -56,7 +56,7 @@ type state = {
   | SwitchCtx of nodei (* end *)
   | TryCtx    of nodei (* the first catch *)
 
-type error = error_kind * Parse_info.info option
+type error = error_kind * Parse_info.t option
  and error_kind =
   | DeadCode of Controlflow.node_kind
   | NoEnclosingLoop

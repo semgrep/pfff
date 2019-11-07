@@ -149,10 +149,10 @@ let rewrite_categ_using_entities s categ file entities =
 (*****************************************************************************)
 type ('ast, 'token) for_helper = {
   parse: (Common.filename -> ('ast * 'token list) list);
-  highlight_visit:(tag_hook:(Parse_info.info -> HC.category -> unit) ->
+  highlight_visit:(tag_hook:(Parse_info.t -> HC.category -> unit) ->
                    Highlight_code.highlighter_preferences ->
                    'ast * 'token list -> unit);
-  info_of_tok:('token -> Parse_info.info);
+  info_of_tok:('token -> Parse_info.t);
 }
 
 let tokens_with_categ_of_file_helper 

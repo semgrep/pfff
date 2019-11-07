@@ -79,7 +79,7 @@ type env = {
 
   log: string -> unit;
   pr2_and_log: string -> unit;
-  lookup_fail: env -> Graph_code.node -> Parse_info.info -> unit;
+  lookup_fail: env -> Graph_code.node -> Parse_info.t -> unit;
 }
  and phase = Defs | Uses
 

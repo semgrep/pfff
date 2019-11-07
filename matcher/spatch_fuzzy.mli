@@ -3,7 +3,7 @@ type pattern = Ast_fuzzy.trees
 
 val parse: 
  pattern_of_string:(string -> pattern) ->
- ii_of_pattern:(pattern -> Parse_info.info list) ->
+ ii_of_pattern:(pattern -> Parse_info.t list) ->
  Common.filename -> pattern
 
 (* It will modify by side effects the tokens in trees. It's up to you

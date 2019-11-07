@@ -2,7 +2,7 @@ open Ast_generic
 
 type node = {
   n: node_kind;
-  i: Parse_info.info option;
+  i: Parse_info.t option;
 } 
   and node_kind = 
       | Enter | Exit 
