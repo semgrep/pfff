@@ -13,10 +13,12 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
+open Common
 
 open Ast_generic
 module V = Visitor_ast
 module E = Error_code
+module CFGB = Controlflow_build
 
 (*****************************************************************************)
 (* Prelude *)
@@ -28,6 +30,27 @@ module E = Error_code
  *)
 
 (*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+let check_func_def fdef =
+  try 
+    let flow = Controlflow_build.cfg_of_func fdef in
+    Controlflow_build.deadcode_detection flow;
+  with Controlflow_build.Error (err, loc) ->
+      let s = Controlflow_build.string_of_error_kind err in
+      (match err, loc with
+      | CFGB.UnreachableStatement _, Some tok ->
+          E.error tok (E.UnreachableStatement s)
+      | CFGB.UnreachableStatement _, None ->
+          pr2 "TODO: unreachable statement detected but no location";
+      | _, Some tok ->
+          E.error tok (E.CFGError s)
+      | _, None ->
+          pr2 (spf "TODO: CFG error detected but no location: %s" s);
+      )
+
+(*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 
@@ -37,16 +60,7 @@ let check_program2 prog =
     V.kdef = (fun (k, _) x ->
       let (_entity, def) = x in
       (match def with
-      | FuncDef fdef ->
-        (try 
-          let flow = Controlflow_build.cfg_of_func fdef in
-          Controlflow_build.deadcode_detection flow;
-        with Controlflow_build.Error (err, loc) ->
-          loc |> Common.do_option (fun loc ->
-            let s = Controlflow_build.string_of_error_kind err in
-            E.error loc (E.UnreachableStatement s);
-          )
-        )
+      | FuncDef fdef -> check_func_def fdef
       | _ -> ()
       );
       (* process nested definitions *)

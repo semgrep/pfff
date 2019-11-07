@@ -58,11 +58,13 @@ type state = {
 
 type error = error_kind * Parse_info.t option
  and error_kind =
-  | DeadCode of Controlflow.node_kind
   | NoEnclosingLoop
   | DynamicBreak
+  | UnreachableStatement of Controlflow.node_kind
 
 exception Error of error
+
+let verbose = ref false
 
 (*****************************************************************************)
 (* Helpers *)
@@ -72,7 +74,9 @@ let stmts_of_stmt_or_defs xs =
   xs |> Common.map_filter (fun stmt_or_def ->
     match stmt_or_def with
     | LocalDef _ | LocalDirective _ ->
-        pr2_once ("ignoring nested func/class/directive in CFG");
+        if !verbose
+        then pr2_once ("ignoring nested func/class/directive in CFG");
+        (* should be processed by the calling visitor *)
         None
     | st -> Some st
   )
@@ -782,7 +786,7 @@ let (deadcode_detection : F.flow -> unit) = fun flow ->
               pr2 (spf "CFG: PB, found dead node but no loc: %s"
                    (Controlflow.short_string_of_node node))
           | Some info ->
-              raise (Error (DeadCode node.F.n, Some info))
+              raise (Error (UnreachableStatement node.F.n, Some info))
           )
       )
   )
@@ -793,8 +797,8 @@ let (deadcode_detection : F.flow -> unit) = fun flow ->
 
 let string_of_error_kind error_kind =
   match error_kind with
-  | DeadCode (node_kind) ->
-      "Deadcode path detected " ^
+  | UnreachableStatement (node_kind) ->
+      "Unreachable statement detected " ^
         (F.short_string_of_node_kind node_kind)
   | NoEnclosingLoop ->
       "No enclosing loop found for break or continue"
