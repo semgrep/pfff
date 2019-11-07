@@ -8,7 +8,10 @@
  *)
 open Common
 
+module Flag = Flag_parsing
 module E = Error_code
+module PI = Parse_info
+module J = Json_type
 
 (*****************************************************************************)
 (* Purpose *)
@@ -126,6 +129,14 @@ let lang = ref "python"
 let filter = ref 2
 (* rank errors *)
 let rank = ref false
+(* do not report certain errors *)
+let report_parse_errors = ref false
+let report_fatal_errors = ref false
+
+(* In strict mode, we can be more aggressive regarding scope like in JsLint. 
+ * (This is a copy of a similar variable in Error_php.ml) 
+*)
+let strict = ref false
 
 let auto_fix = ref false
 
@@ -135,8 +146,10 @@ let graph_code = ref (None: Common.filename option)
 (* for codemap or layer_stat *)
 let layer_file = ref (None: filename option)
 
+(* display *)
 let verbose = ref false
 let show_progress = ref true
+let r2c = ref false
 
 (* action mode *)
 let action = ref ""
@@ -144,10 +157,6 @@ let action = ref ""
 (*---------------------------------------------------------------------------*)
 (* language specific flags *)
 (*---------------------------------------------------------------------------*)
-
-(* In strict mode, we are more aggressive regarding scope like in JsLint. 
- * (This is a copy of the same variable in Error_php.ml) *)
-let strict_scope = ref false 
 
 (* running the heavy analysis by processing the included files *)
 let heavy = ref false
@@ -200,6 +209,30 @@ let set_gc () =
 let ast_of_file file =
   let prog = Parse_python.parse_program file in
   Python_to_generic.program prog
+
+let is_test_or_example file =
+ (file =~ ".*test.*" || 
+  file =~ ".*spec.*" || 
+  file =~ ".*example.*" ||
+  file =~ ".*bench.*"
+ )
+
+(* see also Error_code.adjust_errors *)
+let filter_errors errs =
+  errs |> Common.exclude (fun err ->
+    let file = err.E.loc.PI.file in
+    match err.E.typ with
+    | E.LexicalError _ | E.ParseError 
+    | E.AstbuilderError _ | E.OtherParsingError _
+    | E.FatalError _ 
+      when is_test_or_example file -> true
+    | E.LexicalError _ | E.ParseError 
+    | E.AstbuilderError _ | E.OtherParsingError _
+      when not !report_parse_errors -> true
+    | E.FatalError _ 
+      when not !report_fatal_errors -> true
+    | _ -> false
+  )
 
 (*****************************************************************************)
 (* Language specific *)
@@ -355,7 +388,12 @@ let main_action xs =
           k();
           (try 
             pr2_dbg (spf "processing: %s" file);
-            let ast = Parse_generic.parse_program file in
+            let ast = 
+              Common.save_excursion Flag.error_recovery false (fun () ->
+              Common.save_excursion Flag.exn_when_lexical_error true (fun () ->
+              Common.save_excursion Flag.show_parsing_error false (fun () ->
+                Parse_generic.parse_program file 
+             ))) in
             Check_all_generic.check_file ~find_entity ast;
           with 
           | Parse_info.Lexical_error (s, tok) ->
@@ -371,30 +409,43 @@ let main_action xs =
             let loc = Parse_info.first_loc_of_file file in
             E.error_loc loc (E.FatalError (Common.exn_to_s exn));
           );
-          let errs = 
-            !E.g_errors 
-            |> List.rev 
-            |> List.filter (fun x -> 
-              E.score_of_rank (E.rank_of_error x) >= !filter
-            )
-          in
-          if not !rank
-          then begin 
+          if !rank || !r2c
+          then ()
+          else begin 
+            let errs = 
+              !E.g_errors 
+              |> List.rev 
+              |> List.filter (fun x -> 
+                E.score_of_rank (E.rank_of_error x) >= !filter
+              ) 
+              |>  filter_errors in
             errs |> List.iter (fun err -> pr (E.string_of_error err));
             E.g_errors := []
           end
         )
     );
 
-    if !rank then begin
+    if !rank || !r2c then begin
       let errs = 
-        !E.g_errors 
-        |> List.map (fun x -> x, E.rank_of_error x)
-        |> Common.sort_by_val_highfirst 
-        |> List.map fst
-        |> Common.take_safe 20 
+        if !rank
+        then 
+          !E.g_errors 
+          |> List.map (fun x -> x, E.rank_of_error x)
+          |> Common.sort_by_val_highfirst 
+          |> List.map fst
+          |> Common.take_safe 20 
+        else !E.g_errors |> filter_errors
       in
-      errs |> List.iter (fun err -> pr (E.string_of_error err));
+      if !r2c 
+      then begin
+        let arr = J.Array (errs |> List.map (R2c.error_to_json "scheck")) in
+        let json = J.Object ["results", arr] in
+        let s = Json_io.string_of_json json in
+        pr s
+      end
+      else begin
+        errs |> List.iter (fun err -> pr (E.string_of_error err));
+      end
     end
 
 (*---------------------------------------------------------------------------*)
@@ -453,7 +504,7 @@ let main_action xs =
 
     Flag_parsing.show_parsing_error := false;
     Flag_parsing.verbose_lexing := false;
-    Error_php.strict := !strict_scope;
+    Error_php.strict := !strict;
     (* less: use a VCS.find... that is more general ?
      * infer PHP_ROOT? or take a --php_root?
      *)
@@ -616,7 +667,6 @@ let dflow file_or_dir =
 (*---------------------------------------------------------------------------*)
 (* Poor's man token-based Deadcode detector for C/C++/...  *)
 (*---------------------------------------------------------------------------*)
-module PI = Parse_info
 module Ent = Entity_code
 module Ast = Ast_fuzzy
 module V = Lib_ast_fuzzy
@@ -716,25 +766,44 @@ let options () =
   [
     "-lang", Arg.Set_string lang, 
     (spf " <str> choose language (default = %s)" !lang);
-    "-with_graph_code", Arg.String (fun s -> graph_code := Some s), 
-    " <file> use graph_code file for heavy analysis";
+
+    (* error filtering *)
     "-filter", Arg.Set_int filter,
     " <n> show only bugs whose importance >= n";
     "-rank", Arg.Set rank,
     " rank errors and display the 20 most important";
+    "-report_parse_errors", Arg.Set report_parse_errors,
+    " report parse errors as findings instead of silencing them";
+    "-report_fatal_errors", Arg.Set report_fatal_errors,
+    " report fatal errors as findings instead of silencing them";
+
+    (* error display *)
     "-emacs", Arg.Unit (fun () -> show_progress := false;), 
     " emacs friendly output";
+    "-r2c", Arg.Unit (fun () ->
+        r2c := true;
+        show_progress := false),
+    " use r2c platform error format for output";
+
+    (* extra features *)
+    "-with_graph_code", Arg.String (fun s -> graph_code := Some s), 
+    " <file> use graph_code file for heavy analysis";
     "-gen_layer", Arg.String (fun s -> layer_file := Some s),
     " <file> save result in pfff layer file";
     "-auto_fix", Arg.Set auto_fix,
     " try to auto fix the error\n";
 
+
     (* php specific *)
     "-php_stdlib", Arg.Set_string php_stdlib, 
     (spf " <dir> path to builtins (default = %s)" !php_stdlib);
-    "-strict", Arg.Set strict_scope,
+    "-strict", Arg.Unit (fun () ->
+        strict := true;
+        report_parse_errors := true;
+        report_fatal_errors := true;
+    ),
     " emulate block scope instead of function scope";
-    "-no_scrict", Arg.Clear strict_scope, 
+    "-no_scrict", Arg.Clear strict, 
     " use function scope (default)";
     "-heavy", Arg.Set heavy,
     " process included files for heavy analysis";
