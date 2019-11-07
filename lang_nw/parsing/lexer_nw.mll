@@ -40,48 +40,48 @@ module Flag = Flag_parsing
  *)
 
 type token =
-  | TComment of Parse_info.info
-  | TCommentSpace of Parse_info.info
-  | TCommentNewline of Parse_info.info
+  | TComment of Parse_info.t
+  | TCommentSpace of Parse_info.t
+  | TCommentNewline of Parse_info.t
 
-  | TWord of (string * Parse_info.info)
-  | TNumber of (string * Parse_info.info)
+  | TWord of (string * Parse_info.t)
+  | TNumber of (string * Parse_info.t)
   (* e.g., 12pt *)
-  | TUnit of (string * Parse_info.info)
-  | TSymbol of (string * Parse_info.info)
+  | TUnit of (string * Parse_info.t)
+  | TSymbol of (string * Parse_info.t)
 
   (* \xxx *)
-  | TCommand of (string * Parse_info.info)
+  | TCommand of (string * Parse_info.t)
 
-  | TOBrace of Parse_info.info | TCBrace of Parse_info.info
-  | TOBracket of Parse_info.info | TCBracket of Parse_info.info
+  | TOBrace of Parse_info.t | TCBrace of Parse_info.t
+  | TOBracket of Parse_info.t | TCBracket of Parse_info.t
   (* no TOParen/TCParen, they are not forced to be matching in TeX *)
 
   (* pad-specific: \t \f \l, see noweblatexpad  *)
-  | TFootnote of char * Parse_info.info
+  | TFootnote of char * Parse_info.t
 
   (* verbatim (different lexing rules) *)
 
-  | TBeginVerbatim of Parse_info.info 
-  | TEndVerbatim of Parse_info.info
-  | TVerbatimLine of (string * Parse_info.info)
+  | TBeginVerbatim of Parse_info.t 
+  | TEndVerbatim of Parse_info.t
+  | TVerbatimLine of (string * Parse_info.t)
 
   (* start of noweb stuff (different lexing rules too) *)
 
   (* <<...>>= and @ *)
-  | TBeginNowebChunk of Parse_info.info 
-  | TEndNowebChunk of Parse_info.info
-  | TNowebChunkStr of (string * Parse_info.info)
+  | TBeginNowebChunk of Parse_info.t 
+  | TEndNowebChunk of Parse_info.t
+  | TNowebChunkStr of (string * Parse_info.t)
   (* << >> when on the same line and inside a noweb chunk *)
-  | TNowebChunkName of string * Parse_info.info 
+  | TNowebChunkName of string * Parse_info.t 
 
   (* [[ ]] *)
-  | TNowebCode of string * Parse_info.info
+  | TNowebCode of string * Parse_info.t
   (* syncweb-specific: *)
-  | TNowebCodeLink of string * Parse_info.info
+  | TNowebCodeLink of string * Parse_info.t
 
-  | TUnknown of Parse_info.info
-  | EOF of Parse_info.info
+  | TUnknown of Parse_info.t
+  | EOF of Parse_info.t
 
 (*****************************************************************************)
 (* Helpers *)

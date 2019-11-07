@@ -108,82 +108,82 @@ let constructor_invocation name args =
    * because ocamllex may generate them, or some intermediate phases may also
    * generate them (like some functions in parsing_hacks.ml).
    *)*/
-%token <Parse_info.info> TComment TCommentNewline TCommentSpace
+%token <Parse_info.t> TComment TCommentNewline TCommentSpace
 
 /*(*-----------------------------------------*)*/
 /*(*2 The normal tokens *)*/
 /*(*-----------------------------------------*)*/
 
 /*(* tokens with "values" *)*/
-%token <string * Parse_info.info> TInt
-%token <string * Parse_info.info> TFloat
-%token <string * Parse_info.info> TChar
-%token <string * Parse_info.info> TString
+%token <string * Parse_info.t> TInt
+%token <string * Parse_info.t> TFloat
+%token <string * Parse_info.t> TChar
+%token <string * Parse_info.t> TString
 
 
-%token <(string * Parse_info.info)> IDENTIFIER
-%token <(string * Parse_info.info)> PRIMITIVE_TYPE
+%token <(string * Parse_info.t)> IDENTIFIER
+%token <(string * Parse_info.t)> PRIMITIVE_TYPE
 
 /*
  * 3.11 Separators
  */
-%token <Parse_info.info> LP		/* ( */
-%token <Parse_info.info> RP		/* ) */
-%token <Parse_info.info> LC		/* { */
-%token <Parse_info.info> RC		/* } */
-%token <Parse_info.info> LB		/* [ */
-%token <Parse_info.info> RB		/* ] */
-%token <Parse_info.info> SM		/* ; */
-%token <Parse_info.info> CM		/* , */
-%token <Parse_info.info> DOT		/* . */
+%token <Parse_info.t> LP		/* ( */
+%token <Parse_info.t> RP		/* ) */
+%token <Parse_info.t> LC		/* { */
+%token <Parse_info.t> RC		/* } */
+%token <Parse_info.t> LB		/* [ */
+%token <Parse_info.t> RB		/* ] */
+%token <Parse_info.t> SM		/* ; */
+%token <Parse_info.t> CM		/* , */
+%token <Parse_info.t> DOT		/* . */
 
 /*
  * 3.12 Operators
  */
-%token <Parse_info.info> EQ		/* = */
-%token <Parse_info.info> GT		/* > */
-%token <Parse_info.info> LT		/* < */
-%token <Parse_info.info> NOT		/* ! */
-%token <Parse_info.info> COMPL		/* ~ */
-%token <Parse_info.info> COND		/* ? */
-%token <Parse_info.info> COLON		/* : */
-%token <Parse_info.info> EQ_EQ		/* == */
-%token <Parse_info.info> LE		/* <= */
-%token <Parse_info.info> GE		/* >= */
-%token <Parse_info.info> NOT_EQ		/* != */
-%token <Parse_info.info> AND_AND		/* && */
-%token <Parse_info.info> OR_OR		/* || */
-%token <Parse_info.info> INCR		/* ++ */
-%token <Parse_info.info> DECR		/* -- */
-%token <Parse_info.info> PLUS		/* + */
-%token <Parse_info.info> MINUS		/* - */
-%token <Parse_info.info> TIMES		/* * */
-%token <Parse_info.info> DIV		/* / */
-%token <Parse_info.info> AND		/* & */
-%token <Parse_info.info> OR		/* | */
-%token <Parse_info.info> XOR		/* ^ */
-%token <Parse_info.info> MOD		/* % */
-%token <Parse_info.info> LS		/* << */
-%token <Parse_info.info> SRS		/* >> */
-%token <Parse_info.info> URS		/* >>> */
+%token <Parse_info.t> EQ		/* = */
+%token <Parse_info.t> GT		/* > */
+%token <Parse_info.t> LT		/* < */
+%token <Parse_info.t> NOT		/* ! */
+%token <Parse_info.t> COMPL		/* ~ */
+%token <Parse_info.t> COND		/* ? */
+%token <Parse_info.t> COLON		/* : */
+%token <Parse_info.t> EQ_EQ		/* == */
+%token <Parse_info.t> LE		/* <= */
+%token <Parse_info.t> GE		/* >= */
+%token <Parse_info.t> NOT_EQ		/* != */
+%token <Parse_info.t> AND_AND		/* && */
+%token <Parse_info.t> OR_OR		/* || */
+%token <Parse_info.t> INCR		/* ++ */
+%token <Parse_info.t> DECR		/* -- */
+%token <Parse_info.t> PLUS		/* + */
+%token <Parse_info.t> MINUS		/* - */
+%token <Parse_info.t> TIMES		/* * */
+%token <Parse_info.t> DIV		/* / */
+%token <Parse_info.t> AND		/* & */
+%token <Parse_info.t> OR		/* | */
+%token <Parse_info.t> XOR		/* ^ */
+%token <Parse_info.t> MOD		/* % */
+%token <Parse_info.t> LS		/* << */
+%token <Parse_info.t> SRS		/* >> */
+%token <Parse_info.t> URS		/* >>> */
 
-%token <Parse_info.info> AT		/* @ */
-%token <Parse_info.info> DOTS		/* ... */
+%token <Parse_info.t> AT		/* @ */
+%token <Parse_info.t> DOTS		/* ... */
 
 /*(* to avoid some conflicts *)*/
-%token <Parse_info.info> LB_RB
+%token <Parse_info.t> LB_RB
 
 /*(* Those fresh tokens are created in parsing_hacks_java.ml *)*/
-%token <Parse_info.info> LT2		/* < */
+%token <Parse_info.t> LT2		/* < */
 
-%token <(Ast_generic.arithmetic_operator * Parse_info.info)> OPERATOR_EQ
+%token <(Ast_generic.arithmetic_operator * Parse_info.t)> OPERATOR_EQ
 	/* += -= *= /= &= |= ^= %= <<= >>= >>>= */
 
 /*(* keywords tokens *)*/
 /*
  * 3.9 Keywords
  */
-%token <Parse_info.info>
+%token <Parse_info.t>
  ABSTRACT BOOLEAN BREAK BYTE CASE CATCH CHAR CLASS CONST CONTINUE
  DEFAULT DO DOUBLE ELSE EXTENDS FINAL FINALLY FLOAT FOR GOTO
  IF IMPLEMENTS IMPORT INSTANCEOF INT INTERFACE LONG
@@ -200,8 +200,8 @@ let constructor_invocation name args =
 /*(*-----------------------------------------*)*/
 
 /*(* classic *)*/
-%token <Parse_info.info> TUnknown
-%token <Parse_info.info> EOF
+%token <Parse_info.t> TUnknown
+%token <Parse_info.t> EOF
 
 /*(*************************************************************************)*/
 /*(*1 Priorities *)*/

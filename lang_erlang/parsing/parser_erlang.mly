@@ -30,24 +30,24 @@
 /*(*-----------------------------------------*)*/
 
 /*(* coupling: Token_helpers.is_real_comment *)*/
-%token <Parse_info.info> TCommentSpace TCommentNewline   TComment
-%token <Parse_info.info> TCommentMisc
+%token <Parse_info.t> TCommentSpace TCommentNewline   TComment
+%token <Parse_info.t> TCommentMisc
 
 /*(*-----------------------------------------*)*/
 /*(* the normal tokens *)*/
 /*(*-----------------------------------------*)*/
 
 /*(* tokens with "values" *)*/
-%token <string * Parse_info.info> TInt
-%token <string * Parse_info.info> TFloat
-%token <string * Parse_info.info> TChar
-%token <string * Parse_info.info> TString
+%token <string * Parse_info.t> TInt
+%token <string * Parse_info.t> TFloat
+%token <string * Parse_info.t> TChar
+%token <string * Parse_info.t> TString
 
 /*(* they call atom TIdent, but I prefer TIdent for consistency *)*/
-%token <string * Parse_info.info> TIdent TVariable
+%token <string * Parse_info.t> TIdent TVariable
 
 /*(* keywords tokens *)*/
-%token <Parse_info.info> 
+%token <Parse_info.t> 
  Tif Tcond Twhen Tcase
  Tbegin Tend
  Tlet Tof  
@@ -56,17 +56,17 @@
  Tquery Tcatch Treceive
 
 /*(* syntax *)*/
-%token <Parse_info.info> TOParen TCParen 
-%token <Parse_info.info> TOBracket TCBracket
-%token <Parse_info.info> TOBrace TCBrace
+%token <Parse_info.t> TOParen TCParen 
+%token <Parse_info.t> TOBracket TCBracket
+%token <Parse_info.t> TOBrace TCBrace
 
-%token <Parse_info.info>
+%token <Parse_info.t>
  TDot TColon TSemiColon TComma TQuestion
  TPipe TPipePipe TArrow TSharp
  TUnderscore
 
 /*(* operators *)*/
-%token <Parse_info.info>
+%token <Parse_info.t>
  TPlus TMinus TStar TDiv 
  Tdiv Trem Tor Txor Tbor Tbxor Tbsl Tbsr Tand Tband Tnot Tbnot
  TEqEq TSlashEq 
@@ -81,8 +81,8 @@
 /*(*-----------------------------------------*)*/
 
 /*(* classic *)*/
-%token <Parse_info.info> TUnknown
-%token <Parse_info.info> EOF
+%token <Parse_info.t> TUnknown
+%token <Parse_info.t> EOF
 
 /*(*-----------------------------------------*)*/
 /*(* priorities *)*/

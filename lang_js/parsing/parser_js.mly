@@ -147,14 +147,14 @@ let fake_tok s = {
 /*(*-----------------------------------------*)*/
 /*(*2 XHP tokens *)*/
 /*(*-----------------------------------------*)*/
-%token <string * Parse_info.info> T_XHP_OPEN_TAG
+%token <string * Parse_info.t> T_XHP_OPEN_TAG
 /*(* The 'option' is for closing tags like </> *)*/
-%token <string option * Parse_info.info> T_XHP_CLOSE_TAG
+%token <string option * Parse_info.t> T_XHP_CLOSE_TAG
 
 /*(* ending part of the opening tag *)*/
-%token <Parse_info.info> T_XHP_GT T_XHP_SLASH_GT
+%token <Parse_info.t> T_XHP_GT T_XHP_SLASH_GT
 
-%token <string * Parse_info.info> T_XHP_ATTR T_XHP_TEXT
+%token <string * Parse_info.t> T_XHP_ATTR T_XHP_TEXT
 
 /*(*-----------------------------------------*)*/
 /*(*2 Extra tokens: *)*/

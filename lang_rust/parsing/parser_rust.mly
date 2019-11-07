@@ -29,23 +29,23 @@
 /*(*-----------------------------------------*)*/
 
 /*(* coupling: Token_helpers.is_real_comment *)*/
-%token <Parse_info.info> TCommentSpace TCommentNewline   TComment
-%token <Parse_info.info> TCommentMisc
+%token <Parse_info.t> TCommentSpace TCommentNewline   TComment
+%token <Parse_info.t> TCommentMisc
 
 /*(*-----------------------------------------*)*/
 /*(* the normal tokens *)*/
 /*(*-----------------------------------------*)*/
 
 /*(* tokens with "values" *)*/
-%token <string * Parse_info.info> TInt
-%token <string * Parse_info.info> TFloat
-%token <string * Parse_info.info> TChar
-%token <string * Parse_info.info> TString
+%token <string * Parse_info.t> TInt
+%token <string * Parse_info.t> TFloat
+%token <string * Parse_info.t> TChar
+%token <string * Parse_info.t> TString
 
-%token <string * Parse_info.info> TIdent
+%token <string * Parse_info.t> TIdent
 
 /*(* keywords tokens *)*/
-%token <Parse_info.info>
+%token <Parse_info.t>
  Tif Telse
  Twhile Tfor Tloop
  Tbreak  Tcontinue
@@ -69,17 +69,17 @@
  Tunsafe
 
 /*(* cpp *)*/
-%token <Parse_info.info>
+%token <Parse_info.t>
   TCppLine
 
 /*(* syntax *)*/
-%token <Parse_info.info> TOParen TCParen 
-%token <Parse_info.info> TOBracket TCBracket
-%token <Parse_info.info> TOBrace TCBrace
-%token <Parse_info.info> TOAngle TCAngle
+%token <Parse_info.t> TOParen TCParen 
+%token <Parse_info.t> TOBracket TCBracket
+%token <Parse_info.t> TOBrace TCBrace
+%token <Parse_info.t> TOAngle TCAngle
 
 
-%token <Parse_info.info>
+%token <Parse_info.t>
  TComma TColon TColonColon TSemiColon
  TStar TDiv TPercent
  TEq TEqEq TNotEq
@@ -91,7 +91,7 @@
  TArrow TDot
  TPound
 
-%token <string * Parse_info.info> TAssignOp
+%token <string * Parse_info.t> TAssignOp
 
 
 /*(* operators *)*/
@@ -101,8 +101,8 @@
 /*(*-----------------------------------------*)*/
 
 /*(* classic *)*/
-%token <Parse_info.info> TUnknown
-%token <Parse_info.info> EOF
+%token <Parse_info.t> TUnknown
+%token <Parse_info.t> EOF
 
 /*(*-----------------------------------------*)*/
 /*(* priorities *)*/
