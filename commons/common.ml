@@ -1315,7 +1315,7 @@ let files_of_dir_or_files_no_vcs_nofilter xs =
     if is_directory x
     then
       (* todo: should escape x *)
-      let cmd = (spf "find %s '%s' -noleaf -type f %s"
+      let cmd = (spf "find %s '%s' -type f %s" (* -noleaf *)
             (arg_symlink()) x grep_dash_v_str) in
       let (xs, status) =
         cmd_to_list_and_status cmd in
