@@ -162,7 +162,7 @@ and vof_expr =
       and v2 = vof_expr v2
       in Ocaml.VSum (("Class_get", [ v1; v2 ]))
   | Assign ((v1, v2, v3)) ->
-      let v1 = Ocaml.vof_option Ast_php.vof_binaryOp v1
+      let v1 = Ocaml.vof_option vof_binaryOp v1
       and v2 = vof_expr v2
       and v3 = vof_expr v3
       in Ocaml.VSum (("Assign", [ v1; v2; v3 ]))
@@ -175,12 +175,12 @@ and vof_expr =
       and v2 = vof_expr v2
       in Ocaml.VSum (("Postfix", [ v1; v2 ]))
   | Binop ((v1, v2, v3)) ->
-      let v1 = Ast_php.vof_binaryOp v1
+      let v1 = vof_binaryOp v1
       and v2 = vof_expr v2
       and v3 = vof_expr v3
       in Ocaml.VSum (("Binop", [ v1; v2; v3 ]))
   | Unop ((v1, v2)) ->
-      let v1 = Ast_php.vof_unaryOp v1
+      let v1 = vof_unaryOp v1
       and v2 = vof_expr v2
       in Ocaml.VSum (("Unop", [ v1; v2 ]))
   | Call ((v1, v2)) ->
@@ -250,6 +250,11 @@ and
   let arg = vof_ident v_xml_tag in
   let bnd = ("xml_tag", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
 and vof_xhp_attr x = vof_expr x
+
+and vof_binaryOp = function
+  | _ -> raise Common.Todo
+
+and vof_unaryOp = Meta_ast_generic_common.vof_arithmetic_operator
 
 and vof_constant_def { cst_name = v_cst_name; cst_body = v_cst_body } =
   let bnds = [] in

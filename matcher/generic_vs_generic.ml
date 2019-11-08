@@ -584,62 +584,8 @@ and m_action a b =
 
 and m_arithmetic_operator a b = 
   match a, b with
-  | A.Plus, B.Plus ->
-    return ()
-  | A.Minus, B.Minus ->
-    return ()
-  | A.Mult, B.Mult ->
-    return ()
-  | A.Div, B.Div ->
-    return ()
-  | A.Mod, B.Mod ->
-    return ()
-  | A.Pow, B.Pow ->
-    return ()
-  | A.FloorDiv, B.FloorDiv ->
-    return ()
-  | A.LSL, B.LSL ->
-    return ()
-  | A.LSR, B.LSR ->
-    return ()
-  | A.ASR, B.ASR ->
-    return ()
-  | A.BitOr, B.BitOr ->
-    return ()
-  | A.BitXor, B.BitXor ->
-    return ()
-  | A.BitAnd, B.BitAnd ->
-    return ()
-  | A.BitNot, B.BitNot ->
-    return ()
-  | A.And, B.And ->
-    return ()
-  | A.Or, B.Or ->
-    return ()
-  | A.Not, B.Not ->
-    return ()
-  | A.Eq, B.Eq ->
-    return ()
-  | A.NotEq, B.NotEq ->
-    return ()
-  | A.PhysEq, B.PhysEq ->
-    return ()
-  | A.NotPhysEq, B.NotPhysEq ->
-    return ()
-  | A.Lt, B.Lt ->
-    return ()
-  | A.LtE, B.LtE ->
-    return ()
-  | A.Gt, B.Gt ->
-    return ()
-  | A.GtE, B.GtE ->
-    return ()
-  | A.Plus, _  | A.Minus, _  | A.Mult, _  | A.Div, _  | A.Mod, _  | A.Pow, _
-  | A.FloorDiv, _  | A.LSL, _  | A.LSR, _  | A.ASR, _  | A.BitOr, _
-  | A.BitXor, _  | A.BitAnd, _  | A.BitNot, _  | A.And, _  | A.Or, _
-  | A.Not, _  | A.Eq, _  | A.NotEq, _  | A.PhysEq, _  | A.NotPhysEq, _
-  | A.Lt, _  | A.LtE, _  | A.Gt, _  | A.GtE, _
-   -> fail ()
+  | _ when a =*= b -> return ()
+  | _ -> fail ()
 
 and m_special a b = 
   match a, b with

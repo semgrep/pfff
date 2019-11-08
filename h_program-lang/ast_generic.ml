@@ -230,12 +230,13 @@ and expr =
 
     (* mostly binary operator *)
     and arithmetic_operator = 
-      | Plus | Minus (* unary too *) | Mult | Div | Mod 
+      | Plus (* unary too *) | Minus (* unary too *) 
+      | Mult | Div | Mod
       | Pow | FloorDiv (* Python *)
       | LSL | LSR | ASR (* L = logic, A = Arithmetic, SL = shift left *) 
       | BitOr | BitXor | BitAnd | BitNot (* unary *)
       (* todo? rewrite in CondExpr? have special behavior *)
-      | And | Or (* also shortcut operator *) | Not (* unary *)
+      | And | Or (* also shortcut operator *) | Xor (* PHP*) | Not (* unary *)
       | Eq     | NotEq     (* less: could be desugared to Not Eq *)
       | PhysEq | NotPhysEq (* less: could be desugared to Not PhysEq *)
       | Lt | LtE | Gt | GtE  (* less: could be desugared to Or (Eq Lt) *)

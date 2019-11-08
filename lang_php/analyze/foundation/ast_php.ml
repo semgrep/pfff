@@ -242,7 +242,7 @@ and expr =
   (* pad: could perhaps be at the statement level? The left expr
    * must be an lvalue (e.g. a variable).
    *)
-  | Assign of Cst_php.binaryOp option * expr * expr
+  | Assign of binaryOp option * expr * expr
   (* really a destructuring tuple let; always used as part of an Assign or
    * in foreach_pattern.
    *)
@@ -265,8 +265,8 @@ and expr =
   (* todo? transform into Call (builtin ...) ? *)
   | Infix of Ast_generic.incr_decr * expr
   | Postfix of Ast_generic.incr_decr * expr
-  | Binop of Cst_php.binaryOp * expr * expr
-  | Unop of Cst_php.unaryOp * expr
+  | Binop of binaryOp * expr * expr
+  | Unop of unaryOp * expr
   | Guil of expr list
 
   | ConsArray of array_value list
@@ -278,6 +278,13 @@ and expr =
 
   (* yeah! PHP 5.3 is becoming a real language *)
   | Lambda of func_def
+  
+  and binaryOp = 
+   | BinaryConcat 
+   | Pipe 
+   | CombinedComparison
+   | ArithOp of Ast_generic.arithmetic_operator
+  and unaryOp = Ast_generic.arithmetic_operator
 
   (* pad: do we need that? could convert into something more basic *)
   and xhp =

@@ -693,6 +693,8 @@ and expr_ env heap x =
 (* related to Unify *)
 and binaryOp env heap bop v1 v2 =
   match bop with
+  | ArithOp _ -> raise Todo
+(*
   | Cst_php.Arith _aop ->
       (match v1, v2 with
       | (Vint _ | Vabstr Tint), (Vint _ | Vabstr Tint) -> Vabstr Tint
@@ -700,14 +702,18 @@ and binaryOp env heap bop v1 v2 =
       | _ -> Vsum [Vnull; Vabstr Tint]
       )
   | Cst_php.Logical _lop -> Vabstr Tbool
-  | Cst_php.BinaryConcat ->
+*)
+
+  | BinaryConcat ->
       (* Vabstr Tstring by default *)
       Taint.binary_concat env heap v1 v2 !(env.path)
-  | Cst_php.Pipe ->
+  | Pipe ->
      failwith "Not supported"
-  | Cst_php.CombinedComparison -> Vabstr Tint
+  | CombinedComparison -> Vabstr Tint
 
-and unaryOp uop v =
+and unaryOp _uop _v =
+  raise Todo
+(*
   match uop, v with
   | Cst_php.UnPlus, Vint n       -> Vint n
   | Cst_php.UnPlus, Vabstr Tint  -> Vabstr Tint
@@ -721,6 +727,7 @@ and unaryOp uop v =
   | Cst_php.UnTilde, Vint n      -> Vint (lnot n)
   | Cst_php.UnTilde, Vabstr Tint -> Vabstr Tint
   | Cst_php.UnTilde, _           -> Vsum [Vnull; Vabstr Tint]
+*)
 
 and cast _env _heap ty v =
   match ty, v with

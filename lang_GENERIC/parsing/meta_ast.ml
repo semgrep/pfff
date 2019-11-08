@@ -213,6 +213,7 @@ and vof_arithmetic_operator =
   | And -> Ocaml.VSum (("And", []))
   | Or -> Ocaml.VSum (("Or", []))
   | Not -> Ocaml.VSum (("Not", []))
+  | Xor -> Ocaml.VSum (("Xor", []))
   | Eq -> Ocaml.VSum (("Eq", []))
   | NotEq -> Ocaml.VSum (("NotEq", []))
   | PhysEq -> Ocaml.VSum (("PhysEq", []))

@@ -684,19 +684,23 @@ and ptype _env = function
   | Cst_php.ObjectTy -> Tsum [Tobject SMap.empty]
 
 and binaryOp env t1 t2 = function
+(*
   | Cst_php.Arith _ ->
       Unify.unify env t1 t2
   | Cst_php.Logical lop ->
       logicalOp env t1 t2 lop;
       bool
-  | Cst_php.BinaryConcat ->
+*)
+  | ArithOp _ -> raise Todo
+  | BinaryConcat ->
       Unify.unify env t1 t2
-  | Cst_php.Pipe ->
+  | Pipe ->
      failwith "Not supported"
-  | Cst_php.CombinedComparison ->
+  | CombinedComparison ->
       Unify.unify env t1 t2 |> ignore;
       int
 
+(*
 and logicalOp env t1 t2 = function
   | Cst_php.Inf | Cst_php.Sup | Cst_php.InfEq | Cst_php.SupEq
   | Cst_php.Eq | Cst_php.NotEq
@@ -706,10 +710,14 @@ and logicalOp env t1 t2 = function
   | Cst_php.AndBool | Cst_php.OrBool ->
       (* ?? why nothing there? *)
       ()
+*)
 
-and unaryOp = function
+and unaryOp _x = raise Todo
+(*
+function
   | Cst_php.UnPlus | Cst_php.UnMinus | Cst_php.UnTilde -> int
   | Cst_php.UnBang -> bool
+*)
 
 and xhp env = function
   | XhpText _ -> ()

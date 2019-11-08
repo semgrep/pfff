@@ -16,6 +16,7 @@ open Common
 
 open Cst_php
 module A = Ast_php
+module G = Ast_generic
 
 (*****************************************************************************)
 (* Prelude *)
@@ -311,9 +312,11 @@ and expr env = function
   | Binary (e1, (bop, _), e2) ->
       let e1 = expr env e1 in
       let e2 = expr env e2 in
+      let bop = binary_op bop in
       A.Binop (bop, e1, e2)
   | Unary ((uop, _), e) ->
       let e = expr env e in
+      let uop = unary_op uop in
       A.Unop (uop, e)
   | Assign (e1, _, e2) -> A.Assign (None, lvalue env e1, expr env e2)
   | AssignOp (lv, (op, _), e) ->
@@ -418,6 +421,50 @@ and expr env = function
       (* should never use the abstract interpreter on a sgrep pattern *)
       raise Common.Impossible
   | ParenExpr (_, e, _) -> expr env e
+
+and arith_op = function
+  | Plus -> G.Plus 
+  | Minus -> G.Minus 
+  | Mul -> G.Mult
+  | Div  -> G.Div  
+  | Mod-> G.Mod
+  | DecLeft -> G.LSL
+  | DecRight-> G.LSR
+  | And -> G.BitAnd 
+  | Or -> G.BitOr 
+  | Xor-> G.BitXor
+
+and logical_op = function
+  | Inf -> G.Lt 
+  | Sup -> G.Gt 
+  | InfEq -> G.LtE
+  | SupEq-> G.GtE
+  | Eq -> G.Eq 
+  | NotEq-> G.NotEq
+  | Identical -> G.PhysEq
+  | NotIdentical-> G.NotPhysEq
+ (* less: add difference in ast_generic? 'and' as shortcut operator
+  * and 'and' as boolean operator *)
+  | AndLog -> G.And
+  | OrLog -> G.Or 
+  | XorLog-> G.Xor
+  | AndBool -> G.And 
+  | OrBool-> G.Or
+
+and binary_op = function
+  | Arith op -> A.ArithOp (arith_op op)
+  | Logical op -> A.ArithOp (logical_op op)
+  | BinaryConcat -> A.BinaryConcat
+  | Pipe -> A.Pipe
+  | CombinedComparison -> A.CombinedComparison
+
+and unary_op = function
+ | UnPlus -> G.Plus
+ | UnMinus-> G.Minus
+ | UnBang -> G.Not
+ | UnTilde-> G.BitXor
+
+
 
 and scalar env = function
   | C cst -> constant env cst
@@ -886,8 +933,10 @@ and list_assign env x acc =
   | ListEmpty -> acc
 
 and assignOp _env = function
-  | AssignOpArith aop -> Arith aop
-  | AssignConcat -> BinaryConcat
+  | AssignOpArith aop -> 
+      let aop = arith_op aop in
+      A.ArithOp aop
+  | AssignConcat -> A.BinaryConcat
 
 and global_var env = function
   | GlobalVar dn -> A.Var (dname dn)

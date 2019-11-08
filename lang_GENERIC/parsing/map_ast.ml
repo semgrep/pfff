@@ -206,34 +206,7 @@ and map_special =
 
 and map_of_incdec x = x
 and map_of_prepost x = x
-
-and map_arithmetic_operator =
-  function
-  | Plus -> Plus
-  | Minus -> Minus
-  | Mult -> Mult
-  | Div -> Div
-  | Mod -> Mod
-  | Pow -> Pow
-  | FloorDiv -> FloorDiv
-  | LSL -> LSL
-  | LSR -> LSR
-  | ASR -> ASR
-  | BitOr -> BitOr
-  | BitXor -> BitXor
-  | BitAnd -> BitAnd
-  | BitNot -> BitNot
-  | And -> And
-  | Or -> Or
-  | Not -> Not
-  | Eq -> Eq
-  | NotEq -> NotEq
-  | PhysEq -> PhysEq
-  | NotPhysEq -> NotPhysEq
-  | Lt -> Lt
-  | LtE -> LtE
-  | Gt -> Gt
-  | GtE -> GtE
+and map_arithmetic_operator x = x
 
 and map_arguments v = map_of_list map_argument v
 

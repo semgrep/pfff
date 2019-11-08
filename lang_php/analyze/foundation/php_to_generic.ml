@@ -65,46 +65,11 @@ let qualified_ident v = list ident v
 let name v = qualified_ident v
 
 let rec fixOp x = x
-and binaryOp =
-  function
-  | Arith v1 -> let v1 = arithOp v1 in ()
-  | Logical v1 -> let v1 = logicalOp v1 in ()
-  | BinaryConcat -> ()
-  | Pipe -> ()
-  | CombinedComparison -> ()
-and arithOp =
-  function
-  | Plus -> ()
-  | Minus -> ()
-  | Mul -> ()
-  | Div -> ()
-  | Mod -> ()
-  | DecLeft -> ()
-  | DecRight -> ()
-  | And -> ()
-  | Or -> ()
-  | Xor -> ()
-and logicalOp =
-  function
-  | Inf -> ()
-  | Sup -> ()
-  | InfEq -> ()
-  | SupEq -> ()
-  | Eq -> ()
-  | NotEq -> ()
-  | Identical -> ()
-  | NotIdentical -> ()
-  | AndLog -> ()
-  | OrLog -> ()
-  | XorLog -> ()
-  | AndBool -> ()
-  | OrBool -> ()
-and assignOp =
-  function
-  | AssignOpArith v1 -> let v1 = arithOp v1 in ()
-  | AssignConcat -> ()
-and unaryOp =
-  function | UnPlus -> () | UnMinus -> () | UnBang -> () | UnTilde -> ()
+and binaryOp x = raise Todo
+and arithOp x = raise Todo
+and logicalOp x = raise Todo
+and assignOp x = raise Todo
+and unaryOp x = raise Todo
 
 
 let modifierbis =
