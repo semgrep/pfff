@@ -75,8 +75,8 @@ and v_resolved_name =
   | Parameter -> ()
   | GlobalVar -> ()
   | ClassField -> ()
-  | ImportedModule -> ()
-  | ImportedEntity -> ()
+  | ImportedModule v -> let _ = v_dotted_name v in ()
+  | ImportedEntity v -> let _ = v_dotted_name v in ()
   | NotResolved -> ()
 
 and v_expr (x: expr) =

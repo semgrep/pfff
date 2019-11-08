@@ -106,7 +106,7 @@ and v_resolved_name =
   | NotResolved -> ()
   | Macro -> ()
   | EnumConstant -> ()
-  | ImportedModule -> ()
+  | ImportedModule v1 -> let v1 = v_qualified_name v1 in ()
 
 and v_name (v1, v2) = let v1 = v_ident v1 and v2 = v_id_info v2 in ()
 and v_xml xs = v_list v_any xs

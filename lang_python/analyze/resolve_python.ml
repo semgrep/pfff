@@ -162,7 +162,7 @@ let resolve prog =
          if !(env.ctx) = InFunction
          then env |> add_name_env name (LocalVar);
      | ClassDef (name, _bases, _body, _decorators) ->
-           env |> add_name_env name ImportedEntity; (* could be more precise *)
+           env |> add_name_env name (ImportedEntity []); (* could be more precise *)
            with_new_context InClass env (fun () ->
                k x              
             )
@@ -170,20 +170,20 @@ let resolve prog =
      | Import (aliases) ->
          aliases |> List.iter (fun (dotted_name, asname_opt) ->
            (match dotted_name with
-           | [name] -> env |> add_name_env name ImportedModule
+           | [name] -> env |> add_name_env name (ImportedModule dotted_name)
            | _ -> (* TODO *) ()
            );
            asname_opt |> Common.do_option (fun asname ->
-             env |> add_name_env asname ImportedModule
+             env |> add_name_env asname (ImportedModule dotted_name)
            );
          );
          k x
 
-     | ImportFrom (_dotted_name, aliases, _) ->
+     | ImportFrom (dotted_name, aliases, _) ->
          aliases |> List.iter (fun (name, asname_opt) ->
-           env |> add_name_env name ImportedEntity;
+           env |> add_name_env name (ImportedEntity dotted_name);
            asname_opt |> Common.do_option (fun asname ->
-             env |> add_name_env asname ImportedEntity
+             env |> add_name_env asname (ImportedEntity dotted_name)
            );
          );
          k x

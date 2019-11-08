@@ -58,8 +58,8 @@ let resolved_name =
   | Parameter -> G.Param
   | GlobalVar -> G.Global [] (* TODO? *)
   | ClassField -> G.NotResolved
-  | ImportedModule -> G.ImportedModule
-  | ImportedEntity -> G.Global [] (* TODO? *)
+  | ImportedModule xs -> G.ImportedModule xs
+  | ImportedEntity xs -> G.Global xs
   | NotResolved -> G.NotResolved
 
 let expr_context =

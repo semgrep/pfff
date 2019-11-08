@@ -97,7 +97,7 @@ type dotted_ident = ident list (* at least 1 element *)
 (* todo? module_name * name? 
  * todo? not enough in OCaml with functor and type arguments or C++ templates? 
 *)
-type qualified_ident = dotted_ident
+type qualifier = dotted_ident
  (* with tarzan *)
 
 (* can also be used for packages, or namespaces *)
@@ -110,12 +110,12 @@ type module_name =
 type resolved_name =
   | Local
   | Param
-  | Global of qualified_ident (* or just name? *)
+  | Global of dotted_ident (* or just name? *)
   | NotResolved
 
   | Macro
   | EnumConstant
-  | ImportedModule
+  | ImportedModule of dotted_ident
 
  (* with tarzan *)
 
@@ -123,7 +123,7 @@ type resolved_name =
 
 type name = ident * id_info
   and id_info =
-  { id_qualifier: dotted_ident option;
+  { id_qualifier: qualifier option;
     id_typeargs: type_arguments option; (* Java *)
     id_resolved: resolved_name ref; (* variable tagger (naming) *)
     id_type: type_ option ref; (* type checker (typing) *)
@@ -245,8 +245,12 @@ and expr =
     and incr_decr = Incr | Decr
     and prefix_postfix = Prefix | Postfix
 
-  and arguments = argument list
+  and action = pattern * expr
 
+  (* TODO *)
+  and xml = any list
+
+  and arguments = argument list
     and argument =
       (* regular argument *)
       | Arg of expr (* can be Call (IdSpecial Spread, Id foo) *)
@@ -263,12 +267,7 @@ and expr =
         | OA_ArgComp (* comprehension *)
         (* OCaml *)
         | OA_ArgQuestion
-          
 
-  and action = pattern * expr
-
-  (* TODO *)
-  and xml = any list
 
   and other_expr_operator = 
     (* Javascript *)

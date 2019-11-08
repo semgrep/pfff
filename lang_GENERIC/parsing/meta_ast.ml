@@ -27,11 +27,14 @@ let vof_resolved_name =
   | Local -> Ocaml.VSum (("Local", []))
   | Param -> Ocaml.VSum (("Param", []))
   | Global v1 ->
-      let v1 = vof_qualified_ident v1 in Ocaml.VSum (("Global", [ v1 ]))
+      let v1 = vof_qualified_ident v1 in 
+      Ocaml.VSum (("Global", [ v1 ]))
   | NotResolved -> Ocaml.VSum (("NotResolved", []))
   | Macro -> Ocaml.VSum (("Macro", []))
   | EnumConstant -> Ocaml.VSum (("EnumConstant", []))
-  | ImportedModule -> Ocaml.VSum (("ImportedModule", []))
+  | ImportedModule v1 -> 
+      let v1 = vof_qualified_ident v1 in 
+      Ocaml.VSum (("ImportedModule", [v1]))
 
 let rec vof_name (v1, v2) =
   let v1 = vof_ident v1 and v2 = vof_id_info v2 in Ocaml.VTuple [ v1; v2 ]

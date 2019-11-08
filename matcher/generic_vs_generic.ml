@@ -336,21 +336,24 @@ let m_resolved_name a b =
     m_qualified_name a1 b1 >>= (fun () -> 
     return ()
     )
+  | A.ImportedModule(a1), B.ImportedModule(b1) ->
+    m_qualified_name a1 b1 >>= (fun () -> 
+    return ()
+    )
   | A.NotResolved, B.NotResolved ->
     return ()
   | A.Macro, B.Macro ->
     return ()
   | A.EnumConstant, B.EnumConstant ->
     return ()
-  | A.ImportedModule, B.ImportedModule ->
-    return ()
+
   | A.Local, _
   | A.Param, _
   | A.Global _, _
   | A.NotResolved, _
   | A.Macro, _
   | A.EnumConstant, _
-  | A.ImportedModule, _
+  | A.ImportedModule _, _
    -> fail ()
 
 

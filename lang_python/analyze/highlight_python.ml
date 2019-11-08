@@ -132,10 +132,10 @@ let visit_program ~tag_hook _prefs (program, toks) =
               | _ -> Use (* TODO *)
              in
              tag_name name (Local usedef)
-        | ImportedEntity ->
+        | ImportedEntity _ ->
             let kind = E.Function in
             tag_name name (Entity (kind, use2))
-        | ImportedModule ->
+        | ImportedModule _ ->
             let kind = E.Module in
             tag_name name (Entity (kind, use2))
         | NotResolved ->

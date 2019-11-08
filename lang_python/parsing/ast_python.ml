@@ -78,8 +78,8 @@ type resolved_name =
   | Parameter
   | GlobalVar
   | ClassField
-  | ImportedModule
-  | ImportedEntity
+  | ImportedModule of dotted_name
+  | ImportedEntity of dotted_name
 
   (* default case *)
   | NotResolved

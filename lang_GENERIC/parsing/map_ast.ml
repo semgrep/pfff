@@ -91,7 +91,7 @@ and map_resolved_name =
   | NotResolved -> NotResolved
   | Macro -> Macro
   | EnumConstant -> EnumConstant
-  | ImportedModule -> ImportedModule
+  | ImportedModule v1 -> let v1 = map_qualified_name v1 in ImportedModule((v1))
 
 and map_name (v1, v2) =
   let v1 = map_ident v1 and v2 = map_id_info v2 in (v1, v2)
