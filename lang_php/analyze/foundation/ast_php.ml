@@ -263,8 +263,8 @@ and expr =
   | Call of expr * expr list
 
   (* todo? transform into Call (builtin ...) ? *)
-  | Infix of Cst_php.fixOp * expr
-  | Postfix of Cst_php.fixOp * expr
+  | Infix of Ast_generic.incr_decr * expr
+  | Postfix of Ast_generic.incr_decr * expr
   | Binop of Cst_php.binaryOp * expr * expr
   | Unop of Cst_php.unaryOp * expr
   | Guil of expr list
