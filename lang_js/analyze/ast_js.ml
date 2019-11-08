@@ -126,16 +126,7 @@ type special =
 
   | UseStrict
 
-  (* todo? rewrite in CondExpr? have special behavior *)
-  | And | Or
-  (* Special apply arithmetic and logic *)
-  | Not
-  | BitNot | BitAnd | BitOr | BitXor
-  | Lsr | Asr | Lsl
-  | Equal | PhysEqual 
-  | Lower | Greater
-  | Plus | Minus | Mul | Div | Mod | Expo
-
+  | ArithOp of Ast_generic.arithmetic_operator
   (* less: should be in statement and unsugared in x+=1 or even x = x + 1 *)
   | IncrDecr of (Ast_generic.incr_decr * Ast_generic.prefix_postfix)
  (* with tarzan *)

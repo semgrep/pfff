@@ -16,6 +16,7 @@ open Common
 
 module A = Ast_js
 module C = Cst_js
+module G = Ast_generic
 
 (*****************************************************************************)
 (* Prelude *)
@@ -224,7 +225,7 @@ let forof (lhs_var, tok, e2, st) (expr, stmt, var_binding) =
     ]
   in
   let for_cond = 
-    A.Apply (A.IdSpecial (A.Not, tok), [
+    A.Apply (A.IdSpecial (A.ArithOp G.Not, tok), [
       A.ObjAccess (A.Assign (A.Id (step, ref A.NotResolved),
                           A.Apply (A.ObjAccess (A.Id (iterator, 
                                                       ref A.NotResolved),

@@ -51,26 +51,7 @@ let vof_special =
   | Encaps v1 ->
       let v1 = Ocaml.vof_option vof_name v1
       in Ocaml.VSum (("Encaps", [ v1 ]))
-  | Not -> Ocaml.VSum (("Not", []))
-  | And -> Ocaml.VSum (("And", []))
-  | Or -> Ocaml.VSum (("Or", []))
-  | BitNot -> Ocaml.VSum (("BitNot", []))
-  | BitAnd -> Ocaml.VSum (("BitAnd", []))
-  | BitOr -> Ocaml.VSum (("BitOr", []))
-  | BitXor -> Ocaml.VSum (("BitXor", []))
-  | Lsr -> Ocaml.VSum (("Lsr", []))
-  | Asr -> Ocaml.VSum (("Asr", []))
-  | Lsl -> Ocaml.VSum (("Lsl", []))
-  | Equal -> Ocaml.VSum (("Equal", []))
-  | PhysEqual -> Ocaml.VSum (("PhysEqual", []))
-  | Lower -> Ocaml.VSum (("Lower", []))
-  | Greater -> Ocaml.VSum (("Greater", []))
-  | Plus -> Ocaml.VSum (("Plus", []))
-  | Minus -> Ocaml.VSum (("Minus", []))
-  | Mul -> Ocaml.VSum (("Mul", []))
-  | Div -> Ocaml.VSum (("Div", []))
-  | Mod -> Ocaml.VSum (("Mod", []))
-  | Expo -> Ocaml.VSum (("Expo", []))
+  | ArithOp x -> Meta_ast_generic_common.vof_arithmetic_operator x
   | IncrDecr v1 -> let v1 = Meta_ast_generic_common.vof_inc_dec v1 in 
       Ocaml.VSum (("IncrDecr", [ v1 ]))
   

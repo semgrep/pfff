@@ -498,20 +498,21 @@ and expr env = function
   | C.Assign (e1, (op, tok), e2) ->
     let e1 = expr env e1 in
     let e2 = expr env e2 in
+    let special op = A.IdSpecial (A.ArithOp op, tok) in
     (match op with
     | C.A_eq -> A.Assign (e1, e2)
     (* less: should use intermediate? can unsugar like this? *)
-    | C.A_add -> A.Assign (e1, A.Apply(A.IdSpecial (A.Plus, tok), [e1;e2]))
-    | C.A_sub -> A.Assign (e1, A.Apply(A.IdSpecial (A.Minus, tok), [e1;e2]))
-    | C.A_mul -> A.Assign (e1, A.Apply(A.IdSpecial (A.Mul, tok), [e1;e2]))
-    | C.A_div -> A.Assign (e1, A.Apply(A.IdSpecial (A.Div, tok), [e1;e2]))
-    | C.A_mod -> A.Assign (e1, A.Apply(A.IdSpecial (A.Mod, tok), [e1;e2]))
-    | C.A_lsl -> A.Assign (e1, A.Apply(A.IdSpecial (A.Lsl, tok), [e1;e2]))
-    | C.A_lsr -> A.Assign (e1, A.Apply(A.IdSpecial (A.Lsr, tok), [e1;e2]))
-    | C.A_asr -> A.Assign (e1, A.Apply(A.IdSpecial (A.Asr, tok), [e1;e2]))
-    | C.A_and -> A.Assign (e1, A.Apply(A.IdSpecial (A.BitAnd, tok), [e1;e2]))
-    | C.A_or  -> A.Assign (e1, A.Apply(A.IdSpecial (A.BitOr, tok), [e1;e2]))
-    | C.A_xor -> A.Assign (e1, A.Apply(A.IdSpecial (A.BitXor, tok), [e1;e2]))
+    | C.A_add -> A.Assign (e1, A.Apply(special G.Plus, [e1;e2]))
+    | C.A_sub -> A.Assign (e1, A.Apply(special G.Minus, [e1;e2]))
+    | C.A_mul -> A.Assign (e1, A.Apply(special G.Mult, [e1;e2]))
+    | C.A_div -> A.Assign (e1, A.Apply(special G.Div, [e1;e2]))
+    | C.A_mod -> A.Assign (e1, A.Apply(special G.Mod, [e1;e2]))
+    | C.A_lsl -> A.Assign (e1, A.Apply(special G.LSL, [e1;e2]))
+    | C.A_lsr -> A.Assign (e1, A.Apply(special G.LSR, [e1;e2]))
+    | C.A_asr -> A.Assign (e1, A.Apply(special G.ASR, [e1;e2]))
+    | C.A_and -> A.Assign (e1, A.Apply(special G.BitAnd, [e1;e2]))
+    | C.A_or  -> A.Assign (e1, A.Apply(special G.BitOr, [e1;e2]))
+    | C.A_xor -> A.Assign (e1, A.Apply(special G.BitXor, [e1;e2]))
     )
   | C.Seq (e1, tok, e2) ->
     let e1 = expr env e1 in
@@ -575,42 +576,40 @@ and unop _env = function
   | C.U_pre_decrement -> A.IncrDecr (G.Decr, G.Prefix)
   | C.U_post_increment -> A.IncrDecr (G.Incr, G.Postfix) 
   | C.U_post_decrement -> A.IncrDecr (G.Decr, G.Postfix)
-  | C.U_plus -> A.Plus | C.U_minus -> A.Minus
-  | C.U_not -> A.Not | C.U_bitnot -> A.BitNot | C.U_spread -> A.Spread
+  | C.U_plus -> A.ArithOp G.Plus 
+  | C.U_minus -> A.ArithOp G.Minus
+  | C.U_not -> A.ArithOp G.Not 
+  | C.U_bitnot -> A.ArithOp G.BitNot 
+  | C.U_spread -> A.Spread
 
 and binop _env (op,tok) e1 e2 = 
   let res = 
     match op with
     | C.B_instanceof -> Left A.Instanceof
     | C.B_in -> Left A.In
-    | C.B_add -> Left A.Plus | C.B_sub -> Left A.Minus
-    | C.B_mul -> Left A.Mul | C.B_div -> Left A.Div | C.B_mod -> Left A.Mod
-    | C.B_expo -> Left A.Expo
-    | C.B_lt -> Left A.Lower | C.B_gt -> Left A.Greater
-    | C.B_lsr -> Left A.Lsr | C.B_asr -> Left A.Asr | C.B_lsl -> Left A.Lsl
-    | C.B_bitand -> Left A.BitAnd | C.B_bitor -> Left A.BitOr
-    | C.B_bitxor -> Left A.BitXor
-    | C.B_and -> Left A.And | C.B_or -> Left A.Or
-    | C.B_equal -> Left A.Equal | C.B_physequal -> Left A.PhysEqual
 
-    (* less: e1 and e2 can have side effect, need intermediate var *)
-    | C.B_le -> Right (
-      A.Apply (A.IdSpecial (A.Or, tok), [
-          A.Apply (A.IdSpecial (A.Lower, tok), [e1;e2]);
-          A.Apply (A.IdSpecial (A.Equal, tok), [e1;e2]);
-        ]))
-    | C.B_ge -> Right (
-      A.Apply (A.IdSpecial (A.Or, tok), [
-          A.Apply (A.IdSpecial (A.Greater, tok), [e1;e2]);
-          A.Apply (A.IdSpecial (A.Equal, tok), [e1;e2]);
-        ]))
-
-    | C.B_notequal -> Right (
-      A.Apply (A.IdSpecial (A.Not, tok), [
-        A.Apply (A.IdSpecial (A.Equal, tok), [e1;e2]);]))
-    | C.B_physnotequal -> Right (
-      A.Apply (A.IdSpecial (A.Not, tok), [
-        A.Apply (A.IdSpecial (A.PhysEqual, tok), [e1;e2]);]))
+    | C.B_add -> Left (A.ArithOp G.Plus) 
+    | C.B_sub -> Left (A.ArithOp G.Minus)
+    | C.B_mul -> Left (A.ArithOp G.Mult) 
+    | C.B_div -> Left (A.ArithOp G.Div) 
+    | C.B_mod -> Left (A.ArithOp G.Mod)
+    | C.B_expo -> Left (A.ArithOp G.Pow)
+    | C.B_lt -> Left (A.ArithOp G.Lt) 
+    | C.B_gt -> Left (A.ArithOp G.Gt)
+    | C.B_lsr -> Left (A.ArithOp G.LSR) 
+    | C.B_asr -> Left (A.ArithOp G.ASR) 
+    | C.B_lsl -> Left (A.ArithOp G.LSL)
+    | C.B_bitand -> Left (A.ArithOp G.BitAnd) 
+    | C.B_bitor -> Left (A.ArithOp G.BitOr)
+    | C.B_bitxor -> Left (A.ArithOp G.BitXor)
+    | C.B_and -> Left (A.ArithOp G.And) 
+    | C.B_or -> Left (A.ArithOp G.Or)
+    | C.B_equal -> Left (A.ArithOp G.Eq) 
+    | C.B_physequal -> Left (A.ArithOp G.PhysEq)
+    | C.B_le -> Left (A.ArithOp G.LtE)
+    | C.B_ge -> Left (A.ArithOp G.GtE)
+    | C.B_notequal -> Left (A.ArithOp G.NotEq)
+    | C.B_physnotequal -> Left (A.ArithOp G.NotPhysEq)
   in
   match res with
   | Left special ->A.Apply (A.IdSpecial (special, tok), [e1; e2])

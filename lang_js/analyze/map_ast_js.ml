@@ -112,29 +112,11 @@ and map_special =
   | Await -> Await
   | Encaps v1 -> let v1 = map_of_option map_name v1 in Encaps ((v1))
   | UseStrict -> UseStrict
-  | And -> And
-  | Or -> Or
-  | Not -> Not
-  | BitNot -> BitNot
-  | BitAnd -> BitAnd
-  | BitOr -> BitOr
-  | BitXor -> BitXor
-  | Lsr -> Lsr
-  | Asr -> Asr
-  | Lsl -> Lsl
-  | Equal -> Equal
-  | PhysEqual -> PhysEqual
-  | Lower -> Lower
-  | Greater -> Greater
-  | Plus -> Plus
-  | Minus -> Minus
-  | Mul -> Mul
-  | Div -> Div
-  | Mod -> Mod
-  | Expo -> Expo
+  | ArithOp v -> let v = map_of_arith_op v in ArithOp v
   | IncrDecr v -> let v = map_of_inc_dec v in IncrDecr ((v))
 
 and map_of_inc_dec x = x
+and map_of_arith_op x = x
   
 and map_label v = map_wrap map_of_string v
   
