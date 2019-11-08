@@ -371,7 +371,7 @@ and map_encaps =
       and v2 = map_expr v2
       and v3 = map_tok v3
       in EncapsExpr ((v1, v2, v3))
-and map_fixOp = function | Dec -> Dec | Inc -> Inc
+and map_fixOp x = x
 and map_binaryOp =
   function
   | Arith v1 -> let v1 = map_arithOp v1 in Arith ((v1))

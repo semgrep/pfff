@@ -1068,10 +1068,10 @@ expr:
 
  | simple_expr T_CONCAT_EQUAL expr { AssignOp($1,(AssignConcat,$2),$3) }
 
- | expr T_INC { Postfix($1, (Inc, $2)) }
- | expr T_DEC { Postfix($1, (Dec, $2)) }
- | T_INC expr { Infix((Inc, $1), $2) }
- | T_DEC expr { Infix((Dec, $1), $2) }
+ | expr T_INC { Postfix($1, (Ast_generic.Incr, $2)) }
+ | expr T_DEC { Postfix($1, (Ast_generic.Decr, $2)) }
+ | T_INC expr { Infix((Ast_generic.Incr, $1), $2) }
+ | T_DEC expr { Infix((Ast_generic.Decr, $1), $2) }
 
  | expr T_BOOLEAN_OR   expr { Binary($1,(Logical OrBool ,$2),$3) }
  | expr T_BOOLEAN_AND  expr { Binary($1,(Logical AndBool,$2),$3) }

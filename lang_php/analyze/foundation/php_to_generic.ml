@@ -64,7 +64,7 @@ let qualified_ident v = list ident v
 
 let name v = qualified_ident v
 
-let rec fixOp = function | Dec -> () | Inc -> ()
+let rec fixOp x = x
 and binaryOp =
   function
   | Arith v1 -> let v1 = arithOp v1 in ()

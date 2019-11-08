@@ -675,19 +675,8 @@ let m_assignOp a b =
 
 let m_fixOp a b =
   match a, b with
-  | A.Dec, B.Dec ->
-    return (
-       A.Dec,
-       B.Dec
-    )
-  | A.Inc, B.Inc ->
-    return (
-       A.Inc,
-       B.Inc
-    )
-  | A.Dec, _
-  | A.Inc, _
-   -> fail ()
+  | _ when a =*= b -> return (a,b)
+  | _ -> fail ()
 
 (* ---------------------------------------------------------------------- *)
 (* cast, cpp directives  *)

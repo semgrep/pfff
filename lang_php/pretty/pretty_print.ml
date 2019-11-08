@@ -699,8 +699,8 @@ and expr_ env = function
 
 
 and fixop env = function
-  | Cst_php.Inc -> Pp.print env "++"
-  | Cst_php.Dec -> Pp.print env "--"
+  | Ast_generic.Incr -> Pp.print env "++"
+  | Ast_generic.Decr -> Pp.print env "--"
 
 and array_value pad env = function
   | Aval e ->

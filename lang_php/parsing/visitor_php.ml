@@ -445,7 +445,7 @@ and v_encaps x =
   in
   vin.kencaps (k, all_functions) x
 
-and v_fixOp = function | Dec -> () | Inc -> ()
+and v_fixOp _op =  ()
 and v_binaryOp =
   function
   | Arith v1 -> let v1 = v_arithOp v1 in ()

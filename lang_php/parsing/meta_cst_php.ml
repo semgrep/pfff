@@ -359,10 +359,7 @@ and vof_encaps =
       and v2 = vof_expr v2
       and v3 = vof_tok v3
       in Ocaml.VSum (("EncapsExpr", [ v1; v2; v3 ]))
-and vof_fixOp =
-  function
-  | Dec -> Ocaml.VSum (("Dec", []))
-  | Inc -> Ocaml.VSum (("Inc", []))
+and vof_fixOp = Meta_ast_generic_common.vof_incr_decr
 and vof_binaryOp =
   function
   | Arith v1 -> let v1 = vof_arithOp v1 in Ocaml.VSum (("Arith", [ v1 ]))
