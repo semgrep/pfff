@@ -228,7 +228,9 @@ and expr =
    (* should be lift up and transformed in Assign at stmt level *)
    | IncrDecr of (incr_decr * prefix_postfix)
 
-    (* mostly binary operator *)
+    (* mostly binary operator 
+     * less: could be divided in really Arith vs Logical (bool) operators
+     *)
     and arithmetic_operator = 
       | Plus (* unary too *) | Minus (* unary too *) 
       | Mult | Div | Mod
