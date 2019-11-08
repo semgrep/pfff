@@ -375,10 +375,10 @@ and vof_other_attribute_operator =
 and vof_stmt =
   function
   | ExprStmt v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("ExprStmt", [ v1 ]))
-  | LocalDef v1 ->
-      let v1 = vof_definition v1 in Ocaml.VSum (("LocalDef", [ v1 ]))
-  | LocalDirective v1 ->
-      let v1 = vof_directive v1 in Ocaml.VSum (("LocalDirective", [ v1 ]))
+  | DefStmt v1 ->
+      let v1 = vof_definition v1 in Ocaml.VSum (("DefStmt", [ v1 ]))
+  | DirectiveStmt v1 ->
+      let v1 = vof_directive v1 in Ocaml.VSum (("DirectiveStmt", [ v1 ]))
   | Block v1 ->
       let v1 = Ocaml.vof_list vof_stmt v1 in Ocaml.VSum (("Block", [ v1 ]))
   | If ((v1, v2, v3)) ->

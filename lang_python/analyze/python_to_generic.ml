@@ -356,7 +356,7 @@ and stmt x =
       let ent = G.basic_entity v1 v5 in
       let def = { G.fparams = v2; frettype = v3; fbody = v4; } in
       (* will be lift up to a IDef later *)
-      G.LocalDef (ent, G.FuncDef def)
+      G.DefStmt (ent, G.FuncDef def)
   | ClassDef ((v1, v2, v3, v4)) ->
       let v1 = name v1
       and v2 = list type_parent v2
@@ -368,7 +368,7 @@ and stmt x =
                   cbody = List.map G.stmt_to_field v3;
                 } in
       (* will be lift up to a IDef later *)
-      G.LocalDef (ent, G.ClassDef def)
+      G.DefStmt (ent, G.ClassDef def)
 
   (* TODO: should turn some of those in G.LocalDef (G.VarDef ! ) *)
   | Assign ((v1, v2)) -> let v1 = list expr v1 and v2 = expr v2 in
@@ -457,7 +457,7 @@ and stmt x =
 
   | Import v1 -> let v1 = list alias2 v1 in 
       G.Block (v1 |> List.map (fun (dotted, nopt) ->
-            G.LocalDirective (G.ImportAll (G.DottedName dotted, nopt))))
+            G.DirectiveStmt (G.ImportAll (G.DottedName dotted, nopt))))
 
   | ImportFrom ((v1, v2, v3)) ->
       let v1 = dotted_name v1
@@ -465,7 +465,7 @@ and stmt x =
       and _v3Dotlevel = (*option int v3 *) v3
       in
       (* will be lift up to IDef later *)
-      G.LocalDirective (G.Import (G.DottedName v1, v2))
+      G.DirectiveStmt (G.Import (G.DottedName v1, v2))
 
   | Global v1 -> let v1 = list name v1 in
       G.OtherStmt (G.OS_Global, v1 |> List.map (fun x -> G.Id x))
@@ -477,8 +477,8 @@ and stmt x =
   | Async x ->
       let x = stmt x in
       (match x with
-      | G.LocalDef (ent, func) ->
-          G.LocalDef ({ ent with G.attrs = G.Async::ent.G.attrs}, func)
+      | G.DefStmt (ent, func) ->
+          G.DefStmt ({ ent with G.attrs = G.Async::ent.G.attrs}, func)
       | _ -> G.OtherStmt (G.OS_Async, [G.S x])
       )
 

@@ -73,7 +73,7 @@ let verbose = ref false
 let stmts_of_stmt_or_defs xs =
   xs |> Common.map_filter (fun stmt_or_def ->
     match stmt_or_def with
-    | LocalDef _ | LocalDirective _ ->
+    | DefStmt _ | DirectiveStmt _ ->
         if !verbose
         then pr2_once ("ignoring nested func/class/directive in CFG");
         (* should be processed by the calling visitor *)
@@ -618,7 +618,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        Some newi
 
    (* should be filtered *)
-   | LocalDef _ | LocalDirective _ ->
+   | DefStmt _ | DirectiveStmt _ ->
        raise Impossible
 
 

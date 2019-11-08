@@ -249,7 +249,7 @@ let rec stmt =
       G.Label (v1, v2)
   | Goto v1 -> let v1 = name v1 in G.Goto v1
   | Vars v1 -> let v1 = list var_decl v1 in
-      G.stmt1 (v1 |> List.map (fun v -> G.LocalDef v))
+      G.stmt1 (v1 |> List.map (fun v -> G.DefStmt v))
   | Asm v1 -> let v1 = list expr v1 in 
       G.OtherStmt (G.OS_Asm, v1 |> List.map (fun e -> G.E e))
 

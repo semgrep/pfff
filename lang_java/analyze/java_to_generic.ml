@@ -320,9 +320,9 @@ and stmt =
   | Throw v1 -> let v1 = expr v1 in
       G.Throw v1
   | LocalVar v1 -> let (ent, v) = var_with_init v1 in
-      G.LocalDef (ent, G.VarDef v)
+      G.DefStmt (ent, G.VarDef v)
   | LocalClass v1 -> let (ent, cdef) = class_decl v1 in
-      G.LocalDef (ent, G.ClassDef cdef)
+      G.DefStmt (ent, G.ClassDef cdef)
   | Assert ((v1, v2)) -> let v1 = expr v1 and v2 = option expr v2 in
       G.Assert (v1, v2)
 
@@ -470,13 +470,13 @@ and class_kind = function
 and decl decl =
   match decl with
   | Class v1 -> let (ent, def) = class_decl v1 in
-      G.LocalDef (ent, G.ClassDef def)
+      G.DefStmt (ent, G.ClassDef def)
   | Method v1 -> let (ent, def) = method_decl v1 in 
-      G.LocalDef (ent, G.FuncDef def)
+      G.DefStmt (ent, G.FuncDef def)
   | Field v1 -> let (ent, def) = field v1 in 
-      G.LocalDef (ent, G.VarDef def)
+      G.DefStmt (ent, G.VarDef def)
   | Enum v1 -> let (ent, def) = enum_decl v1 in
-      G.LocalDef (ent, G.TypeDef def)
+      G.DefStmt (ent, G.TypeDef def)
   | Init ((v1, v2)) -> let _v1TODO = bool v1 and v2 = stmt v2 in
       v2
 

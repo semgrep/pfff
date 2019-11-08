@@ -312,8 +312,8 @@ and map_other_attribute_operator x  = x
 and map_stmt =
   function
   | ExprStmt v1 -> let v1 = map_expr v1 in ExprStmt ((v1))
-  | LocalDef v1 -> let v1 = map_definition v1 in LocalDef ((v1))
-  | LocalDirective v1 -> let v1 = map_directive v1 in LocalDirective ((v1))
+  | DefStmt v1 -> let v1 = map_definition v1 in DefStmt ((v1))
+  | DirectiveStmt v1 -> let v1 = map_directive v1 in DirectiveStmt ((v1))
   | Block v1 -> let v1 = map_of_list map_stmt v1 in Block ((v1))
   | If ((v1, v2, v3)) ->
       let v1 = map_expr v1

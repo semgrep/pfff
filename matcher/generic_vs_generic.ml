@@ -891,11 +891,11 @@ and m_stmt a b =
     m_expr a1 b1 >>= (fun () -> 
     return ()
     )
-  | A.LocalDef(a1), B.LocalDef(b1) ->
+  | A.DefStmt(a1), B.DefStmt(b1) ->
     m_definition a1 b1 >>= (fun () -> 
     return ()
     )
-  | A.LocalDirective(a1), B.LocalDirective(b1) ->
+  | A.DirectiveStmt(a1), B.DirectiveStmt(b1) ->
     m_directive a1 b1 >>= (fun () -> 
     return ()
     )
@@ -972,7 +972,7 @@ and m_stmt a b =
     (m_list m_any) a2 b2 >>= (fun () -> 
     return ()
     ))
-  | A.ExprStmt _, _  | A.LocalDef _, _  | A.LocalDirective _, _
+  | A.ExprStmt _, _  | A.DefStmt _, _  | A.DirectiveStmt _, _
   | A.Block _, _  | A.If _, _  | A.While _, _  | A.DoWhile _, _  | A.For _, _
   | A.Switch _, _  | A.Return _, _  | A.Continue _, _  | A.Break _, _
   | A.Label _, _  | A.Goto _, _  | A.Throw _, _  | A.Try _, _  | A.Assert _, _

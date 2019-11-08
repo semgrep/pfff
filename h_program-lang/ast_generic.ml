@@ -306,8 +306,8 @@ and stmt =
   (* later: lift Call/Assign/Seq here *)
   | ExprStmt of expr
 
-  | LocalDef of definition
-  | LocalDirective of directive
+  | DefStmt of definition
+  | DirectiveStmt of directive
 
   | Block of stmt list
 
@@ -775,13 +775,13 @@ let stmt1 xs =
 (* todo? sign that should merge field with item and stmt? *)
 let stmt_to_field st = 
   match st with
-  | LocalDef (entity, VarDef def) -> FieldVar (entity, def)
-  | LocalDef (entity, FuncDef def) -> FieldMethod (entity, def)
+  | DefStmt (entity, VarDef def) -> FieldVar (entity, def)
+  | DefStmt (entity, FuncDef def) -> FieldMethod (entity, def)
   | _ -> FieldStmt st
 
 (* less: could be a Block containing LocalDef or LocalDirective *)
 let stmt_to_item st =
   match st with
-  | LocalDef def -> IDef def
-  | LocalDirective dir -> IDir dir
+  | DefStmt def -> IDef def
+  | DirectiveStmt dir -> IDir dir
   | _ -> IStmt st

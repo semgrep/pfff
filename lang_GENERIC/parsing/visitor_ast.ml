@@ -284,8 +284,8 @@ and v_stmt x =
   let k x =
   match x with
   | ExprStmt v1 -> let v1 = v_expr v1 in ()
-  | LocalDef v1 -> let v1 = v_def v1 in ()
-  | LocalDirective v1 -> let v1 = v_directive v1 in ()
+  | DefStmt v1 -> let v1 = v_def v1 in ()
+  | DirectiveStmt v1 -> let v1 = v_directive v1 in ()
   | Block v1 -> let v1 = v_list v_stmt v1 in ()
   | If ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_stmt v2 and v3 = v_stmt v3 in ()

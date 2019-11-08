@@ -187,7 +187,7 @@ and expr (x: expr) =
 
 and stmt x =
   match x with
-  | VarDecl v1 -> let v1 = def_of_var v1 in G.LocalDef (v1)
+  | VarDecl v1 -> let v1 = def_of_var v1 in G.DefStmt (v1)
   | Block v1 -> let v1 = list stmt v1 in G.Block v1
   | ExprStmt v1 -> let v1 = expr v1 in G.ExprStmt v1
   | If ((v1, v2, v3)) ->
