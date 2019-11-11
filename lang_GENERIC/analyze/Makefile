@@ -6,6 +6,7 @@ TARGET=lib
 OPAMPKG=pfff-lang_GENERIC-analyze
 
 SRC= controlflow.ml controlflow_build.ml \
+  dataflow.ml \
   test_analyze_generic.ml
 
 -include $(TOP)/Makefile.config
@@ -17,7 +18,7 @@ LIBS=$(TOP)/commons/lib.cma \
      ../parsing/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons \
-   $(TOP)/commons_ocollection \
+   $(TOP)/commons_core $(TOP)/commons_ocollection \
    $(TOP)/h_program-lang \
    $(TOP)/globals \
    ../parsing \
