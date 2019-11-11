@@ -5,7 +5,8 @@ TOP=../..
 TARGET=lib
 OPAMPKG=pfff-lang_GENERIC-analyze
 
-SRC= controlflow.ml controlflow_build.ml
+SRC= controlflow.ml controlflow_build.ml \
+  test_analyze_generic.ml
 
 -include $(TOP)/Makefile.config
 
