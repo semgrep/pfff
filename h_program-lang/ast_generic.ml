@@ -45,6 +45,8 @@
  *  - Dawson Engler and Fraser Brown micro-checkers for multiple languages
  *  - https://tabnine.com/ which supports multiple languages
  *  - Lightweight Multi-language syntax transformation paper 
+ *  - srcML https://www.srcml.org/doc/srcMLGrammar.html
+ *    but just for C/C++/C#/Java and seems pretty heavy
  *
  * design choices to have a generic data structure:
  *  - add some 'a, 'b, 'c around expr/stmt/...
