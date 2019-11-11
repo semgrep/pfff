@@ -31,6 +31,7 @@ type node = {
      and simple_stmt = 
          | ExprStmt of expr * use_status
          | TodoSimpleStmt
+
        and use_status = 
        | Normal
        | SpecialMaybeUnused
@@ -49,7 +50,6 @@ val find_exit: flow -> Ograph_extended.nodei
 
 (* using internally graphviz 'dot' and ghostview 'gv' on X11 *)
 val display_flow: flow -> unit
-
 
 val short_string_of_node_kind: node_kind -> string
 val short_string_of_node: node -> string

@@ -39,13 +39,13 @@ module F = Controlflow
 (* Types *)
 (*****************************************************************************)
 
-(* The comparison function uses only the name string so
+(* convenient aliases *)
+module VarMap = Map.Make(String)
+module VarSet = Set.Make(String)
+(* The comparison function uses only the name of a variable (a string), so
  * two variables at different positions in the code will be agglomerated
  * correctly in the Set or Map.
  *)
-
-module VarMap = Map.Make(String)
-module VarSet = Set.Make(String)
 
 type nodei = Ograph_extended.nodei
 module NodeiSet = Set.Make(Int)
@@ -59,11 +59,12 @@ module NodeiSet = Set.Make(Int)
  *)
 type 'a mapping = ('a inout) array
 
+  (* the In and Out sets, as in Appel Modern Compiler in ML book *)
   and 'a inout = {
-    in_env: 'a VarMap.t;
-    out_env: 'a VarMap.t;
+    in_env: 'a env;
+    out_env: 'a env;
   }
-   and 'a env = 'a VarMap.t
+    and 'a env = 'a VarMap.t
 
 let empty_env () = VarMap.empty
 let empty_inout () = {in_env = empty_env (); out_env = empty_env ()}
@@ -72,6 +73,7 @@ let empty_inout () = {in_env = empty_env (); out_env = empty_env ()}
 (* Equality *)
 (*****************************************************************************)
 
+(* the environment is polymorphic, so we require to pass an eq for 'a *)
 let eq_env eq e1 e2 =
   VarMap.equal eq e1 e2
 
@@ -94,6 +96,10 @@ let eq_mapping eq m1 m2 =
 (* Env manipulation *)
 (*****************************************************************************)
 
+(* useful helpers when the environment maps to a set of Nodes, e.g.,
+ * for reaching definitions.
+ *)
+
 let (minus_env : NodeiSet.t env ->  NodeiSet.t env -> NodeiSet.t env) =
 fun e1 e2 -> VarMap.fold (fun v s e' ->
   try
@@ -115,6 +121,10 @@ fun e1 e2 -> VarMap.fold (fun v s e' ->
 let csv_append s v =
   if String.length s == 0 then v else s ^ "," ^ v
 
+let array_fold_left_idx f = let idx = ref 0 in
+  Array.fold_left (fun v e -> let r = f v !idx e in incr idx; r)
+
+
 let ns_to_str ns =
   "{" ^
   NodeiSet.fold (fun n s -> csv_append s (string_of_int n)) ns "" ^
@@ -128,8 +138,6 @@ let (inout_to_str: ('a -> string) -> 'a inout -> string) = fun val2str inout ->
     (env_to_str val2str inout.in_env)
     (env_to_str val2str inout.out_env)
 
-let array_fold_left_idx f = let idx = ref 0 in
-  Array.fold_left (fun v e -> let r = f v !idx e in incr idx; r)
 
 let mapping_to_str (fl : F.flow) val2str mapping =
   array_fold_left_idx (fun s ni v -> s ^

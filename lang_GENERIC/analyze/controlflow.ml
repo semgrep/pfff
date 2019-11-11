@@ -22,10 +22,14 @@ open Ast_generic
 (*****************************************************************************)
 (* A Control Flow Graph (CFG) for AST generic.
  *
+ * Note that this is just for intraprocedural analysis. The CFG covers
+ * just one function. For interprocedural analysis you may want to look
+ * at pfff/graph_code/ (or datalog).
+ *
  * history:
  *  - CFG for C for coccinelle
- *  - CFG for PHP for checkModule at Facebook
- *  - CFG for AST generic for scheck
+ *  - CFG for PHP for checkModule at facebook
+ *  - CFG for AST generic for scheck at r2c
  *)
 
 (*****************************************************************************)
@@ -33,13 +37,14 @@ open Ast_generic
 (*****************************************************************************)
 
 type node = {
-  (* For now we just have node_kind, but later if we want to do some data-flow
-   * analysis or use temporal logic, we may want to add extra information
-   * in each CFG nodes. We could also record such extra
-   * information in an external table that maps Ograph_extended.nodei, 
-   * that is nodeid, to some information.
+  (* later: For now we just have node_kind, but with some data-flow
+   * analysis or with temporal logic we may want to add extra information
+   * in each CFG nodes. 
+   * alt: We could also record such extra information in an external table
+   * that maps Ograph_extended.nodei, that is nodeid, to some information.
    *)
   n: node_kind;
+
   (* for error report *)
   i: Parse_info.t option;
 } 
@@ -50,23 +55,13 @@ type node = {
       | Enter
       | Exit 
 
-      (* An alternative is to store such information in the edges, but
+      (* alt: An alternative is to store such information in the edges, but
        * experience shows it's easier to encode it via regular nodes
        *)
       | TrueNode
       | FalseNode
 
-    (* not used for now
-      | BlockStart of tok (* { *)
-      | BlockEnd of tok (* } *)
-    *)
-
       | IfHeader of expr
-      (* not used for now
-      | Else
-      | Elsif
-      *) 
-
       | WhileHeader of expr
       | DoHeader
       | DoWhileTail of expr
@@ -79,7 +74,6 @@ type node = {
       | Default
 
       | Return of expr
-
       | Break of expr option
       | Continue of expr option
 
@@ -98,6 +92,12 @@ type node = {
        *)
       | SimpleStmt of simple_stmt
 
+    (* not used for now, was used in coccinelle:
+      | BlockStart of tok (* { *)
+      | BlockEnd of tok (* } *)
+      | Else
+      | Elsif
+    *)
 
      and simple_stmt = 
          | ExprStmt of expr * use_status
@@ -107,6 +107,7 @@ type node = {
           * We may want to uplift those constructors here and have
           * a better expr type
           *)
+
        and use_status = 
        | Normal
        | SpecialMaybeUnused
