@@ -149,20 +149,18 @@ let (flow_fold: 'a fold_fn -> 'a -> F.flow -> 'a) =
   flow#nodes#fold
    (fun acc' (ni, nd) -> node_fold ni fold_fn nd.F.n acc') acc
 
-(*
-let flow_fold_lv fold_fn vars acc flow = 
+let flow_fold_lv fold_fn acc flow = 
   flow_fold
-    (fun ndi dnm lhs acc' -> 
-        if lhs 
-        then fold_fn ndi dnm acc' 
+    (fun ndi var lhs acc' -> 
+        if lhs = Lhs
+        then fold_fn ndi var acc' 
         else acc'
-     ) vars acc  flow
+     ) acc  flow
 
-let flow_fold_rv fold_fn vars acc flow = 
+let flow_fold_rv fold_fn acc flow = 
   flow_fold
-    (fun ndi dnm lhs acc' -> 
-       if not lhs 
-       then fold_fn ndi dnm acc' 
+    (fun ndi var lhs acc' -> 
+       if lhs = Rhs
+       then fold_fn ndi var acc' 
        else acc'
-    ) vars acc flow
-*)
+    ) acc flow
