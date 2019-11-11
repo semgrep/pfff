@@ -560,7 +560,7 @@ let display_reaching_dflow flow mp =
   let i = ref 0 in
   List.iter (fun x ->
     if (not x)
-    then pr (spf "%s: Dead Asisgnment" (string_of_ni !i));
+    then pr (spf "%s: Dead Assignment" (string_of_ni !i));
     incr i
   ) (Array.to_list arr)
 
