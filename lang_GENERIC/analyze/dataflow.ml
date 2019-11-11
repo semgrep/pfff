@@ -81,9 +81,10 @@ let eq_inout eq io1 io2 =
   let eqe = eq_env eq in
   (eqe io1.in_env io2.in_env) && (eqe io1.out_env io2.out_env)
 
+(*
 exception Break
 
-let eq_mapping eq m1 m2 =
+let _eq_mapping eq m1 m2 =
   try (
     for x = 0 to Array.length m1 do
       if not (eq_inout eq m1.(x) m2.(x)) then raise Break
@@ -91,6 +92,7 @@ let eq_mapping eq m1 m2 =
     true
   )
   with Break -> false
+*)
 
 (*****************************************************************************)
 (* Env manipulation *)
@@ -205,3 +207,17 @@ let (fixpoint:
     flow#nodes#fold (fun s (ni, _) -> NodeiSet.add ni s) NodeiSet.empty in
   fixpoint_worker eq init trans flow succs work
    
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+let new_node_array (f: F.flow) v =
+  let arr = Array.make f#nb_nodes v in
+  (* sanity checking *)
+  let len = Array.length arr in
+  f#nodes#tolist +> List.iter (fun (ni, _nod) ->
+    if ni >= len
+    then failwith "the CFG nodei is bigger than the number of nodes"
+  );
+  arr

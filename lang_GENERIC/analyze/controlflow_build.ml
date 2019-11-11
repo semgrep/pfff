@@ -73,7 +73,9 @@ let verbose = ref false
 let stmts_of_stmt_or_defs xs =
   xs |> Common.map_filter (fun stmt_or_def ->
     match stmt_or_def with
-    | DefStmt _ | DirectiveStmt _ ->
+    | DefStmt (_, VarDef _) -> Some stmt_or_def
+    | DefStmt _ 
+    | DirectiveStmt _ ->
         if !verbose
         then pr2_once ("ignoring nested func/class/directive in CFG");
         (* should be processed by the calling visitor *)
@@ -616,9 +618,11 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        let newi = state.g#add_node { F.n = F.SimpleStmt simple_stmt;i=i() } in
        state.g |> add_arc_opt (previ, newi);
        Some newi
-
-   (* should be filtered *)
-   | DefStmt _ | DirectiveStmt _ ->
+   | DefStmt (_ent, VarDef _def) ->
+        raise Todo
+   (* should be filtered by stmts_of_stmt_or_defs *)
+   | DefStmt _
+   | DirectiveStmt _ ->
        raise Impossible
 
 

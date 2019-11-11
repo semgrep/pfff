@@ -27,13 +27,16 @@ val fixpoint :
   'a mapping
 
 (* helpers *)
+val minus_env : NodeiSet.t env -> NodeiSet.t env -> NodeiSet.t env
+val add_env   : NodeiSet.t env -> NodeiSet.t env -> NodeiSet.t env
 
+val new_node_array: F.flow -> 'a -> 'a array
+
+(* internal helpers *)
+(*
 val eq_env : ('a -> 'a -> bool) -> 'a VarMap.t -> 'a VarMap.t -> bool
 val eq_inout : ('a -> 'a -> bool) -> 'a inout -> 'a inout -> bool
 val eq_mapping : ('a -> 'a -> bool) -> 'a inout array -> 'a inout array -> bool
-
-val minus_env : NodeiSet.t env -> NodeiSet.t env -> NodeiSet.t env
-val add_env   : NodeiSet.t env -> NodeiSet.t env -> NodeiSet.t env
 
 val fixpoint_worker :
   ('a -> 'a -> bool) ->
@@ -43,10 +46,9 @@ val fixpoint_worker :
 
 val forward_succs : F.flow -> Ograph_extended.nodei -> NodeiSet.t
 val backward_succs : F.flow -> Ograph_extended.nodei -> NodeiSet.t
+*)
 
-
-val csv_append : string -> string -> string
-val array_fold_left_idx : ('a -> int -> 'b -> 'a) -> 'a -> 'b array -> 'a
+(* string of *)
 val ns_to_str : NodeiSet.t -> string
 val env_to_str : ('a -> string) -> 'a env -> string
 val inout_to_str : ('a -> string) -> 'a inout -> string
