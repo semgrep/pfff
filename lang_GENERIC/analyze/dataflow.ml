@@ -39,13 +39,15 @@ module F = Controlflow
 (* Types *)
 (*****************************************************************************)
 
-(* convenient aliases *)
-module VarMap = Map.Make(String)
-module VarSet = Set.Make(String)
 (* The comparison function uses only the name of a variable (a string), so
  * two variables at different positions in the code will be agglomerated
  * correctly in the Set or Map.
  *)
+type var = string
+
+(* convenient aliases *)
+module VarMap = Map.Make(String)
+module VarSet = Set.Make(String)
 
 type nodei = Ograph_extended.nodei
 module NodeiSet = Set.Make(Int)

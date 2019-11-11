@@ -401,7 +401,7 @@ fun fold_env node acc -> match node with
 *)
 
 let (flow_fold: 'a fold_fn -> VarSet.t -> 'a -> F.flow -> 'a) =
-fun fold_fn vars acc flow -> flow#nodes#fold
+ fun fold_fn vars acc flow -> flow#nodes#fold
   (fun acc' (ni, nd) -> node_fold {fold_fn = fold_fn ni; fold_vars = vars}
    nd.F.n acc') acc
 

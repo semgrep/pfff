@@ -1,5 +1,6 @@
 module F = Controlflow
 
+type var = string
 module VarMap : Map.S with type key = String.t
 module VarSet : Set.S with type elt = String.t
 module NodeiSet : Set.S with type elt = Int.t
