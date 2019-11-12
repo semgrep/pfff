@@ -15,7 +15,12 @@
  *)
 open Common
 
-open Dataflow
+module F = Controlflow
+module D = Dataflow
+
+module NodeiSet = Dataflow.NodeiSet
+module VarMap = Dataflow.VarMap
+module VarSet = Dataflow.VarSet
 
 (*****************************************************************************)
 (* Prelude *)
@@ -44,7 +49,11 @@ open Dataflow
  * then at the program point (node index) 7, then for $a the nodei set
  * is {3, 5}, but not '1'.
  *)
-type reaching_mapping = NodeiSet.t mapping
+type reaching_mapping = Dataflow.NodeiSet.t Dataflow.mapping
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
 
 let add_def d var ni =
   let v =
@@ -53,7 +62,7 @@ let add_def d var ni =
   in
   VarMap.add var v d
 
-let (reaching_defs: F.flow -> NodeiSet.t env) = fun flow ->
+let (reaching_defs: F.flow -> NodeiSet.t Dataflow.env) = fun flow ->
   Dataflow_visitor.flow_fold_lv (fun ni va acc -> add_def acc va ni) VarMap.empty flow
 
 let up_map k f mp = mp.(k) <- f mp.(k); mp
@@ -63,15 +72,15 @@ let up_set_map k v mp = up_map k (VarSet.add v) mp
 (* gen/kill *)
 let (reaching_gens: F.flow -> VarSet.t array) = fun flow ->
   Dataflow_visitor.flow_fold_lv (fun ni v gs -> up_set_map ni v gs)
-    (new_node_array flow VarSet.empty) flow
+    (Dataflow.new_node_array flow VarSet.empty) flow
 
 let (reaching_kills:
-   NodeiSet.t env -> F.flow -> (NodeiSet.t env) array) =
+   NodeiSet.t Dataflow.env -> F.flow -> (NodeiSet.t Dataflow.env) array) =
  fun ds fl -> 
   Dataflow_visitor.flow_fold_lv (fun ni va ks ->
     let d = NodeiSet.remove ni (VarMap.find va ds) in
     up_map ni (fun v -> VarMap.add va d v) ks)
-      (new_node_array fl (Dataflow.empty_env())) fl
+      (Dataflow.new_node_array fl (Dataflow.empty_env())) fl
 
 (*
  * This algorithm is taken from Modern Compiler Implementation in ML, Appel,
@@ -84,29 +93,34 @@ let (reaching_kills:
  *)
 let (reaching_transfer:
    gen:VarSet.t array ->
-   kill:(NodeiSet.t env) array ->
+   kill:(NodeiSet.t Dataflow.env) array ->
    flow:F.flow ->
-   NodeiSet.t transfn) =
+   NodeiSet.t Dataflow.transfn) =
  fun ~gen ~kill ~flow ->
   fun mp ni ->
 
   let new_in = (flow#predecessors ni)#fold (fun s (nip, _) ->
-      add_env s mp.(nip).out_env) VarMap.empty in
-  let in_k = minus_env new_in kill.(ni) in
+      Dataflow.add_env s mp.(nip).D.out_env) VarMap.empty in
+  let in_k = Dataflow.minus_env new_in kill.(ni) in
   let new_out = VarSet.fold (fun v e -> VarMap.add v
       (try NodeiSet.add ni (VarMap.find v e)
        with Not_found -> NodeiSet.singleton ni) e)
     gen.(ni) in_k in
-  {in_env = new_in; out_env = new_out}
+  {D. in_env = new_in; out_env = new_out}
+
+(*****************************************************************************)
+(* Entry point *)
+(*****************************************************************************)
 
 let (reaching_fixpoint: F.flow -> reaching_mapping) = fun flow ->
   let defs = reaching_defs flow in
+
   let gen = reaching_gens flow in
   let kill = reaching_kills defs flow in
 
-  fixpoint
+  Dataflow.fixpoint
     ~eq:NodeiSet.equal
-    ~init:(new_node_array flow (Dataflow.empty_inout ()))
+    ~init:(Dataflow.new_node_array flow (Dataflow.empty_inout ()))
     ~trans:(reaching_transfer ~gen ~kill ~flow)
     ~forward:true
     ~flow
@@ -142,7 +156,7 @@ let display_reaching_dflow flow mp =
   (* Now flag the def if it is ever used on rhs *)
   (* Node id -> var name -> acc -> acc' *)
   let flow_rv_fn = fun ni name arr ->
-    let in_env = mp.(ni).in_env in
+    let in_env = mp.(ni).D.in_env in
     (try
        let ns = VarMap.find name in_env in
        NodeiSet.fold (fun n _ -> arr.(n) <- true) ns ()
