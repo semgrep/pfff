@@ -6,6 +6,7 @@ module VarSet : Set.S with type elt = String.t
 module NodeiSet : Set.S with type elt = Int.t
 type nodei = Ograph_extended.nodei
 
+(* types *)
 type 'a mapping = 'a inout array
   and 'a inout = { 
     in_env : 'a env; 
@@ -33,24 +34,7 @@ val add_env   : NodeiSet.t env -> NodeiSet.t env -> NodeiSet.t env
 
 val new_node_array: F.flow -> 'a -> 'a array
 
-(* internal helpers *)
-(*
-val eq_env : ('a -> 'a -> bool) -> 'a VarMap.t -> 'a VarMap.t -> bool
-val eq_inout : ('a -> 'a -> bool) -> 'a inout -> 'a inout -> bool
-val eq_mapping : ('a -> 'a -> bool) -> 'a inout array -> 'a inout array -> bool
-
-val fixpoint_worker :
-  ('a -> 'a -> bool) ->
-  'a inout array ->
-  ('a inout array -> NodeiSet.elt -> 'a inout) ->
-  'b -> ('b -> NodeiSet.elt -> NodeiSet.t) -> NodeiSet.t -> 'a inout array
-
-val forward_succs : F.flow -> Ograph_extended.nodei -> NodeiSet.t
-val backward_succs : F.flow -> Ograph_extended.nodei -> NodeiSet.t
-*)
-
-(* string of *)
 val ns_to_str : NodeiSet.t -> string
-val env_to_str : ('a -> string) -> 'a env -> string
-val inout_to_str : ('a -> string) -> 'a inout -> string
-val mapping_to_str : F.flow -> ('a -> string) -> 'a inout array -> string
+
+val display_mapping :
+  F.flow -> 'a mapping -> ('a -> string) -> unit

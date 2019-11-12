@@ -83,19 +83,6 @@ let eq_inout eq io1 io2 =
   let eqe = eq_env eq in
   (eqe io1.in_env io2.in_env) && (eqe io1.out_env io2.out_env)
 
-(*
-exception Break
-
-let _eq_mapping eq m1 m2 =
-  try (
-    for x = 0 to Array.length m1 do
-      if not (eq_inout eq m1.(x) m2.(x)) then raise Break
-    done;
-    true
-  )
-  with Break -> false
-*)
-
 (*****************************************************************************)
 (* Env manipulation *)
 (*****************************************************************************)
@@ -142,8 +129,7 @@ let (inout_to_str: ('a -> string) -> 'a inout -> string) = fun val2str inout ->
     (env_to_str val2str inout.in_env)
     (env_to_str val2str inout.out_env)
 
-
-let mapping_to_str (fl : F.flow) val2str mapping =
+let mapping_to_str (fl: F.flow) val2str mapping =
   array_fold_left_idx (fun s ni v -> s ^
     (spf "%2d <- %7s: %15s %s\n"
       ni
@@ -152,6 +138,10 @@ let mapping_to_str (fl : F.flow) val2str mapping =
      (F.short_string_of_node (fl#nodes#find ni))
      (inout_to_str val2str v)
   )) "" mapping
+
+let (display_mapping: F.flow -> 'a mapping -> ('a -> string) -> unit) =
+ fun flow mapping string_of_val ->
+   pr (mapping_to_str flow string_of_val mapping)
 
 (*****************************************************************************)
 (* Main generic entry point *)

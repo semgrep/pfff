@@ -120,9 +120,6 @@ let (reaching_fixpoint: F.flow -> reaching_mapping) = fun flow ->
 (* Dataflow pretty printing *)
 (*****************************************************************************)
 
-let (display_dflow: F.flow -> 'a mapping -> ('a -> string) -> unit) =
- fun flow mapping string_of_val ->
-   pr (mapping_to_str flow string_of_val mapping)
 
 
 let display_reaching_dflow flow mp =

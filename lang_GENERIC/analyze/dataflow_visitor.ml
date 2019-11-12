@@ -60,8 +60,6 @@ let error_todo any =
 (* Expression Visitor *)
 (*****************************************************************************)
 
-(* expr_fold: 'a fold_env -> bool(left hand side) -> Ast.expr
- -> 'a -> 'a *)
 let rec expr_fold ni fn lhs expr acc =
   (* Used for known left hand value, e.g. reference *)
   let reclvl = expr_fold ni fn Lhs in
@@ -70,6 +68,7 @@ let rec expr_fold ni fn lhs expr acc =
 
   match expr with
   | Name ((name, _tok), _idinfo) ->
+    (* calling the hook! *)
     fn ni name lhs acc
   | Assign(e, e1) ->
     reclvl e (recr e1 acc)
