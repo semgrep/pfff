@@ -90,7 +90,7 @@ let eq_inout eq io1 io2 =
  * for reaching definitions.
  *)
 
-let (add_env : NodeiSet.t env -> NodeiSet.t env -> NodeiSet.t env) =
+let (union_env : NodeiSet.t env -> NodeiSet.t env -> NodeiSet.t env) =
  fun env1 env2 -> 
   let acc = env1 in
   VarMap.fold (fun var set acc ->
@@ -102,7 +102,7 @@ let (add_env : NodeiSet.t env -> NodeiSet.t env -> NodeiSet.t env) =
       VarMap.add var set2 acc
   ) env2 acc
 
-let (minus_env : NodeiSet.t env ->  NodeiSet.t env -> NodeiSet.t env) =
+let (diff_env : NodeiSet.t env ->  NodeiSet.t env -> NodeiSet.t env) =
 fun env1 env2 -> 
  let acc = env1 in
  VarMap.fold (fun var set acc ->
@@ -114,16 +114,22 @@ fun env1 env2 ->
   with Not_found -> acc
  ) env2 acc
 
-let (add_nodei_to_env: 
+
+let (add_var_and_nodei_to_env: 
+  var -> F.nodei -> NodeiSet.t env -> NodeiSet.t env) =
+ fun var ni env ->
+  let set =
+    try NodeiSet.add ni (VarMap.find var env)
+    with Not_found -> NodeiSet.singleton ni
+  in
+  VarMap.add var set env
+
+
+let (add_vars_and_nodei_to_env: 
   VarSet.t -> F.nodei -> NodeiSet.t env -> NodeiSet.t env) =
  fun varset ni env ->
   let acc = env in
-  VarSet.fold (fun var acc -> 
-     VarMap.add var
-        (try NodeiSet.add ni (VarMap.find var acc)
-         with Not_found -> NodeiSet.singleton ni
-     ) acc
-   ) varset acc 
+  VarSet.fold (fun var acc -> add_var_and_nodei_to_env var ni acc) varset acc 
 
 (*****************************************************************************)
 (* Debugging support *)

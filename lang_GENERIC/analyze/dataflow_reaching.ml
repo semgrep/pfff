@@ -55,41 +55,44 @@ type reaching_mapping = Dataflow.NodeiSet.t Dataflow.mapping
 (* Helpers *)
 (*****************************************************************************)
 
-let add_def d var ni =
-  let v =
-    try NodeiSet.add ni (VarMap.find var d)
-    with Not_found -> NodeiSet.singleton ni
-  in
-  VarMap.add var v d
+
+(*****************************************************************************)
+(* Gen/Kill *)
+(*****************************************************************************)
 
 let (reaching_defs: F.flow -> NodeiSet.t Dataflow.env) = fun flow ->
-  Dataflow_visitor.flow_fold_lv (fun ni va acc -> add_def acc va ni) VarMap.empty flow
+  Dataflow_visitor.flow_fold_lv (fun ni var acc -> 
+    Dataflow.add_var_and_nodei_to_env var ni acc
+  ) VarMap.empty flow
 
-let up_map k f mp = mp.(k) <- f mp.(k); mp
-
-let up_set_map k v mp = up_map k (VarSet.add v) mp
-
-(* gen/kill *)
 let (reaching_gens: F.flow -> VarSet.t array) = fun flow ->
-  Dataflow_visitor.flow_fold_lv (fun ni v gs -> up_set_map ni v gs)
-    (Dataflow.new_node_array flow VarSet.empty) flow
+  let arr = Dataflow.new_node_array flow VarSet.empty in
+  Dataflow_visitor.flow_fold_lv (fun ni var arr -> 
+    arr.(ni) <- VarSet.add var arr.(ni);
+    arr
+  ) arr flow
 
 let (reaching_kills:
    NodeiSet.t Dataflow.env -> F.flow -> (NodeiSet.t Dataflow.env) array) =
- fun ds fl -> 
-  Dataflow_visitor.flow_fold_lv (fun ni va ks ->
-    let d = NodeiSet.remove ni (VarMap.find va ds) in
-    up_map ni (fun v -> VarMap.add va d v) ks)
-      (Dataflow.new_node_array fl (Dataflow.empty_env())) fl
+ fun defs flow -> 
+  let arr = Dataflow.new_node_array flow (Dataflow.empty_env()) in
+  Dataflow_visitor.flow_fold_lv (fun ni var arr ->
+    let set = NodeiSet.remove ni (VarMap.find var defs) in
+    arr.(ni) <- VarMap.add var set arr.(ni);
+    arr
+  ) arr flow
+
+(*****************************************************************************)
+(* Transfer *)
+(*****************************************************************************)
 
 (*
  * This algorithm is taken from Modern Compiler Implementation in ML, Appel,
  * 1998, pp. 382.
  *
- * The transfer is setting in'[n] = U_{p in pred[n]} out[p] and
- * out'[n] = gen[n]U(in[n] - kill[n]) where gen[n] is {n} if there in a
- * definition at n and {} otherwise, and kill[n] is the set of all definitions
- * of the variable being defined at n except the one at n.
+ * The transfer is setting:
+ *  - in'[n]  = U_{p in pred[n]} out[p]
+ *  - out'[n] = gen[n] U (in[n] - kill[n])
  *)
 let (reaching_transfer:
    gen:VarSet.t array ->
@@ -102,10 +105,10 @@ let (reaching_transfer:
 
   let in' = 
     (flow#predecessors ni)#fold (fun acc (ni_pred, _) ->
-       Dataflow.add_env acc mapping.(ni_pred).D.out_env
+       Dataflow.union_env acc mapping.(ni_pred).D.out_env
      ) VarMap.empty in
-  let in_minus_kill = Dataflow.minus_env in' kill.(ni) in
-  let out' = Dataflow.add_nodei_to_env gen.(ni) ni in_minus_kill in
+  let in_minus_kill = Dataflow.diff_env in' kill.(ni) in
+  let out' = Dataflow.add_vars_and_nodei_to_env gen.(ni) ni in_minus_kill in
   {D. in_env = in'; out_env = out'}
 
 (*****************************************************************************)
