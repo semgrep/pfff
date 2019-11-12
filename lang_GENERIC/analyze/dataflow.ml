@@ -75,8 +75,8 @@ let empty_inout () = {in_env = empty_env (); out_env = empty_env ()}
 (*****************************************************************************)
 
 (* the environment is polymorphic, so we require to pass an eq for 'a *)
-let eq_env eq e1 e2 =
-  VarMap.equal eq e1 e2
+let eq_env eq env1 env2 =
+  VarMap.equal eq env1 env2
 
 let eq_inout eq io1 io2 =
   let eqe = eq_env eq in
@@ -90,19 +90,30 @@ let eq_inout eq io1 io2 =
  * for reaching definitions.
  *)
 
-let (minus_env : NodeiSet.t env ->  NodeiSet.t env -> NodeiSet.t env) =
-fun e1 e2 -> VarMap.fold (fun v s e' ->
-  try
-    let df = NodeiSet.diff (VarMap.find v e') s in
-    if NodeiSet.is_empty df then VarMap.remove v e' else VarMap.add v df e'
-  with Not_found -> e')
- e2 e1
-
 let (add_env : NodeiSet.t env -> NodeiSet.t env -> NodeiSet.t env) =
-fun e1 e2 -> VarMap.fold (fun v s e' ->
-    let s2 = try NodeiSet.union s (VarMap.find v e') with Not_found -> s in
-      VarMap.add v s2 e')
-  e2 e1
+ fun env1 env2 -> 
+  let acc = env1 in
+  VarMap.fold (fun var set acc ->
+      let set2 = 
+        try 
+          NodeiSet.union set (VarMap.find var acc) 
+        with Not_found -> set
+      in
+      VarMap.add var set2 acc
+  ) env2 acc
+
+let (minus_env : NodeiSet.t env ->  NodeiSet.t env -> NodeiSet.t env) =
+fun env1 env2 -> 
+ let acc = env1 in
+ VarMap.fold (fun var set acc ->
+  try
+    let diff = NodeiSet.diff (VarMap.find var acc) set in
+    if NodeiSet.is_empty diff 
+    then VarMap.remove var acc
+    else VarMap.add var diff acc
+  with Not_found -> acc
+ ) env2 acc
+
 
 (*****************************************************************************)
 (* Debugging support *)
@@ -160,30 +171,30 @@ let (display_mapping: F.flow -> 'a mapping -> ('a -> string) -> unit) =
  *)
 type 'a transfn = 'a mapping -> F.nodei -> 'a inout
 
-let rec fixpoint_worker eq mp trans flow succs work =
-  if NodeiSet.is_empty work 
-  then mp 
+let rec fixpoint_worker eq mapping trans flow succs workset =
+  if NodeiSet.is_empty workset
+  then mapping 
   else
-    let ni = NodeiSet.choose work in
-    let work' = NodeiSet.remove ni work in
-    let old = mp.(ni) in
-    let nu = trans mp ni in
+    let ni = NodeiSet.choose workset in
+    let work' = NodeiSet.remove ni workset in
+    let old = mapping.(ni) in
+    let new_ = trans mapping ni in
     let work'' = 
-         if eq_inout eq old nu
+         if eq_inout eq old new_
          then work'
          else begin
-            (mp.(ni) <- nu; 
+            (mapping.(ni) <- new_; 
             NodeiSet.union work' (succs flow ni)) 
          end
      in
-     fixpoint_worker eq mp trans flow succs work''
+     fixpoint_worker eq mapping trans flow succs work''
 
 
-let forward_succs (f : F.flow) n = (f#successors n)#fold
-  (fun s (ni, _) -> NodeiSet.add ni s) NodeiSet.empty
+let forward_succs (f : F.flow) n = 
+ (f#successors n)#fold (fun s (ni, _) -> NodeiSet.add ni s) NodeiSet.empty
 
-let backward_succs (f : F.flow) n = (f#predecessors n)#fold
-  (fun s (ni, _) -> NodeiSet.add ni s) NodeiSet.empty
+let backward_succs (f : F.flow) n = 
+ (f#predecessors n)#fold (fun s (ni, _) -> NodeiSet.add ni s) NodeiSet.empty
 
 let (fixpoint:
     eq:('a -> 'a -> bool) ->
@@ -193,7 +204,11 @@ let (fixpoint:
     forward: bool ->
    'a mapping) =
  fun ~eq ~init ~trans ~flow ~forward ->
-  let succs = if forward then forward_succs else backward_succs in
+  let succs = 
+    if forward 
+    then forward_succs 
+    else backward_succs 
+  in
   let work = 
     flow#nodes#fold (fun s (ni, _) -> NodeiSet.add ni s) NodeiSet.empty in
   fixpoint_worker eq init trans flow succs work
