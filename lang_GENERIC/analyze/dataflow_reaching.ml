@@ -132,19 +132,20 @@ let (reaching_fixpoint: F.flow -> reaching_mapping) = fun flow ->
 (* Dataflow pretty printing *)
 (*****************************************************************************)
 
-let display_reaching_dflow flow mp =
-  let string_of_ni ni =
-    let node = flow#nodes#assoc ni in
-    match node.F.i with
-    | None -> "Unknown location"
-    | Some(info) ->
-      let info = Parse_info.token_location_of_info info in
-      spf "%s:%d:%d: "
-        info.Parse_info.file info.Parse_info.line info.Parse_info.column
-  in
-  let arr = Array.make flow#nb_nodes true in
+let string_of_ni flow ni =
+  let node = flow#nodes#assoc ni in
+  match node.F.i with
+  | None -> "Unknown location"
+  | Some(info) ->
+    let info = Parse_info.token_location_of_info info in
+    spf "%s:%d:%d: "
+      info.Parse_info.file info.Parse_info.line info.Parse_info.column
+
+let display_reaching_dflow flow mapping =
+  let arr = Dataflow.new_node_array flow true in
+
   (* Set the flag to false if the node has defined anything *)
-  let flow_lv_fn = fun ni _name arr ->
+  let flow_lv_fn = fun ni _var arr ->
     let node = flow#nodes#assoc ni in
     (match node.F.n with
     | F.SimpleStmt (F.ExprStmt _) ->
@@ -155,20 +156,19 @@ let display_reaching_dflow flow mp =
   let arr = Dataflow_visitor.flow_fold_lv flow_lv_fn arr flow in
 
   (* Now flag the def if it is ever used on rhs *)
-  (* Node id -> var name -> acc -> acc' *)
-  let flow_rv_fn = fun ni name arr ->
-    let in_env = mp.(ni).D.in_env in
+  let flow_rv_fn = fun ni var arr ->
+    let in_env = mapping.(ni).D.in_env in
     (try
-       let ns = VarMap.find name in_env in
-       NodeiSet.fold (fun n _ -> arr.(n) <- true) ns ()
-     with
-     | Not_found -> pr (spf "%s: Undefined variable" (string_of_ni ni)));
+       let ns = VarMap.find var in_env in
+       NodeiSet.fold (fun n () -> arr.(n) <- true) ns ()
+     with Not_found -> 
+      pr (spf "%s: Undefined variable" (string_of_ni flow ni))
+    );
     arr
   in
   let arr = Dataflow_visitor.flow_fold_rv flow_rv_fn arr flow in
-  let i = ref 0 in
-  List.iter (fun x ->
+
+  arr |> Array.iteri (fun i x ->
     if (not x)
-    then pr (spf "%s: Dead Assignment" (string_of_ni !i));
-    incr i
-  ) (Array.to_list arr)
+    then pr (spf "%s: Dead Assignment" (string_of_ni flow i));
+  )
