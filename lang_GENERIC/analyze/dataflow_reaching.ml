@@ -71,7 +71,7 @@ let (reaching_kills:
   Dataflow_visitor.flow_fold_lv (fun ni va ks ->
     let d = NodeiSet.remove ni (VarMap.find va ds) in
     up_map ni (fun v -> VarMap.add va d v) ks)
-      (new_node_array fl (empty_env())) fl
+      (new_node_array fl (Dataflow.empty_env())) fl
 
 (*
  * This algorithm is taken from Modern Compiler Implementation in ML, Appel,
@@ -106,7 +106,7 @@ let (reaching_fixpoint: F.flow -> reaching_mapping) = fun flow ->
 
   fixpoint
     ~eq:NodeiSet.equal
-    ~init:(new_node_array flow (empty_inout ()))
+    ~init:(new_node_array flow (Dataflow.empty_inout ()))
     ~trans:(reaching_transfer ~gen ~kill ~flow)
     ~forward:true
     ~flow

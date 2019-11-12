@@ -45,7 +45,7 @@ type lhs_or_rhs =
  * will add or remove the nodei passed as a first parameter, depending
  * whether we are in an lvalue or rvalue context.
  *)
-type 'a fold_fn = Dataflow.nodei -> Dataflow.var -> lhs_or_rhs -> 'a -> 'a
+type 'a fold_fn = F.nodei -> Dataflow.var -> lhs_or_rhs -> 'a -> 'a
 
 (*****************************************************************************)
 (* Helpers *)
@@ -112,8 +112,7 @@ Seq _|Ref _|DeRef _|Ellipses _|OtherExpr (_, _)) ->
 (* Node Visitor *)
 (*****************************************************************************)
 
-let (node_fold: 
-   Dataflow.nodei -> 'a fold_fn -> Controlflow.node_kind -> 'a -> 'a) =
+let (node_fold:  F.nodei -> 'a fold_fn -> Controlflow.node_kind -> 'a -> 'a) =
  fun ni fn node acc -> 
   match node with
   (* Nothing is needed if the node has no expr information*)

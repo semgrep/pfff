@@ -49,7 +49,6 @@ type var = string
 module VarMap = Map.Make(String)
 module VarSet = Set.Make(String)
 
-type nodei = Ograph_extended.nodei
 module NodeiSet = Set.Make(Int)
 
 (* The final dataflow result; a map from each program point to a map containing
@@ -159,7 +158,7 @@ let (display_mapping: F.flow -> 'a mapping -> ('a -> string) -> unit) =
  * value associated to a var, its reference variable get also
  * the update.
  *)
-type 'a transfn = 'a mapping -> nodei -> 'a inout
+type 'a transfn = 'a mapping -> F.nodei -> 'a inout
 
 let rec fixpoint_worker eq mp trans flow succs work =
   if NodeiSet.is_empty work 

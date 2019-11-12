@@ -116,6 +116,8 @@ type edge = Direct
 
 type flow = (node, edge) Ograph_extended.ograph_mutable
 
+type nodei = Ograph_extended.nodei
+
 (*****************************************************************************)
 (* String of *)
 (*****************************************************************************)

@@ -39,10 +39,11 @@ type edge = Direct
 
 type flow = (node, edge) Ograph_extended.ograph_mutable
 
+type nodei = Ograph_extended.nodei
 
-val find_node: (node -> bool) -> flow -> Ograph_extended.nodei
-val find_enter: flow -> Ograph_extended.nodei
-val find_exit: flow -> Ograph_extended.nodei
+val find_node: (node -> bool) -> flow -> nodei
+val find_enter: flow -> nodei
+val find_exit: flow -> nodei
 
 (* using internally graphviz 'dot' and ghostview 'gv' on X11 *)
 val display_flow: flow -> unit

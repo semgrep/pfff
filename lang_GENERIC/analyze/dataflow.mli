@@ -3,8 +3,6 @@ module F = Controlflow
 type var = string
 module VarMap : Map.S with type key = String.t
 module VarSet : Set.S with type elt = String.t
-module NodeiSet : Set.S with type elt = Int.t
-type nodei = Ograph_extended.nodei
 
 (* types *)
 type 'a mapping = 'a inout array
@@ -17,7 +15,11 @@ type 'a mapping = 'a inout array
 val empty_env : unit -> 'a VarMap.t
 val empty_inout : unit -> 'a inout
 
-type 'a transfn = 'a mapping -> nodei -> 'a inout
+(* useful 'a for mapping: a set of nodes (via their indices) *)
+module NodeiSet : Set.S with type elt = Int.t
+
+
+type 'a transfn = 'a mapping -> F.nodei -> 'a inout
 
 (* main entry point *)
 val fixpoint :
