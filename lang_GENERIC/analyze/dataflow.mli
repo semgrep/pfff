@@ -31,6 +31,8 @@ module NodeiSet : Set.S with type elt = Int.t
 (* helpers *)
 val minus_env : NodeiSet.t env -> NodeiSet.t env -> NodeiSet.t env
 val add_env   : NodeiSet.t env -> NodeiSet.t env -> NodeiSet.t env
+val add_nodei_to_env: 
+  VarSet.t -> F.nodei -> NodeiSet.t env -> NodeiSet.t env
 
 val new_node_array: F.flow -> 'a -> 'a array
 

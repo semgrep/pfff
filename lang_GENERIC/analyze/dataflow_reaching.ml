@@ -97,16 +97,16 @@ let (reaching_transfer:
    flow:F.flow ->
    NodeiSet.t Dataflow.transfn) =
  fun ~gen ~kill ~flow ->
-  fun mp ni ->
+  (* the transfer function to update the mapping at node index ni *)
+  fun mapping ni ->
 
-  let new_in = (flow#predecessors ni)#fold (fun s (nip, _) ->
-      Dataflow.add_env s mp.(nip).D.out_env) VarMap.empty in
-  let in_k = Dataflow.minus_env new_in kill.(ni) in
-  let new_out = VarSet.fold (fun v e -> VarMap.add v
-      (try NodeiSet.add ni (VarMap.find v e)
-       with Not_found -> NodeiSet.singleton ni) e)
-    gen.(ni) in_k in
-  {D. in_env = new_in; out_env = new_out}
+  let in' = 
+    (flow#predecessors ni)#fold (fun acc (ni_pred, _) ->
+       Dataflow.add_env acc mapping.(ni_pred).D.out_env
+     ) VarMap.empty in
+  let in_minus_kill = Dataflow.minus_env in' kill.(ni) in
+  let out' = Dataflow.add_nodei_to_env gen.(ni) ni in_minus_kill in
+  {D. in_env = in'; out_env = out'}
 
 (*****************************************************************************)
 (* Entry point *)
@@ -128,8 +128,6 @@ let (reaching_fixpoint: F.flow -> reaching_mapping) = fun flow ->
 (*****************************************************************************)
 (* Dataflow pretty printing *)
 (*****************************************************************************)
-
-
 
 let display_reaching_dflow flow mp =
   let string_of_ni ni =

@@ -114,6 +114,16 @@ fun env1 env2 ->
   with Not_found -> acc
  ) env2 acc
 
+let (add_nodei_to_env: 
+  VarSet.t -> F.nodei -> NodeiSet.t env -> NodeiSet.t env) =
+ fun varset ni env ->
+  let acc = env in
+  VarSet.fold (fun var acc -> 
+     VarMap.add var
+        (try NodeiSet.add ni (VarMap.find var acc)
+         with Not_found -> NodeiSet.singleton ni
+     ) acc
+   ) varset acc 
 
 (*****************************************************************************)
 (* Debugging support *)
