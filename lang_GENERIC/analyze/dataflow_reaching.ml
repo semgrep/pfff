@@ -160,9 +160,9 @@ let display_reaching_dflow flow mapping =
     let in_env = mapping.(ni).D.in_env in
     (try
        let ns = VarMap.find var in_env in
-       NodeiSet.fold (fun n () -> arr.(n) <- true) ns ()
+       NodeiSet.iter (fun n -> arr.(n) <- true) ns
      with Not_found -> 
-      pr (spf "%s: Undefined variable" (string_of_ni flow ni))
+      pr (spf "%s: Undefined variable %s" (string_of_ni flow ni) var)
     );
     arr
   in
