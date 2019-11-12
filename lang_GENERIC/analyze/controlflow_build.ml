@@ -27,10 +27,6 @@ module F = Controlflow
 (* Types *)
 (*****************************************************************************)
 
-(* an int representing the index of a node in the graph *)
-type nodei = Ograph_extended.nodei
-
-
 (* Information passed recursively in cfg_stmt or cfg_stmt_list below.
  * The graph g is mutable, so most of the work is done by side effects on it.
  * No need to return a new state.
@@ -39,7 +35,7 @@ type state = {
   g: F.flow;
 
   (* When there is a 'return' we need to know the exit node to link to *)
-  exiti: nodei;
+  exiti: F.nodei;
 
   (* Sometimes when there is a 'continue' or 'break' we must know where
    * to jump and so we must know the node index for the end of the loop.
@@ -52,9 +48,9 @@ type state = {
 }
  and context =
   | NoCtx
-  | LoopCtx   of nodei (* head *) * nodei (* end *)
-  | SwitchCtx of nodei (* end *)
-  | TryCtx    of nodei (* the first catch *)
+  | LoopCtx   of F.nodei (* head *) * F.nodei (* end *)
+  | SwitchCtx of F.nodei (* end *)
+  | TryCtx    of F.nodei (* the first catch *)
 
 type error = error_kind * Parse_info.t option
  and error_kind =
@@ -154,7 +150,7 @@ let info_opt any =
  * subtle: try/throw. The current algo is not very precise, but
  * it's probably good enough for many analysis.
  *)
-let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
+let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
  fun state previ stmt ->
 
    let i () = info_opt (S stmt) in
@@ -645,8 +641,8 @@ and cfg_stmt_list state previ xs =
  * None)
  *)
 and (cfg_cases:
-    (nodei * nodei) -> state ->
-    nodei option -> Ast.case_and_body list -> nodei option) =
+    (F.nodei * F.nodei) -> state ->
+    F.nodei option -> Ast.case_and_body list -> F.nodei option) =
  fun (switchi, endswitchi) state previ cases ->
 
    let state = { state with
@@ -686,7 +682,7 @@ and (cfg_cases:
  * a new False Node.
  *)
 
-and (cfg_catches: state -> nodei -> nodei -> Ast.catch list -> nodei) =
+and (cfg_catches: state -> F.nodei -> F.nodei -> Ast.catch list -> F.nodei) =
  fun state previ tryendi catches ->
    catches |> List.fold_left (fun previ catch ->
      let (_pattern, stmt) = catch in

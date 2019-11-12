@@ -22,9 +22,9 @@ open Ast_generic
 (*****************************************************************************)
 (* A Control Flow Graph (CFG) for AST generic.
  *
- * Note that this is just for intraprocedural analysis. The CFG covers
- * just one function. For interprocedural analysis you may want to look
- * at pfff/graph_code/ (or datalog).
+ * Note that this is just for intra-procedural analysis. The CFG covers
+ * just one function. For inter-procedural analysis you may want to look
+ * at pfff/graph_code/ (or invest in learning datalog).
  *
  * history:
  *  - CFG for C for coccinelle

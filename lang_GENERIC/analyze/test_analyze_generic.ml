@@ -20,15 +20,10 @@ let test_dfg_generic file =
   ast |> List.iter (fun item ->
    (match item with
    | IDef (_ent, FuncDef def) ->
-     (try 
-       let flow = Controlflow_build.cfg_of_func def in
-       let mapping = Dataflow_reaching.reaching_fixpoint flow in
-       Dataflow.display_mapping flow mapping Dataflow.ns_to_str;
-       Dataflow_reaching.display_reaching_dflow flow mapping;
-
-      with Controlflow_build.Error err ->
-         Controlflow_build.report_error err
-      )
+      let flow = Controlflow_build.cfg_of_func def in
+      let mapping = Dataflow_reaching.reaching_fixpoint flow in
+      Dataflow.display_mapping flow mapping Dataflow.ns_to_str;
+      Dataflow_reaching.display_reaching_dflow flow mapping;
     | _ -> ()
    )
  )
