@@ -48,6 +48,15 @@ type lhs_or_rhs =
 type 'a fold_fn = Dataflow.nodei -> Dataflow.var -> lhs_or_rhs -> 'a -> 'a
 
 (*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+let error_todo any = 
+  let v = Meta_ast.vof_any any in
+  let s = Ocaml.string_of_v v in
+  pr2 s;
+  failwith ("Dataflow_visitor:error_todo ")
+
+(*****************************************************************************)
 (* Expression Visitor *)
 (*****************************************************************************)
 
@@ -69,6 +78,7 @@ let rec expr_fold ni fn lhs expr acc =
     reclvl e (recr e (recr e1 acc))
 
   (* otherwise regular recurse (could use a visitor) *)
+  | L _ | Nop -> acc
 
   | IdSpecial _ -> acc
   (* todo: Special cases for function that are known to take implicit
@@ -80,7 +90,7 @@ let rec expr_fold ni fn lhs expr acc =
     (List.fold_left
        (fun acc' -> function
        | Arg e1 -> recr e1 acc'
-       | ArgKwd _ | ArgType _ | ArgOther _ -> raise Todo
+       | ArgKwd _ | ArgType _ | ArgOther _ -> error_todo (E expr)
        )
        acc args)
   | ObjAccess(e, _id) ->
@@ -91,10 +101,12 @@ let rec expr_fold ni fn lhs expr acc =
     recl e (recl e2 (recl e1 acc))
   | Cast(_, e) -> recr e acc
 
- | (Nop|L _|Container (_, _)|Tuple _|Record _|Constructor (_, _)|Lambda _|
-AnonClass _|Xml _|LetPattern (_, _)|MatchPattern (_, _)|Yield _|Await _|
+  | Lambda _ | AnonClass _ -> acc
+  | Yield e | Await e -> recr e acc
+
+ | (Container (_, _)|Tuple _|Record _|Constructor (_, _)|Xml _|LetPattern (_, _)|MatchPattern (_, _)|
 Seq _|Ref _|DeRef _|Ellipses _|OtherExpr (_, _)) -> 
-raise Todo
+  error_todo (E expr)
 
 
 (*****************************************************************************)
