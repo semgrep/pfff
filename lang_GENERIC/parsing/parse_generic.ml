@@ -36,6 +36,7 @@ let parse_with_lang lang file =
     let ast = Ast_js_build.program cst in
     Js_to_generic.program ast
   | Lang.C ->
+    (* this internally uses the CST for c++ *)
     let ast = Parse_c.parse_program file in
     C_to_generic.program ast
   | Lang.Java ->

@@ -759,7 +759,9 @@ let extra_actions () = [
 (*****************************************************************************)
 
 let all_actions () =
- extra_actions()@
+ extra_actions() @
+ Test_parsing_generic.actions() @
+ Test_analyze_generic.actions() @
  []
 
 let options () =
@@ -773,9 +775,9 @@ let options () =
     "-rank", Arg.Set rank,
     " rank errors and display the 20 most important";
     "-report_parse_errors", Arg.Set report_parse_errors,
-    " report parse errors as findings instead of silencing them";
+    " report parse errors instead of silencing them";
     "-report_fatal_errors", Arg.Set report_fatal_errors,
-    " report fatal errors as findings instead of silencing them";
+    " report fatal errors instead of silencing them";
 
     (* error display *)
     "-emacs", Arg.Unit (fun () -> show_progress := false;), 
