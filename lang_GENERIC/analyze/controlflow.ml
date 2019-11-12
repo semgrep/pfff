@@ -100,17 +100,13 @@ type node = {
     *)
 
      and simple_stmt = 
-         | ExprStmt of expr * use_status
+         | ExprStmt of expr
          | TodoSimpleStmt
          (* TODO? expr includes Exit, Eval, Include, etc which
           * also have an influence on the control flow ...
           * We may want to uplift those constructors here and have
           * a better expr type
           *)
-
-       and use_status = 
-       | Normal
-       | SpecialMaybeUnused
 
 
 (* For now there is just one kind of edge. Later we may have more, 

@@ -163,7 +163,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
    | Label _ | Goto _ -> raise Todo
 
    | ExprStmt e ->
-       cfg_expr state F.Normal previ e
+       cfg_expr state previ e
 (*
    | StaticVars (_, static_vars, _) ->
      let var_list = Ast.uncomma static_vars |> List.map (fun (v, _) -> v) in
@@ -716,10 +716,10 @@ and (cfg_catches: state -> nodei -> nodei -> Ast.catch list -> nodei) =
      falsei
    ) previ
 
-and cfg_expr state kind previ expr =
+and cfg_expr state previ expr =
   let i = info_opt (E expr) in
   let newi = state.g#add_node { 
-    F.n = F.SimpleStmt (F.ExprStmt (expr, kind)); 
+    F.n = F.SimpleStmt (F.ExprStmt (expr)); 
     i=i 
   } in
   state.g |> add_arc_opt (previ, newi);

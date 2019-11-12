@@ -133,7 +133,7 @@ let (node_fold:
   | F.DoWhileTail expr
   | F.SwitchHeader expr
   | F.Throw expr
-  | F.SimpleStmt (F.ExprStmt (expr, _(*use_status*)))
+  | F.SimpleStmt (F.ExprStmt (expr))
   | F.Return (expr)
   | F.Continue (Some expr) | F.Break (Some expr)
       -> expr_fold ni fn Rhs expr acc

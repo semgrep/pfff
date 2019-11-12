@@ -29,12 +29,8 @@ type node = {
       | SimpleStmt of simple_stmt
 
      and simple_stmt = 
-         | ExprStmt of expr * use_status
+         | ExprStmt of expr
          | TodoSimpleStmt
-
-       and use_status = 
-       | Normal
-       | SpecialMaybeUnused
 
 (* For now there is just one kind of edge. Later we may have more, 
  * see the ShadowNode idea of Julia Lawall.
