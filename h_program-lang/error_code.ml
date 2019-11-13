@@ -381,3 +381,52 @@ let annotation_at2 loc =
 
 let annotation_at a =
   Common.profile_code "Errors_code.annotation" (fun () -> annotation_at2 a)
+
+
+(*****************************************************************************)
+(* Helper functions to use in testing code *)
+(*****************************************************************************)
+
+let (expected_error_lines_of_files: 
+  Common.filename list -> (Common.filename * int (* line *)) list) =
+ fun test_files ->
+  test_files |> List.map (fun file ->
+    Common.cat file |> Common.index_list_1 |> Common.map_filter 
+      (fun (s, idx) -> 
+        (* Right now we don't care about the actual error messages. We
+         * don't check if they match. We are just happy to check for 
+         * correct lines error reporting.
+         *)
+        if s =~ ".*#ERROR:.*" 
+        (* + 1 because the comment is one line before *)
+        then Some (file, idx + 1) 
+        else None
+      )
+  ) |> List.flatten
+
+let compare_actual_to_expected actual_errors expected_error_lines =
+  let actual_error_lines = 
+    actual_errors |> List.map (fun err ->
+      let loc = err.loc in
+      loc.PI.file, loc.PI.line
+      )
+  in
+  (* diff report *)
+  let (_common, only_in_expected, only_in_actual) = 
+    Common2.diff_set_eff expected_error_lines actual_error_lines in
+
+  only_in_expected |> List.iter (fun (src, l) ->
+    pr2 (spf "this one error is missing: %s:%d" src l);
+  );
+  only_in_actual |> List.iter (fun (src, l) ->
+    pr2 (spf "this one error was not expected: %s:%d (%s)" src l
+           (actual_errors |> List.find (fun err ->
+             let loc = err.loc in
+             src =$= loc.PI.file &&
+             l   =|= loc.PI.line
+            ) |> string_of_error));
+  );
+  OUnit.assert_bool
+    ~msg:(spf "it should find all reported errors and no more (%d errors)"
+             (List.length (only_in_actual @ only_in_expected)))
+    (null only_in_expected && null only_in_actual)
