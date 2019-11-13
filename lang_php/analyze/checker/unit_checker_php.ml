@@ -70,23 +70,10 @@ let unittest =
   in
   let files = builtin_files @ test_files in
 
-  let (expected_errors :(Common.filename * int (* line *)) list) =
-    test_files +> List.map (fun file ->
-      Common.cat file +> Common.index_list_1 +> Common.map_filter 
-        (fun (s, idx) -> 
-          (* Right now we don't care about the actual error messages. We
-           * don't check if they match. We are just happy to check for 
-           * correct lines error reporting.
-           *)
-          if s =~ ".*//ERROR:.*" 
-          (* + 1 because the comment is one line before *)
-          then Some (file, idx + 1) 
-          else None
-        )
-    ) +> List.flatten
-  in
-  Error_php._errors := [];
+  let expected_error_lines = 
+     Error_code.expected_error_lines_of_files test_files in
 
+  Error_php._errors := [];
   let verbose = false in
 
   (* old:
@@ -108,17 +95,20 @@ let unittest =
   if verbose then begin
     !Error_php._errors +> List.iter (fun e -> pr (Error_php.string_of_error e))
   end;
-  
-  let (actual_errors: (Common.filename * int (* line *)) list) = 
-    !Error_php._errors +> List.map (fun err ->
+  let actual_errors = !Error_php._errors in
+  let actual_error_lines = 
+    actual_errors |> List.map (fun err ->
       let info = err.Error_php.loc in
       Parse_info.file_of_info info, Parse_info.line_of_info info
       )
   in
   
-  (* diff report *)
+  (* diff report
+   * TODO: can not factorize yet with Error_code.compare_actual_to_expected
+   * because the error type is different (Error_code.error != Error_php.error)
+   *)
   let (_common, only_in_expected, only_in_actual) = 
-    Common2.diff_set_eff expected_errors actual_errors in
+    Common2.diff_set_eff expected_error_lines actual_error_lines in
 
   only_in_expected +> List.iter (fun (src, l) ->
     pr2 (spf "this one error is missing: %s:%d" src l);
