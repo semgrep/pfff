@@ -80,19 +80,9 @@ let pr2 s =
  
 let parse_pattern file =
   match Lang_fuzzy.lang_of_string_opt !lang with
-  | Some _lang ->
-      let parse str =
-        Common2.with_tmp_file ~str ~ext:"cpp" (fun tmpfile ->
-          (* for now we abuse the fuzzy parser of C++ for other languages
-           * as the pattern should be the same in all those languages
-           * (the main difference between those languages from the 
-           * fuzzy parser point of view is the syntax for comments).
-           *)
-          Parse_cpp.parse_fuzzy tmpfile +> fst
-        )
-      in
+  | Some lang ->
       Right (Spatch_fuzzy.parse 
-                ~pattern_of_string:parse
+                ~pattern_of_string:(Parse_fuzzy.parse_pattern lang)
                 ~ii_of_pattern:Lib_ast_fuzzy.toks_of_trees
                 file)
   | None ->

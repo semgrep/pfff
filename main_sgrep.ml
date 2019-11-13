@@ -178,7 +178,7 @@ let any_gen_of_string str =
 
 type ast =
   | Gen of Ast_generic.program
-  | Fuzzy of Ast_fuzzy.tree list
+  | Fuzzy of Ast_fuzzy.trees
 
   | Php of Cst_php.program
 
@@ -210,11 +210,8 @@ let parse_pattern str =
        PatGen (Parse_generic.parse_pattern lang str)
    | None ->
      (match Lang_fuzzy.lang_of_string_opt !lang with
-     | Some _lang ->
-       (* for now we abuse the fuzzy parser of cpp for ml for the pattern as
-        * we should not use comments in patterns
-        *)
-       PatFuzzy (ast_fuzzy_of_string str)
+     | Some lang -> 
+       PatFuzzy (Parse_fuzzy.parse_pattern lang str)
      | None ->
        (match !lang with
        | "php" -> PatPhp (Sgrep_php.parse str)
