@@ -72,6 +72,17 @@ val score_of_error:
 val annotation_at:
   Parse_info.token_location -> annotation option
 
+val options: unit -> Common.cmdline_options
+val report_parse_errors: bool ref
+val report_fatal_errors: bool ref
+(* use the flags above to filter certain errors *)
+val filter_maybe_parse_and_fatal_errors: error list -> error list
+(* convert parsing and other fatal exceptions in regular 'error'
+ * added to g_errors
+ *)
+val try_analyze_file_with_exn_to_errors:
+  Common.filename -> (unit -> unit) -> unit
+
 (* have some approximations and Fps in graph_code_checker so filter them *)
 val adjust_errors:
   error list -> error list

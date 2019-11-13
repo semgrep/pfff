@@ -129,9 +129,8 @@ let lang = ref "python"
 let filter = ref 2
 (* rank errors *)
 let rank = ref false
-(* do not report certain errors *)
-let report_parse_errors = ref false
-let report_fatal_errors = ref false
+
+(* see also the -report_xxx in error_code.ml *)
 
 (* In strict mode, we can be more aggressive regarding scope like in JsLint. 
  * (This is a copy of a similar variable in Error_php.ml) 
@@ -209,30 +208,6 @@ let set_gc () =
 let ast_of_file file =
   let prog = Parse_python.parse_program file in
   Python_to_generic.program prog
-
-let is_test_or_example file =
- (file =~ ".*test.*" || 
-  file =~ ".*spec.*" || 
-  file =~ ".*example.*" ||
-  file =~ ".*bench.*"
- )
-
-(* see also Error_code.adjust_errors *)
-let filter_errors errs =
-  errs |> Common.exclude (fun err ->
-    let file = err.E.loc.PI.file in
-    match err.E.typ with
-    | E.LexicalError _ | E.ParseError 
-    | E.AstbuilderError _ | E.OtherParsingError _
-    | E.FatalError _ 
-      when is_test_or_example file -> true
-    | E.LexicalError _ | E.ParseError 
-    | E.AstbuilderError _ | E.OtherParsingError _
-      when not !report_parse_errors -> true
-    | E.FatalError _ 
-      when not !report_fatal_errors -> true
-    | _ -> false
-  )
 
 (*****************************************************************************)
 (* Language specific *)
@@ -386,7 +361,7 @@ let main_action xs =
       files |> Console.progress ~show:!show_progress (fun k -> 
         List.iter (fun file ->
           k();
-          (try 
+          Error_code.try_analyze_file_with_exn_to_errors file (fun () ->
             pr2_dbg (spf "processing: %s" file);
             let ast = 
               Common.save_excursion Flag.error_recovery false (fun () ->
@@ -395,19 +370,6 @@ let main_action xs =
                 Parse_generic.parse_program file 
              ))) in
             Check_all_generic.check_file ~find_entity ast;
-          with 
-          | Parse_info.Lexical_error (s, tok) ->
-            E.error tok (E.LexicalError s)
-          | Parse_info.Parsing_error tok ->
-            E.error tok (E.ParseError);
-          | Parse_info.Ast_builder_error (s, tok) ->
-            E.error tok (E.AstbuilderError s);
-          | Parse_info.Other_error (s, tok) ->
-            E.error tok (E.OtherParsingError s);
-          | (Timeout | UnixExit _) as exn -> raise exn
-          | exn ->
-            let loc = Parse_info.first_loc_of_file file in
-            E.error_loc loc (E.FatalError (Common.exn_to_s exn));
           );
           if !rank || !r2c
           then ()
@@ -418,7 +380,7 @@ let main_action xs =
               |> List.filter (fun x -> 
                 E.score_of_rank (E.rank_of_error x) >= !filter
               ) 
-              |>  filter_errors in
+              |>  E.filter_maybe_parse_and_fatal_errors in
             errs |> List.iter (fun err -> pr (E.string_of_error err));
             E.g_errors := []
           end
@@ -434,7 +396,7 @@ let main_action xs =
           |> Common.sort_by_val_highfirst 
           |> List.map fst
           |> Common.take_safe 20 
-        else !E.g_errors |> filter_errors
+        else !E.g_errors |> E.filter_maybe_parse_and_fatal_errors
       in
       if !r2c 
       then begin
@@ -774,10 +736,6 @@ let options () =
     " <n> show only bugs whose importance >= n";
     "-rank", Arg.Set rank,
     " rank errors and display the 20 most important";
-    "-report_parse_errors", Arg.Set report_parse_errors,
-    " report parse errors instead of silencing them";
-    "-report_fatal_errors", Arg.Set report_fatal_errors,
-    " report fatal errors instead of silencing them";
 
     (* error display *)
     "-emacs", Arg.Unit (fun () -> show_progress := false;), 
@@ -801,8 +759,8 @@ let options () =
     (spf " <dir> path to builtins (default = %s)" !php_stdlib);
     "-strict", Arg.Unit (fun () ->
         strict := true;
-        report_parse_errors := true;
-        report_fatal_errors := true;
+        Error_code.report_parse_errors := true;
+        Error_code.report_fatal_errors := true;
     ),
     " emulate block scope instead of function scope";
     "-no_scrict", Arg.Clear strict, 
@@ -815,8 +773,9 @@ let options () =
     " cache parsed ASTs";
 
   ] @
-  Common.options_of_actions action (all_actions()) @
+  Error_code.options () @
   Common2.cmdline_flags_devel () @
+  Common.options_of_actions action (all_actions()) @
   [
     "-verbose", Arg.Unit (fun () -> 
       verbose := true;
@@ -827,9 +786,7 @@ let options () =
       pr2 (spf "scheck version: %s" Config_pfff.version);
       exit 0;
     ), " guess what";
-  ] @
-  []
-
+  ]
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)

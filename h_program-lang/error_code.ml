@@ -1,6 +1,7 @@
 (* Yoann Padioleau
  *
  * Copyright (C) 2014 Facebook
+ * Copyright (C) 2019 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -20,11 +21,11 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(*
- * Centralize errors report functions (they did the same in c--).
- * Mostly a copy paste of error_php.ml
- * 
+(* Centralize error management related to errors in user's code 
+ * (as detected by tools such as linters).
+ *
  * history:
+ *  - saw something similar in the code of c--
  *  - was in check_module.ml
  *  - was generalized for scheck php
  *  - introduced ranking via int (but mess)
@@ -43,6 +44,10 @@ module PI = Parse_info
 (*****************************************************************************)
 (* see g_errors below *)
 
+(* do not report certain errors *)
+let report_parse_errors = ref false
+let report_fatal_errors = ref false
+
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
@@ -56,7 +61,9 @@ type error = {
  and severity = Error | Warning
 
  and error_kind =
-  (* parsing related *)
+  (* parsing related errors. See also try_with_exn_to_errors() and 
+   * filter_maybe_parse_and_fatal_errors
+   *)
   | LexicalError of string
   | ParseError (* aka SyntaxError *)
   | AstbuilderError of string
@@ -239,9 +246,60 @@ let score_of_error err =
   err |> rank_of_error |> score_of_rank
 
 (*****************************************************************************)
-(* False positives *)
+(* Error adjustments *)
 (*****************************************************************************)
 
+let options () = [
+  "-report_parse_errors", Arg.Set report_parse_errors,
+  " report parse errors instead of silencing them";
+  "-report_fatal_errors", Arg.Set report_fatal_errors,
+  " report fatal errors instead of silencing them";
+]
+
+let is_test_or_example file =
+ (file =~ ".*test.*" || 
+  file =~ ".*spec.*" || 
+  file =~ ".*example.*" ||
+  file =~ ".*bench.*"
+ )
+
+let filter_maybe_parse_and_fatal_errors errs =
+  errs |> Common.exclude (fun err ->
+    let file = err.loc.PI.file in
+    match err.typ with
+    | LexicalError _ | ParseError 
+    | AstbuilderError _ | OtherParsingError _
+    | FatalError _ 
+      when is_test_or_example file -> true
+    | LexicalError _ | ParseError 
+    | AstbuilderError _ | OtherParsingError _
+      when not !report_parse_errors -> true
+    | FatalError _ 
+      when not !report_fatal_errors -> true
+    | _ -> false
+  )
+
+let try_analyze_file_with_exn_to_errors file f =
+  try 
+    f ()
+  with 
+  | Parse_info.Lexical_error (s, tok) ->
+    error tok (LexicalError s)
+  | Parse_info.Parsing_error tok ->
+    error tok (ParseError);
+  | Parse_info.Ast_builder_error (s, tok) ->
+    error tok (AstbuilderError s);
+  | Parse_info.Other_error (s, tok) ->
+    error tok (OtherParsingError s);
+  (* this should never be captured *)
+  | (Timeout | UnixExit _) as exn -> raise exn
+  (* general case, can't extract line information from it, default to line 1 *)
+  | exn ->
+    let loc = Parse_info.first_loc_of_file file in
+    error_loc loc (FatalError (Common.exn_to_s exn))
+
+
+(* this is for false positives *)
 let adjust_errors xs =
   xs |> Common.exclude (fun err ->
     let file = err.loc.PI.file in
