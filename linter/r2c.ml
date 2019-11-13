@@ -60,3 +60,9 @@ let error_to_json checker_id err =
          "line", J.String (try lines.(line - 1) with _ -> "NO LINE");
           ] @ extra_extra);
    ]
+
+let string_of_errors checker_id errs =
+  let arr = J.Array (errs |> List.map (error_to_json checker_id)) in
+  let json = J.Object ["results", arr] in
+  Json_io.string_of_json json
+

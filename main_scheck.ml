@@ -347,6 +347,12 @@ let main_action xs =
   set_gc ();
 
   let xs = List.map Common.fullpath xs in
+  (* less: could use Common2.find_common_root? *)
+  let root =
+    match xs with
+    | [x] when Common2.is_directory x -> x
+    | _ -> "/"
+  in
   let lang = !lang in
   let files = Find_source.files_of_dir_or_files ~lang xs in
 
@@ -399,15 +405,10 @@ let main_action xs =
         else !E.g_errors |> E.filter_maybe_parse_and_fatal_errors
       in
       if !r2c 
-      then begin
-        let arr = J.Array (errs |> List.map (R2c.error_to_json "scheck")) in
-        let json = J.Object ["results", arr] in
-        let s = Json_io.string_of_json json in
-        pr s
-      end
-      else begin
-        errs |> List.iter (fun err -> pr (E.string_of_error err));
-      end
+      then 
+        let errs = E.adjust_paths_relative_to_root root errs in
+        pr (R2c.string_of_errors "scheck" errs)
+      else errs |> List.iter (fun err -> pr (E.string_of_error err))
     end
 
 (*---------------------------------------------------------------------------*)
