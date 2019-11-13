@@ -630,15 +630,23 @@ and m_special a b =
 
 and m_id_info a b = 
   match a, b with
-  { A. id_qualifier = a1; id_typeargs = a2; id_resolved = a3; id_type = a4; },
-  { B. id_qualifier = b1; id_typeargs = b2; id_resolved = b3; id_type = b4; }
+  { A. id_qualifier = a1; id_typeargs = a2; id_resolved = _a3; id_type = a4; },
+  { B. id_qualifier = b1; id_typeargs = b2; id_resolved = _b3; id_type = b4; }
    -> 
     (m_option m_dotted_name) a1 b1 >>= (fun () -> 
     (m_option m_type_arguments) a2 b2 >>= (fun () -> 
-    (m_ref m_resolved_name) a3 b3 >>= (fun () -> 
+     (* TODO:
+      * right now doing import flask in a file means every reference
+      * to flask.xxx will be tagged with a ImportedEntity, but
+      * sgrep pattern might use flask.xxx without this tag, which prevents
+      * matching, hence the comment for now. We need to correctly resolve
+      * names and always compare with the resolved_name instead of the 
+      * name used in the code (which can be an alias)
+      *)
+      (* (m_ref m_resolved_name) a3 b3  >>= (fun () ->  *)
     (m_ref (m_option m_type_)) a4 b4 >>= (fun () -> 
     return ()
-  ))))
+  )))
 
 and m_container_operator a b = 
   match a, b with
