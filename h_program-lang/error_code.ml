@@ -298,6 +298,14 @@ let try_analyze_file_with_exn_to_errors file f =
     let loc = Parse_info.first_loc_of_file file in
     error_loc loc (FatalError (Common.exn_to_s exn))
 
+let adjust_paths_relative_to_root root errs =
+ errs |> List.map (fun e -> 
+   let file = e.loc.PI.file in
+   let file' = Common.filename_without_leading_path root file in
+   { e with loc = { e.loc with PI.file = file' } }
+  )
+
+
 
 (* this is for false positives *)
 let adjust_errors xs =

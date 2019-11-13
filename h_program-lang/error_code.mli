@@ -86,6 +86,9 @@ val filter_maybe_parse_and_fatal_errors: error list -> error list
  * added to g_errors
  *)
 
+val adjust_paths_relative_to_root: 
+  Common.path -> error list -> error list
+
 val try_analyze_file_with_exn_to_errors:
   Common.filename -> (unit -> unit) -> unit
 
