@@ -143,7 +143,7 @@ let windows_params screen_size =
         2560, 1580, 2350, 100 (* was 2200 and 280 *)
     (* on LG 38' display with split codemap/efuns *)
     | 3 ->
-        2510, 1580, 0, 0
+        2510, 1540, 0, 0
     | 4 ->
         16000, 9000, 15900, 100
     | 5 ->
