@@ -347,7 +347,7 @@ let main_action xs =
   set_gc ();
 
   let xs = List.map Common.fullpath xs in
-  (* less: could use Common2.find_common_root? *)
+  (* less: could use Common2.find_common_root/common_prefix_of_files_or_dirs?*)
   let root =
     match xs with
     | [x] when Common2.is_directory x -> x
