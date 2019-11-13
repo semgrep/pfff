@@ -218,6 +218,8 @@ let sgrep_gen_unittest ~any_gen_of_string =
       (* ------------ *)
       (* Misc isomorphisms *)
       (* ------------ *)
+      (* flexible keyword argument matching, the order does not matter *)
+      "foo(kwd1=$X, kwd2=$Y)", "foo(kwd2=1, kwd1=3)", true;
 
       (* regexp matching in strings *)
       "foo(\"=~/a+/\")", "foo(\"aaaa\")", true;

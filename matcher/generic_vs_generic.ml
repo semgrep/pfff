@@ -683,10 +683,24 @@ and m_list__m_argument (xsa: A.argument list) (xsb: A.argument list) =
       (m_list__m_argument xsa xsb) >||>
       (* can match more *)
       (m_list__m_argument ((A.Arg (A.Ellipses i))::xsa) xsb)
-(*
-  | A.ArgKwd ((s, _tok), ea)::xsa, xsb ->
-      raise Todo
-*)
+
+  | A.ArgKwd ((s, _tok) as ida, ea)::xsa, xsb ->
+      (try 
+        let (before, there, after) = xsb |> Common2.split_when (function
+            | A.ArgKwd ((s2,_), _) when s =$= s2 -> true
+            | _ -> false) in
+        (match there with
+        | A.ArgKwd (idb, eb) ->
+           m_ident ida idb >>= (fun () ->
+           m_expr ea eb >>= (fun () ->
+           m_list__m_argument xsa (before @ after) >>= (fun () ->
+              return ()
+           )))
+        | _ -> raise Impossible
+        )
+      with Not_found -> fail ()
+      )
+
   (* the general case *)
   | xa::aas, xb::bbs ->
       m_argument xa xb >>= (fun () ->
