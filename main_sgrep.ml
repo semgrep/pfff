@@ -107,19 +107,19 @@ let print_match mvars mvar_binding ii_of_any tokens_matched_code =
         PI.file_of_info mini, PI.line_of_info mini in
 
       let strings_metavars =
-        xs +> List.map (fun x ->
+        xs |> List.map (fun x ->
           match Common2.assoc_opt x mvar_binding with
           | Some any ->
               ii_of_any any
-              +> List.map PI.str_of_info 
-              +> Matching_report.join_with_space_if_needed
+              |> List.map PI.str_of_info 
+              |> Matching_report.join_with_space_if_needed
           | None ->
               failwith (spf "the metavariable '%s' was not binded" x)
           )
       in
       pr (spf "%s:%d: %s" file line (Common.join ":" strings_metavars));
   );
-  tokens_matched_code +> List.iter (fun x -> Common.push x _matching_tokens)
+  tokens_matched_code |> List.iter (fun x -> Common.push x _matching_tokens)
 
 let print_simple_match tokens_matched_code =
   print_match [] [] tokens_matched_code
@@ -136,7 +136,7 @@ let gen_layer ~root ~query file =
   let kinds = ["m" (* match *), "red"] in
   
   (* todo: could now use Layer_code.simple_layer_of_parse_infos *)
-  let files_and_lines = toks +> List.map (fun tok ->
+  let files_and_lines = toks |> List.map (fun tok ->
     let file = PI.file_of_info tok in
     let line = PI.line_of_info tok in
     let file = Common2.relative_to_absolute file in 
@@ -148,10 +148,10 @@ let gen_layer ~root ~query file =
     title = "Sgrep";
     description = "output of sgrep";
     kinds = kinds;
-    files = group +> List.map (fun (file, lines) ->
+    files = group |> List.map (fun (file, lines) ->
       let lines = Common2.uniq lines in
       (file, { Layer_code.
-               micro_level = (lines +> List.map (fun l -> l, "m"));
+               micro_level = (lines |> List.map (fun l -> l, "m"));
                macro_level =  if null lines then [] else ["m", 1.];
       })
     );
@@ -163,7 +163,7 @@ let gen_layer ~root ~query file =
 
 let ast_fuzzy_of_string str =
   Common2.with_tmp_file ~str ~ext:"cpp" (fun tmpfile ->
-    Parse_cpp.parse_fuzzy tmpfile +> fst
+    Parse_cpp.parse_fuzzy tmpfile |> fst
   )
 
 let any_gen_of_string str =
@@ -291,7 +291,7 @@ let main_action xs =
        "/", Find_source.files_of_dir_or_files ~lang:!lang xs
   in
 
-  files +> List.iter (fun file ->
+  files |> List.iter (fun file ->
     if !verbose 
     then pr2 (spf "processing: %s" file);
     let process file =
@@ -315,7 +315,7 @@ let main_action xs =
    in
    pr (R2c.string_of_errors "sgrep" errs)
   end;
-  !layer_file +> Common.do_option (fun file ->
+  !layer_file |> Common.do_option (fun file ->
     let root = Common2.common_prefix_of_files_or_dirs xs in
     gen_layer ~root ~query:query_string  file
   );
@@ -337,7 +337,7 @@ let test () =
     Unit_matcher_php.sgrep_unittest;
   ]
   in
-  OUnit.run_test_tt suite +> ignore;
+  OUnit.run_test_tt suite |> ignore;
   ()
 
 (*---------------------------------------------------------------------------*)

@@ -30,7 +30,7 @@ open Highlight_code
 (* Helpers *)
 (*****************************************************************************)
 
-let span_newline xs = xs +> Common2.split_when (function 
+let span_newline xs = xs |> Common2.split_when (function 
   | T.TCommentNewline _ -> true | _ -> false)
 
 let tag_all_tok_with ~tag categ xs = 

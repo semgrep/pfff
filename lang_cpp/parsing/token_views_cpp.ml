@@ -152,12 +152,12 @@ let mk_token_fake x =
 
 let rebuild_tokens_extented toks_ext = 
   let _tokens = ref [] in
-  toks_ext +> List.iter (fun tok -> 
-    tok.new_tokens_before +> List.iter (fun x -> push x _tokens);
+  toks_ext |> List.iter (fun tok -> 
+    tok.new_tokens_before |> List.iter (fun x -> push x _tokens);
     push tok.t _tokens 
   );
   let tokens = List.rev !_tokens in
-  (tokens +> Common2.acc_map mk_token_extended)
+  (tokens |> Common2.acc_map mk_token_extended)
 
 (*****************************************************************************)
 (* View builders  *)
@@ -373,7 +373,7 @@ let line_range_of_paren = function
       (match info_parens with
       | [] -> raise Impossible
       | x::xs -> 
-          let lines_no = (x::xs) +> List.map (fun x -> x.line) in
+          let lines_no = (x::xs) |> List.map (fun x -> x.line) in
           Common2.minimum lines_no, Common2.maximum lines_no
       )
 
@@ -512,7 +512,7 @@ let mk_multi xs =
   aux xs
 
 let split_comma xs =
-  xs +> Common2.split_gen_when (function
+  xs |> Common2.split_gen_when (function
   | Tok{t=TComma _;_}::xs -> Some xs
   | _ -> None
   )
@@ -522,32 +522,32 @@ let split_comma xs =
 (*****************************************************************************)
 
 let rec iter_token_paren f xs = 
-  xs +> List.iter (function
+  xs |> List.iter (function
   | PToken tok -> f tok;
   | Parenthised (xxs, info_parens) -> 
-      info_parens +> List.iter f;
-      xxs +> List.iter (fun xs -> iter_token_paren f xs)
+      info_parens |> List.iter f;
+      xxs |> List.iter (fun xs -> iter_token_paren f xs)
   )
 
 let rec iter_token_brace f xs = 
-  xs +> List.iter (function
+  xs |> List.iter (function
   | BToken tok -> f tok;
   | Braceised (xxs, tok1, tok2opt) -> 
       f tok1; do_option f tok2opt;
-      xxs +> List.iter (fun xs -> iter_token_brace f xs)
+      xxs |> List.iter (fun xs -> iter_token_brace f xs)
   )
 
 let rec iter_token_ifdef f xs = 
-  xs +> List.iter (function
-  | NotIfdefLine xs -> xs +> List.iter f;
+  xs |> List.iter (function
+  | NotIfdefLine xs -> xs |> List.iter f;
   | Ifdefbool (_, xxs, info_ifdef) 
   | Ifdef (xxs, info_ifdef) -> 
-      info_ifdef +> List.iter f;
-      xxs +> List.iter (iter_token_ifdef f)
+      info_ifdef |> List.iter f;
+      xxs |> List.iter (iter_token_ifdef f)
   )
 
 let rec iter_token_multi f xs =
-  xs +> List.iter (function
+  xs |> List.iter (function
   | Tok t -> f t
   | Braces (t1, xs, t2)
   | Parens (t1, xs, t2)
@@ -560,7 +560,7 @@ let rec iter_token_multi f xs =
 
 let tokens_of_paren xs = 
   let g = ref [] in
-  xs +> iter_token_paren (fun tok -> push tok g);
+  xs |> iter_token_paren (fun tok -> push tok g);
   List.rev !g
 
 
@@ -587,16 +587,16 @@ let tokens_of_paren_ordered xs =
   and aux_args (xxs, commas) =
     match xxs, commas with
     | [], [] -> ()
-    | [xs], [] -> xs +> List.iter aux_tokens_ordered
+    | [xs], [] -> xs |> List.iter aux_tokens_ordered
     | xs::ys::xxs, comma::commas -> 
-        xs +> List.iter aux_tokens_ordered;
+        xs |> List.iter aux_tokens_ordered;
         push comma g;
         aux_args (ys::xxs, commas)
     | _ -> raise Impossible
 
   in
 
-  xs +> List.iter aux_tokens_ordered;
+  xs |> List.iter aux_tokens_ordered;
   List.rev !g
 
 let tokens_of_multi_grouped xs =
@@ -605,7 +605,7 @@ let tokens_of_multi_grouped xs =
   let add x = Common.push x res in
 
   let rec aux xs =
-    xs +> List.iter (function
+    xs |> List.iter (function
     | Tok t1 -> add t1
     | Braces (t1, xs, t2)
     | Parens (t1, xs, t2)
@@ -662,5 +662,5 @@ let rec vof_multi_grouped =
 
 
 let vof_multi_grouped_list xs =
-  let v = Ocaml.VList (xs +> List.map vof_multi_grouped) in
+  let v = Ocaml.VList (xs |> List.map vof_multi_grouped) in
   v

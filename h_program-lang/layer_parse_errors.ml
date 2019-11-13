@@ -43,9 +43,9 @@ let gen_red_green_layer ~root stats =
   { Layer_code.
     title = "Parsing errors (red/green)";
     description = "";
-    files = stats +> List.map (fun stat ->
+    files = stats |> List.map (fun stat ->
      let file = 
-       stat.filename +> Common2.relative_to_absolute +> Common.readable ~root
+       stat.filename |> Common2.relative_to_absolute |> Common.readable ~root
      in
       
       file,
@@ -68,9 +68,9 @@ let gen_heatmap_layer ~root stats =
   { Layer_code.
     title = "Parsing errors (heatmap)";
     description = "lower is better";
-    files = stats +> List.map (fun stat ->
+    files = stats |> List.map (fun stat ->
      let file = 
-       stat.filename +> Common2.relative_to_absolute +> Common.readable ~root
+       stat.filename |> Common2.relative_to_absolute |> Common.readable ~root
      in
      let covered = stat.correct in
      let not_covered = stat.bad in
@@ -84,7 +84,7 @@ let gen_heatmap_layer ~root stats =
       file,
       { Layer_code.
         micro_level =
-          stat.problematic_lines +> List.map (fun (_strs, lineno) ->
+          stat.problematic_lines |> List.map (fun (_strs, lineno) ->
             lineno, "bad"
           );
         macro_level = [

@@ -45,7 +45,7 @@ let (qufix: long_name -> tok -> (string wrap) -> long_name) =
       xs @ [Name ident2, dottok], Name ident
 
 let to_item xs =
-  xs +> Common.map_filter (function
+  xs |> Common.map_filter (function
   | TopItem x -> Some x
   | _ -> None
   )

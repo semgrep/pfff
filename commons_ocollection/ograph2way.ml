@@ -65,8 +65,8 @@ object(o)
       match xs#view with (* could be done with an iter *)
       | Empty -> acc
       | Cons(x, xs) -> (acc#add x) 
-          +> (fun newacc -> aux (o#predecessors x) newacc)
-          +> (fun newacc -> aux xs newacc)
+          |> (fun newacc -> aux (o#predecessors x) newacc)
+          |> (fun newacc -> aux xs newacc)
     in aux xs (f2()) (* (new osetb []) *)
 
   method children  xs = 
@@ -74,8 +74,8 @@ object(o)
       match xs#view with (* could be done with an iter *)
       | Empty -> acc
       | Cons(x, xs) -> (acc#add x) 
-          +> (fun newacc -> aux (o#successors x) newacc)
-          +> (fun newacc -> aux xs newacc)
+          |> (fun newacc -> aux (o#successors x) newacc)
+          |> (fun newacc -> aux xs newacc)
     in aux xs (f2()) (* (new osetb []) *)
 
 

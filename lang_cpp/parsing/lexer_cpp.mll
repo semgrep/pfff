@@ -15,7 +15,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
  *)
-open Common
 
 open Parser_cpp
 open Cst_cpp (* to factorise tokens with OpAssign, ... *)
@@ -217,7 +216,7 @@ rule token = parse
   | "/*" 
       { let info = tokinfo lexbuf in 
         let com = comment lexbuf in
-        TComment(info +> tok_add_s com) 
+        TComment(info |> tok_add_s com) 
       }
 
   (* C++ comments are allowed via gccext, but normally they are deleted by cpp.
@@ -269,16 +268,16 @@ rule token = parse
       { TIfdef (tokinfo lexbuf) }
   | "#" [' ''\t']* "if" [' ' '\t']+                                           
       { let info = tokinfo lexbuf in 
-        TIfdef (info +> tok_add_s (cpp_eat_until_nl lexbuf)) 
+        TIfdef (info |> tok_add_s (cpp_eat_until_nl lexbuf)) 
       }
   | "#" [' ' '\t']* "if" '('                
       { let info = tokinfo lexbuf in 
-        TIfdef (info +> tok_add_s (cpp_eat_until_nl lexbuf))
+        TIfdef (info |> tok_add_s (cpp_eat_until_nl lexbuf))
       }
 
   | "#" [' ' '\t']* "elif" [' ' '\t']+ 
       { let info = tokinfo lexbuf in 
-        TIfdefelif (info +> tok_add_s (cpp_eat_until_nl lexbuf)) 
+        TIfdefelif (info |> tok_add_s (cpp_eat_until_nl lexbuf)) 
       } 
 
   (* bugfix: can have #endif LINUX  but at the same time if I eat everything
@@ -303,7 +302,7 @@ rule token = parse
    * but I currently don't handle it cos I think it's bad code.
    *)
   | (("#" [' ' '\t']* "undef" [' ' '\t']+) as _undef) (id as id)
-     (* alt: +> tok_add_s (cpp_eat_until_nl lexbuf)) *)
+     (* alt: |> tok_add_s (cpp_eat_until_nl lexbuf)) *)
       { TUndef (id, tokinfo lexbuf) }
 
   (* ---------------------- *)
@@ -485,23 +484,23 @@ rule token = parse
   | "'"     
       { let info = tokinfo lexbuf in 
         let s = char lexbuf   in 
-        TChar     ((s,   IsChar),  (info +> tok_add_s (s ^ "'"))) 
+        TChar     ((s,   IsChar),  (info |> tok_add_s (s ^ "'"))) 
       }
   | '"'     
       { let info = tokinfo lexbuf in
         let s = string lexbuf in 
-        TString   ((s,   IsChar),  (info +> tok_add_s (s ^ "\""))) 
+        TString   ((s,   IsChar),  (info |> tok_add_s (s ^ "\""))) 
       }
   (* wide character encoding, TODO L'toto' valid ? what is allowed ? *)
   | 'L' "'" 
       { let info = tokinfo lexbuf in 
         let s = char lexbuf   in 
-        TChar     ((s,   IsWchar),  (info +> tok_add_s (s ^ "'"))) 
+        TChar     ((s,   IsWchar),  (info |> tok_add_s (s ^ "'"))) 
       } 
   | 'L' '"' 
       { let info = tokinfo lexbuf in 
         let s = string lexbuf in 
-        TString   ((s,   IsWchar),  (info +> tok_add_s (s ^ "\""))) 
+        TString   ((s,   IsWchar),  (info |> tok_add_s (s ^ "\""))) 
       }
 
   (* Take care of the order ? No because lex try the longest match. The
@@ -539,11 +538,11 @@ rule token = parse
 
 (* gccext: http://gcc.gnu.org/onlinedocs/gcc/Binary-constants.html *)
 (*
- | "0b" ['0'-'1'] { TInt (((tok lexbuf)<!!>(??,??)) +> int_of_stringbits) } 
- | ['0'-'1']+'b' { TInt (((tok lexbuf)<!!>(0,-2)) +> int_of_stringbits) } 
+ | "0b" ['0'-'1'] { TInt (((tok lexbuf)<!!>(??,??)) |> int_of_stringbits) } 
+ | ['0'-'1']+'b' { TInt (((tok lexbuf)<!!>(0,-2)) |> int_of_stringbits) } 
 *)
   (*------------------------------------------------------------------------ *)
-  | eof { EOF (tokinfo lexbuf +> PI.rewrap_str "") }
+  | eof { EOF (tokinfo lexbuf |> PI.rewrap_str "") }
 
   | _ { 
       error("unrecognised symbol, in token rule:" ^ tok lexbuf) lexbuf;
@@ -642,7 +641,7 @@ and string  = parse
   *)
  (*
   | [^ '\\']+ 
-    { let cs = lexbuf +> tok +> list_of_string +> List.map Char.code in
+    { let cs = lexbuf |> tok |> list_of_string |> List.map Char.code in
       cs ++ string lexbuf  
     }
   *)

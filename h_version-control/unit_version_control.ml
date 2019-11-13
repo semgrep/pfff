@@ -19,7 +19,7 @@ let with_tmp_directory f =
   )
 
 let exec_cmds ~basedir xs =
-  xs +> List.iter (fun cmd ->
+  xs |> List.iter (fun cmd ->
     let exit_status = Sys.command (spf "cd %s; %s" basedir cmd) in
     match exit_status with
     | 0 -> ()

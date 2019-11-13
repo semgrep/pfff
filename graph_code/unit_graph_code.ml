@@ -1,5 +1,3 @@
-open Common
-
 open OUnit
 
 open Dependencies_matrix_code
@@ -17,23 +15,23 @@ module DMBuild = Dependencies_matrix_build
 (*****************************************************************************)
 let build_g_and_dm () =
   let g = G.create () in
-  g +> G.add_node (".", E.Dir);
-  g +> G.add_node ("foo.ml", E.File);
-  g +> G.add_node ("a", E.Dir);
-  g +> G.add_node ("a/x.ml", E.File);
-  g +> G.add_node ("a/y.ml", E.File);
-  g +> G.add_node ("bar.ml", E.File);
-  g +> G.add_edge ((".", E.Dir), ("foo.ml", E.File)) G.Has;
-  g +> G.add_edge ((".", E.Dir), ("bar.ml", E.File)) G.Has;
-  g +> G.add_edge ((".", E.Dir), ("a", E.Dir)) G.Has;
-  g +> G.add_edge (("a", E.Dir), ("a/x.ml", E.File)) G.Has;
-  g +> G.add_edge (("a", E.Dir), ("a/y.ml", E.File)) G.Has;
+  g |> G.add_node (".", E.Dir);
+  g |> G.add_node ("foo.ml", E.File);
+  g |> G.add_node ("a", E.Dir);
+  g |> G.add_node ("a/x.ml", E.File);
+  g |> G.add_node ("a/y.ml", E.File);
+  g |> G.add_node ("bar.ml", E.File);
+  g |> G.add_edge ((".", E.Dir), ("foo.ml", E.File)) G.Has;
+  g |> G.add_edge ((".", E.Dir), ("bar.ml", E.File)) G.Has;
+  g |> G.add_edge ((".", E.Dir), ("a", E.Dir)) G.Has;
+  g |> G.add_edge (("a", E.Dir), ("a/x.ml", E.File)) G.Has;
+  g |> G.add_edge (("a", E.Dir), ("a/y.ml", E.File)) G.Has;
 
-  g +> G.add_edge (("a/x.ml", E.File), ("foo.ml", E.File)) G.Use;
-  g +> G.add_edge (("a/y.ml", E.File), ("foo.ml", E.File)) G.Use;
-  g +> G.add_edge (("bar.ml", E.File), ("foo.ml", E.File)) G.Use;
-  g +> G.add_edge (("a/y.ml", E.File), ("a/x.ml", E.File)) G.Use;
-  g +> G.add_edge (("bar.ml", E.File), ("a/y.ml", E.File)) G.Use;
+  g |> G.add_edge (("a/x.ml", E.File), ("foo.ml", E.File)) G.Use;
+  g |> G.add_edge (("a/y.ml", E.File), ("foo.ml", E.File)) G.Use;
+  g |> G.add_edge (("bar.ml", E.File), ("foo.ml", E.File)) G.Use;
+  g |> G.add_edge (("a/y.ml", E.File), ("a/x.ml", E.File)) G.Use;
+  g |> G.add_edge (("bar.ml", E.File), ("a/y.ml", E.File)) G.Use;
 
   let dm = {
     matrix = [|
@@ -109,7 +107,7 @@ let unittest ~graph_of_string =
           scc;
 
         let numbering = G.top_down_numbering g in
-        let xs = Common.hash_to_list numbering +> Common.sort_by_val_lowfirst in
+        let xs = Common.hash_to_list numbering |> Common.sort_by_val_lowfirst in
         assert_equal
           ~msg:"it should find the right ordering of nodes"
           [("foo", E.Function), 0;
@@ -120,7 +118,7 @@ let unittest ~graph_of_string =
           xs;
 
         let numbering = G.bottom_up_numbering g in
-        let xs = Common.hash_to_list numbering +> Common.sort_by_val_lowfirst in
+        let xs = Common.hash_to_list numbering |> Common.sort_by_val_lowfirst in
         assert_equal
           ~msg:"it should find the right ordering of nodes" 
           [
@@ -229,20 +227,20 @@ public function foo() { }
         let children = Graphe.succ node dag in
         assert_equal ~msg:"it should find the direct children of a class"
           ["B"]
-          (children +> List.map fst);
+          (children |> List.map fst);
 
         let dag = Graph_code_class_analysis.class_hierarchy g in
         let hmethods = Graph_code_class_analysis.toplevel_methods g dag in
         let xs = Hashtbl.find_all hmethods "foo" in
         assert_equal ~msg:"it should find the toplevel methods"
             ["C.foo";"A.foo"]
-            (xs +> List.map fst);
+            (xs |> List.map fst);
 
         let node = ("A.foo", E.Method) in
         let methods = Graph_code_class_analysis.dispatched_methods g dag node in
         assert_equal ~msg:"it should find the dispatched methods"
             ["B.foo"]
-            (methods +> List.map fst);
+            (methods |> List.map fst);
       );
     ];
 

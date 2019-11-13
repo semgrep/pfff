@@ -16,7 +16,7 @@ let unittest =
         Common2.glob (spf "%s/typescript/*.js" dir) @
         []
       in
-      files +> List.iter (fun file ->
+      files |> List.iter (fun file ->
         try
           let _ = Parse_js.parse_program file in
           ()

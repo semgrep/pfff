@@ -13,11 +13,9 @@
  * license.txt for more details.
  *)
 
-open Common
-
 let string_of_v v =
   (* todo? hide token info *)
   Ocaml.string_of_v v
 
 let ml_pattern_string_of_stylesheet ast = 
-  Meta_ast_css.vof_stylesheet ast +> string_of_v
+  Meta_ast_css.vof_stylesheet ast |> string_of_v

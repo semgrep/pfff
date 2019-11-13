@@ -118,10 +118,10 @@ let meta_fact = function
 let string_of_fact fact = 
   let str, xs = meta_fact fact in
   spf "%s(%s)" str
-    (xs +> List.map (function
+    (xs |> List.map (function
       | V x | F x | N x | I x -> spf "'%s'" x
       | Z i -> spf "%d" i
-     ) +> Common.join ", "
+     ) |> Common.join ", "
     )
 
 (*****************************************************************************)
@@ -143,13 +143,13 @@ type _idx = (string (* metadomain*), value Common.hashset) Hashtbl.t
 
 
 let bddbddb_of_facts facts dir =
-  let metas = facts +> List.map meta_fact in
+  let metas = facts |> List.map meta_fact in
 
   let hvalues = Hashtbl.create 6 in
   let hrules = Hashtbl.create 30 in
 
   (* build sets *)
-  metas +> List.iter (fun (arule, xs) ->
+  metas |> List.iter (fun (arule, xs) ->
     let listref =
       try Hashtbl.find hrules arule
       with Not_found -> 
@@ -159,7 +159,7 @@ let bddbddb_of_facts facts dir =
     in
     listref := xs :: !listref;
 
-    xs +> List.iter (fun v ->
+    xs |> List.iter (fun v ->
       let add_v v = 
         let domain = domain_of_value v in
         let hdomain =
@@ -183,24 +183,24 @@ let bddbddb_of_facts facts dir =
 
   (* now build integer indexes *)
   let domains_idx = 
-    hvalues +> Common.hash_to_list +> List.map (fun (domain, hdomain) ->
-      let conv = hdomain +> Common.hashset_to_list +> Common.index_list_0 in
+    hvalues |> Common.hash_to_list |> List.map (fun (domain, hdomain) ->
+      let conv = hdomain |> Common.hashset_to_list |> Common.index_list_0 in
       domain, (
-        conv, conv +> Common.hash_of_list
+        conv, conv |> Common.hash_of_list
       )
     )
   in
 
   Common.command2 (spf "rm -f %s/*" dir);
   (* generate .map *)
-  domains_idx +> List.iter (fun (domain, (map, _idx)) ->
+  domains_idx |> List.iter (fun (domain, (map, _idx)) ->
     if domain <> "Z"
     then begin
       let file = Filename.concat dir (domain ^ ".map") in
       Common.with_open_outfile file (fun (pr_no_nl, _chan) ->
         let pr s = pr_no_nl (s ^ "\n") in
 
-        map +> List.iter (fun (v, _int) ->
+        map |> List.iter (fun (v, _int) ->
           pr (string_of_value v)
         )
       )
@@ -208,7 +208,7 @@ let bddbddb_of_facts facts dir =
   );
 
   (* generate .tuples *)
-  hrules +> Common.hash_to_list +> List.iter (fun (arule, xxs) ->
+  hrules |> Common.hash_to_list |> List.iter (fun (arule, xxs) ->
       let arule =
         match arule with
         | "point_to" -> "point_to0"
@@ -226,7 +226,7 @@ let bddbddb_of_facts facts dir =
         | xs::_xxs ->
           let hcnt = Hashtbl.create 6 in
           pr (spf "# %s"
-                (xs +> List.map (fun v -> 
+                (xs |> List.map (fun v -> 
                   let domain = domain_of_value v in
                   let cnt =
                     try Hashtbl.find hcnt domain
@@ -239,12 +239,12 @@ let bddbddb_of_facts facts dir =
                   incr cnt;
                   (* less: size? *)
                   spf "%s%d:18" domain i
-                 ) +> Common.join " "))
+                 ) |> Common.join " "))
         );
 
-        !xxs +> List.iter (fun xs ->
+        !xxs |> List.iter (fun xs ->
           let ints =
-            xs +> List.map (fun v ->
+            xs |> List.map (fun v ->
               let i =
                 match v with
                 | Z i -> i
@@ -256,14 +256,14 @@ let bddbddb_of_facts facts dir =
               i
             )
           in
-          pr (ints +> List.map i_to_s +> Common.join " ")
+          pr (ints |> List.map i_to_s |> Common.join " ")
         );
       )
   );
 
   (* generate extra .tuples *)
-  let fvals = try List.assoc "F" domains_idx +> fst with Not_found -> [] in
-  let nvals = try List.assoc "N" domains_idx +> fst with Not_found -> [] in
+  let fvals = try List.assoc "F" domains_idx |> fst with Not_found -> [] in
+  let nvals = try List.assoc "N" domains_idx |> fst with Not_found -> [] in
   let (_vvals, vconv) = List.assoc "V" domains_idx in
   let arule = "field_to_var" in
 
@@ -273,7 +273,7 @@ let bddbddb_of_facts facts dir =
 
         pr "# F0:18 V0:18";
 
-        fvals +> List.iter (fun (fld, idx) ->
+        fvals |> List.iter (fun (fld, idx) ->
           match fld with
           | F s ->
             let v = V s in
@@ -293,7 +293,7 @@ let bddbddb_of_facts facts dir =
 
         pr "# V0:18 N0:18";
   
-        nvals +> List.iter (fun (n, idx) ->
+        nvals |> List.iter (fun (n, idx) ->
           match n with
           | N s ->
             let v = V s in
@@ -325,24 +325,24 @@ let bddbddb_explain_tuples file =
       let s = Common.matched1 header in
       let flds = Common.split "[ \t]" s in
       let fld_domains =
-        flds +> List.map (fun s -> 
+        flds |> List.map (fun s -> 
           if s =~ "\\([A-Z]\\)[0-9]?:"
           then Common.matched1 s
           else failwith (spf "could not find header in %s" file)
         )
       in
       let fld_translates =
-        fld_domains +> List.map (fun s ->
+        fld_domains |> List.map (fun s ->
           let mapfile = Common2.filename_of_dbe (d,s,"map") in
-          Common.cat mapfile +> Array.of_list
+          Common.cat mapfile |> Array.of_list
         )
       in
 
-      xs +> List.iter (fun s ->
-        let vs = Common.split "[ \t]" s +> List.map s_to_i in
+      xs |> List.iter (fun s ->
+        let vs = Common.split "[ \t]" s |> List.map s_to_i in
         
         let args = 
-          Common2.zip vs fld_translates +> List.map (fun (i, arr) ->
+          Common2.zip vs fld_translates |> List.map (fun (i, arr) ->
             arr.(i)
           )
         in

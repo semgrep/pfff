@@ -78,14 +78,14 @@ let mk_entity ~root ~hcomplete_name_of_info info categ =
   
   let name = s in
   let fullname = 
-    try Hashtbl.find hcomplete_name_of_info info +> snd
+    try Hashtbl.find hcomplete_name_of_info info |> snd
     with Not_found -> ""
   in
               
   { Database_code.
     e_name = name;
     e_fullname = if fullname <> name then fullname else "";
-    e_file = PI.file_of_info info +> Common.readable ~root;
+    e_file = PI.file_of_info info |> Common.readable ~root;
     e_pos = { Common2.l = l; c };
     e_kind = 
       Common2.some
@@ -111,13 +111,13 @@ let compute_database ?(verbose=false) files_or_dirs =
    * like PHP, the other database may use realpath for the path of the files
    * so we want to behave the same.
    *)
-  let files_or_dirs = files_or_dirs +> List.map Common.fullpath in
+  let files_or_dirs = files_or_dirs |> List.map Common.fullpath in
 
   let root = Common2.common_prefix_of_files_or_dirs files_or_dirs in
   pr2 (spf "generating JS db_light with root = %s" root);
 
   let files = Lib_parsing_js.find_source_files_of_dir_or_files files_or_dirs in
-  let dirs = files +> List.map Filename.dirname +> Common2.uniq_eff in
+  let dirs = files |> List.map Filename.dirname |> Common2.uniq_eff in
 
   (* step1: collecting definitions *)
   let (hdefs: (string, Db.entity) Hashtbl.t) = Hashtbl.create 1001 in
@@ -127,7 +127,7 @@ let compute_database ?(verbose=false) files_or_dirs =
    *)
   let (hdefs_pos: (Ast.tok, bool) Hashtbl.t) = Hashtbl.create 1001 in
 
-  files +> List.iter (fun file ->
+  files |> List.iter (fun file ->
     if verbose then pr2 (spf "PHASE 1: %s" file);
 
     let ((astopt, toks), _stat) = Parse_js.parse file in
@@ -158,7 +158,7 @@ let compute_database ?(verbose=false) files_or_dirs =
   );
 
   (* step2: collecting uses *)
-  files +> List.iter (fun file ->
+  files |> List.iter (fun file ->
     if verbose 
     then pr2 (spf "PHASE 2: %s" file);
 
@@ -168,7 +168,7 @@ let compute_database ?(verbose=false) files_or_dirs =
 
     let ((_ast, toks), _stat) = Parse_js.parse file in
 
-      let toks = toks +> Common.exclude (function
+      let toks = toks |> Common.exclude (function
         | T.TCommentSpace _ -> true
         | _ -> false
       )
@@ -192,7 +192,7 @@ let compute_database ?(verbose=false) files_or_dirs =
           ::T.T_LPAREN(_)
           ::xs when PI.col_of_info ii1 <> 0 ->
 
-            Hashtbl.find_all hdefs s +> List.iter (fun entity ->
+            Hashtbl.find_all hdefs s |> List.iter (fun entity ->
               (* todo: should check that method of appropriate class
                * but class analysis is complicated in Javascript.
                *)
@@ -211,7 +211,7 @@ let compute_database ?(verbose=false) files_or_dirs =
           ->
             if not (is_common_method s)
             then
-            Hashtbl.find_all hdefs s +> List.iter (fun entity ->
+            Hashtbl.find_all hdefs s |> List.iter (fun entity ->
               (* todo: should check that method of appropriate class
                * but class analysis is complicated in Javascript
                * I compensate at least a little this problem by
@@ -233,7 +233,7 @@ let compute_database ?(verbose=false) files_or_dirs =
            (* could be the tokens for the def *)
            if not (Hashtbl.mem hdefs_pos ii) then begin
 
-             Hashtbl.find_all hdefs s +> List.iter (fun entity ->
+             Hashtbl.find_all hdefs s |> List.iter (fun entity ->
               (* todo: should check that method of appropriate class
                * but class analysis is complicated in Javascript
                *)
@@ -255,16 +255,16 @@ let compute_database ?(verbose=false) files_or_dirs =
 
   (* step3: adding cross reference information *)
   let entities_arr = 
-    Common.hash_to_list hdefs +> List.map snd +> Array.of_list
+    Common.hash_to_list hdefs |> List.map snd |> Array.of_list
   in
   Db.adjust_method_or_field_external_users ~verbose entities_arr;
 
-  let dirs = dirs +> List.map (fun s -> Common.readable ~root s) in
+  let dirs = dirs |> List.map (fun s -> Common.readable ~root s) in
   let dirs = Db.alldirs_and_parent_dirs_of_relative_dirs dirs in
 
   { Db.
     root = root;
-    dirs = dirs +> List.map (fun d -> d , 0); (* TODO *)
-    files = files +> List.map (fun f -> Common.readable ~root f, 0); (* TODO *)
+    dirs = dirs |> List.map (fun d -> d, 0); (* TODO *)
+    files = files |> List.map (fun f -> Common.readable ~root f, 0); (* TODO *)
     entities = entities_arr;
   }

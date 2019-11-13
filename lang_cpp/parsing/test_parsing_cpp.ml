@@ -13,20 +13,20 @@ let test_tokens_cpp file =
   Flag.verbose_lexing := true;
   Flag.verbose_parsing := true;
   let toks = Parse_cpp.tokens file in
-  toks +> List.iter (fun x -> pr2_gen x);
+  toks |> List.iter (fun x -> pr2_gen x);
   ()
 
 let test_parse_cpp ?lang xs  =
   let fullxs = 
     Lib_parsing_cpp.find_source_files_of_dir_or_files xs
-    +> Skip_code.filter_files_if_skip_list
+    |> Skip_code.filter_files_if_skip_list
   in
   Parse_cpp.init_defs !Flag_cpp.macros_h;
 
   let stat_list = ref [] in
   let newscore  = Common2.empty_score () in
 
-  fullxs +> Console.progress (fun k -> List.iter (fun file -> 
+  fullxs |> Console.progress (fun k -> List.iter (fun file -> 
     k();
     let (_xs, stat) = 
       match lang with
@@ -89,7 +89,7 @@ let test_dump_cpp_full file =
   let v = Meta_cst_cpp.vof_program ~precision ast in
   let s = Ocaml.string_of_v v in
   pr s;
-  toks +> List.iter (fun tok ->
+  toks |> List.iter (fun tok ->
     match tok with
     | Parser_cpp.TComment (ii) ->
         let v = Meta_parse_info.vof_info_adjustable_precision ii in
@@ -103,12 +103,12 @@ let test_dump_cpp_view file =
   Parse_cpp.init_defs !Flag_cpp.macros_h;
   let toks_orig = Parse_cpp.tokens file in
   let toks = 
-    toks_orig +> Common.exclude (fun x ->
+    toks_orig |> Common.exclude (fun x ->
       Token_helpers_cpp.is_comment x ||
       Token_helpers_cpp.is_eof x
     )
   in
-  let extended = toks +> List.map Token_views_cpp.mk_token_extended in
+  let extended = toks |> List.map Token_views_cpp.mk_token_extended in
   Parsing_hacks_cpp.find_template_inf_sup extended;
 
   let multi = Token_views_cpp.mk_multi extended in
@@ -120,9 +120,9 @@ let test_dump_cpp_view file =
 
 let test_parse_cpp_fuzzy xs =
   let fullxs = Lib_parsing_cpp.find_source_files_of_dir_or_files xs
-    +> Skip_code.filter_files_if_skip_list
+    |> Skip_code.filter_files_if_skip_list
   in
-  fullxs +> Console.progress (fun k -> List.iter (fun file -> 
+  fullxs |> Console.progress (fun k -> List.iter (fun file -> 
     k ();
     Common.save_excursion Flag_parsing_cpp.strict_lexer true (fun () ->
       try 

@@ -169,7 +169,7 @@ let instrs_of_expr env e =
 
   (* todo: actually an alloc is hidden there! *)
   | A.Assign (op, e1, A.ArrayInit xs) ->
-    let ys = xs +> List.map (fun (idxopt, value) ->
+    let ys = xs |> List.map (fun (idxopt, value) ->
       (* less? recompute e1 each time? should store in intermediate val? *)
       let access =
         match idxopt with
@@ -184,7 +184,7 @@ let instrs_of_expr env e =
 
   (* todo: actually an alloc is hidden there! *)
   | A.Assign (op, e1, A.RecordInit xs) ->
-    let ys = xs +> List.map (fun (name, value) ->
+    let ys = xs |> List.map (fun (name, value) ->
       (* less? recompute e1 each time? should store in intermediate val? *)
       let access = 
         A.RecordPtAccess
@@ -351,7 +351,7 @@ let instrs_of_expr env e =
   | A.SizeOf (Left e) ->
       let instr = instr_of_expr e in
       Common.push instr instrs;
-      Int ("0_sizeof", tokwrap_of_expr e +> snd)
+      Int ("0_sizeof", tokwrap_of_expr e |> snd)
   | A.SizeOf (Right t) ->
       Int ("0_sizeof", tok_of_type t)
 
@@ -408,7 +408,7 @@ let var_of_global env name =
       E.Global;
     ]
     in
-    let res = candidates +> Common.map_filter (fun kind ->
+    let res = candidates |> Common.map_filter (fun kind ->
       if G.has_node (s, kind) env.globals
       then Some (s, kind)
       else None
@@ -420,7 +420,7 @@ let var_of_global env name =
         spf "%s#%s" file s
     | x::y::xs ->
         pr2 (spf "Conflicting entities for %s [%s]"
-                    s ((x::y::xs) +> List.map G.string_of_node +>
+                    s ((x::y::xs) |> List.map G.string_of_node |>
                           Common.join ","));
         let file = G.file_of_node x env.globals in
         spf "%s#%s" file s
@@ -519,9 +519,9 @@ let facts_of_instr env = function
       | DynamicCall (name, args) 
       | BuiltinCall(name, args)  ->
           let invoke = invoke_loc_of_name env name in
-          args +> Common.index_list_1 +> List.map (fun (v, i) ->
+          (args |> Common.index_list_1 |> List.map (fun (v, i) ->
             D.Argument(invoke, i, var_of_name env v)
-          ) @
+          )) @
           [D.ReturnValue (invoke, dest)] @
           (match e with
           | StaticCall _ | BuiltinCall _ ->
@@ -593,7 +593,7 @@ let return_fact env instr =
 let facts_of_def env def =
   match def with
   | StructDef def -> 
-      def.s_flds +> Common.map_filter (fun fld ->
+      def.s_flds |> Common.map_filter (fun fld ->
         match fld.fld_name with
         (* todo: kencc ext field! *)
         | None -> None
@@ -613,7 +613,7 @@ let facts_of_def env def =
       [D.PointTo (var_of_global env name, heap_of_cst env name)]
   | EnumDef def ->
       let (_name, xs) = def in
-      xs +> List.map (fun (name, _eopt) ->
+      xs |> List.map (fun (name, _eopt) ->
         D.PointTo (var_of_global env name, heap_of_cst env name)
       )
   | Macro _ ->
@@ -621,14 +621,14 @@ let facts_of_def env def =
       []
   | FuncDef def ->
       let (_ret, params) = def.f_type in
-      params +> Common.index_list_1 +> Common.map_filter (fun (p, i) ->
+      (params |> Common.index_list_1 |> Common.map_filter (fun (p, i) ->
         match p.p_name with
         | None -> None
         | Some name ->
             Some (D.Parameter (var_of_global env def.f_name,
                                i, 
                                var_of_local env name))
-      ) @
+      )) @
      (* less: could skip when return void *)
        (let name = env.globals_renames def.f_name in
        [D.Return (var_of_global env def.f_name, spf "ret_%s" (fst name));

@@ -12,13 +12,13 @@ let test_tokens_css file =
   Flag.verbose_parsing := true;
 *)
   let toks = Parse_css.tokens file in
-  toks +> List.iter (fun x -> pr2_gen x);
+  toks |> List.iter (fun x -> pr2_gen x);
   ()
 
 let test_parse_css xs =
 
   let fullxs = Lib_parsing_css.find_css_files_of_dir_or_files xs in
-  fullxs +> List.iter (fun file -> 
+  fullxs |> List.iter (fun file -> 
     pr2 ("PARSING: " ^ file);
     Common.save_excursion Flag_parsing.error_recovery true (fun () ->
       let (ast, _toks) = Parse_css.parse file in

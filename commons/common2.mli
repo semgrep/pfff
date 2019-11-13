@@ -78,7 +78,7 @@ end
 (* Same spirit. Trick found in Jane Street core lib, but originated somewhere
  * else I think: the ability to open nested modules. *)
 module Infix : sig
-  val ( +> ) : 'a -> ('a -> 'b) -> 'b
+  val ( |> ) : 'a -> ('a -> 'b) -> 'b
   val ( |> ) : 'a -> ('a -> 'b) -> 'b
   val ( =~ ) : string -> string -> bool
   val ( ==~ ) : string -> Str.regexp -> bool
@@ -353,8 +353,6 @@ val macro_expand : string -> unit
 (* Composition/Control *)
 (*****************************************************************************)
 
-val ( +> ) : 'a -> ('a -> 'b) -> 'b
-val ( |> ) : 'a -> ('a -> 'b) -> 'b
 val ( +!> ) : 'a ref -> ('a -> 'a) -> unit
 val ( $ ) : ('a -> 'b) -> ('b -> 'c) -> 'a -> 'c
 

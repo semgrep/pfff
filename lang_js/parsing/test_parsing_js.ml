@@ -19,7 +19,7 @@ let test_tokens_js file =
   let toks = Parse_js.tokens file 
     (* |> Parsing_hacks_js.fix_tokens  *)
   in
-  toks +> List.iter (fun x -> pr2_gen x);
+  toks |> List.iter (fun x -> pr2_gen x);
   ()
 
 let test_parse_common xs fullxs ext  =
@@ -40,7 +40,7 @@ let test_parse_common xs fullxs ext  =
 
   Common2.check_stack_nbfiles (List.length fullxs);
 
-  fullxs +> Console.progress (fun k -> List.iter (fun file ->
+  fullxs |> Console.progress (fun k -> List.iter (fun file ->
     k();
 
     let (_xs, stat) =
@@ -58,7 +58,7 @@ let test_parse_common xs fullxs ext  =
   Parse_info.print_parsing_stat_list !stat_list;
 
     let score_path = Filename.concat Config_pfff.path "tmp" in
-    dirname_opt +> Common.do_option (fun dirname -> 
+    dirname_opt |> Common.do_option (fun dirname -> 
       let dirname = Common.fullpath dirname in
       pr2 "--------------------------------";
       pr2 "regression testing  information";

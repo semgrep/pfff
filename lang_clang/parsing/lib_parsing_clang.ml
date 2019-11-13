@@ -11,7 +11,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
  *)
-open Common
 
 module FT = File_type
 
@@ -21,16 +20,16 @@ module FT = File_type
 
 let find_source_files_of_dir_or_files xs = 
   Common.files_of_dir_or_files_no_vcs_nofilter xs 
-  +> List.filter (fun filename ->
+  |> List.filter (fun filename ->
     match File_type.file_type_of_file filename with
     | FT.Obj ("clang") -> true
     | _ -> false
-  ) +> Common.sort
+  ) |> Common.sort
 
 let find_source2_files_of_dir_or_files xs = 
   Common.files_of_dir_or_files_no_vcs_nofilter xs 
-  +> List.filter (fun filename ->
+  |> List.filter (fun filename ->
     match File_type.file_type_of_file filename with
     | FT.Obj ("c.clang2" | "h.clang2" | "clang2") -> true
     | _ -> false
-  ) +> Common.sort
+  ) |> Common.sort

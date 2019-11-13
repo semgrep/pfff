@@ -76,7 +76,7 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
           let var = x.m_var in
           let ident = var.v_name in
           tag_ident ident (Entity (Method, (Def2 fake_no_def2)));
-          x.m_formals +> List.iter (fun v ->
+          x.m_formals |> List.iter (fun v ->
             let ident = v.v_name in
             tag_ident ident (Parameter Def)
           )
@@ -122,7 +122,7 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
           | [] -> raise Impossible
           | (id, _targs)::xs -> 
             tag_ident id (Entity (Type, (Use2 fake_no_use2)));
-            xs +> List.iter (fun (id, _targs) ->
+            xs |> List.iter (fun (id, _targs) ->
               tag_ident id (Entity (Module, (Use2 fake_no_use2)))
             )
           )
@@ -173,7 +173,7 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
     | _x::xs ->
         aux_toks xs
   in
-  let toks' = toks +> Common.exclude (function
+  let toks' = toks |> Common.exclude (function
     | T.TCommentSpace _ -> true
     | _ -> false
   )
@@ -183,7 +183,7 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)
 
-  toks +> List.iter (fun tok -> 
+  toks |> List.iter (fun tok -> 
     match tok with
 
     (* comments *)

@@ -147,7 +147,7 @@ let elts_of_add_args_before acc xs =
   | Esthet2 (Newline, _) ->
   (* new line for each argument *)
       let acc = add_if_need_comma "," [] acc in
-      let sep = xs +> List.map (fun s ->
+      let sep = xs |> List.map (fun s ->
           "  " ^ s ^ ",\n" ^ String.make ws ' ') in
       let add_str = join "" sep in
       (Added add_str)::acc
@@ -230,15 +230,15 @@ let drop_esthet_between_removed xs =
  * was removed, which is what we want most of the time
  *)
 let drop_whole_line_if_only_removed xs =
-  let (before_first_newline, xxs) = xs +> Common2.group_by_pre (function
+  let (before_first_newline, xxs) = xs |> Common2.group_by_pre (function
     | Esthet2 (Newline, _) -> true | _ -> false)
   in
-  let xxs = xxs +> Common.exclude (fun (_newline, elts_after_newline) ->
+  let xxs = xxs |> Common.exclude (fun (_newline, elts_after_newline) ->
     let has_a_remove = 
-      elts_after_newline +> List.exists (function 
+      elts_after_newline |> List.exists (function 
       | Removed _ -> true | _ -> false) in
     let only_remove_or_esthet = 
-      elts_after_newline +> List.for_all (function
+      elts_after_newline |> List.for_all (function
       | Esthet2 _ | Removed _ -> true
       | Added _ | OrigElt _ -> false
       )
@@ -247,7 +247,7 @@ let drop_whole_line_if_only_removed xs =
   )
   in
   before_first_newline @ 
-    (xxs +> List.map (fun (elt, elts) -> elt::elts) +> List.flatten)
+    (xxs |> List.map (fun (elt, elts) -> elt::elts) |> List.flatten)
 
 (* people often write s/foo(X,Y)/.../ but some calls to foo may have
  * a trailing comma that we also want to remove automatically
@@ -264,7 +264,7 @@ let drop_trailing_comma_between_removed xs =
   
 
 let drop_removed xs =
-  xs +> Common.exclude (function
+  xs |> Common.exclude (function
   | Removed _ -> true
   | _ -> false
   )
@@ -311,7 +311,7 @@ let string_of_toks_using_transfo toks =
     let xs = elts_of_any toks in
 
     if !debug 
-    then xs +> List.iter (fun x -> pr2 (Ocaml.string_of_v (vof_elt x)));
+    then xs |> List.iter (fun x -> pr2 (Ocaml.string_of_v (vof_elt x)));
 
     let xs = drop_esthet_between_removed xs in
     let xs = drop_trailing_comma_between_removed xs in
@@ -320,7 +320,7 @@ let string_of_toks_using_transfo toks =
     let xs = drop_removed xs in
     let xs = drop_useless_space xs in
     
-    xs +> List.iter (function
+    xs |> List.iter (function
     | OrigElt s | Added s | Esthet2 ((Comment | Space), s) -> pp s
     | Removed _ -> raise Impossible (* see drop_removed *)
     | Esthet2 (Newline, _) -> pp "\n"

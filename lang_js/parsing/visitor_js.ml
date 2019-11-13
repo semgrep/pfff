@@ -70,7 +70,7 @@ and v_bracket: 'a. ('a -> unit) -> 'a bracket -> unit = fun _of_a (v1, v2, v3)->
 and v_comma x = v_tok x
 
 and v_comma_list: 'a. ('a -> unit) -> 'a comma_list -> unit = fun _of_a xs ->
-  xs +> List.iter (function | Left x -> _of_a x | Right info -> v_comma info)
+  xs |> List.iter (function | Left x -> _of_a x | Right info -> v_comma info)
 
 and v_sc v = v_option v_tok v
 

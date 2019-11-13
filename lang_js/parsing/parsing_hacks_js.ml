@@ -13,7 +13,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common 
 
 module Flag = Flag_parsing
 module PI = Parse_info
@@ -69,7 +68,7 @@ let rparens_of_if toks =
 
   let rparens_if = ref [] in
 
-  toks +> Common2.iter_with_previous_opt (fun prev x -> 
+  toks |> Common2.iter_with_previous_opt (fun prev x -> 
     (match x with
     | T.T_LPAREN _ -> 
         Common.push prev stack;

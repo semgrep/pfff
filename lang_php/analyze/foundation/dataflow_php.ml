@@ -244,7 +244,7 @@ let rec expr_fold fold_env lhs expr acc =
   | This _ -> acc
   (* Special cases for function *)
   | Call (Id(XName([QI(Name(("sscanf", _)))])), args) ->
-    let args = Ast.uncomma(Ast.unparen args) +> List.map
+    let args = Ast.uncomma(Ast.unparen args) |> List.map
       (function
       | Arg e -> e
       | ArgRef _ | ArgUnpack _ -> raise Todo) in
@@ -265,7 +265,7 @@ let rec expr_fold fold_env lhs expr acc =
        | ArgRef (_, e1) -> handle_lhs e1 acc'
        )
        acc args)
-  | ObjGet(e, _ ,e1) ->
+  | ObjGet(e, _,e1) ->
     recl e (recr e1 acc)
   | ClassGet(e, _, _e1) -> recr e acc
   (* TODO: copy on write *)
@@ -285,7 +285,7 @@ let rec expr_fold fold_env lhs expr acc =
   | Sc(Guil(_, encaps_list, _))
   | Sc(HereDoc(_, encaps_list, _))
       ->
-    encaps_list +> List.fold_left
+    encaps_list |> List.fold_left
       (fun acc' encaps ->
         match encaps with
         | EncapsString _ -> acc'
@@ -416,7 +416,7 @@ let new_node_array (f: F.flow) v =
   let arr = Array.make f#nb_nodes v in
   (* sanity checking *)
   let len = Array.length arr in
-  f#nodes#tolist +> List.iter (fun (ni, _nod) ->
+  f#nodes#tolist |> List.iter (fun (ni, _nod) ->
     if ni >= len
     then failwith "the CFG nodei is bigger than the number of nodes"
   );

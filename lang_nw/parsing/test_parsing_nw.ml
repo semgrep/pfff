@@ -14,7 +14,7 @@ let test_tokens_nw file =
   Flag.verbose_parsing := true;
 
   let toks = Parse_nw.tokens file in
-  toks +> List.iter (fun x -> pr2_gen x);
+  toks |> List.iter (fun x -> pr2_gen x);
   ()
 
 let test_parse_nw file =

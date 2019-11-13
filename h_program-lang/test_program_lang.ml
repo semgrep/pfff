@@ -28,7 +28,7 @@ let test_big_grep file =
 
   let xs = Big_grep.top_n_search ~top_n ~query idx in
 
-  xs +> List.iter (fun e ->
+  xs |> List.iter (fun e ->
 (*
     let json = Db.json_of_entity e in
     let s = Json_io.string_of_json json in
@@ -39,7 +39,7 @@ let test_big_grep file =
 
   (* naive search *)
   let xs = Big_grep.naive_top_n_search ~top_n ~query entities in
-  xs +> List.iter (fun e ->
+  xs |> List.iter (fun e ->
 (*
     let json = Db.json_of_entity e in
     let s = Json_io.string_of_json json in
@@ -58,13 +58,13 @@ let test_layer file =
 let layer_stat file =
   let layer = Layer_code.load_layer file in
   let stats = Layer_code.stat_of_layer layer in
-  stats +> List.iter (fun (k, v) ->
+  stats |> List.iter (fun (k, v) ->
     pr (spf " %s = %d" k v)
   )
 
 let test_refactoring file =
   let xs = Refactoring_code.load file in
-  xs +> List.iter pr2_gen;
+  xs |> List.iter pr2_gen;
   ()
 
 

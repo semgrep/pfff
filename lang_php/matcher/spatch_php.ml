@@ -97,11 +97,11 @@ let (_dumb_spatch_pattern: Cst_php.expr) =
  *)
 let parse file =
 
-  let xs = Common.cat file +> Common.index_list_1 in
+  let xs = Common.cat file |> Common.index_list_1 in
 
   let hline_env = Hashtbl.create 11 in
 
-  let ys = xs +> List.map (fun (s, lineno) ->
+  let ys = xs |> List.map (fun (s, lineno) ->
     match s with
     (* ugly: for now I strip the space after the + because.
      * at some point we need to parse this stuff and
@@ -140,7 +140,7 @@ let parse file =
   let toks = Lib_parsing_php.ii_of_any pattern in
 
   (* adjust with Minus info *)  
-  toks +> List.iter (fun tok ->
+  toks |> List.iter (fun tok ->
     let line = Parse_info.line_of_info tok in
 
     let annot = Hashtbl.find hline_env line in
@@ -174,7 +174,7 @@ let parse file =
    *)
 
   let grouped_by_lines = 
-    toks +> Common.group_by_mapped_key (fun tok -> Parse_info.line_of_info tok) in
+    toks |> Common.group_by_mapped_key (fun tok -> Parse_info.line_of_info tok) in
   let rec aux xs = 
     match xs with
     | (line, toks_at_line)::rest ->
@@ -214,7 +214,7 @@ let parse file =
    * reference so by modifying the tokens we actually also modifed
    * the AST.
    *)
-  pattern +> Metavars_php.check_pattern
+  pattern |> Metavars_php.check_pattern
 
 let parse_string spatch_str =
   Common2.with_tmp_file ~str:spatch_str ~ext:".spatch" 
@@ -226,7 +226,7 @@ let spatch ?(case_sensitive=false) pattern file =
   (* quite similar to what we do in main_sgrep.ml *)
   let (ast, tokens) = 
     try 
-        Parse_php.parse file +> fst
+        Parse_php.parse file |> fst
     with Parse_php.Parse_error _err ->
       Common.pr2 (spf "warning: parsing problem in %s" file);
       [], []

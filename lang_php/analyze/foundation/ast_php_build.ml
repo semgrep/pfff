@@ -80,7 +80,7 @@ and toplevels env xs =
   | x::xs ->
     (match x with
     | NamespaceDef (_, qi, _) ->
-      let (xs, rest) = xs +> Common.span (function
+      let (xs, rest) = xs |> Common.span (function
         (* less: actually I'm not sure you can mix NamespaceDef and BracketDef*)
         | NamespaceDef _ | NamespaceBracketDef _ -> false
         | _ -> true
@@ -114,7 +114,7 @@ and toplevel env st =
       in
       [A.NamespaceDef (qi, toplevels env (unbrace xs))]
   | NamespaceUse (_tok, xs, _) ->
-      xs +> uncomma +> List.map (function
+      xs |> uncomma |> List.map (function
       | ImportNamespace qu ->
           A.NamespaceUse (qualified_ident env qu, None)
       | AliasNamespace (qu, _tok, id) ->
@@ -147,7 +147,7 @@ and qualified_ident env xs =
     | rest -> [], rest
   in
   leading @
-    (rest +> Common.map_filter (function
+    (rest |> Common.map_filter (function
     | QITok _ -> None
     | QI id -> Some (ident env id)
      )
@@ -515,7 +515,7 @@ and hint_type env = function
       A.HintCallback (args, ret)
   | HintShape (_tok, xs) ->
     A.HintShape (
-      xs +> brace +> comma_list +> List.map (fun (e, _tok, t) ->
+      xs |> brace |> comma_list |> List.map (fun (e, _tok, t) ->
         expr env e, hint_type env t
       ))
   | HintTypeConst (lhs, _tok, rhs) ->
@@ -564,7 +564,7 @@ and lambda_def env (l_use, ld) =
       (match l_use with
       | None -> []
       | Some (_, (_lp, xs, _rp)) ->
-          comma_list xs +> List.map (function
+          comma_list xs |> List.map (function
           | LexicalVar (is_ref, name) -> is_ref <> None, dname name
           )
       );
@@ -706,7 +706,7 @@ and class_variables env st acc =
 and xhp_fields env st acc =
   match st with
   | XhpDecl (XhpAttributesDecl (_, xal, _)) ->
-    (comma_list xal) +> List.fold_left (fun acc xhp_attr ->
+    (comma_list xal) |> List.fold_left (fun acc xhp_attr ->
       match xhp_attr with
       | XhpAttrDecl (attr_type, attr_name, eopt, req_tok_opt) ->
         let ht =
@@ -742,7 +742,7 @@ and xhp_fields env st acc =
 and xhp_attr_inherit env st acc =
   match st with
   | XhpDecl (XhpAttributesDecl(_, xal, _)) ->
-    (comma_list xal) +> List.fold_left (fun acc xhp_attr ->
+    (comma_list xal) |> List.fold_left (fun acc xhp_attr ->
       match xhp_attr with
       | XhpAttrInherit (source, tok) ->
         A.Hint [ident env (Cst_php.XhpName (source, tok))]::acc
@@ -767,13 +767,13 @@ and method_def env m =
   let params = comma_list_dots params in
   let mds = List.map (fun (x, _) -> x) m.f_modifiers in
   let implicits =
-    params +> Common.map_filter (fun p ->
+    params |> Common.map_filter (fun p ->
       match p.p_modifier with
       | None -> None
       | Some (modifier, _tok) -> Some (p.p_name, modifier, p.p_type)
     )
   in
-  let implicit_flds = implicits +> List.map (fun (var, modifier, topt) ->
+  let implicit_flds = implicits |> List.map (fun (var, modifier, topt) ->
     { A.cv_name = dname var;
       (* less: should use default val of parameter?*)
       A.cv_value = None;
@@ -783,7 +783,7 @@ and method_def env m =
   )
   in
   let implicit_assigns =
-    implicits +> List.map (fun (var, _, _) ->
+    implicits |> List.map (fun (var, _, _) ->
       let (str_with_dollar, tok) = dname var in
       let str_without_dollar = Cst_php.str_of_dname var in
       A.Expr (
@@ -950,7 +950,7 @@ and attributes env = function
   | None -> []
   | Some (_, xs, _) ->
     let xs = comma_list xs in
-    xs +> List.map (function
+    xs |> List.map (function
     | Attribute (s, tok) -> A.Id [s, wrap tok]
     | AttributeWithArgs ((s, tok), (_, xs, _)) ->
       A.Call (A.Id [s, wrap tok], List.map (static_scalar env) (comma_list xs))

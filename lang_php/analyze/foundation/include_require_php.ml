@@ -258,7 +258,7 @@ let all_increq_of_any =
 
 let top_increq_of_program asts = 
   let stmts = Lib_parsing_php.top_statements_of_program asts in
-  stmts +> Common.map_filter (fun st ->
+  stmts |> Common.map_filter (fun st ->
     match st with
     | ExprStmt (e, _tok) -> 
         increq_of_include_stmt e
@@ -331,7 +331,7 @@ let includes_of_file env file =
   let dir = Common2.dirname file in
   
   let incs = all_increq_of_any (Program ast) in
-  incs +> Common.map_filter (fun (_kind, tok, incexpr) ->
+  incs |> Common.map_filter (fun (_kind, tok, incexpr) ->
     
     let fopt = resolve_path (env, dir) incexpr in
     match fopt with
@@ -382,14 +382,14 @@ let recursive_included_files_of_file
         with exn ->
           pr2 (spf "PB processing %s, exn = %s. Trace = "
                   file (Common.exn_to_s exn));
-          stack +> List.iter (fun (file, included_files) ->
+          stack |> List.iter (fun (file, included_files) ->
             pr2 (spf " %s:" file);
-            included_files +> List.iter (fun file -> pr2 (spf "  %s" file));
+            included_files |> List.iter (fun file -> pr2 (spf "  %s" file));
           );
           raise exn;
       in
           
-      incs +> List.iter (fun file2 ->
+      incs |> List.iter (fun file2 ->
         aux_dfs (depth+1) file2 ((file, incs)::stack)
       );
     end
@@ -402,7 +402,7 @@ let recursive_included_files_of_file
       let current = !current_wave in
       current_wave := [];
       
-      current +> List.iter (fun file ->
+      current |> List.iter (fun file ->
         if Hashtbl.mem hdone file then ()
         else begin
           Hashtbl.add hdone file true;

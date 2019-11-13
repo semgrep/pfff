@@ -305,8 +305,8 @@ let key_of_vertex v g =
   Hashtbl.find g.key_of_vertex v
 
 let add_edge k1 k2 g = 
-  let vx = g +> vertex_of_key k1 in
-  let vy = g +> vertex_of_key k2 in
+  let vx = g |> vertex_of_key k1 in
+  let vy = g |> vertex_of_key k2 in
   OG.add_edge g.og vx vy;
   ()
 
@@ -317,17 +317,17 @@ let add_edge k1 k2 g =
 let nodes g = 
   Common2.hkeys g.vertex_of_key
 
-let out_degree k g = OG.out_degree g.og (g +> vertex_of_key k)
-let in_degree k g  = OG.in_degree  g.og (g +> vertex_of_key k)
+let out_degree k g = OG.out_degree g.og (g |> vertex_of_key k)
+let in_degree k g  = OG.in_degree  g.og (g |> vertex_of_key k)
 
 let nb_nodes g = OG.nb_vertex g.og
 let nb_edges g = OG.nb_edges g.og
 
-let succ k g = OG.succ g.og (g +> vertex_of_key k) 
-  +> List.map (fun k -> key_of_vertex k g)
+let succ k g = OG.succ g.og (g |> vertex_of_key k) 
+  |> List.map (fun k -> key_of_vertex k g)
 (* this seems slow on the version of ocamlgraph I currently have *)
-let pred k g  = OG.pred  g.og (g +> vertex_of_key k)
-  +> List.map (fun k -> key_of_vertex k g)
+let pred k g  = OG.pred  g.og (g |> vertex_of_key k)
+  |> List.map (fun k -> key_of_vertex k g)
 
 let ivertex k g = 
   let v = vertex_of_key k g in
@@ -347,16 +347,16 @@ let entry_nodes2 g =
   let res = ref [] in
   let hdone = Hashtbl.create 101 in
   let finished = ref false in
-  g.og +> OG.Topological.iter (fun v ->
+  g.og |> OG.Topological.iter (fun v ->
     if !finished || Hashtbl.mem hdone v
     then finished := true
     else begin
       let xs = OG.succ g.og v in
-      xs +> List.iter (fun n -> Hashtbl.replace hdone n true);
+      xs |> List.iter (fun n -> Hashtbl.replace hdone n true);
       Common.push v res;
     end
   );
-  !res +> List.map (fun i -> key_of_vertex i g) +> List.rev
+  !res |> List.map (fun i -> key_of_vertex i g) |> List.rev
 
 
 let entry_nodes a =
@@ -366,14 +366,14 @@ let entry_nodes a =
 (* Iteration *)
 (*****************************************************************************)
 let iter_edges f g =
-  g.og +> OG.iter_edges (fun v1 v2 ->
+  g.og |> OG.iter_edges (fun v1 v2 ->
     let k1 = key_of_vertex v1 g in
     let k2 = key_of_vertex v2 g in
     f k1 k2
   )
 
 let iter_nodes f g =
-  g.og +> OG.iter_vertex (fun v ->
+  g.og |> OG.iter_vertex (fun v ->
     let k = key_of_vertex v g in
     f k
   )
@@ -382,15 +382,15 @@ let iter_nodes f g =
 (*****************************************************************************)
 
 let remove_vertex k g =
-  let vk = g +> vertex_of_key k in
+  let vk = g |> vertex_of_key k in
   OG.remove_vertex g.og vk;
   Hashtbl.remove g.vertex_of_key k;
   Hashtbl.remove g.key_of_vertex vk;
   ()
 
 let remove_edge k1 k2 g =
-  let vx = g +> vertex_of_key k1 in
-  let vy = g +> vertex_of_key k2 in
+  let vx = g |> vertex_of_key k1 in
+  let vy = g |> vertex_of_key k2 in
   (* todo? assert edge exists? *)
   OG.remove_edge g.og vx vy;
   ()
@@ -420,11 +420,11 @@ let copy oldg =
   (* naive way, enough? optimize? all those iter are ugly ... *)
   let g = create () in
   let nodes = nodes oldg in
-  nodes +> List.iter (fun n -> add_vertex_if_not_present n g);
-  nodes +> List.iter (fun n -> 
+  nodes |> List.iter (fun n -> add_vertex_if_not_present n g);
+  nodes |> List.iter (fun n -> 
     (* bugfix: it's oldg, not 'g', wow, copying stuff is error prone *)
     let succ = succ n oldg in
-    succ +> List.iter (fun n2 -> add_edge n n2 g)
+    succ |> List.iter (fun n2 -> add_edge n n2 g)
   );
   g
 
@@ -433,14 +433,14 @@ let copy oldg =
 (*****************************************************************************)
 
 let shortest_path k1 k2 g = 
-  let vx = g +> vertex_of_key k1 in
-  let vy = g +> vertex_of_key k2 in
+  let vx = g |> vertex_of_key k1 in
+  let vy = g |> vertex_of_key k2 in
 
   let (edges, _len) = OG.shortest_path g.og vx vy in
   let vertexes = 
-    vx::(edges +> List.map (fun edge -> OG.E.dst edge))
+    vx::(edges |> List.map (fun edge -> OG.E.dst edge))
   in
-  vertexes +> List.map (fun v -> key_of_vertex v g)
+  vertexes |> List.map (fun v -> key_of_vertex v g)
 
 
 (* todo? this works? I get some 
@@ -457,7 +457,7 @@ let shortest_path k1 k2 g =
 let transitive_closure g = 
 
   let label_to_vertex = Hashtbl.create 101 in
-  g.og +> OG.iter_vertex (fun v ->
+  g.og |> OG.iter_vertex (fun v ->
     let lbl = OG.V.label v in
     Hashtbl.replace label_to_vertex lbl v
   );
@@ -465,7 +465,7 @@ let transitive_closure g =
   let og' = OG.transitive_closure ~reflexive:true g.og in
   let g' = create () in
 
-  og' +> OG.iter_vertex (fun v ->
+  og' |> OG.iter_vertex (fun v ->
     let lbl = OG.V.label v in
     let vertex_in_g = Hashtbl.find label_to_vertex lbl in
     let key_in_g = Hashtbl.find g.key_of_vertex vertex_in_g in
@@ -485,13 +485,13 @@ let mirror g =
 let strongly_connected_components2 g =
   let scc_array_vt = OG.Components.scc_array g.og in
   let scc_array = 
-    scc_array_vt +> Array.map (fun xs -> xs +> List.map (fun vt -> 
+    scc_array_vt |> Array.map (fun xs -> xs |> List.map (fun vt -> 
       key_of_vertex vt g
     ))
   in
   let h = Hashtbl.create 101 in
-  scc_array +> Array.iteri (fun i xs -> 
-    xs +> List.iter (fun k -> 
+  scc_array |> Array.iteri (fun i xs -> 
+    xs |> List.iter (fun k -> 
       if Hashtbl.mem h k
       then failwith "the strongly connected components should be disjoint";
       Hashtbl.add h k i
@@ -506,13 +506,13 @@ let strongly_connected_components_condensation2 g (scc, hscc) =
   let g2 = create () in
   let n = Array.length scc in
   for i = 0 to n -1 do
-    g2 +> add_vertex_if_not_present i
+    g2 |> add_vertex_if_not_present i
   done;
-  g +> iter_edges (fun n1 n2 ->
+  g |> iter_edges (fun n1 n2 ->
     let k1 = Hashtbl.find hscc n1 in
     let k2 = Hashtbl.find hscc n2 in
     if k1 <> k2
-    then g2 +> add_edge k1 k2;
+    then g2 |> add_edge k1 k2;
   );
   g2
 let strongly_connected_components_condensation a b =
@@ -527,7 +527,7 @@ let depth_nodes2 g =
   let hres = Hashtbl.create 101 in
 
   (* do in toplogical order *)
-  g.og +> OG.Topological.iter (fun v -> 
+  g.og |> OG.Topological.iter (fun v -> 
     let ncurrent = 
       if not (Hashtbl.mem hres v)
       then 0
@@ -535,7 +535,7 @@ let depth_nodes2 g =
     in
     Hashtbl.replace hres v ncurrent;
     let xs = OG.succ g.og v in
-    xs +> List.iter (fun v2 ->
+    xs |> List.iter (fun v2 ->
       let nchild =
         if not (Hashtbl.mem hres v2)
         then ncurrent + 1
@@ -551,7 +551,7 @@ let depth_nodes2 g =
   );
 
   let hfinalres = Hashtbl.create 101 in
-  hres +> Hashtbl.iter (fun v n ->
+  hres |> Hashtbl.iter (fun v n ->
     Hashtbl.add hfinalres (key_of_vertex v g) n
   );
   hfinalres
@@ -574,7 +574,7 @@ let print_graph_generic ?(launch_gv=true) ?(extra_string="") ~str_of_key
     pr extra_string;
     pr "\n";
 
-    g.og +> OG.iter_vertex (fun v -> 
+    g.og |> OG.iter_vertex (fun v -> 
       let k = key_of_vertex v g in
       (* todo? could also use the str_of_key to represent the node *)
       pr (spf "%d [label=\"%s\"];\n" 
@@ -582,9 +582,9 @@ let print_graph_generic ?(launch_gv=true) ?(extra_string="") ~str_of_key
              (str_of_key k));
     );
 
-    g.og +> OG.iter_vertex (fun v -> 
+    g.og |> OG.iter_vertex (fun v -> 
       let succ = OG.succ g.og v in
-      succ +> List.iter (fun v2 ->
+      succ |> List.iter (fun v2 ->
         pr (spf "%d -> %d;\n" (OG.V.label v) (OG.V.label v2));
       )
     );

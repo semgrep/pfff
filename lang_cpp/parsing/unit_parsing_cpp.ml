@@ -35,7 +35,7 @@ let unittest =
      let dir = Filename.concat Config_pfff.path "/tests/cpp/parsing" in
      let files = 
        Common2.glob (spf "%s/*.cpp" dir) @ Common2.glob (spf "%s/*.h" dir) in
-     files +> List.iter (fun file ->
+     files |> List.iter (fun file ->
        try
          let _ast = parse file in
          ()
@@ -47,7 +47,7 @@ let unittest =
    "rejecting bad code" >:: (fun () ->
      let dir = Filename.concat Config_pfff.path "/tests/cpp/parsing_errors" in
      let files = Common2.glob (spf "%s/*.cpp" dir) in
-     files +> List.iter (fun file ->
+     files |> List.iter (fun file ->
        try 
          let _ast = parse file in
          assert_failure (spf "it should have thrown a Parse_error %s" file)
@@ -64,7 +64,7 @@ let unittest =
      let files = 
        Common2.glob (spf "%s/*.c" dir)
        (* @ Common2.glob (spf "%s/*.h" dir) *) in
-     files +> List.iter (fun file ->
+     files |> List.iter (fun file ->
        try
          let _ast = parse file in
          ()

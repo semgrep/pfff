@@ -77,7 +77,7 @@ let sanitize_compile_commands json =
   let hdone = Hashtbl.create 101 in
   match json with
   | J.Array xs ->
-      J.Array (xs +> List.filter (fun json ->
+      J.Array (xs |> List.filter (fun json ->
         (match json with
         | J.Object ([
             "directory", _d;
@@ -102,11 +102,11 @@ let analyze_make_trace file =
   let dir = ref None in
 
   let relevant_lines = 
-    Common.cat file +> Common.map_filter (fun s ->
+    Common.cat file |> Common.map_filter (fun s ->
       let xs = Common.split "[ \t]+" s in
       match xs with
       | ("clang"|"gcc"|"cc")::xs when List.mem "-c" xs ->
-          xs +> Common.find_some_opt (fun file ->
+          xs |> Common.find_some_opt (fun file ->
             if file =~ ".*\\.[cm]$"
             then Some (file, s, !dir)
             else None
@@ -120,7 +120,7 @@ let analyze_make_trace file =
           None
 
       | ("8c" | "8^c")::xs ->
-          xs +> Common.find_some_opt (fun file ->
+          xs |> Common.find_some_opt (fun file ->
             let s = Str.global_replace (Str.regexp "8c\\|8^c") "cc" s in
             if file =~ ".*\\.c$"
             then Some (file, s ^ " " ^ (Common.join " " [
@@ -158,7 +158,7 @@ let analyze_make_trace file =
           None
     )
   in
-  relevant_lines +> List.map (fun (file, s, dir) ->
+  relevant_lines |> List.map (fun (file, s, dir) ->
     let final_file = 
       match dir with
       | None -> file
@@ -180,5 +180,5 @@ let analyze_make_trace file =
       "command", J.String s;
       "file", J.String path;
     ]
-  ) +> (fun xs -> J.Array xs)
-  +> sanitize_compile_commands
+  ) |> (fun xs -> J.Array xs)
+  |> sanitize_compile_commands

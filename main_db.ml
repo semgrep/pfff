@@ -127,7 +127,7 @@ let rec light_db_of_files_or_dirs lang xs =
 
 let main_action xs =
 
-  let xs = xs +> List.map Common2.relative_to_absolute in
+  let xs = xs |> List.map Common2.relative_to_absolute in
   let db = light_db_of_files_or_dirs !lang xs in
   
   let file = 

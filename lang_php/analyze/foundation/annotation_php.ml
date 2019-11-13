@@ -114,7 +114,7 @@ exception AnnotationPb of string * Cst_php.info
 let extract_annotations str tok =
   let lines = Common2.lines str in 
 
-  lines +> Common2.map_flatten (fun str ->
+  lines |> Common2.map_flatten (fun str ->
 
     let str = Comment_php.strip_comment_marks str in
 
@@ -134,7 +134,7 @@ let extract_annotations str tok =
         let s = Common.matched1 str in
         let xs = Common.split "[ ,]+" s in
 
-        let emails = xs +> List.map (fun s ->
+        let emails = xs |> List.map (fun s ->
           
           if s =~ "^\\([^:]+\\):?\\([a-z]*\\)$" 
           then 
@@ -195,7 +195,7 @@ let extract_annotations str tok =
        
     | _ -> 
         let xs = Common2.all_match "\\(@[A-Za-z-]+\\)" str in
-        xs +> List.map (function
+        xs |> List.map (function
         | "@called-from-phpsh" -> CalledFromPhpsh
         | "@called-outside-tfb" -> CalledOutsideTfb
         | "@called-dynamically" -> CalledDynamically
@@ -298,7 +298,7 @@ let str_debug_of_annotation a =
 (*****************************************************************************)
 
 let annotations_of_program_with_comments2 (_ast, tokens) =
- tokens +> List.map (function
+ tokens |> List.map (function
   | Parser_php.T_COMMENT info
   | Parser_php.T_DOC_COMMENT info 
     ->
@@ -311,9 +311,9 @@ let annotations_of_program_with_comments2 (_ast, tokens) =
        * be good enough to locate the annotation when we
        * do checks related to annotations.
        *)
-      annots +> List.map (fun annot -> annot, info)
+      annots |> List.map (fun annot -> annot, info)
   | _ -> []
- ) +> List.flatten
+ ) |> List.flatten
 
  
 let annotations_of_program_with_comments a = 

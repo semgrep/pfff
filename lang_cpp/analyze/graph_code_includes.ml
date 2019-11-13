@@ -70,8 +70,8 @@ let add_use_edge env (name, kind) =
     let parent_target = G.not_found in
     pr2 (spf "PB: lookup fail on %s (in %s)" 
            (G.string_of_node dst) (G.string_of_node src));
-    env.g +> G.add_edge (parent_target, dst) G.Has;
-    env.g +> G.add_edge (src, dst) G.Use;
+    env.g |> G.add_edge (parent_target, dst) G.Has;
+    env.g |> G.add_edge (src, dst) G.Use;
     ()
   )
 
@@ -83,8 +83,8 @@ let extract_defs ~g ~ast ~readable =
   ignore(ast);
   let dir = Common2.dirname readable in
   G.create_intermediate_directories_if_not_present g dir;
-  g +> G.add_node (readable, E.File);
-  g +> G.add_edge ((dir, E.Dir), (readable, E.File))  G.Has;
+  g |> G.add_node (readable, E.File);
+  g |> G.add_edge ((dir, E.Dir), (readable, E.File))  G.Has;
 
   ()
 
@@ -98,7 +98,7 @@ let extract_uses ~g ~ast ~readable =
   }
   in
   let dir = Common2.dirname readable in
-  ast +> List.iter (function
+  ast |> List.iter (function
   | T.TInclude (_, file, _) ->
     (match file with
     | s when s =~ "\"\\(.*\\)\"" ->
@@ -122,7 +122,7 @@ let build ?(verbose=true) root files =
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
   if verbose then pr2 "\nstep1: extract defs";
-  files +> Console.progress ~show:verbose (fun k -> 
+  files |> Console.progress ~show:verbose (fun k -> 
     List.iter (fun file ->
       k();
       let readable = Common.readable root file in
@@ -132,7 +132,7 @@ let build ?(verbose=true) root files =
 
   (* step2: creating the 'Use' edges, the uses *)
   if verbose then pr2 "\nstep2: extract uses";
-  files +> Console.progress ~show:verbose (fun k -> 
+  files |> Console.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
      k();
      let readable = Common.readable root file in

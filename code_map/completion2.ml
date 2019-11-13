@@ -273,7 +273,7 @@ let my_entry_completion_eff2 ~callback_selected ~callback_changed fn_idx =
       pr2 file;
       callback_selected entry str file entity
 
-  ) +> ignore;
+  ) |> ignore;
 
   let current_timeout = ref None in
 
@@ -281,7 +281,7 @@ let my_entry_completion_eff2 ~callback_selected ~callback_changed fn_idx =
     let s = entry#text in
     pr2 s;
     if s <> "" then begin
-      !current_timeout +> Common.do_option (fun x ->
+      !current_timeout |> Common.do_option (fun x ->
         GMain.Timeout.remove x;
       );
       current_timeout :=
@@ -302,7 +302,7 @@ let my_entry_completion_eff2 ~callback_selected ~callback_changed fn_idx =
           ));
     end
     else callback_changed s
-  ) +> ignore;
+  ) |> ignore;
 
   (* return the entry so someone can hook another signal *)
   entry

@@ -224,7 +224,7 @@ let keyword_table = Common.hash_of_list [
   "resource_xdebug", (fun ii -> T_RESOURCE_XDEBUG ii);
 ]
 
-let _ = assert ((Common2.hkeys keyword_table) +>
+let _ = assert ((Common2.hkeys keyword_table) |>
                  List.for_all (fun s -> s = String.lowercase_ascii s))
 
 (* ---------------------------------------------------------------------- *)
@@ -460,19 +460,19 @@ rule st_in_scripting = parse
     | "/*" {
         let info = tokinfo lexbuf in
         let com = st_comment lexbuf in
-        T_COMMENT(info +> tok_add_s com)
+        T_COMMENT(info |> tok_add_s com)
       }
     | "/**/" { T_COMMENT(tokinfo lexbuf) }
 
     | "/**" { (* RESET_DOC_COMMENT(); *)
         let info = tokinfo lexbuf in
         let com = st_comment lexbuf in
-        T_DOC_COMMENT(info +> tok_add_s com)
+        T_DOC_COMMENT(info |> tok_add_s com)
       }
     | "#"|"//" {
         let info = tokinfo lexbuf in
         let com = st_one_line_comment lexbuf in
-        T_COMMENT(info +> tok_add_s com)
+        T_COMMENT(info |> tok_add_s com)
       }
 
     (* old: | WHITESPACE { T_WHITESPACE(tokinfo lexbuf) } *)
@@ -907,7 +907,7 @@ rule st_in_scripting = parse
 
 
   (* ----------------------------------------------------------------------- *)
-    | eof { EOF (tokinfo lexbuf +> PI.rewrap_str "") }
+    | eof { EOF (tokinfo lexbuf |> PI.rewrap_str "") }
     | _ {
         error ("unrecognised symbol, in token rule:"^tok lexbuf);
         TUnknown (tokinfo lexbuf)
@@ -964,7 +964,7 @@ and initial = parse
 
   (*------------------------------------------------------------------------ *)
 
-  | eof { EOF (tokinfo lexbuf +> PI.rewrap_str "") }
+  | eof { EOF (tokinfo lexbuf |> PI.rewrap_str "") }
   | _ (* ANY_CHAR *) {
       error("unrecognised symbol, in token rule:"^tok lexbuf);
       TUnknown (tokinfo lexbuf)
@@ -1019,7 +1019,7 @@ and st_var_offset = parse
       pop_mode();
       TCBRA(tokinfo lexbuf);
     }
-   | eof { EOF (tokinfo lexbuf +> PI.rewrap_str "") }
+   | eof { EOF (tokinfo lexbuf |> PI.rewrap_str "") }
    | _ {
        error ("unrecognised symbol, in st_var_offset rule:"^tok lexbuf);
        TUnknown (tokinfo lexbuf)
@@ -1072,7 +1072,7 @@ and st_double_quotes = parse
       pop_mode ();
       TGUIL(tokinfo lexbuf)
     }
-   | eof { EOF (tokinfo lexbuf +> PI.rewrap_str "") }
+   | eof { EOF (tokinfo lexbuf |> PI.rewrap_str "") }
    | _ {
        error("unrecognised symbol, in st_double_quotes rule:"^tok lexbuf);
        TUnknown (tokinfo lexbuf)
@@ -1117,7 +1117,7 @@ and st_backquote = parse
       TBACKQUOTE(tokinfo lexbuf)
     }
 
-    | eof { EOF (tokinfo lexbuf +>PI.rewrap_str "") }
+    | eof { EOF (tokinfo lexbuf |>PI.rewrap_str "") }
     | _ {
         error ("unrecognised symbol, in st_backquote rule:"^tok lexbuf);
         TUnknown (tokinfo lexbuf)
@@ -1192,7 +1192,7 @@ and st_start_heredoc stopdoc = parse
         T_DOLLAR_OPEN_CURLY_BRACES(tokinfo lexbuf);
       }
 
-    | eof { EOF (tokinfo lexbuf +> PI.rewrap_str "") }
+    | eof { EOF (tokinfo lexbuf |> PI.rewrap_str "") }
     | _ {
         error("unrecognised symbol, in st_start_heredoc rule:"^tok lexbuf);
         TUnknown (tokinfo lexbuf)
@@ -1237,7 +1237,7 @@ and st_start_nowdoc stopdoc = parse
       TNewline (tokinfo lexbuf)
     }
 
-  | eof { EOF (tokinfo lexbuf +> PI.rewrap_str "") }
+  | eof { EOF (tokinfo lexbuf |> PI.rewrap_str "") }
   | _ {
        error ("unrecognised symbol, in st_start_nowdoc rule:"^tok lexbuf);
        TUnknown (tokinfo lexbuf)
@@ -1262,19 +1262,19 @@ and st_in_xhp_tag current_tag = parse
   | "/*" {
         let info = tokinfo lexbuf in
         let com = st_comment lexbuf in
-        T_COMMENT(info +> tok_add_s com)
+        T_COMMENT(info |> tok_add_s com)
       }
   | "/**/" { T_COMMENT(tokinfo lexbuf) }
 
   | "/**" { (* RESET_DOC_COMMENT(); *)
       let info = tokinfo lexbuf in
       let com = st_comment lexbuf in
-      T_DOC_COMMENT(info +> tok_add_s com)
+      T_DOC_COMMENT(info |> tok_add_s com)
     }
   | "//" {
       let info = tokinfo lexbuf in
       let com = st_one_line_comment lexbuf in
-      T_COMMENT(info +> tok_add_s com)
+      T_COMMENT(info |> tok_add_s com)
     }
 
 
@@ -1306,7 +1306,7 @@ and st_in_xhp_tag current_tag = parse
       T_XHP_GT (tokinfo lexbuf)
     }
 
-  | eof { EOF (tokinfo lexbuf +> PI.rewrap_str "") }
+  | eof { EOF (tokinfo lexbuf |> PI.rewrap_str "") }
   | _  {
         error("unrecognised symbol, in XHP tag:"^tok lexbuf);
         TUnknown (tokinfo lexbuf)
@@ -1345,7 +1345,7 @@ and st_in_xhp_text current_tag = parse
       let info = tokinfo lexbuf in
       let com = st_xhp_comment lexbuf in
       (* less: make a special token T_XHP_COMMENT? *)
-      T_COMMENT(info +> tok_add_s com)
+      T_COMMENT(info |> tok_add_s com)
   }
 
   (* PHP interpolation. How the user can produce a { ? &;something ? *)
@@ -1358,7 +1358,7 @@ and st_in_xhp_text current_tag = parse
   | [^'<' '{']+ { T_XHP_TEXT (tok lexbuf, tokinfo lexbuf) }
 
 
-  | eof { EOF (tokinfo lexbuf +> PI.rewrap_str "") }
+  | eof { EOF (tokinfo lexbuf |> PI.rewrap_str "") }
   | _  {
       error ("unrecognised symbol, in XHP text:"^tok lexbuf);
       TUnknown (tokinfo lexbuf)

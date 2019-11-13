@@ -101,7 +101,7 @@ let rec check_format_stringn n args =
 let rec unargs args =
   match args with
   | [] -> []
-  | Left(Arg(Sc(C(String((s , _))))))::t -> s::(unargs t)
+  | Left(Arg(Sc(C(String((s, _))))))::t -> s::(unargs t)
   | Left _x::t -> ""::(unargs t)
   | _h::t -> unargs t
 
@@ -137,11 +137,11 @@ let expr_is_string e =
 
 let check ast = 
 
-  ast +> List.iter (function
+  ast |> List.iter (function
   | ClassDef cdef ->
     (match cdef.c_type with
     | Interface _ ->
-      cdef.c_body +> Ast.unbrace +> List.iter (function
+      cdef.c_body |> Ast.unbrace |> List.iter (function
       | Method mdef ->
         (match mdef.f_type with
         | MethodAbstract -> ()
@@ -162,7 +162,7 @@ let check ast =
       | Switch (_tok, _expr, cases) ->
         (match cases with
         | CaseList (_obrace, _tok2, cases, _cbrace) ->
-          cases +> List.iter (function
+          cases |> List.iter (function
           | Case (_, _, case_separator, _)
           | Default (_, case_separator, _) ->
                   (* this is more something that should be fixed by a proper
@@ -195,7 +195,7 @@ let check ast =
         then E.warning tok E.CaseSensitivityKeyword;
         k e
       (* Check the number of argument if the function name is in function_list/function_listn*)
-      | Call(Id(XName[QI(Name((func_name, tok)))]), (_ , args, _))
+      | Call(Id(XName[QI(Name((func_name, tok)))]), (_, args, _))
           when (List.mem_assoc func_name printf_like_functions_list) ->
         let n = List.assoc func_name printf_like_functions_list in
         (try

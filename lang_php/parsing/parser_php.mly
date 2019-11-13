@@ -601,7 +601,7 @@ is_reference:
 lexical_vars:
  | /*(*empty*)*/  { None }
  | T_USE TOPAR non_empty_lexical_var_list TCPAR {
-     Some ($1, ($2, ($3 +> List.map (function
+     Some ($1, ($2, ($3 |> List.map (function
      | Right info -> Right info
      | Left (a,b) -> Left (LexicalVar (a,b)))), $4))
    }

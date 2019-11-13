@@ -16,7 +16,7 @@ let test_tokens_php file =
   Flag.verbose_parsing := true;
 
   let toks = Parse_php.tokens file in
-  toks +> List.iter (fun x -> pr2_gen x);
+  toks |> List.iter (fun x -> pr2_gen x);
   ()
 
 (*e: test_tokens_php *)
@@ -43,7 +43,7 @@ let test_parse_php xs  =
 
   Common2.check_stack_nbfiles (List.length fullxs);
 
-  fullxs +> Console.progress (fun k -> List.iter (fun file -> 
+  fullxs |> Console.progress (fun k -> List.iter (fun file -> 
      k ();
 
     let (_xs, stat) = 
@@ -64,7 +64,7 @@ let test_parse_php xs  =
   Parse_info.print_parsing_stat_list !stat_list;
   (*s: print regression testing results *)
     let score_path = Filename.concat Config_pfff.path "tmp" in
-    dirname_opt +> Common.do_option (fun dirname -> 
+    dirname_opt |> Common.do_option (fun dirname -> 
       let dirname = Common.fullpath dirname in
       pr2 "--------------------------------";
       pr2 "regression testing  information";
@@ -139,7 +139,7 @@ let test_unparse_php file =
   let s = Unparse_php.string_of_program_with_comments_using_transfo ast2 in
   Common.write_file ~file:tmpfile s;
   let xs = Common2.unix_diff file tmpfile in
-  xs +> List.iter pr2;
+  xs |> List.iter pr2;
   ()
 
 let test_pretty_print_php file = 

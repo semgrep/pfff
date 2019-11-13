@@ -12,10 +12,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common 
 
 open Ast_web
-
 open Ast_html
 
 (*****************************************************************************)
@@ -60,7 +58,7 @@ let parse2 filename =
             failwith "wrong script/style tag"
         | _ -> ()
         );
-        xs +> List.iter visit;
+        xs |> List.iter visit;
     | Data _ ->
         ()
   in

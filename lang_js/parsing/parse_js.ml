@@ -197,7 +197,7 @@ let tokens2 file =
         if not (TH.is_comment tok)
         then Lexer_js._last_non_whitespace_like_token := Some tok;
 
-        let tok = tok +> TH.visitor_info_of_tok (fun ii -> 
+        let tok = tok |> TH.visitor_info_of_tok (fun ii -> 
         { ii with PI.token =
           (* could assert pinfo.filename = file ? *)
             match ii.PI.token with
@@ -315,7 +315,7 @@ let parse2 filename =
 
         x::aux tr 
     | Right err_tok ->
-       let max_line = Common.cat filename +> List.length in
+       let max_line = Common.cat filename |> List.length in
        if !Flag.show_parsing_error
        then begin
          let filelines = Common2.cat_array filename in

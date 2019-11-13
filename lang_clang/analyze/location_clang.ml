@@ -50,7 +50,7 @@ let locations_of_angle (line, file) xs =
   | xs ->
       let xxs = Common2.split_gen_when 
         (function (T TComma)::xs -> Some xs | _ -> None) xs in
-      xxs +> List.map (function
+      xxs |> List.map (function
         | [T (TLowerIdent "line"); T TColon; T (TInt i1);T TColon; T(TInt i2)]->
             Line (s_to_i i1, s_to_i i2)
         | [T (TLowerIdent "col"); T TColon; T (TInt i);] ->
@@ -145,7 +145,7 @@ let readable_filename_location_of_paren_opt ~root clang_file (enum, l, xs) =
    * location, hence the List.rev below.
    * update: now that use ExpansionLoc, can get rid of List.rev?
    *)
-  locations +> Common.find_some_opt (function 
+  locations |> Common.find_some_opt (function 
   | File (f, _,_) ->
       let readable = readable_of_filename ~root f in
       (* ugly: stdbool.h contains some macros that then confused

@@ -54,13 +54,13 @@ let entity_of_highlight_category_opt x =
 let defs_of_files_or_dirs ?(verbose=false) xs =
   let files = Lib_parsing_ml.find_source_files_of_dir_or_files xs in
 
-  files +> Console.progress ~show:verbose (fun k -> 
+  files |> Console.progress ~show:verbose (fun k -> 
    List.map (fun file ->
     k();
      let (ast, toks) = 
        try 
          Common.save_excursion Flag.show_parsing_error false(fun()->
-           Parse_ml.parse file +> fst
+           Parse_ml.parse file |> fst
          )
        with Parse_info.Parsing_error pos ->
          pr2 (spf "PARSING error in %s" (Parse_info.string_of_info pos));
@@ -81,15 +81,15 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
     ;
 
     (* processing the tokens in order *)
-    toks +> List.iter (fun tok -> 
+    toks |> List.iter (fun tok -> 
 
         let info = Token_helpers_ml.info_of_tok tok in
         let s = Parse_info.str_of_info info in
 
         let categ = Common2.hfind_option info h in
         
-        categ +> Common.do_option (fun x ->
-          entity_of_highlight_category_opt x +> Common.do_option (fun kind ->
+        categ |> Common.do_option (fun x ->
+          entity_of_highlight_category_opt x |> Common.do_option (fun kind ->
 
               Common.push (Tags.tag_of_info filelines info kind) defs;
 

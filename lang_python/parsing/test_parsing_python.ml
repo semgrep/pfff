@@ -15,7 +15,7 @@ let test_tokens_python file =
   Flag.exn_when_lexical_error := true;
 
   let toks = Parse_python.tokens file in
-  toks +> List.iter (fun x -> pr2_gen x);
+  toks |> List.iter (fun x -> pr2_gen x);
   ()
 
 let test_parse_python xs =
@@ -27,7 +27,7 @@ let test_parse_python xs =
   in
   let stat_list = ref [] in
 
-  fullxs +> Console.progress (fun k -> List.iter (fun file -> 
+  fullxs |> Console.progress (fun k -> List.iter (fun file -> 
     k();
 
     let (_xs, stat) = 

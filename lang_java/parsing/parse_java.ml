@@ -55,7 +55,7 @@ let tokens2 file =
       if !Flag.debug_lexer then Common.pr2_gen tok;
 
       (* fill in the line and col information *)
-      let tok = tok +> TH.visitor_info_of_tok (fun ii ->
+      let tok = tok |> TH.visitor_info_of_tok (fun ii ->
         { ii with PI.token=
           (* could assert pinfo.filename = file ? *)
            match ii.PI.token with
@@ -137,7 +137,7 @@ let parse2 filename =
 
   match elems with
   | Left xs ->
-      stat.PI.correct <- (Common.cat filename +> List.length);
+      stat.PI.correct <- (Common.cat filename |> List.length);
       (Some xs, toks), stat
 
   | Right (_info_of_bads, line_error, cur) ->
@@ -147,11 +147,11 @@ let parse2 filename =
 
       if !Flag.show_parsing_error
       then pr2 ("parse error \n = " ^ error_msg_tok cur);
-      let checkpoint2 = Common.cat filename +> List.length in
+      let checkpoint2 = Common.cat filename |> List.length in
 
       if !Flag.show_parsing_error
       then Parse_info.print_bad line_error (checkpoint, checkpoint2) filelines;
-      stat.PI.bad     <- Common.cat filename +> List.length;
+      stat.PI.bad     <- Common.cat filename |> List.length;
       (None, toks), stat
 
 let parse a =

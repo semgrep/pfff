@@ -34,7 +34,7 @@ module Annot = Annotation_js
 let tags_of_files_or_dirs ?(verbose=false) xs =
   let files = Lib_parsing_js.find_source_files_of_dir_or_files xs in
 
-  files +> Console.progress ~show:verbose (fun k ->
+  files |> Console.progress ~show:verbose (fun k ->
    List.map (fun file ->
     k();
 
@@ -55,8 +55,8 @@ let tags_of_files_or_dirs ?(verbose=false) xs =
     
     let tags_classes = 
       hcomplete_name_of_info 
-      +> Common.hash_to_list 
-      +> List.map (fun (info, (entity_kind, str)) ->
+      |> Common.hash_to_list 
+      |> List.map (fun (info, (entity_kind, str)) ->
          let str' = 
           (* we standardize static vs member methods in class_js
            * for the light_db database building, but
@@ -82,7 +82,7 @@ let tags_of_files_or_dirs ?(verbose=false) xs =
     let annots = 
       Annotation_js.annotations_of_program_with_comments (astopt,toks) in
     let tags_modules =
-      annots +> Common.map_filter (function
+      annots |> Common.map_filter (function
       | (Annot.ProvidesModule m | Annot.ProvidesLegacy m), info ->
           let info' = Parse_info.rewrap_str m info in
           Some (Tags.tag_of_info filelines info' (E.Module))

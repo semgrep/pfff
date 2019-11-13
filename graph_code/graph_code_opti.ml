@@ -72,18 +72,18 @@ let (convert2: Graph_code.graph -> graph) = fun g ->
   }
   in
   let i = ref 0 in
-  g +> G.iter_nodes (fun node ->
+  g |> G.iter_nodes (fun node ->
     Hashtbl.add h.name_to_i node !i;
     h.i_to_name.(!i) <- node;
     incr i;
   );
-  g +> G.iter_nodes (fun node ->
+  g |> G.iter_nodes (fun node ->
     let i = hashtbl_find h.name_to_i node in
-    g +> G.succ node G.Has +> List.iter (fun node2 ->
+    g |> G.succ node G.Has |> List.iter (fun node2 ->
       let j = hashtbl_find h.name_to_i node2 in
       h.has_children.(i) <- j :: h.has_children.(i);
     );
-    g +> G.succ node G.Use +> List.iter (fun node2 ->
+    g |> G.succ node G.Use |> List.iter (fun node2 ->
       (match node2 with
       (* ugly: less important dependency *)
 (*   | _, E.Constant  | _, E.ClassConstant -> () *)
@@ -104,7 +104,7 @@ let convert a =
 
 let children n g =
   g.has_children.(hashtbl_find g.name_to_i n) 
-  +> List.map (fun i ->
+  |> List.map (fun i ->
       g.i_to_name.(i)
   )
 
@@ -115,9 +115,9 @@ let all_children n g =
     let xs = g.has_children.(i) in
     if null xs 
     then [i]
-    else i::(xs +> List.map (fun i -> aux i) +> List.flatten)
+    else i::(xs |> List.map (fun i -> aux i) |> List.flatten)
   in
-  aux (hashtbl_find g.name_to_i n) +> List.map (fun i -> g.i_to_name.(i))
+  aux (hashtbl_find g.name_to_i n) |> List.map (fun i -> g.i_to_name.(i))
 
 
 let has_node n g =
@@ -138,7 +138,7 @@ let adjust_graph_pack_some_children_under_dotdotdot parent to_pack g =
   then failwith (spf "already a node with '%s' for a name" dotdotdot);
 
   let new_idx = Array.length g.i_to_name in
-  let to_pack_idx = to_pack +> List.map (fun n -> hashtbl_find g.name_to_i n)in
+  let to_pack_idx = to_pack |> List.map (fun n -> hashtbl_find g.name_to_i n)in
   let new_g = { 
     name_to_i = Hashtbl.copy g.name_to_i;
     i_to_name = Array.append g.i_to_name [|new_node|];
@@ -147,11 +147,11 @@ let adjust_graph_pack_some_children_under_dotdotdot parent to_pack g =
   } in
   Hashtbl.add new_g.name_to_i new_node new_idx;
   let idx_parent = hashtbl_find new_g.name_to_i parent in
-  let idx_packs = to_pack_idx +> Common.hashset_of_list in
+  let idx_packs = to_pack_idx |> Common.hashset_of_list in
   new_g.has_children.(idx_parent) <-
     (* bugfix: don't forget to add new_idx *)
     new_idx ::
-     new_g.has_children.(idx_parent) +> Common.exclude (fun i ->
+     new_g.has_children.(idx_parent) |> Common.exclude (fun i ->
       Hashtbl.mem idx_packs i
      );
   new_g, new_node

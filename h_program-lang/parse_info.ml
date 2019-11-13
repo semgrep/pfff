@@ -450,7 +450,7 @@ let min_max_ii_by_pos xs =
   | [x] -> (x, x)
   | x::xs ->
       let pos_leq p1 p2 = (compare_pos p1 p2) =|= (-1) in
-      xs +> List.fold_left (fun (minii,maxii) e ->
+      xs |> List.fold_left (fun (minii,maxii) e ->
         let maxii' = if pos_leq maxii e then e else maxii in
         let minii' = if pos_leq e minii then e else minii in
         minii', maxii'
@@ -873,20 +873,20 @@ let print_parsing_stat_list ?(verbose=false)statxs =
   let total = (List.length statxs) in
   let perfect = 
     statxs 
-      +> List.filter (function 
+      |> List.filter (function 
           {have_timeout = false; bad = 0; _} -> true | _ -> false)
-      +> List.length 
+      |> List.length 
   in
 
   if verbose then begin 
   pr "\n\n\n---------------------------------------------------------------";
   pr "pbs with files:";
   statxs 
-    +> List.filter (function 
+    |> List.filter (function 
       | {have_timeout = true; _} -> true 
       | {bad = n; _} when n > 0 -> true 
       | _ -> false)
-    +> List.iter (function 
+    |> List.iter (function 
         {filename = file; have_timeout = timeout; bad = n; _} -> 
           pr (file ^ "  " ^ (if timeout then "TIMEOUT" else i_to_s n));
         );
@@ -895,10 +895,10 @@ let print_parsing_stat_list ?(verbose=false)statxs =
   pr "files with lots of tokens passed/commentized:";
   let threshold_passed = 100 in
   statxs 
-    +> List.filter (function 
+    |> List.filter (function 
       | {commentized = n; _} when n > threshold_passed -> true
       | _ -> false)
-    +> List.iter (function 
+    |> List.iter (function 
         {filename = file; commentized = n; _} -> 
           pr (file ^ "  " ^ (i_to_s n));
         );
@@ -906,9 +906,9 @@ let print_parsing_stat_list ?(verbose=false)statxs =
   pr "\n\n\n";
   end;
 
-  let good = statxs +> List.fold_left (fun acc {correct = x; _} -> acc+x) 0 in
-  let bad  = statxs +> List.fold_left (fun acc {bad = x; _} -> acc+x) 0  in
-  let passed = statxs +> List.fold_left (fun acc {commentized = x; _} -> acc+x) 0
+  let good = statxs |> List.fold_left (fun acc {correct = x; _} -> acc+x) 0 in
+  let bad  = statxs |> List.fold_left (fun acc {bad = x; _} -> acc+x) 0  in
+  let passed = statxs |> List.fold_left (fun acc {commentized = x; _} -> acc+x) 0
   in
   let total_lines = good + bad in
 
@@ -917,12 +917,12 @@ let print_parsing_stat_list ?(verbose=false)statxs =
   (spf "NB total files = %d; " total) ^
   (spf "NB total lines = %d; " total_lines) ^
   (spf "perfect = %d; " perfect) ^
-  (spf "pbs = %d; "     (statxs +> List.filter (function 
+  (spf "pbs = %d; "     (statxs |> List.filter (function 
       {bad = n; _} when n > 0 -> true | _ -> false) 
-                               +> List.length)) ^
-  (spf "timeout = %d; " (statxs +> List.filter (function 
+                               |> List.length)) ^
+  (spf "timeout = %d; " (statxs |> List.filter (function 
       {have_timeout = true; _} -> true | _ -> false) 
-                               +> List.length)) ^
+                               |> List.length)) ^
   (spf "=========> %d" ((100 * perfect) / total)) ^ "%"
                                                           
  );
@@ -957,10 +957,10 @@ let lines_around_error_line ~context (file, line) =
 
 let print_recurring_problematic_tokens xs =
   let h = Hashtbl.create 101 in
-  xs +> List.iter (fun x ->
+  xs |> List.iter (fun x ->
     let file = x.filename in
-    x.problematic_lines +> List.iter (fun (xs, line_error) ->
-      xs +> List.iter (fun s ->
+    x.problematic_lines |> List.iter (fun (xs, line_error) ->
+      xs |> List.iter (fun s ->
         Common2.hupdate_default s
           (fun (old, example)  -> old + 1, example)
           (fun() -> 0, (file, line_error)) h;
@@ -969,13 +969,13 @@ let print_recurring_problematic_tokens xs =
   pr2 ("maybe 10 most problematic tokens");
   Common2.pr2_xxxxxxxxxxxxxxxxx();
   Common.hash_to_list h
-  +> List.sort (fun (_k1,(v1,_)) (_k2,(v2,_)) -> compare v2 v1)
-  +> Common.take_safe 10
-  +> List.iter (fun (k,(i, (file_ex, line_ex))) ->
+  |> List.sort (fun (_k1,(v1,_)) (_k2,(v2,_)) -> compare v2 v1)
+  |> Common.take_safe 10
+  |> List.iter (fun (k,(i, (file_ex, line_ex))) ->
     pr2 (spf "%s: present in %d parsing errors" k i);
     pr2 ("example: ");
     let lines = lines_around_error_line ~context:2 (file_ex, line_ex) in
-    lines +> List.iter (fun s -> pr2 ("       " ^ s));
+    lines |> List.iter (fun s -> pr2 ("       " ^ s));
   );
   Common2.pr2_xxxxxxxxxxxxxxxxx();
   ()

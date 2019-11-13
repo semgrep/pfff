@@ -80,7 +80,7 @@ let is_php_file filename =
  *)
 let find_source_files_of_dir_or_files ?(verbose=false) ?(include_hack=false) xs = 
   Common.files_of_dir_or_files_no_vcs_nofilter xs 
-  +> List.filter (fun filename ->
+  |> List.filter (fun filename ->
     (* note: there was a possible race here because between the time we
      * do the 'find' and the time we call is_php_file(), the file may have
      * disappeared (this happens for instance because of watchman).
@@ -98,7 +98,7 @@ let find_source_files_of_dir_or_files ?(verbose=false) ?(include_hack=false) xs 
     if not valid && verbose
     then pr2 ("not analyzing: " ^ filename);
     valid
-   ) +> Common.sort
+   ) |> Common.sort
 
 (*****************************************************************************)
 (* Extract infos *)
@@ -218,11 +218,11 @@ let get_constant_strings_any any =
 (*e: ast getters *)
 
 let get_static_vars_any any =
-  any +> V.do_visit_with_ref (fun aref -> { V.default_visitor with
+  any |> V.do_visit_with_ref (fun aref -> { V.default_visitor with
     V.kstmt = (fun (k,_vx) x ->
       match x with
       | StaticVars (_tok, xs, _tok2) ->
-          xs +> Ast.uncomma +> List.iter (fun (dname, _affect_opt) -> 
+          xs |> Ast.uncomma |> List.iter (fun (dname, _affect_opt) -> 
             Common.push dname aref
           );
       | _ -> 
@@ -249,8 +249,8 @@ let get_vars_any any =
 
       (* todo? sure ?? *)
       | Lambda (l_use, _def) ->
-          l_use +> Common.do_option (fun (_tok, xs) ->
-            xs +> Ast.unparen +> Ast.uncomma +> List.iter (function
+          l_use |> Common.do_option (fun (_tok, xs) ->
+            xs |> Ast.unparen |> Ast.uncomma |> List.iter (function
             | LexicalVar (_is_ref, dname) ->
                 Common.push dname aref
             )
@@ -265,13 +265,13 @@ let get_vars_any any =
 (*****************************************************************************)
 
 let top_statements_of_program ast = 
-  ast +> List.map (function
+  ast |> List.map (function
   | StmtList xs -> xs
   | FinalDef _|NotParsedCorrectly _
   | ClassDef _| FuncDef _ | ConstantDef _ | TypeDef _
   | NamespaceDef _ | NamespaceBracketDef _ | NamespaceUse _
       -> []
-  ) +> List.flatten  
+  ) |> List.flatten  
 
 (* We often do some analysis on "unit" of code like a function,
  * a method, or toplevel statements. One can not use the
@@ -319,9 +319,9 @@ let get_vars_assignements_any recursor =
       V.kstmt = (fun (k,_) x ->
         match x with
         | StaticVars (_tok, xs, _tok2) ->
-            xs +> Ast.uncomma +> List.iter (fun (dname, affect_opt) -> 
+            xs |> Ast.uncomma |> List.iter (fun (dname, affect_opt) -> 
               let s = Ast.str_of_dname dname in
-              affect_opt +> Common.do_option (fun (_tok, scalar) ->
+              affect_opt |> Common.do_option (fun (_tok, scalar) ->
                 Common.push (s, scalar) aref;
               );
             );
@@ -350,6 +350,6 @@ let get_vars_assignements_any recursor =
             k x
       );
     }
-  ) recursor +> Common.group_assoc_bykey_eff
+  ) recursor |> Common.group_assoc_bykey_eff
 
 (*e: lib_parsing_php.ml *)

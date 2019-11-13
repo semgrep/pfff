@@ -94,7 +94,7 @@ let build_with_tree2 tree gopti =
   let igopti_to_idm = Array.make n_nodes (-1) in
 
   let (i: idm idx ref) = ref 0 in
-  nodes +> List.iter (fun node ->
+  nodes |> List.iter (fun node ->
     Hashtbl.add name_to_idm node !i;
     idm_to_name.(!i) <- node;
     igopti_to_idm.(hashtbl_find_node gopti.G2.name_to_i node) <- !i;
@@ -119,13 +119,13 @@ let build_with_tree2 tree gopti =
       else idm
     in
     projected_parent_of_igopti.(igopti) <- project;
-    children +> List.iter (depth project);
+    children |> List.iter (depth project);
   in
   depth (-1) iroot;
 
-  gopti.G2.use +> Array.iteri (fun i xs ->
+  gopti.G2.use |> Array.iteri (fun i xs ->
     let parent_i = projected_parent_of_igopti.(i) in
-    xs +> List.iter (fun j ->
+    xs |> List.iter (fun j ->
       let parent_j = projected_parent_of_igopti.(j) in
       (* It's possible we operate on a slice of the original dsm, 
        * for instance when we focus on a node, in which case
@@ -271,9 +271,9 @@ let hill_climbing nodes dm =
 (*****************************************************************************)
 
 let sort_by_count_rows_low_first xs m dm =
-  xs +> List.map (fun n -> n, count_row (hashtbl_find_node dm.name_to_i n) m)
-     +> Common.sort_by_val_lowfirst
-     +> List.map fst
+  xs |> List.map (fun n -> n, count_row (hashtbl_find_node dm.name_to_i n) m)
+     |> Common.sort_by_val_lowfirst
+     |> List.map fst
 
 (*
 let sort_by_count_columns_high_first xs m dm =
@@ -290,7 +290,7 @@ let sort_by_count_columns_high_first xs m dm =
  *   which is a bit equivalent to normalize, to do sum of percentage.
  *)
 let sort_by_count_rows_low_columns_high_first xs m dm =
-  xs +> List.map (fun n ->
+  xs |> List.map (fun n ->
     let idx = hashtbl_find_node dm.name_to_i n in
     let h =
       float_of_int (count_row idx m) 
@@ -298,8 +298,8 @@ let sort_by_count_rows_low_columns_high_first xs m dm =
         (1. +. float_of_int (count_column idx m))
     in
     n, h
-  ) +> Common.sort_by_val_lowfirst
-    +> List.map fst
+  ) |> Common.sort_by_val_lowfirst
+    |> List.map fst
 
 (* 
  * See http://dsmweb.org/dsmweb/en/understand-dsm/technical-dsm-tutorial/partitioning.html
@@ -315,7 +315,7 @@ let sort_by_count_rows_low_columns_high_first xs m dm =
  *)
 let partition_matrix nodes dm =
 
-  let m = dm.matrix +> Array.map Array.copy in
+  let m = dm.matrix |> Array.map Array.copy in
   let n = Array.length m in
   for i = 0 to n - 1 do
     m.(i).(i) <- 0
@@ -334,10 +334,10 @@ let partition_matrix nodes dm =
      * elements."
      *)
     let elts_with_empty_columns, rest = 
-      nodes +> List.partition (fun node -> is_empty_column node m dm) in
+      nodes |> List.partition (fun node -> is_empty_column node m dm) in
     let xs = 
       sort_by_count_rows_low_first elts_with_empty_columns dm.matrix dm in
-    xs +> List.iter (empty_all_cells_relevant_to_node m dm);
+    xs |> List.iter (empty_all_cells_relevant_to_node m dm);
     right := xs @ !right;
     (* pr2 (spf "step1: %s" (Common2.dump xs)); *)
     if null xs
@@ -353,14 +353,14 @@ let partition_matrix nodes dm =
      * marks) and step 2 is repeated on the remaining elements."
      *)
     let elts_with_empty_lines, rest = 
-      nodes +> List.partition (fun node -> is_empty_row node m dm) in
+      nodes |> List.partition (fun node -> is_empty_row node m dm) in
     (* I use dm.matrix here and not the current matrix m because I want
      * to sort by looking globally at whether this item uses very few things.
      * todo: maybe don't need this 'm dm' to pass around to all those sort_xxx
      * functions. Just pass dm.
      *)
     let xs = sort_by_count_rows_low_first elts_with_empty_lines dm.matrix dm in
-    xs+> List.iter (empty_all_cells_relevant_to_node m dm);
+    xs|> List.iter (empty_all_cells_relevant_to_node m dm);
     (* pr2 (spf "step2: %s" (Common2.dump xs)); *)
     left := !left @ xs;
     if null xs
@@ -383,7 +383,7 @@ let partition_matrix nodes dm =
 
 (* to debug the heuristics *)
 let info_orders dm =
-  dm.matrix +> Array.mapi  (fun i _ ->
+  dm.matrix |> Array.mapi  (fun i _ ->
     let nrow = (count_row i dm.matrix) in
     let ncol = (count_column i dm.matrix) in
     let h = float_of_int nrow /. (1. +. float_of_int ncol) in
@@ -393,9 +393,9 @@ let info_orders dm =
       nrow
       ncol
       h)
-  ) +> Array.to_list 
-    +> Common.sort_by_key_lowfirst
-    +> List.iter (fun (_, s) ->
+  ) |> Array.to_list 
+    |> Common.sort_by_key_lowfirst
+    |> List.iter (fun (_, s) ->
        pr2 s
     )
 
@@ -410,10 +410,10 @@ let optional_manual_reordering (s, _node_kind) nodes constraints_opt =
       if Hashtbl.mem h s
       then begin
         let xs = hashtbl_find h s in
-        let horder = xs +> Common.index_list_1 +> Common.hash_of_list in
+        let horder = xs |> Common.index_list_1 |> Common.hash_of_list in
         let current = ref 0 in
         let nodes_with_order = 
-          nodes +> List.map (fun (s, node_kind) ->
+          nodes |> List.map (fun (s, node_kind) ->
             match Common2.hfind_option s horder with
             | None ->
                 pr2 (spf "INFO_TXT: could not find %s in constraint set" s);
@@ -423,7 +423,7 @@ let optional_manual_reordering (s, _node_kind) nodes constraints_opt =
                 (s, node_kind), n
           )
         in
-        Common.sort_by_val_lowfirst nodes_with_order +> List.map fst
+        Common.sort_by_val_lowfirst nodes_with_order |> List.map fst
       end
       else begin 
         pr2 (spf "didn't find entry in constraints for %s" s);
@@ -494,29 +494,29 @@ let adjust_gopti_if_needed_lazily tree gopti =
          *)
         if List.length xs <= !threshold_pack
         then 
-          Node (n, xs +> List.map (fun (Node (n1, xs1)) -> 
+          Node (n, xs |> List.map (fun (Node (n1, xs1)) -> 
             let more_brothers = 
-              xs +> Common.map_filter (fun (Node (n2, _)) ->
+              xs |> Common.map_filter (fun (Node (n2, _)) ->
                 if n1 <> n2 then Some n2 else None
               ) 
             in
             aux (Node (n1, xs1)) (brothers @ more_brothers)
           ))
         else begin
-          let children_nodes = xs +> List.map (fun (Node (n,_)) -> n) in
+          let children_nodes = xs |> List.map (fun (Node (n,_)) -> n) in
           let config = (Node (n,
-             (xs +> List.map (fun (Node (n, _)) -> Node (n, []))) @
-             (brothers +> List.map (fun n -> Node (n, [])))))
+             (xs |> List.map (fun (Node (n, _)) -> Node (n, []))) @
+             (brothers |> List.map (fun n -> Node (n, [])))))
           in
           let dm = build_with_tree config !gopti in
 
-          let score = children_nodes +> List.map (fun n ->
+          let score = children_nodes |> List.map (fun n ->
             let idx = hashtbl_find_node dm.name_to_i n in
             let m = dm.matrix in
             n, count_column idx m + count_row idx m
             (* + m.(idx).(idx) / 3 *)
-          ) +> Common.sort_by_val_highfirst
-            +> List.map fst
+          ) |> Common.sort_by_val_highfirst
+            |> List.map fst
           in
           (* minus one because after the packing we will have 
            * threshold_pack - 1 + the new entry = threshold_pack
@@ -530,7 +530,7 @@ let adjust_gopti_if_needed_lazily tree gopti =
               n to_pack !gopti in
           gopti := new_gopti;
           Node (n,
-             (ok @ [dotdotdot_entry]) +> List.map (fun n ->
+             (ok @ [dotdotdot_entry]) |> List.map (fun n ->
                (* todo: grab the children of n in the original config? *)
                Node (n, [])
               )
@@ -561,12 +561,12 @@ let build tree constraints_opt gopti =
         then Node (n, [])
         else begin
           let config_depth1 = 
-            Node (n,xs +> List.map (function (Node (n2,_)) -> (Node (n2, []))))
+            Node (n,xs |> List.map (function (Node (n2,_)) -> (Node (n2, []))))
           in
           let children_nodes = 
-            xs +> List.map (function (Node (n2, _)) -> n2) in
+            xs |> List.map (function (Node (n2, _)) -> n2) in
           let h_children_of_children_nodes = 
-            xs +> List.map (function (Node (n2, xs)) -> n2, xs) +> 
+            xs |> List.map (function (Node (n2, xs)) -> n2, xs) |> 
               Common.hash_of_list
           in
 
@@ -582,7 +582,7 @@ let build tree constraints_opt gopti =
             optional_manual_reordering n nodes_reordered constraints_opt in
           
           Node (n,
-               nodes_reordered +> List.map (fun n2 ->
+               nodes_reordered |> List.map (fun n2 ->
                  let xs = 
                    try Hashtbl.find h_children_of_children_nodes n2 
                    (* probably one of the newly created "..." child *)
@@ -636,7 +636,7 @@ let config_of_path (path: config_path) gopti =
   let path = fix_path path gopti in
   let initial_config = basic_config_opti gopti in
   (* pr2_gen path; *)
-  path +> List.fold_left (fun (config, gopti) e ->
+  path |> List.fold_left (fun (config, gopti) e ->
     match e with
     | Expand node ->
         expand_node_opti node config gopti, gopti

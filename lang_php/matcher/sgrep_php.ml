@@ -56,7 +56,7 @@ type pattern = Cst_php.any
  *)
 let parse str =
   Common.save_excursion Flag_parsing.sgrep_mode true (fun () ->
-    Parse_php.any_of_string str +> Metavars_php.check_pattern
+    Parse_php.any_of_string str |> Metavars_php.check_pattern
   )
 
 (*****************************************************************************)
@@ -82,7 +82,7 @@ let sgrep_ast ?(case_sensitive=false) ~hook pattern ast =
                * the matched code itself.
                *)
               let matched_tokens = Lib_parsing_php.ii_of_any (XhpHtml2 x) in
-              matches_with_env +> List.iter (fun env ->
+              matches_with_env |> List.iter (fun env ->
                 hook env matched_tokens
               )
             end
@@ -102,7 +102,7 @@ let sgrep_ast ?(case_sensitive=false) ~hook pattern ast =
                * the matched code itself.
                *)
               let matched_tokens = Lib_parsing_php.ii_of_any (Expr x) in
-              matches_with_env +> List.iter (fun env ->
+              matches_with_env |> List.iter (fun env ->
                 hook env matched_tokens
               )
             end
@@ -122,7 +122,7 @@ let sgrep_ast ?(case_sensitive=false) ~hook pattern ast =
                * the matched code itself.
                *)
               let matched_tokens = Lib_parsing_php.ii_of_any (Stmt2 x) in
-              matches_with_env +> List.iter (fun env ->
+              matches_with_env |> List.iter (fun env ->
                 hook env matched_tokens
               )
             end
@@ -142,7 +142,7 @@ let sgrep_ast ?(case_sensitive=false) ~hook pattern ast =
                * the matched code itself.
                *)
               let matched_tokens = Lib_parsing_php.ii_of_any (Hint2 x) in
-              matches_with_env +> List.iter (fun env ->
+              matches_with_env |> List.iter (fun env ->
                 hook env matched_tokens
               )
             end

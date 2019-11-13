@@ -228,14 +228,14 @@ let init_drawing   ?(width = 600) ?(height = 600) func layers paths root =
     ) 
   in
   let readable_file_to_rect =
-    treemap +> Common.map_filter (fun rect ->
+    treemap |> Common.map_filter (fun rect ->
       if not rect.T.tr_is_node
       then 
         let file  = rect.T.tr_label in
         let readable = Common.readable ~root file in
         Some (readable, rect)
       else None
-    ) +> Common.hash_of_list
+    ) |> Common.hash_of_list
   in
   {
     treemap;
@@ -301,15 +301,15 @@ let find_rectangle_at_user_point2 user dw =
     Some (x, [], x)
   else 
    let matching_rects = rects 
-    +> List.filter (fun r -> 
+    |> List.filter (fun r -> 
         F.point_is_in_rectangle user r.T.tr_rect && r.T.tr_depth > 1
     ) 
-    +> List.map (fun r -> r, r.T.tr_depth) 
+    |> List.map (fun r -> r, r.T.tr_depth) 
     (* opti: this should be far faster by using a quad tree to represent
      * the treemap
      *)
-    +> Common.sort_by_val_highfirst 
-    +> List.map fst
+    |> Common.sort_by_val_highfirst 
+    |> List.map fst
    in
    match matching_rects with
    | [] -> None
@@ -339,7 +339,7 @@ let find_glyph_in_rectangle_at_user_point user r dw =
       else
         let glyphs = glyphs.(line) in
         (* find the best one *)
-        glyphs +> List.rev +> Common.find_opt (fun glyph ->
+        glyphs |> List.rev |> Common.find_opt (fun glyph ->
           let pos = glyph.pos in
           user.Figures.x >= pos.Figures.x
         )
@@ -375,13 +375,13 @@ let find_def_entity_at_line_opt line tr dw model =
     let short_node = List.assoc line microlevel.defs in
     (* try to match the possible shortname str with a fully qualified node 
     *)
-    nodes +> Common.map_filter (fun node ->
+    nodes |> Common.map_filter (fun node ->
       if match_short_vs_node short_node node
       then Some node
       else None
-    ) +> List.map (fun (s, kind) -> ((s, kind), rank_entity_kind kind))
-      +> Common.sort_by_val_highfirst
-      +> List.hd +> fst +> (fun x -> Some x)
+    ) |> List.map (fun (s, kind) -> ((s, kind), rank_entity_kind kind))
+      |> Common.sort_by_val_highfirst
+      |> List.hd |> fst |> (fun x -> Some x)
   with Not_found | Failure _ (* "hd"*) -> None
 
 let find_use_entity_at_line_and_glyph_opt line glyph tr dw model =
@@ -391,13 +391,13 @@ let find_use_entity_at_line_and_glyph_opt line glyph tr dw model =
     (* try because maybe have no enclosing defs *)
     try 
       let (line_def, _shortnode) = 
-        microlevel.defs +> List.rev +> List.find (fun (line2, _shortnode) ->
+        microlevel.defs |> List.rev |> List.find (fun (line2, _shortnode) ->
           line >= line2
         )
       in
       find_def_entity_at_line_opt line_def tr dw model >>= (fun node ->
         let uses = Graph_code.succ node Graph_code.Use g in
-        uses +> Common.find_opt (fun node ->
+        uses |> Common.find_opt (fun node ->
           let s = Graph_code.shortname_of_node node in
           let categ =  glyph.categ ||| Highlight_code.Normal in
           glyph.str =$= s &&
@@ -423,20 +423,20 @@ let deps_readable_files_of_node node model =
   | _, Some g ->
       let succ = Graph_code.succ node Graph_code.Use g in
       let pred = Graph_code.pred node Graph_code.Use g in
-      succ +> Common.map_filter (fun n ->
+      succ |> Common.map_filter (fun n ->
         try Some (Graph_code.file_of_node n g) with Not_found -> None
       ),
-      pred +> Common.map_filter (fun n ->
+      pred |> Common.map_filter (fun n ->
         try Some (Graph_code.file_of_node n g) with Not_found -> None
       )
 
 let deps_rects_of_rect tr dw model =
   let node = node_of_rect tr model in
   let uses, users = deps_readable_files_of_node node model in
-  uses +> Common.map_filter (fun file -> 
+  uses |> Common.map_filter (fun file -> 
     Common2.optionise (fun () -> Hashtbl.find dw.readable_file_to_rect file)
   ),
-  users +> Common.map_filter (fun file ->
+  users |> Common.map_filter (fun file ->
     Common2.optionise (fun () ->Hashtbl.find dw.readable_file_to_rect file)
   )
 
@@ -449,9 +449,9 @@ let line_and_microlevel_of_node_opt n dw model =
        *)
       let rect = Hashtbl.find dw.readable_file_to_rect file in
       let microlevel = Hashtbl.find dw.microlevel rect in
-      let line = microlevel.defs +> List.find (fun (_line, snode) ->
+      let line = microlevel.defs |> List.find (fun (_line, snode) ->
         match_short_vs_node snode n
-      ) +> fst in
+      ) |> fst in
       Some (n, line, microlevel)
     with Not_found -> None
   )
@@ -461,7 +461,7 @@ let uses_or_users_of_node node dw fsucc model =
   | None -> []
   | Some g ->
     let succ = fsucc node Graph_code.Use g in
-    succ +> Common.map_filter (fun n -> 
+    succ |> Common.map_filter (fun n -> 
       line_and_microlevel_of_node_opt n dw model
     )
 
@@ -488,7 +488,7 @@ let lines_where_used_node node startl microlevel =
     (* todo: should be from startl to endl (the start of the next entity) *)
     for line = startl to Array.length glypys - 1 do
       let xs = glypys.(line) in
-      if xs +> List.exists (fun glyph ->
+      if xs |> List.exists (fun glyph ->
         let categ =  glyph.categ ||| Highlight_code.Normal in
         glyph.str =$= s &&
         Database_code.matching_use_categ_kind categ (snd node)

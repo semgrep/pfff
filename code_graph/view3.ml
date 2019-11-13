@@ -95,7 +95,7 @@ let mk_gui w =
   let ctx = statusbar#new_context "main" in
 
   Controller._set_title := (fun s -> win#set_title s);
-  Controller._statusbar_addtext := (fun s -> ctx#push s +> ignore);
+  Controller._statusbar_addtext := (fun s -> ctx#push s |> ignore);
 
   !Controller._set_title 
     (Dependencies_matrix_code.string_of_config_path w.path);
@@ -125,76 +125,76 @@ let mk_gui w =
     vbox#pack (G.mk (GMenu.menu_bar) (fun m -> 
 
       let factory = new GMenu.factory m in
-      factory#add_submenu "_File" +> (fun menu -> 
+      factory#add_submenu "_File" |> (fun menu -> 
         let fc = new GMenu.factory menu ~accel_group in
 
         fc#add_item "_Open stuff from db" ~key:K._O ~callback:(fun () -> 
           raise Todo
-        ) +> ignore;
-        fc#add_separator () +> ignore;
+        ) |> ignore;
+        fc#add_separator () |> ignore;
 
-        fc#add_item "_Quit" ~key:K._Q ~callback:quit +> ignore;
+        fc#add_item "_Quit" ~key:K._Q ~callback:quit |> ignore;
       );
 
-      factory#add_submenu "_Edit" +> (fun menu -> 
+      factory#add_submenu "_Edit" |> (fun menu -> 
         GToolbox.build_menu menu ~entries:[
           `S;
         ];
-      ) +> ignore;
+      ) |> ignore;
 
-      factory#add_submenu "_Move" +> (fun menu -> 
+      factory#add_submenu "_Move" |> (fun menu -> 
         let fc = new GMenu.factory menu ~accel_group in
 
         fc#add_item "_Go back" ~key:K._B ~callback:(fun () -> 
           raise Todo
           (*!Controller._go_back dw *)
-        ) +> ignore;
+        ) |> ignore;
       );
 
-      factory#add_submenu "_Search" +> (fun menu -> 
+      factory#add_submenu "_Search" |> (fun menu -> 
         let _fc = new GMenu.factory menu ~accel_group in
         ()
       );
 
-      factory#add_submenu "_Filter" +> (fun menu -> 
+      factory#add_submenu "_Filter" |> (fun menu -> 
         let fc = new GMenu.factory menu ~accel_group in
         fc#add_item "Types only" ~callback:(fun () -> 
           raise Todo
-        ) +> ignore;
+        ) |> ignore;
         fc#add_item "Functions only" ~callback:(fun () -> 
           raise Todo
-        ) +> ignore;
+        ) |> ignore;
         fc#add_item "mli only" ~callback:(fun () -> 
           raise Todo
-        ) +> ignore;
+        ) |> ignore;
       );
 
-      factory#add_submenu "_Misc" +> (fun menu -> 
+      factory#add_submenu "_Misc" |> (fun menu -> 
         let fc = new GMenu.factory menu ~accel_group in
 
         fc#add_item "_Refresh" ~key:K._R ~callback:(fun () -> 
           raise Todo
-        ) +> ignore;
+        ) |> ignore;
 
         fc#add_item "_Order" ~callback:(fun () ->
           let dm = w.m in
           Dependencies_matrix_build.info_orders dm;
-        ) +> ignore;
+        ) |> ignore;
         fc#add_item "_PrintTree" ~callback:(fun () ->
           let dm = w.m in
-          dm.DM.i_to_name +> Array.iter (fun node ->
+          dm.DM.i_to_name |> Array.iter (fun node ->
             pr (Graph_code.string_of_node node)
           );
-        ) +> ignore;
+        ) |> ignore;
       );
 
-      factory#add_submenu "_Help" +> (fun menu -> 
+      factory#add_submenu "_Help" |> (fun menu -> 
         let fc = new GMenu.factory menu ~accel_group in
 
-        fc#add_separator () +> ignore;
+        fc#add_separator () |> ignore;
         fc#add_item "About" ~callback:(fun () -> 
             G.dialog_text "Brought to you by pad\nwith love" "About"
-        ) +> ignore;
+        ) |> ignore;
       );
 
     ));
@@ -234,16 +234,16 @@ let mk_gui w =
                    `BUTTON_MOTION; `POINTER_MOTION;
                    `BUTTON_PRESS; `BUTTON_RELEASE ];
 
-    da#event#connect#expose ~callback:(expose da w) +> ignore;
-    da#event#connect#configure ~callback:(configure da w) +> ignore;
+    da#event#connect#expose ~callback:(expose da w) |> ignore;
+    da#event#connect#configure ~callback:(configure da w) |> ignore;
 
     da#event#connect#button_press   
-      (View_matrix.button_action da w) +> ignore;
+      (View_matrix.button_action da w) |> ignore;
     da#event#connect#button_release 
-      (View_matrix.button_action da w) +> ignore;
+      (View_matrix.button_action da w) |> ignore;
 
     da#event#connect#motion_notify  
-      (View_overlays.motion_notify da w) +> ignore; 
+      (View_overlays.motion_notify da w) |> ignore; 
 
     Controller._refresh_drawing_area := (fun () ->
       GtkBase.Widget.queue_draw da#as_widget;
@@ -267,8 +267,8 @@ let mk_gui w =
     raise exn
   );
 
-  win#event#connect#delete    ~callback:(fun _  -> quit(); true) +> ignore;
-  win#connect#destroy         ~callback:(fun () -> quit(); ) +> ignore;
+  win#event#connect#delete    ~callback:(fun _  -> quit(); true) |> ignore;
+  win#connect#destroy         ~callback:(fun () -> quit(); ) |> ignore;
   win#show ();
 
   GtkThread.main ();

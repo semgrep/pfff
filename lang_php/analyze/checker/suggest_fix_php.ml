@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common
 
 (*****************************************************************************)
 (* Prelude *)
@@ -27,7 +26,7 @@ open Common
 
 let suggest s xs =
   try 
-    Some (xs +> Common.find_some (fun s2 ->
+    Some (xs |> Common.find_some (fun s2 ->
       let dist = Common2.edit_distance s s2 in
       if dist <= 2
       then Some (s2, dist)

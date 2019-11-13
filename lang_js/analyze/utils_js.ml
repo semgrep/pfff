@@ -1,8 +1,6 @@
 
-open Common
-
 let string_of_any ast =
-	ast +> Meta_cst_js.vof_any +> Ocaml.string_of_v
+	ast |> Meta_cst_js.vof_any |> Ocaml.string_of_v
 
 let load db gen =
 	try

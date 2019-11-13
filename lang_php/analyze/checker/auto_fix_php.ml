@@ -62,14 +62,14 @@ let delete_arguments args =
     match arg with
     | Left a ->
       let ii = Lib_parsing_php.ii_of_any (Argument a) in
-      ii +> List.iter (fun info ->
+      ii |> List.iter (fun info ->
         info.PI.transfo <- PI.Remove
       )      
     | Right tok ->
       tok.PI.transfo <- PI.Remove
   in
   (* if the first and last element of args are both comma, leave one *)
-  let last_arg = args +> List.rev +> List.hd in
+  let last_arg = args |> List.rev |> List.hd in
   match (args, last_arg) with
   | (Right _::t, Right _) ->
     List.iter delete_arg t
@@ -151,7 +151,7 @@ let try_auto_fix error =
     let tmpfile = new_temp_file "trans" ".php" in
     write_file ~file:tmpfile s;
     let diff = Common2.unix_diff file tmpfile in
-    diff +> List.iter pr2;
+    diff |> List.iter pr2;
     write_file ~file:file (read_file tmpfile);
   | _ -> ()
     

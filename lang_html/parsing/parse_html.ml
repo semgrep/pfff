@@ -309,7 +309,7 @@ let parse2 file =
   let call_scan scannerf = 
     let tok = scannerf buf in
 
-    let tok = tok +> TH.visitor_info_of_tok (fun ii ->
+    let tok = tok |> TH.visitor_info_of_tok (fun ii ->
       { ii with Parse_info.token=
           (* could assert pinfo.filename = file ? *)
           match ii.Parse_info.token with
@@ -543,7 +543,7 @@ let parse2 file =
       List.rev !current.subs
   in
   Ast.Element (Tag ("__root__", Ast.fakeInfo()), [], xs), 
-   (!toks +> List.rev +> merge_cdataspecial_tokens)
+   (!toks |> List.rev |> merge_cdataspecial_tokens)
  )
 
 let parse a = 

@@ -136,7 +136,7 @@ let point_to_line pt r layout =
   let y = pt.Figures.y - r.p.y in
   let line_in_column = floor (y / layout.height_per_line) in
   let column = floor (x / layout.width_per_column) in
-  Line ((column * layout.nblines_per_column + line_in_column) +> int_of_float)
+  Line ((column * layout.nblines_per_column + line_in_column) |> int_of_float)
 
 (*****************************************************************************)
 (* Content properties *)
@@ -168,7 +168,7 @@ let color_of_categ categ =
     | None ->       Highlight_code.info_of_category Highlight_code.Normal
     | Some categ -> Highlight_code.info_of_category categ
   in
-  attrs +> Common.find_some (fun attr ->
+  attrs |> Common.find_some (fun attr ->
     match attr with
     | `FOREGROUND s 
     | `BACKGROUND s (* todo: should really draw the background of the text *)
@@ -204,14 +204,14 @@ let glyphs_of_file ~font_size ~font_size_real model_async file
     let line = ref 0 in
     let acc = ref [] in
     (try
-     tokens_with_categ +> List.iter (fun (s, categ, _filepos) ->
+     tokens_with_categ |> List.iter (fun (s, categ, _filepos) ->
       let final_font_size = 
         final_font_size_of_categ ~font_size ~font_size_real categ in
       let color = 
         color_of_categ categ in
 
       let xs = Common2.lines_with_nl_either s in
-      xs +> List.iter (function
+      xs |> List.iter (function
       | Common2.Left str ->
           Common.push { M. str; font_size=final_font_size; color; categ;pos } 
             acc;
@@ -230,20 +230,20 @@ let glyphs_of_file ~font_size ~font_size_real model_async file
 
   | FT.PL _ | FT.Text _ ->      
       Common.cat file
-      +> List.map (fun str -> 
+      |> List.map (fun str -> 
         [{ M.str; font_size; color = "black"; categ=None; pos }])
-      +> Array.of_list
-      +> (fun x -> Some x)
+      |> Array.of_list
+      |> (fun x -> Some x)
 
   | _ -> None
 
 let defs_of_glyphs glyphs =
   let res = ref [] in
-  glyphs +> Array.iteri (fun line_0_indexed glyphs ->
-    glyphs +> List.iter (fun glyph ->
-      glyph.categ +> Common.do_option (fun categ ->
+  glyphs |> Array.iteri (fun line_0_indexed glyphs ->
+    glyphs |> List.iter (fun glyph ->
+      glyph.categ |> Common.do_option (fun categ ->
         Database_code.entity_kind_of_highlight_category_def categ 
-        +> Common.do_option (fun kind ->
+        |> Common.do_option (fun kind ->
               Common.push (Line line_0_indexed, (glyph.str, kind)) res
         ))));
   List.rev !res
@@ -354,7 +354,7 @@ let draw_content2 cr layout context tr =
     try Hashtbl.find_all context.grep_query file
     with Not_found -> []
   in
-  matching_grep_lines +> List.iter (fun line ->
+  matching_grep_lines |> List.iter (fun line ->
     let (Line iline) = line in
     Hashtbl.add hmatching_lines (iline+..1) "purple"
   );
@@ -363,13 +363,13 @@ let draw_content2 cr layout context tr =
   let glyphs_opt = 
     glyphs_of_file ~font_size ~font_size_real context.model2 file in
 
-  glyphs_opt +> Common.do_option (fun glyphs ->
-    glyphs +> Array.iteri (fun line_0_indexed _glyph ->
+  glyphs_opt |> Common.do_option (fun glyphs ->
+    glyphs |> Array.iteri (fun line_0_indexed _glyph ->
       let lc = line_to_line_in_column (Line line_0_indexed) layout in
       let x, y = line_in_column_to_bottom_pos lc r layout in
       Cairo.move_to cr x y;
       
-      glyphs.(line_0_indexed) +> List.iter (fun glyph ->
+      glyphs.(line_0_indexed) |> List.iter (fun glyph ->
         let (x, y) = Cairo.Path.get_current_point cr in
         glyph.pos <- {Figures.x; y };
         Cairo.set_font_size cr glyph.M.font_size;
@@ -440,7 +440,7 @@ let draw_treemap_rectangle_content_maybe2 cr clipping context tr  =
        (* Common.nblines_with_wc was really slow. Forking sucks.
         * alt: we could store the nblines of a file in the db.
         *)
-        let nblines = Common2.nblines_eff file +> float_of_int in
+        let nblines = Common2.nblines_eff file |> float_of_int in
         
        (* Assume our code follow certain conventions. Could infer from file. 
         * We should put 80, but a font is higher than large, so I readjusted.
@@ -459,7 +459,7 @@ let draw_treemap_rectangle_content_maybe2 cr clipping context tr  =
           split_nb_columns;
           width_per_column = w / split_nb_columns;
           height_per_line = font_size;
-          nblines_per_column = (nblines / split_nb_columns) +> ceil;
+          nblines_per_column = (nblines / split_nb_columns) |> ceil;
         } 
         in
         draw_column_bars cr layout r;
@@ -508,14 +508,14 @@ let draw_magnify_line ?(honor_color=true) cr line microlevel =
      *)
     if iline < Array.length glyphs then begin
      glyphs.(iline) 
-     +> (fun xs ->
+     |> (fun xs ->
       match xs with
       | [] -> []
       | x::xs ->
         if x.M.str =~ "[ \t]+" then xs
         else x::xs
     )
-    +> List.iter (fun glyph ->
+    |> List.iter (fun glyph ->
       (* let font_size = glyph.M.font_size * 3. in *)
       let font_size_real = 15. in
       let font_size = CairoH.device_to_user_size cr font_size_real in

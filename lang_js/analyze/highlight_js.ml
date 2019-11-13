@@ -13,7 +13,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common
 
 open Highlight_code
 open Ast_js
@@ -144,7 +143,7 @@ let visit_program ~tag_hook _prefs (cst, toks) =
   (* -------------------------------------------------------------------- *)
   (* token phase 1 (individual tokens) *)
   (* -------------------------------------------------------------------- *)
-  toks +> List.iter (fun tok ->
+  toks |> List.iter (fun tok ->
     match tok with
     (* specials *)
 

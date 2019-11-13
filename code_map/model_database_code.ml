@@ -52,10 +52,10 @@ let readable_to_absolute_filename_under_root ~root filename =
   in
 
   let root_and_parents =
-    Common2.inits_of_absolute_dir root_dir +> List.rev
+    Common2.inits_of_absolute_dir root_dir |> List.rev
   in
   try 
-    root_and_parents +> Common2.return_when (fun dir ->
+    root_and_parents |> Common2.return_when (fun dir ->
       let path = Filename.concat dir filename in
       if Sys.file_exists path
       then Some path
@@ -95,14 +95,14 @@ let actual_root_of_db ~root db =
 let hentities root db_opt = 
   let hentities = Hashtbl.create 1001 in
 
-  db_opt +> Common.do_option (fun db ->
+  db_opt |> Common.do_option (fun db ->
 
     let actual_root = actual_root_of_db ~root db in
 
       (* todo sanity check that db talks about files
        * in dirs_or_files ? Ensure same readable path.
        *)
-      db.Db.entities +> Array.iter (fun e ->
+      db.Db.entities |> Array.iter (fun e ->
         Hashtbl.add hentities
           e.Db.e_name
           {e with Db.e_file = 
@@ -118,7 +118,7 @@ let hentities root db_opt =
 let hfiles_and_top_entities root db_opt =
   let hfiles = Hashtbl.create 1001 in
 
-  db_opt +> Common.do_option (fun db ->
+  db_opt |> Common.do_option (fun db ->
     let ksorted = 
       Db.build_top_k_sorted_entities_per_file ~k:5 db.Db.entities in
     let actual_root = actual_root_of_db ~root db in

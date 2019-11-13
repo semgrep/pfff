@@ -176,13 +176,13 @@ and v_comma x =
   in
   vin.kcomma (k, all_functions) x
 and v_comma_list_dots : 'a. ('a -> unit) -> 'a comma_list_dots -> unit = fun _of_a xs ->
-  xs +> List.iter (function
+  xs |> List.iter (function
   | Left3 x -> _of_a x
   | Middle3 info -> v_tok info
   | Right3 info -> v_comma info
   )
 and v_comma_list: 'a. ('a -> unit) -> 'a comma_list -> unit = fun _of_a xs ->
-  xs +> List.iter (function | Left x -> _of_a x | Right info -> v_comma info)
+  xs |> List.iter (function | Left x -> _of_a x | Right info -> v_comma info)
 
 and v_ptype =
   function

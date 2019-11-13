@@ -20,7 +20,7 @@ let prolog_query ~files query =
     let root = tmp_dir in
 
     (* generating .class files *)
-    files +> List.iter (fun (filename, content) ->
+    files |> List.iter (fun (filename, content) ->
       Common.write_file ~file:(Filename.concat tmp_dir filename) content
     );
     let extra_args = "" in
@@ -31,7 +31,7 @@ let prolog_query ~files query =
                         * is ordered for javac to work, which means generic
                         * files first and main files at the end.
                         *)
-                       (files +> List.map fst +> Common.join " "));
+                       (files |> List.map fst |> Common.join " "));
 
     let cfiles = 
       Lib_parsing_bytecode.find_source_files_of_dir_or_files [root] in
@@ -47,12 +47,12 @@ let prolog_query ~files query =
     let facts_pl_file = Filename.concat tmp_dir "facts.pl" in
     Common.with_open_outfile facts_pl_file (fun (pr_no_nl, _chan) ->
       let pr s = pr_no_nl (s ^ "\n") in
-      facts +> List.iter (fun x -> pr (Prolog_code.string_of_fact x))
+      facts |> List.iter (fun x -> pr (Prolog_code.string_of_fact x))
       );
     let predicates_file = 
       Filename.concat Config_pfff.path "h_program-lang/prolog_code.pl" in
     if verbose 
-    then Common.cat facts_pl_file +> List.iter pr2;
+    then Common.cat facts_pl_file |> List.iter pr2;
     let cmd =
       spf "swipl -s %s -f %s -t halt --quiet -g \"%s ,fail\""
         facts_pl_file predicates_file query

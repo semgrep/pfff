@@ -336,27 +336,27 @@ let clist_connect ~callback:f (widget : string GList.clist) =
       );
 
       f (Some s);
-    ) +> ignore;
+    ) |> ignore;
 
 
     widget#connect#unselect_row ~callback:(fun ~row ~column ~event ->
       f None
-    ) +> ignore;
+    ) |> ignore;
   end
 
 let clist_update xs widget = 
-  widget +> freeze_thaw (fun () ->
+  widget |> freeze_thaw (fun () ->
     widget#clear ();
-    xs +> List.iter (fun dir -> 
-      widget#append [dir;] +> ignore;
+    xs |> List.iter (fun dir -> 
+      widget#append [dir;] |> ignore;
     );
   )
 
 let clist_update_multicol xs widget = 
-  widget +> freeze_thaw (fun () ->
+  widget |> freeze_thaw (fun () ->
     widget#clear ();
-    xs +> List.iter (fun props -> 
-      widget#append props +> ignore;
+    xs |> List.iter (fun props -> 
+      widget#append props |> ignore;
     );
   )
 
@@ -449,7 +449,7 @@ let dialog_text ~text ~title =
   let _label  = GMisc.label    ~text     ~packing:dialog#vbox#add () in
   let dquit  = GButton.button ~label:"Close" ~packing:dialog#vbox#add () in 
   begin
-    dquit#connect#clicked ~callback: (fun _ -> dialog#destroy ()) +>ignore;
+    dquit#connect#clicked ~callback: (fun _ -> dialog#destroy ()) |>ignore;
     dialog#show ();
   end
 
@@ -543,7 +543,7 @@ let dialog_ask_generic ?width ~title fbuild fget_val  =
   let w = 
     GWindow.dialog ~modal:true ~border_width:1 ~title ?width () 
   in
-  w#connect#destroy ~callback: GMain.Main.quit +> ignore;
+  w#connect#destroy ~callback: GMain.Main.quit |> ignore;
 
   let ok_button = GButton.button ~stock: `YES ()in
   let no_button = GButton.button ~stock: `NO () in
@@ -558,11 +558,11 @@ let dialog_ask_generic ?width ~title fbuild fget_val  =
   ok_button#connect#clicked ~callback:(fun () -> 
     res := Some (fget_val ());
     w#destroy ()
-  ) +> ignore;
+  ) |> ignore;
   no_button#connect#clicked ~callback:(fun () -> 
     res := None;
     w#destroy ();
-  ) +> ignore;
+  ) |> ignore;
 
   w#event#connect#key_press ~callback:(fun ev -> 
     let k = GdkEvent.Key.keyval ev in
@@ -575,7 +575,7 @@ let dialog_ask_generic ?width ~title fbuild fget_val  =
       (* pr2 (i_to_s k); *)
       false
     end 
-  ) +> ignore;
+  ) |> ignore;
 
 
   w#show ();
@@ -621,16 +621,16 @@ let dialog_ask_filename ~title ~filename =
   let (res: filename option ref) = ref None in
 
   let filew = GWindow.file_selection ~title ~filename ~modal:true () in
-  filew#connect#destroy ~callback: GMain.Main.quit +> ignore;
+  filew#connect#destroy ~callback: GMain.Main.quit |> ignore;
 
   filew#ok_button#connect#clicked ~callback:(fun () -> 
     res := Some (filew#filename);
     filew#destroy ()
-  ) +> ignore;
+  ) |> ignore;
   filew#cancel_button#connect#clicked ~callback:(fun () -> 
     res := None;
     filew#destroy ();
-  ) +> ignore;
+  ) |> ignore;
   filew#show ();
   GMain.Main.main ();
   !res
@@ -740,11 +740,11 @@ let gmain_timeout_add ~ms ~callback =
 (*****************************************************************************)
   
 let mk_gui_main ~title ?(width=800) ?(height=600) f = 
-  GtkMain.Main.init() +> ignore;
+  GtkMain.Main.init() |> ignore;
   let w = GWindow.window ~title ~width ~height () in
 
-  w#event#connect#delete ~callback:(fun _ -> GMain.Main.quit (); true) +>ignore;
-  w#connect#destroy      ~callback:          GMain.Main.quit +> ignore;
+  w#event#connect#delete ~callback:(fun _ -> GMain.Main.quit (); true) |>ignore;
+  w#connect#destroy      ~callback:          GMain.Main.quit |> ignore;
 
   f w;
   (*

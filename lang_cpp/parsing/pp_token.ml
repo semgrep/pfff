@@ -99,14 +99,14 @@ type define_def = string * define_param * define_body
  * OCaml code (but are now hardcoded in standard.h ...)
  *)
 let (cpp_engine: 
-  (string , Parser.token list) assoc -> Parser.token list -> Parser.token list)
+  (string, Parser.token list) assoc -> Parser.token list -> Parser.token list)
   = fun env xs ->
-  xs +> List.map (fun tok -> 
+  xs |> List.map (fun tok -> 
     match tok with
     | TIdent (s,_i1) when List.mem_assoc s env -> Common2.assoc s env
     | x -> [x]
   )
-  +> List.flatten
+  |> List.flatten
 
 (* 
  * We apply a macro by generating new ExpandedToken and by
@@ -135,8 +135,8 @@ let apply_macro_defs defs xs =
       | Right params, bodymacro -> 
           if List.length params = List.length xxs
           then
-            let xxs' = xxs +> List.map (fun x -> 
-              (tokens_of_paren_ordered x) +> List.map (fun x -> 
+            let xxs' = xxs |> List.map (fun x -> 
+              (tokens_of_paren_ordered x) |> List.map (fun x -> 
                 TH.visitor_info_of_tok Ast.make_expanded x.t
               )
             ) in
@@ -151,7 +151,7 @@ let apply_macro_defs defs xs =
            * will pass as argument to the macro some tokens that
            * are all TCommentCpp
            *)
-          [Parenthised (xxs, info_parens)] +> 
+          [Parenthised (xxs, info_parens)] |> 
             iter_token_paren (Hack.set_as_comment Token_cpp.CppMacroExpanded);
           Hack.set_as_comment Token_cpp.CppMacroExpanded id;
 
@@ -172,7 +172,7 @@ let apply_macro_defs defs xs =
           (* special case when 1-1 substitution, we reuse the token *)
           (match bodymacro with
           | [newtok] -> 
-              id.t <- (newtok +> TH.visitor_info_of_tok (fun _ -> 
+              id.t <- (newtok |> TH.visitor_info_of_tok (fun _ -> 
                 TH.info_of_tok id.t))
 
           | _ -> 
@@ -185,7 +185,7 @@ let apply_macro_defs defs xs =
   (* recurse *)
   | (PToken _x)::xs -> apply_macro_defs xs 
   | (Parenthised (xxs, _info_parens))::xs -> 
-      xxs +> List.iter apply_macro_defs;
+      xxs |> List.iter apply_macro_defs;
       apply_macro_defs xs
 
  in
@@ -201,26 +201,26 @@ let rec define_parse xs =
   | [] -> []
   | TDefine _i1::TIdent_Define (s,_i2)::TOPar_Define _i3::xs -> 
       let (tokparams, _, xs) = 
-        xs +> Common2.split_when (function TCPar _ -> true | _ -> false) in
+        xs |> Common2.split_when (function TCPar _ -> true | _ -> false) in
       let (body, _, xs) = 
-        xs +> Common2.split_when 
+        xs |> Common2.split_when 
           (function TCommentNewline_DefineEndOfMacro _ -> true | _ -> false) in
       let params = 
-        tokparams +> Common.map_filter (function
+        tokparams |> Common.map_filter (function
         | TComma _ -> None
         | TIdent (s, _) -> Some s
         | x -> Common2.error_cant_have x
         ) in
-      let body = body +> List.map 
+      let body = body |> List.map 
         (TH.visitor_info_of_tok Ast.make_expanded) in
       let def = (s, (Right params, body)) in
       def::define_parse xs
 
   | TDefine _i1::TIdent_Define (s,_i2)::xs -> 
       let (body, _, xs) = 
-        xs +> Common2.split_when 
+        xs |> Common2.split_when 
           (function TCommentNewline_DefineEndOfMacro _ -> true | _ -> false) in
-      let body = body +> List.map 
+      let body = body |> List.map 
         (TH.visitor_info_of_tok Ast.make_expanded) in
       let def = (s, (Left (), body)) in
       def::define_parse xs
@@ -231,5 +231,5 @@ let rec define_parse xs =
       
 
 let extract_macros xs = 
-  let cleaner = xs +> List.filter (fun x -> not (TH.is_comment x)) in
+  let cleaner = xs |> List.filter (fun x -> not (TH.is_comment x)) in
   define_parse cleaner

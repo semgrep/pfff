@@ -17,7 +17,7 @@ let with_graph ~files f =
   Common2.with_tmp_dir (fun tmp_dir ->
     let root = tmp_dir in
     (* generating .cmt files *)
-    files +> List.iter (fun (filename, content) ->
+    files |> List.iter (fun (filename, content) ->
       Common.write_file ~file:(Filename.concat tmp_dir filename) content
     );
     (* otherwise will get many lookup failure when build the graph_code *)
@@ -29,7 +29,7 @@ let with_graph ~files f =
                         * is ordered for ocamlc to work, which means generic
                         * files first and main files at the end.
                         *)
-                       (files +> List.map fst +> Common.join " "));
+                       (files |> List.map fst |> Common.join " "));
     let cmt_files = Lib_parsing_ml.find_cmt_files_of_dir_or_files [tmp_dir] in
     let ml_files = [] in
     let g = Graph_code_cmt.build ~verbose:verbose ~root ~cmt_files ~ml_files in
@@ -43,12 +43,12 @@ let prolog_query ~files query =
     let facts_pl_file = Filename.concat tmp_dir "facts.pl" in
     Common.with_open_outfile facts_pl_file (fun (pr_no_nl, _chan) ->
       let pr s = pr_no_nl (s ^ "\n") in
-      facts +> List.iter (fun x -> pr (Prolog_code.string_of_fact x))
+      facts |> List.iter (fun x -> pr (Prolog_code.string_of_fact x))
       );
     let predicates_file = 
       Filename.concat Config_pfff.path "h_program-lang/prolog_code.pl" in
     if verbose 
-    then Common.cat facts_pl_file +> List.iter pr2;
+    then Common.cat facts_pl_file |> List.iter pr2;
     let cmd =
       spf "swipl -s %s -f %s -t halt --quiet -g \"%s ,fail\""
         facts_pl_file predicates_file query

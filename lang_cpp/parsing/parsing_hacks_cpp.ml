@@ -251,14 +251,14 @@ let reclassify_tokens_before_idents_or_typedefs xs =
 let find_template_commentize groups =
   (* remove template *)
   let rec aux xs =
-    xs +> List.iter (function
+    xs |> List.iter (function
     | TV.Braces (_, xs, _) ->
         aux xs
     | TV.Parens  (_, xs, _) ->
         aux xs
     | TV.Angle (_, _xs, _) as angle ->
         (* let's commentize everything *)
-        [angle] +> TV.iter_token_multi (fun tok ->
+        [angle] |> TV.iter_token_multi (fun tok ->
           change_tok tok 
             (TComment_Cpp (Token_cpp.CplusplusTemplate, TH.info_of_tok tok.t))
         )
@@ -294,7 +294,7 @@ let find_qualifier_commentize xs =
     | [] -> ()
 
     | ({t=TIdent _} as t1)::({t=TColCol _} as t2)::xs ->
-        [t1; t2] +> List.iter (fun tok ->
+        [t1; t2] |> List.iter (fun tok ->
           change_tok tok 
             (TComment_Cpp (Token_cpp.CplusplusQualifier, TH.info_of_tok tok.t))
         );
@@ -302,7 +302,7 @@ let find_qualifier_commentize xs =
 
     (* need also to pass the top :: *)
     | ({t=TColCol _} as t2)::xs ->
-        [t2] +> List.iter (fun tok ->
+        [t2] |> List.iter (fun tok ->
           change_tok tok 
             (TComment_Cpp (Token_cpp.CplusplusQualifier, TH.info_of_tok tok.t))
         );

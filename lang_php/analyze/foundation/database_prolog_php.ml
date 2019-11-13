@@ -109,7 +109,7 @@ let escape_quote_array_field s =
   Str.global_replace (Str.regexp "[']") "__" s
 
 let add_function_params current def add =
-  def.f_params +> Ast.unparen +> Ast.uncomma_dots +> Common.index_list_0 +>
+  def.f_params |> Ast.unparen |> Ast.uncomma_dots |> Common.index_list_0 |>
     List.iter (fun (param, i) ->
       add (P.Misc (spf "parameter(%s, %d, '$%s', '%s')"
              current
@@ -160,9 +160,9 @@ let visit ~add readable ast =
         add (P.At (P.entity_of_str s, readable, PI.line_of_info def.f_tok));
 
         add (P.Misc (spf "arity(%s, %d)" !current
-             (List.length (def.f_params +> Ast.unparen +> Ast.uncomma_dots))));
+             (List.length (def.f_params |> Ast.unparen |> Ast.uncomma_dots))));
         add_function_params !current def add;
-        def.f_modifiers +> List.iter (fun (m, _) ->
+        def.f_modifiers |> List.iter (fun (m, _) ->
           add (P.Misc (spf "%s(%s)" (string_of_modifier m) !current));
         );
 
@@ -198,11 +198,11 @@ let visit ~add readable ast =
         | Interface _
         | Trait _ -> ()
         );
-        def.c_extends +> Common.do_option (fun (_tok, x) ->
+        def.c_extends |> Common.do_option (fun (_tok, x) ->
           add (P.Extends (s, (Ast.str_of_class_name x)));
         );
-        def.c_implements +> Common.do_option (fun (_tok, interface_list) ->
-          interface_list +> Ast.uncomma +> List.iter (fun x ->
+        def.c_implements |> Common.do_option (fun (_tok, interface_list) ->
+          interface_list |> Ast.uncomma |> List.iter (fun x ->
           (* could put implements instead? it's not really the same
            * kind of extends. Or have a extends_interface/2? maybe
            * not worth it, just add kind(X, class) when using children/2
@@ -215,15 +215,15 @@ let visit ~add readable ast =
               add (P.Implements(s, Ast.str_of_class_name x));
             )
           ));
-        def.c_body +> Ast.unbrace +> List.iter (function
+        def.c_body |> Ast.unbrace |> List.iter (function
         | UseTrait (_tok, names, _rules_or_tok) ->
-          names +> Ast.uncomma +> List.iter (fun name ->
+          names |> Ast.uncomma |> List.iter (fun name ->
             add (P.Mixins (s, Ast.str_of_class_name name))
           )
         | _ -> ()
         );
 
-        def.c_body +> Ast.unbrace +> List.iter (fun class_stmt ->
+        def.c_body |> Ast.unbrace |> List.iter (fun class_stmt ->
           match class_stmt with
           | Method def ->
 
@@ -235,8 +235,8 @@ let visit ~add readable ast =
           add (P.At (P.entity_of_str sfull, readable, PI.line_of_info def.f_tok));
 
           add (P.Misc (spf "arity(%s, %d)" !current
-             (List.length (def.f_params +> Ast.unparen +> Ast.uncomma_dots))));
-          def.f_modifiers +> List.iter (fun (m, _) ->
+             (List.length (def.f_params |> Ast.unparen |> Ast.uncomma_dots))));
+          def.f_modifiers |> List.iter (fun (m, _) ->
             add (P.Misc (spf "%s(%s)" (string_of_modifier m) !current));
           );
           add_function_params !current def add;
@@ -244,7 +244,7 @@ let visit ~add readable ast =
           vx (ClassStmt class_stmt);
 
         | ClassConstants (_abstok, tok, _typopt, xs, _sc) ->
-          xs +> Ast.uncomma +> List.iter (fun (id, sc_opt) ->
+          xs |> Ast.uncomma |> List.iter (fun (id, sc_opt) ->
             let s2 = Ast.str_of_ident id in
             current := spf "('%s', '%s')" s s2;
             Hashtbl.clear h;
@@ -252,11 +252,11 @@ let visit ~add readable ast =
             add (P.Kind (P.entity_of_str sfull, E.ClassConstant));
             add (P.At (P.entity_of_str sfull, readable, PI.line_of_info tok));
 
-            sc_opt +> Common.do_option (fun (_, e) -> vx (Expr e))
+            sc_opt |> Common.do_option (fun (_, e) -> vx (Expr e))
           )
         | ClassVariables (ms, topt, xs, _sc) ->
 
-          xs +> Ast.uncomma +> List.iter (fun classvar ->
+          xs |> Ast.uncomma |> List.iter (fun classvar ->
             let (dname, sc_opt) = classvar in
             let s2 = Ast.str_of_dname dname in
 
@@ -273,18 +273,18 @@ let visit ~add readable ast =
             (match ms with
             | NoModifiers _ -> ()
             | VModifiers ms ->
-              ms +> List.iter (fun (m, _) ->
+              ms |> List.iter (fun (m, _) ->
                 add (P.Misc (spf "%s(%s)" (string_of_modifier m) !current))
               );
             );
             add (P.Type (P.entity_of_str sfull, string_of_hint_type_opt topt));
-            sc_opt +> Common.do_option (fun (_, e) -> vx (Expr e))
+            sc_opt |> Common.do_option (fun (_, e) -> vx (Expr e))
           )
 
         | XhpDecl decl ->
           (match decl with
           | XhpAttributesDecl (tok, xs, _sc) ->
-            xs +> Ast.uncomma +> List.iter (function
+            xs |> Ast.uncomma |> List.iter (function
             | XhpAttrDecl (_t, (name, _tok), _affect_opt, _tok_opt) ->
               let s2 = name in
               current := spf "('%s', '%s')" s s2;
@@ -318,7 +318,7 @@ let visit ~add readable ast =
        *)
       | Call (Id callname, args) ->
           let str = Cst_php.str_of_name callname in
-          let args = args +> Ast.unparen +> Ast.uncomma in
+          let args = args |> Ast.unparen |> Ast.uncomma in
           (match str, args with
           (* Many entities (functions, classes) in PHP are passed as
            * string parameters to some higher-order functions. We normally
@@ -498,7 +498,7 @@ let visit ~add readable ast =
           add (P.Misc (spf "throw(%s, '%s')"
                  !current (Ast.str_of_name name)))
       | Try (_, _, cs, _) ->
-          (cs) +> List.iter (fun (_, (_, (classname, _dname), _), _) ->
+          (cs) |> List.iter (fun (_, (_, (classname, _dname), _), _) ->
             add (P.Misc (spf "catch(%s, '%s')"
                    !current (Ast.str_of_class_name classname)))
           );
@@ -542,12 +542,12 @@ let build2 ?(show_progress=true) root files =
    add (P.Misc "special('newv')");
    add (P.Misc "special('DT')");
 
-   files +> List.iter (fun file ->
+   files |> List.iter (fun file ->
 
      let readable = Common.readable root file in
      let parts = Common.split "/" readable in
      add (P.Misc (spf "file('%s', [%s])" readable
-           (parts +> List.map (fun s -> spf "'%s'" s) +> Common.join ",")));
+           (parts |> List.map (fun s -> spf "'%s'" s) |> Common.join ",")));
 
      try
        let (ast, toks) = Parse_php.ast_and_tokens file in
@@ -620,7 +620,7 @@ let append_callgraph_to_prolog_db2 ?(show_progress=true) g file =
    *  -
    *)
   let h_oldcallgraph = Hashtbl.create 101 in
-  file +> Common.cat +> List.iter (fun s ->
+  file |> Common.cat |> List.iter (fun s ->
     if s =~ "^docall(.*"
     then Hashtbl.add h_oldcallgraph s true
   );
@@ -628,8 +628,8 @@ let append_callgraph_to_prolog_db2 ?(show_progress=true) g file =
   Common2.with_open_outfile_append file (fun (pr, _chan) ->
     let pr s = pr (s ^ "\n") in
     pr "";
-    g +> Map_.iter (fun src xs ->
-      xs +> Set_.iter (fun target ->
+    g |> Map_.iter (fun src xs ->
+      xs |> Set_.iter (fun target ->
         let kind =
           match target with
           (* can't call a file ... *)
@@ -695,7 +695,7 @@ let prolog_query ?(verbose=false) ~source_file ~query =
   let facts = build ~show_progress "/" [source_file] in
   Common.with_open_outfile facts_pl_file (fun (pr_no_nl, _chan) ->
     let pr s = pr_no_nl (s ^ "\n") in
-    facts +> List.iter (fun fact ->
+    facts |> List.iter (fun fact ->
       pr (P.string_of_fact fact);
     )
   );
@@ -709,7 +709,7 @@ let prolog_query ?(verbose=false) ~source_file ~query =
 
   append_callgraph_to_prolog_db
     ~show_progress cg facts_pl_file;
-  if verbose then Common.cat facts_pl_file +> List.iter pr2;
+  if verbose then Common.cat facts_pl_file |> List.iter pr2;
   let cmd =
     spf "swipl -s %s -f %s -t halt --quiet -g \"%s ,fail\""
       facts_pl_file helpers_pl_file query

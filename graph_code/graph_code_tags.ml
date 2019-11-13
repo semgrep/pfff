@@ -50,7 +50,7 @@ let defs_of_graph_code ?(verbose=false) g =
   let hmemo_file_array = Hashtbl.create 101 in
   
 
-  g +> G.iter_nodes (fun n ->
+  g |> G.iter_nodes (fun n ->
     let (str, kind) = n in
     (try 
       let nodeinfo = G.nodeinfo n g in
@@ -85,7 +85,7 @@ let defs_of_graph_code ?(verbose=false) g =
       Hashtbl.add hfile_to_tags file tag;
       (* when add a tag for List.foo, also add foo.List *)
       let reversed_tagname = 
-        Common.split "\\." str +> List.rev +> Common.join "." in
+        Common.split "\\." str |> List.rev |> Common.join "." in
       Hashtbl.add hfile_to_tags file 
         { tag with Tags_file.tagname = reversed_tagname }
 
@@ -99,11 +99,11 @@ let defs_of_graph_code ?(verbose=false) g =
       )
     )
   );
-  Common2.hkeys hfile_to_tags +> List.map (fun file ->
+  Common2.hkeys hfile_to_tags |> List.map (fun file ->
     file, 
     Hashtbl.find_all hfile_to_tags file 
-    +> List.map (fun tag -> tag.Tags_file.byte_offset, tag)
-    +> Common.sort_by_key_lowfirst
-    +> List.map snd
+    |> List.map (fun tag -> tag.Tags_file.byte_offset, tag)
+    |> Common.sort_by_key_lowfirst
+    |> List.map snd
   )
 

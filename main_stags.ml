@@ -99,7 +99,7 @@ let rec defs_of_files_or_dirs lang xs =
               Graph_code_cmt.build ~verbose ~root ~cmt_files ~ml_files
 #endif
             | "java" -> Graph_code_java.build ~verbose ~only_defs root files
-            | "php2" -> Graph_code_php.build ~verbose ~only_defs root files+>fst
+            | "php2" -> Graph_code_php.build ~verbose ~only_defs root files|>fst
             | _ -> raise Impossible
           in
           Graph_code_tags.defs_of_graph_code ~verbose g

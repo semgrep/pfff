@@ -312,7 +312,7 @@ let option_ofv a__of_sexp sexp = match sexp with
 (* Format pretty printers *)
 (*****************************************************************************)
 let add_sep xs = 
-  xs +> List.map (fun x -> Right x) +> Common2.join_gen (Left ())
+  xs |> List.map (fun x -> Right x) |> Common2.join_gen (Left ())
 
 (* 
  * OCaml value pretty printer. A similar functionnality is provided by
@@ -351,14 +351,14 @@ let string_of_v v =
       | VInt i -> ppf "%d" i
       | VTuple xs ->
           ppf "(@[";
-              xs +> add_sep +> List.iter (function
+              xs |> add_sep |> List.iter (function
               | Left _ -> ppf ",@ ";
               | Right v -> aux v
               );
           ppf "@])";
       | VDict xs ->
           ppf "{@[";
-          xs +> List.iter (fun (s, v) ->
+          xs |> List.iter (fun (s, v) ->
             (* less: could open a box there too? *)
             ppf "@,%s=" s;
             aux v;
@@ -371,7 +371,7 @@ let string_of_v v =
           | [] -> ppf "%s" s
           | y::ys ->
               ppf "@[<hov 2>%s(@," s;
-              xs +> add_sep +> List.iter (function
+              xs |> add_sep |> List.iter (function
               | Left _ -> ppf ",@ ";
               | Right v -> aux v
               );
@@ -385,7 +385,7 @@ let string_of_v v =
       | VRef v -> ppf "Ref(@["; aux v; ppf "@])";
       | VList xs ->
           ppf "[@[<hov>";
-          xs +> add_sep +> List.iter (function
+          xs |> add_sep |> List.iter (function
           | Left _ -> ppf ";@ ";
           | Right v -> aux v
           );

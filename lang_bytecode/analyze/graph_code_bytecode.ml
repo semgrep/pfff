@@ -124,7 +124,7 @@ let bytecode_class_name_of_string name =
   | [] -> failwith ("wrong format for bytecode class name: " ^ name)
   | y::ys ->
     { package; baseclass = y;
-      nested_or_anon = ys +> List.map (fun y ->
+      nested_or_anon = ys |> List.map (fun y ->
         if y =~ "[0-9]+" 
         then DollarAnonClass y
         else DollarNestedClass y
@@ -132,13 +132,13 @@ let bytecode_class_name_of_string name =
     }
 let java_class_name_of_bytecode_class_name x =
   Common.join "." (x.package @ [x.baseclass]) ^
-  (x.nested_or_anon +> List.map (function
+  (x.nested_or_anon |> List.map (function
    (* todo: need look in original java file, or have a more compatible
     * convention of how I name anon class entities in graph_code_java.ml
     *)
    | DollarAnonClass _ -> raise Todo
    | DollarNestedClass s -> "." ^ s
-   ) +> Common.join ""
+   ) |> Common.join ""
   )
 
 (* quite similar to create_intermediate_directories_if_not_present *)
@@ -161,8 +161,8 @@ let create_intermediate_packages_if_not_present g root xs =
       if G.has_node entity g
       then aux entity xs
       else begin
-        g +> G.add_node entity;
-        g +> G.add_edge (current, entity) G.Has;
+        g |> G.add_node entity;
+        g |> G.add_edge (current, entity) G.Has;
         aux entity xs
       end
   in
@@ -183,8 +183,8 @@ let add_use_edge env dst =
     let (name, kind) = dst in
     let fake_name = 
       (Common.split "\\." name) 
-      +> List.map (fun s -> s^"2") 
-      +> Common.join "."
+      |> List.map (fun s -> s^"2") 
+      |> Common.join "."
     in
     let dst = (fake_name, kind) in
     let parent_target = G.not_found in
@@ -202,10 +202,10 @@ let add_use_edge env dst =
         pr2 (spf "PB: lookup fail on %s (in %s)" 
                (G.string_of_node dst) (G.string_of_node src));
       );
-      g +> G.add_node dst;
-      g +> G.add_edge (parent, dst) G.Has;
+      g |> G.add_node dst;
+      g |> G.add_edge (parent, dst) G.Has;
     end;
-    g +> G.add_edge (src, dst) G.Use;
+    g |> G.add_edge (src, dst) G.Use;
     ()
 
 (*****************************************************************************)
@@ -223,7 +223,7 @@ let (lookup2:
       let children = G.children current g in
       let full_name = (fst current ^ "." ^ fld) in
       let res =
-        children +> Common.find_some_opt (fun (s2, kind) ->
+        children |> Common.find_some_opt (fun (s2, kind) ->
           if full_name =$= s2
           then Some (s2, kind)
           else None
@@ -234,7 +234,7 @@ let (lookup2:
       | None -> 
           let parents_inheritance = G.succ current G.Use g in
           breath parents_inheritance
-  and breath xs = xs +> Common.find_some_opt depth
+  and breath xs = xs |> Common.find_some_opt depth
   in
   depth start
 
@@ -256,7 +256,7 @@ let unmangle _graph_java (full_str_bytecode_name, kind) =
   
   let class_ = { class_ with
     (* todo: look in graph_java for the corresponding anon_xxx at some point *)
-    nested_or_anon = class_.nested_or_anon +> List.filter (function
+    nested_or_anon = class_.nested_or_anon |> List.filter (function
     | DollarAnonClass _ -> false
     | DollarNestedClass _ -> true
     );
@@ -265,7 +265,7 @@ let unmangle _graph_java (full_str_bytecode_name, kind) =
   java_class_name_of_bytecode_class_name class_, kind
 
 let java_basename_of_jclass jclass =
-  jclass.j_attributes +> Common.find_some (function
+  jclass.j_attributes |> Common.find_some (function
   (* note that this always contain just a basename, e.g. "Foo.java", never
    * a full path like "fb4a/com/facebook/Foo.java"
    *)
@@ -289,7 +289,7 @@ let extract_defs2 ~g ~file ~graph_code_java ~hjavabasename_to_fullpath ast =
 
   let node = (name, E.Class) in
   (try 
-      g +> G.add_node node;
+      g |> G.add_node node;
   with Graph_code.Error (Graph_code.NodeAlreadyPresent node) ->
     let nodeinfo = G.nodeinfo node g in
     pr2 (spf "DUPE: %s" (G.string_of_node node));
@@ -308,17 +308,17 @@ let extract_defs2 ~g ~file ~graph_code_java ~hjavabasename_to_fullpath ast =
     props = [];
     typ = None;
   } in
-  g +> G.add_nodeinfo node nodeinfo;
+  g |> G.add_nodeinfo node nodeinfo;
   (match class_.nested_or_anon with
-  | [] -> g +> G.add_edge (current, node) G.Has;
+  | [] -> g |> G.add_edge (current, node) G.Has;
   (* this will be done later in adjust_parents_nested_anon2 *)
   | _ -> ()
   );
-  graph_code_java +> Common.do_option (fun g2 ->
+  graph_code_java |> Common.do_option (fun g2 ->
     let node' = unmangle g2 node in
     try 
       let nodeinfo = G.nodeinfo node' g2 in
-      g +> G.add_nodeinfo node nodeinfo
+      g |> G.add_nodeinfo node nodeinfo
     with Not_found ->
       let java_filename =
         try 
@@ -343,20 +343,20 @@ let extract_defs2 ~g ~file ~graph_code_java ~hjavabasename_to_fullpath ast =
 
   let current = node in
 
-  jclass.j_fields +> List.iter (fun fld ->
+  jclass.j_fields |> List.iter (fun fld ->
     let node = (name ^ "." ^ fld.f_name, E.Field) in
-    g +> G.add_node node;
-    g +> G.add_edge (current, node) G.Has;
+    g |> G.add_node node;
+    g |> G.add_edge (current, node) G.Has;
   );
-  jclass.j_methods +> List.iter (fun def ->
+  jclass.j_methods |> List.iter (fun def ->
     let node = (name ^ "." ^ def.m_name, E.Method) in
 
     (* less: for now we just collapse all methods with same name together *)
     if G.has_node node g
     then ()
     else begin
-      g +> G.add_node node;
-      g +> G.add_edge (current, node) G.Has;
+      g |> G.add_node node;
+      g |> G.add_edge (current, node) G.Has;
     end
   );
   ()
@@ -370,7 +370,7 @@ let extract_defs ~g ~file ~graph_code_java ~hjavabasename_to_fullpath ast =
  * need to lookup for classes.
  *)
 let adjust_parents_nested_anon2 g =
-  g +> G.iter_nodes (fun n ->
+  g |> G.iter_nodes (fun n ->
     let (str, kind) = n in
     (match kind with
     | E.Class ->
@@ -406,7 +406,7 @@ let extract_uses_inheritance2 ~g ast =
   let env = { g; current; consts = jclass.j_consts } in
 
   let parents = Common2.option_to_list jclass.j_super @ jclass.j_interfaces in
-  parents +> List.iter (fun cname ->
+  parents |> List.iter (fun cname ->
     let node = (JBasics.cn_name cname, E.Class) in
     add_use_edge env node;
   );
@@ -426,27 +426,27 @@ let rec extract_uses2 ~g ast =
   let current = (name, E.Class) in
   let env = { g; current; consts = jclass.j_consts } in
 
-  jclass.j_attributes +> List.iter (function
+  jclass.j_attributes |> List.iter (function
   | AttributeCode _ -> failwith "code in j_attributes?"
   | _ -> ()
   );
 
-  jclass.j_fields +> List.iter (fun fld ->
+  jclass.j_fields |> List.iter (fun fld ->
     let node = (name ^ "." ^ fld.f_name, E.Field) in
     let env = { env with current = node } in
     value_type env fld.f_descriptor;
 
-    fld.f_attributes +> List.iter (function
+    fld.f_attributes |> List.iter (function
     | AttributeCode _ -> failwith "code in f_attributes?"
     | _ -> ()
     );
   );
-  jclass.j_methods +> List.iter (fun def ->
+  jclass.j_methods |> List.iter (fun def ->
     let node = (name ^ "." ^ def.m_name, E.Method) in
     let env = { env with current = node } in
     (* less: dependencies for parameters? ok cmf spirit? and skip? *)
 
-    def.m_attributes +> List.iter (function
+    def.m_attributes |> List.iter (function
     | AttributeCode x -> 
         code env x
     | _ -> ()
@@ -466,11 +466,11 @@ and object_type env = function
 
 and code env x = 
   let x = Lazy.force x in
-  x.c_attributes +> List.iter (function
+  x.c_attributes |> List.iter (function
   | AttributeCode _ -> failwith "code in c_attributes?"
   | _ -> ()
   );
-  x.c_code +> Array.iteri (fun _i op ->
+  x.c_code |> Array.iteri (fun _i op ->
     match op with
     | OpNew i | OpANewArray i ->
         (match env.consts.(i) with
@@ -554,9 +554,9 @@ let build ?(verbose=true) ?(graph_code_java=None) root files =
   (* less? Skip_code.filter_files skip_list root all_java_files in *)
   let hjavabasename_to_fullpath =
     java_files 
-    +> List.map (fun file -> Filename.basename file, file)
-    +> Common.group_assoc_bykey_eff
-    +> Common.hash_of_list
+    |> List.map (fun file -> Filename.basename file, file)
+    |> Common.group_assoc_bykey_eff
+    |> Common.hash_of_list
   in
 
   let g = G.create () in
@@ -564,7 +564,7 @@ let build ?(verbose=true) ?(graph_code_java=None) root files =
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
   if verbose then pr2 "\nstep1: extract defs";
-  files +> Console.progress ~show:verbose (fun k -> 
+  files |> Console.progress ~show:verbose (fun k -> 
     List.iter (fun file ->
       k();
       let ast = parse ~show_parse_error:true file in
@@ -581,7 +581,7 @@ let build ?(verbose=true) ?(graph_code_java=None) root files =
 
   (* step2: creating the 'Use' edges for inheritance *)
   if verbose then pr2 "\nstep2: extract inheritance information";
-  files +> Console.progress ~show:verbose (fun k -> 
+  files |> Console.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
      k();
      let ast = parse ~show_parse_error:false  file in
@@ -591,7 +591,7 @@ let build ?(verbose=true) ?(graph_code_java=None) root files =
 
   (* step3: creating the 'Use' edges *)
   if verbose then pr2 "\nstep3: extract uses";
-  files +> Console.progress ~show:verbose (fun k -> 
+  files |> Console.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
      k();
      let readable = Common.readable ~root file in

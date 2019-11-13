@@ -201,7 +201,7 @@ let constraints_of_info_txt info_txt =
         | "__ROOT__" -> "."
         | _ -> Filename.concat current title
       in
-      let children = xs +> List.map (fun (Common2.Tree (node, _)) ->
+      let children = xs |> List.map (fun (Common2.Tree (node, _)) ->
         (match entry with
         | "." -> node.Outline.title
         | _ -> Filename.concat entry node.Outline.title
@@ -299,7 +299,7 @@ let main_action xs =
   let inits = Common2.inits_of_absolute_dir dir in
   let root =
     try 
-      inits +> List.rev +> List.find (fun path -> 
+      inits |> List.rev |> List.find (fun path -> 
         Sys.file_exists (dep_file_of_dir path))
     with Not_found ->
       failwith (spf "could not find the codegraph file from %s or its parent"
@@ -329,7 +329,7 @@ let main_action xs =
         then dir_node, readable_subdir
         else package_node, 
               try
-               Common2.tails readable_subdir +> List.find (fun xs ->
+               Common2.tails readable_subdir |> List.find (fun xs ->
                  GC.has_node (package_node xs) model.Model.g_deprecated
                )
               with Not_found ->

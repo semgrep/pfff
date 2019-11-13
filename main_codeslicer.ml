@@ -100,7 +100,7 @@ let find_big_branching_factor graph_file =
   (* step1: find the big parents and the children candidates to remove *)
   
   let big_parents = 
-    hierarchy +> Graphe.nodes +> List.filter (fun parent ->
+    hierarchy |> Graphe.nodes |> List.filter (fun parent ->
       let children = Graphe.succ parent hierarchy in
       (* should modulate by the branching factor of the parent? *)
       List.length children > big_parent_branching_factor
@@ -115,11 +115,11 @@ let find_big_branching_factor graph_file =
     (* Inheritance transtive closure,
      * todo: could keep 1? the biggest one in terms of use? 
      *)
-    +> List.map (fun parent -> Graphe.succ parent hierarchy_transitive)
-    +> List.flatten 
+    |> List.map (fun parent -> Graphe.succ parent hierarchy_transitive)
+    |> List.flatten 
     (* Has transitive closure, to also remove the fields, methods of a class *)
-    +> List.map (fun node -> Graph_code.node_and_all_children node g)
-    +> List.flatten
+    |> List.map (fun node -> Graph_code.node_and_all_children node g)
+    |> List.flatten
   in
 
   let hdead_candidates = Common.hashset_of_list (dead_candidates ()) in
@@ -142,13 +142,13 @@ let find_big_branching_factor graph_file =
      * may have rendered live children of big parents originally,
      * but that should not anymore, so let's reconsider all children!
      *)
-    dead_candidates () +> List.iter (fun node ->
+    dead_candidates () |> List.iter (fun node ->
       Hashtbl.replace hdead_candidates node true
     );
 
     (* step2: make sure none of the candidate are used by live entities *)
 
-    let live = ref (Graph_code.all_nodes g +> Common.exclude (fun node ->
+    let live = ref (Graph_code.all_nodes g |> Common.exclude (fun node ->
       Hashtbl.mem hdead_candidates node
     ))
     in
@@ -161,7 +161,7 @@ let find_big_branching_factor graph_file =
           (1+(try Hashtbl.find hlivermakes_stats from with Not_found -> 0));
       end;
       let xs = Graph_code.node_and_all_children node g in
-      xs +> List.iter (fun node ->
+      xs |> List.iter (fun node ->
         Hashtbl.remove hdead_candidates node;
         Common.push node live
       )
@@ -171,9 +171,9 @@ let find_big_branching_factor graph_file =
       let this_round = !live in
       live := [];
   
-      this_round +> List.iter (fun live_node ->
+      this_round |> List.iter (fun live_node ->
         let uses = Graph_code.succ live_node Graph_code.Use g in
-        uses +> List.iter (fun use_of_live_node ->
+        uses |> List.iter (fun use_of_live_node ->
           if Hashtbl.mem hdead_candidates use_of_live_node then begin
             make_live use_of_live_node ~from:live_node
           end
@@ -195,7 +195,7 @@ let find_big_branching_factor graph_file =
   
     let make_dead node =
       let xs = Graph_code.node_and_all_children node g in
-      xs +> List.iter (fun node ->
+      xs |> List.iter (fun node ->
         Hashtbl.replace hdead_candidates node true;
         Common.push node dead;
         (* a newly dead, should reconsider children of original
@@ -209,13 +209,13 @@ let find_big_branching_factor graph_file =
       let this_round = !dead in
       dead := [];
   
-      this_round +> List.iter (fun dead_node ->
+      this_round |> List.iter (fun dead_node ->
         let uses = Graph_code.succ dead_node Graph_code.Use g in
         let live_uses_of_dead_code =
-          uses +> Common.exclude (fun node -> Hashtbl.mem hdead_candidates node)
+          uses |> Common.exclude (fun node -> Hashtbl.mem hdead_candidates node)
         in
   
-        live_uses_of_dead_code +> List.iter (fun live_use_of_dead_node ->
+        live_uses_of_dead_code |> List.iter (fun live_use_of_dead_node ->
           let xs = 
             let node = live_use_of_dead_node in
             Graph_code.node_and_all_children node g 
@@ -223,10 +223,10 @@ let find_big_branching_factor graph_file =
           let hxs = Common.hashset_of_list xs in
   
           let users =
-            xs +> List.map (fun node -> users_of_node node) +> List.flatten in
+            xs |> List.map (fun node -> users_of_node node) |> List.flatten in
           
           (* maybe a newly dead! *)
-          if users +> List.for_all (fun node ->
+          if users |> List.for_all (fun node ->
             Hashtbl.mem hdead_candidates node ||
             Hashtbl.mem hxs node
           ) 
@@ -251,8 +251,8 @@ let find_big_branching_factor graph_file =
 
   (* step5: slice the code! *)
 
-  hlivermakes_stats +> Common.hash_to_list +> Common.sort_by_val_highfirst
-    +> Common.take_safe 10 +> List.iter (fun (k, v) ->
+  hlivermakes_stats |> Common.hash_to_list |> Common.sort_by_val_highfirst
+    |> Common.take_safe 10 |> List.iter (fun (k, v) ->
       pr2 (spf "livemaker: %s (%d)"
              (Graph_code.string_of_node k) v)
     );
@@ -264,7 +264,7 @@ let find_big_branching_factor graph_file =
    *)
 
   let files_to_remove =
-    Graph_code.all_nodes g +> Common.map_filter (fun node ->
+    Graph_code.all_nodes g |> Common.map_filter (fun node ->
       match node with
       | filename, Entity_code.File ->
         (* ? should look for all children recursively? *)
@@ -278,21 +278,21 @@ let find_big_branching_factor graph_file =
           )
         end;
 *)
-        if children +> List.for_all 
+        if children |> List.for_all 
           (fun node -> Hashtbl.mem hdead_candidates node) && 
           (* for files like webroot/index.php with no entities *)
           List.length children >= 1 
         then Some filename
         else None
       | _ -> None
-    ) +> Common.sort
+    ) |> Common.sort
   in
   let dir = Filename.dirname graph_file in
   let file = Filename.concat dir "list_slicer" in
   pr2 (spf "generating data in %s" file);
   Common.with_open_outfile file (fun (pr_no_nl, _chan) ->
     let pr s = pr_no_nl (s ^ "\n") in
-    files_to_remove +> List.iter pr
+    files_to_remove |> List.iter pr
   );
 
   ()
@@ -313,7 +313,7 @@ let extract_transitive_deps xs =
   let max_depth = 4 in
   
   let start_nodes = 
-    xs +> List.map (fun path ->
+    xs |> List.map (fun path ->
       let node =
         if Sys.is_directory path
         then path, E.Dir
@@ -344,17 +344,17 @@ let extract_transitive_deps xs =
       
   in
   dfs 0 start_nodes;
-  let files = hdone +> Common.hashset_to_list +> Common.map_filter (fun n ->
+  let files = hdone |> Common.hashset_to_list |> Common.map_filter (fun n ->
     try 
       let file = GC.file_of_node n g in
       Some file
     with Not_found -> None
-  ) +> Common.hashset_of_list +> Common.hashset_to_list in
+  ) |> Common.hashset_of_list |> Common.hashset_to_list in
   (*pr2 (spf "%d" (List.length files));*)
-  files +> List.iter pr;
+  files |> List.iter pr;
   let dir = !output_dir in
   Common.command2 (spf "mkdir -p %s" dir);
-  files +> List.iter (fun file ->
+  files |> List.iter (fun file ->
     let subdir = Filename.dirname file in
     Common.command2 (spf "mkdir -p %s/%s" dir subdir);
     Common.command2 (spf "cp %s %s/%s" file dir subdir);
@@ -370,7 +370,7 @@ let slice_dir_with_file file =
   let cmd = spf "cp -a %s %s" dir dst in
   pr2 cmd;
   Common.command2 cmd;
-  Common.cat file +> List.iter (fun file ->
+  Common.cat file |> List.iter (fun file ->
     Common.command2 (spf "rm -f %s/%s" dst file)
   )
   

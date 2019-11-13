@@ -42,7 +42,7 @@ let graph_to_gefx ~str_of_node ~output ~tree ~weight_edges g =
     let nodes_xml = 
       match tree with
       | None -> 
-          nodes +> List.map (fun n ->
+          nodes |> List.map (fun n ->
             let modularity_class = "nothing"
 (*
               let s = str_of_node n in
@@ -92,9 +92,9 @@ let graph_to_gefx ~str_of_node ~output ~tree ~weight_edges g =
           in
           [aux tree]
     in
-    let edges_xml = nodes +> List.map (fun n ->
+    let edges_xml = nodes |> List.map (fun n ->
       let succ = G.succ n g in
-      succ +> Common.map_filter (fun n2 ->
+      succ |> Common.map_filter (fun n2 ->
         let weight = 
           match weight_edges with
           | None -> 1.
@@ -110,7 +110,7 @@ let graph_to_gefx ~str_of_node ~output ~tree ~weight_edges g =
           "weight", spf "%5.1f" weight;
         ], [])
         )
-    )) +> List.flatten
+    )) |> List.flatten
     in
     let xml =
       Element (

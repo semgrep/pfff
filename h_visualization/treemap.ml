@@ -252,11 +252,11 @@ let (slice_and_dicing_layout: ('a, 'b) layout_func) =
 
   let axis_split = (depth + 1) mod 2 in
   
-  let stotal = children +> List.map fst +> Common2.sum_float in
+  let stotal = children |> List.map fst |> Common2.sum_float in
 
   let width = q.(axis_split) -. p.(axis_split) in
 
-  children +> List.map (fun (size, child) ->
+  children |> List.map (fun (size, child) ->
 
     q.(axis_split) <- 
       p.(axis_split) +. 
@@ -295,7 +295,7 @@ let (slice_and_dicing_layout: ('a, 'b) layout_func) =
  * node, with its descendant)
 *)
 let squarified_list_area_ex = 
-  [6; 6; 4; 3; 2; 2; 1] +> List.map (fun x -> float_of_int x, spf "info: %d" x)
+  [6; 6; 4; 3; 2; 2; 1] |> List.map (fun x -> float_of_int x, spf "info: %d" x)
 
 (* normally our algorithm should do things proportionnally to the size
  * of the aready. It should not matter that the total sum of area is
@@ -303,7 +303,7 @@ let squarified_list_area_ex =
  * things in an ortho plan, that is with a rectangle 0x0 to 1x1.
  *)
 let squarified_list_area_ex2 = 
-  squarified_list_area_ex +> List.map (fun (x, info) -> x *. 2.0, info)
+  squarified_list_area_ex |> List.map (fun (x, info) -> x *. 2.0, info)
 let dim_rect_orig = 
   { p = {x = 0.0; y = 0.0; }; q = { x = 6.0; y = 4.0} }
 (*e: squarified examples *)
@@ -373,8 +373,8 @@ let layout row rect =
 
   let children = row in
 
-  let stotal = children +> List.map fst +> Common2.sum_float in
-  let children = children +> List.map (fun (size, info) ->
+  let stotal = children |> List.map fst |> Common2.sum_float in
+  let children = children |> List.map (fun (size, info) ->
     size /. stotal (* percentage *),
     size,
     info
@@ -394,7 +394,7 @@ let layout row rect =
   in
   let width = q.(axis_split) -. p.(axis_split) in
     
-  children +> List.iter (fun (percent_child, size_child, info) ->
+  children |> List.iter (fun (percent_child, size_child, info) ->
 
     q.(axis_split) <- 
       p.(axis_split) +. 
@@ -517,7 +517,7 @@ let squarify children rect =
   (* squarify_orig assume the sum of children = area rect *)
   let area = rect_area rect in
   let total = Common2.sum_float (List.map fst children) in
-  let children' = children +> List.map (fun (x, info) -> 
+  let children' = children |> List.map (fun (x, info) -> 
     (x /. total) *. area,
     info
   )
@@ -533,9 +533,9 @@ let test_squarify () =
     pr2_gen (worst [6.0;6.0] 4.0);
     pr2_gen (worst [6.0;6.0;4.0] 4.0);
   pr2_xxxxxxxxxxxxxxxxx ();
-  squarify squarified_list_area_ex dim_rect_orig +> ignore;
+  squarify squarified_list_area_ex dim_rect_orig |> ignore;
   pr2_xxxxxxxxxxxxxxxxx ();
-  squarify squarified_list_area_ex2 (rect_ortho()) +> ignore;
+  squarify squarified_list_area_ex2 (rect_ortho()) |> ignore;
   ()
 (*e: function test_squarify *)
 
@@ -543,7 +543,7 @@ let test_squarify () =
 (*s: layout squarify *)
 let (squarify_layout: ('a, 'b) layout_func) = 
  fun children _depth rect ->
-  let children' = children +> Common.sort_by_key_highfirst in
+  let children' = children |> Common.sort_by_key_highfirst in
   squarify children' rect
 
 let (squarify_layout_no_sort_size: ('a, 'b) layout_func) = 
@@ -704,7 +704,7 @@ let orderify_children ?(pivotf=PivotBySize) xs rect =
         let left, pivot, right = 
           match pivotf with
           | PivotBySize -> 
-              let pivot_max = Common2.maximum (xs +> List.map fst) in
+              let pivot_max = Common2.maximum (xs |> List.map fst) in
               Common2.split_when 
                 (fun x -> fst x = pivot_max) xs 
           | PivotByMiddle ->
@@ -723,7 +723,7 @@ let orderify_children ?(pivotf=PivotBySize) xs rect =
         let right_combinations = balayer_right right in
         
         let scores_and_rects = 
-          right_combinations +> List.map (fun (above_pivot, right) ->
+          right_combinations |> List.map (fun (above_pivot, right) ->
             
             let childs_pivotized = 
               { left = left;
@@ -738,7 +738,7 @@ let orderify_children ?(pivotf=PivotBySize) xs rect =
             childs_pivotized)
           )
         in
-        let best = Common.sort_by_key_lowfirst scores_and_rects +> List.hd in
+        let best = Common.sort_by_key_lowfirst scores_and_rects |> List.hd in
         let (_score, (rects, childs_pivotized)) = best in
         
         (* pr2_gen rects; *)
@@ -753,11 +753,11 @@ let orderify_children ?(pivotf=PivotBySize) xs rect =
 
 (*s: function test_orderify *)
 let test_orderify () = 
-  let xs = children_ex_ordered_2001 +> List.map float_of_int in
+  let xs = children_ex_ordered_2001 |> List.map float_of_int in
   let rect = rect_ortho () in
 
   let fake_treemap = () in
-  let children = xs +> List.map (fun size -> size, fake_treemap) in
+  let children = xs |> List.map (fun size -> size, fake_treemap) in
   
   let layout = orderify_children children rect in
   pr2_gen layout
@@ -858,7 +858,7 @@ let render_treemap_algo2 = fun ?(algo=Classic) ?(big_borders=false) treemap ->
         let rect = { p = p; q = q } in
 
         let children' = 
-          children +> List.map (fun child ->
+          children |> List.map (fun child ->
             float_of_int (size_of_treemap_node child),
             child
           )
@@ -870,7 +870,7 @@ let render_treemap_algo2 = fun ?(algo=Classic) ?(big_borders=false) treemap ->
         in
         (* less: assert rects_with_info are inside rect ? *)
 
-        rects_with_info +> List.iter (fun (_x, child, rect) ->
+        rects_with_info |> List.iter (fun (_x, child, rect) ->
           aux_treemap child rect ~depth:(depth + 1)
         );
 
@@ -977,7 +977,7 @@ let tree_of_dir3
 
     let res = ref [] in
     
-    children +> Array.iter (fun (_, f) ->
+    children |> Array.iter (fun (_, f) ->
       let full = Filename.concat dir f in
 
       let stat = Common2.unix_lstat_eff full in
@@ -1034,14 +1034,14 @@ let add_intermediate_nodes root_path nodes =
   let root = Common.split "/" root in
 
   (* extract dirs and file from file, e.g. ["home";"pad"], "__flib.php", path *)
-  let xs = nodes +> List.map (fun x -> 
+  let xs = nodes |> List.map (fun x -> 
     match x with
     | Leaf (file, _) -> Common2.dirs_and_base_of_file file, x
     | Node (dir, _) -> Common2.dirs_and_base_of_file dir, x
   )
   in
   (* remove the root part *)
-  let xs = xs +> List.map (fun ((dirs, base), node) -> 
+  let xs = xs |> List.map (fun ((dirs, base), node) -> 
     let n = List.length root in
     let (root', rest) = 
       Common2.take n dirs,  
@@ -1054,18 +1054,18 @@ let add_intermediate_nodes root_path nodes =
   (* now ready to build the tree recursively *)
   let rec aux current_root xs = 
     let files_here, rest = 
-      xs +> List.partition (fun ((dirs, _base), _) -> null dirs)
+      xs |> List.partition (fun ((dirs, _base), _) -> null dirs)
     in
     let groups = 
-      rest +> group_by_mapped_key (fun ((dirs, _base),_) -> 
+      rest |> group_by_mapped_key (fun ((dirs, _base),_) -> 
         (* would be a file if null dirs *)
         assert(not (null dirs));
         List.hd dirs
       ) in
 
     let nodes = 
-      groups +> List.map (fun (k, xs) -> 
-        let xs' = xs +> List.map (fun ((dirs, base), node) -> 
+      groups |> List.map (fun (k, xs) -> 
+        let xs' = xs |> List.map (fun ((dirs, base), node) -> 
           (List.tl dirs, base), node
         ) 
         in
@@ -1073,7 +1073,7 @@ let add_intermediate_nodes root_path nodes =
         Node (dirname, aux dirname xs')
       )
     in
-    let leaves = files_here +> List.map (fun ((_dir, _base), node) -> 
+    let leaves = files_here |> List.map (fun ((_dir, _base), node) -> 
       node
     ) in
     nodes @ leaves
@@ -1087,7 +1087,7 @@ let tree_of_dirs_or_files2 ?filter_file ?filter_dir ?sort ~file_hook paths =
   | [x] -> tree_of_dir_or_file ?filter_file ?filter_dir ?sort ~file_hook x
   | xs -> 
       let nodes = 
-        xs +> List.map (fun x ->
+        xs |> List.map (fun x ->
           tree_of_dir_or_file ?filter_file ?filter_dir ?sort ~file_hook x
         )
       in
@@ -1198,7 +1198,7 @@ let (treemap_ex_ordered_2001: (unit, unit) treemap) =
   let children = children_ex_ordered_2001 in
 
   let children_treemap = 
-    children +> Common.index_list_1 +> List.map (fun (size, i) -> 
+    children |> Common.index_list_1 |> List.map (fun (size, i) -> 
       
       Leaf ({ 
         size = size;

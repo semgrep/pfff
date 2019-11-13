@@ -12,7 +12,7 @@ module Json_in = Json_io
 (*****************************************************************************)
 let test_parse_simple xs =
   let fullxs = Lib_parsing_php.find_source_files_of_dir_or_files xs in
-  fullxs +> List.iter (fun file ->
+  fullxs |> List.iter (fun file ->
     try 
       let ast = Parse_php.parse_program file in
       let _ast = Ast_php_build.program ast in
@@ -77,7 +77,7 @@ let test_scope_php file =
 (* bin/iphp *)
 let test_type_php file =
   let ast = 
-    Parse_php.parse_program file +> Ast_php_build.program 
+    Parse_php.parse_program file |> Ast_php_build.program 
   in
   let env = { (Env_typing_php.make_env ()) with Env_typing_php.
     verbose = true;
@@ -97,7 +97,7 @@ let test_type_php file =
 (*s: test_cfg_php *)
 let test_cfg_php file =
   let ast = Parse_php.parse_program file in
-  ast +> List.iter (function
+  ast |> List.iter (function
   | Cst_php.FuncDef def ->
       (try
         let flow = Controlflow_build_php.cfg_of_func def in
@@ -122,11 +122,11 @@ let test_dflow_php file =
     )
   in
   let ast = Parse_php.parse_program file in
-  ast +> List.iter (function
+  ast |> List.iter (function
   | Cst_php.FuncDef def ->
     dflow_of_func_def def
   | Cst_php.ClassDef def ->
-    Cst_php.unbrace def.Cst_php.c_body +> List.iter
+    Cst_php.unbrace def.Cst_php.c_body |> List.iter
       (function
       | Cst_php.Method def -> dflow_of_func_def def
       | _ -> ())
@@ -207,8 +207,8 @@ let test_callgraph_php file =
     [file] db
   in
   (* todo: could also show a dot? *)
-  g +> Map_.iter (fun n1 v ->
-    v +> Set_.iter (fun n2 ->
+  g |> Map_.iter (fun n1 v ->
+    v |> Set_.iter (fun n2 ->
       pr (spf "%s --> %s"
              (CG.string_of_node n1) (CG.string_of_node n2));
     )
@@ -224,7 +224,7 @@ let test_include_require file =
   let ast = Parse_php.parse_program file in
 
   let increqs = Include_require_php.top_increq_of_program ast in
-  increqs +> List.iter (fun (_inckind, _tok, incexpr) ->
+  increqs |> List.iter (fun (_inckind, _tok, incexpr) ->
     match incexpr with
     | Include_require_php.SimpleVar _
     | Include_require_php.Other _ ->
@@ -253,7 +253,7 @@ let test_stat_php xs =
   let files = Lib_parsing_php.find_source_files_of_dir_or_files xs in
   let h = Common2.hash_with_default (fun () -> 0) in
 
-  files +> Console.progress (fun k -> List.iter (fun file ->
+  files |> Console.progress (fun k -> List.iter (fun file ->
     k();
     try 
       let ast = Parse_php.parse_program file in
@@ -270,7 +270,7 @@ let test_stat_php xs =
    * pr2 str
    *)
   Common2.pr2_xxxxxxxxxxxxxxxxx();
-  h#to_list +> List.iter (fun (s, i) -> pr2 (spf "%-30s: %d" s i));
+  h#to_list |> List.iter (fun (s, i) -> pr2 (spf "%-30s: %d" s i));
   ()
 
 (*****************************************************************************)
@@ -290,7 +290,7 @@ let test_unsugar_php file =
 (*****************************************************************************)
 
 let test_xdebug_dumpfile file =
-  file +> Xdebug.iter_dumpfile (fun acall ->
+  file |> Xdebug.iter_dumpfile (fun acall ->
     pr2_gen acall;
   )
 
@@ -300,7 +300,7 @@ let test_php_xdebug file =
   let cmd = spf "%s %s" php file in
   pr2 (spf "executing: %s" cmd);
   Common.command2 cmd;
-  trace_file +> Xdebug.iter_dumpfile ~show_progress:false (fun call ->
+  trace_file |> Xdebug.iter_dumpfile ~show_progress:false (fun call ->
     let caller = call.Xdebug.f_call in
     let str = Xdebug.s_of_kind_call caller in
     let file = call.Xdebug.f_file in

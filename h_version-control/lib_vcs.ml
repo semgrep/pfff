@@ -71,7 +71,7 @@ let parse_commit_patch xs =
      * "Author: pad <pad@facebook.com>"; "Date:   6 weeks ago"; "";
      * "    Merge branch 'master' of /home/pad/release/pfff-git"; ""]
      *)
-    if xs +> List.exists (fun s -> s =~ ".*Merge.*")
+    if xs |> List.exists (fun s -> s =~ ".*Merge.*")
     then xs, []
     else 
       failwith ("wrong commit:" ^ List.hd xs)

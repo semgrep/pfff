@@ -101,8 +101,8 @@ spf "
   stat.functions stat.classes 
   stat.toplevels_funcalls stat.toplevels_assign 
   stat.toplevels_other stat.toplevels_include_requires
-  (stat.toplevels_funcalls_kinds +> List.map (fun (s, d) ->
-    spf "   %s -> %d\n" s d) +> Common.join "")
+  (stat.toplevels_funcalls_kinds |> List.map (fun (s, d) ->
+    spf "   %s -> %d\n" s d) |> Common.join "")
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -127,7 +127,7 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
   h#update "SOC" (fun old -> old + Common2.filesize file);
   
 
-  (Program ast) +> V.mk_visitor { V.default_visitor with
+  (Program ast) |> V.mk_visitor { V.default_visitor with
     V.ktop = (fun (k, _) x ->
       (match x with
       | FuncDef def ->

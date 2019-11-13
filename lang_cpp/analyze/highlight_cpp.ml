@@ -152,7 +152,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
 
 
     (* heuristic for function definitions *)
-    | t1::xs when (t1 +> TH.info_of_tok +> PI.col_of_info = 0) && 
+    | t1::xs when (t1 |> TH.info_of_tok |> PI.col_of_info = 0) && 
                    TH.is_not_comment t1 ->
         let line_t1 = TH.line_of_tok t1 in
         let rec find_ident_paren xs =
@@ -165,7 +165,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
               find_ident_paren xs
           | [] -> ()
         in
-        let same_line = (t1::xs) +> Common2.take_while (fun t ->
+        let same_line = (t1::xs) |> Common2.take_while (fun t ->
           TH.line_of_tok t = line_t1) 
         in
         find_ident_paren same_line;
@@ -195,8 +195,8 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     V.kblock_decl = (fun (k, _) x ->
       match x with
       | DeclList (xs_comma, _) ->
-          xs_comma +> Ast.uncomma +> List.iter (fun onedecl ->
-            onedecl.v_namei +> Common.do_option (fun (name, _ini_opt) ->
+          xs_comma |> Ast.uncomma |> List.iter (fun onedecl ->
+            onedecl.v_namei |> Common.do_option (fun (name, _ini_opt) ->
               let storage = onedecl.v_storage in
               let categ = 
                 match storage with
@@ -208,7 +208,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
                 | _ when !is_at_toplevel -> Entity (Global, (Def2 fake_no_def2))
                 | _ -> Local Def
               in
-              Ast.ii_of_id_name name +>List.iter (fun ii -> tag ii categ)
+              Ast.ii_of_id_name name |>List.iter (fun ii -> tag ii categ)
             );
           );
           k x
@@ -224,7 +224,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     V.kstmt = (fun (k, _) x ->
       match x with
       | Labeled (Ast.Label (_s, _st)), ii ->
-          ii +> List.iter (fun ii -> tag ii KeywordExn);
+          ii |> List.iter (fun ii -> tag ii KeywordExn);
           k x
       | Jump (Goto _s), ii ->
           let (_iigoto, lblii, _iiptvirg) = Common2.tuple_of_list3 ii in
@@ -279,7 +279,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
             );
 
           | RecordAccess (_e, name) | RecordPtAccess (_e, name) ->
-              Ast.ii_of_id_name name +> List.iter (fun ii ->
+              Ast.ii_of_id_name name |> List.iter (fun ii ->
                 let file = PI.file_of_info ii in
                 if File_type.file_type_of_file file =*= 
                    File_type.PL (File_type.C "c")
@@ -289,7 +289,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
           | _ -> 
               (* dynamic stuff, should highlight! *)
               let ii = Lib.ii_of_any (Expr e) in
-              ii +> List.iter (fun ii -> tag ii PointerCall);
+              ii |> List.iter (fun ii -> tag ii PointerCall);
           );
           k x
 
@@ -305,7 +305,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
       | New (_colon, _tok, _placement, ft, _args) ->
           (match ft with
           | _nq, ((TypeName (name)), _) ->
-              Ast.ii_of_id_name name +> List.iter (fun ii -> 
+              Ast.ii_of_id_name name |> List.iter (fun ii -> 
                 tag ii (Entity (Class, (Use2 fake_no_use2)));
               )
           | _ -> ()
@@ -316,7 +316,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     V.kinit = (fun (k, _) x ->
       match x with
       | InitDesignators (xs, _, _init) ->
-          xs +> List.iter (function
+          xs |> List.iter (function
             | DesignatorField (_tok, (_s, tok2)) ->
                 tag tok2 (Entity (Field, (Use2 fake_no_use2)))
             | _ -> ()
@@ -337,7 +337,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
       let (typeCbis, _)  = x in
       match typeCbis with
       | TypeName (name) ->
-          Ast.ii_of_id_name name +> List.iter (fun ii -> 
+          Ast.ii_of_id_name name |> List.iter (fun ii -> 
             (* new Xxx and other places have priority *)
             if not (Hashtbl.mem already_tagged ii)
             then tag ii (Entity (Type, Use2 fake_no_use2))
@@ -352,12 +352,12 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
           k x
 
       | TypenameKwd (_tok, name) ->
-          Ast.ii_of_id_name name +> List.iter (fun ii -> 
+          Ast.ii_of_id_name name |> List.iter (fun ii -> 
             tag ii (Entity (Type, Use2 fake_no_use2)));
           k x
 
       | EnumDef (_tok, _sopt, xs) ->
-          xs +> unbrace +> uncomma +> List.iter (fun enum_elem ->
+          xs |> unbrace |> uncomma |> List.iter (fun enum_elem ->
             let (_, ii) = enum_elem.e_name in
             tag ii (Entity (Constructor,(Def2 fake_no_def2)))
           );
@@ -369,14 +369,14 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     V.kfieldkind = (fun (k, _) x -> 
       match x with
       | FieldDecl onedecl ->
-          onedecl.v_namei +> Common.do_option (fun (name, _ini_opt) ->
+          onedecl.v_namei |> Common.do_option (fun (name, _ini_opt) ->
             let kind = 
               (* poor's man object using function pointer; classic C idiom *)
               if Type.is_method_type onedecl.v_type
               then Entity (Method, (Def2 fake_no_def2))
               else Entity (Field, (Def2 NoUse))
             in
-            Ast.ii_of_id_name name +> List.iter (fun ii -> tag ii kind)
+            Ast.ii_of_id_name name |> List.iter (fun ii -> tag ii kind)
           );
           k x
 
@@ -390,8 +390,8 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
 
     V.kclass_def = (fun (k,_) def ->
       let name = def.c_name in
-      name +> Common.do_option (fun name ->
-        Ast.ii_of_id_name name +> List.iter (fun ii -> 
+      name |> Common.do_option (fun name ->
+        Ast.ii_of_id_name name |> List.iter (fun ii -> 
           tag ii (Entity (Class, (Def2 fake_no_def2)));
         )
       );
@@ -399,7 +399,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     );
     V.kfunc_def = (fun (k,_) def ->
       let name = def.f_name in
-      Ast.ii_of_id_name name +> List.iter (fun ii -> 
+      Ast.ii_of_id_name name |> List.iter (fun ii -> 
         if not (Hashtbl.mem already_tagged ii)
         then tag ii (Entity (Class, (Def2 fake_no_def2)));
       );
@@ -413,7 +413,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
             | FunctionOrMethod def | Ast.Constructor def | Destructor def -> def
           in
           let name = def.f_name in
-          Ast.ii_of_id_name name +> List.iter (fun ii -> 
+          Ast.ii_of_id_name name |> List.iter (fun ii -> 
             tag ii (Entity (Method, (Def2 fake_no_def2)))
           );
       | (EmptyField _|UsingDeclInClass _|TemplateDeclInClass _
@@ -427,7 +427,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     V.kcpp = (fun (k,_) def ->
       (match def with
       | Ast.Define (_, _id, DefineFunc params, _body) ->
-          params +> Ast.unparen +> Ast.uncomma +> List.iter (fun (name) ->
+          params |> Ast.unparen |> Ast.uncomma |> List.iter (fun (name) ->
             match name with
             | (_s, [ii]) -> tag ii (Parameter Def)
             | _ -> ()
@@ -442,7 +442,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     V.ktoplevel = (fun (k,_) def ->
       (match def with
       | NotParsedCorrectly ii ->
-          ii +> List.iter (fun ii -> tag ii NotParsed)
+          ii |> List.iter (fun ii -> tag ii NotParsed)
       | _ ->()
       );
       k def
@@ -454,7 +454,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)
   (* -------------------------------------------------------------------- *)
-  toks +> List.iter (fun tok -> 
+  toks |> List.iter (fun tok -> 
     match tok with
 
     | T.TComment ii ->

@@ -38,7 +38,7 @@ let rec methods_in_chain e =
 let main files_or_dirs = 
   let files = Lib_parsing_php.find_source_files_of_dir_or_files files_or_dirs in
 
-  files +> List.iter (fun file ->
+  files |> List.iter (fun file ->
 
     (* step1: parse the file *)
     let ast = Parse_php.parse_program file in
@@ -48,7 +48,7 @@ let main files_or_dirs =
         (match e with
         | Call (ObjGet(objexpr, _tok, name), (_lp, args, _rp)) ->
           let chain = methods_in_chain e in
-          let strs = chain +> List.map Ast.str_of_name +> List.rev in
+          let strs = chain |> List.map Ast.str_of_name |> List.rev in
           pr2_gen strs;
           
           (* visit just the arguments *)

@@ -87,7 +87,7 @@ let parse_cache parse_in extract file =
         Hashtbl.replace _hmemo_file file (mtime, ast);
         ast
       end
-      else Hashtbl.find _hmemo_file file +> snd
+      else Hashtbl.find _hmemo_file file |> snd
     in
     extract ast
   )
@@ -115,7 +115,7 @@ let rewrite_categ_using_entities s categ file entities =
   | Some e_kind ->
 
     let entities = 
-      Hashtbl.find_all entities s +> List.filter (fun e ->
+      Hashtbl.find_all entities s |> List.filter (fun e ->
         (* we could have the full www dbcode but run the treemap on
          * a subdir in which case the root will not be the same.
          * It's a good approximation to just look at the basename.
@@ -165,7 +165,7 @@ let tokens_with_categ_of_file_helper
   (* todo: ast2 should not be a list, should just be (ast, toks)
    * but right now only a few parsers will satisfy this interface
    *)
-  ast2 +> List.map (fun (ast, toks) ->
+  ast2 |> List.map (fun (ast, toks) ->
 
     let h = Hashtbl.create 101 in
 
@@ -174,17 +174,17 @@ let tokens_with_categ_of_file_helper
       prefs (ast, toks);
 
     (* getting the text *)
-    toks +> Common.map_filter (fun tok -> 
+    toks |> Common.map_filter (fun tok -> 
       let info = info_of_tok tok in
       let s = PI.str_of_info info in
       if not (PI.is_origintok info)
       then None
       else 
-        let categ = Common2.hfind_option info h +> Common2.fmap (fun categ ->
+        let categ = Common2.hfind_option info h |> Common2.fmap (fun categ ->
           rewrite_categ_using_entities s categ file hentities
         ) in
         Some (s, categ,{ Common2.l = PI.line_of_info info; c = PI.col_of_info info; })
-    )) +> List.flatten
+    )) |> List.flatten
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -232,7 +232,7 @@ let tokens_with_categ_of_file file hentities =
       tokens_with_categ_of_file_helper 
         { parse = (parse_cache (fun file -> 
            Common.save_excursion Flag_parsing.error_recovery true (fun()->
-             ML (Parse_ml.parse file +> fst))
+             ML (Parse_ml.parse file |> fst))
          )
          (function 
          | ML (astopt, toks) -> 
@@ -249,7 +249,7 @@ let tokens_with_categ_of_file file hentities =
       tokens_with_categ_of_file_helper 
         { parse = (parse_cache (fun file -> 
            Common.save_excursion Flag_parsing.error_recovery true (fun()->
-             Skip (Parse_skip.parse file +> fst))
+             Skip (Parse_skip.parse file |> fst))
          )
          (function 
          | Skip (astopt, toks) -> 
@@ -264,7 +264,7 @@ let tokens_with_categ_of_file file hentities =
   | FT.PL (FT.Haskell _) ->
       tokens_with_categ_of_file_helper 
         { parse = (parse_cache 
-         (fun file -> Hs (Parse_hs.parse file +> fst))
+         (fun file -> Hs (Parse_hs.parse file |> fst))
          (function Hs (ast, toks) -> [ast, toks] | _ -> raise Impossible));
         highlight_visit = (fun ~tag_hook prefs (ast, toks) -> 
           Highlight_hs.visit_program ~tag_hook prefs (ast, toks));
@@ -276,7 +276,7 @@ let tokens_with_categ_of_file file hentities =
       tokens_with_categ_of_file_helper 
         { parse = (parse_cache (fun file -> 
            Common.save_excursion Flag_parsing.error_recovery true (fun()->
-             Python (Parse_python.parse file +> fst))
+             Python (Parse_python.parse file |> fst))
          )
          (function 
          | Python (astopt, toks) -> 
@@ -292,7 +292,7 @@ let tokens_with_categ_of_file file hentities =
   | FT.PL (FT.Csharp) ->
       tokens_with_categ_of_file_helper 
         { parse = (parse_cache 
-         (fun file -> Csharp (Parse_csharp.parse file +> fst))
+         (fun file -> Csharp (Parse_csharp.parse file |> fst))
          (function Csharp (ast, toks) -> [ast, toks] | _ -> raise Impossible));
         highlight_visit = (fun ~tag_hook prefs (ast, toks) -> 
           Highlight_csharp.visit_program ~tag_hook prefs (ast, toks));
@@ -303,7 +303,7 @@ let tokens_with_categ_of_file file hentities =
   | FT.PL (FT.Rust) ->
       tokens_with_categ_of_file_helper 
         { parse = (parse_cache 
-         (fun file -> Rust (Parse_rust.parse file +> fst))
+         (fun file -> Rust (Parse_rust.parse file |> fst))
          (function Rust (ast, toks) -> [ast, toks] | _ -> raise Impossible));
         highlight_visit = (fun ~tag_hook prefs (ast, toks) -> 
           Highlight_rust.visit_program ~tag_hook prefs (ast, toks));
@@ -314,7 +314,7 @@ let tokens_with_categ_of_file file hentities =
   | FT.PL (FT.Erlang) ->
       tokens_with_categ_of_file_helper 
         { parse = (parse_cache 
-         (fun file -> Erlang (Parse_erlang.parse file +> fst))
+         (fun file -> Erlang (Parse_erlang.parse file |> fst))
          (function Erlang x -> [x] | _ -> raise Impossible));
         highlight_visit = Highlight_erlang.visit_program;
         info_of_tok = Token_helpers_erlang.info_of_tok;
@@ -324,7 +324,7 @@ let tokens_with_categ_of_file file hentities =
   | FT.PL (FT.Java) ->
       tokens_with_categ_of_file_helper 
         { parse = (parse_cache 
-         (fun file -> Java (Parse_java.parse file +> fst))
+         (fun file -> Java (Parse_java.parse file |> fst))
           (function 
           | Java (ast, toks) -> [Common2.some ast, (toks)] 
           | _ -> raise Impossible));
@@ -336,7 +336,7 @@ let tokens_with_categ_of_file file hentities =
   | FT.PL (FT.Lisp _) ->
       tokens_with_categ_of_file_helper 
         { parse = (parse_cache 
-         (fun file -> Lisp (Parse_lisp.parse file +> fst))
+         (fun file -> Lisp (Parse_lisp.parse file |> fst))
          (function
          |  Lisp (ast, toks) -> [Common2.some ast, toks]
          | _ -> raise Impossible));
@@ -348,7 +348,7 @@ let tokens_with_categ_of_file file hentities =
   | FT.Text ("nw" | "tex" | "texi" | "web") ->
       tokens_with_categ_of_file_helper 
         { parse = (parse_cache 
-         (fun file -> Noweb (Parse_nw.parse file +> fst))
+         (fun file -> Noweb (Parse_nw.parse file |> fst))
          (function Noweb x -> [x] | _ -> raise Impossible));
         highlight_visit = Highlight_nw.visit_program;
         info_of_tok = Token_helpers_nw.info_of_tok;
@@ -378,7 +378,7 @@ let tokens_with_categ_of_file file hentities =
         { parse = (parse_cache
           (fun file -> 
             Common.save_excursion Flag_parsing.error_recovery true (fun () ->
-              Js (Parse_js.parse file +> fst))
+              Js (Parse_js.parse file |> fst))
           )
          (function 
          | Js (astopt, toks) -> 

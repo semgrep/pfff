@@ -74,7 +74,7 @@ let plot_matrix ~lines ~columns ~xlabel ~ylabel matrix =
     pr (prelude());
 
 
-    Common.index_list columns +> List.iter (fun (s, i) -> 
+    Common.index_list columns |> List.iter (fun (s, i) -> 
       pr (spf "hash_label at %d : %s" i s);
     );
     let middle = limx / 2 in

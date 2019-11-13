@@ -9,9 +9,9 @@ let regexp_comment_line = "#.*"
 
 let cat_and_filter_comments file = 
   let xs = Common.cat file in
-  let xs = xs +> List.map 
+  let xs = xs |> List.map 
     (Str.global_replace (Str.regexp regexp_comment_line) "" ) in
-  let xs = xs +> Common.exclude Common2.is_blank_string in
+  let xs = xs |> Common.exclude Common2.is_blank_string in
   xs
 
 (*****************************************************************************)
@@ -40,7 +40,7 @@ let title_colon_elems_space_separated file =
 
   let xs = cat_and_filter_comments file in
 
-  xs +> List.map (fun s -> 
+  xs |> List.map (fun s -> 
     assert (s =~ "^\\([^ ]+\\):\\(.*\\)");
     let (title, elems_str) = matched2 s in
     let elems = Common.split "[ \t]+" elems_str in

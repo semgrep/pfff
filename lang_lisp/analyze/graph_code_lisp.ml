@@ -79,7 +79,7 @@ let parse file =
 
 (* dupe: graph_code_c *)
 let find_existing_node env s candidates last_resort =
-  candidates +> Common.find_opt (fun kind ->
+  candidates |> Common.find_opt (fun kind ->
     G.has_node (s, kind) env.g
   ) ||| last_resort
 
@@ -110,9 +110,9 @@ let add_node_and_edge_if_defs_mode env (s, kind) tok =
           typ = None;
           props = [];
         } in
-      env.g +> G.add_node node;
-      env.g +> G.add_edge (env.current, node) G.Has;
-      env.g +> G.add_nodeinfo node nodeinfo;
+      env.g |> G.add_node node;
+      env.g |> G.add_edge (env.current, node) G.Has;
+      env.g |> G.add_nodeinfo node nodeinfo;
     end
   );
   { env with current = node }
@@ -145,8 +145,8 @@ let rec extract_defs_uses env ast =
     let dir = Common2.dirname env.readable_file in
     G.create_intermediate_directories_if_not_present env.g dir;
     let node = (env.readable_file, E.File) in
-    env.g +> G.add_node node;
-    env.g +> G.add_edge ((dir, E.Dir), node) G.Has;
+    env.g |> G.add_node node;
+    env.g |> G.add_edge ((dir, E.Dir), node) G.Has;
   end;
   let env = { env with current = (env.readable_file, E.File); } in
   sexps_toplevel env ast
@@ -155,9 +155,9 @@ let rec extract_defs_uses env ast =
 (* Toplevels *)
 (* ---------------------------------------------------------------------- *)
 and sexps_toplevel env xs =
-  xs +> List.iter (sexp_toplevel env)
+  xs |> List.iter (sexp_toplevel env)
 and sexps env xs =
-  xs +> List.iter (sexp env)
+  xs |> List.iter (sexp env)
 
 and sexp_toplevel env x =
   sexp_bis env x
@@ -258,7 +258,7 @@ let build ?(verbose=true) root files =
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
   env.pr2_and_log "\nstep1: extract defs";
-  files +> Console.progress ~show:verbose (fun k ->
+  files |> Console.progress ~show:verbose (fun k ->
     List.iter (fun file ->
       k();
       let ast = parse file in
@@ -270,7 +270,7 @@ let build ?(verbose=true) root files =
 
   (* step2: creating the 'Use' edges *)
   env.pr2_and_log "\nstep2: extract Uses";
-  files +> Console.progress ~show:verbose (fun k ->
+  files |> Console.progress ~show:verbose (fun k ->
     List.iter (fun file ->
       k();
       let ast = parse file in

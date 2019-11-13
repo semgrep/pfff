@@ -47,11 +47,11 @@ let db_of_graph_code root g =
 
   (* opti: using G.parent and check if G.not_found is slow *)
   let hnot_found = 
-    G.node_and_all_children G.not_found g +> Common.hashset_of_list in
+    G.node_and_all_children G.not_found g |> Common.hashset_of_list in
   (* opti: using G.pred is super slow *)
   let use_pred = G.mk_eff_use_pred g in
   
-  g +> G.iter_nodes (fun node ->
+  g |> G.iter_nodes (fun node ->
     let (s, kind) = node in
     match kind with
     | E.Function | E.Class | E.Constant | E.Global | E.Type | E.Exception
@@ -75,7 +75,7 @@ let db_of_graph_code root g =
 
       (* select users that are outside! that are not in the same file *)
         let pred = use_pred node in
-        let extern = pred +> List.filter (fun n ->
+        let extern = pred |> List.filter (fun n ->
           try
             let file2 = G.file_of_node n g in
             file <> file2
@@ -114,8 +114,8 @@ let db_of_graph_code root g =
   
   { Database_code.
     root = root;
-    files = Common2.hkeys hfiles +> List.map (fun file -> file, 0);
-    dirs = Common2.hkeys hdirs +> List.map (fun dir -> dir, 1);
+    files = Common2.hkeys hfiles |> List.map (fun file -> file, 0);
+    dirs = Common2.hkeys hdirs |> List.map (fun dir -> dir, 1);
     entities = arr;
   }
 

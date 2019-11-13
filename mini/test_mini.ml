@@ -15,13 +15,13 @@ let test_dataflow_minic file =
   let facts = Datalog_minic.generate_facts ast in
 
   (* debug *)
-  facts +> List.iter pr2_gen;
+  facts |> List.iter pr2_gen;
   Common2.pr2_xxxxxxxxxxxxxxxxx();
   
   let facts_file = "/tmp/facts.dl" in
   Common.with_open_outfile facts_file (fun (pr_no_nl, _chan) ->
     let pr s = pr_no_nl (s ^ ".\n") in
-    facts +> List.iter pr;
+    facts |> List.iter pr;
   );
   
   let logic_file = 

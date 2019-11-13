@@ -25,7 +25,7 @@ let ast_unittest =
     let files =
       (Common2.glob (spf "%s/*.php" dir1) @ Common2.glob (spf "%s/*.php" dir2))
     in
-    files +> List.iter (fun file ->
+    files |> List.iter (fun file ->
       try
         let cst = Parse_php.parse_program file in
         let _ast = Ast_php_build.program cst in
@@ -49,7 +49,7 @@ foo1();
       let ast = Parse_php.program_of_string file_content in
       let uses = Defs_uses_php.uses_of_any (Ast.Program ast) in
       let uses_strings =
-        uses +> List.map (fun (name, _kind) -> Ast.str_of_name name) in
+        uses |> List.map (fun (name, _kind) -> Ast.str_of_name name) in
       assert_equal
         (sort ["foo1"])
         (sort uses_strings);
@@ -82,12 +82,12 @@ $x = <x:xhp2/>;
         | _ -> raise Impossible
       in
       let uses_strings =
-        uses +> List.map (fun (name, _kind) -> str_of_name name) in
+        uses |> List.map (fun (name, _kind) -> str_of_name name) in
 
       let classes =
-        (Common2.enum 1 10) +> List.map (fun i -> spf "Foo%d" i) in
+        (Common2.enum 1 10) |> List.map (fun i -> spf "Foo%d" i) in
       let xhp_classes =
-        (Common2.enum 1 2) +> List.map (fun i -> spf "x:xhp%d" i) in
+        (Common2.enum 1 2) |> List.map (fun i -> spf "x:xhp%d" i) in
       assert_equal
         (sort (classes @ xhp_classes))
         (sort uses_strings);
@@ -117,7 +117,7 @@ let tags_unittest =
         (match tags with
         | [file, tags_in_file] ->
             assert_equal tmpfile file;
-            let xs = tags_in_file +> List.map (fun x ->
+            let xs = tags_in_file |> List.map (fun x ->
               x.Tags_file.tagname, x.Tags_file.kind
             ) in
             assert_equal ~msg:"it should contain the right entries" [
@@ -153,7 +153,7 @@ let tags_unittest =
         (match tags with
         | [file, tags_in_file] ->
             assert_equal tmpfile file;
-            let xs = tags_in_file +> List.map (fun x ->
+            let xs = tags_in_file |> List.map (fun x ->
               x.Tags_file.tagname, x.Tags_file.kind
             ) in
             (* we now generate two tags per method, one for 'a_method',
@@ -192,7 +192,7 @@ let tags_unittest =
         (match tags with
         | [file, tags_in_file] ->
             assert_equal tmpfile file;
-            let xs = tags_in_file +> List.map (fun x ->
+            let xs = tags_in_file |> List.map (fun x ->
               x.Tags_file.tagname, x.Tags_file.kind
             ) in
             let desired = [
@@ -225,14 +225,14 @@ let tags_unittest =
         let tmpfile = Parse_php.tmp_php_file_from_string file_content in
         let tags =
           Tags_php.php_defs_of_files_or_dirs ~verbose:false [tmpfile] in
-        let all_tags = tags +> List.map snd +> List.flatten in
+        let all_tags = tags |> List.map snd |> List.flatten in
         assert_bool
           ~msg:"it should contain an entry for the :x:... classname form"
-          (all_tags +> List.exists (fun t ->
+          (all_tags |> List.exists (fun t ->
             t.Tags_file.tagname =$= ":x:foo"));
         assert_bool
           ~msg:"it should contain an entry for the x:... classname form"
-          (all_tags +> List.exists (fun t ->
+          (all_tags |> List.exists (fun t ->
             t.Tags_file.tagname =$= "x:foo"));
       );
     ]
@@ -300,8 +300,8 @@ function test_useA() {
       let skip_list = Skip_code.load (Filename.concat root "skip_list.txt") in
       let files = 
         Lib_parsing_php.find_source_files_of_dir_or_files [root] 
-        +> Skip_code.filter_files skip_list root
-        +> Skip_code.reorder_files_skip_errors_last skip_list root
+        |> Skip_code.filter_files skip_list root
+        |> Skip_code.reorder_files_skip_errors_last skip_list root
       in
       let is_skip_error_file = Skip_code.build_filter_errors_file skip_list in
       let logfile = Filename.concat root "pfff_test.log" in
@@ -362,7 +362,7 @@ let annotation_unittest =
       let (ast_with_comments, _stat) = Parse_php.parse tmpfile in
       let annots =
         Annotation_php.annotations_of_program_with_comments ast_with_comments
-          +> List.map fst
+          |> List.map fst
       in
       assert_equal ~msg:"should have the DataProvider annotations"
         (sort [A.DataProvider (A.Method "provider");

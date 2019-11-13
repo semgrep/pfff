@@ -22,19 +22,19 @@ module V = Visitor_ml
 
 let find_source_files_of_dir_or_files xs = 
   Common.files_of_dir_or_files_no_vcs_nofilter xs 
-  +> List.filter (fun filename ->
+  |> List.filter (fun filename ->
     match File_type.file_type_of_file filename with
     | File_type.PL (File_type.ML ("ml" | "mli")) -> true
     | _ -> false
-  ) +> Common.sort
+  ) |> Common.sort
 
 let find_ml_files_of_dir_or_files xs = 
   Common.files_of_dir_or_files_no_vcs_nofilter xs 
-  +> List.filter (fun filename ->
+  |> List.filter (fun filename ->
     match File_type.file_type_of_file filename with
     | File_type.PL (File_type.ML ("ml")) -> true
     | _ -> false
-  ) +> Common.sort
+  ) |> Common.sort
 
 let find_cmt_files_of_dir_or_files xs = 
   Common.files_of_dir_or_files_no_vcs_nofilter xs 
@@ -50,11 +50,11 @@ let find_cmt_files_of_dir_or_files xs =
    *)
   |> (fun xs ->
     let hfiles = Hashtbl.create 101 in
-    xs +> List.iter (fun file ->
+    xs |> List.iter (fun file ->
       let (d,b,e) = Common2.dbe_of_filename file in
       Hashtbl.add hfiles (d,b) e
     );
-    Common2.hkeys hfiles +> List.map (fun (d,b) ->
+    Common2.hkeys hfiles |> List.map (fun (d,b) ->
       let xs = Hashtbl.find_all hfiles (d,b) in
       (match xs with
       | ["cmt";"cmti"]

@@ -70,7 +70,7 @@ let string_of_program ast =
             let line = p.Parse_info.line in 
             if line > !cur_line
             then begin
-              (line - !cur_line) +> Common2.times (fun () -> pp "\n"); 
+              (line - !cur_line) |> Common2.times (fun () -> pp "\n"); 
               cur_line := line;
             end;
             let s =  p.Parse_info.str in

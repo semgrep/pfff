@@ -5,7 +5,7 @@ open Common
 (*****************************************************************************)
 let test_parse_simple xs =
   let fullxs = Lib_parsing_js.find_source_files_of_dir_or_files xs in
-  fullxs +> List.iter (fun file ->
+  fullxs |> List.iter (fun file ->
     try 
       let cst = Parse_js.parse_program file in
       let _ast = Ast_js_build.program cst in

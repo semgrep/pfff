@@ -33,7 +33,7 @@ function bar() {}
         let (ast_and_tokens, _stat) = Parse_js.parse tmpfile in
         let annots = 
           Annotation_js.annotations_of_program_with_comments ast_and_tokens
-          +> List.map fst
+          |> List.map fst
         in
         assert_equal 
           ~msg:"it should extract @providesModule annotations"
@@ -60,7 +60,7 @@ function foo() {}
 " in
      Common2.with_tmp_file ~str:file_content ~ext:"js" (fun tmpfile ->
        let tags = Tags_js.tags_of_files_or_dirs ~verbose:false [tmpfile] in
-       (match tags +> List.map snd +> List.flatten with
+       (match tags |> List.map snd |> List.flatten with
        | [{ Tags_file.tagname = "my-module"; kind = E.Module; _}] -> ()
        | _ -> assert_failure "it should extract module names from comments"
        );

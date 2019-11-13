@@ -57,7 +57,7 @@ let rec find_next_synchro ~next ~already_passed =
 
   let last_round = List.rev already_passed in
   let is_define = 
-    let xs = last_round +> List.filter TH.is_not_comment in
+    let xs = last_round |> List.filter TH.is_not_comment in
     match xs with
     | T.TDefine _::_ -> true
     | _ -> false
@@ -67,7 +67,7 @@ let rec find_next_synchro ~next ~already_passed =
   else 
 
   let (before, after) = 
-    last_round +> Common.span (fun tok -> 
+    last_round |> Common.span (fun tok -> 
       match tok with
       (* by looking at TOBrace we are sure that the "start of something"
        * will not arrive too early 

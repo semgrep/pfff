@@ -95,7 +95,7 @@ let paint_content_maybe_rect ~user_rect dw model rect =
    let microlevel_opt = 
      Draw_microlevel.draw_treemap_rectangle_content_maybe
        cr clipping context rect in
-   microlevel_opt +> Common.do_option (fun microlevel ->
+   microlevel_opt |> Common.do_option (fun microlevel ->
      Hashtbl.replace dw.microlevel rect microlevel
    );
   (* have to redraw the label *)
@@ -129,7 +129,7 @@ let lazy_paint user_rect dw model () =
 let paint2 dw model = 
   pr2 (spf "paint");
   
-  !Ctl.paint_content_maybe_refresher +> Common.do_option GMain.Idle.remove;
+  !Ctl.paint_content_maybe_refresher |> Common.do_option GMain.Idle.remove;
   Ctl.current_rects_to_draw := [];
 
   let user_rect = device_to_user_area dw in
@@ -141,13 +141,13 @@ let paint2 dw model =
 
     (if not (Layer_code.has_active_layers dw.layers)
      (* phase 1, draw the rectangles *)
-     then rects +> List.iter (Draw_macrolevel.draw_treemap_rectangle ~cr)
-     else rects +> List.iter (Draw_macrolevel.draw_trect_using_layers 
+     then rects |> List.iter (Draw_macrolevel.draw_treemap_rectangle ~cr)
+     else rects |> List.iter (Draw_macrolevel.draw_trect_using_layers 
                                 ~cr dw.layers)
     );
 
     (* phase 2, draw the labels, if have enough space *)
-    rects +> List.iter (Draw_labels.draw_treemap_rectangle_label_maybe 
+    rects |> List.iter (Draw_labels.draw_treemap_rectangle_label_maybe 
                           ~cr ~zoom:1.0  ~color:None);
   );
 
@@ -194,13 +194,13 @@ let button_action w ev =
       pr2 (spf "button %d pressed" button);
       (match button with
       | 1 -> 
-        r_opt +> Common.do_option (fun (r, _, _r_englobing) ->
+        r_opt |> Common.do_option (fun (r, _, _r_englobing) ->
           let file = r.T.tr_label in
           pr2 (spf "clicking on %s" file);
         );
         true
       | 2 ->
-        r_opt +> Common.do_option (fun (r, _, _r_englobing) ->
+        r_opt |> Common.do_option (fun (r, _, _r_englobing) ->
           let file = r.T.tr_label in
           pr2 (spf "opening %s" file);
           let line = 
@@ -211,7 +211,7 @@ let button_action w ev =
         true
 
       | 3 ->
-        r_opt +> Common.do_option (fun (tr, _, _r_englobing) ->
+        r_opt |> Common.do_option (fun (tr, _, _r_englobing) ->
           (* actually file_or_dir *)
           let file = tr.T.tr_label in
 
@@ -247,16 +247,16 @@ let button_action w ev =
 
           let paths_of_readables xs = 
             xs 
-            +> List.sort compare
-            +> Common2.uniq
+            |> List.sort compare
+            |> Common2.uniq
             (* todo: tfidf to filter files like common2.ml *)
-            +> Common.exclude (fun readable -> 
+            |> Common.exclude (fun readable -> 
                 readable =~ "commons/common2.ml"
                 (*readable =~ "external/.*"  *)
             )
-            +> List.map (fun s -> Filename.concat model.root s)
+            |> List.map (fun s -> Filename.concat model.root s)
             (* less: print a warning when does not exist? *)
-            +> List.filter Sys.file_exists
+            |> List.filter Sys.file_exists
           in
           let readable = Common.readable ~root:model.root file in
           let readable =
@@ -286,7 +286,7 @@ let button_action w ev =
               let buf = Buffer.create 100 in
               let prx s = Buffer.add_string buf (s ^ "\n") in
               prx "short defs";
-              defs +> List.iter (fun (_line, short_node) ->
+              defs |> List.iter (fun (_line, short_node) ->
                   prx (" " ^ Graph_code.string_of_node short_node)
               );
               Gui.dialog_text ~text:(Buffer.contents buf) ~title:"Info file";
@@ -302,8 +302,8 @@ let button_action w ev =
                   let users = Graph_code.pred n (Graph_code.Use) g in
                   let str =
                     ([Graph_code.string_of_node n] @
-                    (users +> List.map Graph_code.string_of_node )
-                    ) +> Common.join "\n"
+                    (users |> List.map Graph_code.string_of_node )
+                    ) |> Common.join "\n"
                   in
                   Gui.dialog_text ~text:str ~title:"Info entity";
                 ));
@@ -332,7 +332,7 @@ let button_action w ev =
 
   | `TWO_BUTTON_PRESS ->
       pr2 ("double click");
-      r_opt +> Common.do_option (fun (_r, _, r_englobing) ->
+      r_opt |> Common.do_option (fun (_r, _, r_englobing) ->
         let path = r_englobing.T.tr_label in
         !Ctl._go_dirs_or_file w [path];
       );

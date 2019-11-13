@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common
 
 open Cst_cpp
 
@@ -120,7 +119,7 @@ let do_in_new_scope_and_check f =
   let top = top_scope () in
   del_scope();
 
-  top +> List.rev +> List.iter (fun (name, (scope, aref)) ->
+  top |> List.rev |> List.iter (fun (name, (scope, aref)) ->
     if !aref = 0 
     then 
       let s = Ast.string_of_name_tmp name in
@@ -150,7 +149,7 @@ let visit_prog prog =
       do_in_new_scope_and_check (fun () -> 
         (match x with
         | Define (_, _id, DefineFunc params, _body) ->
-            params +> Ast.unparen +> Ast.uncomma +> List.iter (fun (name) ->
+            params |> Ast.unparen |> Ast.uncomma |> List.iter (fun (name) ->
               (match name with
               | (s, [ii]) ->
                 add_binding (None, noQscope, IdIdent (s,ii)) (S.Param, ref 0);
@@ -165,7 +164,7 @@ let visit_prog prog =
 
     (* 2: adding defs of name in environment *)
     V.kparameter = (fun (k, _) param ->
-      param.p_name  +> Common.do_option (fun ident ->
+      param.p_name  |> Common.do_option (fun ident ->
         add_binding (None, noQscope, IdIdent ident) (S.Param, ref 0);
       );
       k param
@@ -174,8 +173,8 @@ let visit_prog prog =
     V.kblock_decl = (fun (k, _) x ->
       match x with
       | DeclList (xs_comma, _) ->
-          xs_comma +> Ast.uncomma +> List.iter (fun onedecl ->
-            onedecl.v_namei +> Common.do_option (fun (name, _ini_opt) ->
+          xs_comma |> Ast.uncomma |> List.iter (fun onedecl ->
+            onedecl.v_namei |> Common.do_option (fun (name, _ini_opt) ->
               let scope = 
                 if is_top_env !_scoped_env || 
                    (match onedecl.v_storage with 

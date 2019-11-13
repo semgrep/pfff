@@ -15,7 +15,6 @@
  * license.txt for more details.
  *)
 (*e: Facebook copyright *)
-open Common
 open Common2.ArithFloatInfix
 
 module CairoH = Cairo_helpers
@@ -37,7 +36,7 @@ let draw_legend_of_color_string_pairs ~cr xs =
   Cairo.set_font_size cr (size * 0.6);
   Cairo.set_source_rgba cr 0. 0. 0.    1.0;
   
-  xs +> Common.index_list_1 +> List.iter (fun ((color,s), i) ->
+  xs |> Common.index_list_1 |> List.iter (fun ((color,s), i) ->
     let x = 10. in
     let y = float_of_int i * size in
 
@@ -59,15 +58,15 @@ let draw_legend_of_color_string_pairs ~cr xs =
 let draw_legend ~cr =
 
   let archis = Archi_code.source_archi_list in
-  let grouped_archis = archis +> Common.group_by_mapped_key (fun archi ->
+  let grouped_archis = archis |> Common.group_by_mapped_key (fun archi ->
     (* I tend to favor the darker variant of the color in treemap_pl.ml hence
      * the 3 below
      *)
     Treemap_pl.color_of_source_archi archi ^ "3"
   )
   in
-  let grouped_archis = grouped_archis +> List.map (fun (color, kinds) ->
-    color, kinds +> List.map Archi_code.s_of_source_archi +> Common.join ", "
+  let grouped_archis = grouped_archis |> List.map (fun (color, kinds) ->
+    color, kinds |> List.map Archi_code.s_of_source_archi |> Common.join ", "
   ) in
   draw_legend_of_color_string_pairs ~cr grouped_archis
 
@@ -75,11 +74,11 @@ let draw_legend ~cr =
 
 let draw_legend_layer ~cr layers_idx = 
   let pairs = 
-    layers_idx.L.layers +> Common.map_filter (fun (layer, is_active) ->
+    layers_idx.L.layers |> Common.map_filter (fun (layer, is_active) ->
       if is_active
       then Some layer.L.kinds
       else None
-    ) +> List.flatten +> List.map (fun (a, b) -> (b, a))
+    ) |> List.flatten |> List.map (fun (a, b) -> (b, a))
   in
   draw_legend_of_color_string_pairs ~cr pairs
 

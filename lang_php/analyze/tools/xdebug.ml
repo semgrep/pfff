@@ -173,9 +173,9 @@ let hash_of_config cfg =
 
 let cmdline_args_of_config cfg =
   hash_of_config cfg 
-  +> Common.hash_to_list 
-  +> List.map (fun (s, d) -> spf "-d xdebug.%s=%s" s d) 
-  +> Common.join " "
+  |> Common.hash_to_list 
+  |> List.map (fun (s, d) -> spf "-d xdebug.%s=%s" s d) 
+  |> Common.join " "
 
 (*****************************************************************************)
 (* Small wrapper over php interpreter *)
@@ -198,7 +198,7 @@ let php_cmd_with_xdebug_on ?(config = default_config) ~trace_file () =
 
 let php_has_xdebug_extension () = 
   let xs = Common.cmd_to_list "php -v 2>&1" in
-  xs +> List.exists (fun s -> s =~ ".*with Xdebug v.*")
+  xs |> List.exists (fun s -> s =~ ".*with Xdebug v.*")
 
 (*****************************************************************************)
 (* Helpers *)
@@ -405,8 +405,8 @@ let iter_dumpfile2
                       | Call (Id name, args_paren) ->
                         assert(Ast.str_of_name name = "foo");
                         Ast.unparen args_paren 
-                        +> Ast.uncomma 
-                        +> List.map (function
+                        |> Ast.uncomma 
+                        |> List.map (function
                         | Arg e -> e
                         | _ -> raise Impossible
                         )
@@ -434,7 +434,7 @@ let iter_dumpfile2
                  None
             )
             in
-            trace_opt +> Common.do_option (fun trace -> 
+            trace_opt |> Common.do_option (fun trace -> 
               if not config.collect_return then
                 (try 
                     if trace.f_call = FunCall(xdebug_main_name) 

@@ -294,7 +294,7 @@ let warning loc err =
   Common.push { loc = loc; typ = err; sev = Warning } _errors
 
 let report_all_errors () = 
-  !_errors +> List.rev +> List.iter report_error
+  !_errors |> List.rev |> List.iter report_error
 
 (*****************************************************************************)
 (* Ranking *)
@@ -492,25 +492,25 @@ let rank_of_error_kind err_kind =
 
 (* ranking errors, inspired by Engler slides *)
 let rank_errors errs =
-  errs +> List.map (fun x ->
+  errs |> List.map (fun x ->
     x,
     rank_of_error_kind x.typ
-  ) +> Common.sort_by_val_highfirst +> Common2.map fst
+  ) |> Common.sort_by_val_highfirst |> Common2.map fst
 
 let show_10_most_recurring_unused_variable_names () =
 
   (* most recurring, probably false positives *)
   let hcount_str = Common2.hash_with_default (fun() -> 0) in
 
-  !_errors +> List.iter (fun err ->
+  !_errors |> List.iter (fun err ->
     match err.typ with
     | UnusedVariable (dname, _scope) ->
         hcount_str#update dname (fun old -> old+1);
     | _ -> ()
   );
   pr2 "top 10 most recurring unused variable names";
-  hcount_str#to_list +> Common.sort_by_val_highfirst +> Common.take_safe 10
-   +> List.iter (fun (s, cnt) ->
+  hcount_str#to_list |> Common.sort_by_val_highfirst |> Common.take_safe 10
+   |> List.iter (fun (s, cnt) ->
         pr2 (spf " %s -> %d" s cnt)
       );
   ()

@@ -90,14 +90,14 @@ let java_options = [
   "-Dbddcache=1500000";
   "-Dbddnodes=40000000";
 *)
-  ] +> Common.join " "
+  ] |> Common.join " "
 
 let run_datalog root facts =
   (* facts +> List.iter pr2; *)
   let datalog_file = Filename.concat root "facts.dl" in
   Common.with_open_outfile datalog_file (fun (pr_no_nl, _chan) ->
     let pr s = pr_no_nl (s ^ ".\n") in
-    facts +> List.iter (fun fact -> 
+    facts |> List.iter (fun fact -> 
       pr (Datalog_code.string_of_fact fact));
   );
   pr2 (spf "Your datalog facts are in %s" datalog_file);
@@ -136,7 +136,7 @@ let run_datalog root facts =
     exec (spf "cp %s %s" pointing_file root);
     exec (spf "cp %s %s" calling_file root);
 
-    calling_file +> Common.cat +> Common.take_safe 10 +> List.iter pr;
+    calling_file |> Common.cat |> Common.take_safe 10 |> List.iter pr;
     exec (spf "rm %s/*" datadir);
     exec (spf "rmdir %s" datadir);
   );
@@ -148,7 +148,7 @@ let run_datalog root facts =
 (* Language specific, building the prolog db *)
 (*****************************************************************************)
 let build_prolog_db lang root xs =
-  let root = Common.fullpath root +> Common2.chop_dirsymbol in
+  let root = Common.fullpath root |> Common2.chop_dirsymbol in
   let files = Find_source.files_of_dir_or_files ~lang xs in
   match lang with
   | "php" ->
@@ -171,7 +171,7 @@ let build_prolog_db lang root xs =
          Database_prolog_php.build ~show_progress:!verbose root files in
        Common.with_open_outfile file (fun (pr_no_nl, _chan) ->
          let pr s = pr_no_nl (s ^ "\n") in
-         facts +> List.iter (fun fact ->
+         facts |> List.iter (fun fact ->
            pr (Prolog_code.string_of_fact fact);
          )
        );
@@ -234,7 +234,7 @@ let build_prolog_db lang root xs =
       let facts_pl_file = Filename.concat root "facts.pl" in
       Common.with_open_outfile facts_pl_file (fun (pr_no_nl, _chan) ->
         let pr s = pr_no_nl (s ^ "\n") in
-        facts +> List.iter (fun x -> pr (Prolog_code.string_of_fact x))
+        facts |> List.iter (fun x -> pr (Prolog_code.string_of_fact x))
       );
       let prolog_compiled_db = Filename.concat root "facts.db" in
       Common.command2 (spf "%s -c %s %s" swipl facts_pl_file predicates_file);
@@ -266,35 +266,35 @@ let test_compare_datalog file =
   let facts_minic = Datalog_minic.generate_facts ast in
 
   (* C *)
-  let root = Sys.getcwd () +> Common.fullpath in
+  let root = Sys.getcwd () |> Common.fullpath in
   Graph_code_c.facts := Some (ref []);
   let _g = Graph_code_c.build ~verbose:false root [file] in
   let facts_c = List.rev !(Common2.some (!Graph_code_c.facts)) in
 
   let a = Common.sort facts_minic in
-  let b = Common.sort (facts_c +> List.map Datalog_code.string_of_fact) in
+  let b = Common.sort (facts_c |> List.map Datalog_code.string_of_fact) in
   
   let (_common, only_in_a, only_in_b) = 
     Common2.diff_set_eff a b in
   
-  only_in_a +> List.iter (fun src ->
+  only_in_a |> List.iter (fun src ->
     pr2 (spf "this fact is missing: %s" src);
   );
-  only_in_b +> List.iter (fun src ->
+  only_in_b |> List.iter (fun src ->
     pr2 (spf "this fact was not expected: %s" src);
   );
   ()
 
 let test_explain_bddbddb_tuples file =
   let dst = Datalog_code.bddbddb_explain_tuples file in
-  dst +> Common.cat +> List.iter pr
+  dst |> Common.cat |> List.iter pr
 
 (*---------------------------------------------------------------------------*)
 (* regression testing *)
 (*---------------------------------------------------------------------------*)
 let test () =
   let suite = Unit_prolog_php.unittest in
-  OUnit.run_test_tt suite +> ignore;
+  OUnit.run_test_tt suite |> ignore;
   ()
 
 (* ---------------------------------------------------------------------- *)

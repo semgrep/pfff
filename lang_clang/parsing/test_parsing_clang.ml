@@ -13,12 +13,12 @@ let test_tokens_clang file =
   then pr2 "warning: seems not a clang file";
 
   let toks = Parse_clang.tokens file in
-  toks +> List.iter (fun x -> pr2_gen x);
+  toks |> List.iter (fun x -> pr2_gen x);
   ()
 
 let test_parse_clang xs =
   let fullxs = Lib_parsing_clang.find_source_files_of_dir_or_files xs in
-  fullxs +> List.iter (fun file -> 
+  fullxs |> List.iter (fun file -> 
     pr2 ("PARSING: " ^ file);
     let _ast = Parse_clang.parse file in
     ()
@@ -40,7 +40,7 @@ let gen_clang jsonfile =
   (match json with
   | J.Array xs ->
       let hdone = Hashtbl.create 101 in
-      xs +> List.iter (fun json ->
+      xs |> List.iter (fun json ->
         (match json with
         | J.Object ([
             "directory", _;
@@ -108,11 +108,11 @@ let stat_clang_constructors xs =
   let fullxs = Lib_parsing_clang.find_source_files_of_dir_or_files xs in
   let h = Common2.hash_with_default (fun () -> 0) in
   
-  fullxs +> Console.progress (fun k ->
+  fullxs |> Console.progress (fun k ->
     List.iter (fun file ->
       k();
       let ast = Parse_clang.parse file in
-      ast +> Visitor_clang.visit (fun k x ->
+      ast |> Visitor_clang.visit (fun k x ->
         match x with
         | Paren (s, _, _) ->
             h#update s (fun x -> x + 1);
@@ -121,8 +121,8 @@ let stat_clang_constructors xs =
       )
   ));
   h#to_list 
-  +> Common.sort_by_val_highfirst 
-  +> List.iter (fun (k, v) -> pr2 (spf "%s: %d" (Parse_clang.str_of_enum k) v))
+  |> Common.sort_by_val_highfirst 
+  |> List.iter (fun (k, v) -> pr2 (spf "%s: %d" (Parse_clang.str_of_enum k) v))
 
 (*****************************************************************************)
 (* Main entry for Arg *)

@@ -24,10 +24,10 @@ object(o: 'o)
 
 
   method add2: 'a -> unit = fun a -> 
-    o#add a +> ignore;
+    o#add a |> ignore;
     ()
   method del2: 'a -> unit = fun a -> 
-    o#del a +> ignore;
+    o#del a |> ignore;
     ()
   method clear: unit = 
     o#iter (fun e -> o#del2 e);
@@ -43,7 +43,7 @@ object(o: 'o)
   method tolist: 'a list = 
     List.rev (o#fold (fun acc e -> e::acc) [])
   method fromlist: 'a list -> 'o = 
-    fun xs -> xs +> List.fold_left (fun o e -> o#add e) o#empty
+    fun xs -> xs |> List.fold_left (fun o e -> o#add e) o#empty
 
   method length: int = 
     (* oldsimple: o#tolist +> List.length *)
@@ -53,11 +53,11 @@ object(o: 'o)
     !count
 
   method exists: ('a -> bool) -> bool = fun f -> 
-    o#tolist +> List.exists f
+    o#tolist |> List.exists f
 
   method filter: ('a -> bool) -> 'o = fun f ->
     (* iter and call add from empty, or del *)
-    o#tolist +> List.filter f +> o#fromlist
+    o#tolist |> List.filter f |> o#fromlist
 
   (* forall, fold, map *)
 

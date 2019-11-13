@@ -13,8 +13,6 @@
  * license.txt for more details.
  *)
 
-open Common
-
 open Parser_html
 
 module PI = Parse_info
@@ -48,7 +46,7 @@ let visitor_info_of_tok f = function
 
 let info_of_tok tok = 
   let res = ref None in
-  visitor_info_of_tok (fun ii -> res := Some ii; ii) tok +> ignore;
+  visitor_info_of_tok (fun ii -> res := Some ii; ii) tok |> ignore;
   Common2.some !res
   
 

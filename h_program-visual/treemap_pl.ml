@@ -269,7 +269,7 @@ let treemap_file_size_hook ~root file =
 let code_treemap2 ~filter_file paths =
   let root = Common2.common_prefix_of_files_or_dirs paths in
   let tree = 
-    paths +> Treemap.tree_of_dirs_or_files
+    paths |> Treemap.tree_of_dirs_or_files
       ~filter_dir:Lib_vcs.filter_vcs_dir
       ~filter_file:filter_file
       ~file_hook:(fun file -> treemap_file_size_hook ~root file)
@@ -277,7 +277,7 @@ let code_treemap2 ~filter_file paths =
 
   let tree = Treemap.remove_singleton_subdirs tree in
 
-  tree +> Treemap.treemap_of_tree
+  tree |> Treemap.treemap_of_tree
     ~size_of_leaf:(fun (_f, intleaf) -> intleaf) 
     ~color_of_leaf:(fun (f, _intleaf) -> 
       let kind = source_archi_of_filename ~root f in

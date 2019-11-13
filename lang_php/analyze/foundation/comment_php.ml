@@ -98,7 +98,7 @@ let (parse_comment: string -> comment) = fun s ->
               OtherStyle s
             end
             else begin 
-              let ys' = ys +> Common.map_filter (fun s ->
+              let ys' = ys |> Common.map_filter (fun s ->
                 if s =~ " \\*$" 
                 then Some ""
                 else 
@@ -132,14 +132,14 @@ let _ = example(parse_comment "/*\n * foo\n */" = (MultiLineSlashStar ["foo"]))
 (* UnParsing *)
 (*****************************************************************************)
 let gen_space indent = 
-  (Common2.repeat " " indent) +> Common.join ""
+  (Common2.repeat " " indent) |> Common.join ""
 
 let (unparse_comment: ?indent:int -> comment -> string) = 
  fun ?(indent=0) m ->
   match m with
   | DocBlock (xs, b) ->
       (["/**"] @
-      (xs +> List.map (fun s -> 
+      (xs |> List.map (fun s -> 
         if s = ""
         then " *"
         else 
@@ -148,7 +148,7 @@ let (unparse_comment: ?indent:int -> comment -> string) =
       then [spf "%s */" (gen_space indent)]
       else [spf "%s **/" (gen_space indent)]
       )
-      ) +> Common2.unlines
+      ) |> Common2.unlines
   | _ -> 
       raise Todo
 
@@ -172,7 +172,7 @@ let (index_comment: comment -> (int * string) list) = fun m ->
   match m with
   | SingleLineSlashSlash s -> [0, s]
   | DocBlock (xs,_) | MultiLineSlashStar xs -> 
-      Common.index_list_1 xs +> List.map (fun (s, i) -> (i, s))
+      Common.index_list_1 xs |> List.map (fun (s, i) -> (i, s))
   | _ -> raise Todo
 
 (*
@@ -182,7 +182,7 @@ let _ = example(index_comment (DocBlock (["foo"],true)) = [1, "foo"])
 
 let comments_of_file file =
   let toks = Parse_php.tokens file in
-  toks +> Common.map_filter (function
+  toks |> Common.map_filter (function
   | Parser_php.T_COMMENT info
   | Parser_php.T_DOC_COMMENT info
       -> Some info
@@ -195,14 +195,14 @@ let comments_of_file file =
 let comment_before tok all_toks =
   let pos = Parse_info.pos_of_info tok in
   let before = 
-    all_toks +> Common2.take_while (fun tok2 ->
+    all_toks |> Common2.take_while (fun tok2 ->
       let info = TH.info_of_tok tok2 in
       let pos2 = PI.pos_of_info info in
       pos2 < pos
     )
   in
   let first_non_space =
-    List.rev before +> Common2.drop_while (function
+    List.rev before |> Common2.drop_while (function
     | Parser_php.TNewline _ | Parser_php.TSpaces _ -> true
     | _ -> false
     )
@@ -216,14 +216,14 @@ let comment_before tok all_toks =
 let comment_after tok all_toks =
   let pos = PI.pos_of_info tok in
   let after = 
-    all_toks +> Common2.drop_while (fun tok2 ->
+    all_toks |> Common2.drop_while (fun tok2 ->
       let info = TH.info_of_tok tok2 in
       let pos2 = PI.pos_of_info info in
       pos2 <= pos
     )
   in
   let first_non_space =
-    after +> Common2.drop_while (function
+    after |> Common2.drop_while (function
     | Parser_php.TNewline _ | Parser_php.TSpaces _ -> true
     | _ -> false
     )

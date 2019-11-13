@@ -95,7 +95,7 @@ let extract_defs ~g ~duplicate_modules ~ast ~readable ~file =
   G.create_intermediate_directories_if_not_present g dir;
   let m = Module_ml.module_name_of_filename file in
 
-  g +> G.add_node (readable, E.File);
+  g |> G.add_node (readable, E.File);
 
   match () with
   | _ when List.mem m (Common2.keys duplicate_modules) ->
@@ -107,7 +107,7 @@ let extract_defs ~g ~duplicate_modules ~ast ~readable ~file =
        * somewhere then it will generate a lookup failure.
        * So just Dir -> File here, no Dir -> Module -> File.
        *)
-      g +> G.add_edge ((dir, E.Dir), (readable, E.File)) G.Has;
+      g |> G.add_edge ((dir, E.Dir), (readable, E.File)) G.Has;
       (match m with
       | s when s =~ "Main.*" || s =~ "Demo.*" ||
           s =~ "Test.*" || s =~ "Foo.*"
@@ -121,7 +121,7 @@ let extract_defs ~g ~duplicate_modules ~ast ~readable ~file =
       (match G.parents (m, E.Module) g with
       (* probably because processed .mli or .ml before which created the node *)
       | [p] when p =*= (dir, E.Dir) -> 
-          g +> G.add_edge ((m, E.Module), (readable, E.File)) G.Has
+          g |> G.add_edge ((m, E.Module), (readable, E.File)) G.Has
       | x -> 
           pr2 "multiple parents or no parents or wrong dir";
           pr2_gen (x, dir, m);
@@ -129,9 +129,9 @@ let extract_defs ~g ~duplicate_modules ~ast ~readable ~file =
       )
   | _ ->
       (* Dir -> Module -> File *)
-      g +> G.add_node (m, E.Module);
-      g +> G.add_edge ((dir, E.Dir), (m, E.Module))  G.Has;
-      g +> G.add_edge ((m, E.Module), (readable, E.File)) G.Has
+      g |> G.add_node (m, E.Module);
+      g |> G.add_edge ((dir, E.Dir), (m, E.Module))  G.Has;
+      g |> G.add_edge ((m, E.Module), (readable, E.File)) G.Has
 
 (*****************************************************************************)
 (* Uses *)
@@ -147,16 +147,16 @@ let extract_uses ~g ~ast ~readable ~dupes =
 
     let target = (s, E.Module) in
     if G.has_node target g
-    then g +> G.add_edge (src, target) G.Use
+    then g |> G.add_edge (src, target) G.Use
     else begin
-      g +> G.add_node target;
+      g |> G.add_node target;
       let parent_target = 
         if List.mem s dupes
         then G.dupe
         else G.not_found
       in
-      g +> G.add_edge (parent_target, target) G.Has;
-      g +> G.add_edge (src, target) G.Use;
+      g |> G.add_edge (parent_target, target) G.Has;
+      g |> G.add_edge (src, target) G.Use;
       pr2 (spf "PB: lookup fail on module %s in %s" 
                    (fst target) readable)
     end
@@ -205,14 +205,14 @@ let build ?(verbose=true) root files =
 
   let duplicate_modules =
     files 
-    +> Common.group_by_mapped_key (fun f -> Common2.basename f)
-    +> List.filter (fun (_k, xs) -> List.length xs >= 2)
-    +> List.map (fun (k, xs) -> Module_ml.module_name_of_filename k, xs)
+    |> Common.group_by_mapped_key (fun f -> Common2.basename f)
+    |> List.filter (fun (_k, xs) -> List.length xs >= 2)
+    |> List.map (fun (k, xs) -> Module_ml.module_name_of_filename k, xs)
   in
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
   if verbose then pr2 "\nstep1: extract defs";
-  files +> Console.progress ~show:verbose (fun k -> 
+  files |> Console.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
     k();
     let readable = Common.readable ~root file in
@@ -222,7 +222,7 @@ let build ?(verbose=true) root files =
 
   (* step2: creating the 'Use' edges, the uses *)
   if verbose then pr2 "\nstep2: extract uses";
-  files +> Console.progress ~show:verbose (fun k -> 
+  files |> Console.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
      k();
      let readable = Common.readable ~root file in

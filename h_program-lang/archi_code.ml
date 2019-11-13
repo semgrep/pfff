@@ -177,9 +177,9 @@ let find_duplicate_dirname dir =
   let dups = Common2.hash_with_default (fun () -> 0) in
 
   let rec aux path = 
-    let subdirs = Common2.readdir_to_dir_list path +> List.sort compare in
+    let subdirs = Common2.readdir_to_dir_list path |> List.sort compare in
 
-    subdirs +> List.iter (fun dir ->
+    subdirs |> List.iter (fun dir ->
       let path = Filename.concat path dir in
 
       if Hashtbl.mem h dir
@@ -195,7 +195,7 @@ let find_duplicate_dirname dir =
   in
   aux dir;
   pr2 "duplicate are:";
-  dups#to_list +> Common.sort_by_val_highfirst +> List.iter (fun (dir,cnt) ->
+  dups#to_list |> Common.sort_by_val_highfirst |> List.iter (fun (dir,cnt) ->
     pr2 (spf " %s: %d" dir cnt);
   );
   ()

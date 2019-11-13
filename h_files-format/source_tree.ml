@@ -19,14 +19,14 @@ let dirfinal_of_dir s =
 
 
 let all_subsystem reorg = 
-  reorg +> List.map fst +> List.map string_of_subsystem 
+  reorg |> List.map fst |> List.map string_of_subsystem 
 let all_dirs reorg = 
-  reorg +> List.map snd +> List.concat +> List.map string_of_dir
+  reorg |> List.map snd |> List.concat |> List.map string_of_dir
 
 let reverse_index reorg = 
   let res = ref [] in
-  reorg +> List.iter (fun (SubSystem s1, dirs) -> 
-    dirs +> List.iter (fun (Dir s2) -> 
+  reorg |> List.iter (fun (SubSystem s1, dirs) -> 
+    dirs |> List.iter (fun (Dir s2) -> 
       push (Dir s2, SubSystem s1) res;
     );
   );
@@ -38,8 +38,8 @@ let reverse_index reorg =
 let (load_tree_reorganization : Common.filename -> tree_reorganization) = 
  fun file -> 
    let xs = Simple_format.title_colon_elems_space_separated file in
-   xs +> List.map (fun (title, elems) -> 
-     SubSystem title, elems +> List.map (fun s -> Dir s)
+   xs |> List.map (fun (title, elems) -> 
+     SubSystem title, elems |> List.map (fun s -> Dir s)
    )
 
 let debug_source_tree = false
@@ -50,11 +50,11 @@ let change_organization_dirs_to_subsystems reorg basedir =
     then pr2 s
     else Common.command2 s
   in
-  reorg +> List.iter (fun (SubSystem sub, dirs) -> 
+  reorg |> List.iter (fun (SubSystem sub, dirs) -> 
     if not debug_source_tree 
     then Common2.mkdir (spf "%s/%s" basedir sub);
 
-    dirs +> List.iter (fun (Dir dir) -> 
+    dirs |> List.iter (fun (Dir dir) -> 
       let dir' = dir_to_dirfinal (Dir dir) in
       cmd (spf "mv %s/%s %s/%s/%s" basedir dir   basedir sub dir')
     );
@@ -67,8 +67,8 @@ let change_organization_subsystems_to_dirs reorg basedir =
     then pr2 s
     else Common.command2 s
   in
-  reorg +> List.iter (fun (SubSystem sub, dirs) -> 
-    dirs +> List.iter (fun (Dir dir) -> 
+  reorg |> List.iter (fun (SubSystem sub, dirs) -> 
+    dirs |> List.iter (fun (Dir dir) -> 
       let dir' = dir_to_dirfinal (Dir dir) in
       cmd (spf "mv %s/%s/%s %s/%s" basedir sub dir' basedir dir)
     );
@@ -88,11 +88,11 @@ let (change_organization:
 
    let subsystem_bools = 
      all_subsystem reorg
-     +> List.map (fun s -> (Sys.file_exists (Filename.concat dir s)))
+     |> List.map (fun s -> (Sys.file_exists (Filename.concat dir s)))
    in
    let dirs_bools = 
      all_dirs reorg
-     +> List.map (fun s -> (Sys.file_exists (Filename.concat dir s)))
+     |> List.map (fun s -> (Sys.file_exists (Filename.concat dir s)))
    in
    match () with
    | _ when Common2.and_list subsystem_bools -> 
@@ -110,13 +110,13 @@ let subsystem_of_dir2 (Dir dir) reorg  =
   let index = reverse_index reorg in
   let dirsplit = Common.split "/" dir in
   let index = 
-    index +> List.map (fun (Dir d, sub) -> Common.split "/" d, sub)
+    index |> List.map (fun (Dir d, sub) -> Common.split "/" d, sub)
   in
   try 
-    index +> List.find (fun (dirsplit2, _sub) -> 
+    index |> List.find (fun (dirsplit2, _sub) -> 
       let len = List.length dirsplit2 in
       Common2.take_safe len dirsplit = dirsplit2
-    ) +> snd
+    ) |> snd
   with Not_found -> 
     pr2 (spf "Cant find %s in reorganization information" dir);
     raise Not_found

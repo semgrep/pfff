@@ -187,7 +187,7 @@ let visit_program ~tag_hook _prefs  (_astopt, toks) =
     | _x::xs ->
         aux_toks xs
   in
-  let toks' = toks +> Common.exclude (function
+  let toks' = toks |> Common.exclude (function
     | T.TCommentSpace _ -> true
     | _ -> false
   )
@@ -198,7 +198,7 @@ let visit_program ~tag_hook _prefs  (_astopt, toks) =
   (* Tokens phase 2 (individual tokens) *)
   (* -------------------------------------------------------------------- *)
 
-   toks +> List.iter (fun tok -> 
+   toks |> List.iter (fun tok -> 
     match tok with
     (* specials *)
 

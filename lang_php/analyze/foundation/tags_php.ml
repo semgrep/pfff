@@ -49,7 +49,7 @@ let tag_of_ident filelines name kind =
 let tags_of_ast ast filelines =
   let defs = Defs_uses_php.defs_of_any (Program ast) in
 
-  defs +> List.map (fun (name, enclosing_name_opt, kind) ->
+  defs |> List.map (fun (name, enclosing_name_opt, kind) ->
     match kind with
     | E.Class ->
         (match name with
@@ -84,7 +84,7 @@ let tags_of_ast ast filelines =
             let yieldmagic =
               if s =~ "^yield\\(.*\\)" then
                 let tail = Common.matched1 s in
-                [ "gen"; "prepare"; "get"] +>
+                [ "gen"; "prepare"; "get"] |>
                 List.map (fun w ->
                   let info = Parse_info.rewrap_str
                     (Ast.str_of_ident class_name ^ "::" ^ w ^ tail) info in
@@ -103,7 +103,7 @@ let tags_of_ast ast filelines =
         )
     | _ ->
         failwith "your defs_of_any is probably wrong"
-  ) +> List.flatten
+  ) |> List.flatten
 
 (* obsolete ? stuff with heavy_tagging ?
  * if heavy_tagging then begin
@@ -131,7 +131,7 @@ let tags_of_ast ast filelines =
 let php_defs_of_files_or_dirs ?(verbose=false) ?(include_hack=false) xs =
   let files = Lib_parsing_php.find_source_files_of_dir_or_files ~include_hack:include_hack xs in
 
-  files +> Console.progress ~show:verbose (fun k ->
+  files |> Console.progress ~show:verbose (fun k ->
    List.map (fun file ->
     k ();
     let (ast) =
@@ -151,4 +151,4 @@ let php_defs_of_files_or_dirs ?(verbose=false) ?(include_hack=false) xs =
     in
     (file, defs)
   ))
-  +> Tags_file.add_method_tags_when_unambiguous
+  |> Tags_file.add_method_tags_when_unambiguous

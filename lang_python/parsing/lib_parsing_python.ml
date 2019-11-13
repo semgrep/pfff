@@ -13,8 +13,6 @@
  * license.txt for more details.
  *)
 
-open Common
-
 module Ast = Ast_python
 module Flag = Flag_parsing
 
@@ -24,9 +22,9 @@ module Flag = Flag_parsing
 
 let find_source_files_of_dir_or_files xs = 
   Common.files_of_dir_or_files_no_vcs_nofilter xs 
-  +> List.filter (fun filename ->
+  |> List.filter (fun filename ->
     let ftype = File_type.file_type_of_file filename in
     match ftype with
     | File_type.PL (File_type.Python) -> true
     | _ -> false
-  ) +> Common.sort
+  ) |> Common.sort

@@ -73,9 +73,9 @@ let print_match ?(format = Normal) ii =
   | Normal ->
       pr prefix;
       (* todo? some context too ? *)
-      lines +> List.map (fun i -> arr.(i)) +> List.iter (fun s -> pr (" " ^ s))
+      lines |> List.map (fun i -> arr.(i)) |> List.iter (fun s -> pr (" " ^ s))
   | Emacs ->
       pr (prefix ^ ": " ^ arr.(List.hd lines))
   | OneLine ->
-      pr (prefix ^ ": " ^ (ii +> List.map PI.str_of_info 
-                            +> join_with_space_if_needed))
+      pr (prefix ^ ": " ^ (ii |> List.map PI.str_of_info 
+                            |> join_with_space_if_needed))

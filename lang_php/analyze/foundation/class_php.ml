@@ -86,10 +86,10 @@ let resolve_class_name qu =
 (*****************************************************************************)
 
 let is_static_method def =
-  def.f_modifiers +> List.map Ast.unwrap +> List.mem Ast.Static
+  def.f_modifiers |> List.map Ast.unwrap |> List.mem Ast.Static
 
 let has_visiblity_modifier xs =
-  xs +> List.map Ast.unwrap +> List.exists (function
+  xs |> List.map Ast.unwrap |> List.exists (function
   | Public  | Private | Protected -> true
   | _ -> false
   )
@@ -103,7 +103,7 @@ let is_interface def =
  * print a warning to tell to use __construct instead ?
  *)
 let get_constructor def =
-  def.c_body +> Ast.unbrace +> Common.find_some (fun class_stmt ->
+  def.c_body |> Ast.unbrace |> Common.find_some (fun class_stmt ->
     match class_stmt with
     | Method def when Ast.str_of_ident def.f_name =$= constructor_name ->
         Some def
@@ -115,7 +115,7 @@ let get_constructor def =
  *)
 let get_public_or_protected_vars_of_class def =
 
-  def.c_body +> Ast.unbrace +> Common.map_filter (function
+  def.c_body |> Ast.unbrace |> Common.map_filter (function
   |  ClassVariables (modifiers, _opt_ty, class_vars, _tok) ->
 
        let modifiers = Ast.unmodifiers modifiers in
@@ -124,14 +124,14 @@ let get_public_or_protected_vars_of_class def =
           List.mem Protected modifiers
        then
          let dnames =
-           class_vars +> Ast.uncomma +> List.map fst
+           class_vars |> Ast.uncomma |> List.map fst
          in
          Some dnames
        else None
 
   (* could maybe do something with XhpDecl ? *)
   | _ -> None
-  ) +> List.flatten
+  ) |> List.flatten
 
 (* This is useful when one needs to add class variables in scope.
  * Because they may be at the end and that simple algorithm are just
@@ -142,7 +142,7 @@ let class_variables_reorder_first def =
   let (lb, body, rb) = def.c_body in
   let body' =
     let (vars, rest) =
-      body +> List.partition (function
+      body |> List.partition (function
       | ClassVariables _ -> true
       | _ -> false
       )
@@ -170,10 +170,10 @@ let interfaces c =
   match c.c_implements with
   | None -> []
   | Some (_, xs) ->
-      xs +> Ast.uncomma
+      xs |> Ast.uncomma
 
 let traits c =
-  c.c_body +> Ast.unbrace +> Common.map_filter (function
+  c.c_body |> Ast.unbrace |> Common.map_filter (function
   | UseTrait (_, names, rewrite_rule) ->
       (match rewrite_rule with
       | Left _nowrite -> ()
@@ -181,7 +181,7 @@ let traits c =
       );
       Some (Ast.uncomma names)
   | _ -> None
-  ) +> List.flatten
+  ) |> List.flatten
 
 (*****************************************************************************)
 (* Lookup *)
@@ -208,12 +208,12 @@ let lookup_gen aclass find_entity hook =
   let rec aux aclass =
     match find_class_or_trait aclass with
     | [ClassE def] ->
-        (try def.c_body +> Ast.unbrace +> Common.find_some hook
+        (try def.c_body |> Ast.unbrace |> Common.find_some hook
         with Not_found ->
           (* traits have priority over inheritance *)
           let xs = traits def in
           (try
-            xs +> Common2.return_when (fun trait ->
+            xs |> Common2.return_when (fun trait ->
               let str = Ast.str_of_class_name trait in
               (* recurse *)
               try Some (aux str)
@@ -255,7 +255,7 @@ let lookup_member ?(case_insensitive=false) (aclass, afield) find_entity =
     (function
     | ClassVariables (modifier, _opt_ty, class_vars, _tok) ->
         (try
-          Some (class_vars +> Ast.uncomma +> Common.find_some
+          Some (class_vars |> Ast.uncomma |> Common.find_some
             (fun (dname, affect_opt) ->
               if eq (Ast.str_of_dname dname) afield
               then Some ((dname, affect_opt), modifier)
@@ -271,7 +271,7 @@ let lookup_constant (aclass, aconstant) find_entity =
     (function
     | ClassConstants (_, _, _, xs, _) ->
         (try
-          Some (xs +> Ast.uncomma +> Common.find_some
+          Some (xs |> Ast.uncomma |> Common.find_some
             (fun (name, affect) ->
               if Ast.str_of_ident name =$= aconstant
               then Some (name, affect)
@@ -293,7 +293,7 @@ let collect_members aclass find_entity =
   (try
     let _ = lookup_gen aclass find_entity (function
     | ClassVariables (_, _, class_vars, _) ->
-        class_vars +> Ast.uncomma +> List.iter (fun (dname, _affect) ->
+        class_vars |> Ast.uncomma |> List.iter (fun (dname, _affect) ->
           Common.push dname res;
         );
         None

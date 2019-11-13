@@ -50,7 +50,7 @@ object(o: 'o)
       o#replkey (k, f old)
 
   method apply_with_default2 = fun k f default -> 
-    o#apply_with_default k f default +> ignore
+    o#apply_with_default k f default |> ignore
     
 
 end

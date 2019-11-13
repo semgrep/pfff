@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common
 
 module V = Lib_ast_fuzzy
 
@@ -57,7 +56,7 @@ let sgrep ~hook pattern ast =
              * the matched code itself
              *)
             let matched_tokens = Lib_ast_fuzzy.toks_of_trees shorter in
-            matches_with_env +> List.iter (fun env ->
+            matches_with_env |> List.iter (fun env ->
               hook env matched_tokens
             );
             k rest

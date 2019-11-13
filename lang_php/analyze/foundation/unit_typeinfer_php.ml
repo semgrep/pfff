@@ -1,4 +1,3 @@
-open Common
 open OUnit
 
 module Ast = Ast_php
@@ -23,8 +22,8 @@ let normalize t =
 let get_signature file =
   let ast = 
     Parse_php.tmp_php_file_from_string file
-    +> Parse_php.parse_program
-    +> Ast_php_build.program 
+    |> Parse_php.parse_program
+    |> Ast_php_build.program 
   in
   let env = { (Env_typing_php.make_env ()) with Env_typing_php.
     verbose = false;

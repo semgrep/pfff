@@ -64,7 +64,7 @@ let dialog_search_def model =
         text
       )
   in
-  res +> Common.do_option (fun s -> 
+  res |> Common.do_option (fun s -> 
     pr2 ("selected: " ^ s);
   );
   res
@@ -83,7 +83,7 @@ let run_grep_query ~root s =
     spf "cd %s; git grep %s %s" root git_grep_options s
   in
   let xs = Common.cmd_to_list cmd in
-  let xs = xs +> List.map (fun s ->
+  let xs = xs |> List.map (fun s ->
     if s =~ "\\([^:]*\\):\\([0-9]+\\):.*"
     then
       let (filename, lineno) = Common.matched2 s in
@@ -102,7 +102,7 @@ let run_tbgs_query ~root s =
     spf "cd %s; tbgs --stripdir %s" root s
   in
   let xs = Common.cmd_to_list cmd in
-  let xs = xs +> List.map (fun s ->
+  let xs = xs |> List.map (fun s ->
     if s =~ "\\([^:]*\\):\\([0-9]+\\):.*"
     then
       let (filename, lineno) = Common.matched2 s in

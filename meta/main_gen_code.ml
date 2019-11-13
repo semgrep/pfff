@@ -192,7 +192,7 @@ let test_matcher_all () =
     "switch_case_list";
   ]
   in
-  all_types +> List.iter (fun t -> 
+  all_types |> List.iter (fun t -> 
     try 
       test_matcher_gen t
     with 

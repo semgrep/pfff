@@ -15,7 +15,6 @@
  * license.txt for more details.
  *)
 (*e: Facebook copyright *)
-open Common
 open Common2.ArithFloatInfix
 
 open Figures (* for the fields *)
@@ -35,11 +34,11 @@ let draw_treemap_rectangle2 ~cr ?(color=None) ?(alpha=1.) rect =
   let r = rect.T.tr_rect in
 
   (let (r,g,b) = 
-    let (r,g,b) = rect.T.tr_color +> Color.rgb_of_color +> Color.rgbf_of_rgb in
+    let (r,g,b) = rect.T.tr_color |> Color.rgb_of_color |> Color.rgbf_of_rgb in
     match color with
     | None -> (r,g,b)
     | Some c -> 
-        let (r2,g2,b2) = c +> Color.rgbf_of_string in
+        let (r2,g2,b2) = c |> Color.rgbf_of_string in
         (r2 + r / 20., g2 + g / 20., b2 + b / 20.)
   in
   Cairo.set_source_rgba cr r g b (alpha);

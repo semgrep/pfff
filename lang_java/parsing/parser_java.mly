@@ -41,14 +41,14 @@ let void_type ii = named_type ("void", ii)
  * identifier followed by some type arguments.
  *)
 let (class_type: name_or_class_type -> class_type) = fun xs ->
-  xs +> List.map (function
+  xs |> List.map (function
   | Id x -> x, []
   | Id_then_TypeArgs (x, xs) -> x, xs
   | TypeArgs_then_Id _ -> raise Parsing.Parse_error
   )
 
 let (name: name_or_class_type -> name) = fun xs ->
-  xs +> List.map (function
+  xs |> List.map (function
   | Id x -> [], x
   | Id_then_TypeArgs (x, xs) ->
       (* this is ok because of the ugly trick we do for Cast
@@ -62,7 +62,7 @@ let (name: name_or_class_type -> name) = fun xs ->
   )
 
 let (qualified_ident: name_or_class_type -> qualified_ident) = fun xs ->
-  xs +> List.map (function
+  xs |> List.map (function
   | Id x -> x
   | Id_then_TypeArgs _ -> raise Parsing.Parse_error
   | TypeArgs_then_Id _ -> raise Parsing.Parse_error
@@ -514,10 +514,10 @@ cast_expression:
           let typname =
             match $2 with
             | Name name ->
-                TClass (name +> List.map (fun (xs, id) -> id, xs))
+                TClass (name |> List.map (fun (xs, id) -> id, xs))
             (* ugly, undo what was done in postfix_expression *)
             | Dot (Name name, id) ->
-                TClass ((name @ [[], id]) +> List.map (fun (xs, id) -> id, xs))
+                TClass ((name @ [[], id]) |> List.map (fun (xs, id) -> id, xs))
             | _ ->
                 pr2 "cast_expression pb";
                 pr2_gen $2;

@@ -87,7 +87,7 @@ let main files_or_dirs =
   Flag_parsing.show_parsing_error := false;
   Flag_parsing.verbose_lexing := false;
 
-  files +> Common2.index_list_and_total +> List.iter (fun (file, i, total) ->
+  files |> Common2.index_list_and_total |> List.iter (fun (file, i, total) ->
     pr2 (spf "processing: %s (%d/%d)" file i total);
 
     (* step1: parse the file *)
@@ -175,7 +175,7 @@ let main files_or_dirs =
             let tokens_in_expression = 
               Lib_parsing_php.ii_of_any (Expr an_expr) in
 
-            tokens_in_expression +> List.iter (fun tok ->
+            tokens_in_expression |> List.iter (fun tok ->
               tok.PI.transfo <- PI.Remove;
             );
             i_token_comma.PI.transfo <- PI.Remove;
@@ -193,7 +193,7 @@ let main files_or_dirs =
     Common.write_file ~file:tmpfile s;
       
     let diff = Common.cmd_to_list (spf "diff -u %s %s" file tmpfile) in
-    diff +> List.iter pr;
+    diff |> List.iter pr;
 
     if !apply_patch 
     then Common.write_file ~file:file s;

@@ -33,8 +33,8 @@ type program_and_tokens =
 
 let parse file =
   let (ast2, stat) = Parse_cpp.parse_with_lang ~lang:Flag_parsing_cpp.C file in
-  let ast = ast2 +> List.map fst in
-  let toks = ast2 +> List.map snd +> List.flatten in
+  let ast = ast2 |> List.map fst in
+  let toks = ast2 |> List.map snd |> List.flatten in
   let ast_opt, stat = 
     try Some (Ast_c_build.program ast), stat
     with exn ->

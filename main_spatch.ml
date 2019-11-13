@@ -155,11 +155,11 @@ let main_action xs =
   let files =
     Find_source.files_of_dir_or_files ~lang:!lang xs in
 
-  files +> Console.progress ~show:!verbose (fun k -> 
+  files |> Console.progress ~show:!verbose (fun k -> 
    List.iter (fun file->
     k();
     let resopt = spatch pattern file in
-    resopt +> Common.do_option (fun (s) ->
+    resopt |> Common.do_option (fun (s) ->
       pr2 (spf "transforming: %s" file);
 
       let tmpfile = Common.new_temp_file "trans" ".spatch" in
@@ -170,7 +170,7 @@ let main_action xs =
              ~oldfile:file ~newfile:tmpfile;
       
       let diff = Common2.unix_diff file tmpfile in
-      diff +> List.iter pr;
+      diff |> List.iter pr;
       if !apply_patch 
       then Common.write_file ~file:file (Common.read_file tmpfile);
     )
@@ -204,7 +204,7 @@ let apply_transfo transfo xs =
   Flag_parsing.show_parsing_error := false;
   Flag_parsing.verbose_lexing := false;
 
-  files +> Console.progress (fun k -> List.iter (fun file ->
+  files |> Console.progress (fun k -> List.iter (fun file ->
     let file = Common2.relative_to_absolute file in
     pr2 (spf "processing: %s" file);
     k();
@@ -241,7 +241,7 @@ let apply_transfo transfo xs =
       Common.write_file ~file:tmpfile s;
       
       let diff = Common2.unix_diff file tmpfile in
-      diff +> List.iter pr;
+      diff |> List.iter pr;
 
       if !apply_patch 
       then Common.write_file ~file:file s;
@@ -249,7 +249,7 @@ let apply_transfo transfo xs =
     ) with exn ->
       Common.push (spf "PB with %s, exn = %s" file (Common.exn_to_s exn)) pbs;
   ));
-  !pbs +> List.iter Common.pr2
+  !pbs |> List.iter Common.pr2
 
 let apply_refactoring refactoring file =
   let ast_and_toks = Parse_php.ast_and_tokens file in
@@ -257,7 +257,7 @@ let apply_refactoring refactoring file =
   let tmpfile = Common.new_temp_file "trans" ".spatch" in
   Common.write_file ~file:tmpfile s;
   let diff = Common2.unix_diff file tmpfile in
-  diff +> List.iter pr;
+  diff |> List.iter pr;
   if !apply_patch 
   then Common.write_file ~file:file (Common.read_file tmpfile);
   ()
@@ -280,7 +280,7 @@ let simple_transfo xs =
 
   Flag_parsing.show_parsing_error := false;
   Flag_parsing.verbose_lexing := false;
-  files +> List.iter (fun file ->
+  files |> List.iter (fun file ->
     pr2 (spf "processing: %s" file);
 
     let (ast, toks) = Parse_php.ast_and_tokens file in
@@ -292,7 +292,7 @@ let simple_transfo xs =
             pr2 "found match";
             
             let ii = Lib_parsing_php.ii_of_any (Expr x) in
-            ii +> List.iter (fun info ->
+            ii |> List.iter (fun info ->
               info.transfo <- Remove
             );
             info_foo.transfo <- Replace (AddStr "1");
@@ -310,14 +310,14 @@ let simple_transfo xs =
     Common.write_file ~file:tmpfile s;
     
     let diff = Common2.unix_diff file tmpfile in
-    diff +> List.iter pr;
+    diff |> List.iter pr;
   );
   ()
 (* -------------------------------------------------------------------------*)
 (* Trailing comma transformation *)
 (* -------------------------------------------------------------------------*)
 let all_different xs = 
-  List.length xs = (xs +> Common.sort +> Common2.uniq +> List.length)
+  List.length xs = (xs |> Common.sort |> Common2.uniq |> List.length)
 
 (* todo: 
  * - julien thinks we should transform even if some commas
@@ -331,7 +331,7 @@ let add_trailing_comma_multiline_funcalls ast =
       if List.length args >= 1 then begin
         let (args, commas) = Common.partition_either (fun x -> x) args in
         let lines_commas = 
-          commas +> List.map Parse_info.line_of_info
+          commas |> List.map Parse_info.line_of_info
         in
         let line_rp = Parse_info.line_of_info rp in
         let last_expr = Common2.list_last args in
@@ -405,12 +405,12 @@ let remove_border_attribute ast =
       | Xhp ( (["ui"; "section-header"], _), attributes, _, _, _)
       | XhpSingleton ( (["ui"; "section-header"], _), attributes, _) ->
 
-          attributes +> List.iter (fun attr ->
+          attributes |> List.iter (fun attr ->
             match attr with
             | (("border", _tok_border), _tok_equal, _xhp_attr_value) ->
                 was_modified := true;
                 let tokens = Lib_parsing_php.ii_of_any (XhpAttribute attr) in
-                tokens +> List.iter (fun tok ->
+                tokens |> List.iter (fun tok ->
                   tok.transfo <- Remove;
                 );
             | _ -> ()
@@ -462,7 +462,7 @@ let add_action_ui_form_transfo_func ast =
       | XhpSingleton((["ui"; "form"], info_tag), attributes, _)
       | Xhp ((["ui"; "form"], info_tag), attributes, _, _, _) 
         ->
-          if not (attributes +> 
+          if not (attributes |> 
                   List.exists (fun ((attr_name,_), _tok, _attr_val) ->
                     attr_name = "action"
           )) 
@@ -501,7 +501,7 @@ let test_pp file =
   let tmp_file = Common.new_temp_file "pp" ".php" in
   Common.write_file ~file:tmp_file s;
   let xs = Common2.unix_diff file tmp_file in
-  xs +> List.iter pr2
+  xs |> List.iter pr2
 
 (*---------------------------------------------------------------------------*)
 (* juju refactorings *)
@@ -515,15 +515,15 @@ let juju_refactoring spec_file =
    * that refers to the original file
    *)
   let xxs = 
-    xs +> List.map (fun x -> 
+    xs |> List.map (fun x -> 
       match x with
       | (_a, Some pos) -> 
         pos.Refactoring_code.file, x
       | _ -> failwith "no file position"
     )
-    +> Common.group_assoc_bykey_eff
+    |> Common.group_assoc_bykey_eff
   in
-  xxs +> List.iter (fun (file, refactorings) ->
+  xxs |> List.iter (fun (file, refactorings) ->
     let (ast2, _stat) = Parse_php.parse file in
     let s = Refactoring_code_php.refactor refactorings ast2 in
 
@@ -535,7 +535,7 @@ let juju_refactoring spec_file =
       ~oldfile:file ~newfile:tmpfile;
       
     let diff = Common2.unix_diff file tmpfile in
-    diff +> List.iter pr;
+    diff |> List.iter pr;
     if !apply_patch 
     then Common.write_file ~file:file (Common.read_file tmpfile);
   );
@@ -552,7 +552,7 @@ let juju_refactoring spec_file =
 let case_refactoring pfff_log =
   let xs = Common.cat pfff_log in
   let simple_rename =
-    xs +> Common.map_filter (fun s ->
+    xs |> Common.map_filter (fun s ->
    (*ex: CASE SENSITIVITY: SmsConst instead of SMSConst at /path/file:176:18 *)
       if s =~ 
         ("CASE SENSITIVITY: \\([A-Za-z_0-9\\.]+\\) " ^
@@ -576,7 +576,7 @@ let case_refactoring pfff_log =
       else None
     )
   in
-  simple_rename +> List.iter (fun (actual, expected, file, _, _) ->
+  simple_rename |> List.iter (fun (actual, expected, file, _, _) ->
     let xs = Common.split "\\." actual in
     let ys = Common.split "\\." expected in
     (match xs, ys with
@@ -623,11 +623,11 @@ let remove_undefined_xhp_field (xhp_class_str, field) ast=
       | XhpSingleton ( (xhp_class, _), attributes, _)
       | Xhp ( (xhp_class, _), attributes, _, _, _)
           when (xhp_class_str = string_of_xhp_tag xhp_class) ->
-        attributes +> List.iter (fun attr ->
+        attributes |> List.iter (fun attr ->
           match attr with
           | ((s, _), _, _) when (s = field) ->              
             let ii = Lib_parsing_php.ii_of_any (XhpAttribute attr) in
-            ii +> List.iter (fun info ->
+            ii |> List.iter (fun info ->
               info.transfo <- Remove
             );
             was_modified := true;
@@ -643,7 +643,7 @@ let remove_undefined_xhp_field (xhp_class_str, field) ast=
 let read_log_undefined_xhp_field pfff_log =
   let xs = Common.cat pfff_log in
   let undefined_xhp_field =
-    xs +> Common.map_filter (fun s ->
+    xs |> Common.map_filter (fun s ->
       (* PB: lookup fail on Field:<x:misc>.xnosuchstr= (at xhp_use.php:9) *)
       if s =~ 
         ("PB: lookup fail on Field:\\(<[A-Za-z_0-9:-]+>\\)\\." ^
@@ -655,7 +655,7 @@ let read_log_undefined_xhp_field pfff_log =
       else None
     )
   in
-  undefined_xhp_field +> List.iter
+  undefined_xhp_field |> List.iter
     (fun  (xhp_class_str, field, filename, _) ->
       let transfo ={
         trans_func = remove_undefined_xhp_field (xhp_class_str, field);
@@ -690,7 +690,7 @@ let array_to_int_array_transfo line_closing_paren_array replacment = {
 }
 
 let array_to_int_array_ptc logfile =
-  logfile +> Common.cat +> List.iter (fun s ->
+  logfile |> Common.cat |> List.iter (fun s ->
     if s =~ "^\\(.*\\):\\([0-9]+\\):\\(.*\\)$"
     then
       let (file, linestr, replacment) = Common.matched3 s in
@@ -711,7 +711,7 @@ let test () =
     Unit_matcher.spatch_fuzzy_unittest
       ~ast_fuzzy_of_string:(fun str ->
         Common2.with_tmp_file ~str ~ext:"cpp" (fun tmpfile ->
-          Parse_cpp.parse_fuzzy tmpfile +> fst
+          Parse_cpp.parse_fuzzy tmpfile |> fst
         ))
       ~parse_file:(fun file ->
         Common.save_excursion Flag_parsing.verbose_lexing false (fun () ->
@@ -722,7 +722,7 @@ let test () =
     Unit_matcher_php.refactoring_unittest;
   ]
   in
-  OUnit.run_test_tt suite +> ignore;
+  OUnit.run_test_tt suite |> ignore;
   ()
 
 (*---------------------------------------------------------------------------*)

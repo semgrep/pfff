@@ -30,7 +30,7 @@ let (lookup_fully_qualified2:
     | x::xs ->
         let children = G.children current g in
         (* because have File intermediate (noisy) nodes *)
-        let children = children +> List.map (fun child ->
+        let children = children |> List.map (fun child ->
           match child with
           | (_, E.File) -> G.children child g
           (* we prefer Package to Dir when we lookup, we don't want
@@ -39,10 +39,10 @@ let (lookup_fully_qualified2:
            *)
           | (_, E.Dir) -> []
           | _ -> [child]
-        ) +> List.flatten
+        ) |> List.flatten
         in
         (* sanity check, quite expansive according to -profile *)
-        Common.group_assoc_bykey_eff children +> List.iter (fun (k, xs) ->
+        Common.group_assoc_bykey_eff children |> List.iter (fun (k, xs) ->
           if List.length xs > 1 
              (* issue warnings lazily, only when the ambiguity concerns
               * something we are actually looking for 
@@ -63,7 +63,7 @@ let (lookup_fully_qualified2:
           | s, _ -> s ^ "." ^ x
         in
         let new_current = 
-          children +> Common.find_some_opt (fun (s2, kind) ->
+          children |> Common.find_some_opt (fun (s2, kind) ->
             if str =$= s2
             then Some (s2, kind)
             else None

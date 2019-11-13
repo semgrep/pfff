@@ -50,35 +50,35 @@ let addStorageD x decl  =
   | {storageD = NoSto; _} -> { decl with storageD = x }
   | {storageD = (StoTypedef ii | Sto (_, ii)) as y; _} -> 
       if x = y 
-      then decl +> warning "duplicate storage classes"
+      then decl |> warning "duplicate storage classes"
       else raise (Semantic ("multiple storage classes", ii))
 
 let addInlineD ii decl =
   match decl with
   | {inlineD = (false,[]); _} -> { decl with inlineD=(true,[ii])}
-  | {inlineD = (true, _ii2); _} -> decl +> warning "duplicate inline"
+  | {inlineD = (true, _ii2); _} -> decl |> warning "duplicate inline"
   | _ -> raise Impossible
 
 
 let addTypeD ty decl =
   match ty, decl with
   | (Left3 Signed,_ii), {typeD = ((Some Signed,  _b,_c),_ii2); _} -> 
-      decl +> warning "duplicate 'signed'"
+      decl |> warning "duplicate 'signed'"
   | (Left3 UnSigned,_ii), {typeD = ((Some UnSigned,_b,_c),_ii2); _} -> 
-      decl +> warning "duplicate 'unsigned'"
+      decl |> warning "duplicate 'unsigned'"
   | (Left3 _,ii),        {typeD = ((Some _,_b,_c),_ii2); _} -> 
       raise (Semantic ("both signed and unsigned specified", List.hd ii))
   | (Left3 x,ii),        {typeD = ((None,b,c),ii2); _} -> 
       { decl with typeD = (Some x,b,c),ii @ ii2}
   | (Middle3 Short,_ii),  {typeD = ((_a,Some Short,_c),_ii2); _} -> 
-      decl +> warning "duplicate 'short'"
+      decl |> warning "duplicate 'short'"
 
       
   (* gccext: long long allowed *)
   | (Middle3 Long,ii),   {typeD = ((a,Some Long,c),ii2); _}-> 
       { decl with typeD = (a, Some LongLong, c),ii@ii2 }
   | (Middle3 Long,_ii),  {typeD = ((_a,Some LongLong,_c),_ii2); _} -> 
-      decl +> warning "triplicate 'long'"
+      decl |> warning "triplicate 'long'"
 
   | (Middle3 _,ii),     {typeD = ((_a,Some _,_c),_ii2); _} -> 
       raise (Semantic ("both long and short specified", List.hd ii))
@@ -94,9 +94,9 @@ let addTypeD ty decl =
 let addQualif tq1 tq2 =
   match tq1, tq2 with
   | {const=Some _; _},   {const=Some _; _} -> 
-      tq2 +> warning "duplicate 'const'"
+      tq2 |> warning "duplicate 'const'"
   | {volatile=Some _; _}, {volatile=Some _; _} -> 
-      tq2 +> warning "duplicate 'volatile'"
+      tq2 |> warning "duplicate 'volatile'"
   | {const=Some x; _},   _ -> 
       { tq2 with const = Some x}
   | {volatile=Some x; _}, _ -> 
@@ -134,9 +134,9 @@ let type_and_storage_from_decl
  | (Some sign,   None, (None| Some (BaseType (IntType (Si (_,CInt))))))  -> 
      BaseType(IntType (Si (sign, CInt))), iit
  | ((None|Some Signed),Some x,(None|Some(BaseType(IntType (Si (_,CInt)))))) -> 
-     BaseType(IntType (Si (Signed, [Short,CShort; Long, CLong; LongLong, CLongLong] +> List.assoc x))), iit
+     BaseType(IntType (Si (Signed, [Short,CShort; Long, CLong; LongLong, CLongLong] |> List.assoc x))), iit
  | (Some UnSigned, Some x, (None| Some (BaseType (IntType (Si (_,CInt))))))-> 
-     BaseType(IntType (Si (UnSigned, [Short,CShort; Long, CLong; LongLong, CLongLong] +> List.assoc x))), iit
+     BaseType(IntType (Si (UnSigned, [Short,CShort; Long, CLong; LongLong, CLongLong] |> List.assoc x))), iit
  | (Some sign,   None, (Some (BaseType (IntType CChar))))   -> BaseType(IntType (Si (sign, CChar2))), iit
  | (None, Some Long,(Some(BaseType(FloatType CDouble))))    -> BaseType (FloatType (CLongDouble)), iit
 
@@ -175,7 +175,7 @@ let fixNameForParam (name, ftyp) =
   match name with
   | None, [], IdIdent id -> id, ftyp
   | _ -> 
-    let ii =  Lib_parsing_cpp.ii_of_any (Name name) +> List.hd in
+    let ii =  Lib_parsing_cpp.ii_of_any (Name name) |> List.hd in
     raise (Semantic ("parameter have qualifier", ii))
 
 let type_and_storage_for_funcdef_from_decl decl =
@@ -222,7 +222,7 @@ let (fixOldCDecl: fullType -> fullType) = fun ty ->
               ty
           )
       | params ->
-          (params +> List.iter (fun (param,_) ->
+          (params |> List.iter (fun (param,_) ->
             match param with
             | {p_name = None; p_type = _ty2; _} -> 
               (* see above
@@ -242,7 +242,7 @@ let (fixOldCDecl: fullType -> fullType) = fun ty ->
       *)
   | _ -> 
       (* gcc says parse error but I dont see why *)
-      let ii = Lib_parsing_cpp.ii_of_any (Type ty) +> List.hd in
+      let ii = Lib_parsing_cpp.ii_of_any (Type ty) |> List.hd in
       raise (Semantic ("seems this is not a function", ii))
 
 (* TODO: this is ugly ... use record! *)
@@ -260,7 +260,7 @@ let fixFunc ((name, ty, sto), cp) =
           | _ -> ()
           )
       | params -> 
-          params +> List.iter (function 
+          params |> List.iter (function 
           | ({p_name = Some _s;_}, _) -> ()
           (* failwith "internal errror: fixOldCDecl not good" *)
           | _ -> ()
@@ -268,7 +268,7 @@ let fixFunc ((name, ty, sto), cp) =
       ); 
       { f_name = name; f_type = ftyp; f_storage = sto; f_body = cp; }
   | _ -> 
-      let ii = Lib_parsing_cpp.ii_of_any (Type ty) +> List.hd in
+      let ii = Lib_parsing_cpp.ii_of_any (Type ty) |> List.hd in
       raise (Semantic ("function definition without parameters", ii))
 
 let fixFieldOrMethodDecl (xs, semicolon) =

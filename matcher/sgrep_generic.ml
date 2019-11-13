@@ -73,7 +73,7 @@ let sgrep_ast ~hook pattern ast =
                * the matched code itself.
                *)
               let matched_tokens = Lib_ast.ii_of_any (E x) in
-              matches_with_env +> List.iter (fun env ->
+              matches_with_env |> List.iter (fun env ->
                 hook env matched_tokens
               )
             end
@@ -91,7 +91,7 @@ let sgrep_ast ~hook pattern ast =
                * the matched code itself.
                *)
               let matched_tokens = Lib_ast.ii_of_any (S x) in
-              matches_with_env +> List.iter (fun env ->
+              matches_with_env |> List.iter (fun env ->
                 hook env matched_tokens
               )
             end

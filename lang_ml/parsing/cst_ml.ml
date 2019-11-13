@@ -378,7 +378,7 @@ let unpipe xs = uncomma xs
 
 let name_of_long_name (_, name) = name
 let module_of_long_name (qu, _) = 
-  qu +> List.map fst +> List.map str_of_name +> Common.join "."
+  qu |> List.map fst |> List.map str_of_name |> Common.join "."
 let module_infos_of_long_name (qu, _) = 
-  qu +> List.map fst +> List.map info_of_name
+  qu |> List.map fst |> List.map info_of_name
 

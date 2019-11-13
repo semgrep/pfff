@@ -222,7 +222,7 @@ rule tex = parse
 
 
   (* ----------------------------------------------------------------------- *)
-  | eof { EOF (tokinfo lexbuf +> Parse_info.rewrap_str "") }
+  | eof { EOF (tokinfo lexbuf |> Parse_info.rewrap_str "") }
   | _ { 
         error ("unrecognised symbol, in token rule:"^tok lexbuf);
         TUnknown (tokinfo lexbuf)
@@ -245,7 +245,7 @@ and noweb = parse
   | '<'  { TNowebChunkStr ("<", tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
-  | eof { EOF (tokinfo lexbuf +> Parse_info.rewrap_str "") }
+  | eof { EOF (tokinfo lexbuf |> Parse_info.rewrap_str "") }
   | _ { 
       error ("unrecognised symbol, in noweb chunkname rule:"^tok lexbuf);
       TUnknown (tokinfo lexbuf)
@@ -268,7 +268,7 @@ and verbatim endname = parse
   | '\n' { TCommentNewline (tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
-  | eof { EOF (tokinfo lexbuf +> Parse_info.rewrap_str "") }
+  | eof { EOF (tokinfo lexbuf |> Parse_info.rewrap_str "") }
   | _ { 
       error ("unrecognised symbol, in verbatim rule:"^tok lexbuf);
       TUnknown (tokinfo lexbuf)

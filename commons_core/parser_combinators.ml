@@ -115,9 +115,9 @@ let alphanum_under_minus c = digit c || alpha c || (c = '-') || (c = '_')
 
 
 
-let (+>) o f = f o
+let (|>) o f = f o
 let string_of_chars cs = 
-  cs +> List.map (String.make 1) +> String.concat ""
+  cs |> List.map (String.make 1) |> String.concat ""
 
 
 let collect(h, t) =

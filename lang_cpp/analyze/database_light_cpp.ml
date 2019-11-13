@@ -43,14 +43,14 @@ let mk_entity ~root ~hcomplete_name_of_info info categ =
   
   let name = s in
   let fullname = 
-    try Hashtbl.find hcomplete_name_of_info info +> snd
+    try Hashtbl.find hcomplete_name_of_info info |> snd
     with Not_found -> ""
   in
               
   { Database_code.
     e_name = name;
     e_fullname = if fullname <> name then fullname else "";
-    e_file = PI.file_of_info info +> Common.readable ~root;
+    e_file = PI.file_of_info info |> Common.readable ~root;
     e_pos = { Common2.l = l; c };
     e_kind = 
       Common2.some (Database_code.entity_kind_of_highlight_category_def categ);
@@ -74,12 +74,12 @@ let compute_database ?(verbose=false) files_or_dirs =
    * like PHP, the other database may use realpath for the path of the files
    * so we want to behave the same.
    *)
-  let files_or_dirs = files_or_dirs +> List.map Common.fullpath in
+  let files_or_dirs = files_or_dirs |> List.map Common.fullpath in
   let root = Common2.common_prefix_of_files_or_dirs files_or_dirs in
   pr2 (spf "generating C/C++ db_light with root = %s" root);
 
   let files = Lib_parsing_cpp.find_source_files_of_dir_or_files files_or_dirs in
-  let dirs = files +> List.map Filename.dirname +> Common2.uniq_eff in
+  let dirs = files |> List.map Filename.dirname |> Common2.uniq_eff in
 
   (* step1: collecting definitions *)
   if verbose then pr2 "phase 1: collecting definitions";
@@ -88,7 +88,7 @@ let compute_database ?(verbose=false) files_or_dirs =
 
   let (hdefs_pos: (Parse_info.t, bool) Hashtbl.t) = Hashtbl.create 1001 in
 
-  files +> Console.progress ~show:verbose (fun k -> 
+  files |> Console.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
     k ();
     let (ast2, _stat) = Parse_cpp.parse file in
@@ -98,7 +98,7 @@ let compute_database ?(verbose=false) files_or_dirs =
       Hashtbl.create 101
     in
 
-    ast2 +> List.iter (fun (ast, toks) ->
+    ast2 |> List.iter (fun (ast, toks) ->
       let prefs = Highlight_code.default_highlighter_preferences in
 
       Highlight_cpp.visit_toplevel ~tag_hook:(fun info categ -> 
@@ -125,7 +125,7 @@ let compute_database ?(verbose=false) files_or_dirs =
   (* step2: collecting uses *)
   if verbose then pr2 "\nphase 2: collecting uses";
 
-  files +> Console.progress ~show:verbose (fun k -> 
+  files |> Console.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
     k();
     let (ast2, _stat) = Parse_cpp.parse file in
@@ -135,7 +135,7 @@ let compute_database ?(verbose=false) files_or_dirs =
     Check_variables_cpp.check_and_annotate_program
       ast;
 
-    ast2 +> List.iter (fun (ast, toks) ->
+    ast2 |> List.iter (fun (ast, toks) ->
       let prefs = Highlight_code.default_highlighter_preferences in
 
       Highlight_cpp.visit_toplevel ~tag_hook:(fun info categ -> 
@@ -147,7 +147,7 @@ let compute_database ?(verbose=false) files_or_dirs =
           (*| HC.Method (HC.Use2 _) *)
             ->
               let s = PI.str_of_info info in
-              Hashtbl.find_all hdefs s +> List.iter (fun entity ->
+              Hashtbl.find_all hdefs s |> List.iter (fun entity ->
                 let file_entity = entity.Db.e_file in
 
                 (* todo: check corresponding entity_kind ? *)
@@ -171,16 +171,16 @@ let compute_database ?(verbose=false) files_or_dirs =
   (* step3: adding cross reference information *)
   if verbose then pr2 "\nphase 3: last fixes";
 
-  let entities_arr = Common.hash_to_list hdefs +> List.map snd +> Array.of_list
+  let entities_arr = Common.hash_to_list hdefs |> List.map snd |> Array.of_list
   in
   Db.adjust_method_or_field_external_users ~verbose entities_arr;
 
-  let dirs = dirs +> List.map (fun s -> Common.readable ~root s) in
+  let dirs = dirs |> List.map (fun s -> Common.readable ~root s) in
   let dirs = Db.alldirs_and_parent_dirs_of_relative_dirs dirs in
 
   { Db.
     root = root;
-    dirs = dirs +> List.map (fun d -> d, 0); (* TODO *)
-    files = files +> List.map (fun f -> Common.readable ~root f, 0); (* TODO *)
+    dirs = dirs |> List.map (fun d -> d, 0); (* TODO *)
+    files = files |> List.map (fun f -> Common.readable ~root f, 0); (* TODO *)
     entities = entities_arr;
   }

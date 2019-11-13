@@ -46,10 +46,10 @@ let show_function_calls file =
 
   (*s: display hfuncs to user *)
     (* printing statistics *)
-    hfuncs#to_list +> List.iter (fun (f, hcount) ->
+    hfuncs#to_list |> List.iter (fun (f, hcount) ->
       pr2 (spf "statistics for %s" f);
-      hcount#to_list +> Common.sort_by_key_highfirst
-        +> List.iter (fun (nbargs, nbcalls_at_nbargs) ->
+      hcount#to_list |> Common.sort_by_key_highfirst
+        |> List.iter (fun (nbargs, nbcalls_at_nbargs) ->
           pr2 (spf " when # of args is %d: found %d call sites" 
                   nbargs nbcalls_at_nbargs)
         )

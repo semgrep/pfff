@@ -90,19 +90,19 @@ let group_tokens_by_line toks =
   aux 1 [] toks
 
 let comment_pp_ize toks = 
-  toks +> List.map (fun tok -> 
+  toks |> List.map (fun tok -> 
     let info = TH.info_of_tok tok in 
     Parser_php.TCommentPP info
   )
 
 let mark_as_expanded last_orig_parse_info toks =
   let cnt = ref (String.length (last_orig_parse_info.Parse_info.str)) in
-  toks +> List.map (fun tok ->
+  toks |> List.map (fun tok ->
     let info = TH.info_of_tok tok in
     let str = PI.str_of_info info in
     let len = String.length str in
     cnt := !cnt + len;
-    tok +> TH.visitor_info_of_tok (fun info -> 
+    tok |> TH.visitor_info_of_tok (fun info -> 
       let parse_info_in_pp = Parse_info.token_location_of_info info in
       { info with 
         Parse_info.token = Parse_info.ExpandedTok (
@@ -138,8 +138,8 @@ let merge_tokens_line ~orig_toks ~pp_toks =
     TH.visitor_info_of_tok (fun info -> Ast.al_info info) tok
   in
   
-  let a' = Common.exclude TH.is_comment a +> List.map al_info_tok in
-  let b' = Common.exclude TH.is_comment b +> List.map al_info_tok in
+  let a' = Common.exclude TH.is_comment a |> List.map al_info_tok in
+  let b' = Common.exclude TH.is_comment b |> List.map al_info_tok in
 
   if a' =*= b'
   then a
@@ -149,7 +149,7 @@ let merge_tokens_line ~orig_toks ~pp_toks =
     if null commented_a
     then failwith "WEIRD: a XHP line has tokens but not the original one";
     
-    let last_orig_info = Common2.list_last commented_a +> TH.info_of_tok in
+    let last_orig_info = Common2.list_last commented_a |> TH.info_of_tok in
     let last_orig_parse_info = 
       Parse_info.token_location_of_info last_orig_info in
 
@@ -195,11 +195,11 @@ let  zip_and_sync ~toks_orig_lines ~toks_pp_lines =
          * mark the tokens as ExpandedTok.
          *)
         let all_remaining_toks = 
-          (ytoks::List.map snd ys) +> List.flatten
+          (ytoks::List.map snd ys) |> List.flatten
         in
 
         let last_orig_parse_info = 
-          !last_orig_tok +> TH.info_of_tok +> Parse_info.token_location_of_info in
+          !last_orig_tok |> TH.info_of_tok |> Parse_info.token_location_of_info in
         let toks = mark_as_expanded last_orig_parse_info all_remaining_toks in
         [toks]
         
@@ -228,11 +228,11 @@ let  zip_and_sync ~toks_orig_lines ~toks_pp_lines =
             pr2 (spf "WEIRD, wrong line numbers in preprocessed file %d > %d"
                      xline yline);
                     
-            let b' = b +> List.map (fun (yline, ytoks) -> yline+1, ytoks) in
+            let b' = b |> List.map (fun (yline, ytoks) -> yline+1, ytoks) in
             aux a b'
         )
   in
-  aux toks_orig_lines toks_pp_lines +> List.flatten
+  aux toks_orig_lines toks_pp_lines |> List.flatten
 
 
 (* Trying to merge tokens from the original file with the preprocessed file,
@@ -245,8 +245,8 @@ let adapt_tokens_pp2 ~tokenizer ~orig_filename toks_pp =
    * reporting was slightly improved.
    *)
   if not !Flag.obsolete_merge_tokens_xhp then
-   toks_pp +> List.rev_map (fun tok ->
-    tok +> TH.visitor_info_of_tok (fun ii ->
+   toks_pp |> List.rev_map (fun tok ->
+    tok |> TH.visitor_info_of_tok (fun ii ->
       let pinfo = ii.PI.token in
       { ii with Parse_info.token =
           match ii.PI.token with
@@ -261,7 +261,7 @@ let adapt_tokens_pp2 ~tokenizer ~orig_filename toks_pp =
           | Parse_info.ExpandedTok _ -> 
               raise Impossible
       })
-  )  +> List.rev (* ugly, but need tail-call rev_map and so this rev *)
+  )  |> List.rev (* ugly, but need tail-call rev_map and so this rev *)
   else 
     (* algo: 
      *  - split by line the tokens 

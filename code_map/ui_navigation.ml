@@ -33,7 +33,7 @@ let go_back w =
   (* reset also the motion notifier ? less needed because
    * the next motion will reset it
    *)
-  !Controller.paint_content_maybe_refresher +> Common.do_option (fun x ->
+  !Controller.paint_content_maybe_refresher |> Common.do_option (fun x ->
     GMain.Idle.remove x;
   );
   let old_dw = Common2.pop2 w.dw_stack in

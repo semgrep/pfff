@@ -46,7 +46,7 @@ let build_filedeps_of_dir_or_file g =
 
   let halready = Hashtbl.create 101 in
 
-  g +> G.iter_use_edges (fun n1 n2 ->
+  g |> G.iter_use_edges (fun n1 n2 ->
     try 
       let file1 = G.file_of_node n1 g in
       let file2 = G.file_of_node n2 g in
@@ -63,11 +63,11 @@ let build_filedeps_of_dir_or_file g =
        *)
       let dirs_n1 = Common2.inits_of_relative_dir file1 in
       let dirs_n2 = Common2.inits_of_relative_dir file2 in
-      dirs_n1 +> List.iter (fun dir ->
+      dirs_n1 |> List.iter (fun dir ->
         if not (is_prefix dir file2)
         then Hashtbl.add huses (dir, E.Dir) file2;
       );
-      dirs_n2 +> List.iter (fun dir ->
+      dirs_n2 |> List.iter (fun dir ->
         if not (is_prefix dir file1)
         then Hashtbl.add husers (dir, E.Dir) file1;
       );
@@ -76,7 +76,7 @@ let build_filedeps_of_dir_or_file g =
   );
   let hres = Hashtbl.create 101 in
   let keys = Common2.union_set (Common2.hkeys huses) (Common2.hkeys husers) in
-  keys +> List.iter (fun k ->
+  keys |> List.iter (fun k ->
     let uses = try Hashtbl.find_all huses k with Not_found -> [] in
     let users = try Hashtbl.find_all husers k with Not_found -> [] in
     (* todo: have to do uniq? if add in hash multiple times with same value,
@@ -91,7 +91,7 @@ let build_entities_of_file g =
   (* we use the 'find_all' property of those hashes *)
   let h = Hashtbl.create 101 in
 
-  g +> G.iter_nodes (fun n ->
+  g |> G.iter_nodes (fun n ->
     try 
       let info = G.nodeinfo n g in
       let file = info.G.pos.Parse_info.file in
@@ -99,7 +99,7 @@ let build_entities_of_file g =
       Hashtbl.add h file n;
     with Not_found -> ()
   );
-  Common2.hkeys h +> List.map (fun k ->
+  Common2.hkeys h |> List.map (fun k ->
     let xs = Hashtbl.find_all h k in
     k, xs
   )
@@ -116,7 +116,7 @@ let build_entities_of_file g =
  *)
 let add_headers_files_entities_of_file root xs =
   let headers =
-    xs +> Common.map_filter (fun (file, xs) ->
+    xs |> Common.map_filter (fun (file, xs) ->
       let (d,b,e) = Common2.dbe_of_filename_noext_ok file in
       match e with
       | "ml" -> 

@@ -31,11 +31,11 @@ let choose_layer ~root layer_title_opt w =
   pr2 "choose_layer()";
   let dw = w.dw in
 
-  let original_layers = dw.M.layers.L.layers +> List.map fst in
+  let original_layers = dw.M.layers.L.layers |> List.map fst in
   let layers_idx = 
     Layer_code.build_index_of_layers 
       ~root
-      (original_layers +> List.map (fun layer ->
+      (original_layers |> List.map (fun layer ->
         layer, 
         match layer_title_opt with
         | None -> false

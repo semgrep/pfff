@@ -15,7 +15,6 @@
  * license.txt for more details.
  *)
 (*e: Facebook copyright *)
-open Common
 (* floats are the norm in graphics *)
 open Common2.ArithFloatInfix
 
@@ -151,7 +150,7 @@ let surface_of_pixmap pm =
 (*****************************************************************************)
 
 let fill_rectangle ?(alpha=1.) ~cr ~x ~y ~w ~h ~color () = 
-  (let (r,g,b) = color +> Color.rgbf_of_string in
+  (let (r,g,b) = color |> Color.rgbf_of_string in
   Cairo.set_source_rgba cr r g b alpha;
   );
   
@@ -163,7 +162,7 @@ let fill_rectangle ?(alpha=1.) ~cr ~x ~y ~w ~h ~color () =
   ()
 
 let draw_rectangle_figure ~cr ~color r =
-  (let (r,g,b) = color +> Color.rgbf_of_string in
+  (let (r,g,b) = color |> Color.rgbf_of_string in
   Cairo.set_source_rgb cr r g b;
   );
  let line_width = device_to_user_size cr 3. in
@@ -182,7 +181,7 @@ let draw_rectangle_figure ~cr ~color r =
 *)
 let draw_rectangle_bis ~cr ~color ~line_width r =
   (let (r,g,b) = 
-    color +> Color.rgb_of_color +> Color.rgbf_of_rgb
+    color |> Color.rgb_of_color |> Color.rgbf_of_rgb
     in
    Cairo.set_source_rgb cr r g b;
   );

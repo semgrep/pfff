@@ -156,7 +156,7 @@ let parse env file =
   with
   | Timeout -> raise Timeout
   | exn ->
-     env.stats.G.parse_errors +> Common.push file;
+     env.stats.G.parse_errors |> Common.push file;
      env.pr2_and_log (spf "PARSE ERROR with %s, exn = %s" (env.path file)
                         (Common.exn_to_s exn));
      []
@@ -203,7 +203,7 @@ let look_like_class s =
 let privacy_of_modifiers modifiers =
   (* yes, default is public ... I love PHP *)
   let p = ref E.Public in
-  modifiers +> List.iter (function
+  modifiers |> List.iter (function
   | Cst_php.Public -> p := E.Public
   | Cst_php.Private -> p := E.Private
   | Cst_php.Protected -> p := E.Protected
@@ -212,7 +212,7 @@ let privacy_of_modifiers modifiers =
   !p
 
 let property_of_modifiers modifiers =
-  modifiers +> Common.map_filter (function
+  modifiers |> Common.map_filter (function
   | Cst_php.Public | Cst_php.Private | Cst_php.Protected -> None
   | Cst_php.Static -> Some E.Static
   | Cst_php.Abstract -> Some E.Abstract
@@ -222,8 +222,8 @@ let property_of_modifiers modifiers =
 
 let normalize str =
   str
-  +> String.lowercase_ascii                   (* php is case insensitive *)
-  +> Str.global_replace (Str.regexp "-") "_"  (* xhp is "dash" insensitive *)
+  |> String.lowercase_ascii                   (* php is case insensitive *)
+  |> Str.global_replace (Str.regexp "-") "_"  (* xhp is "dash" insensitive *)
 
 (*****************************************************************************)
 (* Namespace *)
@@ -239,12 +239,12 @@ let (name_of_class_name: Ast.hint_type -> name) = fun x ->
 let (ident_of_name: Ast.name -> Ast.ident) = function
   | [id] -> id
   | x -> failwith (spf "was expecting an ident not a qualified ident at %s"
-                     (Ast.tok_of_name x +> Parse_info.string_of_info))
+                     (Ast.tok_of_name x |> Parse_info.string_of_info))
 
 let add_prefix qu =
   match qu with
   | [] -> ""
-  | x::xs -> ((x::xs) +> List.map Ast.str_of_ident +> Common.join "\\")^"\\"
+  | x::xs -> ((x::xs) |> List.map Ast.str_of_ident |> Common.join "\\")^"\\"
 
 let prune_special_root xs =
   match xs with
@@ -278,14 +278,14 @@ let (strtok_of_name: env -> Ast.name -> Entity_code.entity_kind ->
    in
    let candidates = fully_qualified_candidates env.cur name kind in
    try
-    candidates +> Common.find_some (fun fullname ->
-     let str = fullname +> List.map Ast.str_of_ident +> Common.join "\\" in
+    candidates |> Common.find_some (fun fullname ->
+     let str = fullname |> List.map Ast.str_of_ident |> Common.join "\\" in
      if G.has_node (str, kind) env.g
      then Some (R str, tokopt)
      else None
    )
    with Not_found ->
-     let str = name +> List.map Ast.str_of_ident +> Common.join "\\" in
+     let str = name |> List.map Ast.str_of_ident |> Common.join "\\" in
      R str, tokopt
 
 
@@ -347,17 +347,17 @@ let add_node_and_has_edge2 ?(props=[]) env (ident, kind) =
         Hashtbl.add env.dupes node (env.cur.readable, file)
     )
    else begin
-    env.g +> G.add_node node;
+    env.g |> G.add_node node;
     (* if we later find a duplicate for node, we will
      * redirect this edge in build() to G.dupe (unless
      * the duplicate are all in a skip_errors dir).
      *)
-    env.g +> G.add_edge (env.cur.node, node) G.Has;
+    env.g |> G.add_edge (env.cur.node, node) G.Has;
     let pos = Parse_info.token_location_of_info (Ast.tok_of_ident ident) in
     let pos = { pos with Parse_info.file = env.cur.readable } in
     let typ = None in (* todo *)
     let nodeinfo = { Graph_code. pos; props; typ } in
-    env.g +> G.add_nodeinfo node nodeinfo;
+    env.g |> G.add_nodeinfo node nodeinfo;
    end
   end;
   (* for dupes like main(), but also dupe classes, or methods of dupe
@@ -393,7 +393,7 @@ let lookup_fail env tokopt dst =
         | _ -> env.log
         )
   in
-  env.stats.G.lookup_fail +> Common.push (info, dst);
+  env.stats.G.lookup_fail |> Common.push (info, dst);
   fprinter (spf "PB: lookup fail on %s (at %s:%d)" (G.string_of_node dst)
               (env.path file) line)
 
@@ -464,9 +464,9 @@ let rec add_use_edge2 env (name, kind) =
             if !add_fake_node_when_undefined_entity then begin
               G.add_node dst env.g;
               let parent_target = G.not_found in
-              env.g +> G.add_edge (parent_target, dst) G.Has;
+              env.g |> G.add_edge (parent_target, dst) G.Has;
               Hashtbl.replace env.not_found dst true;
-              env.g +> G.add_edge (src, dst) G.Use;
+              env.g |> G.add_edge (src, dst) G.Use;
             end
         )
     )
@@ -477,8 +477,8 @@ let add_use_edge_bis a b =
 let add_use_edge ?(phase=Uses) env n =
   match phase with
   | Defs -> raise Impossible
-  | Inheritance -> env.phase_inheritance +> Common.push (env.cur, n)
-  | Uses -> env.phase_use +> Common.push (env.cur, n)
+  | Inheritance -> env.phase_inheritance |> Common.push (env.cur, n)
+  | Uses -> env.phase_use |> Common.push (env.cur, n)
 
 (* why not call add_use_edge() and benefit from the error reporting
  * there? because instanceOf check are less important so
@@ -486,7 +486,7 @@ let add_use_edge ?(phase=Uses) env n =
  *)
 let add_use_edge_instanceof env (name, kind) =
   let env = { env with phase = Uses } in
-  env.phase_use_other +> Common.push (fun () ->
+  env.phase_use_other |> Common.push (fun () ->
     let (R x) = str_of_name env name kind in
     let node = (x, kind) in
     if not (G.has_node node env.g)
@@ -496,7 +496,7 @@ let add_use_edge_instanceof env (name, kind) =
 (* todo: add unit test for that *)
 let add_use_edge_maybe_class env entity tokopt =
   let env = { env with phase = Uses } in
-  env.phase_use_other +> Common.push (fun () ->
+  env.phase_use_other |> Common.push (fun () ->
     (* less: do case insensitive? handle conflicts? *)
     if G.has_node (entity, E.Class) env.g
     then
@@ -526,7 +526,7 @@ let lookup_inheritance2 g (R aclass, amethod_or_field_or_constant) tokopt =
       let children = G.children current g in
       let full_name = (fst current ^ "." ^ amethod_or_field_or_constant) in
       let res =
-        children +> Common.find_some_opt (fun (s2, kind) ->
+        children |> Common.find_some_opt (fun (s2, kind) ->
           if full_name =$= s2 ||
              (* todo? pass a is_static extra param to lookup?
               * also should intercept __get for fields?
@@ -548,7 +548,7 @@ let lookup_inheritance2 g (R aclass, amethod_or_field_or_constant) tokopt =
          *)
         let parents_inheritance = G.succ current G.Use g in
         breath parents_inheritance
-  and breath xs = xs +> Common.find_some_opt depth
+  and breath xs = xs |> Common.find_some_opt depth
   in
   depth (aclass, E.Class)
 
@@ -571,9 +571,9 @@ let add_use_edge_lookup2 xhp env (name, ident) kind =
       let tok = Ast.tok_of_ident ident in
       (match kind2 with
       | E.Method ->
-          env.stats.G.method_calls +> Common.push (tok, true)
+          env.stats.G.method_calls |> Common.push (tok, true)
       | E.Field ->
-          env.stats.G.field_access +> Common.push (tok, true)
+          env.stats.G.field_access |> Common.push (tok, true)
       | E.ClassConstant -> ()
       | _ -> raise Impossible
       );
@@ -616,7 +616,7 @@ let add_use_edge_lookup2 xhp env (name, ident) kind =
   then add_use_edge_bis env (name, E.Class)
 
 let add_use_edge_lookup ?(xhp=false) env a b =
-  env.phase_use_lookup +> Common.push (env.cur, (xhp, a, b))
+  env.phase_use_lookup |> Common.push (env.cur, (xhp, a, b))
 
 (* todo: add unit test for this
  * todo: this is buggy, you can't use lookup_inheritance in the
@@ -663,8 +663,8 @@ let rec extract_defs_uses env ast readable =
   begin
     let dir = Common2.dirname env.cur.readable in
     G.create_intermediate_directories_if_not_present env.g dir;
-    env.g +> G.add_node (env.cur.readable, E.File);
-    env.g +> G.add_edge ((dir, E.Dir), (env.cur.readable, E.File))  G.Has;
+    env.g |> G.add_node (env.cur.readable, E.File);
+    env.g |> G.add_edge ((dir, E.Dir), (env.cur.readable, E.File))  G.Has;
   end;
   stmt_toplevel_list env ast
 
@@ -738,7 +738,7 @@ and stmt_bis env x =
       finallys env (fs)
 
   | StaticVars xs ->
-      xs +> List.iter (fun (_name, eopt) -> Common2.opt (expr env) eopt)
+      xs |> List.iter (fun (_name, eopt) -> Common2.opt (expr env) eopt)
   (* could add entity for that? *)
   | Global xs -> exprl env xs
 
@@ -771,7 +771,7 @@ and func_def env def =
     | Function -> add_node_and_has_edge env (def.f_name, E.Function)
     | Method -> raise Impossible
   in
-  def.f_params +> List.iter (fun p ->
+  def.f_params |> List.iter (fun p ->
     (* less: add deps to type hint? *)
     Common2.opt (expr env) p.p_default;
   );
@@ -787,17 +787,17 @@ and class_def env def =
   in
   *)
   let env = add_node_and_has_edge env (def.c_name, E.Class) in
-  def.c_extends +> Common.do_option (fun c2 ->
+  def.c_extends |> Common.do_option (fun c2 ->
     (* todo: also mark as use the generic arguments *)
     add_use_edge ~phase:Inheritance env (name_of_class_name c2, E.Class);
   );
-  def.c_implements +> List.iter (fun c2 ->
+  def.c_implements |> List.iter (fun c2 ->
     add_use_edge ~phase:Inheritance env (name_of_class_name c2, E.Class (*E.Interface*));
   );
-  def.c_uses +> List.iter (fun c2 ->
+  def.c_uses |> List.iter (fun c2 ->
     add_use_edge ~phase:Inheritance env (name_of_class_name c2, E.Class (*E.Trait*));
   );
-  def.c_xhp_attr_inherit +> List.iter (fun c2 ->
+  def.c_xhp_attr_inherit |> List.iter (fun c2 ->
     add_use_edge ~phase:Inheritance env (name_of_class_name c2, E.Class);
   );
 
@@ -812,18 +812,18 @@ and class_def env def =
   in
   let env = { env with cur = { env.cur with self; parent; }} in
 
-  def.c_constants +> List.iter (fun def ->
+  def.c_constants |> List.iter (fun def ->
     let env = add_node_and_has_edge env (def.cst_name, E.ClassConstant) in
     Common2.opt (expr env) def.cst_body;
   );
   (* See URL: https://github.com/facebook/xhp/wiki "Defining Attributes" *)
-  def.c_xhp_fields +> List.iter (fun (def, req) ->
+  def.c_xhp_fields |> List.iter (fun (def, req) ->
     let node = (addpostfix def.cv_name, E.Field) in
     let props = if req then [E.Required] else [] in
     let env = add_node_and_has_edge ~props env node in
     Common2.opt (expr env) def.cv_value;
   );
-  def.c_variables +> List.iter (fun fld ->
+  def.c_variables |> List.iter (fun fld ->
     let props = [E.Privacy (privacy_of_modifiers fld.cv_modifiers)] in
     let env = add_node_and_has_edge ~props env (fld.cv_name, E.Field)in
     (* PHP allows to refine a field, for instance on can do
@@ -837,7 +837,7 @@ and class_def env def =
 *)
     Common2.opt (expr env) fld.cv_value
   );
-  def.c_methods +> List.iter (fun def ->
+  def.c_methods |> List.iter (fun def ->
     (* less: static? be more precise at some point *)
     let props = property_of_modifiers def.m_modifiers @
                 [E.Privacy (privacy_of_modifiers def.m_modifiers)]
@@ -873,7 +873,7 @@ and hint_type env t =
       List.iter (hint_type env) tparams;
       Common.opt (hint_type env) tret_opt
   | HintShape xs ->
-    xs +> List.iter (fun (_ket, t) ->
+    xs |> List.iter (fun (_ket, t) ->
       hint_type env t
     )
   | HintTypeConst (x1, x2) ->
@@ -953,16 +953,16 @@ and expr env x =
         | This ((_x, tokopt)) ->
             expr env
                 (Call (Class_get (Id[ (env.cur.self, tokopt)], Id name2), es));
-            env.phase_dispatch +> Common.push (env.cur, name2);
+            env.phase_dispatch |> Common.push (env.cur, name2);
         (* need class analysis ... *)
         | _ ->
-          env.phase_class_analysis +> Common.push (env.cur, name2);
+          env.phase_class_analysis |> Common.push (env.cur, name2);
           expr env e1;
           exprl env es
         )
     | _ ->
-      let tok = Meta_ast_php.toks_of_any (Expr2 e) +> List.hd in
-      env.stats.G.unresolved_calls +> Common.push tok;
+      let tok = Meta_ast_php.toks_of_any (Expr2 e) |> List.hd in
+      env.stats.G.unresolved_calls |> Common.push tok;
       expr env e;
       exprl env es
     )
@@ -993,15 +993,15 @@ and expr env x =
      | Id name1, e2  ->
          add_use_edge env (name1, E.Class);
          let tok = Ast.tok_of_name name1 in
-         env.stats.G.unresolved_class_access +> Common.push tok;
+         env.stats.G.unresolved_class_access |> Common.push tok;
          expr env e2;
      | e1, Id name2  ->
          let tok = Ast.tok_of_name name2 in
-         env.stats.G.unresolved_class_access +> Common.push tok;
+         env.stats.G.unresolved_class_access |> Common.push tok;
          expr env e1;
      | _ ->
-         let tok = Meta_ast_php.toks_of_any (Expr2 e1) +> List.hd in
-         env.stats.G.unresolved_class_access +> Common.push tok;
+         let tok = Meta_ast_php.toks_of_any (Expr2 e1) |> List.hd in
+         env.stats.G.unresolved_class_access |> Common.push tok;
          exprl env [e1; e2]
       )
 
@@ -1014,16 +1014,16 @@ and expr env x =
           expr env (Class_get (Id[ (env.cur.self, tokopt)], Var("$"^s2, tok2)))
       | _, Id name2  ->
           let tok = Ast.tok_of_name name2 in
-          env.stats.G.field_access +> Common.push (tok, false);
+          env.stats.G.field_access |> Common.push (tok, false);
           expr env e1;
       | _ ->
-          let tok = Meta_ast_php.toks_of_any (Expr2 e1) +> List.hd in
-          env.stats.G.unresolved_class_access +> Common.push tok;
+          let tok = Meta_ast_php.toks_of_any (Expr2 e1) |> List.hd in
+          env.stats.G.unresolved_class_access |> Common.push tok;
           exprl env [e1; e2]
       )
 
   | New (e, es) ->
-      let tok = Meta_ast_php.toks_of_any (Expr2 e) +> List.hd in
+      let tok = Meta_ast_php.toks_of_any (Expr2 e) |> List.hd in
       expr env (Call (Class_get(e, Id[ ("__construct", Some tok)]), es))
 
   (* -------------------------------------------------- *)
@@ -1033,8 +1033,8 @@ and expr env x =
       (* less: add deps? *)
       | Id name -> add_use_edge_instanceof env (name, E.Class)
       | _ ->
-          let tok = Meta_ast_php.toks_of_any (Expr2 e1) +> List.hd in
-          env.stats.G.unresolved_class_access +> Common.push tok;
+          let tok = Meta_ast_php.toks_of_any (Expr2 e1) |> List.hd in
+          env.stats.G.unresolved_class_access |> Common.push tok;
           expr env e2
       )
 
@@ -1066,11 +1066,11 @@ and array_value env x = expr env x
 
 and xml env x =
   add_use_edge env ([x.xml_tag], E.Class);
-  x.xml_attrs +> List.iter (fun (ident, xhp_attr) ->
+  x.xml_attrs |> List.iter (fun (ident, xhp_attr) ->
     add_use_edge_lookup ~xhp:true env ([x.xml_tag], ident) E.Field;
     expr env xhp_attr
   );
-  x.xml_body +> List.iter (xhp env)
+  x.xml_body |> List.iter (xhp env)
 
 and xhp env = function
   | XhpText _s -> ()
@@ -1149,7 +1149,7 @@ let build
   (* step1: creating the nodes and 'Has' edges, the defs *)
   env.pr2_and_log "\nstep1: extract defs";
   Common.profile_code "Graph_php.step1" (fun () ->
-  files +> Console.progress ~show:verbose (fun k ->
+  files |> Console.progress ~show:verbose (fun k ->
     List.iter (fun file ->
       k();
       let readable = Common.readable root file in
@@ -1160,12 +1160,12 @@ let build
   );
   Common.profile_code "Graph_php.step dupes" (fun () ->
   Common2.hkeys env.dupes
-  +> List.filter (fun (_, kind) ->
+  |> List.filter (fun (_, kind) ->
     match kind with
     | E.ClassConstant | E.Field | E.Method -> false
     | _ -> true
   )
-  +> List.iter (fun node ->
+  |> List.iter (fun node ->
     let files = Hashtbl.find_all env.dupes node in
     let (ex_file, _) = List.hd files in
     let orig_file =
@@ -1185,8 +1185,8 @@ let build
     (* dupe in regular codebase, bad *)
     | _, n when n >= 2 ->
       env.pr2_and_log  (spf "DUPE: %s (%d)" (G.string_of_node node) cnt);
-      g +> G.remove_edge (G.parent node g, node) G.Has;
-      g +> G.add_edge (G.dupe, node) G.Has;
+      g |> G.remove_edge (G.parent node g, node) G.Has;
+      g |> G.add_edge (G.dupe, node) G.Has;
       env.log (spf " orig = %s" (orig_file));
       env.log (spf " dupe = %s" (ex_file));
     (* duplicating a regular function, bad, but ok, should have renamed it in
@@ -1203,7 +1203,7 @@ let build
     )
   ));
   if not only_defs then begin
-    g +> G.iter_nodes (fun (str, kind) ->
+    g |> G.iter_nodes (fun (str, kind) ->
       Hashtbl.replace env.case_insensitive (normalize str, kind) (str, kind)
     );
     let envold = env in
@@ -1214,7 +1214,7 @@ let build
     (* step2: creating the 'Use' edges for inheritance *)
     envold.pr2_and_log "\nstep2: extract inheritance";
     Common.profile_code "Graph_php.step2" (fun () ->
-      !(envold.phase_inheritance) +> List.rev +> List.iter (fun (cur, n) ->
+      !(envold.phase_inheritance) |> List.rev |> List.iter (fun (cur, n) ->
         let env = { envold with phase = Inheritance; cur } in
         add_use_edge_bis env n
       );
@@ -1223,13 +1223,13 @@ let build
     (* step3: creating the 'Use' edges, the uses *)
     envold.pr2_and_log "\nstep3: extract uses";
     Common.profile_code "Graph_php.step3" (fun () ->
-      !(envold.phase_use) +> List.rev +> List.iter (fun (cur, n) ->
+      !(envold.phase_use) |> List.rev |> List.iter (fun (cur, n) ->
         let env = { envold with phase = Uses; cur } in
         add_use_edge_bis env n
       );
       envold.phase_use := [];
 
-      !(envold.phase_use_lookup) +> List.rev +> List.iter (fun (cur, (xhp, a, b))->
+      !(envold.phase_use_lookup) |> List.rev |> List.iter (fun (cur, (xhp, a, b))->
         let env = { envold with phase = Uses; cur } in
         add_use_edge_lookup2 xhp env a b
       );
@@ -1237,7 +1237,7 @@ let build
 
       let xs = !(envold.phase_use_other) in
       (envold.phase_use_other) := [];
-      xs +> List.rev +> List.iter (fun f -> f());
+      xs |> List.rev |> List.iter (fun f -> f());
     );
 
     if class_analysis then begin
@@ -1245,7 +1245,7 @@ let build
     Common.profile_code "Graph_php.step4" (fun () ->
       let dag = Graph_code_class_analysis.class_hierarchy g in
       let htoplevels = Graph_code_class_analysis.toplevel_methods g dag in
-      !(envold.phase_class_analysis) +> List.iter (fun (cur, name) ->
+      !(envold.phase_class_analysis) |> List.iter (fun (cur, name) ->
           let kind = E.Method in
           let ident = ident_of_name name in
           let method_str = Ast.str_of_ident ident in
@@ -1266,22 +1266,22 @@ let build
                * will get a huge graph? do that just for methods with no prev?
                *)
               let xs = Graph_code_class_analysis.dispatched_methods g dag dst in
-              xs +> List.iter (fun m ->
+              xs |> List.iter (fun m ->
                 G.add_edge (cur.node, m) G.Use envold.g;
               );
-              envold.stats.G.method_calls +> Common.push (tok, true);
+              envold.stats.G.method_calls |> Common.push (tok, true);
           | _ ->
-              envold.stats.G.method_calls +> Common.push (tok, false);
+              envold.stats.G.method_calls |> Common.push (tok, false);
           )
       );
-      !(envold.phase_dispatch) +> List.iter (fun (cur, name) ->
+      !(envold.phase_dispatch) |> List.iter (fun (cur, name) ->
         let kind = E.Method in
         let ident = ident_of_name name in
         let method_str = Ast.str_of_ident ident in
         let self = add_prefix cur.qualifier ^ cur.self in
         let dst = (self ^ "." ^ method_str, kind) in
         let xs = Graph_code_class_analysis.dispatched_methods g dag dst in
-        xs +> List.iter (fun m ->
+        xs |> List.iter (fun m ->
           G.add_edge (cur.node, m) G.Use envold.g;
         )
       )

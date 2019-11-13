@@ -142,7 +142,7 @@ let rec program env xs =
     | StructDef def -> 
       let env = { env with structs = (fst def.s_name, def)::env.structs } in
 
-      def.s_flds +> List.iter (fun var ->
+      def.s_flds |> List.iter (fun var ->
         let name = var.v_name in
         (match var.v_type with
           | TBase _ -> 
@@ -184,9 +184,9 @@ and func_def env def =
   let (_ret, params) = def.f_type in
   let env = { env with 
     scope = fst def.f_name;
-    locals = params +> List.map (fun p -> fst p.v_name, p.v_type);
+    locals = params |> List.map (fun p -> fst p.v_name, p.v_type);
   } in
-  params +> Common.index_list_1 +> List.iter (fun (p, i) ->
+  params |> Common.index_list_1 |> List.iter (fun (p, i) ->
     add (spf "parameter(%s, %d, %s)" 
            (var_of_global env def.f_name) i (var_of_local env p.v_name)) env;
   );
@@ -265,7 +265,7 @@ and instr env = function
 
     | StaticCall (name, args) | DynamicCall (name, args) | BuiltinCall(name, args)  ->
       let invoke = invoke_loc_of_name env name in
-      args +> Common.index_list_1 +> List.iter (fun (v, i) ->
+      args |> Common.index_list_1 |> List.iter (fun (v, i) ->
         add (spf "argument(%s, %d, %s)" invoke i (var_of_name env v)) env
       );
       add (spf "call_ret(%s, %s)" invoke dest) env;

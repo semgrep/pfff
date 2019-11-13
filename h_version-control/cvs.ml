@@ -37,7 +37,7 @@ let _ = assert ("1.208        (imp      07-Jan-05): /*-" =~ annotate_regexp)
 let annotate2 ?(basedir="") filename = 
 
   let today = Common2.today () in
-  let dmy = today +> Common2.floattime_to_unixtime +> Common2.unixtime_to_dmy in
+  let dmy = today |> Common2.floattime_to_unixtime |> Common2.unixtime_to_dmy in
   let (Common2.DMY (_,_,Common2.Year this_year)) = dmy in
 
   (* TODO????: compute it from file directly ? *)
@@ -62,7 +62,7 @@ let annotate2 ?(basedir="") filename =
   (*let ys = Common.cat (Common.filename_of_db (basedir,filename)) in*)
 
   let annots = 
-    xs +> Common.map_filter (fun s -> 
+    xs |> Common.map_filter (fun s -> 
       match () with
       | () when s =~ annotate_regexp -> 
         let (rcsid, _, author, day, month_str, year) = Common.matched6 s in
@@ -113,7 +113,7 @@ let annotate_raw ?(basedir="") filename =
   (*let ys = Common.cat (Common.filename_of_db (basedir,filename)) in*)
 
   let annots = 
-    xs +> Common.map_filter (fun s -> 
+    xs |> Common.map_filter (fun s -> 
       if s =~ annotate_regexp 
       then 
         Some s
@@ -153,7 +153,7 @@ let find_all_date cmd =
 
   (*todo: use find_some *)
   let xs' = 
-    xs +> Common.map_filter (fun s -> 
+    xs |> Common.map_filter (fun s -> 
       if s=~ date_regexp
       then 
         let (year, month, day) = matched3 s in

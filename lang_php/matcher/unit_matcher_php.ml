@@ -175,7 +175,7 @@ let sgrep_unittest =
        * "return <x:frag></x:frag>;", "return <x:frag></>;", true; 
        *)
     ] in
-    triples +> List.iter (fun (spattern, scode, should_match) ->
+    triples |> List.iter (fun (spattern, scode, should_match) ->
       match Sgrep_php.parse spattern, Parse_php.any_of_string scode with
       | Stmt2 pattern, Stmt2 code ->
           let matches_with_env = Matching_php.match_st_st pattern code in
@@ -236,7 +236,7 @@ let spatch_unittest =
     let testdir = Filename.concat Config_pfff.path "tests/php/spatch/" in
     let expfiles = Common2.glob (testdir ^ "*.exp") in
   
-    expfiles +> List.iter (fun expfile ->
+    expfiles |> List.iter (fun expfile ->
       (* todo: this regexp should just be .*? but ocaml regexp do not
        * have the greedy feature :( Also note that expfile is a fullpath
        * so it can contains /, hence this ugly regexp
@@ -263,7 +263,7 @@ let spatch_unittest =
               tmpfile
         in
         let diff = Common2.unix_diff file_res expfile in
-        diff +> List.iter pr;
+        diff |> List.iter pr;
         if List.length diff > 1
         then assert_failure
           (spf "spatch %s on %s should have resulted in %s" 
@@ -402,7 +402,7 @@ let unparser_unittest =
     let file_content = "function foo() { $x = printf(\"%s %d\", ); }" in
     let file = Parse_php.tmp_php_file_from_string file_content in
     let (ast, toks) = Parse_php.ast_and_tokens file in
-    toks +> List.iter (fun tok -> 
+    toks |> List.iter (fun tok -> 
       match tok with
       | Parser_php.TCPAR info when (Parse_info.str_of_info info = ")") ->
         info.Parse_info.transfo <- Parse_info.AddArgsBefore ["str"; "1"]

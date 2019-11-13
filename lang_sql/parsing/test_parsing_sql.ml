@@ -14,7 +14,7 @@ let test_tokens_sql file =
   Flag.verbose_parsing := true;
 
   let toks = Parse_sql.tokens file in
-  toks +> List.iter (fun x -> pr2_gen x);
+  toks |> List.iter (fun x -> pr2_gen x);
   ()
 
 (* ------------------------------------------------------------------------ *)
@@ -31,7 +31,7 @@ let stress_parse_sql file =
   let bad = ref 0 in 
   let nbtotal = List.length ys in 
 
-  ys +> List.iter (fun (_heading, xs) ->
+  ys |> List.iter (fun (_heading, xs) ->
     let s = Common.join " " xs in
     try 
       let _ = 

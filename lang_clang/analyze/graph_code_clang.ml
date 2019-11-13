@@ -331,9 +331,9 @@ let add_node_and_edge_if_defs_mode env node typopt =
           props = [];
           typ;
         } in
-        env.g +> G.add_node node;
-        env.g +> G.add_edge (env.current, node) G.Has;
-        env.g +> G.add_nodeinfo node nodeinfo;
+        env.g |> G.add_node node;
+        env.g |> G.add_edge (env.current, node) G.Has;
+        env.g |> G.add_nodeinfo node nodeinfo;
       with Not_found ->
         error env ("Not_found:" ^ str)
     );
@@ -441,8 +441,8 @@ let rec extract_defs_uses env ast =
     let dir = Common2.dirname c_file_readable in
     G.create_intermediate_directories_if_not_present env.g dir;
     let node = (c_file_readable, E.File) in
-    env.g +> G.add_node node;
-    env.g +> G.add_edge ((dir, E.Dir), node) G.Has;
+    env.g |> G.add_node node;
+    env.g |> G.add_edge ((dir, E.Dir), node) G.Has;
   end;
   let env = { env with 
     current = (c_file_readable, E.File);
@@ -473,7 +473,7 @@ and sexp_toplevel env x =
       | LinkageSpecDecl ->
           (match xs with
           | _loc::T (TUpperIdent "C")::xs ->
-              xs +> List.iter (sexp_toplevel env)
+              xs |> List.iter (sexp_toplevel env)
           | _ -> error env "weird LinkageSpecDecl"
           )
 
@@ -506,7 +506,7 @@ and decl env (enum, _l, xs) =
     match enum, xs with
     | FunctionDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::typ::rest->
         let kind = 
-          if rest +> List.exists (function 
+          if rest |> List.exists (function 
           | Paren (CompoundStmt, _, _) -> true
           | _ -> false
           )
@@ -622,7 +622,7 @@ and decl env (enum, _l, xs) =
         if env.phase = Defs then begin
           (* this is used for InitListExpr *)
           let fields = 
-            rest +> Common.map_filter (function
+            rest |> Common.map_filter (function
             | Paren (FieldDecl, _, _::(T (TLowerIdent s | TUpperIdent s))::_)->
                 Some s
             (* could print a warning?*)
@@ -909,7 +909,7 @@ let build ?(verbose=true) root files =
   
   (* step1: creating the nodes and 'Has' edges, the defs *)
   env.pr2_and_log "\nstep1: extract defs";
-  files +> Console.progress ~show:verbose (fun k ->
+  files |> Console.progress ~show:verbose (fun k ->
     List.iter (fun file ->
       k();
       let ast = parse file in
@@ -924,7 +924,7 @@ let build ?(verbose=true) root files =
 
   (* step2: creating the 'Use' edges *)
   env.pr2_and_log "\nstep2: extract Uses";
-  files +> Console.progress ~show:verbose (fun k ->
+  files |> Console.progress ~show:verbose (fun k ->
     List.iter (fun file ->
       k();
       let ast = parse file in

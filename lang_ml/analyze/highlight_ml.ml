@@ -144,7 +144,7 @@ let visit_program
 
     V.kqualifier = (fun (_k, _bigf) qu ->
       let module_infos = Ast.module_infos_of_long_name (qu, ()) in
-      module_infos +> List.iter (fun ii -> tag ii (Entity (Module, Use2 fake_no_use2)))
+      module_infos |> List.iter (fun ii -> tag ii (Entity (Module, Use2 fake_no_use2)))
     );
     V.kmodule_expr = (fun (k, _bigf) mod_expr ->
       (match mod_expr with
@@ -231,7 +231,7 @@ let visit_program
           (match () with
           | _ when s = "ref" -> tag info UseOfRef
           | _ when Hashtbl.mem h_builtin_modules module_name ->
-              module_infos +> List.iter (fun ii -> tag ii BuiltinCommentColor);
+              module_infos |> List.iter (fun ii -> tag ii BuiltinCommentColor);
               tag info Builtin;
           | _ ->
               tag info (Entity (Function, (Use2 fake_no_use2)));
@@ -247,7 +247,7 @@ let visit_program
           tag tok_with (KeywordExn);
           k (Try (try_tok, e, tok_with, []));
           Common.save_excursion in_try_with true (fun () ->
-            match_cases +> Ast.unpipe +> List.iter (fun match_case ->
+            match_cases |> Ast.unpipe |> List.iter (fun match_case ->
               bigf (MatchCase match_case)
             )
           )
@@ -318,7 +318,7 @@ let visit_program
           (* todo: ty_params *)
           (match type_kind with
           | TyAlgebric xs ->
-              xs +> Ast.unpipe +> List.iter (fun (name, _args) ->
+              xs |> Ast.unpipe |> List.iter (fun (name, _args) ->
                 let info = Ast.info_of_name name in
                 tag info (Entity (Constructor, Def2 fake_no_def2))
               );
@@ -537,7 +537,7 @@ let visit_program
     | _x::xs ->
         aux_toks xs
   in
-  let toks' = toks +> Common.exclude (function
+  let toks' = toks |> Common.exclude (function
     | T.TCommentSpace _ -> true
     | _ -> false
   )
@@ -549,7 +549,7 @@ let visit_program
   (* -------------------------------------------------------------------- *)
 
   if not disable_token_phase2 then
-   toks +> List.iter (fun tok -> 
+   toks |> List.iter (fun tok -> 
     match tok with
     | T.TComment ii ->
         if not (Hashtbl.mem already_tagged ii)

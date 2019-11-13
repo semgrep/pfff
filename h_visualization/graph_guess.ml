@@ -69,7 +69,7 @@ let to_gdf g ~str_of_node ~output =
 
     (* check that no ambiguity? *)
     pr (spf "nodedef> name, dir1 varchar(200), dir2 varchar(200), dir varchar(200)");
-    nodes +> List.iter (fun n ->
+    nodes |> List.iter (fun n ->
       let (dir1, dir2, dir) = dirs_of_n n in
       (* don't add extra space for attributes, otherwise no match when
        * use ==
@@ -77,9 +77,9 @@ let to_gdf g ~str_of_node ~output =
       pr (spf "%s,%s,%s,%s" (node_name_of_n n) dir1 dir2 dir);
     );
     pr (spf "edgedef> node1,node2,directed");
-    nodes +> List.iter (fun n1 ->
+    nodes |> List.iter (fun n1 ->
       let succ = G.succ n1 g in
-      succ +> List.iter (fun n2 ->
+      succ |> List.iter (fun n2 ->
         pr (spf "%s,%s,true" (node_name_of_n n1) (node_name_of_n n2));
       )
     );

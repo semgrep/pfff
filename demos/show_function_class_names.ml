@@ -16,13 +16,13 @@ let pr_class_def class_def =
 let show_function_calls file =
   let ast = Parse_php.parse_program file in
 
-    ast +> List.iter (fun toplevel ->
+    ast |> List.iter (fun toplevel ->
       match toplevel with
       | FuncDef func_def ->
         pr_func_def func_def
       | ClassDef class_def ->
         pr_class_def class_def;
-        (unbrace class_def.c_body) +> List.iter (fun class_stmt ->
+        (unbrace class_def.c_body) |> List.iter (fun class_stmt ->
           match class_stmt with
             | Method func_def->
               pr_func_def func_def

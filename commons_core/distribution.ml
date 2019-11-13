@@ -107,7 +107,7 @@ let master ?(timeout=60) ~freduce:reduce_ex acc xs =
   (*e: debug master *)
   (*s: killing_workers helper *)
   let killing_workers xs = 
-    xs +> List.iter (fun i -> Mpi.send StopWorker i notag Mpi.comm_world)
+    xs |> List.iter (fun i -> Mpi.send StopWorker i notag Mpi.comm_world)
   (*e: killing_workers helper *)
   in
 
@@ -281,7 +281,7 @@ let mpi_adjust_argv argvold =
       (* the master get the full list of arguments, but also some 
        * extra stuff that we must filter *)
       let xs = Array.to_list argvold in
-      let xs = xs +> Common.take_until (fun s -> s = "-p4pg") in
+      let xs = xs |> Common.take_until (fun s -> s = "-p4pg") in
       (* send good argv to workers *)
       for i = 1 to numworkers do
         Mpi.send (Argv xs) i notag Mpi.comm_world;

@@ -198,7 +198,7 @@ let ast_php_entity_in_file ~check_dupes (s, kind) g file =
 
   let ast2 = Parse_php.parse_program file in
   let entities =
-    ast2 +> Common.map_filter (function
+    ast2 |> Common.map_filter (function
     | Ast.StmtList _ -> None
     | Ast.FuncDef def ->
         Some ((Ast.str_of_ident def.Ast.f_name, E.Function), Ast.FunctionE def)
@@ -217,7 +217,7 @@ let ast_php_entity_in_file ~check_dupes (s, kind) g file =
     )
   in
   (* cache all those entities. todo: use marshalled form? for GC? *)
-  entities +> List.iter (fun ((s, kind), def) -> 
+  entities |> List.iter (fun ((s, kind), def) -> 
     (* This is expensive so we do it only if one really wants
      * the check_dupe checks (like in our unit tests). Most of 
      * the time you don't need this check as building the codegraph

@@ -15,7 +15,7 @@ let test_tokens_ml file =
   Flag.exn_when_lexical_error := true;
 
   let toks = Parse_ml.tokens file in
-  toks +> List.iter (fun x -> pr2_gen x);
+  toks |> List.iter (fun x -> pr2_gen x);
   ()
 
 let test_parse_ml_or_mli xs =
@@ -27,7 +27,7 @@ let test_parse_ml_or_mli xs =
   in
   let stat_list = ref [] in
 
-  fullxs +> Console.progress (fun k -> List.iter (fun file -> 
+  fullxs |> Console.progress (fun k -> List.iter (fun file -> 
     k();
 
     let (_xs, stat) = 
@@ -78,7 +78,7 @@ let refactor_grammar subst_file file =
   populate_hash xs;
 
   let ys = Common.cat file in
-  ys +> List.iter (fun l ->
+  ys |> List.iter (fun l ->
     let s = Common2.global_replace_regexp "\\([a-zA-Z_][A-Za-z_0-9]*\\)" (fun s ->
       try 
         Hashtbl.find h s

@@ -42,7 +42,7 @@ module Semantic = Parser_cpp_mly_helper
 type toplevels_and_tokens = (Ast.toplevel * Parser_cpp.token list) list
 
 let program_of_program2 xs = 
-  xs +> List.map fst
+  xs |> List.map fst
 
 (*****************************************************************************)
 (* Wrappers *)
@@ -60,7 +60,7 @@ let error_msg_tok tok =
 (* Stats on what was passed/commentized  *)
 (*****************************************************************************)
 
-let commentized xs = xs +> Common.map_filter (function
+let commentized xs = xs |> Common.map_filter (function
   | T.TComment_Pp (cppkind, ii) -> 
       if !Flag_cpp.filter_classic_passed
       then 
@@ -91,7 +91,7 @@ let commentized xs = xs +> Common.map_filter (function
 let count_lines_commentized xs = 
   let line = ref (-1) in
   let count = ref 0 in
-  commentized xs +> List.iter (function
+  commentized xs |> List.iter (function
     | PI.OriginTok pinfo 
     | PI.ExpandedTok (_,pinfo,_) -> 
         let newline = pinfo.PI.line in
@@ -127,7 +127,7 @@ let tokens2 file =
     let rec tokens_aux () = 
       let tok = Lexer.token lexbuf in
       (* fill in the line and col information *)
-      let tok = tok +> TH.visitor_info_of_tok (fun ii -> 
+      let tok = tok |> TH.visitor_info_of_tok (fun ii -> 
         { ii with PI.token=
           (* could assert pinfo.filename = file ? *)
           match ii.PI.token with
@@ -158,7 +158,7 @@ let tokens a =
 (*****************************************************************************)
 
 let rec multi_grouped_list xs = 
-  xs +> List.map multi_grouped
+  xs |> List.map multi_grouped
 
 and multi_grouped = function
   | Token_views_cpp.Braces (tok1, xs, (Some tok2)) ->
@@ -182,11 +182,11 @@ and multi_grouped_list_comma xs =
   | [] ->
       if null acc
       then []
-      else [Left (acc +> List.rev +> multi_grouped_list)]
+      else [Left (acc |> List.rev |> multi_grouped_list)]
   | (x::xs) ->
       (match x with
       | Token_views_cpp.Tok tok when PI.str_of_info (tokext tok) = "," ->
-          let before = acc +> List.rev +> multi_grouped_list in
+          let before = acc |> List.rev |> multi_grouped_list in
           if null before
           then aux [] xs
           else (Left before)::(Right (tokext tok))::aux [] xs
@@ -207,11 +207,11 @@ let parse_fuzzy file =
   Common.save_excursion Flag_parsing.sgrep_mode true (fun () ->
   let toks_orig = tokens file in
   let toks = 
-    toks_orig +> Common.exclude (fun x ->
+    toks_orig |> Common.exclude (fun x ->
       Token_helpers_cpp.is_comment x || Token_helpers_cpp.is_eof x
     )
   in
-  let extended = toks +> List.map Token_views_cpp.mk_token_extended in
+  let extended = toks |> List.map Token_views_cpp.mk_token_extended in
   Parsing_hacks_cpp.find_template_inf_sup extended;
   let groups = Token_views_cpp.mk_multi extended in
   let trees = multi_grouped_list groups in
@@ -258,7 +258,7 @@ let add_defs file =
                    file);
   pr2 (spf "Using %s macro file" file);
   let xs = extract_macros file in
-  xs +> List.iter (fun (k, v) -> Hashtbl.add _defs k v)
+  xs |> List.iter (fun (k, v) -> Hashtbl.add _defs k v)
 
 let init_defs file =     
   Hashtbl.clear _defs;
@@ -301,7 +301,7 @@ let rec lexer_function tr = fun lexbuf ->
 
 (* was a define ? *)
 let passed_a_define tr =
-  let xs = tr.PI.passed +> List.rev +> Common.exclude TH.is_comment in
+  let xs = tr.PI.passed |> List.rev |> Common.exclude TH.is_comment in
   if List.length xs >= 2 
    then 
       (match Common2.head_middle_tail xs with
@@ -389,11 +389,11 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
 
           let pbline =
             tr.PI.passed
-            +> List.filter (is_same_line_or_close line_error)
-            +> List.filter TH.is_ident_like
+            |> List.filter (is_same_line_or_close line_error)
+            |> List.filter TH.is_ident_like
           in
           let error_info =
-            (pbline +> List.map (fun tok->PI.str_of_info (TH.info_of_tok tok))),
+            (pbline |> List.map (fun tok->PI.str_of_info (TH.info_of_tok tok))),
             line_error 
           in
           stat.Stat.problematic_lines <-

@@ -38,7 +38,7 @@ type org = org_line list
 
 let parse file =
   let xs = Common.cat file in
-  xs +> List.map (fun s ->
+  xs |> List.map (fun s ->
     let s = s ^ "\n" in
     match () with
     | _ when s =~ "^\\([*]+\\)" ->
@@ -56,7 +56,7 @@ let parse file =
 (*****************************************************************************)
 
 let highlight org =
-  org +> Common.index_list_1 +> List.map (fun (org, line) ->
+  org |> Common.index_list_1 |> List.map (fun (org, line) ->
     let filepos = { Common2.l = line; c = 0; } in
     match org with
     | Comment s -> 
@@ -71,7 +71,7 @@ let highlight org =
           | _ -> HC.Normal
           )
         in
-        s, Some categ , filepos
+        s, Some categ, filepos
     | Header (int, s) ->
         let categ = 
           (match int with

@@ -209,10 +209,10 @@ let analyze_backward_deps graph_file =
   pr2 (spf "total backward deps = %d" (List.length edges));
   let xxs = Common.group_by_mapped_key (fun (_n1, n2) -> n2) edges in
   pr2 (spf "#dst =%d" (List.length xxs));
-  xxs +> List.map (fun (n, xs) -> (n, xs), List.length xs)
-    +> Common.sort_by_val_highfirst
-    +> Common.take_safe 100
-    +> List.iter (fun ((n, _xs), cnt) ->
+  xxs |> List.map (fun (n, xs) -> (n, xs), List.length xs)
+    |> Common.sort_by_val_highfirst
+    |> Common.take_safe 100
+    |> List.iter (fun ((n, _xs), cnt) ->
         let file = GC.file_of_node n g in
          pr2 (spf "%-30s = %d (file = %s)" (GC.string_of_node n) cnt
                 file)
@@ -256,7 +256,7 @@ let test_thrift_alive graph_file =
       if v > 0 then begin
         pr2 (spf "%s is USED in flib/" s);
         let xs = DM.explain_cell_list_use_edges (kflib, j) dm gopti in
-        xs +> Common.take_safe 5 +> List.iter (fun (n1, n2) ->
+        xs |> Common.take_safe 5 |> List.iter (fun (n1, n2) ->
           pr2 (spf "    %s --> %s" 
                  (GC.string_of_node n1) (GC.string_of_node n2))
         )
@@ -272,7 +272,7 @@ let test_thrift_alive graph_file =
 (* quite similar to analyze_backward_deps *)
 let test_adhoc_deps graph_file =
   let g = GC.load graph_file in
-  g +> GC.iter_use_edges (fun n1 n2 ->
+  g |> GC.iter_use_edges (fun n1 n2 ->
     let file = GC.file_of_node n2 g in
     if file =~ ".*flib/intern/thrift/lib"
     then begin
@@ -291,7 +291,7 @@ let test_layering graph_file =
   pr2 (spf "#scc = %d" (Array.length scc));
   let htopdown = GC.bottom_up_numbering g in
   pr2 (spf "computed numbering = %d" (Hashtbl.length htopdown));
-  let xs = htopdown +> Common.hash_to_list +> List.map snd in
+  let xs = htopdown |> Common.hash_to_list |> List.map snd in
   let min = Common2.minimum xs in
   assert(min = 0);
   let max = Common2.maximum xs in
@@ -301,8 +301,8 @@ let test_layering graph_file =
   pr2 (spf "ranks in %s" file);
   Common.with_open_outfile file (fun (pr, _chan) ->
     let pr s = pr (s ^ "\n") in
-    htopdown +> Common.hash_to_list +> Common.sort_by_val_lowfirst
-    +> List.iter (fun (node, v) -> 
+    htopdown |> Common.hash_to_list |> Common.sort_by_val_lowfirst
+    |> List.iter (fun (node, v) -> 
       pr (spf "%s: %d" (GC.string_of_node node) v)
     )
   );
@@ -317,12 +317,12 @@ let test_xta graph_file =
   let g = Graph_code.load graph_file in
   let dag = Graph_code_class_analysis.class_hierarchy g in
   let hdepth = Graphe.depth_nodes dag in
-  hdepth +> Hashtbl.iter (fun k v ->
+  hdepth |> Hashtbl.iter (fun k v ->
     pr2 (spf "%s = %d" (Graph_code.string_of_node k) v);
   );
   let dag = Graph_code_class_analysis.class_hierarchy g in
   let htoplevels = Graph_code_class_analysis.toplevel_methods g dag in
-  htoplevels +> Common2.hkeys +> List.iter (fun k ->
+  htoplevels |> Common2.hkeys |> List.iter (fun k ->
       let xs = Hashtbl.find_all htoplevels k in
       pr2 (spf "%s -> %d (e.g. %s)" 
                k (List.length xs) (Graph_code.string_of_node (List.hd xs)));
@@ -331,11 +331,11 @@ let test_xta graph_file =
 
 let test_dotfile_of_deps dir =
   let deps = Common.cmd_to_list (spf "find %s -name \"*.deps\" " dir) in
-  deps +> List.iter (fun file ->
+  deps |> List.iter (fun file ->
     let (_d,lib,e) = Common2.dbe_of_filename file in
     if e = "deps" then begin
       let deps = Common.cat file in
-      deps +> List.iter (fun lib2 ->
+      deps |> List.iter (fun lib2 ->
         pr (spf "\"%s\" -> \"%s\"" lib lib2)
       )
     end

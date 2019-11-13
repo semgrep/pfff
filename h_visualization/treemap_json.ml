@@ -41,9 +41,9 @@ let rec treemap_of_json j =
       "label", J.String s;
       "children", J.Array xs;
     ] ->
-      let children = xs +> List.map treemap_of_json in
+      let children = xs |> List.map treemap_of_json in
 
-      let sizes = children +> List.map Treemap.size_of_treemap_node in
+      let sizes = children |> List.map Treemap.size_of_treemap_node in
       let size = Common2.sum sizes in
 
       let rect = {

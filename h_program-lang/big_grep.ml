@@ -103,7 +103,7 @@ let build_index2 ?(case_sensitive=false) entities =
 
   let current = ref 0 in
 
-  entities +> List.iter (fun e ->
+  entities |> List.iter (fun e ->
     (* Use fullname ? The caller, that is for instance
      * files_and_dirs_and_sorted_entities_for_completion
      * should have done the job of putting the fullename in e_name.

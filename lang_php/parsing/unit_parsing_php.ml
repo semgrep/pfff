@@ -37,7 +37,7 @@ let unittest =
     "lexing regular code" >:: (fun () ->
       let toks = Parse_php.tokens_of_string "echo 1+2;" in
       assert_bool "it should have a Echo token" 
-        (toks +> List.exists (function 
+        (toks |> List.exists (function 
           Parser_php.T_ECHO _ -> true | _ -> false));
     );
 
@@ -45,7 +45,7 @@ let unittest =
       let toks = Parse_php.tokens_of_string 
           "function foo() { echo __function__; }" in
       assert_bool "it should have a __FUNCTION__ token" 
-        (toks +> List.exists (function 
+        (toks |> List.exists (function 
           Parser_php.T_FUNC_C _ -> true | _ -> false));
     );
 
@@ -126,7 +126,7 @@ let unittest =
     "regression files" >:: (fun () ->
       let dir = Filename.concat Config_pfff.path "/tests/php/parsing" in
       let files = Common2.glob (spf "%s/*.php" dir) in
-      files +> List.iter (fun file ->
+      files |> List.iter (fun file ->
         try
           let _ = Parse_php.parse_program file in
           ()

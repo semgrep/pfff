@@ -63,7 +63,7 @@ let update_current_c_file env (enum, l, xs) =
     Loc.readable_filename_location_of_paren_opt 
       env.root env.current_clang_file (enum, l, xs) 
   in
-  file_opt +> Common.do_option (fun f ->
+  file_opt |> Common.do_option (fun f ->
     env.current_c_file := f;
     if not (Hashtbl.mem env.hfile f)
     then begin
@@ -98,7 +98,7 @@ let add_if_not_already_there env (enum, s, v) sexp =
 let rec process env ast =
   match ast with
   | Paren (TranslationUnitDecl, _l, _loc::xs) ->
-      xs +> List.iter (fun sexp -> dispatch_sexp env sexp)
+      xs |> List.iter (fun sexp -> dispatch_sexp env sexp)
   | _ -> failwith (spf "%s: not a TranslationDecl" env.current_clang_file)
 
 and dispatch_sexp env exp =
@@ -129,7 +129,7 @@ and decl env (enum, l, xs) =
   (match enum, xs with
   | FunctionDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::rest ->
       let variant = 
-        if rest +> List.exists (function 
+        if rest |> List.exists (function 
         | Paren (CompoundStmt, _, _) -> true
         | _ -> false
         )
@@ -152,7 +152,7 @@ and decl env (enum, l, xs) =
   | VarDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::rest ->
       let variant = 
         (* less: actually I think rest is just 'extern' so could use =*= *)
-        if rest +> List.exists (function
+        if rest |> List.exists (function
           | T (TLowerIdent "extern") -> true
           | _ -> false
         )
@@ -209,7 +209,7 @@ let uninclude ?(verbose=true) root files dst =
   
 
   (* step1: extract files info *)
-  files +> Console.progress ~show:verbose (fun k ->
+  files |> Console.progress ~show:verbose (fun k ->
     List.iter (fun file ->
       k();
       let ast = Parse_clang.parse file in
@@ -218,7 +218,7 @@ let uninclude ?(verbose=true) root files dst =
   );
 
   (* step2: generate clang2 files *)
-  env.hfile_data +> Common.hash_to_list +> List.iter (fun (file, xs) ->
+  env.hfile_data |> Common.hash_to_list |> List.iter (fun (file, xs) ->
     let file = spf "%s/%s.clang2" dst  file in
     pr2 (spf "generating %s" file);
     let dir = Filename.dirname file in

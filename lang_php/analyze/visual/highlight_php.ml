@@ -113,7 +113,7 @@ let highlight_funcall_simple ~tag ~hentities f args info =
          * the ContainDynamicCall of database_code then.
          *)
         let ii = Lib_parsing_php.ii_of_any (Argument x) in
-        ii +> List.iter (fun info -> tag info PointerCall);
+        ii |> List.iter (fun info -> tag info PointerCall);
   end;
   (match () with
   (* security: *)
@@ -133,12 +133,12 @@ let highlight_funcall_simple ~tag ~hentities f args info =
           );
 
           (* args by ref *)
-          ps +> List.iter (function
+          ps |> List.iter (function
           | E.TakeArgNByRef i ->
               (try
                 let a = List.nth args i in
                 let ii = Lib_parsing_php.ii_of_any (Argument a) in
-                ii +> List.iter (fun info -> tag info CallByRef)
+                ii |> List.iter (fun info -> tag info CallByRef)
               with _exn ->
                 pr2_once ("highlight_php: pb with TakeArgNByRef for " ^ f);
               )
@@ -185,7 +185,7 @@ let tag_class_name_reference ~tag qualif =
   | Id name -> tag_name ~tag name
   | _ ->
     let ii = Lib_parsing_php.ii_of_any (Expr qualif) in
-    ii +> List.iter (fun info -> tag info PointerCall)
+    ii |> List.iter (fun info -> tag info PointerCall)
 
 
 (*****************************************************************************)
@@ -310,13 +310,13 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
     V.kclass_def = (fun (k, _) def ->
       let info = Ast.info_of_ident def.c_name in
       tag info (Entity (Class, (Def2 fake_no_def2)));
-      def.c_extends +> Common.do_option (fun (_, name) ->
+      def.c_extends |> Common.do_option (fun (_, name) ->
         let name = name_of_class_name name in
         let info = Ast.info_of_name name in
         tag info (Entity (Class, (Use2 fake_no_use2)));
       );
-      def.c_implements +> Common.do_option (fun (_, xs) ->
-        xs +> Ast.uncomma +> List.iter (fun name ->
+      def.c_implements |> Common.do_option (fun (_, xs) ->
+        xs |> Ast.uncomma |> List.iter (fun name ->
           let name = name_of_class_name name in
           let info = Ast.info_of_name name in
           tag info (Entity (Class, (Use2 fake_no_use2)));
@@ -349,24 +349,24 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
         | XhpAttributesDecl _ -> k x
         | XhpChildrenDecl _ -> k x
         | XhpCategoriesDecl (_, decls, _) ->
-          decls +> Ast.uncomma +> List.iter (fun (_tag, ii) ->
+          decls |> Ast.uncomma |> List.iter (fun (_tag, ii) ->
             tag ii (Entity (Type, (Use2 fake_no_use2)))
           );
         )
       | Ast.ClassConstants (_, _, _, vars, _) ->
-        vars +> Ast.uncomma +> List.iter (fun (name, _opt) ->
+        vars |> Ast.uncomma |> List.iter (fun (name, _opt) ->
           let info = Ast.info_of_ident name in
           tag info (Entity (Constant, (Def2 NoUse)));
         );
         k x;
       | Ast.ClassVariables (_modifiers, _opt_ty, vars, _) ->
-        vars +> Ast.uncomma +> List.iter (fun (dname, _opt) ->
+        vars |> Ast.uncomma |> List.iter (fun (dname, _opt) ->
           let info = Ast.info_of_dname dname in
           tag info (Entity (Field, (Def2 fake_no_def2)));
         );
         k x
       | Ast.UseTrait (_, names, _rules_or_tok) ->
-         names +> Ast.uncomma +> List.iter (fun name ->
+         names |> Ast.uncomma |> List.iter (fun name ->
           let name = name_of_class_name name in
           let info = Ast.info_of_name name in
           tag info (Entity (Class, (Use2 fake_no_use2)));
@@ -382,7 +382,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
       k stmt;
       match stmt with
       | Globals ((_v1, v2, _v3)) ->
-        v2 +> Ast.uncomma +> List.iter (fun x ->
+        v2 |> Ast.uncomma |> List.iter (fun x ->
           match x  with
           | GlobalVar dname ->
             let info = Ast.info_of_dname dname in
@@ -393,7 +393,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
           | GlobalDollarExpr _ ->  ()
         );
       | StaticVars ((_v1, v2, _v3)) ->
-        v2 +> Ast.uncomma +> List.iter (fun svar ->
+        v2 |> Ast.uncomma |> List.iter (fun svar ->
           let (dname, _affect_opt) = svar in
           let info = Ast.info_of_dname dname in
           tag info (Local Def);
@@ -447,21 +447,21 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
         | Id callname ->
           let info = Ast.info_of_name callname in
           let f = Ast.str_of_name callname in
-          let args = args +> Ast.unparen +> Ast.uncomma in
+          let args = args |> Ast.unparen |> Ast.uncomma in
           highlight_funcall_simple ~tag ~hentities f args info;
         | ClassGet (_lval, _, Id name) ->
           let info = Ast.info_of_name name in
           tag info (StaticMethod (Use2 fake_no_use2));
         | ClassGet (lval, _, _var) ->
           let ii = Lib_parsing_php.ii_of_any (Expr lval) in
-          ii +> List.iter (fun info -> tag info PointerCall);
+          ii |> List.iter (fun info -> tag info PointerCall);
         | ObjGet(_lval, _tok, Id name) ->
           let info = Ast.info_of_name name in
           tag info (Entity (Method, (Use2 fake_no_use2)));
         | e ->
           (* function pointer call !!! put in big font *)
           let ii = Lib_parsing_php.ii_of_any (Expr e) in
-          ii +> List.iter (fun info -> tag info PointerCall);
+          ii |> List.iter (fun info -> tag info PointerCall);
         );
         k expr
 
@@ -539,7 +539,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
         | XhpAttrString (tok1, xs, tok2) ->
           tag tok1 String;
           tag tok2 String;
-          xs +> List.iter (function
+          xs |> List.iter (function
           | EncapsString (_s, ii) ->
             tag ii EmbededUrl
           | EncapsExpr (_, _, _) | EncapsDollarCurly (_, _, _)
@@ -612,7 +612,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)
   (* -------------------------------------------------------------------- *)
-  toks +> List.iter (fun tok ->
+  toks |> List.iter (fun tok ->
     match tok with
     | T.TNewline _ii | T.TSpaces _ii | T.EOF _ii -> ()
     (* less: could highlight certain words in the comment? *)
@@ -820,7 +820,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
   (* -------------------------------------------------------------------- *)
   (match ast with
   | NotParsedCorrectly iis::_ ->
-    iis +> List.iter (fun ii -> tag ii NotParsed)
+    iis |> List.iter (fun ii -> tag ii NotParsed)
   | _ -> ()
   );
   ()

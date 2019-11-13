@@ -54,13 +54,13 @@ let no_check_when_contain = [
 
 let contain_func_name_args_like any =
   let funcalls = Lib_parsing_php.get_funcalls_any any in
-  no_check_when_contain +> List.exists (fun danger_func -> 
+  no_check_when_contain |> List.exists (fun danger_func -> 
     List.mem danger_func funcalls
   )
 
 (* introduced in hh *)
 let is_var_args_function def =
-  def.f_params +> Ast.unparen +> List.exists (function
+  def.f_params |> Ast.unparen |> List.exists (function
   (* ... *)
   | Middle3 _ -> true
   | _ -> false
@@ -83,7 +83,7 @@ let check_args_vs_params (callname, all_args) (defname, all_params) =
     | x::xs, y::ys ->
         (match x with
         (* erling's idea of wrong keyword argument check *)
-        | Arg(Assign(IdVar(dn, _),_ , _expr)) ->
+        | Arg(Assign(IdVar(dn, _),_, _expr)) ->
             (match y with
             (* passing a keyword argument for a reference is bad *)
             | { p_ref = Some _; _ } ->
@@ -94,7 +94,7 @@ let check_args_vs_params (callname, all_args) (defname, all_params) =
             if not (Ast.str_of_dname dn =$= Ast.str_of_dname y.p_name)
             then
               let all_params_str = 
-                all_params +> List.map (fun p -> Ast.str_of_dname p.p_name) in
+                all_params |> List.map (fun p -> Ast.str_of_dname p.p_name) in
               let severity =
                 if List.mem (Ast.str_of_dname dn) all_params_str
                 then E.ReallyReallyBad
@@ -145,8 +145,8 @@ let visit_and_check_funcalls find_entity prog =
            then pr2_once "not checking functions with calls to func_num_args()"
            else 
              check_args_vs_params 
-               (callname,   args +> Ast.unparen +> Ast.uncomma)
-               (def.f_name, def.f_params +> Ast.unparen +> Ast.uncomma_dots)
+               (callname,   args |> Ast.unparen |> Ast.uncomma)
+               (def.f_name, def.f_params |> Ast.unparen |> Ast.uncomma_dots)
          | _ -> raise Impossible
          );
          k x

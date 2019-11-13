@@ -45,7 +45,7 @@ let parse_outline ?(outline_regexp=outline_default_regexp) file =
 
   (* just differentiate outline lines from regular lines *)
   let headers_or_not = 
-    xs +> List.map (fun s -> 
+    xs |> List.map (fun s -> 
       if s =~ outline_regexp
       then
         let (stars, line) = extract_outline_line ~outline_regexp s in
@@ -79,7 +79,7 @@ let parse_outline ?(outline_regexp=outline_default_regexp) file =
       | x::xs -> 
           let ((lvl, stars, title), before_first_children) = x in
           
-          let (children, rest) = xs +> Common2.span (fun x2 -> 
+          let (children, rest) = xs |> Common2.span (fun x2 -> 
             let ((lvl2, _, _), _) = x2 in
             lvl2 > lvl
           )
@@ -106,11 +106,11 @@ let write_outline outline file =
   Common.with_open_outfile file (fun (pr_no_nl, _chan) -> 
     let pr s = pr_no_nl (s ^ "\n") in
     
-    outline +> Common2.tree2_iter (fun node -> 
+    outline |> Common2.tree2_iter (fun node -> 
       if not (is_root_node node)
       then pr (node.stars ^ node.title);
 
-      node.before_first_children +> List.iter pr;
+      node.before_first_children |> List.iter pr;
     );
   )
 

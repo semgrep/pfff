@@ -389,7 +389,7 @@ let generate_builtins idlfile pr_hook =
      * 'type' => type of the constant
      * 'desc' => additional note about this constant's schema
      *)
-    consts +> List.iter (function 
+    consts |> List.iter (function 
     | J.Object (("name", J.String _name)::_) ->
 
       (* we don't really care about the value for static analysis purposes,
@@ -428,7 +428,7 @@ let generate_builtins idlfile pr_hook =
     *      )
     * )
     *)
-    funcs +> List.iter (function
+    funcs |> List.iter (function
     | J.Object (flds) ->
       (match List.assoc "name" flds, 
              List.assoc "args" flds,
@@ -440,7 +440,7 @@ let generate_builtins idlfile pr_hook =
         else begin
           let body_str = "" in
           let xs = List.map string_of_arg args in
-          let flags = flags +> List.map (function
+          let flags = flags |> List.map (function
             | J.String s -> s
             | _ -> failwith "wrong json format"
           )
@@ -495,7 +495,7 @@ let generate_builtins idlfile pr_hook =
      * 'note'  => additional note about this property's schema
      * )
      *)
-    classes +> List.iter (function
+    classes |> List.iter (function
     | J.Object (flds) ->
 
       (* todo: use parent, ifaces *)
@@ -509,7 +509,7 @@ let generate_builtins idlfile pr_hook =
           | ["HH"; name] -> name
           | _ -> failwith ("can't use namespaces other than HH: " ^ name) in
 
-        let flags = flags +> List.map (function
+        let flags = flags |> List.map (function
           | J.String s -> s
           | _ -> failwith "wrong json format"
         )
@@ -534,14 +534,14 @@ let generate_builtins idlfile pr_hook =
         pr_hook (spf "%sclass %s%s {" abstract_str name extends_str);
 
         (* quite similar to consts above *)
-        consts +> List.iter (function
+        consts |> List.iter (function
         | J.Object (("name", J.String name)::_) ->
           pr_hook (spf "  const %s = 0;" name)
         | _ -> failwith "wrong json format"
         );
 
         (* quite similar to funcs above *)
-        funcs +> List.iter (function
+        funcs |> List.iter (function
         | J.Object (flds) ->
           (match List.assoc "name" flds, 
                  List.assoc "args" flds,
@@ -558,7 +558,7 @@ let generate_builtins idlfile pr_hook =
               else ""
             in
             let xs = List.map string_of_arg args in
-            let flags = flags +> List.map (function
+            let flags = flags |> List.map (function
               | J.String s -> s
               | _ -> failwith "wrong json format"
             )
@@ -612,13 +612,13 @@ let generate_php_stdlib ~src (* ~phpmanual_dir *) ~dest =
    *)
 
   let files = Common.files_of_dir_or_files_no_vcs_nofilter [src] in
-  let files = files +> List.filter (fun f -> f =~ ".*\\.idl\\.json$") in
+  let files = files |> List.filter (fun f -> f =~ ".*\\.idl\\.json$") in
 
 (*  if not (Common2.command2_y_or_no("rm -rf " ^ dest))
   then failwith "ok we stop";
 *)
   Common.command2("mkdir -p " ^ dest);
-  files +> List.iter (fun file -> 
+  files |> List.iter (fun file -> 
     pr2 (spf "processing: %s" file);
       let (_d,b,_e) = Common2.dbe_of_filename file in
       if (* parse error on PHP_INT_MAX, which is why it's processed

@@ -50,7 +50,7 @@ let gensym s =
 (* Conversion *)
 (*****************************************************************************)
 let rec program xs =
-  xs +> List.map toplevel +> List.flatten
+  xs |> List.map toplevel |> List.flatten
   
 and toplevel t = 
   match t with
@@ -66,7 +66,7 @@ and toplevel t =
   | StructDef def -> [M.StructDef (struct_def def)]
   | TypeDef (name, _type) -> error "typedefs not supported" (snd name)
   | EnumDef (_name, xs) ->
-       xs +> List.map (fun (name, eopt) ->
+       xs |> List.map (fun (name, eopt) ->
          (match eopt with
          | Some (Int _) -> ()
          | None -> ()
@@ -112,7 +112,7 @@ and type_ x =
   | TTypeName name -> error "typedef not supported, inline" (snd name)
 
 and function_type (t, params) =
-  (type_ t, params +> List.map parameter)
+  (type_ t, params |> List.map parameter)
 
 and parameter p =
   match p.p_name with
@@ -124,7 +124,7 @@ and struct_def def =
   | Union -> error "union not supported" (snd def.s_name)
   | Struct ->
       { M.s_name = def.s_name;
-        s_flds = def.s_flds +> List.map field_def
+        s_flds = def.s_flds |> List.map field_def
       }
 
 and field_def def = 
@@ -141,7 +141,7 @@ and func_def def =
     f_body = stmts def.f_body;
   }
 
-and stmts xs = xs +> List.map stmt +> List.flatten
+and stmts xs = xs |> List.map stmt |> List.flatten
 
 and stmt st =
   match st with
@@ -166,7 +166,7 @@ and stmt st =
   | Return (Some e) -> [M.Return (expr_for_var e)]
   | Return None -> error "empty return not supported" (failwith "noTok")
   | Label (name, _) | Goto name -> error "label not supported" (snd name)
-  | Vars xs -> xs +> List.map var_decl +> List.flatten
+  | Vars xs -> xs |> List.map var_decl |> List.flatten
   | Asm xs -> error_any "asm not supported" (Expr (List.hd xs))
 
 
@@ -242,12 +242,12 @@ and expr e =
 
   | Call (Id ("builtin", tok), xs) -> 
       let name = ("builtin", tok) in
-      M.BuiltinCall (name, xs +> List.map expr_for_var)
+      M.BuiltinCall (name, xs |> List.map expr_for_var)
 
   | Call (Id name, xs) -> 
-      M.StaticCall (name, xs +> List.map expr_for_var)
+      M.StaticCall (name, xs |> List.map expr_for_var)
   | Call(Unary(Id(name), (DeRef, _)), xs) ->
-      M.DynamicCall (name, xs +> List.map expr_for_var)
+      M.DynamicCall (name, xs |> List.map expr_for_var)
 
   (* should be handled in caller in expr_for_instr *)
   | Assign _

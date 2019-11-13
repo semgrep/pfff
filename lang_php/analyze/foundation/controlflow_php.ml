@@ -172,7 +172,7 @@ let short_string_of_node node =
 (*****************************************************************************)
 
 let find_node f cfg =
-  cfg#nodes#tolist +> Common.find_some (fun (nodei, node) ->
+  cfg#nodes#tolist |> Common.find_some (fun (nodei, node) ->
     if f node then Some nodei else None
   )
 
@@ -191,7 +191,7 @@ let (mk_node: node_kind -> node) = fun _nk ->
 (*s: function display_flow *)
 (* using internally graphviz dot and ghostview on X11 *)
 let (display_flow: flow -> unit) = fun flow ->
-  flow +> Ograph_extended.print_ograph_mutable_generic  
+  flow |> Ograph_extended.print_ograph_mutable_generic  
     ~s_of_node:(fun (_nodei, node) -> 
       short_string_of_node_kind node.n, None, None
     )

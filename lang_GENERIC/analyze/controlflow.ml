@@ -13,7 +13,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common 
 
 open Ast_generic
 
@@ -168,7 +167,7 @@ let short_string_of_node node =
 (*****************************************************************************)
 
 let find_node f cfg =
-  cfg#nodes#tolist +> Common.find_some (fun (nodei, node) ->
+  cfg#nodes#tolist |> Common.find_some (fun (nodei, node) ->
     if f node then Some nodei else None
   )
 

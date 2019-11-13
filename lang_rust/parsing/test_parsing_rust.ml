@@ -14,7 +14,7 @@ let test_tokens_rust file =
   Flag.verbose_parsing := true;
 
   let toks = Parse_rust.tokens file in
-  toks +> List.iter (fun x -> pr2_gen x);
+  toks |> List.iter (fun x -> pr2_gen x);
   ()
 
 let test_parse_rust xs =
@@ -22,7 +22,7 @@ let test_parse_rust xs =
   let fullxs = Lib_parsing_rust.find_source_files_of_dir_or_files xs in
   let stat_list = ref [] in
 
-  fullxs +> List.iter (fun file -> 
+  fullxs |> List.iter (fun file -> 
     pr2 ("PARSING: " ^ file);
     Flag.verbose_lexing := true;
     let (_xs, stat) = Parse_rust.parse file in

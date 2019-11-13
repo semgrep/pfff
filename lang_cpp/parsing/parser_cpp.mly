@@ -913,7 +913,7 @@ cv_qualif:
  *)*/
 
 declarator: 
- | pointer direct_d { (fst $2, fun x -> x +> $1 +> (snd $2)  ) }
+ | pointer direct_d { (fst $2, fun x -> x |> $1 |> (snd $2)  ) }
  | direct_d         { $1  }
 
 /*(* so must do  int * const p; if the pointer is constant, not the pointee *)*/
@@ -962,7 +962,7 @@ declarator_id:
 abstract_declarator: 
  | pointer                            { $1 }
  |         direct_abstract_declarator { $1 }
- | pointer direct_abstract_declarator { fun x -> x +> $2 +> $1 }
+ | pointer direct_abstract_declarator { fun x -> x |> $2 |> $1 }
 
 direct_abstract_declarator: 
  | TOPar abstract_declarator TCPar /*(* forunparser: old: $2 *)*/
@@ -1264,7 +1264,7 @@ field_declaration:
      }
  | decl_spec member_declarator_list TPtVirg 
      { let (t_ret, sto, _inline) = type_and_storage_from_decl $1 in
-       ($2 +> (List.map (fun (f, iivirg) -> f t_ret sto, iivirg)), $3)
+       ($2 |> (List.map (fun (f, iivirg) -> f t_ret sto, iivirg)), $3)
      }
 
 /*(* was called struct_declarator before *)*/
@@ -1362,7 +1362,7 @@ simple_declaration:
  | decl_spec init_declarator_list TPtVirg 
      { let (t_ret, sto, _inline) = type_and_storage_from_decl $1 in
        DeclList (
-         ($2 +> List.map (fun (((name, f), iniopt), iivirg) ->
+         ($2 |> List.map (fun (((name, f), iniopt), iivirg) ->
            (* old: if fst (unwrap storage)=StoTypedef then LP.add_typedef s; *)
            { v_namei = Some (name, iniopt);
              v_type = f t_ret; v_storage = sto

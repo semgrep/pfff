@@ -92,13 +92,13 @@ let assert_final_value_at_checkpoint var file v =
 let assert_graph file xs = 
   let g = callgraph_generation file in
   let _nb_nodes = List.length xs in
-  xs +> List.iter (fun (s, expected) ->
+  xs |> List.iter (fun (s, expected) ->
     try
       let n = CG.node_of_string s in
       let actual_child = 
         Map_.find n g 
-        +> Set_.elements 
-        +> List.map CG.string_of_node 
+        |> Set_.elements 
+        |> List.map CG.string_of_node 
       in
       assert_equal
         ~msg:"it should have the expected callees"
@@ -305,7 +305,7 @@ function bar() { foo(); }
 " in
       (* note: I don't use assert_graph for teaching purpose here *)
       let g = callgraph_generation file in
-      let xs = Map_.find (CG.Function "bar") g +> Set_.elements in
+      let xs = Map_.find (CG.Function "bar") g |> Set_.elements in
       assert_equal
         ~msg:"it should handle simple direct calls:"
         [CG.Function "foo"]

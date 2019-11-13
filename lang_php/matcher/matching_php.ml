@@ -82,7 +82,7 @@ module XMATCH = struct
          *)
         let xs = m1 tin in
         (* try m2 on each possible returned bindings *)
-        let xxs = xs +> List.map (fun ((a,b), binding) -> 
+        let xxs = xs |> List.map (fun ((a,b), binding) -> 
           m2 (a, b) binding
         ) in
         List.flatten xxs
@@ -193,21 +193,21 @@ type ('a, 'b) matcher = 'a -> 'b ->
 let empty_environment () = []
 
 let (extract_bindings: 'a XMATCH.tout -> MV.metavars_binding list) = fun tout ->
-  tout +> List.map (fun (_term, env) -> env)
+  tout |> List.map (fun (_term, env) -> env)
   
 (* todo: should maybe have a match_any_any *)
 let match_e_e pattern e = 
   let env = empty_environment () in
-  MATCH.m_expr pattern e env +> extract_bindings
+  MATCH.m_expr pattern e env |> extract_bindings
 
 let match_st_st pattern e = 
   let env = empty_environment () in
-  MATCH.m_stmt pattern e env +> extract_bindings
+  MATCH.m_stmt pattern e env |> extract_bindings
 
 let match_xhp_xhp pattern e = 
   let env = empty_environment () in
-  MATCH.m_xhp_html pattern e env +> extract_bindings
+  MATCH.m_xhp_html pattern e env |> extract_bindings
 
 let match_hint_hint pattern e =
   let env = empty_environment () in
-  MATCH.m_hint_type pattern e env +> extract_bindings
+  MATCH.m_hint_type pattern e env |> extract_bindings

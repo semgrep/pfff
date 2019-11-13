@@ -59,7 +59,7 @@ let string_of_class_method (c, m) =
  * analyze.
  *)
 let protected_to_private_candidates g =
-  g +> G.iter_nodes (fun node ->
+  g |> G.iter_nodes (fun node ->
     match node with
     | (_s, E.Field) ->
 
@@ -88,7 +88,7 @@ let protected_to_private_candidates g =
             if null users
             then pr2 (spf "DEAD protected field: %s" (G.string_of_node node))
             else 
-              if users +> List.for_all (fun (s, _kind) -> 
+              if users |> List.for_all (fun (s, _kind) -> 
                 s =~ (spf "^%s\\." classname)
               )
               then pr2 (spf "Protected to private candidate: %s"
@@ -108,19 +108,19 @@ let protected_to_private_candidates g =
 let class_hierarchy g =
   let dag = Graphe.create () in
   
-  g +> G.iter_nodes (fun n1 ->
+  g |> G.iter_nodes (fun n1 ->
     (match snd n1 with
     | E.Class ->
-        dag +> Graphe.add_vertex_if_not_present n1;
+        dag |> Graphe.add_vertex_if_not_present n1;
 
         (* explore if its extends/implements/uses another class/interf/trait *)
-        let succ = g +> G.succ n1 G.Use in
-        succ +> List.iter (fun n2 ->
+        let succ = g |> G.succ n1 G.Use in
+        succ |> List.iter (fun n2 ->
           (match snd n2 with
           | E.Class ->
-              dag +> Graphe.add_vertex_if_not_present n2;
+              dag |> Graphe.add_vertex_if_not_present n2;
               (* from parent to children *)
-              dag +> Graphe.add_edge n2 n1
+              dag |> Graphe.add_edge n2 n1
           | _ -> 
               failwith (spf "class_hierarchy: impossible edge %s --> %s"
                           (G.string_of_node n1) (G.string_of_node n2))
@@ -142,7 +142,7 @@ let toplevel_methods g dag =
   let rec aux env n = 
 
     let methods_here =
-      G.children n g +> Common.map_filter (fun n2 ->
+      G.children n g |> Common.map_filter (fun n2 ->
           match snd n2 with
           | E.Method -> 
               let (_, method_str) = class_method_of_string (fst n2) in
@@ -151,7 +151,7 @@ let toplevel_methods g dag =
           | _ -> None
       )
     in
-    methods_here +> List.iter (fun (s, priv, n2) ->
+    methods_here |> List.iter (fun (s, priv, n2) ->
       if Set.mem s env
       then ()
       else
@@ -168,11 +168,11 @@ let toplevel_methods g dag =
       Graphe.succ n dag in
     (* todo? what if public overriding a private? *)
     let env = 
-      methods_here +> List.fold_left (fun acc (s, _p, _) ->Set.add s acc) env in
+      methods_here |> List.fold_left (fun acc (s, _p, _) ->Set.add s acc) env in
 
-    children_classes +> List.iter (aux env)
+    children_classes |> List.iter (aux env)
   in
-  start +> List.iter (aux env);
+  start |> List.iter (aux env);
   htoplevels
 
 
@@ -191,11 +191,11 @@ let dispatched_methods2 g dag node =
     then Common.push node res
     );
     let children = Graphe.succ (current_class, class_kind) dag in
-    children +> List.iter aux
+    children |> List.iter aux
   in
   let node = (c, E.Class) in
   (if G.has_node node g 
-  then Graphe.succ node dag +> List.iter aux
+  then Graphe.succ node dag |> List.iter aux
   else failwith (spf "could not find class %s" c)
   );
 

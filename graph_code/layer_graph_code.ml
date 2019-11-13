@@ -50,8 +50,8 @@ let gen_rank_heatmap_layer g hentity_to_rank  ~output =
 
   let group_by_file =
     hentity_to_rank 
-    +> Common.hash_to_list
-    +> Common.map_filter (fun (node, v) ->
+    |> Common.hash_to_list
+    |> Common.map_filter (fun (node, v) ->
       try 
         let file = G.file_of_node node g in
         (* we want to make sure this node has a line, some
@@ -62,23 +62,23 @@ let gen_rank_heatmap_layer g hentity_to_rank  ~output =
         Some (file, (node, v))
       with Not_found -> None
     ) 
-    +> Common.group_assoc_bykey_eff
+    |> Common.group_assoc_bykey_eff
   in
-  let xs = hentity_to_rank +> Common.hash_to_list +> List.map snd in
+  let xs = hentity_to_rank |> Common.hash_to_list |> List.map snd in
   let max_total = Common2.maximum xs in
 
   let layer = { Layer_code.
     title = spf "Graph code rank (%s)" (Filename.basename output);
     description = "Associate a rank to each entity according to its depth
 in the Use graph";
-    files = group_by_file +> List.map (fun (file, nodes_and_rank) ->
+    files = group_by_file |> List.map (fun (file, nodes_and_rank) ->
       let max_file = 
-        nodes_and_rank +> List.map snd +> Common2.maximum
+        nodes_and_rank |> List.map snd |> Common2.maximum
       in
 
       file, 
       { Layer_code.
-        micro_level = nodes_and_rank +> List.map (fun (n, v) ->
+        micro_level = nodes_and_rank |> List.map (fun (n, v) ->
           let info = G.nodeinfo n g in
           let line = info.Graph_code.pos.Parse_info.line in
           line, kind_of_rank v ~max_total
@@ -116,15 +116,15 @@ let gen_statistics_layer ~root stats ~output =
       
   let infos =
     (!(stats.G.unresolved_calls) 
-     +> List.map (fun x -> x, "unresolved calls")) @
+     |> List.map (fun x -> x, "unresolved calls")) @
     (!(stats.G.unresolved_class_access) 
-     +> List.map (fun x -> x, "unresolved class access")) @
+     |> List.map (fun x -> x, "unresolved class access")) @
     (!(stats.G.field_access) 
-     +> List.map (fun (x, b) -> x, pre b "field access")) @
+     |> List.map (fun (x, b) -> x, pre b "field access")) @
     (!(stats.G.method_calls) 
-     +> List.map (fun (x, b) -> x, pre b "method calls")) @
+     |> List.map (fun (x, b) -> x, pre b "method calls")) @
     (!(stats.G.lookup_fail) 
-     +> List.map (fun (x, (_str, _kind)) -> x, "lookup fail")) @
+     |> List.map (fun (x, (_str, _kind)) -> x, "lookup fail")) @
 
       []
   in

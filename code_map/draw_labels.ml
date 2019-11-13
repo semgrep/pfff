@@ -15,7 +15,6 @@
  * license.txt for more details.
  *)
 (*e: Facebook copyright *)
-open Common
 open Common2.ArithFloatInfix
 
 open Figures (* for the fields *)
@@ -139,7 +138,7 @@ and try_draw_label ~font_size_orig ~color ~alpha ~cr ~rect txt =
     not rect.T.tr_is_node
   in
 
-  (let (r,g,b) = color +> Color.rgbf_of_string in
+  (let (r,g,b) = color |> Color.rgbf_of_string in
    Cairo.set_source_rgba cr r g b alpha;
   );
 

@@ -380,7 +380,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
     | _x::xs ->
         aux_toks xs
   in
-  let toks' = toks +> Common.exclude (function
+  let toks' = toks |> Common.exclude (function
     | T.TCommentSpace _ -> true
     | _ -> false
   )

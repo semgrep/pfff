@@ -1,4 +1,3 @@
-open Common
 open OUnit
 
 (*****************************************************************************)
@@ -40,7 +39,7 @@ let unittest =
        let root = Filename.concat Config_pfff.path "lang_ml" in
        let cover' = 
          Coverage_ml.basename_coverage_to_readable_coverage cover root
-         +> List.map fst
+         |> List.map fst
        in
        assert_equal
          ~msg:"it should map basename'd files to readable paths"

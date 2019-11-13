@@ -29,8 +29,6 @@
  * reference.
  *)
 
-let (+>) o f = f o
-
 let spf = Printf.sprintf
 
 exception Timeout
@@ -102,7 +100,7 @@ let (lines: string -> string list) = fun s ->
     | x::xs ->
         x::lines_aux xs
   in
-  Str.split_delim (Str.regexp "\n") s +> lines_aux
+  Str.split_delim (Str.regexp "\n") s |> lines_aux
 
 let save_excursion reference newv f =
   let old = !reference in
@@ -364,13 +362,13 @@ let profile_diagnostic () =
   if !profile = ProfNone then "" else
   let xs =
     Hashtbl.fold (fun k v acc -> (k,v)::acc) !_profile_table []
-      +> List.sort (fun (k1, (t1,n1)) (k2, (t2,n2)) -> compare t2 t1)
+      |> List.sort (fun (k1, (t1,n1)) (k2, (t2,n2)) -> compare t2 t1)
     in
     with_open_stringbuf (fun (pr,_) ->
       pr "---------------------";
       pr "profiling result";
       pr "---------------------";
-      xs +> List.iter (fun (k, (t,n)) ->
+      xs |> List.iter (fun (k, (t,n)) ->
         pr (Printf.sprintf "%-40s : %10.3f sec %10d count" k !t !n)
       )
     )
@@ -487,7 +485,7 @@ let usage usage_msg options  =
 
 (* If you don't want the -help and --help that are appended by Arg.align *)
 let arg_align2 xs =
-  Arg.align xs +> List.rev +> drop 2 +> List.rev
+  Arg.align xs |> List.rev |> drop 2 |> List.rev
 
 
 let short_usage usage_msg  ~short_opt =
@@ -498,13 +496,13 @@ let long_usage  usage_msg  ~short_opt ~long_opt  =
   pr "";
   let all_options_with_title =
     (("main options", "", short_opt)::long_opt) in
-  all_options_with_title +> List.iter
+  all_options_with_title |> List.iter
     (fun (title, explanations, xs) ->
       pr title;
       pr_xxxxxxxxxxxxxxxxx();
       if explanations <> ""
       then begin pr explanations; pr "" end;
-      arg_align2 xs +> List.iter (fun (key,action,s) ->
+      arg_align2 xs |> List.iter (fun (key,action,s) ->
         pr ("  " ^ key ^ s)
       );
       pr "";
@@ -544,7 +542,7 @@ type cmdline_actions = action_spec list
 exception WrongNumberOfArguments
 
 let options_of_actions action_ref actions =
-  actions +> List.map (fun (key, doc, _func) ->
+  actions |> List.map (fun (key, doc, _func) ->
     (key, (Arg.Unit (fun () -> action_ref := key)), doc)
   )
 
@@ -553,7 +551,7 @@ let (action_list: cmdline_actions -> Arg.key list) = fun xs ->
 
 let (do_action: Arg.key -> string list (* args *) -> cmdline_actions -> unit) =
   fun key args xs ->
-    let assoc = xs +> List.map (fun (a,b,c) -> (a,c)) in
+    let assoc = xs |> List.map (fun (a,b,c) -> (a,c)) in
     let action_func = List.assoc key assoc in
     action_func args
 
@@ -690,7 +688,7 @@ let rec filter_some = function
   | None :: l -> filter_some l
   | Some e :: l -> e :: filter_some l
 
-let map_filter f xs = xs +> List.map f +> filter_some
+let map_filter f xs = xs |> List.map f |> filter_some
 
 let rec find_some_opt p = function
   | [] -> None
@@ -838,7 +836,7 @@ let cat file =
     then cat_aux (l::acc) ()
     else acc
   in
-  cat_aux [] () +> List.rev +> (fun x -> close_in chan; x)
+  cat_aux [] () |> List.rev |> (fun x -> close_in chan; x)
 
 let read_file file =
   let ic = open_in file  in
@@ -1022,7 +1020,7 @@ let new_temp_file prefix suffix =
 let save_tmp_files = ref false
 let erase_temp_files () =
   if not !save_tmp_files then begin
-    !_temp_files_created +> List.iter (fun s ->
+    !_temp_files_created |> List.iter (fun s ->
       (* pr2 ("erasing: " ^ s); *)
       command2 ("rm -f " ^ s)
     );
@@ -1120,7 +1118,7 @@ let index_list xs =
 let index_list_0 xs = index_list xs
 
 let index_list_1 xs =
-  xs +> index_list +> List.map (fun (x,i) -> x, i+1)
+  xs |> index_list |> List.map (fun (x,i) -> x, i+1)
 
 let sort_prof a b =
   profile_code "Common.sort_by_xxx" (fun () -> List.sort a b)
@@ -1164,11 +1162,11 @@ type ('a, 'b) assoc = ('a * 'b) list
 
 let hash_to_list h =
   Hashtbl.fold (fun k v acc -> (k,v)::acc) h []
-  +> List.sort compare
+  |> List.sort compare
 
 let hash_of_list xs =
   let h = Hashtbl.create 101 in
-  xs +> List.iter (fun (k, v) -> Hashtbl.replace h k v);
+  xs |> List.iter (fun (k, v) -> Hashtbl.replace h k v);
   h
 
 
@@ -1180,7 +1178,7 @@ type 'a hashset = ('a, bool) Hashtbl.t
   (* with sexp *)
 
 let hashset_to_list h =
-  hash_to_list h +> List.map fst
+  hash_to_list h |> List.map fst
 
 (* old: slightly slower?
  * let hashset_of_list xs =
@@ -1193,14 +1191,14 @@ let hashset_of_list (xs: 'a list) : ('a, bool) Hashtbl.t =
 
 let hkeys h =
   let hkey = Hashtbl.create 101 in
-  h +> Hashtbl.iter (fun k v -> Hashtbl.replace hkey k true);
+  h |> Hashtbl.iter (fun k v -> Hashtbl.replace hkey k true);
   hashset_to_list hkey
 
 let group_assoc_bykey_eff2 xs =
   let h = Hashtbl.create 101 in
-  xs +> List.iter (fun (k, v) -> Hashtbl.add h k v);
+  xs |> List.iter (fun (k, v) -> Hashtbl.add h k v);
   let keys = hkeys h in
-  keys +> List.map (fun k -> k, Hashtbl.find_all h k)
+  keys |> List.map (fun k -> k, Hashtbl.find_all h k)
 
 let group_assoc_bykey_eff xs =
   profile_code "Common.group_assoc_bykey_eff" (fun () ->
@@ -1279,7 +1277,7 @@ let main_boilerplate f =
        * Common.debugger will be set in main(), so too late, so
        * have to be quicker
        *)
-      if Sys.argv +> Array.to_list +> List.exists (fun x -> x =$= "-debugger")
+      if Sys.argv |> Array.to_list |> List.exists (fun x -> x =$= "-debugger")
       then debugger := true;
 
       finalize          (fun ()->
@@ -1314,7 +1312,7 @@ let grep_dash_v_str =
  "| grep -v /.svn/ | grep -v .git_annot | grep -v .marshall"
 
 let files_of_dir_or_files_no_vcs_nofilter xs =
-  xs +> List.map (fun x ->
+  xs |> List.map (fun x ->
     if is_directory x
     then
       (* todo: should escape x *)
@@ -1329,7 +1327,7 @@ let files_of_dir_or_files_no_vcs_nofilter xs =
                              cmd (String.concat "\n" xs))))
       )
     else [x]
-  ) +> List.concat
+  ) |> List.concat
 
 
 (*****************************************************************************)

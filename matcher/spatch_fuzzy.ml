@@ -76,11 +76,11 @@ let parse
   ~pattern_of_string
   ~ii_of_pattern
   file =
-  let xs = Common.cat file +> Common.index_list_1 in
+  let xs = Common.cat file |> Common.index_list_1 in
 
   let hline_env = Hashtbl.create 11 in
 
-  let ys = xs +> List.map (fun (s, lineno) ->
+  let ys = xs |> List.map (fun (s, lineno) ->
     match s with
     (* ugly: for now I strip the space after the + because.
      * at some point we need to parse this stuff and
@@ -109,7 +109,7 @@ let parse
   let toks = ii_of_pattern pattern in
 
   (* adjust with Minus info *)  
-  toks +> List.iter (fun tok ->
+  toks |> List.iter (fun tok ->
     let line = PI.line_of_info tok in
 
     let annot = Hashtbl.find hline_env line in
@@ -143,7 +143,7 @@ let parse
    *)
 
   let grouped_by_lines = 
-    toks +> Common.group_by_mapped_key (fun tok -> PI.line_of_info tok) in
+    toks |> Common.group_by_mapped_key (fun tok -> PI.line_of_info tok) in
   let rec aux xs = 
     match xs with
     | (line, toks_at_line)::rest ->

@@ -321,7 +321,7 @@ let check_defined env name ~incr_count =
           then E.UseOfUndefinedVariableInLambda s
           else
             let allvars =
-              !(env.vars) +> Map_.to_list +> List.map fst in
+              !(env.vars) |> Map_.to_list |> List.map fst in
             let suggest = Suggest_fix_php.suggest s allvars in
             E.UseOfUndefinedVariable (s, suggest)
         in
@@ -332,7 +332,7 @@ let check_defined env name ~incr_count =
       if incr_count then incr access_count
 
 let check_used env vars =
-  vars +> Map_.iter (fun s (tok, scope, aref) ->
+  vars |> Map_.iter (fun s (tok, scope, aref) ->
     if !aref = 0
     then
       if unused_ok s
@@ -387,7 +387,7 @@ let rec program env prog =
 and func_def env def =
 
   (* should not contain variables anyway, but does not hurt to check *)
-  def.f_params +> List.iter (fun p -> Common.opt (expr env) p.p_default);
+  def.f_params |> List.iter (fun p -> Common.opt (expr env) p.p_default);
 
   let access_cnt =
     match def.f_kind with
@@ -411,7 +411,7 @@ and func_def env def =
     | ShortLambda -> Map_.to_list oldvars
     (* fresh new scope *)
     | _ ->
-      (Env_php.globals_builtins +> List.map (fun s ->
+      (Env_php.globals_builtins |> List.map (fun s ->
        "$" ^ s, (Cst_php.fakeInfo s, S.Global, ref 1)
       )) @
       (* $this is now implicitly passed in use() for closures *)
@@ -422,18 +422,18 @@ and func_def env def =
 
   let env = { env with
     vars = ref ((
-      (def.f_params +> List.map (fun p ->
+      (def.f_params |> List.map (fun p ->
         let (s, tok) = s_tok_of_ident p.p_name in
         s, (tok, S.Param, ref access_cnt)
       )) @
       enclosing_vars
-      ) +> Map_.of_list);
+      ) |> Map_.of_list);
 
     (* reinitialize bailout for each function/method *)
     bailout = ref false;
   }
   in
-  def.l_uses +> List.iter (fun (_is_ref, name) ->
+  def.l_uses |> List.iter (fun (_is_ref, name) ->
     let (s, tok) = s_tok_of_ident name in
     check_defined ~incr_count:true { env with vars = ref oldvars} name;
     (* don't reuse same access count reference; the variable has to be used
@@ -453,7 +453,7 @@ and func_def env def =
 
   List.iter (stmt env) def.f_body;
   let newvars =
-    enclosing_vars +> List.fold_left (fun acc (x, _) -> Map_.remove x acc)
+    enclosing_vars |> List.fold_left (fun acc (x, _) -> Map_.remove x acc)
       !(env.vars)
   in
   check_used env newvars
@@ -507,14 +507,14 @@ and stmt env = function
       finallys env (fs)
 
   | StaticVars xs ->
-      xs +> List.iter (fun (name, eopt) ->
+      xs |> List.iter (fun (name, eopt) ->
         Common.opt (expr env) eopt;
         let (s, tok) = s_tok_of_ident name in
         (* less: check if shadows something? *)
         env.vars := Map_.add s (tok, S.Static, ref 0) !(env.vars);
       )
   | Global xs ->
-      xs +> List.iter (fun e ->
+      xs |> List.iter (fun e ->
         (* should be an Var most of the time.
          * todo: should check in .globals that this variable actually exists
          *)
@@ -583,7 +583,7 @@ and foreach_pattern env pattern =
      *)
     | Array_get (e, eopt) ->
       aux e;
-      eopt +> Common.do_option (expr env)
+      eopt |> Common.do_option (expr env)
     (* todo: E.warning tok E.WeirdForeachNoIteratorVar *)
     | _ ->
       failwith ("Warning: unexpected `foreach` value " ^
@@ -670,7 +670,7 @@ and expr env e =
       exprl env [e1;e2]
 
   | List _xs ->
-      let tok = Meta_ast_php.toks_of_any (Expr2 e) +> List.hd in
+      let tok = Meta_ast_php.toks_of_any (Expr2 e) |> List.hd in
       failwith (spf "list(...) should be used only in an Assign context at %s"
                   (PI.string_of_info tok))
   (* Arrow used to be allowed only in Array and Foreach context, but now
@@ -684,7 +684,7 @@ and expr env e =
    * statement in the function that actually uses the variable.
    *)
   | Call (Id[ ("__builtin__unset", _tok)], args) ->
-      args +> List.iter (function
+      args |> List.iter (function
         (* should be an lvalue again *)
         (* less: The use of 'unset' on a variable is still not clear to me. *)
         | Var name ->
@@ -705,7 +705,7 @@ and expr env e =
       (* what if no x and y? wrong number of arguments, not our business here*)
       expr env x;
       expr env y;
-      vars +> List.iter (function
+      vars |> List.iter (function
       | Var name ->
           create_new_local_if_necessary ~incr_count:false env name
       (* less: wrong, it should be a variable? *)
@@ -755,8 +755,8 @@ and expr env e =
               (* less: display an error? weird argument to param_xxx func?*)
               None
         in
-        prefix_opt +> Common.do_option (fun prefix ->
-          array_args +> List.iter (function
+        prefix_opt |> Common.do_option (fun prefix ->
+          array_args |> List.iter (function
           | Arrow(String(param_string, tok_param), _typ_param) ->
               let s = "$" ^ prefix ^ param_string in
               let tok = A.tok_of_ident (param_string, tok_param) in
@@ -775,10 +775,10 @@ and expr env e =
       let es_with_parameters =
         match def_opt with
         | None ->
-            es +> List.map (fun e -> e, None)
+            es |> List.map (fun e -> e, None)
         | Some def ->
             let params =
-              def.Cst_php.f_params +> Cst_php.unparen +> Cst_php.uncomma_dots
+              def.Cst_php.f_params |> Cst_php.unparen |> Cst_php.uncomma_dots
             in
             let rec zip args params =
               match args, params with
@@ -792,7 +792,7 @@ and expr env e =
             zip es params
       in
 
-      es_with_parameters +> List.iter (fun (arg, param_opt) ->
+      es_with_parameters |> List.iter (fun (arg, param_opt) ->
         match arg, param_opt with
         (* keyword argument; do not consider this variable as unused.
          * We consider this variable as a pure comment here and just pass over.
@@ -877,8 +877,8 @@ and array_value env x =
   | e -> expr env e
 
 and xml env x =
-  x.xml_attrs +> List.iter (fun (_name, xhp_attr) -> expr env xhp_attr);
-  x.xml_body +> List.iter (xhp env)
+  x.xml_attrs |> List.iter (fun (_name, xhp_attr) -> expr env xhp_attr);
+  x.xml_body |> List.iter (xhp env)
 
 and xhp env = function
   | XhpText _s -> ()
@@ -926,9 +926,9 @@ and method_def env x = func_def env x
 let check_and_annotate_program2 find_entity prog =
   let env = {
     (* less: should be a in globals field instead? *)
-    vars = ref (Env_php.globals_builtins +> List.map (fun s ->
+    vars = ref (Env_php.globals_builtins |> List.map (fun s ->
        "$" ^ s, (Cst_php.fakeInfo s, S.Global, ref 1)
-       ) +> Map_.of_list);
+       ) |> Map_.of_list);
     db = find_entity;
     in_class = None;
     in_long_lambda = false;
@@ -940,7 +940,7 @@ let check_and_annotate_program2 find_entity prog =
   program env ast;
 
   (* annotating the scope of Var *)
-  (Cst_php.Program prog) +>
+  (Cst_php.Program prog) |>
     Visitor_php.mk_visitor { Visitor_php.default_visitor with
     Visitor_php.kexpr = (fun (k, _) x ->
       match x with

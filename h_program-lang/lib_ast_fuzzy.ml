@@ -58,7 +58,7 @@ let char_of_token_kind = function
 let mk_trees h xs =
 
  (* filter comment tokens *)
-  let xs = xs +> Common.exclude (fun t ->
+  let xs = xs |> Common.exclude (fun t ->
       let kind = h.kind t in
       match kind with
       | PI.Esthet _ | PI.Eof -> true
@@ -132,11 +132,11 @@ let mk_trees h xs =
        | [] ->
          if null acc
          then []
-         else [Left (acc +> List.rev)]
+         else [Left (acc |> List.rev)]
        | x::xs ->
          (match x with
          | Ast_fuzzy.Tok (",", info) ->
-           let before = acc +> List.rev in
+           let before = acc |> List.rev in
            if null before
            then aux [] xs
            else (Left before)::(Right (info))::aux [] xs

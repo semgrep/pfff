@@ -1,4 +1,3 @@
-open Common
 
 module PI = Parse_info
 
@@ -16,7 +15,7 @@ let test_highlight_cpp file =
 
   let h = Hashtbl.create 101 in
 
-  ast2 +> List.iter (fun (ast, toks) ->
+  ast2 |> List.iter (fun (ast, toks) ->
     (* computing the token attributes *)
     let prefs = Highlight_code.default_highlighter_preferences in
 
@@ -27,7 +26,7 @@ let test_highlight_cpp file =
     ;
 
     (* getting the text *)
-    let _ = toks +> Common.map_filter (fun tok -> 
+    let _ = toks |> Common.map_filter (fun tok -> 
       let info = Token_helpers_cpp.info_of_tok tok in
       let s = PI.str_of_info info in
 
@@ -35,7 +34,7 @@ let test_highlight_cpp file =
       then None
       else 
         let categ = Common2.hfind_option info h in
-        let categ = categ +> Common2.fmap (fun categ ->
+        let categ = categ |> Common2.fmap (fun categ ->
               (*
                 rewrite_categ_using_entities s categ file hentities
               *)

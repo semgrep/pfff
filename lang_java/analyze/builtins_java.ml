@@ -64,14 +64,14 @@ let extract_from_sources ~src ~dst files =
     let xs = G.children current g in
     
     let classes_or_files =
-      xs +> List.filter (function 
+      xs |> List.filter (function 
       | _, E.Class -> true
       | _, E.File -> true
       | _ -> false 
       )
     in
     let subpackages = 
-      xs +> List.filter (function 
+      xs |> List.filter (function 
       | _, E.Package -> true
       | _ -> false 
       )

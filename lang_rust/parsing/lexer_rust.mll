@@ -121,7 +121,7 @@ rule token = parse
   | "/*" 
       { let info = tokinfo lexbuf in 
         let com = comment lexbuf in
-        TComment(info +> Parse_info.tok_add_s com) 
+        TComment(info |> Parse_info.tok_add_s com) 
       }
 
   | newline { TCommentNewline (tokinfo lexbuf) }
@@ -198,7 +198,7 @@ rule token = parse
   | '"' { 
       let info = tokinfo lexbuf in
       let s = string_double_quote lexbuf in
-      TString (s, info +> Parse_info.tok_add_s (s ^ "\""))
+      TString (s, info |> Parse_info.tok_add_s (s ^ "\""))
     }
 
   (* ----------------------------------------------------------------------- *)

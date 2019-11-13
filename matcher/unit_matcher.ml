@@ -99,7 +99,7 @@ let sgrep_fuzzy_unittest ~ast_fuzzy_of_string =
 
     ]
     in
-    triples +> List.iter (fun (spattern, scode, should_match) ->
+    triples |> List.iter (fun (spattern, scode, should_match) ->
       let pattern = ast_fuzzy_of_string spattern in
       let code = ast_fuzzy_of_string scode in
       let matches_with_env = Matching_fuzzy.match_trees_trees pattern code in
@@ -157,7 +157,7 @@ let sgrep_gen_unittest ~any_gen_of_string =
 
       (* for lvalues *)
       "$X.method()",  "foo.method()", true;
-      "$X.method()"  ,  "foo.bar.method()", true;
+      "$X.method()",  "foo.bar.method()", true;
 
       (* "linear" patterns, a la Prolog *)
       "$X & $X", "(a | b) & (a | b)", true;
@@ -226,7 +226,7 @@ let sgrep_gen_unittest ~any_gen_of_string =
 
     ]
     in
-    triples +> List.iter (fun (spattern, scode, should_match) ->
+    triples |> List.iter (fun (spattern, scode, should_match) ->
      try 
       let pattern = any_gen_of_string spattern in
       let code    = any_gen_of_string scode in
@@ -258,7 +258,7 @@ let spatch_fuzzy_unittest ~ast_fuzzy_of_string ~parse_file =
     let testdir = Filename.concat Config_pfff.path "tests/fuzzy/spatch/" in
     let expfiles = Common2.glob (testdir ^ "*.exp") in
 
-    expfiles +> List.iter (fun expfile ->
+    expfiles |> List.iter (fun expfile ->
       (* todo: this regexp should just be .*? but ocaml regexp do not
        * have the greedy feature :( Also note that expfile is a fullpath
        * so it can contains /, hence this ugly regexp
@@ -293,7 +293,7 @@ let spatch_fuzzy_unittest ~ast_fuzzy_of_string ~parse_file =
             tmpfile
         in
         let diff = Common2.unix_diff file_res expfile in
-        diff +> List.iter pr;
+        diff |> List.iter pr;
         if List.length diff > 1
         then assert_failure
           (spf "spatch %s on %s should have resulted in %s" 

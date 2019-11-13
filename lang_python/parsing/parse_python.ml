@@ -67,7 +67,7 @@ let tokens2 file =
         let tok = token lexbuf in
         if !Flag.debug_lexer then Common.pr2_gen tok;
 
-        let tok = tok +> TH.visitor_info_of_tok (fun ii -> 
+        let tok = tok |> TH.visitor_info_of_tok (fun ii -> 
         { ii with PI.token=
           (* could assert pinfo.filename = file ? *)
            match ii.PI.token with
@@ -129,7 +129,7 @@ let parse2 filename =
         Parser_python.main  (lexer_function tr) lexbuf_fake
       )
     in
-    stat.PI.correct <- (Common.cat filename +> List.length);
+    stat.PI.correct <- (Common.cat filename |> List.length);
     (Some xs, toks_final), stat
 
   with Parsing.Parse_error ->
@@ -143,12 +143,12 @@ let parse2 filename =
       pr2 ("parse error \n = " ^ error_msg_tok cur);
 
       let filelines = Common2.cat_array filename in
-      let checkpoint2 = Common.cat filename +> List.length in
+      let checkpoint2 = Common.cat filename |> List.length in
       let line_error = PI.line_of_info (TH.info_of_tok cur) in
       Parse_info.print_bad line_error (0, checkpoint2) filelines;
     end;
 
-    stat.PI.bad     <- Common.cat filename +> List.length;
+    stat.PI.bad     <- Common.cat filename |> List.length;
     (None, toks_final), stat
 
 let parse a = 

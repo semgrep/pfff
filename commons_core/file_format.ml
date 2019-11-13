@@ -28,6 +28,6 @@ open Common
 (*****************************************************************************)
 let read_tsv_file file =
   let xs = Common.cat file in
-  xs +> List.map (fun s ->
+  xs |> List.map (fun s ->
     Str.split_delim (Str.regexp "\t") s
   )

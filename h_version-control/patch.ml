@@ -124,7 +124,7 @@ let remove_prefix_mark s =
   end
 
 let parse_hunk xs =
-  xs +> List.map (fun s ->
+  xs |> List.map (fun s ->
     if s=~ regexp_mark_and_line
     then
       let (mark, rest_line) = Common.matched2 s in
@@ -201,13 +201,13 @@ let (parse_patch: (string list) -> patchinfo) = fun lines ->
    *)
   let double_splitted = 
     lines 
-      +> Common2.split_list_regexp "^xxx "  
-      +> List.map (fun (s, group) -> 
+      |> Common2.split_list_regexp "^xxx "  
+      |> List.map (fun (s, group) -> 
           (s, Common2.split_list_regexp "^@@" group) 
          )
   in
 
-  double_splitted +>         
+  double_splitted |>         
      List.map (fun (s, group) -> 
        if s =~ "^xxx [^/]+/\\([^ \t]+\\)[ \t]?"
        then
@@ -221,7 +221,7 @@ let (parse_patch: (string list) -> patchinfo) = fun lines ->
        *)
         let (file) = matched1 s in
         file, 
-        group +>
+        group |>
           List.map (fun (s, group) -> 
             match () with
             | _ when 
@@ -274,10 +274,10 @@ let (parse_patch: (string list) -> patchinfo) = fun lines ->
 (*****************************************************************************)
 
 let hunk_containing_string s (pinfos: patchinfo) = 
-  pinfos +> Common.find_some (fun (_file, fileinfo) -> 
+  pinfos |> Common.find_some (fun (_file, fileinfo) -> 
     Common2.optionise (fun () -> 
-      fileinfo +> Common.find_some (fun (_limits, hunk) -> 
-        let hunk' = hunk +> List.map remove_prefix_mark in
+      fileinfo |> Common.find_some (fun (_limits, hunk) -> 
+        let hunk' = hunk |> List.map remove_prefix_mark in
         if List.mem s hunk'
         then Some hunk
         else None
@@ -285,29 +285,29 @@ let hunk_containing_string s (pinfos: patchinfo) =
   )
 
 let hunks_containing_string s (pinfos: patchinfo) = 
-  pinfos +> Common.map_filter (fun (_file, fileinfo) -> 
+  pinfos |> Common.map_filter (fun (_file, fileinfo) -> 
     let res = 
-      (fileinfo +> Common.map_filter (fun (_limits, hunk) -> 
-        let hunk' = hunk +> List.map remove_prefix_mark in
+      (fileinfo |> Common.map_filter (fun (_limits, hunk) -> 
+        let hunk' = hunk |> List.map remove_prefix_mark in
         if List.mem s hunk'
         then Some hunk
         else None
       ))
     in
     if null res then None else Some res
-  ) +> List.flatten
+  ) |> List.flatten
 
 
 let modified_lines fileinfo = 
-  fileinfo +> List.map (fun ((start, _end), hunk) ->
+  fileinfo |> List.map (fun ((start, _end), hunk) ->
     let hunk = parse_hunk hunk in
-    let noplus = hunk +> Common.exclude (function Plus _ -> true | _ -> false)
+    let noplus = hunk |> Common.exclude (function Plus _ -> true | _ -> false)
     in
-    Common.index_list noplus +> Common.map_filter (function
+    Common.index_list noplus |> Common.map_filter (function
     | Minus _, idx -> Some (idx + start)
     | _ -> None
     )
-  ) +> List.flatten
+  ) |> List.flatten
 
 (*****************************************************************************)
 (* Extra func *)
@@ -318,9 +318,9 @@ let diffstat_file finfo =
   let plus = ref 0 in
   let minus = ref 0 in
   
-  finfo +> List.iter (fun (_, hunk) ->
+  finfo |> List.iter (fun (_, hunk) ->
     let plines = parse_hunk hunk in
-    plines +> List.iter (function
+    plines |> List.iter (function
     | Context _ -> ()
     | Minus _ -> incr minus
     | Plus _ -> incr plus
@@ -331,7 +331,7 @@ let diffstat_file finfo =
   }
 
 let diffstat pinfo = 
-  pinfo +> List.map (fun (file, fileinfo) ->
+  pinfo |> List.map (fun (file, fileinfo) ->
     file, diffstat_file fileinfo
   )
 
@@ -413,20 +413,20 @@ let (generate_patch:
  fun edition_cmds ~filename_in_project filename ->
 
    let indexed_lines = 
-     Common.cat filename +> Common.index_list_1 in
+     Common.cat filename |> Common.index_list_1 in
    
    let indexed_lines = 
-     edition_cmds +> List.fold_left (fun indexed_lines edition_cmd ->
+     edition_cmds |> List.fold_left (fun indexed_lines edition_cmd ->
      match edition_cmd with
      | RemoveLines index_lines -> 
          indexed_lines
-         +> Common.exclude (fun (_line, idx) -> List.mem idx index_lines)
+         |> Common.exclude (fun (_line, idx) -> List.mem idx index_lines)
      | PreAddAt (lineno, lines_to_add) 
      | PostAddAt (lineno, lines_to_add) ->
          let lines_to_add_fake_indexed = 
-           lines_to_add +> List.map (fun s -> s, -1) in
+           lines_to_add |> List.map (fun s -> s, -1) in
 
-         indexed_lines +> Common2.map_flatten (fun (line, idx) ->
+         indexed_lines |> Common2.map_flatten (fun (line, idx) ->
            if idx = lineno 
            then 
              (match edition_cmd with
@@ -438,7 +438,7 @@ let (generate_patch:
          )
      ) indexed_lines
    in
-   let lines' = indexed_lines +> List.map fst in
+   let lines' = indexed_lines |> List.map fst in
                                     
    (* generating diff *)
    let tmpfile = Common.new_temp_file "genpatch" ".patch" in
@@ -449,7 +449,7 @@ let (generate_patch:
        (spf "diff -u -p  \"%s\" \"%s\"" filename tmpfile) 
    in
    
-   let xs' = xs +> List.map (fun s ->
+   let xs' = xs |> List.map (fun s ->
      match () with
      | _ when  s =~ "^\\-\\-\\- \\([^ \t]+\\)\\([ \t]?\\)" ->
          let (_, rest) = matched2 s in 

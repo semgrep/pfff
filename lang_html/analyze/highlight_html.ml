@@ -55,7 +55,7 @@ let visit_toplevel ~tag_hook _prefs (toplevel, toks) =
   let rec visit = function
 
     | Element ((Tag (s_tag, _tok_t)), attrs, xs) ->
-        attrs +> List.iter 
+        attrs |> List.iter 
           (fun (Attr (s_attr, _tok_a), (Val (_s_val, tok_v))) ->
             match s_attr with
             | "href" | "xmlns" -> tag tok_v EmbededUrl
@@ -64,36 +64,36 @@ let visit_toplevel ~tag_hook _prefs (toplevel, toks) =
           );
         (match s_tag, xs with
         | "pre", _ ->
-            xs +> List.iter (function
+            xs |> List.iter (function
             | Element _ -> raise Impossible
             | Data (_s, tok) -> tag tok Verbatim
             )
         | "script", _ ->
-            xs +> List.iter (function
+            xs |> List.iter (function
             | Element _ -> raise Impossible
             | Data (_s, tok) -> tag tok EmbededCode
             )
         | "style", _ ->
-            xs +> List.iter (function
+            xs |> List.iter (function
             | Element _ -> raise Impossible
             | Data (_s, tok) -> tag tok EmbededStyle
             )
 
         | "h1", _ ->
-            xs +> List.iter (function
+            xs |> List.iter (function
             | Element _ -> () | Data (_s, tok) -> tag tok CommentSection1
             )
         | "h2", _ ->
-            xs +> List.iter (function
+            xs |> List.iter (function
             | Element _ -> () | Data (_s, tok) -> tag tok CommentSection2
             )
         | "h3", _ ->
-            xs +> List.iter (function
+            xs |> List.iter (function
             | Element _ -> () | Data (_s, tok) -> tag tok CommentSection3
             )
         | _ -> ()
         );
-        xs +> List.iter visit
+        xs |> List.iter visit
     | Data _ -> ()
   in
   visit toplevel;
@@ -110,7 +110,7 @@ let visit_toplevel ~tag_hook _prefs (toplevel, toks) =
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)
   (* -------------------------------------------------------------------- *)
-  toks +> List.iter (fun tok -> 
+  toks |> List.iter (fun tok -> 
     match tok with
     | T.TComment ii ->
         if not (Hashtbl.mem already_tagged ii)

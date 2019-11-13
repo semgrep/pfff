@@ -54,14 +54,14 @@ let commits_since ~basedir ~since =
                (spf "git log --no-color --pretty=oneline --since=\"%s\""
                   since)) in
   let xs = cmd_to_list cmd in
-  xs +> List.map id +> List.rev
+  xs |> List.map id |> List.rev
     
 let has_keywords_in_header (xs,_) =
-  xs +> List.exists (fun s -> (s =~ ".*\\bbug\\b.*") 
+  xs |> List.exists (fun s -> (s =~ ".*\\bbug\\b.*") 
     || (s =~ ".*\\bbugfix\\b.*") || (s =~ ".*\\bfatal\\b.*"))
 
 let committed_by_jiao (xs,_) =
-  xs +> List.exists (fun s -> (s =~ "Author: Jiao Li <jiaol@fb.com>")
+  xs |> List.exists (fun s -> (s =~ "Author: Jiao Li <jiaol@fb.com>")
     || (s =~ "Author: jiaol.*"))
 
 let lines (_, pinfo) =
@@ -69,7 +69,7 @@ let lines (_, pinfo) =
     let fstat = Patch.diffstat_file finfo in
     fstat.Patch.nb_minus + fstat.Patch.nb_plus
   in
-  pinfo +> List.map flines +> List.fold_left (+) 0
+  pinfo |> List.map flines |> List.fold_left (+) 0
 
 let do_metrics stat dir commit =
   try(

@@ -159,7 +159,7 @@ let visit_program
     | _x::xs ->
         aux_toks xs
   in
-  let toks' = toks +> Common.exclude (function
+  let toks' = toks |> Common.exclude (function
     | T.TCommentSpace _ -> true
     | _ -> false
   )
@@ -169,7 +169,7 @@ let visit_program
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)
 
-  toks +> List.iter (fun tok -> 
+  toks |> List.iter (fun tok -> 
     match tok with
 
     (* comments *)

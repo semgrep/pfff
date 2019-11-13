@@ -91,7 +91,7 @@ let draw_green_yellow_dependent_rows ~cr w i =
     then Common.push i2 i_used_by;
   done;
 
-  !i_uses +> List.iter (fun i ->
+  !i_uses |> List.iter (fun i ->
     let x = l.x_start_matrix_left - 0.05 in
     let y = (float_of_int i) * l.height_cell + l.y_start_matrix_up in
     let rect = { 
@@ -101,7 +101,7 @@ let draw_green_yellow_dependent_rows ~cr w i =
     CairoH.fill_rectangle ~cr ~color:color_using ~alpha:0.3 rect;
   );
 
-  !i_used_by +> List.iter (fun i ->
+  !i_used_by |> List.iter (fun i ->
     let x = l.x_start_matrix_left - 0.05 in
     let y = (float_of_int i) * l.height_cell + l.y_start_matrix_up in
     let rect = { 
@@ -164,7 +164,7 @@ let motion_notify_refresher _da w ev () =
   false
 
 let motion_notify da w ev =
-  !Ctl.current_motion_refresher +> Common.do_option GMain.Idle.remove;
+  !Ctl.current_motion_refresher |> Common.do_option GMain.Idle.remove;
   Ctl.current_motion_refresher := 
     Some (Gui.gmain_idle_add ~prio:100 (fun () -> 
       let res = motion_notify_refresher da w ev () in

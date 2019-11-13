@@ -4,7 +4,7 @@ open Common
 
 (* see opa/pfff_logger.opa *)
 let log config cmd extra_args =
-  config +> do_option (fun server ->
+  config |> do_option (fun server ->
     let unixname = Common2.unixname() in
     let extra_args = 
       match extra_args with

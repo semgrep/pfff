@@ -82,7 +82,7 @@ rule token = parse
   | space* "/*" { 
       let info = tokinfo lexbuf in
       let com = comment lexbuf in
-      TComment(info +> Parse_info.tok_add_s com)
+      TComment(info |> Parse_info.tok_add_s com)
     }
   | space* "//" [^ '\n']+ space* { TComment (tokinfo lexbuf) }
   | space          { S (tokinfo lexbuf) }
@@ -154,13 +154,13 @@ rule token = parse
   | '\''  { 
       let info = tokinfo lexbuf in
       let s = single_string lexbuf in
-      TString (s, info +> Parse_info.tok_add_s (s ^ "\'"))
+      TString (s, info |> Parse_info.tok_add_s (s ^ "\'"))
     }
 
   | '"' {
       let info = tokinfo lexbuf in
       let s = double_string lexbuf in
-      TString (s, info +> Parse_info.tok_add_s (s ^ "\""))
+      TString (s, info |> Parse_info.tok_add_s (s ^ "\""))
     }
 
   (* ----------------------------------------------------------------------- *)

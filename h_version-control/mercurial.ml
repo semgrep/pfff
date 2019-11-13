@@ -75,7 +75,7 @@ let annotate2 ?(basedir="") filename =
   (*let ys = Common.cat (Common.filename_of_db (basedir,filename)) in*)
 
   let annots = 
-    xs +> Common.map_filter (fun s -> 
+    xs |> Common.map_filter (fun s -> 
       if s =~ annotate_regexp 
       then 
         let (author, commitid, month_str, day, year) = Common.matched5 s in
@@ -104,7 +104,7 @@ let annotate_raw ?(basedir="") filename =
   let xs = Common.cmd_to_list cmd in
 
   let annots = 
-    xs +> Common.map_filter (fun s -> 
+    xs |> Common.map_filter (fun s -> 
       if s =~ annotate_regexp 
       then 
         Some s
@@ -142,7 +142,7 @@ let date_file_creation2 ?(basedir="") file =
   let xs = Common.cmd_to_list cmd in
   let xs = List.rev xs in   (* could also hg log ... | tac *)
   
-  xs +> Common.find_some (fun s -> 
+  xs |> Common.find_some (fun s -> 
     if s =~ date_regexp
     then 
       let (month_str, day, year) = Common.matched3 s in
@@ -193,5 +193,5 @@ let files_involved_in_diff ~basedir commitid =
   let cmd = goto_dir basedir ^
     spf "hg status --change '%s'" str_commit in
   let xs = Common.cmd_to_list cmd in
-  xs +> List.map Lib_vcs.parse_file_status
+  xs |> List.map Lib_vcs.parse_file_status
 

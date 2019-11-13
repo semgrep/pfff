@@ -17,11 +17,11 @@ let rec squash_stmt_list xs =
           | NamespaceDef _ | NamespaceBracketDef _ | NamespaceUse _
           ) -> x,  xs
         | StmtList [st] -> 
-            let stmts, rest = xs +> Common.span (function
+            let stmts, rest = xs |> Common.span (function
               | StmtList _ -> true 
               | _ -> false
               ) in
-            let stmts' = stmts +> List.map (function
+            let stmts' = stmts |> List.map (function
               | StmtList [st] -> st
               | _ -> raise Impossible
             ) in

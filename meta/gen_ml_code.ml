@@ -71,21 +71,21 @@ let (gen_matcher: string * Ocaml.t -> unit) = fun (s, t) ->
     let aux t = 
       match t with
       | O.Sum xs ->
-          xs +> List.iter (fun (s, args) ->
+          xs |> List.iter (fun (s, args) ->
 
-            let aa = Common.index_list_1 args +> List.map (fun (t, i) ->
+            let aa = Common.index_list_1 args |> List.map (fun (t, i) ->
               spf "a%d" i, t
             ) in
-            let bb = Common.index_list_1 args +> List.map (fun (t, i) ->
+            let bb = Common.index_list_1 args |> List.map (fun (t, i) ->
               spf "b%d" i, t
             ) in
             
-            let aas = aa +> List.map fst +> parenize_and_comma in
-            let bbs = bb +> List.map fst +> parenize_and_comma in
+            let aas = aa |> List.map fst |> parenize_and_comma in
+            let bbs = bb |> List.map fst |> parenize_and_comma in
             e+= "| A.%s%s, B.%s%s ->" $ s $ aas $ s $ bbs;
             e --> (fun e ->
               (* ... *)
-              Common2.zip aa bb +> List.iter (fun ((aa1, t), (aa2, _t2)) ->
+              Common2.zip aa bb |> List.iter (fun ((aa1, t), (aa2, _t2)) ->
                 e.p (spf "%s %s %s >>= (fun (%s, %s) -> " 
                         (call_to_matcher t) aa1 aa2 aa1 aa2);
               );
@@ -97,11 +97,11 @@ let (gen_matcher: string * Ocaml.t -> unit) = fun (s, t) ->
               );
               e+= (")");
               if not (null args)
-              then e.p (Common2.repeat ")" (List.length args) +> Common.join "");
+              then e.p (Common2.repeat ")" (List.length args) |> Common.join "");
             )
           );
           if List.length xs > 1 then begin
-            xs +> List.iter (fun (s, args) ->
+            xs |> List.iter (fun (s, args) ->
               e+= "| A.%s%s, _" $ s $ (if null args then "" else " _");
             );
             e+= " -> fail ()";
@@ -110,19 +110,19 @@ let (gen_matcher: string * Ocaml.t -> unit) = fun (s, t) ->
 
       (* TODO factorize code ? a tuple is a kind of anon single constructor *)
       | O.Tuple args ->
-            let aa = Common.index_list_1 args +> List.map (fun (t, i) ->
+            let aa = Common.index_list_1 args |> List.map (fun (t, i) ->
               spf "a%d" i, t
             ) in
-            let bb = Common.index_list_1 args +> List.map (fun (t, i) ->
+            let bb = Common.index_list_1 args |> List.map (fun (t, i) ->
               spf "b%d" i, t
             ) in
             
-            let aas = aa +> List.map fst +> parenize_and_comma in
-            let bbs = bb +> List.map fst +> parenize_and_comma in
+            let aas = aa |> List.map fst |> parenize_and_comma in
+            let bbs = bb |> List.map fst |> parenize_and_comma in
             e+= "| %s, %s ->" $ aas $ bbs;
             e --> (fun e ->
               (* ... *)
-              Common2.zip aa bb +> List.iter (fun ((aa1, t), (aa2, _t2)) ->
+              Common2.zip aa bb |> List.iter (fun ((aa1, t), (aa2, _t2)) ->
                 e.p (spf "%s %s %s >>= (fun (%s, %s) -> " 
                         (call_to_matcher t) aa1 aa2 aa1 aa2);
               );
@@ -134,7 +134,7 @@ let (gen_matcher: string * Ocaml.t -> unit) = fun (s, t) ->
               );
               e+= (")");
               if not (null args)
-              then e.p (Common2.repeat ")" (List.length args) +> Common.join "");
+              then e.p (Common2.repeat ")" (List.length args) |> Common.join "");
             )
       | O.Var s ->
           e += "(a, b) -> %s a b" $ (call_to_matcher (O.Var s))
@@ -146,27 +146,27 @@ let (gen_matcher: string * Ocaml.t -> unit) = fun (s, t) ->
           e += "(a, b) -> %s a b" $ (call_to_matcher (O.Apply (x,y)))
 
       | O.Dict xs ->
-          let aa = Common.index_list_1 xs +> List.map (fun (t, i) ->
+          let aa = Common.index_list_1 xs |> List.map (fun (t, i) ->
             spf "a%d" i, t
           ) in
-          let bb = Common.index_list_1 xs +> List.map (fun (t, i) ->
+          let bb = Common.index_list_1 xs |> List.map (fun (t, i) ->
             spf "b%d" i, t
           ) in
 
           e+= "{ A. ";
-          aa +> List.iter (fun (aa1, (fld, _, _t)) ->
+          aa |> List.iter (fun (aa1, (fld, _, _t)) ->
             e += "%s = %s;" $ fld $ aa1
           );
           e+= "},";
           e+= "{ B. ";
-          bb +> List.iter (fun (bb1, (fld, _, _t)) ->
+          bb |> List.iter (fun (bb1, (fld, _, _t)) ->
             e += "%s = %s;" $ fld $ bb1
           );
           e+= "} -> ";
 
           e --> (fun e ->
             (* ... *)
-            Common2.zip aa bb +> List.iter (fun ((aa1, (_fld, _, t)), (aa2, _)) ->
+            Common2.zip aa bb |> List.iter (fun ((aa1, (_fld, _, t)), (aa2, _)) ->
               e.p (spf "%s %s %s >>= (fun (%s, %s) -> " 
                       (call_to_matcher t) aa1 aa2 aa1 aa2);
               );
@@ -174,19 +174,19 @@ let (gen_matcher: string * Ocaml.t -> unit) = fun (s, t) ->
               e --> (fun e ->
 
                 e+= "{ A. ";
-                aa +> List.iter (fun (aa1, (fld, _, _t)) ->
+                aa |> List.iter (fun (aa1, (fld, _, _t)) ->
                   e += "%s = %s;" $ fld $ aa1
                 );
                 e+= "},";
                 e+= "{ B.";
-                bb +> List.iter (fun (bb1, (fld, _, _t)) ->
+                bb |> List.iter (fun (bb1, (fld, _, _t)) ->
                   e += "%s = %s;" $ fld $ bb1
                 );
                 e+= "} ";
               );
               e+= (")");
           );
-          e.p (Common2.repeat ")" (List.length xs) +> Common.join "")
+          e.p (Common2.repeat ")" (List.length xs) |> Common.join "")
           
 
 

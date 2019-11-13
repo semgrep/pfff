@@ -275,7 +275,7 @@ let is_phpunit_derived_class_heuristics def =
        * for the following cases.
        *)
       s =~ ".*TestCase" ||
-      (Ast.unbrace def.c_body +> List.exists (fun class_stmt ->
+      (Ast.unbrace def.c_body |> List.exists (fun class_stmt ->
         match class_stmt with
         | Method def -> 
             let s = Ast.str_of_ident def.f_name in 
@@ -319,7 +319,7 @@ let (find_testcase_class_if_any:
       Cst_php.toplevel list -> Cst_php.class_def option) = 
  fun ~is_phpunit_base_class_name asts ->
   try 
-    let x = asts +> Common.find_some (fun ast_toplevel -> 
+    let x = asts |> Common.find_some (fun ast_toplevel -> 
        
        (* Do we need to visit, that is search deep inside nested classes ?
         * Nested classes are normally frowned upon by our PHP checkers 
@@ -397,11 +397,11 @@ let test_speed_of_int x =
 let parse_one_trace2 file xs = 
 
   let statuses = 
-    xs +> Common.map_filter (fun s ->
+    xs |> Common.map_filter (fun s ->
       match s with
       | s when s =~ "^OK (\\([0-9]+\\) tests?, \\([0-9]+\\) assertions?)" ->
           let (nb_tests, _nb_asserts) = 
-            Common.matched2 s +> Common2.pair s_to_i 
+            Common.matched2 s |> Common2.pair s_to_i 
           in
           Some (Pass (nb_tests, 0))
 
@@ -409,7 +409,7 @@ let parse_one_trace2 file xs =
       (* old: | s when s =~ "There were \\([0-9]+\\) failures:" -> *)
       | s when s =~ "Tests?: \\([0-9]+\\), Assertions?: \\([0-9]+\\), Failures?: \\([0-9]+\\)" ->
           let (nb_tests, _nb_asserts, nb_fail) = 
-            Common.matched3 s +> Common2.triple s_to_i
+            Common.matched3 s |> Common2.triple s_to_i
           in
 
           (* todo? parse the failure message, file pos/method, 
@@ -420,21 +420,21 @@ let parse_one_trace2 file xs =
       (* TODO: diff between fail and errors ? *)
       | s when s =~ "Tests?: \\([0-9]+\\), Assertions?: \\([0-9]+\\), Errors?: \\([0-9]+\\)" ->
           let (nb_tests, _nb_asserts, nb_fail) = 
-            Common.matched3 s +> Common2.triple s_to_i
+            Common.matched3 s |> Common2.triple s_to_i
           in
           Some (Fail (nb_fail, nb_tests - nb_fail))
 
 
       | s when s =~ "Tests?: \\([0-9]+\\), Assertions?: \\([0-9]+\\), Skipped?: \\([0-9]+\\)" ->
           let (nb_tests, _nb_asserts, nb_skip) = 
-            Common.matched3 s +> Common2.triple s_to_i
+            Common.matched3 s |> Common2.triple s_to_i
           in
           Some (Pass (nb_tests - nb_skip, nb_skip))
 
       (* maybe facebook specific, with our FacebookTestCase wrapper *)
       | s when s =~ "Tests?: \\([0-9]+\\), Assertions?: \\([0-9]+\\), Incompletes?: \\([0-9]+\\)" ->
           let (nb_tests, _nb_asserts, nb_skip) = 
-            Common.matched3 s +> Common2.triple s_to_i
+            Common.matched3 s |> Common2.triple s_to_i
           in
           Some (Pass (nb_tests - nb_skip, nb_skip))
 
@@ -468,7 +468,7 @@ let parse_one_trace2 file xs =
         pr2 msg;
         (Fatal msg)
     | x::y::xs ->
-        if (x::y::xs) +> List.for_all (function Fatal _ -> true | _ -> false)
+        if (x::y::xs) |> List.for_all (function Fatal _ -> true | _ -> false)
         then x
         else begin
           pr2 ("parse error: multiple statues in trace for: " ^ file);
@@ -477,7 +477,7 @@ let parse_one_trace2 file xs =
   in
   
   let times_and_mem = 
-    xs +> Common.map_filter (fun s ->
+    xs |> Common.map_filter (fun s ->
       match s with
 
       | s when s =~ "^Time: \\(.*\\), Memory: \\(.*\\)" ->
@@ -495,7 +495,7 @@ let parse_one_trace2 file xs =
                 s_to_i (Common.matched1 tm)
             | _ when tm =~ "\\([0-9]+\\):\\([0-9]+\\)" ->
                 let (min, sec) = 
-                  Common.matched2 tm +> Common2.pair s_to_i in
+                  Common.matched2 tm |> Common2.pair s_to_i in
                 min * 60 + sec
             | _ ->
                 failwith ("wrong time format: " ^ tm)
@@ -504,7 +504,7 @@ let parse_one_trace2 file xs =
             match () with
             | _ when mem =~ "\\([0-9]+\\)\\.\\([0-9]+\\)Mb" ->
                 let (x1, x2) = 
-                  Common.matched2 mem +> Common2.pair s_to_i in
+                  Common.matched2 mem |> Common2.pair s_to_i in
                 (* could also call float_of_string directly on mem ... *)
                 float_of_string (spf "%d.%d" x1 x2)
             | _ ->
@@ -537,8 +537,8 @@ let parse_one_trace2 file xs =
   in
 
   let nb_shimmed = 
-    xs +> List.filter (fun s -> s =~ "Creating new database shim:") 
-    +> List.length
+    xs |> List.filter (fun s -> s =~ "Creating new database shim:") 
+    |> List.length
   in
   let nb_lines = List.length xs in
 
@@ -566,7 +566,7 @@ let final_report ?(report_also_pass=false) tr =
   pr2 "Report";
   Common2.pr2_xxxxxxxxxxxxxxxxx();
 
-  tr +> List.iter (fun t ->
+  tr |> List.iter (fun t ->
     match t.t_status with
     | Fail (fail, _pass) ->
         pr2 (spf "FAIL: %3d,  in %s" fail t.t_file)
@@ -590,22 +590,22 @@ let final_report ?(report_also_pass=false) tr =
   );
 
 
-  let total_fail = tr +> Common.map_filter (fun t ->
-    match t.t_status with Fail (i, _) -> Some i | _ -> None) +> 
+  let total_fail = tr |> Common.map_filter (fun t ->
+    match t.t_status with Fail (i, _) -> Some i | _ -> None) |> 
     Common2.sum_int in
-  let total_pass = tr +> Common.map_filter (fun t ->
-    match t.t_status with Pass (i,_) | Fail(_,i) -> Some i | _ -> None) +> 
+  let total_pass = tr |> Common.map_filter (fun t ->
+    match t.t_status with Pass (i,_) | Fail(_,i) -> Some i | _ -> None) |> 
     Common2.sum_int in
-  let total_fatal = tr +> Common.map_filter (fun t ->
-    match t.t_status with Fatal _-> Some 1 | _ -> None) +> 
+  let total_fatal = tr |> Common.map_filter (fun t ->
+    match t.t_status with Fatal _-> Some 1 | _ -> None) |> 
     Common2.sum_int in
 
-  let total_files_with_pbs = tr +> List.map (fun t ->
-    match t.t_status with Fatal _ | Fail(_) -> 1 | _ -> 0) +> Common2.sum_int in
+  let total_files_with_pbs = tr |> List.map (fun t ->
+    match t.t_status with Fatal _ | Fail(_) -> 1 | _ -> 0) |> Common2.sum_int in
   let total_files = List.length tr in
 
-  let total_shimmed = tr +> List.map (fun t -> t.t_shimmed) 
-    +> Common2.sum_int in
+  let total_shimmed = tr |> List.map (fun t -> t.t_shimmed) 
+    |> Common2.sum_int in
     
   pr2 (spf "total shimmed: %d" total_shimmed);
 
@@ -734,10 +734,10 @@ let rec (v_of_json: Json_type.json_type -> v) = fun j ->
            let constructor = Common.matched1 s in
            VSum (constructor, List.map v_of_json  xs)
       | ys ->
-          VList (ys +> List.map v_of_json)
+          VList (ys |> List.map v_of_json)
       )
   | J.Object flds ->
-      VDict (flds +> List.map (fun (s, fld) ->
+      VDict (flds |> List.map (fun (s, fld) ->
         s, v_of_json fld
       ))
 
@@ -878,11 +878,11 @@ let test_results_of_json json =
 (*****************************************************************************)
 
 let gen_regression_filename files_or_dirs =
-  let files_or_dirs = files_or_dirs +> List.map Common2.chop_dirsymbol in
+  let files_or_dirs = files_or_dirs |> List.map Common2.chop_dirsymbol in
 
   let str = 
-    files_or_dirs +> Common.join "___" 
-    +> Str.global_replace (Str.regexp "/") "__"  
+    files_or_dirs |> Common.join "___" 
+    |> Str.global_replace (Str.regexp "/") "__"  
   in
 
   (* ext3 does not like too long filenames *)  
@@ -898,7 +898,7 @@ let regression ~regression_file tr =
 
   let newscore  = Common2.empty_score () in
 
-  tr +> List.iter (fun t ->
+  tr |> List.iter (fun t ->
     let score = 
       match t.t_status with
       | Pass _ -> Common2.Ok
@@ -921,7 +921,7 @@ let regression ~regression_file tr =
 let regression_perf ~regression_file tr = 
   let newscore  = Common2.empty_score () in
 
-  tr +> List.iter (fun t ->
+  tr |> List.iter (fun t ->
     let score_opt = 
       match t.t_status with
       | Pass _ -> 
@@ -941,7 +941,7 @@ let regression_perf ~regression_file tr =
       | Fatal _s -> 
           None
     in
-    score_opt +> Common.do_option (fun score ->
+    score_opt |> Common.do_option (fun score ->
       Hashtbl.add newscore t.t_file score;
     )
   );

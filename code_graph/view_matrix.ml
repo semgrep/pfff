@@ -296,12 +296,12 @@ let draw_left_tree cr w ~interactive_regions =
         CairoH.show_text cr txt;
         Cairo.rotate cr (-. angle);
         
-        xs +> List.iter (aux (depth +.. 1))
+        xs |> List.iter (aux (depth +.. 1))
   in
   (* use dm.config, not w.config which is not necessaraly ordered *)
   let config = w.m.DM.config in
   (match config with
-  | DM.Node (_root, xs) -> xs +> List.iter (aux 0)
+  | DM.Node (_root, xs) -> xs |> List.iter (aux 0)
   )
 
 let draw_up_columns cr w ~interactive_regions =
@@ -402,7 +402,7 @@ let highlight_internal_helpers cr w =
 let highlight_biggest_offenders cr w nodes =
   let l = M.layout_of_w w in
   let mat = w.m.DM.matrix in
-  nodes +> List.iter (fun n ->
+  nodes |> List.iter (fun n ->
     let idx = Hashtbl.find w.m.DM.name_to_i n in
     for j = idx +.. 1 to Array.length mat -.. 1 do
       CairoH.fill_rectangle ~cr ~alpha:0.1 ~color:"yellow"
@@ -416,7 +416,7 @@ let highlight_biggest_offenders cr w nodes =
 
 let highlight_biggest_offenders_cells cr w cells =
   let l = M.layout_of_w w in
-  cells +> List.iter (fun (i, j) ->
+  cells |> List.iter (fun (i, j) ->
     CairoH.fill_rectangle ~cr ~alpha:0.3 ~color:"purple"
       (rect_of_cell i j l)
   )
@@ -451,10 +451,10 @@ let draw_matrix cr w =
   highlight_internal_helpers cr w;
 
   (* todo: could start from the config and mark all children of PB too *)
-  let nodes_pb = w.m.DM.i_to_name +> Array.to_list +> List.filter (fun n ->
+  let nodes_pb = w.m.DM.i_to_name |> Array.to_list |> List.filter (fun n ->
     fst n = "PB"
   ) in
-  let nodes_dots = w.m.DM.i_to_name +> Array.to_list +> List.filter (fun n ->
+  let nodes_dots = w.m.DM.i_to_name |> Array.to_list |> List.filter (fun n ->
     snd n = E.MultiDirs
   ) in
   let score_up   = DM.score_upper_triangle w.m [] in
@@ -462,19 +462,19 @@ let draw_matrix cr w =
 
   let biggest_offenders =
     DM.score_upper_triangle_nodes w.m 
-    +> Common.sort_by_val_highfirst
-    +> Common.take_safe 4
-    +> Common.exclude (fun (_i, n) -> n = 0)
+    |> Common.sort_by_val_highfirst
+    |> Common.take_safe 4
+    |> Common.exclude (fun (_i, n) -> n = 0)
   in
-  let nodes_major = biggest_offenders +> List.map fst in
+  let nodes_major = biggest_offenders |> List.map fst in
   highlight_biggest_offenders cr w nodes_major;
   let biggest_cells =
     DM.score_upper_triangle_cells w.m
-     +> Common.sort_by_val_highfirst
-     +> Common.take_safe 20
-     +> Common.exclude (fun (_i, n) -> n = 0)
+     |> Common.sort_by_val_highfirst
+     |> Common.take_safe 20
+     |> Common.exclude (fun (_i, n) -> n = 0)
   in
-  highlight_biggest_offenders_cells cr w (biggest_cells +> List.map fst);
+  highlight_biggest_offenders_cells cr w (biggest_cells |> List.map fst);
     
   !Ctl._label_settext 
     (spf "#backward deps = %d (%.2f%%), - PB = %d, - ... = %d, - biggest = %d" 
@@ -570,7 +570,7 @@ let button_action _da w ev =
                   Graph_code.group_edges_by_files_edges xs 
                     w.model.g_deprecated in
                 let str = 
-                  grouped_deps +> List.map (fun ((f1, f2), deps) ->
+                  grouped_deps |> List.map (fun ((f1, f2), deps) ->
                     let final_file f =
                       try  Common.readable ~root:w.model.root f
                       with Failure _ -> f
@@ -578,14 +578,14 @@ let button_action _da w ev =
                     let f1 = final_file f1 in
                     let f2 = final_file f2 in
                     spf "%s --> %s (%d)\n" f1 f2 (List.length deps) ^
-                    (Common.take_safe ncount deps +> List.map (fun (n1, n2) ->
+                    (Common.take_safe ncount deps |> List.map (fun (n1, n2) ->
                       spf "            %s --> %s" 
                       (Graph_code.string_of_node n1)  
                       (Graph_code.string_of_node n2)
-                     ) +> Common.join "\n"
+                     ) |> Common.join "\n"
                     ) ^
                     (if List.length deps >= ncount then "\n   ...  \n" else "")
-                  ) +> Common.join "\n"
+                  ) |> Common.join "\n"
                 in
                 pr2 str;
                 Gui.dialog_text ~text:str ~title:"Cell explaination";

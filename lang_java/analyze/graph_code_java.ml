@@ -118,10 +118,10 @@ let parse ~show_parse_error file =
 
 
 let str_of_qualified_ident xs =
-  xs +> List.map Ast.unwrap +> Common.join "."
+  xs |> List.map Ast.unwrap |> Common.join "."
 
 let str_of_name xs =
-  xs +> List.map (fun (_tyarg_todo, ident) -> Ast.unwrap ident) +>
+  xs |> List.map (fun (_tyarg_todo, ident) -> Ast.unwrap ident) |>
     Common.join "."
 
 (* helper to build entries in env.params_or_locals *)
@@ -156,7 +156,7 @@ let rec classname_and_info_of_typ t =
 
 (* quite similar to create_intermediate_directories_if_not_present *)
 let create_intermediate_packages_if_not_present g root xs =
-  let dirs = Common2.inits xs +> List.map str_of_qualified_ident in
+  let dirs = Common2.inits xs |> List.map str_of_qualified_ident in
   let dirs =
     match dirs with
     | ""::xs -> xs
@@ -171,8 +171,8 @@ let create_intermediate_packages_if_not_present g root xs =
         if G.has_node entity g
         then aux entity xs
         else begin
-          g +> G.add_node entity;
-          g +> G.add_edge (current, entity) G.Has;
+          g |> G.add_node entity;
+          g |> G.add_edge (current, entity) G.Has;
           aux entity xs
         end
   in
@@ -198,24 +198,24 @@ let add_use_edge env (name, kind) =
           (match kind_original with
           | E.Package ->
               let fake_package =
-                (Common.split "\\." name) +> List.map (fun s -> s^"2") in
+                (Common.split "\\." name) |> List.map (fun s -> s^"2") in
               let dst = (Common.join "." fake_package, kind_original) in
               if not (G.has_node dst env.g)
               then begin
                 create_intermediate_packages_if_not_present
                   env.g parent_target
-                  (fake_package +> List.map (fun s -> s,()));
+                  (fake_package |> List.map (fun s -> s,()));
                 pr2 (spf "PB: lookup fail on %s (in %s)"
                         (G.string_of_node dst) (G.string_of_node src));
               end;
-              env.g +> G.add_edge (src, dst) G.Use;
+              env.g |> G.add_edge (src, dst) G.Use;
               ()
           | _ ->
               pr2 (spf "PB: lookup fail on %s (in %s)"
                       (G.string_of_node dst) (G.string_of_node src));
               G.add_node dst env.g;
-              env.g +> G.add_edge (parent_target, dst) G.Has;
-              env.g +> G.add_edge (src, dst) G.Use;
+              env.g |> G.add_edge (parent_target, dst) G.Has;
+              env.g |> G.add_edge (src, dst) G.Use;
           )
       )
   )
@@ -242,7 +242,7 @@ let lookup_fully_qualified_memoized env x =
  * of all its parents too), hence import_of_inherited_classes below.
  *)
 let with_full_qualifier env xs =
-  env.imported_namespace +> List.map (fun (qualified_ident) ->
+  env.imported_namespace |> List.map (fun (qualified_ident) ->
     let rev = List.rev qualified_ident in
     let prefix =
       (* todo: simplify now that have imported_qualified? *)
@@ -252,7 +252,7 @@ let with_full_qualifier env xs =
       (* todo opti: if head match the head of xs, then can accelerate things? *)
       | _ -> List.rev (List.tl rev)
     in
-    prefix @ (xs +> List.map Ast.unwrap)
+    prefix @ (xs |> List.map Ast.unwrap)
   )
 
 (* Look for entity (package/class/method/field) in list of imported
@@ -264,7 +264,7 @@ let (lookup2: env -> Ast.qualified_ident -> Graph_code.node option) =
  fun env xs ->
   let candidates = with_full_qualifier env xs in
   (* pr2_gen candidates; *)
-  candidates +> Common.find_some_opt (fun full_qualifier ->
+  candidates |> Common.find_some_opt (fun full_qualifier ->
     lookup_fully_qualified_memoized env full_qualifier
   )
 
@@ -280,14 +280,14 @@ let rec import_of_inherited_classes env n =
    * then as E.Class E.Interface
    *)
   let parents_inheritance = G.succ n G.Use env.g in
-  parents_inheritance +> Common.map_filter (fun (str, kind) ->
+  parents_inheritance |> Common.map_filter (fun (str, kind) ->
     match kind with
     | E.Class ->
         let xs = (Common.split "\\." str) @ ["*"] in
         let res = import_of_inherited_classes env (str, kind) in
         Some (xs::res)
     | _ -> None
-  ) +> List.flatten
+  ) |> List.flatten
 
 (*****************************************************************************)
 (* Defs/Uses *)
@@ -319,16 +319,16 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
       | Some long_ident -> [List.map Ast.unwrap long_ident @ ["*"]]
       | None -> []
       ) @
-     (ast.imports +> List.map (fun (_is_static, qualified_ident) ->
+     ((ast.imports |> List.map (fun (_is_static, qualified_ident) ->
        List.map Ast.unwrap qualified_ident
-     ) @ [
+     )) @ [
        (* we automatically import java.lang.* *)
        ["java";"lang";"*"];
        (* we automatically import top packages *)
        ["*"]
      ]
      );
-    imported_qualified = ast.imports +> Common.map_filter (fun (is_static, xs)->
+    imported_qualified = ast.imports |> Common.map_filter (fun (is_static, xs)->
       match List.rev xs with
       | [] -> raise Impossible
       | ["*", _] -> None
@@ -343,8 +343,8 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
     | None ->
         let dir = Common2.dirname readable in
         G.create_intermediate_directories_if_not_present g dir;
-        g +> G.add_node (readable, E.File);
-        g +> G.add_edge ((dir, E.Dir), (readable, E.File))  G.Has;
+        g |> G.add_node (readable, E.File);
+        g |> G.add_edge ((dir, E.Dir), (readable, E.File))  G.Has;
     | Some long_ident ->
         create_intermediate_packages_if_not_present g G.root long_ident;
   end;
@@ -353,7 +353,7 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
    * third-party packages not-yet handled).
    *)
   if phase = Inheritance then begin
-    ast.imports +> List.iter (fun (is_static, qualified_ident) ->
+    ast.imports |> List.iter (fun (is_static, qualified_ident) ->
       let qualified_ident_bis =
         match List.rev qualified_ident with
         | ("*",_)::rest -> List.rev rest
@@ -397,8 +397,8 @@ and decl env = function
       let full_str = str_of_qualified_ident full_ident in
       let node = (full_str, E.TopStmts) in
       if env.phase = Defs then begin
-        env.g +> G.add_node node;
-        env.g +> G.add_edge (env.current, node) G.Has;
+        env.g |> G.add_node node;
+        env.g |> G.add_edge (env.current, node) G.Has;
       end;
       let env = { env with
         current = node;
@@ -415,16 +415,16 @@ and class_decl env def =
   let node = (full_str, E.Class) in
   if env.phase = Defs then begin
     (* less: def.c_type? *)
-    env.g +> G.add_node node;
-    env.g +> G.add_nodeinfo node (nodeinfo def.cl_name);
-    env.g +> G.add_edge (env.current, node) G.Has;
+    env.g |> G.add_node node;
+    env.g |> G.add_nodeinfo node (nodeinfo def.cl_name);
+    env.g |> G.add_edge (env.current, node) G.Has;
   end;
   let env = { env with
     current = node;
     current_qualifier = full_ident;
     (* with anon classes we need to lookup enclosing final parameters/locals *)
-    params_or_locals = env.params_or_locals +> List.filter (fun (_x,b) -> b);
-    type_parameters = def.cl_tparams +> List.map (function
+    params_or_locals = env.params_or_locals |> List.filter (fun (_x,b) -> b);
+    type_parameters = def.cl_tparams |> List.map (function
     | TParam ((str,_tok), _constraints) -> str
     );
   }
@@ -464,9 +464,9 @@ and method_decl env def =
     if G.has_node (full_str, E.Method) env.g
     then ()
     else begin
-      env.g +> G.add_node node;
-      env.g +> G.add_nodeinfo node (nodeinfo def.m_var.v_name);
-      env.g +> G.add_edge (env.current, node) G.Has;
+      env.g |> G.add_node node;
+      env.g |> G.add_nodeinfo node (nodeinfo def.m_var.v_name);
+      env.g |> G.add_edge (env.current, node) G.Has;
     end
   end;
   let env = { env with
@@ -476,12 +476,12 @@ and method_decl env def =
      * share the same name so yes need full_ident as a qualifier.
     *)
     current_qualifier = full_ident;
-    params_or_locals = (def.m_formals +> List.map p_or_l)
+    params_or_locals = (def.m_formals |> List.map p_or_l)
       @
      (* with methods of anon classes we need to lookup enclosing
       * final parameters/locals
       *)
-     (env.params_or_locals +> List.filter (fun (_x,b) -> b));
+     (env.params_or_locals |> List.filter (fun (_x,b) -> b));
 
     (* TODO use m_tparams *)
     type_parameters = [];
@@ -503,9 +503,9 @@ and field_decl env def =
   let node = (full_str, kind) in
   if env.phase = Defs then begin
     (* less: static? *)
-    env.g +> G.add_node node;
-    env.g +> G.add_nodeinfo node (nodeinfo def.f_var.v_name);
-    env.g +> G.add_edge (env.current, node) G.Has;
+    env.g |> G.add_node node;
+    env.g |> G.add_nodeinfo node (nodeinfo def.f_var.v_name);
+    env.g |> G.add_edge (env.current, node) G.Has;
   end;
   let env = { env with
     current = node;
@@ -520,9 +520,9 @@ and enum_decl env def =
     (* less: make it a class? or a Type? *)
   let node = (full_str, E.Class) in
   if env.phase = Defs then begin
-    env.g +> G.add_node node;
-    env.g +> G.add_nodeinfo node (nodeinfo def.en_name);
-    env.g +> G.add_edge (env.current, node) G.Has;
+    env.g |> G.add_node node;
+    env.g |> G.add_nodeinfo node (nodeinfo def.en_name);
+    env.g |> G.add_edge (env.current, node) G.Has;
   end;
   let env = { env with
     current = node;
@@ -537,7 +537,7 @@ and enum_decl env def =
   let (csts, xs) = def.en_body in
   decls env xs;
 
-  csts +> List.iter (fun enum_constant ->
+  csts |> List.iter (fun enum_constant ->
 
     let ident =
       match enum_constant with
@@ -547,9 +547,9 @@ and enum_decl env def =
     let full_str = str_of_qualified_ident full_ident in
     let node = (full_str, E.Constant) in
     if env.phase = Defs then begin
-      env.g +> G.add_node node;
-      env.g +> G.add_nodeinfo node (nodeinfo ident);
-      env.g +> G.add_edge (env.current, node) G.Has;
+      env.g |> G.add_node node;
+      env.g |> G.add_nodeinfo node (nodeinfo ident);
+      env.g |> G.add_edge (env.current, node) G.Has;
     end;
     let env = { env with
       current = node;
@@ -561,7 +561,7 @@ and enum_decl env def =
     | EnumConstructor (_ident, args) ->
         exprs env args
     | EnumWithMethods (_ident, xs) ->
-        decls env (xs +> List.map (fun x -> Method x))
+        decls env (xs |> List.map (fun x -> Method x))
     )
   )
 
@@ -579,7 +579,7 @@ and stmt env = function
       stmt env st2;
   | Switch (e, xs) ->
       expr env e;
-      xs +> List.iter (fun (cs, sts) ->
+      xs |> List.iter (fun (cs, sts) ->
         cases env cs;
         stmts env sts
       )
@@ -608,7 +608,7 @@ and stmt env = function
                 List.iter (field env) xs;
                 let env = { env with
                   params_or_locals =
-                    (xs +> List.map (fun fld -> p_or_l fld.f_var)
+                    (xs |> List.map (fun fld -> p_or_l fld.f_var)
                     ) @ env.params_or_locals;
                 }
                 in
@@ -853,7 +853,7 @@ let build ?(verbose=true) ?(only_defs=false) root files =
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
   if verbose then pr2 "\nstep1: extract defs";
-  files +> Console.progress ~show:verbose (fun k ->
+  files |> Console.progress ~show:verbose (fun k ->
     List.iter (fun file ->
       k();
       let readable = Common.readable ~root file in
@@ -864,7 +864,7 @@ let build ?(verbose=true) ?(only_defs=false) root files =
 
   (* step2: creating the 'Use' edges just for inheritance *)
   if verbose then pr2 "\nstep2: extract inheritance information";
-  files +> Console.progress ~show:verbose (fun k ->
+  files |> Console.progress ~show:verbose (fun k ->
    List.iter (fun file ->
      k();
      let readable = Common.readable ~root file in
@@ -874,7 +874,7 @@ let build ?(verbose=true) ?(only_defs=false) root files =
 
   (* step3: creating the 'Use' edges that can rely on recursive inheritance *)
   if verbose then pr2 "\nstep3: extract uses";
-  files +> Console.progress ~show:verbose (fun k ->
+  files |> Console.progress ~show:verbose (fun k ->
    List.iter (fun file ->
      k();
      let readable = Common.readable ~root file in

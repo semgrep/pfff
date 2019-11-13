@@ -99,7 +99,7 @@ let contain_self_or_parent def =
  * certain assumptions in the code using this file?
  *)
 let subtitute_pos_info qualified_ident newpos =
-  qualified_ident +> List.map (function
+  qualified_ident |> List.map (function
   | QI name ->
     QI (match name with
     | Name (s, _info_of_referenced_class) ->
@@ -167,5 +167,5 @@ let unsugar_self_parent_any a =
 
 (* special case *)
 let unsugar_self_parent_program ast =
-  unsugar_self_parent_any (Program ast) +>
+  unsugar_self_parent_any (Program ast) |>
     (function Program x -> x | _ -> raise Impossible)

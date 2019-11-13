@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common
 
 (*****************************************************************************)
 (* Prelude *)
@@ -56,7 +55,7 @@ let check_file ?(verbose=true) ?(find_entity=None) env file =
    * using them (so need pass find_entity to unsugar_traits).
    *)
   let ast = Parse_php.parse_program file 
-    +> Unsugar_php.unsugar_self_parent_program
+    |> Unsugar_php.unsugar_self_parent_program
   in
 
   (* even if find_entity=None, check_and_annotate_program can find
@@ -74,7 +73,7 @@ let check_file ?(verbose=true) ?(find_entity=None) env file =
   Check_micro_clones_php.check ast;
 
   (* work only when have a find_entity; requires a global view of the code *)
-  find_entity +> Common.do_option (fun find_entity ->
+  find_entity |> Common.do_option (fun find_entity ->
     Check_functions_php.check_program find_entity ast;
     Check_classes_php.check_program   find_entity ast;
     (* could have a Check_typedefs_php.check_program but hack will

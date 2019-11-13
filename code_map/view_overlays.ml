@@ -48,7 +48,7 @@ let readable_txt_for_label txt current_root =
   in
   if String.length readable_txt > 25
   then 
-    let dirs = Filename.dirname readable_txt +> Common.split "/" in
+    let dirs = Filename.dirname readable_txt |> Common.split "/" in
     let file = Filename.basename readable_txt in
     spf "%s/.../%s" (List.hd dirs) file
   else readable_txt
@@ -107,7 +107,7 @@ let draw_englobing_rectangles_overlay ~dw (r, middle, r_englobing) =
   Draw_labels.draw_treemap_rectangle_label_maybe 
     ~cr:cr_overlay ~color:(Some "red") ~zoom:1.0 r_englobing;
 
-  middle +> Common.index_list_1 +> List.iter (fun (r, i) ->
+  middle |> Common.index_list_1 |> List.iter (fun (r, i) ->
     let color = 
       match i with
       | 1 -> "grey70"
@@ -129,10 +129,10 @@ let draw_deps_files tr dw model =
  with_overlay dw (fun cr_overlay ->
    let uses_rect, users_rect = M.deps_rects_of_rect tr dw model in
    (* todo: glowing layer *)
-   uses_rect +> List.iter (fun r ->
+   uses_rect |> List.iter (fun r ->
      CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"green" r.T.tr_rect;
    );
-   users_rect +> List.iter (fun r ->
+   users_rect |> List.iter (fun r ->
      CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"red" r.T.tr_rect;
    )
  )
@@ -156,22 +156,22 @@ let draw_deps_entities n dw model =
  with_overlay dw (fun cr_overlay ->
 
    line_and_microlevel_of_node_opt n dw model 
-   +> Common.do_option (fun (_n2, line, microlevel) ->
+   |> Common.do_option (fun (_n2, line, microlevel) ->
      let rectangle = microlevel.line_to_rectangle line in
      CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"white" rectangle
    );
 
    let uses, users = M.deps_nodes_of_node_clipped n dw model in
-   uses +> List.iter (fun (_n2, line, microlevel) ->
+   uses |> List.iter (fun (_n2, line, microlevel) ->
      let rectangle = microlevel.line_to_rectangle line in
      CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"green" rectangle;
    );
-   users +> List.iter (fun (_n2, line, microlevel) ->
+   users |> List.iter (fun (_n2, line, microlevel) ->
      let rectangle = microlevel.line_to_rectangle line in
      CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"red" rectangle;
      
      let lines_used = M.lines_where_used_node n line microlevel in
-     lines_used +> List.iter (fun line ->
+     lines_used |> List.iter (fun line ->
        let rectangle = microlevel.line_to_rectangle line in
        CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"purple" rectangle;
 
@@ -190,9 +190,9 @@ let draw_tooltip ~cr_overlay ~x ~y n g =
   let succ = Graph_code.succ n Graph_code.Use g in
   let files = 
     pred 
-    +> Common.map_filter (fun n ->
+    |> Common.map_filter (fun n ->
         Common2.optionise (fun () -> (Graph_code.file_of_node n g)))
-    +> Common.sort +> Common2.uniq
+    |> Common.sort |> Common2.uniq
   in
   let str = spf "
  Entity: %s
@@ -210,13 +210,13 @@ let draw_tooltip ~cr_overlay ~x ~y n g =
 
   let template = "peh" in
   let max_length = 
-    xs +> List.map (String.length) +> Common2.maximum +> float_of_int in
+    xs |> List.map (String.length) |> Common2.maximum |> float_of_int in
 
   let extent = CairoH.text_extents cr_overlay template in
-  let tw = extent.Cairo.width * ((max_length / 3.) +> ceil) in
+  let tw = extent.Cairo.width * ((max_length / 3.) |> ceil) in
   let th = extent.Cairo.height * 1.2 in
 
-  let nblines = List.length xs +> float_of_int in
+  let nblines = List.length xs |> float_of_int in
   let refx = x - tw / 2. in
   let refy = y - (th * nblines) in
 
@@ -228,7 +228,7 @@ let draw_tooltip ~cr_overlay ~x ~y n g =
     ();
 
   Cairo.set_source_rgba cr_overlay 1. 1. 1.    1.0;
-  xs +> Common.index_list_0 +> List.iter (fun (txt, line) ->
+  xs |> Common.index_list_0 |> List.iter (fun (txt, line) ->
     let line = float_of_int line in
     Cairo.move_to cr_overlay refx (refy + line * th);
     CairoH.show_text cr_overlay txt;
@@ -242,7 +242,7 @@ let draw_tooltip ~cr_overlay ~x ~y n g =
 (*s: draw_searched_rectangles *)
 let draw_searched_rectangles ~dw =
  with_overlay dw (fun cr_overlay ->
-  dw.current_searched_rectangles +> List.iter (fun r ->
+  dw.current_searched_rectangles |> List.iter (fun r ->
     CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"yellow" r.T.tr_rect
   );
   (* 
@@ -278,12 +278,12 @@ let paint_initial dw =
 let hook_finish_paint w =
   (* pr2 "Hook_finish_paint"; *)
   let dw = w.dw in
-  w.current_node +> Common.do_option (fun n -> 
-    Async.async_get_opt w.model +> Common.do_option (fun model ->
+  w.current_node |> Common.do_option (fun n -> 
+    Async.async_get_opt w.model |> Common.do_option (fun model ->
       draw_deps_entities n dw model
     ));
-  w.current_node_selected +> Common.do_option (fun n -> 
-    Async.async_get_opt w.model +> Common.do_option (fun model ->
+  w.current_node_selected |> Common.do_option (fun n -> 
+    Async.async_get_opt w.model |> Common.do_option (fun model ->
       draw_deps_entities n dw model
     ))
 
@@ -300,7 +300,7 @@ let motion_refresher ev w =
     Cairo.device_to_user cr x y |> CairoH.cairo_point_to_point) in
   let r_opt = M.find_rectangle_at_user_point user dw in
 
-  r_opt +> Common.do_option (fun (tr, middle, r_englobing) ->
+  r_opt |> Common.do_option (fun (tr, middle, r_englobing) ->
     (* coupling: similar code in right click handler in View_mainmap *)
     let line_opt = 
       M.find_line_in_rectangle_at_user_point user tr dw in
@@ -348,11 +348,11 @@ let motion_refresher ev w =
     );
 
     draw_englobing_rectangles_overlay ~dw (tr, middle, r_englobing);
-    Async.async_get_opt w.model +> Common.do_option (fun model ->
+    Async.async_get_opt w.model |> Common.do_option (fun model ->
       draw_deps_files tr dw model;
-      entity_opt +> Common.do_option (fun _n -> w.current_node <- None);
-      entity_def_opt+>Common.do_option (fun n -> draw_deps_entities n dw model);
-      entity_use_opt+>Common.do_option (fun n -> draw_deps_entities n dw model);
+      entity_opt |> Common.do_option (fun _n -> w.current_node <- None);
+      entity_def_opt|>Common.do_option (fun n -> draw_deps_entities n dw model);
+      entity_use_opt|>Common.do_option (fun n -> draw_deps_entities n dw model);
     );
   
     if w.settings.draw_searched_rectangles;
@@ -362,7 +362,7 @@ let motion_refresher ev w =
       |> Common.do_option GMain.Timeout.remove;
     Controller.current_tooltip_refresher := 
       Some (Gui.gmain_timeout_add ~ms:1000 ~callback:(fun _ ->
-        Async.async_get_opt w.model +> Common.do_option (fun model ->
+        Async.async_get_opt w.model |> Common.do_option (fun model ->
           match entity_opt, model.g with
           | Some node, Some g ->
             draw_tooltip ~cr_overlay ~x ~y node g;
@@ -388,7 +388,7 @@ let motion_notify w ev =
   (* The motion code now takes time, so it's better do run it when the user
    * has finished moving his mouse, hence the use of gmain_idle_add below.
    *)
-  !Controller.current_motion_refresher +> Common.do_option GMain.Idle.remove;
+  !Controller.current_motion_refresher |> Common.do_option GMain.Idle.remove;
   Controller.current_motion_refresher := 
     Some (Gui.gmain_idle_add ~prio:200 (fun () -> 
       let res = motion_refresher ev w in

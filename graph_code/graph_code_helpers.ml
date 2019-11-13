@@ -23,7 +23,7 @@ module G = Graph_code
 
 let propagate_users_of_functions_globals_types_to_prototype_extern_typedefs g =
   let pred = G.mk_eff_use_pred g in
-  g +> G.iter_nodes (fun n ->
+  g |> G.iter_nodes (fun n ->
     let n_def_opt =
       match n with
       | s, E.Prototype -> Some (s, E.Function)
@@ -35,16 +35,16 @@ let propagate_users_of_functions_globals_types_to_prototype_extern_typedefs g =
         Some ("S__" ^(Common.matched1 s), E.Type)
       | _ -> None
     in
-    n_def_opt +> Common.do_option (fun n_def ->
+    n_def_opt |> Common.do_option (fun n_def ->
       let n_decl = n in
       if G.has_node n_def g 
       then begin
         (* let's create a link between the def and the decl *)
-        g +> G.add_edge (n_def, n_decl) G.Use;
+        g |> G.add_edge (n_def, n_decl) G.Use;
         (* and now the users *)
         let users = pred n_def in
-        users +> List.iter (fun user ->
-          g +> G.add_edge (user, n_decl) G.Use
+        users |> List.iter (fun user ->
+          g |> G.add_edge (user, n_decl) G.Use
         )
       end
     )

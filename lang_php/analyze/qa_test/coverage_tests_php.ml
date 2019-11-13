@@ -128,7 +128,7 @@ let get_all_call_lines_with_sanity_check
      ?is_directive_to_filter file lines_covered =
 
   (* don't know why but sometimes 0 is in the trace *)
-  let lines_covered = lines_covered +> Common.exclude (fun x -> x = 0) in
+  let lines_covered = lines_covered |> Common.exclude (fun x -> x = 0) in
       
   let nb_lines_covered = List.length lines_covered in
       
@@ -143,8 +143,8 @@ let get_all_call_lines_with_sanity_check
      
   let lines_calls = 
     calls 
-    +> List.map (fun (_sopt, rp) -> Parse_info.line_of_info rp)
-    +> Common2.set
+    |> List.map (fun (_sopt, rp) -> Parse_info.line_of_info rp)
+    |> Common2.set
   in
   let nb_lines_calls = List.length lines_calls in
       
@@ -166,7 +166,7 @@ let get_all_call_lines_with_sanity_check
       with
       exn -> [Common.exn_to_s exn]
     in
-    lines +> List.iter pr2;
+    lines |> List.iter pr2;
     pr2 "PB: fix get_all_calls";
     
   end;
@@ -176,11 +176,11 @@ let get_all_call_lines_with_sanity_check
 
 let killall_php_process () = 
   pr2 "Remaining php process";
-  Sys.command ("ps aux |grep php") +> ignore;
+  Sys.command ("ps aux |grep php") |> ignore;
   pr2 "killing";
-  Sys.command ("killall php") +> ignore;
+  Sys.command ("killall php") |> ignore;
   pr2 "Still remaining php process ?";
-  Sys.command ("ps aux |grep php") +> ignore;
+  Sys.command ("ps aux |grep php") |> ignore;
   ()
 
 (*****************************************************************************)
@@ -283,7 +283,7 @@ let coverage_tests
         then 
           Problem (test_file, "trace file too big")
         else begin
-          trace_file +> Xdebug.iter_dumpfile 
+          trace_file |> Xdebug.iter_dumpfile 
             ~config 
             ~show_progress:false
             ~fatal_when_exn:true
@@ -332,8 +332,8 @@ let coverage_tests
   let reducer _acc test_cover_result = 
     match test_cover_result with
     | Cover (test_file, files_called) ->
-        let total = files_called +> List.map snd +> Common2.sum in
-        files_called +> List.iter (fun (file_called, nb_occurences) ->
+        let total = files_called |> List.map snd |> Common2.sum in
+        files_called |> List.iter (fun (file_called, nb_occurences) ->
           h#update file_called (fun hbis -> 
             Hashtbl.replace hbis test_file 
               (* "term" frequency *)
@@ -353,23 +353,23 @@ let coverage_tests
       ~fmap:mapper ~freduce:reducer () test_files_fn
 *)
   in
-  not_done +> List.iter (fun test_file ->
+  not_done |> List.iter (fun test_file ->
     Common.push (test_file, "MPI error, see the full log") pb_test_files;
   );
 
   pr2 "test dependencies";
   let coverage = 
-    h#to_list +> List.map (fun (source_file, h) ->
+    h#to_list |> List.map (fun (source_file, h) ->
       let tests = h 
-      +> Common.hash_to_list 
-      +> Common.sort_by_val_highfirst
+      |> Common.hash_to_list 
+      |> Common.sort_by_val_highfirst
       in
       (source_file, tests)
     )
   in
 
   (* error report *)
-  !pb_test_files +> List.rev +> List.iter (fun (test_file, error) ->
+  !pb_test_files |> List.rev |> List.iter (fun (test_file, error) ->
     pr2 (spf "PB with %s, \n\t%s" test_file error);
   );
   let good = !ok_test_files in
@@ -407,7 +407,7 @@ let lines_coverage_from_tests
     Hashtbl.create 101
   ) in
 
-  all_test_files +> Common2.index_list_and_total +> List.iter 
+  all_test_files |> Common2.index_list_and_total |> List.iter 
   (fun (test_file, i, total) ->
     let trace_file = Common.new_temp_file "xdebug" ".xt" in
     Common.finalize (fun () ->
@@ -443,7 +443,7 @@ let lines_coverage_from_tests
             (Common2.nblines_with_wc trace_file)
     );
 
-    trace_file +> Xdebug.iter_dumpfile 
+    trace_file |> Xdebug.iter_dumpfile 
       ~config 
       ~show_progress:false
       ~fatal_when_exn:true
@@ -480,13 +480,13 @@ let lines_coverage_from_tests
     
   (* some sanity checks *)
   let h_all_files = Common.hashset_of_list all_files in
-  h#to_list +> List.iter (fun (file, _hset) ->
+  h#to_list |> List.iter (fun (file, _hset) ->
     if not (Hashtbl.mem h_all_files file)
     then pr2
       (spf "file with coverage information %s not in list of files" file);
   );
 
-  all_files +> Common2.index_list_and_total +> List.map (fun (file, i, total) ->
+  all_files |> Common2.index_list_and_total |> List.map (fun (file, i, total) ->
     pr2 (spf "processing source: %s (%d/%d)" file i total);
     let covered = 
       try 

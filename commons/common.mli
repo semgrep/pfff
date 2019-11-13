@@ -1,7 +1,4 @@
 
-(* TODO: should deprecate that! you can now use |> in recent OCaml *)
-val (+>) : 'a -> ('a -> 'b) -> 'b
-
 val (=|=) : int    -> int    -> bool
 val (=<=) : char   -> char   -> bool
 val (=$=) : string -> string -> bool

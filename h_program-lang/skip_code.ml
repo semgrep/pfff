@@ -45,10 +45,10 @@ type skip =
 (*****************************************************************************)
 let load file =
   Common.cat file 
-  +> Common.exclude (fun s -> 
+  |> Common.exclude (fun s -> 
     s =~ "#.*" || s =~ "^[ \t]*$"
   )
-  +> List.map (fun s ->
+  |> List.map (fun s ->
     match s with
     | _ when s =~ "^dir:[ ]*\\([^ ]+\\)" -> 
       Dir (Common.matched1 s)
@@ -68,29 +68,29 @@ let load file =
 (* less: say when skipped stuff? *)
 let filter_files skip_list root xs =
   let skip_files =
-    skip_list +> Common.map_filter (function
+    skip_list |> Common.map_filter (function
     | File s -> Some s
     | _ -> None
-    ) +> Common.hashset_of_list
+    ) |> Common.hashset_of_list
   in
   let skip_dirs =
-    skip_list +> Common.map_filter (function
+    skip_list |> Common.map_filter (function
     | Dir s -> Some s
     | _ -> None
     ) 
   in
   let skip_dir_elements =
-    skip_list +> Common.map_filter (function
+    skip_list |> Common.map_filter (function
     | DirElement s -> Some s
     | _ -> None
     ) 
   in
-  xs +> Common.exclude (fun file ->
+  xs |> Common.exclude (fun file ->
     let readable = Common.readable ~root file in
     (Hashtbl.mem skip_files readable) ||
-    (skip_dirs +> List.exists 
+    (skip_dirs |> List.exists 
        (fun dir -> readable =~ (dir ^ ".*"))) ||
-    (skip_dir_elements +> List.exists 
+    (skip_dir_elements |> List.exists 
        (fun dir -> readable =~ (".*/" ^ dir ^ "/.*")))
   )
 
@@ -99,7 +99,7 @@ let filter_files skip_list root xs =
 let find_vcs_root_from_absolute_path file =
   let xs = Common.split "/" (Common2.dirname file) in
   let xxs = Common2.inits xs in
-  xxs +> List.rev +> Common.find_some (fun xs ->
+  xxs |> List.rev |> Common.find_some (fun xs ->
     let dir = "/" ^ Common.join "/" xs in
     if Sys.file_exists (Filename.concat dir ".git") ||
        Sys.file_exists (Filename.concat dir ".hg") ||
@@ -117,7 +117,7 @@ let find_skip_file_from_root root =
     "conf/codegraph/skip_list.txt";
   ]
   in
-  candidates +> Common.find_some (fun f ->
+  candidates |> Common.find_some (fun f ->
     let full = Filename.concat root f in
     if Sys.file_exists full
     then Some full
@@ -141,19 +141,19 @@ let filter_files_if_skip_list xs =
 (*****************************************************************************)
 let build_filter_errors_file skip_list =
   let skip_dirs = 
-    skip_list +> Common.map_filter (function
+    skip_list |> Common.map_filter (function
     | SkipErrorsDir dir -> Some dir
     | _ -> None
     )
   in
   (fun readable ->
-    skip_dirs +> List.exists (fun dir -> readable =~ ("^" ^ dir))
+    skip_dirs |> List.exists (fun dir -> readable =~ ("^" ^ dir))
   )
 
 let reorder_files_skip_errors_last skip_list root xs =
   let is_file_want_to_skip_error = build_filter_errors_file skip_list in
   let (skip_errors, ok) = 
-    xs +> List.partition (fun file ->
+    xs |> List.partition (fun file ->
       let readable = Common.readable ~root file in
       is_file_want_to_skip_error readable
     )

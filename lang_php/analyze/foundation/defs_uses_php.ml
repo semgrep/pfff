@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common
 
 open Cst_php
 
@@ -127,7 +126,7 @@ let defs_of_any any =
     V.kexpr = (fun (k, _) x ->
       match x with
       | Call(Id(XName[QI (Name ("define", _tok))]), args) ->
-          let args = args +> Ast.unparen +> Ast.uncomma in
+          let args = args |> Ast.unparen |> Ast.uncomma in
           (match args with
           (* Maybe better to have a Define directly in the AST. Note that
            * PHP 5.3 has a new const features that makes the use of define

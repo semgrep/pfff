@@ -261,15 +261,15 @@ let treemap_generator ~filter_file =
 (* this is currently called in the background *)
 let build_model2 root dbfile_opt graphfile_opt =   
 
-  let db_opt = dbfile_opt +> Common.map_opt Database_code.load_database in
+  let db_opt = dbfile_opt |> Common.map_opt Database_code.load_database in
   let files = 
-    Common.files_of_dir_or_files_no_vcs_nofilter [root] +> List.filter !filter
+    Common.files_of_dir_or_files_no_vcs_nofilter [root] |> List.filter !filter
   in
   let hentities = Model_database_code.hentities root db_opt in
   let all_entities = Model_database_code.all_entities ~root files db_opt in
   let big_grep_idx = Completion2.build_completion_defs_index all_entities in
 
-  let g_opt = graphfile_opt +> Common.map_opt Graph_code.load in
+  let g_opt = graphfile_opt |> Common.map_opt Graph_code.load in
   let hfile_deps_of_node, hentities_of_file =
     match g_opt with
     | None -> Hashtbl.create 0, Hashtbl.create 0
@@ -297,7 +297,7 @@ let build_model a b c =
 
 (* could also to parse all json files and filter the one which do not parse *)
 let layers_in_dir dir =
-  Common2.readdir_to_file_list dir +> Common.map_filter (fun file ->
+  Common2.readdir_to_file_list dir |> Common.map_filter (fun file ->
     if file =~ "layer.*json"
     then Some (Filename.concat dir file)
     else None
@@ -325,14 +325,14 @@ let main_action xs =
     | Some file, _, _ -> 
         [Layer_code.load_layer file]
     | None, Some dir, _ | None, None, [dir] ->
-        layers_in_dir dir +> List.map Layer_code.load_layer
+        layers_in_dir dir |> List.map Layer_code.load_layer
     | _ -> []
   in
   let layers_with_index = 
     Layer_code.build_index_of_layers ~root 
       (match !layer_file, layers with 
       | Some _, [layer] -> [layer, true]
-      | _ -> layers +> List.map (fun x -> x, false)
+      | _ -> layers |> List.map (fun x -> x, false)
       )
   in
 
@@ -345,12 +345,12 @@ let main_action xs =
           Filename.concat dir Database_code.default_db_name ^ ".json";
       ] in
       (try 
-        Some (candidates +> List.find (fun file -> Sys.file_exists file))
+        Some (candidates |> List.find (fun file -> Sys.file_exists file))
       with Not_found -> None
       )
       | _ -> None
   in
-  db_file +> Common.do_option (fun db -> 
+  db_file |> Common.do_option (fun db -> 
     pr2 (spf "Using pfff light db: %s" db)
   );
   let graph_file = 
@@ -361,12 +361,12 @@ let main_action xs =
           Filename.concat dir Graph_code.default_filename;
       ] in
       (try 
-        Some (candidates +> List.find (fun file -> Sys.file_exists file))
+        Some (candidates |> List.find (fun file -> Sys.file_exists file))
       with Not_found -> None
       )
     | _ -> None
   in
-  graph_file +> Common.do_option (fun db -> 
+  graph_file |> Common.do_option (fun db -> 
     pr2 (spf "Using graphcode: %s" db)
   );
   let skip_file = !skip_file ||| Filename.concat root "skip_list.txt" in
@@ -399,7 +399,7 @@ let main_action xs =
     let res = Parallel.invoke job () () in
     Async.async_set res async_model;
   ) ()
-  +> ignore;
+  |> ignore;
  
   let w = { Model.
     dw;
@@ -465,13 +465,13 @@ let test_loc print_top30 xs =
         end
   in
   aux treemap;
-  let total = !res +> List.map snd +> List.map int_of_float  +> Common2.sum in
+  let total = !res |> List.map snd |> List.map int_of_float  |> Common2.sum in
   pr2 (spf "LOC = %d (%d files)" total (List.length !res));
   if print_top30 then begin
     let topx = 30 in
     pr2 (spf "Top %d:" topx);
-    !res +> Common.sort_by_val_highfirst +> Common.take_safe topx 
-    +>  List.iter (fun (file, f) ->
+    !res |> Common.sort_by_val_highfirst |> Common.take_safe topx 
+    |>  List.iter (fun (file, f) ->
       pr2 (spf "%-40s: %d" file (int_of_float f))
     )
   end
@@ -480,10 +480,10 @@ let test_loc print_top30 xs =
 let test_treemap_dirs () =
   let paths = 
     ["commons/common.ml"; "h_visualization"; "code_graph"] 
-    +> List.map Common.fullpath in
+    |> List.map Common.fullpath in
   let paths = List.sort String.compare paths in
   let tree = 
-    paths +> Treemap.tree_of_dirs_or_files
+    paths |> Treemap.tree_of_dirs_or_files
       ~filter_dir:Lib_vcs.filter_vcs_dir
       ~filter_file:(fun file -> file =~ ".*\\.ml")
       ~file_hook:(fun _file -> 10)
@@ -504,7 +504,7 @@ let test_visual_commitid id =
     (* not sure why git adds an extra empty line at the beginning but we
      * have to filter it
      *)
-    +> Common.exclude Common.null_string
+    |> Common.exclude Common.null_string
   in
   pr2_gen files;
   main_action files
@@ -553,13 +553,13 @@ let test_draw cr =
 let test_cairo () =
   let _locale = GtkMain.Main.init () in
   let w = GWindow.window ~title:"test" () in
-  (w#connect#destroy GMain.quit) +> ignore;
+  (w#connect#destroy GMain.quit) |> ignore;
   let px = GDraw.pixmap ~width ~height ~window:w () in
   px#set_foreground `WHITE;
   px#rectangle ~x:0 ~y:0 ~width ~height ~filled:true ();
   let cr = Cairo_gtk.create px#pixmap in
   test_draw cr;
-  (GMisc.pixmap px ~packing:w#add ()) +> ignore;
+  (GMisc.pixmap px ~packing:w#add ()) |> ignore;
   w#show ();
   GMain.main()
   
@@ -613,7 +613,7 @@ let options () = ([
     " <dir_with_layers>";
     "-filter", Arg.String (fun s -> filter := List.assoc s filters;), 
      spf " filter certain files (available = %s)" 
-      (filters +> List.map fst +> Common.join ", ");
+      (filters |> List.map fst |> Common.join ", ");
     "-extra_filter", Arg.String (fun s -> Flag.extra_filter := Some s),
     " ";
     "-skip_list", Arg.String (fun s -> skip_file := Some s), 

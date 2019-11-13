@@ -41,14 +41,14 @@ type 'tok hooks = {
 let comment_before hooks tok all_toks =
   let pos = Parse_info.pos_of_info tok in
   let before = 
-    all_toks +> Common2.take_while (fun tok2 ->
+    all_toks |> Common2.take_while (fun tok2 ->
       let info = hooks.tokf tok2 in
       let pos2 = PI.pos_of_info info in
       pos2 < pos
     )
   in
   let first_non_space =
-    List.rev before +> Common2.drop_while (fun t ->
+    List.rev before |> Common2.drop_while (fun t ->
       let kind = hooks.kind t in
       match kind with
       | PI.Esthet PI.Newline | PI.Esthet PI.Space -> true
@@ -68,14 +68,14 @@ let comment_after hooks tok all_toks =
   let pos = PI.pos_of_info tok in
   let line = PI.line_of_info tok in
   let after = 
-    all_toks +> Common2.drop_while (fun tok2 ->
+    all_toks |> Common2.drop_while (fun tok2 ->
       let info = hooks.tokf tok2 in
       let pos2 = PI.pos_of_info info in
       pos2 <= pos
     )
   in
   let first_non_space =
-    after +> Common2.drop_while (fun t ->
+    after |> Common2.drop_while (fun t ->
       let kind = hooks.kind t in
       match kind with
       | PI.Esthet PI.Newline | PI.Esthet PI.Space -> true

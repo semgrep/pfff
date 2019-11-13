@@ -57,7 +57,7 @@ let tokens2 file =
         let tok = mltoken lexbuf in
         if !Flag.debug_lexer then Common.pr2_gen tok;
 
-        let tok = tok +> TH.visitor_info_of_tok (fun ii -> 
+        let tok = tok |> TH.visitor_info_of_tok (fun ii -> 
         { ii with PI.token=
           (* could assert pinfo.filename = file ? *)
            match ii.PI.token with

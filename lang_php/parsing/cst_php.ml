@@ -898,7 +898,7 @@ let unarg arg =
   | ArgRef _ -> failwith "Found a ArgRef"
   | ArgUnpack _ -> failwith "Found a ArgUnpack"
 let unargs xs =
-  uncomma xs +> Common.partition_either (function
+  uncomma xs |> Common.partition_either (function
   | Arg e -> Left e
   | ArgRef (_tok, e) -> Right (e)
   | ArgUnpack (_tok, e) -> Right (e)
@@ -982,10 +982,10 @@ let str_of_name_namespace x =
   match x with
   | Self tok | Parent tok | LateStatic tok -> Parse_info.str_of_info tok
   | XName xs ->
-    xs +> List.map (function
+    xs |> List.map (function
     | QITok _ -> "\\"
     | QI id -> str_of_ident id
-    ) +> Common.join ""
+    ) |> Common.join ""
 
 
 let name_of_class_name x =

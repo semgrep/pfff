@@ -31,7 +31,7 @@ module TV = Token_views_cpp
 let look_like_argument _tok_before xs =
 
   (* normalize for C++ *)
-  let xs = xs +> List.map (function
+  let xs = xs |> List.map (function
     | Tok ({t=TAnd ii} as record) -> Tok ({record with t=TMul ii})
     | x -> x
   )
@@ -84,7 +84,7 @@ let look_like_argument _tok_before xs =
   (* todo? what if they contradict each other? if one say arg and
    * the other a parameter?
    *)
-  xxs +> List.exists aux1 || aux xs
+  xxs |> List.exists aux1 || aux xs
 
 let look_like_typedef s =
   s =~ ".*_t$" ||
@@ -107,7 +107,7 @@ let look_like_typedef s =
 let look_like_parameter tok_before xs =
 
   (* normalize for C++ *)
-  let xs = xs +> List.map (function
+  let xs = xs |> List.map (function
     | Tok ({t=TAnd ii} as record) -> Tok ({record with t=TMul ii})
     | x -> x
   )
@@ -161,7 +161,7 @@ let look_like_parameter tok_before xs =
         | _ -> aux xs
         )
   in
-  xxs +> List.exists aux1 || aux xs
+  xxs |> List.exists aux1 || aux xs
 
 
 (*****************************************************************************)
@@ -194,21 +194,21 @@ let set_context_tag_multi groups =
   | Tok{t=(Tstruct _ | Tunion _ | Tclass _)}::Tok{t=TIdent(s,_)}
     ::(Braces(_t1, _body, _t2) as braces)::xs
     ->
-      [braces] +> TV.iter_token_multi (fun tok ->
+      [braces] |> TV.iter_token_multi (fun tok ->
         tok.TV.where <- (TV.InClassStruct s)::tok.TV.where;
       );
       aux (braces::xs)
 
   | Tok{t=(Tstruct _ | Tunion _)}::(Braces(_t1, _body, _t2) as braces)::xs
     ->
-      [braces] +> TV.iter_token_multi (fun tok ->
+      [braces] |> TV.iter_token_multi (fun tok ->
         tok.TV.where <- (TV.InClassStruct "__anon__")::tok.TV.where;
       );
       aux (braces::xs)
 
   (* = { } *)
   | Tok ({t=TEq _; _})::(Braces(_t1, _body, _t2) as braces)::xs -> 
-      [braces] +> TV.iter_token_multi (fun tok -> 
+      [braces] |> TV.iter_token_multi (fun tok -> 
         tok.TV.where <- InInitializer::tok.TV.where;
       );
       aux (braces::xs)
@@ -217,7 +217,7 @@ let set_context_tag_multi groups =
   | Tok{t=Tenum _}::Tok{t=TIdent(_,_)}::(Braces(_t1, _body, _t2) as braces)::xs
   | Tok{t=Tenum _}::(Braces(_t1, _body, _t2) as braces)::xs
     ->
-      [braces] +> TV.iter_token_multi (fun tok ->
+      [braces] |> TV.iter_token_multi (fun tok ->
         tok.TV.where <- TV.InEnum::tok.TV.where;
       );
       aux (braces::xs)
@@ -229,7 +229,7 @@ let set_context_tag_multi groups =
     ->
       let (before, braces, after) =
         try 
-          xs +> Common2.split_when (function
+          xs |> Common2.split_when (function
           | Braces _ -> true
           | _ -> false
           )
@@ -238,7 +238,7 @@ let set_context_tag_multi groups =
                                     (Parse_info.string_of_info ii)))
       in
       aux before;
-      [braces] +> TV.iter_token_multi (fun tok ->
+      [braces] |> TV.iter_token_multi (fun tok ->
         tok.TV.where <- (TV.InClassStruct s)::tok.TV.where;
       );
       aux [braces];
@@ -254,7 +254,7 @@ let set_context_tag_multi groups =
   | x::(Parens(_t1, body, _t2) as parens)::xs 
     when look_like_argument x body ->
       (*msg_context t1.t (TV.InArgument); *)
-      [parens] +> TV.iter_token_multi (fun tok ->
+      [parens] |> TV.iter_token_multi (fun tok ->
         tok.TV.where <- (TV.InArgument)::tok.TV.where;
       );
       (* todo? recurse on body? *)
@@ -265,7 +265,7 @@ let set_context_tag_multi groups =
   | (Tok{t=Toperator _} as tok1)::tok2::(Parens(_t1, body, _t2) as parens)::xs 
     when look_like_parameter tok1 body ->
       (* msg_context t1.t (TV.InParameter); *)
-      [parens] +> TV.iter_token_multi (fun tok ->
+      [parens] |> TV.iter_token_multi (fun tok ->
         tok.TV.where <- (TV.InParameter)::tok.TV.where;
       );
       (* recurse on body? hmm if InParameter should not have nested 
@@ -278,7 +278,7 @@ let set_context_tag_multi groups =
   | x::(Parens(_t1, body, _t2) as parens)::xs 
     when look_like_parameter x body ->
       (* msg_context t1.t (TV.InParameter); *)
-      [parens] +> TV.iter_token_multi (fun tok ->
+      [parens] |> TV.iter_token_multi (fun tok ->
         tok.TV.where <- (TV.InParameter)::tok.TV.where;
       );
       (* recurse on body? hmm if InParameter should not have nested 
@@ -291,7 +291,7 @@ let set_context_tag_multi groups =
   | Tok{t=typ}::Tok{t=TIdent _}::(Parens(_t1, _body, _t2) as parens)::xs 
     when TH.is_basic_type typ ->
       (* msg_context t1.t (TV.InParameter); *)
-      [parens] +> TV.iter_token_multi (fun tok ->
+      [parens] |> TV.iter_token_multi (fun tok ->
         tok.TV.where <- (TV.InParameter)::tok.TV.where;
       );
       aux (parens::xs)
@@ -309,7 +309,7 @@ let set_context_tag_multi groups =
       aux xs
   in
   (* sane initialization *)
-  groups +> TV.iter_token_multi (fun tok ->
+  groups |> TV.iter_token_multi (fun tok ->
     tok.TV.where <- [TV.InTopLevel];
   );
   aux groups

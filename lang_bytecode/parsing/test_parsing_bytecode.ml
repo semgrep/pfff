@@ -19,7 +19,7 @@ module PI = Parse_info
 
 let test_parse_bytecode xs =
   let fullxs = Lib_parsing_bytecode.find_source_files_of_dir_or_files xs in
-  fullxs +> List.iter (fun file -> 
+  fullxs |> List.iter (fun file -> 
     pr2 ("PARSING: " ^ file);
     let _ast = Parse_bytecode.parse file in
     ()

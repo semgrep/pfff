@@ -88,12 +88,12 @@ let unittest =
   let env = Env_php.mk_env ~php_root:"/" in
 
   (* run the bugs finders *)
-  test_files +> List.iter (fun file ->
+  test_files |> List.iter (fun file ->
     Check_all_php.check_file ~verbose ~find_entity env file;
     Check_classes_php.check_required_field cg file
   );
   if verbose then begin
-    !Error_php._errors +> List.iter (fun e -> pr (Error_php.string_of_error e))
+    !Error_php._errors |> List.iter (fun e -> pr (Error_php.string_of_error e))
   end;
   let actual_errors = !Error_php._errors in
   let actual_error_lines = 
@@ -110,16 +110,16 @@ let unittest =
   let (_common, only_in_expected, only_in_actual) = 
     Common2.diff_set_eff expected_error_lines actual_error_lines in
 
-  only_in_expected +> List.iter (fun (src, l) ->
+  only_in_expected |> List.iter (fun (src, l) ->
     pr2 (spf "this one error is missing: %s:%d" src l);
   );
-  only_in_actual +> List.iter (fun (src, l) ->
+  only_in_actual |> List.iter (fun (src, l) ->
     pr2 (spf "this one error was not expected: %s:%d (%s)" src l
-           (!Error_php._errors +> List.find (fun err ->
+           (!Error_php._errors |> List.find (fun err ->
              let info = err.Error_php.loc in
              src =$= Parse_info.file_of_info info &&
              l   =|= Parse_info.line_of_info info
-            ) +> Error_php.string_of_error));
+            ) |> Error_php.string_of_error));
   );
   assert_bool
     ~msg:(spf "it should find all reported errors and no more (%d errors)"

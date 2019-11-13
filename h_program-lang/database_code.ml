@@ -215,19 +215,19 @@ let json_of_entity e =
     "p", json_of_filepos e.e_pos;
     (* different from type *)
     "cnt", J.Int e.e_number_external_users;
-    "u", J.Array (e.e_good_examples_of_use +> List.map (fun id -> J.Int id));
-    "ps", J.Array (e.e_properties +> List.map json_of_property);
+    "u", J.Array (e.e_good_examples_of_use |> List.map (fun id -> J.Int id));
+    "ps", J.Array (e.e_properties |> List.map json_of_property);
   ]
 
 let json_of_database db = 
   J.Object [
     "root", J.String db.root;
-    "dirs", J.Array (db.dirs +> List.map (fun (x, i) ->
+    "dirs", J.Array (db.dirs |> List.map (fun (x, i) ->
       J.Array([J.String x; J.Int i])));
-    "files", J.Array (db.files +> List.map (fun (x, i) ->
+    "files", J.Array (db.files |> List.map (fun (x, i) ->
       J.Array([J.String x; J.Int i])));
-    "entities", J.Array (db.entities +> 
-                         Array.to_list +> List.map json_of_entity);
+    "entities", J.Array (db.entities |> 
+                         Array.to_list |> List.map json_of_entity);
   ]
 
 (*---------------------------------------------------------------------------*)
@@ -236,7 +236,7 @@ let json_of_database db =
 let ids_of_json json =
   match json with
   | J.Array xs ->
-      xs +> List.map (function
+      xs |> List.map (function
       | J.Int id -> id
       | _ -> failwith "bad json"
       )
@@ -259,7 +259,7 @@ let property_of_json json =
 let properties_of_json json =
   match json with
   | J.Array xs ->
-      xs +> List.map property_of_json
+      xs |> List.map property_of_json
   | _ -> failwith "Bad json"
 
 (* Reverse of json_of_entity_info; must follow same convention for the order
@@ -304,21 +304,21 @@ let database_of_json2 json =
     ] -> {
       root = db_root;
       
-      dirs = db_dirs +> List.map (fun json ->
+      dirs = db_dirs |> List.map (fun json ->
         match json with
         | J.Array([J.String x; J.Int i]) ->
             x, i
         | _ -> failwith "Bad json"
       );
 
-      files = db_files +> List.map (fun json ->
+      files = db_files |> List.map (fun json ->
         match json with
         | J.Array([J.String x; J.Int i]) ->
             x, i
         | _ -> failwith "Bad json"
       );
       entities = 
-        db_entities +> List.map entity_of_json +> Array.of_list
+        db_entities |> List.map entity_of_json |> Array.of_list
     }
       
   | _ -> failwith "Bad json"
@@ -359,9 +359,9 @@ let load_database file =
 let save_database database file =
   if File_type.is_json_filename file
   then
-    database +> json_of_database 
-    +> Json_io.string_of_json ~compact:false ~recursive:false ~allow_nan:true
-    +> Common.write_file ~file
+    database |> json_of_database 
+    |> Json_io.string_of_json ~compact:false ~recursive:false ~allow_nan:true
+    |> Common.write_file ~file
   else Common2.write_value database file
 
 
@@ -478,8 +478,8 @@ let entity_and_highlight_category_correpondance entity categ =
  *)
 let alldirs_and_parent_dirs_of_relative_dirs dirs =
   dirs 
-  +> List.map Common2.inits_of_relative_dir 
-  +> List.flatten +> Common2.uniq_eff
+  |> List.map Common2.inits_of_relative_dir 
+  |> List.flatten |> Common2.uniq_eff
 
 
 let merge_databases db1 db2 =
@@ -500,11 +500,11 @@ let merge_databases db1 db2 =
   
   let db2_entities = db2.entities in
   let db2_entities_adjusted = 
-    db2_entities +> Array.map (fun e ->
+    db2_entities |> Array.map (fun e ->
       { e with
         e_good_examples_of_use = 
           e.e_good_examples_of_use 
-          +> List.map (fun id -> id + length_entities1);
+          |> List.map (fun id -> id + length_entities1);
       }
     )
   in
@@ -512,8 +512,8 @@ let merge_databases db1 db2 =
   {
     root = db1.root;
     dirs = (db1.dirs @ db2.dirs) 
-      +> Common.group_assoc_bykey_eff
-      +> List.map (fun (file, xs) ->
+      |> Common.group_assoc_bykey_eff
+      |> List.map (fun (file, xs) ->
         file, Common2.sum xs
       );
     files = db1.files @ db2.files; (* should ensure exclusive ? *)
@@ -523,16 +523,16 @@ let merge_databases db1 db2 =
 
 let build_top_k_sorted_entities_per_file2 ~k xs =
   xs 
-  +> Array.to_list
-  +> List.map (fun e -> e.e_file, e)
-  +> Common.group_assoc_bykey_eff
-  +> List.map (fun (file, xs) ->
-    file, (xs +> List.sort (fun e1 e2 ->
+  |> Array.to_list
+  |> List.map (fun e -> e.e_file, e)
+  |> Common.group_assoc_bykey_eff
+  |> List.map (fun (file, xs) ->
+    file, (xs |> List.sort (fun e1 e2 ->
       (* high first *)
       compare e2.e_number_external_users e1.e_number_external_users
-    ) +> Common.take_safe k
+    ) |> Common.take_safe k
     )
-  ) +> Common.hash_of_list
+  ) |> Common.hash_of_list
 
 let build_top_k_sorted_entities_per_file ~k xs =
   Common.profile_code "Db.build_sorted_entities" (fun () ->
@@ -562,7 +562,7 @@ let mk_file_entity file n = {
 }
 
 let mk_multi_dirs_entity name dirs_entities =
-  let dirs_fullnames = dirs_entities +> List.map (fun e -> e.e_file) in
+  let dirs_fullnames = dirs_entities |> List.map (fun e -> e.e_file) in
 
   {
   e_name = name ^ "//";
@@ -583,11 +583,11 @@ let mk_multi_dirs_entity name dirs_entities =
 
 let multi_dirs_entities_of_dirs es =
   let h = Hashtbl.create 101 in
-  es +> List.iter (fun e ->
+  es |> List.iter (fun e ->
     Hashtbl.add h e.e_name e
   );
   let keys = Common2.hkeys h in
-  keys +> Common.map_filter (fun k ->
+  keys |> Common.map_filter (fun k ->
     let vs = Hashtbl.find_all h k in
     if List.length vs > 1
     then Some (mk_multi_dirs_entity k vs)
@@ -597,13 +597,13 @@ let multi_dirs_entities_of_dirs es =
 let files_and_dirs_database_from_files ~root files =
 
   (* quite similar to what we first do in a database_light_xxx.ml *)
-  let dirs = files +> List.map Filename.dirname +> Common2.uniq_eff in
-  let dirs = dirs +> List.map (fun s -> Common.readable ~root s) in
+  let dirs = files |> List.map Filename.dirname |> Common2.uniq_eff in
+  let dirs = dirs |> List.map (fun s -> Common.readable ~root s) in
   let dirs = alldirs_and_parent_dirs_of_relative_dirs dirs in
 
   { root = root;
-    dirs =  dirs  +> List.map (fun d -> d, 0); (* TODO *)
-    files = files +> List.map (fun f -> Common.readable ~root f, 0); (* TODO *)
+    dirs =  dirs  |> List.map (fun d -> d, 0); (* TODO *)
+    files = files |> List.map (fun f -> Common.readable ~root f, 0); (* TODO *)
     entities = [| |];
   }
 
@@ -615,10 +615,10 @@ let files_and_dirs_and_sorted_entities_for_completion2
   let nb_entities = Array.length db.entities in
 
   let dirs = 
-    db.dirs +> List.map (fun (dir, n) -> mk_dir_entity dir n)
+    db.dirs |> List.map (fun (dir, n) -> mk_dir_entity dir n)
   in
   let files = 
-    db.files +> List.map (fun (file, n) -> mk_file_entity file n)
+    db.files |> List.map (fun (file, n) -> mk_file_entity file n)
   in
   let multidirs = multi_dirs_entities_of_dirs dirs in
 
@@ -629,7 +629,7 @@ let files_and_dirs_and_sorted_entities_for_completion2
       pr2 "Too many entities. Completion just for filenames";
       []
     end else 
-       (db.entities +> Array.to_list +> List.map (fun e -> 
+       (db.entities |> Array.to_list |> List.map (fun e -> 
          (* we used to return 2 entities per entity by having
           * both an entity with the short name and one with the long
           * name, but now that we do a suffix search, no need
@@ -647,15 +647,15 @@ let files_and_dirs_and_sorted_entities_for_completion2
    * completion the dirs and files will be proposed first
    * (could also enforce this rule when building the gtk completion model).
    *)
-  xs +> List.map (fun e ->
+  xs |> List.map (fun e ->
     (match e.e_kind with
     | MultiDirs -> 100
     | Dir -> 40
     | File -> 20
     | _ -> e.e_number_external_users
     ), e
-  ) +> Common.sort_by_key_highfirst
-  +> List.map snd
+  ) |> Common.sort_by_key_highfirst
+  |> List.map snd
 
   
 let files_and_dirs_and_sorted_entities_for_completion
@@ -674,7 +674,7 @@ let adjust_method_or_field_external_users ~verbose entities =
   (* phase1: collect all method counts *)
   let h_method_def_count = Common2.hash_with_default (fun () -> 0) in
   
-  entities +> Array.iter (fun e ->
+  entities |> Array.iter (fun e ->
     match e.e_kind with
     | Method | Field ->
         let k = e.e_name in
@@ -683,7 +683,7 @@ let adjust_method_or_field_external_users ~verbose entities =
   );
 
   (* phase2: adjust *)
-  entities +> Array.iter (fun e ->
+  entities |> Array.iter (fun e ->
     match e.e_kind with
     | Method | Field ->
         let k = e.e_name in

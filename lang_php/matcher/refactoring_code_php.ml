@@ -38,8 +38,8 @@ let tok_pos_equal_refactor_pos tok refactoring_opt =
 let string_of_class_var_modifier modifiers =
   match modifiers with
   | NoModifiers _ -> "var"
-  | VModifiers xs -> xs +> List.map (fun (_modifier, tok) ->
-      PI.str_of_info tok) +> Common.join " "
+  | VModifiers xs -> xs |> List.map (fun (_modifier, tok) ->
+      PI.str_of_info tok) |> Common.join " "
 
 let last_token_classes classnames =
   match Common2.list_last classnames with
@@ -56,7 +56,7 @@ let last_token_classes classnames =
 (*****************************************************************************)
 
 let refactor refactorings (ast, tokens) =
-  refactorings +> List.iter (fun (kind, pos_opt) ->
+  refactorings |> List.iter (fun (kind, pos_opt) ->
     let was_modifed = ref false in
     let visitor =
       match kind with
@@ -138,7 +138,7 @@ let refactor refactorings (ast, tokens) =
                       end;
                       k x
                   | xs ->
-                      xs +> Ast.uncomma +> List.iter (fun (dname, _) ->
+                      xs |> Ast.uncomma |> List.iter (fun (dname, _) ->
                       let tok = Ast.info_of_dname dname in
                       if tok_pos_equal_refactor_pos tok pos_opt then begin
                         failwith "Do a SPLIT_MEMBERS refactoring first"
@@ -231,8 +231,8 @@ let refactor refactorings (ast, tokens) =
                   when Ast.str_of_class_name classname =$= interface ->
                   tok.PI.transfo <- PI.Remove;
                   (Hint2 classname) 
-                  +> Lib_parsing_php.ii_of_any 
-                  +> List.iter (fun tok -> tok.PI.transfo <- PI.Remove);
+                  |> Lib_parsing_php.ii_of_any 
+                  |> List.iter (fun tok -> tok.PI.transfo <- PI.Remove);
                   was_modifed := true;
                 | xs ->
                   let rec aux xs = 
@@ -242,8 +242,8 @@ let refactor refactorings (ast, tokens) =
                     | Right comma::Left classname::_rest
                       when Ast.str_of_class_name classname =$= interface ->
                         (Hint2 classname) 
-                        +> Lib_parsing_php.ii_of_any 
-                        +> List.iter (fun tok -> tok.PI.transfo <- PI.Remove);
+                        |> Lib_parsing_php.ii_of_any 
+                        |> List.iter (fun tok -> tok.PI.transfo <- PI.Remove);
                         comma.PI.transfo <- PI.Remove;
                         was_modifed := true;
                     | _x::xs -> aux xs

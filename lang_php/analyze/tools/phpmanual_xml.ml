@@ -67,7 +67,7 @@ let parse_xml file =
 
     
 let extract_text_xml_list xs =
-  xs +> List.map (Xml.to_string_fmt ~escape_pcdata:false) +> Common.join " "
+  xs |> List.map (Xml.to_string_fmt ~escape_pcdata:false) |> Common.join " "
 
 (*
  * The format of each function is quite big. Maybe it would be
@@ -82,7 +82,7 @@ let extract_useful_doc xml =
   let programlisting = ref "" in
   let screen = ref "" in
   
-  xml +> Xml_utils.iter_rec (fun (s, _attrs, body) ->
+  xml |> Xml_utils.iter_rec (fun (s, _attrs, body) ->
     match s with
     | "refpurpose" -> 
         refpurpose := extract_text_xml_list body
@@ -117,10 +117,10 @@ let find_functions_reference_of_dir phpdoc_reference_dir =
 let build_doc_function_finder phpdoc_reference_dir =
   let files = find_functions_reference_of_dir phpdoc_reference_dir in
   let h =
-    files +> List.map (fun file -> 
+    files |> List.map (fun file -> 
       let func = function_name_of_xml_filename file in
       func, file) 
-    +> Common.hash_of_list
+    |> Common.hash_of_list
   in
   (fun funcname ->
     let file = Hashtbl.find h funcname in

@@ -52,7 +52,7 @@ let build g =
   add (Misc ":- discontiguous extends/2, implements/2");
 
   (* defs *)
-  g +> G.iter_nodes (fun n ->
+  g |> G.iter_nodes (fun n ->
     let (str, kind) = n in
     (match kind with
     | E.Function | E.Global | E.Constant | E.Type | E.Macro
@@ -103,7 +103,7 @@ let build g =
   (* we iter on the Use edges of the graph_code (see graph_code.ml), which
    * contains the inheritance tree, call graph, and data graph information.
    *)
-  g +> G.iter_use_edges (fun n1 n2 ->
+  g |> G.iter_use_edges (fun n1 n2 ->
     match n1, n2 with
     (* less: at some point have to differentiate Extends and Implements
      * depending on the _kind, but for now let's simplify and convert
@@ -135,7 +135,7 @@ let build g =
   );
 
   (* special uses *)
-  !hook_facts +> List.iter add;
+  !hook_facts |> List.iter add;
 
   List.rev !res
 
@@ -198,9 +198,9 @@ let hook_use_edge_for_prolog ctx in_assign (src, dst) g _loc =
   | NoCtx, _ -> ()
   | AssignCtx fld_node, E.Function ->
       let efld = entity_of_str (fst fld_node) in
-      hook_facts +> Common.push (Special (esrc, efld, edst, "field"))
+      hook_facts |> Common.push (Special (esrc, efld, edst, "field"))
   | CallCtx func_node, E.Function ->
       let efunc = entity_of_str (fst func_node) in
-      hook_facts +> Common.push (Special (esrc, efunc, edst, "function"))
+      hook_facts |> Common.push (Special (esrc, efunc, edst, "function"))
   | _ -> ()
   )

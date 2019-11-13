@@ -239,7 +239,7 @@ let new_node_array (f: F.flow) v =
 
   (* sanity checking *)
   let len = Array.length arr in
-  f#nodes#tolist +> List.iter (fun (ni, _nod) ->
+  f#nodes#tolist |> List.iter (fun (ni, _nod) ->
     if ni >= len
     then failwith "the CFG nodei is bigger than the number of nodes"
   );

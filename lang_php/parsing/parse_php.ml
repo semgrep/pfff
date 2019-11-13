@@ -108,7 +108,7 @@ let tokens_from_changen ?(init_state=Lexer_php.INITIAL) changen =
         if not (TH.is_comment tok)
         then Lexer_php._last_non_whitespace_like_token := Some tok;
 
-        let tok = tok +> TH.visitor_info_of_tok (fun ii ->
+        let tok = tok |> TH.visitor_info_of_tok (fun ii ->
         { ii with PI.token=
           (* could assert pinfo.filename = file ? *)
                match ii.PI.token with
@@ -262,7 +262,7 @@ let parse2 ?(pp=(!Flag_php.pp_default)) filename =
 
   match elems with
   | Left xs ->
-      stat.PI.correct <- (Common.cat filename +> List.length);
+      stat.PI.correct <- (Common.cat filename |> List.length);
 
       (xs, toks), 
       stat
@@ -292,13 +292,13 @@ let parse2 ?(pp=(!Flag_php.pp_default)) filename =
           *)
         | _e -> raise Impossible
         );
-      let checkpoint2 = Common.cat filename +> List.length in
+      let checkpoint2 = Common.cat filename |> List.length in
 
 
       if !Flag_php.show_parsing_error_full
       then PI.print_bad line_error (checkpoint, checkpoint2) filelines;
 
-      stat.PI.bad     <- Common.cat filename +> List.length;
+      stat.PI.bad     <- Common.cat filename |> List.length;
 
       let info_item = (List.rev tr.PI.passed) in 
       ([Ast.NotParsedCorrectly info_of_bads], info_item), 

@@ -57,7 +57,7 @@ object(o)
     then failwith "del_leaf_node_and_its_edges: have some successors"
     else begin
       let pred = o#predecessors i in
-      pred#tolist +> List.iter (fun (k, edge) -> 
+      pred#tolist |> List.iter (fun (k, edge) -> 
         o#del_arc (k,i) edge;
       );
       o#del_node i
@@ -65,7 +65,7 @@ object(o)
       
   method leaf_nodes () = 
     let (set : 'key Oset.oset)  = build_set () in
-    o#nodes#tolist +> List.fold_left (fun acc (k,v) -> 
+    o#nodes#tolist |> List.fold_left (fun acc (k,v) -> 
       if (o#successors k)#null
       then acc#add k
       else acc
@@ -110,8 +110,8 @@ object(o)
       else
         let acc = acc#add x in
         let prefs = o#predecessors x in
-        let prefs = prefs#tolist +> List.map fst in
-        prefs +> List.fold_left (fun acc x -> aux acc x) acc
+        let prefs = prefs#tolist |> List.map fst in
+        prefs |> List.fold_left (fun acc x -> aux acc x) acc
     in
     let set = aux empty_set k in
     let set = set#del k in

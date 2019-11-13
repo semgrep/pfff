@@ -182,7 +182,7 @@ rule token = parse
   | '"' { 
       let info = tokinfo lexbuf in
       let s = string_double_quote lexbuf in
-      TString (s, info +> Parse_info.tok_add_s (s ^ "\""))
+      TString (s, info |> Parse_info.tok_add_s (s ^ "\""))
     }
 
   (* ----------------------------------------------------------------------- *)

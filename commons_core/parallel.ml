@@ -104,10 +104,10 @@ let map_jobs ~tasks xs =
   then List.map (fun job -> job ()) xs
   else 
     let xxs = Common2.pack_safe tasks xs in
-    xxs +> List.map (fun xs ->
+    xxs |> List.map (fun xs ->
       (* do in parallel a batch of job *)
       parallel_map (fun job -> job ()) xs
-    ) +> List.flatten
+    ) |> List.flatten
 
 
 (* 
@@ -131,9 +131,9 @@ let map_batch_jobs ~tasks xs =
      * be computationaly "inbalanced".
      *)
     let xxs = Common2.chunks tasks xs in
-    let jobs = xxs +> List.map (fun xs ->
+    let jobs = xxs |> List.map (fun xs ->
       (fun () ->
-        xs +> List.map (fun job -> job ())
+        xs |> List.map (fun job -> job ())
       ))
     in
-    parallel_map (fun job -> job ()) jobs +> List.flatten
+    parallel_map (fun job -> job ()) jobs |> List.flatten

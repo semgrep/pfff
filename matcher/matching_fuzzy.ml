@@ -81,7 +81,7 @@ module XMATCH = struct
          *)
         let xs = m1 tin in
         (* try m2 on each possible returned bindings *)
-        let xxs = xs +> List.map (fun ((a,b), binding) -> 
+        let xxs = xs |> List.map (fun ((a,b), binding) -> 
           m2 (a, b) binding
         ) in
         List.flatten xxs
@@ -181,8 +181,8 @@ type ('a, 'b) matcher = 'a -> 'b ->
   Metavars_fuzzy.fuzzy_binding list
 
 let (extract_bindings: 'a XMATCH.tout -> MV.fuzzy_binding list) = fun tout ->
-  tout +> List.map (fun (_term, binding) -> binding)
+  tout |> List.map (fun (_term, binding) -> binding)
 
 let match_trees_trees pattern x =
   let env = MV.empty_environment () in
-  MATCH.m_trees pattern x env +> extract_bindings
+  MATCH.m_trees pattern x env |> extract_bindings

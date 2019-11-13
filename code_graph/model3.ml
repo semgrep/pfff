@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common
 (* floats are the norm in graphics *)
 open Common2.ArithFloatInfix
 
@@ -193,7 +192,7 @@ let layout_of_w w =
 let find_region_at_user_point2 w ~x ~y =
   let regions = w.interactive_regions in
   let pt = { Figures. x = x; y = y } in
-  regions +> Common.find_some_opt (fun (kind, rect) ->
+  regions |> Common.find_some_opt (fun (kind, rect) ->
       if Figures.point_is_in_rectangle pt rect
       then Some kind
       else None

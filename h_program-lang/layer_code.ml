@@ -232,11 +232,11 @@ let build_index_of_layers ~root layers =
   let hmacro = Common2.hash_with_default (fun () -> []) in
   
   layers 
-   +> List.filter (fun (_layer, active) -> active) 
-   +> List.iter (fun (layer, _active) ->
+   |> List.filter (fun (_layer, active) -> active) 
+   |> List.iter (fun (layer, _active) ->
     let hkind = Common.hash_of_list layer.kinds in
 
-    layer.files +> List.iter (fun (file, finfo) ->
+    layer.files |> List.iter (fun (file, finfo) ->
 
       let file = Filename.concat root file in
 
@@ -248,7 +248,7 @@ let build_index_of_layers ~root layers =
        * floats to recompute the actual multi-layer percentage.
        *)
       let color_macro_level = 
-        finfo.macro_level +> Common.map_filter (fun (kind, v) ->
+        finfo.macro_level |> Common.map_filter (fun (kind, v) ->
           (* some sanity checking *)
           try Some (v, Hashtbl.find hkind kind)
           with Not_found -> 
@@ -262,7 +262,7 @@ let build_index_of_layers ~root layers =
       in
       hmacro#update file (fun old -> color_macro_level @ old);
 
-      finfo.micro_level +> List.iter (fun (line, kind) ->
+      finfo.micro_level |> List.iter (fun (line, kind) ->
         try 
           let color = Hashtbl.find hkind kind in
 
@@ -291,7 +291,7 @@ let build_index_of_layers ~root layers =
 (* Layers helpers *)
 (*****************************************************************************)
 let has_active_layers layers =
-  layers.layers +> List.map snd +> Common2.or_list
+  layers.layers |> List.map snd |> Common2.or_list
 
 (*****************************************************************************)
 (* Meta *)
@@ -405,11 +405,11 @@ let rec json_of_v v =
   match v with
   | VString s -> J.String s
   | VSum ((s, vs)) ->J.Array ((J.String s)::(List.map json_of_v vs ))
-  | VTuple xs -> J.Array (xs +> List.map json_of_v)
-  | VDict xs -> J.Object (xs +> List.map (fun (s, v) ->
+  | VTuple xs -> J.Array (xs |> List.map json_of_v)
+  | VDict xs -> J.Object (xs |> List.map (fun (s, v) ->
       s, json_of_v v
     ))
-  | VList xs -> J.Array (xs +> List.map json_of_v)
+  | VList xs -> J.Array (xs |> List.map json_of_v)
   | VNone -> J.Null
   | VSome v -> J.Array [ J.String "Some"; json_of_v v]
   | VRef v -> J.Array [ J.String "Ref"; json_of_v v]
@@ -461,10 +461,10 @@ let rec (v_of_json: Json_type.json_type -> v) = fun j ->
            let constructor = Common.matched1 s in
            VSum (constructor, List.map v_of_json  xs)
       | ys ->
-          VList (ys +> List.map v_of_json)
+          VList (ys |> List.map v_of_json)
       )
   | J.Object flds ->
-      VDict (flds +> List.map (fun (s, fld) ->
+      VDict (flds |> List.map (fun (s, fld) ->
         s, v_of_json fld
       ))
 
@@ -641,10 +641,10 @@ and kind_ofv sexp = kind_ofv__ sexp
 (*****************************************************************************)
 
 let json_of_layer layer =
-  layer +> vof_layer +> Ocamlx.json_of_v
+  layer |> vof_layer |> Ocamlx.json_of_v
 
 let layer_of_json json =
-  json +> Ocamlx.v_of_json +> layer_ofv
+  json |> Ocamlx.v_of_json |> layer_ofv
 
 (*****************************************************************************)
 (* Load/Save *)
@@ -656,13 +656,13 @@ let layer_of_json json =
 let load_layer file =
   (* pr2 (spf "loading layer: %s" file); *)
   if File_type.is_json_filename file
-  then Json_in.load_json file +> layer_of_json
+  then Json_in.load_json file |> layer_of_json
   else Common2.get_value file
 
 let save_layer layer file =
   if File_type.is_json_filename file
   (* layer +> vof_layer +> Ocaml.string_of_v +> Common.write_file ~file *)
-  then layer +> json_of_layer +> Ocamlx.save_json file
+  then layer |> json_of_layer |> Ocamlx.save_json file
   else  Common2.write_value layer file
 
 (*****************************************************************************)
@@ -675,12 +675,12 @@ let save_layer layer file =
  *)
 let simple_layer_of_parse_infos ~root ~title ?(description="") xs kinds =
   let ranks_kinds = 
-    kinds +> List.map (fun (k, _color) -> k) 
-    +> Common.index_list_1 +> Common.hash_of_list
+    kinds |> List.map (fun (k, _color) -> k) 
+    |> Common.index_list_1 |> Common.hash_of_list
   in
 
   (* group by file, group by line, uniq categ *)
-  let files_and_lines = xs +> List.map (fun (tok, kind) ->
+  let files_and_lines = xs |> List.map (fun (tok, kind) ->
     let file = Parse_info.file_of_info tok in
     let line = Parse_info.line_of_info tok in
     let file' = Common2.relative_to_absolute file in 
@@ -696,27 +696,27 @@ let simple_layer_of_parse_infos ~root ~title ?(description="") xs kinds =
     title = title;
     description = description;
     kinds = kinds;
-    files = group_by_file +> List.map (fun (file, lines_and_kinds) ->
+    files = group_by_file |> List.map (fun (file, lines_and_kinds) ->
 
       let (group_by_line: (int * kind list) list) = 
         Common.group_assoc_bykey_eff lines_and_kinds 
       in
       let all_kinds_in_file = 
-        group_by_line +> List.map snd +> List.flatten +> Common2.uniq in
+        group_by_line |> List.map snd |> List.flatten |> Common2.uniq in
 
       (file, { 
        micro_level = 
-          group_by_line +> List.map (fun (line, kinds) -> 
+          group_by_line |> List.map (fun (line, kinds) -> 
             let kinds = Common2.uniq kinds in
             (* many kinds om same line, keep highest prio *)
             match kinds with
             | [] -> raise Impossible
             | [x] -> line, x
             | _ ->
-              let sorted = kinds +> List.map (fun x -> 
-                x, Hashtbl.find ranks_kinds x) +> Common.sort_by_val_lowfirst
+              let sorted = kinds |> List.map (fun x -> 
+                x, Hashtbl.find ranks_kinds x) |> Common.sort_by_val_lowfirst
               in
-              line, List.hd sorted +> fst
+              line, List.hd sorted |> fst
           );
 
        macro_level =  
@@ -724,7 +724,7 @@ let simple_layer_of_parse_infos ~root ~title ?(description="") xs kinds =
            * we instead give a priority based on the rank of the kinds
            * in the kind list
            *)
-          all_kinds_in_file +> List.map (fun kind -> 
+          all_kinds_in_file |> List.map (fun kind -> 
             (kind, 1. /. (float_of_int (Hashtbl.find ranks_kinds kind)))
           )
       })
@@ -782,11 +782,11 @@ let layer_red_green_and_heatmap ~root ~output xs =
 let stat_of_layer layer =
   let h = Common2.hash_with_default (fun () -> 0) in
   
-  layer.kinds +> List.iter (fun (kind, _color) -> 
+  layer.kinds |> List.iter (fun (kind, _color) -> 
     h#add kind 0
   );
-  layer.files +> List.iter (fun (_file, finfo) ->
-    finfo.micro_level +> List.iter (fun (_line, kind) ->
+  layer.files |> List.iter (fun (_file, finfo) ->
+    finfo.micro_level |> List.iter (fun (_line, kind) ->
       h#update kind (fun old -> old + 1)
     )
   );
@@ -795,5 +795,5 @@ let stat_of_layer layer =
 
 let filter_layer f layer =
   { layer with 
-    files = layer.files +> List.filter (fun (file, _) -> f file);
+    files = layer.files |> List.filter (fun (file, _) -> f file);
   }

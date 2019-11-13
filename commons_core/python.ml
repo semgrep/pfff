@@ -67,15 +67,15 @@ let cpr = check_python_return
  *)
 let string_list_to_python xs =
   xs 
-  +> Array.of_list 
-  +> Array.map Pycaml.pystring_fromstring
-  +> Pycaml.pylist_fromarray
+  |> Array.of_list 
+  |> Array.map Pycaml.pystring_fromstring
+  |> Pycaml.pylist_fromarray
 
 let string_list_of_python pythonobj =
   pythonobj 
-  +> Pycaml.guarded_pylist_toarray 
-  +> Array.map Pycaml.guarded_pystring_asstring
-  +> Array.to_list
+  |> Pycaml.guarded_pylist_toarray 
+  |> Array.map Pycaml.guarded_pystring_asstring
+  |> Array.to_list
 
 (*  pythonobj +> Pycaml.py_string_list_as_array +> Array.to_list *)
 
@@ -127,7 +127,7 @@ let test_pycaml3 () =
   let res = cpr (Pycaml.pyeval_callobject (f,args)) in
 
   let xsout = Pycaml.py_int_list_as_array res in
-  xsout +> Array.iter (fun i -> pr2 (i_to_s i));
+  xsout |> Array.iter (fun i -> pr2 (i_to_s i));
   ()
 
 
@@ -141,7 +141,7 @@ let test_pycaml4 () =
   let res = cpr (Pycaml.pyeval_callobject (f,args)) in
 
   let xsout = string_list_of_python res in
-  xsout +> List.iter (fun s -> pr2 s);
+  xsout |> List.iter (fun s -> pr2 s);
   ()
 
 

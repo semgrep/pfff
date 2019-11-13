@@ -19,7 +19,7 @@ type seti = elt list (* last elements is in first pos, ordered reverse *)
  * merged (intervalle are separated) *)
 let invariant xs = 
   let rec aux min xs = 
-    xs +> List.fold_left (fun min e -> 
+    xs |> List.fold_left (fun min e -> 
       match e with 
       | Exact i -> 
           if i <= min then pr2 (spf "i = %d, min = %d" i min);
@@ -37,7 +37,7 @@ let invariant xs =
 
 let string_of_seti xs = 
   "[" ^  
-    join "," (xs +> List.rev +> List.map (function 
+    join "," (xs |> List.rev |> List.map (function 
     | (Exact i) -> string_of_int i
     | (Interv (i,j)) -> Printf.sprintf "%d - %d" i j)) ^
     "]"
@@ -142,7 +142,7 @@ let rec mem e = function
         if e >= i && e <= j then true
       else mem e xs
 
-let iter f xs = xs +> List.iter 
+let iter f xs = xs |> List.iter 
   (function
   | Exact i -> f i
   | Interv (i, j) -> for k = i to j do f k done
@@ -328,7 +328,7 @@ let rec debug = function
 (*****************************************************************************)
 (* if operation return wrong result, then may later have to patch them *)
 let patch1 xs = List.map exactize xs
-let patch2 xs = xs +> List.map (fun e -> 
+let patch2 xs = xs |> List.map (fun e -> 
   match e with
   | Interv (i,j) when i > j && i =|= j+1 -> 
       let _ = pr2 (spf "i = %d, j = %d" i j) in
@@ -337,7 +337,7 @@ let patch2 xs = xs +> List.map (fun e ->
 )
 let patch3 xs = 
   let rec aux min xs = 
-    xs +> List.fold_left (fun (min,acc) e -> 
+    xs |> List.fold_left (fun (min,acc) e -> 
       match e with 
       | Exact i -> 
           if i =|= min 
@@ -347,6 +347,6 @@ let patch3 xs =
           (j, (Interv (i,j)::acc))
     ) (min, [])
   in
-  aux min_int (List.rev xs) +> snd
+  aux min_int (List.rev xs) |> snd
 
 

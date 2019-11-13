@@ -83,7 +83,7 @@ let msg_change_tok tok =
 
   | TIdent_Typedef (s, ii) ->
       (* todo? also do LP.add_typedef_root s ??? *)
-      s +> msg_gen (fun s ->
+      s |> msg_gen (fun s ->
         match s with
         | "u_char"   | "u_short"  | "u_int"  | "u_long"
         | "u8" | "u16" | "u32" | "u64" 
@@ -127,7 +127,7 @@ let msg_change_tok tok =
 
   | TIdent_MacroString ii ->
       let s = PI.str_of_info ii in
-      s +> msg_gen (fun s -> 
+      s |> msg_gen (fun s -> 
         match s with 
         | "REVISION" | "UTS_RELEASE" | "SIZE_STR" | "DMA_STR"
             -> true
@@ -140,7 +140,7 @@ let msg_change_tok tok =
       pr2_pp (spf "MACRO: stmt-macro at %s" (pos ii));
 
   | TIdent_MacroDecl (s, ii) ->
-      s +> msg_gen (fun s -> 
+      s |> msg_gen (fun s -> 
         match s with 
         | "DECLARE_MUTEX" | "DECLARE_COMPLETION"  | "DECLARE_RWSEM"
         | "DECLARE_WAITQUEUE" | "DECLARE_WAIT_QUEUE_HEAD" 

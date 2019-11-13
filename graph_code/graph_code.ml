@@ -326,9 +326,9 @@ let mk_eff_use_pred g =
   (* we use its find_all property *)
   let h = Hashtbl.create 101 in
   
-  g +> iter_nodes (fun n1 ->
+  g |> iter_nodes (fun n1 ->
     let uses = succ n1 Use g in
-    uses +> List.iter (fun n2 ->
+    uses |> List.iter (fun n2 ->
       Hashtbl.add h n2 n1
     )
   );
@@ -355,7 +355,7 @@ let rec node_and_all_children n g =
   if null xs 
   then [n]
   else 
-    n::(xs +> List.map (fun n -> node_and_all_children n g) +> List.flatten)
+    n::(xs |> List.map (fun n -> node_and_all_children n g) |> List.flatten)
 
 
 
@@ -395,7 +395,7 @@ let file_of_node n g =
 let privacy_of_node n g =
   let info = nodeinfo n g in
   let props = info.props in
-  props +> Common.find_some (function
+  props |> Common.find_some (function
   | E.Privacy x -> Some x
   | _ -> None
   )
@@ -445,8 +445,8 @@ let create_intermediate_directories_if_not_present g dir =
         if has_node entity g
         then aux entity xs
         else begin
-          g +> add_node entity;
-          g +> add_edge (current, entity) Has;
+          g |> add_node entity;
+          g |> add_edge (current, entity) Has;
           aux entity xs
         end
   in
@@ -454,20 +454,20 @@ let create_intermediate_directories_if_not_present g dir =
 
 
 let create_initial_hierarchy g =
-  g +> add_node root;
-  g +> add_node pb;
-  g +> add_node not_found;
-  g +> add_node dupe;
+  g |> add_node root;
+  g |> add_node pb;
+  g |> add_node not_found;
+  g |> add_node dupe;
 (*  g +> add_node stdlib;*)
-  g +> add_edge (root, pb) Has;
-  g +> add_edge (pb, dupe) Has;
-  g +> add_edge (pb, not_found) Has;
+  g |> add_edge (root, pb) Has;
+  g |> add_edge (pb, dupe) Has;
+  g |> add_edge (pb, not_found) Has;
 (*  g +> add_edge (root, stdlib) Has;*)
   ()
 
 let remove_empty_nodes g xs =
   let use_pred = mk_eff_use_pred g in
-  xs +> List.iter (fun n ->
+  xs |> List.iter (fun n ->
     if succ n Use g = [] &&
        use_pred n = []
     then begin
@@ -479,10 +479,10 @@ let remove_empty_nodes g xs =
   )
 
 let basename_to_readable_disambiguator xs ~root =
-  let xs = xs +> List.map (Common.readable ~root) in
+  let xs = xs |> List.map (Common.readable ~root) in
   (* use the Hashtbl.find_all property of this hash *)
   let h = Hashtbl.create 101 in
-  xs +> List.iter (fun file ->
+  xs |> List.iter (fun file ->
     Hashtbl.add h (Filename.basename file) file
   );
   (fun file ->
@@ -494,11 +494,11 @@ let basename_to_readable_disambiguator xs ~root =
 (*****************************************************************************)
 
 let group_edges_by_files_edges xs g =
-  xs +> Common2.group_by_mapped_key (fun (n1, n2) ->
+  xs |> Common2.group_by_mapped_key (fun (n1, n2) ->
     (file_of_node n1 g, file_of_node n2 g)
-  ) +> List.map (fun (x, deps) -> List.length deps, (x, deps))
-    +> Common.sort_by_key_highfirst
-    +> List.map snd
+  ) |> List.map (fun (x, deps) -> List.length deps, (x, deps))
+    |> Common.sort_by_key_highfirst
+    |> List.map snd
 
 (*****************************************************************************)
 (* Graph algorithms *)
@@ -516,9 +516,9 @@ let top_down_numbering g =
     G.depth_nodes g2 in
   
   let hres = Hashtbl.create 101 in
-  hdepth +> Hashtbl.iter (fun k v ->
+  hdepth |> Hashtbl.iter (fun k v ->
     let nodes_at_k = scc.(k) in
-    nodes_at_k +> List.iter (fun n -> Hashtbl.add hres n v)
+    nodes_at_k |> List.iter (fun n -> Hashtbl.add hres n v)
   );
   hres
 
@@ -533,9 +533,9 @@ let bottom_up_numbering g =
     G.depth_nodes g3 in
   
   let hres = Hashtbl.create 101 in
-  hdepth +> Hashtbl.iter (fun k v ->
+  hdepth |> Hashtbl.iter (fun k v ->
     let nodes_at_k = scc.(k) in
-    nodes_at_k +> List.iter (fun n -> Hashtbl.add hres n v)
+    nodes_at_k |> List.iter (fun n -> Hashtbl.add hres n v)
   );
   hres
 
@@ -544,10 +544,10 @@ let bottom_up_numbering g =
 (*****************************************************************************)
 let load_adjust file =
   Common.cat file 
-  +> Common.exclude (fun s -> 
+  |> Common.exclude (fun s -> 
     s =~ "#.*" || s =~ "^[ \t]*$"
   )
-  +> List.map (fun s ->
+  |> List.map (fun s ->
     match s with
     | _ when s =~ "\\([^ ]+\\)[ ]+->[ ]*\\([^ ]+\\)" ->
       Common.matched2 s
@@ -555,7 +555,7 @@ let load_adjust file =
   )
 
 let load_whitelist file =
-  Common.cat file +>
+  Common.cat file |>
   List.map (fun s ->
     if s =~ "\\(.*\\) --> \\(.*\\) "
     then
@@ -566,7 +566,7 @@ let load_whitelist file =
 
 let save_whitelist xs file g =
   Common.with_open_outfile file (fun (pr_no_nl, _chan) ->
-    xs +> List.iter (fun (n1, n2) ->
+    xs |> List.iter (fun (n1, n2) ->
       let file = file_of_node n2 g in
       pr_no_nl (spf "%s --> %s (%s)\n"
                   (string_of_node n1) (string_of_node n2) file);
@@ -580,10 +580,10 @@ let save_whitelist xs file g =
  *)
 let adjust_graph g xs whitelist =
   let mapping = Hashtbl.create 101 in
-  g +> iter_nodes (fun (s, kind) ->
+  g |> iter_nodes (fun (s, kind) ->
     Hashtbl.add mapping s (s, kind)
   );
-  xs +> List.iter (fun (s1, s2) ->
+  xs |> List.iter (fun (s1, s2) ->
     let nodes = Hashtbl.find_all mapping s1 in
 
     let new_parent = (s2, E.Dir) in
@@ -597,7 +597,7 @@ let adjust_graph g xs whitelist =
     | _ -> failwith (spf "multiple entities with %s as a name" s1)
     )
   );
-  whitelist +> Console.progress ~show:true (fun k ->
+  whitelist |> Console.progress ~show:true (fun k ->
     List.iter (fun (n1, n2) ->
       k();
       remove_edge (n1, n2) Use g;
@@ -611,7 +611,7 @@ let adjust_graph g xs whitelist =
 let graph_of_dotfile dotfile =
   let xs = Common.cat dotfile in
   let deps =
-    xs +> Common.map_filter (fun s ->
+    xs |> Common.map_filter (fun s ->
       if s =~ "^\"\\(.*\\)\" -> \"\\(.*\\)\"$"
       then
         let (src, dst) = Common.matched2 s in
@@ -625,30 +625,30 @@ let graph_of_dotfile dotfile =
   let g = create () in
   create_initial_hierarchy g;
   (* step1: defs *)
-  deps +> List.iter (fun (src, dst) ->
+  deps |> List.iter (fun (src, dst) ->
     let srcdir = Filename.dirname src in
     let dstdir = Filename.dirname dst in
     try 
       create_intermediate_directories_if_not_present g srcdir;
       create_intermediate_directories_if_not_present g dstdir;
       if not (has_node (src, E.File) g) then begin
-        g +> add_node (src, E.File);
-        g +> add_edge ((srcdir, E.Dir), (src, E.File)) Has;
+        g |> add_node (src, E.File);
+        g |> add_edge ((srcdir, E.Dir), (src, E.File)) Has;
       end;
       if not (has_node (dst, E.File) g) then begin
-        g +> add_node (dst, E.File);
-        g +> add_edge ((dstdir, E.Dir), (dst, E.File)) Has;
+        g |> add_node (dst, E.File);
+        g |> add_edge ((dstdir, E.Dir), (dst, E.File)) Has;
       end;
 
     with Assert_failure _ ->
       pr2_gen (src, dst);
   );
   (* step2: use *)
-  deps +> List.iter (fun (src, dst) ->
+  deps |> List.iter (fun (src, dst) ->
     let src_node = (src, E.File) in
     let dst_node = (dst, E.File) in
     
-    g +> add_edge (src_node, dst_node) Use;
+    g |> add_edge (src_node, dst_node) Use;
   );
   g
 
@@ -658,21 +658,21 @@ let graph_of_dotfile dotfile =
 (*****************************************************************************)
 let print_statistics stats g =
   pr (spf "nb nodes = %d, nb edges = %d" (nb_nodes g) (nb_use_edges g));
-  pr (spf "parse errors = %d" (!(stats.parse_errors) +> List.length));
-  pr (spf "lookup fail = %d" (!(stats.lookup_fail) +> List.length));
+  pr (spf "parse errors = %d" (!(stats.parse_errors) |> List.length));
+  pr (spf "lookup fail = %d" (!(stats.lookup_fail) |> List.length));
 
   pr (spf "unresolved method calls = %d" 
-   (!(stats.method_calls) +> List.filter (fun (_, x) -> not x) +> List.length));
+   (!(stats.method_calls) |> List.filter (fun (_, x) -> not x) |> List.length));
   pr (spf "(resolved method calls = %d)" 
-   (!(stats.method_calls) +> List.filter (fun (_, x) -> x ) +> List.length));
+   (!(stats.method_calls) |> List.filter (fun (_, x) -> x ) |> List.length));
 
   pr (spf "unresolved field access = %d" 
-   (!(stats.field_access) +> List.filter (fun (_, x) -> not x) +> List.length));
+   (!(stats.field_access) |> List.filter (fun (_, x) -> not x) |> List.length));
   pr (spf "(resolved field access) = %d)" 
-   (!(stats.field_access) +> List.filter (fun (_, x) -> x ) +> List.length));
+   (!(stats.field_access) |> List.filter (fun (_, x) -> x ) |> List.length));
 
   pr (spf "unresolved class access = %d" 
-        (!(stats.unresolved_class_access) +> List.length));
+        (!(stats.unresolved_class_access) |> List.length));
   pr (spf "unresolved calls = %d" 
-        (!(stats.unresolved_calls) +> List.length));
+        (!(stats.unresolved_calls) |> List.length));
   ()

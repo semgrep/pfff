@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common
 (* floats are the norm in graphics *)
 open Common2.ArithFloatInfix
 
@@ -83,7 +82,7 @@ let clear cr =
   ()
 
 let set_source_color ?(alpha=1.) ~cr ~color () = 
-  (let (r,g,b) = color +> Color.rgbf_of_string in
+  (let (r,g,b) = color |> Color.rgbf_of_string in
   Cairo.set_source_rgba cr r g b alpha;
   )
 

@@ -131,7 +131,7 @@ let visit_program ~tag_hook _prefs  (_prog, toks) =
     | _x::xs ->
         aux_toks xs
   in
-  let toks' = toks +> Common.exclude (function
+  let toks' = toks |> Common.exclude (function
     | T.TCommentSpace _ -> true
     | _ -> false
   )
@@ -141,7 +141,7 @@ let visit_program ~tag_hook _prefs  (_prog, toks) =
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)
 
-  toks +> List.iter (fun tok -> 
+  toks |> List.iter (fun tok -> 
     match tok with
     | T.TComment ii ->
         if not (Hashtbl.mem already_tagged ii)

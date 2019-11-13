@@ -87,7 +87,7 @@ let entity_poor_id_of_entity e =
 
 (* give a score per id and then sort and return top k *)
 let rank_and_filter_examples_of_use ~root ids entities_arr =
-  ids +> List.map (fun id ->
+  ids |> List.map (fun id ->
     let file = entities_arr.(id).Db.e_file in
     let file = Filename.concat root file in
     let size = Common2.filesize file in
@@ -97,8 +97,8 @@ let rank_and_filter_examples_of_use ~root ids entities_arr =
       size / (if is_pleac_file file then 4 else 1) in
     score, id
   ) 
-  +> Common.sort_by_key_lowfirst 
-  +> List.map snd
+  |> Common.sort_by_key_lowfirst 
+  |> List.map snd
 
 let parse file =
   Common.save_excursion Flag.error_recovery true (fun () ->
@@ -117,7 +117,7 @@ let compute_database ?(verbose=false) files_or_dirs =
   if verbose then pr2 (spf "generating ML db_light with root = %s" root);
 
   let files = Lib_parsing_ml.find_source_files_of_dir_or_files files_or_dirs in
-  let dirs = files +> List.map Filename.dirname +> Common2.uniq_eff in
+  let dirs = files |> List.map Filename.dirname |> Common2.uniq_eff in
 
   (* PHASE 1: collecting definitions *)
   if verbose then pr2 (spf "PHASE 1: collecting definitions");
@@ -137,7 +137,7 @@ let compute_database ?(verbose=false) files_or_dirs =
   let (hfile_to_entities: (filename, entity_poor_id) Hashtbl.t) = 
     Hashtbl.create 1001 in
 
-  files +> Console.progress ~show:verbose (fun k -> 
+  files |> Console.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
     k();
     let ((ast, toks), _stat) = 
@@ -165,7 +165,7 @@ let compute_database ?(verbose=false) files_or_dirs =
               let l = PI.line_of_info info in
               let c = PI.col_of_info info in
 
-              let file = Parse_info.file_of_info info +> Common.readable ~root 
+              let file = Parse_info.file_of_info info |> Common.readable ~root 
               in
 
               let module_name = Module_ml.module_name_of_filename file in
@@ -219,7 +219,7 @@ let compute_database ?(verbose=false) files_or_dirs =
   if verbose then pr2 (spf "PHASE 2: collecting uses");
 
   let entities_arr = 
-    Common.hash_to_list hdefs +> List.map snd +> Array.of_list
+    Common.hash_to_list hdefs |> List.map snd |> Array.of_list
   in
 
   (* this is useful when we want to add cross-references in the entities
@@ -228,7 +228,7 @@ let compute_database ?(verbose=false) files_or_dirs =
   let (h_id_mldb_to_id_db: (entity_poor_id, Db.entity_id) Hashtbl.t) = 
     Hashtbl.create 1001 in
 
-  entities_arr +> Array.iteri (fun id_db e ->
+  entities_arr |> Array.iteri (fun id_db e ->
     let id_mldb = entity_poor_id_of_entity e in
     Hashtbl.add h_id_mldb_to_id_db id_mldb id_db;
   );
@@ -263,7 +263,7 @@ let compute_database ?(verbose=false) files_or_dirs =
   in
 
 
-  files +> Console.progress ~show:verbose (fun k -> 
+  files |> Console.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
     k ();
 
@@ -288,7 +288,7 @@ let compute_database ?(verbose=false) files_or_dirs =
      *)
     let hmodule_aliases = Hashtbl.create 11 in
 
-    let toks = toks +> Common.exclude (function
+    let toks = toks |> Common.exclude (function
       | T.TCommentSpace _ -> true
       | _ -> false
     )
@@ -314,7 +314,7 @@ let compute_database ?(verbose=false) files_or_dirs =
 
         | T.TUpperIdent(s, _ii)::T.TDot _ii2::T.TLowerIdent(s2, _ii3)::xs ->
           
-            Hashtbl.find_all hdefs s2 +> List.iter (fun entity ->
+            Hashtbl.find_all hdefs s2 |> List.iter (fun entity ->
               let file_entity = entity.Db.e_file in
 
               let final_module_name = 
@@ -351,18 +351,18 @@ let compute_database ?(verbose=false) files_or_dirs =
   (* PHASE 3: adjusting entities *)
   if verbose then pr2 (spf "PHASE 3: adjusting entities");
 
-  entities_arr +> Array.iter (fun e ->
+  entities_arr |> Array.iter (fun e ->
     let ids = e.Db.e_good_examples_of_use in
     e.Db.e_good_examples_of_use <- 
       rank_and_filter_examples_of_use ~root ids entities_arr;
   );
 
-  let dirs = dirs +> List.map (fun s -> Common.readable ~root s) in
+  let dirs = dirs |> List.map (fun s -> Common.readable ~root s) in
   let dirs = Db.alldirs_and_parent_dirs_of_relative_dirs dirs in
 
   { Db.
     root = root;
-    dirs = dirs +> List.map (fun d -> d, 0); (* TODO *)
-    files = files +> List.map (fun f -> Common.readable ~root f, 0); (* TODO *)
+    dirs = dirs |> List.map (fun d -> d, 0); (* TODO *)
+    files = files |> List.map (fun f -> Common.readable ~root f, 0); (* TODO *)
     entities = entities_arr;
   }

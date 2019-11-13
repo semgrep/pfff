@@ -74,8 +74,8 @@ let check_method_call context (aclass, amethod) (name, args) find_entity =
           E.fatal loc (E.CallingStaticMethodWithoutQualifier amethod)
       );
       Check_functions_php.check_args_vs_params
-        (name, args +> Ast.unparen +> Ast.uncomma)
-        (def.f_name, def.f_params +> Ast.unparen +> Ast.uncomma_dots)
+        (name, args |> Ast.unparen |> Ast.uncomma)
+        (def.f_name, def.f_params |> Ast.unparen |> Ast.uncomma_dots)
     end
   with
   (* not much we can do then, let's bailout? *)
@@ -113,7 +113,7 @@ let check_member_access ctx (aclass, afield) loc find_entity =
           E.fatal loc (E.UndefinedEntity (Ent.Field, afield))
       | ObjAccess ->
           let allmembers = Class_php.collect_members aclass find_entity
-            +> List.map Ast.str_of_dname
+            |> List.map Ast.str_of_dname
           in
           (* todo? could also show a strong warning when the list
            * allmembers is big, in which case if most of the
@@ -140,13 +140,13 @@ let check_class_constant (aclass, s) tok find_entity =
 
 let extract_required_fields node graph =
   let fields = G.succ node G.Has graph in
-  fields +> List.filter (fun node ->
+  fields |> List.filter (fun node ->
     try
       let nodeinfo = G.nodeinfo node graph in
       let props = nodeinfo.G.props in
       List.mem Ent.Required props
     with Not_found -> false)
-  +> List.map (fun (name, _) ->
+  |> List.map (fun (name, _) ->
     if (name =~ ".*\\.\\(.*\\)=")
     then matched1 name
     else failwith "bad field name in check_required_field"
@@ -166,11 +166,11 @@ let visit_f_body f_body current_class graph=
           let required_fields =
             extract_required_fields xhp_node graph in
           let has_fields = xhp_attr_list
-            +> List.map (fun ((name, _), _, _) -> name) in
+            |> List.map (fun ((name, _), _, _) -> name) in
           let (_common, _only_in_first, only_in_second) =
             Common2.diff_set_eff has_fields required_fields
           in
-          let tok_and_error = only_in_second +> Common.map_filter (fun f ->
+          let tok_and_error = only_in_second |> Common.map_filter (fun f ->
             match current_class with
             | Some class_str ->
               (match Graph_code_php.lookup_inheritance graph 
@@ -225,7 +225,7 @@ let visit_and_check  find_entity prog =
       let is_trait =
         match def.c_type with Trait _ -> true | _ -> false in
 
-      def.c_extends +> Common.do_option (fun (_tok, parent) ->
+      def.c_extends |> Common.do_option (fun (_tok, parent) ->
         let parent = name_of_class_name parent in
         E.find_entity_and_warn find_entity (Ent.Class, parent)
           (fun _ ->
@@ -371,7 +371,7 @@ let check_required_field graph file =
       let f_body = def.f_body in
       (* (tok * error) list *)
       let acc = visit_f_body f_body !current_class graph in
-      acc +> List.iter (fun (tok, error) ->
+      acc |> List.iter (fun (tok, error) ->
         E.warning tok error
       );
       k def

@@ -67,7 +67,7 @@ let toks_before_after_ii ii toks =
   let (_min, max) = Parse_info.min_max_ii_by_pos ii in
   let toks_before_max, toks_after = 
     Common.profile_code "spanning tokens" (fun () ->
-      toks +> Common2.span_tail_call (fun tok ->
+      toks |> Common2.span_tail_call (fun tok ->
         let info = TH.info_of_tok tok in
         match Parse_info.compare_pos info max with
         | -1 | 0 -> true
@@ -94,7 +94,7 @@ let rec diff xs ys =
       if sa =$= sb
       then (Match, b)::diff xs ys
       else
-        if not (ys +> List.exists (fun (_, _, s) -> s =$= sa))
+        if not (ys |> List.exists (fun (_, _, s) -> s =$= sa))
         then (AnotinB, a)::diff xs (b::ys)
         else (BnotinA, b)::diff (a::xs) ys
   | [], y::ys -> (BnotinA, y):: diff [] ys
@@ -138,13 +138,13 @@ let split_chunks tokens ast =
             Lib_parsing_php.ii_of_any 
               (Cst_php.Toplevel (Cst_php.ClassDef just_class)) 
             (* don't count ending } *)
-            +> Common2.list_init
+            |> Common2.list_init
           in
           let toks_header, toks = 
             toks_before_after_ii ii_header toks in
 
           let chunks_body, toks =
-            body +> List.fold_left (fun (acc, toks) class_stmt ->
+            body |> List.fold_left (fun (acc, toks) class_stmt ->
               let ii = 
                 Lib_parsing_php.ii_of_any (Cst_php.ClassStmt class_stmt) in
               let (toks_before_max, toks) = toks_before_after_ii ii toks in
@@ -201,7 +201,7 @@ let unparse buf (_chunk, toks) =
       | Parse_info.FakeTokStr ("fake_token", _) -> ()
       | Parse_info.Ab | Parse_info.FakeTokStr _ -> raise Impossible
     in
-  toks +> List.iter pp_tok;
+  toks |> List.iter pp_tok;
   ()
 
 let string_of_toks toks =
@@ -234,12 +234,12 @@ let pretty_print_when_need_it ~oldfile ~newfile =
    *)
   let chunks_old = 
     split_chunks toks_old ast_old 
-    +> List.map (fun (a, toks) -> a, toks, string_of_toks toks) in
+    |> List.map (fun (a, toks) -> a, toks, string_of_toks toks) in
   let chunks_new = split_chunks toks_new ast_new
-    +> List.map (fun (a, toks) -> a, toks, string_of_toks toks) in
+    |> List.map (fun (a, toks) -> a, toks, string_of_toks toks) in
 
   let diffs = diff chunks_old chunks_new in
-  diffs +> List.iter (function
+  diffs |> List.iter (function
   | Match, (bchunk, btoks, _bstr) ->
       (* if no change then use conservative unparser *)
       unparse buf (bchunk, btoks)

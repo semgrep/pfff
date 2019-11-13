@@ -80,7 +80,7 @@ module XMATCH = struct
          *)
         let xs = m1 tin in
         (* try m2 on each possible returned bindings *)
-        let xxs = xs +> List.map (fun ((a,b), binding) -> 
+        let xxs = xs |> List.map (fun ((a,b), binding) -> 
           m2 (a, b) binding
         ) in
         List.flatten xxs
@@ -221,9 +221,9 @@ module XMATCH = struct
     (match transfo with
     | PI.NoTransfo -> ()
     | PI.Remove -> 
-      ii +> List.iter (fun tok -> tok.PI.transfo <- PI.Remove)
+      ii |> List.iter (fun tok -> tok.PI.transfo <- PI.Remove)
     | PI.Replace _add ->
-        ii +> List.iter (fun tok -> tok.PI.transfo <- PI.Remove);
+        ii |> List.iter (fun tok -> tok.PI.transfo <- PI.Remove);
         (match ii with
         | [ii] -> ii.PI.transfo <- adjust_transfo_with_env env transfo;
         | _ -> failwith "metavar matching multi tokens not supported yet"

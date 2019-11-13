@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
  *)
-open Common
 
 module Flag = Flag_parsing_cpp
 module TH = Token_helpers_cpp
@@ -71,7 +70,7 @@ module PI = Parse_info
 (*****************************************************************************)
 
 let filter_comment_stuff xs =
-  xs +> List.filter (fun x -> not (TH.is_comment x.TV.t))
+  xs |> List.filter (fun x -> not (TH.is_comment x.TV.t))
 
 (*****************************************************************************)
 (* Post processing *)
@@ -112,7 +111,7 @@ let insert_virtual_positions l =
 (* C vs C++ *)
 (*****************************************************************************)
 let fix_tokens_for_language lang xs =
-  xs +> List.map (fun tok ->
+  xs |> List.map (fun tok ->
     if lang = Flag_parsing_cpp.C && TH.is_cpp_keyword tok
     then 
       let ii = TH.info_of_tok tok in
@@ -152,10 +151,10 @@ let fix_tokens_c ~macro_defs tokens =
   let tokens = Parsing_hacks_define.fix_tokens_define tokens in
   let tokens = fix_tokens_for_language Flag.C tokens in
 
-  let tokens2 = ref (tokens +> Common2.acc_map TV.mk_token_extended) in
+  let tokens2 = ref (tokens |> Common2.acc_map TV.mk_token_extended) in
 
   (* ifdef *)
-  let cleaner = !tokens2 +> filter_comment_stuff in
+  let cleaner = !tokens2 |> filter_comment_stuff in
   
   let ifdef_grouped = TV.mk_ifdef cleaner in
   Parsing_hacks_pp.find_ifdef_funheaders ifdef_grouped;
@@ -163,19 +162,19 @@ let fix_tokens_c ~macro_defs tokens =
   Parsing_hacks_pp.find_ifdef_mid        ifdef_grouped;
 
   (* macro part 1 *)
-  let cleaner = !tokens2 +> Parsing_hacks_pp.filter_pp_or_comment_stuff in
+  let cleaner = !tokens2 |> Parsing_hacks_pp.filter_pp_or_comment_stuff in
   let paren_grouped = TV.mk_parenthised  cleaner in
   Pp_token.apply_macro_defs macro_defs paren_grouped;
   (* because the before field is used by apply_macro_defs *)
   tokens2 := TV.rebuild_tokens_extented !tokens2; 
 
-  let cleaner = !tokens2 +> Parsing_hacks_pp.filter_pp_or_comment_stuff in
+  let cleaner = !tokens2 |> Parsing_hacks_pp.filter_pp_or_comment_stuff in
 
   let paren_grouped      = TV.mk_parenthised  cleaner in
   Parsing_hacks_pp.find_define_init_brace_paren paren_grouped;
   Parsing_hacks_pp.find_string_macro_paren paren_grouped;
   Parsing_hacks_pp.find_macro_paren        paren_grouped;
-  let cleaner = !tokens2 +> Parsing_hacks_pp.filter_pp_or_comment_stuff in
+  let cleaner = !tokens2 |> Parsing_hacks_pp.filter_pp_or_comment_stuff in
 
 
   (* tagging contextual info (InFunc, InStruct, etc) *)
@@ -184,7 +183,7 @@ let fix_tokens_c ~macro_defs tokens =
   let xxs = Parsing_hacks_typedef.filter_for_typedef multi_grouped in
   Parsing_hacks_typedef.find_typedefs xxs;
 
-  insert_virtual_positions (!tokens2 +> Common2.acc_map (fun x -> x.TV.t))
+  insert_virtual_positions (!tokens2 |> Common2.acc_map (fun x -> x.TV.t))
 
 
 
@@ -193,10 +192,10 @@ let fix_tokens_cpp ~macro_defs tokens =
   let tokens = Parsing_hacks_define.fix_tokens_define tokens in
   (* let tokens = fix_tokens_for_language Flag.Cplusplus tokens in *)
 
-  let tokens2 = ref (tokens +> Common2.acc_map TV.mk_token_extended) in
+  let tokens2 = ref (tokens |> Common2.acc_map TV.mk_token_extended) in
   
   (* ifdef *)
-  let cleaner = !tokens2 +> filter_comment_stuff in
+  let cleaner = !tokens2 |> filter_comment_stuff in
   
   let ifdef_grouped = TV.mk_ifdef cleaner in
   Parsing_hacks_pp.find_ifdef_funheaders ifdef_grouped;
@@ -204,7 +203,7 @@ let fix_tokens_cpp ~macro_defs tokens =
   Parsing_hacks_pp.find_ifdef_mid        ifdef_grouped;
   
   (* macro part 1 *)
-  let cleaner = !tokens2 +> Parsing_hacks_pp.filter_pp_or_comment_stuff in
+  let cleaner = !tokens2 |> Parsing_hacks_pp.filter_pp_or_comment_stuff in
   
   (* find '<' '>' template symbols. We need that for the typedef
    * heuristics. We actually need that even for the paren view 
@@ -222,7 +221,7 @@ let fix_tokens_cpp ~macro_defs tokens =
   tokens2 := TV.rebuild_tokens_extented !tokens2; 
   
   (* could filter also #define/#include *)
-  let cleaner = !tokens2 +> filter_comment_stuff in
+  let cleaner = !tokens2 |> filter_comment_stuff in
   
   (* tagging contextual info (InFunc, InStruct, etc). Better to do
    * that after the "ifdef-simplification" phase.
@@ -231,7 +230,7 @@ let fix_tokens_cpp ~macro_defs tokens =
   Token_views_context.set_context_tag_multi multi_grouped;
   
   (* macro part 2 *)
-  let cleaner = !tokens2 +> Parsing_hacks_pp.filter_pp_or_comment_stuff in
+  let cleaner = !tokens2 |> Parsing_hacks_pp.filter_pp_or_comment_stuff in
   
   let paren_grouped      = TV.mk_parenthised  cleaner in
   let line_paren_grouped = TV.mk_line_parenthised paren_grouped in
@@ -245,13 +244,13 @@ let fix_tokens_cpp ~macro_defs tokens =
    * works on the nested template arguments.
    *)
   Parsing_hacks_cpp.find_template_commentize multi_grouped;
-  let cleaner = !tokens2 +> Parsing_hacks_pp.filter_pp_or_comment_stuff in
+  let cleaner = !tokens2 |> Parsing_hacks_pp.filter_pp_or_comment_stuff in
 
   (* must be done before the qualifier filtering *)
   Parsing_hacks_cpp.find_constructor_outside_class cleaner;
 
   Parsing_hacks_cpp.find_qualifier_commentize cleaner;
-  let cleaner = !tokens2 +> Parsing_hacks_pp.filter_pp_or_comment_stuff in
+  let cleaner = !tokens2 |> Parsing_hacks_pp.filter_pp_or_comment_stuff in
 
   let multi_grouped = TV.mk_multi cleaner in
   Token_views_context.set_context_tag_cplus multi_grouped;
@@ -266,7 +265,7 @@ let fix_tokens_cpp ~macro_defs tokens =
   (* the pending of find_qualifier_comentize *)
   Parsing_hacks_cpp.reclassify_tokens_before_idents_or_typedefs multi_grouped;
   
-  insert_virtual_positions (!tokens2 +> Common2.acc_map (fun x -> x.TV.t))
+  insert_virtual_positions (!tokens2 |> Common2.acc_map (fun x -> x.TV.t))
 
 
 let fix_tokens ~macro_defs lang a = 

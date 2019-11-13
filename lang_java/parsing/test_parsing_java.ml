@@ -28,7 +28,7 @@ let test_parse xs  =
 
   Common2.check_stack_nbfiles (List.length fullxs);
 
-  fullxs +> List.iter (fun file -> 
+  fullxs |> List.iter (fun file -> 
     pr2 ("PARSING: " ^ file);
     let (_xs, stat) = 
       Common.save_excursion Flag_parsing.error_recovery true (fun () ->
@@ -52,7 +52,7 @@ let test_parse xs  =
     | _ -> None
   in
   let score_path = Filename.concat Config_pfff.path "tmp" in
-  dirname_opt +> Common.do_option (fun dirname -> 
+  dirname_opt |> Common.do_option (fun dirname -> 
     pr2 "--------------------------------";
     pr2 "regression testing  information";
     pr2 "--------------------------------";

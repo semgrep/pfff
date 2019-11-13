@@ -83,7 +83,7 @@ let rec ifdef_skipper xs f =
         pr2_once (spf "skipping: %s" (Parse_info.str_of_info tok));
         (try 
           let (_, x, rest) = 
-            xs +> Common2.split_when (fun x -> 
+            xs |> Common2.split_when (fun x -> 
               match f x with
               | Some (IfdefElse, _) -> true
               | Some (IfdefEndif, _) -> true
@@ -95,7 +95,7 @@ let rec ifdef_skipper xs f =
               ifdef_skipper rest f
           | Some (IfdefElse, _) ->
             let (before, _x, rest) = 
-              rest +> Common2.split_when (fun x -> 
+              rest |> Common2.split_when (fun x -> 
                 match f x with
                 | Some (IfdefEndif, _) -> true
               | _ -> false
@@ -118,7 +118,7 @@ let rec ifdef_skipper xs f =
 
 let rec program xs =
   let env = empty_env () in
-  toplevels env xs +> List.flatten
+  toplevels env xs |> List.flatten
 
 (* ---------------------------------------------------------------------- *)
 (* Toplevels *)
@@ -126,7 +126,7 @@ let rec program xs =
 
 and toplevels env xs =
   ifdef_skipper xs (function IfdefDecl x -> Some x | _ -> None)
-    +> List.map (toplevel env)
+    |> List.map (toplevel env)
 
 and toplevel env x =
   match x with
@@ -162,10 +162,10 @@ and declaration env x =
           env.struct_defs_toadd <- [];
           env.enum_defs_toadd <- [];
           env.typedefs_toadd <- [];
-          (structs +> List.map (fun x -> A.StructDef x)) @
-          (enums +> List.map (fun x -> A.EnumDef x)) @
-          (typedefs +> List.map (fun x -> A.TypeDef x)) @
-          (xs +> List.map (fun x ->
+          (structs |> List.map (fun x -> A.StructDef x)) @
+          (enums |> List.map (fun x -> A.EnumDef x)) @
+          (typedefs |> List.map (fun x -> A.TypeDef x)) @
+          (xs |> List.map (fun x ->
             (* could skip extern declaration? *)
             match x with
             | { A.v_type = A.TFunction ft; v_storage = storage; _ } ->
@@ -220,7 +220,7 @@ and function_type env x =
     );
     
     (full_type env ret,
-   List.map (parameter env) (params +> unparen +> uncomma)
+   List.map (parameter env) (params |> unparen |> uncomma)
   )
 
 and parameter env x =
@@ -294,17 +294,17 @@ and initialiser env x =
   match x with
   | InitExpr e -> expr env e
   | InitList xs ->
-     (match xs +> unbrace +> uncomma with
+     (match xs |> unbrace |> uncomma with
      | [] -> debug (Init x); raise Impossible
      | (InitDesignators ([DesignatorField (_, _)], _, _init))::_ ->
        A.RecordInit (
-         xs +> unbrace +> uncomma +> List.map (function
+         xs |> unbrace |> uncomma |> List.map (function
            | InitDesignators ([DesignatorField (_, ident)], _, init) ->
              ident, initialiser env init
            | _ -> debug (Init x); raise Todo
          ))
      | _ ->
-       A.ArrayInit ((xs +> unbrace +> uncomma) +> List.map (function
+       A.ArrayInit ((xs |> unbrace |> uncomma) |> List.map (function
          (* less: todo? *)
          | InitIndexOld ((_, idx, _), ini) ->
              Some (expr env idx), initialiser env ini
@@ -342,7 +342,7 @@ and cpp_directive env x =
           [A.Define (name, v)]
       | DefineFunc(args) ->
           [A.Macro(name, 
-                 args +> unparen +> uncomma +> List.map (fun (s, ii) ->
+                 args |> unparen |> uncomma |> List.map (fun (s, ii) ->
                    (s, List.hd ii)
                  ),
                  v)]
@@ -442,11 +442,11 @@ and stmt env x =
       debug (Stmt x); raise Todo
 
 and compound env (_, xs, _) =
-  statements_sequencable env xs +> List.flatten
+  statements_sequencable env xs |> List.flatten
 
 and statements_sequencable env xs =
   ifdef_skipper xs (function IfdefStmt x -> Some x | _ -> None)
-    +> List.map (statement_sequencable env)
+    |> List.map (statement_sequencable env)
 
 
 and statement_sequencable env x =
@@ -468,7 +468,7 @@ and cases env x =
             | StmtElem ((Labeled (Default st)), _)
               ->
                 let xs', rest =
-                  (StmtElem st::xs) +> Common.span (function
+                  (StmtElem st::xs) |> Common.span (function
                   | StmtElem ((Labeled (Case (_, _st))), _)
                   | StmtElem ((Labeled (Default _st)), _) -> false
                   | _ -> true
@@ -551,7 +551,7 @@ and expr env e =
                  expr env e3)
   | Call (e, args) ->
       A.Call (expr env e,
-             Common.map_filter (argument env) (args +> unparen +> uncomma))
+             Common.map_filter (argument env) (args |> unparen |> uncomma))
 
   | SizeOfExpr (_tok, e) ->
       A.SizeOf(Left (expr env e))
@@ -665,7 +665,7 @@ and full_type env x =
         let def' = { A.
           s_name = name;
           s_kind = struct_kind env kind;
-          s_flds = class_members_sequencable env xs +> List.flatten;
+          s_flds = class_members_sequencable env xs |> List.flatten;
         }
         in
         env.struct_defs_toadd <- def' :: env.struct_defs_toadd;
@@ -683,7 +683,7 @@ and full_type env x =
         | Some n -> n
       in
       let xs' =
-        xs +> unbrace +> uncomma +> List.map (fun eelem ->
+        xs |> unbrace |> uncomma |> List.map (fun eelem ->
           let (name, e_opt) = eelem.e_name, eelem.e_val in
           name, 
           match e_opt with
@@ -709,7 +709,7 @@ and class_member env x =
   match x with
   | MemberField (fldkind, _) ->
       let xs = uncomma fldkind in
-      xs +> List.map (fieldkind env)
+      xs |> List.map (fieldkind env)
   | ( UsingDeclInClass _| TemplateDeclInClass _
     | QualifiedIdInClass (_, _)| MemberDecl _| MemberFunc _| Access (_, _)
     ) ->
@@ -719,7 +719,7 @@ and class_member env x =
 
 and class_members_sequencable env xs =
   ifdef_skipper xs (function IfdefStruct x -> Some x | _ -> None)
-    +> List.map (class_member_sequencable env)
+    |> List.map (class_member_sequencable env)
 
 and class_member_sequencable env x =
   match x with

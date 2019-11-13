@@ -109,7 +109,7 @@ rule token = parse
   | "{-" { 
       let info = tokinfo lexbuf in 
       let com = comment lexbuf in
-      TComment(info +> Parse_info.tok_add_s com)
+      TComment(info |> Parse_info.tok_add_s com)
     }
 
   | [' ''\t']+ { TCommentSpace (tokinfo lexbuf) }
@@ -138,7 +138,7 @@ rule token = parse
       let buf = Buffer.create 100 in
       string buf lexbuf;
       let s = Buffer.contents buf in
-      TString (s, info +> Parse_info.tok_add_s (s ^ "\""))
+      TString (s, info |> Parse_info.tok_add_s (s ^ "\""))
     }
 
   (* ----------------------------------------------------------------------- *)
@@ -178,7 +178,7 @@ rule token = parse
     }
 
   (* ----------------------------------------------------------------------- *)
-  | eof { EOF (tokinfo lexbuf +> Parse_info.rewrap_str "") }
+  | eof { EOF (tokinfo lexbuf |> Parse_info.rewrap_str "") }
   | _ { 
         if !Flag.verbose_lexing 
         then pr2_once ("LEXER:unrecognised symbol, in token rule:"^tok lexbuf);

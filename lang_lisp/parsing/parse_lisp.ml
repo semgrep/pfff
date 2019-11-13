@@ -62,7 +62,7 @@ let tokens2 file =
         let tok = ftoken lexbuf in
         if !Flag.debug_lexer then Common.pr2_gen tok;
 
-        let tok = tok +> TH.visitor_info_of_tok (fun ii -> 
+        let tok = tok |> TH.visitor_info_of_tok (fun ii -> 
         { ii with PI.token=
           (* could assert pinfo.filename = file ? *)
            match ii.PI.token with
@@ -159,7 +159,7 @@ let parse2 filename =
   let stat = Parse_info.default_stat filename in
   let toks_orig = tokens filename in
 
-  let toks = toks_orig +> Common.exclude TH.is_comment in
+  let toks = toks_orig |> Common.exclude TH.is_comment in
   let nblines = Common2.nblines filename in
 
   let ast = 

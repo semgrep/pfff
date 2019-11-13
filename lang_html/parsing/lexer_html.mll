@@ -72,12 +72,12 @@ rule scan_document = parse
   | "<!--" { 
       let info = tokinfo lexbuf in
       let com = scan_comment lexbuf in
-      TComment(info +> tok_add_s com) 
+      TComment(info |> tok_add_s com) 
     }
   | "<!"  { 
       let info = tokinfo lexbuf in
       let com = scan_doctype lexbuf in
-      TDoctype(info +> tok_add_s com) 
+      TDoctype(info |> tok_add_s com) 
     }
   (* pi stands for processing elements, it is obsolete in HTML 5
    * see http://www.w3.org/TR/2011/WD-html5-diff-20110113/#syntax
@@ -85,7 +85,7 @@ rule scan_document = parse
   | "<?" { 
       let info = tokinfo lexbuf in
       let com = scan_pi lexbuf in
-      TPi(info +> tok_add_s com) 
+      TPi(info |> tok_add_s com) 
     }
 
   | "<" (name as s)  { Lelement (tokinfo lexbuf, s) }

@@ -32,7 +32,7 @@ module E = Error_php
 (*****************************************************************************)
 
 let check_boolean_expr expr =
-  (Expr expr) +> V.mk_visitor { V.default_visitor with
+  (Expr expr) |> V.mk_visitor { V.default_visitor with
     V.kexpr = (fun (k, visitor) e ->
       (match e with
       (* putting extra parenthesis around an assignement silence the
@@ -76,7 +76,7 @@ let check ast =
         ->
           check_boolean_expr expr
       | For (_, _, _for_expr1, _, for_expr2, _, _for_expr3, _, _stmt) ->
-          for_expr2 +> Ast.uncomma +> List.iter (check_boolean_expr)
+          for_expr2 |> Ast.uncomma |> List.iter (check_boolean_expr)
       | _ -> ()
       );
       (* recurse, call continuation *)

@@ -83,7 +83,7 @@ module XMATCH = struct
          *)
         let xs = m1 tin in
         (* try m2 on each possible returned bindings *)
-        let xxs = xs +> List.map (fun ((a,b), binding) -> 
+        let xxs = xs |> List.map (fun ((a,b), binding) -> 
           m2 (a, b) binding
         ) in
         List.flatten xxs
@@ -165,7 +165,7 @@ module XMATCH = struct
 
   let subst_metavars env add =
     let env = 
-      env +> List.map (fun (mvar, any) -> mvar, Unparse_php.string_of_any any)
+      env |> List.map (fun (mvar, any) -> mvar, Unparse_php.string_of_any any)
     in
     match add with
     | PI.AddNewlineAndIdent -> 
@@ -175,7 +175,7 @@ module XMATCH = struct
          * mevar (X)
          *)
         let s = 
-         s +> Common2.global_replace_regexp MV.metavar_variable_regexp_string
+         s |> Common2.global_replace_regexp MV.metavar_variable_regexp_string
          (fun matched ->
           try List.assoc matched env
           with Not_found -> 
@@ -184,7 +184,7 @@ module XMATCH = struct
          )
         in
 
-        let s = s +> Common2.global_replace_regexp MV.metavar_regexp_string
+        let s = s |> Common2.global_replace_regexp MV.metavar_regexp_string
          (fun matched ->
           try List.assoc matched env
           with Not_found -> 
@@ -237,9 +237,9 @@ module XMATCH = struct
 
     (match transfo with
     | PI.NoTransfo -> ()
-    | PI.Remove -> ii +> List.iter (fun tok -> tok.PI.transfo <- PI.Remove)
+    | PI.Remove -> ii |> List.iter (fun tok -> tok.PI.transfo <- PI.Remove)
     | PI.Replace _add ->
-        ii +> List.iter (fun tok -> tok.PI.transfo <- PI.Remove);
+        ii |> List.iter (fun tok -> tok.PI.transfo <- PI.Remove);
         let any_ii = List.hd ii in
         any_ii.PI.transfo <- adjust_transfo_with_env env transfo;
     | PI.AddBefore _add -> raise Todo
