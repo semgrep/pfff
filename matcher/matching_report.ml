@@ -15,7 +15,6 @@
 open Common
 
 module PI = Parse_info
-module J = Json_type
 
 (*****************************************************************************)
 (* Prelude *)
@@ -25,7 +24,7 @@ module J = Json_type
 (* Types *)
 (*****************************************************************************)
 
-(* could perhaps create a special file related to display of code ? *)
+(* could perhaps create a special file related to display of code? *)
 type match_format =
   (* ex: tests/misc/foo4.php:3
    *  foo(
@@ -37,14 +36,6 @@ type match_format =
   | Emacs
   (* ex: tests/misc/foo4.php:3: foo(1,2) *)
   | OneLine
-  (* ex: { check_id: ...; path: ...; start: ... end: ...; extra: ... *)
-  | Json
-
-(*****************************************************************************)
-(* Globals *)
-(*****************************************************************************)
-(* used only for Json format *)
-let first_entry = ref true
 
 (*****************************************************************************)
 (* Helpers *)
@@ -67,13 +58,6 @@ let rec join_with_space_if_needed xs =
       then x ^ " " ^ (join_with_space_if_needed (y::xs))
       else x ^ (join_with_space_if_needed (y::xs))
 
-let info_to_json col_offset info = 
-  let loc = PI.token_location_of_info info in
-  J.Object [
-    "line", J.Int loc.PI.line;
-    "col", J.Int (loc.PI.column + col_offset);
-  ]
-
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
@@ -89,46 +73,9 @@ let print_match ?(format = Normal) ii =
   | Normal ->
       pr prefix;
       (* todo? some context too ? *)
-      lines +> List.map (fun i -> arr.(i)) +> List.iter (fun s -> pr (" " ^ s));
+      lines +> List.map (fun i -> arr.(i)) +> List.iter (fun s -> pr (" " ^ s))
   | Emacs ->
       pr (prefix ^ ": " ^ arr.(List.hd lines))
   | OneLine ->
       pr (prefix ^ ": " ^ (ii +> List.map PI.str_of_info 
                             +> join_with_space_if_needed))
-  | Json ->
-      if not !first_entry
-      then pr ",";
-      first_entry := false;
-
-      let matched_str = ii |> List.map PI.str_of_info 
-                            |> join_with_space_if_needed in
-      let json = J.Object [
-        (* r2c: quite specific to r2c *)
-        "check_id", J.String "pfff-parse_js_r2c";
-        "path", J.String file;
-        "start", info_to_json 0 mini;
-        "end", info_to_json (PI.str_of_info maxi |> String.length) maxi;
-        "extra", J.Object [
-          "matched_str", J.String matched_str;
-          (* todo: put metavars content *)
-        ];
-      ] in
-      let s = Json_io.string_of_json json in
-      pr s
-
-
-(*****************************************************************************)
-(* Header/Trailer *)
-(*****************************************************************************)
-let print_header = function
-  | Normal | Emacs | OneLine -> ()
-  | Json -> 
-     pr "{ \"results\": [";
-     first_entry := true
-
-let print_trailer = function
-  | Normal | Emacs | OneLine -> ()
-  | Json -> 
-     pr "] }";
-     first_entry := false
-

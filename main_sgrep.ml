@@ -8,8 +8,10 @@
  *)
 open Common
 
+module Flag = Flag_parsing
 module PI = Parse_info
 module S = Scope_code
+module E = Error_code
 
 (*****************************************************************************)
 (* Purpose *)
@@ -45,6 +47,7 @@ let lang = ref "python"
 
 let case_sensitive = ref false
 let match_format = ref Matching_report.Normal
+let r2c = ref false
 
 let mvars = ref ([]: Metavars_fuzzy.mvar list)
 
@@ -78,10 +81,18 @@ let _matching_tokens = ref []
  * would see where the parameters come from :)
  *)
 
+let mk_one_info_from_multiple_infos xs =
+  List.hd xs
+
 let print_match mvars mvar_binding ii_of_any tokens_matched_code = 
   (match mvars with
   | [] ->
-      Matching_report.print_match ~format:!match_format tokens_matched_code
+      if !r2c
+      then 
+         let info = mk_one_info_from_multiple_infos tokens_matched_code in
+         E.error info (E.SgrepLint ("sgrep", "found a match"))
+      else    
+        Matching_report.print_match ~format:!match_format tokens_matched_code
   | xs ->
       (* similar to the code of Lib_matcher.print_match, maybe could
        * factorize code a bit.
@@ -174,7 +185,6 @@ type ast =
   | NoAST
 
 let create_ast file =
- try (
   match !lang with
   | s when Lang.lang_of_string_opt s <> None ->
     Gen (Parse_generic.parse_program file)
@@ -183,18 +193,7 @@ let create_ast file =
   | "php" ->
     Php (Parse_php.parse_program file)
   | _ -> failwith ("unsupported language: " ^ !lang)
-  )
-  with
-   | Parse_info.Lexical_error (_, tok)
-   | Parse_info.Parsing_error tok
-   | Parse_info.Ast_builder_error (_, tok)
-   | Parse_info.Other_error (_, tok)
-   -> 
-      pr2 (Parse_info.error_message_info tok);
-      NoAST
-   | exn ->
-    pr2 (spf "PB parsing with %s, exn = %s"  file (Common.exn_to_s exn));
-    NoAST
+  
 
 type pattern =
   | PatFuzzy of Ast_fuzzy.tree list
@@ -269,6 +268,8 @@ let sgrep_ast pattern any_ast =
 (*****************************************************************************)
 let main_action xs =
   set_gc ();
+  let xs = List.map Common.fullpath xs in
+
   let patterns, query_string =
     match !pattern_file, !pattern_string, !use_multiple_patterns with
     | "", "", _ ->
@@ -284,29 +285,39 @@ let main_action xs =
         [parse_pattern s], s
     | _ -> raise Impossible
   in
-  Logger.log Config_pfff.logger "sgrep" (Some query_string);
 
-  let files = 
+  let root, files = 
     match xs with
     | [x] when Sys.is_directory x ->
-       Find_source.files_of_root ~lang:!lang x
+       x, Find_source.files_of_root ~lang:!lang x
     | _ -> 
-       Find_source.files_of_dir_or_files ~lang:!lang xs
+       "/", Find_source.files_of_dir_or_files ~lang:!lang xs
   in
 
-  Matching_report.print_header !match_format;
   files +> List.iter (fun file ->
-    if !verbose then pr2 (spf "processing: %s" file);
-    try 
-      let ast = create_ast file in
-      let sgrep pattern = 
-        sgrep_ast pattern ast 
-      in
-      List.iter sgrep patterns
-    with Stack_overflow -> ()
+    if !verbose 
+    then pr2 (spf "processing: %s" file);
+    let process file =
+      patterns |> List.iter (fun pattern -> 
+        sgrep_ast pattern (create_ast file)
+      )
+    in
+    if !r2c
+    then E.try_analyze_file_with_exn_to_errors file (fun () ->
+          Common.save_excursion Flag.error_recovery false (fun () ->
+          Common.save_excursion Flag.exn_when_lexical_error true (fun () ->
+          Common.save_excursion Flag.show_parsing_error false (fun () ->
+            process file
+         ))))
+    else process file
   );
-  Matching_report.print_trailer !match_format;
-
+  if !r2c then begin
+   let errs = !E.g_errors 
+          |> E.filter_maybe_parse_and_fatal_errors
+          |> E.adjust_paths_relative_to_root root
+   in
+   pr (R2c.string_of_errors "sgrep" errs)
+  end;
   !layer_file +> Common.do_option (fun file ->
     let root = Common2.common_prefix_of_files_or_dirs xs in
     gen_layer ~root ~query:query_string  file
@@ -371,8 +382,8 @@ let options () =
     " print matches on the same line than the match position";
     "-oneline", Arg.Unit (fun () -> match_format := Matching_report.OneLine),
     " print matches on one line, in normalized form";
-    "-json", Arg.Unit (fun () -> match_format := Matching_report.Json),
-    " print matches in a Json format for the r2c platform";
+    "-r2c", Arg.Unit (fun () -> r2c := true;),
+    " use r2c platform error format for output";
 
     "-pvar", Arg.String (fun s -> mvars := Common.split "," s),
     " <metavars> print the metavariables, not the matched code";
@@ -387,17 +398,15 @@ let options () =
     ),
     " ";
   ] @
+  Error_code.options () @
+  Common2.cmdline_flags_devel () @
   (* old: Flag_parsing_php.cmdline_flags_pp () ++ *)
   Common.options_of_actions action (all_actions()) @
-  Common2.cmdline_flags_devel () @
-  [
-  "-version",   Arg.Unit (fun () -> 
+  [ "-version",   Arg.Unit (fun () -> 
     pr2 (spf "sgrep version: %s" Config_pfff.version);
     exit 0;
-  ), 
-    "  guess what";
-  ] @
-  []
+    ), "  guess what"; 
+  ]
 
 (*****************************************************************************)
 (* Main entry point *)

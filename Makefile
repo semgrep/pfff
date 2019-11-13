@@ -114,6 +114,7 @@ BASICLIBS=commons/lib.cma \
   lang_GENERIC/analyze/lib.cma \
  lang_FUZZY/parsing/lib.cma \
  matcher/lib.cma \
+ linter/lib.cma \
  mini/lib.cma
 
 SYSLIBS=bigarray.cma str.cma unix.cma

@@ -256,7 +256,7 @@ let options () = [
   " report fatal errors instead of silencing them";
 ]
 
-let is_test_or_example file =
+let _is_test_or_example file =
  (file =~ ".*test.*" || 
   file =~ ".*spec.*" || 
   file =~ ".*example.*" ||
@@ -265,12 +265,14 @@ let is_test_or_example file =
 
 let filter_maybe_parse_and_fatal_errors errs =
   errs |> Common.exclude (fun err ->
-    let file = err.loc.PI.file in
+    let _file = err.loc.PI.file in
     match err.typ with
+(*
     | LexicalError _ | ParseError 
     | AstbuilderError _ | OtherParsingError _
     | FatalError _ 
       when is_test_or_example file -> true
+*)
     | LexicalError _ | ParseError 
     | AstbuilderError _ | OtherParsingError _
       when not !report_parse_errors -> true

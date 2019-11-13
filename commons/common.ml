@@ -770,6 +770,9 @@ let chop_dirsymbol = function
 
 (* pre: prj_path must not contain regexp symbol *)
 let filename_without_leading_path prj_path s =
+ if prj_path = "/"
+ then s
+ else
   let prj_path = chop_dirsymbol prj_path in
   if s =$= prj_path
   then "."
