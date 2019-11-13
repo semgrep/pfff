@@ -397,7 +397,7 @@ let (expected_error_lines_of_files:
          * don't check if they match. We are just happy to check for 
          * correct lines error reporting.
          *)
-        if s =~ ".*#ERROR:.*" 
+        if s =~ ".*ERROR:.*" 
         (* + 1 because the comment is one line before *)
         then Some (file, idx + 1) 
         else None
