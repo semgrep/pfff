@@ -46,6 +46,9 @@ val find_node: (node -> bool) -> flow -> nodei
 val find_enter: flow -> nodei
 val find_exit: flow -> nodei
 
+val exprs_of_node: node -> Ast.expr list
+val fold_on_expr: ((nodei * node) -> Ast.expr -> 'a -> 'a) -> flow -> 'a -> 'a
+
 (* using internally graphviz 'dot' and ghostview 'gv' on X11 *)
 val display_flow: flow -> unit
 

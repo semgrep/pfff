@@ -61,26 +61,47 @@ type reaching_mapping = Dataflow.NodeiSet.t Dataflow.mapping
 (*****************************************************************************)
 
 let (reaching_defs: F.flow -> NodeiSet.t Dataflow.env) = fun flow ->
-  Dataflow_visitor.flow_fold_lv (fun ni var acc -> 
-    Dataflow.add_var_and_nodei_to_env var ni acc
-  ) VarMap.empty flow
+  (* the long version, could use F.fold_on_expr *)
+  flow#nodes#fold (fun env (ni, node) ->
+    let xs = F.exprs_of_node node in
+    xs |> List.fold_left (fun env e ->
+
+      let lvals = Lrvalue.lvalues_of_expr e in
+      (* TODO: filter just Local *)
+      let vars = lvals |> List.map (fun ((s,_tok), _idinfo) -> s) in
+      vars |> List.fold_left (fun env var ->
+        Dataflow.add_var_and_nodei_to_env var ni env
+      ) env
+
+    ) env
+  ) VarMap.empty
 
 let (reaching_gens: F.flow -> VarSet.t array) = fun flow ->
   let arr = Dataflow.new_node_array flow VarSet.empty in
-  Dataflow_visitor.flow_fold_lv (fun ni var arr -> 
-    arr.(ni) <- VarSet.add var arr.(ni);
+  F.fold_on_expr (fun (ni, _nd) e arr ->
+    let lvals = Lrvalue.lvalues_of_expr e in
+    (* TODO: filter just Local *)
+    let vars = lvals |> List.map (fun ((s,_tok), _idinfo) -> s) in
+    vars |> List.iter (fun var ->
+      arr.(ni) <- VarSet.add var arr.(ni);
+    );
     arr
-  ) arr flow
+  ) flow arr
 
 let (reaching_kills:
    NodeiSet.t Dataflow.env -> F.flow -> (NodeiSet.t Dataflow.env) array) =
  fun defs flow -> 
   let arr = Dataflow.new_node_array flow (Dataflow.empty_env()) in
-  Dataflow_visitor.flow_fold_lv (fun ni var arr ->
-    let set = NodeiSet.remove ni (VarMap.find var defs) in
-    arr.(ni) <- VarMap.add var set arr.(ni);
+  F.fold_on_expr (fun (ni, _nd) e arr ->
+    let lvals = Lrvalue.lvalues_of_expr e in
+    (* TODO: filter just Local *)
+    let vars = lvals |> List.map (fun ((s,_tok), _idinfo) -> s) in
+    vars |> List.iter (fun var ->
+      let set = NodeiSet.remove ni (VarMap.find var defs) in
+      arr.(ni) <- VarMap.add var set arr.(ni);
+    );
     arr
-  ) arr flow
+  ) flow arr
 
 (*****************************************************************************)
 (* Transfer *)
