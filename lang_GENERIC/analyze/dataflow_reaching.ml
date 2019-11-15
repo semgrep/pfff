@@ -78,7 +78,7 @@ let (reaching_defs: F.flow -> NodeiSet.t Dataflow.env) = fun flow ->
 
 let (reaching_gens: F.flow -> VarSet.t array) = fun flow ->
   let arr = Dataflow.new_node_array flow VarSet.empty in
-  F.fold_on_expr (fun (ni, _nd) e arr ->
+  F.fold_on_node_and_expr (fun (ni, _nd) e arr ->
     let lvals = Lrvalue.lvalues_of_expr e in
     (* TODO: filter just Local *)
     let vars = lvals |> List.map (fun ((s,_tok), _idinfo) -> s) in
@@ -92,7 +92,7 @@ let (reaching_kills:
    NodeiSet.t Dataflow.env -> F.flow -> (NodeiSet.t Dataflow.env) array) =
  fun defs flow -> 
   let arr = Dataflow.new_node_array flow (Dataflow.empty_env()) in
-  F.fold_on_expr (fun (ni, _nd) e arr ->
+  F.fold_on_node_and_expr (fun (ni, _nd) e arr ->
     let lvals = Lrvalue.lvalues_of_expr e in
     (* TODO: filter just Local *)
     let vars = lvals |> List.map (fun ((s,_tok), _idinfo) -> s) in
@@ -166,7 +166,7 @@ let display_reaching_dflow flow mapping =
   let arr = Dataflow.new_node_array flow true in
 
   (* Set the flag to false if the node has defined anything *)
-  F.fold_on_expr (fun (ni, _nd) e () ->
+  F.fold_on_node_and_expr (fun (ni, _nd) e () ->
     let lvals = Lrvalue.lvalues_of_expr e in
     (* TODO: filter just Local *)
     if lvals <> [] (* less: and ExprStmt node? why? *)
@@ -174,7 +174,7 @@ let display_reaching_dflow flow mapping =
   ) flow ();
 
   (* Now flag the def if it is ever used on rhs *)
-  F.fold_on_expr (fun (ni, _nd) e () ->
+  F.fold_on_node_and_expr (fun (ni, _nd) e () ->
      let rvals = Lrvalue.rvalues_of_expr e in
      (* TODO: filter just local *)
      let vars = rvals |> List.map (fun ((s,_tok), _idinfo) -> s) in

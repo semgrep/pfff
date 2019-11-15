@@ -207,7 +207,7 @@ let exprs_of_node node =
   | ForeachHeader ->
       []
 
-let fold_on_expr hook (flow: flow) acc =
+let fold_on_node_and_expr hook (flow: flow) acc =
   flow#nodes#fold (fun acc (ni, node) ->
     let xs = exprs_of_node node in
     xs |> List.fold_left (fun acc e ->
