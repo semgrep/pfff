@@ -12,5 +12,9 @@
 
 type program = Ast_generic.program
 
+type name = Ast_generic.name
+type expr = Ast_generic.expr
+type stmt = Ast_generic.stmt
+
 type any = Ast_generic.any
 

@@ -6,6 +6,8 @@ TARGET=lib
 OPAMPKG=pfff-lang_GENERIC-analyze
 
 SRC= controlflow.ml controlflow_build.ml \
+  controlflow_visitor.ml \
+  lrvalue.ml \
   dataflow.ml dataflow_visitor.ml dataflow_reaching.ml \
   test_analyze_generic.ml
 
