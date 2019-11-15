@@ -4,4 +4,4 @@ type reaching_mapping = Dataflow.NodeiSet.t Dataflow.mapping
 val reaching_fixpoint : Dataflow.F.flow -> reaching_mapping
 
 val display_reaching_dflow :
-  Dataflow_visitor.F.flow -> reaching_mapping -> unit
+  Dataflow.F.flow -> reaching_mapping -> unit

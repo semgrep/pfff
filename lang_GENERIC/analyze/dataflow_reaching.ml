@@ -166,28 +166,28 @@ let display_reaching_dflow flow mapping =
   let arr = Dataflow.new_node_array flow true in
 
   (* Set the flag to false if the node has defined anything *)
-  let flow_lv_fn = fun ni _var arr ->
-    let node = flow#nodes#assoc ni in
-    (match node.F.n with
-    | F.SimpleStmt (F.ExprStmt _) ->
-      arr.(ni) <- false
-    | _ -> ());
-    arr
-  in
-  let arr = Dataflow_visitor.flow_fold_lv flow_lv_fn arr flow in
+  F.fold_on_expr (fun (ni, _nd) e () ->
+    let lvals = Lrvalue.lvalues_of_expr e in
+    (* TODO: filter just Local *)
+    if lvals <> [] (* less: and ExprStmt node? why? *)
+    then arr.(ni) <- false
+  ) flow ();
 
   (* Now flag the def if it is ever used on rhs *)
-  let flow_rv_fn = fun ni var arr ->
-    let in_env = mapping.(ni).D.in_env in
-    (try
-       let ns = VarMap.find var in_env in
-       NodeiSet.iter (fun n -> arr.(n) <- true) ns
-     with Not_found -> 
-      pr (spf "%s: Undefined variable %s" (string_of_ni flow ni) var)
-    );
-    arr
-  in
-  let arr = Dataflow_visitor.flow_fold_rv flow_rv_fn arr flow in
+  F.fold_on_expr (fun (ni, _nd) e () ->
+     let rvals = Lrvalue.rvalues_of_expr e in
+     (* TODO: filter just local *)
+     let vars = rvals |> List.map (fun ((s,_tok), _idinfo) -> s) in
+     vars |> List.iter (fun var ->
+       let in_env = mapping.(ni).D.in_env in
+       (try
+         let ns = VarMap.find var in_env in
+         NodeiSet.iter (fun n -> arr.(n) <- true) ns
+       with Not_found -> 
+         pr (spf "%s: Undefined variable %s" (string_of_ni flow ni) var)
+       );
+     );
+  ) flow ();
 
   arr |> Array.iteri (fun i x ->
     if (not x)
