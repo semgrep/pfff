@@ -66,6 +66,7 @@ let verbose = ref false
 (* Helpers *)
 (*****************************************************************************)
 
+(* TODO: actually we should process lambdas! *)
 let stmts_of_stmt_or_defs xs =
   xs |> Common.map_filter (fun stmt_or_def ->
     match stmt_or_def with
@@ -616,7 +617,16 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
        Some newi
    | DefStmt (_ent, VarDef _def) ->
         raise Todo
-   (* should be filtered by stmts_of_stmt_or_defs *)
+   (* should be filtered by stmts_of_stmt_or_defs 
+    * TODO: we should process lambdas! and generate an arc to its
+    * entry that then go back here! After all most lambdas are used for
+    * callbacks and they sure can be called just after they have been
+    * defined. It would be better to exactly determine when, but as a first
+    * approximation we can at least create an arc! This could find
+    * tainting-related bugs that occur inside a single function, even 
+    * if the source is in the function and the sink in the callback!
+    * (see daghan example in js-permissions slides on xhr.open)
+    *)
    | DefStmt _
    | DirectiveStmt _ ->
        raise Impossible

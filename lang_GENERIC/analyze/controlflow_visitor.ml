@@ -20,6 +20,9 @@ module F = Controlflow
 (*****************************************************************************)
 (* A smaller wrapper around the AST generic visitor to also handles 
  * control flow nodes.
+ * 
+ * Less useful now that we have Controlflow.exprs_of_node and
+ * Controlflow.fold_on_node_and_expr.
  *)
 
 (*****************************************************************************)
