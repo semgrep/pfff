@@ -8,7 +8,7 @@ def foo():
 def bar():
     if(1 == 2):
         return 0
-    if(1+2 == 1+2):
+    if(1+2 == 1+     2):
         return 1
     if(1+2 == 1+2):
         foo()
@@ -32,3 +32,12 @@ def cond():
     if True:
         bar()
     return False
+
+def stupid_if():
+  if(foo() > 2):
+     foo()
+     bar()
+  else:
+     foo()
+     # comment between
+     bar()
