@@ -180,37 +180,3 @@ let (display_flow: flow -> unit) = fun flow ->
     ~s_of_node:(fun (_nodei, node) -> 
       short_string_of_node_kind node.n, None, None
     )
-
-let exprs_of_node node =
-  match node.n with
-  | Enter | Exit
-  | TrueNode | FalseNode
-  | DoHeader | ForHeader
-  | SwitchEnd | Case  | Default
-  | TryHeader | CatchStart | Catch | TryEnd
-  | Join
-  | SimpleStmt (TodoSimpleStmt)
-  | Continue None | Break None
-   -> []
-  (* expr *)
-  | IfHeader expr
-  | WhileHeader expr
-  | DoWhileTail expr
-  | SwitchHeader expr
-  | Throw expr
-  | SimpleStmt (ExprStmt (expr))
-  | Return (expr)
-  | Continue (Some expr) | Break (Some expr)
-      -> [expr]
-  | Parameter (_) ->
-      []
-  | ForeachHeader ->
-      []
-
-let fold_on_node_and_expr hook (flow: flow) acc =
-  flow#nodes#fold (fun acc (ni, node) ->
-    let xs = exprs_of_node node in
-    xs |> List.fold_left (fun acc e ->
-      hook (ni, node) e acc
-    ) acc
-  ) acc

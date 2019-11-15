@@ -13,6 +13,7 @@
  * license.txt for more details.
  *)
 module Ast = Ast_generic
+open Controlflow
 module F = Controlflow
 
 (*****************************************************************************)
@@ -33,7 +34,7 @@ type visitor_in = Visitor_ast.visitor_in
 type visitor_out = Controlflow.node -> unit
 
 (*****************************************************************************)
-(* Entry Point *)
+(* Entry Points *)
 (*****************************************************************************)
 
 let mk_visitor vin = 
@@ -66,3 +67,41 @@ let mk_visitor vin =
       ()
     | F.ForeachHeader ->
       ()
+
+(*****************************************************************************)
+(* Alternative visitor *)
+(*****************************************************************************)
+
+let exprs_of_node node =
+  match node.n with
+  | Enter | Exit
+  | TrueNode | FalseNode
+  | DoHeader | ForHeader
+  | SwitchEnd | Case  | Default
+  | TryHeader | CatchStart | Catch | TryEnd
+  | Join
+  | SimpleStmt (TodoSimpleStmt)
+  | Continue None | Break None
+   -> []
+  (* expr *)
+  | IfHeader expr
+  | WhileHeader expr
+  | DoWhileTail expr
+  | SwitchHeader expr
+  | Throw expr
+  | SimpleStmt (ExprStmt (expr))
+  | Return (expr)
+  | Continue (Some expr) | Break (Some expr)
+      -> [expr]
+  | Parameter (_) ->
+      []
+  | ForeachHeader ->
+      []
+
+let fold_on_node_and_expr hook (flow: flow) acc =
+  flow#nodes#fold (fun acc (ni, node) ->
+    let xs = exprs_of_node node in
+    xs |> List.fold_left (fun acc e ->
+      hook (ni, node) e acc
+    ) acc
+  ) acc
