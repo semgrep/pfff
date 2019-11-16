@@ -1,7 +1,11 @@
-type reaching_mapping = Dataflow.NodeiSet.t Dataflow.mapping
+
+(* map for each node/var a set of nodes containing a var assignment
+ * that can reach that node
+ *)
+type mapping = Dataflow.NodeiSet.t Dataflow.mapping
 
 (* main entry point *)
-val reaching_fixpoint : Dataflow.F.flow -> reaching_mapping
+val fixpoint : Dataflow.F.flow -> mapping
 
-val display_reaching_dflow :
-  Dataflow.F.flow -> reaching_mapping -> unit
+val display :
+  Dataflow.F.flow -> mapping -> unit

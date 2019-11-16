@@ -50,7 +50,7 @@ module VarSet = Dataflow.VarSet
  * then at the program point (node index) 7, then for $a the nodei set
  * is {3, 5}, but not '1'.
  *)
-type reaching_mapping = Dataflow.NodeiSet.t Dataflow.mapping
+type mapping = Dataflow.NodeiSet.t Dataflow.mapping
 
 (*****************************************************************************)
 (* Helpers *)
@@ -61,14 +61,13 @@ type reaching_mapping = Dataflow.NodeiSet.t Dataflow.mapping
 (* Gen/Kill *)
 (*****************************************************************************)
 
-let (reaching_defs: F.flow -> NodeiSet.t Dataflow.env) = fun flow ->
+let (defs: F.flow -> NodeiSet.t Dataflow.env) = fun flow ->
   (* the long version, could use F.fold_on_expr *)
   flow#nodes#fold (fun env (ni, node) ->
     let xs = V.exprs_of_node node in
     xs |> List.fold_left (fun env e ->
 
       let lvals = Lrvalue.lvalues_of_expr e in
-      (* TODO: filter just Local *)
       let vars = lvals |> List.map (fun ((s,_tok), _idinfo) -> s) in
       vars |> List.fold_left (fun env var ->
         Dataflow.add_var_and_nodei_to_env var ni env
@@ -77,11 +76,10 @@ let (reaching_defs: F.flow -> NodeiSet.t Dataflow.env) = fun flow ->
     ) env
   ) VarMap.empty
 
-let (reaching_gens: F.flow -> VarSet.t array) = fun flow ->
+let (gens: F.flow -> VarSet.t array) = fun flow ->
   let arr = Dataflow.new_node_array flow VarSet.empty in
   V.fold_on_node_and_expr (fun (ni, _nd) e arr ->
     let lvals = Lrvalue.lvalues_of_expr e in
-    (* TODO: filter just Local *)
     let vars = lvals |> List.map (fun ((s,_tok), _idinfo) -> s) in
     vars |> List.iter (fun var ->
       arr.(ni) <- VarSet.add var arr.(ni);
@@ -89,13 +87,12 @@ let (reaching_gens: F.flow -> VarSet.t array) = fun flow ->
     arr
   ) flow arr
 
-let (reaching_kills:
+let (kills:
    NodeiSet.t Dataflow.env -> F.flow -> (NodeiSet.t Dataflow.env) array) =
  fun defs flow -> 
   let arr = Dataflow.new_node_array flow (Dataflow.empty_env()) in
   V.fold_on_node_and_expr (fun (ni, _nd) e arr ->
     let lvals = Lrvalue.lvalues_of_expr e in
-    (* TODO: filter just Local *)
     let vars = lvals |> List.map (fun ((s,_tok), _idinfo) -> s) in
     vars |> List.iter (fun var ->
       let set = NodeiSet.remove ni (VarMap.find var defs) in
@@ -116,7 +113,7 @@ let (reaching_kills:
  *  - in'[n]  = U_{p in pred[n]} out[p]
  *  - out'[n] = gen[n] U (in[n] - kill[n])
  *)
-let (reaching_transfer:
+let (transfer:
    gen:VarSet.t array ->
    kill:(NodeiSet.t Dataflow.env) array ->
    flow:F.flow ->
@@ -137,16 +134,14 @@ let (reaching_transfer:
 (* Entry point *)
 (*****************************************************************************)
 
-let (reaching_fixpoint: F.flow -> reaching_mapping) = fun flow ->
-  let defs = reaching_defs flow in
-
-  let gen = reaching_gens flow in
-  let kill = reaching_kills defs flow in
+let (fixpoint: F.flow -> mapping) = fun flow ->
+  let gen = gens flow in
+  let kill = kills (defs flow) flow in
 
   Dataflow.fixpoint
     ~eq:NodeiSet.equal
     ~init:(Dataflow.new_node_array flow (Dataflow.empty_inout ()))
-    ~trans:(reaching_transfer ~gen ~kill ~flow)
+    ~trans:(transfer ~gen ~kill ~flow)
     ~forward:true
     ~flow
 
@@ -163,13 +158,13 @@ let string_of_ni flow ni =
     spf "%s:%d:%d: "
       info.Parse_info.file info.Parse_info.line info.Parse_info.column
 
-let display_reaching_dflow flow mapping =
+let display flow mapping =
   let arr = Dataflow.new_node_array flow true in
 
   (* Set the flag to false if the node has defined anything *)
   V.fold_on_node_and_expr (fun (ni, _nd) e () ->
     let lvals = Lrvalue.lvalues_of_expr e in
-    (* TODO: filter just Local *)
+    (* TODO: filter just Locals here! *)
     if lvals <> [] (* less: and ExprStmt node? why? *)
     then arr.(ni) <- false
   ) flow ();
@@ -177,7 +172,7 @@ let display_reaching_dflow flow mapping =
   (* Now flag the def if it is ever used on rhs *)
   V.fold_on_node_and_expr (fun (ni, _nd) e () ->
      let rvals = Lrvalue.rvalues_of_expr e in
-     (* TODO: filter just local *)
+     (* TODO: filter just local here! *)
      let vars = rvals |> List.map (fun ((s,_tok), _idinfo) -> s) in
      vars |> List.iter (fun var ->
        let in_env = mapping.(ni).D.in_env in

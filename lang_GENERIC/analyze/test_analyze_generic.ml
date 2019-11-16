@@ -21,9 +21,9 @@ let test_dfg_generic file =
    (match item with
    | IDef (_ent, FuncDef def) ->
       let flow = Controlflow_build.cfg_of_func def in
-      let mapping = Dataflow_reaching.reaching_fixpoint flow in
+      let mapping = Dataflow_reaching.fixpoint flow in
       Dataflow.display_mapping flow mapping Dataflow.ns_to_str;
-      Dataflow_reaching.display_reaching_dflow flow mapping;
+      Dataflow_reaching.display flow mapping;
     | _ -> ()
    )
  )
