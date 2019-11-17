@@ -19,83 +19,71 @@ module F = Controlflow
 module D = Dataflow
 module V = Controlflow_visitor
 
-module NodeiSet = Dataflow.NodeiSet
 module VarMap = Dataflow.VarMap
-module VarSet = Dataflow.VarSet
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Reaching definitions dataflow analysis.
+(* Liveness dataflow analysis.
  *
- * A definition will "reach" another program point if there is no 
- * intermediate assignment between this definition and this program point.
+ * A variable is *live* if it holds a value that may be needed in the future.
+ * So a variable is "dead" if it holds a value that is not used later.
  *)
 
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
 
-(* For a reaching definitions analysis, the dataflow result is
+(* For a liveness analysis, the dataflow result is
  * a map from each program point (as usual), to a map from each
- * variable (as usual), to a set of nodes that define this variable
- * that are visible at this program point.
+ * variable (as usual), to whether the variable is live at that point.
  *
  * For instance on:
  *
- * 1: $a = 1;
- * 2: if(...) {
- * 3:   $a = 2;
- * 4: } else {
- * 5:   $a = 3;
- * 6: }
- * 7: echo $a;
+ * 1: a = 1;
+ *  : do {
+ * 2:   b = a + 1;
+ * 3:   c = c + b;
+ * 4:   a = b * 2;
+ * 5: } while (a < N)
+ * 6: return c
  *
- * then at the program point (node index) 7, then for $a the nodei set
- * is {3, 5}, but not '1'.
  *)
-type mapping = Dataflow.NodeiSet.t Dataflow.mapping
+type mapping = unit Dataflow.mapping
 
 (*****************************************************************************)
 (* Gen/Kill *)
 (*****************************************************************************)
 
-let (defs: F.flow -> NodeiSet.t Dataflow.env) = fun flow ->
-  (* the long version, could use F.fold_on_expr *)
-  flow#nodes#fold (fun env (ni, node) ->
-    let xs = V.exprs_of_node node in
-    xs |> List.fold_left (fun env e ->
-
-      let lvals = Lrvalue.lvalues_of_expr e in
-      let vars = lvals |> List.map (fun ((s,_tok), _idinfo) -> s) in
-      vars |> List.fold_left (fun env var ->
-        Dataflow.add_var_and_nodei_to_env var ni env
-      ) env
-
-    ) env
-  ) VarMap.empty
-
-let (gens: F.flow -> VarSet.t array) = fun flow ->
-  let arr = Dataflow.new_node_array flow VarSet.empty in
+(* "Any use of a variable generates liveness" *) 
+let (gens: F.flow -> (unit Dataflow.env) array) = fun flow ->
+  let arr = Dataflow.new_node_array flow VarMap.empty in
   V.fold_on_node_and_expr (fun (ni, _nd) e arr ->
+    (* rvalues here, to get the use of variables *)
+    let rvals = Lrvalue.rvalues_of_expr e in
     let lvals = Lrvalue.lvalues_of_expr e in
-    let vars = lvals |> List.map (fun ((s,_tok), _idinfo) -> s) in
-    vars |> List.iter (fun var ->
-      arr.(ni) <- VarSet.add var arr.(ni);
+    let rvars = rvals |> List.map (fun ((s,_tok), _idinfo) -> s) in
+    let lvars = lvals |> List.map (fun ((s,_tok), _idinfo) -> s) in
+    rvars |> List.iter (fun var ->
+      if not (List.mem var lvars)
+      then arr.(ni) <- VarMap.add var () arr.(ni);
     );
     arr
   ) flow arr
 
-let (kills:
-   NodeiSet.t Dataflow.env -> F.flow -> (NodeiSet.t Dataflow.env) array) =
- fun defs flow -> 
+(* "Any definition kills liveness". Indeed, if you assign a new value
+ * in a variable b, and you don't use the previous value of b in this
+ * assignment, then the previous value of b is indeed not needed just before
+ * this assignment.
+ *)
+let (kills: F.flow -> (unit Dataflow.env) array) =
+ fun flow -> 
   let arr = Dataflow.new_node_array flow (Dataflow.empty_env()) in
   V.fold_on_node_and_expr (fun (ni, _nd) e arr ->
     let lvals = Lrvalue.lvalues_of_expr e in
     let vars = lvals |> List.map (fun ((s,_tok), _idinfo) -> s) in
     vars |> List.iter (fun var ->
-      let set = NodeiSet.remove ni (VarMap.find var defs) in
-      arr.(ni) <- VarMap.add var set arr.(ni);
+      arr.(ni) <- VarMap.add var () arr.(ni);
     );
     arr
   ) flow arr
@@ -104,33 +92,36 @@ let (kills:
 (* Transfer *)
 (*****************************************************************************)
 
-let union = Dataflow.union_env
-let diff = Dataflow.diff_env
+let union = 
+  Dataflow.varmap_union (fun () () -> ())
+let diff =
+  Dataflow.varmap_diff (fun () () -> ()) (fun () -> true)
 
 (*
  * This algorithm is taken from Modern Compiler Implementation in ML, Appel,
- * 1998, pp. 382.
+ * 1998, pp. 385
  *
  * The transfer is setting:
- *  - in'[n]  = U_{p in pred[n]} out[p]
- *  - out'[n] = gen[n] U (in[n] - kill[n])
+ *  - in[n] = gen[n] U (out[n] - kill[n])
+ *  - out[n] = U_{s in succ[n]} in[s]
  *)
 let (transfer:
-   gen:VarSet.t array ->
-   kill:(NodeiSet.t Dataflow.env) array ->
+   gen:(unit Dataflow.env) array ->
+   kill:(unit Dataflow.env) array ->
    flow:F.flow ->
-   NodeiSet.t Dataflow.transfn) =
+   unit Dataflow.transfn) =
  fun ~gen ~kill ~flow ->
   (* the transfer function to update the mapping at node index ni *)
   fun mapping ni ->
 
-  let in' = 
-    (flow#predecessors ni)#fold (fun acc (ni_pred, _) ->
-       union acc mapping.(ni_pred).D.out_env
+  let out' = 
+    (flow#successors ni)#fold (fun acc (ni_succ, _) ->
+       union acc mapping.(ni_succ).D.in_env
      ) VarMap.empty in
-  let in_minus_kill = diff in' kill.(ni) in
-  let out' = Dataflow.add_vars_and_nodei_to_env gen.(ni) ni in_minus_kill in
+  let out_minus_kill = diff out' kill.(ni) in
+  let in' = union gen.(ni) out_minus_kill in
   {D. in_env = in'; out_env = out'}
+
 
 (*****************************************************************************)
 (* Entry point *)
@@ -138,29 +129,23 @@ let (transfer:
 
 let (fixpoint: F.flow -> mapping) = fun flow ->
   let gen = gens flow in
-  let kill = kills (defs flow) flow in
+  let kill = kills flow in
 
   Dataflow.fixpoint
-    ~eq:NodeiSet.equal
+    ~eq:(fun () () -> true)
     ~init:(Dataflow.new_node_array flow (Dataflow.empty_inout ()))
     ~trans:(transfer ~gen ~kill ~flow)
-    ~forward:true
+    ~forward:false
     ~flow
 
 (*****************************************************************************)
 (* Dataflow pretty printing *)
 (*****************************************************************************)
 
-let string_of_ni flow ni =
-  let node = flow#nodes#assoc ni in
-  match node.F.i with
-  | None -> "Unknown location"
-  | Some(info) ->
-    let info = Parse_info.token_location_of_info info in
-    spf "%s:%d:%d: "
-      info.Parse_info.file info.Parse_info.line info.Parse_info.column
+let display _flow _mapping =
 
-let display flow mapping =
+  raise Todo
+(*
   let arr = Dataflow.new_node_array flow true in
 
   (* Set the flag to false if the node has defined anything *)
@@ -191,3 +176,4 @@ let display flow mapping =
     if (not x)
     then pr (spf "%s: Dead Assignment" (string_of_ni flow i));
   )
+*)

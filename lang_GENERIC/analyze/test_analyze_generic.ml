@@ -1,3 +1,4 @@
+open Common
 open Ast_generic
 
 let test_cfg_generic file =
@@ -21,9 +22,16 @@ let test_dfg_generic file =
    (match item with
    | IDef (_ent, FuncDef def) ->
       let flow = Controlflow_build.cfg_of_func def in
+      pr2 "Reaching definitions";
       let mapping = Dataflow_reaching.fixpoint flow in
       Dataflow.display_mapping flow mapping Dataflow.ns_to_str;
+
       Dataflow_reaching.display flow mapping;
+
+      pr2 "Liveness";
+      let mapping = Dataflow_liveness.fixpoint flow in
+      Dataflow.display_mapping flow mapping (fun () -> "()");
+
     | _ -> ()
    )
  )

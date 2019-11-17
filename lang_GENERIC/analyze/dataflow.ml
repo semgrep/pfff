@@ -86,10 +86,35 @@ let eq_inout eq io1 io2 =
 (* Env manipulation *)
 (*****************************************************************************)
 
+let (varmap_union: ('a -> 'a -> 'a) -> 'a env -> 'a env -> 'a env) =
+ fun union_op env1 env2 ->
+  let acc = env1 in
+  VarMap.fold (fun var x acc ->
+    let x' = 
+      try 
+        union_op x (VarMap.find var acc)
+      with Not_found -> x
+    in
+    VarMap.add var x' acc
+  ) env2 acc
+
+let (varmap_diff: ('a -> 'a -> 'a) -> ('a -> bool) -> 
+    'a env -> 'a env -> 'a env) =
+ fun diff_op is_empty env1 env2 ->
+  let acc = env1 in
+  VarMap.fold (fun var x acc ->
+   try
+     let diff = diff_op (VarMap.find var acc) x in
+     if is_empty diff 
+     then VarMap.remove var acc
+     else VarMap.add var diff acc
+   with Not_found -> acc
+  ) env2 acc
+
+
 (* useful helpers when the environment maps to a set of Nodes, e.g.,
  * for reaching definitions.
  *)
-
 let (union_env : NodeiSet.t env -> NodeiSet.t env -> NodeiSet.t env) =
  fun env1 env2 -> 
   let acc = env1 in
