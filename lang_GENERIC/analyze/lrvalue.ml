@@ -24,7 +24,7 @@ module V = Visitor_ast
 (* Helpers to extract the lvalues and rvalues of an expression.
  *
  * alternatives:
- *  - have a proper lvalue type and an IL (a la CIL/PIL/RIL/...)
+ *  - have a proper lvalue type and an IL (a la CIL/RIL/PIL/...)
 *)
 
 (*****************************************************************************)
@@ -92,16 +92,8 @@ let rec visit_expr hook lhs expr =
     recr e;
     reclvl e;
 
+
   (* possible lvalues (also rvalues, hence the call to recl, not reclvl) *)
-
-
-  | ObjAccess(e, _id) ->
-    (* bugfix: this is not recl here! in 'x.fld = 2', x itself is not
-     * an lvalue; 'x.fld' is *)
-    recr e 
-  | ArrayAccess(e, e1) ->
-    recr e1;
-    recl e; (* XXX => SAME HERE *)
 
   | Tuple xs -> xs |> List.iter recl
 
@@ -118,12 +110,20 @@ let rec visit_expr hook lhs expr =
     recl e1;
     recl e2;
     recl e;
-    (* TODO check in Python/JS you can do that (true? a : b) = 3? *)
+   (* TODO check in Python/JS you can do that (true? a : b) = 3? *)
 
-  | DeRef e -> recl e
+  (* composite lvalues that are actually not themselves lvalues *)
+
+  | ObjAccess(e, _id) ->
+    (* bugfix: this is not recl here! in 'x.fld = 2', x itself is not
+     * an lvalue; 'x.fld' is *)
+    recr e 
+  | ArrayAccess(e, e1) ->
+    recr e1;
+    recr e;
+
+  | DeRef e -> recr e
   | Ref e -> recr e 
-    (* XXX same here? no the var itself, but the vars
-    it could point too that are lvalues! *)
 
   (* otherwise regular recurse (could use a visitor) *)
 

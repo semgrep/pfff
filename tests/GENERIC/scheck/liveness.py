@@ -6,9 +6,9 @@ def basic_liveness():
   y = y + 1
   print(y)
 
-  z = 1
+  useless_z = 1
   #ERROR: useless assignement
-  z = z + 1
+  useless_z = useless_z + 1
 
 
 def test_underscore():
@@ -25,3 +25,22 @@ def test_objaccess():
   obj.fld1 = 1
   obj.fld2 = 2
   print(obj.fld1)
+
+def test_arraccess():
+  obj = []
+  obj[1] = 1
+  obj[2] = 2
+  print(obj[2])
+
+#TODO
+#def test_foreach():
+#  a = []
+#  for i in a:
+#    print (i)
+#
+#def test_with():
+#  a = 1
+#  ctx = 2
+#  with ctx:
+#     print(a)
+
