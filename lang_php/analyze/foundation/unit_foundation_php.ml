@@ -258,7 +258,7 @@ function test_useA() {
       in
       let tmpfile = Parse_php.tmp_php_file_from_string file_content in
       let (g, _stat) = Graph_code_php.build 
-        ~verbose:false ~logfile:"/dev/null" "/" [tmpfile] in
+        ~verbose:false ~logfile:"/dev/null" "/tmp" [tmpfile] in
 
       let src = ("A.$fld", E.Field) in
       let pred = G.pred src G.Use g in
@@ -285,7 +285,7 @@ function test_useA() {
       in
       let tmpfile = Parse_php.tmp_php_file_from_string file_content in
       let (g, _) = Graph_code_php.build 
-        ~verbose:false ~logfile:"/dev/null" "/" [tmpfile] in
+        ~verbose:false ~logfile:"/dev/null" "/tmp" [tmpfile] in
       let field = (":x:required.req_int=", E.Field) in
       let nodeinfo = G.nodeinfo field g in
       let props = nodeinfo.G.props in

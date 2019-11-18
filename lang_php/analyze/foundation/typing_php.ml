@@ -16,6 +16,7 @@ open Common
 
 open Ast_php
 module A = Ast_php
+module G = Ast_generic
 
 open Env_typing_php
 open Typing_helpers_php
@@ -684,14 +685,12 @@ and ptype _env = function
   | Cst_php.ObjectTy -> Tsum [Tobject SMap.empty]
 
 and binaryOp env t1 t2 = function
-(*
-  | Cst_php.Arith _ ->
-      Unify.unify env t1 t2
-  | Cst_php.Logical lop ->
-      logicalOp env t1 t2 lop;
-      bool
-*)
-  | ArithOp _ -> raise Todo
+  | ArithOp op -> 
+     if G.is_boolean_operator op
+     then begin
+       logicalOp env t1 t2 op;
+       bool
+     end else Unify.unify env t1 t2
   | BinaryConcat ->
       Unify.unify env t1 t2
   | Pipe ->
@@ -700,24 +699,21 @@ and binaryOp env t1 t2 = function
       Unify.unify env t1 t2 |> ignore;
       int
 
-(*
 and logicalOp env t1 t2 = function
-  | Cst_php.Inf | Cst_php.Sup | Cst_php.InfEq | Cst_php.SupEq
-  | Cst_php.Eq | Cst_php.NotEq
-  | Cst_php.Identical | Cst_php.NotIdentical ->
+  | G.Lt | G.Gt | G.LtE | G.GtE
+  | G.Eq | G.NotEq
+  | G.PhysEq | G.NotPhysEq ->
       ignore (Unify.unify env t1 t2)
-  | Cst_php.AndLog | Cst_php.OrLog | Cst_php.XorLog
-  | Cst_php.AndBool | Cst_php.OrBool ->
+  | G.And | G.Or | G.Xor
+  | _ ->
       (* ?? why nothing there? *)
       ()
-*)
 
-and unaryOp _x = raise Todo
-(*
-function
-  | Cst_php.UnPlus | Cst_php.UnMinus | Cst_php.UnTilde -> int
-  | Cst_php.UnBang -> bool
-*)
+and unaryOp = function
+  | G.Plus | G.Minus | G.BitNot -> int
+  | G.Not -> bool
+  | _ -> raise Impossible
+
 
 and xhp env = function
   | XhpText _ -> ()

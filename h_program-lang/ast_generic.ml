@@ -235,7 +235,8 @@ and expr =
    | IncrDecr of (incr_decr * prefix_postfix)
 
     (* mostly binary operator 
-     * less: could be divided in really Arith vs Logical (bool) operators
+     * less: could be divided in really Arith vs Logical (bool) operators,
+     * but see is_boolean_operator() helper below.
      *)
     and arithmetic_operator = 
       | Plus (* unary too *) | Minus (* unary too *) 
@@ -792,3 +793,16 @@ let stmt_to_item st =
   | DefStmt def -> IDef def
   | DirectiveStmt dir -> IDir dir
   | _ -> IStmt st
+
+let is_boolean_operator = function
+ | Plus (* unary too *) | Minus (* unary too *) 
+ | Mult | Div | Mod
+ | Pow | FloorDiv (* Python *)
+ | LSL | LSR | ASR (* L = logic, A = Arithmetic, SL = shift left *) 
+ | BitOr | BitXor | BitAnd | BitNot (* unary *)
+  -> false
+ | And | Or | Xor | Not
+ | Eq     | NotEq     
+ | PhysEq | NotPhysEq 
+ | Lt | LtE | Gt | GtE 
+   -> true

@@ -19,6 +19,7 @@ open Env_interpreter_php
 open Abstract_interpreter_php_helpers
 
 module A = Ast_php
+module G = Ast_generic
 module Env = Env_interpreter_php
 module H = Abstract_interpreter_php_helpers
 module CG = Callgraph_php2
@@ -693,16 +694,15 @@ and expr_ env heap x =
 (* related to Unify *)
 and binaryOp env heap bop v1 v2 =
   match bop with
-  | ArithOp _ -> raise Todo
-(*
-  | Cst_php.Arith _aop ->
+  | ArithOp op -> 
+    if G.is_boolean_operator op
+    then Vabstr Tbool
+    else
       (match v1, v2 with
       | (Vint _ | Vabstr Tint), (Vint _ | Vabstr Tint) -> Vabstr Tint
       (* todo: warn on type error? why vnull? *)
       | _ -> Vsum [Vnull; Vabstr Tint]
       )
-  | Cst_php.Logical _lop -> Vabstr Tbool
-*)
 
   | BinaryConcat ->
       (* Vabstr Tstring by default *)
@@ -711,23 +711,24 @@ and binaryOp env heap bop v1 v2 =
      failwith "Not supported"
   | CombinedComparison -> Vabstr Tint
 
-and unaryOp _uop _v =
-  raise Todo
-(*
+and unaryOp uop v =
   match uop, v with
-  | Cst_php.UnPlus, Vint n       -> Vint n
-  | Cst_php.UnPlus, Vabstr Tint  -> Vabstr Tint
-  | Cst_php.UnPlus, _            -> Vsum [Vnull; Vabstr Tint]
-  | Cst_php.UnMinus, Vint n      -> Vint (-n)
-  | Cst_php.UnMinus, Vabstr Tint -> Vabstr Tint
-  | Cst_php.UnMinus, _           -> Vsum [Vnull; Vabstr Tint]
-  | Cst_php.UnBang, Vbool b      -> Vbool (not b)
-  | Cst_php.UnBang, Vabstr Tbool -> Vabstr Tbool
-  | Cst_php.UnBang, _            -> Vsum [Vnull; Vabstr Tbool]
-  | Cst_php.UnTilde, Vint n      -> Vint (lnot n)
-  | Cst_php.UnTilde, Vabstr Tint -> Vabstr Tint
-  | Cst_php.UnTilde, _           -> Vsum [Vnull; Vabstr Tint]
-*)
+  | G.Plus, Vint n       -> Vint n
+  | G.Plus, Vabstr Tint  -> Vabstr Tint
+  | G.Plus, _            -> Vsum [Vnull; Vabstr Tint]
+  | G.Minus, Vint n      -> Vint (-n)
+  | G.Minus, Vabstr Tint -> Vabstr Tint
+  | G.Minus, _           -> Vsum [Vnull; Vabstr Tint]
+  | G.Not, Vbool b      -> Vbool (not b)
+  | G.Not, Vabstr Tbool -> Vabstr Tbool
+  | G.Not, _            -> Vsum [Vnull; Vabstr Tbool]
+  | G.BitNot, Vint n      -> Vint (lnot n)
+  | G.BitNot, Vabstr Tint -> Vabstr Tint
+  | G.BitNot, _           -> Vsum [Vnull; Vabstr Tint]
+  | ((G.Mult|G.Div|G.Mod|G.Pow|G.FloorDiv
+     |G.LSL|G.LSR|G.ASR|G.BitOr|G.BitXor|G.BitAnd
+     |G.And|G.Or|G.Xor|G.Eq|G.NotEq|G.PhysEq|G.NotPhysEq
+     |G.Lt|G.LtE|G.Gt|G.GtE),_) -> raise Impossible
 
 and cast _env _heap ty v =
   match ty, v with
