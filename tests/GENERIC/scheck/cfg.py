@@ -37,7 +37,6 @@ def test_dead_after_exn():
 #  echo( 1)
 
 
-
 def test_dead_ifdef_like():
   return null
   
@@ -71,4 +70,3 @@ def test_for_continue_ok():
       continue
     
     return 1
-

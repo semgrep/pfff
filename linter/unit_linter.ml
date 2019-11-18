@@ -23,6 +23,7 @@ let unittest ~ast_of_file =
     p "foo.py";
 
     p "cfg.py";
+    p "liveness.py";
 
 (*
     p "builtins.php";

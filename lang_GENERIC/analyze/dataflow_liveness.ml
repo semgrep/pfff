@@ -60,12 +60,13 @@ let (gens: F.flow -> (unit Dataflow.env) array) = fun flow ->
   V.fold_on_node_and_expr (fun (ni, _nd) e arr ->
     (* rvalues here, to get the use of variables *)
     let rvals = Lrvalue.rvalues_of_expr e in
-    let lvals = Lrvalue.lvalues_of_expr e in
+    (* note that Appel's book p385 says gen(x) is 
+     * something - kill(x) but this is wrong, as shown
+     * p214 which contradicts p385.
+     *)
     let rvars = rvals |> List.map (fun ((s,_tok), _idinfo) -> s) in
-    let lvars = lvals |> List.map (fun ((s,_tok), _idinfo) -> s) in
     rvars |> List.iter (fun var ->
-      if not (List.mem var lvars)
-      then arr.(ni) <- VarMap.add var () arr.(ni);
+      arr.(ni) <- VarMap.add var () arr.(ni);
     );
     arr
   ) flow arr
