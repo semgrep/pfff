@@ -18,16 +18,54 @@ open Common
 open Ast_generic
 module V = Visitor_ast
 module E = Error_code
-module CFGB = Controlflow_build
+module F = Controlflow
+module D = Dataflow
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
 (*
- * Most of the hard work is done by Controlflow_build_generic.ml.
+ * Most of the hard work is done by Controlflow_build.ml.
  * 
  * TODO: check dead statements for toplevel blocks ?
  *)
+
+(*****************************************************************************)
+(* Checks *)
+(*****************************************************************************)
+
+(* less: could be in controlflow_build.ml (was there before) *)
+let (unreachable_statement_detection : F.flow -> unit) = fun flow ->
+  flow#nodes#iter (fun (k, node) ->
+    let pred = flow#predecessors k in
+    if pred#null then
+      (match node.F.n with
+      | F.Enter -> ()
+      | _ ->
+          (match node.F.i with
+          | None ->
+              pr2 (spf "CFG: PB, found dead node but no loc: %s"
+                   (Controlflow.short_string_of_node node))
+          | Some info ->
+              E.error info E.UnusedStatement
+          )
+      )
+  )
+
+
+let (dead_assign_detection: F.flow -> Dataflow_liveness.mapping -> unit) =
+ fun flow mapping ->
+  Controlflow_visitor.fold_on_node_and_expr (fun (ni, _nd) e () ->
+    let lvals = Lrvalue.lvalues_of_expr e in
+    lvals |> List.iter (fun ((var, tok), _idinfo) ->
+      (* TODO: filter just Locals here! *)
+      let out_env = mapping.(ni).D.out_env in
+      try 
+        let () = D.VarMap.find var out_env in
+        ()
+      with Not_found -> E.error tok E.UnusedAssign
+    )
+  ) flow ()
 
 (*****************************************************************************)
 (* Helpers *)
@@ -36,18 +74,16 @@ module CFGB = Controlflow_build
 let check_func_def fdef =
   try 
     let flow = Controlflow_build.cfg_of_func fdef in
-    Controlflow_build.deadcode_detection flow;
+    unreachable_statement_detection flow;
+
+    let mapping = Dataflow_liveness.fixpoint flow in
+    dead_assign_detection flow mapping;
+
   with Controlflow_build.Error (err, loc) ->
       let s = Controlflow_build.string_of_error_kind err in
-      (match err, loc with
-      | CFGB.UnreachableStatement _, Some tok ->
-          E.error tok (E.UnreachableStatement s)
-      | CFGB.UnreachableStatement _, None ->
-          pr2 "TODO: unreachable statement detected but no location";
-      | _, Some tok ->
-          E.error tok (E.CFGError s)
-      | _, None ->
-          pr2 (spf "TODO: CFG error detected but no location: %s" s);
+      (match loc with
+      | Some tok -> E.error tok (E.CFGError s)
+      | None -> pr2 (spf "TODO: CFG error detected but no location: %s" s)
       )
 
 (*****************************************************************************)

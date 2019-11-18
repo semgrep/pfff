@@ -44,7 +44,9 @@ module PI = Parse_info
 (*****************************************************************************)
 (* see g_errors below *)
 
-(* do not report certain errors *)
+(* do not report certain errors. 
+ * Must be used with filter_maybe_parse_and_fatal_errors.
+ *)
 let report_parse_errors = ref false
 let report_fatal_errors = ref false
 
@@ -100,11 +102,13 @@ type error = {
     *)
   | UnusedVariable of string * Scope_code.t
 
-  (* CFG.
+  (* CFG/DFG.
    * Again, unreachable statements are rarely checked by compilers or linters,
-   * but they really should (see https://www.wired.com/2014/02/gotofail/)
+   * but they really should (see https://www.wired.com/2014/02/gotofail/).
+   * Those are also special cases of Deadcode.
    *)
- | UnreachableStatement of string
+ | UnusedStatement (* a.k.a UnreachableStatement *) 
+ | UnusedAssign
  | CFGError of string
 
   (* classes *)
@@ -162,7 +166,9 @@ let string_of_error_kind error_kind =
         (Scope_code.string_of_scope scope)
   | SgrepLint (title, message) -> spf "%s: %s" title message
 
-  | UnreachableStatement s -> spf "unreachable statement: %s" s
+  | UnusedStatement -> spf "unreachable statement"
+  | UnusedAssign -> 
+    spf "useless assignement; the value in the variable is never used after."
 
   | LexicalError s -> spf "Lexical error: %s" s
   | ParseError -> "Syntax error"
@@ -231,7 +237,7 @@ let rank_of_error err =
   | UnusedExport _ -> ReallyImportant
   | UnusedVariable _ -> Less
   | SgrepLint _ -> Important
-  | UnreachableStatement _ -> Important
+  | UnusedStatement | UnusedAssign -> Important
   | CFGError _ -> Important
 
   (* usually issues in my parsers *)

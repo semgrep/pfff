@@ -56,7 +56,6 @@ type error = error_kind * Parse_info.t option
  and error_kind =
   | NoEnclosingLoop
   | DynamicBreak
-  | UnreachableStatement of Controlflow.node_kind
 
 exception Error of error
 
@@ -780,26 +779,6 @@ let (cfg_of_func: function_definition -> F.flow) = fun def ->
 (* alias *)
 let cfg_of_stmts = control_flow_graph_of_stmts
 
-(*****************************************************************************)
-(* Deadcode stmts detection *)
-(*****************************************************************************)
-
-let (deadcode_detection : F.flow -> unit) = fun flow ->
-  flow#nodes#iter (fun (k, node) ->
-    let pred = flow#predecessors k in
-    if pred#null then
-      (match node.F.n with
-      | F.Enter -> ()
-      | _ ->
-          (match node.F.i with
-          | None ->
-              pr2 (spf "CFG: PB, found dead node but no loc: %s"
-                   (Controlflow.short_string_of_node node))
-          | Some info ->
-              raise (Error (UnreachableStatement node.F.n, Some info))
-          )
-      )
-  )
 
 (*****************************************************************************)
 (* Error management *)
@@ -807,9 +786,6 @@ let (deadcode_detection : F.flow -> unit) = fun flow ->
 
 let string_of_error_kind error_kind =
   match error_kind with
-  | UnreachableStatement (node_kind) ->
-      "Unreachable statement detected " ^
-        (F.short_string_of_node_kind node_kind)
   | NoEnclosingLoop ->
       "No enclosing loop found for break or continue"
   | DynamicBreak ->
