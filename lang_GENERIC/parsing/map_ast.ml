@@ -650,6 +650,7 @@ and map_any =
   | P v1 -> let v1 = map_pattern v1 in P ((v1))
   | Def v1 -> let v1 = map_definition v1 in Def ((v1))
   | Dir v1 -> let v1 = map_directive v1 in Dir ((v1))
+  | Fld v1 -> let v1 = map_field v1 in Fld ((v1))
   | Di v1 -> let v1 = map_dotted_name v1 in Di ((v1))
   | I v1 -> let v1 = map_item v1 in I ((v1))
   | Pa v1 -> let v1 = map_parameter v1 in Pa ((v1))

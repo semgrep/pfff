@@ -700,6 +700,7 @@ and any =
   | At of attribute
   | Dk of definition_kind
   | Di of dotted_ident
+  | Fld of field
 
   | Pr of program
 

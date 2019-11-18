@@ -545,6 +545,7 @@ and v_any =
   | P v1 -> let v1 = v_pattern v1 in ()
   | Def v1 -> let v1 = v_def v1 in ()
   | Dir v1 -> let v1 = v_directive v1 in ()
+  | Fld v1 -> let v1 = v_field v1 in ()
   | Dk v1 -> let v1 = v_def_kind v1 in ()
   | Di v1 -> let v1 = v_dotted_name v1 in ()
   | I v1 -> let v1 = v_item v1 in ()

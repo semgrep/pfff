@@ -792,6 +792,7 @@ and vof_any =
   | P v1 -> let v1 = vof_pattern v1 in Ocaml.VSum (("P", [ v1 ]))
   | Def v1 -> let v1 = vof_definition v1 in Ocaml.VSum (("D", [ v1 ]))
   | Dir v1 -> let v1 = vof_directive v1 in Ocaml.VSum (("Di", [ v1 ]))
+  | Fld v1 -> let v1 = vof_field v1 in Ocaml.VSum (("Fld", [ v1 ]))
   | Di v1 -> let v1 = vof_dotted_name v1 in Ocaml.VSum (("Dn", [ v1 ]))
   | I v1 -> let v1 = vof_item v1 in Ocaml.VSum (("I", [ v1 ]))
   | Id v1 -> let v1 = vof_ident v1 in Ocaml.VSum (("Id", [ v1 ]))

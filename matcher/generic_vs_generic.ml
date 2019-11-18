@@ -1572,6 +1572,10 @@ and m_any a b =
     m_directive a1 b1 >>= (fun () -> 
     return ()
     )
+  | A.Fld(a1), B.Fld(b1) ->
+    m_field a1 b1 >>= (fun () -> 
+    return ()
+    )
   | A.I(a1), B.I(b1) ->
     m_item a1 b1 >>= (fun () -> 
     return ()
@@ -1603,4 +1607,5 @@ and m_any a b =
   | A.Id _, _  | A.N _, _  | A.Di _, _  | A.En _, _  | A.E _, _
   | A.S _, _  | A.T _, _  | A.P _, _  | A.Def _, _  | A.Dir _, _
   | A.I _, _  | A.Pa _, _  | A.Ar _, _  | A.At _, _  | A.Dk _, _ | A.Pr _, _
+  | A.Fld _, _
    -> fail ()
