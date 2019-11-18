@@ -768,9 +768,6 @@ let chop_dirsymbol = function
 
 (* pre: prj_path must not contain regexp symbol *)
 let filename_without_leading_path prj_path s =
- if prj_path = "/"
- then s
- else
   let prj_path = chop_dirsymbol prj_path in
   if s =$= prj_path
   then "."
@@ -782,7 +779,9 @@ let filename_without_leading_path prj_path s =
       (spf "cant find filename_without_project_path: %s  %s" prj_path s)
 
 let readable ~root s =
-  filename_without_leading_path root s
+  if root = "/"
+  then s
+  else filename_without_leading_path root s
 
 let is_directory file =
   (Unix.stat file).Unix.st_kind =*= Unix.S_DIR

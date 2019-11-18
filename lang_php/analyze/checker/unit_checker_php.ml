@@ -16,44 +16,48 @@ open OUnit
 let unittest =
  "checkers_php" >::: [
   "basic checkers" >:: (fun () ->
-  let p path = Filename.concat Config_pfff.path path in
+  let p path = 
+     Filename.concat Config_pfff.path 
+            (Filename.concat "tests/php/scheck" path)
+  in
 
   let test_files = [
-    p "tests/php/scheck/builtins.php";
-    p "tests/php/scheck/common.php";
+    p "builtins.php";
+    p "common.php";
 
-    p "tests/php/scheck/includes.php";
+    p "includes.php";
 
-    p "tests/php/scheck/variables.php";
-    p "tests/php/scheck/variables_fp.php";
-    p "tests/php/scheck/arrays.php";
-    p "tests/php/scheck/foreach.php";
-    p "tests/php/scheck/edit_distance.php";
+    p "variables.php";
+    p "variables_fp.php";
+    p "arrays.php";
+    p "foreach.php";
+    p "edit_distance.php";
 
-    p "tests/php/scheck/functions.php";
-    p "tests/php/scheck/static_methods.php";
-    p "tests/php/scheck/methods.php";
+    p "functions.php";
+    p "static_methods.php";
+    p "methods.php";
 
-    p "tests/php/scheck/classes.php";
-    p "tests/php/scheck/traits.php";
+    p "classes.php";
+    p "traits.php";
+
 (*
-    p "tests/php/scheck/namespaces.php";
-    p "tests/php/scheck/namespaces_uses.php";
+    p "namespaces.php";
+    p "namespaces_uses.php";
 *)
 
-    p "tests/php/scheck/cfg.php";
-    p "tests/php/scheck/references.php";
-    p "tests/php/scheck/xhp.php";
-    p "tests/php/scheck/typing.php";
+    p "cfg.php";
+    p "references.php";
+    p "xhp.php";
+    p "typing.php";
 
-    p "tests/php/scheck/dynamic_bailout.php";
+    p "dynamic_bailout.php";
 
-    p "tests/php/scheck/format_string.php";
-    p "tests/php/scheck/ternary_if.php";
-    p "tests/php/scheck/misc.php";
+    p "format_string.php";
+    p "ternary_if.php";
+    p "misc.php";
 
-    p "tests/php/scheck/lint.php";
-    p "tests/php/scheck/micro_clones.php";
+    p "lint.php";
+    p "micro_clones.php";
   ] 
   in
 
@@ -64,7 +68,7 @@ let unittest =
    * data/php_stdlib is not anymore in the pfff repo.
    *)
   let builtin_files = [
-    p "tests/php/scheck/php_stdlib.php";
+    p "php_stdlib.php";
   ]
 
   in
@@ -80,10 +84,10 @@ let unittest =
    *  let db = Database_php_build.db_of_files_or_dirs files in
    *  let find_entity = Some (Database_php_build.build_entity_finder db) in
    *)
-  let (cg, _stat) = Graph_code_php.build ~verbose "/" files in
+  let (cg, _stat) = Graph_code_php.build ~verbose (p "") files in
   let find_entity = 
     Some (Entity_php.entity_finder_of_graph_code ~check_dupes:true
-             cg "/") in
+             cg (p "")) in
   
   let env = Env_php.mk_env ~php_root:"/" in
 
