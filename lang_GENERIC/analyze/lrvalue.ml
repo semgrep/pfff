@@ -105,13 +105,6 @@ let rec visit_expr hook lhs expr =
     | Set | Dict -> xs |> List.iter recr
     )   
 
-  (* this can be part of an assign *)
-  | Conditional(e, e1, e2) ->
-    recl e1;
-    recl e2;
-    recl e;
-   (* TODO check in Python/JS you can do that (true? a : b) = 3? *)
-
   (* composite lvalues that are actually not themselves lvalues *)
 
   | ObjAccess(e, _id) ->
@@ -146,6 +139,12 @@ let rec visit_expr hook lhs expr =
     );
 
   | Cast(_t, e) -> recr e
+
+  (* Do some languages allow this to be part of an assign? *)
+  | Conditional(e, e1, e2) ->
+    recr e1;
+    recr e2;
+    recr e;
 
   (* TODO: need to detect external vars used inside the closure *)
   | Lambda _ -> ()
