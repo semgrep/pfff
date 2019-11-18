@@ -11,3 +11,10 @@ def foo():
   z = z + 1
 
 
+def foo2():
+  # using _ means we know this is unused and should not be an error
+  a, _ = bar()
+  if a:
+     return 1
+  else:
+     return 2

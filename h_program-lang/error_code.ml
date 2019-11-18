@@ -108,7 +108,7 @@ type error = {
    * Those are also special cases of Deadcode.
    *)
  | UnusedStatement (* a.k.a UnreachableStatement *) 
- | UnusedAssign
+ | UnusedAssign of string
  | CFGError of string
 
   (* classes *)
@@ -167,8 +167,9 @@ let string_of_error_kind error_kind =
   | SgrepLint (title, message) -> spf "%s: %s" title message
 
   | UnusedStatement -> spf "unreachable statement"
-  | UnusedAssign -> 
-    spf "useless assignement; the value in the variable is never used after."
+  | UnusedAssign s -> 
+    spf "useless assignement for %s; the value in %s is never used after."
+      s s
 
   | LexicalError s -> spf "Lexical error: %s" s
   | ParseError -> "Syntax error"
@@ -237,7 +238,7 @@ let rank_of_error err =
   | UnusedExport _ -> ReallyImportant
   | UnusedVariable _ -> Less
   | SgrepLint _ -> Important
-  | UnusedStatement | UnusedAssign -> Important
+  | UnusedStatement | UnusedAssign _ -> Important
   | CFGError _ -> Important
 
   (* usually issues in my parsers *)

@@ -53,6 +53,9 @@ let (unreachable_statement_detection : F.flow -> unit) = fun flow ->
   )
 
 
+let is_ok_unused_varname s =
+  s =~ "_.*"
+
 let (dead_assign_detection: F.flow -> Dataflow_liveness.mapping -> unit) =
  fun flow mapping ->
   Controlflow_visitor.fold_on_node_and_expr (fun (ni, _nd) e () ->
@@ -63,7 +66,9 @@ let (dead_assign_detection: F.flow -> Dataflow_liveness.mapping -> unit) =
       try 
         let () = D.VarMap.find var out_env in
         ()
-      with Not_found -> E.error tok E.UnusedAssign
+      with Not_found -> 
+        if not (is_ok_unused_varname var)
+        then E.error tok (E.UnusedAssign var)
     )
   ) flow ()
 

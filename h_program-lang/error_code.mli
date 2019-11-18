@@ -25,7 +25,7 @@ type error = {
 
   (* CFG/DFG *)
  | UnusedStatement
- | UnusedAssign
+ | UnusedAssign of string (* var name *)
  | CFGError of string
 
   (* sgrep lint rules *)
