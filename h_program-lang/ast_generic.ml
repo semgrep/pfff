@@ -25,9 +25,9 @@
  * per-language basis, many useful analysis are trivial and require just an
  * AST and a visitor. One could duplicate those analysis for each language
  * or design a generic AST (this file) to be generic enough to
- * factorize all those analysis (e.g., unused entity), while still remaining
- * as precise as possible (not as generic as ast_fuzzy.ml for example or a
- * very general but imprecise tree of nodes).
+ * factorize all those analysis (e.g., unused entity). The goal is
+ * still to remain as precise as possible, not as generic as ast_fuzzy.ml
+ * for example or a very general but imprecise tree of nodes.
  * 
  * TODO:
  *  - later: add Go (easy)
@@ -63,6 +63,9 @@
  *  - all the other_xxx types should contain only simple constructors (enums)
  *    without any parameter. I rely on that to simplify the code 
  *    of the generic mapper and matcher.
+ *  - each language should add the VarDefs that defines the locals
+ *    used in a function (instead of having the first Assign play the role
+ *    of a VarDef, as done in Python for example).
  *
  * See also pfff/lang_GENERIC/
  *)
@@ -110,9 +113,10 @@ type module_name =
 
 (* todo: see also scope_code.ml *)
 type resolved_name =
-  | Local
-  | Param
-  | Global of dotted_ident (* or just name? *)
+  | Local (* TODO of gensym *)
+  | Param (* TODO of gensym *)
+  | Global of dotted_ident (* or just name? *) (* can also use 0 for gensym *)
+
   | NotResolved
 
   | Macro
