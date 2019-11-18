@@ -16,13 +16,14 @@
 open Common
 
 open Ast_generic
+module V = Visitor_ast
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Helpers to extract the lvalues and rvalues of an expression 
+(* Helpers to extract the lvalues and rvalues of an expression.
  *
- * alternative:
+ * alternatives:
  *  - have a proper lvalue type and an IL (a la CIL/PIL/RIL/...)
 *)
 
@@ -45,58 +46,127 @@ let error_todo any =
   pr2 s;
   failwith ("Dataflow_visitor:error_todo ")
 
+(* Recursively visit the expression.
+ * alt: 
+ *  - use a visitor? and then do things differently only when inside an
+ *    Assign?
+ *)
 let rec visit_expr hook lhs expr =
-  (* Used for known left hand value, e.g. reference *)
+      
+  (* recurse lvalue (used for known left hand value, e.g. in left assign *)
   let reclvl = visit_expr hook Lhs in
+  (* recurse left (possible lvalue) *)
   let recl = visit_expr hook lhs in
+  (* recurse right (rvalue context) *)
   let recr = visit_expr hook Rhs in
 
+  let anyhook hook lhs any =
+    let v = V.mk_visitor { V.default_visitor with 
+      V.kexpr = (fun (_k, _anyf) e -> 
+        visit_expr hook lhs e
+        (* do not call k here! *)
+      )
+     (* todo? should no go through FuncDef? intercept kdef? *)
+    } in
+    v any
+  in
+
   match expr with
+  (* the leaf *)
+
   | Name (name, idinfo) ->
     (* calling the hook! *)
     hook lhs name idinfo
 
+  (* the assignements *)
+
   | Assign(e, e1) ->
+    (* definitely in a Rhs context *)
     recr e1;
+    (* definitely in a Lhs context *)
     reclvl e;
+
   | AssignOp(e, _op, e1) ->
-    (* x += b <=> x = x + b hence the call also to 'recr e' *)
     recr e1;
+    (* x += b <=> x = x + b hence the call also to 'recr e' *)
     recr e;
     reclvl e;
 
+  (* possible lvalues (also rvalues, hence the call to recl, not reclvl) *)
+
+
+  | ObjAccess(e, _id) ->
+    recl e 
+    (* XXX not actually, x.fld = 2 => x is not an lvalue, x.fld is *)
+  | ArrayAccess(e, e1) ->
+    recr e1;
+    recl e; (* XXX => SAME HERE *)
+  | Tuple xs -> xs |> List.iter recl
+  | Container (typ, xs) ->
+    (match typ with
+    (* used on lhs? *)
+    | Array | List -> xs |> List.iter recl
+    (* never used on lhs *)
+    | Set | Dict -> xs |> List.iter recr
+    )   
+
+  (* this can be part of an assign *)
+  | Conditional(e, e1, e2) ->
+    recl e1;
+    recl e2;
+    recl e;
+    (* TODO check in Python/JS you can do that (true? a : b) = 3? *)
+
+  | DeRef e -> recl e
+  | Ref e -> recr e 
+    (* XXX same here? no the var itself, but the vars
+    it could point too that are lvalues! *)
+
   (* otherwise regular recurse (could use a visitor) *)
+
   | L _ | Nop -> ()
 
   | IdSpecial _ -> ()
   (* todo: Special cases for function that are known to take implicit
    * lvalue, e.g., sscanf? 
    *)
-  (* Todo: false positive because passsing by reference *)
+
+  (* todo? some languages allow function return value to be an lvalue? *)
   | Call (e, args) ->
     recr e;
     args |> List.iter (function
-       | Arg e1 -> recr e1
-       | ArgKwd _ | ArgType _ | ArgOther _ -> error_todo (E expr)
+       (* Todo: false positive because passsing by reference? *)
+       | Arg e -> recr e
+       | ArgKwd (_id, e) -> recr e
+       | ArgType _ -> ()
+       | ArgOther (_, anys) -> List.iter (anyhook hook Rhs) anys
     );
-  | ObjAccess(e, _id) ->
-    recl e
-  | ArrayAccess(e, e1) ->
-    recr e1;
-    recl e;
-  | Conditional(e, e1, e2) ->
-    recl e1;
-    recl e2;
-    recl e;
-  | Cast(_, e) -> recr e
 
-  (* TODO?? *)
-  | Lambda _ | AnonClass _ -> ()
+  | Cast(_t, e) -> recr e
+
+  (* TODO: need to detect external vars used inside the closure *)
+  | Lambda _ -> ()
+  | AnonClass _ -> ()
+
   | Yield e | Await e -> recr e
 
- | (Container (_, _)|Tuple _|Record _|Constructor (_, _)|Xml _|LetPattern (_, _)|MatchPattern (_, _)|
-Seq _|Ref _|DeRef _|Ellipses _|OtherExpr (_, _)) -> 
-  error_todo (E expr)
+  | Record xs -> 
+     xs |> List.iter (fun field ->
+       anyhook hook Rhs (Fld field)
+     )
+
+  | Constructor (_name, es) -> List.iter recr es
+  | Xml anys -> List.iter (anyhook hook Rhs) anys
+
+  | LetPattern (_, _)
+  | MatchPattern (_, _)
+     -> error_todo (E expr)
+
+  | Seq xs -> List.iter recr xs
+
+  | Ellipses _tok -> ()
+
+  | OtherExpr (_other_xxx, anys) -> List.iter (anyhook hook Rhs) anys
 
 (*****************************************************************************)
 (* Entry points *)
