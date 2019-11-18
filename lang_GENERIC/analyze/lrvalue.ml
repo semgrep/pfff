@@ -96,12 +96,15 @@ let rec visit_expr hook lhs expr =
 
 
   | ObjAccess(e, _id) ->
-    recl e 
-    (* XXX not actually, x.fld = 2 => x is not an lvalue, x.fld is *)
+    (* bugfix: this is not recl here! in 'x.fld = 2', x itself is not
+     * an lvalue; 'x.fld' is *)
+    recr e 
   | ArrayAccess(e, e1) ->
     recr e1;
     recl e; (* XXX => SAME HERE *)
+
   | Tuple xs -> xs |> List.iter recl
+
   | Container (typ, xs) ->
     (match typ with
     (* used on lhs? *)
