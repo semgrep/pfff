@@ -22,9 +22,6 @@ module Lexer = Lexer_python
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Lots of copy-paste with my other parsers (e.g. C++, PHP, SQL) but
- * copy-paste is sometimes ok.
- *)
 
 (*****************************************************************************)
 (* Types *)
@@ -67,30 +64,8 @@ let tokens2 file =
   Parse_info.tokenize_all_and_adjust_pos 
     file token TH.visitor_info_of_tok TH.is_eof
 
-
 let tokens a = 
   Common.profile_code "Parse_python.tokens" (fun () -> tokens2 a)
-
-(*****************************************************************************)
-(* Helper for main entry point *)
-(*****************************************************************************)
-
-(* Hacked lex. Ocamlyacc expects a function returning one token at a time
- * but we actually lex all the file so we need a wrapper to turn that
- * into a stream.
- * This function use refs passed by parse. 'tr' means 'token refs'. 
- *)
-let rec lexer_function tr = fun lexbuf ->
-  match tr.PI.rest with
-  | [] -> (pr2 "LEXER: ALREADY AT END"; tr.PI.current)
-  | v::xs -> 
-      tr.PI.rest <- xs;
-      tr.PI.current <- v;
-      tr.PI.passed <- v::tr.PI.passed;
-
-      if TH.is_comment v (* || other condition to pass tokens ? *)
-      then lexer_function (*~pass*) tr lexbuf
-      else v
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -100,9 +75,8 @@ let parse2 filename =
   (* this can throw Parse_info.Lexical_error *)
   let toks = tokens filename in
   let toks_final = toks |> Common.exclude TH.is_special in
-
-  let tr = Parse_info.mk_tokens_state toks in
-  let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
+  let tr, lexer, lexbuf_fake = 
+    Parse_info.mk_lexer_for_yacc toks TH.is_comment in
 
   try 
     (* -------------------------------------------------- *)
@@ -110,7 +84,7 @@ let parse2 filename =
     (* -------------------------------------------------- *)
     let xs =
       Common.profile_code "Parser_python.main" (fun () ->
-        Parser_python.main  (lexer_function tr) lexbuf_fake
+        Parser_python.main  lexer lexbuf_fake
       )
     in
     stat.PI.correct <- (Common.cat filename |> List.length);
@@ -155,12 +129,11 @@ let (program_of_string: string -> Ast_python.program) = fun s ->
 let any_of_string s = 
   Common2.with_tmp_file ~str:s ~ext:"py" (fun file ->
     let toks = tokens file in
-    let tr = PI.mk_tokens_state toks in
-    let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
-       (* -------------------------------------------------- *)
-       (* Call parser *)
-       (* -------------------------------------------------- *)
-       Parser_python.sgrep_spatch_pattern (lexer_function tr) lexbuf_fake
+    let _tr, lexer, lexbuf_fake = PI.mk_lexer_for_yacc toks TH.is_comment in
+    (* -------------------------------------------------- *)
+    (* Call parser *)
+    (* -------------------------------------------------- *)
+    Parser_python.sgrep_spatch_pattern lexer lexbuf_fake
   )
 
 

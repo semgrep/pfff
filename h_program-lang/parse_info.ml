@@ -713,11 +713,14 @@ let complete_token_location_large filename table x =
     column = snd (table (x.charpos));
   }
 
-(* Why is it better to first get all the tokens? Why not lex on-demand
- * as yacc requires more tokens?
- * Because for parsing hacks and for error recovery strategy, it's easier
- * to work on the full list of tokens. This also allows to not care
- * about line/col in the lexer and do that afterwards once and for all here.
+(* Why is it better to first get all the tokens? 
+ * Why not lex on-demand as yacc requires more tokens?
+ * There are a few reasons:
+ *  - for parsing hacks, it's easier to work on the full list
+ *  - for error recovery strategy, it's easier to work on the full list
+ *  - we do not need to care about line/col in the lexer and do that here
+ *  - we can have comments as tokens (useful for codemap/efuns) and
+ *    skip them easily with one Common.exclude
  *)
 let tokenize_all_and_adjust_pos file tokenizer visitor_tok is_eof =
  Common.with_open_infile file (fun chan -> 
@@ -747,6 +750,32 @@ let tokenize_all_and_adjust_pos file tokenizer visitor_tok is_eof =
   in
   tokens_aux []
  )
+
+(* Hacked lex. Ocamlyacc expects a function returning one token at a time
+ * but we actually lex all the file so we need a wrapper to turn that
+ * into a stream.
+ * This function use refs passed by parse. 'tr' means 'token refs'. 
+ *
+ * Why pass is_comment? Why not skip comments before?
+ *  - for error recovery to still return comments for separate entities?
+ *  - TODO?
+ *)
+let mk_lexer_for_yacc toks is_comment =
+  let tr = mk_tokens_state toks in
+  let rec lexer = 
+   fun lexbuf ->
+     match tr.rest with
+     | [] -> (pr2 "LEXER: ALREADY AT END"; tr.current)
+     | v::xs -> 
+         tr.rest <- xs;
+         tr.current <- v;
+         tr.passed <- v::tr.passed;
+         if is_comment v
+         then lexer lexbuf
+         else v
+   in
+   let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
+   tr, lexer, lexbuf_fake
 
 
 (*****************************************************************************)

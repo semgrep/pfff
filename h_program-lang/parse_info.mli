@@ -135,6 +135,10 @@ val tokenize_all_and_adjust_pos:
   ((t -> t) -> 'tok -> 'tok) (* token visitor *) -> 
   ('tok -> bool) (* is_eof *) -> 
   'tok list
+val mk_lexer_for_yacc: 'tok list -> ('tok -> bool) (* is_comment *) ->
+  'tok tokens_state * (* token stream for error recovery *)
+   (Lexing.lexbuf -> 'tok) * (* the lexer to pass to the ocamlyacc parser *)
+   Lexing.lexbuf (* fake lexbuf needed by ocamlyacc API *)
 
 (* can deprecate? just use tokenize_all_and_adjust_pos *)
 (* f(i) will contain the (line x col) of the i char position *)
