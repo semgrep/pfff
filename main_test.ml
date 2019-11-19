@@ -87,6 +87,7 @@ let test regexp =
 #endif
       Unit_parsing_js.unittest;
       Unit_analyze_js.unittest;
+      Unit_parsing_python.unittest;
       Unit_parsing_html.unittest;
       Unit_parsing_cpp.unittest;
     ]
