@@ -42,53 +42,12 @@ let error_msg_tok tok =
 (*****************************************************************************)
 
 let tokens2 file = 
-  let table     = Parse_info.full_charpos_to_pos_large file in
-  Common.with_open_infile file (fun chan -> 
-    let lexbuf = Lexing.from_channel chan in
-
-      let rec tokens_aux acc = 
-        let tok = Lexer_skip.token lexbuf in
-        if !Flag.debug_lexer 
-        then Common.pr2_gen tok;
-
-        let tok = tok |> TH.visitor_info_of_tok (fun ii -> 
-        { ii with PI.token=
-           match ii.PI.token with
-           | PI.OriginTok pi ->
-               PI.OriginTok (PI.complete_token_location_large file table pi)
-           | _ -> raise Todo
-        })
-        in
-        if TH.is_eof tok
-        then List.rev (tok::acc)
-        else tokens_aux (tok::acc)
-      in
-      tokens_aux []
- )
+  let token = Lexer_skip.token in
+  Parse_info.tokenize_all_and_adjust_pos 
+    file token TH.visitor_info_of_tok TH.is_eof
           
 let tokens a = 
   Common.profile_code "Parse_skip.tokens" (fun () -> tokens2 a)
-
-(*****************************************************************************)
-(* Helper for main entry point *)
-(*****************************************************************************)
-
-(* Hacked lex. Ocamlyacc expects a function returning one token at a time
- * but we actually lex all the file so we need a wrapper to turn that
- * into a stream.
- * This function use refs passed by parse. 'tr' means 'token refs'. 
- *)
-let rec lexer_function tr = fun lexbuf ->
-  match tr.PI.rest with
-  | [] -> (pr2 "LEXER: ALREADY AT END"; tr.PI.current)
-  | v::xs -> 
-      tr.PI.rest <- xs;
-      tr.PI.current <- v;
-      tr.PI.passed <- v::tr.PI.passed;
-
-      if TH.is_comment v (* || other condition to pass tokens ? *)
-      then lexer_function (*~pass*) tr lexbuf
-      else v
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -98,8 +57,8 @@ let parse2 filename =
   let stat = Parse_info.default_stat filename in
   let toks = tokens filename in
 
-  let tr = Parse_info.mk_tokens_state toks in
-  let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
+  let tr, lexer, lexbuf_fake = 
+    Parse_info.mk_lexer_for_yacc toks TH.is_comment in
 
   try 
     (* -------------------------------------------------- *)
@@ -107,7 +66,7 @@ let parse2 filename =
     (* -------------------------------------------------- *)
     let xs =
       Common.profile_code "Parser_skip.main" (fun () ->
-        Parser_skip.main      (lexer_function tr) lexbuf_fake
+        Parser_skip.main    lexer lexbuf_fake
       )
     in
     stat.PI.correct <- (Common.cat filename |> List.length);

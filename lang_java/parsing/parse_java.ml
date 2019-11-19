@@ -45,56 +45,13 @@ let error_msg_tok tok =
 (*****************************************************************************)
 
 let tokens2 file =
- let table     = Parse_info.full_charpos_to_pos_large file in
+  let token = Lexer_java.token in
+  Parse_info.tokenize_all_and_adjust_pos 
+    file token TH.visitor_info_of_tok TH.is_eof
 
- Common.with_open_infile file (fun chan ->
-  let lexbuf = Lexing.from_channel chan in
-
-    let rec tokens_aux () =
-      let tok = Lexer_java.token lexbuf in
-      if !Flag.debug_lexer then Common.pr2_gen tok;
-
-      (* fill in the line and col information *)
-      let tok = tok |> TH.visitor_info_of_tok (fun ii ->
-        { ii with PI.token=
-          (* could assert pinfo.filename = file ? *)
-           match ii.PI.token with
-           | PI.OriginTok pi ->
-               PI.OriginTok
-                 (PI.complete_token_location_large file table pi)
-           | _ -> raise Todo
-        })
-
-      in
-
-      if TH.is_eof tok
-      then [tok]
-      else tok::(tokens_aux ())
-    in
-    tokens_aux ()
- )
 
 let tokens a =
   Common.profile_code "Java parsing.tokens" (fun () -> tokens2 a)
-
-(*****************************************************************************)
-(* Helper for main entry point *)
-(*****************************************************************************)
-
-(* Hacked lex. This function use refs passed by parse.
- * 'tr' means 'token refs'.
- *)
-let rec lexer_function tr = fun lexbuf ->
-  match tr.PI.rest with
-  | [] -> (pr2 "LEXER: ALREADY AT END"; tr.PI.current)
-  | v::xs ->
-      tr.PI.rest <- xs;
-      tr.PI.current <- v;
-      tr.PI.passed <- v::tr.PI.passed;
-
-      if TH.is_comment v (* || other condition to pass tokens ? *)
-      then lexer_function (*~pass*) tr lexbuf
-      else v
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -107,9 +64,10 @@ let parse2 filename =
   let toks = tokens filename in
   let toks = Parsing_hacks_java.fix_tokens toks in
 
-  let tr = Parse_info.mk_tokens_state toks in
+  let tr, lexer, lexbuf_fake = 
+    Parse_info.mk_lexer_for_yacc toks TH.is_comment in
+
   let checkpoint = TH.line_of_tok tr.PI.current in
-  let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
 
   let elems =
     try (
@@ -118,7 +76,7 @@ let parse2 filename =
       (* -------------------------------------------------- *)
       Left
         (Common.profile_code "Parser_java.main" (fun () ->
-          Parser_java.goal (lexer_function tr) lexbuf_fake
+          Parser_java.goal lexer lexbuf_fake
         ))
     ) with Parsing.Parse_error ->
 
@@ -174,11 +132,6 @@ let any_of_string s =
   Common2.with_tmp_file ~str:s ~ext:"java" (fun file ->
     let toks = tokens file in
     let toks = Parsing_hacks_java.fix_tokens toks in
-
-    let tr = PI.mk_tokens_state toks in
-    let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
-       (* -------------------------------------------------- *)
-       (* Call parser *)
-       (* -------------------------------------------------- *)
-       Parser_java.sgrep_spatch_pattern (lexer_function tr) lexbuf_fake
+    let _tr, lexer, lexbuf_fake = PI.mk_lexer_for_yacc toks TH.is_comment in
+    Parser_java.sgrep_spatch_pattern lexer lexbuf_fake
   )

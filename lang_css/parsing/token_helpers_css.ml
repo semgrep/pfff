@@ -12,14 +12,15 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Parser_css
-module PI = Parse_info
 
+let is_eof = function
+  | EOF _ -> true
+  | _ -> false
 
-(*****************************************************************************)
-(* Token Helpers *)
-(*****************************************************************************)
+let is_comment = function
+  | TComment _ -> true
+  | _ -> false
 
 (*****************************************************************************)
 (* Visitors *)
@@ -72,24 +73,10 @@ let visitor_info_of_tok f = function
   | TUnknown (ii) -> TUnknown (f ii)
   | EOF(ii) -> EOF(f ii)
 
-
 let info_of_tok tok = 
   let res = ref None in
   visitor_info_of_tok (fun ii -> res := Some ii; ii) tok |> ignore;
   Common2.some !res
 
-(*****************************************************************************)
-(* Accessors *)
-(*****************************************************************************)
-
-let linecol_of_tok tok =
-  let info = info_of_tok tok in
-  PI.line_of_info info, PI.col_of_info info
-
-let line_of_tok x = fst (linecol_of_tok x)
-
-let str_of_tok  x = PI.str_of_info  (info_of_tok x)
-let file_of_tok x = PI.file_of_info (info_of_tok x)
-let pos_of_tok x =  PI.pos_of_info (info_of_tok x)
 
 

@@ -11,18 +11,12 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
  *)
-open Common 
 
-module Flag = Flag_parsing
-module PI = Parse_info
 module TH   = Token_helpers_csharp
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Lots of copy paste with my other parsers (e.g. C++, PHP, sql) but
- * copy paste is sometimes ok.
- *)
 
 (*****************************************************************************)
 (* Types *)
@@ -38,36 +32,9 @@ type program_and_tokens =
 (*****************************************************************************)
 
 let tokens2 file = 
-  let table     = Parse_info.full_charpos_to_pos_large file in
-
-  Common.with_open_infile file (fun chan -> 
-    let lexbuf = Lexing.from_channel chan in
-
-      let mltoken lexbuf = 
-        Lexer_csharp.token lexbuf
-      in
-      
-      let rec tokens_aux acc = 
-        let tok = mltoken lexbuf in
-        if !Flag.debug_lexer then Common.pr2_gen tok;
-
-        let tok = tok |> TH.visitor_info_of_tok (fun ii -> 
-        { ii with PI.token=
-          (* could assert pinfo.filename = file ? *)
-           match ii.PI.token with
-           | PI.OriginTok pi ->
-               PI.OriginTok 
-                 (PI.complete_token_location_large file table pi)
-           | _ -> raise Todo
-        })
-        in
-        
-        if TH.is_eof tok
-        then List.rev (tok::acc)
-        else tokens_aux (tok::acc)
-      in
-      tokens_aux []
- )
+  let token lexbuf = Lexer_csharp.token lexbuf in
+  Parse_info.tokenize_all_and_adjust_pos 
+    file token TH.visitor_info_of_tok TH.is_eof
 
 let tokens a = 
   Common.profile_code "Parse_csharp.tokens" (fun () -> tokens2 a)

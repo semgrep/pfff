@@ -11,18 +11,12 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
  *)
-open Common 
 
-module Flag = Flag_parsing
 module TH   = Token_helpers_nw
-module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Lots of copy paste with my other parsers (e.g. C++, PHP, sql) but
- * copy paste is sometimes ok.
- *)
 
 (*****************************************************************************)
 (* Types *)
@@ -36,44 +30,19 @@ type program_and_tokens = Ast_nw.program * Lexer_nw.token list
 (*****************************************************************************)
 
 let tokens2 file = 
-  let table     = PI.full_charpos_to_pos_large file in
-
-  Common.with_open_infile file (fun chan -> 
-    let lexbuf = Lexing.from_channel chan in
-
-    Lexer_nw.reset();
-
-      let mytokenizer lexbuf = 
-        (match Lexer_nw.current_mode () with
-        | Lexer_nw.INITIAL -> 
-            Lexer_nw.tex lexbuf
-        | Lexer_nw.IN_VERBATIM s ->
-            Lexer_nw.verbatim s lexbuf
-        | Lexer_nw.IN_NOWEB_CHUNK ->
-            Lexer_nw.noweb lexbuf
-        )
-      in
-      
-      let rec tokens_aux acc = 
-        let tok = mytokenizer lexbuf in
-        if !Flag.debug_lexer then Common.pr2_gen tok;
-
-        let tok = tok |> TH.visitor_info_of_tok (fun ii -> 
-        { ii with PI.token=
-            (* could assert pinfo.filename = file ? *)
-           match ii.PI.token with
-           | PI.OriginTok pi ->
-               PI.OriginTok 
-                 (PI.complete_token_location_large file table pi)
-           | _ -> raise Todo
-        })
-        in
-        if TH.is_eof tok
-        then List.rev (tok::acc)
-        else tokens_aux (tok::acc)
-      in
-      tokens_aux []
- )
+  Lexer_nw.reset();
+  let token lexbuf = 
+    (match Lexer_nw.current_mode () with
+    | Lexer_nw.INITIAL -> 
+        Lexer_nw.tex lexbuf
+    | Lexer_nw.IN_VERBATIM s ->
+        Lexer_nw.verbatim s lexbuf
+    | Lexer_nw.IN_NOWEB_CHUNK ->
+        Lexer_nw.noweb lexbuf
+    )
+  in
+  Parse_info.tokenize_all_and_adjust_pos 
+    file token TH.visitor_info_of_tok TH.is_eof
 
 let tokens a = 
   Common.profile_code "Parse_nw.tokens" (fun () -> tokens2 a)
