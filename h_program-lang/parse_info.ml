@@ -572,9 +572,8 @@ let tok_add_s s ii  =
   rewrap_str ((str_of_info ii) ^ s) ii
 
 
-
 (*****************************************************************************)
-(* Error location report *)
+(* Adjust file pos *)
 (*****************************************************************************)
 
 (* A changen is a stand-in for a file for the underlying code.  We use
@@ -710,6 +709,36 @@ let complete_token_location_large filename table x =
     line   = fst (table (x.charpos));
     column = snd (table (x.charpos));
   }
+
+let tokenize_all_and_adjust_pos file tokenizer visitor_tok is_eof =
+ Common.with_open_infile file (fun chan -> 
+  let lexbuf = Lexing.from_channel chan in
+
+  let table     = full_charpos_to_pos_large file in
+      
+  let rec tokens_aux acc = 
+    let tok = tokenizer lexbuf in
+    if !Flag_parsing.debug_lexer then Common.pr2_gen tok;
+
+    let tok = tok |> visitor_tok (fun ii -> 
+    { ii with token=
+      (* could assert pinfo.filename = file ? *)
+       match ii.token with
+       | OriginTok pi -> OriginTok(complete_token_location_large file table pi)
+       | _ -> raise Todo
+    })
+    in
+    if is_eof tok
+    then List.rev (tok::acc)
+    else tokens_aux (tok::acc)
+  in
+  tokens_aux []
+ )
+
+
+(*****************************************************************************)
+(* Error location report *)
+(*****************************************************************************)
 
 (*---------------------------------------------------------------------------*)
 (* return line x col x str_line  from a charpos. This function is quite

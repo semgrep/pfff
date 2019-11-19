@@ -134,6 +134,13 @@ val full_charpos_to_pos_large:
  * during lexing because of limitations of ocamllex. *)
 val complete_token_location_large : 
   Common.filename -> (int -> (int * int))  -> token_location -> token_location
+(* to be used by the lexer *)
+val tokenize_all_and_adjust_pos: 
+  Common.filename -> 
+  (Lexing.lexbuf -> 'tok) (* tokenizer *) -> 
+  ((t -> t) -> 'tok -> 'tok) (* token visitor *) -> 
+  ('tok -> bool) (* is_eof *) -> 
+  'tok list
 
 val error_message : Common.filename -> (string * int) -> string
 val error_message_info :  t -> string

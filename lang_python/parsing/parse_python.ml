@@ -43,53 +43,30 @@ let error_msg_tok tok =
 (*****************************************************************************)
 
 let tokens2 file = 
-  let table     = Parse_info.full_charpos_to_pos_large file in
-  Common.with_open_infile file (fun chan -> 
-    let lexbuf = Lexing.from_channel chan in
+  let state = Lexer.create () in
+  let token lexbuf = 
+    match Lexer.top_mode state with
+    | Lexer.STATE_TOKEN -> 
+      Lexer.token state lexbuf
+    | Lexer.STATE_OFFSET -> 
+        failwith "impossibe STATE_OFFSET in python lexer"
+    | Lexer.STATE_UNDERSCORE_TOKEN -> 
+      let tok = Lexer._token state lexbuf in
+      (match tok with
+      | Parser_python.TCommentSpace _ -> ()
+      | Parser_python.FSTRING_START _ -> ()
+      | _ -> 
+          Lexer.set_mode state Lexer.STATE_TOKEN
+      );
+      tok
+    | Lexer.STATE_IN_FSTRING_SINGLE ->
+       Lexer.fstring_single state lexbuf
+    | Lexer.STATE_IN_FSTRING_TRIPLE ->
+       Lexer.fstring_triple state lexbuf
+  in
+  Parse_info.tokenize_all_and_adjust_pos 
+    file token TH.visitor_info_of_tok TH.is_eof
 
-    let state = Lexer.create () in
-
-      let token lexbuf = 
-        match Lexer.top_mode state with
-        | Lexer.STATE_TOKEN -> 
-          Lexer.token state lexbuf
-        | Lexer.STATE_OFFSET -> 
-            failwith "impossibe STATE_OFFSET in python lexer"
-        | Lexer.STATE_UNDERSCORE_TOKEN -> 
-          let tok = Lexer._token state lexbuf in
-          (match tok with
-          | Parser_python.TCommentSpace _ -> ()
-          | Parser_python.FSTRING_START _ -> ()
-          | _ -> 
-              Lexer.set_mode state Lexer.STATE_TOKEN
-          );
-          tok
-        | Lexer.STATE_IN_FSTRING_SINGLE ->
-           Lexer.fstring_single state lexbuf
-        | Lexer.STATE_IN_FSTRING_TRIPLE ->
-           Lexer.fstring_triple state lexbuf
-      in
-      
-      let rec tokens_aux acc = 
-        let tok = token lexbuf in
-        if !Flag.debug_lexer then Common.pr2_gen tok;
-
-        let tok = tok |> TH.visitor_info_of_tok (fun ii -> 
-        { ii with PI.token=
-          (* could assert pinfo.filename = file ? *)
-           match ii.PI.token with
-           | PI.OriginTok pi ->
-               PI.OriginTok 
-                 (PI.complete_token_location_large file table pi)
-           | _ -> raise Todo
-        })
-        in
-        if TH.is_eof tok
-        then List.rev (tok::acc)
-        else tokens_aux (tok::acc)
-      in
-      tokens_aux []
-  )
 
 let tokens a = 
   Common.profile_code "Parse_python.tokens" (fun () -> tokens2 a)
