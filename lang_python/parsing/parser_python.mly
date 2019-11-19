@@ -76,6 +76,10 @@ let tuple_expr_store l =
 let mk_name_param (name, t) =
   name, t
 
+let mk_str ii =
+  let s = Parse_info.string_of_info ii in
+  Str (s, ii)
+
 %}
 
 /*(*************************************************************************)*/
@@ -590,6 +594,7 @@ atom:
      match $1 with 
      | [] ->  raise Common.Impossible
      | [x] -> x
+     (* abused to also concatenate regular literal strings *)
      | xs -> InterpolatedString xs
    }
 
@@ -602,6 +607,12 @@ atom:
   /*(* typing-ext: sgrep-ext: *)*/
   | ELLIPSES    { Ellipses $1 }
 
+atom_repr: BACKQUOTE testlist1 BACKQUOTE { Repr (tuple_expr $2) }
+
+/*(*----------------------------*)*/
+/*(*2 strings *)*/
+/*(*----------------------------*)*/
+
 string:
   | STR { Str $1 }
   | FSTRING_START interpolated_list FSTRING_END { InterpolatedString $2 }
@@ -609,22 +620,24 @@ string:
 interpolated:
   | FSTRING_STRING { Str $1 }
   | FSTRING_LBRACE expr RBRACE { $2 }
-  | FSTRING_LBRACE expr COLON format_specifier RBRACE { $2 }
+  | FSTRING_LBRACE expr COLON format_specifier RBRACE 
+     { InterpolatedString ($2::mk_str $3::$4) }
 
 /*(* TODO: should add in AST at some point *)*/
-format_specifier: format_token_list { }
+format_specifier: format_token_list { $1 }
 
 format_token_list:
- | format_token { }
- | format_token format_token_list { }
+ | format_token                   { [$1] }
+ | format_token format_token_list { $1::$2 }
 
 format_token:
-  | INT  { }
-  | FLOAT { }
-  | DOT  { }
-  | NAME { }
-
-atom_repr: BACKQUOTE testlist1 BACKQUOTE { Repr (tuple_expr $2) }
+  | INT   { mk_str (snd $1) }
+  | FLOAT { mk_str (snd $1) }
+  | DOT   { mk_str $1 }
+  | NAME  { mk_str (snd $1) }
+  | LT    { mk_str $1 }
+  | GT    { mk_str $1 }
+  | LBRACE expr RBRACE { $2 }
 
 /*(*----------------------------*)*/
 /*(*2 containers *)*/

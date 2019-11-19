@@ -14,13 +14,8 @@ def test():
    echo_warning(f"{len(collapsed_findings)} findings in {elapsed:.2f} s\n")
 
    click.secho(
-                f"""-------------------------------------------------------------------------------------------------
-This may be due to a corrupted tool installation. You might be able to fix this issue by running:
-
-  bento init --clean
-
-You can also view full details of this error in `{bento.constants.DEFAULT_LOG_PATH}`.
--------------------------------------------------------------------------------------------------
+                f"""
+You  error in `{bento.constants.DEFAULT_LOG_PATH}`.
 """,
                 err=True,
             )
