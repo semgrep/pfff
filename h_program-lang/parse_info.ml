@@ -710,24 +710,32 @@ let complete_token_location_large filename table x =
     column = snd (table (x.charpos));
   }
 
+(* Why is it better to first get all the tokens? Why not lex on-demand
+ * as yacc requires more tokens?
+ * TODO explain
+ *)
 let tokenize_all_and_adjust_pos file tokenizer visitor_tok is_eof =
  Common.with_open_infile file (fun chan -> 
   let lexbuf = Lexing.from_channel chan in
-
   let table     = full_charpos_to_pos_large file in
-      
-  let rec tokens_aux acc = 
-    let tok = tokenizer lexbuf in
-    if !Flag_parsing.debug_lexer then Common.pr2_gen tok;
-
-    let tok = tok |> visitor_tok (fun ii -> 
-    { ii with token=
+  let adjust_info ii = 
+    { ii with token =
       (* could assert pinfo.filename = file ? *)
        match ii.token with
        | OriginTok pi -> OriginTok(complete_token_location_large file table pi)
        | _ -> raise Todo
-    })
+    }      
+  in
+  let rec tokens_aux acc = 
+    let tok = 
+      try
+        tokenizer lexbuf 
+      with Lexical_error (s, info) ->
+        raise (Lexical_error (s, adjust_info info))
     in
+    if !Flag_parsing.debug_lexer 
+    then Common.pr2_gen tok;
+    let tok = tok |> visitor_tok adjust_info in
     if is_eof tok
     then List.rev (tok::acc)
     else tokens_aux (tok::acc)
