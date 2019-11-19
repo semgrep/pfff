@@ -9,6 +9,7 @@ def foo():
 foo()
 
 def test():
+   foo(f"this is {1+2 if True else 4}")
    echo_error(f"Error while running {tool_id}: {findings}")
    # what is that?
    echo_warning(f"{len(collapsed_findings)} findings in {elapsed:.2f} s\n")

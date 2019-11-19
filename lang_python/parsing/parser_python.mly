@@ -619,8 +619,8 @@ string:
 
 interpolated:
   | FSTRING_STRING { Str $1 }
-  | FSTRING_LBRACE expr RBRACE { $2 }
-  | FSTRING_LBRACE expr COLON format_specifier RBRACE 
+  | FSTRING_LBRACE test RBRACE { $2 }
+  | FSTRING_LBRACE test COLON format_specifier RBRACE 
      { InterpolatedString ($2::mk_str $3::$4) }
 
 /*(* TODO: should add in AST at some point *)*/
@@ -637,7 +637,7 @@ format_token:
   | NAME  { mk_str (snd $1) }
   | LT    { mk_str $1 }
   | GT    { mk_str $1 }
-  | LBRACE expr RBRACE { $2 }
+  | LBRACE test RBRACE { $2 }
 
 /*(*----------------------------*)*/
 /*(*2 containers *)*/
