@@ -452,6 +452,7 @@ and sq_shortstrlit state pos = parse
  | eof { error "EOF in string" lexbuf; EOF (tokinfo lexbuf) }
  | _  { error "unrecognized symbol in string" lexbuf; TUnknown(tokinfo lexbuf)}
 
+(* because here we're using 'shortest', do not put a rule for '| _ { ... }' *)
 and sq_longstrlit state pos = shortest
 | (([^ '\\'] | escapeseq)* as s) "'''"
     { 
@@ -461,8 +462,6 @@ and sq_longstrlit state pos = shortest
       lexbuf.lex_curr_p <- { curpos with pos_lnum = curpos.pos_lnum + lines};
       STR (unescaped s, PI.tok_add_s full_str pos) 
     }
- | eof { error "EOF in string" lexbuf; EOF (tokinfo lexbuf) }
- | _  { error "unrecognized symbol in string" lexbuf; TUnknown(tokinfo lexbuf)}
 
 and dq_shortstrlit state pos = parse
   | (([^ '\\' '\r' '\n' '\"'] | escapeseq)* as s) '"' 
@@ -480,8 +479,6 @@ and dq_longstrlit state pos = shortest
         let curpos = lexbuf.lex_curr_p in
         lexbuf.lex_curr_p <- { curpos with pos_lnum = curpos.pos_lnum + lines};
         STR (unescaped s, PI.tok_add_s full_str pos) }
- | eof { error "EOF in string" lexbuf; EOF (tokinfo lexbuf) }
- | _  { error "unrecognized symbol in string" lexbuf; TUnknown(tokinfo lexbuf)}
 
 (*****************************************************************************)
 (* Rules on interpolated strings *)
