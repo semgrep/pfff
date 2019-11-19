@@ -489,7 +489,7 @@ and fstring_single state = parse
     FSTRING_LBRACE (tokinfo lexbuf) 
    }
  | ([^ '\\' '\r' '\n' '\"' '{'] | escapeseq)* 
-    { FSTRING_STRING (tokinfo lexbuf)}
+    { FSTRING_STRING (tok lexbuf, tokinfo lexbuf)}
 
 and fstring_triple state = parse
  | "\"\"\"" { pop_mode state; FSTRING_END (tokinfo lexbuf) }
@@ -499,4 +499,4 @@ and fstring_triple state = parse
     FSTRING_LBRACE (tokinfo lexbuf) 
    }
  | ([^ '\\' '{'] | escapeseq)* 
-    { FSTRING_STRING (tokinfo lexbuf)}
+    { FSTRING_STRING (tok lexbuf, tokinfo lexbuf)}

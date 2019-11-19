@@ -27,8 +27,11 @@ let rec vof_expr =
   function
   | Num v1 -> let v1 = vof_number v1 in Ocaml.VSum (("Num", [ v1 ]))
   | Str v1 ->
-      let v1 = Ocaml.vof_list (vof_wrap Ocaml.vof_string) v1
+      let v1 = (vof_wrap Ocaml.vof_string) v1
       in Ocaml.VSum (("Str", [ v1 ]))
+  | InterpolatedString v1 ->
+      let v1 = Ocaml.vof_list vof_expr v1 in
+      Ocaml.VSum (("InterpolatedString", [v1]))
   | Bool v1 ->
       let v1 = vof_wrap Ocaml.vof_bool v1 in Ocaml.VSum (("Bool", [ v1 ]))
   | ExprNone v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("ExprNone", [ v1 ]))

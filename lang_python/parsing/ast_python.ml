@@ -91,7 +91,7 @@ type resolved_name =
 (* ------------------------------------------------------------------------- *)
 type expr =
   | Num of number (* n *)
-  | Str of (string wrap) list (* s *)
+  | Str of string wrap (* s *)
   (* python3: now officially reserved keywords *)
   | Bool of bool wrap
   | ExprNone of tok
@@ -105,6 +105,8 @@ type expr =
 
   (* python3: *)
   | ExprStar of expr (* less: expr_context? always Store anyway no? *)
+  (* python3: https://www.python.org/dev/peps/pep-0498/ *)
+  | InterpolatedString of expr list (* usually a Str or a simple expr *)
 
   (* python3: *)
   (* inside an Assign (or ExprStmt) *)

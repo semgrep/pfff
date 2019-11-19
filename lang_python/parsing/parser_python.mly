@@ -163,7 +163,8 @@ let mk_name_param (name, t) =
 /*(*-----------------------------------------*)*/
 /* fstrings */
 %token <Ast_python.tok> FSTRING_START FSTRING_END
-%token <Ast_python.tok> FSTRING_LBRACE FSTRING_STRING
+%token <Ast_python.tok> FSTRING_LBRACE 
+%token <string * Ast_python.tok> FSTRING_STRING
 
 /* layout */
 %token INDENT DEDENT 
@@ -585,7 +586,12 @@ atom:
 
   | NONE        { ExprNone $1 }
 
-  | string_list { Str $1 }
+  | string_list { 
+     match $1 with 
+     | [] ->  raise Common.Impossible
+     | [x] -> x
+     | xs -> InterpolatedString xs
+   }
 
   | atom_tuple  { $1 }
   | atom_list   { $1 }
@@ -597,12 +603,12 @@ atom:
   | ELLIPSES    { Ellipses $1 }
 
 string:
-  | STR { $1 }
-  | FSTRING_START interpolated_list FSTRING_END { "TODO", $1 }
+  | STR { Str $1 }
+  | FSTRING_START interpolated_list FSTRING_END { InterpolatedString $2 }
 
 interpolated:
-  | FSTRING_STRING { () }
-  | FSTRING_LBRACE expr RBRACE { () }
+  | FSTRING_STRING { Str $1 }
+  | FSTRING_LBRACE expr RBRACE { $2 }
 
 atom_repr: BACKQUOTE testlist1 BACKQUOTE { Repr (tuple_expr $2) }
 

@@ -86,7 +86,8 @@ and v_expr (x: expr) =
   | Ellipses v1 -> let v1 = v_tok v1 in ()
   | Bool v1 -> let v1 = v_wrap v_bool v1 in ()
   | Num v1 -> let v1 = v_number v1 in ()
-  | Str (v1) -> let v1 = v_list v_name v1 in ()
+  | Str (v1) -> let v1 = v_wrap v_string v1 in ()
+  | InterpolatedString v1 -> let v1 = v_list v_expr v1 in ()
   | Name ((v1, v2, v3)) ->
       let v1 = v_name v1
       and v2 = v_expr_context v2

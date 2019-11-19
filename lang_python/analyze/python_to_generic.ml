@@ -90,13 +90,12 @@ let rec expr (x: expr) =
       | Right x -> x
       )
   | Str (v1) -> 
-    (match v1 with
-    | [x] -> 
-      let x = wrap string x in
-      G.L (G.String (x))
-    | xs -> G.Call (G.IdSpecial (G.Concat, fake_info ()), 
-              xs |> List.map (fun x -> let x = wrap string x in
-                  G.Arg (G.L (G.String x))))
+      let v1 = wrap string v1 in
+      G.L (G.String (v1))
+
+  | InterpolatedString xs ->
+    G.Call (G.IdSpecial (G.Concat, fake_info ()), 
+      xs |> List.map (fun x -> let x = expr x in G.Arg (x))
     )
   | TypedExpr (v1, v2) ->
      let v1 = expr v1 in
