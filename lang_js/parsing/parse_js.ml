@@ -24,9 +24,6 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Lots of copy paste with my other parsers (e.g. PHP, C, ML) but
- * copy paste is sometimes ok.
- *)
 
 (*****************************************************************************)
 (* Types *)
@@ -165,20 +162,14 @@ let asi_insert charpos last_charpos_error tr
      *)
     last_charpos_error := charpos
 
-
 (*****************************************************************************)
 (* Lexing only *)
 (*****************************************************************************)
 
 let tokens2 file = 
-  let table     = Parse_info.full_charpos_to_pos_large file in
-
-  Common.with_open_infile file (fun chan -> 
-    let lexbuf = Lexing.from_channel chan in
-
-    Lexer_js.reset();
-
-      let jstoken lexbuf = 
+   Lexer_js.reset();
+   let token lexbuf = 
+     let tok =
         match Lexer_js.current_mode() with
         | Lexer_js.ST_IN_CODE ->
             Lexer_js.initial lexbuf
@@ -188,54 +179,16 @@ let tokens2 file =
             Lexer_js.st_in_xhp_text current_tag lexbuf
         | Lexer_js.ST_IN_BACKQUOTE ->
             Lexer_js.backquote lexbuf
-      in
-      let rec tokens_aux acc = 
-        let tok = jstoken lexbuf in
-        if !Flag.debug_lexer 
-        then Common.pr2_gen tok;
-
-        if not (TH.is_comment tok)
-        then Lexer_js._last_non_whitespace_like_token := Some tok;
-
-        let tok = tok |> TH.visitor_info_of_tok (fun ii -> 
-        { ii with PI.token =
-          (* could assert pinfo.filename = file ? *)
-            match ii.PI.token with
-            | PI.OriginTok pi ->
-              PI.OriginTok (PI.complete_token_location_large file table pi)
-            | PI.FakeTokStr _ | PI.Ab  | PI.ExpandedTok _ ->
-              raise Impossible
-        })
-        in
-
-        if TH.is_eof tok
-        then List.rev (tok::acc)
-        else tokens_aux (tok::acc)
-    in
-    tokens_aux []
- )
+     in
+     if not (TH.is_comment tok)
+     then Lexer_js._last_non_whitespace_like_token := Some tok;
+     tok
+  in
+  Parse_info.tokenize_all_and_adjust_pos
+    file token TH.visitor_info_of_tok TH.is_eof
 
 let tokens a = 
   Common.profile_code "Parse_js.tokens" (fun () -> tokens2 a)
-
-(*****************************************************************************)
-(* Helper for main entry point *)
-(*****************************************************************************)
-
-(* Hacked lex. This function use refs passed by parse.
- * 'tr' means 'token refs'.
- *)
-let rec lexer_function tr = fun lexbuf ->
-  match tr.PI.rest with
-  | [] -> (pr2 "LEXER: ALREADY AT END"; tr.PI.current)
-  | v::xs -> 
-      tr.PI.rest <- xs;
-      tr.PI.current <- v;
-      tr.PI.passed <- v::tr.PI.passed;
-
-      if TH.is_comment v (* || other condition to pass tokens ? *)
-      then lexer_function (*~pass*) tr lexbuf
-      else v
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -248,9 +201,10 @@ let parse2 filename =
   let toks = Parsing_hacks_js.fix_tokens toks in
   let toks = Parsing_hacks_js.fix_tokens_ASI toks in
 
-  let tr = PI.mk_tokens_state toks in
+  let tr, lexer, lexbuf_fake = 
+    PI.mk_lexer_for_yacc toks TH.is_comment in
+
   let last_charpos_error = ref 0 in
-  let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
 
    Sys.set_signal Sys.sigalrm (Sys.Signal_handle (fun _ -> raise Timeout ));
    (* todo: minimized files abusing ASI before '}' requires a very long time
@@ -265,13 +219,14 @@ let parse2 filename =
        (* Call parser *)
        (* -------------------------------------------------- *)
        Common.profile_code "Parser_js.module_item" (fun () ->
-         Parser_js.module_item_or_eof (lexer_function tr) lexbuf_fake
+         Parser_js.module_item_or_eof lexer lexbuf_fake
        )
      in
      (* this seems optional *)
      Parsing.clear_parser ();
      put_back_lookahead_token_if_needed tr item;
      Left item
+
    with Parsing.Parse_error ->
       let cur = tr.PI.current in
       let info = TH.info_of_tok cur in
@@ -377,10 +332,6 @@ let (program_of_string: string -> Cst_js.program) = fun s ->
 let any_of_string s = 
   Common2.with_tmp_file ~str:s ~ext:"js" (fun file ->
     let toks = tokens file in
-    let tr = PI.mk_tokens_state toks in
-    let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
-       (* -------------------------------------------------- *)
-       (* Call parser *)
-       (* -------------------------------------------------- *)
-       Parser_js.sgrep_spatch_pattern (lexer_function tr) lexbuf_fake
+    let _tr, lexer, lexbuf_fake = PI.mk_lexer_for_yacc toks TH.is_comment in
+    Parser_js.sgrep_spatch_pattern lexer lexbuf_fake
   )
