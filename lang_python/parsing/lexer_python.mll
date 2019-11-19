@@ -490,6 +490,10 @@ and fstring_single state = parse
    }
  | ([^ '\\' '\r' '\n' '\"' '{'] | escapeseq)* 
     { FSTRING_STRING (tok lexbuf, tokinfo lexbuf)}
+ | eof { 
+      error "end of file in fstring with triple quote" lexbuf;
+      EOF (tokinfo lexbuf)
+    }
 
 and fstring_triple state = parse
  | "\"\"\"" { pop_mode state; FSTRING_END (tokinfo lexbuf) }
@@ -498,5 +502,10 @@ and fstring_triple state = parse
     push_mode state STATE_UNDERSCORE_TOKEN;
     FSTRING_LBRACE (tokinfo lexbuf) 
    }
- | ([^ '\\' '{'] | escapeseq)* 
+ | '"' { FSTRING_STRING (tok lexbuf, tokinfo lexbuf) }
+ | ([^ '\\' '{' '"'] | escapeseq)* 
     { FSTRING_STRING (tok lexbuf, tokinfo lexbuf)}
+ | eof { 
+      error "end of file in fstring with triple quote" lexbuf;
+      EOF (tokinfo lexbuf)
+    }
