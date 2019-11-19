@@ -434,14 +434,11 @@ and _token state = parse
   (* ----------------------------------------------------------------------- *)
   (* eof *)
   (* ----------------------------------------------------------------------- *)
-  (* eof *)
   | eof { EOF (tokinfo lexbuf) }
 
-  | _ { 
-      if !Flag.verbose_lexing 
-      then pr2_once ("LEXER:unrecognised symbol, in token rule:"^tok lexbuf);
-      TUnknown (tokinfo lexbuf)
-    }
+  | _ { error (spf "unrecognized symbol: %s" (tok lexbuf)) lexbuf;
+        TUnknown (tokinfo lexbuf)
+      }
 
 (*****************************************************************************)
 (* Rules on strings *)
@@ -452,6 +449,8 @@ and sq_shortstrlit state pos = parse
      { 
        let full_str = Lexing.lexeme lexbuf in
        STR (unescaped s, PI.tok_add_s full_str pos) }
+ | eof { error "EOF in string" lexbuf; EOF (tokinfo lexbuf) }
+ | _  { error "unrecognized symbol in string" lexbuf; TUnknown(tokinfo lexbuf)}
 
 and sq_longstrlit state pos = shortest
 | (([^ '\\'] | escapeseq)* as s) "'''"
@@ -462,12 +461,16 @@ and sq_longstrlit state pos = shortest
       lexbuf.lex_curr_p <- { curpos with pos_lnum = curpos.pos_lnum + lines};
       STR (unescaped s, PI.tok_add_s full_str pos) 
     }
+ | eof { error "EOF in string" lexbuf; EOF (tokinfo lexbuf) }
+ | _  { error "unrecognized symbol in string" lexbuf; TUnknown(tokinfo lexbuf)}
 
 and dq_shortstrlit state pos = parse
   | (([^ '\\' '\r' '\n' '\"'] | escapeseq)* as s) '"' 
      { 
        let full_str = Lexing.lexeme lexbuf in
        STR (unescaped s, PI.tok_add_s full_str pos) }
+ | eof { error "EOF in string" lexbuf; EOF (tokinfo lexbuf) }
+ | _  { error "unrecognized symbol in string" lexbuf; TUnknown(tokinfo lexbuf)}
 
 and dq_longstrlit state pos = shortest
   | (([^ '\\'] | escapeseq)* as s) "\"\"\""
@@ -477,12 +480,15 @@ and dq_longstrlit state pos = shortest
         let curpos = lexbuf.lex_curr_p in
         lexbuf.lex_curr_p <- { curpos with pos_lnum = curpos.pos_lnum + lines};
         STR (unescaped s, PI.tok_add_s full_str pos) }
+ | eof { error "EOF in string" lexbuf; EOF (tokinfo lexbuf) }
+ | _  { error "unrecognized symbol in string" lexbuf; TUnknown(tokinfo lexbuf)}
 
 (*****************************************************************************)
 (* Rules on interpolated strings *)
 (*****************************************************************************)
 and fstring_single state = parse
  | '"' { pop_mode state; FSTRING_END (tokinfo lexbuf) }
+ | "{{" { FSTRING_STRING (tok lexbuf, tokinfo lexbuf)}
  | '{' { 
     ignore_nl state;
     push_mode state STATE_UNDERSCORE_TOKEN;
@@ -490,13 +496,12 @@ and fstring_single state = parse
    }
  | ([^ '\\' '\r' '\n' '\"' '{'] | escapeseq)* 
     { FSTRING_STRING (tok lexbuf, tokinfo lexbuf)}
- | eof { 
-      error "end of file in fstring with triple quote" lexbuf;
-      EOF (tokinfo lexbuf)
-    }
+ | eof { error "EOF in string" lexbuf; EOF (tokinfo lexbuf) }
+ | _  { error "unrecognized symbol in string" lexbuf; TUnknown(tokinfo lexbuf)}
 
 and fstring_triple state = parse
  | "\"\"\"" { pop_mode state; FSTRING_END (tokinfo lexbuf) }
+ | "{{" { FSTRING_STRING (tok lexbuf, tokinfo lexbuf)}
  | '{' { 
     ignore_nl state;
     push_mode state STATE_UNDERSCORE_TOKEN;
@@ -505,7 +510,5 @@ and fstring_triple state = parse
  | '"' { FSTRING_STRING (tok lexbuf, tokinfo lexbuf) }
  | ([^ '\\' '{' '"'] | escapeseq)* 
     { FSTRING_STRING (tok lexbuf, tokinfo lexbuf)}
- | eof { 
-      error "end of file in fstring with triple quote" lexbuf;
-      EOF (tokinfo lexbuf)
-    }
+ | eof { error "EOF in string" lexbuf; EOF (tokinfo lexbuf) }
+ | _  { error "unrecognized symbol in string" lexbuf; TUnknown(tokinfo lexbuf)}
