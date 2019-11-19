@@ -1,6 +1,7 @@
 open Common
 
 module Flag = Flag_parsing
+module E = Error_code
 
 (*****************************************************************************)
 (* Subsystem testing *)
@@ -25,20 +26,16 @@ let test_parse_python xs =
     Lib_parsing_python.find_source_files_of_dir_or_files xs 
     |> Skip_code.filter_files_if_skip_list
   in
-  let stat_list = ref [] in
-
   fullxs |> Console.progress (fun k -> List.iter (fun file -> 
     k();
-
-    let (_xs, stat) = 
-      Common.save_excursion Flag.error_recovery true (fun () ->
-        Parse_python.parse file 
-      ) 
-    in
-    Common.push stat stat_list;
-  ));
-  Parse_info.print_parsing_stat_list !stat_list;
-  ()
+    Common.save_excursion Flag.error_recovery true (fun () ->
+    E.try_analyze_file_with_exn_to_errors file (fun () ->
+      Parse_python.parse file |> ignore
+    );
+    !E.g_errors |> List.iter (fun err -> pr (E.string_of_error err));
+    E.g_errors := []
+   )
+  ))
 
 
 let test_dump_python file =

@@ -52,7 +52,7 @@ type token_location = {
   (* with tarzan *)
 
 let fake_token_location = {
-  charpos = -1; str = ""; line = -1; column = -1; file = "";
+  charpos = -1; str = ""; line = -1; column = -1; file = "FAKE TOKEN";
 }
 
 let first_loc_of_file file = {
@@ -240,7 +240,7 @@ let tokinfo_str_pos str pos =
       (* info filled in a post-lexing phase, see complete_token_location_large*)
       line = -1;
       column = -1;
-      file = "";
+      file = "NO FILE INFO YET";
     };
     transfo = NoTransfo;
   }
@@ -269,8 +269,14 @@ let tokinfo lexbuf  =
   tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
 
 let lexical_error s lexbuf =
+  let info = 
+    try 
+      tokinfo lexbuf 
+    with Failure s -> 
+      failwith (spf "lexical_error: failure to get token info: %s" s)
+  in
   if !Flag_parsing.exn_when_lexical_error
-  then raise (Lexical_error (s, tokinfo lexbuf))
+  then raise (Lexical_error (s, info))
   else
     if !Flag_parsing.verbose_lexing
     then pr2_once ("LEXER: " ^ s)

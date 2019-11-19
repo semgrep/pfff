@@ -190,6 +190,7 @@ let loc_of_node root n g =
 
 let string_of_error err =
   let pos = err.loc in
+  assert (pos.PI.file <> "");
   spf "%s:%d: %s" pos.PI.file pos.PI.line (string_of_error_kind err.typ)
 
 
