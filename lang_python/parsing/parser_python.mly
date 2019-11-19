@@ -161,10 +161,13 @@ let mk_name_param (name, t) =
 /*(*-----------------------------------------*)*/
 /*(*2 Extra tokens: *)*/
 /*(*-----------------------------------------*)*/
+/* fstrings */
+%token <Ast_python.tok> FSTRING_START FSTRING_END
+%token <Ast_python.tok> FSTRING_LBRACE FSTRING_STRING
 
 /* layout */
 %token INDENT DEDENT 
-%token <Ast_python.tok>NEWLINE
+%token <Ast_python.tok> NEWLINE
 
 /*(*************************************************************************)*/
 /*(*1 Rules type declaration *)*/
@@ -593,9 +596,13 @@ atom:
   /*(* typing-ext: sgrep-ext: *)*/
   | ELLIPSES    { Ellipses $1 }
 
-string_list:
-  | STR { [$1] }
-  | STR string_list { $1::$2 }
+string:
+  | STR { $1 }
+  | FSTRING_START interpolated_list FSTRING_END { "TODO", $1 }
+
+interpolated:
+  | FSTRING_STRING { () }
+  | FSTRING_LBRACE expr RBRACE { () }
 
 atom_repr: BACKQUOTE testlist1 BACKQUOTE { Repr (tuple_expr $2) }
 
@@ -754,6 +761,9 @@ stmt_list:
   | /*(* empty *)*/ { [] }
   | stmt stmt_list  { $1 @ $2 }
 
+interpolated_list:
+  | /*(*empty*)*/      { [] }
+  | interpolated interpolated_list { $1::$2 }
 
 decorator_list:
   | /*(* empty *)*/          { [] }
@@ -764,6 +774,10 @@ decorator_list:
 excepthandler_list:
   | excepthandler                    { [$1] }
   | excepthandler excepthandler_list { $1::$2 }
+
+string_list:
+  | string             { [$1] }
+  | string string_list { $1::$2 }
 
 
 /*(* list with commans and trailing comma *)*/

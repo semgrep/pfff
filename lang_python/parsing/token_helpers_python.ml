@@ -42,6 +42,11 @@ let visitor_info_of_tok f = function
   | TCommentSpace (ii) -> TCommentSpace (f ii)
   | TComment (ii) -> TComment (f ii)
 
+  | FSTRING_START (ii) -> FSTRING_START (f ii)
+  | FSTRING_END (ii) -> FSTRING_END (f ii)
+  | FSTRING_LBRACE (ii) -> FSTRING_LBRACE (f ii)
+  | FSTRING_STRING (ii) -> FSTRING_STRING (f ii)
+
   | NAME (x, ii) -> NAME (x, f ii)
   | INT (x, ii) -> INT (x, f ii)
   | LONGINT (x, ii) -> LONGINT (x, f ii)

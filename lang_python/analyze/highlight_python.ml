@@ -429,6 +429,10 @@ let visit_program ~tag_hook _prefs (program, toks) =
         (* most of the time they are used as documentation strings *)
         tag ii Comment
 *)
+    | T.FSTRING_START ii | T.FSTRING_END ii
+    | T.FSTRING_STRING ii
+     -> tag ii String
+    | T.FSTRING_LBRACE ii -> tag ii Punctuation
 
     (* ident  *)
     | T.NAME (s, ii) -> 

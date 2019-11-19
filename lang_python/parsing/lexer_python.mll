@@ -99,12 +99,15 @@ type state_mode =
   | STATE_OFFSET
   | STATE_UNDERSCORE_TOKEN
 
+  | STATE_IN_FSTRING_SINGLE
+  | STATE_IN_FSTRING_TRIPLE
+
 type lexer_state = {
   mutable curr_offset : int;
   offset_stack : int Stack.t;
   mutable nl_ignore : int;
 
-  mutable mode: state_mode;
+  mode: state_mode list ref;
 }
 
 let create () =
@@ -113,7 +116,7 @@ let create () =
   { curr_offset = 0;
     offset_stack = stack;
     nl_ignore = 0;
-    mode = STATE_TOKEN;
+    mode = ref [STATE_TOKEN];
   }
 
 let ignore_nl t =
@@ -121,6 +124,15 @@ let ignore_nl t =
 
 and aware_nl t =
   t.nl_ignore <- pred t.nl_ignore
+
+(* stack mode management *)
+let top_mode state = 
+  match !(state.mode) with
+  | [] -> failwith "Lexer_python.top_mode: empty stack"
+  | x::_ -> x
+let push_mode state mode = Common.push mode state.mode
+let pop_mode state = ignore(Common2.pop2 state.mode)
+let set_mode state mode = begin pop_mode state; push_mode state mode end
 
 }
 
@@ -224,7 +236,7 @@ and _token state = parse
           let s = offset state lexbuf in
           NEWLINE (Parse_info.tok_add_s s info)
         end else begin
-         state.mode <- STATE_UNDERSCORE_TOKEN;
+         set_mode state STATE_UNDERSCORE_TOKEN;
          TCommentSpace info
         end
        }
@@ -236,14 +248,14 @@ and _token state = parse
             { pos with
                 pos_bol = pos.pos_cnum;
                 pos_lnum = pos.pos_lnum + 1 };
-          state.mode <- STATE_UNDERSCORE_TOKEN;
+          set_mode state STATE_UNDERSCORE_TOKEN;
           TCommentSpace info
       }
 
   | whitespace+
       { 
         let info = tokinfo lexbuf in
-        state.mode <- STATE_UNDERSCORE_TOKEN;
+        set_mode state STATE_UNDERSCORE_TOKEN;
         TCommentSpace info
       }
 
@@ -296,8 +308,16 @@ and _token state = parse
   | ')'     { aware_nl state; RPAREN (tokinfo lexbuf) }
   | '['     { ignore_nl state; LBRACK (tokinfo lexbuf) }
   | ']'     { aware_nl state; RBRACK (tokinfo lexbuf) }
-  | '{'     { ignore_nl state; LBRACE (tokinfo lexbuf) }
-  | '}'     { aware_nl state; RBRACE (tokinfo lexbuf) }
+  | '{'     { 
+      ignore_nl state;
+      push_mode state STATE_UNDERSCORE_TOKEN;
+      LBRACE (tokinfo lexbuf) 
+     }
+  | '}'     { 
+      aware_nl state;
+      pop_mode state;
+      RBRACE (tokinfo lexbuf) 
+     }
 
   | ':'     { COLON (tokinfo lexbuf) }
   | ';'     { SEMICOL (tokinfo lexbuf) }
@@ -393,6 +413,14 @@ and _token state = parse
   (* ----------------------------------------------------------------------- *)
   (* Strings *)
   (* ----------------------------------------------------------------------- *)
+  | 'f' '"'  { 
+       push_mode state STATE_IN_FSTRING_SINGLE;
+       FSTRING_START (tokinfo lexbuf) 
+    }
+  | 'f' "\"\"\"" { 
+       push_mode state STATE_IN_FSTRING_TRIPLE;
+       FSTRING_START (tokinfo lexbuf)  
+     }
 
   | stringprefix '\''
       { sq_shortstrlit state (tokinfo lexbuf) lexbuf }
@@ -449,3 +477,26 @@ and dq_longstrlit state pos = shortest
         let curpos = lexbuf.lex_curr_p in
         lexbuf.lex_curr_p <- { curpos with pos_lnum = curpos.pos_lnum + lines};
         STR (unescaped s, PI.tok_add_s full_str pos) }
+
+(*****************************************************************************)
+(* Rules on interpolated strings *)
+(*****************************************************************************)
+and fstring_single state = parse
+ | '"' { pop_mode state; FSTRING_END (tokinfo lexbuf) }
+ | '{' { 
+    ignore_nl state;
+    push_mode state STATE_UNDERSCORE_TOKEN;
+    FSTRING_LBRACE (tokinfo lexbuf) 
+   }
+ | ([^ '\\' '\r' '\n' '\"' '{'] | escapeseq)* 
+    { FSTRING_STRING (tokinfo lexbuf)}
+
+and fstring_triple state = parse
+ | "\"\"\"" { pop_mode state; FSTRING_END (tokinfo lexbuf) }
+ | '{' { 
+    ignore_nl state;
+    push_mode state STATE_UNDERSCORE_TOKEN;
+    FSTRING_LBRACE (tokinfo lexbuf) 
+   }
+ | ([^ '\\' '{'] | escapeseq)* 
+    { FSTRING_STRING (tokinfo lexbuf)}

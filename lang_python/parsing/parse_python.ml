@@ -17,6 +17,7 @@ open Common
 module Flag = Flag_parsing
 module TH   = Token_helpers_python
 module PI = Parse_info
+module Lexer = Lexer_python
 
 (*****************************************************************************)
 (* Prelude *)
@@ -46,21 +47,27 @@ let tokens2 file =
   Common.with_open_infile file (fun chan -> 
     let lexbuf = Lexing.from_channel chan in
 
-    let state = Lexer_python.create () in
+    let state = Lexer.create () in
 
       let token lexbuf = 
-        match state.Lexer_python.mode with
-        | Lexer_python.STATE_TOKEN -> 
-            Lexer_python.token state lexbuf
-        | Lexer_python.STATE_OFFSET -> 
-            raise (Impossible)
-        | Lexer_python.STATE_UNDERSCORE_TOKEN -> 
-            let tok = Lexer_python._token state lexbuf in
-            (match tok with
-            | Parser_python.TCommentSpace _ -> ()
-            | _ -> state.Lexer_python.mode <- Lexer_python.STATE_TOKEN
-            );
-            tok
+        match Lexer.top_mode state with
+        | Lexer.STATE_TOKEN -> 
+          Lexer.token state lexbuf
+        | Lexer.STATE_OFFSET -> 
+            failwith "impossibe STATE_OFFSET in python lexer"
+        | Lexer.STATE_UNDERSCORE_TOKEN -> 
+          let tok = Lexer._token state lexbuf in
+          (match tok with
+          | Parser_python.TCommentSpace _ -> ()
+          | Parser_python.FSTRING_START _ -> ()
+          | _ -> 
+              Lexer.set_mode state Lexer.STATE_TOKEN
+          );
+          tok
+        | Lexer.STATE_IN_FSTRING_SINGLE ->
+           Lexer.fstring_single state lexbuf
+        | Lexer.STATE_IN_FSTRING_TRIPLE ->
+           Lexer.fstring_triple state lexbuf
       in
       
       let rec tokens_aux acc = 
