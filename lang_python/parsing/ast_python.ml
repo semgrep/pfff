@@ -106,7 +106,7 @@ type expr =
   (* python3: *)
   | ExprStar of expr (* less: expr_context? always Store anyway no? *)
   (* python3: https://www.python.org/dev/peps/pep-0498/ *)
-  | InterpolatedString of expr list (* usually a Str or a simple expr *)
+  | InterpolatedString of interpolated list
 
   (* python3: *)
   (* inside an Assign (or ExprStmt) *)
@@ -161,6 +161,12 @@ type expr =
     | Is | IsNot 
     | In | NotIn
   
+ (* usually a Str or a simple expr.
+  * TODO: should also handle format specifier, they are skipped for now
+  * during parsing
+  *)
+  and interpolated = expr
+
   and 'a list_or_comprehension = 
     | CompList of 'a list
     | CompForIf of 'a comprehension
@@ -236,7 +242,7 @@ type stmt =
    * or Attribute, or ExprStar, which are anything with an expr_context
    * (see also Parser_python.set_expr_ctx).
    * This can introduce new vars.
-   * todo: why take an expr list? can reuse Tuple for tuple assignment
+   * TODO: why take an expr list? can reuse Tuple for tuple assignment
    *)
   | Assign of expr list (* targets *) * expr (* value *)
   | AugAssign of expr (* target *) * operator wrap (* op *) * expr (* value *)

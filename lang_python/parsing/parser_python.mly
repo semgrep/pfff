@@ -609,6 +609,20 @@ string:
 interpolated:
   | FSTRING_STRING { Str $1 }
   | FSTRING_LBRACE expr RBRACE { $2 }
+  | FSTRING_LBRACE expr COLON format_specifier RBRACE { $2 }
+
+/*(* TODO: should add in AST at some point *)*/
+format_specifier: format_token_list { }
+
+format_token_list:
+ | format_token { }
+ | format_token format_token_list { }
+
+format_token:
+  | INT  { }
+  | FLOAT { }
+  | DOT  { }
+  | NAME { }
 
 atom_repr: BACKQUOTE testlist1 BACKQUOTE { Repr (tuple_expr $2) }
 

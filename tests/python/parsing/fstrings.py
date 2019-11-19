@@ -10,6 +10,9 @@ foo()
 
 def test():
    echo_error(f"Error while running {tool_id}: {findings}")
+   # what is that?
+   echo_warning(f"{len(collapsed_findings)} findings in {elapsed:.2f} s\n")
+
    click.secho(
                 f"""-------------------------------------------------------------------------------------------------
 This may be due to a corrupted tool installation. You might be able to fix this issue by running:
