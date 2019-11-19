@@ -200,10 +200,7 @@ let rec current_mode () =
 
 let push_mode mode = Common.push mode _mode_stack
 let pop_mode () = ignore(Common2.pop2 _mode_stack)
-let set_mode mode =
-  pop_mode();
-  push_mode mode;
-  ()
+let set_mode mode = begin pop_mode(); push_mode mode; end
 
 (* Here is an example of state transition. Given a js file like:
  *

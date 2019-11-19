@@ -43,6 +43,7 @@
  * history:
  *  - 2019 port to the pfff infrastructure.
  *  - 2019 modified to support types, and many other Python 3 features
+ *    (see the python3: tag in this file)
  *)
 
 (*****************************************************************************)
@@ -91,7 +92,7 @@ type resolved_name =
 type expr =
   | Num of number (* n *)
   | Str of (string wrap) list (* s *)
-  (* python3-ext: officially reserved keywords in python3 *)
+  (* python3: now officially reserved keywords *)
   | Bool of bool wrap
   | ExprNone of tok
 
@@ -102,10 +103,10 @@ type expr =
   | List of expr list_or_comprehension (* elts *)   * expr_context (* ctx *)
   | DictOrSet of dictorset_elt list_or_comprehension
 
-  (* python3-ext: *)
+  (* python3: *)
   | ExprStar of expr (* less: expr_context? always Store anyway no? *)
 
-  (* python3-ext: *)
+  (* python3: *)
   (* inside an Assign (or ExprStmt) *)
   | TypedExpr of expr * type_
   | Ellipses of tok (* should be only in .pyi, types Dict[str,...], or sgrep *)
@@ -127,7 +128,7 @@ type expr =
   | IfExp of expr (* test *) * expr (* body *) * expr (* orelse *)
 
   | Yield of expr option (* value *)
-  (* python3-ext: *)
+  (* python3: *)
   | Await of expr
 
   | Repr of expr (* value *)
@@ -142,7 +143,8 @@ type expr =
 
   (* less: could reuse Ast_generic.arithmetic_operator *)
   and boolop = And | Or
-  
+
+  (* the % operator can also be used for strings! "foo %s" % name *)  
   and operator = 
     | Add | Sub | Mult | Div 
     | Mod | Pow | FloorDiv
@@ -169,7 +171,7 @@ type expr =
   and dictorset_elt = 
     | KeyVal of expr * expr
     | Key of expr
-    (* python3-ext: *)
+    (* python3: *)
     | PowInline of expr
   
   (* AugLoad and AugStore are not used *)
@@ -203,7 +205,8 @@ type expr =
 (* ------------------------------------------------------------------------- *)
 (* Types *)
 (* ------------------------------------------------------------------------- *)
-(* see https://docs.python.org/3/library/typing.html for the semantic
+(* python3: type annotations!
+ * see https://docs.python.org/3/library/typing.html for the semantic
  * and https://www.python.org/dev/peps/pep-3107/ (function annotations)
  * for https://www.python.org/dev/peps/pep-0526/ (variable annotations)
  * for its syntax.
@@ -253,10 +256,10 @@ type stmt =
 
   | Global of name list (* names *)
   | Delete of expr list (* targets *)
-  (* python3-ext: *)
+  (* python3: *)
   | NonLocal of name list (* names *)
 
-  (* python3-ext: for With, For, and FunctionDef *)
+  (* python3: for With, For, and FunctionDef *)
   | Async of stmt
 
   | Import of alias_dotted list (* names *)

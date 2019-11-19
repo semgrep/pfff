@@ -80,6 +80,8 @@ module Model = Model2
  *    https://www.youtube.com/watch?v=EqDhtRoorGU also very deep semantic analysis
  *    with control flow and data flow
  *  - CodeCompass https://github.com/Ericsson/CodeCompass/
+ *  - Sourcetrail, recently open sourced
+ *    https://www.sourcetrail.com/blog/open_source/
  * 
  * features of IDE we do want (e.g. see the list at http://xamarin.com/studio):
  *  - smart syntax highlighting (we do even more: semantic highlighting!)

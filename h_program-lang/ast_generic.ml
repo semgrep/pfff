@@ -166,6 +166,8 @@ and expr =
   | Call of expr * arguments
   (* (XHP, JSX, TSX), could transpile also *)
   | Xml of xml
+  (* IntepolatedString of expr list is simulated with a 
+   * Call(IdSpecial (Concat ...)) *)
 
   (* The left part should be an lvalue (id, ObjAccess, ArrayAccess, Deref)
    * but it can also be a pattern (Tuple, Container), but
@@ -237,6 +239,8 @@ and expr =
     (* mostly binary operator 
      * less: could be divided in really Arith vs Logical (bool) operators,
      * but see is_boolean_operator() helper below.
+     * Note that Mod can be used for %style string formatting in Python.
+     * todo? use a Special operator intead for that? but need type info?
      *)
     and arithmetic_operator = 
       | Plus (* unary too *) | Minus (* unary too *) 
