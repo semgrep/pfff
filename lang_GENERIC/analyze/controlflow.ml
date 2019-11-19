@@ -60,6 +60,8 @@ type node = {
       | TrueNode
       | FalseNode
 
+      | Join
+
       | IfHeader of expr
       | WhileHeader of expr
       | DoHeader
@@ -81,8 +83,6 @@ type node = {
       | Catch
       | TryEnd
       | Throw of expr
-
-      | Join
 
       | Parameter of parameter
 

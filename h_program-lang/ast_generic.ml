@@ -348,7 +348,6 @@ and stmt =
     | Case of expr
     | Default
 
-
   and catch = pattern * stmt
   and finally = stmt
 

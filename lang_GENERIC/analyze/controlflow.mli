@@ -7,22 +7,21 @@ type node = {
   and node_kind = 
       | Enter | Exit 
       | TrueNode | FalseNode
+      | Join
 
       | IfHeader of expr
       | WhileHeader of expr
       | DoHeader | DoWhileTail of expr
-      | ForHeader | ForeachHeader
+      | ForHeader | ForeachHeader (* TODO *)
 
       | SwitchHeader of expr | SwitchEnd
-      | Case | Default
+      | Case (* TODO of expr? *) | Default
 
       | Return of expr
       | Break of expr option  | Continue of expr option
 
-      | TryHeader | CatchStart | Catch | TryEnd
+      | TryHeader | CatchStart | Catch (* of pattern? *) | TryEnd
       | Throw of expr
-
-      | Join
 
       | Parameter of parameter
 
