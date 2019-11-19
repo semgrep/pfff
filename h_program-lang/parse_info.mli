@@ -19,9 +19,6 @@ type token_origin =
 
 (* to allow source to source transformation via token "annotations", 
  * see the documentation for spatch.
- * Technically speaking this is not a token, because we do not have
- * the kind of the token (e.g., PLUS | IDENT | IF | ...).
- * It's just a lexeme, but the word lexeme is not as known as token.
  *)
 type token_mutable = {
   token: token_origin; 
@@ -41,7 +38,11 @@ type token_mutable = {
     | AddStr of string
     | AddNewlineAndIdent
 
-(* shortcut *)
+(* Shortcut.
+ * Technically speaking this is not a token, because we do not have
+ * the kind of the token (e.g., PLUS | IDENT | IF | ...).
+ * It's just a lexeme, but the word lexeme is not as known as token.
+ *)
 type t = token_mutable
 (* deprecated *)
 type info_ = t
@@ -116,24 +117,17 @@ type 'tok tokens_state = {
 }
 val mk_tokens_state: 'tok list -> 'tok tokens_state
 
-val tokinfo_str_pos: 
-  string -> int -> t
 val tokinfo:
   Lexing.lexbuf -> t
-val lexbuf_to_strpos:
-  Lexing.lexbuf -> string * int
 val yyback: int -> Lexing.lexbuf -> unit
+
+(* can deprecate? *)
+val tokinfo_str_pos:  string -> int -> t
+val lexbuf_to_strpos: Lexing.lexbuf -> string * int
 
 val rewrap_str: string -> t -> t
 val tok_add_s: string -> t -> t
 
-(* f(i) will contain the (line x col) of the i char position *)
-val full_charpos_to_pos_large: 
-  Common.filename -> (int -> (int * int))
-(* fill in the line and column field of token_location that were not set
- * during lexing because of limitations of ocamllex. *)
-val complete_token_location_large : 
-  Common.filename -> (int -> (int * int))  -> token_location -> token_location
 (* to be used by the lexer *)
 val tokenize_all_and_adjust_pos: 
   Common.filename -> 
@@ -141,6 +135,16 @@ val tokenize_all_and_adjust_pos:
   ((t -> t) -> 'tok -> 'tok) (* token visitor *) -> 
   ('tok -> bool) (* is_eof *) -> 
   'tok list
+
+(* can deprecate? just use tokenize_all_and_adjust_pos *)
+(* f(i) will contain the (line x col) of the i char position *)
+val full_charpos_to_pos_large: 
+  Common.filename -> (int -> (int * int))
+(* fill in the line and column field of token_location that were not set
+ * during lexing because of limitations of ocamllex. *)
+val complete_token_location_large : 
+  Common.filename -> (int -> (int * int))  -> token_location -> token_location
+
 
 val error_message : Common.filename -> (string * int) -> string
 val error_message_info :  t -> string

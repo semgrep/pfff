@@ -284,7 +284,7 @@ let lexical_error s lexbuf =
 
 
 (*****************************************************************************)
-(* Misc *)
+(* Accessors *)
 (*****************************************************************************)
 
 (*
@@ -324,9 +324,12 @@ let str_of_info  ii = (token_location_of_info ii).str
 let file_of_info ii = (token_location_of_info ii).file
 let line_of_info ii = (token_location_of_info ii).line
 let col_of_info  ii = (token_location_of_info ii).column
-
 (* todo: return a Real | Virt position ? *)
 let pos_of_info  ii = (token_location_of_info ii).charpos
+
+(*****************************************************************************)
+(* Misc *)
+(*****************************************************************************)
 
 let pinfo_of_info ii = ii.token
 
@@ -712,7 +715,9 @@ let complete_token_location_large filename table x =
 
 (* Why is it better to first get all the tokens? Why not lex on-demand
  * as yacc requires more tokens?
- * TODO explain
+ * Because for parsing hacks and for error recovery strategy, it's easier
+ * to work on the full list of tokens. This also allows to not care
+ * about line/col in the lexer and do that afterwards once and for all here.
  *)
 let tokenize_all_and_adjust_pos file tokenizer visitor_tok is_eof =
  Common.with_open_infile file (fun chan -> 
