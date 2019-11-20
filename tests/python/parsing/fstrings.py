@@ -10,6 +10,7 @@ foo()
 
 def test():
    foo(f"this is {1+2 if True else 4}")
+   foo(f'this can contain double quotes " {1+2 if True else 4}')
    foo(f"this is {{ not: an expr}}")
    echo_error(f"Error while running {tool_id}: {findings}")
    # what is that?

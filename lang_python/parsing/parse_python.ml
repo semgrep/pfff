@@ -58,6 +58,8 @@ let tokens2 file =
       tok
     | Lexer.STATE_IN_FSTRING_SINGLE ->
        Lexer.fstring_single state lexbuf
+    | Lexer.STATE_IN_FSTRING_DOUBLE ->
+       Lexer.fstring_double state lexbuf
     | Lexer.STATE_IN_FSTRING_TRIPLE ->
        Lexer.fstring_triple state lexbuf
   in

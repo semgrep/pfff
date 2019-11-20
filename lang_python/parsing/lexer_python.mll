@@ -100,6 +100,7 @@ type state_mode =
   | STATE_UNDERSCORE_TOKEN
 
   | STATE_IN_FSTRING_SINGLE
+  | STATE_IN_FSTRING_DOUBLE
   | STATE_IN_FSTRING_TRIPLE
 
 type lexer_state = {
@@ -413,8 +414,12 @@ and _token state = parse
   (* ----------------------------------------------------------------------- *)
   (* Strings *)
   (* ----------------------------------------------------------------------- *)
-  | 'f' '"'  { 
+  | 'f' "'"  { 
        push_mode state STATE_IN_FSTRING_SINGLE;
+       FSTRING_START (tokinfo lexbuf) 
+    }
+  | 'f' '"'  { 
+       push_mode state STATE_IN_FSTRING_DOUBLE;
        FSTRING_START (tokinfo lexbuf) 
     }
   | 'f' "\"\"\"" { 
@@ -483,7 +488,21 @@ and dq_longstrlit state pos = shortest
 (*****************************************************************************)
 (* Rules on interpolated strings *)
 (*****************************************************************************)
+
 and fstring_single state = parse
+ | "'" { pop_mode state; FSTRING_END (tokinfo lexbuf) }
+ | "{{" { FSTRING_STRING (tok lexbuf, tokinfo lexbuf)}
+ | '{' { 
+    ignore_nl state;
+    push_mode state STATE_UNDERSCORE_TOKEN;
+    FSTRING_LBRACE (tokinfo lexbuf) 
+   }
+ | ([^ '\\' '\r' '\n' '\'' '{'] | escapeseq)* 
+    { FSTRING_STRING (tok lexbuf, tokinfo lexbuf)}
+ | eof { error "EOF in string" lexbuf; EOF (tokinfo lexbuf) }
+ | _  { error "unrecognized symbol in string" lexbuf; TUnknown(tokinfo lexbuf)}
+
+and fstring_double state = parse
  | '"' { pop_mode state; FSTRING_END (tokinfo lexbuf) }
  | "{{" { FSTRING_STRING (tok lexbuf, tokinfo lexbuf)}
  | '{' { 
