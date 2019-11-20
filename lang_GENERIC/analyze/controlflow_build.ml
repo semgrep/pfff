@@ -147,8 +147,11 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
          (match stmt with 
          | While (e, stmt) ->
              F.WhileHeader (e), stmt
-         | For (_forheaderTODO, stmt) ->
-             F.ForHeader, stmt
+         | For (forheader, stmt) ->
+             (match forheader with
+             | ForClassic _ -> raise Todo
+             | ForEach (pat, e) -> F.ForeachHeader (pat, e)
+             ), stmt
          | _ -> raise Impossible
          )
        in

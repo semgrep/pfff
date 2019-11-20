@@ -66,7 +66,9 @@ let rec visit_expr hook lhs expr =
         visit_expr hook lhs e
         (* do not call k here! *)
       )
-     (* todo? should no go through FuncDef? intercept kdef? *)
+     (* todo? should no go through FuncDef? intercept kdef? 
+      *  should also consider PatVar?
+      *)
     } in
     v any
   in
@@ -160,7 +162,9 @@ let rec visit_expr hook lhs expr =
   | Constructor (_name, es) -> List.iter recr es
   | Xml anys -> List.iter (anyhook hook Rhs) anys
 
-  | LetPattern (_, _)
+  | LetPattern (pat, e) ->
+      anyhook hook Lhs (P pat);
+      recr e
   | MatchPattern (_, _)
      -> error_todo (E expr)
 
@@ -169,6 +173,7 @@ let rec visit_expr hook lhs expr =
   | Ellipses _tok -> ()
 
   | OtherExpr (_other_xxx, anys) -> List.iter (anyhook hook Rhs) anys
+
 
 (*****************************************************************************)
 (* Entry points *)

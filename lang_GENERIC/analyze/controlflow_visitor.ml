@@ -44,7 +44,7 @@ let mk_visitor vin =
     (* Nothing is needed if the node has no expr information*)
     | F.Enter | F.Exit
     | F.TrueNode | F.FalseNode
-    | F.DoHeader | F.ForHeader | F.ForeachHeader
+    | F.DoHeader | F.ForHeader
     | F.SwitchEnd | F.Case  | F.Default
     | F.TryHeader | F.CatchStart | F.Catch | F.TryEnd
     | F.Join
@@ -58,8 +58,10 @@ let mk_visitor vin =
     | F.SwitchHeader expr
     | F.Throw expr
     | F.Return (expr)
-    | F.Continue (Some expr) | F.Break (Some expr)
-        -> visitor (Ast.E expr)
+    | F.Continue (Some expr) | F.Break (Some expr) ->
+        visitor (Ast.E expr)
+    | F.ForeachHeader (pat, e) ->
+        visitor (Ast.E (Ast.LetPattern (pat, e)))
 
     | F.SimpleNode x -> 
         let any = F.any_of_simple_node x in
@@ -73,7 +75,7 @@ let exprs_of_node node =
   match node.n with
   | Enter | Exit
   | TrueNode | FalseNode
-  | DoHeader | ForHeader | ForeachHeader
+  | DoHeader | ForHeader
   | SwitchEnd | Case  | Default
   | TryHeader | CatchStart | Catch | TryEnd
   | Join
@@ -89,6 +91,9 @@ let exprs_of_node node =
   | Return (expr)
   | Continue (Some expr) | Break (Some expr)
       -> [expr]
+  | ForeachHeader (pat, expr) -> 
+      [Ast.LetPattern (pat, expr)]
+      
   | SimpleNode x ->
       (match x with
       | ExprStmt e -> [e]

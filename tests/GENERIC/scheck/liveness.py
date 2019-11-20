@@ -32,12 +32,13 @@ def test_arraccess():
   obj[2] = 2
   print(obj[2])
 
-#TODO
-#def test_foreach():
-#  a = []
-#  for i in a:
-#    print (i)
-#
+def test_foreach():
+  a = []
+  for i in a:
+    print (i)
+
+
+
 #def test_with():
 #  a = 1
 #  ctx = 2

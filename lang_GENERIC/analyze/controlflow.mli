@@ -12,7 +12,7 @@ type node = {
     | IfHeader of expr
     | WhileHeader of expr
     | DoHeader | DoWhileTail of expr
-    | ForHeader | ForeachHeader (* TODO *)
+    | ForHeader | ForeachHeader of pattern * expr
 
     | SwitchHeader of expr | SwitchEnd
     | Case (* TODO of expr? *) | Default
