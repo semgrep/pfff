@@ -33,11 +33,6 @@ let ast_fuzzy_of_string str =
     Parse_cpp.parse_fuzzy tmpfile |> fst
   )
 
-(* for testing *)
-let ast_of_file file =
-  let prog = Parse_python.parse_program file in
-  Python_to_generic.program prog
-
 let graph_of_string str =
   let tmpfile = Parse_php.tmp_php_file_from_string str in
   let (g, _stat) = Graph_code_php.build 
@@ -64,7 +59,7 @@ let test regexp =
       Unit_program_lang.unittest;
       Unit_graph_code.unittest ~graph_of_string;
       Unit_version_control.unittest;
-      Unit_linter.unittest ~ast_of_file;
+      Unit_linter.unittest ~ast_of_file:Parse_generic.parse_program;
       Unit_matcher.sgrep_fuzzy_unittest ~ast_fuzzy_of_string;
       (* todo: Unit_matcher.spatch_unittest ~xxx *)
 

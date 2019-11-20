@@ -425,6 +425,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
 
            (* remove endi if for instance all branches contained a return *)
            if (state.g#predecessors endi)#null then begin
+             (* coupling: make sure Dataflow.new_node_array handle that case *)
              state.g#del_node endi;
              None
            end else

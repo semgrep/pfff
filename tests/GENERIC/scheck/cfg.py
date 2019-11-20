@@ -13,29 +13,7 @@ def test_dead_after_exn():
   #ERROR: dead statement
   return 1
 
-# no switch in Python
-
-#def test_dead_break():
-#  # we have a few code like this. It's an error but a less important one
-#  switch(1):
-#    case 1:
-#      return 2
-#      #ERRORX: dead statement
-#      break
-#    default:
-#      return 3
-  
-
-
-#def test_dead_after_switch():
-#  switch(1):
-#    case 1:
-#      return 2
-#    default:
-#      return 3
-#  #ERRORX: dead statement, requires a not-so-easy CFG to detect that
-#  echo( 1)
-
+# no switch in Python, see cfg.c
 
 def test_dead_ifdef_like():
   return null

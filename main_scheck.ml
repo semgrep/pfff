@@ -204,11 +204,6 @@ let set_gc () =
   Gc.set { (Gc.get()) with Gc.space_overhead = 200 };
   ()
 
-(* for testing *)
-let ast_of_file file =
-  let prog = Parse_python.parse_program file in
-  Python_to_generic.program prog
-
 (*****************************************************************************)
 (* Language specific *)
 (*****************************************************************************)
@@ -685,7 +680,7 @@ open OUnit
 
 let test () =
   let suite = "scheck" >:::[
-      Unit_linter.unittest ~ast_of_file;
+      Unit_linter.unittest ~ast_of_file:Parse_generic.parse_program;
       Unit_checker_php.unittest;
   ]
   in

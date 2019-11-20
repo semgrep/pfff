@@ -260,13 +260,18 @@ let (fixpoint:
 (*****************************************************************************)
 
 let new_node_array (f: F.flow) v =
-  let arr = Array.make f#nb_nodes v in
+  let nb_nodes = f#nb_nodes in
+  let max_nodei = ref (-1) in
 
-  (* sanity checking *)
-  let len = Array.length arr in
   f#nodes#tolist |> List.iter (fun (ni, _nod) ->
-    if ni >= len
-    then failwith "the CFG nodei is bigger than the number of nodes"
+    (* actually there are some del_node done in cfg_build, for
+     * switch, so sometimes ni is >= len
+     *
+     * old: 
+     * if ni >= nb_nodes
+     * then pr2 "the CFG nodei is bigger than the number of nodes"
+     *)
+    if ni > !max_nodei then max_nodei := ni;
   );
-
-  arr
+  assert (!max_nodei + 1 >= nb_nodes);
+  Array.make (!max_nodei + 1) v
