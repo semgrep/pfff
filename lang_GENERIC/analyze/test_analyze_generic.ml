@@ -25,9 +25,6 @@ let test_dfg_generic file =
       pr2 "Reaching definitions";
       let mapping = Dataflow_reaching.fixpoint flow in
       Dataflow.display_mapping flow mapping Dataflow.ns_to_str;
-
-      Dataflow_reaching.display flow mapping;
-
       pr2 "Liveness";
       let mapping = Dataflow_liveness.fixpoint flow in
       Dataflow.display_mapping flow mapping (fun () -> "()");

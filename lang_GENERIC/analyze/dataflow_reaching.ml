@@ -13,8 +13,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common
-
 module F = Controlflow
 module D = Dataflow
 module V = Controlflow_visitor
@@ -90,15 +88,15 @@ let (kills:
    NodeiSet.t Dataflow.env -> F.flow -> (NodeiSet.t Dataflow.env) array) =
  fun defs flow -> 
   let arr = Dataflow.new_node_array flow (Dataflow.empty_env()) in
-  V.fold_on_node_and_expr (fun (ni, _nd) e arr ->
+  V.fold_on_node_and_expr (fun (ni, _nd) e () ->
     let lvals = Lrvalue.lvalues_of_expr e in
     let vars = lvals |> List.map (fun ((s,_tok), _idinfo) -> s) in
     vars |> List.iter (fun var ->
       let set = NodeiSet.remove ni (VarMap.find var defs) in
       arr.(ni) <- VarMap.add var set arr.(ni);
-    );
-    arr
-  ) flow arr
+    )
+  ) flow ();
+  arr
 
 (*****************************************************************************)
 (* Transfer *)
@@ -146,48 +144,3 @@ let (fixpoint: F.flow -> mapping) = fun flow ->
     ~trans:(transfer ~gen ~kill ~flow)
     ~forward:true
     ~flow
-
-(*****************************************************************************)
-(* Dataflow pretty printing *)
-(*****************************************************************************)
-
-let string_of_ni flow ni =
-  let node = flow#nodes#assoc ni in
-  match node.F.i with
-  | None -> "Unknown location"
-  | Some(info) ->
-    let info = Parse_info.token_location_of_info info in
-    spf "%s:%d:%d: "
-      info.Parse_info.file info.Parse_info.line info.Parse_info.column
-
-let display flow mapping =
-  let arr = Dataflow.new_node_array flow true in
-
-  (* Set the flag to false if the node has defined anything *)
-  V.fold_on_node_and_expr (fun (ni, _nd) e () ->
-    let lvals = Lrvalue.lvalues_of_expr e in
-    (* TODO: filter just Locals here! *)
-    if lvals <> [] (* less: and ExprStmt node? why? *)
-    then arr.(ni) <- false
-  ) flow ();
-
-  (* Now flag the def if it is ever used on rhs *)
-  V.fold_on_node_and_expr (fun (ni, _nd) e () ->
-     let rvals = Lrvalue.rvalues_of_expr e in
-     (* TODO: filter just local here! *)
-     let vars = rvals |> List.map (fun ((s,_tok), _idinfo) -> s) in
-     vars |> List.iter (fun var ->
-       let in_env = mapping.(ni).D.in_env in
-       (try
-         let ns = VarMap.find var in_env in
-         NodeiSet.iter (fun n -> arr.(n) <- true) ns
-       with Not_found -> 
-         pr (spf "%s: Undefined variable %s" (string_of_ni flow ni) var)
-       );
-     );
-  ) flow ();
-
-  arr |> Array.iteri (fun i x ->
-    if (not x)
-    then pr (spf "%s: Dead Assignment" (string_of_ni flow i));
-  )

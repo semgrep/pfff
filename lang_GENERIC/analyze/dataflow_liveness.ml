@@ -47,6 +47,7 @@ module VarMap = Dataflow.VarMap
  * 5: } while (a < N)
  * 6: return c
  *
+ * TODO?? what is live?
  *)
 type mapping = unit Dataflow.mapping
 
@@ -54,10 +55,14 @@ type mapping = unit Dataflow.mapping
 (* Gen/Kill *)
 (*****************************************************************************)
 
-(* "Any use of a variable generates liveness" *) 
+(* "Any use of a variable generates liveness".
+ * note that unit Dataflow.env is really simple a VarSet.t but
+ * it's convenient to still use a VarMap (Dataflow.env) so we can
+ * reuse Dataflow.varmap_union and Dataflow.varmap_diff.
+*) 
 let (gens: F.flow -> (unit Dataflow.env) array) = fun flow ->
   let arr = Dataflow.new_node_array flow VarMap.empty in
-  V.fold_on_node_and_expr (fun (ni, _nd) e arr ->
+  V.fold_on_node_and_expr (fun (ni, _nd) e () ->
     (* rvalues here, to get the use of variables *)
     let rvals = Lrvalue.rvalues_of_expr e in
     (* note that Appel's book p385 says gen(x) is 
@@ -67,9 +72,9 @@ let (gens: F.flow -> (unit Dataflow.env) array) = fun flow ->
     let rvars = rvals |> List.map (fun ((s,_tok), _idinfo) -> s) in
     rvars |> List.iter (fun var ->
       arr.(ni) <- VarMap.add var () arr.(ni);
-    );
-    arr
-  ) flow arr
+    )
+  ) flow ();
+  arr
 
 (* "Any definition kills liveness". Indeed, if you assign a new value
  * in a variable b, and you don't use the previous value of b in this
@@ -79,14 +84,14 @@ let (gens: F.flow -> (unit Dataflow.env) array) = fun flow ->
 let (kills: F.flow -> (unit Dataflow.env) array) =
  fun flow -> 
   let arr = Dataflow.new_node_array flow (Dataflow.empty_env()) in
-  V.fold_on_node_and_expr (fun (ni, _nd) e arr ->
+  V.fold_on_node_and_expr (fun (ni, _nd) e () ->
     let lvals = Lrvalue.lvalues_of_expr e in
     let vars = lvals |> List.map (fun ((s,_tok), _idinfo) -> s) in
     vars |> List.iter (fun var ->
       arr.(ni) <- VarMap.add var () arr.(ni);
-    );
-    arr
-  ) flow arr
+    )
+  ) flow ();
+  arr
 
 (*****************************************************************************)
 (* Transfer *)
@@ -135,6 +140,6 @@ let (fixpoint: F.flow -> mapping) = fun flow ->
     ~eq:(fun () () -> true)
     ~init:(Dataflow.new_node_array flow (Dataflow.empty_inout ()))
     ~trans:(transfer ~gen ~kill ~flow)
+    (* liveness is a backward analysis! *)
     ~forward:false
     ~flow
-
