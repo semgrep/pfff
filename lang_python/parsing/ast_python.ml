@@ -251,6 +251,7 @@ type stmt =
            stmt list (* body *) * stmt list (* orelse *)
   | While of expr (* test *) * stmt list (* body *) * stmt list (* orelse *)
   | If of expr (* test *) * stmt list (* body *) * stmt list (* orelse *)
+  (* https://docs.python.org/2.5/whatsnew/pep-343.html *)
   | With of expr (* context_expr *) * expr option (* optional_vars *) * stmt list (* body *)
 
   | Return of expr option (* value *)
