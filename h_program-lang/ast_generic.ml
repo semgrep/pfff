@@ -19,6 +19,13 @@
 (* A generic AST, to be used by a generic visitor to factorize
  * similar analysis in different programming languages
  * (e.g., scheck, sgrep, checked_return). 
+ * Right now this is mostly the factorized union of:
+ *  - Python
+ *  - Javascript
+ *  - Java
+ *  - C
+ *  - TOFINISH OCaml
+ *  - TODO PHP
  *
  * rational: In the end, programming languages have a lot in common.
  * Even though most interesting analysis are probably better done on a
@@ -351,6 +358,11 @@ and stmt =
   | Try of stmt * catch list * finally option
   | Assert of expr * expr option (* message *)
 
+  (* this is important to correctly compute a CFG *)
+  | OtherStmtWithStmt of other_stmt_with_stmt_operator * expr * stmt
+  (* any here should not contain any statement! otherwise the CFG will be
+   * incorrect and some analysis (e.g., liveness) will be incorrect.
+   *)
   | OtherStmt of other_stmt_operator * any list
 
   and case_and_body = case list * stmt
@@ -376,11 +388,15 @@ and stmt =
     | ForInitVar of entity * variable_definition
     | ForInitExpr of expr
 
+  and other_stmt_with_stmt_operator = 
+    (* Python *)
+    | OSWS_With
+
   and other_stmt_operator = 
     (* Python *)
     | OS_Delete 
     | OS_ForOrElse | OS_WhileOrElse | OS_TryOrElse
-    | OS_With | OS_ThrowFrom | OS_ThrowNothing | OS_Global | OS_NonLocal
+    | OS_ThrowFrom | OS_ThrowNothing | OS_Global | OS_NonLocal
     | OS_Pass
     | OS_Async
     (* Java *)

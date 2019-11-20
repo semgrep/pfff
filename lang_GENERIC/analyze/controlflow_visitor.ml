@@ -62,7 +62,8 @@ let mk_visitor vin =
         visitor (Ast.E expr)
     | F.ForeachHeader (pat, e) ->
         visitor (Ast.E (Ast.LetPattern (pat, e)))
-
+    | F.OtherStmtWithStmtHeader (_op, e) ->
+        visitor (Ast.E e)
     | F.SimpleNode x -> 
         let any = F.any_of_simple_node x in
         visitor any
@@ -91,8 +92,8 @@ let exprs_of_node node =
   | Return (expr)
   | Continue (Some expr) | Break (Some expr)
       -> [expr]
-  | ForeachHeader (pat, expr) -> 
-      [Ast.LetPattern (pat, expr)]
+  | ForeachHeader (pat, expr) -> [Ast.LetPattern (pat, expr)]
+  | OtherStmtWithStmtHeader (_op, e) -> [e]
       
   | SimpleNode x ->
       (match x with

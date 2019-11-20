@@ -423,10 +423,18 @@ and vof_stmt =
       let v1 = vof_expr v1
       and v2 = Ocaml.vof_option vof_expr v2
       in Ocaml.VSum (("Assert", [ v1; v2 ]))
+  | OtherStmtWithStmt ((v1, v2, v3)) ->
+      let v1 = vof_other_stmt_with_stmt_operator v1
+      and v2 = vof_expr v2
+      and v3 = vof_stmt v3
+      in Ocaml.VSum (("OtherStmtWithStmt", [ v1; v2; v3 ]))
   | OtherStmt ((v1, v2)) ->
       let v1 = vof_other_stmt_operator v1
       and v2 = Ocaml.vof_list vof_any v2
       in Ocaml.VSum (("OtherStmt", [ v1; v2 ]))
+and vof_other_stmt_with_stmt_operator = function
+  | OSWS_With -> Ocaml.VSum (("OSWS_With", []))
+
 and vof_case_and_body (v1, v2) =
   let v1 = Ocaml.vof_list vof_case v1
   and v2 = vof_stmt v2
@@ -465,7 +473,6 @@ and vof_other_stmt_operator =
   | OS_ForOrElse -> Ocaml.VSum (("OS_ForOrElse", []))
   | OS_WhileOrElse -> Ocaml.VSum (("OS_WhileOrElse", []))
   | OS_TryOrElse -> Ocaml.VSum (("OS_TryOrElse", []))
-  | OS_With -> Ocaml.VSum (("OS_With", []))
   | OS_ThrowFrom -> Ocaml.VSum (("OS_ThrowFrom", []))
   | OS_ThrowNothing -> Ocaml.VSum (("OS_ThrowNothing", []))
   | OS_Global -> Ocaml.VSum (("OS_Global", []))

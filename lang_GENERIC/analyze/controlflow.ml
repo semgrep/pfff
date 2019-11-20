@@ -70,6 +70,8 @@ type node = {
       | ForHeader
       | ForeachHeader of pattern * expr
 
+      | OtherStmtWithStmtHeader of other_stmt_with_stmt_operator *  expr
+
       | SwitchHeader of expr
       | SwitchEnd
       | Case
@@ -143,6 +145,7 @@ let short_string_of_node_kind nkind =
   | DoWhileTail _ -> "while(...);"
   | ForHeader -> "for(...)"
   | ForeachHeader _  -> "foreach(...)"
+  | OtherStmtWithStmtHeader _ -> "<otherstmtheader>" 
 
   | Return _ -> "return ...;"
   | Continue _ -> "continue ...;"
@@ -188,6 +191,7 @@ let simple_node_of_stmt_opt stmt =
     |A.Switch (_, _)
     |A.Return _|A.Continue _|A.Break _|A.Label (_, _)|A.Goto _
     |A.Throw _|A.Try (_, _, _)
+    |A.OtherStmtWithStmt _
     ) -> None
 
 let any_of_simple_node = function

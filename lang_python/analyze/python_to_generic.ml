@@ -421,8 +421,12 @@ and stmt x =
       and v2 = option expr v2
       and v3 = list_stmt1 v3
       in
-      let anys = [G.E v1; G.E (G.opt_to_nop v2); G.S v3] in
-      G.OtherStmt (G.OS_With, anys)
+      let e =
+        match v2 with
+        | None -> v1
+        | Some e2 -> G.LetPattern (G.OtherPat (G.OP_Expr, [G.E e2]), v1)
+      in
+      G.OtherStmtWithStmt (G.OSWS_With, e, v3)
 
   | Raise (v1) ->
       (match v1 with

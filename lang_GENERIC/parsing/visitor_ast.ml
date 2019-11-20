@@ -311,10 +311,16 @@ and v_stmt x =
       and v3 = v_option v_finally v3
       in ()
   | Assert ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_option v_expr v2 in ()
+  | OtherStmtWithStmt ((v1, v2, v3)) ->
+      let v1 = v_other_stmt_with_stmt_operator v1 
+      and v2 = v_expr v2 
+      and v3 = v_stmt v3
+      in ()
   | OtherStmt ((v1, v2)) ->
       let v1 = v_other_stmt_operator v1 and v2 = v_list v_any v2 in ()
   in
   vin.kstmt (k, all_functions) x
+and v_other_stmt_with_stmt_operator _ = ()
 
 and v_case = function | Case v1 -> let v1 = v_expr v1 in () | Default -> ()
 and v_catch (v1, v2) = let v1 = v_pattern v1 and v2 = v_stmt v2 in ()

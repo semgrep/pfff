@@ -577,6 +577,12 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
            state.g |> add_arc (newi, state.exiti)
        );
        None
+   (* TODO? should create a OtherStmtWithStmtFooter and arc to it? *)
+   | OtherStmtWithStmt (op, e, st) ->
+     let header = F.OtherStmtWithStmtHeader (op, e) in
+     let newi = state.g#add_node { F.n = header; i = i () }in
+     state.g |> add_arc_opt (previ, newi);
+     cfg_stmt state (Some newi) st
 
   (* TODO: we should process lambdas! and generate an arc to its
    * entry that then go back here! After all most lambdas are used for

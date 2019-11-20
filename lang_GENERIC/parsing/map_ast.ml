@@ -346,10 +346,17 @@ and map_stmt =
       let v1 = map_expr v1
       and v2 = map_of_option map_expr v2
       in Assert ((v1, v2))
+  | OtherStmtWithStmt ((v1, v2, v3)) ->
+      let v1 = map_other_stmt_with_stmt_operator v1
+      and v2 = map_expr v2
+      and v3 = map_stmt v3
+      in OtherStmtWithStmt ((v1, v2, v3))
   | OtherStmt ((v1, v2)) ->
       let v1 = map_other_stmt_operator v1
       and v2 = map_of_list map_any v2
       in OtherStmt ((v1, v2))
+
+and map_other_stmt_with_stmt_operator x = x
 
 and map_case_and_body (v1, v2) =
   let v1 = map_of_list map_case v1 and v2 = map_stmt v2 in (v1, v2)

@@ -996,11 +996,17 @@ and m_stmt a b =
     (m_list m_any) a2 b2 >>= (fun () -> 
     return ()
     ))
+  | A.OtherStmtWithStmt(a1, a2, a3), B.OtherStmtWithStmt(b1, b2, b3) ->
+    m_other_stmt_with_stmt_operator a1 b1 >>= (fun () -> 
+    m_expr a2 b2 >>= (fun () -> 
+    m_stmt a3 b3 >>= (fun () -> 
+      return ()
+    )))
   | A.ExprStmt _, _  | A.DefStmt _, _  | A.DirectiveStmt _, _
   | A.Block _, _  | A.If _, _  | A.While _, _  | A.DoWhile _, _  | A.For _, _
   | A.Switch _, _  | A.Return _, _  | A.Continue _, _  | A.Break _, _
   | A.Label _, _  | A.Goto _, _  | A.Throw _, _  | A.Try _, _  | A.Assert _, _
-  | A.OtherStmt _, _
+  | A.OtherStmt _, _ | A.OtherStmtWithStmt _, _
    -> fail ()
 
 
@@ -1074,6 +1080,7 @@ and m_case a b =
 
 
 and m_other_stmt_operator = m_other_xxx
+and m_other_stmt_with_stmt_operator = m_other_xxx
 
 (* ------------------------------------------------------------------------- *)
 (* Pattern *)
