@@ -77,7 +77,7 @@ let rec expr (x: expr) =
   | Bool v1 -> 
     let v1 = wrap bool v1 in
      G.L (G.Bool v1)
-  | ExprNone x ->
+  | None_ x ->
      let x = info x in
      G.L (G.Null x)
   | Ellipses x ->

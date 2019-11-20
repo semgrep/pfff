@@ -94,7 +94,7 @@ type expr =
   | Str of string wrap (* s *)
   (* python3: now officially reserved keywords *)
   | Bool of bool wrap
-  | ExprNone of tok
+  | None_ of tok
 
   (* introduce new vars when expr_context = Store *)
   | Name of name (* id *) * expr_context (* ctx *) * resolved_name ref

@@ -82,7 +82,7 @@ and v_resolved_name =
 and v_expr (x: expr) =
   (* tweak *)
   let k x =  match x with
-  | ExprNone v1 -> let v1 = v_tok v1 in ()
+  | None_ v1 -> let v1 = v_tok v1 in ()
   | Ellipses v1 -> let v1 = v_tok v1 in ()
   | Bool v1 -> let v1 = v_wrap v_bool v1 in ()
   | Num v1 -> let v1 = v_number v1 in ()

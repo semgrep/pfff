@@ -588,7 +588,7 @@ atom:
   | TRUE        { Bool (true, $1) }
   | FALSE       { Bool (false, $1) }
 
-  | NONE        { ExprNone $1 }
+  | NONE        { None_ $1 }
 
   | string_list { 
      match $1 with 

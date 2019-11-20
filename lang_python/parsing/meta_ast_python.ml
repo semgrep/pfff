@@ -34,7 +34,7 @@ let rec vof_expr =
       Ocaml.VSum (("InterpolatedString", [v1]))
   | Bool v1 ->
       let v1 = vof_wrap Ocaml.vof_bool v1 in Ocaml.VSum (("Bool", [ v1 ]))
-  | ExprNone v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("ExprNone", [ v1 ]))
+  | None_ v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("None_", [ v1 ]))
   | Name ((v1, v2, v3)) ->
       let v1 = vof_name v1
       and v2 = vof_expr_context v2
