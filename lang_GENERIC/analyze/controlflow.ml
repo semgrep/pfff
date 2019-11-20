@@ -15,6 +15,7 @@
  *)
 
 open Ast_generic
+module A = Ast_generic
 
 (*****************************************************************************)
 (* Prelude *)
@@ -23,11 +24,11 @@ open Ast_generic
  *
  * Note that this is just for intra-procedural analysis. The CFG covers
  * just one function. For inter-procedural analysis you may want to look
- * at pfff/graph_code/ (or invest in learning datalog).
+ * at pfff/graph_code/ (or invest in learning Datalog).
  *
  * history:
  *  - CFG for C for coccinelle
- *  - CFG for PHP for checkModule at facebook
+ *  - CFG for PHP for checkModule at Facebook
  *  - CFG for AST generic for scheck at r2c
  *)
 
@@ -37,10 +38,10 @@ open Ast_generic
 
 type node = {
   (* later: For now we just have node_kind, but with some data-flow
-   * analysis or with temporal logic we may want to add extra information
-   * in each CFG nodes. 
+   *  analysis or with temporal logic we may want to add extra information
+   *  in each CFG nodes. 
    * alt: We could also record such extra information in an external table
-   * that maps Ograph_extended.nodei, that is nodeid, to some information.
+   *  that maps Ograph_extended.nodei, that is nodeid, to some information.
    *)
   n: node_kind;
 
@@ -84,12 +85,10 @@ type node = {
       | TryEnd
       | Throw of expr
 
-      | Parameter of parameter
-
-      (* statements without multiple outgoing or ingoing edges, such
-       * as echo, expression statements, etc.
+      (* statements without multiple outgoing or ingoing edges, such as
+       * expression statements.
        *)
-      | SimpleStmt of simple_stmt
+      | SimpleNode of simple_node
 
     (* not used for now, was used in coccinelle:
       | BlockStart of tok (* { *)
@@ -98,18 +97,24 @@ type node = {
       | Elsif
     *)
 
-     and simple_stmt = 
-         | ExprStmt of expr
-         | TodoSimpleStmt
-         (* TODO? expr includes Exit, Eval, Include, etc which
+     (* mostly a copy-paste of a subset of Ast.stmt *)
+     and simple_node = 
+         (* later: some expr includes Exit, Eval, Include, etc which
           * also have an influence on the control flow ...
           * We may want to uplift those constructors here and have
           * a better expr type
           *)
+         | ExprStmt of expr
+         | DefStmt of definition
+         | DirectiveStmt of directive
+         | Assert of expr * expr option
+         | OtherStmt of other_stmt_operator * any list
+         (* not part of Ast.stmt but useful to have in CFG for 
+          * dataflow analysis purpose *)
+         | Parameter of parameter
 
-
-(* For now there is just one kind of edge. Later we may have more, 
- * see the ShadowNode idea of Julia Lawall.
+(* For now there is just one kind of edge. 
+ * later: we may have more, see the ShadowNode idea of Julia Lawall?
  *)
 type edge = Direct 
 
@@ -121,34 +126,30 @@ type nodei = Ograph_extended.nodei
 (* String of *)
 (*****************************************************************************)
 
+(* This is useful in graphviz and in dataflow analysis result tables 
+ * to just get a quick idea of what a node is (without too much details).
+ *)
 let short_string_of_node_kind nkind = 
   match nkind with
   | Enter -> "<enter>"
   | Exit -> "<exit>"
-  | SimpleStmt _ -> "<simplestmt>"
-  | Parameter _ -> "<parameter>"
-  | WhileHeader _ -> "while(...)"
-
-  | TrueNode -> "TRUE path"
-  | FalseNode -> "FALSE path"
-
-  | IfHeader _ -> "if(...)"
+  | TrueNode -> "<TRUE path>"
+  | FalseNode -> "<FALSE path>"
   | Join -> "<join>"
 
-  | Return _ -> "return ...;"
-
+  | IfHeader _ -> "if(...)"
+  | WhileHeader _ -> "while(...)"
   | DoHeader -> "do"
   | DoWhileTail _ -> "while(...);"
-
-  | Continue _ -> "continue ...;"
-  | Break _ -> "break ...;"
-
   | ForHeader -> "for(...)"
   | ForeachHeader  -> "foreach(...)"
 
+  | Return _ -> "return ...;"
+  | Continue _ -> "continue ...;"
+  | Break _ -> "break ...;"
+
   | SwitchHeader _ -> "switch(...)"
   | SwitchEnd -> "<endswitch>"
-
   | Case -> "case: ..."
   | Default -> "default:"
 
@@ -159,8 +160,44 @@ let short_string_of_node_kind nkind =
 
   | Throw _ -> "throw ...;"
 
+  | SimpleNode x -> 
+      (match x with
+      | ExprStmt _ -> "<expt_stmt>;"
+      | DefStmt _ -> "<def>"
+      | DirectiveStmt _ -> "<directive>"
+      | Assert _ -> "<assert>"
+      | Parameter _ -> "<param>"
+      | OtherStmt _ -> "<other_stmt>"
+      )
+
 let short_string_of_node node =
   short_string_of_node_kind node.n 
+
+(*****************************************************************************)
+(* Converters *)
+(*****************************************************************************)
+let simple_node_of_stmt_opt stmt =
+  match stmt with
+  | A.ExprStmt e      -> Some (ExprStmt e)
+  | A.Assert (e1, e2) -> Some (Assert (e1, e2))
+  | A.DefStmt x       -> Some (DefStmt x)
+  | A.DirectiveStmt x -> Some (DirectiveStmt x)
+  | A.OtherStmt (a,b) -> Some (OtherStmt (a,b))
+
+  | (A.Block _|A.If (_, _, _)|A.While (_, _)|A.DoWhile (_, _)|A.For (_, _)
+    |A.Switch (_, _)
+    |A.Return _|A.Continue _|A.Break _|A.Label (_, _)|A.Goto _
+    |A.Throw _|A.Try (_, _, _)
+    ) -> None
+
+let any_of_simple_node = function
+  | ExprStmt e      -> A.S (A.ExprStmt e)
+  | Assert (e1, e2) -> A.S (A.Assert (e1, e2))
+  | DefStmt x       -> A.S (A.DefStmt x)
+  | DirectiveStmt x -> A.S (A.DirectiveStmt x)
+  | OtherStmt (a,b) -> A.S (A.OtherStmt (a,b))
+  | Parameter x -> A.Pa x
+
 
 (*****************************************************************************)
 (* Accessors *)

@@ -45,6 +45,7 @@ type state = {
    * a stack of context.
    *)
   ctx: context Common.stack;
+  (* todo: labels for goto *)
 }
  and context =
   | NoCtx
@@ -52,6 +53,7 @@ type state = {
   | SwitchCtx of F.nodei (* end *)
   | TryCtx    of F.nodei (* the first catch *)
 
+(* xleroy's error style *)
 type error = error_kind * Parse_info.t option
  and error_kind =
   | NoEnclosingLoop
@@ -59,33 +61,9 @@ type error = error_kind * Parse_info.t option
 
 exception Error of error
 
-let verbose = ref false
-
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-
-(* TODO: actually we should process lambdas! *)
-let stmts_of_stmt_or_defs xs =
-  xs |> Common.map_filter (fun stmt_or_def ->
-    match stmt_or_def with
-    | DefStmt (_, VarDef _) -> Some stmt_or_def
-    | DefStmt _ 
-    | DirectiveStmt _ ->
-        if !verbose
-        then pr2_once ("ignoring nested func/class/directive in CFG");
-        (* should be processed by the calling visitor *)
-        None
-    | st -> Some st
-  )
-
-(*
-let rec intvalue_of_expr e =
-  match e with
-  | (Sc (C (Int (i_str, _)))) -> Some (s_to_i i_str)
-  | ParenExpr (_, e, _)       -> intvalue_of_expr e
-  | _ -> None
-*)
 
 let add_arc (starti, nodei) g =
   g#add_arc ((starti, nodei), F.Direct)
@@ -140,12 +118,10 @@ let info_opt any =
  * the created node (if there is one).
  *
  * history:
- *
- * ver1: old code was returning a nodei, but break has no end, so
- * cfg_stmt should return a nodei option.
- *
- * ver2: old code was taking a nodei, but should also take a nodei
- * option. There can be deadcode in the function.
+ * - ver1: old code was returning a nodei, but break has no end, so
+ *  cfg_stmt should return a nodei option.
+ * - ver2: old code was taking a nodei, but should also take a nodei
+ *   option. There can be deadcode in the function.
  *
  * subtle: try/throw. The current algo is not very precise, but
  * it's probably good enough for many analysis.
@@ -158,19 +134,11 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
    match stmt with
    | Label _ | Goto _ -> raise Todo
 
-   | ExprStmt e ->
-       cfg_expr state previ e
-(*
-   | StaticVars (_, static_vars, _) ->
-     let var_list = Ast.uncomma static_vars |> List.map (fun (v, _) -> v) in
-     List.fold_left (cfg_var_def state) previ var_list
-*)
-
-   | Block xs ->
-       let stmts = stmts_of_stmt_or_defs (xs) in
+   | Block stmts ->
        cfg_stmt_list state previ stmts
 
-   | For _ | While _ ->
+   | For _ 
+   | While _ ->
      (* previ -> newi ---> newfakethen -> ... -> finalthen -
       *             |---|-----------------------------------|
       *                 |-> newfakelse 
@@ -179,7 +147,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
          (match stmt with 
          | While (e, stmt) ->
              F.WhileHeader (e), stmt
-         | For (_forheader, stmt) ->
+         | For (_forheaderTODO, stmt) ->
              F.ForHeader, stmt
          | _ -> raise Impossible
          )
@@ -305,7 +273,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
    *)
    | DoWhile (st, e) ->
      (* previ -> doi ---> ... ---> finalthen (opt) ---> taili
-      *           |--------- newfakethen ----------------| |-> newfakelse <rest>
+      *          |--------- newfakethen ----------------| |-> newfakelse <rest>
       *)
        let doi = state.g#add_node { F.n = F.DoHeader;i=i() } in
        state.g |> add_arc_opt (previ, doi);
@@ -607,34 +575,31 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
        );
        None
 
-   | Assert _
-   | OtherStmt _
-       ->
-       let simple_stmt = F.TodoSimpleStmt in
-       let newi = state.g#add_node { F.n = F.SimpleStmt simple_stmt;i=i() } in
-       state.g |> add_arc_opt (previ, newi);
-       Some newi
-   | DefStmt (_ent, VarDef _def) ->
-        raise Todo
-   (* should be filtered by stmts_of_stmt_or_defs 
-    * TODO: we should process lambdas! and generate an arc to its
-    * entry that then go back here! After all most lambdas are used for
-    * callbacks and they sure can be called just after they have been
-    * defined. It would be better to exactly determine when, but as a first
-    * approximation we can at least create an arc! This could find
-    * tainting-related bugs that occur inside a single function, even 
-    * if the source is in the function and the sink in the callback!
-    * (see daghan example in js-permissions slides on xhr.open)
-    *)
+  (* TODO: we should process lambdas! and generate an arc to its
+   * entry that then go back here! After all most lambdas are used for
+   * callbacks and they sure can be called just after they have been
+   * defined. It would be better to exactly determine when, but as a first
+   * approximation we can at least create an arc! This could find
+   * tainting-related bugs that occur inside a single function, even 
+   * if the source is in the function and the sink in the callback!
+   * (see daghan example in js-permissions slides on xhr.open).
+   * Note that DefStmt are not the only form of lambdas ... you can have
+   * lambdas inside expressions too! (need a proper instr type really)
+   *)
    | DefStmt _
-   | DirectiveStmt _ ->
-       raise Impossible
+
+   | ExprStmt _
+   | Assert _ 
+   | DirectiveStmt _
+   | OtherStmt _
+       -> cfg_simple_node state previ stmt
 
 
 and cfg_stmt_list state previ xs =
   xs |> List.fold_left (fun previ stmt ->
     cfg_stmt state previ stmt
   ) previ
+
 
 (*
  * Creating the CFG nodes and edges for the cases of a switch.
@@ -721,22 +686,20 @@ and (cfg_catches: state -> F.nodei -> F.nodei -> Ast.catch list -> F.nodei) =
      falsei
    ) previ
 
-and cfg_expr state previ expr =
-  let i = info_opt (E expr) in
-  let newi = state.g#add_node { 
-    F.n = F.SimpleStmt (F.ExprStmt (expr)); 
-    i=i 
-  } in
+(*
+ * Creating the CFG nodes and edges for the simple nodes.
+ *)
+and cfg_simple_node state previ stmt =
+  let i = info_opt (S stmt) in
+
+  let simple_node = 
+    match F.simple_node_of_stmt_opt stmt with
+    | Some x -> x
+    | None -> raise Impossible (* see caller of cfg_simple_node *)
+  in
+  let newi = state.g#add_node { F.n = F.SimpleNode simple_node; i=i } in
   state.g |> add_arc_opt (previ, newi);
   Some newi
-
-(*
-and cfg_var_def state previ dname =
-  let i = Ast.info_of_dname dname in
-  let vari = state.g#add_node { F.n = F.Parameter dname; i=Some i } in
-  state.g |> add_arc_opt (previ, vari);
-  Some vari
-*)
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -749,12 +712,16 @@ let (control_flow_graph_of_stmts: parameter list -> stmt list -> F.flow) =
 
   let enteri = g#add_node { F.n = F.Enter;i=None } in
   let exiti  = g#add_node { F.n = F.Exit; i=None } in
+
   let newi = params |> List.fold_left (fun previ param ->
-    let parami = g#add_node { F.n = F.Parameter param; i=None } in
+    let node_kind = F.SimpleNode (F.Parameter param) in
+    let i = info_opt (Pa param) in
+    let parami = g#add_node { F.n = node_kind; i=i } in
     g |> add_arc (previ, parami);
     parami
     ) enteri 
   in
+
   let state = {
     g = g;
     exiti = exiti;
@@ -800,13 +767,6 @@ let string_of_error (error_kind, info) =
     spf "%s:%d:%d: FLOW %s"
       info.Parse_info.file info.Parse_info.line info.Parse_info.column
       (string_of_error_kind error_kind)
- (* old:
-  let error_from_info info =
-    let pinfo = Ast.parse_info_of_info info in
-    Parse_info.error_message_short
-      pinfo.Parse_info.file ("", pinfo.Parse_info.charpos)
-  in
- *)
 
 let (report_error : error -> unit) = fun err ->
   pr2 (string_of_error err)

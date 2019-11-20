@@ -5,31 +5,34 @@ type node = {
   i: Parse_info.t option;
 } 
   and node_kind = 
-      | Enter | Exit 
-      | TrueNode | FalseNode
-      | Join
+    | Enter | Exit 
+    | TrueNode | FalseNode
+    | Join
 
-      | IfHeader of expr
-      | WhileHeader of expr
-      | DoHeader | DoWhileTail of expr
-      | ForHeader | ForeachHeader (* TODO *)
+    | IfHeader of expr
+    | WhileHeader of expr
+    | DoHeader | DoWhileTail of expr
+    | ForHeader | ForeachHeader (* TODO *)
 
-      | SwitchHeader of expr | SwitchEnd
-      | Case (* TODO of expr? *) | Default
+    | SwitchHeader of expr | SwitchEnd
+    | Case (* TODO of expr? *) | Default
 
-      | Return of expr
-      | Break of expr option  | Continue of expr option
+    | Return of expr
+    | Break of expr option  | Continue of expr option
 
-      | TryHeader | CatchStart | Catch (* of pattern? *) | TryEnd
-      | Throw of expr
+    | TryHeader | CatchStart | Catch (* of pattern? *) | TryEnd
+    | Throw of expr
 
+    | SimpleNode of simple_node
+
+    and simple_node = 
+      | ExprStmt of expr
+      | DefStmt of definition
+      | DirectiveStmt of directive
+      | Assert of expr * expr option
+      | OtherStmt of other_stmt_operator * any list
       | Parameter of parameter
 
-      | SimpleStmt of simple_stmt
-
-     and simple_stmt = 
-         | ExprStmt of expr
-         | TodoSimpleStmt
 
 (* For now there is just one kind of edge. Later we may have more, 
  * see the ShadowNode idea of Julia Lawall.
@@ -50,3 +53,6 @@ val display_flow: flow -> unit
 
 val short_string_of_node_kind: node_kind -> string
 val short_string_of_node: node -> string
+
+val simple_node_of_stmt_opt: stmt -> simple_node option
+val any_of_simple_node: simple_node -> any

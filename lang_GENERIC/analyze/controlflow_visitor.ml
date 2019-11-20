@@ -44,11 +44,10 @@ let mk_visitor vin =
     (* Nothing is needed if the node has no expr information*)
     | F.Enter | F.Exit
     | F.TrueNode | F.FalseNode
-    | F.DoHeader | F.ForHeader
+    | F.DoHeader | F.ForHeader | F.ForeachHeader
     | F.SwitchEnd | F.Case  | F.Default
     | F.TryHeader | F.CatchStart | F.Catch | F.TryEnd
     | F.Join
-    | F.SimpleStmt (F.TodoSimpleStmt)
     | F.Continue None | F.Break None
       -> ()
 
@@ -58,15 +57,13 @@ let mk_visitor vin =
     | F.DoWhileTail expr
     | F.SwitchHeader expr
     | F.Throw expr
-    | F.SimpleStmt (F.ExprStmt (expr))
     | F.Return (expr)
     | F.Continue (Some expr) | F.Break (Some expr)
         -> visitor (Ast.E expr)
 
-    | F.Parameter (_) ->
-      ()
-    | F.ForeachHeader ->
-      ()
+    | F.SimpleNode x -> 
+        let any = F.any_of_simple_node x in
+        visitor any
 
 (*****************************************************************************)
 (* Alternative visitor *)
@@ -76,28 +73,36 @@ let exprs_of_node node =
   match node.n with
   | Enter | Exit
   | TrueNode | FalseNode
-  | DoHeader | ForHeader
+  | DoHeader | ForHeader | ForeachHeader
   | SwitchEnd | Case  | Default
   | TryHeader | CatchStart | Catch | TryEnd
   | Join
-  | SimpleStmt (TodoSimpleStmt)
   | Continue None | Break None
    -> []
+
   (* expr *)
   | IfHeader expr
   | WhileHeader expr
   | DoWhileTail expr
   | SwitchHeader expr
   | Throw expr
-  | SimpleStmt (ExprStmt (expr))
   | Return (expr)
   | Continue (Some expr) | Break (Some expr)
       -> [expr]
-  | Parameter (_) ->
-      []
-  | ForeachHeader ->
-      []
+  | SimpleNode x ->
+      (match x with
+      | ExprStmt e -> [e]
+      | Assert (e, eopt) -> e::Common.opt_to_list eopt
+      (* TODO: should transform VarDef in it in Assign *)
+      | DefStmt _ -> []
+      | DirectiveStmt _ -> []
+      (* TODO: should use visitor! *)
+      | OtherStmt _ -> []
+      (* TODO: should transform in Assign *)
+      | Parameter _p -> []
+      )
 
+(* this can also be used as an iter; just pass () to acc *)
 let fold_on_node_and_expr hook (flow: flow) acc =
   flow#nodes#fold (fun acc (ni, node) ->
     let xs = exprs_of_node node in
