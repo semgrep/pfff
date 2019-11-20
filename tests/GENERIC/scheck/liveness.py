@@ -7,12 +7,12 @@ def basic_liveness():
   print(y)
 
   useless_z = 1
-  #ERROR: useless assignement
+  #ERROR: useless assignement; the value is not used after
   useless_z = useless_z + 1
 
 
 def test_underscore():
-  # using _ means we know this is unused and should not be an error
+  # using _ means we know this is unused and should not be reported as an error
   a, _ = bar()
   if a:
      return 1
@@ -28,20 +28,21 @@ def test_objaccess():
 
 def test_arraccess():
   obj = []
+  # same here
   obj[1] = 1
   obj[2] = 2
   print(obj[2])
 
 def test_foreach():
   a = []
+  # lrvalue.ml must understand foreach loops
   for i in a:
     print (i)
 
 
-
-#def test_with():
-#  a = 1
-#  ctx = 2
-#  with ctx:
-#     print(a)
-
+def test_with():
+  a = 1
+  ctx = 2
+  # the CFG must understand with statements
+  with ctx:
+     print(a)

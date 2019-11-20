@@ -66,6 +66,11 @@
  *  - each language should add the VarDefs that defines the locals
  *    used in a function (instead of having the first Assign play the role
  *    of a VarDef, as done in Python for example).
+ *  - to correctly compute a CFG (Control Flow Graph), the stmt type 
+ *    should list all constructs that contains other statements and 
+ *    try to avoid to use the very generic OtherXxx of any
+ *  - to correctly compute a DFG (Data Flow Graph), each constructs that
+ *    introduce a new variable should have a relevant comment 'newvar:'
  *
  * See also pfff/lang_GENERIC/
  *)
@@ -159,6 +164,10 @@ and expr =
 
   | Nop (* less: could be merged with L Unit *)
 
+  (* todo: newvar: sometimes abused to also introduce a newvar (as in Python)
+   * but ultimately those cases should be rewritten to first introduce a
+   * VarDef
+   *)
   | Name of name
   | IdSpecial of special wrap
 
@@ -179,6 +188,7 @@ and expr =
   | Assign of expr * expr
   (* less: should desugar in Assign, should be only binary_operator *)
   | AssignOp of expr * arithmetic_operator wrap * expr
+  (* newvar:! *)
   | LetPattern of pattern * expr
 
   (* can also be used for Record, Class, or Module access depending on expr *)
@@ -296,6 +306,7 @@ and expr =
     | OE_In | OE_NotIn (* less: could be part of a obj_operator? *)
     | OE_Invert
     | OE_Slice | OE_SliceIndex | OE_SliceRange
+    (* TODO: newvar: *)
     | OE_CompForIf | OE_CompFor | OE_CompIf
     | OE_CmpOps
     | OE_Repr
@@ -357,9 +368,11 @@ and stmt =
     | ForClassic of for_var_or_expr list (* init *) * 
                     expr (* cond *) * 
                     expr (* next *)
+    (* newvar: *)
     | ForEach of pattern * expr (* pattern 'in' expr *)
 
     and for_var_or_expr = 
+    (* newvar: *)
     | ForInitVar of entity * variable_definition
     | ForInitExpr of expr
 
@@ -385,6 +398,7 @@ and pattern =
   (* And-Type *)
   | PatRecord of field_pattern list
 
+  (* newvar:! *)
   | PatVar of ident
 
   (* special cases of PatConstructor *)
@@ -500,6 +514,7 @@ and definition = entity * definition_kind (* (or decl) *)
    * in a header file *)
   and definition_kind =
     | FuncDef   of function_definition (* valid for methods too *)
+    (* newvar: *)
     | VarDef    of variable_definition  (* valid for constants and fields too *)
 
     | TypeDef   of type_definition
@@ -528,6 +543,7 @@ and function_definition = {
  fbody: stmt;
 }
   and parameters = parameter list
+    (* newvar: *)
     and parameter =
      | ParamClassic of parameter_classic
      | ParamPattern of pattern
