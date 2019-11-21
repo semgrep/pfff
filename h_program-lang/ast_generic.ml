@@ -78,6 +78,8 @@
  *    try to avoid to use the very generic OtherXxx of any
  *  - to correctly compute a DFG (Data Flow Graph), each constructs that
  *    introduce a new variable should have a relevant comment 'newvar:'
+ *  - to correctly resolve names, each constructs that introduce a new scope
+ *    should have a relevant comment 'newscope:'
  *
  * See also pfff/lang_GENERIC/
  *)
@@ -195,7 +197,7 @@ and expr =
   | Assign of expr * expr
   (* less: should desugar in Assign, should be only binary_operator *)
   | AssignOp of expr * arithmetic_operator wrap * expr
-  (* newvar:! *)
+  (* newvar:! newscope:? in OCaml yes but we miss the 'in' part here  *)
   | LetPattern of pattern * expr
 
   (* can also be used for Record, Class, or Module access depending on expr *)
@@ -273,6 +275,7 @@ and expr =
     and incr_decr = Incr | Decr
     and prefix_postfix = Prefix | Postfix
 
+  (* newscope: newvar: *)
   and action = pattern * expr
 
   (* TODO *)
@@ -338,11 +341,13 @@ and stmt =
   | DefStmt of definition
   | DirectiveStmt of directive
 
+  (* newscope: in C++/Java *)
   | Block of stmt list
 
   | If of expr * stmt * stmt
   | While of expr * stmt
   | DoWhile of stmt * expr
+  (* newscope: *)
   | For of for_header * stmt
 
   (* less: could be merged with ExprStmt (MatchPattern ...) *)
@@ -365,13 +370,16 @@ and stmt =
    *)
   | OtherStmt of other_stmt_operator * any list
 
+  (* newscope: *)
   and case_and_body = case list * stmt
    (* less: could be merged with pattern *)
     and case  =
     | Case of expr
     | Default
 
+  (* newvar: newscope: *)
   and catch = pattern * stmt
+  (* newscope: *)
   and finally = stmt
 
   and label = ident
@@ -390,7 +398,8 @@ and stmt =
 
   and other_stmt_with_stmt_operator = 
     (* Python *)
-    | OSWS_With
+    | OSWS_With (* TODO: newvar: in OtherStmtWithStmt with LetPattern 
+                 * and newscope: *)
 
   and other_stmt_operator = 
     (* Python *)
@@ -556,6 +565,7 @@ and function_definition = {
  (* less: could be merged in entity.type_ *)
  fparams: parameters;
  frettype: type_ option; (* return type *)
+ (* newscope: *)
  fbody: stmt;
 }
   and parameters = parameter list
@@ -652,6 +662,7 @@ and class_definition = {
   ckind: class_kind;
   cextends: type_ list; 
   cimplements: type_ list;
+  (* newscope: *)
   cbody: field list;
 }
   and class_kind = 
@@ -668,6 +679,7 @@ and module_definition = {
 
   and module_definition_kind =
     | ModuleAlias of name
+    (* newscope: *)
     | ModuleStruct of dotted_ident option * item list
 
     | OtherModule of other_module_operator * any list
@@ -688,6 +700,7 @@ and macro_definition = {
 (* Directives (Module import/export, macros) *)
 (*****************************************************************************)
 and directive = 
+  (* newvar: *)
   | Import    of module_name * alias list
   | ImportAll of module_name * ident option (* as name *)
 

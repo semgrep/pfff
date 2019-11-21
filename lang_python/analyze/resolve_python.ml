@@ -31,6 +31,7 @@ type context =
   | AtToplevel
   | InClass
   | InFunction
+  (* TODO: InLambda *)
  
 type env = {
   ctx: context ref;
