@@ -326,12 +326,23 @@ let m_module_name a b =
   | A.DottedName _, _
    -> fail ()
 
+let m_gensym a b = 
+  if a =|= b then return () else fail ()
+
 let m_resolved_name a b = 
   match a, b with
-  | A.Local, B.Local ->
-    return ()
-  | A.Param, B.Param ->
-    return ()
+  | A.Local a1, B.Local b1 ->
+    m_gensym a1 b1 >>= (fun () -> 
+      return ()
+    )
+  | A.EnclosedVar a1, B.EnclosedVar b1 ->
+    m_gensym a1 b1 >>= (fun () -> 
+      return ()
+    )
+  | A.Param a1, B.Param b1 ->
+    m_gensym a1 b1 >>= (fun () -> 
+      return ()
+    )
   | A.Global(a1), B.Global(b1) ->
     m_qualified_name a1 b1 >>= (fun () -> 
     return ()
@@ -340,17 +351,15 @@ let m_resolved_name a b =
     m_qualified_name a1 b1 >>= (fun () -> 
     return ()
     )
-  | A.NotResolved, B.NotResolved ->
-    return ()
   | A.Macro, B.Macro ->
     return ()
   | A.EnumConstant, B.EnumConstant ->
     return ()
 
-  | A.Local, _
-  | A.Param, _
+  | A.Local _, _
+  | A.Param _, _
   | A.Global _, _
-  | A.NotResolved, _
+  | A.EnclosedVar _, _
   | A.Macro, _
   | A.EnumConstant, _
   | A.ImportedModule _, _
@@ -630,8 +639,10 @@ and m_special a b =
 
 and m_id_info a b = 
   match a, b with
-  { A. id_qualifier = a1; id_typeargs = a2; id_resolved = _a3; id_type = a4; },
-  { B. id_qualifier = b1; id_typeargs = b2; id_resolved = _b3; id_type = b4; }
+  { A. name_qualifier = a1; name_typeargs = a2; 
+       name_resolved = _a3; name_type = a4; },
+  { B. name_qualifier = b1; name_typeargs = b2; 
+       name_resolved = _b3; name_type = b4; }
    -> 
     (m_option m_dotted_name) a1 b1 >>= (fun () -> 
     (m_option m_type_arguments) a2 b2 >>= (fun () -> 

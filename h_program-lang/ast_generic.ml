@@ -16,9 +16,9 @@
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* A generic AST, to be used by a generic visitor to factorize
- * similar analysis in different programming languages
- * (e.g., scheck, sgrep, checked_return). 
+(* A generic AST, to factorize similar analysis in different programming
+ * languages (e.g., scheck, sgrep, checked_return). 
+ *
  * Right now this is mostly the factorized union of:
  *  - Python
  *  - Javascript
@@ -31,10 +31,12 @@
  * Even though most interesting analysis are probably better done on a
  * per-language basis, many useful analysis are trivial and require just an
  * AST and a visitor. One could duplicate those analysis for each language
- * or design a generic AST (this file) to be generic enough to
- * factorize all those analysis (e.g., unused entity). The goal is
- * still to remain as precise as possible, not as generic as ast_fuzzy.ml
- * for example or a very general but imprecise tree of nodes.
+ * or design an AST (this file) generic enough to factorize all those 
+ * analysis (e.g., unused entity). We also want to remain
+ * as precise as possible and not lose too much information while going
+ * from the specific language AST to the generic AST. We do not want
+ * to be generic as in ast_fuzzy.ml, where we have a very general 
+ * tree of nodes, but all the structure of the original AST is lost.
  * 
  * TODO:
  *  - later: add Go (easy)
@@ -50,8 +52,10 @@
  *  - Semmle internal common representation?
  *  - Infer SIL (for C++, Java, Objective-C)
  *  - Dawson Engler and Fraser Brown micro-checkers for multiple languages
- *  - https://tabnine.com/ which supports multiple languages
- *  - Lightweight Multi-language syntax transformation paper 
+ *  - Lightweight Multi-language syntax transformation paper, but does not
+ *    really operate on an AST
+ *  - https://tabnine.com/ which supports multiple languages, but probably
+ *    again does not operate on an AST
  *  - srcML https://www.srcml.org/doc/srcMLGrammar.html
  *    but just for C/C++/C#/Java and seems pretty heavy
  *
@@ -113,40 +117,40 @@ type ident = string wrap
 type dotted_ident = ident list (* at least 1 element *)
  (* with tarzan *)
 
-(* todo? module_name * name? 
- * todo? not enough in OCaml with functor and type arguments or C++ templates? 
-*)
+(* todo: not enough in OCaml with functor and type arguments or C++ templates*)
 type qualifier = dotted_ident
  (* with tarzan *)
 
-(* can also be used for packages, or namespaces *)
+(* 'module' can also be used for a 'package', or a 'namespace' *)
 type module_name =
   | FileName of string wrap   (* ex: Javascript import, C #include *)
   | DottedName of dotted_ident (* ex: Python *)
  (* with tarzan *)
 
-(* todo: see also scope_code.ml *)
+(* see also scope_code.ml *)
 type resolved_name =
-  | Local (* TODO of gensym *)
-  | Param (* TODO of gensym *)
+  | Local of gensym
+  | Param of gensym
+  | EnclosedVar of gensym (* for closures *)
   | Global of dotted_ident (* or just name? *) (* can also use 0 for gensym *)
 
-  | NotResolved
-
+  | ImportedModule of dotted_ident
   | Macro
   | EnumConstant
-  | ImportedModule of dotted_ident
 
+
+  and gensym = int (* a unique gensym'ed number *)
  (* with tarzan *)
 
 (* big mutually recursive types because of the use of 'any' in OtherXxx *)
 
-type name = ident * id_info
-  and id_info =
-  { id_qualifier: qualifier option;
-    id_typeargs: type_arguments option; (* Java *)
-    id_resolved: resolved_name ref; (* variable tagger (naming) *)
-    id_type: type_ option ref; (* type checker (typing) *)
+type name = ident * name_info
+  and name_info =
+  { name_qualifier: qualifier option;
+    name_typeargs: type_arguments option; (* Java *)
+    (* less: could be separate and factorized in an 'id_info' *)
+    name_resolved: resolved_name option ref; (* variable tagger (naming) *)
+    name_type:     type_         option ref; (* type checker (typing) *)
   }
 
 (*****************************************************************************)
@@ -775,10 +779,10 @@ let error tok msg =
 (*****************************************************************************)
 
 let empty_info () = {
-   id_qualifier = None;
-   id_typeargs = None;
-   id_resolved = ref NotResolved;
-   id_type = ref None;
+   name_qualifier = None;
+   name_typeargs = None;
+   name_resolved = ref None;
+   name_type     = ref None;
  }
 
 let basic_param id = { 

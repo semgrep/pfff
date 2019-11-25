@@ -52,15 +52,17 @@ let name v = wrap string v
 
 let dotted_name v = list name v
 
+let gensym_TODO = -1 
+
 let resolved_name =
   function
-  | LocalVar -> G.Local
-  | Parameter -> G.Param
-  | GlobalVar -> G.Global [] (* TODO? *)
-  | ClassField -> G.NotResolved
-  | ImportedModule xs -> G.ImportedModule xs
-  | ImportedEntity xs -> G.Global xs
-  | NotResolved -> G.NotResolved
+  | LocalVar -> Some (G.Local gensym_TODO)
+  | Parameter -> Some (G.Param gensym_TODO)
+  | GlobalVar -> Some (G.Global [] (* TODO? *))
+  | ClassField -> None
+  | ImportedModule xs -> Some (G.ImportedModule xs)
+  | ImportedEntity xs -> Some (G.Global xs)
+  | NotResolved -> None
 
 let expr_context =
   function
@@ -111,9 +113,9 @@ let rec expr (x: expr) =
       and v3 = vref resolved_name v3
       in 
       G.Name (v1, 
-            { (G.empty_info ()) with 
-               G.id_type = ref None;
-               id_resolved = v3 })
+            { (G.empty_info ()) with G.
+               name_type = ref None;
+               name_resolved = v3 })
           
   | Tuple ((CompList v1, v2)) ->
       let v1 = list expr v1 

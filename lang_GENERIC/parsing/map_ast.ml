@@ -74,24 +74,25 @@ and map_wrap:'a. ('a -> 'a) -> 'a wrap -> 'a wrap = fun _of_a (v1, v2) ->
   
 and map_ident v = map_wrap map_of_string v
   
-and map_dotted_name v = map_of_list map_ident v
-  
-and map_qualified_name v = map_dotted_name v
+and map_dotted_ident v = map_of_list map_ident v
   
 and map_module_name =
   function
   | FileName v1 -> let v1 = map_wrap map_of_string v1 in FileName ((v1))
-  | DottedName v1 -> let v1 = map_dotted_name v1 in DottedName ((v1))
-  
+  | DottedName v1 -> let v1 = map_dotted_ident v1 in DottedName ((v1))
+
 and map_resolved_name =
   function
-  | Local -> Local
-  | Param -> Param
-  | Global v1 -> let v1 = map_qualified_name v1 in Global ((v1))
-  | NotResolved -> NotResolved
+  | Local v1 -> let v1 = map_gensym v1 in Local ((v1))
+  | Param v1 -> let v1 = map_gensym v1 in Param ((v1))
+  | EnclosedVar v1 -> let v1 = map_gensym v1 in EnclosedVar ((v1))
+  | Global v1 -> let v1 = map_dotted_ident v1 in Global ((v1))
+  | ImportedModule v1 ->
+      let v1 = map_dotted_ident v1 in ImportedModule ((v1))
   | Macro -> Macro
   | EnumConstant -> EnumConstant
-  | ImportedModule v1 -> let v1 = map_qualified_name v1 in ImportedModule((v1))
+and map_gensym v = map_of_int v
+  
 
 and map_name (v1, v2) =
   let v1 = map_ident v1 and v2 = map_id_info v2 in (v1, v2)
@@ -173,18 +174,18 @@ and map_container_operator =
 
 and
   map_id_info {
-                id_qualifier = v_id_qualifier;
-                id_typeargs = v_id_typeargs;
-                id_resolved = v_id_resolved;
-                id_type = v_id_type
+                name_qualifier = v_id_qualifier;
+                name_typeargs = v_id_typeargs;
+                name_resolved = v_id_resolved;
+                name_type = v_id_type
               } =
   let v_id_type = map_of_ref (map_of_option map_type_) v_id_type in
-  let v_id_resolved = map_of_ref map_resolved_name v_id_resolved in
+  let v_id_resolved = map_of_ref (map_of_option map_resolved_name) v_id_resolved in
   let v_id_typeargs = map_of_option map_type_arguments v_id_typeargs in
-  let v_id_qualifier = map_of_option map_dotted_name v_id_qualifier
+  let v_id_qualifier = map_of_option map_dotted_ident v_id_qualifier
   in 
-  { id_qualifier = v_id_qualifier; id_typeargs = v_id_typeargs;
-    id_resolved = v_id_resolved; id_type = v_id_type }
+  { name_qualifier = v_id_qualifier; name_typeargs = v_id_typeargs;
+    name_resolved = v_id_resolved; name_type = v_id_type }
 
 
 and map_special =
@@ -466,7 +467,7 @@ and map_module_definition_kind =
   function
   | ModuleAlias v1 -> let v1 = map_name v1 in ModuleAlias ((v1))
   | ModuleStruct ((v1, v2)) ->
-      let v1 = map_of_option map_dotted_name v1
+      let v1 = map_of_option map_dotted_ident v1
       and v2 = map_of_list map_item v2
       in ModuleStruct ((v1, v2))
   | OtherModule ((v1, v2)) ->
@@ -658,7 +659,7 @@ and map_any =
   | Def v1 -> let v1 = map_definition v1 in Def ((v1))
   | Dir v1 -> let v1 = map_directive v1 in Dir ((v1))
   | Fld v1 -> let v1 = map_field v1 in Fld ((v1))
-  | Di v1 -> let v1 = map_dotted_name v1 in Di ((v1))
+  | Di v1 -> let v1 = map_dotted_ident v1 in Di ((v1))
   | I v1 -> let v1 = map_item v1 in I ((v1))
   | Pa v1 -> let v1 = map_parameter v1 in Pa ((v1))
   | Ar v1 -> let v1 = map_argument v1 in Ar ((v1))

@@ -73,8 +73,8 @@ and class_type v =
   | [] -> raise Impossible (* list1 *)
   | name::xs ->
         let info = { (G.empty_info ()) with G.
-            id_typeargs = None; (* could be v1TODO above *)
-            id_qualifier = Some (List.rev xs);
+            name_typeargs = None; (* could be v1TODO above *)
+            name_qualifier = Some (List.rev xs);
           } in
         G.TyApply ((name, info), [])
   )
@@ -168,8 +168,8 @@ and name v =
   | [] -> raise Impossible (* list1 *)
   | name::xs ->
         let info = { (G.empty_info ()) with G.
-            id_typeargs = None; (* could be v1TODO above *)
-            id_qualifier = Some (List.rev xs);
+            name_typeargs = None; (* could be v1TODO above *)
+            name_qualifier = Some (List.rev xs);
           } in
         (name, info)
   )

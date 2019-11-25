@@ -59,11 +59,13 @@ let label v = wrap string v
 
 let qualified_name x = [x, Parse_info.fake_info "TODO qualified name"]
 
+let gensym_TODO = -1
+
 let resolved_name = function
-  | Local -> G.Local
-  | Param -> G.Param
-  | Global x -> G.Global (qualified_name x)
-  | NotResolved -> G.NotResolved
+  | Local -> Some (G.Local gensym_TODO)
+  | Param -> Some (G.Param gensym_TODO)
+  | Global x -> Some (G.Global (qualified_name x))
+  | NotResolved -> None
 
 type special_result = 
   | SR_Special of G.special
@@ -131,7 +133,7 @@ and expr (x: expr) =
   | Id (v1, refresolved) -> 
       let v1 = name v1 in
       let v2 = { (G.empty_info ()) with 
-                 G.id_resolved = vref resolved_name refresolved } in
+                 G.name_resolved = vref resolved_name refresolved } in
       G.Name (v1, v2)
 
   | IdSpecial (v1) -> 

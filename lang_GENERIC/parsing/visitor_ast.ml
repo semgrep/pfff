@@ -88,25 +88,27 @@ and v_ident v =
   in
   vin.kident (k, all_functions) v
 
-and v_dotted_name v = v_list v_ident v
+and v_dotted_ident v = v_list v_ident v
 
-and v_qualified_name v = v_dotted_name v
+and v_qualified_name v = v_dotted_ident v
 
 and v_module_name =
   function
   | FileName v1 -> let v1 = v_wrap v_string v1 in ()
-  | DottedName v1 -> let v1 = v_dotted_name v1 in ()
+  | DottedName v1 -> let v1 = v_dotted_ident v1 in ()
 
 
 and v_resolved_name =
   function
-  | Local -> ()
-  | Param -> ()
-  | Global v1 -> let v1 = v_qualified_name v1 in ()
-  | NotResolved -> ()
+  | Local v1 -> let v1 = v_gensym v1 in ()
+  | Param v1 -> let v1 = v_gensym v1 in ()
+  | EnclosedVar v1 -> let v1 = v_gensym v1 in ()
+  | Global v1 -> let v1 = v_dotted_ident v1 in ()
+  | ImportedModule v1 -> let v1 = v_dotted_ident v1 in ()
   | Macro -> ()
   | EnumConstant -> ()
-  | ImportedModule v1 -> let v1 = v_qualified_name v1 in ()
+and v_gensym v = v_int v
+
 
 and v_name (v1, v2) = let v1 = v_ident v1 and v2 = v_id_info v2 in ()
 and v_xml xs = v_list v_any xs
@@ -174,14 +176,14 @@ and v_container_operator =
   function | Array -> () | List -> () | Set -> () | Dict -> ()
 and
   v_id_info {
-              id_qualifier = v_id_qualifier;
-              id_typeargs = v_id_typeargs;
-              id_resolved = v_id_resolved;
-              id_type = v_id_type
+              name_qualifier = v_id_qualifier;
+              name_typeargs = v_id_typeargs;
+              name_resolved = v_id_resolved;
+              name_type = v_id_type
             } =
-  let arg = v_option v_dotted_name v_id_qualifier in
+  let arg = v_option v_dotted_ident v_id_qualifier in
   let arg = v_option v_type_arguments v_id_typeargs in
-  let arg = v_ref v_resolved_name v_id_resolved in
+  let arg = v_ref (v_option v_resolved_name) v_id_resolved in
   let arg = v_ref (v_option v_type_) v_id_type in ()
 and v_special =
   function
@@ -505,7 +507,7 @@ and v_module_definition_kind =
   function
   | ModuleAlias v1 -> let v1 = v_name v1 in ()
   | ModuleStruct ((v1, v2)) ->
-      let v1 = v_option v_dotted_name v1 and v2 = v_list v_item v2 in ()
+      let v1 = v_option v_dotted_ident v1 and v2 = v_list v_item v2 in ()
   | OtherModule ((v1, v2)) ->
       let v1 = v_other_module_operator v1 and v2 = v_list v_any v2 in ()
 and v_other_module_operator = function | OMO_Functor -> ()
@@ -553,7 +555,7 @@ and v_any =
   | Dir v1 -> let v1 = v_directive v1 in ()
   | Fld v1 -> let v1 = v_field v1 in ()
   | Dk v1 -> let v1 = v_def_kind v1 in ()
-  | Di v1 -> let v1 = v_dotted_name v1 in ()
+  | Di v1 -> let v1 = v_dotted_ident v1 in ()
   | I v1 -> let v1 = v_item v1 in ()
   | Pa v1 -> let v1 = v_parameter v1 in ()
   | Ar v1 -> let v1 = v_argument v1 in ()
