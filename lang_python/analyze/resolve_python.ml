@@ -22,6 +22,12 @@ module V = Visitor_python
 (* Identifiers tagger (so we can colorize them differently in codemap/efuns).
  *
  * See also Ast_python.resolved_name.
+ *
+ * TODO: generalize for ast_generic at some point?
+ * This naming phase helps dealing with:
+ *  - scoping issues in static analysis as it deals with
+      * variable shadowing (every variables now have a different name)
+ *  - coloring identifiers in codemap/efuns
  *)
 
 (*****************************************************************************)
