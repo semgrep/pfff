@@ -130,14 +130,13 @@ type module_name =
 (* see also scope_code.ml *)
 type resolved_name =
   | Local of gensym
-  | Param of gensym
-  | EnclosedVar of gensym (* for closures *)
+  | Param of gensym (* could merge with Local *)
+  | EnclosedVar of gensym (* for closures; can refer to a Local or Param *)
   | Global of dotted_ident (* or just name? *) (* can also use 0 for gensym *)
 
   | ImportedModule of dotted_ident
   | Macro
   | EnumConstant
-
 
   and gensym = int (* a unique gensym'ed number *)
  (* with tarzan *)
@@ -777,6 +776,13 @@ let error tok msg =
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+
+(* use 0 for globals, if needed *)
+let gensym_counter = ref 0
+let gensym () = 
+  incr gensym_counter;
+  !gensym_counter
+
 
 let empty_info () = {
    name_qualifier = None;
