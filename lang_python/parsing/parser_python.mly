@@ -47,7 +47,7 @@ let to_list = function
   | Tup l -> l
 
 (* TODO: TypedExpr? ExprStar? then can appear as lvalue 
- * what about CompForIf?
+ * CompForIf though is not an lvalue.
 *)
 let rec set_expr_ctx ctx = function
   | Name (id, _, x) ->
@@ -623,7 +623,6 @@ interpolated:
   | FSTRING_LBRACE test COLON format_specifier RBRACE 
      { InterpolatedString ($2::mk_str $3::$4) }
 
-/*(* TODO: should add in AST at some point *)*/
 format_specifier: format_token_list { $1 }
 
 format_token_list:
@@ -769,7 +768,7 @@ lambdadef_nocond: LAMBDA varargslist COLON test_nocond { Lambda ($2, $4) }
 /*(* python3-ext: can be any order, ArgStar before or after ArgKwd *)*/
 argument:
   | test           { Arg $1 }
-  | test comp_for  { Arg $1 (* TODO *) }
+  | test comp_for  { ArgComp ($1, $2) }
 
   /*(* python3-ext: *)*/
   | MULT test      { ArgStar $2 }

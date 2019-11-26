@@ -46,3 +46,12 @@ def test_with():
   # the CFG must understand with statements
   with ctx:
      print(a)
+
+def test_call_comprehension():
+  client = bar()
+  any(i for i in client)
+
+def test_call_comprehension2():
+  client = bar()
+  # ERRORTODO: it should report that one!
+  any(0 for i in client)
