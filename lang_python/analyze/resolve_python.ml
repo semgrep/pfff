@@ -128,10 +128,16 @@ let resolve prog =
             )
           | Store | AugStore ->
             let kind = 
-              match !(env.ctx) with
-              | AtToplevel -> GlobalVar
-              | InClass -> ClassField
-              | InFunction -> LocalVar
+              let s = Ast.str_of_name name in
+              match List.assoc_opt s !(env.names) with
+              (* can happen if had a 'Global' declaration before *)
+              | Some x -> x
+              | None ->
+                (match !(env.ctx) with
+                | AtToplevel -> GlobalVar
+                | InClass -> ClassField
+                | InFunction -> LocalVar
+                )
             in
             env |> add_name_env name kind;
             resolved := kind; (* optional *)
@@ -145,7 +151,7 @@ let resolve prog =
       | Tuple (CompForIf x, _)
       | List (CompForIf x, _)
         (* bugfix: do not pass just k here, because we want to intercept
-         * the processing of e too!
+         * the processing of 'e' too!
          *)
         -> comprehension (fun e -> v (Expr e)) v x
       | DictOrSet (CompForIf x) -> 
@@ -230,6 +236,9 @@ let resolve prog =
             v (Stmts body)
        );
        v (Stmts stmts2);
+
+     | Global names ->
+       names |> List.iter (fun name -> env |> add_name_env name GlobalVar;)
     
      (* TODO: NonLocal!! *) 
 

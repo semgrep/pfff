@@ -55,3 +55,9 @@ def test_call_comprehension2():
   client = bar()
   # ERRORTODO: it should report that one!
   any(0 for i in client)
+
+
+def test_global():
+  global foo
+  # this is ok
+  foo = 1

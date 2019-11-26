@@ -56,19 +56,25 @@ let (unreachable_statement_detection : F.flow -> unit) = fun flow ->
 let is_ok_unused_varname s =
   s =~ "_.*"
 
+let is_global idinfo =
+  match !(idinfo.id_resolved) with
+  | Some (Global _) -> true
+  | _ -> false
+
 let (dead_assign_detection: F.flow -> Dataflow_liveness.mapping -> unit) =
  fun flow mapping ->
   Controlflow_visitor.fold_on_node_and_expr (fun (ni, _nd) e () ->
     let lvals = Lrvalue.lvalues_of_expr e in
-    lvals |> List.iter (fun ((var, tok), _idinfo) ->
+    lvals |> List.iter (fun ((var, tok), idinfo) ->
       (* TODO: filter just Locals here! *)
       let out_env = mapping.(ni).D.out_env in
       try 
         let () = D.VarMap.find var out_env in
         ()
       with Not_found -> 
-        if not (is_ok_unused_varname var)
-        then E.error tok (E.UnusedAssign var)
+        if is_ok_unused_varname var || is_global idinfo
+        then ()
+        else E.error tok (E.UnusedAssign var)
     )
   ) flow ()
 
