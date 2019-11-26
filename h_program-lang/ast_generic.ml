@@ -131,25 +131,36 @@ type module_name =
 type resolved_name =
   | Local of gensym
   | Param of gensym (* could merge with Local *)
-  | EnclosedVar of gensym (* for closures; can refer to a Local or Param *)
+  (* for closures; can refer to a Local or Param *)
+  | EnclosedVar of gensym (* TODO? and depth? *)
   | Global of dotted_ident (* or just name? *) (* can also use 0 for gensym *)
 
   | ImportedModule of dotted_ident
   | Macro
   | EnumConstant
 
+  (* this simplifies further analysis which need less to care about 
+   * maintaining scoping information to deal with variable shadowing, 
+   * functions using the same parameter names, etc.
+   *)
   and gensym = int (* a unique gensym'ed number *)
  (* with tarzan *)
 
 (* big mutually recursive types because of the use of 'any' in OtherXxx *)
 
 type name = ident * name_info
-  and name_info =
-  { name_qualifier: qualifier option;
+  and name_info = { 
+    name_qualifier: qualifier option;
     name_typeargs: type_arguments option; (* Java *)
-    (* less: could be separate and factorized in an 'id_info' *)
-    name_resolved: resolved_name option ref; (* variable tagger (naming) *)
-    name_type:     type_         option ref; (* type checker (typing) *)
+  } 
+
+(*****************************************************************************)
+(* Naming/typing *)
+(*****************************************************************************)
+
+and id_info = {
+    id_resolved: resolved_name option ref; (* variable tagger (naming) *)
+    id_type:     type_         option ref; (* type checker (typing) *)
   }
 
 (*****************************************************************************)
@@ -180,7 +191,7 @@ and expr =
    * but ultimately those cases should be rewritten to first introduce a
    * VarDef
    *)
-  | Name of name
+  | Name of name * id_info
   | IdSpecial of special wrap
 
   (* operators and function application *)
@@ -427,7 +438,7 @@ and pattern =
   | PatRecord of field_pattern list
 
   (* newvar:! *)
-  | PatVar of ident
+  | PatVar of ident * id_info (* Always Local or Param *)
 
   (* special cases of PatConstructor *)
   | PatTuple of pattern list
@@ -441,7 +452,7 @@ and pattern =
   | PatDisj  of pattern * pattern
   | PatTyped of pattern * type_
   | PatWhen  of pattern * expr
-  | PatAs    of pattern * ident
+  | PatAs    of pattern * (ident * id_info)
 
   | OtherPat of other_pattern_operator * any list
 
@@ -536,6 +547,8 @@ and definition = entity * definition_kind (* (or decl) *)
     attrs: attribute list;
     type_: type_ option; (* less: use ref to enable typechecking *)
     tparams: type_parameter list;
+    (* naming/typing *)
+    info: id_info;
   }
 
   (* can have empty "body" when the definition is actually a declaration
@@ -585,6 +598,8 @@ and function_definition = {
      pdefault: expr option;
      ptype: type_ option;
      pattrs: attribute list;
+     (* naming *)
+     pinfo: id_info; (* Always Param *)
     }
   and other_parameter_operator =
      (* Python *)
@@ -784,11 +799,14 @@ let gensym () =
   !gensym_counter
 
 
-let empty_info () = {
+let empty_name_info = {
    name_qualifier = None;
    name_typeargs = None;
-   name_resolved = ref None;
-   name_type     = ref None;
+}
+
+let empty_id_info () = {
+   id_resolved = ref None;
+   id_type     = ref None;
  }
 
 let basic_param id = { 
@@ -796,6 +814,7 @@ let basic_param id = {
     pdefault = None;
     ptype = None;
     pattrs = [];
+    pinfo = empty_id_info ();
 }
 
 let basic_entity id attrs = {
@@ -803,6 +822,7 @@ let basic_entity id attrs = {
   attrs = attrs;
   type_ = None;
   tparams = [];
+  info = empty_id_info ();
 }
 
 let basic_field id typeopt =
@@ -815,11 +835,12 @@ let empty_var () =
 let expr_to_arg e = 
   Arg e
 
-let entity_to_param { name; attrs; type_; tparams = _unused } = 
+let entity_to_param { name; attrs; type_; tparams = _unused; info } = 
   { pname = name;
     pdefault = None;
     ptype = type_;
     pattrs = attrs;
+    pinfo = info;
   }
 
 let opt_to_nop opt =
