@@ -148,8 +148,16 @@ let rec visit_expr hook lhs expr =
     recr e2;
     recr e;
 
-  (* TODO: need to detect external vars used inside the closure *)
-  | Lambda _ -> ()
+  (* TODO: need to detect external vars used inside the closure,
+   * visit but just grab the EnclodedVars inside
+   *)
+  | Lambda def -> 
+    (* quick hack ... return everything, hopefully there are no locals
+     * with same name than an enclosing var that introduce some FN
+     *)
+      anyhook hook Rhs (S def.fbody)
+
+
   | AnonClass _ -> ()
 
   | Yield e | Await e -> recr e

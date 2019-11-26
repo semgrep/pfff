@@ -61,3 +61,8 @@ def test_global():
   global foo
   # this is ok
   foo = 1
+
+def test_lambda():
+  a = 1
+  iter(lambda c: a + c)
+
