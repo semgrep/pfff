@@ -112,10 +112,9 @@ let rec expr (x: expr) =
       and _v2TODO = expr_context v2
       and v3 = vref resolved_name v3
       in 
-      G.Name (v1, 
-            { (G.empty_info ()) with G.
-               name_type = ref None;
-               name_resolved = v3 })
+      G.Name ((v1, G.empty_name_info),
+               { G.id_type = ref None;
+                 id_resolved = v3 })
           
   | Tuple ((CompList v1, v2)) ->
       let v1 = list expr v1 

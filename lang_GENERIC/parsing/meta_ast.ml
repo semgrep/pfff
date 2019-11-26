@@ -41,26 +41,27 @@ and vof_gensym v = Ocaml.vof_int v
 
 let rec vof_name (v1, v2) =
   let v1 = vof_ident v1 and v2 = vof_name_info v2 in Ocaml.VTuple [ v1; v2 ]
+
 and
   vof_name_info {
                   name_qualifier = v_name_qualifier;
-                  name_typeargs = v_name_typeargs;
-                  name_resolved = v_name_resolved;
-                  name_type = v_name_type
+                  name_typeargs = v_name_typeargs
                 } =
   let bnds = [] in
-  let arg = Ocaml.vof_ref (Ocaml.vof_option vof_type_) v_name_type in
-  let bnd = ("name_type", arg) in
-  let bnds = bnd :: bnds in
-  let arg =
-    Ocaml.vof_ref (Ocaml.vof_option vof_resolved_name) v_name_resolved in
-  let bnd = ("name_resolved", arg) in
-  let bnds = bnd :: bnds in
   let arg = Ocaml.vof_option vof_type_arguments v_name_typeargs in
   let bnd = ("name_typeargs", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_option vof_qualifier v_name_qualifier in
   let bnd = ("name_qualifier", arg) in
+  let bnds = bnd :: bnds in Ocaml.VDict bnds
+and vof_id_info { id_resolved = v_id_resolved; id_type = v_id_type } =
+  let bnds = [] in
+  let arg = Ocaml.vof_ref (Ocaml.vof_option vof_type_) v_id_type in
+  let bnd = ("id_type", arg) in
+  let bnds = bnd :: bnds in
+  let arg =
+    Ocaml.vof_ref (Ocaml.vof_option vof_resolved_name) v_id_resolved in
+  let bnd = ("id_resolved", arg) in
   let bnds = bnd :: bnds in Ocaml.VDict bnds
 
 
@@ -89,9 +90,10 @@ and vof_expr =
       let v1 = vof_class_definition v1
       in Ocaml.VSum (("AnonClass", [ v1 ]))
   | Nop -> Ocaml.VSum (("Nop", []))
-  | Name ((v1)) ->
+  | Name ((v1, v2)) ->
       let v1 = vof_name v1
-      in Ocaml.VSum (("Name", [ v1 ]))
+      and v2 = vof_id_info v2
+      in Ocaml.VSum (("Name", [ v1; v2 ]))
   | IdSpecial v1 ->
       let v1 = vof_wrap vof_special v1 in Ocaml.VSum (("IdSpecial", [ v1 ]))
   | Call ((v1, v2)) ->
@@ -487,7 +489,11 @@ and vof_other_stmt_operator =
   | OS_Asm -> Ocaml.VSum (("OS_Asm", []))
 and vof_pattern =
   function
-  | PatVar v1 -> let v1 = vof_ident v1 in Ocaml.VSum (("PatVar", [ v1 ]))
+  | PatVar ((v1, v2)) ->
+      let v1 = vof_ident v1
+      and v2 = vof_id_info v2
+      in Ocaml.VSum (("PatVar", [ v1; v2 ]))
+
   | PatLiteral v1 ->
       let v1 = vof_literal v1 in Ocaml.VSum (("PatLiteral", [ v1 ]))
   | PatRecord v1 ->
@@ -509,7 +515,12 @@ and vof_pattern =
       in Ocaml.VSum (("PatWhen", [ v1; v2 ]))
   | PatAs ((v1, v2)) ->
       let v1 = vof_pattern v1
-      and v2 = vof_ident v2
+      and v2 =
+        (match v2 with
+         | (v1, v2) ->
+             let v1 = vof_ident v1
+             and v2 = vof_id_info v2
+             in Ocaml.VTuple [ v1; v2 ])
       in Ocaml.VSum (("PatAs", [ v1; v2 ]))
   | PatTuple v1 ->
       let v1 = Ocaml.vof_list vof_pattern v1
@@ -543,14 +554,19 @@ and vof_definition (v1, v2) =
   let v1 = vof_entity v1
   and v2 = vof_definition_kind v2
   in Ocaml.VTuple [ v1; v2 ]
+
 and
   vof_entity {
                name = v_name;
                attrs = v_attrs;
                type_ = v_type_;
-               tparams = v_tparams
+               tparams = v_tparams;
+               info = v_info
              } =
   let bnds = [] in
+  let arg = vof_id_info v_info in
+  let bnd = ("info", arg) in
+  let bnds = bnd :: bnds in
   let arg = Ocaml.vof_list vof_type_parameter v_tparams in
   let bnd = ("tparams", arg) in
   let bnds = bnd :: bnds in
@@ -562,6 +578,7 @@ and
   let bnds = bnd :: bnds in
   let arg = vof_ident v_name in
   let bnd = ("name", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+
 and vof_definition_kind =
   function
   | FuncDef v1 ->
@@ -644,14 +661,19 @@ and vof_parameter =
       let v1 = vof_other_parameter_operator v1
       and v2 = Ocaml.vof_list vof_any v2
       in Ocaml.VSum (("OtherParam", [ v1; v2 ]))
+
 and
   vof_parameter_classic {
                           pname = v_pname;
                           pdefault = v_pdefault;
                           ptype = v_ptype;
-                          pattrs = v_pattrs
+                          pattrs = v_pattrs;
+                          pinfo = v_pinfo
                         } =
   let bnds = [] in
+  let arg = vof_id_info v_pinfo in
+  let bnd = ("pinfo", arg) in
+  let bnds = bnd :: bnds in
   let arg = Ocaml.vof_list vof_attribute v_pattrs in
   let bnd = ("pattrs", arg) in
   let bnds = bnd :: bnds in
@@ -663,6 +685,7 @@ and
   let bnds = bnd :: bnds in
   let arg = vof_ident v_pname in
   let bnd = ("pname", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+
 and vof_other_parameter_operator =
   function
   | OPO_KwdParam -> Ocaml.VSum (("OPO_KwdParam", []))

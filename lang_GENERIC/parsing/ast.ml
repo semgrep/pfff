@@ -13,6 +13,8 @@
 type program = Ast_generic.program
 
 type name = Ast_generic.name
+type ident = Ast_generic.ident
+type id_info = Ast_generic.id_info
 type expr = Ast_generic.expr
 type stmt = Ast_generic.stmt
 

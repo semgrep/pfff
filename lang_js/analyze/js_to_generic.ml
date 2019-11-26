@@ -132,9 +132,10 @@ and expr (x: expr) =
   | Regexp v1 -> let v1 = wrap string v1 in G.L (G.Regexp v1)
   | Id (v1, refresolved) -> 
       let v1 = name v1 in
-      let v2 = { (G.empty_info ()) with 
-                 G.name_resolved = vref resolved_name refresolved } in
-      G.Name (v1, v2)
+      let v2 = G.empty_name_info in
+      let v3 = { (G.empty_id_info ()) with
+                 G.id_resolved = vref resolved_name refresolved } in
+      G.Name ((v1, v2), v3)
 
   | IdSpecial (v1) -> 
       let x = special v1 in
@@ -204,9 +205,11 @@ and stmt x =
   | Switch ((v1, v2)) -> let v1 = expr v1 and v2 = list case v2 in
       G.Switch (v1, v2)
   | Continue v1 -> let v1 = option label v1 in 
-     G.Continue (v1 |> option (fun n -> G.Name (n, G.empty_info ())))
+     G.Continue (v1 |> option (fun n -> 
+       G.Name ((n, G.empty_name_info), G.empty_id_info ())))
   | Break v1 -> let v1 = option label v1 in
-     G.Break (v1 |> option (fun n -> G.Name (n, G.empty_info ())))
+     G.Break (v1 |> option (fun n -> 
+       G.Name ((n, G.empty_name_info), G.empty_id_info ())))
   | Return v1 -> let v1 = expr v1 in G.Return v1
   | Label ((v1, v2)) -> let v1 = label v1 and v2 = stmt v2 in
       G.Label (v1, v2)
@@ -216,7 +219,7 @@ and stmt x =
       and v2 =
         option (fun (v1, v2) -> 
            let v1 = name v1 and v2 = stmt v2 in
-           G.PatVar v1, v2
+           G.PatVar (v1, G.empty_id_info()), v2
        ) v2
       and v3 = option stmt v3 in
       G.Try (v1, Common.opt_to_list v2, v3)
@@ -302,8 +305,10 @@ and parameter x =
   let v1 = name p_name in
   let v2 = option expr p_default in 
   let v3 = bool p_dots in
-  G.ParamClassic { G.pname = v1; pdefault = v2; ptype = None;
-        pattrs = if v3 then [G.Variadic] else [];
+  G.ParamClassic { 
+    G.pname = v1; pdefault = v2; ptype = None;
+    pattrs = if v3 then [G.Variadic] else [];
+    pinfo = G.empty_id_info ();
   }
   
 

@@ -75,6 +75,8 @@ and map_wrap:'a. ('a -> 'a) -> 'a wrap -> 'a wrap = fun _of_a (v1, v2) ->
 and map_ident v = map_wrap map_of_string v
   
 and map_dotted_ident v = map_of_list map_ident v
+
+and map_qualifier v = map_dotted_ident v
   
 and map_module_name =
   function
@@ -95,7 +97,22 @@ and map_gensym v = map_of_int v
   
 
 and map_name (v1, v2) =
-  let v1 = map_ident v1 and v2 = map_id_info v2 in (v1, v2)
+  let v1 = map_ident v1 and v2 = map_name_info v2 in (v1, v2)
+and
+  map_name_info {
+                  name_qualifier = v_name_qualifier;
+                  name_typeargs = v_name_typeargs
+                } =
+  let v_name_typeargs = map_of_option map_type_arguments v_name_typeargs in
+  let v_name_qualifier = map_of_option map_qualifier v_name_qualifier
+  in { name_qualifier = v_name_qualifier; name_typeargs = v_name_typeargs  }
+and map_id_info { id_resolved = v_id_resolved; id_type = v_id_type } =
+  let v_id_type = map_of_ref (map_of_option map_type_) v_id_type in
+  let v_id_resolved =
+    map_of_ref (map_of_option map_resolved_name) v_id_resolved
+  in { id_resolved = v_id_resolved; id_type = v_id_type }
+
+
 
 and map_xml v1 = map_of_list map_any v1  
 and map_expr =
@@ -117,8 +134,8 @@ and map_expr =
       let v1 = map_class_definition v1 in AnonClass ((v1))
   | Nop -> Nop
   | Xml v1 -> let v1 = map_xml v1 in Xml v1
-  | Name ((v1)) ->
-      let v1 = map_name v1 in Name ((v1))
+  | Name ((v1, v2)) ->
+      let v1 = map_name v1 and v2 = map_id_info v2 in Name ((v1, v2))
   | IdSpecial v1 -> let v1 = map_wrap map_special v1 in IdSpecial ((v1))
   | Call ((v1, v2)) ->
       let v1 = map_expr v1 and v2 = map_arguments v2 in Call ((v1, v2))
@@ -172,20 +189,6 @@ and map_literal =
 and map_container_operator =
   function | Array -> Array | List -> List | Set -> Set | Dict -> Dict
 
-and
-  map_id_info {
-                name_qualifier = v_id_qualifier;
-                name_typeargs = v_id_typeargs;
-                name_resolved = v_id_resolved;
-                name_type = v_id_type
-              } =
-  let v_id_type = map_of_ref (map_of_option map_type_) v_id_type in
-  let v_id_resolved = map_of_ref (map_of_option map_resolved_name) v_id_resolved in
-  let v_id_typeargs = map_of_option map_type_arguments v_id_typeargs in
-  let v_id_qualifier = map_of_option map_dotted_ident v_id_qualifier
-  in 
-  { name_qualifier = v_id_qualifier; name_typeargs = v_id_typeargs;
-    name_resolved = v_id_resolved; name_type = v_id_type }
 
 
 and map_special =
@@ -403,7 +406,8 @@ and map_pattern =
              let v1 = map_name v1 and v2 = map_pattern v2 in (v1, v2))
           v1
       in PatRecord ((v1))
-  | PatVar v1 -> let v1 = map_ident v1 in PatVar ((v1))
+  | PatVar ((v1, v2)) ->
+      let v1 = map_ident v1 and v2 = map_id_info v2 in PatVar ((v1, v2))
   | PatLiteral v1 -> let v1 = map_literal v1 in PatLiteral ((v1))
   | PatConstructor ((v1, v2)) ->
       let v1 = map_name v1
@@ -419,7 +423,13 @@ and map_pattern =
   | PatTyped ((v1, v2)) ->
       let v1 = map_pattern v1 and v2 = map_type_ v2 in PatTyped ((v1, v2))
   | PatAs ((v1, v2)) ->
-      let v1 = map_pattern v1 and v2 = map_ident v2 in PatAs ((v1, v2))
+      let v1 = map_pattern v1
+      and v2 =
+        (match v2 with
+         | (v1, v2) ->
+             let v1 = map_ident v1 and v2 = map_id_info v2 in (v1, v2))
+      in PatAs ((v1, v2))
+
   | PatWhen ((v1, v2)) ->
       let v1 = map_pattern v1 and v2 = map_expr v2 in PatWhen ((v1, v2))
   | OtherPat ((v1, v2)) ->
@@ -438,8 +448,10 @@ and
                name = v_name;
                attrs = v_attrs;
                type_ = v_type_;
-               tparams = v_tparams
+               tparams = v_tparams;
+               info = v_info;
              } =
+  let v_info = map_id_info v_info in
   let v_tparams = map_of_list map_type_parameter v_tparams in
   let v_type_ = map_of_option map_type_ v_type_ in
   let v_attrs = map_of_list map_attribute v_attrs in
@@ -448,7 +460,8 @@ and
                name = v_name;
                attrs = v_attrs;
                type_ = v_type_;
-               tparams = v_tparams
+               tparams = v_tparams;
+               info = v_info;
   }
 and map_definition_kind =
   function
@@ -523,8 +536,10 @@ and
                           pname = v_pname;
                           pdefault = v_pdefault;
                           ptype = v_ptype;
-                          pattrs = v_pattrs
+                          pattrs = v_pattrs;
+                          pinfo = v_pinfo;
                         } =
+  let v_pinfo = map_id_info v_pinfo in
   let v_pattrs = map_of_list map_attribute v_pattrs in
   let v_ptype = map_of_option map_type_ v_ptype in
   let v_pdefault = map_of_option map_expr v_pdefault in
@@ -533,7 +548,8 @@ and
                           pname = v_pname;
                           pdefault = v_pdefault;
                           ptype = v_ptype;
-                          pattrs = v_pattrs
+                          pattrs = v_pattrs;
+                          pinfo = v_pinfo;
                         }
 
 and map_other_parameter_operator x = x

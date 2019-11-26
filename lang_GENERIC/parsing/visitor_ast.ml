@@ -90,7 +90,7 @@ and v_ident v =
 
 and v_dotted_ident v = v_list v_ident v
 
-and v_qualified_name v = v_dotted_ident v
+and v_qualifier v = v_dotted_ident v
 
 and v_module_name =
   function
@@ -110,7 +110,20 @@ and v_resolved_name =
 and v_gensym v = v_int v
 
 
-and v_name (v1, v2) = let v1 = v_ident v1 and v2 = v_id_info v2 in ()
+and v_name (v1, v2) = let v1 = v_ident v1 and v2 = v_name_info v2 in ()
+
+and
+  v_name_info {
+                name_qualifier = v_name_qualifier;
+                name_typeargs = v_name_typeargs
+              } =
+  let arg = v_option v_qualifier v_name_qualifier in
+  let arg = v_option v_type_arguments v_name_typeargs in ()
+
+and v_id_info { id_resolved = v_id_resolved; id_type = v_id_type } =
+  let arg = v_ref (v_option v_resolved_name) v_id_resolved in
+  let arg = v_ref (v_option v_type_) v_id_type in ()
+
 and v_xml xs = v_list v_any xs
 
 and v_expr x =
@@ -128,7 +141,7 @@ and v_expr x =
   | AnonClass ((v1)) -> let v1 = v_class_definition v1 in ()
   | Nop -> ()
   | Xml v1 -> let v1 = v_xml v1 in ()
-  | Name ((v1)) -> let v1 = v_name v1 in  ()
+  | Name ((v1, v2)) -> let v1 = v_name v1 and v2 = v_id_info v2 in ()
   | IdSpecial v1 -> let v1 = v_wrap v_special v1 in ()
   | Call ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_arguments v2 in ()
   | Assign ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_expr v2 in ()
@@ -174,17 +187,7 @@ and v_literal =
 
 and v_container_operator =
   function | Array -> () | List -> () | Set -> () | Dict -> ()
-and
-  v_id_info {
-              name_qualifier = v_id_qualifier;
-              name_typeargs = v_id_typeargs;
-              name_resolved = v_id_resolved;
-              name_type = v_id_type
-            } =
-  let arg = v_option v_dotted_ident v_id_qualifier in
-  let arg = v_option v_type_arguments v_id_typeargs in
-  let arg = v_ref (v_option v_resolved_name) v_id_resolved in
-  let arg = v_ref (v_option v_type_) v_id_type in ()
+
 and v_special =
   function
   | This -> ()
@@ -351,7 +354,7 @@ and v_pattern x =
         v_list
           (fun (v1, v2) -> let v1 = v_name v1 and v2 = v_pattern v2 in ()) v1
       in ()
-  | PatVar v1 -> let v1 = v_ident v1 in ()
+  | PatVar ((v1, v2)) -> let v1 = v_ident v1 and v2 = v_id_info v2 in ()
   | PatLiteral v1 -> let v1 = v_literal v1 in ()
   | PatConstructor ((v1, v2)) ->
       let v1 = v_name v1 and v2 = v_list v_pattern v2 in ()
@@ -361,7 +364,13 @@ and v_pattern x =
   | PatUnderscore v1 -> let v1 = v_tok v1 in ()
   | PatDisj ((v1, v2)) -> let v1 = v_pattern v1 and v2 = v_pattern v2 in ()
   | PatTyped ((v1, v2)) -> let v1 = v_pattern v1 and v2 = v_type_ v2 in ()
-  | PatAs ((v1, v2)) -> let v1 = v_pattern v1 and v2 = v_ident v2 in ()
+  | PatAs ((v1, v2)) ->
+      let v1 = v_pattern v1
+      and v2 =
+        (match v2 with
+         | (v1, v2) -> let v1 = v_ident v1 and v2 = v_id_info v2 in ())
+      in ()
+
   | PatWhen ((v1, v2)) -> let v1 = v_pattern v1 and v2 = v_expr v2 in ()
   | OtherPat ((v1, v2)) ->
       let v1 = v_other_pattern_operator v1 and v2 = v_list v_any v2 in ()

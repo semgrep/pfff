@@ -371,7 +371,7 @@ let rec m_name a b =
   match a,b with
   | (a1, a2), (b1, b2) ->
     m_ident a1 b1 >>= (fun () ->
-    m_id_info a2 b2 >>= (fun () ->
+    m_name_info a2 b2 >>= (fun () ->
       return ()
    ))
        
@@ -386,11 +386,13 @@ and m_expr a b =
   (* $X should not match an IdSpecial otherwise $X(...) could match
    * a+b because this is transformed in a Call(IdSpecial Plus, ...) 
    *)
-  | A.Name ((str,_tok), _id_info), B.IdSpecial _ when MV.is_metavar_name str ->
+  | A.Name (((str,_tok), _name_info), _id_info), B.IdSpecial _ 
+      when MV.is_metavar_name str ->
       fail ()
 
   (* metavariable! *)
-  | A.Name ((str,tok), _id_info), e2 when MV.is_metavar_name str ->
+  | A.Name (((str,tok), _name_info), _id_info), e2 
+     when MV.is_metavar_name str ->
       envf (str, tok) (B.E (e2))
 
   | A.L(a1), B.L(b1) ->
@@ -423,9 +425,10 @@ and m_expr a b =
     return ())
   | A.Nop, B.Nop ->
     return ()
-  | A.Name(a1), B.Name(b1) ->
+  | A.Name(a1, a2), B.Name(b1, b2) ->
     m_name a1 b1 >>= (fun () -> 
-    return ())
+    m_id_info a2 b2 >>= (fun () -> 
+    return ()))
   | A.IdSpecial(a1), B.IdSpecial(b1) ->
     m_wrap m_special a1 b1 >>= (fun () -> 
     return ()
@@ -637,15 +640,22 @@ and m_special a b =
   | A.Concat, _  | A.Spread, _  | A.ArithOp _, _  | A.IncrDecr _, _
    -> fail ()
 
-and m_id_info a b = 
+and m_name_info a b = 
   match a, b with
-  { A. name_qualifier = a1; name_typeargs = a2; 
-       name_resolved = _a3; name_type = a4; },
-  { B. name_qualifier = b1; name_typeargs = b2; 
-       name_resolved = _b3; name_type = b4; }
+  { A. name_qualifier = a1; name_typeargs = a2; },
+  { B. name_qualifier = b1; name_typeargs = b2; }
    -> 
     (m_option m_dotted_name) a1 b1 >>= (fun () -> 
     (m_option m_type_arguments) a2 b2 >>= (fun () -> 
+    return ()
+  ))
+
+and m_id_info a b =
+  match a, b with
+  { A. id_resolved = _a1; id_type = a2; },
+  { B. id_resolved = _b1; id_type = b2; }
+   -> 
+
      (* TODO:
       * right now doing import flask in a file means every reference
       * to flask.xxx will be tagged with a ImportedEntity, but
@@ -655,9 +665,10 @@ and m_id_info a b =
       * name used in the code (which can be an alias)
       *)
       (* (m_ref m_resolved_name) a3 b3  >>= (fun () ->  *)
-    (m_ref (m_option m_type_)) a4 b4 >>= (fun () -> 
-    return ()
-  )))
+
+    (m_ref (m_option m_type_)) a2 b2 >>= (fun () -> 
+      return ()
+    )
 
 and m_container_operator a b = 
   match a, b with
@@ -915,7 +926,8 @@ and m_stmt a b =
   match a, b with
 
   (* metavariable! *)
-  | A.ExprStmt(A.Name ((str,tok), _id_info)), b when MV.is_metavar_name str ->
+  | A.ExprStmt(A.Name (((str,tok), _name_info), _id_info)), b 
+     when MV.is_metavar_name str ->
       envf (str, tok) (B.S b)
 
   (* '...' can to match any statememt *)
@@ -1099,10 +1111,11 @@ and m_other_stmt_with_stmt_operator = m_other_xxx
 
 and m_pattern a b = 
   match a, b with
-  | A.PatVar(a1), B.PatVar(b1) ->
+  | A.PatVar(a1, a2), B.PatVar(b1, b2) ->
     m_ident a1 b1 >>= (fun () -> 
-    return ()
-    )
+    m_id_info a2 b2 >>= (fun () -> 
+      return ()
+    ))
   | A.PatLiteral(a1), B.PatLiteral(b1) ->
     m_literal a1 b1 >>= (fun () -> 
     return ()
@@ -1138,11 +1151,12 @@ and m_pattern a b =
     m_pattern a2 b2 >>= (fun () -> 
     return ()
     ))
-  | A.PatAs(a1, a2), B.PatAs(b1, b2) ->
+  | A.PatAs(a1, (a2, a3)), B.PatAs(b1, (b2, b3)) ->
     m_pattern a1 b1 >>= (fun () -> 
     m_ident a2 b2 >>= (fun () -> 
+    m_id_info a3 b3 >>= (fun () -> 
     return ()
-    ))
+    )))
   | A.PatTyped(a1, a2), B.PatTyped(b1, b2) ->
     m_pattern a1 b1 >>= (fun () -> 
     m_type_ a2 b2 >>= (fun () -> 
@@ -1188,14 +1202,15 @@ and m_definition a b =
 
 and m_entity a b = 
   match a, b with
-  { A. name = a1; attrs = a2; type_ = a3; tparams = a4; },
-  { B. name = b1; attrs = b2; type_ = b3; tparams = b4; } -> 
+  { A. name = a1; attrs = a2; type_ = a3; tparams = a4; info = a5 },
+  { B. name = b1; attrs = b2; type_ = b3; tparams = b4; info = b5 } -> 
     m_ident a1 b1 >>= (fun () -> 
     (m_list m_attribute) a2 b2 >>= (fun () -> 
     (m_option m_type_) a3 b3 >>= (fun () -> 
     (m_list m_type_parameter) a4 b4 >>= (fun () -> 
-    return ()
-  ))))
+    m_id_info a5 b5 >>= (fun () -> 
+     return ()
+  )))))
 
 and m_definition_kind a b = 
   match a, b with
@@ -1290,14 +1305,15 @@ and m_parameter a b =
 
 and m_parameter_classic a b = 
   match a, b with
-  { A. pname = a1; pdefault = a2; ptype = a3; pattrs = a4; },
-  { B. pname = b1; pdefault = b2; ptype = b3; pattrs = b4; } -> 
+  { A. pname = a1; pdefault = a2; ptype = a3; pattrs = a4; pinfo = a5 },
+  { B. pname = b1; pdefault = b2; ptype = b3; pattrs = b4; pinfo = b5 } -> 
     m_ident a1 b1 >>= (fun () -> 
     (m_option m_expr) a2 b2 >>= (fun () -> 
     (m_option m_type_) a3 b3 >>= (fun () -> 
     (m_list m_attribute) a4 b4 >>= (fun () -> 
+    m_id_info a5 b5 >>= (fun () ->
     return ()
-  ))))
+  )))))
 
 
 and m_other_parameter_operator = m_other_xxx

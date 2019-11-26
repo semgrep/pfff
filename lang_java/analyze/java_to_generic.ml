@@ -72,7 +72,7 @@ and class_type v =
   (match List.rev res with
   | [] -> raise Impossible (* list1 *)
   | name::xs ->
-        let info = { (G.empty_info ()) with G.
+        let info = { G.
             name_typeargs = None; (* could be v1TODO above *)
             name_qualifier = Some (List.rev xs);
           } in
@@ -167,7 +167,7 @@ and name v =
   (match List.rev res with
   | [] -> raise Impossible (* list1 *)
   | name::xs ->
-        let info = { (G.empty_info ()) with G.
+        let info = { G.
             name_typeargs = None; (* could be v1TODO above *)
             name_qualifier = Some (List.rev xs);
           } in
@@ -186,7 +186,7 @@ and literal = function
 and expr e =
   match e with
   | Ellipses v1 -> let v1 = tok v1 in G.Ellipses v1
-  | Name v1 -> let (a,b) = name v1 in G.Name (a,b)
+  | Name v1 -> let (a,b) = name v1 in G.Name ((a,b), G.empty_id_info())
   | NameOrClassType _v1 -> 
       let ii = Lib_parsing_java.ii_of_any (AExpr e) in
       error (List.hd ii) 
@@ -328,7 +328,7 @@ and stmt =
 
 and ident_label x =
   let x = ident x in
-  G.Name (x, G.empty_info ())
+  G.Name ((x, G.empty_name_info), G.empty_id_info())
 
 and stmts v = list stmt v
 
@@ -361,7 +361,9 @@ and var { v_name = name; v_mods = mods; v_type = xtyp } =
   let v1 = ident name in
   let v2 = modifiers mods in 
   let v3 = typ xtyp in
-  { G.name = v1; G.attrs = v2; G.type_ = Some v3; tparams = [] }
+  { G.name = v1; G.attrs = v2; G.type_ = Some v3; tparams = [];
+    info = G.empty_id_info ();
+  }
 
 and catch (v1, v2) = let (ent: G.entity) = var v1 and v2 = stmt v2 in
   let pat = G.OtherPat (G.OP_Var, [G.En ent]) in
