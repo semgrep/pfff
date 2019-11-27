@@ -5,9 +5,9 @@
 pfff is a set of tools and APIs to perform static analysis, code
 visualizations, code navigations, or style-preserving source-to-source
 transformations such as refactorings on source code. There is good
-support for C, Java, Javascript and PHP. There is also preliminary
+support for Javascript, Python, C, Java, and PHP. There is also preliminary
 support for other languages such as C++, Rust, C#, Html, CSS, Erlang,
-Lisp, Haskell, Python, OPA and SQL. There is also very good support for
+Lisp, Haskell, Skip, and SQL. There is also very good support for
 OCaml code so that the framework can be used on the code of pfff
 itself.
 
