@@ -66,3 +66,16 @@ def test_lambda():
   a = 1
   iter(lambda c: a + c)
 
+
+def test_nested_function():
+  a = 1
+  def bar():
+      return a
+  bar()
+
+def test_nested_function2():
+  a = 1
+  def foo():
+    b = 2
+    return a+b
+  foo(2)

@@ -46,6 +46,10 @@ let error_todo any =
   pr2 s;
   failwith ("Dataflow_visitor:error_todo ")
 
+(*****************************************************************************)
+(* Main algorithm *)
+(*****************************************************************************)
+
 (* Recursively visit the expression.
  * alt: 
  *  - use a visitor? and then do things differently only when inside an
@@ -67,7 +71,9 @@ let rec visit_expr hook lhs expr =
         (* do not call k here! *)
       )
      (* todo? should no go through FuncDef? intercept kdef? 
-      *  should also consider PatVar?
+      * TODO: should also consider PatVar?
+      *  with PatVar we will miss some lvalue, but it will just lead
+      *  to some FNs for liveness, not FPs.
       *)
     } in
     v any
@@ -148,14 +154,27 @@ let rec visit_expr hook lhs expr =
     recr e2;
     recr e;
 
-  (* TODO: need to detect external vars used inside the closure,
-   * visit but just grab the EnclodedVars inside
+  (* TODO: we should also process the lambda and check for useless
+   * assignements in it
    *)
   | Lambda def -> 
-    (* quick hack ... return everything, hopefully there are no locals
-     * with same name than an enclosing var that introduce some FN
+    (* Is it enough to just call anyhook and return everything as in:
+     *
+     *    anyhook hook Rhs (S def.fbody)
+     *
+     * No, because the body may introduce some assigns to its parameter 
+     * or its own locals, and then those locals will be returned as lvalues,
+     * which will then lead to some useless_assign because the
+     * enclosing functions will probably not use the same local var.
+     *
+     * As a first step, we could just filter and only return rvalues
+     * TODO As a second step we could return lvalues but only for variables
+     * tagged as an EnclosedVar.
      *)
-      anyhook hook Rhs (S def.fbody)
+      let filter_rvalue_hook lhs name idinfo =
+        if lhs = Rhs then hook lhs name idinfo
+      in
+      anyhook filter_rvalue_hook Rhs (S def.fbody)
 
 
   | AnonClass _ -> ()

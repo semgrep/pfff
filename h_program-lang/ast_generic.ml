@@ -885,3 +885,15 @@ let is_boolean_operator = function
  | PhysEq | NotPhysEq 
  | Lt | LtE | Gt | GtE 
    -> true
+
+let vardef_to_assign (ent, def) resolved =
+  let idinfo = { (empty_id_info()) with id_resolved = ref resolved } in
+  let name = Name ((ent.name, empty_name_info), idinfo) in
+  let v = opt_to_nop def.vinit in
+  Assign (name, v)
+
+let funcdef_to_lambda (ent, def) resolved =
+  let idinfo = { (empty_id_info()) with id_resolved = ref resolved } in
+  let name = Name ((ent.name, empty_name_info), idinfo) in
+  let v = Lambda def in
+  Assign (name, v)
