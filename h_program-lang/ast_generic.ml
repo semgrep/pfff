@@ -719,8 +719,8 @@ and macro_definition = {
 (*****************************************************************************)
 and directive = 
   (* newvar: *)
-  | Import    of module_name * alias list
-  | ImportAll of module_name * ident option (* as name *)
+  | ImportFrom of module_name * alias list
+  | ImportAs   of module_name * ident option (* as name *)
 
   | OtherDirective of other_directive_operator * any list
 

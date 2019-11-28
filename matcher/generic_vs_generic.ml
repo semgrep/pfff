@@ -1511,12 +1511,12 @@ and m_macro_definition a b =
 
 and m_directive a b = 
   match a, b with
-  | A.Import(a1, a2), B.Import(b1, b2) ->
+  | A.ImportFrom(a1, a2), B.ImportFrom(b1, b2) ->
     m_module_name a1 b1 >>= (fun () -> 
     (m_list m_alias) a2 b2 >>= (fun () -> 
     return ()
     ))
-  | A.ImportAll(a1, a2), B.ImportAll(b1, b2) ->
+  | A.ImportAs(a1, a2), B.ImportAs(b1, b2) ->
     m_module_name a1 b1 >>= (fun () -> 
     (m_option m_ident) a2 b2 >>= (fun () -> 
     return ()
@@ -1526,7 +1526,7 @@ and m_directive a b =
     (m_list m_any) a2 b2 >>= (fun () -> 
     return ()
     ))
-  | A.Import _, _ | A.ImportAll _, _ | A.OtherDirective _, _
+  | A.ImportFrom _, _ | A.ImportAs _, _ | A.OtherDirective _, _
    -> fail ()
 
 and m_alias a b = 

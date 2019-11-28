@@ -529,9 +529,9 @@ and
 and v_directive x =
   let k x = 
   match x with
-  | Import ((v1, v2)) ->
+  | ImportFrom ((v1, v2)) ->
       let v1 = v_module_name v1 and v2 = v_list v_alias v2 in ()
-  | ImportAll ((v1, v2)) ->
+  | ImportAs ((v1, v2)) ->
       let v1 = v_module_name v1 and v2 = v_option v_ident v2 in ()
   | OtherDirective ((v1, v2)) ->
       let v1 = v_other_directive_operator v1 and v2 = v_list v_any v2 in ()

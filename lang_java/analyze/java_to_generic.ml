@@ -495,10 +495,10 @@ let compilation_unit {
       (fun (v1, v2) -> let _v1TODO = bool v1 and v2 = qualified_ident v2 in 
         match List.rev v2 with
         | ("*", _)::xs ->
-           G.ImportAll (G.DottedName (List.rev xs), None)
+           G.ImportAs (G.DottedName (List.rev xs), None)
         | [] -> raise Impossible
         | x::xs ->
-          G.Import (G.DottedName (List.rev xs), [(x, None)])
+          G.ImportFrom (G.DottedName (List.rev xs), [(x, None)])
         )
       imports in
   let v3 = decls xdecls in

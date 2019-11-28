@@ -351,7 +351,7 @@ let define_body =
 let toplevel =
   function
   | Include v1 -> let v1 = wrap string v1 in 
-      G.IDir (G.ImportAll (G.FileName v1, None))
+      G.IDir (G.ImportAs (G.FileName v1, None))
   | Define ((v1, v2)) -> 
     let v1 = name v1 and v2 = define_body v2 in
     let ent = G.basic_entity v1 [] in

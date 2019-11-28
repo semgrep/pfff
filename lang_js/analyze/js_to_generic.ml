@@ -365,10 +365,10 @@ and module_directive x =
   match x with
   | Import ((v1, v2, v3)) ->
       let v1 = name v1 and v2 = name v2 and v3 = filename v3 in 
-      G.Import (G.FileName v3, [v1, Some v2])
+      G.ImportFrom (G.FileName v3, [v1, Some v2])
   | ModuleAlias ((v1, v2)) ->
       let v1 = name v1 and v2 = filename v2 in
-      G.ImportAll (G.FileName v2, Some v1)
+      G.ImportAs (G.FileName v2, Some v1)
   | ImportCss ((v1)) ->
       let v1 = name v1 in
       G.OtherDirective (G.OI_ImportCss, [G.Id v1])

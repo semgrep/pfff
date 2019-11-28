@@ -465,7 +465,7 @@ and stmt x =
 
   | Import v1 -> let v1 = list alias2 v1 in 
       G.Block (v1 |> List.map (fun (dotted, nopt) ->
-            G.DirectiveStmt (G.ImportAll (G.DottedName dotted, nopt))))
+            G.DirectiveStmt (G.ImportAs (G.DottedName dotted, nopt))))
 
   | ImportFrom ((v1, v2, v3)) ->
       let v1 = dotted_name v1
@@ -473,7 +473,7 @@ and stmt x =
       and _v3Dotlevel = (*option int v3 *) v3
       in
       (* will be lift up to IDef later *)
-      G.DirectiveStmt (G.Import (G.DottedName v1, v2))
+      G.DirectiveStmt (G.ImportFrom (G.DottedName v1, v2))
 
   | Global v1 -> let v1 = list name v1 in
       G.OtherStmt (G.OS_Global, v1 |> List.map (fun x -> G.Id x))

@@ -637,14 +637,14 @@ and map_class_kind =
 
 and map_directive =
   function
-  | Import ((v1, v2)) ->
+  | ImportFrom ((v1, v2)) ->
       let v1 = map_module_name v1
       and v2 = map_of_list map_alias v2
-      in Import ((v1, v2))
-  | ImportAll ((v1, v2)) ->
+      in ImportFrom ((v1, v2))
+  | ImportAs ((v1, v2)) ->
       let v1 = map_module_name v1
       and v2 = map_of_option map_ident v2
-      in ImportAll ((v1, v2))
+      in ImportAs ((v1, v2))
   | OtherDirective ((v1, v2)) ->
       let v1 = map_other_directive_operator v1
       and v2 = map_of_list map_any v2

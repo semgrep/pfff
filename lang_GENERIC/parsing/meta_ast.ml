@@ -790,14 +790,14 @@ and vof_class_kind =
   | Trait -> Ocaml.VSum (("Trait", []))
 and vof_directive =
   function
-  | Import ((v1, v2)) ->
+  | ImportFrom ((v1, v2)) ->
       let v1 = vof_module_name v1
       and v2 = Ocaml.vof_list vof_alias v2
-      in Ocaml.VSum (("Import", [ v1; v2 ]))
-  | ImportAll ((v1, v2)) ->
+      in Ocaml.VSum (("ImportFrom", [ v1; v2 ]))
+  | ImportAs ((v1, v2)) ->
       let v1 = vof_module_name v1
       and v2 = Ocaml.vof_option vof_ident v2
-      in Ocaml.VSum (("ImportAll", [ v1; v2 ]))
+      in Ocaml.VSum (("ImportAs", [ v1; v2 ]))
   | OtherDirective ((v1, v2)) ->
       let v1 = vof_other_directive_operator v1
       and v2 = Ocaml.vof_list vof_any v2
