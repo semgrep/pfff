@@ -379,9 +379,21 @@ let rec m_name a b =
 (* Expression *)
 (* ------------------------------------------------------------------------- *)
 
+and make_dotted xs =
+  match xs with
+  | [] -> raise Impossible
+  | x::xs ->
+    let base = B.Name ((x, B.empty_name_info), B.empty_id_info()) in
+    List.fold_left (fun acc e -> 
+      B.ObjAccess (acc, e)) base xs
+
 and m_expr a b = 
   match a, b with
+  (* iso: name resolving! *)
+  | a, B.Name (_, { B.id_resolved = 
+      {contents = Some (B.Global dotted | B.ImportedModule dotted)}; _}) ->
 
+    m_expr a (make_dotted dotted)
 
   (* $X should not match an IdSpecial otherwise $X(...) could match
    * a+b because this is transformed in a Call(IdSpecial Plus, ...) 

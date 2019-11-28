@@ -182,10 +182,6 @@ let resolve prog =
     
      | Import (aliases) ->
          aliases |> List.iter (fun (dotted_name, asname_opt) ->
-           (match dotted_name with
-           | [name] -> env |> add_name_env name (ImportedModule dotted_name)
-           | _ -> (* TODO *) ()
-           );
            asname_opt |> Common.do_option (fun asname ->
              env |> add_name_env asname (ImportedModule dotted_name)
            );
@@ -194,9 +190,12 @@ let resolve prog =
 
      | ImportFrom (dotted_name, aliases, _) ->
          aliases |> List.iter (fun (name, asname_opt) ->
-           env |> add_name_env name (ImportedEntity dotted_name);
-           asname_opt |> Common.do_option (fun asname ->
-             env |> add_name_env asname (ImportedEntity dotted_name)
+           let entity = dotted_name @ [name] in
+           (match asname_opt with
+           | None -> 
+             env |> add_name_env name (ImportedEntity entity);
+           | Some asname ->
+             env |> add_name_env asname (ImportedEntity entity)
            );
          );
          k x
