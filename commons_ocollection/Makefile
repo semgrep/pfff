@@ -9,7 +9,7 @@ SRC=objet.ml \
  oset.ml oassoc.ml osequence.ml oarray.ml  \
  osetb.ml oseth.ml oseti.ml \
  oassocb.ml oassoch.ml \
- ograph.ml ograph_simple.ml ograph_extended.ml ograph2way.ml \
+ ograph.ml ograph_extended.ml ograph_simple.ml  ograph2way.ml \
  oassoc_buffer.ml \
  ofullcommon.ml
 

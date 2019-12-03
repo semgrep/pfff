@@ -333,8 +333,11 @@ purebytecode:
 # stags targets (was pfff_tags)
 #------------------------------------------------------------------------------
 
+# I've added -linkall just to debug possible issues in wrong 
+# order of the SRC files in the library
+# (I had a linking error in efuns, which require -linkall)
 stags: $(LIBS) $(OBJS) main_stags.cmo
-	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
+	$(OCAMLC) -linkall $(CUSTOM) -o $@ $(SYSLIBS) $^
 stags.opt: $(LIBS:.cma=.cmxa) $(OPTOBJS) main_stags.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) $^
 
@@ -467,7 +470,7 @@ uninstall: all
 
 # Some of those libraries are needed by efuns, magicator, syncweb
 INSTALL_SUBDIRS= \
-  commons commons_core commons_wrappers/graph \
+  commons commons_core commons_ocollection commons_wrappers/graph \
   globals \
   h_program-lang    matcher linter \
   h_version-control h_files-format h_visualization \
