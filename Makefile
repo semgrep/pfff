@@ -246,7 +246,7 @@ MAKESUBDIRS=commons commons_ocollection commons_core \
   matcher \
   linter \
   mini \
-  meta \
+  metagen \
   $(VISUALDIRS) \
   demos
 
