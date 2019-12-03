@@ -54,11 +54,11 @@ let dotted_name v = list name v
 
 let gensym_TODO = -1 
 
-let resolved_name =
+let resolved_name name =
   function
   | LocalVar -> Some (G.Local gensym_TODO)
   | Parameter -> Some (G.Param gensym_TODO)
-  | GlobalVar -> Some (G.Global [] (* TODO? *))
+  | GlobalVar -> Some (G.Global [name])
   | ClassField -> None
   | ImportedModule xs -> Some (G.ImportedModule xs)
   | ImportedEntity xs -> Some (G.Global xs)
@@ -110,7 +110,7 @@ let rec expr (x: expr) =
   | Name ((v1, v2, v3)) ->
       let v1 = name v1
       and _v2TODO = expr_context v2
-      and v3 = vref resolved_name v3
+      and v3 = vref (resolved_name v1) v3
       in 
       G.Name ((v1, G.empty_name_info),
                { G.id_type = ref None;
