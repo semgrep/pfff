@@ -180,8 +180,8 @@ parser_*.output
 /lang_php/parsing/show_function_calls3
 /h_version-control/vcs
 /h_visualization/treemap_viewer
-/meta/ffi
-/meta/gen_code
+/metagen/ffi
+/metagen/gen_code
 /lang_php/pretty/prettyphp
 
 # ocsigen
