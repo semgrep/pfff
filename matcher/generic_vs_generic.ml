@@ -721,8 +721,6 @@ and m_list__m_argument (xsa: A.argument list) (xsb: A.argument list) =
   | A.Arg (A.Ellipses i)::xsa, xb::xsb ->
       (* can match nothing *)
       (m_list__m_argument xsa (xb::xsb)) >||>
-      (* can match one *)
-      (m_list__m_argument xsa xsb) >||>
       (* can match more *)
       (m_list__m_argument ((A.Arg (A.Ellipses i))::xsa) xsb)
 
