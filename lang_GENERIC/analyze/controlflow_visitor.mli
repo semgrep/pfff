@@ -1,5 +1,6 @@
 
 val exprs_of_node: Controlflow.node -> Ast.expr list
+(* can also be (ab)used as an iter_on_node_and_expr *)
 val fold_on_node_and_expr: 
   ((Controlflow.nodei * Controlflow.node) -> Ast.expr -> 'a -> 'a) -> 
   Controlflow.flow -> 'a -> 'a

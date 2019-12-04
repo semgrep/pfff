@@ -12,7 +12,7 @@ type node = {
     | IfHeader of expr
     | WhileHeader of expr
     | DoHeader | DoWhileTail of expr
-    | ForHeader | ForeachHeader of pattern * expr
+    | ForHeader (*TODO*) | ForeachHeader of pattern * expr
     | OtherStmtWithStmtHeader of other_stmt_with_stmt_operator * expr
 
     | SwitchHeader of expr | SwitchEnd
@@ -31,6 +31,9 @@ type node = {
       | DefStmt of definition
       | DirectiveStmt of directive
       | Assert of expr * expr option
+      (* The 'any' below should not containt stmts, otherwise the CFG will
+       * be incomplete. Use other_stmt_with_stmt_operator instead.
+       *)
       | OtherStmt of other_stmt_operator * any list
       | Parameter of parameter
 
@@ -53,7 +56,7 @@ val find_exit: flow -> nodei
 val display_flow: flow -> unit
 
 val short_string_of_node_kind: node_kind -> string
-val short_string_of_node: node -> string
+val short_string_of_node:      node      -> string
 
 val simple_node_of_stmt_opt: stmt -> simple_node option
 val any_of_simple_node: simple_node -> any

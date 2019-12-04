@@ -13,10 +13,8 @@ type error = error_kind * Parse_info.t option
   | NoEnclosingLoop
   | DynamicBreak
 
+exception Error of error
 
 val string_of_error: error -> string
 val string_of_error_kind: error_kind -> string
-
-exception Error of error
-
 val report_error : error -> unit

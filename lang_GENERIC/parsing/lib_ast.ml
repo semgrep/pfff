@@ -39,7 +39,7 @@ let ii_of_any any =
 (* Abstract position *)
 (*****************************************************************************)
 let abstract_position_visitor recursor = 
-  let hooks = { (* M.default_visitor with *)
+  let hooks = { M.default_visitor with
     M.kinfo = (fun (_k, _) i -> 
       { i with Parse_info.token = Parse_info.Ab }
     )
