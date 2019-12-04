@@ -362,7 +362,7 @@ let main_action xs =
       files |> Console.progress ~show:!show_progress (fun k -> 
         List.iter (fun file ->
           k();
-          Error_code.try_analyze_file_with_exn_to_errors file (fun () ->
+          Error_code.try_with_exn_to_error file (fun () ->
             pr2_dbg (spf "processing: %s" file);
             let ast = 
               Common.save_excursion Flag.error_recovery false (fun () ->

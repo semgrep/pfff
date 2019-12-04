@@ -90,7 +90,10 @@ val filter_maybe_parse_and_fatal_errors: error list -> error list
 val adjust_paths_relative_to_root: 
   Common.path -> error list -> error list
 
-val try_analyze_file_with_exn_to_errors:
+val try_with_exn_to_error:
+  Common.filename -> (unit -> unit) -> unit
+
+val try_with_print_exn_and_reraise:
   Common.filename -> (unit -> unit) -> unit
 
 (* to detect false positives (we use the Hashtbl.find_all property) *)

@@ -63,7 +63,8 @@ type error = {
  and severity = Error | Warning
 
  and error_kind =
-  (* parsing related errors. See also try_with_exn_to_errors() and 
+  (* parsing related errors. 
+   * See also try_with_exn_to_errors(), try_with_error_loc_and_reraise(), and
    * filter_maybe_parse_and_fatal_errors
    *)
   | LexicalError of string
@@ -204,15 +205,21 @@ let string_of_error err =
 
 let g_errors = ref []
 
-let error tok err =
+let mk_error tok err = 
   let loc = PI.token_location_of_info tok in
-  Common.push { loc = loc; typ = err; sev = Error } g_errors
+  { loc = loc; typ = err; sev = Error }
+
+let mk_error_loc loc err =
+  { loc = loc; typ = err; sev = Error }
+
+let error tok err =
+  Common.push (mk_error tok err) g_errors
 let warning tok err = 
   let loc = PI.token_location_of_info tok in
   Common.push { loc = loc; typ = err; sev = Warning } g_errors
 
 let error_loc loc err =
-  Common.push { loc = loc; typ = err; sev = Error } g_errors
+  Common.push (mk_error_loc loc err)  g_errors
 let warning_loc loc err = 
   Common.push { loc = loc; typ = err; sev = Warning } g_errors
 
@@ -293,24 +300,37 @@ let filter_maybe_parse_and_fatal_errors errs =
     | _ -> false
   )
 
-let try_analyze_file_with_exn_to_errors file f =
-  try 
-    f ()
-  with 
+let exn_to_error file exn =
+  match exn with
   | Parse_info.Lexical_error (s, tok) ->
-    error tok (LexicalError s)
+    mk_error tok (LexicalError s)
   | Parse_info.Parsing_error tok ->
-    error tok (ParseError);
+    mk_error tok (ParseError);
   | Parse_info.Ast_builder_error (s, tok) ->
-    error tok (AstbuilderError s);
+    mk_error tok (AstbuilderError s);
   | Parse_info.Other_error (s, tok) ->
-    error tok (OtherParsingError s);
+    mk_error tok (OtherParsingError s);
   (* this should never be captured *)
   | (Timeout | UnixExit _) as exn -> raise exn
   (* general case, can't extract line information from it, default to line 1 *)
   | exn ->
     let loc = Parse_info.first_loc_of_file file in
-    error_loc loc (FatalError (Common.exn_to_s exn))
+    mk_error_loc loc (FatalError (Common.exn_to_s exn))
+
+let try_with_exn_to_error file f =
+  try 
+    f ()
+  with exn ->
+    Common.push (exn_to_error file exn) g_errors
+
+let try_with_print_exn_and_reraise file f =
+  try 
+    f () 
+  with exn ->
+    let err = exn_to_error file exn in
+    pr2 (string_of_error err);
+    raise exn
+
 
 let adjust_paths_relative_to_root root errs =
  errs |> List.map (fun e -> 

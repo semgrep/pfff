@@ -300,13 +300,15 @@ let main_action xs =
       )
     in
     if !r2c
-    then E.try_analyze_file_with_exn_to_errors file (fun () ->
+    then E.try_with_exn_to_error file (fun () ->
           Common.save_excursion Flag.error_recovery false (fun () ->
           Common.save_excursion Flag.exn_when_lexical_error true (fun () ->
           Common.save_excursion Flag.show_parsing_error false (fun () ->
             process file
          ))))
-    else process file
+    else E.try_with_print_exn_and_reraise file (fun () ->
+            process file
+         )
   );
   if !r2c then begin
    let errs = !E.g_errors 
@@ -315,6 +317,7 @@ let main_action xs =
    in
    pr (R2c.string_of_errors "sgrep" errs)
   end;
+
   !layer_file |> Common.do_option (fun file ->
     let root = Common2.common_prefix_of_files_or_dirs xs in
     gen_layer ~root ~query:query_string  file
