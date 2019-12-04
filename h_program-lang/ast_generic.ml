@@ -769,6 +769,7 @@ and any =
   | Dk of definition_kind
   | Di of dotted_ident
   | Fld of field
+  | Ss of stmt list
 
   | Pr of program
 

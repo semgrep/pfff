@@ -1648,8 +1648,12 @@ and m_any a b =
     m_ident a1 b1 >>= (fun () -> 
     return ()
     )
+  | A.Ss(a1), B.Ss(b1) ->
+    m_list m_stmt a1 b1 >>= (fun () -> 
+    return ()
+    )
   | A.Id _, _  | A.N _, _  | A.Di _, _  | A.En _, _  | A.E _, _
   | A.S _, _  | A.T _, _  | A.P _, _  | A.Def _, _  | A.Dir _, _
   | A.I _, _  | A.Pa _, _  | A.Ar _, _  | A.At _, _  | A.Dk _, _ | A.Pr _, _
-  | A.Fld _, _
+  | A.Fld _, _ | A.Ss _, _
    -> fail ()

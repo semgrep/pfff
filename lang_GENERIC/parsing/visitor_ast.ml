@@ -558,6 +558,7 @@ and v_any =
   | En v1 -> let v1 = v_entity v1 in ()
   | E v1 -> let v1 = v_expr v1 in ()
   | S v1 -> let v1 = v_stmt v1 in ()
+  | Ss v1 -> let v1 = v_list v_stmt v1 in ()
   | T v1 -> let v1 = v_type_ v1 in ()
   | P v1 -> let v1 = v_pattern v1 in ()
   | Def v1 -> let v1 = v_def v1 in ()

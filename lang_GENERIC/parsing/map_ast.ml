@@ -671,6 +671,7 @@ and map_any =
   | En v1 -> let v1 = map_entity v1 in En ((v1))
   | E v1 -> let v1 = map_expr v1 in E ((v1))
   | S v1 -> let v1 = map_stmt v1 in S ((v1))
+  | Ss v1 -> let v1 = map_of_list map_stmt v1 in Ss ((v1))
   | T v1 -> let v1 = map_type_ v1 in T ((v1))
   | P v1 -> let v1 = map_pattern v1 in P ((v1))
   | Def v1 -> let v1 = map_definition v1 in Def ((v1))

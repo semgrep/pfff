@@ -823,6 +823,7 @@ and vof_any =
   | En v1 -> let v1 = vof_entity v1 in Ocaml.VSum (("En", [ v1 ]))
   | E v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("E", [ v1 ]))
   | S v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("S", [ v1 ]))
+  | Ss v1 -> let v1 = Ocaml.vof_list vof_stmt v1 in Ocaml.VSum (("Ss", [ v1 ]))
   | T v1 -> let v1 = vof_type_ v1 in Ocaml.VSum (("T", [ v1 ]))
   | P v1 -> let v1 = vof_pattern v1 in Ocaml.VSum (("P", [ v1 ]))
   | Def v1 -> let v1 = vof_definition v1 in Ocaml.VSum (("D", [ v1 ]))
