@@ -29,6 +29,7 @@ INCLUDEDIRS= $(TOP)/commons $(TOP)/commons_ocollection \
    $(TOP)/globals \
    $(TOP)/external/ \
    $(TOP)/lang_GENERIC/parsing \
+   $(TOP)/lang_GENERIC/analyze \
 
 ##############################################################################
 # Generic variables

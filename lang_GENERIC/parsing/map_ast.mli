@@ -1,6 +1,9 @@
 open Ast_generic
 
 type visitor_in = {
+  kexpr: (expr -> expr) * visitor_out -> expr -> expr;
+  kstmt: (stmt -> stmt) * visitor_out -> stmt -> stmt;
+
   kinfo: (tok -> tok) * visitor_out -> tok -> tok;
 }
 

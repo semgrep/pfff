@@ -56,6 +56,10 @@ let match_any_any pattern e =
 (*****************************************************************************)
 
 let sgrep_ast ~hook pattern ast =
+  
+  let pattern = Normalize_ast.normalize pattern in
+  let prog = Normalize_ast.normalize (Pr ast) in
+
   let hook =
     match pattern with
     (* depending on the pattern, we visit every relevant nodes
@@ -106,4 +110,4 @@ let sgrep_ast ~hook pattern ast =
    * constants (name of function, field, etc.)
    *)
 
-  (V.mk_visitor hook) (Pr ast)
+  (V.mk_visitor hook) prog

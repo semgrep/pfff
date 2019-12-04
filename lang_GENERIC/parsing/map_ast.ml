@@ -23,10 +23,9 @@ open Ast_generic
 (* hooks *)
 
 type visitor_in = {
-(*
   kexpr: (expr  -> expr) * visitor_out -> expr  -> expr;
   kstmt: (stmt -> stmt) * visitor_out -> stmt -> stmt;
-*)
+
   kinfo: (tok -> tok) * visitor_out -> tok -> tok;
 }
 
@@ -39,10 +38,8 @@ and visitor_out = {
 
 let default_visitor =
   { 
-(*
     kexpr   = (fun (k,_) x -> k x);
     kstmt = (fun (k,_) x -> k x);
-*)
     kinfo = (fun (k,_) x -> k x);
   }
 
@@ -115,8 +112,8 @@ and map_id_info { id_resolved = v_id_resolved; id_type = v_id_type } =
 
 
 and map_xml v1 = map_of_list map_any v1  
-and map_expr =
-  function
+and map_expr x =
+  let k x = match x with
   | L v1 -> let v1 = map_literal v1 in L ((v1))
   | Container ((v1, v2)) ->
       let v1 = map_container_operator v1
@@ -173,6 +170,8 @@ and map_expr =
       let v1 = map_other_expr_operator v1
       and v2 = map_of_list map_any v2
       in OtherExpr ((v1, v2))
+  in
+  vin.kexpr (k, all_functions) x
 
 and map_literal =
   function
@@ -313,8 +312,8 @@ and map_attribute =
 
 and map_other_attribute_operator x  = x
 
-and map_stmt =
-  function
+and map_stmt x =
+  let k x = match x with
   | ExprStmt v1 -> let v1 = map_expr v1 in ExprStmt ((v1))
   | DefStmt v1 -> let v1 = map_definition v1 in DefStmt ((v1))
   | DirectiveStmt v1 -> let v1 = map_directive v1 in DirectiveStmt ((v1))
@@ -359,6 +358,8 @@ and map_stmt =
       let v1 = map_other_stmt_operator v1
       and v2 = map_of_list map_any v2
       in OtherStmt ((v1, v2))
+  in
+  vin.kstmt (k, all_functions) x
 
 and map_other_stmt_with_stmt_operator x = x
 
