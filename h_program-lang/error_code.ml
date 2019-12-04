@@ -327,8 +327,11 @@ let try_with_print_exn_and_reraise file f =
   try 
     f () 
   with exn ->
+    let bt = Printexc.get_backtrace () in
     let err = exn_to_error file exn in
     pr2 (string_of_error err);
+    pr2 bt;
+    (* does not really re-raise :( lose some backtrace *)
     raise exn
 
 

@@ -79,6 +79,7 @@ type resolved_name =
   | Parameter
   | GlobalVar
   | ClassField
+  (* both dotted_name should contain at least one element! *)
   | ImportedModule of dotted_name
   | ImportedEntity of dotted_name
 

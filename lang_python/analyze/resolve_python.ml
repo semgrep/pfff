@@ -175,7 +175,7 @@ let resolve prog =
          if !(env.ctx) = InFunction
          then env |> add_name_env name (LocalVar);
      | ClassDef (name, _bases, _body, _decorators) ->
-           env |> add_name_env name (ImportedEntity []); (* could be more precise *)
+           env |> add_name_env name (ImportedEntity [name]); (* could be more precise *)
            with_new_context InClass env (fun () ->
                k x              
             )

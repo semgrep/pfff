@@ -133,8 +133,9 @@ type resolved_name =
   | Param of gensym (* could merge with Local *)
   (* for closures; can refer to a Local or Param *)
   | EnclosedVar of gensym (* TODO? and depth? *)
-  | Global of dotted_ident (* or just name? *) (* can also use 0 for gensym *)
 
+  (* both dotted_ident must at least contain one element *)
+  | Global of dotted_ident (* or just name? *) (* can also use 0 for gensym *)
   | ImportedModule of dotted_ident
   | Macro
   | EnumConstant
