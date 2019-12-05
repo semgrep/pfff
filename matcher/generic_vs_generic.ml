@@ -946,11 +946,12 @@ and m_stmts (xsa: A.stmt list) (xsb: A.stmt list) =
    * matched all the statements in the pattern (there is an implicit
    * '...' at the end, in addition to implicit '...' at the beginning
    * handled by kstmts calling the pattern for each subsequences).
+   * TODO: sgrep_generic though then display the whole sequence as a match
+   * instead of just the relevant part.
    *)
   | [], _::_ ->
       return ()
 
-(* TODO
   (* '...', can also match no statement *)
   | [A.ExprStmt (A.Ellipses _i)], [] ->
       return ()
@@ -960,7 +961,7 @@ and m_stmts (xsa: A.stmt list) (xsb: A.stmt list) =
       (m_stmts xsa (xb::xsb)) >||>
       (* can match more *)
       (m_stmts ((A.ExprStmt (A.Ellipses i))::xsa) xsb)
-*)
+
 
   (* the general case *)
   | xa::aas, xb::bbs ->

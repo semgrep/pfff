@@ -196,11 +196,14 @@ nl_or_stmt:
  | stmt    { $1 }
 
 sgrep_spatch_pattern:
- | test       EOF { Expr $1 }
- | small_stmt EOF { Stmt $1 }
- | compound_stmt EOF { Stmt $1 }
- | small_stmt NEWLINE EOF { Stmt $1 }
+ | test       EOF            { Expr $1 }
+
+ | small_stmt EOF            { Stmt $1 }
+ | compound_stmt EOF         { Stmt $1 }
+ | small_stmt NEWLINE EOF    { Stmt $1 }
  | compound_stmt NEWLINE EOF { Stmt $1 }
+
+ | stmt stmt stmt_list EOF { Stmts ($1 @ $2 @ $3) }
 
 /*(*************************************************************************)*/
 /*(*1 Import *)*/
