@@ -62,6 +62,7 @@ let rec join_with_space_if_needed xs =
 (* Entry point *)
 (*****************************************************************************)
 let print_match ?(format = Normal) ii = 
+ try
   let (mini, maxi) = PI.min_max_ii_by_pos ii in
   let (file, line) = 
     PI.file_of_info mini, PI.line_of_info mini in
@@ -69,7 +70,7 @@ let print_match ?(format = Normal) ii =
   let arr = Common2.cat_array file in
   let lines = Common2.enum (PI.line_of_info mini) (PI.line_of_info maxi) in
   
-  match format with
+  (match format with
   | Normal ->
       pr prefix;
       (* todo? some context too ? *)
@@ -79,3 +80,6 @@ let print_match ?(format = Normal) ii =
   | OneLine ->
       pr (prefix ^ ": " ^ (ii |> List.map PI.str_of_info 
                             |> join_with_space_if_needed))
+  )
+ with Failure "get_pos: Ab or FakeTok" ->
+   pr "<could not locate match, FakeTok or AbstractTok>"
