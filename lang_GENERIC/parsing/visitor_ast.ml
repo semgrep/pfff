@@ -34,6 +34,7 @@ type visitor_in = {
   kparam: (parameter  -> unit) * visitor_out -> parameter  -> unit;
   kident: (ident -> unit)  * visitor_out -> ident  -> unit;
   kentity: (entity -> unit)  * visitor_out -> entity  -> unit;
+  kstmts: (stmt list  -> unit) * visitor_out -> stmt list -> unit;
 
   kinfo: (tok -> unit)  * visitor_out -> tok  -> unit;
 }
@@ -53,6 +54,7 @@ let default_visitor =
     kparam   = (fun (k,_) x -> k x);
     kident   = (fun (k,_) x -> k x);
     kentity   = (fun (k,_) x -> k x);
+    kstmts   = (fun (k,_) x -> k x);
 
     kinfo   = (fun (k,_) x -> k x);
   }
@@ -285,13 +287,23 @@ and v_attribute x =
 
 and v_other_attribute_operator _ = ()
 
+and v_stmts xs =
+  let k xs = 
+    match xs with
+    | [] -> ()
+    | x::xs ->
+      v_stmt x;
+      v_stmts xs
+  in
+  vin.kstmts (k, all_functions) xs
+
 and v_stmt x =
   let k x =
   match x with
   | ExprStmt v1 -> let v1 = v_expr v1 in ()
   | DefStmt v1 -> let v1 = v_def v1 in ()
   | DirectiveStmt v1 -> let v1 = v_directive v1 in ()
-  | Block v1 -> let v1 = v_list v_stmt v1 in ()
+  | Block v1 -> let v1 = v_stmts v1 in ()
   | If ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_stmt v2 and v3 = v_stmt v3 in ()
   | While ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_stmt v2 in ()
@@ -558,7 +570,7 @@ and v_any =
   | En v1 -> let v1 = v_entity v1 in ()
   | E v1 -> let v1 = v_expr v1 in ()
   | S v1 -> let v1 = v_stmt v1 in ()
-  | Ss v1 -> let v1 = v_list v_stmt v1 in ()
+  | Ss v1 -> let v1 = v_stmts v1 in ()
   | T v1 -> let v1 = v_type_ v1 in ()
   | P v1 -> let v1 = v_pattern v1 in ()
   | Def v1 -> let v1 = v_def v1 in ()

@@ -854,6 +854,7 @@ and v_any =
   | Toplevel v1 -> let v1 = v_toplevel v1 in ()
   | BlockDecl2 v1 -> let v1 = v_block_declaration v1 in ()
   | Stmt v1 -> let v1 = v_statement v1 in ()
+  | Stmts v1 -> let v1 = v_list v_statement v1 in ()
   | Expr v1 -> let v1 = v_expression v1 in ()
   | Init v1 -> let v1 = v_initialiser v1 in ()
   | Type v1 -> let v1 = v_fullType v1 in ()

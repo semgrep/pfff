@@ -278,6 +278,7 @@ external_declaration:
 sgrep_spatch_pattern:
  | expr      EOF { Expr $1 }
  | statement EOF { Stmt $1 }
+ | statement statement_list EOF { Stmts ($1::$2) }
 
 
 /*(*************************************************************************)*/
@@ -766,11 +767,15 @@ jump:
 
 statement_list_opt:
  | /*(*empty*)*/ { [] }
- | statement_list { $1 }
+ | statement_seq_list { $1 }
+
+statement_seq_list:
+ | statement_seq { [$1] }
+ | statement_seq_list statement_seq { $1 @ [$2] }
 
 statement_list:
- | statement_seq { [$1] }
- | statement_list statement_seq { $1 @ [$2] }
+ | statement { [$1] }
+ | statement_list statement { $1 @ [$2] }
 
 statement_seq:
  | statement { StmtElem $1 }

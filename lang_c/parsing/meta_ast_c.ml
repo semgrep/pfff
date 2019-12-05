@@ -352,6 +352,8 @@ let vof_any =
   function
   | Expr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Expr", [ v1 ]))
   | Stmt v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("Stmt", [ v1 ]))
+  | Stmts v1 -> let v1 = Ocaml.vof_list vof_stmt v1 in 
+                Ocaml.VSum (("Stmts", [ v1 ]))
   | Type v1 -> let v1 = vof_type_ v1 in Ocaml.VSum (("Type", [ v1 ]))
   | Toplevel v1 ->
       let v1 = vof_toplevel v1 in Ocaml.VSum (("Toplevel", [ v1 ]))

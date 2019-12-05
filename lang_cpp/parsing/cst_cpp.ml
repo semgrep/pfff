@@ -769,6 +769,7 @@ and any =
   | ClassMember of class_member
   | OneDecl of onedecl
   | Init of initialiser
+  | Stmts of statement list
 
   | Constant of constant
 

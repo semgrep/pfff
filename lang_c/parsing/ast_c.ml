@@ -294,6 +294,7 @@ type program = toplevel list
 type any =
   | Expr of expr
   | Stmt of stmt
+  | Stmts of stmt list
   | Type of type_
   | Toplevel of toplevel
   | Program of program

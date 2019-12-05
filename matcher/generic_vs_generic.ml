@@ -57,6 +57,7 @@ module Lib = Lib_ast
 (* Globals *)
 (*****************************************************************************)
 let verbose = ref false
+let debug = ref false
 
 (*****************************************************************************)
 (* Helpers *)
@@ -159,7 +160,10 @@ let pr2, _pr2_once = Common2.mk_pr2_wrappers verbose
     [tin]
       
     let (fail : tin -> tout) = fun _tin ->
-    []
+      if !debug
+      then failwith "Generic_vs_generic.fail: Match failure"
+      else
+      []
 
   (* ------------------------------------------------------------------------*)
   (* Environment *) 
@@ -170,6 +174,7 @@ let pr2, _pr2_once = Common2.mk_pr2_wrappers verbose
    *)
   let equal_ast_binded_code a b =
     match a, b with
+    | Ast.Id _, Ast.Id _
     | Ast.E _, Ast.E _ 
     | Ast.N _, Ast.N _
     | Ast.S _, Ast.S _
@@ -932,6 +937,42 @@ and m_other_attribute_operator = m_other_xxx
 (* Statement *)
 (* ------------------------------------------------------------------------- *)
 
+and m_stmts (xsa: A.stmt list) (xsb: A.stmt list) =
+  match xsa, xsb with
+  | [], [] ->
+      return ()
+
+  (* it's ok to have statements after in the concrete code as long as we
+   * matched all the statements in the pattern (there is an implicit
+   * '...' at the end, in addition to implicit '...' at the beginning
+   * handled by kstmts calling the pattern for each subsequences).
+   *)
+  | [], _::_ ->
+      return ()
+
+(* TODO
+  (* '...', can also match no statement *)
+  | [A.ExprStmt (A.Ellipses _i)], [] ->
+      return ()
+
+  | (A.ExprStmt (A.Ellipses i))::xsa, xb::xsb ->
+      (* can match nothing *)
+      (m_stmts xsa (xb::xsb)) >||>
+      (* can match more *)
+      (m_stmts ((A.ExprStmt (A.Ellipses i))::xsa) xsb)
+*)
+
+  (* the general case *)
+  | xa::aas, xb::bbs ->
+      m_stmt xa xb >>= (fun () ->
+        pr2 "ONE MATCH";
+      m_stmts aas bbs >>= (fun () ->
+        return ()
+      )
+      )
+  | _::_, _ ->
+      fail ()
+
 and m_stmt a b = 
   match a, b with
 
@@ -959,7 +1000,7 @@ and m_stmt a b =
 
   (* TODO: ... should also allow a subset of stmts *)
   | A.Block(a1), B.Block(b1) ->
-    (m_list m_stmt) a1 b1 >>= (fun () -> 
+    m_stmts a1 b1 >>= (fun () -> 
     return ()
     )
   | A.If(a1, a2, a3), B.If(b1, b2, b3) ->
@@ -1649,7 +1690,7 @@ and m_any a b =
     return ()
     )
   | A.Ss(a1), B.Ss(b1) ->
-    m_list m_stmt a1 b1 >>= (fun () -> 
+    m_stmts a1 b1 >>= (fun () -> 
     return ()
     )
   | A.Id _, _  | A.N _, _  | A.Di _, _  | A.En _, _  | A.E _, _

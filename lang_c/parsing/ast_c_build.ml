@@ -781,4 +781,5 @@ let any any =
   match any with
   | Expr x -> A.Expr (expr env x)
   | Stmt x -> A.Stmt (stmt env x)
-  | _ -> failwith "Ast_c_simple_build.any: only Expr and Stmt handled"
+  | Stmts xs -> A.Stmts (List.map (stmt env) xs)
+  | _ -> failwith "Ast_c_simple_build.any: only Expr/Stmt/Stmts handled"

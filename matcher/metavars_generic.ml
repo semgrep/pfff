@@ -31,9 +31,9 @@ type mvar = string
 
 type metavars_binding = (mvar, Ast_generic.any) Common.assoc
 
-(* ex: $X *)
+(* ex: $X, $FAIL *)
 let metavar_regexp_string = 
-  "^\\(\\$[A-Z]\\)$"
+  "^\\(\\$[A-Z]+\\)$"
 
 (* ex: $x *)
 let metavar_variable_regexp_string = 

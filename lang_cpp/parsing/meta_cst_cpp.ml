@@ -1091,6 +1091,8 @@ and vof_any =
       let v1 = vof_block_declaration v1
       in Ocaml.VSum (("BlockDecl2", [ v1 ]))
   | Stmt v1 -> let v1 = vof_statement v1 in Ocaml.VSum (("Stmt", [ v1 ]))
+  | Stmts v1 -> let v1 = Ocaml.vof_list vof_statement v1 in 
+                Ocaml.VSum (("Stmts", [ v1 ]))
   | Expr v1 -> let v1 = vof_expression v1 in Ocaml.VSum (("Expr", [ v1 ]))
   | Init v1 -> let v1 = vof_initialiser v1 in Ocaml.VSum (("Init", [ v1 ]))
   | Type v1 -> let v1 = vof_fullType v1 in Ocaml.VSum (("Type", [ v1 ]))
