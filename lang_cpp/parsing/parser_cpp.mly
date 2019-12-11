@@ -20,7 +20,12 @@ open Common
 open Cst_cpp
 open Parser_cpp_mly_helper
 
-(* see todo_mly for stuff temporarily commented out *)
+(* see todo_mly for stuff temporarily commented out
+ *
+ * TODO: http://www.nongnu.org/hcb/ for recent hyperlinked grammar
+ * see also http://www.externsoft.ch/download/cpp-iso.html
+ *
+ *)
 
 %}
 
