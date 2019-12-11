@@ -34,6 +34,14 @@ semantic highlighting!
 *** add support for AST generic to sgrep precisely over Python, Javascript,
 C, and Java.
 
+*** resolve names in sgrep, so can look for original function
+and sgrep will find aliases.
+Support for Python only for now (Javascript should be similar).
+
+*** basic handling of '...' between statements!
+the PHP version of sgrep never had that! 
+(coccinelle had though, and even better with working on the CFG).
+
 ** scheck
 
 *** add support for AST generic to factorize checks over multiple langages,
