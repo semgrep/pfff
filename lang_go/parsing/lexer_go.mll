@@ -123,7 +123,7 @@ rule token = parse
     }
 
   (* don't keep the trailing \n; it will be in another token *)
-  | "//" [^ '\r' '\n']+ { TComment (tokinfo lexbuf) }
+  | "//" [^ '\r' '\n']* { TComment (tokinfo lexbuf) }
   | newline     { TCommentNewline (tokinfo lexbuf) }
   | whitespace+ { TCommentSpace (tokinfo lexbuf) }
 
