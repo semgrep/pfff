@@ -181,7 +181,7 @@ import_here:
     {
         (*// import with given name*)
     }
-|   '.' LSTR
+|   LDOT LSTR
     {
         (*// import into my name space *)
     }
