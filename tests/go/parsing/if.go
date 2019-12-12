@@ -1,7 +1,7 @@
 package Foo;
 
 func foo() { 
-  if true {{ 
+  if true {
   }
 }
 

@@ -21,6 +21,13 @@ open Parser_go
  *)
 
 (*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
+type env = {
+ loophack: bool list;
+}
+
+(*****************************************************************************)
 (* Fix tokens *)
 (*****************************************************************************)
 
@@ -28,24 +35,46 @@ let fix_tokens xs =
   let rec aux env xs = 
     match xs with
     | [] -> []
-    | x::y::xs ->
-        (match x, y with
-        | (LNAME _ 
-          | LINT _ | LFLOAT _ | LIMAG _ | LRUNE _ | LSTR _
-          | LBREAK _ | LCONTINUE _ | LFALL _ | LRETURN _
-          | LINC _ | LDEC _
-          | RPAREN _ 
-          | RBRACE _ 
-          | RBRACKET _
-          ), (TCommentNewline ii | EOF ii) ->
+    | ((LNAME _ 
+      | LINT _ | LFLOAT _ | LIMAG _ | LRUNE _ | LSTR _
+      | LBREAK _ | LCONTINUE _ | LFALL _ | LRETURN _
+      | LINC _ | LDEC _
+      | RPAREN _ 
+      | RBRACE _ 
+      | RBRACKET _
+      ) as x) ::((TCommentNewline ii | EOF ii) as y)::xs ->
           let iifake = Parse_info.rewrap_str "FAKE ';'" ii in
           (* implicit semicolon insertion *)
+          let env = 
+            match x with
+            | RPAREN _ | RBRACKET _ -> { loophack = List.tl env.loophack }
+            | _ -> env
+          in
           x::LSEMICOLON iifake::y::aux env xs
-        | _ -> x::aux env (y::xs)
-        )
-    | [x] -> [x]
 
+    | ((LPAREN _ | LBRACKET _) as x)::xs ->
+        x::aux { loophack = false::env.loophack } xs
+    | ((RPAREN _ | RBRACKET _) as x)::xs ->
+        x::aux { loophack = List.tl env.loophack } xs
 
+    | LBRACE ii::xs  ->
+       (match env.loophack with 
+       | true::rest ->
+          LBODY ii::aux { loophack = false::rest } xs
+       | _ -> 
+          LBRACE ii::aux env xs
+       )
+
+    | ((LFOR _ | LIF _ | LSWITCH _ | LSELECT _) as x)::xs ->
+       (match env.loophack with 
+       | _::rest ->
+          x::aux { loophack = true::rest } xs
+       | [] -> 
+         raise Common.Impossible
+       )
+        
+
+    | x::xs -> x::aux env xs
   in
-  aux () xs
+  aux { loophack = [false] } xs
 
