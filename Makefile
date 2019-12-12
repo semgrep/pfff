@@ -98,6 +98,8 @@ BASICLIBS=commons/lib.cma \
   lang_java/analyze/lib.cma \
  lang_python/parsing/lib.cma \
   lang_python/analyze/lib.cma \
+ lang_go/parsing/lib.cma \
+  lang_go/analyze/lib.cma \
  lang_csharp/parsing/lib.cma \
  lang_rust/parsing/lib.cma \
  lang_erlang/parsing/lib.cma \
@@ -168,6 +170,8 @@ LIBS= commons/lib.cma \
     $(BYTECODEDIRS:%=%/lib.cma) \
     lang_python/parsing/lib.cma \
      lang_python/analyze/lib.cma \
+    lang_go/parsing/lib.cma \
+     lang_go/analyze/lib.cma \
     lang_csharp/parsing/lib.cma \
      lang_csharp/analyze/lib.cma \
     lang_rust/parsing/lib.cma \
@@ -224,6 +228,8 @@ MAKESUBDIRS=commons commons_ocollection commons_core \
   $(BYTECODEDIRS) \
   lang_python/parsing \
    lang_python/analyze \
+  lang_go/parsing \
+   lang_go/analyze \
   lang_csharp/parsing \
    lang_csharp/analyze \
   lang_rust/parsing \
@@ -482,6 +488,7 @@ INSTALL_SUBDIRS= \
   lang_java/parsing  lang_java/analyze\
   lang_js/parsing  lang_js/analyze\
   lang_python/parsing  lang_python/analyze\
+  lang_go/parsing  lang_go/analyze\
   lang_GENERIC/parsing  lang_GENERIC/analyze\
   lang_FUZZY/parsing \
 

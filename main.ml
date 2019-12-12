@@ -80,6 +80,7 @@ let all_actions () =
   Test_mini.actions()@
 (*Test_parsing_bytecode.actions()@*)
   Test_parsing_java.actions()@
+  Test_parsing_go.actions()@
 
   Test_parsing_nw.actions()@
 

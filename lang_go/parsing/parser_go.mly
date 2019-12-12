@@ -39,33 +39,39 @@ func fixlbrace(lbr int) {
 /*(*2 The space/comment tokens *)*/
 /*(*-----------------------------------------*)*/
 /*(* coupling: Token_helpers.is_comment *)*/
-%token <Ast_python.tok> TCommentSpace TComment TCommentNewline
+%token <Ast_go.tok> TCommentSpace TComment TCommentNewline
 
 /*(*-----------------------------------------*)*/
 /*(*2 The normal tokens *)*/
 /*(*-----------------------------------------*)*/
 
-/*(* tokens with "values" *)*/
-%token  <Ast_go.tok>    LLITERAL
+/*(* tokens with "values" (was LLITERAL before) *)*/
 
+%token  <string * Ast_go.tok>
+  LINT LFLOAT 
+  LIMAG
+  LRUNE LSTR
 
-%token  <Ast_go.tok>    LASOP LCOLAS
+%token  <string * Ast_go.tok> LASOP 
 
 /*(*-----------------------------------------*)*/
 /*(*2 Keyword tokens *)*/
 /*(*-----------------------------------------*)*/
 
 %token  <Ast_go.tok> 
-  LBREAK LCASE LCHAN LCONST LCONTINUE 
-  LDEFAULT LDEFER LELSE LFALL LFOR LFUNC LGO LGOTO
-  LIF LIMPORT LINTERFACE LMAP 
-  LPACKAGE LRANGE LRETURN LSELECT LSTRUCT LSWITCH
+  LIF LELSE 
+  LFOR
+  LRETURN LBREAK LCONTINUE LFALL
+  LSWITCH LCASE LDEFAULT
+  LGOTO
+  LFUNC LCONST LVAR LTYPE LSTRUCT LINTERFACE 
+  LGO LCHAN LSELECT 
+  LDEFER 
+  LPACKAGE LIMPORT  
+  LMAP 
+  LRANGE   
 
-  LNAME
-  LDDD
-
-%token  <Ast_go.tok>    LTYPE LVAR
-
+%token  <string * Ast_go.tok> LNAME 
 
 /*(*-----------------------------------------*)*/
 /*(*2 Punctuation tokens *)*/
@@ -76,6 +82,8 @@ func fixlbrace(lbr int) {
   LBRACE RBRACE
   LBRACKET RBRACKET
   LCOLON LSEMICOLON LEQ LDOT LCOMMA
+  LCOLAS /* := */
+  LDDD
   
 /*(* operators *)*/
 %token <Ast_go.tok> 
@@ -86,7 +94,6 @@ func fixlbrace(lbr int) {
   LBODY LCOMM 
   LINC LDEC 
   LEQEQ LGE LGT
-  LIGNORE
   LLE LLT LNE  
   LLSH LRSH
   LBANG LTILDE
@@ -163,15 +170,15 @@ import_stmt_list:
 |   import_stmt_list LSEMICOLON import_stmt { }
 
 import_here:
-|   LLITERAL
+|   LSTR
     {
         (*// import with original name*)
     }
-|   sym LLITERAL
+|   sym LSTR
     {
         (*// import with given name*)
     }
-|   '.' LLITERAL
+|   '.' LSTR
     {
         (*// import into my name space *)
     }
@@ -385,7 +392,7 @@ if_header:
     }
 
 /*(* IF cond body (ELSE IF cond body)* (ELSE block)? *) */
-if_stmt: LIF  if_header loop_body elseif_list else
+if_stmt: LIF  if_header loop_body elseif_list else_
     {
         (* if $3.Left == nil
             Yyerror("missing condition in if statement");
@@ -407,7 +414,7 @@ elseif_list:
     {
     }
 
-else:
+else_:
 | /*(*empty*)*/    
     {
     }
@@ -508,7 +515,6 @@ uexpr:
     }
 |   LBANG uexpr
     {
-        $$ = Nod(ONOT, $2, nil);
     }
 |   LTILDE uexpr
     {
@@ -536,8 +542,15 @@ pseudocall:
     {
     }
 
+basic_literal:
+| LINT { }
+| LFLOAT { }
+| LIMAG { }
+| LRUNE { }
+| LSTR { }
+
 pexpr_no_paren:
-|   LLITERAL
+|   basic_literal
     {
     }
 |   name {  }
@@ -872,7 +885,6 @@ typedcl_list:
      }
 |   typedcl_list LSEMICOLON typedcl
     {
-        $$ = list($1, $3);
     }
 
 structdcl_list:
@@ -887,7 +899,6 @@ interfacedcl_list:
     }
 |   interfacedcl_list LSEMICOLON interfacedcl
     {
-        $$ = list($1, $3);
     }
 
 /*(*************************************************************************)*/
@@ -1112,4 +1123,4 @@ osimple_stmt:
 
 oliteral:
 |/*(*empty*)*/ { }
-|   LLITERAL { }
+|   LSTR { }
