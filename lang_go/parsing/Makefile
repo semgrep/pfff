@@ -12,6 +12,7 @@ SRC= ast_go.ml \
      lib_parsing_go.ml \
      parser_go.ml lexer_go.ml \
      token_helpers_go.ml \
+     parsing_hacks_go.ml \
      parse_go.ml \
      test_parsing_go.ml unit_parsing_go.ml
 

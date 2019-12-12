@@ -89,8 +89,7 @@ let integer =
   ('0' ['b' 'B'] ('_'? ['0'-'1'])+) | (* Binary. *)
   ('0' ['o' 'O'] ('_'? ['0'-'7'])+) | (* Octal. *)
   ('0' ['x' 'X'] ('_'? hexdigit)+) | (* Hexadecimal. *)
-  (['1' - '9'] ('_'? digit)* | '0' ('_'? '0')* ) |  (* Decimal. *)
-  ('0' digit+) (* Valid before python 3.6 *)
+  (['1' - '9'] ('_'? digit)* | '0' ('_'? '0')* ) (* Decimal. *)
 
 
 let intpart = digipart
@@ -169,6 +168,9 @@ rule token = parse
 
   | "<<"    { LLSH (tokinfo lexbuf) }
   | ">>"    { LRSH (tokinfo lexbuf) }
+
+  | "++"    { LINC (tokinfo lexbuf) }
+  | "--"    { LDEC (tokinfo lexbuf) }
 
   | "<-"    { LCOMM (tokinfo lexbuf) }
 

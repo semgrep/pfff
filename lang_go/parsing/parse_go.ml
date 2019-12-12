@@ -57,6 +57,8 @@ let parse2 filename =
 
   (* this can throw Parse_info.Lexical_error *)
   let toks = tokens filename in
+  (* insert implicit semicolons *)
+  let toks = Parsing_hacks_go.fix_tokens toks in
   let tr, lexer, lexbuf_fake = 
     Parse_info.mk_lexer_for_yacc toks TH.is_comment in
 
