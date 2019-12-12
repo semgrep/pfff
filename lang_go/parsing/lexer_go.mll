@@ -172,11 +172,16 @@ rule token = parse
   | "++"    { LINC (tokinfo lexbuf) }
   | "--"    { LDEC (tokinfo lexbuf) }
 
+  | "&&"    { LANDAND (tokinfo lexbuf) }
+  | "||"    { LOROR (tokinfo lexbuf) }
+
   | "<-"    { LCOMM (tokinfo lexbuf) }
+  | ":="     { LCOLAS (tokinfo lexbuf) }
 
   | '(' { LPAREN (tokinfo lexbuf) }   | ')' { RPAREN (tokinfo lexbuf) }
   | '[' { LBRACKET (tokinfo lexbuf) } | ']' { RBRACKET (tokinfo lexbuf) }
   | '{' { LBRACE (tokinfo lexbuf) }   | '}' { RBRACE (tokinfo lexbuf) }
+  | "{{" { LBODY (tokinfo lexbuf) }
 
   | ':'     { LCOLON (tokinfo lexbuf) }
   | ';'     { LSEMICOLON (tokinfo lexbuf) }

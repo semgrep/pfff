@@ -81,7 +81,7 @@ func fixlbrace(lbr int) {
   LPAREN RPAREN 
   LBRACE RBRACE
   LBRACKET RBRACKET
-  LCOLON LSEMICOLON LEQ LDOT LCOMMA
+  LCOLON LEQ LDOT LCOMMA
   LCOLAS /* := */
   LDDD
   
@@ -91,16 +91,19 @@ func fixlbrace(lbr int) {
   LPIPE LAND LHAT 
   LANDAND LOROR
   LANDNOT 
-  LBODY LCOMM 
   LINC LDEC 
-  LEQEQ LGE LGT
-  LLE LLT LNE  
+  LEQEQ LNE  
+  LGE LGT LLE LLT 
   LLSH LRSH
   LBANG LTILDE
+  LCOMM 
 
 /*(*-----------------------------------------*)*/
 /*(*2 Extra tokens: *)*/
 /*(*-----------------------------------------*)*/
+%token <Ast_go.tok>
+  LBODY /* LBRACE parsing hack */
+  LSEMICOLON /* sometimes implicitely inserted, see Parsing_hacks_go.ml */ 
 
 /*(*************************************************************************)*/
 /*(*1 Priorities *)*/
@@ -616,7 +619,7 @@ complitexpr:
     }
 
 pexpr:
-|    pexpr_no_paren { }
+|   pexpr_no_paren { }
 |   LPAREN expr_or_type RPAREN
     {
     }

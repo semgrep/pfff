@@ -34,9 +34,11 @@ let fix_tokens xs =
           | LINT _ | LFLOAT _ | LIMAG _ | LRUNE _ | LSTR _
           | LBREAK _ | LCONTINUE _ | LFALL _ | LRETURN _
           | LINC _ | LDEC _
-          | RPAREN _ | RBRACE _ | RBRACKET _
+          | RPAREN _ 
+          | RBRACE _ 
+          | RBRACKET _
           ), (TCommentNewline ii | EOF ii) ->
-          let iifake = ii in (* TODO generate fake from ii? *)
+          let iifake = Parse_info.rewrap_str "FAKE ';'" ii in
           (* implicit semicolon insertion *)
           x::LSEMICOLON iifake::y::aux env xs
         | _ -> x::aux env (y::xs)
