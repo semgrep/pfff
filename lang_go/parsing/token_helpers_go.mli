@@ -1,6 +1,7 @@
 
 val is_eof          : Parser_go.token -> bool
-val is_comment      : Parser_go.token -> bool
+val is_irrelevant      : Parser_go.token -> bool
+val is_comment_or_space      : Parser_go.token -> bool
 
 val info_of_tok : 
   Parser_go.token -> Parse_info.t

@@ -11,6 +11,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
  *)
+open Common
 
 open Parser_go
 
@@ -26,6 +27,15 @@ open Parser_go
 type env = {
  loophack: bool list;
 }
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+let tl = function
+ | _::xs -> xs
+ | [] -> 
+      pr2 "Parsing_hacks_go.tl: Impossible, empty tail, wrong loopback";
+      []
 
 (*****************************************************************************)
 (* Fix tokens *)
@@ -47,7 +57,7 @@ let fix_tokens xs =
           (* implicit semicolon insertion *)
           let env = 
             match x with
-            | RPAREN _ | RBRACKET _ -> { loophack = List.tl env.loophack }
+            | RPAREN _ | RBRACKET _ -> { loophack = tl env.loophack }
             | _ -> env
           in
           x::LSEMICOLON iifake::y::aux env xs
@@ -55,7 +65,7 @@ let fix_tokens xs =
     | ((LPAREN _ | LBRACKET _) as x)::xs ->
         x::aux { loophack = false::env.loophack } xs
     | ((RPAREN _ | RBRACKET _) as x)::xs ->
-        x::aux { loophack = List.tl env.loophack } xs
+        x::aux { loophack = tl env.loophack } xs
 
     | LBRACE ii::xs  ->
        (match env.loophack with 
@@ -70,7 +80,8 @@ let fix_tokens xs =
        | _::rest ->
           x::aux { loophack = true::rest } xs
        | [] -> 
-         raise Common.Impossible
+         pr2 "Impossible, wrong balancing for loophack";
+         x::aux { loophack = [true] } xs
        )
         
 

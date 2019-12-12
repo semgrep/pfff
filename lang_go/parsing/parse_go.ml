@@ -57,10 +57,11 @@ let parse2 filename =
 
   (* this can throw Parse_info.Lexical_error *)
   let toks = tokens filename in
+  let toks = Common.exclude TH.is_comment_or_space toks in
   (* insert implicit semicolons *)
   let toks = Parsing_hacks_go.fix_tokens toks in
   let tr, lexer, lexbuf_fake = 
-    Parse_info.mk_lexer_for_yacc toks TH.is_comment in
+    Parse_info.mk_lexer_for_yacc toks TH.is_irrelevant in
 
   try 
     (* -------------------------------------------------- *)
@@ -113,7 +114,7 @@ let (program_of_string: string -> Ast_go.program) = fun s ->
 let any_of_string s = 
   Common2.with_tmp_file ~str:s ~ext:"go" (fun file ->
     let toks = tokens file in
-    let _tr, lexer, lexbuf_fake = PI.mk_lexer_for_yacc toks TH.is_comment in
+    let _tr, lexer, lexbuf_fake = PI.mk_lexer_for_yacc toks TH.is_irrelevant in
     (* -------------------------------------------------- *)
     (* Call parser *)
     (* -------------------------------------------------- *)

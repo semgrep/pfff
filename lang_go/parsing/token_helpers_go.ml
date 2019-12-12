@@ -23,8 +23,12 @@ let is_eof = function
   | EOF _ -> true
   | _ -> false
 
-let is_comment = function
+let is_irrelevant = function
   | TComment _ | TCommentSpace _ | TCommentNewline _ -> true
+  | _ -> false 
+
+let is_comment_or_space = function
+  | TComment _ | TCommentSpace _ -> true
   | _ -> false 
 
 (*****************************************************************************)
