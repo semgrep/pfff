@@ -83,7 +83,7 @@ let (dead_assign_detection: F.flow -> Dataflow_liveness.mapping -> unit) =
     )
   ) flow ()
 
-let (use_of_uninitialized: F.flow -> Dataflow_liveness.mapping -> unit) =
+let (_use_of_uninitialized: F.flow -> Dataflow_liveness.mapping -> unit) =
   fun flow mapping ->
     let enteri = F.find_enter flow in
     let in_enteri = mapping.(enteri).D.in_env in

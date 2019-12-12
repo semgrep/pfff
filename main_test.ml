@@ -91,6 +91,7 @@ let test regexp =
       Unit_parsing_python.unittest;
       Unit_parsing_html.unittest;
       Unit_parsing_cpp.unittest;
+      Unit_parsing_go.unittest;
     ]
   in
   let suite = 
