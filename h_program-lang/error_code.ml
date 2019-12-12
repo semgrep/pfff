@@ -110,6 +110,7 @@ type error = {
    *)
  | UnusedStatement (* a.k.a UnreachableStatement *) 
  | UnusedAssign of string
+ | UseOfUninitialized of string
  | CFGError of string
 
   (* classes *)
@@ -171,6 +172,8 @@ let string_of_error_kind error_kind =
   | UnusedAssign s -> 
     spf "useless assignement for %s; the value in %s is never used after."
       s s
+  | UseOfUninitialized s -> 
+    spf "use of unitialized variable: %s" s
 
   | LexicalError s -> spf "Lexical error: %s" s
   | ParseError -> "Syntax error"
@@ -250,7 +253,7 @@ let rank_of_error err =
   | UnusedExport _ -> ReallyImportant
   | UnusedVariable _ -> Less
   | SgrepLint _ -> Important
-  | UnusedStatement | UnusedAssign _ -> Important
+  | UnusedStatement | UnusedAssign _ | UseOfUninitialized _ -> Important
   | CFGError _ -> Important
 
   (* usually issues in my parsers *)

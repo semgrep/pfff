@@ -61,6 +61,11 @@ let is_global idinfo =
   | Some (Global _) -> true
   | _ -> false
 
+let is_local idinfo =
+  match !(idinfo.id_resolved) with
+  | Some (Local _ | Param _) -> true
+  | _ -> false
+
 let (dead_assign_detection: F.flow -> Dataflow_liveness.mapping -> unit) =
  fun flow mapping ->
   Controlflow_visitor.fold_on_node_and_expr (fun (ni, _nd) e () ->
@@ -77,6 +82,20 @@ let (dead_assign_detection: F.flow -> Dataflow_liveness.mapping -> unit) =
         else E.error tok (E.UnusedAssign var)
     )
   ) flow ()
+
+let (use_of_uninitialized: F.flow -> Dataflow_liveness.mapping -> unit) =
+  fun flow mapping ->
+    let enteri = F.find_enter flow in
+    let in_enteri = mapping.(enteri).D.in_env in
+    Controlflow_visitor.fold_on_node_and_expr (fun (_ni, _nd) e () ->
+      let rvals = Lrvalue.rvalues_of_expr e in
+      rvals |> List.iter (fun ((var, tok), idinfo) ->
+        if D.VarMap.mem var in_enteri && (is_local idinfo)
+        then E.error tok (E.UseOfUninitialized var)
+      )
+    ) flow ()
+
+
 
 (* alternative dead assign, using reaching_def instead (but a bit awkward) *)
 (*
@@ -133,6 +152,7 @@ let check_func_def fdef =
 
     let mapping = Dataflow_liveness.fixpoint flow in
     dead_assign_detection flow mapping;
+(* TODO    use_of_uninitialized flow mapping; *)
 
   with Controlflow_build.Error (err, loc) ->
       let s = Controlflow_build.string_of_error_kind err in
