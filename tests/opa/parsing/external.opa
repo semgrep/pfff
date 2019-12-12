@@ -1,1 +1,0 @@
-client jstest = %%foo.bar%%

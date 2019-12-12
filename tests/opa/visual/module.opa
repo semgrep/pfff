@@ -1,3 +1,0 @@
-module Xx {
-       function foo() { }
-}
