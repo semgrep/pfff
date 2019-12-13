@@ -5,6 +5,10 @@ jobs:
       - image: returntocorp/sgrep-build:1.0
     steps:
       - checkout
+      - run: opam install pfff
+      - run: cd pfff
+      - run: ./configure -novisual
+      - run: make depend
       - run: make
   test:
     docker:
@@ -17,4 +21,3 @@ workflows:
   build_and_test:
     jobs:
       - build
-      - test
