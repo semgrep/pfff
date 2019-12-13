@@ -1,3 +1,0 @@
-dir: todo
-dir: xhpast_checks
-file: playground.php
