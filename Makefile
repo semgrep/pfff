@@ -361,11 +361,13 @@ INSTALL_SUBDIRS= \
   lang_ml/parsing  lang_ml/analyze \
   lang_cpp/parsing lang_cpp/analyze \
   lang_c/parsing lang_c/analyze \
-  lang_nw/parsing  lang_nw/analyze\
   lang_java/parsing  lang_java/analyze\
   lang_js/parsing  lang_js/analyze\
   lang_python/parsing  lang_python/analyze\
+  lang_nw/parsing  lang_nw/analyze\
   lang_php/parsing \
+  lang_lisp/parsing \
+  lang_skip/parsing \
   lang_GENERIC/parsing  lang_GENERIC/analyze\
   lang_FUZZY/parsing \
 
