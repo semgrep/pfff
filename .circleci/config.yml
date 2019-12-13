@@ -5,8 +5,7 @@ jobs:
       - image: returntocorp/sgrep-build:1.0
     steps:
       - checkout
-      - run: opam install pfff
-      - run: cd pfff
+      - run: eval $(opam env); 
       - run: ./configure -novisual
       - run: make depend
       - run: make
