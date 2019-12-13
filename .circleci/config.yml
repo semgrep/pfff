@@ -2,19 +2,19 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: circleci/returntocorp/sgrep-build:1.0
+      - image: returntocorp/sgrep-build:1.0
     steps:
       - checkout
-      - run: make
+      - run: eval $(opam env); ./configure -novisual && make depend && make
+
   test:
     docker:
-      - image: circleci/returntocorp/sgrep-build:1.0
+      - image: returntocorp/sgrep-build:1.0
     steps:
       - checkout
-      - run: make test
+      - run: eval $(opam env); ./configure -novisual && make depend && make test
 workflows:
   version: 2.1
   build_and_test:
     jobs:
       - build
-      - test
