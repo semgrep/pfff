@@ -68,7 +68,7 @@ let test regexp =
 (*      Unit_analyze_db_php.unittest; *)
 (*      Unit_static_analysis_simple_php.unittest;*)
       Unit_prolog_php.unittest;
-      Unit_checker_php.unittest;
+(*      Unit_checker_php.unittest; should be in check_generic/ now *)
       (* this one needs xdebug to work *)
       Unit_coverage_php.unittest;
 

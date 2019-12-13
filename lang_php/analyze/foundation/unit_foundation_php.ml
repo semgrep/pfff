@@ -240,7 +240,7 @@ let tags_unittest =
 (*---------------------------------------------------------------------------*)
 (* Codegraph *)
 (*---------------------------------------------------------------------------*)
-let codegraph_unittest = 
+let _codegraph_unittest = 
   "codegraph_php" >::: [
 
     "basic class def/uses" >:: (fun () ->
@@ -427,7 +427,7 @@ let unittest =
     ast_unittest;
     defs_uses_unittest;
     tags_unittest;
-    codegraph_unittest;
+(* TODO    codegraph_unittest; should be in check_generic *)
     annotation_unittest;
     include_unittest;
   ]
