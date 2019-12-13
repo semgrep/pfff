@@ -2,13 +2,13 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: circleci/returntocorp/sgrep-build:1.0
+      - image: returntocorp/sgrep-build:1.0
     steps:
       - checkout
       - run: make
   test:
     docker:
-      - image: circleci/returntocorp/sgrep-build:1.0
+      - image: returntocorp/sgrep-build:1.0
     steps:
       - checkout
       - run: make test
