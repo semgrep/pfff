@@ -1,4 +1,4 @@
-# sgrep
+# pfff
 
 [![Build Status](https://travis-ci.org/facebook/pfff.svg?branch=master)](https://travis-ci.org/facebook/pfff)
 
