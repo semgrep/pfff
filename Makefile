@@ -20,7 +20,6 @@ OPAMPKG=pfff
 
 PROGS=pfff \
  stags \
- scheck \
  codequery \
  codeslicer \
  codegraph_build pfff_db \
@@ -93,7 +92,6 @@ BASICLIBS=commons/lib.cma \
  lang_GENERIC/parsing/lib.cma \
   lang_GENERIC/analyze/lib.cma \
  lang_FUZZY/parsing/lib.cma \
- linter/lib.cma \
 
 
 SYSLIBS=bigarray.cma str.cma unix.cma
@@ -158,7 +156,6 @@ LIBS= commons/lib.cma \
     lang_GENERIC/parsing/lib.cma \
      lang_GENERIC/analyze/lib.cma \
     lang_FUZZY/parsing/lib.cma \
-    linter/lib.cma \
 
 MAKESUBDIRS=commons commons_ocollection commons_core \
   $(GRAPHDIRS) \
@@ -214,7 +211,6 @@ MAKESUBDIRS=commons commons_ocollection commons_core \
   lang_GENERIC/parsing \
    lang_GENERIC/analyze \
   lang_FUZZY/parsing \
-  linter \
   metagen \
   $(VISUALDIRS) \
   demos
@@ -308,15 +304,6 @@ purebytecode:
 stags: $(LIBS) $(OBJS) main_stags.cmo
 	$(OCAMLC) -linkall $(CUSTOM) -o $@ $(SYSLIBS) $^
 stags.opt: $(LIBS:.cma=.cmxa) $(OPTOBJS) main_stags.cmx
-	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) $^
-
-#------------------------------------------------------------------------------
-# scheck targets
-#------------------------------------------------------------------------------
-
-scheck: $(LIBS) $(OBJS) main_scheck.cmo
-	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
-scheck.opt: $(LIBS:.cma=.cmxa) $(OPTOBJS) main_scheck.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) $^
 
 #------------------------------------------------------------------------------
@@ -427,7 +414,7 @@ uninstall: all
 INSTALL_SUBDIRS= \
   commons commons_core commons_ocollection commons_wrappers/graph \
   globals \
-  h_program-lang    linter \
+  h_program-lang    \
   h_version-control h_files-format h_visualization \
   graph_code \
   lang_ml/parsing  lang_ml/analyze \
