@@ -5,16 +5,14 @@ jobs:
       - image: returntocorp/sgrep-build:1.0
     steps:
       - checkout
-      - run: eval $(opam env); 
-      - run: ./configure -novisual
-      - run: make depend
-      - run: make
+      - run: eval $(opam env); ./configure -novisual && make depend && make
+
   test:
     docker:
       - image: returntocorp/sgrep-build:1.0
     steps:
       - checkout
-      - run: make test
+      - run: eval $(opam env); ./configure -novisual && make depend && make test
 workflows:
   version: 2.1
   build_and_test:
