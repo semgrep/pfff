@@ -58,7 +58,6 @@ let test regexp =
       (* general tests *)
       Unit_program_lang.unittest;
       Unit_graph_code.unittest ~graph_of_string;
-      Unit_version_control.unittest;
 
       (* PHP related tests *)
       Unit_parsing_php.unittest;

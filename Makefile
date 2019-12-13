@@ -25,24 +25,12 @@ PROGS=pfff \
  pfff_db \
  pfff_test
 
-ifeq ($(FEATURE_VISUAL), 1)
-PROGS+=codemap 
-endif
-
 OPTPROGS= $(PROGS:=.opt)
 
 # not a configuration option anymore; used by too many things
 JSONCMA=external/deps-netsys/netsys_oothr.cma external/deps-netsys/netsys.cma\
         external/deps-netstring/netstring.cma\
         external/json-wheel/jsonwheel.cma 
-
-ifeq ($(FEATURE_VISUAL),1)
-GTKINCLUDE=external/lablgtk2
-CAIROINCLUDE=external/cairo2 external/cairo2-gtk
-GUIDIRS=commons_wrappers/gui
-
-VISUALDIRS=code_map
-endif
 
 # could be FEATURE_OCAMLGRAPH, or should give dependencies between features
 GRAPHCMA=external/ocamlgraph/graph.cma commons_wrappers/graph/lib.cma
@@ -106,10 +94,8 @@ LIBS= commons/lib.cma \
        $(EXTLIBCMA) $(PTCMA) $(ZIPCMA) $(JAVALIBCMA) \
     globals/lib.cma \
     h_files-format/lib.cma \
-    h_version-control/lib.cma \
     h_program-lang/lib.cma \
     h_visualization/lib.cma \
-    h_program-visual/lib.cma \
     graph_code/lib.cma \
     lang_ml/parsing/lib.cma \
      lang_ml/analyze/lib.cma \
@@ -159,14 +145,11 @@ LIBS= commons/lib.cma \
 
 MAKESUBDIRS=commons commons_ocollection commons_core \
   $(GRAPHDIRS) \
-  $(GUIDIRS) \
   globals \
-  h_version-control \
   h_visualization \
   h_files-format \
   h_program-lang \
   graph_code \
-  h_program-visual \
   lang_ml/parsing \
    lang_ml/analyze \
   lang_skip/parsing \
@@ -212,15 +195,12 @@ MAKESUBDIRS=commons commons_ocollection commons_core \
    lang_GENERIC/analyze \
   lang_FUZZY/parsing \
   metagen \
-  $(VISUALDIRS) \
   demos
 
 INCLUDEDIRS=$(MAKESUBDIRS) \
  external/deps-netsys \
  external/json-wheel \
- $(GTKINCLUDE) $(CAIROINCLUDE) \
- commons_wrappers/graph commons_wrappers/gui \
- $(OCAMLCOMPILERDIR)
+ commons_wrappers/graph \
 
 # cpp causes some 'warning: missing terminating' errors
 CLANG_HACK=-Wno-invalid-pp-token
@@ -332,26 +312,6 @@ pfff_db: $(LIBS) $(OBJS) main_db.cmo
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
 pfff_db.opt: $(LIBS:.cma=.cmxa) $(LIBS2:.cma=.cmxa) $(OBJS2:.cmo=.cmx) $(OPTOBJS) main_db.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa)   $^
-
-#------------------------------------------------------------------------------
-# codemap target (was pfff_visual)
-#------------------------------------------------------------------------------
-SYSLIBS_CM= \
- external/lablgtk2/lablgtk.cma \
- external/cairo2/cairo.cma \
- external/cairo2-gtk/cairo_gtk.cma
-OBJS_CM=code_map/lib.cma
-
-GTKLOOP=gtkThread.cmo
-
-codemap: $(LIBS) commons_wrappers/gui/lib.cma $(OBJS_CM) $(OBJS) main_codemap.cmo
-	$(OCAMLC) -thread $(CUSTOM) -o $@ $(SYSLIBS) threads.cma \
-            $(SYSLIBS_CM) $(GTKLOOP) $^
-
-codemap.opt: $(LIBS:.cma=.cmxa) commons_wrappers/gui/lib.cmxa $(OBJS_CM:.cma=.cmxa) $(OPTOBJS) main_codemap.cmx
-	$(OCAMLOPT) -thread $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) threads.cmxa\
-          $(SYSLIBS_CM:.cma=.cmxa) $(GTKLOOP:.cmo=.cmx)  $^
-
 
 #------------------------------------------------------------------------------
 # pfff_test targets

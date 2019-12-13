@@ -1,3 +1,0 @@
-
-let verbose = ref true
-

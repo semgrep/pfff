@@ -14,12 +14,11 @@ all::
 include ../Makefile.config
 
 LIBS= ../commons/lib.cma ../commons_core/lib.cma \
-      ../h_version-control/lib.cma \
       ../h_program-lang/lib.cma \
       ../lang_php/parsing/lib.cma
 
 INCLUDEDIRS=../commons \
-            ../h_program-lang ../lang_php/parsing ../h_version-control
+            ../h_program-lang ../lang_php/parsing
 
 SYSLIBS= str.cma unix.cma bigarray.cma
 
@@ -62,7 +61,7 @@ OCAMLMKTOP=ocamlmktop -g -custom $(INCLUDES) -thread
 PROGS=php_transducer.byte \
  show_function_calls1.byte show_function_calls2.byte show_function_calls3.byte\
  show_function_class_names.byte show_function_class_names2.byte \
- simple_git_metrics.byte simple_code_search.byte \
+ simple_code_search.byte \
  analyze_chain.byte
 
 all:: $(PROGS)

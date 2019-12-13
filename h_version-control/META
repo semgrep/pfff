@@ -1,4 +1,0 @@
-description = "Helper functions for dealing with version control systems"
-requires = "unix num"
-archive(byte) = "lib.cma"
-archive(native) = "lib.cmxa"

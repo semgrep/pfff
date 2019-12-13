@@ -4,12 +4,6 @@ json-wheel/: used for json input and output by lots of code (e.g., codemap)
 netstring/: needed by json-wheel
 netsys/: needed by json-wheel
 
-cairo2/: used by codemap/codegraph, core graphics library.
-cairo2-gtk/: gtk/cairo interaction, to draw on a gtk surface
-cairo2-pango/: variable-sized fonts used by codemap
-lablgtk2/:   used by codemap/codegraph, mostly for interactive menus and basic
- UI chrome.
-
 ocamlgraph/: used by commons/graph.ml and so graph_code, also a bit by
  lang_html/? TODO why dependencies to codegraph is now shown in cg?
 
