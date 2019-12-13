@@ -25,7 +25,6 @@ SRC= flag_analyze_cpp.ml \
 SYSLIBS= str.cma unix.cma $(PCRECMA)
 LIBS=$(TOP)/commons/lib.cma \
      $(TOP)/h_program-lang/lib.cma \
-     $(TOP)/h_version-control/lib.cma \
      ../parsing/lib.cma \
 
 #database \
@@ -36,7 +35,7 @@ INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/commons_ocollection \
    $(TOP)/commons_core \
    $(TOP)/external/ \
-   $(TOP)/h_program-lang $(TOP)/h_version-control  \
+   $(TOP)/h_program-lang \
    $(TOP)/globals \
    ../parsing \
 

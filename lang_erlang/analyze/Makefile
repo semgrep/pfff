@@ -10,29 +10,17 @@ SRC= \
      test_analyze_erlang.ml
 
 -include $(TOP)/Makefile.config
-
-#ifeq ($(FEATURES_PCRE), 1)
-#PCRECMA=pcre.cma
-#PCREINCLUDE= +pcre
-#PCREINCLUDE=$(TOP)/
-#endif
-
 SYSLIBS= str.cma unix.cma $(PCRECMA)
 LIBS=$(TOP)/commons/lib.cma \
      $(TOP)/h_program-lang/lib.cma \
-     $(TOP)/h_version-control/lib.cma \
      ../parsing/lib.cma \
 
 MAKESUBDIRS=
 
-#database \
-# dynamic_analysis static_analysis \
-# qa_test qa_code \
-
 INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/commons_ocollection \
    $(TOP)/external/ \
-   $(TOP)/h_program-lang $(TOP)/h_version-control  \
+   $(TOP)/h_program-lang \
    $(TOP)/globals \
    ../parsing \
 

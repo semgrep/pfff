@@ -34,7 +34,6 @@ SRC= test_analyze_php.ml \
 SYSLIBS= str.cma unix.cma $(PCRECMA)
 LIBS=$(TOP)/commons/lib.cma \
      $(TOP)/h_program-lang/lib.cma \
-     $(TOP)/h_version-control/lib.cma \
      ../parsing/lib.cma \
 
 MAKESUBDIRS=foundation tools checker \
@@ -46,7 +45,7 @@ INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/commons_ocollection \
    $(TOP)/commons_core \
    $(TOP)/external/json-wheel \
-   $(TOP)/h_program-lang $(TOP)/h_version-control  \
+   $(TOP)/h_program-lang \
    $(TOP)/globals \
    $(TOP)/matcher \
    $(BDBINCLUDE) \

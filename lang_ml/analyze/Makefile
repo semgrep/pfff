@@ -19,7 +19,6 @@ SRC= ast_ml.ml ast_ml_build.ml ml_to_generic.ml \
 SYSLIBS= str.cma unix.cma
 LIBS=$(TOP)/commons/lib.cma \
      $(TOP)/h_program-lang/lib.cma \
-     $(TOP)/h_version-control/lib.cma \
      ../parsing/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons \
@@ -29,7 +28,6 @@ INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/external/ \
    $(TOP)/h_program-lang \
    $(TOP)/graph_code \
-   $(TOP)/h_version-control  \
    $(TOP)/h_visualization  \
    $(TOP)/globals \
    ../parsing \

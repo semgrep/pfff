@@ -17,7 +17,6 @@ SRC= \
 SYSLIBS= str.cma unix.cma 
 LIBS=$(TOP)/commons/lib.cma \
      $(TOP)/h_program-lang/lib.cma \
-     $(TOP)/h_version-control/lib.cma \
      ../../parsing/lib.cma \
      ../foundation/lib.cma \
 
@@ -26,14 +25,8 @@ INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/commons_core \
   $(TOP)/external/json-wheel \
   $(TOP)/h_program-lang \
-  $(TOP)/h_version-control  \
   ../../parsing \
   ../foundation \
-
-#   $(PCREINCLUDE) $(JANEINCLUDE)
-#../matcher_php
-#../parsing-comments \
-#../smpl \
 
 ##############################################################################
 # Generic variables

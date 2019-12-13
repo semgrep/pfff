@@ -26,7 +26,6 @@ SRC= \
 SYSLIBS= str.cma unix.cma $(PCRECMA)
 LIBS=$(TOP)/commons/lib.cma \
      $(TOP)/h_program-lang/lib.cma \
-     $(TOP)/h_version-control/lib.cma \
      ../parsing/lib.cma \
 
 #database \
@@ -36,7 +35,7 @@ LIBS=$(TOP)/commons/lib.cma \
 INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/external/json-wheel \
    $(TOP)/commons_ocollection $(TOP)/commons_core \
-   $(TOP)/h_program-lang $(TOP)/h_version-control  \
+   $(TOP)/h_program-lang \
    $(TOP)/globals \
    $(TOP)/graph_code \
    ../parsing \

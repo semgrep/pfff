@@ -356,7 +356,7 @@ INSTALL_SUBDIRS= \
   commons commons_core commons_ocollection commons_wrappers/graph \
   globals \
   h_program-lang    \
-  h_version-control h_files-format h_visualization \
+  h_files-format h_visualization \
   graph_code \
   lang_ml/parsing  lang_ml/analyze \
   lang_cpp/parsing lang_cpp/analyze \
@@ -365,9 +365,10 @@ INSTALL_SUBDIRS= \
   lang_java/parsing  lang_java/analyze\
   lang_js/parsing  lang_js/analyze\
   lang_python/parsing  lang_python/analyze\
-  lang_go/parsing  lang_go/analyze\
   lang_GENERIC/parsing  lang_GENERIC/analyze\
   lang_FUZZY/parsing \
+
+#  lang_go/parsing  lang_go/analyze\
 
 
 install-libs:: all all.opt

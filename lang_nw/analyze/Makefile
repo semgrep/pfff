@@ -16,13 +16,12 @@ MAKESUBDIRS=
 INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/commons_ocollection \
    $(TOP)/external/ \
-   $(TOP)/h_program-lang $(TOP)/h_version-control  \
+   $(TOP)/h_program-lang  \
    $(TOP)/globals \
    ../parsing \
 
 LIBS=$(TOP)/commons/lib.cma \
      $(TOP)/h_program-lang/lib.cma \
-     $(TOP)/h_version-control/lib.cma \
      ../parsing/lib.cma \
 
 SYSLIBS= str.cma unix.cma $(PCRECMA)
