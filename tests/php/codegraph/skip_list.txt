@@ -1,3 +1,0 @@
-skip_errors_dir: skip_errors
-skip_errors_dir: scripts
-

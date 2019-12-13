@@ -22,11 +22,11 @@ PROGS=pfff \
  stags \
  codequery \
  codeslicer \
- codegraph_build pfff_db \
+ pfff_db \
  pfff_test
 
 ifeq ($(FEATURE_VISUAL), 1)
-PROGS+=codemap codegraph
+PROGS+=codemap 
 endif
 
 OPTPROGS= $(PROGS:=.opt)
@@ -41,7 +41,7 @@ GTKINCLUDE=external/lablgtk2
 CAIROINCLUDE=external/cairo2 external/cairo2-gtk
 GUIDIRS=commons_wrappers/gui
 
-VISUALDIRS=code_map code_graph
+VISUALDIRS=code_map
 endif
 
 # could be FEATURE_OCAMLGRAPH, or should give dependencies between features
@@ -352,25 +352,6 @@ codemap.opt: $(LIBS:.cma=.cmxa) commons_wrappers/gui/lib.cmxa $(OBJS_CM:.cma=.cm
 	$(OCAMLOPT) -thread $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) threads.cmxa\
           $(SYSLIBS_CM:.cma=.cmxa) $(GTKLOOP:.cmo=.cmx)  $^
 
-
-#------------------------------------------------------------------------------
-# codegraph (was pm_depend)
-#------------------------------------------------------------------------------
-SYSLIBS_CG=$(SYSLIBS_CM)
-OBJS_CG=code_graph/lib.cma
-
-codegraph: $(LIBS) commons_wrappers/gui/lib.cma $(OBJS_CG) $(OBJS) main_codegraph.cmo
-	$(OCAMLC) -thread $(CUSTOM) -o $@ $(SYSLIBS) threads.cma \
-           $(SYSLIBS_CG) $(GTKLOOP) $^
-codegraph.opt: $(LIBS:.cma=.cmxa) commons_wrappers/gui/lib.cmxa $(OBJS_CG:.cma=.cmxa) $(OPTOBJS) main_codegraph.cmx
-	$(OCAMLOPT) -thread $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) threads.cmxa\
-          $(SYSLIBS_CG:.cma=.cmxa) $(GTKLOOP:.cmo=.cmx)  $^
-
-# far simpler dependencies
-codegraph_build: $(LIBS) $(OBJS) main_codegraph_build.cmo
-	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
-codegraph_build.opt: $(LIBS:.cma=.cmxa) $(OPTOBJS) main_codegraph_build.cmx
-	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) $^
 
 #------------------------------------------------------------------------------
 # pfff_test targets
