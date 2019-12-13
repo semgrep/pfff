@@ -66,8 +66,6 @@ let build_stdlib lang root dst =
   match lang with
   | "java" ->
       Builtins_java.extract_from_sources ~src:root ~dst files
-  | "clang" ->
-      Uninclude_clang.uninclude ~verbose:!verbose root files dst
   | "js" ->
       Stdlib_js.extract_from_sources files dst
   | _ -> failwith ("language not supported: " ^ lang)
@@ -97,13 +95,6 @@ let main_action xs =
     try (
     match lang with
     | "ml"  -> Graph_code_ml.build ~verbose:!verbose root files, empty
-#if FEATURE_CMT
-    | "cmt"  -> 
-          let ml_files = Find_source.files_of_root ~lang:"ml" root in
-          let cmt_files = files in
-          Graph_code_cmt.build ~verbose:!verbose ~root ~cmt_files ~ml_files, 
-          empty
-#endif
     | "lisp" -> Graph_code_lisp.build ~verbose:!verbose root files, empty
 
     | "c" -> 
@@ -112,19 +103,8 @@ let main_action xs =
         if Sys.file_exists local
         then Parse_cpp.add_defs local;
         Graph_code_c.build ~verbose:!verbose root files, empty
-    | "clang2" -> Graph_code_clang.build ~verbose:!verbose root files, empty
 
     | "java" -> Graph_code_java.build ~verbose:!verbose root files, empty
-#if FEATURE_BYTECODE
-    | "bytecode" -> 
-      let graph_code_java =  None 
-(*        Some (Graph_code_java.build ~verbose:!verbose ~only_defs:true 
-                 root skip_list)
-*)
-      in
-      Graph_code_bytecode.build ~verbose:!verbose ~graph_code_java root files,
-      empty
-#endif
 
     | "php" -> 
       (* todo: better factorize *)

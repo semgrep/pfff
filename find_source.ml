@@ -12,16 +12,12 @@ let finder lang =
     Lib_parsing_c.find_source_files_of_dir_or_files
   | "ml" | "ocaml" | "mlfuzzy" -> 
     Lib_parsing_ml.find_source_files_of_dir_or_files
-  | "cmt"  -> 
-    Lib_parsing_ml.find_cmt_files_of_dir_or_files
   | "java" | "javafuzzy" -> 
     Lib_parsing_java.find_source_files_of_dir_or_files
   | "js" | "jsfuzzy" | "jsgen"  -> 
     Lib_parsing_js.find_source_files_of_dir_or_files ~include_scripts:false
   | "py" | "python"  -> 
     Lib_parsing_python.find_source_files_of_dir_or_files
-  | "clang2" ->
-    Lib_parsing_clang.find_source2_files_of_dir_or_files    
   | "lisp" ->
     Lib_parsing_lisp.find_source_files_of_dir_or_files    
   | "dot" -> (fun _ -> [])

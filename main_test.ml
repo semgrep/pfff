@@ -276,11 +276,7 @@ let all_actions () =
  Test_analyze_js.actions()@
  Test_analyze_ml.actions()@
  Test_analyze_cpp.actions()@
- Test_analyze_clang.actions()@
  Test_analyze_c.actions()@
-#if FEATURE_CMT
- Test_parsing_cmt.actions()@
-#endif
  Test_parsing_generic.actions()@
  Test_analyze_generic.actions()@
  Test_program_lang.actions()@

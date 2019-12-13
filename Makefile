@@ -50,25 +50,7 @@ endif
 GRAPHCMA=external/ocamlgraph/graph.cma commons_wrappers/graph/lib.cma
 GRAPHDIRS=commons_wrappers/graph 
 
-ifeq ($(FEATURE_BYTECODE), 1)
-#still? ZIPCMA=external/ocamlzip/zip.cma
-EXTLIBCMA=external/deps-extlib/extLib.cma
-PTCMA=external/deps-ptrees/ptrees.cma
-JAVALIBCMA=external/javalib/lib.cma
 
-BYTECODEDIRS=lang_bytecode/parsing lang_bytecode/analyze
-endif
-
-ifeq ($(FEATURE_CMT), 1)
-#bugfix: better to use external/compiler-libs otherwise
-# the filter-out in Makefile.common will not skip this dir,
-# which may lead to recompilation of .cmi in ocaml stdlib
-#old: OCAMLCOMPILERDIR=$(shell ocamlc -where)/compiler-libs
-OCAMLCOMPILERDIR=external/compiler-libs
-OCAMLCOMPILERCMA=ocamlcommon.cma
-
-CMTDIRS=lang_cmt/parsing lang_cmt/analyze
-endif
 
 #------------------------------------------------------------------------------
 # Main variables
@@ -93,7 +75,6 @@ BASICLIBS=commons/lib.cma \
  lang_cpp/parsing/lib.cma \
  lang_c/parsing/lib.cma \
   lang_c/analyze/lib.cma \
- lang_clang/parsing/lib.cma \
  lang_java/parsing/lib.cma \
   lang_java/analyze/lib.cma \
  lang_python/parsing/lib.cma \
@@ -140,7 +121,6 @@ LIBS= commons/lib.cma \
      lang_ml/analyze/lib.cma \
     lang_skip/parsing/lib.cma \
      lang_skip/analyze/lib.cma \
-    $(CMTDIRS:%=%/lib.cma) \
     lang_nw/parsing/lib.cma \
      lang_nw/analyze/lib.cma \
     lang_lisp/parsing/lib.cma \
@@ -163,11 +143,8 @@ LIBS= commons/lib.cma \
      lang_cpp/analyze/lib.cma \
     lang_c/parsing/lib.cma \
      lang_c/analyze/lib.cma \
-    lang_clang/parsing/lib.cma \
-     lang_clang/analyze/lib.cma \
     lang_java/parsing/lib.cma \
      lang_java/analyze/lib.cma \
-    $(BYTECODEDIRS:%=%/lib.cma) \
     lang_python/parsing/lib.cma \
      lang_python/analyze/lib.cma \
     lang_go/parsing/lib.cma \
@@ -204,7 +181,6 @@ MAKESUBDIRS=commons commons_ocollection commons_core \
    lang_ml/analyze \
   lang_skip/parsing \
    lang_skip/analyze \
-  $(CMTDIRS) \
   lang_nw/parsing \
    lang_nw/analyze \
   lang_lisp/parsing \
@@ -221,11 +197,8 @@ MAKESUBDIRS=commons commons_ocollection commons_core \
    lang_cpp/analyze \
   lang_c/parsing \
    lang_c/analyze \
-  lang_clang/parsing \
-   lang_clang/analyze \
   lang_java/parsing \
    lang_java/analyze \
-  $(BYTECODEDIRS) \
   lang_python/parsing \
    lang_python/analyze \
   lang_go/parsing \
@@ -265,7 +238,7 @@ INCLUDEDIRS=$(MAKESUBDIRS) \
 
 # cpp causes some 'warning: missing terminating' errors
 CLANG_HACK=-Wno-invalid-pp-token
-PP=-pp "cpp $(CLANG_HACK) -DFEATURE_BYTECODE=$(FEATURE_BYTECODE) -DFEATURE_CMT=$(FEATURE_CMT)"
+PP=-pp "cpp $(CLANG_HACK)"
 
 ##############################################################################
 # Generic
