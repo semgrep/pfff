@@ -24,22 +24,6 @@ INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/globals \
    ../parsing \
 
-#   $(TOP)/analyze_php/basic \
-#   $(TOP)/analyze_php/foundation \
-#   $(TOP)/analyze_php/database \
-#   $(TOP)/analyze_php/checker \
-#   $(TOP)/analyze_php/annotaters \
-#   $(TOP)/analyze_php/tools \
-#   $(TOP)/analyze_php/typing \
-#   $(TOP)/analyze_php/static_analysis \
-#   $(TOP)/analyze_php/dynamic_analysis \
-#   $(TOP)/analyze_php/qa_test \
-
-#   $(PCREINCLUDE) $(JANEINCLUDE)
-#$(TOP)/matcher_php
-#$(TOP)/parsing-comments \
-#$(TOP)/smpl \
-
 ##############################################################################
 # Generic variables
 ##############################################################################

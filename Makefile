@@ -365,6 +365,7 @@ INSTALL_SUBDIRS= \
   lang_java/parsing  lang_java/analyze\
   lang_js/parsing  lang_js/analyze\
   lang_python/parsing  lang_python/analyze\
+  lang_php/parsing \
   lang_GENERIC/parsing  lang_GENERIC/analyze\
   lang_FUZZY/parsing \
 

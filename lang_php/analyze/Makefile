@@ -47,18 +47,12 @@ INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/external/json-wheel \
    $(TOP)/h_program-lang \
    $(TOP)/globals \
-   $(TOP)/matcher \
    $(BDBINCLUDE) \
    ../parsing \
    foundation \
    checker \
    tools \
    qa_test \
-
-#   $(PCREINCLUDE) $(JANEINCLUDE)
-#$(TOP)/matcher_php
-#$(TOP)/parsing-comments \
-#$(TOP)/smpl \
 
 ##############################################################################
 # Generic variables

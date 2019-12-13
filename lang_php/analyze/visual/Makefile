@@ -12,7 +12,7 @@ LIBS=$(TOP)/commons/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/commons_ocollection \
-   $(TOP)/h_program-lang $(TOP)/h_version-control  \
+   $(TOP)/h_program-lang \
    $(TOP)/globals \
    $(TOP)/lang_php/parsing \
    ../foundation \

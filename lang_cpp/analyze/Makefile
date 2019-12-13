@@ -16,20 +16,10 @@ SRC= flag_analyze_cpp.ml \
 
 -include $(TOP)/Makefile.config
 
-#ifeq ($(FEATURES_PCRE), 1)
-#PCRECMA=pcre.cma
-#PCREINCLUDE= +pcre
-#PCREINCLUDE=$(TOP)/
-#endif
-
 SYSLIBS= str.cma unix.cma $(PCRECMA)
 LIBS=$(TOP)/commons/lib.cma \
      $(TOP)/h_program-lang/lib.cma \
      ../parsing/lib.cma \
-
-#database \
-# dynamic_analysis static_analysis \
-# qa_test qa_code \
 
 INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/commons_ocollection \
@@ -38,22 +28,6 @@ INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/h_program-lang \
    $(TOP)/globals \
    ../parsing \
-
-#   $(TOP)/analyze_php/basic \
-#   $(TOP)/analyze_php/foundation \
-#   $(TOP)/analyze_php/database \
-#   $(TOP)/analyze_php/checker \
-#   $(TOP)/analyze_php/annotaters \
-#   $(TOP)/analyze_php/tools \
-#   $(TOP)/analyze_php/typing \
-#   $(TOP)/analyze_php/static_analysis \
-#   $(TOP)/analyze_php/dynamic_analysis \
-#   $(TOP)/analyze_php/qa_test \
-
-#   $(PCREINCLUDE) $(JANEINCLUDE)
-#$(TOP)/matcher_php
-#$(TOP)/parsing-comments \
-#$(TOP)/smpl \
 
 ##############################################################################
 # Generic variables
