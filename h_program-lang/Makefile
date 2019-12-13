@@ -19,7 +19,7 @@ SRC= entity_code.ml scope_code.ml \
      prolog_code.ml datalog_code.ml \
      layer_code.ml \
      tags_file.ml \
-     error_code.ml \
+     error_code.ml r2c.ml \
      layer_parse_errors.ml \
      coverage_code.ml layer_coverage.ml \
      overlay_code.ml big_grep.ml pleac.ml info_code.ml \

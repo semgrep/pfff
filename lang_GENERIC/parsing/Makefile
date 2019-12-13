@@ -7,7 +7,8 @@ OPAMPKG=pfff-lang_GENERIC
 
 -include $(TOP)/Makefile.config
 
-SRC= lang.ml \
+SRC= find_source.ml \
+     lang.ml \
      ast.ml meta_ast.ml \
      visitor_ast.ml map_ast.ml \
      lib_ast.ml \
@@ -33,6 +34,9 @@ INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/lang_java/analyze \
   $(TOP)/lang_ml/parsing \
    $(TOP)/lang_ml/analyze \
+  $(TOP)/lang_cpp/parsing \
+  $(TOP)/lang_php/parsing \
+  $(TOP)/lang_lisp/parsing \
 
 ##############################################################################
 # Generic variables

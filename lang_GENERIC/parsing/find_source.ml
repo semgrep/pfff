@@ -3,7 +3,7 @@ open Common
 let finder lang = 
   match lang with
   | "php" | "phpfuzzy" | "php2" -> 
-    Lib_parsing_php.find_source_files_of_dir_or_files ~verbose:false ~include_hack:false
+    Lib_parsing_php.find_source_files_of_dir_or_files ~verbose:false ~include_hack:false 
   | "hack" ->
     Lib_parsing_php.find_source_files_of_dir_or_files ~verbose:false ~include_hack:true
   | "c++" -> 
