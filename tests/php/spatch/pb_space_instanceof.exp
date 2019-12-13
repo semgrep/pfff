@@ -1,3 +1,0 @@
-<?php
-
-bar($x instanceof Foo);

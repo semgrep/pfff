@@ -1,3 +1,0 @@
-if($EXPR)
-  goto $FAIL;
-  goto $FAIL;

@@ -1,5 +1,0 @@
-<?php
-
-$a = <ui:section-header href="foo" >
-     This is nuts
-     </ui:section-header>;

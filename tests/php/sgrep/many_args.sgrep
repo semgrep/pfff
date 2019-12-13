@@ -1,3 +1,0 @@
-// would like to do that, but the grammar does not allow it: foo(X...)
-// so have to abuse again naming conventions for the metavariable
-bar(MANYARGS)

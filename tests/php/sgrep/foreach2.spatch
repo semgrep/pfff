@@ -1,3 +1,0 @@
-
-- foreach($A as $B) { if (X) { return;  } }
-+ if (atLeastOneArrayValueIsSubstringOfText(1, 2)) { return; }

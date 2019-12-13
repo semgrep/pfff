@@ -1,3 +1,0 @@
-<?php
-
-foo_new(bar(), new Baz());

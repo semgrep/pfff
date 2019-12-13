@@ -1,3 +1,0 @@
-// remove_second_arg_foo_alt.spatch
-- foo(X,Y)
-+ foo(X)

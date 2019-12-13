@@ -5,36 +5,17 @@
 # update: with OPAM now being almost standard, this file is less useful.
 #  just use ocamlfind as described in section "Compilation once installed"
 
-all:: simple_refactoring
-
-##############################################################################
-# Simple compilation
-##############################################################################
-
-# This is intentionnaly not using OCAMLC, SYSLIBS and so on to show a simple
-# way to compile a pfff "script"
-simple_refactoring: simple_refactoring.ml
-	ocamlc -g -o simple_refactoring \
-         -I ../commons -I ../lang_php/parsing -I ../h_program-lang \
-          str.cma unix.cma bigarray.cma \
-	  ../commons/lib.cma ../h_program-lang/lib.cma ../matcher/lib.cma \
-          ../lang_php/parsing/lib.cma \
-          simple_refactoring.ml
-clean::
-	rm -f simple_refactoring
+all::
 
 ##############################################################################
 # Variables
 ##############################################################################
-
-# Now we switch to a more traditional Makefile
 
 include ../Makefile.config
 
 LIBS= ../commons/lib.cma ../commons_core/lib.cma \
       ../h_version-control/lib.cma \
       ../h_program-lang/lib.cma \
-      ../matcher/lib.cma \
       ../lang_php/parsing/lib.cma
 
 INCLUDEDIRS=../commons \
@@ -106,7 +87,6 @@ clean::
 LIBS2= \
  $(shell ocamlfind query pfff-commons) \
  $(shell ocamlfind query pfff-h_program-lang) \
- $(shell ocamlfind query pfff-matcher) \
  $(shell ocamlfind query pfff-lang_js) \
 
 STUBDIR=$(shell ocamlfind query pfff-commons)/../stublibs \

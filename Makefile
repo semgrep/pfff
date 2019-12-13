@@ -19,7 +19,6 @@ OPAMPKG=pfff
 #------------------------------------------------------------------------------
 
 PROGS=pfff \
- sgrep spatch \
  stags \
  scheck \
  codequery \
@@ -57,8 +56,7 @@ GRAPHDIRS=commons_wrappers/graph
 #------------------------------------------------------------------------------
 BASICSYSLIBS=bigarray.cma str.cma unix.cma
 
-# used for sgrep and other small utilities that I dont want to depend
-# on too much things
+# used small utilities that I dont want to depend on too much things
 BASICLIBS=commons/lib.cma \
  commons_core/lib.cma \
  $(JSONCMA) \
@@ -70,7 +68,6 @@ BASICLIBS=commons/lib.cma \
  lang_skip/parsing/lib.cma \
  lang_nw/parsing/lib.cma \
  lang_php/parsing/lib.cma \
-  lang_php/matcher/lib.cma \
   lang_php/pretty/lib.cma \
  lang_cpp/parsing/lib.cma \
  lang_c/parsing/lib.cma \
@@ -96,7 +93,6 @@ BASICLIBS=commons/lib.cma \
  lang_GENERIC/parsing/lib.cma \
   lang_GENERIC/analyze/lib.cma \
  lang_FUZZY/parsing/lib.cma \
- matcher/lib.cma \
  linter/lib.cma \
 
 
@@ -131,7 +127,6 @@ LIBS= commons/lib.cma \
      lang_php/analyze/foundation/lib.cma \
      lang_php/analyze/tools/lib.cma \
      lang_php/analyze/checker/lib.cma \
-     lang_php/matcher/lib.cma \
      lang_php/analyze/qa_test/lib.cma \
      lang_php/analyze/visual/lib.cma \
      lang_php/analyze/lib.cma \
@@ -164,7 +159,6 @@ LIBS= commons/lib.cma \
      lang_GENERIC/analyze/lib.cma \
     lang_FUZZY/parsing/lib.cma \
     linter/lib.cma \
-    matcher/lib.cma \
 
 MAKESUBDIRS=commons commons_ocollection commons_core \
   $(GRAPHDIRS) \
@@ -187,7 +181,6 @@ MAKESUBDIRS=commons commons_ocollection commons_core \
   lang_haskell/parsing \
    lang_haskell/analyze \
   lang_php/parsing \
-   lang_php/matcher \
    lang_php/pretty \
   lang_sql/parsing \
   lang_js/parsing \
@@ -221,7 +214,6 @@ MAKESUBDIRS=commons commons_ocollection commons_core \
   lang_GENERIC/parsing \
    lang_GENERIC/analyze \
   lang_FUZZY/parsing \
-  matcher \
   linter \
   metagen \
   $(VISUALDIRS) \
@@ -317,20 +309,6 @@ stags: $(LIBS) $(OBJS) main_stags.cmo
 	$(OCAMLC) -linkall $(CUSTOM) -o $@ $(SYSLIBS) $^
 stags.opt: $(LIBS:.cma=.cmxa) $(OPTOBJS) main_stags.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) $^
-
-#------------------------------------------------------------------------------
-# sgrep/spatch targets
-#------------------------------------------------------------------------------
-
-sgrep: $(BASICLIBS) $(OBJS) main_sgrep.cmo
-	$(OCAMLC) $(CUSTOM) -o $@ $(BASICSYSLIBS) $^
-sgrep.opt: $(BASICLIBS:.cma=.cmxa) $(OPTOBJS) main_sgrep.cmx
-	$(OCAMLOPT) $(STATIC) -o $@ $(BASICSYSLIBS:.cma=.cmxa) $^
-
-spatch: $(BASICLIBS) $(OBJS) main_spatch.cmo
-	$(OCAMLC) $(CUSTOM) -o $@ $(BASICSYSLIBS) $^
-spatch.opt: $(BASICLIBS:.cma=.cmxa) $(OPTOBJS) main_spatch.cmx
-	$(OCAMLOPT) $(STATIC) -o $@ $(BASICSYSLIBS:.cma=.cmxa) $^
 
 #------------------------------------------------------------------------------
 # scheck targets
@@ -449,7 +427,7 @@ uninstall: all
 INSTALL_SUBDIRS= \
   commons commons_core commons_ocollection commons_wrappers/graph \
   globals \
-  h_program-lang    matcher linter \
+  h_program-lang    linter \
   h_version-control h_files-format h_visualization \
   graph_code \
   lang_ml/parsing  lang_ml/analyze \

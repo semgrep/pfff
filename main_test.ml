@@ -60,13 +60,10 @@ let test regexp =
       Unit_graph_code.unittest ~graph_of_string;
       Unit_version_control.unittest;
       Unit_linter.unittest ~ast_of_file:Parse_generic.parse_program;
-      Unit_matcher.sgrep_fuzzy_unittest ~ast_fuzzy_of_string;
-      (* todo: Unit_matcher.spatch_unittest ~xxx *)
 
       (* PHP related tests *)
       Unit_parsing_php.unittest;
       Unit_pretty_print_php.unittest;
-      Unit_matcher_php.unittest; (* sgrep, spatch, refactoring, unparsing *)
       Unit_foundation_php.unittest;
       Unit_static_analysis_php.unittest;
       Unit_typeinfer_php.unittest;
