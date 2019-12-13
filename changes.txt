@@ -3,6 +3,11 @@
 * 0.39 (Q4 2019) (real Python parser, a generic AST, a generic sgrep/scheck)
 10 years of Pfff! Started in November 2009 (while at Facebook).
 
+** big split! move sgrep/spatch, codemap, codegraph, the lang_xxx bytecode
+related, mini, and scheck in separate repositories
+either under github.com/returntocorp (pfff, sgrep, check_generic) 
+or under github.com/aryx
+
 ** introducing ast_generic.ml
 a generic AST helping to factorize AST/visitor-based analysis,
 but now also CFG/DFG-based analysis, across multiple languages.
