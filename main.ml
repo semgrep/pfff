@@ -76,7 +76,6 @@ let all_actions () =
 
   Test_parsing_c.actions()@
   Test_parsing_cpp.actions()@
-  Test_mini.actions()@
   Test_parsing_java.actions()@
   Test_parsing_go.actions()@
 

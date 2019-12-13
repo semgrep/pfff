@@ -98,7 +98,7 @@ BASICLIBS=commons/lib.cma \
  lang_FUZZY/parsing/lib.cma \
  matcher/lib.cma \
  linter/lib.cma \
- mini/lib.cma
+
 
 SYSLIBS=bigarray.cma str.cma unix.cma
 SYSLIBS+=$(OCAMLCOMPILERCMA)
@@ -165,7 +165,6 @@ LIBS= commons/lib.cma \
     lang_FUZZY/parsing/lib.cma \
     linter/lib.cma \
     matcher/lib.cma \
-    mini/lib.cma
 
 MAKESUBDIRS=commons commons_ocollection commons_core \
   $(GRAPHDIRS) \
@@ -224,7 +223,6 @@ MAKESUBDIRS=commons commons_ocollection commons_core \
   lang_FUZZY/parsing \
   matcher \
   linter \
-  mini \
   metagen \
   $(VISUALDIRS) \
   demos
