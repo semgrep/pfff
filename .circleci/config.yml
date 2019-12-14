@@ -12,7 +12,7 @@ jobs:
       - image: returntocorp/sgrep-build:2.1
     steps:
       - checkout
-      - run: eval $(opam env); export PFFF_HOME=/home/opam/project; ./configure -novisual && make depend && make && make test
+      - run: eval $(opam env); export PFFF_HOME=/home/opam/project; ./configure -novisual && make depend && make test
 workflows:
   version: 2.1
   build_and_test:
