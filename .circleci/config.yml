@@ -13,7 +13,7 @@ jobs:
     steps:
       - checkout
       - run: export PFFF_HOME=/home/opam/project
-      - run: eval $(opam env); ./configure -novisual && make depend && make test
+      - run: eval $(opam env); ./configure -novisual && make depend && make && make test
 workflows:
   version: 2.1
   build_and_test:
