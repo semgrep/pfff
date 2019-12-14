@@ -2,14 +2,14 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: returntocorp/sgrep-build:1.0
+      - image: returntocorp/sgrep-build:2.0
     steps:
       - checkout
       - run: eval $(opam env); ./configure -novisual && make depend && make
 
   test:
     docker:
-      - image: returntocorp/sgrep-build:1.0
+      - image: returntocorp/sgrep-build:2.0
     steps:
       - checkout
       - run: eval $(opam env); ./configure -novisual && make depend && make test
