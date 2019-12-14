@@ -10,9 +10,11 @@ jobs:
   test:
     docker:
       - image: returntocorp/sgrep-build:2.1
+    environment:
+        PFFF_HOME: /home/opam/project
     steps:
       - checkout
-      - run: eval $(opam env); export PFFF_HOME=/home/opam/project; ./configure -novisual && make depend && make test
+      - run: eval $(opam env); ./configure -novisual && make depend && make test
 workflows:
   version: 2.1
   build_and_test:
