@@ -12,8 +12,7 @@ jobs:
       - image: returntocorp/sgrep-build:2.0
     steps:
       - checkout
-      - run: export PFFF_HOME=/home/opam/project
-      - run: eval $(opam env); ./configure -novisual && make depend && make && make test
+      - run: eval $(opam env); export PFFF_HOME=/home/opam/project; export HGUSER=ci; git config --global user.email "ci@r2c.dev"; git config --global user.name "r2c CI"; ./configure -novisual && make depend && make && make test
 workflows:
   version: 2.1
   build_and_test:
