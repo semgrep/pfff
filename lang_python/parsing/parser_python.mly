@@ -496,8 +496,16 @@ excepthandler:
   | EXCEPT test COMMA test COLON suite { ExceptHandler (Some $2, Some (expr_store $4), $6) }
 
 with_stmt:
-  | WITH test         COLON suite { With ($2, None, $4) }
-  | WITH test AS expr COLON suite { With ($2, Some $4, $6) }
+  | WITH with_list         COLON suite { With ($2, $4) }
+
+with_item:
+  | test            { WithItem ($1, None) }
+  | test AS expr    { WithItem ($1, Some $3)   }
+
+with_list:
+  | with_item                 { [$1] }
+  | with_item COMMA           { [$1] }
+  | with_item COMMA with_list { $1::$3 }
 
 /*(* python3-ext: *)*/
 async_stmt: 

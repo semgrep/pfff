@@ -223,6 +223,11 @@ and v_parameter x =
   in
   vin.kparameter (k, all_functions) x
 
+and v_with_item =
+  function
+  | WithItem ((v1, v2)) ->
+    let v1 = v_expr v1 and v2 = v_option v_expr v2 in ()
+
 and v_name_and_type (v1, v2) =
   let v1 = v_name v1 and v2 = v_option v_type_ v2 in ()
 
@@ -275,10 +280,9 @@ and v_stmt x =
       and v2 = v_list v_stmt v2
       and v3 = v_list v_stmt v3
       in ()
-  | With ((v1, v2, v3)) ->
-      let v1 = v_expr v1
-      and v2 = v_option v_expr v2
-      and v3 = v_list v_stmt v3
+  | With ((v1, v2)) ->
+      let v1 = v_list v_with_item v1
+      and v2 = v_list v_stmt v2
       in ()
   | Raise v1 ->
       let v1 =

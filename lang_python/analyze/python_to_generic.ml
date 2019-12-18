@@ -329,7 +329,7 @@ and parameters xs =
      G.OtherParam (G.OPO_KwdParam, 
             [G.Id n] @ (match topt with None -> [] | Some t -> [G.T t]))
   )
- 
+
 
 and type_ v = 
   let v = expr v in
@@ -417,17 +417,17 @@ and stmt x =
               G.For (header, body);
               G.OtherStmt (G.OS_ForOrElse, orelse|> List.map (fun x -> G.S x))]
       )
-  | With ((v1, v2, v3)) ->
-      let v1 = expr v1
-      and v2 = option expr v2
-      and v3 = list_stmt1 v3
+  | With ((with_item_list, stmts)) ->
+      let context_expr_list = with_item_list |> List.map (function | WithItem ((context_expr, opt_var_name)) ->
+        let context_expr = expr context_expr
+        and opt_var_name = option expr opt_var_name
+        in
+        match opt_var_name with
+          | None -> context_expr
+          | Some var_name_expr -> G.LetPattern (G.OtherPat (G.OP_Expr, [G.E var_name_expr]), context_expr))
+      and stmts = list_stmt1 stmts
       in
-      let e =
-        match v2 with
-        | None -> v1
-        | Some e2 -> G.LetPattern (G.OtherPat (G.OP_Expr, [G.E e2]), v1)
-      in
-      G.OtherStmtWithStmt (G.OSWS_With, e, v3)
+      G.OtherStmtWithStmt (G.OSWS_With, context_expr_list, stmts)
 
   | Raise (v1) ->
       (match v1 with

@@ -330,7 +330,7 @@ and v_stmt x =
   | Assert ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_option v_expr v2 in ()
   | OtherStmtWithStmt ((v1, v2, v3)) ->
       let v1 = v_other_stmt_with_stmt_operator v1 
-      and v2 = v_expr v2 
+      and v2 = v2 |> List.iter(fun curr_expr -> v_expr curr_expr) 
       and v3 = v_stmt v3
       in ()
   | OtherStmt ((v1, v2)) ->

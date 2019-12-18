@@ -209,7 +209,9 @@ type expr =
     | ArgStar of expr
     | ArgPow of expr
     | ArgComp of expr * for_if list
- 
+  
+  and with_item = 
+    | WithItem of expr (* context_expr *) * expr option (* optional_var *)
   
 (* ------------------------------------------------------------------------- *)
 (* Types *)
@@ -253,7 +255,7 @@ type stmt =
   | While of expr (* test *) * stmt list (* body *) * stmt list (* orelse *)
   | If of expr (* test *) * stmt list (* body *) * stmt list (* orelse *)
   (* https://docs.python.org/2.5/whatsnew/pep-343.html *)
-  | With of expr (* context_expr *) * expr option (* optional_vars *) * stmt list (* body *)
+  | With of with_item list (* context items *) * stmt list (* body *)
 
   | Return of expr option (* value *)
   | Break | Continue

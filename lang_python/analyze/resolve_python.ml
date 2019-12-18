@@ -199,11 +199,12 @@ let resolve prog =
            );
          );
          k x
-     | With (e, eopt, stmts) ->
-       v (Expr e);
-       (match eopt with
-       | None -> v (Stmts stmts)
-       | Some (Name (name, _ctx, _res)) ->
+     | With (with_items, stmts) ->
+        with_items |> List.iter (fun (WithItem (context_expr, optional_name)) -> 
+          (v (Expr context_expr));
+          (match optional_name with
+            | None -> ();
+            | Some (Name (name, _ctx, _res)) ->
           (* the scope of name is valid only inside the body, but the
            * body may define variables that are used then outside the with
            * so simpler to use add_name_env() here, not with_add_env()
@@ -212,13 +213,12 @@ let resolve prog =
             v (Stmts stmts)
           )
            *)
-          env |> add_name_env name LocalVar;
-          v (Stmts stmts);
-       (* todo: tuples? *)
-       | Some e -> 
-           v (Expr e);
-           v (Stmts stmts)
-       )
+            env |> add_name_env name LocalVar;
+            | Some e -> v (Expr e);
+          );
+       );
+        
+       v (Stmts stmts)
      | TryExcept (stmts1, excepts, stmts2) ->
        v (Stmts stmts1);
        excepts |> List.iter (fun (ExceptHandler (_typ, e, body)) ->

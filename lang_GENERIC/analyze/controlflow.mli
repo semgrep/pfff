@@ -13,7 +13,7 @@ type node = {
     | WhileHeader of expr
     | DoHeader | DoWhileTail of expr
     | ForHeader (*TODO*) | ForeachHeader of pattern * expr
-    | OtherStmtWithStmtHeader of other_stmt_with_stmt_operator * expr
+    | OtherStmtWithStmtHeader of other_stmt_with_stmt_operator * expr list
 
     | SwitchHeader of expr | SwitchEnd
     | Case (* TODO of expr? *) | Default

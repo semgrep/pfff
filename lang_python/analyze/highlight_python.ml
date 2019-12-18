@@ -228,14 +228,15 @@ let visit_program ~tag_hook _prefs (program, toks) =
          );
          k x
 
-     | With (_e, eopt, _stmts) ->
-       eopt |> Common.do_option (fun e ->
-          match e with
-         | Name (name, _ctx, _res) ->
-            tag_name name (Local Def);
-         (* todo: tuples? *)
-         | _ -> ()
-       );
+     | With (with_item_list, _stmts) ->
+       with_item_list |> List.iter (fun (WithItem (_context_expr, optional_name)) ->
+        optional_name |> Common.do_option (fun e ->
+            match e with
+          | Name (name, _ctx, _res) ->
+              tag_name name (Local Def);
+          (* todo: tuples? *)
+          | _ -> ()
+        ));
        k x
      | TryExcept (_stmts1, excepts, _stmts2) ->
        excepts |> List.iter (fun (ExceptHandler (_typ, e, _)) ->

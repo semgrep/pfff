@@ -379,7 +379,7 @@ and stmt =
   | Assert of expr * expr option (* message *)
 
   (* this is important to correctly compute a CFG *)
-  | OtherStmtWithStmt of other_stmt_with_stmt_operator * expr * stmt
+  | OtherStmtWithStmt of other_stmt_with_stmt_operator * expr list * stmt
   (* any here should not contain any statement! otherwise the CFG will be
    * incorrect and some analysis (e.g., liveness) will be incorrect.
    *)

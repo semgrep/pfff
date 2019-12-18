@@ -243,6 +243,12 @@ and vof_argument =
       let v1 = vof_expr v1
       and v2 = Ocaml.vof_list vof_for_if v2
       in Ocaml.VSum (("ArgComp", [ v1; v2 ]))
+and vof_with_item = 
+    function
+    | WithItem ((v1, v2)) ->
+        let v1 = vof_expr v1
+        and v2 = Ocaml.vof_option vof_expr v2
+        in Ocaml.VSum (("WithItem", [ v1; v2 ]))
 and vof_type_ v = vof_expr v
 and vof_type_parent v = vof_argument v
   
@@ -276,11 +282,10 @@ let rec vof_stmt =
       and v2 = Ocaml.vof_list vof_stmt v2
       and v3 = Ocaml.vof_list vof_stmt v3
       in Ocaml.VSum (("If", [ v1; v2; v3 ]))
-  | With ((v1, v2, v3)) ->
-      let v1 = vof_expr v1
-      and v2 = Ocaml.vof_option vof_expr v2
-      and v3 = Ocaml.vof_list vof_stmt v3
-      in Ocaml.VSum (("With", [ v1; v2; v3 ]))
+  | With ((v1, v2)) ->
+      let v1 = Ocaml.vof_list vof_with_item v1
+      and v2 = Ocaml.vof_list vof_stmt v2
+      in Ocaml.VSum (("With", [ v1; v2 ]))
   | Return v1 ->
       let v1 = Ocaml.vof_option vof_expr v1
       in Ocaml.VSum (("Return", [ v1 ]))
