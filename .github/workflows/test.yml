@@ -10,7 +10,7 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Install System Deps
-      run: sudo apt-get update && apt-get install -y --no-install-recommends m4 perl wget swi-prolog mercurial opam
+      run: sudo apt-get update && sudo apt-get install -y --no-install-recommends m4 perl wget swi-prolog mercurial opam
     - name: Install pfff
       run: |
         git pull && opam update && opam switch 4.07 && \
