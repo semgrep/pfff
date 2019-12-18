@@ -496,7 +496,7 @@ excepthandler:
   | EXCEPT test COMMA test COLON suite { ExceptHandler (Some $2, Some (expr_store $4), $6) }
 
 with_stmt:
-  | WITH with_list         COLON suite { With ($2, $4) }
+  | WITH with_list COLON suite { With ($2, $4) }
 
 with_item:
   | test            { WithItem ($1, None) }
