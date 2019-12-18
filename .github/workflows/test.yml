@@ -12,9 +12,6 @@ jobs:
     - name: Install System Deps
       run: sudo apt-get update && sudo apt-get install -y --no-install-recommends m4 perl wget swi-prolog mercurial opam
     - name: Install pfff
-      run: |
-        git pull && opam update && opam switch 4.07 && \
-        opam install ocaml-migrate-parsetree ocaml-migrate-parsetree.1.3.1 && \
-        opam install pfff
-    - name: Run Test
+      run: opam switch 4.07 && opam install ocaml-migrate-parsetree ocaml-migrate-parsetree.1.3.1 && opam install pfff
+    - name: Run Tests
       run: eval $(opam env); ./configure -novisual && make depend && make test
