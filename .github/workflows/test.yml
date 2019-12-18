@@ -14,7 +14,7 @@ jobs:
     - name: debugging
       run: opam --version
     - name: Install pfff
-      run: opam init && opam switch create 4.07.1 && opam switch 4.07.1 && opam install ocaml-migrate-parsetree ocaml-migrate-parsetree.1.3.1 && opam install pfff
+      run: opam init && opam switch create 4.07.1 && opam switch 4.07.1 && eval $(opam env) && opam install ocaml-migrate-parsetree ocaml-migrate-parsetree.1.3.1 && opam install pfff
     - name: Setup Env
       run: export PFFF_HOME=`pwd`
     - name: Run Tests
