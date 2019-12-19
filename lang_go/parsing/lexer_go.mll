@@ -37,39 +37,6 @@ let tok = Lexing.lexeme
 let tokinfo = Parse_info.tokinfo
 let error = Parse_info.lexical_error
 
-let unescaped s =
-  let buf = Buffer.create (String.length s) in
-  let escape = ref false in
-  let unescapechar c =
-    if !escape then begin
-      match c with
-      | '\r' -> ()
-      | '\n' -> escape := false
-      | _ -> begin
-          escape := false;
-          (* TODO http://docs.python.org/reference/lexical_analysis.html#string-literals *)
-          Buffer.add_char
-            buf
-            (match c with
-             | '\\' -> '\\'
-             | '\'' -> '\''
-             | '"' -> '"'
-             | 'a' -> Char.chr 7
-             | 'b' -> '\b'
-             | 'f' -> Char.chr 12
-             | 'n' -> '\n'
-             | 'r' -> '\r'
-             | 't' -> '\t'
-             | 'v' -> Char.chr 11
-             | _ -> (Buffer.add_char buf '\\'; c))
-        end
-    end else if c = '\\' then
-      escape := true
-    else
-      Buffer.add_char buf c
-  in
-    String.iter unescapechar s;
-    Buffer.contents buf
 }
 
 (*****************************************************************************)
@@ -79,17 +46,41 @@ let unescaped s =
 let newline = ('\n' | "\r\n")
 let whitespace = [' ' '\t']
 
-let digit = ['0'-'9']
-let octdigit = ['0'-'7']
-let hexdigit = ['0'-'9' 'a'-'f' 'A'-'F']
+(* todo: *)
+let unicode_digit = ['0'-'9']
+let unicode_letter = ['a'-'z' 'A'-'Z']
 
+let letter = unicode_letter | '_'
+
+let decimal_digit = ['0'-'9']
+let binary_digit = ['0'-'1']
+let octal_digit = ['0'-'7']
+let hex_digit = ['0'-'9' 'a'-'f' 'A'-'F']
+
+
+let identifier = letter (letter | unicode_digit)*
+
+let decimal_digits = decimal_digit ('_'? decimal_digit)*
+let decimal_lit = "0" | ['1'-'9'] ( '_'? decimal_digits)?
+
+let binary_digits = binary_digit ('_'? binary_digit)*
+let binary_lit = "0" ['b' 'B'] '_'? binary_digits
+
+let octal_digits = octal_digit ('_'? octal_digit)*
+let octal_lit = "0" ['o' 'O']? '_'? octal_digits
+
+let hex_digits = hex_digit ('_'? hex_digit)*
+let hex_lit = "0" ['x' 'X'] '_'? hex_digits
+
+let int_lit = 
+  decimal_lit 
+| binary_lit 
+| octal_lit 
+| hex_lit
+
+
+let digit = decimal_digit
 let digipart = digit (('_'? digit)* )
-
-let integer =
-  ('0' ['b' 'B'] ('_'? ['0'-'1'])+) | (* Binary. *)
-  ('0' ['o' 'O'] ('_'? ['0'-'7'])+) | (* Octal. *)
-  ('0' ['x' 'X'] ('_'? hexdigit)+) | (* Hexadecimal. *)
-  (['1' - '9'] ('_'? digit)* | '0' ('_'? '0')* ) (* Decimal. *)
 
 
 let intpart = digipart
@@ -103,7 +94,6 @@ let imagnumber = (floatnumber | intpart) ['i']
 
 let escapeseq = '\\' _
 
-let identifier = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
 
 (*****************************************************************************)
 (* Rule initial *)
@@ -131,10 +121,8 @@ rule token = parse
   (* symbols *)
   (* ----------------------------------------------------------------------- *)
 
-  | '+'     { LPLUS (tokinfo lexbuf) }
-  | '-'     { LMINUS (tokinfo lexbuf) }
-  | '*'     { LMULT (tokinfo lexbuf) }
-  | '/'     { LDIV (tokinfo lexbuf) }
+  | '+'     { LPLUS (tokinfo lexbuf) }  | '-'     { LMINUS (tokinfo lexbuf) }
+  | '*'     { LMULT (tokinfo lexbuf) }  | '/'     { LDIV (tokinfo lexbuf) }
   | '%'     { LPERCENT (tokinfo lexbuf) }
 
   | "+=" as s   { LASOP (s, tokinfo lexbuf) }
@@ -153,10 +141,8 @@ rule token = parse
   | "=="    { LEQEQ (tokinfo lexbuf) }
   | "!="    { LNE (tokinfo lexbuf) }
 
-  | "<="    { LLE (tokinfo lexbuf) }
-  | ">="    { LGE (tokinfo lexbuf) }
-  | '<'     { LLT (tokinfo lexbuf) }
-  | '>'     { LGT (tokinfo lexbuf) }
+  | "<="    { LLE (tokinfo lexbuf) }  | ">="    { LGE (tokinfo lexbuf) }
+  | '<'     { LLT (tokinfo lexbuf) }  | '>'     { LGT (tokinfo lexbuf) }
 
   | '='     { LEQ (tokinfo lexbuf) }
 
@@ -166,14 +152,11 @@ rule token = parse
   | '~'     { LTILDE (tokinfo lexbuf) }
   | '!'     { LBANG (tokinfo lexbuf) }
 
-  | "<<"    { LLSH (tokinfo lexbuf) }
-  | ">>"    { LRSH (tokinfo lexbuf) }
+  | "<<"    { LLSH (tokinfo lexbuf) }  | ">>"    { LRSH (tokinfo lexbuf) }
 
-  | "++"    { LINC (tokinfo lexbuf) }
-  | "--"    { LDEC (tokinfo lexbuf) }
+  | "++"    { LINC (tokinfo lexbuf) }  | "--"    { LDEC (tokinfo lexbuf) }
 
-  | "&&"    { LANDAND (tokinfo lexbuf) }
-  | "||"    { LOROR (tokinfo lexbuf) }
+  | "&&"    { LANDAND (tokinfo lexbuf) } | "||"    { LOROR (tokinfo lexbuf) }
 
   | "<-"    { LCOMM (tokinfo lexbuf) }
   | ":="     { LCOLAS (tokinfo lexbuf) }
@@ -248,7 +231,7 @@ rule token = parse
   (* ----------------------------------------------------------------------- *)
 
   (* literals *)
-  | integer as n
+  | int_lit as n
       { LINT (n, tokinfo lexbuf) }
 
   | floatnumber as n
@@ -282,7 +265,7 @@ and rune pos = parse
   | (([^ '\\' '\r' '\n' '\''] | escapeseq) as s) '\'' 
      { 
        let full_str = Lexing.lexeme lexbuf in
-       LRUNE (unescaped s, PI.tok_add_s full_str pos) }
+       LRUNE (s, PI.tok_add_s full_str pos) }
  | eof { error "EOF in rune" lexbuf; EOF (tokinfo lexbuf) }
  | _  { error "unrecognized symbol in rune" lexbuf; TUnknown(tokinfo lexbuf)}
 
@@ -290,7 +273,7 @@ and string pos = parse
   | (([^ '\\' '\r' '\n' '\"'] | escapeseq)* as s) '"' 
      { 
        let full_str = Lexing.lexeme lexbuf in
-       LSTR (unescaped s, PI.tok_add_s full_str pos) }
+       LSTR (s, PI.tok_add_s full_str pos) }
  | eof { error "EOF in string" lexbuf; EOF (tokinfo lexbuf) }
  | _  { error "unrecognized symbol in string" lexbuf; TUnknown(tokinfo lexbuf)}
 
