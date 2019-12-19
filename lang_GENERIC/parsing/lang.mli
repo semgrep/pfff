@@ -10,3 +10,5 @@ val lang_of_filename_opt: Common.filename -> t option
 
 val files_of_dirs_or_files: t -> Common.path list -> 
   Common.filename list
+
+val string_of_lang: t -> string

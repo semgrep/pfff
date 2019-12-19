@@ -28,11 +28,6 @@ let action = ref ""
 (* Helpers *)
 (*****************************************************************************)
 
-let ast_fuzzy_of_string str =
-  Common2.with_tmp_file ~str ~ext:"cpp" (fun tmpfile ->
-    Parse_cpp.parse_fuzzy tmpfile |> fst
-  )
-
 let graph_of_string str =
   let tmpfile = Parse_php.tmp_php_file_from_string str in
   let (g, _stat) = Graph_code_php.build 

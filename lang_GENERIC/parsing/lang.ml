@@ -53,6 +53,13 @@ let lang_of_filename_opt filename =
  | FT.PL (FT.Java) -> Some Java
  | _ -> None
 
+let string_of_lang = function
+  | Python -> "Python"
+  | Javascript -> "Javascript"
+  | Java -> "Java"
+  | C -> "C"
+  | ML -> "ML"
+
 
 
 
