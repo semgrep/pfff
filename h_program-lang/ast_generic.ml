@@ -223,7 +223,7 @@ and expr =
   | MatchPattern of expr * action list
   (* less: TryFunctional *)
 
-  | Yield of expr
+  | Yield of expr * bool
   | Await of expr
 
   | Cast of type_ * expr

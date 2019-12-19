@@ -202,8 +202,10 @@ let rec expr (x: expr) =
   | IfExp ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in
       G.Conditional (v1, v2, v3)
-  | Yield v1 -> let v1 = option expr v1 in
-      G.Yield (G.opt_to_nop v1)
+  | Yield ((v1, v2)) ->
+      let v1 = option expr v1
+      and v2 = v2 in
+      G.Yield (G.opt_to_nop v1, v2)
   | Await v1 -> let v1 = expr v1 in
       G.Await v1
   | Repr v1 -> let v1 = expr v1 in

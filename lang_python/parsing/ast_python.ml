@@ -130,7 +130,7 @@ type expr =
 
   | IfExp of expr (* test *) * expr (* body *) * expr (* orelse *)
 
-  | Yield of expr option (* value *)
+  | Yield of expr option (* value *) * bool (* is_yield_from *)
   (* python3: *)
   | Await of expr
 

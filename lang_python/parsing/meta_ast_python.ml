@@ -93,8 +93,10 @@ let rec vof_expr =
       and v2 = vof_expr v2
       and v3 = vof_expr v3
       in Ocaml.VSum (("IfExp", [ v1; v2; v3 ]))
-  | Yield v1 ->
-      let v1 = Ocaml.vof_option vof_expr v1 in Ocaml.VSum (("Yield", [ v1 ]))
+  | Yield ((v1, v2)) ->
+      let v1 = Ocaml.vof_option vof_expr v1
+      and v2 = Ocaml.vof_bool v2
+      in Ocaml.VSum (("Yield", [ v1; v2 ]))
   | Await v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Await", [ v1 ]))
   | Repr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Repr", [ v1 ]))
   | Attribute ((v1, v2, v3)) ->

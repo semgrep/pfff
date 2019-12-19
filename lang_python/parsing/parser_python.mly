@@ -731,8 +731,9 @@ star_expr: MULT expr { ExprStar $2 }
 
 
 yield_expr:
-  | YIELD          { Yield (None) }
-  | YIELD testlist { Yield (Some (tuple_expr $2)) }
+  | YIELD           { Yield (None, false) }
+  | YIELD FROM test { Yield (Some $3, true) }
+  | YIELD testlist  { Yield (Some (tuple_expr $2), false) }
 
 lambdadef: LAMBDA varargslist COLON test { Lambda ($2, $4) }
 
