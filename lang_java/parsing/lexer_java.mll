@@ -130,7 +130,7 @@ let SP = ' '     (* space *)
 let HT = '\t'    (* horizontal tab *)
 let FF = '\012'  (* form feed *) (* decimal *)
 
-let WhiteSpace = SP | HT | FF (* | LineTerminator -- handled separately *)
+let _WhiteSpace = SP | HT | FF (* | LineTerminator -- handled separately *)
 
 (* 3.7 Comments *)
 
@@ -200,6 +200,7 @@ let CharacterLiteral = '\'' (SingleCharacter | EscapeSequence | UnicodeX ) '\''
 (* 3.10.5 String Literals *)
 
 let StringCharacter = [^ '"' '\\' '\n' '\r']
+(* used inline later *)
 let StringLiteral = '"' (StringCharacter | EscapeSequence)* '"'
 
 (* 3.10.7 The Null Literal *)
@@ -232,28 +233,18 @@ rule token = parse
   (* ----------------------------------------------------------------------- *)
   (* spacing/comments *)
   (* ----------------------------------------------------------------------- *)
-(* old:
-| WhiteSpace
-    { token lexbuf }
-| LineTerminator
-    { next_line lexbuf; token lexbuf }
-| "/*"
-    { begin_comment lexbuf; comment lexbuf; token lexbuf }
-| "//" InputCharacter* LineTerminator (* inline of EndOfLineComment*)
-    { eol_comment lexbuf; next_line lexbuf; token lexbuf }
-*)
  | [' ' '\t' '\r' '\011' '\012' ]+  { TCommentSpace (tokinfo lexbuf) }
 
  | newline { TCommentNewline (tokinfo lexbuf) }
 
-| "/*"
+ | "/*"
     { 
       let info = tokinfo lexbuf in 
       let com = comment lexbuf in
       TComment(info |> Parse_info.tok_add_s com) 
     }
-(* don't keep the trailing \n; it will be in another token *)
-| "//" InputCharacter* 
+ (* don't keep the trailing \n; it will be in another token *)
+ | "//" InputCharacter* 
    { TComment(tokinfo lexbuf) }
 
 
@@ -266,7 +257,8 @@ rule token = parse
 | IntegerLiteral       { TInt (tok lexbuf, tokinfo lexbuf) }
 | FloatingPointLiteral { TFloat (tok lexbuf, tokinfo lexbuf) }
 | CharacterLiteral     { TChar (tok lexbuf, tokinfo lexbuf) }
-| StringLiteral        { TString (tok lexbuf, tokinfo lexbuf) }
+| '"' ( (StringCharacter | EscapeSequence)* as s) '"'
+   { TString (s, tokinfo lexbuf) }
 (* bool and null literals are keywords, see below *)
 
   (* ----------------------------------------------------------------------- *)
@@ -330,7 +322,7 @@ rule token = parse
 
 (* ext: annotations *)
 | "@" { AT(tokinfo lexbuf) }
-(* ext: ?? sgrep-ext: *)
+(* regular feature of Java for params and sgrep-ext: *)
 | "..."  { DOTS(tokinfo lexbuf) }
 
 | "+="  { OPERATOR_EQ (Plus, tokinfo lexbuf) }

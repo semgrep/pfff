@@ -1263,7 +1263,7 @@ argument:
  | T_DOTS assignment_expression
      { (uop U_spread $1 $2) }
  /*(* sgrep-ext: *)*/
- | T_DOTS { Ellipses $1 }
+ | T_DOTS { Flag_parsing.sgrep_guard (Ellipses $1) }
 
 /*(*----------------------------*)*/
 /*(*2 XHP embeded html *)*/
