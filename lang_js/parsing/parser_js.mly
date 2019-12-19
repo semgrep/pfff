@@ -248,14 +248,22 @@ declaration:
  | type_alias_declaration { ItemTodo $1 }
  | enum_declaration       { ItemTodo $1 }
 
+/*(*************************************************************************)*/
+/*(*1 sgrep *)*/
+/*(*************************************************************************)*/
+
 sgrep_spatch_pattern:
  | assignment_expression_no_statement EOF      { Expr $1 }
  | statement EOF                               { Stmt $1 }
- | statement statement_no_item_list EOF                { Stmts ($1::$2) }
+ | statement statement_sgrep_list EOF                { Stmts ($1::$2) }
 
-statement_no_item_list:
- | statement { [$1] }
- | statement_no_item_list statement { $1 @ [$2] }
+statement_sgrep:
+ | statement { $1 }
+ | T_DOTS { ExprStmt (Ellipses $1, None) }
+
+statement_sgrep_list:
+ | statement_sgrep { [$1] }
+ | statement_sgrep_list statement_sgrep { $1 @ [$2] }
 
 /*(*************************************************************************)*/
 /*(*1 Namespace *)*/
@@ -1254,6 +1262,7 @@ argument:
  /*(* es6: spread operator, allowed not only in last position *)*/
  | T_DOTS assignment_expression
      { (uop U_spread $1 $2) }
+ /*(* sgrep-ext: *)*/
  | T_DOTS { Ellipses $1 }
 
 /*(*----------------------------*)*/
