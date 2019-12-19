@@ -306,6 +306,7 @@ and map_any =
   function
   | Expr v1 -> let v1 = map_expr v1 in Expr ((v1))
   | Stmt v1 -> let v1 = map_stmt v1 in Stmt ((v1))
+  | Stmts v1 -> let v1 = map_of_list map_stmt v1 in Stmts ((v1))
   | Top v1 -> let v1 = map_toplevel v1 in Top ((v1))
   | Program v1 -> let v1 = map_program v1 in Program ((v1))
   

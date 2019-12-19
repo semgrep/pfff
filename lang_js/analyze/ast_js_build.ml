@@ -829,6 +829,7 @@ let any x =
   match x with
   | C.Expr x -> A.Expr (expr env x)
   | C.Stmt x -> A.Stmt (stmt1 env x)
+  | C.Stmts x -> A.Stmts (List.map (stmt1 env) x)
   | C.Pattern _x -> raise Todo
   | C.Item _x -> raise Todo
   | C.Program _x -> raise Todo

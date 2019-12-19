@@ -327,6 +327,7 @@ type program = toplevel list
 type any = 
   | Expr of expr
   | Stmt of stmt
+  | Stmts of stmt list
   | Top of toplevel
   | Program of program
  (* with tarzan *)

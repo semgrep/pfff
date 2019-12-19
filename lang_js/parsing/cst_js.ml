@@ -625,6 +625,7 @@ and export =
 type any =
   | Expr of expr
   | Stmt of stmt
+  | Stmts of stmt list
   | Pattern of pattern
   | Item of item
   | Program of program

@@ -250,7 +250,12 @@ declaration:
 
 sgrep_spatch_pattern:
  | assignment_expression_no_statement EOF      { Expr $1 }
- | statement EOF { Stmt $1 }
+ | statement EOF                               { Stmt $1 }
+ | statement statement_no_item_list EOF                { Stmts ($1::$2) }
+
+statement_no_item_list:
+ | statement { [$1] }
+ | statement_no_item_list statement { $1 @ [$2] }
 
 /*(*************************************************************************)*/
 /*(*1 Namespace *)*/
