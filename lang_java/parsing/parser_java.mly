@@ -709,6 +709,8 @@ statement_expression:
  | post_decrement_expression  { $1 }
  | method_invocation  { $1 }
  | class_instance_creation_expression  { $1 }
+ /*(* to allow '$S;' in sgrep *)*/
+ | name { Flag_parsing.sgrep_guard ((Name (name $1)))  }
 
 
 
