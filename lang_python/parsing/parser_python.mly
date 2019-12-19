@@ -318,10 +318,19 @@ return_type_opt:
 parameters: LPAREN typedargslist RPAREN { $2 }
 
 /*(* typing-ext: *)*/
+/*(* Note: Python allows separating positional arguments from keyword
+   * arguments that MUST be specified as keywords with a single asterisk then
+   * a comma.
+   *
+   * We place the consumption of this single asterisk in typedargslist rather
+   * than typed_parameter as it does not generate a parameter for our
+   * parameter list.
+   * TODO: Enforce that only keyword args come after the asterisk. *)*/
 typedargslist:
   | /*(*empty*)*/                       { [] }
   | typed_parameter                     { [$1] }
   | typed_parameter COMMA typedargslist { $1::$3 }
+  | MULT COMMA typedargslist            { $3 }
 
 /*(* the original grammar enforces more restrictions on the order between
    * Param, ParamStar, and ParamPow, but each language version relaxed it *)*/
