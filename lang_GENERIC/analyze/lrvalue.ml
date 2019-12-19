@@ -179,7 +179,8 @@ let rec visit_expr hook lhs expr =
 
   | AnonClass _ -> ()
 
-  | Yield e | Await e -> recr e
+  | Yield (e, _is_yield_from) -> recr e
+  | Await e -> recr e
 
   | Record xs -> 
      xs |> List.iter (fun field ->

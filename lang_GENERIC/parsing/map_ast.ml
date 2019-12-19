@@ -158,7 +158,7 @@ and map_expr x =
       let v1 = map_expr v1
       and v2 = map_of_list map_action v2
       in MatchPattern ((v1, v2))
-  | Yield v1 -> let v1 = map_expr v1 in Yield ((v1))
+  | Yield ((v1, v2)) -> let v1 = map_expr v1 and v2 = map_of_bool v2 in Yield ((v1, v2))
   | Await v1 -> let v1 = map_expr v1 in Await ((v1))
   | Cast ((v1, v2)) ->
       let v1 = map_type_ v1 and v2 = map_expr v2 in Cast ((v1, v2))

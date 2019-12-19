@@ -97,7 +97,7 @@ let special (x, tok) =
   | Spread -> SR_Special G.Spread
   | Yield -> SR_NeedArgs (fun args -> 
           match args with
-          | [e] -> G.Yield e
+          | [e] -> G.Yield (e, false)
           | _ -> error tok "Impossible: Too many arguments to Yield"
           )
   | YieldStar -> SR_Other G.OE_YieldStar

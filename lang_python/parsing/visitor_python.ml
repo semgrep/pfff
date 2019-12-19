@@ -121,7 +121,7 @@ and v_expr (x: expr) =
   | Lambda ((v1, v2)) -> let v1 = v_parameters v1 and v2 = v_expr v2 in ()
   | IfExp ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_expr v2 and v3 = v_expr v3 in ()
-  | Yield v1 -> let v1 = v_option v_expr v1 in ()
+  | Yield ((v1, v2)) -> let v1 = v_option v_expr v1 and v2 = v_bool v2 in ()
   | Await v1 -> let v1 = v_expr v1 in ()
   | Repr v1 -> let v1 = v_expr v1 in ()
   | Attribute ((v1, v2, v3)) ->
