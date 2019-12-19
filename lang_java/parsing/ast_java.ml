@@ -385,6 +385,7 @@ type any =
   | AIdent of ident
   | AExpr of expr
   | AStmt of stmt
+  | AStmts of stmt list
   | ATyp of typ
   | AVar of var
   | AInit of init

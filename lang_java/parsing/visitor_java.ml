@@ -81,6 +81,7 @@ and v_any x = match x with
   | AIdent i   -> v_ident i
   | AExpr e   -> v_expr e
   | AStmt s    -> v_stmt s
+  | AStmts s    -> v_list v_stmt s
   | ATyp t     -> v_typ t
   | AVar v     -> v_var v
   | AInit i   -> v_init i

@@ -522,6 +522,7 @@ let any =
   | AIdent v1 -> let v1 = ident v1 in G.Id v1
   | AExpr v1 -> let v1 = expr v1 in G.E v1
   | AStmt v1 -> let v1 = stmt v1 in G.S v1
+  | AStmts v1 -> let v1 = List.map stmt v1 in G.Ss v1
   | ATyp v1 -> let v1 = typ v1 in G.T v1
   | AVar v1 -> let v1 = var v1 in G.En v1
   | AInit v1 -> let v1 = init v1 in G.E v1

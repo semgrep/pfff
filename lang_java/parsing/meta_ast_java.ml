@@ -453,6 +453,8 @@ let vof_any =
   | AIdent v1 -> let v1 = vof_ident v1 in Ocaml.VSum (("AIdent", [ v1 ]))
   | AExpr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("AExpr", [ v1 ]))
   | AStmt v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("AStmt", [ v1 ]))
+  | AStmts v1 -> let v1 = Ocaml.vof_list vof_stmt v1 in 
+      Ocaml.VSum (("AStmt", [ v1 ]))
   | ATyp v1 -> let v1 = vof_typ v1 in Ocaml.VSum (("ATyp", [ v1 ]))
   | AVar v1 -> let v1 = vof_var v1 in Ocaml.VSum (("AVar", [ v1 ]))
   | AInit v1 -> let v1 = vof_init v1 in Ocaml.VSum (("AInit", [ v1 ]))

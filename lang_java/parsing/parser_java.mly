@@ -251,6 +251,7 @@ compilation_unit:
 sgrep_spatch_pattern:
  | expression EOF { AExpr $1 }
  | statement EOF { AStmt $1 }
+ | statement block_statements EOF { AStmts ($1::$2) }
 
 /*(*************************************************************************)*/
 /*(*1 Package, Import, Type *)*/
