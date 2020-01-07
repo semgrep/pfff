@@ -631,6 +631,7 @@ interpolated:
   | FSTRING_LBRACE test COLON format_specifier RBRACE 
      { InterpolatedString ($2::mk_str $3::$4) }
 
+/*(* todo: maybe need another lexing state when COLON inside FSTRING_LBRACE*)*/
 format_specifier: format_token_list { $1 }
 
 format_token_list:
@@ -644,6 +645,7 @@ format_token:
   | NAME  { mk_str (snd $1) }
   | LT    { mk_str $1 }
   | GT    { mk_str $1 }
+  | BITXOR { mk_str $1 }
   | LBRACE test RBRACE { $2 }
 
 /*(*----------------------------*)*/
