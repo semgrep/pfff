@@ -76,6 +76,7 @@ let parse2 filename =
   let stat = Parse_info.default_stat filename in
   (* this can throw Parse_info.Lexical_error *)
   let toks = tokens filename in
+  let toks = Parsing_hacks_python.fix_tokens toks in
   let toks_final = toks |> Common.exclude TH.is_special in
   let tr, lexer, lexbuf_fake = 
     Parse_info.mk_lexer_for_yacc toks TH.is_comment in

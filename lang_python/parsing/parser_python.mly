@@ -499,9 +499,9 @@ with_stmt:
   | WITH with_inner { $2 }
 
 with_inner:
-  | test COLON suite              { With ($1, None, $3)    }
+  | test         COLON suite      { With ($1, None, $3) }
   | test AS expr COLON suite      { With ($1, Some $3, $5) }
-  | test COMMA with_inner         { With ($1, None, [$3])    }
+  | test         COMMA with_inner { With ($1, None, [$3]) }
   | test AS expr COMMA with_inner { With ($1, Some $3, [$5]) }
 
 /*(* python3-ext: *)*/

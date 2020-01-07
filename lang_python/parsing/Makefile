@@ -12,7 +12,7 @@ SRC= ast_python.ml meta_ast_python.ml \
      lib_parsing_python.ml \
      parser_python.ml lexer_python.ml \
      token_helpers_python.ml \
-     parse_python.ml \
+     parsing_hacks_python.ml parse_python.ml \
      test_parsing_python.ml unit_parsing_python.ml
 
 SYSLIBS= str.cma unix.cma 
