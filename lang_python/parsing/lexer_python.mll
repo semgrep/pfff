@@ -82,13 +82,6 @@ let unescaped s =
     String.iter unescapechar s;
     Buffer.contents buf
 
-let count_lines s =
-  let n = ref 0 in
-    String.iter
-      (fun c -> if c = '\n' then incr n)
-      s;
-    !n
-
 (* ---------------------------------------------------------------------- *)
 (* Lexer state *)
 (* ---------------------------------------------------------------------- *)
@@ -227,12 +220,6 @@ and _token state = parse
   | ((whitespace* comment? newline)* whitespace* comment?) newline
       { 
         let info = tokinfo lexbuf in
-        let lines = count_lines (Lexing.lexeme lexbuf) in
-        let pos = lexbuf.lex_curr_p in
-          lexbuf.lex_curr_p <-
-            { pos with
-                pos_bol = pos.pos_cnum;
-                pos_lnum = pos.pos_lnum + lines };
         if state.nl_ignore <= 0 then begin
           state.curr_offset <- 0;
           let s = offset state lexbuf in
@@ -463,9 +450,6 @@ and sq_longstrlit state pos = shortest
 | (([^ '\\'] | escapeseq)* as s) "'''"
     { 
       let full_str = Lexing.lexeme lexbuf in
-      let lines = count_lines s in
-      let curpos = lexbuf.lex_curr_p in
-      lexbuf.lex_curr_p <- { curpos with pos_lnum = curpos.pos_lnum + lines};
       STR (unescaped s, PI.tok_add_s full_str pos) 
     }
 
@@ -481,9 +465,6 @@ and dq_longstrlit state pos = shortest
   | (([^ '\\'] | escapeseq)* as s) "\"\"\""
       { 
         let full_str = Lexing.lexeme lexbuf in
-        let lines = count_lines s in
-        let curpos = lexbuf.lex_curr_p in
-        lexbuf.lex_curr_p <- { curpos with pos_lnum = curpos.pos_lnum + lines};
         STR (unescaped s, PI.tok_add_s full_str pos) }
 
 (*****************************************************************************)
