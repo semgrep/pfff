@@ -52,45 +52,46 @@ let unicode_letter = ['a'-'z' 'A'-'Z']
 
 let letter = unicode_letter | '_'
 
+let identifier = letter (letter | unicode_digit)*
+
+
 let decimal_digit = ['0'-'9']
 let binary_digit = ['0'-'1']
 let octal_digit = ['0'-'7']
 let hex_digit = ['0'-'9' 'a'-'f' 'A'-'F']
 
-
-let identifier = letter (letter | unicode_digit)*
-
 let decimal_digits = decimal_digit ('_'? decimal_digit)*
-let decimal_lit = "0" | ['1'-'9'] ( '_'? decimal_digits)?
-
 let binary_digits = binary_digit ('_'? binary_digit)*
-let binary_lit = "0" ['b' 'B'] '_'? binary_digits
-
 let octal_digits = octal_digit ('_'? octal_digit)*
-let octal_lit = "0" ['o' 'O']? '_'? octal_digits
-
 let hex_digits = hex_digit ('_'? hex_digit)*
+
+let decimal_lit = "0" | ['1'-'9'] ( '_'? decimal_digits)?
+let binary_lit = "0" ['b' 'B'] '_'? binary_digits
+let octal_lit = "0" ['o' 'O']? '_'? octal_digits
 let hex_lit = "0" ['x' 'X'] '_'? hex_digits
 
 let int_lit = 
-  decimal_lit 
-| binary_lit 
-| octal_lit 
-| hex_lit
+   decimal_lit 
+ | binary_lit 
+ | octal_lit 
+ | hex_lit
 
+let decimal_exponent = ['e' 'E'] ['+' '-']? decimal_digits
+let decimal_float_lit =
+   decimal_digits '.' decimal_digits? decimal_exponent?
+ | decimal_digits decimal_exponent
+ | '.' decimal_digits decimal_exponent?
 
-let digit = decimal_digit
-let digipart = digit (('_'? digit)* )
+let hex_mantissa = 
+   '_'? hex_digits '.' hex_digits?
+ | '_'? hex_digits
+ | '.' hex_digits
+let hex_exponent = ['p' 'P'] ['+' '-']? decimal_digits
+let hex_float_lit = '0' ['x' 'X'] hex_mantissa hex_exponent
 
+let float_lit = decimal_float_lit | hex_float_lit
 
-let intpart = digipart
-let fraction = '.' digipart
-let pointfloat = intpart? fraction | intpart '.'
-let exponent = ['e' 'E'] ['+' '-']? digipart
-let exponentfloat = (intpart | pointfloat) exponent
-let floatnumber = pointfloat | exponentfloat
-
-let imagnumber = (floatnumber | intpart) ['i']
+let imaginary_lit = (decimal_digits | int_lit | float_lit) 'i'
 
 let escapeseq = '\\' _
 
@@ -234,10 +235,10 @@ rule token = parse
   | int_lit as n
       { LINT (n, tokinfo lexbuf) }
 
-  | floatnumber as n
+  | float_lit as n
       { LFLOAT (n, tokinfo lexbuf) }
 
-  | imagnumber as n
+  | imaginary_lit as n
       { LIMAG (n, tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
