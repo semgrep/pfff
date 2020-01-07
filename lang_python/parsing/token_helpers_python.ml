@@ -27,10 +27,6 @@ let is_comment = function
   | TComment _ | TCommentSpace _ -> true
   | _ -> false 
 
-let is_special = function
-  | INDENT | DEDENT -> true
-  | _ -> false
-
 (*****************************************************************************)
 (* Visitors *)
 (*****************************************************************************)
@@ -137,8 +133,8 @@ let visitor_info_of_tok f = function
   | LEQ (ii) -> LEQ (f ii)
   | GEQ (ii) -> GEQ (f ii)
 
-  | INDENT -> INDENT
-  | DEDENT -> DEDENT
+  | INDENT ii -> INDENT (f ii)
+  | DEDENT ii -> DEDENT (f ii)
   | NEWLINE (ii) -> NEWLINE (f ii)
 
 let info_of_tok tok = 

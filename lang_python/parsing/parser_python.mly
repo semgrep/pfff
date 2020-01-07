@@ -171,7 +171,7 @@ let mk_str ii =
 %token <string * Ast_python.tok> FSTRING_STRING
 
 /* layout */
-%token INDENT DEDENT 
+%token <Ast_python.tok> INDENT DEDENT 
 %token <Ast_python.tok> NEWLINE
 
 /*(*************************************************************************)*/
@@ -385,10 +385,6 @@ stmt:
   | simple_stmt { $1 }
   | compound_stmt { [$1] }
 
-suite:
-  | simple_stmt { $1 }
-  | NEWLINE INDENT stmt_list DEDENT { $3 }
-
 simple_stmt:
   | small_stmt NEWLINE { [$1] }
   | small_stmt SEMICOL NEWLINE { [$1] }
@@ -455,6 +451,11 @@ compound_stmt:
   | funcdef     { $1 }
   | classdef    { $1 }
   | async_stmt  { $1 }
+
+/*(* this is always preceded by a COLON *)*/
+suite:
+  | simple_stmt { $1 }
+  | NEWLINE INDENT stmt_list DEDENT { $3 }
 
 
 if_stmt: IF test COLON suite elif_stmt_list { If ($2, $4, $5) }

@@ -197,10 +197,11 @@ rule token state = parse
         match () with
         | _ when curr_offset < last_offset ->
             ignore (Stack.pop state.offset_stack); 
-            DEDENT
+            DEDENT (tokinfo lexbuf)
         | _ when curr_offset > last_offset ->
             Stack.push curr_offset state.offset_stack; 
-            INDENT
+            INDENT (tokinfo lexbuf)
+        (* curr_offset = last_offset *)
         | _ -> _token state lexbuf 
       }
 

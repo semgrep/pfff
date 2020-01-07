@@ -77,7 +77,6 @@ let parse2 filename =
   (* this can throw Parse_info.Lexical_error *)
   let toks = tokens filename in
   let toks = Parsing_hacks_python.fix_tokens toks in
-  let toks_final = toks |> Common.exclude TH.is_special in
   let tr, lexer, lexbuf_fake = 
     Parse_info.mk_lexer_for_yacc toks TH.is_comment in
 
@@ -91,7 +90,7 @@ let parse2 filename =
       )
     in
     stat.PI.correct <- (Common.cat filename |> List.length);
-    (Some xs, toks_final), stat
+    (Some xs, toks), stat
 
   with Parsing.Parse_error ->
 
@@ -110,7 +109,7 @@ let parse2 filename =
     end;
 
     stat.PI.bad     <- Common.cat filename |> List.length;
-    (None, toks_final), stat
+    (None, toks), stat
 
 let parse a = 
   Common.profile_code "Parse_python.parse" (fun () -> parse2 a)

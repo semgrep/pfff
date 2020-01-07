@@ -13,7 +13,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common
 
 open Ast_python
 open Highlight_code
@@ -400,8 +399,8 @@ let visit_program ~tag_hook _prefs (program, toks) =
        tag ii Error
     | T.EOF _ii -> 
        ()
-    | T.INDENT | T.DEDENT -> 
-       raise Impossible (* filtered in parse_python.ml with is_special *)
+    | T.INDENT _ii | T.DEDENT _ii ->  
+       ()
 
     (* comments *)
     | T.TComment ii -> 
