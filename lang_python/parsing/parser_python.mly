@@ -234,13 +234,15 @@ import_from:
       { ImportFrom (fst $2, $4, snd $2) }
 
 name_and_level:
-  |           dotted_name { $1, Some 0 }
+  |           dotted_name { $1, None }
   | dot_level dotted_name { $2, Some $1 }
   | DOT dot_level         { [("",$1(*TODO*))], Some (1 + $2) }
+  | ELLIPSES dot_level         { [("",$1(*TODO*))], Some (3 + $2) }
 
 dot_level:
   | /*(*empty *)*/ { 0 }
   | DOT dot_level  { 1 + $2 }
+  | ELLIPSES dot_level { 3 + $2 }
 
 import_as_name:
   | NAME         { $1, None }

@@ -74,6 +74,7 @@ type 'a wrap = 'a * tok
 type name = string wrap
  (* with tarzan *)
 
+(* note that name can be also the special "*" in an import context. *)
 type dotted_name = name list
  (* with tarzan *)
 
