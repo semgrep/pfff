@@ -552,6 +552,7 @@ term_op:
   | DIV     { Div, $1 }
   | MOD     { Mod, $1 }
   | FDIV    { FloorDiv, $1 }
+  | AT      { MatMult, $1 }
 
 factor:
   | ADD factor    { UnaryOp ((UAdd,$1), $2) }

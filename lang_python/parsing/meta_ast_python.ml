@@ -125,6 +125,7 @@ and vof_operator =
   | Div -> Ocaml.VSum (("Div", []))
   | Mod -> Ocaml.VSum (("Mod", []))
   | Pow -> Ocaml.VSum (("Pow", []))
+  | MatMult -> Ocaml.VSum (("MatMult", []))
   | FloorDiv -> Ocaml.VSum (("FloorDiv", []))
   | LShift -> Ocaml.VSum (("LShift", []))
   | RShift -> Ocaml.VSum (("RShift", []))

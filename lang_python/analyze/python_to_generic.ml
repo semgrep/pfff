@@ -272,6 +272,7 @@ and operator =
   | BitOr    -> G.BitOr
   | BitXor   -> G.BitXor
   | BitAnd   -> G.BitAnd
+  | MatMult  -> G.MatMult
 
 and unaryop = function 
   | Invert -> Right G.OE_Invert

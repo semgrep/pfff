@@ -158,6 +158,7 @@ and v_operator =
   | Mod -> ()
   | Pow -> ()
   | FloorDiv -> ()
+  | MatMult -> ()
   | LShift -> ()
   | RShift -> ()
   | BitOr -> ()
@@ -214,6 +215,7 @@ and v_parameters v = v_list v_parameter v
 and v_parameter x =
   let k x = 
   match x with
+  | ParamSingleStar v1 -> v_tok v1; ()
   | ParamClassic ((v1, v2)) ->
       let v1 = v_name_and_type v1 and v2 = v_option v_expr v2 in ()
   | ParamStar ((v1, v2)) ->

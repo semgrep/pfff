@@ -279,7 +279,7 @@ and expr =
     and arithmetic_operator = 
       | Plus (* unary too *) | Minus (* unary too *) 
       | Mult | Div | Mod
-      | Pow | FloorDiv (* Python *)
+      | Pow | FloorDiv | MatMult (* Python *)
       | LSL | LSR | ASR (* L = logic, A = Arithmetic, SL = shift left *) 
       | BitOr | BitXor | BitAnd | BitNot (* unary *)
       (* todo? rewrite in CondExpr? have special behavior *)
@@ -879,7 +879,7 @@ let stmt_to_item st =
 let is_boolean_operator = function
  | Plus (* unary too *) | Minus (* unary too *) 
  | Mult | Div | Mod
- | Pow | FloorDiv (* Python *)
+ | Pow | FloorDiv | MatMult (* Python *)
  | LSL | LSR | ASR (* L = logic, A = Arithmetic, SL = shift left *) 
  | BitOr | BitXor | BitAnd | BitNot (* unary *)
   -> false

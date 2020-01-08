@@ -12,6 +12,7 @@ let vof_arithmetic_operator =
   | Mod -> Ocaml.VSum (("Mod", []))
   | Pow -> Ocaml.VSum (("Pow", []))
   | FloorDiv -> Ocaml.VSum (("FloorDiv", []))
+  | MatMult -> Ocaml.VSum (("MatMult", []))
   | LSL -> Ocaml.VSum (("LSL", []))
   | LSR -> Ocaml.VSum (("LSR", []))
   | ASR -> Ocaml.VSum (("ASR", []))

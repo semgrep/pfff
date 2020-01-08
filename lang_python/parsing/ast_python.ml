@@ -159,6 +159,7 @@ type expr =
     | Mod | Pow | FloorDiv
     | LShift | RShift 
     | BitOr | BitXor | BitAnd 
+    | MatMult (* Matrix Multiplication *)
   
   and unaryop = Invert | Not | UAdd | USub
   
@@ -282,7 +283,11 @@ type stmt =
   | Async of stmt
 
   | Import of alias_dotted list (* names *)
-  | ImportFrom of dotted_name (* module *) * alias list (* names *) * int option (* level *)
+  | ImportFrom of 
+     dotted_name (* module *) * 
+     alias list (* names *) * 
+     (* https://realpython.com/absolute-vs-relative-python-imports/ *)
+     int option (* levels, for relative imports *)
 
   (* should be allowed just at the toplevel *)
   | FunctionDef of 
