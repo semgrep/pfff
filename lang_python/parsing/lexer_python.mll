@@ -317,6 +317,18 @@ and _token state = parse
   (* part of python3 and also sgrep-ext: *)
   | "..."   { ELLIPSES (tokinfo lexbuf) }
 
+  | "!" { if !(state.mode) |> List.exists (function
+            | STATE_IN_FSTRING_SINGLE 
+            | STATE_IN_FSTRING_DOUBLE
+            | STATE_IN_FSTRING_TRIPLE -> true
+            | _ -> false)
+          then BANG (tokinfo lexbuf)
+          else begin 
+             error (spf "unrecognized symbols: %s" (tok lexbuf)) lexbuf;
+             TUnknown (tokinfo lexbuf)
+          end
+      }
+
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)
   (* ----------------------------------------------------------------------- *)

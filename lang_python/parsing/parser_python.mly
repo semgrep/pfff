@@ -169,6 +169,7 @@ let mk_str ii =
 %token <Ast_python.tok> FSTRING_START FSTRING_END
 %token <Ast_python.tok> FSTRING_LBRACE 
 %token <string * Ast_python.tok> FSTRING_STRING
+%token <Ast_python.tok> BANG
 
 /* layout */
 %token <Ast_python.tok> INDENT DEDENT 
@@ -648,6 +649,8 @@ interpolated:
   | FSTRING_STRING { Str $1 }
   | FSTRING_LBRACE test RBRACE { $2 }
   | FSTRING_LBRACE test COLON format_specifier RBRACE 
+     { InterpolatedString ($2::mk_str $3::$4) }
+  | FSTRING_LBRACE test BANG format_specifier RBRACE 
      { InterpolatedString ($2::mk_str $3::$4) }
 
 /*(* todo: maybe need another lexing state when COLON inside FSTRING_LBRACE*)*/

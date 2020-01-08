@@ -42,6 +42,7 @@ let visitor_info_of_tok f = function
   | FSTRING_END (ii) -> FSTRING_END (f ii)
   | FSTRING_LBRACE (ii) -> FSTRING_LBRACE (f ii)
   | FSTRING_STRING (x, ii) -> FSTRING_STRING (x, f ii)
+  | BANG ii -> BANG (f ii)
 
   | NAME (x, ii) -> NAME (x, f ii)
   | INT (x, ii) -> INT (x, f ii)

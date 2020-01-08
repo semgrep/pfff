@@ -430,9 +430,9 @@ let visit_program ~tag_hook _prefs (program, toks) =
         tag ii Comment
 *)
     | T.FSTRING_START ii | T.FSTRING_END ii
-    | T.FSTRING_STRING (_, ii)
+    | T.FSTRING_STRING (_, ii) 
      -> tag ii String
-    | T.FSTRING_LBRACE ii -> tag ii Punctuation
+    | T.FSTRING_LBRACE ii | T.BANG ii -> tag ii Punctuation
 
     (* ident  *)
     | T.NAME (s, ii) -> 
