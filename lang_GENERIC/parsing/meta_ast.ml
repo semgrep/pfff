@@ -690,6 +690,7 @@ and vof_other_parameter_operator =
   function
   | OPO_KwdParam -> Ocaml.VSum (("OPO_KwdParam", []))
   | OPO_Ref -> Ocaml.VSum (("OPO_Ref", []))
+  | OPO_SingleStarParam -> Ocaml.VSum ("OPO_SingleStarParam", [])
 and vof_variable_definition { vinit = v_vinit; vtype = v_vtype } =
   let bnds = [] in
   let arg = Ocaml.vof_option vof_type_ v_vtype in
@@ -819,6 +820,7 @@ and vof_item =
 and vof_program v = Ocaml.vof_list vof_item v
 and vof_any =
   function
+  | Tk v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Tk", [ v1 ]))
   | N v1 -> let v1 = vof_name v1 in Ocaml.VSum (("N", [ v1 ]))
   | En v1 -> let v1 = vof_entity v1 in Ocaml.VSum (("En", [ v1 ]))
   | E v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("E", [ v1 ]))

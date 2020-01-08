@@ -456,8 +456,7 @@ and
   let arg = v_option v_expr v_pdefault in
   let arg = v_option v_type_ v_ptype in
   let arg = v_list v_attribute v_pattrs in ()
-and v_other_parameter_operator =
-  function | OPO_KwdParam -> () | OPO_Ref -> ()
+and v_other_parameter_operator _ = ()
 and
   v_variable_definition {
                           vinit = v_vinit;

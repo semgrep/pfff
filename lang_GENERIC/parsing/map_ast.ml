@@ -666,6 +666,7 @@ and map_program v = map_of_list map_item v
 
 and map_any =
   function
+  | Tk v1 -> let v1 = map_tok v1 in Tk v1
   | Id v1 -> let v1 = map_ident v1 in Id ((v1))
   | N v1 -> let v1 = map_name v1 in N ((v1))
   | En v1 -> let v1 = map_entity v1 in En ((v1))

@@ -110,7 +110,8 @@ type expr =
 
   (* python3: *)
   | ExprStar of expr (* less: expr_context? always Store anyway no? *)
-  (* python3: https://www.python.org/dev/peps/pep-0498/ *)
+  (* python3: f-strings
+   * reference: https://www.python.org/dev/peps/pep-0498/ *)
   | InterpolatedString of interpolated list
 
   (* python3: *)
@@ -205,6 +206,9 @@ type expr =
        *)
      | ParamClassic of (name * type_ option) * expr option (* default value *)
      | ParamStar of (name * type_ option)
+     (* python3: single star delimiter to force keyword-only arguments after.
+      * reference: https://www.python.org/dev/peps/pep-3102/ *)
+     | ParamSingleStar of tok
      | ParamPow  of (name * type_ option)
   
   and argument = 

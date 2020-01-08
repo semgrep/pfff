@@ -73,6 +73,7 @@ let params_of_parameters params =
     | ParamClassic ((name, _), _)
     | ParamStar (name, _) | ParamPow (name, _) 
     -> Some name
+    | ParamSingleStar _ -> None
    )
 
 (*****************************************************************************)

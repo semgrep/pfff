@@ -330,6 +330,8 @@ and parameters xs =
      let topt = option type_ topt in
      G.OtherParam (G.OPO_KwdParam, 
             [G.Id n] @ (match topt with None -> [] | Some t -> [G.T t]))
+   | ParamSingleStar tok ->
+     G.OtherParam (G.OPO_SingleStarParam, [G.Tk tok])
   )
  
 

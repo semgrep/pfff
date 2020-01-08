@@ -207,6 +207,8 @@ and vof_slice =
 and vof_parameters v = Ocaml.vof_list vof_parameter v
 and vof_parameter =
   function
+  | ParamSingleStar v1 -> let v1 = vof_tok v1 
+    in Ocaml.VSum (("ParamSingleStar", [ v1 ]))
   | ParamClassic ((v1, v2)) ->
       let v1 =
         (match v1 with

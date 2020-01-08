@@ -25,17 +25,17 @@
  *  - Java
  *  - C
  *  - TOFINISH OCaml
- *  - TODO PHP
+ *  - TODO PHP, Go
  *
  * rational: In the end, programming languages have a lot in common.
  * Even though most interesting analysis are probably better done on a
  * per-language basis, many useful analysis are trivial and require just an
  * AST and a visitor. One could duplicate those analysis for each language
  * or design an AST (this file) generic enough to factorize all those 
- * analysis (e.g., unused entity). We also want to remain
+ * analysis (e.g., unused entity). We want to remain
  * as precise as possible and not lose too much information while going
- * from the specific language AST to the generic AST. We do not want
- * to be generic as in ast_fuzzy.ml, where we have a very general 
+ * from the specific language AST to the generic AST. We also do not want
+ * to be too generic as in ast_fuzzy.ml, where we have a very general 
  * tree of nodes, but all the structure of the original AST is lost.
  * 
  * TODO:
@@ -604,7 +604,7 @@ and function_definition = {
     }
   and other_parameter_operator =
      (* Python *)
-     | OPO_KwdParam
+     | OPO_KwdParam | OPO_SingleStarParam
      (* PHP *)
      | OPO_Ref (* less: or encode in type? *)
 
@@ -770,6 +770,7 @@ and any =
   | Di of dotted_ident
   | Fld of field
   | Ss of stmt list
+  | Tk of tok
 
   | Pr of program
 

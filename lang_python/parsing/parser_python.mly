@@ -330,6 +330,7 @@ typed_parameter:
   /*(* TODO check default args come after variable args later *)*/
   | tfpdef EQ test   { ParamClassic (mk_name_param $1, Some $3) }
   | MULT tfpdef      { ParamStar (fst $2, snd $2) }
+  | MULT             { ParamSingleStar $1 }
   | POW tfpdef       { ParamPow (fst $2, snd $2) }
 
 tfpdef:
