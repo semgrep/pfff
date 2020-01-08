@@ -5,9 +5,8 @@ tests/js/ai/todo2
 external/battery_included/ocamlgtk
 #facebook/
 
-todo
-
 #TODO
+todo
 /code_map/thread_bug_ml
 /gitlog
 /h_program-lang/old/dm_ml
@@ -15,6 +14,7 @@ todo
 /pfff.spatch
 /pfff2.spatch
 /todo.txt
+
 
 *.json
 *.marshall

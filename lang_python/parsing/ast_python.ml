@@ -44,6 +44,10 @@
  *  - 2019 port to the pfff infrastructure.
  *  - 2019 modified to support types, and many other Python 3 features
  *    (see the python3: tag in this file)
+ *
+ * todo:
+ *  - could use records for all the XxxDef, but what matters now is 
+ *    ast_generic.ml, which uses records at least.
  *)
 
 (*****************************************************************************)
