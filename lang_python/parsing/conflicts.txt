@@ -9,6 +9,14 @@ state 24
 	import_from : FROM . name_and_level IMPORT import_as_names  (11)
 	dot_level : .  (15)
 
+* async def
+
+note that compound_stmt allow async_funcdef and async_stmt
+which contains an 'ASYNC funcdef' which seems to be a conflict.
+To solve the issue, the python grammar actually imposes that
+the async_funcdef be decorated by at least one attribute, hence
+the introduction of the weird decorated rule.
+
 * lambda x : y 
 
 We want to allow types on parameters, 
@@ -41,3 +49,4 @@ state 206
 
 ==> have varargslist and typedargslist (as used in recent
 Python grammars)
+

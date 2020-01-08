@@ -304,9 +304,12 @@ augassign:
 /*(*************************************************************************)*/
 /*(*1 Function definition *)*/
 /*(*************************************************************************)*/
+/*(* this rule is referenced in compound_stmt shown later *)*/
+funcdef: DEF NAME parameters return_type_opt COLON suite
+    { FunctionDef ($2, $3, $4, $6, []) }
 
-funcdef: decorator_list DEF NAME parameters return_type_opt COLON suite
-    { FunctionDef ($3, $4, $5, $7, $1) }
+async_funcdef: ASYNC DEF NAME parameters return_type_opt COLON suite
+    { FunctionDef ($3, $4, $5, $7, [] (* TODO $1 *)) }
 
 /*(* typing-ext: *)*/
 return_type_opt: 
@@ -360,8 +363,8 @@ vfpdef: NAME { $1 }
 /*(*1 Class definition *)*/
 /*(*************************************************************************)*/
 
-classdef: decorator_list CLASS NAME arglist_paren_opt COLON suite 
-   { ClassDef ($3, $4, $6, $1) }
+classdef: CLASS NAME arglist_paren_opt COLON suite 
+   { ClassDef ($2, $3, $5, []) }
 
 arglist_paren_opt: 
  | /*(* empty *)*/ { [] }
@@ -451,9 +454,20 @@ compound_stmt:
   | for_stmt    { $1 }
   | try_stmt    { $1 }
   | with_stmt   { $1 }
+
   | funcdef     { $1 }
   | classdef    { $1 }
+  | decorated   { $1 }
+  /*(* Note that there is no async_funcdef above. To avoid conflict
+     * with async_stmt below, Python enforces the def to be decorated.
+     *)*/
   | async_stmt  { $1 }
+
+/*(* TODO: add attributes *)*/
+decorated:
+  | decorators classdef { $2 }
+  | decorators funcdef { $2 }
+  | decorators async_funcdef { $2 }
 
 /*(* this is always preceded by a COLON *)*/
 suite:
@@ -813,10 +827,6 @@ interpolated_list:
   | /*(*empty*)*/      { [] }
   | interpolated interpolated_list { $1::$2 }
 
-decorator_list:
-  | /*(* empty *)*/          { [] }
-  | decorator decorator_list { $1::$2 }
-
 
 /*(* basic lists, at least one element *)*/
 excepthandler_list:
@@ -826,6 +836,10 @@ excepthandler_list:
 string_list:
   | string             { [$1] }
   | string string_list { $1::$2 }
+
+decorators:
+  | decorator          { [$1] }
+  | decorator decorators { $1::$2 }
 
 
 /*(* list with commans and trailing comma *)*/
