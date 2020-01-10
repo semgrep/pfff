@@ -365,7 +365,7 @@ INSTALL_SUBDIRS= \
   lang_js/parsing  lang_js/analyze\
   lang_python/parsing  lang_python/analyze\
   lang_nw/parsing  lang_nw/analyze\
-  lang_php/parsing \
+  lang_php/parsing lang_php/analyze/foundation lang_php/analyze/checker \
   lang_lisp/parsing \
   lang_skip/parsing \
   lang_GENERIC/parsing  lang_GENERIC/analyze\
