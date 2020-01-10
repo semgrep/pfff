@@ -50,6 +50,8 @@ let whitespace = [' ' '\t']
 let unicode_digit = ['0'-'9']
 let unicode_letter = ['a'-'z' 'A'-'Z']
 let unicode_char = [^ '\n' '\r']
+let unicode_char_no_quote = [^ '\n' '\r' '\'' ]
+let unicode_char_no_backquote = [^ '\n' '\r' '`' ]
 
 let letter = unicode_letter | '_'
 
@@ -99,7 +101,11 @@ let escaped_char = '\\' ['a' 'b' 'f' 'n' 'r' 't' 't' 'v' '\\' '\'' '"']
 let little_u_value = '\\' 'u' hex_digit hex_digit hex_digit hex_digit
 let big_u_value =    '\\' 'U' hex_digit hex_digit hex_digit hex_digit
                               hex_digit hex_digit hex_digit hex_digit
-let unicode_value = unicode_char | little_u_value | big_u_value | escaped_char
+let unicode_value = 
+  unicode_char_no_quote
+| little_u_value 
+| big_u_value 
+| escaped_char
 
 let octal_byte_value = '\\' octal_digit octal_digit octal_digit
 let hex_byte_value = '\\' 'x' hex_digit hex_digit
