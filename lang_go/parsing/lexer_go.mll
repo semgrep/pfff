@@ -102,6 +102,10 @@ let escaped_char = '\\' ['a' 'b' 'f' 'n' 'r' 't' 't' 'v' '\\' '\'' '"']
 let little_u_value = '\\' 'u' hex_digit hex_digit hex_digit hex_digit
 let big_u_value =    '\\' 'U' hex_digit hex_digit hex_digit hex_digit
                               hex_digit hex_digit hex_digit hex_digit
+
+(* the Go ref says just unicode_char, but this can not work, hence the
+ * use of various xxx_no_yyy below
+ *)
 let unicode_value_no_quote = 
   unicode_char_no_quote
 | little_u_value 
