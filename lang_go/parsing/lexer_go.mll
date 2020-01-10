@@ -50,7 +50,8 @@ let whitespace = [' ' '\t']
 let unicode_digit = ['0'-'9']
 let unicode_letter = ['a'-'z' 'A'-'Z']
 let unicode_char = [^ '\n' '\r']
-let unicode_char_no_quote = [^ '\n' '\r' '\'' ]
+let unicode_char_no_quote = [^ '\n' '\r' '\'' '\\']
+let unicode_char_no_double_quote = [^ '\n' '\r' '"' '\\']
 let unicode_char_no_backquote = [^ '\n' '\r' '`' ]
 
 let letter = unicode_letter | '_'
@@ -101,8 +102,14 @@ let escaped_char = '\\' ['a' 'b' 'f' 'n' 'r' 't' 't' 'v' '\\' '\'' '"']
 let little_u_value = '\\' 'u' hex_digit hex_digit hex_digit hex_digit
 let big_u_value =    '\\' 'U' hex_digit hex_digit hex_digit hex_digit
                               hex_digit hex_digit hex_digit hex_digit
-let unicode_value = 
+let unicode_value_no_quote = 
   unicode_char_no_quote
+| little_u_value 
+| big_u_value 
+| escaped_char
+
+let unicode_value_no_double_quote = 
+  unicode_char_no_double_quote
 | little_u_value 
 | big_u_value 
 | escaped_char
@@ -261,10 +268,12 @@ rule token = parse
   (* ----------------------------------------------------------------------- *)
   (* Chars/Strings *)
   (* ----------------------------------------------------------------------- *)
-  | '\'' ((unicode_value | byte_value) as s) '\''
+  | '\'' ((unicode_value_no_quote | byte_value) as s) '\''
       { LRUNE (s, tokinfo lexbuf) }
-  | '"'
-      { string (tokinfo lexbuf) lexbuf }
+  | '`' ((unicode_char_no_backquote | newline)* as s) '`'
+      { LSTR (s, tokinfo lexbuf) }
+  | '"' ((unicode_value_no_double_quote | byte_value)* as s) '"'
+      { LSTR (s, tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* eof *)
@@ -274,19 +283,6 @@ rule token = parse
   | _ { error (spf "unrecognized symbol: %s" (tok lexbuf)) lexbuf;
         TUnknown (tokinfo lexbuf)
       }
-
-(*****************************************************************************)
-(* Rules on strings *)
-(*****************************************************************************)
-
-and string pos = parse
-  | (([^ '\\' '\r' '\n' '\"'] | escapeseq)* as s) '"' 
-     { 
-       let full_str = Lexing.lexeme lexbuf in
-       LSTR (s, PI.tok_add_s full_str pos) }
- | eof { error "EOF in string" lexbuf; EOF (tokinfo lexbuf) }
- | _  { error "unrecognized symbol in string" lexbuf; TUnknown(tokinfo lexbuf)}
-
 
 (*****************************************************************************)
 (* Rule comment *)
