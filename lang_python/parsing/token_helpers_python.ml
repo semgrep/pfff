@@ -88,6 +88,8 @@ let visitor_info_of_tok f = function
   | WHILE (ii) -> WHILE (f ii)
   | WITH (ii) -> WITH (f ii)
   | YIELD (ii) -> YIELD (f ii)
+  | PRINT (ii) -> PRINT (f ii)
+  | EXEC (ii) -> EXEC (f ii)
 
   | LPAREN (ii) -> LPAREN (f ii)
   | RPAREN (ii) -> RPAREN (f ii)

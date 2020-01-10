@@ -382,8 +382,11 @@ and _token state = parse
         | "await"    -> AWAIT (tokinfo lexbuf)
         | "nonlocal"    -> NONLOCAL (tokinfo lexbuf)
 
+        (* python2: *)
+        | "print" when !Flag_parsing_python.python2 -> PRINT (tokinfo lexbuf)
+        | "exec" when !Flag_parsing_python.python2 -> EXEC (tokinfo lexbuf)
         (* python3-ext: no more: print, exec *)
- 
+
         | _          -> NAME (id, (tokinfo lexbuf)) 
     }
 

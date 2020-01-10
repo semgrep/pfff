@@ -7,7 +7,7 @@ OPAMPKG=pfff-lang_python
 
 -include $(TOP)/Makefile.config
 
-SRC= ast_python.ml meta_ast_python.ml \
+SRC= flag_parsing_python.ml ast_python.ml meta_ast_python.ml \
      visitor_python.ml \
      lib_parsing_python.ml \
      parser_python.ml lexer_python.ml \

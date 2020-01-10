@@ -122,6 +122,8 @@ let mk_str ii =
  NONE TRUE FALSE
  ASYNC AWAIT
  NONLOCAL
+ /*(* python2: *)*/
+ PRINT EXEC
 
 /*(*-----------------------------------------*)*/
 /*(*2 Punctuation tokens *)*/
@@ -397,7 +399,6 @@ simple_stmt:
   | small_stmt SEMICOL NEWLINE { [$1] }
   | small_stmt SEMICOL simple_stmt { $1::$3 }
 
-/*(* python3-ext: there was a print_stmt before but got generalized *)*/
 small_stmt:
   | expr_stmt   { $1 }
   | del_stmt    { $1 }
@@ -407,8 +408,28 @@ small_stmt:
   | global_stmt { $1 }
   | nonlocal_stmt { $1 }
   | assert_stmt { $1 }
+  /*(* python2: *)*/
+  | print_stmt { $1 }
+  | exec_stmt { $1 }
 
 /*(* for expr_stmt see above *)*/
+
+/*(* python2: *)*/
+print_stmt:
+  | PRINT                     { Print ($1, None, [], true) }
+  | PRINT test print_testlist { Print ($1, None, $2::(fst $3), snd $3) }
+  | PRINT RSHIFT test { Print ($1, Some $3, [], true) }
+  | PRINT RSHIFT test COMMA test print_testlist 
+     { Print ($1, Some $3, $5::(fst $6), snd $6) }
+print_testlist:
+  | /*(* empty *)*/  { [], true }
+  | COMMA test COMMA { [$2], false }
+  | COMMA test print_testlist { $2::(fst $3), snd $3 }
+exec_stmt:
+  | EXEC expr { Exec ($1, $2, None, None) }
+  | EXEC expr IN test { Exec ($1, $2, Some $4, None) }
+  | EXEC expr IN test COMMA test { Exec ($1, $2, Some $4, Some $6) }
+
 
 del_stmt: DEL exprlist { Delete (List.map expr_del (to_list $2)) }
 

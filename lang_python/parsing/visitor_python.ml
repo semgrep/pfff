@@ -242,6 +242,18 @@ and v_type_parent v = v_argument v
 
 and v_stmt x =
   let k x = match x with
+  | Exec ((v0, v1, v2, v3)) ->
+      let v0 = v_tok v0 in
+      let v1 = v_expr v1
+      and v2 = v_option v_expr v2
+      and v3 = v_option v_expr v3
+      in ()
+ | Print ((v0, v1, v2, v3)) ->
+      let v0 = v_tok v0 in
+      let v1 = v_option v_expr v1
+      and v2 = v_list v_expr v2
+      and v3 = v_bool v3
+      in ()
   | FunctionDef ((v1, v2, v3, v4, v5)) ->
       let v1 = v_name v1
       and v2 = v_parameters v2

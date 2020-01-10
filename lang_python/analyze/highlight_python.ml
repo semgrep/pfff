@@ -467,6 +467,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
     | T.YIELD ii
     | T.RETURN ii
     | T.ASYNC ii | T.AWAIT ii
+    | T.EXEC ii | T.PRINT ii
         -> tag ii Keyword
 
     | T.IS ii | T.IN ii

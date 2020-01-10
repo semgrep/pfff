@@ -18,7 +18,7 @@
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Abstract Syntax Tree for Python.
+(* Abstract Syntax Tree for Python3.
  *
  * Most of the code in this file derives from code from 
  * Tomohiro Matsuyama in ocaml-pythonlib, which itself derives from
@@ -28,6 +28,10 @@
  *
  * See also:
  *  - http://trevorjim.com/python-is-not-context-free/
+ *
+ * Note that this AST supports partly Python2 syntax with the special
+ * print and exec statements. It does not support the special tuple
+ * parameters syntax though.
  * 
  * related work:
  *  - https://github.com/m2ym/ocaml-pythonlib
@@ -44,6 +48,7 @@
  *  - 2019 port to the pfff infrastructure.
  *  - 2019 modified to support types, and many other Python 3 features
  *    (see the python3: tag in this file)
+ *  - 2020 backport print and exec statements, to parse some python2 code.
  *
  * todo:
  *  - could use records for all the XxxDef, but what matters now is 
@@ -278,6 +283,10 @@ type stmt =
   | Delete of expr list (* targets *)
   (* python3: *)
   | NonLocal of name list (* names *)
+
+  (* python2: *)
+  | Print of tok * expr option (* dest *) * expr list (* values *) * bool (* nl *)
+  | Exec of tok * expr (* body *) * expr option (* glob *) * expr option (* local *)
 
   (* python3: for With, For, and FunctionDef *)
   | Async of stmt

@@ -499,6 +499,14 @@ and stmt x =
   | Break -> G.Break (None)
   | Continue -> G.Continue (None)
 
+  (* python2: *)
+  | Print (tok, _dest, vals, _nl) -> 
+      let id = Name (("print", tok), Load, ref NotResolved) in
+      stmt (ExprStmt (Call (id, vals |> List.map (fun e -> Arg e))))
+
+  | Exec (tok, e, _eopt, _eopt2) -> 
+      let id = Name (("exec", tok), Load, ref NotResolved) in
+      stmt (ExprStmt (Call (id, [Arg e])))
 
 and excepthandler =
   function

@@ -72,7 +72,7 @@ let tokens a =
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
-let parse2 filename = 
+let rec parse2 filename = 
   let stat = Parse_info.default_stat filename in
   (* this can throw Parse_info.Lexical_error *)
   let toks = tokens filename in
@@ -94,22 +94,45 @@ let parse2 filename =
 
   with Parsing.Parse_error ->
 
-    let cur = tr.PI.current in
-    if not !Flag.error_recovery
-    then raise (PI.Parsing_error (TH.info_of_tok cur));
-
-    if !Flag.show_parsing_error
-    then begin
-      pr2 ("parse error \n = " ^ error_msg_tok cur);
-
-      let filelines = Common2.cat_array filename in
-      let checkpoint2 = Common.cat filename |> List.length in
-      let line_error = PI.line_of_info (TH.info_of_tok cur) in
-      Parse_info.print_bad line_error (0, checkpoint2) filelines;
-    end;
-
-    stat.PI.bad     <- Common.cat filename |> List.length;
-    (None, toks), stat
+    (* There are still lots of python2 code out there, it would be sad to
+     * not parse them just because they use the print and exec special 
+     * statements, which are not compatible with python3, hence
+     * the special error recovery trick below.
+     * For the rest Python2 is mostly compatible with Python3.
+     *
+     * Note that we do the error recovery only when we think a print
+     * or exec identifiers was involved. Otherwise every parse errors
+     * would trigger a parsing with a python2 mode, which change the
+     * significance of the print and exec identifiers, which may give
+     * strange error messages for python3 code.
+     *)
+    if not !Flag_parsing_python.python2 &&
+       (tr.PI.passed |> Common.take_safe 10 |> List.exists (function
+         | Parser_python.NAME (("print" | "exec"), _) -> true
+         | _ -> false))
+    then parse_python2 filename
+    else begin
+      let cur = tr.PI.current in
+      if not !Flag.error_recovery
+      then raise (PI.Parsing_error (TH.info_of_tok cur));
+  
+      if !Flag.show_parsing_error
+      then begin
+        pr2 ("parse error \n = " ^ error_msg_tok cur);
+  
+        let filelines = Common2.cat_array filename in
+        let checkpoint2 = Common.cat filename |> List.length in
+        let line_error = PI.line_of_info (TH.info_of_tok cur) in
+        Parse_info.print_bad line_error (0, checkpoint2) filelines;
+      end;
+  
+      stat.PI.bad     <- Common.cat filename |> List.length;
+      (None, toks), stat
+     end
+and parse_python2 a =
+  Common.save_excursion Flag_parsing_python.python2 true (fun () ->
+      parse2 a
+  )
 
 let parse a = 
   Common.profile_code "Parse_python.parse" (fun () -> parse2 a)

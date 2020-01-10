@@ -343,6 +343,19 @@ let rec vof_stmt =
       and v3 = Ocaml.vof_list vof_stmt v3
       and v4 = Ocaml.vof_list vof_decorator v4
       in Ocaml.VSum (("ClassDef", [ v1; v2; v3; v4 ]))
+  | Exec ((v0, v1, v2, v3)) ->
+      let v0 = vof_tok v0 in
+      let v1 = vof_expr v1
+      and v2 = Ocaml.vof_option vof_expr v2
+      and v3 = Ocaml.vof_option vof_expr v3
+      in Ocaml.VSum (("Exec", [ v0; v1; v2; v3 ]))
+ | Print ((v0, v1, v2, v3)) ->
+      let v0 = vof_tok v0 in
+      let v1 = Ocaml.vof_option vof_expr v1
+      and v2 = Ocaml.vof_list vof_expr v2
+      and v3 = Ocaml.vof_bool v3
+      in Ocaml.VSum (("Print", [ v0; v1; v2; v3 ]))
+
 and vof_excepthandler =
   function
   | ExceptHandler ((v1, v2, v3)) ->
