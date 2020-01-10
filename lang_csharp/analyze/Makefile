@@ -3,6 +3,7 @@ TOP=../..
 # Variables
 ##############################################################################
 TARGET=lib
+OPAMPKG=pfff-lang_csharp-analyze
 
 SRC= \
      highlight_csharp.ml \

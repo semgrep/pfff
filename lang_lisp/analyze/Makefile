@@ -3,6 +3,7 @@ TOP=../..
 # Variables
 ##############################################################################
 TARGET=lib
+OPAMPKG=pfff-lang_lisp-analyze
 
 SRC= \
      highlight_lisp.ml \

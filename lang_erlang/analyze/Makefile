@@ -3,6 +3,7 @@ TOP=../..
 # Variables
 ##############################################################################
 TARGET=lib
+OPAMPKG=pfff-lang_erlang-analyze
 
 SRC= \
      highlight_erlang.ml \

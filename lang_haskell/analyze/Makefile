@@ -3,6 +3,7 @@ TOP=../..
 # Variables
 ##############################################################################
 TARGET=lib
+OPAMPKG=pfff-lang_haskell-analyze
 
 SRC= \
      highlight_hs.ml \

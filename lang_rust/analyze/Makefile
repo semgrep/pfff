@@ -3,6 +3,7 @@ TOP=../..
 # Variables
 ##############################################################################
 TARGET=lib
+OPAMPKG=pfff-lang_rust-analyze
 
 SRC= \
      highlight_rust.ml \

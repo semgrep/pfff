@@ -3,6 +3,7 @@ TOP=../../..
 # Variables
 ##############################################################################
 TARGET=lib
+OPAMPKG=pfff-lang_php-analyze-visual
 
 SRC= highlight_php.ml \
 
