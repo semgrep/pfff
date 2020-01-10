@@ -49,6 +49,7 @@ let whitespace = [' ' '\t']
 (* todo: *)
 let unicode_digit = ['0'-'9']
 let unicode_letter = ['a'-'z' 'A'-'Z']
+let unicode_char = [^ '\n' '\r']
 
 let letter = unicode_letter | '_'
 
@@ -93,8 +94,18 @@ let float_lit = decimal_float_lit | hex_float_lit
 
 let imaginary_lit = (decimal_digits | int_lit | float_lit) 'i'
 
-let escapeseq = '\\' _
+let escaped_char = '\\' ['a' 'b' 'f' 'n' 'r' 't' 't' 'v' '\\' '\'' '"']
 
+let little_u_value = '\\' 'u' hex_digit hex_digit hex_digit hex_digit
+let big_u_value =    '\\' 'U' hex_digit hex_digit hex_digit hex_digit
+                              hex_digit hex_digit hex_digit hex_digit
+let unicode_value = unicode_char | little_u_value | big_u_value | escaped_char
+
+let octal_byte_value = '\\' octal_digit octal_digit octal_digit
+let hex_byte_value = '\\' 'x' hex_digit hex_digit
+let byte_value = octal_byte_value | hex_byte_value
+
+let escapeseq = '\\' _
 
 (*****************************************************************************)
 (* Rule initial *)
@@ -244,8 +255,8 @@ rule token = parse
   (* ----------------------------------------------------------------------- *)
   (* Chars/Strings *)
   (* ----------------------------------------------------------------------- *)
-  | '\''
-      { rune (tokinfo lexbuf) lexbuf }
+  | '\'' ((unicode_value | byte_value) as s) '\''
+      { LRUNE (s, tokinfo lexbuf) }
   | '"'
       { string (tokinfo lexbuf) lexbuf }
 
@@ -261,14 +272,6 @@ rule token = parse
 (*****************************************************************************)
 (* Rules on strings *)
 (*****************************************************************************)
-
-and rune pos = parse
-  | (([^ '\\' '\r' '\n' '\''] | escapeseq) as s) '\'' 
-     { 
-       let full_str = Lexing.lexeme lexbuf in
-       LRUNE (s, PI.tok_add_s full_str pos) }
- | eof { error "EOF in rune" lexbuf; EOF (tokinfo lexbuf) }
- | _  { error "unrecognized symbol in rune" lexbuf; TUnknown(tokinfo lexbuf)}
 
 and string pos = parse
   | (([^ '\\' '\r' '\n' '\"'] | escapeseq)* as s) '"' 
