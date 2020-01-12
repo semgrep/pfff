@@ -3,7 +3,6 @@
  * // Use of this source code is governed by a BSD-style
  * // license that can be found in the LICENSE file.
  *
- *
  * // Go language grammar.
  * // 
  * // The Go semicolon rules are:
@@ -18,7 +17,7 @@
  * // Rule #3 is implemented in yylex.
  *)
 
-(*
+(* TODO
 func fixlbrace(lbr int) {
     // If the opening brace was an LBODY,
     // set up for another one now that we're done.
@@ -46,12 +45,7 @@ func fixlbrace(lbr int) {
 /*(*-----------------------------------------*)*/
 
 /*(* tokens with "values" (was LLITERAL before) *)*/
-
-%token  <string * Ast_go.tok>
-  LINT LFLOAT 
-  LIMAG
-  LRUNE LSTR
-
+%token  <string * Ast_go.tok> LINT LFLOAT  LIMAG  LRUNE LSTR
 %token  <string * Ast_go.tok> LASOP 
 
 /*(*-----------------------------------------*)*/
@@ -149,17 +143,14 @@ func fixlbrace(lbr int) {
 
 file: package imports xdcl_list EOF { }
 
-sgrep_spatch_pattern: EOF { }
-
 package: LPACKAGE sym LSEMICOLON { }
+
+
+sgrep_spatch_pattern: EOF { }
 
 /*(*************************************************************************)*/
 /*(*1 Import *)*/
 /*(*************************************************************************)*/
-
-imports:
-| /*(* empty *)*/ { }
-| imports import LSEMICOLON { }
 
 import:
 |   LIMPORT import_stmt { }
@@ -168,23 +159,10 @@ import:
 
 import_stmt: import_here  { }
 
-import_stmt_list:
-|   import_stmt                             { }
-|   import_stmt_list LSEMICOLON import_stmt { }
-
 import_here:
-|   LSTR
-    {
-        (*// import with original name*)
-    }
-|   sym LSTR
-    {
-        (*// import with given name*)
-    }
-|   LDOT LSTR
-    {
-        (*// import into my name space *)
-    }
+|   LSTR        { (*// import with original name*) }
+|   sym LSTR    { (*// import with given name*)  }
+|   LDOT LSTR   { (*// import into my name space *) }
 
 /*(*************************************************************************)*/
 /*(*1 Declarations *)*/
@@ -195,69 +173,36 @@ xdcl:
 |   xfndcl { }
 
 common_dcl:
-|   LVAR vardcl
-    {
-    }
-|   LVAR LPAREN vardcl_list osemi RPAREN
-    {
-    }
-|   LVAR LPAREN RPAREN
-    {
-    }
+|   LVAR vardcl  { }
+|   LVAR LPAREN vardcl_list osemi RPAREN { }
+|   LVAR LPAREN RPAREN { }
 
-|   lconst constdcl
-    {
-    }
-|   lconst LPAREN constdcl osemi RPAREN
-    {
-    }
-|   lconst LPAREN constdcl LSEMICOLON constdcl_list osemi RPAREN
-    {
-    }
-|   lconst LPAREN RPAREN
-    {
-    }
+|   lconst constdcl { }
+|   lconst LPAREN constdcl osemi RPAREN { }
+|   lconst LPAREN constdcl LSEMICOLON constdcl_list osemi RPAREN { }
+|   lconst LPAREN RPAREN { }
 
-|   LTYPE typedcl
-    {
-    }
-|   LTYPE LPAREN typedcl_list osemi RPAREN
-    {
-    }
-|   LTYPE LPAREN RPAREN
-    {
-    }
+|   LTYPE typedcl { }
+|   LTYPE LPAREN typedcl_list osemi RPAREN { }
+|   LTYPE LPAREN RPAREN { }
 
-lconst:
-    LCONST
-    {
-    }
+lconst: LCONST { }
 
 vardcl:
-|   dcl_name_list ntype
-    {
-    }
-|   dcl_name_list ntype LEQ expr_list
-    {
-    }
-|   dcl_name_list LEQ expr_list
-    {
-    }
+|   dcl_name_list ntype { }
+|   dcl_name_list ntype LEQ expr_list { }
+|   dcl_name_list       LEQ expr_list { }
 
 constdcl:
-|   dcl_name_list ntype LEQ expr_list
-    {
-    }
-|   dcl_name_list LEQ expr_list
-    {
-    }
+|   dcl_name_list ntype LEQ expr_list { }
+|   dcl_name_list       LEQ expr_list { }
 
 constdcl1:
 |   constdcl { }
-|   dcl_name_list ntype
-    {
-    }
-|   dcl_name_list
+|   dcl_name_list ntype { }
+|   dcl_name_list   { }
+
+typedcl: typedclname ntype
     {
     }
 
@@ -270,51 +215,98 @@ typedclname:  sym
         *)
     }
 
-typedcl: typedclname ntype
-    {
-    }
-
 /*(*************************************************************************)*/
 /*(*1 Statements *)*/
 /*(*************************************************************************)*/
 
+stmt:
+| /*(*empty*)*/    { }
+| compound_stmt { }
+| common_dcl { }
+| non_dcl_stmt { }
+
+compound_stmt: LBRACE stmt_list RBRACE { }
+
+non_dcl_stmt:
+|   simple_stmt { }
+
+|   if_stmt { }
+|   for_stmt { }
+|   switch_stmt { }
+|   select_stmt { }
+
+|   labelname LCOLON stmt { }
+|   LGOTO new_name { }
+
+|   LBREAK onew_name { }
+|   LCONTINUE onew_name { }
+|   LRETURN oexpr_list { }
+|   LFALL { }
+
+|   LGO pseudocall { }
+|   LDEFER pseudocall { }
+
+
 simple_stmt:
-|   expr
+|   expr { }
+|   expr LASOP expr { }
+|   expr_list LEQ expr_list { }
+|   expr_list LCOLAS expr_list { }
+|   expr LINC { }
+|   expr LDEC { }
+
+
+/*(* IF cond body (ELSE IF cond body)* (ELSE block)? *) */
+if_stmt: LIF  if_header loop_body elseif_list else_
     {
+        (* if $3.Left == nil
+            Yyerror("missing condition in if statement");
+        *)
     }
-|   expr LASOP expr
+
+if_header:
+|   osimple_stmt { }
+|   osimple_stmt LSEMICOLON osimple_stmt { }
+
+
+elseif: LELSE LIF  if_header loop_body
     {
+        (* if $4.Left == nil {
+            Yyerror("missing condition in if statement");
+        } *)
     }
-|   expr_list LEQ expr_list
-    {
-    }
-|   expr_list LCOLAS expr_list
-    {
-    }
-|   expr LINC
-    {
-    }
-|   expr LDEC
-    {
-    }
+
+else_:
+| /*(*empty*)*/ { }
+|   LELSE compound_stmt { }
+
+
+for_stmt: LFOR for_body { }
+
+for_body: for_header loop_body { }
+
+for_header:
+|   osimple_stmt LSEMICOLON osimple_stmt LSEMICOLON osimple_stmt { }
+|   osimple_stmt { }
+|   range_stmt { }
+
+range_stmt:
+|   expr_list LEQ LRANGE expr { }
+|   expr_list LCOLAS LRANGE expr { }
+|   LRANGE expr { }
+
+loop_body: LBODY stmt_list RBRACE { }
+
+
+switch_stmt: LSWITCH if_header LBODY caseblock_list RBRACE { }
+
+select_stmt:  LSELECT LBODY caseblock_list RBRACE { }
 
 case:
-|   LCASE expr_or_type_list LCOLON
-    {
-    }
-|   LCASE expr_or_type_list LEQ expr LCOLON
-    {
-    }
-|   LCASE expr_or_type_list LCOLAS expr LCOLON
-    {
-    }
-|   LDEFAULT LCOLON
-    {
-    }
-
-compound_stmt: LBRACE stmt_list RBRACE
-    {
-    }
+|   LCASE expr_or_type_list LCOLON { }
+|   LCASE expr_or_type_list LEQ expr LCOLON { }
+|   LCASE expr_or_type_list LCOLAS expr LCOLON { }
+|   LDEFAULT LCOLON { }
 
 caseblock: case stmt_list
     {
@@ -346,232 +338,69 @@ caseblock: case stmt_list
       *)
     }
 
-caseblock_list:
-|  /*(*empty*)*/  
-    {
-    }
-|   caseblock_list caseblock
-    {
-    }
-
-loop_body: LBODY stmt_list RBRACE
-    {
-    }
-
-range_stmt:
-|   expr_list LEQ LRANGE expr
-    {
-    }
-|   expr_list LCOLAS LRANGE expr
-    {
-    }
-|   LRANGE expr
-    {
-    }
-
-for_header:
-|   osimple_stmt LSEMICOLON osimple_stmt LSEMICOLON osimple_stmt
-    {
-    }
-|   osimple_stmt
-    {
-    }
-|   range_stmt { }
-
-for_body: for_header loop_body
-    {
-    }
-
-for_stmt: LFOR for_body
-    {
-    }
-
-if_header:
-|   osimple_stmt
-    {
-    }
-|   osimple_stmt LSEMICOLON osimple_stmt
-    {
-    }
-
-/*(* IF cond body (ELSE IF cond body)* (ELSE block)? *) */
-if_stmt: LIF  if_header loop_body elseif_list else_
-    {
-        (* if $3.Left == nil
-            Yyerror("missing condition in if statement");
-        *)
-    }
-
-elseif: LELSE LIF  if_header loop_body
-    {
-        (* if $4.Left == nil {
-            Yyerror("missing condition in if statement");
-        } *)
-    }
-
-elseif_list:
-| /*(*empty*)*/    
-    {
-    }
-|   elseif_list elseif
-    {
-    }
-
-else_:
-| /*(*empty*)*/    
-    {
-    }
-|   LELSE compound_stmt
-    {
-    }
-
-switch_stmt: LSWITCH if_header LBODY caseblock_list RBRACE
-    {
-    }
-
-select_stmt:  LSELECT LBODY caseblock_list RBRACE
-    {
-    }
-
 /*(*************************************************************************)*/
 /*(*1 Expressions *)*/
 /*(*************************************************************************)*/
 
 expr:
 |   uexpr { }
-|   expr LOROR expr
-    {
-    }
-|   expr LANDAND expr
-    {
-    }
-|   expr LEQEQ expr
-    {
-    }
-|   expr LNE expr
-    {
-    }
-|   expr LLT expr
-    {
-    }
-|   expr LLE expr
-    {
-    }
-|   expr LGE expr
-    {
-    }
-|   expr LGT expr
-    {
-    }
-|   expr LPLUS expr
-    {
-    }
-|   expr LMINUS expr
-    {
-    }
-|   expr LPIPE expr
-    {
-    }
-|   expr LHAT expr
-    {
-    }
-|   expr LMULT expr
-    {
-    }
-|   expr LDIV expr
-    {
-    }
-|   expr LPERCENT expr
-    {
-    }
-|   expr LAND expr
-    {
-    }
-|   expr LANDNOT expr
-    {
-    }
-|   expr LLSH expr
-    {
-    }
-|   expr LRSH expr
-    {
-    }
+
+|   expr LOROR expr { }
+|   expr LANDAND expr { }
+|   expr LEQEQ expr { }
+|   expr LNE expr { }
+|   expr LLT expr { }
+|   expr LLE expr { }
+|   expr LGE expr { }
+|   expr LGT expr { }
+|   expr LPLUS expr { }
+|   expr LMINUS expr { }
+|   expr LPIPE expr { }
+|   expr LHAT expr { }
+|   expr LMULT expr { }
+|   expr LDIV expr { }
+|   expr LPERCENT expr { }
+|   expr LAND expr { }
+|   expr LANDNOT expr { }
+|   expr LLSH expr { }
+|   expr LRSH expr { }
 /*(* not an expression anymore, but left in so we can give a good error *)*/
-|   expr LCOMM expr
-    {
-    }
+|   expr LCOMM expr { }
 
 uexpr:
 |   pexpr { }
-|   LMULT uexpr
-    {
-    }
+
+|   LMULT uexpr { }
 |   LAND uexpr
     {
            (* // Special case for &T{...}: turn into ( *T){...}. *)
     }
-|   LPLUS uexpr
-    {
-    }
-|   LMINUS uexpr
-    {
-    }
-|   LBANG uexpr
-    {
-    }
+|   LPLUS uexpr { }
+|   LMINUS uexpr { }
+|   LBANG uexpr { }
 |   LTILDE uexpr
     {
         (* Yyerror("the bitwise complement operator is ^"); *)
     }
-|   LHAT uexpr
-    {
-    }
-|   LCOMM uexpr
-    {
-    }
+|   LHAT uexpr { }
+|   LCOMM uexpr { }
 
-/*
- * call-like statements that
- * can be preceded by 'defer' and 'go'
- */
-pseudocall:
-|   pexpr LPAREN RPAREN
-    {
-    }
-|   pexpr LPAREN expr_or_type_list ocomma RPAREN
-    {
-    }
-|   pexpr LPAREN expr_or_type_list LDDD ocomma RPAREN
-    {
-    }
+pexpr:
+|   pexpr_no_paren { }
 
-basic_literal:
-| LINT { }
-| LFLOAT { }
-| LIMAG { }
-| LRUNE { }
-| LSTR { }
+|   LPAREN expr_or_type RPAREN { }
+
 
 pexpr_no_paren:
-|   basic_literal
-    {
-    }
+|   basic_literal { }
+
 |   name {  }
-|   pexpr LDOT sym
-    {
-    }
-|   pexpr LDOT LPAREN expr_or_type RPAREN
-    {
-    }
-|   pexpr LDOT LPAREN LTYPE RPAREN
-    {
-    }
-|   pexpr LBRACKET expr RBRACKET
-    {
-    }
-|   pexpr LBRACKET oexpr LCOLON oexpr RBRACKET
-    {
-    }
+
+|   pexpr LDOT sym { }
+|   pexpr LDOT LPAREN expr_or_type RPAREN { }
+|   pexpr LDOT LPAREN LTYPE RPAREN { }
+|   pexpr LBRACKET expr RBRACKET { }
+|   pexpr LBRACKET oexpr LCOLON oexpr RBRACKET { }
 |   pexpr LBRACKET oexpr LCOLON oexpr LCOLON oexpr RBRACKET
     {
         (*if $5 == nil {
@@ -582,81 +411,74 @@ pexpr_no_paren:
         }
         *)
     }
+
 |   pseudocall { }
-|   convtype LPAREN expr ocomma RPAREN
-    {
-    }
+
+|   convtype LPAREN expr ocomma RPAREN { }
 |   comptype lbrace braced_keyval_list RBRACE
     {
         (* fixlbrace($2); *)
     }
-|   pexpr_no_paren LBRACE braced_keyval_list RBRACE
-    {
-    }
+|   pexpr_no_paren LBRACE braced_keyval_list RBRACE { }
 |   LPAREN expr_or_type RPAREN LBRACE braced_keyval_list RBRACE
     {
         (* Yyerror("cannot parenthesize type in composite literal"); *)
     }
 |   fnliteral { }
 
+basic_literal:
+| LINT { }
+| LFLOAT { }
+| LIMAG { }
+| LRUNE { }
+| LSTR { }
+
+
+/*
+ * call-like statements that
+ * can be preceded by 'defer' and 'go'
+ */
+pseudocall:
+|   pexpr LPAREN RPAREN { }
+|   pexpr LPAREN expr_or_type_list ocomma RPAREN { }
+|   pexpr LPAREN expr_or_type_list LDDD ocomma RPAREN { }
+
 
 keyval: complitexpr LCOLON complitexpr
     {
     }
 
+
 bare_complitexpr:
-|   expr
-    {
-    }
-|   LBRACE braced_keyval_list RBRACE
-    {
-    }
+|   expr { }
+|   LBRACE braced_keyval_list RBRACE { }
 
 complitexpr:
 |   expr { }
-|   LBRACE braced_keyval_list RBRACE
-    {
-    }
+|   LBRACE braced_keyval_list RBRACE { }
 
-pexpr:
-|   pexpr_no_paren { }
-|   LPAREN expr_or_type RPAREN
-    {
-    }
 
-expr_or_type:
-|   expr { }
-|   non_expr_type   %prec PreferToRightParen { }
+/*
+ * list of combo of keyval and val
+ */
+keyval_list:
+|   keyval { }
+|   bare_complitexpr { }
+|   keyval_list LCOMMA keyval { }
+|   keyval_list LCOMMA bare_complitexpr { }
 
-name_or_type:  ntype { }
+braced_keyval_list:
+|/*(*empty*)*/ { }
+|   keyval_list ocomma { }
+
 
 lbrace:
-|   LBODY
-    {
-    }
-|   LBRACE
-    {
-    }
+|   LBODY { }
+|   LBRACE { }
 
 /*(*************************************************************************)*/
 /*(*1 Names *)*/
 /*(*************************************************************************)*/
-
-/*
- *  newname is used before declared
- *  oldname is used after declared
- */
-new_name: sym
-    {
-    }
-
-dcl_name: sym
-    {
-    }
-
-onew_name:
-|/*(*empty*)*/   {  }
-|   new_name { }
 
 sym:
 |   LNAME
@@ -668,9 +490,26 @@ sym:
         *)
     }
 
+/*
+ *  newname is used before declared
+ *  oldname is used after declared
+ */
+new_name: sym { }
+
+dcl_name: sym { }
+
+
 name: sym %prec NotParen
     {
     }
+
+dotname:
+|   name { }
+|   name LDOT sym { }
+
+packname:
+|   LNAME { }
+|   LNAME LDOT sym { }
 
 labelname: new_name { }
 
@@ -688,41 +527,67 @@ labelname: new_name { }
  // but those are not implemented in the grammar.
  *)*/
 
+ntype:
+|   dotname { }
+
+|   ptrtype { }
+|   recvchantype { }
+|   fntype { }
+
+|   othertype { }
+|   LPAREN ntype RPAREN { }
+
+non_recvchantype:
+|   dotname { }
+
+|   ptrtype { }
+|   fntype { }
+
+|   othertype { }
+|   LPAREN ntype RPAREN { }
+
+
+ptrtype: LMULT ntype { }
+
+recvchantype: LCOMM LCHAN ntype { }
+
+fntype: LFUNC LPAREN oarg_type_list_ocomma RPAREN fnres { }
+
+fnres:
+| /*(*empty *)*/    %prec NotParen
+    {
+    }
+|   fnret_type { }
+|   LPAREN oarg_type_list_ocomma RPAREN { }
+
+fnret_type:
+|   dotname { }
+
+|   ptrtype { } 
+|   recvchantype { }
+|   fntype { }
+
+|   othertype { }
+
+
+
+othertype:
+|   LBRACKET oexpr RBRACKET ntype { }
+|   LBRACKET LDDD RBRACKET ntype  { }
+|   LCHAN non_recvchantype { }
+|   LCHAN LCOMM ntype { }
+|   LMAP LBRACKET ntype RBRACKET ntype { }
+|   structtype { }
+|   interfacetype { }
+
 dotdotdot:
 |   LDDD
     {
         (* Yyerror("final argument in variadic function missing type"); *)
     }
-|   LDDD ntype
-    {
-    }
+|   LDDD ntype { }
 
-ntype:
-|   recvchantype { }
-|   fntype { }
-|   othertype { }
-|   ptrtype { }
-|   dotname { }
-|   LPAREN ntype RPAREN
-    {
-    }
 
-non_expr_type:
-|   recvchantype { }
-|   fntype { } 
-|   othertype { }
-|   LMULT non_expr_type
-    {
-    }
-
-non_recvchantype:
-|   fntype { }
-|   othertype { }
-|   ptrtype { }
-|   dotname { }
-|   LPAREN ntype RPAREN
-    {
-    }
 
 convtype:
 |   fntype { }
@@ -730,45 +595,20 @@ convtype:
 
 comptype: othertype { }
 
-fnret_type:
+
+expr_or_type:
+|   expr { }
+|   non_expr_type   %prec PreferToRightParen { }
+
+non_expr_type:
+|   fntype { } 
 |   recvchantype { }
-|   fntype { }
 |   othertype { }
-|   ptrtype { } 
-|   dotname { }
+|   LMULT non_expr_type { }
 
-dotname:
-|   name { }
-|   name LDOT sym
-    {
-    }
-
-othertype:
-|   LBRACKET oexpr RBRACKET ntype
-    {
-    }
-|   LBRACKET LDDD RBRACKET ntype
-    {
-    }
-|   LCHAN non_recvchantype
-    {
-    }
-|   LCHAN LCOMM ntype
-    {
-    }
-|   LMAP LBRACKET ntype RBRACKET ntype
-    {
-    }
-|   structtype { }
-|   interfacetype { }
-
-ptrtype: LMULT ntype
-    {
-    }
-
-recvchantype: LCOMM LCHAN ntype
-    {
-    }
+/*(*************************************************************************)*/
+/*(*1 Struct/Interface *)*/
+/*(*************************************************************************)*/
 
 structtype:
 |   LSTRUCT lbrace structdcl_list osemi RBRACE
@@ -780,6 +620,25 @@ structtype:
         (* fixlbrace($2); *)
     }
 
+structdcl:
+|   new_name_list ntype oliteral { }
+|   embed oliteral { }
+|   LPAREN embed RPAREN oliteral
+    {
+        (* Yyerror("cannot parenthesize embedded type"); *)
+    }
+|   LMULT embed oliteral { }
+|   LPAREN LMULT embed RPAREN oliteral
+    {
+        (* Yyerror("cannot parenthesize embedded type"); *)
+    }
+|   LMULT LPAREN embed RPAREN oliteral
+    {
+        (* Yyerror("cannot parenthesize embedded type"); *)
+    }
+
+embed: packname { }
+
 interfacetype:
     LINTERFACE lbrace interfacedcl_list osemi RBRACE
     {
@@ -788,6 +647,19 @@ interfacetype:
 |   LINTERFACE lbrace RBRACE
     {
         (* fixlbrace($2); *)
+    }
+
+interfacedcl:
+|   new_name indcl { }
+|   packname { }
+|   LPAREN packname RPAREN
+    {
+        (* Yyerror("cannot parenthesize embedded type"); *)
+    }
+
+indcl: LPAREN oarg_type_list_ocomma RPAREN fnres
+    {
+        (* // without func keyword *)
     }
 
 /*(*************************************************************************)*/
@@ -802,9 +674,7 @@ xfndcl: LFUNC fndcl fnbody
     }
 
 fndcl:
-|   sym LPAREN oarg_type_list_ocomma RPAREN fnres
-    {
-    }
+|   sym LPAREN oarg_type_list_ocomma RPAREN fnres { }
 |   LPAREN oarg_type_list_ocomma RPAREN sym 
     LPAREN oarg_type_list_ocomma RPAREN fnres
     {
@@ -821,37 +691,27 @@ fndcl:
     }
 
 
-fntype: LFUNC LPAREN oarg_type_list_ocomma RPAREN fnres
-    {
-    }
 
 fnbody:
-| /*(*empty *)*/    {
-    }
-|   LBRACE stmt_list RBRACE
-    {
-    }
+| /*(*empty *)*/    {  }
+|   LBRACE stmt_list RBRACE { }
 
-fnres:
-| /*(*empty *)*/    %prec NotParen
-    {
-    }
-|   fnret_type
-    {
-    }
-|   LPAREN oarg_type_list_ocomma RPAREN
-    {
-    }
-
-fnlitdcl: fntype
-    {
-    }
 
 fnliteral:
     fnlitdcl lbrace stmt_list RBRACE
     {
         (* fixlbrace($2); *)
     }
+
+fnlitdcl: fntype { }
+
+arg_type:
+|   name_or_type { }
+|   sym name_or_type { }
+|   sym dotdotdot { }
+|   dotdotdot { }
+
+name_or_type:  ntype { }
 
 /*(*************************************************************************)*/
 /*(*1 xxx_opt, xxx_list *)*/
@@ -863,242 +723,74 @@ fnliteral:
  * to conserve yacc stack. they need to
  * be reversed to interpret correctly
  */
+
+/*(* basic lists, 0 element allowed *)*/
+elseif_list:
+| /*(*empty*)*/ { }
+| elseif_list elseif { }
+
+caseblock_list:
+| /*(*empty*)*/  { }
+| caseblock_list caseblock { }
+
+/*(* lists with ending LSEMICOLON, 0 element allowed *)*/
 xdcl_list:
-| /*(*empty*)*/    {
-    }
-|   xdcl_list xdcl LSEMICOLON
-    {
-    }
+| /*(*empty*)*/    { }
+|   xdcl_list xdcl LSEMICOLON { }
+
+imports:
+| /*(* empty *)*/ { }
+| imports import LSEMICOLON { }
+
+/*(* lists with LSEMICOLON separator, at least 1 element *)*/
+import_stmt_list:
+|   import_stmt                             { }
+|   import_stmt_list LSEMICOLON import_stmt { }
 
 vardcl_list:
 |   vardcl { }
-|   vardcl_list LSEMICOLON vardcl
-    {
-    }
+|   vardcl_list LSEMICOLON vardcl { }
 
 constdcl_list:
 |   constdcl1 { }
-|   constdcl_list LSEMICOLON constdcl1
-    {
-    }
+|   constdcl_list LSEMICOLON constdcl1 { }
 
 typedcl_list:
-|   typedcl
-    {
-     }
-|   typedcl_list LSEMICOLON typedcl
-    {
-    }
+|   typedcl { }
+|   typedcl_list LSEMICOLON typedcl { }
 
 structdcl_list:
 |   structdcl { }
-|   structdcl_list LSEMICOLON structdcl
-    {
-    }
+|   structdcl_list LSEMICOLON structdcl { }
 
 interfacedcl_list:
-|   interfacedcl
-    {
-    }
-|   interfacedcl_list LSEMICOLON interfacedcl
-    {
-    }
-
-/*(*************************************************************************)*/
-/*(*1 TODO *)*/
-/*(*************************************************************************)*/
-
-structdcl:
-|   new_name_list ntype oliteral
-    {
-    }
-|   embed oliteral
-    {
-    }
-|   LPAREN embed RPAREN oliteral
-    {
-        (* Yyerror("cannot parenthesize embedded type"); *)
-    }
-|   LMULT embed oliteral
-    {
-    }
-|   LPAREN LMULT embed RPAREN oliteral
-    {
-        (* Yyerror("cannot parenthesize embedded type"); *)
-    }
-|   LMULT LPAREN embed RPAREN oliteral
-    {
-        (* Yyerror("cannot parenthesize embedded type"); *)
-    }
-
-packname:
-|   LNAME
-    {
-    }
-|   LNAME LDOT sym
-    {
-    }
-
-embed: packname
-    {
-    }
-
-interfacedcl:
-|   new_name indcl
-    {
-    }
-|   packname
-    {
-    }
-|   LPAREN packname RPAREN
-    {
-        (* Yyerror("cannot parenthesize embedded type"); *)
-    }
-
-indcl: LPAREN oarg_type_list_ocomma RPAREN fnres
-    {
-        (* // without func keyword *)
-    }
-
-/*(*************************************************************************)*/
-/*(*1 Function arguments *)*/
-/*(*************************************************************************)*/
-
-arg_type:
-|   name_or_type { }
-|   sym name_or_type
-    {
-    }
-|   sym dotdotdot
-    {
-    }
-|   dotdotdot { }
-
-arg_type_list:
-|   arg_type
-    {
-    }
-|   arg_type_list LCOMMA arg_type
-    {
-    }
-
-oarg_type_list_ocomma:
-|/*(*empty*)*/  
-    {
-    }
-|   arg_type_list ocomma
-    {
-    }
-
-/*(*************************************************************************)*/
-/*(*1 TODO *)*/
-/*(*************************************************************************)*/
-
-stmt:
-| /*(*empty*)*/    
-    {
-    }
-|   compound_stmt { }
-|   common_dcl
-    {
-    }
-|   non_dcl_stmt { }
-
-non_dcl_stmt:
-|   simple_stmt { }
-|   for_stmt { }
-|   switch_stmt { }
-|   select_stmt { }
-|   if_stmt { }
-|   labelname LCOLON stmt
-    {
-    }
-|   LFALL
-    {
-    }
-|   LBREAK onew_name
-    {
-    }
-|   LCONTINUE onew_name
-    {
-    }
-|   LGO pseudocall
-    {
-    }
-|   LDEFER pseudocall
-    {
-    }
-|   LGOTO new_name
-    {
-    }
-|   LRETURN oexpr_list
-    {
-    }
+|   interfacedcl { }
+|   interfacedcl_list LSEMICOLON interfacedcl { }
 
 stmt_list:
-|   stmt
-    {
-    }
-|   stmt_list LSEMICOLON stmt
-    {
-    }
+|   stmt { }
+|   stmt_list LSEMICOLON stmt { }
+
+
+arg_type_list:
+|   arg_type { }
+|   arg_type_list LCOMMA arg_type { }
 
 new_name_list:
-|   new_name
-    {
-    }
-|   new_name_list LCOMMA new_name
-    {
-    }
+|   new_name { }
+|   new_name_list LCOMMA new_name { }
 
 dcl_name_list:
-|   dcl_name
-    {
-    }
-|   dcl_name_list LCOMMA dcl_name
-    {
-    }
+|   dcl_name { }
+|   dcl_name_list LCOMMA dcl_name { }
 
 expr_list:
-|   expr
-    {
-    }
-|   expr_list LCOMMA expr
-    {
-    }
+|   expr { }
+|   expr_list LCOMMA expr { }
 
 expr_or_type_list:
-|   expr_or_type
-    {
-    }
-|   expr_or_type_list LCOMMA expr_or_type
-    {
-    }
-
-/*
- * list of combo of keyval and val
- */
-keyval_list:
-|   keyval
-    {
-    }
-|   bare_complitexpr
-    {
-    }
-|   keyval_list LCOMMA keyval
-    {
-    }
-|   keyval_list LCOMMA bare_complitexpr
-    {
-    }
-
-braced_keyval_list:
-|/*(*empty*)*/    
-    {
-    }
-|   keyval_list ocomma
-    {
-    }
+|   expr_or_type { }
+|   expr_or_type_list LCOMMA expr_or_type { }
 
 /*
  * optional things
@@ -1110,6 +802,11 @@ osemi:
 ocomma:
 |/*(*empty*)*/ { }
 |   LCOMMA { }
+
+oliteral:
+|/*(*empty*)*/ { }
+|   LSTR { }
+
 
 oexpr:
 |/*(*empty*)*/ { }
@@ -1123,7 +820,10 @@ osimple_stmt:
 |/*(*empty*)*/ { }
 |   simple_stmt { }
 
+onew_name:
+|/*(*empty*)*/   {  }
+|   new_name { }
 
-oliteral:
-|/*(*empty*)*/ { }
-|   LSTR { }
+oarg_type_list_ocomma:
+|/*(*empty*)*/  { }
+|   arg_type_list ocomma { }
