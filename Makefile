@@ -373,6 +373,7 @@ INSTALL_SUBDIRS= \
   lang_erlang/parsing lang_erlang/analyze \
   lang_haskell/parsing lang_haskell/analyze \
   lang_html/parsing lang_html/analyze \
+  lang_text/ \
   lang_GENERIC/parsing  lang_GENERIC/analyze \
   lang_FUZZY/parsing \
 
