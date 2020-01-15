@@ -123,7 +123,7 @@ type error = {
   (* lint *)
 
   (* sgrep lint rules *)
-  | SgrepLint of (string (* title/code *) * string (* msg *))
+  | SgrepLint of (string (* check_id *) * string (* msg *))
 
   (* other *)
   | FatalError of string (* missing file, OCaml errors, etc. *)
@@ -166,7 +166,7 @@ let string_of_error_kind error_kind =
   | UnusedVariable (name, scope) ->
       spf "Unused variable %s, scope = %s" name 
         (Scope_code.string_of_scope scope)
-  | SgrepLint (title, message) -> spf "%s: %s" title message
+  | SgrepLint (_title, message) -> message
 
   | UnusedStatement -> spf "unreachable statement"
   | UnusedAssign s -> 
@@ -181,6 +181,34 @@ let string_of_error_kind error_kind =
   | OtherParsingError s -> spf "Other parsing error: %s" s
   | CFGError s -> spf "Control flow error: %s" s
   | FatalError s -> spf "Fatal Error: %s" s
+
+(* for r2c/bento error format *)
+let check_id_of_error_kind = function
+  | LexicalError _ -> "LexicalError"
+  | ParseError -> "ParseError"
+  | AstbuilderError _ -> "AstbuilderError"
+  | OtherParsingError _ -> "OtherParsingError"
+
+  (* global analysis *)
+  | Deadcode _ -> "Deadcode"
+
+  (* use/def entities *)
+  | UndefinedDefOfDecl _ -> "UndefinedDefOfDecl"
+  | UnusedExport _ -> "UnusedExport"
+  | UnusedVariable _ -> "UnusedVariable"
+
+  (* CFG/DFG *)
+  | UnusedStatement -> "UnusedStatement"
+  | UnusedAssign _ -> "UnusedAssign"
+  | UseOfUninitialized _ -> "UseOfUninitialized"
+  | CFGError _ -> "CFGError"
+
+  (* sgrep lint rules *)
+  | SgrepLint (check_id, _) -> spf "sgrep-lint-<%s>" check_id
+
+  (* other *)
+  | FatalError _ -> "FatalError"
+
 
 (*
 let loc_of_node root n g =

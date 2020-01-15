@@ -24,13 +24,13 @@ type error = {
   | UnusedVariable of string * Scope_code.t
 
   (* CFG/DFG *)
- | UnusedStatement
- | UnusedAssign of string (* var name *)
- | UseOfUninitialized of string
- | CFGError of string
+  | UnusedStatement
+  | UnusedAssign of string (* var name *)
+  | UseOfUninitialized of string
+  | CFGError of string
 
   (* sgrep lint rules *)
-  | SgrepLint of (string (* title/code *) * string (* msg *))
+  | SgrepLint of (string (* check_id *) * string (* msg *))
 
   (* other *)
   | FatalError of string
@@ -57,6 +57,8 @@ val warning_loc: Parse_info.token_location -> error_kind -> unit
 
 val string_of_error: error -> string
 val string_of_error_kind: error_kind -> string
+
+val check_id_of_error_kind: error_kind -> string
 
 (* ranking *)
 
