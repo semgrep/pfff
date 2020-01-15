@@ -342,6 +342,9 @@ expr:
 |   expr LLSH expr { }
 |   expr LRSH expr { }
 
+/*(* not an expression anymore, but left in so we can give a good error *)*/
+|   expr LCOMM expr { }
+
 uexpr:
 |   pexpr { }
 
