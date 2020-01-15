@@ -25,7 +25,7 @@ module Lexer = Lexer_go
 (* TODO:
  * error recovery: could skip until next toplevel decl (func/type/const/var)
  *
- * 
+ *)
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
