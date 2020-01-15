@@ -25,6 +25,7 @@ module F = Ast_fuzzy
 (* The goal for this module is to retag tokens (e.g, a LBRACE in LBODY),
  * or insert tokens (e.g., implicit semicolons) to help the grammar 
  * remains simple and unambiguous. 
+ *
  * See lang_cpp/parsing/parsing_hacks.ml for more information about
  * this technique.
  *)
@@ -82,11 +83,21 @@ let fix_tokens_lbody toks =
   let rec aux env trees =
       match trees with
       | [] -> ()
+      (* for a := range []int{...} { ... } *)
+      | (F.Braces (_lb1, xs1, _rb1))::(F.Braces (lb2, xs2, _rb2))::ys 
+        when env = InIfHeader ->
+          Hashtbl.add retag_lbrace lb2 true;
+          aux Normal xs1;
+          aux Normal xs2;
+          aux Normal ys;
+          
       | (F.Braces (lb, xs, _rb))::ys ->
+          (* for ... { ... } *)
           if env = InIfHeader
           then Hashtbl.add retag_lbrace lb true;
           aux Normal xs;
           aux Normal ys;
+
       | F.Tok (("if" | "for" | "switch" | "select"), _)::xs ->
           aux InIfHeader xs
 
