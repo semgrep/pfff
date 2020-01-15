@@ -1,5 +1,6 @@
 open Common
 
+module PI = Parse_info
 module Flag = Flag_parsing
 
 (*****************************************************************************)
@@ -28,6 +29,8 @@ let test_parse_go xs =
   in
 
   let stat_list = ref [] in
+  let newscore  = Common2.empty_score () in
+  let ext = "java" in
 
   fullxs |> Console.progress (fun k -> List.iter (fun file ->
     k();
@@ -38,9 +41,30 @@ let test_parse_go xs =
        Parse_go.parse file
     )) in
     Common.push stat stat_list;
+    let s = spf "bad = %d" stat.PI.bad in
+    if stat.PI.bad = 0
+    then Hashtbl.add newscore file (Common2.Ok)
+    else Hashtbl.add newscore file (Common2.Pb s)
   ));
+  flush stdout; flush stderr;
   Parse_info.print_parsing_stat_list !stat_list;
+  let dirname_opt = 
+    match xs with
+    | [x] when Common2.is_directory x -> Some (Common.fullpath x)
+    | _ -> None
+  in
+  let score_path = Filename.concat Config_pfff.path "tmp" in
+  dirname_opt |> Common.do_option (fun dirname -> 
+    pr2 "--------------------------------";
+    pr2 "regression testing  information";
+    pr2 "--------------------------------";
+    let str = Str.global_replace (Str.regexp "/") "__" dirname in
+    Common2.regression_testing newscore 
+      (Filename.concat score_path
+       ("score_parsing__" ^str ^ ext ^ ".marshalled"))
+  );
   ()
+
 
 
 let test_dump_go file =

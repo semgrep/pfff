@@ -192,8 +192,8 @@ rule token = parse
 
   | '(' { LPAREN (tokinfo lexbuf) }   | ')' { RPAREN (tokinfo lexbuf) }
   | '[' { LBRACKET (tokinfo lexbuf) } | ']' { RBRACKET (tokinfo lexbuf) }
+  (* can also be a LBODY *)
   | '{' { LBRACE (tokinfo lexbuf) }   | '}' { RBRACE (tokinfo lexbuf) }
-  | "{{" { LBODY (tokinfo lexbuf) }
 
   | ':'     { LCOLON (tokinfo lexbuf) }
   | ';'     { LSEMICOLON (tokinfo lexbuf) }
