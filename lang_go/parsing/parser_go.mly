@@ -17,15 +17,6 @@
  * // Rule #3 is implemented in yylex.
  *)
 
-(* TODO
-func fixlbrace(lbr int) {
-    // If the opening brace was an LBODY,
-    // set up for another one now that we're done.
-    // See comment in lex.C about loophack.
-    if lbr == LBODY {
-        loophack = true
-    }
-*)
 %}
 
 /*(*************************************************************************)*/
@@ -415,10 +406,8 @@ pexpr_no_paren:
 |   pseudocall { }
 
 |   convtype LPAREN expr ocomma RPAREN { }
-|   comptype lbrace braced_keyval_list RBRACE
-    {
-        (* fixlbrace($2); *)
-    }
+|   comptype lbrace braced_keyval_list RBRACE { }
+
 |   pexpr_no_paren LBRACE braced_keyval_list RBRACE { }
 |   LPAREN expr_or_type RPAREN LBRACE braced_keyval_list RBRACE
     {
@@ -472,6 +461,7 @@ braced_keyval_list:
 |   keyval_list ocomma { }
 
 
+/*(* todo: I don't think we need that with a good fix_tokens_lbody *)*/
 lbrace:
 |   LBODY { }
 |   LBRACE { }
@@ -611,14 +601,8 @@ non_expr_type:
 /*(*************************************************************************)*/
 
 structtype:
-|   LSTRUCT lbrace structdcl_list osemi RBRACE
-    {
-        (* fixlbrace($2); *)
-    }
-|   LSTRUCT lbrace RBRACE
-    {
-        (* fixlbrace($2); *)
-    }
+|   LSTRUCT lbrace structdcl_list osemi RBRACE { }
+|   LSTRUCT lbrace RBRACE { }
 
 structdcl:
 |   new_name_list ntype oliteral { }
@@ -640,14 +624,8 @@ structdcl:
 embed: packname { }
 
 interfacetype:
-    LINTERFACE lbrace interfacedcl_list osemi RBRACE
-    {
-        (* fixlbrace($2); *)
-    }
-|   LINTERFACE lbrace RBRACE
-    {
-        (* fixlbrace($2); *)
-    }
+    LINTERFACE lbrace interfacedcl_list osemi RBRACE { }
+|   LINTERFACE lbrace RBRACE { }
 
 interfacedcl:
 |   new_name indcl { }
@@ -697,11 +675,7 @@ fnbody:
 |   LBRACE stmt_list RBRACE { }
 
 
-fnliteral:
-    fnlitdcl lbrace stmt_list RBRACE
-    {
-        (* fixlbrace($2); *)
-    }
+fnliteral: fnlitdcl lbrace stmt_list RBRACE { }
 
 fnlitdcl: fntype { }
 
