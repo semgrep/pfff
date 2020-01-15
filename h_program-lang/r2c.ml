@@ -45,17 +45,18 @@ let lines_of_file (file: Common.filename) : string array =
    with _ -> [|"EMPTY FILE"|]
   )
 
-let error_to_json checker_id err =
+let error_to_json err =
    let file = err.E.loc.PI.file in
    let lines = lines_of_file file in
    let (startp, endp, line) = loc_to_json_range err.E.loc in
+   let check_id = E.check_id_of_error_kind err.E.typ in
    let message = E.string_of_error_kind err.E.typ in
    let extra_extra =
      match err.E.typ with
      | _ -> []
    in
    J.Object [
-      "check_id", J.String checker_id;
+      "check_id", J.String check_id;
       "path", J.String file;
       "start", startp;
       "end", endp;
@@ -65,8 +66,8 @@ let error_to_json checker_id err =
           ] @ extra_extra);
    ]
 
-let string_of_errors checker_id errs =
-  let arr = J.Array (errs |> List.map (error_to_json checker_id)) in
+let string_of_errors errs =
+  let arr = J.Array (errs |> List.map (error_to_json)) in
   let json = J.Object ["results", arr] in
   Json_io.string_of_json json
 
