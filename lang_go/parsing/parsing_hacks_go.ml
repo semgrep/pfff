@@ -100,7 +100,7 @@ let fix_tokens_lbody toks =
           aux Normal ys;
 
       (* for a := struct {...} { ... } { ... } *)
-      | F.Tok (("struct", _))::
+      | F.Tok (("struct" | "interface"), _)::
         (F.Braces (_lb1, xs1, _rb1))::
         (F.Braces (_lb2, xs2, _rb2))::
         (F.Braces (lb3, xs3, _rb3))::
