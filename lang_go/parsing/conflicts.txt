@@ -1,0 +1,20 @@
+# -*- org -*-
+
+* if header and loop body
+
+Go allow if/for/switch/select to omit the parenthesis around
+the conditional/iterator/... as in 
+
+  if true { ... }
+
+However, this forces the grammar to introduce a special token
+for the left brace of the then body (called loop_body in the grammar).
+TODO: why?
+
+Thus, some LBRACE must be retagged as LBODY to maintain a simple
+unambiguous grammar. This is currently done in parsing_hacks_go.ml
+by using a braced view (see ast_fuzzy.ml) to easily match and find
+the right '{' to retag (basically the one following an if/for/switch/select.
+
+
+
