@@ -12,7 +12,6 @@ func main() {
  		xBytes := Repeat(x, startLen)
     }
 
-/*
  	for _, test := range []struct {
  		n, k int64
  		want string
@@ -41,6 +40,13 @@ func main() {
    		  t.Errorf("Binomial(%d, %d) = %s; want %s", test.n, test.k, got, test.want)
  		}
  	}
+
+/*
+
+	if func(a, b int) bool { return a < b }(3, 4) {
+ 		check(LINE, 1)
+	}
+
 */
 
 
