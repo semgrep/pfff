@@ -364,6 +364,7 @@ INSTALL_SUBDIRS= \
   lang_java/parsing  lang_java/analyze \
   lang_js/parsing  lang_js/analyze \
   lang_python/parsing  lang_python/analyze \
+  lang_go/parsing  lang_go/analyze\
   lang_nw/parsing  lang_nw/analyze \
   lang_php/parsing lang_php/analyze/foundation lang_php/analyze/checker \
    lang_php/analyze/visual \
@@ -378,7 +379,7 @@ INSTALL_SUBDIRS= \
   lang_GENERIC/parsing  lang_GENERIC/analyze \
   lang_FUZZY/parsing \
 
-#  lang_go/parsing  lang_go/analyze\
+
 
 
 install-libs:: all all.opt
