@@ -41,14 +41,9 @@ func main() {
  		}
  	}
 
-/*
-
 	if func(a, b int) bool { return a < b }(3, 4) {
  		check(LINE, 1)
 	}
-
-*/
-
 
 }
 

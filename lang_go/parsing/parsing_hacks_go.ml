@@ -84,6 +84,21 @@ let fix_tokens_lbody toks =
       match trees with
       | [] -> ()
 
+       (* if func(...) bool { return ... }(...) { ... } *)
+      | (F.Braces (_lb1, xs1, _rb1))::
+        (F.Parens (_lb2, xs2, _rb2))::
+        (F.Braces (lb3, xs3, _rb3))::
+        ys 
+        when env = InIfHeader ->
+          Hashtbl.add retag_lbrace lb3 true;
+          aux Normal xs1;
+          xs2 |> List.iter (function
+              | Left xs -> aux Normal xs
+              | Right _ -> ()
+          );
+          aux Normal xs3;
+          aux Normal ys;
+
       (* for a := struct {...} { ... } { ... } *)
       | F.Tok (("struct", _))::
         (F.Braces (_lb1, xs1, _rb1))::
