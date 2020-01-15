@@ -46,6 +46,7 @@ let test_parse xs  =
 
   PI.print_parsing_stat_list !stat_list;
 
+  (* todo: could factorize with other *)
   let dirname_opt = 
     match xs with
     | [x] when Common2.is_directory x -> Some (Common.fullpath x)

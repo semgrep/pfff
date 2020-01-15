@@ -48,6 +48,8 @@ let test_parse_go xs =
   ));
   flush stdout; flush stderr;
   Parse_info.print_parsing_stat_list !stat_list;
+
+  (* todo: could factorize with other *)
   let dirname_opt = 
     match xs with
     | [x] when Common2.is_directory x -> Some (Common.fullpath x)

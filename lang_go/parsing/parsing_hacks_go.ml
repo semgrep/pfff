@@ -18,7 +18,11 @@ open Parser_go
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Insert implicit semicolons.
+(* The goal for this module is to retag tokens (e.g, a LBRACE in LBODY),
+ * or insert tokens (e.g., implicit semicolons) to help the grammar 
+ * remains simple and unambiguous. 
+ * See lang_cpp/parsing/parsing_hacks.ml for more information about
+ * this technique.
  *)
 
 (*****************************************************************************)
@@ -45,6 +49,8 @@ let fix_tokens xs =
   let rec aux env xs = 
     match xs with
     | [] -> []
+
+    (* ASI: automatic semicolon insertion, similar in Javascript *)
     | ((LNAME _ 
       | LINT _ | LFLOAT _ | LIMAG _ | LRUNE _ | LSTR _
       | LBREAK _ | LCONTINUE _ | LFALL _ | LRETURN _
@@ -61,6 +67,7 @@ let fix_tokens xs =
             | _ -> env
           in
           x::LSEMICOLON iifake::y::aux env xs
+
 
     | ((LPAREN _ | LBRACKET _) as x)::xs ->
         x::aux { loophack = false::env.loophack } xs
