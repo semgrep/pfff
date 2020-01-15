@@ -38,6 +38,7 @@
 /*(* tokens with "values" (was LLITERAL before) *)*/
 %token  <string * Ast_go.tok> LINT LFLOAT  LIMAG  LRUNE LSTR
 %token  <string * Ast_go.tok> LASOP 
+%token  <string * Ast_go.tok> LNAME 
 
 /*(*-----------------------------------------*)*/
 /*(*2 Keyword tokens *)*/
@@ -55,8 +56,6 @@
   LPACKAGE LIMPORT  
   LMAP 
   LRANGE   
-
-%token  <string * Ast_go.tok> LNAME 
 
 /*(*-----------------------------------------*)*/
 /*(*2 Punctuation tokens *)*/
@@ -165,21 +164,21 @@ common_dcl:
 |   LVAR LPAREN vardcl_list osemi RPAREN { }
 |   LVAR LPAREN RPAREN { }
 
-|   lconst constdcl { }
-|   lconst LPAREN constdcl osemi RPAREN { }
-|   lconst LPAREN constdcl LSEMICOLON constdcl_list osemi RPAREN { }
-|   lconst LPAREN RPAREN { }
+|   LCONST constdcl { }
+|   LCONST LPAREN constdcl osemi RPAREN { }
+|   LCONST LPAREN constdcl LSEMICOLON constdcl1_list osemi RPAREN { }
+|   LCONST LPAREN RPAREN { }
 
 |   LTYPE typedcl { }
 |   LTYPE LPAREN typedcl_list osemi RPAREN { }
 |   LTYPE LPAREN RPAREN { }
 
-lconst: LCONST { }
 
 vardcl:
 |   dcl_name_list ntype { }
 |   dcl_name_list ntype LEQ expr_list { }
 |   dcl_name_list       LEQ expr_list { }
+
 
 constdcl:
 |   dcl_name_list ntype LEQ expr_list { }
@@ -190,18 +189,8 @@ constdcl1:
 |   dcl_name_list ntype { }
 |   dcl_name_list   { }
 
-typedcl: typedclname ntype
-    {
-    }
 
-typedclname:  sym
-    {
-        (*
-        // different from dclname because the name
-        // becomes visible right here, not at the end
-        // of the declaration.
-        *)
-    }
+typedcl: typedclname ntype { }
 
 /*(*************************************************************************)*/
 /*(*1 Statements *)*/
@@ -353,9 +342,6 @@ expr:
 |   expr LLSH expr { }
 |   expr LRSH expr { }
 
-/*(* not an expression anymore, but left in so we can give a good error *)*/
-|   expr LCOMM expr { }
-
 uexpr:
 |   pexpr { }
 
@@ -500,6 +486,15 @@ packname:
 |   LNAME LDOT sym { }
 
 labelname: new_name { }
+
+typedclname:  sym
+    {
+        (*
+        // different from dclname because the name
+        // becomes visible right here, not at the end
+        // of the declaration.
+        *)
+    }
 
 /*(*************************************************************************)*/
 /*(*1 Types *)*/
@@ -723,9 +718,9 @@ vardcl_list:
 |   vardcl { }
 |   vardcl_list LSEMICOLON vardcl { }
 
-constdcl_list:
+constdcl1_list:
 |   constdcl1 { }
-|   constdcl_list LSEMICOLON constdcl1 { }
+|   constdcl1_list LSEMICOLON constdcl1 { }
 
 typedcl_list:
 |   typedcl { }
