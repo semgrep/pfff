@@ -190,7 +190,10 @@ constdcl1:
 |   dcl_name_list   { }
 
 
-typedcl: typedclname ntype { }
+typedcl: 
+| typedclname ntype { }
+/*(* alias decl, go 1.?? *)*/
+| typedclname LEQ ntype { }
 
 /*(*************************************************************************)*/
 /*(*1 Statements *)*/
