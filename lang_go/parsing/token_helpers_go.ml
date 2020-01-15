@@ -13,7 +13,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
+module PI = Parse_info
 open Parser_go
 
 (*****************************************************************************)
@@ -30,6 +30,21 @@ let is_irrelevant = function
 let is_comment_or_space = function
   | TComment _ | TCommentSpace _ -> true
   | _ -> false 
+
+let token_kind_of_tok t =
+  match t with
+  | LBRACE _ | LBODY _ -> PI.LBrace
+  | RBRACE _ -> PI.RBrace
+  | LPAREN _ -> PI.LPar
+  | RPAREN _ -> PI.RPar
+  | LBRACKET _ -> PI.LBracket
+  | RBRACKET _ -> PI.RBracket
+
+  | TComment _ -> PI.Esthet PI.Comment
+  | TCommentSpace _ -> PI.Esthet PI.Space
+  | TCommentNewline _ -> PI.Esthet PI.Newline
+
+  | _ -> PI.Other
 
 (*****************************************************************************)
 (* Visitors *)

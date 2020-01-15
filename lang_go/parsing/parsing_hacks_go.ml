@@ -12,8 +12,12 @@
  * file license.txt for more details.
  *)
 open Common
-
 open Parser_go
+
+module Flag = Flag_parsing
+module T = Parser_go
+module TH = Token_helpers_go
+module F = Ast_fuzzy
 
 (*****************************************************************************)
 (* Prelude *)
@@ -28,24 +32,20 @@ open Parser_go
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
-type env = {
- loophack: bool list;
-}
+type env_lbody = 
+  | InIfHeader
+  | Normal
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-let tl = function
- | _::xs -> xs
- | [] -> 
-      pr2 "Parsing_hacks_go.tl: Impossible, empty tail, wrong loopback";
-      []
 
 (*****************************************************************************)
-(* Fix tokens *)
+(* ASI *)
 (*****************************************************************************)
 
-let fix_tokens xs =
+let fix_tokens_asi xs =
+  let env = () in
   let rec aux env xs = 
     match xs with
     | [] -> []
@@ -61,38 +61,65 @@ let fix_tokens xs =
       ) as x) ::((TCommentNewline ii | EOF ii) as y)::xs ->
           let iifake = Parse_info.rewrap_str "FAKE ';'" ii in
           (* implicit semicolon insertion *)
-          let env = 
-            match x with
-            | RPAREN _ | RBRACKET _ -> { loophack = tl env.loophack }
-            | _ -> env
-          in
           x::LSEMICOLON iifake::y::aux env xs
-
-
-    | ((LPAREN _ | LBRACKET _) as x)::xs ->
-        x::aux { loophack = false::env.loophack } xs
-    | ((RPAREN _ | RBRACKET _) as x)::xs ->
-        x::aux { loophack = tl env.loophack } xs
-
-    | LBRACE ii::xs  ->
-       (match env.loophack with 
-       | true::rest ->
-          LBODY ii::aux { loophack = false::rest } xs
-       | _ -> 
-          LBRACE ii::aux env xs
-       )
-
-    | ((LFOR _ | LIF _ | LSWITCH _ | LSELECT _) as x)::xs ->
-       (match env.loophack with 
-       | _::rest ->
-          x::aux { loophack = true::rest } xs
-       | [] -> 
-         pr2 "Impossible, wrong balancing for loophack";
-         x::aux { loophack = [true] } xs
-       )
-        
 
     | x::xs -> x::aux env xs
   in
-  aux { loophack = [false] } xs
+  aux env xs
 
+(*****************************************************************************)
+(* LBODY *)
+(*****************************************************************************)
+let fix_tokens_lbody toks =
+ try 
+  let trees = Lib_ast_fuzzy.mk_trees { Lib_ast_fuzzy.
+     tokf = TH.info_of_tok;
+     kind = TH.token_kind_of_tok;
+  } toks 
+  in
+  let retag_lbrace = Hashtbl.create 101 in
+
+  let rec aux env trees =
+      match trees with
+      | [] -> ()
+      | (F.Braces (lb, xs, _rb))::ys ->
+          if env = InIfHeader
+          then Hashtbl.add retag_lbrace lb true;
+          aux Normal xs;
+          aux Normal ys;
+      | F.Tok (("if" | "for" | "switch" | "select"), _)::xs ->
+          aux InIfHeader xs
+
+      | x::xs -> 
+          (match x with
+          | F.Parens (_, xs, _) ->
+                xs |> List.iter (function
+                  | Left trees -> aux Normal trees
+                  | Right _comma -> ()
+                )
+           | _ -> ()
+          );
+          aux env xs
+  in
+  aux Normal trees;
+
+  (* use the tagged information and transform tokens *)
+  toks |> List.map (function
+    | T.LBRACE info when Hashtbl.mem retag_lbrace info ->
+      T.LBODY (info)
+    | x -> x
+  )
+
+  with Lib_ast_fuzzy.Unclosed (msg, info) ->
+   if !Flag.error_recovery
+   then toks
+   else raise (Parse_info.Lexical_error (msg, info))
+
+
+(*****************************************************************************)
+(* Entry point *)
+(*****************************************************************************)
+
+let fix_tokens xs =
+  let xs = fix_tokens_asi xs in
+  fix_tokens_lbody xs
