@@ -164,7 +164,7 @@ rule token = parse
   | "^=" as s   { LASOP (s, tokinfo lexbuf) }
   | "<<=" as s  { LASOP (s, tokinfo lexbuf) }
   | ">>=" as s  { LASOP (s, tokinfo lexbuf) }
-  (* Go specific *)
+  (* Go specific operator *)
   | "&^=" as s   { LASOP (s, tokinfo lexbuf) }
 
   | "=="    { LEQEQ (tokinfo lexbuf) }
@@ -192,7 +192,7 @@ rule token = parse
 
   | '(' { LPAREN (tokinfo lexbuf) }   | ')' { RPAREN (tokinfo lexbuf) }
   | '[' { LBRACKET (tokinfo lexbuf) } | ']' { RBRACKET (tokinfo lexbuf) }
-  (* can also be a LBODY *)
+  (* can be transformed in an LBODY by parsing hack later *)
   | '{' { LBRACE (tokinfo lexbuf) }   | '}' { RBRACE (tokinfo lexbuf) }
 
   | ':'     { LCOLON (tokinfo lexbuf) }

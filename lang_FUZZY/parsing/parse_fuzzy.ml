@@ -88,6 +88,18 @@ let parse_and_tokens_with_lang lang file =
      kind = Token_helpers_js.token_kind_of_tok;
     } in
     Lib_ast_fuzzy.mk_trees hooks toks, Lib_ast_fuzzy.mk_tokens hooks toks
+  | Lang_fuzzy.Go ->
+    let toks = Parse_go.tokens file  |> (fun toks ->
+            if !Flag_parsing.sgrep_mode
+            then Common.exclude Token_helpers_go.is_eof toks
+            else toks)
+    in
+    let hooks = { Lib_ast_fuzzy.
+     tokf = Token_helpers_go.info_of_tok;
+     kind = Token_helpers_go.token_kind_of_tok;
+    } in
+    Lib_ast_fuzzy.mk_trees hooks toks, Lib_ast_fuzzy.mk_tokens hooks toks
+
   | Lang_fuzzy.Cpp ->
     Common.save_excursion Flag_parsing.verbose_lexing false (fun () ->
       Parse_cpp.parse_fuzzy file

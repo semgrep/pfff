@@ -8,6 +8,7 @@ type t =
   | Java
   | Skip
   | Javascript
+  | Go
   | Cpp
 
 let lang_of_string_opt = function
@@ -17,6 +18,7 @@ let lang_of_string_opt = function
   | "javafuzzy"           -> Some Java
   | "jsfuzzy"             -> Some Javascript
   | "skipfuzzy"           -> Some Skip
+  | "fofuzzy"           -> Some Go
   | _ -> None
 
 let lang_of_filename_opt filename =
@@ -28,4 +30,5 @@ let lang_of_filename_opt filename =
  | FT.PL (FT.ML _) -> Some ML
  | FT.PL (FT.Java) -> Some Java
  | FT.PL (FT.Skip) -> Some Skip
+ | FT.PL (FT.Go) -> Some Go
  | _ -> None

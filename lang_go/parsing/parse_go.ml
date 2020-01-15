@@ -58,7 +58,7 @@ let parse2 filename =
   (* this can throw Parse_info.Lexical_error *)
   let toks = tokens filename in
   let toks = Common.exclude TH.is_comment_or_space toks in
-  (* insert implicit semicolons *)
+  (* insert implicit SEMICOLON and replace some LBRACE with LBODY *)
   let toks = Parsing_hacks_go.fix_tokens toks in
   let tr, lexer, lexbuf_fake = 
     Parse_info.mk_lexer_for_yacc toks TH.is_irrelevant in
@@ -120,20 +120,3 @@ let any_of_string s =
     (* -------------------------------------------------- *)
     Parser_go.sgrep_spatch_pattern lexer lexbuf_fake
   )
-
-
-(*****************************************************************************)
-(* Fuzzy parsing *)
-(*****************************************************************************)
-
-(*
-let parse_fuzzy file =
-  let toks = tokens file in
-  let trees = Parse_fuzzy.mk_trees { Parse_fuzzy.
-     tokf = TH.info_of_tok;
-     kind = TH.token_kind_of_tok;
-  } toks 
-  in
-  trees, toks
-*)
-

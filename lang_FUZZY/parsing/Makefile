@@ -28,6 +28,7 @@ INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/lang_ml/parsing \
   $(TOP)/lang_php/parsing \
   $(TOP)/lang_skip/parsing \
+  $(TOP)/lang_go/parsing \
 
 
 ##############################################################################
