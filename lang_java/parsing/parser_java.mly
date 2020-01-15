@@ -99,6 +99,10 @@ let constructor_invocation name args =
 /*(*1 Tokens *)*/
 /*(*************************************************************************)*/
 
+/*(* classic *)*/
+%token <Parse_info.t> TUnknown
+%token <Parse_info.t> EOF
+
 /*(*-----------------------------------------*)*/
 /*(*2 The comment tokens *)*/
 /*(*-----------------------------------------*)*/
@@ -115,11 +119,7 @@ let constructor_invocation name args =
 /*(*-----------------------------------------*)*/
 
 /*(* tokens with "values" *)*/
-%token <string * Parse_info.t> TInt
-%token <string * Parse_info.t> TFloat
-%token <string * Parse_info.t> TChar
-%token <string * Parse_info.t> TString
-
+%token <string * Parse_info.t> TInt TFloat TChar TString
 
 %token <(string * Parse_info.t)> IDENTIFIER
 %token <(string * Parse_info.t)> PRIMITIVE_TYPE
@@ -170,11 +170,6 @@ let constructor_invocation name args =
 %token <Parse_info.t> AT		/* @ */
 %token <Parse_info.t> DOTS		/* ... */
 
-/*(* to avoid some conflicts *)*/
-%token <Parse_info.t> LB_RB
-
-/*(* Those fresh tokens are created in parsing_hacks_java.ml *)*/
-%token <Parse_info.t> LT2		/* < */
 
 %token <(Ast_generic.arithmetic_operator * Parse_info.t)> OPERATOR_EQ
 	/* += -= *= /= &= |= ^= %= <<= >>= >>>= */
@@ -199,9 +194,11 @@ let constructor_invocation name args =
 /*(*2 Extra tokens: *)*/
 /*(*-----------------------------------------*)*/
 
-/*(* classic *)*/
-%token <Parse_info.t> TUnknown
-%token <Parse_info.t> EOF
+/*(* to avoid some conflicts *)*/
+%token <Parse_info.t> LB_RB
+
+/*(* Those fresh tokens are created in parsing_hacks_java.ml *)*/
+%token <Parse_info.t> LT2		/* < */
 
 /*(*************************************************************************)*/
 /*(*1 Priorities *)*/
@@ -327,6 +324,9 @@ type_argument:
 /*(*----------------------------*)*/
 /*(*2 Generics parameters *)*/
 /*(*----------------------------*)*/
+type_parameters:
+ | LT type_parameters_bis GT { $2 }
+
 type_parameter:
  | identifier               { TParam ($1, []) }
  | identifier EXTENDS bound { TParam ($1, $3) }
@@ -1182,49 +1182,57 @@ annotation_type_element_declarations:
 /*(*1 xxx_list, xxx_opt *)*/
 /*(*************************************************************************)*/
 
+/*(* basic lists, at least one element *)*/
 import_declarations:
  | import_declaration  { [$1] }
  | import_declarations import_declaration  { $1 @ [$2] }
-
-import_declarations_opt:
- | /*(*empty*)*/  { [] }
- | import_declarations  { $1 }
-
 
 type_declarations:
  | type_declaration  { $1 }
  | type_declarations type_declaration  { $1 @ $2 }
 
-type_declarations_opt:
- | /*(*empty*)*/  { [] }
- | type_declarations  { $1 }
+class_body_declarations:
+ | class_body_declaration  { $1 }
+ | class_body_declarations class_body_declaration  { $1 @ $2 }
 
-
-
-package_declaration_opt:
- | /*(*empty*)*/  { None }
- | package_declaration  { Some $1 }
-
+interface_member_declarations:
+ | interface_member_declaration  { $1 }
+ | interface_member_declarations interface_member_declaration  { $1 @ $2 }
 
 modifiers:
  | modifier  { [$1] }
  | modifiers modifier  { $2 :: $1 }
 
-modifiers_opt:
- | /*(*empty*)*/  { [] }
- | modifiers  { List.rev $1 }
+variable_modifiers:
+ | variable_modifier { [$1] }
+ | variable_modifiers variable_modifier { $1 @ [$2] }
+
+block_statements:
+ | block_statement  { $1 }
+ | block_statements block_statement  { $1 @ $2 }
+
+switch_block_statement_groups:
+ | switch_block_statement_group  { [$1] }
+ | switch_block_statement_groups switch_block_statement_group  { $2 :: $1 }
+
+switch_labels:
+ | switch_label  { [$1] }
+ | switch_labels switch_label  { $2 :: $1 }
+
+catches:
+ | catch_clause  { [$1] }
+ | catches catch_clause  { $2 :: $1 }
+
+method_declarations:
+ | method_declaration { [$1] }
+ | method_declarations method_declaration { $2 :: $1 }
+
+dim_exprs:
+ | dim_expr  { [$1] }
+ | dim_exprs dim_expr  { $2 :: $1 }
 
 
-super_opt:
- | /*(*empty*)*/  { None }
- | super  { Some $1 }
-
-
-interfaces_opt:
- | /*(*empty*)*/  { [] }
- | interfaces  { $1 }
-
-
+/*(* basic lists, at least one element with separator *)*/
 ref_type_list:
  | reference_type  { [$1] }
  | ref_type_list CM reference_type  { $1 @ [$3] }
@@ -1233,163 +1241,33 @@ ref_type_and_list:
  | reference_type  { [$1] }
  | ref_type_and_list AND reference_type  { $1 @ [$3] }
 
-
-class_body_declarations:
- | class_body_declaration  { $1 }
- | class_body_declarations class_body_declaration  { $1 @ $2 }
-
-class_body_declarations_opt:
- | /*(*empty*)*/  { [] }
- | class_body_declarations  { $1 }
-
-
 variable_declarators:
  | variable_declarator  { [$1] }
  | variable_declarators CM variable_declarator  { $3 :: $1 }
-
 
 formal_parameter_list:
  | formal_parameter  { [$1] }
  | formal_parameter_list CM formal_parameter  { $3 :: $1 }
 
-formal_parameter_list_opt:
- | /*(*empty*)*/  { [] }
- | formal_parameter_list  { List.rev $1 }
-
-
-variable_modifiers_opt:
- | /*(*empty*)*/  { [] }
- | variable_modifiers  { $1 }
-
-variable_modifiers:
- | variable_modifier { [$1] }
- | variable_modifiers variable_modifier { $1 @ [$2] }
-
-static_opt:
- | /*(*empty*)*/  { false }
- | STATIC  { true }
-
-throws_opt:
- | /*(*empty*)*/  { [] }
- | throws  { $1 }
+variable_initializers:
+ | variable_initializer  { [$1] }
+ | variable_initializers CM variable_initializer  { $3 :: $1 }
 
 qualified_ident_list:
  | name                          { [qualified_ident $1] }
  | qualified_ident_list CM name  { $1 @ [qualified_ident $3] }
 
-extends_interfaces_opt:
- | /*(*empty*)*/  { [] }
- | extends_interfaces  { $1 }
-
-
-interface_member_declarations:
- | interface_member_declaration  { $1 }
- | interface_member_declarations interface_member_declaration  { $1 @ $2 }
-
-interface_member_declarations_opt:
- | /*(*empty*)*/  { [] }
- | interface_member_declarations  { $1 }
-
-
-variable_initializers:
- | variable_initializer  { [$1] }
- | variable_initializers CM variable_initializer  { $3 :: $1 }
-
-comma_opt:
- | /*(*empty*)*/  { () }
- | CM  { () }
-
-
-block_statements:
- | block_statement  { $1 }
- | block_statements block_statement  { $1 @ $2 }
-
-block_statements_opt:
- | /*(*empty*)*/      { [] }
- | block_statements  { $1 }
-
-
-switch_block_statement_groups:
- | switch_block_statement_group  { [$1] }
- | switch_block_statement_groups switch_block_statement_group  { $2 :: $1 }
-
-
-switch_labels:
- | switch_label  { [$1] }
- | switch_labels switch_label  { $2 :: $1 }
-
-
-
-expression_opt:
- | /*(*empty*)*/  { None }
- | expression     { Some $1 }
-
-
-for_update_opt:
- | /*(*empty*)*/  { [] }
- | for_update     { $1 }
-
 statement_expression_list:
  | statement_expression                               { [$1] }
  | statement_expression_list CM statement_expression  { $1 @ [$3] }
-
-identifier_opt:
- | /*(*empty*)*/  { None }
- | identifier  { Some $1 }
-
-
-catches:
- | catch_clause  { [$1] }
- | catches catch_clause  { $2 :: $1 }
-
-catches_opt:
- | /*(*empty*)*/  { [] }
- | catches  { List.rev $1 }
-
 
 argument_list:
  | argument  { [$1] }
  | argument_list CM argument  { $3 :: $1 }
 
-argument_list_opt:
- | /*(*empty*)*/  { [] }
- | argument_list  { List.rev $1 }
-
-method_declarations_opt:
- | /*(*empty*)*/  { [] }
- | method_declarations  { List.rev $1 }
-
-method_declarations:
- | method_declaration { [$1] }
- | method_declarations method_declaration { $2 :: $1 }
-
-class_body_opt:
- | /*(*empty*)*/  { None }
- | class_body     { Some $1 }
-
-dim_exprs:
- | dim_expr  { [$1] }
- | dim_exprs dim_expr  { $2 :: $1 }
-
-dims_opt:
- | /*(*empty*)*/  { 0 }
- | dims  { $1 }
-
-
 enum_constants:
  | enum_constant { [$1] }
  | enum_constants CM enum_constant { $1 @ [$3] }
-
-enum_body_declarations_opt:
- | /*(*empty*)*/           { [] }
- | enum_body_declarations  { $1 }
-
-type_parameters_opt:
- | /*(*empty*)*/   { [] }
- | type_parameters { $1 }
-
-type_parameters:
- | LT type_parameters_bis GT { $2 }
 
 type_parameters_bis:
  | type_parameter                         { [$1] }
@@ -1406,3 +1284,108 @@ element_value_pairs:
 element_values:
  | element_value { [$1] }
  | element_values CM element_value { $1 @ [$3] }
+
+
+/*(* basic lists, 0 element allowed *)*/
+import_declarations_opt:
+ | /*(*empty*)*/  { [] }
+ | import_declarations  { $1 }
+
+type_declarations_opt:
+ | /*(*empty*)*/  { [] }
+ | type_declarations  { $1 }
+
+package_declaration_opt:
+ | /*(*empty*)*/  { None }
+ | package_declaration  { Some $1 }
+
+modifiers_opt:
+ | /*(*empty*)*/  { [] }
+ | modifiers  { List.rev $1 }
+
+class_body_declarations_opt:
+ | /*(*empty*)*/  { [] }
+ | class_body_declarations  { $1 }
+
+formal_parameter_list_opt:
+ | /*(*empty*)*/  { [] }
+ | formal_parameter_list  { List.rev $1 }
+
+variable_modifiers_opt:
+ | /*(*empty*)*/  { [] }
+ | variable_modifiers  { $1 }
+
+extends_interfaces_opt:
+ | /*(*empty*)*/  { [] }
+ | extends_interfaces  { $1 }
+
+interface_member_declarations_opt:
+ | /*(*empty*)*/  { [] }
+ | interface_member_declarations  { $1 }
+
+block_statements_opt:
+ | /*(*empty*)*/      { [] }
+ | block_statements  { $1 }
+
+catches_opt:
+ | /*(*empty*)*/  { [] }
+ | catches  { List.rev $1 }
+
+argument_list_opt:
+ | /*(*empty*)*/  { [] }
+ | argument_list  { List.rev $1 }
+
+method_declarations_opt:
+ | /*(*empty*)*/  { [] }
+ | method_declarations  { List.rev $1 }
+
+dims_opt:
+ | /*(*empty*)*/  { 0 }
+ | dims  { $1 }
+
+enum_body_declarations_opt:
+ | /*(*empty*)*/           { [] }
+ | enum_body_declarations  { $1 }
+
+type_parameters_opt:
+ | /*(*empty*)*/   { [] }
+ | type_parameters { $1 }
+
+
+/*(* optional element *)*/
+
+static_opt:
+ | /*(*empty*)*/  { false }
+ | STATIC  { true }
+
+comma_opt:
+ | /*(*empty*)*/  { () }
+ | CM  { () }
+
+super_opt:
+ | /*(*empty*)*/  { None }
+ | super  { Some $1 }
+
+interfaces_opt:
+ | /*(*empty*)*/  { [] }
+ | interfaces  { $1 }
+
+throws_opt:
+ | /*(*empty*)*/  { [] }
+ | throws  { $1 }
+
+expression_opt:
+ | /*(*empty*)*/  { None }
+ | expression     { Some $1 }
+
+identifier_opt:
+ | /*(*empty*)*/  { None }
+ | identifier  { Some $1 }
+
+for_update_opt:
+ | /*(*empty*)*/  { [] }
+ | for_update     { $1 }
+
+class_body_opt:
+ | /*(*empty*)*/  { None }
+ | class_body     { Some $1 }
