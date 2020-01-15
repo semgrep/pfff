@@ -109,9 +109,6 @@
  // NotToken with lower precedence or PreferToToken with higher
  // and annotate the reducing rule accordingly.
  *)*/
-%left       NotPackage
-%left       LPACKAGE
-
 %left       NotParen
 %left       LPAREN
 

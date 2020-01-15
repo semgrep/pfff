@@ -21,3 +21,4 @@ Date:   Mon Nov 23 14:11:15 2015 -0800
 
 So the grammar and lexer files are accessible in
 git checkout b5fe07710f4a31bfc100fbc2e344be11e4b4d3fc^
+in src/cmd/compile/internal/gc/go.y
