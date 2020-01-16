@@ -1,6 +1,7 @@
 (* Yoann Padioleau
  *
  * Copyright (C) 2012 Facebook
+ * Copyright (C) 2020 r2c
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
@@ -14,13 +15,16 @@
 open Common
 
 open Parser_java
+module Flag = Flag_parsing
+module TH = Token_helpers_java
+module F = Ast_fuzzy
+module T = Parser_java
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* 
- * This module transforms certain tokens like '<', normally a LT
- * into a LT2, which helps solving conflicts in the original
+(* This module transforms certain tokens like '<', normally a LT
+ * into a LT_GENERIC, which helps solving conflicts in the original
  * Java grammar.
  * 
  * This is similar to what we do for C/C++. 
@@ -28,10 +32,14 @@ open Parser_java
  *)
 
 (*****************************************************************************)
-(* Fix tokens *)
+(* Helpers *)
 (*****************************************************************************)
 
-let fix_tokens xs =
+(*****************************************************************************)
+(* Generic inference *)
+(*****************************************************************************)
+
+let fix_tokens_generics xs =
 
   let rec aux env xs = 
     let depth_angle = env in
@@ -47,7 +55,7 @@ let fix_tokens xs =
     match xs with
     | [] -> []
 
-    (* dont transform the < of type parameters in LT2. Transforms
+    (* dont transform the < of type parameters in LT_GENERIC. Transforms
      * only for type arguments (but increment depth_angle because
      * we may still need to transform some >> into > >).
      *)
@@ -82,7 +90,7 @@ let fix_tokens xs =
 (* too many FPs
     | IDENTIFIER (s, ii1)::TCommentSpace iispace::LT ii2::xs 
        when s =~ "^[A-Z]" ->
-        IDENTIFIER (s, ii1)::TCommentSpace iispace::LT2 ii2::
+        IDENTIFIER (s, ii1)::TCommentSpace iispace::LT_GENERIC ii2::
           aux (depth_angle + 1) xs
 *)
 
@@ -90,26 +98,26 @@ let fix_tokens xs =
      * this code. But pb, see previous comment.
      *)
     | IDENTIFIER (s, ii1)::LT ii2::xs when s =~ "^[A-Z]"->
-        IDENTIFIER (s, ii1)::LT2 ii2::aux (depth_angle + 1) xs
+        IDENTIFIER (s, ii1)::LT_GENERIC ii2::aux (depth_angle + 1) xs
 
     | IDENTIFIER (s, ii1)::TCommentSpace iispace::LT ii2::
       IDENTIFIER (s3, ii3)::xs
        when s =~ "^[A-Z]" && s3 =~ "^[A-Z]" ->
-        IDENTIFIER (s, ii1)::TCommentSpace iispace::LT2 ii2::
+        IDENTIFIER (s, ii1)::TCommentSpace iispace::LT_GENERIC ii2::
         aux (depth_angle + 1) (IDENTIFIER (s3, ii3)::xs)
 
     | IDENTIFIER (s, ii1)::TCommentSpace iispace::LT ii2::
       COND ii3::xs
        when s =~ "^[A-Z]" ->
-        IDENTIFIER (s, ii1)::TCommentSpace iispace::LT2 ii2::
+        IDENTIFIER (s, ii1)::TCommentSpace iispace::LT_GENERIC ii2::
         aux (depth_angle + 1) (COND ii3::xs)
 
-    (* xxx.<type>of(...), actually don't have to transform in a LT2
+    (* xxx.<type>of(...), actually don't have to transform in a LT_GENERIC
      * but it's a type context so we need to augment depth_angle
      * so at least the >> get transformed into > >.
      *)
     | DOT ii1::LT ii2::xs ->
-      DOT ii1::LT2 ii2::aux (depth_angle + 1) xs
+      DOT ii1::LT_GENERIC ii2::aux (depth_angle + 1) xs
 
     (* <T extends ...> bar().
      * could also check for public|static|... just before the <
@@ -137,3 +145,52 @@ let fix_tokens xs =
   in
   aux 0 xs
 
+(*****************************************************************************)
+(* Lambdas *)
+(*****************************************************************************)
+let fix_tokens_fuzzy toks =
+ try 
+  let trees = Lib_ast_fuzzy.mk_trees { Lib_ast_fuzzy.
+     tokf = TH.info_of_tok;
+     kind = TH.token_kind_of_tok;
+  } toks 
+  in
+  let retag_lparen = Hashtbl.create 101 in
+
+  let rec aux env trees =
+      match trees with
+      | [] -> ()
+      | x::xs -> 
+          (match x with
+          | F.Parens (_, xs, _) ->
+                xs |> List.iter (function
+                  | Left trees -> aux () trees
+                  | Right _comma -> ()
+                )
+           | _ -> ()
+          );
+          aux env xs
+  in
+  aux () trees;
+
+  (* use the tagged information and transform tokens *)
+  toks |> List.map (function
+    | T.LP info when Hashtbl.mem retag_lparen info ->
+      T.LP_LAMBDA (info)
+    | x -> x
+  )
+
+  with Lib_ast_fuzzy.Unclosed (msg, info) ->
+   if !Flag.error_recovery
+   then toks
+   else raise (Parse_info.Lexical_error (msg, info))
+
+
+(*****************************************************************************)
+(* Entry point *)
+(*****************************************************************************)
+
+let fix_tokens xs = 
+  let xs = fix_tokens_generics xs in
+  let xs = fix_tokens_fuzzy xs in
+  xs

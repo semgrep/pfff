@@ -23,11 +23,17 @@ let token_kind_of_tok t =
   match t with
   | LC _ -> PI.LBrace
   | RC _ -> PI.RBrace
-  | LP _ -> PI.LPar
+
+  | LP _ | LP_LAMBDA _ -> PI.LPar
   | RP _ -> PI.RPar
+
+  | LB _ -> PI.LBracket
+  | RB _ -> PI.RBracket
+
   | TComment _ -> PI.Esthet PI.Comment
   | TCommentSpace _ -> PI.Esthet PI.Space
   | TCommentNewline _ -> PI.Esthet PI.Newline
+
   | _ -> PI.Other
 
 (*****************************************************************************)
@@ -75,7 +81,8 @@ let visitor_info_of_tok f = function
   | EQ (ii) -> EQ (f ii)
   | GT (ii) -> GT (f ii)
   | LT (ii) -> LT (f ii)
-  | LT2 (ii) -> LT2 (f ii)
+  | LT_GENERIC (ii) -> LT_GENERIC (f ii)
+  | LP_LAMBDA (ii) -> LP_LAMBDA (f ii)
   | NOT (ii) -> NOT (f ii)
   | COMPL (ii) -> COMPL (f ii)
   | COND (ii) -> COND (f ii)
@@ -102,7 +109,9 @@ let visitor_info_of_tok f = function
 
   | AT (ii) -> AT (f ii)
   | DOTS (ii) -> DOTS (f ii)
+  | ARROW (ii) -> ARROW (f ii)
 
+  | VAR (ii) -> VAR (f ii)
   | ABSTRACT (ii) -> ABSTRACT (f ii)
   | BOOLEAN (ii) -> BOOLEAN (f ii)
   | BREAK (ii) -> BREAK (f ii)

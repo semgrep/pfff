@@ -89,6 +89,8 @@ let keyword_table = Common.hash_of_list [
   "false", (fun ii -> FALSE ii);
   "null", (fun ii -> NULL ii);
 
+(*  "var", (fun ii -> VAR ii); REGRESSIONS *)
+
   primitive_type "byte";
   primitive_type "short";
   primitive_type "char";
@@ -319,6 +321,8 @@ rule token = parse
 (* this may be split in two tokens in fix_tokens_java.ml *)
 | ">>"  { SRS(tokinfo lexbuf) }
 | ">>>"  { URS(tokinfo lexbuf) }
+(* lambdas *)
+| "->" { ARROW (tokinfo lexbuf) }
 
 (* ext: annotations *)
 | "@" { AT(tokinfo lexbuf) }

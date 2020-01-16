@@ -270,7 +270,7 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
         -> tag ii Keyword
 
     | T.VOLATILE ii | T.STATIC ii
-    | T.CONST ii
+    | T.CONST ii | T.VAR ii
         -> tag ii Keyword
 
     | T.SYNCHRONIZED ii
@@ -293,7 +293,8 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
 
     (* symbols *)
 
-    | T.LP ii | T.RP ii
+    | T.LP ii | T.LP_LAMBDA ii
+    | T.RP ii
     | T.LC ii | T.RC ii
     | T.LB ii  | T.RB ii
 
@@ -305,7 +306,7 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
 
     | T.EQ ii  
 
-    | T.LT ii | T.LT2 ii
+    | T.LT ii | T.LT_GENERIC ii
     | T.GT ii 
 
     | T.NOT ii  | T.COMPL ii
@@ -320,6 +321,7 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
     | T.INCR ii | T.DECR ii
     | T.PLUS ii  | T.MINUS ii  | T.TIMES ii  | T.DIV ii
     | T.AND_AND ii | T.OR_OR ii | T.XOR ii
+    | T.ARROW ii
 
     | T.MOD ii
     | T.LS ii

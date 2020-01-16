@@ -169,6 +169,7 @@ let constructor_invocation name args =
 
 %token <Parse_info.t> AT		/* @ */
 %token <Parse_info.t> DOTS		/* ... */
+%token <Parse_info.t> ARROW		/* -> */
 
 
 %token <(Ast_generic.arithmetic_operator * Parse_info.t)> OPERATOR_EQ
@@ -189,6 +190,7 @@ let constructor_invocation name args =
  ASSERT
  ENUM
  TRUE FALSE NULL
+ VAR
 
 /*(*-----------------------------------------*)*/
 /*(*2 Extra tokens: *)*/
@@ -198,7 +200,8 @@ let constructor_invocation name args =
 %token <Parse_info.t> LB_RB
 
 /*(* Those fresh tokens are created in parsing_hacks_java.ml *)*/
-%token <Parse_info.t> LT2		/* < */
+%token <Parse_info.t> LT_GENERIC		/* < ... > */
+%token <Parse_info.t> LP_LAMBDA		/* ( ... ) ->  */
 
 /*(*************************************************************************)*/
 /*(*1 Priorities *)*/
@@ -280,11 +283,12 @@ identifier: IDENTIFIER { $1 }
 name:
  | identifier_           { [$1] }
  | name DOT identifier_  { $1 @ [$3] }
- | name DOT LT2 type_arguments GT identifier_ { $1@[TypeArgs_then_Id($4,$6)] }
+ | name DOT LT_GENERIC type_arguments GT identifier_ 
+     { $1@[TypeArgs_then_Id($4,$6)] }
 
 identifier_:
  | identifier                       { Id $1 }
- | identifier LT2 type_arguments GT { Id_then_TypeArgs($1, $3) }
+ | identifier LT_GENERIC type_arguments GT { Id_then_TypeArgs($1, $3) }
 
 /*(*************************************************************************)*/
 /*(*1 Types *)*/
@@ -629,12 +633,26 @@ assignment_operator:
  | EQ  { (fun e1 e2 -> Assign (e1, e2))  }
  | OPERATOR_EQ  { (fun e1 e2 -> AssignOp (e1, $1, e2)) }
 
+/*(*----------------------------*)*/
+/*(*2 Lambdas *)*/
+/*(*----------------------------*)*/
+lambda_expression: lambda_parameters ARROW lambda_body 
+  { Literal (Null $2) (* TODO *) }
+
+lambda_parameters: 
+ | identifier { }
+
+lambda_body:
+ | expression { }
+ | block { }
 
 /*(*----------------------------*)*/
 /*(*2 Shortcuts *)*/
 /*(*----------------------------*)*/
 /* 15.27 */
-expression: assignment_expression  { $1 }
+expression: 
+ | assignment_expression  { $1 }
+ | lambda_expression { $1 }
 
 /* 15.28 */
 constant_expression: expression  { $1 }
