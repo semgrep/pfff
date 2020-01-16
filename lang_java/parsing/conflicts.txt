@@ -27,6 +27,24 @@ Led to inline Type def in ArrayType.
 See the writeup above pb #5.
 Led to generalize CastExpression and inline some of ReferenceType.
 
+* modifiers vs modifiers_opt
+
+In many places we can not use modifiers_opt (or one of its variant
+like variable_modifiers_opt) but have instead to inline its content
+and create in the parent 2 alternatives like
+
+ruleA:
+|  modifiers XXX { }
+|            XXX { }
+
+This is usually when XXX can be a type or an identifier.
+Seeing an identifier, which can be start of a type, yacc does not know
+if it can reduce modifiers_opt. It needs to read more than the next
+ident to know if this is the start of a declaration with a modifier and a type
+or a simple identifier.
+
+ex: lambda_param.
+
 
 * When add generics
 

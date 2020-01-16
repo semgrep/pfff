@@ -641,6 +641,35 @@ lambda_expression: lambda_parameters ARROW lambda_body
 
 lambda_parameters: 
  | identifier { }
+ | LP_LAMBDA lambda_parameter_list RP { }
+ | LP_LAMBDA RP { }
+
+lambda_parameter_list: 
+ | identifier_list { }
+ | lambda_param_list { }
+
+identifier_list:
+ | identifier  { [$1] }
+ | identifier_list CM identifier  { $3 :: $1 }
+
+lambda_param_list:
+ | lambda_param  { [$1] }
+ | lambda_param_list CM lambda_param  { $3 :: $1 }
+
+lambda_param:
+ | variable_modifiers lambda_parameter_type variable_declarator_id { }
+ |                    lambda_parameter_type variable_declarator_id { }
+ | variable_arity_parameter { }
+
+lambda_parameter_type:
+ | unann_type { }
+ | VAR { }
+
+unann_type: type_java { }
+
+variable_arity_parameter: 
+ | variable_modifiers unann_type DOTS identifier { }
+ |                    unann_type DOTS identifier { }
 
 lambda_body:
  | expression { }
