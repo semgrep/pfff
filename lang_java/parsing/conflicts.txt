@@ -1,4 +1,32 @@
--*- org -*-
+# -*- org -*-
+
+* Conflicts in Java 1.0
+
+A great prelimiary writeup to read on conflicts is the official
+LALR grammar comments in the 1st edition of the Java specification, which is
+still accessible at https://www.cs.cornell.edu/andru/javaspec/19.doc.html
+(also cached in pfff/docs/official-grammars/java/).
+
+** Different names for different entities
+See the writeup above pb #1.
+Led to just having a general Name non terminal.
+
+** Different modifiers for different entities
+See the writeup above pb #2.
+Led to just having a general Modifiers non terminal.
+
+** Field declaration vs method declaration
+See the writeup above pb #3.
+Led to inline ResultType in MethodHeader.
+
+** Array type vs array access.
+See the writeup above pb #4.
+Led to inline Type def in ArrayType.
+
+** Cast vs parenthesized expression
+See the writeup above pb #5.
+Led to generalize CastExpression and inline some of ReferenceType.
+
 
 * When add generics
 
@@ -18,4 +46,6 @@ solutions?
 I currently use #3.
 
 * when add generic methods
+
+* Lambda
 
