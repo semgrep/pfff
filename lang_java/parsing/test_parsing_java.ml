@@ -14,26 +14,34 @@ open Common
 open Ast_java
 module PI = Parse_info
 module V = Visitor_java
+module Flag = Flag_parsing
 
 (*****************************************************************************)
 (* Subsystem testing *)
 (*****************************************************************************)
 
 let test_parse xs  =
-  let fullxs = Lib_parsing_java.find_source_files_of_dir_or_files xs in
-  let ext = "java" in
+  let xs = List.map Common.fullpath xs in
+
+  let fullxs = 
+    Lib_parsing_java.find_source_files_of_dir_or_files xs 
+    |> Skip_code.filter_files_if_skip_list ~root:xs
+  in
 
   let stat_list = ref [] in
   let newscore  = Common2.empty_score () in
+  let ext = "java" in
 
-  Common2.check_stack_nbfiles (List.length fullxs);
-
-  fullxs |> List.iter (fun file -> 
-    pr2 ("PARSING: " ^ file);
+  fullxs |> Console.progress (fun k -> List.iter (fun file ->
+    k();
     let (_xs, stat) = 
-      Common.save_excursion Flag_parsing.error_recovery true (fun () ->
+     try 
+      Common.save_excursion Flag.error_recovery true (fun () ->
+      Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
         Parse_java.parse file 
-      )
+      ))
+     with exn -> 
+      failwith (spf "PB with %s (exn = %s)" file (Common.exn_to_s exn))
     in
     Common.push stat stat_list;
     let s = spf "bad = %d" stat.PI.bad in
@@ -41,7 +49,7 @@ let test_parse xs  =
     then Hashtbl.add newscore file (Common2.Ok)
     else Hashtbl.add newscore file (Common2.Pb s)
     ;
-  );
+  ));
   flush stdout; flush stderr;
 
   PI.print_parsing_stat_list !stat_list;

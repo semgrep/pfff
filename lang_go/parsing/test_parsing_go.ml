@@ -46,6 +46,7 @@ let test_parse_go xs =
     then Hashtbl.add newscore file (Common2.Ok)
     else Hashtbl.add newscore file (Common2.Pb s)
   ));
+
   flush stdout; flush stderr;
   Parse_info.print_parsing_stat_list !stat_list;
 

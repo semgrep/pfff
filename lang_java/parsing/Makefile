@@ -19,7 +19,7 @@ SYSLIBS= str.cma unix.cma
 LIBS= $(TOP)/commons/lib.cma \
  $(TOP)/h_program-lang/lib.cma \
 
-INCLUDEDIRS= $(TOP)/commons \
+INCLUDEDIRS= $(TOP)/commons $(TOP)/commons_core \
   $(TOP)/h_program-lang \
   $(TOP)/globals \
 
