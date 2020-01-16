@@ -902,7 +902,8 @@ element_value_array_initializer:
 
 expr1:
  | primary_no_new_array { $1 }
- | primary_no_new_array PLUS primary_no_new_array { failwith "+ inside raw annot values"  }
+ | primary_no_new_array PLUS primary_no_new_array 
+    { $1 (* TODO skipping $3 *) }
  | name { NameOrClassType $1 }
 
 /*(*************************************************************************)*/

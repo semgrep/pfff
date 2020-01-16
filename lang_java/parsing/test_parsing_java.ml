@@ -41,7 +41,8 @@ let test_parse xs  =
         Parse_java.parse file 
       ))
      with exn -> 
-      failwith (spf "PB with %s (exn = %s)" file (Common.exn_to_s exn))
+      pr2 (spf "PB with %s (exn = %s)" file (Common.exn_to_s exn));
+      raise exn
     in
     Common.push stat stat_list;
     let s = spf "bad = %d" stat.PI.bad in
