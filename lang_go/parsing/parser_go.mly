@@ -15,6 +15,11 @@
  * // Rules #1 and #2 are accomplished by writing the lists as
  * // semicolon-separated lists with an optional trailing semicolon.
  * // Rule #3 is implemented in yylex.
+ *
+ * src: this is mostly an ocamlyacc port of the Go yacc grammar in
+ *  src/cmd/compile/internal/gc/go.y in commit
+ *  b5fe07710f4a31bfc100fbc2e344be11e4b4d3fc^ in the golang source code
+ *  at https://github.com/golang/go
  *)
 
 %}
