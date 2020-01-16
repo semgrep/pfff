@@ -35,8 +35,10 @@ let token_kind_of_tok t =
   match t with
   | LBRACE _ | LBODY _ -> PI.LBrace
   | RBRACE _ -> PI.RBrace
+
   | LPAREN _ -> PI.LPar
   | RPAREN _ -> PI.RPar
+
   | LBRACKET _ -> PI.LBracket
   | RBRACKET _ -> PI.RBracket
 
