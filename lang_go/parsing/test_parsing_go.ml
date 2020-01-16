@@ -25,12 +25,12 @@ let test_parse_go xs =
 
   let fullxs = 
     Lib_parsing_go.find_source_files_of_dir_or_files xs 
-    |> Skip_code.filter_files_if_skip_list
+    |> Skip_code.filter_files_if_skip_list ~root:xs
   in
 
   let stat_list = ref [] in
   let newscore  = Common2.empty_score () in
-  let ext = "java" in
+  let ext = "go" in
 
   fullxs |> Console.progress (fun k -> List.iter (fun file ->
     k();

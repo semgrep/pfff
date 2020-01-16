@@ -124,17 +124,25 @@ let find_skip_file_from_root root =
     else None
   )
 
-let filter_files_if_skip_list xs =
-  match xs with
-  | [] -> []
-  | x::_ ->
-      try 
-        let root = find_vcs_root_from_absolute_path x in
-        let skip_file = find_skip_file_from_root root in
-        let skip_list = load skip_file in
-        pr2 (spf "using skip list in %s" skip_file);
-        filter_files skip_list root xs
-      with Not_found -> xs
+let filter_files_if_skip_list ~root xs =
+  let root = 
+    match root with
+    | [x] -> x
+    | _ ->
+      (match xs with
+      | [] -> "/"
+      | x::_ ->
+        try 
+          find_vcs_root_from_absolute_path x
+        with Not_found -> "/"
+      )
+   in
+  try 
+   let skip_file = find_skip_file_from_root root in
+   let skip_list = load skip_file in
+   pr2 (spf "using skip list in %s" skip_file);
+   filter_files skip_list root xs
+  with Not_found -> xs
 
 (*****************************************************************************)
 (* Helpers *)

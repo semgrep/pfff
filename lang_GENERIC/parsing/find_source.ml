@@ -30,7 +30,7 @@ let skip_file dir =
 let files_of_dir_or_files ~lang xs =
   let finder = finder lang in
   let xs = List.map Common.fullpath xs in
-  finder xs |> Skip_code.filter_files_if_skip_list
+  finder xs |> Skip_code.filter_files_if_skip_list ~root:xs
 
 
 (* todo: factorize with filter_files_if_skip_list?

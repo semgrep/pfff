@@ -14,7 +14,7 @@ val filter_files:
 
 (* assumes given full paths *)
 val filter_files_if_skip_list:
-  Common.filename list -> Common.filename list
+  root:Common.dirname list -> Common.filename list -> Common.filename list
 
 val reorder_files_skip_errors_last:
   skip list -> Common.dirname (* root *) -> Common.filename list -> 

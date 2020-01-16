@@ -19,7 +19,7 @@ let test_tokens_cpp file =
 let test_parse_cpp ?lang xs  =
   let fullxs = 
     Lib_parsing_cpp.find_source_files_of_dir_or_files xs
-    |> Skip_code.filter_files_if_skip_list
+    |> Skip_code.filter_files_if_skip_list ~root:xs
   in
   Parse_cpp.init_defs !Flag_cpp.macros_h;
 
@@ -120,7 +120,7 @@ let test_dump_cpp_view file =
 
 let test_parse_cpp_fuzzy xs =
   let fullxs = Lib_parsing_cpp.find_source_files_of_dir_or_files xs
-    |> Skip_code.filter_files_if_skip_list
+    |> Skip_code.filter_files_if_skip_list ~root:xs
   in
   fullxs |> Console.progress (fun k -> List.iter (fun file -> 
     k ();
