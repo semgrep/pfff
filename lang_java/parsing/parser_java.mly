@@ -671,6 +671,7 @@ variable_arity_parameter:
  | variable_modifiers unann_type DOTS identifier { }
  |                    unann_type DOTS identifier { }
 
+/*(* no need %prec LOW_PRIORITY_RULE as in parser_js.mly ?*)*/
 lambda_body:
  | expression { }
  | block { }
