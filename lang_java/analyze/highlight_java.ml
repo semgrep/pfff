@@ -303,7 +303,7 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
     | T.NOT ii  | T.COMPL ii
 
     | T.COND ii
-    | T.COLON ii
+    | T.COLON ii | T.COLONCOLON ii
     | T.EQ_EQ ii
 
     | T.LE ii  | T.GE ii

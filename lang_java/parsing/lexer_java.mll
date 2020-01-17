@@ -302,7 +302,7 @@ rule token = parse
   (* javaext: lambdas *)
   | "->" { ARROW (tokinfo lexbuf) }
   (* javaext: qualified method *)
-(*  | "::" { COLONCOLON (tokinfo lexbuf) } *)
+  | "::" { COLONCOLON (tokinfo lexbuf) }
   
   (* ext: annotations *)
   | "@" { AT(tokinfo lexbuf) }

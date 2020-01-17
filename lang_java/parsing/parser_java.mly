@@ -176,6 +176,7 @@ let constructor_invocation name args =
 %token <Parse_info.t> AT		/* @ */
 %token <Parse_info.t> DOTS		/* ... */
 %token <Parse_info.t> ARROW		/* -> */
+%token <Parse_info.t> COLONCOLON		/* :: */
 
 
 %token <(Ast_generic.arithmetic_operator * Parse_info.t)> OPERATOR_EQ
@@ -285,12 +286,12 @@ identifier: IDENTIFIER { $1 }
 name:
  | identifier_           { [$1] }
  | name DOT identifier_  { $1 @ [$3] }
- | name DOT LT_GENERIC type_arguments_opt GT identifier_ 
+ | name DOT LT_GENERIC type_arguments_args_opt GT identifier_ 
      { $1@[TypeArgs_then_Id($4,$6)] }
 
 identifier_:
  | identifier                       { Id $1 }
- | identifier LT_GENERIC type_arguments_opt GT { Id_then_TypeArgs($1, $3) }
+ | identifier LT_GENERIC type_arguments_args_opt GT { Id_then_TypeArgs($1, $3) }
 
 /*(*************************************************************************)*/
 /*(*1 Types *)*/
@@ -357,6 +358,8 @@ primary_no_new_array:
  | name DOT THIS       { Name (name $1 @ [this_ident $3]) }
  /*(* javaext: ? *)*/
  | class_literal       { $1 }
+ /*(* javaext: ? *)*/
+ | method_reference { $1 }
 
 literal:
  | TRUE   { Literal (Bool (true, $1)) }
@@ -655,6 +658,14 @@ variable_arity_parameter:
 lambda_body:
  | expression { Expr $1 }
  | block      { $1 }
+
+/*(*----------------------------*)*/
+/*(*2 Method reference *)*/
+/*(*----------------------------*)*/
+/*(* javaext: ? *)*/
+method_reference: 
+ | name COLONCOLON identifier { Literal (Null $2) }
+ | name COLONCOLON NEW { Literal (Null $2) }
 
 /*(*----------------------------*)*/
 /*(*2 Shortcuts *)*/
@@ -1322,9 +1333,9 @@ type_parameters_bis:
  | type_parameter                         { [$1] }
  | type_parameters_bis CM type_parameter  { $1 @ [$3] }
 
-type_arguments:
+type_arguments_args:
  | type_argument                    { [$1] }
- | type_arguments CM type_argument  { $1 @ [$3] }
+ | type_arguments_args CM type_argument  { $1 @ [$3] }
 
 element_value_pairs:
  | element_value_pair { [$1] }
@@ -1400,9 +1411,9 @@ type_parameters_opt:
  | /*(*empty*)*/   { [] }
  | type_parameters { $1 }
 
-type_arguments_opt:
+type_arguments_args_opt:
  | /*(*empty*)*/   { [] }
- | type_arguments { $1 }
+ | type_arguments_args { $1 }
 
 
 /*(* optional element *)*/

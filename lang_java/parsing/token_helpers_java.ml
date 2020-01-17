@@ -65,6 +65,8 @@ let visitor_info_of_tok f = function
 
   | OPERATOR_EQ (op, ii) -> OPERATOR_EQ (op, f ii)
 
+  | COLONCOLON (ii) -> COLONCOLON (f ii)
+
   (* 3.11 Separators *)
   | LP (ii) -> LP (f ii)
   | RP (ii) -> RP (f ii)
