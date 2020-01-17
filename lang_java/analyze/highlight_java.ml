@@ -214,7 +214,6 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
 
     | T.PRIMITIVE_TYPE (s, ii) ->
         (match s with
-        | "void" -> tag ii TypeVoid
         | "boolean" -> tag ii TypeInt
         | _ -> tag ii TypeInt
         )
@@ -226,14 +225,6 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
         ()
 
     (* keywords  *)
-    | T.BOOLEAN ii -> tag ii TypeInt
-
-    | T.BYTE ii | T.CHAR ii | T.INT ii | T.SHORT ii | T.LONG ii
-          -> tag ii TypeInt
-
-    | T.DOUBLE ii | T.FLOAT ii
-          -> tag ii TypeInt
-
     | T.VOID ii -> tag ii TypeVoid
        
     | T.CLASS ii  | T.ABSTRACT ii | T.INTERFACE ii

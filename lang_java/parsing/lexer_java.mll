@@ -68,24 +68,14 @@ let keyword_table = Common.hash_of_list [
 
   "void", (fun ii -> VOID ii);
 
-  (* todo: dead code? because of primitive_type after? *)
-  "boolean", (fun ii -> BOOLEAN ii);
-  "byte", (fun ii -> BYTE ii);
-  "char", (fun ii -> CHAR ii);
-  "int", (fun ii -> INT ii);
-  "short", (fun ii -> SHORT ii);
-  "long", (fun ii -> LONG ii);
-  "float", (fun ii -> FLOAT ii);
-  "double", (fun ii -> DOUBLE ii);
-
+  primitive_type "boolean";
   primitive_type "byte";
-  primitive_type "short";
   primitive_type "char";
+  primitive_type "short";
   primitive_type "int";
   primitive_type "long";
   primitive_type "float";
   primitive_type "double";
-  primitive_type "boolean";
 
   "class", (fun ii -> CLASS ii);
   "interface", (fun ii -> INTERFACE ii);
