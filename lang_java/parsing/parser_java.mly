@@ -591,6 +591,8 @@ conditional_expression:
      { $1 }
  | conditional_or_expression COND expression COLON conditional_expression
      { Conditional ($1, $3, $5) }
+ | conditional_or_expression COND expression COLON lambda_expression
+     { Conditional ($1, $3, $5) }
 
 /*(*----------------------------*)*/
 /*(*2 Assign *)*/
@@ -600,7 +602,8 @@ assignment_expression:
  | conditional_expression  { $1 }
  | assignment              { $1 }
 
-assignment: left_hand_side assignment_operator assignment_expression
+/*(* javaext: was assignment_expression for rhs, but we want lambdas there*)*/
+assignment: left_hand_side assignment_operator expression
     { $2 $1 $3 }
 
 
