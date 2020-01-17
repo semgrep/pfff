@@ -821,6 +821,13 @@ throw_statement: THROW expression SM  { Throw $2 }
 try_statement:
  | TRY block catches              { Try ($2, List.rev $3, None) }
  | TRY block catches_opt finally  { Try ($2, $3, Some $4) }
+ /*(* javaext: ? *)*/
+ | TRY resource_specification block catches_opt finally_opt { 
+    (* TODO $2 *)
+    Try ($3, $4, $5)
+  }
+
+finally: FINALLY block  { $2 }
 
 catch_clause:
  | CATCH LP catch_formal_parameter RP block  { $3, $5 }
@@ -841,7 +848,20 @@ catch_type_list:
   | type_ { }
   | catch_type_list OR type_ { }
 
-finally: FINALLY block  { $2 }
+/*(* javaext: ? *)*/
+resource_specification: LP resource_list comma_opt RP { }
+
+resource: 
+ | variable_modifiers local_variable_type identifier EQ expression { }
+ |                    local_variable_type identifier EQ expression { }
+ | variable_access { }
+ 
+local_variable_type: 
+ | unann_type { }
+
+variable_access:
+ | field_access { }
+ | name { }
 
 /*(*----------------------------*)*/
 /*(*2 No short if *)*/
@@ -1262,6 +1282,10 @@ ref_type_list:
  | reference_type  { [$1] }
  | ref_type_list CM reference_type  { $1 @ [$3] }
 
+resource_list:
+ | resource  { [$1] }
+ | resource_list CM resource  { $1 @ [$3] }
+
 ref_type_and_list:
  | reference_type  { [$1] }
  | ref_type_and_list AND reference_type  { $1 @ [$3] }
@@ -1390,6 +1414,10 @@ static_opt:
 comma_opt:
  | /*(*empty*)*/  { () }
  | CM  { () }
+
+finally_opt:
+ | /*(*empty*)*/  { None  }
+ | finally  { Some $1 }
 
 super_opt:
  | /*(*empty*)*/  { None }
