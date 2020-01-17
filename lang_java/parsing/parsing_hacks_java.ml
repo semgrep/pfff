@@ -156,6 +156,7 @@ let fix_tokens_fuzzy toks =
   } toks 
   in
   let retag_lparen = Hashtbl.create 101 in
+  let retag_default = Hashtbl.create 101 in
 
   let rec aux env trees =
       match trees with
@@ -166,6 +167,9 @@ let fix_tokens_fuzzy toks =
           iter_parens () xs;
           aux () ys
 
+      | F.Tok ("default", ii)::F.Tok(":", _)::ys ->
+          Hashtbl.add retag_default ii true;
+          aux () ys
       | x::xs -> 
           (match x with
           | F.Parens (_, xs, _) -> iter_parens env xs
@@ -186,6 +190,8 @@ let fix_tokens_fuzzy toks =
   toks |> List.map (function
     | T.LP info when Hashtbl.mem retag_lparen info ->
       T.LP_LAMBDA (info)
+    | T.DEFAULT info when Hashtbl.mem retag_default info ->
+      T.DEFAULT_COLON (info)
     | x -> x
   )
 

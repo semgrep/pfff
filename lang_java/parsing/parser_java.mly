@@ -206,6 +206,7 @@ let constructor_invocation name args =
 /*(* Those fresh tokens are created in parsing_hacks_java.ml *)*/
 %token <Parse_info.t> LT_GENERIC		/* < ... > */
 %token <Parse_info.t> LP_LAMBDA		/* ( ... ) ->  */
+%token <Parse_info.t> DEFAULT_COLON		/* default :  */
 
 /*(*************************************************************************)*/
 /*(*1 Priorities *)*/
@@ -772,7 +773,7 @@ switch_block_statement_group: switch_labels block_statements  {List.rev $1, $2}
 
 switch_label:
  | CASE constant_expression COLON  { Case $2 }
- | DEFAULT COLON                   { Default }
+ | DEFAULT_COLON COLON                   { Default }
 
 
 while_statement: WHILE LP expression RP statement
@@ -927,6 +928,8 @@ modifier:
  | VOLATILE     { Volatile, $1 }
  | SYNCHRONIZED { Synchronized, $1 }
  | NATIVE       { Native, $1 }
+
+ | DEFAULT      { Native, $1 (* TODO *) }
 
  | annotation { Annotation $1, (info_of_identifier_ (List.hd (List.rev (fst $1)))) }
 

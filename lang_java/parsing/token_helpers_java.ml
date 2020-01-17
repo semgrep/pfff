@@ -122,6 +122,7 @@ let visitor_info_of_tok f = function
   | CONST (ii) -> CONST (f ii)
   | CONTINUE (ii) -> CONTINUE (f ii)
   | DEFAULT (ii) -> DEFAULT (f ii)
+  | DEFAULT_COLON (ii) -> DEFAULT_COLON (f ii)
   | DO (ii) -> DO (f ii)
   | ELSE (ii) -> ELSE (f ii)
   | EXTENDS (ii) -> EXTENDS (f ii)

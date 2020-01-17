@@ -250,7 +250,7 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
 
     | T.SWITCH ii
     | T.CASE ii
-    | T.DEFAULT ii
+    | T.DEFAULT ii | T.DEFAULT_COLON ii
         -> tag ii KeywordConditional
 
     | T.PACKAGE ii
