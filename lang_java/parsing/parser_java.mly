@@ -13,10 +13,14 @@
  * The Java Language Specification, Third Edition, with some fixes from
  * http://www.cmis.brighton.ac.uk/staff/rnb/bosware/javaSyntax/syntaxV2.html
  *
+ * More modifications to support more recent versions of Java.
+ * Copyright (C) 2020 r2c
+ *
  * Support for:
- *  - generics
+ *  - generics (partial)
  *  - enums, foreach, ...
  *  - annotations (partial)
+ *  - lambdas
  *)
  */
 %{
