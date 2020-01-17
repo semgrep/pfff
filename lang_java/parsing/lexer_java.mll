@@ -290,15 +290,19 @@ rule token = parse
   | "++"  { INCR(tokinfo lexbuf) } | "--"  { DECR(tokinfo lexbuf) }
   | "+"  { PLUS(tokinfo lexbuf) } | "-"  { MINUS(tokinfo lexbuf) }
   | "*"  { TIMES(tokinfo lexbuf) } | "/"  { DIV(tokinfo lexbuf) }
-  | "&"  { AND(tokinfo lexbuf) } | "|"  { OR(tokinfo lexbuf) }
+  | "&"  { AND(tokinfo lexbuf) } 
+  (* javaext: also used inside catch for list of possible exn *)
+  | "|"  { OR(tokinfo lexbuf) }
   | "^"  { XOR(tokinfo lexbuf) }
   | "%"  { MOD(tokinfo lexbuf) }
   | "<<"  { LS(tokinfo lexbuf) } 
   (* this may be split in two tokens in fix_tokens_java.ml *)
   | ">>"  { SRS(tokinfo lexbuf) }
   | ">>>"  { URS(tokinfo lexbuf) }
-  (* lambdas *)
+  (* javaext: lambdas *)
   | "->" { ARROW (tokinfo lexbuf) }
+  (* javaext: qualified method *)
+(*  | "::" { COLONCOLON (tokinfo lexbuf) } *)
   
   (* ext: annotations *)
   | "@" { AT(tokinfo lexbuf) }
