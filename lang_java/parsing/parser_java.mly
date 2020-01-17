@@ -261,6 +261,7 @@ sgrep_spatch_pattern:
 
 package_declaration: PACKAGE name SM  { qualified_ident $2 }
 
+/*(* javaext: static_opt 1.? *)*/
 import_declaration:
  | IMPORT static_opt name SM            { $2, qualified_ident $3 }
  | IMPORT static_opt name DOT TIMES SM  { $2, (qualified_ident $3 @["*", $5])}
@@ -268,9 +269,12 @@ import_declaration:
 type_declaration:
  | class_declaration      { [Class $1] }
  | interface_declaration  { [Class $1] }
+ | SM  { [] }
+
+ /*(* javaext: 1.? *)*/
  | enum_declaration            { [Enum $1] }
  | annotation_type_declaration { ast_todo }
- | SM  { [] }
+
 
 /*(*************************************************************************)*/
 /*(*1 Ident, namespace  *)*/
@@ -292,9 +296,8 @@ identifier_:
 /*(*************************************************************************)*/
 
 type_:
- | primitive_type           { $1 }
- | class_or_interface_type  { $1 }
- | array_type               { $1 }
+ | primitive_type  { $1 }
+ | reference_type  { $1 }
 
 primitive_type: PRIMITIVE_TYPE  { named_type $1 }
 
@@ -306,13 +309,14 @@ reference_type:
 
 array_type:
  | primitive_type          LB_RB { TArray $1 }
- | class_or_interface_type LB_RB { TArray $1 }
+ | class_or_interface_type /*(* was name *)*/ LB_RB { TArray $1 }
  | array_type              LB_RB { TArray $1 }
 
 /*(*----------------------------*)*/
 /*(*2 Generics arguments *)*/
 /*(*----------------------------*)*/
 
+/*(* javaext: 1? *)*/
 type_argument:
  | reference_type { TArgument $1 }
  | COND           { TQuestion None }
@@ -322,6 +326,7 @@ type_argument:
 /*(*----------------------------*)*/
 /*(*2 Generics parameters *)*/
 /*(*----------------------------*)*/
+/*(* javaext: 1? *)*/
 type_parameters:
  | LT type_parameters_bis GT { $2 }
 
@@ -341,14 +346,16 @@ primary:
 
 primary_no_new_array:
  | literal             { $1 }
- | class_literal       { $1 }
  | THIS                { Name [this_ident $1] }
- | name DOT THIS       { Name (name $1 @ [this_ident $3]) }
  | LP expression RP    { $2 }
  | class_instance_creation_expression { $1 }
  | field_access                       { $1 }
  | method_invocation                  { $1 }
  | array_access                       { $1 }
+ /*(* javaext: ? *)*/
+ | name DOT THIS       { Name (name $1 @ [this_ident $3]) }
+ /*(* javaext: ? *)*/
+ | class_literal       { $1 }
 
 literal:
  | TRUE   { Literal (Bool (true, $1)) }
@@ -366,11 +373,13 @@ class_literal:
  | VOID           DOT CLASS  { ClassLiteral (void_type $1) }
 
 class_instance_creation_expression:
- | NEW name LP argument_list_opt RP class_body_opt
+ | NEW name LP argument_list_opt RP 
+   class_body_opt
        { NewClass (TClass (class_type $2), $4, $6) }
+ /*(* javaext: ? *)*/
  | primary DOT NEW identifier LP argument_list_opt RP class_body_opt
        { NewQualifiedClass ($1, $4, $6, $8) }
- /*(* not in 2nd edition java language specification. *)*/
+ /*(* javaext: not in 2nd edition java language specification. *)*/
  | name DOT NEW identifier LP argument_list_opt RP class_body_opt
        { NewQualifiedClass ((Name (name $1)), $4, $6, $8) }
 
@@ -379,6 +388,7 @@ array_creation_expression:
        { NewArray ($2, List.rev $3, $4, None) }
  | NEW name dim_exprs dims_opt
        { NewArray (TClass (class_type ($2)), List.rev $3, $4, None) }
+ /*(* javaext: ? *)*/
  | NEW primitive_type dims array_initializer
        { NewArray ($2, [], $3, Some $4) }
  | NEW name dims array_initializer
@@ -393,6 +403,7 @@ dims:
 field_access:
  | primary DOT identifier        { Dot ($1, $3) }
  | SUPER   DOT identifier        { Dot (Name [super_ident $1], $3) }
+ /*(* javaext: ? *)*/
  | name DOT SUPER DOT identifier { Dot (Name (name $1@[super_ident $3]), $5) }
 
 array_access:
@@ -426,6 +437,7 @@ method_invocation:
 	{ Call ((Dot ($1, $3)), $5) }
  | SUPER DOT identifier LP argument_list_opt RP
 	{ Call ((Dot (Name [super_ident $1], $3)), $5) }
+ /*(* javaext: ? *)*/
  | name DOT SUPER DOT identifier LP argument_list_opt RP
 	{ Call (Dot (Name (name $1 @ [super_ident $3]), $5), $7)}
 
@@ -433,8 +445,6 @@ argument:
  | expression { $1 }
  /*(* sgrep-ext: *)*/
  | DOTS { Flag_parsing.sgrep_guard (Ellipses $1) }
-
-
 
 /*(*----------------------------*)*/
 /*(*2 Arithmetic *)*/
@@ -461,7 +471,7 @@ postfix_expression:
 
 post_increment_expression: postfix_expression INCR  
   { Postfix ($1, (Ast_generic.Incr, $2)) }
-/* 15.14.2 */
+
 post_decrement_expression: postfix_expression DECR  
   { Postfix ($1, (Ast_generic.Decr, $2)) }
 
@@ -650,6 +660,7 @@ lambda_body:
 /*(*----------------------------*)*/
 expression: 
  | assignment_expression  { $1 }
+ /*(* javaext: ? *)*/
  | lambda_expression { $1 }
 
 constant_expression: expression  { $1 }
@@ -689,17 +700,18 @@ block: LC block_statements_opt RC  { Block $2 }
 
 block_statement:
  | local_variable_declaration_statement  { $1 }
- | class_declaration  { [LocalClass $1] }
  | statement          { [$1] }
+ /*(* javaext: ? *)*/
+ | class_declaration  { [LocalClass $1] }
 
 local_variable_declaration_statement: local_variable_declaration SM
  { List.map (fun x -> LocalVar x) $1 }
 
 /*(* cant factorize with variable_modifier_opt, conflicts otherwise *)*/
 local_variable_declaration:
- | type_ variable_declarators
+ |           type_ variable_declarators
      { decls (fun x -> x) [] $1 (List.rev $2) }
- /*(* actually should be variable_modifiers but conflict *)*/
+ /*(* javaext: 1.? actually should be variable_modifiers but conflict *)*/
  | modifiers type_ variable_declarators
      { decls (fun x -> x) $1 $2 (List.rev $3) }
 
@@ -720,7 +732,7 @@ statement_expression:
  | method_invocation  { $1 }
  | class_instance_creation_expression  { $1 }
  /*(* to allow '$S;' in sgrep *)*/
- | name { Flag_parsing.sgrep_guard ((Name (name $1)))  }
+ | IDENTIFIER { Flag_parsing.sgrep_guard ((Name (name [Id $1])))  }
 
 
 if_then_statement: IF LP expression RP statement
@@ -734,9 +746,9 @@ switch_statement: SWITCH LP expression RP switch_block
     { Switch ($3, $5) }
 
 switch_block:
- | LC RC  { [] }
- | LC switch_labels RC  { [$2, []] }
- | LC switch_block_statement_groups RC  { List.rev $2 }
+ | LC                                             RC  { [] }
+ | LC                               switch_labels RC  { [$2, []] }
+ | LC switch_block_statement_groups               RC  { List.rev $2 }
  | LC switch_block_statement_groups switch_labels RC
      { List.rev ((List.rev $3, []) :: $2) }
 
@@ -764,6 +776,7 @@ for_statement:
 for_control:
  | for_init_opt SM expression_opt SM for_update_opt
      { ForClassic ($1, Common2.option_to_list $3, $5) }
+ /*(* javeext: ? *)*/
  | for_var_control
      { let (a, b) = $1 in Foreach (a, b) }
 
@@ -806,7 +819,7 @@ try_statement:
 
 catch_clause:
  | CATCH LP formal_parameter RP block  { $3, $5 }
- /*(* not in 2nd edition java language specification.*) */
+ /*(* javaext: not in 2nd edition java language specification.*) */
  | CATCH LP formal_parameter RP empty_statement  { $3, $5 }
 
 finally: FINALLY block  { $2 }
@@ -837,7 +850,7 @@ for_statement_no_short_if:
 	{ For ($3, $5) }
 
 /*(*************************************************************************)*/
-/*(*1 Declaration *)*/
+/*(*1 Modifiers *)*/
 /*(*************************************************************************)*/
 
 /*(*
@@ -897,12 +910,9 @@ expr1:
  | name { NameOrClassType $1 }
 
 /*(*************************************************************************)*/
-/*(*1 Class/Interface *)*/
+/*(*1 Class *)*/
 /*(*************************************************************************)*/
 
-/*(*----------------------------*)*/
-/*(*2 Class *)*/
-/*(*----------------------------*)*/
 class_declaration:
  modifiers_opt CLASS identifier type_parameters_opt super_opt interfaces_opt
  class_body
@@ -913,9 +923,9 @@ class_declaration:
      }
   }
 
-super: EXTENDS type_  { $2 }
+super: EXTENDS type_ /*(* was class_type *)*/  { $2 }
 
-interfaces: IMPLEMENTS ref_type_list  { $2 }
+interfaces: IMPLEMENTS ref_type_list /*(* was interface_type_list *)*/  { $2 }
 
 /*(*----------------------------*)*/
 /*(*2 Class body *)*/
@@ -925,36 +935,45 @@ class_body: LC class_body_declarations_opt RC  { $2 }
 class_body_declaration:
  | class_member_declaration  { $1 }
  | constructor_declaration  { [$1] }
-
- | instance_initializer  { [$1] }
  | static_initializer  { [$1] }
+ /* (* javaext: 1.? *)*/
+ | instance_initializer  { [$1] }
+
 
 class_member_declaration:
  | field_declaration  { $1 }
  | method_declaration  { [Method $1] }
- | generic_method_or_constructor_decl { ast_todo }
 
+ /* (* javaext: 1.? *)*/
+ | generic_method_or_constructor_decl { ast_todo }
+ /* (* javaext: 1.? *)*/
  | class_declaration  { [Class $1] }
  | interface_declaration  { [Class $1] }
+ /* (* javaext: 1.? *)*/
  | enum_declaration { [Enum $1] }
+ /* (* javaext: 1.? *)*/
  | annotation_type_declaration { ast_todo }
 
  | SM  { [] }
 
+static_initializer: STATIC block  { Init (true, $2) }
+
+instance_initializer: block       { Init (false, $1) }
+
+/*(*----------------------------*)*/
+/*(*2 Field *)*/
+/*(*----------------------------*)*/
 
 field_declaration: modifiers_opt type_ variable_declarators SM
    { decls (fun x -> Field x) $1 $2 (List.rev $3) }
-
 
 variable_declarator:
  | variable_declarator_id  { $1, None }
  | variable_declarator_id EQ variable_initializer  { $1, Some $3 }
 
-
 variable_declarator_id:
  | identifier                    { IdentDecl $1 }
  | variable_declarator_id LB_RB  { ArrayDecl $1 }
-
 
 variable_initializer:
  | expression         { ExprInit $1 }
@@ -964,6 +983,9 @@ array_initializer:
  | LC comma_opt RC                        { ArrayInit [] }
  | LC variable_initializers comma_opt RC  { ArrayInit (List.rev $2) }
 
+/*(*----------------------------*)*/
+/*(*2 Method *)*/
+/*(*----------------------------*)*/
 
 method_declaration: method_header method_body  { { $1 with m_body = $2 } }
 
@@ -977,6 +999,13 @@ method_declarator:
  | identifier LP formal_parameter_list_opt RP  { (IdentDecl $1), $3 }
  | method_declarator LB_RB                     { (ArrayDecl (fst $1)), snd $1 }
 
+method_body:
+ | block  { $1 }
+ | SM     { Empty }
+
+
+throws: THROWS qualified_ident_list /*(* was class_type_list *)*/  { $2 }
+
 
 generic_method_or_constructor_decl:
   modifiers_opt type_parameters generic_method_or_constructor_rest  { }
@@ -988,16 +1017,9 @@ generic_method_or_constructor_rest:
 method_declarator_rest:
  | formal_parameters throws_opt method_body { }
 
-formal_parameters: LP formal_parameter_list_opt RP { $2 }
-
-throws: THROWS qualified_ident_list  { $2 }
-
-method_body:
- | block  { $1 }
- | SM     { Empty }
-
-instance_initializer: block       { Init (false, $1) }
-static_initializer: STATIC block  { Init (true, $2) }
+/*(*----------------------------*)*/
+/*(*2 Constructors *)*/
+/*(*----------------------------*)*/
 
 constructor_declaration:
  modifiers_opt constructor_declarator throws_opt constructor_body
@@ -1020,6 +1042,7 @@ explicit_constructor_invocation:
       { constructor_invocation [this_ident $1] $3 }
  | SUPER LP argument_list_opt RP SM
       { constructor_invocation [super_ident $1] $3 }
+ /*(* javaext: ? *)*/
  | primary DOT SUPER LP argument_list_opt RP SM
       { Expr (Call ((Dot ($1, super_identifier $3)), $5)) }
  /*(* not in 2nd edition java language specification. *)*/
@@ -1030,20 +1053,24 @@ explicit_constructor_invocation:
 /*(*2 Method parameter *)*/
 /*(*----------------------------*)*/
 
+formal_parameters: LP formal_parameter_list_opt RP { $2 }
+
 formal_parameter: variable_modifiers_opt type_ variable_declarator_id_bis
   { canon_var $1 (Some $2) $3 }
 
 variable_declarator_id_bis:
  | variable_declarator_id      { $1 }
+ /* (* javaext: 1.? *)*/
  | DOTS variable_declarator_id { $2 (* todo_ast *) }
 
+ /* (* javaext: 1.? *)*/
 variable_modifier:
  | FINAL      { Final, $1 }
  | annotation { (Annotation $1), info_of_identifier_ (List.hd (List.rev (fst $1))) }
 
-/*(*----------------------------*)*/
-/*(*2 Interface *)*/
-/*(*----------------------------*)*/
+/*(*************************************************************************)*/
+/*(*1 Interface *)*/
+/*(*************************************************************************)*/
 
 interface_declaration:
  modifiers_opt INTERFACE identifier type_parameters_opt  extends_interfaces_opt
@@ -1056,7 +1083,7 @@ interface_declaration:
   }
 
 extends_interfaces:
- | EXTENDS reference_type                { [$2] }
+ | EXTENDS reference_type /*(* was interface_type *)*/ { [$2] }
  | extends_interfaces CM reference_type  { $1 @ [$3] }
 
 /*(*----------------------------*)*/
@@ -1068,20 +1095,27 @@ interface_body:	LC interface_member_declarations_opt RC  { $2 }
 interface_member_declaration:
  | constant_declaration  { $1 }
  | abstract_method_declaration  { [Method $1] }
- | interface_generic_method_decl { ast_todo }
 
+ /* (* javaext: 1.? *)*/
+ | interface_generic_method_decl { ast_todo }
+ /* (* javaext: 1.? *)*/
  | class_declaration      { [Class $1] }
  | interface_declaration  { [Class $1] }
+ /* (* javaext: 1.? *)*/
  | enum_declaration       { [Enum $1] }
+ /* (* javaext: 1.? *)*/
  | annotation_type_declaration { ast_todo }
+
  | SM  { [] }
 
 
 /*(* note: semicolon is missing in 2nd edition java language specification.*)*/
+/*(* less: could replace with field_declaration? was field_declaration *)*/
 constant_declaration: modifiers_opt type_ variable_declarators SM
      { decls (fun x -> Field x) $1 $2 (List.rev $3) }
 
 
+/*(* less: could replace with method_header? was method_header *)*/
 abstract_method_declaration:
  | modifiers_opt type_ method_declarator throws_opt SM
 	{ method_header $1 $2 $3 $4 }
