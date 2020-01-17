@@ -160,16 +160,25 @@ let fix_tokens_fuzzy toks =
   let rec aux env trees =
       match trees with
       | [] -> ()
+      (* (...) -> *) 
+      | F.Parens (lp, xs, _rp)::F.Tok ("->", _)::ys ->
+          Hashtbl.add retag_lparen lp true;
+          iter_parens () xs;
+          aux () ys
+
       | x::xs -> 
           (match x with
-          | F.Parens (_, xs, _) ->
-                xs |> List.iter (function
-                  | Left trees -> aux () trees
-                  | Right _comma -> ()
-                )
-           | _ -> ()
+          | F.Parens (_, xs, _) -> iter_parens env xs
+          | F.Braces (_, xs, _) -> aux env xs
+          | F.Angle _ | F.Bracket _ 
+          | F.Metavar _ | F.Dots _ | F.Tok _ -> ()
           );
           aux env xs
+  and iter_parens env xs =
+      xs |> List.iter (function
+        | Left trees -> aux env trees
+        | Right _comma -> ()
+      )
   in
   aux () trees;
 
