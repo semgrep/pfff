@@ -259,6 +259,7 @@ sgrep_spatch_pattern:
 /*(*1 Package, Import, Type *)*/
 /*(*************************************************************************)*/
 
+/*(* ident_list *)*/
 package_declaration: PACKAGE name SM  { qualified_ident $2 }
 
 /*(* javaext: static_opt 1.? *)*/
@@ -1094,15 +1095,19 @@ interface_body:	LC interface_member_declarations_opt RC  { $2 }
 
 interface_member_declaration:
  | constant_declaration  { $1 }
- | abstract_method_declaration  { [Method $1] }
+ /*(* javaext: was abstract_method_declaration *)*/
+ | interface_method_declaration  { [Method $1] }
 
  /* (* javaext: 1.? *)*/
  | interface_generic_method_decl { ast_todo }
+
  /* (* javaext: 1.? *)*/
  | class_declaration      { [Class $1] }
  | interface_declaration  { [Class $1] }
+
  /* (* javaext: 1.? *)*/
  | enum_declaration       { [Enum $1] }
+
  /* (* javaext: 1.? *)*/
  | annotation_type_declaration { ast_todo }
 
@@ -1114,13 +1119,8 @@ interface_member_declaration:
 constant_declaration: modifiers_opt type_ variable_declarators SM
      { decls (fun x -> Field x) $1 $2 (List.rev $3) }
 
-
-/*(* less: could replace with method_header? was method_header *)*/
-abstract_method_declaration:
- | modifiers_opt type_ method_declarator throws_opt SM
-	{ method_header $1 $2 $3 $4 }
- | modifiers_opt VOID method_declarator throws_opt SM
-	{ method_header $1 (void_type $2) $3 $4 }
+/*(* javaext:: was abstract_method_declaration only before *)*/
+interface_method_declaration: method_declaration { $1 }
 
 interface_generic_method_decl:
  | modifiers_opt type_parameters type_ identifier interface_method_declator_rest

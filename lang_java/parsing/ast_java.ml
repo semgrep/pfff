@@ -353,7 +353,7 @@ and class_decl = {
   (* for interface this is actually the extends *)
   cl_impls: ref_type list;
 
-  (* the methods body are always empty for interface *)
+  (* javaext: the methods body used to be always empty for interface *)
   cl_body: decls
 }
   and class_kind = ClassRegular | Interface
