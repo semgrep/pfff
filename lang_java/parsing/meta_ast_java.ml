@@ -297,16 +297,17 @@ and vof_for_init =
 and vof_catch (v1, v2) =
   let v1 = vof_var v1 and v2 = vof_stmt v2 in Ocaml.VTuple [ v1; v2 ]
 and vof_catches v = Ocaml.vof_list vof_catch v
-and vof_var { v_name = v_v_name; v_mods = v_v_mods; v_type = v_v_type } =
+and vof_var { name = v_v_name; mods = v_v_mods; type_ = v_v_type } =
   let bnds = [] in
-  let arg = vof_typ v_v_type in
+  let arg = Ocaml.vof_option vof_typ v_v_type in
   let bnd = ("v_type", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_modifiers v_v_mods in
   let bnd = ("v_mods", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_ident v_v_name in
-  let bnd = ("v_name", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+  let bnd = ("v_name", arg) in let bnds = bnd :: bnds 
+  in Ocaml.VDict bnds
 and vof_vars v = Ocaml.vof_list vof_var v
 and vof_var_with_init { f_var = v_f_var; f_init = v_f_init } =
   let bnds = [] in

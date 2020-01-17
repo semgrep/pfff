@@ -357,11 +357,11 @@ and for_init =
   | ForInitExprs v1 -> let v1 = list expr v1 in
       v1 |> List.map (fun e -> G.ForInitExpr e)
 
-and var { v_name = name; v_mods = mods; v_type = xtyp } =
+and var { name = name; mods = mods; type_ = xtyp } =
   let v1 = ident name in
   let v2 = modifiers mods in 
-  let v3 = typ xtyp in
-  { G.name = v1; G.attrs = v2; G.type_ = Some v3; tparams = [];
+  let v3 = option typ xtyp in
+  { G.name = v1; G.attrs = v2; G.type_ = v3; tparams = [];
     info = G.empty_id_info ();
   }
 

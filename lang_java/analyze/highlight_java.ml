@@ -70,14 +70,14 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
           tag_ident ident (Entity (Class, (Def2 fake_no_def2)))
       | Ast.Field x ->
           let var = x.f_var in
-          let ident = var.v_name in
+          let ident = var.name in
           tag_ident ident (Entity (Field, (Def2 fake_no_def2)))
       | Ast.Method x ->
           let var = x.m_var in
-          let ident = var.v_name in
+          let ident = var.name in
           tag_ident ident (Entity (Method, (Def2 fake_no_def2)));
           x.m_formals |> List.iter (fun v ->
-            let ident = v.v_name in
+            let ident = v.name in
             tag_ident ident (Parameter Def)
           )
       | Ast.Enum x ->
@@ -91,7 +91,7 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
     V.kstmt = (fun (k, _) x ->
       (match x with
       | LocalVar v ->
-        let ident = v.f_var.v_name in
+        let ident = v.f_var.name in
         tag_ident ident (Local Def)
       | _ -> ()
       );

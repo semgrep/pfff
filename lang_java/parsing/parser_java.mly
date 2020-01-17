@@ -80,7 +80,7 @@ type var_decl_id =
 (* Move array dimensions from variable name to type. *)
 let rec canon_var mods t v =
   match v with
-  | IdentDecl str -> { v_mods = mods; v_type = t; v_name = str }
+  | IdentDecl str -> { mods = mods; type_ = Some t; name = str }
   | ArrayDecl v' -> canon_var mods (TArray t) v'
 
 let method_header mods mtype (v, formals) throws =
@@ -991,9 +991,8 @@ static_initializer: STATIC block  { Init (true, $2) }
 constructor_declaration:
  modifiers_opt constructor_declarator throws_opt constructor_body
   {
-    let no_type = TBasic ("void", fakeInfo "void") in
     let (id, formals) = $2 in
-    let var = { v_mods = $1; v_type = no_type; v_name = id } in
+    let var = { mods = $1; type_ = None; name = id } in
     Method { m_var = var; m_formals = formals; m_throws = $3;
 	     m_body = $4 }
   }

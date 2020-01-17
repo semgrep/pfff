@@ -126,7 +126,7 @@ let str_of_name xs =
 
 (* helper to build entries in env.params_or_locals *)
 let p_or_l v =
-  Ast.unwrap v.v_name, Ast.is_final v.v_mods
+  Ast.unwrap v.name, Ast.is_final v.mods
 
 (* TODO *)
 let long_ident_of_name xs = List.map snd xs
@@ -455,7 +455,7 @@ and class_decl env def =
  *)
 and method_decl env def =
 
-  let full_ident = env.current_qualifier @ [def.m_var.v_name] in
+  let full_ident = env.current_qualifier @ [def.m_var.name] in
   let full_str = str_of_qualified_ident full_ident in
   let node = (full_str, E.Method) in
   if env.phase = Defs then begin
@@ -465,7 +465,7 @@ and method_decl env def =
     then ()
     else begin
       env.g |> G.add_node node;
-      env.g |> G.add_nodeinfo node (nodeinfo def.m_var.v_name);
+      env.g |> G.add_nodeinfo node (nodeinfo def.m_var.name);
       env.g |> G.add_edge (env.current, node) G.Has;
     end
   end;
@@ -493,10 +493,10 @@ and method_decl env def =
   stmt env def.m_body
 
 and field_decl env def =
-  let full_ident = env.current_qualifier @ [def.f_var.v_name] in
+  let full_ident = env.current_qualifier @ [def.f_var.name] in
   let full_str = str_of_qualified_ident full_ident in
   let kind =
-    if Ast.is_final_static def.f_var.v_mods
+    if Ast.is_final_static def.f_var.mods
     then E.Constant
     else E.Field
   in
@@ -504,7 +504,7 @@ and field_decl env def =
   if env.phase = Defs then begin
     (* less: static? *)
     env.g |> G.add_node node;
-    env.g |> G.add_nodeinfo node (nodeinfo def.f_var.v_name);
+    env.g |> G.add_nodeinfo node (nodeinfo def.f_var.name);
     env.g |> G.add_edge (env.current, node) G.Has;
   end;
   let env = { env with
@@ -833,7 +833,7 @@ and typ env = function
 (* Misc *)
 (* ---------------------------------------------------------------------- *)
 and var env v =
-  typ env v.v_type;
+  Common.do_option (typ env) v.type_;
   ()
 
 and field env f =

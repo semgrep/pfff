@@ -595,7 +595,9 @@ and function_definition = {
 
      | OtherParam of other_parameter_operator * any list
 
-    (* less: could be merged with variable_definition, or pattern *)
+    (* less: could be merged with variable_definition, or pattern
+     * could factorize pname/pattrs/pinfo with entity
+     *)
     and parameter_classic = { 
      pname: ident;
      pdefault: expr option;

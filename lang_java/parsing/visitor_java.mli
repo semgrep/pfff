@@ -18,7 +18,7 @@ type visitor_in = {
   kexpr:    (expr        -> unit) * visitor_out -> expr        -> unit;
   kstmt:    (stmt        -> unit) * visitor_out -> stmt        -> unit;
   ktype:    (typ         -> unit) * visitor_out -> typ         -> unit;
-  kvar:     (var         -> unit) * visitor_out -> var         -> unit;
+  kvar:     (var_definition -> unit) * visitor_out -> var_definition -> unit;
   kinit:    (init        -> unit) * visitor_out -> init        -> unit;
   kmethod:  (method_decl -> unit) * visitor_out -> method_decl -> unit;
   kfield:   (field       -> unit) * visitor_out -> field       -> unit;

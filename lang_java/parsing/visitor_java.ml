@@ -29,7 +29,7 @@ type visitor_in = {
   kexpr:    (expr        -> unit) * visitor_out -> expr        -> unit;
   kstmt:    (stmt        -> unit) * visitor_out -> stmt        -> unit;
   ktype:    (typ         -> unit) * visitor_out -> typ         -> unit;
-  kvar:     (var         -> unit) * visitor_out -> var         -> unit;
+  kvar:     (var_definition      -> unit) * visitor_out -> var_definition         -> unit;
   kinit:    (init        -> unit) * visitor_out -> init        -> unit;
   kmethod:  (method_decl -> unit) * visitor_out -> method_decl -> unit;
   kfield:   (field       -> unit) * visitor_out -> field       -> unit;
@@ -251,9 +251,11 @@ and v_catch (v1, v2) = let v1 = v_var v1 and v2 = v_stmt v2 in ()
 and v_catches v = v_list v_catch v
 and v_var x =
   let k x = match x with
-    | { v_name = v_v_name; v_mods = v_v_mods; v_type = v_v_type } ->
+    | { name = v_v_name; mods = v_v_mods; type_ = v_v_type } ->
       let arg = v_ident v_v_name in
-      let arg = v_modifiers v_v_mods in let arg = v_typ v_v_type in ()
+      let arg = v_modifiers v_v_mods in 
+      let arg = v_option v_typ v_v_type 
+      in ()
   in
   vin.kvar (k, all_functions) x
 

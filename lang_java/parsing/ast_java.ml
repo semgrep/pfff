@@ -251,33 +251,35 @@ and cases = case list
 
 and for_control =
   | ForClassic of for_init * expr list * expr list
-  | Foreach of var * expr
+  | Foreach of var_definition * expr
   and for_init =
     | ForInitVars of var_with_init list
     | ForInitExprs of expr list
 
-and catch = var * stmt
+and catch = var_definition * stmt
 and catches = catch list
 
 (*****************************************************************************)
 (* Definitions *)
 (*****************************************************************************)
+(* todo: use entity to factorize fields in method_decl, class_decl *)
+and entity = {
+    name: ident;
+    mods: modifiers;
+    type_: typ option;
+    (* todo? tparams: type_parameter list; *)
+}
 
 (* ------------------------------------------------------------------------- *)
 (* variable (local var, parameter) declaration *)
 (* ------------------------------------------------------------------------- *)
+and var_definition = entity
 
-and var = {
-  v_name: ident;
-  v_mods: modifiers;
-  v_type: typ;
-}
-
-and vars = var list
+and vars = var_definition list
 
 (* less: could be merged with var *)
 and var_with_init = {
-  f_var: var;
+  f_var: var_definition;
   f_init: init option
 }
 
@@ -292,9 +294,9 @@ and var_with_init = {
 
 (* method or constructor *)
 and method_decl = {
-  (* m_var.v_type is a (TBasic void) for a constructor *)
-  m_var: var;
-  (* the var.v_mod in params can only be Final or Annotation *)
+  (* m_var.type_ is None for a constructor *)
+  m_var: var_definition;
+  (* the var.mod in params can only be Final or Annotation *)
   m_formals: vars;
   m_throws: qualified_ident list;
 
@@ -390,7 +392,7 @@ type any =
   | AStmt of stmt
   | AStmts of stmt list
   | ATyp of typ
-  | AVar of var
+  | AVar of var_definition
   | AInit of init
   | AMethod of method_decl
   | AField of field
