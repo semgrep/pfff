@@ -36,60 +36,47 @@ let error = Parse_info.lexical_error
 let primitive_type t = (t, (fun ii -> PRIMITIVE_TYPE (t, ii)))
 
 let keyword_table = Common.hash_of_list [
-  "abstract", (fun ii -> ABSTRACT ii);
-  "boolean", (fun ii -> BOOLEAN ii);
-  "break", (fun ii -> BREAK ii);
-  "byte", (fun ii -> BYTE ii);
-  "case", (fun ii -> CASE ii);
-  "catch", (fun ii -> CATCH ii);
-  "char", (fun ii -> CHAR ii);
-  "class", (fun ii -> CLASS ii);
-  "const", (fun ii -> CONST ii);
-  "continue", (fun ii -> CONTINUE ii);
-  "default", (fun ii -> DEFAULT ii);
-  "do", (fun ii -> DO ii);
-  "double", (fun ii -> DOUBLE ii);
-  "else", (fun ii -> ELSE ii);
-  "extends", (fun ii -> EXTENDS ii);
-  "final", (fun ii -> FINAL ii);
-  "finally", (fun ii -> FINALLY ii);
-  "float", (fun ii -> FLOAT ii);
-  "for", (fun ii -> FOR ii);
-  "goto", (fun ii -> GOTO ii);
   "if", (fun ii -> IF ii);
-  "implements", (fun ii -> IMPLEMENTS ii);
-  "import", (fun ii -> IMPORT ii);
-  "instanceof", (fun ii -> INSTANCEOF ii);
-  "int", (fun ii -> INT ii);
-  "interface", (fun ii -> INTERFACE ii);
-  "long", (fun ii -> LONG ii);
-  "native", (fun ii -> NATIVE ii);
-  "new", (fun ii -> NEW ii);
-  "package", (fun ii -> PACKAGE ii);
-  "private", (fun ii -> PRIVATE ii);
-  "protected", (fun ii -> PROTECTED ii);
-  "public", (fun ii -> PUBLIC ii);
-  "return", (fun ii -> RETURN ii);
-  "short", (fun ii -> SHORT ii);
-  "static", (fun ii -> STATIC ii);
-  "strictfp", (fun ii -> STRICTFP ii);
-  "super", (fun ii -> SUPER ii);
-  "switch", (fun ii -> SWITCH ii);
-  "synchronized", (fun ii -> SYNCHRONIZED ii);
-  "this", (fun ii -> THIS ii);
-  "throw", (fun ii -> THROW ii);
-  "throws", (fun ii -> THROWS ii);
-  "transient", (fun ii -> TRANSIENT ii);
-  "try", (fun ii -> TRY ii);
-  "void", (fun ii -> VOID ii);
-  "volatile", (fun ii -> VOLATILE ii);
+  "else", (fun ii -> ELSE ii);
+
   "while", (fun ii -> WHILE ii);
+  "do", (fun ii -> DO ii);
+  "for", (fun ii -> FOR ii);
+
+  "return", (fun ii -> RETURN ii);
+  "break", (fun ii -> BREAK ii);
+  "continue", (fun ii -> CONTINUE ii);
+
+  "switch", (fun ii -> SWITCH ii);
+  "case", (fun ii -> CASE ii);
+  (* javaext: now also use for interface default implementation in 1.? *)
+  "default", (fun ii -> DEFAULT ii);
+
+  "goto", (fun ii -> GOTO ii);
+
+  "try", (fun ii -> TRY ii);
+  "catch", (fun ii -> CATCH ii);
+  "finally", (fun ii -> FINALLY ii);
+  "throw", (fun ii -> THROW ii);
+
+  "synchronized", (fun ii -> SYNCHRONIZED ii);
+
 
   "true", (fun ii -> TRUE ii);
   "false", (fun ii -> FALSE ii);
   "null", (fun ii -> NULL ii);
 
-(*  "var", (fun ii -> VAR ii); REGRESSIONS *)
+  "void", (fun ii -> VOID ii);
+
+  (* todo: dead code? because of primitive_type after? *)
+  "boolean", (fun ii -> BOOLEAN ii);
+  "byte", (fun ii -> BYTE ii);
+  "char", (fun ii -> CHAR ii);
+  "int", (fun ii -> INT ii);
+  "short", (fun ii -> SHORT ii);
+  "long", (fun ii -> LONG ii);
+  "float", (fun ii -> FLOAT ii);
+  "double", (fun ii -> DOUBLE ii);
 
   primitive_type "byte";
   primitive_type "short";
@@ -100,11 +87,44 @@ let keyword_table = Common.hash_of_list [
   primitive_type "double";
   primitive_type "boolean";
 
+  "class", (fun ii -> CLASS ii);
+  "interface", (fun ii -> INTERFACE ii);
+  "extends", (fun ii -> EXTENDS ii);
+  "implements", (fun ii -> IMPLEMENTS ii);
+
+  "this", (fun ii -> THIS ii);
+  "super", (fun ii -> SUPER ii);
+  "new", (fun ii -> NEW ii);
+  "instanceof", (fun ii -> INSTANCEOF ii);
+
+  "abstract", (fun ii -> ABSTRACT ii);
+  "final", (fun ii -> FINAL ii);
+
+  "private", (fun ii -> PRIVATE ii);
+  "protected", (fun ii -> PROTECTED ii);
+  "public", (fun ii -> PUBLIC ii);
+
+  "const", (fun ii -> CONST ii);
+
+  "native", (fun ii -> NATIVE ii);
+  "static", (fun ii -> STATIC ii);
+  "strictfp", (fun ii -> STRICTFP ii);
+  "transient", (fun ii -> TRANSIENT ii);
+  "volatile", (fun ii -> VOLATILE ii);
+
+  "throws", (fun ii -> THROWS ii);
+
+
+  "package", (fun ii -> PACKAGE ii);
+  "import", (fun ii -> IMPORT ii);
+
   (* javaext: 1.4 *)
   "assert", (fun ii -> ASSERT ii);
 
   (* javaext: 1.? *)
   "enum", (fun ii -> ENUM ii);
+
+(*  "var", (fun ii -> VAR ii); REGRESSIONS *)
 
 ]
 }
