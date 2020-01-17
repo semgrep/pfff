@@ -663,10 +663,13 @@ lambda_body:
 /*(*2 Method reference *)*/
 /*(*----------------------------*)*/
 /*(* javaext: ? *)*/
+/*(* reference_type is inlined because of classic ambiguity with name *)*/
 method_reference: 
- | name COLONCOLON identifier { Literal (Null $2) }
- | name COLONCOLON NEW { Literal (Null $2) }
- | primary COLONCOLON identifier { Literal (Null $2) }
+ | name       COLONCOLON identifier { Literal (Null $2) }
+ | primary    COLONCOLON identifier { Literal (Null $2) }
+ | array_type COLONCOLON identifier { Literal (Null $2) }
+ | name       COLONCOLON NEW { Literal (Null $2) }
+ | array_type COLONCOLON NEW { Literal (Null $2) }
 
 /*(*----------------------------*)*/
 /*(*2 Shortcuts *)*/
