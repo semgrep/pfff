@@ -13,7 +13,8 @@
  * The Java Language Specification, Third Edition, with some fixes from
  * http://www.cmis.brighton.ac.uk/staff/rnb/bosware/javaSyntax/syntaxV2.html
  *
- * More modifications to support more recent versions of Java.
+ * More modifications by Yoann Padioleau to support more recent versions.
+ * Copyright (C) 2011 Facebook
  * Copyright (C) 2020 r2c
  *
  * Support for:
@@ -128,9 +129,6 @@ let constructor_invocation name args =
 %token <(string * Parse_info.t)> IDENTIFIER
 %token <(string * Parse_info.t)> PRIMITIVE_TYPE
 
-/*
- * 3.11 Separators
- */
 %token <Parse_info.t> LP		/* ( */
 %token <Parse_info.t> RP		/* ) */
 %token <Parse_info.t> LC		/* { */
@@ -141,9 +139,6 @@ let constructor_invocation name args =
 %token <Parse_info.t> CM		/* , */
 %token <Parse_info.t> DOT		/* . */
 
-/*
- * 3.12 Operators
- */
 %token <Parse_info.t> EQ		/* = */
 %token <Parse_info.t> GT		/* > */
 %token <Parse_info.t> LT		/* < */
@@ -180,9 +175,6 @@ let constructor_invocation name args =
 	/* += -= *= /= &= |= ^= %= <<= >>= >>>= */
 
 /*(* keywords tokens *)*/
-/*
- * 3.9 Keywords
- */
 %token <Parse_info.t>
  ABSTRACT BREAK CASE CATCH CLASS CONST CONTINUE
  DEFAULT DO ELSE EXTENDS FINAL FINALLY FOR GOTO
@@ -247,7 +239,6 @@ let constructor_invocation name args =
 
 goal: compilation_unit EOF  { $1 }
 
-/* 7.3 */
 compilation_unit:
   package_declaration_opt import_declarations_opt type_declarations_opt
   { { package = $1; imports = $2; decls = $3; } }
@@ -261,15 +252,12 @@ sgrep_spatch_pattern:
 /*(*1 Package, Import, Type *)*/
 /*(*************************************************************************)*/
 
-/* 7.4.1 */
 package_declaration: PACKAGE name SM  { qualified_ident $2 }
 
-/* 7.5 */
 import_declaration:
  | IMPORT static_opt name SM            { $2, qualified_ident $3 }
  | IMPORT static_opt name DOT TIMES SM  { $2, (qualified_ident $3 @["*", $5])}
 
-/* 7.6 */
 type_declaration:
  | class_declaration      { [Class $1] }
  | interface_declaration  { [Class $1] }
@@ -280,10 +268,8 @@ type_declaration:
 /*(*************************************************************************)*/
 /*(*1 Ident, namespace  *)*/
 /*(*************************************************************************)*/
-/* 3.8 */
 identifier: IDENTIFIER { $1 }
 
-/* 6.5 */
 name:
  | identifier_           { [$1] }
  | name DOT identifier_  { $1 @ [$3] }
@@ -298,18 +284,15 @@ identifier_:
 /*(*1 Types *)*/
 /*(*************************************************************************)*/
 
-/* 4.1 */
 type_java:
  | primitive_type           { $1 }
  | class_or_interface_type  { $1 }
  | array_type               { $1 }
 
-/* 4.2 */
 primitive_type: PRIMITIVE_TYPE  { named_type $1 }
 
 class_or_interface_type: name { TClass (class_type $1) }
 
-/* 4.3 */
 reference_type:
  | class_or_interface_type { $1 }
  | array_type { $1 }
@@ -345,7 +328,6 @@ bound: ref_type_and_list { $1 }
 /*(*1 Expressions *)*/
 /*(*************************************************************************)*/
 
-/* 15.8 */
 primary:
  | primary_no_new_array       { $1 }
  | array_creation_expression  { $1 }
@@ -361,7 +343,6 @@ primary_no_new_array:
  | method_invocation                  { $1 }
  | array_access                       { $1 }
 
-/* 3.10 */
 literal:
  | TRUE   { Literal (Bool (true, $1)) }
  | FALSE   { Literal (Bool (false, $1)) }
@@ -371,14 +352,12 @@ literal:
  | TString { Literal (String ($1)) }
  | NULL   { Literal (Null $1) }
 
-/* 15.8.2 */
 class_literal:
  | primitive_type DOT CLASS  { ClassLiteral $1 }
  | name           DOT CLASS  { ClassLiteral (TClass (class_type ($1))) }
  | array_type     DOT CLASS  { ClassLiteral $1 }
  | VOID           DOT CLASS  { ClassLiteral (void_type $1) }
 
-/* 15.9 */
 class_instance_creation_expression:
  | NEW name LP argument_list_opt RP class_body_opt
        { NewClass (TClass (class_type $2), $4, $6) }
@@ -388,7 +367,6 @@ class_instance_creation_expression:
  | name DOT NEW identifier LP argument_list_opt RP class_body_opt
        { NewQualifiedClass ((Name (name $1)), $4, $6, $8) }
 
-/* 15.10 */
 array_creation_expression:
  | NEW primitive_type dim_exprs dims_opt
        { NewArray ($2, List.rev $3, $4, None) }
@@ -405,13 +383,11 @@ dims:
  | LB_RB       { 1 }
  | dims LB_RB  { $1 + 1 }
 
-/* 15.11 */
 field_access:
  | primary DOT identifier        { Dot ($1, $3) }
  | SUPER   DOT identifier        { Dot (Name [super_ident $1], $3) }
  | name DOT SUPER DOT identifier { Dot (Name (name $1@[super_ident $3]), $5) }
 
-/* 15.13 */
 array_access:
  | name LB expression RB                  { ArrayAccess ((Name (name $1)), $3)}
  | primary_no_new_array LB expression RB  { ArrayAccess ($1, $3) }
@@ -420,7 +396,6 @@ array_access:
 /*(*2 Method call *)*/
 /*(*----------------------------*)*/
 
-/* 15.12 */
 method_invocation:
  | name LP argument_list_opt RP
         {
@@ -458,7 +433,6 @@ argument:
 /*(*2 Arithmetic *)*/
 /*(*----------------------------*)*/
 
-/* 15.14 */
 postfix_expression:
  | primary  { $1 }
  | name     {
@@ -478,14 +452,12 @@ postfix_expression:
  | post_increment_expression  { $1 }
  | post_decrement_expression  { $1 }
 
-/* 15.14.1 */
 post_increment_expression: postfix_expression INCR  
   { Postfix ($1, (Ast_generic.Incr, $2)) }
 /* 15.14.2 */
 post_decrement_expression: postfix_expression DECR  
   { Postfix ($1, (Ast_generic.Decr, $2)) }
 
-/* 15.15 */
 unary_expression:
  | pre_increment_expression  { $1 }
  | pre_decrement_expression  { $1 }
@@ -505,7 +477,6 @@ unary_expression_not_plus_minus:
  | NOT unary_expression    { Unary ((Ast_generic.Not,$1), $2) }
  | cast_expression  { $1 }
 
-/* 15.16 */
 /*
 (*
  * original rule:
@@ -536,30 +507,23 @@ cast_expression:
         }
  | LP array_type RP unary_expression_not_plus_minus  { Cast ($2, $4) }
 
-/* 15.17 */
 multiplicative_expression:
  | unary_expression  { $1 }
  | multiplicative_expression TIMES unary_expression { Infix ($1, (Mult,$2) , $3) }
  | multiplicative_expression DIV unary_expression   { Infix ($1, (Div,$2), $3) }
  | multiplicative_expression MOD unary_expression   { Infix ($1, (Mod,$2), $3) }
 
-
-/* 15.18 */
 additive_expression:
  | multiplicative_expression  { $1 }
  | additive_expression PLUS multiplicative_expression { Infix ($1, (Plus,$2), $3) }
  | additive_expression MINUS multiplicative_expression { Infix ($1, (Minus,$2), $3) }
 
-
-/* 15.19 */
 shift_expression:
  | additive_expression  { $1 }
  | shift_expression LS additive_expression  { Infix ($1, (LSL,$2), $3) }
  | shift_expression SRS additive_expression  { Infix ($1, (LSR,$2), $3) }
  | shift_expression URS additive_expression  { Infix ($1, (ASR,$2), $3) }
 
-
-/* 15.20 */
 relational_expression:
  | shift_expression  { $1 }
  /*(* possible many conflicts if don't use a LT2 *)*/
@@ -569,15 +533,11 @@ relational_expression:
  | relational_expression GE shift_expression  { Infix ($1, (GtE,$2), $3) }
  | relational_expression INSTANCEOF reference_type  { InstanceOf ($1, $3) }
 
-
-/* 15.21 */
 equality_expression:
  | relational_expression  { $1 }
  | equality_expression EQ_EQ relational_expression  { Infix ($1, (Eq,$2), $3) }
  | equality_expression NOT_EQ relational_expression { Infix ($1, (NotEq,$2), $3) }
 
-
-/* 15.22 */
 and_expression:
  | equality_expression  { $1 }
  | and_expression AND equality_expression  { Infix ($1, (BitAnd,$2), $3) }
@@ -586,19 +546,15 @@ exclusive_or_expression:
  | and_expression  { $1 }
  | exclusive_or_expression XOR and_expression  { Infix ($1, (BitXor,$2), $3) }
 
-
 inclusive_or_expression:
  | exclusive_or_expression  { $1 }
  | inclusive_or_expression OR exclusive_or_expression  { Infix ($1, (BitOr,$2), $3) }
 
-/* 15.23 */
 conditional_and_expression:
  | inclusive_or_expression  { $1 }
  | conditional_and_expression AND_AND inclusive_or_expression
      { Infix($1,(And,$2),$3) }
 
-
-/* 15.24 */
 conditional_or_expression:
  | conditional_and_expression  { $1 }
  | conditional_or_expression OR_OR conditional_and_expression
@@ -608,7 +564,6 @@ conditional_or_expression:
 /*(*2 Ternary *)*/
 /*(*----------------------------*)*/
 
-/* 15.25 */
 conditional_expression:
  | conditional_or_expression
      { $1 }
@@ -619,7 +574,6 @@ conditional_expression:
 /*(*2 Assign *)*/
 /*(*----------------------------*)*/
 
-/* 15.26 */
 assignment_expression:
  | conditional_expression  { $1 }
  | assignment              { $1 }
@@ -683,19 +637,16 @@ lambda_body:
 /*(*----------------------------*)*/
 /*(*2 Shortcuts *)*/
 /*(*----------------------------*)*/
-/* 15.27 */
 expression: 
  | assignment_expression  { $1 }
  | lambda_expression { $1 }
 
-/* 15.28 */
 constant_expression: expression  { $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Statements *)*/
 /*(*************************************************************************)*/
 
-/* 14.5 */
 statement:
  | statement_without_trailing_substatement  { $1 }
 
@@ -723,7 +674,6 @@ statement_without_trailing_substatement:
  | ASSERT expression SM                  { Assert ($2, None) }
  | ASSERT expression COLON expression SM { Assert ($2, Some $4) }
 
-/* 14.2 */
 block: LC block_statements_opt RC  { Block $2 }
 
 block_statement:
@@ -731,7 +681,6 @@ block_statement:
  | class_declaration  { [LocalClass $1] }
  | statement          { [$1] }
 
-/* 14.4 */
 local_variable_declaration_statement: local_variable_declaration SM
  { List.map (fun x -> LocalVar x) $1 }
 
@@ -743,14 +692,11 @@ local_variable_declaration:
  | modifiers type_java variable_declarators
      { decls (fun x -> x) $1 $2 (List.rev $3) }
 
-/* 14.6 */
 empty_statement: SM { Empty }
 
-/* 14.7 */
 labeled_statement: identifier COLON statement
    { Label ($1, $3) }
 
-/* 14.8 */
 expression_statement: statement_expression SM  { Expr $1 }
 
 /*(* pad: good *)*/
@@ -766,15 +712,13 @@ statement_expression:
  | name { Flag_parsing.sgrep_guard ((Name (name $1)))  }
 
 
-
-/* 14.9 */
 if_then_statement: IF LP expression RP statement
    { If ($3, $5, Empty) }
 
 if_then_else_statement: IF LP expression RP statement_no_short_if ELSE statement
    { If ($3, $5, $7) }
 
-/* 14.10 */
+
 switch_statement: SWITCH LP expression RP switch_block
     { Switch ($3, $5) }
 
@@ -792,11 +736,9 @@ switch_label:
  | DEFAULT COLON                   { Default }
 
 
-/* 14.11 */
 while_statement: WHILE LP expression RP statement
      { While ($3, $5) }
 
-/* 14.12 */
 do_statement: DO statement WHILE LP expression RP SM
      { Do ($2, $5) }
 
@@ -804,7 +746,6 @@ do_statement: DO statement WHILE LP expression RP SM
 /*(*2 For *)*/
 /*(*----------------------------*)*/
 
-/* 14.13 */
 for_statement:
   FOR LP for_control RP statement
 	{ For ($3, $5) }
@@ -840,20 +781,14 @@ for_var_control_rest: COLON expression { $2 }
 /*(*2 Other *)*/
 /*(*----------------------------*)*/
 
-/* 14.14 */
 break_statement: BREAK identifier_opt SM  { Break $2 }
-/* 14.15 */
 continue_statement: CONTINUE identifier_opt SM  { Continue $2 }
-/* 14.16 */
 return_statement: RETURN expression_opt SM  { Return $2 }
 
-/* 14.18 */
 synchronized_statement: SYNCHRONIZED LP expression RP block { Sync ($3, $5) }
 
-/* 14.17 */
 throw_statement: THROW expression SM  { Throw $2 }
 
-/* 14.19 */
 try_statement:
  | TRY block catches              { Try ($2, List.rev $3, None) }
  | TRY block catches_opt finally  { Try ($2, $3, Some $4) }
@@ -893,14 +828,6 @@ for_statement_no_short_if:
 /*(*************************************************************************)*/
 /*(*1 Declaration *)*/
 /*(*************************************************************************)*/
-
-/* 8.1.1 */
-/* 8.3.1 */
-/* 8.4.3 */
-/* 8.8.3 */
-/* 9.1.1 */
-/* 9.3 */
-/* 9.4 */
 
 /*(*
  * to avoid shift/reduce conflicts, we accept all modifiers
@@ -965,7 +892,6 @@ expr1:
 /*(*----------------------------*)*/
 /*(*2 Class *)*/
 /*(*----------------------------*)*/
-/* 8.1 */
 class_declaration:
  modifiers_opt CLASS identifier type_parameters_opt super_opt interfaces_opt
  class_body
@@ -976,15 +902,13 @@ class_declaration:
      }
   }
 
-/* 8.1.3 */
 super: EXTENDS type_java  { $2 }
-/* 8.1.4 */
+
 interfaces: IMPLEMENTS ref_type_list  { $2 }
 
 /*(*----------------------------*)*/
 /*(*2 Class body *)*/
 /*(*----------------------------*)*/
-/* 8.1.5 */
 class_body: LC class_body_declarations_opt RC  { $2 }
 
 class_body_declaration:
@@ -1007,7 +931,6 @@ class_member_declaration:
  | SM  { [] }
 
 
-/* 8.3 */
 field_declaration: modifiers_opt type_java variable_declarators SM
    { decls (fun x -> Field x) $1 $2 (List.rev $3) }
 
@@ -1026,13 +949,11 @@ variable_initializer:
  | expression         { ExprInit $1 }
  | array_initializer  { $1 }
 
-/* 10.6 */
 array_initializer:
  | LC comma_opt RC                        { ArrayInit [] }
  | LC variable_initializers comma_opt RC  { ArrayInit (List.rev $2) }
 
 
-/* 8.4 */
 method_declaration: method_header method_body  { { $1 with m_body = $2 } }
 
 method_header:
@@ -1058,20 +979,15 @@ method_declarator_rest:
 
 formal_parameters: LP formal_parameter_list_opt RP { $2 }
 
-/* 8.4.4 */
 throws: THROWS qualified_ident_list  { $2 }
 
-/* 8.4.5 */
 method_body:
  | block  { $1 }
  | SM     { Empty }
 
-/* 8.6 */
 instance_initializer: block       { Init (false, $1) }
-/* 8.7 */
 static_initializer: STATIC block  { Init (true, $2) }
 
-/* 8.8 */
 constructor_declaration:
  modifiers_opt constructor_declarator throws_opt constructor_body
   {
@@ -1084,13 +1000,11 @@ constructor_declaration:
 
 constructor_declarator:	identifier LP formal_parameter_list_opt RP  { $1, $3 }
 
-/* 8.8.5 */
 constructor_body:
  | LC block_statements_opt RC                                 { Block $2 }
  | LC explicit_constructor_invocation block_statements_opt RC { Block ($2::$3) }
 
 
-/* 8.8.5.1 */
 explicit_constructor_invocation:
  | THIS LP argument_list_opt RP SM
       { constructor_invocation [this_ident $1] $3 }
@@ -1106,7 +1020,6 @@ explicit_constructor_invocation:
 /*(*2 Method parameter *)*/
 /*(*----------------------------*)*/
 
-/* 8.4.1 */
 formal_parameter: variable_modifiers_opt type_java variable_declarator_id_bis
   { canon_var $1 $2 $3 }
 
@@ -1122,7 +1035,6 @@ variable_modifier:
 /*(*2 Interface *)*/
 /*(*----------------------------*)*/
 
-/* 9.1 */
 interface_declaration:
  modifiers_opt INTERFACE identifier type_parameters_opt  extends_interfaces_opt
  interface_body
@@ -1133,7 +1045,6 @@ interface_declaration:
     }
   }
 
-/* 9.1.2 */
 extends_interfaces:
  | EXTENDS reference_type                { [$2] }
  | extends_interfaces CM reference_type  { $1 @ [$3] }
@@ -1141,7 +1052,7 @@ extends_interfaces:
 /*(*----------------------------*)*/
 /*(*2 Interface body *)*/
 /*(*----------------------------*)*/
-/* 9.1.3 */
+
 interface_body:	LC interface_member_declarations_opt RC  { $2 }
 
 interface_member_declaration:
@@ -1155,13 +1066,12 @@ interface_member_declaration:
  | annotation_type_declaration { ast_todo }
  | SM  { [] }
 
-/* 9.3 */
 
 /*(* note: semicolon is missing in 2nd edition java language specification.*)*/
 constant_declaration: modifiers_opt type_java variable_declarators SM
      { decls (fun x -> Field x) $1 $2 (List.rev $3) }
 
-/* 9.4 */
+
 abstract_method_declaration:
  | modifiers_opt type_java method_declarator throws_opt SM
 	{ method_header $1 $2 $3 $4 }
