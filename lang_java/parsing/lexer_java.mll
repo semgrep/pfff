@@ -110,10 +110,10 @@ let keyword_table = Common.hash_of_list [
 
   (* javaext: 1.4 *)
   "assert", (fun ii -> ASSERT ii);
-
   (* javaext: 1.? *)
   "enum", (fun ii -> ENUM ii);
-(*  "var", (fun ii -> VAR ii); REGRESSIONS *)
+  (* javaext: 1.? *)
+  (*  "var", (fun ii -> VAR ii); REGRESSIONS *)
 ]
 
 }

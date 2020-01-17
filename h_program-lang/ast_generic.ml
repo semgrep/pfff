@@ -48,6 +48,8 @@
  *  - ast_fuzzy.ml (in this directory)
  *  - github semantic
  *    https://github.com/github/semantic
+ *  - UAST of babelfish
+ *    https://doc.bblf.sh/uast/uast-specification-v2.html
  *  - Coverity common program representation?
  *  - Semmle internal common representation?
  *  - Infer SIL (for C++, Java, Objective-C)
