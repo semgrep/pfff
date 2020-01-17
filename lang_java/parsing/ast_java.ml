@@ -2,9 +2,10 @@
  * Copyright (C) 2001  Eric C. Cooper <ecc@cmu.edu>
  * Released under the GNU General Public License
  *
- * Yoann Padioleau:
- * 2010 port to the pfff infrastructure.
- * 2012 heavily modified to support annotations, generics, enum, foreach, etc
+ * Extended by Yoann Padioleau to support more recent versions of Java.
+ * Copyright (C) 2011 Facebook
+ * Copyright (C) 2020 r2c
+ *
  *)
 
 (*****************************************************************************)
@@ -22,6 +23,11 @@
  *  - support generic methods (there is support for generic classes though)
  *  - Look for featherweight Java
  *  - look for middleweight Java (mentioned in Coccinelle4J paper)
+ *
+ * history:
+ * - 2010 port to the pfff infrastructure.
+ * - 2012 heavily modified to support annotations, generics, enum, foreach, etc
+ * - 2020 support lambdas
  *)
 
 (*****************************************************************************)
@@ -85,13 +91,10 @@ type type_parameter =
 
 type modifier =
   | Public | Protected | Private
-  | Abstract
+  | Abstract | Final
   | Static
-  | Final
-  | StrictFP
-  | Transient | Volatile
+  | Transient | Volatile | Native | StrictFP
   | Synchronized
-  | Native
 
   | Annotation of annotation
 
@@ -205,9 +208,6 @@ and expr =
   | Null of tok
 
 and arguments = expr list
-
-(* todo: split in more precise *)
-and op = string
 
 (* ------------------------------------------------------------------------- *)
 (* Statements *)
