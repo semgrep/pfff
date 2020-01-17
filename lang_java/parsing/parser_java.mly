@@ -291,7 +291,7 @@ identifier_:
 /*(*1 Types *)*/
 /*(*************************************************************************)*/
 
-type_java:
+type_:
  | primitive_type           { $1 }
  | class_or_interface_type  { $1 }
  | array_type               { $1 }
@@ -632,7 +632,7 @@ lambda_parameter_type:
  | unann_type { Some $1 }
  | VAR        { None }
 
-unann_type: type_java { $1 }
+unann_type: type_ { $1 }
 
 variable_arity_parameter: 
  | variable_modifiers unann_type DOTS identifier 
@@ -697,10 +697,10 @@ local_variable_declaration_statement: local_variable_declaration SM
 
 /*(* cant factorize with variable_modifier_opt, conflicts otherwise *)*/
 local_variable_declaration:
- | type_java variable_declarators
+ | type_ variable_declarators
      { decls (fun x -> x) [] $1 (List.rev $2) }
  /*(* actually should be variable_modifiers but conflict *)*/
- | modifiers type_java variable_declarators
+ | modifiers type_ variable_declarators
      { decls (fun x -> x) $1 $2 (List.rev $3) }
 
 empty_statement: SM { Empty }
@@ -778,12 +778,12 @@ for_init:
 for_update: statement_expression_list  { $1 }
 
 for_var_control:
- |           type_java variable_declarator_id for_var_control_rest
+ |           type_ variable_declarator_id for_var_control_rest
      {  canon_var [] (Some $1) $2, $3 }
 /*(* actually only FINAL is valid here, but cant because get shift/reduce
    * conflict otherwise because for_init can be a local_variable_decl
    *)*/
- | modifiers type_java variable_declarator_id for_var_control_rest
+ | modifiers type_ variable_declarator_id for_var_control_rest
      { canon_var $1 (Some $2) $3, $4 }
 
 for_var_control_rest: COLON expression { $2 }
@@ -913,7 +913,7 @@ class_declaration:
      }
   }
 
-super: EXTENDS type_java  { $2 }
+super: EXTENDS type_  { $2 }
 
 interfaces: IMPLEMENTS ref_type_list  { $2 }
 
@@ -942,7 +942,7 @@ class_member_declaration:
  | SM  { [] }
 
 
-field_declaration: modifiers_opt type_java variable_declarators SM
+field_declaration: modifiers_opt type_ variable_declarators SM
    { decls (fun x -> Field x) $1 $2 (List.rev $3) }
 
 
@@ -968,7 +968,7 @@ array_initializer:
 method_declaration: method_header method_body  { { $1 with m_body = $2 } }
 
 method_header:
- | modifiers_opt type_java method_declarator throws_opt
+ | modifiers_opt type_ method_declarator throws_opt
      { method_header $1 $2 $3 $4 }
  | modifiers_opt VOID method_declarator throws_opt
      { method_header $1 (void_type $2) $3 $4 }
@@ -982,7 +982,7 @@ generic_method_or_constructor_decl:
   modifiers_opt type_parameters generic_method_or_constructor_rest  { }
 
 generic_method_or_constructor_rest:
- | type_java identifier method_declarator_rest { }
+ | type_ identifier method_declarator_rest { }
  | VOID identifier method_declarator_rest { }
 
 method_declarator_rest:
@@ -1030,7 +1030,7 @@ explicit_constructor_invocation:
 /*(*2 Method parameter *)*/
 /*(*----------------------------*)*/
 
-formal_parameter: variable_modifiers_opt type_java variable_declarator_id_bis
+formal_parameter: variable_modifiers_opt type_ variable_declarator_id_bis
   { canon_var $1 (Some $2) $3 }
 
 variable_declarator_id_bis:
@@ -1078,18 +1078,18 @@ interface_member_declaration:
 
 
 /*(* note: semicolon is missing in 2nd edition java language specification.*)*/
-constant_declaration: modifiers_opt type_java variable_declarators SM
+constant_declaration: modifiers_opt type_ variable_declarators SM
      { decls (fun x -> Field x) $1 $2 (List.rev $3) }
 
 
 abstract_method_declaration:
- | modifiers_opt type_java method_declarator throws_opt SM
+ | modifiers_opt type_ method_declarator throws_opt SM
 	{ method_header $1 $2 $3 $4 }
  | modifiers_opt VOID method_declarator throws_opt SM
 	{ method_header $1 (void_type $2) $3 $4 }
 
 interface_generic_method_decl:
- | modifiers_opt type_parameters type_java identifier interface_method_declator_rest
+ | modifiers_opt type_parameters type_ identifier interface_method_declator_rest
     { ast_todo }
  | modifiers_opt type_parameters VOID identifier interface_method_declator_rest
     { ast_todo }
@@ -1131,7 +1131,7 @@ annotation_type_element_declaration:
  annotation_type_element_rest { }
 
 annotation_type_element_rest:
- | modifiers_opt type_java identifier annotation_method_or_constant_rest SM { }
+ | modifiers_opt type_ identifier annotation_method_or_constant_rest SM { }
 
  | class_declaration { }
  | enum_declaration { }
