@@ -864,7 +864,7 @@ catch_type_list:
   | catch_type_list OR type_ { }
 
 /*(* javaext: ? *)*/
-resource_specification: LP resource_list comma_opt RP { }
+resource_specification: LP resource_list semi_opt RP { }
 
 resource: 
  | variable_modifiers local_variable_type identifier EQ expression { }
@@ -1299,7 +1299,7 @@ ref_type_list:
 
 resource_list:
  | resource  { [$1] }
- | resource_list CM resource  { $1 @ [$3] }
+ | resource_list SM resource  { $1 @ [$3] }
 
 ref_type_and_list:
  | reference_type  { [$1] }
@@ -1429,6 +1429,10 @@ static_opt:
 comma_opt:
  | /*(*empty*)*/  { () }
  | CM  { () }
+
+semi_opt:
+ | /*(*empty*)*/  { () }
+ | SM  { () }
 
 finally_opt:
  | /*(*empty*)*/  { None  }
