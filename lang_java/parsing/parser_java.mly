@@ -284,12 +284,12 @@ identifier: IDENTIFIER { $1 }
 name:
  | identifier_           { [$1] }
  | name DOT identifier_  { $1 @ [$3] }
- | name DOT LT_GENERIC type_arguments GT identifier_ 
+ | name DOT LT_GENERIC type_arguments_opt GT identifier_ 
      { $1@[TypeArgs_then_Id($4,$6)] }
 
 identifier_:
  | identifier                       { Id $1 }
- | identifier LT_GENERIC type_arguments GT { Id_then_TypeArgs($1, $3) }
+ | identifier LT_GENERIC type_arguments_opt GT { Id_then_TypeArgs($1, $3) }
 
 /*(*************************************************************************)*/
 /*(*1 Types *)*/
@@ -1357,6 +1357,10 @@ enum_body_declarations_opt:
 type_parameters_opt:
  | /*(*empty*)*/   { [] }
  | type_parameters { $1 }
+
+type_arguments_opt:
+ | /*(*empty*)*/   { [] }
+ | type_arguments { $1 }
 
 
 /*(* optional element *)*/
