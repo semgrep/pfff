@@ -812,6 +812,10 @@ return_statement: RETURN expression_opt SM  { Return $2 }
 
 synchronized_statement: SYNCHRONIZED LP expression RP block { Sync ($3, $5) }
 
+/*(*----------------------------*)*/
+/*(*2 Exceptions *)*/
+/*(*----------------------------*)*/
+
 throw_statement: THROW expression SM  { Throw $2 }
 
 try_statement:
@@ -819,9 +823,23 @@ try_statement:
  | TRY block catches_opt finally  { Try ($2, $3, Some $4) }
 
 catch_clause:
- | CATCH LP formal_parameter RP block  { $3, $5 }
+ | CATCH LP catch_formal_parameter RP block  { $3, $5 }
  /*(* javaext: not in 2nd edition java language specification.*) */
- | CATCH LP formal_parameter RP empty_statement  { $3, $5 }
+ | CATCH LP catch_formal_parameter RP empty_statement  { $3, $5 }
+
+/*(* javaext: ? was just formal_parameter before *)*/
+catch_formal_parameter: 
+  | variable_modifiers catch_type variable_declarator_id 
+      { canon_var $1 None (* TODO $2 *) $3 }
+  |                    catch_type variable_declarator_id 
+      { canon_var [] None (* TODO $1 *) $2 }
+
+/*(* javaext: ? *)*/
+catch_type: catch_type_list { }
+
+catch_type_list:
+  | type_ { }
+  | catch_type_list OR type_ { }
 
 finally: FINALLY block  { $2 }
 
