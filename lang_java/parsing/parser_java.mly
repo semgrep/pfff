@@ -666,6 +666,7 @@ lambda_body:
 method_reference: 
  | name COLONCOLON identifier { Literal (Null $2) }
  | name COLONCOLON NEW { Literal (Null $2) }
+ | primary COLONCOLON identifier { Literal (Null $2) }
 
 /*(*----------------------------*)*/
 /*(*2 Shortcuts *)*/
