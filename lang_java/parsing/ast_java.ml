@@ -92,6 +92,9 @@ type modifier =
   | Transient | Volatile | Native | StrictFP
   | Synchronized
 
+  (* only for parameters, '...' *)
+  | Variadic
+
   | Annotation of annotation
 
  and modifiers = modifier wrap list
@@ -195,6 +198,9 @@ and expr =
   | Assign of expr * expr
   | AssignOp of expr * Ast_generic.arithmetic_operator wrap * expr
 
+  (* javaext: 1.? *)
+  | Lambda of parameters * stmt
+
   (* sgrep-ext: *)
   | Ellipses of tok
 
@@ -297,7 +303,7 @@ and method_decl = {
   (* m_var.type_ is None for a constructor *)
   m_var: var_definition;
   (* the var.mod in params can only be Final or Annotation *)
-  m_formals: vars;
+  m_formals: parameters;
   m_throws: qualified_ident list;
 
   (* todo: m_tparams *)
@@ -308,6 +314,9 @@ and method_decl = {
    *)
   m_body: stmt
 }
+
+  and parameters = parameter list
+    and parameter = var_definition
 
 and field = var_with_init
 

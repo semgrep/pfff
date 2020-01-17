@@ -77,21 +77,28 @@ type var_decl_id =
   | IdentDecl of ident
   | ArrayDecl of var_decl_id
 
+let mk_param_id id = 
+  { mods = []; type_ = None; name = id; }
+
 (* Move array dimensions from variable name to type. *)
-let rec canon_var mods t v =
+let rec canon_var mods t_opt v =
   match v with
-  | IdentDecl str -> { mods = mods; type_ = Some t; name = str }
-  | ArrayDecl v' -> canon_var mods (TArray t) v'
+  | IdentDecl str -> { mods = mods; type_ = t_opt; name = str }
+  | ArrayDecl v' -> 
+      (match t_opt with
+      | None -> raise Impossible
+      | Some t -> canon_var mods (Some (TArray t)) v'
+      )
 
 let method_header mods mtype (v, formals) throws =
-  { m_var = canon_var mods mtype v; m_formals = formals;
+  { m_var = canon_var mods (Some mtype) v; m_formals = formals;
     m_throws = throws; m_body = Empty }
 
 (* Return a list of field declarations in canonical form. *)
 
 let decls f = fun mods vtype vars ->
   let dcl (v, init) =
-    f { f_var = canon_var mods vtype v; f_init = init }
+    f { f_var = canon_var mods (Some vtype) v; f_init = init }
   in
   List.map dcl vars
 
@@ -595,16 +602,16 @@ assignment_operator:
 /*(*2 Lambdas *)*/
 /*(*----------------------------*)*/
 lambda_expression: lambda_parameters ARROW lambda_body 
-  { Literal (Null $2) (* TODO *) }
+  { Lambda ($1, $3) }
 
 lambda_parameters: 
- | identifier { }
- | LP_LAMBDA lambda_parameter_list RP { }
- | LP_LAMBDA RP { }
+ | identifier { [mk_param_id $1] }
+ | LP_LAMBDA lambda_parameter_list RP { $2 }
+ | LP_LAMBDA RP { [] }
 
 lambda_parameter_list: 
- | identifier_list { }
- | lambda_param_list { }
+ | identifier_list { $1 |> List.map mk_param_id }
+ | lambda_param_list { $1 }
 
 identifier_list:
  | identifier  { [$1] }
@@ -615,24 +622,28 @@ lambda_param_list:
  | lambda_param_list CM lambda_param  { $3 :: $1 }
 
 lambda_param:
- | variable_modifiers lambda_parameter_type variable_declarator_id { }
- |                    lambda_parameter_type variable_declarator_id { }
- | variable_arity_parameter { }
+ | variable_modifiers lambda_parameter_type variable_declarator_id 
+    { canon_var $1 $2 $3  }
+ |                    lambda_parameter_type variable_declarator_id 
+    { canon_var [] $1 $2 }
+ | variable_arity_parameter { $1 }
 
 lambda_parameter_type:
- | unann_type { }
- | VAR { }
+ | unann_type { Some $1 }
+ | VAR        { None }
 
-unann_type: type_java { }
+unann_type: type_java { $1 }
 
 variable_arity_parameter: 
- | variable_modifiers unann_type DOTS identifier { }
- |                    unann_type DOTS identifier { }
+ | variable_modifiers unann_type DOTS identifier 
+    { canon_var $1 (Some $2) (IdentDecl $4) }
+ |                    unann_type DOTS identifier 
+    { canon_var [] (Some $1) (IdentDecl $3) }
 
 /*(* no need %prec LOW_PRIORITY_RULE as in parser_js.mly ?*)*/
 lambda_body:
- | expression { }
- | block { }
+ | expression { Expr $1 }
+ | block      { $1 }
 
 /*(*----------------------------*)*/
 /*(*2 Shortcuts *)*/
@@ -768,12 +779,12 @@ for_update: statement_expression_list  { $1 }
 
 for_var_control:
  |           type_java variable_declarator_id for_var_control_rest
-     {  canon_var [] $1 $2, $3 }
+     {  canon_var [] (Some $1) $2, $3 }
 /*(* actually only FINAL is valid here, but cant because get shift/reduce
    * conflict otherwise because for_init can be a local_variable_decl
    *)*/
  | modifiers type_java variable_declarator_id for_var_control_rest
-     { canon_var $1 $2 $3, $4 }
+     { canon_var $1 (Some $2) $3, $4 }
 
 for_var_control_rest: COLON expression { $2 }
 
@@ -1020,7 +1031,7 @@ explicit_constructor_invocation:
 /*(*----------------------------*)*/
 
 formal_parameter: variable_modifiers_opt type_java variable_declarator_id_bis
-  { canon_var $1 $2 $3 }
+  { canon_var $1 (Some $2) $3 }
 
 variable_declarator_id_bis:
  | variable_declarator_id      { $1 }

@@ -775,6 +775,8 @@ and expr env = function
       expr env e;
       typ env (tref);
   | Ellipses _ -> ()
+  | Lambda (_params, _st) -> raise Todo (* imitate method_decl code *)
+      
 
 
 and exprs env xs = List.iter (expr env) xs

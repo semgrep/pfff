@@ -50,6 +50,7 @@ let vof_type_parameter =
 
 let rec vof_modifier =
   function
+  | Variadic -> Ocaml.VSum (("Variadic", []))
   | Public -> Ocaml.VSum (("Public", []))
   | Protected -> Ocaml.VSum (("Protected", []))
   | Private -> Ocaml.VSum (("Private", []))
@@ -204,7 +205,12 @@ and vof_expr =
       and v2 = vof_wrap Meta_ast_generic_common.vof_arithmetic_operator v2
       and v3 = vof_expr v3
       in Ocaml.VSum (("AssignOp", [ v1; v2; v3 ]))
+  | Lambda ((v1, v2)) ->
+      let v1 = vof_parameters v1
+      and v2 = vof_stmt v2
+      in Ocaml.VSum (("Lambda", [ v1; v2 ]))
 and vof_arguments v = Ocaml.vof_list vof_expr v
+and vof_parameters x = vof_vars x
 and vof_op v = vof_wrap Meta_ast_generic_common.vof_incr_decr v
 and vof_stmt =
   function

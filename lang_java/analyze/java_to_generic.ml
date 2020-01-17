@@ -105,6 +105,7 @@ let type_parameter =
 
 let rec modifier =
   function
+  | Variadic -> G.Variadic
   | Public -> G.Public
   | Protected -> G.Protected
   | Private -> G.Private
@@ -272,6 +273,11 @@ and expr e =
   | AssignOp ((v1, (v2, tok), v3)) ->
       let v1 = expr v1 and v3 = expr v3 in
       G.AssignOp (v1, (v2, tok), v3)
+  | Lambda (v1, v2) ->
+      let v1 = params v1 in
+      let v2 = stmt v2 in
+      G.Lambda { G.fparams = v1; frettype = None; fbody = v2 }
+
 
 and arguments v = list expr v |> List.map (fun e -> G.Arg e)
 

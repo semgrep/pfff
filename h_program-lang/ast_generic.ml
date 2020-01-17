@@ -602,6 +602,7 @@ and function_definition = {
      pname: ident;
      pdefault: expr option;
      ptype: type_ option;
+     (* this covers '...' variadic parameters, see the Variadic attribute *)
      pattrs: attribute list;
      (* naming *)
      pinfo: id_info; (* Always Param *)
