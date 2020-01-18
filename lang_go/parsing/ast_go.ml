@@ -176,6 +176,7 @@ and stmt =
  | IncDec of expr * Ast_generic.incr_decr wrap * 
                     Ast_generic.prefix_postfix
  | Assign of expr list (* lhs *) * tok * expr list (* rhs *)
+ | AssignOp of expr * Ast_generic.arithmetic_operator wrap * expr
 
  | If     of stmt option (* init *) * expr * stmt * stmt option
  | Switch of stmt option (* init *) * expr * case_clause list

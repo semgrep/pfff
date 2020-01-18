@@ -53,7 +53,7 @@ let mk_arg x =
   | Left e -> Arg e
   | Right t -> ArgType t
 
-let _expr_to_type _e =
+let expr_to_type _e =
   raise Todo
 
 let expr_or_type_to_type _e = 
@@ -79,7 +79,7 @@ let expr_or_type_to_type _e =
 
 /*(* tokens with "values" (was LLITERAL before) *)*/
 %token  <string * Ast_go.tok> LINT LFLOAT  LIMAG  LRUNE LSTR
-%token  <string * Ast_go.tok> LASOP 
+%token  <Ast_generic.arithmetic_operator * Ast_go.tok> LASOP 
 %token  <string * Ast_go.tok> LNAME 
 
 /*(*-----------------------------------------*)*/
@@ -272,7 +272,7 @@ non_dcl_stmt:
 
 simple_stmt:
 |   expr { ExprStmt $1 }
-|   expr LASOP expr { raise Todo }
+|   expr LASOP expr { AssignOp ($1, $2, $3) }
 |   expr_list LEQ expr_list { Assign (List.rev $1, $2, List.rev $3)  }
 |   expr_list LCOLAS expr_list { raise Todo }
 |   expr LINC { IncDec ($1, (Incr, $2), Postfix) }
@@ -445,10 +445,10 @@ pexpr_no_paren:
 
 |   convtype LPAREN expr ocomma RPAREN { Cast ($1, $3) }
 
-|   comptype lbrace braced_keyval_list RBRACE 
+|   comptype       lbrace braced_keyval_list RBRACE 
     { CompositeLit ($1, $3) }
 |   pexpr_no_paren LBRACE braced_keyval_list RBRACE 
-    { raise Todo }
+    { CompositeLit (expr_to_type $1, $3) }
 
 |   fnliteral { $1 }
 

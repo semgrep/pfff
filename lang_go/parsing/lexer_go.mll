@@ -18,6 +18,7 @@ open Common
 open Parser_go
 module PI = Parse_info
 module Flag = Flag_parsing
+open Ast_generic (* for LASOP *)
 
 (*****************************************************************************)
 (* Prelude *)
@@ -154,18 +155,18 @@ rule token = parse
   | '*'     { LMULT (tokinfo lexbuf) }  | '/'     { LDIV (tokinfo lexbuf) }
   | '%'     { LPERCENT (tokinfo lexbuf) }
 
-  | "+=" as s   { LASOP (s, tokinfo lexbuf) }
-  | "-=" as s   { LASOP (s, tokinfo lexbuf) }
-  | "*=" as s   { LASOP (s, tokinfo lexbuf) }
-  | "/=" as s   { LASOP (s, tokinfo lexbuf) }
-  | "%=" as s   { LASOP (s, tokinfo lexbuf) }
-  | "&=" as s   { LASOP (s, tokinfo lexbuf) }
-  | "|=" as s   { LASOP (s, tokinfo lexbuf) }
-  | "^=" as s   { LASOP (s, tokinfo lexbuf) }
-  | "<<=" as s  { LASOP (s, tokinfo lexbuf) }
-  | ">>=" as s  { LASOP (s, tokinfo lexbuf) }
+  | "+="    { LASOP (Plus, tokinfo lexbuf) }
+  | "-="    { LASOP (Minus, tokinfo lexbuf) }
+  | "*="    { LASOP (Mult, tokinfo lexbuf) }
+  | "/="    { LASOP (Div, tokinfo lexbuf) }
+  | "%="    { LASOP (Mod, tokinfo lexbuf) }
+  | "&="    { LASOP (BitAnd, tokinfo lexbuf) }
+  | "|="    { LASOP (BitOr, tokinfo lexbuf) }
+  | "^="    { LASOP (BitXor, tokinfo lexbuf) }
+  | "<<="   { LASOP (LSL, tokinfo lexbuf) }
+  | ">>="   { LASOP (LSR, tokinfo lexbuf) }
   (* Go specific operator *)
-  | "&^=" as s   { LASOP (s, tokinfo lexbuf) }
+  | "&^="   { LASOP (raise Todo , tokinfo lexbuf) }
 
   | "=="    { LEQEQ (tokinfo lexbuf) }
   | "!="    { LNE (tokinfo lexbuf) }
