@@ -274,7 +274,7 @@ simple_stmt:
 |   expr { ExprStmt $1 }
 |   expr LASOP expr { AssignOp ($1, $2, $3) }
 |   expr_list LEQ expr_list { Assign (List.rev $1, $2, List.rev $3)  }
-|   expr_list LCOLAS expr_list { raise Todo }
+|   expr_list LCOLAS expr_list { DShortVars ($1, $2, $3) }
 |   expr LINC { IncDec ($1, (Incr, $2), Postfix) }
 |   expr LDEC { IncDec ($1, (Decr, $2), Postfix) }
 
@@ -656,9 +656,10 @@ structtype:
 |   LSTRUCT lbrace RBRACE                      { TStruct [] }
 
 structdcl:
-|   new_name_list ntype oliteral { raise Todo }
-|         packname      oliteral { raise Todo }
-|   LMULT packname      oliteral { raise Todo }
+|   new_name_list ntype oliteral 
+    { $1 |> List.map (fun id -> Field (id, $2), $3) }
+|         packname      oliteral { [EmbeddedField (None, $1), $2] }
+|   LMULT packname      oliteral { [EmbeddedField (Some $1, $2), $3] }
 
 
 interfacetype:
@@ -666,13 +667,12 @@ interfacetype:
 |   LINTERFACE lbrace RBRACE                         { TInterface [] }
 
 interfacedcl:
-|   new_name indcl { raise Todo }
-|   packname       { raise Todo }
+|   new_name indcl { Method ($1, $2) }
+|   packname       { EmbeddedInterface $1 }
 
+/*(* fntype // without func keyword *)*/
 indcl: LPAREN oarg_type_list_ocomma RPAREN fnres
-    {
-        (* // without func keyword *)
-    }
+   { { fparams = $2; fresults = $4 } }
 
 /*(*************************************************************************)*/
 /*(*1 Function *)*/
@@ -768,8 +768,8 @@ typedcl_list:
 |   typedcl_list LSEMICOLON typedcl { }
 
 structdcl_list:
-|   structdcl { [$1] }
-|   structdcl_list LSEMICOLON structdcl { $3::$1 }
+|   structdcl { $1 }
+|   structdcl_list LSEMICOLON structdcl { $3 @ $1 }
 
 interfacedcl_list:
 |   interfacedcl { [$1] }
@@ -812,8 +812,8 @@ ocomma:
 |   LCOMMA { }
 
 oliteral:
-|/*(*empty*)*/ { }
-|   LSTR       { }
+|/*(*empty*)*/ { None }
+|   LSTR       { Some $1 }
 
 
 oexpr:

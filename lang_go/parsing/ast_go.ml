@@ -177,6 +177,8 @@ and stmt =
                     Ast_generic.prefix_postfix
  | Assign of expr list (* lhs *) * tok * expr list (* rhs *)
  | AssignOp of expr * Ast_generic.arithmetic_operator wrap * expr
+ (* declare or reassign, and special semantic when Receive operation *)
+ | DShortVars of expr list * tok (* := *) * expr list
 
  | If     of stmt option (* init *) * expr * stmt * stmt option
  | Switch of stmt option (* init *) * expr * case_clause list
@@ -214,9 +216,6 @@ and stmt =
 and decl = 
  | DConst of ident * type_ option * constant_expr option 
  | DVar  of ident  * type_ option * (* = *) expr option (* value *)
-
- (* declare or reassign, and special semantic when Receive operation *)
- | DShortVars of ident list * tok (* := *) * expr list
 
  | DTypeAlias of ident * tok (* = *) * type_
  | DTypeDef of ident * type_
