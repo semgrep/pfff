@@ -105,13 +105,15 @@ and expr =
  (* the type of [...]{...} should be transformed in TArray (length {...}) *)
  | CompositeLit of type_ * init list
 
- | Id of ident (* can actually denotes a type sometimes *)
+  (* can actually denotes a type sometimes, or a package *)
+ | Id of ident 
 
- (* can be a 
+ (* A Selector can be a 
   *  - a field access of a struct
   *  - a top decl access of a package
   *  - a method access when expr denotes actually a type 
   *  - a method value
+  * We need more semantic information on expr to know what it is.
   *)
  | Selector of expr * tok * ident
 
@@ -128,6 +130,10 @@ and expr =
  | Receive of tok * expr
 
  | TypeAssert of expr * type_
+ (* note that some Call are really Cast, e.g., uint(1), but we need
+  * semantic information to know that
+  *)
+ | Cast of type_ * expr
 
  | Ellipsis of tok
  | FuncLit of func_type * stmt
@@ -153,6 +159,8 @@ and expr =
   | InitExpr of expr (* can be Id, which have special meaning for Key *)
   | InitKeyValue of init * tok (* : *) * init
   | InitBraces of init list
+
+and constant_expr = expr
 
 (*****************************************************************************)
 (* Statement *)
@@ -203,8 +211,7 @@ and stmt =
 (*****************************************************************************)
 
 and decl = 
-  (* statically computable? const_expr? *)
- | DConst of ident * type_ option * expr option 
+ | DConst of ident * type_ option * constant_expr option 
  | DVar  of ident  * type_ option * (* = *) expr option (* value *)
 
  (* declare or reassign, and special semantic when Receive operation *)

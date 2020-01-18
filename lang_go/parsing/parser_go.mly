@@ -443,7 +443,7 @@ pexpr_no_paren:
 
 |   pseudocall { Call $1 }
 
-|   convtype LPAREN expr ocomma RPAREN { raise Todo }
+|   convtype LPAREN expr ocomma RPAREN { Cast ($1, $3) }
 
 |   comptype lbrace braced_keyval_list RBRACE 
     { CompositeLit ($1, $3) }
