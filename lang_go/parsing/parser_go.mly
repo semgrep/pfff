@@ -223,7 +223,7 @@ constdcl:
 constdcl1:
 |   constdcl            { }
 |   dcl_name_list ntype { }
-|   dcl_name_list   { }
+|   dcl_name_list       { }
 
 
 typedcl: 
@@ -387,19 +387,15 @@ expr:
 uexpr:
 |   pexpr { $1 }
 
-|   LMULT uexpr { Star ($1, $2)}
+|   LMULT uexpr { Deref ($1, $2)}
 |   LAND uexpr
     {
            (* // Special case for &T{...}: turn into ( *T){...}. *)
-    raise Todo
+      Ref ($1, $2)
     }
 |   LPLUS  uexpr { mk_unary Plus $1 $2 }
 |   LMINUS uexpr { mk_unary Minus $1 $2 }
 |   LBANG  uexpr { mk_unary Not $1 $2 }
-|   LTILDE uexpr
-    {
-        failwith "the bitwise complement operator is ^"
-    }
 |   LHAT uexpr { mk_unary BitXor $1 $2  }
 |   LCOMM uexpr { Receive ($1, $2) }
 
@@ -444,11 +440,6 @@ pexpr_no_paren:
 |   pexpr_no_paren LBRACE braced_keyval_list RBRACE 
     { raise Todo }
 
-|   LPAREN expr_or_type RPAREN LBRACE braced_keyval_list RBRACE
-    {
-        (* Yyerror("cannot parenthesize type in composite literal"); *)
-        raise Todo
-    }
 |   fnliteral { $1 }
 
 
@@ -623,11 +614,7 @@ othertype:
 
 
 dotdotdot:
-|   LDDD
-    { $1, None
-        (* Yyerror("final argument in variadic function missing type"); *)
-    }
-|   LDDD ntype { $1, Some $2 }
+|   LDDD ntype { $1, $2 }
 
 
 convtype:
@@ -661,19 +648,6 @@ structdcl:
 |         packname      oliteral { }
 |   LMULT packname      oliteral { }
 
-|   LPAREN packname RPAREN oliteral
-    {
-        (* Yyerror("cannot parenthesize embedded type"); *)
-    }
-|   LPAREN LMULT packname RPAREN oliteral
-    {
-        (* Yyerror("cannot parenthesize embedded type"); *)
-    }
-|   LMULT LPAREN packname RPAREN oliteral
-    {
-        (* Yyerror("cannot parenthesize embedded type"); *)
-    }
-
 
 interfacetype:
     LINTERFACE lbrace interfacedcl_list osemi RBRACE { TInterface(List.rev $3)}
@@ -682,11 +656,6 @@ interfacetype:
 interfacedcl:
 |   new_name indcl { }
 |   packname       { }
-
-|   LPAREN packname RPAREN
-    {
-        (* Yyerror("cannot parenthesize embedded type"); *)
-    }
 
 indcl: LPAREN oarg_type_list_ocomma RPAREN fnres
     {

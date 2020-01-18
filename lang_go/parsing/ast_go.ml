@@ -77,7 +77,7 @@ type type_ =
     and parameter = {
       pname: ident option;
       ptype: type_ option; (* None only for pdots *)
-      pdots: (tok * type_ option) option;
+      pdots: (tok * type_) option;
     }
 
   and struct_field = unit
@@ -102,7 +102,8 @@ and expr =
  | Slice of expr * (expr option * expr option * expr option) 
 
  | Call of call_expr
- | Star of tok * expr
+ | Deref of tok (* * *) * expr
+ | Ref   of tok (* & *) * expr
  | Unary of         Ast_generic.arithmetic_operator (* +/-/~/! *) wrap * expr
  | Binary of expr * Ast_generic.arithmetic_operator wrap * expr
  | Receive of tok * expr
