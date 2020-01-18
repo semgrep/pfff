@@ -606,9 +606,9 @@ fnret_type:
 
 othertype:
 |   LBRACKET oexpr RBRACKET ntype 
-      { TArray (TSlice $2, $4) }
+      { match $2 with None -> TSlice $4 | Some e -> TArray (e, $4) }
 |   LBRACKET LDDD RBRACKET ntype  
-      { TArray (TEllipsis $2, $4) }
+      { TArrayEllipsis ($2, $4) }
 
 |   LCHAN non_recvchantype { TChan (TBidirectional, $2) }
 |   LCHAN LCOMM ntype      { TChan (TSend, $3) }

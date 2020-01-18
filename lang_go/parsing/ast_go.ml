@@ -60,7 +60,11 @@ type type_ =
  | TName of qualified_ident (* included the basic types: bool/int/... *)
  | TPtr of type_
 
- | TArray of array_kind * type_
+ | TArray of expr * type_
+ | TSlice of type_
+  (* only in CompositeLit (could be rewritten as TArray with static length) *)
+ | TArrayEllipsis of tok (* ... *) * type_ 
+
  | TFunc of func_type
  | TMap of type_ * type_
  | TChan of chan_dir * type_
@@ -69,7 +73,6 @@ type type_ =
  | TInterface of interface_field list
 
   and chan_dir = TSend | TRecv | TBidirectional
-  and array_kind = TSlice of expr option | TEllipsis of tok
   and func_type =  { 
     fparams: parameter list; 
     fresults: parameter list;
@@ -99,6 +102,7 @@ and expr_or_type = type_
 (*****************************************************************************)
 and expr = 
  | BasicLit of literal
+ (* the type of [...]{...} should be transformed in TArray (length {...}) *)
  | CompositeLit of type_ * init list
 
  | Id of ident
@@ -140,7 +144,7 @@ and expr =
 
  (* could be merged with expr *)
  and init = 
-  | InitExpr of expr
+  | InitExpr of expr (* can be Id, which have special meaning for Key *)
   | InitKeyValue of init * tok (* : *) * init
   | InitBraces of init list
 
