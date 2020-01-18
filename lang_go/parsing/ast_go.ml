@@ -118,6 +118,8 @@ and expr =
   and arguments = argument list
   and argument = 
     | Arg of expr
+    | ArgType of type_
+    | ArgDots of tok (* should be the last argument *)
 
 (*****************************************************************************)
 (* Statement *)

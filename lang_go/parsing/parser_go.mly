@@ -44,6 +44,11 @@ let mk_bin e1 op tok e2 =
   Binary (e1, (op, tok), e2)
 let mk_unary op tok e = 
   Unary ((op, tok), e)
+let mk_arg x =
+  match x with
+  | Left e -> Arg e
+  | Right t -> ArgType t
+
 %}
 
 /*(*************************************************************************)*/
@@ -427,7 +432,7 @@ pexpr_no_paren:
         *)
     }
 
-|   pseudocall { raise Todo }
+|   pseudocall { $1 }
 
 |   convtype LPAREN expr ocomma RPAREN { raise Todo }
 |   comptype lbrace braced_keyval_list RBRACE { raise Todo }
@@ -453,9 +458,12 @@ basic_literal:
  * can be preceded by 'defer' and 'go'
  */
 pseudocall:
-|   pexpr LPAREN RPAREN { }
-|   pexpr LPAREN expr_or_type_list ocomma RPAREN { }
-|   pexpr LPAREN expr_or_type_list LDDD ocomma RPAREN { }
+|   pexpr LPAREN RPAREN                               
+      { Call ($1, []) }
+|   pexpr LPAREN expr_or_type_list ocomma RPAREN      
+      { Call ($1, $3 |> List.rev |> List.map mk_arg) }
+|   pexpr LPAREN expr_or_type_list LDDD ocomma RPAREN 
+      { Call ($1, ($3 |> List.rev |> List.map mk_arg) @ [ArgDots $4]) }
 
 
 keyval: complitexpr LCOLON complitexpr
@@ -627,10 +635,10 @@ expr_or_type:
 |   non_expr_type   %prec PreferToRightParen { Right $1 }
 
 non_expr_type:
-|   fntype              { } 
-|   recvchantype        { }
-|   othertype           { }
-|   LMULT non_expr_type { }
+|   fntype              { $1 } 
+|   recvchantype        { $1 }
+|   othertype           { $1 }
+|   LMULT non_expr_type { TPtr ($2) }
 
 /*(*************************************************************************)*/
 /*(*1 Struct/Interface *)*/
@@ -800,8 +808,8 @@ expr_list:
 |   expr_list LCOMMA expr { $3::$1 }
 
 expr_or_type_list:
-|   expr_or_type { }
-|   expr_or_type_list LCOMMA expr_or_type { }
+|   expr_or_type { [$1] }
+|   expr_or_type_list LCOMMA expr_or_type { $3::$1 }
 
 /*
  * optional things
