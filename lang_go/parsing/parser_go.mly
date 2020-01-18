@@ -133,7 +133,7 @@
 /*(*1 Toplevel *)*/
 /*(*************************************************************************)*/
 
-file: package imports xdcl_list EOF { }
+file: package imports xdcl_list EOF { raise Common.Todo }
 
 package: LPACKAGE sym LSEMICOLON { }
 
