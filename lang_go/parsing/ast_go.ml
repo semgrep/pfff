@@ -101,7 +101,7 @@ and expr =
   (* low, high, max *)
  | Slice of expr * (expr option * expr option * expr option) 
 
- | Call of expr * arguments
+ | Call of call_expr
  | Star of tok * expr
  | Unary of         Ast_generic.arithmetic_operator (* +/-/~/! *) wrap * expr
  | Binary of expr * Ast_generic.arithmetic_operator wrap * expr
@@ -138,7 +138,7 @@ and expr =
 (* Statement *)
 (*****************************************************************************)
 and stmt = 
- | DeclStmt of decl (* inside a Block *)
+ | DeclStmts of decl list (* inside a Block *)
 
  | Empty
  | Block of stmt list
@@ -146,7 +146,7 @@ and stmt =
  | ExprStmt of expr
  (* good boy! not an expression but a statement! better! *) 
  | IncDec of expr * Ast_generic.incr_decr wrap * 
-                    Ast_generic.prefix_postfix wrap
+                    Ast_generic.prefix_postfix
  | Assign of expr list (* lhs *) * tok * expr list (* rhs *)
 
  | If of stmt option (* init *) * expr * stmt * stmt option
@@ -158,8 +158,12 @@ and stmt =
  | For of (stmt option * expr option * stmt option) * stmt
  | Range of (expr * expr option) (* key/value pattern *) * expr * stmt 
 
- | Return of tok * expr option
- | Branch of branch_kind wrap * ident option
+ | Return of tok * expr list option
+ (* was put together in a Branch in ast.go, but better to split *)
+ | Break of tok * ident option
+ | Continue of tok * ident option
+ | Goto of tok * ident 
+ | Fallthrough of tok
 
  | Label of ident * stmt
 
@@ -168,7 +172,6 @@ and stmt =
 
  | Defer of tok * call_expr
 
- and branch_kind = Break | Continue | Goto | Fallthrough
  and case_clause = 
     expr_or_type list (* [] = default *) * stmt (* can be Empty*)
  and comm_clause =

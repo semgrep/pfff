@@ -236,45 +236,45 @@ typedcl:
 /*(*************************************************************************)*/
 
 stmt:
-| /*(*empty*)*/   { raise Todo }
-| compound_stmt   { raise Todo }
-| common_dcl      { raise Todo }
-| non_dcl_stmt    { raise Todo }
+| /*(*empty*)*/   { Empty }
+| compound_stmt   { $1 }
+| common_dcl      { DeclStmts $1 }
+| non_dcl_stmt    { $1 }
 
-compound_stmt: LBRACE stmt_list RBRACE { }
+compound_stmt: LBRACE stmt_list RBRACE { Block (List.rev $2) }
 
 non_dcl_stmt:
-|   simple_stmt { }
+|   simple_stmt { $1 }
 
-|   if_stmt { }
-|   for_stmt { }
-|   switch_stmt { }
-|   select_stmt { }
+|   if_stmt { $1 }
+|   for_stmt { $1 }
+|   switch_stmt { $1 }
+|   select_stmt { $1 }
 
-|   labelname LCOLON stmt { }
-|   LGOTO new_name { }
+|   labelname LCOLON stmt { Label ($1, $3) }
+|   LGOTO new_name        { Goto ($1, $2) }
 
-|   LBREAK onew_name { }
-|   LCONTINUE onew_name { }
-|   LRETURN oexpr_list { }
-|   LFALL { }
+|   LBREAK onew_name    { Break ($1, $2) }
+|   LCONTINUE onew_name { Continue ($1, $2) }
+|   LRETURN oexpr_list  { Return ($1, $2) }
+|   LFALL { Fallthrough $1 }
 
-|   LGO pseudocall { }
-|   LDEFER pseudocall { }
+|   LGO pseudocall    { Go ($1, $2) }
+|   LDEFER pseudocall { Defer ($1, $2) }
 
 
 simple_stmt:
-|   expr { }
-|   expr LASOP expr { }
-|   expr_list LEQ expr_list { }
-|   expr_list LCOLAS expr_list { }
-|   expr LINC { }
-|   expr LDEC { }
+|   expr { ExprStmt $1 }
+|   expr LASOP expr { raise Todo }
+|   expr_list LEQ expr_list { Assign (List.rev $1, $2, List.rev $3)  }
+|   expr_list LCOLAS expr_list { raise Todo }
+|   expr LINC { IncDec ($1, (Incr, $2), Postfix) }
+|   expr LDEC { IncDec ($1, (Decr, $2), Postfix) }
 
 
 /*(* IF cond body (ELSE IF cond body)* (ELSE block)? *) */
 if_stmt: LIF  if_header loop_body elseif_list else_
-    {
+    { raise Todo
         (* if $3.Left == nil
             Yyerror("missing condition in if statement");
         *)
@@ -297,7 +297,7 @@ else_:
 |   LELSE compound_stmt { }
 
 
-for_stmt: LFOR for_body { }
+for_stmt: LFOR for_body { raise Todo }
 
 for_body: for_header loop_body { }
 
@@ -314,9 +314,9 @@ range_stmt:
 loop_body: LBODY stmt_list RBRACE { }
 
 
-switch_stmt: LSWITCH if_header LBODY caseblock_list RBRACE { }
+switch_stmt: LSWITCH if_header LBODY caseblock_list RBRACE { raise Todo }
 
-select_stmt:  LSELECT LBODY caseblock_list RBRACE { }
+select_stmt:  LSELECT LBODY caseblock_list RBRACE { raise Todo }
 
 case:
 |   LCASE expr_or_type_list LCOLON { }
@@ -435,7 +435,7 @@ pexpr_no_paren:
         *)
     }
 
-|   pseudocall { $1 }
+|   pseudocall { Call $1 }
 
 |   convtype LPAREN expr ocomma RPAREN { raise Todo }
 
@@ -466,11 +466,11 @@ basic_literal:
  */
 pseudocall:
 |   pexpr LPAREN RPAREN                               
-      { Call ($1, []) }
+      { ($1, []) }
 |   pexpr LPAREN expr_or_type_list ocomma RPAREN      
-      { Call ($1, $3 |> List.rev |> List.map mk_arg) }
+      { ($1, $3 |> List.rev |> List.map mk_arg) }
 |   pexpr LPAREN expr_or_type_list LDDD ocomma RPAREN 
-      { Call ($1, ($3 |> List.rev |> List.map mk_arg) @ [ArgDots $4]) }
+      { ($1, ($3 |> List.rev |> List.map mk_arg) @ [ArgDots $4]) }
 
 
 braced_keyval_list:
@@ -841,16 +841,16 @@ oexpr:
 |   expr       { Some $1 }
 
 oexpr_list:
-|/*(*empty*)*/ { }
-|   expr_list { }
+|/*(*empty*)*/ { None }
+|   expr_list  { Some (List.rev $1) }
 
 osimple_stmt:
 |/*(*empty*)*/ { }
 |   simple_stmt { }
 
 onew_name:
-|/*(*empty*)*/   {  }
-|   new_name { }
+|/*(*empty*)*/   { None  }
+|   new_name     { Some $1 }
 
 oarg_type_list_ocomma:
 |/*(*empty*)*/  { [] }
