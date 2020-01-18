@@ -246,7 +246,7 @@ rule token = parse
 
         (* todo? 
          *  - true, false
-         *  - new
+         *  - new, make
          *  - nil
          *)
       

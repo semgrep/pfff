@@ -193,7 +193,7 @@ import_stmt:
 /*(*************************************************************************)*/
 
 xdcl:
-|   common_dcl { $1 }
+|   common_dcl { $1 |> List.map (fun decl -> D decl) }
 |   xfndcl     { $1 }
 
 common_dcl:
@@ -646,9 +646,9 @@ structtype:
 |   LSTRUCT lbrace RBRACE                      { TStruct [] }
 
 structdcl:
-|   new_name_list ntype oliteral { }
-|         packname      oliteral { }
-|   LMULT packname      oliteral { }
+|   new_name_list ntype oliteral { raise Todo }
+|         packname      oliteral { raise Todo }
+|   LMULT packname      oliteral { raise Todo }
 
 
 interfacetype:
@@ -656,8 +656,8 @@ interfacetype:
 |   LINTERFACE lbrace RBRACE                         { TInterface [] }
 
 interfacedcl:
-|   new_name indcl { }
-|   packname       { }
+|   new_name indcl { raise Todo }
+|   packname       { raise Todo }
 
 indcl: LPAREN oarg_type_list_ocomma RPAREN fnres
     {
@@ -672,8 +672,7 @@ indcl: LPAREN oarg_type_list_ocomma RPAREN fnres
  // all in one place to show how crappy it all is
   *) */
 xfndcl: LFUNC fndcl fnbody
-    { []
-    }
+    { [] }
 
 fndcl:
 |   sym LPAREN oarg_type_list_ocomma RPAREN fnres { }

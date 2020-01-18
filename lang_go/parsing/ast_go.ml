@@ -77,11 +77,19 @@ type type_ =
     and parameter = {
       pname: ident option;
       ptype: type_;
+      (* only at last element position *)
       pdots: tok option;
     }
 
-  and struct_field = unit
-  and interface_field = unit
+  and struct_field = struct_field_kind * tag option
+    and struct_field_kind = 
+    | Field of ident * type_ (* could factorize with entity *)
+    | EmbeddedField of tok option (* * *) * qualified_ident
+   and tag = string wrap
+    
+  and interface_field = 
+    | Method of ident * func_type
+    | EmbeddedInterface of qualified_ident
 
 (* Id | Selector | Star *)
 and expr_or_type = type_
@@ -195,8 +203,14 @@ and decl = entity * declaration_kind
 and declaration_kind = 
  | DConst of expr option (* statically computable? const_expr? *)
  | DVar of expr option (* value *)
- | DType of expr_or_type
+
+ | DTypeAlias of type_
+ | DTypeNew of type_
+
+and top_decl =
+ (* toplevel decl only *)
  | DFunc of parameter option (* receiver *) * func_type * stmt
+ | D of decl
 
 (* ------------------------------------------------------------------------- *)
 (* variable (local var, parameter) declaration *)
@@ -233,7 +247,7 @@ and import = {
 type program = {
   package: ident;
   imports: import list;
-  decls: decl list;
+  decls: top_decl list;
 }
 
 (*****************************************************************************)
