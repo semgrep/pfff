@@ -45,11 +45,11 @@ type 'a wrap = 'a * tok
 (* ------------------------------------------------------------------------- *)
 (* Ident, qualifier *)
 (* ------------------------------------------------------------------------- *)
-(* for? *)
+(* for ?/?/? *)
 type ident = string wrap
  (* with tarzan *)
 
-(* for ?  (called names in ast.go) *)
+(* for ?/?/?  (called names in ast.go) *)
 type qualified_ident = ident list (* 1 or 2 elements *)
  (* with tarzan *)
 
@@ -57,7 +57,7 @@ type qualified_ident = ident list (* 1 or 2 elements *)
 (* Type *)
 (*****************************************************************************)
 type type_ =
- | TName of qualified_ident
+ | TName of qualified_ident (* included the basic types: bool/int/... *)
  | TPtr of type_
 
  | TArray of array_kind * type_
@@ -76,8 +76,8 @@ type type_ =
   }
     and parameter = {
       pname: ident option;
-      ptype: type_ option; (* None only for pdots *)
-      pdots: (tok * type_) option;
+      ptype: type_;
+      pdots: tok option;
     }
 
   and struct_field = unit
@@ -115,6 +115,7 @@ and expr =
 
   (* was just a string in ast.go *)
   and literal = 
+  (* todo? Bool of bool wrap | Nil of tok? *)
   | Int of string wrap
   | Float of string wrap
   | Imag of string wrap
@@ -150,7 +151,7 @@ and stmt =
                     Ast_generic.prefix_postfix
  | Assign of expr list (* lhs *) * tok * expr list (* rhs *)
 
- | If of stmt option (* init *) * expr * stmt * stmt option
+ | If     of stmt option (* init *) * expr * stmt * stmt option
  | Switch of stmt option (* init *) * expr * case_clause list
  | TypeSwitch of stmt option * stmt (* Assign *) * case_clause list
  | Select of comm_clause list
@@ -168,15 +169,15 @@ and stmt =
 
  | Label of ident * stmt
 
- | Go of tok * call_expr
+ | Go    of tok * call_expr
+ | Defer of tok * call_expr
  | Send of expr * tok (* <- *) * expr
 
- | Defer of tok * call_expr
 
  and case_clause = 
     expr_or_type list (* [] = default *) * stmt (* can be Empty*)
  and comm_clause =
-    stmt (* Send or Receive *)* stmt (* can be empty *)
+    stmt (* Send or Receive *) * stmt (* can be empty *)
  and call_expr = expr * arguments
 
 (*****************************************************************************)
@@ -192,8 +193,8 @@ and entity = {
 and decl = entity * declaration_kind
 
 and declaration_kind = 
+ | DConst of expr option (* statically computable? const_expr? *)
  | DVar of expr option (* value *)
- | DConst of expr option 
  | DType of expr_or_type
  | DFunc of parameter option (* receiver *) * func_type * stmt
 

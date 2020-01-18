@@ -243,6 +243,12 @@ rule token = parse
         | "defer"   -> LDEFER (tokinfo lexbuf)
         | "map"      -> LMAP (tokinfo lexbuf)
         | "range"   -> LRANGE (tokinfo lexbuf)
+
+        (* todo? 
+         *  - true, false
+         *  - new
+         *  - nil
+         *)
       
         | _          -> LNAME (id, (tokinfo lexbuf)) 
     }

@@ -586,7 +586,7 @@ fntype: LFUNC LPAREN oarg_type_list_ocomma RPAREN fnres
 fnres:
 | /*(*empty *)*/    %prec NotParen      { [] }
 |   fnret_type                          
-    { [{ pname = None; ptype = Some $1; pdots = None }] }
+    { [{ pname = None; ptype = $1; pdots = None }] }
 |   LPAREN oarg_type_list_ocomma RPAREN { $2 }
 
 fnret_type:
@@ -601,8 +601,10 @@ fnret_type:
 
 
 othertype:
-|   LBRACKET oexpr RBRACKET ntype { TArray (TSlice $2, $4) }
-|   LBRACKET LDDD RBRACKET ntype  { TArray (TEllipsis $2, $4) }
+|   LBRACKET oexpr RBRACKET ntype 
+      { TArray (TSlice $2, $4) }
+|   LBRACKET LDDD RBRACKET ntype  
+      { TArray (TEllipsis $2, $4) }
 
 |   LCHAN non_recvchantype { TChan (TBidirectional, $2) }
 |   LCHAN LCOMM ntype      { TChan (TSend, $3) }
@@ -703,10 +705,10 @@ fnliteral: fnlitdcl lbrace stmt_list RBRACE
 fnlitdcl: fntype { $1 }
 
 arg_type:
-|       name_or_type { { pname = None; ptype = Some $1; pdots = None } }
-|   sym name_or_type { { pname = Some $1; ptype = Some $2; pdots = None } }
-|   sym dotdotdot    { { pname = Some $1; ptype = None; pdots = Some $2 } }
-|       dotdotdot    { { pname = None; ptype = None; pdots = Some $1} }
+|       name_or_type { { pname= None; ptype = $1; pdots = None } }
+|   sym name_or_type { { pname= Some $1; ptype = $2; pdots = None } }
+|   sym dotdotdot    { { pname= Some $1; ptype = snd $2; pdots = Some (fst $2)}}
+|       dotdotdot    { { pname= None; ptype = snd $1; pdots = Some (fst $1)} }
 
 name_or_type:  ntype { $1 }
 
