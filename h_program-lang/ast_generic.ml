@@ -277,6 +277,7 @@ and expr =
      * but see is_boolean_operator() helper below.
      * Note that Mod can be used for %style string formatting in Python.
      * todo? use a Special operator intead for that? but need type info?
+     * Plus can be used for string concatenations in Go.
      *)
     and arithmetic_operator = 
       | Plus (* unary too *) | Minus (* unary too *) 

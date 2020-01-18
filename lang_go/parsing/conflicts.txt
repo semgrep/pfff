@@ -18,3 +18,18 @@ the right '{' to retag (basically the one following an if/for/switch/select.
 
 
 
+* Typename and CompositeLit
+
+From golang spec: 
+
+"A parsing ambiguity arises when a composite literal using the TypeName
+form of the LiteralType appears as an operand between the keyword and
+the opening brace of the block of an "if", "for", or "switch"
+statement, and the composite literal is not enclosed in parentheses,
+square brackets, or curly braces. In this rare case, the opening brace
+of the literal is erroneously parsed as the one introducing the block
+of statements. To resolve the ambiguity, the composite literal must
+appear within parentheses."
+
+if x == (T{a,b,c}[i]) { ... }
+if (x == T{a,b,c}[i]) { ... }

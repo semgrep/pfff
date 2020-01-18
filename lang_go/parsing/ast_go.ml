@@ -105,9 +105,16 @@ and expr =
  (* the type of [...]{...} should be transformed in TArray (length {...}) *)
  | CompositeLit of type_ * init list
 
- | Id of ident
+ | Id of ident (* can actually denotes a type sometimes *)
 
- | Selector of expr * selector
+ (* can be a 
+  *  - a field access of a struct
+  *  - a top decl access of a package
+  *  - a method access when expr denotes actually a type 
+  *  - a method value
+  *)
+ | Selector of expr * tok * ident
+
  (* valid for TArray, TMap, Tptr, TName ("string") *)
  | Index of expr * index
   (* low, high, max *)
@@ -134,7 +141,6 @@ and expr =
   | Rune of string wrap
   | String of string wrap
 
-  and selector = ident
   and index = expr
   and arguments = argument list
   and argument = 
@@ -196,27 +202,21 @@ and stmt =
 (* Declarations *)
 (*****************************************************************************)
 
-and entity = {
-    name: ident;
-    type_: type_ option;
-    (* could put more stuff here later *)
- }
+and decl = 
+  (* statically computable? const_expr? *)
+ | DConst of ident * type_ option * expr option 
+ | DVar  of ident  * type_ option * (* = *) expr option (* value *)
 
-and decl = entity * declaration_kind
+ (* declare or reassign, and special semantic when Receive operation *)
+ | DShortVars of ident list * tok (* := *) * expr list
 
-and declaration_kind = 
- | DConst of expr option (* statically computable? const_expr? *)
- | DVar of (* = *) expr option (* value *)
- (* declare or reassign *)
- | DShortVar of (* := *) expr
-
- | DTypeAlias of tok (* = *) * type_
- | DTypeDef of type_
+ | DTypeAlias of ident * tok (* = *) * type_
+ | DTypeDef of ident * type_
 
 and top_decl =
  (* toplevel decl only *)
- | DFunc   of entity *                            func_type * stmt
- | DMethod of entity * parameter (* receiver *) * func_type * stmt
+ | DFunc   of ident *                            func_type * stmt
+ | DMethod of ident * parameter (* receiver *) * func_type * stmt
  | D of decl
 
 (* ------------------------------------------------------------------------- *)
@@ -266,9 +266,6 @@ type any = unit
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-let mk_entity id topt = 
-  { name = id; type_ = topt }
-
 let stmt1 xs =
   match xs with
   | [] -> Empty

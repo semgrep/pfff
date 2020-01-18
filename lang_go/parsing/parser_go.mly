@@ -37,7 +37,7 @@ let mk_vars xs type_opt expr_opt =
     | Some ys -> ys |> List.rev |> List.map (fun x -> Some x)
   in
   Common2.zip_safe xs ys |> List.map (fun (id, eopt) ->
-      mk_entity id type_opt, DVar eopt
+      DVar (id, type_opt, eopt)
   )
 
 let _mk_const _xs _type_opt _expr_opt =
@@ -54,6 +54,9 @@ let mk_arg x =
   | Right t -> ArgType t
 
 let _expr_to_type _e =
+  raise Todo
+
+let expr_or_type_to_type _e = 
   raise Todo
 
 %}
@@ -381,7 +384,7 @@ expr:
 |   expr LDIV expr     { mk_bin $1 Div $2 $3 }
 |   expr LPERCENT expr { mk_bin $1 Mod $2 $3 }
 |   expr LAND expr     { mk_bin $1 BitAnd $2 $3 }
-|   expr LANDNOT expr  { mk_bin $1 BitNot (* TODO *) $2 $3 }
+|   expr LANDNOT expr  { mk_bin $1 BitNot (* BitAndNot aka BitClear *) $2 $3 }
 |   expr LLSH expr     { mk_bin $1 LSL $2 $3 }
 |   expr LRSH expr     { mk_bin $1 LSR $2 $3 }
 
@@ -418,14 +421,17 @@ pexpr_no_paren:
 
 |   name { Id $1 }
 
-|   pexpr LDOT sym { Selector ($1, $3) }
-|   pexpr LDOT LPAREN expr_or_type RPAREN { raise Todo }
+    /*(* can be many things *)*/
+|   pexpr LDOT sym { Selector ($1, $2, $3) }
+
+|   pexpr LDOT LPAREN expr_or_type RPAREN 
+    { TypeAssert ($1, expr_or_type_to_type $4) }
 |   pexpr LDOT LPAREN LTYPE RPAREN { raise Todo }
 
 |   pexpr LBRACKET expr RBRACKET { Index ($1, $3) }
-|   pexpr LBRACKET oexpr LCOLON oexpr RBRACKET { raise Todo }
-|   pexpr LBRACKET oexpr LCOLON oexpr LCOLON oexpr RBRACKET
-    { raise Todo
+|   pexpr LBRACKET oexpr LCOLON oexpr RBRACKET { Slice ($1, ($3, $5, None)) }
+|   pexpr LBRACKET oexpr LCOLON oexpr LCOLON oexpr RBRACKET 
+    { Slice ($1, ($3, $5, $7))
         (*if $5 == nil {
             Yyerror("middle index required in 3-index slice");
         }
