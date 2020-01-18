@@ -40,6 +40,10 @@ let mk_vars xs type_opt expr_opt =
       mk_entity id type_opt, DVar eopt
   )
 
+let _mk_const _xs _type_opt _expr_opt =
+  (* zip or repeat *)
+  raise Todo
+
 let mk_bin e1 op tok e2 =
   Binary (e1, (op, tok), e2)
 let mk_unary op tok e = 

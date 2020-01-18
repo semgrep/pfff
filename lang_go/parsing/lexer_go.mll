@@ -244,10 +244,18 @@ rule token = parse
         | "map"      -> LMAP (tokinfo lexbuf)
         | "range"   -> LRANGE (tokinfo lexbuf)
 
-        (* todo? 
+        (* declared in the "universe block"
          *  - true, false
-         *  - new, make
+         *  - iota
+         *  - new, make, 
+         *    panic, recover,
+         *    print, println
+         *    complex, imag, real
+         *    append, cap, 
+         *    close, delete, copy, 
+         *    len,
          *  - nil
+         *  - _ (blank identifier)
          *)
       
         | _          -> LNAME (id, (tokinfo lexbuf)) 

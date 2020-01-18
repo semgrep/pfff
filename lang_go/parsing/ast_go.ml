@@ -204,8 +204,8 @@ and declaration_kind =
  | DConst of expr option (* statically computable? const_expr? *)
  | DVar of expr option (* value *)
 
- | DTypeAlias of type_
- | DTypeNew of type_
+ | DTypeAlias of tok (* = *) * type_
+ | DTypeDef of type_
 
 and top_decl =
  (* toplevel decl only *)
