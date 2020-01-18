@@ -67,3 +67,5 @@ I currently use #3.
 
 * Lambda
 
+See the same notes on this subject in lang_php/parsing/conflicts.txt
+and lang_js/parsing/conflicts.txt
