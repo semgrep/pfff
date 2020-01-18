@@ -202,14 +202,17 @@ and decl = entity * declaration_kind
 
 and declaration_kind = 
  | DConst of expr option (* statically computable? const_expr? *)
- | DVar of expr option (* value *)
+ | DVar of (* = *) expr option (* value *)
+ (* declare or reassign *)
+ | DShortVar of (* := *) expr
 
  | DTypeAlias of tok (* = *) * type_
  | DTypeDef of type_
 
 and top_decl =
  (* toplevel decl only *)
- | DFunc of parameter option (* receiver *) * func_type * stmt
+ | DFunc   of entity *                            func_type * stmt
+ | DMethod of entity * parameter (* receiver *) * func_type * stmt
  | D of decl
 
 (* ------------------------------------------------------------------------- *)
