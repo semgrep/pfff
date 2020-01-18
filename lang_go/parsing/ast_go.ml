@@ -50,22 +50,30 @@ type ident = string wrap
  (* with tarzan *)
 
 (* for ?  (called names in ast.go) *)
-type qualified_ident = ident list
+type qualified_ident = ident list (* 1 or 2 elements *)
  (* with tarzan *)
 
 (*****************************************************************************)
 (* Type *)
 (*****************************************************************************)
 type type_ =
- | TArray of type_ * array_len_type 
- | TStruct of fields
+ | TName of qualified_ident
+ | TPtr of type_
+
+ | TArray of array_kind * type_
  | TFunc of func_type
  | TMap of type_ * type_
  | TChan of chan_dir * type_
 
-  and chan_dir = TSend | TRecv
-  and array_len_type = TSlice | TEllipsis
+ | TStruct    of struct_field list
+ | TInterface of interface_field list
+
+  and chan_dir = TSend | TRecv | TBidirectional
+  and array_kind = TSlice of expr option | TEllipsis of tok
   and func_type =  { fparams: fields; fresults: fields }
+
+  and struct_field = unit
+  and interface_field = unit
 
 (* Id | Selector | Star *)
 and expr_or_type = type_
@@ -81,23 +89,32 @@ and expr =
  | Id of ident
 
  | Selector of expr * selector
+ (* valid for TArray, TMap, Tptr, TName ("string") *)
  | Index of expr * index
   (* low, high, max *)
  | Slice of expr * (expr option * expr option * expr option) 
 
  | Call of expr * arguments
  | Star of tok * expr
- | Unary of Ast_generic.arithmetic_operator (* +/-/~/! *) wrap * expr
+ | Unary of         Ast_generic.arithmetic_operator (* +/-/~/! *) wrap * expr
  | Binary of expr * Ast_generic.arithmetic_operator wrap * expr
+ | Receive of tok * expr
 
  | TypeAssert of expr * type_
 
  | Ellipsis of tok
  | FuncLit of func_type * stmt
 
-  and literal = string
-  and selector = unit
-  and index = unit
+  (* was just a string in ast.go *)
+  and literal = 
+  | Int of string wrap
+  | Float of string wrap
+  | Imag of string wrap
+  | Rune of string wrap
+  | String of string wrap
+
+  and selector = ident
+  and index = expr
   and arguments = argument list
   and argument = 
     | Arg of expr
@@ -156,13 +173,16 @@ and entity = {
 and decl = entity * declaration_kind
 
 and declaration_kind = 
- | DValue of expr option (* value *)
+ | DVar of expr option (* value *)
+ | DConst of expr option 
  | DType of expr_or_type
  | DFunc of field option (* receiver *) * func_type * stmt
 
 and field = {
-    fld_name: qualified_ident; (* can be [] *)
+    fld_name: qualified_ident option;
     fld_type: type_;
+    (* only in args *)
+    fld_dots: (tok * type_ option) option;
  }
 
 and fields = field list 
@@ -187,9 +207,13 @@ and fields = field list
 (* Import *)
 (*****************************************************************************)
 and import = {
- i_path: string;
- i_name: ident option;
+ i_path: string wrap;
+ i_kind: import_kind;
 }
+  and import_kind =
+  | ImportOrig
+  | ImportNamed of ident
+  | ImportDot of tok
 
 (*****************************************************************************)
 (* Toplevel *)
@@ -206,3 +230,12 @@ type program = {
 (*****************************************************************************)
 
 type any = unit
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+let mk_entity id topt = 
+  { name = id; type_ = topt }
+
+let mk_field qid_opt t = 
+  { fld_name = qid_opt; fld_type = t; fld_dots = None }

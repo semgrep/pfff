@@ -21,8 +21,29 @@
  *  b5fe07710f4a31bfc100fbc2e344be11e4b4d3fc^ in the golang source code
  *  at https://github.com/golang/go
  *)
+open Common
+open Ast_generic (* for the arithmetic operator *)
 open Ast_go
 
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+let mk_vars xs type_opt expr_opt = 
+  let xs = List.rev xs in
+  let ys = 
+    match expr_opt with
+    | None -> Common2.repeat None (List.length xs) 
+    | Some ys -> ys |> List.rev |> List.map (fun x -> Some x)
+  in
+  Common2.zip_safe xs ys |> List.map (fun (id, eopt) ->
+      mk_entity id type_opt, DVar eopt
+  )
+
+let mk_bin e1 op tok e2 =
+  Binary (e1, (op, tok), e2)
+let mk_unary op tok e = 
+  Unary ((op, tok), e)
 %}
 
 /*(*************************************************************************)*/
@@ -139,24 +160,25 @@ file: package imports xdcl_list EOF
 
 package: LPACKAGE sym LSEMICOLON { $2 }
 
-
-sgrep_spatch_pattern: EOF { }
+sgrep_spatch_pattern: 
+  EOF { }
 
 /*(*************************************************************************)*/
 /*(*1 Import *)*/
 /*(*************************************************************************)*/
 
 import:
-|   LIMPORT import_stmt { [] }
-|   LIMPORT LPAREN import_stmt_list osemi RPAREN { [] }
+|   LIMPORT import_stmt { [$2] }
+|   LIMPORT LPAREN import_stmt_list osemi RPAREN { List.rev $3 }
 |   LIMPORT LPAREN RPAREN { [] }
 
-import_stmt: import_here  { }
-
-import_here:
-|   LSTR        { (*// import with original name*) }
-|   sym LSTR    { (*// import with given name*)  }
-|   LDOT LSTR   { (*// import into my name space *) }
+import_stmt:
+|        LSTR  
+    { { i_path = $1; i_kind = ImportOrig } (*// import with original name*) }
+|   sym  LSTR  
+    { { i_path = $2; i_kind = ImportNamed $1 }(*// import with given name*)  }
+|   LDOT LSTR  
+    { { i_path = $2; i_kind = ImportDot $1 }(*// import into my name space *) }
 
 /*(*************************************************************************)*/
 /*(*1 Declarations *)*/
@@ -167,8 +189,8 @@ xdcl:
 |   xfndcl     { $1 }
 
 common_dcl:
-|   LVAR vardcl  { [] }
-|   LVAR LPAREN vardcl_list osemi RPAREN { [] }
+|   LVAR vardcl  { $2 }
+|   LVAR LPAREN vardcl_list osemi RPAREN { List.rev $3 }
 |   LVAR LPAREN RPAREN { [] }
 
 |   LCONST constdcl { [] }
@@ -182,23 +204,22 @@ common_dcl:
 
 
 vardcl:
-|   dcl_name_list ntype { }
-|   dcl_name_list ntype LEQ expr_list { }
-|   dcl_name_list       LEQ expr_list { }
-
+|   dcl_name_list ntype               { mk_vars $1 (Some $2) None }
+|   dcl_name_list ntype LEQ expr_list { mk_vars $1 (Some $2) (Some $4) }
+|   dcl_name_list       LEQ expr_list { mk_vars $1 None      (Some $3) }
 
 constdcl:
 |   dcl_name_list ntype LEQ expr_list { }
 |   dcl_name_list       LEQ expr_list { }
 
 constdcl1:
-|   constdcl { }
+|   constdcl            { }
 |   dcl_name_list ntype { }
 |   dcl_name_list   { }
 
 
 typedcl: 
-| typedclname ntype { }
+| typedclname ntype     { }
 /*(* alias decl, go 1.?? *)*/
 | typedclname LEQ ntype { }
 
@@ -207,10 +228,10 @@ typedcl:
 /*(*************************************************************************)*/
 
 stmt:
-| /*(*empty*)*/    { }
-| compound_stmt { }
-| common_dcl { }
-| non_dcl_stmt { }
+| /*(*empty*)*/   { }
+| compound_stmt   { }
+| common_dcl      { }
+| non_dcl_stmt    { }
 
 compound_stmt: LBRACE stmt_list RBRACE { }
 
@@ -330,67 +351,73 @@ caseblock: case stmt_list
 /*(*************************************************************************)*/
 
 expr:
-|   uexpr { }
+|   uexpr              { $1 }
 
-|   expr LOROR expr { }
-|   expr LANDAND expr { }
-|   expr LEQEQ expr { }
-|   expr LNE expr { }
-|   expr LLT expr { }
-|   expr LLE expr { }
-|   expr LGE expr { }
-|   expr LGT expr { }
-|   expr LPLUS expr { }
-|   expr LMINUS expr { }
-|   expr LPIPE expr { }
-|   expr LHAT expr { }
-|   expr LMULT expr { }
-|   expr LDIV expr { }
-|   expr LPERCENT expr { }
-|   expr LAND expr { }
-|   expr LANDNOT expr { }
-|   expr LLSH expr { }
-|   expr LRSH expr { }
+|   expr LOROR expr    { mk_bin $1 Or $2 $3 }
+|   expr LANDAND expr  { mk_bin $1 And $2 $3 }
+|   expr LEQEQ expr    { mk_bin $1 Eq $2 $3 }
+|   expr LNE expr      { mk_bin $1 NotEq $2 $3 }
+|   expr LLT expr      { mk_bin $1 Lt $2 $3 }
+|   expr LLE expr      { mk_bin $1 LtE $2 $3 }
+|   expr LGE expr      { mk_bin $1 GtE $2 $3 }
+|   expr LGT expr      { mk_bin $1 Gt $2 $3 }
+|   expr LPLUS expr    { mk_bin $1 Plus $2 $3 }
+|   expr LMINUS expr   { mk_bin $1 Minus $2 $3 }
+|   expr LPIPE expr    { mk_bin $1 BitOr $2 $3 }
+|   expr LHAT expr     { mk_bin $1 BitXor $2 $3 }
+|   expr LMULT expr    { mk_bin $1 Mult $2 $3 }
+|   expr LDIV expr     { mk_bin $1 Div $2 $3 }
+|   expr LPERCENT expr { mk_bin $1 Mod $2 $3 }
+|   expr LAND expr     { mk_bin $1 BitAnd $2 $3 }
+|   expr LANDNOT expr  { mk_bin $1 BitNot (* TODO *) $2 $3 }
+|   expr LLSH expr     { mk_bin $1 LSL $2 $3 }
+|   expr LRSH expr     { mk_bin $1 LSR $2 $3 }
 
 /*(* not an expression anymore, but left in so we can give a good error *)*/
-|   expr LCOMM expr { }
+|   expr LCOMM expr    { raise Todo }
 
 uexpr:
-|   pexpr { }
+|   pexpr { $1 }
 
-|   LMULT uexpr { }
+|   LMULT uexpr { Star ($1, $2)}
 |   LAND uexpr
     {
            (* // Special case for &T{...}: turn into ( *T){...}. *)
+    raise Todo
     }
-|   LPLUS uexpr { }
-|   LMINUS uexpr { }
-|   LBANG uexpr { }
+|   LPLUS  uexpr { mk_unary Plus $1 $2 }
+|   LMINUS uexpr { mk_unary Minus $1 $2 }
+|   LBANG  uexpr { mk_unary Not $1 $2 }
 |   LTILDE uexpr
     {
-        (* Yyerror("the bitwise complement operator is ^"); *)
+        failwith "the bitwise complement operator is ^"
     }
-|   LHAT uexpr { }
-|   LCOMM uexpr { }
+|   LHAT uexpr { mk_unary BitXor $1 $2  }
+|   LCOMM uexpr { Receive ($1, $2) }
 
 pexpr:
-|   pexpr_no_paren { }
+|   pexpr_no_paren { $1 }
 
-|   LPAREN expr_or_type RPAREN { }
+|   LPAREN expr_or_type RPAREN 
+    { match $2 with
+      | Left e -> e
+      | Right _t -> raise Todo
+    }
 
 
 pexpr_no_paren:
-|   basic_literal { }
+|   basic_literal { BasicLit $1 }
 
-|   name {  }
+|   name { Id $1 }
 
-|   pexpr LDOT sym { }
-|   pexpr LDOT LPAREN expr_or_type RPAREN { }
-|   pexpr LDOT LPAREN LTYPE RPAREN { }
-|   pexpr LBRACKET expr RBRACKET { }
-|   pexpr LBRACKET oexpr LCOLON oexpr RBRACKET { }
+|   pexpr LDOT sym { Selector ($1, $3) }
+|   pexpr LDOT LPAREN expr_or_type RPAREN { raise Todo }
+|   pexpr LDOT LPAREN LTYPE RPAREN { raise Todo }
+
+|   pexpr LBRACKET expr RBRACKET { Index ($1, $3) }
+|   pexpr LBRACKET oexpr LCOLON oexpr RBRACKET { raise Todo }
 |   pexpr LBRACKET oexpr LCOLON oexpr LCOLON oexpr RBRACKET
-    {
+    { raise Todo
         (*if $5 == nil {
             Yyerror("middle index required in 3-index slice");
         }
@@ -400,24 +427,25 @@ pexpr_no_paren:
         *)
     }
 
-|   pseudocall { }
+|   pseudocall { raise Todo }
 
-|   convtype LPAREN expr ocomma RPAREN { }
-|   comptype lbrace braced_keyval_list RBRACE { }
+|   convtype LPAREN expr ocomma RPAREN { raise Todo }
+|   comptype lbrace braced_keyval_list RBRACE { raise Todo }
 
-|   pexpr_no_paren LBRACE braced_keyval_list RBRACE { }
+|   pexpr_no_paren LBRACE braced_keyval_list RBRACE { raise Todo }
 |   LPAREN expr_or_type RPAREN LBRACE braced_keyval_list RBRACE
     {
         (* Yyerror("cannot parenthesize type in composite literal"); *)
+        raise Todo
     }
-|   fnliteral { }
+|   fnliteral { raise Todo }
 
 basic_literal:
-| LINT { }
-| LFLOAT { }
-| LIMAG { }
-| LRUNE { }
-| LSTR { }
+| LINT   { Int $1 }
+| LFLOAT { Float $1 }
+| LIMAG  { Imag $1 }
+| LRUNE  { Rune $1 }
+| LSTR   { String $1 }
 
 
 /*
@@ -448,9 +476,9 @@ complitexpr:
  * list of combo of keyval and val
  */
 keyval_list:
-|   keyval { }
-|   bare_complitexpr { }
-|   keyval_list LCOMMA keyval { }
+|   keyval                              { }
+|   bare_complitexpr                    { }
+|   keyval_list LCOMMA keyval           { }
 |   keyval_list LCOMMA bare_complitexpr { }
 
 braced_keyval_list:
@@ -482,24 +510,13 @@ sym:
  *  newname is used before declared
  *  oldname is used after declared
  */
-new_name: sym { }
+new_name: sym { $1 }
 
-dcl_name: sym { }
+dcl_name: sym { $1 }
 
+name: sym %prec NotParen { $1 }
 
-name: sym %prec NotParen
-    {
-    }
-
-dotname:
-|   name { }
-|   name LDOT sym { }
-
-packname:
-|   LNAME { }
-|   LNAME LDOT sym { }
-
-labelname: new_name { }
+labelname: new_name { $1 }
 
 typedclname:  sym
     {
@@ -509,6 +526,15 @@ typedclname:  sym
         // of the declaration.
         *)
     }
+
+
+dotname:
+|   name { [$1] }
+|   name LDOT sym { [$1; $3] }
+
+packname:
+|   LNAME { [$1] }
+|   LNAME LDOT sym { [$1; $3] }
 
 /*(*************************************************************************)*/
 /*(*1 Types *)*/
@@ -525,57 +551,60 @@ typedclname:  sym
  *)*/
 
 ntype:
-|   dotname { }
+|   dotname      { TName $1 }
 
-|   ptrtype { }
-|   recvchantype { }
-|   fntype { }
+|   ptrtype      { $1 }
+|   recvchantype { $1 }
+|   fntype       { $1 }
 
-|   othertype { }
-|   LPAREN ntype RPAREN { }
+|   othertype           { $1 }
+|   LPAREN ntype RPAREN { $2 }
 
 non_recvchantype:
-|   dotname { }
+|   dotname { TName $1 }
 
-|   ptrtype { }
-|   fntype { }
+|   ptrtype { $1 }
+|   fntype  { $1 }
 
-|   othertype { }
-|   LPAREN ntype RPAREN { }
+|   othertype { $1 }
+|   LPAREN ntype RPAREN { $2 }
 
 
-ptrtype: LMULT ntype { }
+ptrtype: LMULT ntype { TPtr $2 }
 
-recvchantype: LCOMM LCHAN ntype { }
+recvchantype: LCOMM LCHAN ntype { TChan (TRecv, $3) }
 
-fntype: LFUNC LPAREN oarg_type_list_ocomma RPAREN fnres { }
+fntype: LFUNC LPAREN oarg_type_list_ocomma RPAREN fnres 
+  { TFunc { fparams = $3; fresults = $5 } }
 
 fnres:
-| /*(*empty *)*/    %prec NotParen
-    {
-    }
-|   fnret_type { }
-|   LPAREN oarg_type_list_ocomma RPAREN { }
+| /*(*empty *)*/    %prec NotParen      { [] }
+|   fnret_type                          { [mk_field None $1] }
+|   LPAREN oarg_type_list_ocomma RPAREN { $2 }
 
 fnret_type:
-|   dotname { }
+|   dotname      { TName $1 }
 
-|   ptrtype { } 
-|   recvchantype { }
-|   fntype { }
+|   ptrtype      { $1 } 
+|   recvchantype { $1 }
+|   fntype       { $1 }
 
-|   othertype { }
+|   othertype    { $1 }
 
 
 
 othertype:
-|   LBRACKET oexpr RBRACKET ntype { }
-|   LBRACKET LDDD RBRACKET ntype  { }
-|   LCHAN non_recvchantype { }
-|   LCHAN LCOMM ntype { }
-|   LMAP LBRACKET ntype RBRACKET ntype { }
-|   structtype { }
-|   interfacetype { }
+|   LBRACKET oexpr RBRACKET ntype { TArray (TSlice $2, $4) }
+|   LBRACKET LDDD RBRACKET ntype  { TArray (TEllipsis $2, $4) }
+
+|   LCHAN non_recvchantype { TChan (TBidirectional, $2) }
+|   LCHAN LCOMM ntype      { TChan (TSend, $3) }
+
+|   LMAP LBRACKET ntype RBRACKET ntype { TMap ($3, $5) }
+
+|   structtype    { $1 }
+|   interfacetype { $1 }
+
 
 dotdotdot:
 |   LDDD
@@ -585,22 +614,22 @@ dotdotdot:
 |   LDDD ntype { }
 
 
-
 convtype:
 |   fntype { }
 |   othertype { }
 
-comptype: othertype { }
+comptype: 
+| othertype { }
 
 
 expr_or_type:
-|   expr { }
-|   non_expr_type   %prec PreferToRightParen { }
+|   expr                                     { Left $1 }
+|   non_expr_type   %prec PreferToRightParen { Right $1 }
 
 non_expr_type:
-|   fntype { } 
-|   recvchantype { }
-|   othertype { }
+|   fntype              { } 
+|   recvchantype        { }
+|   othertype           { }
 |   LMULT non_expr_type { }
 
 /*(*************************************************************************)*/
@@ -608,35 +637,36 @@ non_expr_type:
 /*(*************************************************************************)*/
 
 structtype:
-|   LSTRUCT lbrace structdcl_list osemi RBRACE { }
-|   LSTRUCT lbrace RBRACE { }
+|   LSTRUCT lbrace structdcl_list osemi RBRACE { TStruct (List.rev $3) }
+|   LSTRUCT lbrace RBRACE                      { TStruct [] }
 
 structdcl:
 |   new_name_list ntype oliteral { }
-|   embed oliteral { }
-|   LPAREN embed RPAREN oliteral
+|         packname      oliteral { }
+|   LMULT packname      oliteral { }
+
+|   LPAREN packname RPAREN oliteral
     {
         (* Yyerror("cannot parenthesize embedded type"); *)
     }
-|   LMULT embed oliteral { }
-|   LPAREN LMULT embed RPAREN oliteral
+|   LPAREN LMULT packname RPAREN oliteral
     {
         (* Yyerror("cannot parenthesize embedded type"); *)
     }
-|   LMULT LPAREN embed RPAREN oliteral
+|   LMULT LPAREN packname RPAREN oliteral
     {
         (* Yyerror("cannot parenthesize embedded type"); *)
     }
 
-embed: packname { }
 
 interfacetype:
-    LINTERFACE lbrace interfacedcl_list osemi RBRACE { }
-|   LINTERFACE lbrace RBRACE { }
+    LINTERFACE lbrace interfacedcl_list osemi RBRACE { TInterface(List.rev $3)}
+|   LINTERFACE lbrace RBRACE                         { TInterface [] }
 
 interfacedcl:
 |   new_name indcl { }
-|   packname { }
+|   packname       { }
+
 |   LPAREN packname RPAREN
     {
         (* Yyerror("cannot parenthesize embedded type"); *)
@@ -687,12 +717,12 @@ fnliteral: fnlitdcl lbrace stmt_list RBRACE { }
 fnlitdcl: fntype { }
 
 arg_type:
-|   name_or_type { }
-|   sym name_or_type { }
-|   sym dotdotdot { }
-|   dotdotdot { }
+|       name_or_type { raise Todo }
+|   sym name_or_type { raise Todo }
+|   sym dotdotdot    { raise Todo }
+|       dotdotdot    { raise Todo }
 
-name_or_type:  ntype { }
+name_or_type:  ntype { $1 }
 
 /*(*************************************************************************)*/
 /*(*1 xxx_opt, xxx_list *)*/
@@ -725,12 +755,12 @@ imports:
 
 /*(* lists with LSEMICOLON separator, at least 1 element *)*/
 import_stmt_list:
-|   import_stmt                             { }
-|   import_stmt_list LSEMICOLON import_stmt { }
+|   import_stmt                             { [$1] }
+|   import_stmt_list LSEMICOLON import_stmt { $3::$1 }
 
 vardcl_list:
-|   vardcl { }
-|   vardcl_list LSEMICOLON vardcl { }
+|   vardcl { $1 }
+|   vardcl_list LSEMICOLON vardcl { $3 @ $1 }
 
 constdcl1_list:
 |   constdcl1 { }
@@ -741,12 +771,12 @@ typedcl_list:
 |   typedcl_list LSEMICOLON typedcl { }
 
 structdcl_list:
-|   structdcl { }
-|   structdcl_list LSEMICOLON structdcl { }
+|   structdcl { [$1] }
+|   structdcl_list LSEMICOLON structdcl { $3::$1 }
 
 interfacedcl_list:
-|   interfacedcl { }
-|   interfacedcl_list LSEMICOLON interfacedcl { }
+|   interfacedcl { [$1] }
+|   interfacedcl_list LSEMICOLON interfacedcl { $3::$1 }
 
 stmt_list:
 |   stmt { }
@@ -754,20 +784,20 @@ stmt_list:
 
 
 arg_type_list:
-|   arg_type { }
-|   arg_type_list LCOMMA arg_type { }
+|   arg_type                      { [$1] }
+|   arg_type_list LCOMMA arg_type { $3::$1 }
 
 new_name_list:
-|   new_name { }
-|   new_name_list LCOMMA new_name { }
+|   new_name { [$1] }
+|   new_name_list LCOMMA new_name { $3::$1 }
 
 dcl_name_list:
-|   dcl_name { }
-|   dcl_name_list LCOMMA dcl_name { }
+|   dcl_name { [$1] }
+|   dcl_name_list LCOMMA dcl_name { $3::$1 }
 
 expr_list:
-|   expr { }
-|   expr_list LCOMMA expr { }
+|   expr { [$1] }
+|   expr_list LCOMMA expr { $3::$1 }
 
 expr_or_type_list:
 |   expr_or_type { }
@@ -786,12 +816,12 @@ ocomma:
 
 oliteral:
 |/*(*empty*)*/ { }
-|   LSTR { }
+|   LSTR       { }
 
 
 oexpr:
-|/*(*empty*)*/ { }
-|   expr { }
+|/*(*empty*)*/ { None }
+|   expr       { Some $1 }
 
 oexpr_list:
 |/*(*empty*)*/ { }
@@ -806,5 +836,5 @@ onew_name:
 |   new_name { }
 
 oarg_type_list_ocomma:
-|/*(*empty*)*/  { }
-|   arg_type_list ocomma { }
+|/*(*empty*)*/  { [] }
+|   arg_type_list ocomma { List.rev $1  }
