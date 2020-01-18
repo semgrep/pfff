@@ -21,6 +21,7 @@
  *  b5fe07710f4a31bfc100fbc2e344be11e4b4d3fc^ in the golang source code
  *  at https://github.com/golang/go
  *)
+open Ast_go
 
 %}
 
@@ -133,9 +134,10 @@
 /*(*1 Toplevel *)*/
 /*(*************************************************************************)*/
 
-file: package imports xdcl_list EOF { raise Common.Todo }
+file: package imports xdcl_list EOF 
+  { { package = $1; imports = List.rev $2; decls = List.rev $3 } }
 
-package: LPACKAGE sym LSEMICOLON { }
+package: LPACKAGE sym LSEMICOLON { $2 }
 
 
 sgrep_spatch_pattern: EOF { }
@@ -145,9 +147,9 @@ sgrep_spatch_pattern: EOF { }
 /*(*************************************************************************)*/
 
 import:
-|   LIMPORT import_stmt { }
-|   LIMPORT LPAREN import_stmt_list osemi RPAREN { }
-|   LIMPORT LPAREN RPAREN { }
+|   LIMPORT import_stmt { [] }
+|   LIMPORT LPAREN import_stmt_list osemi RPAREN { [] }
+|   LIMPORT LPAREN RPAREN { [] }
 
 import_stmt: import_here  { }
 
@@ -161,22 +163,22 @@ import_here:
 /*(*************************************************************************)*/
 
 xdcl:
-|   common_dcl { }
-|   xfndcl { }
+|   common_dcl { $1 }
+|   xfndcl     { $1 }
 
 common_dcl:
-|   LVAR vardcl  { }
-|   LVAR LPAREN vardcl_list osemi RPAREN { }
-|   LVAR LPAREN RPAREN { }
+|   LVAR vardcl  { [] }
+|   LVAR LPAREN vardcl_list osemi RPAREN { [] }
+|   LVAR LPAREN RPAREN { [] }
 
-|   LCONST constdcl { }
-|   LCONST LPAREN constdcl osemi RPAREN { }
-|   LCONST LPAREN constdcl LSEMICOLON constdcl1_list osemi RPAREN { }
-|   LCONST LPAREN RPAREN { }
+|   LCONST constdcl { [] }
+|   LCONST LPAREN constdcl osemi RPAREN { [] }
+|   LCONST LPAREN constdcl LSEMICOLON constdcl1_list osemi RPAREN { [] }
+|   LCONST LPAREN RPAREN { [] }
 
-|   LTYPE typedcl { }
-|   LTYPE LPAREN typedcl_list osemi RPAREN { }
-|   LTYPE LPAREN RPAREN { }
+|   LTYPE typedcl { [] }
+|   LTYPE LPAREN typedcl_list osemi RPAREN { [] }
+|   LTYPE LPAREN RPAREN { [] }
 
 
 vardcl:
@@ -473,6 +475,7 @@ sym:
             $$ = Pkglookup($1.Name, builtinpkg);
         }
         *)
+      $1
     }
 
 /*
@@ -652,7 +655,7 @@ indcl: LPAREN oarg_type_list_ocomma RPAREN fnres
  // all in one place to show how crappy it all is
   *) */
 xfndcl: LFUNC fndcl fnbody
-    {
+    { []
     }
 
 fndcl:
@@ -713,12 +716,12 @@ caseblock_list:
 
 /*(* lists with ending LSEMICOLON, 0 element allowed *)*/
 xdcl_list:
-| /*(*empty*)*/    { }
-|   xdcl_list xdcl LSEMICOLON { }
+| /*(*empty*)*/    { [] }
+|   xdcl_list xdcl LSEMICOLON { $2 @ $1 }
 
 imports:
-| /*(* empty *)*/ { }
-| imports import LSEMICOLON { }
+| /*(* empty *)*/ { [] }
+| imports import LSEMICOLON { $2 @ $1 }
 
 /*(* lists with LSEMICOLON separator, at least 1 element *)*/
 import_stmt_list:
