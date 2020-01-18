@@ -236,10 +236,10 @@ typedcl:
 /*(*************************************************************************)*/
 
 stmt:
-| /*(*empty*)*/   { }
-| compound_stmt   { }
-| common_dcl      { }
-| non_dcl_stmt    { }
+| /*(*empty*)*/   { raise Todo }
+| compound_stmt   { raise Todo }
+| common_dcl      { raise Todo }
+| non_dcl_stmt    { raise Todo }
 
 compound_stmt: LBRACE stmt_list RBRACE { }
 
@@ -449,7 +449,7 @@ pexpr_no_paren:
         (* Yyerror("cannot parenthesize type in composite literal"); *)
         raise Todo
     }
-|   fnliteral { raise Todo }
+|   fnliteral { $1 }
 
 
 basic_literal:
@@ -570,7 +570,7 @@ ntype:
 
 |   ptrtype      { $1 }
 |   recvchantype { $1 }
-|   fntype       { $1 }
+|   fntype       { TFunc $1 }
 
 |   othertype           { $1 }
 |   LPAREN ntype RPAREN { $2 }
@@ -579,7 +579,7 @@ non_recvchantype:
 |   dotname { TName $1 }
 
 |   ptrtype { $1 }
-|   fntype  { $1 }
+|   fntype  { TFunc $1 }
 
 |   othertype { $1 }
 |   LPAREN ntype RPAREN { $2 }
@@ -590,11 +590,12 @@ ptrtype: LMULT ntype { TPtr $2 }
 recvchantype: LCOMM LCHAN ntype { TChan (TRecv, $3) }
 
 fntype: LFUNC LPAREN oarg_type_list_ocomma RPAREN fnres 
-  { TFunc { fparams = $3; fresults = $5 } }
+  { { fparams = $3; fresults = $5 } }
 
 fnres:
 | /*(*empty *)*/    %prec NotParen      { [] }
-|   fnret_type                          { [mk_param None $1] }
+|   fnret_type                          
+    { [{ pname = None; ptype = Some $1; pdots = None }] }
 |   LPAREN oarg_type_list_ocomma RPAREN { $2 }
 
 fnret_type:
@@ -602,7 +603,7 @@ fnret_type:
 
 |   ptrtype      { $1 } 
 |   recvchantype { $1 }
-|   fntype       { $1 }
+|   fntype       { TFunc $1 }
 
 |   othertype    { $1 }
 
@@ -630,7 +631,7 @@ dotdotdot:
 
 
 convtype:
-|   fntype    { $1 }
+|   fntype    { TFunc $1 }
 |   othertype { $1 }
 
 comptype: 
@@ -642,7 +643,7 @@ expr_or_type:
 |   non_expr_type   %prec PreferToRightParen { Right $1 }
 
 non_expr_type:
-|   fntype              { $1 } 
+|   fntype              { TFunc $1 } 
 |   recvchantype        { $1 }
 |   othertype           { $1 }
 |   LMULT non_expr_type { TPtr ($2) }
@@ -727,9 +728,10 @@ fnbody:
 |   LBRACE stmt_list RBRACE { }
 
 
-fnliteral: fnlitdcl lbrace stmt_list RBRACE { }
+fnliteral: fnlitdcl lbrace stmt_list RBRACE 
+    { FuncLit ($1, stmt1 (List.rev $3)) }
 
-fnlitdcl: fntype { }
+fnlitdcl: fntype { $1 }
 
 arg_type:
 |       name_or_type { { pname = None; ptype = Some $1; pdots = None } }
@@ -794,8 +796,8 @@ interfacedcl_list:
 |   interfacedcl_list LSEMICOLON interfacedcl { $3::$1 }
 
 stmt_list:
-|   stmt { }
-|   stmt_list LSEMICOLON stmt { }
+|   stmt { [$1] }
+|   stmt_list LSEMICOLON stmt { $3::$1 }
 
 
 arg_type_list:

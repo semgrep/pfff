@@ -191,16 +191,7 @@ and declaration_kind =
  | DVar of expr option (* value *)
  | DConst of expr option 
  | DType of expr_or_type
- | DFunc of field option (* receiver *) * func_type * stmt
-
-and field = {
-    fld_name: qualified_ident option;
-    fld_type: type_;
-    (* only in args *)
-    fld_dots: (tok * type_ option) option;
- }
-
-and fields = field list 
+ | DFunc of parameter option (* receiver *) * func_type * stmt
 
 (* ------------------------------------------------------------------------- *)
 (* variable (local var, parameter) declaration *)
@@ -252,8 +243,8 @@ type any = unit
 let mk_entity id topt = 
   { name = id; type_ = topt }
 
-let _mk_field qid_opt t = 
-  { fld_name = qid_opt; fld_type = t; fld_dots = None }
-
-let mk_param _nopt _topt =
-  raise Common.Todo
+let stmt1 xs =
+  match xs with
+  | [] -> Empty
+  | [st] -> st
+  | xs -> Block xs
