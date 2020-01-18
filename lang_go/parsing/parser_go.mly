@@ -594,7 +594,7 @@ fntype: LFUNC LPAREN oarg_type_list_ocomma RPAREN fnres
 
 fnres:
 | /*(*empty *)*/    %prec NotParen      { [] }
-|   fnret_type                          { [mk_field None $1] }
+|   fnret_type                          { [mk_param None $1] }
 |   LPAREN oarg_type_list_ocomma RPAREN { $2 }
 
 fnret_type:
@@ -623,10 +623,10 @@ othertype:
 
 dotdotdot:
 |   LDDD
-    {
+    { $1, None
         (* Yyerror("final argument in variadic function missing type"); *)
     }
-|   LDDD ntype { }
+|   LDDD ntype { $1, Some $2 }
 
 
 convtype:
@@ -732,10 +732,10 @@ fnliteral: fnlitdcl lbrace stmt_list RBRACE { }
 fnlitdcl: fntype { }
 
 arg_type:
-|       name_or_type { raise Todo }
-|   sym name_or_type { raise Todo }
-|   sym dotdotdot    { raise Todo }
-|       dotdotdot    { raise Todo }
+|       name_or_type { { pname = None; ptype = Some $1; pdots = None } }
+|   sym name_or_type { { pname = Some $1; ptype = Some $2; pdots = None } }
+|   sym dotdotdot    { { pname = Some $1; ptype = None; pdots = Some $2 } }
+|       dotdotdot    { { pname = None; ptype = None; pdots = Some $1} }
 
 name_or_type:  ntype { $1 }
 

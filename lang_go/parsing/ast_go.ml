@@ -70,7 +70,15 @@ type type_ =
 
   and chan_dir = TSend | TRecv | TBidirectional
   and array_kind = TSlice of expr option | TEllipsis of tok
-  and func_type =  { fparams: fields; fresults: fields }
+  and func_type =  { 
+    fparams: parameter list; 
+    fresults: parameter list;
+  }
+    and parameter = {
+      pname: ident option;
+      ptype: type_ option; (* None only for pdots *)
+      pdots: (tok * type_ option) option;
+    }
 
   and struct_field = unit
   and interface_field = unit
@@ -244,5 +252,8 @@ type any = unit
 let mk_entity id topt = 
   { name = id; type_ = topt }
 
-let mk_field qid_opt t = 
+let _mk_field qid_opt t = 
   { fld_name = qid_opt; fld_type = t; fld_dots = None }
+
+let mk_param _nopt _topt =
+  raise Common.Todo
