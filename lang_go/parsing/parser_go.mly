@@ -49,6 +49,9 @@ let mk_arg x =
   | Left e -> Arg e
   | Right t -> ArgType t
 
+let _expr_to_type _e =
+  raise Todo
+
 %}
 
 /*(*************************************************************************)*/
@@ -435,15 +438,19 @@ pexpr_no_paren:
 |   pseudocall { $1 }
 
 |   convtype LPAREN expr ocomma RPAREN { raise Todo }
-|   comptype lbrace braced_keyval_list RBRACE { raise Todo }
 
-|   pexpr_no_paren LBRACE braced_keyval_list RBRACE { raise Todo }
+|   comptype lbrace braced_keyval_list RBRACE 
+    { CompositeLit ($1, $3) }
+|   pexpr_no_paren LBRACE braced_keyval_list RBRACE 
+    { raise Todo }
+
 |   LPAREN expr_or_type RPAREN LBRACE braced_keyval_list RBRACE
     {
         (* Yyerror("cannot parenthesize type in composite literal"); *)
         raise Todo
     }
 |   fnliteral { raise Todo }
+
 
 basic_literal:
 | LINT   { Int $1 }
@@ -466,32 +473,32 @@ pseudocall:
       { Call ($1, ($3 |> List.rev |> List.map mk_arg) @ [ArgDots $4]) }
 
 
-keyval: complitexpr LCOLON complitexpr
-    {
-    }
-
-
-bare_complitexpr:
-|   expr { }
-|   LBRACE braced_keyval_list RBRACE { }
-
-complitexpr:
-|   expr { }
-|   LBRACE braced_keyval_list RBRACE { }
-
+braced_keyval_list:
+|/*(*empty*)*/         { [] }
+|   keyval_list ocomma { List.rev $1 }
 
 /*
  * list of combo of keyval and val
  */
 keyval_list:
-|   keyval                              { }
-|   bare_complitexpr                    { }
-|   keyval_list LCOMMA keyval           { }
-|   keyval_list LCOMMA bare_complitexpr { }
+|   keyval                              { [$1] }
+|   bare_complitexpr                    { [$1] }
 
-braced_keyval_list:
-|/*(*empty*)*/ { }
-|   keyval_list ocomma { }
+|   keyval_list LCOMMA keyval           { $3 :: $1 }
+|   keyval_list LCOMMA bare_complitexpr { $3 :: $1 }
+
+keyval: complitexpr LCOLON complitexpr { InitKeyValue ($1, $2, $3) }
+
+complitexpr:
+|   expr { InitExpr $1 }
+|   LBRACE braced_keyval_list RBRACE { InitBraces ($2) }
+
+bare_complitexpr:
+|   expr { InitExpr $1 }
+|   LBRACE braced_keyval_list RBRACE { InitBraces $2 }
+
+
+
 
 
 /*(* todo: I don't think we need that with a good fix_tokens_lbody *)*/
@@ -623,11 +630,11 @@ dotdotdot:
 
 
 convtype:
-|   fntype { }
-|   othertype { }
+|   fntype    { $1 }
+|   othertype { $1 }
 
 comptype: 
-| othertype { }
+| othertype { $1 }
 
 
 expr_or_type:

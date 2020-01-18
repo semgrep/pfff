@@ -83,8 +83,7 @@ and expr_or_type = type_
 (*****************************************************************************)
 and expr = 
  | BasicLit of literal
- | CompositeLit of expr list
- | KeyValue of expr * tok (* : *) * expr (* in CompositeLit *)
+ | CompositeLit of type_ * init list
 
  | Id of ident
 
@@ -120,6 +119,12 @@ and expr =
     | Arg of expr
     | ArgType of type_
     | ArgDots of tok (* should be the last argument *)
+
+ (* could be merged with expr *)
+ and init = 
+  | InitExpr of expr
+  | InitKeyValue of init * tok (* : *) * init
+  | InitBraces of init list
 
 (*****************************************************************************)
 (* Statement *)
