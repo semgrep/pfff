@@ -40,7 +40,7 @@ let mk_vars_or_consts xs type_opt exprs_opt mk_var_or_const =
     | None -> []
     | Some ys -> List.rev ys
   in
-  (* todo: for consts we should copy the last value *)
+  (* less: for consts we should copy the last value *)
   let rec aux xs ys =
     match xs, ys with
     | [], [] -> []
@@ -455,7 +455,7 @@ pexpr:
 |   LPAREN expr_or_type RPAREN 
     { match $2 with
       | Left e -> e
-      | Right _t -> error $1 "expr_or_type in LPAREN"
+      | Right t -> ParenType t
     }
 
 
@@ -469,7 +469,7 @@ pexpr_no_paren:
 
 |   pexpr LDOT LPAREN expr_or_type RPAREN 
     { TypeAssert ($1, expr_or_type_to_type $2 $4) }
-    /*(* todo: only inside a TypeSwitch, rewrite grammar? *)*/
+    /*(* less: only inside a TypeSwitch, rewrite grammar? *)*/
 |   pexpr LDOT LPAREN LTYPE RPAREN 
     { TypeSwitchExpr ($1, $3) }
 
@@ -547,7 +547,7 @@ bare_complitexpr:
 
 
 
-/*(* todo: I don't think we need that with a good fix_tokens_lbody *)*/
+/*(* less: I don't think we need that with a good fix_tokens_lbody *)*/
 lbrace:
 |   LBODY { }
 |   LBRACE { }

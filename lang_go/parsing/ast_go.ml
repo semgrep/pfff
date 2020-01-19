@@ -152,6 +152,9 @@ and expr =
 
  | FuncLit of func_type * stmt
 
+ (* only used as an intermediate during parsing, should be converted *)
+ | ParenType of type_
+
   (* old: was just a string in ast.go *)
   and literal = 
   (* less: Bool of bool wrap | Nil of tok? *)
