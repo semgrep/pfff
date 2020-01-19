@@ -240,7 +240,7 @@ import_stmt:
 
 xdcl:
 |   common_dcl { $1 |> List.map (fun decl -> D decl) }
-|   xfndcl     { $1 }
+|   xfndcl     { [$1] }
 
 common_dcl:
 |   LVAR vardcl  { $2 }
@@ -254,8 +254,8 @@ common_dcl:
       { $3 @ (List.rev $5) }
 |   LCONST LPAREN RPAREN { [] }
 
-|   LTYPE typedcl { [] }
-|   LTYPE LPAREN typedcl_list osemi RPAREN { [] }
+|   LTYPE typedcl { [$2] }
+|   LTYPE LPAREN typedcl_list osemi RPAREN { List.rev $3 }
 |   LTYPE LPAREN RPAREN { [] }
 
 
@@ -276,9 +276,9 @@ constdcl1:
 
 
 typedcl: 
-| typedclname ntype     { }
+| typedclname ntype     { DTypeDef ($1, $2) }
 /*(* alias decl, go 1.?? *)*/
-| typedclname LEQ ntype { }
+| typedclname LEQ ntype { DTypeAlias ($1, $2, $3) }
 
 /*(*************************************************************************)*/
 /*(*1 Statements *)*/
@@ -587,7 +587,7 @@ name: sym %prec NotParen { $1 }
 labelname: new_name { $1 }
 
 typedclname:  sym
-    {
+    { $1
         (*
         // different from dclname because the name
         // becomes visible right here, not at the end
@@ -734,30 +734,24 @@ indcl: LPAREN oarg_type_list_ocomma RPAREN fnres
  // all in one place to show how crappy it all is
   *) */
 xfndcl: LFUNC fndcl fnbody
-    { [] }
+    { $2 $3 }
 
 fndcl:
-|   sym LPAREN oarg_type_list_ocomma RPAREN fnres { }
+|   sym LPAREN oarg_type_list_ocomma RPAREN fnres 
+    { fun body -> DFunc ($1, { fparams = $3; fresults = $5 }, body) }
 |   LPAREN oarg_type_list_ocomma RPAREN sym 
     LPAREN oarg_type_list_ocomma RPAREN fnres
     {
-       (*
-        if $2 == nil {
-            Yyerror("method has no receiver");
-            break;
-        }
-        if $2.Next != nil {
-            Yyerror("method has multiple receivers");
-            break;
-        }
-       *)
+      fun body ->
+        match $2 with
+        | [x] -> DMethod ($4, x, { fparams = $6; fresults = $8 }, body)
+        | [] -> error $1 "method has no receiver"
+        | _::_::_ -> error $1 "method has multiple receivers"
     }
 
-
-
 fnbody:
-| /*(*empty *)*/    {  }
-|   LBRACE stmt_list RBRACE { }
+|  /*(*empty *)*/          {  Empty }
+|  LBRACE stmt_list RBRACE { Block $2 }
 
 
 fnliteral: fnlitdcl lbrace stmt_list RBRACE 
@@ -816,8 +810,8 @@ constdcl1_list:
 |   constdcl1_list LSEMICOLON constdcl1 { $3 @ $1 }
 
 typedcl_list:
-|   typedcl { }
-|   typedcl_list LSEMICOLON typedcl { }
+|   typedcl { [$1] }
+|   typedcl_list LSEMICOLON typedcl { $3::$1 }
 
 structdcl_list:
 |   structdcl { $1 }
