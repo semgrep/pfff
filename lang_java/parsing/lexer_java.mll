@@ -140,22 +140,53 @@ let EndOfLineComment = "//" InputCharacter* LineTerminator
 
 let Letter = ['A'-'Z' 'a'-'z' '_' '$']
 let Digit = ['0'-'9']
+
 let Identifier = Letter (Letter | Digit)*
 
-let IntegerTypeSuffix = ['l' 'L']
-
-let DecimalIntegerLiteral = ('0' | ['1'-'9'] Digit*) IntegerTypeSuffix?
-
+let NonZeroDigit = ['1'-'9']
 let HexDigit = ['0'-'9' 'a'-'f' 'A'-'F']
-let HexIntegerLiteral = '0' ['x' 'X'] HexDigit+ IntegerTypeSuffix?
-
 let OctalDigit = ['0'-'7']
-let OctalIntegerLiteral = '0' OctalDigit+ IntegerTypeSuffix?
+let BinaryDigit = ['0'-'1']
+
+(* javaext: underscore in numbers *)
+let IntegerTypeSuffix = ['l' 'L']
+let Underscores = '_' '_'*
+
+let DigitOrUnderscore = Digit | '_'
+let DigitsAndUnderscores = DigitOrUnderscore DigitOrUnderscore*
+let Digits = Digit | Digit DigitsAndUnderscores? Digit
+
+let DecimalNumeral = 
+  "0"
+| NonZeroDigit Digits?
+| NonZeroDigit Underscores Digits
+
+let DecimalIntegerLiteral = DecimalNumeral IntegerTypeSuffix?
+
+let HexDigitOrUndercore = HexDigit | '_'
+let HexDigitsAndUnderscores = HexDigitOrUndercore HexDigitOrUndercore*
+let HexDigits = HexDigit | HexDigit HexDigitsAndUnderscores? HexDigit
+let HexNumeral = ("0x" | "0X") HexDigits
+let HexIntegerLiteral = HexNumeral IntegerTypeSuffix?
+
+let OctalDigitOrUnderscore = OctalDigit | '_'
+let OctalDigitsAndUnderscores = OctalDigitOrUnderscore OctalDigitOrUnderscore*
+let OctalDigits = OctalDigit | OctalDigit OctalDigitsAndUnderscores? OctalDigit
+let OctalNumeral = "0" (OctalDigits | Underscores OctalDigits)
+let OctalIntegerLiteral = OctalNumeral IntegerTypeSuffix?
+
+let BinaryDigitOrUnderscore = BinaryDigit | '_'
+let BinaryDigitsAndUnderscores = BinaryDigitOrUnderscore BinaryDigitOrUnderscore*
+let BinaryDigits = BinaryDigit | BinaryDigit BinaryDigitsAndUnderscores? BinaryDigit
+let BinaryNumeral = ("0b" | "0B") BinaryDigits
+let BinaryIntegerLiteral = BinaryNumeral IntegerTypeSuffix?
 
 let IntegerLiteral =
   DecimalIntegerLiteral
 | HexIntegerLiteral
 | OctalIntegerLiteral
+(* javaext: ? *)
+| BinaryIntegerLiteral
 
 let ExponentPart = ['e' 'E'] ['+' '-']? Digit+
 
