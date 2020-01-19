@@ -85,6 +85,7 @@ let rec expr_to_type tok e =
   match e with
   | Id id -> TName [id]
   | Deref (_, e) -> TPtr (expr_to_type tok e)
+  | Selector (Id id1, _, id2) -> TName [id1;id2]
   | _ -> error tok "TODO: expr_to_type"
 
 let expr_or_type_to_type tok x = 
