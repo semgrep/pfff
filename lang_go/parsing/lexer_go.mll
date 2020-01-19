@@ -166,7 +166,7 @@ rule token = parse
   | "<<="   { LASOP (LSL, tokinfo lexbuf) }
   | ">>="   { LASOP (LSR, tokinfo lexbuf) }
   (* Go specific operator *)
-  | "&^="   { LASOP (raise Todo , tokinfo lexbuf) }
+  | "&^="   { LASOP (BitClear, tokinfo lexbuf) }
 
   | "=="    { LEQEQ (tokinfo lexbuf) }
   | "!="    { LNE (tokinfo lexbuf) }

@@ -221,6 +221,7 @@ and vof_arithmetic_operator =
   | BitXor -> Ocaml.VSum (("BitXor", []))
   | BitAnd -> Ocaml.VSum (("BitAnd", []))
   | BitNot -> Ocaml.VSum (("BitNot", []))
+  | BitClear -> Ocaml.VSum (("BitClear", []))
   | And -> Ocaml.VSum (("And", []))
   | Or -> Ocaml.VSum (("Or", []))
   | Not -> Ocaml.VSum (("Not", []))

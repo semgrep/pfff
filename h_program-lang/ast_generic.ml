@@ -284,7 +284,7 @@ and expr =
       | Mult | Div | Mod
       | Pow | FloorDiv | MatMult (* Python *)
       | LSL | LSR | ASR (* L = logic, A = Arithmetic, SL = shift left *) 
-      | BitOr | BitXor | BitAnd | BitNot (* unary *)
+      | BitOr | BitXor | BitAnd | BitNot (* unary *) | BitClear (* Go *)
       (* todo? rewrite in CondExpr? have special behavior *)
       | And | Or (* also shortcut operator *) | Xor (* PHP*) | Not (* unary *)
       | Eq     | NotEq     (* less: could be desugared to Not Eq *)
@@ -887,7 +887,7 @@ let is_boolean_operator = function
  | Mult | Div | Mod
  | Pow | FloorDiv | MatMult (* Python *)
  | LSL | LSR | ASR (* L = logic, A = Arithmetic, SL = shift left *) 
- | BitOr | BitXor | BitAnd | BitNot (* unary *)
+ | BitOr | BitXor | BitAnd | BitNot | BitClear (* unary *)
   -> false
  | And | Or | Xor | Not
  | Eq     | NotEq     
