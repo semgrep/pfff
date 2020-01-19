@@ -367,19 +367,22 @@ loop_body: LBODY stmt_list RBRACE { Block $2 }
 
 /*(* split in 2, switch expr and switch types *)*/
 switch_stmt: LSWITCH if_header LBODY caseblock_list RBRACE 
-    { Empty }
+    { let stopt1, stopt2 = $2 in
+      Switch (stopt1, stopt2 ,List.rev $4)
+    }
 
 select_stmt:  LSELECT LBODY caseblock_list RBRACE 
-    { Empty }
+    { Select ($1, List.rev $3) }
 
 case:
-|   LCASE expr_or_type_list LCOLON { }
-|   LCASE expr_or_type_list LEQ expr LCOLON { }
-|   LCASE expr_or_type_list LCOLAS expr LCOLON { }
-|   LDEFAULT LCOLON { }
+|   LCASE expr_or_type_list LCOLON             { CaseExprs $2 }
+|   LCASE expr_or_type_list LEQ expr LCOLON    { CaseAssign ($2, $3, $4) }
+|   LCASE expr_or_type_list LCOLAS expr LCOLON { CaseAssign ($2, $3, $4) }
+|   LDEFAULT LCOLON                            { CaseDefault $1 }
 
 caseblock: case stmt_list
     {
+      $1, Block $2
       (*
         // If the last token read by the lexer was consumed
         // as part of the case, clear it (parser has cleared yychar).
@@ -787,8 +790,8 @@ elseif_list:
 | elseif_list elseif { $2::$1 }
 
 caseblock_list:
-| /*(*empty*)*/  { }
-| caseblock_list caseblock { }
+| /*(*empty*)*/  { [] }
+| caseblock_list caseblock { $2::$1 }
 
 /*(* lists with ending LSEMICOLON, 0 element allowed *)*/
 xdcl_list:

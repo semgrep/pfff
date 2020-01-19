@@ -209,10 +209,13 @@ and stmt =
  | IncDec of expr * Ast_generic.incr_decr wrap * Ast_generic.prefix_postfix
 
  | If     of stmt option (* init *) * expr * stmt * stmt option
- | Switch of stmt option (* init *) * expr * case_clause list
+ (* todo: cond should be an expr, except for TypeSwitch where it can also
+  * be x := expr
+  *)
+ | Switch of stmt option (* init *) * stmt option * case_clause list
  (* todo: expr should always be a TypeSwitchExpr *)
- | TypeSwitch of stmt option * expr (* Assign *) * case_clause list
- | Select of comm_clause list
+ (* | TypeSwitch of stmt option * expr (* Assign *) * case_clause list *)
+ | Select of tok * comm_clause list
 
  (* note: no While or DoWhile, just For and Foreach (Range) *)
  | For of (stmt option * expr option * stmt option) * stmt
@@ -233,10 +236,14 @@ and stmt =
  | Defer of tok * call_expr
 
  (* todo: split in case_clause_expr and case_clause_type *)
- and case_clause = 
-    expr_or_type list (* [] = default *) * stmt (* can be Empty*)
- and comm_clause =
-    stmt (* Send or Receive *) * stmt (* can be empty *)
+ and case_clause = case_kind * stmt (* can be Empty*)
+   and case_kind =
+    | CaseExprs of expr_or_type list
+    | CaseAssign of expr_or_type list * tok (* = or := *) * expr
+    | CaseDefault of tok
+ (* TODO: stmt (* Send or Receive *) * stmt (* can be empty *) *)
+ and comm_clause = case_clause
+    
  and call_expr = expr * arguments
 
 (*****************************************************************************)
