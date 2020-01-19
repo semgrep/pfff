@@ -214,7 +214,8 @@ package: LPACKAGE sym LSEMICOLON { $2 }
 
 sgrep_spatch_pattern: 
  | expr EOF       { E $1 }
-
+ | stmt LSEMICOLON EOF       { S $1 }
+ | stmt LSEMICOLON stmt LSEMICOLON stmt_list EOF { Ss ($1::$3::List.rev $5) }
 
 /*(*************************************************************************)*/
 /*(*1 Import *)*/
