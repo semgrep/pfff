@@ -181,7 +181,6 @@ and stmt =
  | AssignOp of expr * Ast_generic.arithmetic_operator wrap * expr
  (* declare or reassign, and special semantic when Receive operation *)
  | DShortVars of expr list * tok (* := *) * expr list
-
  | If     of stmt option (* init *) * expr * stmt * stmt option
  | Switch of stmt option (* init *) * expr * case_clause list
  | TypeSwitch of stmt option * stmt (* Assign *) * case_clause list

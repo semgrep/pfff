@@ -53,8 +53,17 @@ let mk_arg x =
   | Left e -> Arg e
   | Right t -> ArgType t
 
-let mk_else _elseifs _else_ = 
-  raise Todo
+let condition_of_stmt tok stmt =
+  match stmt with
+  | ExprStmt e -> e
+  | _ -> error tok "condition is not an expression"
+
+let mk_else elseifs else_ = 
+  let elseifs = List.rev elseifs in
+  List.fold_right (fun elseif accu ->
+      let ((stopt, cond), body) = elseif in
+      Some (If (stopt, cond, body, accu))
+  ) elseifs else_
 
 let expr_to_type _e =
   raise Todo
@@ -288,13 +297,8 @@ simple_stmt:
 /*(* IF cond body (ELSE IF cond body)* (ELSE block)? *) */
 if_stmt: LIF  if_header loop_body elseif_list else_
     { match $2 with
-      | stopt, Some (ExprStmt e) ->
-        If (stopt, e, $3, (mk_else $4 $5))
-      | _, Some _ -> 
-        (* stricter: *)
-        error $1 "condition is not an expression"
-      | _, None ->
-        error $1 "missing condition in if statement"
+      | stopt, Some st -> If (stopt, condition_of_stmt $1 st, $3,mk_else $4 $5)
+      | _, None -> error $1 "missing condition in if statement"
     }
 
 if_header:
@@ -303,32 +307,34 @@ if_header:
 
 
 elseif: LELSE LIF  if_header loop_body
-    {
-        (* if $4.Left == nil {
-            Yyerror("missing condition in if statement");
-        } *)
+    { match $3 with
+      | stopt, Some st -> (stopt, condition_of_stmt $2 st), $4
+      | _, None -> error $2 "missing condition in if statement"
     }
 
 else_:
-| /*(*empty*)*/ { }
-|   LELSE compound_stmt { }
+| /*(*empty*)*/         { None }
+|   LELSE compound_stmt { Some $2 }
 
 
-for_stmt: LFOR for_body { raise Todo }
-
-for_body: for_header loop_body { }
-
-for_header:
-|   osimple_stmt LSEMICOLON osimple_stmt LSEMICOLON osimple_stmt { }
-|   osimple_stmt { }
-|   range_stmt { }
+for_stmt: 
+ | LFOR osimple_stmt LSEMICOLON osimple_stmt LSEMICOLON osimple_stmt loop_body
+    { raise Todo }
+ | LFOR osimple_stmt loop_body 
+    { match $2 with
+      | None ->    For ((None, None, None), $3)
+      | Some st -> For ((None, Some (condition_of_stmt $1 st), None), $3)
+    }
+ | LFOR range_stmt loop_body
+    { raise Todo }
 
 range_stmt:
-|   expr_list LEQ LRANGE expr { }
+|   expr_list LEQ    LRANGE expr { }
 |   expr_list LCOLAS LRANGE expr { }
-|   LRANGE expr { }
+|                    LRANGE expr { }
 
 loop_body: LBODY stmt_list RBRACE { Block $2 }
+
 
 /*(* split in 2, switch expr and switch types *)*/
 switch_stmt: LSWITCH if_header LBODY caseblock_list RBRACE { raise Todo }
@@ -745,8 +751,8 @@ name_or_type:  ntype { $1 }
 
 /*(* basic lists, 0 element allowed *)*/
 elseif_list:
-| /*(*empty*)*/ { }
-| elseif_list elseif { }
+| /*(*empty*)*/      { [] }
+| elseif_list elseif { $2::$1 }
 
 caseblock_list:
 | /*(*empty*)*/  { }
