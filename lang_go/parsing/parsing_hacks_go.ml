@@ -127,6 +127,12 @@ let fix_tokens_lbody toks =
           aux Normal ys;
           aux env zs
 
+      (* False Positive (FP): if ... {}; ... { *)
+      | (F.Braces (_lb, xs, _rb))::F.Tok (";", _)::zs 
+          when env = InIfHeader ->
+          aux Normal xs;
+          aux env zs
+
           
           
       | (F.Braces (lb, xs, _rb))::ys ->

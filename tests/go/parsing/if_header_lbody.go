@@ -51,6 +51,20 @@ func main() {
 		}
 	}
 
+	if want := []string{"HTTP/1.1", "HTTP/2.0"}; !reflect.DeepEqual(got.log, want) {
+ 		t.Errorf("got %q; want %q", got.log, want)
+	}
+
+		if want := []byte{5, 1, 0}; !bytes.Equal(buf[:3], want) {
+			t.Errorf("socks5 proxy initial read: got %v, want %v", buf[:3], want)
+			return
+		}
+
+
+	if e := []int{arg}; !reflect.DeepEqual(replySlice, e) {
+		t.Errorf("Slice: expected %v got %v", e, replySlice)
+	}
+
 
 }
 
