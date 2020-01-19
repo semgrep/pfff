@@ -246,10 +246,41 @@ and decl =
   | DTypeAlias ((v1, v2, v3)) ->
       let v1 = ident v1 and v2 = tok v2 and v3 = type_ v3 in ()
   | DTypeDef ((v1, v2)) -> let v1 = ident v1 and v2 = type_ v2 in ()
+
+let top_decl =
+  function
+  | DFunc ((v1, v2, v3)) ->
+      let v1 = ident v1 and v2 = func_type v2 and v3 = stmt v3 in ()
+  | DMethod ((v1, v2, v3, v4)) ->
+      let v1 = ident v1
+      and v2 = parameter v2
+      and v3 = func_type v3
+      and v4 = stmt v4
+      in ()
+  | D v1 -> let v1 = decl v1 in ()
+
+let rec import { i_path = i_path; i_kind = i_kind } =
+  let arg = wrap string i_path in
+  let arg = import_kind i_kind in ()
   
 and import_kind =
   function
   | ImportOrig -> ()
   | ImportNamed v1 -> let v1 = ident v1 in ()
   | ImportDot v1 -> let v1 = tok v1 in ()
+
+let program { package = package; imports = imports; decls = decls } =
+  let arg = ident package in
+  let arg = list import imports in
+  let arg = list top_decl decls in ()
   
+let any =
+  function
+  | E v1 -> let v1 = expr v1 in ()
+  | S v1 -> let v1 = stmt v1 in ()
+  | T v1 -> let v1 = type_ v1 in ()
+  | Decl v1 -> let v1 = decl v1 in ()
+  | I v1 -> let v1 = import v1 in ()
+  | P v1 -> let v1 = program v1 in ()
+  | Ident v1 -> let v1 = ident v1 in ()
+  | Ss v1 -> let v1 = list stmt v1 in ()
