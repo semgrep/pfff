@@ -264,17 +264,20 @@ and decl =
  | DTypeAlias of ident * tok (* = *) * type_
  (* this introduces a distinct type, with different method set *)
  | DTypeDef of ident * type_
+ (* with tarzan *)
 
 (* only at the toplevel *)
-and top_decl =
+type top_decl =
  | DFunc   of ident *                            func_type * stmt
  | DMethod of ident * parameter (* receiver *) * func_type * stmt
  | D of decl
 
+ (* with tarzan *)
+
 (*****************************************************************************)
 (* Import *)
 (*****************************************************************************)
-and import = {
+type import = {
  i_path: string wrap;
  i_kind: import_kind;
 }
@@ -284,6 +287,7 @@ and import = {
   | ImportNamed of ident
   (* inline in current file scope all the entities of the imported module *)
   | ImportDot of tok
+ (* with tarzan *)
 
 (*****************************************************************************)
 (* Toplevel *)
@@ -294,6 +298,7 @@ type program = {
   imports: import list;
   decls: top_decl list;
 }
+ (* with tarzan *)
 
 (*****************************************************************************)
 (* Any *)
@@ -309,6 +314,7 @@ type any =
 
  | Ident of ident
  | Ss of stmt list
+ (* with tarzan *)
 
 (*****************************************************************************)
 (* Helpers *)

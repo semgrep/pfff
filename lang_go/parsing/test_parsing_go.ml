@@ -72,13 +72,10 @@ let test_parse_go xs =
 
 
 let test_dump_go file =
-  let _ast = Parse_go.parse_program file in
-(*
-  let v = Meta_ast_python.vof_program ast in
+  let ast = Parse_go.parse_program file in
+  let v = Meta_ast_go.vof_program ast in
   let s = Ocaml.string_of_v v in
   pr s
-*)
-  raise Todo
 
 (*****************************************************************************)
 (* Main entry for Arg *)

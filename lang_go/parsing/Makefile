@@ -7,7 +7,7 @@ OPAMPKG=pfff-lang_go
 
 -include $(TOP)/Makefile.config
 
-SRC= ast_go.ml \
+SRC= ast_go.ml meta_ast_go.ml \
      visitor_go.ml \
      lib_parsing_go.ml \
      parser_go.ml lexer_go.ml \
