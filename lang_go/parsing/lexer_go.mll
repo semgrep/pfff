@@ -249,7 +249,7 @@ rule token = parse
          *  - true, false
          *  - iota
          *  - new, make, 
-         *    panic, recover,
+         *    panic (CFG effect, like goto), recover,
          *    print, println
          *    complex, imag, real
          *    append, cap, 

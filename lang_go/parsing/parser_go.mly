@@ -320,7 +320,7 @@ range_stmt:
 
 loop_body: LBODY stmt_list RBRACE { }
 
-
+/*(* split in 2, switch expr and switch types *)*/
 switch_stmt: LSWITCH if_header LBODY caseblock_list RBRACE { raise Todo }
 
 select_stmt:  LSELECT LBODY caseblock_list RBRACE { raise Todo }
@@ -426,6 +426,7 @@ pexpr_no_paren:
 
 |   pexpr LDOT LPAREN expr_or_type RPAREN 
     { TypeAssert ($1, expr_or_type_to_type $4) }
+ /*(* only inside a TypeSwitch, rewrite grammar? *)*/
 |   pexpr LDOT LPAREN LTYPE RPAREN { raise Todo }
 
 |   pexpr LBRACKET expr RBRACKET { Index ($1, $3) }

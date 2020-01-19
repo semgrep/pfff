@@ -127,7 +127,7 @@ and expr =
  | Ref   of tok (* & *) * expr
  | Unary of         Ast_generic.arithmetic_operator (* +/-/~/! *) wrap * expr
  | Binary of expr * Ast_generic.arithmetic_operator wrap * expr
- | Receive of tok * expr
+ | Receive of tok * expr (* denote a channel *)
 
  | TypeAssert of expr * type_
  (* note that some Call are really Cast, e.g., uint(1), but we need
@@ -151,6 +151,7 @@ and expr =
   and arguments = argument list
   and argument = 
     | Arg of expr
+    (* for new, make *)
     | ArgType of type_
     | ArgDots of tok (* should be the last argument *)
 
@@ -175,7 +176,8 @@ and stmt =
  (* good boy! not an expression but a statement! better! *) 
  | IncDec of expr * Ast_generic.incr_decr wrap * 
                     Ast_generic.prefix_postfix
- | Assign of expr list (* lhs *) * tok * expr list (* rhs *)
+ (* lhs and rhs do not always have the same length *)
+ | Assign of expr list (* lhs, pattern *) * tok * expr list (* rhs *)
  | AssignOp of expr * Ast_generic.arithmetic_operator wrap * expr
  (* declare or reassign, and special semantic when Receive operation *)
  | DShortVars of expr list * tok (* := *) * expr list
@@ -200,7 +202,7 @@ and stmt =
 
  | Go    of tok * call_expr
  | Defer of tok * call_expr
- | Send of expr * tok (* <- *) * expr
+ | Send of expr (* denote a channel *) * tok (* <- *) * expr
 
 
  and case_clause = 
