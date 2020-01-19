@@ -14,5 +14,17 @@ func f2(arg int) (int, error) {
 	var mutex = &sync.Mutex{}
 
 	return arg + 3, nil
+
 }
 
+
+func issue13264() {
+    // this can be parsed incorrectly by parsing hack as
+    // for ; ; []map[int]int { }   and later as [0][0] = 0 {
+    // which then can cause an error in expr_to_type because 0 is not
+    // a valid type for CompositeLit
+    // The solution is to parse this correctly
+	for ; ; []map[int]int{}[0][0] = 0 {
+	}
+
+}
