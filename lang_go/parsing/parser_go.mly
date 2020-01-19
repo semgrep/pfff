@@ -205,7 +205,8 @@ file: package imports xdcl_list EOF
 package: LPACKAGE sym LSEMICOLON { $2 }
 
 sgrep_spatch_pattern: 
-  EOF { }
+ | expr EOF       { E $1 }
+
 
 /*(*************************************************************************)*/
 /*(*1 Import *)*/

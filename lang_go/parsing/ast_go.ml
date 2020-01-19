@@ -101,10 +101,15 @@ and expr_or_type = (expr, type_) Common.either
 (*****************************************************************************)
 and expr = 
  | BasicLit of literal
- (* the type of [...]{...} should be transformed in TArray (length {...}) *)
+ (* less: the type of TarrayEllipsis ( [...]{...}) in a CompositeLit
+  *  could be transformed in TArray (length {...}) *)
  | CompositeLit of type_ * init list
 
-  (* can actually denotes a type sometimes, or a package *)
+  (* This Id can actually denotes sometimes a type (e.g., in Arg), or 
+   * a package (e.g., in Selector). 
+   * To disambiguate requires semantic information.
+   * Selector (Name,'.', ident) can be many things.
+   *)
  | Id of ident 
 
  (* A Selector can be a 
@@ -122,25 +127,34 @@ and expr =
  | Slice of expr * (expr option * expr option * expr option) 
 
  | Call of call_expr
- | Deref of tok (* * *) * expr
- | Ref   of tok (* & *) * expr
- | Unary of         Ast_generic.arithmetic_operator (* +/-/~/! *) wrap * expr
- | Binary of expr * Ast_generic.arithmetic_operator wrap * expr
- | Receive of tok * expr (* denote a channel *)
-
- | TypeAssert of expr * type_
- | TypeSwitchExpr of expr * tok (* 'type' *)
  (* note that some Call are really Cast, e.g., uint(1), but we need
   * semantic information to know that
   *)
  | Cast of type_ * expr
 
- | Ellipsis of tok
+ (* special cases of Unary *)
+ | Deref of tok (* * *) * expr
+ (* less: some &T{...} should be transformed in call to new? *)
+ | Ref   of tok (* & *) * expr
+ | Receive of tok * expr (* denote a channel *)
+
+ | Unary of         Ast_generic.arithmetic_operator (* +/-/~/! *) wrap * expr
+ | Binary of expr * Ast_generic.arithmetic_operator wrap * expr
+
+ (* x.(<type>) *)
+ | TypeAssert of expr * type_
+ (* x.(type)
+  * less: can appear only in a TypeSwitch, so could be moved there *)
+ | TypeSwitchExpr of expr * tok (* 'type' *)
+
+ (* ?? sgrep *)
+ | EllipsisTODO of tok
+
  | FuncLit of func_type * stmt
 
-  (* was just a string in ast.go *)
+  (* old: was just a string in ast.go *)
   and literal = 
-  (* todo? Bool of bool wrap | Nil of tok? *)
+  (* less: Bool of bool wrap | Nil of tok? *)
   | Int of string wrap
   | Float of string wrap
   | Imag of string wrap
@@ -171,25 +185,29 @@ and constant_expr = expr
 and stmt = 
  | DeclStmts of decl list (* inside a Block *)
 
- | Empty
  | Block of stmt list
+ (* less: could be rewritten as Block [] *)
+ | Empty
 
  | ExprStmt of expr
+
  (* good boy! not an expression but a statement! better! *) 
- | IncDec of expr * Ast_generic.incr_decr wrap * 
-                    Ast_generic.prefix_postfix
- (* lhs and rhs do not always have the same length *)
+ (* note: lhs and rhs do not always have the same length as in
+  *  a,b = foo()
+  *)
  | Assign of expr list (* lhs, pattern *) * tok * expr list (* rhs *)
- | AssignOp of expr * Ast_generic.arithmetic_operator wrap * expr
  (* declare or reassign, and special semantic when Receive operation *)
  | DShortVars of expr list * tok (* := *) * expr list
+ | AssignOp of expr * Ast_generic.arithmetic_operator wrap * expr
+ | IncDec of expr * Ast_generic.incr_decr wrap * Ast_generic.prefix_postfix
+
  | If     of stmt option (* init *) * expr * stmt * stmt option
  | Switch of stmt option (* init *) * expr * case_clause list
  (* todo: expr should always be a TypeSwitchExpr *)
  | TypeSwitch of stmt option * expr (* Assign *) * case_clause list
  | Select of comm_clause list
 
- (* no While or DoWhile, just For and Foreach (Range) *)
+ (* note: no While or DoWhile, just For and Foreach (Range) *)
  | For of (stmt option * expr option * stmt option) * stmt
  (* todo: should impose (expr * tok * expr option) for key/value *)
  | Range of (expr list * tok (* = or := *)) option (* key/value pattern *) * 
@@ -206,6 +224,7 @@ and stmt =
 
  | Go    of tok * call_expr
  | Defer of tok * call_expr
+ (* Send as opposed to Receive is a statement, not an expr *)
  | Send of expr (* denote a channel *) * tok (* <- *) * expr
 
  (* todo: split in case_clause_expr and case_clause_type *)
@@ -221,37 +240,24 @@ and stmt =
 
 and decl = 
  (* consts can have neither a type nor an expr but the expr is usually
-  * a copy of the expr of the previous const in a list of consts (e.g., iota)
+  * a copy of the expr of the previous const in a list of consts (e.g., iota),
+  * and the grammar imposes that the first const at least has an expr.
   * less: could do this transformation during parsing.
   *)
  | DConst of ident * type_ option * constant_expr option 
- (* vars have at least a type or an expr *)
+ (* vars have at least a type or an expr ((None,None) is impossible) *)
  | DVar   of ident * type_ option * (* = *) expr option (* value *)
 
+ (* type can be a TStruct to define and name a structure *)
  | DTypeAlias of ident * tok (* = *) * type_
+ (* this introduces a distinct type, with different method set *)
  | DTypeDef of ident * type_
 
+(* only at the toplevel *)
 and top_decl =
- (* toplevel decl only *)
  | DFunc   of ident *                            func_type * stmt
  | DMethod of ident * parameter (* receiver *) * func_type * stmt
  | D of decl
-
-(* ------------------------------------------------------------------------- *)
-(* variable (local var, parameter) declaration *)
-(* ------------------------------------------------------------------------- *)
-(* ------------------------------------------------------------------------- *)
-(* Function *)
-(* ------------------------------------------------------------------------- *)
-(* ------------------------------------------------------------------------- *)
-(* Type *)
-(* ------------------------------------------------------------------------- *)
-(* ------------------------------------------------------------------------- *)
-(* Struct *)
-(* ------------------------------------------------------------------------- *)
-(* ------------------------------------------------------------------------- *)
-(* Interface *)
-(* ------------------------------------------------------------------------- *)
 
 (*****************************************************************************)
 (* Import *)
@@ -261,8 +267,10 @@ and import = {
  i_kind: import_kind;
 }
   and import_kind =
+  (* basename of i_path is usually the package name *)
   | ImportOrig
   | ImportNamed of ident
+  (* inline in current file scope all the entities of the imported module *)
   | ImportDot of tok
 
 (*****************************************************************************)
@@ -279,7 +287,16 @@ type program = {
 (* Any *)
 (*****************************************************************************)
 
-type any = unit
+type any = 
+ | E of expr
+ | S of stmt
+ | T of type_
+ | Decl of decl
+ | I of import
+ | P of program
+
+ | Ident of ident
+ | Ss of stmt list
 
 (*****************************************************************************)
 (* Helpers *)
