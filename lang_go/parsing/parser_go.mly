@@ -319,8 +319,6 @@ simple_stmt:
 |   expr LINC { IncDec ($1, (Incr, $2), Postfix) }
 |   expr LDEC { IncDec ($1, (Decr, $2), Postfix) }
 
-/*(* old: was in expression, to give better error message, but better here *)*/
-|   expr LCOMM expr    { Send ($1, $2, $3) }
 
 
 
@@ -436,6 +434,8 @@ expr:
 |   expr LLSH expr     { mk_bin $1 LSL $2 $3 }
 |   expr LRSH expr     { mk_bin $1 LSR $2 $3 }
 
+/*(* old: was in expression, to give better error message, but better here *)*/
+|   expr LCOMM expr    { Send ($1, $2, $3) }
 
 uexpr:
 |   pexpr { $1 }

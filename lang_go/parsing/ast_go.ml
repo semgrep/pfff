@@ -155,6 +155,10 @@ and expr =
  (* only used as an intermediate during parsing, should be converted *)
  | ParenType of type_
 
+ (* TODO: move in stmt, but need better comm_clause *)
+ (* Send as opposed to Receive is a statement, not an expr *)
+ | Send of expr (* denote a channel *) * tok (* <- *) * expr
+
   (* old: was just a string in ast.go *)
   and literal = 
   (* less: Bool of bool wrap | Nil of tok? *)
@@ -227,8 +231,6 @@ and stmt =
 
  | Go    of tok * call_expr
  | Defer of tok * call_expr
- (* Send as opposed to Receive is a statement, not an expr *)
- | Send of expr (* denote a channel *) * tok (* <- *) * expr
 
  (* todo: split in case_clause_expr and case_clause_type *)
  and case_clause = 
