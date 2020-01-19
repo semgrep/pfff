@@ -81,11 +81,12 @@ let mk_else elseifs else_ =
       Some (If (stopt, cond, body, accu))
   ) elseifs else_
 
-let expr_to_type _e =
-  raise Todo
+let expr_to_type tok _e =
+  error tok "TODO: expr_to_type"
 
-let expr_or_type_to_type _e = 
-  raise Todo
+let expr_or_type_to_type tok _e = 
+  error tok "TODO: expr_or_type_to_type"
+
 
 %}
 
@@ -309,6 +310,10 @@ simple_stmt:
 |   expr LINC { IncDec ($1, (Incr, $2), Postfix) }
 |   expr LDEC { IncDec ($1, (Decr, $2), Postfix) }
 
+/*(* old: was in expression, to give better error message, but better here *)*/
+|   expr LCOMM expr    { Send ($1, $2, $3) }
+
+
 
 /*(* IF cond body (ELSE IF cond body)* (ELSE block)? *) */
 if_stmt: LIF  if_header loop_body elseif_list else_
@@ -335,7 +340,7 @@ else_:
 
 for_stmt: 
  | LFOR osimple_stmt LSEMICOLON osimple_stmt LSEMICOLON osimple_stmt loop_body
-    { raise Todo }
+    { For (($2, Common.map_opt (condition_of_stmt $1) $4, $6), $7) }
  | LFOR osimple_stmt loop_body 
     { match $2 with
       | None ->    For ((None, None, None), $3)
@@ -353,9 +358,11 @@ loop_body: LBODY stmt_list RBRACE { Block $2 }
 
 
 /*(* split in 2, switch expr and switch types *)*/
-switch_stmt: LSWITCH if_header LBODY caseblock_list RBRACE { raise Todo }
+switch_stmt: LSWITCH if_header LBODY caseblock_list RBRACE 
+    { Empty }
 
-select_stmt:  LSELECT LBODY caseblock_list RBRACE { raise Todo }
+select_stmt:  LSELECT LBODY caseblock_list RBRACE 
+    { Empty }
 
 case:
 |   LCASE expr_or_type_list LCOLON { }
@@ -420,8 +427,6 @@ expr:
 |   expr LLSH expr     { mk_bin $1 LSL $2 $3 }
 |   expr LRSH expr     { mk_bin $1 LSR $2 $3 }
 
-/*(* not an expression anymore, but left in so we can give a good error *)*/
-|   expr LCOMM expr    { raise Todo }
 
 uexpr:
 |   pexpr { $1 }
@@ -444,7 +449,7 @@ pexpr:
 |   LPAREN expr_or_type RPAREN 
     { match $2 with
       | Left e -> e
-      | Right _t -> raise Todo
+      | Right _t -> error $1 "expr_or_type in LPAREN"
     }
 
 
@@ -457,9 +462,10 @@ pexpr_no_paren:
 |   pexpr LDOT sym { Selector ($1, $2, $3) }
 
 |   pexpr LDOT LPAREN expr_or_type RPAREN 
-    { TypeAssert ($1, expr_or_type_to_type $4) }
+    { TypeAssert ($1, expr_or_type_to_type $2 $4) }
     /*(* todo: only inside a TypeSwitch, rewrite grammar? *)*/
-|   pexpr LDOT LPAREN LTYPE RPAREN { raise Todo }
+|   pexpr LDOT LPAREN LTYPE RPAREN 
+    { TypeSwitchExpr ($1, $3) }
 
 |   pexpr LBRACKET expr RBRACKET { Index ($1, $3) }
 |   pexpr LBRACKET oexpr LCOLON oexpr RBRACKET { Slice ($1, ($3, $5, None)) }
@@ -481,7 +487,7 @@ pexpr_no_paren:
 |   comptype       lbrace braced_keyval_list RBRACE 
     { CompositeLit ($1, $3) }
 |   pexpr_no_paren LBRACE braced_keyval_list RBRACE 
-    { CompositeLit (expr_to_type $1, $3) }
+    { CompositeLit (expr_to_type $2 $1, $3) }
 
 |   fnliteral { $1 }
 

@@ -129,6 +129,7 @@ and expr =
  | Receive of tok * expr (* denote a channel *)
 
  | TypeAssert of expr * type_
+ | TypeSwitchExpr of expr * tok (* 'type' *)
  (* note that some Call are really Cast, e.g., uint(1), but we need
   * semantic information to know that
   *)
@@ -184,7 +185,7 @@ and stmt =
  | DShortVars of expr list * tok (* := *) * expr list
  | If     of stmt option (* init *) * expr * stmt * stmt option
  | Switch of stmt option (* init *) * expr * case_clause list
- (* todo: expr should always be a type switch expr *)
+ (* todo: expr should always be a TypeSwitchExpr *)
  | TypeSwitch of stmt option * expr (* Assign *) * case_clause list
  | Select of comm_clause list
 

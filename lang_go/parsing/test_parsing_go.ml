@@ -36,6 +36,7 @@ let test_parse_go xs =
     k();
     pr2 file;
 
+   Error_code.try_with_print_exn_and_reraise file(fun () ->
     let (_xs, stat) =
      Common.save_excursion Flag.error_recovery true (fun () ->
      Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
@@ -46,6 +47,7 @@ let test_parse_go xs =
     if stat.PI.bad = 0
     then Hashtbl.add newscore file (Common2.Ok)
     else Hashtbl.add newscore file (Common2.Pb s)
+   )
   ));
 
   flush stdout; flush stderr;
