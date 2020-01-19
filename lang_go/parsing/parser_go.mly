@@ -81,8 +81,10 @@ let mk_else elseifs else_ =
       Some (If (stopt, cond, body, accu))
   ) elseifs else_
 
-let expr_to_type tok _e =
-  error tok "TODO: expr_to_type"
+let expr_to_type tok e =
+  match e with
+  | Id id -> TName [id]
+  | _ -> error tok "TODO: expr_to_type"
 
 let expr_or_type_to_type tok _e = 
   error tok "TODO: expr_or_type_to_type"
