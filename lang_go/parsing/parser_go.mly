@@ -326,11 +326,11 @@ for_stmt:
       | Some st -> For ((None, Some (condition_of_stmt $1 st), None), $3)
     }
  | LFOR expr_list LEQ    LRANGE expr loop_body
-    { raise Todo }
+    { Range (Some (List.rev $2, $3), $4, $5, $6)  }
  | LFOR expr_list LCOLAS LRANGE expr loop_body
-    { raise Todo }
+    { Range (Some (List.rev $2, $3), $4, $5, $6) }
  | LFOR                  LRANGE expr loop_body
-    { raise Todo }
+    { Range (None, $2, $3, $4) }
 
 
 loop_body: LBODY stmt_list RBRACE { Block $2 }

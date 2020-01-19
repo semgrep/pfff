@@ -191,7 +191,8 @@ and stmt =
  (* no While or DoWhile, just For and Foreach (Range) *)
  | For of (stmt option * expr option * stmt option) * stmt
  (* todo: should impose (expr * tok * expr option) for key/value *)
- | Range of (expr list * tok) option (* key/value pattern *) * expr * stmt 
+ | Range of (expr list * tok (* = or := *)) option (* key/value pattern *) * 
+            tok (* 'range' *) * expr * stmt 
 
  | Return of tok * expr list option
  (* was put together in a Branch in ast.go, but better to split *)
