@@ -45,5 +45,12 @@ func main() {
  		check(LINE, 1)
 	}
 
+	for _, b := range []interface{}{opts.daemon, opts.buildBackend} {
+ 		if b, ok := b.(grpcrouter.Backend); ok {
+			grpcBackends = append(grpcBackends, b)
+		}
+	}
+
+
 }
 
