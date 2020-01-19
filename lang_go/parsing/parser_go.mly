@@ -325,13 +325,13 @@ for_stmt:
       | None ->    For ((None, None, None), $3)
       | Some st -> For ((None, Some (condition_of_stmt $1 st), None), $3)
     }
- | LFOR range_stmt loop_body
+ | LFOR expr_list LEQ    LRANGE expr loop_body
+    { raise Todo }
+ | LFOR expr_list LCOLAS LRANGE expr loop_body
+    { raise Todo }
+ | LFOR                  LRANGE expr loop_body
     { raise Todo }
 
-range_stmt:
-|   expr_list LEQ    LRANGE expr { }
-|   expr_list LCOLAS LRANGE expr { }
-|                    LRANGE expr { }
 
 loop_body: LBODY stmt_list RBRACE { Block $2 }
 
@@ -442,7 +442,7 @@ pexpr_no_paren:
 
 |   pexpr LDOT LPAREN expr_or_type RPAREN 
     { TypeAssert ($1, expr_or_type_to_type $4) }
- /*(* only inside a TypeSwitch, rewrite grammar? *)*/
+    /*(* todo: only inside a TypeSwitch, rewrite grammar? *)*/
 |   pexpr LDOT LPAREN LTYPE RPAREN { raise Todo }
 
 |   pexpr LBRACKET expr RBRACKET { Index ($1, $3) }

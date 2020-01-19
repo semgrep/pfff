@@ -94,8 +94,7 @@ type type_ =
     | Method of ident * func_type
     | EmbeddedInterface of qualified_ident
 
-(* Id | Selector | Star *)
-and expr_or_type = type_
+and expr_or_type = (expr, type_) Common.either
 
 (*****************************************************************************)
 (* Expression *)
@@ -150,9 +149,11 @@ and expr =
   and index = expr
   and arguments = argument list
   and argument = 
+    (* less: could also use Arg of expr_or_type *)
     | Arg of expr
-    (* for new, make *)
+    (* for new, make, ?? *)
     | ArgType of type_
+
     | ArgDots of tok (* should be the last argument *)
 
  (* could be merged with expr *)
@@ -183,12 +184,14 @@ and stmt =
  | DShortVars of expr list * tok (* := *) * expr list
  | If     of stmt option (* init *) * expr * stmt * stmt option
  | Switch of stmt option (* init *) * expr * case_clause list
- | TypeSwitch of stmt option * stmt (* Assign *) * case_clause list
+ (* todo: expr should always be a type switch expr *)
+ | TypeSwitch of stmt option * expr (* Assign *) * case_clause list
  | Select of comm_clause list
 
  (* no While or DoWhile, just For and Foreach (Range) *)
  | For of (stmt option * expr option * stmt option) * stmt
- | Range of (expr * expr option) (* key/value pattern *) * expr * stmt 
+ (* todo: should impose (expr * tok * expr option) for key/value *)
+ | Range of (expr list * tok) option (* key/value pattern *) * expr * stmt 
 
  | Return of tok * expr list option
  (* was put together in a Branch in ast.go, but better to split *)
@@ -203,7 +206,7 @@ and stmt =
  | Defer of tok * call_expr
  | Send of expr (* denote a channel *) * tok (* <- *) * expr
 
-
+ (* todo: split in case_clause_expr and case_clause_type *)
  and case_clause = 
     expr_or_type list (* [] = default *) * stmt (* can be Empty*)
  and comm_clause =
