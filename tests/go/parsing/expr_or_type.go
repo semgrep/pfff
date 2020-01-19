@@ -28,3 +28,8 @@ func issue13264() {
 	}
 
 }
+
+func foo() {
+	c.Assert(len(cfg.Get("menus.docs").(([]map[string]interface{}))), qt.Equals, 2)
+
+}

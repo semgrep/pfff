@@ -34,8 +34,6 @@ let test_parse_go xs =
 
   fullxs |> Console.progress (fun k -> List.iter (fun file ->
     k();
-    pr2 file;
-
    Error_code.try_with_print_exn_and_reraise file(fun () ->
     let (_xs, stat) =
      Common.save_excursion Flag.error_recovery true (fun () ->
