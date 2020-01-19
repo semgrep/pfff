@@ -53,12 +53,18 @@ let mk_arg x =
   | Left e -> Arg e
   | Right t -> ArgType t
 
+let mk_else _elseifs _else_ = 
+  raise Todo
+
 let expr_to_type _e =
   raise Todo
 
 let expr_or_type_to_type _e = 
   raise Todo
 
+let error tok s =
+  pr2 s;
+  raise (Parse_info.Parsing_error tok)
 %}
 
 /*(*************************************************************************)*/
@@ -281,15 +287,19 @@ simple_stmt:
 
 /*(* IF cond body (ELSE IF cond body)* (ELSE block)? *) */
 if_stmt: LIF  if_header loop_body elseif_list else_
-    { raise Todo
-        (* if $3.Left == nil
-            Yyerror("missing condition in if statement");
-        *)
+    { match $2 with
+      | stopt, Some (ExprStmt e) ->
+        If (stopt, e, $3, (mk_else $4 $5))
+      | _, Some _ -> 
+        (* stricter: *)
+        error $1 "condition is not an expression"
+      | _, None ->
+        error $1 "missing condition in if statement"
     }
 
 if_header:
-|   osimple_stmt { }
-|   osimple_stmt LSEMICOLON osimple_stmt { }
+|   osimple_stmt { (None, $1) }
+|   osimple_stmt LSEMICOLON osimple_stmt { ($1, $3) }
 
 
 elseif: LELSE LIF  if_header loop_body
@@ -318,7 +328,7 @@ range_stmt:
 |   expr_list LCOLAS LRANGE expr { }
 |   LRANGE expr { }
 
-loop_body: LBODY stmt_list RBRACE { }
+loop_body: LBODY stmt_list RBRACE { Block $2 }
 
 /*(* split in 2, switch expr and switch types *)*/
 switch_stmt: LSWITCH if_header LBODY caseblock_list RBRACE { raise Todo }
@@ -826,8 +836,8 @@ oexpr_list:
 |   expr_list  { Some (List.rev $1) }
 
 osimple_stmt:
-|/*(*empty*)*/ { }
-|   simple_stmt { }
+|/*(*empty*)*/  { None }
+|   simple_stmt { Some $1 }
 
 onew_name:
 |/*(*empty*)*/   { None  }
