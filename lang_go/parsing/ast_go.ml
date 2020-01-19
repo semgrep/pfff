@@ -219,8 +219,13 @@ and stmt =
 (*****************************************************************************)
 
 and decl = 
+ (* consts can have neither a type nor an expr but the expr is usually
+  * a copy of the expr of the previous const in a list of consts (e.g., iota)
+  * less: could do this transformation during parsing.
+  *)
  | DConst of ident * type_ option * constant_expr option 
- | DVar  of ident  * type_ option * (* = *) expr option (* value *)
+ (* vars have at least a type or an expr *)
+ | DVar   of ident * type_ option * (* = *) expr option (* value *)
 
  | DTypeAlias of ident * tok (* = *) * type_
  | DTypeDef of ident * type_

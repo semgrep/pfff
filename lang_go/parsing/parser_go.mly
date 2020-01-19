@@ -29,20 +29,36 @@ open Ast_go
 (* Helpers *)
 (*****************************************************************************)
 
-let mk_vars xs type_opt expr_opt = 
+let error tok s =
+  pr2 s;
+  raise (Parse_info.Parsing_error tok)
+
+let mk_vars_or_consts xs type_opt exprs_opt mk_var_or_const = 
   let xs = List.rev xs in
   let ys = 
-    match expr_opt with
-    | None -> Common2.repeat None (List.length xs) 
-    | Some ys -> ys |> List.rev |> List.map (fun x -> Some x)
+    match exprs_opt with
+    | None -> []
+    | Some ys -> List.rev ys
   in
-  Common2.zip_safe xs ys |> List.map (fun (id, eopt) ->
-      DVar (id, type_opt, eopt)
-  )
+  (* todo: for consts we should copy the last value *)
+  let rec aux xs ys =
+    match xs, ys with
+    | [], [] -> []
+    | x::xs, [] -> mk_var_or_const x type_opt None :: aux xs ys 
+    | x::xs, y::ys -> mk_var_or_const x type_opt (Some y) :: aux xs ys
+    | [], _y::_ys -> 
+        failwith "more values than entities"
+  in
+  aux xs ys
 
-let _mk_const _xs _type_opt _expr_opt =
-  (* zip or repeat *)
-  raise Todo
+let mk_vars xs type_opt exprs_opt =
+  mk_vars_or_consts xs type_opt exprs_opt 
+    (fun a b c -> DVar (a,b,c))
+
+let mk_consts xs type_opt exprs_opt =
+  mk_vars_or_consts xs type_opt exprs_opt 
+    (fun a b c -> DConst (a,b,c))
+ 
 
 let mk_bin e1 op tok e2 =
   Binary (e1, (op, tok), e2)
@@ -71,9 +87,6 @@ let expr_to_type _e =
 let expr_or_type_to_type _e = 
   raise Todo
 
-let error tok s =
-  pr2 s;
-  raise (Parse_info.Parsing_error tok)
 %}
 
 /*(*************************************************************************)*/
@@ -223,9 +236,11 @@ common_dcl:
 |   LVAR LPAREN vardcl_list osemi RPAREN { List.rev $3 }
 |   LVAR LPAREN RPAREN { [] }
 
-|   LCONST constdcl { [] }
-|   LCONST LPAREN constdcl osemi RPAREN { [] }
-|   LCONST LPAREN constdcl LSEMICOLON constdcl1_list osemi RPAREN { [] }
+    /*(* at least the first const has a value *)*/
+|   LCONST constdcl { $2 }
+|   LCONST LPAREN constdcl osemi RPAREN { $3 }
+|   LCONST LPAREN constdcl LSEMICOLON constdcl1_list osemi RPAREN 
+      { $3 @ (List.rev $5) }
 |   LCONST LPAREN RPAREN { [] }
 
 |   LTYPE typedcl { [] }
@@ -238,14 +253,15 @@ vardcl:
 |   dcl_name_list ntype LEQ expr_list { mk_vars $1 (Some $2) (Some $4) }
 |   dcl_name_list       LEQ expr_list { mk_vars $1 None      (Some $3) }
 
+/*(* this enforces the const has a value *)*/
 constdcl:
-|   dcl_name_list ntype LEQ expr_list { }
-|   dcl_name_list       LEQ expr_list { }
+|   dcl_name_list ntype LEQ expr_list { mk_consts $1 (Some $2) (Some $4)  }
+|   dcl_name_list       LEQ expr_list { mk_consts $1 None (Some $3) }
 
 constdcl1:
-|   constdcl            { }
-|   dcl_name_list ntype { }
-|   dcl_name_list       { }
+|   constdcl            { $1 }
+|   dcl_name_list ntype { mk_consts $1 (Some $2) None }
+|   dcl_name_list       { mk_consts $1 None None }
 
 
 typedcl: 
@@ -777,8 +793,8 @@ vardcl_list:
 |   vardcl_list LSEMICOLON vardcl { $3 @ $1 }
 
 constdcl1_list:
-|   constdcl1 { }
-|   constdcl1_list LSEMICOLON constdcl1 { }
+|   constdcl1 { $1 }
+|   constdcl1_list LSEMICOLON constdcl1 { $3 @ $1 }
 
 typedcl_list:
 |   typedcl { }
