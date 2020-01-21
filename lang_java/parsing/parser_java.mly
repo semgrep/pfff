@@ -493,6 +493,7 @@ pre_increment_expression: INCR unary_expression
 pre_decrement_expression: DECR unary_expression  
   { Prefix ((Ast_generic.Decr, $1), $2) }
 
+/*(* see conflicts.txt Cast note to understand the need of this rule *)*/
 unary_expression_not_plus_minus:
  | postfix_expression  { $1 }
  | COMPL unary_expression  { Unary ((Ast_generic.BitNot,$1), $2) }
@@ -625,7 +626,7 @@ lambda_expression: lambda_parameters ARROW lambda_body
   { Lambda ($1, $3) }
 
 lambda_parameters: 
- | identifier { [mk_param_id $1] }
+ | IDENTIFIER { [mk_param_id $1] }
  | LP_LAMBDA lambda_parameter_list RP { $2 }
  | LP_LAMBDA RP { [] }
 

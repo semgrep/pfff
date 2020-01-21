@@ -45,6 +45,26 @@ or a simple identifier.
 
 ex: lambda_param.
 
+* Cast vs unary_expr_not_plus_or_minus
+
+When have read '(foo)' and see a '+', 
+if the cast_expression rule was written as:
+
+cast_expression:
+ | LP expression RP unary_expression
+
+then because of also this rule:
+
+primary_no_new_array:
+ | LP expression RP    { $2 }
+
+they is no way to disambiguate between   a possible (foo) + 2 addition
+and the cast  (foo) of the +2 unary expr.
+
+This is why the java grammar uses
+
+cast_expression:
+ | LP expression RP unary_expression_not_plus_minus
 
 * When add generics
 
