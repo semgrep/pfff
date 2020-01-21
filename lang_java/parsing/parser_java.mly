@@ -105,6 +105,18 @@ let decls f = fun mods vtype vars ->
 let constructor_invocation name args =
   Expr (Call ((Name name), args))
 
+let expr_to_typename expr =
+    match expr with
+    | Name name ->
+        TClass (name |> List.map (fun (xs, id) -> id, xs))
+    (* ugly, undo what was done in postfix_expression *)
+    | Dot (Name name, id) ->
+        TClass ((name @ [[], id]) |> List.map (fun (xs, id) -> id, xs))
+    | _ ->
+        pr2 "cast_expression pb";
+        pr2_gen expr;
+        raise Todo
+
 %}
 
 /*(*************************************************************************)*/
@@ -515,21 +527,12 @@ cast_expression:
  | LP primitive_type RP unary_expression  { Cast ($2, $4) }
  | LP array_type RP unary_expression_not_plus_minus  { Cast ($2, $4) }
  | LP expression RP unary_expression_not_plus_minus
-	{
-          let typname =
-            match $2 with
-            | Name name ->
-                TClass (name |> List.map (fun (xs, id) -> id, xs))
-            (* ugly, undo what was done in postfix_expression *)
-            | Dot (Name name, id) ->
-                TClass ((name @ [[], id]) |> List.map (fun (xs, id) -> id, xs))
-            | _ ->
-                pr2 "cast_expression pb";
-                pr2_gen $2;
-                raise Todo
-          in
-          Cast (typname, $4)
-        }
+	{  Cast (expr_to_typename $2, $4) }
+
+cast_lambda_expression:
+ /*(* this can not be put inside cast_expression. See conflicts.txt*)*/
+ | LP expression RP lambda_expression 
+     { Cast (expr_to_typename $2, $4) }
 
 
 multiplicative_expression:
@@ -687,6 +690,8 @@ expression:
  | assignment_expression  { $1 }
  /*(* javaext: ? *)*/
  | lambda_expression { $1 }
+ /*(* this can not be put inside cast_expression. See conflicts.txt*)*/
+ | cast_lambda_expression { $1 }
 
 constant_expression: expression  { $1 }
 

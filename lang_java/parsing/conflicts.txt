@@ -89,3 +89,46 @@ I currently use #3.
 
 See the same notes on this subject in lang_php/parsing/conflicts.txt
 and lang_js/parsing/conflicts.txt
+
+* Lambda and Cast
+
+lambda_expression are at the very top in the grammar expr rules,
+so they can not appear anywhere unless put inside parenthesis. See:
+
+expression: 
+ | assignment_expression  { $1 }
+ /*(* javaext: ? *)*/
+ | lambda_expression { $1 }
+
+For example this is is not allowed 'a -> 1 + a -> 2' 
+because after 1 +, you can only have a multiplicative_expr, then
+ unary_expr, then postfix_expr then primary, which imposes
+ a LP expression RP.
+
+This breaks when lambda_expressions were allowed in
+cast_expression, which are very low in the java grammar, with originally:
+
+cast_expression:
+ ...
+ | LP expression RP lambda_expression
+
+In that case however, if you read '(foo) a -> 1 ' and then
+you look a '+2', there is no way to know if it should be parsed as
+(foo) a -> 1+2, or (foo) a -> 1     +   2
+because a cast_expression can be part of a multiplicative, or addivitive
+expression.
+
+To solve the ambiguity you need to forbid cast of lambda inside
+cast_expression, and instead allow it only at the top with
+
+expression:
+ | assignment_expression  { $1 }
+ | lambda_expression { $1 }     
+ | lambda_cast_expression { }
+ 
+and 
+lambda_cast_expression: LP expression RP lambda_expression
+
+
+
+
