@@ -209,7 +209,7 @@ and expr =
    * you should really use LetPattern for that.
    * Assign can also be abused to declare new variables, but you should use
    * variable_definition for that.
-   * less: should be in stmt, but many languages allow this at expr level 
+   * less: should be in stmt, but most languages allow this at expr level :(
    *)
   | Assign of expr * expr
   (* less: should desugar in Assign, should be only binary_operator *)

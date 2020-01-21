@@ -12,6 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
+open Common
 
 open Ast_go
 module G = Ast_generic
@@ -37,16 +38,21 @@ let arithmetic_operator _ = ()
 let incr_decr _ = ()
 let prefix_postfix _ = ()
 
+let error = Ast_generic.error
+
+(* need visitor_go.ml and lib_parsing_go.ml *)
+let ii_of_any x = 
+  raise Todo
+
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
-
 
 let tok v = v
 
 let wrap _of_a (v1, v2) = 
   let v1 = _of_a v1 and v2 = tok v2 in 
-  ()
+  (v1, v2)
 
 let ident v = wrap string v
 
@@ -63,7 +69,6 @@ let rec type_ =
   | TMap ((v1, v2)) -> let v1 = type_ v1 and v2 = type_ v2 in ()
   | TChan ((v1, v2)) -> let v1 = chan_dir v1 and v2 = type_ v2 in ()
   | TStruct v1 -> let v1 = list struct_field v1 in ()
-
   | TInterface v1 -> let v1 = list interface_field v1 in ()
 
 and chan_dir = function | TSend -> () | TRecv -> () | TBidirectional -> ()
@@ -75,19 +80,27 @@ and func_type { fparams = fparams; fresults = fresults } =
 and parameter { pname = pname; ptype = ptype; pdots = pdots } =
   let arg = option ident pname in
   let arg = type_ ptype in let arg = option tok pdots in ()
+
 and struct_field (v1, v2) =
   let v1 = struct_field_kind v1 and v2 = option tag v2 in ()
+
 and struct_field_kind =
   function
   | Field ((v1, v2)) -> let v1 = ident v1 and v2 = type_ v2 in ()
   | EmbeddedField ((v1, v2)) ->
       let v1 = option tok v1 and v2 = qualified_ident v2 in ()
+
 and tag v = wrap string v
+
 and interface_field =
   function
   | Method ((v1, v2)) -> let v1 = ident v1 and v2 = func_type v2 in ()
   | EmbeddedInterface v1 -> let v1 = qualified_ident v1 in ()
+
 and expr_or_type v = either expr type_ v
+
+
+
 and expr =
   function
   | BasicLit v1 -> let v1 = literal v1 in ()
@@ -128,6 +141,7 @@ and expr =
   | ParenType v1 -> let v1 = type_ v1 in ()
   | Send ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = tok v2 and v3 = expr v3 in ()
+
 and literal =
   function
   | Int v1 -> let v1 = wrap string v1 in ()
@@ -135,20 +149,26 @@ and literal =
   | Imag v1 -> let v1 = wrap string v1 in ()
   | Rune v1 -> let v1 = wrap string v1 in ()
   | String v1 -> let v1 = wrap string v1 in ()
+
 and index v = expr v
+
 and arguments v = list argument v
 and argument =
   function
   | Arg v1 -> let v1 = expr v1 in ()
   | ArgType v1 -> let v1 = type_ v1 in ()
   | ArgDots v1 -> let v1 = tok v1 in ()
+
 and init =
   function
   | InitExpr v1 -> let v1 = expr v1 in ()
   | InitKeyValue ((v1, v2, v3)) ->
       let v1 = init v1 and v2 = tok v2 and v3 = init v3 in ()
   | InitBraces v1 -> let v1 = list init v1 in ()
+
 and constant_expr v = expr v
+
+
 and stmt =
   function
   | DeclStmts v1 -> let v1 = list decl v1 in ()
@@ -217,6 +237,7 @@ and stmt =
   | Label ((v1, v2)) -> let v1 = ident v1 and v2 = stmt v2 in ()
   | Go ((v1, v2)) -> let v1 = tok v1 and v2 = call_expr v2 in ()
   | Defer ((v1, v2)) -> let v1 = tok v1 and v2 = call_expr v2 in ()
+
 and case_clause (v1, v2) = let v1 = case_kind v1 and v2 = stmt v2 in ()
 and case_kind =
   function
@@ -227,8 +248,12 @@ and case_kind =
       and v3 = expr v3
       in ()
   | CaseDefault v1 -> let v1 = tok v1 in ()
+
 and comm_clause v = case_clause v
+
 and call_expr (v1, v2) = let v1 = expr v1 and v2 = arguments v2 in ()
+
+
 and decl =
   function
   | DConst ((v1, v2, v3)) ->
