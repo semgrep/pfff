@@ -507,10 +507,12 @@ unary_expression_not_plus_minus:
  * Semantic action must ensure that '( expression )' is really '( name )'.
  * Conflict with regular paren expr; when see ')' dont know if
  * can reduce to expr or shift name, so have to use
- * expr in both cases.
+ * expr in both cases (see primary_new_array for the other rule
+ * using LP expression RP)
  *)*/
 cast_expression:
  | LP primitive_type RP unary_expression  { Cast ($2, $4) }
+ | LP array_type RP unary_expression_not_plus_minus  { Cast ($2, $4) }
  | LP expression RP unary_expression_not_plus_minus
 	{
           let typname =
@@ -527,7 +529,7 @@ cast_expression:
           in
           Cast (typname, $4)
         }
- | LP array_type RP unary_expression_not_plus_minus  { Cast ($2, $4) }
+
 
 multiplicative_expression:
  | unary_expression  { $1 }
