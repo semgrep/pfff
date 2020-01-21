@@ -965,11 +965,8 @@ element_value_array_initializer:
  | LC element_values RC { $2 }
  | LC element_values CM RC { $2 }
 
-expr1:
- | primary_no_new_array { $1 }
- | primary_no_new_array PLUS expr1
-    { $1 (* TODO skipping $3 *) }
- | name { NameOrClassType $1 }
+/*(* should be statically a constant expression; can contain '+', '*', etc.*)*/
+expr1: conditional_expression { $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Class *)*/
