@@ -11,6 +11,7 @@ SRC= ast_java.ml meta_ast_java.ml \
      parser_java.ml lexer_java.ml \
      token_helpers_java.ml \
      parsing_hacks_java.ml \
+     parse_java_with_external_prog.ml \
      parse_java.ml \
      test_parsing_java.ml unit_parsing_java.ml
 
@@ -20,8 +21,9 @@ LIBS= $(TOP)/commons/lib.cma \
  $(TOP)/h_program-lang/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons $(TOP)/commons_core \
+  $(TOP)/external/json-wheel \
   $(TOP)/h_program-lang \
-  $(TOP)/globals \
+  $(TOP)/globals
 
 ##############################################################################
 # Generic variables
