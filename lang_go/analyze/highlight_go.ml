@@ -13,11 +13,11 @@
  * license.txt for more details.
  *)
 
-(* open Ast_go *)
+open Ast_go
 open Highlight_code
 module T = Parser_go
-(* module V = Visitor_python *)
-(* module E = Entity_code *)
+module V = Visitor_go
+module E = Entity_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -32,8 +32,8 @@ module T = Parser_go
 (* we generate fake value here because the real one are computed in a
  * later phase in rewrite_categ_using_entities in pfff_visual.
  *)
-let _def2 = Def2 NoUse
-let _use2 = Use2 (NoInfoPlace, UniqueDef, MultiUse)
+let def2 = Def2 NoUse
+let use2 = Use2 (NoInfoPlace, UniqueDef, MultiUse)
 
 
 (* coupling: dupe of list in lexer_go.mll comment *)
@@ -72,14 +72,14 @@ let _builtin_functions = Common.hashset_of_list [
  * to figure out what kind of ident it is.
  *)
 
-let visit_program ~tag_hook _prefs (_program, toks) =
+let visit_program ~tag_hook _prefs (program, toks) =
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->
     tag_hook ii categ;
     Hashtbl.replace already_tagged ii true
   )
   in
-  let _tag_name (_s, ii) categ = 
+  let tag_ident (_s, ii) categ = 
     (* so treat the most specific in the enclosing code and then
      * do not fear to write very general case patterns later because
      * the specific will have priority over the general
@@ -92,12 +92,65 @@ let visit_program ~tag_hook _prefs (_program, toks) =
    if not (Hashtbl.mem already_tagged ii)    
    then tag ii categ
   in
+  let tag_qid xs categ =
+    match xs with
+    | [] | _::_::_::_ -> raise Common.Impossible
+    | [x] -> tag_ident x categ
+    | [x;y] -> 
+        tag_ident x (Entity (E.Module, use2));
+        tag_ident y categ
+   in
+
 
   (* TODO program |> Common.do_option Resolve_python.resolve;*)
 
   (* -------------------------------------------------------------------- *)
   (* AST phase 1 *) 
   (* -------------------------------------------------------------------- *)
+  (* try to better colorize identifiers which can be many different things
+   * e.g. a field, a type, a function, a parameter, etc
+   *)
+
+  let visitor = V.mk_visitor { V.default_visitor with
+    (* use 'k x' as much as possible below. No need to 
+     * do v (Stmt st1); v (Expr e); ... Go deep to tag
+     * special stuff (e.g., a local var in an exception handler) but then
+     * just recurse from the top with 'k x'
+     *)
+
+    (* defs *)
+    V.kprogram = (fun (k, _) x ->
+      tag_ident x.package (Entity (E.Module, def2));
+      x.imports |> List.iter (fun import ->
+        (* could color import.i_path *)
+        match import.i_kind with
+        | ImportNamed id -> tag_ident id (Entity (E.Module, def2))
+        | ImportOrig | ImportDot _ -> ()
+      );
+      k x
+    );
+    V.ktop_decl = (fun (k, _) x ->
+      (match x with
+      | DFunc (id, _t, _st) -> tag_ident id (Entity (E.Function, def2))
+      | DMethod (id, _o, _t, _st) -> tag_ident id (Entity (E.Method, def2))
+      | D _ -> ()
+      );
+      k x
+    );
+
+    (* uses *)
+
+    V.ktype = (fun (k, _) x ->
+      (match x with
+      | TName (["int", ii]) -> tag ii TypeInt
+      | TName qid -> tag_qid qid (Entity (E.Type, use2))
+      | _ -> ()
+      );
+      k x
+    );
+  } in
+  visitor (P program);
+
   (* -------------------------------------------------------------------- *)
   (* tokens phase 1 (list of tokens) *)
   (* -------------------------------------------------------------------- *)
@@ -120,7 +173,9 @@ let visit_program ~tag_hook _prefs (_program, toks) =
     | T.TCommentSpace _ | T.TCommentNewline _ -> ()
 
     (* values  *)
-    | T.LSTR (_,ii) | T.LRUNE (_, ii) ->
+    | T.LSTR (_,ii) ->
+        tag_if_not_tagged ii String (* can be a Module in an import *)
+    | T.LRUNE (_, ii) ->
         tag ii String
     | T.LFLOAT (_,ii) | T.LINT (_,ii) | T.LIMAG (_,ii) ->
         tag ii Number
@@ -201,13 +256,13 @@ let visit_program ~tag_hook _prefs (_program, toks) =
     | T.LCOLON (ii)
     | T.LCOMMA ii
     | T.LSEMICOLON ii
-
     ->
         tag ii Punctuation
 
-    | T.LCOMM ii -> tag ii Punctuation (* keywordComm *)
+    | T.LCOMM ii -> 
+          tag ii Punctuation (* keywordComm *)
 
-    | T.LDDD ii
-        -> tag ii Punctuation
+    | T.LDDD ii-> 
+          tag ii Punctuation
   );
   ()

@@ -317,7 +317,7 @@ and v_program x =
   let arg = v_list v_import v_imports in
   let arg = v_list v_top_decl v_decls in ()
   in
-  vin.kprogram (k, all_functions)
+  vin.kprogram (k, all_functions) x
   
 and v_any =
   function
