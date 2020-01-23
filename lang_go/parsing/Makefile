@@ -62,4 +62,4 @@ clean::
 beforedepend:: parser_go.ml parser_go.mli
 
 visitor_go.cmo: visitor_go.ml
-	$(OCAMLC) -w y -c $<
+	ocamlc $(INCLUDES) -w y -c $<

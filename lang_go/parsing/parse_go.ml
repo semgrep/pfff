@@ -22,10 +22,13 @@ module Lexer = Lexer_go
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* TODO:
- * error recovery: could skip until next toplevel decl (func/type/const/var)
+(* Parser for Go(lang)
+ *
+ * TODO:
+ *  - error recovery: could skip until next toplevel decl (func/type/const/var)
  *
  *)
+
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
