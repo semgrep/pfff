@@ -51,6 +51,8 @@ let json_of_filename_with_external_prog _file =
    * (or use a pipe to the external program to avoid using an
    *  intermediate temporary file)
    *)
+  (* let lines = "node ../parsing/tree-sitter-parser.js " ^ _file ^ " > results.json"
+  Sys.command lines *)
   raise Todo
 
 (*****************************************************************************)
@@ -270,25 +272,40 @@ let wrap str =
  * used by tree-sitter and defined here:
  *  https://github.com/tree-sitter/tree-sitter-java/blob/master/grammar.js
  *
- * Note that the JSON of sharon is not great. It should use arrays instead
- * of those "0", "1", "2" keys. Some values are not good, for example
- * for the decimal_integer_literal I get "1;" instead of just "1"
- * or the name of the method is "main(" instead of just "main".
 *)
+
 let program_of_tree_sitter_json _file json = 
   let rec program = function
-   | J.Object [ "program", J.Object [ "value", _; "body", J.Object xs]] ->
-        let package_opt, rest = 
-          match xs with
-          | (_, J.Object ["package_declaration", pack])::rest ->
-              Some (package pack), rest
+  | J.Object [
+    "type", J.String "program";
+    "startPosition", _;
+    "endPosition", _;
+    "body", J.Object xs;
+  ] -> let package, rest = 
+        match xs with
+          | (_, J.Object [
+            "type", J.String "package_declaration";
+            "startPosition", _;
+            "endPosition", _;
+            "value", J.String pack;
+            "body", _;
+          ])::rest -> Some (qualified_ident pack), rest
           | _ -> None, xs
-        in
-        let imports, rest =
-          [], rest in
-        { package = package_opt; imports = imports; 
-          decls = decls rest }
-   | x -> error "program" x
+       in 
+       let import, rest = 
+         match xs with
+          | (_, J.Object [
+            "type", J.String "import_declaration";
+            "startPosition", _;
+            "endPosition", _;
+            "value", J.String imp;
+            "body", _;
+          ])::rest -> Some (qualified_ident imp), rest
+          | _ -> None, xs
+       in 
+       { package = package; imports = import; 
+        decls = decls rest }
+  | x -> error "program" x
  
   (* from grammar.js: 
     package_declaration: $ => seq(
@@ -298,23 +315,24 @@ let program_of_tree_sitter_json _file json =
       $._semicolon
     ),
    *)
-  and package = function
-    | J.Object ["value", _; "body", 
-        J.Object [
-          "0", _packtok;
-          "1", n;
-          "2", _semicolon;
-        ]] ->
-        qualified_ident n;
-    | x -> error "package" x
 
   and qualified_ident = function
-    | J.Object ["identifier", J.Object ["value", J.String str]] ->
-        [wrap str]
+    | J.Object [
+      "type", J.String "identifier";
+      "startPosition", _;
+      "endPosition", _;
+      "value", J.String str;
+      "body", _;
+    ] -> [wrap star]
     | x -> todo "qualified_ident" x
   and ident = function
-    | J.Object ["identifier", J.Object ["value", J.String str]] ->
-        wrap str
+    | J.Object [
+      "type", J.String "identifier";
+      "startPosition", _;
+      "endPosition", _;
+      "value", J.String str;
+      "body", _;
+    ] -> wrap str
     | x -> todo "ident" x
 
   and decls xs = List.map (fun (_idx, a) -> decl a) xs
@@ -331,35 +349,39 @@ let program_of_tree_sitter_json _file json =
     ),
    *)
   and decl = function
-   | J.Object ["class_declaration", J.Object ["value", _; "body", J.Object [
-        (* todo: should handle optional modifiers, type_params, etc. *)
-        "0", _classtok;
-        "1", n;
-        "2", body;
-      ]]] ->
+    | J.Object [
+        "type", J.String "class_declaration";
+        "startPosition", _;
+        "endPosition", _;
+        "body", J.Object cx;
+      ] ->
         Class { cl_name = ident n;
+          cl_name = None;
           cl_kind = ClassRegular;
-          cl_body = class_body body;
-          (* TODO *)
-          cl_mods = []; cl_extends = None; cl_impls = []; cl_tparams = [];
-          }
-   | x -> todo "decl" x
+          cl_body = class_body cx;
+          cl_mods = []; 
+          cl_extends = None; 
+          cl_impls = []; 
+          cl_tparams = [];
+        }
+    | x -> todo "decl" x
 
   and class_body = function
-   | J.Object ["class_body", J.Object ["value", _; "body", J.Object [
-            "0", _lbracetok;
-            "1", met;
-            "2", _rbracetok;
-       ]]] ->
-        [Method (method_decl met)]
+   | J.Object [
+     "type", J.String "class_body";
+      "startPosition", _;
+      "endPosition", _;
+      "body", J.Object met;
+      ] -> [Method (method_decl met)]
    | x -> todo "class_body" x
+
   and method_decl = function
-   | J.Object ["method_declaration", J.Object ["value", _; "body", J.Object [
-            "0", ret_typ;
-            "1", n;
-            "2", params;
-            "3", st;
-            ]]] ->
+   | J.Object [
+     "type", J.String "method_declaration";
+     "startPosition", _;
+      "endPosition", _;
+     "body", J.Object met_id;
+     ] ->
         { m_var = { name = ident n; mods = []; type_ = Some (typ ret_typ); };
           m_formals = parameters params;
           m_throws = [];
@@ -368,37 +390,55 @@ let program_of_tree_sitter_json _file json =
    | x -> todo "method_decl" x
 
   and typ = function
-   | J.Object ["void_type", _] -> TBasic (wrap "void")
+   | J.Object [
+     "type", "void_type";
+      _
+    ] -> TBasic (wrap "void")
    | x -> todo "typ" x
 
   and parameters = function
-   | J.Object ["formal_parameters", J.Object ["value", _; "body", J.Object [
-            "0", _lparentok;
-            "1", _rparentok;
-            ]]] -> []
+   | J.Object [
+     "type", J.String "formal_parameters";
+     "startPosition", _;
+      "endPosition", _;
+     "value", params
+    ] -> params
    | x -> todo "parameters" x
 
+   and parameter = function
+   | J.Object [
+     "type", J.String "formal_parameter";
+     "startPosition", _;
+      "endPosition", _;
+     "value", param
+    ] -> param
+   | x -> todo "parameter" x
+
   and block = function
-   | J.Object ["block", J.Object ["value", _; "body", J.Object [
-            "0", _lbracetok;
-            "1", st;
-            "2", _rbracetok;
-            ]]]
-      -> Block [stmt st]
+   | J.Object [
+     "type", J.String "block";
+     "startPosition", _;
+    "endPosition", _;
+     "body", J.Object st
+     ] -> Block [stmt st]
    | x -> todo "block" x
 
   and stmt = function
-   | J.Object ["return_statement", J.Object ["value", _; "body", J.Object [
-            "0", _rettok;
-            "1", e;
-            "2", _semicoltok;
-            ]]] ->
-        Return (Some (expr e))
+   | J.Object [
+     "type", J.String "return_statement";
+     "startPosition", _;
+    "endPosition", _;
+     "body", J.Object e
+     ] -> Return (Some (expr e))
    | x -> todo "stmt" x
 
   and expr = function
-   | J.Object ["decimal_integer_literal", J.Object ["value", J.String str]] ->
-        Literal (Int (wrap str))
+   | J.Object [
+     "type", J.String "decimal_integer_literal";
+     "startPosition", _;
+    "endPosition", _;
+     "body", J.Object str
+     ] -> Literal (Int (wrap str))
    | x -> todo "expr" x
 
   in
