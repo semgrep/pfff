@@ -1229,7 +1229,12 @@ enum_body:
  | LC enum_constants    enum_body_declarations_opt RC { $2, $3 }
  | LC enum_constants CM enum_body_declarations_opt RC { $2, $4 }
 
-enum_constant:
+enum_constant: 
+ |           enum_constant_bis { $1 }
+ /*(* always annotations *)*/
+ | modifiers enum_constant_bis { $2 }
+
+enum_constant_bis:
  | identifier                         { EnumSimple $1 }
  | identifier LP argument_list_opt RP { EnumConstructor ($1, $3) }
  | identifier LC method_declarations_opt RC  { EnumWithMethods ($1, $3) }
