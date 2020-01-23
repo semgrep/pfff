@@ -59,8 +59,8 @@ let parse2 filename =
   let stat = Parse_info.default_stat filename in
 
   (* this can throw Parse_info.Lexical_error *)
-  let toks = tokens filename in
-  let toks = Common.exclude TH.is_comment_or_space toks in
+  let toks_orig = tokens filename in
+  let toks = Common.exclude TH.is_comment_or_space toks_orig in
   (* insert implicit SEMICOLON and replace some LBRACE with LBODY *)
   let toks = Parsing_hacks_go.fix_tokens toks in
   let tr, lexer, lexbuf_fake = 
@@ -76,7 +76,7 @@ let parse2 filename =
       )
     in
     stat.PI.correct <- (Common.cat filename |> List.length);
-    (Some xs, toks), stat
+    (Some xs, toks_orig), stat
 
   with Parsing.Parse_error ->
 
@@ -95,7 +95,7 @@ let parse2 filename =
     end;
 
     stat.PI.bad     <- Common.cat filename |> List.length;
-    (None, toks), stat
+    (None, toks_orig), stat
 
 let parse a = 
   Common.profile_code "Parse_go.parse" (fun () -> parse2 a)
