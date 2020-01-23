@@ -363,10 +363,12 @@ and class_decl = {
 (*****************************************************************************)
 
 and decl =
+  (* top decl *)
   | Class of class_decl
+  | Enum of enum_decl
+
   | Method of method_decl
   | Field of field
-  | Enum of enum_decl
   | Init of bool (* static *) * stmt
 
 and decls = decl list
@@ -383,7 +385,7 @@ type compilation_unit = {
    * The bool is for static import (javaext:)
    *)
   imports: (bool * qualified_ident) list;
-  (* todo? necessarily a (unique) class first? *)
+  (* todo? necessarily a (unique) class/interface first? *)
   decls: decls;
 }
  (* with tarzan *)

@@ -1216,9 +1216,10 @@ interface_generic_method_decl:
 interface_method_declator_rest:
  | formal_parameters throws_opt SM { }
 
-/*(*----------------------------*)*/
-/*(*2 Enum *)*/
-/*(*----------------------------*)*/
+/*(*************************************************************************)*/
+/*(*1 Enum *)*/
+/*(*************************************************************************)*/
+
 enum_declaration: modifiers_opt ENUM identifier interfaces_opt enum_body
    { { en_name = $3; en_mods = $1; en_impls = $4; en_body = $5; } }
 
@@ -1235,9 +1236,9 @@ enum_constant:
 
 enum_body_declarations: SM class_body_declarations_opt { $2 }
 
-/*(*----------------------------*)*/
-/*(*2 Annotation type decl *)*/
-/*(*----------------------------*)*/
+/*(*************************************************************************)*/
+/*(*1 Annotation type decl *)*/
+/*(*************************************************************************)*/
 
 /*(* cant factorize modifiers_opt *)*/
 annotation_type_declaration:
