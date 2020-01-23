@@ -260,9 +260,21 @@ let expr_to_typename expr =
 
 goal: compilation_unit EOF  { $1 }
 
+/*(* conflicts: was simply 
+   *  package_declaration_opt import_declarations_opt type_declarations_opt
+   * but with an annotation now possible on package_declaration, seeing an
+   * '@' the LALR(1) parser does not know if it's the start of an annotation
+   * for a package or class_declaration. So we need to unfold those _opt.
+   *)*/
 compilation_unit:
-  package_declaration_opt import_declarations_opt type_declarations_opt
-  { { package = $1; imports = $2; decls = $3; } }
+  | package_declaration import_declarations type_declarations_opt
+    { { package = Some $1; imports = $2; decls = $3; } }
+  | package_declaration                     type_declarations_opt
+    { { package = Some $1; imports = []; decls = $2; } }
+  |                     import_declarations type_declarations_opt
+    { { package = None; imports = $1; decls = $2; } }
+  |                                         type_declarations_opt
+    { { package = None; imports = []; decls = $1; } }
 
 sgrep_spatch_pattern:
  | expression EOF { AExpr $1 }
@@ -274,7 +286,10 @@ sgrep_spatch_pattern:
 /*(*************************************************************************)*/
 
 /*(* ident_list *)*/
-package_declaration: PACKAGE name SM  { qualified_ident $2 }
+package_declaration: 
+ |             PACKAGE qualified_ident SM  { $2 }
+ /*(* always annotations *)*/
+ | modifiers   PACKAGE qualified_ident SM  { $3 }
 
 /*(* javaext: static_opt 1.? *)*/
 import_declaration:
@@ -295,6 +310,10 @@ type_declaration:
 /*(*1 Ident, namespace  *)*/
 /*(*************************************************************************)*/
 identifier: IDENTIFIER { $1 }
+
+qualified_ident: 
+  | IDENTIFIER                     { [$1] }
+  | qualified_ident DOT IDENTIFIER { $1 @ [$3] }
 
 name:
  | identifier_           { [$1] }
@@ -1364,17 +1383,10 @@ element_values:
 
 
 /*(* basic lists, 0 element allowed *)*/
-import_declarations_opt:
- | /*(*empty*)*/  { [] }
- | import_declarations  { $1 }
-
 type_declarations_opt:
  | /*(*empty*)*/  { [] }
  | type_declarations  { $1 }
 
-package_declaration_opt:
- | /*(*empty*)*/  { None }
- | package_declaration  { Some $1 }
 
 modifiers_opt:
  | /*(*empty*)*/  { [] }
