@@ -7,6 +7,7 @@ type category =
   | Keyword 
   | KeywordConditional | KeywordLoop 
   | KeywordExn | KeywordObject | KeywordModule
+  | KeywordConcurrency
 
   | Builtin 
   | BuiltinCommentColor | BuiltinBoolean

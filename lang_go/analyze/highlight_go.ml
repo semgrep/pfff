@@ -123,7 +123,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
     V.kprogram = (fun (k, _) x ->
       tag_ident x.package (Entity (E.Module, def2));
       x.imports |> List.iter (fun import ->
-        (* could color import.i_path *)
+        tag_ident import.i_path (Entity (E.Module, use2));
         match import.i_kind with
         | ImportNamed id -> tag_ident id (Entity (E.Module, def2))
         | ImportOrig | ImportDot _ -> ()
@@ -174,6 +174,22 @@ let visit_program ~tag_hook _prefs (program, toks) =
       (match x with
       | TName (["int", ii]) -> tag ii TypeInt
       | TName qid -> tag_qid qid (Entity (E.Type, use2))
+
+      | TStruct flds ->
+        flds |> List.iter (fun (fld, tag_opt) ->
+          tag_opt |> Common.do_option (fun tag -> 
+            tag_ident tag Attribute;
+          );
+          (match fld with
+          | Field (id, _) -> tag_ident id (Entity (E.Field, def2));
+          | EmbeddedField (_, qid) -> tag_qid qid (Entity (E.Type, use2))
+          );
+        );
+      | TInterface flds ->
+        flds |> List.iter (function
+          | Method (id, _) -> tag_ident id (Entity (E.Method, def2))
+          | EmbeddedInterface qid -> tag_qid qid (Entity (E.Type, use2))
+        );
       | _ -> () 
       );
       k x
@@ -204,7 +220,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
 
     (* values  *)
     | T.LSTR (_,ii) ->
-        tag_if_not_tagged ii String (* can be a Module in an import *)
+        tag_if_not_tagged ii String (* can be a Module in an import, or a Tag *)
     | T.LRUNE (_, ii) ->
         tag ii String
     | T.LFLOAT (_,ii) | T.LINT (_,ii) | T.LIMAG (_,ii) ->
@@ -238,7 +254,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
     | T.LPACKAGE ii  | T.LIMPORT ii
         -> tag ii KeywordModule
     | T.LSELECT ii | T.LGO ii | T.LCHAN ii
-        -> tag ii Keyword (* TODO: KeywordComm? *)
+        -> tag ii KeywordConcurrency
     | T.LCONTINUE ii | T.LBREAK ii
     | T.LFALL ii
     | T.LRETURN ii
@@ -290,7 +306,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
         tag ii Punctuation
 
     | T.LCOMM ii -> 
-          tag ii Punctuation (* keywordComm *)
+          tag ii KeywordConcurrency
 
     | T.LDDD ii-> 
           tag ii Punctuation

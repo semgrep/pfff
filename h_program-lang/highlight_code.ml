@@ -166,6 +166,8 @@ type category =
   | KeywordObject
   | KeywordModule
 
+  | KeywordConcurrency
+
   | Builtin
   | BuiltinCommentColor (* e.g. for "pr", "pr2", "spf". etc *)
   | BuiltinBoolean (* e.g. "not" *)
@@ -707,6 +709,7 @@ let info_of_category = function
   | KeywordExn -> [`FOREGROUND "orchid";]
   | KeywordObject -> [`FOREGROUND "aquamarine3";]
   | KeywordModule -> [`FOREGROUND "chocolate";]
+  | KeywordConcurrency -> [`FOREGROUND "turquoise";]
 
   | Number -> [`FOREGROUND "yellow3";]
   | Boolean -> [`FOREGROUND "pink3";]
