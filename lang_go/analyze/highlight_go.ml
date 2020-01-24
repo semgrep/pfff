@@ -110,6 +110,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
   (* try to better colorize identifiers which can be many different things
    * e.g. a field, a type, a function, a parameter, etc
    *)
+  let in_toplevel = ref true in
 
   let visitor = V.mk_visitor { V.default_visitor with
     (* use 'k x' as much as possible below. No need to 
@@ -135,8 +136,37 @@ let visit_program ~tag_hook _prefs (program, toks) =
       | DMethod (id, _o, _t, _st) -> tag_ident id (Entity (E.Method, def2))
       | D _ -> ()
       );
+     Common.save_excursion in_toplevel false (fun () -> 
+       k x
+     );
+    );
+    V.kdecl = (fun (k, _) x ->
+      (match x with
+      | DTypeDef (id, _) | DTypeAlias (id, _, _) ->
+         tag_ident id (Entity (E.Type, def2))
+      | DConst (id, _, _) -> tag_ident id (Entity (E.Constant, def2))
+      | DVar (id, _, _) -> 
+          if !in_toplevel
+          then tag_ident id (Entity (E.Global, def2))
+          else tag_ident id (Local Def)
+      );
       k x
     );
+    V.kstmt = (fun (k, _) x ->
+      (match x with
+      | DShortVars (xs, _, _) ->
+         xs |> List.iter (function
+           | Id id -> 
+              if !in_toplevel 
+              then tag_ident id (Entity (E.Global, def2))
+              else tag_ident id (Local Def)
+           | _ -> ()
+         )
+       | _ -> ()
+      );
+      k x
+    );
+
 
     (* uses *)
 
@@ -144,7 +174,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
       (match x with
       | TName (["int", ii]) -> tag ii TypeInt
       | TName qid -> tag_qid qid (Entity (E.Type, use2))
-      | _ -> ()
+      | _ -> () 
       );
       k x
     );
