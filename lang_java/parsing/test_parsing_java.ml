@@ -15,6 +15,7 @@ open Ast_java
 module PI = Parse_info
 module V = Visitor_java
 module Flag = Flag_parsing
+module Ast = Ast_java
 
 (*****************************************************************************)
 (* Subsystem testing *)
@@ -88,6 +89,10 @@ let test_dump file =
   let str = Ocaml.string_of_v v in
   pr str
 
+let test_dump_tree_sitter file =
+  let sysline =  "node lang_java/tree_sitter/tree-sitter-parser.js " ^ file in 
+  Sys.command sysline |> ignore
+
 let test_visitor file = 
   let visitor = V.mk_visitor { V.default_visitor with
     V.kexpr = (fun (k, _) e -> 
@@ -105,6 +110,30 @@ let test_visitor file =
   let ast = Parse_java.parse_program file in
   visitor (AProgram ast);
   ()
+
+let test_visitor_print file = 
+  let ast = Parse_java.parse_program file in
+
+  (* prints out tokens as they are visited *)
+  let hooks = { Visitor_java.default_visitor with
+    Visitor_java.kinfo = (fun (_k, _) info ->
+      let s = Parse_info.str_of_info info in
+      pr2 s;
+    );
+
+    Visitor_java.kexpr = (fun (k, _) e -> 
+      match e with
+      | Ast_java.Literal (Ast_java.Int (s,_)) -> 
+          pr2 ("int:" ^ s);
+          k e
+      | Ast_java.Dot (e, (_s,_)) -> 
+          pr2 "dot: s";
+          k e
+      | _ -> k e
+    );
+  } in
+  let visitor = Visitor_java.mk_visitor hooks in
+  visitor (Ast.AProgram ast)
 
 let test_parse_json_tree_sitter file =
   let json = Json_io.load_json file in
@@ -127,7 +156,6 @@ let test_parse_json_babelfish file =
   let str = Ocaml.string_of_v v in
   pr str
 
-
 (*****************************************************************************)
 (* Main entry for Arg *)
 (*****************************************************************************)
@@ -139,10 +167,12 @@ let actions () = [
   Common.mk_action_n_arg test_parse;
   "-dump_java", "   <file>", 
   Common.mk_action_1_arg test_dump;
-
+  "-dump_java_tree_sitter", "   <file>", 
+  Common.mk_action_1_arg test_dump_tree_sitter;
   "-visitor_java", "   <file>", 
   Common.mk_action_1_arg test_visitor;
-
+  "-visitor_java_print", "   <file>", 
+  Common.mk_action_1_arg test_visitor_print;
   "-parse_json_tree_sitter", "   <file>", 
   Common.mk_action_1_arg test_parse_json_tree_sitter;
   "-parse_json_babelfish", "   <file>", 
