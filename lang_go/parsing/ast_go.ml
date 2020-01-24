@@ -324,3 +324,5 @@ let stmt1 xs =
   | [] -> Empty
   | [st] -> st
   | xs -> Block xs
+
+let str_of_id (s,_) = s

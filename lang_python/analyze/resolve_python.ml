@@ -53,7 +53,7 @@ let default_env () = {
 (* Helpers *)
 (*****************************************************************************)
 
-(* because we use Visitor_python instead of a clean recursive 
+(* because we use a Visitor instead of a clean recursive 
  * function passing down an environment, we need to emulate a scoped
  * environment by using save_excursion.
  *)
