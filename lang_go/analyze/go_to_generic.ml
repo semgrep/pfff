@@ -106,7 +106,7 @@ and expr =
   | BasicLit v1 -> let v1 = literal v1 in ()
   | CompositeLit ((v1, v2)) ->
       let v1 = type_ v1 and v2 = list init v2 in ()
-  | Id v1 -> let v1 = ident v1 in ()
+  | Id (v1, _IGNORED) -> let v1 = ident v1 in ()
   | Selector ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = tok v2 and v3 = ident v3 in ()
   | Index ((v1, v2)) -> let v1 = expr v1 and v2 = index v2 in ()

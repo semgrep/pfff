@@ -156,7 +156,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
       (match x with
       | DShortVars (xs, _, _) ->
          xs |> List.iter (function
-           | Id id -> 
+           | Id (id, _) -> 
               if !in_toplevel 
               then tag_ident id (Entity (E.Global, def2))
               else tag_ident id (Local Def)

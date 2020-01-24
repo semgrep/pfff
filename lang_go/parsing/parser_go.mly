@@ -83,9 +83,9 @@ let mk_else elseifs else_ =
 
 let rec expr_to_type tok e =
   match e with
-  | Id id -> TName [id]
+  | Id (id, _) -> TName [id]
   | Deref (_, e) -> TPtr (expr_to_type tok e)
-  | Selector (Id id1, _, id2) -> TName [id1;id2]
+  | Selector (Id (id1, _), _, id2) -> TName [id1;id2]
   | ParenType t -> t
   | _ -> 
       pr2_gen e;
@@ -469,7 +469,7 @@ pexpr:
 pexpr_no_paren:
 |   basic_literal { BasicLit $1 }
 
-|   name { Id $1 }
+|   name { Id ($1, ref None) }
 
     /*(* can be many things *)*/
 |   pexpr LDOT sym { Selector ($1, $2, $3) }

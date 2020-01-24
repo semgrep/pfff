@@ -95,7 +95,7 @@ and vof_expr =
       let v1 = vof_type_ v1
       and v2 = Ocaml.vof_list vof_init v2
       in Ocaml.VSum (("CompositeLit", [ v1; v2 ]))
-  | Id v1 -> let v1 = vof_ident v1 in Ocaml.VSum (("Id", [ v1 ]))
+  | Id (v1, _IGNORED) -> let v1 = vof_ident v1 in Ocaml.VSum (("Id", [ v1 ]))
   | Selector ((v1, v2, v3)) ->
       let v1 = vof_expr v1
       and v2 = vof_tok v2
