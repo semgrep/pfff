@@ -87,7 +87,7 @@ and map_resolved_name =
   | EnclosedVar v1 -> let v1 = map_gensym v1 in EnclosedVar ((v1))
   | Global v1 -> let v1 = map_dotted_ident v1 in Global ((v1))
   | ImportedModule v1 ->
-      let v1 = map_dotted_ident v1 in ImportedModule ((v1))
+      let v1 = map_module_name v1 in ImportedModule ((v1))
   | Macro -> Macro
   | EnumConstant -> EnumConstant
 and map_gensym v = map_of_int v

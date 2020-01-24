@@ -60,7 +60,7 @@ let resolved_name name =
   | Parameter -> Some (G.Param gensym_TODO)
   | GlobalVar -> Some (G.Global [name])
   | ClassField -> None
-  | ImportedModule xs -> Some (G.ImportedModule xs)
+  | ImportedModule xs -> Some (G.ImportedModule (G.DottedName xs))
   | ImportedEntity xs -> Some (G.Global xs)
   | NotResolved -> None
 

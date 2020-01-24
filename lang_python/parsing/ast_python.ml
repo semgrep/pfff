@@ -83,6 +83,7 @@ type name = string wrap
 type dotted_name = name list
  (* with tarzan *)
 
+(* TODO: reuse ast_generic one? *)
 type resolved_name =
   (* this can be computed by a visitor *)
   | LocalVar

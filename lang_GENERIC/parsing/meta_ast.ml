@@ -33,7 +33,7 @@ let rec vof_resolved_name =
   | Global v1 ->
       let v1 = vof_dotted_ident v1 in Ocaml.VSum (("Global", [ v1 ]))
   | ImportedModule v1 ->
-      let v1 = vof_dotted_ident v1 in Ocaml.VSum (("ImportedModule", [ v1 ]))
+      let v1 = vof_module_name v1 in Ocaml.VSum (("ImportedModule", [ v1 ]))
   | Macro -> Ocaml.VSum (("Macro", []))
   | EnumConstant -> Ocaml.VSum (("EnumConstant", []))
 and vof_gensym v = Ocaml.vof_int v

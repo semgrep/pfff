@@ -106,7 +106,7 @@ and v_resolved_name =
   | Param v1 -> let v1 = v_gensym v1 in ()
   | EnclosedVar v1 -> let v1 = v_gensym v1 in ()
   | Global v1 -> let v1 = v_dotted_ident v1 in ()
-  | ImportedModule v1 -> let v1 = v_dotted_ident v1 in ()
+  | ImportedModule v1 -> let v1 = v_module_name v1 in ()
   | Macro -> ()
   | EnumConstant -> ()
 and v_gensym v = v_int v
@@ -583,6 +583,7 @@ and v_any =
   | At v1 -> let v1 = v_attribute v1 in ()
   | Pr v1 -> let v1 = v_program v1 in ()
   | Id v1 -> let v1 = v_ident v1 in ()
+  | Tk v1 -> let v1 = v_tok v1 in ()
   
 
 and all_functions x = v_any x
