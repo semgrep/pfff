@@ -18,6 +18,7 @@ open Highlight_code
 module T = Parser_go
 module V = Visitor_go
 module E = Entity_code
+module G = Ast_generic
 
 (*****************************************************************************)
 (* Prelude *)
@@ -132,8 +133,8 @@ let visit_program ~tag_hook _prefs (program, toks) =
     );
     V.ktop_decl = (fun (k, _) x ->
       (match x with
-      | DFunc (id, _t, _st) -> tag_ident id (Entity (E.Function, def2))
-      | DMethod (id, _o, _t, _st) -> tag_ident id (Entity (E.Method, def2))
+      | DFunc (id, (_t, _st)) -> tag_ident id (Entity (E.Function, def2))
+      | DMethod (id, _o, (_t, _st)) -> tag_ident id (Entity (E.Method, def2))
       | D _ -> ()
       );
      Common.save_excursion in_toplevel false (fun () -> 
@@ -162,6 +163,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
               else tag_ident id (Local Def)
            | _ -> ()
          )
+       (* general case *)
        | _ -> ()
       );
       k x
@@ -190,10 +192,29 @@ let visit_program ~tag_hook _prefs (program, toks) =
           | Method (id, _) -> tag_ident id (Entity (E.Method, def2))
           | EmbeddedInterface qid -> tag_qid qid (Entity (E.Type, use2))
         );
+      (* general case *)
       | _ -> () 
       );
       k x
     );
+
+    V.kexpr = (fun (k, _) x ->
+      (match x with
+      | Id (id, resolved) ->
+        (match !resolved with
+        | None -> ()
+        | Some x ->
+          (match x with
+          | G.ImportedModule _ -> tag_ident id (Entity (E.Module, use2))
+          | _ -> raise Common.Todo
+          )
+        )
+      (* general case *)
+      | _ -> ()
+      );
+      k x
+    );
+    
   } in
   visitor (P program);
 
@@ -243,7 +264,8 @@ let visit_program ~tag_hook _prefs (program, toks) =
     (* keywords  *)
     | T.LFUNC ii | T.LCONST ii | T.LVAR ii | T.LTYPE ii ->
         tag ii Keyword
-    | T.LSTRUCT ii | T.LINTERFACE ii
+    | T.LSTRUCT ii -> tag ii Keyword
+    | T.LINTERFACE ii
         -> tag ii KeywordObject
     | T.LIF ii | T.LELSE ii 
     | T.LSWITCH ii | T.LCASE ii | T.LDEFAULT ii
@@ -262,9 +284,9 @@ let visit_program ~tag_hook _prefs (program, toks) =
     | T.LGOTO ii 
         -> tag ii Keyword (* dangerous? *)
     | T.LMAP ii -> 
-          tag ii Keyword (* type? *)
+          tag ii (Entity (E.Type, use2))
     | T.LDEFER ii ->
-          tag ii Keyword
+          tag ii KeywordExn
 
     (* symbols *)
     | T.LEQ ii | T.LCOLAS ii ->

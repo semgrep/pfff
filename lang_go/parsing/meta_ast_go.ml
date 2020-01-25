@@ -328,20 +328,23 @@ and vof_decl =
       let v1 = vof_ident v1
       and v2 = vof_type_ v2
       in Ocaml.VSum (("DTypeDef", [ v1; v2 ]))
-  
+
+and vof_function_ (v1, v2) = 
+   let v1 = vof_func_type v1
+   and v2 = vof_stmt v2
+   in Ocaml.VTuple [v1; v2]
+
 let vof_top_decl =
   function
-  | DFunc ((v1, v2, v3)) ->
+  | DFunc ((v1, v2)) ->
       let v1 = vof_ident v1
-      and v2 = vof_func_type v2
-      and v3 = vof_stmt v3
-      in Ocaml.VSum (("DFunc", [ v1; v2; v3 ]))
-  | DMethod ((v1, v2, v3, v4)) ->
+      and v2 = vof_function_ v2
+      in Ocaml.VSum (("DFunc", [ v1; v2 ]))
+  | DMethod ((v1, v2, v3)) ->
       let v1 = vof_ident v1
       and v2 = vof_parameter v2
-      and v3 = vof_func_type v3
-      and v4 = vof_stmt v4
-      in Ocaml.VSum (("DMethod", [ v1; v2; v3; v4 ]))
+      and v3 = vof_function_ v3
+      in Ocaml.VSum (("DMethod", [ v1; v2; v3 ]))
   | D v1 -> let v1 = vof_decl v1 in Ocaml.VSum (("D", [ v1 ]))
   
 let rec vof_import { i_path = v_i_path; i_kind = v_i_kind } =

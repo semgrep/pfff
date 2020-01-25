@@ -8,6 +8,7 @@ type visitor_in = {
   ktype:    (type_         -> unit) * visitor_out -> type_         -> unit;
   kdecl:    (decl        -> unit) * visitor_out -> decl        -> unit;
   ktop_decl:    (top_decl        -> unit) * visitor_out -> top_decl   -> unit;
+  kfunction: (function_ -> unit) * visitor_out -> function_ -> unit;
   kprogram: (program     -> unit) * visitor_out -> program     -> unit;
 
   kinfo: (tok -> unit) * visitor_out -> tok -> unit;

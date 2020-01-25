@@ -32,6 +32,7 @@ type visitor_in = {
   ktype:    (type_         -> unit) * visitor_out -> type_         -> unit;
   kdecl:    (decl        -> unit) * visitor_out -> decl        -> unit;
   ktop_decl:    (top_decl        -> unit) * visitor_out -> top_decl   -> unit;
+  kfunction: (function_ -> unit) * visitor_out -> function_ -> unit;
   kprogram: (program     -> unit) * visitor_out -> program     -> unit;
 
   kinfo: (tok -> unit) * visitor_out -> tok -> unit;
@@ -47,6 +48,7 @@ let default_visitor = {
   ktype    = (fun (k,_) x -> k x);
   kdecl    = (fun (k,_) x -> k x);
   ktop_decl    = (fun (k,_) x -> k x);
+  kfunction =   (fun (k,_) x -> k x);
   kprogram = (fun (k,_) x -> k x);
   kinfo = (fun (k,_) x -> k x);
 }
@@ -287,15 +289,20 @@ and v_decl x =
   in
   vin.kdecl (k, all_functions) x
 
+and v_function_ x = 
+  let k (v1, v2) = 
+    let v1 = v_func_type v1 and v2 = v_stmt v2 in ()
+  in
+  vin.kfunction (k, all_functions) x
+
 and v_top_decl x =
   let k = function
-  | DFunc ((v1, v2, v3)) ->
-      let v1 = v_ident v1 and v2 = v_func_type v2 and v3 = v_stmt v3 in ()
-  | DMethod ((v1, v2, v3, v4)) ->
+  | DFunc ((v1, v2)) ->
+      let v1 = v_ident v1 and v2 = v_function_ v2 in ()
+  | DMethod ((v1, v2, v3)) ->
       let v1 = v_ident v1
       and v2 = v_parameter v2
-      and v3 = v_func_type v3
-      and v4 = v_stmt v4
+      and v3 = v_function_ v3
       in ()
   | D v1 -> let v1 = v_decl v1 in ()
   in

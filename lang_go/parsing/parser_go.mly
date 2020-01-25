@@ -738,13 +738,13 @@ xfndcl: LFUNC fndcl fnbody
 
 fndcl:
 |   sym LPAREN oarg_type_list_ocomma RPAREN fnres 
-    { fun body -> DFunc ($1, { fparams = $3; fresults = $5 }, body) }
+    { fun body -> DFunc ($1, ({ fparams = $3; fresults = $5 }, body)) }
 |   LPAREN oarg_type_list_ocomma RPAREN sym 
     LPAREN oarg_type_list_ocomma RPAREN fnres
     {
       fun body ->
         match $2 with
-        | [x] -> DMethod ($4, x, { fparams = $6; fresults = $8 }, body)
+        | [x] -> DMethod ($4, x, ({ fparams = $6; fresults = $8 }, body))
         | [] -> error $1 "method has no receiver"
         | _::_::_ -> error $1 "method has multiple receivers"
     }

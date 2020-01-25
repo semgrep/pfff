@@ -272,9 +272,9 @@ and decl =
 
 let top_decl =
   function
-  | DFunc ((v1, v2, v3)) ->
+  | DFunc ((v1, (v2, v3))) ->
       let v1 = ident v1 and v2 = func_type v2 and v3 = stmt v3 in ()
-  | DMethod ((v1, v2, v3, v4)) ->
+  | DMethod ((v1, v2, (v3, v4))) ->
       let v1 = ident v1
       and v2 = parameter v2
       and v3 = func_type v3

@@ -15,6 +15,7 @@
 open Ast_go
 module Ast = Ast_go
 module V = Visitor_go
+module G = Ast_generic
 
 (*****************************************************************************)
 (* Prelude *)
@@ -29,7 +30,7 @@ module V = Visitor_go
 (*****************************************************************************)
 (* Type *)
 (*****************************************************************************)
-type resolved_name = unit
+type resolved_name = Ast_generic.resolved_name
 
 type env = {
   (* ctx: context ref; *)
@@ -48,7 +49,7 @@ let _with_added_env xs env f =
   let newnames = xs @ !(env.names) in
   Common.save_excursion env.names newnames f
 
-let _add_name_env name kind env =
+let add_name_env name kind env =
   env.names := (Ast.str_of_id name, kind)::!(env.names)
 
 let default_env () = {
@@ -61,7 +62,7 @@ let default_env () = {
 (*****************************************************************************)
 
 let resolve prog =
-  let _env = default_env () in
+  let env = default_env () in
 
   (* would be better to use a classic recursive with environment visit *)
   let visitor = V.mk_visitor { V.default_visitor with
@@ -69,7 +70,40 @@ let resolve prog =
      * This will be patterned-match specially anyway in the highlighter. What
      * you want is to tag the use sites, and to maintain the right environment.
      *)
+
+    (* defs *)
+    V.kprogram = (fun (k, _) x ->
+
+      let file = Parse_info.file_of_info (snd x.package), snd x.package in
+      add_name_env x.package (G.ImportedModule (G.FileName file)) env;
+      x.imports |> List.iter (fun { i_path = (path, ii); i_kind = kind } ->
+          match kind with
+          | ImportOrig -> 
+            add_name_env (Filename.basename path, ii) 
+              (G.ImportedModule (G.FileName (path,ii))) env
+          | ImportNamed id -> 
+            add_name_env id
+              (G.ImportedModule (G.FileName (path,ii))) env
+          | ImportDot _ -> ()
+      );
+      k x
+
+    );
     V.ktop_decl = (fun (k, _) x ->
+      k x
+    );
+
+    (* uses *)
+    V.kexpr = (fun (k, _) x ->
+      (match x with
+      | Id (id, resolved) ->
+        let s = Ast.str_of_id id in
+        (match List.assoc_opt s !(env.names) with
+          | Some x -> resolved := Some x
+          | None -> () (* will be tagged as Error by highlighter later *)
+        )
+      | _ -> ()
+      );
       k x
     );
 

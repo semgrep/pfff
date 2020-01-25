@@ -45,11 +45,15 @@ type 'a wrap = 'a * tok
 (* ------------------------------------------------------------------------- *)
 (* Ident, qualifier *)
 (* ------------------------------------------------------------------------- *)
-(* for ?/?/? *)
+(* For functions/methods/parameters/fields/labels *)
 type ident = string wrap
  (* with tarzan *)
 
-(* for ?/?/?  (called names in ast.go) *)
+(* For type names  (called names in ast.go). It could also be used for
+ * imported entities from other module, but they are currently parsed as
+ * a Selector (Id, Id) instead of a qualified_ident because of ambiguities
+ * that require a semantic analysis to disambiguate.
+ *)
 type qualified_ident = ident list (* 1 or 2 elements *)
  (* with tarzan *)
 
@@ -150,7 +154,7 @@ and expr =
  (* ?? sgrep *)
  | EllipsisTODO of tok
 
- | FuncLit of func_type * stmt
+ | FuncLit of function_
 
  (* only used as an intermediate during parsing, should be converted *)
  | ParenType of type_
@@ -266,10 +270,12 @@ and decl =
  | DTypeDef of ident * type_
  (* with tarzan *)
 
+and function_ = func_type * stmt
+
 (* only at the toplevel *)
 type top_decl =
- | DFunc   of ident *                            func_type * stmt
- | DMethod of ident * parameter (* receiver *) * func_type * stmt
+ | DFunc   of ident *                            function_
+ | DMethod of ident * parameter (* receiver *) * function_
  | D of decl
 
  (* with tarzan *)
