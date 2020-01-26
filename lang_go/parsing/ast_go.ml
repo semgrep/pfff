@@ -132,7 +132,9 @@ and expr =
 
  | Call of call_expr
  (* note that some Call are really Cast, e.g., uint(1), but we need
-  * semantic information to know that
+  * semantic information to know that. Actually, some Cast
+  * such as (Foo)(nil) are unfortunately parsed as Calls, because again
+  * you need typing information to know that.
   *)
  | Cast of type_ * expr
 

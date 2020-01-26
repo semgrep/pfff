@@ -183,7 +183,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
     V.ktype = (fun (k, _) x ->
       (match x with
       | TName ([(
-        "int" | "float" | "double"
+        "int" | "uint32" | "float" | "double"
         ), ii]) -> tag ii TypeInt
       | TName qid -> tag_qid qid (Entity (E.Type, use2))
 
@@ -284,7 +284,10 @@ let visit_program ~tag_hook _prefs (program, toks) =
         | "nil" -> tag_if_not_tagged ii Null
 
         | "panic" | "recover" -> tag ii KeywordExn
-        | s when Hashtbl.mem builtin_functions s -> tag ii Builtin
+        | "int" | "uint32" | "string" -> 
+            tag_if_not_tagged ii (Entity (E.Type, use2))
+        | s when Hashtbl.mem builtin_functions s -> 
+            tag_if_not_tagged ii Builtin
 
         (* should have been tagged by the AST visitor *)
         | _ -> 
