@@ -23,7 +23,13 @@ module G = Ast_generic
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Syntax highlighting for Go code for codemap (and now also efuns)
+(* Syntax highlighting for Go code for codemap (and now also efuns).
+ *
+ * Making a code highlighter, like a deadcode checker, allows to find
+ * bugs in the parsing/AST/understanding of the language:
+ *  - parameters semantic in Go is special (foo(a,b,c,d int)) or foo(int,int)
+ *  - need List.rev for stmts in many more places, not just compound_stmt
+ *  - 
  *)
 
 (*****************************************************************************)
@@ -204,15 +210,10 @@ let visit_program ~tag_hook _prefs (program, toks) =
       (match x with
       | Call (Selector (Id (_m, {contents=Some G.ImportedModule _}),_,fld),_)->
           tag_ident fld (Entity (E.Function, use2));
-          k x
-      | Call (Selector (Id (_m, {contents=_}), _, fld),_) ->
+      | Call (Selector (_, _, fld),_) ->
           tag_ident fld (Entity (E.Method, use2));
-          k x
-
       | Selector (Id (_m, {contents=_}), _, fld) ->
           tag_ident fld (Entity (E.Field, use2));
-          k x
-
       | Id (id, resolved) ->
         (match !resolved with
         | None -> ()
@@ -224,14 +225,24 @@ let visit_program ~tag_hook _prefs (program, toks) =
           | G.EnclosedVar _ -> tag_ident id (Local Use) (* TODO *)
           (* unless matched before in a Call *)
           | G.Global _ -> tag_ident id (Entity (E.Global, use2))
+          | G.TypeName -> tag_ident id (Entity (E.Type, use2))
           | G.Macro | G.EnumConstant -> ()
           )
         )
-
       (* general case *)
       | _ -> ()
       );
       k x
+    );
+
+    V.kinit = (fun (k, _) x ->
+      (match x with
+      | InitKeyValue (InitExpr (Id (id, _)), _, _) ->
+         tag_ident id (Entity (E.Field, use2))
+      | _ -> ()
+      );
+      k x
+
     );
     
   } in

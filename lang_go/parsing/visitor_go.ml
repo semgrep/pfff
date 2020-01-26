@@ -34,6 +34,7 @@ type visitor_in = {
   ktop_decl:    (top_decl        -> unit) * visitor_out -> top_decl   -> unit;
   kfunction: (function_ -> unit) * visitor_out -> function_ -> unit;
   kparameter: (parameter -> unit) * visitor_out -> parameter -> unit;
+  kinit: (init -> unit) * visitor_out -> init -> unit;
   kprogram: (program     -> unit) * visitor_out -> program     -> unit;
 
   kinfo: (tok -> unit) * visitor_out -> tok -> unit;
@@ -52,6 +53,7 @@ let default_visitor = {
   kfunction =   (fun (k,_) x -> k x);
   kprogram = (fun (k,_) x -> k x);
   kparameter = (fun (k,_) x -> k x);
+  kinit = (fun (k,_) x -> k x);
   kinfo = (fun (k,_) x -> k x);
 }
 
@@ -182,12 +184,15 @@ and v_argument =
   | Arg v1 -> let v1 = v_expr v1 in ()
   | ArgType v1 -> let v1 = v_type_ v1 in ()
   | ArgDots v1 -> let v1 = v_tok v1 in ()
-and v_init =
+and v_init x =
+  let k =
   function
   | InitExpr v1 -> let v1 = v_expr v1 in ()
   | InitKeyValue ((v1, v2, v3)) ->
       let v1 = v_init v1 and v2 = v_tok v2 and v3 = v_init v3 in ()
   | InitBraces v1 -> let v1 = v_list v_init v1 in ()
+  in
+  vin.kinit (k, all_functions) x
 and v_constant_expr v = v_expr v
 
 and v_stmt x =

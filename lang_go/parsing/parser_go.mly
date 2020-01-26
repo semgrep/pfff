@@ -368,7 +368,7 @@ for_stmt:
     { Range (None, $2, $3, $4) }
 
 
-loop_body: LBODY stmt_list RBRACE { Block $2 }
+loop_body: LBODY stmt_list RBRACE { Block (List.rev $2) }
 
 
 /*(* split in 2, switch expr and switch types *)*/
@@ -388,7 +388,7 @@ case:
 
 caseblock: case stmt_list
     {
-      $1, Block $2
+      $1, Block (List.rev $2)
       (*
         // If the last token read by the lexer was consumed
         // as part of the case, clear it (parser has cleared yychar).
@@ -757,7 +757,7 @@ fndcl:
 
 fnbody:
 |  /*(*empty *)*/          {  Empty }
-|  LBRACE stmt_list RBRACE { Block $2 }
+|  LBRACE stmt_list RBRACE { Block (List.rev $2) }
 
 
 fnliteral: fnlitdcl lbrace stmt_list RBRACE 

@@ -23,8 +23,12 @@ module G = Ast_generic
 (* Identifiers tagger (so we can colorize them differently in codemap/efuns).
  *
  * mostly copy paste of resolve_python.ml
- * TODO: generalize for ast_generic at some point? hard? better to do on
- *  lang-specific AST?
+ *
+ * todo: 
+ *  - generalize for ast_generic at some point? hard? better to do on
+ *    lang-specific AST?
+ *  - in theory if/for/switch with their init declare new scope, as well 
+ *    as Block
  *)
 
 (*****************************************************************************)
@@ -126,18 +130,24 @@ let resolve prog =
       (match x with
       | DConst (id, _, _) | DVar (id, _, _) ->
          env |> add_name_env id (local_or_global env id)
-        (* we don't care about types; they are colorized differently *)
-      | DTypeAlias _ | DTypeDef _ -> ()
+        (* we do care about types because sometimes we don't know an Id
+         * is actually a type, e.g., when passed to make()
+         * less: could hardcode recognizing make()? or other cases where
+         * you can pass a type as an argument in Go?
+         *)
+      | DTypeAlias (id, _, _)  | DTypeDef (id, _) ->
+         env |> add_name_env id (G.TypeName)
       );
       k x
     );
     V.kstmt = (fun (k, _) x ->
       (match x with
-      | DShortVars (xs, _, _) ->
+      | DShortVars (xs, _, _) | Range (Some (xs, _), _, _, _) ->
          xs |> List.iter (function
            | Id (id, _) -> env |> add_name_env id (local_or_global env id)
            | _ -> ()
          )
+
        (* general case *)
        | _ -> ()
       );
