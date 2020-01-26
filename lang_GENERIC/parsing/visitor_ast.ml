@@ -109,6 +109,7 @@ and v_resolved_name =
   | ImportedModule v1 -> let v1 = v_module_name v1 in ()
   | Macro -> ()
   | EnumConstant -> ()
+  | TypeName -> ()
 and v_gensym v = v_int v
 
 

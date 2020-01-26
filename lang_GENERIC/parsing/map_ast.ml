@@ -90,6 +90,7 @@ and map_resolved_name =
       let v1 = map_module_name v1 in ImportedModule ((v1))
   | Macro -> Macro
   | EnumConstant -> EnumConstant
+  | TypeName -> TypeName
 and map_gensym v = map_of_int v
   
 

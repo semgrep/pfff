@@ -36,6 +36,7 @@ let rec vof_resolved_name =
       let v1 = vof_module_name v1 in Ocaml.VSum (("ImportedModule", [ v1 ]))
   | Macro -> Ocaml.VSum (("Macro", []))
   | EnumConstant -> Ocaml.VSum (("EnumConstant", []))
+  | TypeName -> Ocaml.VSum (("TypeName", []))
 and vof_gensym v = Ocaml.vof_int v
 
 

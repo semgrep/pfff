@@ -139,6 +139,7 @@ type resolved_name =
   (* both dotted_ident must at least contain one element *)
   | Global of dotted_ident (* or just name? *) (* can also use 0 for gensym *)
   | ImportedModule of module_name
+  | TypeName (* in Go, where you can pass types as arguments *)
   | Macro
   | EnumConstant
 
