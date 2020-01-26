@@ -51,13 +51,12 @@ let use2 = Use2 (NoInfoPlace, UniqueDef, MultiUse)
  *  - nil
  *  - _ (blank identifier)
  *)
-
-let _builtin_functions = Common.hashset_of_list [
+let builtin_functions = Common.hashset_of_list [
     "iota";
     "new"; "make";
 
     "print"; "println";
-
+    "complex"; "imag"; "real";
     "append"; "cap";
     "close"; "delete";"copy";
     "len";
@@ -80,19 +79,16 @@ let visit_program ~tag_hook _prefs (program, toks) =
     Hashtbl.replace already_tagged ii true
   )
   in
-  let tag_ident (_s, ii) categ = 
-    (* so treat the most specific in the enclosing code and then
-     * do not fear to write very general case patterns later because
+  let tag_if_not_tagged ii categ =
+    (* thx to the if below, you can treat the most specific in enclosing code 
+     * and then not fear to write very general case patterns later because
      * the specific will have priority over the general
      * (e.g., a Method use vs a Field use)
      *)
-    if not (Hashtbl.mem already_tagged ii)
-    then tag ii categ 
-  in
-  let tag_if_not_tagged ii categ =
    if not (Hashtbl.mem already_tagged ii)    
    then tag ii categ
   in
+  let tag_ident (_s, ii) categ = tag_if_not_tagged ii categ in
   let tag_qid xs categ =
     match xs with
     | [] | _::_::_::_ -> raise Common.Impossible
@@ -101,7 +97,6 @@ let visit_program ~tag_hook _prefs (program, toks) =
         tag_ident x (Entity (E.Module, use2));
         tag_ident y categ
    in
-
 
   Resolve_go.resolve program;
 
@@ -134,7 +129,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
     );
     V.ktop_decl = (fun (k, _) x ->
       (match x with
-      | DFunc (id, (_t, _st)) -> tag_ident id (Entity (E.Function, def2))
+      | DFunc   (id,     (_t, _st)) -> tag_ident id (Entity (E.Function, def2))
       | DMethod (id, _o, (_t, _st)) -> tag_ident id (Entity (E.Method, def2))
       | D _ -> ()
       );
@@ -181,14 +176,14 @@ let visit_program ~tag_hook _prefs (program, toks) =
 
     V.ktype = (fun (k, _) x ->
       (match x with
-      | TName (["int", ii]) -> tag ii TypeInt
+      | TName ([(
+        "int" | "float" | "double"
+        ), ii]) -> tag ii TypeInt
       | TName qid -> tag_qid qid (Entity (E.Type, use2))
 
       | TStruct flds ->
         flds |> List.iter (fun (fld, tag_opt) ->
-          tag_opt |> Common.do_option (fun tag -> 
-            tag_ident tag Attribute;
-          );
+          tag_opt |> Common.do_option (fun tag -> tag_ident tag Attribute);
           (match fld with
           | Field (id, _) -> tag_ident id (Entity (E.Field, def2));
           | EmbeddedField (_, qid) -> tag_qid qid (Entity (E.Type, use2))
@@ -196,7 +191,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
         );
       | TInterface flds ->
         flds |> List.iter (function
-          | Method (id, _) -> tag_ident id (Entity (E.Method, def2))
+          | Method (id, _)        -> tag_ident id (Entity (E.Method, def2))
           | EmbeddedInterface qid -> tag_qid qid (Entity (E.Type, use2))
         );
       (* general case *)
@@ -278,6 +273,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
         | "nil" -> tag_if_not_tagged ii Null
 
         | "panic" | "recover" -> tag ii KeywordExn
+        | s when Hashtbl.mem builtin_functions s -> tag ii Builtin
 
         (* should have been tagged by the AST visitor *)
         | _ -> 
@@ -323,10 +319,8 @@ let visit_program ~tag_hook _prefs (program, toks) =
     | T.LPAREN ii | T.RPAREN ii
         -> tag ii Punctuation
 
-    | T.LPLUS ii ->
-        tag ii Punctuation
-    | T.LMINUS ii ->
-        tag ii Punctuation
+    | T.LPLUS ii  -> tag ii Punctuation
+    | T.LMINUS ii -> tag ii Punctuation
 
     | T.LMULT ii | T.LDIV ii
     | T.LPERCENT ii

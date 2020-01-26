@@ -85,7 +85,7 @@ let resolve prog =
   (* would be better to use a classic recursive with environment visit *)
   let visitor = V.mk_visitor { V.default_visitor with
     (* No need to resolve at the definition sites (for parameters, locals).
-     * This will be patterned-match specially anyway in the highlighter. What
+     * This will be pattern-matched specially anyway in the highlighter. What
      * you want is to tag the use sites, and to maintain the right environment.
      *)
 
@@ -108,12 +108,12 @@ let resolve prog =
     V.ktop_decl = (fun (k, _) x ->
       (match x with 
       | DFunc (id, _) ->
-         env |> add_name_env id (G.Global [id]);
+         env |> add_name_env id (G.Global [id]); (* could add package name?*)
          with_new_context InFunction env (fun () ->
            k x
          )
       | DMethod (id, receiver, _) ->
-         env |> add_name_env id (G.Global [id]);
+         env |> add_name_env id (G.Global [id]); (* could add package name?*)
          let new_names = params_of_parameters [receiver] in
          with_added_env new_names env (fun () ->
           with_new_context InFunction env (fun () ->
@@ -126,6 +126,7 @@ let resolve prog =
       (match x with
       | DConst (id, _, _) | DVar (id, _, _) ->
          env |> add_name_env id (local_or_global env id)
+        (* we don't care about types; they are colorized differently *)
       | DTypeAlias _ | DTypeDef _ -> ()
       );
       k x
