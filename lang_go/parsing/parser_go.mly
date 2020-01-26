@@ -96,6 +96,12 @@ let expr_or_type_to_type tok x =
   | Right t -> t
   | Left e -> expr_to_type tok e
 
+let type_to_id x =
+  match x with
+  | TName [id] -> id
+  | _ -> 
+    pr2_gen x;
+    failwith "type_to_id: was expecting an id"
 %}
 
 /*(*************************************************************************)*/
@@ -767,9 +773,43 @@ arg_type:
 
 name_or_type:  ntype { $1 }
 
-arg_type_list:
+arg_type_list: arg_type_list_bis 
+  { (* see golang spec on signatures. If you have
+     * func foo(a, b, c) then it means a, b, and c are types. If you have once
+     * an identifier and a type, as in 
+     * func foo(a, b, c, d e) this means a, b, c, and d are of type e.
+     *)
+    let params = List.rev $1 in
+    let all_types = 
+      params |> List.for_all (function {pname = None; _} -> true | _ ->false) in
+    if all_types
+    then params
+    else 
+      let rec aux acc xs =
+        match xs with
+        | [] -> if acc = [] 
+                then [] 
+                else begin 
+                  pr2_gen acc;
+                  failwith "last parameter should have a type and id"
+                end
+        | x::xs ->
+          (match x with
+            | { pname = Some _; ptype = t; _ } ->
+               ((acc |> List.rev |> List.map (fun id -> 
+                 { pname = Some id; ptype = t; pdots = None })) @ [x]) @
+                 aux [] xs
+            | { pname = None; ptype = id_typ; _ } ->
+              let id = type_to_id id_typ in
+              aux (id::acc) xs
+          )
+      in
+      aux [] params
+  }
+
+arg_type_list_bis:
 |   arg_type                      { [$1] }
-|   arg_type_list LCOMMA arg_type { $3::$1 }
+|   arg_type_list_bis LCOMMA arg_type { $3::$1 }
 
 /*(*************************************************************************)*/
 /*(*1 xxx_opt, xxx_list *)*/
@@ -881,4 +921,4 @@ onew_name:
 
 oarg_type_list_ocomma:
 |/*(*empty*)*/  { [] }
-|   arg_type_list ocomma { List.rev $1  }
+|   arg_type_list ocomma { $1  }
