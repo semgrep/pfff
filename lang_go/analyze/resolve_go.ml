@@ -30,10 +30,14 @@ module G = Ast_generic
 (*****************************************************************************)
 (* Type *)
 (*****************************************************************************)
+type context = 
+  | AtToplevel
+  | InFunction (* or Method *)
+
 type resolved_name = Ast_generic.resolved_name
 
 type env = {
-  (* ctx: context ref; *)
+  ctx: context ref;
   names: (string * resolved_name) list ref;
 }
 
@@ -45,17 +49,31 @@ type env = {
  * function passing down an environment, we need to emulate a scoped
  * environment by using save_excursion.
  *)
-let _with_added_env xs env f = 
+let with_added_env xs env f = 
   let newnames = xs @ !(env.names) in
   Common.save_excursion env.names newnames f
 
 let add_name_env name kind env =
   env.names := (Ast.str_of_id name, kind)::!(env.names)
 
+let with_new_context ctx env f = 
+  Common.save_excursion env.ctx ctx f
+
 let default_env () = {
-(*  ctx = ref AtToplevel; *)
+  ctx = ref AtToplevel;
   names = ref [];
 }
+
+let nosym = -1 
+
+let params_of_parameters xs = 
+  xs |> Common.map_filter (fun p ->
+      match p.pname with
+      | Some id -> Some (Ast.str_of_id id, (G.Param nosym))
+      | _ -> None
+    )
+let local_or_global env id =
+  if !(env.ctx) = AtToplevel then G.Global [id] else G.Local nosym
 
 (*****************************************************************************)
 (* Entry point *)
@@ -73,7 +91,6 @@ let resolve prog =
 
     (* defs *)
     V.kprogram = (fun (k, _) x ->
-
       let file = Parse_info.file_of_info (snd x.package), snd x.package in
       add_name_env x.package (G.ImportedModule (G.FileName file)) env;
       x.imports |> List.iter (fun { i_path = (path, ii); i_kind = kind } ->
@@ -87,10 +104,50 @@ let resolve prog =
           | ImportDot _ -> ()
       );
       k x
-
     );
     V.ktop_decl = (fun (k, _) x ->
+      (match x with 
+      | DFunc (id, _) ->
+         env |> add_name_env id (G.Global [id]);
+         with_new_context InFunction env (fun () ->
+           k x
+         )
+      | DMethod (id, receiver, _) ->
+         env |> add_name_env id (G.Global [id]);
+         let new_names = params_of_parameters [receiver] in
+         with_added_env new_names env (fun () ->
+          with_new_context InFunction env (fun () ->
+           k x
+          ))
+      | D _ -> k x
+      )
+    );
+    V.kdecl = (fun (k, _) x -> 
+      (match x with
+      | DConst (id, _, _) | DVar (id, _, _) ->
+         env |> add_name_env id (local_or_global env id)
+      | DTypeAlias _ | DTypeDef _ -> ()
+      );
       k x
+    );
+    V.kstmt = (fun (k, _) x ->
+      (match x with
+      | DShortVars (xs, _, _) ->
+         xs |> List.iter (function
+           | Id (id, _) -> env |> add_name_env id (local_or_global env id)
+           | _ -> ()
+         )
+       (* general case *)
+       | _ -> ()
+      );
+      k x
+    );
+    V.kfunction = (fun (k, _) x ->
+     let (ft, _) = x in
+     let new_params = params_of_parameters ft.fparams in
+      with_added_env new_params env (fun () ->
+       k x
+     )
     );
 
     (* uses *)

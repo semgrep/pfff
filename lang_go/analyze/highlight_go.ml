@@ -103,7 +103,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
    in
 
 
-  (* TODO program |> Common.do_option Resolve_python.resolve;*)
+  Resolve_go.resolve program;
 
   (* -------------------------------------------------------------------- *)
   (* AST phase 1 *) 
@@ -117,7 +117,8 @@ let visit_program ~tag_hook _prefs (program, toks) =
     (* use 'k x' as much as possible below. No need to 
      * do v (Stmt st1); v (Expr e); ... Go deep to tag
      * special stuff (e.g., a local var in an exception handler) but then
-     * just recurse from the top with 'k x'
+     * just recurse from the top with 'k x', tag_if_not_tagged will
+     * do its job.
      *)
 
     (* defs *)
@@ -150,6 +151,12 @@ let visit_program ~tag_hook _prefs (program, toks) =
           if !in_toplevel
           then tag_ident id (Entity (E.Global, def2))
           else tag_ident id (Local Def)
+      );
+      k x
+    );
+    V.kparameter = (fun (k, _) x ->
+      x.pname |> Common.do_option (fun id ->
+        tag_ident id (Parameter Def)
       );
       k x
     );
@@ -200,15 +207,32 @@ let visit_program ~tag_hook _prefs (program, toks) =
 
     V.kexpr = (fun (k, _) x ->
       (match x with
+      | Call (Selector (Id (_m, {contents=Some G.ImportedModule _}),_,fld),_)->
+          tag_ident fld (Entity (E.Function, use2));
+          k x
+      | Call (Selector (Id (_m, {contents=_}), _, fld),_) ->
+          tag_ident fld (Entity (E.Method, use2));
+          k x
+
+      | Selector (Id (_m, {contents=_}), _, fld) ->
+          tag_ident fld (Entity (E.Field, use2));
+          k x
+
       | Id (id, resolved) ->
         (match !resolved with
         | None -> ()
         | Some x ->
           (match x with
           | G.ImportedModule _ -> tag_ident id (Entity (E.Module, use2))
-          | _ -> raise Common.Todo
+          | G.Param _ -> tag_ident id (Parameter (Use))
+          | G.Local _ -> tag_ident id (Local (Use)) 
+          | G.EnclosedVar _ -> tag_ident id (Local Use) (* TODO *)
+          (* unless matched before in a Call *)
+          | G.Global _ -> tag_ident id (Entity (E.Global, use2))
+          | G.Macro | G.EnumConstant -> ()
           )
         )
+
       (* general case *)
       | _ -> ()
       );
@@ -257,8 +281,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
 
         (* should have been tagged by the AST visitor *)
         | _ -> 
-          ()
-          (* TODO: tag_if_not_tagged ii Error *)
+          tag_if_not_tagged ii IdentUnknown
         )
 
     (* keywords  *)

@@ -33,6 +33,7 @@ type visitor_in = {
   kdecl:    (decl        -> unit) * visitor_out -> decl        -> unit;
   ktop_decl:    (top_decl        -> unit) * visitor_out -> top_decl   -> unit;
   kfunction: (function_ -> unit) * visitor_out -> function_ -> unit;
+  kparameter: (parameter -> unit) * visitor_out -> parameter -> unit;
   kprogram: (program     -> unit) * visitor_out -> program     -> unit;
 
   kinfo: (tok -> unit) * visitor_out -> tok -> unit;
@@ -50,6 +51,7 @@ let default_visitor = {
   ktop_decl    = (fun (k,_) x -> k x);
   kfunction =   (fun (k,_) x -> k x);
   kprogram = (fun (k,_) x -> k x);
+  kparameter = (fun (k,_) x -> k x);
   kinfo = (fun (k,_) x -> k x);
 }
 
@@ -102,9 +104,12 @@ and v_chan_dir = function | TSend -> () | TRecv -> () | TBidirectional -> ()
 and v_func_type { fparams = v_fparams; fresults = v_fresults } =
   let arg = v_list v_parameter v_fparams in
   let arg = v_list v_parameter v_fresults in ()
-and v_parameter { pname = v_pname; ptype = v_ptype; pdots = v_pdots } =
+and v_parameter x =
+  let k { pname = v_pname; ptype = v_ptype; pdots = v_pdots } =
   let arg = v_option v_ident v_pname in
   let arg = v_type_ v_ptype in let arg = v_option v_tok v_pdots in ()
+  in
+  vin.kparameter (k, all_functions) x
 and v_struct_field (v1, v2) =
   let v1 = v_struct_field_kind v1 and v2 = v_option v_tag v2 in ()
 and v_struct_field_kind =
@@ -156,7 +161,7 @@ and v_expr x =
   | TypeAssert ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_type_ v2 in ()
   | TypeSwitchExpr ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_tok v2 in ()
   | EllipsisTODO v1 -> let v1 = v_tok v1 in ()
-  | FuncLit ((v1, v2)) -> let v1 = v_func_type v1 and v2 = v_stmt v2 in ()
+  | FuncLit (x) -> v_function_ x
   | ParenType v1 -> let v1 = v_type_ v1 in ()
   | Send ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()

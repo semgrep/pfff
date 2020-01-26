@@ -767,6 +767,10 @@ arg_type:
 
 name_or_type:  ntype { $1 }
 
+arg_type_list:
+|   arg_type                      { [$1] }
+|   arg_type_list LCOMMA arg_type { $3::$1 }
+
 /*(*************************************************************************)*/
 /*(*1 xxx_opt, xxx_list *)*/
 /*(*************************************************************************)*/
@@ -826,9 +830,6 @@ stmt_list:
 |   stmt_list LSEMICOLON stmt { $3::$1 }
 
 
-arg_type_list:
-|   arg_type                      { [$1] }
-|   arg_type_list LCOMMA arg_type { $3::$1 }
 
 new_name_list:
 |   new_name { [$1] }
