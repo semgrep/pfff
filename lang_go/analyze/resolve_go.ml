@@ -29,6 +29,8 @@ module G = Ast_generic
  *    lang-specific AST?
  *  - in theory if/for/switch with their init declare new scope, as well 
  *    as Block
+ *  - should do first pass to get all toplevel decl as you can use
+ *    forward ref in Go
  *)
 
 (*****************************************************************************)
