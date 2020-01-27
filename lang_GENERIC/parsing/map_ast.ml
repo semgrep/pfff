@@ -166,7 +166,7 @@ and map_expr x =
   | Seq v1 -> let v1 = map_of_list map_expr v1 in Seq ((v1))
   | Ref v1 -> let v1 = map_expr v1 in Ref ((v1))
   | DeRef v1 -> let v1 = map_expr v1 in DeRef ((v1))
-  | Ellipses v1 -> let v1 = map_tok v1 in Ellipses ((v1))
+  | Ellipsis v1 -> let v1 = map_tok v1 in Ellipsis ((v1))
   | OtherExpr ((v1, v2)) ->
       let v1 = map_other_expr_operator v1
       and v2 = map_of_list map_any v2
@@ -528,6 +528,7 @@ and map_parameter =
   | ParamClassic v1 ->
       let v1 = map_parameter_classic v1 in ParamClassic ((v1))
   | ParamPattern v1 -> let v1 = map_pattern v1 in ParamPattern ((v1))
+  | ParamEllipsis v1 -> let v1 = map_tok v1 in ParamEllipsis ((v1))
   | OtherParam ((v1, v2)) ->
       let v1 = map_other_parameter_operator v1
       and v2 = map_of_list map_any v2

@@ -198,7 +198,7 @@ let rec visit_expr hook lhs expr =
 
   | Seq xs -> List.iter recr xs
 
-  | Ellipses _tok -> ()
+  | Ellipsis _tok -> ()
 
   | OtherExpr (_other_xxx, anys) -> List.iter (anyhook hook Rhs) anys
 

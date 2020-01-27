@@ -133,7 +133,7 @@ and v_expr x =
   let k x = 
   match x with
   | L v1 -> let v1 = v_literal v1 in ()
-  | Ellipses v1 -> let v1 = v_tok v1 in ()
+  | Ellipsis v1 -> let v1 = v_tok v1 in ()
   | Container ((v1, v2)) ->
       let v1 = v_container_operator v1 and v2 = v_list v_expr v2 in ()
   | Tuple v1 -> let v1 = v_list v_expr v1 in ()
@@ -442,6 +442,7 @@ and v_parameter x =
   match x with
   | ParamClassic v1 -> let v1 = v_parameter_classic v1 in ()
   | ParamPattern v1 -> let v1 = v_pattern v1 in ()
+  | ParamEllipsis v1 -> let v1 = v_tok v1 in ()
   | OtherParam ((v1, v2)) ->
       let v1 = v_other_parameter_operator v1 and v2 = v_list v_any v2 in ()
   in

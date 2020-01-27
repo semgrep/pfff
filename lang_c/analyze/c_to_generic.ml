@@ -144,7 +144,7 @@ and expr =
 
   | Id v1 -> let v1 = name v1 in 
              G.Name ((v1, G.empty_name_info), G.empty_id_info())
-  | Ellipses v1 -> let v1 = info v1 in G.Ellipses (v1)
+  | Ellipses v1 -> let v1 = info v1 in G.Ellipsis (v1)
   | Call ((v1, v2)) -> let v1 = expr v1 and v2 = list argument v2 in
       G.Call (v1, v2)
   | Assign ((v1, v2, v3)) ->

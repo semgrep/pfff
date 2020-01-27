@@ -83,7 +83,7 @@ and v_expr (x: expr) =
   (* tweak *)
   let k x =  match x with
   | None_ v1 -> let v1 = v_tok v1 in ()
-  | Ellipses v1 -> let v1 = v_tok v1 in ()
+  | Ellipsis v1 -> let v1 = v_tok v1 in ()
   | Bool v1 -> let v1 = v_wrap v_bool v1 in ()
   | Num v1 -> let v1 = v_number v1 in ()
   | Str (v1) -> let v1 = v_wrap v_string v1 in ()
@@ -216,6 +216,7 @@ and v_parameter x =
   let k x = 
   match x with
   | ParamSingleStar v1 -> v_tok v1; ()
+  | ParamEllipsis v1 -> v_tok v1; ()
   | ParamClassic ((v1, v2)) ->
       let v1 = v_name_and_type v1 and v2 = v_option v_expr v2 in ()
   | ParamStar ((v1, v2)) ->

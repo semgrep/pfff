@@ -186,7 +186,7 @@ and literal = function
 
 and expr e =
   match e with
-  | Ellipses v1 -> let v1 = tok v1 in G.Ellipses v1
+  | Ellipses v1 -> let v1 = tok v1 in G.Ellipsis v1
   | Name v1 -> let (a,b) = name v1 in G.Name ((a,b), G.empty_id_info())
   | NameOrClassType _v1 -> 
       let ii = Lib_parsing_java.ii_of_any (AExpr e) in

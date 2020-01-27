@@ -82,9 +82,9 @@ let rec expr (x: expr) =
   | None_ x ->
      let x = info x in
      G.L (G.Null x)
-  | Ellipses x ->
+  | Ellipsis x ->
      let x = info x in
-     G.Ellipses x
+     G.Ellipsis x
   | Num v1 -> 
       let v1 = number v1 in 
       (match v1 with
@@ -331,6 +331,7 @@ and parameters xs =
      let topt = option type_ topt in
      G.OtherParam (G.OPO_KwdParam, 
             [G.Id n] @ (match topt with None -> [] | Some t -> [G.T t]))
+   | ParamEllipsis tok -> G.ParamEllipsis tok
    | ParamSingleStar tok ->
      G.OtherParam (G.OPO_SingleStarParam, [G.Tk tok])
   )

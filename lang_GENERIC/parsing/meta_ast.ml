@@ -141,7 +141,7 @@ and vof_expr =
       let v1 = Ocaml.vof_list vof_expr v1 in Ocaml.VSum (("Seq", [ v1 ]))
   | Ref v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Ref", [ v1 ]))
   | DeRef v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("DeRef", [ v1 ]))
-  | Ellipses v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Ellipses", [ v1 ]))
+  | Ellipsis v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Ellipsis", [ v1 ]))
   | OtherExpr ((v1, v2)) ->
       let v1 = vof_other_expr_operator v1
       and v2 = Ocaml.vof_list vof_any v2
@@ -660,6 +660,8 @@ and vof_parameter =
       in Ocaml.VSum (("ParamClassic", [ v1 ]))
   | ParamPattern v1 ->
       let v1 = vof_pattern v1 in Ocaml.VSum (("ParamPattern", [ v1 ]))
+  | ParamEllipsis v1 ->
+      let v1 = vof_tok v1 in Ocaml.VSum (("ParamEllipsis", [ v1 ]))
   | OtherParam ((v1, v2)) ->
       let v1 = vof_other_parameter_operator v1
       and v2 = Ocaml.vof_list vof_any v2

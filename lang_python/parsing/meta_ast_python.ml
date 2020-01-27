@@ -56,7 +56,7 @@ let rec vof_expr =
       let v1 = vof_expr v1
       and v2 = vof_type_ v2
       in Ocaml.VSum (("TypedExpr", [ v1; v2 ]))
-  | Ellipses v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Ellipses", [ v1 ]))
+  | Ellipsis v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Ellipsis", [ v1 ]))
   | BoolOp ((v1, v2)) ->
       let v1 = vof_wrap vof_boolop v1
       and v2 = Ocaml.vof_list vof_expr v2
@@ -210,6 +210,8 @@ and vof_parameter =
   function
   | ParamSingleStar v1 -> let v1 = vof_tok v1 
     in Ocaml.VSum (("ParamSingleStar", [ v1 ]))
+  | ParamEllipsis v1 -> let v1 = vof_tok v1 
+    in Ocaml.VSum (("ParamEllipsis", [ v1 ]))
   | ParamClassic ((v1, v2)) ->
       let v1 =
         (match v1 with

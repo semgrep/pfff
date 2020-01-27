@@ -124,7 +124,7 @@ type expr =
   (* python3: *)
   (* inside an Assign (or ExprStmt) *)
   | TypedExpr of expr * type_
-  | Ellipses of tok (* should be only in .pyi, types Dict[str,...], or sgrep *)
+  | Ellipsis of tok (* should be only in .pyi, types Dict[str,...], or sgrep *)
 
   | BoolOp of boolop wrap (* op *) * expr list (* values *)
   | BinOp of expr (* left *) * operator wrap (* op *) * expr (* right *)
@@ -218,9 +218,11 @@ type expr =
       * reference: https://www.python.org/dev/peps/pep-3102/ *)
      | ParamSingleStar of tok
      | ParamPow  of (name * type_ option)
+     (* sgrep-ext: *)
+     | ParamEllipsis of tok
   
   and argument = 
-    | Arg of expr (* this can be Ellipses for sgrep *)
+    | Arg of expr (* this can be Ellipsis for sgrep *)
     | ArgKwd of name (* arg *) * expr (* value *)
     | ArgStar of expr
     | ArgPow of expr

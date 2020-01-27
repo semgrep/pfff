@@ -235,7 +235,7 @@ and expr =
   | Ref of expr (* &, address of *)
   | DeRef of expr (* '*' *)
 
-  | Ellipses of tok (* for sgrep, and also types in Python *)
+  | Ellipsis of tok (* for sgrep, and also types in Python *)
 
   | OtherExpr of other_expr_operator * any list
 
@@ -592,6 +592,8 @@ and function_definition = {
     and parameter =
      | ParamClassic of parameter_classic
      | ParamPattern of pattern
+     (* for sgrep *)
+     | ParamEllipsis of tok
 
      | OtherParam of other_parameter_operator * any list
 

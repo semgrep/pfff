@@ -340,6 +340,8 @@ typed_parameter:
   | MULT tfpdef      { ParamStar (fst $2, snd $2) }
   | MULT             { ParamSingleStar $1 }
   | POW tfpdef       { ParamPow (fst $2, snd $2) }
+  /*(* sgrep-ext: *)*/
+  | ELLIPSES         { Flag_parsing.sgrep_guard (ParamEllipsis $1) }
 
 tfpdef:
   | NAME            { $1, None }
@@ -654,7 +656,7 @@ atom:
   | atom_repr   { $1 }
 
   /*(* typing-ext: sgrep-ext: *)*/
-  | ELLIPSES    { Ellipses $1 }
+  | ELLIPSES    { Ellipsis $1 }
 
 atom_repr: BACKQUOTE testlist1 BACKQUOTE { Repr (tuple_expr $2) }
 
