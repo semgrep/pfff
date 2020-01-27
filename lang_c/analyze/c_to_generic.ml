@@ -351,30 +351,30 @@ let define_body =
 let toplevel =
   function
   | Include v1 -> let v1 = wrap string v1 in 
-      G.IDir (G.ImportAs (G.FileName v1, None))
+      G.DirectiveStmt (G.ImportAs (G.FileName v1, None))
   | Define ((v1, v2)) -> 
     let v1 = name v1 and v2 = define_body v2 in
     let ent = G.basic_entity v1 [] in
-    G.IDef (ent, G.MacroDef { G.macroparams = []; G.macrobody = [v2]})
+    G.DefStmt (ent, G.MacroDef { G.macroparams = []; G.macrobody = [v2]})
   | Macro ((v1, v2, v3)) ->
       let v1 = name v1
       and v2 = list name v2
       and v3 = define_body v3
       in
       let ent = G.basic_entity v1 [] in
-      G.IDef (ent, G.MacroDef { G.macroparams = v2; G.macrobody = [v3]})
+      G.DefStmt (ent, G.MacroDef { G.macroparams = v2; G.macrobody = [v3]})
   | StructDef v1 -> let v1 = struct_def v1 in
-      G.IDef v1
+      G.DefStmt v1
   | TypeDef v1 -> let v1 = type_def v1 in
-      G.IDef v1
+      G.DefStmt v1
   | EnumDef v1 -> let v1 = enum_def v1 in
-      G.IDef v1
+      G.DefStmt v1
   | FuncDef v1 -> let v1 = func_def v1 in
-      G.IDef v1
+      G.DefStmt v1
   | Global v1 -> let v1 = var_decl v1 in
-      G.IDef v1
+      G.DefStmt v1
   | Prototype v1 -> let v1 = func_def v1 in 
-      G.IDef v1
+      G.DefStmt v1
 
 let program v = 
  list toplevel v
@@ -385,6 +385,6 @@ let any =
   | Stmt v1 -> let v1 = stmt v1 in G.S v1
   | Stmts v1 -> let v1 = list stmt v1 in G.Ss v1
   | Type v1 -> let v1 = type_ v1 in G.T v1
-  | Toplevel v1 -> let v1 = toplevel v1 in G.I v1
+  | Toplevel v1 -> let v1 = toplevel v1 in G.S v1
   | Program v1 -> let v1 = program v1 in G.Pr v1
 

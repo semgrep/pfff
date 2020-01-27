@@ -555,12 +555,9 @@ and v_other_directive_operator =
   | OI_Export -> ()
   | OI_ImportCss -> ()
   | OI_ImportEffect -> ()
-and v_item x =
+and v_item x = 
   let k x = 
-  match x with
-  | IStmt v1 -> let v1 = v_stmt v1 in ()
-  | IDef v1 -> let v1 = v_def v1 in ()
-  | IDir v1 -> let v1 = v_directive v1 in ()
+    v_stmt x
   in
   vin.kitem (k, all_functions) x
 and v_program v = v_list v_item v
@@ -578,7 +575,6 @@ and v_any =
   | Fld v1 -> let v1 = v_field v1 in ()
   | Dk v1 -> let v1 = v_def_kind v1 in ()
   | Di v1 -> let v1 = v_dotted_ident v1 in ()
-  | I v1 -> let v1 = v_item v1 in ()
   | Pa v1 -> let v1 = v_parameter v1 in ()
   | Ar v1 -> let v1 = v_argument v1 in ()
   | At v1 -> let v1 = v_attribute v1 in ()

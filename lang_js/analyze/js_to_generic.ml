@@ -356,9 +356,9 @@ and property_prop =
 
 let rec toplevel x =
   match x with
-  | V v1 -> let v1 = def_of_var v1 in G.IDef v1
-  | S ((v1, v2)) -> let _v1TODO = tok v1 and v2 = stmt v2 in G.IStmt v2
-  | M v1 -> let v1 = module_directive v1 in G.IDir v1
+  | V v1 -> let v1 = def_of_var v1 in G.DefStmt v1
+  | S ((v1, v2)) -> let _v1TODO = tok v1 and v2 = stmt v2 in v2
+  | M v1 -> let v1 = module_directive v1 in G.DirectiveStmt v1
 
 
 and module_directive x = 
@@ -386,6 +386,6 @@ let any =
   | Expr v1 -> let v1 = expr v1 in G.E v1
   | Stmt v1 -> let v1 = stmt v1 in G.S v1
   | Stmts v1 -> let v1 = List.map stmt v1 in G.Ss v1
-  | Top v1 -> let v1 = toplevel v1 in G.I v1
+  | Top v1 -> let v1 = toplevel v1 in G.S v1
   | Program v1 -> let v1 = program v1 in G.Pr v1
 

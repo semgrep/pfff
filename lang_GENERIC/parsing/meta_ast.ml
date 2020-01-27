@@ -815,11 +815,7 @@ and vof_other_directive_operator =
   | OI_Export -> Ocaml.VSum (("OI_Export", []))
   | OI_ImportCss -> Ocaml.VSum (("OI_ImportCss", []))
   | OI_ImportEffect -> Ocaml.VSum (("OI_ImportEffect", []))
-and vof_item =
-  function
-  | IStmt v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("IStmt", [ v1 ]))
-  | IDef v1 -> let v1 = vof_definition v1 in Ocaml.VSum (("IDef", [ v1 ]))
-  | IDir v1 -> let v1 = vof_directive v1 in Ocaml.VSum (("IDir", [ v1 ]))
+and vof_item x = vof_stmt x
 and vof_program v = Ocaml.vof_list vof_item v
 and vof_any =
   function
@@ -835,7 +831,6 @@ and vof_any =
   | Dir v1 -> let v1 = vof_directive v1 in Ocaml.VSum (("Di", [ v1 ]))
   | Fld v1 -> let v1 = vof_field v1 in Ocaml.VSum (("Fld", [ v1 ]))
   | Di v1 -> let v1 = vof_dotted_name v1 in Ocaml.VSum (("Dn", [ v1 ]))
-  | I v1 -> let v1 = vof_item v1 in Ocaml.VSum (("I", [ v1 ]))
   | Id v1 -> let v1 = vof_ident v1 in Ocaml.VSum (("Id", [ v1 ]))
   | Pa v1 -> let v1 = vof_parameter v1 in Ocaml.VSum (("Pa", [ v1 ]))
   | Ar v1 -> let v1 = vof_argument v1 in Ocaml.VSum (("Ar", [ v1 ]))

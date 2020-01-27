@@ -509,14 +509,14 @@ let compilation_unit {
       imports in
   let v3 = decls xdecls in
   let items = v3 |> List.map G.stmt_to_item in
-  let imports = v2 |> List.map (fun import -> G.IDir import) in
+  let imports = v2 |> List.map (fun import -> G.DirectiveStmt import) in
   (match v1 with
   | None -> items @ imports
   | Some [] -> raise Impossible
   | Some xs -> 
     let id = Common2.list_last xs in
     let ent = G.basic_entity id [] in
-    [G.IDef (ent, G.ModuleDef { G.mbody = 
+    [G.DefStmt (ent, G.ModuleDef { G.mbody = 
         G.ModuleStruct (None, items @ imports) })]
   )
 

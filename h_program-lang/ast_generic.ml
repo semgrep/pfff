@@ -17,9 +17,9 @@
 (* Prelude *)
 (*****************************************************************************)
 (* A generic AST, to factorize similar analysis in different programming
- * languages (e.g., scheck, sgrep, checked_return). 
+ * languages (e.g., scheck, sgrep). 
  *
- * Right now this is mostly the factorized union of:
+ * Right now this generic AST is mostly the factorized union of:
  *  - Python
  *  - Javascript
  *  - Java
@@ -70,7 +70,8 @@
  *
  * history:
  *  - started with crossproduct of Javascript, Python, PHP, Java, and C
- *    (and a bit of OCaml)
+ *    (and a bit of OCaml) after wanting to port checked_return from Js to
+ *    Python and got the idea to factorize things
  *
  * invariants:
  *  - all the other_xxx types should contain only simple constructors (enums)
@@ -91,12 +92,8 @@
  *)
 
 (*****************************************************************************)
-(* Names *)
+(* Token (leaf) *)
 (*****************************************************************************)
-
-(* ------------------------------------------------------------------------- *)
-(* Token/info *)
-(* ------------------------------------------------------------------------- *)
 
 (* Contains among other things the position of the token through
  * the Parse_info.token_location embedded inside it, as well as the
@@ -109,9 +106,9 @@ type tok = Parse_info.t
 type 'a wrap = 'a * tok
  (* with tarzan *)
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* Names *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 
 type ident = string wrap
  (* with tarzan *)
@@ -125,7 +122,7 @@ type qualifier = dotted_ident
 
 (* 'module' can also be used for a 'package', or a 'namespace' *)
 type module_name =
-  | FileName of string wrap   (* ex: Javascript import, C #include *)
+  | FileName of string wrap   (* ex: Js import, C #include, Go import *)
   | DottedName of dotted_ident (* ex: Python *)
  (* with tarzan *)
 
@@ -220,6 +217,7 @@ and expr =
 
   (* can also be used for Record, Class, or Module access depending on expr *)
   | ObjAccess of expr * ident
+  (* in Js this is used for ObjAccess with a computed field name *)
   | ArrayAccess of expr * expr (* less: slice *)
 
   | Conditional of expr * expr * expr
@@ -508,9 +506,9 @@ and type_ =
   (* PHP *)
   | OT_Shape | OT_Variadic
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* Attribute *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* a.k.a decorators, annotations *)
 and attribute = 
   | Static | Volatile | Extern
@@ -741,13 +739,12 @@ and directive =
 (*****************************************************************************)
 (* Toplevel *)
 (*****************************************************************************)
-(* less: should merge stmt, item, and field? *)
-and item = 
-  | IStmt of stmt
-
-  (* could be removed since they are as LocalDef and LocalDirective in stmt *)
-  | IDef of definition
-  | IDir of directive
+(* less: merge with field? *)
+(* this is merged with stmt because many languages allow nested function
+ * or class definitions and even nested imports, so this is simpler to
+ * merge item and stmt together. This can simplfy sgrep too.
+ *)
+and item = stmt
 
 and program = item list
 
@@ -768,7 +765,6 @@ and any =
 
   | Def of definition
   | Dir of directive
-  | I of item
 
   | Pa of parameter
   | Ar of argument
@@ -877,11 +873,7 @@ let stmt_to_field st =
   | _ -> FieldStmt st
 
 (* less: could be a Block containing LocalDef or LocalDirective *)
-let stmt_to_item st =
-  match st with
-  | DefStmt def -> IDef def
-  | DirectiveStmt dir -> IDir dir
-  | _ -> IStmt st
+let stmt_to_item st = st
 
 let is_boolean_operator = function
  | Plus (* unary too *) | Minus (* unary too *) 

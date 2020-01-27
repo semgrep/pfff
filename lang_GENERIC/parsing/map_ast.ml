@@ -657,11 +657,7 @@ and map_alias (v1, v2) =
 
 and map_other_directive_operator x = x
 
-and map_item =
-  function
-  | IStmt v1 -> let v1 = map_stmt v1 in IStmt ((v1))
-  | IDef v1 -> let v1 = map_definition v1 in IDef ((v1))
-  | IDir v1 -> let v1 = map_directive v1 in IDir ((v1))
+and map_item x = map_stmt x
 
 and map_program v = map_of_list map_item v
 
@@ -680,7 +676,6 @@ and map_any =
   | Dir v1 -> let v1 = map_directive v1 in Dir ((v1))
   | Fld v1 -> let v1 = map_field v1 in Fld ((v1))
   | Di v1 -> let v1 = map_dotted_ident v1 in Di ((v1))
-  | I v1 -> let v1 = map_item v1 in I ((v1))
   | Pa v1 -> let v1 = map_parameter v1 in Pa ((v1))
   | Ar v1 -> let v1 = map_argument v1 in Ar ((v1))
   | At v1 -> let v1 = map_attribute v1 in At ((v1))

@@ -5,7 +5,7 @@ let test_cfg_generic file =
   let ast = Parse_generic.parse_program file in
   ast |> List.iter (fun item ->
    (match item with
-   | IDef (_ent, FuncDef def) ->
+   | DefStmt (_ent, FuncDef def) ->
      (try 
        let flow = Controlflow_build.cfg_of_func def in
        Controlflow.display_flow flow;
@@ -20,7 +20,7 @@ let test_dfg_generic file =
   let ast = Parse_generic.parse_program file in
   ast |> List.iter (fun item ->
    (match item with
-   | IDef (_ent, FuncDef def) ->
+   | DefStmt (_ent, FuncDef def) ->
       let flow = Controlflow_build.cfg_of_func def in
       pr2 "Reaching definitions";
       let mapping = Dataflow_reaching.fixpoint flow in
