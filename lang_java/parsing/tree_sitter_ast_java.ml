@@ -18,9 +18,11 @@
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
 
+module J = Json_type
+
 type 'a wrap  = 'a * string
 
-type _literal =
+and _literal =
 | Decimal of decimal_integer_literal
 | Hex of hex_integer_literal
 | Octal of octal_integer_literal
@@ -53,21 +55,21 @@ and null_literal = string wrap
 
 and _expression =
 | Assignment of assignment_expression
-| Binary of binary_expression
+| Binary1 of binary_expression
 | Instanceof of instanceof_expression
 | Lambda of lambda_expression
 | Ternary of ternary_expression
 | Update of update_expression
-| Ambiguous of _ambiguous_name
-| Primary of _primary
+| Ambiguous1 of _ambiguous_name
+| Primary2 of _primary
 | Unary of unary_expression
 | Cast of cast_expression
 
 
 and cast_expression = {
   t_type: _type;
-  t_type1: _type list;
-  value: _expression;
+  t_type12: _type list;
+  value4: _expression;
 }
 
 and assignment_expression = {
@@ -80,30 +82,30 @@ and binary_expression = string wrap
 
 
 and instanceof_expression = {
-  left: _expression;
-  right: _type;
+  left1: _expression;
+  right1: _type;
 }
 
 and lambda_expression = {
   body: interm15 option;
-  parameters: interm16 option;
+  parameters1: interm16 option;
 }
 
 and interm15 =
-| Expression of _expression
+| Expression2 of _expression
 | Block of block
 
 and interm16 =
 | Formal of formal_parameters
-| Identifier of identifier
+| Identifier1 of identifier
 | Inferred of inferred_parameters
 
 
 and inferred_parameters = identifier * ( identifier list)
 
 and ternary_expression = {
-  condition: _expression;
-  consequence: _expression;
+  condition1: _expression;
+  consequence1: _expression;
   alternative: _expression;
 }
 
@@ -117,17 +119,17 @@ and _primary =
 | This of this
 | Parenthesized of parenthesized_expression
 | Object of object_creation_expression
-| Field of field_access
+| Field2 of field_access
 | Array of array_access
-| Method of method_invocation
-| Method1 of method_reference
-| Array1 of array_creation_expression
+| Method2 of method_invocation
+| Method11 of method_reference
+| Array11 of array_creation_expression
 
 
 and array_creation_expression = {
-  t_type: _simple_type;
+  t_type10: _simple_type;
   t_dimensions: interm1;
-  value: array_initializer;
+  value5: array_initializer;
 }
 
 and interm1 = 
@@ -139,22 +141,22 @@ and dimensions_expr = ( _annotation list) * _expression
 and parenthesized_expression = _expression
 
 and class_literal =
-| Ambiguous of _ambiguous_name
-| Numeric of _numeric_type
-| Boolean of boolean_type
-| Void of void_type
+| Ambiguous2 of _ambiguous_name
+| Numeric1 of _numeric_type
+| Boolean1 of boolean_type
+| Void1 of void_type
 
 
 and object_creation_expression =
 | Unqualified of _unqualified_object_creation_expression
-| Ambiguous of _ambiguous_name * _unqualified_object_creation_expression
-| Primary of _primary * _unqualified_object_creation_expression
+| Ambiguous3 of _ambiguous_name * _unqualified_object_creation_expression
+| Primary3 of _primary * _unqualified_object_creation_expression
 
 
 and _unqualified_object_creation_expression = {
-  type_arguments: type_arguments;
-  t_type: _simple_type;
-  arguments: argument_list;
+  type_arguments1: type_arguments;
+  t_type1: _simple_type;
+  arguments1: argument_list;
   class_body: class_body option;
 }
 
@@ -164,19 +166,19 @@ and field_access =
 | Interm4 of interm4
 
 and interm2 = {
-  t_object: _ambiguous_name;
-  field: this;
+  t_object2: _ambiguous_name;
+  field1: this;
 }
 
 and interm3 = {
-  t_object: _primary * super;
-  field: identifier;
+  t_object3: _primary * super;
+  field2: identifier;
 }
 
 and interm4 = {
-  t_object: _ambiguous_name;
-  mods: super;
-  field: identifier;
+  t_object4: _ambiguous_name;
+  mods15: super;
+  field3: identifier;
 }
   
 
@@ -191,20 +193,20 @@ and method_invocation =
 | Interm7 of interm7
 
 and interm5 = {
-  t_object: _ambiguous_name * _primary * super * _ambiguous_name;
-  type_arguments: type_arguments;
-  name: identifier;
+  t_object5: _ambiguous_name * _primary * super * _ambiguous_name;
+  type_arguments2: type_arguments;
+  name1: identifier;
 }
 
 and interm6 = {
-  t_object: _ambiguous_name;
-  supertype_arguments: type_arguments;
-  name: identifier;
-  arguments: argument_list;
+  t_object11: _ambiguous_name;
+  supertype_arguments2: type_arguments;
+  name2: identifier;
+  arguments2: argument_list;
 }
 
 and interm7 = {
-  name: identifier * _reserved_identifier;
+  name3: identifier * _reserved_identifier;
 }
 
 and argument_list = (_expression * ( _expression list)) option
@@ -212,15 +214,15 @@ and argument_list = (_expression * ( _expression list)) option
 and method_reference = interm8 * type_arguments option * identifier option
 
 and interm8 = 
-| Type of _type
-| Ambiguous of _ambiguous_name
-| Primary of _primary
-| Super of super
+| Type2 of _type
+| Ambiguous4 of _ambiguous_name
+| Primary1 of _primary
+| Super1 of super
 
 and type_arguments = (interm9 * (_type * wildcard) list) option
 
 and interm9 =
-| Type of _type
+| Type1 of _type
 | Wildcard of wildcard
 
 and wildcard = ( _annotation list) * _wildcard_bounds option
@@ -233,21 +235,21 @@ and dimensions = ( _annotation list)
 
 and _statement =
 | Declaration of _declaration
-| Expression of expression_statement
+| Expression3 of expression_statement
 | Labeled of labeled_statement
 | If of if_statement
 | While of while_statement
 | For of for_statement
 | Enhanced of enhanced_for_statement
-| Block of block
+| Block1 of block
 | Assert of assert_statement
-| Switch of switch_statement
+| Switch1 of switch_statement
 | Do of do_statement
 | Break of break_statement
 | Continue of continue_statement
 | Return of return_statement
 | Synchronized of synchronized_statement
-| Local of local_variable_declaration
+| Local1 of local_variable_declaration
 | Throw of throw_statement
 | Try of try_statement
 | Try1 of try_with_resources_statement
@@ -260,13 +262,13 @@ and expression_statement = _expression
 and labeled_statement = identifier * _statement
 
 and assert_statement =
-| Expression of _expression
-| Expression1 of _expression * _expression
+| Expression4 of _expression
+| Expression11 of _expression * _expression
 
 
 and switch_statement = {
-  condition: parenthesized_expression;
-  body: switch_block;
+  condition2: parenthesized_expression;
+  body20: switch_block;
 }
 
 and switch_block = interm10 list
@@ -278,8 +280,8 @@ and interm10 =
 and switch_label = _expression
 
 and do_statement = {
-  body: _statement;
-  condition: parenthesized_expression;
+  body2: _statement;
+  condition3: parenthesized_expression;
 }
 
 and break_statement = identifier option
@@ -290,19 +292,19 @@ and return_statement = _expression option
 
 and synchronized_statement = {
  paren: parenthesized_expression;
- body: block;
+ body3: block;
 }
 
 and throw_statement = _expression
 
 and try_statement = {
-  body: block;
-  extra: ( catch_clause list) * finally_clause option
+  body4: block;
+  extra3: ( catch_clause list) * finally_clause option
 }
 
 and catch_clause = {
- extra: catch_formal_parameter;
- body: block;
+ extra22: catch_formal_parameter;
+ body5: block;
 }
 
 and catch_formal_parameter = modifiers option * catch_type * _variable_declarator_id
@@ -313,75 +315,75 @@ and finally_clause = block
 
 and try_with_resources_statement = {
   resources: resource_specification;
-  body: block;
-  extra: ( catch_clause list) * finally_clause option
+  body6: block;
+  extra1: ( catch_clause list) * finally_clause option
 }
 
 and resource_specification = (resource * ( resource list)) option
 
 and resource = {
-  mods: modifiers option;
-  t_type: _unannotated_type;
+  mods1: modifiers option;
+  t_type2: _unannotated_type;
   id: _variable_declarator_id;
-  value: _expression;
-  extra: interm11;
+  value6: _expression;
+  extra21: interm11;
 }
 
 and interm11 = 
 | Ambiguous of _ambiguous_name
-| Field of field_access
+| Field1 of field_access
 
 and if_statement = {
-  condition: parenthesized_expression;
+  condition4: parenthesized_expression;
   consequence: _statement;
-  alternative: _statement option;
+  alternative1: _statement option;
 }
 
 and while_statement = {
-  condition: parenthesized_expression;
-  body: _statement;
+  condition5: parenthesized_expression;
+  body7: _statement;
 }
 
 (* GET BACK TO THIS!!!!! *)
 and for_statement = {
   init: interm12;
-  condition: _expression;
+  condition6: _expression;
   update: (_expression list) option;
-  body: _statement;
+  body8: _statement;
 }
 
 and interm12 = 
 | Local of local_variable_declaration
-| Expression of (_expression list) option
+| Expression5 of (_expression list) option
 
 and enhanced_for_statement = {
-  mods: modifiers option;
-  t_type: _unannotated_type;
-  extra: _variable_declarator_id;
-  value: _expression;
-  body: _statement;
+  mods2: modifiers option;
+  t_type3: _unannotated_type;
+  extra2: _variable_declarator_id;
+  value1: _expression;
+  body9: _statement;
 }
 
 and _annotation =
 | Marker of marker_annotation
-| Annotation of annotation
+| Annotation1 of annotation
 
 and marker_annotation = {
-  name: identifier * scoped_identifier;
+  name4: identifier * scoped_identifier;
 }
 
 and annotation = {
-  name: identifier * scoped_identifier;
-  arguments: annotation_argument_list;
+  name5: identifier * scoped_identifier;
+  arguments3: annotation_argument_list;
 }
 
 and annotation_argument_list = 
-|  Element of _element_value
-|  Element1 of (element_value_pair * ( element_value_pair list)) option
+|  Element1 of _element_value
+|  Element11 of (element_value_pair * ( element_value_pair list)) option
 
 and element_value_pair = {
   key: identifier;
-  value: _element_value;
+  value2: _element_value;
 }
 
 and _element_value =
@@ -392,13 +394,13 @@ and _element_value =
 and element_value_array_initializer = (_element_value * ( _element_value list)) option
 
 and _declaration =
-| Module of module_declaration
+| Module1 of module_declaration
 | Package of package_declaration
 | Import of import_declaration
-| Class of class_declaration
-| Interface of interface_declaration
-| Annotation of annotation_type_declaration
-| Enum of enum_declaration
+| Class1 of class_declaration
+| Interface1 of interface_declaration
+| Annotation2 of annotation_type_declaration
+| Enum2 of enum_declaration
 
 
 and module_declaration = ( _annotation list) option *  _ambiguous_name * ( module_directive list)
@@ -410,7 +412,7 @@ and requires_modifier = string wrap
 
 
 and module_name =
-| Identifier of identifier
+| Identifier2 of identifier
 | Module of module_name * identifier
 
 
@@ -421,10 +423,10 @@ and import_declaration = identifier * ( identifier list) * asterisk option
 and asterisk = string wrap
 
 and enum_declaration = {
-  mods: modifiers option;
-  name: identifier;
-  interfaces: super_interfaces;
-  body: enum_body;
+  mods3: modifiers option;
+  name6: identifier;
+  interfaces1: super_interfaces;
+  body10: enum_body;
 }
 
 and enum_body = (enum_constant * ( enum_constant list)) option * enum_body_declarations option
@@ -432,19 +434,19 @@ and enum_body = (enum_constant * ( enum_constant list)) option * enum_body_decla
 and enum_body_declarations = ( _class_body_declaration list)
 
 and enum_constant = {
-  mods: modifiers option;
-  name: identifier;
-  arguments: argument_list;
-  body: class_body;
+  mods4: modifiers option;
+  name7: identifier;
+  arguments4: argument_list;
+  body11: class_body;
 }
 
 and class_declaration = {
-  mods: modifiers option;
-  name: identifier;
-  type_parameters: type_parameters option;
+  mods5: modifiers option;
+  name8: identifier;
+  type_parameters2: type_parameters option;
   superclass: superclass option;
   interfaces: super_interfaces option;
-  body: class_body;
+  body12: class_body;
 }
 
 and modifiers = string wrap
@@ -464,24 +466,24 @@ and interface_type_list = _type * ( _type list)
 and class_body = ( _class_body_declaration list)
 
 and _class_body_declaration =
-| Class of _class_member_declaration
-| Block of block
+| Class2 of _class_member_declaration
+| Block2 of block
 | Static of static_initializer
 | Constructor of constructor_declaration
 
 and static_initializer = block
 
 and constructor_declaration = {
-  mods: modifiers option; 
-  extra: _constructor_declarator;
+  mods6: modifiers option; 
+  extra31: _constructor_declarator;
   throw: throws option;
-  body: constructor_body;
+  body13: constructor_body;
 }
 
 and _constructor_declarator = {
-  type_parameters: type_parameters;
-  name: identifier;
-  parameters: formal_parameters;
+  type_parameters3: type_parameters;
+  name9: identifier;
+  parameters4: formal_parameters;
 }
 
 and constructor_body = explicit_constructor_invocation option * ( _statement list)
@@ -491,63 +493,63 @@ and explicit_constructor_invocation =
 | Interm14 of interm14
 
 and interm13 = {
-  type_arguments: type_arguments;
-  constructor: this * super;
+  type_arguments3: type_arguments;
+  constructor1: this * super;
 }
 
 and interm14 = {
-  t_object: _ambiguous_name * _primary;
-  type_arguments: type_arguments;
+  t_object1: _ambiguous_name * _primary;
+  type_arguments4: type_arguments;
   constructor: super;
-  arguments: argument_list;
+  arguments5: argument_list;
 }
 
 and _ambiguous_name =
 | Identifier of identifier
 | Reserved of _reserved_identifier
-| Scoped of scoped_identifier
+| Scoped1 of scoped_identifier
 
 and scoped_identifier = {
   scope: identifier * _reserved_identifier * scoped_identifier;
-  name: identifier;
+  name10: identifier;
 }
 
 and _class_member_declaration =
 | Field of field_declaration
-| Method of method_declaration
-| Class of class_declaration
-| Interface of interface_declaration
-| Annotation of annotation_type_declaration
-| Enum of enum_declaration
+| Method3 of method_declaration
+| Class3 of class_declaration
+| Interface2 of interface_declaration
+| Annotation3 of annotation_type_declaration
+| Enum3 of enum_declaration
 
 
 and field_declaration = {
-  mods: modifiers option; 
-  t_type: _unannotated_type;
-  extra: _variable_declarator_list;
+  mods7: modifiers option; 
+  t_type4: _unannotated_type;
+  extra4: _variable_declarator_list;
 }
 
 and annotation_type_declaration = {
-  mods: modifiers option; 
-  name: identifier;
-  body: annotation_type_body;
+  mods8: modifiers option; 
+  name11: identifier;
+  body14: annotation_type_body;
 }
 
 and annotation_type_body = ( _annotation_type_member_declaration list)
 
 and _annotation_type_member_declaration =
-| Annotation of annotation_type_element_declaration
-| Constant of constant_declaration
-| Class of class_declaration
-| Interface of interface_declaration
-| Annotation1 of annotation_type_declaration
+| Annotation4 of annotation_type_element_declaration
+| Constant1 of constant_declaration
+| Class4 of class_declaration
+| Interface3 of interface_declaration
+| Annotation11 of annotation_type_declaration
 
 
 and annotation_type_element_declaration = {
-  mods: modifiers option; 
-  t_type: _unannotated_type;
-  name: identifier;
-  dimensions: dimensions;
+  mods9: modifiers option; 
+  t_type5: _unannotated_type;
+  name12: identifier;
+  dimensions1: dimensions;
   extra: _default_value option;
 }
 
@@ -556,11 +558,11 @@ and _default_value = {
 }
 
 and interface_declaration = {
-  mods: modifiers option; 
-  name: identifier;
-  type_parameters: type_parameters;
-  extra: extends_interfaces option;
-  body: interface_body;
+  mods10: modifiers option; 
+  name13: identifier;
+  type_parameters5: type_parameters;
+  extra5: extends_interfaces option;
+  body15: interface_body;
 }
 
 and extends_interfaces = interface_type_list
@@ -569,17 +571,17 @@ and interface_body = ( _interface_member_declaration list)
 
 and _interface_member_declaration =
 | Constant of constant_declaration
-| Enum of enum_declaration
-| Method of method_declaration
-| Class of class_declaration
+| Enum4 of enum_declaration
+| Method4 of method_declaration
+| Class5 of class_declaration
 | Interface of interface_declaration
-| Annotation of annotation_type_declaration
+| Annotation5 of annotation_type_declaration
 
 
 and constant_declaration = {
-  mods: modifiers option;
-  t_type: _unannotated_type;
-  extra: _variable_declarator_list;
+  mods11: modifiers option;
+  t_type6: _unannotated_type;
+  extra51: _variable_declarator_list;
 }
 
 and _variable_declarator_list = {
@@ -587,18 +589,18 @@ and _variable_declarator_list = {
 }
 
 and variable_declarator = {
-  extra: _variable_declarator_id;
-  value: _variable_initializer option;
+  extra41: _variable_declarator_id;
+  value3: _variable_initializer option;
 }
 
 and _variable_declarator_id = {
-  name: identifier * _reserved_identifier;
-  dimensions: dimensions;
+  name14: identifier * _reserved_identifier;
+  dimensions2: dimensions;
 }
 
 and _variable_initializer =
-| Expression of _expression
-| Array of array_initializer
+| Expression1 of _expression
+| Array1 of array_initializer
 
 
 and array_initializer = (_variable_initializer * ( _variable_initializer list)) option
@@ -610,14 +612,14 @@ and _type =
 
 and _unannotated_type =
 | Simple of _simple_type
-| Array of array_type
+| Array2 of array_type
 
 and _simple_type =
 | Void of void_type
 | Numeric of _numeric_type
 | Boolean of boolean_type
-| Scoped of scoped_type_identifier
-| Generic of generic_type
+| Scoped2 of scoped_type_identifier
+| Generic1 of generic_type
 
 
 and annotated_type = ( _annotation list) * _unannotated_type
@@ -630,7 +632,7 @@ and generic_type = string wrap
 
 and array_type = {
   element: _unannotated_type;
-  dimensions: dimensions;
+  dimensions3: dimensions;
 }
 
 and _numeric_type =
@@ -646,24 +648,24 @@ and boolean_type = string wrap
 and void_type = string wrap
 
 and _method_header = {
-  type_parameters: type_parameters * ( _annotation list) option;
-  t_type: _unannotated_type;
-  extra: _method_declarator;
-  throw: throws option;
+  type_parameters6: type_parameters * ( _annotation list) option;
+  t_type7: _unannotated_type;
+  extra6: _method_declarator;
+  throw1: throws option;
 }
 
 and _method_declarator = {
-  name: identifier * _reserved_identifier;
+  name15: identifier * _reserved_identifier;
   parameters: formal_parameters;
-  dimensions: dimensions;
+  dimensions4: dimensions;
 }
 
 and formal_parameters = receiver_parameter option * (formal_parameter * ( formal_parameter list)) option * spread_parameter option
 
 and formal_parameter = {
-  mods: modifiers option;
-  t_type: _unannotated_type;
-  extra: _variable_declarator_id;
+  mods12: modifiers option;
+  t_type8: _unannotated_type;
+  extra7: _variable_declarator_id;
 }
 
 and receiver_parameter = ( _annotation list) * _unannotated_type * identifier option * this
@@ -673,15 +675,15 @@ and spread_parameter = modifiers option * _unannotated_type * variable_declarato
 and throws =  _type * ( _type list)
 
 and local_variable_declaration = {
-  mods: modifiers option;
-  t_type: _unannotated_type;
-  extra: _variable_declarator_list;
+  mods13: modifiers option;
+  t_type9: _unannotated_type;
+  extra8: _variable_declarator_list;
 }
 
 and method_declaration = {
-  mods: modifiers option;
-  extra: _method_header;
-  body: block;
+  mods14: modifiers option;
+  extra9: _method_header;
+  body1: block;
 }
 
 and _reserved_identifier = identifier
@@ -693,3 +695,23 @@ and super = string wrap
 and comment = string wrap
 
 and identifier = string wrap
+
+and program = compilation_unit
+
+and compilation_unit = {
+  package: identifier option;
+  imports: identifier list;
+  decls: decls;
+}
+
+and decl =
+  (* top decl *)
+  | Class6 of class_declaration
+  | Enum1 of enum_declaration
+  | Method1 of method_declaration
+  | Field11 of field_declaration
+
+and decls = decl list
+
+and any = 
+  | AProgram of program
