@@ -76,12 +76,12 @@ let program_of_tree_sitter_json _file json =
   }
   | x -> error "program" x
 
-  and _literal = function
+  and t_literal = function
    | J.Object [
      "type", J.String "_literal";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs;
     ] -> Some (interm0 xs) 
    | x -> error "_literal" x
 
@@ -257,61 +257,61 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "_expression";
      "startPosition", _;
       "endPosition", _;
-     "children", xs;
+     "children", J.Object xs;
     ] -> Some (assignment_expression xs) 
     | J.Object [
      "type", J.String "_expression";
      "startPosition", _;
       "endPosition", _;
-     "children", xs;
+     "children", J.Object xs;
     ] -> Some (binary_expression xs) 
     | J.Object [
      "type", J.String "_expression";
      "startPosition", _;
       "endPosition", _;
-     "children", xs;
+     "children", J.Object xs;
     ] -> Some (instanceof_expression xs) 
     | J.Object [
      "type", J.String "_expression";
      "startPosition", _;
       "endPosition", _;
-     "children", xs;
+     "children", J.Object xs;
     ] -> Some (lambda_expression xs) 
     | J.Object [
      "type", J.String "_expression";
      "startPosition", _;
       "endPosition", _;
-     "children", xs;
+     "children", J.Object xs;
     ] -> Some (ternary_expression xs) 
     | J.Object [
      "type", J.String "_expression";
      "startPosition", _;
       "endPosition", _;
-     "children", xs;
+     "children", J.Object xs;
     ] -> Some (update_expression xs) 
     | J.Object [
      "type", J.String "_expression";
      "startPosition", _;
       "endPosition", _;
-     "children", xs;
+     "children", J.Object xs;
     ] -> Some (_ambiguous_name xs) 
     | J.Object [
      "type", J.String "_expression";
      "startPosition", _;
       "endPosition", _;
-     "children", xs;
+     "children", J.Object xs;
     ] -> Some (_primary xs) 
     | J.Object [
      "type", J.String "_expression";
      "startPosition", _;
       "endPosition", _;
-     "children", xs;
+     "children", J.Object xs;
     ] -> Some (unary_expression xs) 
      | J.Object [
      "type", J.String "_expression";
      "startPosition", _;
       "endPosition", _;
-     "children", xs;
+     "children", J.Object xs;
     ] -> Some (cast_expression xs)  
    | x -> error "_expression" x
  
@@ -332,7 +332,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "assignment_expression";
      "startPosition", _;
       "endPosition", _;
-     "children", xs;
+     "children", J.Object xs;
     ] -> {
       left = interm94 xs;
       operator = operator xs;
@@ -373,7 +373,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "binary_expression";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       left: t_expression xs;
       right: t_expression xs;
@@ -385,7 +385,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "instanceof_expression";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       left: t_expression xs;  
       right: t_type xs;
@@ -397,7 +397,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "lambda_expression";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       parameters: identifier xs;
       body: t_expression xs;
@@ -406,7 +406,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "lambda_expression";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       parameters: identifier xs;
       body: block xs;
@@ -415,7 +415,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "lambda_expression";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       parameters: formal_parameters xs;
       body: t_expression xs;
@@ -424,7 +424,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "lambda_expression";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       parameters: formal_parameters xs;
       body: block xs;
@@ -433,7 +433,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "lambda_expression";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       parameters: inferred_parameters xs;
       body: t_expression xs;
@@ -442,7 +442,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "lambda_expression";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       parameters: inferred_parameters xs;
       body: block xs;
@@ -488,7 +488,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "inferred_parameters";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       identifier: identifier xs list;  
     }
@@ -499,7 +499,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "ternary_expression";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       condition: t_expression xs;
       consequence: t_expression xs;
@@ -512,7 +512,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "unary_expression";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       field: t_expression xs;
     }
@@ -523,7 +523,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "update_expression";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       expression: t_expression xs;
     }
@@ -534,7 +534,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "_primary";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (interm4 xs) 
    | x -> error "_primary" x
 
@@ -605,7 +605,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "array_creation_expression";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       t_type: simple_type xs;
       dimensions: dimensions_expr xs list;
@@ -615,7 +615,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "array_creation_expression";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       t_type: simple_type xs;
       dimensions: dimensions xs;
@@ -629,7 +629,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "dimensions_expr";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       annotation: (annotation xs) list;
       expression: expression xs;
@@ -649,7 +649,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "parenthesized_expression";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       expression: expression xs;
     }
@@ -660,7 +660,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "class_literal";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (interm6 xs) 
    | x -> error "class_literal" x
 
@@ -696,7 +696,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "object_creation_expression";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (interm7 xs) 
    | x -> error "object_creation_expression" x
 
@@ -737,7 +737,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "_unqualified_object_creation_expression";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       type_arguments: type_arguments xs option;
       t_type: simple_type xs;
@@ -751,7 +751,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "field_access";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       t_object: _ambiguous_name xs;
       field: this xs;
@@ -760,7 +760,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "field_access";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       t_object: _primary xs;
       field: identifier xs;
@@ -769,7 +769,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "field_access";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       t_object: super xs;
       field: identifier xs;
@@ -778,7 +778,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "field_access";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       t_object: _ambiguous_name xs;
       super: super xs;
@@ -792,7 +792,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "array_access";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       array: array xs;
       index: expression xs;
@@ -819,7 +819,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "method_invocation";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       name: identifier xs;
       arguments: argument_list xs;
@@ -828,7 +828,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "method_invocation";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       name: _reserved_identifier xs;
       arguments: argument_list xs;
@@ -837,7 +837,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "method_invocation";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       t_object: _ambiguous_name xs;
       type_arguments: type_arguments option;
@@ -848,7 +848,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "method_invocation";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       t_object: _primary xs;
       type_arguments: type_arguments option;
@@ -859,7 +859,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "method_invocation";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       t_object: super xs;
       type_arguments: type_arguments option;
@@ -870,7 +870,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "method_invocation";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       t_object: _ambiguous_name xs;
       super: super xs;
@@ -885,7 +885,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "argument_list";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       expression: expression list option;
     }
@@ -896,7 +896,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "method_reference";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       identifier: identifier xs option;
       arguments: type_arguments xs option;
@@ -935,7 +935,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "type_arguments";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (interm14 xs list option)
    | x -> error "type_arguments" x
 
@@ -958,7 +958,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "wildcard";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       left: annotation xs list;
       right: wildcard_bounds xs option;
@@ -990,7 +990,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "dimensions";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (annotation xs list)
    | x -> error "dimensions" x
 
@@ -999,7 +999,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "_statement";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (interm18 xs) 
    | x -> error "_statement" x
 
@@ -1125,7 +1125,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "block";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (statement xs list)
    | x -> error "block" x
 
@@ -1134,7 +1134,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "expression_statement";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (expression xs)
    | x -> error "expression_statement" x
 
@@ -1143,7 +1143,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "labeled_statement";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       left: identifier xs;
       right: statement xs;
@@ -1155,13 +1155,13 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "assert_statement";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (expression xs) 
   | J.Object [
      "type", J.String "assert_statement";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (expression xs) * Some (expression xs) 
    | x -> error "assert_statement" x
     
@@ -1170,7 +1170,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "switch_statement";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       condition: parenthesized_expression xs;
       body: switch_block xs;
@@ -1182,13 +1182,13 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "switch_block";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (switch_label xs list)
    | J.Object [
      "type", J.String "switch_block";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (statement xs list)
    | x -> error "switch_block" x
 
@@ -1197,7 +1197,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "switch_label";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (expression xs option)
    | x -> error "switch_label" x
     
@@ -1206,7 +1206,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "do_statement";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       body: statement xs;
       condition: parenthesized_expression xs;
@@ -1218,7 +1218,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "break_statement";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (identifier xs option)
    | x -> error "break_statement" x
 
@@ -1227,7 +1227,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "continue_statement";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (identifier xs option)
    | x -> error "continue_statement" x
 
@@ -1236,7 +1236,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "return_statement";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (expression xs option)
    | x -> error "return_statement" x
 
@@ -1245,7 +1245,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "synchronized_statement";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       left: parenthesized_expression xs;
       body: block xs;
@@ -1257,7 +1257,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "throw_statement";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (expression xs)
    | x -> error "throw_statement" x
 
@@ -1266,7 +1266,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "try_statement";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       body: block xs;
       right: catch_clause xs list;
@@ -1279,7 +1279,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "catch_clause";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       left: catch_formal_parameter xs;
       body: block xs;
@@ -1291,7 +1291,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "catch_formal_parameter";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       modifiers: modifiers xs option;
       right: catch_type xs;
@@ -1304,7 +1304,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "catch_type";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (unannotated_type xs list)
    | x -> error "catch_type" x
 
@@ -1313,7 +1313,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "finally_clause";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (block xs)
    | x -> error "finally_clause" x
 
@@ -1322,7 +1322,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "try_with_resources_statement";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       resources: resource_specification xs;
       body: block xs;
@@ -1336,7 +1336,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "resource_specification";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (resource xs list)
    | x -> error "resource_specification" x
 
@@ -1345,7 +1345,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "resource";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       mods: modifiers xs option;
       t_type: unannotated_type xs;
@@ -1356,13 +1356,13 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "resource";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (ambiguous_name xs)
     | J.Object [
      "type", J.String "resource";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (field_access xs)
    | x -> error "resource" x
 
@@ -1389,7 +1389,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "if_statement";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       condition: parenthesized_expression xs;
       consequence: statement xs;
@@ -1402,7 +1402,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "while_statement";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       condition: carenthesized_expression xs;
       body: statement xs;
@@ -1414,7 +1414,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "for_statement";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       init: local_variable_declaration xs;
       condition: expression xs option;
@@ -1425,7 +1425,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "for_statement";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       init: (expression xs) list option;
       condition: expression xs option;
@@ -1439,7 +1439,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "enhanced_for_statement";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       mods: modifiers xs option;
       t_type: unannotated_type xs;
@@ -1454,13 +1454,13 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "_annotation";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (annotation xs) 
     | J.Object [
      "type", J.String "_annotation";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (marker_annotation xs) 
   | x -> error "annotation" x
 
@@ -1469,7 +1469,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "annotation";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       identifier: identifier xs;
       arguments: annotation_argument_list xs;
@@ -1478,7 +1478,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "annotation";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       identifier: scoped_identifier xs;
       arguments: annotation_argument_list xs;
@@ -1490,7 +1490,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "annotation_argument_list";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (element_value_pair xs list option)
     | x -> error "annotation_argument_list" x
 
@@ -1499,7 +1499,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "element_value_pair";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       key: identifier xs;
       value: _element_value xs;
@@ -1511,19 +1511,19 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "_element_value";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (expression xs)
     | J.Object [
      "type", J.String "_element_value";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (element_value_array_initializer xs)
     | J.Object [
      "type", J.String "_element_value";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (_annotation xs)
    | x -> error "_element_value" x
 
@@ -1532,7 +1532,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "element_value_array_initializer";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (_element_value xs list option)
    | x -> error "element_value_array_initializer" x
 
@@ -1541,7 +1541,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "_declaration";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (interm13 xs)
 
   and interm13 = function
@@ -1593,7 +1593,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "module_declaration";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       annotation: _annotation xs list;
       name: _ambiguous_name xs;
@@ -1606,7 +1606,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "module_directive";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       modifier: requires_modifier xs list;
       t_module: module_name xs;
@@ -1615,7 +1615,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "module_directive";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       name: _ambiguous_name xs list;
       t_module: module_name xs list option;
@@ -1624,7 +1624,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "module_directive";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       name: _ambiguous_name xs list;
       t_module: module_name xs list;
@@ -1633,7 +1633,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "module_directive";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       name: _ambiguous_name xs list;
     }
@@ -1641,7 +1641,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "module_directive";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       name: _ambiguous_name xs list;
     }
@@ -1661,7 +1661,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "module_name";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       right: identifier param lists;
       left: module_name xs;
@@ -1673,7 +1673,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "package_declaration";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (_ambiguous_name xs list)
    | x -> error "package_declaration" x
 
@@ -1682,7 +1682,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "import_declaration";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       name: (identifier xs) list;
       symbol: asterisk xs option;
@@ -1703,7 +1703,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "enum_declaration";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       mods: modifiers xs option;
       name: identifier xs;
@@ -1717,7 +1717,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "enum_body";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       head: enum_constant xs list option;
       body: enum_body_declarations xs option;
@@ -1729,7 +1729,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "enum_body_declarations";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (_class_body_declaration xs list)
    | x -> error "enum_body_declarations" x
 
@@ -1738,7 +1738,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "enum_constant";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       mods: modifiers xs option;
       name: identifier xs;
@@ -1752,7 +1752,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "class_declaration";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       mods: modifiers xs option;
       name: identifier xs;
@@ -1768,7 +1768,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "type_parameters";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (type_parameter xs list)
    | x -> error "type_parameters" x
 
@@ -1777,7 +1777,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "type_parameter";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       annotation: _annotation xs list;
       identifier: identifier xs;
@@ -1790,7 +1790,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "type_bound";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       right: t_type xs;
       left: t_type xs list;
@@ -1802,7 +1802,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "superclass";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (_type xs)
    | x -> error "superclass" x
 
@@ -1811,7 +1811,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "super_interfaces";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (interface_type_list xs)
    | x -> error "super_interfaces" x
 
@@ -1820,7 +1820,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "interface_type_list";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       right: t_type xs;
       left: t_type xs list;
@@ -1832,7 +1832,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "class_body";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (_class_body_declaration xs list)
    | x -> error "class_body" x
 
@@ -1841,7 +1841,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "_class_body_declaration";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (interm54 xs) 
    | x -> error "_class_body_declaration" x
 
@@ -1877,7 +1877,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "static_initializer";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (block xs)
    | x -> error "static_initializer" x
 
@@ -1886,7 +1886,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "constructor_declaration";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       mods: modifiers xs option;
       constructor: _constructor_declarator xs;
@@ -1900,7 +1900,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "_constructor_declarator";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       type_parameters: type_parameters xs option;
       name: identifier xs;
@@ -1913,7 +1913,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "constructor_body";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       constructor: explicit_constructor_invocation xs option;
       statement: _statement xs list;
@@ -1925,7 +1925,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "explicit_constructor_invocation";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       type_arguments: type_arguments xs option;
       constructor: this xs;
@@ -1934,7 +1934,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "explicit_constructor_invocation";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       type_arguments: type_arguments xs option;
       constructor: super xs;
@@ -1943,7 +1943,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "explicit_constructor_invocation";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       t_object: _ambiguous_name xs;
       type_arguments: type_arguments xs option;
@@ -1953,7 +1953,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "explicit_constructor_invocation";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       t_object: _primary xs;
       type_arguments: type_arguments xs option;
@@ -1966,19 +1966,19 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "_ambiguous_name";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (identifier xs) 
     | J.Object [
      "type", J.String "_ambiguous_name";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (_reserved_identifier xs) 
     | J.Object [
      "type", J.String "_ambiguous_name";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (scoped_identifier xs) 
    | x -> error "_ambiguous_name" x
 
@@ -1987,7 +1987,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "scoped_identifier";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       scope: identifier xs;
       name: identifier xs;
@@ -1996,7 +1996,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "scoped_identifier";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       scope: _reserved_identifier xs;
       name: identifier xs;
@@ -2005,7 +2005,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "scoped_identifier";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       scope: scoped_identifier xs;
       name: identifier xs;
@@ -2017,7 +2017,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "_class_member_declaration";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (interm60 xs) 
    | x -> error "_class_member_declaration" x
 
@@ -2064,7 +2064,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "field_declaration";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       mods: modifiers xs option;
       t_type: _unannotated_type xs;
@@ -2077,7 +2077,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "annotation_type_declaration";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       mods: modifiers xs option;
       name: identifier xs;
@@ -2090,7 +2090,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "annotation_type_body";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (_annotation_type_member_declaration xs list)
    | x -> error "annotation_type_body" x
 
@@ -2099,7 +2099,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "_annotation_type_member_declaration";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (interm63 xs) 
    | x -> error "_annotation_type_member_declaration" x
 
@@ -2141,7 +2141,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "annotation_type_element_declaration";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       mods: modifiers xs option;
       t_type: _unannotated_type xs;
@@ -2156,7 +2156,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "_default_value";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       value: _element_value xs;
     }
@@ -2167,7 +2167,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "interface_declaration";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       mods: modifiers xs option;
       name: identifier xs;
@@ -2182,7 +2182,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "extends_interfaces";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (interface_type_list xs)
    | x -> error "extends_interfaces" x
 
@@ -2191,7 +2191,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "interface_body";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (_interface_member_declaration xs list)
    | x -> error "interface_body" x
 
@@ -2200,7 +2200,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "_interface_member_declaration";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (interm68 xs) 
    | x -> error "_interface_member_declaration" x
 
@@ -2248,7 +2248,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "constant_declaration";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       mods: modifiers xs option;
       t_type: _unannotated_type xs;
@@ -2261,7 +2261,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "_variable_declarator_list";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       declarator: variable_declarator xs list;
     }
@@ -2272,7 +2272,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "variable_declarator";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       id: _variable_declarator_id xs;
       t_initializer: _variable_initializer xs option;
@@ -2284,7 +2284,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "_variable_declarator_id";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       name: identifier xs;
       dimensions: dimensions xs option;
@@ -2293,7 +2293,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "_variable_declarator_id";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       name: _reserved_identifier xs;
       dimensions: dimensions xs option;
@@ -2305,7 +2305,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "_variable_initializer";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (interm71 xs) 
    | x -> error "_variable_initializer" x
 
@@ -2328,7 +2328,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "array_initializer";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (_variable_initializer xs list option)
    | x -> error "array_initializer" x
 
@@ -2337,7 +2337,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "_type";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (interm74 xs) 
    | x -> error "_type" x
 
@@ -2362,7 +2362,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "_unannotated_type";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (interm75 xs) 
    | x -> error "_unannotated_type" x
 
@@ -2386,7 +2386,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "_simple_type";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (interm76 xs) 
    | x -> error "_simple_type" x
 
@@ -2427,7 +2427,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "annotated_type";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       annotation: _annotation xs list;
       _unannotated_type: _unannotated_type xs;
@@ -2439,7 +2439,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "scoped_type_identifier";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       type_identifier: type_identifier xs;
       annotaiton: _annotation xs list;
@@ -2449,7 +2449,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "scoped_type_identifier";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       type_identifier: type_identifier xs;
       annotaiton: _annotation xs list;
@@ -2459,7 +2459,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "scoped_type_identifier";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       type_identifier: type_identifier xs list;
       annotaiton: _annotation xs list;
@@ -2471,7 +2471,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "generic_type";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       arguments: type_arguments xs;
       type_identifier: identifier xs;
@@ -2480,7 +2480,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "generic_type";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       arguments: type_arguments xs;
       type_identifier: scoped_type_identifier xs;
@@ -2492,7 +2492,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "array_type";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       element: _unannotated_type xs;
       dimensions: dimensions xs;
@@ -2504,7 +2504,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "_numeric_type";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (interm79 xs) 
    | x -> error "_numeric_type" x
 
@@ -2527,7 +2527,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "integral_type";
      "startPosition", t_start;
       "endPosition", t_end;
-     "children", xs
+     "children", J.Object xs
     ] -> [wrap t_start t_end]
    | x -> error "integral_type" x
 
@@ -2536,7 +2536,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "floating_point_type";
      "startPosition", t_start;
       "endPosition", t_end;
-     "children", xs
+     "children", J.Object xs
     ] -> [wrap t_start t_end]
    | x -> error "floating_point_type" x
 
@@ -2563,7 +2563,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "_method_header";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       type_parameters: type_parameters xs list option;
       annotation: _annotation xs list option;
@@ -2578,7 +2578,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "_method_declarator";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       name: identifier xs;
       parameters: formal_parameters xs;
@@ -2588,7 +2588,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "_method_declarator";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       name: _reserved_identifier xs;
       parameters: formal_parameters xs;
@@ -2601,7 +2601,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "formal_parameters";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       parameter: receiver_parameter xs option;
       formal_parameter: formal_parameter xs list option;
@@ -2614,7 +2614,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "formal_parameter";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       mods: modifiers xs option;
       t_type: _unannotated_type xs;
@@ -2627,7 +2627,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "receiver_parameter";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       annotation: _annotation xs list;
       t_type: _unannotated_type xs;
@@ -2641,7 +2641,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "spread_parameter";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       mods: modifiers xs option;
       t_type: _unannotated_type xs;
@@ -2654,7 +2654,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "throws";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> Some (_type xs list)
    | x -> error "throws" x
 
@@ -2663,7 +2663,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "local_variable_declaration";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       mods: modifiers xs option;
       t_type: _unannotated_type xs;
@@ -2676,7 +2676,7 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "method_declaration";
      "startPosition", _;
       "endPosition", _;
-     "children", xs
+     "children", J.Object xs
     ] -> {
       mods: modifiers xs option;
       header: _method_header xs;
