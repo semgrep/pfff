@@ -244,6 +244,7 @@ and expr =
     | Int of string wrap | Float of string wrap
     | Char of string wrap | String of string wrap | Regexp of string wrap
     | Unit of tok (* a.k.a Void *) | Null of tok | Undefined of tok (* JS *)
+    | Imag of string wrap (* Go, Python *)
 
   and container_operator = 
     (* Tuple was lifted up *)
@@ -328,7 +329,6 @@ and expr =
     | OE_UseStrict (* less: lift up to program attribute/directive? *)
     | OE_ObjAccess_PN_Computed (* less: convert to ArrayAccess *)
     (* Python *)
-    | OE_Imag
     | OE_Is | OE_IsNot (* less: could be part of a set_operator? or PhysEq? *)
     | OE_In | OE_NotIn (* less: could be part of a obj_operator? *)
     | OE_Invert

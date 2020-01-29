@@ -180,6 +180,7 @@ and map_literal =
   | Bool v1 -> let v1 = map_wrap map_of_bool v1 in Bool ((v1))
   | Int v1 -> let v1 = map_wrap map_of_string v1 in Int ((v1))
   | Float v1 -> let v1 = map_wrap map_of_string v1 in Float ((v1))
+  | Imag v1 -> let v1 = map_wrap map_of_string v1 in Imag ((v1))
   | Char v1 -> let v1 = map_wrap map_of_string v1 in Char ((v1))
   | String v1 -> let v1 = map_wrap map_of_string v1 in String ((v1))
   | Regexp v1 -> let v1 = map_wrap map_of_string v1 in Regexp ((v1))

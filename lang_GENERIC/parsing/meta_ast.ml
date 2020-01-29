@@ -155,6 +155,8 @@ and vof_literal =
       let v1 = vof_wrap Ocaml.vof_string v1 in Ocaml.VSum (("Int", [ v1 ]))
   | Float v1 ->
       let v1 = vof_wrap Ocaml.vof_string v1 in Ocaml.VSum (("Float", [ v1 ]))
+  | Imag v1 ->
+      let v1 = vof_wrap Ocaml.vof_string v1 in Ocaml.VSum (("Imag", [ v1 ]))
   | Char v1 ->
       let v1 = vof_wrap Ocaml.vof_string v1 in Ocaml.VSum (("Char", [ v1 ]))
   | String v1 ->
@@ -270,7 +272,6 @@ and vof_other_expr_operator =
   | OE_Require -> Ocaml.VSum (("OE_Require", []))
   | OE_UseStrict -> Ocaml.VSum (("OE_UseStrict", []))
   | OE_ObjAccess_PN_Computed -> Ocaml.VSum (("OE_ObjAccess_PN_Computed", []))
-  | OE_Imag -> Ocaml.VSum (("OE_Imag", []))
   | OE_Is -> Ocaml.VSum (("OE_Is", []))
   | OE_IsNot -> Ocaml.VSum (("OE_IsNot", []))
   | OE_In -> Ocaml.VSum (("OE_In", []))

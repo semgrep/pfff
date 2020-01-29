@@ -182,6 +182,7 @@ and v_literal =
   | Bool v1 -> let v1 = v_wrap v_bool v1 in ()
   | Int v1 -> let v1 = v_wrap v_string v1 in ()
   | Float v1 -> let v1 = v_wrap v_string v1 in ()
+  | Imag v1 -> let v1 = v_wrap v_string v1 in ()
   | Char v1 -> let v1 = v_wrap v_string v1 in ()
   | String v1 -> let v1 = v_wrap v_string v1 in ()
   | Regexp v1 -> let v1 = v_wrap v_string v1 in ()

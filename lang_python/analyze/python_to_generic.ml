@@ -87,10 +87,7 @@ let rec expr (x: expr) =
      G.Ellipsis x
   | Num v1 -> 
       let v1 = number v1 in 
-      (match v1 with
-      | Left x -> G.L x
-      | Right x -> x
-      )
+      G.L v1
   | Str (v1) -> 
       let v1 = wrap string v1 in
       G.L (G.String (v1))
@@ -246,12 +243,10 @@ and dictorset_elt = function
   
 and number =
   function
-  | Int v1     -> let v1 = wrap id v1 in Left (G.Int v1)
-  | LongInt v1 -> let v1 = wrap id v1 in Left (G.Int v1)
-  | Float v1   -> let v1 = wrap id v1 in Left (G.Float v1)
-  | Imag v1    -> 
-      let v1 = wrap string v1 in 
-      Right (G.OtherExpr (G.OE_Imag, [G.E (G.L (G.Int v1))]))
+  | Int v1     -> let v1 = wrap id v1 in G.Int v1
+  | LongInt v1 -> let v1 = wrap id v1 in G.Int v1
+  | Float v1   -> let v1 = wrap id v1 in G.Float v1
+  | Imag v1    -> let v1 = wrap string v1 in G.Imag v1
 
 
 and boolop = function 
