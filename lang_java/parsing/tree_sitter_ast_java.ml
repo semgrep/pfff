@@ -39,19 +39,19 @@ and decimal_integer_literal = string wrap
 
 and hex_integer_literal = string wrap
 
-and octal_integer_literal = string wrap
+and octal_integer_literal = string wrap 
 
-and binary_integer_literal = string wrap
+and binary_integer_literal = string wrap 
 
-and decimal_floating_point_literal = string wrap
+and decimal_floating_point_literal = string wrap 
 
-and hex_floating_point_literal = string wrap
+and hex_floating_point_literal = string wrap 
 
-and character_literal = string wrap
+and character_literal = string wrap 
 
-and string_literal = string wrap
+and string_literal = string wrap 
 
-and null_literal = string wrap
+and null_literal = string wrap 
 
 and _expression =
 | Assignment of assignment_expression
@@ -344,7 +344,6 @@ and while_statement = {
   body7: _statement;
 }
 
-(* GET BACK TO THIS!!!!! *)
 and for_statement = {
   init: interm12;
   condition6: _expression;
@@ -418,7 +417,7 @@ and module_name =
 
 and package_declaration = ( _annotation list) * _ambiguous_name
 
-and import_declaration = identifier * ( identifier list) * asterisk option
+and import_declaration = identifier list
 
 and asterisk = string wrap
 
@@ -639,13 +638,13 @@ and _numeric_type =
 | Integral of integral_type
 | Floating of floating_point_type
 
-and integral_type = string wrap
+and integral_type = string
 
-and floating_point_type = string wrap
+and floating_point_type = string
 
-and boolean_type = string wrap
+and boolean_type = string
 
-and void_type = string wrap
+and void_type = string
 
 and _method_header = {
   type_parameters6: type_parameters * ( _annotation list) option;
@@ -688,13 +687,13 @@ and method_declaration = {
 
 and _reserved_identifier = identifier
 
-and this = string wrap
+and this = string 
 
-and super = string wrap
+and super = string 
 
-and comment = string wrap
+and comment = string 
 
-and identifier = string wrap
+and identifier = string 
 
 and program = compilation_unit
 
@@ -705,13 +704,13 @@ and compilation_unit = {
 }
 
 and decl =
-  (* top decl *)
   | Class6 of class_declaration
   | Enum1 of enum_declaration
   | Method1 of method_declaration
   | Field11 of field_declaration
 
-and decls = decl list
+(* FOR TESTING ONLY *)
+and decls = class_declaration
 
 and any = 
-  | AProgram of program
+  | TProgram of program

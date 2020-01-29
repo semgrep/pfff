@@ -5,7 +5,8 @@ TOP=../..
 TARGET=lib
 OPAMPKG=pfff-lang_java
 
-SRC= ast_java.ml meta_ast_java.ml tree_sitter_ast_java.ml \
+SRC= ast_java.ml meta_ast_java.ml \
+     tree_sitter_ast_java.ml \
      visitor_java.ml \
      lib_parsing_java.ml \
      parser_java.ml lexer_java.ml \
@@ -14,7 +15,6 @@ SRC= ast_java.ml meta_ast_java.ml tree_sitter_ast_java.ml \
      parse_java_with_external_program.ml \
      parse_java.ml \
      test_parsing_java.ml unit_parsing_java.ml \
-     parse_with_external_mod.ml 
 
 SYSLIBS= str.cma unix.cma
 
