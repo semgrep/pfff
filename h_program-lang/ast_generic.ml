@@ -120,7 +120,7 @@ type dotted_ident = ident list (* at least 1 element *)
 type qualifier = dotted_ident
  (* with tarzan *)
 
-(* 'module' can also be used for a 'package', or a 'namespace' *)
+(* module_name can also be used for a packaeg name  or a namespace *)
 type module_name =
   | FileName of string wrap   (* ex: Js import, C #include, Go import *)
   | DottedName of dotted_ident (* ex: Python *)
@@ -702,7 +702,7 @@ and class_definition = {
     | Trait
 
 (* ------------------------------------------------------------------------- *)
-(* Module definition (a.k.a package, a.k.a namespace)  *)
+(* Module definition  *)
 (* ------------------------------------------------------------------------- *)
 and module_definition = {
   mbody: module_definition_kind;
@@ -734,6 +734,11 @@ and directive =
   (* newvar: *)
   | ImportFrom of module_name * alias list
   | ImportAs   of module_name * ident option (* as name *)
+
+  (* packages are different from modules in that multiple files can reuse
+   * the same package name; they are agglomarated in the same package
+   *)
+  | Package of dotted_ident (* a.k.a namespace *)
 
   | OtherDirective of other_directive_operator * any list
 

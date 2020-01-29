@@ -490,11 +490,10 @@ and decl decl =
 
 and decls v = list decl v
 
-let compilation_unit {
-                         package = package;
-                         imports = imports;
-                         decls = xdecls
-                       } =
+let compilation_unit { package = package;
+                       imports = imports;
+                       decls = xdecls
+                      } =
   let v1 = option qualified_ident package in
   let v2 =
     list
@@ -510,15 +509,12 @@ let compilation_unit {
   let v3 = decls xdecls in
   let items = v3 |> List.map G.stmt_to_item in
   let imports = v2 |> List.map (fun import -> G.DirectiveStmt import) in
-  (match v1 with
-  | None -> items @ imports
-  | Some [] -> raise Impossible
-  | Some xs -> 
-    let id = Common2.list_last xs in
-    let ent = G.basic_entity id [] in
-    [G.DefStmt (ent, G.ModuleDef { G.mbody = 
-        G.ModuleStruct (None, items @ imports) })]
-  )
+  let package = 
+    match v1 with
+    | None -> items @ imports
+    | Some x -> [G.DirectiveStmt (G.Package x)]
+  in
+  package @ imports @ items
 
 let program v = 
   compilation_unit v

@@ -653,6 +653,9 @@ and map_directive =
       let v1 = map_other_directive_operator v1
       and v2 = map_of_list map_any v2
       in OtherDirective ((v1, v2))
+  | Package ((v1)) ->
+      let v1 = map_dotted_ident v1
+      in Package ((v1))
 
 and map_alias (v1, v2) =
   let v1 = map_ident v1 and v2 = map_of_option map_ident v2 in (v1, v2)
