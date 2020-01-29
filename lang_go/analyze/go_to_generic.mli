@@ -1,3 +1,3 @@
-val program: Ast_go.program -> Ast_go.program
+val program: Ast_go.program -> Ast_generic.program
 
-val any: Ast_go.any -> Ast_go.any
+val any: Ast_go.any -> Ast_generic.any

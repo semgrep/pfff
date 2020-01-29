@@ -321,18 +321,22 @@ and decl =
 let top_decl =
   function
   | DFunc ((v1, (v2, v3))) ->
-      let v1 = ident v1 and v2 = func_type v2 and v3 = stmt v3 in ()
+      let v1 = ident v1 and v2 = func_type v2 and v3 = stmt v3 in 
+      raise Todo
   | DMethod ((v1, v2, (v3, v4))) ->
       let v1 = ident v1
       and v2 = parameter v2
       and v3 = func_type v3
       and v4 = stmt v4
-      in ()
-  | D v1 -> let v1 = decl v1 in ()
+      in
+      raise Todo
+  | D v1 -> let v1 = decl v1 in
+      raise Todo
 
 let rec import { i_path = i_path; i_kind = i_kind } =
   let arg = wrap string i_path in
-  let arg = import_kind i_kind in ()
+  let arg = import_kind i_kind in 
+  raise Todo
   
 and import_kind =
   function
@@ -340,22 +344,20 @@ and import_kind =
   | ImportNamed v1 -> let v1 = ident v1 in ()
   | ImportDot v1 -> let v1 = tok v1 in ()
 
-let program2 { package = package; imports = imports; decls = decls } =
-  let arg = ident package in
-  let arg = list import imports in
-  let arg = list top_decl decls in ()
+let program { package = package; imports = imports; decls = decls } =
+  let arg1 = ident package in
+  let arg2 = list import imports in
+  let arg3 = list top_decl decls in
+  [G.DirectiveStmt (G.Package [arg1])] @ arg2 @ arg3
   
 
-let any2 =
+let any =
   function
-  | E v1 -> let v1 = expr v1 in ()
-  | S v1 -> let v1 = stmt v1 in ()
-  | T v1 -> let v1 = type_ v1 in ()
-  | Decl v1 -> let v1 = decl v1 in ()
-  | I v1 -> let v1 = import v1 in ()
-  | P v1 -> let v1 = program2 v1 in ()
-  | Ident v1 -> let v1 = ident v1 in ()
-  | Ss v1 -> let v1 = list stmt v1 in ()
-
-let program _ = raise Common.Todo
-let any _ = raise Common.Todo
+  | E v1 -> let v1 = expr v1 in G.E v1
+  | S v1 -> let v1 = stmt v1 in raise Todo
+  | T v1 -> let v1 = type_ v1 in G.T v1
+  | Decl v1 -> let v1 = decl v1 in raise Todo
+  | I v1 -> let v1 = import v1 in raise Todo
+  | P v1 -> let v1 = program v1 in G.Pr v1
+  | Ident v1 -> let v1 = ident v1 in G.Id v1
+  | Ss v1 -> let v1 = list stmt v1 in raise Todo
