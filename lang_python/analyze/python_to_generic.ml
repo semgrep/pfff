@@ -356,7 +356,6 @@ and stmt x =
       in
       let ent = G.basic_entity v1 v5 in
       let def = { G.fparams = v2; frettype = v3; fbody = v4; } in
-      (* will be lift up to a IDef later *)
       G.DefStmt (ent, G.FuncDef def)
   | ClassDef ((v1, v2, v3, v4)) ->
       let v1 = name v1
@@ -368,7 +367,6 @@ and stmt x =
       let def = { G.ckind = G.Class; cextends = v2; cimplements = [];
                   cbody = List.map G.stmt_to_field v3;
                 } in
-      (* will be lift up to a IDef later *)
       G.DefStmt (ent, G.ClassDef def)
 
   (* TODO: should turn some of those in G.LocalDef (G.VarDef ! ) *)
@@ -464,16 +462,17 @@ and stmt x =
   | Assert ((v1, v2)) -> let v1 = expr v1 and v2 = option expr v2 in
       G.Assert (v1, v2)
 
-  | Import v1 -> let v1 = list alias2 v1 in 
-      G.Block (v1 |> List.map (fun (dotted, nopt) ->
-            G.DirectiveStmt (G.ImportAs (G.DottedName dotted, nopt))))
+  | ImportAs ((v1, _dotsAlwaysNone), v2) -> 
+      let dotted = dotted_name v1 and nopt = option name v2 in
+      G.DirectiveStmt (G.ImportAs (G.DottedName dotted, nopt))
+  | ImportAll ((v1, _dotsAlwaysNone), v2) -> 
+      let dotted = dotted_name v1 and v2 = info v2 in
+      G.DirectiveStmt (G.ImportAll (G.DottedName dotted, v2))
 
-  | ImportFrom ((v1, v2, v3)) ->
+  | ImportFrom (((v1, _dotsTODO), v2)) ->
       let v1 = dotted_name v1
       and v2 = list alias v2
-      and _v3Dotlevel = (*option int v3 *) v3
       in
-      (* will be lift up to IDef later *)
       G.DirectiveStmt (G.ImportFrom (G.DottedName v1, v2))
 
   | Global v1 -> let v1 = list name v1 in
@@ -528,9 +527,6 @@ and decorator v =
 
 and alias (v1, v2) = 
   let v1 = name v1 and v2 = option name v2 in 
-  v1, v2
-and alias2 (v1, v2) = 
-  let v1 = dotted_name v1 and v2 = option name v2 in
   v1, v2
 
 let program v = 

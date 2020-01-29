@@ -10,7 +10,12 @@ let vof_wrap _of_a (v1, v2) =
 let vof_name v = vof_wrap Ocaml.vof_string v
   
 let vof_dotted_name v = Ocaml.vof_list vof_name v
-  
+
+let vof_module_name (v1, v2) = 
+  let v1 = vof_dotted_name v1
+  and v2 = Ocaml.vof_option Ocaml.vof_int v2 in
+  Ocaml.VTuple [v1; v2]
+
 let vof_resolved_name =
   function
   | LocalVar -> Ocaml.VSum (("LocalVar", []))
@@ -324,14 +329,17 @@ let rec vof_stmt =
       let v1 = Ocaml.vof_list vof_name v1
       in Ocaml.VSum (("NonLocal", [ v1 ]))
   | Async v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("Async", [ v1 ]))
-  | Import v1 ->
-      let v1 = Ocaml.vof_list vof_alias_dotted v1
-      in Ocaml.VSum (("Import", [ v1 ]))
-  | ImportFrom ((v1, v2, v3)) ->
-      let v1 = vof_dotted_name v1
+  | ImportAs (v1, v2) ->
+      let v1 = vof_alias_dotted (v1, v2)
+      in Ocaml.VSum (("ImportAs", [ v1 ]))
+  | ImportAll (v1, v2) ->
+      let v1 = vof_module_name v1
+      and v2 = vof_tok v2
+      in Ocaml.VSum (("ImportAll", [v1; v2]))
+  | ImportFrom ((v1, v2)) ->
+      let v1 = vof_module_name v1
       and v2 = Ocaml.vof_list vof_alias v2
-      and v3 = Ocaml.vof_option Ocaml.vof_int v3
-      in Ocaml.VSum (("ImportFrom", [ v1; v2; v3 ]))
+      in Ocaml.VSum (("ImportFrom", [ v1; v2 ]))
   | FunctionDef ((v1, v2, v3, v4, v5)) ->
       let v1 = vof_name v1
       and v2 = vof_parameters v2
@@ -371,7 +379,7 @@ and vof_alias (v1, v2) =
   and v2 = Ocaml.vof_option vof_name v2
   in Ocaml.VTuple [ v1; v2 ]
 and vof_alias_dotted (v1, v2) =
-  let v1 = vof_dotted_name v1
+  let v1 = vof_module_name v1
   and v2 = Ocaml.vof_option vof_name v2
   in Ocaml.VTuple [ v1; v2 ]
   

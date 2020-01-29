@@ -83,6 +83,11 @@ type name = string wrap
 type dotted_name = name list
  (* with tarzan *)
 
+type module_name = 
+ dotted_name * 
+ (* https://realpython.com/absolute-vs-relative-python-imports/ *)
+ int option (* levels, for relative imports *)
+
 (* TODO: reuse ast_generic one? *)
 type resolved_name =
   (* this can be computed by a visitor *)
@@ -294,12 +299,9 @@ type stmt =
   (* python3: for With, For, and FunctionDef *)
   | Async of stmt
 
-  | Import of alias_dotted list (* names *)
-  | ImportFrom of 
-     dotted_name (* module *) * 
-     alias list (* names *) * 
-     (* https://realpython.com/absolute-vs-relative-python-imports/ *)
-     int option (* levels, for relative imports *)
+  | ImportAs of module_name (* name *) * name option (* asname *)
+  | ImportAll of module_name * tok (* * *)
+  | ImportFrom of module_name (* module *) * alias list (* names *)
 
   (* should be allowed just at the toplevel *)
   | FunctionDef of 
@@ -351,7 +353,6 @@ and decorator = expr
 (* Module import/export *)
 (* ------------------------------------------------------------------------- *)
 and alias = name (* name *) * name option (* asname *)
-and alias_dotted = dotted_name (* name *) * name option (* asname *)
   (* with tarzan *)
 
 (*****************************************************************************)
