@@ -40,9 +40,11 @@ let prefix_postfix _ = ()
 
 let error = Ast_generic.error
 
-(* need visitor_go.ml and lib_parsing_go.ml *)
-let ii_of_any x = 
-  raise Todo
+let name_of_qualified_ident = function
+  | Left id -> id, G.empty_name_info
+  | Right (xs, id) -> id, { G.name_qualifier = Some xs; name_typeargs = None }
+
+let fake_info () = Parse_info.fake_info "FAKE"
 
 (*****************************************************************************)
 (* Entry point *)
@@ -56,30 +58,48 @@ let wrap _of_a (v1, v2) =
 
 let ident v = wrap string v
 
-let qualified_ident v = list ident v
+let qualified_ident v = 
+  match list ident v with
+  | [x] -> Left x
+  | [x;y] -> Right ([x], y)
+  | _ -> raise Impossible
+
 
 let rec type_ =
   function
-  | TName v1 -> let v1 = qualified_ident v1 in ()
-  | TPtr v1 -> let v1 = type_ v1 in ()
-  | TArray ((v1, v2)) -> let v1 = expr v1 and v2 = type_ v2 in ()
-  | TSlice v1 -> let v1 = type_ v1 in ()
-  | TArrayEllipsis ((v1, v2)) -> let v1 = tok v1 and v2 = type_ v2 in ()
-  | TFunc v1 -> let v1 = func_type v1 in ()
-  | TMap ((v1, v2)) -> let v1 = type_ v1 and v2 = type_ v2 in ()
-  | TChan ((v1, v2)) -> let v1 = chan_dir v1 and v2 = type_ v2 in ()
-  | TStruct v1 -> let v1 = list struct_field v1 in ()
-  | TInterface v1 -> let v1 = list interface_field v1 in ()
+  | TName v1 -> let v1 = qualified_ident v1 in
+      G.TyApply (name_of_qualified_ident v1, [])
+  | TPtr v1 -> let v1 = type_ v1 in 
+      G.TyPointer v1
+  | TArray ((v1, v2)) -> let v1 = expr v1 and v2 = type_ v2 in 
+      G.TyArray (Some v1, v2)
+  | TSlice v1 -> let v1 = type_ v1 in 
+      G.TyArray (None, v1) (* not sure worth introducing an OT_Slice *)
+  | TArrayEllipsis ((v1, v2)) -> let v1 = tok v1 and v2 = type_ v2 in
+      G.TyArray (None, v2)
+  | TFunc v1 -> let (params, res) = func_type v1 in 
+      G.TyFun (params, res)
+  | TMap ((v1, v2)) -> let v1 = type_ v1 and v2 = type_ v2 in 
+      let map_name = ("map", fake_info ()), G.empty_name_info in
+      G.TyApply (map_name, [G.TypeArg v1; G.TypeArg v2])
+  | TChan ((v1, v2)) -> let v1 = chan_dir v1 and v2 = type_ v2 in 
+      raise Todo
+  | TStruct v1 -> let v1 = list struct_field v1 in 
+      raise Todo
+  | TInterface v1 -> let v1 = list interface_field v1 in 
+      raise Todo
 
 and chan_dir = function | TSend -> () | TRecv -> () | TBidirectional -> ()
 
 and func_type { fparams = fparams; fresults = fresults } =
-  let arg = list parameter fparams in
-  let arg = list parameter fresults in ()
+  let fparams = list parameter fparams in
+  let fresults = list parameter fresults in
+  raise Todo
 
 and parameter { pname = pname; ptype = ptype; pdots = pdots } =
   let arg = option ident pname in
-  let arg = type_ ptype in let arg = option tok pdots in ()
+  let arg = type_ ptype in let arg = option tok pdots in 
+  raise Todo
 
 and struct_field (v1, v2) =
   let v1 = struct_field_kind v1 and v2 = option tag v2 in ()
@@ -103,13 +123,17 @@ and expr_or_type v = either expr type_ v
 
 and expr =
   function
-  | BasicLit v1 -> let v1 = literal v1 in ()
+  | BasicLit v1 -> let v1 = literal v1 in G.L v1
   | CompositeLit ((v1, v2)) ->
-      let v1 = type_ v1 and v2 = list init v2 in ()
-  | Id (v1, _IGNORED) -> let v1 = ident v1 in ()
+      let v1 = type_ v1 and v2 = list init v2 in
+      raise Todo
+  | Id (v1, _IGNORED) -> let v1 = ident v1 in 
+      raise Todo
   | Selector ((v1, v2, v3)) ->
-      let v1 = expr v1 and v2 = tok v2 and v3 = ident v3 in ()
-  | Index ((v1, v2)) -> let v1 = expr v1 and v2 = index v2 in ()
+      let v1 = expr v1 and v2 = tok v2 and v3 = ident v3 in
+      raise Todo
+  | Index ((v1, v2)) -> let v1 = expr v1 and v2 = index v2 in
+      raise Todo
   | Slice ((v1, v2)) ->
       let v1 = expr v1
       and v2 =
@@ -119,36 +143,48 @@ and expr =
              and v2 = option expr v2
              and v3 = option expr v3
              in ())
-      in ()
-  | Call v1 -> let v1 = call_expr v1 in ()
-  | Cast ((v1, v2)) -> let v1 = type_ v1 and v2 = expr v2 in ()
-  | Deref ((v1, v2)) -> let v1 = tok v1 and v2 = expr v2 in ()
-  | Ref ((v1, v2)) -> let v1 = tok v1 and v2 = expr v2 in ()
-  | Receive ((v1, v2)) -> let v1 = tok v1 and v2 = expr v2 in ()
+      in 
+      raise Todo
+  | Call v1 -> let v1 = call_expr v1 in 
+      raise Todo
+  | Cast ((v1, v2)) -> let v1 = type_ v1 and v2 = expr v2 in
+      raise Todo
+  | Deref ((v1, v2)) -> let v1 = tok v1 and v2 = expr v2 in
+      raise Todo
+  | Ref ((v1, v2)) -> let v1 = tok v1 and v2 = expr v2 in
+      raise Todo
+  | Receive ((v1, v2)) -> let v1 = tok v1 and v2 = expr v2 in 
+      raise Todo
   | Unary ((v1, v2)) ->
       let v1 = wrap arithmetic_operator v1
       and v2 = expr v2
-      in ()
+      in raise Todo
   | Binary ((v1, v2, v3)) ->
       let v1 = expr v1
       and v2 = wrap arithmetic_operator v2
       and v3 = expr v3
-      in ()
-  | TypeAssert ((v1, v2)) -> let v1 = expr v1 and v2 = type_ v2 in ()
-  | TypeSwitchExpr ((v1, v2)) -> let v1 = expr v1 and v2 = tok v2 in ()
-  | EllipsisTODO v1 -> let v1 = tok v1 in ()
-  | FuncLit ((v1, v2)) -> let v1 = func_type v1 and v2 = stmt v2 in ()
-  | ParenType v1 -> let v1 = type_ v1 in ()
+      in raise Todo
+  | TypeAssert ((v1, v2)) -> let v1 = expr v1 and v2 = type_ v2 in
+      raise Todo
+  | TypeSwitchExpr ((v1, v2)) -> let v1 = expr v1 and v2 = tok v2 in
+      raise Todo
+  | EllipsisTODO v1 -> let v1 = tok v1 in 
+      raise Todo
+  | FuncLit ((v1, v2)) -> let v1 = func_type v1 and v2 = stmt v2 in
+      raise Todo
+  | ParenType v1 -> let v1 = type_ v1 in
+      raise Todo
   | Send ((v1, v2, v3)) ->
-      let v1 = expr v1 and v2 = tok v2 and v3 = expr v3 in ()
+      let v1 = expr v1 and v2 = tok v2 and v3 = expr v3 in
+      raise Todo
 
 and literal =
   function
-  | Int v1 -> let v1 = wrap string v1 in ()
-  | Float v1 -> let v1 = wrap string v1 in ()
-  | Imag v1 -> let v1 = wrap string v1 in ()
-  | Rune v1 -> let v1 = wrap string v1 in ()
-  | String v1 -> let v1 = wrap string v1 in ()
+  | Int v1 -> let v1 = wrap string v1 in G.Int v1
+  | Float v1 -> let v1 = wrap string v1 in G.Float v1
+  | Imag v1 -> let v1 = wrap string v1 in G.Imag v1
+  | Rune v1 -> let v1 = wrap string v1 in G.Char v1
+  | String v1 -> let v1 = wrap string v1 in G.String v1
 
 and index v = expr v
 
