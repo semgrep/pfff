@@ -127,13 +127,14 @@ and expr =
   | CompositeLit ((v1, v2)) ->
       let v1 = type_ v1 and v2 = list init v2 in
       raise Todo
-  | Id (v1, _IGNORED) -> let v1 = ident v1 in 
-      raise Todo
+  | Id (v1, vref) -> let v1 = ident v1 in 
+      G.Name ((v1, G.empty_name_info), 
+        { G.id_resolved = vref; id_type = ref None })
   | Selector ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = tok v2 and v3 = ident v3 in
-      raise Todo
+      G.ObjAccess (v1, v3)
   | Index ((v1, v2)) -> let v1 = expr v1 and v2 = index v2 in
-      raise Todo
+      G.ArrayAccess (v1, v2)
   | Slice ((v1, v2)) ->
       let v1 = expr v1
       and v2 =
@@ -145,8 +146,8 @@ and expr =
              in ())
       in 
       raise Todo
-  | Call v1 -> let v1 = call_expr v1 in 
-      raise Todo
+  | Call v1 -> let (e, args) = call_expr v1 in 
+      G.Call (e, args)
   | Cast ((v1, v2)) -> let v1 = type_ v1 and v2 = expr v2 in
       raise Todo
   | Deref ((v1, v2)) -> let v1 = tok v1 and v2 = expr v2 in
@@ -191,9 +192,10 @@ and index v = expr v
 and arguments v = list argument v
 and argument =
   function
-  | Arg v1 -> let v1 = expr v1 in ()
-  | ArgType v1 -> let v1 = type_ v1 in ()
-  | ArgDots v1 -> let v1 = tok v1 in ()
+  | Arg v1 -> let v1 = expr v1 in G.Arg v1
+  | ArgType v1 -> let v1 = type_ v1 in G.ArgType v1
+  | ArgDots (v1, v2) -> let v1 = expr v1 in let v2 = tok v2 in
+      raise Todo
 
 and init =
   function
@@ -287,7 +289,9 @@ and case_kind =
 
 and comm_clause v = case_clause v
 
-and call_expr (v1, v2) = let v1 = expr v1 and v2 = arguments v2 in ()
+and call_expr (v1, v2) = 
+  let v1 = expr v1 and v2 = arguments v2 in 
+  v1, v2
 
 
 and decl =

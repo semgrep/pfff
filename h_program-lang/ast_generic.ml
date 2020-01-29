@@ -190,7 +190,10 @@ and expr =
 
   (* todo: newvar: sometimes abused to also introduce a newvar (as in Python)
    * but ultimately those cases should be rewritten to first introduce a
-   * VarDef
+   * VarDef. Sometimes some ObjAccess should really be transformed in Name
+   * with a better qualifier because the obj is actually the name of a package
+   * or module, but you may need advanced semantic information and global
+   * analysis to disambiguate.
    *)
   | Name of name * id_info
   | IdSpecial of special wrap
@@ -215,7 +218,9 @@ and expr =
   (* newvar:! newscope:? in OCaml yes but we miss the 'in' part here  *)
   | LetPattern of pattern * expr
 
-  (* can also be used for Record, Class, or Module access depending on expr *)
+  (* can also be used for Record, Class, or Module access depending on expr,
+   * in which case it should be rewritten as a Name with a better qualifier. 
+   *)
   | ObjAccess of expr * ident
   (* in Js this is used for ObjAccess with a computed field name *)
   | ArrayAccess of expr * expr (* less: slice *)
