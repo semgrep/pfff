@@ -34,9 +34,9 @@ let list = List.map
 let option = Common.map_opt
 let either = Ocaml.map_of_either
 
-let arithmetic_operator _ = ()
-let incr_decr _ = ()
-let prefix_postfix _ = ()
+let arithmetic_operator = id
+let incr_decr = id
+let prefix_postfix = id
 
 let error = Ast_generic.error
 
@@ -45,6 +45,8 @@ let name_of_qualified_ident = function
   | Right (xs, id) -> id, { G.name_qualifier = Some xs; name_typeargs = None }
 
 let fake_info () = Parse_info.fake_info "FAKE"
+
+let ii_of_any = Lib_parsing_go.ii_of_any
 
 (*****************************************************************************)
 (* Entry point *)
@@ -123,10 +125,8 @@ and expr_or_type v = either expr type_ v
 
 and expr =
   function
-  | BasicLit v1 -> let v1 = literal v1 in G.L v1
-  | CompositeLit ((v1, v2)) ->
-      let v1 = type_ v1 and v2 = list init v2 in
-      raise Todo
+  | BasicLit v1 -> let v1 = literal v1 in 
+      G.L v1
   | Id (v1, vref) -> let v1 = ident v1 in 
       G.Name ((v1, G.empty_name_info), 
         { G.id_resolved = vref; id_type = ref None })
@@ -135,6 +135,28 @@ and expr =
       G.ObjAccess (v1, v3)
   | Index ((v1, v2)) -> let v1 = expr v1 and v2 = index v2 in
       G.ArrayAccess (v1, v2)
+  | Call v1 -> let (e, args) = call_expr v1 in 
+      G.Call (e, args)
+  | Cast ((v1, v2)) -> let v1 = type_ v1 and v2 = expr v2 in
+      G.Cast (v1, v2)
+  | Deref ((v1, v2)) -> let v1 = tok v1 and v2 = expr v2 in
+      G.DeRef v2
+  | Ref ((v1, v2)) -> let v1 = tok v1 and v2 = expr v2 in
+      G.Ref v2
+  | Unary ((v1, v2)) ->
+      let (v1, tok) = wrap arithmetic_operator v1
+      and v2 = expr v2
+      in
+      G.Call (G.IdSpecial (ArithOp v1, tok), [G.expr_to_arg v2])
+  | Binary ((v1, v2, v3)) ->
+      let v1 = expr v1
+      and (v2, tok) = wrap arithmetic_operator v2
+      and v3 = expr v3
+      in
+      G.Call (G.IdSpecial (ArithOp v2, tok), [v1;v3] |> List.map G.expr_to_arg)
+  | CompositeLit ((v1, v2)) ->
+      let v1 = type_ v1 and v2 = list init v2 in
+      raise Todo
   | Slice ((v1, v2)) ->
       let v1 = expr v1
       and v2 =
@@ -146,38 +168,21 @@ and expr =
              in ())
       in 
       raise Todo
-  | Call v1 -> let (e, args) = call_expr v1 in 
-      G.Call (e, args)
-  | Cast ((v1, v2)) -> let v1 = type_ v1 and v2 = expr v2 in
-      raise Todo
-  | Deref ((v1, v2)) -> let v1 = tok v1 and v2 = expr v2 in
-      raise Todo
-  | Ref ((v1, v2)) -> let v1 = tok v1 and v2 = expr v2 in
-      raise Todo
-  | Receive ((v1, v2)) -> let v1 = tok v1 and v2 = expr v2 in 
-      raise Todo
-  | Unary ((v1, v2)) ->
-      let v1 = wrap arithmetic_operator v1
-      and v2 = expr v2
-      in raise Todo
-  | Binary ((v1, v2, v3)) ->
-      let v1 = expr v1
-      and v2 = wrap arithmetic_operator v2
-      and v3 = expr v3
-      in raise Todo
   | TypeAssert ((v1, v2)) -> let v1 = expr v1 and v2 = type_ v2 in
-      raise Todo
-  | TypeSwitchExpr ((v1, v2)) -> let v1 = expr v1 and v2 = tok v2 in
       raise Todo
   | EllipsisTODO v1 -> let v1 = tok v1 in 
       raise Todo
   | FuncLit ((v1, v2)) -> let v1 = func_type v1 and v2 = stmt v2 in
       raise Todo
-  | ParenType v1 -> let v1 = type_ v1 in
+  | Receive ((v1, v2)) -> let v1 = tok v1 and v2 = expr v2 in 
       raise Todo
   | Send ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = tok v2 and v3 = expr v3 in
       raise Todo
+  | TypeSwitchExpr ((v1, v2)) -> let v1 = expr v1 and v2 = tok v2 in
+      error v2 "TypeSwitchExpr should be handled in Switch statement"
+  | ParenType v1 -> let _v1 = type_ v1 in
+      error (ii_of_any (T v1) |> List.hd) "ParenType should disappear"
 
 and literal =
   function
@@ -195,14 +200,17 @@ and argument =
   | Arg v1 -> let v1 = expr v1 in G.Arg v1
   | ArgType v1 -> let v1 = type_ v1 in G.ArgType v1
   | ArgDots (v1, v2) -> let v1 = expr v1 in let v2 = tok v2 in
-      raise Todo
+      let special = G.Call (G.IdSpecial (G.Spread, v2), [G.expr_to_arg v1]) in
+      G.Arg special
 
 and init =
   function
-  | InitExpr v1 -> let v1 = expr v1 in ()
+  | InitExpr v1 -> let v1 = expr v1 in v1
   | InitKeyValue ((v1, v2, v3)) ->
-      let v1 = init v1 and v2 = tok v2 and v3 = init v3 in ()
-  | InitBraces v1 -> let v1 = list init v1 in ()
+      let v1 = init v1 and v2 = tok v2 and v3 = init v3 in
+      G.Tuple [v1; v3]
+  | InitBraces v1 -> let v1 = list init v1 in
+      G.Container (G.List, v1)
 
 and constant_expr v = expr v
 
@@ -337,6 +345,7 @@ let program2 { package = package; imports = imports; decls = decls } =
   let arg = list import imports in
   let arg = list top_decl decls in ()
   
+
 let any2 =
   function
   | E v1 -> let v1 = expr v1 in ()
