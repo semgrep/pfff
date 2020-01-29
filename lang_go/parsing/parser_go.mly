@@ -102,6 +102,40 @@ let type_to_id x =
   | _ -> 
     pr2_gen x;
     failwith "type_to_id: was expecting an id"
+
+(* see golang spec on signatures. If you have
+ * func foo(a, b, c) then it means a, b, and c are types. If you have once
+ * an identifier and a type, as in 
+ * func foo(a, b, c, d e) this means a, b, c, and d are of type e.
+ *)
+let adjust_signatures params =
+  let params = List.rev params in
+  let all_types = 
+   params |> List.for_all (function {pname = None; _} -> true | _ ->false) in
+  if all_types
+  then params
+  else 
+    let rec aux acc xs =
+      match xs with
+      | [] -> if acc = [] 
+              then [] 
+              else begin 
+                pr2_gen acc;
+                failwith "last parameter should have a type and id"
+              end
+      | x::xs ->
+        (match x with
+          | { pname = Some _; ptype = t; _ } ->
+             ((acc |> List.rev |> List.map (fun id -> 
+               { pname = Some id; ptype = t; pdots = None })) @ [x]) @
+               aux [] xs
+          | { pname = None; ptype = id_typ; _ } ->
+            let id = type_to_id id_typ in
+            aux (id::acc) xs
+        )
+    in
+    aux [] params
+
 %}
 
 /*(*************************************************************************)*/
@@ -529,7 +563,15 @@ pseudocall:
 |   pexpr LPAREN expr_or_type_list ocomma RPAREN      
       { ($1, $3 |> List.rev |> List.map mk_arg) }
 |   pexpr LPAREN expr_or_type_list LDDD ocomma RPAREN 
-      { ($1, ($3 |> List.rev |> List.map mk_arg) @ [ArgDots $4]) }
+      { let args = 
+          match $3 |> List.map mk_arg with
+          | [] -> raise Impossible
+          | (Arg e)::xs -> List.rev ((ArgDots (e, $4))::xs)
+          | (ArgDots _)::_ -> raise Impossible
+          | (ArgType _t)::_ -> raise Impossible
+         in
+         $1, args 
+      }
 
 
 braced_keyval_list:
@@ -773,43 +815,13 @@ arg_type:
 
 name_or_type:  ntype { $1 }
 
-arg_type_list: arg_type_list_bis 
-  { (* see golang spec on signatures. If you have
-     * func foo(a, b, c) then it means a, b, and c are types. If you have once
-     * an identifier and a type, as in 
-     * func foo(a, b, c, d e) this means a, b, c, and d are of type e.
-     *)
-    let params = List.rev $1 in
-    let all_types = 
-      params |> List.for_all (function {pname = None; _} -> true | _ ->false) in
-    if all_types
-    then params
-    else 
-      let rec aux acc xs =
-        match xs with
-        | [] -> if acc = [] 
-                then [] 
-                else begin 
-                  pr2_gen acc;
-                  failwith "last parameter should have a type and id"
-                end
-        | x::xs ->
-          (match x with
-            | { pname = Some _; ptype = t; _ } ->
-               ((acc |> List.rev |> List.map (fun id -> 
-                 { pname = Some id; ptype = t; pdots = None })) @ [x]) @
-                 aux [] xs
-            | { pname = None; ptype = id_typ; _ } ->
-              let id = type_to_id id_typ in
-              aux (id::acc) xs
-          )
-      in
-      aux [] params
-  }
-
-arg_type_list_bis:
+arg_type_list:
 |   arg_type                      { [$1] }
-|   arg_type_list_bis LCOMMA arg_type { $3::$1 }
+|   arg_type_list LCOMMA arg_type { $3::$1 }
+
+oarg_type_list_ocomma:
+|/*(*empty*)*/  { [] }
+|   arg_type_list ocomma { adjust_signatures $1  }
 
 /*(*************************************************************************)*/
 /*(*1 xxx_opt, xxx_list *)*/
@@ -919,6 +931,3 @@ onew_name:
 |/*(*empty*)*/   { None  }
 |   new_name     { Some $1 }
 
-oarg_type_list_ocomma:
-|/*(*empty*)*/  { [] }
-|   arg_type_list ocomma { $1  }

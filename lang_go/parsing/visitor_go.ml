@@ -183,7 +183,7 @@ and v_argument =
   function
   | Arg v1 -> let v1 = v_expr v1 in ()
   | ArgType v1 -> let v1 = v_type_ v1 in ()
-  | ArgDots v1 -> let v1 = v_tok v1 in ()
+  | ArgDots (v1, v2) -> let v1 = v_expr v1 in let v2 = v_tok v2 in ()
 and v_init x =
   let k =
   function

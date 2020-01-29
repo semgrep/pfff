@@ -181,8 +181,7 @@ and expr =
     | Arg of expr
     (* for new, make, ?? *)
     | ArgType of type_
-
-    | ArgDots of tok (* should be the last argument *)
+    | ArgDots of expr * tok (* should be the last argument *)
 
  (* could be merged with expr *)
  and init = 
