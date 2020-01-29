@@ -734,6 +734,8 @@ and directive =
   (* newvar: *)
   | ImportFrom of module_name * alias list
   | ImportAs   of module_name * ident option (* as name *)
+  (* bad practice! hard to resolve name locally *)
+  | ImportAll  of module_name * tok (* '.' in Go, '*' in Java/Python *)
 
   (* packages are different from modules in that multiple files can reuse
    * the same package name; they are agglomarated in the same package

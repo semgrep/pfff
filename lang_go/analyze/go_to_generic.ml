@@ -334,19 +334,23 @@ let top_decl =
       raise Todo
 
 let rec import { i_path = i_path; i_kind = i_kind } =
-  let arg = wrap string i_path in
-  let arg = import_kind i_kind in 
-  raise Todo
+  let module_name = G.FileName (wrap string i_path) in
+  let (s,tok) = i_path in
+  import_kind i_kind module_name (Filename.basename s, tok)
   
-and import_kind =
-  function
-  | ImportOrig -> ()
-  | ImportNamed v1 -> let v1 = ident v1 in ()
-  | ImportDot v1 -> let v1 = tok v1 in ()
+and import_kind kind module_name id =
+  match kind with
+  | ImportOrig -> 
+     (* in Go, import "a/b/c" is really equivalent to import c "a/b/c" *)
+      G.ImportAs (module_name, Some id)
+  | ImportNamed v1 -> let v1 = ident v1 in 
+      G.ImportAs (module_name, Some v1)
+  | ImportDot v1 -> let v1 = tok v1 in 
+      raise Todo
 
 let program { package = package; imports = imports; decls = decls } =
   let arg1 = ident package in
-  let arg2 = list import imports in
+  let arg2 = list import imports |> List.map (fun x -> G.DirectiveStmt x) in
   let arg3 = list top_decl decls in
   [G.DirectiveStmt (G.Package [arg1])] @ arg2 @ arg3
   

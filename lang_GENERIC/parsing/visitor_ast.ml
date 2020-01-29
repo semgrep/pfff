@@ -545,10 +545,12 @@ and v_directive x =
   match x with
   | ImportFrom ((v1, v2)) ->
       let v1 = v_module_name v1 and v2 = v_list v_alias v2 in ()
-  | Package ((v1)) ->
-      let v1 = v_dotted_ident v1 in ()
   | ImportAs ((v1, v2)) ->
       let v1 = v_module_name v1 and v2 = v_option v_ident v2 in ()
+  | ImportAll ((v1, v2)) ->
+      let v1 = v_module_name v1 and v2 = v_tok v2 in ()
+  | Package ((v1)) ->
+      let v1 = v_dotted_ident v1 in ()
   | OtherDirective ((v1, v2)) ->
       let v1 = v_other_directive_operator v1 and v2 = v_list v_any v2 in ()
   in
