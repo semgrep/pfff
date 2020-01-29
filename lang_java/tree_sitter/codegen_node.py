@@ -1,32 +1,12 @@
 #!/usr/bin/python3
 
 import json
+import templates
 
 with open("node-types.json", 'r') as fs:
-    data = json.load(fs)
+    node_types = json.load(fs)
 
-codegen = '''
-(* 
- * Yoann Padioleau, Sharon Lin
- * 2020 initial draft
- *)
-
-(*****************************************************************************)
-(* Prelude *)
-(*****************************************************************************)
-(*
- * An AST for Java.
- *
- *)
- (*****************************************************************************)
-(* The Tree-sitter AST java related types *)
-(*****************************************************************************)
-(* ------------------------------------------------------------------------- *)
-(* Token/info *)
-(* ------------------------------------------------------------------------- *)
-
-type 'a wrap  = 'a * string
-'''
+codegen = templates.ast_header
 
 constructors = {}
 mod_count = 0
@@ -69,19 +49,19 @@ def handleOptionList(a):
     tmp += " option" if a['required'] != False else ""
     return tmp
 
-for a in data:
-    if 'subtypes' in a:
+for node in node_types:
+    if 'subtypes' in node:
         codegen += '''
-and {type} ='''.format(type=a['type'])
-        for b in a['subtypes']:
-            codegen += handleChoice(b)
+and {type} ='''.format(type=node['type'])
+        for subtype in node['subtypes']:
+            codegen += handleChoice(subtype)
         codegen += "\n"
     
-    elif 'fields' in a and len(a['fields']) > 0:
+    elif 'fields' in node and len(node['fields']) > 0:
         codegen += '''
-and {type} = {{'''.format(type=a['type'])
+and {type} = {{'''.format(type=node['type'])
         intermediates = {}
-        for b, bval in a['fields'].items():
+        for b, bval in node['fields'].items():
             if b == "operator":
                 codegen +='''
   operator: string wrap;'''
@@ -101,15 +81,15 @@ and {type} = {{'''.format(type=a['type'])
                         codegen += " *"
                     codegen = codegen[:-2] + ";"
             
-        if 'children' in a:
+        if 'children' in node:
             codegen +='''
   mods: mods{num}{option};
 }}
   
-and mods{num} ='''.format(num=mod_count, option=handleOptionList(a['children']))
+and mods{num} ='''.format(num=mod_count, option=handleOptionList(node['children']))
             mod_count += 1
 
-            for b in a['children']['types']:
+            for b in node['children']['types']:
                 codegen += handleChoice(b)
             codegen += "\n"
                
@@ -126,25 +106,25 @@ and {field} ='''.format(field=name)
                 codegen += "\n"
     
     
-    elif 'children' in a: 
+    elif 'children' in node: 
             codegen+='''
-and {param} ='''.format(param=a['type'])
+and {param} ='''.format(param=node['type'])
 
-            if a['children']['multiple'] == False:
-                for b in a['children']['types']:
+            if node['children']['multiple'] == False:
+                for b in node['children']['types']:
                     codegen += handleChoice(b)
-                    codegen += handleOptionList(a['children'])
+                    codegen += handleOptionList(node['children'])
                 codegen += "\n"
             else:
                 codegen += "("
-                for b in a['children']['types']:
+                for b in node['children']['types']:
                     codegen += " {param}".format(param=b['type'])
-                    codegen += handleOptionList(a['children']) + " *"
+                    codegen += handleOptionList(node['children']) + " *"
                 codegen = codegen[:-2] + ")\n"
 
     
-    elif 'named' in a and a['named'] == True and a['type'] not in ['false', 'true']:
-        codegen += "\nand {type} = string wrap\n".format(type=a['type'])
+    elif 'named' in node and node['named'] == True and node['type'] not in ['false', 'true']:
+        codegen += "\nand {type} = string wrap\n".format(type=node['type'])
     
     else:
         pass

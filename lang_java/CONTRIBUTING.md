@@ -11,6 +11,14 @@ $ ocamlc -o <executable> <filename>.ml
 $ ./<executable>
 ```
 
+To compile all of pfff, make sure you have OCaml 4.07.1 and ran `eval $(opam env)`. 
+
+```
+$ cd ../..
+$ ./configure && make depend && make && make opt
+$ ./pfff <your commands>
+```
+
 ### Running
 
 You can run the following commands to output a JSON of the AST parsed from a `.java` file by tree-sitter.

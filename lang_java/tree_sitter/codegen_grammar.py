@@ -1,36 +1,13 @@
 #!/usr/bin/python3
 
 import json
+import templates
 
 with open("grammar.json", 'r') as fs:
     data = json.load(fs)
 
-codegen = '''
-(* 
- * Yoann Padioleau, Sharon Lin
- * 2020 initial draft
- *)
+codegen = templates.ast_header
 
-(*****************************************************************************)
-(* Prelude *)
-(*****************************************************************************)
-(*
- * An AST for Java.
- *
- * (Not yet complete, this requires further manual edits in order to compile)
- *
- *)
- (*****************************************************************************)
-(* The Tree-sitter AST java related types *)
-(*****************************************************************************)
-(* ------------------------------------------------------------------------- *)
-(* Token/info *)
-(* ------------------------------------------------------------------------- *)
-
-type 'a wrap  = 'a * string
-'''
-
-IGNORE_TYPES = ["PREC_DYNAMIC", "PREC_LEFT", "PREC", "PREC_RIGHT", "SEQ", "STRING", "ALIAS"]
 PREC = ['PREC_LEFT', 'PREC_RIGHT', 'PREC_DYNAMIC']
 
 # Finding type from field
@@ -142,6 +119,8 @@ def makeConstructor(b):
 
 def removeToken(b):
     return b[:-2] if b[-2] in ['|', '*'] else b
+
+# Handling top-level types 
 
 for a, aval in data["rules"].items():
     if aval["type"] == "CHOICE":
