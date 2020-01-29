@@ -490,22 +490,22 @@ and decl decl =
 
 and decls v = list decl v
 
+and import = function
+  | ImportAll (xs, tok) -> G.ImportAll (G.DottedName xs, tok)
+  | ImportFrom (xs, id) -> 
+      let id = ident id in
+      G.ImportFrom (G.DottedName xs, [id, None])
+
+
 let compilation_unit { package = package;
                        imports = imports;
                        decls = xdecls
                       } =
   let v1 = option qualified_ident package in
   let v2 =
-    list
-      (fun (v1, v2) -> let _v1TODO = bool v1 and v2 = qualified_ident v2 in 
-        match List.rev v2 with
-        | ("*", _)::xs ->
-           G.ImportAs (G.DottedName (List.rev xs), None)
-        | [] -> raise Impossible
-        | x::xs ->
-          G.ImportFrom (G.DottedName (List.rev xs), [(x, None)])
-        )
-      imports in
+    list (fun (v1, v2) -> let _v1static = bool v1 and v2 = import v2 in v2)
+    imports
+  in
   let v3 = decls xdecls in
   let items = v3 |> List.map G.stmt_to_item in
   let imports = v2 |> List.map (fun import -> G.DirectiveStmt import) in

@@ -319,8 +319,8 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
       | Some long_ident -> [List.map Ast.unwrap long_ident @ ["*"]]
       | None -> []
       ) @
-     ((ast.imports |> List.map (fun (_is_static, qualified_ident) ->
-       List.map Ast.unwrap qualified_ident
+     ((ast.imports |> List.map (fun (_is_static, _import) ->
+       (* List.map Ast.unwrap qualified_ident *) raise Todo
      )) @ [
        (* we automatically import java.lang.* *)
        ["java";"lang";"*"];
@@ -328,11 +328,15 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
        ["*"]
      ]
      );
-    imported_qualified = ast.imports |> Common.map_filter (fun (is_static, xs)->
+    imported_qualified = ast.imports |> Common.map_filter (fun 
+          (_is_static, _import)->
+          raise Todo
+(*
       match List.rev xs with
       | [] -> raise Impossible
       | ["*", _] -> None
       | (s, _)::_rest -> Some (s, (is_static, xs))
+*)
     );
   }
   in
@@ -353,13 +357,16 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
    * third-party packages not-yet handled).
    *)
   if phase = Inheritance then begin
-    ast.imports |> List.iter (fun (is_static, qualified_ident) ->
+    ast.imports |> List.iter (fun (_is_static, _import) ->
       let qualified_ident_bis =
+            raise Todo
+      (*
         match List.rev qualified_ident with
         | ("*",_)::rest -> List.rev rest
         (* less: just lookup the class for now *)
         | _x::xs when is_static -> List.rev xs
         | _ -> qualified_ident
+      *)
       in
       let entity = List.map Ast.unwrap qualified_ident_bis in
       (match lookup_fully_qualified_memoized env entity with

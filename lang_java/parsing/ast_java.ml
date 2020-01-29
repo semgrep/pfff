@@ -378,13 +378,16 @@ and decls = decl list
 (*****************************************************************************)
 (* Toplevel *)
 (*****************************************************************************)
+type import = 
+  | ImportAll of qualified_ident * tok (* * *)
+  | ImportFrom of qualified_ident * ident
 
 type compilation_unit = {
   package: qualified_ident option;
   (* The qualified ident can also contain "*" at the very end.
    * The bool is for static import (javaext:)
    *)
-  imports: (bool * qualified_ident) list;
+  imports: (bool * import) list;
   (* todo? necessarily a (unique) class/interface first? *)
   decls: decls;
 }

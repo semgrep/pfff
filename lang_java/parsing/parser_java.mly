@@ -293,8 +293,14 @@ package_declaration:
 
 /*(* javaext: static_opt 1.? *)*/
 import_declaration:
- | IMPORT static_opt name SM            { $2, qualified_ident $3 }
- | IMPORT static_opt name DOT TIMES SM  { $2, (qualified_ident $3 @["*", $5])}
+ | IMPORT static_opt name SM            
+    { $2, 
+      (match List.rev (qualified_ident $3) with
+      | x::xs -> ImportFrom (List.rev xs, x)
+      | [] -> raise Impossible
+      ) }
+ | IMPORT static_opt name DOT TIMES SM  
+    { $2, ImportAll (qualified_ident $3, $5)}
 
 type_declaration:
  | class_declaration      { [Class $1] }
