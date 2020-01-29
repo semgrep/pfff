@@ -9,6 +9,3 @@ val json_of_filename_with_external_prog: Common.filename -> Json_type.t
 
 val program_of_tree_sitter_json: 
   Common.filename -> Json_type.t -> Ast_java.program
-
-val program_of_babelfish_json: 
-  Common.filename -> Json_type.t -> Ast_java.program
