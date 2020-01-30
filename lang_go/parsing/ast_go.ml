@@ -147,7 +147,7 @@ and expr =
  | Unary of         Ast_generic.arithmetic_operator (* +/-/~/! *) wrap * expr
  | Binary of expr * Ast_generic.arithmetic_operator wrap * expr
 
- (* x.(<type>) *)
+ (* x.(<type>), panic if false unless used as x, ok = x.(<type>) *)
  | TypeAssert of expr * type_
  (* x.(type)
   * less: can appear only in a TypeSwitch, so could be moved there *)

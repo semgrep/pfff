@@ -49,6 +49,17 @@ let fake_name s = (s, fake_info ()), G.empty_name_info
 
 let ii_of_any = Lib_parsing_go.ii_of_any
 
+(* TODO? do results "parameters" can have names? *)
+let return_type_of_results results = 
+  match results with
+  | [] | [{G. ptype = None; _}] -> raise Impossible
+  | [{G. ptype = Some t; _}] -> t
+  | xs -> G.TyTuple (xs |> List.map (function
+            | { G.ptype = Some t;_ } -> t
+            | { G.ptype = None; _ } -> raise Impossible
+            ))
+      
+
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
@@ -81,11 +92,13 @@ let rec type_ =
   | TArrayEllipsis ((v1, v2)) -> let v1 = tok v1 and v2 = type_ v2 in
       G.TyArray (None, v2)
   | TFunc v1 -> let (params, res) = func_type v1 in 
-      G.TyFun (params, res)
+      let rett = return_type_of_results res in
+      G.TyFun (params, rett)
   | TMap ((v1, v2)) -> let v1 = type_ v1 and v2 = type_ v2 in 
       G.TyApply (fake_name "map", [G.TypeArg v1; G.TypeArg v2])
   | TChan ((v1, v2)) -> let v1 = chan_dir v1 and v2 = type_ v2 in 
       G.TyApply (fake_name "chan", [G.TypeArg v1; G.TypeArg v2])
+
   | TStruct v1 -> let v1 = list struct_field v1 in 
       raise Todo
   | TInterface v1 -> let v1 = list interface_field v1 in 
@@ -99,7 +112,7 @@ and chan_dir = function
 and func_type { fparams = fparams; fresults = fresults } =
   let fparams = list parameter fparams in
   let fresults = list parameter fresults in
-  raise Todo
+  fparams, fresults
 
 and parameter { pname = pname; ptype = ptype; pdots = pdots } =
   let arg1 = option ident pname in
@@ -112,20 +125,25 @@ and parameter { pname = pname; ptype = ptype; pdots = pdots } =
     }
 
 and struct_field (v1, v2) =
-  let v1 = struct_field_kind v1 and v2 = option tag v2 in ()
+  let v1 = struct_field_kind v1 and v2 = option tag v2 in
+  raise Todo
 
 and struct_field_kind =
   function
-  | Field ((v1, v2)) -> let v1 = ident v1 and v2 = type_ v2 in ()
+  | Field ((v1, v2)) -> let v1 = ident v1 and v2 = type_ v2 in 
+      raise Todo
   | EmbeddedField ((v1, v2)) ->
-      let v1 = option tok v1 and v2 = qualified_ident v2 in ()
+      let v1 = option tok v1 and v2 = qualified_ident v2 in
+      raise Todo
 
 and tag v = wrap string v
 
 and interface_field =
   function
-  | Method ((v1, v2)) -> let v1 = ident v1 and v2 = func_type v2 in ()
-  | EmbeddedInterface v1 -> let v1 = qualified_ident v1 in ()
+  | Method ((v1, v2)) -> let v1 = ident v1 and v2 = func_type v2 in
+      raise Todo
+  | EmbeddedInterface v1 -> let v1 = qualified_ident v1 in 
+      raise Todo
 
 and expr_or_type v = either expr type_ v
 
@@ -164,23 +182,25 @@ and expr =
       G.Call (G.IdSpecial (ArithOp v2, tok), [v1;v3] |> List.map G.expr_to_arg)
   | CompositeLit ((v1, v2)) ->
       let v1 = type_ v1 and v2 = list init v2 in
-      raise Todo
+      G.Call (G.IdSpecial (G.New, fake_info ()), 
+        (G.ArgType v1)::(v2 |> List.map G.expr_to_arg))
   | Slice ((v1, v2)) ->
-      let v1 = expr v1
-      and v2 =
-        (match v2 with
-         | (v1, v2, v3) ->
-             let v1 = option expr v1
-             and v2 = option expr v2
-             and v3 = option expr v3
-             in ())
+      let e = expr v1 in
+      let (v1, v2, v3) = v2 in
+      let v1 = option expr v1
+      and v2 = option expr v2
+      and v3 = option expr v3
       in 
-      raise Todo
+      G.SliceAccess (e, v1, v2, v3)
   | TypeAssert ((v1, v2)) -> let v1 = expr v1 and v2 = type_ v2 in
-      raise Todo
+      G.Call (G.IdSpecial (G.Instanceof, fake_info()),
+        [G.Arg v1; G.ArgType v2])
   | EllipsisTODO v1 -> let v1 = tok v1 in 
-      raise Todo
-  | FuncLit ((v1, v2)) -> let v1 = func_type v1 and v2 = stmt v2 in
+      G.Ellipsis v1
+  | FuncLit ((v1, v2)) -> 
+      let (params, results) = func_type v1 
+      and v2 = stmt v2 
+      in
       raise Todo
   | Receive ((v1, v2)) -> let v1 = tok v1 and v2 = expr v2 in 
       raise Todo
