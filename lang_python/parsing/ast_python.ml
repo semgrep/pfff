@@ -268,7 +268,7 @@ type stmt =
    * This can introduce new vars.
    * TODO: why take an expr list? can reuse Tuple for tuple assignment
    *)
-  | Assign of expr list (* targets *) * expr (* value *)
+  | Assign of expr list (* targets *) * tok * expr (* value *)
   | AugAssign of expr (* target *) * operator wrap (* op *) * expr (* value *)
 
   | For of pattern (* (pattern) introduce new vars *) * expr (* 'in' iter *) * 

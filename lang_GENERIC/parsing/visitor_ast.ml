@@ -147,7 +147,8 @@ and v_expr x =
   | Name ((v1, v2)) -> let v1 = v_name v1 and v2 = v_id_info v2 in ()
   | IdSpecial v1 -> let v1 = v_wrap v_special v1 in ()
   | Call ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_arguments v2 in ()
-  | Assign ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_expr v2 in ()
+  | Assign ((v1, v2, v3)) -> 
+        let v1 = v_expr v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()
   | AssignOp ((v1, v2, v3)) ->
       let v1 = v_expr v1
       and v2 = v_wrap v_arithmetic_operator v2

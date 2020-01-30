@@ -378,11 +378,12 @@ and stmt x =
       G.DefStmt (ent, G.ClassDef def)
 
   (* TODO: should turn some of those in G.LocalDef (G.VarDef ! ) *)
-  | Assign ((v1, v2)) -> let v1 = list expr v1 and v2 = expr v2 in
+  | Assign ((v1, v2, v3)) -> 
+      let v1 = list expr v1 and v2 = info v2 and v3 = expr v3 in
       (match v1 with
       | [] -> raise Impossible
-      | [a] -> G.ExprStmt (G.Assign (a, v2))
-      | xs -> G.ExprStmt (G.Assign (G.Tuple xs, v2)) 
+      | [a] -> G.ExprStmt (G.Assign (a, v2, v3))
+      | xs -> G.ExprStmt (G.Assign (G.Tuple xs, v2, v3)) 
       )
   | AugAssign ((v1, (v2, tok), v3)) ->
       let v1 = expr v1 and v2 = operator v2 and v3 = expr v3 in

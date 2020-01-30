@@ -264,14 +264,14 @@ expr_stmt:
   | testlist_star_expr COLON test
       { ExprStmt (TypedExpr (tuple_expr $1, $3)) }
   | testlist_star_expr COLON test EQ test
-      { Assign ([TypedExpr (tuple_expr_store $1, $3)], $5) }
+      { Assign ([TypedExpr (tuple_expr_store $1, $3)], $4, $5) }
 
   | testlist_star_expr augassign yield_expr  
       { AugAssign (tuple_expr_store $1, $2, $3) }
   | testlist_star_expr augassign testlist    
       { AugAssign (tuple_expr_store $1, $2, tuple_expr $3) }
   | testlist_star_expr EQ expr_stmt_rhs_list 
-      { Assign ((tuple_expr_store $1)::(fst $3), snd $3) }
+      { Assign ((tuple_expr_store $1)::(fst $3), $2, snd $3) }
 
 test_or_star_expr:
   | test      { $1 }

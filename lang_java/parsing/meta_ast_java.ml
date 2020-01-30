@@ -196,10 +196,11 @@ and vof_expr =
       and v2 = vof_expr v2
       and v3 = vof_expr v3
       in Ocaml.VSum (("Conditional", [ v1; v2; v3 ]))
-  | Assign ((v1, v2)) ->
+  | Assign ((v1, v2, v3)) ->
       let v1 = vof_expr v1
-      and v2 = vof_expr v2
-      in Ocaml.VSum (("Assign", [ v1; v2 ]))
+      and v2 = vof_tok v2
+      and v3 = vof_expr v3
+      in Ocaml.VSum (("Assign", [ v1; v2; v3 ]))
   | AssignOp ((v1, v2, v3)) ->
       let v1 = vof_expr v1
       and v2 = vof_wrap Meta_ast_generic_common.vof_arithmetic_operator v2

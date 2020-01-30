@@ -500,19 +500,19 @@ and expr env = function
     let e2 = expr env e2 in
     let special op = A.IdSpecial (A.ArithOp op, tok) in
     (match op with
-    | C.A_eq -> A.Assign (e1, e2)
+    | C.A_eq -> A.Assign (e1, tok, e2)
     (* less: should use intermediate? can unsugar like this? *)
-    | C.A_add -> A.Assign (e1, A.Apply(special G.Plus, [e1;e2]))
-    | C.A_sub -> A.Assign (e1, A.Apply(special G.Minus, [e1;e2]))
-    | C.A_mul -> A.Assign (e1, A.Apply(special G.Mult, [e1;e2]))
-    | C.A_div -> A.Assign (e1, A.Apply(special G.Div, [e1;e2]))
-    | C.A_mod -> A.Assign (e1, A.Apply(special G.Mod, [e1;e2]))
-    | C.A_lsl -> A.Assign (e1, A.Apply(special G.LSL, [e1;e2]))
-    | C.A_lsr -> A.Assign (e1, A.Apply(special G.LSR, [e1;e2]))
-    | C.A_asr -> A.Assign (e1, A.Apply(special G.ASR, [e1;e2]))
-    | C.A_and -> A.Assign (e1, A.Apply(special G.BitAnd, [e1;e2]))
-    | C.A_or  -> A.Assign (e1, A.Apply(special G.BitOr, [e1;e2]))
-    | C.A_xor -> A.Assign (e1, A.Apply(special G.BitXor, [e1;e2]))
+    | C.A_add -> A.Assign (e1, tok, A.Apply(special G.Plus, [e1;e2]))
+    | C.A_sub -> A.Assign (e1, tok, A.Apply(special G.Minus, [e1;e2]))
+    | C.A_mul -> A.Assign (e1, tok, A.Apply(special G.Mult, [e1;e2]))
+    | C.A_div -> A.Assign (e1, tok, A.Apply(special G.Div, [e1;e2]))
+    | C.A_mod -> A.Assign (e1, tok, A.Apply(special G.Mod, [e1;e2]))
+    | C.A_lsl -> A.Assign (e1, tok, A.Apply(special G.LSL, [e1;e2]))
+    | C.A_lsr -> A.Assign (e1, tok, A.Apply(special G.LSR, [e1;e2]))
+    | C.A_asr -> A.Assign (e1, tok, A.Apply(special G.ASR, [e1;e2]))
+    | C.A_and -> A.Assign (e1, tok, A.Apply(special G.BitAnd, [e1;e2]))
+    | C.A_or  -> A.Assign (e1, tok, A.Apply(special G.BitOr, [e1;e2]))
+    | C.A_xor -> A.Assign (e1, tok, A.Apply(special G.BitXor, [e1;e2]))
     )
   | C.Seq (e1, tok, e2) ->
     let e1 = expr env e1 in

@@ -496,7 +496,7 @@ and expr env e =
 
   | IdSpecial _ -> ()
   | Nop -> ()
-  | Assign (e1, e2) ->
+  | Assign (e1, _tok, e2) ->
     expr env e1;
     expr env e2
 

@@ -166,7 +166,7 @@ and expr =
   | Nop
 
   (* should be a statement *)
-  | Assign of expr * expr
+  | Assign of expr * tok * expr
 
   (* less: could be transformed in a series of Assign(ObjAccess, ...) *)
   | Obj of obj_

@@ -138,8 +138,9 @@ and map_expr =
       in Id ((v1, v2))
   | IdSpecial v1 -> let v1 = map_wrap map_special v1 in IdSpecial ((v1))
   | Nop -> Nop
-  | Assign ((v1, v2)) ->
-      let v1 = map_expr v1 and v2 = map_expr v2 in Assign ((v1, v2))
+  | Assign ((v1, v2, v3)) ->
+      let v1 = map_expr v1 and v2 = map_tok v2 and v3 = map_expr v3 in
+      Assign ((v1, v2, v3))
   | Obj v1 -> let v1 = map_obj_ v1 in Obj ((v1))
   | Ellipses v1 -> let v1 = map_tok v1 in Ellipses ((v1))
   | Class (v1, v2) -> 

@@ -195,7 +195,7 @@ and expr =
 
   | Conditional of expr * expr * expr
   (* ugly java, like in C assignement is an expression not a statement :( *)
-  | Assign of expr * expr
+  | Assign of expr * tok * expr
   | AssignOp of expr * Ast_generic.arithmetic_operator wrap * expr
 
   (* javaext: 1.? *)

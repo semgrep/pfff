@@ -213,7 +213,7 @@ and expr =
    * variable_definition for that.
    * less: should be in stmt, but most languages allow this at expr level :(
    *)
-  | Assign of expr * expr
+  | Assign of expr * tok (* =, or := in Go *) * expr
   (* less: should desugar in Assign, should be only binary_operator *)
   | AssignOp of expr * arithmetic_operator wrap * expr
   (* newvar:! newscope:? in OCaml yes but we miss the 'in' part here  *)
@@ -919,10 +919,10 @@ let vardef_to_assign (ent, def) resolved =
   let idinfo = { (empty_id_info()) with id_resolved = ref resolved } in
   let name = Name ((ent.name, empty_name_info), idinfo) in
   let v = opt_to_nop def.vinit in
-  Assign (name, v)
+  Assign (name, Parse_info.fake_info "=", v)
 
 let funcdef_to_lambda (ent, def) resolved =
   let idinfo = { (empty_id_info()) with id_resolved = ref resolved } in
   let name = Name ((ent.name, empty_name_info), idinfo) in
   let v = Lambda def in
-  Assign (name, v)
+  Assign (name, Parse_info.fake_info "=", v)

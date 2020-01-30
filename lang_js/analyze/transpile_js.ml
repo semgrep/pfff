@@ -227,6 +227,7 @@ let forof (lhs_var, tok, e2, st) (expr, stmt, var_binding) =
   let for_cond = 
     A.Apply (A.IdSpecial (A.ArithOp G.Not, tok), [
       A.ObjAccess (A.Assign (A.Id (step, ref A.NotResolved),
+                         Parse_info.fake_info "=",
                           A.Apply (A.ObjAccess (A.Id (iterator, 
                                                       ref A.NotResolved),
                                                 A.PN ("next", tok)),
@@ -245,7 +246,7 @@ let forof (lhs_var, tok, e2, st) (expr, stmt, var_binding) =
    match lhs_var with
    | C.LHS2 e -> 
      let e = expr e in
-     [A.ExprStmt (A.Assign (e, step_value))]
+     [A.ExprStmt (A.Assign (e, Parse_info.fake_info "=", step_value))]
    | C.ForVar ((vkind,_tok), binding) -> 
       let binding = 
         match binding with

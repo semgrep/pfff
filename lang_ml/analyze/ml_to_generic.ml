@@ -93,8 +93,8 @@ and expr =
     let _v1 = tok v1 and v2 = expr v2 in
     G.DeRef (v2)
   | RefAssign ((v1, v2, v3)) ->
-      let v1 = expr v1 and _v2 = tok v2 and v3 = expr v3 in
-      G.Assign (G.DeRef v1, v3)
+      let v1 = expr v1 and v2 = tok v2 and v3 = expr v3 in
+      G.Assign (G.DeRef v1, v2, v3)
   | FieldAccess ((v1, v2)) -> 
     let v1 = expr v1 in
     (match v2 with
@@ -105,9 +105,11 @@ and expr =
   | FieldAssign ((v1, v2, v3)) ->
       let v1 = expr v1 and v3 = expr v3 in
     (match v2 with
-    | [], id -> let id = ident id in G.Assign (G.ObjAccess (v1, id), v3)
+    | [], id -> let id = ident id in 
+            G.Assign (G.ObjAccess (v1, id), Parse_info.fake_info "=", v3)
     | _ -> let v2 = name v2 in 
            G.Assign (G.OtherExpr (G.OE_FieldAccessQualified, [G.E v1; G.N v2]),
+              Parse_info.fake_info "=",
                      v3)
     )
       

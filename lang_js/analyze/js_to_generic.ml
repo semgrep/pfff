@@ -147,8 +147,9 @@ and expr (x: expr) =
       | SR_Other x -> G.OtherExpr (x, [])
       )
   | Nop -> G.Nop
-  | Assign ((v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in 
-      G.Assign (v1, v2)
+  | Assign ((v1, tok, v2)) -> let v1 = expr v1 and v2 = expr v2 in 
+      let tok = info tok in
+      G.Assign (v1, tok, v2)
   | ArrAccess ((v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in 
       G.ArrayAccess (v1, v2)
   | Obj v1 -> let flds = obj_ v1 in G.Record flds

@@ -773,7 +773,7 @@ and expr env = function
   | Infix (e1, _op, e2) -> exprs env [e1;e2]
   | Conditional (e1, e2, e3) -> exprs env [e1;e2;e3]
   | AssignOp (e1, _op, e2) -> exprs env [e1;e2]
-  | Assign (e1, e2) -> exprs env [e1;e2]
+  | Assign (e1, _tok, e2) -> exprs env [e1;e2]
 
   | Cast (t, e) ->
       typ env t;

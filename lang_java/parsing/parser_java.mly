@@ -644,7 +644,7 @@ left_hand_side:
  | array_access  { $1 }
 
 assignment_operator:
- | EQ  { (fun e1 e2 -> Assign (e1, e2))  }
+ | EQ  { (fun e1 e2 -> Assign (e1, $1, e2))  }
  | OPERATOR_EQ  { (fun e1 e2 -> AssignOp (e1, $1, e2)) }
 
 /*(*----------------------------*)*/

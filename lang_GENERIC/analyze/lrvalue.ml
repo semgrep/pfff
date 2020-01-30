@@ -88,7 +88,7 @@ let rec visit_expr hook lhs expr =
 
   (* the assignements *)
 
-  | Assign(e, e1) ->
+  | Assign(e, _tok, e1) ->
     (* definitely in a Rhs context *)
     recr e1;
     (* definitely in a Lhs context *)

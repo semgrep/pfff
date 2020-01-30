@@ -273,7 +273,8 @@ and v_stmt x =
       and v3 = v_list v_stmt v3
       and v4 = v_list v_decorator v4
       in ()
-  | Assign ((v1, v2)) -> let v1 = v_list v_expr v1 and v2 = v_expr v2 in ()
+  | Assign ((v1, v2, v3)) -> 
+        let v1 = v_list v_expr v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()
   | AugAssign ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_wrap v_operator v2 and v3 = v_expr v3 in ()
   | Return v1 -> let v1 = v_option v_expr v1 in ()
