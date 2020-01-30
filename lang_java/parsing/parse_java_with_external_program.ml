@@ -12,10 +12,12 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common
 
+open Common
 open Ast_java
 module J = Json_type
+module JI = Json_io
+
 (* module PI = Parse_info *)
 
 (*****************************************************************************)
@@ -50,8 +52,12 @@ let json_of_filename_with_external_prog _file =
    * temporary JSON output, and read this JSON output
    * (or use a pipe to the external program to avoid using an
    *  intermediate temporary file)
-   *)
-  raise Todo
+   *) 
+  let file = "results.json" in 
+  let line = "node lang_java/tree_sitter/tree-sitter-parser.js " ^ _file ^ " > " ^ file in
+  let _ = Sys.command line in
+  let json = JI.load_json file in
+  json
 
 (*****************************************************************************)
 (* JSON boilerplate (we should find a way to generate this code) *)
