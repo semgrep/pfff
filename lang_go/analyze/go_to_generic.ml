@@ -102,9 +102,11 @@ and func_type { fparams = fparams; fresults = fresults } =
   raise Todo
 
 and parameter { pname = pname; ptype = ptype; pdots = pdots } =
-  let arg = option ident pname in
-  let arg = type_ ptype in let arg = option tok pdots in 
-  raise Todo
+  let arg1 = option ident pname in
+  let arg2 = type_ ptype in 
+  let arg3 = option tok pdots in 
+  G.opt_to_ident arg1, arg2, 
+  (match arg3 with None -> [] | Some _ -> [G.Variadic])
 
 and struct_field (v1, v2) =
   let v1 = struct_field_kind v1 and v2 = option tag v2 in ()

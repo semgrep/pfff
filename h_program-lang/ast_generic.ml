@@ -190,7 +190,8 @@ and expr =
 
   (* todo: newvar: sometimes abused to also introduce a newvar (as in Python)
    * but ultimately those cases should be rewritten to first introduce a
-   * VarDef. Sometimes some ObjAccess should really be transformed in Name
+   * VarDef. 
+   * todo: Sometimes some ObjAccess should really be transformed in Name
    * with a better qualifier because the obj is actually the name of a package
    * or module, but you may need advanced semantic information and global
    * analysis to disambiguate.
@@ -231,6 +232,7 @@ and expr =
 
   | Yield of expr * bool
   | Await of expr
+  (* Send/Recv of Go are currently in OtherExpr *)
 
   | Cast of type_ * expr
   (* less: should be in statement *)
@@ -352,6 +354,7 @@ and expr =
     (* OCaml *)
     | OE_FieldAccessQualified | OE_RecordWith 
     | OE_StmtExpr (* OCaml has just expressions, no statements *)
+    (* Go *)
 
 (*****************************************************************************)
 (* Statement *)
@@ -363,7 +366,7 @@ and stmt =
   | DefStmt of definition
   | DirectiveStmt of directive
 
-  (* newscope: in C++/Java *)
+  (* newscope: in C++/Java/Go *)
   | Block of stmt list
 
   | If of expr * stmt * stmt
@@ -589,7 +592,9 @@ and function_definition = {
  (* less: could be merged in entity.type_ *)
  fparams: parameters;
  frettype: type_ option; (* return type *)
- (* newscope: *)
+ (* newscope:
+  * can be empty statement for methods in interfaces
+  *)
  fbody: stmt;
 }
   and parameters = parameter list
@@ -597,7 +602,8 @@ and function_definition = {
     and parameter =
      | ParamClassic of parameter_classic
      | ParamPattern of pattern
-     (* for sgrep *)
+     (* for sgrep
+      * note: foo(...x) of Js/Go is using the Variadic attribute, not this *)
      | ParamEllipsis of tok
 
      | OtherParam of other_parameter_operator * any list
