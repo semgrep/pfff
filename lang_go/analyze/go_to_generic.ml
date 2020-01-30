@@ -375,18 +375,25 @@ and decl =
       and v2 = option type_ v2
       and v3 = option constant_expr v3
       in 
-      raise Todo
+      let ent = G.basic_entity v1 [G.Const] in
+      G.DefStmt (ent, G.VarDef { G.vinit = v3; vtype = v2 })
+
   | DVar ((v1, v2, v3)) ->
       let v1 = ident v1
       and v2 = option type_ v2
       and v3 = option expr v3
       in
-      raise Todo
+      let ent = G.basic_entity v1 [G.Var] in
+      G.DefStmt (ent, G.VarDef { G.vinit = v3; vtype = v2 })
+
   | DTypeAlias ((v1, v2, v3)) ->
       let v1 = ident v1 and v2 = tok v2 and v3 = type_ v3 in 
-      raise Todo
+      let ent = G.basic_entity v1 [] in
+      G.DefStmt (ent, G.TypeDef { G.tbody = G.AliasType v3 })
   | DTypeDef ((v1, v2)) -> let v1 = ident v1 and v2 = type_ v2 in 
-      raise Todo
+      let ent = G.basic_entity v1 [] in
+      G.DefStmt (ent, G.TypeDef { G.tbody = 
+          G.OtherTypeKind (G.OTKO_Typedef, [G.T v2]) })
 
 and top_decl =
   function
@@ -397,12 +404,18 @@ and top_decl =
   | DMethod ((v1, v2, (v3, v4))) ->
       let v1 = ident v1
       and v2 = parameter v2
-      and v3 = func_type v3
+      and (params, ret) = func_type v3
       and v4 = stmt v4
       in
-      raise Todo
+      let ent = G.basic_entity v1 [] in
+      let def = mk_func_def params ret v4 in
+      let receiver = G.OtherParam (G.OPO_Receiver, [G.Pa (G.ParamClassic v2)])
+      in
+      G.DefStmt (ent, G.FuncDef { def with
+          fparams = receiver::def.fparams
+          })
   | D v1 -> let v1 = decl v1 in
-      raise Todo
+      v1
 
 and import { i_path = i_path; i_kind = i_kind } =
   let module_name = G.FileName (wrap string i_path) in
