@@ -414,12 +414,10 @@ and v_entity x =
    let {
              name = x_name;
              attrs = v_attrs;
-             type_ = x_type_;
              tparams = v_tparams
            } = x in
    let arg = v_ident x_name in
    let arg = v_list v_attribute v_attrs in
-   let arg = v_option v_type_ x_type_ in
    let arg = v_list v_type_parameter v_tparams in ()
   in
   vin.kentity (k, all_functions) x

@@ -456,19 +456,16 @@ and
   map_entity {
                name = v_name;
                attrs = v_attrs;
-               type_ = v_type_;
                tparams = v_tparams;
                info = v_info;
              } =
   let v_info = map_id_info v_info in
   let v_tparams = map_of_list map_type_parameter v_tparams in
-  let v_type_ = map_of_option map_type_ v_type_ in
   let v_attrs = map_of_list map_attribute v_attrs in
   let v_name = map_ident v_name 
   in { 
                name = v_name;
                attrs = v_attrs;
-               type_ = v_type_;
                tparams = v_tparams;
                info = v_info;
   }

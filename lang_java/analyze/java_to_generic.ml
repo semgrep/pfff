@@ -40,6 +40,12 @@ let error = Ast_generic.error
 
 let fake_info () = Parse_info.fake_info "FAKE"
 
+let entity_to_param { G.name; attrs; tparams = _unused; info } t = 
+  { G. pname = Some name; ptype = t; pattrs = attrs; pinfo = info;
+       pdefault = None;
+  }
+
+
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
@@ -352,7 +358,7 @@ and for_control =
       and v3 = list expr v3
       in 
       G.ForClassic (v1, G.Seq v2, G.Seq v3)
-  | Foreach ((v1, v2)) -> let ent = var v1 and v2 = expr v2 in
+  | Foreach ((v1, v2)) -> let ent, _tTODO = var v1 and v2 = expr v2 in
       let pat = G.OtherPat (G.OP_Var, [G.En ent]) in
       G.ForEach (pat, v2)
 
@@ -367,11 +373,9 @@ and var { name = name; mods = mods; type_ = xtyp } =
   let v1 = ident name in
   let v2 = modifiers mods in 
   let v3 = option typ xtyp in
-  { G.name = v1; G.attrs = v2; G.type_ = v3; tparams = [];
-    info = G.empty_id_info ();
-  }
+  G.basic_entity v1 v2, v3
 
-and catch (v1, v2) = let (ent: G.entity) = var v1 and v2 = stmt v2 in
+and catch (v1, v2) = let ent, _tTODO = var v1 and v2 = stmt v2 in
   let pat = G.OtherPat (G.OP_Var, [G.En ent]) in
   pat, v2
 and catches v = list catch v
@@ -380,9 +384,9 @@ and catches v = list catch v
 and vars v = list var v
 
 and var_with_init { f_var = f_var; f_init = f_init } =
-  let ent = var f_var in 
+  let ent, t = var f_var in 
   let init = option init f_init in
-  ent, {G.vinit = init; vtype = None }
+  ent, {G.vinit = init; vtype = t }
 
 and init =
   function
@@ -393,8 +397,8 @@ and init =
 
 and params v = 
   let v = vars v in
-  v |> List.map (fun ent ->
-      G.ParamClassic ( G.entity_to_param ent))
+  v |> List.map (fun (ent, t) ->
+      G.ParamClassic (entity_to_param ent t))
 and
   method_decl {
                   m_var = m_var;
@@ -402,16 +406,15 @@ and
                   m_throws = m_throws;
                   m_body = m_body
                 } =
-  let v1 = var m_var in
-  let rett = match v1.G.type_ with None -> raise Impossible | Some x -> x in
+  let ent, rett = var m_var in
   let v2 = params m_formals in
   let v3 = list qualified_ident m_throws in
   let v4 = stmt m_body in
   let throws = v3 |> List.map (fun qu_id ->
         G.OtherAttribute (G.OA_AnnotThrow, [G.Di qu_id]))
   in
-  { v1 with G.attrs = v1.G.attrs @ throws },
-  { G.fparams = v2; frettype  = Some rett; fbody = v4 }
+  { ent with G.attrs = ent.G.attrs @ throws },
+  { G.fparams = v2; frettype  = rett; fbody = v4 }
 
 and field v = var_with_init v
 
@@ -526,7 +529,8 @@ let any =
   | AStmt v1 -> let v1 = stmt v1 in G.S v1
   | AStmts v1 -> let v1 = List.map stmt v1 in G.Ss v1
   | ATyp v1 -> let v1 = typ v1 in G.T v1
-  | AVar v1 -> let v1 = var v1 in G.En v1
+  | AVar v1 -> let ent, t = var v1 in 
+      G.Def (ent, G.VarDef {G.vtype = t; vinit = None})
   | AInit v1 -> let v1 = init v1 in G.E v1
   | AMethod v1 -> let (ent, def) = method_decl v1 in 
       G.Def (ent, G.FuncDef def)

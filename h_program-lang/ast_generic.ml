@@ -567,10 +567,13 @@ and definition = entity * definition_kind (* (or decl) *)
   and entity = {
     name: ident;
     attrs: attribute list;
-    type_: type_ option; (* less: use ref to enable typechecking *)
     tparams: type_parameter list;
     (* naming/typing *)
     info: id_info;
+    (* old: type_: type_ option; but redundant with the type information in
+     * the different definition_kind, as well as in id_info, 
+     * so not worth factoring.
+     *)
   }
 
   (* can have empty "body" when the definition is actually a declaration
@@ -839,20 +842,17 @@ let error tok msg =
 
 (* use 0 for globals, if needed *)
 let gensym_counter = ref 0
+(* see gensym type in resolved_name *)
 let gensym () = 
   incr gensym_counter;
   !gensym_counter
 
 
-let empty_name_info = {
-   name_qualifier = None;
-   name_typeargs = None;
-}
+let empty_name_info = 
+  { name_qualifier = None; name_typeargs = None;}
 
-let empty_id_info () = {
-   id_resolved = ref None;
-   id_type     = ref None;
- }
+let empty_id_info () = 
+  { id_resolved = ref None;id_type     = ref None; }
 
 let basic_param id = { 
     pname = Some id;
@@ -866,7 +866,7 @@ let param_of_type typ = {
 let basic_entity id attrs = {
   name = id;
   attrs = attrs;
-  type_ = None; tparams = []; info = empty_id_info ();
+  tparams = []; info = empty_id_info ();
 }
 
 let basic_field id typeopt =
@@ -879,13 +879,7 @@ let empty_var () =
 let expr_to_arg e = 
   Arg e
 
-let entity_to_param { name; attrs; type_; tparams = _unused; info } = 
-  { pname = Some name;
-    pdefault = None;
-    ptype = type_;
-    pattrs = attrs;
-    pinfo = info;
-  }
+(* see also Java_to_generic.entity_to_param *)
 
 (* should avoid; should prefer to use 'expr option' in the AST *)
 let opt_to_nop opt =
@@ -906,7 +900,6 @@ let stmt_to_field st =
   | DefStmt (entity, FuncDef def) -> FieldMethod (entity, def)
   | _ -> FieldStmt st
 
-(* less: could be a Block containing LocalDef or LocalDirective *)
 let stmt_to_item st = st
 
 let is_boolean_operator = function

@@ -571,7 +571,6 @@ and
   vof_entity {
                name = v_name;
                attrs = v_attrs;
-               type_ = v_type_;
                tparams = v_tparams;
                info = v_info
              } =
@@ -581,9 +580,6 @@ and
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_list vof_type_parameter v_tparams in
   let bnd = ("tparams", arg) in
-  let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_option vof_type_ v_type_ in
-  let bnd = ("type_", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_list vof_attribute v_attrs in
   let bnd = ("attrs", arg) in
