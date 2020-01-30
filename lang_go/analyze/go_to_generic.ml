@@ -58,6 +58,14 @@ let return_type_of_results results =
             | { G.ptype = Some t;_ } -> t
             | { G.ptype = None; _ } -> raise Impossible
             ))
+
+let mk_func_def params ret st =
+ { G.
+    fparams = params |> List.map (fun x -> G.ParamClassic x);
+    frettype = Some ret;
+    fbody = st;
+  }
+      
       
 
 (*****************************************************************************)
@@ -78,6 +86,13 @@ let qualified_ident v =
   | [x;y] -> Right ([x], y)
   | _ -> raise Impossible
 
+let top_func () = 
+let anon_types = ref [] in
+let cnt = ref 0 in
+let gensym () = 
+  incr cnt;
+  spf "_anon%d" !cnt
+in
 
 let rec type_ =
   function
@@ -91,18 +106,28 @@ let rec type_ =
       G.TyArray (None, v1) (* not sure worth introducing an OT_Slice *)
   | TArrayEllipsis ((v1, v2)) -> let v1 = tok v1 and v2 = type_ v2 in
       G.TyArray (None, v2)
-  | TFunc v1 -> let (params, res) = func_type v1 in 
-      let rett = return_type_of_results res in
-      G.TyFun (params, rett)
+  | TFunc v1 -> let (params, ret) = func_type v1 in 
+      G.TyFun (params, ret)
   | TMap ((v1, v2)) -> let v1 = type_ v1 and v2 = type_ v2 in 
       G.TyApply (fake_name "map", [G.TypeArg v1; G.TypeArg v2])
   | TChan ((v1, v2)) -> let v1 = chan_dir v1 and v2 = type_ v2 in 
       G.TyApply (fake_name "chan", [G.TypeArg v1; G.TypeArg v2])
 
   | TStruct v1 -> let v1 = list struct_field v1 in 
-      raise Todo
+      (* could also use StructName *)
+      let s = gensym () in
+      let ent = G.basic_entity (s, fake_info ()) [] in
+      let def = G.TypeDef { G.tbody = G.AndType v1 } in
+      Common.push (ent, def) anon_types;
+      G.TyApply (fake_name s, [])
   | TInterface v1 -> let v1 = list interface_field v1 in 
-      raise Todo
+      let s = gensym () in
+      let ent = G.basic_entity (s, fake_info ()) [] in
+      let def = G.ClassDef { G.ckind = G.Interface; 
+          cextends = []; cimplements = []; 
+          cbody = v1; } in
+      Common.push (ent, def) anon_types;
+      G.TyApply (fake_name s, [])
 
 and chan_dir = function 
   | TSend -> G.TyApply (fake_name "send", [])
@@ -112,7 +137,7 @@ and chan_dir = function
 and func_type { fparams = fparams; fresults = fresults } =
   let fparams = list parameter fparams in
   let fresults = list parameter fresults in
-  fparams, fresults
+  fparams, return_type_of_results fresults
 
 and parameter { pname = pname; ptype = ptype; pdots = pdots } =
   let arg1 = option ident pname in
@@ -125,25 +150,31 @@ and parameter { pname = pname; ptype = ptype; pdots = pdots } =
     }
 
 and struct_field (v1, v2) =
-  let v1 = struct_field_kind v1 and v2 = option tag v2 in
-  raise Todo
+  let v1 = struct_field_kind v1 and v2TODO = option tag v2 in
+  v1
 
 and struct_field_kind =
   function
   | Field ((v1, v2)) -> let v1 = ident v1 and v2 = type_ v2 in 
-      raise Todo
+      let ent = G.basic_entity v1 [] in
+      G.FieldVar (ent, { G.vinit = None; vtype = Some v2 })
   | EmbeddedField ((v1, v2)) ->
-      let v1 = option tok v1 and v2 = qualified_ident v2 in
-      raise Todo
+      let _v1TODO = option tok v1 and v2 = qualified_ident v2 in
+      let name = name_of_qualified_ident v2 in
+      G.FieldSpread (G.Name (name, G.empty_id_info()))
 
 and tag v = wrap string v
 
 and interface_field =
   function
-  | Method ((v1, v2)) -> let v1 = ident v1 and v2 = func_type v2 in
-      raise Todo
+  | Method ((v1, v2)) -> 
+      let v1 = ident v1 in
+      let (params, ret) = func_type v2 in
+      let ent = G.basic_entity v1 [] in
+      G.FieldMethod (ent, mk_func_def params ret (Block []))
   | EmbeddedInterface v1 -> let v1 = qualified_ident v1 in 
-      raise Todo
+      let name = name_of_qualified_ident v1 in
+      G.FieldSpread (G.Name (name, G.empty_id_info()))
 
 and expr_or_type v = either expr type_ v
 
@@ -198,10 +229,10 @@ and expr =
   | EllipsisTODO v1 -> let v1 = tok v1 in 
       G.Ellipsis v1
   | FuncLit ((v1, v2)) -> 
-      let (params, results) = func_type v1 
+      let (params, ret) = func_type v1 
       and v2 = stmt v2 
       in
-      raise Todo
+      G.Lambda (mk_func_def params ret v2)
   | Receive ((v1, v2)) -> let v1 = tok v1 and v2 = expr v2 in 
       raise Todo
   | Send ((v1, v2, v3)) ->
@@ -252,43 +283,43 @@ and constant_expr v = expr v
 
 and stmt =
   function
-  | DeclStmts v1 -> let v1 = list decl v1 in ()
-  | Block v1 -> let v1 = list stmt v1 in ()
-  | Empty -> ()
-  | ExprStmt v1 -> let v1 = expr v1 in ()
+  | DeclStmts v1 -> let v1 = list decl v1 in raise Todo
+  | Block v1 -> let v1 = list stmt v1 in raise Todo
+  | Empty -> raise Todo
+  | ExprStmt v1 -> let v1 = expr v1 in raise Todo
   | Assign ((v1, v2, v3)) ->
       let v1 = list expr v1
       and v2 = tok v2
       and v3 = list expr v3
-      in ()
+      in raise Todo
   | DShortVars ((v1, v2, v3)) ->
       let v1 = list expr v1
       and v2 = tok v2
       and v3 = list expr v3
-      in ()
+      in raise Todo
   | AssignOp ((v1, v2, v3)) ->
       let v1 = expr v1
       and v2 = wrap arithmetic_operator v2
       and v3 = expr v3
-      in ()
+      in raise Todo
   | IncDec ((v1, v2, v3)) ->
       let v1 = expr v1
       and v2 = wrap incr_decr v2
       and v3 = prefix_postfix v3
-      in ()
+      in raise Todo
   | If ((v1, v2, v3, v4)) ->
       let v1 = option stmt v1
       and v2 = expr v2
       and v3 = stmt v3
       and v4 = option stmt v4
-      in ()
+      in raise Todo
   | Switch ((v1, v2, v3)) ->
       let v1 = option stmt v1
       and v2 = option stmt v2
       and v3 = list case_clause v3
-      in ()
+      in raise Todo
   | Select ((v1, v2)) ->
-      let v1 = tok v1 and v2 = list comm_clause v2 in ()
+      let v1 = tok v1 and v2 = list comm_clause v2 in raise Todo
   | For ((v1, v2)) ->
       let v1 =
         (match v1 with
@@ -296,28 +327,28 @@ and stmt =
              let v1 = option stmt v1
              and v2 = option expr v2
              and v3 = option stmt v3
-             in ())
+             in raise Todo)
       and v2 = stmt v2
-      in ()
+      in raise Todo
   | Range ((v1, v2, v3, v4)) ->
       let v1 =
         option
-          (fun (v1, v2) -> let v1 = list expr v1 and v2 = tok v2 in ())
+          (fun (v1, v2) -> let v1 = list expr v1 and v2 = tok v2 in raise Todo)
           v1
       and v2 = tok v2
       and v3 = expr v3
       and v4 = stmt v4
-      in ()
+      in raise Todo
   | Return ((v1, v2)) ->
-      let v1 = tok v1 and v2 = option (list expr) v2 in ()
-  | Break ((v1, v2)) -> let v1 = tok v1 and v2 = option ident v2 in ()
+      let v1 = tok v1 and v2 = option (list expr) v2 in raise Todo
+  | Break ((v1, v2)) -> let v1 = tok v1 and v2 = option ident v2 in raise Todo
   | Continue ((v1, v2)) ->
-      let v1 = tok v1 and v2 = option ident v2 in ()
-  | Goto ((v1, v2)) -> let v1 = tok v1 and v2 = ident v2 in ()
-  | Fallthrough v1 -> let v1 = tok v1 in ()
-  | Label ((v1, v2)) -> let v1 = ident v1 and v2 = stmt v2 in ()
-  | Go ((v1, v2)) -> let v1 = tok v1 and v2 = call_expr v2 in ()
-  | Defer ((v1, v2)) -> let v1 = tok v1 and v2 = call_expr v2 in ()
+      let v1 = tok v1 and v2 = option ident v2 in raise Todo
+  | Goto ((v1, v2)) -> let v1 = tok v1 and v2 = ident v2 in raise Todo
+  | Fallthrough v1 -> let v1 = tok v1 in raise Todo
+  | Label ((v1, v2)) -> let v1 = ident v1 and v2 = stmt v2 in raise Todo
+  | Go ((v1, v2)) -> let v1 = tok v1 and v2 = call_expr v2 in raise Todo
+  | Defer ((v1, v2)) -> let v1 = tok v1 and v2 = call_expr v2 in raise Todo
 
 and case_clause (v1, v2) = let v1 = case_kind v1 and v2 = stmt v2 in ()
 and case_kind =
@@ -353,11 +384,12 @@ and decl =
       let v1 = ident v1 and v2 = tok v2 and v3 = type_ v3 in ()
   | DTypeDef ((v1, v2)) -> let v1 = ident v1 and v2 = type_ v2 in ()
 
-let top_decl =
+and top_decl =
   function
   | DFunc ((v1, (v2, v3))) ->
-      let v1 = ident v1 and v2 = func_type v2 and v3 = stmt v3 in 
-      raise Todo
+      let v1 = ident v1 and (params, ret) = func_type v2 and v3 = stmt v3 in 
+      let ent = G.basic_entity v1 [] in
+      G.DefStmt (ent, G.FuncDef (mk_func_def params ret v3))
   | DMethod ((v1, v2, (v3, v4))) ->
       let v1 = ident v1
       and v2 = parameter v2
@@ -368,7 +400,7 @@ let top_decl =
   | D v1 -> let v1 = decl v1 in
       raise Todo
 
-let rec import { i_path = i_path; i_kind = i_kind } =
+and import { i_path = i_path; i_kind = i_kind } =
   let module_name = G.FileName (wrap string i_path) in
   let (s,tok) = i_path in
   import_kind i_kind module_name (Filename.basename s, tok)
@@ -383,14 +415,14 @@ and import_kind kind module_name id =
   | ImportDot v1 -> let v1 = tok v1 in 
       G.ImportAll (module_name, v1)
 
-let program { package = package; imports = imports; decls = decls } =
+and program { package = package; imports = imports; decls = decls } =
   let arg1 = ident package |> (fun x -> G.DirectiveStmt (G.Package [x])) in
   let arg2 = list import imports |> List.map (fun x -> G.DirectiveStmt x) in
   let arg3 = list top_decl decls in
   arg1 :: arg2 @ arg3
   
 
-let any =
+and any =
   function
   | E v1 -> let v1 = expr v1 in G.E v1
   | S v1 -> let v1 = stmt v1 in raise Todo
@@ -400,3 +432,15 @@ let any =
   | P v1 -> let v1 = program v1 in G.Pr v1
   | Ident v1 -> let v1 = ident v1 in G.Id v1
   | Ss v1 -> let v1 = list stmt v1 in raise Todo
+
+in
+program, any
+
+
+let program x = 
+  let p, _ = top_func () in
+  p x
+
+let any x = 
+  let _, a = top_func () in
+  a x
