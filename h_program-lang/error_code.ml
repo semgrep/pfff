@@ -69,7 +69,8 @@ type error = {
    *)
   | LexicalError of string
   | ParseError (* aka SyntaxError *)
-  | AstbuilderError of string
+  | AstBuilderError of string
+  | AstGenericError of string
   | OtherParsingError of string
 
   (* entities *)
@@ -177,7 +178,8 @@ let string_of_error_kind error_kind =
 
   | LexicalError s -> spf "Lexical error: %s" s
   | ParseError -> "Syntax error"
-  | AstbuilderError s -> spf "AST generation error: %s" s
+  | AstBuilderError s -> spf "AST generation error: %s" s
+  | AstGenericError s -> spf "AST generic error: %s" s
   | OtherParsingError s -> spf "Other parsing error: %s" s
   | CFGError s -> spf "Control flow error: %s" s
   | FatalError s -> spf "Fatal Error: %s" s
@@ -186,7 +188,8 @@ let string_of_error_kind error_kind =
 let check_id_of_error_kind = function
   | LexicalError _ -> "LexicalError"
   | ParseError -> "ParseError"
-  | AstbuilderError _ -> "AstbuilderError"
+  | AstBuilderError _ -> "AstBuilderError"
+  | AstGenericError _ -> "AstGenericError"
   | OtherParsingError _ -> "OtherParsingError"
 
   (* global analysis *)
@@ -285,7 +288,8 @@ let rank_of_error err =
   | CFGError _ -> Important
 
   (* usually issues in my parsers *)
-  | LexicalError _ | ParseError | AstbuilderError _ | OtherParsingError _
+  | LexicalError _ | ParseError | AstBuilderError _ | OtherParsingError _
+  | AstGenericError _
    -> OnlyStrict
   (* usually a bug somewhere in my code *)
   | FatalError _
@@ -324,7 +328,8 @@ let filter_maybe_parse_and_fatal_errors errs =
       when is_test_or_example file -> true
 *)
     | LexicalError _ | ParseError 
-    | AstbuilderError _ | OtherParsingError _
+    | AstBuilderError _ | OtherParsingError _
+    | AstGenericError _
       when not !report_parse_errors -> true
     | FatalError _ 
       when not !report_fatal_errors -> true
@@ -338,9 +343,11 @@ let exn_to_error file exn =
   | Parse_info.Parsing_error tok ->
     mk_error tok (ParseError);
   | Parse_info.Ast_builder_error (s, tok) ->
-    mk_error tok (AstbuilderError s);
+    mk_error tok (AstBuilderError s);
   | Parse_info.Other_error (s, tok) ->
     mk_error tok (OtherParsingError s);
+  | Ast_generic.Error (s, tok) ->
+    mk_error tok (AstGenericError s);
   (* this should never be captured *)
   | (Timeout | UnixExit _) as exn -> raise exn
   (* general case, can't extract line information from it, default to line 1 *)

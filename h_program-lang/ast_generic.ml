@@ -816,13 +816,16 @@ and any =
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let str_of_name = fst
+let str_of_ident = fst
 
 (*****************************************************************************)
 (* Error *)
 (*****************************************************************************)
 
-(* this can be used in the xxx_to_generic.ml file to signal limitations *)
+(* this can be used in the xxx_to_generic.ml file to signal limitations,
+ * and can be captured in Error_code.exn_to_error to pinpoint the error
+ * location.
+ *)
 exception Error of string * Parse_info.t
 
 let error tok msg = 

@@ -12,7 +12,8 @@ type error = {
   (* parsing related *)
   | LexicalError of string
   | ParseError (* a.k.a SyntaxError *)
-  | AstbuilderError of string
+  | AstBuilderError of string
+  | AstGenericError of string
   | OtherParsingError of string
 
   (* global analysis *)
