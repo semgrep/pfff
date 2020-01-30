@@ -342,7 +342,7 @@ and expr =
     | OE_Is | OE_IsNot (* less: could be part of a set_operator? or PhysEq? *)
     | OE_In | OE_NotIn (* less: could be part of a obj_operator? *)
     | OE_Invert
-    | OE_Slices | OE_SliceIndex | OE_SliceRange
+    | OE_Slices | OE_SliceIndex | OE_SliceRange (* see also SliceAccess *)
     (* TODO: newvar: *)
     | OE_CompForIf | OE_CompFor | OE_CompIf
     | OE_CmpOps
@@ -351,13 +351,14 @@ and expr =
     | OE_NameOrClassType | OE_ClassLiteral | OE_NewQualifiedClass
     (* C *)
     | OE_GetRefLabel
-    | OE_ArrayInitDesignator | OE_GccConstructor (* transform in New? *)
+    | OE_ArrayInitDesignator (* .x = or [x] = *)
     (* PHP *)
     | OE_Unpack
     (* OCaml *)
     | OE_FieldAccessQualified | OE_RecordWith 
     | OE_StmtExpr (* OCaml has just expressions, no statements *)
     (* Go *)
+    | OE_Send | OE_Recv
 
 (*****************************************************************************)
 (* Statement *)

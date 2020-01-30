@@ -214,7 +214,8 @@ and expr =
           v1
       in G.Record v1
   | GccConstructor ((v1, v2)) -> let v1 = type_ v1 and v2 = expr v2 in
-      G.OtherExpr (G.OE_GccConstructor, [G.T v1; G.E v2])
+      G.Call (G.IdSpecial (G.New, fake_info ()), 
+        (G.ArgType v1)::([v2] |> List.map G.expr_to_arg))
 
 and argument v = 
   let v = expr v in

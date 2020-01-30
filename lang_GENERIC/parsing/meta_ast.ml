@@ -266,6 +266,8 @@ and vof_action (v1, v2) =
   let v1 = vof_pattern v1 and v2 = vof_expr v2 in Ocaml.VTuple [ v1; v2 ]
 and vof_other_expr_operator =
   function
+  | OE_Send -> Ocaml.VSum (("OE_Send", []))
+  | OE_Recv -> Ocaml.VSum (("OE_Recv", []))
   | OE_StmtExpr -> Ocaml.VSum (("OE_StmtExpr", []))
   | OE_Exports -> Ocaml.VSum (("OE_Exports", []))
   | OE_Module -> Ocaml.VSum (("OE_Module", []))
@@ -296,7 +298,6 @@ and vof_other_expr_operator =
   | OE_NewQualifiedClass -> Ocaml.VSum (("OE_NewQualifiedClass", []))
   | OE_GetRefLabel -> Ocaml.VSum (("OE_GetRefLabel", []))
   | OE_ArrayInitDesignator -> Ocaml.VSum (("OE_ArrayInitDesignator", []))
-  | OE_GccConstructor -> Ocaml.VSum (("OE_GccConstructor", []))
   | OE_Unpack -> Ocaml.VSum (("OE_Unpack", []))
   | OE_FieldAccessQualified -> Ocaml.VSum (("OE_FieldAccessQualified", []))
   | OE_RecordWith -> Ocaml.VSum (("OE_RecordWith", []))
