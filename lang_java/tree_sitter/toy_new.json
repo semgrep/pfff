@@ -1,0 +1,247 @@
+{
+  "type": "program",
+  "startPosition": {
+    "row": 0,
+    "column": 0
+  },
+  "endPosition": {
+    "row": 3,
+    "column": 2
+  },
+  "children": [
+    {
+      "type": "class_declaration",
+      "startPosition": {
+        "row": 0,
+        "column": 0
+      },
+      "endPosition": {
+        "row": 3,
+        "column": 1
+      },
+      "children": [
+        {
+          "type": "class",
+          "startPosition": {
+            "row": 0,
+            "column": 0
+          },
+          "endPosition": {
+            "row": 0,
+            "column": 5
+          },
+          "children": []
+        },
+        {
+          "type": "identifier",
+          "startPosition": {
+            "row": 0,
+            "column": 6
+          },
+          "endPosition": {
+            "row": 0,
+            "column": 9
+          },
+          "children": []
+        },
+        {
+          "type": "class_body",
+          "startPosition": {
+            "row": 0,
+            "column": 10
+          },
+          "endPosition": {
+            "row": 3,
+            "column": 1
+          },
+          "children": [
+            {
+              "type": "{",
+              "startPosition": {
+                "row": 0,
+                "column": 10
+              },
+              "endPosition": {
+                "row": 0,
+                "column": 11
+              },
+              "children": []
+            },
+            {
+              "type": "method_declaration",
+              "startPosition": {
+                "row": 2,
+                "column": 0
+              },
+              "endPosition": {
+                "row": 2,
+                "column": 26
+              },
+              "children": [
+                {
+                  "type": "void_type",
+                  "startPosition": {
+                    "row": 2,
+                    "column": 0
+                  },
+                  "endPosition": {
+                    "row": 2,
+                    "column": 4
+                  },
+                  "children": []
+                },
+                {
+                  "type": "identifier",
+                  "startPosition": {
+                    "row": 2,
+                    "column": 5
+                  },
+                  "endPosition": {
+                    "row": 2,
+                    "column": 9
+                  },
+                  "children": []
+                },
+                {
+                  "type": "formal_parameters",
+                  "startPosition": {
+                    "row": 2,
+                    "column": 9
+                  },
+                  "endPosition": {
+                    "row": 2,
+                    "column": 11
+                  },
+                  "children": [
+                    {
+                      "type": "(",
+                      "startPosition": {
+                        "row": 2,
+                        "column": 9
+                      },
+                      "endPosition": {
+                        "row": 2,
+                        "column": 10
+                      },
+                      "children": []
+                    },
+                    {
+                      "type": ")",
+                      "startPosition": {
+                        "row": 2,
+                        "column": 10
+                      },
+                      "endPosition": {
+                        "row": 2,
+                        "column": 11
+                      },
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "type": "block",
+                  "startPosition": {
+                    "row": 2,
+                    "column": 12
+                  },
+                  "endPosition": {
+                    "row": 2,
+                    "column": 26
+                  },
+                  "children": [
+                    {
+                      "type": "{",
+                      "startPosition": {
+                        "row": 2,
+                        "column": 12
+                      },
+                      "endPosition": {
+                        "row": 2,
+                        "column": 13
+                      },
+                      "children": []
+                    },
+                    {
+                      "type": "return_statement",
+                      "startPosition": {
+                        "row": 2,
+                        "column": 14
+                      },
+                      "endPosition": {
+                        "row": 2,
+                        "column": 23
+                      },
+                      "children": [
+                        {
+                          "type": "return",
+                          "startPosition": {
+                            "row": 2,
+                            "column": 14
+                          },
+                          "endPosition": {
+                            "row": 2,
+                            "column": 20
+                          },
+                          "children": []
+                        },
+                        {
+                          "type": "decimal_integer_literal",
+                          "startPosition": {
+                            "row": 2,
+                            "column": 21
+                          },
+                          "endPosition": {
+                            "row": 2,
+                            "column": 22
+                          },
+                          "children": []
+                        },
+                        {
+                          "type": ";",
+                          "startPosition": {
+                            "row": 2,
+                            "column": 22
+                          },
+                          "endPosition": {
+                            "row": 2,
+                            "column": 23
+                          },
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "type": "}",
+                      "startPosition": {
+                        "row": 2,
+                        "column": 25
+                      },
+                      "endPosition": {
+                        "row": 2,
+                        "column": 26
+                      },
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "}",
+              "startPosition": {
+                "row": 3,
+                "column": 0
+              },
+              "endPosition": {
+                "row": 3,
+                "column": 1
+              },
+              "children": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
