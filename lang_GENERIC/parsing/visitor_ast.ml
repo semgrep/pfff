@@ -455,7 +455,7 @@ and
                         ptype = v_ptype;
                         pattrs = v_pattrs
                       } =
-  let arg = v_ident v_pname in
+  let arg = v_option v_ident v_pname in
   let arg = v_option v_expr v_pdefault in
   let arg = v_option v_type_ v_ptype in
   let arg = v_list v_attribute v_pattrs in ()

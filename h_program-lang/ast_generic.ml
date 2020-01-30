@@ -609,12 +609,13 @@ and function_definition = {
      | OtherParam of other_parameter_operator * any list
 
     (* less: could be merged with variable_definition, or pattern
-     * could factorize pname/pattrs/pinfo with entity
+     * less: could factorize pname/pattrs/pinfo with entity
      *)
     and parameter_classic = { 
-     pname: ident;
-     pdefault: expr option;
-     ptype: type_ option;
+     (* alt: use a 'ParamNoIdent of type_' for that? *)
+     pname:    ident option;
+     pdefault: expr  option;
+     ptype:    type_ option;
      (* this covers '...' variadic parameters, see the Variadic attribute *)
      pattrs: attribute list;
      (* naming *)
@@ -678,16 +679,15 @@ and type_definition = {
   *)
   and field = 
     | FieldVar of entity * variable_definition
+    (* those can have empty body for interface methods *)
     | FieldMethod of entity * function_definition
 
-    | FieldDynamic of expr (* dynamic name *) * attribute list * expr (* value*)
+    | FieldDynamic of expr (* dynamic name *) * attribute list * expr (*value*)
     | FieldSpread of expr (* usually a Name *)
 
     | FieldStmt of stmt
 
   and other_type_kind_operator = 
-     (* C *)
-     | OTKO_EnumWithValue (* obsolete actually now that has OrEnum *)
      (* OCaml *)
      | OTKO_AbstractType
 
@@ -697,7 +697,7 @@ and type_definition = {
 (* less: could be a special kind of type_definition *)
 and class_definition = {
   ckind: class_kind;
-  cextends: type_ list; 
+  cextends: type_ list; (* usually just one parent *)
   cimplements: type_ list;
   (* newscope: *)
   cbody: field list;
@@ -836,7 +836,7 @@ let empty_id_info () = {
  }
 
 let basic_param id = { 
-    pname = id;
+    pname = Some id;
     pdefault = None;
     ptype = None;
     pattrs = [];
@@ -862,7 +862,7 @@ let expr_to_arg e =
   Arg e
 
 let entity_to_param { name; attrs; type_; tparams = _unused; info } = 
-  { pname = name;
+  { pname = Some name;
     pdefault = None;
     ptype = type_;
     pattrs = attrs;
@@ -873,12 +873,6 @@ let opt_to_nop opt =
   match opt with
   | None -> Nop
   | Some e -> e
-
-(* should delete that ... maybe use a 'ParamNoIdent of type_' instead *)
-let opt_to_ident opt =
-  match opt with
-  | None -> "FakeNAME", Parse_info.fake_info "FakeNAME"
-  | Some n -> n
 
 let stmt1 xs =
   match xs with

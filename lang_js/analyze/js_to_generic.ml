@@ -306,7 +306,7 @@ and parameter x =
   let v2 = option expr p_default in 
   let v3 = bool p_dots in
   G.ParamClassic { 
-    G.pname = v1; pdefault = v2; ptype = None;
+    G.pname = Some v1; pdefault = v2; ptype = None;
     pattrs = if v3 then [G.Variadic] else [];
     pinfo = G.empty_id_info ();
   }

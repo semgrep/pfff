@@ -547,7 +547,7 @@ and
   let v_pattrs = map_of_list map_attribute v_pattrs in
   let v_ptype = map_of_option map_type_ v_ptype in
   let v_pdefault = map_of_option map_expr v_pdefault in
-  let v_pname = map_ident v_pname in 
+  let v_pname = map_of_option map_ident v_pname in 
   { 
                           pname = v_pname;
                           pdefault = v_pdefault;

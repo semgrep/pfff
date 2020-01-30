@@ -42,6 +42,11 @@ let string = id
 
 let fake_info () = Parse_info.fake_info "FAKE"
 
+let opt_to_ident opt =
+  match opt with
+  | None -> "FakeNAME", Parse_info.fake_info "FakeNAME"
+  | Some n -> n
+
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
@@ -294,9 +299,10 @@ let func_def {
   let entity = G.basic_entity v1 v4 in
   entity, G.FuncDef {
     G.fparams = params |> List.map (fun (t, nameopt) ->
-        G.ParamClassic {
-          (G.basic_param (nameopt |> G.opt_to_ident)) with
-          G.ptype = Some t;
+        G.ParamClassic { G.
+          pname = nameopt;
+          ptype = Some t;
+          pdefault = None; pattrs = []; pinfo = G.empty_id_info ();
         }
     );
     frettype = Some ret;
@@ -323,7 +329,7 @@ let rec
 and field_def { fld_name = fld_name; fld_type = fld_type } =
   let v1 = option name fld_name in 
   let v2 = type_ fld_type in
-  G.opt_to_ident v1, v2
+  opt_to_ident v1, v2
   
 
 let enum_def (v1, v2) =

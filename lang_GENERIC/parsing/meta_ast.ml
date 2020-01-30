@@ -689,7 +689,7 @@ and
   let arg = Ocaml.vof_option vof_expr v_pdefault in
   let bnd = ("pdefault", arg) in
   let bnds = bnd :: bnds in
-  let arg = vof_ident v_pname in
+  let arg = Ocaml.vof_option vof_ident v_pname in
   let bnd = ("pname", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
 
 and vof_other_parameter_operator =
@@ -747,7 +747,6 @@ and vof_type_definition_kind =
       in Ocaml.VSum (("OtherTypeKind", [ v1; v2 ]))
 and vof_other_type_kind_operator =
   function 
-    | OTKO_EnumWithValue -> Ocaml.VSum (("OTKO_EnumWithValue", []))
     | OTKO_AbstractType -> Ocaml.VSum (("OTKO_AbstractType", []))
 and vof_or_type_element =
   function
