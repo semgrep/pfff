@@ -704,6 +704,7 @@ and vof_other_parameter_operator =
   function
   | OPO_KwdParam -> Ocaml.VSum (("OPO_KwdParam", []))
   | OPO_Ref -> Ocaml.VSum (("OPO_Ref", []))
+  | OPO_Receiver -> Ocaml.VSum (("OPO_Receiver", []))
   | OPO_SingleStarParam -> Ocaml.VSum ("OPO_SingleStarParam", [])
 and vof_variable_definition { vinit = v_vinit; vtype = v_vtype } =
   let bnds = [] in

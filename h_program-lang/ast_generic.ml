@@ -636,6 +636,8 @@ and function_definition = {
      | OPO_KwdParam | OPO_SingleStarParam
      (* PHP *)
      | OPO_Ref (* less: or encode in type? *)
+     (* Go *)
+     | OPO_Receiver (* of parameter_classic *)
 
 (* ------------------------------------------------------------------------- *)
 (* Variable definition *)
