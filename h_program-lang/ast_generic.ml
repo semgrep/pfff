@@ -24,8 +24,9 @@
  *  - Javascript
  *  - Java
  *  - C
+ *  - Go
  *  - TOFINISH OCaml
- *  - TODO PHP, Go
+ *  - TODO PHP
  *
  * rational: In the end, programming languages have a lot in common.
  * Even though most interesting analysis are probably better done on a
@@ -39,7 +40,6 @@
  * tree of nodes, but all the structure of the original AST is lost.
  * 
  * TODO:
- *  - later: add Go (easy)
  *  - later: add Ruby, Rust, Scala (difficult)
  *  - later: add C++ (argh)
  *  - see ast_fuzzy.ml TODOs for ideas to use ast_generic for sgrep.
@@ -116,14 +116,11 @@ type ident = string wrap
 type dotted_ident = ident list (* at least 1 element *)
  (* with tarzan *)
 
-(* todo: not enough in OCaml with functor and type arguments or C++ templates*)
-type qualifier = dotted_ident
- (* with tarzan *)
-
-(* module_name can also be used for a packaeg name  or a namespace *)
+(* module_name can also be used for a package name or a namespace *)
 type module_name =
-  | FileName of string wrap   (* ex: Js import, C #include, Go import *)
   | DottedName of dotted_ident (* ex: Python *)
+  (* in that case the '.' is really the '/' *)
+  | FileName of string wrap   (* ex: Js import, C #include, Go import *)
  (* with tarzan *)
 
 (* see also scope_code.ml *)
@@ -154,6 +151,8 @@ type name = ident * name_info
     name_qualifier: qualifier option;
     name_typeargs: type_arguments option; (* Java *)
   } 
+  (* todo: not enough in OCaml with functor and type args or C++ templates*)
+  and qualifier = dotted_ident
 
 (*****************************************************************************)
 (* Naming/typing *)
@@ -180,6 +179,7 @@ and expr =
   | Record of field list
   (* Or-type (could be used instead of Container, Cons, Nil, etc.) *)
   | Constructor of name * expr list
+  (* see also Call(IdSpecial (New,_), [ArgType _;...] for other values *)
 
   (* very special value *)
   | Lambda of function_definition
@@ -245,7 +245,7 @@ and expr =
   | Ref of expr (* &, address of *)
   | DeRef of expr (* '*' *)
 
-  | Ellipsis of tok (* for sgrep, and also types in Python *)
+  | Ellipsis of tok (* sgrep: ... in args, stmts, and also types in Python *)
 
   | OtherExpr of other_expr_operator * any list
 
@@ -258,7 +258,7 @@ and expr =
 
   and container_operator = 
     (* Tuple was lifted up *)
-    | Array (* todo? designator? *)
+    | Array (* todo? designator? use ArrayAccess for designator? *)
     | List | Set
     | Dict (* a.k.a Hash or Map (combine with Tuple to get Key/value pair) *)
 
@@ -327,7 +327,7 @@ and expr =
         (* OCaml *)
         | OA_ArgQuestion
 
-
+  (* TODO: reduce *)
   and other_expr_operator = 
     (* Javascript *)
     | OE_Exports | OE_Module 
@@ -346,12 +346,12 @@ and expr =
     (* TODO: newvar: *)
     | OE_CompForIf | OE_CompFor | OE_CompIf
     | OE_CmpOps
-    | OE_Repr
+    | OE_Repr (* lift up? special Dump? *)
     (* Java *)
     | OE_NameOrClassType | OE_ClassLiteral | OE_NewQualifiedClass
     (* C *)
     | OE_GetRefLabel
-    | OE_ArrayInitDesignator (* .x = or [x] = *)
+    | OE_ArrayInitDesignator (* [x] = ... todo? use ArrayAccess in container?*)
     (* PHP *)
     | OE_Unpack
     (* OCaml *)
@@ -372,6 +372,7 @@ and stmt =
 
   (* newscope: in C++/Java/Go *)
   | Block of stmt list
+  (* EmptyStmt = Block [] *)
 
   | If of expr * stmt * stmt
   | While of expr * stmt
@@ -433,6 +434,7 @@ and stmt =
   and other_stmt_operator = 
     (* Python *)
     | OS_Delete 
+    (* TODO: reduce? transpile? *)
     | OS_ForOrElse | OS_WhileOrElse | OS_TryOrElse
     | OS_ThrowFrom | OS_ThrowNothing | OS_Global | OS_NonLocal
     | OS_Pass
@@ -518,9 +520,10 @@ and type_ =
   (* Python *)
   | OT_Expr | OT_Arg (* todo: should transform in type_ when can *)
   (* C *)
-  | OT_StructName | OT_UnionName | OT_EnumName
+  (* TODO? convert in unique name with TyApply ?*)
+  | OT_StructName | OT_UnionName | OT_EnumName 
   (* PHP *)
-  | OT_Shape | OT_Variadic
+  | OT_Shape (* hack-specific? *) | OT_Variadic (* ???? *)
 
 (*****************************************************************************)
 (* Attribute *)
@@ -575,7 +578,7 @@ and definition = entity * definition_kind (* (or decl) *)
   and definition_kind =
     | FuncDef   of function_definition (* valid for methods too *)
     (* newvar: *)
-    | VarDef    of variable_definition  (* valid for constants and fields too *)
+    | VarDef    of variable_definition (* valid for constants and fields too *)
 
     | TypeDef   of type_definition
     | ClassDef  of class_definition
@@ -601,8 +604,7 @@ and function_definition = {
  fparams: parameters;
  frettype: type_ option; (* return type *)
  (* newscope:
-  * can be empty statement for methods in interfaces
-  *)
+  * note: can be empty statement for methods in interfaces *)
  fbody: stmt;
 }
   and parameters = parameter list
@@ -610,7 +612,7 @@ and function_definition = {
     and parameter =
      | ParamClassic of parameter_classic
      | ParamPattern of pattern
-     (* for sgrep
+     (* sgrep: ... in parameters
       * note: foo(...x) of Js/Go is using the Variadic attribute, not this *)
      | ParamEllipsis of tok
 
@@ -620,10 +622,10 @@ and function_definition = {
      * less: could factorize pname/pattrs/pinfo with entity
      *)
     and parameter_classic = { 
-     (* alt: use a 'ParamNoIdent of type_' for that? *)
+     (* alt: use a 'ParamNoIdent of type_' when pname is None instead? *)
      pname:    ident option;
-     pdefault: expr  option;
      ptype:    type_ option;
+     pdefault: expr  option;
      (* this covers '...' variadic parameters, see the Variadic attribute *)
      pattrs: attribute list;
      (* naming *)
@@ -640,11 +642,10 @@ and function_definition = {
 (* ------------------------------------------------------------------------- *)
 (* Also used for constant_definition with attrs = [Const].
  * Also used for field definition in a class (and record).
- * Could also use for function_definition with vinit = Some (Lambda (...))
+ * less: could use for function_definition with vinit = Some (Lambda (...))
+ *  but maybe useful to explicitely makes the difference for now?
  *)
 and variable_definition = {
-  (* less: could remove function_definition as expr can be a Lambda but maybe
-   * useful to explicitely makes the difference for now? *)
   vinit: expr option;
   (* less: could merge in entity.type_ *)
   vtype: type_ option;
@@ -660,7 +661,7 @@ and type_definition = {
   and type_definition_kind = 
    | OrType  of or_type_element list  (* enum/ADTs *)           
    (* field.vtype should be defined here *)
-   | AndType of field list (* record/struct/union *) 
+   | AndType of field list (* record/struct (for class see class_definition *)
 
    (* a.k.a typedef in C (and alias type in Go) *)
    | AliasType of type_
@@ -679,10 +680,9 @@ and type_definition = {
       (* Java *)
       | OOTEO_EnumWithMethods | OOTEO_EnumWithArguments
 
-  (* Field definition and use, for classes and records *)
-
- (* less: could be merged with variable_definition,
-  * I don't call it field_definition because it's used both to
+ (* Field definition and use, for classes and records
+  * less: could be merged with variable_definition.
+  * note: I don't call it field_definition because it's used both to
   * define the shape of a field (a definition), and when creating
   * an actual field (a value)
   *)
@@ -745,11 +745,11 @@ and macro_definition = {
 }
 
 (*****************************************************************************)
-(* Directives (Module import/export, macros) *)
+(* Directives (Module import/export, package) *)
 (*****************************************************************************)
 and directive = 
   (* newvar: *)
-  | ImportFrom of module_name * alias list
+  | ImportFrom of module_name * alias list (* less: unfold the list? *)
   | ImportAs   of module_name * ident option (* as name *)
   (* bad practice! hard to resolve name locally *)
   | ImportAll  of module_name * tok (* '.' in Go, '*' in Java/Python *)
@@ -765,15 +765,18 @@ and directive =
 
   and other_directive_operator = 
   (* Javascript *)
-  | OI_Export | OI_ImportCss | OI_ImportEffect
+  | OI_Export 
+  | OI_ImportCss | OI_ImportEffect
 
 (*****************************************************************************)
 (* Toplevel *)
 (*****************************************************************************)
-(* less: merge with field? *)
-(* this is merged with stmt because many languages allow nested function
+(* item (a.k.a toplevel element, toplevel decl) is now equal to stmt.
+ * Indeed, many languages allow nested functions
  * or class definitions and even nested imports, so this is simpler to
- * merge item and stmt together. This can simplfy sgrep too.
+ * just merge them. 
+ * This can simplify sgrep too.
+ * less: merge with field?
  *)
 and item = stmt
 
