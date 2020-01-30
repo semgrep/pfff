@@ -447,8 +447,8 @@ and enum_body_declarations = ( _class_body_declaration list)
 and enum_constant = {
   mods4: modifiers option;
   name7: identifier;
-  arguments4: argument_list;
-  body11: class_body;
+  arguments4: argument_list option;
+  body11: class_body option;
 }
 
 and class_declaration = {
