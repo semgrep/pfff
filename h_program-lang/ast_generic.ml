@@ -662,6 +662,7 @@ and type_definition = {
    (* field.vtype should be defined here *)
    | AndType of field list (* record/struct/union *) 
 
+   (* a.k.a typedef in C (and alias type in Go) *)
    | AliasType of type_
    | Exception of ident (* same name than entity *) * type_ list
 
@@ -698,6 +699,8 @@ and type_definition = {
   and other_type_kind_operator = 
      (* OCaml *)
      | OTKO_AbstractType
+     (* Go *)
+     | OTKO_Typedef (* type x foo (vs type x = foo) *)
 
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)
