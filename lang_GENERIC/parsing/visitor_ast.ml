@@ -156,6 +156,13 @@ and v_expr x =
   | LetPattern ((v1, v2)) -> let v1 = v_pattern v1 and v2 = v_expr v2 in ()
   | ObjAccess ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_ident v2 in ()
   | ArrayAccess ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_expr v2 in ()
+  | SliceAccess ((v1, v2, v3, v4)) -> 
+        let v1 = v_expr v1 
+        and v2 = v_option v_expr v2 
+        and v3 = v_option v_expr v3
+        and v4 = v_option v_expr v4 
+        in
+        ()
   | Conditional ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_expr v2 and v3 = v_expr v3 in ()
   | MatchPattern ((v1, v2)) ->
@@ -319,7 +326,7 @@ and v_stmt x =
           (fun (v1, v2) -> let v1 = v_list v_case v1 and v2 = v_stmt v2 in ())
           v2
       in ()
-  | Return v1 -> let v1 = v_expr v1 in ()
+  | Return v1 -> let v1 = v_option v_expr v1 in ()
   | Continue v1 -> let v1 = v_option v_expr v1 in ()
   | Break v1 -> let v1 = v_option v_expr v1 in ()
   | Label ((v1, v2)) -> let v1 = v_label v1 and v2 = v_stmt v2 in ()

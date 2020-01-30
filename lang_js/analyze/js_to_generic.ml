@@ -210,7 +210,7 @@ and stmt x =
   | Break v1 -> let v1 = option label v1 in
      G.Break (v1 |> option (fun n -> 
        G.Name ((n, G.empty_name_info), G.empty_id_info ())))
-  | Return v1 -> let v1 = expr v1 in G.Return v1
+  | Return v1 -> let v1 = expr v1 in G.Return (Some v1)
   | Label ((v1, v2)) -> let v1 = label v1 and v2 = stmt v2 in
       G.Label (v1, v2)
   | Throw v1 -> let v1 = expr v1 in G.Throw v1

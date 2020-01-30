@@ -311,7 +311,7 @@ and stmt =
   | Continue v1 -> let v1 = option ident_label v1 in
       G.Continue v1
   | Return v1 -> let v1 = option expr v1 in
-      G.Return (G.opt_to_nop v1)
+      G.Return v1
   | Label ((v1, v2)) -> let v1 = ident v1 and v2 = stmt v2 in
       G.Label (v1, v2)
   | Sync ((v1, v2)) -> 

@@ -77,7 +77,7 @@ type node = {
       | Case
       | Default
 
-      | Return of expr
+      | Return of expr option
       | Break of expr option
       | Continue of expr option
 

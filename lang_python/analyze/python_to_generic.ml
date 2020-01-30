@@ -134,13 +134,21 @@ let rec expr (x: expr) =
       G.Container (G.List, e1)
 
   | Subscript ((v1, v2, v3)) ->
-      let v1 = expr v1 
-      and v2 = list slice v2 
+      let e = expr v1 
       and _v3TODO = expr_context v3 in 
       (match v2 with
-      | [G.OE_SliceIndex, e] -> G.ArrayAccess (v1, e)
-      | xs -> 
-        G.OtherExpr (G.OE_Slice, 
+      | [Index v1] -> 
+          let v1 = expr v1 in
+          G.ArrayAccess (e, v1)
+      | [Slice (v1, v2, v3)] ->
+        let v1 = option expr v1
+        and v2 = option expr v2
+        and v3 = option expr v3
+        in
+        G.SliceAccess (e, v1, v2, v3)
+      | _ -> 
+        let xs = list slice v2 in
+        G.OtherExpr (G.OE_Slices, 
                      xs |> List.map (fun (other, e) ->
                        G.E (G.OtherExpr (other, [G.E e]))))
       )
@@ -380,7 +388,7 @@ and stmt x =
       let v1 = expr v1 and v2 = operator v2 and v3 = expr v3 in
       G.ExprStmt (G.AssignOp (v1, (v2, tok), v3))
   | Return v1 -> let v1 = option expr v1 in 
-      G.Return (G.opt_to_nop v1)
+      G.Return v1
 
   | Delete v1 -> let v1 = list expr v1 in
       G.OtherStmt (G.OS_Delete, v1 |> List.map (fun x -> G.E x))

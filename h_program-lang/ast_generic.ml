@@ -225,6 +225,9 @@ and expr =
   | ObjAccess of expr * ident
   (* in Js this is used for ObjAccess with a computed field name *)
   | ArrayAccess of expr * expr (* less: slice *)
+  (* could also use ArrayAccess with a Tuple rhs, or use a special *)
+  | SliceAccess of expr * 
+      expr option (* lower *) * expr option (* upper *) * expr option (* step*)
 
   | Conditional of expr * expr * expr
   | MatchPattern of expr * action list
@@ -339,7 +342,7 @@ and expr =
     | OE_Is | OE_IsNot (* less: could be part of a set_operator? or PhysEq? *)
     | OE_In | OE_NotIn (* less: could be part of a obj_operator? *)
     | OE_Invert
-    | OE_Slice | OE_SliceIndex | OE_SliceRange
+    | OE_Slices | OE_SliceIndex | OE_SliceRange
     (* TODO: newvar: *)
     | OE_CompForIf | OE_CompFor | OE_CompIf
     | OE_CmpOps
@@ -378,7 +381,7 @@ and stmt =
   (* less: could be merged with ExprStmt (MatchPattern ...) *)
   | Switch of expr * case_and_body list
 
-  | Return of expr
+  | Return of expr option
   | Continue of expr option | Break of expr option (* todo? switch to label? *)
 
   | Label of label * stmt
@@ -872,6 +875,7 @@ let entity_to_param { name; attrs; type_; tparams = _unused; info } =
     pinfo = info;
   }
 
+(* should avoid; should prefer to use 'expr option' in the AST *)
 let opt_to_nop opt =
   match opt with
   | None -> Nop

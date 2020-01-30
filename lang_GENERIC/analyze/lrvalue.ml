@@ -122,6 +122,9 @@ let rec visit_expr hook lhs expr =
   | ArrayAccess(e, e1) ->
     recr e1;
     recr e;
+  | SliceAccess (e, e1, e2, e3) ->
+      [e1;e2;e3] |> List.map Ast_generic.opt_to_nop |> List.iter recr;
+      recr e
 
   | DeRef e -> recr e
   | Ref e -> recr e 

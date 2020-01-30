@@ -247,7 +247,7 @@ let rec stmt =
           G.opt_to_nop v2,
           G.opt_to_nop v3) in
       G.For (header, v4)
-  | Return v1 -> let v1 = option expr v1 in G.Return (G.opt_to_nop v1)
+  | Return v1 -> let v1 = option expr v1 in G.Return v1
   | Continue -> G.Continue None
   | Break -> G.Break None
   | Label ((v1, v2)) -> let v1 = name v1 and v2 = stmt v2 in

@@ -150,6 +150,12 @@ and map_expr x =
       let v1 = map_expr v1 and v2 = map_ident v2 in ObjAccess ((v1, v2))
   | ArrayAccess ((v1, v2)) ->
       let v1 = map_expr v1 and v2 = map_expr v2 in ArrayAccess ((v1, v2))
+  | SliceAccess ((v1, v2, v3, v4)) ->
+      let v1 = map_expr v1 
+      and v2 = map_of_option map_expr v2 
+      and v3 = map_of_option map_expr v3
+      and v4 = map_of_option map_expr v4 
+      in SliceAccess ((v1, v2, v3, v4))
   | Conditional ((v1, v2, v3)) ->
       let v1 = map_expr v1
       and v2 = map_expr v2
@@ -335,7 +341,7 @@ and map_stmt x =
       let v1 = map_expr v1
       and v2 = map_of_list map_case_and_body v2
       in Switch ((v1, v2))
-  | Return v1 -> let v1 = map_expr v1 in Return ((v1))
+  | Return v1 -> let v1 = map_of_option map_expr v1 in Return ((v1))
   | Continue v1 -> let v1 = map_of_option map_expr v1 in Continue ((v1))
   | Break v1 -> let v1 = map_of_option map_expr v1 in Break ((v1))
   | Label ((v1, v2)) ->

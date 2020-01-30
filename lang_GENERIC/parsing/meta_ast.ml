@@ -122,6 +122,12 @@ and vof_expr =
       let v1 = vof_expr v1
       and v2 = vof_expr v2
       in Ocaml.VSum (("ArrayAccess", [ v1; v2 ]))
+  | SliceAccess ((v1, v2, v3, v4)) ->
+      let v1 = vof_expr v1
+      and v2 = Ocaml.vof_option vof_expr v2
+      and v3 = Ocaml.vof_option vof_expr v3
+      and v4 = Ocaml.vof_option vof_expr v4
+      in Ocaml.VSum (("SliceAccess", [ v1; v2; v3; v4 ]))
   | Conditional ((v1, v2, v3)) ->
       let v1 = vof_expr v1
       and v2 = vof_expr v2
@@ -277,7 +283,7 @@ and vof_other_expr_operator =
   | OE_In -> Ocaml.VSum (("OE_In", []))
   | OE_NotIn -> Ocaml.VSum (("OE_NotIn", []))
   | OE_Invert -> Ocaml.VSum (("OE_Invert", []))
-  | OE_Slice -> Ocaml.VSum (("OE_Slice", []))
+  | OE_Slices -> Ocaml.VSum (("OE_Slices", []))
   | OE_SliceIndex -> Ocaml.VSum (("OE_SliceIndex", []))
   | OE_SliceRange -> Ocaml.VSum (("OE_SliceRange", []))
   | OE_CompForIf -> Ocaml.VSum (("OE_CompForIf", []))
@@ -413,7 +419,8 @@ and vof_stmt =
       let v1 = vof_expr v1
       and v2 = Ocaml.vof_list vof_case_and_body v2
       in Ocaml.VSum (("Switch", [ v1; v2 ]))
-  | Return v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Return", [ v1 ]))
+  | Return v1 -> let v1 = Ocaml.vof_option vof_expr v1 in 
+      Ocaml.VSum (("Return", [ v1 ]))
   | Continue v1 ->
       let v1 = Ocaml.vof_option vof_expr v1
       in Ocaml.VSum (("Continue", [ v1 ]))
