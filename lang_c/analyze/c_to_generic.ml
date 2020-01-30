@@ -295,7 +295,7 @@ let func_def {
   entity, G.FuncDef {
     G.fparams = params |> List.map (fun (t, nameopt) ->
         G.ParamClassic {
-          (G.basic_param (nameopt |> G.opt_to_name)) with
+          (G.basic_param (nameopt |> G.opt_to_ident)) with
           G.ptype = Some t;
         }
     );
@@ -323,7 +323,7 @@ let rec
 and field_def { fld_name = fld_name; fld_type = fld_type } =
   let v1 = option name fld_name in 
   let v2 = type_ fld_type in
-  G.opt_to_name v1, v2
+  G.opt_to_ident v1, v2
   
 
 let enum_def (v1, v2) =

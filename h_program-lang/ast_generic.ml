@@ -868,7 +868,8 @@ let opt_to_nop opt =
   | None -> Nop
   | Some e -> e
 
-let opt_to_name opt =
+(* should delete that ... maybe use a 'ParamNoIdent of type_' instead *)
+let opt_to_ident opt =
   match opt with
   | None -> "FakeNAME", Parse_info.fake_info "FakeNAME"
   | Some n -> n
