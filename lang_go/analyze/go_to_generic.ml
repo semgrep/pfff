@@ -374,17 +374,19 @@ and decl =
       let v1 = ident v1
       and v2 = option type_ v2
       and v3 = option constant_expr v3
-      in ()
+      in 
+      raise Todo
   | DVar ((v1, v2, v3)) ->
       let v1 = ident v1
       and v2 = option type_ v2
       and v3 = option expr v3
-      in ()
+      in
+      raise Todo
   | DTypeAlias ((v1, v2, v3)) ->
       let v1 = ident v1 and v2 = tok v2 and v3 = type_ v3 in 
-      ()
+      raise Todo
   | DTypeDef ((v1, v2)) -> let v1 = ident v1 and v2 = type_ v2 in 
-      ()
+      raise Todo
 
 and top_decl =
   function
@@ -427,13 +429,13 @@ and program { package = package; imports = imports; decls = decls } =
 and any =
   function
   | E v1 -> let v1 = expr v1 in G.E v1
-  | S v1 -> let v1 = stmt v1 in raise Todo
+  | S v1 -> let v1 = stmt v1 in G.S v1
   | T v1 -> let v1 = type_ v1 in G.T v1
-  | Decl v1 -> let v1 = decl v1 in raise Todo
+  | Decl v1 -> let v1 = decl v1 in G.S v1
   | I v1 -> let v1 = import v1 in G.S (G.DirectiveStmt v1)
   | P v1 -> let v1 = program v1 in G.Pr v1
   | Ident v1 -> let v1 = ident v1 in G.Id v1
-  | Ss v1 -> let v1 = list stmt v1 in raise Todo
+  | Ss v1 -> let v1 = list stmt v1 in G.Ss v1
 
 in
 program, any
