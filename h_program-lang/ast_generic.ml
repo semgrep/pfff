@@ -482,8 +482,12 @@ and pattern =
 and type_ =
   (* todo? a type_builtin = TInt | TBool | ...? see Literal *)
   | TyBuiltin of string wrap (* int, bool, etc. could be TApply with no args *)
-  | TyFun of type_ list (* use parameter? args (not curried) *) * 
-             type_ (* return type *)
+  (* old: was type_, but languages such as C and Go allow also to name
+   * those parameters, and Go even allow Variadic params so we need
+   * at least type_ * attributes, at which point it's better to just use 
+   * parameter_classic
+   *)
+  | TyFun of parameter_classic list * type_ (* return type *)
   (* covers tuples, list, etc. and also regular typedefs *)
   | TyApply of name * type_arguments
   | TyVar of ident (* typedef? no type variable in polymorphic type *)
@@ -837,18 +841,17 @@ let empty_id_info () = {
 
 let basic_param id = { 
     pname = Some id;
-    pdefault = None;
-    ptype = None;
-    pattrs = [];
-    pinfo = empty_id_info ();
+    pdefault = None; ptype = None; pattrs = []; pinfo = empty_id_info ();
+}
+let param_of_type typ = {
+    ptype = Some typ;
+    pname = None; pdefault = None; pattrs = []; pinfo = empty_id_info ();
 }
 
 let basic_entity id attrs = {
   name = id;
   attrs = attrs;
-  type_ = None;
-  tparams = [];
-  info = empty_id_info ();
+  type_ = None; tparams = []; info = empty_id_info ();
 }
 
 let basic_field id typeopt =

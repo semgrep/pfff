@@ -237,7 +237,7 @@ and map_type_ =
   function
   | TyBuiltin v1 -> let v1 = map_wrap map_of_string v1 in TyBuiltin ((v1))
   | TyFun ((v1, v2)) ->
-      let v1 = map_of_list map_type_ v1
+      let v1 = map_of_list map_parameter_classic v1
       and v2 = map_type_ v2
       in TyFun ((v1, v2))
   | TyApply ((v1, v2)) ->

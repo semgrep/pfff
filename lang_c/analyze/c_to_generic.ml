@@ -115,8 +115,6 @@ let rec type_ =
       let v1 = option const_expr v1 and v2 = type_ v2 in
       G.TyArray (v1, v2)
   | TFunction v1 -> let (ret, params) = function_type v1 in 
-      (* dropping the optional name *)
-      let params = params |> List.map fst in
       G.TyFun (params, ret)
   | TStructName ((v1, v2)) ->
       let v1 = struct_kind v1 and v2 = name v2 in
@@ -134,7 +132,8 @@ and function_type (v1, v2) =
 and parameter { p_type = p_type; p_name = p_name } =
   let arg1 = type_ p_type in 
   let arg2 = option name p_name in 
-  (arg1, arg2)
+  { G.ptype = Some arg1; pname = arg2;
+    pattrs = []; pinfo = G.empty_id_info (); pdefault = None }
 and struct_kind = function 
   | Struct -> G.OT_StructName
   | Union -> G.OT_UnionName
@@ -297,14 +296,8 @@ let func_def {
   let v3 = list stmt f_body in 
   let v4 = if f_static then [G.Static] else [] in
   let entity = G.basic_entity v1 v4 in
-  entity, G.FuncDef {
-    G.fparams = params |> List.map (fun (t, nameopt) ->
-        G.ParamClassic { G.
-          pname = nameopt;
-          ptype = Some t;
-          pdefault = None; pattrs = []; pinfo = G.empty_id_info ();
-        }
-    );
+  entity, G.FuncDef { G.
+    fparams = params |> List.map (fun x -> G.ParamClassic x);
     frettype = Some ret;
     fbody = G.stmt1 v3;
     }
