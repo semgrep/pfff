@@ -234,10 +234,10 @@ and expr =
       in
       G.Lambda (mk_func_def params ret v2)
   | Receive ((v1, v2)) -> let v1 = tok v1 and v2 = expr v2 in 
-      raise Todo
+      G.OtherExpr (G.OE_Recv, [G.E v2])
   | Send ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = tok v2 and v3 = expr v3 in
-      raise Todo
+      G.OtherExpr (G.OE_Send, [G.E v1; G.E v3])
   | TypeSwitchExpr ((v1, v2)) -> let v1 = expr v1 and v2 = tok v2 in
       error v2 "TypeSwitchExpr should be handled in Switch statement"
   | ParenType v1 -> let _v1 = type_ v1 in
@@ -381,8 +381,10 @@ and decl =
       and v3 = option expr v3
       in ()
   | DTypeAlias ((v1, v2, v3)) ->
-      let v1 = ident v1 and v2 = tok v2 and v3 = type_ v3 in ()
-  | DTypeDef ((v1, v2)) -> let v1 = ident v1 and v2 = type_ v2 in ()
+      let v1 = ident v1 and v2 = tok v2 and v3 = type_ v3 in 
+      ()
+  | DTypeDef ((v1, v2)) -> let v1 = ident v1 and v2 = type_ v2 in 
+      ()
 
 and top_decl =
   function
