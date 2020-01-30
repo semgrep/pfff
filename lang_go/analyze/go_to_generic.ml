@@ -45,6 +45,7 @@ let name_of_qualified_ident = function
   | Right (xs, id) -> id, { G.name_qualifier = Some xs; name_typeargs = None }
 
 let fake_info () = Parse_info.fake_info "FAKE"
+let fake_name s = (s, fake_info ()), G.empty_name_info
 
 let ii_of_any = Lib_parsing_go.ii_of_any
 
@@ -82,16 +83,18 @@ let rec type_ =
   | TFunc v1 -> let (params, res) = func_type v1 in 
       G.TyFun (params, res)
   | TMap ((v1, v2)) -> let v1 = type_ v1 and v2 = type_ v2 in 
-      let map_name = ("map", fake_info ()), G.empty_name_info in
-      G.TyApply (map_name, [G.TypeArg v1; G.TypeArg v2])
+      G.TyApply (fake_name "map", [G.TypeArg v1; G.TypeArg v2])
   | TChan ((v1, v2)) -> let v1 = chan_dir v1 and v2 = type_ v2 in 
-      raise Todo
+      G.TyApply (fake_name "chan", [G.TypeArg v1; G.TypeArg v2])
   | TStruct v1 -> let v1 = list struct_field v1 in 
       raise Todo
   | TInterface v1 -> let v1 = list interface_field v1 in 
       raise Todo
 
-and chan_dir = function | TSend -> () | TRecv -> () | TBidirectional -> ()
+and chan_dir = function 
+  | TSend -> G.TyApply (fake_name "send", [])
+  | TRecv -> G.TyApply (fake_name "recv", []) 
+  | TBidirectional -> G.TyApply (fake_name "bidirectional", [])
 
 and func_type { fparams = fparams; fresults = fresults } =
   let fparams = list parameter fparams in
@@ -356,10 +359,10 @@ and import_kind kind module_name id =
       G.ImportAll (module_name, v1)
 
 let program { package = package; imports = imports; decls = decls } =
-  let arg1 = ident package in
+  let arg1 = ident package |> (fun x -> G.DirectiveStmt (G.Package [x])) in
   let arg2 = list import imports |> List.map (fun x -> G.DirectiveStmt x) in
   let arg3 = list top_decl decls in
-  [G.DirectiveStmt (G.Package [arg1])] @ arg2 @ arg3
+  arg1 :: arg2 @ arg3
   
 
 let any =
@@ -368,7 +371,7 @@ let any =
   | S v1 -> let v1 = stmt v1 in raise Todo
   | T v1 -> let v1 = type_ v1 in G.T v1
   | Decl v1 -> let v1 = decl v1 in raise Todo
-  | I v1 -> let v1 = import v1 in raise Todo
+  | I v1 -> let v1 = import v1 in G.S (G.DirectiveStmt v1)
   | P v1 -> let v1 = program v1 in G.Pr v1
   | Ident v1 -> let v1 = ident v1 in G.Id v1
   | Ss v1 -> let v1 = list stmt v1 in raise Todo
