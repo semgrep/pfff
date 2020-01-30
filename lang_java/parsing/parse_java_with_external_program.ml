@@ -12,10 +12,12 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common
 
+open Common
 open Ast_java
 module J = Json_type
+module JI = Json_io
+
 (* module PI = Parse_info *)
 
 (*****************************************************************************)
@@ -50,8 +52,12 @@ let json_of_filename_with_external_prog _file =
    * temporary JSON output, and read this JSON output
    * (or use a pipe to the external program to avoid using an
    *  intermediate temporary file)
-   *)
-  raise Todo
+   *) 
+  let file = "results.json" in 
+  let line = "node lang_java/tree_sitter/tree-sitter-parser.js " ^ _file ^ " > " ^ file in
+  let _ = Sys.command line in
+  let json = JI.load_json file in
+  json
 
 (*****************************************************************************)
 (* JSON boilerplate (we should find a way to generate this code) *)
@@ -118,55 +124,47 @@ let program_of_tree_sitter_json _file json =
      "type", J.String "class_declaration";
      "startPosition", _;
       "endPosition", _;
-     "children", xs;
-    ] -> Class { 
-          cl_name = ident xs;
+     "children", J.Array xs;
+    ] -> let identity = 
+      match xs with 
+        | _::J.Object ["type", J.String "identifier"; "startPosition", _; "endPosition", _; "children", _;]::_ ->  wrap "void" 
+        | _ -> wrap "void"
+      in 
+      let bodies = 
+      match xs with
+        | _::J.Object ["type", J.String "class_body"; "startPosition", _; "endPosition", _; "children", b;]::_ -> list "decl" method_decl b
+        | _ -> []
+      in
+        Class { 
+          cl_name = identity;
           cl_kind = ClassRegular;
-          cl_body = class_body xs;
+          cl_body = bodies;
           cl_mods = []; cl_extends = None; cl_impls = []; cl_tparams = [];
           } 
    | x -> error "decl" x
-
-  and ident = function
-   | J.Object [
-     "type", J.String "identifier";
-     "startPosition", _;
-      "endPosition", _;
-     "children", _;
-    ] -> wrap "void"
-   | x -> error "ident" x 
-
-  and class_body = function
-   | J.Object [
-     "type", J.String "class_body";
-     "startPosition", _;
-      "endPosition", _;
-     "children", xs;
-    ] ->  list "decl" method_decl xs
-   | x -> error "class_body" x
 
   and method_decl = function
   | J.Object [
      "type", J.String "method_declaration";
      "startPosition", _;
       "endPosition", _;
-     "children", xs;
+     "children", _;
     ] ->  Method {
-      m_var = { name = ident xs; mods = []; type_ = Some (typ xs); };
+      m_var = { name = wrap "str"; mods = []; type_ = None; };
       m_formals = [];
       m_throws = [];
-      m_body = block xs;
+      m_body = Empty;
     }
-   | x -> error "class_body" x
+   | x -> error "method_decl" x
 
-  and typ = function
+  (* and typ = function
   | J.Object [
      "type", J.String "void_type";
      "startPosition", _;
       "endPosition", _;
      "children", _;
     ] ->  TBasic (wrap "void")
-   | x -> error "class_body" x
+   | x -> error "typ" x
 
   and block = function
   | J.Object [
@@ -175,7 +173,7 @@ let program_of_tree_sitter_json _file json =
       "endPosition", _;
      "children", xs;
     ] ->  Return (Some (expr xs))
-   | x -> error "class_body" x
+   | x -> error "block" x
 
   and expr = function
   | J.Object [
@@ -184,7 +182,7 @@ let program_of_tree_sitter_json _file json =
       "endPosition", _;
      "children", _;
     ] ->  Literal (Int (wrap "str"))
-   | x -> error "class_body" x
+   | x -> error "expr" x *)
 
 
   (* and package_declaration = function

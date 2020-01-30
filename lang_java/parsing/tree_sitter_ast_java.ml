@@ -73,22 +73,31 @@ and cast_expression = {
 }
 
 and assignment_expression = {
-  left: _ambiguous_name * field_access * array_access;
+  left: interm17;
   operator: string wrap;
   right: _expression;
 }
 
-and binary_expression = string wrap
+and interm17 = 
+ | Ambiguous5 of _ambiguous_name
+ | Field4 of field_access
+ | Array3 of array_access
+
+and binary_expression = {
+  left2: _expression;
+  right2: _expression;
+}
 
 
 and instanceof_expression = {
   left1: _expression;
+  operator1: string wrap;
   right1: _type;
 }
 
 and lambda_expression = {
-  body: interm15 option;
-  parameters1: interm16 option;
+  body: interm15;
+  parameters1: interm16;
 }
 
 and interm15 =
@@ -109,9 +118,12 @@ and ternary_expression = {
   alternative: _expression;
 }
 
-and unary_expression = string wrap
+and unary_expression = {
+  operator2: string wrap;
+  operand: _expression;
+}
 
-and update_expression = string wrap
+and update_expression = _expression
  
 and _primary =
 | Literal of _literal
@@ -154,7 +166,7 @@ and object_creation_expression =
 
 
 and _unqualified_object_creation_expression = {
-  type_arguments1: type_arguments;
+  type_arguments1: type_arguments option;
   t_type1: _simple_type;
   arguments1: argument_list;
   class_body: class_body option;
@@ -435,8 +447,8 @@ and enum_body_declarations = ( _class_body_declaration list)
 and enum_constant = {
   mods4: modifiers option;
   name7: identifier;
-  arguments4: argument_list;
-  body11: class_body;
+  arguments4: argument_list option;
+  body11: class_body option;
 }
 
 and class_declaration = {

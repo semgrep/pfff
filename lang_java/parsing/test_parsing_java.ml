@@ -145,6 +145,14 @@ let test_parse_json_tree_sitter file =
   let str = Ocaml.string_of_v v in
   pr str
 
+let test_parse_file_tree_sitter file =
+  let ast = Parse_java_with_external_program.parse file in
+
+  (* just dump it back, to double check *)
+  let v = Meta_ast_java.vof_any (Ast_java.AProgram ast) in
+  let str = Ocaml.string_of_v v in
+  pr str
+
 (*****************************************************************************)
 (* Main entry for Arg *)
 (*****************************************************************************)
@@ -162,6 +170,8 @@ let actions () = [
   Common.mk_action_1_arg test_visitor;
   "-visitor_java_print", "   <file>", 
   Common.mk_action_1_arg test_visitor_print;
-  "-parse_json_tree_sitter_new", "   <file>", 
+  "-parse_json_tree_sitter", "   <file>", 
   Common.mk_action_1_arg test_parse_json_tree_sitter;
+  "-parse_file_tree_sitter", "   <file>", 
+  Common.mk_action_1_arg test_parse_file_tree_sitter;
 ]
