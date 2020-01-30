@@ -59,13 +59,21 @@ let return_type_of_results results =
             | { G.ptype = None; _ } -> raise Impossible
             ))
 
+let list_to_tuple_or_expr xs =
+  match xs with
+  | [] -> raise Impossible
+  | [x] -> x
+  | xs -> G.Tuple xs
+
 let mk_func_def params ret st =
  { G.
     fparams = params |> List.map (fun x -> G.ParamClassic x);
     frettype = Some ret;
     fbody = st;
   }
-      
+
+let ident_to_expr id =
+  G.Name ((id, G.empty_name_info), G.empty_id_info())
       
 
 (*****************************************************************************)
@@ -283,30 +291,42 @@ and constant_expr v = expr v
 
 and stmt =
   function
-  | DeclStmts v1 -> let v1 = list decl v1 in raise Todo
-  | Block v1 -> let v1 = list stmt v1 in raise Todo
-  | Empty -> raise Todo
-  | ExprStmt v1 -> let v1 = expr v1 in raise Todo
+  | DeclStmts v1 -> 
+      let v1 = list decl v1 in 
+      raise Todo
+  | Block v1 -> let v1 = list stmt v1 in 
+      G.Block v1
+  | Empty -> 
+      G.Block []
+  | ExprStmt v1 -> let v1 = expr v1 in 
+      G.ExprStmt v1
+  (* nice language! Assigns are at statement level! *)
   | Assign ((v1, v2, v3)) ->
       let v1 = list expr v1
       and v2 = tok v2
       and v3 = list expr v3
-      in raise Todo
+      in
+      G.ExprStmt (G.Assign (G.Tuple v1, v2, G.Tuple v3))
   | DShortVars ((v1, v2, v3)) ->
       let v1 = list expr v1
       and v2 = tok v2
       and v3 = list expr v3
-      in raise Todo
+      in
+      (* use OtherExpr? *)
+      G.ExprStmt (G.Assign (G.Tuple v1, v2, G.Tuple v3))
   | AssignOp ((v1, v2, v3)) ->
       let v1 = expr v1
       and v2 = wrap arithmetic_operator v2
       and v3 = expr v3
-      in raise Todo
+      in
+      G.ExprStmt (G.AssignOp (v1, v2, v3))
   | IncDec ((v1, v2, v3)) ->
       let v1 = expr v1
-      and v2 = wrap incr_decr v2
+      and (v2, tok) = wrap incr_decr v2
       and v3 = prefix_postfix v3
-      in raise Todo
+      in
+      G.ExprStmt (G.Call (G.IdSpecial (G.IncrDecr (v2, v3), tok), 
+          [G.Arg v1]))
   | If ((v1, v2, v3, v4)) ->
       let v1 = option stmt v1
       and v2 = expr v2
@@ -340,15 +360,26 @@ and stmt =
       and v4 = stmt v4
       in raise Todo
   | Return ((v1, v2)) ->
-      let v1 = tok v1 and v2 = option (list expr) v2 in raise Todo
-  | Break ((v1, v2)) -> let v1 = tok v1 and v2 = option ident v2 in raise Todo
+      let v1 = tok v1 and v2 = option (list expr) v2 in
+      G.Return (v2 |> Common.map_opt (list_to_tuple_or_expr))
+  | Break ((v1, v2)) -> 
+      let v1 = tok v1 and v2 = option ident v2 in 
+      G.Break (v2 |> Common.map_opt ident_to_expr)
   | Continue ((v1, v2)) ->
-      let v1 = tok v1 and v2 = option ident v2 in raise Todo
-  | Goto ((v1, v2)) -> let v1 = tok v1 and v2 = ident v2 in raise Todo
-  | Fallthrough v1 -> let v1 = tok v1 in raise Todo
-  | Label ((v1, v2)) -> let v1 = ident v1 and v2 = stmt v2 in raise Todo
-  | Go ((v1, v2)) -> let v1 = tok v1 and v2 = call_expr v2 in raise Todo
-  | Defer ((v1, v2)) -> let v1 = tok v1 and v2 = call_expr v2 in raise Todo
+      let v1 = tok v1 and v2 = option ident v2 in
+      G.Continue (v2 |> Common.map_opt ident_to_expr)
+  | Goto ((v1, v2)) -> let v1 = tok v1 and v2 = ident v2 in 
+      G.Goto v2
+  | Fallthrough v1 -> let v1 = tok v1 in 
+      raise Todo
+  | Label ((v1, v2)) -> let v1 = ident v1 and v2 = stmt v2 in 
+      G.Label (v1, v2)
+  | Go ((v1, v2)) -> 
+      let v1 = tok v1 and v2 = call_expr v2 in 
+      raise Todo
+  | Defer ((v1, v2)) -> 
+      let v1 = tok v1 and v2 = call_expr v2 in 
+      raise Todo
 
 and case_clause (v1, v2) = let v1 = case_kind v1 and v2 = stmt v2 in ()
 and case_kind =
