@@ -402,11 +402,14 @@ and stmt =
   | OtherStmt of other_stmt_operator * any list
 
   (* newscope: *)
+  (* less: could merge even more with pattern
+   * list = PatDisj and Default = PatUnderscore, 
+   * so case_and_body of Switch <=> action of MatchPattern
+   *)
   and case_and_body = case list * stmt
-   (* less: could be merged with pattern *)
     and case  =
     | Case of pattern
-    | Default (* <=> PatUnderscore *)
+    | Default
 
   (* newvar: newscope: *)
   and catch = pattern * stmt
