@@ -126,14 +126,18 @@ let compile_pattern (expr, fname, fpname) varname pat =
      (match pat with
      | C.PatId _ ->
        let init_builder name = 
-         A.ObjAccess (A.Id (varname, ref A.NotResolved), A.PN name)
+         A.ObjAccess (A.Id (varname, ref A.NotResolved), 
+                    Parse_info.fake_info ".",
+                    A.PN name)
        in
        var_of_simple_pattern (expr, fname) init_builder pat 
      (* { x: y, z } = varname; *)
      | C.PatProp (pname, _tok, pat) ->
        let pname = fpname pname in
        let init_builder _name = 
-         A.ObjAccess (A.Id (varname, ref A.NotResolved), pname)
+         A.ObjAccess (A.Id (varname, ref A.NotResolved), 
+                    Parse_info.fake_info ".",
+                    pname)
        in
        var_of_simple_pattern (expr, fname) init_builder pat
      | _ -> failwith "TODO: PatObj pattern not handled"
@@ -153,6 +157,7 @@ let compile_pattern (expr, fname, fpname) varname pat =
       | C.PatDots (tok, pat) -> 
          let init_builder (_name, _tok) = 
           A.Apply(A.ObjAccess (A.Id (varname, ref A.NotResolved),
+                               Parse_info.fake_info ".",
                               (A.PN (("slice", tok)))),
                   [A.Num (string_of_int !idx, tok)])
         in
@@ -213,6 +218,7 @@ let forof (lhs_var, tok, e2, st) (expr, stmt, var_binding) =
   let step = "!step!", tok in
   let symbol_iterator = 
     A.ObjAccess (A.Id (("Symbol", tok), ref A.NotResolved),
+                 Parse_info.fake_info ".",
                  A.PN ("iterator", tok))
   in
 
@@ -230,12 +236,15 @@ let forof (lhs_var, tok, e2, st) (expr, stmt, var_binding) =
                          Parse_info.fake_info "=",
                           A.Apply (A.ObjAccess (A.Id (iterator, 
                                                       ref A.NotResolved),
+                                                Parse_info.fake_info ".",
                                                 A.PN ("next", tok)),
                                    [])),
+        Parse_info.fake_info ".",
         A.PN ("done", tok))
        ])
   in
   let step_value = A.ObjAccess (A.Id (step, ref A.NotResolved),
+                                Parse_info.fake_info ".",
                                A.PN ("value", tok)) 
   in
   let step_value_cst = 

@@ -157,11 +157,12 @@ and expr (x: expr) =
   | Class (v1, _v2TODO) -> 
       let def, _more_attrsTODOEMPTY  = class_ v1 in
       G.AnonClass def
-  | ObjAccess ((v1, v2)) ->
+  | ObjAccess ((v1, t, v2)) ->
       let v1 = expr v1 in
       let v2 = property_name v2 in
+      let t = info t in
       (match v2 with
-      | Left n -> G.ObjAccess (v1, n)
+      | Left n -> G.DotAccess (v1, t, n)
       | Right e -> G.OtherExpr (G.OE_ObjAccess_PN_Computed, [G.E v1; G.E e])
       )
   | Fun ((v1, _v2TODO)) -> 

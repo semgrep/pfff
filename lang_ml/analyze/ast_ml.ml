@@ -89,13 +89,13 @@ type expr =
   | RefAssign of expr * tok (* := *) * expr
 
   (* special case of RefAccess and RefAssign *)
-  | FieldAccess of expr * name
-  | FieldAssign of expr * name * (* <- *) expr
+  | FieldAccess of expr * tok * name
+  | FieldAssign of expr * tok * name * tok (* <- *) * expr
 
   | Record of expr option (* with *) * (name * expr) list
 
   | New of tok * name
-  | ObjAccess of expr * ident
+  | ObjAccess of expr * tok (* # *) * ident
   
 
   (* > 1 elt for mutually recursive let (let x and y and z) *)

@@ -101,12 +101,12 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
     (* uses *)
     V.kexpr = (fun (k, _) e ->
       (match e with
-      | Call (Dot (e, ident), args) ->
+      | Call (Dot (e, _, ident), args) ->
           tag_ident ident (HC.Entity (Method, (Use2 fake_no_use2)));
           k e;
           List.iter k args
         
-      | Dot (e, ident) ->
+      | Dot (e, _t, ident) ->
           tag_ident ident (Entity (Field, (Use2 fake_no_use2)));
           k e
       | _ -> k e

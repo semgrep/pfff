@@ -115,7 +115,7 @@ let rec visit_expr hook lhs expr =
 
   (* composite lvalues that are actually not themselves lvalues *)
 
-  | ObjAccess(e, _id) ->
+  | DotAccess(e, _, _id) ->
     (* bugfix: this is not recl here! in 'x.fld = 2', x itself is not
      * an lvalue; 'x.fld' is *)
     recr e 

@@ -152,11 +152,12 @@ let rec expr (x: expr) =
                      xs |> List.map (fun (other, e) ->
                        G.E (G.OtherExpr (other, [G.E e]))))
       )
-  | Attribute ((v1, v2, v3)) ->
+  | Attribute ((v1, t, v2, v3)) ->
       let v1 = expr v1 
+      and t = info t 
       and v2 = name v2 
       and _v3TODO = expr_context v3 in 
-      G.ObjAccess (v1, v2)
+      G.DotAccess (v1, t, v2)
 
   | DictOrSet (CompList v) -> 
       let v = list dictorset_elt v in 

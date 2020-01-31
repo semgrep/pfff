@@ -122,8 +122,10 @@ and v_expr (x: expr) =
   | Obj v1 -> let v1 = v_obj_ v1 in ()
   | Ellipses v1 -> let v1 = v_tok v1 in ()
   | Class (v1, v2) -> let v1 = v_class_ v1 in let v2 = v_option v_name v2 in ()
-  | ObjAccess ((v1, v2)) ->
-      let v1 = v_expr v1 and v2 = v_property_name v2 in ()
+  | ObjAccess ((v1, t, v2)) ->
+      let v1 = v_expr v1 and v2 = v_property_name v2 in
+      let t = v_tok t in
+      ()
   | Fun ((v1, v2)) -> let v1 = v_fun_ v1 and v2 = v_option v_name v2 in ()
   | Apply ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_list v_expr v2 in ()
   | Arr ((v1)) -> let v1 = v_list v_expr v1 in ()

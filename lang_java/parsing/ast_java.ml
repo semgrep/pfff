@@ -180,7 +180,7 @@ and expr =
    * The problem is that more things in x.y.z can be a Dot, but to know
    * that requires semantic information about the type of x and y.
    *)
-  | Dot of expr * ident
+  | Dot of expr * tok * ident
 
   | ArrayAccess of expr * expr
 

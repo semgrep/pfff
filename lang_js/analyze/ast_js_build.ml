@@ -471,9 +471,9 @@ and expr env = function
     let e1 = expr env e1 in
     let e2 = expr env e2 in
     binop env op e1 e2
-  | C.Period (e, _, n) ->
+  | C.Period (e, t, n) ->
     let e = expr env e in
-    A.ObjAccess (e, A.PN (name env n))
+    A.ObjAccess (e, t, A.PN (name env n))
   | C.Bracket (e, e2) ->
     (* let e = expr env e in
     A.ObjAccess (e, A.PN_Computed (expr env (paren e2)))

@@ -237,14 +237,14 @@ and v_expressionbis =
       in ()
   | ArrayAccess ((v1, v2)) ->
       let v1 = v_expression v1 and v2 = v_bracket v_expression v2 in ()
-  | RecordAccess ((v1, v2)) ->
-      let v1 = v_expression v1 and v2 = v_name v2 in ()
-  | RecordPtAccess ((v1, v2)) ->
-      let v1 = v_expression v1 and v2 = v_name v2 in ()
-  | RecordStarAccess ((v1, v2)) ->
-      let v1 = v_expression v1 and v2 = v_expression v2 in ()
-  | RecordPtStarAccess ((v1, v2)) ->
-      let v1 = v_expression v1 and v2 = v_expression v2 in ()
+  | RecordAccess ((v1, t, v2)) ->
+      let v1 = v_expression v1 and t = v_tok t and v2 = v_name v2 in ()
+  | RecordPtAccess ((v1, t, v2)) ->
+      let v1 = v_expression v1 and t = v_tok t and v2 = v_name v2 in ()
+  | RecordStarAccess ((v1, t, v2)) ->
+      let v1 = v_expression v1 and t = v_tok t and v2 = v_expression v2 in ()
+  | RecordPtStarAccess ((v1, t, v2)) ->
+      let v1 = v_expression v1 and t = v_tok t and v2 = v_expression v2 in ()
   | SizeOfExpr ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_expression v2 in ()
   | SizeOfType ((v1, v2)) ->
       let v1 = v_tok v1 and v2 = v_paren v_fullType v2 in ()

@@ -104,11 +104,12 @@ let rec vof_expr =
       in Ocaml.VSum (("Yield", [ v1; v2 ]))
   | Await v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Await", [ v1 ]))
   | Repr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Repr", [ v1 ]))
-  | Attribute ((v1, v2, v3)) ->
+  | Attribute ((v1, t, v2, v3)) ->
       let v1 = vof_expr v1
+      and t = vof_tok t
       and v2 = vof_name v2
       and v3 = vof_expr_context v3
-      in Ocaml.VSum (("Attribute", [ v1; v2; v3 ]))
+      in Ocaml.VSum (("Attribute", [ v1; t; v2; v3 ]))
 and vof_number =
   function
   | Int v1 ->

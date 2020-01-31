@@ -100,10 +100,11 @@ and vof_expr =
      let v1 = vof_class_ v1 in 
      let v2 = Ocaml.vof_option vof_name v2 in
      Ocaml.VSum (("Class", [ v1; v2 ]))
-  | ObjAccess ((v1, v2)) ->
+  | ObjAccess ((v1, t, v2)) ->
       let v1 = vof_expr v1
       and v2 = vof_property_name v2
-      in Ocaml.VSum (("ObjAccess", [ v1; v2 ]))
+      and t = vof_tok t
+      in Ocaml.VSum (("ObjAccess", [ v1; t; v2 ]))
   | Fun ((v1, v2)) ->
       let v1 = vof_fun_ v1
       and v2 = Ocaml.vof_option vof_name v2

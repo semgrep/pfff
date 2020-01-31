@@ -147,8 +147,9 @@ and map_expr x =
       in AssignOp ((v1, v2, v3))
   | LetPattern ((v1, v2)) ->
       let v1 = map_pattern v1 and v2 = map_expr v2 in LetPattern ((v1, v2))
-  | ObjAccess ((v1, v2)) ->
-      let v1 = map_expr v1 and v2 = map_ident v2 in ObjAccess ((v1, v2))
+  | DotAccess ((v1, t, v2)) ->
+      let v1 = map_expr v1 and t = map_tok t and v2 = map_ident v2 in
+      DotAccess ((v1, t, v2))
   | ArrayAccess ((v1, v2)) ->
       let v1 = map_expr v1 and v2 = map_expr v2 in ArrayAccess ((v1, v2))
   | SliceAccess ((v1, v2, v3, v4)) ->

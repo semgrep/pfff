@@ -158,10 +158,11 @@ and vof_expr =
       let v1 = vof_expr v1
       and v2 = vof_arguments v2
       in Ocaml.VSum (("Call", [ v1; v2 ]))
-  | Dot ((v1, v2)) ->
+  | Dot ((v1, t, v2)) ->
       let v1 = vof_expr v1
+      and t = vof_tok t
       and v2 = vof_ident v2
-      in Ocaml.VSum (("Dot", [ v1; v2 ]))
+      in Ocaml.VSum (("Dot", [ v1; t; v2 ]))
   | ArrayAccess ((v1, v2)) ->
       let v1 = vof_expr v1
       and v2 = vof_expr v2

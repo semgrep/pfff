@@ -147,10 +147,11 @@ and map_expr =
     let v1 = map_class_ v1 in
     let v2 = map_option map_name v2 in
     Class ((v1, v2))
-  | ObjAccess ((v1, v2)) ->
+  | ObjAccess ((v1, t, v2)) ->
       let v1 = map_expr v1
       and v2 = map_property_name v2
-      in ObjAccess ((v1, v2))
+      and t = map_tok t 
+      in ObjAccess ((v1, t, v2))
   | Arr v1 -> let v1 = map_of_list map_expr v1 in Arr ((v1))
   | ArrAccess ((v1, v2)) ->
       let v1 = map_expr v1 and v2 = map_expr v2 in ArrAccess ((v1, v2))

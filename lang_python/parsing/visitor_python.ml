@@ -129,8 +129,9 @@ and v_expr (x: expr) =
   | Yield ((v1, v2)) -> let v1 = v_option v_expr v1 and v2 = v_bool v2 in ()
   | Await v1 -> let v1 = v_expr v1 in ()
   | Repr v1 -> let v1 = v_expr v1 in ()
-  | Attribute ((v1, v2, v3)) ->
-      let v1 = v_expr v1 and v2 = v_name v2 and v3 = v_expr_context v3 in ()
+  | Attribute ((v1, t, v2, v3)) ->
+      let v1 = v_expr v1 and t = v_tok t and v2 = v_name v2 
+        and v3 = v_expr_context v3 in ()
   in
   vin.kexpr (k, all_functions) x
 

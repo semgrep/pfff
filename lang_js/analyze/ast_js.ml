@@ -171,7 +171,7 @@ and expr =
   (* less: could be transformed in a series of Assign(ObjAccess, ...) *)
   | Obj of obj_
   | Class of class_ * name option (* when assigned in module.exports  *)
-  | ObjAccess of expr * property_name
+  | ObjAccess of expr * tok * property_name
   (* we could transform it in an Obj but can be useful to remember 
    * the difference in further analysis (e.g., in the abstract interpreter) *)
   | Arr of expr list  

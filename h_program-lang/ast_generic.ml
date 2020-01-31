@@ -214,23 +214,23 @@ and expr =
    * less: should be in stmt, but most languages allow this at expr level :(
    * update: should even be in a separate simple_stmt, as in Go
    *)
-  | Assign of expr * tok (* =, or sometimes := in Go *) * expr
+  | Assign of expr * tok (* =, or sometimes := in Go, <- in ML *) * expr
   (* less: should desugar in Assign, should be only binary_operator *)
   | AssignOp of expr * arithmetic_operator wrap * expr
   (* newvar:! newscope:? in OCaml yes but we miss the 'in' part here  *)
   | LetPattern of pattern * expr
 
-  (* can also be used for Record, Class, or Module access depending on expr,
-   * in which case it should be rewritten as a Name with a better qualifier. 
+  (* can be used for Record, Class, or Module access depending on expr.
+   * In the last case it should be rewritten as a Name with a qualifier though.
    *)
-  | ObjAccess of expr * ident
+  | DotAccess of expr * tok (* ., ::, ->, # *) * ident
   (* in Js this is used for ObjAccess with a computed field name *)
   | ArrayAccess of expr * expr (* less: slice *)
   (* could also use ArrayAccess with a Tuple rhs, or use a special *)
   | SliceAccess of expr * 
       expr option (* lower *) * expr option (* upper *) * expr option (* step*)
 
-  | Conditional of expr * expr * expr
+  | Conditional of expr * expr * expr (* a.k.a ternary expression *)
   | MatchPattern of expr * action list
   (* less: TryFunctional *)
 

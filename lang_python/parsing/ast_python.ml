@@ -153,7 +153,8 @@ type expr =
 
   | Repr of expr (* value *)
   (* =~ ObjAccess *)
-  | Attribute of expr (* value *) * name (* attr *) * expr_context (* ctx *)
+  | Attribute of expr (* value *) * tok (* . *) * name (* attr *) * 
+       expr_context (* ctx *)
 
   and number =
     | Int of string wrap
@@ -382,7 +383,7 @@ let str_of_name = fst
 (* Accessors *)
 (*****************************************************************************)
 let context_of_expr = function
-  | Attribute (_, _, ctx) -> Some ctx
+  | Attribute (_, _, _, ctx) -> Some ctx
   | Subscript (_, _, ctx) -> Some ctx
   | Name (_, ctx, _)   -> Some ctx
   | List (_, ctx)         -> Some ctx

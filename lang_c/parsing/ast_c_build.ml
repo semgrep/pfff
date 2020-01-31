@@ -522,10 +522,11 @@ and expr env e =
   | Id (n, _) -> A.Id (name env n)
   | Ellipses tok -> A.Ellipses tok
 
-  | RecordAccess (e, n) ->
-      A.RecordPtAccess (A.Unary (expr env e, (GetRef,List.hd toks)), name env n)
-  | RecordPtAccess (e, n) ->
-      A.RecordPtAccess (expr env e, name env n)
+  | RecordAccess (e, t, n) ->
+      A.RecordPtAccess (A.Unary (expr env e, (GetRef,List.hd toks)), 
+        t, name env n)
+  | RecordPtAccess (e, t, n) ->
+      A.RecordPtAccess (expr env e, t, name env n)
 
   | Cast ((_, ft, _), e) -> 
       A.Cast (full_type env ft, expr env e)
@@ -573,7 +574,7 @@ and expr env e =
   | Throw _|DeleteArray (_, _)|Delete (_, _)|New (_, _, _, _, _)
   | CplusplusCast (_, _, _)
   | This _
-  | RecordPtStarAccess (_, _)|RecordStarAccess (_, _)
+  | RecordPtStarAccess (_, _, _)|RecordStarAccess (_, _, _)
   | TypeId (_, _)
       ->
       debug (Expr e); raise CplusplusConstruct

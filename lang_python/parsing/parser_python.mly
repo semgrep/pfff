@@ -52,8 +52,8 @@ let to_list = function
 let rec set_expr_ctx ctx = function
   | Name (id, _, x) ->
       Name (id, ctx, x)
-  | Attribute (value, attr, _) ->
-      Attribute (value, attr, ctx)
+  | Attribute (value, t, attr, _) ->
+      Attribute (value, t, attr, ctx)
   | Subscript (value, slice, _) ->
       Subscript (value, slice, ctx)
 
@@ -388,7 +388,7 @@ decorator:
 
 decorator_name:
   | NAME                    { Name ($1, Load, ref NotResolved) }
-  | decorator_name DOT NAME { Attribute ($1, $3, Load) }
+  | decorator_name DOT NAME { Attribute ($1, $2, $3, Load) }
 
 /*(*************************************************************************)*/
 /*(*1 Statement *)*/
@@ -624,7 +624,7 @@ atom_and_trailers:
         | [s] -> Subscript ($1, [s], Load)
         | l -> Subscript ($1, (l), Load) }
 
-  | atom_and_trailers DOT NAME { Attribute ($1, $3, Load) }
+  | atom_and_trailers DOT NAME { Attribute ($1, $2, $3, Load) }
 
 /*(*----------------------------*)*/
 /*(*2 Atom *)*/

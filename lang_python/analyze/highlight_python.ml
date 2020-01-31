@@ -150,7 +150,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
        | Name (name, _ctx, _resolved) ->
            let kind = E.Function in
            tag_name name (Entity (kind, use2))
-       | Ast_python.Attribute (_e, name, _ctx) ->
+       | Ast_python.Attribute (_e, _t, name, _ctx) ->
            let kind = E.Method in
            tag_name name (Entity (kind, use2))
        | _ -> ()
@@ -160,7 +160,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
           | _ -> ();
        );
        k x
-     | Ast_python.Attribute (_e, name, _ctx) ->
+     | Ast_python.Attribute (_e, _, name, _ctx) ->
          (match () with
          | _ when !in_type ->
           (match fst name with

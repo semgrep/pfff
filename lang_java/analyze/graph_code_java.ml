@@ -760,7 +760,7 @@ and expr env = function
   | Call (e, es) ->
       expr env e;
       exprs env es
-  | Dot (e, _idTODO) ->
+  | Dot (e, _t, _idTODO) ->
       (* todo: match e, and try lookup method/field
        * if e is a Name, lookup it, and if a class then
        * lookup children. If local ... then need get its type
