@@ -893,8 +893,13 @@ let basic_field id typeopt =
 
 let expr_to_arg e = 
   Arg e
-(* should fix those, try to transform when can *)
+(* Should fix those, try to transform in PatLiteral/... when can.
+ * Note that in Go it's ok to have a complex expressions. It is just
+ * matched for equality with the thing it's matched against, so in that
+ * case it should be a pattern like | _ when expr = x.
+ *)
 let expr_to_pattern e =
+  (* TODO: diconstruct e and generate the right pattern (PatLiteral, ...) *)
   OtherPat (OP_ExprPattern, [E e])
 
 (* see also Java_to_generic.entity_to_param *)

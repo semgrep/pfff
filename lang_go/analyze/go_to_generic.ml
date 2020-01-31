@@ -414,14 +414,17 @@ and case_clause (v1, v2) = let v1 = case_kind v1 and v2 = stmt v2 in
   v1, v2
 and case_kind =
   function
-  | CaseExprs v1 -> let _v1 = list expr_or_type v1 in 
-      raise Todo
+  | CaseExprs v1 -> let xs = list expr_or_type v1 in 
+      xs |> List.map (function
+        | Left e -> G.Case (G.expr_to_pattern e)
+        | Right t -> G.Case (G.PatType t)
+      )
   | CaseAssign ((v1, v2, v3)) ->
       let _v1 = list expr_or_type v1
-      and _v2 = tok v2
+      and v2 = tok v2
       and _v3 = expr v3
       in 
-      raise Todo
+      error v2 "TODO: CaseAssign"
   | CaseDefault v1 -> let _v1 = tok v1 in
       [G.Default]
 
