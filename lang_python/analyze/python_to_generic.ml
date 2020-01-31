@@ -323,11 +323,11 @@ and parameters xs =
      let n = name n in
      let topt = option type_ topt in
      let eopt = option expr eopt in
-     G.ParamClassic { (G.basic_param n) with G.ptype = topt; pdefault = eopt; }
+     G.ParamClassic { (G.param_of_id n) with G.ptype = topt; pdefault = eopt; }
   | ParamStar (n, topt) ->
      let n = name n in
      let topt = option type_ topt in
-     G.ParamClassic { (G.basic_param n) with
+     G.ParamClassic { (G.param_of_id n) with
        G.ptype = topt; pattrs = [G.Variadic]; }
    | ParamPow (n, topt) ->
      let n = name n in
@@ -418,7 +418,7 @@ and stmt x =
       and body = list_stmt1 v3
       and orelse = list stmt v4
       in
-      let header = G.ForEach (G.OtherPat (G.OP_Expr, [G.E foreach]), ins) in
+      let header = G.ForEach (G.expr_to_pattern foreach, ins) in
       (match orelse with
       | [] -> G.For (header, body)
       | _ -> G.Block [
@@ -433,7 +433,7 @@ and stmt x =
       let e =
         match v2 with
         | None -> v1
-        | Some e2 -> G.LetPattern (G.OtherPat (G.OP_Expr, [G.E e2]), v1)
+        | Some e2 -> G.LetPattern (G.expr_to_pattern e2, v1)
       in
       G.OtherStmtWithStmt (G.OSWS_With, e, v3)
 
@@ -521,12 +521,12 @@ and excepthandler =
       in 
       (match v1, v2 with
       | Some e, None ->
-        let pat = G.OtherPat (G.OP_Expr, [G.E e]) in
+        let pat = G.expr_to_pattern e in
         pat, v3
       | _ ->
         let e1 = G.opt_to_nop v1 in
         let e2 = G.opt_to_nop v2 in
-        let pat = G.OtherPat (G.OP_Expr, [G.E e1; G.E e2]) in
+        let pat = G.expr_to_pattern (G.Tuple [e1;e2]) in
         pat, v3
       )
 

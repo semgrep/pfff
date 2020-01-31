@@ -346,7 +346,7 @@ and ident_label x =
 and stmts v = list stmt v
 
 and case = function 
-  | Case v1 -> let v1 = expr v1 in G.Case v1
+  | Case v1 -> let v1 = expr v1 in G.Case (G.expr_to_pattern v1)
   | Default -> G.Default
 
 and cases v = list case v

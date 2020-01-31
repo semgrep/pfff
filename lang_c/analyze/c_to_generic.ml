@@ -264,7 +264,7 @@ let rec stmt =
 and case =
   function
   | Case ((v1, v2)) -> let v1 = expr v1 and v2 = list stmt v2 in 
-      [G.Case v1], G.stmt1 v2
+      [G.Case (G.expr_to_pattern v1)], G.stmt1 v2
   | Default v1 -> let v1 = list stmt v1 in 
       [G.Default], G.stmt1 v1
 and

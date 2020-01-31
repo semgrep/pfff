@@ -356,7 +356,7 @@ and stmt =
         (G.Switch (v0, G.opt_to_nop v2, v3))
   | Select ((v1, v2)) ->
       let v1 = tok v1 and v2 = list comm_clause v2 in 
-      raise Todo
+      G.Switch (v1, G.Nop, v2)
   | For ((v1, v2, v3), v4) ->
       let v1 = option simple v1
       and v2 = option expr v2
@@ -382,8 +382,7 @@ and stmt =
          let pattern = G.PatUnderscore (fake_info ()) in
          G.For (G.ForEach (pattern, v3), v4)
       | Some (xs, _tokEqOrColonEqTODO) -> 
-          let pattern = G.PatTuple (xs |> List.map (fun e ->
-                    G.OtherPat (OP_Expr, [G.E e]))) in
+          let pattern = G.PatTuple (xs |> List.map G.expr_to_pattern) in
           G.For (G.ForEach (pattern, v3), v4)
       )
   | Return ((v1, v2)) ->

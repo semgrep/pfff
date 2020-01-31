@@ -378,7 +378,7 @@ and map_case_and_body (v1, v2) =
 
 and map_case =
   function
-  | Case v1 -> let v1 = map_expr v1 in Case ((v1))
+  | Case v1 -> let v1 = map_pattern v1 in Case ((v1))
   | Default -> Default
 
 and map_catch (v1, v2) =

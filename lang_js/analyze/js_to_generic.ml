@@ -254,14 +254,14 @@ and for_header =
             G.OtherPat (G.OP_Var, [G.Def v])
         | Right e ->
             let e = expr e in
-            G.OtherPat (G.OP_Expr, [G.E e])
+            G.expr_to_pattern e
       in
       G.ForEach (pattern, v2)
 
 and case =
   function
   | Case ((v1, v2)) -> let v1 = expr v1 and v2 = stmt v2 in
-      [G.Case v1], v2
+      [G.Case (G.expr_to_pattern v1)], v2
   | Default v1 -> let v1 = stmt v1 in
       [G.Default], v1
 

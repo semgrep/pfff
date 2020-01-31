@@ -405,8 +405,8 @@ and stmt =
   and case_and_body = case list * stmt
    (* less: could be merged with pattern *)
     and case  =
-    | Case of expr
-    | Default
+    | Case of pattern
+    | Default (* <=> PatUnderscore *)
 
   (* newvar: newscope: *)
   and catch = pattern * stmt
@@ -484,7 +484,7 @@ and pattern =
 
   and other_pattern_operator =
   (* Python *)
-  | OP_Expr (* todo: should transform in pattern when can *)
+  | OP_ExprPattern (* todo: should transform in pattern when can *)
   (* Javascript *)
   | OP_Var (* todo: should transform in pattern when can *)
 
@@ -858,10 +858,14 @@ let gensym () =
 let empty_name_info = 
   { name_qualifier = None; name_typeargs = None;}
 
-let empty_id_info () = 
-  { id_resolved = ref None;id_type     = ref None; }
+let empty_var = 
+  { vinit = None; vtype = None }
 
-let basic_param id = { 
+let empty_id_info () = 
+  { id_resolved = ref None; id_type = ref None; }
+
+
+let param_of_id id = { 
     pname = Some id;
     pdefault = None; ptype = None; pattrs = []; pinfo = empty_id_info ();
 }
@@ -880,11 +884,12 @@ let basic_field id typeopt =
   let entity = basic_entity id [] in
   FieldVar (entity, { vinit = None; vtype = typeopt})
 
-let empty_var () = 
-  { vinit = None; vtype = None }
 
 let expr_to_arg e = 
   Arg e
+(* should fix those, try to transform when can *)
+let expr_to_pattern e =
+  OtherPat (OP_ExprPattern, [E e])
 
 (* see also Java_to_generic.entity_to_param *)
 

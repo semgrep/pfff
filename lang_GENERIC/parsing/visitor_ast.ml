@@ -351,7 +351,7 @@ and v_stmt x =
   vin.kstmt (k, all_functions) x
 and v_other_stmt_with_stmt_operator _ = ()
 
-and v_case = function | Case v1 -> let v1 = v_expr v1 in () | Default -> ()
+and v_case = function | Case v1 -> let v1 = v_pattern v1 in () | Default -> ()
 and v_catch (v1, v2) = let v1 = v_pattern v1 and v2 = v_stmt v2 in ()
 and v_finally v = v_stmt v
 and v_label v = v_ident v
@@ -400,9 +400,7 @@ and v_pattern x =
       let v1 = v_other_pattern_operator v1 and v2 = v_list v_any v2 in ()
   in
   vin.kpattern (k, all_functions) x
-and v_other_pattern_operator = function 
- | OP_Expr -> ()
- | OP_Var -> ()
+and v_other_pattern_operator _ = ()
 
 and v_def x =
   let k x =

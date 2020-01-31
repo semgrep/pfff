@@ -462,7 +462,7 @@ and vof_case_and_body (v1, v2) =
   in Ocaml.VTuple [ v1; v2 ]
 and vof_case =
   function
-  | Case v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Case", [ v1 ]))
+  | Case v1 -> let v1 = vof_pattern v1 in Ocaml.VSum (("Case", [ v1 ]))
   | Default -> Ocaml.VSum (("Default", []))
 and vof_catch (v1, v2) =
   let v1 = vof_pattern v1 and v2 = vof_stmt v2 in Ocaml.VTuple [ v1; v2 ]
@@ -565,7 +565,7 @@ and vof_pattern =
       in Ocaml.VSum (("OtherPat", [ v1; v2 ]))
 and vof_other_pattern_operator =
   function
-  | OP_Expr -> Ocaml.VSum (("OP_Expr", []))
+  | OP_ExprPattern -> Ocaml.VSum (("OP_ExprPattern", []))
   | OP_Var -> Ocaml.VSum (("OP_Var", []))
 and vof_definition (v1, v2) =
   let v1 = vof_entity v1
