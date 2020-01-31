@@ -352,7 +352,7 @@ and stmt =
       and v3 = list case_clause v3
       in
       wrap_init_in_block_maybe v1 
-      (raise Todo)
+        (G.Switch (G.opt_to_nop v2, v3))
   | Select ((v1, v2)) ->
       let v1 = tok v1 and v2 = list comm_clause v2 in 
       raise Todo
@@ -362,7 +362,12 @@ and stmt =
       and v3 = option simple v3
       and v4 = stmt v4
       in
-      raise Todo
+      (* TODO: some of v1 are really ForInitVar *)
+      G.For (G.ForClassic (
+        (match v1 with None -> [] | Some e -> [ForInitExpr e]),
+        G.opt_to_nop v2,
+        G.opt_to_nop v3), v4)
+        
   | Range ((v1, v2, v3, v4)) ->
       let opt =  option 
           (fun (v1, v2) -> let v1 = list expr v1 and v2 = tok v2 in 
@@ -402,16 +407,20 @@ and stmt =
       let v1 = tok v1 and (e, args) = call_expr v2 in 
       G.OtherStmt (G.OS_Defer, [G.E (G.Call (e, args))])
 
-and case_clause (v1, v2) = let v1 = case_kind v1 and v2 = stmt v2 in ()
+and case_clause (v1, v2) = let v1 = case_kind v1 and v2 = stmt v2 in 
+  v1, v2
 and case_kind =
   function
-  | CaseExprs v1 -> let v1 = list expr_or_type v1 in ()
+  | CaseExprs v1 -> let v1 = list expr_or_type v1 in 
+      raise Todo
   | CaseAssign ((v1, v2, v3)) ->
       let v1 = list expr_or_type v1
       and v2 = tok v2
       and v3 = expr v3
-      in ()
-  | CaseDefault v1 -> let v1 = tok v1 in ()
+      in 
+      raise Todo
+  | CaseDefault v1 -> let v1 = tok v1 in
+      [G.Default]
 
 and comm_clause v = case_clause v
 
