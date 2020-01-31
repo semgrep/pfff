@@ -258,6 +258,7 @@ and expr =
   | TypeSwitchExpr ((v1, v2)) -> let _v1 = expr v1 and v2 = tok v2 in
       error v2 "TypeSwitchExpr should be handled in Switch statement"
   | ParenType v1 -> let _v1 = type_ v1 in
+      pr2_gen v1;
       error (ii_of_any (T v1) |> List.hd) "ParenType should disappear"
 
 and literal =
@@ -358,11 +359,26 @@ and stmt =
   | Switch ((v0, v1, v2, v3)) ->
       let v0 = tok v0 in
       let v1 = option simple v1
-      and v2 = option simple v2
+      and v2 = 
+        match v2 with
+        | None -> G.Nop
+        | Some s ->
+            (match s with
+            | ExprStmt (TypeSwitchExpr (e, tok1)) ->
+                let e = expr e in
+                G.Call (G.IdSpecial (G.Typeof, tok1), [G.Arg e])
+            | DShortVars (xs, tok1, [TypeSwitchExpr (e, tok2)]) ->
+                let xs = list expr xs in
+                let e = expr e in
+                G.Assign (list_to_tuple_or_expr xs, tok1,
+                G.Call (G.IdSpecial (G.Typeof, tok2), [G.Arg e])
+                  )
+            | s -> simple s
+            )   
       and v3 = list case_clause v3
       in
       wrap_init_in_block_maybe v1 
-        (G.Switch (v0, G.opt_to_nop v2, v3))
+        (G.Switch (v0, v2, v3))
   | Select ((v1, v2)) ->
       let v1 = tok v1 and v2 = list comm_clause v2 in 
       G.Switch (v1, G.Nop, v2)
@@ -423,10 +439,17 @@ and case_clause (v1, v2) = let v1 = case_kind v1 and v2 = stmt v2 in
   v1, v2
 and case_kind =
   function
-  | CaseExprs v1 -> let xs = list expr_or_type v1 in 
-      xs |> List.map (function
-        | Left e -> G.Case (G.expr_to_pattern e)
-        | Right t -> G.Case (G.PatType t)
+  | CaseExprs v1 -> 
+      v1 |> List.map (function
+        | Left (ParenType t) -> 
+            let t = type_ t in
+            G.Case (G.PatType t)
+        | Left e -> 
+            let e = expr e in
+            G.Case (G.expr_to_pattern e)
+        | Right t ->
+            let t = type_ t in
+            G.Case (G.PatType t)
       )
   | CaseAssign ((v1, v2, v3)) ->
       let _v1 = list expr_or_type v1

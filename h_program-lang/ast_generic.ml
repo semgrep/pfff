@@ -271,7 +271,8 @@ and expr =
 
    (* special apply *)
    | Eval
-   | Typeof | Instanceof | Sizeof
+   | Typeof (* for C? and Go in switch x.(type) *)
+   | Instanceof | Sizeof
    (* note that certain languages do not have a 'new' keyword (e.g., Python),
     * instead certain 'Call' are really 'New' *)
    | New  (* usually associated with Call(New, [ArgType _;...]) *)
