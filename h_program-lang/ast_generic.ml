@@ -415,6 +415,9 @@ and stmt =
   and label = ident
 
   and for_header = 
+    (* todo? copy Go and have instead   
+     * ForClassic of stmt option * expr * stmt option? need change CFG then
+     *)
     | ForClassic of for_var_or_expr list (* init *) * 
                     expr (* cond *) * 
                     expr (* next *)
@@ -443,6 +446,9 @@ and stmt =
     | OS_Sync
     (* C *)
     | OS_Asm
+    (* Go *)
+    | OS_Go | OS_Defer 
+    | OS_Fallthrough
 
 (*****************************************************************************)
 (* Pattern *)
@@ -887,6 +893,11 @@ let opt_to_nop opt =
   | None -> Nop
   | Some e -> e
 
+let opt_to_empty opt =
+  match opt with
+  | None -> Block []
+  | Some e -> e
+
 let stmt1 xs =
   match xs with
   | [] -> Block []
@@ -899,8 +910,6 @@ let stmt_to_field st =
   | DefStmt (entity, VarDef def) -> FieldVar (entity, def)
   | DefStmt (entity, FuncDef def) -> FieldMethod (entity, def)
   | _ -> FieldStmt st
-
-let stmt_to_item st = st
 
 let is_boolean_operator = function
  | Plus (* unary too *) | Minus (* unary too *) 

@@ -74,7 +74,11 @@ let mk_func_def params ret st =
 
 let ident_to_expr id =
   G.Name ((id, G.empty_name_info), G.empty_id_info())
-      
+
+let wrap_init_in_block_maybe x v =
+  match x with
+  | None -> v
+  | Some st -> G.Block [st;v]
 
 (*****************************************************************************)
 (* Entry point *)
@@ -332,33 +336,43 @@ and stmt =
       and v2 = expr v2
       and v3 = stmt v3
       and v4 = option stmt v4
-      in raise Todo
+      in 
+      wrap_init_in_block_maybe v1 
+       (G.If (v2, v3, G.opt_to_empty v4))
   | Switch ((v1, v2, v3)) ->
       let v1 = option stmt v1
       and v2 = option stmt v2
       and v3 = list case_clause v3
-      in raise Todo
+      in
+      wrap_init_in_block_maybe v1 
+      (raise Todo)
   | Select ((v1, v2)) ->
-      let v1 = tok v1 and v2 = list comm_clause v2 in raise Todo
-  | For ((v1, v2)) ->
-      let v1 =
-        (match v1 with
-         | (v1, v2, v3) ->
-             let v1 = option stmt v1
-             and v2 = option expr v2
-             and v3 = option stmt v3
-             in raise Todo)
-      and v2 = stmt v2
-      in raise Todo
+      let v1 = tok v1 and v2 = list comm_clause v2 in 
+      raise Todo
+  | For ((v1, v2, v3), v4) ->
+      let v1 = option stmt v1
+      and v2 = option expr v2
+      and v3 = option stmt v3
+      and v4 = stmt v4
+      in
+      raise Todo
   | Range ((v1, v2, v3, v4)) ->
-      let v1 =
-        option
-          (fun (v1, v2) -> let v1 = list expr v1 and v2 = tok v2 in raise Todo)
-          v1
+      let opt =  option 
+          (fun (v1, v2) -> let v1 = list expr v1 and v2 = tok v2 in 
+            v1, v2) v1
       and v2 = tok v2
       and v3 = expr v3
       and v4 = stmt v4
-      in raise Todo
+      in 
+      (match opt with
+      | None -> 
+         let pattern = G.PatUnderscore (fake_info ()) in
+         G.For (G.ForEach (pattern, v3), v4)
+      | Some (xs, _tokEqOrColonEqTODO) -> 
+          let pattern = G.PatTuple (xs |> List.map (fun e ->
+                    G.OtherPat (OP_Expr, [G.E e]))) in
+          G.For (G.ForEach (pattern, v3), v4)
+      )
   | Return ((v1, v2)) ->
       let v1 = tok v1 and v2 = option (list expr) v2 in
       G.Return (v2 |> Common.map_opt (list_to_tuple_or_expr))
@@ -371,15 +385,15 @@ and stmt =
   | Goto ((v1, v2)) -> let v1 = tok v1 and v2 = ident v2 in 
       G.Goto v2
   | Fallthrough v1 -> let v1 = tok v1 in 
-      raise Todo
+      G.OtherStmt (G.OS_Fallthrough, [G.Tk v1])
   | Label ((v1, v2)) -> let v1 = ident v1 and v2 = stmt v2 in 
       G.Label (v1, v2)
   | Go ((v1, v2)) -> 
-      let v1 = tok v1 and v2 = call_expr v2 in 
-      raise Todo
+      let v1 = tok v1 and (e, args) = call_expr v2 in 
+      G.OtherStmt (G.OS_Go, [G.E (G.Call (e, args))])
   | Defer ((v1, v2)) -> 
-      let v1 = tok v1 and v2 = call_expr v2 in 
-      raise Todo
+      let v1 = tok v1 and (e, args) = call_expr v2 in 
+      G.OtherStmt (G.OS_Defer, [G.E (G.Call (e, args))])
 
 and case_clause (v1, v2) = let v1 = case_kind v1 and v2 = stmt v2 in ()
 and case_kind =
@@ -408,7 +422,6 @@ and decl =
       in 
       let ent = G.basic_entity v1 [G.Const] in
       G.DefStmt (ent, G.VarDef { G.vinit = v3; vtype = v2 })
-
   | DVar ((v1, v2, v3)) ->
       let v1 = ident v1
       and v2 = option type_ v2
@@ -416,7 +429,6 @@ and decl =
       in
       let ent = G.basic_entity v1 [G.Var] in
       G.DefStmt (ent, G.VarDef { G.vinit = v3; vtype = v2 })
-
   | DTypeAlias ((v1, v2, v3)) ->
       let v1 = ident v1 and v2 = tok v2 and v3 = type_ v3 in 
       let ent = G.basic_entity v1 [] in
@@ -433,18 +445,13 @@ and top_decl =
       let ent = G.basic_entity v1 [] in
       G.DefStmt (ent, G.FuncDef (mk_func_def params ret v3))
   | DMethod ((v1, v2, (v3, v4))) ->
-      let v1 = ident v1
-      and v2 = parameter v2
-      and (params, ret) = func_type v3
-      and v4 = stmt v4
-      in
+      let v1 = ident v1 and v2 = parameter v2
+      and (params, ret) = func_type v3 and v4 = stmt v4 in
       let ent = G.basic_entity v1 [] in
       let def = mk_func_def params ret v4 in
       let receiver = G.OtherParam (G.OPO_Receiver, [G.Pa (G.ParamClassic v2)])
       in
-      G.DefStmt (ent, G.FuncDef { def with
-          fparams = receiver::def.fparams
-          })
+      G.DefStmt (ent, G.FuncDef { def with fparams = receiver::def.fparams})
   | D v1 -> let v1 = decl v1 in
       v1
 
@@ -464,14 +471,17 @@ and import_kind kind module_name id =
       G.ImportAll (module_name, v1)
 
 and program { package = package; imports = imports; decls = decls } =
+  anon_types := [];
   let arg1 = ident package |> (fun x -> G.DirectiveStmt (G.Package [x])) in
   let arg2 = list import imports |> List.map (fun x -> G.DirectiveStmt x) in
   let arg3 = list top_decl decls in
-  arg1 :: arg2 @ arg3
+  let arg_types = !anon_types |> List.map (fun x -> G.DefStmt x) in
+  arg1 :: arg2 @ arg_types @ arg3
   
-
-and any =
-  function
+and any x =
+  anon_types := [];
+  let res = 
+  match x with
   | E v1 -> let v1 = expr v1 in G.E v1
   | S v1 -> let v1 = stmt v1 in G.S v1
   | T v1 -> let v1 = type_ v1 in G.T v1
@@ -480,6 +490,10 @@ and any =
   | P v1 -> let v1 = program v1 in G.Pr v1
   | Ident v1 -> let v1 = ident v1 in G.Id v1
   | Ss v1 -> let v1 = list stmt v1 in G.Ss v1
+  in
+  if !anon_types <> []
+  then failwith "TODO: anon_types not empty";
+  res
 
 in
 program, any

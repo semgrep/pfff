@@ -540,7 +540,7 @@ and alias (v1, v2) =
 
 let program v = 
   let v = list stmt v in
-  v |> List.map G.stmt_to_item
+  v
 
 let any =
   function

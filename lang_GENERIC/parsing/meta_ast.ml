@@ -500,6 +500,9 @@ and vof_other_stmt_operator =
   | OS_Pass -> Ocaml.VSum (("OS_Pass", []))
   | OS_Sync -> Ocaml.VSum (("OS_Sync", []))
   | OS_Asm -> Ocaml.VSum (("OS_Asm", []))
+  | OS_Go -> Ocaml.VSum (("OS_Go", []))
+  | OS_Defer -> Ocaml.VSum (("OS_Defer", []))
+  | OS_Fallthrough -> Ocaml.VSum (("OS_Fallthrough", []))
 and vof_pattern =
   function
   | PatVar ((v1, v2)) ->

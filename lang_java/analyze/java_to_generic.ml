@@ -510,7 +510,7 @@ let compilation_unit { package = package;
     imports
   in
   let v3 = decls xdecls in
-  let items = v3 |> List.map G.stmt_to_item in
+  let items = v3 in
   let imports = v2 |> List.map (fun import -> G.DirectiveStmt import) in
   let package = 
     match v1 with
