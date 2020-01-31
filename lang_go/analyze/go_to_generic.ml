@@ -52,12 +52,12 @@ let ii_of_any = Lib_parsing_go.ii_of_any
 (* TODO? do results "parameters" can have names? *)
 let return_type_of_results results = 
   match results with
-  | [] | [{G. ptype = None; _}] -> raise Impossible
-  | [{G. ptype = Some t; _}] -> t
-  | xs -> G.TyTuple (xs |> List.map (function
+  | [] | [{G. ptype = None; _}] -> None
+  | [{G. ptype = Some t; _}] -> Some t
+  | xs -> Some (G.TyTuple (xs |> List.map (function
             | { G.ptype = Some t;_ } -> t
             | { G.ptype = None; _ } -> raise Impossible
-            ))
+            )))
 
 let list_to_tuple_or_expr xs =
   match xs with
@@ -68,7 +68,7 @@ let list_to_tuple_or_expr xs =
 let mk_func_def params ret st =
  { G.
     fparams = params |> List.map (fun x -> G.ParamClassic x);
-    frettype = Some ret;
+    frettype = ret;
     fbody = st;
   }
 
@@ -119,6 +119,11 @@ let rec type_ =
   | TArrayEllipsis ((v1, v2)) -> let _v1 = tok v1 and v2 = type_ v2 in
       G.TyArray (None, v2)
   | TFunc v1 -> let (params, ret) = func_type v1 in 
+      let ret = 
+        match ret with
+        | None -> G.TyApply (fake_name "void", [])
+        | Some t -> t
+      in
       G.TyFun (params, ret)
   | TMap ((v1, v2)) -> let v1 = type_ v1 and v2 = type_ v2 in 
       G.TyApply (fake_name "map", [G.TypeArg v1; G.TypeArg v2])
