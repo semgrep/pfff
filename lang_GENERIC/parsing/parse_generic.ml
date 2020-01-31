@@ -42,6 +42,9 @@ let parse_with_lang lang file =
   | Lang.Java ->
     let ast = Parse_java.parse_program file in
     Java_to_generic.program ast
+  | Lang.Go ->
+    let ast = Parse_go.parse_program file in
+    Go_to_generic.program ast
   | Lang.ML ->
     let cst = Parse_ml.parse_program file in
     let ast = Ast_ml_build.program cst in
@@ -70,6 +73,9 @@ let parse_pattern lang str =
   | Lang.Java ->
       let any = Parse_java.any_of_string str in
       Java_to_generic.any any
+  | Lang.Go ->
+      let any = Parse_go.any_of_string str in
+      Go_to_generic.any any
   | Lang.ML -> 
       raise Todo
   )

@@ -27,6 +27,7 @@ type t =
   | Python
   | Javascript
   | Java
+  | Go
   | C
   | ML
 
@@ -41,6 +42,7 @@ let lang_of_string_opt x =
   | "c"  -> Some C
   | "ml" | "ocaml" -> Some ML
   | "java" -> Some Java
+  | "go" | "golang" -> Some Go
   | _ -> None
 
 let lang_of_filename_opt filename =
@@ -51,6 +53,7 @@ let lang_of_filename_opt filename =
  | FT.PL (FT.C ("c" | "h" )) -> Some C
  | FT.PL (FT.ML _) -> Some ML
  | FT.PL (FT.Java) -> Some Java
+ | FT.PL (FT.Go) -> Some Go
  | _ -> None
 
 let string_of_lang = function
@@ -59,9 +62,7 @@ let string_of_lang = function
   | Java -> "Java"
   | C -> "C"
   | ML -> "ML"
-
-
-
+  | Go -> "Golang"
 
 
 
@@ -75,6 +76,7 @@ let finder lang =
   | C
   | Java
   | ML
+  | Go
    -> raise Todo
 
 

@@ -34,6 +34,8 @@ INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/lang_java/analyze \
   $(TOP)/lang_ml/parsing \
    $(TOP)/lang_ml/analyze \
+  $(TOP)/lang_go/parsing \
+   $(TOP)/lang_go/analyze \
   $(TOP)/lang_cpp/parsing \
   $(TOP)/lang_php/parsing \
   $(TOP)/lang_lisp/parsing \
