@@ -203,36 +203,17 @@ and vof_stmt =
   | Block v1 ->
       let v1 = Ocaml.vof_list vof_stmt v1 in Ocaml.VSum (("Block", [ v1 ]))
   | Empty -> Ocaml.VSum (("Empty", []))
-  | ExprStmt v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("ExprStmt", [ v1 ]))
-  | Assign ((v1, v2, v3)) ->
-      let v1 = Ocaml.vof_list vof_expr v1
-      and v2 = vof_tok v2
-      and v3 = Ocaml.vof_list vof_expr v3
-      in Ocaml.VSum (("Assign", [ v1; v2; v3 ]))
-  | DShortVars ((v1, v2, v3)) ->
-      let v1 = Ocaml.vof_list vof_expr v1
-      and v2 = vof_tok v2
-      and v3 = Ocaml.vof_list vof_expr v3
-      in Ocaml.VSum (("DShortVars", [ v1; v2; v3 ]))
-  | AssignOp ((v1, v2, v3)) ->
-      let v1 = vof_expr v1
-      and v2 = vof_wrap Meta_ast_generic_common.vof_arithmetic_operator v2
-      and v3 = vof_expr v3
-      in Ocaml.VSum (("AssignOp", [ v1; v2; v3 ]))
-  | IncDec ((v1, v2, v3)) ->
-      let v1 = vof_expr v1
-      and v2 = vof_wrap Meta_ast_generic_common.vof_incr_decr v2
-      and v3 = Meta_ast_generic_common.vof_prepost v3
-      in Ocaml.VSum (("IncDec", [ v1; v2; v3 ]))
+  | SimpleStmt v1 ->
+      let v1 = vof_simple v1 in Ocaml.VSum (("SimpleStmt", [ v1 ]))
   | If ((v1, v2, v3, v4)) ->
-      let v1 = Ocaml.vof_option vof_stmt v1
+      let v1 = Ocaml.vof_option vof_simple v1
       and v2 = vof_expr v2
       and v3 = vof_stmt v3
       and v4 = Ocaml.vof_option vof_stmt v4
       in Ocaml.VSum (("If", [ v1; v2; v3; v4 ]))
   | Switch ((v1, v2, v3)) ->
-      let v1 = Ocaml.vof_option vof_stmt v1
-      and v2 = Ocaml.vof_option vof_stmt v2
+      let v1 = Ocaml.vof_option vof_simple v1
+      and v2 = Ocaml.vof_option vof_simple v2
       and v3 = Ocaml.vof_list vof_case_clause v3
       in Ocaml.VSum (("Switch", [ v1; v2; v3 ]))
   | Select ((v1, v2)) ->
@@ -243,9 +224,9 @@ and vof_stmt =
       let v1 =
         (match v1 with
          | (v1, v2, v3) ->
-             let v1 = Ocaml.vof_option vof_stmt v1
+             let v1 = Ocaml.vof_option vof_simple v1
              and v2 = Ocaml.vof_option vof_expr v2
-             and v3 = Ocaml.vof_option vof_stmt v3
+             and v3 = Ocaml.vof_option vof_simple v3
              in Ocaml.VTuple [ v1; v2; v3 ])
       and v2 = vof_stmt v2
       in Ocaml.VSum (("For", [ v1; v2 ]))
@@ -291,6 +272,31 @@ and vof_stmt =
       let v1 = vof_tok v1
       and v2 = vof_call_expr v2
       in Ocaml.VSum (("Defer", [ v1; v2 ]))
+
+
+and vof_simple = function
+  | ExprStmt v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("ExprStmt", [ v1 ]))
+  | Assign ((v1, v2, v3)) ->
+      let v1 = Ocaml.vof_list vof_expr v1
+      and v2 = vof_tok v2
+      and v3 = Ocaml.vof_list vof_expr v3
+      in Ocaml.VSum (("Assign", [ v1; v2; v3 ]))
+  | DShortVars ((v1, v2, v3)) ->
+      let v1 = Ocaml.vof_list vof_expr v1
+      and v2 = vof_tok v2
+      and v3 = Ocaml.vof_list vof_expr v3
+      in Ocaml.VSum (("DShortVars", [ v1; v2; v3 ]))
+  | AssignOp ((v1, v2, v3)) ->
+      let v1 = vof_expr v1
+      and v2 = vof_wrap Meta_ast_generic_common.vof_arithmetic_operator v2
+      and v3 = vof_expr v3
+      in Ocaml.VSum (("AssignOp", [ v1; v2; v3 ]))
+  | IncDec ((v1, v2, v3)) ->
+      let v1 = vof_expr v1
+      and v2 = vof_wrap Meta_ast_generic_common.vof_incr_decr v2
+      and v3 = Meta_ast_generic_common.vof_prepost v3
+      in Ocaml.VSum (("IncDec", [ v1; v2; v3 ]))
+
 and vof_case_clause (v1, v2) =
   let v1 = vof_case_kind v1 and v2 = vof_stmt v2 in Ocaml.VTuple [ v1; v2 ]
 and vof_case_kind =
@@ -329,6 +335,7 @@ and vof_decl =
       let v1 = vof_ident v1
       and v2 = vof_type_ v2
       in Ocaml.VSum (("DTypeDef", [ v1; v2 ]))
+
 
 and vof_function_ (v1, v2) = 
    let v1 = vof_func_type v1

@@ -78,7 +78,7 @@ let ident_to_expr id =
 let wrap_init_in_block_maybe x v =
   match x with
   | None -> v
-  | Some st -> G.Block [st;v]
+  | Some e -> G.Block [G.ExprStmt e;v]
 
 (*****************************************************************************)
 (* Entry point *)
@@ -292,6 +292,39 @@ and init =
 
 and constant_expr v = expr v
 
+and simple = function
+  | ExprStmt v1 -> let v1 = expr v1 in 
+      v1
+  (* nice language! Assigns are at statement level! *)
+  | Assign ((v1, v2, v3)) ->
+      let v1 = list expr v1
+      and v2 = tok v2
+      and v3 = list expr v3
+      in
+      (G.Assign (list_to_tuple_or_expr v1, v2, list_to_tuple_or_expr v3))
+  | DShortVars ((v1, v2, v3)) ->
+      let v1 = list expr v1
+      and v2 = tok v2
+      and v3 = list expr v3
+      in
+      (* use OtherExpr? at least v2 contains a different token :=, not = so
+       * the information is there
+       *)
+      (G.Assign (list_to_tuple_or_expr v1, v2, list_to_tuple_or_expr v3))
+  | AssignOp ((v1, v2, v3)) ->
+      let v1 = expr v1
+      and v2 = wrap arithmetic_operator v2
+      and v3 = expr v3
+      in
+      (G.AssignOp (v1, v2, v3))
+  | IncDec ((v1, v2, v3)) ->
+      let v1 = expr v1
+      and (v2, tok) = wrap incr_decr v2
+      and v3 = prefix_postfix v3
+      in
+      (G.Call (G.IdSpecial (G.IncrDecr (v2, v3), tok), 
+          [G.Arg v1]))
+
 
 and stmt =
   function
@@ -302,37 +335,11 @@ and stmt =
       G.Block v1
   | Empty -> 
       G.Block []
-  | ExprStmt v1 -> let v1 = expr v1 in 
+  | SimpleStmt v1 ->
+      let v1 = simple v1 in
       G.ExprStmt v1
-  (* nice language! Assigns are at statement level! *)
-  | Assign ((v1, v2, v3)) ->
-      let v1 = list expr v1
-      and v2 = tok v2
-      and v3 = list expr v3
-      in
-      G.ExprStmt (G.Assign (G.Tuple v1, v2, G.Tuple v3))
-  | DShortVars ((v1, v2, v3)) ->
-      let v1 = list expr v1
-      and v2 = tok v2
-      and v3 = list expr v3
-      in
-      (* use OtherExpr? *)
-      G.ExprStmt (G.Assign (G.Tuple v1, v2, G.Tuple v3))
-  | AssignOp ((v1, v2, v3)) ->
-      let v1 = expr v1
-      and v2 = wrap arithmetic_operator v2
-      and v3 = expr v3
-      in
-      G.ExprStmt (G.AssignOp (v1, v2, v3))
-  | IncDec ((v1, v2, v3)) ->
-      let v1 = expr v1
-      and (v2, tok) = wrap incr_decr v2
-      and v3 = prefix_postfix v3
-      in
-      G.ExprStmt (G.Call (G.IdSpecial (G.IncrDecr (v2, v3), tok), 
-          [G.Arg v1]))
   | If ((v1, v2, v3, v4)) ->
-      let v1 = option stmt v1
+      let v1 = option simple v1
       and v2 = expr v2
       and v3 = stmt v3
       and v4 = option stmt v4
@@ -340,8 +347,8 @@ and stmt =
       wrap_init_in_block_maybe v1 
        (G.If (v2, v3, G.opt_to_empty v4))
   | Switch ((v1, v2, v3)) ->
-      let v1 = option stmt v1
-      and v2 = option stmt v2
+      let v1 = option simple v1
+      and v2 = option simple v2
       and v3 = list case_clause v3
       in
       wrap_init_in_block_maybe v1 
@@ -350,9 +357,9 @@ and stmt =
       let v1 = tok v1 and v2 = list comm_clause v2 in 
       raise Todo
   | For ((v1, v2, v3), v4) ->
-      let v1 = option stmt v1
+      let v1 = option simple v1
       and v2 = option expr v2
-      and v3 = option stmt v3
+      and v3 = option simple v3
       and v4 = stmt v4
       in
       raise Todo

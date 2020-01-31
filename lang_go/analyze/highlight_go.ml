@@ -163,7 +163,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
     );
     V.kstmt = (fun (k, _) x ->
       (match x with
-      | DShortVars (xs, _, _) ->
+      | SimpleStmt (DShortVars (xs, _, _)) ->
          xs |> List.iter (function
            | Id (id, _) -> 
               if !in_toplevel 

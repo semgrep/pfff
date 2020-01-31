@@ -333,7 +333,7 @@ stmt:
 compound_stmt: LBRACE stmt_list RBRACE { Block (List.rev $2) }
 
 non_dcl_stmt:
-|   simple_stmt { $1 }
+|   simple_stmt { SimpleStmt $1 }
 
 |   if_stmt { $1 }
 |   for_stmt { $1 }

@@ -201,29 +201,19 @@ and stmt =
  (* less: could be rewritten as Block [] *)
  | Empty
 
- | ExprStmt of expr
+ | SimpleStmt of simple
 
- (* good boy! not an expression but a statement! better! *) 
- (* note: lhs and rhs do not always have the same length as in
-  *  a,b = foo()
-  *)
- | Assign of expr list (* lhs, pattern *) * tok * expr list (* rhs *)
- (* declare or reassign, and special semantic when Receive operation *)
- | DShortVars of expr list * tok (* := *) * expr list
- | AssignOp of expr * Ast_generic.arithmetic_operator wrap * expr
- | IncDec of expr * Ast_generic.incr_decr wrap * Ast_generic.prefix_postfix
-
- | If     of stmt option (* init *) * expr * stmt * stmt option
+ | If     of simple option (* init *) * expr * stmt * stmt option
  (* todo: cond should be an expr, except for TypeSwitch where it can also
   * be x := expr
   *)
- | Switch of stmt option (* init *) * stmt option * case_clause list
+ | Switch of simple option (* init *) * simple option * case_clause list
  (* todo: expr should always be a TypeSwitchExpr *)
  (* | TypeSwitch of stmt option * expr (* Assign *) * case_clause list *)
  | Select of tok * comm_clause list
 
  (* note: no While or DoWhile, just For and Foreach (Range) *)
- | For of (stmt option * expr option * stmt option) * stmt
+ | For of (simple option * expr option * simple option) * stmt
  (* todo: should impose (expr * tok * expr option) for key/value *)
  | Range of (expr list * tok (* = or := *)) option (* key/value pattern *) * 
             tok (* 'range' *) * expr * stmt 
@@ -250,6 +240,18 @@ and stmt =
  and comm_clause = case_clause
     
  and call_expr = expr * arguments
+
+ and simple =
+ | ExprStmt of expr
+ (* good boy! not an expression but a statement! better! *) 
+ (* note: lhs and rhs do not always have the same length as in
+  *  a,b = foo()
+  *)
+ | Assign of expr list (* lhs, pattern *) * tok * expr list (* rhs *)
+ | AssignOp of expr * Ast_generic.arithmetic_operator wrap * expr
+ | IncDec of expr * Ast_generic.incr_decr wrap * Ast_generic.prefix_postfix
+ (* declare or reassign, and special semantic when Receive operation *)
+ | DShortVars of expr list * tok (* := *) * expr list
 
 (*****************************************************************************)
 (* Declarations *)

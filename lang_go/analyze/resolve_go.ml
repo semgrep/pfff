@@ -144,7 +144,7 @@ let resolve prog =
     );
     V.kstmt = (fun (k, _) x ->
       (match x with
-      | DShortVars (xs, _, _) | Range (Some (xs, _), _, _, _) ->
+      | SimpleStmt (DShortVars (xs, _, _)) | Range (Some (xs, _), _, _, _) ->
          xs |> List.iter (function
            | Id (id, _) -> env |> add_name_env id (local_or_global env id)
            | _ -> ()

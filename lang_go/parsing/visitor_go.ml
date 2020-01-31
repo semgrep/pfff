@@ -201,36 +201,17 @@ and v_stmt x =
   | DeclStmts v1 -> let v1 = v_list v_decl v1 in ()
   | Block v1 -> let v1 = v_list v_stmt v1 in ()
   | Empty -> ()
-  | ExprStmt v1 -> let v1 = v_expr v1 in ()
-  | Assign ((v1, v2, v3)) ->
-      let v1 = v_list v_expr v1
-      and v2 = v_tok v2
-      and v3 = v_list v_expr v3
-      in ()
-  | DShortVars ((v1, v2, v3)) ->
-      let v1 = v_list v_expr v1
-      and v2 = v_tok v2
-      and v3 = v_list v_expr v3
-      in ()
-  | AssignOp ((v1, v2, v3)) ->
-      let v1 = v_expr v1
-      and v2 = v_wrap v_arithmetic_operator v2
-      and v3 = v_expr v3
-      in ()
-  | IncDec ((v1, v2, v3)) ->
-      let v1 = v_expr v1
-      and v2 = v_wrap v_incr_decr v2
-      and v3 = v_prefix_postfix v3
-      in ()
+  | SimpleStmt v1 -> v_simple v1
+
   | If ((v1, v2, v3, v4)) ->
-      let v1 = v_option v_stmt v1
+      let v1 = v_option v_simple v1
       and v2 = v_expr v2
       and v3 = v_stmt v3
       and v4 = v_option v_stmt v4
       in ()
   | Switch ((v1, v2, v3)) ->
-      let v1 = v_option v_stmt v1
-      and v2 = v_option v_stmt v2
+      let v1 = v_option v_simple v1
+      and v2 = v_option v_simple v2
       and v3 = v_list v_case_clause v3
       in ()
   | Select ((v1, v2)) ->
@@ -239,9 +220,9 @@ and v_stmt x =
       let v1 =
         (match v1 with
          | (v1, v2, v3) ->
-             let v1 = v_option v_stmt v1
+             let v1 = v_option v_simple v1
              and v2 = v_option v_expr v2
-             and v3 = v_option v_stmt v3
+             and v3 = v_option v_simple v3
              in ())
       and v2 = v_stmt v2
       in ()
@@ -266,6 +247,29 @@ and v_stmt x =
   | Defer ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_call_expr v2 in ()
   in
   vin.kstmt (k, all_functions) x
+
+and v_simple = function
+  | ExprStmt v1 -> let v1 = v_expr v1 in ()
+  | Assign ((v1, v2, v3)) ->
+      let v1 = v_list v_expr v1
+      and v2 = v_tok v2
+      and v3 = v_list v_expr v3
+      in ()
+  | DShortVars ((v1, v2, v3)) ->
+      let v1 = v_list v_expr v1
+      and v2 = v_tok v2
+      and v3 = v_list v_expr v3
+      in ()
+  | AssignOp ((v1, v2, v3)) ->
+      let v1 = v_expr v1
+      and v2 = v_wrap v_arithmetic_operator v2
+      and v3 = v_expr v3
+      in ()
+  | IncDec ((v1, v2, v3)) ->
+      let v1 = v_expr v1
+      and v2 = v_wrap v_incr_decr v2
+      and v3 = v_prefix_postfix v3
+      in ()
 
 and v_case_clause (v1, v2) = let v1 = v_case_kind v1 and v2 = v_stmt v2 in ()
 and v_case_kind =

@@ -212,8 +212,9 @@ and expr =
    * Assign can also be abused to declare new variables, but you should use
    * variable_definition for that.
    * less: should be in stmt, but most languages allow this at expr level :(
+   * update: should even be in a separate simple_stmt, as in Go
    *)
-  | Assign of expr * tok (* =, or := in Go *) * expr
+  | Assign of expr * tok (* =, or sometimes := in Go *) * expr
   (* less: should desugar in Assign, should be only binary_operator *)
   | AssignOp of expr * arithmetic_operator wrap * expr
   (* newvar:! newscope:? in OCaml yes but we miss the 'in' part here  *)
@@ -416,7 +417,7 @@ and stmt =
 
   and for_header = 
     (* todo? copy Go and have instead   
-     * ForClassic of stmt option * expr * stmt option? need change CFG then
+     * ForClassic of simple option * expr * simple option?
      *)
     | ForClassic of for_var_or_expr list (* init *) * 
                     expr (* cond *) * 
