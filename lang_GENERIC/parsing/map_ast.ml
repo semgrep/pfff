@@ -420,6 +420,7 @@ and map_pattern =
   | PatVar ((v1, v2)) ->
       let v1 = map_ident v1 and v2 = map_id_info v2 in PatVar ((v1, v2))
   | PatLiteral v1 -> let v1 = map_literal v1 in PatLiteral ((v1))
+  | PatType v1 -> let v1 = map_type_ v1 in PatType ((v1))
   | PatConstructor ((v1, v2)) ->
       let v1 = map_name v1
       and v2 = map_of_list map_pattern v2

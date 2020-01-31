@@ -481,6 +481,9 @@ and pattern =
   | PatWhen  of pattern * expr
   | PatAs    of pattern * (ident * id_info)
 
+  (* Go *)
+  | PatType of type_
+
   | OtherPat of other_pattern_operator * any list
 
   and field_pattern = name * pattern

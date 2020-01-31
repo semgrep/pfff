@@ -513,6 +513,8 @@ and vof_pattern =
 
   | PatLiteral v1 ->
       let v1 = vof_literal v1 in Ocaml.VSum (("PatLiteral", [ v1 ]))
+  | PatType v1 ->
+      let v1 = vof_type_ v1 in Ocaml.VSum (("PatType", [ v1 ]))
   | PatRecord v1 ->
       let v1 =
         Ocaml.vof_list
