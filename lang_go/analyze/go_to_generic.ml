@@ -326,12 +326,16 @@ and simple = function
           [G.Arg v1]))
 
 
+and stmt2 = function
+  | DeclStmts v1 -> list decl v1
+  | x -> [stmt x]
+  
 and stmt =
   function
   | DeclStmts v1 -> 
-      let _v1 = list decl v1 in 
-      raise Todo
-  | Block v1 -> let v1 = list stmt v1 in 
+      let v1 = list decl v1 in 
+      G.Block v1
+  | Block v1 -> let v1 = list stmt2 v1 |> List.flatten in 
       G.Block v1
   | Empty -> 
       G.Block []
