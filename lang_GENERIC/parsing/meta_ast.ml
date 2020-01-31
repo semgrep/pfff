@@ -417,10 +417,11 @@ and vof_stmt =
       let v1 = vof_for_header v1
       and v2 = vof_stmt v2
       in Ocaml.VSum (("For", [ v1; v2 ]))
-  | Switch ((v1, v2)) ->
+  | Switch ((v0, v1, v2)) ->
+      let v0 = vof_tok v0 in
       let v1 = vof_expr v1
       and v2 = Ocaml.vof_list vof_case_and_body v2
-      in Ocaml.VSum (("Switch", [ v1; v2 ]))
+      in Ocaml.VSum (("Switch", [ v0; v1; v2 ]))
   | Return v1 -> let v1 = Ocaml.vof_option vof_expr v1 in 
       Ocaml.VSum (("Return", [ v1 ]))
   | Continue v1 ->

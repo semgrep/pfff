@@ -209,7 +209,8 @@ and v_stmt x =
       and v3 = v_stmt v3
       and v4 = v_option v_stmt v4
       in ()
-  | Switch ((v1, v2, v3)) ->
+  | Switch ((v0, v1, v2, v3)) ->
+      let v0 = v_tok v0 in
       let v1 = v_option v_simple v1
       and v2 = v_option v_simple v2
       and v3 = v_list v_case_clause v3

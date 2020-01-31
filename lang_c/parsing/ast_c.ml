@@ -181,7 +181,7 @@ type stmt =
   | Block of stmt list
 
   | If of expr * stmt * stmt
-  | Switch of expr * case list
+  | Switch of tok * expr * case list
 
   | While of expr * stmt
   | DoWhile of stmt * expr

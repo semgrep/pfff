@@ -750,7 +750,7 @@ and stmt env = function
   | If (e, st1, st2) ->
       expr_toplevel env e;
       stmts env [st1; st2]
-  | Switch (e, xs) ->
+  | Switch (_, e, xs) ->
       expr_toplevel env e;
       cases env xs
   | While (e, st) | DoWhile (st, e) -> 

@@ -798,7 +798,7 @@ if_then_else_statement: IF LP expression RP statement_no_short_if ELSE statement
 
 
 switch_statement: SWITCH LP expression RP switch_block
-    { Switch ($3, $5) }
+    { Switch ($1, $3, $5) }
 
 switch_block:
  | LC                                             RC  { [] }

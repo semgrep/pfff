@@ -363,10 +363,10 @@ and stmt env = function
      with Failure s ->
        raise (TodoConstruct(spf "ForOf:%s" s, tokof))
     )
-  | C.Switch (_, e, xs) ->
+  | C.Switch (tok, e, xs) ->
     let e = e |> C.unparen |> expr env in
     let xs = xs |> C.unparen |> List.map (case_clause env) in
-    [A.Switch (e, xs)]
+    [A.Switch (tok, e, xs)]
   | C.Continue (_, lopt, _) -> 
     [A.Continue (opt label env lopt)]
   | C.Break (_, lopt, _) -> 

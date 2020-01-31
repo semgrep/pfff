@@ -224,7 +224,7 @@ and stmt =
   | Expr of expr
 
   | If of expr * stmt * stmt
-  | Switch of expr * (cases * stmts) list
+  | Switch of tok * expr * (cases * stmts) list
 
   | While of expr * stmt
   | Do of stmt * expr

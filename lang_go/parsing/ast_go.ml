@@ -207,7 +207,7 @@ and stmt =
  (* todo: cond should be an expr, except for TypeSwitch where it can also
   * be x := expr
   *)
- | Switch of simple option (* init *) * simple option * case_clause list
+ | Switch of tok * simple option (* init *) * simple option * case_clause list
  (* todo: expr should always be a TypeSwitchExpr *)
  (* | TypeSwitch of stmt option * expr (* Assign *) * case_clause list *)
  | Select of tok * comm_clause list

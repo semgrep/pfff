@@ -183,10 +183,11 @@ and map_stmt =
       let v1 = map_expr v1 and v2 = map_stmt v2 in While ((v1, v2))
   | For ((v1, v2)) ->
       let v1 = map_for_header v1 and v2 = map_stmt v2 in For ((v1, v2))
-  | Switch ((v1, v2)) ->
+  | Switch ((v0, v1, v2)) ->
+      let v0 = map_tok v0 in
       let v1 = map_expr v1
       and v2 = map_of_list map_case v2
-      in Switch ((v1, v2))
+      in Switch ((v0, v1, v2))
   | Continue v1 -> let v1 = map_of_option map_label v1 in Continue ((v1))
   | Break v1 -> let v1 = map_of_option map_label v1 in Break ((v1))
   | Return v1 -> let v1 = map_expr v1 in Return ((v1))

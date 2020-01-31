@@ -203,8 +203,10 @@ and stmt x =
       G.While (v1, v2)
   | For ((v1, v2)) -> let v1 = for_header v1 and v2 = stmt v2 in
       G.For (v1, v2)
-  | Switch ((v1, v2)) -> let v1 = expr v1 and v2 = list case v2 in
-      G.Switch (v1, v2)
+  | Switch ((v0, v1, v2)) -> 
+      let v0 = info v0 in
+      let v1 = expr v1 and v2 = list case v2 in
+      G.Switch (v0, v1, v2)
   | Continue v1 -> let v1 = option label v1 in 
      G.Continue (v1 |> option (fun n -> 
        G.Name ((n, G.empty_name_info), G.empty_id_info ())))

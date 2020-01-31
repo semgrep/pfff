@@ -408,7 +408,7 @@ loop_body: LBODY stmt_list RBRACE { Block (List.rev $2) }
 /*(* split in 2, switch expr and switch types *)*/
 switch_stmt: LSWITCH if_header LBODY caseblock_list RBRACE 
     { let stopt1, stopt2 = $2 in
-      Switch (stopt1, stopt2 ,List.rev $4)
+      Switch ($1, stopt1, stopt2 ,List.rev $4)
     }
 
 select_stmt:  LSELECT LBODY caseblock_list RBRACE 

@@ -390,8 +390,8 @@ and stmt env x =
       (match s with
       | If (_, (_, e, _), st1, _, st2) ->
           A.If (expr env e, stmt env st1, stmt env st2)
-      | Switch (_, (_, e, _), st) ->
-          A.Switch (expr env e, cases env st)
+      | Switch (tok, (_, e, _), st) ->
+          A.Switch (tok, expr env e, cases env st)
         )
   | Iteration i ->
       (match i with

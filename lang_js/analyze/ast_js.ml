@@ -200,7 +200,7 @@ and stmt =
   | Do of stmt * expr | While of expr * stmt
   | For of for_header * stmt
 
-  | Switch of expr * case list
+  | Switch of tok * expr * case list
   | Continue of label option | Break of label option
   | Return of expr
 

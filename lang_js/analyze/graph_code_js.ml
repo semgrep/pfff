@@ -401,7 +401,7 @@ and stmt env = function
  | For (header, st) ->
    let env = for_header env header in
    stmt env st
- | Switch (e, xs) ->
+ | Switch (_tok, e, xs) ->
    expr env e;
    cases env xs
  | Continue lopt ->

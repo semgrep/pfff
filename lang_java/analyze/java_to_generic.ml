@@ -297,7 +297,8 @@ and stmt =
   | If ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = stmt v2 and v3 = stmt v3 in
       G.If (v1, v2, v3)
-  | Switch ((v1, v2)) ->
+  | Switch ((v0, v1, v2)) ->
+      let v0 = info v0 in
       let v1 = expr v1
       and v2 =
         list
@@ -305,7 +306,7 @@ and stmt =
             v1, G.stmt1 v2
         ) v2
       in
-      G.Switch (v1, v2)
+      G.Switch (v0, v1, v2)
   | While ((v1, v2)) -> let v1 = expr v1 and v2 = stmt v2 in
       G.While (v1, v2)
   | Do ((v1, v2)) -> let v1 = stmt v1 and v2 = expr v2 in

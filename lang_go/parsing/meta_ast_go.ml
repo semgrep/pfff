@@ -211,11 +211,12 @@ and vof_stmt =
       and v3 = vof_stmt v3
       and v4 = Ocaml.vof_option vof_stmt v4
       in Ocaml.VSum (("If", [ v1; v2; v3; v4 ]))
-  | Switch ((v1, v2, v3)) ->
+  | Switch ((v0, v1, v2, v3)) ->
+      let v0 = vof_tok v0 in
       let v1 = Ocaml.vof_option vof_simple v1
       and v2 = Ocaml.vof_option vof_simple v2
       and v3 = Ocaml.vof_list vof_case_clause v3
-      in Ocaml.VSum (("Switch", [ v1; v2; v3 ]))
+      in Ocaml.VSum (("Switch", [ v0; v1; v2; v3 ]))
   | Select ((v1, v2)) ->
       let v1 = vof_tok v1
       and v2 = Ocaml.vof_list vof_comm_clause v2

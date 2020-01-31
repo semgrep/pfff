@@ -320,7 +320,8 @@ and v_stmt x =
   | While ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_stmt v2 in ()
   | DoWhile ((v1, v2)) -> let v1 = v_stmt v1 and v2 = v_expr v2 in ()
   | For ((v1, v2)) -> let v1 = v_for_header v1 and v2 = v_stmt v2 in ()
-  | Switch ((v1, v2)) ->
+  | Switch ((v0, v1, v2)) ->
+      let v0 = v_tok v0 in
       let v1 = v_expr v1
       and v2 =
         v_list

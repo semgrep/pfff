@@ -209,7 +209,8 @@ and v_stmt (x : stmt) =
   | Expr v1 -> let v1 = v_expr v1 in ()
   | If ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_stmt v2 and v3 = v_stmt v3 in ()
-  | Switch ((v1, v2)) ->
+  | Switch ((v0, v1, v2)) ->
+      let v0 = v_info v0 in
       let v1 = v_expr v1
       and v2 =
         v_list

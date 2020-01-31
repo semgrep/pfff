@@ -584,7 +584,7 @@ and stmt env = function
       expr env e;
       stmt env st1;
       stmt env st2;
-  | Switch (e, xs) ->
+  | Switch (_, e, xs) ->
       expr env e;
       xs |> List.iter (fun (cs, sts) ->
         cases env cs;

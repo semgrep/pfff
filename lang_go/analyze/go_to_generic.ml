@@ -346,13 +346,14 @@ and stmt =
       in 
       wrap_init_in_block_maybe v1 
        (G.If (v2, v3, G.opt_to_empty v4))
-  | Switch ((v1, v2, v3)) ->
+  | Switch ((v0, v1, v2, v3)) ->
+      let v0 = tok v0 in
       let v1 = option simple v1
       and v2 = option simple v2
       and v3 = list case_clause v3
       in
       wrap_init_in_block_maybe v1 
-        (G.Switch (G.opt_to_nop v2, v3))
+        (G.Switch (v0, G.opt_to_nop v2, v3))
   | Select ((v1, v2)) ->
       let v1 = tok v1 and v2 = list comm_clause v2 in 
       raise Todo

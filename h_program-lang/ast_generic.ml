@@ -382,7 +382,7 @@ and stmt =
   | For of for_header * stmt
 
   (* less: could be merged with ExprStmt (MatchPattern ...) *)
-  | Switch of expr * case_and_body list
+  | Switch of tok (* switch or also Select in Go *) * expr * case_and_body list
 
   | Return of expr option
   | Continue of expr option | Break of expr option (* todo? switch to label? *)
