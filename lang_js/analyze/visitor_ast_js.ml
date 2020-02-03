@@ -183,14 +183,14 @@ and v_resolved_name _ = ()
 and v_var { v_name = v_v_name; v_kind = v_v_kind; v_init = v_v_init; 
             v_resolved = v_v_resolved } =
   let arg = v_name v_v_name in
-  let arg = v_var_kind v_v_kind in 
+  let arg = v_wrap v_var_kind v_v_kind in 
   let arg = v_expr v_v_init in 
   let arg = v_ref v_resolved_name v_v_resolved in
   ()
 and v_var_kind = function | Var -> () | Let -> () | Const -> ()
 
 and v_fun_ { f_props = v_f_props; f_params = v_f_params; f_body = v_f_body } =
-  let arg = v_list v_fun_prop v_f_props in
+  let arg = v_list (v_wrap v_fun_prop) v_f_props in
   let arg = v_list v_parameter v_f_params in let arg = v_stmt v_f_body in ()
 
 and v_parameter x =
@@ -199,7 +199,7 @@ and v_parameter x =
  { p_name = v_p_name; p_default = v_p_default; p_dots = v_p_dots
               } ->
   let arg = v_name v_p_name in
-  let arg = v_option v_expr v_p_default in let arg = v_bool v_p_dots in ()
+  let arg = v_option v_expr v_p_default in let arg = v_option v_tok v_p_dots in ()
   in
   vin.kparam (k, all_functions) x
 
@@ -215,7 +215,7 @@ and v_property x =
   let k x =  match x with
   | Field ((v1, v2, v3)) ->
       let v1 = v_property_name v1
-      and v2 = v_list v_property_prop v2
+      and v2 = v_list (v_wrap v_property_prop) v2
       and v3 = v_expr v3
       in ()
   | FieldSpread v1 -> let v1 = v_expr v1 in ()

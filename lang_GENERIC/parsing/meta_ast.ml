@@ -352,7 +352,7 @@ and vof_other_type_operator =
   | OT_EnumName -> Ocaml.VSum (("OT_EnumName", []))
   | OT_Shape -> Ocaml.VSum (("OT_Shape", []))
   | OT_Variadic -> Ocaml.VSum (("OT_Variadic", []))
-and vof_attribute =
+and vof_keyword_attribute =
   function
   | Static -> Ocaml.VSum (("Static", []))
   | Volatile -> Ocaml.VSum (("Volatile", []))
@@ -375,9 +375,13 @@ and vof_attribute =
   | Getter -> Ocaml.VSum (("Getter", []))
   | Setter -> Ocaml.VSum (("Setter", []))
   | Variadic -> Ocaml.VSum (("Variadic", []))
+
+and vof_attribute = function
+  | KeywordAttr x -> let v1 = vof_wrap vof_keyword_attribute x in
+    Ocaml.VSum (("KeywordAttr", [v1]))
   | NamedAttr ((v1, v2)) ->
       let v1 = vof_ident v1
-      and v2 = Ocaml.vof_list vof_any v2
+      and v2 = Ocaml.vof_list vof_argument v2
       in Ocaml.VSum (("NamedAttr", [ v1; v2 ]))
   | OtherAttribute ((v1, v2)) ->
       let v1 = vof_other_attribute_operator v1

@@ -235,21 +235,21 @@ and stmt =
 
 and var = { 
   v_name: name;
-  v_kind: var_kind;
+  v_kind: var_kind wrap;
   v_init: expr;
   v_resolved: resolved_name ref;
 }
   and var_kind = Var | Let | Const
 
 and fun_ = {
-  f_props: fun_prop list;
+  f_props: fun_prop wrap list;
   f_params: parameter list;
   f_body: stmt;
 }
   and parameter = {
     p_name: name;
     p_default: expr option;
-    p_dots: bool;
+    p_dots: tok option;
   }
   (* less: could transpile *)
   and fun_prop = 
@@ -267,7 +267,7 @@ and class_ = {
 
   and property = 
     (* expr is a Fun for methods *)
-    | Field of property_name * property_prop list * expr
+    | Field of property_name * property_prop wrap list * expr
     (* less: can unsugar? *)
     | FieldSpread of expr
 

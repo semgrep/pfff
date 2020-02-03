@@ -36,6 +36,11 @@ module G = Ast_generic
  *)
 
 (*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+let fake s = Parse_info.fake_info s
+
+(*****************************************************************************)
 (* Xhp *)
 (*****************************************************************************)
 (* TODO probably incomplete *)
@@ -102,7 +107,7 @@ let var_of_simple_pattern (expr, fname) init_builder pat =
   | C.PatId (name, None) ->
     let name = fname name in
     let init = init_builder name in
-    { A.v_name = name; v_kind = A.Let; v_init = init;
+    { A.v_name = name; v_kind = A.Let, (fake "let"); v_init = init;
       v_resolved = ref A.NotResolved;
     }
   (* { x = y } = varname; -~> x = pfff_builtin_default(varname.x, y) *)
@@ -112,7 +117,7 @@ let var_of_simple_pattern (expr, fname) init_builder pat =
     let init1 = init_builder name in
     let init = A.Apply (A.Id (("pfff_builtin_default", tok),ref A.NotResolved),
                        [init1; e]) in
-    { A.v_name = name; v_kind = A.Let; v_init = init;
+    { A.v_name = name; v_kind = A.Let, fake "let"; v_init = init;
       v_resolved = ref A.NotResolved;
     }
   | _ -> failwith "TODO: simple pattern not handled"
@@ -127,7 +132,7 @@ let compile_pattern (expr, fname, fpname) varname pat =
      | C.PatId _ ->
        let init_builder name = 
          A.ObjAccess (A.Id (varname, ref A.NotResolved), 
-                    Parse_info.fake_info ".",
+                    fake ".",
                     A.PN name)
        in
        var_of_simple_pattern (expr, fname) init_builder pat 
@@ -136,7 +141,7 @@ let compile_pattern (expr, fname, fpname) varname pat =
        let pname = fpname pname in
        let init_builder _name = 
          A.ObjAccess (A.Id (varname, ref A.NotResolved), 
-                    Parse_info.fake_info ".",
+                    fake ".",
                     pname)
        in
        var_of_simple_pattern (expr, fname) init_builder pat
@@ -157,7 +162,7 @@ let compile_pattern (expr, fname, fpname) varname pat =
       | C.PatDots (tok, pat) -> 
          let init_builder (_name, _tok) = 
           A.Apply(A.ObjAccess (A.Id (varname, ref A.NotResolved),
-                               Parse_info.fake_info ".",
+                               fake ".",
                               (A.PN (("slice", tok)))),
                   [A.Num (string_of_int !idx, tok)])
         in
@@ -194,7 +199,7 @@ let var_pattern (expr, fname, fpname) x =
       | A.Id (name, _) -> name, []
       | _ ->
         let intermediate = gensym_name "tmp" tok in
-        let var = { A.v_name = intermediate; v_kind = A.Let; v_init = e;
+        let var = { A.v_name = intermediate; v_kind = A.Let, fake "let"; v_init = e;
                     v_resolved = ref A.NotResolved } in
         intermediate, [var]
     in
@@ -218,33 +223,33 @@ let forof (lhs_var, tok, e2, st) (expr, stmt, var_binding) =
   let step = "!step!", tok in
   let symbol_iterator = 
     A.ObjAccess (A.Id (("Symbol", tok), ref A.NotResolved),
-                 Parse_info.fake_info ".",
+                 fake ".",
                  A.PN ("iterator", tok))
   in
 
   let for_init = 
     Left [
-      { A.v_name = iterator; v_kind = A.Let; v_resolved = ref A.NotResolved;
+      { A.v_name = iterator; v_kind = A.Let, fake "let"; v_resolved = ref A.NotResolved;
         v_init = A.Apply (A.ArrAccess (e2, symbol_iterator), []) };
-      { A.v_name = step; v_kind = A.Let; v_resolved = ref A.NotResolved;
+      { A.v_name = step; v_kind = A.Let, fake "let"; v_resolved = ref A.NotResolved;
         v_init = A.Nop; }
     ]
   in
   let for_cond = 
     A.Apply (A.IdSpecial (A.ArithOp G.Not, tok), [
       A.ObjAccess (A.Assign (A.Id (step, ref A.NotResolved),
-                         Parse_info.fake_info "=",
+                         fake "=",
                           A.Apply (A.ObjAccess (A.Id (iterator, 
                                                       ref A.NotResolved),
-                                                Parse_info.fake_info ".",
+                                                fake ".",
                                                 A.PN ("next", tok)),
                                    [])),
-        Parse_info.fake_info ".",
+        fake ".",
         A.PN ("done", tok))
        ])
   in
   let step_value = A.ObjAccess (A.Id (step, ref A.NotResolved),
-                                Parse_info.fake_info ".",
+                                fake ".",
                                A.PN ("value", tok)) 
   in
   let step_value_cst = 
@@ -255,8 +260,8 @@ let forof (lhs_var, tok, e2, st) (expr, stmt, var_binding) =
    match lhs_var with
    | C.LHS2 e -> 
      let e = expr e in
-     [A.ExprStmt (A.Assign (e, Parse_info.fake_info "=", step_value))]
-   | C.ForVar ((vkind,_tok), binding) -> 
+     [A.ExprStmt (A.Assign (e, fake "=", step_value))]
+   | C.ForVar (vkind, binding) -> 
       let binding = 
         match binding with
         | C.VarClassic x -> 

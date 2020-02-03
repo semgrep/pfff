@@ -36,7 +36,7 @@ let vref f x = ref (f !x)
 let string = id
 let bool = id
 
-let fake_info () = Parse_info.fake_info "FAKE"
+let fake s = Parse_info.fake_info s
 
 (*****************************************************************************)
 (* Entry point *)
@@ -93,7 +93,7 @@ let rec expr (x: expr) =
       G.L (G.String (v1))
 
   | InterpolatedString xs ->
-    G.Call (G.IdSpecial (G.Concat, fake_info ()), 
+    G.Call (G.IdSpecial (G.Concat, fake "concat"), 
       xs |> List.map (fun x -> let x = expr x in G.Arg (x))
     )
   | TypedExpr (v1, v2) ->
@@ -102,7 +102,7 @@ let rec expr (x: expr) =
      G.Cast (v2, v1)
   | ExprStar v1 ->
     let v1 = expr v1 in
-    G.Call (G.IdSpecial (G.Spread, fake_info()), [G.expr_to_arg v1])
+    G.Call (G.IdSpecial (G.Spread, fake "spread"), [G.expr_to_arg v1])
 
   | Name ((v1, v2, v3)) ->
       let v1 = name v1
@@ -221,7 +221,7 @@ and argument = function
   | Arg e -> let e = expr e in 
       G.Arg e
   | ArgStar e -> let e = expr e in
-      G.Arg (G.Call (G.IdSpecial (G.Spread, fake_info()), [G.expr_to_arg e]))
+      G.Arg (G.Call (G.IdSpecial (G.Spread, fake "spread"), [G.expr_to_arg e]))
   | ArgPow e -> 
       let e = expr e in
       G.ArgOther (G.OA_ArgPow, [G.E e])
@@ -248,7 +248,7 @@ and dictorset_elt = function
       v1
   | PowInline (v1) -> 
       let v1 = expr v1 in
-      G.Call (G.IdSpecial (G.Spread, fake_info()), [G.expr_to_arg v1])
+      G.Call (G.IdSpecial (G.Spread, fake "spread"), [G.expr_to_arg v1])
   
 and number =
   function
@@ -329,7 +329,7 @@ and parameters xs =
      let n = name n in
      let topt = option type_ topt in
      G.ParamClassic { (G.param_of_id n) with
-       G.ptype = topt; pattrs = [G.Variadic]; }
+       G.ptype = topt; pattrs = [G.attr G.Variadic (fake "...")]; }
    | ParamPow (n, topt) ->
      let n = name n in
      let topt = option type_ topt in
@@ -496,7 +496,8 @@ and stmt x =
       let x = stmt x in
       (match x with
       | G.DefStmt (ent, func) ->
-          G.DefStmt ({ ent with G.attrs = G.Async::ent.G.attrs}, func)
+          G.DefStmt ({ ent with G.attrs = (G.attr G.Async (fake "async"))
+                                          ::ent.G.attrs}, func)
       | _ -> G.OtherStmt (G.OS_Async, [G.S x])
       )
 
@@ -531,9 +532,15 @@ and excepthandler =
         pat, v3
       )
 
+and expr_to_attribute v  = 
+  match v with
+  | G.Call (G.Name ((id, _), _), args) -> 
+      G.NamedAttr (id, args)
+  | _ -> G.OtherAttribute (G.OA_Expr, [G.E v])
+
 and decorator v = 
   let v = expr v in
-  G.OtherAttribute (G.OA_Expr, [G.E v])
+  expr_to_attribute v
 
 and alias (v1, v2) = 
   let v1 = name v1 and v2 = option name v2 in 

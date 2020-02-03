@@ -288,38 +288,19 @@ and map_other_type_operator =
   | OT_Shape -> OT_Shape
   | OT_Variadic -> OT_Variadic
 
-and map_attribute =
-  function
-    | Recursive -> Recursive
-    | MutuallyRecursive -> MutuallyRecursive
-  | Static -> Static
-  | Volatile -> Volatile
-  | Extern -> Extern
-  | Public -> Public
-  | Private -> Private
-  | Protected -> Protected
-  | Abstract -> Abstract
-  | Final -> Final
-  | Var -> Var
-  | Let -> Let
-  | Const -> Const
-  | Mutable -> Mutable
-  | Generator -> Generator
-  | Async -> Async
-  | Ctor -> Ctor
-  | Dtor -> Dtor
-  | Getter -> Getter
-  | Setter -> Setter
-  | Variadic -> Variadic
+and map_attribute = function
+  | KeywordAttr v1 -> let v1 = map_wrap map_keyword_attribute v1 in 
+      KeywordAttr v1
   | NamedAttr ((v1, v2)) ->
       let v1 = map_ident v1
-      and v2 = map_of_list map_any v2
+      and v2 = map_of_list map_argument v2
       in NamedAttr ((v1, v2))
   | OtherAttribute ((v1, v2)) ->
       let v1 = map_other_attribute_operator v1
       and v2 = map_of_list map_any v2
       in OtherAttribute ((v1, v2))
 
+and map_keyword_attribute x = x
 and map_other_attribute_operator x  = x
 
 and map_stmt x =

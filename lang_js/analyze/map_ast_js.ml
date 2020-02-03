@@ -229,7 +229,7 @@ and
           } =
   let v_v_resolved = map_of_ref map_resolved_name v_v_resolved in
   let v_v_init = map_expr v_v_init in
-  let v_v_kind = map_var_kind v_v_kind in
+  let v_v_kind = map_wrap map_var_kind v_v_kind in
   let v_v_name = map_name v_v_name in 
     { v_name = v_v_name; v_kind = v_v_kind; v_init = v_v_init;
       v_resolved = v_v_resolved }
@@ -240,7 +240,7 @@ and
            =
   let v_f_body = map_stmt v_f_body in
   let v_f_params = map_of_list map_parameter v_f_params in
-  let v_f_props = map_of_list map_fun_prop v_f_props in 
+  let v_f_props = map_of_list (map_wrap map_fun_prop) v_f_props in 
   { f_props = v_f_props; f_params = v_f_params; f_body = v_f_body }
 and
   map_parameter {
@@ -248,7 +248,7 @@ and
                   p_default = v_p_default;
                   p_dots = v_p_dots
                 } =
-  let v_p_dots = map_of_bool v_p_dots in
+  let v_p_dots = map_of_option map_tok v_p_dots in
   let v_p_default = map_of_option map_expr v_p_default in
   let v_p_name = map_name v_p_name in 
   { p_name = v_p_name; p_default = v_p_default; p_dots = v_p_dots }
@@ -267,7 +267,7 @@ and map_property =
   function
   | Field ((v1, v2, v3)) ->
       let v1 = map_property_name v1
-      and v2 = map_of_list map_property_prop v2
+      and v2 = map_of_list (map_wrap map_property_prop) v2
       and v3 = map_expr v3
       in Field ((v1, v2, v3))
   | FieldSpread v1 -> let v1 = map_expr v1 in FieldSpread ((v1))

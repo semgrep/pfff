@@ -199,7 +199,7 @@ and vof_var { v_name = v_v_name;
   let arg = vof_expr v_v_init in
   let bnd = ("v_init", arg) in
   let bnds = bnd :: bnds in
-  let arg = vof_var_kind v_v_kind in
+  let arg = vof_wrap vof_var_kind v_v_kind in
   let bnd = ("v_kind", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_name v_v_name in
@@ -219,7 +219,7 @@ and
   let arg = Ocaml.vof_list vof_parameter v_f_params in
   let bnd = ("f_params", arg) in
   let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_list vof_fun_prop v_f_props in
+  let arg = Ocaml.vof_list (vof_wrap vof_fun_prop) v_f_props in
   let bnd = ("f_props", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
 and
   vof_parameter {
@@ -228,7 +228,7 @@ and
                   p_dots = v_p_dots
                 } =
   let bnds = [] in
-  let arg = Ocaml.vof_bool v_p_dots in
+  let arg = Ocaml.vof_option vof_tok v_p_dots in
   let bnd = ("p_dots", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_option vof_expr v_p_default in
@@ -254,7 +254,7 @@ and vof_property =
   function
   | Field ((v1, v2, v3)) ->
       let v1 = vof_property_name v1
-      and v2 = Ocaml.vof_list vof_property_prop v2
+      and v2 = Ocaml.vof_list (vof_wrap vof_property_prop) v2
       and v3 = vof_expr v3
       in Ocaml.VSum (("Field", [ v1; v2; v3 ]))
   | FieldSpread v1 ->

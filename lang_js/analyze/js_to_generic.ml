@@ -295,7 +295,11 @@ and var_of_var { v_name = x_name; v_kind = x_kind;
   ent, { G.vinit = Some v3; G.vtype = None }
 
 
-and var_kind = function | Var -> G.Var | Let -> G.Let | Const -> G.Const
+and var_kind (x, tok) =
+  match x with
+  | Var -> G.attr G.Var tok
+  | Let -> G.attr G.Let tok
+  | Const -> G.attr G.Const tok
 
 and fun_ { f_props = f_props; f_params = f_params; f_body = f_body } =
   let v1 = list fun_prop f_props in
@@ -311,15 +315,17 @@ and parameter x =
   let v3 = bool p_dots in
   G.ParamClassic { 
     G.pname = Some v1; pdefault = v2; ptype = None;
-    pattrs = if v3 then [G.Variadic] else [];
+    pattrs = (match v3 with None -> [] | Some tok -> [G.attr G.Variadic tok]);
     pinfo = G.empty_id_info ();
   }
   
 
-and fun_prop =
-  function 
-  | Get -> G.Getter | Set -> G.Setter
-  | Generator -> G.Generator | Async -> G.Async
+and fun_prop (x, tok) =
+  match x with
+  | Get -> G.attr G.Getter tok
+  | Set -> G.attr G.Setter tok
+  | Generator -> G.attr G.Generator tok 
+  | Async -> G.attr G.Async tok
 
 and obj_ v = list property v
 
@@ -352,10 +358,12 @@ and property x =
       let v1 = expr v1 in 
       G.FieldSpread v1
 
-and property_prop =
-  function 
-  | Static -> G.Static 
-  | Public -> G.Public | Private -> G.Private | Protected -> G.Protected
+and property_prop (x, tok) =
+  match x with
+  | Static -> G.attr G.Static tok
+  | Public -> G.attr G.Public tok
+  | Private -> G.attr G.Private tok
+  | Protected -> G.attr G.Protected tok
   
 
 let rec toplevel x =

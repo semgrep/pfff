@@ -137,6 +137,8 @@ let is_undefined_ok (src, _kindsrc) (dst, _kinddst) =
   (* r2c: too specific? *)
   dst =~ "^src/images/"
 
+let fake s = Parse_info.fake_info s
+
 (*****************************************************************************)
 (* Qualified Name *)
 (*****************************************************************************)
@@ -167,7 +169,7 @@ let is_local env n =
 let add_locals env vs = 
   let locals = vs |> Common.map_filter (fun v ->
     let s = s_of_n v.v_name in
-    match v.v_kind with
+    match fst v.v_kind with
     | Let | Const -> Some s
     | Var ->
         Hashtbl.replace env.vars s true;
@@ -184,7 +186,7 @@ let kind_of_expr v_kind e =
         (* without types, this might be wrong; a constant might
          * actually refer to a function, and a global to an object
          *)
-        if v_kind = Const 
+        if fst v_kind = Const 
         then E.Constant
         else E.Global
 
@@ -418,7 +420,8 @@ and stmt env = function
  | Try (st1, catchopt, finalopt) ->
    stmt env st1;
    catchopt |> Common.opt (fun (n, st) -> 
-     let v = { v_name = n; v_kind = Let; v_init = Nop; 
+     let v = { v_name = n; v_kind = Let, fake "let"; 
+              v_init = Nop; 
                v_resolved = ref Local } in
      let env = add_locals env [v] in
      stmt env st
@@ -509,7 +512,7 @@ and expr env e =
       match nopt with
       | None -> env
       | Some n -> 
-        let v = { v_name = n; v_kind = Let; v_init = Nop; (* TODO *)
+        let v = { v_name = n; v_kind = Let, fake "let"; v_init = Nop; (* TODO *)
                   v_resolved = ref Local}
         in
         add_locals env [v]
@@ -537,7 +540,7 @@ and expr env e =
       match nopt with
       | None -> env
       | Some n -> 
-        let v = { v_name = n; v_kind = Let; v_init = Nop; (* TODO *)
+        let v = { v_name = n; v_kind = Let, fake "let"; v_init = Nop; (* TODO *)
                   v_resolved = ref Local}
         in
         add_locals env [v]
