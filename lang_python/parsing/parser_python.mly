@@ -27,6 +27,7 @@
  * old src: 
  *  - http://inst.eecs.berkeley.edu/~cs164/sp10/python-grammar.html
  *)
+open Common
 open Ast_python
 
 (* intermediate helper type *)
@@ -489,11 +490,22 @@ compound_stmt:
      *)*/
   | async_stmt  { $1 }
 
-/*(* TODO: add attributes *)*/
 decorated:
-  | decorators classdef { $2 }
-  | decorators funcdef { $2 }
-  | decorators async_funcdef { $2 }
+  | decorators classdef { 
+     match $2 with 
+     | ClassDef (a, b, c, d) -> ClassDef (a, b, c, $1 @ d)
+     | _ -> raise Impossible
+   }
+  | decorators funcdef { 
+     match $2 with 
+     | FunctionDef (a, b, c, d, e) -> FunctionDef (a, b, c, d, $1 @ e)
+     | _ -> raise Impossible
+   }
+  | decorators async_funcdef {
+     match $2 with 
+     | FunctionDef (a, b, c, d, e) -> FunctionDef (a, b, c, d, $1 @ e)
+     | _ -> raise Impossible
+  }
 
 /*(* this is always preceded by a COLON *)*/
 suite:
