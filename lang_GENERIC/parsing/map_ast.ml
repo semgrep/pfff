@@ -137,8 +137,9 @@ and map_expr x =
   | IdSpecial v1 -> let v1 = map_wrap map_special v1 in IdSpecial ((v1))
   | Call ((v1, v2)) ->
       let v1 = map_expr v1 and v2 = map_arguments v2 in Call ((v1, v2))
-  | Assign ((v1, v2)) ->
-      let v1 = map_expr v1 and v2 = map_expr v2 in Assign ((v1, v2))
+  | Assign ((v1, v2, v3)) ->
+      let v1 = map_expr v1 and v2 = map_tok v2 and 
+          v3 = map_expr v3 in Assign ((v1, v2, v3))
   | AssignOp ((v1, v2, v3)) ->
       let v1 = map_expr v1
       and v2 = map_wrap map_arithmetic_operator v2
@@ -146,10 +147,17 @@ and map_expr x =
       in AssignOp ((v1, v2, v3))
   | LetPattern ((v1, v2)) ->
       let v1 = map_pattern v1 and v2 = map_expr v2 in LetPattern ((v1, v2))
-  | ObjAccess ((v1, v2)) ->
-      let v1 = map_expr v1 and v2 = map_ident v2 in ObjAccess ((v1, v2))
+  | DotAccess ((v1, t, v2)) ->
+      let v1 = map_expr v1 and t = map_tok t and v2 = map_ident v2 in
+      DotAccess ((v1, t, v2))
   | ArrayAccess ((v1, v2)) ->
       let v1 = map_expr v1 and v2 = map_expr v2 in ArrayAccess ((v1, v2))
+  | SliceAccess ((v1, v2, v3, v4)) ->
+      let v1 = map_expr v1 
+      and v2 = map_of_option map_expr v2 
+      and v3 = map_of_option map_expr v3
+      and v4 = map_of_option map_expr v4 
+      in SliceAccess ((v1, v2, v3, v4))
   | Conditional ((v1, v2, v3)) ->
       let v1 = map_expr v1
       and v2 = map_expr v2
@@ -180,6 +188,7 @@ and map_literal =
   | Bool v1 -> let v1 = map_wrap map_of_bool v1 in Bool ((v1))
   | Int v1 -> let v1 = map_wrap map_of_string v1 in Int ((v1))
   | Float v1 -> let v1 = map_wrap map_of_string v1 in Float ((v1))
+  | Imag v1 -> let v1 = map_wrap map_of_string v1 in Imag ((v1))
   | Char v1 -> let v1 = map_wrap map_of_string v1 in Char ((v1))
   | String v1 -> let v1 = map_wrap map_of_string v1 in String ((v1))
   | Regexp v1 -> let v1 = map_wrap map_of_string v1 in Regexp ((v1))
@@ -236,7 +245,7 @@ and map_type_ =
   function
   | TyBuiltin v1 -> let v1 = map_wrap map_of_string v1 in TyBuiltin ((v1))
   | TyFun ((v1, v2)) ->
-      let v1 = map_of_list map_type_ v1
+      let v1 = map_of_list map_parameter_classic v1
       and v2 = map_type_ v2
       in TyFun ((v1, v2))
   | TyApply ((v1, v2)) ->
@@ -330,11 +339,12 @@ and map_stmt x =
       let v1 = map_stmt v1 and v2 = map_expr v2 in DoWhile ((v1, v2))
   | For ((v1, v2)) ->
       let v1 = map_for_header v1 and v2 = map_stmt v2 in For ((v1, v2))
-  | Switch ((v1, v2)) ->
+  | Switch ((v0, v1, v2)) ->
+      let v0 = map_tok v0 in
       let v1 = map_expr v1
       and v2 = map_of_list map_case_and_body v2
-      in Switch ((v1, v2))
-  | Return v1 -> let v1 = map_expr v1 in Return ((v1))
+      in Switch ((v0, v1, v2))
+  | Return v1 -> let v1 = map_of_option map_expr v1 in Return ((v1))
   | Continue v1 -> let v1 = map_of_option map_expr v1 in Continue ((v1))
   | Break v1 -> let v1 = map_of_option map_expr v1 in Break ((v1))
   | Label ((v1, v2)) ->
@@ -369,7 +379,7 @@ and map_case_and_body (v1, v2) =
 
 and map_case =
   function
-  | Case v1 -> let v1 = map_expr v1 in Case ((v1))
+  | Case v1 -> let v1 = map_pattern v1 in Case ((v1))
   | Default -> Default
 
 and map_catch (v1, v2) =
@@ -411,6 +421,7 @@ and map_pattern =
   | PatVar ((v1, v2)) ->
       let v1 = map_ident v1 and v2 = map_id_info v2 in PatVar ((v1, v2))
   | PatLiteral v1 -> let v1 = map_literal v1 in PatLiteral ((v1))
+  | PatType v1 -> let v1 = map_type_ v1 in PatType ((v1))
   | PatConstructor ((v1, v2)) ->
       let v1 = map_name v1
       and v2 = map_of_list map_pattern v2
@@ -449,19 +460,16 @@ and
   map_entity {
                name = v_name;
                attrs = v_attrs;
-               type_ = v_type_;
                tparams = v_tparams;
                info = v_info;
              } =
   let v_info = map_id_info v_info in
   let v_tparams = map_of_list map_type_parameter v_tparams in
-  let v_type_ = map_of_option map_type_ v_type_ in
   let v_attrs = map_of_list map_attribute v_attrs in
   let v_name = map_ident v_name 
   in { 
                name = v_name;
                attrs = v_attrs;
-               type_ = v_type_;
                tparams = v_tparams;
                info = v_info;
   }
@@ -546,7 +554,7 @@ and
   let v_pattrs = map_of_list map_attribute v_pattrs in
   let v_ptype = map_of_option map_type_ v_ptype in
   let v_pdefault = map_of_option map_expr v_pdefault in
-  let v_pname = map_ident v_pname in 
+  let v_pname = map_of_option map_ident v_pname in 
   { 
                           pname = v_pname;
                           pdefault = v_pdefault;
@@ -648,10 +656,17 @@ and map_directive =
       let v1 = map_module_name v1
       and v2 = map_of_option map_ident v2
       in ImportAs ((v1, v2))
+  | ImportAll ((v1, v2)) ->
+      let v1 = map_module_name v1
+      and v2 = map_tok v2
+      in ImportAll ((v1, v2))
   | OtherDirective ((v1, v2)) ->
       let v1 = map_other_directive_operator v1
       and v2 = map_of_list map_any v2
       in OtherDirective ((v1, v2))
+  | Package ((v1)) ->
+      let v1 = map_dotted_ident v1
+      in Package ((v1))
 
 and map_alias (v1, v2) =
   let v1 = map_ident v1 and v2 = map_of_option map_ident v2 in (v1, v2)

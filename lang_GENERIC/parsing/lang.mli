@@ -2,6 +2,7 @@ type t =
   | Python
   | Javascript
   | Java
+  | Go
   | C
   | ML
 

@@ -274,3 +274,4 @@ tmp
 /lang_js/meta/gen_code
 /data/js_stdlib/stdlib.js
 /tests/php/codegraph/pfff_test.log
+/external/OPAM_DIR

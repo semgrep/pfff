@@ -147,15 +147,24 @@ and v_expr x =
   | Name ((v1, v2)) -> let v1 = v_name v1 and v2 = v_id_info v2 in ()
   | IdSpecial v1 -> let v1 = v_wrap v_special v1 in ()
   | Call ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_arguments v2 in ()
-  | Assign ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_expr v2 in ()
+  | Assign ((v1, v2, v3)) -> 
+        let v1 = v_expr v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()
   | AssignOp ((v1, v2, v3)) ->
       let v1 = v_expr v1
       and v2 = v_wrap v_arithmetic_operator v2
       and v3 = v_expr v3
       in ()
   | LetPattern ((v1, v2)) -> let v1 = v_pattern v1 and v2 = v_expr v2 in ()
-  | ObjAccess ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_ident v2 in ()
+  | DotAccess ((v1, t, v2)) -> 
+        let v1 = v_expr v1 and t = v_tok t and v2 = v_ident v2 in ()
   | ArrayAccess ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_expr v2 in ()
+  | SliceAccess ((v1, v2, v3, v4)) -> 
+        let v1 = v_expr v1 
+        and v2 = v_option v_expr v2 
+        and v3 = v_option v_expr v3
+        and v4 = v_option v_expr v4 
+        in
+        ()
   | Conditional ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_expr v2 and v3 = v_expr v3 in ()
   | MatchPattern ((v1, v2)) ->
@@ -182,6 +191,7 @@ and v_literal =
   | Bool v1 -> let v1 = v_wrap v_bool v1 in ()
   | Int v1 -> let v1 = v_wrap v_string v1 in ()
   | Float v1 -> let v1 = v_wrap v_string v1 in ()
+  | Imag v1 -> let v1 = v_wrap v_string v1 in ()
   | Char v1 -> let v1 = v_wrap v_string v1 in ()
   | String v1 -> let v1 = v_wrap v_string v1 in ()
   | Regexp v1 -> let v1 = v_wrap v_string v1 in ()
@@ -226,7 +236,8 @@ and v_type_ x =
   let k x = 
   match x with
   | TyBuiltin v1 -> let v1 = v_wrap v_string v1 in ()
-  | TyFun ((v1, v2)) -> let v1 = v_list v_type_ v1 and v2 = v_type_ v2 in ()
+  | TyFun ((v1, v2)) -> let v1 = v_list v_parameter_classic v1 and 
+    v2 = v_type_ v2 in ()
   | TyApply ((v1, v2)) ->
       let v1 = v_name v1 and v2 = v_type_arguments v2 in ()
   | TyVar v1 -> let v1 = v_ident v1 in ()
@@ -310,14 +321,15 @@ and v_stmt x =
   | While ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_stmt v2 in ()
   | DoWhile ((v1, v2)) -> let v1 = v_stmt v1 and v2 = v_expr v2 in ()
   | For ((v1, v2)) -> let v1 = v_for_header v1 and v2 = v_stmt v2 in ()
-  | Switch ((v1, v2)) ->
+  | Switch ((v0, v1, v2)) ->
+      let v0 = v_tok v0 in
       let v1 = v_expr v1
       and v2 =
         v_list
           (fun (v1, v2) -> let v1 = v_list v_case v1 and v2 = v_stmt v2 in ())
           v2
       in ()
-  | Return v1 -> let v1 = v_expr v1 in ()
+  | Return v1 -> let v1 = v_option v_expr v1 in ()
   | Continue v1 -> let v1 = v_option v_expr v1 in ()
   | Break v1 -> let v1 = v_option v_expr v1 in ()
   | Label ((v1, v2)) -> let v1 = v_label v1 and v2 = v_stmt v2 in ()
@@ -340,7 +352,7 @@ and v_stmt x =
   vin.kstmt (k, all_functions) x
 and v_other_stmt_with_stmt_operator _ = ()
 
-and v_case = function | Case v1 -> let v1 = v_expr v1 in () | Default -> ()
+and v_case = function | Case v1 -> let v1 = v_pattern v1 in () | Default -> ()
 and v_catch (v1, v2) = let v1 = v_pattern v1 and v2 = v_stmt v2 in ()
 and v_finally v = v_stmt v
 and v_label v = v_ident v
@@ -369,6 +381,7 @@ and v_pattern x =
       in ()
   | PatVar ((v1, v2)) -> let v1 = v_ident v1 and v2 = v_id_info v2 in ()
   | PatLiteral v1 -> let v1 = v_literal v1 in ()
+  | PatType v1 -> let v1 = v_type_ v1 in ()
   | PatConstructor ((v1, v2)) ->
       let v1 = v_name v1 and v2 = v_list v_pattern v2 in ()
   | PatTuple v1 -> let v1 = v_list v_pattern v1 in ()
@@ -389,9 +402,7 @@ and v_pattern x =
       let v1 = v_other_pattern_operator v1 and v2 = v_list v_any v2 in ()
   in
   vin.kpattern (k, all_functions) x
-and v_other_pattern_operator = function 
- | OP_Expr -> ()
- | OP_Var -> ()
+and v_other_pattern_operator _ = ()
 
 and v_def x =
   let k x =
@@ -405,12 +416,10 @@ and v_entity x =
    let {
              name = x_name;
              attrs = v_attrs;
-             type_ = x_type_;
              tparams = v_tparams
            } = x in
    let arg = v_ident x_name in
    let arg = v_list v_attribute v_attrs in
-   let arg = v_option v_type_ x_type_ in
    let arg = v_list v_type_parameter v_tparams in ()
   in
   vin.kentity (k, all_functions) x
@@ -454,7 +463,7 @@ and
                         ptype = v_ptype;
                         pattrs = v_pattrs
                       } =
-  let arg = v_ident v_pname in
+  let arg = v_option v_ident v_pname in
   let arg = v_option v_expr v_pdefault in
   let arg = v_option v_type_ v_ptype in
   let arg = v_list v_attribute v_pattrs in ()
@@ -546,6 +555,10 @@ and v_directive x =
       let v1 = v_module_name v1 and v2 = v_list v_alias v2 in ()
   | ImportAs ((v1, v2)) ->
       let v1 = v_module_name v1 and v2 = v_option v_ident v2 in ()
+  | ImportAll ((v1, v2)) ->
+      let v1 = v_module_name v1 and v2 = v_tok v2 in ()
+  | Package ((v1)) ->
+      let v1 = v_dotted_ident v1 in ()
   | OtherDirective ((v1, v2)) ->
       let v1 = v_other_directive_operator v1 and v2 = v_list v_any v2 in ()
   in

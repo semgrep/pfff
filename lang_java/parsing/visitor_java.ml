@@ -177,7 +177,8 @@ and v_expr (x : expr) =
       and v4 = v_option v_decls v4
       in ()
     | Call ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_arguments v2 in ()
-    | Dot ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_ident v2 in ()
+    | Dot ((v1, t, v2)) -> 
+        let v1 = v_expr v1 and t = v_tok t and v2 = v_ident v2 in ()
     | ArrayAccess ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_expr v2 in ()
     | Postfix ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_incr_decr v2 in ()
     | Prefix ((v1, v2)) -> let v1 = v_incr_decr v1 and v2 = v_expr v2 in ()
@@ -190,8 +191,8 @@ and v_expr (x : expr) =
       let v1 = v_expr v1 and v2 = v_expr v2 and v3 = v_expr v3 in ()
     | AssignOp ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_wrap v_arith_op v2 and v3 = v_expr v3 in ()
-    | Assign ((v1, v2)) ->
-      let v1 = v_expr v1 and v2 = v_expr v2 in ()
+    | Assign ((v1, v2, v3)) ->
+      let v1 = v_expr v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()
     | Lambda ((v1, v2)) ->
       let v1 = v_parameters v1 and v2 = v_stmt v2 in ()
   in
@@ -209,7 +210,8 @@ and v_stmt (x : stmt) =
   | Expr v1 -> let v1 = v_expr v1 in ()
   | If ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_stmt v2 and v3 = v_stmt v3 in ()
-  | Switch ((v1, v2)) ->
+  | Switch ((v0, v1, v2)) ->
+      let v0 = v_info v0 in
       let v1 = v_expr v1
       and v2 =
         v_list

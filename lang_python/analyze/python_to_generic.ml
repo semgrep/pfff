@@ -87,10 +87,7 @@ let rec expr (x: expr) =
      G.Ellipsis x
   | Num v1 -> 
       let v1 = number v1 in 
-      (match v1 with
-      | Left x -> G.L x
-      | Right x -> x
-      )
+      G.L v1
   | Str (v1) -> 
       let v1 = wrap string v1 in
       G.L (G.String (v1))
@@ -137,21 +134,30 @@ let rec expr (x: expr) =
       G.Container (G.List, e1)
 
   | Subscript ((v1, v2, v3)) ->
-      let v1 = expr v1 
-      and v2 = list slice v2 
+      let e = expr v1 
       and _v3TODO = expr_context v3 in 
       (match v2 with
-      | [G.OE_SliceIndex, e] -> G.ArrayAccess (v1, e)
-      | xs -> 
-        G.OtherExpr (G.OE_Slice, 
+      | [Index v1] -> 
+          let v1 = expr v1 in
+          G.ArrayAccess (e, v1)
+      | [Slice (v1, v2, v3)] ->
+        let v1 = option expr v1
+        and v2 = option expr v2
+        and v3 = option expr v3
+        in
+        G.SliceAccess (e, v1, v2, v3)
+      | _ -> 
+        let xs = list slice v2 in
+        G.OtherExpr (G.OE_Slices, 
                      xs |> List.map (fun (other, e) ->
                        G.E (G.OtherExpr (other, [G.E e]))))
       )
-  | Attribute ((v1, v2, v3)) ->
+  | Attribute ((v1, t, v2, v3)) ->
       let v1 = expr v1 
+      and t = info t 
       and v2 = name v2 
       and _v3TODO = expr_context v3 in 
-      G.ObjAccess (v1, v2)
+      G.DotAccess (v1, t, v2)
 
   | DictOrSet (CompList v) -> 
       let v = list dictorset_elt v in 
@@ -246,12 +252,10 @@ and dictorset_elt = function
   
 and number =
   function
-  | Int v1     -> let v1 = wrap id v1 in Left (G.Int v1)
-  | LongInt v1 -> let v1 = wrap id v1 in Left (G.Int v1)
-  | Float v1   -> let v1 = wrap id v1 in Left (G.Float v1)
-  | Imag v1    -> 
-      let v1 = wrap string v1 in 
-      Right (G.OtherExpr (G.OE_Imag, [G.E (G.L (G.Int v1))]))
+  | Int v1     -> let v1 = wrap id v1 in G.Int v1
+  | LongInt v1 -> let v1 = wrap id v1 in G.Int v1
+  | Float v1   -> let v1 = wrap id v1 in G.Float v1
+  | Imag v1    -> let v1 = wrap string v1 in G.Imag v1
 
 
 and boolop = function 
@@ -320,11 +324,11 @@ and parameters xs =
      let n = name n in
      let topt = option type_ topt in
      let eopt = option expr eopt in
-     G.ParamClassic { (G.basic_param n) with G.ptype = topt; pdefault = eopt; }
+     G.ParamClassic { (G.param_of_id n) with G.ptype = topt; pdefault = eopt; }
   | ParamStar (n, topt) ->
      let n = name n in
      let topt = option type_ topt in
-     G.ParamClassic { (G.basic_param n) with
+     G.ParamClassic { (G.param_of_id n) with
        G.ptype = topt; pattrs = [G.Variadic]; }
    | ParamPow (n, topt) ->
      let n = name n in
@@ -361,7 +365,6 @@ and stmt x =
       in
       let ent = G.basic_entity v1 v5 in
       let def = { G.fparams = v2; frettype = v3; fbody = v4; } in
-      (* will be lift up to a IDef later *)
       G.DefStmt (ent, G.FuncDef def)
   | ClassDef ((v1, v2, v3, v4)) ->
       let v1 = name v1
@@ -373,21 +376,21 @@ and stmt x =
       let def = { G.ckind = G.Class; cextends = v2; cimplements = [];
                   cbody = List.map G.stmt_to_field v3;
                 } in
-      (* will be lift up to a IDef later *)
       G.DefStmt (ent, G.ClassDef def)
 
   (* TODO: should turn some of those in G.LocalDef (G.VarDef ! ) *)
-  | Assign ((v1, v2)) -> let v1 = list expr v1 and v2 = expr v2 in
+  | Assign ((v1, v2, v3)) -> 
+      let v1 = list expr v1 and v2 = info v2 and v3 = expr v3 in
       (match v1 with
       | [] -> raise Impossible
-      | [a] -> G.ExprStmt (G.Assign (a, v2))
-      | xs -> G.ExprStmt (G.Assign (G.Tuple xs, v2)) 
+      | [a] -> G.ExprStmt (G.Assign (a, v2, v3))
+      | xs -> G.ExprStmt (G.Assign (G.Tuple xs, v2, v3)) 
       )
   | AugAssign ((v1, (v2, tok), v3)) ->
       let v1 = expr v1 and v2 = operator v2 and v3 = expr v3 in
       G.ExprStmt (G.AssignOp (v1, (v2, tok), v3))
   | Return v1 -> let v1 = option expr v1 in 
-      G.Return (G.opt_to_nop v1)
+      G.Return v1
 
   | Delete v1 -> let v1 = list expr v1 in
       G.OtherStmt (G.OS_Delete, v1 |> List.map (fun x -> G.E x))
@@ -416,7 +419,7 @@ and stmt x =
       and body = list_stmt1 v3
       and orelse = list stmt v4
       in
-      let header = G.ForEach (G.OtherPat (G.OP_Expr, [G.E foreach]), ins) in
+      let header = G.ForEach (G.expr_to_pattern foreach, ins) in
       (match orelse with
       | [] -> G.For (header, body)
       | _ -> G.Block [
@@ -431,7 +434,7 @@ and stmt x =
       let e =
         match v2 with
         | None -> v1
-        | Some e2 -> G.LetPattern (G.OtherPat (G.OP_Expr, [G.E e2]), v1)
+        | Some e2 -> G.LetPattern (G.expr_to_pattern e2, v1)
       in
       G.OtherStmtWithStmt (G.OSWS_With, e, v3)
 
@@ -469,16 +472,17 @@ and stmt x =
   | Assert ((v1, v2)) -> let v1 = expr v1 and v2 = option expr v2 in
       G.Assert (v1, v2)
 
-  | Import v1 -> let v1 = list alias2 v1 in 
-      G.Block (v1 |> List.map (fun (dotted, nopt) ->
-            G.DirectiveStmt (G.ImportAs (G.DottedName dotted, nopt))))
+  | ImportAs ((v1, _dotsAlwaysNone), v2) -> 
+      let dotted = dotted_name v1 and nopt = option name v2 in
+      G.DirectiveStmt (G.ImportAs (G.DottedName dotted, nopt))
+  | ImportAll ((v1, _dotsAlwaysNone), v2) -> 
+      let dotted = dotted_name v1 and v2 = info v2 in
+      G.DirectiveStmt (G.ImportAll (G.DottedName dotted, v2))
 
-  | ImportFrom ((v1, v2, v3)) ->
+  | ImportFrom (((v1, _dotsTODO), v2)) ->
       let v1 = dotted_name v1
       and v2 = list alias v2
-      and _v3Dotlevel = (*option int v3 *) v3
       in
-      (* will be lift up to IDef later *)
       G.DirectiveStmt (G.ImportFrom (G.DottedName v1, v2))
 
   | Global v1 -> let v1 = list name v1 in
@@ -518,12 +522,12 @@ and excepthandler =
       in 
       (match v1, v2 with
       | Some e, None ->
-        let pat = G.OtherPat (G.OP_Expr, [G.E e]) in
+        let pat = G.expr_to_pattern e in
         pat, v3
       | _ ->
         let e1 = G.opt_to_nop v1 in
         let e2 = G.opt_to_nop v2 in
-        let pat = G.OtherPat (G.OP_Expr, [G.E e1; G.E e2]) in
+        let pat = G.expr_to_pattern (G.Tuple [e1;e2]) in
         pat, v3
       )
 
@@ -534,13 +538,10 @@ and decorator v =
 and alias (v1, v2) = 
   let v1 = name v1 and v2 = option name v2 in 
   v1, v2
-and alias2 (v1, v2) = 
-  let v1 = dotted_name v1 and v2 = option name v2 in
-  v1, v2
 
 let program v = 
   let v = list stmt v in
-  v |> List.map G.stmt_to_item
+  v
 
 let any =
   function

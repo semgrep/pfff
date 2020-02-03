@@ -750,7 +750,7 @@ and stmt env = function
   | If (e, st1, st2) ->
       expr_toplevel env e;
       stmts env [st1; st2]
-  | Switch (e, xs) ->
+  | Switch (_, e, xs) ->
       expr_toplevel env e;
       cases env xs
   | While (e, st) | DoWhile (st, e) -> 
@@ -870,7 +870,7 @@ and expr env = function
       expr env e2;
   | ArrayAccess (e1, e2) -> exprs env [e1; e2]
   (* todo: determine type of e and make appropriate use link *)
-  | RecordPtAccess (e, _name) -> expr env e
+  | RecordPtAccess (e, _, _name) -> expr env e
 
   | Cast (t, e) -> 
       type_ env t;

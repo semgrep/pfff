@@ -42,6 +42,11 @@ let string = id
 
 let fake_info () = Parse_info.fake_info "FAKE"
 
+let opt_to_ident opt =
+  match opt with
+  | None -> "FakeNAME", Parse_info.fake_info "FakeNAME"
+  | Some n -> n
+
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
@@ -110,8 +115,6 @@ let rec type_ =
       let v1 = option const_expr v1 and v2 = type_ v2 in
       G.TyArray (v1, v2)
   | TFunction v1 -> let (ret, params) = function_type v1 in 
-      (* dropping the optional name *)
-      let params = params |> List.map fst in
       G.TyFun (params, ret)
   | TStructName ((v1, v2)) ->
       let v1 = struct_kind v1 and v2 = name v2 in
@@ -129,7 +132,8 @@ and function_type (v1, v2) =
 and parameter { p_type = p_type; p_name = p_name } =
   let arg1 = type_ p_type in 
   let arg2 = option name p_name in 
-  (arg1, arg2)
+  { G.ptype = Some arg1; pname = arg2;
+    pattrs = []; pinfo = G.empty_id_info (); pdefault = None }
 and struct_kind = function 
   | Struct -> G.OT_StructName
   | Union -> G.OT_UnionName
@@ -153,13 +157,14 @@ and expr =
       and v3 = expr v3
       in
       (match v1 with
-      | None, _ -> G.Assign (v2, v3)
+      | None, tok -> G.Assign (v2, tok, v3)
       | Some op, tok -> G.AssignOp (v2, (op, tok), v3)
       )
   | ArrayAccess ((v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in
       G.ArrayAccess (v1, v2) 
-  | RecordPtAccess ((v1, v2)) -> let v1 = expr v1 and v2 = name v2 in
-      G.ObjAccess (G.DeRef v1, v2)
+  | RecordPtAccess ((v1, t, v2)) -> 
+      let v1 = expr v1 and t = info t and v2 = name v2 in
+      G.DotAccess (G.DeRef v1, t, v2)
   | Cast ((v1, v2)) -> let v1 = type_ v1 and v2 = expr v2 in
       G.Cast (v1, v2)
   | Postfix ((v1, (v2, v3))) ->
@@ -210,7 +215,8 @@ and expr =
           v1
       in G.Record v1
   | GccConstructor ((v1, v2)) -> let v1 = type_ v1 and v2 = expr v2 in
-      G.OtherExpr (G.OE_GccConstructor, [G.T v1; G.E v2])
+      G.Call (G.IdSpecial (G.New, fake_info ()), 
+        (G.ArgType v1)::([v2] |> List.map G.expr_to_arg))
 
 and argument v = 
   let v = expr v in
@@ -226,8 +232,10 @@ let rec stmt =
   | If ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = stmt v2 and v3 = stmt v3 in
       G.If (v1, v2, v3)
-  | Switch ((v1, v2)) -> let v1 = expr v1 and v2 = list case v2 in
-      G.Switch (v1, v2)
+  | Switch ((v0, v1, v2)) -> 
+      let v0 = info v0 in
+      let v1 = expr v1 and v2 = list case v2 in
+      G.Switch (v0, v1, v2)
   | While ((v1, v2)) -> let v1 = expr v1 and v2 = stmt v2 in
       G.While (v1, v2)
   | DoWhile ((v1, v2)) -> let v1 = stmt v1 and v2 = expr v2 in 
@@ -243,7 +251,7 @@ let rec stmt =
           G.opt_to_nop v2,
           G.opt_to_nop v3) in
       G.For (header, v4)
-  | Return v1 -> let v1 = option expr v1 in G.Return (G.opt_to_nop v1)
+  | Return v1 -> let v1 = option expr v1 in G.Return v1
   | Continue -> G.Continue None
   | Break -> G.Break None
   | Label ((v1, v2)) -> let v1 = name v1 and v2 = stmt v2 in
@@ -257,7 +265,7 @@ let rec stmt =
 and case =
   function
   | Case ((v1, v2)) -> let v1 = expr v1 and v2 = list stmt v2 in 
-      [G.Case v1], G.stmt1 v2
+      [G.Case (G.expr_to_pattern v1)], G.stmt1 v2
   | Default v1 -> let v1 = list stmt v1 in 
       [G.Default], G.stmt1 v1
 and
@@ -292,13 +300,8 @@ let func_def {
   let v3 = list stmt f_body in 
   let v4 = if f_static then [G.Static] else [] in
   let entity = G.basic_entity v1 v4 in
-  entity, G.FuncDef {
-    G.fparams = params |> List.map (fun (t, nameopt) ->
-        G.ParamClassic {
-          (G.basic_param (nameopt |> G.opt_to_name)) with
-          G.ptype = Some t;
-        }
-    );
+  entity, G.FuncDef { G.
+    fparams = params |> List.map (fun x -> G.ParamClassic x);
     frettype = Some ret;
     fbody = G.stmt1 v3;
     }
@@ -323,7 +326,7 @@ let rec
 and field_def { fld_name = fld_name; fld_type = fld_type } =
   let v1 = option name fld_name in 
   let v2 = type_ fld_type in
-  G.opt_to_name v1, v2
+  opt_to_ident v1, v2
   
 
 let enum_def (v1, v2) =

@@ -88,7 +88,8 @@ and v_expr x =
       and v3 = v_expr v3
       in ()
   | ArrayAccess ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_expr v2 in ()
-  | RecordPtAccess ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_name v2 in ()
+  | RecordPtAccess ((v1, t, v2)) -> 
+        let v1 = v_expr v1 and t = v_info t and v2 = v_name v2 in ()
   | Cast ((v1, v2)) -> let v1 = v_type_ v1 and v2 = v_expr v2 in ()
   | Postfix ((v1, v2)) ->
       let v1 = v_expr v1 and v2 = v_wrap Ast_cpp.v_fixOp v2 in ()
@@ -128,7 +129,9 @@ and v_stmt =
   | Block v1 -> let v1 = v_list v_stmt v1 in ()
   | If ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_stmt v2 and v3 = v_stmt v3 in ()
-  | Switch ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_list v_case v2 in ()
+  | Switch ((v0, v1, v2)) -> 
+      let v0 = v_info v0 in
+      let v1 = v_expr v1 and v2 = v_list v_case v2 in ()
   | While ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_stmt v2 in ()
   | DoWhile ((v1, v2)) -> let v1 = v_stmt v1 and v2 = v_expr v2 in ()
   | For ((v1, v2, v3, v4)) ->

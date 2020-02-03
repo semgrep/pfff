@@ -189,6 +189,7 @@ let instrs_of_expr env e =
       let access = 
         A.RecordPtAccess
           (A.Unary (e1, (A2.GetRef, snd op)),
+           Parse_info.fake_info "->",
            name)
       in
       A.Assign(op, access, value)
@@ -324,7 +325,7 @@ let instrs_of_expr env e =
           DynamicCall (var_of_expr e, vs)
 
       (* x->f(...) is actually sugar for ( *  x->f)(...) *)
-      | A.RecordPtAccess (_, _) 
+      | A.RecordPtAccess (_, _, _) 
       (* x[y](...) is also sugar for ( * x[y](...) *)
       | A.ArrayAccess (_, _) 
         ->
@@ -344,7 +345,7 @@ let instrs_of_expr env e =
       let v1 = var_of_expr e1 in
       let v2 = var_of_expr e2 in
       Lv (ArrayAccess (v1, v2))
-  | A.RecordPtAccess (e, name) ->
+  | A.RecordPtAccess (e, _, name) ->
       let v = var_of_expr e in
       Lv (ObjField (v, name))
 

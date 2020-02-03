@@ -52,8 +52,8 @@ let to_list = function
 let rec set_expr_ctx ctx = function
   | Name (id, _, x) ->
       Name (id, ctx, x)
-  | Attribute (value, attr, _) ->
-      Attribute (value, attr, ctx)
+  | Attribute (value, t, attr, _) ->
+      Attribute (value, t, attr, ctx)
   | Subscript (value, slice, _) ->
       Subscript (value, slice, ctx)
 
@@ -201,9 +201,9 @@ nl_or_stmt:
 sgrep_spatch_pattern:
  | test       EOF            { Expr $1 }
 
- | small_stmt EOF            { Stmt $1 }
+ | small_stmt EOF            { match $1 with [x] -> Stmt x | xs -> Stmts xs }
+ | small_stmt NEWLINE EOF    {  match $1 with [x] -> Stmt x | xs -> Stmts xs }
  | compound_stmt EOF         { Stmt $1 }
- | small_stmt NEWLINE EOF    { Stmt $1 }
  | compound_stmt NEWLINE EOF { Stmt $1 }
 
  | stmt stmt stmt_list EOF { Stmts ($1 @ $2 @ $3) }
@@ -217,7 +217,9 @@ import_stmt:
   | import_from { $1 }
 
 
-import_name: IMPORT dotted_as_name_list { Import ($2) }
+import_name: IMPORT dotted_as_name_list 
+  { $2 |> List.map (fun (v1, v2) -> let dots = None in 
+         ImportAs ((v1, dots), v2))   }
 
 dotted_as_name:
   | dotted_name         { $1, None }
@@ -230,11 +232,11 @@ dotted_name:
 
 import_from:
   | FROM name_and_level IMPORT MULT
-      { ImportFrom (fst $2, [("*", $1(*TODO*)), None], snd $2) }
+      { [ImportAll ($2, $4)] }
   | FROM name_and_level IMPORT LPAREN import_as_name_list RPAREN
-      { ImportFrom (fst $2, $5, snd $2) }
+      { [ImportFrom ($2, $5)] }
   | FROM name_and_level IMPORT import_as_name_list
-      { ImportFrom (fst $2, $4, snd $2) }
+      { [ImportFrom ($2, $4)] }
 
 name_and_level:
   |           dotted_name { $1, None }
@@ -262,14 +264,14 @@ expr_stmt:
   | testlist_star_expr COLON test
       { ExprStmt (TypedExpr (tuple_expr $1, $3)) }
   | testlist_star_expr COLON test EQ test
-      { Assign ([TypedExpr (tuple_expr_store $1, $3)], $5) }
+      { Assign ([TypedExpr (tuple_expr_store $1, $3)], $4, $5) }
 
   | testlist_star_expr augassign yield_expr  
       { AugAssign (tuple_expr_store $1, $2, $3) }
   | testlist_star_expr augassign testlist    
       { AugAssign (tuple_expr_store $1, $2, tuple_expr $3) }
   | testlist_star_expr EQ expr_stmt_rhs_list 
-      { Assign ((tuple_expr_store $1)::(fst $3), snd $3) }
+      { Assign ((tuple_expr_store $1)::(fst $3), $2, snd $3) }
 
 test_or_star_expr:
   | test      { $1 }
@@ -386,7 +388,7 @@ decorator:
 
 decorator_name:
   | NAME                    { Name ($1, Load, ref NotResolved) }
-  | decorator_name DOT NAME { Attribute ($1, $3, Load) }
+  | decorator_name DOT NAME { Attribute ($1, $2, $3, Load) }
 
 /*(*************************************************************************)*/
 /*(*1 Statement *)*/
@@ -397,22 +399,22 @@ stmt:
   | compound_stmt { [$1] }
 
 simple_stmt:
-  | small_stmt NEWLINE { [$1] }
-  | small_stmt SEMICOL NEWLINE { [$1] }
-  | small_stmt SEMICOL simple_stmt { $1::$3 }
+  | small_stmt NEWLINE { $1 }
+  | small_stmt SEMICOL NEWLINE { $1 }
+  | small_stmt SEMICOL simple_stmt { $1 @ $3 }
 
 small_stmt:
-  | expr_stmt   { $1 }
-  | del_stmt    { $1 }
-  | pass_stmt   { $1 }
-  | flow_stmt   { $1 }
+  | expr_stmt   { [$1] }
+  | del_stmt    { [$1] }
+  | pass_stmt   { [$1] }
+  | flow_stmt   { [$1] }
   | import_stmt { $1 }
-  | global_stmt { $1 }
-  | nonlocal_stmt { $1 }
-  | assert_stmt { $1 }
+  | global_stmt { [$1] }
+  | nonlocal_stmt { [$1] }
+  | assert_stmt { [$1] }
   /*(* python2: *)*/
-  | print_stmt { $1 }
-  | exec_stmt { $1 }
+  | print_stmt { [$1] }
+  | exec_stmt { [$1] }
 
 /*(* for expr_stmt see above *)*/
 
@@ -622,7 +624,7 @@ atom_and_trailers:
         | [s] -> Subscript ($1, [s], Load)
         | l -> Subscript ($1, (l), Load) }
 
-  | atom_and_trailers DOT NAME { Attribute ($1, $3, Load) }
+  | atom_and_trailers DOT NAME { Attribute ($1, $2, $3, Load) }
 
 /*(*----------------------------*)*/
 /*(*2 Atom *)*/

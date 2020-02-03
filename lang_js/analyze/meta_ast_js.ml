@@ -85,10 +85,11 @@ and vof_expr =
   | IdSpecial v1 ->
       let v1 = vof_wrap vof_special v1 in Ocaml.VSum (("IdSpecial", [ v1 ]))
   | Nop -> Ocaml.VSum (("Nop", []))
-  | Assign ((v1, v2)) ->
+  | Assign ((v1, v2, v3)) ->
       let v1 = vof_expr v1
-      and v2 = vof_expr v2
-      in Ocaml.VSum (("Assign", [ v1; v2 ]))
+      and v2 = vof_tok v2
+      and v3 = vof_expr v3 
+      in Ocaml.VSum (("Assign", [ v1; v2; v3 ]))
   | ArrAccess ((v1, v2)) ->
       let v1 = vof_expr v1
       and v2 = vof_expr v2
@@ -99,10 +100,11 @@ and vof_expr =
      let v1 = vof_class_ v1 in 
      let v2 = Ocaml.vof_option vof_name v2 in
      Ocaml.VSum (("Class", [ v1; v2 ]))
-  | ObjAccess ((v1, v2)) ->
+  | ObjAccess ((v1, t, v2)) ->
       let v1 = vof_expr v1
       and v2 = vof_property_name v2
-      in Ocaml.VSum (("ObjAccess", [ v1; v2 ]))
+      and t = vof_tok t
+      in Ocaml.VSum (("ObjAccess", [ v1; t; v2 ]))
   | Fun ((v1, v2)) ->
       let v1 = vof_fun_ v1
       and v2 = Ocaml.vof_option vof_name v2
@@ -139,10 +141,11 @@ and vof_stmt =
       let v1 = vof_for_header v1
       and v2 = vof_stmt v2
       in Ocaml.VSum (("For", [ v1; v2 ]))
-  | Switch ((v1, v2)) ->
+  | Switch ((v0, v1, v2)) ->
+      let v0 = vof_tok v0 in
       let v1 = vof_expr v1
       and v2 = Ocaml.vof_list vof_case v2
-      in Ocaml.VSum (("Switch", [ v1; v2 ]))
+      in Ocaml.VSum (("Switch", [ v0; v1; v2 ]))
   | Continue v1 ->
       let v1 = Ocaml.vof_option vof_label v1
       in Ocaml.VSum (("Continue", [ v1 ]))

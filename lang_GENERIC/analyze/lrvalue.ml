@@ -88,7 +88,7 @@ let rec visit_expr hook lhs expr =
 
   (* the assignements *)
 
-  | Assign(e, e1) ->
+  | Assign(e, _tok, e1) ->
     (* definitely in a Rhs context *)
     recr e1;
     (* definitely in a Lhs context *)
@@ -115,13 +115,16 @@ let rec visit_expr hook lhs expr =
 
   (* composite lvalues that are actually not themselves lvalues *)
 
-  | ObjAccess(e, _id) ->
+  | DotAccess(e, _, _id) ->
     (* bugfix: this is not recl here! in 'x.fld = 2', x itself is not
      * an lvalue; 'x.fld' is *)
     recr e 
   | ArrayAccess(e, e1) ->
     recr e1;
     recr e;
+  | SliceAccess (e, e1, e2, e3) ->
+      [e1;e2;e3] |> List.map Ast_generic.opt_to_nop |> List.iter recr;
+      recr e
 
   | DeRef e -> recr e
   | Ref e -> recr e 

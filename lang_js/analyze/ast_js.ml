@@ -166,12 +166,12 @@ and expr =
   | Nop
 
   (* should be a statement *)
-  | Assign of expr * expr
+  | Assign of expr * tok * expr
 
   (* less: could be transformed in a series of Assign(ObjAccess, ...) *)
   | Obj of obj_
   | Class of class_ * name option (* when assigned in module.exports  *)
-  | ObjAccess of expr * property_name
+  | ObjAccess of expr * tok * property_name
   (* we could transform it in an Obj but can be useful to remember 
    * the difference in further analysis (e.g., in the abstract interpreter) *)
   | Arr of expr list  
@@ -200,7 +200,7 @@ and stmt =
   | Do of stmt * expr | While of expr * stmt
   | For of for_header * stmt
 
-  | Switch of expr * case list
+  | Switch of tok * expr * case list
   | Continue of label option | Break of label option
   | Return of expr
 

@@ -397,7 +397,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
        );
        None
 
-   | Switch (e, cases_and_body) ->
+   | Switch (_, e, cases_and_body) ->
 
            let newi = state.g#add_node
              { F.n = F.SwitchHeader (e);i=i() } in

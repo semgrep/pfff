@@ -97,7 +97,7 @@ let visit_program ~tag_hook _prefs (cst, toks) =
       );
      Visitor_ast_js.kexpr = (fun (k,_) x ->
       (match x with
-      | ObjAccess (_, PN name) ->
+      | ObjAccess (_, _, PN name) ->
           tag_name name (Entity (E.Field, (Use2 fake_no_use2)));
       | IdSpecial (special, ii) ->
          (match special with
@@ -116,7 +116,7 @@ let visit_program ~tag_hook _prefs (cst, toks) =
       | Apply (Id (_name, {contents = Local | Param}), _) ->
          (* todo: tag_name name PointerCall; *)
          ()
-      | Apply (ObjAccess (_, PN name), _) ->
+      | Apply (ObjAccess (_, _, PN name), _) ->
          tag_name name (Entity (E.Method, (Use2 fake_no_use2)));
       | Fun (_, Some name) ->
          tag_name name (Entity (E.Function, (Use2 fake_no_use2)));

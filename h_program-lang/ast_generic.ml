@@ -24,8 +24,9 @@
  *  - Javascript
  *  - Java
  *  - C
+ *  - Go
  *  - TOFINISH OCaml
- *  - TODO PHP, Go
+ *  - TODO PHP
  *
  * rational: In the end, programming languages have a lot in common.
  * Even though most interesting analysis are probably better done on a
@@ -39,7 +40,6 @@
  * tree of nodes, but all the structure of the original AST is lost.
  * 
  * TODO:
- *  - later: add Go (easy)
  *  - later: add Ruby, Rust, Scala (difficult)
  *  - later: add C++ (argh)
  *  - see ast_fuzzy.ml TODOs for ideas to use ast_generic for sgrep.
@@ -116,14 +116,11 @@ type ident = string wrap
 type dotted_ident = ident list (* at least 1 element *)
  (* with tarzan *)
 
-(* todo: not enough in OCaml with functor and type arguments or C++ templates*)
-type qualifier = dotted_ident
- (* with tarzan *)
-
-(* 'module' can also be used for a 'package', or a 'namespace' *)
+(* module_name can also be used for a package name or a namespace *)
 type module_name =
-  | FileName of string wrap   (* ex: Js import, C #include, Go import *)
   | DottedName of dotted_ident (* ex: Python *)
+  (* in that case the '.' is really the '/' *)
+  | FileName of string wrap   (* ex: Js import, C #include, Go import *)
  (* with tarzan *)
 
 (* see also scope_code.ml *)
@@ -154,6 +151,8 @@ type name = ident * name_info
     name_qualifier: qualifier option;
     name_typeargs: type_arguments option; (* Java *)
   } 
+  (* todo: not enough in OCaml with functor and type args or C++ templates*)
+  and qualifier = dotted_ident
 
 (*****************************************************************************)
 (* Naming/typing *)
@@ -180,6 +179,7 @@ and expr =
   | Record of field list
   (* Or-type (could be used instead of Container, Cons, Nil, etc.) *)
   | Constructor of name * expr list
+  (* see also Call(IdSpecial (New,_), [ArgType _;...] for other values *)
 
   (* very special value *)
   | Lambda of function_definition
@@ -190,7 +190,11 @@ and expr =
 
   (* todo: newvar: sometimes abused to also introduce a newvar (as in Python)
    * but ultimately those cases should be rewritten to first introduce a
-   * VarDef
+   * VarDef. 
+   * todo: Sometimes some ObjAccess should really be transformed in Name
+   * with a better qualifier because the obj is actually the name of a package
+   * or module, but you may need advanced semantic information and global
+   * analysis to disambiguate.
    *)
   | Name of name * id_info
   | IdSpecial of special wrap
@@ -208,24 +212,31 @@ and expr =
    * Assign can also be abused to declare new variables, but you should use
    * variable_definition for that.
    * less: should be in stmt, but most languages allow this at expr level :(
+   * update: should even be in a separate simple_stmt, as in Go
    *)
-  | Assign of expr * expr
+  | Assign of expr * tok (* =, or sometimes := in Go, <- in ML *) * expr
   (* less: should desugar in Assign, should be only binary_operator *)
   | AssignOp of expr * arithmetic_operator wrap * expr
   (* newvar:! newscope:? in OCaml yes but we miss the 'in' part here  *)
   | LetPattern of pattern * expr
 
-  (* can also be used for Record, Class, or Module access depending on expr *)
-  | ObjAccess of expr * ident
+  (* can be used for Record, Class, or Module access depending on expr.
+   * In the last case it should be rewritten as a Name with a qualifier though.
+   *)
+  | DotAccess of expr * tok (* ., ::, ->, # *) * ident
   (* in Js this is used for ObjAccess with a computed field name *)
   | ArrayAccess of expr * expr (* less: slice *)
+  (* could also use ArrayAccess with a Tuple rhs, or use a special *)
+  | SliceAccess of expr * 
+      expr option (* lower *) * expr option (* upper *) * expr option (* step*)
 
-  | Conditional of expr * expr * expr
+  | Conditional of expr * expr * expr (* a.k.a ternary expression *)
   | MatchPattern of expr * action list
   (* less: TryFunctional *)
 
   | Yield of expr * bool
   | Await of expr
+  (* Send/Recv of Go are currently in OtherExpr *)
 
   | Cast of type_ * expr
   (* less: should be in statement *)
@@ -235,7 +246,7 @@ and expr =
   | Ref of expr (* &, address of *)
   | DeRef of expr (* '*' *)
 
-  | Ellipsis of tok (* for sgrep, and also types in Python *)
+  | Ellipsis of tok (* sgrep: ... in args, stmts, and also types in Python *)
 
   | OtherExpr of other_expr_operator * any list
 
@@ -244,10 +255,11 @@ and expr =
     | Int of string wrap | Float of string wrap
     | Char of string wrap | String of string wrap | Regexp of string wrap
     | Unit of tok (* a.k.a Void *) | Null of tok | Undefined of tok (* JS *)
+    | Imag of string wrap (* Go, Python *)
 
   and container_operator = 
     (* Tuple was lifted up *)
-    | Array (* todo? designator? *)
+    | Array (* todo? designator? use ArrayAccess for designator? *)
     | List | Set
     | Dict (* a.k.a Hash or Map (combine with Tuple to get Key/value pair) *)
 
@@ -259,7 +271,8 @@ and expr =
 
    (* special apply *)
    | Eval
-   | Typeof | Instanceof | Sizeof
+   | Typeof (* for C? and Go in switch x.(type) *)
+   | Instanceof | Sizeof
    (* note that certain languages do not have a 'new' keyword (e.g., Python),
     * instead certain 'Call' are really 'New' *)
    | New  (* usually associated with Call(New, [ArgType _;...]) *)
@@ -316,7 +329,7 @@ and expr =
         (* OCaml *)
         | OA_ArgQuestion
 
-
+  (* TODO: reduce *)
   and other_expr_operator = 
     (* Javascript *)
     | OE_Exports | OE_Module 
@@ -328,25 +341,26 @@ and expr =
     | OE_UseStrict (* less: lift up to program attribute/directive? *)
     | OE_ObjAccess_PN_Computed (* less: convert to ArrayAccess *)
     (* Python *)
-    | OE_Imag
     | OE_Is | OE_IsNot (* less: could be part of a set_operator? or PhysEq? *)
     | OE_In | OE_NotIn (* less: could be part of a obj_operator? *)
     | OE_Invert
-    | OE_Slice | OE_SliceIndex | OE_SliceRange
+    | OE_Slices | OE_SliceIndex | OE_SliceRange (* see also SliceAccess *)
     (* TODO: newvar: *)
     | OE_CompForIf | OE_CompFor | OE_CompIf
     | OE_CmpOps
-    | OE_Repr
+    | OE_Repr (* lift up? special Dump? *)
     (* Java *)
     | OE_NameOrClassType | OE_ClassLiteral | OE_NewQualifiedClass
     (* C *)
     | OE_GetRefLabel
-    | OE_ArrayInitDesignator | OE_GccConstructor (* transform in New? *)
+    | OE_ArrayInitDesignator (* [x] = ... todo? use ArrayAccess in container?*)
     (* PHP *)
     | OE_Unpack
     (* OCaml *)
     | OE_FieldAccessQualified | OE_RecordWith 
     | OE_StmtExpr (* OCaml has just expressions, no statements *)
+    (* Go *)
+    | OE_Send | OE_Recv
 
 (*****************************************************************************)
 (* Statement *)
@@ -358,8 +372,9 @@ and stmt =
   | DefStmt of definition
   | DirectiveStmt of directive
 
-  (* newscope: in C++/Java *)
+  (* newscope: in C++/Java/Go *)
   | Block of stmt list
+  (* EmptyStmt = Block [] *)
 
   | If of expr * stmt * stmt
   | While of expr * stmt
@@ -368,9 +383,9 @@ and stmt =
   | For of for_header * stmt
 
   (* less: could be merged with ExprStmt (MatchPattern ...) *)
-  | Switch of expr * case_and_body list
+  | Switch of tok (* switch or also Select in Go *) * expr * case_and_body list
 
-  | Return of expr
+  | Return of expr option
   | Continue of expr option | Break of expr option (* todo? switch to label? *)
 
   | Label of label * stmt
@@ -388,10 +403,13 @@ and stmt =
   | OtherStmt of other_stmt_operator * any list
 
   (* newscope: *)
+  (* less: could merge even more with pattern
+   * list = PatDisj and Default = PatUnderscore, 
+   * so case_and_body of Switch <=> action of MatchPattern
+   *)
   and case_and_body = case list * stmt
-   (* less: could be merged with pattern *)
     and case  =
-    | Case of expr
+    | Case of pattern
     | Default
 
   (* newvar: newscope: *)
@@ -402,6 +420,9 @@ and stmt =
   and label = ident
 
   and for_header = 
+    (* todo? copy Go and have instead   
+     * ForClassic of simple option * expr * simple option?
+     *)
     | ForClassic of for_var_or_expr list (* init *) * 
                     expr (* cond *) * 
                     expr (* next *)
@@ -421,6 +442,7 @@ and stmt =
   and other_stmt_operator = 
     (* Python *)
     | OS_Delete 
+    (* TODO: reduce? transpile? *)
     | OS_ForOrElse | OS_WhileOrElse | OS_TryOrElse
     | OS_ThrowFrom | OS_ThrowNothing | OS_Global | OS_NonLocal
     | OS_Pass
@@ -429,6 +451,9 @@ and stmt =
     | OS_Sync
     (* C *)
     | OS_Asm
+    (* Go *)
+    | OS_Go | OS_Defer 
+    | OS_Fallthrough
 
 (*****************************************************************************)
 (* Pattern *)
@@ -457,13 +482,16 @@ and pattern =
   | PatWhen  of pattern * expr
   | PatAs    of pattern * (ident * id_info)
 
+  (* Go *)
+  | PatType of type_
+
   | OtherPat of other_pattern_operator * any list
 
   and field_pattern = name * pattern
 
   and other_pattern_operator =
   (* Python *)
-  | OP_Expr (* todo: should transform in pattern when can *)
+  | OP_ExprPattern (* todo: should transform in pattern when can *)
   (* Javascript *)
   | OP_Var (* todo: should transform in pattern when can *)
 
@@ -474,8 +502,12 @@ and pattern =
 and type_ =
   (* todo? a type_builtin = TInt | TBool | ...? see Literal *)
   | TyBuiltin of string wrap (* int, bool, etc. could be TApply with no args *)
-  | TyFun of type_ list (* use parameter? args (not curried) *) * 
-             type_ (* return type *)
+  (* old: was type_, but languages such as C and Go allow also to name
+   * those parameters, and Go even allow Variadic params so we need
+   * at least type_ * attributes, at which point it's better to just use 
+   * parameter_classic
+   *)
+  | TyFun of parameter_classic list * type_ (* return type *)
   (* covers tuples, list, etc. and also regular typedefs *)
   | TyApply of name * type_arguments
   | TyVar of ident (* typedef? no type variable in polymorphic type *)
@@ -502,9 +534,10 @@ and type_ =
   (* Python *)
   | OT_Expr | OT_Arg (* todo: should transform in type_ when can *)
   (* C *)
-  | OT_StructName | OT_UnionName | OT_EnumName
+  (* TODO? convert in unique name with TyApply ?*)
+  | OT_StructName | OT_UnionName | OT_EnumName 
   (* PHP *)
-  | OT_Shape | OT_Variadic
+  | OT_Shape (* hack-specific? *) | OT_Variadic (* ???? *)
 
 (*****************************************************************************)
 (* Attribute *)
@@ -548,10 +581,13 @@ and definition = entity * definition_kind (* (or decl) *)
   and entity = {
     name: ident;
     attrs: attribute list;
-    type_: type_ option; (* less: use ref to enable typechecking *)
     tparams: type_parameter list;
     (* naming/typing *)
     info: id_info;
+    (* old: type_: type_ option; but redundant with the type information in
+     * the different definition_kind, as well as in id_info, 
+     * so not worth factoring.
+     *)
   }
 
   (* can have empty "body" when the definition is actually a declaration
@@ -559,7 +595,7 @@ and definition = entity * definition_kind (* (or decl) *)
   and definition_kind =
     | FuncDef   of function_definition (* valid for methods too *)
     (* newvar: *)
-    | VarDef    of variable_definition  (* valid for constants and fields too *)
+    | VarDef    of variable_definition (* valid for constants and fields too *)
 
     | TypeDef   of type_definition
     | ClassDef  of class_definition
@@ -584,7 +620,8 @@ and function_definition = {
  (* less: could be merged in entity.type_ *)
  fparams: parameters;
  frettype: type_ option; (* return type *)
- (* newscope: *)
+ (* newscope:
+  * note: can be empty statement for methods in interfaces *)
  fbody: stmt;
 }
   and parameters = parameter list
@@ -592,18 +629,20 @@ and function_definition = {
     and parameter =
      | ParamClassic of parameter_classic
      | ParamPattern of pattern
-     (* for sgrep *)
+     (* sgrep: ... in parameters
+      * note: foo(...x) of Js/Go is using the Variadic attribute, not this *)
      | ParamEllipsis of tok
 
      | OtherParam of other_parameter_operator * any list
 
     (* less: could be merged with variable_definition, or pattern
-     * could factorize pname/pattrs/pinfo with entity
+     * less: could factorize pname/pattrs/pinfo with entity
      *)
     and parameter_classic = { 
-     pname: ident;
-     pdefault: expr option;
-     ptype: type_ option;
+     (* alt: use a 'ParamNoIdent of type_' when pname is None instead? *)
+     pname:    ident option;
+     ptype:    type_ option;
+     pdefault: expr  option;
      (* this covers '...' variadic parameters, see the Variadic attribute *)
      pattrs: attribute list;
      (* naming *)
@@ -614,17 +653,18 @@ and function_definition = {
      | OPO_KwdParam | OPO_SingleStarParam
      (* PHP *)
      | OPO_Ref (* less: or encode in type? *)
+     (* Go *)
+     | OPO_Receiver (* of parameter_classic *)
 
 (* ------------------------------------------------------------------------- *)
 (* Variable definition *)
 (* ------------------------------------------------------------------------- *)
 (* Also used for constant_definition with attrs = [Const].
  * Also used for field definition in a class (and record).
- * Could also use for function_definition with vinit = Some (Lambda (...))
+ * less: could use for function_definition with vinit = Some (Lambda (...))
+ *  but maybe useful to explicitely makes the difference for now?
  *)
 and variable_definition = {
-  (* less: could remove function_definition as expr can be a Lambda but maybe
-   * useful to explicitely makes the difference for now? *)
   vinit: expr option;
   (* less: could merge in entity.type_ *)
   vtype: type_ option;
@@ -640,8 +680,9 @@ and type_definition = {
   and type_definition_kind = 
    | OrType  of or_type_element list  (* enum/ADTs *)           
    (* field.vtype should be defined here *)
-   | AndType of field list (* record/struct/union *) 
+   | AndType of field list (* record/struct (for class see class_definition *)
 
+   (* a.k.a typedef in C (and alias type in Go) *)
    | AliasType of type_
    | Exception of ident (* same name than entity *) * type_ list
 
@@ -658,27 +699,27 @@ and type_definition = {
       (* Java *)
       | OOTEO_EnumWithMethods | OOTEO_EnumWithArguments
 
-  (* Field definition and use, for classes and records *)
-
- (* less: could be merged with variable_definition,
-  * I don't call it field_definition because it's used both to
+ (* Field definition and use, for classes and records
+  * less: could be merged with variable_definition.
+  * note: I don't call it field_definition because it's used both to
   * define the shape of a field (a definition), and when creating
   * an actual field (a value)
   *)
   and field = 
     | FieldVar of entity * variable_definition
+    (* those can have empty body for interface methods *)
     | FieldMethod of entity * function_definition
 
-    | FieldDynamic of expr (* dynamic name *) * attribute list * expr (* value*)
+    | FieldDynamic of expr (* dynamic name *) * attribute list * expr (*value*)
     | FieldSpread of expr (* usually a Name *)
 
     | FieldStmt of stmt
 
   and other_type_kind_operator = 
-     (* C *)
-     | OTKO_EnumWithValue (* obsolete actually now that has OrEnum *)
      (* OCaml *)
      | OTKO_AbstractType
+     (* Go *)
+     | OTKO_Typedef (* type x foo (vs type x = foo) *)
 
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)
@@ -686,7 +727,7 @@ and type_definition = {
 (* less: could be a special kind of type_definition *)
 and class_definition = {
   ckind: class_kind;
-  cextends: type_ list; 
+  cextends: type_ list; (* usually just one parent *)
   cimplements: type_ list;
   (* newscope: *)
   cbody: field list;
@@ -697,7 +738,7 @@ and class_definition = {
     | Trait
 
 (* ------------------------------------------------------------------------- *)
-(* Module definition (a.k.a package, a.k.a namespace)  *)
+(* Module definition  *)
 (* ------------------------------------------------------------------------- *)
 and module_definition = {
   mbody: module_definition_kind;
@@ -723,12 +764,19 @@ and macro_definition = {
 }
 
 (*****************************************************************************)
-(* Directives (Module import/export, macros) *)
+(* Directives (Module import/export, package) *)
 (*****************************************************************************)
 and directive = 
   (* newvar: *)
-  | ImportFrom of module_name * alias list
+  | ImportFrom of module_name * alias list (* less: unfold the list? *)
   | ImportAs   of module_name * ident option (* as name *)
+  (* bad practice! hard to resolve name locally *)
+  | ImportAll  of module_name * tok (* '.' in Go, '*' in Java/Python *)
+
+  (* packages are different from modules in that multiple files can reuse
+   * the same package name; they are agglomarated in the same package
+   *)
+  | Package of dotted_ident (* a.k.a namespace *)
 
   | OtherDirective of other_directive_operator * any list
 
@@ -736,15 +784,18 @@ and directive =
 
   and other_directive_operator = 
   (* Javascript *)
-  | OI_Export | OI_ImportCss | OI_ImportEffect
+  | OI_Export 
+  | OI_ImportCss | OI_ImportEffect
 
 (*****************************************************************************)
 (* Toplevel *)
 (*****************************************************************************)
-(* less: merge with field? *)
-(* this is merged with stmt because many languages allow nested function
+(* item (a.k.a toplevel element, toplevel decl) is now equal to stmt.
+ * Indeed, many languages allow nested functions
  * or class definitions and even nested imports, so this is simpler to
- * merge item and stmt together. This can simplfy sgrep too.
+ * just merge them. 
+ * This can simplify sgrep too.
+ * less: merge with field?
  *)
 and item = stmt
 
@@ -784,13 +835,16 @@ and any =
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let str_of_name = fst
+let str_of_ident = fst
 
 (*****************************************************************************)
 (* Error *)
 (*****************************************************************************)
 
-(* this can be used in the xxx_to_generic.ml file to signal limitations *)
+(* this can be used in the xxx_to_generic.ml file to signal limitations,
+ * and can be captured in Error_code.exn_to_error to pinpoint the error
+ * location.
+ *)
 exception Error of string * Parse_info.t
 
 let error tok msg = 
@@ -802,64 +856,65 @@ let error tok msg =
 
 (* use 0 for globals, if needed *)
 let gensym_counter = ref 0
+(* see gensym type in resolved_name *)
 let gensym () = 
   incr gensym_counter;
   !gensym_counter
 
 
-let empty_name_info = {
-   name_qualifier = None;
-   name_typeargs = None;
+let empty_name_info = 
+  { name_qualifier = None; name_typeargs = None;}
+
+let empty_var = 
+  { vinit = None; vtype = None }
+
+let empty_id_info () = 
+  { id_resolved = ref None; id_type = ref None; }
+
+
+let param_of_id id = { 
+    pname = Some id;
+    pdefault = None; ptype = None; pattrs = []; pinfo = empty_id_info ();
 }
-
-let empty_id_info () = {
-   id_resolved = ref None;
-   id_type     = ref None;
- }
-
-let basic_param id = { 
-    pname = id;
-    pdefault = None;
-    ptype = None;
-    pattrs = [];
-    pinfo = empty_id_info ();
+let param_of_type typ = {
+    ptype = Some typ;
+    pname = None; pdefault = None; pattrs = []; pinfo = empty_id_info ();
 }
 
 let basic_entity id attrs = {
   name = id;
   attrs = attrs;
-  type_ = None;
-  tparams = [];
-  info = empty_id_info ();
+  tparams = []; info = empty_id_info ();
 }
 
 let basic_field id typeopt =
   let entity = basic_entity id [] in
   FieldVar (entity, { vinit = None; vtype = typeopt})
 
-let empty_var () = 
-  { vinit = None; vtype = None }
 
 let expr_to_arg e = 
   Arg e
+(* Should fix those, try to transform in PatLiteral/... when can.
+ * Note that in Go it's ok to have a complex expressions. It is just
+ * matched for equality with the thing it's matched against, so in that
+ * case it should be a pattern like | _ when expr = x.
+ *)
+let expr_to_pattern e =
+  (* TODO: diconstruct e and generate the right pattern (PatLiteral, ...) *)
+  OtherPat (OP_ExprPattern, [E e])
 
-let entity_to_param { name; attrs; type_; tparams = _unused; info } = 
-  { pname = name;
-    pdefault = None;
-    ptype = type_;
-    pattrs = attrs;
-    pinfo = info;
-  }
+(* see also Java_to_generic.entity_to_param *)
 
+(* should avoid; should prefer to use 'expr option' in the AST *)
 let opt_to_nop opt =
   match opt with
   | None -> Nop
   | Some e -> e
 
-let opt_to_name opt =
+let opt_to_empty opt =
   match opt with
-  | None -> "FakeNAME", Parse_info.fake_info "FakeNAME"
-  | Some n -> n
+  | None -> Block []
+  | Some e -> e
 
 let stmt1 xs =
   match xs with
@@ -873,9 +928,6 @@ let stmt_to_field st =
   | DefStmt (entity, VarDef def) -> FieldVar (entity, def)
   | DefStmt (entity, FuncDef def) -> FieldMethod (entity, def)
   | _ -> FieldStmt st
-
-(* less: could be a Block containing LocalDef or LocalDirective *)
-let stmt_to_item st = st
 
 let is_boolean_operator = function
  | Plus (* unary too *) | Minus (* unary too *) 
@@ -894,10 +946,10 @@ let vardef_to_assign (ent, def) resolved =
   let idinfo = { (empty_id_info()) with id_resolved = ref resolved } in
   let name = Name ((ent.name, empty_name_info), idinfo) in
   let v = opt_to_nop def.vinit in
-  Assign (name, v)
+  Assign (name, Parse_info.fake_info "=", v)
 
 let funcdef_to_lambda (ent, def) resolved =
   let idinfo = { (empty_id_info()) with id_resolved = ref resolved } in
   let name = Name ((ent.name, empty_name_info), idinfo) in
   let v = Lambda def in
-  Assign (name, v)
+  Assign (name, Parse_info.fake_info "=", v)

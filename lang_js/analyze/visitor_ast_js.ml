@@ -116,13 +116,16 @@ and v_expr (x: expr) =
   | Id (v1, _) -> let v1 = v_name v1 in ()
   | IdSpecial v1 -> let v1 = v_wrap v_special v1 in ()
   | Nop -> ()
-  | Assign ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_expr v2 in ()
+  | Assign ((v1, v2, v3)) -> 
+        let v1 = v_expr v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()
   | ArrAccess ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_expr v2 in ()
   | Obj v1 -> let v1 = v_obj_ v1 in ()
   | Ellipses v1 -> let v1 = v_tok v1 in ()
   | Class (v1, v2) -> let v1 = v_class_ v1 in let v2 = v_option v_name v2 in ()
-  | ObjAccess ((v1, v2)) ->
-      let v1 = v_expr v1 and v2 = v_property_name v2 in ()
+  | ObjAccess ((v1, t, v2)) ->
+      let v1 = v_expr v1 and v2 = v_property_name v2 in
+      let t = v_tok t in
+      ()
   | Fun ((v1, v2)) -> let v1 = v_fun_ v1 and v2 = v_option v_name v2 in ()
   | Apply ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_list v_expr v2 in ()
   | Arr ((v1)) -> let v1 = v_list v_expr v1 in ()
@@ -142,7 +145,9 @@ and v_stmt x =
   | Do ((v1, v2)) -> let v1 = v_stmt v1 and v2 = v_expr v2 in ()
   | While ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_stmt v2 in ()
   | For ((v1, v2)) -> let v1 = v_for_header v1 and v2 = v_stmt v2 in ()
-  | Switch ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_list v_case v2 in ()
+  | Switch ((v0, v1, v2)) -> 
+        let v0 = v_tok v0 in
+        let v1 = v_expr v1 and v2 = v_list v_case v2 in ()
   | Continue v1 -> let v1 = v_option v_label v1 in ()
   | Break v1 -> let v1 = v_option v_label v1 in ()
   | Return v1 -> let v1 = v_expr v1 in ()

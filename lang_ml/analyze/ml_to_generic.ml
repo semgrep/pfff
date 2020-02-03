@@ -64,7 +64,7 @@ and type_ =
   | TyName v1 -> let v1 = name v1 in G.TyApply (v1, [])
   | TyVar v1 -> let v1 = ident v1 in G.TyVar v1
   | TyFunction ((v1, v2)) -> let v1 = type_ v1 and v2 = type_ v2 in 
-                             G.TyFun ([v1], v2)
+                             G.TyFun ([G.param_of_type v1], v2)
   | TyApp ((v1, v2)) -> let v1 = list type_ v1 and v2 = name v2 in
                         G.TyApply (v2, v1 |> List.map (fun t -> G.TypeArg t))
   | TyTuple v1 -> let v1 = list type_ v1 in G.TyTuple v1
@@ -93,21 +93,25 @@ and expr =
     let _v1 = tok v1 and v2 = expr v2 in
     G.DeRef (v2)
   | RefAssign ((v1, v2, v3)) ->
-      let v1 = expr v1 and _v2 = tok v2 and v3 = expr v3 in
-      G.Assign (G.DeRef v1, v3)
-  | FieldAccess ((v1, v2)) -> 
+      let v1 = expr v1 and v2 = tok v2 and v3 = expr v3 in
+      G.Assign (G.DeRef v1, v2, v3)
+  | FieldAccess ((v1, vtok, v2)) -> 
     let v1 = expr v1 in
+    let vtok = tok vtok in
     (match v2 with
-    | [], id -> let id = ident id in G.ObjAccess (v1, id)
+    | [], id -> let id = ident id in G.DotAccess (v1, vtok, id)
     | _ -> let v2 = name v2 in 
            G.OtherExpr (G.OE_FieldAccessQualified, [G.E v1; G.N v2])
     )
-  | FieldAssign ((v1, v2, v3)) ->
-      let v1 = expr v1 and v3 = expr v3 in
+  | FieldAssign ((v1, t1, v2, t2, v3)) ->
+    let v1 = expr v1 and v3 = expr v3 in
+    let t1 = tok t1 in let t2 = tok t2 in
     (match v2 with
-    | [], id -> let id = ident id in G.Assign (G.ObjAccess (v1, id), v3)
+    | [], id -> let id = ident id in 
+            G.Assign (G.DotAccess (v1, t1, id), t2, v3)
     | _ -> let v2 = name v2 in 
            G.Assign (G.OtherExpr (G.OE_FieldAccessQualified, [G.E v1; G.N v2]),
+              Parse_info.fake_info "=",
                      v3)
     )
       
@@ -136,8 +140,10 @@ and expr =
   | New ((v1, v2)) -> let v1 = tok v1 and v2 = name v2 in 
                       G.Call (G.IdSpecial (G.New, v1), 
                               [G.Arg (G.Name (v2, G.empty_id_info()))])
-  | ObjAccess ((v1, v2)) -> let v1 = expr v1 and v2 = ident v2 in
-                            G.ObjAccess (v1, v2)
+  | ObjAccess ((v1, t, v2)) -> 
+      let v1 = expr v1 and v2 = ident v2 in
+      let t = tok t in
+      G.DotAccess (v1, t, v2)
   | LetIn ((v1, v2, v3)) ->
       let _v1 = list let_binding v1
       and _v2 = expr v2

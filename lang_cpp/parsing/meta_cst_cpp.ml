@@ -273,22 +273,26 @@ and vof_expressionbis =
       let v1 = vof_expression v1
       and v2 = vof_bracket vof_expression v2
       in Ocaml.VSum (("ArrayAccess", [ v1; v2 ]))
-  | RecordAccess ((v1, v2)) ->
+  | RecordAccess ((v1, t, v2)) ->
       let v1 = vof_expression v1
+      and t = vof_tok t
       and v2 = vof_name v2
-      in Ocaml.VSum (("RecordAccess", [ v1; v2 ]))
-  | RecordPtAccess ((v1, v2)) ->
+      in Ocaml.VSum (("RecordAccess", [ v1; t; v2 ]))
+  | RecordPtAccess ((v1, t, v2)) ->
       let v1 = vof_expression v1
+      and t = vof_tok t
       and v2 = vof_name v2
-      in Ocaml.VSum (("RecordPtAccess", [ v1; v2 ]))
-  | RecordStarAccess ((v1, v2)) ->
+      in Ocaml.VSum (("RecordPtAccess", [ v1; t; v2 ]))
+  | RecordStarAccess ((v1, t, v2)) ->
       let v1 = vof_expression v1
+      and t = vof_tok t
       and v2 = vof_expression v2
-      in Ocaml.VSum (("RecordStarAccess", [ v1; v2 ]))
-  | RecordPtStarAccess ((v1, v2)) ->
+      in Ocaml.VSum (("RecordStarAccess", [ v1; t; v2 ]))
+  | RecordPtStarAccess ((v1, t, v2)) ->
       let v1 = vof_expression v1
+      and t = vof_tok t
       and v2 = vof_expression v2
-      in Ocaml.VSum (("RecordPtStarAccess", [ v1; v2 ]))
+      in Ocaml.VSum (("RecordPtStarAccess", [ v1; t; v2 ]))
   | SizeOfExpr ((v1, v2)) ->
       let v1 = vof_tok v1
       and v2 = vof_expression v2

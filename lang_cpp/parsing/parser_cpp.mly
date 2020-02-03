@@ -473,9 +473,9 @@ pm_expr:
  | cast_expr { $1 }
  /*(*c++ext: .* and ->*, note that not next to . and -> and take expr *)*/
  | pm_expr TDotStar   cast_expr
-     { mk_e(RecordStarAccess   ($1,$3)) [$2]}
+     { mk_e(RecordStarAccess   ($1,$2, $3)) [$2]}
  | pm_expr TPtrOpStar cast_expr
-     { mk_e(RecordPtStarAccess ($1,$3)) [$2]}
+     { mk_e(RecordPtStarAccess ($1, $2, $3)) [$2]}
 
 cast_expr: 
  | unary_expr                        { $1 }
@@ -514,9 +514,9 @@ postfix_expr:
 
  /*(*c++ext: ident is now a id_expression *)*/
  | postfix_expr TDot   template_opt tcolcol_opt  id_expression
-     { let name = ($4, fst $5, snd $5) in mk_e(RecordAccess ($1,name)) [$2] }
+     { let name = ($4, fst $5, snd $5) in mk_e(RecordAccess ($1,$2,name))[$2] }
  | postfix_expr TPtrOp template_opt tcolcol_opt id_expression  
-     { let name = ($4, fst $5, snd $5) in mk_e(RecordPtAccess($1,name)) [$2] }
+     { let name = ($4, fst $5, snd $5) in mk_e(RecordPtAccess($1,$2,name))[$2]}
 
  | postfix_expr TInc          { mk_e(Postfix ($1, Inc)) [$2] }
  | postfix_expr TDec          { mk_e(Postfix ($1, Dec)) [$2] }

@@ -140,7 +140,7 @@ and expr =
    * and it's more consistent with ArrayAccess where expr has to be
    * a kind of pointer too. That means x.y is actually unsugared in (&x)->y
    *)
-  | RecordPtAccess of expr * name (* x->y,  and not x.y!! *)
+  | RecordPtAccess of expr * tok * name (* x->y,  and not x.y!! *)
 
   | Cast of type_ * expr
 
@@ -181,7 +181,7 @@ type stmt =
   | Block of stmt list
 
   | If of expr * stmt * stmt
-  | Switch of expr * case list
+  | Switch of tok * expr * case list
 
   | While of expr * stmt
   | DoWhile of stmt * expr

@@ -147,8 +147,9 @@ and expr (x: expr) =
       | SR_Other x -> G.OtherExpr (x, [])
       )
   | Nop -> G.Nop
-  | Assign ((v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in 
-      G.Assign (v1, v2)
+  | Assign ((v1, tok, v2)) -> let v1 = expr v1 and v2 = expr v2 in 
+      let tok = info tok in
+      G.Assign (v1, tok, v2)
   | ArrAccess ((v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in 
       G.ArrayAccess (v1, v2)
   | Obj v1 -> let flds = obj_ v1 in G.Record flds
@@ -156,11 +157,12 @@ and expr (x: expr) =
   | Class (v1, _v2TODO) -> 
       let def, _more_attrsTODOEMPTY  = class_ v1 in
       G.AnonClass def
-  | ObjAccess ((v1, v2)) ->
+  | ObjAccess ((v1, t, v2)) ->
       let v1 = expr v1 in
       let v2 = property_name v2 in
+      let t = info t in
       (match v2 with
-      | Left n -> G.ObjAccess (v1, n)
+      | Left n -> G.DotAccess (v1, t, n)
       | Right e -> G.OtherExpr (G.OE_ObjAccess_PN_Computed, [G.E v1; G.E e])
       )
   | Fun ((v1, _v2TODO)) -> 
@@ -202,15 +204,17 @@ and stmt x =
       G.While (v1, v2)
   | For ((v1, v2)) -> let v1 = for_header v1 and v2 = stmt v2 in
       G.For (v1, v2)
-  | Switch ((v1, v2)) -> let v1 = expr v1 and v2 = list case v2 in
-      G.Switch (v1, v2)
+  | Switch ((v0, v1, v2)) -> 
+      let v0 = info v0 in
+      let v1 = expr v1 and v2 = list case v2 in
+      G.Switch (v0, v1, v2)
   | Continue v1 -> let v1 = option label v1 in 
      G.Continue (v1 |> option (fun n -> 
        G.Name ((n, G.empty_name_info), G.empty_id_info ())))
   | Break v1 -> let v1 = option label v1 in
      G.Break (v1 |> option (fun n -> 
        G.Name ((n, G.empty_name_info), G.empty_id_info ())))
-  | Return v1 -> let v1 = expr v1 in G.Return v1
+  | Return v1 -> let v1 = expr v1 in G.Return (Some v1)
   | Label ((v1, v2)) -> let v1 = label v1 and v2 = stmt v2 in
       G.Label (v1, v2)
   | Throw v1 -> let v1 = expr v1 in G.Throw v1
@@ -251,14 +255,14 @@ and for_header =
             G.OtherPat (G.OP_Var, [G.Def v])
         | Right e ->
             let e = expr e in
-            G.OtherPat (G.OP_Expr, [G.E e])
+            G.expr_to_pattern e
       in
       G.ForEach (pattern, v2)
 
 and case =
   function
   | Case ((v1, v2)) -> let v1 = expr v1 and v2 = stmt v2 in
-      [G.Case v1], v2
+      [G.Case (G.expr_to_pattern v1)], v2
   | Default v1 -> let v1 = stmt v1 in
       [G.Default], v1
 
@@ -306,7 +310,7 @@ and parameter x =
   let v2 = option expr p_default in 
   let v3 = bool p_dots in
   G.ParamClassic { 
-    G.pname = v1; pdefault = v2; ptype = None;
+    G.pname = Some v1; pdefault = v2; ptype = None;
     pattrs = if v3 then [G.Variadic] else [];
     pinfo = G.empty_id_info ();
   }

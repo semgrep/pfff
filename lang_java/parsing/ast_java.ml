@@ -180,7 +180,7 @@ and expr =
    * The problem is that more things in x.y.z can be a Dot, but to know
    * that requires semantic information about the type of x and y.
    *)
-  | Dot of expr * ident
+  | Dot of expr * tok * ident
 
   | ArrayAccess of expr * expr
 
@@ -195,7 +195,7 @@ and expr =
 
   | Conditional of expr * expr * expr
   (* ugly java, like in C assignement is an expression not a statement :( *)
-  | Assign of expr * expr
+  | Assign of expr * tok * expr
   | AssignOp of expr * Ast_generic.arithmetic_operator wrap * expr
 
   (* javaext: 1.? *)
@@ -224,7 +224,7 @@ and stmt =
   | Expr of expr
 
   | If of expr * stmt * stmt
-  | Switch of expr * (cases * stmts) list
+  | Switch of tok * expr * (cases * stmts) list
 
   | While of expr * stmt
   | Do of stmt * expr
@@ -378,13 +378,16 @@ and decls = decl list
 (*****************************************************************************)
 (* Toplevel *)
 (*****************************************************************************)
+type import = 
+  | ImportAll of qualified_ident * tok (* * *)
+  | ImportFrom of qualified_ident * ident
 
 type compilation_unit = {
   package: qualified_ident option;
   (* The qualified ident can also contain "*" at the very end.
    * The bool is for static import (javaext:)
    *)
-  imports: (bool * qualified_ident) list;
+  imports: (bool * import) list;
   (* todo? necessarily a (unique) class/interface first? *)
   decls: decls;
 }

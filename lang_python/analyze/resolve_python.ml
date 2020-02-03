@@ -181,15 +181,13 @@ let resolve prog =
                k x              
             )
     
-     | Import (aliases) ->
-         aliases |> List.iter (fun (dotted_name, asname_opt) ->
+     | ImportAs ((dotted_name, _dotsTODO), asname_opt) ->
            asname_opt |> Common.do_option (fun asname ->
              env |> add_name_env asname (ImportedModule dotted_name)
            );
-         );
          k x
 
-     | ImportFrom (dotted_name, aliases, _) ->
+     | ImportFrom ((dotted_name, _dotsTODO), aliases) ->
          aliases |> List.iter (fun (name, asname_opt) ->
            let entity = dotted_name @ [name] in
            (match asname_opt with

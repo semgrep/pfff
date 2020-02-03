@@ -170,21 +170,21 @@ and v_expr v =
       let v1 = v_expr v1 and v2 = v_tok v2 and v3 = v_expr v3 in 
       A.RefAssign (v1, v2, v3)
   | FieldAccess ((v1, v2, v3)) ->
-      let v1 = v_expr v1 and _v2 = v_tok v2 and v3 = v_long_name v3 in
-      A.FieldAccess (v1, v3)
+      let v1 = v_expr v1 and v2 = v_tok v2 and v3 = v_long_name v3 in
+      A.FieldAccess (v1, v2, v3)
   | FieldAssign ((v1, v2, v3, v4, v5)) ->
       let v1 = v_expr v1
-      and _v2 = v_tok v2
+      and v2 = v_tok v2
       and v3 = v_long_name v3
-      and _v4 = v_tok v4
+      and v4 = v_tok v4
       and v5 = v_expr v5
       in 
-      A.FieldAssign (v1, v3, v5)
+      A.FieldAssign (v1, v2, v3, v4, v5)
   | Record v1 -> let (a,b) = v_brace v_record_expr v1 in 
                  A.Record (a,b)
   | ObjAccess ((v1, v2, v3)) ->
-      let v1 = v_expr v1 and _v2 = v_tok v2 and v3 = v_name v3 in 
-      A.ObjAccess (v1, v3)
+      let v1 = v_expr v1 and v2 = v_tok v2 and v3 = v_name v3 in 
+      A.ObjAccess (v1, v2, v3)
   | New ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_long_name v2 in 
                       A.New (v1, v2)
   | LetIn ((v1, v2, v3, v4, v5)) ->

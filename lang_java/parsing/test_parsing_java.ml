@@ -100,7 +100,7 @@ let test_visitor file =
       | Ast_java.Literal (Ast_java.Int (s,_)) -> 
           pr2 ("int:" ^ s);
           k e
-      | Ast_java.Dot (e, (_s,_)) -> 
+      | Ast_java.Dot (e, _, (_s,_)) -> 
           pr2 "dot: s";
           k e
       | _ -> k e
@@ -126,7 +126,7 @@ let test_visitor_print file =
       | Ast_java.Literal (Ast_java.Int (s,_)) -> 
           pr2 ("int:" ^ s);
           k e
-      | Ast_java.Dot (e, (_s,_)) -> 
+      | Ast_java.Dot (e, _, (_s,_)) -> 
           pr2 "dot: s";
           k e
       | _ -> k e

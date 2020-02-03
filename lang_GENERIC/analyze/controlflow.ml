@@ -77,7 +77,7 @@ type node = {
       | Case
       | Default
 
-      | Return of expr
+      | Return of expr option
       | Break of expr option
       | Continue of expr option
 
@@ -188,7 +188,7 @@ let simple_node_of_stmt_opt stmt =
   | A.OtherStmt (a,b) -> Some (OtherStmt (a,b))
 
   | (A.Block _|A.If (_, _, _)|A.While (_, _)|A.DoWhile (_, _)|A.For (_, _)
-    |A.Switch (_, _)
+    |A.Switch (_, _, _)
     |A.Return _|A.Continue _|A.Break _|A.Label (_, _)|A.Goto _
     |A.Throw _|A.Try (_, _, _)
     |A.OtherStmtWithStmt _

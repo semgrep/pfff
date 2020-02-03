@@ -158,10 +158,11 @@ and vof_expr =
       let v1 = vof_expr v1
       and v2 = vof_arguments v2
       in Ocaml.VSum (("Call", [ v1; v2 ]))
-  | Dot ((v1, v2)) ->
+  | Dot ((v1, t, v2)) ->
       let v1 = vof_expr v1
+      and t = vof_tok t
       and v2 = vof_ident v2
-      in Ocaml.VSum (("Dot", [ v1; v2 ]))
+      in Ocaml.VSum (("Dot", [ v1; t; v2 ]))
   | ArrayAccess ((v1, v2)) ->
       let v1 = vof_expr v1
       and v2 = vof_expr v2
@@ -196,10 +197,11 @@ and vof_expr =
       and v2 = vof_expr v2
       and v3 = vof_expr v3
       in Ocaml.VSum (("Conditional", [ v1; v2; v3 ]))
-  | Assign ((v1, v2)) ->
+  | Assign ((v1, v2, v3)) ->
       let v1 = vof_expr v1
-      and v2 = vof_expr v2
-      in Ocaml.VSum (("Assign", [ v1; v2 ]))
+      and v2 = vof_tok v2
+      and v3 = vof_expr v3
+      in Ocaml.VSum (("Assign", [ v1; v2; v3 ]))
   | AssignOp ((v1, v2, v3)) ->
       let v1 = vof_expr v1
       and v2 = vof_wrap Meta_ast_generic_common.vof_arithmetic_operator v2
@@ -222,7 +224,8 @@ and vof_stmt =
       and v2 = vof_stmt v2
       and v3 = vof_stmt v3
       in Ocaml.VSum (("If", [ v1; v2; v3 ]))
-  | Switch ((v1, v2)) ->
+  | Switch ((v0, v1, v2)) ->
+      let v0 = vof_tok v0 in
       let v1 = vof_expr v1
       and v2 =
         Ocaml.vof_list
@@ -231,7 +234,7 @@ and vof_stmt =
              and v2 = vof_stmts v2
              in Ocaml.VTuple [ v1; v2 ])
           v2
-      in Ocaml.VSum (("Switch", [ v1; v2 ]))
+      in Ocaml.VSum (("Switch", [ v0; v1; v2 ]))
   | While ((v1, v2)) ->
       let v1 = vof_expr v1
       and v2 = vof_stmt v2
@@ -432,6 +435,16 @@ and vof_decl =
       in Ocaml.VSum (("Init", [ v1; v2 ]))
 and vof_decls v = Ocaml.vof_list vof_decl v
 
+and vof_import = function
+  | ImportAll (v1, v2) ->
+      let v1 = vof_qualified_ident v1 in
+      let v2 = vof_tok v2 in
+      Ocaml.VSum ("ImportAll", [v1;v2])
+  | ImportFrom (v1, v2) ->
+      let v1 = vof_qualified_ident v1 in
+      let v2 = vof_ident v2 in
+      Ocaml.VSum ("ImportFrom", [v1;v2])
+
 let vof_compilation_unit {
                            package = v_package;
                            imports = v_imports;
@@ -445,7 +458,7 @@ let vof_compilation_unit {
     Ocaml.vof_list
       (fun (v1, v2) ->
          let v1 = Ocaml.vof_bool v1
-         and v2 = vof_qualified_ident v2
+         and v2 = vof_import v2
          in Ocaml.VTuple [ v1; v2 ])
       v_imports in
   let bnd = ("imports", arg) in

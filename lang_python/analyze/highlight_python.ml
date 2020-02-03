@@ -150,7 +150,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
        | Name (name, _ctx, _resolved) ->
            let kind = E.Function in
            tag_name name (Entity (kind, use2))
-       | Ast_python.Attribute (_e, name, _ctx) ->
+       | Ast_python.Attribute (_e, _t, name, _ctx) ->
            let kind = E.Method in
            tag_name name (Entity (kind, use2))
        | _ -> ()
@@ -160,7 +160,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
           | _ -> ();
        );
        k x
-     | Ast_python.Attribute (_e, name, _ctx) ->
+     | Ast_python.Attribute (_e, _, name, _ctx) ->
          (match () with
          | _ when !in_type ->
           (match fst name with
@@ -201,8 +201,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
        tag_name name (Entity (kind, def2));
        Common.save_excursion in_class true (fun () -> 
           k x);
-     | Import (aliases) ->
-         aliases |> List.iter (fun (dotted_name, asname_opt) ->
+     | ImportAs ((dotted_name, _dotsTODO), asname_opt) ->
            let kind = E.Module in
            dotted_name |> List.iter (fun name ->
              tag_name name (Entity (kind, use2));
@@ -210,10 +209,9 @@ let visit_program ~tag_hook _prefs (program, toks) =
            asname_opt |> Common.do_option (fun asname ->
              tag_name asname (Entity (kind, def2));
            );
-         );
          k x
 
-     | ImportFrom (dotted_name, aliases, _) ->
+     | ImportFrom ((dotted_name, _dotsTODO), aliases) ->
          let kind = E.Module in
          dotted_name |> List.iter (fun name ->
            tag_name name (Entity (kind, use2));

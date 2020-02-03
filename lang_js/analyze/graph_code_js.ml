@@ -401,7 +401,7 @@ and stmt env = function
  | For (header, st) ->
    let env = for_header env header in
    stmt env st
- | Switch (e, xs) ->
+ | Switch (_tok, e, xs) ->
    expr env e;
    cases env xs
  | Continue lopt ->
@@ -496,7 +496,7 @@ and expr env e =
 
   | IdSpecial _ -> ()
   | Nop -> ()
-  | Assign (e1, e2) ->
+  | Assign (e1, _tok, e2) ->
     expr env e1;
     expr env e2
 
@@ -515,7 +515,7 @@ and expr env e =
         add_locals env [v]
      in
      class_ env c
-  | ObjAccess (e, prop) ->
+  | ObjAccess (e, _, prop) ->
     (match e with
     | Id (n, scope) when not (is_local env n) -> 
        add_use_edge_candidates env (n, E.Class) scope

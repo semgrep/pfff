@@ -18,7 +18,7 @@ type node = {
     | SwitchHeader of expr | SwitchEnd
     | Case (* TODO of expr? *) | Default
 
-    | Return of expr
+    | Return of expr option
     | Break of expr option  | Continue of expr option
 
     | TryHeader | CatchStart | Catch (* of pattern? *) | TryEnd

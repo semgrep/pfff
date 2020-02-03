@@ -110,7 +110,7 @@ let expr_to_typename expr =
     | Name name ->
         TClass (name |> List.map (fun (xs, id) -> id, xs))
     (* ugly, undo what was done in postfix_expression *)
-    | Dot (Name name, id) ->
+    | Dot (Name name, _, id) ->
         TClass ((name @ [[], id]) |> List.map (fun (xs, id) -> id, xs))
     | _ ->
         pr2 "cast_expression pb";
@@ -293,8 +293,14 @@ package_declaration:
 
 /*(* javaext: static_opt 1.? *)*/
 import_declaration:
- | IMPORT static_opt name SM            { $2, qualified_ident $3 }
- | IMPORT static_opt name DOT TIMES SM  { $2, (qualified_ident $3 @["*", $5])}
+ | IMPORT static_opt name SM            
+    { $2, 
+      (match List.rev (qualified_ident $3) with
+      | x::xs -> ImportFrom (List.rev xs, x)
+      | [] -> raise Impossible
+      ) }
+ | IMPORT static_opt name DOT TIMES SM  
+    { $2, ImportAll (qualified_ident $3, $5)}
 
 type_declaration:
  | class_declaration      { [Class $1] }
@@ -437,10 +443,10 @@ dims:
  | dims LB_RB  { $1 + 1 }
 
 field_access:
- | primary DOT identifier        { Dot ($1, $3) }
- | SUPER   DOT identifier        { Dot (Name [super_ident $1], $3) }
+ | primary DOT identifier        { Dot ($1, $2, $3) }
+ | SUPER   DOT identifier        { Dot (Name [super_ident $1], $2, $3) }
  /*(* javaext: ? *)*/
- | name DOT SUPER DOT identifier { Dot (Name (name $1@[super_ident $3]), $5) }
+ | name DOT SUPER DOT identifier { Dot (Name (name $1@[super_ident $3]),$2,$5)}
 
 array_access:
  | name LB expression RB                  { ArrayAccess ((Name (name $1)), $3)}
@@ -463,19 +469,19 @@ method_invocation:
                 | _ -> List.rev xs
                 )
               in
-              Call (Dot (Name (name (xs)), x), $3)
+              Call (Dot (Name (name (xs)), Parse_info.fake_info ".", x), $3)
           | _ ->
               pr2 "method_invocation pb";
               pr2_gen $1;
               raise Impossible
         }
  | primary DOT identifier LP argument_list_opt RP
-	{ Call ((Dot ($1, $3)), $5) }
+	{ Call ((Dot ($1, $2, $3)), $5) }
  | SUPER DOT identifier LP argument_list_opt RP
-	{ Call ((Dot (Name [super_ident $1], $3)), $5) }
+	{ Call ((Dot (Name [super_ident $1], $2, $3)), $5) }
  /*(* javaext: ? *)*/
  | name DOT SUPER DOT identifier LP argument_list_opt RP
-	{ Call (Dot (Name (name $1 @ [super_ident $3]), $5), $7)}
+	{ Call (Dot (Name (name $1 @ [super_ident $3]), $2, $5), $7)}
 
 argument: 
  | expression { $1 }
@@ -497,7 +503,7 @@ postfix_expression:
       *)
      match List.rev $1 with
      | (Id id)::x::xs ->
-         Dot (Name (name (List.rev (x::xs))), id)
+         Dot (Name (name (List.rev (x::xs))), Parse_info.fake_info ".", id)
      | _ ->
          Name (name $1)
    }
@@ -638,7 +644,7 @@ left_hand_side:
  | array_access  { $1 }
 
 assignment_operator:
- | EQ  { (fun e1 e2 -> Assign (e1, e2))  }
+ | EQ  { (fun e1 e2 -> Assign (e1, $1, e2))  }
  | OPERATOR_EQ  { (fun e1 e2 -> AssignOp (e1, $1, e2)) }
 
 /*(*----------------------------*)*/
@@ -792,7 +798,7 @@ if_then_else_statement: IF LP expression RP statement_no_short_if ELSE statement
 
 
 switch_statement: SWITCH LP expression RP switch_block
-    { Switch ($3, $5) }
+    { Switch ($1, $3, $5) }
 
 switch_block:
  | LC                                             RC  { [] }
@@ -1130,7 +1136,7 @@ explicit_constructor_invocation:
       { constructor_invocation [super_ident $1] $3 }
  /*(* javaext: ? *)*/
  | primary DOT SUPER LP argument_list_opt RP SM
-      { Expr (Call ((Dot ($1, super_identifier $3)), $5)) }
+      { Expr (Call ((Dot ($1, $2, super_identifier $3)), $5)) }
  /*(* not in 2nd edition java language specification. *)*/
  | name DOT SUPER LP argument_list_opt RP SM
       { constructor_invocation (name $1 @ [super_ident $3]) $5 }

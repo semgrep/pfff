@@ -319,8 +319,8 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
       | Some long_ident -> [List.map Ast.unwrap long_ident @ ["*"]]
       | None -> []
       ) @
-     ((ast.imports |> List.map (fun (_is_static, qualified_ident) ->
-       List.map Ast.unwrap qualified_ident
+     ((ast.imports |> List.map (fun (_is_static, _import) ->
+       (* List.map Ast.unwrap qualified_ident *) raise Todo
      )) @ [
        (* we automatically import java.lang.* *)
        ["java";"lang";"*"];
@@ -328,11 +328,15 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
        ["*"]
      ]
      );
-    imported_qualified = ast.imports |> Common.map_filter (fun (is_static, xs)->
+    imported_qualified = ast.imports |> Common.map_filter (fun 
+          (_is_static, _import)->
+          raise Todo
+(*
       match List.rev xs with
       | [] -> raise Impossible
       | ["*", _] -> None
       | (s, _)::_rest -> Some (s, (is_static, xs))
+*)
     );
   }
   in
@@ -353,13 +357,16 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
    * third-party packages not-yet handled).
    *)
   if phase = Inheritance then begin
-    ast.imports |> List.iter (fun (is_static, qualified_ident) ->
+    ast.imports |> List.iter (fun (_is_static, _import) ->
       let qualified_ident_bis =
+            raise Todo
+      (*
         match List.rev qualified_ident with
         | ("*",_)::rest -> List.rev rest
         (* less: just lookup the class for now *)
         | _x::xs when is_static -> List.rev xs
         | _ -> qualified_ident
+      *)
       in
       let entity = List.map Ast.unwrap qualified_ident_bis in
       (match lookup_fully_qualified_memoized env entity with
@@ -577,7 +584,7 @@ and stmt env = function
       expr env e;
       stmt env st1;
       stmt env st2;
-  | Switch (e, xs) ->
+  | Switch (_, e, xs) ->
       expr env e;
       xs |> List.iter (fun (cs, sts) ->
         cases env cs;
@@ -753,7 +760,7 @@ and expr env = function
   | Call (e, es) ->
       expr env e;
       exprs env es
-  | Dot (e, _idTODO) ->
+  | Dot (e, _t, _idTODO) ->
       (* todo: match e, and try lookup method/field
        * if e is a Name, lookup it, and if a class then
        * lookup children. If local ... then need get its type
@@ -766,7 +773,7 @@ and expr env = function
   | Infix (e1, _op, e2) -> exprs env [e1;e2]
   | Conditional (e1, e2, e3) -> exprs env [e1;e2;e3]
   | AssignOp (e1, _op, e2) -> exprs env [e1;e2]
-  | Assign (e1, e2) -> exprs env [e1;e2]
+  | Assign (e1, _tok, e2) -> exprs env [e1;e2]
 
   | Cast (t, e) ->
       typ env t;

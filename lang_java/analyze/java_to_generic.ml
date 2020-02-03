@@ -40,6 +40,12 @@ let error = Ast_generic.error
 
 let fake_info () = Parse_info.fake_info "FAKE"
 
+let entity_to_param { G.name; attrs; tparams = _unused; info } t = 
+  { G. pname = Some name; ptype = t; pattrs = attrs; pinfo = info;
+       pdefault = None;
+  }
+
+
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
@@ -246,8 +252,8 @@ and expr e =
 
   | Call ((v1, v2)) -> let v1 = expr v1 and v2 = arguments v2 in
       G.Call (v1, v2)
-  | Dot ((v1, v2)) -> let v1 = expr v1 and v2 = ident v2 in 
-      G.ObjAccess (v1, v2)
+  | Dot ((v1, t, v2)) -> let v1 = expr v1 and t = info t and v2 = ident v2 in 
+      G.DotAccess (v1, t, v2)
   | ArrayAccess ((v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in
       G.ArrayAccess (v1, v2)
   | Postfix ((v1, (v2, tok))) -> let v1 = expr v1 and v2 = fix_op v2 in
@@ -267,9 +273,9 @@ and expr e =
   | Conditional ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in
       G.Conditional (v1, v2, v3)
-  | Assign ((v1, v2)) ->
-      let v1 = expr v1 and v2 = expr v2 in
-      G.Assign (v1, v2)
+  | Assign ((v1, v2, v3)) ->
+      let v1 = expr v1 and v2 = info v2 and v3 = expr v3 in
+      G.Assign (v1, v2, v3)
   | AssignOp ((v1, (v2, tok), v3)) ->
       let v1 = expr v1 and v3 = expr v3 in
       G.AssignOp (v1, (v2, tok), v3)
@@ -291,7 +297,8 @@ and stmt =
   | If ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = stmt v2 and v3 = stmt v3 in
       G.If (v1, v2, v3)
-  | Switch ((v1, v2)) ->
+  | Switch ((v0, v1, v2)) ->
+      let v0 = info v0 in
       let v1 = expr v1
       and v2 =
         list
@@ -299,7 +306,7 @@ and stmt =
             v1, G.stmt1 v2
         ) v2
       in
-      G.Switch (v1, v2)
+      G.Switch (v0, v1, v2)
   | While ((v1, v2)) -> let v1 = expr v1 and v2 = stmt v2 in
       G.While (v1, v2)
   | Do ((v1, v2)) -> let v1 = stmt v1 and v2 = expr v2 in
@@ -311,7 +318,7 @@ and stmt =
   | Continue v1 -> let v1 = option ident_label v1 in
       G.Continue v1
   | Return v1 -> let v1 = option expr v1 in
-      G.Return (G.opt_to_nop v1)
+      G.Return v1
   | Label ((v1, v2)) -> let v1 = ident v1 and v2 = stmt v2 in
       G.Label (v1, v2)
   | Sync ((v1, v2)) -> 
@@ -339,7 +346,7 @@ and ident_label x =
 and stmts v = list stmt v
 
 and case = function 
-  | Case v1 -> let v1 = expr v1 in G.Case v1
+  | Case v1 -> let v1 = expr v1 in G.Case (G.expr_to_pattern v1)
   | Default -> G.Default
 
 and cases v = list case v
@@ -352,7 +359,7 @@ and for_control =
       and v3 = list expr v3
       in 
       G.ForClassic (v1, G.Seq v2, G.Seq v3)
-  | Foreach ((v1, v2)) -> let ent = var v1 and v2 = expr v2 in
+  | Foreach ((v1, v2)) -> let ent, _tTODO = var v1 and v2 = expr v2 in
       let pat = G.OtherPat (G.OP_Var, [G.En ent]) in
       G.ForEach (pat, v2)
 
@@ -367,11 +374,9 @@ and var { name = name; mods = mods; type_ = xtyp } =
   let v1 = ident name in
   let v2 = modifiers mods in 
   let v3 = option typ xtyp in
-  { G.name = v1; G.attrs = v2; G.type_ = v3; tparams = [];
-    info = G.empty_id_info ();
-  }
+  G.basic_entity v1 v2, v3
 
-and catch (v1, v2) = let (ent: G.entity) = var v1 and v2 = stmt v2 in
+and catch (v1, v2) = let ent, _tTODO = var v1 and v2 = stmt v2 in
   let pat = G.OtherPat (G.OP_Var, [G.En ent]) in
   pat, v2
 and catches v = list catch v
@@ -380,9 +385,9 @@ and catches v = list catch v
 and vars v = list var v
 
 and var_with_init { f_var = f_var; f_init = f_init } =
-  let ent = var f_var in 
+  let ent, t = var f_var in 
   let init = option init f_init in
-  ent, {G.vinit = init; vtype = None }
+  ent, {G.vinit = init; vtype = t }
 
 and init =
   function
@@ -393,8 +398,8 @@ and init =
 
 and params v = 
   let v = vars v in
-  v |> List.map (fun ent ->
-      G.ParamClassic ( G.entity_to_param ent))
+  v |> List.map (fun (ent, t) ->
+      G.ParamClassic (entity_to_param ent t))
 and
   method_decl {
                   m_var = m_var;
@@ -402,16 +407,15 @@ and
                   m_throws = m_throws;
                   m_body = m_body
                 } =
-  let v1 = var m_var in
-  let rett = match v1.G.type_ with None -> raise Impossible | Some x -> x in
+  let ent, rett = var m_var in
   let v2 = params m_formals in
   let v3 = list qualified_ident m_throws in
   let v4 = stmt m_body in
   let throws = v3 |> List.map (fun qu_id ->
         G.OtherAttribute (G.OA_AnnotThrow, [G.Di qu_id]))
   in
-  { v1 with G.attrs = v1.G.attrs @ throws },
-  { G.fparams = v2; frettype  = Some rett; fbody = v4 }
+  { ent with G.attrs = ent.G.attrs @ throws },
+  { G.fparams = v2; frettype  = rett; fbody = v4 }
 
 and field v = var_with_init v
 
@@ -490,35 +494,31 @@ and decl decl =
 
 and decls v = list decl v
 
-let compilation_unit {
-                         package = package;
-                         imports = imports;
-                         decls = xdecls
-                       } =
+and import = function
+  | ImportAll (xs, tok) -> G.ImportAll (G.DottedName xs, tok)
+  | ImportFrom (xs, id) -> 
+      let id = ident id in
+      G.ImportFrom (G.DottedName xs, [id, None])
+
+
+let compilation_unit { package = package;
+                       imports = imports;
+                       decls = xdecls
+                      } =
   let v1 = option qualified_ident package in
   let v2 =
-    list
-      (fun (v1, v2) -> let _v1TODO = bool v1 and v2 = qualified_ident v2 in 
-        match List.rev v2 with
-        | ("*", _)::xs ->
-           G.ImportAs (G.DottedName (List.rev xs), None)
-        | [] -> raise Impossible
-        | x::xs ->
-          G.ImportFrom (G.DottedName (List.rev xs), [(x, None)])
-        )
-      imports in
+    list (fun (v1, v2) -> let _v1static = bool v1 and v2 = import v2 in v2)
+    imports
+  in
   let v3 = decls xdecls in
-  let items = v3 |> List.map G.stmt_to_item in
+  let items = v3 in
   let imports = v2 |> List.map (fun import -> G.DirectiveStmt import) in
-  (match v1 with
-  | None -> items @ imports
-  | Some [] -> raise Impossible
-  | Some xs -> 
-    let id = Common2.list_last xs in
-    let ent = G.basic_entity id [] in
-    [G.DefStmt (ent, G.ModuleDef { G.mbody = 
-        G.ModuleStruct (None, items @ imports) })]
-  )
+  let package = 
+    match v1 with
+    | None -> items @ imports
+    | Some x -> [G.DirectiveStmt (G.Package x)]
+  in
+  package @ imports @ items
 
 let program v = 
   compilation_unit v
@@ -530,7 +530,8 @@ let any =
   | AStmt v1 -> let v1 = stmt v1 in G.S v1
   | AStmts v1 -> let v1 = List.map stmt v1 in G.Ss v1
   | ATyp v1 -> let v1 = typ v1 in G.T v1
-  | AVar v1 -> let v1 = var v1 in G.En v1
+  | AVar v1 -> let ent, t = var v1 in 
+      G.Def (ent, G.VarDef {G.vtype = t; vinit = None})
   | AInit v1 -> let v1 = init v1 in G.E v1
   | AMethod v1 -> let (ent, def) = method_decl v1 in 
       G.Def (ent, G.FuncDef def)

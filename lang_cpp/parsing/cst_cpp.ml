@@ -18,12 +18,13 @@
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* 
+(* A (mostly) Concrete Syntax Tree for C/C++/Cpp.
+ *
  * This is a big file ... C++ is a big and complicated language ...
  * This file started with a simple AST for C. It was then extended
- * to deal with cpp idioms (see 'cppext:' tag), gcc extensions (see gccext),
- * and finally C++ constructs (see c++ext). A few kencc extensions
- * were also recently added (see kenccext).
+ * to deal with cpp idioms (see 'cppext:' tag), gcc extensions (see gccext:),
+ * and finally C++ constructs (see c++ext:). A few kencc extensions
+ * were also recently added (see kenccext:).
  * 
  * gcc introduced StatementExpr which made expr and statement mutually
  * recursive. It also added NestedFunc for even more mutual recursivity ...
@@ -31,7 +32,6 @@
  * and because templates are also qualifiers, almost all types
  * are now mutually recursive ...
  *
- * Like most other ASTs in pfff, it's actually more a Concrete Syntax Tree.
  * Some stuff are tagged 'semantic:' which means that they are computed
  * after parsing. 
  * 
@@ -257,12 +257,12 @@ and expression = expressionbis wrap
   | ArrayAccess    of expression * expression bracket
 
    (* The Pt is redundant normally, could be replace by DeRef RecordAccess *)
-  | RecordAccess   of expression * name
-  | RecordPtAccess of expression * name
+  | RecordAccess   of expression * tok (* . *)  * name
+  | RecordPtAccess of expression * tok (* -> *) * name
 
   (* c++ext: note that second paramater is an expression, not a name *)
-  | RecordStarAccess   of expression * expression
-  | RecordPtStarAccess of expression * expression
+  | RecordStarAccess   of expression * tok (* .* *) * expression
+  | RecordPtStarAccess of expression * tok (* ->* *) * expression
 
   | SizeOfExpr     of tok * expression
   | SizeOfType     of tok * fullType paren

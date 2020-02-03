@@ -121,10 +121,11 @@ and vof_expr =
       let v1 = vof_expr v1
       and v2 = vof_expr v2
       in Ocaml.VSum (("ArrayAccess", [ v1; v2 ]))
-  | RecordPtAccess ((v1, v2)) ->
+  | RecordPtAccess ((v1, t, v2)) ->
       let v1 = vof_expr v1
+      and t = vof_tok t
       and v2 = vof_name v2
-      in Ocaml.VSum (("RecordPtAccess", [ v1; v2 ]))
+      in Ocaml.VSum (("RecordPtAccess", [ v1; t; v2 ]))
   | Cast ((v1, v2)) ->
       let v1 = vof_type_ v1
       and v2 = vof_expr v2
@@ -191,10 +192,11 @@ let rec vof_stmt =
       and v2 = vof_stmt v2
       and v3 = vof_stmt v3
       in Ocaml.VSum (("If", [ v1; v2; v3 ]))
-  | Switch ((v1, v2)) ->
+  | Switch ((v0, v1, v2)) ->
+      let v0 = vof_tok v0 in
       let v1 = vof_expr v1
       and v2 = Ocaml.vof_list vof_case v2
-      in Ocaml.VSum (("Switch", [ v1; v2 ]))
+      in Ocaml.VSum (("Switch", [ v0; v1; v2 ]))
   | While ((v1, v2)) ->
       let v1 = vof_expr v1
       and v2 = vof_stmt v2
