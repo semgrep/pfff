@@ -65,26 +65,16 @@ let string_of_lang = function
   | Go -> "Golang"
 
 
+let find_source lang xs = 
+  Common.files_of_dir_or_files_no_vcs_nofilter xs 
+   |> List.filter (fun filename ->
+     lang_of_filename_opt filename =*= Some lang
+  ) |> Common.sort
 
-(* copy-paste: very similar to pfff/find_source.ml *)
-let finder lang =
-  match lang with
-  | Python  -> 
-    Lib_parsing_python.find_source_files_of_dir_or_files
-  | Javascript  -> 
-    Lib_parsing_js.find_source_files_of_dir_or_files ~include_scripts:false
-  | C
-  | Java
-  | ML
-  | Go
-   -> raise Todo
-
-
+(* this is used by sgrep, so it is probably better to keep the logic 
+ * simple and not perform any Skip_code filtering (bento already does that)
+ *) 
 let files_of_dirs_or_files lang xs =
-  let finder = finder lang in
   let xs = List.map Common.fullpath xs in
-  finder xs
- (* |> Skip_code.filter_files_if_skip_list *)
-
-
+  find_source lang xs
 

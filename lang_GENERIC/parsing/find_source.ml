@@ -1,3 +1,7 @@
+(* UPDATE: this is mostly obsolete. You should use Lang.files_of_dirs_or_files
+ * instead.
+ *)
+
 open Common
 
 let finder lang = 
@@ -14,7 +18,7 @@ let finder lang =
     Lib_parsing_ml.find_source_files_of_dir_or_files
   | "java" | "javafuzzy" -> 
     Lib_parsing_java.find_source_files_of_dir_or_files
-  | "js" | "jsfuzzy" | "jsgen"  -> 
+  | "js" | "javascript" | "jsfuzzy" | "jsgen"  -> 
     Lib_parsing_js.find_source_files_of_dir_or_files ~include_scripts:false
   | "py" | "python"  -> 
     Lib_parsing_python.find_source_files_of_dir_or_files
