@@ -546,7 +546,7 @@ and type_ =
 and attribute = 
   | KeywordAttr of keyword_attribute wrap
   (* for general @annotations *)
-  | NamedAttr of ident * any list
+  | NamedAttr of ident * argument list
 
   | OtherAttribute of other_attribute_operator * any list
 
@@ -909,6 +909,7 @@ let expr_to_pattern e =
   OtherPat (OP_ExprPattern, [E e])
 
 (* see also Java_to_generic.entity_to_param *)
+(* see also python_to_generic.expr_to_attribute *)
 
 (* should avoid; should prefer to use 'expr option' in the AST *)
 let opt_to_nop opt =

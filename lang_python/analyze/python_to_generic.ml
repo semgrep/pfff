@@ -532,9 +532,15 @@ and excepthandler =
         pat, v3
       )
 
+and expr_to_attribute v  = 
+  match v with
+  | G.Call (G.Name ((id, _), _), args) -> 
+      G.NamedAttr (id, args)
+  | _ -> G.OtherAttribute (G.OA_Expr, [G.E v])
+
 and decorator v = 
   let v = expr v in
-  G.OtherAttribute (G.OA_Expr, [G.E v])
+  expr_to_attribute v
 
 and alias (v1, v2) = 
   let v1 = name v1 and v2 = option name v2 in 

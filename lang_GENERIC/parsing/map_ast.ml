@@ -293,7 +293,7 @@ and map_attribute = function
       KeywordAttr v1
   | NamedAttr ((v1, v2)) ->
       let v1 = map_ident v1
-      and v2 = map_of_list map_any v2
+      and v2 = map_of_list map_argument v2
       in NamedAttr ((v1, v2))
   | OtherAttribute ((v1, v2)) ->
       let v1 = map_other_attribute_operator v1

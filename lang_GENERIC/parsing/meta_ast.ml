@@ -381,7 +381,7 @@ and vof_attribute = function
     Ocaml.VSum (("KeywordAttr", [v1]))
   | NamedAttr ((v1, v2)) ->
       let v1 = vof_ident v1
-      and v2 = Ocaml.vof_list vof_any v2
+      and v2 = Ocaml.vof_list vof_argument v2
       in Ocaml.VSum (("NamedAttr", [ v1; v2 ]))
   | OtherAttribute ((v1, v2)) ->
       let v1 = vof_other_attribute_operator v1
