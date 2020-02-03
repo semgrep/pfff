@@ -544,6 +544,13 @@ and type_ =
 (*****************************************************************************)
 (* a.k.a decorators, annotations *)
 and attribute = 
+  | KeywordAttr of keyword_attribute wrap
+  (* for general @annotations *)
+  | NamedAttr of ident * any list
+
+  | OtherAttribute of other_attribute_operator * any list
+
+  and keyword_attribute =
   | Static | Volatile | Extern
   (* for class fields *)
   | Public | Private | Protected
@@ -560,10 +567,6 @@ and attribute =
   | Getter | Setter
   (* for parameters *)
   | Variadic
-  (* for general @annotations *)
-  | NamedAttr of ident * any list
-
-  | OtherAttribute of other_attribute_operator * any list
 
   and other_attribute_operator = 
     (* Java *)
@@ -891,6 +894,8 @@ let basic_field id typeopt =
   let entity = basic_entity id [] in
   FieldVar (entity, { vinit = None; vtype = typeopt})
 
+let attr kwd tok =
+  KeywordAttr (kwd, tok)
 
 let expr_to_arg e = 
   Arg e

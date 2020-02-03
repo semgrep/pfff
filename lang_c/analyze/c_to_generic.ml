@@ -40,7 +40,7 @@ let either f g x =
 
 let string = id
 
-let fake_info () = Parse_info.fake_info "FAKE"
+let fake s = Parse_info.fake_info s
 
 let opt_to_ident opt =
   match opt with
@@ -187,7 +187,7 @@ and expr =
   | Sequence ((v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in
       G.Seq [v1;v2]
   | SizeOf v1 -> let v1 = either expr type_ v1 in
-      G.Call (G.IdSpecial (G.Sizeof, fake_info()), 
+      G.Call (G.IdSpecial (G.Sizeof, fake "sizeof"), 
        (match v1 with
        | Left e -> [G.Arg e]
        | Right t -> [G.ArgType t]
@@ -215,7 +215,7 @@ and expr =
           v1
       in G.Record v1
   | GccConstructor ((v1, v2)) -> let v1 = type_ v1 and v2 = expr v2 in
-      G.Call (G.IdSpecial (G.New, fake_info ()), 
+      G.Call (G.IdSpecial (G.New, fake "new"), 
         (G.ArgType v1)::([v2] |> List.map G.expr_to_arg))
 
 and argument v = 
@@ -285,8 +285,8 @@ and
 and initialiser v = expr v
 
 and storage = function 
-  | Extern -> [G.Extern] 
-  | Static -> [G.Static]
+  | Extern -> [G.attr G.Extern (fake "extern")] 
+  | Static -> [G.attr G.Static (fake "static")]
   | DefaultStorage -> []
 
 let func_def {
@@ -298,7 +298,7 @@ let func_def {
   let v1 = name f_name in
   let (ret, params) = function_type f_type in
   let v3 = list stmt f_body in 
-  let v4 = if f_static then [G.Static] else [] in
+  let v4 = if f_static then [G.attr G.Static (fake "static")] else [] in
   let entity = G.basic_entity v1 v4 in
   entity, G.FuncDef { G.
     fparams = params |> List.map (fun x -> G.ParamClassic x);

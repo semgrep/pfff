@@ -93,7 +93,7 @@ let is_local env n =
 let add_locals env vs = 
   let locals = vs |> Common.map_filter (fun v ->
     let s = s_of_n v.A.v_name in
-    match v.A.v_kind with
+    match fst v.A.v_kind with
     | A.Let | A.Const -> Some (s, A.Local)
     | A.Var ->
         Hashtbl.replace env.vars s true;
@@ -114,6 +114,8 @@ let add_params env ps =
  *)
 let path_to_file (path, tok) =
   path, tok
+
+let fake s = Parse_info.fake_info s
 
 (*****************************************************************************)
 (* Entry point *)
@@ -176,7 +178,7 @@ and export env tok = function
  | C.ExportDefaultExpr (tok, e, _)  -> 
    let e = expr env e in
    let n = A.default_entity, tok in
-   let v = {A.v_name = n; v_kind = A.Const; v_init = e; 
+   let v = {A.v_name = n; v_kind = A.Const, tok; v_init = e; 
             v_resolved = not_resolved () } in
    [A.V v; A.M (A.Export (n))]
  | C.ExportDecl x ->
@@ -202,7 +204,7 @@ and export env tok = function
      | Some (_, n2) -> 
          let n2 = name env n2 in
          let id = A.Id (n1, not_resolved ()) in
-         let v = { A.v_name = n2; v_kind = A.Const; v_init = id;
+         let v = { A.v_name = n2; v_kind = A.Const, fake "const"; v_init = id;
                    v_resolved = not_resolved () } in
          [A.V v; A.M (A.Export n2)]
   ) |> List.flatten
@@ -215,12 +217,12 @@ and export env tok = function
      let id = A.Id (tmpname, not_resolved()) in
      match n2opt with
      | None -> 
-       let v = { A.v_name = n1; v_kind = A.Const; v_init = id; 
+       let v = { A.v_name = n1; v_kind = A.Const, fake "const"; v_init = id; 
                   v_resolved = not_resolved () } in
        [A.M import; A.V v; A.M (A.Export n1)]
      | Some (_, n2) ->
        let n2 = name env n2 in
-       let v = { A.v_name = n2; v_kind = A.Const; v_init = id; 
+       let v = { A.v_name = n2; v_kind = A.Const, fake "const"; v_init = id; 
                   v_resolved = not_resolved () } in
        [A.M import; A.V v; A.M (A.Export n2)]
    ) |> List.flatten
@@ -236,17 +238,17 @@ and item default_opt env = function
     (match x.C.f_kind, default_opt with
     | C.F_func (_, Some x), None ->
       let n = name env x in
-      [A.VarDecl {A.v_name = n; v_kind = A.Const; 
+      [A.VarDecl {A.v_name = n; v_kind = A.Const, fake "const"; 
                   v_init = A.Fun (fun_, None); v_resolved = not_resolved()}]
 
     | C.F_func (_, None), Some tok ->
       let n = A.default_entity, tok in 
-      [A.VarDecl {A.v_name = n; v_kind = A.Const; 
+      [A.VarDecl {A.v_name = n; v_kind = A.Const, fake "const"; 
                   v_init = A.Fun (fun_, None); v_resolved = not_resolved()}]
     | C.F_func (_, Some x), Some tok ->
       let n1 = A.default_entity, tok in 
       let n2 = name env x in
-      [A.VarDecl {A.v_name = n1; v_kind = A.Const; 
+      [A.VarDecl {A.v_name = n1; v_kind = A.Const, fake "const"; 
                   v_init = A.Fun (fun_, Some n2); v_resolved = not_resolved()}]
 
     | C.F_func (_, None), None ->
@@ -260,16 +262,16 @@ and item default_opt env = function
     (match x.C.c_name, default_opt with
     | Some x, None ->
       let n = name env x in
-      [A.VarDecl {A.v_name = n; v_kind=A.Const;
+      [A.VarDecl {A.v_name = n; v_kind=A.Const, fake "const";
                   v_init=A.Class (class_, None); v_resolved = not_resolved ()}]
     | None, Some tok ->
       let n = A.default_entity, tok in 
-      [A.VarDecl {A.v_name = n; v_kind=A.Const;
+      [A.VarDecl {A.v_name = n; v_kind=A.Const, fake "const";
                   v_init=A.Class (class_, None); v_resolved = not_resolved ()}]
     | Some x, Some tok ->
       let n1 = A.default_entity, tok in 
       let n2 = name env x in
-      [A.VarDecl {A.v_name = n1; v_kind=A.Const;
+      [A.VarDecl {A.v_name = n1; v_kind=A.Const, fake "const";
                   v_init=A.Class (class_, Some n2); 
                   v_resolved = not_resolved ()}]
     | None, None ->
@@ -297,7 +299,7 @@ and property_name env = function
 (* ------------------------------------------------------------------------- *)
 
 and stmt env = function
-  | C.VarsDecl ((vkind,_), bindings, _) ->
+  | C.VarsDecl (vkind, bindings, _) ->
     bindings |> C.uncomma |> List.map (fun x -> 
      let vars = var_binding env vkind x in
      vars |> List.map (fun var -> A.VarDecl var)) |> List.flatten
@@ -333,7 +335,7 @@ and stmt env = function
      let e1 = 
        match lhs_vars_opt with
        | Some (C.LHS1 e) -> Right (expr env e)
-       | Some (C.ForVars (((vkind, _), vbindings))) ->
+       | Some (C.ForVars ((vkind, vbindings))) ->
          Left (vbindings |> C.uncomma |> List.map (fun x -> 
              (var_binding env vkind x)) |> List.flatten)
        | None -> Right (A.Nop)
@@ -346,11 +348,11 @@ and stmt env = function
     let e1 =
       match lhs_var with
       | C.LHS2 e -> Right (expr env e)
-      | C.ForVar ((vkind,tok), binding) -> 
+      | C.ForVar (vkind, binding) -> 
         let vars = var_binding env vkind binding in
         (match vars with
         | [var] -> Left var
-        | _ -> raise (TodoConstruct ("For in with (pattern) vars?", tok))
+        | _ -> raise (TodoConstruct ("For in with (pattern) vars?", snd vkind))
         )
     in 
     let e2 = expr env e2 in
@@ -643,10 +645,11 @@ and init_opt env ini =
   | None -> A.Nop
   | Some (_, e) -> expr env e
 
-and var_kind _env = function
-  | C.Var -> A.Var
-  | C.Const -> A.Const
-  | C.Let -> A.Let
+and var_kind _env (x, tok) =
+  match x with
+  | C.Var -> A.Var, tok
+  | C.Const -> A.Const, tok
+  | C.Let -> A.Let, tok
 
 
 
@@ -669,12 +672,12 @@ and func_props _env kind props =
   (match kind with
   | C.F_func _ -> []
   | C.F_method _ -> []
-  | C.F_get _ -> [A.Get]
-  | C.F_set _ -> [A.Set]
+  | C.F_get (tok, _) -> [A.Get, tok]
+  | C.F_set (tok, _) -> [A.Set, tok]
   ) @
   (props |> List.map (function
-   | C.Generator _ -> A.Generator
-   | C.Async _ -> A.Async
+   | C.Generator tok -> A.Generator, tok
+   | C.Async tok -> A.Async, tok
    ))
 
 and parameter_binding env idx = function
@@ -705,8 +708,7 @@ and parameter_binding env idx = function
 and parameter env p =
   let name = name env p.C.p_name in
   let d = opt default env p.C.p_default in
-  let dots = p.C.p_dots <> None in
-  { A.p_name = name; p_default = d; p_dots = dots }
+  { A.p_name = name; p_default = d; p_dots = p.C.p_dots }
 
 and default env = function
   (* less: use Undefined? *)
@@ -798,7 +800,7 @@ and class_element env = function
     let props = 
       match static_opt with
       | None -> []
-      | Some _ -> [A.Static]
+      | Some tok -> [A.Static, tok]
     in
     [method_ env props x]
   | C.C_extrasemicolon _ -> []
@@ -809,10 +811,10 @@ and method_ env props x =
     match x.C.f_kind with
     | C.F_method pn ->
       property_name env pn, []
-    | C.F_get (_, pn) ->
-      property_name env pn, [A.Get]
-    | C.F_set (_, pn) ->
-      property_name env pn, [A.Set]
+    | C.F_get (tok, pn) ->
+      property_name env pn, [A.Get, tok]
+    | C.F_set (tok, pn) ->
+      property_name env pn, [A.Set, tok]
     | C.F_func _ ->
       raise (UnhandledConstruct ("weird method decl: unexpected F_func", 
                                   fst3 x.C.f_params))

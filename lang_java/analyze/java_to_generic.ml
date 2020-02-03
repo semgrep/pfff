@@ -109,25 +109,25 @@ let type_parameter =
       let v1 = ident v1 and v2 = list ref_type v2 in
       v1, (v2 |> List.map (fun t -> G.Extends t))
 
-let rec modifier =
-  function
-  | Variadic -> G.Variadic
-  | Public -> G.Public
-  | Protected -> G.Protected
-  | Private -> G.Private
-  | Abstract -> G.Abstract
-  | Static -> G.Static
-  | Final -> G.Final
+let rec modifier (x, tok) =
+  match x with
+  | Variadic -> G.attr G.Variadic tok
+  | Public -> G.attr G.Public tok
+  | Protected -> G.attr G.Protected tok
+  | Private -> G.attr G.Private tok
+  | Abstract -> G.attr G.Abstract tok
+  | Static -> G.attr G.Static tok
+  | Final -> G.attr G.Final tok
   | StrictFP -> G.OtherAttribute (G.OA_StrictFP, [])
   | Transient -> G.OtherAttribute (G.OA_Transient, [])
-  | Volatile -> G.Volatile
+  | Volatile -> G.attr G.Volatile tok
   | Synchronized -> G.OtherAttribute (G.OA_Synchronized, [])
   | Native -> G.OtherAttribute (G.OA_Native, [])
   | Annotation _v1 -> 
       (* let _v1TODO = annotation v1 in *)
       G.OtherAttribute (G.OA_AnnotJavaOther, [])
 
-and modifiers v = list (wrap modifier) v |> List.map fst
+and modifiers v = list modifier v
 
 (*  
 and annotation (v1, v2) =

@@ -271,32 +271,14 @@ and v_type_parameter_constraint =
 and v_attribute x =
   let k x = 
   match x with
-  | Recursive | MutuallyRecursive -> ()
-  | Static -> ()
-  | Volatile -> ()
-  | Extern -> ()
-  | Public -> ()
-  | Private -> ()
-  | Protected -> ()
-  | Abstract -> ()
-  | Final -> ()
-  | Var -> ()
-  | Let -> ()
-  | Const -> ()
-  | Mutable -> ()
-  | Generator -> ()
-  | Async -> ()
-  | Ctor -> ()
-  | Dtor -> ()
-  | Getter -> ()
-  | Setter -> ()
-  | Variadic -> ()
+  | KeywordAttr v1 -> let v1 = v_wrap v_keyword_attribute v1 in ()
   | NamedAttr ((v1, v2)) -> let v1 = v_ident v1 and v2 = v_list v_any v2 in ()
   | OtherAttribute ((v1, v2)) ->
       let v1 = v_other_attribute_operator v1 and v2 = v_list v_any v2 in ()
   in
   vin.kattr (k, all_functions) x
 
+and v_keyword_attribute _ = ()
 and v_other_attribute_operator _ = ()
 
 and v_stmts xs =

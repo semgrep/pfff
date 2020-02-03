@@ -300,7 +300,9 @@ and type_def_kind =
              and v3 = option tok v3
              in 
              let ent = G.basic_entity v1
-               (match v3 with Some _ -> [G.Mutable] | None -> []) in
+               (match v3 with 
+               | Some tok -> [G.attr G.Mutable tok] 
+               | None -> []) in
              G.FieldVar (ent, { G.vinit = None; vtype = Some v2 }))
           v1
       in G.AndType v1

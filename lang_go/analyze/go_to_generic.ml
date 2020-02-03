@@ -44,8 +44,8 @@ let name_of_qualified_ident = function
   | Left id -> id, G.empty_name_info
   | Right (xs, id) -> id, { G.name_qualifier = Some xs; name_typeargs = None }
 
-let fake_info () = Parse_info.fake_info "FAKE"
-let fake_name s = (s, fake_info ()), G.empty_name_info
+let fake s = Parse_info.fake_info s
+let fake_name s = (s, fake s), G.empty_name_info
 
 let ii_of_any = Lib_parsing_go.ii_of_any
 
@@ -133,13 +133,13 @@ let rec type_ =
   | TStruct v1 -> let v1 = list struct_field v1 in 
       (* could also use StructName *)
       let s = gensym () in
-      let ent = G.basic_entity (s, fake_info ()) [] in
+      let ent = G.basic_entity (s, fake s) [] in
       let def = G.TypeDef { G.tbody = G.AndType v1 } in
       Common.push (ent, def) anon_types;
       G.TyApply (fake_name s, [])
   | TInterface v1 -> let v1 = list interface_field v1 in 
       let s = gensym () in
-      let ent = G.basic_entity (s, fake_info ()) [] in
+      let ent = G.basic_entity (s, fake s) [] in
       let def = G.ClassDef { G.ckind = G.Interface; 
           cextends = []; cimplements = []; 
           cbody = v1; } in
@@ -162,7 +162,7 @@ and parameter { pname = pname; ptype = ptype; pdots = pdots } =
   let arg3 = option tok pdots in 
   { G.pname = arg1; ptype = Some arg2; 
     pdefault = None; 
-    pattrs = (match arg3 with None -> [] | Some _ -> [G.Variadic]);
+    pattrs = (match arg3 with None -> [] | Some tok -> [G.attr G.Variadic tok]);
     pinfo = G.empty_id_info ()
     }
 
@@ -230,7 +230,7 @@ and expr =
       G.Call (G.IdSpecial (G.ArithOp v2, tok), [v1;v3] |> List.map G.expr_to_arg)
   | CompositeLit ((v1, v2)) ->
       let v1 = type_ v1 and v2 = list init v2 in
-      G.Call (G.IdSpecial (G.New, fake_info ()), 
+      G.Call (G.IdSpecial (G.New, fake "new"), 
         (G.ArgType v1)::(v2 |> List.map G.expr_to_arg))
   | Slice ((v1, v2)) ->
       let e = expr v1 in
@@ -241,7 +241,7 @@ and expr =
       in 
       G.SliceAccess (e, v1, v2, v3)
   | TypeAssert ((v1, v2)) -> let v1 = expr v1 and v2 = type_ v2 in
-      G.Call (G.IdSpecial (G.Instanceof, fake_info()),
+      G.Call (G.IdSpecial (G.Instanceof, fake "instanceof"),
         [G.Arg v1; G.ArgType v2])
   | EllipsisTODO v1 -> let v1 = tok v1 in 
       G.Ellipsis v1
@@ -404,7 +404,7 @@ and stmt =
       in 
       (match opt with
       | None -> 
-         let pattern = G.PatUnderscore (fake_info ()) in
+         let pattern = G.PatUnderscore (fake "_") in
          G.For (G.ForEach (pattern, v3), v4)
       | Some (xs, _tokEqOrColonEqTODO) -> 
           let pattern = G.PatTuple (xs |> List.map G.expr_to_pattern) in
@@ -474,14 +474,14 @@ and decl =
       and v2 = option type_ v2
       and v3 = option constant_expr v3
       in 
-      let ent = G.basic_entity v1 [G.Const] in
+      let ent = G.basic_entity v1 [G.attr G.Const (fake "const")] in
       G.DefStmt (ent, G.VarDef { G.vinit = v3; vtype = v2 })
   | DVar ((v1, v2, v3)) ->
       let v1 = ident v1
       and v2 = option type_ v2
       and v3 = option expr v3
       in
-      let ent = G.basic_entity v1 [G.Var] in
+      let ent = G.basic_entity v1 [G.attr G.Var (fake "var")] in
       G.DefStmt (ent, G.VarDef { G.vinit = v3; vtype = v2 })
   | DTypeAlias ((v1, v2, v3)) ->
       let v1 = ident v1 and _v2 = tok v2 and v3 = type_ v3 in 
