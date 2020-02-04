@@ -53,12 +53,16 @@ and v_wrap:'a. ('a -> unit) -> 'a wrap -> unit =
  fun _of_a (v1, v2) -> 
    let v1 = _of_a v1 and v2 = v_info v2 in ()
 
+and v_bracket: 'a. ('a -> unit) -> 'a bracket -> unit = 
+  fun of_a (v1, v2, v3) ->
+  let v1 = v_info v1 and v2 = of_a v2 and v3 = v_info v3 in ()
+
 and v_name v = v_wrap v_string v
 
 and v_type_ =
   function
   | TBase v1 -> let v1 = v_name v1 in ()
-  | TPointer v1 -> let v1 = v_type_ v1 in ()
+  | TPointer (t, v1) -> let t = v_info t in let v1 = v_type_ v1 in ()
   | TArray ((v1, v2)) ->
       let v1 = v_option v_const_expr v1 and v2 = v_type_ v2 in ()
   | TFunction v1 -> let v1 = v_function_type v1 in ()
@@ -108,14 +112,14 @@ and v_expr x =
   | SizeOf v1 -> let v1 = Ocaml.v_either v_expr v_type_ v1 in ()
   | ArrayInit v1 ->
       let v1 =
-        v_list
+        v_bracket (v_list
           (fun (v1, v2) ->
-             let v1 = v_option v_expr v1 and v2 = v_expr v2 in ())
+             let v1 = v_option v_expr v1 and v2 = v_expr v2 in ()))
           v1
       in ()
   | RecordInit v1 ->
       let v1 =
-        v_list (fun (v1, v2) -> let v1 = v_name v1 and v2 = v_expr v2 in ())
+        v_bracket (v_list (fun (v1, v2) -> let v1 = v_name v1 and v2 = v_expr v2 in ()))
           v1
       in ()
   | GccConstructor ((v1, v2)) -> let v1 = v_type_ v1 and v2 = v_expr v2 in ()
@@ -127,31 +131,49 @@ and v_stmt =
   function
   | ExprSt v1 -> let v1 = v_expr v1 in ()
   | Block v1 -> let v1 = v_list v_stmt v1 in ()
-  | If ((v1, v2, v3)) ->
+  | If ((t, v1, v2, v3)) ->
+      let t = v_info t in
       let v1 = v_expr v1 and v2 = v_stmt v2 and v3 = v_stmt v3 in ()
   | Switch ((v0, v1, v2)) -> 
       let v0 = v_info v0 in
       let v1 = v_expr v1 and v2 = v_list v_case v2 in ()
-  | While ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_stmt v2 in ()
-  | DoWhile ((v1, v2)) -> let v1 = v_stmt v1 and v2 = v_expr v2 in ()
-  | For ((v1, v2, v3, v4)) ->
+  | While ((t, v1, v2)) -> 
+      let t = v_info t in
+      let v1 = v_expr v1 and v2 = v_stmt v2 in ()
+  | DoWhile ((t, v1, v2)) -> 
+      let t = v_info t in
+      let v1 = v_stmt v1 and v2 = v_expr v2 in ()
+  | For ((t, v1, v2, v3, v4)) ->
+      let t = v_info t in
       let v1 = v_option v_expr v1
       and v2 = v_option v_expr v2
       and v3 = v_option v_expr v3
       and v4 = v_stmt v4
       in ()
-  | Return v1 -> let v1 = v_option v_expr v1 in ()
-  | Continue -> ()
-  | Break -> ()
+  | Return (t, v1) -> 
+      let t = v_info t in
+      let v1 = v_option v_expr v1 in ()
+  | Continue t -> 
+      let t = v_info t in
+      ()
+  | Break t -> 
+      let t = v_info t in
+      ()
   | Label ((v1, v2)) -> let v1 = v_name v1 and v2 = v_stmt v2 in ()
-  | Goto v1 -> let v1 = v_name v1 in ()
+  | Goto (t, v1) -> 
+      let t = v_info t in
+      let v1 = v_name v1 in ()
   | Vars v1 -> let v1 = v_list v_var_decl v1 in ()
   | Asm v1 -> let v1 = v_list v_expr v1 in ()
 
 and v_case =
   function
-  | Case ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_list v_stmt v2 in ()
-  | Default v1 -> let v1 = v_list v_stmt v1 in ()
+  | Case ((t, v1, v2)) -> 
+      let t = v_info t in
+      let v1 = v_expr v1 and v2 = v_list v_stmt v2 in ()
+  | Default (t, v1) -> 
+      let t = v_info t in
+      let v1 = v_list v_stmt v1 in ()
 and
   v_var_decl {
                v_name = v_v_name;
@@ -191,7 +213,9 @@ and v_define_body =
 
 and v_toplevel =
   function
-  | Include v1 -> let v1 = v_wrap v_string v1 in ()
+  | Include (t, v1) -> 
+      let t = v_info t in
+      let v1 = v_wrap v_string v1 in ()
   | Define ((v1, v2)) -> let v1 = v_name v1 and v2 = v_define_body v2 in ()
   | Macro ((v1, v2, v3)) ->
       let v1 = v_name v1

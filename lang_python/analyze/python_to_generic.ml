@@ -37,6 +37,7 @@ let string = id
 let bool = id
 
 let fake s = Parse_info.fake_info s
+let fake_bracket x = fake "(", x, fake ")"
 
 (*****************************************************************************)
 (* Entry point *)
@@ -47,6 +48,8 @@ let info x = x
 let wrap = fun _of_a (v1, v2) ->
   let v1 = _of_a v1 and v2 = info v2 in 
   (v1, v2)
+
+let bracket of_a (t1, x, t2) = (info t1, of_a x, info t2)
 
 let name v = wrap string v
 
@@ -114,7 +117,7 @@ let rec expr (x: expr) =
                  id_resolved = v3 })
           
   | Tuple ((CompList v1, v2)) ->
-      let v1 = list expr v1 
+      let (_, v1, _) = bracket (list expr) v1 
       and _v2TODO = expr_context v2 in 
       G.Tuple v1
 
@@ -124,14 +127,14 @@ let rec expr (x: expr) =
       G.Tuple e1
 
   | List ((CompList v1, v2)) ->
-      let v1 = list expr v1 
+      let v1 = bracket (list expr) v1 
       and _v2TODO = expr_context v2 in 
       G.Container (G.List, v1)
 
   | List ((CompForIf (v1, v2), v3)) ->
       let e1 = comprehension expr v1 v2 in
       let _v3TODO = expr_context v3 in 
-      G.Container (G.List, e1)
+      G.Container (G.List, fake_bracket e1)
 
   | Subscript ((v1, v2, v3)) ->
       let e = expr v1 
@@ -160,13 +163,13 @@ let rec expr (x: expr) =
       G.DotAccess (v1, t, v2)
 
   | DictOrSet (CompList v) -> 
-      let v = list dictorset_elt v in 
+      let v = bracket (list dictorset_elt) v in 
       (* less: could be a Set if alls are Key *)
       G.Container (G.Dict, v)
 
   | DictOrSet (CompForIf (v1, v2)) -> 
       let e1 = comprehension2 dictorset_elt v1 v2 in
-      G.Container (G.Dict, e1)
+      G.Container (G.Dict, fake_bracket e1)
 
   | BoolOp (((v1,tok), v2)) -> 
       let v1 = boolop v1 
@@ -208,13 +211,13 @@ let rec expr (x: expr) =
   | IfExp ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in
       G.Conditional (v1, v2, v3)
-  | Yield ((v1, v2)) ->
+  | Yield ((t, v1, v2)) ->
       let v1 = option expr v1
       and v2 = v2 in
-      G.Yield (G.opt_to_nop v1, v2)
-  | Await v1 -> let v1 = expr v1 in
-      G.Await v1
-  | Repr v1 -> let v1 = expr v1 in
+      G.Yield (t, v1, v2)
+  | Await (t, v1) -> let v1 = expr v1 in
+      G.Await (t, v1)
+  | Repr v1 -> let (_, v1, _) = bracket expr v1 in
       G.OtherExpr (G.OE_Repr, [G.E v1])
 
 and argument = function
@@ -389,31 +392,31 @@ and stmt x =
   | AugAssign ((v1, (v2, tok), v3)) ->
       let v1 = expr v1 and v2 = operator v2 and v3 = expr v3 in
       G.ExprStmt (G.AssignOp (v1, (v2, tok), v3))
-  | Return v1 -> let v1 = option expr v1 in 
-      G.Return v1
+  | Return (t, v1) -> let v1 = option expr v1 in 
+      G.Return (t, v1)
 
-  | Delete v1 -> let v1 = list expr v1 in
+  | Delete (_t, v1) -> let v1 = list expr v1 in
       G.OtherStmt (G.OS_Delete, v1 |> List.map (fun x -> G.E x))
-  | If ((v1, v2, v3)) ->
+  | If ((t, v1, v2, v3)) ->
       let v1 = expr v1
       and v2 = list_stmt1 v2
       and v3 = list_stmt1 v3
       in
-      G.If (v1, v2, v3)
+      G.If (t, v1, v2, v3)
 
-  | While ((v1, v2, v3)) ->
+  | While ((t, v1, v2, v3)) ->
       let v1 = expr v1
       and v2 = list_stmt1 v2
       and v3 = list stmt v3
       in
       (match v3 with
-      | [] -> G.While (v1, v2)
+      | [] -> G.While (t, v1, v2)
       | _ -> G.Block [
-              G.While (v1,v2); 
+              G.While (t, v1,v2); 
               G.OtherStmt (G.OS_WhileOrElse, v3 |> List.map (fun x -> G.S x))]
       )
             
-  | For ((v1, v2, v3, v4)) ->
+  | For ((t, v1, v2, v3, v4)) ->
       let foreach = expr v1
       and ins = expr v2
       and body = list_stmt1 v3
@@ -421,12 +424,13 @@ and stmt x =
       in
       let header = G.ForEach (G.expr_to_pattern foreach, ins) in
       (match orelse with
-      | [] -> G.For (header, body)
+      | [] -> G.For (t, header, body)
       | _ -> G.Block [
-              G.For (header, body);
+              G.For (t, header, body);
               G.OtherStmt (G.OS_ForOrElse, orelse|> List.map (fun x -> G.S x))]
       )
-  | With ((v1, v2, v3)) ->
+  (* TODO: unsugar in sequence? *)
+  | With ((_t, v1, v2, v3)) ->
       let v1 = expr v1
       and v2 = option expr v2
       and v3 = list_stmt1 v3
@@ -438,72 +442,72 @@ and stmt x =
       in
       G.OtherStmtWithStmt (G.OSWS_With, e, v3)
 
-  | Raise (v1) ->
+  | Raise (t, v1) ->
       (match v1 with
       | Some (e, None) -> 
-        let e = expr e in G.Throw e
+        let e = expr e in G.Throw (t, e)
       | Some (e, Some from) -> 
         let e = expr e in
         let from = expr from in
-        let st = G.Throw e in
+        let st = G.Throw (t, e) in
         G.OtherStmt (G.OS_ThrowFrom, [G.E from; G.S st])
       | None ->
         G.OtherStmt (G.OS_ThrowNothing, [])
       )
                   
-  | TryExcept ((v1, v2, v3)) ->
+  | TryExcept ((t, v1, v2, v3)) ->
       let v1 = list_stmt1 v1
       and v2 = list excepthandler v2
       and orelse = list stmt v3
       in
       (match orelse with
-      | [] -> G.Try (v1, v2, None)
+      | [] -> G.Try (t, v1, v2, None)
       | _ -> G.Block [
-              G.Try (v1, v2, None);
+              G.Try (t, v1, v2, None);
               G.OtherStmt (G.OS_TryOrElse, orelse |> List.map (fun x -> G.S x))
               ]
       )
 
-  | TryFinally ((v1, v2)) ->
+  | TryFinally ((t, v1, v2)) ->
       let v1 = list_stmt1 v1 and v2 = list_stmt1 v2 in
       (* could lift down the Try in v1 *)
-      G.Try (v1, [], Some v2)
+      G.Try (t, v1, [], Some v2)
 
-  | Assert ((v1, v2)) -> let v1 = expr v1 and v2 = option expr v2 in
-      G.Assert (v1, v2)
+  | Assert ((t, v1, v2)) -> let v1 = expr v1 and v2 = option expr v2 in
+      G.Assert (t, v1, v2)
 
-  | ImportAs ((v1, _dotsAlwaysNone), v2) -> 
+  | ImportAs (t, (v1, _dotsAlwaysNone), v2) -> 
       let dotted = dotted_name v1 and nopt = option name v2 in
-      G.DirectiveStmt (G.ImportAs (G.DottedName dotted, nopt))
-  | ImportAll ((v1, _dotsAlwaysNone), v2) -> 
+      G.DirectiveStmt (G.ImportAs (t, G.DottedName dotted, nopt))
+  | ImportAll (t, (v1, _dotsAlwaysNone), v2) -> 
       let dotted = dotted_name v1 and v2 = info v2 in
-      G.DirectiveStmt (G.ImportAll (G.DottedName dotted, v2))
+      G.DirectiveStmt (G.ImportAll (t, G.DottedName dotted, v2))
 
-  | ImportFrom (((v1, _dotsTODO), v2)) ->
+  | ImportFrom (t, (v1, _dotsTODO), v2) ->
       let v1 = dotted_name v1
       and v2 = list alias v2
       in
-      G.DirectiveStmt (G.ImportFrom (G.DottedName v1, v2))
+      G.DirectiveStmt (G.ImportFrom (t, G.DottedName v1, v2))
 
-  | Global v1 -> let v1 = list name v1 in
+  | Global (_t, v1) -> let v1 = list name v1 in
       G.OtherStmt (G.OS_Global, v1 |> List.map (fun x -> G.Id x))
-  | NonLocal v1 -> let v1 = list name v1 in
+  | NonLocal (_t, v1) -> let v1 = list name v1 in
       G.OtherStmt (G.OS_NonLocal, v1 |> List.map (fun x -> G.Id x))
 
   | ExprStmt v1 -> let v1 = expr v1 in G.ExprStmt v1
 
-  | Async x ->
+  | Async (t, x) ->
       let x = stmt x in
       (match x with
       | G.DefStmt (ent, func) ->
-          G.DefStmt ({ ent with G.attrs = (G.attr G.Async (fake "async"))
+          G.DefStmt ({ ent with G.attrs = (G.attr G.Async t)
                                           ::ent.G.attrs}, func)
       | _ -> G.OtherStmt (G.OS_Async, [G.S x])
       )
 
-  | Pass -> G.OtherStmt (G.OS_Pass, [])
-  | Break -> G.Break (None)
-  | Continue -> G.Continue (None)
+  | Pass _t -> G.OtherStmt (G.OS_Pass, [])
+  | Break t -> G.Break (t, None)
+  | Continue t -> G.Continue (t, None)
 
   (* python2: *)
   | Print (tok, _dest, vals, _nl) -> 

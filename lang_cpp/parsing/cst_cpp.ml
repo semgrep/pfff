@@ -654,6 +654,7 @@ and class_definition = {
 (* ------------------------------------------------------------------------- *)
 and cpp_directive =
   | Define of tok (* #define*) * simple_ident * define_kind * define_val
+  (* TODO: should split tok in 2 *)
   | Include of tok (* #include s *) * inc_kind * string (* path *)
   | Undef of simple_ident (* #undef xxx *)
   | PragmaAndCo of tok

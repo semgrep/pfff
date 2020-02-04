@@ -51,6 +51,8 @@ let wrap = fun _of_a (v1, v2) ->
   let v1 = _of_a v1 and v2 = info v2 in 
   (v1, v2)
 
+let bracket of_a (t1, x, t2) = (info t1, of_a x, info t2)
+
 let rec ident v = wrap string v
 
 and name (v1, v2) = 
@@ -77,7 +79,7 @@ and expr =
       let v1 = name v1 and v2 = option expr v2 in
       G.Constructor (v1, Common.opt_to_list v2)
   | Tuple v1 -> let v1 = list expr v1 in G.Tuple v1
-  | List v1 -> let v1 = list expr v1 in G.Container (G.List, v1)
+  | List v1 -> let v1 = bracket (list expr) v1 in G.Container (G.List, v1)
   | Sequence v1 -> let v1 = list expr v1 in G.Seq v1
   | Prefix ((v1, v2)) -> let v1 = wrap string v1 and v2 = expr v2 in
                          let n = v1, G.empty_name_info in
@@ -90,11 +92,11 @@ and expr =
   | Call ((v1, v2)) -> let v1 = expr v1 and v2 = list argument v2 in
                        G.Call (v1, v2)
   | RefAccess ((v1, v2)) -> 
-    let _v1 = tok v1 and v2 = expr v2 in
-    G.DeRef (v2)
+    let v1 = tok v1 and v2 = expr v2 in
+    G.DeRef (v1, v2)
   | RefAssign ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = tok v2 and v3 = expr v3 in
-      G.Assign (G.DeRef v1, v2, v3)
+      G.Assign (G.DeRef (v2, v1), v2, v3)
   | FieldAccess ((v1, vtok, v2)) -> 
     let v1 = expr v1 in
     let vtok = tok vtok in
@@ -118,7 +120,7 @@ and expr =
   | Record ((v1, v2)) ->
       let v1 = option expr v1
       and v2 =
-        list (fun (v1, v2) -> let v2 = expr v2 in
+        bracket (list (fun (v1, v2) -> let v2 = expr v2 in
           (match v1 with
           | [], id -> let id = ident id in
                       let ent = G.basic_entity id [] in
@@ -129,7 +131,7 @@ and expr =
                  let st = G.ExprStmt e in
                  G.FieldStmt (st)
           )
-        )
+        ))
           v2
       in 
       let obj = G.Record v2 in
@@ -157,24 +159,24 @@ and expr =
     G.Lambda def
 
   | Nop -> G.Nop
-  | If ((v1, v2, v3)) ->
+  | If ((_t, v1, v2, v3)) ->
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in 
       G.Conditional (v1, v2, v3)
   | Match ((v1, v2)) ->
       let v1 = expr v1 and v2 = list match_case v2 in
       G.MatchPattern (v1, v2)
-  | Try ((v1, v2)) ->
+  | Try ((t, v1, v2)) ->
       let v1 = expr v1 and v2 = list match_case v2 in 
       let catches = v2 |> List.map (fun (pat, e) -> pat, G.ExprStmt e) in
-      let st = G.Try (G.ExprStmt v1, catches, None) in
+      let st = G.Try (t, G.ExprStmt v1, catches, None) in
       G.OtherExpr (G.OE_StmtExpr, [G.S st])
 
-  | While ((v1, v2)) -> 
+  | While ((t, v1, v2)) -> 
     let v1 = expr v1 and v2 = expr v2 in 
-    let st = G.While (v1, G.ExprStmt v2) in
+    let st = G.While (t, v1, G.ExprStmt v2) in
     G.OtherExpr (G.OE_StmtExpr, [G.S st])
     
-  | For ((v1, v2, v3, v4, v5)) ->
+  | For ((t, v1, v2, v3, v4, v5)) ->
       let v1 = ident v1
       and v2 = expr v2
       and (tok, nextop, condop) = for_direction v3
@@ -189,7 +191,7 @@ and expr =
                          [G.Arg n; G.Arg v4]) in
       let header = G.ForClassic ([G.ForInitVar (ent, var)],
                                  cond, next) in
-      let st = G.For (header, G.ExprStmt v5) in
+      let st = G.For (t, header, G.ExprStmt v5) in
       G.OtherExpr (G.OE_StmtExpr, [G.S st])
   
 and literal =

@@ -57,13 +57,15 @@ let wrap = fun _of_a (v1, v2) ->
   let v1 = _of_a v1 and v2 = info v2 in 
   (v1, v2)
 
+let bracket of_a (t1, x, t2) = (info t1, of_a x, info t2)
+
 let name v = wrap string v
 
 
 let rec unaryOp (a, tok) =
   match a with
-  | GetRef -> (fun e -> G.Ref e)
-  | DeRef -> (fun e -> G.DeRef e)
+  | GetRef -> (fun e -> G.Ref (tok,e))
+  | DeRef -> (fun e -> G.DeRef (tok, e))
   | UnPlus -> (fun e -> 
           G.Call (G.IdSpecial (G.ArithOp G.Plus, tok), [G.Arg e]))
   | UnMinus -> (fun e -> 
@@ -110,7 +112,7 @@ and logicalOp =
 let rec type_ =
   function
   | TBase v1 -> let v1 = name v1 in G.TyBuiltin v1
-  | TPointer v1 -> let v1 = type_ v1 in G.TyPointer v1
+  | TPointer (t, v1) -> let v1 = type_ v1 in G.TyPointer (t, v1)
   | TArray ((v1, v2)) ->
       let v1 = option const_expr v1 and v2 = type_ v2 in
       G.TyArray (v1, v2)
@@ -164,7 +166,7 @@ and expr =
       G.ArrayAccess (v1, v2) 
   | RecordPtAccess ((v1, t, v2)) -> 
       let v1 = expr v1 and t = info t and v2 = name v2 in
-      G.DotAccess (G.DeRef v1, t, v2)
+      G.DotAccess (G.DeRef (t, v1), t, v2)
   | Cast ((v1, v2)) -> let v1 = type_ v1 and v2 = expr v2 in
       G.Cast (v1, v2)
   | Postfix ((v1, (v2, v3))) ->
@@ -194,7 +196,7 @@ and expr =
        ))
   | ArrayInit v1 ->
       let v1 =
-        list
+        bracket (list
           (fun (v1, v2) ->
              let v1 = option expr v1 and v2 = expr v2 in
              (match v1 with
@@ -202,16 +204,16 @@ and expr =
              | Some e ->
                   G.OtherExpr (G.OE_ArrayInitDesignator, [G.E e; G.E v2])
             )
-        )
+        ))
           v1
       in G.Container (G.Array, v1)
   | RecordInit v1 ->
       let v1 =
-        list (fun (v1, v2) -> let v1 = name v1 and v2 = expr v2 in 
+        bracket (list (fun (v1, v2) -> let v1 = name v1 and v2 = expr v2 in 
             let entity = G.basic_entity v1 [] in
             let vdef = { G.vinit = Some v2; vtype = None } in
             G.FieldVar (entity, vdef)
-        )
+        ))
           v1
       in G.Record v1
   | GccConstructor ((v1, v2)) -> let v1 = type_ v1 and v2 = expr v2 in
@@ -229,18 +231,18 @@ let rec stmt =
   function
   | ExprSt v1 -> let v1 = expr v1 in G.ExprStmt v1
   | Block v1 -> let v1 = list stmt v1 in G.Block v1
-  | If ((v1, v2, v3)) ->
+  | If ((t, v1, v2, v3)) ->
       let v1 = expr v1 and v2 = stmt v2 and v3 = stmt v3 in
-      G.If (v1, v2, v3)
+      G.If (t, v1, v2, v3)
   | Switch ((v0, v1, v2)) -> 
       let v0 = info v0 in
       let v1 = expr v1 and v2 = list case v2 in
       G.Switch (v0, v1, v2)
-  | While ((v1, v2)) -> let v1 = expr v1 and v2 = stmt v2 in
-      G.While (v1, v2)
-  | DoWhile ((v1, v2)) -> let v1 = stmt v1 and v2 = expr v2 in 
-      G.DoWhile (v1, v2)
-  | For ((v1, v2, v3, v4)) ->
+  | While ((t, v1, v2)) -> let v1 = expr v1 and v2 = stmt v2 in
+      G.While (t, v1, v2)
+  | DoWhile ((t, v1, v2)) -> let v1 = stmt v1 and v2 = expr v2 in 
+      G.DoWhile (t, v1, v2)
+  | For ((t, v1, v2, v3, v4)) ->
       let v1 = option expr v1
       and v2 = option expr v2
       and v3 = option expr v3
@@ -250,13 +252,13 @@ let rec stmt =
         G.ForClassic ([G.ForInitExpr (G.opt_to_nop v1)],
           G.opt_to_nop v2,
           G.opt_to_nop v3) in
-      G.For (header, v4)
-  | Return v1 -> let v1 = option expr v1 in G.Return v1
-  | Continue -> G.Continue None
-  | Break -> G.Break None
+      G.For (t, header, v4)
+  | Return (t, v1) -> let v1 = option expr v1 in G.Return (t, v1)
+  | Continue t -> G.Continue (t, None)
+  | Break t -> G.Break (t, None)
   | Label ((v1, v2)) -> let v1 = name v1 and v2 = stmt v2 in
       G.Label (v1, v2)
-  | Goto v1 -> let v1 = name v1 in G.Goto v1
+  | Goto (t, v1) -> let v1 = name v1 in G.Goto (t, v1)
   | Vars v1 -> let v1 = list var_decl v1 in
       G.stmt1 (v1 |> List.map (fun v -> G.DefStmt v))
   | Asm v1 -> let v1 = list expr v1 in 
@@ -264,10 +266,10 @@ let rec stmt =
 
 and case =
   function
-  | Case ((v1, v2)) -> let v1 = expr v1 and v2 = list stmt v2 in 
-      [G.Case (G.expr_to_pattern v1)], G.stmt1 v2
-  | Default v1 -> let v1 = list stmt v1 in 
-      [G.Default], G.stmt1 v1
+  | Case ((t, v1, v2)) -> let v1 = expr v1 and v2 = list stmt v2 in 
+      [G.Case (t, G.expr_to_pattern v1)], G.stmt1 v2
+  | Default (t, v1) -> let v1 = list stmt v1 in 
+      [G.Default t], G.stmt1 v1
 and
   var_decl {
                v_name = xname;
@@ -353,8 +355,8 @@ let define_body =
 
 let toplevel =
   function
-  | Include v1 -> let v1 = wrap string v1 in 
-      G.DirectiveStmt (G.ImportAs (G.FileName v1, None))
+  | Include (t, v1) -> let v1 = wrap string v1 in 
+      G.DirectiveStmt (G.ImportAs (t, G.FileName v1, None))
   | Define ((v1, v2)) -> 
     let v1 = name v1 and v2 = define_body v2 in
     let ent = G.basic_entity v1 [] in

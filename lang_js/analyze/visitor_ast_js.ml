@@ -60,8 +60,12 @@ let rec v_info x =
 
 and v_tok v = v_info v
 
-and v_wrap: 'a. ('a -> unit) -> 'a wrap -> unit = fun _of_a (v1, v2) ->
-  let v1 = _of_a v1 and v2 = v_info v2 in ()
+and v_wrap: 'a. ('a -> unit) -> 'a wrap -> unit = fun of_a (v1, v2) ->
+  let v1 = of_a v1 and v2 = v_info v2 in ()
+
+and v_bracket: 'a. ('a -> unit) -> 'a bracket -> unit = 
+  fun of_a (v1, v2, v3) ->
+  let v1 = v_info v1 and v2 = of_a v2 and v3 = v_info v3 in ()
 
 and v_name v = v_wrap v_string v
 
@@ -128,7 +132,7 @@ and v_expr (x: expr) =
       ()
   | Fun ((v1, v2)) -> let v1 = v_fun_ v1 and v2 = v_option v_name v2 in ()
   | Apply ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_list v_expr v2 in ()
-  | Arr ((v1)) -> let v1 = v_list v_expr v1 in ()
+  | Arr ((v1)) -> let v1 = v_bracket (v_list v_expr) v1 in ()
   | Conditional ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_expr v2 and v3 = v_expr v3 in ()
   in  
@@ -140,20 +144,36 @@ and v_stmt x =
   | VarDecl v1 -> let v1 = v_var v1 in ()
   | Block v1 -> let v1 = v_list v_stmt v1 in ()
   | ExprStmt v1 -> let v1 = v_expr v1 in ()
-  | If ((v1, v2, v3)) ->
+  | If ((t, v1, v2, v3)) ->
+      let t = v_tok t in
       let v1 = v_expr v1 and v2 = v_stmt v2 and v3 = v_stmt v3 in ()
-  | Do ((v1, v2)) -> let v1 = v_stmt v1 and v2 = v_expr v2 in ()
-  | While ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_stmt v2 in ()
-  | For ((v1, v2)) -> let v1 = v_for_header v1 and v2 = v_stmt v2 in ()
+  | Do ((t, v1, v2)) -> 
+      let t = v_tok t in
+      let v1 = v_stmt v1 and v2 = v_expr v2 in ()
+  | While ((t, v1, v2)) -> 
+      let t = v_tok t in
+      let v1 = v_expr v1 and v2 = v_stmt v2 in ()
+  | For ((t, v1, v2)) -> 
+      let t = v_tok t in
+      let v1 = v_for_header v1 and v2 = v_stmt v2 in ()
   | Switch ((v0, v1, v2)) -> 
         let v0 = v_tok v0 in
         let v1 = v_expr v1 and v2 = v_list v_case v2 in ()
-  | Continue v1 -> let v1 = v_option v_label v1 in ()
-  | Break v1 -> let v1 = v_option v_label v1 in ()
-  | Return v1 -> let v1 = v_expr v1 in ()
+  | Continue (t, v1) -> 
+      let t = v_tok t in
+      let v1 = v_option v_label v1 in ()
+  | Break (t, v1) -> 
+      let t = v_tok t in
+      let v1 = v_option v_label v1 in ()
+  | Return (t, v1) -> 
+      let t = v_tok t in
+      let v1 = v_expr v1 in ()
   | Label ((v1, v2)) -> let v1 = v_label v1 and v2 = v_stmt v2 in ()
-  | Throw v1 -> let v1 = v_expr v1 in ()
-  | Try ((v1, v2, v3)) ->
+  | Throw (t, v1) -> 
+      let t = v_tok t in
+      let v1 = v_expr v1 in ()
+  | Try ((t, v1, v2, v3)) ->
+      let t = v_tok t in
       let v1 = v_stmt v1
       and v2 =
         v_option
@@ -175,8 +195,12 @@ and v_for_header =
 
 and v_case =
   function
-  | Case ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_stmt v2 in ()
-  | Default v1 -> let v1 = v_stmt v1 in ()
+  | Case ((t, v1, v2)) -> 
+      let t = v_tok t in
+      let v1 = v_expr v1 and v2 = v_stmt v2 in ()
+  | Default (t, v1) -> 
+      let t = v_tok t in
+      let v1 = v_stmt v1 in ()
 
 and v_resolved_name _ = ()
 
@@ -206,7 +230,7 @@ and v_parameter x =
 and v_fun_prop =
   function | Get -> () | Set -> () | Generator -> () | Async -> ()
 
-and v_obj_ v = v_list v_property v
+and v_obj_ v = v_bracket (v_list v_property) v
 and v_class_ { c_extends = v_c_extends; c_body = v_c_body } =
   let arg = v_option v_expr v_c_extends in
   let arg = v_list v_property v_c_body in ()
@@ -218,7 +242,7 @@ and v_property x =
       and v2 = v_list (v_wrap v_property_prop) v2
       and v3 = v_expr v3
       in ()
-  | FieldSpread v1 -> let v1 = v_expr v1 in ()
+  | FieldSpread (t, v1) -> let t = v_tok t in let v1 = v_expr v1 in ()
   in
   vin.kprop (k, all_functions) x
 
@@ -236,13 +260,15 @@ and v_toplevel x =
 
 and v_module_directive x = 
   match x with
-  | Import ((v1, v2, v3)) ->
+  | Import ((t, v1, v2, v3)) ->
+      let t = v_tok t in
       let v1 = v_name v1 and v2 = v_name v2 and v3 = v_filename v3 in ()
   | ImportCss ((v1)) ->
       let v1 = v_name v1 in ()
   | ImportEffect ((v1)) ->
       let v1 = v_name v1 in ()
-  | ModuleAlias ((v1, v2)) ->
+  | ModuleAlias ((t, v1, v2)) ->
+      let t = v_tok t in
       let v1 = v_name v1 and v2 = v_filename v2 in ()
   | Export ((v1)) -> let v1 = v_name v1 in ()
 

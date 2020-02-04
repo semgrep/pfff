@@ -201,7 +201,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
        tag_name name (Entity (kind, def2));
        Common.save_excursion in_class true (fun () -> 
           k x);
-     | ImportAs ((dotted_name, _dotsTODO), asname_opt) ->
+     | ImportAs (_, (dotted_name, _dotsTODO), asname_opt) ->
            let kind = E.Module in
            dotted_name |> List.iter (fun name ->
              tag_name name (Entity (kind, use2));
@@ -211,7 +211,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
            );
          k x
 
-     | ImportFrom ((dotted_name, _dotsTODO), aliases) ->
+     | ImportFrom (_, (dotted_name, _dotsTODO), aliases) ->
          let kind = E.Module in
          dotted_name |> List.iter (fun name ->
            tag_name name (Entity (kind, use2));
@@ -225,7 +225,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
          );
          k x
 
-     | With (_e, eopt, _stmts) ->
+     | With (_, _e, eopt, _stmts) ->
        eopt |> Common.do_option (fun e ->
           match e with
          | Name (name, _ctx, _res) ->
@@ -234,7 +234,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
          | _ -> ()
        );
        k x
-     | TryExcept (_stmts1, excepts, _stmts2) ->
+     | TryExcept (_, _stmts1, excepts, _stmts2) ->
        excepts |> List.iter (fun (ExceptHandler (_typ, e, _)) ->
          match e with
          | None -> ()

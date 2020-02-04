@@ -77,14 +77,14 @@ let condition_of_stmt tok stmt =
 let mk_else elseifs else_ = 
   let elseifs = List.rev elseifs in
   List.fold_right (fun elseif accu ->
-      let ((stopt, cond), body) = elseif in
-      Some (If (stopt, cond, body, accu))
+      let ((tok, stopt, cond), body) = elseif in
+      Some (If (tok, stopt, cond, body, accu))
   ) elseifs else_
 
 let rec expr_to_type tok e =
   match e with
   | Id (id, _) -> TName [id]
-  | Deref (_, e) -> TPtr (expr_to_type tok e)
+  | Deref (t, e) -> TPtr (t, expr_to_type tok e)
   | Selector (Id (id1, _), _, id2) -> TName [id1;id2]
   | ParenType t -> t
   | _ -> 
@@ -250,7 +250,7 @@ let adjust_signatures params =
 file: package imports xdcl_list EOF 
   { { package = $1; imports = List.rev $2; decls = List.rev $3 } }
 
-package: LPACKAGE sym LSEMICOLON { $2 }
+package: LPACKAGE sym LSEMICOLON { $1, $2 }
 
 sgrep_spatch_pattern: 
  | expr EOF       { E $1 }
@@ -262,17 +262,22 @@ sgrep_spatch_pattern:
 /*(*************************************************************************)*/
 
 import:
-|   LIMPORT import_stmt { [$2] }
-|   LIMPORT LPAREN import_stmt_list osemi RPAREN { List.rev $3 }
+|   LIMPORT import_stmt 
+      { [$2 $1] }
+|   LIMPORT LPAREN import_stmt_list osemi RPAREN 
+      { List.rev $3 |> List.map (fun f -> f $1) }
 |   LIMPORT LPAREN RPAREN { [] }
 
 import_stmt:
 |        LSTR  
-    { { i_path = $1; i_kind = ImportOrig } (*// import with original name*) }
+    { fun i_tok -> { i_tok; i_path = $1; i_kind = ImportOrig } 
+      (*// import with original name*) }
 |   sym  LSTR  
-    { { i_path = $2; i_kind = ImportNamed $1 }(*// import with given name*)  }
+    { fun i_tok -> { i_tok; i_path = $2; i_kind = ImportNamed $1 }
+      (*// import with given name*)  }
 |   LDOT LSTR  
-    { { i_path = $2; i_kind = ImportDot $1 }(*// import into my name space *) }
+    { fun i_tok -> { i_tok; i_path = $2; i_kind = ImportDot $1 }
+      (*// import into my name space *) }
 
 /*(*************************************************************************)*/
 /*(*1 Declarations *)*/
@@ -366,8 +371,10 @@ simple_stmt:
 /*(* IF cond body (ELSE IF cond body)* (ELSE block)? *) */
 if_stmt: LIF  if_header loop_body elseif_list else_
     { match $2 with
-      | stopt, Some st -> If (stopt, condition_of_stmt $1 st, $3,mk_else $4 $5)
-      | _, None -> error $1 "missing condition in if statement"
+      | stopt, Some st -> 
+        If ($1, stopt, condition_of_stmt $1 st, $3, mk_else $4 $5)
+      | _, None -> 
+        error $1 "missing condition in if statement"
     }
 
 if_header:
@@ -377,8 +384,10 @@ if_header:
 
 elseif: LELSE LIF  if_header loop_body
     { match $3 with
-      | stopt, Some st -> (stopt, condition_of_stmt $2 st), $4
-      | _, None -> error $2 "missing condition in if statement"
+      | stopt, Some st -> 
+        ($2, stopt, condition_of_stmt $2 st), $4
+      | _, None -> 
+        error $2 "missing condition in if statement"
     }
 
 else_:
@@ -388,18 +397,18 @@ else_:
 
 for_stmt: 
  | LFOR osimple_stmt LSEMICOLON osimple_stmt LSEMICOLON osimple_stmt loop_body
-    { For (($2, Common.map_opt (condition_of_stmt $1) $4, $6), $7) }
+    { For ($1, ($2, Common.map_opt (condition_of_stmt $1) $4, $6), $7) }
  | LFOR osimple_stmt loop_body 
     { match $2 with
-      | None ->    For ((None, None, None), $3)
-      | Some st -> For ((None, Some (condition_of_stmt $1 st), None), $3)
+      | None ->    For ($1, (None, None, None), $3)
+      | Some st -> For ($1, (None, Some (condition_of_stmt $1 st), None), $3)
     }
  | LFOR expr_list LEQ    LRANGE expr loop_body
-    { Range (Some (List.rev $2, $3), $4, $5, $6)  }
+    { Range ($1, Some (List.rev $2, $3), $4, $5, $6)  }
  | LFOR expr_list LCOLAS LRANGE expr loop_body
-    { Range (Some (List.rev $2, $3), $4, $5, $6) }
+    { Range ($1, Some (List.rev $2, $3), $4, $5, $6) }
  | LFOR                  LRANGE expr loop_body
-    { Range (None, $2, $3, $4) }
+    { Range ($1, None, $2, $3, $4) }
 
 
 loop_body: LBODY stmt_list RBRACE { Block (List.rev $2) }
@@ -415,9 +424,9 @@ select_stmt:  LSELECT LBODY caseblock_list RBRACE
     { Select ($1, List.rev $3) }
 
 case:
-|   LCASE expr_or_type_list LCOLON             { CaseExprs $2 }
-|   LCASE expr_or_type_list LEQ expr LCOLON    { CaseAssign ($2, $3, $4) }
-|   LCASE expr_or_type_list LCOLAS expr LCOLON { CaseAssign ($2, $3, $4) }
+|   LCASE expr_or_type_list LCOLON             { CaseExprs ($1, $2) }
+|   LCASE expr_or_type_list LEQ expr LCOLON    { CaseAssign ($1, $2, $3, $4) }
+|   LCASE expr_or_type_list LCOLAS expr LCOLON { CaseAssign ($1, $2, $3, $4) }
 |   LDEFAULT LCOLON                            { CaseDefault $1 }
 
 caseblock: case stmt_list
@@ -538,9 +547,9 @@ pexpr_no_paren:
 |   convtype LPAREN expr ocomma RPAREN { Cast ($1, $3) }
 
 |   comptype       lbrace braced_keyval_list RBRACE 
-    { CompositeLit ($1, $3) }
+    { CompositeLit ($1, ($2, $3, $4)) }
 |   pexpr_no_paren LBRACE braced_keyval_list RBRACE 
-    { CompositeLit (expr_to_type $2 $1, $3) }
+    { CompositeLit (expr_to_type $2 $1, ($2, $3, $4)) }
 
 |   fnliteral { $1 }
 
@@ -592,11 +601,11 @@ keyval: complitexpr LCOLON complitexpr { InitKeyValue ($1, $2, $3) }
 
 complitexpr:
 |   expr { InitExpr $1 }
-|   LBRACE braced_keyval_list RBRACE { InitBraces ($2) }
+|   LBRACE braced_keyval_list RBRACE { InitBraces ($1, $2, $3) }
 
 bare_complitexpr:
 |   expr { InitExpr $1 }
-|   LBRACE braced_keyval_list RBRACE { InitBraces $2 }
+|   LBRACE braced_keyval_list RBRACE { InitBraces ($1, $2, $3) }
 
 
 
@@ -604,8 +613,8 @@ bare_complitexpr:
 
 /*(* less: I don't think we need that with a good fix_tokens_lbody *)*/
 lbrace:
-|   LBODY { }
-|   LBRACE { }
+|   LBODY { $1 }
+|   LBRACE { $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Names *)*/
@@ -686,9 +695,9 @@ non_recvchantype:
 |   LPAREN ntype RPAREN { $2 }
 
 
-ptrtype: LMULT ntype { TPtr $2 }
+ptrtype: LMULT ntype { TPtr ($1, $2) }
 
-recvchantype: LCOMM LCHAN ntype { TChan (TRecv, $3) }
+recvchantype: LCOMM LCHAN ntype { TChan ($2, TRecv, $3) }
 
 fntype: LFUNC LPAREN oarg_type_list_ocomma RPAREN fnres 
   { { fparams = $3; fresults = $5 } }
@@ -716,10 +725,10 @@ othertype:
 |   LBRACKET LDDD RBRACKET ntype  
       { TArrayEllipsis ($2, $4) }
 
-|   LCHAN non_recvchantype { TChan (TBidirectional, $2) }
-|   LCHAN LCOMM ntype      { TChan (TSend, $3) }
+|   LCHAN non_recvchantype { TChan ($1, TBidirectional, $2) }
+|   LCHAN LCOMM ntype      { TChan ($1, TSend, $3) }
 
-|   LMAP LBRACKET ntype RBRACKET ntype { TMap ($3, $5) }
+|   LMAP LBRACKET ntype RBRACKET ntype { TMap ($1, $3, $5) }
 
 |   structtype    { $1 }
 |   interfacetype { $1 }
@@ -745,15 +754,17 @@ non_expr_type:
 |   fntype              { TFunc $1 } 
 |   recvchantype        { $1 }
 |   othertype           { $1 }
-|   LMULT non_expr_type { TPtr ($2) }
+|   LMULT non_expr_type { TPtr ($1, $2) }
 
 /*(*************************************************************************)*/
 /*(*1 Struct/Interface *)*/
 /*(*************************************************************************)*/
 
 structtype:
-|   LSTRUCT lbrace structdcl_list osemi RBRACE { TStruct (List.rev $3) }
-|   LSTRUCT lbrace RBRACE                      { TStruct [] }
+|   LSTRUCT lbrace structdcl_list osemi RBRACE 
+    { TStruct ($1, ($2, List.rev $3, $5)) }
+|   LSTRUCT lbrace RBRACE                      
+    { TStruct ($1, ($2, [], $3)) }
 
 structdcl:
 |   new_name_list ntype oliteral 
@@ -763,8 +774,10 @@ structdcl:
 
 
 interfacetype:
-    LINTERFACE lbrace interfacedcl_list osemi RBRACE { TInterface(List.rev $3)}
-|   LINTERFACE lbrace RBRACE                         { TInterface [] }
+    LINTERFACE lbrace interfacedcl_list osemi RBRACE 
+    { TInterface ($1, ($2, List.rev $3, $5)) }
+|   LINTERFACE lbrace RBRACE                         
+    { TInterface ($1, ($2, [], $3)) }
 
 interfacedcl:
 |   new_name indcl { Method ($1, $2) }

@@ -287,20 +287,20 @@ sgrep_spatch_pattern:
 
 /*(* ident_list *)*/
 package_declaration: 
- |             PACKAGE qualified_ident SM  { $2 }
+ |             PACKAGE qualified_ident SM  { $1, $2 }
  /*(* always annotations *)*/
- | modifiers   PACKAGE qualified_ident SM  { $3 }
+ | modifiers   PACKAGE qualified_ident SM  { $2, $3 (* TODO $1 *) }
 
 /*(* javaext: static_opt 1.? *)*/
 import_declaration:
  | IMPORT static_opt name SM            
     { $2, 
       (match List.rev (qualified_ident $3) with
-      | x::xs -> ImportFrom (List.rev xs, x)
+      | x::xs -> ImportFrom ($1, List.rev xs, x)
       | [] -> raise Impossible
       ) }
  | IMPORT static_opt name DOT TIMES SM  
-    { $2, ImportAll (qualified_ident $3, $5)}
+    { $2, ImportAll ($1, qualified_ident $3, $5)}
 
 type_declaration:
  | class_declaration      { [Class $1] }
@@ -748,8 +748,8 @@ statement_without_trailing_substatement:
  | throw_statement  { $1 }
  | try_statement  { $1 }
  /*(* javaext:  *)*/
- | ASSERT expression SM                  { Assert ($2, None) }
- | ASSERT expression COLON expression SM { Assert ($2, Some $4) }
+ | ASSERT expression SM                  { Assert ($1, $2, None) }
+ | ASSERT expression COLON expression SM { Assert ($1, $2, Some $4) }
 
 block: LC block_statements_opt RC  { Block $2 }
 
@@ -791,10 +791,10 @@ statement_expression:
 
 
 if_then_statement: IF LP expression RP statement
-   { If ($3, $5, Empty) }
+   { If ($1, $3, $5, Empty) }
 
 if_then_else_statement: IF LP expression RP statement_no_short_if ELSE statement
-   { If ($3, $5, $7) }
+   { If ($1, $3, $5, $7) }
 
 
 switch_statement: SWITCH LP expression RP switch_block
@@ -810,15 +810,15 @@ switch_block:
 switch_block_statement_group: switch_labels block_statements  {List.rev $1, $2}
 
 switch_label:
- | CASE constant_expression COLON  { Case $2 }
- | DEFAULT_COLON COLON                   { Default }
+ | CASE constant_expression COLON  { Case ($1, $2) }
+ | DEFAULT_COLON COLON                   { Default $1 }
 
 
 while_statement: WHILE LP expression RP statement
-     { While ($3, $5) }
+     { While ($1, $3, $5) }
 
 do_statement: DO statement WHILE LP expression RP SM
-     { Do ($2, $5) }
+     { Do ($1, $2, $5) }
 
 /*(*----------------------------*)*/
 /*(*2 For *)*/
@@ -826,7 +826,7 @@ do_statement: DO statement WHILE LP expression RP SM
 
 for_statement:
   FOR LP for_control RP statement
-	{ For ($3, $5) }
+	{ For ($1, $3, $5) }
 
 for_control:
  | for_init_opt SM expression_opt SM for_update_opt
@@ -860,9 +860,9 @@ for_var_control_rest: COLON expression { $2 }
 /*(*2 Other *)*/
 /*(*----------------------------*)*/
 
-break_statement: BREAK identifier_opt SM  { Break $2 }
-continue_statement: CONTINUE identifier_opt SM  { Continue $2 }
-return_statement: RETURN expression_opt SM  { Return $2 }
+break_statement: BREAK identifier_opt SM  { Break ($1, $2) }
+continue_statement: CONTINUE identifier_opt SM  { Continue ($1, $2) }
+return_statement: RETURN expression_opt SM  { Return ($1, $2) }
 
 synchronized_statement: SYNCHRONIZED LP expression RP block { Sync ($3, $5) }
 
@@ -870,15 +870,15 @@ synchronized_statement: SYNCHRONIZED LP expression RP block { Sync ($3, $5) }
 /*(*2 Exceptions *)*/
 /*(*----------------------------*)*/
 
-throw_statement: THROW expression SM  { Throw $2 }
+throw_statement: THROW expression SM  { Throw ($1, $2) }
 
 try_statement:
- | TRY block catches              { Try ($2, List.rev $3, None) }
- | TRY block catches_opt finally  { Try ($2, $3, Some $4) }
+ | TRY block catches              { Try ($1, $2, List.rev $3, None) }
+ | TRY block catches_opt finally  { Try ($1, $2, $3, Some $4) }
  /*(* javaext: ? *)*/
  | TRY resource_specification block catches_opt finally_opt { 
     (* TODO $2 *)
-    Try ($3, $4, $5)
+    Try ($1, $3, $4, $5)
   }
 
 finally: FINALLY block  { $2 }
@@ -933,14 +933,14 @@ labeled_statement_no_short_if: identifier COLON statement_no_short_if
 
 if_then_else_statement_no_short_if:
  IF LP expression RP statement_no_short_if ELSE statement_no_short_if
-   { If ($3, $5, $7) }
+   { If ($1, $3, $5, $7) }
 
 while_statement_no_short_if: WHILE LP expression RP statement_no_short_if
-     { While ($3, $5) }
+     { While ($1, $3, $5) }
 
 for_statement_no_short_if:
   FOR LP for_control RP statement_no_short_if
-	{ For ($3, $5) }
+	{ For ($1, $3, $5) }
 
 /*(*************************************************************************)*/
 /*(*1 Modifiers *)*/
@@ -1072,8 +1072,8 @@ variable_initializer:
  | array_initializer  { $1 }
 
 array_initializer:
- | LC comma_opt RC                        { ArrayInit [] }
- | LC variable_initializers comma_opt RC  { ArrayInit (List.rev $2) }
+ | LC comma_opt RC                        { ArrayInit ($1, [], $3) }
+ | LC variable_initializers comma_opt RC  { ArrayInit ($1, List.rev $2, $4) }
 
 /*(*----------------------------*)*/
 /*(*2 Method *)*/

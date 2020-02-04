@@ -98,7 +98,7 @@ let exprs_of_node node =
   | SimpleNode x ->
       (match x with
       | ExprStmt e -> [e]
-      | Assert (e, eopt) -> e::Common.opt_to_list eopt
+      | Assert (_, e, eopt) -> e::Common.opt_to_list eopt
       (* TODO: should transform VarDef in it in Assign *)
       | DefStmt _ -> []
       | DirectiveStmt _ -> []

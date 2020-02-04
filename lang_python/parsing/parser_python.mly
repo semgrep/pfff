@@ -30,6 +30,9 @@
 open Common
 open Ast_python
 
+let fake s = Parse_info.fake_info s
+let fake_bracket x = fake "(", x, fake ")"
+
 (* intermediate helper type *)
 type single_or_tuple =
   | Single of expr
@@ -41,7 +44,7 @@ let cons e = function
 
 let tuple_expr = function
   | Single e -> e
-  | Tup l -> Tuple (CompList l, Load)
+  | Tup l -> Tuple (CompList (fake_bracket l), Load)
 
 let to_list = function
   | Single e -> [e]
@@ -58,10 +61,10 @@ let rec set_expr_ctx ctx = function
   | Subscript (value, slice, _) ->
       Subscript (value, slice, ctx)
 
-  | List (CompList elts, _) ->
-      List (CompList (List.map (set_expr_ctx ctx) elts), ctx)
-  | Tuple (CompList elts, _) ->
-      Tuple (CompList (List.map (set_expr_ctx ctx) elts), ctx)
+  | List (CompList (t1, elts, t2), _) ->
+      List (CompList ((t1, List.map (set_expr_ctx ctx) elts, t2)), ctx)
+  | Tuple (CompList (t1, elts, t2), _) ->
+      Tuple (CompList ((t1, List.map (set_expr_ctx ctx) elts, t2)), ctx)
 
   | e -> e
 
@@ -220,7 +223,7 @@ import_stmt:
 
 import_name: IMPORT dotted_as_name_list 
   { $2 |> List.map (fun (v1, v2) -> let dots = None in 
-         ImportAs ((v1, dots), v2))   }
+         ImportAs ($1, (v1, dots), v2))   }
 
 dotted_as_name:
   | dotted_name         { $1, None }
@@ -233,11 +236,11 @@ dotted_name:
 
 import_from:
   | FROM name_and_level IMPORT MULT
-      { [ImportAll ($2, $4)] }
+      { [ImportAll ($1, $2, $4)] }
   | FROM name_and_level IMPORT LPAREN import_as_name_list RPAREN
-      { [ImportFrom ($2, $5)] }
+      { [ImportFrom ($1, $2, $5)] }
   | FROM name_and_level IMPORT import_as_name_list
-      { [ImportFrom ($2, $4)] }
+      { [ImportFrom ($1, $2, $4)] }
 
 name_and_level:
   |           dotted_name { $1, None }
@@ -436,9 +439,9 @@ exec_stmt:
   | EXEC expr IN test COMMA test { Exec ($1, $2, Some $4, Some $6) }
 
 
-del_stmt: DEL exprlist { Delete (List.map expr_del (to_list $2)) }
+del_stmt: DEL exprlist { Delete ($1, List.map expr_del (to_list $2)) }
 
-pass_stmt: PASS { Pass }
+pass_stmt: PASS { Pass $1 }
 
 
 flow_stmt:
@@ -448,30 +451,30 @@ flow_stmt:
   | raise_stmt    { $1 }
   | yield_stmt    { $1 }
 
-break_stmt:    BREAK    { Break  }
-continue_stmt: CONTINUE { Continue }
+break_stmt:    BREAK    { Break $1  }
+continue_stmt: CONTINUE { Continue $1 }
 
 return_stmt:
-  | RETURN          { Return (None) }
-  | RETURN testlist { Return (Some (tuple_expr $2)) }
+  | RETURN          { Return ($1, None) }
+  | RETURN testlist { Return ($1, Some (tuple_expr $2)) }
 
 yield_stmt: yield_expr { ExprStmt ($1) }
 
 raise_stmt:
-  | RAISE                           { Raise (None) }
-  | RAISE test                      { Raise (Some ($2, None)) }
+  | RAISE                           { Raise ($1, None) }
+  | RAISE test                      { Raise ($1, Some ($2, None)) }
   /*(* python3-ext: *)*/
-  | RAISE test FROM test            { Raise (Some ($2, Some $4)) }
+  | RAISE test FROM test            { Raise ($1, Some ($2, Some $4)) }
 
 
-global_stmt: GLOBAL name_list { Global ($2) }
+global_stmt: GLOBAL name_list { Global ($1, $2) }
 
 /*(* python3-ext: *)*/
-nonlocal_stmt: NONLOCAL name_list { NonLocal $2 }
+nonlocal_stmt: NONLOCAL name_list { NonLocal ($1, $2) }
 
 assert_stmt:
-  | ASSERT test            { Assert ($2, None) }
-  | ASSERT test COMMA test { Assert ($2, Some $4) }
+  | ASSERT test            { Assert ($1, $2, None) }
+  | ASSERT test COMMA test { Assert ($1, $2, Some $4) }
 
 
 
@@ -513,37 +516,37 @@ suite:
   | NEWLINE INDENT stmt_list DEDENT { $3 }
 
 
-if_stmt: IF test COLON suite elif_stmt_list { If ($2, $4, $5) }
+if_stmt: IF test COLON suite elif_stmt_list { If ($1, $2, $4, $5) }
 
 elif_stmt_list:
   | /*(*empty *)*/  { [] }
-  | ELIF test COLON suite elif_stmt_list { [If ($2, $4, $5)] }
+  | ELIF test COLON suite elif_stmt_list { [If ($1, $2, $4, $5)] }
   | ELSE COLON suite { $3 }
 
 
 while_stmt:
-  | WHILE test COLON suite { While ($2, $4, []) }
-  | WHILE test COLON suite ELSE COLON suite { While ($2, $4, $7) }
+  | WHILE test COLON suite { While ($1, $2, $4, []) }
+  | WHILE test COLON suite ELSE COLON suite { While ($1, $2, $4, $7) }
 
 
 for_stmt:
   | FOR exprlist IN testlist COLON suite
-      { For (tuple_expr_store $2, tuple_expr $4, $6, []) }
+      { For ($1, tuple_expr_store $2, tuple_expr $4, $6, []) }
   | FOR exprlist IN testlist COLON suite ELSE COLON suite
-      { For (tuple_expr_store $2, tuple_expr $4, $6, $9) }
+      { For ($1, tuple_expr_store $2, tuple_expr $4, $6, $9) }
 
 
 try_stmt:
   | TRY COLON suite excepthandler_list
-      { TryExcept ($3, $4, []) }
+      { TryExcept ($1, $3, $4, []) }
   | TRY COLON suite excepthandler_list ELSE COLON suite
-      { TryExcept ($3, $4, $7) }
+      { TryExcept ($1, $3, $4, $7) }
   | TRY COLON suite excepthandler_list ELSE COLON suite FINALLY COLON suite
-      { TryFinally ([TryExcept ($3, $4, $7)], $10) }
+      { TryFinally ($1, [TryExcept ($1, $3, $4, $7)], $10) }
   | TRY COLON suite excepthandler_list FINALLY COLON suite
-      { TryFinally ([TryExcept ($3, $4, [])], $7) }
+      { TryFinally ($1, [TryExcept ($1, $3, $4, [])], $7) }
   | TRY COLON suite FINALLY COLON suite
-      { TryFinally ($3, $6) }
+      { TryFinally ($1, $3, $6) }
 
 excepthandler:
   | EXCEPT COLON suite { ExceptHandler (None, None, $3) }
@@ -552,19 +555,19 @@ excepthandler:
   | EXCEPT test COMMA test COLON suite { ExceptHandler (Some $2, Some (expr_store $4), $6) }
 
 with_stmt:
-  | WITH with_inner { $2 }
+  | WITH with_inner { $2 $1 }
 
 with_inner:
-  | test         COLON suite      { With ($1, None, $3) }
-  | test AS expr COLON suite      { With ($1, Some $3, $5) }
-  | test         COMMA with_inner { With ($1, None, [$3]) }
-  | test AS expr COMMA with_inner { With ($1, Some $3, [$5]) }
+  | test         COLON suite      { fun t -> With (t, $1, None, $3) }
+  | test AS expr COLON suite      { fun t -> With (t, $1, Some $3, $5) }
+  | test         COMMA with_inner { fun t -> With (t, $1, None, [$3 t]) }
+  | test AS expr COMMA with_inner { fun t -> With (t, $1, Some $3, [$5 t]) }
 
 /*(* python3-ext: *)*/
 async_stmt: 
-  | ASYNC funcdef   { Async $2 }
-  | ASYNC with_stmt { Async $2 } 
-  | ASYNC for_stmt  { Async $2 }
+  | ASYNC funcdef   { Async ($1, $2) }
+  | ASYNC with_stmt { Async ($1, $2) } 
+  | ASYNC for_stmt  { Async ($1, $2) }
 
 /*(*************************************************************************)*/
 /*(*1 Expressions *)*/
@@ -622,7 +625,7 @@ power:
 
 atom_expr: 
   | atom_and_trailers        { $1 }
-  | AWAIT atom_and_trailers  { Await $2 }
+  | AWAIT atom_and_trailers  { Await ($1, $2) }
 
 atom_and_trailers:
   | atom { $1 }
@@ -672,7 +675,7 @@ atom:
   /*(* typing-ext: sgrep-ext: *)*/
   | ELLIPSES    { Ellipsis $1 }
 
-atom_repr: BACKQUOTE testlist1 BACKQUOTE { Repr (tuple_expr $2) }
+atom_repr: BACKQUOTE testlist1 BACKQUOTE { Repr ($1, tuple_expr $2, $3) }
 
 /*(*----------------------------*)*/
 /*(*2 strings *)*/
@@ -712,21 +715,21 @@ format_token:
 /*(*----------------------------*)*/
 
 atom_tuple:
-  | LPAREN               RPAREN { Tuple (CompList [], Load) }
+  | LPAREN               RPAREN { Tuple (CompList ($1, [], $2), Load) }
   | LPAREN testlist_comp RPAREN { Tuple ($2, Load) }
   | LPAREN yield_expr    RPAREN { $2 }
 
 atom_list:
-  | LBRACK               RBRACK { List (CompList [], Load) }
+  | LBRACK               RBRACK { List (CompList ($1, [], $2), Load) }
   | LBRACK testlist_comp RBRACK { List ($2, Load) }
 
 atom_dict:
-  | LBRACE                RBRACE { DictOrSet (CompList []) }
-  | LBRACE dictorsetmaker RBRACE { DictOrSet ($2) }
+  | LBRACE                RBRACE { DictOrSet (CompList ($1, [], $2)) }
+  | LBRACE dictorsetmaker RBRACE { DictOrSet ($2 ($1, $3)) }
 
 dictorsetmaker: 
-  | dictorset_elem comp_for { CompForIf ($1, $2) }
-  | dictorset_elem_list     { CompList $1 }
+  | dictorset_elem comp_for { fun _ -> CompForIf ($1, $2) }
+  | dictorset_elem_list     { fun (t1, t2) -> CompList (t1, $1, t2) }
 
 dictorset_elem:
   | test COLON test { KeyVal ($1, $3) }
@@ -792,9 +795,9 @@ star_expr: MULT expr { ExprStar $2 }
 
 
 yield_expr:
-  | YIELD           { Yield (None, false) }
-  | YIELD FROM test { Yield (Some $3, true) }
-  | YIELD testlist  { Yield (Some (tuple_expr $2), false) }
+  | YIELD           { Yield ($1, None, false) }
+  | YIELD FROM test { Yield ($1, Some $3, true) }
+  | YIELD testlist  { Yield ($1, Some (tuple_expr $2), false) }
 
 lambdadef: LAMBDA varargslist COLON test { Lambda ($2, $4) }
 
@@ -804,7 +807,7 @@ lambdadef: LAMBDA varargslist COLON test { Lambda ($2, $4) }
 
 testlist_comp:
   | test_or_star_expr comp_for { CompForIf ($1, $2) }
-  | testlist_star_expr         { CompList (to_list $1) }
+  | testlist_star_expr         { CompList (fake_bracket (to_list $1)) }
 
 comp_for: 
  | sync_comp_for       { $1 }

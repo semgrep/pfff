@@ -112,6 +112,8 @@ let rec ifdef_skipper xs f =
       )
     )
 
+let bracket_keep of_a (t1, x, t2) = (t1, of_a x, t2)
+
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
@@ -297,23 +299,23 @@ and initialiser env x =
      (match xs |> unbrace |> uncomma with
      | [] -> debug (Init x); raise Impossible
      | (InitDesignators ([DesignatorField (_, _)], _, _init))::_ ->
-       A.RecordInit (
-         xs |> unbrace |> uncomma |> List.map (function
+       A.RecordInit (bracket_keep (fun xs ->
+         xs |> uncomma |> List.map (function
            | InitDesignators ([DesignatorField (_, ident)], _, init) ->
              ident, initialiser env init
            | _ -> debug (Init x); raise Todo
-         ))
+         )) xs)
      | _ ->
-       A.ArrayInit ((xs |> unbrace |> uncomma) |> List.map (function
+       A.ArrayInit (bracket_keep (fun xs ->
+       xs |> uncomma |> List.map (function
          (* less: todo? *)
          | InitIndexOld ((_, idx, _), ini) ->
              Some (expr env idx), initialiser env ini
          | InitDesignators([DesignatorIndex((_, idx, _))], _, ini) -> 
              Some (expr env idx), initialiser env ini
          | x -> None, initialiser env x
-       ))
+       )) xs)
      )
-
   (* should be covered by caller *)
   | InitDesignators _ -> debug (Init x); raise Todo
   | InitIndexOld _ | InitFieldOld _ -> debug (Init x); raise Todo
@@ -354,7 +356,7 @@ and cpp_directive env x =
         | Standard -> "<" ^ path ^ ">"
         | Weird -> debug (Cpp x); raise Todo
       in
-      [A.Include (s, tok)]
+      [A.Include (tok, (s, tok))]
   | Undef _ -> debug (Cpp x); raise Todo
   | PragmaAndCo _ -> []
 
@@ -388,19 +390,19 @@ and stmt env x =
   | Compound x -> A.Block (compound env x)
   | Selection s ->
       (match s with
-      | If (_, (_, e, _), st1, _, st2) ->
-          A.If (expr env e, stmt env st1, stmt env st2)
+      | If (t, (_, e, _), st1, _, st2) ->
+          A.If (t, expr env e, stmt env st1, stmt env st2)
       | Switch (tok, (_, e, _), st) ->
           A.Switch (tok, expr env e, cases env st)
         )
   | Iteration i ->
       (match i with
-      | While (_, (_, e, _), st) ->
-          A.While (expr env e, stmt env st)
-      | DoWhile (_, st, _, (_, e, _), _) ->
-          A.DoWhile (stmt env st, expr env e)
-      | For (_, (_, ((est1, _), (est2, _), (est3, _)), _), st) ->
-          A.For (
+      | While (t, (_, e, _), st) ->
+          A.While (t, expr env e, stmt env st)
+      | DoWhile (t, st, _, (_, e, _), _) ->
+          A.DoWhile (t, stmt env st, expr env e)
+      | For (t, (_, ((est1, _), (est2, _), (est3, _)), _), st) ->
+          A.For (t,
             Common2.fmap (expr env) est1,
             Common2.fmap (expr env) est2,
             Common2.fmap (expr env) est3,
@@ -426,12 +428,13 @@ and stmt env x =
           debug (Stmt x); raise CaseOutsideSwitch
       )
   | Jump j ->
+      let tok = List.hd ii in
       (match j with
-      | Goto s -> A.Goto ((s, List.hd ii))
-      | Return -> A.Return None;
-      | ReturnExpr e -> A.Return (Some (expr env e))
-      | Continue -> A.Continue
-      | Break -> A.Break
+      | Goto s -> A.Goto (tok, (s, tok))
+      | Return -> A.Return (tok, None);
+      | ReturnExpr e -> A.Return (tok, Some (expr env e))
+      | Continue -> A.Continue tok
+      | Break -> A.Break tok
       | GotoComputed _ -> debug (Stmt x); raise Todo
       )
 
@@ -481,10 +484,12 @@ and cases env x =
                     raise MacroInCase
                 ) xs' in
                 (match x with
-                | StmtElem ((Labeled (Case (e, _))), _) ->
-                    A.Case (expr env e, stmts)
-                | StmtElem ((Labeled (Default _st)), _) ->
-                    A.Default (stmts)
+                | StmtElem ((Labeled (Case (e, _))), ii) ->
+                    let tok = List.hd ii in
+                    A.Case (tok, expr env e, stmts)
+                | StmtElem ((Labeled (Default _st)), ii) ->
+                    let tok = List.hd ii in
+                    A.Default (tok, stmts)
                 | _ -> raise Impossible
                 )::aux rest
             | x -> debug (Body (l, [x], r)); raise Todo
@@ -606,7 +611,7 @@ and argument env x =
 and full_type env x =
   let (_qu, (t, ii)) = x in
   match t with
-  | Pointer t -> A.TPointer (full_type env t)
+  | Pointer t -> A.TPointer (List.hd ii, full_type env t)
   | BaseType t ->
       let s = 
         (match t with

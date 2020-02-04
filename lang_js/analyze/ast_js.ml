@@ -71,6 +71,10 @@ type tok = Parse_info.t
 type 'a wrap = 'a * tok
  (* with tarzan *)
 
+(* round(), square[], curly{}, angle<> brackets *)
+type 'a bracket = tok * 'a * tok
+ (* with tarzan *)
+
 (* ------------------------------------------------------------------------- *)
 (* Name *)
 (* ------------------------------------------------------------------------- *)
@@ -169,12 +173,12 @@ and expr =
   | Assign of expr * tok * expr
 
   (* less: could be transformed in a series of Assign(ObjAccess, ...) *)
-  | Obj of obj_
+  | Obj of obj_ 
   | Class of class_ * name option (* when assigned in module.exports  *)
   | ObjAccess of expr * tok * property_name
   (* we could transform it in an Obj but can be useful to remember 
    * the difference in further analysis (e.g., in the abstract interpreter) *)
-  | Arr of expr list  
+  | Arr of expr list bracket
   (* this can also be used to access object fields dynamically *)
   | ArrAccess of expr * expr
 
@@ -196,18 +200,18 @@ and stmt =
   | Block of stmt list
   | ExprStmt of expr
 
-  | If of expr * stmt * stmt
-  | Do of stmt * expr | While of expr * stmt
-  | For of for_header * stmt
+  | If of tok * expr * stmt * stmt
+  | Do of tok * stmt * expr | While of tok * expr * stmt
+  | For of tok * for_header * stmt
 
   | Switch of tok * expr * case list
-  | Continue of label option | Break of label option
-  | Return of expr
+  | Continue of tok * label option | Break of tok * label option
+  | Return of tok * expr
 
   | Label of label * stmt
  
-  | Throw of expr
-  | Try of stmt * catch option * stmt option
+  | Throw of tok * expr
+  | Try of tok * stmt * catch option * stmt option
 
   (* less: ModuleDirective of module_directive 
    * ES6 modules can appear only at the toplevel
@@ -224,8 +228,8 @@ and stmt =
     and var_or_expr = (var, expr) Common.either
 
   and case = 
-   | Case of expr * stmt
-   | Default of stmt
+   | Case of tok * expr * stmt
+   | Default of tok * stmt
 
   and catch = name * stmt
 
@@ -257,7 +261,7 @@ and fun_ = {
     (* only inside classes *)
     | Get | Set 
 
-and obj_ = property list
+and obj_ = property list bracket
 
 and class_ = { 
   (* usually simply an Id *)
@@ -269,7 +273,7 @@ and class_ = {
     (* expr is a Fun for methods *)
     | Field of property_name * property_prop wrap list * expr
     (* less: can unsugar? *)
-    | FieldSpread of expr
+    | FieldSpread of tok * expr
 
   and property_prop =
     | Static
@@ -293,11 +297,12 @@ type module_directive =
    * when you do 'import "react"' to get a resolved path).
    * See Module_path_js to resolve paths.
    *)
-  | Import of name * name (* 'name1 as name2', often name1=name2 *) * filename
+  | Import of tok * name * name (* 'name1 as name2', often name1=name2 *) * 
+      filename
   | Export of name
 
   (* hard to unsugar in Import because we do not have the list of names *)
-  | ModuleAlias of name * filename (* import * as 'name' from 'file' *)
+  | ModuleAlias of tok * name * filename (* import * as 'name' from 'file' *)
 
   | ImportCss of filename
   (* those should not exist *)

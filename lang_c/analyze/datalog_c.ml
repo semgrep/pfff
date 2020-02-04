@@ -116,6 +116,8 @@ let string_of_op _str =
 let is_local env s =
   (Common.find_opt (fun (x, _) -> x =$= s) !(env.locals)) <> None
 
+let unbracket (_, x, _) = x
+
 (*****************************************************************************)
 (* Normalize *)
 (*****************************************************************************)
@@ -169,7 +171,7 @@ let instrs_of_expr env e =
 
   (* todo: actually an alloc is hidden there! *)
   | A.Assign (op, e1, A.ArrayInit xs) ->
-    let ys = xs |> List.map (fun (idxopt, value) ->
+    let ys = xs |> unbracket |> List.map (fun (idxopt, value) ->
       (* less? recompute e1 each time? should store in intermediate val? *)
       let access =
         match idxopt with
@@ -184,7 +186,7 @@ let instrs_of_expr env e =
 
   (* todo: actually an alloc is hidden there! *)
   | A.Assign (op, e1, A.RecordInit xs) ->
-    let ys = xs |> List.map (fun (name, value) ->
+    let ys = xs |> unbracket |> List.map (fun (name, value) ->
       (* less? recompute e1 each time? should store in intermediate val? *)
       let access = 
         A.RecordPtAccess

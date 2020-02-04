@@ -39,6 +39,7 @@ module G = Ast_generic
 (* Helpers *)
 (*****************************************************************************)
 let fake s = Parse_info.fake_info s
+let fake_bracket x = fake "(", x, fake ")"
 
 (*****************************************************************************)
 (* Xhp *)
@@ -56,10 +57,10 @@ let xhp_attr_value expr x =
 (* todo: should probably use Obj instead of tuples with string keys *)
 let xhp_attribute expr x = 
   match x with
-  | C.XhpAttrNoValue (str) -> A.Arr [A.String str]
+  | C.XhpAttrNoValue (str) -> A.Arr (fake_bracket [A.String str])
   | C.XhpAttrValue (str, _tok, attrval) ->
     let v = xhp_attr_value expr attrval in
-    A.Arr [A.String str; v]
+    A.Arr (fake_bracket [A.String str; v])
   | C.XhpAttrSpread (_, (tokdot, e), _) ->
     A.Apply (A.IdSpecial (A.Spread, tokdot), [expr e])
 
@@ -70,12 +71,12 @@ let rec xhp expr x =
     let args1 = List.map (xhp_attribute expr) attrs in
     let args2 = [] in
     (* TODO: is it the actual result? good enough for codegraph for now *)
-    A.Apply(id, [A.Arr args1; A.Arr args2])
+    A.Apply(id, [A.Arr (fake_bracket args1); A.Arr (fake_bracket args2)])
   | C.Xhp (tag, attrs, _tok, body, _endtag_opt) ->
     let id = id_of_tag tag in
     let args1 = List.map (xhp_attribute expr) attrs in
     let args2 = List.map (xhp_body expr) body in
-    A.Apply (id, [A.Arr args1; A.Arr args2])
+    A.Apply (id, [A.Arr (fake_bracket args1); A.Arr (fake_bracket args2)])
 and xhp_body expr x = 
   match x with
   (* todo: contain enclosing quote? *)
@@ -276,4 +277,4 @@ let forof (lhs_var, tok, e2, st) (expr, stmt, var_binding) =
       var_binding vkind binding |> List.map (fun var -> A.VarDecl var)
   in 
   let finalst = vars_or_assign_stmts @ st  in
-  [A.For (A.ForClassic (for_init, for_cond, A.Nop), A.Block finalst)]
+  [A.For (fake "for", A.ForClassic (for_init, for_cond, A.Nop), A.Block finalst)]

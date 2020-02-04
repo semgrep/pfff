@@ -69,6 +69,10 @@ let rec map_tok v =
 and map_wrap:'a. ('a -> 'a) -> 'a wrap -> 'a wrap = fun _of_a (v1, v2) ->
   let v1 = _of_a v1 and v2 = map_tok v2 in (v1, v2)
   
+and map_bracket:'a. ('a -> 'a) -> 'a bracket -> 'a bracket = 
+  fun of_a (v1, v2, v3) ->
+  let v1 = map_tok v1 and v2 = of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
+
 and map_ident v = map_wrap map_of_string v
   
 and map_dotted_ident v = map_of_list map_ident v
@@ -118,10 +122,13 @@ and map_expr x =
   | L v1 -> let v1 = map_literal v1 in L ((v1))
   | Container ((v1, v2)) ->
       let v1 = map_container_operator v1
-      and v2 = map_of_list map_expr v2
+      and v2 = map_bracket (map_of_list map_expr) v2
       in Container ((v1, v2))
-  | Tuple v1 -> let v1 = map_of_list map_expr v1 in Tuple ((v1))
-  | Record v1 -> let v1 = map_of_list map_field v1 in Record ((v1))
+  | Tuple v1 -> 
+        let v1 = map_of_list map_expr v1 in Tuple ((v1))
+  | Record v1 -> 
+        let v1 = map_bracket (map_of_list map_field) v1 in
+        Record ((v1))
   | Constructor ((v1, v2)) ->
       let v1 = map_name v1
       and v2 = map_of_list map_expr v2
@@ -167,13 +174,24 @@ and map_expr x =
       let v1 = map_expr v1
       and v2 = map_of_list map_action v2
       in MatchPattern ((v1, v2))
-  | Yield ((v1, v2)) -> let v1 = map_expr v1 and v2 = map_of_bool v2 in Yield ((v1, v2))
-  | Await v1 -> let v1 = map_expr v1 in Await ((v1))
+  | Yield ((t, v1, v2)) -> 
+        let t = map_tok t in
+        let v1 = map_of_option map_expr v1 and 
+        v2 = map_of_bool v2 in 
+        Yield ((t, v1, v2))
+  | Await (t, v1) -> 
+        let t = map_tok t in
+        let v1 = map_expr v1 in Await ((t, v1))
   | Cast ((v1, v2)) ->
       let v1 = map_type_ v1 and v2 = map_expr v2 in Cast ((v1, v2))
-  | Seq v1 -> let v1 = map_of_list map_expr v1 in Seq ((v1))
-  | Ref v1 -> let v1 = map_expr v1 in Ref ((v1))
-  | DeRef v1 -> let v1 = map_expr v1 in DeRef ((v1))
+  | Seq (v1) -> 
+        let v1 = map_of_list map_expr v1 in Seq ((v1))
+  | Ref (t, v1) -> 
+        let t = map_tok t in
+        let v1 = map_expr v1 in Ref ((t, v1))
+  | DeRef (t, v1) -> 
+        let t = map_tok t in
+        let v1 = map_expr v1 in DeRef ((t, v1))
   | Ellipsis v1 -> let v1 = map_tok v1 in Ellipsis ((v1))
   | OtherExpr ((v1, v2)) ->
       let v1 = map_other_expr_operator v1
@@ -257,7 +275,9 @@ and map_type_ =
       let v1 = map_of_option map_expr v1
       and v2 = map_type_ v2
       in TyArray ((v1, v2))
-  | TyPointer v1 -> let v1 = map_type_ v1 in TyPointer ((v1))
+  | TyPointer (t, v1) -> 
+      let t = map_tok t in
+      let v1 = map_type_ v1 in TyPointer ((t, v1))
   | TyTuple v1 -> let v1 = map_of_list map_type_ v1 in TyTuple ((v1))
   | TyQuestion v1 -> let v1 = map_type_ v1 in TyQuestion ((v1))
   | OtherType ((v1, v2)) ->
@@ -309,38 +329,54 @@ and map_stmt x =
   | DefStmt v1 -> let v1 = map_definition v1 in DefStmt ((v1))
   | DirectiveStmt v1 -> let v1 = map_directive v1 in DirectiveStmt ((v1))
   | Block v1 -> let v1 = map_of_list map_stmt v1 in Block ((v1))
-  | If ((v1, v2, v3)) ->
+  | If ((t, v1, v2, v3)) ->
+      let t = map_tok t in
       let v1 = map_expr v1
       and v2 = map_stmt v2
       and v3 = map_stmt v3
-      in If ((v1, v2, v3))
-  | While ((v1, v2)) ->
-      let v1 = map_expr v1 and v2 = map_stmt v2 in While ((v1, v2))
-  | DoWhile ((v1, v2)) ->
-      let v1 = map_stmt v1 and v2 = map_expr v2 in DoWhile ((v1, v2))
-  | For ((v1, v2)) ->
-      let v1 = map_for_header v1 and v2 = map_stmt v2 in For ((v1, v2))
+      in If ((t, v1, v2, v3))
+  | While ((t, v1, v2)) ->
+      let t = map_tok t in
+      let v1 = map_expr v1 and v2 = map_stmt v2 in While ((t, v1, v2))
+  | DoWhile ((t, v1, v2)) ->
+      let t = map_tok t in
+      let v1 = map_stmt v1 and v2 = map_expr v2 in DoWhile ((t, v1, v2))
+  | For ((t, v1, v2)) ->
+      let t = map_tok t in
+      let v1 = map_for_header v1 and v2 = map_stmt v2 in For ((t, v1, v2))
   | Switch ((v0, v1, v2)) ->
       let v0 = map_tok v0 in
       let v1 = map_expr v1
       and v2 = map_of_list map_case_and_body v2
       in Switch ((v0, v1, v2))
-  | Return v1 -> let v1 = map_of_option map_expr v1 in Return ((v1))
-  | Continue v1 -> let v1 = map_of_option map_expr v1 in Continue ((v1))
-  | Break v1 -> let v1 = map_of_option map_expr v1 in Break ((v1))
+  | Return (t, v1) -> 
+      let t = map_tok t in
+      let v1 = map_of_option map_expr v1 in Return ((t, v1))
+  | Continue (t, v1) -> 
+      let t = map_tok t in
+        let v1 = map_of_option map_expr v1 in Continue ((t, v1))
+  | Break (t, v1) -> 
+      let t = map_tok t in
+        let v1 = map_of_option map_expr v1 in Break ((t, v1))
   | Label ((v1, v2)) ->
       let v1 = map_label v1 and v2 = map_stmt v2 in Label ((v1, v2))
-  | Goto v1 -> let v1 = map_label v1 in Goto ((v1))
-  | Throw v1 -> let v1 = map_expr v1 in Throw ((v1))
-  | Try ((v1, v2, v3)) ->
+  | Goto (t, v1) -> 
+      let t = map_tok t in
+        let v1 = map_label v1 in Goto ((t, v1))
+  | Throw (t, v1) -> 
+      let t = map_tok t in
+        let v1 = map_expr v1 in Throw ((t, v1))
+  | Try ((t, v1, v2, v3)) ->
+      let t = map_tok t in
       let v1 = map_stmt v1
       and v2 = map_of_list map_catch v2
       and v3 = map_of_option map_finally v3
-      in Try ((v1, v2, v3))
-  | Assert ((v1, v2)) ->
+      in Try ((t, v1, v2, v3))
+  | Assert ((t, v1, v2)) ->
+      let t = map_tok t in
       let v1 = map_expr v1
       and v2 = map_of_option map_expr v2
-      in Assert ((v1, v2))
+      in Assert ((t, v1, v2))
   | OtherStmtWithStmt ((v1, v2, v3)) ->
       let v1 = map_other_stmt_with_stmt_operator v1
       and v2 = map_expr v2
@@ -360,8 +396,12 @@ and map_case_and_body (v1, v2) =
 
 and map_case =
   function
-  | Case v1 -> let v1 = map_pattern v1 in Case ((v1))
-  | Default -> Default
+  | Case (t, v1) -> 
+      let t = map_tok t in
+      let v1 = map_pattern v1 in Case ((t, v1))
+  | Default t -> 
+      let t = map_tok t in
+      Default t
 
 and map_catch (v1, v2) =
   let v1 = map_pattern v1 and v2 = map_stmt v2 in (v1, v2)
@@ -566,7 +606,9 @@ and map_field =
       and v2 = map_of_list map_attribute v2
       and v3 = map_expr v3
       in FieldDynamic ((v1, v2, v3))
-  | FieldSpread v1 -> let v1 = map_expr v1 in FieldSpread ((v1))
+  | FieldSpread (t, v1) -> 
+      let t = map_tok t in
+      let v1 = map_expr v1 in FieldSpread ((t, v1))
   | FieldStmt v1 -> let v1 = map_stmt v1 in FieldStmt ((v1))
 
 and map_type_definition { tbody = v_tbody } =
@@ -629,25 +671,29 @@ and map_class_kind =
 
 and map_directive =
   function
-  | ImportFrom ((v1, v2)) ->
+  | ImportFrom ((t, v1, v2)) ->
+      let t = map_tok t in
       let v1 = map_module_name v1
       and v2 = map_of_list map_alias v2
-      in ImportFrom ((v1, v2))
-  | ImportAs ((v1, v2)) ->
+      in ImportFrom ((t, v1, v2))
+  | ImportAs ((t, v1, v2)) ->
+      let t = map_tok t in
       let v1 = map_module_name v1
       and v2 = map_of_option map_ident v2
-      in ImportAs ((v1, v2))
-  | ImportAll ((v1, v2)) ->
+      in ImportAs ((t, v1, v2))
+  | ImportAll ((t, v1, v2)) ->
+      let t = map_tok t in
       let v1 = map_module_name v1
       and v2 = map_tok v2
-      in ImportAll ((v1, v2))
+      in ImportAll ((t, v1, v2))
   | OtherDirective ((v1, v2)) ->
       let v1 = map_other_directive_operator v1
       and v2 = map_of_list map_any v2
       in OtherDirective ((v1, v2))
-  | Package ((v1)) ->
+  | Package ((t, v1)) ->
+      let t = map_tok t in
       let v1 = map_dotted_ident v1
-      in Package ((v1))
+      in Package ((t, v1))
 
 and map_alias (v1, v2) =
   let v1 = map_ident v1 and v2 = map_of_option map_ident v2 in (v1, v2)

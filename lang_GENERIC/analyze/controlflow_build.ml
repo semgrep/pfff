@@ -145,9 +145,9 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
       *)
        let node, stmt = 
          (match stmt with 
-         | While (e, stmt) ->
+         | While (_, e, stmt) ->
              F.WhileHeader (e), stmt
-         | For (forheader, stmt) ->
+         | For (_, forheader, stmt) ->
              (match forheader with
              | ForClassic _ -> raise Todo
              | ForEach (pat, e) -> F.ForeachHeader (pat, e)
@@ -274,7 +274,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
    * (whereas While can't return None). But if we return None, certainly
    * sign of buggy code.
    *)
-   | DoWhile (st, e) ->
+   | DoWhile (_, st, e) ->
      (* previ -> doi ---> ... ---> finalthen (opt) ---> taili
       *          |--------- newfakethen ----------------| |-> newfakelse <rest>
       *)
@@ -303,7 +303,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
            Some newfakeelse
        )
 
-   | If (e, st_then, st_else) ->
+   | If (_, e, st_then, st_else) ->
      (* previ -> newi --->  newfakethen -> ... -> finalthen --> lasti -> <rest>
       *                |                                     |
       *                |->  newfakeelse -> ... -> finalelse -|
@@ -338,7 +338,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
            Some lasti
        )
 
-   | Return (e) ->
+   | Return (_, e) ->
        let newi = state.g#add_node { F.n = F.Return e;i=i() } in
        state.g |> add_arc_opt (previ, newi);
        state.g |> add_arc (newi, state.exiti);
@@ -346,7 +346,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
         * this new node *)
        None
 
-   | Continue (eopt) | Break (eopt) ->
+   | Continue (_, eopt) | Break (_, eopt) ->
 
        let is_continue, node =
          match stmt with
@@ -413,7 +413,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
             *)
            if (not (cases_and_body |> List.exists (fun (cases, _body) ->
                   cases |> List.exists (function 
-                    | Ast.Default -> true | _ -> false))))
+                    | Ast.Default _ -> true | _ -> false))))
            then begin
              state.g |> add_arc (newi, endi);
            end;
@@ -482,7 +482,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
     *   <tryend>
     *)
 
-   | Try(body, catches, _finallys) ->
+   | Try(_, body, catches, _finallys) ->
        (* TODO Task #3622443: Update the logic below to account for "finally"
           clauses *)
        let newi = state.g#add_node { F.n = F.TryHeader;i=i() } in
@@ -557,7 +557,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
     * path sensitive analysis to be more precise (so that we would remove
     * certain edges)
     *)
-   | Throw (e) ->
+   | Throw (_, e) ->
        let newi = state.g#add_node { F.n = F.Throw e; i=i() } in
        state.g |> add_arc_opt (previ, newi);
 
@@ -656,7 +656,7 @@ and (cfg_cases:
       let node =     
        (* TODO: attach expressions there *)
        match cases with
-       | [Default] -> F.Default
+       | [Default _] -> F.Default
        | _ -> F.Case
       in
 

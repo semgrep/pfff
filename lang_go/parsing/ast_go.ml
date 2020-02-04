@@ -42,6 +42,10 @@ type tok = Parse_info.t
 type 'a wrap = 'a * tok
  (* with tarzan *)
 
+(* round(), square[], curly{}, angle<> brackets *)
+type 'a bracket = tok * 'a * tok
+ (* with tarzan *)
+
 (* ------------------------------------------------------------------------- *)
 (* Ident, qualifier *)
 (* ------------------------------------------------------------------------- *)
@@ -62,7 +66,7 @@ type qualified_ident = ident list (* 1 or 2 elements *)
 (*****************************************************************************)
 type type_ =
  | TName of qualified_ident (* included the basic types: bool/int/... *)
- | TPtr of type_
+ | TPtr of tok * type_
 
  | TArray of expr * type_
  | TSlice of type_
@@ -70,11 +74,11 @@ type type_ =
  | TArrayEllipsis of tok (* ... *) * type_ 
 
  | TFunc of func_type
- | TMap of type_ * type_
- | TChan of chan_dir * type_
+ | TMap of tok * type_ * type_
+ | TChan of tok * chan_dir * type_
 
- | TStruct    of struct_field list
- | TInterface of interface_field list
+ | TStruct    of tok * struct_field list bracket
+ | TInterface of tok * interface_field list bracket
 
   and chan_dir = TSend | TRecv | TBidirectional
   and func_type =  { 
@@ -107,7 +111,7 @@ and expr =
  | BasicLit of literal
  (* less: the type of TarrayEllipsis ( [...]{...}) in a CompositeLit
   *  could be transformed in TArray (length {...}) *)
- | CompositeLit of type_ * init list
+ | CompositeLit of type_ * init list bracket
 
   (* This Id can actually denotes sometimes a type (e.g., in Arg), or 
    * a package (e.g., in Selector). 
@@ -187,7 +191,7 @@ and expr =
  and init = 
   | InitExpr of expr (* can be Id, which have special meaning for Key *)
   | InitKeyValue of init * tok (* : *) * init
-  | InitBraces of init list
+  | InitBraces of init list bracket
 
 and constant_expr = expr
 
@@ -203,7 +207,7 @@ and stmt =
 
  | SimpleStmt of simple
 
- | If     of simple option (* init *) * expr * stmt * stmt option
+ | If     of tok * simple option (* init *) * expr * stmt * stmt option
  (* todo: cond should be an expr, except for TypeSwitch where it can also
   * be x := expr
   *)
@@ -213,16 +217,17 @@ and stmt =
  | Select of tok * comm_clause list
 
  (* note: no While or DoWhile, just For and Foreach (Range) *)
- | For of (simple option * expr option * simple option) * stmt
+ | For of tok * (simple option * expr option * simple option) * stmt
  (* todo: should impose (expr * tok * expr option) for key/value *)
- | Range of (expr list * tok (* = or := *)) option (* key/value pattern *) * 
-            tok (* 'range' *) * expr * stmt 
+ | Range of tok * 
+      (expr list * tok (* = or := *)) option (* key/value pattern *) * 
+      tok (* 'range' *) * expr * stmt 
 
  | Return of tok * expr list option
  (* was put together in a Branch in ast.go, but better to split *)
- | Break of tok * ident option
+ | Break    of tok * ident option
  | Continue of tok * ident option
- | Goto of tok * ident 
+ | Goto     of tok * ident 
  | Fallthrough of tok
 
  | Label of ident * stmt
@@ -233,8 +238,8 @@ and stmt =
  (* todo: split in case_clause_expr and case_clause_type *)
  and case_clause = case_kind * stmt (* can be Empty*)
    and case_kind =
-    | CaseExprs of expr_or_type list
-    | CaseAssign of expr_or_type list * tok (* = or := *) * expr
+    | CaseExprs of tok * expr_or_type list
+    | CaseAssign of tok * expr_or_type list * tok (* = or := *) * expr
     | CaseDefault of tok
  (* TODO: stmt (* Send or Receive *) * stmt (* can be empty *) *)
  and comm_clause = case_clause
@@ -287,6 +292,7 @@ type top_decl =
 (* Import *)
 (*****************************************************************************)
 type import = {
+ i_tok: tok;
  i_path: string wrap;
  i_kind: import_kind;
 }
@@ -303,7 +309,7 @@ type import = {
 (*****************************************************************************)
 
 type program = {
-  package: ident;
+  package: tok * ident;
   imports: import list;
   decls: top_decl list;
 }

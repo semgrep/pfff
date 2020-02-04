@@ -97,9 +97,10 @@ let resolve prog =
 
     (* defs *)
     V.kprogram = (fun (k, _) x ->
-      let file = Parse_info.file_of_info (snd x.package), snd x.package in
-      add_name_env x.package (G.ImportedModule (G.FileName file)) env;
-      x.imports |> List.iter (fun { i_path = (path, ii); i_kind = kind } ->
+      let file = Parse_info.file_of_info (fst x.package), fst x.package in
+      let packid = snd x.package in
+      add_name_env packid (G.ImportedModule (G.FileName file)) env;
+      x.imports |> List.iter (fun { i_path = (path, ii); i_kind = kind; _ } ->
           match kind with
           | ImportOrig -> 
             add_name_env (Filename.basename path, ii) 
@@ -144,7 +145,7 @@ let resolve prog =
     );
     V.kstmt = (fun (k, _) x ->
       (match x with
-      | SimpleStmt (DShortVars (xs, _, _)) | Range (Some (xs, _), _, _, _) ->
+      | SimpleStmt (DShortVars (xs, _, _)) | Range (_, Some (xs, _),_, _, _) ->
          xs |> List.iter (function
            | Id (id, _) -> env |> add_name_env id (local_or_global env id)
            | _ -> ()
