@@ -36,6 +36,10 @@ type tok = Parse_info.t
 type 'a wrap = 'a * tok
  (* with tarzan *)
 
+(* round(), square[], curly{}, angle<> brackets *)
+type 'a bracket = tok * 'a * tok
+ (* with tarzan *)
+
 (* ------------------------------------------------------------------------- *)
 (* Names  *)
 (* ------------------------------------------------------------------------- *)
@@ -74,7 +78,7 @@ type expr =
   | Constructor of name * expr option
   (* special case of Constr *)
   | Tuple of expr list
-  | List  of expr list
+  | List  of expr list bracket
 
   (* can be empty *) 
   | Sequence of expr list
@@ -92,7 +96,7 @@ type expr =
   | FieldAccess of expr * tok * name
   | FieldAssign of expr * tok * name * tok (* <- *) * expr
 
-  | Record of expr option (* with *) * (name * expr) list
+  | Record of expr option (* with *) * (name * expr) list bracket
 
   | New of tok * name
   | ObjAccess of expr * tok (* # *) * ident
@@ -105,13 +109,13 @@ type expr =
   (* statement-like expressions *)
   | Nop (* for empty else *)
 
-  | If of expr * expr * expr
+  | If of tok * expr * expr * expr
   | Match of expr * match_case list
 
-  | Try of expr * match_case list 
+  | Try of tok * expr * match_case list 
 
-  | While of expr * expr
-  | For of ident * expr * for_direction * expr *   expr
+  | While of tok * expr * expr
+  | For of tok * ident * expr * for_direction * expr *   expr
 
  and literal =
    | Int    of string wrap

@@ -63,6 +63,10 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 let rec v_wrap: 'a. ('a -> unit) -> 'a wrap -> unit = fun _of_a (v1, v2) ->
   let v1 = _of_a v1 and v2 = v_info v2 in ()
 
+and v_bracket: 'a. ('a -> unit) -> 'a bracket -> unit = 
+  fun of_a (v1, v2, v3) ->
+  let v1 = v_info v1 and v2 = of_a v2 and v3 = v_info v3 in ()
+
 and v_info x = 
   let k _x = () in
   vin.kinfo (k, all_functions) x
@@ -208,7 +212,8 @@ and v_stmt (x : stmt) =
   | Empty -> ()
   | Block v1 -> let v1 = v_stmts v1 in ()
   | Expr v1 -> let v1 = v_expr v1 in ()
-  | If ((v1, v2, v3)) ->
+  | If ((t, v1, v2, v3)) ->
+      let t = v_info t in
       let v1 = v_expr v1 and v2 = v_stmt v2 and v3 = v_stmt v3 in ()
   | Switch ((v0, v1, v2)) ->
       let v0 = v_info v0 in
@@ -217,28 +222,51 @@ and v_stmt (x : stmt) =
         v_list
           (fun (v1, v2) -> let v1 = v_cases v1 and v2 = v_stmts v2 in ()) v2
       in ()
-  | While ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_stmt v2 in ()
-  | Do ((v1, v2)) -> let v1 = v_stmt v1 and v2 = v_expr v2 in ()
-  | For ((v1, v2)) -> let v1 = v_for_control v1 and v2 = v_stmt v2 in ()
-  | Break v1 -> let v1 = v_option v_ident v1 in ()
-  | Continue v1 -> let v1 = v_option v_ident v1 in ()
-  | Return v1 -> let v1 = v_option v_expr v1 in ()
+  | While ((t, v1, v2)) -> 
+      let t = v_info t in
+        let v1 = v_expr v1 and v2 = v_stmt v2 in ()
+  | Do ((t, v1, v2)) -> 
+      let t = v_info t in
+        let v1 = v_stmt v1 and v2 = v_expr v2 in ()
+  | For ((t, v1, v2)) -> 
+      let t = v_info t in
+        let v1 = v_for_control v1 and v2 = v_stmt v2 in ()
+  | Break (t, v1) -> 
+      let t = v_info t in
+        let v1 = v_option v_ident v1 in ()
+  | Continue (t, v1) -> 
+      let t = v_info t in
+        let v1 = v_option v_ident v1 in ()
+  | Return (t, v1) -> 
+      let t = v_info t in
+        let v1 = v_option v_expr v1 in ()
   | Label ((v1, v2)) -> let v1 = v_ident v1 and v2 = v_stmt v2 in ()
   | Sync ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_stmt v2 in ()
-  | Try ((v1, v2, v3)) ->
+  | Try ((t, v1, v2, v3)) ->
+      let t = v_info t in
       let v1 = v_stmt v1
       and v2 = v_catches v2
       and v3 = v_option v_stmt v3
       in ()
-  | Throw v1 -> let v1 = v_expr v1 in ()
+  | Throw (t, v1) -> 
+      let t = v_info t in
+        let v1 = v_expr v1 in ()
   | LocalVar v1 -> let v1 = v_var_with_init v1 in ()
   | LocalClass v1 -> let v1 = v_class_decl v1 in ()
-  | Assert ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_option v_expr v2 in ()
+  | Assert ((t, v1, v2)) -> 
+      let t = v_info t in
+        let v1 = v_expr v1 and v2 = v_option v_expr v2 in ()
   in
   vin.kstmt (k, all_functions) x
 
 and v_stmts v = v_list v_stmt v
-and v_case = function | Case v1 -> let v1 = v_expr v1 in () | Default -> ()
+and v_case = function 
+  | Case (t, v1) -> 
+      let t = v_tok t in
+      let v1 = v_expr v1 in () 
+  | Default t -> 
+      let t = v_tok t in
+      ()
 and v_cases v = v_list v_case v
 and v_for_control =
   function
@@ -270,7 +298,7 @@ and v_var_with_init { f_var = v_f_var; f_init = v_f_init } =
 and v_init (x : init) =
   let k x = match x with
   | ExprInit v1 -> let v1 = v_expr v1 in ()
-  | ArrayInit v1 -> let v1 = v_list v_init v1 in ()
+  | ArrayInit v1 -> let v1 = v_bracket (v_list v_init) v1 in ()
   in
   vin.kinit (k, all_functions) x
 

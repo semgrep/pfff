@@ -7,6 +7,9 @@ let vof_tok v = Meta_parse_info.vof_info_adjustable_precision v
   
 let vof_wrap _of_a (v1, v2) =
   let v1 = _of_a v1 and v2 = vof_tok v2 in Ocaml.VTuple [ v1; v2 ]
+
+let vof_bracket of_a (_t1, x, _t2) =
+  of_a x
   
 let vof_ident v = vof_wrap Ocaml.vof_string v
   
@@ -74,12 +77,13 @@ and vof_expr =
   | L v1 -> let v1 = vof_literal v1 in Ocaml.VSum (("L", [ v1 ]))
   | Container ((v1, v2)) ->
       let v1 = vof_container_operator v1
-      and v2 = Ocaml.vof_list vof_expr v2
+      and v2 = vof_bracket (Ocaml.vof_list vof_expr) v2
       in Ocaml.VSum (("Container", [ v1; v2 ]))
   | Tuple v1 ->
       let v1 = Ocaml.vof_list vof_expr v1 in Ocaml.VSum (("Tuple", [ v1 ]))
   | Record v1 ->
-      let v1 = Ocaml.vof_list vof_field v1 in Ocaml.VSum (("Record", [ v1 ]))
+      let v1 = vof_bracket (Ocaml.vof_list vof_field) v1 in 
+      Ocaml.VSum (("Record", [ v1 ]))
   | Constructor ((v1, v2)) ->
       let v1 = vof_name v1
       and v2 = Ocaml.vof_list vof_expr v2
@@ -139,16 +143,25 @@ and vof_expr =
       let v1 = vof_expr v1
       and v2 = Ocaml.vof_list vof_action v2
       in Ocaml.VSum (("MatchPattern", [ v1; v2 ]))
-  | Yield ((v1, v2)) -> let v1 = vof_expr v1 and v2 = Ocaml.vof_bool v2 in Ocaml.VSum (("Yield", [ v1; v2 ]))
-  | Await v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Await", [ v1 ]))
+  | Yield ((t, v1, v2)) -> 
+      let t = vof_tok t in
+      let v1 = Ocaml.vof_option vof_expr v1 and v2 = Ocaml.vof_bool v2 in 
+      Ocaml.VSum (("Yield", [ t; v1; v2 ]))
+  | Await (t, v1) -> 
+      let t = vof_tok t in
+      let v1 = vof_expr v1 in Ocaml.VSum (("Await", [ t; v1 ]))
   | Cast ((v1, v2)) ->
       let v1 = vof_type_ v1
       and v2 = vof_expr v2
       in Ocaml.VSum (("Cast", [ v1; v2 ]))
   | Seq v1 ->
       let v1 = Ocaml.vof_list vof_expr v1 in Ocaml.VSum (("Seq", [ v1 ]))
-  | Ref v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Ref", [ v1 ]))
-  | DeRef v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("DeRef", [ v1 ]))
+  | Ref (t, v1) -> 
+      let t = vof_tok t in
+      let v1 = vof_expr v1 in Ocaml.VSum (("Ref", [ t; v1 ]))
+  | DeRef (t, v1) -> 
+      let t = vof_tok t in
+      let v1 = vof_expr v1 in Ocaml.VSum (("DeRef", [ t; v1 ]))
   | Ellipsis v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Ellipsis", [ v1 ]))
   | OtherExpr ((v1, v2)) ->
       let v1 = vof_other_expr_operator v1
@@ -322,8 +335,9 @@ and vof_type_ =
       let v1 = Ocaml.vof_option vof_expr v1
       and v2 = vof_type_ v2
       in Ocaml.VSum (("TyArray", [ v1; v2 ]))
-  | TyPointer v1 ->
-      let v1 = vof_type_ v1 in Ocaml.VSum (("TyPointer", [ v1 ]))
+  | TyPointer (t, v1) ->
+      let t = vof_tok t in
+      let v1 = vof_type_ v1 in Ocaml.VSum (("TyPointer", [ t; v1 ]))
   | TyTuple v1 ->
       let v1 = Ocaml.vof_list vof_type_ v1
       in Ocaml.VSum (("TyTuple", [ v1 ]))
@@ -405,50 +419,65 @@ and vof_stmt =
       let v1 = vof_directive v1 in Ocaml.VSum (("DirectiveStmt", [ v1 ]))
   | Block v1 ->
       let v1 = Ocaml.vof_list vof_stmt v1 in Ocaml.VSum (("Block", [ v1 ]))
-  | If ((v1, v2, v3)) ->
+  | If ((t, v1, v2, v3)) ->
+      let t = vof_tok t in
       let v1 = vof_expr v1
       and v2 = vof_stmt v2
       and v3 = vof_stmt v3
-      in Ocaml.VSum (("If", [ v1; v2; v3 ]))
-  | While ((v1, v2)) ->
+      in Ocaml.VSum (("If", [ t; v1; v2; v3 ]))
+  | While ((t, v1, v2)) ->
+      let t = vof_tok t in
       let v1 = vof_expr v1
       and v2 = vof_stmt v2
-      in Ocaml.VSum (("While", [ v1; v2 ]))
-  | DoWhile ((v1, v2)) ->
+      in Ocaml.VSum (("While", [ t; v1; v2 ]))
+  | DoWhile ((t, v1, v2)) ->
+      let t = vof_tok t in
       let v1 = vof_stmt v1
       and v2 = vof_expr v2
-      in Ocaml.VSum (("DoWhile", [ v1; v2 ]))
-  | For ((v1, v2)) ->
+      in Ocaml.VSum (("DoWhile", [ t; v1; v2 ]))
+  | For ((t, v1, v2)) ->
+      let t = vof_tok t in
       let v1 = vof_for_header v1
       and v2 = vof_stmt v2
-      in Ocaml.VSum (("For", [ v1; v2 ]))
+      in Ocaml.VSum (("For", [ t; v1; v2 ]))
   | Switch ((v0, v1, v2)) ->
       let v0 = vof_tok v0 in
       let v1 = vof_expr v1
       and v2 = Ocaml.vof_list vof_case_and_body v2
       in Ocaml.VSum (("Switch", [ v0; v1; v2 ]))
-  | Return v1 -> let v1 = Ocaml.vof_option vof_expr v1 in 
-      Ocaml.VSum (("Return", [ v1 ]))
-  | Continue v1 ->
+  | Return (t, v1) -> 
+      let t = vof_tok t in
+      let v1 = Ocaml.vof_option vof_expr v1 in 
+      Ocaml.VSum (("Return", [ t; v1 ]))
+  | Continue (t, v1) ->
+      let t = vof_tok t in
       let v1 = Ocaml.vof_option vof_expr v1
-      in Ocaml.VSum (("Continue", [ v1 ]))
-  | Break v1 ->
-      let v1 = Ocaml.vof_option vof_expr v1 in Ocaml.VSum (("Break", [ v1 ]))
+      in Ocaml.VSum (("Continue", [ t; v1 ]))
+  | Break (t, v1) ->
+      let t = vof_tok t in
+      let v1 = Ocaml.vof_option vof_expr v1 in 
+      Ocaml.VSum (("Break", [ t; v1 ]))
   | Label ((v1, v2)) ->
       let v1 = vof_label v1
       and v2 = vof_stmt v2
       in Ocaml.VSum (("Label", [ v1; v2 ]))
-  | Goto v1 -> let v1 = vof_label v1 in Ocaml.VSum (("Goto", [ v1 ]))
-  | Throw v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Throw", [ v1 ]))
-  | Try ((v1, v2, v3)) ->
+  | Goto (t, v1) -> 
+      let t = vof_tok t in
+      let v1 = vof_label v1 in Ocaml.VSum (("Goto", [ t; v1 ]))
+  | Throw (t, v1) -> 
+      let t = vof_tok t in
+      let v1 = vof_expr v1 in Ocaml.VSum (("Throw", [ t; v1 ]))
+  | Try ((t, v1, v2, v3)) ->
+      let t = vof_tok t in
       let v1 = vof_stmt v1
       and v2 = Ocaml.vof_list vof_catch v2
       and v3 = Ocaml.vof_option vof_finally v3
-      in Ocaml.VSum (("Try", [ v1; v2; v3 ]))
-  | Assert ((v1, v2)) ->
+      in Ocaml.VSum (("Try", [ t; v1; v2; v3 ]))
+  | Assert ((t, v1, v2)) ->
+      let t = vof_tok t in
       let v1 = vof_expr v1
       and v2 = Ocaml.vof_option vof_expr v2
-      in Ocaml.VSum (("Assert", [ v1; v2 ]))
+      in Ocaml.VSum (("Assert", [ t; v1; v2 ]))
   | OtherStmtWithStmt ((v1, v2, v3)) ->
       let v1 = vof_other_stmt_with_stmt_operator v1
       and v2 = vof_expr v2
@@ -467,8 +496,13 @@ and vof_case_and_body (v1, v2) =
   in Ocaml.VTuple [ v1; v2 ]
 and vof_case =
   function
-  | Case v1 -> let v1 = vof_pattern v1 in Ocaml.VSum (("Case", [ v1 ]))
-  | Default -> Ocaml.VSum (("Default", []))
+  | Case (t, v1) -> 
+      let t = vof_tok t in
+      let v1 = vof_pattern v1 in 
+      Ocaml.VSum (("Case", [ t; v1 ]))
+  | Default t -> 
+      let t = vof_tok t in
+      Ocaml.VSum (("Default", [t]))
 and vof_catch (v1, v2) =
   let v1 = vof_pattern v1 and v2 = vof_stmt v2 in Ocaml.VTuple [ v1; v2 ]
 and vof_finally v = vof_stmt v
@@ -736,8 +770,9 @@ and vof_field =
       and v2 = Ocaml.vof_list vof_attribute v2
       and v3 = vof_expr v3
       in Ocaml.VSum (("FieldDynamic", [ v1; v2; v3 ]))
-  | FieldSpread v1 ->
-      let v1 = vof_expr v1 in Ocaml.VSum (("FieldSpread", [ v1 ]))
+  | FieldSpread (t, v1) ->
+      let t = vof_tok t in
+      let v1 = vof_expr v1 in Ocaml.VSum (("FieldSpread", [ t; v1 ]))
   | FieldStmt v1 ->
       let v1 = vof_stmt v1 in Ocaml.VSum (("FieldStmt", [ v1 ]))
 and vof_type_definition { tbody = v_tbody } =
@@ -814,21 +849,25 @@ and vof_class_kind =
   | Trait -> Ocaml.VSum (("Trait", []))
 and vof_directive =
   function
-  | ImportFrom ((v1, v2)) ->
+  | ImportFrom ((t, v1, v2)) ->
+      let t = vof_tok t in
       let v1 = vof_module_name v1
       and v2 = Ocaml.vof_list vof_alias v2
-      in Ocaml.VSum (("ImportFrom", [ v1; v2 ]))
-  | ImportAs ((v1, v2)) ->
+      in Ocaml.VSum (("ImportFrom", [ t; v1; v2 ]))
+  | ImportAs ((t, v1, v2)) ->
+      let t = vof_tok t in
       let v1 = vof_module_name v1
       and v2 = Ocaml.vof_option vof_ident v2
-      in Ocaml.VSum (("ImportAs", [ v1; v2 ]))
-  | ImportAll ((v1, v2)) ->
+      in Ocaml.VSum (("ImportAs", [ t; v1; v2 ]))
+  | ImportAll ((t, v1, v2)) ->
+      let t = vof_tok t in
       let v1 = vof_module_name v1
       and v2 = vof_tok v2
-      in Ocaml.VSum (("ImportAll", [ v1; v2 ]))
-  | Package ((v1)) ->
+      in Ocaml.VSum (("ImportAll", [ t; v1; v2 ]))
+  | Package ((t, v1)) ->
+      let t = vof_tok t in
       let v1 = vof_dotted_ident v1
-      in Ocaml.VSum (("Package", [ v1 ]))
+      in Ocaml.VSum (("Package", [ t; v1 ]))
   | OtherDirective ((v1, v2)) ->
       let v1 = vof_other_directive_operator v1
       and v2 = Ocaml.vof_list vof_any v2

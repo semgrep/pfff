@@ -72,6 +72,10 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 let rec v_wrap: 'a. ('a -> unit) -> 'a wrap -> unit = fun _of_a (v1, v2) ->
   let v1 = _of_a v1 and v2 = v_info v2 in ()
 
+and v_bracket: 'a. ('a -> unit) -> 'a bracket -> unit = 
+  fun of_a (v1, v2, v3) ->
+  let v1 = v_info v1 and v2 = of_a v2 and v3 = v_info v3 in ()
+
 and v_info x = 
   let k _x = () in
   vin.kinfo (k, all_functions) x
@@ -90,15 +94,25 @@ and v_type_ x =
   let k =
   function
   | TName v1 -> let v1 = v_qualified_ident v1 in ()
-  | TPtr v1 -> let v1 = v_type_ v1 in ()
+  | TPtr (t, v1) -> 
+        let t = v_tok t in
+        let v1 = v_type_ v1 in ()
   | TArray ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_type_ v2 in ()
   | TSlice v1 -> let v1 = v_type_ v1 in ()
   | TArrayEllipsis ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_type_ v2 in ()
   | TFunc v1 -> let v1 = v_func_type v1 in ()
-  | TMap ((v1, v2)) -> let v1 = v_type_ v1 and v2 = v_type_ v2 in ()
-  | TChan ((v1, v2)) -> let v1 = v_chan_dir v1 and v2 = v_type_ v2 in ()
-  | TStruct v1 -> let v1 = v_list v_struct_field v1 in ()
-  | TInterface v1 -> let v1 = v_list v_interface_field v1 in ()
+  | TMap ((t, v1, v2)) -> 
+        let t = v_tok t in
+        let v1 = v_type_ v1 and v2 = v_type_ v2 in ()
+  | TChan ((t, v1, v2)) -> 
+        let t = v_tok t in
+        let v1 = v_chan_dir v1 and v2 = v_type_ v2 in ()
+  | TStruct (t, v1) -> 
+        let t = v_tok t in
+        let v1 = v_bracket (v_list v_struct_field) v1 in ()
+  | TInterface (t, v1) -> 
+        let t = v_tok t in
+        let v1 = v_bracket (v_list v_interface_field) v1 in ()
   in
   vin.ktype (k, all_functions) x
 
@@ -131,7 +145,7 @@ and v_expr x =
   function
   | BasicLit v1 -> let v1 = v_literal v1 in ()
   | CompositeLit ((v1, v2)) ->
-      let v1 = v_type_ v1 and v2 = v_list v_init v2 in ()
+      let v1 = v_type_ v1 and v2 = v_bracket (v_list v_init) v2 in ()
   | Id (v1, _IGNORED) -> let v1 = v_ident v1 in ()
   | Selector ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_tok v2 and v3 = v_ident v3 in ()
@@ -190,7 +204,7 @@ and v_init x =
   | InitExpr v1 -> let v1 = v_expr v1 in ()
   | InitKeyValue ((v1, v2, v3)) ->
       let v1 = v_init v1 and v2 = v_tok v2 and v3 = v_init v3 in ()
-  | InitBraces v1 -> let v1 = v_list v_init v1 in ()
+  | InitBraces v1 -> let v1 = v_bracket (v_list v_init) v1 in ()
   in
   vin.kinit (k, all_functions) x
 and v_constant_expr v = v_expr v
@@ -203,7 +217,8 @@ and v_stmt x =
   | Empty -> ()
   | SimpleStmt v1 -> v_simple v1
 
-  | If ((v1, v2, v3, v4)) ->
+  | If ((t, v1, v2, v3, v4)) ->
+      let t = v_tok t in
       let v1 = v_option v_simple v1
       and v2 = v_expr v2
       and v3 = v_stmt v3
@@ -217,7 +232,8 @@ and v_stmt x =
       in ()
   | Select ((v1, v2)) ->
       let v1 = v_tok v1 and v2 = v_list v_comm_clause v2 in ()
-  | For ((v1, v2)) ->
+  | For ((t, v1, v2)) ->
+        let t = v_tok t in
       let v1 =
         (match v1 with
          | (v1, v2, v3) ->
@@ -227,7 +243,8 @@ and v_stmt x =
              in ())
       and v2 = v_stmt v2
       in ()
-  | Range ((v1, v2, v3, v4)) ->
+  | Range ((t, v1, v2, v3, v4)) ->
+        let t = v_tok t in
       let v1 =
         v_option
           (fun (v1, v2) -> let v1 = v_list v_expr v1 and v2 = v_tok v2 in ())
@@ -275,13 +292,17 @@ and v_simple = function
 and v_case_clause (v1, v2) = let v1 = v_case_kind v1 and v2 = v_stmt v2 in ()
 and v_case_kind =
   function
-  | CaseExprs v1 -> let v1 = v_list v_expr_or_type v1 in ()
-  | CaseAssign ((v1, v2, v3)) ->
+  | CaseExprs (t, v1) -> 
+      let t = v_tok t in
+      let v1 = v_list v_expr_or_type v1 in ()
+  | CaseAssign ((t, v1, v2, v3)) ->
+      let t = v_tok t in
       let v1 = v_list v_expr_or_type v1
       and v2 = v_tok v2
       and v3 = v_expr v3
       in ()
   | CaseDefault v1 -> let v1 = v_tok v1 in ()
+
 and v_comm_clause v = v_case_clause v
 and v_call_expr (v1, v2) = let v1 = v_expr v1 and v2 = v_arguments v2 in ()
 
@@ -333,9 +354,13 @@ and v_import_kind =
   | ImportNamed v1 -> let v1 = v_ident v1 in ()
   | ImportDot v1 -> let v1 = v_tok v1 in ()
 
+and v_package (v1, v2) =
+  let v1 = v_tok v1 in
+  let v2 = v_ident v2 in
+  ()
 and v_program x = 
-  let k { package = v_package; imports = v_imports; decls = v_decls } =
-  let arg = v_ident v_package in
+  let k { package = pack; imports = v_imports; decls = v_decls } =
+  let arg = v_package pack in
   let arg = v_list v_import v_imports in
   let arg = v_list v_top_decl v_decls in ()
   in

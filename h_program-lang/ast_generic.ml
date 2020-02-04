@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2019 r2c
+ * Copyright (C) 2019-2020 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -63,23 +63,27 @@
  *
  * design choices to have a generic data structure:
  *  - add some 'a, 'b, 'c around expr/stmt/...
- *  - functorize and add some type hole (type tstmt; type texpr; ...)
- *  - data-type a la carte like in github-semantic but Seems too high-level
+ *  - data-type a la carte like in github-semantic but IMHO too high-level
  *    with astronaut-style architecture (too abstract, too advanced features).
  *  - the OtherXxx strategy used in this file (simple)
+ *  - functorize and add some type hole (type tstmt; type texpr; ...),
+ *    todo? not a bad idea if later we want to add type information on each
+ *    expression nodes
  *
  * history:
  *  - started with crossproduct of Javascript, Python, PHP, Java, and C
  *    (and a bit of OCaml) after wanting to port checked_return from Js to
  *    Python and got the idea to factorize things
  *
- * invariants:
+ * INVARIANTS:
  *  - all the other_xxx types should contain only simple constructors (enums)
  *    without any parameter. I rely on that to simplify the code 
  *    of the generic mapper and matcher.
- *  - each language should add the VarDefs that defines the locals
- *    used in a function (instead of having the first Assign play the role
- *    of a VarDef, as done in Python for example).
+ *    Same for keyword_attribute.
+ *  - each expression or statement must have at least one token in it
+ *    so that sgrep can report correctly ranges (e.g., 'Return of expr option'
+ *    is not enough because with no expr, there is no location information
+ *    for this return, so it must be 'Return of tok * expr option' instead)
  *  - to correctly compute a CFG (Control Flow Graph), the stmt type 
  *    should list all constructs that contains other statements and 
  *    try to avoid to use the very generic OtherXxx of any
@@ -87,6 +91,9 @@
  *    introduce a new variable should have a relevant comment 'newvar:'
  *  - to correctly resolve names, each constructs that introduce a new scope
  *    should have a relevant comment 'newscope:'
+ *  - TODO each language should add the VarDefs that defines the locals
+ *    used in a function (instead of having the first Assign play the role
+ *    of a VarDef, as done in Python for example).
  *
  * See also pfff/lang_GENERIC/
  *)
@@ -104,6 +111,14 @@ type tok = Parse_info.t
 
 (* a shortcut to annotate some information with position information *)
 type 'a wrap = 'a * tok
+ (* with tarzan *)
+
+(* Use for round(), square[], curly{}, and angle<> brackets. 
+ * note: in theory we should not care about those tokens in an AST, 
+ * but they are useful to report correct ranges in sgrep when we match
+ * something that can just be those brackets (e.g., an empty container).
+ *)
+type 'a bracket = tok * 'a * tok
  (* with tarzan *)
 
 (*****************************************************************************)
@@ -172,11 +187,11 @@ and expr =
   | L of literal
 
   (* composite values *)
-  | Container of container_operator * expr list
-  | Tuple of expr list (* special case of Container *) 
+  | Container of container_operator * expr list bracket
+  | Tuple of expr list (* special case of Container, at least 2 elements *) 
 
   (* And-type (field.vinit should be a Some) *)
-  | Record of field list
+  | Record of field list bracket
   (* Or-type (could be used instead of Container, Cons, Nil, etc.) *)
   | Constructor of name * expr list
   (* see also Call(IdSpecial (New,_), [ArgType _;...] for other values *)
@@ -186,7 +201,7 @@ and expr =
   (* usually an argument of a New (used in Java, Javascript) *)
   | AnonClass of class_definition
 
-  | Nop (* less: could be merged with L Unit *)
+  | Nop (* less: could be merged with L Unit, TODO: remove? *)
 
   (* todo: newvar: sometimes abused to also introduce a newvar (as in Python)
    * but ultimately those cases should be rewritten to first introduce a
@@ -225,26 +240,27 @@ and expr =
    *)
   | DotAccess of expr * tok (* ., ::, ->, # *) * ident
   (* in Js this is used for ObjAccess with a computed field name *)
-  | ArrayAccess of expr * expr (* less: slice *)
+  | ArrayAccess of expr * expr
   (* could also use ArrayAccess with a Tuple rhs, or use a special *)
   | SliceAccess of expr * 
       expr option (* lower *) * expr option (* upper *) * expr option (* step*)
 
-  | Conditional of expr * expr * expr (* a.k.a ternary expression *)
+  (* a.k.a ternary expression, or regular if in ML *)
+  | Conditional of expr * expr * expr 
   | MatchPattern of expr * action list
   (* less: TryFunctional *)
 
-  | Yield of expr * bool
-  | Await of expr
+  | Yield of tok * expr option * bool (* 'from' for Python *)
+  | Await of tok * expr
   (* Send/Recv of Go are currently in OtherExpr *)
 
   | Cast of type_ * expr
   (* less: should be in statement *)
-  | Seq of expr list
+  | Seq of expr list (* at least 2 elements *)
 
   (* less: could be in Special *)
-  | Ref of expr (* &, address of *)
-  | DeRef of expr (* '*' *)
+  | Ref   of tok (* &, address of *) * expr 
+  | DeRef of tok (* '*' in C, '!' or '<-' in ML *) * expr 
 
   | Ellipsis of tok (* sgrep: ... in args, stmts, and also types in Python *)
 
@@ -373,27 +389,29 @@ and stmt =
   | DirectiveStmt of directive
 
   (* newscope: in C++/Java/Go *)
-  | Block of stmt list
-  (* EmptyStmt = Block [] *)
+  | Block of stmt list (* TODO: bracket *)
+  (* EmptyStmt = Block [], or separate so can not be matched by $S? *)
 
-  | If of expr * stmt * stmt
-  | While of expr * stmt
-  | DoWhile of stmt * expr
+  | If of tok (* 'if' or 'elif' *) * expr * stmt * stmt
+  | While of tok * expr * stmt
+  | DoWhile of tok * stmt * expr
   (* newscope: *)
-  | For of for_header * stmt
+  | For of tok * for_header * stmt
 
   (* less: could be merged with ExprStmt (MatchPattern ...) *)
   | Switch of tok (* switch or also Select in Go *) * expr * case_and_body list
 
-  | Return of expr option
-  | Continue of expr option | Break of expr option (* todo? switch to label? *)
+  | Return   of tok * expr option
+  (* less: switch to label? but PHP accept integers no? *)
+  | Continue of tok * expr option 
+  | Break    of tok * expr option 
 
   | Label of label * stmt
-  | Goto of label
+  | Goto of tok * label
 
-  | Throw of expr (* a.k.a raise *)
-  | Try of stmt * catch list * finally option
-  | Assert of expr * expr option (* message *)
+  | Throw of tok * expr (* a.k.a raise *)
+  | Try of tok * stmt * catch list * finally option
+  | Assert of tok * expr * expr option (* message *)
 
   (* this is important to correctly compute a CFG *)
   | OtherStmtWithStmt of other_stmt_with_stmt_operator * expr * stmt
@@ -409,8 +427,8 @@ and stmt =
    *)
   and case_and_body = case list * stmt
     and case  =
-    | Case of pattern
-    | Default
+    | Case    of tok * pattern
+    | Default of tok
 
   (* newvar: newscope: *)
   and catch = pattern * stmt
@@ -463,14 +481,14 @@ and pattern =
   (* Or-Type *)
   | PatConstructor of name * pattern list
   (* And-Type *)
-  | PatRecord of field_pattern list
+  | PatRecord of field_pattern list (* TODO: bracket *)
 
   (* newvar:! *)
   | PatVar of ident * id_info (* Always Local or Param *)
 
   (* special cases of PatConstructor *)
   | PatTuple of pattern list
-  | PatList of pattern list
+  | PatList of pattern list (* TODO bracket *)
   | PatKeyVal of pattern * pattern (* a kind of PatTuple *)
 
   (* special case of PatVar *)
@@ -514,7 +532,7 @@ and type_ =
 
   (* a special case of TApply, also a special case of TPointer *)
   | TyArray of (* const_expr *) expr option * type_
-  | TyPointer of type_
+  | TyPointer of tok * type_
   | TyTuple of type_ list
   | TyQuestion of type_ (* option type *)
 
@@ -682,8 +700,10 @@ and type_definition = {
 
   and type_definition_kind = 
    | OrType  of or_type_element list  (* enum/ADTs *)           
-   (* field.vtype should be defined here *)
-   | AndType of field list (* record/struct (for class see class_definition *)
+   (* field.vtype should be defined here 
+    * record/struct (for class see class_definition 
+    *)
+   | AndType of field list (* TODO bracket  *)
 
    (* a.k.a typedef in C (and alias type in Go) *)
    | AliasType of type_
@@ -714,7 +734,7 @@ and type_definition = {
     | FieldMethod of entity * function_definition
 
     | FieldDynamic of expr (* dynamic name *) * attribute list * expr (*value*)
-    | FieldSpread of expr (* usually a Name *)
+    | FieldSpread of tok (* ... *) * expr (* usually a Name *)
 
     | FieldStmt of stmt
 
@@ -733,7 +753,7 @@ and class_definition = {
   cextends: type_ list; (* usually just one parent *)
   cimplements: type_ list;
   (* newscope: *)
-  cbody: field list;
+  cbody: field list; (* TODO bracket *)
 }
   and class_kind = 
     | Class
@@ -771,15 +791,16 @@ and macro_definition = {
 (*****************************************************************************)
 and directive = 
   (* newvar: *)
-  | ImportFrom of module_name * alias list (* less: unfold the list? *)
-  | ImportAs   of module_name * ident option (* as name *)
+  | ImportFrom of tok (* 'import' or 'from' *) * module_name * alias list
+     (* less: unfold the alias list? *)
+  | ImportAs   of tok * module_name * ident option (* as name *)
   (* bad practice! hard to resolve name locally *)
-  | ImportAll  of module_name * tok (* '.' in Go, '*' in Java/Python *)
+  | ImportAll  of tok * module_name * tok (* '.' in Go, '*' in Java/Python *)
 
   (* packages are different from modules in that multiple files can reuse
    * the same package name; they are agglomarated in the same package
    *)
-  | Package of dotted_ident (* a.k.a namespace *)
+  | Package of tok * dotted_ident (* a.k.a namespace *)
 
   | OtherDirective of other_directive_operator * any list
 

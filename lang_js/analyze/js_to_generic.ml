@@ -51,6 +51,8 @@ let wrap = fun _of_a (v1, v2) ->
   let v1 = _of_a v1 and v2 = info v2 in 
   (v1, v2)
 
+let bracket of_a (t1, x, t2) = (info t1, of_a x, info t2)
+
 let name v = wrap id v
 
 let filename v = wrap string v
@@ -97,13 +99,13 @@ let special (x, tok) =
   | Spread -> SR_Special G.Spread
   | Yield -> SR_NeedArgs (fun args -> 
           match args with
-          | [e] -> G.Yield (e, false)
+          | [e] -> G.Yield (tok, Some e, false)
           | _ -> error tok "Impossible: Too many arguments to Yield"
           )
   | YieldStar -> SR_Other G.OE_YieldStar
   | Await -> SR_NeedArgs (fun args ->
           match args with
-          | [e] -> G.Await e
+          | [e] -> G.Await (tok, e)
           | _ -> error tok "Impossible: Too many arguments to Await"
           )
   | Encaps v1 -> 
@@ -185,7 +187,7 @@ and expr (x: expr) =
       )
   | Apply ((v1, v2)) -> let v1 = expr v1 and v2 = list expr v2 in 
       G.Call (v1, v2 |> List.map (fun e -> G.Arg e))
-  | Arr ((v1)) -> let v1 = list expr v1 in G.Container (G.Array, v1)
+  | Arr ((v1)) -> let v1 = bracket (list expr) v1 in G.Container (G.Array, v1)
   | Conditional ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in
       G.Conditional (v1, v2, v3)
@@ -195,30 +197,32 @@ and stmt x =
   | VarDecl v1 -> let v1 = def_of_var v1 in G.DefStmt (v1)
   | Block v1 -> let v1 = list stmt v1 in G.Block v1
   | ExprStmt v1 -> let v1 = expr v1 in G.ExprStmt v1
-  | If ((v1, v2, v3)) ->
+  | If ((t, v1, v2, v3)) ->
       let v1 = expr v1 and v2 = stmt v2 and v3 = stmt v3 in 
-      G.If (v1, v2, v3)
-  | Do ((v1, v2)) -> let v1 = stmt v1 and v2 = expr v2 in 
-      G.DoWhile (v1, v2)
-  | While ((v1, v2)) -> let v1 = expr v1 and v2 = stmt v2 in
-      G.While (v1, v2)
-  | For ((v1, v2)) -> let v1 = for_header v1 and v2 = stmt v2 in
-      G.For (v1, v2)
+      G.If (t, v1, v2, v3)
+  | Do ((t, v1, v2)) -> let v1 = stmt v1 and v2 = expr v2 in 
+      G.DoWhile (t, v1, v2)
+  | While ((t, v1, v2)) -> let v1 = expr v1 and v2 = stmt v2 in
+      G.While (t, v1, v2)
+  | For ((t, v1, v2)) -> let v1 = for_header v1 and v2 = stmt v2 in
+      G.For (t, v1, v2)
   | Switch ((v0, v1, v2)) -> 
       let v0 = info v0 in
       let v1 = expr v1 and v2 = list case v2 in
       G.Switch (v0, v1, v2)
-  | Continue v1 -> let v1 = option label v1 in 
-     G.Continue (v1 |> option (fun n -> 
+  | Continue (t, v1) -> let v1 = option label v1 in 
+     G.Continue (t, v1 |> option (fun n -> 
        G.Name ((n, G.empty_name_info), G.empty_id_info ())))
-  | Break v1 -> let v1 = option label v1 in
-     G.Break (v1 |> option (fun n -> 
+  | Break (t, v1) -> let v1 = option label v1 in
+     G.Break (t, v1 |> option (fun n -> 
        G.Name ((n, G.empty_name_info), G.empty_id_info ())))
-  | Return v1 -> let v1 = expr v1 in G.Return (Some v1)
+  | Return (t, v1) -> 
+      let v1 = expr v1 in 
+      G.Return (t, Some v1)
   | Label ((v1, v2)) -> let v1 = label v1 and v2 = stmt v2 in
       G.Label (v1, v2)
-  | Throw v1 -> let v1 = expr v1 in G.Throw v1
-  | Try ((v1, v2, v3)) ->
+  | Throw (t, v1) -> let v1 = expr v1 in G.Throw (t, v1)
+  | Try ((t, v1, v2, v3)) ->
       let v1 = stmt v1
       and v2 =
         option (fun (v1, v2) -> 
@@ -226,7 +230,7 @@ and stmt x =
            G.PatVar (v1, G.empty_id_info()), v2
        ) v2
       and v3 = option stmt v3 in
-      G.Try (v1, Common.opt_to_list v2, v3)
+      G.Try (t, v1, Common.opt_to_list v2, v3)
 
 and for_header =
   function
@@ -261,10 +265,10 @@ and for_header =
 
 and case =
   function
-  | Case ((v1, v2)) -> let v1 = expr v1 and v2 = stmt v2 in
-      [G.Case (G.expr_to_pattern v1)], v2
-  | Default v1 -> let v1 = stmt v1 in
-      [G.Default], v1
+  | Case ((t, v1, v2)) -> let v1 = expr v1 and v2 = stmt v2 in
+      [G.Case (t, G.expr_to_pattern v1)], v2
+  | Default (t, v1) -> let v1 = stmt v1 in
+      [G.Default t], v1
 
 and def_of_var { v_name = x_name; v_kind = x_kind; 
                  v_init = x_init; v_resolved = x_resolved } =
@@ -327,7 +331,7 @@ and fun_prop (x, tok) =
   | Generator -> G.attr G.Generator tok 
   | Async -> G.attr G.Async tok
 
-and obj_ v = list property v
+and obj_ v = bracket (list property) v
 
 and class_ { c_extends = c_extends; c_body = c_body } =
   let v1 = option expr c_extends in
@@ -354,9 +358,9 @@ and property x =
       | Right e ->
         G.FieldDynamic (e, v2, v3)
       )
-  | FieldSpread v1 -> 
+  | FieldSpread (t, v1) -> 
       let v1 = expr v1 in 
-      G.FieldSpread v1
+      G.FieldSpread (t, v1)
 
 and property_prop (x, tok) =
   match x with
@@ -375,12 +379,12 @@ let rec toplevel x =
 
 and module_directive x = 
   match x with
-  | Import ((v1, v2, v3)) ->
+  | Import ((t, v1, v2, v3)) ->
       let v1 = name v1 and v2 = name v2 and v3 = filename v3 in 
-      G.ImportFrom (G.FileName v3, [v1, Some v2])
-  | ModuleAlias ((v1, v2)) ->
+      G.ImportFrom (t, G.FileName v3, [v1, Some v2])
+  | ModuleAlias ((t, v1, v2)) ->
       let v1 = name v1 and v2 = filename v2 in
-      G.ImportAs (G.FileName v2, Some v1)
+      G.ImportAs (t, G.FileName v2, Some v1)
   | ImportCss ((v1)) ->
       let v1 = name v1 in
       G.OtherDirective (G.OI_ImportCss, [G.Id v1])

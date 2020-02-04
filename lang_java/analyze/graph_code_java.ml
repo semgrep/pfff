@@ -124,6 +124,8 @@ let str_of_name xs =
   xs |> List.map (fun (_tyarg_todo, ident) -> Ast.unwrap ident) |>
     Common.join "."
 
+let unbracket (_, x, _) = x
+
 (* helper to build entries in env.params_or_locals *)
 let p_or_l v =
   Ast.unwrap v.name, Ast.is_final v.mods
@@ -303,20 +305,20 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
 
     current =
      (match ast.package with
-     | Some long_ident -> (str_of_qualified_ident long_ident, E.Package)
+     | Some (_, long_ident) -> (str_of_qualified_ident long_ident, E.Package)
      | None ->            (readable, E.File)
      );
     current_qualifier =
       (match ast.package with
       | None -> []
-      | Some long_ident -> long_ident
+      | Some (_, long_ident) -> long_ident
       );
     params_or_locals = [];
     type_parameters = [];
     imported_namespace =
       (match ast.package with
       (* we automatically import the current.package.* *)
-      | Some long_ident -> [List.map Ast.unwrap long_ident @ ["*"]]
+      | Some (_, long_ident) -> [List.map Ast.unwrap long_ident @ ["*"]]
       | None -> []
       ) @
      ((ast.imports |> List.map (fun (_is_static, _import) ->
@@ -349,7 +351,7 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
         G.create_intermediate_directories_if_not_present g dir;
         g |> G.add_node (readable, E.File);
         g |> G.add_edge ((dir, E.Dir), (readable, E.File))  G.Has;
-    | Some long_ident ->
+    | Some (_, long_ident) ->
         create_intermediate_packages_if_not_present g G.root long_ident;
   end;
   (* double check if we can find some of the imports
@@ -580,7 +582,7 @@ and stmt env = function
   | Empty -> ()
   | Block xs -> stmts env xs
   | Expr e -> expr env e
-  | If (e, st1, st2) ->
+  | If (_, e, st1, st2) ->
       expr env e;
       stmt env st1;
       stmt env st2;
@@ -590,13 +592,13 @@ and stmt env = function
         cases env cs;
         stmts env sts
       )
-  | While (e, st) ->
+  | While (_, e, st) ->
       expr env e;
       stmt env st;
-  | Do (st, e) ->
+  | Do (_, st, e) ->
       expr env e;
       stmt env st;
-  | For (x, st) ->
+  | For (_, x, st) ->
       let env =
         match x with
         | Foreach (v, e) ->
@@ -629,17 +631,17 @@ and stmt env = function
    * so not that useful
    *)
   | Label (_id, st) -> stmt env st
-  | Break _idopt | Continue _idopt -> ()
-  | Return eopt -> exprs env (Common2.option_to_list eopt)
+  | Break (_, _idopt) | Continue (_, _idopt) -> ()
+  | Return (_, eopt) -> exprs env (Common2.option_to_list eopt)
   | Sync (e, st) ->
       expr env e;
       stmt env st;
-  | Try (st, xs, stopt) ->
+  | Try (_, st, xs, stopt) ->
       stmt env st;
       catches env xs;
       stmts env (Common2.option_to_list stopt);
-  | Throw e -> expr env e
-  | Assert (e, eopt) ->
+  | Throw (_, e) -> expr env e
+  | Assert (_, e, eopt) ->
       exprs env (e::Common2.option_to_list eopt)
   (* The modification of env.params_locals is done in decls() *)
   | LocalVar f -> field env f
@@ -664,8 +666,8 @@ and stmts env xs =
 
 and cases env xs = List.iter (case env) xs
 and case env = function
-  | Case e -> expr env e
-  | Default -> ()
+  | Case (_, e) -> expr env e
+  | Default _ -> ()
 
 and catches env xs = List.iter (catch env) xs
 and catch env (v, st) =
@@ -789,7 +791,7 @@ and expr env = function
 and exprs env xs = List.iter (expr env) xs
 and init env = function
   | ExprInit e -> expr env e
-  | ArrayInit xs -> List.iter (init env) xs
+  | ArrayInit xs -> List.iter (init env) (unbracket xs)
 and init_opt env opt =
   match opt with
   | None -> ()

@@ -139,6 +139,8 @@ let is_undefined_ok (src, _kindsrc) (dst, _kinddst) =
 
 let fake s = Parse_info.fake_info s
 
+let unbracket (_, x, _) = x
+
 (*****************************************************************************)
 (* Qualified Name *)
 (*****************************************************************************)
@@ -330,7 +332,7 @@ and toplevel env x =
 
 and module_directive env x =
   match x with
-  | Import (name1, name2, (file, tok)) ->
+  | Import (_, name1, name2, (file, tok)) ->
     if env.phase = Uses then begin
       let str1 = s_of_n name1 in
       let str2 = s_of_n name2 in
@@ -358,7 +360,7 @@ and module_directive env x =
        let str = s_of_n name in
        Hashtbl.replace env.exports env.file_readable (str::exports)
      end
-  | ModuleAlias (name, _fileTODO) ->
+  | ModuleAlias (_, name, _fileTODO) ->
       (* for now just add name as a local; anyway we do not
        * generate dependencies for fields yet
        *)
@@ -390,34 +392,34 @@ and stmt env = function
     expr env v.v_init
  | Block xs -> stmts env xs
  | ExprStmt e -> expr env e
- | If (e, st1, st2) ->
+ | If (_, e, st1, st2) ->
    expr env e;
    stmt env st1;
    stmt env st2
- | Do (st, e) ->
+ | Do (_, st, e) ->
    stmt env st;
    expr env e;
- | While (e, st) ->
+ | While (_, e, st) ->
    expr env e;
    stmt env st
- | For (header, st) ->
+ | For (_, header, st) ->
    let env = for_header env header in
    stmt env st
  | Switch (_tok, e, xs) ->
    expr env e;
    cases env xs
- | Continue lopt ->
+ | Continue (_, lopt) ->
    Common.opt (label env) lopt
- | Break lopt ->
+ | Break (_, lopt) ->
    Common.opt (label env) lopt
- | Return e ->
+ | Return (_, e) ->
    expr env e
  | Label (l, st) ->
    label env l;
    stmt env st
- | Throw e ->
+ | Throw (_, e) ->
    expr env e
- | Try (st1, catchopt, finalopt) ->
+ | Try (_, st1, catchopt, finalopt) ->
    stmt env st1;
    catchopt |> Common.opt (fun (n, st) -> 
      let v = { v_name = n; v_kind = Let, fake "let"; 
@@ -464,10 +466,10 @@ and label _env _lbl =
 and cases env xs = List.iter (case env) xs
 
 and case env = function
- | Case (e, st) ->
+ | Case (_, e, st) ->
    expr env e;
    stmt env st
- | Default st ->
+ | Default (_, st) ->
    stmt env st
    
 and stmts env xs =
@@ -506,7 +508,7 @@ and expr env e =
   | Obj o ->
      obj_ env o
   | Arr xs ->
-     List.iter (expr env) xs
+     xs |> unbracket |> List.iter (expr env)
   | Class (c, nopt) ->
      let env =
       match nopt with
@@ -570,7 +572,7 @@ and expr env e =
 
 (* todo: create nodes if global var? *)
 and obj_ env xs =
-  List.iter (property env) xs
+  xs |> unbracket |> List.iter (property env)
 
 and class_ env c = 
   Common.opt (expr env) c.c_extends;
@@ -580,7 +582,7 @@ and property env = function
   | Field (pname, _props, e) ->
      property_name env pname;
      expr env e
-  | FieldSpread e ->
+  | FieldSpread (_, e) ->
      expr env e
 
 and property_name env = function

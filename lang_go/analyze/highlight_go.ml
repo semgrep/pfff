@@ -68,6 +68,8 @@ let builtin_functions = Common.hashset_of_list [
     "len";
 ]
 
+let unbracket (_, x, _) = x
+
 (*****************************************************************************)
 (* Code highlighter *)
 (*****************************************************************************)
@@ -124,7 +126,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
 
     (* defs *)
     V.kprogram = (fun (k, _) x ->
-      tag_ident x.package (Entity (E.Module, def2));
+      tag_ident (snd x.package) (Entity (E.Module, def2));
       x.imports |> List.iter (fun import ->
         tag_ident import.i_path (Entity (E.Module, use2));
         match import.i_kind with
@@ -187,16 +189,16 @@ let visit_program ~tag_hook _prefs (program, toks) =
         ), ii]) -> tag ii TypeInt
       | TName qid -> tag_qid qid (Entity (E.Type, use2))
 
-      | TStruct flds ->
-        flds |> List.iter (fun (fld, tag_opt) ->
+      | TStruct (_, flds) ->
+        flds |> unbracket |> List.iter (fun (fld, tag_opt) ->
           tag_opt |> Common.do_option (fun tag -> tag_ident tag Attribute);
           (match fld with
           | Field (id, _) -> tag_ident id (Entity (E.Field, def2));
           | EmbeddedField (_, qid) -> tag_qid qid (Entity (E.Type, use2))
           );
         );
-      | TInterface flds ->
-        flds |> List.iter (function
+      | TInterface (_, flds) ->
+        flds |> unbracket |> List.iter (function
           | Method (id, _)        -> tag_ident id (Entity (E.Method, def2))
           | EmbeddedInterface qid -> tag_qid qid (Entity (E.Type, use2))
         );

@@ -43,6 +43,10 @@ type 'a wrap  = 'a * tok
 type 'a list1 = 'a list (* really should be 'a * 'a list *)
   (* with tarzan *)
 
+(* round(), square[], curly{}, angle<> brackets *)
+type 'a bracket = tok * 'a * tok
+ (* with tarzan *)
+
 (* ------------------------------------------------------------------------- *)
 (* Ident, qualifier *)
 (* ------------------------------------------------------------------------- *)
@@ -223,22 +227,22 @@ and stmt =
   | Block of stmts
   | Expr of expr
 
-  | If of expr * stmt * stmt
+  | If of tok * expr * stmt * stmt
   | Switch of tok * expr * (cases * stmts) list
 
-  | While of expr * stmt
-  | Do of stmt * expr
-  | For of for_control * stmt
+  | While of tok * expr * stmt
+  | Do of tok * stmt * expr
+  | For of tok * for_control * stmt
 
-  | Break of ident option
-  | Continue of ident option
-  | Return of expr option
+  | Break of tok * ident option
+  | Continue of tok * ident option
+  | Return of tok * expr option
   | Label of ident * stmt
 
   | Sync of expr * stmt
 
-  | Try of stmt * catches * stmt option
-  | Throw of expr
+  | Try of tok * stmt * catches * stmt option
+  | Throw of tok * expr
 
   (* decl as statement *)
   | LocalVar of var_with_init
@@ -246,13 +250,13 @@ and stmt =
   | LocalClass of class_decl
 
   (* javaext: http://java.sun.com/j2se/1.4.2/docs/guide/lang/assert.html *)
-  | Assert of expr * expr option (* assert e or assert e : e2 *)
+  | Assert of tok * expr * expr option (* assert e or assert e : e2 *)
 
 and stmts = stmt list
 
 and case =
-  | Case of expr
-  | Default
+  | Case of (tok * expr)
+  | Default of tok
 and cases = case list
 
 and for_control =
@@ -292,7 +296,7 @@ and var_with_init = {
   (* less: could merge with expr *)
   and init =
     | ExprInit of expr
-    | ArrayInit of init list
+    | ArrayInit of init list bracket
 
 (* ------------------------------------------------------------------------- *)
 (* Methods, fields *)
@@ -379,11 +383,11 @@ and decls = decl list
 (* Toplevel *)
 (*****************************************************************************)
 type import = 
-  | ImportAll of qualified_ident * tok (* * *)
-  | ImportFrom of qualified_ident * ident
+  | ImportAll of tok * qualified_ident * tok (* * *)
+  | ImportFrom of tok * qualified_ident * ident
 
 type compilation_unit = {
-  package: qualified_ident option;
+  package: (tok * qualified_ident) option;
   (* The qualified ident can also contain "*" at the very end.
    * The bool is for static import (javaext:)
    *)

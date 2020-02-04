@@ -181,13 +181,13 @@ let resolve prog =
                k x              
             )
     
-     | ImportAs ((dotted_name, _dotsTODO), asname_opt) ->
+     | ImportAs (_, (dotted_name, _dotsTODO), asname_opt) ->
            asname_opt |> Common.do_option (fun asname ->
              env |> add_name_env asname (ImportedModule dotted_name)
            );
          k x
 
-     | ImportFrom ((dotted_name, _dotsTODO), aliases) ->
+     | ImportFrom (_, (dotted_name, _dotsTODO), aliases) ->
          aliases |> List.iter (fun (name, asname_opt) ->
            let entity = dotted_name @ [name] in
            (match asname_opt with
@@ -198,7 +198,7 @@ let resolve prog =
            );
          );
          k x
-     | With (e, eopt, stmts) ->
+     | With (_, e, eopt, stmts) ->
        v (Expr e);
        (match eopt with
        | None -> v (Stmts stmts)
@@ -218,7 +218,7 @@ let resolve prog =
            v (Expr e);
            v (Stmts stmts)
        )
-     | TryExcept (stmts1, excepts, stmts2) ->
+     | TryExcept (_, stmts1, excepts, stmts2) ->
        v (Stmts stmts1);
        excepts |> List.iter (fun (ExceptHandler (_typ, e, body)) ->
          match e with
@@ -235,7 +235,7 @@ let resolve prog =
        );
        v (Stmts stmts2);
 
-     | Global names ->
+     | Global (_, names) ->
        names |> List.iter (fun name -> env |> add_name_env name GlobalVar;)
     
      (* TODO: NonLocal!! *) 

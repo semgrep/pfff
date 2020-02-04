@@ -109,7 +109,7 @@ type node = {
          | ExprStmt of expr
          | DefStmt of definition
          | DirectiveStmt of directive
-         | Assert of expr * expr option
+         | Assert of tok * expr * expr option
          | OtherStmt of other_stmt_operator * any list
          (* not part of Ast.stmt but useful to have in CFG for 
           * dataflow analysis purpose *)
@@ -182,21 +182,22 @@ let short_string_of_node node =
 let simple_node_of_stmt_opt stmt =
   match stmt with
   | A.ExprStmt e      -> Some (ExprStmt e)
-  | A.Assert (e1, e2) -> Some (Assert (e1, e2))
+  | A.Assert (t, e1, e2) -> Some (Assert (t, e1, e2))
   | A.DefStmt x       -> Some (DefStmt x)
   | A.DirectiveStmt x -> Some (DirectiveStmt x)
   | A.OtherStmt (a,b) -> Some (OtherStmt (a,b))
 
-  | (A.Block _|A.If (_, _, _)|A.While (_, _)|A.DoWhile (_, _)|A.For (_, _)
+  | (A.Block _|A.If (_, _, _, _)|A.While (_, _, _)|A.DoWhile (_, _, _)
+    |A.For (_, _, _)
     |A.Switch (_, _, _)
     |A.Return _|A.Continue _|A.Break _|A.Label (_, _)|A.Goto _
-    |A.Throw _|A.Try (_, _, _)
+    |A.Throw _|A.Try (_, _, _, _)
     |A.OtherStmtWithStmt _
     ) -> None
 
 let any_of_simple_node = function
   | ExprStmt e      -> A.S (A.ExprStmt e)
-  | Assert (e1, e2) -> A.S (A.Assert (e1, e2))
+  | Assert (t, e1, e2) -> A.S (A.Assert (t, e1, e2))
   | DefStmt x       -> A.S (A.DefStmt x)
   | DirectiveStmt x -> A.S (A.DirectiveStmt x)
   | OtherStmt (a,b) -> A.S (A.OtherStmt (a,b))

@@ -221,7 +221,7 @@ let rec expand_typedefs env t =
         then t
         else expand_typedefs env t'
       else t
-  | TPointer x -> TPointer (expand_typedefs env x)
+  | TPointer (t, x) -> TPointer (t, expand_typedefs env x)
   (* less: eopt could contain some sizeof(typedefs) that we should expand
    * but does not matter probably
    *)
@@ -294,6 +294,8 @@ let find_existing_node_opt env name candidates last_resort =
 
 let is_local env s =
   (Common.find_opt (fun (x, _) -> x =$= s) !(env.locals)) <> None
+
+let unbracket (_, x, _) = x
 
 (*****************************************************************************)
 (* For datalog *)
@@ -747,26 +749,26 @@ and stmt env = function
   | ExprSt e -> expr_toplevel env e
   | Block xs -> stmts env xs
   | Asm xs -> List.iter (expr_toplevel env) xs
-  | If (e, st1, st2) ->
+  | If (_, e, st1, st2) ->
       expr_toplevel env e;
       stmts env [st1; st2]
   | Switch (_, e, xs) ->
       expr_toplevel env e;
       cases env xs
-  | While (e, st) | DoWhile (st, e) -> 
+  | While (_, e, st) | DoWhile (_, st, e) -> 
       expr_toplevel env e;
       stmt env st
-  | For (e1, e2, e3, st) ->
+  | For (_, e1, e2, e3, st) ->
       Common2.opt (expr_toplevel env) e1;
       Common2.opt (expr_toplevel env) e2;
       Common2.opt (expr_toplevel env) e3;
       stmt env st
-  | Return eopt ->
+  | Return (_, eopt) ->
       Common2.opt (expr_toplevel { env with in_return = true }) eopt;
-  | Continue | Break -> ()
+  | Continue _ | Break _ -> ()
   | Label (_name, st) ->
       stmt env st
-  | Goto _name ->
+  | Goto (_, _name) ->
       ()
 
   | Vars xs ->
@@ -786,10 +788,10 @@ and stmt env = function
       )
 
  and case env = function
-   | Case (e, xs) -> 
+   | Case (_, e, xs) -> 
        expr_toplevel env e;
        stmts env xs
-   | Default xs ->
+   | Default (_, xs) ->
        stmts env xs
 
 and stmts env xs = List.iter (stmt env) xs
@@ -894,12 +896,12 @@ and expr env = function
   | Sequence (e1, e2) -> exprs env [e1;e2]
 
   | ArrayInit xs -> 
-      xs |> List.iter (fun (eopt, init) ->
+      xs |> unbracket |> List.iter (fun (eopt, init) ->
         Common2.opt (expr env) eopt;
         expr env init
       )
   (* todo: add deps on field *)
-  | RecordInit xs -> xs |> List.map snd |> exprs env
+  | RecordInit xs -> xs |> unbracket |> List.map snd |> exprs env
 
   | SizeOf x ->
       (match x with
@@ -974,7 +976,7 @@ and type_ env typ =
             else env.pr2_and_log (spf "typedef not found: %s (%s)" s
                                     (Parse_info.string_of_info (snd name)))
 
-      | TPointer x -> aux x
+      | TPointer (_, x) -> aux x
       | TArray (eopt, x) -> 
           Common2.opt (expr env) eopt;
           aux x

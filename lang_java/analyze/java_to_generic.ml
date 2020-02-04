@@ -57,6 +57,8 @@ let wrap = fun _of_a (v1, v2) ->
   let v1 = _of_a v1 and v2 = info v2 in 
   (v1, v2)
 
+let bracket of_a (t1, x, t2) = (info t1, of_a x, info t2)
+
 let list1 _of_a = list _of_a
 
 let ident v = wrap string v
@@ -294,9 +296,9 @@ and stmt =
   | Empty -> G.Block []
   | Block v1 -> let v1 = stmts v1 in G.Block v1
   | Expr v1 -> let v1 = expr v1 in G.ExprStmt v1
-  | If ((v1, v2, v3)) ->
+  | If ((t, v1, v2, v3)) ->
       let v1 = expr v1 and v2 = stmt v2 and v3 = stmt v3 in
-      G.If (v1, v2, v3)
+      G.If (t, v1, v2, v3)
   | Switch ((v0, v1, v2)) ->
       let v0 = info v0 in
       let v1 = expr v1
@@ -307,37 +309,37 @@ and stmt =
         ) v2
       in
       G.Switch (v0, v1, v2)
-  | While ((v1, v2)) -> let v1 = expr v1 and v2 = stmt v2 in
-      G.While (v1, v2)
-  | Do ((v1, v2)) -> let v1 = stmt v1 and v2 = expr v2 in
-      G.DoWhile (v1, v2)
-  | For ((v1, v2)) -> let v1 = for_control v1 and v2 = stmt v2 in
-      G.For (v1, v2)
-  | Break v1 -> let v1 = option ident_label v1 in
-      G.Break v1
-  | Continue v1 -> let v1 = option ident_label v1 in
-      G.Continue v1
-  | Return v1 -> let v1 = option expr v1 in
-      G.Return v1
+  | While ((t, v1, v2)) -> let v1 = expr v1 and v2 = stmt v2 in
+      G.While (t, v1, v2)
+  | Do ((t, v1, v2)) -> let v1 = stmt v1 and v2 = expr v2 in
+      G.DoWhile (t, v1, v2)
+  | For ((t, v1, v2)) -> let v1 = for_control v1 and v2 = stmt v2 in
+      G.For (t, v1, v2)
+  | Break (t, v1) -> let v1 = option ident_label v1 in
+      G.Break (t, v1)
+  | Continue (t, v1) -> let v1 = option ident_label v1 in
+      G.Continue (t, v1)
+  | Return (t, v1) -> let v1 = option expr v1 in
+      G.Return (t, v1)
   | Label ((v1, v2)) -> let v1 = ident v1 and v2 = stmt v2 in
       G.Label (v1, v2)
   | Sync ((v1, v2)) -> 
       let v1 = expr v1 and v2 = stmt v2 in
       G.OtherStmt (G.OS_Sync, [G.E v1; G.S v2])
-  | Try ((v1, v2, v3)) ->
+  | Try ((t, v1, v2, v3)) ->
       let v1 = stmt v1
       and v2 = catches v2
       and v3 = option stmt v3
       in
-      G.Try (v1, v2, v3)
-  | Throw v1 -> let v1 = expr v1 in
-      G.Throw v1
+      G.Try (t,v1, v2, v3)
+  | Throw (t, v1) -> let v1 = expr v1 in
+      G.Throw (t, v1)
   | LocalVar v1 -> let (ent, v) = var_with_init v1 in
       G.DefStmt (ent, G.VarDef v)
   | LocalClass v1 -> let (ent, cdef) = class_decl v1 in
       G.DefStmt (ent, G.ClassDef cdef)
-  | Assert ((v1, v2)) -> let v1 = expr v1 and v2 = option expr v2 in
-      G.Assert (v1, v2)
+  | Assert ((t, v1, v2)) -> let v1 = expr v1 and v2 = option expr v2 in
+      G.Assert (t, v1, v2)
 
 and ident_label x =
   let x = ident x in
@@ -346,8 +348,8 @@ and ident_label x =
 and stmts v = list stmt v
 
 and case = function 
-  | Case v1 -> let v1 = expr v1 in G.Case (G.expr_to_pattern v1)
-  | Default -> G.Default
+  | Case (t, v1) -> let v1 = expr v1 in G.Case (t, G.expr_to_pattern v1)
+  | Default t -> G.Default t
 
 and cases v = list case v
 
@@ -393,7 +395,7 @@ and init =
   function
   | ExprInit v1 -> let v1 = expr v1 in
       v1
-  | ArrayInit v1 -> let v1 = list init v1 in
+  | ArrayInit v1 -> let v1 = bracket (list init) v1 in
       G.Container (G.Array, v1)
 
 and params v = 
@@ -495,17 +497,20 @@ and decl decl =
 and decls v = list decl v
 
 and import = function
-  | ImportAll (xs, tok) -> G.ImportAll (G.DottedName xs, tok)
-  | ImportFrom (xs, id) -> 
+  | ImportAll (t, xs, tok) -> G.ImportAll (t, G.DottedName xs, tok)
+  | ImportFrom (t, xs, id) -> 
       let id = ident id in
-      G.ImportFrom (G.DottedName xs, [id, None])
+      G.ImportFrom (t, G.DottedName xs, [id, None])
 
 
-let compilation_unit { package = package;
+let package (t, qu) = 
+  t, qualified_ident qu
+
+let compilation_unit { package = pack;
                        imports = imports;
                        decls = xdecls
                       } =
-  let v1 = option qualified_ident package in
+  let v1 = option package pack in
   let v2 =
     list (fun (v1, v2) -> let _v1static = bool v1 and v2 = import v2 in v2)
     imports
@@ -516,7 +521,7 @@ let compilation_unit { package = package;
   let package = 
     match v1 with
     | None -> items @ imports
-    | Some x -> [G.DirectiveStmt (G.Package x)]
+    | Some (t, x) -> [G.DirectiveStmt (G.Package (t, x))]
   in
   package @ imports @ items
 

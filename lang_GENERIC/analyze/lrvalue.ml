@@ -46,6 +46,8 @@ let error_todo any =
   pr2 s;
   failwith ("Dataflow_visitor:error_todo ")
 
+let unbracket (_, x, _) = x
+
 (*****************************************************************************)
 (* Main algorithm *)
 (*****************************************************************************)
@@ -108,9 +110,9 @@ let rec visit_expr hook lhs expr =
   | Container (typ, xs) ->
     (match typ with
     (* used on lhs? *)
-    | Array | List -> xs |> List.iter recl
+    | Array | List -> xs |> unbracket |> List.iter recl
     (* never used on lhs *)
-    | Set | Dict -> xs |> List.iter recr
+    | Set | Dict -> xs |> unbracket |> List.iter recr
     )   
 
   (* composite lvalues that are actually not themselves lvalues *)
@@ -123,11 +125,11 @@ let rec visit_expr hook lhs expr =
     recr e1;
     recr e;
   | SliceAccess (e, e1, e2, e3) ->
-      [e1;e2;e3] |> List.map Ast_generic.opt_to_nop |> List.iter recr;
+      [e1;e2;e3] |> List.map opt_to_nop |> List.iter recr;
       recr e
 
-  | DeRef e -> recr e
-  | Ref e -> recr e 
+  | DeRef (_, e) -> recr e
+  | Ref (_, e) -> recr e 
 
   (* otherwise regular recurse (could use a visitor) *)
 
@@ -182,11 +184,11 @@ let rec visit_expr hook lhs expr =
 
   | AnonClass _ -> ()
 
-  | Yield (e, _is_yield_from) -> recr e
-  | Await e -> recr e
+  | Yield (_, e, _is_yield_from) -> recr (opt_to_nop e)
+  | Await (_, e) -> recr e
 
   | Record xs -> 
-     xs |> List.iter (fun field ->
+     xs |> unbracket |> List.iter (fun field ->
        anyhook hook Rhs (Fld field)
      )
 

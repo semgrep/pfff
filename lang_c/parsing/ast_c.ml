@@ -81,6 +81,10 @@ type tok = Parse_info.t
 type 'a wrap = 'a * tok
  (* with tarzan *)
 
+(* round(), square[], curly{}, angle<> brackets *)
+type 'a bracket = tok * 'a * tok
+ (* with tarzan *)
+
 (* ------------------------------------------------------------------------- *)
 (* Name *)
 (* ------------------------------------------------------------------------- *)
@@ -95,7 +99,7 @@ type name = string wrap
 (* less: qualifier (const/volatile) *)
 type type_ =
   | TBase of name (* int, float, etc *)
-  | TPointer of type_
+  | TPointer of tok * type_
   | TArray of const_expr option * type_
   | TFunction of function_type
   | TStructName of struct_kind * name
@@ -158,8 +162,8 @@ and expr =
   | SizeOf of (expr, type_) Common.either
 
   (* should appear only in a variable initializer, or after GccConstructor *)
-  | ArrayInit of (expr option * expr) list
-  | RecordInit of (name * expr) list
+  | ArrayInit of (expr option * expr) list bracket
+  | RecordInit of (name * expr) list bracket
   (* gccext: kenccext: *)
   | GccConstructor  of type_ * expr (* always an ArrayInit (or RecordInit?) *)
 
@@ -180,26 +184,26 @@ type stmt =
   | ExprSt of expr
   | Block of stmt list
 
-  | If of expr * stmt * stmt
+  | If of tok * expr * stmt * stmt
   | Switch of tok * expr * case list
 
-  | While of expr * stmt
-  | DoWhile of stmt * expr
-  | For of expr option * expr option * expr option * stmt
+  | While of tok * expr * stmt
+  | DoWhile of tok * stmt * expr
+  | For of tok * expr option * expr option * expr option * stmt
 
-  | Return of expr option
-  | Continue | Break
+  | Return of tok * expr option
+  | Continue of tok | Break of tok
 
   | Label of name * stmt
-  | Goto of name
+  | Goto of tok * name
 
   | Vars of var_decl list
   (* todo: it's actually a special kind of format, not just an expr *)
   | Asm of expr list
 
   and case =
-    | Case of expr * stmt list
-    | Default of stmt list
+    | Case of tok * expr * stmt list
+    | Default of tok * stmt list
 
 (* ------------------------------------------------------------------------- *)
 (* Variables *)
@@ -270,7 +274,7 @@ type define_body =
 (* Program *)
 (* ------------------------------------------------------------------------- *)
 type toplevel =
-  | Include of string wrap (* path *)
+  | Include of tok * string wrap (* path *)
   | Define of name * define_body 
   | Macro of name * (name list) * define_body
 

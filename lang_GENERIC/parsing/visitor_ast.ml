@@ -84,6 +84,10 @@ and v_tok v = v_info v
 and v_wrap: 'a. ('a -> unit) -> 'a wrap -> unit = fun _of_a (v1, v2) ->
   let v1 = _of_a v1 and v2 = v_info v2 in ()
 
+and v_bracket: 'a. ('a -> unit) -> 'a bracket -> unit = 
+  fun of_a (v1, v2, v3) ->
+  let v1 = v_info v1 and v2 = of_a v2 and v3 = v_info v3 in ()
+
 and v_ident v = 
   let k x =
     v_wrap v_string x
@@ -135,9 +139,10 @@ and v_expr x =
   | L v1 -> let v1 = v_literal v1 in ()
   | Ellipsis v1 -> let v1 = v_tok v1 in ()
   | Container ((v1, v2)) ->
-      let v1 = v_container_operator v1 and v2 = v_list v_expr v2 in ()
+      let v1 = v_container_operator v1 and v2 = v_bracket (v_list v_expr) v2
+      in ()
   | Tuple v1 -> let v1 = v_list v_expr v1 in ()
-  | Record v1 -> let v1 = v_list v_field v1 in ()
+  | Record v1 -> let v1 = v_bracket (v_list v_field) v1 in ()
   | Constructor ((v1, v2)) ->
       let v1 = v_name v1 and v2 = v_list v_expr v2 in ()
   | Lambda ((v1)) -> let v1 = v_function_definition v1 in ()
@@ -173,12 +178,20 @@ and v_expr x =
         v_list
           (fun (v1, v2) -> let v1 = v_pattern v1 and v2 = v_expr v2 in ()) v2
       in ()
-  | Yield ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_bool v2 in ()
-  | Await v1 -> let v1 = v_expr v1 in ()
+  | Yield ((t, v1, v2)) -> 
+        let t = v_tok t in
+        let v1 = v_option v_expr v1 and v2 = v_bool v2 in ()
+  | Await (t, v1) -> 
+      let t = v_tok t in
+      let v1 = v_expr v1 in ()
   | Cast ((v1, v2)) -> let v1 = v_type_ v1 and v2 = v_expr v2 in ()
   | Seq v1 -> let v1 = v_list v_expr v1 in ()
-  | Ref v1 -> let v1 = v_expr v1 in ()
-  | DeRef v1 -> let v1 = v_expr v1 in ()
+  | Ref (t, v1) -> 
+      let t = v_tok t in
+      let v1 = v_expr v1 in ()
+  | DeRef (t, v1) -> 
+      let t = v_tok t in
+      let v1 = v_expr v1 in ()
   | OtherExpr ((v1, v2)) ->
       let v1 = v_other_expr_operator v1 and v2 = v_list v_any v2 in ()
   in
@@ -243,7 +256,9 @@ and v_type_ x =
   | TyVar v1 -> let v1 = v_ident v1 in ()
   | TyArray ((v1, v2)) ->
       let v1 = v_option v_expr v1 and v2 = v_type_ v2 in ()
-  | TyPointer v1 -> let v1 = v_type_ v1 in ()
+  | TyPointer (t, v1) -> 
+        let t = v_tok t in
+        let v1 = v_type_ v1 in ()
   | TyTuple v1 -> let v1 = v_list v_type_ v1 in ()
   | TyQuestion v1 -> let v1 = v_type_ v1 in ()
   | OtherType ((v1, v2)) ->
@@ -298,11 +313,18 @@ and v_stmt x =
   | DefStmt v1 -> let v1 = v_def v1 in ()
   | DirectiveStmt v1 -> let v1 = v_directive v1 in ()
   | Block v1 -> let v1 = v_stmts v1 in ()
-  | If ((v1, v2, v3)) ->
+  | If ((t, v1, v2, v3)) ->
+      let t = v_tok t in
       let v1 = v_expr v1 and v2 = v_stmt v2 and v3 = v_stmt v3 in ()
-  | While ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_stmt v2 in ()
-  | DoWhile ((v1, v2)) -> let v1 = v_stmt v1 and v2 = v_expr v2 in ()
-  | For ((v1, v2)) -> let v1 = v_for_header v1 and v2 = v_stmt v2 in ()
+  | While ((t, v1, v2)) -> 
+        let t = v_tok t in
+        let v1 = v_expr v1 and v2 = v_stmt v2 in ()
+  | DoWhile ((t, v1, v2)) -> 
+        let t = v_tok t in
+        let v1 = v_stmt v1 and v2 = v_expr v2 in ()
+  | For ((t, v1, v2)) -> 
+        let t = v_tok t in
+        let v1 = v_for_header v1 and v2 = v_stmt v2 in ()
   | Switch ((v0, v1, v2)) ->
       let v0 = v_tok v0 in
       let v1 = v_expr v1
@@ -311,18 +333,31 @@ and v_stmt x =
           (fun (v1, v2) -> let v1 = v_list v_case v1 and v2 = v_stmt v2 in ())
           v2
       in ()
-  | Return v1 -> let v1 = v_option v_expr v1 in ()
-  | Continue v1 -> let v1 = v_option v_expr v1 in ()
-  | Break v1 -> let v1 = v_option v_expr v1 in ()
+  | Return (t, v1) -> 
+        let t = v_tok t in
+        let v1 = v_option v_expr v1 in ()
+  | Continue (t, v1) -> 
+        let t = v_tok t in
+        let v1 = v_option v_expr v1 in ()
+  | Break (t, v1) -> 
+        let t = v_tok t in
+        let v1 = v_option v_expr v1 in ()
   | Label ((v1, v2)) -> let v1 = v_label v1 and v2 = v_stmt v2 in ()
-  | Goto v1 -> let v1 = v_label v1 in ()
-  | Throw v1 -> let v1 = v_expr v1 in ()
-  | Try ((v1, v2, v3)) ->
+  | Goto (t, v1) -> 
+        let t = v_tok t in
+        let v1 = v_label v1 in ()
+  | Throw (t, v1) -> 
+        let t = v_tok t in
+        let v1 = v_expr v1 in ()
+  | Try ((t, v1, v2, v3)) ->
+      let t = v_tok t in
       let v1 = v_stmt v1
       and v2 = v_list v_catch v2
       and v3 = v_option v_finally v3
       in ()
-  | Assert ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_option v_expr v2 in ()
+  | Assert ((t, v1, v2)) -> 
+        let t = v_tok t in
+        let v1 = v_expr v1 and v2 = v_option v_expr v2 in ()
   | OtherStmtWithStmt ((v1, v2, v3)) ->
       let v1 = v_other_stmt_with_stmt_operator v1 
       and v2 = v_expr v2 
@@ -334,7 +369,14 @@ and v_stmt x =
   vin.kstmt (k, all_functions) x
 and v_other_stmt_with_stmt_operator _ = ()
 
-and v_case = function | Case v1 -> let v1 = v_pattern v1 in () | Default -> ()
+and v_case = function 
+  | Case (t, v1) -> 
+        let t = v_tok t in
+      let v1 = v_pattern v1 in () 
+  | Default t ->
+      let t = v_tok t in
+      ()
+
 and v_catch (v1, v2) = let v1 = v_pattern v1 and v2 = v_stmt v2 in ()
 and v_finally v = v_stmt v
 and v_label v = v_ident v
@@ -470,7 +512,9 @@ and v_field =
       and v2 = v_list v_attribute v2
       and v3 = v_expr v3
       in ()
-  | FieldSpread v1 -> let v1 = v_expr v1 in ()
+  | FieldSpread (t, v1) -> 
+      let t = v_tok t in
+      let v1 = v_expr v1 in ()
   | FieldStmt v1 -> let v1 = v_stmt v1 in ()
 
 and v_type_definition { tbody = v_tbody } =
@@ -533,13 +577,17 @@ and
 and v_directive x =
   let k x = 
   match x with
-  | ImportFrom ((v1, v2)) ->
+  | ImportFrom ((t, v1, v2)) ->
+      let t = v_tok t in
       let v1 = v_module_name v1 and v2 = v_list v_alias v2 in ()
-  | ImportAs ((v1, v2)) ->
+  | ImportAs ((t, v1, v2)) ->
+      let t = v_tok t in
       let v1 = v_module_name v1 and v2 = v_option v_ident v2 in ()
-  | ImportAll ((v1, v2)) ->
+  | ImportAll ((t, v1, v2)) ->
+      let t = v_tok t in
       let v1 = v_module_name v1 and v2 = v_tok v2 in ()
-  | Package ((v1)) ->
+  | Package ((t, v1)) ->
+      let t = v_tok t in
       let v1 = v_dotted_ident v1 in ()
   | OtherDirective ((v1, v2)) ->
       let v1 = v_other_directive_operator v1 and v2 = v_list v_any v2 in ()

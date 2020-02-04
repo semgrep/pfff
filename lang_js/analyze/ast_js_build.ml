@@ -63,6 +63,8 @@ let opt f env x =
 
 let fst3 (x, _, _) = x
 
+let bracket_keep of_a (t1, x, t2) = (t1, of_a x, t2)
+
 let noop = A.Block []
 let not_resolved () = ref A.NotResolved
 
@@ -144,11 +146,11 @@ and import env = function
      if file =~ ".*\\.css$"
      then [A.ImportCss (file, tok)]
      else [A.ImportEffect (file, tok)]
-  | C.ImportFrom ((default_opt, names_opt), (_, path)) ->
+  | C.ImportFrom ((default_opt, names_opt), (tok, path)) ->
     let file = path_to_file path in
     (match default_opt with
     | Some n -> 
-       [A.Import ((A.default_entity, snd n),  name env n, file)]
+       [A.Import (tok, (A.default_entity, snd n),  name env n, file)]
     | None -> []
     ) @
     (match names_opt with
@@ -157,7 +159,7 @@ and import env = function
       (match ni with
       | C.ImportNamespace (_star, _as, n1) ->
         let n1 = name env n1 in
-        [A.ModuleAlias (n1, file)]
+        [A.ModuleAlias (tok, n1, file)]
       | C.ImportNames xs ->
         xs |> C.unparen |> C.uncomma |> List.map (fun (n1, n2opt) ->
            let n1 = name env n1 in
@@ -166,7 +168,7 @@ and import env = function
               | None -> n1
               | Some (_, n2) -> name env n2
            in
-           A.Import (n1, n2, file)
+           A.Import (tok, n1, n2, file)
          )
       | C.ImportTypes (_tok, _xs) ->
          (* ignore for now *)
@@ -208,12 +210,12 @@ and export env tok = function
                    v_resolved = not_resolved () } in
          [A.V v; A.M (A.Export n2)]
   ) |> List.flatten
- | C.ReExportNames (xs, (_from, path), _) ->
+ | C.ReExportNames (xs, (tok, path), _) ->
    xs |> C.unbrace |> C.uncomma |> List.map (fun (n1, n2opt) ->
      let n1 = name env n1 in
      let tmpname = ("!tmp_" ^ fst n1, snd n1) in
      let file = path_to_file path in
-     let import = A.Import (n1, tmpname, file) in
+     let import = A.Import (tok, n1, tmpname, file) in
      let id = A.Id (tmpname, not_resolved()) in
      match n2opt with
      | None -> 
@@ -314,7 +316,7 @@ and stmt env = function
       [A.ExprStmt (A.Apply(A.IdSpecial (A.UseStrict, tok), []))]
     | _ -> [A.ExprStmt e]
     )
-  | C.If (_, e, then_, elseopt) ->
+  | C.If (t, e, then_, elseopt) ->
     let e = e |> C.unparen |> expr env in
     let then_ = stmt1 env then_ in
     let else_ = 
@@ -322,16 +324,16 @@ and stmt env = function
       | None -> noop
       | Some (_, st) -> stmt1 env st
     in
-    [A.If (e, then_, else_)]
-  | C.Do (_, st, _, e, _) ->
+    [A.If (t, e, then_, else_)]
+  | C.Do (t, st, _, e, _) ->
      let st = stmt1 env st in
      let e = e |> C.unparen |> expr env in
-     [A.Do (st, e)]
-  | C.While (_, e, st) ->
+     [A.Do (t, st, e)]
+  | C.While (t, e, st) ->
      let e = e |> C.unparen |> expr env in
      let st = stmt1 env st in
-     [A.While (e, st)]
-  | C.For (_, _, lhs_vars_opt, _, e2opt, _, e3opt, _, st) ->
+     [A.While (t, e, st)]
+  | C.For (t, _, lhs_vars_opt, _, e2opt, _, e3opt, _, st) ->
      let e1 = 
        match lhs_vars_opt with
        | Some (C.LHS1 e) -> Right (expr env e)
@@ -343,8 +345,8 @@ and stmt env = function
      let e2 = expr_opt env e2opt in
      let e3 = expr_opt env e3opt in
      let st = stmt1 env st in
-     [A.For (A.ForClassic (e1, e2, e3), st)]
-  | C.ForIn (_, _, lhs_var, _, e2, _, st) ->
+     [A.For (t, A.ForClassic (e1, e2, e3), st)]
+  | C.ForIn (t, _, lhs_var, _, e2, _, st) ->
     let e1 =
       match lhs_var with
       | C.LHS2 e -> Right (expr env e)
@@ -357,8 +359,8 @@ and stmt env = function
     in 
     let e2 = expr env e2 in
     let st = stmt1 env st in
-    [A.For (A.ForIn (e1, e2), st)]
-  | C.ForOf (_, _, lhs_var, tokof, e2, _, st) ->
+    [A.For (t, A.ForIn (e1, e2), st)]
+  | C.ForOf (_tTODO, _, lhs_var, tokof, e2, _, st) ->
     (try 
       Transpile_js.forof (lhs_var, tokof, e2, st) 
         (expr env, stmt env, var_binding env)
@@ -369,22 +371,22 @@ and stmt env = function
     let e = e |> C.unparen |> expr env in
     let xs = xs |> C.unparen |> List.map (case_clause env) in
     [A.Switch (tok, e, xs)]
-  | C.Continue (_, lopt, _) -> 
-    [A.Continue (opt label env lopt)]
-  | C.Break (_, lopt, _) -> 
-    [A.Break (opt label env lopt)]
-  | C.Return (_, eopt, _) -> 
-    [A.Return (expr_opt env eopt)]
+  | C.Continue (t, lopt, _) -> 
+    [A.Continue (t, opt label env lopt)]
+  | C.Break (t, lopt, _) -> 
+    [A.Break (t, opt label env lopt)]
+  | C.Return (t, eopt, _) -> 
+    [A.Return (t, expr_opt env eopt)]
   | C.With (tok, _e, _st) ->
     raise (TodoConstruct ("with", tok))
   | C.Labeled (lbl, _, st) ->
     let lbl = label env lbl in
     let st = stmt1 env st in
     [A.Label (lbl, st)]
-  | C.Throw (_, e, _) ->
+  | C.Throw (t, e, _) ->
     let e = expr env e in
-    [A.Throw e]
-  | C.Try (_, st, catchopt, finally_opt) ->
+    [A.Throw (t, e)]
+  | C.Try (t, st, catchopt, finally_opt) ->
     let st = stmt1 env st in
     let catchopt = opt (fun env (_, arg, st) ->
        let arg = name env (C.unparen arg) in
@@ -392,7 +394,7 @@ and stmt env = function
        (arg, st)
        ) env catchopt in
     let finally_opt = opt (fun env (_, st) -> stmt1 env st) env finally_opt in
-    [A.Try (st, catchopt, finally_opt)]
+    [A.Try (t, st, catchopt, finally_opt)]
 
 and stmt_of_stmts xs = 
   match xs with
@@ -404,10 +406,10 @@ and stmt1 env st =
   stmt env st |> stmt_of_stmts
 
 and case_clause env = function
-  | C.Default (_, _, xs) -> A.Default (stmt1_item_list env xs)
-  | C.Case (_, e, _, xs) ->
+  | C.Default (t, _, xs) -> A.Default (t, stmt1_item_list env xs)
+  | C.Case (t, e, _, xs) ->
     let e = expr env e in
-    A.Case (e, stmt1_item_list env xs)
+    A.Case (t, e, stmt1_item_list env xs)
 
 and stmt_item_list env items =
  let rec aux acc env = function
@@ -484,10 +486,11 @@ and expr env = function
     let e2 = expr env (C.unparen e2) in
     A.ArrAccess (e, e2)
   | C.Object xs ->
-    A.Obj (xs |> C.unparen |> C.uncomma |> List.map (property env))
-  | C.Array (tok, xs, _) ->
+    A.Obj (bracket_keep 
+          (fun xs -> xs |> C.uncomma |> List.map (property env)) xs)
+  | C.Array (xs) ->
     (* A.Obj (array_obj env 0 tok xs) *)
-    A.Arr (array_arr env tok xs)
+    A.Arr (bracket_keep (array_arr env (fst3 xs)) xs)
   | C.Apply (e, es) ->
     let e = expr env e in
     let es = List.map (expr env) (es |> C.unparen |> C.uncomma) in
@@ -732,7 +735,7 @@ and arrow_func env x =
   let xs = 
     match x.C.a_body with
     (* Javascript has implicit returns for arrows like that *)
-    | C.AExpr e -> [A.Return (expr env e)]
+    | C.AExpr e -> [A.Return (fake "return", expr env e)]
     | C.ABody xs -> stmt_item_list env (xs |> C.unparen)
   in
   let body = stmt_of_stmts (vars @ xs) in
@@ -750,9 +753,9 @@ and property env = function
   | C.P_shorthand n ->
     let n = name env n in
     A.Field (A.PN n, [], A.Id (n, not_resolved ()))
-  | C.P_spread (_, e) ->
+  | C.P_spread (t, e) ->
     let e = expr env e in
-    A.FieldSpread e
+    A.FieldSpread (t, e)
 
 and _array_obj env idx tok xs =
   match xs with

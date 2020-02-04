@@ -73,6 +73,10 @@ type tok = Parse_info.t
 type 'a wrap = 'a * tok
  (* with tarzan *)
 
+(* round(), square[], curly{}, angle<> brackets *)
+type 'a bracket = tok * 'a * tok
+ (* with tarzan *)
+
 (* ------------------------------------------------------------------------- *)
 (* Name *)
 (* ------------------------------------------------------------------------- *)
@@ -116,8 +120,8 @@ type expr =
   (* introduce new vars when expr_context = Store *)
   | Name of name (* id *) * expr_context (* ctx *) * resolved_name ref
 
-  | Tuple of expr list_or_comprehension (* elts *)  * expr_context (* ctx *)
-  | List of expr list_or_comprehension (* elts *)   * expr_context (* ctx *)
+  | Tuple of expr list_or_comprehension * expr_context
+  | List  of expr list_or_comprehension * expr_context
   | DictOrSet of dictorset_elt list_or_comprehension
 
   (* python3: *)
@@ -147,11 +151,11 @@ type expr =
 
   | IfExp of expr (* test *) * expr (* body *) * expr (* orelse *)
 
-  | Yield of expr option (* value *) * bool (* is_yield_from *)
+  | Yield of tok * expr option (* value *) * bool (* is_yield_from *)
   (* python3: *)
-  | Await of expr
+  | Await of tok * expr
 
-  | Repr of expr (* value *)
+  | Repr of expr bracket (* `` *)
   (* =~ ObjAccess *)
   | Attribute of expr (* value *) * tok (* . *) * name (* attr *) * 
        expr_context (* ctx *)
@@ -188,7 +192,7 @@ type expr =
   and interpolated = expr
 
   and 'a list_or_comprehension = 
-    | CompList of 'a list
+    | CompList of 'a list bracket
     | CompForIf of 'a comprehension
 
     and 'a comprehension = 'a * for_if list
@@ -272,37 +276,42 @@ type stmt =
   | Assign of expr list (* targets *) * tok * expr (* value *)
   | AugAssign of expr (* target *) * operator wrap (* op *) * expr (* value *)
 
-  | For of pattern (* (pattern) introduce new vars *) * expr (* 'in' iter *) * 
+  | For of tok * pattern (* (pattern) introduce new vars *) * 
+           expr (* 'in' iter *) * 
            stmt list (* body *) * stmt list (* orelse *)
-  | While of expr (* test *) * stmt list (* body *) * stmt list (* orelse *)
-  | If of expr (* test *) * stmt list (* body *) * stmt list (* orelse *)
+  | While of tok * expr (* test *) * stmt list (* body *) * 
+             stmt list (* orelse *)
+  | If of tok * expr (* test *) * stmt list (* body *) * 
+             stmt list (* orelse *)
   (* https://docs.python.org/2.5/whatsnew/pep-343.html *)
-  | With of expr (* context_expr *) * expr option (* optional_vars *) * stmt list (* body *)
+  | With of tok * expr (* context_expr *) * expr option (* optional_vars *) * 
+      stmt list (* body *)
 
-  | Return of expr option (* value *)
-  | Break | Continue
-  | Pass
+  | Return of tok * expr option (* value *)
+  | Break of tok | Continue of tok
+  | Pass of tok
 
-  | Raise of (expr * expr option (* from *)) option
-  | TryExcept of stmt list (* body *) * excepthandler list (* handlers *) * stmt list (* orelse *)
-  | TryFinally of stmt list (* body *) * stmt list (* finalbody *)
-  | Assert of expr (* test *) * expr option (* msg *)
+  | Raise of tok * (expr * expr option (* from *)) option
+  | TryExcept of tok * stmt list (* body *) * excepthandler list (* handlers *)
+           * stmt list (* orelse *)
+  | TryFinally of tok * stmt list (* body *) * stmt list (* finalbody *)
+  | Assert of tok * expr (* test *) * expr option (* msg *)
 
-  | Global of name list (* names *)
-  | Delete of expr list (* targets *)
+  | Global of tok * name list (* names *)
+  | Delete of tok * expr list (* targets *)
   (* python3: *)
-  | NonLocal of name list (* names *)
+  | NonLocal of tok * name list (* names *)
 
   (* python2: *)
   | Print of tok * expr option (* dest *) * expr list (* values *) * bool (* nl *)
   | Exec of tok * expr (* body *) * expr option (* glob *) * expr option (* local *)
 
   (* python3: for With, For, and FunctionDef *)
-  | Async of stmt
+  | Async of tok * stmt
 
-  | ImportAs of module_name (* name *) * name option (* asname *)
-  | ImportAll of module_name * tok (* * *)
-  | ImportFrom of module_name (* module *) * alias list (* names *)
+  | ImportAs   of tok * module_name (* name *) * name option (* asname *)
+  | ImportAll  of tok * module_name * tok (* * *)
+  | ImportFrom of tok * module_name (* module *) * alias list (* names *)
 
   (* should be allowed just at the toplevel *)
   | FunctionDef of 

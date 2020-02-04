@@ -6,6 +6,9 @@ let vof_tok v = Meta_parse_info.vof_info_adjustable_precision v
   
 let vof_wrap _of_a (v1, v2) =
   let v1 = _of_a v1 and v2 = vof_tok v2 in Ocaml.VTuple [ v1; v2 ]
+
+let vof_bracket of_a (_t1, x, _t2) =
+  of_a x
   
 let vof_name v = vof_wrap Ocaml.vof_string v
   
@@ -98,12 +101,16 @@ let rec vof_expr =
       and v2 = vof_expr v2
       and v3 = vof_expr v3
       in Ocaml.VSum (("IfExp", [ v1; v2; v3 ]))
-  | Yield ((v1, v2)) ->
+  | Yield ((t, v1, v2)) ->
+      let t = vof_tok t in
       let v1 = Ocaml.vof_option vof_expr v1
       and v2 = Ocaml.vof_bool v2
-      in Ocaml.VSum (("Yield", [ v1; v2 ]))
-  | Await v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Await", [ v1 ]))
-  | Repr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Repr", [ v1 ]))
+      in Ocaml.VSum (("Yield", [ t; v1; v2 ]))
+  | Await (t, v1) -> 
+      let t = vof_tok t in
+      let v1 = vof_expr v1 in Ocaml.VSum (("Await", [ t; v1 ]))
+  | Repr (v1) -> 
+      let v1 = vof_bracket vof_expr v1 in Ocaml.VSum (("Repr", [ v1 ]))
   | Attribute ((v1, t, v2, v3)) ->
       let v1 = vof_expr v1
       and t = vof_tok t
@@ -160,14 +167,16 @@ and vof_cmpop =
 and vof_list_or_comprehension _of_a =
   function
   | CompList v1 ->
-      let v1 = Ocaml.vof_list _of_a v1 in Ocaml.VSum (("CompList", [ v1 ]))
+      let v1 = vof_bracket (Ocaml.vof_list _of_a) v1 in 
+      Ocaml.VSum (("CompList", [ v1 ]))
   | CompForIf v1 ->
       let v1 = vof_comprehension _of_a v1
       in Ocaml.VSum (("CompForIf", [ v1 ]))
 and vof_list_or_comprehension2 _of_a =
   function
   | CompList v1 ->
-      let v1 = Ocaml.vof_list _of_a v1 in Ocaml.VSum (("CompList", [ v1 ]))
+      let v1 = vof_bracket (Ocaml.vof_list _of_a) v1 in 
+      Ocaml.VSum (("CompList", [ v1 ]))
   | CompForIf v1 ->
       let v1 = vof_comprehension2 _of_a v1
       in Ocaml.VSum (("CompForIf", [ v1 ]))
@@ -274,34 +283,46 @@ let rec vof_stmt =
       and v2 = vof_wrap vof_operator v2
       and v3 = vof_expr v3
       in Ocaml.VSum (("AugAssign", [ v1; v2; v3 ]))
-  | For ((v1, v2, v3, v4)) ->
+  | For ((t, v1, v2, v3, v4)) ->
+      let t = vof_tok t in
       let v1 = vof_pattern v1
       and v2 = vof_expr v2
       and v3 = Ocaml.vof_list vof_stmt v3
       and v4 = Ocaml.vof_list vof_stmt v4
-      in Ocaml.VSum (("For", [ v1; v2; v3; v4 ]))
-  | While ((v1, v2, v3)) ->
+      in Ocaml.VSum (("For", [ t; v1; v2; v3; v4 ]))
+  | While ((t, v1, v2, v3)) ->
+      let t = vof_tok t in
       let v1 = vof_expr v1
       and v2 = Ocaml.vof_list vof_stmt v2
       and v3 = Ocaml.vof_list vof_stmt v3
-      in Ocaml.VSum (("While", [ v1; v2; v3 ]))
-  | If ((v1, v2, v3)) ->
+      in Ocaml.VSum (("While", [ t; v1; v2; v3 ]))
+  | If ((t, v1, v2, v3)) ->
+      let t = vof_tok t in
       let v1 = vof_expr v1
       and v2 = Ocaml.vof_list vof_stmt v2
       and v3 = Ocaml.vof_list vof_stmt v3
-      in Ocaml.VSum (("If", [ v1; v2; v3 ]))
-  | With ((v1, v2, v3)) ->
+      in Ocaml.VSum (("If", [ t; v1; v2; v3 ]))
+  | With ((t, v1, v2, v3)) ->
+      let t = vof_tok t in
       let v1 = vof_expr v1
       and v2 = Ocaml.vof_option vof_expr v2
       and v3 = Ocaml.vof_list vof_stmt v3
-      in Ocaml.VSum (("With", [ v1; v2; v3 ]))
-  | Return v1 ->
+      in Ocaml.VSum (("With", [ t; v1; v2; v3 ]))
+  | Return (t, v1) ->
+      let t = vof_tok t in
       let v1 = Ocaml.vof_option vof_expr v1
-      in Ocaml.VSum (("Return", [ v1 ]))
-  | Break -> Ocaml.VSum (("Break", []))
-  | Continue -> Ocaml.VSum (("Continue", []))
-  | Pass -> Ocaml.VSum (("Pass", []))
-  | Raise v1 ->
+      in Ocaml.VSum (("Return", [ t; v1 ]))
+  | Break t -> 
+      let t = vof_tok t in
+      Ocaml.VSum (("Break", [t]))
+  | Continue t -> 
+      let t = vof_tok t in
+      Ocaml.VSum (("Continue", [t]))
+  | Pass t -> 
+      let t = vof_tok t in
+      Ocaml.VSum (("Pass", [t]))
+  | Raise (t, v1) ->
+      let t = vof_tok t in
       let v1 =
         Ocaml.vof_option
           (fun (v1, v2) ->
@@ -309,39 +330,51 @@ let rec vof_stmt =
              and v2 = Ocaml.vof_option vof_expr v2
              in Ocaml.VTuple [ v1; v2 ])
           v1
-      in Ocaml.VSum (("Raise", [ v1 ]))
-  | TryExcept ((v1, v2, v3)) ->
+      in Ocaml.VSum (("Raise", [ t; v1 ]))
+  | TryExcept ((t, v1, v2, v3)) ->
+      let t = vof_tok t in
       let v1 = Ocaml.vof_list vof_stmt v1
       and v2 = Ocaml.vof_list vof_excepthandler v2
       and v3 = Ocaml.vof_list vof_stmt v3
-      in Ocaml.VSum (("TryExcept", [ v1; v2; v3 ]))
-  | TryFinally ((v1, v2)) ->
+      in Ocaml.VSum (("TryExcept", [ t; v1; v2; v3 ]))
+  | TryFinally ((t, v1, v2)) ->
+      let t = vof_tok t in
       let v1 = Ocaml.vof_list vof_stmt v1
       and v2 = Ocaml.vof_list vof_stmt v2
-      in Ocaml.VSum (("TryFinally", [ v1; v2 ]))
-  | Assert ((v1, v2)) ->
+      in Ocaml.VSum (("TryFinally", [ t; v1; v2 ]))
+  | Assert ((t, v1, v2)) ->
+      let t = vof_tok t in
       let v1 = vof_expr v1
       and v2 = Ocaml.vof_option vof_expr v2
-      in Ocaml.VSum (("Assert", [ v1; v2 ]))
-  | Global v1 ->
-      let v1 = Ocaml.vof_list vof_name v1 in Ocaml.VSum (("Global", [ v1 ]))
-  | Delete v1 ->
-      let v1 = Ocaml.vof_list vof_expr v1 in Ocaml.VSum (("Delete", [ v1 ]))
-  | NonLocal v1 ->
+      in Ocaml.VSum (("Assert", [ t; v1; v2 ]))
+  | Global (t, v1) ->
+      let t = vof_tok t in
+      let v1 = Ocaml.vof_list vof_name v1 in Ocaml.VSum (("Global", [ t; v1 ]))
+  | Delete (t, v1) ->
+      let t = vof_tok t in
+      let v1 = Ocaml.vof_list vof_expr v1 in Ocaml.VSum (("Delete", [ t; v1 ]))
+  | NonLocal (t, v1) ->
+      let t = vof_tok t in
       let v1 = Ocaml.vof_list vof_name v1
-      in Ocaml.VSum (("NonLocal", [ v1 ]))
-  | Async v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("Async", [ v1 ]))
-  | ImportAs (v1, v2) ->
+      in Ocaml.VSum (("NonLocal", [ t; v1 ]))
+  | Async (t, v1) -> 
+      let t = vof_tok t in
+      let v1 = vof_stmt v1 in Ocaml.VSum (("Async", [ t; v1 ]))
+  | ImportAs (t, v1, v2) ->
+      let t = vof_tok t in
       let v1 = vof_alias_dotted (v1, v2)
-      in Ocaml.VSum (("ImportAs", [ v1 ]))
-  | ImportAll (v1, v2) ->
+      in Ocaml.VSum (("ImportAs", [ t; v1 ]))
+  | ImportAll (t, v1, v2) ->
+      let t = vof_tok t in
       let v1 = vof_module_name v1
       and v2 = vof_tok v2
-      in Ocaml.VSum (("ImportAll", [v1; v2]))
-  | ImportFrom ((v1, v2)) ->
+      in Ocaml.VSum (("ImportAll", [t; v1; v2]))
+  | ImportFrom ((t, v1, v2)) ->
+      let t = vof_tok t in
       let v1 = vof_module_name v1
       and v2 = Ocaml.vof_list vof_alias v2
-      in Ocaml.VSum (("ImportFrom", [ v1; v2 ]))
+      in Ocaml.VSum (("ImportFrom", [ t; v1; v2 ]))
+
   | FunctionDef ((v1, v2, v3, v4, v5)) ->
       let v1 = vof_name v1
       and v2 = vof_parameters v2

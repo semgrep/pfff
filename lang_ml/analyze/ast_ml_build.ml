@@ -35,6 +35,7 @@ let xxx_list of_a xs =
 let v_paren of_a (_, x, _) = of_a x
 let v_brace = v_paren
 let v_bracket = v_paren
+let v_bracket_keep of_a (t1, x, t2) = (t1, of_a x, t2)
 
 let v_star_list = xxx_list
 let v_pipe_list = xxx_list
@@ -148,7 +149,8 @@ and v_expr v =
       let v1 = v_long_name v1 and v2 = Common.map_opt v_expr v2 in 
       A.Constructor (v1, v2)
   | Tuple v1 -> let v1 = v_comma_list v_expr v1 in A.Tuple v1
-  | List v1 -> let v1 = v_bracket (v_semicolon_list v_expr) v1 in A.List v1
+  | List v1 -> let v1 = v_bracket_keep (v_semicolon_list v_expr) v1 in 
+      A.List v1
   | ParenExpr v1 -> let v1 = v_paren v_expr v1 in v1
   | Sequence v1 -> let v1 = v_paren v_seq_expr v1 in A.Sequence v1
   | Prefix ((v1, v2)) ->
@@ -180,7 +182,7 @@ and v_expr v =
       and v5 = v_expr v5
       in 
       A.FieldAssign (v1, v2, v3, v4, v5)
-  | Record v1 -> let (a,b) = v_brace v_record_expr v1 in 
+  | Record v1 -> let (a,b) = v_record_expr v1 in 
                  A.Record (a,b)
   | ObjAccess ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_tok v2 and v3 = v_name v3 in 
@@ -204,7 +206,7 @@ and v_expr v =
       let _v1 = v_tok v1 and __v2 = v_pipe_list v_match_case v2 in 
       raise Common.Todo
   | If ((v1, v2, v3, v4, v5)) ->
-      let _v1 = v_tok v1
+      let v1 = v_tok v1
       and v2 = v_seq_expr1 v2
       and _v3 = v_tok v3
       and v4 = v_expr v4
@@ -212,7 +214,7 @@ and v_expr v =
         Common.map_opt (fun (v1, v2) -> let _v1 = v_tok v1 and v2 = v_expr v2 in v2)
           v5
       in
-      A.If (v2, v4, v5 |> opt_to_nop)
+      A.If (v1, v2, v4, v5 |> opt_to_nop)
   | Match ((v1, v2, v3, v4)) ->
       let _v1 = v_tok v1
       and v2 = v_seq_expr1 v2
@@ -221,22 +223,22 @@ and v_expr v =
       in 
       A.Match (v2, v4)
   | Try ((v1, v2, v3, v4)) ->
-      let _v1 = v_tok v1
+      let v1 = v_tok v1
       and v2 = v_seq_expr1 v2
       and _v3 = v_tok v3
       and v4 = v_pipe_list v_match_case v4
       in 
-      A.Try (v2, v4)
+      A.Try (v1, v2, v4)
   | While ((v1, v2, v3, v4, v5)) ->
-      let _v1 = v_tok v1
+      let v1 = v_tok v1
       and v2 = v_seq_expr1 v2
       and _v3 = v_tok v3
       and v4 = v_seq_expr1 v4
       and _v5 = v_tok v5
       in
-      A.While (v2, v4)
+      A.While (v1, v2, v4)
   | For ((v1, v2, v3, v4, v5, v6, v7, v8, v9)) ->
-      let _v1 = v_tok v1
+      let v1 = v_tok v1
       and v2 = v_name v2
       and _v3 = v_tok v3
       and v4 = v_seq_expr1 v4
@@ -246,7 +248,7 @@ and v_expr v =
       and v8 = v_seq_expr1 v8
       and _v9 = v_tok v9
       in 
-      A.For (v2, v4, v5, v6, v8)
+      A.For (v1, v2, v4, v5, v6, v8)
   | ExprTodo -> failwith "ExprTodo"
 
 
@@ -257,14 +259,16 @@ and v_constant =
   | Char v1 -> let v1 = v_wrap v_string v1 in A.Char v1
   | String v1 -> let v1 = v_wrap v_string v1 in A.String v1
 
-and v_record_expr =
-  function
-  | RecordNormal v1 -> let v1 = v_semicolon_list v_field_and_expr v1 in 
-                       None, v1
+and v_record_expr (t1, x, t2) =
+  match x with
+  | RecordNormal v1 -> 
+      let v1 = v_bracket_keep (v_semicolon_list v_field_and_expr) (t1, v1, t2)
+      in 
+      None, v1
   | RecordWith ((v1, v2, v3)) ->
       let v1 = v_expr v1
       and _v2 = v_tok v2
-      and v3 = v_semicolon_list v_field_and_expr v3
+      and v3 = v_bracket_keep (v_semicolon_list v_field_and_expr) (t1, v3, t2)
       in 
       Some v1, v3
 

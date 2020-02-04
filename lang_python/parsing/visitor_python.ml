@@ -65,6 +65,10 @@ and v_tok v = v_info v
 and v_wrap: 'a. ('a -> unit) -> 'a wrap -> unit = fun _of_a (v1, v2) ->
   let v1 = _of_a v1 and v2 = v_info v2 in ()
 
+and v_bracket: 'a. ('a -> unit) -> 'a bracket -> unit = 
+  fun of_a (v1, v2, v3) ->
+  let v1 = v_info v1 and v2 = of_a v2 and v3 = v_info v3 in ()
+
 and v_name v = v_wrap v_string v
 
 and v_dotted_name v = v_list v_name v
@@ -126,9 +130,14 @@ and v_expr (x: expr) =
   | Lambda ((v1, v2)) -> let v1 = v_parameters v1 and v2 = v_expr v2 in ()
   | IfExp ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_expr v2 and v3 = v_expr v3 in ()
-  | Yield ((v1, v2)) -> let v1 = v_option v_expr v1 and v2 = v_bool v2 in ()
-  | Await v1 -> let v1 = v_expr v1 in ()
-  | Repr v1 -> let v1 = v_expr v1 in ()
+  | Yield ((t, v1, v2)) -> 
+        let t = v_info t in
+        let v1 = v_option v_expr v1 and v2 = v_bool v2 in ()
+  | Await (t, v1) -> 
+        let t = v_info t in
+        let v1 = v_expr v1 in ()
+  | Repr (v1) -> 
+        let v1 = v_bracket v_expr v1 in ()
   | Attribute ((v1, t, v2, v3)) ->
       let v1 = v_expr v1 and t = v_tok t and v2 = v_name v2 
         and v3 = v_expr_context v3 in ()
@@ -187,7 +196,7 @@ and v_cmpop =
 and v_list_or_comprehension: 'a. ('a -> unit) -> 'a list_or_comprehension -> unit = 
  fun of_a ->
   function
-  | CompList v1 -> let v1 = v_list of_a v1 in ()
+  | CompList v1 -> let v1 = v_bracket (v_list of_a) v1 in ()
   | CompForIf v1 ->
         v_comprehension of_a v1
 
@@ -278,57 +287,88 @@ and v_stmt x =
         let v1 = v_list v_expr v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()
   | AugAssign ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_wrap v_operator v2 and v3 = v_expr v3 in ()
-  | Return v1 -> let v1 = v_option v_expr v1 in ()
-  | Delete v1 -> let v1 = v_list v_expr v1 in ()
-  | Async v1 -> let v1 = v_stmt v1 in ()
-  | For ((v1, v2, v3, v4)) ->
+  | Return (t, v1) -> 
+        let t = v_info t in
+        let v1 = v_option v_expr v1 in ()
+  | Delete (t, v1) -> 
+        let t = v_info t in
+        let v1 = v_list v_expr v1 in ()
+  | Async (t, v1) -> 
+        let t = v_info t in
+        let v1 = v_stmt v1 in ()
+  | For ((t, v1, v2, v3, v4)) ->
+        let t = v_info t in
       let v1 = v_expr v1
       and v2 = v_expr v2
       and v3 = v_list v_stmt v3
       and v4 = v_list v_stmt v4
       in ()
-  | While ((v1, v2, v3)) ->
+  | While ((t, v1, v2, v3)) ->
+        let t = v_info t in
       let v1 = v_expr v1
       and v2 = v_list v_stmt v2
       and v3 = v_list v_stmt v3
       in ()
-  | If ((v1, v2, v3)) ->
+  | If ((t, v1, v2, v3)) ->
+        let t = v_info t in
       let v1 = v_expr v1
       and v2 = v_list v_stmt v2
       and v3 = v_list v_stmt v3
       in ()
-  | With ((v1, v2, v3)) ->
+  | With ((t, v1, v2, v3)) ->
+        let t = v_info t in
       let v1 = v_expr v1
       and v2 = v_option v_expr v2
       and v3 = v_list v_stmt v3
       in ()
-  | Raise v1 ->
+  | Raise (t, v1) ->
+        let t = v_info t in
       let v1 =
         v_option
           (fun (v1, v2) ->
              let v1 = v_expr v1 and v2 = v_option v_expr v2 in ())
           v1
       in ()
-  | TryExcept ((v1, v2, v3)) ->
+  | TryExcept ((t, v1, v2, v3)) ->
+        let t = v_info t in
       let v1 = v_list v_stmt v1
       and v2 = v_list v_excepthandler v2
       and v3 = v_list v_stmt v3
       in ()
-  | TryFinally ((v1, v2)) ->
+  | TryFinally ((t, v1, v2)) ->
+        let t = v_info t in
       let v1 = v_list v_stmt v1 and v2 = v_list v_stmt v2 in ()
-  | Assert ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_option v_expr v2 in ()
-  | ImportAs (v1, v2) -> let v1 = v_alias2 (v1, v2) in ()
-  | ImportAll (v1, v2) -> let v1 = v_module_name v1 and v2 = v_tok v2 in ()
-  | ImportFrom ((v1, v2)) ->
+  | Assert ((t, v1, v2)) -> 
+        let t = v_info t in
+        let v1 = v_expr v1 and v2 = v_option v_expr v2 in ()
+  | ImportAs (t, v1, v2) -> 
+        let t = v_info t in
+        let v1 = v_alias2 (v1, v2) in ()
+  | ImportAll (t, v1, v2) -> 
+        let t = v_info t in
+        let v1 = v_module_name v1 and v2 = v_tok v2 in ()
+  | ImportFrom ((t, v1, v2)) ->
+        let t = v_info t in
       let v1 = v_module_name v1
       and v2 = v_list v_alias v2
       in ()
-  | Global v1 -> let v1 = v_list v_name v1 in ()
-  | NonLocal v1 -> let v1 = v_list v_name v1 in ()
-  | ExprStmt v1 -> let v1 = v_expr v1 in ()
-  | Pass -> ()
-  | Break -> ()
-  | Continue -> ()
+  | Global (t, v1) -> 
+        let t = v_info t in
+        let v1 = v_list v_name v1 in ()
+  | NonLocal (t, v1) -> 
+        let t = v_info t in
+        let v1 = v_list v_name v1 in ()
+  | ExprStmt (v1) -> 
+        let v1 = v_expr v1 in ()
+  | Pass t -> 
+        let t = v_info t in
+        ()
+  | Break t -> 
+        let t = v_info t in
+        ()
+  | Continue t ->
+        let t = v_info t in
+        ()
   in
   vin.kstmt (k, all_functions) x
 
