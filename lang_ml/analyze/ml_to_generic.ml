@@ -123,8 +123,7 @@ and expr =
         bracket (list (fun (v1, v2) -> let v2 = expr v2 in
           (match v1 with
           | [], id -> let id = ident id in
-                      let ent = G.basic_entity id [] in
-                      G.FieldVar (ent, {G.vinit = Some v2; vtype = None})
+                      G.basic_field id (Some v2) None
           | _ -> let v1 = name v1 in
                  let e = 
                    G.OtherExpr (G.OE_FieldAccessQualified, [G.N v1; G.E v2]) in
@@ -305,7 +304,8 @@ and type_def_kind =
                (match v3 with 
                | Some tok -> [G.attr G.Mutable tok] 
                | None -> []) in
-             G.FieldVar (ent, { G.vinit = None; vtype = Some v2 }))
+            G.FieldStmt (G.DefStmt
+             (ent, G.VarDef { G.vinit = None; vtype = Some v2 })))
           v1
       in G.AndType v1
   

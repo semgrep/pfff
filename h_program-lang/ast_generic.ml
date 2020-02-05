@@ -724,17 +724,18 @@ and type_definition = {
       (* Java *)
       | OOTEO_EnumWithMethods | OOTEO_EnumWithArguments
 
- (* Field definition and use, for classes and records
-  * less: could be merged with variable_definition.
+ (* Field definition and use, for classes and records.
   * note: I don't call it field_definition because it's used both to
   * define the shape of a field (a definition), and when creating
-  * an actual field (a value)
+  * an actual field (a value).
+  * old: there used to be a FieldVar and FieldMethod similar to
+  * VarDef and FuncDef but they are now instead in FieldStmt(DefStmt).
+  * this simplifies sgrep too so that a function pattern can match
+  * toplevel functions, nested functions, and methods.
+  * Note: the FieldStmt(DefStmt(FuncDef(...))) can have empty body
+  * for interface methods.
   *)
   and field = 
-    | FieldVar of entity * variable_definition
-    (* those can have empty body for interface methods *)
-    | FieldMethod of entity * function_definition
-
     | FieldDynamic of expr (* dynamic name *) * attribute list * expr (*value*)
     | FieldSpread of tok (* ... *) * expr (* usually a Name *)
 
@@ -817,10 +818,9 @@ and directive =
 (* Toplevel *)
 (*****************************************************************************)
 (* item (a.k.a toplevel element, toplevel decl) is now equal to stmt.
- * Indeed, many languages allow nested functions
- * or class definitions and even nested imports, so this is simpler to
- * just merge them. 
- * This can simplify sgrep too.
+ * Indeed, many languages allow nested functions, nested class definitions, 
+ * and even nested imports, so it is just simpler to merge item with stmt.
+ * This simplifies sgrep too.
  * less: merge with field?
  *)
 and item = stmt
@@ -913,9 +913,9 @@ let basic_entity id attrs = {
   tparams = []; info = empty_id_info ();
 }
 
-let basic_field id typeopt =
+let basic_field id vopt typeopt =
   let entity = basic_entity id [] in
-  FieldVar (entity, { vinit = None; vtype = typeopt})
+  FieldStmt(DefStmt(entity, VarDef { vinit = vopt; vtype = typeopt}))
 
 let attr kwd tok =
   KeywordAttr (kwd, tok)
@@ -934,6 +934,11 @@ let expr_to_pattern e =
 let expr_to_type e =
   (* TODO: diconstruct e and generate the right type (TyBuiltin, ...) *)
   OtherType (OT_Expr, [E e])
+
+(* old: there was a stmt_to_item also before *)
+(* todo? sign that should fully merge field with stmt? *)
+let stmt_to_field st =
+  FieldStmt st
 
 (* see also Java_to_generic.entity_to_param *)
 (* see also python_to_generic.expr_to_attribute *)
@@ -955,12 +960,6 @@ let stmt1 xs =
   | [st] -> st
   | xs -> Block xs
 
-(* todo? sign that should merge field with item and stmt? *)
-let stmt_to_field st = 
-  match st with
-  | DefStmt (entity, VarDef def) -> FieldVar (entity, def)
-  | DefStmt (entity, FuncDef def) -> FieldMethod (entity, def)
-  | _ -> FieldStmt st
 
 let is_boolean_operator = function
  | Plus (* unary too *) | Minus (* unary too *) 

@@ -210,9 +210,7 @@ and expr =
   | RecordInit v1 ->
       let v1 =
         bracket (list (fun (v1, v2) -> let v1 = name v1 and v2 = expr v2 in 
-            let entity = G.basic_entity v1 [] in
-            let vdef = { G.vinit = Some v2; vtype = None } in
-            G.FieldVar (entity, vdef)
+            G.basic_field v1 (Some v2) None
         ))
           v1
       in G.Record v1
@@ -316,7 +314,7 @@ let rec
   (match s_kind with
   | Struct -> 
         let fields = v3 |> List.map (fun (n, t) -> 
-              G.basic_field n (Some t)) in
+              G.basic_field n None (Some t)) in
         entity, G.TypeDef ({ G.tbody = G.AndType fields })
   | Union ->
         let ctors = v3 |> List.map (fun (n, t) -> 
