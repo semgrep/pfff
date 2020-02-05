@@ -505,10 +505,6 @@ and
 
 and v_field =
   function
-  | FieldVar ((v1, v2)) ->
-      let v1 = v_entity v1 and v2 = v_variable_definition v2 in ()
-  | FieldMethod ((v1, v2)) ->
-      let v1 = v_entity v1 and v2 = v_function_definition v2 in ()
   | FieldDynamic ((v1, v2, v3)) ->
       let v1 = v_expr v1
       and v2 = v_list v_attribute v2

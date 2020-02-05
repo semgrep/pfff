@@ -354,7 +354,8 @@ and property x =
       | Left n ->
         let ent = G.basic_entity n v2 in
        (* todo: could be a Lambda in which case we should return a FuncDef? *)
-        G.FieldVar (ent, { G.vinit = Some v3; vtype = None })
+        G.FieldStmt (G.DefStmt 
+                ((ent, G.VarDef { G.vinit = Some v3; vtype = None })))
       | Right e ->
         G.FieldDynamic (e, v2, v3)
       )

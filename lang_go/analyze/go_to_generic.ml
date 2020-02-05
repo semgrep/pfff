@@ -176,8 +176,7 @@ and struct_field (v1, v2) =
 and struct_field_kind =
   function
   | Field ((v1, v2)) -> let v1 = ident v1 and v2 = type_ v2 in 
-      let ent = G.basic_entity v1 [] in
-      G.FieldVar (ent, { G.vinit = None; vtype = Some v2 })
+      G.basic_field v1 None (Some v2)
   | EmbeddedField ((v1, v2)) ->
       let _v1TODO = option tok v1 and v2 = qualified_ident v2 in
       let name = name_of_qualified_ident v2 in
@@ -191,7 +190,8 @@ and interface_field =
       let v1 = ident v1 in
       let (params, ret) = func_type v2 in
       let ent = G.basic_entity v1 [] in
-      G.FieldMethod (ent, mk_func_def params ret (G.Block []))
+      G.FieldStmt (G.DefStmt 
+          (ent, G.FuncDef (mk_func_def params ret (G.Block []))))
   | EmbeddedInterface v1 -> let v1 = qualified_ident v1 in 
       let name = name_of_qualified_ident v1 in
       G.FieldSpread (fake "...", G.Name (name, G.empty_id_info()))

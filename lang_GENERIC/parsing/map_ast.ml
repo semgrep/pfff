@@ -598,14 +598,6 @@ and map_variable_definition { vinit = v_vinit; vtype = v_vtype } =
 
 and map_field =
   function
-  | FieldVar ((v1, v2)) ->
-      let v1 = map_entity v1
-      and v2 = map_variable_definition v2
-      in FieldVar ((v1, v2))
-  | FieldMethod ((v1, v2)) ->
-      let v1 = map_entity v1
-      and v2 = map_function_definition v2
-      in FieldMethod ((v1, v2))
   | FieldDynamic ((v1, v2, v3)) ->
       let v1 = map_expr v1
       and v2 = map_of_list map_attribute v2

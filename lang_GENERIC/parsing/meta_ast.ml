@@ -763,14 +763,6 @@ and vof_variable_definition { vinit = v_vinit; vtype = v_vtype } =
   let bnd = ("vinit", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
 and vof_field =
   function
-  | FieldVar ((v1, v2)) ->
-      let v1 = vof_entity v1
-      and v2 = vof_variable_definition v2
-      in Ocaml.VSum (("FieldVar", [ v1; v2 ]))
-  | FieldMethod ((v1, v2)) ->
-      let v1 = vof_entity v1
-      and v2 = vof_function_definition v2
-      in Ocaml.VSum (("FieldMethod", [ v1; v2 ]))
   | FieldDynamic ((v1, v2, v3)) ->
       let v1 = vof_expr v1
       and v2 = Ocaml.vof_list vof_attribute v2
