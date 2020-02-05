@@ -847,6 +847,11 @@ argument:
   | MULT test      { ArgStar $2 }
   | POW test       { ArgPow $2 }
 
+  /*(* sgrep-ext: difficult to move in atom without s/r conflict so restricted
+     * to argument for now *)*/
+  | NAME COLON test 
+    { Flag_parsing.sgrep_guard (Arg (TypedMetavar ($1, $2, $3))) }
+
   | test EQ test
       { match $1 with
         | Name (id, _, _) -> ArgKwd (id, $3)

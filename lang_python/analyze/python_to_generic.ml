@@ -103,6 +103,10 @@ let rec expr (x: expr) =
      let v1 = expr v1 in
      let v2 = type_ v2 in
      G.Cast (v2, v1)
+  | TypedMetavar (v1, v2, v3) ->
+     let v1 = name v1 in
+     let v3 = type_ v3 in
+     G.TypedMetavar (v1, v2, v3)
   | ExprStar v1 ->
     let v1 = expr v1 in
     G.Call (G.IdSpecial (G.Spread, fake "spread"), [G.expr_to_arg v1])
@@ -346,7 +350,7 @@ and parameters xs =
 
 and type_ v = 
   let v = expr v in
-  G.OtherType (G.OT_Expr, [G.E v])
+  G.expr_to_type v
 
 and type_parent v = 
   let v = argument v in

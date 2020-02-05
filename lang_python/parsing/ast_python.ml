@@ -133,7 +133,9 @@ type expr =
   (* python3: *)
   (* inside an Assign (or ExprStmt) *)
   | TypedExpr of expr * type_
+  (* sgrep-ext: *)
   | Ellipsis of tok (* should be only in .pyi, types Dict[str,...], or sgrep *)
+  | TypedMetavar of name * tok * type_
 
   | BoolOp of boolop wrap (* op *) * expr list (* values *)
   | BinOp of expr (* left *) * operator wrap (* op *) * expr (* right *)
