@@ -262,7 +262,9 @@ and expr =
   | Ref   of tok (* &, address of *) * expr 
   | DeRef of tok (* '*' in C, '!' or '<-' in ML *) * expr 
 
+  (* sgrep: *)
   | Ellipsis of tok (* sgrep: ... in args, stmts, and also types in Python *)
+  | TypedMetavar of ident * tok (* : *) * type_
 
   | OtherExpr of other_expr_operator * any list
 
@@ -928,6 +930,10 @@ let expr_to_arg e =
 let expr_to_pattern e =
   (* TODO: diconstruct e and generate the right pattern (PatLiteral, ...) *)
   OtherPat (OP_ExprPattern, [E e])
+
+let expr_to_type e =
+  (* TODO: diconstruct e and generate the right type (TyBuiltin, ...) *)
+  OtherType (OT_Expr, [E e])
 
 (* see also Java_to_generic.entity_to_param *)
 (* see also python_to_generic.expr_to_attribute *)

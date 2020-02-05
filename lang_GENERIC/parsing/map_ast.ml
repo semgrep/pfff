@@ -170,6 +170,11 @@ and map_expr x =
       and v2 = map_expr v2
       and v3 = map_expr v3
       in Conditional ((v1, v2, v3))
+  | TypedMetavar ((v1, v2, v3)) ->
+      let v1 = map_ident v1
+      and v2 = map_tok v2
+      and v3 = map_type_ v3
+      in TypedMetavar ((v1, v2, v3))
   | MatchPattern ((v1, v2)) ->
       let v1 = map_expr v1
       and v2 = map_of_list map_action v2

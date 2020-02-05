@@ -202,7 +202,9 @@ let rec visit_expr hook lhs expr =
      -> error_todo (E expr)
 
   | Seq xs -> List.iter recr xs
-
+ 
+  (* we should not be called on a sgrep pattern *)
+  | TypedMetavar (_id, _, _t) -> raise Impossible
   | Ellipsis _tok -> ()
 
   | OtherExpr (_other_xxx, anys) -> List.iter (anyhook hook Rhs) anys

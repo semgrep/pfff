@@ -106,6 +106,11 @@ and v_expr (x: expr) =
      let v1 = v_expr v1 in
      let v2 = v_type_ v2 in
      ()
+  | TypedMetavar ((v1, v2, v3)) ->
+     let v1 = v_name v1 in
+     let v2 = v_tok v2 in
+     let v3 = v_type_ v3 in
+     ()
   | ExprStar ((v1)) ->
       let v1 = v_expr v1 in ()
   | Tuple ((v1, v2)) ->
