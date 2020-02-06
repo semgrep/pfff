@@ -261,8 +261,8 @@ and expr =
   | TypeSwitchExpr ((v1, v2)) -> let _v1 = expr v1 and v2 = tok v2 in
       error v2 "TypeSwitchExpr should be handled in Switch statement"
   | ParenType v1 -> let _v1 = type_ v1 in
-      pr2_gen v1;
-      error (ii_of_any (T v1) |> List.hd) "ParenType should disappear"
+      error (ii_of_any (T v1) |> List.hd) 
+        ("ParenType should disappear" ^ Common.dump v1)
 
 and literal =
   function
