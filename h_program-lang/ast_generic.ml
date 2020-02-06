@@ -431,6 +431,11 @@ and stmt =
     and case  =
     | Case    of tok * pattern
     | Default of tok
+    (* For Go, expr can contain some Assign bindings. 
+     * todo? could merge with regular Case? can 'case x := <-chan' be
+     * transformed in a pattern?
+     *)
+    | CaseEqualExpr of tok * expr
 
   (* newvar: newscope: *)
   and catch = pattern * stmt
