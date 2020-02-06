@@ -935,13 +935,11 @@ let expr_to_type e =
   (* TODO: diconstruct e and generate the right type (TyBuiltin, ...) *)
   OtherType (OT_Expr, [E e])
 
-(* old: there was a stmt_to_item also before *)
-(* todo? sign that should fully merge field with stmt? *)
-let stmt_to_field st =
-  FieldStmt st
+(* old: there was a stmt_to_item before *)
+(* old: there was a stmt_to_field before *)
 
 (* see also Java_to_generic.entity_to_param *)
-(* see also python_to_generic.expr_to_attribute *)
+(* see also Python_to_generic.expr_to_attribute *)
 
 (* should avoid; should prefer to use 'expr option' in the AST *)
 let opt_to_nop opt =
