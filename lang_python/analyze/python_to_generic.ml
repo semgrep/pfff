@@ -144,20 +144,10 @@ let rec expr (x: expr) =
       let e = expr v1 
       and _v3TODO = expr_context v3 in 
       (match v2 with
-      | [Index v1] -> 
-          let v1 = expr v1 in
-          G.ArrayAccess (e, v1)
-      | [Slice (v1, v2, v3)] ->
-        let v1 = option expr v1
-        and v2 = option expr v2
-        and v3 = option expr v3
-        in
-        G.SliceAccess (e, v1, v2, v3)
+      | [x] -> slice e x
       | _ -> 
-        let xs = list slice v2 in
-        G.OtherExpr (G.OE_Slices, 
-                     xs |> List.map (fun (other, e) ->
-                       G.E (G.OtherExpr (other, [G.E e]))))
+        let xs = list (slice e) v2 in
+        G.OtherExpr (G.OE_Slices, xs |> List.map (fun x -> G.E x))
       )
   | Attribute ((v1, t, v2, v3)) ->
       let v1 = expr v1 
@@ -314,16 +304,15 @@ and comprehension2 f v1 v2 =
   let v2 = list for_if v2 in
   [G.OtherExpr (G.OE_CompForIf, (G.E v1)::v2)]
 
-and slice =
+and slice e =
   function
-  | Index v1 -> let v1 = expr v1 in G.OE_SliceIndex, v1
+  | Index v1 -> let v1 = expr v1 in G.ArrayAccess (e, v1)
   | Slice ((v1, v2, v3)) ->
       let v1 = option expr v1
       and v2 = option expr v2
       and v3 = option expr v3
       in
-      let tuple = G.Tuple ([v1;v2;v3] |> List.map G.opt_to_nop) in
-      G.OE_SliceRange, tuple
+      G.SliceAccess (e, v1, v2, v3)
 
 and parameters xs =
   xs |> List.map (function
@@ -381,7 +370,7 @@ and stmt x =
       in 
       let ent = G.basic_entity v1 v4 in
       let def = { G.ckind = G.Class; cextends = v2; cimplements = [];
-                  cbody = List.map G.stmt_to_field v3;
+                  cbody = v3 |> List.map (fun x -> G.FieldStmt x);
                 } in
       G.DefStmt (ent, G.ClassDef def)
 
@@ -421,12 +410,12 @@ and stmt x =
       )
             
   | For ((t, v1, v2, v3, v4)) ->
-      let foreach = expr v1
+      let foreach = pattern v1
       and ins = expr v2
       and body = list_stmt1 v3
       and orelse = list stmt v4
       in
-      let header = G.ForEach (G.expr_to_pattern foreach, ins) in
+      let header = G.ForEach (foreach, ins) in
       (match orelse with
       | [] -> G.For (t, header, body)
       | _ -> G.Block [
@@ -522,23 +511,26 @@ and stmt x =
       let id = Name (("exec", tok), Load, ref NotResolved) in
       stmt (ExprStmt (Call (id, [Arg e])))
 
+and pattern e = 
+  let e = expr e in
+  G.expr_to_pattern e
+
 and excepthandler =
   function
   | ExceptHandler ((v1, v2, v3)) ->
-      let v1 = option expr v1
-      and v2 = option expr v2
+      let v1 = option pattern v1 (* a type actually, even tuple of types *)
+      and v2 = option name v2
       and v3 = list_stmt1 v3
       in 
       (match v1, v2 with
       | Some e, None ->
-        let pat = G.expr_to_pattern e in
-        pat, v3
-      | _ ->
-        let e1 = G.opt_to_nop v1 in
-        let e2 = G.opt_to_nop v2 in
-        let pat = G.expr_to_pattern (G.Tuple [e1;e2]) in
-        pat, v3
-      )
+         e
+      | None, None -> 
+         G.PatUnderscore (fake "_")
+      | None, Some _ -> raise Impossible (* see the grammar *)
+      | Some pat, Some n ->
+         G.PatAs (pat, (n, G.empty_id_info ()))
+      ), v3
 
 and expr_to_attribute v  = 
   match v with

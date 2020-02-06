@@ -201,8 +201,6 @@ and expr =
   (* usually an argument of a New (used in Java, Javascript) *)
   | AnonClass of class_definition
 
-  | Nop (* less: could be merged with L Unit, TODO: remove? *)
-
   (* todo: newvar: sometimes abused to also introduce a newvar (as in Python)
    * but ultimately those cases should be rewritten to first introduce a
    * VarDef. 
@@ -362,7 +360,7 @@ and expr =
     | OE_Is | OE_IsNot (* less: could be part of a set_operator? or PhysEq? *)
     | OE_In | OE_NotIn (* less: could be part of a obj_operator? *)
     | OE_Invert
-    | OE_Slices | OE_SliceIndex | OE_SliceRange (* see also SliceAccess *)
+    | OE_Slices (* see also SliceAccess *)
     (* TODO: newvar: *)
     | OE_CompForIf | OE_CompFor | OE_CompIf
     | OE_CmpOps
@@ -400,8 +398,10 @@ and stmt =
   (* newscope: *)
   | For of tok * for_header * stmt
 
-  (* less: could be merged with ExprStmt (MatchPattern ...) *)
-  | Switch of tok (* switch or also Select in Go *) * expr * case_and_body list
+  (* The expr can be None for Go.
+   * less: could be merged with ExprStmt (MatchPattern ...) *)
+  | Switch of tok (* 'switch' or also 'select' in Go *) * expr option * 
+     case_and_body list
 
   | Return   of tok * expr option
   (* less: switch to label? but PHP accept integers no? *)
@@ -444,8 +444,8 @@ and stmt =
      * ForClassic of simple option * expr * simple option?
      *)
     | ForClassic of for_var_or_expr list (* init *) * 
-                    expr (* cond *) * 
-                    expr (* next *)
+                    expr option (* cond *) * 
+                    expr option (* next *)
     (* newvar: *)
     | ForEach of pattern * expr (* pattern 'in' expr *)
 
@@ -715,7 +715,7 @@ and type_definition = {
 
   and or_type_element =
     | OrConstructor of ident * type_ list
-    | OrEnum of ident * expr
+    | OrEnum of ident * expr option
     | OrUnion of ident * type_
 
     | OtherOr of other_or_type_element_operator * any list
@@ -926,6 +926,7 @@ let expr_to_arg e =
  * Note that in Go it's ok to have a complex expressions. It is just
  * matched for equality with the thing it's matched against, so in that
  * case it should be a pattern like | _ when expr = x.
+ * For Python you can actually have a PatDisj of exception classes.
  *)
 let expr_to_pattern e =
   (* TODO: diconstruct e and generate the right pattern (PatLiteral, ...) *)
@@ -935,20 +936,13 @@ let expr_to_type e =
   (* TODO: diconstruct e and generate the right type (TyBuiltin, ...) *)
   OtherType (OT_Expr, [E e])
 
-(* old: there was a stmt_to_item also before *)
-(* todo? sign that should fully merge field with stmt? *)
-let stmt_to_field st =
-  FieldStmt st
+(* old: there was a stmt_to_item before *)
+(* old: there was a stmt_to_field before *)
 
 (* see also Java_to_generic.entity_to_param *)
-(* see also python_to_generic.expr_to_attribute *)
+(* see also Python_to_generic.expr_to_attribute *)
 
-(* should avoid; should prefer to use 'expr option' in the AST *)
-let opt_to_nop opt =
-  match opt with
-  | None -> Nop
-  | Some e -> e
-
+(* todo? should remove? should have an explicit EmptyStmt? *)
 let opt_to_empty opt =
   match opt with
   | None -> Block []
@@ -977,7 +971,11 @@ let is_boolean_operator = function
 let vardef_to_assign (ent, def) resolved =
   let idinfo = { (empty_id_info()) with id_resolved = ref resolved } in
   let name = Name ((ent.name, empty_name_info), idinfo) in
-  let v = opt_to_nop def.vinit in
+  let v = 
+    match def.vinit with
+   | Some v -> v
+   | None -> L (Null (Parse_info.fake_info "null"))
+  in
   Assign (name, Parse_info.fake_info "=", v)
 
 let funcdef_to_lambda (ent, def) resolved =

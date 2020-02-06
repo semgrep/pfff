@@ -364,9 +364,9 @@ and stmt =
       let v1 = option simple v1
       and v2 = 
         match v2 with
-        | None -> G.Nop
+        | None -> None
         | Some s ->
-            (match s with
+            Some (match s with
             | ExprStmt (TypeSwitchExpr (e, tok1)) ->
                 let e = expr e in
                 G.Call (G.IdSpecial (G.Typeof, tok1), [G.Arg e])
@@ -384,7 +384,7 @@ and stmt =
         (G.Switch (v0, v2, v3))
   | Select ((v1, v2)) ->
       let v1 = tok v1 and v2 = list comm_clause v2 in 
-      G.Switch (v1, G.Nop, v2)
+      G.Switch (v1, None, v2)
   | For (t, (v1, v2, v3), v4) ->
       let v1 = option simple v1
       and v2 = option expr v2
@@ -392,10 +392,8 @@ and stmt =
       and v4 = stmt v4
       in
       (* TODO: some of v1 are really ForInitVar *)
-      G.For (t, G.ForClassic (
-        (match v1 with None -> [] | Some e -> [G.ForInitExpr e]),
-        G.opt_to_nop v2,
-        G.opt_to_nop v3), v4)
+      let init = match v1 with None -> [] | Some e -> [G.ForInitExpr e] in
+      G.For (t, G.ForClassic (init, v2, v3), v4)
         
   | Range ((t, v1, v2, v3, v4)) ->
       let opt =  option 

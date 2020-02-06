@@ -137,7 +137,6 @@ and map_expr x =
       let v1 = map_function_definition v1 in Lambda ((v1))
   | AnonClass ((v1)) ->
       let v1 = map_class_definition v1 in AnonClass ((v1))
-  | Nop -> Nop
   | Xml v1 -> let v1 = map_xml v1 in Xml v1
   | Name ((v1, v2)) ->
       let v1 = map_name v1 and v2 = map_id_info v2 in Name ((v1, v2))
@@ -351,7 +350,7 @@ and map_stmt x =
       let v1 = map_for_header v1 and v2 = map_stmt v2 in For ((t, v1, v2))
   | Switch ((v0, v1, v2)) ->
       let v0 = map_tok v0 in
-      let v1 = map_expr v1
+      let v1 = map_of_option map_expr v1
       and v2 = map_of_list map_case_and_body v2
       in Switch ((v0, v1, v2))
   | Return (t, v1) -> 
@@ -419,8 +418,8 @@ and map_for_header =
   function
   | ForClassic ((v1, v2, v3)) ->
       let v1 = map_of_list map_for_var_or_expr v1
-      and v2 = map_expr v2
-      and v3 = map_expr v3
+      and v2 = map_of_option map_expr v2
+      and v3 = map_of_option map_expr v3
       in ForClassic ((v1, v2, v3))
   | ForEach ((v1, v2)) ->
       let v1 = map_pattern v1 and v2 = map_expr v2 in ForEach ((v1, v2))
@@ -636,7 +635,7 @@ and map_or_type_element =
       and v2 = map_of_list map_type_ v2
       in OrConstructor ((v1, v2))
   | OrEnum ((v1, v2)) ->
-      let v1 = map_ident v1 and v2 = map_expr v2 in OrEnum ((v1, v2))
+      let v1 = map_ident v1 and v2 = map_of_option map_expr v2 in OrEnum ((v1, v2))
   | OrUnion ((v1, v2)) ->
       let v1 = map_ident v1 and v2 = map_type_ v2 in OrUnion ((v1, v2))
   | OtherOr ((v1, v2)) ->

@@ -382,7 +382,7 @@ and v_excepthandler =
   function
   | ExceptHandler ((v1, v2, v3)) ->
       let v1 = v_option v_type_ v1
-      and v2 = v_option v_expr v2
+      and v2 = v_option v_name v2
       and v3 = v_list v_stmt v3
       in ()
 and v_decorator v = 

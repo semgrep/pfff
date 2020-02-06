@@ -410,7 +410,7 @@ and vof_excepthandler =
   function
   | ExceptHandler ((v1, v2, v3)) ->
       let v1 = Ocaml.vof_option vof_type_ v1
-      and v2 = Ocaml.vof_option vof_expr v2
+      and v2 = Ocaml.vof_option vof_name v2
       and v3 = Ocaml.vof_list vof_stmt v3
       in Ocaml.VSum (("ExceptHandler", [ v1; v2; v3 ]))
 and vof_decorator v = vof_expr v

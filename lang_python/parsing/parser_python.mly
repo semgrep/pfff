@@ -549,10 +549,9 @@ try_stmt:
       { TryFinally ($1, $3, $6) }
 
 excepthandler:
-  | EXCEPT COLON suite { ExceptHandler (None, None, $3) }
-  | EXCEPT test COLON suite { ExceptHandler (Some $2, None, $4) }
-  | EXCEPT test AS test COLON suite { ExceptHandler (Some $2, Some $4, $6) }
-  | EXCEPT test COMMA test COLON suite { ExceptHandler (Some $2, Some (expr_store $4), $6) }
+  | EXCEPT              COLON suite { ExceptHandler (None, None, $3) }
+  | EXCEPT test         COLON suite { ExceptHandler (Some $2, None, $4) }
+  | EXCEPT test AS NAME COLON suite { ExceptHandler (Some $2, Some $4, $6) }
 
 with_stmt:
   | WITH with_inner { $2 $1 }

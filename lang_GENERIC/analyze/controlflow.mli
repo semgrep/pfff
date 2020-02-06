@@ -15,7 +15,7 @@ type node = {
     | ForHeader (*TODO*) | ForeachHeader of pattern * expr
     | OtherStmtWithStmtHeader of other_stmt_with_stmt_operator * expr
 
-    | SwitchHeader of expr | SwitchEnd
+    | SwitchHeader of expr option | SwitchEnd
     | Case (* TODO of expr? *) | Default
 
     | Return of expr option

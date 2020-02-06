@@ -223,15 +223,11 @@ let resolve prog =
        excepts |> List.iter (fun (ExceptHandler (_typ, e, body)) ->
          match e with
          | None -> v (Stmts body)
-         | Some (Name (name, _ctx, _res)) ->
+         | Some name ->
            let new_names = (fst name, LocalVar)::!(env.names) in
            with_added_env new_names env (fun () ->
              v (Stmts body)
            )
-         (* tuples? *)
-         | Some e -> 
-            v (Expr e);
-            v (Stmts body)
        );
        v (Stmts stmts2);
 

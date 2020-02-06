@@ -215,7 +215,7 @@ and expr e =
                 ckind = G.Class;
                 cextends = [v1];
                 cimplements = [];
-                cbody = List.map G.stmt_to_field decls } in
+                cbody = decls |> List.map (fun x -> G.FieldStmt x) } in
          G.Call (G.IdSpecial (G.New, fake_info()), (G.Arg anonclass)::v2)
       )
   | NewArray ((v1, v2, v3, v4)) ->
@@ -308,7 +308,7 @@ and stmt =
             v1, G.stmt1 v2
         ) v2
       in
-      G.Switch (v0, v1, v2)
+      G.Switch (v0, Some v1, v2)
   | While ((t, v1, v2)) -> let v1 = expr v1 and v2 = stmt v2 in
       G.While (t, v1, v2)
   | Do ((t, v1, v2)) -> let v1 = stmt v1 and v2 = expr v2 in
@@ -353,6 +353,11 @@ and case = function
 
 and cases v = list case v
 
+and list_to_opt_seq = function
+  | [] -> None
+  | [e] -> Some e
+  | xs -> Some (G.Seq xs)
+
 and for_control =
   function
   | ForClassic ((v1, v2, v3)) ->
@@ -360,7 +365,7 @@ and for_control =
       and v2 = list expr v2
       and v3 = list expr v3
       in 
-      G.ForClassic (v1, G.Seq v2, G.Seq v3)
+      G.ForClassic (v1, list_to_opt_seq v2, list_to_opt_seq v3)
   | Foreach ((v1, v2)) -> let ent, _tTODO = var v1 and v2 = expr v2 in
       let pat = G.OtherPat (G.OP_Var, [G.En ent]) in
       G.ForEach (pat, v2)
@@ -465,7 +470,7 @@ and class_decl {
   let v5 = option typ cl_extends in
   let v6 = list ref_type cl_impls in 
   let v7 = decls cl_body in 
-  let fields = List.map G.stmt_to_field v7 in
+  let fields = v7 |> List.map (fun x -> G.FieldStmt x) in
   let ent = { (G.basic_entity v1 v4) with
       G.tparams = v3 } in
   let cdef = { G.

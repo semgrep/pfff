@@ -94,7 +94,6 @@ and vof_expr =
   | AnonClass v1 ->
       let v1 = vof_class_definition v1
       in Ocaml.VSum (("AnonClass", [ v1 ]))
-  | Nop -> Ocaml.VSum (("Nop", []))
   | Name ((v1, v2)) ->
       let v1 = vof_name v1
       and v2 = vof_id_info v2
@@ -307,8 +306,6 @@ and vof_other_expr_operator =
   | OE_NotIn -> Ocaml.VSum (("OE_NotIn", []))
   | OE_Invert -> Ocaml.VSum (("OE_Invert", []))
   | OE_Slices -> Ocaml.VSum (("OE_Slices", []))
-  | OE_SliceIndex -> Ocaml.VSum (("OE_SliceIndex", []))
-  | OE_SliceRange -> Ocaml.VSum (("OE_SliceRange", []))
   | OE_CompForIf -> Ocaml.VSum (("OE_CompForIf", []))
   | OE_CompFor -> Ocaml.VSum (("OE_CompFor", []))
   | OE_CompIf -> Ocaml.VSum (("OE_CompIf", []))
@@ -448,7 +445,7 @@ and vof_stmt =
       in Ocaml.VSum (("For", [ t; v1; v2 ]))
   | Switch ((v0, v1, v2)) ->
       let v0 = vof_tok v0 in
-      let v1 = vof_expr v1
+      let v1 = Ocaml.vof_option vof_expr v1
       and v2 = Ocaml.vof_list vof_case_and_body v2
       in Ocaml.VSum (("Switch", [ v0; v1; v2 ]))
   | Return (t, v1) -> 
@@ -517,8 +514,8 @@ and vof_for_header =
   function
   | ForClassic ((v1, v2, v3)) ->
       let v1 = Ocaml.vof_list vof_for_var_or_expr v1
-      and v2 = vof_expr v2
-      and v3 = vof_expr v3
+      and v2 = Ocaml.vof_option vof_expr v2
+      and v3 = Ocaml.vof_option vof_expr v3
       in Ocaml.VSum (("ForClassic", [ v1; v2; v3 ]))
   | ForEach ((v1, v2)) ->
       let v1 = vof_pattern v1
@@ -807,7 +804,7 @@ and vof_or_type_element =
       in Ocaml.VSum (("OrConstructor", [ v1; v2 ]))
   | OrEnum ((v1, v2)) ->
       let v1 = vof_ident v1
-      and v2 = vof_expr v2
+      and v2 = Ocaml.vof_option vof_expr v2
       in Ocaml.VSum (("OrEnum", [ v1; v2 ]))
   | OrUnion ((v1, v2)) ->
       let v1 = vof_ident v1

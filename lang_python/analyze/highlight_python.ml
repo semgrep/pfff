@@ -238,10 +238,8 @@ let visit_program ~tag_hook _prefs (program, toks) =
        excepts |> List.iter (fun (ExceptHandler (_typ, e, _)) ->
          match e with
          | None -> ()
-         | Some (Name (name, _ctx, _res)) ->
+         | Some name ->
            tag_name name (Local Def)
-         (* tuples? *)
-         | Some _ -> ()
        );
        k x
 

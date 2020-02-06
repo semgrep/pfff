@@ -72,7 +72,7 @@ type node = {
 
       | OtherStmtWithStmtHeader of other_stmt_with_stmt_operator *  expr
 
-      | SwitchHeader of expr
+      | SwitchHeader of expr option
       | SwitchEnd
       | Case
       | Default

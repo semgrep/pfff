@@ -235,7 +235,7 @@ let rec stmt =
   | Switch ((v0, v1, v2)) -> 
       let v0 = info v0 in
       let v1 = expr v1 and v2 = list case v2 in
-      G.Switch (v0, v1, v2)
+      G.Switch (v0, Some v1, v2)
   | While ((t, v1, v2)) -> let v1 = expr v1 and v2 = stmt v2 in
       G.While (t, v1, v2)
   | DoWhile ((t, v1, v2)) -> let v1 = stmt v1 and v2 = expr v2 in 
@@ -246,10 +246,8 @@ let rec stmt =
       and v3 = option expr v3
       and v4 = stmt v4
       in
-      let header = 
-        G.ForClassic ([G.ForInitExpr (G.opt_to_nop v1)],
-          G.opt_to_nop v2,
-          G.opt_to_nop v3) in
+      let init = match v1 with None -> [] | Some e -> [G.ForInitExpr e] in
+      let header = G.ForClassic (init, v2, v3) in
       G.For (t, header, v4)
   | Return (t, v1) -> let v1 = option expr v1 in G.Return (t, v1)
   | Continue t -> G.Continue (t, None)
@@ -338,7 +336,7 @@ let enum_def (v1, v2) =
       v2
   in
   let entity = G.basic_entity v1 [] in
-  let ors = v2 |> List.map (fun (n, eopt) -> G.OrEnum (n, G.opt_to_nop eopt))
+  let ors = v2 |> List.map (fun (n, eopt) -> G.OrEnum (n, eopt))
   in
   entity, G.TypeDef ({ G.tbody = G.OrType ors})
 
