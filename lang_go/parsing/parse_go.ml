@@ -119,7 +119,10 @@ let (program_of_string: string -> Ast_go.program) = fun s ->
 (* for sgrep/spatch *)
 let any_of_string s = 
   Common2.with_tmp_file ~str:s ~ext:"go" (fun file ->
-    let toks = tokens file in
+    let toks_orig = tokens file in
+    let toks = Common.exclude TH.is_comment_or_space toks_orig in
+    (* insert implicit SEMICOLON and replace some LBRACE with LBODY *)
+    let toks = Parsing_hacks_go.fix_tokens toks in
     let _tr, lexer, lexbuf_fake = PI.mk_lexer_for_yacc toks TH.is_irrelevant in
     (* -------------------------------------------------- *)
     (* Call parser *)

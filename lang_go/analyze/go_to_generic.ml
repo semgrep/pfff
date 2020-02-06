@@ -246,7 +246,7 @@ and expr =
   | TypeAssert ((v1, v2)) -> let v1 = expr v1 and v2 = type_ v2 in
       G.Call (G.IdSpecial (G.Instanceof, fake "instanceof"),
         [G.Arg v1; G.ArgType v2])
-  | EllipsisTODO v1 -> let v1 = tok v1 in 
+  | Ellipsis v1 -> let v1 = tok v1 in 
       G.Ellipsis v1
   | FuncLit ((v1, v2)) -> 
       let (params, ret) = func_type v1 

@@ -64,6 +64,13 @@ let fix_tokens_asi xs =
           (* implicit semicolon insertion *)
           x::LSEMICOLON iifake::y::aux env xs
 
+    (* sgrep-ext: *)
+    | (LDDD _ as x)::((TCommentNewline ii | EOF ii) as y)::xs
+      when !Flag_parsing.sgrep_mode ->
+          let iifake = Parse_info.rewrap_str "FAKE ';'" ii in
+          (* implicit semicolon insertion *)
+          x::LSEMICOLON iifake::y::aux env xs
+
     | x::xs -> x::aux env xs
   in
   aux env xs

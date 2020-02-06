@@ -334,6 +334,8 @@ stmt:
 | compound_stmt   { $1 }
 | common_dcl      { DeclStmts $1 }
 | non_dcl_stmt    { $1 }
+ /*(* sgrep-ext: *)*/
+| LDDD  { Flag_parsing.sgrep_guard (SimpleStmt (ExprStmt (Ellipsis $1)))}
 
 compound_stmt: LBRACE stmt_list RBRACE { Block (List.rev $2) }
 
@@ -364,7 +366,6 @@ simple_stmt:
 |   expr_list LCOLAS expr_list { DShortVars ($1, $2, $3) }
 |   expr LINC                  { IncDec ($1, (Incr, $2), Postfix) }
 |   expr LDEC                  { IncDec ($1, (Decr, $2), Postfix) }
-
 
 
 
@@ -569,9 +570,9 @@ basic_literal:
 pseudocall:
 |   pexpr LPAREN RPAREN                               
       { ($1, []) }
-|   pexpr LPAREN expr_or_type_list ocomma RPAREN      
+|   pexpr LPAREN arguments ocomma RPAREN      
       { ($1, $3 |> List.rev |> List.map mk_arg) }
-|   pexpr LPAREN expr_or_type_list LDDD ocomma RPAREN 
+|   pexpr LPAREN arguments LDDD ocomma RPAREN 
       { let args = 
           match $3 |> List.map mk_arg with
           | [] -> raise Impossible
@@ -581,6 +582,12 @@ pseudocall:
          in
          $1, args 
       }
+
+argument: 
+ | expr_or_type { $1 }
+ /*(* sgrep-ext: *)*/
+ | LDDD { Flag_parsing.sgrep_guard (Left (Ellipsis $1)) }
+
 
 
 braced_keyval_list:
@@ -894,8 +901,6 @@ stmt_list:
 |   stmt { [$1] }
 |   stmt_list LSEMICOLON stmt { $3::$1 }
 
-
-
 new_name_list:
 |   new_name { [$1] }
 |   new_name_list LCOMMA new_name { $3::$1 }
@@ -911,6 +916,12 @@ expr_list:
 expr_or_type_list:
 |   expr_or_type { [$1] }
 |   expr_or_type_list LCOMMA expr_or_type { $3::$1 }
+
+/*(* was expr_or_type_list before *)*/
+arguments:
+|   argument { [$1] }
+|   arguments LCOMMA argument { $3::$1 }
+
 
 /*
  * optional things
