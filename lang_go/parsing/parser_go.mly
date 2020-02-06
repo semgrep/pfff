@@ -87,9 +87,7 @@ let rec expr_to_type tok e =
   | Deref (t, e) -> TPtr (t, expr_to_type tok e)
   | Selector (Id (id1, _), _, id2) -> TName [id1;id2]
   | ParenType t -> t
-  | _ -> 
-      pr2_gen e;
-      error tok "TODO: expr_to_type"
+  | _ -> error tok ("TODO: expr_to_type: " ^ Common.dump e)
 
 let expr_or_type_to_type tok x = 
   match x with
@@ -108,9 +106,7 @@ let mk_call_or_cast (e, xs) =
 let type_to_id x =
   match x with
   | TName [id] -> id
-  | _ -> 
-    pr2_gen x;
-    failwith "type_to_id: was expecting an id"
+  | _ -> failwith ("type_to_id: was expecting an id" ^ Common.dump x)
 
 (* see golang spec on signatures. If you have
  * func foo(a, b, c) then it means a, b, and c are types. If you have once
@@ -129,8 +125,8 @@ let adjust_signatures params =
       | [] -> if acc = [] 
               then [] 
               else begin 
-                pr2_gen acc;
-                failwith "last parameter should have a type and id"
+                failwith ("last parameter should have a type and id" ^
+                    Common.dump acc)
               end
       | x::xs ->
         (match x with
@@ -815,10 +811,10 @@ xfndcl: LFUNC fndcl fnbody
 
 fndcl:
 |   sym LPAREN oarg_type_list_ocomma RPAREN fnres 
-    { fun body -> DFunc ($1, ({ fparams = $3; fresults = $5 }, body)) }
+     { fun body -> DFunc ($1, ({ fparams = $3; fresults = $5 }, body)) }
 |   LPAREN oarg_type_list_ocomma RPAREN sym 
     LPAREN oarg_type_list_ocomma RPAREN fnres
-    {
+     {
       fun body ->
         match $2 with
         | [x] -> DMethod ($4, x, ({ fparams = $6; fresults = $8 }, body))
