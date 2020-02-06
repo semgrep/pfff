@@ -374,6 +374,9 @@ and v_case = function
   | Case (t, v1) -> 
         let t = v_tok t in
       let v1 = v_pattern v1 in () 
+  | CaseEqualExpr (t, v1) -> 
+        let t = v_tok t in
+      let v1 = v_expr v1 in () 
   | Default t ->
       let t = v_tok t in
       ()

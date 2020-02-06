@@ -403,6 +403,9 @@ and map_case =
   | Case (t, v1) -> 
       let t = map_tok t in
       let v1 = map_pattern v1 in Case ((t, v1))
+  | CaseEqualExpr (t, v1) -> 
+      let t = map_tok t in
+      let v1 = map_expr v1 in CaseEqualExpr ((t, v1))
   | Default t -> 
       let t = map_tok t in
       Default t

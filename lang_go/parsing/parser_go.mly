@@ -30,8 +30,7 @@ open Ast_go
 (*****************************************************************************)
 
 let error tok s =
-  pr2 s;
-  raise (Parse_info.Parsing_error tok)
+  raise (Parse_info.Other_error (s, tok))
 
 let mk_vars_or_consts xs type_opt exprs_opt mk_var_or_const = 
   let xs = List.rev xs in
@@ -87,21 +86,26 @@ let rec expr_to_type tok e =
   | Deref (t, e) -> TPtr (t, expr_to_type tok e)
   | Selector (Id (id1, _), _, id2) -> TName [id1;id2]
   | ParenType t -> t
-  | _ -> 
-      pr2_gen e;
-      error tok "TODO: expr_to_type"
+  | _ -> error tok ("TODO: expr_to_type: " ^ Common.dump e)
 
 let expr_or_type_to_type tok x = 
   match x with
   | Right t -> t
   | Left e -> expr_to_type tok e
 
+(* some casts such as ( *byte)(foo) are actually parsed as 
+ * Calls with a ParenType. We need to convert back those in
+ * Cast.
+ *)
+let mk_call_or_cast (e, xs) =
+  match e, xs with
+  | ParenType t, [Arg e] -> Cast (t, e)
+  | _ -> Call (e, xs)
+
 let type_to_id x =
   match x with
   | TName [id] -> id
-  | _ -> 
-    pr2_gen x;
-    failwith "type_to_id: was expecting an id"
+  | _ -> failwith ("type_to_id: was expecting an id" ^ Common.dump x)
 
 (* see golang spec on signatures. If you have
  * func foo(a, b, c) then it means a, b, and c are types. If you have once
@@ -120,8 +124,8 @@ let adjust_signatures params =
       | [] -> if acc = [] 
               then [] 
               else begin 
-                pr2_gen acc;
-                failwith "last parameter should have a type and id"
+                failwith ("last parameter should have a type and id" ^
+                    Common.dump acc)
               end
       | x::xs ->
         (match x with
@@ -334,6 +338,8 @@ stmt:
 | compound_stmt   { $1 }
 | common_dcl      { DeclStmts $1 }
 | non_dcl_stmt    { $1 }
+ /*(* sgrep-ext: *)*/
+| LDDD  { Flag_parsing.sgrep_guard (SimpleStmt (ExprStmt (Ellipsis $1)))}
 
 compound_stmt: LBRACE stmt_list RBRACE { Block (List.rev $2) }
 
@@ -364,7 +370,6 @@ simple_stmt:
 |   expr_list LCOLAS expr_list { DShortVars ($1, $2, $3) }
 |   expr LINC                  { IncDec ($1, (Incr, $2), Postfix) }
 |   expr LDEC                  { IncDec ($1, (Decr, $2), Postfix) }
-
 
 
 
@@ -542,7 +547,7 @@ pexpr_no_paren:
         *)
     }
 
-|   pseudocall { Call $1 }
+|   pseudocall { mk_call_or_cast $1 }
 
 |   convtype LPAREN expr ocomma RPAREN { Cast ($1, $3) }
 
@@ -569,9 +574,9 @@ basic_literal:
 pseudocall:
 |   pexpr LPAREN RPAREN                               
       { ($1, []) }
-|   pexpr LPAREN expr_or_type_list ocomma RPAREN      
+|   pexpr LPAREN arguments ocomma RPAREN      
       { ($1, $3 |> List.rev |> List.map mk_arg) }
-|   pexpr LPAREN expr_or_type_list LDDD ocomma RPAREN 
+|   pexpr LPAREN arguments LDDD ocomma RPAREN 
       { let args = 
           match $3 |> List.map mk_arg with
           | [] -> raise Impossible
@@ -581,6 +586,12 @@ pseudocall:
          in
          $1, args 
       }
+
+argument: 
+ | expr_or_type { $1 }
+ /*(* sgrep-ext: *)*/
+ | LDDD { Flag_parsing.sgrep_guard (Left (Ellipsis $1)) }
+
 
 
 braced_keyval_list:
@@ -799,10 +810,10 @@ xfndcl: LFUNC fndcl fnbody
 
 fndcl:
 |   sym LPAREN oarg_type_list_ocomma RPAREN fnres 
-    { fun body -> DFunc ($1, ({ fparams = $3; fresults = $5 }, body)) }
+     { fun body -> DFunc ($1, ({ fparams = $3; fresults = $5 }, body)) }
 |   LPAREN oarg_type_list_ocomma RPAREN sym 
     LPAREN oarg_type_list_ocomma RPAREN fnres
-    {
+     {
       fun body ->
         match $2 with
         | [x] -> DMethod ($4, x, ({ fparams = $6; fresults = $8 }, body))
@@ -894,8 +905,6 @@ stmt_list:
 |   stmt { [$1] }
 |   stmt_list LSEMICOLON stmt { $3::$1 }
 
-
-
 new_name_list:
 |   new_name { [$1] }
 |   new_name_list LCOMMA new_name { $3::$1 }
@@ -911,6 +920,12 @@ expr_list:
 expr_or_type_list:
 |   expr_or_type { [$1] }
 |   expr_or_type_list LCOMMA expr_or_type { $3::$1 }
+
+/*(* was expr_or_type_list before *)*/
+arguments:
+|   argument { [$1] }
+|   arguments LCOMMA argument { $3::$1 }
+
 
 /*
  * optional things

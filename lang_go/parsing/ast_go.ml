@@ -157,8 +157,8 @@ and expr =
   * less: can appear only in a TypeSwitch, so could be moved there *)
  | TypeSwitchExpr of expr * tok (* 'type' *)
 
- (* ?? sgrep *)
- | EllipsisTODO of tok
+ (* sgrep-ext: *)
+ | Ellipsis of tok
 
  | FuncLit of function_
 

@@ -176,7 +176,7 @@ and v_expr x =
       in ()
   | TypeAssert ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_type_ v2 in ()
   | TypeSwitchExpr ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_tok v2 in ()
-  | EllipsisTODO v1 -> let v1 = v_tok v1 in ()
+  | Ellipsis v1 -> let v1 = v_tok v1 in ()
   | FuncLit (x) -> v_function_ x
   | ParenType v1 -> let v1 = v_type_ v1 in ()
   | Send ((v1, v2, v3)) ->

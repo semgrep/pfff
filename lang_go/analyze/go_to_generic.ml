@@ -246,7 +246,7 @@ and expr =
   | TypeAssert ((v1, v2)) -> let v1 = expr v1 and v2 = type_ v2 in
       G.Call (G.IdSpecial (G.Instanceof, fake "instanceof"),
         [G.Arg v1; G.ArgType v2])
-  | EllipsisTODO v1 -> let v1 = tok v1 in 
+  | Ellipsis v1 -> let v1 = tok v1 in 
       G.Ellipsis v1
   | FuncLit ((v1, v2)) -> 
       let (params, ret) = func_type v1 
@@ -261,8 +261,8 @@ and expr =
   | TypeSwitchExpr ((v1, v2)) -> let _v1 = expr v1 and v2 = tok v2 in
       error v2 "TypeSwitchExpr should be handled in Switch statement"
   | ParenType v1 -> let _v1 = type_ v1 in
-      pr2_gen v1;
-      error (ii_of_any (T v1) |> List.hd) "ParenType should disappear"
+      error (ii_of_any (T v1) |> List.hd) 
+        ("ParenType should disappear" ^ Common.dump v1)
 
 and literal =
   function
@@ -438,26 +438,30 @@ and stmt =
 
 and case_clause (v1, v2) = let v1 = case_kind v1 and v2 = stmt v2 in 
   v1, v2
+and expr_or_type_to_pattern = function
+  (* can't call expr_or_type because we want to intercept this one *)
+  | Left (ParenType t) -> 
+      let t = type_ t in
+     G.PatType t
+  | x ->
+      (match expr_or_type x with
+      | Left e -> G.expr_to_pattern e
+      | Right t ->G.PatType t
+      )
+
 and case_kind =
   function
   | CaseExprs (tok, v1) -> 
-      v1 |> List.map (function
-        | Left (ParenType t) -> 
-            let t = type_ t in
-            G.Case (tok, G.PatType t)
-        | Left e -> 
-            let e = expr e in
-            G.Case (tok, G.expr_to_pattern e)
-        | Right t ->
-            let t = type_ t in
-            G.Case (tok, G.PatType t)
-      )
-  | CaseAssign ((_t, v1, v2, v3)) ->
-      let _v1 = list expr_or_type v1
-      and v2 = tok v2
-      and _v3 = expr v3
-      in 
-      error v2 "TODO: CaseAssign"
+      v1 |> List.map (fun x -> (G.Case (tok, expr_or_type_to_pattern x)))
+  | CaseAssign ((tok, v1, v2, v3)) ->
+      let v1 = list expr_or_type v1
+      and v3 = expr v3
+      in
+      let v1 = v1 |> List.map (function
+            | Left e -> e
+            | Right _ -> error tok "TODO: Case Assign with Type?"
+       ) in
+      [G.CaseEqualExpr (tok, G.Assign (list_to_tuple_or_expr v1, v2, v3))]
   | CaseDefault v1 -> let v1 = tok v1 in
       [G.Default v1]
 
