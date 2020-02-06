@@ -30,8 +30,7 @@ open Ast_go
 (*****************************************************************************)
 
 let error tok s =
-  pr2 s;
-  raise (Parse_info.Parsing_error tok)
+  raise (Parse_info.Other_error (s, tok))
 
 let mk_vars_or_consts xs type_opt exprs_opt mk_var_or_const = 
   let xs = List.rev xs in
