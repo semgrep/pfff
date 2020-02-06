@@ -96,6 +96,15 @@ let expr_or_type_to_type tok x =
   | Right t -> t
   | Left e -> expr_to_type tok e
 
+(* some casts such as ( *byte)(foo) are actually parsed as 
+ * Calls with a ParenType. We need to convert back those in
+ * Cast.
+ *)
+let mk_call_or_cast (e, xs) =
+  match e, xs with
+  | ParenType t, [Arg e] -> Cast (t, e)
+  | _ -> Call (e, xs)
+
 let type_to_id x =
   match x with
   | TName [id] -> id
@@ -543,7 +552,7 @@ pexpr_no_paren:
         *)
     }
 
-|   pseudocall { Call $1 }
+|   pseudocall { mk_call_or_cast $1 }
 
 |   convtype LPAREN expr ocomma RPAREN { Cast ($1, $3) }
 
