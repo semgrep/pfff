@@ -125,7 +125,7 @@ let rec visit_expr hook lhs expr =
     recr e1;
     recr e;
   | SliceAccess (e, e1, e2, e3) ->
-      [e1;e2;e3] |> List.map opt_to_nop |> List.iter recr;
+      [e1;e2;e3] |> List.iter (Common.do_option recr);
       recr e
 
   | DeRef (_, e) -> recr e
@@ -133,7 +133,7 @@ let rec visit_expr hook lhs expr =
 
   (* otherwise regular recurse (could use a visitor) *)
 
-  | L _ | Nop -> ()
+  | L _ -> ()
 
   | IdSpecial _ -> ()
   (* todo: Special cases for function that are known to take implicit
@@ -184,7 +184,7 @@ let rec visit_expr hook lhs expr =
 
   | AnonClass _ -> ()
 
-  | Yield (_, e, _is_yield_from) -> recr (opt_to_nop e)
+  | Yield (_, e, _is_yield_from) -> Common.do_option recr e
   | Await (_, e) -> recr e
 
   | Record xs -> 

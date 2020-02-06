@@ -49,13 +49,14 @@ let mk_visitor vin =
     | F.TryHeader | F.CatchStart | F.Catch | F.TryEnd
     | F.Join
     | F.Continue None | F.Break None | F.Return None
+    | F.SwitchHeader None
       -> ()
 
     (* expr *)
     | F.IfHeader expr
     | F.WhileHeader expr
     | F.DoWhileTail expr
-    | F.SwitchHeader expr
+    | F.SwitchHeader (Some expr)
     | F.Throw expr
     | F.Return (Some expr)
     | F.Continue (Some expr) | F.Break (Some expr) ->
@@ -80,14 +81,14 @@ let exprs_of_node node =
   | SwitchEnd | Case  | Default
   | TryHeader | CatchStart | Catch | TryEnd
   | Join
-  | Continue None | Break None | Return None
+  | Continue None | Break None | Return None | SwitchHeader None
    -> []
 
   (* expr *)
   | IfHeader expr
   | WhileHeader expr
   | DoWhileTail expr
-  | SwitchHeader expr
+  | SwitchHeader (Some expr)
   | Throw expr
   | Return (Some expr)
   | Continue (Some expr) | Break (Some expr)

@@ -38,7 +38,7 @@ let string = id
 
 let error = Ast_generic.error
 
-let fake_info () = Parse_info.fake_info "FAKE"
+let fake s = Parse_info.fake_info s
 
 (*****************************************************************************)
 (* Entry point *)
@@ -59,7 +59,7 @@ let filename v = wrap string v
 
 let label v = wrap string v
 
-let qualified_name x = [x, Parse_info.fake_info "TODO qualified name"]
+let qualified_name x = [x, fake "TODO qualified name"]
 
 let gensym_TODO = -1
 
@@ -111,7 +111,7 @@ let special (x, tok) =
   | Encaps v1 -> 
       (match v1 with
       | None -> SR_NeedArgs (fun args -> 
-          G.Call (G.IdSpecial (G.Concat, fake_info ()), 
+          G.Call (G.IdSpecial (G.Concat, fake "+"), 
                   args |> List.map (fun e -> G.Arg e)))
       | Some n -> 
             let n = name n in
@@ -148,7 +148,7 @@ and expr (x: expr) =
       | SR_Literal l -> G.L l
       | SR_Other x -> G.OtherExpr (x, [])
       )
-  | Nop -> G.Nop
+  | Nop -> G.L (G.Null (fake "null"))
   | Assign ((v1, tok, v2)) -> let v1 = expr v1 and v2 = expr v2 in 
       let tok = info tok in
       G.Assign (v1, tok, v2)
@@ -209,7 +209,7 @@ and stmt x =
   | Switch ((v0, v1, v2)) -> 
       let v0 = info v0 in
       let v1 = expr v1 and v2 = list case v2 in
-      G.Switch (v0, v1, v2)
+      G.Switch (v0, Some v1, v2)
   | Continue (t, v1) -> let v1 = option label v1 in 
      G.Continue (t, v1 |> option (fun n -> 
        G.Name ((n, G.empty_name_info), G.empty_id_info ())))
@@ -244,10 +244,10 @@ and for_header =
                   G.ForInitVar (a, b)
             )
             in
-            G.ForClassic (vars, v2, v3)
+            G.ForClassic (vars, Some v2, Some v3)
       | Right e ->
          let e = expr e in
-         G.ForClassic ([G.ForInitExpr e], v2, v3)
+         G.ForClassic ([G.ForInitExpr e], Some v2, Some v3)
       )
       
   | ForIn ((v1, v2)) ->

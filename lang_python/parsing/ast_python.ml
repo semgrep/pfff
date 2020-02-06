@@ -332,8 +332,8 @@ type stmt =
 
 and excepthandler = 
   ExceptHandler of 
-    type_ option (* type *) * 
-    expr option (* name, introduce new var *) * 
+    pattern option (* type, possibly a list of types as in (Error,Fatal) *) * 
+    name option (* name, introduce new var, todo: only if pattern is Some *) * 
     stmt list (* body *)
 
 

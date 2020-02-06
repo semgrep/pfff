@@ -147,7 +147,6 @@ and v_expr x =
       let v1 = v_name v1 and v2 = v_list v_expr v2 in ()
   | Lambda ((v1)) -> let v1 = v_function_definition v1 in ()
   | AnonClass ((v1)) -> let v1 = v_class_definition v1 in ()
-  | Nop -> ()
   | Xml v1 -> let v1 = v_xml v1 in ()
   | Name ((v1, v2)) -> let v1 = v_name v1 and v2 = v_id_info v2 in ()
   | IdSpecial v1 -> let v1 = v_wrap v_special v1 in ()
@@ -329,7 +328,7 @@ and v_stmt x =
         let v1 = v_for_header v1 and v2 = v_stmt v2 in ()
   | Switch ((v0, v1, v2)) ->
       let v0 = v_tok v0 in
-      let v1 = v_expr v1
+      let v1 = v_option v_expr v1
       and v2 =
         v_list
           (fun (v1, v2) -> let v1 = v_list v_case v1 and v2 = v_stmt v2 in ())
@@ -386,8 +385,8 @@ and v_for_header =
   function
   | ForClassic ((v1, v2, v3)) ->
       let v1 = v_list v_for_var_or_expr v1
-      and v2 = v_expr v2
-      and v3 = v_expr v3
+      and v2 = v_option v_expr v2
+      and v3 = v_option v_expr v3
       in ()
   | ForEach ((v1, v2)) -> let v1 = v_pattern v1 and v2 = v_expr v2 in ()
 and v_for_var_or_expr =
@@ -534,7 +533,7 @@ and v_or_type_element =
   function
   | OrConstructor ((v1, v2)) ->
       let v1 = v_ident v1 and v2 = v_list v_type_ v2 in ()
-  | OrEnum ((v1, v2)) -> let v1 = v_ident v1 and v2 = v_expr v2 in ()
+  | OrEnum ((v1, v2)) -> let v1 = v_ident v1 and v2 = v_option v_expr v2 in ()
   | OrUnion ((v1, v2)) -> let v1 = v_ident v1 and v2 = v_type_ v2 in ()
   | OtherOr ((v1, v2)) ->
       let v1 = v_other_or_type_element_operator v1

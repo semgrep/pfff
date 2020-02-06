@@ -38,7 +38,7 @@ let int = id
 
 let error = Ast_generic.error
 
-let fake_info () = Parse_info.fake_info "FAKE"
+let fake s = Parse_info.fake_info s
 
 (*****************************************************************************)
 (* Entry point *)
@@ -113,7 +113,7 @@ and expr =
             G.Assign (G.DotAccess (v1, t1, id), t2, v3)
     | _ -> let v2 = name v2 in 
            G.Assign (G.OtherExpr (G.OE_FieldAccessQualified, [G.E v1; G.N v2]),
-              Parse_info.fake_info "=",
+              fake "=",
                      v3)
     )
       
@@ -157,7 +157,7 @@ and expr =
     let def = { G.fparams = v1; frettype = None; fbody = G.ExprStmt v2 } in
     G.Lambda def
 
-  | Nop -> G.Nop
+  | Nop -> G.L (G.Null (fake "null"))
   | If ((_t, v1, v2, v3)) ->
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in 
       G.Conditional (v1, v2, v3)
@@ -189,7 +189,7 @@ and expr =
       let cond = G.Call (G.IdSpecial (G.ArithOp condop, tok),
                          [G.Arg n; G.Arg v4]) in
       let header = G.ForClassic ([G.ForInitVar (ent, var)],
-                                 cond, next) in
+                                 Some cond, Some next) in
       let st = G.For (t, header, G.ExprStmt v5) in
       G.OtherExpr (G.OE_StmtExpr, [G.S st])
   
