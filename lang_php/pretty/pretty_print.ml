@@ -81,7 +81,6 @@ let rec binaryOp = function
   | Cst_php.Arith aop    -> arithOp aop
   | Cst_php.Logical lop  -> logicalOp lop
   | Cst_php.BinaryConcat -> 17 , Left
-  | Cst_php.Pipe         -> -1, Left
   | Cst_php.CombinedComparison -> 14, NonAssoc
 
 and arithOp = function
@@ -145,7 +144,6 @@ let rec binaryOp = function
   | Cst_php.Arith aop    -> arithOp aop
   | Cst_php.Logical lop  -> logicalOp lop
   | Cst_php.BinaryConcat -> "."
-  | Cst_php.Pipe         -> "|>"
   | Cst_php.CombinedComparison -> "<=>"
 
 and arithOp = function

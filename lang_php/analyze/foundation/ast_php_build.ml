@@ -455,7 +455,6 @@ and binary_op = function
   | Arith op -> A.ArithOp (arith_op op)
   | Logical op -> A.ArithOp (logical_op op)
   | BinaryConcat -> A.BinaryConcat
-  | Pipe -> A.Pipe
   | CombinedComparison -> A.CombinedComparison
 
 and unary_op = function

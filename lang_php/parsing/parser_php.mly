@@ -1075,7 +1075,6 @@ expr:
 
  | expr T_BOOLEAN_OR   expr { Binary($1,(Logical OrBool ,$2),$3) }
  | expr T_BOOLEAN_AND  expr { Binary($1,(Logical AndBool,$2),$3) }
- | expr T_BOOLEAN_PIPE expr { Binary($1,(Pipe,$2), $3) }
  | expr T_LOGICAL_OR   expr { Binary($1,(Logical OrLog,  $2),$3) }
  | expr T_LOGICAL_AND  expr { Binary($1,(Logical AndLog, $2),$3) }
  | expr T_LOGICAL_XOR  expr { Binary($1,(Logical XorLog, $2),$3) }
