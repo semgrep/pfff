@@ -61,6 +61,9 @@ type token_kind =
    | Newline
    | Space
 
+(* note that those exceptions can be converted in Error_code.error with
+ * Error_code.try_with_exn_to_error()
+ *)
 (* see also Parsing.Parse_error and Failure "empty token" raised by Lexing *)
 exception Lexical_error of string * t
 (* better than Parsing.Parse_error, which does not have location information *)

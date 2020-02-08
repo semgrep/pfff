@@ -32,8 +32,8 @@ type _env = unit
 
 let empty_env () = ()
 
-exception ObsoleteConstruct of Cst_php.info
-exception TodoConstruct of string * Cst_php.info
+let error tok s =
+  raise (Parse_info.Ast_builder_error (s, tok))
 
 (* Whether or not we want to store position information in the Ast_simple
  * built here.
@@ -219,7 +219,7 @@ and stmt env st acc =
       A.Expr (A.Call (A.Id [A.builtin "echo", wrap tok],
                      [A.String (s, wrap tok)])) :: acc
   | Use (tok, _fn, _) ->
-      raise (TodoConstruct ("Use", tok))
+      error tok "TODO:Use"
   | Unset (tok, (_, lp, _), _e) ->
       let lp = comma_list lp in
       let lp = List.map (lvalue env) lp in
@@ -231,6 +231,8 @@ and stmt env st acc =
        * See 'i wiki/index.php/Pfff/Declare_strict' *)
       | (_,[Common.Left((Name(("strict",_)),(_,Sc(C(Int((("1"|"0"),_)))))))],_),
       SingleStmt(EmptyStmt(_))
+      | (_,[Common.Left((Name(("strict_types",_)),(_,Sc(C(Int((("1"|"0"),_)))))))],_),
+      SingleStmt(EmptyStmt(_))
       (* declare(ticks=1); can be skipped too.
        * http://www.php.net/manual/en/control-structures.declare.php#control-structures.declare.ticks
        *)
@@ -238,13 +240,13 @@ and stmt env st acc =
       SingleStmt(EmptyStmt(_))
       ->
         acc
-      |  _ -> raise (TodoConstruct ("Declare", tok))
+      |  _ -> error tok "TODO: declare"
       )
 
   | FuncDefNested fd -> A.FuncDef (func_def env fd) :: acc
   | ClassDefNested cd -> A.ClassDef (class_def env cd) :: acc
 
-  | IfColon (tok, _, _, _, _, _, _, _) -> raise (ObsoleteConstruct tok)
+  | IfColon (tok, _, _, _, _, _, _, _) -> error tok "Obsolete: IfColon"
 
 and if_elseif env (_, (_, e, _), st) acc =
   let e = expr env e in
@@ -366,7 +368,7 @@ and expr env = function
   | Cast ((c, _), e) ->
       A.Cast (c, expr env e)
   | CastUnset (tok, _) ->
-      raise (TodoConstruct ("expr CastUnset", tok))
+      error tok "TODO: CastUnset"
   | InstanceOf (e, _, cn) ->
       let e = expr env e in
       let cn = class_name_reference env cn in
@@ -883,7 +885,7 @@ and colon_stmt env = function
 
 and switch_case_list env = function
   | CaseList (_, _, cl, _) -> List.map (case env) cl
-  | CaseColonList (tok, _, _, _, _) -> raise (ObsoleteConstruct tok)
+  | CaseColonList (tok, _, _, _, _) -> error tok "Obsolete: CaseColonList"
 
 and case env = function
   | Case (_, e, _, stl) ->
@@ -943,7 +945,7 @@ and global_var env = function
   | GlobalDollar (tok, lv) ->
       A.Call (A.Id [(A.builtin "eval_var", wrap tok)], [lvalue env lv])
   | GlobalDollarExpr (tok, _) ->
-      raise (TodoConstruct ("GlobalDollarExpr", tok))
+      error tok "TODO: GlobalDollarExpr"
 
 and attributes env = function
   | None -> []

@@ -13,37 +13,20 @@ module Json_in = Json_io
 let test_parse_simple xs =
   let fullxs = Lib_parsing_php.find_source_files_of_dir_or_files xs in
   fullxs |> List.iter (fun file ->
-    try 
+   Error_code.try_with_print_exn_and_reraise file(fun () ->
       let ast = Parse_php.parse_program file in
       let _ast = Ast_php_build.program ast in
       ()
-    with exn ->
-      (match exn with
-      | Ast_php_build.TodoConstruct (_, tok)
-      | Ast_php_build.ObsoleteConstruct tok
-        ->
-        pr2 (Parse_info.error_message_info tok);
-
-      | _ -> raise exn
-      )
-  )
+  ))
 
 let test_dump_simple file =
-  try 
+  Error_code.try_with_print_exn_and_reraise file (fun () ->
     let ast = Parse_php.parse_program file in
     let ast = Ast_php_build.program ast in
     let v = Meta_ast_php.vof_program ast in
     let s = Ocaml.string_of_v v in
-    pr s
-  with exn ->
-    (match exn with
-    | Ast_php_build.TodoConstruct (_, tok)
-    | Ast_php_build.ObsoleteConstruct tok
-      ->
-        pr2 (Parse_info.error_message_info tok);
-        raise exn
-    | _ -> raise exn
-    )
+    pr s  
+  )
 
 let test_pp_simple file =
   let cst = Parse_php.parse_program file in
