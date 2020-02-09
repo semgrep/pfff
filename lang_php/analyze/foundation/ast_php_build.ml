@@ -898,7 +898,7 @@ and colon_stmt env = function
 
 and switch_case_list env = function
   | CaseList (_, _, cl, _) -> List.map (case env) cl
-  | CaseColonList (tok, _, _, _, _) -> error tok "Obsolete: CaseColonList"
+  | CaseColonList (_, _, cl, _, _) -> List.map (case env) cl
 
 and case env = function
   | Case (_, e, _, stl) ->

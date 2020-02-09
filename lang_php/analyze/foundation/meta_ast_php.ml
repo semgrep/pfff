@@ -252,7 +252,12 @@ and
 and vof_xhp_attr x = vof_expr x
 
 and vof_binaryOp = function
-  | _ -> raise Common.Todo
+ | BinaryConcat -> Ocaml.VSum ("BinaryConcat", [])
+ | Pipe  -> Ocaml.VSum ("BinaryConcat", [])
+ | CombinedComparison  -> Ocaml.VSum ("BinaryConcat", [])
+ | ArithOp v1 -> 
+      let v1 = Meta_ast_generic_common.vof_arithmetic_operator v1 in
+      Ocaml.VSum ("ArithOp", [v1])
 
 and vof_unaryOp = Meta_ast_generic_common.vof_arithmetic_operator
 
