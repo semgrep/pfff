@@ -10,14 +10,33 @@ module Json_in = Json_io
 (*****************************************************************************)
 (* Simple AST *)
 (*****************************************************************************)
-let test_parse_simple xs =
-  let fullxs = Lib_parsing_php.find_source_files_of_dir_or_files xs in
-  fullxs |> List.iter (fun file ->
-   Error_code.try_with_print_exn_and_reraise file(fun () ->
-      let ast = Parse_php.parse_program file in
-      let _ast = Ast_php_build.program ast in
+(* mostly a copy paste of Test_parsing_php.parse_php *)
+let test_parse_simple xs  =
+  let xs = List.map Common.fullpath xs in
+  let fullxs = 
+    Lib_parsing_php.find_source_files_of_dir_or_files xs
+    |> Skip_code.filter_files_if_skip_list ~root:xs
+  in
+
+  let stat_list = ref [] in
+  fullxs |> Console.progress (fun k -> List.iter (fun file -> 
+     k ();
+    let ((cst, _toks), stat) = 
+      Common.save_excursion Flag_parsing.error_recovery true (fun () ->
+        Parse_php.parse file 
+      )
+    in
+    Common.push stat stat_list;
+    if stat.Parse_info.bad = 0
+    then 
+      let _ast = Ast_php_build.program cst in
       ()
-  ))
+
+  ));
+
+  Parse_info.print_parsing_stat_list !stat_list;
+  ()
+
 
 let test_dump_simple file =
   Error_code.try_with_print_exn_and_reraise file (fun () ->

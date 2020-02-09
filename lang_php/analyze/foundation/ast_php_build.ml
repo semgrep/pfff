@@ -179,6 +179,11 @@ and stmt env st acc =
       let st = A.Block (stmt env st []) in
       let il = List.fold_right (if_elseif env) il (if_else env io) in
       A.If (e, st, il) :: acc
+  | IfColon (_tok, (_, e,_), _, st, il, io, _, _) -> 
+      let e = expr env e in
+      let st = A.Block (List.fold_right (stmt_and_def env) st []) in
+      let il = List.fold_right (new_elseif env) il (new_else env io) in
+      A.If (e, st, il) :: acc
   | While (_, (_, e, _), cst) ->
       let cst = colon_stmt env cst in
       A.While (expr env e, cst) :: acc
@@ -246,7 +251,6 @@ and stmt env st acc =
   | FuncDefNested fd -> A.FuncDef (func_def env fd) :: acc
   | ClassDefNested cd -> A.ClassDef (class_def env cd) :: acc
 
-  | IfColon (tok, _, _, _, _, _, _, _) -> error tok "Obsolete: IfColon"
 
 and if_elseif env (_, (_, e, _), st) acc =
   let e = expr env e in
@@ -261,6 +265,15 @@ and if_else env = function
       | _l -> assert false
       )
   | Some (_, st) -> A.Block (stmt env st [])
+
+and new_elseif env (_, (_, e, _), _, stl) acc =
+  let e = expr env e in
+  let st = A.Block (List.fold_right (stmt_and_def env) stl []) in
+  A.If (e, st, acc)
+
+and new_else env = function
+  | None -> noop
+  | Some (_, _, st) -> A.Block (List.fold_right (stmt_and_def env) st [])
 
 and stmt_and_def env st acc = stmt env st acc
 
