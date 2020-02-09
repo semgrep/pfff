@@ -230,8 +230,8 @@ and stmt env st acc =
       let lp = List.map (lvalue env) lp in
       A.Expr (A.Call (A.Id [A.builtin "unset", wrap tok], lp)) :: acc
   (* http://php.net/manual/en/control-structures.declare.php *)
-  | Declare (tok, args, stmt) ->
-      (match args, stmt with
+  | Declare (tok, args, colon_st) ->
+      (match args, colon_st with
       (* declare(strict=1); (or 0) can be skipped,
        * See 'i wiki/index.php/Pfff/Declare_strict' *)
       | (_,[Common.Left((Name(("strict",_)),(_,Sc(C(Int((("1"|"0"),_)))))))],_),
@@ -241,11 +241,14 @@ and stmt env st acc =
       (* declare(ticks=1); can be skipped too.
        * http://www.php.net/manual/en/control-structures.declare.php#control-structures.declare.ticks
        *)
-      | (_,[Common.Left((Name(("ticks",_)), (_,Sc(C(Int((("1"),_)))))))],_),
-      SingleStmt(EmptyStmt(_))
+      -> acc
+
+      | (_,[Common.Left((Name(("ticks",_)), (_,Sc(C(Int((("1"),_)))))))],_), _
       ->
-        acc
-      |  _ -> error tok "TODO: declare"
+       let cst = colon_stmt env colon_st in
+       cst @ acc
+
+     |  _ -> error tok "TODO: declare"
       )
 
   | FuncDefNested fd -> A.FuncDef (func_def env fd) :: acc
@@ -957,8 +960,9 @@ and global_var env = function
   (* this is used only once in our codebase, and it should not ... *)
   | GlobalDollar (tok, lv) ->
       A.Call (A.Id [(A.builtin "eval_var", wrap tok)], [lvalue env lv])
-  | GlobalDollarExpr (tok, _) ->
-      error tok "TODO: GlobalDollarExpr"
+  | GlobalDollarExpr (tok, (_, e, _)) ->
+      A.Call (A.Id [(A.builtin "eval_var", wrap tok)], [expr env e])
+
 
 and attributes env = function
   | None -> []
