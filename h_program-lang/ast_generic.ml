@@ -819,7 +819,7 @@ and directive =
   | OI_Export 
   | OI_ImportCss | OI_ImportEffect
   (* C/PHP *)
-  (* TODO: Pragma Declare *)
+  (* TODO: Pragma, Declare *)
 
 (*****************************************************************************)
 (* Toplevel *)
