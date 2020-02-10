@@ -405,7 +405,8 @@ let map_of_float x = x
 let map_of_char x = x
 let map_of_string (s:string) = s
 
-let map_of_ref aref x = x (* dont go into ref *)
+let map_of_ref f aref = ref (f !aref)
+let map_of_ref_do_nothing_share_ref _f x = x (* dont go into ref *)
 let map_of_option v_of_a v = 
   match v with
   | None -> None
