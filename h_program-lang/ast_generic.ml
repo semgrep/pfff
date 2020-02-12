@@ -235,9 +235,10 @@ and expr =
 
   (* can be used for Record, Class, or Module access depending on expr.
    * In the last case it should be rewritten as a Name with a qualifier though.
+   * TODO: change ident -> name, and get rid of OE_FieldAccessQualified.
    *)
-  | DotAccess of expr * tok (* ., ::, ->, # *) * ident
-  (* in Js this is used for ObjAccess with a computed field name *)
+  | DotAccess of expr * tok (* ., ::, ->, # *) * ident 
+  (* in Js this is used for DynamicAccess with a computed field name *)
   | ArrayAccess of expr * expr
   (* could also use ArrayAccess with a Tuple rhs, or use a special *)
   | SliceAccess of expr * 
@@ -373,7 +374,7 @@ and expr =
     (* PHP *)
     | OE_Unpack
     (* OCaml *)
-    | OE_FieldAccessQualified | OE_RecordWith 
+    | OE_FieldAccessQualified (* and PHP *) | OE_RecordWith 
     | OE_StmtExpr (* OCaml has just expressions, no statements *)
     (* Go *)
     | OE_Send | OE_Recv

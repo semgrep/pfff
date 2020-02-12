@@ -160,14 +160,14 @@ and vof_expr =
   | String v1 ->
       let v1 = vof_wrapped_string v1 in Ocaml.VSum (("String", [ v1 ]))
   | Guil v1 ->
-      let v1 = Ocaml.vof_list vof_encaps v1 in Ocaml.VSum (("Guil", [ v1 ]))
+      let v1 = vof_bracket (Ocaml.vof_list vof_encaps) v1 in 
+      Ocaml.VSum (("Guil", [ v1 ]))
   | Id v1 ->
       let v1 = vof_name v1 in Ocaml.VSum (("Id", [ v1 ]))
+  | IdSpecial v1 ->
+      let v1 = vof_wrap vof_special v1 in Ocaml.VSum (("IdSpecial", [ v1 ]))
   | Var v1 ->
       let v1 = vof_var v1 in Ocaml.VSum (("Var", [ v1 ]))
-  | This name ->
-      let v1 = vof_wrapped_string name in
-      Ocaml.VSum (("This", [ v1 ]))
   | Array_get ((v1, v2)) ->
       let v1 = vof_expr v1
       and v2 = Ocaml.vof_option vof_expr v2
@@ -249,7 +249,7 @@ and vof_expr =
       and v3 = vof_expr v3
       in Ocaml.VSum (("CondExpr", [ v1; v2; v3 ]))
   | Cast ((v1, v2)) ->
-      let v1 = Ast_php.vof_ptype v1
+      let v1 = vof_wrap Ast_php.vof_ptype v1
       and v2 = vof_expr v2
       in Ocaml.VSum (("Cast", [ v1; v2 ]))
   | Lambda v1 -> let v1 = vof_func_def v1 in Ocaml.VSum (("Lambda", [ v1 ]))
@@ -284,6 +284,10 @@ and
   let arg = vof_ident v_xml_tag in
   let bnd = ("xml_tag", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
 and vof_xhp_attr x = vof_expr x
+
+and vof_special = function
+  | This -> Ocaml.VSum (("This", [ ]))
+  | Eval -> Ocaml.VSum (("Eval", [ ]))
 
 and vof_binaryOp = function
  | BinaryConcat -> Ocaml.VSum ("BinaryConcat", [])

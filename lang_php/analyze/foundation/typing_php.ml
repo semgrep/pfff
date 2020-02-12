@@ -354,6 +354,8 @@ and expr env e =
 
 and expr_ env _lv = function
 
+  | IdSpecial (Eval, _) -> raise Todo
+
   | Id [(("true" | "false"),_)] -> bool
   | Int _ -> int
   | Double _ -> float
@@ -366,7 +368,7 @@ and expr_ env _lv = function
       | _ when String.contains s '<' -> thtml
       | _                            -> Tsum [Tsstring (SSet.singleton s)]
       )
-  | Guil el ->
+  | Guil (_, el, _) ->
       List.iter (encaps env) el;
       string
 
@@ -434,7 +436,7 @@ and expr_ env _lv = function
           then raise (UnknownEntity s);
           any
       )
-  | This name -> expr env (Var (name))
+  | IdSpecial (This, tok) -> let name = "$this", tok in expr env (Var (name))
 
   (*Array_get returns the type of the values of the array*)
   (* Array access without a key *)
@@ -680,7 +682,8 @@ and array_declaration env id pi = function
       AEnv.set env id aa;
       t
 
-and ptype _env = function
+and ptype _env (x, _tok) =
+  match x with
   | Cst_php.BoolTy -> bool
   | Cst_php.IntTy -> int
   | Cst_php.DoubleTy -> float
@@ -729,7 +732,7 @@ and xml env x =
   List.iter (xhp env) x.xml_body
 
 and xhp_attr env = function
-  | Guil el -> List.iter (encaps env) el
+  | Guil (_, el, _) -> List.iter (encaps env) el
   | e ->
       let t = expr env e in
       ignore (Unify.unify env t string)

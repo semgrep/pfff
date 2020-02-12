@@ -514,8 +514,8 @@ and expr_ env heap x =
    * todo: fix Taint.fold_slist to not return a
    * a 'Vabstr Tstring' but instead a precise 'Vstring xxx'
    *)
-  | Guil [String (s,_)] -> heap, Vstring s
-  | Guil el ->
+  | Guil (_, [String (s,_)], _) -> heap, Vstring s
+  | Guil (_, el, _) ->
       let heap, vl = Utils.lfold (encaps env) heap el in
       let heap, vl = Utils.lfold Ptr.get heap vl in
       let v = Taint.fold_slist vl in
@@ -679,8 +679,9 @@ and expr_ env heap x =
       (* todo? could try to process its body? return a Vfun ? *)
       if !strict then failwith "todo: handle Lambda";
       heap, Vany
+  | IdSpecial (Eval, _) -> raise Todo
   | Array_get _ | Class_get (_, _, _) | Obj_get (_, _, _)
-  | Var _ | This _ as lv ->
+  | Var _ | (IdSpecial (This, _)) as lv ->
       (* The lvalue will contain the pointer to pointer, e.g. &2{&1{...}}
        * so someone can modify it. See also assign() below.
        * But in an expr context, we actually want the value, hence
@@ -730,7 +731,7 @@ and unaryOp uop v =
      |G.And|G.Or|G.Xor|G.Eq|G.NotEq|G.PhysEq|G.NotPhysEq
      |G.Lt|G.LtE|G.Gt|G.GtE),_) -> raise Impossible
 
-and cast _env _heap ty v =
+and cast _env _heap (ty, _) v =
   match ty, v with
   | Cst_php.BoolTy, (Vbool _ | Vabstr Tbool) -> v
   | Cst_php.IntTy, (Vint _ | Vabstr Tint) -> v
@@ -770,11 +771,12 @@ and lvalue env heap x =
   | Var (s,_) ->
       Var.get env heap s
 
-  | This name ->
+  | IdSpecial (This, tok) ->
       (* $this is present in env.globals (see make_method())
        * todo: so with this actually look for the value of $this in
        * env.globals??
       *)
+      let name = "$this", tok in
       lvalue env heap (Var (name))
 
   | Array_get (e, k) ->
@@ -1173,7 +1175,7 @@ and xhp env heap x =
 
 and xhp_attr env heap x =
   match x with
-  | Guil el ->
+  | Guil (_, el, _) ->
       let heap, vl = Utils.lfold (encaps env) heap el in
 
       let heap, vl = Utils.lfold Ptr.get heap vl in

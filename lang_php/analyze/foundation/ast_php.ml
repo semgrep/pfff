@@ -122,6 +122,7 @@ type 'a bracket = tok * 'a * tok
 
 type ident = string wrap
  (* with tarzan *)
+(* the string contains the $ prefix *)
 type var = string wrap
  (* with tarzan *)
 
@@ -215,7 +216,8 @@ and expr =
    * todo: For field name, if in the code they are referenced like $this->fld,
    * we should prepend a $ to fld to match their definition.
    *)
-  | Id of name
+  | Id of name (* less: should be renamed Name *)
+  | IdSpecial of special wrap
 
    (* Var used to be merged with Id. But then we were doing lots of
     * 'when Ast.is_variable name' so maybe better to have Id and Var
@@ -227,8 +229,6 @@ and expr =
   (* when None it means add to the end when used in lvalue position *)
   | Array_get of expr * expr option
 
-  (* often transformed in Var "$this" in the analysis *)
-  | This of string wrap
   (* Unified method/field access.
    * ex: $o->foo() ==> Call(Obj_get(Var "$o", Id "foo"), [])
    * ex: A::foo()  ==> Call(Class_get(Id "A", Id "foo"), [])
@@ -269,17 +269,23 @@ and expr =
   | Postfix of Ast_generic.incr_decr wrap * expr
   | Binop of expr * binaryOp wrap * expr
   | Unop of unaryOp wrap * expr
-  | Guil of expr list
+  | Guil of expr list bracket
 
   | ConsArray of array_value list bracket
   | Collection of name * array_value list bracket
   | Xhp of xml
 
   | CondExpr of expr * expr * expr
-  | Cast of Cst_php.ptype * expr
+  | Cast of Cst_php.ptype wrap * expr
 
   (* yeah! PHP 5.3 is becoming a real language *)
   | Lambda of func_def
+
+  and special =
+  (* often transformed in Var "$this" in the analysis *)
+  | This
+  (* take many different forms in PHP, eval(), call_user_func, ${}, etc. *)
+  | Eval
   
   and binaryOp = 
    | BinaryConcat 

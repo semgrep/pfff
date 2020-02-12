@@ -58,6 +58,13 @@ let var v = wrap string v
 
 let qualified_ident v = list ident v
 
+let name_of_qualified_ident xs =
+  match List.rev (qualified_ident xs) with
+  | [] -> raise Impossible
+  | [x] -> x, { G.name_qualifier = None; name_typeargs = None }
+  | x::y::xs -> x, { G.name_qualifier = Some (List.rev (y::xs)); 
+                       name_typeargs = None }
+
 let name v = qualified_ident v
 
 let rec fixOp x = x
@@ -78,14 +85,15 @@ let modifierbis =
   | Final -> G.Final
   | Async -> G.Async
 
-let ptype =
-  function
-  | BoolTy -> ()
-  | IntTy -> ()
-  | DoubleTy -> ()
-  | StringTy -> ()
-  | ArrayTy -> ()
-  | ObjectTy -> ()
+let ptype (x, t) =
+  match x with
+  | BoolTy -> G.TyBuiltin ("bool", t)
+  | IntTy -> G.TyBuiltin ("int", t)
+  | DoubleTy -> G.TyBuiltin ("double", t)
+  | StringTy -> G.TyBuiltin ("string", t)
+  (* TODO: TyArray of gen? *)
+  | ArrayTy -> G.TyBuiltin ("array", t)
+  | ObjectTy -> G.TyBuiltin ("object", t)
 
 let rec stmt =
   function
@@ -147,68 +155,113 @@ and finally v = list stmt v
 
 and expr =
   function
-  | Int v1 -> let v1 = string v1 in ()
-  | Double v1 -> let v1 = string v1 in ()
-  | String v1 -> let v1 = wrap string v1 in ()
-  | Id v1 -> let v1 = name v1 in ()
-  | Var v1 -> let v1 = var v1 in ()
+  | Int v1 -> let v1 = wrap id v1 in 
+      G.L (G.Int v1)
+  | Double v1 -> let v1 = wrap id v1 in 
+      G.L (G.Float v1)
+  | String v1 -> let v1 = wrap string v1 in 
+      G.L (G.String v1)
+  | Id v1 -> let v1 = name_of_qualified_ident v1 in 
+      G.Name (v1, G.empty_id_info ())
+  | IdSpecial v1 ->
+      let v1 = wrap special v1 in
+      G.IdSpecial (v1)
+  (* unify Id and Var, finally *)      
+  | Var v1 -> let v1 = var v1 in 
+      G.Name ((v1, G.empty_name_info), G.empty_id_info())
   | Array_get ((v1, v2)) ->
-      let v1 = expr v1 and v2 = option expr v2 in ()
-  | This v1 -> let v1 = wrap string v1 in ()
-  | Obj_get ((v1, t, v2)) -> let v1 = expr v1 and v2 = expr v2 in ()
-  | Class_get ((v1, t, v2)) -> let v1 = expr v1 and v2 = expr v2 in ()
-  | New ((t, v1, v2)) -> let v1 = expr v1 and v2 = list expr v2 in ()
-  | InstanceOf ((t, v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in ()
+      let v1 = expr v1 and v2 = option expr v2 in 
+      raise Todo
+      
+  | Obj_get ((v1, t, Id [v2])) -> 
+      let v1 = expr v1 and v2 = ident v2 in
+      G.DotAccess (v1, t, v2)
+  | Obj_get ((v1, t, v2)) -> 
+      let v1 = expr v1 and v2 = expr v2 in
+      raise Todo
+  | Class_get ((v1, t, Id [v2])) -> let v1 = expr v1 and v2 = ident v2 in
+      G.DotAccess (v1, t, v2)
+  | Class_get ((v1, t, v2)) -> let v1 = expr v1 and v2 = expr v2 in
+      raise Todo
+  | New ((t, v1, v2)) -> let v1 = expr v1 and v2 = list expr v2 in 
+      G.Call (G.IdSpecial(New, t), (v1::v2) |> List.map G.expr_to_arg)
+  | InstanceOf ((t, v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in
+      G.Call (G.IdSpecial(Instanceof, t), ([v1;v2]) |> List.map G.expr_to_arg)
+      
   | Assign ((v1, t, v3)) ->
       let v1 = expr v1
       and v3 = expr v3
-      in ()
-  | AssignOp ((v1, (v2, t), v3)) ->
+      in 
+      G.Assign (v1, t, v3)
+  | AssignOp ((v1, v2, v3)) ->
       let v2 = binaryOp v2
       and v1 = expr v1
       and v3 = expr v3
-      in ()
-  | List v1 -> let v1 = bracket (list expr) v1 in ()
-  | Arrow ((v1, t, v2)) -> let v1 = expr v1 and v2 = expr v2 in ()
-  | Ref (t, v1) -> let v1 = expr v1 in ()
-  | Unpack v1 -> let v1 = expr v1 in ()
-  | Call ((v1, v2)) -> let v1 = expr v1 and v2 = list expr v2 in ()
-  | Infix ((v1, v2)) -> let v1 = fixOp v1 and v2 = expr v2 in ()
-  | Postfix ((v1, v2)) ->
-      let v1 = fixOp v1 and v2 = expr v2 in ()
+      in 
+      G.AssignOp (v1, v2, v3)
+  | List v1 -> let v1 = bracket (list expr) v1 in
+      G.Container(G.List, v1)
+  | Arrow ((v1, _t, v2)) -> let v1 = expr v1 and v2 = expr v2 in
+      G.Tuple [v1; v2]
+  | Ref (t, v1) -> let v1 = expr v1 in
+      G.Ref (t, v1)
+  | Unpack v1 -> let v1 = expr v1 in
+      G.OtherExpr(G.OE_Unpack, [G.E v1])
+  | Call ((v1, v2)) -> let v1 = expr v1 and v2 = list expr v2 in 
+      G.Call (v1, v2 |> List.map G.expr_to_arg)
+  | Infix (((v1, t), v2)) -> 
+      let v1 = fixOp v1 and v2 = expr v2 in 
+      G.Call (G.IdSpecial (G.IncrDecr (v1, G.Prefix), t), [G.Arg v2])
+  | Postfix (((v1, t), v2)) ->
+      let v1 = fixOp v1 and v2 = expr v2 in 
+      G.Call (G.IdSpecial (G.IncrDecr (v1, G.Postfix), t), [G.Arg v2])
   | Binop ((v1, v2, v3)) ->
       let v2 = binaryOp v2
       and v1 = expr v1
       and v3 = expr v3
-      in ()
-  | Unop ((v1, v2)) -> let v1 = unaryOp v1 and v2 = expr v2 in ()
-  | Guil v1 -> let v1 = list expr v1 in ()
-  | ConsArray v1 -> let v1 = bracket (list array_value) v1 in ()
+      in raise Todo
+  | Unop (((v1, t), v2)) -> let v1 = unaryOp v1 and v2 = expr v2 in 
+      G.Call (G.IdSpecial (G.ArithOp v1, t), [G.Arg v2])
+  | Guil (t, v1, _) -> let v1 = list expr v1 in
+      G.Call (G.IdSpecial (G.Concat, t), v1 |> List.map G.expr_to_arg)
+  | ConsArray v1 -> let v1 = bracket (list array_value) v1 in
+      G.Container (G.Array, v1)
   | Collection ((v1, v2)) ->
-      let v1 = name v1 and v2 = bracket (list array_value) v2 in ()
-  | Xhp v1 -> let v1 = xml v1 in ()
+      let v1 = name_of_qualified_ident v1 
+      and v2 = bracket (list array_value) v2 in 
+      G.Call (G.IdSpecial (G.New, fake "new"),
+        [G.Arg (G.Name (v1, G.empty_id_info()));
+         G.Arg (G.Container (G.Dict, v2))])
+  | Xhp v1 -> let v1 = xml v1 in 
+      G.Xml v1
   | CondExpr ((v1, v2, v3)) ->
-      let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in ()
-  | Cast ((v1, v2)) -> let v1 = ptype v1 and v2 = expr v2 in ()
-  | Lambda v1 -> let v1 = func_def v1 in ()
+      let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in
+      G.Conditional (v1, v2, v3)
+  | Cast ((v1, v2)) -> let v1 = ptype v1 and v2 = expr v2 in
+      G.Cast(v1, v2)
+  | Lambda v1 -> let v1 = func_def v1 in 
+      raise Todo
+
+and special = function
+  | This -> G.This
+  | Eval -> G.Eval
 
 and xhp =
   function
   | XhpText v1 -> let v1 = string v1 in ()
   | XhpExpr v1 -> let v1 = expr v1 in ()
   | XhpXml v1 -> let v1 = xml v1 in ()
-and
-  xml { xml_tag = xml_tag; xml_attrs = xml_attrs; xml_body = xml_body
-        } =
+and xml { xml_tag = xml_tag; xml_attrs = xml_attrs; xml_body = xml_body } =
   let arg = ident xml_tag in
   let arg =
     list (fun (v1, v2) -> let v1 = ident v1 and v2 = xhp_attr v2 in ())
       xml_attrs in
-  let arg = list xhp xml_body in ()
+  let arg = list xhp xml_body in 
+  raise Todo
 
-and xhp_attr v = expr v
-and foreach_pattern v = expr v
-and array_value v = expr v
+and xhp_attr v          = expr v
+and foreach_pattern v   = expr v
+and array_value v       = expr v
 and string_const_expr v = expr v
 
 and hint_type =
@@ -263,8 +316,8 @@ and function_kind =
   | AnonLambda -> ()
   | ShortLambda -> ()
   | Method -> ()
-and
-  parameter {
+
+and parameter {
                 p_type = p_type;
                 p_ref = p_ref;
                 p_name = p_name;
@@ -290,7 +343,7 @@ and enum_type { e_base = e_base; e_constraint = e_constraint } =
   let arg = hint_type e_base in
   let arg = option hint_type e_constraint in ()
 
-and  class_def {
+and class_def {
                 c_name = c_name;
                 c_kind = c_kind;
                 c_extends = c_extends;

@@ -949,9 +949,9 @@ and expr env x =
     | Obj_get (e1, _, Id name2) ->
         (match e1 with
         (* handle easy case *)
-        | This ((_x, tokopt)) ->
+        | IdSpecial (This, tok) ->
             expr env
-                (Call (Class_get (Id[ (env.cur.self, tokopt)], tokopt, Id name2), es));
+                (Call (Class_get (Id[ (env.cur.self, tok)], tok, Id name2), es));
             env.phase_dispatch |> Common.push (env.cur, name2);
         (* need class analysis ... *)
         | _ ->
@@ -1008,9 +1008,9 @@ and expr env x =
   | Obj_get (e1, tok, e2) ->
       (match e1, e2 with
       (* handle easy case *)
-      | This (_, tokopt), Id [name2] ->
+      | IdSpecial (This, tokthis), Id [name2] ->
           let (s2, tok2) = name2 in
-          expr env (Class_get (Id[ (env.cur.self, tokopt)], tok, Var("$"^s2, tok2)))
+          expr env (Class_get (Id[ (env.cur.self, tokthis)], tok, Var("$"^s2, tok2)))
       | _, Id name2  ->
           let tok = Ast.tok_of_name name2 in
           env.stats.G.field_access |> Common.push (tok, false);
@@ -1042,13 +1042,13 @@ and expr env x =
   | Assign (e1, _, e2) -> exprl env [e1;e2]
   | AssignOp (e1, _, e2) -> exprl env [e1;e2]
 
-  | This _ -> ()
+  | IdSpecial (_, _) -> ()
   | Array_get (e, eopt) ->
       expr env e;
       Common2.opt (expr env) eopt
   | Infix (_, e) | Postfix (_, e) | Unop (_, e) -> expr env e
   | Binop (e1, _, e2) -> exprl env [e1; e2]
-  | Guil xs -> exprl env xs
+  | Guil (_, xs, _) -> exprl env xs
   | Ref (_, e) | Unpack e -> expr env e
   | ConsArray (_, xs, _) -> array_valuel env xs
   | Collection (name, (_, xs, _)) ->

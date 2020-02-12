@@ -165,7 +165,7 @@ and identifier_ =
 
 
 
-
+(* name_of_qualified_ident *)
 and name v =
   let res = list1
     (fun (v1, v2) ->
@@ -175,10 +175,16 @@ and name v =
   in
   (match List.rev res with
   | [] -> raise Impossible (* list1 *)
-  | name::xs ->
+  | [name] -> 
         let info = { G.
             name_typeargs = None; (* could be v1TODO above *)
-            name_qualifier = Some (List.rev xs);
+            name_qualifier = None;
+          } in
+        (name, info)
+  | name::y::xs ->
+        let info = { G.
+            name_typeargs = None; (* could be v1TODO above *)
+            name_qualifier = Some (List.rev (y::xs));
           } in
         (name, info)
   )

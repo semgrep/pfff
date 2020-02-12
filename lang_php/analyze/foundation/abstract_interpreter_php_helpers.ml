@@ -536,7 +536,7 @@ module IsLvalue = struct
     match e with
     | Id _
     | Var _
-    | This _
+    | IdSpecial (This, _)
     | Infix _
     | Postfix _
     | Array_get _
@@ -551,6 +551,7 @@ module IsLvalue = struct
       | Xhp _|Ref _|Call (_, _)|Unop (_, _)|Binop (_, _, _)|Assign (_, _, _)
       | AssignOp _
       | Guil _|String _|Double _|Int _|Unpack _
+      | IdSpecial (Eval, _)
       ) ->
         false
 end

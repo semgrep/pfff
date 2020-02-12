@@ -281,7 +281,7 @@ let funcdef_of_call_or_new_opt env e =
        *
        * todo: special case also id(new ...)-> ?
        *)
-      | Obj_get (This _, _, Id [name2]) ->
+      | Obj_get (IdSpecial (This, _), _, Id [name2]) ->
           (match env.in_class with
           | Some name1 ->
               let aclass = A.str_of_ident name1 in
@@ -597,6 +597,7 @@ and foreach_pattern env pattern =
 (* ---------------------------------------------------------------------- *)
 and expr env e =
   match e with
+  | IdSpecial (Eval, _) -> raise Todo
   | Int _ | Double _ | String _ -> ()
 
   | Var name ->
@@ -814,7 +815,8 @@ and expr env e =
       )
 
 
-  | This name ->
+  | IdSpecial (This,tok) ->
+      let name = "$this", tok in
       (* when we do use($this) in closures, we create a fresh $this variable
        * with a refcount of 0, so we need to increment it here.
        *)
@@ -852,7 +854,7 @@ and expr env e =
 
   | Infix (_, e) | Postfix (_, e) | Unop (_, e) -> expr env e
   | Binop (e1, _, e2) -> exprl env [e1; e2]
-  | Guil xs -> exprl env xs
+  | Guil (_, xs, _) -> exprl env xs
 
   | Ref (_, e) | Unpack e -> expr env e
 

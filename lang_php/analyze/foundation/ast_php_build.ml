@@ -289,7 +289,7 @@ and expr env = function
   | Id n -> A.Id (name env n)
 
   | IdVar (dn, _scope) -> A.Var (dname dn)
-  | This tok -> A.This ("$this", wrap tok)
+  | This tok -> A.IdSpecial (A.This, tok)
 
   (* ($o->fn)(...) ==> call_user_func($o->fn, ...) *)
   | Call (ParenExpr(tok, ObjGet (e1, arrow, Id fld), _), (_lp, args, _rp)) ->
@@ -381,7 +381,7 @@ and expr env = function
       let e1 = lvalue env e1 in
       let e2 = expr env (New (new_tok, class_ref, args)) in
       A.Assign (e1, tokeq, A.Ref (tokref, e2))
-  | Cast ((c, _), e) ->
+  | Cast (c, e) ->
       A.Cast (c, expr env e)
   | CastUnset (tok, _) ->
       error tok "TODO: CastUnset"
@@ -408,9 +408,9 @@ and expr env = function
       A.Call (A.Id [A.builtin "at", wrap tok], [arg])
   | Print (tok, e) ->
       A.Call (A.Id [A.builtin "print", wrap tok], [expr env e])
-  | BackQuote (tok, el, _) ->
-      A.Call (A.Id [A.builtin "exec", wrap tok (* not really an exec token *)],
-             [A.Guil (List.map (encaps env) el)])
+  | BackQuote (t1, el, t2) ->
+      A.Call (A.Id [A.builtin "exec", wrap t1 (* not really an exec token *)],
+             [A.Guil (t1, List.map (encaps env) el, t2)])
   | Include (tok, e) ->
       A.Call (A.Id [A.builtin "include", wrap tok], [expr env e])
   | IncludeOnce (tok, e) ->
@@ -485,8 +485,8 @@ and unary_op = function
 
 and scalar env = function
   | C cst -> constant env cst
-  | Guil (_, el, _) -> A.Guil (List.map (encaps env) el)
-  | HereDoc (_, el, _) -> A.Guil (List.map (encaps env) el)
+  | Guil (t1, el, t2) -> A.Guil (t1, List.map (encaps env) el, t2)
+  | HereDoc (t1, el, t2) -> A.Guil (t1, List.map (encaps env) el, t2)
 
 and constant env = function
   | Int x -> A.Int x
@@ -804,7 +804,7 @@ and method_def env m =
       let (str_with_dollar, tok) = dname var in
       let str_without_dollar = Cst_php.str_of_dname var in
       A.Expr (
-        A.Assign (A.Obj_get(A.This ("$this", tok), fake ".",
+        A.Assign (A.Obj_get(A.IdSpecial(A.This,tok), fake ".",
                                   A.Id [str_without_dollar, tok]),
                   fake "=",
                   A.Var (str_with_dollar, tok)))
@@ -866,8 +866,8 @@ and xhp_attribute env ((n, tok), _, v) =
   (n, wrap tok), xhp_attr_value env v
 
 and xhp_attr_value env = function
-  | XhpAttrString (_, l, _) ->
-      A.Guil (List.map (encaps env) l)
+  | XhpAttrString (t1, l, t2) ->
+      A.Guil (t1, List.map (encaps env) l, t2)
   | XhpAttrExpr (_, e, _) ->
       (expr env e)
   | SgrepXhpAttrValueMvar _ ->
