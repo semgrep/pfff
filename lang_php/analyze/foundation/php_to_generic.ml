@@ -69,11 +69,7 @@ let name v = qualified_ident v
 
 let rec fixOp x = x
 and binaryOp x = raise Todo
-and arithOp x = raise Todo
-and logicalOp x = raise Todo
-and assignOp x = raise Todo
-and unaryOp x = raise Todo
-
+and unaryOp x = x
 
 let modifierbis =
   function
@@ -169,10 +165,12 @@ and expr =
   (* unify Id and Var, finally *)      
   | Var v1 -> let v1 = var v1 in 
       G.Name ((v1, G.empty_name_info), G.empty_id_info())
-  | Array_get ((v1, v2)) ->
-      let v1 = expr v1 and v2 = option expr v2 in 
+  | Array_get ((v1, Some v2)) ->
+      let v1 = expr v1 and v2 = expr v2 in 
+      G.ArrayAccess (v1, v2)
+  | Array_get ((v1, None)) ->
+      let v1 = expr v1 in
       raise Todo
-      
   | Obj_get ((v1, t, Id [v2])) -> 
       let v1 = expr v1 and v2 = ident v2 in
       G.DotAccess (v1, t, G.FId v2)
@@ -187,7 +185,6 @@ and expr =
       G.Call (G.IdSpecial(New, t), (v1::v2) |> List.map G.expr_to_arg)
   | InstanceOf ((t, v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in
       G.Call (G.IdSpecial(Instanceof, t), ([v1;v2]) |> List.map G.expr_to_arg)
-      
   | Assign ((v1, t, v3)) ->
       let v1 = expr v1
       and v3 = expr v3
@@ -410,8 +407,8 @@ and program v =
 
 let any =
   function
-  | Program v1 -> let v1 = program v1 in ()
-  | Stmt v1 -> let v1 = stmt v1 in ()
-  | Expr2 v1 -> let v1 = expr v1 in ()
-  | Param v1 -> let v1 = parameter v1 in ()
+  | Program v1 -> let v1 = program v1 in G.Pr v1
+  | Stmt v1 -> let v1 = stmt v1 in raise Todo
+  | Expr2 v1 -> let v1 = expr v1 in G.E v1
+  | Param v1 -> let v1 = parameter v1 in raise Todo
 

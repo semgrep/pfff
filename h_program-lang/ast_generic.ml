@@ -237,7 +237,7 @@ and expr =
    * In the last case it should be rewritten as a Name with a qualifier though.
    *)
   | DotAccess of expr * tok (* ., ::, ->, # *) * field_ident 
-  (* in Js this is used for DynamicAccess with a computed field name *)
+  (* in Js ArrayAccess is also abused to perform DotAccess (..., FDynamic) *)
   | ArrayAccess of expr * expr
   (* could also use ArrayAccess with a Tuple rhs, or use a special *)
   | SliceAccess of expr * 
@@ -275,7 +275,7 @@ and expr =
 
   and field_ident =
     | FId of ident
-    | FName of name (* OCaml/PHP *)
+    | FName of name (* OCaml *)
     | FDynamic of expr
 
   and container_operator = 
