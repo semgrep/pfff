@@ -70,13 +70,13 @@ and unaryOp x = raise Todo
 
 let modifierbis =
   function
-  | Public -> ()
-  | Private -> ()
-  | Protected -> ()
-  | Static -> ()
-  | Abstract -> ()
-  | Final -> ()
-  | Async -> ()
+  | Public -> G.Public
+  | Private -> G.Private
+  | Protected -> G.Protected
+  | Static -> G.Static
+  | Abstract -> G.Abstract
+  | Final -> G.Final
+  | Async -> G.Async
 
 let ptype =
   function
@@ -116,6 +116,7 @@ let rec stmt =
       and v2 = list catch v2
       and v3 = list finally v3
       in ()
+
   | ClassDef v1 -> let v1 = class_def v1 in ()
   | FuncDef v1 -> let v1 = func_def v1 in ()
   | ConstantDef v1 -> let v1 = constant_def v1 in ()
@@ -124,6 +125,7 @@ let rec stmt =
       let v1 = qualified_ident v1 and v2 = list stmt v2 in ()
   | NamespaceUse ((v1, v2)) ->
       let v1 = qualified_ident v1 and v2 = option ident v2 in ()
+
   | StaticVars (t, v1) ->
       let v1 =
         list
@@ -189,6 +191,7 @@ and expr =
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in ()
   | Cast ((v1, v2)) -> let v1 = ptype v1 and v2 = expr v2 in ()
   | Lambda v1 -> let v1 = func_def v1 in ()
+
 and xhp =
   function
   | XhpText v1 -> let v1 = string v1 in ()
@@ -202,10 +205,12 @@ and
     list (fun (v1, v2) -> let v1 = ident v1 and v2 = xhp_attr v2 in ())
       xml_attrs in
   let arg = list xhp xml_body in ()
+
 and xhp_attr v = expr v
 and foreach_pattern v = expr v
 and array_value v = expr v
 and string_const_expr v = expr v
+
 and hint_type =
   function
   | Hint v1 -> let v1 = name v1 in ()
@@ -227,9 +232,10 @@ and hint_type =
          | (v1, v2) -> let v1 = hint_type v1 and v2 = hint_type v2 in ())
       in ()
   | HintVariadic v1 -> let v1 = option hint_type v1 in ()
+
 and class_name v = hint_type v
-and
-  func_def {
+
+and func_def {
                f_name = f_name;
                f_kind = f_kind;
                f_params = f_params;
@@ -272,15 +278,19 @@ and
   let arg = option expr p_default in
   let arg = list attribute p_attrs in
   let arg = bool p_variadic in ()
+
 and modifier v = wrap modifierbis v
+
 and attribute v = expr v
+
 and constant_def { cst_name = cst_name; cst_body = cst_body } =
   let arg = ident cst_name in let arg = option expr cst_body in ()
+
 and enum_type { e_base = e_base; e_constraint = e_constraint } =
   let arg = hint_type e_base in
   let arg = option hint_type e_constraint in ()
-and
-  class_def {
+
+and  class_def {
                 c_name = c_name;
                 c_kind = c_kind;
                 c_extends = c_extends;
@@ -306,6 +316,7 @@ and
   let arg = list constant_def c_constants in
   let arg = list class_var c_variables in
   let arg = list method_def c_methods in ()
+
 and class_kind =
   function
   | ClassRegular -> ()
@@ -315,9 +326,10 @@ and class_kind =
   | Interface -> ()
   | Trait -> ()
   | Enum -> ()
+
 and xhp_field (v1, v2) = let v1 = class_var v1 and v2 = bool v2 in ()
-and
-  class_var {
+
+and class_var {
                 cv_name = cname;
                 cv_type = ctype;
                 cv_value = cvalue;
@@ -327,7 +339,9 @@ and
   let arg = option hint_type ctype in
   let arg = option expr cvalue in
   let arg = list modifier cmodifiers in ()
+
 and method_def v = func_def v
+
 and type_def { t_name = t_name; t_kind = t_kind } =
   let arg = ident t_name in let arg = type_def_kind t_kind in ()
 and type_def_kind =
@@ -341,11 +355,10 @@ and program v =
   raise Todo
 
 
-(*
 let any =
   function
   | Program v1 -> let v1 = program v1 in ()
   | Stmt v1 -> let v1 = stmt v1 in ()
   | Expr2 v1 -> let v1 = expr v1 in ()
   | Param v1 -> let v1 = parameter v1 in ()
-*)
+
