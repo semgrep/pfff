@@ -166,7 +166,7 @@ and expr =
       G.ArrayAccess (v1, v2) 
   | RecordPtAccess ((v1, t, v2)) -> 
       let v1 = expr v1 and t = info t and v2 = name v2 in
-      G.DotAccess (G.DeRef (t, v1), t, v2)
+      G.DotAccess (G.DeRef (t, v1), t, G.FId v2)
   | Cast ((v1, v2)) -> let v1 = type_ v1 and v2 = expr v2 in
       G.Cast (v1, v2)
   | Postfix ((v1, (v2, v3))) ->

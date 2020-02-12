@@ -160,7 +160,7 @@ and v_expr x =
       in ()
   | LetPattern ((v1, v2)) -> let v1 = v_pattern v1 and v2 = v_expr v2 in ()
   | DotAccess ((v1, t, v2)) -> 
-        let v1 = v_expr v1 and t = v_tok t and v2 = v_ident v2 in ()
+        let v1 = v_expr v1 and t = v_tok t and v2 = v_field_ident v2 in ()
   | ArrayAccess ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_expr v2 in ()
   | SliceAccess ((v1, v2, v3, v4)) -> 
         let v1 = v_expr v1 
@@ -198,6 +198,10 @@ and v_expr x =
   in
   vin.kexpr (k, all_functions) x
 
+and v_field_ident = function
+ | FId id -> v_ident id
+ | FName n -> v_name n
+ | FDynamic e -> v_expr e
 
 and v_literal =
   function

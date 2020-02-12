@@ -154,7 +154,7 @@ let rec expr (x: expr) =
       and t = info t 
       and v2 = name v2 
       and _v3TODO = expr_context v3 in 
-      G.DotAccess (v1, t, v2)
+      G.DotAccess (v1, t, G.FId v2)
 
   | DictOrSet (CompList v) -> 
       let v = bracket (list dictorset_elt) v in 

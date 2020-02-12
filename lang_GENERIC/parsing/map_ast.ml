@@ -154,7 +154,7 @@ and map_expr x =
   | LetPattern ((v1, v2)) ->
       let v1 = map_pattern v1 and v2 = map_expr v2 in LetPattern ((v1, v2))
   | DotAccess ((v1, t, v2)) ->
-      let v1 = map_expr v1 and t = map_tok t and v2 = map_ident v2 in
+      let v1 = map_expr v1 and t = map_tok t and v2 = map_field_ident v2 in
       DotAccess ((v1, t, v2))
   | ArrayAccess ((v1, v2)) ->
       let v1 = map_expr v1 and v2 = map_expr v2 in ArrayAccess ((v1, v2))
@@ -203,6 +203,11 @@ and map_expr x =
       in OtherExpr ((v1, v2))
   in
   vin.kexpr (k, all_functions) x
+
+and map_field_ident = function
+ | FId v1 -> let v1 = map_ident v1 in FId v1
+ | FName v1 -> let v1 = map_name v1 in FName v1
+ | FDynamic v1 -> let v1 = map_expr v1 in FDynamic v1
 
 and map_literal =
   function

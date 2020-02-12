@@ -261,7 +261,7 @@ and expr e =
   | Call ((v1, v2)) -> let v1 = expr v1 and v2 = arguments v2 in
       G.Call (v1, v2)
   | Dot ((v1, t, v2)) -> let v1 = expr v1 and t = info t and v2 = ident v2 in 
-      G.DotAccess (v1, t, v2)
+      G.DotAccess (v1, t, G.FId v2)
   | ArrayAccess ((v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in
       G.ArrayAccess (v1, v2)
   | Postfix ((v1, (v2, tok))) -> let v1 = expr v1 and v2 = fix_op v2 in

@@ -121,7 +121,7 @@ and vof_expr =
   | DotAccess ((v1, t, v2)) ->
       let v1 = vof_expr v1
       and t = vof_tok t
-      and v2 = vof_ident v2
+      and v2 = vof_field_ident v2
       in Ocaml.VSum (("DotAccess", [ v1; t; v2 ]))
   | ArrayAccess ((v1, v2)) ->
       let v1 = vof_expr v1
@@ -172,6 +172,12 @@ and vof_expr =
       let v1 = vof_other_expr_operator v1
       and v2 = Ocaml.vof_list vof_any v2
       in Ocaml.VSum (("OtherExpr", [ v1; v2 ]))
+
+and vof_field_ident = function
+ | FId (v1) -> let v1 = vof_ident v1 in Ocaml.VSum (("FId", [v1]))
+ | FName (v1) -> let v1 = vof_name v1 in Ocaml.VSum (("FName", [v1]))
+ | FDynamic (v1) -> let v1 = vof_expr v1 in Ocaml.VSum (("FDynamic", [v1]))
+
 and vof_literal =
   function
   | Unit v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Unit", [ v1 ]))
@@ -299,7 +305,6 @@ and vof_other_expr_operator =
   | OE_Encaps -> Ocaml.VSum (("OE_Encaps", []))
   | OE_Require -> Ocaml.VSum (("OE_Require", []))
   | OE_UseStrict -> Ocaml.VSum (("OE_UseStrict", []))
-  | OE_ObjAccess_PN_Computed -> Ocaml.VSum (("OE_ObjAccess_PN_Computed", []))
   | OE_Is -> Ocaml.VSum (("OE_Is", []))
   | OE_IsNot -> Ocaml.VSum (("OE_IsNot", []))
   | OE_In -> Ocaml.VSum (("OE_In", []))
@@ -317,7 +322,7 @@ and vof_other_expr_operator =
   | OE_GetRefLabel -> Ocaml.VSum (("OE_GetRefLabel", []))
   | OE_ArrayInitDesignator -> Ocaml.VSum (("OE_ArrayInitDesignator", []))
   | OE_Unpack -> Ocaml.VSum (("OE_Unpack", []))
-  | OE_FieldAccessQualified -> Ocaml.VSum (("OE_FieldAccessQualified", []))
+  | OE_RecordFieldName -> Ocaml.VSum (("OE_RecordFieldName", []))
   | OE_RecordWith -> Ocaml.VSum (("OE_RecordWith", []))
   
 and vof_type_ =

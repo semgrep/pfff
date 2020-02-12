@@ -235,9 +235,8 @@ and expr =
 
   (* can be used for Record, Class, or Module access depending on expr.
    * In the last case it should be rewritten as a Name with a qualifier though.
-   * TODO: change ident -> name, and get rid of OE_FieldAccessQualified.
    *)
-  | DotAccess of expr * tok (* ., ::, ->, # *) * ident 
+  | DotAccess of expr * tok (* ., ::, ->, # *) * field_ident 
   (* in Js this is used for DynamicAccess with a computed field name *)
   | ArrayAccess of expr * expr
   (* could also use ArrayAccess with a Tuple rhs, or use a special *)
@@ -273,6 +272,11 @@ and expr =
     | Char of string wrap | String of string wrap | Regexp of string wrap
     | Unit of tok (* a.k.a Void *) | Null of tok | Undefined of tok (* JS *)
     | Imag of string wrap (* Go, Python *)
+
+  and field_ident =
+    | FId of ident
+    | FName of name (* OCaml/PHP *)
+    | FDynamic of expr
 
   and container_operator = 
     (* Tuple was lifted up *)
@@ -356,7 +360,6 @@ and expr =
     | OE_Encaps (* less: convert to regular funcall? *)
     | OE_Require (* todo: lift to Import? *) 
     | OE_UseStrict (* less: lift up to program attribute/directive? *)
-    | OE_ObjAccess_PN_Computed (* less: convert to ArrayAccess *)
     (* Python *)
     | OE_Is | OE_IsNot (* less: could be part of a set_operator? or PhysEq? *)
     | OE_In | OE_NotIn (* less: could be part of a obj_operator? *)
@@ -374,7 +377,7 @@ and expr =
     (* PHP *)
     | OE_Unpack
     (* OCaml *)
-    | OE_FieldAccessQualified (* and PHP *) | OE_RecordWith 
+    | OE_RecordWith | OE_RecordFieldName
     | OE_StmtExpr (* OCaml has just expressions, no statements *)
     (* Go *)
     | OE_Send | OE_Recv
