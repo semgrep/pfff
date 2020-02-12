@@ -115,6 +115,11 @@ type tok = Parse_info.t
 type 'a wrap = 'a * tok
  (* with tarzan *)
 
+(* round(), square[], curly{}, angle<> brackets *)
+type 'a bracket = tok * 'a * tok
+ (* with tarzan *)
+
+
 type ident = string wrap
  (* with tarzan *)
 type var = string wrap
@@ -143,21 +148,21 @@ and stmt =
 
   | Block of stmt list
 
-  | If of expr * stmt * stmt
-  | Switch of expr * case list
+  | If of tok * expr * stmt * stmt
+  | Switch of tok * expr * case list
 
   (* pad: not sure why we use stmt list instead of just stmt like for If *)
-  | While of expr * stmt list
-  | Do of stmt list * expr
-  | For of expr list * expr list * expr list * stmt list
+  | While of tok * expr * stmt list
+  | Do of tok * stmt list * expr
+  | For of tok * expr list * expr list * expr list * stmt list
   (* 'foreach ($xs as $k)', '... ($xs as $k => $v)', '... ($xs as list($...))'*)
-  | Foreach of expr * foreach_pattern * stmt list
+  | Foreach of tok * expr * foreach_pattern * stmt list
 
-  | Return of expr option
-  | Break of expr option | Continue of expr option
+  | Return of tok * expr option
+  | Break of tok * expr option | Continue of tok * expr option
 
-  | Throw of expr
-  | Try of stmt list * catch list * finally list
+  | Throw of tok * expr
+  | Try of tok * stmt list * catch list * finally list
 
   (* only at toplevel in most of our code *)
   | ClassDef of class_def
@@ -172,13 +177,13 @@ and stmt =
 
   (* Note that there is no LocalVars constructor. Variables in PHP are
    * declared when they are first assigned. *)
-  | StaticVars of (var * expr option) list
+  | StaticVars of tok * (var * expr option) list
   (* expr is most of the time a simple variable name *)
-  | Global of expr list
+  | Global of tok * expr list
 
   and case =
-    | Case of expr * stmt list
-    | Default of stmt list
+    | Case of tok * expr * stmt list
+    | Default of tok * stmt list
 
   (* catch(Exception $exn) { ... } => ("Exception", "$exn", [...]) *)
   and catch = hint_type  * var * stmt list
@@ -193,8 +198,8 @@ and stmt =
  *)
 and expr =
   (* booleans are really just Int in PHP :( *)
-  | Int of string
-  | Double of string
+  | Int of string wrap
+  | Double of string wrap
   (* PHP has no first-class functions so entities are sometimes passed
    * as strings so the string wrap below can actually correspond to a
    * 'Id name' sometimes. Some magic functions like param_post() also
@@ -229,29 +234,30 @@ and expr =
    * ex: A::foo()  ==> Call(Class_get(Id "A", Id "foo"), [])
    * note that Id can be "self", "parent", "static".
    *)
-  | Obj_get of expr * expr
-  | Class_get of expr * expr
+  | Obj_get of expr * tok * expr
+  | Class_get of expr * tok * expr
 
-  | New of expr * expr list
-  | InstanceOf of expr * expr
+  | New of tok * expr * expr list
+  | InstanceOf of tok * expr * expr
 
   (* pad: could perhaps be at the statement level? The left expr
    * must be an lvalue (e.g. a variable).
    *)
-  | Assign of binaryOp option * expr * expr
+  | Assign of expr * tok * expr
+  | AssignOp of expr * binaryOp wrap * expr
   (* really a destructuring tuple let; always used as part of an Assign or
    * in foreach_pattern.
    *)
-  | List of expr list
+  | List of expr list bracket
   (* used only inside array_value or foreach_pattern, or for yield
    * (which is translated as a builtin and so a Call)
    *)
-  | Arrow of expr * expr
+  | Arrow of expr * tok * expr
 
   (* $y =& $x is transformed into an Assign(Var "$y", Ref (Var "$x")). In
    * PHP refs are always used in an Assign context.
    *)
-  | Ref of expr
+  | Ref of tok * expr
 
   (* e.g. f(...$x) *)
   | Unpack of expr
@@ -259,14 +265,14 @@ and expr =
   | Call of expr * expr list
 
   (* todo? transform into Call (builtin ...) ? *)
-  | Infix of Ast_generic.incr_decr * expr
-  | Postfix of Ast_generic.incr_decr * expr
-  | Binop of binaryOp * expr * expr
-  | Unop of unaryOp * expr
+  | Infix of Ast_generic.incr_decr wrap * expr
+  | Postfix of Ast_generic.incr_decr wrap * expr
+  | Binop of expr * binaryOp wrap * expr
+  | Unop of unaryOp wrap * expr
   | Guil of expr list
 
-  | ConsArray of array_value list
-  | Collection of name * array_value list
+  | ConsArray of array_value list bracket
+  | Collection of name * array_value list bracket
   | Xhp of xml
 
   | CondExpr of expr * expr * expr
@@ -284,7 +290,7 @@ and expr =
 
   (* pad: do we need that? could convert into something more basic *)
   and xhp =
-    | XhpText of string
+    | XhpText of string wrap
     | XhpExpr of expr
     | XhpXml of xml
 
@@ -363,7 +369,7 @@ and func_def = {
    }
 
   (* for methods, and below for fields too *)
-  and modifier = Cst_php.modifier
+  and modifier = Cst_php.modifier wrap
 
   (* normally either an Id or Call with only static arguments *)
   and attribute = expr
@@ -470,9 +476,12 @@ let builtin x = "__builtin__" ^ x
 let special x = "__special__" ^ x
 
 (* AST helpers *)
-let has_modifier cv = List.length cv.cv_modifiers > 0
-let is_static modifiers  = List.mem Cst_php.Static  modifiers
-let is_private modifiers = List.mem Cst_php.Private modifiers
+let has_modifier cv = 
+  List.length cv.cv_modifiers > 0
+let is_static modifiers  = 
+  List.mem Cst_php.Static  (List.map unwrap modifiers)
+let is_private modifiers = 
+  List.mem Cst_php.Private (List.map unwrap modifiers)
 
 let string_of_xhp_tag xs = ":" ^ Common.join ":" xs
 

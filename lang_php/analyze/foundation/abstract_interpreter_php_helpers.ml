@@ -484,7 +484,10 @@ module NullNewVars = struct
     (* todo? enough? what about deeply nested assignements?
      * what if had some 'global' directives in previous statements?
      *)
-    | Expr (Assign (_, Id [s,_], _)) when not (SMap.mem s !(env.vars)) ->
+    | Expr (Assign (Id [s,_], _tok, _)) when not (SMap.mem s !(env.vars)) ->
+        let heap, _, _ = Var.get env heap s in
+        heap
+    | Expr (AssignOp (Id [s,_], _op, _)) when not (SMap.mem s !(env.vars)) ->
         let heap, _, _ = Var.get env heap s in
         heap
     | _ -> heap
@@ -543,9 +546,10 @@ module IsLvalue = struct
       -> true
 
     | Lambda _
-    | (Cast (_, _)|CondExpr (_, _, _)|InstanceOf (_, _)|New (_, _)|ConsArray _
+    | (Cast (_, _)|CondExpr (_, _, _)|InstanceOf (_, _, _)|New (_, _, _)|ConsArray _
       | Collection _ |Arrow _
       | Xhp _|Ref _|Call (_, _)|Unop (_, _)|Binop (_, _, _)|Assign (_, _, _)
+      | AssignOp _
       | Guil _|String _|Double _|Int _|Unpack _
       ) ->
         false
@@ -558,6 +562,7 @@ end
 (* shortcuts *)
 let unw = Ast_php.unwrap
 let w = Ast_php.wrap_fake
+let fake s = Parse_info.fake_info s
 
 (* Allez ... pour faire plaisir a yoyo.
  * pad: not sure we need that.

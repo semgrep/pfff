@@ -50,36 +50,36 @@ module Deps = struct
     | TypeDef t -> SSet.add (unwrap t.t_name) acc
 
     (* boilerplate to recurse *)
-    | Expr e | Throw e -> expr acc e
+    | Expr e | Throw (_, e) -> expr acc e
     | Block stl -> stmtl acc stl
-    | If (e, st1, st2) -> stmtl (expr acc e) [st1; st2]
-    | Do (stl, e)| While (e, stl) -> stmtl (expr acc e) stl
-    | For (el1, el2, el3, stl) ->
+    | If (_, e, st1, st2) -> stmtl (expr acc e) [st1; st2]
+    | Do (_, stl, e)| While (_, e, stl) -> stmtl (expr acc e) stl
+    | For (_, el1, el2, el3, stl) ->
         let acc = exprl acc el1 in
         let acc = exprl acc el2 in
         let acc = exprl acc el3 in
         stmtl acc stl
-    | Switch (e, cl) -> casel (expr acc e) cl
-    | Foreach (e1, e2, stl) ->
+    | Switch (_, e, cl) -> casel (expr acc e) cl
+    | Foreach (_, e1, e2, stl) ->
         let acc = expr acc e1 in
         let acc = expr acc e2 in
         stmtl acc stl
-    | Return e | Break e | Continue e -> expr_opt acc e
-    | Try (stl, cl, fl) ->
+    | Return (_, e) | Break (_, e) | Continue (_, e) -> expr_opt acc e
+    | Try (_, stl, cl, fl) ->
         let acc = stmtl acc stl in
         let acc = catchl acc cl in
         let acc = finallyl acc fl in
         acc
-    | StaticVars svl -> List.fold_left static_var acc svl
-    | Global el -> exprl acc el
+    | StaticVars (_, svl) -> List.fold_left static_var acc svl
+    | Global (_, el) -> exprl acc el
 
 
   and static_var acc (_, e) = expr_opt acc e
 
   and casel acc l = List.fold_left case acc l
   and case acc = function
-    | Case (e, stl) -> stmtl (expr acc e) stl
-    | Default stl -> stmtl acc stl
+    | Case (_, e, stl) -> stmtl (expr acc e) stl
+    | Default (_, stl) -> stmtl acc stl
 
   and catchl acc l = List.fold_left catch acc l
   and catch acc (_, _, stl) = stmtl acc stl
@@ -99,30 +99,31 @@ module Deps = struct
     | Guil el -> encapsl acc el
     | This _ -> acc
     | Array_get (e1, e2) -> expr (expr_opt acc e2) e1
-    | Obj_get (e1, e2)
-    | Binop (_, e1, e2)
-    | Class_get (e1, e2)
-    | InstanceOf (e1, e2)
-    | Arrow(e1, e2)
-    | Assign (_, e1, e2) -> expr (expr acc e1) e2
+    | Obj_get (e1, _, e2)
+    | Binop (e1, _, e2)
+    | Class_get (e1, _, e2)
+    | InstanceOf (_, e1, e2)
+    | Arrow(e1, _, e2)
+    | AssignOp(e1, _, e2)
+    | Assign (e1, _, e2) -> expr (expr acc e1) e2
     | Infix (_, e)
     | Postfix (_, e)
     | Cast (_, e)
-    | Ref e | Unpack e
+    | Ref (_, e) | Unpack e
     | Unop (_, e) -> expr acc e
     | Call (e, el) -> exprl (expr acc e) el
     | Xhp x ->
         let acc = xml acc x in
         let name = Ast.unwrap x.xml_tag in
         SSet.add name acc
-    | ConsArray (avl) -> array_valuel acc avl
-    | Collection ([(n,_)], mel) ->
+    | ConsArray ((_, avl, _)) -> array_valuel acc avl
+    | Collection ([(n,_)], (_, mel, _)) ->
       let acc = SSet.add n acc in
       array_valuel acc mel
     | Collection (name, _mel) ->
       raise (Cst_php.TodoNamespace (tok_of_name name))
-    | List el -> exprl acc el
-    | New (e, el) -> exprl (expr acc e) el
+    | List (_, el, _) -> exprl acc el
+    | New (_, e, el) -> exprl (expr acc e) el
     | CondExpr (e1, e2, e3) ->
         expr (expr (expr acc e1) e2) e3
     | Lambda fd -> func_def acc fd

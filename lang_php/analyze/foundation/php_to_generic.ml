@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2019 r2c
+ * Copyright (C) 2020 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -36,15 +36,9 @@ let vref f x = ref (f !x)
 
 let bool = id
 let string = id
-let int_to_string = string_of_int
-let float_to_string = string_of_float
 
-(*
-exception Error of string * Parse_info.info
-
-let error tok msg = 
-  raise (Error (msg, tok))
-*)
+let fake s = Parse_info.fake_info s
+let fake_bracket x = fake "(", x, fake ")"
 
 (*****************************************************************************)
 (* Entry point *)
@@ -55,6 +49,8 @@ let info x = x
 let wrap = fun _of_a (v1, v2) ->
   let v1 = _of_a v1 and v2 = info v2 in 
   (v1, v2)
+
+let bracket of_a (t1, x, t2) = (info t1, of_a x, info t2)
 
 let ident v = wrap string v
 
@@ -95,27 +91,27 @@ let rec stmt =
   function
   | Expr v1 -> let v1 = expr v1 in ()
   | Block v1 -> let v1 = list stmt v1 in ()
-  | If ((v1, v2, v3)) ->
+  | If ((t, v1, v2, v3)) ->
       let v1 = expr v1 and v2 = stmt v2 and v3 = stmt v3 in ()
-  | Switch ((v1, v2)) -> let v1 = expr v1 and v2 = list case v2 in ()
-  | While ((v1, v2)) -> let v1 = expr v1 and v2 = list stmt v2 in ()
-  | Do ((v1, v2)) -> let v1 = list stmt v1 and v2 = expr v2 in ()
-  | For ((v1, v2, v3, v4)) ->
+  | Switch ((t, v1, v2)) -> let v1 = expr v1 and v2 = list case v2 in ()
+  | While ((t, v1, v2)) -> let v1 = expr v1 and v2 = list stmt v2 in ()
+  | Do ((t, v1, v2)) -> let v1 = list stmt v1 and v2 = expr v2 in ()
+  | For ((t, v1, v2, v3, v4)) ->
       let v1 = list expr v1
       and v2 = list expr v2
       and v3 = list expr v3
       and v4 = list stmt v4
       in ()
-  | Foreach ((v1, v2, v3)) ->
+  | Foreach ((t, v1, v2, v3)) ->
       let v1 = expr v1
       and v2 = foreach_pattern v2
       and v3 = list stmt v3
       in ()
-  | Return v1 -> let v1 = option expr v1 in ()
-  | Break v1 -> let v1 = option expr v1 in ()
-  | Continue v1 -> let v1 = option expr v1 in ()
-  | Throw v1 -> let v1 = expr v1 in ()
-  | Try ((v1, v2, v3)) ->
+  | Return (t, v1) -> let v1 = option expr v1 in ()
+  | Break (t, v1) -> let v1 = option expr v1 in ()
+  | Continue (t, v1) -> let v1 = option expr v1 in ()
+  | Throw (t, v1) -> let v1 = expr v1 in ()
+  | Try ((t, v1, v2, v3)) ->
       let v1 = list stmt v1
       and v2 = list catch v2
       and v3 = list finally v3
@@ -128,21 +124,25 @@ let rec stmt =
       let v1 = qualified_ident v1 and v2 = list stmt v2 in ()
   | NamespaceUse ((v1, v2)) ->
       let v1 = qualified_ident v1 and v2 = option ident v2 in ()
-  | StaticVars v1 ->
+  | StaticVars (t, v1) ->
       let v1 =
         list
           (fun (v1, v2) ->
              let v1 = var v1 and v2 = option expr v2 in ())
           v1
       in ()
-  | Global v1 -> let v1 = list expr v1 in ()
+  | Global (t, v1) -> let v1 = list expr v1 in ()
+
 and case =
   function
-  | Case ((v1, v2)) -> let v1 = expr v1 and v2 = list stmt v2 in ()
-  | Default v1 -> let v1 = list stmt v1 in ()
+  | Case ((t, v1, v2)) -> let v1 = expr v1 and v2 = list stmt v2 in ()
+  | Default (t, v1) -> let v1 = list stmt v1 in ()
+
 and catch (v1, v2, v3) =
   let v1 = hint_type v1 and v2 = var v2 and v3 = list stmt v3 in ()
+
 and finally v = list stmt v
+
 and expr =
   function
   | Int v1 -> let v1 = string v1 in ()
@@ -153,33 +153,37 @@ and expr =
   | Array_get ((v1, v2)) ->
       let v1 = expr v1 and v2 = option expr v2 in ()
   | This v1 -> let v1 = wrap string v1 in ()
-  | Obj_get ((v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in ()
-  | Class_get ((v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in ()
-  | New ((v1, v2)) -> let v1 = expr v1 and v2 = list expr v2 in ()
-  | InstanceOf ((v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in ()
-  | Assign ((v1, v2, v3)) ->
-      let v1 = option binaryOp v1
-      and v2 = expr v2
+  | Obj_get ((v1, t, v2)) -> let v1 = expr v1 and v2 = expr v2 in ()
+  | Class_get ((v1, t, v2)) -> let v1 = expr v1 and v2 = expr v2 in ()
+  | New ((t, v1, v2)) -> let v1 = expr v1 and v2 = list expr v2 in ()
+  | InstanceOf ((t, v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in ()
+  | Assign ((v1, t, v3)) ->
+      let v1 = expr v1
       and v3 = expr v3
       in ()
-  | List v1 -> let v1 = list expr v1 in ()
-  | Arrow ((v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in ()
-  | Ref v1 -> let v1 = expr v1 in ()
+  | AssignOp ((v1, (v2, t), v3)) ->
+      let v2 = binaryOp v2
+      and v1 = expr v1
+      and v3 = expr v3
+      in ()
+  | List v1 -> let v1 = bracket (list expr) v1 in ()
+  | Arrow ((v1, t, v2)) -> let v1 = expr v1 and v2 = expr v2 in ()
+  | Ref (t, v1) -> let v1 = expr v1 in ()
   | Unpack v1 -> let v1 = expr v1 in ()
   | Call ((v1, v2)) -> let v1 = expr v1 and v2 = list expr v2 in ()
   | Infix ((v1, v2)) -> let v1 = fixOp v1 and v2 = expr v2 in ()
   | Postfix ((v1, v2)) ->
       let v1 = fixOp v1 and v2 = expr v2 in ()
   | Binop ((v1, v2, v3)) ->
-      let v1 = binaryOp v1
-      and v2 = expr v2
+      let v2 = binaryOp v2
+      and v1 = expr v1
       and v3 = expr v3
       in ()
   | Unop ((v1, v2)) -> let v1 = unaryOp v1 and v2 = expr v2 in ()
   | Guil v1 -> let v1 = list expr v1 in ()
-  | ConsArray v1 -> let v1 = list array_value v1 in ()
+  | ConsArray v1 -> let v1 = bracket (list array_value) v1 in ()
   | Collection ((v1, v2)) ->
-      let v1 = name v1 and v2 = list array_value v2 in ()
+      let v1 = name v1 and v2 = bracket (list array_value) v2 in ()
   | Xhp v1 -> let v1 = xml v1 in ()
   | CondExpr ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in ()
@@ -268,7 +272,7 @@ and
   let arg = option expr p_default in
   let arg = list attribute p_attrs in
   let arg = bool p_variadic in ()
-and modifier v = modifierbis v
+and modifier v = wrap modifierbis v
 and attribute v = expr v
 and constant_def { cst_name = cst_name; cst_body = cst_body } =
   let arg = ident cst_name in let arg = option expr cst_body in ()

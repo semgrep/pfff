@@ -258,7 +258,7 @@ let funcdef_of_call_or_new_opt env e =
       | Var _ -> None
 
       (* static method call *)
-      | Class_get (Id name1, Id name2) ->
+      | Class_get (Id name1, _, Id name2) ->
           (* todo: name1 can be self/parent in traits, or static: *)
           let aclass = A.str_of_name name1 in
           let amethod = A.str_of_name name2 in
@@ -281,7 +281,7 @@ let funcdef_of_call_or_new_opt env e =
        *
        * todo: special case also id(new ...)-> ?
        *)
-      | Obj_get (This _, Id [name2]) ->
+      | Obj_get (This _, _, Id [name2]) ->
           (match env.in_class with
           | Some name1 ->
               let aclass = A.str_of_ident name1 in
@@ -473,47 +473,47 @@ and stmt env = function
   (* todo: block scope checking when in strict mode? *)
   | Block xs -> stmtl env xs
 
-  | If (e, st1, st2) ->
+  | If (_, e, st1, st2) ->
       expr env e;
       stmtl env [st1;st2]
 
-  | Switch (e, xs) ->
+  | Switch (_, e, xs) ->
       expr env e;
       casel env xs
 
-  | While (e, xs) ->
+  | While (_, e, xs) ->
       expr env e;
       stmtl env xs
-  | Do (xs, e) ->
+  | Do (_, xs, e) ->
       stmtl env xs;
       expr env e
-  | For (es1, es2, es3, xs) ->
+  | For (_, es1, es2, es3, xs) ->
       exprl env (es1 @ es2 @ es3);
       stmtl env xs
 
-  | Foreach (e1, pattern, xs) ->
+  | Foreach (_, e1, pattern, xs) ->
       expr env e1;
       foreach_pattern env pattern;
       stmtl env xs
 
-  | Return eopt
-  | Break eopt | Continue eopt ->
+  | Return (_, eopt)
+  | Break (_, eopt) | Continue (_, eopt) ->
       Common.opt (expr env) eopt
 
-  | Throw e -> expr env e
-  | Try (xs, cs, fs) ->
+  | Throw (_, e) -> expr env e
+  | Try (_, xs, cs, fs) ->
       stmtl env xs;
       catches env (cs);
       finallys env (fs)
 
-  | StaticVars xs ->
+  | StaticVars (_, xs) ->
       xs |> List.iter (fun (name, eopt) ->
         Common.opt (expr env) eopt;
         let (s, tok) = s_tok_of_ident name in
         (* less: check if shadows something? *)
         env.vars := Map_.add s (tok, S.Static, ref 0) !(env.vars);
       )
-  | Global xs ->
+  | Global (_, xs) ->
       xs |> List.iter (fun e ->
         (* should be an Var most of the time.
          * todo: should check in .globals that this variable actually exists
@@ -545,10 +545,10 @@ and finally env (xs) =
   stmtl env xs
 
 and case env = function
-  | Case (e, xs) ->
+  | Case (_, e, xs) ->
       expr env e;
       stmtl env xs
-  | Default xs ->
+  | Default (_, xs) ->
       stmtl env xs
 
 and stmtl env xs = List.iter (stmt env) xs
@@ -575,9 +575,9 @@ and foreach_pattern env pattern =
       (* todo: if strict then introduce new scope here *)
       (* todo: scope_ref := S.LocalIterator; *)
       env.vars := Map_.add s (tok, S.LocalIterator, shared_ref) !(env.vars)
-    | Ref x -> aux x
-    | Arrow (e1, e2) -> aux e1; aux e2
-    | List xs -> List.iter aux xs
+    | Ref (_, x) -> aux x
+    | Arrow (e1, _, e2) -> aux e1; aux e2
+    | List (_, xs, _) -> List.iter aux xs
     (* other kinds of lvalue are permitted too, but it's a little bit wierd
      * and very rarely used in www
      *)
@@ -604,7 +604,7 @@ and expr env e =
 
   | Id _name -> ()
 
-  | Assign (None, e1, e2) ->
+  | Assign (e1, _, e2) ->
       (* e1 should be an lvalue *)
       (match e1 with
       | Var name ->
@@ -619,7 +619,7 @@ and expr env e =
           create_new_local_if_necessary ~incr_count:false env name;
 
       (* extract all vars, and share the same reference *)
-      | List xs ->
+      | List (_, xs, _) ->
           (* Use the same trick than for LocalIterator *)
           let shared_ref = ref 0 in
 
@@ -636,9 +636,8 @@ and expr env e =
                 )
             | ((Array_get _ | Obj_get _ | Class_get _) as e) ->
                 expr env e
-            | List xs -> List.iter aux xs
+            | List (_, xs, _) -> List.iter aux xs
             | _ ->
-                pr2 (str_of_any (Expr2 (List xs)));
                 raise Todo
           in
           List.iter aux xs
@@ -649,7 +648,7 @@ and expr env e =
           Common.opt (expr env) e_opt
 
       (* checks for use of undefined member should be in check_classes *)
-      | Obj_get (_, _) | Class_get (_, _) ->
+      | Obj_get _ | Class_get _ ->
           (* just recurse on the whole thing so the code for Obj_get/Class_get
            * below will be triggered
            *)
@@ -666,7 +665,7 @@ and expr env e =
       );
       expr env e2
 
-  | Assign (Some _, e1, e2) ->
+  | AssignOp (e1, _, e2) ->
       exprl env [e1;e2]
 
   | List _xs ->
@@ -676,7 +675,7 @@ and expr env e =
   (* Arrow used to be allowed only in Array and Foreach context, but now
    * can we also have code like yield $k => $v, so this is really a pair.
    *)
-  | Arrow (e1, e2) ->
+  | Arrow (e1, _, e2) ->
       exprl env [e1; e2]
 
   (* A mention of a variable in a unset() should not be really
@@ -734,7 +733,7 @@ and expr env e =
 
       (* facebook specific? should be a hook instead to visit_prog? *)
   | Call(Id[("param_post"|"param_get"|"param_request"|"param_cookie"as kind,_)],
-        (ConsArray (array_args))::rest_param_xxx_args) ->
+        (ConsArray (_, array_args, _))::rest_param_xxx_args) ->
 
       (* have passed a 'prefix' arg, or nothing *)
       if List.length rest_param_xxx_args <= 1
@@ -757,7 +756,7 @@ and expr env e =
         in
         prefix_opt |> Common.do_option (fun prefix ->
           array_args |> List.iter (function
-          | Arrow(String(param_string, tok_param), _typ_param) ->
+          | Arrow(String(param_string, tok_param), _, _typ_param) ->
               let s = "$" ^ prefix ^ param_string in
               let tok = A.tok_of_ident (param_string, tok_param) in
               env.vars := Map_.add s (tok, S.Local, ref 0) !(env.vars);
@@ -800,7 +799,7 @@ and expr env e =
          * environment in strict mode? and if they are, shout because of
          * bad practice?
          *)
-        | Assign (None, Var _name, e2), _ ->
+        | Assign (Var _name, _, e2), _ ->
             expr env e2
         (* a variable passed by reference, this can considered a new decl *)
         | Var name, Some {Cst_php.p_ref = Some _;_} ->
@@ -826,7 +825,7 @@ and expr env e =
       expr env e;
       Common.opt (expr env) eopt
 
-  | Obj_get (e1, e2) ->
+  | Obj_get (e1, _, e2) ->
       expr env e1;
       (match e2 with
       (* with 'echo $o->$v' we have a dynamic field, we need to visit
@@ -836,7 +835,7 @@ and expr env e =
       | _ -> expr env e2
       )
 
-  | Class_get (e1, e2) ->
+  | Class_get (e1, _, e2) ->
       expr env e1;
       (match e2 with
       (* with 'echo A::$v' we should not issue a UseOfUndefinedVariable,
@@ -846,19 +845,19 @@ and expr env e =
       | _ -> expr env e2
       )
 
-  | New (e, es) ->
-      expr env (Call (Class_get(e, Id[ (wrap_fake "__construct")]), es))
+  | New (tok, e, es) ->
+      expr env (Call (Class_get(e, tok, Id[ (wrap_fake "__construct")]), es))
 
-  | InstanceOf (e1, e2) -> exprl env [e1;e2]
+  | InstanceOf (_, e1, e2) -> exprl env [e1;e2]
 
   | Infix (_, e) | Postfix (_, e) | Unop (_, e) -> expr env e
-  | Binop (_, e1, e2) -> exprl env [e1; e2]
+  | Binop (e1, _, e2) -> exprl env [e1; e2]
   | Guil xs -> exprl env xs
 
-  | Ref e | Unpack e -> expr env e
+  | Ref (_, e) | Unpack e -> expr env e
 
-  | ConsArray (xs) -> array_valuel env xs
-  | Collection (_n, xs) ->
+  | ConsArray (_, xs, _) -> array_valuel env xs
+  | Collection (_n, (_, xs, _)) ->
     array_valuel env xs
   | Xhp x -> xml env x
 
@@ -873,7 +872,7 @@ and expr env e =
 
 and array_value env x =
   match x with
-  | Arrow (e1, e2) -> exprl env [e1; e2]
+  | Arrow (e1, _, e2) -> exprl env [e1; e2]
   | e -> expr env e
 
 and xml env x =
