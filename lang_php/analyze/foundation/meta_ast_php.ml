@@ -10,16 +10,9 @@ let visited_toks = ref []
 let rec vof_program v = Ocaml.vof_list vof_stmt v
 and vof_wrapped_string (s, tok) =
   if !visit_mode
-  then
-    (match tok with
-    | None ->
-      (* todo? failwith "no info, use Ast_php_build.store_position" *)
-      (* maybe fake tok? *)
-      ()
-    | Some tok ->
-      visited_toks := tok :: !visited_toks;
-    );
+  then visited_toks := tok :: !visited_toks;
   Ocaml.VString s
+
 and vof_name x = Ocaml.vof_list vof_wrapped_string x
 and vof_qualified_ident x = Ocaml.vof_list vof_wrapped_string x
 and vof_ident x =vof_wrapped_string x

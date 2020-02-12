@@ -35,13 +35,13 @@ let empty_env () = ()
 let error tok s =
   raise (Parse_info.Ast_builder_error (s, tok))
 
-(* Whether or not we want to store position information in the Ast_simple
- * built here.
- *)
-let store_position = ref false
 
-let wrap tok =
-  if !store_position then Some tok else None
+(* old: opti: to get www from 380MB to 190MB marshalled, but not worth it
+ *  if !store_position then Some tok else None
+ *)
+let wrap tok = tok
+
+let fake s = Parse_info.fake_info s
 
 (*****************************************************************************)
 (* Helpers *)
@@ -594,7 +594,7 @@ and short_lambda_def env def =
       A.special "_lambda",
       match def.sl_tok with
       | Some tok -> wrap tok
-      | None -> None
+      | None -> wrap (fake "_lambda")
     );
     f_params =
       (match def.sl_params with
@@ -974,10 +974,3 @@ and attributes env = function
       A.Call (A.Id [s, wrap tok], List.map (static_scalar env) (comma_list xs))
     )
 
-(*****************************************************************************)
-(* Shortcuts *)
-(*****************************************************************************)
-let program_with_position_information prog =
-  Common.save_excursion store_position true (fun () ->
-    program prog
-  )

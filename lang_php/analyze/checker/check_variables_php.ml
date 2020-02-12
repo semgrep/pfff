@@ -847,7 +847,7 @@ and expr env e =
       )
 
   | New (e, es) ->
-      expr env (Call (Class_get(e, Id[ ("__construct", None)]), es))
+      expr env (Call (Class_get(e, Id[ (wrap_fake "__construct")]), es))
 
   | InstanceOf (e1, e2) -> exprl env [e1;e2]
 
@@ -936,7 +936,7 @@ let check_and_annotate_program2 find_entity prog =
     scope_vars_used = Hashtbl.create 101;
   }
   in
-  let ast = Ast_php_build.program_with_position_information prog in
+  let ast = Ast_php_build.program prog in
   program env ast;
 
   (* annotating the scope of Var *)

@@ -110,13 +110,9 @@
 (* The AST related types *)
 (*****************************************************************************)
 
-(* The wrap is to get position information for certain elements in the AST.
- * It can be None when we want to optimize things and have a very
- * small marshalled AST. See Ast_php_simple.build.store_position flag.
- * Right now with None the marshalled AST for www is 190MB instead of
- * 380MB.
- *)
-type 'a wrap = 'a * Cst_php.tok option
+type tok = Parse_info.t
+
+type 'a wrap = 'a * tok
  (* with tarzan *)
 
 type ident = string wrap
@@ -446,7 +442,7 @@ type any =
 (*****************************************************************************)
 
 let unwrap x = fst x
-let wrap s = s, Some (Cst_php.fakeInfo s)
+let wrap_fake s = s, Parse_info.fake_info s
 
 (* builtin() is used for:
  *  - 'eval', and implicitly generated eval/reflection like functions:
@@ -481,10 +477,7 @@ let is_private modifiers = List.mem Cst_php.Private modifiers
 let string_of_xhp_tag xs = ":" ^ Common.join ":" xs
 
 let str_of_ident (s, _) = s
-let tok_of_ident (s, x) =
-  match x with
-  | None -> failwith (Common.spf "no token information for %s" s)
-  | Some tok -> tok
+let tok_of_ident (_, x) = x
 
 let str_of_name = function
   | [id] -> str_of_ident id

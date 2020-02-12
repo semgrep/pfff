@@ -147,12 +147,11 @@ let (==~) = Common2.(==~)
 
 let parse env file =
   try
-    Common.save_excursion Ast_php_build.store_position true (fun () ->
     Common.save_excursion Flag_parsing_php.strict_lexer true (fun () ->
     let cst = Parse_php.parse_program file in
     let ast = Ast_php_build.program cst in
     ast
-    ))
+    )
   with
   | Timeout -> raise Timeout
   | exn ->
@@ -1024,7 +1023,7 @@ and expr env x =
 
   | New (e, es) ->
       let tok = Meta_ast_php.toks_of_any (Expr2 e) |> List.hd in
-      expr env (Call (Class_get(e, Id[ ("__construct", Some tok)]), es))
+      expr env (Call (Class_get(e, Id[ ("__construct", tok)]), es))
 
   (* -------------------------------------------------- *)
   | InstanceOf (e1, e2) ->
@@ -1257,7 +1256,7 @@ let build
               | _ when method_str =~ "get.*" -> ()
               | _ when method_str =~ "set.*" -> ()
               | _ ->
-                  lookup_fail envold (Some tok) (method_str, kind);
+                  lookup_fail envold tok (method_str, kind);
               )
           (* cool *)
           | [dst] ->

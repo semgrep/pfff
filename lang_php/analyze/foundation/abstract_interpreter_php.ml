@@ -543,7 +543,7 @@ and expr_ env heap x =
           heap, Vany
        )
 
-  | Id ((_s,tok)::_) -> raise (Cst_php.TodoNamespace (Common2.some tok))
+  | Id ((_s,tok)::_) -> raise (Cst_php.TodoNamespace (tok))
   | Id [] -> raise Impossible
 
   (* will probably return some Vabstr (Tint|Tbool|...) *)
@@ -1178,7 +1178,7 @@ and xhp_attr env heap x =
 
       let heap, vl = Utils.lfold Ptr.get heap vl in
       let v = Taint.fold_slist vl in
-      Taint.check_danger env heap "xhp attribute" (Some (Cst_php.fakeInfo ""))
+      Taint.check_danger env heap "xhp attribute" ((Cst_php.fakeInfo ""))
         !(env.path) v;
 
       heap

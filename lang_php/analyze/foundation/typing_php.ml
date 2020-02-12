@@ -283,12 +283,12 @@ and stmt env= function
       let id = AEnv.create_ai env e in
       let ti = (pi, Env_typing_php.ReturnValue) in
       let _ = AEnv.set env id ti in
-      iexpr env (Assign (None, Id [(wrap "$;return")], e))
+      iexpr env (Assign (None, Id [(wrap_fake "$;return")], e))
   | Return (Some e) ->
       let id = AEnv.create_ai env e in
       let ti = (pi, Env_typing_php.ReturnValue) in
       let _ = AEnv.set env id ti in
-      iexpr env (Assign (None, Id [(wrap "$;return")], e))
+      iexpr env (Assign (None, Id [(wrap_fake "$;return")], e))
   | Break eopt | Continue eopt -> expr_opt env eopt
   | Throw e -> iexpr env e
   | Try (stl, cl, fl) ->
@@ -306,7 +306,7 @@ and stmt env= function
       List.iter (function
         | Id [(x, tok)] ->
             let gid = A.remove_first_char x in
-            let gl = Array_get (Id [(wrap "$GLOBALS")],Some(String (gid,tok)))in
+            let gl = Array_get (Id [(wrap_fake "$GLOBALS")],Some(String (gid,tok)))in
             let assign = Assign (None, Id [(x, tok)], gl) in
             iexpr env assign
         | e -> iexpr env e
@@ -628,10 +628,10 @@ and expr_ env _lv = function
       any
   | New (x, el) ->
       let v = "$;tmp"^(string_of_int (fresh())) in
-      let obj = Class_get (x, Id [(wrap "__obj")]) in
-      iexpr env (Assign (None, Var (wrap v), obj));
-      iexpr env (Call (Obj_get (obj, Id [(wrap "__construct")]), el));
-      let t = expr env (Id [(wrap v)]) in
+      let obj = Class_get (x, Id [(wrap_fake "__obj")]) in
+      iexpr env (Assign (None, Var (wrap_fake v), obj));
+      iexpr env (Call (Obj_get (obj, Id [(wrap_fake "__construct")]), el));
+      let t = expr env (Id [(wrap_fake v)]) in
       let set = match x with
         | Id [(c,_)] when c.[0] <> '$' -> SSet.singleton c
         | _ -> SSet.empty

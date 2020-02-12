@@ -557,7 +557,7 @@ end
 
 (* shortcuts *)
 let unw = Ast_php.unwrap
-let w = Ast_php.wrap
+let w = Ast_php.wrap_fake
 
 (* Allez ... pour faire plaisir a yoyo.
  * pad: not sure we need that.
