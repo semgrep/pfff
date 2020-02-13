@@ -207,7 +207,8 @@ and case =
 
 and catch (v1, v2, v3) =
   let v1 = hint_type v1 and v2 = var v2 and v3 = list stmt v3 in
-  raise Todo
+  let pat = G.PatVar (v1, Some (v2, G.empty_id_info())) in
+  pat, G.stmt1 v3
 
 and finally xxs = 
   (* list stmt v *)
