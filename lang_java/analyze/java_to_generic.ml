@@ -321,9 +321,9 @@ and stmt =
       G.DoWhile (t, v1, v2)
   | For ((t, v1, v2)) -> let v1 = for_control v1 and v2 = stmt v2 in
       G.For (t, v1, v2)
-  | Break (t, v1) -> let v1 = option ident_label v1 in
+  | Break (t, v1) -> let v1 = G.opt_to_label_ident v1 in
       G.Break (t, v1)
-  | Continue (t, v1) -> let v1 = option ident_label v1 in
+  | Continue (t, v1) -> let v1 = G.opt_to_label_ident v1 in
       G.Continue (t, v1)
   | Return (t, v1) -> let v1 = option expr v1 in
       G.Return (t, v1)
@@ -347,9 +347,6 @@ and stmt =
   | Assert ((t, v1, v2)) -> let v1 = expr v1 and v2 = option expr v2 in
       G.Assert (t, v1, v2)
 
-and ident_label x =
-  let x = ident x in
-  G.Name ((x, G.empty_name_info), G.empty_id_info())
 
 and stmts v = list stmt v
 

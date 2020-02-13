@@ -363,10 +363,10 @@ and map_stmt x =
       let v1 = map_of_option map_expr v1 in Return ((t, v1))
   | Continue (t, v1) -> 
       let t = map_tok t in
-        let v1 = map_of_option map_expr v1 in Continue ((t, v1))
+        let v1 = map_label_ident v1 in Continue ((t, v1))
   | Break (t, v1) -> 
       let t = map_tok t in
-        let v1 = map_of_option map_expr v1 in Break ((t, v1))
+        let v1 = map_label_ident v1 in Break ((t, v1))
   | Label ((v1, v2)) ->
       let v1 = map_label v1 and v2 = map_stmt v2 in Label ((v1, v2))
   | Goto (t, v1) -> 
@@ -399,6 +399,13 @@ and map_stmt x =
   vin.kstmt (k, all_functions) x
 
 and map_other_stmt_with_stmt_operator x = x
+
+and map_label_ident =
+  function
+  | LNone -> LNone
+  | LId v1 -> let v1 = map_label v1 in LId ((v1))
+  | LInt v1 -> let v1 = map_of_int v1 in LInt ((v1))
+  | LDynamic v1 -> let v1 = map_expr v1 in LDynamic ((v1))
 
 and map_case_and_body (v1, v2) =
   let v1 = map_of_list map_case v1 and v2 = map_stmt v2 in (v1, v2)

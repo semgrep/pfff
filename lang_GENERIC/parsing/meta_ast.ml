@@ -459,11 +459,11 @@ and vof_stmt =
       Ocaml.VSum (("Return", [ t; v1 ]))
   | Continue (t, v1) ->
       let t = vof_tok t in
-      let v1 = Ocaml.vof_option vof_expr v1
+      let v1 = vof_label_ident v1
       in Ocaml.VSum (("Continue", [ t; v1 ]))
   | Break (t, v1) ->
       let t = vof_tok t in
-      let v1 = Ocaml.vof_option vof_expr v1 in 
+      let v1 = vof_label_ident v1 in
       Ocaml.VSum (("Break", [ t; v1 ]))
   | Label ((v1, v2)) ->
       let v1 = vof_label v1
@@ -497,6 +497,13 @@ and vof_stmt =
       in Ocaml.VSum (("OtherStmt", [ v1; v2 ]))
 and vof_other_stmt_with_stmt_operator = function
   | OSWS_With -> Ocaml.VSum (("OSWS_With", []))
+
+and vof_label_ident =
+  function
+  | LNone -> Ocaml.VSum (("LNone", []))
+  | LId v1 -> let v1 = vof_label v1 in Ocaml.VSum (("LId", [ v1 ]))
+  | LInt v1 -> let v1 = Ocaml.vof_int v1 in Ocaml.VSum (("LInt", [ v1 ]))
+  | LDynamic v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("LDynamic", [ v1 ]))
 
 and vof_case_and_body (v1, v2) =
   let v1 = Ocaml.vof_list vof_case v1

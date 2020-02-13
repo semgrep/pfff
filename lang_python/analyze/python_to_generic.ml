@@ -499,8 +499,8 @@ and stmt x =
       )
 
   | Pass _t -> G.OtherStmt (G.OS_Pass, [])
-  | Break t -> G.Break (t, None)
-  | Continue t -> G.Continue (t, None)
+  | Break t -> G.Break (t, G.LNone)
+  | Continue t -> G.Continue (t, G.LNone)
 
   (* python2: *)
   | Print (tok, _dest, vals, _nl) -> 

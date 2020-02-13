@@ -73,9 +73,6 @@ let mk_func_def params ret st =
     fbody = st;
   }
 
-let ident_to_expr id =
-  G.Name ((id, G.empty_name_info), G.empty_id_info())
-
 let wrap_init_in_block_maybe x v =
   match x with
   | None -> v
@@ -416,10 +413,10 @@ and stmt =
       G.Return (v1, v2 |> Common.map_opt (list_to_tuple_or_expr))
   | Break ((v1, v2)) -> 
       let v1 = tok v1 and v2 = option ident v2 in 
-      G.Break (v1, v2 |> Common.map_opt ident_to_expr)
+      G.Break (v1, G.opt_to_label_ident v2)
   | Continue ((v1, v2)) ->
       let v1 = tok v1 and v2 = option ident v2 in
-      G.Continue (v1, v2 |> Common.map_opt ident_to_expr)
+      G.Continue (v1, G.opt_to_label_ident v2)
   | Goto ((v1, v2)) -> 
       let v1 = tok v1 and v2 = ident v2 in 
       G.Goto (v1, v2)

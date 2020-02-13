@@ -423,8 +423,8 @@ and stmt =
   (* TODO: switch to label? but PHP accept integers no? 
    * label_ident like field_ident, so easier for CFG! and bailout for
    * DynamicLabel of expr *)
-  | Continue of tok * expr option 
-  | Break    of tok * expr option 
+  | Continue of tok * label_ident
+  | Break    of tok * label_ident
 
   | Label of label * stmt
   | Goto of tok * label
@@ -461,6 +461,11 @@ and stmt =
   and finally = stmt
 
   and label = ident
+  and label_ident =
+    | LNone (* C/Python *)
+    | LId of label (* Java/Go *)
+    | LInt of int (* PHP *)
+    | LDynamic of expr (* PHP, woohoo *)
 
   and for_header = 
     (* todo? copy Go and have instead   
@@ -971,10 +976,13 @@ let expr_to_type e =
 (* see also Python_to_generic.expr_to_attribute *)
 
 (* todo? should remove? should have an explicit EmptyStmt? *)
-let opt_to_empty opt =
-  match opt with
+let opt_to_empty = function
   | None -> Block []
   | Some e -> e
+
+let opt_to_label_ident = function
+  | None -> LNone
+  | Some id -> LId id
 
 let stmt1 xs =
   match xs with

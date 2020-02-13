@@ -211,11 +211,9 @@ and stmt x =
       let v1 = expr v1 and v2 = list case v2 in
       G.Switch (v0, Some v1, v2)
   | Continue (t, v1) -> let v1 = option label v1 in 
-     G.Continue (t, v1 |> option (fun n -> 
-       G.Name ((n, G.empty_name_info), G.empty_id_info ())))
+     G.Continue (t, G.opt_to_label_ident v1)
   | Break (t, v1) -> let v1 = option label v1 in
-     G.Break (t, v1 |> option (fun n -> 
-       G.Name ((n, G.empty_name_info), G.empty_id_info ())))
+     G.Break (t, G.opt_to_label_ident v1)
   | Return (t, v1) -> 
       let v1 = expr v1 in 
       G.Return (t, Some v1)

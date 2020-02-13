@@ -48,7 +48,7 @@ let mk_visitor vin =
     | F.SwitchEnd | F.Case  | F.Default
     | F.TryHeader | F.CatchStart | F.Catch | F.TryEnd
     | F.Join
-    | F.Continue None | F.Break None | F.Return None
+    | F.Continue | F.Break | F.Return None
     | F.SwitchHeader None
       -> ()
 
@@ -59,7 +59,7 @@ let mk_visitor vin =
     | F.SwitchHeader (Some expr)
     | F.Throw expr
     | F.Return (Some expr)
-    | F.Continue (Some expr) | F.Break (Some expr) ->
+    ->
         visitor (Ast.E expr)
     | F.ForeachHeader (pat, e) ->
         visitor (Ast.E (Ast.LetPattern (pat, e)))
@@ -81,7 +81,7 @@ let exprs_of_node node =
   | SwitchEnd | Case  | Default
   | TryHeader | CatchStart | Catch | TryEnd
   | Join
-  | Continue None | Break None | Return None | SwitchHeader None
+  | Continue | Break | Return None | SwitchHeader None
    -> []
 
   (* expr *)
@@ -91,7 +91,6 @@ let exprs_of_node node =
   | SwitchHeader (Some expr)
   | Throw expr
   | Return (Some expr)
-  | Continue (Some expr) | Break (Some expr)
       -> [expr]
   | ForeachHeader (pat, expr) -> [Ast.LetPattern (pat, expr)]
   | OtherStmtWithStmtHeader (_op, e) -> [e]

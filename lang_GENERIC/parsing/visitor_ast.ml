@@ -343,10 +343,10 @@ and v_stmt x =
         let v1 = v_option v_expr v1 in ()
   | Continue (t, v1) -> 
         let t = v_tok t in
-        let v1 = v_option v_expr v1 in ()
+        let v1 = v_label_ident v1 in ()
   | Break (t, v1) -> 
         let t = v_tok t in
-        let v1 = v_option v_expr v1 in ()
+        let v1 = v_label_ident v1 in ()
   | Label ((v1, v2)) -> let v1 = v_label v1 and v2 = v_stmt v2 in ()
   | Goto (t, v1) -> 
         let t = v_tok t in
@@ -373,6 +373,13 @@ and v_stmt x =
   in
   vin.kstmt (k, all_functions) x
 and v_other_stmt_with_stmt_operator _ = ()
+
+and v_label_ident =
+  function
+  | LNone -> ()
+  | LId v1 -> let v1 = v_label v1 in ()
+  | LInt v1 -> let v1 = v_int v1 in ()
+  | LDynamic v1 -> let v1 = v_expr v1 in ()
 
 and v_case = function 
   | Case (t, v1) -> 

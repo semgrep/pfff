@@ -78,8 +78,8 @@ type node = {
       | Default
 
       | Return of expr option
-      | Break of expr option
-      | Continue of expr option
+      | Break
+      | Continue
 
       | TryHeader
       | CatchStart
@@ -148,8 +148,8 @@ let short_string_of_node_kind nkind =
   | OtherStmtWithStmtHeader _ -> "<otherstmtheader>" 
 
   | Return _ -> "return ...;"
-  | Continue _ -> "continue ...;"
-  | Break _ -> "break ...;"
+  | Continue -> "continue ...;"
+  | Break -> "break ...;"
 
   | SwitchHeader _ -> "switch(...)"
   | SwitchEnd -> "<endswitch>"
