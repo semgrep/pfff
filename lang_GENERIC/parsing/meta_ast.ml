@@ -585,7 +585,7 @@ and vof_other_stmt_operator =
   | OS_TryOrElse -> Ocaml.VSum (("OS_TryOrElse", []))
   | OS_ThrowFrom -> Ocaml.VSum (("OS_ThrowFrom", []))
   | OS_ThrowNothing -> Ocaml.VSum (("OS_ThrowNothing", []))
-  | OS_Global -> Ocaml.VSum (("OS_Global", []))
+  | OS_GlobalComplex -> Ocaml.VSum (("OS_GlobalComplex", []))
   | OS_NonLocal -> Ocaml.VSum (("OS_NonLocal", []))
   | OS_Pass -> Ocaml.VSum (("OS_Pass", []))
   | OS_Sync -> Ocaml.VSum (("OS_Sync", []))
@@ -709,6 +709,8 @@ and vof_definition_kind =
       let v1 = vof_macro_definition v1 in Ocaml.VSum (("MacroDef", [ v1 ]))
   | Signature v1 ->
       let v1 = vof_type_ v1 in Ocaml.VSum (("Signature", [ v1 ]))
+  | GlobalDecl v1 ->
+      let v1 = vof_tok v1 in Ocaml.VSum (("GlobalDecl", [ v1 ]))
 
 and vof_module_definition { mbody = v_mbody } =
   let bnds = [] in

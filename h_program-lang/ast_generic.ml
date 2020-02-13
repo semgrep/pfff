@@ -500,7 +500,7 @@ and stmt =
     (* TODO: reduce? transpile? *)
     | OS_ForOrElse | OS_WhileOrElse | OS_TryOrElse
     | OS_ThrowFrom | OS_ThrowNothing 
-    | OS_Global (* PHP/Python *) | OS_NonLocal
+    | OS_NonLocal (* see also GlobalDecl *)
     | OS_Pass
     | OS_Async
     (* Java *)
@@ -510,6 +510,8 @@ and stmt =
     (* Go *)
     | OS_Go | OS_Defer 
     | OS_Fallthrough (* only in Switch *)
+    (* PHP *)
+    | OS_GlobalComplex (* e.g., global $$x, argh *)
 
 (*****************************************************************************)
 (* Pattern *)
@@ -653,10 +655,11 @@ and definition = entity * definition_kind (* (or decl) *)
      *)
   }
 
-  (* can have empty "body" when the definition is actually a declaration
-   * in a header file *)
   and definition_kind =
-    (* newvar: can be used also for methods, nested functions, lambdas *)
+    (* newvar: can be used also for methods, nested functions, lambdas.
+     * note: can have empty "body" when the def is actually a declaration
+     * in a header file (called a prototype in C) 
+     *)
     | FuncDef   of function_definition
     (* newvar: can be used also for constants, fields *)
     | VarDef    of variable_definition
@@ -666,7 +669,16 @@ and definition = entity * definition_kind (* (or decl) *)
 
     | ModuleDef of module_definition
     | MacroDef of macro_definition
+
+    (* in header file (e.g., .mli in OCaml or 'module sig') *)
     | Signature of type_
+    (* Only used inside a function.
+     * Need for languages without local VarDef (e.g., Python/PHP)
+     * where the first use is also its declaration. In that case when we
+     * want to access a global we need to disambiguate with creating a new
+     * local.
+     *)
+    | GlobalDecl of tok (* 'global' *)
 
 (* template/generics/polymorphic *)
 and type_parameter = ident * type_parameter_constraints
