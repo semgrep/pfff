@@ -428,7 +428,7 @@ and modifier v = wrap modifierbis v
 and attribute v = expr v
 
 and constant_def { cst_name = cst_name; cst_body = cst_body } =
-  let arg = ident cst_name in let arg = option expr cst_body in 
+  let arg = ident cst_name in let arg = option expr cst_body in
   raise Todo
 
 and enum_type { e_base = e_base; e_constraint = e_constraint } =
@@ -489,24 +489,26 @@ and class_var {
 and method_def v = func_def v
 
 and type_def { t_name = t_name; t_kind = t_kind } =
-  let arg = ident t_name in let arg = type_def_kind t_kind in 
-  raise Todo
+  let id = ident t_name in let kind = type_def_kind t_kind in
+  let ent = G.basic_entity id [] in
+  ent, { G.tbody = kind }
 
 and type_def_kind =
   function
-  | Alias v1 -> let v1 = hint_type v1 in ()
-  | Newtype v1 -> let v1 = hint_type v1 in ()
-  | ClassConstType v1 -> let v1 = option hint_type v1 in ()
+  | Alias v1 -> let v1 = hint_type v1 in
+      G.AliasType v1
+  | Newtype v1 -> let v1 = hint_type v1 in
+      G.NewType v1
+  | ClassConstType v1 -> let v1 = option hint_type v1 in
+      raise Todo
 
 and program v = 
-  (* list stmt v  *)
-  raise Todo
-
+  list stmt v
 
 let any =
   function
   | Program v1 -> let v1 = program v1 in G.Pr v1
-  | Stmt v1 -> let v1 = stmt v1 in raise Todo
+  | Stmt v1 -> let v1 = stmt v1 in G.S v1
   | Expr2 v1 -> let v1 = expr v1 in G.E v1
-  | Param v1 -> let v1 = parameter v1 in raise Todo
+  | Param v1 -> let v1 = parameter v1 in G.Pa v1
 
