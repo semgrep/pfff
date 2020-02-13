@@ -500,7 +500,6 @@ and stmt =
     (* TODO: reduce? transpile? *)
     | OS_ForOrElse | OS_WhileOrElse | OS_TryOrElse
     | OS_ThrowFrom | OS_ThrowNothing 
-    | OS_NonLocal (* see also GlobalDecl *)
     | OS_Pass
     | OS_Async
     (* Java *)
@@ -685,7 +684,7 @@ and definition = entity * definition_kind (* (or decl) *)
      * want to access a global we need to disambiguate with creating a new
      * local.
      *)
-    | GlobalDecl of tok (* 'global' *)
+    | UseOuterDecl of tok (* 'global' or 'nonlocal' Python, 'use' PHP *)
 
 (* template/generics/polymorphic *)
 and type_parameter = ident * type_parameter_constraints

@@ -483,12 +483,11 @@ and stmt_aux x =
       in
       [G.DirectiveStmt (G.ImportFrom (t, G.DottedName v1, v2))]
 
-  | Global (t, v1) -> let v1 = list name v1 in
+  | Global (t, v1) | NonLocal (t, v1)
+    -> let v1 = list name v1 in
       v1 |> List.map (fun x -> 
           let ent = G.basic_entity x [] in
-          G.DefStmt (ent, G.GlobalDecl t))
-  | NonLocal (_t, v1) -> let v1 = list name v1 in
-      [G.OtherStmt (G.OS_NonLocal, v1 |> List.map (fun x -> G.Id x))]
+          G.DefStmt (ent, G.UseOuterDecl t))
 
   | ExprStmt v1 -> let v1 = expr v1 in 
       [G.ExprStmt v1]

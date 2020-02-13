@@ -556,7 +556,7 @@ and map_definition_kind =
   | ModuleDef v1 -> let v1 = map_module_definition v1 in ModuleDef ((v1))
   | MacroDef v1 -> let v1 = map_macro_definition v1 in MacroDef ((v1))
   | Signature v1 -> let v1 = map_type_ v1 in Signature ((v1))
-  | GlobalDecl v1 -> let v1 = map_tok v1 in GlobalDecl ((v1))
+  | UseOuterDecl v1 -> let v1 = map_tok v1 in UseOuterDecl ((v1))
 
 and map_module_definition { mbody = v_mbody } =
   let v_mbody = map_module_definition_kind v_mbody in 

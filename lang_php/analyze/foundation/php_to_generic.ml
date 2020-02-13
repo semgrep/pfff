@@ -185,7 +185,7 @@ let rec stmt_aux =
           match e with
           | Id [id] -> 
               let ent = G.basic_entity id [] in
-              G.DefStmt (ent, G.GlobalDecl t)
+              G.DefStmt (ent, G.UseOuterDecl t)
           | _ ->
               let e = expr e in
               G.OtherStmt (G.OS_GlobalComplex, [G.E e])
@@ -327,6 +327,7 @@ and expr =
             let body = G.stmt1 (list stmt body) in
             let ps = parameters ps in
             let rett = option hint_type rett in
+            (* TODO: transform l_uses in UseOuterDecl preceding body *)
             G.Lambda { G.fparams = ps; frettype = rett; fbody = body }
       | _ -> error (snd v1.f_name) "TODO: Lambda"
       )

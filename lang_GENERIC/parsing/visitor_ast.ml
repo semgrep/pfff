@@ -498,7 +498,7 @@ and v_def_kind =
   | ModuleDef v1 -> let v1 = v_module_definition v1 in ()
   | MacroDef v1 -> let v1 = v_macro_definition v1 in ()
   | Signature v1 -> let v1 = v_type_ v1 in ()
-  | GlobalDecl v1 -> let v1 = v_tok v1 in ()
+  | UseOuterDecl v1 -> let v1 = v_tok v1 in ()
 
 and
   v_function_definition {
