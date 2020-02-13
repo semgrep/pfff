@@ -180,8 +180,16 @@ let rec stmt_aux =
           G.DefStmt (ent, G.VarDef def)
       )
 
-  | Global (t, v1) -> let v1 = list expr v1 in
-      raise Todo
+  | Global (t, v1) -> 
+      v1 |> List.map (fun e ->
+          match e with
+          | Id [id] -> 
+              let ent = G.basic_entity id [] in
+              G.DefStmt (ent, G.GlobalDecl t)
+          | _ ->
+              let e = expr e in
+              G.OtherStmt (G.OS_GlobalComplex, [G.E e])
+     )
 
 and stmt x = 
   G.stmt1 (stmt_aux x)
