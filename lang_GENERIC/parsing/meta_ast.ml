@@ -911,6 +911,9 @@ and vof_directive =
       let t = vof_tok t in
       let v1 = vof_dotted_ident v1
       in Ocaml.VSum (("Package", [ t; v1 ]))
+  | PackageEnd (t) ->
+      let t = vof_tok t in
+      Ocaml.VSum (("PackageEnd", [ t ]))
   | OtherDirective ((v1, v2)) ->
       let v1 = vof_other_directive_operator v1
       and v2 = Ocaml.vof_list vof_any v2

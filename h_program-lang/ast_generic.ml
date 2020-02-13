@@ -844,6 +844,8 @@ and directive =
    * the same package name; they are agglomarated in the same package
    *)
   | Package of tok * dotted_ident (* a.k.a namespace *)
+  (* for languages such as C++/PHP with scoped namespaces *)
+  | PackageEnd of tok
 
   | OtherDirective of other_directive_operator * any list
 

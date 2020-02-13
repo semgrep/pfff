@@ -108,62 +108,62 @@ let list_expr_to_opt xs =
 let for_var xs = 
   xs |> List.map (fun e -> G.ForInitExpr e)
 
-let rec stmt =
+let rec stmt_aux =
   function
   | Expr v1 -> let v1 = expr v1 in 
-      G.ExprStmt v1
+      [G.ExprStmt v1]
   | Block v1 -> let v1 = list stmt v1 in
-      G.Block v1
+      [G.Block v1]
   | If ((t, v1, v2, v3)) ->
       let v1 = expr v1 and v2 = stmt v2 and v3 = stmt v3 in
-      G.If (t, v1, v2, v3)
+      [G.If (t, v1, v2, v3)]
   | Switch ((t, v1, v2)) -> let v1 = expr v1 and v2 = list case v2 in
-      G.Switch (t, Some v1, v2)
+      [G.Switch (t, Some v1, v2)]
   | While ((t, v1, v2)) -> let v1 = expr v1 and v2 = list stmt v2 in
-      G.While (t, v1, G.stmt1 v2)
+      [G.While (t, v1, G.stmt1 v2)]
   | Do ((t, v1, v2)) -> let v1 = list stmt v1 and v2 = expr v2 in
-      G.DoWhile (t, G.stmt1 v1, v2)
+      [G.DoWhile (t, G.stmt1 v1, v2)]
   | For ((t, v1, v2, v3, v4)) ->
       let v1 = list expr v1
       and v2 = list expr v2
       and v3 = list expr v3
       and v4 = list stmt v4
       in
-      G.For (t, G.ForClassic (
+      [G.For (t, G.ForClassic (
           for_var v1, 
           list_expr_to_opt v2,
           list_expr_to_opt v3),
-        G.stmt1 v4)
+        G.stmt1 v4)]
           
   | Foreach ((t, v1, v2, v3)) ->
       let v1 = expr v1
       and v2 = foreach_pattern v2
       and v3 = list stmt v3
       in 
-      G.For (t, G.ForEach (v2, v1), G.stmt1 v3)
+      [G.For (t, G.ForEach (v2, v1), G.stmt1 v3)]
   | Return (t, v1) -> let v1 = option expr v1 in 
-      G.Return (t, v1)
+      [G.Return (t, v1)]
   | Break (t, v1) -> 
-      G.Break (t, opt_expr_to_label_ident v1)
+      [G.Break (t, opt_expr_to_label_ident v1)]
   | Continue (t, v1) -> 
-      G.Continue (t, opt_expr_to_label_ident v1)
+      [G.Continue (t, opt_expr_to_label_ident v1)]
   | Throw (t, v1) -> let v1 = expr v1 in
-      G.Throw (t, v1)
+      [G.Throw (t, v1)]
   | Try ((t, v1, v2, v3)) ->
       let v1 = list stmt v1
       and v2 = list catch v2
       and v3 = finally v3
       in 
-      G.Try (t, G.stmt1 v1, v2, v3)
+      [G.Try (t, G.stmt1 v1, v2, v3)]
 
   | ClassDef v1 -> let (ent, def) = class_def v1 in
-      G.DefStmt (ent, G.ClassDef def)
+      [G.DefStmt (ent, G.ClassDef def)]
   | FuncDef v1 -> let (ent, def) = func_def v1 in
-      G.DefStmt (ent, G.FuncDef def)
+      [G.DefStmt (ent, G.FuncDef def)]
   | ConstantDef v1 -> let (ent, def) = constant_def v1 in
-      G.DefStmt (ent, G.VarDef def)
+      [G.DefStmt (ent, G.VarDef def)]
   | TypeDef v1 -> let (ent, def) = type_def v1 in
-      G.DefStmt (ent, G.TypeDef def)
+      [G.DefStmt (ent, G.TypeDef def)]
   | NamespaceDef ((v1, v2)) ->
       let v1 = qualified_ident v1 and v2 = list stmt v2 in
       raise Todo
@@ -181,6 +181,9 @@ let rec stmt =
       raise Todo
   | Global (t, v1) -> let v1 = list expr v1 in
       raise Todo
+
+and stmt x = 
+  G.stmt1 (stmt_aux x)
 
 and opt_expr_to_label_ident = function
  | None -> G.LNone
@@ -331,9 +334,7 @@ and xhp =
 and xml { xml_tag = xml_tag; xml_attrs = xml_attrs; xml_body = xml_body } =
   let tag = ident xml_tag in
   let attrs =
-    list (fun (v1, v2) -> let v1 = ident v1 and v2 = xhp_attr v2 in 
-        v1, v2
-    )
+    list (fun (v1, v2) -> let v1 = ident v1 and v2 = xhp_attr v2 in v1, v2)
     xml_attrs in
   let body = list xhp xml_body in 
   { G.xml_tag = tag; xml_attrs = attrs; xml_body = body }

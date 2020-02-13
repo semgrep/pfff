@@ -616,6 +616,9 @@ and v_directive x =
   | Package ((t, v1)) ->
       let t = v_tok t in
       let v1 = v_dotted_ident v1 in ()
+  | PackageEnd ((t)) ->
+      let t = v_tok t in
+      ()
   | OtherDirective ((v1, v2)) ->
       let v1 = v_other_directive_operator v1 and v2 = v_list v_any v2 in ()
   in

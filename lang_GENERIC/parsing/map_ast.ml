@@ -725,6 +725,9 @@ and map_directive =
       let t = map_tok t in
       let v1 = map_dotted_ident v1
       in Package ((t, v1))
+  | PackageEnd ((t)) ->
+      let t = map_tok t in
+      PackageEnd ((t))
 
 and map_alias (v1, v2) =
   let v1 = map_ident v1 and v2 = map_of_option map_ident v2 in (v1, v2)
