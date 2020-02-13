@@ -79,7 +79,7 @@ and toplevels env xs =
   | [] -> []
   | x::xs ->
     (match x with
-    | NamespaceDef (_, qi, _) ->
+    | NamespaceDef (t, qi, _) ->
       let (xs, rest) = xs |> Common.span (function
         (* less: actually I'm not sure you can mix NamespaceDef and BracketDef*)
         | NamespaceDef _ | NamespaceBracketDef _ -> false
@@ -88,7 +88,7 @@ and toplevels env xs =
       in
       let body = toplevels env xs in
       let rest = toplevels env rest in
-      A.NamespaceDef (qualified_ident env qi, body)::rest
+      A.NamespaceDef (t, qualified_ident env qi, G.fake_bracket body)::rest
 
     | _ ->
       (toplevel env x) @ toplevels env xs
@@ -106,19 +106,19 @@ and toplevel env st =
   | NotParsedCorrectly _ -> raise Common.Impossible
   (* should be handled by toplevel above *)
   | NamespaceDef (_, _, _) -> raise Impossible
-  | NamespaceBracketDef (tok, qu_opt, xs) ->
+  | NamespaceBracketDef (tok, qu_opt, (t1, xs, t2)) ->
       let qi =
         match qu_opt with
         | Some qu -> qualified_ident env qu
         | None -> [A.special "ROOT", wrap tok]
       in
-      [A.NamespaceDef (qi, toplevels env (unbrace xs))]
-  | NamespaceUse (_tok, xs, _) ->
+      [A.NamespaceDef (tok, qi, (t1, toplevels env xs, t2))]
+  | NamespaceUse (tok, xs, _) ->
       xs |> uncomma |> List.map (function
       | ImportNamespace qu ->
-          A.NamespaceUse (qualified_ident env qu, None)
+          A.NamespaceUse (tok, qualified_ident env qu, None)
       | AliasNamespace (qu, _tok, id) ->
-          A.NamespaceUse (qualified_ident env qu, Some (ident env id))
+          A.NamespaceUse (tok, qualified_ident env qu, Some (ident env id))
       )
 
 (* ------------------------------------------------------------------------- *)

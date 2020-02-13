@@ -173,8 +173,8 @@ and stmt =
   | TypeDef of type_def
   (* the qualified_ident below can not have a leading '\', it can also
    * be the root namespace *)
-  | NamespaceDef of qualified_ident * stmt list
-  | NamespaceUse of qualified_ident * ident option (* when alias *)
+  | NamespaceDef of tok * qualified_ident * stmt list bracket
+  | NamespaceUse of tok * qualified_ident * ident option (* when alias *)
 
   (* Note that there is no LocalVars constructor. Variables in PHP are
    * declared when they are first assigned. *)

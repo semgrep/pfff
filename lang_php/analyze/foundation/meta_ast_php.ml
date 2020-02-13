@@ -107,14 +107,16 @@ and vof_stmt =
       let v1 = vof_constant_def v1 in Ocaml.VSum (("ConstantDef", [ v1 ]))
   | TypeDef v1 ->
       let v1 = vof_type_def v1 in Ocaml.VSum (("TypeDef", [ v1 ]))
-  | NamespaceDef (v1, v2) ->
+  | NamespaceDef (t, v1, v2) ->
+      let t = vof_tok t in
       let v1 = vof_qualified_ident v1 in
-      let v2 = Ocaml.vof_list vof_stmt v2  in
-      Ocaml.VSum (("NamespaceDef", [ v1; v2 ]))
-  | NamespaceUse ((v1, v2)) ->
+      let v2 = vof_bracket (Ocaml.vof_list vof_stmt) v2  in
+      Ocaml.VSum (("NamespaceDef", [ t; v1; v2 ]))
+  | NamespaceUse ((t, v1, v2)) ->
+      let t = vof_tok t in
       let v1 = vof_qualified_ident v1
       and v2 = Ocaml.vof_option vof_ident v2
-      in Ocaml.VSum (("NamespaceUse", [ v1; v2 ]))
+      in Ocaml.VSum (("NamespaceUse", [ t; v1; v2 ]))
 
 
 and vof_type_def { t_name = v_t_name; t_kind = v_t_kind } =

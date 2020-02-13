@@ -37,10 +37,9 @@ let vref f x = ref (f !x)
 let bool = id
 let string = id
 
-let fake s = Parse_info.fake_info s
-let fake_bracket x = fake "(", x, fake ")"
-
 let error = Ast_generic.error
+let fake = Ast_generic.fake
+let fake_bracket = Ast_generic.fake_bracket
 
 (*****************************************************************************)
 (* Entry point *)
@@ -164,10 +163,12 @@ let rec stmt_aux =
       [G.DefStmt (ent, G.VarDef def)]
   | TypeDef v1 -> let (ent, def) = type_def v1 in
       [G.DefStmt (ent, G.TypeDef def)]
-  | NamespaceDef ((v1, v2)) ->
+  | NamespaceDef ((t, v1, (_t1, v2, t2))) ->
       let v1 = qualified_ident v1 and v2 = list stmt v2 in
-      raise Todo
-  | NamespaceUse ((v1, v2)) ->
+      [G.DirectiveStmt (G.Package (t, v1))] @ v2 @ 
+      [G.DirectiveStmt (G.PackageEnd t2)]
+      
+  | NamespaceUse ((t, v1, v2)) ->
       let v1 = qualified_ident v1 and v2 = option ident v2 in
       raise Todo
 

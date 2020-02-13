@@ -844,7 +844,10 @@ and directive =
    * the same package name; they are agglomarated in the same package
    *)
   | Package of tok * dotted_ident (* a.k.a namespace *)
-  (* for languages such as C++/PHP with scoped namespaces *)
+  (* for languages such as C++/PHP with scoped namespaces
+   * alt: Package of tok * dotted_ident * item list bracket, but less 
+   * consistent with other directives, so better to use PackageEnd.
+   *)
   | PackageEnd of tok
 
   | OtherDirective of other_directive_operator * any list
@@ -1034,3 +1037,7 @@ let funcdef_to_lambda (ent, def) resolved =
   let name = Name ((ent.name, empty_name_info), idinfo) in
   let v = Lambda def in
   Assign (name, Parse_info.fake_info "=", v)
+
+(* try avoid using them! *)
+let fake s = Parse_info.fake_info s
+let fake_bracket x = fake "(", x, fake ")"

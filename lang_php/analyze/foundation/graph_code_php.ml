@@ -672,7 +672,7 @@ and stmt_toplevel_list env xs =
   | [] -> ()
   | x::xs ->
     (match x with
-    | NamespaceUse (qu, sopt) ->
+    | NamespaceUse (_, qu, sopt) ->
         let new_name =
           match sopt, List.rev qu with
           | Some (str, _tok), _ -> str
@@ -700,7 +700,7 @@ and stmt_bis env x =
   | ClassDef def -> class_def env def
   | ConstantDef def -> constant_def env def
   | TypeDef def -> type_def env def
-  | NamespaceDef (qu, xs) ->
+  | NamespaceDef (_, qu, (_, xs, _)) ->
     stmt_toplevel_list
       {env with cur = { env.cur with qualifier = prune_special_root qu; }} xs
   (* handled in stmt_toplevel_list *)
