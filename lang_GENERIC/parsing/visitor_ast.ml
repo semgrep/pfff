@@ -552,6 +552,7 @@ and v_type_definition_kind =
       in ()
   | AndType v1 -> let v1 = v_list v_field v1 in ()
   | AliasType v1 -> let v1 = v_type_ v1 in ()
+  | NewType v1 -> let v1 = v_type_ v1 in ()
   | Exception ((v1, v2)) ->
       let v1 = v_ident v1 and v2 = v_list v_type_ v2 in ()
   | OtherTypeKind ((v1, v2)) ->

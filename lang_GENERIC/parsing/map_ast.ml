@@ -651,7 +651,8 @@ and map_type_definition_kind =
       let v1 = map_of_list map_or_type_element v1 in OrType ((v1))
   | AndType v1 -> let v1 = map_of_list map_field v1 in AndType ((v1))
   | AliasType v1 -> let v1 = map_type_ v1 in AliasType ((v1))
-   | Exception ((v1, v2)) ->
+  | NewType v1 -> let v1 = map_type_ v1 in NewType ((v1))
+  | Exception ((v1, v2)) ->
       let v1 = map_ident v1
       and v2 = map_of_list map_type_ v2
       in Exception ((v1, v2))

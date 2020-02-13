@@ -491,8 +491,7 @@ and decl =
       G.DefStmt (ent, G.TypeDef { G.tbody = G.AliasType v3 })
   | DTypeDef ((v1, v2)) -> let v1 = ident v1 and v2 = type_ v2 in 
       let ent = G.basic_entity v1 [] in
-      G.DefStmt (ent, G.TypeDef { G.tbody = 
-          G.OtherTypeKind (G.OTKO_Typedef, [G.T v2]) })
+      G.DefStmt (ent, G.TypeDef { G.tbody = G.NewType v2 })
 
 and top_decl =
   function

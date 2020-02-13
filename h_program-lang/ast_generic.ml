@@ -747,6 +747,8 @@ and type_definition = {
 
    (* a.k.a typedef in C (and alias type in Go) *)
    | AliasType of type_
+   | NewType of type_ (* Haskell/Hack/Go ('type x foo' vs 'type x = foo') *)
+
    | Exception of ident (* same name than entity *) * type_ list
 
    | OtherTypeKind of other_type_kind_operator * any list
@@ -782,8 +784,6 @@ and type_definition = {
   and other_type_kind_operator = 
      (* OCaml *)
      | OTKO_AbstractType
-     (* Go *)
-     | OTKO_Typedef (* 'type x foo' (vs 'type x = foo', subtle) *)
 
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)

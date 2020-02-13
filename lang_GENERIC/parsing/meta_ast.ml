@@ -831,6 +831,8 @@ and vof_type_definition_kind =
       in Ocaml.VSum (("AndType", [ v1 ]))
   | AliasType v1 ->
       let v1 = vof_type_ v1 in Ocaml.VSum (("AliasType", [ v1 ]))
+  | NewType v1 ->
+      let v1 = vof_type_ v1 in Ocaml.VSum (("NewType", [ v1 ]))
   | Exception ((v1, v2)) ->
       let v1 = vof_ident v1
       and v2 = Ocaml.vof_list vof_type_ v2
@@ -842,7 +844,6 @@ and vof_type_definition_kind =
 and vof_other_type_kind_operator =
   function 
     | OTKO_AbstractType -> Ocaml.VSum (("OTKO_AbstractType", []))
-    | OTKO_Typedef -> Ocaml.VSum (("OTKO_Typedef", []))
 and vof_or_type_element =
   function
   | OrConstructor ((v1, v2)) ->
