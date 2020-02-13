@@ -397,7 +397,9 @@ and vof_hint_type =
       let t = vof_hint_type t in
       let tok = vof_tok tok in
       Ocaml.VSum (("HintQuestion", [ tok; t ]))
-  | HintTuple l -> Ocaml.VSum (("HintTuple", List.map vof_hint_type l))
+  | HintTuple l -> 
+      let l = vof_bracket (Ocaml.vof_list vof_hint_type) l in
+      Ocaml.VSum (("HintTuple", [l]))
   | HintCallback (args, ret) ->
       Ocaml.VSum (("HintCallback",
                    [ Ocaml.VList (List.map vof_hint_type args);

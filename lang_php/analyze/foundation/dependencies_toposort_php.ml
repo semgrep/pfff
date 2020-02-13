@@ -176,7 +176,7 @@ module Deps = struct
 
     | HintArray _ -> acc
     | HintQuestion (_, t) -> hint_type_ acc t
-    | HintTuple t -> List.fold_left (fun accp x -> SSet.union accp (hint_type_ accp x)) acc t
+    | HintTuple (_, t, _) -> List.fold_left (fun accp x -> SSet.union accp (hint_type_ accp x)) acc t
     | HintCallback (args, ret) ->
         let acc_u_ret = match ret with
                          | Some x -> hint_type_ acc x

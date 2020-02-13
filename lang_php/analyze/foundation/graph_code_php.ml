@@ -867,7 +867,7 @@ and hint_type env t =
       add_use_edge env (name, E.Class)
   | HintArray _tok -> ()
   | HintQuestion (_, t) -> hint_type env t
-  | HintTuple xs -> List.iter (hint_type env) xs
+  | HintTuple (_, xs, _) -> List.iter (hint_type env) xs
   | HintCallback (tparams, tret_opt) ->
       List.iter (hint_type env) tparams;
       Common.opt (hint_type env) tret_opt

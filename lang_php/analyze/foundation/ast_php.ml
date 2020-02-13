@@ -323,7 +323,7 @@ and hint_type =
  | Hint of name (* todo: add the generics *)
  | HintArray of tok
  | HintQuestion of tok * hint_type
- | HintTuple of hint_type list
+ | HintTuple of hint_type list bracket
  | HintCallback of hint_type list * (hint_type option)
  | HintShape of (string_const_expr * hint_type) list (* a.k.a record *)
  | HintTypeConst of (hint_type * hint_type) (* ?? *)

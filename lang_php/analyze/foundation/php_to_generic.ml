@@ -363,11 +363,11 @@ and hint_type =
   | Hint v1 -> let v1 = name v1 in 
       G.TyName (name_of_qualified_ident v1)
   | HintArray t -> 
-      raise Todo
+      G.TyBuiltin ("array", t)
   | HintQuestion (t, v1) -> let v1 = hint_type v1 in 
-      raise Todo
-  | HintTuple v1 -> let v1 = list hint_type v1 in
-      raise Todo
+      G.TyQuestion (v1, t)
+  | HintTuple (t1, v1, t2) -> let v1 = list hint_type v1 in
+      G.TyTuple (t1, v1, t2)
   | HintCallback ((v1, v2)) ->
       let v1 = list hint_type v1 and v2 = option hint_type v2 in 
       raise Todo

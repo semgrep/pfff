@@ -525,7 +525,8 @@ and hint_type env = function
   | Hint (q, _typeTODO) -> A.Hint (name env q)
   | HintArray tok -> A.HintArray tok
   | HintQuestion (tok, t) -> A.HintQuestion (tok, hint_type env t)
-  | HintTuple v1 -> A.HintTuple (List.map (hint_type env) (comma_list (brace v1)))
+  | HintTuple (t1, v1, t2) -> 
+      A.HintTuple (t1, List.map (hint_type env) (comma_list v1), t2)
   | HintCallback (_, (_, args, ret), _) ->
       let args = List.map (hint_type env) (comma_list_dots (brace args)) in
       let ret  = Common2.fmap (fun (_, _, t) -> hint_type env t) ret in
