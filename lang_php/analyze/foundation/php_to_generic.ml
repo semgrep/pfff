@@ -174,7 +174,10 @@ let rec stmt_aux =
   | StaticVars (t, v1) ->
       v1 |> list (fun (v1, v2) ->
           let v1 = var v1 and v2 = option expr v2 in
-          raise Todo
+          let attr = [G.KeywordAttr (G.Static, t)] in
+          let ent = G.basic_entity v1 attr in
+          let def = { G.vinit = v2; vtype = None } in
+          G.DefStmt (ent, G.VarDef def)
       )
 
   | Global (t, v1) -> let v1 = list expr v1 in
