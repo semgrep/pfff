@@ -167,19 +167,16 @@ let rec stmt_aux =
       let v1 = qualified_ident v1 and v2 = list stmt v2 in
       [G.DirectiveStmt (G.Package (t, v1))] @ v2 @ 
       [G.DirectiveStmt (G.PackageEnd t2)]
-      
   | NamespaceUse ((t, v1, v2)) ->
       let v1 = qualified_ident v1 and v2 = option ident v2 in
-      raise Todo
+      [G.DirectiveStmt (G.ImportAs (t, G.DottedName v1, v2))]
 
   | StaticVars (t, v1) ->
-      let v1 =
-        list
-          (fun (v1, v2) ->
-             let v1 = var v1 and v2 = option expr v2 in ())
-          v1
-      in
-      raise Todo
+      v1 |> list (fun (v1, v2) ->
+          let v1 = var v1 and v2 = option expr v2 in
+          raise Todo
+      )
+
   | Global (t, v1) -> let v1 = list expr v1 in
       raise Todo
 
