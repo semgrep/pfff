@@ -708,8 +708,6 @@ and binaryOp env heap bop v1 v2 =
   | BinaryConcat ->
       (* Vabstr Tstring by default *)
       Taint.binary_concat env heap v1 v2 !(env.path)
-  | Pipe ->
-     failwith "Not supported"
   | CombinedComparison -> Vabstr Tint
 
 and unaryOp uop v =

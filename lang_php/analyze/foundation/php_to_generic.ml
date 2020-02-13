@@ -73,7 +73,6 @@ let rec fixOp x = x
 and binaryOp (x, t) =
   match x with
   | BinaryConcat -> raise Todo
-  | Pipe -> raise Todo
   | CombinedComparison -> raise Todo
   | ArithOp op -> Left (op, t)
 

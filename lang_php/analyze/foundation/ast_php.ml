@@ -289,7 +289,6 @@ and expr =
   
   and binaryOp = 
    | BinaryConcat 
-   | Pipe 
    | CombinedComparison
    | ArithOp of Ast_generic.arithmetic_operator
   and unaryOp = Ast_generic.arithmetic_operator

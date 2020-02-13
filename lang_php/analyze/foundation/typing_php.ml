@@ -700,8 +700,6 @@ and binaryOp env t1 t2 = function
      end else Unify.unify env t1 t2
   | BinaryConcat ->
       Unify.unify env t1 t2
-  | Pipe ->
-     failwith "Not supported"
   | CombinedComparison ->
       Unify.unify env t1 t2 |> ignore;
       int

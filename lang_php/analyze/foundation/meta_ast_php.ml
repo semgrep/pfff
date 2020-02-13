@@ -291,7 +291,6 @@ and vof_special = function
 
 and vof_binaryOp = function
  | BinaryConcat -> Ocaml.VSum ("BinaryConcat", [])
- | Pipe  -> Ocaml.VSum ("BinaryConcat", [])
  | CombinedComparison  -> Ocaml.VSum ("BinaryConcat", [])
  | ArithOp v1 -> 
       let v1 = Meta_ast_generic_common.vof_arithmetic_operator v1 in
