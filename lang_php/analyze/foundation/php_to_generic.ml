@@ -70,7 +70,13 @@ let name_of_qualified_ident xs =
 let name v = qualified_ident v
 
 let rec fixOp x = x
-and binaryOp x = raise Todo
+and binaryOp (x, t) =
+  match x with
+  | BinaryConcat -> raise Todo
+  | Pipe -> raise Todo
+  | CombinedComparison -> raise Todo
+  | ArithOp op -> Left (op, t)
+
 and unaryOp x = x
 
 let modifierbis =
@@ -236,7 +242,10 @@ and expr =
       and v1 = expr v1
       and v3 = expr v3
       in 
-      G.AssignOp (v1, v2, v3)
+      (match v2 with
+      | Left (op, t) -> G.AssignOp (v1, (op, t), v3)
+      | Right x -> raise Todo
+      )
   | List v1 -> let v1 = bracket (list expr) v1 in
       G.Container(G.List, v1)
   | Arrow ((v1, _t, v2)) -> let v1 = expr v1 and v2 = expr v2 in
@@ -257,7 +266,13 @@ and expr =
       let v2 = binaryOp v2
       and v1 = expr v1
       and v3 = expr v3
-      in raise Todo
+      in
+      (match v2 with
+      | Left (op, t) -> 
+         G.Call (G.IdSpecial (G.ArithOp op, t), [G.Arg v1; G.Arg v3])
+      | Right x -> 
+         raise Todo
+      )
   | Unop (((v1, t), v2)) -> let v1 = unaryOp v1 and v2 = expr v2 in 
       G.Call (G.IdSpecial (G.ArithOp v1, t), [G.Arg v2])
   | Guil (t, v1, _) -> let v1 = list expr v1 in
