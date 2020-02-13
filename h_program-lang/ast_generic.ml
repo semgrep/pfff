@@ -204,7 +204,7 @@ and expr =
   (* todo: newvar: sometimes abused to also introduce a newvar (as in Python)
    * but ultimately those cases should be rewritten to first introduce a
    * VarDef. 
-   * todo: Sometimes some ObjAccess should really be transformed in Name
+   * todo: Sometimes some DotAccess should really be transformed in Name
    * with a better qualifier because the obj is actually the name of a package
    * or module, but you may need advanced semantic information and global
    * analysis to disambiguate.
@@ -219,16 +219,17 @@ and expr =
   (* IntepolatedString of expr list is simulated with a 
    * Call(IdSpecial (Concat ...)) *)
 
-  (* The left part should be an lvalue (id, ObjAccess, ArrayAccess, Deref)
+  (* The left part should be an lvalue (Name, DotAccess, ArrayAccess, Deref)
    * but it can also be a pattern (Tuple, Container), but
    * you should really use LetPattern for that.
    * Assign can also be abused to declare new variables, but you should use
    * variable_definition for that.
    * less: should be in stmt, but most languages allow this at expr level :(
+   * todo: do il_generic where normalize this AST with expr/instr/stmt
    * update: should even be in a separate simple_stmt, as in Go
    *)
-  | Assign of expr * tok (* =, or sometimes := in Go, <- in ML *) * expr
-  (* less: should desugar in Assign, should be only binary_operator *)
+  | Assign of expr * tok (* =, or sometimes := in Go, <- in OCaml *) * expr
+  (* less: could desugar in Assign, should be only binary_operator *)
   | AssignOp of expr * arithmetic_operator wrap * expr
   (* newvar:! newscope:? in OCaml yes but we miss the 'in' part here  *)
   | LetPattern of pattern * expr
@@ -243,7 +244,7 @@ and expr =
   | SliceAccess of expr * 
       expr option (* lower *) * expr option (* upper *) * expr option (* step*)
 
-  (* a.k.a ternary expression, or regular if in ML *)
+  (* a.k.a ternary expression, or regular if in OCaml *)
   | Conditional of expr * expr * expr 
   | MatchPattern of expr * action list
   (* less: TryFunctional *)
@@ -256,12 +257,12 @@ and expr =
   (* less: should be in statement *)
   | Seq of expr list (* at least 2 elements *)
 
-  (* less: could be in Special *)
+  (* less: could be in Special, but pretty important so I've lifted them here*)
   | Ref   of tok (* &, address of *) * expr 
-  | DeRef of tok (* '*' in C, '!' or '<-' in ML *) * expr 
+  | DeRef of tok (* '*' in C, '!' or '<-' in OCaml, ^ in Reason *) * expr 
 
   (* sgrep: *)
-  | Ellipsis of tok (* sgrep: ... in args, stmts, and also types in Python *)
+  | Ellipsis of tok (* '...' in args, stmts (and also types in Python) *)
   | TypedMetavar of ident * tok (* : *) * type_
 
   | OtherExpr of other_expr_operator * any list
@@ -273,27 +274,29 @@ and expr =
     | Unit of tok (* a.k.a Void *) | Null of tok | Undefined of tok (* JS *)
     | Imag of string wrap (* Go, Python *)
 
-  and field_ident =
-    | FId of ident
-    | FName of name (* OCaml *)
-    | FDynamic of expr
-
   and container_operator = 
     (* Tuple was lifted up *)
     | Array (* todo? designator? use ArrayAccess for designator? *)
     | List | Set
     | Dict (* a.k.a Hash or Map (combine with Tuple to get Key/value pair) *)
 
-
+  (* It's useful to keep track in the AST of all those special identifiers.
+   * They need to be handled in a special way by certain analysis and just
+   * using Name for them would be error-prone.
+   * Note though that by putting all of them together in a type, we lose
+   * typing information, for example Eval takes only one argument and
+   * InstanceOf takes a type and an expr. This is a tradeoff to also not 
+   * polluate too much expr with too many constructs.
+   *)
   and special = 
    (* special vars *)
    | This | Super
    | Self | Parent (* different from This/Super? *)
 
-   (* special apply *)
+   (* special calls *)
    | Eval
    | Typeof (* for C? and Go in switch x.(type) *)
-   | Instanceof | Sizeof
+   | Instanceof | Sizeof (* takes a ArgType *)
    (* note that certain languages do not have a 'new' keyword (e.g., Python),
     * instead certain 'Call' are really 'New' *)
    | New  (* usually associated with Call(New, [ArgType _;...]) *)
@@ -301,16 +304,17 @@ and expr =
    | Concat (* used for interpolated strings constructs *)
    | Spread (* inline list var, in Container or call context *)
 
+   (* used for unary and binary operations *)
    | ArithOp of arithmetic_operator
-   (* should be lift up and transformed in Assign at stmt level *)
+   (* less: should be lift up and transformed in Assign at stmt level *)
    | IncrDecr of (incr_decr * prefix_postfix)
 
-    (* mostly binary operator 
+    (* mostly binary operators.
      * less: could be divided in really Arith vs Logical (bool) operators,
      * but see is_boolean_operator() helper below.
      * Note that Mod can be used for %style string formatting in Python.
+     * Note that Plus can also be used for string concatenations in Go/??.
      * todo? use a Special operator intead for that? but need type info?
-     * Plus can be used for string concatenations in Go.
      *)
     and arithmetic_operator = 
       | Plus (* unary too *) | Minus (* unary too *) 
@@ -320,11 +324,19 @@ and expr =
       | BitOr | BitXor | BitAnd | BitNot (* unary *) | BitClear (* Go *)
       (* todo? rewrite in CondExpr? have special behavior *)
       | And | Or (* also shortcut operator *) | Xor (* PHP*) | Not (* unary *)
-      | Eq     | NotEq     (* less: could be desugared to Not Eq *)
-      | PhysEq | NotPhysEq (* less: could be desugared to Not PhysEq *)
+      | Eq (* '=' in OCaml, '==' in Go/... *)
+      | NotEq     (* less: could be desugared to Not Eq *)
+      | PhysEq (* '==' in OCaml, '===' in JS/... *)
+      | NotPhysEq (* less: could be desugared to Not PhysEq *)
       | Lt | LtE | Gt | GtE  (* less: could be desugared to Or (Eq Lt) *)
-    and incr_decr = Incr | Decr
+    and incr_decr = Incr | Decr (* '++', '--' *)
     and prefix_postfix = Prefix | Postfix
+
+  and field_ident =
+    | FId of ident
+    | FName of name (* OCaml *)
+    | FDynamic of expr
+
 
   (* newscope: newvar: *)
   and action = pattern * expr
@@ -350,16 +362,16 @@ and expr =
         (* OCaml *)
         | OA_ArgQuestion
 
-  (* TODO: reduce *)
+  (* TODO: reduce, or move in other_special? *)
   and other_expr_operator = 
     (* Javascript *)
     | OE_Exports | OE_Module 
     | OE_Define | OE_Arguments 
     | OE_NewTarget
     | OE_Delete | OE_YieldStar
-    | OE_Encaps (* less: convert to regular funcall? *)
-    | OE_Require (* todo: lift to Import? *) 
-    | OE_UseStrict (* less: lift up to program attribute/directive? *)
+    | OE_Encaps (* todo: convert to regular funcall? use Concat? *)
+    | OE_Require (* todo: lift to DirectiveStmt? transform in Import? *) 
+    | OE_UseStrict (* todo: lift up to program attribute/directive? *)
     (* Python *)
     | OE_Is | OE_IsNot (* less: could be part of a set_operator? or PhysEq? *)
     | OE_In | OE_NotIn (* less: could be part of a obj_operator? *)
@@ -368,7 +380,7 @@ and expr =
     (* TODO: newvar: *)
     | OE_CompForIf | OE_CompFor | OE_CompIf
     | OE_CmpOps
-    | OE_Repr (* lift up? special Dump? *)
+    | OE_Repr (* todo: move to special, special Dump *)
     (* Java *)
     | OE_NameOrClassType | OE_ClassLiteral | OE_NewQualifiedClass
     (* C *)
@@ -386,7 +398,7 @@ and expr =
 (* Statement *)
 (*****************************************************************************)
 and stmt =
-  (* later: lift Call/Assign/Seq here *)
+  (* later: lift Call/Assign/Seq here and separate in expr/instr/stmt *)
   | ExprStmt of expr
 
   | DefStmt of definition
@@ -408,14 +420,16 @@ and stmt =
      case_and_body list
 
   | Return   of tok * expr option
-  (* less: switch to label? but PHP accept integers no? *)
+  (* TODO: switch to label? but PHP accept integers no? 
+   * label_ident like field_ident, so easier for CFG! and bailout for
+   * DynamicLabel of expr *)
   | Continue of tok * expr option 
   | Break    of tok * expr option 
 
   | Label of label * stmt
   | Goto of tok * label
 
-  | Throw of tok * expr (* a.k.a raise *)
+  | Throw of tok (* 'raise' in OCaml, 'throw' in Java *) * expr
   | Try of tok * stmt * catch list * finally option
   | Assert of tok * expr * expr option (* message *)
 
@@ -482,7 +496,7 @@ and stmt =
     | OS_Asm
     (* Go *)
     | OS_Go | OS_Defer 
-    | OS_Fallthrough
+    | OS_Fallthrough (* only in Switch *)
 
 (*****************************************************************************)
 (* Pattern *)
@@ -520,7 +534,7 @@ and pattern =
 
   and other_pattern_operator =
   (* Python *)
-  | OP_ExprPattern (* todo: should transform in pattern when can *)
+  | OP_ExprPattern (* todo: should transform via expr_to_pattern() below *)
   (* Javascript *)
   | OP_Var (* todo: should transform in pattern when can *)
 
@@ -531,15 +545,15 @@ and pattern =
 and type_ =
   (* todo? a type_builtin = TInt | TBool | ...? see Literal *)
   | TyBuiltin of string wrap (* int, bool, etc. could be TApply with no args *)
-  (* old: was type_, but languages such as C and Go allow also to name
-   * those parameters, and Go even allow Variadic params so we need
-   * at least type_ * attributes, at which point it's better to just use 
-   * parameter_classic
+  (* old: was 'type_ list * type*' , but languages such as C and 
+   * Go allow also to name those parameters, and Go even allow Variadic 
+   * parameters so we need at least 'type_ * attributes', at which point 
+   * it's better to just use parameter_classic
    *)
   | TyFun of parameter_classic list * type_ (* return type *)
   (* covers tuples, list, etc. and also regular typedefs *)
   | TyApply of name * type_arguments
-  | TyVar of ident (* typedef? no type variable in polymorphic type *)
+  | TyVar of ident (* type variable in polymorphic types (not a typedef) *)
 
   (* a special case of TApply, also a special case of TPointer *)
   | TyArray of (* const_expr *) expr option * type_
@@ -561,7 +575,7 @@ and type_ =
 
   and other_type_operator = 
   (* Python *)
-  | OT_Expr | OT_Arg (* todo: should transform in type_ when can *)
+  | OT_Expr | OT_Arg (* todo: should use expr_to_type() below when can *)
   (* C *)
   (* TODO? convert in unique name with TyApply ?*)
   | OT_StructName | OT_UnionName | OT_EnumName 
@@ -617,17 +631,19 @@ and definition = entity * definition_kind (* (or decl) *)
     (* naming/typing *)
     info: id_info;
     (* old: type_: type_ option; but redundant with the type information in
-     * the different definition_kind, as well as in id_info, 
-     * so not worth factoring.
+     * the different definition_kind, as well as in id_info, and does not
+     * have any meanings for certain defs (e.g., ClassDef) so not worth
+     * factoring.
      *)
   }
 
   (* can have empty "body" when the definition is actually a declaration
    * in a header file *)
   and definition_kind =
-    | FuncDef   of function_definition (* valid for methods too *)
-    (* newvar: *)
-    | VarDef    of variable_definition (* valid for constants and fields too *)
+    (* newvar: can be used also for methods, nested functions, lambdas *)
+    | FuncDef   of function_definition
+    (* newvar: can be used also for constants, fields *)
+    | VarDef    of variable_definition
 
     | TypeDef   of type_definition
     | ClassDef  of class_definition
@@ -754,7 +770,7 @@ and type_definition = {
      (* OCaml *)
      | OTKO_AbstractType
      (* Go *)
-     | OTKO_Typedef (* type x foo (vs type x = foo) *)
+     | OTKO_Typedef (* 'type x foo' (vs 'type x = foo', subtle) *)
 
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)
@@ -762,7 +778,8 @@ and type_definition = {
 (* less: could be a special kind of type_definition *)
 and class_definition = {
   ckind: class_kind;
-  cextends: type_ list; (* usually just one parent *)
+ (* usually just one parent, and type_ should be a TyApply *)
+  cextends: type_ list;
   cimplements: type_ list;
   (* newscope: *)
   cbody: field list; (* TODO bracket *)
@@ -803,8 +820,9 @@ and macro_definition = {
 (*****************************************************************************)
 and directive = 
   (* newvar: *)
-  | ImportFrom of tok (* 'import' or 'from' *) * module_name * alias list
-     (* less: unfold the alias list? *)
+  | ImportFrom of tok (* 'import'/'from' for Python, 'include' for C *) * 
+                  module_name * alias list
+  (* less: unfold the alias list? *)
   | ImportAs   of tok * module_name * ident option (* as name *)
   (* bad practice! hard to resolve name locally *)
   | ImportAll  of tok * module_name * tok (* '.' in Go, '*' in Java/Python *)
@@ -822,6 +840,7 @@ and directive =
   (* Javascript *)
   | OI_Export 
   | OI_ImportCss | OI_ImportEffect
+  (* TODO: Pragma/Declare, move OE_UseStrict here for JS? *)
 
 (*****************************************************************************)
 (* Toplevel *)
@@ -963,7 +982,8 @@ let stmt1 xs =
   | [st] -> st
   | xs -> Block xs
 
-
+(* used in abstract interpreter and type for PHP where we now reuse
+ * 'Ast_generic.arithmetic_operator' above *)
 let is_boolean_operator = function
  | Plus (* unary too *) | Minus (* unary too *) 
  | Mult | Div | Mod
@@ -977,6 +997,7 @@ let is_boolean_operator = function
  | Lt | LtE | Gt | GtE 
    -> true
 
+(* used in controlflow_build *)
 let vardef_to_assign (ent, def) resolved =
   let idinfo = { (empty_id_info()) with id_resolved = ref resolved } in
   let name = Name ((ent.name, empty_name_info), idinfo) in
@@ -987,6 +1008,7 @@ let vardef_to_assign (ent, def) resolved =
   in
   Assign (name, Parse_info.fake_info "=", v)
 
+(* used in controlflow_build *)
 let funcdef_to_lambda (ent, def) resolved =
   let idinfo = { (empty_id_info()) with id_resolved = ref resolved } in
   let name = Name ((ent.name, empty_name_info), idinfo) in
