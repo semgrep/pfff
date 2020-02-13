@@ -324,18 +324,22 @@ and special = function
 
 and xhp =
   function
-  | XhpText v1 -> let v1 = string v1 in ()
-  | XhpExpr v1 -> let v1 = expr v1 in ()
-  | XhpXml v1 -> let v1 = xml v1 in ()
+  | XhpText v1 -> let v1 = string v1 in G.XmlText v1
+  | XhpExpr v1 -> let v1 = expr v1 in G.XmlExpr v1
+  | XhpXml v1 -> let v1 = xml v1 in G.XmlXml v1
+
 and xml { xml_tag = xml_tag; xml_attrs = xml_attrs; xml_body = xml_body } =
-  let arg = ident xml_tag in
-  let arg =
-    list (fun (v1, v2) -> let v1 = ident v1 and v2 = xhp_attr v2 in ())
-      xml_attrs in
-  let arg = list xhp xml_body in 
-  raise Todo
+  let tag = ident xml_tag in
+  let attrs =
+    list (fun (v1, v2) -> let v1 = ident v1 and v2 = xhp_attr v2 in 
+        v1, v2
+    )
+    xml_attrs in
+  let body = list xhp xml_body in 
+  { G.xml_tag = tag; xml_attrs = attrs; xml_body = body }
 
 and xhp_attr v          = expr v
+
 and foreach_pattern v   = 
   let v = expr v in
   G.expr_to_pattern v
@@ -407,6 +411,7 @@ and function_kind =
   | Method -> ()
 
 and parameters x = list parameter x
+
 and parameter {
                 p_type = p_type;
                 p_ref = p_ref;
@@ -459,8 +464,10 @@ and class_def {
   let arg = list class_name c_uses in
   let arg = option enum_type c_enum_type in
   let arg = list attribute c_attrs in
+
   let arg = list xhp_field c_xhp_fields in
   let arg = list class_name c_xhp_attr_inherit in
+
   let arg = list constant_def c_constants in
   let arg = list class_var c_variables in
   let arg = list method_def c_methods in 
