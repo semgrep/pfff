@@ -40,6 +40,8 @@ let string = id
 let fake s = Parse_info.fake_info s
 let fake_bracket x = fake "(", x, fake ")"
 
+let error = Ast_generic.error
+
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
@@ -266,8 +268,18 @@ and expr =
       G.Conditional (v1, v2, v3)
   | Cast ((v1, v2)) -> let v1 = ptype v1 and v2 = expr v2 in
       G.Cast(v1, v2)
-  | Lambda v1 -> let v1 = func_def v1 in 
-      raise Todo
+  | Lambda v1 -> 
+      (match v1 with
+      | { f_kind = AnonLambda; f_ref = false; m_modifiers = [];
+          l_uses = []; f_attrs = [];
+          f_params = ps; f_return_type = rett;
+          f_body = body } ->
+            let body = G.stmt1 (list stmt body) in
+            let ps = parameters ps in
+            let rett = option hint_type rett in
+            G.Lambda { G.fparams = ps; frettype = rett; fbody = body }
+      | _ -> error (snd v1.f_name) "TODO: Lambda"
+      )
 
 and special = function
   | This -> G.This
@@ -293,25 +305,33 @@ and string_const_expr v = expr v
 
 and hint_type =
   function
-  | Hint v1 -> let v1 = name v1 in ()
-  | HintArray -> ()
-  | HintQuestion v1 -> let v1 = hint_type v1 in ()
-  | HintTuple v1 -> let v1 = list hint_type v1 in ()
+  | Hint v1 -> let v1 = name v1 in 
+      raise Todo
+  | HintArray -> 
+      raise Todo
+  | HintQuestion v1 -> let v1 = hint_type v1 in 
+      raise Todo
+  | HintTuple v1 -> let v1 = list hint_type v1 in
+      raise Todo
   | HintCallback ((v1, v2)) ->
-      let v1 = list hint_type v1 and v2 = option hint_type v2 in ()
+      let v1 = list hint_type v1 and v2 = option hint_type v2 in 
+      raise Todo
   | HintShape v1 ->
       let v1 =
         list
           (fun (v1, v2) ->
              let v1 = string_const_expr v1 and v2 = hint_type v2 in ())
           v1
-      in ()
+      in
+      raise Todo
   | HintTypeConst v1 ->
       let v1 =
         (match v1 with
          | (v1, v2) -> let v1 = hint_type v1 and v2 = hint_type v2 in ())
-      in ()
-  | HintVariadic v1 -> let v1 = option hint_type v1 in ()
+      in
+      raise Todo
+  | HintVariadic v1 -> let v1 = option hint_type v1 in
+      raise Todo
 
 and class_name v = hint_type v
 
@@ -328,7 +348,7 @@ and func_def {
              } =
   let arg = ident f_name in
   let arg = function_kind f_kind in
-  let arg = list parameter f_params in
+  let arg = parameters f_params in
   let arg = option hint_type f_return_type in
   let arg = bool f_ref in
   let arg = list modifier m_modifiers in
@@ -344,6 +364,7 @@ and function_kind =
   | ShortLambda -> ()
   | Method -> ()
 
+and parameters x = list parameter x
 and parameter {
                 p_type = p_type;
                 p_ref = p_ref;
@@ -357,7 +378,8 @@ and parameter {
   let arg = var p_name in
   let arg = option expr p_default in
   let arg = list attribute p_attrs in
-  let arg = bool p_variadic in ()
+  let arg = bool p_variadic in
+  raise Todo
 
 and modifier v = wrap modifierbis v
 
