@@ -156,7 +156,7 @@ and stmt =
   | While of tok * expr * stmt list
   | Do of tok * stmt list * expr
   | For of tok * expr list * expr list * expr list * stmt list
-  (* 'foreach ($xs as $k)', '... ($xs as $k => $v)', '... ($xs as list($...))'*)
+  (* 'foreach ($xs as $k)','... ($xs as $k => $v)', '... ($xs as list($...))'*)
   | Foreach of tok * expr * foreach_pattern * stmt list
 
   | Return of tok * expr option

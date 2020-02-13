@@ -99,6 +99,15 @@ let ptype (x, t) =
   | ObjectTy -> G.TyBuiltin ("object", t)
 
 
+let list_expr_to_opt xs =
+  match xs with
+  | [] -> None
+  | [e] -> Some e
+  | x::xs -> Some (G.Seq (x::xs))
+
+let for_var xs = 
+  xs |> List.map (fun e -> G.ForInitExpr e)
+
 let rec stmt =
   function
   | Expr v1 -> let v1 = expr v1 in 
@@ -120,13 +129,18 @@ let rec stmt =
       and v3 = list expr v3
       and v4 = list stmt v4
       in
-      raise Todo
+      G.For (t, G.ForClassic (
+          for_var v1, 
+          list_expr_to_opt v2,
+          list_expr_to_opt v3),
+        G.stmt1 v4)
+          
   | Foreach ((t, v1, v2, v3)) ->
       let v1 = expr v1
       and v2 = foreach_pattern v2
       and v3 = list stmt v3
       in 
-      raise Todo
+      G.For (t, G.ForEach (v2, v1), G.stmt1 v3)
   | Return (t, v1) -> let v1 = option expr v1 in 
       G.Return (t, v1)
   | Break (t, v1) -> 
@@ -322,7 +336,10 @@ and xml { xml_tag = xml_tag; xml_attrs = xml_attrs; xml_body = xml_body } =
   raise Todo
 
 and xhp_attr v          = expr v
-and foreach_pattern v   = expr v
+and foreach_pattern v   = 
+  let v = expr v in
+  G.expr_to_pattern v
+
 and array_value v       = expr v
 and string_const_expr v = expr v
 

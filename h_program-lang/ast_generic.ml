@@ -982,6 +982,8 @@ let expr_to_type e =
 
 (* see also Java_to_generic.entity_to_param *)
 (* see also Python_to_generic.expr_to_attribute *)
+(* see also Php_generic.list_expr_to_opt *)
+(* see also Php_generic.name_of_qualified_ident (also in Java) *)
 
 (* todo? should remove? should have an explicit EmptyStmt? *)
 let opt_to_empty = function
