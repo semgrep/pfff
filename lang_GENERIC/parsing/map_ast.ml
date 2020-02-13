@@ -289,6 +289,15 @@ and map_other_expr_operator x = x
 
 and map_type_ =
   function
+  | TyAnd v1 ->
+      let v1 =
+        map_bracket
+          (map_of_list
+             (fun (v1, v2) ->
+                let v1 = map_ident v1 and v2 = map_type_ v2 in (v1, v2)))
+          v1
+      in TyAnd ((v1))
+  | TyOr v1 -> let v1 = map_of_list map_type_ v1 in TyOr ((v1))
   | TyBuiltin v1 -> let v1 = map_wrap map_of_string v1 in TyBuiltin ((v1))
   | TyFun ((v1, v2)) ->
       let v1 = map_of_list map_parameter_classic v1

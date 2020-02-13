@@ -358,6 +358,18 @@ and vof_other_expr_operator =
   
 and vof_type_ =
   function
+  | TyAnd v1 ->
+      let v1 =
+        vof_bracket
+          (Ocaml.vof_list
+             (fun (v1, v2) ->
+                let v1 = vof_ident v1
+                and v2 = vof_type_ v2
+                in Ocaml.VTuple [ v1; v2 ]))
+          v1
+      in Ocaml.VSum (("TyAnd", [ v1 ]))
+  | TyOr v1 ->
+      let v1 = Ocaml.vof_list vof_type_ v1 in Ocaml.VSum (("TyOr", [ v1 ]))
   | TyBuiltin v1 ->
       let v1 = vof_wrap Ocaml.vof_string v1
       in Ocaml.VSum (("TyBuiltin", [ v1 ]))

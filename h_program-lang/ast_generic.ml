@@ -516,7 +516,7 @@ and pattern =
   | PatLiteral of literal
   (* Or-Type, used also to match OCaml exceptions *)
   | PatConstructor of name * pattern list
-  (* And-Type *)
+  (* And-Type*)
   | PatRecord of field_pattern list (* TODO: bracket *)
 
   (* newvar:! *)
@@ -581,6 +581,16 @@ and type_ =
   | TyPointer of tok * type_
   | TyTuple of type_ list bracket (* at least 2 elements *)
   | TyQuestion of type_ * tok (* a.k.a option type *)
+ 
+  (* Anonymous record type, a.k.a shape in PHP/Hack. See also AndType.
+   * Most record types are defined via a TypeDef and are then referenced
+   * via a TyName. Here we have flexible record types (a.k.a. rows in OCaml).
+   *)
+  | TyAnd of (ident * type_) list bracket
+  (* unused for now, but could be used for OCaml variants, or for 
+   * union types!
+   *)
+  | TyOr of type_ list
 
   | OtherType of other_type_operator * any list
   
@@ -601,7 +611,8 @@ and type_ =
   (* TODO? convert in unique names with TyName? *)
   | OT_StructName | OT_UnionName | OT_EnumName 
   (* PHP *)
-  | OT_ShapeComplex (* complex record keys *) | OT_Variadic (* ???? *)
+  | OT_ShapeComplex (* complex TyAnd with complex keys *) 
+  | OT_Variadic (* ???? *)
 
 (*****************************************************************************)
 (* Attribute *)
@@ -744,6 +755,9 @@ and function_definition = {
  *  but maybe useful to explicitely makes the difference for now?
  *)
 and variable_definition = {
+  (* todo? should remove vinit and transform a VarDef with init with a VarDef
+   * followed by an Assign (possibly to Null).
+   *)
   vinit: expr option;
   (* less: could merge in entity.type_ *)
   vtype: type_ option;

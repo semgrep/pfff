@@ -268,6 +268,14 @@ and v_other_expr_operator _x = ()
 and v_type_ x =
   let k x = 
   match x with
+  | TyAnd v1 ->
+      let v1 =
+        v_bracket
+          (v_list
+             (fun (v1, v2) -> let v1 = v_ident v1 and v2 = v_type_ v2 in ()))
+          v1
+      in ()
+  | TyOr v1 -> let v1 = v_list v_type_ v1 in ()
   | TyBuiltin v1 -> let v1 = v_wrap v_string v1 in ()
   | TyFun ((v1, v2)) -> let v1 = v_list v_parameter_classic v1 and 
     v2 = v_type_ v2 in ()
