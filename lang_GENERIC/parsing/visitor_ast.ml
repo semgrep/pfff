@@ -271,8 +271,10 @@ and v_type_ x =
   | TyBuiltin v1 -> let v1 = v_wrap v_string v1 in ()
   | TyFun ((v1, v2)) -> let v1 = v_list v_parameter_classic v1 and 
     v2 = v_type_ v2 in ()
-  | TyApply ((v1, v2)) ->
+  | TyNameApply ((v1, v2)) ->
       let v1 = v_name v1 and v2 = v_type_arguments v2 in ()
+  | TyName ((v1)) ->
+      let v1 = v_name v1 in ()
   | TyVar v1 -> let v1 = v_ident v1 in ()
   | TyArray ((v1, v2)) ->
       let v1 = v_option v_expr v1 and v2 = v_type_ v2 in ()

@@ -45,6 +45,7 @@ let name_of_qualified_ident = function
   | Right (xs, id) -> id, { G.name_qualifier = Some xs; name_typeargs = None }
 
 let fake s = Parse_info.fake_info s
+let fake_id s = (s, fake s)
 let fake_name s = (s, fake s), G.empty_name_info
 let mk_name s tok = (s, tok), G.empty_name_info
 
@@ -109,7 +110,7 @@ in
 let rec type_ =
   function
   | TName v1 -> let v1 = qualified_ident v1 in
-      G.TyApply (name_of_qualified_ident v1, [])
+      G.TyName (name_of_qualified_ident v1)
   | TPtr (t, v1) -> let v1 = type_ v1 in 
       G.TyPointer (t, v1)
   | TArray ((v1, v2)) -> let v1 = expr v1 and v2 = type_ v2 in 
@@ -121,14 +122,14 @@ let rec type_ =
   | TFunc v1 -> let (params, ret) = func_type v1 in 
       let ret = 
         match ret with
-        | None -> G.TyApply (fake_name "void", [])
+        | None -> G.TyBuiltin (fake_id "void")
         | Some t -> t
       in
       G.TyFun (params, ret)
   | TMap ((t, v1, v2)) -> let v1 = type_ v1 and v2 = type_ v2 in 
-      G.TyApply (mk_name "map" t, [G.TypeArg v1; G.TypeArg v2])
+      G.TyNameApply (mk_name "map" t, [G.TypeArg v1; G.TypeArg v2])
   | TChan ((t, v1, v2)) -> let v1 = chan_dir v1 and v2 = type_ v2 in 
-      G.TyApply (mk_name "chan" t, [G.TypeArg v1; G.TypeArg v2])
+      G.TyNameApply (mk_name "chan" t, [G.TypeArg v1; G.TypeArg v2])
 
   | TStruct (t, v1) -> let (_t1, v1, _t2) = bracket (list struct_field) v1 in 
       (* could also use StructName *)
@@ -136,7 +137,7 @@ let rec type_ =
       let ent = G.basic_entity (s, t) [] in
       let def = G.TypeDef { G.tbody = G.AndType v1 } in
       Common.push (ent, def) anon_types;
-      G.TyApply (mk_name s t, [])
+      G.TyName (mk_name s t)
   | TInterface (t, v1) -> let (_t1, v1, _t2) = bracket (list interface_field) v1 in 
       let s = gensym () in
       let ent = G.basic_entity (s, t) [] in
@@ -144,12 +145,12 @@ let rec type_ =
           cextends = []; cimplements = []; 
           cbody = v1; } in
       Common.push (ent, def) anon_types;
-      G.TyApply (mk_name s t, [])
+      G.TyName (mk_name s t)
 
 and chan_dir = function 
-  | TSend -> G.TyApply (fake_name "send", [])
-  | TRecv -> G.TyApply (fake_name "recv", []) 
-  | TBidirectional -> G.TyApply (fake_name "bidirectional", [])
+  | TSend -> G.TyName (fake_name "send")
+  | TRecv -> G.TyName (fake_name "recv") 
+  | TBidirectional -> G.TyName (fake_name "bidirectional")
 
 and func_type { fparams = fparams; fresults = fresults } =
   let fparams = list parameter fparams in

@@ -365,10 +365,13 @@ and vof_type_ =
       let v1 = Ocaml.vof_list vof_parameter_classic v1
       and v2 = vof_type_ v2
       in Ocaml.VSum (("TyFun", [ v1; v2 ]))
-  | TyApply ((v1, v2)) ->
+  | TyNameApply ((v1, v2)) ->
       let v1 = vof_name v1
       and v2 = vof_type_arguments v2
-      in Ocaml.VSum (("TyApply", [ v1; v2 ]))
+      in Ocaml.VSum (("TyNameApply", [ v1; v2 ]))
+  | TyName ((v1)) ->
+      let v1 = vof_name v1
+      in Ocaml.VSum (("TyName", [ v1 ]))
   | TyVar v1 -> let v1 = vof_ident v1 in Ocaml.VSum (("TyVar", [ v1 ]))
   | TyArray ((v1, v2)) ->
       let v1 = Ocaml.vof_option vof_expr v1

@@ -125,7 +125,7 @@ let rec type_ =
       G.OtherType (G.OT_EnumName, [G.Id v1])
   | TTypeName v1 -> 
       let v1 = name v1 in 
-      G.TyApply ((v1, G.empty_name_info), [])
+      G.TyName ((v1, G.empty_name_info))
 
 and function_type (v1, v2) =
   let v1 = type_ v1 and v2 = list parameter v2 in 

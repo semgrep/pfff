@@ -563,18 +563,22 @@ and pattern =
 and type_ =
   (* todo? a type_builtin = TInt | TBool | ...? see Literal *)
   | TyBuiltin of string wrap (* int, bool, etc. could be TApply with no args *)
+ 
+   (* less: could merge with TyApply (name, []) 
+    * todo? may need also TySpecial because the name can actually be
+    *  self/parent/static (e.g., in PHP)
+    *)
+  | TyName of name
+  (* covers tuples, list, etc.*)
+  | TyNameApply of name * type_arguments
+  | TyVar of ident (* type variable in polymorphic types (not a typedef) *)
+
   (* old: was 'type_ list * type*' , but languages such as C and 
    * Go allow also to name those parameters, and Go even allow Variadic 
    * parameters so we need at least 'type_ * attributes', at which point 
    * it's better to just use parameter_classic
    *)
   | TyFun of parameter_classic list * type_ (* return type *)
-  (* covers tuples, list, etc. and also regular typedefs.
-   * TODO: split with simple case TyName? also need TySpecial because
-   * sometimes the name is actually self/parent/static (e.g., in PHP)
-   *)
-  | TyApply of name * type_arguments
-  | TyVar of ident (* type variable in polymorphic types (not a typedef) *)
 
   (* a special case of TApply, also a special case of TPointer *)
   | TyArray of (* const_expr *) expr option * type_

@@ -84,7 +84,7 @@ and class_type v =
             name_typeargs = None; (* could be v1TODO above *)
             name_qualifier = Some (List.rev xs);
           } in
-        G.TyApply ((name, info), [])
+        G.TyName ((name, info))
   )
 
 and type_argument =
