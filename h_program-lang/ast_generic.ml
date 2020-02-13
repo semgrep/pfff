@@ -569,15 +569,18 @@ and type_ =
    * it's better to just use parameter_classic
    *)
   | TyFun of parameter_classic list * type_ (* return type *)
-  (* covers tuples, list, etc. and also regular typedefs *)
+  (* covers tuples, list, etc. and also regular typedefs.
+   * TODO: split with simple case TyName? also need TySpecial because
+   * sometimes the name is actually self/parent/static (e.g., in PHP)
+   *)
   | TyApply of name * type_arguments
   | TyVar of ident (* type variable in polymorphic types (not a typedef) *)
 
   (* a special case of TApply, also a special case of TPointer *)
   | TyArray of (* const_expr *) expr option * type_
   | TyPointer of tok * type_
-  | TyTuple of type_ list
-  | TyQuestion of type_ (* option type *)
+  | TyTuple of type_ list bracket (* at least 2 elements *)
+  | TyQuestion of type_ * tok (* a.k.a option type *)
 
   | OtherType of other_type_operator * any list
   

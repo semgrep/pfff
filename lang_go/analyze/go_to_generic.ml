@@ -58,7 +58,7 @@ let return_type_of_results results =
   | xs -> Some (G.TyTuple (xs |> List.map (function
             | { G.ptype = Some t;_ } -> t
             | { G.ptype = None; _ } -> raise Impossible
-            )))
+            ) |> G.fake_bracket))
 
 let list_to_tuple_or_expr xs =
   match xs with

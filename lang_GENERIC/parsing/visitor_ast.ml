@@ -279,8 +279,10 @@ and v_type_ x =
   | TyPointer (t, v1) -> 
         let t = v_tok t in
         let v1 = v_type_ v1 in ()
-  | TyTuple v1 -> let v1 = v_list v_type_ v1 in ()
-  | TyQuestion v1 -> let v1 = v_type_ v1 in ()
+  | TyTuple v1 -> let v1 = v_bracket (v_list v_type_) v1 in ()
+  | TyQuestion (v1, t) -> 
+        let t = v_tok t in
+        let v1 = v_type_ v1 in ()
   | OtherType ((v1, v2)) ->
       let v1 = v_other_type_operator v1 and v2 = v_list v_any v2 in ()
   in

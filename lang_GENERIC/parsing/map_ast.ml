@@ -306,8 +306,12 @@ and map_type_ =
   | TyPointer (t, v1) -> 
       let t = map_tok t in
       let v1 = map_type_ v1 in TyPointer ((t, v1))
-  | TyTuple v1 -> let v1 = map_of_list map_type_ v1 in TyTuple ((v1))
-  | TyQuestion v1 -> let v1 = map_type_ v1 in TyQuestion ((v1))
+  | TyTuple v1 -> let v1 = map_bracket (map_of_list map_type_) v1 in 
+      TyTuple ((v1))
+  | TyQuestion (v1, t) -> 
+      let t = map_tok t in
+      let v1 = map_type_ v1 in
+      TyQuestion ((v1, t))
   | OtherType ((v1, v2)) ->
       let v1 = map_other_type_operator v1
       and v2 = map_of_list map_any v2

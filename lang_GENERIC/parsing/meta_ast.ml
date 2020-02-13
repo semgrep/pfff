@@ -378,10 +378,11 @@ and vof_type_ =
       let t = vof_tok t in
       let v1 = vof_type_ v1 in Ocaml.VSum (("TyPointer", [ t; v1 ]))
   | TyTuple v1 ->
-      let v1 = Ocaml.vof_list vof_type_ v1
+      let v1 = vof_bracket (Ocaml.vof_list vof_type_) v1
       in Ocaml.VSum (("TyTuple", [ v1 ]))
-  | TyQuestion v1 ->
-      let v1 = vof_type_ v1 in Ocaml.VSum (("TyQuestion", [ v1 ]))
+  | TyQuestion (v1, t) ->
+      let t = vof_tok t in
+      let v1 = vof_type_ v1 in Ocaml.VSum (("TyQuestion", [ t; v1 ]))
   | OtherType ((v1, v2)) ->
       let v1 = vof_other_type_operator v1
       and v2 = Ocaml.vof_list vof_any v2
