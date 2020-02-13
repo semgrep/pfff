@@ -429,7 +429,7 @@ and stmt =
   | Label of label * stmt
   | Goto of tok * label
 
-  | Throw of tok (* 'raise' in OCaml, 'throw' in Java *) * expr
+  | Throw of tok (* 'raise' in OCaml, 'throw' in Java/PHP *) * expr
   | Try of tok * stmt * catch list * finally option
   | Assert of tok * expr * expr option (* message *)
 

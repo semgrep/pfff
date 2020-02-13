@@ -91,44 +91,67 @@ let ptype (x, t) =
   | ArrayTy -> G.TyBuiltin ("array", t)
   | ObjectTy -> G.TyBuiltin ("object", t)
 
+let opt_expr_to_label_ident = function
+ | None -> G.LNone
+ | Some _ -> raise Todo
+
 let rec stmt =
   function
-  | Expr v1 -> let v1 = expr v1 in ()
-  | Block v1 -> let v1 = list stmt v1 in ()
+  | Expr v1 -> let v1 = expr v1 in 
+      G.ExprStmt v1
+  | Block v1 -> let v1 = list stmt v1 in
+      G.Block v1
   | If ((t, v1, v2, v3)) ->
-      let v1 = expr v1 and v2 = stmt v2 and v3 = stmt v3 in ()
-  | Switch ((t, v1, v2)) -> let v1 = expr v1 and v2 = list case v2 in ()
-  | While ((t, v1, v2)) -> let v1 = expr v1 and v2 = list stmt v2 in ()
-  | Do ((t, v1, v2)) -> let v1 = list stmt v1 and v2 = expr v2 in ()
+      let v1 = expr v1 and v2 = stmt v2 and v3 = stmt v3 in
+      G.If (t, v1, v2, v3)
+  | Switch ((t, v1, v2)) -> let v1 = expr v1 and v2 = list case v2 in
+      G.Switch (t, Some v1, v2)
+  | While ((t, v1, v2)) -> let v1 = expr v1 and v2 = list stmt v2 in
+      G.While (t, v1, G.stmt1 v2)
+  | Do ((t, v1, v2)) -> let v1 = list stmt v1 and v2 = expr v2 in
+      G.DoWhile (t, G.stmt1 v1, v2)
   | For ((t, v1, v2, v3, v4)) ->
       let v1 = list expr v1
       and v2 = list expr v2
       and v3 = list expr v3
       and v4 = list stmt v4
-      in ()
+      in
+      raise Todo
   | Foreach ((t, v1, v2, v3)) ->
       let v1 = expr v1
       and v2 = foreach_pattern v2
       and v3 = list stmt v3
-      in ()
-  | Return (t, v1) -> let v1 = option expr v1 in ()
-  | Break (t, v1) -> let v1 = option expr v1 in ()
-  | Continue (t, v1) -> let v1 = option expr v1 in ()
-  | Throw (t, v1) -> let v1 = expr v1 in ()
+      in 
+      raise Todo
+  | Return (t, v1) -> let v1 = option expr v1 in 
+      G.Return (t, v1)
+  | Break (t, v1) -> let v1 = option expr v1 in
+      G.Break (t, opt_expr_to_label_ident v1)
+  | Continue (t, v1) -> let v1 = option expr v1 in
+      G.Continue (t, opt_expr_to_label_ident v1)
+  | Throw (t, v1) -> let v1 = expr v1 in
+      G.Throw (t, v1)
   | Try ((t, v1, v2, v3)) ->
       let v1 = list stmt v1
       and v2 = list catch v2
-      and v3 = list finally v3
-      in ()
+      and v3 = finally v3
+      in 
+      G.Try (t, G.stmt1 v1, v2, v3)
 
-  | ClassDef v1 -> let v1 = class_def v1 in ()
-  | FuncDef v1 -> let v1 = func_def v1 in ()
-  | ConstantDef v1 -> let v1 = constant_def v1 in ()
-  | TypeDef v1 -> let v1 = type_def v1 in ()
+  | ClassDef v1 -> let v1 = class_def v1 in
+      raise Todo
+  | FuncDef v1 -> let v1 = func_def v1 in
+      raise Todo
+  | ConstantDef v1 -> let v1 = constant_def v1 in
+      raise Todo
+  | TypeDef v1 -> let v1 = type_def v1 in
+      raise Todo
   | NamespaceDef ((v1, v2)) ->
-      let v1 = qualified_ident v1 and v2 = list stmt v2 in ()
+      let v1 = qualified_ident v1 and v2 = list stmt v2 in
+      raise Todo
   | NamespaceUse ((v1, v2)) ->
-      let v1 = qualified_ident v1 and v2 = option ident v2 in ()
+      let v1 = qualified_ident v1 and v2 = option ident v2 in
+      raise Todo
 
   | StaticVars (t, v1) ->
       let v1 =
@@ -136,18 +159,25 @@ let rec stmt =
           (fun (v1, v2) ->
              let v1 = var v1 and v2 = option expr v2 in ())
           v1
-      in ()
-  | Global (t, v1) -> let v1 = list expr v1 in ()
+      in
+      raise Todo
+  | Global (t, v1) -> let v1 = list expr v1 in
+      raise Todo
 
 and case =
   function
-  | Case ((t, v1, v2)) -> let v1 = expr v1 and v2 = list stmt v2 in ()
-  | Default (t, v1) -> let v1 = list stmt v1 in ()
+  | Case ((t, v1, v2)) -> let v1 = expr v1 and v2 = list stmt v2 in
+      [G.Case (t, G.expr_to_pattern v1)], G.stmt1 v2
+  | Default (t, v1) -> let v1 = list stmt v1 in
+      [G.Default t], G.stmt1 v1
 
 and catch (v1, v2, v3) =
-  let v1 = hint_type v1 and v2 = var v2 and v3 = list stmt v3 in ()
+  let v1 = hint_type v1 and v2 = var v2 and v3 = list stmt v3 in
+  raise Todo
 
-and finally v = list stmt v
+and finally xxs = 
+  (* list stmt v *)
+  raise Todo
 
 and expr =
   function
