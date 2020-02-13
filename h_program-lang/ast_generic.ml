@@ -462,17 +462,17 @@ and stmt =
      *)
     | CaseEqualExpr of tok * expr
 
-  (* newvar: newscope: *)
-  and catch = pattern * stmt
+  (* newvar: newscope: usually a PatVar *)
+  and catch = (* TODO tok *) pattern * stmt
   (* newscope: *)
-  and finally = stmt
+  and finally = (* TODO tok * *) stmt
 
   and label = ident
   and label_ident =
     | LNone (* C/Python *)
     | LId of label (* Java/Go *)
     | LInt of int wrap (* PHP *)
-    | LDynamic of expr (* PHP, woohoo *)
+    | LDynamic of expr (* PHP, woohoo, dynamic break! *)
 
   and for_header = 
     (* todo? copy Go and have instead   
@@ -482,7 +482,7 @@ and stmt =
                     expr option (* cond *) * 
                     expr option (* next *)
     (* newvar: *)
-    | ForEach of pattern * expr (* pattern 'in' expr *)
+    | ForEach of pattern * (* TODO tok *) expr (* pattern 'in' expr *)
 
     and for_var_or_expr = 
     (* newvar: *)
@@ -516,13 +516,13 @@ and stmt =
 (*****************************************************************************)
 and pattern = 
   | PatLiteral of literal
-  (* Or-Type *)
+  (* Or-Type, used also to match OCaml exceptions *)
   | PatConstructor of name * pattern list
   (* And-Type *)
   | PatRecord of field_pattern list (* TODO: bracket *)
 
   (* newvar:! *)
-  | PatVar of ident * id_info (* Always Local or Param *)
+  | PatId of ident * id_info (* Always Local or Param *)
 
   (* special cases of PatConstructor *)
   | PatTuple of pattern list
@@ -533,13 +533,18 @@ and pattern =
   | PatUnderscore of tok
 
   (* OCaml *)
-  | PatDisj  of pattern * pattern
+  | PatDisj  of pattern * pattern (* also for Java in catch *)
   | PatTyped of pattern * type_
   | PatWhen  of pattern * expr
   | PatAs    of pattern * (ident * id_info)
 
-  (* Go *)
+  (* For Go also in swtich x.(type) { case int: ... } *)
   | PatType of type_
+  (* In catch for Java/PHP. less: do instead PatAs (PatType(TyApply, var))?
+   *  or even PatAs (PatConstructor(id, []), var)?
+   * Also in foreach for Java.
+   *)
+  | PatVar of type_ * (ident * id_info) option
 
   | OtherPat of other_pattern_operator * any list
 
@@ -548,8 +553,6 @@ and pattern =
   and other_pattern_operator =
   (* Python *)
   | OP_ExprPattern (* todo: should transform via expr_to_pattern() below *)
-  (* Javascript *)
-  | OP_Var (* todo: should transform in pattern when can *)
 
 (*****************************************************************************)
 (* Type *)

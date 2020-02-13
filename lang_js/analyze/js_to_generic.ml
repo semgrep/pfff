@@ -225,7 +225,7 @@ and stmt x =
       and v2 =
         option (fun (v1, v2) -> 
            let v1 = name v1 and v2 = stmt v2 in
-           G.PatVar (v1, G.empty_id_info()), v2
+           G.PatId (v1, G.empty_id_info()), v2
        ) v2
       and v3 = option stmt v3 in
       G.Try (t, v1, Common.opt_to_list v2, v3)
@@ -252,9 +252,8 @@ and for_header =
       let v2 = expr v2 in
       let pattern = 
         match v1 with
-        | Left v -> 
-            let v = def_of_var v in
-            G.OtherPat (G.OP_Var, [G.Def v])
+        | Left {v_name = id; v_init = _NONE; v_resolved = _; v_kind = _ } -> 
+            G.PatId (id, G.empty_id_info())
         | Right e ->
             let e = expr e in
             G.expr_to_pattern e

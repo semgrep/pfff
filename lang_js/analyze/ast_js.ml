@@ -79,6 +79,7 @@ type 'a bracket = tok * 'a * tok
 (* Name *)
 (* ------------------------------------------------------------------------- *)
 
+(* todo: should rename ident *)
 type name = string wrap
  (* with tarzan *)
 

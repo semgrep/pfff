@@ -319,7 +319,7 @@ and stmt =
       G.While (t, v1, v2)
   | Do ((t, v1, v2)) -> let v1 = stmt v1 and v2 = expr v2 in
       G.DoWhile (t, v1, v2)
-  | For ((t, v1, v2)) -> let v1 = for_control v1 and v2 = stmt v2 in
+  | For ((t, v1, v2)) -> let v1 = for_control t v1 and v2 = stmt v2 in
       G.For (t, v1, v2)
   | Break (t, v1) -> let v1 = G.opt_to_label_ident v1 in
       G.Break (t, v1)
@@ -334,7 +334,7 @@ and stmt =
       G.OtherStmt (G.OS_Sync, [G.E v1; G.S v2])
   | Try ((t, v1, v2, v3)) ->
       let v1 = stmt v1
-      and v2 = catches v2
+      and v2 = catches t v2
       and v3 = option stmt v3
       in
       G.Try (t,v1, v2, v3)
@@ -361,7 +361,7 @@ and list_to_opt_seq = function
   | [e] -> Some e
   | xs -> Some (G.Seq xs)
 
-and for_control =
+and for_control tok =
   function
   | ForClassic ((v1, v2, v3)) ->
       let v1 = for_init v1
@@ -369,8 +369,12 @@ and for_control =
       and v3 = list expr v3
       in 
       G.ForClassic (v1, list_to_opt_seq v2, list_to_opt_seq v3)
-  | Foreach ((v1, v2)) -> let ent, _tTODO = var v1 and v2 = expr v2 in
-      let pat = G.OtherPat (G.OP_Var, [G.En ent]) in
+  | Foreach ((v1, v2)) -> let ent, typ = var v1 and v2 = expr v2 in
+      let pat = 
+        match typ with
+        | Some t -> G.PatVar (t, Some (ent.G.name, G.empty_id_info ()))
+        | None -> error tok "TODO: Catch without type"
+      in
       G.ForEach (pat, v2)
 
 and for_init =
@@ -386,10 +390,14 @@ and var { name = name; mods = mods; type_ = xtyp } =
   let v3 = option typ xtyp in
   G.basic_entity v1 v2, v3
 
-and catch (v1, v2) = let ent, _tTODO = var v1 and v2 = stmt v2 in
-  let pat = G.OtherPat (G.OP_Var, [G.En ent]) in
+and catch tok (v1, v2) = let ent, typ = var v1 and v2 = stmt v2 in
+  let pat = 
+    match typ with
+    | Some t -> G.PatVar (t, Some (ent.G.name, G.empty_id_info ()))
+    | None -> error tok "TODO: Catch without type"
+  in
   pat, v2
-and catches v = list catch v
+and catches t v = list (catch t) v
 
 
 and vars v = list var v

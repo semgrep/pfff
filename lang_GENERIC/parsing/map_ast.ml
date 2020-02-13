@@ -477,8 +477,16 @@ and map_pattern =
              let v1 = map_name v1 and v2 = map_pattern v2 in (v1, v2))
           v1
       in PatRecord ((v1))
+  | PatId ((v1, v2)) ->
+      let v1 = map_ident v1 and v2 = map_id_info v2 in PatId ((v1, v2))
   | PatVar ((v1, v2)) ->
-      let v1 = map_ident v1 and v2 = map_id_info v2 in PatVar ((v1, v2))
+      let v1 = map_type_ v1
+      and v2 =
+        map_of_option
+          (fun (v1, v2) ->
+             let v1 = map_ident v1 and v2 = map_id_info v2 in (v1, v2))
+          v2
+      in PatVar ((v1, v2))
   | PatLiteral v1 -> let v1 = map_literal v1 in PatLiteral ((v1))
   | PatType v1 -> let v1 = map_type_ v1 in PatType ((v1))
   | PatConstructor ((v1, v2)) ->

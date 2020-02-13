@@ -224,7 +224,7 @@ and rec_opt v = option tok v
 
 and pattern =
   function
-  | PatVar v1 -> let v1 = ident v1 in G.PatVar (v1, G.empty_id_info())
+  | PatVar v1 -> let v1 = ident v1 in G.PatId (v1, G.empty_id_info())
   | PatLiteral v1 -> let v1 = literal v1 in G.PatLiteral v1
   | PatConstructor ((v1, v2)) ->
       let v1 = name v1 and v2 = option pattern v2 in

@@ -433,7 +433,14 @@ and v_pattern x =
         v_list
           (fun (v1, v2) -> let v1 = v_name v1 and v2 = v_pattern v2 in ()) v1
       in ()
-  | PatVar ((v1, v2)) -> let v1 = v_ident v1 and v2 = v_id_info v2 in ()
+  | PatId ((v1, v2)) -> let v1 = v_ident v1 and v2 = v_id_info v2 in ()
+  | PatVar ((v1, v2)) ->
+      let v1 = v_type_ v1
+      and v2 =
+        v_option
+          (fun (v1, v2) -> let v1 = v_ident v1 and v2 = v_id_info v2 in ())
+          v2
+      in ()
   | PatLiteral v1 -> let v1 = v_literal v1 in ()
   | PatType v1 -> let v1 = v_type_ v1 in ()
   | PatConstructor ((v1, v2)) ->

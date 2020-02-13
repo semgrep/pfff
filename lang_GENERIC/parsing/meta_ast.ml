@@ -595,9 +595,20 @@ and vof_other_stmt_operator =
   | OS_Fallthrough -> Ocaml.VSum (("OS_Fallthrough", []))
 and vof_pattern =
   function
-  | PatVar ((v1, v2)) ->
+  | PatId ((v1, v2)) ->
       let v1 = vof_ident v1
       and v2 = vof_id_info v2
+      in Ocaml.VSum (("PatVar", [ v1; v2 ]))
+
+  | PatVar ((v1, v2)) ->
+      let v1 = vof_type_ v1
+      and v2 =
+        Ocaml.vof_option
+          (fun (v1, v2) ->
+             let v1 = vof_ident v1
+             and v2 = vof_id_info v2
+             in Ocaml.VTuple [ v1; v2 ])
+          v2
       in Ocaml.VSum (("PatVar", [ v1; v2 ]))
 
   | PatLiteral v1 ->
@@ -657,7 +668,6 @@ and vof_pattern =
 and vof_other_pattern_operator =
   function
   | OP_ExprPattern -> Ocaml.VSum (("OP_ExprPattern", []))
-  | OP_Var -> Ocaml.VSum (("OP_Var", []))
 and vof_definition (v1, v2) =
   let v1 = vof_entity v1
   and v2 = vof_definition_kind v2
