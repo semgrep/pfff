@@ -299,8 +299,11 @@ and vof_binaryOp = function
 and vof_unaryOp = 
   Meta_ast_generic_common.vof_arithmetic_operator
 
-and vof_constant_def { cst_name = v_cst_name; cst_body = v_cst_body } =
+and vof_constant_def { cst_name = v_cst_name; cst_body = v_cst_body; cst_tok = tok } =
   let bnds = [] in
+  let arg =  vof_tok tok in
+  let bnd = ("cst_tok", arg) in
+  let bnds = bnd :: bnds in
   let arg =  Ocaml.vof_option vof_expr v_cst_body in
   let bnd = ("cst_body", arg) in
   let bnds = bnd :: bnds in

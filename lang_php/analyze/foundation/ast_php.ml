@@ -380,6 +380,7 @@ and func_def = {
   and attribute = expr
 
 and constant_def = {
+  cst_tok: tok;
   cst_name: ident;
   (* normally a static scalar; None for abstract const *)
   cst_body: expr option;
