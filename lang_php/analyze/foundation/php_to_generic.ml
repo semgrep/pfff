@@ -427,13 +427,16 @@ and modifier v = wrap modifierbis v
 
 and attribute v = expr v
 
-and constant_def { cst_name = cst_name; cst_body = cst_body } =
-  let arg = ident cst_name in let arg = option expr cst_body in
-  raise Todo
+and constant_def { cst_name = cst_name; cst_body = cst_body; cst_tok = tok } =
+  let id = ident cst_name in let body = option expr cst_body in
+  let attr = [G.KeywordAttr (G.Const, tok)] in
+  let ent = G.basic_entity id attr in
+  ent, { G.vinit = body; vtype = None }
 
 and enum_type { e_base = e_base; e_constraint = e_constraint } =
   let arg = hint_type e_base in
-  let arg = option hint_type e_constraint in ()
+  let arg = option hint_type e_constraint in
+  raise Todo
 
 and class_def {
                 c_name = c_name;
