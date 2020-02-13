@@ -156,14 +156,14 @@ let rec stmt =
       in 
       G.Try (t, G.stmt1 v1, v2, v3)
 
-  | ClassDef v1 -> let v1 = class_def v1 in
-      raise Todo
-  | FuncDef v1 -> let v1 = func_def v1 in
-      raise Todo
-  | ConstantDef v1 -> let v1 = constant_def v1 in
-      raise Todo
-  | TypeDef v1 -> let v1 = type_def v1 in
-      raise Todo
+  | ClassDef v1 -> let (ent, def) = class_def v1 in
+      G.DefStmt (ent, G.ClassDef def)
+  | FuncDef v1 -> let (ent, def) = func_def v1 in
+      G.DefStmt (ent, G.FuncDef def)
+  | ConstantDef v1 -> let (ent, def) = constant_def v1 in
+      G.DefStmt (ent, G.VarDef def)
+  | TypeDef v1 -> let (ent, def) = type_def v1 in
+      G.DefStmt (ent, G.TypeDef def)
   | NamespaceDef ((v1, v2)) ->
       let v1 = qualified_ident v1 and v2 = list stmt v2 in
       raise Todo
@@ -396,7 +396,9 @@ and func_def {
     list (fun (v1, v2) -> let v1 = bool v1 and v2 = var v2 in ())
       l_uses in
   let arg = list attribute f_attrs in
-  let arg = list stmt f_body in ()
+  let arg = list stmt f_body in 
+  raise Todo
+
 and function_kind =
   function
   | Function -> ()
@@ -426,7 +428,8 @@ and modifier v = wrap modifierbis v
 and attribute v = expr v
 
 and constant_def { cst_name = cst_name; cst_body = cst_body } =
-  let arg = ident cst_name in let arg = option expr cst_body in ()
+  let arg = ident cst_name in let arg = option expr cst_body in 
+  raise Todo
 
 and enum_type { e_base = e_base; e_constraint = e_constraint } =
   let arg = hint_type e_base in
@@ -457,7 +460,8 @@ and class_def {
   let arg = list class_name c_xhp_attr_inherit in
   let arg = list constant_def c_constants in
   let arg = list class_var c_variables in
-  let arg = list method_def c_methods in ()
+  let arg = list method_def c_methods in 
+  raise Todo
 
 and class_kind =
   function
@@ -485,7 +489,9 @@ and class_var {
 and method_def v = func_def v
 
 and type_def { t_name = t_name; t_kind = t_kind } =
-  let arg = ident t_name in let arg = type_def_kind t_kind in ()
+  let arg = ident t_name in let arg = type_def_kind t_kind in 
+  raise Todo
+
 and type_def_kind =
   function
   | Alias v1 -> let v1 = hint_type v1 in ()
