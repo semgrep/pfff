@@ -341,8 +341,16 @@ and expr =
   (* newscope: newvar: *)
   and action = pattern * expr
 
-  (* TODO *)
-  and xml = any list
+    and xml = {
+      xml_tag: ident;
+      xml_attrs: (ident * xml_attr) list;
+      xml_body: xml_body list;
+    }
+     and xml_attr = expr
+     and xml_body =
+      | XmlText of string wrap
+      | XmlExpr of expr
+      | XmlXml of xml
 
   and arguments = argument list
     and argument =
@@ -492,7 +500,8 @@ and stmt =
     | OS_Delete 
     (* TODO: reduce? transpile? *)
     | OS_ForOrElse | OS_WhileOrElse | OS_TryOrElse
-    | OS_ThrowFrom | OS_ThrowNothing | OS_Global | OS_NonLocal
+    | OS_ThrowFrom | OS_ThrowNothing 
+    | OS_Global (* PHP/Python *) | OS_NonLocal
     | OS_Pass
     | OS_Async
     (* Java *)

@@ -69,7 +69,40 @@ and vof_id_info { id_resolved = v_id_resolved; id_type = v_id_type } =
   let bnds = bnd :: bnds in Ocaml.VDict bnds
 
 
-and vof_xml x = Ocaml.vof_list vof_any x
+
+and
+  vof_xml {
+            xml_tag = v_xml_tag;
+            xml_attrs = v_xml_attrs;
+            xml_body = v_xml_body
+          } =
+  let bnds = [] in
+  let arg = Ocaml.vof_list vof_xml_body v_xml_body in
+  let bnd = ("xml_body", arg) in
+  let bnds = bnd :: bnds in
+  let arg =
+    Ocaml.vof_list
+      (fun (v1, v2) ->
+         let v1 = vof_ident v1
+         and v2 = vof_xml_attr v2
+         in Ocaml.VTuple [ v1; v2 ])
+      v_xml_attrs in
+  let bnd = ("xml_attrs", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_ident v_xml_tag in
+  let bnd = ("xml_tag", arg) in let bnds = bnd :: bnds in 
+  Ocaml.VDict bnds
+
+and vof_xml_attr v = vof_expr v
+
+and vof_xml_body =
+  function
+  | XmlText v1 ->
+      let v1 = vof_wrap Ocaml.vof_string v1
+      in Ocaml.VSum (("XmlText", [ v1 ]))
+  | XmlExpr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("XmlExpr", [ v1 ]))
+  | XmlXml v1 -> let v1 = vof_xml v1 in Ocaml.VSum (("XmlXml", [ v1 ]))
+
 
 and vof_expr =
   function

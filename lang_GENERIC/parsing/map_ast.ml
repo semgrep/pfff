@@ -115,8 +115,27 @@ and map_id_info { id_resolved = v_id_resolved; id_type = v_id_type } =
   in { id_resolved = v_id_resolved; id_type = v_id_type }
 
 
+and map_xml {
+            xml_tag = v_xml_tag;
+            xml_attrs = v_xml_attrs;
+            xml_body = v_xml_body
+          } =
+  let v_xml_body = map_of_list map_xml_body v_xml_body in
+  let v_xml_attrs =
+    map_of_list
+      (fun (v1, v2) ->
+         let v1 = map_ident v1 and v2 = map_xml_attr v2 in (v1, v2))
+      v_xml_attrs in
+  let v_xml_tag = map_ident v_xml_tag in 
+  { xml_tag = v_xml_tag; xml_attrs = v_xml_attrs; xml_body = v_xml_body }
 
-and map_xml v1 = map_of_list map_any v1  
+and map_xml_attr v = map_expr v
+and map_xml_body =
+  function
+  | XmlText v1 -> let v1 = map_wrap map_of_string v1 in XmlText ((v1))
+  | XmlExpr v1 -> let v1 = map_expr v1 in XmlExpr ((v1))
+  | XmlXml v1 -> let v1 = map_xml v1 in XmlXml ((v1))
+
 and map_expr x =
   let k x = match x with
   | L v1 -> let v1 = map_literal v1 in L ((v1))

@@ -193,7 +193,8 @@ let rec visit_expr hook lhs expr =
      )
 
   | Constructor (_name, es) -> List.iter recr es
-  | Xml anys -> List.iter (anyhook hook Rhs) anys
+  | Xml _ -> 
+      error_todo (E expr)
 
   | LetPattern (pat, e) ->
       anyhook hook Lhs (P pat);
