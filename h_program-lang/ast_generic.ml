@@ -965,6 +965,11 @@ let empty_var =
 let empty_id_info () = 
   { id_resolved = ref None; id_type = ref None; }
 
+(*
+let name_of_id id = 
+  (id, empty_name_info), empty_id_info ()
+*)
+
 
 let param_of_id id = { 
     pname = Some id;

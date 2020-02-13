@@ -361,7 +361,7 @@ and string_const_expr v = expr v
 and hint_type =
   function
   | Hint v1 -> let v1 = name v1 in 
-      raise Todo
+      G.TyName (name_of_qualified_ident v1)
   | HintArray t -> 
       raise Todo
   | HintQuestion (t, v1) -> let v1 = hint_type v1 in 
