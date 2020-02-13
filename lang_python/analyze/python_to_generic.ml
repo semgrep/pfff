@@ -289,8 +289,8 @@ and cmpop (a,b) =
   | LtE   -> Left G.LtE, b
   | Gt    -> Left G.Gt, b
   | GtE   -> Left G.GtE, b
-  | Is    -> Right G.OE_Is, b
-  | IsNot -> Right G.OE_IsNot, b
+  | Is    -> Left G.PhysEq, b
+  | IsNot -> Left G.NotPhysEq, b
   | In    -> Right G.OE_In, b
   | NotIn -> Right G.OE_NotIn, b
 

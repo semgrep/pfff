@@ -381,7 +381,6 @@ and expr =
     | OE_Require (* todo: lift to DirectiveStmt? transform in Import? *) 
     | OE_UseStrict (* todo: lift up to program attribute/directive? *)
     (* Python *)
-    | OE_Is | OE_IsNot (* less: could be part of a set_operator? or PhysEq? *)
     | OE_In | OE_NotIn (* less: could be part of a obj_operator? *)
     | OE_Invert
     | OE_Slices (* see also SliceAccess *)
