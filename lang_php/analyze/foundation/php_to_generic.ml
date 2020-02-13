@@ -362,9 +362,9 @@ and hint_type =
   function
   | Hint v1 -> let v1 = name v1 in 
       raise Todo
-  | HintArray -> 
+  | HintArray t -> 
       raise Todo
-  | HintQuestion v1 -> let v1 = hint_type v1 in 
+  | HintQuestion (t, v1) -> let v1 = hint_type v1 in 
       raise Todo
   | HintTuple v1 -> let v1 = list hint_type v1 in
       raise Todo

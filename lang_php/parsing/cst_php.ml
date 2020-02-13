@@ -145,7 +145,7 @@ type hint_type =
       * (hint_type comma_list_dots paren) (* params *)
       * (tok * tok option * hint_type) option (* return type *)
      ) paren
- | HintShape of
+ | HintShape of (* a.k.a record *)
      tok (* "shape" *) *
      (string_const_expr * tok (* '=>' *) * hint_type) comma_list paren
  | HintTypeConst of

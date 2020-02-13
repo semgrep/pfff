@@ -321,12 +321,12 @@ and string_const_expr = expr
 
 and hint_type =
  | Hint of name (* todo: add the generics *)
- | HintArray
- | HintQuestion of hint_type
+ | HintArray of tok
+ | HintQuestion of tok * hint_type
  | HintTuple of hint_type list
  | HintCallback of hint_type list * (hint_type option)
- | HintShape of (string_const_expr * hint_type) list
- | HintTypeConst of (hint_type * hint_type)
+ | HintShape of (string_const_expr * hint_type) list (* a.k.a record *)
+ | HintTypeConst of (hint_type * hint_type) (* ?? *)
  | HintVariadic of hint_type option
 
 and class_name = hint_type

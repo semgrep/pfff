@@ -523,8 +523,8 @@ and static_scalar env a = expr env a
 (* ------------------------------------------------------------------------- *)
 and hint_type env = function
   | Hint (q, _typeTODO) -> A.Hint (name env q)
-  | HintArray _ -> A.HintArray
-  | HintQuestion (_i, t) -> A.HintQuestion (hint_type env t)
+  | HintArray tok -> A.HintArray tok
+  | HintQuestion (tok, t) -> A.HintQuestion (tok, hint_type env t)
   | HintTuple v1 -> A.HintTuple (List.map (hint_type env) (comma_list (brace v1)))
   | HintCallback (_, (_, args, ret), _) ->
       let args = List.map (hint_type env) (comma_list_dots (brace args)) in

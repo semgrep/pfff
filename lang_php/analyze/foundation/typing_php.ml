@@ -791,7 +791,7 @@ and parameter env p =
         with Not_found ->
           expr env (New (fake "new", Id [(x, tok)], [])))
     | Some (Hint _) -> failwith "no support for namespace yet"
-    | Some (HintArray) ->
+    | Some (HintArray _) ->
         expr env (ConsArray (fake_bracket []))
 
     (* don't handle type extensions *)

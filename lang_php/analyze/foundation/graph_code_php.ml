@@ -865,8 +865,8 @@ and hint_type env t =
   | Hint name ->
       (* todo: handle basic types? could also add them in php_stdlib/ *)
       add_use_edge env (name, E.Class)
-  | HintArray -> ()
-  | HintQuestion t -> hint_type env t
+  | HintArray _tok -> ()
+  | HintQuestion (_, t) -> hint_type env t
   | HintTuple xs -> List.iter (hint_type env) xs
   | HintCallback (tparams, tret_opt) ->
       List.iter (hint_type env) tparams;

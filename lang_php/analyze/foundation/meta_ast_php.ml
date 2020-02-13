@@ -392,8 +392,11 @@ and
 and vof_hint_type =
   function
   | Hint v1 -> let v1 = vof_name v1 in Ocaml.VSum (("Hint", [ v1 ]))
-  | HintArray -> Ocaml.VSum (("HintArray", []))
-  | HintQuestion t -> (Ocaml.VSum (("HintQuestion", [ vof_hint_type t ])))
+  | HintArray v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("HintArray", [v1]))
+  | HintQuestion (tok, t) -> 
+      let t = vof_hint_type t in
+      let tok = vof_tok tok in
+      Ocaml.VSum (("HintQuestion", [ tok; t ]))
   | HintTuple l -> Ocaml.VSum (("HintTuple", List.map vof_hint_type l))
   | HintCallback (args, ret) ->
       Ocaml.VSum (("HintCallback",

@@ -219,7 +219,7 @@ and make_fake_params l =
   List.map (fun p ->
     match p.p_type with
     | Some (Hint name) -> New (fake "new", Id (name), [])
-    | None | Some (HintArray) -> Id [w "null"]
+    | None | Some (HintArray _) -> Id [w "null"]
     | _ -> failwith "fake params not implemented for extended types"
   ) l
 

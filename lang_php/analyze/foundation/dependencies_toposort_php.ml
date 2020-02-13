@@ -174,8 +174,8 @@ module Deps = struct
     | Hint [(s, _)] -> SSet.add s acc
     | Hint name -> raise (Cst_php.TodoNamespace (tok_of_name name))
 
-    | HintArray -> acc
-    | HintQuestion t -> hint_type_ acc t
+    | HintArray _ -> acc
+    | HintQuestion (_, t) -> hint_type_ acc t
     | HintTuple t -> List.fold_left (fun accp x -> SSet.union accp (hint_type_ accp x)) acc t
     | HintCallback (args, ret) ->
         let acc_u_ret = match ret with
