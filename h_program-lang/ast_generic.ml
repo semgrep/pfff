@@ -427,9 +427,6 @@ and stmt =
      case_and_body list
 
   | Return   of tok * expr option
-  (* TODO: switch to label? but PHP accept integers no? 
-   * label_ident like field_ident, so easier for CFG! and bailout for
-   * DynamicLabel of expr *)
   | Continue of tok * label_ident
   | Break    of tok * label_ident
 
@@ -472,7 +469,7 @@ and stmt =
     | LNone (* C/Python *)
     | LId of label (* Java/Go *)
     | LInt of int wrap (* PHP *)
-    | LDynamic of expr (* PHP, woohoo, dynamic break! *)
+    | LDynamic of expr (* PHP, woohoo, dynamic break! bailout for CFG *)
 
   and for_header = 
     (* todo? copy Go and have instead   
@@ -601,10 +598,10 @@ and type_ =
   (* Python *)
   | OT_Expr | OT_Arg (* todo: should use expr_to_type() below when can *)
   (* C *)
-  (* TODO? convert in unique name with TyApply ?*)
+  (* TODO? convert in unique names with TyName? *)
   | OT_StructName | OT_UnionName | OT_EnumName 
   (* PHP *)
-  | OT_Shape (* hack-specific? *) | OT_Variadic (* ???? *)
+  | OT_ShapeComplex (* complex record keys *) | OT_Variadic (* ???? *)
 
 (*****************************************************************************)
 (* Attribute *)

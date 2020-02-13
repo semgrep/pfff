@@ -407,7 +407,7 @@ and vof_other_type_operator =
   | OT_StructName -> Ocaml.VSum (("OT_StructName", []))
   | OT_UnionName -> Ocaml.VSum (("OT_UnionName", []))
   | OT_EnumName -> Ocaml.VSum (("OT_EnumName", []))
-  | OT_Shape -> Ocaml.VSum (("OT_Shape", []))
+  | OT_ShapeComplex -> Ocaml.VSum (("OT_ShapeComplex", []))
   | OT_Variadic -> Ocaml.VSum (("OT_Variadic", []))
 and vof_keyword_attribute =
   function

@@ -333,15 +333,7 @@ and map_type_argument =
 and map_other_type_argument_operator =
   function | OTA_Question -> OTA_Question
 
-and map_other_type_operator =
-  function
-  | OT_Expr -> OT_Expr
-  | OT_Arg -> OT_Arg
-  | OT_StructName -> OT_StructName
-  | OT_UnionName -> OT_UnionName
-  | OT_EnumName -> OT_EnumName
-  | OT_Shape -> OT_Shape
-  | OT_Variadic -> OT_Variadic
+and map_other_type_operator x = x
 
 and map_attribute = function
   | KeywordAttr v1 -> let v1 = map_wrap map_keyword_attribute v1 in 
