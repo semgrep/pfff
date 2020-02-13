@@ -423,7 +423,7 @@ and map_label_ident =
   function
   | LNone -> LNone
   | LId v1 -> let v1 = map_label v1 in LId ((v1))
-  | LInt v1 -> let v1 = map_of_int v1 in LInt ((v1))
+  | LInt v1 -> let v1 = map_wrap map_of_int v1 in LInt ((v1))
   | LDynamic v1 -> let v1 = map_expr v1 in LDynamic ((v1))
 
 and map_case_and_body (v1, v2) =

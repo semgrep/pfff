@@ -393,7 +393,7 @@ and v_label_ident =
   function
   | LNone -> ()
   | LId v1 -> let v1 = v_label v1 in ()
-  | LInt v1 -> let v1 = v_int v1 in ()
+  | LInt v1 -> let v1 = v_wrap v_int v1 in ()
   | LDynamic v1 -> let v1 = v_expr v1 in ()
 
 and v_case = function 

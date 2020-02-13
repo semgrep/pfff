@@ -93,9 +93,6 @@ let ptype (x, t) =
   | ArrayTy -> G.TyBuiltin ("array", t)
   | ObjectTy -> G.TyBuiltin ("object", t)
 
-let opt_expr_to_label_ident = function
- | None -> G.LNone
- | Some _ -> raise Todo
 
 let rec stmt =
   function
@@ -127,9 +124,9 @@ let rec stmt =
       raise Todo
   | Return (t, v1) -> let v1 = option expr v1 in 
       G.Return (t, v1)
-  | Break (t, v1) -> let v1 = option expr v1 in
+  | Break (t, v1) -> 
       G.Break (t, opt_expr_to_label_ident v1)
-  | Continue (t, v1) -> let v1 = option expr v1 in
+  | Continue (t, v1) -> 
       G.Continue (t, opt_expr_to_label_ident v1)
   | Throw (t, v1) -> let v1 = expr v1 in
       G.Throw (t, v1)
@@ -165,6 +162,18 @@ let rec stmt =
       raise Todo
   | Global (t, v1) -> let v1 = list expr v1 in
       raise Todo
+
+and opt_expr_to_label_ident = function
+ | None -> G.LNone
+ | Some e -> 
+      (match e with
+      | Int (s, tok) when s =~ "^[0-9]+$" -> 
+            G.LInt (int_of_string s, tok)
+      | Id [label] -> G.LId label
+      | _ -> 
+            let e = expr e in
+            G.LDynamic e
+      )
 
 and case =
   function

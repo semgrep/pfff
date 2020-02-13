@@ -471,7 +471,7 @@ and stmt =
   and label_ident =
     | LNone (* C/Python *)
     | LId of label (* Java/Go *)
-    | LInt of int (* PHP *)
+    | LInt of int wrap (* PHP *)
     | LDynamic of expr (* PHP, woohoo *)
 
   and for_header = 

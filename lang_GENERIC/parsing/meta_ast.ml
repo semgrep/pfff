@@ -533,7 +533,7 @@ and vof_label_ident =
   function
   | LNone -> Ocaml.VSum (("LNone", []))
   | LId v1 -> let v1 = vof_label v1 in Ocaml.VSum (("LId", [ v1 ]))
-  | LInt v1 -> let v1 = Ocaml.vof_int v1 in Ocaml.VSum (("LInt", [ v1 ]))
+  | LInt v1 -> let v1 = vof_wrap Ocaml.vof_int v1 in Ocaml.VSum (("LInt", [ v1 ]))
   | LDynamic v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("LDynamic", [ v1 ]))
 
 and vof_case_and_body (v1, v2) =
