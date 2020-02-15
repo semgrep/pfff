@@ -756,7 +756,7 @@ and function_definition = {
  *)
 and variable_definition = {
   (* todo? should remove vinit and transform a VarDef with init with a VarDef
-   * followed by an Assign (possibly to Null).
+   * followed by an Assign (possibly to Null). See vardef_to_assign().
    *)
   vinit: expr option;
   (* less: could merge in entity.type_ *)
@@ -1075,6 +1075,8 @@ let funcdef_to_lambda (ent, def) resolved =
   let v = Lambda def in
   Assign (name, Parse_info.fake_info "=", v)
 
-(* try avoid using them! *)
+(* Try avoid using them! if you build new constructs, you should try
+ * to derive the tokens in those new constructs from existing constructs.
+ *)
 let fake s = Parse_info.fake_info s
 let fake_bracket x = fake "(", x, fake ")"

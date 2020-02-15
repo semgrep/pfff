@@ -432,12 +432,12 @@ and parameter {
                 p_attrs = p_attrs;
                 p_variadic = p_variadic
               } =
-  let arg = option hint_type p_type in
-  let arg = bool p_ref in
-  let arg = var p_name in
-  let arg = option expr p_default in
-  let arg = list attribute p_attrs in
-  let arg = bool p_variadic in
+  let p_type = option hint_type p_type in
+  let p_ref = bool p_ref in
+  let p_name = var p_name in
+  let p_default = option expr p_default in
+  let p_attrs = list attribute p_attrs in
+  let p_variadic = bool p_variadic in
   raise Todo
 
 and modifier v = wrap modifierbis v
@@ -474,11 +474,12 @@ and class_def {
   let arg = option class_name c_extends in
   let arg = list class_name c_implements in
   let arg = list class_name c_uses in
-  let arg = option enum_type c_enum_type in
-  let arg = list attribute c_attrs in
 
+  let arg = option enum_type c_enum_type in
   let arg = list xhp_field c_xhp_fields in
   let arg = list class_name c_xhp_attr_inherit in
+
+  let arg = list attribute c_attrs in
 
   let arg = list constant_def c_constants in
   let arg = list class_var c_variables in

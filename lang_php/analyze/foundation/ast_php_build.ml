@@ -836,11 +836,11 @@ and parameter env
    p_variadic = variadic;
  } =
   { A.p_type = opt hint_type env t;
-    A.p_ref = r <> None;
+    A.p_ref = r;
     A.p_name = dname name;
     A.p_default = opt static_scalar_affect env d;
     A.p_attrs = attributes env a;
-    A.p_variadic = variadic <> None;
+    A.p_variadic = variadic;
   }
 
 (*****************************************************************************)

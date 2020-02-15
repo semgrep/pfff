@@ -373,7 +373,7 @@ and
   let arg = Ocaml.vof_option vof_expr v_p_default in
   let bnd = ("p_default", arg) in
   let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_bool v_p_ref in
+  let arg = Ocaml.vof_option vof_tok v_p_ref in
   let bnd = ("p_ref", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_list vof_attribute v_p_attrs in
@@ -385,7 +385,7 @@ and
   let arg = vof_wrapped_string v_p_name in
   let bnd = ("p_name", arg) in
   let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_bool v_p_variadic in
+  let arg = Ocaml.vof_option vof_tok v_p_variadic in
   let bnd = ("p_variadic", arg) in
   let bnds = bnd :: bnds in
   Ocaml.VDict bnds

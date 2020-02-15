@@ -366,11 +366,11 @@ and func_def = {
 
    and parameter = {
      p_type: hint_type option;
-     p_ref: bool;
+     p_ref: tok option;
      p_name: var;
      p_default: expr option;
      p_attrs: attribute list;
-     p_variadic: bool
+     p_variadic: tok option;
    }
 
   (* for methods, and below for fields too *)
@@ -435,6 +435,7 @@ and type_def = {
   and type_def_kind =
   | Alias of hint_type
   | Newtype of hint_type
+  (* ??? *)
   | ClassConstType of hint_type option
 
 (* with tarzan *)
@@ -478,6 +479,7 @@ let wrap_fake s = s, Parse_info.fake_info s
 let builtin x = "__builtin__" ^ x
 (* for 'self'/'parent', 'static', 'lambda', 'namespace', root namespace '\',
  * 'class' as in C::class
+ * TODO: transform in IdSpecial!
  *)
 let special x = "__special__" ^ x
 

@@ -990,7 +990,7 @@ and parameters env heap l1 l2 =
       (match p.p_default with
       | None -> parameters env heap rl []
       | Some e ->
-          let e = if p.p_ref then make_ref e else e in
+          let e = if p.p_ref <> None then make_ref e else e in
           let heap, v = expr env heap e in
           Var.unset env (unw p.p_name);
           let heap, _, lv = lvalue env heap (Var p.p_name) in
@@ -998,7 +998,7 @@ and parameters env heap l1 l2 =
           parameters env heap rl []
       )
   | p :: rl, e :: rl2 ->
-      let e = if p.p_ref then make_ref e else e in
+      let e = if p.p_ref <> None then make_ref e else e in
       let heap, v = expr env heap e in
       (* in recursive calls we have parameters equal
        * to variables used in the caller context.
