@@ -302,6 +302,7 @@ and vof_arithmetic_operator =
   | LtE -> Ocaml.VSum (("LtE", []))
   | Gt -> Ocaml.VSum (("Gt", []))
   | GtE -> Ocaml.VSum (("GtE", []))
+  | Cmp -> Ocaml.VSum (("Cmp", []))
 
 and vof_arguments v = Ocaml.vof_list vof_argument v
 and vof_argument =

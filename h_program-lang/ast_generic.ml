@@ -329,6 +329,7 @@ and expr =
       | PhysEq (* '==' in OCaml, '===' in JS/... *)
       | NotPhysEq (* less: could be desugared to Not PhysEq *)
       | Lt | LtE | Gt | GtE  (* less: could be desugared to Or (Eq Lt) *)
+      | Cmp (* <=>, PHP *)
     and incr_decr = Incr | Decr (* '++', '--' *)
     and prefix_postfix = Prefix | Postfix
 
@@ -1055,6 +1056,7 @@ let is_boolean_operator = function
  | Eq     | NotEq     
  | PhysEq | NotPhysEq 
  | Lt | LtE | Gt | GtE 
+ | Cmp
    -> true
 
 (* used in controlflow_build *)
