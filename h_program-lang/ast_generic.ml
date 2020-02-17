@@ -578,7 +578,7 @@ and type_ =
 
   (* a special case of TApply, also a special case of TPointer *)
   | TyArray of (* const_expr *) expr option * type_
-  | TyPointer of tok * type_
+  | TyPointer of tok * type_ (* | TyRef of tok * type_ for C++ *)
   | TyTuple of type_ list bracket (* at least 2 elements *)
   | TyQuestion of type_ * tok (* a.k.a option type *)
  
@@ -741,10 +741,10 @@ and function_definition = {
   and other_parameter_operator =
      (* Python *)
      | OPO_KwdParam | OPO_SingleStarParam
-     (* PHP *)
-     | OPO_Ref (* less: or encode in type? *)
      (* Go *)
-     | OPO_Receiver (* of parameter_classic *)
+     | OPO_Receiver (* of parameter_classic, used to tag the "self" parameter *)
+     (* PHP *) 
+     | OPO_Ref (* of parameter_classic *)
 
 (* ------------------------------------------------------------------------- *)
 (* Variable definition *)
