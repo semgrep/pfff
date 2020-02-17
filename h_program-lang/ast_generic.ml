@@ -892,7 +892,9 @@ and directive =
   (* Javascript *)
   | OI_Export 
   | OI_ImportCss | OI_ImportEffect
+  (* C/PHP *)
   (* TODO: Pragma/Declare, move OE_UseStrict here for JS? *)
+
 
 (*****************************************************************************)
 (* Toplevel *)
