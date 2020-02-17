@@ -125,7 +125,7 @@ let rec type_ =
       G.OtherType (G.OT_EnumName, [G.Id v1])
   | TTypeName v1 -> 
       let v1 = name v1 in 
-      G.TyApply ((v1, G.empty_name_info), [])
+      G.TyName ((v1, G.empty_name_info))
 
 and function_type (v1, v2) =
   let v1 = type_ v1 and v2 = list parameter v2 in 
@@ -166,7 +166,7 @@ and expr =
       G.ArrayAccess (v1, v2) 
   | RecordPtAccess ((v1, t, v2)) -> 
       let v1 = expr v1 and t = info t and v2 = name v2 in
-      G.DotAccess (G.DeRef (t, v1), t, v2)
+      G.DotAccess (G.DeRef (t, v1), t, G.FId v2)
   | Cast ((v1, v2)) -> let v1 = type_ v1 and v2 = expr v2 in
       G.Cast (v1, v2)
   | Postfix ((v1, (v2, v3))) ->
@@ -250,8 +250,8 @@ let rec stmt =
       let header = G.ForClassic (init, v2, v3) in
       G.For (t, header, v4)
   | Return (t, v1) -> let v1 = option expr v1 in G.Return (t, v1)
-  | Continue t -> G.Continue (t, None)
-  | Break t -> G.Break (t, None)
+  | Continue t -> G.Continue (t, G.LNone)
+  | Break t -> G.Break (t, G.LNone)
   | Label ((v1, v2)) -> let v1 = name v1 and v2 = stmt v2 in
       G.Label (v1, v2)
   | Goto (t, v1) -> let v1 = name v1 in G.Goto (t, v1)

@@ -7,8 +7,10 @@ let test_parse_generic xs =
     match Lang.lang_of_filename_opt file with
     | None -> pr2 (spf "skipping %s" file)
     | Some _ -> 
-          let _ast = Parse_generic.parse_program file in
-          ()
+       Error_code.try_with_print_exn_and_reraise file (fun () ->
+        let _ast = Parse_generic.parse_program file in
+        ()
+       )
   )
 
 let test_dump_generic file =

@@ -69,7 +69,40 @@ and vof_id_info { id_resolved = v_id_resolved; id_type = v_id_type } =
   let bnds = bnd :: bnds in Ocaml.VDict bnds
 
 
-and vof_xml x = Ocaml.vof_list vof_any x
+
+and
+  vof_xml {
+            xml_tag = v_xml_tag;
+            xml_attrs = v_xml_attrs;
+            xml_body = v_xml_body
+          } =
+  let bnds = [] in
+  let arg = Ocaml.vof_list vof_xml_body v_xml_body in
+  let bnd = ("xml_body", arg) in
+  let bnds = bnd :: bnds in
+  let arg =
+    Ocaml.vof_list
+      (fun (v1, v2) ->
+         let v1 = vof_ident v1
+         and v2 = vof_xml_attr v2
+         in Ocaml.VTuple [ v1; v2 ])
+      v_xml_attrs in
+  let bnd = ("xml_attrs", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_ident v_xml_tag in
+  let bnd = ("xml_tag", arg) in let bnds = bnd :: bnds in 
+  Ocaml.VDict bnds
+
+and vof_xml_attr v = vof_expr v
+
+and vof_xml_body =
+  function
+  | XmlText v1 ->
+      let v1 = vof_wrap Ocaml.vof_string v1
+      in Ocaml.VSum (("XmlText", [ v1 ]))
+  | XmlExpr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("XmlExpr", [ v1 ]))
+  | XmlXml v1 -> let v1 = vof_xml v1 in Ocaml.VSum (("XmlXml", [ v1 ]))
+
 
 and vof_expr =
   function
@@ -121,7 +154,7 @@ and vof_expr =
   | DotAccess ((v1, t, v2)) ->
       let v1 = vof_expr v1
       and t = vof_tok t
-      and v2 = vof_ident v2
+      and v2 = vof_field_ident v2
       in Ocaml.VSum (("DotAccess", [ v1; t; v2 ]))
   | ArrayAccess ((v1, v2)) ->
       let v1 = vof_expr v1
@@ -172,6 +205,12 @@ and vof_expr =
       let v1 = vof_other_expr_operator v1
       and v2 = Ocaml.vof_list vof_any v2
       in Ocaml.VSum (("OtherExpr", [ v1; v2 ]))
+
+and vof_field_ident = function
+ | FId (v1) -> let v1 = vof_ident v1 in Ocaml.VSum (("FId", [v1]))
+ | FName (v1) -> let v1 = vof_name v1 in Ocaml.VSum (("FName", [v1]))
+ | FDynamic (v1) -> let v1 = vof_expr v1 in Ocaml.VSum (("FDynamic", [v1]))
+
 and vof_literal =
   function
   | Unit v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Unit", [ v1 ]))
@@ -263,6 +302,7 @@ and vof_arithmetic_operator =
   | LtE -> Ocaml.VSum (("LtE", []))
   | Gt -> Ocaml.VSum (("Gt", []))
   | GtE -> Ocaml.VSum (("GtE", []))
+  | Cmp -> Ocaml.VSum (("Cmp", []))
 
 and vof_arguments v = Ocaml.vof_list vof_argument v
 and vof_argument =
@@ -299,9 +339,6 @@ and vof_other_expr_operator =
   | OE_Encaps -> Ocaml.VSum (("OE_Encaps", []))
   | OE_Require -> Ocaml.VSum (("OE_Require", []))
   | OE_UseStrict -> Ocaml.VSum (("OE_UseStrict", []))
-  | OE_ObjAccess_PN_Computed -> Ocaml.VSum (("OE_ObjAccess_PN_Computed", []))
-  | OE_Is -> Ocaml.VSum (("OE_Is", []))
-  | OE_IsNot -> Ocaml.VSum (("OE_IsNot", []))
   | OE_In -> Ocaml.VSum (("OE_In", []))
   | OE_NotIn -> Ocaml.VSum (("OE_NotIn", []))
   | OE_Invert -> Ocaml.VSum (("OE_Invert", []))
@@ -317,11 +354,23 @@ and vof_other_expr_operator =
   | OE_GetRefLabel -> Ocaml.VSum (("OE_GetRefLabel", []))
   | OE_ArrayInitDesignator -> Ocaml.VSum (("OE_ArrayInitDesignator", []))
   | OE_Unpack -> Ocaml.VSum (("OE_Unpack", []))
-  | OE_FieldAccessQualified -> Ocaml.VSum (("OE_FieldAccessQualified", []))
+  | OE_RecordFieldName -> Ocaml.VSum (("OE_RecordFieldName", []))
   | OE_RecordWith -> Ocaml.VSum (("OE_RecordWith", []))
   
 and vof_type_ =
   function
+  | TyAnd v1 ->
+      let v1 =
+        vof_bracket
+          (Ocaml.vof_list
+             (fun (v1, v2) ->
+                let v1 = vof_ident v1
+                and v2 = vof_type_ v2
+                in Ocaml.VTuple [ v1; v2 ]))
+          v1
+      in Ocaml.VSum (("TyAnd", [ v1 ]))
+  | TyOr v1 ->
+      let v1 = Ocaml.vof_list vof_type_ v1 in Ocaml.VSum (("TyOr", [ v1 ]))
   | TyBuiltin v1 ->
       let v1 = vof_wrap Ocaml.vof_string v1
       in Ocaml.VSum (("TyBuiltin", [ v1 ]))
@@ -329,10 +378,13 @@ and vof_type_ =
       let v1 = Ocaml.vof_list vof_parameter_classic v1
       and v2 = vof_type_ v2
       in Ocaml.VSum (("TyFun", [ v1; v2 ]))
-  | TyApply ((v1, v2)) ->
+  | TyNameApply ((v1, v2)) ->
       let v1 = vof_name v1
       and v2 = vof_type_arguments v2
-      in Ocaml.VSum (("TyApply", [ v1; v2 ]))
+      in Ocaml.VSum (("TyNameApply", [ v1; v2 ]))
+  | TyName ((v1)) ->
+      let v1 = vof_name v1
+      in Ocaml.VSum (("TyName", [ v1 ]))
   | TyVar v1 -> let v1 = vof_ident v1 in Ocaml.VSum (("TyVar", [ v1 ]))
   | TyArray ((v1, v2)) ->
       let v1 = Ocaml.vof_option vof_expr v1
@@ -342,10 +394,11 @@ and vof_type_ =
       let t = vof_tok t in
       let v1 = vof_type_ v1 in Ocaml.VSum (("TyPointer", [ t; v1 ]))
   | TyTuple v1 ->
-      let v1 = Ocaml.vof_list vof_type_ v1
+      let v1 = vof_bracket (Ocaml.vof_list vof_type_) v1
       in Ocaml.VSum (("TyTuple", [ v1 ]))
-  | TyQuestion v1 ->
-      let v1 = vof_type_ v1 in Ocaml.VSum (("TyQuestion", [ v1 ]))
+  | TyQuestion (v1, t) ->
+      let t = vof_tok t in
+      let v1 = vof_type_ v1 in Ocaml.VSum (("TyQuestion", [ t; v1 ]))
   | OtherType ((v1, v2)) ->
       let v1 = vof_other_type_operator v1
       and v2 = Ocaml.vof_list vof_any v2
@@ -367,7 +420,7 @@ and vof_other_type_operator =
   | OT_StructName -> Ocaml.VSum (("OT_StructName", []))
   | OT_UnionName -> Ocaml.VSum (("OT_UnionName", []))
   | OT_EnumName -> Ocaml.VSum (("OT_EnumName", []))
-  | OT_Shape -> Ocaml.VSum (("OT_Shape", []))
+  | OT_ShapeComplex -> Ocaml.VSum (("OT_ShapeComplex", []))
   | OT_Variadic -> Ocaml.VSum (("OT_Variadic", []))
 and vof_keyword_attribute =
   function
@@ -454,11 +507,11 @@ and vof_stmt =
       Ocaml.VSum (("Return", [ t; v1 ]))
   | Continue (t, v1) ->
       let t = vof_tok t in
-      let v1 = Ocaml.vof_option vof_expr v1
+      let v1 = vof_label_ident v1
       in Ocaml.VSum (("Continue", [ t; v1 ]))
   | Break (t, v1) ->
       let t = vof_tok t in
-      let v1 = Ocaml.vof_option vof_expr v1 in 
+      let v1 = vof_label_ident v1 in
       Ocaml.VSum (("Break", [ t; v1 ]))
   | Label ((v1, v2)) ->
       let v1 = vof_label v1
@@ -492,6 +545,13 @@ and vof_stmt =
       in Ocaml.VSum (("OtherStmt", [ v1; v2 ]))
 and vof_other_stmt_with_stmt_operator = function
   | OSWS_With -> Ocaml.VSum (("OSWS_With", []))
+
+and vof_label_ident =
+  function
+  | LNone -> Ocaml.VSum (("LNone", []))
+  | LId v1 -> let v1 = vof_label v1 in Ocaml.VSum (("LId", [ v1 ]))
+  | LInt v1 -> let v1 = vof_wrap Ocaml.vof_int v1 in Ocaml.VSum (("LInt", [ v1 ]))
+  | LDynamic v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("LDynamic", [ v1 ]))
 
 and vof_case_and_body (v1, v2) =
   let v1 = Ocaml.vof_list vof_case v1
@@ -542,8 +602,7 @@ and vof_other_stmt_operator =
   | OS_TryOrElse -> Ocaml.VSum (("OS_TryOrElse", []))
   | OS_ThrowFrom -> Ocaml.VSum (("OS_ThrowFrom", []))
   | OS_ThrowNothing -> Ocaml.VSum (("OS_ThrowNothing", []))
-  | OS_Global -> Ocaml.VSum (("OS_Global", []))
-  | OS_NonLocal -> Ocaml.VSum (("OS_NonLocal", []))
+  | OS_GlobalComplex -> Ocaml.VSum (("OS_GlobalComplex", []))
   | OS_Pass -> Ocaml.VSum (("OS_Pass", []))
   | OS_Sync -> Ocaml.VSum (("OS_Sync", []))
   | OS_Asm -> Ocaml.VSum (("OS_Asm", []))
@@ -552,9 +611,20 @@ and vof_other_stmt_operator =
   | OS_Fallthrough -> Ocaml.VSum (("OS_Fallthrough", []))
 and vof_pattern =
   function
-  | PatVar ((v1, v2)) ->
+  | PatId ((v1, v2)) ->
       let v1 = vof_ident v1
       and v2 = vof_id_info v2
+      in Ocaml.VSum (("PatVar", [ v1; v2 ]))
+
+  | PatVar ((v1, v2)) ->
+      let v1 = vof_type_ v1
+      and v2 =
+        Ocaml.vof_option
+          (fun (v1, v2) ->
+             let v1 = vof_ident v1
+             and v2 = vof_id_info v2
+             in Ocaml.VTuple [ v1; v2 ])
+          v2
       in Ocaml.VSum (("PatVar", [ v1; v2 ]))
 
   | PatLiteral v1 ->
@@ -614,7 +684,6 @@ and vof_pattern =
 and vof_other_pattern_operator =
   function
   | OP_ExprPattern -> Ocaml.VSum (("OP_ExprPattern", []))
-  | OP_Var -> Ocaml.VSum (("OP_Var", []))
 and vof_definition (v1, v2) =
   let v1 = vof_entity v1
   and v2 = vof_definition_kind v2
@@ -656,6 +725,8 @@ and vof_definition_kind =
       let v1 = vof_macro_definition v1 in Ocaml.VSum (("MacroDef", [ v1 ]))
   | Signature v1 ->
       let v1 = vof_type_ v1 in Ocaml.VSum (("Signature", [ v1 ]))
+  | UseOuterDecl v1 ->
+      let v1 = vof_tok v1 in Ocaml.VSum (("UseOuterDecl", [ v1 ]))
 
 and vof_module_definition { mbody = v_mbody } =
   let bnds = [] in
@@ -788,6 +859,8 @@ and vof_type_definition_kind =
       in Ocaml.VSum (("AndType", [ v1 ]))
   | AliasType v1 ->
       let v1 = vof_type_ v1 in Ocaml.VSum (("AliasType", [ v1 ]))
+  | NewType v1 ->
+      let v1 = vof_type_ v1 in Ocaml.VSum (("NewType", [ v1 ]))
   | Exception ((v1, v2)) ->
       let v1 = vof_ident v1
       and v2 = Ocaml.vof_list vof_type_ v2
@@ -799,7 +872,6 @@ and vof_type_definition_kind =
 and vof_other_type_kind_operator =
   function 
     | OTKO_AbstractType -> Ocaml.VSum (("OTKO_AbstractType", []))
-    | OTKO_Typedef -> Ocaml.VSum (("OTKO_Typedef", []))
 and vof_or_type_element =
   function
   | OrConstructor ((v1, v2)) ->
@@ -827,11 +899,15 @@ and
                          ckind = v_ckind;
                          cextends = v_cextends;
                          cimplements = v_cimplements;
-                         cbody = v_cbody
+                         cbody = v_cbody;
+                         cmixins = v_cmixins;
                        } =
   let bnds = [] in
   let arg = Ocaml.vof_list vof_field v_cbody in
   let bnd = ("cbody", arg) in
+  let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_list vof_type_ v_cmixins in
+  let bnd = ("cmixins", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_list vof_type_ v_cimplements in
   let bnd = ("cimplements", arg) in
@@ -867,6 +943,9 @@ and vof_directive =
       let t = vof_tok t in
       let v1 = vof_dotted_ident v1
       in Ocaml.VSum (("Package", [ t; v1 ]))
+  | PackageEnd (t) ->
+      let t = vof_tok t in
+      Ocaml.VSum (("PackageEnd", [ t ]))
   | OtherDirective ((v1, v2)) ->
       let v1 = vof_other_directive_operator v1
       and v2 = Ocaml.vof_list vof_any v2

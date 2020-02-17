@@ -115,8 +115,27 @@ and map_id_info { id_resolved = v_id_resolved; id_type = v_id_type } =
   in { id_resolved = v_id_resolved; id_type = v_id_type }
 
 
+and map_xml {
+            xml_tag = v_xml_tag;
+            xml_attrs = v_xml_attrs;
+            xml_body = v_xml_body
+          } =
+  let v_xml_body = map_of_list map_xml_body v_xml_body in
+  let v_xml_attrs =
+    map_of_list
+      (fun (v1, v2) ->
+         let v1 = map_ident v1 and v2 = map_xml_attr v2 in (v1, v2))
+      v_xml_attrs in
+  let v_xml_tag = map_ident v_xml_tag in 
+  { xml_tag = v_xml_tag; xml_attrs = v_xml_attrs; xml_body = v_xml_body }
 
-and map_xml v1 = map_of_list map_any v1  
+and map_xml_attr v = map_expr v
+and map_xml_body =
+  function
+  | XmlText v1 -> let v1 = map_wrap map_of_string v1 in XmlText ((v1))
+  | XmlExpr v1 -> let v1 = map_expr v1 in XmlExpr ((v1))
+  | XmlXml v1 -> let v1 = map_xml v1 in XmlXml ((v1))
+
 and map_expr x =
   let k x = match x with
   | L v1 -> let v1 = map_literal v1 in L ((v1))
@@ -154,7 +173,7 @@ and map_expr x =
   | LetPattern ((v1, v2)) ->
       let v1 = map_pattern v1 and v2 = map_expr v2 in LetPattern ((v1, v2))
   | DotAccess ((v1, t, v2)) ->
-      let v1 = map_expr v1 and t = map_tok t and v2 = map_ident v2 in
+      let v1 = map_expr v1 and t = map_tok t and v2 = map_field_ident v2 in
       DotAccess ((v1, t, v2))
   | ArrayAccess ((v1, v2)) ->
       let v1 = map_expr v1 and v2 = map_expr v2 in ArrayAccess ((v1, v2))
@@ -203,6 +222,11 @@ and map_expr x =
       in OtherExpr ((v1, v2))
   in
   vin.kexpr (k, all_functions) x
+
+and map_field_ident = function
+ | FId v1 -> let v1 = map_ident v1 in FId v1
+ | FName v1 -> let v1 = map_name v1 in FName v1
+ | FDynamic v1 -> let v1 = map_expr v1 in FDynamic v1
 
 and map_literal =
   function
@@ -265,15 +289,27 @@ and map_other_expr_operator x = x
 
 and map_type_ =
   function
+  | TyAnd v1 ->
+      let v1 =
+        map_bracket
+          (map_of_list
+             (fun (v1, v2) ->
+                let v1 = map_ident v1 and v2 = map_type_ v2 in (v1, v2)))
+          v1
+      in TyAnd ((v1))
+  | TyOr v1 -> let v1 = map_of_list map_type_ v1 in TyOr ((v1))
   | TyBuiltin v1 -> let v1 = map_wrap map_of_string v1 in TyBuiltin ((v1))
   | TyFun ((v1, v2)) ->
       let v1 = map_of_list map_parameter_classic v1
       and v2 = map_type_ v2
       in TyFun ((v1, v2))
-  | TyApply ((v1, v2)) ->
+  | TyNameApply ((v1, v2)) ->
       let v1 = map_name v1
       and v2 = map_type_arguments v2
-      in TyApply ((v1, v2))
+      in TyNameApply ((v1, v2))
+  | TyName ((v1)) ->
+      let v1 = map_name v1 in
+      TyName ((v1))
   | TyVar v1 -> let v1 = map_ident v1 in TyVar ((v1))
   | TyArray ((v1, v2)) ->
       let v1 = map_of_option map_expr v1
@@ -282,8 +318,12 @@ and map_type_ =
   | TyPointer (t, v1) -> 
       let t = map_tok t in
       let v1 = map_type_ v1 in TyPointer ((t, v1))
-  | TyTuple v1 -> let v1 = map_of_list map_type_ v1 in TyTuple ((v1))
-  | TyQuestion v1 -> let v1 = map_type_ v1 in TyQuestion ((v1))
+  | TyTuple v1 -> let v1 = map_bracket (map_of_list map_type_) v1 in 
+      TyTuple ((v1))
+  | TyQuestion (v1, t) -> 
+      let t = map_tok t in
+      let v1 = map_type_ v1 in
+      TyQuestion ((v1, t))
   | OtherType ((v1, v2)) ->
       let v1 = map_other_type_operator v1
       and v2 = map_of_list map_any v2
@@ -302,15 +342,7 @@ and map_type_argument =
 and map_other_type_argument_operator =
   function | OTA_Question -> OTA_Question
 
-and map_other_type_operator =
-  function
-  | OT_Expr -> OT_Expr
-  | OT_Arg -> OT_Arg
-  | OT_StructName -> OT_StructName
-  | OT_UnionName -> OT_UnionName
-  | OT_EnumName -> OT_EnumName
-  | OT_Shape -> OT_Shape
-  | OT_Variadic -> OT_Variadic
+and map_other_type_operator x = x
 
 and map_attribute = function
   | KeywordAttr v1 -> let v1 = map_wrap map_keyword_attribute v1 in 
@@ -358,10 +390,10 @@ and map_stmt x =
       let v1 = map_of_option map_expr v1 in Return ((t, v1))
   | Continue (t, v1) -> 
       let t = map_tok t in
-        let v1 = map_of_option map_expr v1 in Continue ((t, v1))
+        let v1 = map_label_ident v1 in Continue ((t, v1))
   | Break (t, v1) -> 
       let t = map_tok t in
-        let v1 = map_of_option map_expr v1 in Break ((t, v1))
+        let v1 = map_label_ident v1 in Break ((t, v1))
   | Label ((v1, v2)) ->
       let v1 = map_label v1 and v2 = map_stmt v2 in Label ((v1, v2))
   | Goto (t, v1) -> 
@@ -394,6 +426,13 @@ and map_stmt x =
   vin.kstmt (k, all_functions) x
 
 and map_other_stmt_with_stmt_operator x = x
+
+and map_label_ident =
+  function
+  | LNone -> LNone
+  | LId v1 -> let v1 = map_label v1 in LId ((v1))
+  | LInt v1 -> let v1 = map_wrap map_of_int v1 in LInt ((v1))
+  | LDynamic v1 -> let v1 = map_expr v1 in LDynamic ((v1))
 
 and map_case_and_body (v1, v2) =
   let v1 = map_of_list map_case v1 and v2 = map_stmt v2 in (v1, v2)
@@ -446,8 +485,16 @@ and map_pattern =
              let v1 = map_name v1 and v2 = map_pattern v2 in (v1, v2))
           v1
       in PatRecord ((v1))
+  | PatId ((v1, v2)) ->
+      let v1 = map_ident v1 and v2 = map_id_info v2 in PatId ((v1, v2))
   | PatVar ((v1, v2)) ->
-      let v1 = map_ident v1 and v2 = map_id_info v2 in PatVar ((v1, v2))
+      let v1 = map_type_ v1
+      and v2 =
+        map_of_option
+          (fun (v1, v2) ->
+             let v1 = map_ident v1 and v2 = map_id_info v2 in (v1, v2))
+          v2
+      in PatVar ((v1, v2))
   | PatLiteral v1 -> let v1 = map_literal v1 in PatLiteral ((v1))
   | PatType v1 -> let v1 = map_type_ v1 in PatType ((v1))
   | PatConstructor ((v1, v2)) ->
@@ -510,6 +557,7 @@ and map_definition_kind =
   | ModuleDef v1 -> let v1 = map_module_definition v1 in ModuleDef ((v1))
   | MacroDef v1 -> let v1 = map_macro_definition v1 in MacroDef ((v1))
   | Signature v1 -> let v1 = map_type_ v1 in Signature ((v1))
+  | UseOuterDecl v1 -> let v1 = map_tok v1 in UseOuterDecl ((v1))
 
 and map_module_definition { mbody = v_mbody } =
   let v_mbody = map_module_definition_kind v_mbody in 
@@ -620,7 +668,8 @@ and map_type_definition_kind =
       let v1 = map_of_list map_or_type_element v1 in OrType ((v1))
   | AndType v1 -> let v1 = map_of_list map_field v1 in AndType ((v1))
   | AliasType v1 -> let v1 = map_type_ v1 in AliasType ((v1))
-   | Exception ((v1, v2)) ->
+  | NewType v1 -> let v1 = map_type_ v1 in NewType ((v1))
+  | Exception ((v1, v2)) ->
       let v1 = map_ident v1
       and v2 = map_of_list map_type_ v2
       in Exception ((v1, v2))
@@ -652,9 +701,11 @@ and
                          ckind = v_ckind;
                          cextends = v_cextends;
                          cimplements = v_cimplements;
-                         cbody = v_cbody
+                         cbody = v_cbody;
+                         cmixins = v_cmixins;
                        } =
   let v_cbody = map_of_list map_field v_cbody in
+  let v_cmixins = map_of_list map_type_ v_cmixins in
   let v_cimplements = map_of_list map_type_ v_cimplements in
   let v_cextends = map_of_list map_type_ v_cextends in
   let v_ckind = map_class_kind v_ckind in 
@@ -662,7 +713,8 @@ and
                          ckind = v_ckind;
                          cextends = v_cextends;
                          cimplements = v_cimplements;
-                         cbody = v_cbody
+                         cbody = v_cbody;
+                         cmixins = v_cmixins;
                        }
 
 and map_class_kind =
@@ -693,6 +745,9 @@ and map_directive =
       let t = map_tok t in
       let v1 = map_dotted_ident v1
       in Package ((t, v1))
+  | PackageEnd ((t)) ->
+      let t = map_tok t in
+      PackageEnd ((t))
 
 and map_alias (v1, v2) =
   let v1 = map_ident v1 and v2 = map_of_option map_ident v2 in (v1, v2)

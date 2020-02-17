@@ -147,12 +147,11 @@ let (==~) = Common2.(==~)
 
 let parse env file =
   try
-    Common.save_excursion Ast_php_build.store_position true (fun () ->
     Common.save_excursion Flag_parsing_php.strict_lexer true (fun () ->
     let cst = Parse_php.parse_program file in
     let ast = Ast_php_build.program cst in
     ast
-    ))
+    )
   with
   | Timeout -> raise Timeout
   | exn ->
@@ -203,7 +202,7 @@ let look_like_class s =
 let privacy_of_modifiers modifiers =
   (* yes, default is public ... I love PHP *)
   let p = ref E.Public in
-  modifiers |> List.iter (function
+  modifiers |> List.map fst |> List.iter (function
   | Cst_php.Public -> p := E.Public
   | Cst_php.Private -> p := E.Private
   | Cst_php.Protected -> p := E.Protected
@@ -212,7 +211,7 @@ let privacy_of_modifiers modifiers =
   !p
 
 let property_of_modifiers modifiers =
-  modifiers |> Common.map_filter (function
+  modifiers |> List.map fst |> Common.map_filter (function
   | Cst_php.Public | Cst_php.Private | Cst_php.Protected -> None
   | Cst_php.Static -> Some E.Static
   | Cst_php.Abstract -> Some E.Abstract
@@ -673,7 +672,7 @@ and stmt_toplevel_list env xs =
   | [] -> ()
   | x::xs ->
     (match x with
-    | NamespaceUse (qu, sopt) ->
+    | NamespaceUse (_, qu, sopt) ->
         let new_name =
           match sopt, List.rev qu with
           | Some (str, _tok), _ -> str
@@ -701,7 +700,7 @@ and stmt_bis env x =
   | ClassDef def -> class_def env def
   | ConstantDef def -> constant_def env def
   | TypeDef def -> type_def env def
-  | NamespaceDef (qu, xs) ->
+  | NamespaceDef (_, qu, (_, xs, _)) ->
     stmt_toplevel_list
       {env with cur = { env.cur with qualifier = prune_special_root qu; }} xs
   (* handled in stmt_toplevel_list *)
@@ -714,33 +713,33 @@ and stmt_bis env x =
 
   | Expr e -> expr env e
   | Block xs -> stmtl env xs
-  | If (e, st1, st2) ->
+  | If (_, e, st1, st2) ->
       expr env e;
       stmtl env [st1;st2]
-  | Switch (e, xs) ->
+  | Switch (_, e, xs) ->
       expr env e;
       casel env xs
-  | While (e, xs) | Do (xs, e) ->
+  | While (_, e, xs) | Do (_, xs, e) ->
       expr env e;
       stmtl env xs
-  | For (es1, es2, es3, xs) ->
+  | For (_, es1, es2, es3, xs) ->
       exprl env (es1 @ es2 @ es3);
       stmtl env xs
-  | Foreach (e1, e2, xs) ->
+  | Foreach (_, e1, e2, xs) ->
       exprl env [e1;e2];
       stmtl env xs;
-  | Return eopt  | Break eopt | Continue eopt ->
+  | Return (_, eopt)  | Break (_, eopt) | Continue (_, eopt) ->
       Common2.opt (expr env) eopt
-  | Throw e -> expr env e
-  | Try (xs, cs, fs) ->
+  | Throw (_, e) -> expr env e
+  | Try (_, xs, cs, fs) ->
       stmtl env xs;
       catches env (cs);
       finallys env (fs)
 
-  | StaticVars xs ->
+  | StaticVars (_, xs) ->
       xs |> List.iter (fun (_name, eopt) -> Common2.opt (expr env) eopt)
   (* could add entity for that? *)
-  | Global xs -> exprl env xs
+  | Global (_, xs) -> exprl env xs
 
 (* todo: add deps to type hint? *)
 and catch env (_hint_type, _name, xs) =
@@ -750,10 +749,10 @@ and finally env (xs) =
   stmtl env xs
 
 and case env = function
-  | Case (e, xs) ->
+  | Case (_, e, xs) ->
       expr env e;
       stmtl env xs
-  | Default xs ->
+  | Default (_, xs) ->
       stmtl env xs
 
 and stmtl env xs = List.iter (stmt env) xs
@@ -802,7 +801,7 @@ and class_def env def =
   );
 
   let self = Ast.str_of_ident def.c_name in
-  let in_trait = match def.c_kind with Trait -> true | _ -> false in
+  let in_trait = match def.c_kind with Trait, _ -> true | _ -> false in
   (* opti: do not capture def in parent(), otherwise gc can't collect def *)
   let extend = def.c_extends in
   let parent () =
@@ -866,20 +865,20 @@ and hint_type env t =
   | Hint name ->
       (* todo: handle basic types? could also add them in php_stdlib/ *)
       add_use_edge env (name, E.Class)
-  | HintArray -> ()
-  | HintQuestion t -> hint_type env t
-  | HintTuple xs -> List.iter (hint_type env) xs
+  | HintArray _tok -> ()
+  | HintQuestion (_, t) -> hint_type env t
+  | HintTuple (_, xs, _) -> List.iter (hint_type env) xs
   | HintCallback (tparams, tret_opt) ->
       List.iter (hint_type env) tparams;
       Common.opt (hint_type env) tret_opt
-  | HintShape xs ->
+  | HintShape (_, (_, xs, _)) ->
     xs |> List.iter (fun (_ket, t) ->
       hint_type env t
     )
-  | HintTypeConst (x1, x2) ->
+  | HintTypeConst (x1, _, x2) ->
     hint_type env x1;
     hint_type env x2
-  | HintVariadic t -> do_option (hint_type env) t
+  | HintVariadic (_, t) -> do_option (hint_type env) t
 
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
@@ -928,18 +927,18 @@ and expr env x =
         exprl env es
 
     (* static method call *)
-    | Class_get (Id[ ("__special__self", tokopt)], e2) ->
-        expr env (Call (Class_get (Id[ (env.cur.self, tokopt)], e2), es))
-    | Class_get (Id[ ("__special__parent", tokopt)], e2) ->
+    | Class_get (Id[ ("__special__self", tokopt)], tok, e2) ->
+        expr env (Call (Class_get (Id[ (env.cur.self, tokopt)], tok, e2), es))
+    | Class_get (Id[ ("__special__parent", tokopt)], tok, e2) ->
         let name = name_of_parent env tokopt in
-        expr env (Call (Class_get (Id name, e2), es))
+        expr env (Call (Class_get (Id name, tok, e2), es))
     (* Incorrect actually ... but good enough for codegraph.
      * todo: should put that in the phase_dispatch
      *)
-    | Class_get (Id[ ("__special__static", tokopt)], e2) ->
-        expr env (Call (Class_get (Id[ (env.cur.self, tokopt)], e2), es))
+    | Class_get (Id[ ("__special__static", tokopt)], tok, e2) ->
+        expr env (Call (Class_get (Id[ (env.cur.self, tokopt)], tok, e2), es))
 
-    | Class_get (Id name1, Id [name2]) ->
+    | Class_get (Id name1, _, Id [name2]) ->
        (* can be static or regular method as transform $this->foo()
         * in env.self::foo() below
         *)
@@ -947,12 +946,12 @@ and expr env x =
         exprl env es
 
     (* object call *)
-    | Obj_get (e1, Id name2) ->
+    | Obj_get (e1, _, Id name2) ->
         (match e1 with
         (* handle easy case *)
-        | This ((_x, tokopt)) ->
+        | IdSpecial (This, tok) ->
             expr env
-                (Call (Class_get (Id[ (env.cur.self, tokopt)], Id name2), es));
+                (Call (Class_get (Id[ (env.cur.self, tok)], tok, Id name2), es));
             env.phase_dispatch |> Common.push (env.cur, name2);
         (* need class analysis ... *)
         | _ ->
@@ -971,16 +970,16 @@ and expr env x =
   (* This should be executed only for access to class constants or static
    * class variable; calls should have been catched in the Call pattern above.
    *)
-  | Class_get (e1, e2) ->
+  | Class_get (e1, tok, e2) ->
       (match e1, e2 with
       | Id[ ("__special__self", tokopt)], _ ->
-          expr env (Class_get (Id[(env.cur.self, tokopt)], e2))
+          expr env (Class_get (Id[(env.cur.self, tokopt)], tok, e2))
       | Id[ ("__special__parent", tokopt)], _ ->
           let name = name_of_parent env tokopt in
-          expr env (Class_get (Id name, e2))
+          expr env (Class_get (Id name, tok, e2))
       (* incorrect actually ... but good enough for now for codegraph *)
       | Id[ ("__special__static", tokopt)], _ ->
-          expr env (Class_get (Id[ (env.cur.self, tokopt)], e2))
+          expr env (Class_get (Id[ (env.cur.self, tokopt)], tok, e2))
 
       | Id _name1, Id ["__special__class", _tokopt] ->
         ()
@@ -1006,12 +1005,12 @@ and expr env x =
       )
 
   (* same, should be executed only for field access *)
-  | Obj_get (e1, e2) ->
+  | Obj_get (e1, tok, e2) ->
       (match e1, e2 with
       (* handle easy case *)
-      | This (_, tokopt), Id [name2] ->
+      | IdSpecial (This, tokthis), Id [name2] ->
           let (s2, tok2) = name2 in
-          expr env (Class_get (Id[ (env.cur.self, tokopt)], Var("$"^s2, tok2)))
+          expr env (Class_get (Id[ (env.cur.self, tokthis)], tok, Var("$"^s2, tok2)))
       | _, Id name2  ->
           let tok = Ast.tok_of_name name2 in
           env.stats.G.field_access |> Common.push (tok, false);
@@ -1022,12 +1021,11 @@ and expr env x =
           exprl env [e1; e2]
       )
 
-  | New (e, es) ->
-      let tok = Meta_ast_php.toks_of_any (Expr2 e) |> List.hd in
-      expr env (Call (Class_get(e, Id[ ("__construct", Some tok)]), es))
+  | New (tok, e, es) ->
+      expr env (Call (Class_get(e, tok, Id[ ("__construct", tok)]), es))
 
   (* -------------------------------------------------- *)
-  | InstanceOf (e1, e2) ->
+  | InstanceOf (_, e1, e2) ->
       expr env e1;
       (match e2 with
       (* less: add deps? *)
@@ -1039,20 +1037,21 @@ and expr env x =
       )
 
   (* boilerplate *)
-  | Arrow(e1, e2) -> exprl env [e1;e2]
-  | List xs -> exprl env xs
-  | Assign (_, e1, e2) -> exprl env [e1;e2]
+  | Arrow(e1, _, e2) -> exprl env [e1;e2]
+  | List (_, xs, _) -> exprl env xs
+  | Assign (e1, _, e2) -> exprl env [e1;e2]
+  | AssignOp (e1, _, e2) -> exprl env [e1;e2]
 
-  | This _ -> ()
+  | IdSpecial (_, _) -> ()
   | Array_get (e, eopt) ->
       expr env e;
       Common2.opt (expr env) eopt
   | Infix (_, e) | Postfix (_, e) | Unop (_, e) -> expr env e
-  | Binop (_, e1, e2) -> exprl env [e1; e2]
-  | Guil xs -> exprl env xs
-  | Ref e | Unpack e -> expr env e
-  | ConsArray (xs) -> array_valuel env xs
-  | Collection (name, xs) ->
+  | Binop (e1, _, e2) -> exprl env [e1; e2]
+  | Guil (_, xs, _) -> exprl env xs
+  | Ref (_, e) | Unpack e -> expr env e
+  | ConsArray (_, xs, _) -> array_valuel env xs
+  | Collection (name, (_, xs, _)) ->
       add_use_edge env (name, E.Class);
       array_valuel env xs
   | Xhp x -> xml env x
@@ -1257,7 +1256,7 @@ let build
               | _ when method_str =~ "get.*" -> ()
               | _ when method_str =~ "set.*" -> ()
               | _ ->
-                  lookup_fail envold (Some tok) (method_str, kind);
+                  lookup_fail envold tok (method_str, kind);
               )
           (* cool *)
           | [dst] ->

@@ -108,6 +108,10 @@ exception UnknownEntity of string
 let pi = Some (Cst_php.fakeInfo "todo")
 let pi_loc = Cst_php.fakeInfo "todo"
 
+let fake s = Parse_info.fake_info s
+let fake_bracket x = (fake "{", x, fake "}")
+let unbracket (_, x, _) = x
+
 (*****************************************************************************)
 (* Preparing work *)
 (*****************************************************************************)
@@ -246,26 +250,26 @@ and stmt env= function
   | NamespaceDef _ | NamespaceUse _ -> failwith "no support for namespace yet"
   | Expr e -> iexpr env e
   | Block stl -> stmtl env stl
-  | If (e, st1, st2) ->
+  | If (_, e, st1, st2) ->
       (* todo? should we unify e with bool? *)
       iexpr env e;
       stmt env st1;
       stmt env st2
-  | While (e, stl) ->
+  | While (_, e, stl) ->
       iexpr env e;
       stmtl env stl
-  | Do (stl, e) ->
+  | Do (_, stl, e) ->
       stmtl env stl;
       iexpr env e
-  | For (el1, el2, el3, stl) ->
+  | For (_, el1, el2, el3, stl) ->
       iexprl env el1;
       iexprl env el2;
       iexprl env el3;
       stmtl env stl
-  | Switch (e, cl) ->
+  | Switch (_, e, cl) ->
       let t = expr env e in
       casel env t cl
-  | Foreach (e1, pat, stl) ->
+  | Foreach (_, e1, pat, stl) ->
       let a = expr env e1 in
       let a' =
         match pat with
@@ -277,37 +281,37 @@ and stmt env= function
       in
       let _ = Unify.unify env a a' in
       stmtl env stl
-  | Return (None) -> ()
-  | Return (Some (ConsArray (avl))) ->
+  | Return (_, None) -> ()
+  | Return (_, Some (ConsArray (avl))) ->
       let e = ConsArray(avl) in
       let id = AEnv.create_ai env e in
       let ti = (pi, Env_typing_php.ReturnValue) in
       let _ = AEnv.set env id ti in
-      iexpr env (Assign (None, Id [(wrap "$;return")], e))
-  | Return (Some e) ->
+      iexpr env (Assign (Id [(wrap_fake "$;return")], fake "=", e))
+  | Return (_, Some e) ->
       let id = AEnv.create_ai env e in
       let ti = (pi, Env_typing_php.ReturnValue) in
       let _ = AEnv.set env id ti in
-      iexpr env (Assign (None, Id [(wrap "$;return")], e))
-  | Break eopt | Continue eopt -> expr_opt env eopt
-  | Throw e -> iexpr env e
-  | Try (stl, cl, fl) ->
+      iexpr env (Assign (Id [(wrap_fake "$;return")], fake "=", e))
+  | Break (_, eopt) | Continue (_, eopt) -> expr_opt env eopt
+  | Throw (_, e) -> iexpr env e
+  | Try (_, stl, cl, fl) ->
       stmtl env stl;
       catchl env cl;
       finallyl env fl
-  | StaticVars svarl ->
+  | StaticVars (_, svarl) ->
       List.iter (fun (s, e) ->
         match e with
         | None -> ()
         | Some e ->
-            iexpr env (Assign (None, Id [s], e))
+            iexpr env (Assign (Id [s], fake "=", e))
      ) svarl
-  | Global el ->
+  | Global (_, el) ->
       List.iter (function
         | Id [(x, tok)] ->
             let gid = A.remove_first_char x in
-            let gl = Array_get (Id [(wrap "$GLOBALS")],Some(String (gid,tok)))in
-            let assign = Assign (None, Id [(x, tok)], gl) in
+            let gl = Array_get (Id [(wrap_fake "$GLOBALS")],Some(String (gid,tok)))in
+            let assign = Assign (Id [(x, tok)], fake "=", gl) in
             iexpr env assign
         | e -> iexpr env e
      ) el
@@ -325,11 +329,11 @@ and expr_opt env = function
 and casel env t l = List.iter (case env t) l
 
 and case env t = function
-  | Case (e, stl) ->
+  | Case (_, e, stl) ->
       let t' = expr env e in
       let _ = Unify.unify env t t' in
       stmtl env stl
-  | Default stl -> stmtl env stl
+  | Default (_, stl) -> stmtl env stl
 
 and catchl env l = List.iter (catch env) l
 and catch env (_, _, stl) = stmtl env stl
@@ -350,6 +354,8 @@ and expr env e =
 
 and expr_ env _lv = function
 
+  | IdSpecial (Eval, _) -> raise Todo
+
   | Id [(("true" | "false"),_)] -> bool
   | Int _ -> int
   | Double _ -> float
@@ -362,15 +368,15 @@ and expr_ env _lv = function
       | _ when String.contains s '<' -> thtml
       | _                            -> Tsum [Tsstring (SSet.singleton s)]
       )
-  | Guil el ->
+  | Guil (_, el, _) ->
       List.iter (encaps env) el;
       string
 
-  | Binop (bop, e1, e2) ->
+  | Binop (e1, (bop, _), e2) ->
       let t1 = expr env e1 in
       let t2 = expr env e2 in
       binaryOp env t1 t2 bop
-  | Unop (uop, e) ->
+  | Unop ((uop, _), e) ->
       let _ = expr env e in
       unaryOp uop
   | Infix (_, e) -> expr env e
@@ -385,7 +391,7 @@ and expr_ env _lv = function
       iexpr env e;
       ptype env pty
 
-  | Ref e -> expr env e
+  | Ref (_, e) -> expr env e
 
   | Unpack _ -> raise Todo
 
@@ -430,7 +436,7 @@ and expr_ env _lv = function
           then raise (UnknownEntity s);
           any
       )
-  | This name -> expr env (Var (name))
+  | IdSpecial (This, tok) -> let name = "$this", tok in expr env (Var (name))
 
   (*Array_get returns the type of the values of the array*)
   (* Array access without a key *)
@@ -500,7 +506,7 @@ and expr_ env _lv = function
   (* ?? why this special case? the code handling Id() should do the
    * GEnv.get_class so no need this special case.
    *)
-  | Class_get (Id [(c,_)], Id [(x,_)])
+  | Class_get (Id [(c,_)], _, Id [(x,_)])
       when c <> special "self" && c <> special "parent" ->
       let marked = env.auto_complete && has_marker env x in
       let t1 = GEnv.get_class env c in
@@ -509,7 +515,7 @@ and expr_ env _lv = function
       let t2 = sobject (x, v) in
       let _ = Unify.unify env t1 t2 in
       v
-  | Class_get (e, Id [(x,_)]) | Obj_get (e, Id [(x,_)]) ->
+  | Class_get (e, _, Id [(x,_)]) | Obj_get (e, _, Id [(x,_)]) ->
       let marked = env.auto_complete && has_marker env x in
       let t1 = expr env e in
       if marked then (env.show := Sauto_complete (x, t1); any) else
@@ -521,7 +527,7 @@ and expr_ env _lv = function
       any
 
 
-  | Assign (None, Array_get(e, a), e2) ->
+  | Assign (Array_get(e, a), _, e2) ->
     let e1 = Array_get(e, a) in
     let id = AEnv.create_ai env e in
     let t1 = expr env e1 in
@@ -531,7 +537,7 @@ and expr_ env _lv = function
     let t = Unify.unify env t1 t2 in
     t
 
-  | Assign (None, Id [("$;return", tok)], ConsArray(avl))  -> (
+  | Assign (Id [("$;return", tok)], _, ConsArray(avl))  -> (
     let e1 = Id [("$;return", tok)] in
     let e2 = ConsArray(avl) in
       let t1 = expr env e1 in
@@ -541,37 +547,37 @@ and expr_ env _lv = function
       | Some _p ->
           let e = ConsArray(avl) in
           let id = AEnv.create_ai env e in
-          let tl = List.map (array_declaration env id pi) avl in
+          let tl = List.map (array_declaration env id pi) (unbracket avl) in
           let ti = (pi, Env_typing_php.Declaration(tl)) in
           let _ = AEnv.set env id ti in
           t
       | None -> t
   )
 
-  | Assign (None, e1, ConsArray(avl)) ->
+  | Assign (e1, _, ConsArray(avl)) ->
       let e2 = ConsArray (avl) in
       let t1 = expr env e1 in
       let t2 = expr env e2 in
       let t = Unify.unify env t1 t2 in
       t
 
-  | Assign (None, e1, e2) ->
+  | Assign (e1, _, e2) ->
       let t1 = expr env e1 in
       let t2 = expr env e2 in
       let t = Unify.unify env t1 t2 in
       t
 
-  | Assign (Some bop, e1, e2) ->
-      expr env (Assign (None, e1, Binop (bop, e1, e2)))
+  | AssignOp (e1, bop, e2) ->
+      expr env (Assign (e1, fake "=", Binop (e1, bop, e2)))
 
   | ConsArray (avl) ->
       let t = Tvar (fresh()) in
-      let t = List.fold_left (array_value env) t avl in
+      let t = List.fold_left (array_value env) t (unbracket avl) in
       (match pi with
       | Some _p ->
           let e = ConsArray(avl) in
           let id = AEnv.create_ai env e in
-          let tl  = List.map (array_declaration env id pi) avl in
+          let tl  = List.map (array_declaration env id pi) (unbracket avl) in
 	  let ti = (pi, Env_typing_php.Declaration(tl)) in
           let _ = AEnv.set env id ti in
           t
@@ -600,10 +606,10 @@ and expr_ env _lv = function
 *)
   | Collection _ -> failwith "Collection is not implemented - complain to pieter@"
 
-  | Arrow (_e1, _e2) -> failwith "Todo: Arrow"
+  | Arrow (_e1,_,  _e2) -> failwith "Todo: Arrow"
   | List el ->
       let t = Tvar (fresh()) in
-      let el = List.map (expr env) el in
+      let el = List.map (expr env) (unbracket el) in
       let t = List.fold_left (Unify.unify env) t el in
       array (int, t)
 
@@ -620,25 +626,25 @@ and expr_ env _lv = function
 
   | Xhp x ->
       xml env x;
-      let t = expr env (New (Id [(x.xml_tag)], [])) in
+      let t = expr env (New (fake "new", Id [(x.xml_tag)], [])) in
       t
 
-  | New (Id [(x,_)], _) when env.auto_complete && has_marker env x ->
+  | New (_, Id [(x,_)], _) when env.auto_complete && has_marker env x ->
       env.show := Sglobal (get_marked_id env x);
       any
-  | New (x, el) ->
+  | New (_, x, el) ->
       let v = "$;tmp"^(string_of_int (fresh())) in
-      let obj = Class_get (x, Id [(wrap "__obj")]) in
-      iexpr env (Assign (None, Var (wrap v), obj));
-      iexpr env (Call (Obj_get (obj, Id [(wrap "__construct")]), el));
-      let t = expr env (Id [(wrap v)]) in
+      let obj = Class_get (x, fake "::", Id [(wrap_fake "__obj")]) in
+      iexpr env (Assign (Var (wrap_fake v), fake "=", obj));
+      iexpr env (Call (Obj_get (obj, fake ".", Id [(wrap_fake "__construct")]), el));
+      let t = expr env (Id [(wrap_fake v)]) in
       let set = match x with
         | Id [(c,_)] when c.[0] <> '$' -> SSet.singleton c
         | _ -> SSet.empty
       in
       Unify.unify env t (Tsum [Tclosed (set, SMap.empty)])
 
-  | InstanceOf (e1, e2) ->
+  | InstanceOf (_, e1, e2) ->
       iexpr env e1;
       iexpr env e2;
       bool
@@ -653,10 +659,10 @@ and encaps env e =
   ignore (Unify.unify env t string)
 
 and array_value env t = function
-  | Arrow (String (s,_), e) ->
+  | Arrow (String (s,_), _, e) ->
       let t' = srecord (s, (expr env e)) in
       Unify.unify env t t'
-  | Arrow (e1, e2) ->
+  | Arrow (e1, _, e2) ->
       let t' = array (expr env e1, expr env e2) in
       Unify.unify env t t'
   | e ->
@@ -664,7 +670,7 @@ and array_value env t = function
       Unify.unify env t t'
 
 and array_declaration env id pi = function
-  | Arrow (e1, e2) ->
+  | Arrow (e1, _, e2) ->
       let t1 = expr env e1 in
       let t2 = expr env e2 in
       let aa = (pi, DeclarationKValue(t1, t2)) in
@@ -676,7 +682,8 @@ and array_declaration env id pi = function
       AEnv.set env id aa;
       t
 
-and ptype _env = function
+and ptype _env (x, _tok) =
+  match x with
   | Cst_php.BoolTy -> bool
   | Cst_php.IntTy -> int
   | Cst_php.DoubleTy -> float
@@ -693,8 +700,6 @@ and binaryOp env t1 t2 = function
      end else Unify.unify env t1 t2
   | BinaryConcat ->
       Unify.unify env t1 t2
-  | Pipe ->
-     failwith "Not supported"
   | CombinedComparison ->
       Unify.unify env t1 t2 |> ignore;
       int
@@ -725,7 +730,7 @@ and xml env x =
   List.iter (xhp env) x.xml_body
 
 and xhp_attr env = function
-  | Guil el -> List.iter (encaps env) el
+  | Guil (_, el, _) -> List.iter (encaps env) el
   | e ->
       let t = expr env e in
       ignore (Unify.unify env t string)
@@ -784,10 +789,10 @@ and parameter env p =
     | Some (Hint [(x, tok)]) ->
         (try get_hard_object env x
         with Not_found ->
-          expr env (New (Id [(x, tok)], [])))
+          expr env (New (fake "new", Id [(x, tok)], [])))
     | Some (Hint _) -> failwith "no support for namespace yet"
-    | Some (HintArray) ->
-        expr env (ConsArray ([]))
+    | Some (HintArray _) ->
+        expr env (ConsArray (fake_bracket []))
 
     (* don't handle type extensions *)
     | Some (HintQuestion _)
@@ -795,7 +800,7 @@ and parameter env p =
     | Some (HintCallback _) -> Tvar (fresh())
     | Some (HintShape _) -> failwith "no support for shape yet"
     | Some (HintTypeConst _) -> failwith "no support for type consts"
-    | Some (HintVariadic x) -> array (int, hint x)
+    | Some (HintVariadic (_, x)) -> array (int, hint x)
   in
   let pval = hint p.p_type
   in

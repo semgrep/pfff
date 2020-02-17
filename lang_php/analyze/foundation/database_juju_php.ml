@@ -73,10 +73,10 @@ let juju_db_of_files ?(show_progress=false) xs =
             failwith "no support for namespace yet"
 
         | (Global _|StaticVars _
-          |Try (_, _, _)|Throw _
+          |Try _ |Throw _
           |Continue _|Break _|Return _
-          |Foreach (_, _, _)|For (_, _, _, _)|Do (_, _)|While (_, _)
-          |Switch (_, _)|If (_, _, _)
+          |Foreach _ |For _|Do _|While _
+          |Switch _ |If _
           |Block _|Expr _
           ) -> ()
       ) ast

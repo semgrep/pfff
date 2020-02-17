@@ -346,12 +346,12 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
         * this new node *)
        None
 
-   | Continue (_, eopt) | Break (_, eopt) ->
+   | Continue (_, _TODOlabelid) | Break (_, _TODOlabelid) ->
 
        let is_continue, node =
          match stmt with
-         | Continue _ -> true,  F.Continue eopt
-         | Break _    -> false, F.Break eopt
+         | Continue _ -> true,  F.Continue
+         | Break _    -> false, F.Break
          | _ -> raise Impossible
        in
 (*

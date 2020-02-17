@@ -110,17 +110,19 @@
 (* The AST related types *)
 (*****************************************************************************)
 
-(* The wrap is to get position information for certain elements in the AST.
- * It can be None when we want to optimize things and have a very
- * small marshalled AST. See Ast_php_simple.build.store_position flag.
- * Right now with None the marshalled AST for www is 190MB instead of
- * 380MB.
- *)
-type 'a wrap = 'a * Cst_php.tok option
+type tok = Parse_info.t
+
+type 'a wrap = 'a * tok
  (* with tarzan *)
+
+(* round(), square[], curly{}, angle<> brackets *)
+type 'a bracket = tok * 'a * tok
+ (* with tarzan *)
+
 
 type ident = string wrap
  (* with tarzan *)
+(* the string contains the $ prefix *)
 type var = string wrap
  (* with tarzan *)
 
@@ -147,21 +149,21 @@ and stmt =
 
   | Block of stmt list
 
-  | If of expr * stmt * stmt
-  | Switch of expr * case list
+  | If of tok * expr * stmt * stmt
+  | Switch of tok * expr * case list
 
   (* pad: not sure why we use stmt list instead of just stmt like for If *)
-  | While of expr * stmt list
-  | Do of stmt list * expr
-  | For of expr list * expr list * expr list * stmt list
-  (* 'foreach ($xs as $k)', '... ($xs as $k => $v)', '... ($xs as list($...))'*)
-  | Foreach of expr * foreach_pattern * stmt list
+  | While of tok * expr * stmt list
+  | Do of tok * stmt list * expr
+  | For of tok * expr list * expr list * expr list * stmt list
+  (* 'foreach ($xs as $k)','... ($xs as $k => $v)', '... ($xs as list($...))'*)
+  | Foreach of tok * expr * foreach_pattern * stmt list
 
-  | Return of expr option
-  | Break of expr option | Continue of expr option
+  | Return of tok * expr option
+  | Break of tok * expr option | Continue of tok * expr option
 
-  | Throw of expr
-  | Try of stmt list * catch list * finally list
+  | Throw of tok * expr
+  | Try of tok * stmt list * catch list * finally list
 
   (* only at toplevel in most of our code *)
   | ClassDef of class_def
@@ -171,18 +173,18 @@ and stmt =
   | TypeDef of type_def
   (* the qualified_ident below can not have a leading '\', it can also
    * be the root namespace *)
-  | NamespaceDef of qualified_ident * stmt list
-  | NamespaceUse of qualified_ident * ident option (* when alias *)
+  | NamespaceDef of tok * qualified_ident * stmt list bracket
+  | NamespaceUse of tok * qualified_ident * ident option (* when alias *)
 
   (* Note that there is no LocalVars constructor. Variables in PHP are
    * declared when they are first assigned. *)
-  | StaticVars of (var * expr option) list
+  | StaticVars of tok * (var * expr option) list
   (* expr is most of the time a simple variable name *)
-  | Global of expr list
+  | Global of tok * expr list
 
   and case =
-    | Case of expr * stmt list
-    | Default of stmt list
+    | Case of tok * expr * stmt list
+    | Default of tok * stmt list
 
   (* catch(Exception $exn) { ... } => ("Exception", "$exn", [...]) *)
   and catch = hint_type  * var * stmt list
@@ -197,8 +199,8 @@ and stmt =
  *)
 and expr =
   (* booleans are really just Int in PHP :( *)
-  | Int of string
-  | Double of string
+  | Int of string wrap
+  | Double of string wrap
   (* PHP has no first-class functions so entities are sometimes passed
    * as strings so the string wrap below can actually correspond to a
    * 'Id name' sometimes. Some magic functions like param_post() also
@@ -214,7 +216,8 @@ and expr =
    * todo: For field name, if in the code they are referenced like $this->fld,
    * we should prepend a $ to fld to match their definition.
    *)
-  | Id of name
+  | Id of name (* less: should be renamed Name *)
+  | IdSpecial of special wrap
 
    (* Var used to be merged with Id. But then we were doing lots of
     * 'when Ast.is_variable name' so maybe better to have Id and Var
@@ -226,36 +229,35 @@ and expr =
   (* when None it means add to the end when used in lvalue position *)
   | Array_get of expr * expr option
 
-  (* often transformed in Var "$this" in the analysis *)
-  | This of string wrap
   (* Unified method/field access.
    * ex: $o->foo() ==> Call(Obj_get(Var "$o", Id "foo"), [])
    * ex: A::foo()  ==> Call(Class_get(Id "A", Id "foo"), [])
    * note that Id can be "self", "parent", "static".
    *)
-  | Obj_get of expr * expr
-  | Class_get of expr * expr
+  | Obj_get of expr * tok * expr
+  | Class_get of expr * tok * expr
 
-  | New of expr * expr list
-  | InstanceOf of expr * expr
+  | New of tok * expr * expr list
+  | InstanceOf of tok * expr * expr
 
   (* pad: could perhaps be at the statement level? The left expr
    * must be an lvalue (e.g. a variable).
    *)
-  | Assign of binaryOp option * expr * expr
+  | Assign of expr * tok * expr
+  | AssignOp of expr * binaryOp wrap * expr
   (* really a destructuring tuple let; always used as part of an Assign or
    * in foreach_pattern.
    *)
-  | List of expr list
+  | List of expr list bracket
   (* used only inside array_value or foreach_pattern, or for yield
    * (which is translated as a builtin and so a Call)
    *)
-  | Arrow of expr * expr
+  | Arrow of expr * tok * expr
 
   (* $y =& $x is transformed into an Assign(Var "$y", Ref (Var "$x")). In
    * PHP refs are always used in an Assign context.
    *)
-  | Ref of expr
+  | Ref of tok * expr
 
   (* e.g. f(...$x) *)
   | Unpack of expr
@@ -263,32 +265,37 @@ and expr =
   | Call of expr * expr list
 
   (* todo? transform into Call (builtin ...) ? *)
-  | Infix of Ast_generic.incr_decr * expr
-  | Postfix of Ast_generic.incr_decr * expr
-  | Binop of binaryOp * expr * expr
-  | Unop of unaryOp * expr
-  | Guil of expr list
+  | Infix of Ast_generic.incr_decr wrap * expr
+  | Postfix of Ast_generic.incr_decr wrap * expr
+  | Binop of expr * binaryOp wrap * expr
+  | Unop of unaryOp wrap * expr
+  | Guil of expr list bracket
 
-  | ConsArray of array_value list
-  | Collection of name * array_value list
+  | ConsArray of array_value list bracket
+  | Collection of name * array_value list bracket
   | Xhp of xml
 
   | CondExpr of expr * expr * expr
-  | Cast of Cst_php.ptype * expr
+  | Cast of Cst_php.ptype wrap * expr
 
   (* yeah! PHP 5.3 is becoming a real language *)
   | Lambda of func_def
+
+  and special =
+  (* often transformed in Var "$this" in the analysis *)
+  | This
+  (* take many different forms in PHP, eval(), call_user_func, ${}, etc. *)
+  | Eval
   
   and binaryOp = 
    | BinaryConcat 
-   | Pipe 
    | CombinedComparison
    | ArithOp of Ast_generic.arithmetic_operator
   and unaryOp = Ast_generic.arithmetic_operator
 
   (* pad: do we need that? could convert into something more basic *)
   and xhp =
-    | XhpText of string
+    | XhpText of string wrap
     | XhpExpr of expr
     | XhpXml of xml
 
@@ -314,13 +321,14 @@ and string_const_expr = expr
 
 and hint_type =
  | Hint of name (* todo: add the generics *)
- | HintArray
- | HintQuestion of hint_type
- | HintTuple of hint_type list
+ | HintArray of tok
+ | HintQuestion of tok * hint_type
+ | HintTuple of hint_type list bracket
  | HintCallback of hint_type list * (hint_type option)
- | HintShape of (string_const_expr * hint_type) list
- | HintTypeConst of (hint_type * hint_type)
- | HintVariadic of hint_type option
+ (* a.k.a record *)
+ | HintShape of tok * (string_const_expr * hint_type) list bracket 
+ | HintTypeConst of hint_type * tok * hint_type (* ?? *)
+ | HintVariadic of tok * hint_type option
 
 and class_name = hint_type
 
@@ -359,20 +367,21 @@ and func_def = {
 
    and parameter = {
      p_type: hint_type option;
-     p_ref: bool;
+     p_ref: tok option;
      p_name: var;
      p_default: expr option;
      p_attrs: attribute list;
-     p_variadic: bool
+     p_variadic: tok option;
    }
 
   (* for methods, and below for fields too *)
-  and modifier = Cst_php.modifier
+  and modifier = Cst_php.modifier wrap
 
   (* normally either an Id or Call with only static arguments *)
   and attribute = expr
 
 and constant_def = {
+  cst_tok: tok;
   cst_name: ident;
   (* normally a static scalar; None for abstract const *)
   cst_body: expr option;
@@ -385,7 +394,7 @@ and enum_type = {
 
 and class_def = {
   c_name: ident;
-  c_kind: class_kind;
+  c_kind: class_kind wrap;
 
   c_extends: class_name option;
   c_implements: class_name list;
@@ -395,6 +404,7 @@ and class_def = {
    * constraint) of the enum? *)
   c_enum_type: enum_type option;
 
+  c_modifiers: modifier list;
   c_attrs: attribute list;
   (* xhp attributes. less: other xhp decl, e.g. children, @required, etc *)
   c_xhp_fields: xhp_field list;
@@ -405,8 +415,7 @@ and class_def = {
 }
 
 and class_kind =
-    (* todo: put Final, Abstract as modifier list in class_def *)
-  | ClassRegular | ClassFinal | ClassAbstract | ClassAbstractFinal
+  | Class
   | Interface
   | Trait
   | Enum
@@ -427,6 +436,7 @@ and type_def = {
   and type_def_kind =
   | Alias of hint_type
   | Newtype of hint_type
+  (* ??? *)
   | ClassConstType of hint_type option
 
 (* with tarzan *)
@@ -446,7 +456,7 @@ type any =
 (*****************************************************************************)
 
 let unwrap x = fst x
-let wrap s = s, Some (Cst_php.fakeInfo s)
+let wrap_fake s = s, Parse_info.fake_info s
 
 (* builtin() is used for:
  *  - 'eval', and implicitly generated eval/reflection like functions:
@@ -470,21 +480,22 @@ let wrap s = s, Some (Cst_php.fakeInfo s)
 let builtin x = "__builtin__" ^ x
 (* for 'self'/'parent', 'static', 'lambda', 'namespace', root namespace '\',
  * 'class' as in C::class
+ * TODO: transform in IdSpecial!
  *)
 let special x = "__special__" ^ x
 
 (* AST helpers *)
-let has_modifier cv = List.length cv.cv_modifiers > 0
-let is_static modifiers  = List.mem Cst_php.Static  modifiers
-let is_private modifiers = List.mem Cst_php.Private modifiers
+let has_modifier cv = 
+  List.length cv.cv_modifiers > 0
+let is_static modifiers  = 
+  List.mem Cst_php.Static  (List.map unwrap modifiers)
+let is_private modifiers = 
+  List.mem Cst_php.Private (List.map unwrap modifiers)
 
 let string_of_xhp_tag xs = ":" ^ Common.join ":" xs
 
 let str_of_ident (s, _) = s
-let tok_of_ident (s, x) =
-  match x with
-  | None -> failwith (Common.spf "no token information for %s" s)
-  | Some tok -> tok
+let tok_of_ident (_, x) = x
 
 let str_of_name = function
   | [id] -> str_of_ident id

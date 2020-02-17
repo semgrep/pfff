@@ -101,12 +101,10 @@ let test_json_fast_php file =
 (*e: test_json_php *)
 
 let test_dump_php file =
-  let _ast = Parse_php.parse_program file in
-  raise Todo
-(*
-  let s = Export_ast_php.ml_pattern_string_of_program ast in
+  let cst = Parse_php.parse_program file in
+  let v = Meta_cst_php.vof_any (Cst_php.Program cst) in
+  let s = Ocaml.string_of_v v in
   pr s
-*)
 
 (*****************************************************************************)
 (* Misc *)

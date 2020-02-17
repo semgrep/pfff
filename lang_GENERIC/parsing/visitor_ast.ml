@@ -129,7 +129,22 @@ and v_id_info { id_resolved = v_id_resolved; id_type = v_id_type } =
   let arg = v_ref (v_option v_resolved_name) v_id_resolved in
   let arg = v_ref (v_option v_type_) v_id_type in ()
 
-and v_xml xs = v_list v_any xs
+and
+  v_xml { xml_tag = v_xml_tag; xml_attrs = v_xml_attrs; xml_body = vv_xml_body
+        } =
+  let v_xml_tag = v_ident v_xml_tag in
+  let v_xml_attrs =
+    v_list (fun (v1, v2) -> let v1 = v_ident v1 and v2 = v_xml_attr v2 in ())
+      v_xml_attrs in
+  let vv_xml_body = v_list v_xml_body vv_xml_body in 
+  ()
+and v_xml_attr v = v_expr v
+and v_xml_body =
+  function
+  | XmlText v1 -> let v1 = v_wrap v_string v1 in ()
+  | XmlExpr v1 -> let v1 = v_expr v1 in ()
+  | XmlXml v1 -> let v1 = v_xml v1 in ()
+
 
 and v_expr x =
   let k x = 
@@ -158,7 +173,7 @@ and v_expr x =
       in ()
   | LetPattern ((v1, v2)) -> let v1 = v_pattern v1 and v2 = v_expr v2 in ()
   | DotAccess ((v1, t, v2)) -> 
-        let v1 = v_expr v1 and t = v_tok t and v2 = v_ident v2 in ()
+        let v1 = v_expr v1 and t = v_tok t and v2 = v_field_ident v2 in ()
   | ArrayAccess ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_expr v2 in ()
   | SliceAccess ((v1, v2, v3, v4)) -> 
         let v1 = v_expr v1 
@@ -196,6 +211,10 @@ and v_expr x =
   in
   vin.kexpr (k, all_functions) x
 
+and v_field_ident = function
+ | FId id -> v_ident id
+ | FName n -> v_name n
+ | FDynamic e -> v_expr e
 
 and v_literal =
   function
@@ -247,19 +266,31 @@ and v_other_expr_operator _x = ()
 and v_type_ x =
   let k x = 
   match x with
+  | TyAnd v1 ->
+      let v1 =
+        v_bracket
+          (v_list
+             (fun (v1, v2) -> let v1 = v_ident v1 and v2 = v_type_ v2 in ()))
+          v1
+      in ()
+  | TyOr v1 -> let v1 = v_list v_type_ v1 in ()
   | TyBuiltin v1 -> let v1 = v_wrap v_string v1 in ()
   | TyFun ((v1, v2)) -> let v1 = v_list v_parameter_classic v1 and 
     v2 = v_type_ v2 in ()
-  | TyApply ((v1, v2)) ->
+  | TyNameApply ((v1, v2)) ->
       let v1 = v_name v1 and v2 = v_type_arguments v2 in ()
+  | TyName ((v1)) ->
+      let v1 = v_name v1 in ()
   | TyVar v1 -> let v1 = v_ident v1 in ()
   | TyArray ((v1, v2)) ->
       let v1 = v_option v_expr v1 and v2 = v_type_ v2 in ()
   | TyPointer (t, v1) -> 
         let t = v_tok t in
         let v1 = v_type_ v1 in ()
-  | TyTuple v1 -> let v1 = v_list v_type_ v1 in ()
-  | TyQuestion v1 -> let v1 = v_type_ v1 in ()
+  | TyTuple v1 -> let v1 = v_bracket (v_list v_type_) v1 in ()
+  | TyQuestion (v1, t) -> 
+        let t = v_tok t in
+        let v1 = v_type_ v1 in ()
   | OtherType ((v1, v2)) ->
       let v1 = v_other_type_operator v1 and v2 = v_list v_any v2 in ()
   in
@@ -337,10 +368,10 @@ and v_stmt x =
         let v1 = v_option v_expr v1 in ()
   | Continue (t, v1) -> 
         let t = v_tok t in
-        let v1 = v_option v_expr v1 in ()
+        let v1 = v_label_ident v1 in ()
   | Break (t, v1) -> 
         let t = v_tok t in
-        let v1 = v_option v_expr v1 in ()
+        let v1 = v_label_ident v1 in ()
   | Label ((v1, v2)) -> let v1 = v_label v1 and v2 = v_stmt v2 in ()
   | Goto (t, v1) -> 
         let t = v_tok t in
@@ -367,6 +398,13 @@ and v_stmt x =
   in
   vin.kstmt (k, all_functions) x
 and v_other_stmt_with_stmt_operator _ = ()
+
+and v_label_ident =
+  function
+  | LNone -> ()
+  | LId v1 -> let v1 = v_label v1 in ()
+  | LInt v1 -> let v1 = v_wrap v_int v1 in ()
+  | LDynamic v1 -> let v1 = v_expr v1 in ()
 
 and v_case = function 
   | Case (t, v1) -> 
@@ -405,7 +443,14 @@ and v_pattern x =
         v_list
           (fun (v1, v2) -> let v1 = v_name v1 and v2 = v_pattern v2 in ()) v1
       in ()
-  | PatVar ((v1, v2)) -> let v1 = v_ident v1 and v2 = v_id_info v2 in ()
+  | PatId ((v1, v2)) -> let v1 = v_ident v1 and v2 = v_id_info v2 in ()
+  | PatVar ((v1, v2)) ->
+      let v1 = v_type_ v1
+      and v2 =
+        v_option
+          (fun (v1, v2) -> let v1 = v_ident v1 and v2 = v_id_info v2 in ())
+          v2
+      in ()
   | PatLiteral v1 -> let v1 = v_literal v1 in ()
   | PatType v1 -> let v1 = v_type_ v1 in ()
   | PatConstructor ((v1, v2)) ->
@@ -459,7 +504,7 @@ and v_def_kind =
   | ModuleDef v1 -> let v1 = v_module_definition v1 in ()
   | MacroDef v1 -> let v1 = v_macro_definition v1 in ()
   | Signature v1 -> let v1 = v_type_ v1 in ()
-
+  | UseOuterDecl v1 -> let v1 = v_tok v1 in ()
 
 and
   v_function_definition {
@@ -524,6 +569,7 @@ and v_type_definition_kind =
       in ()
   | AndType v1 -> let v1 = v_list v_field v1 in ()
   | AliasType v1 -> let v1 = v_type_ v1 in ()
+  | NewType v1 -> let v1 = v_type_ v1 in ()
   | Exception ((v1, v2)) ->
       let v1 = v_ident v1 and v2 = v_list v_type_ v2 in ()
   | OtherTypeKind ((v1, v2)) ->
@@ -587,6 +633,9 @@ and v_directive x =
   | Package ((t, v1)) ->
       let t = v_tok t in
       let v1 = v_dotted_ident v1 in ()
+  | PackageEnd ((t)) ->
+      let t = v_tok t in
+      ()
   | OtherDirective ((v1, v2)) ->
       let v1 = v_other_directive_operator v1 and v2 = v_list v_any v2 in ()
   in

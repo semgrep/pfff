@@ -164,8 +164,8 @@ and expr (x: expr) =
       let v2 = property_name v2 in
       let t = info t in
       (match v2 with
-      | Left n -> G.DotAccess (v1, t, n)
-      | Right e -> G.OtherExpr (G.OE_ObjAccess_PN_Computed, [G.E v1; G.E e])
+      | Left n -> G.DotAccess (v1, t, G.FId n)
+      | Right e -> G.DotAccess (v1, t, G.FDynamic e)
       )
   | Fun ((v1, _v2TODO)) -> 
       let def, _more_attrs   = fun_ v1 in
@@ -211,11 +211,9 @@ and stmt x =
       let v1 = expr v1 and v2 = list case v2 in
       G.Switch (v0, Some v1, v2)
   | Continue (t, v1) -> let v1 = option label v1 in 
-     G.Continue (t, v1 |> option (fun n -> 
-       G.Name ((n, G.empty_name_info), G.empty_id_info ())))
+     G.Continue (t, G.opt_to_label_ident v1)
   | Break (t, v1) -> let v1 = option label v1 in
-     G.Break (t, v1 |> option (fun n -> 
-       G.Name ((n, G.empty_name_info), G.empty_id_info ())))
+     G.Break (t, G.opt_to_label_ident v1)
   | Return (t, v1) -> 
       let v1 = expr v1 in 
       G.Return (t, Some v1)
@@ -227,7 +225,7 @@ and stmt x =
       and v2 =
         option (fun (v1, v2) -> 
            let v1 = name v1 and v2 = stmt v2 in
-           G.PatVar (v1, G.empty_id_info()), v2
+           G.PatId (v1, G.empty_id_info()), v2
        ) v2
       and v3 = option stmt v3 in
       G.Try (t, v1, Common.opt_to_list v2, v3)
@@ -254,9 +252,8 @@ and for_header =
       let v2 = expr v2 in
       let pattern = 
         match v1 with
-        | Left v -> 
-            let v = def_of_var v in
-            G.OtherPat (G.OP_Var, [G.Def v])
+        | Left {v_name = id; v_init = _NONE; v_resolved = _; v_kind = _ } -> 
+            G.PatId (id, G.empty_id_info())
         | Right e ->
             let e = expr e in
             G.expr_to_pattern e
@@ -342,7 +339,8 @@ and class_ { c_extends = c_extends; c_body = c_body } =
     | None -> [] 
     | Some e -> [G.OtherType (G.OT_Expr, [G.E e])]
   in
-  { G.ckind = G.Class; cextends = extends; cimplements = []; cbody = v2;}, []
+  { G.ckind = G.Class; cextends = extends; 
+    cimplements = []; cmixins = []; cbody = v2;}, []
 and property x =
    match x with
   | Field ((v1, v2, v3)) ->

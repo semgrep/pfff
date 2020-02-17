@@ -154,7 +154,7 @@ let rec expr (x: expr) =
       and t = info t 
       and v2 = name v2 
       and _v3TODO = expr_context v3 in 
-      G.DotAccess (v1, t, v2)
+      G.DotAccess (v1, t, G.FId v2)
 
   | DictOrSet (CompList v) -> 
       let v = bracket (list dictorset_elt) v in 
@@ -289,8 +289,8 @@ and cmpop (a,b) =
   | LtE   -> Left G.LtE, b
   | Gt    -> Left G.Gt, b
   | GtE   -> Left G.GtE, b
-  | Is    -> Right G.OE_Is, b
-  | IsNot -> Right G.OE_IsNot, b
+  | Is    -> Left G.PhysEq, b
+  | IsNot -> Left G.NotPhysEq, b
   | In    -> Right G.OE_In, b
   | NotIn -> Right G.OE_NotIn, b
 
@@ -350,7 +350,7 @@ and list_stmt1 xs =
   | [e] -> e
   | xs -> G.Block xs
 
-and stmt x =
+and stmt_aux x =
   match x with
   | FunctionDef ((v1, v2, v3, v4, v5)) ->
       let v1 = name v1
@@ -361,7 +361,7 @@ and stmt x =
       in
       let ent = G.basic_entity v1 v5 in
       let def = { G.fparams = v2; frettype = v3; fbody = v4; } in
-      G.DefStmt (ent, G.FuncDef def)
+      [G.DefStmt (ent, G.FuncDef def)]
   | ClassDef ((v1, v2, v3, v4)) ->
       let v1 = name v1
       and v2 = list type_parent v2
@@ -369,33 +369,34 @@ and stmt x =
       and v4 = list decorator v4
       in 
       let ent = G.basic_entity v1 v4 in
-      let def = { G.ckind = G.Class; cextends = v2; cimplements = [];
+      let def = { G.ckind = G.Class; cextends = v2; 
+                  cimplements = []; cmixins = [];
                   cbody = v3 |> List.map (fun x -> G.FieldStmt x);
                 } in
-      G.DefStmt (ent, G.ClassDef def)
+      [G.DefStmt (ent, G.ClassDef def)]
 
   (* TODO: should turn some of those in G.LocalDef (G.VarDef ! ) *)
   | Assign ((v1, v2, v3)) -> 
       let v1 = list expr v1 and v2 = info v2 and v3 = expr v3 in
       (match v1 with
       | [] -> raise Impossible
-      | [a] -> G.ExprStmt (G.Assign (a, v2, v3))
-      | xs -> G.ExprStmt (G.Assign (G.Tuple xs, v2, v3)) 
+      | [a] -> [G.ExprStmt (G.Assign (a, v2, v3))]
+      | xs -> [G.ExprStmt (G.Assign (G.Tuple xs, v2, v3))]
       )
   | AugAssign ((v1, (v2, tok), v3)) ->
       let v1 = expr v1 and v2 = operator v2 and v3 = expr v3 in
-      G.ExprStmt (G.AssignOp (v1, (v2, tok), v3))
+      [G.ExprStmt (G.AssignOp (v1, (v2, tok), v3))]
   | Return (t, v1) -> let v1 = option expr v1 in 
-      G.Return (t, v1)
+      [G.Return (t, v1)]
 
   | Delete (_t, v1) -> let v1 = list expr v1 in
-      G.OtherStmt (G.OS_Delete, v1 |> List.map (fun x -> G.E x))
+      [G.OtherStmt (G.OS_Delete, v1 |> List.map (fun x -> G.E x))]
   | If ((t, v1, v2, v3)) ->
       let v1 = expr v1
       and v2 = list_stmt1 v2
       and v3 = list_stmt1 v3
       in
-      G.If (t, v1, v2, v3)
+      [G.If (t, v1, v2, v3)]
 
   | While ((t, v1, v2, v3)) ->
       let v1 = expr v1
@@ -403,10 +404,10 @@ and stmt x =
       and v3 = list stmt v3
       in
       (match v3 with
-      | [] -> G.While (t, v1, v2)
-      | _ -> G.Block [
+      | [] -> [G.While (t, v1, v2)]
+      | _ -> [G.Block [
               G.While (t, v1,v2); 
-              G.OtherStmt (G.OS_WhileOrElse, v3 |> List.map (fun x -> G.S x))]
+              G.OtherStmt (G.OS_WhileOrElse, v3 |> List.map (fun x -> G.S x))]]
       )
             
   | For ((t, v1, v2, v3, v4)) ->
@@ -417,10 +418,10 @@ and stmt x =
       in
       let header = G.ForEach (foreach, ins) in
       (match orelse with
-      | [] -> G.For (t, header, body)
-      | _ -> G.Block [
+      | [] -> [G.For (t, header, body)]
+      | _ -> [G.Block [
               G.For (t, header, body);
-              G.OtherStmt (G.OS_ForOrElse, orelse|> List.map (fun x -> G.S x))]
+              G.OtherStmt (G.OS_ForOrElse, orelse|> List.map (fun x -> G.S x))]]
       )
   (* TODO: unsugar in sequence? *)
   | With ((_t, v1, v2, v3)) ->
@@ -433,19 +434,20 @@ and stmt x =
         | None -> v1
         | Some e2 -> G.LetPattern (G.expr_to_pattern e2, v1)
       in
-      G.OtherStmtWithStmt (G.OSWS_With, e, v3)
+      [G.OtherStmtWithStmt (G.OSWS_With, e, v3)]
 
   | Raise (t, v1) ->
       (match v1 with
       | Some (e, None) -> 
-        let e = expr e in G.Throw (t, e)
+        let e = expr e in 
+        [G.Throw (t, e)]
       | Some (e, Some from) -> 
         let e = expr e in
         let from = expr from in
         let st = G.Throw (t, e) in
-        G.OtherStmt (G.OS_ThrowFrom, [G.E from; G.S st])
+        [G.OtherStmt (G.OS_ThrowFrom, [G.E from; G.S st])]
       | None ->
-        G.OtherStmt (G.OS_ThrowNothing, [])
+        [G.OtherStmt (G.OS_ThrowNothing, [])]
       )
                   
   | TryExcept ((t, v1, v2, v3)) ->
@@ -454,62 +456,67 @@ and stmt x =
       and orelse = list stmt v3
       in
       (match orelse with
-      | [] -> G.Try (t, v1, v2, None)
-      | _ -> G.Block [
+      | [] -> [G.Try (t, v1, v2, None)]
+      | _ -> [G.Block [
               G.Try (t, v1, v2, None);
               G.OtherStmt (G.OS_TryOrElse, orelse |> List.map (fun x -> G.S x))
-              ]
+              ]]
       )
 
   | TryFinally ((t, v1, v2)) ->
       let v1 = list_stmt1 v1 and v2 = list_stmt1 v2 in
       (* could lift down the Try in v1 *)
-      G.Try (t, v1, [], Some v2)
+      [G.Try (t, v1, [], Some v2)]
 
   | Assert ((t, v1, v2)) -> let v1 = expr v1 and v2 = option expr v2 in
-      G.Assert (t, v1, v2)
+      [G.Assert (t, v1, v2)]
 
   | ImportAs (t, (v1, _dotsAlwaysNone), v2) -> 
       let dotted = dotted_name v1 and nopt = option name v2 in
-      G.DirectiveStmt (G.ImportAs (t, G.DottedName dotted, nopt))
+      [G.DirectiveStmt (G.ImportAs (t, G.DottedName dotted, nopt))]
   | ImportAll (t, (v1, _dotsAlwaysNone), v2) -> 
       let dotted = dotted_name v1 and v2 = info v2 in
-      G.DirectiveStmt (G.ImportAll (t, G.DottedName dotted, v2))
+      [G.DirectiveStmt (G.ImportAll (t, G.DottedName dotted, v2))]
 
   | ImportFrom (t, (v1, _dotsTODO), v2) ->
       let v1 = dotted_name v1
       and v2 = list alias v2
       in
-      G.DirectiveStmt (G.ImportFrom (t, G.DottedName v1, v2))
+      [G.DirectiveStmt (G.ImportFrom (t, G.DottedName v1, v2))]
 
-  | Global (_t, v1) -> let v1 = list name v1 in
-      G.OtherStmt (G.OS_Global, v1 |> List.map (fun x -> G.Id x))
-  | NonLocal (_t, v1) -> let v1 = list name v1 in
-      G.OtherStmt (G.OS_NonLocal, v1 |> List.map (fun x -> G.Id x))
+  | Global (t, v1) | NonLocal (t, v1)
+    -> let v1 = list name v1 in
+      v1 |> List.map (fun x -> 
+          let ent = G.basic_entity x [] in
+          G.DefStmt (ent, G.UseOuterDecl t))
 
-  | ExprStmt v1 -> let v1 = expr v1 in G.ExprStmt v1
+  | ExprStmt v1 -> let v1 = expr v1 in 
+      [G.ExprStmt v1]
 
   | Async (t, x) ->
       let x = stmt x in
       (match x with
       | G.DefStmt (ent, func) ->
-          G.DefStmt ({ ent with G.attrs = (G.attr G.Async t)
-                                          ::ent.G.attrs}, func)
-      | _ -> G.OtherStmt (G.OS_Async, [G.S x])
+          [G.DefStmt ({ ent with G.attrs = (G.attr G.Async t)
+                                          ::ent.G.attrs}, func)]
+      | _ -> [G.OtherStmt (G.OS_Async, [G.S x])]
       )
 
-  | Pass _t -> G.OtherStmt (G.OS_Pass, [])
-  | Break t -> G.Break (t, None)
-  | Continue t -> G.Continue (t, None)
+  | Pass _t -> [G.OtherStmt (G.OS_Pass, [])]
+  | Break t -> [G.Break (t, G.LNone)]
+  | Continue t -> [G.Continue (t, G.LNone)]
 
   (* python2: *)
   | Print (tok, _dest, vals, _nl) -> 
       let id = Name (("print", tok), Load, ref NotResolved) in
-      stmt (ExprStmt (Call (id, vals |> List.map (fun e -> Arg e))))
+      stmt_aux (ExprStmt (Call (id, vals |> List.map (fun e -> Arg e))))
 
   | Exec (tok, e, _eopt, _eopt2) -> 
       let id = Name (("exec", tok), Load, ref NotResolved) in
-      stmt (ExprStmt (Call (id, [Arg e])))
+      stmt_aux (ExprStmt (Call (id, [Arg e])))
+
+and stmt x = 
+  G.stmt1 (stmt_aux x)
 
 and pattern e = 
   let e = expr e in

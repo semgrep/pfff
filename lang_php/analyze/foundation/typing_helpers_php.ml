@@ -215,7 +215,7 @@ module AEnv = struct
 
   let create_ai env e = 
     match e with 
-    | Obj_get(This("$this", _), Id[(s, tok)]) -> 
+    | Obj_get(IdSpecial(This, _), _, Id[(s, tok)]) -> 
       (Id[(("$"^s), tok)], "", get_class env)
     | _ -> (e, get_fun env, get_class env)
 

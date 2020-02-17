@@ -33,6 +33,7 @@ let vof_arithmetic_operator =
   | LtE -> Ocaml.VSum (("LtE", []))
   | Gt -> Ocaml.VSum (("Gt", []))
   | GtE -> Ocaml.VSum (("GtE", []))
+  | Cmp -> Ocaml.VSum (("Cmp", []))
 
 let vof_incr_decr =
   function

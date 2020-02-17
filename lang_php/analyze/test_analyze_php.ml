@@ -10,40 +10,43 @@ module Json_in = Json_io
 (*****************************************************************************)
 (* Simple AST *)
 (*****************************************************************************)
-let test_parse_simple xs =
-  let fullxs = Lib_parsing_php.find_source_files_of_dir_or_files xs in
-  fullxs |> List.iter (fun file ->
-    try 
-      let ast = Parse_php.parse_program file in
-      let _ast = Ast_php_build.program ast in
-      ()
-    with exn ->
-      (match exn with
-      | Ast_php_build.TodoConstruct (_, tok)
-      | Ast_php_build.ObsoleteConstruct tok
-        ->
-        pr2 (Parse_info.error_message_info tok);
+(* mostly a copy paste of Test_parsing_php.parse_php *)
+let test_parse_simple xs  =
+  let xs = List.map Common.fullpath xs in
+  let fullxs = 
+    Lib_parsing_php.find_source_files_of_dir_or_files xs
+    |> Skip_code.filter_files_if_skip_list ~root:xs
+  in
 
-      | _ -> raise exn
+  let stat_list = ref [] in
+  fullxs |> Console.progress (fun k -> List.iter (fun file -> 
+     k ();
+    let ((cst, _toks), stat) = 
+      Common.save_excursion Flag_parsing.error_recovery true (fun () ->
+        Parse_php.parse file 
       )
-  )
+    in
+    Common.push stat stat_list;
+    if stat.Parse_info.bad = 0
+    then 
+      Error_code.try_with_print_exn_and_reraise file (fun () ->
+      let _ast = Ast_php_build.program cst in
+      ()
+      )
+  ));
+
+  Parse_info.print_parsing_stat_list !stat_list;
+  ()
+
 
 let test_dump_simple file =
-  try 
+  Error_code.try_with_print_exn_and_reraise file (fun () ->
     let ast = Parse_php.parse_program file in
     let ast = Ast_php_build.program ast in
     let v = Meta_ast_php.vof_program ast in
     let s = Ocaml.string_of_v v in
-    pr s
-  with exn ->
-    (match exn with
-    | Ast_php_build.TodoConstruct (_, tok)
-    | Ast_php_build.ObsoleteConstruct tok
-      ->
-        pr2 (Parse_info.error_message_info tok);
-        raise exn
-    | _ -> raise exn
-    )
+    pr s  
+  )
 
 let test_pp_simple file =
   let cst = Parse_php.parse_program file in

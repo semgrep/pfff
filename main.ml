@@ -19,7 +19,7 @@ open Common
 
 (* In addition to flags that can be tweaked via -xxx options (cf the
  * full list of options in the "the options" section below), this 
- * program also depends on external files ?
+ * program also depends on external files?
  *)
 
 let verbose = ref false

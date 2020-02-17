@@ -145,14 +145,14 @@ type hint_type =
       * (hint_type comma_list_dots paren) (* params *)
       * (tok * tok option * hint_type) option (* return type *)
      ) paren
- | HintShape of
+ | HintShape of (* a.k.a record *)
      tok (* "shape" *) *
      (string_const_expr * tok (* '=>' *) * hint_type) comma_list paren
  | HintTypeConst of
      hint_type   (* lhs *)
      * tok       (* '::' *)
      * hint_type (* rhs *)
- | HintVariadic of (tok * hint_type option)
+ | HintVariadic of tok * hint_type option
 
  and type_args = hint_type comma_list single_angle
 
@@ -332,7 +332,6 @@ and expr =
    and fixOp    = Ast_generic.incr_decr
    and binaryOp = Arith of arithOp | Logical of logicalOp 
         | BinaryConcat (* . *) 
-        | Pipe 
         | CombinedComparison
          and arithOp   =
            | Plus | Minus | Mul | Div | Mod

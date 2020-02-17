@@ -19,7 +19,7 @@ type node = {
     | Case (* TODO of expr? *) | Default
 
     | Return of expr option
-    | Break of expr option  | Continue of expr option
+    | Break  | Continue
 
     | TryHeader | CatchStart | Catch (* of pattern? *) | TryEnd
     | Throw of expr
