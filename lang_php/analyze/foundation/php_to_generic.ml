@@ -430,19 +430,38 @@ and parameter {
                 p_name = p_name;
                 p_default = p_default;
                 p_attrs = p_attrs;
-                p_variadic = p_variadic
+                p_variadic = p_variadic;
               } =
   let p_type = option hint_type p_type in
-  let p_ref = bool p_ref in
   let p_name = var p_name in
   let p_default = option expr p_default in
   let p_attrs = list attribute p_attrs in
-  let p_variadic = bool p_variadic in
-  raise Todo
+  let attrs = p_attrs @ 
+    (match p_variadic with 
+    | None -> [] 
+    | Some tok -> [G.KeywordAttr (G.Variadic, tok)]
+    ) in
+  let pclassic = G.ParamClassic
+  { G.pname = Some p_name; ptype = p_type; pdefault = p_default;
+    pattrs = attrs; pinfo = G.empty_id_info() } in
+  (match p_ref with
+  | None -> pclassic
+  | Some tok -> G.OtherParam (G.OPO_Ref, [G.Pa pclassic])
+  )
 
 and modifier v = wrap modifierbis v
 
-and attribute v = expr v
+and attribute v = 
+  match v with
+  | Id [id] -> 
+    let id = ident id in
+    G.NamedAttr (id, [])
+  | Call (Id [id], args) ->
+    let id = ident id in
+    let args = list expr args in
+    G.NamedAttr (id, args |> List.map G.expr_to_arg)
+  | _ -> raise Impossible (* see ast_php_build.ml *)
+                 
 
 and constant_def { cst_name = cst_name; cst_body = cst_body; cst_tok = tok } =
   let id = ident cst_name in let body = option expr cst_body in
