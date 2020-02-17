@@ -727,7 +727,7 @@ and unaryOp uop v =
   | ((G.Mult|G.Div|G.Mod|G.Pow|G.FloorDiv|G.MatMult
      |G.LSL|G.LSR|G.ASR|G.BitOr|G.BitXor|G.BitAnd|G.BitClear
      |G.And|G.Or|G.Xor|G.Eq|G.NotEq|G.PhysEq|G.NotPhysEq
-     |G.Lt|G.LtE|G.Gt|G.GtE),_) -> raise Impossible
+     |G.Lt|G.LtE|G.Gt|G.GtE|G.Cmp),_) -> raise Impossible
 
 and cast _env _heap (ty, _) v =
   match ty, v with

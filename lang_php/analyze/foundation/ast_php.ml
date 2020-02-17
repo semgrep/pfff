@@ -325,9 +325,10 @@ and hint_type =
  | HintQuestion of tok * hint_type
  | HintTuple of hint_type list bracket
  | HintCallback of hint_type list * (hint_type option)
- | HintShape of (string_const_expr * hint_type) list (* a.k.a record *)
- | HintTypeConst of (hint_type * hint_type) (* ?? *)
- | HintVariadic of hint_type option
+ (* a.k.a record *)
+ | HintShape of tok * (string_const_expr * hint_type) list bracket 
+ | HintTypeConst of hint_type * tok * hint_type (* ?? *)
+ | HintVariadic of tok * hint_type option
 
 and class_name = hint_type
 

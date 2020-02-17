@@ -800,7 +800,7 @@ and parameter env p =
     | Some (HintCallback _) -> Tvar (fresh())
     | Some (HintShape _) -> failwith "no support for shape yet"
     | Some (HintTypeConst _) -> failwith "no support for type consts"
-    | Some (HintVariadic x) -> array (int, hint x)
+    | Some (HintVariadic (_, x)) -> array (int, hint x)
   in
   let pval = hint p.p_type
   in

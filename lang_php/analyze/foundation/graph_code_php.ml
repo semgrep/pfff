@@ -871,7 +871,7 @@ and hint_type env t =
   | HintCallback (tparams, tret_opt) ->
       List.iter (hint_type env) tparams;
       Common.opt (hint_type env) tret_opt
-  | HintShape xs ->
+  | HintShape (_, xs, _) ->
     xs |> List.iter (fun (_ket, t) ->
       hint_type env t
     )
