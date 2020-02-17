@@ -29,16 +29,16 @@ module G = Ast_generic
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-let id = fun x -> x
-let option = Common.map_opt
-let list = List.map
+let id       = fun x -> x
+let option   = Common.map_opt
+let list     = List.map
 let vref f x = ref (f !x)
 
-let bool = id
+let bool   = id
 let string = id
 
 let error = Ast_generic.error
-let fake = Ast_generic.fake
+let fake  = Ast_generic.fake
 let fake_bracket = Ast_generic.fake_bracket
 
 (*****************************************************************************)
@@ -71,8 +71,8 @@ let name v = qualified_ident v
 let rec fixOp x = x
 and binaryOp (x, t) =
   match x with
-  | BinaryConcat -> raise Todo
-  | CombinedComparison -> raise Todo
+  | BinaryConcat -> Right (G.Concat, t)
+  | CombinedComparison -> Left (G.Cmp, t)
   | ArithOp op -> Left (op, t)
 
 and unaryOp x = x
@@ -218,9 +218,12 @@ and catch (v1, v2, v3) =
   let pat = G.PatVar (v1, Some (v2, G.empty_id_info())) in
   pat, G.stmt1 v3
 
-and finally xxs = 
-  (* list stmt v *)
-  raise Todo
+and finally (v: finally list) = 
+  let xs = list (list stmt) v in
+  let xs = List.flatten xs in
+  match xs with
+  | [] -> None
+  | xs -> Some (G.stmt1 xs)
 
 and expr =
   function
@@ -270,7 +273,10 @@ and expr =
       in 
       (match v2 with
       | Left (op, t) -> G.AssignOp (v1, (op, t), v3)
-      | Right x -> raise Todo
+      | Right (special, t) -> 
+        (* todo: should introduce intermediate var *)
+        G.Assign (v1, t, 
+                  G.Call (G.IdSpecial (special, t), [G.Arg v1; G.Arg v3]))
       )
   | List v1 -> let v1 = bracket (list expr) v1 in
       G.Container(G.List, v1)
@@ -297,7 +303,7 @@ and expr =
       | Left (op, t) -> 
          G.Call (G.IdSpecial (G.ArithOp op, t), [G.Arg v1; G.Arg v3])
       | Right x -> 
-         raise Todo
+         G.Call (G.IdSpecial (x), [G.Arg v1; G.Arg v3])
       )
   | Unop (((v1, t), v2)) -> let v1 = unaryOp v1 and v2 = expr v2 in 
       G.Call (G.IdSpecial (G.ArithOp v1, t), [G.Arg v2])
@@ -319,6 +325,7 @@ and expr =
   | Cast ((v1, v2)) -> let v1 = ptype v1 and v2 = expr v2 in
       G.Cast(v1, v2)
   | Lambda v1 -> 
+      let tok = snd v1.f_name in
       (match v1 with
       | { f_kind = AnonLambda; f_ref = false; m_modifiers = [];
           l_uses = []; f_attrs = [];
@@ -329,7 +336,7 @@ and expr =
             let rett = option hint_type rett in
             (* TODO: transform l_uses in UseOuterDecl preceding body *)
             G.Lambda { G.fparams = ps; frettype = rett; fbody = body }
-      | _ -> error (snd v1.f_name) "TODO: Lambda"
+      | _ -> error tok "TODO: Lambda"
       )
 
 and special = function
@@ -371,23 +378,28 @@ and hint_type =
       G.TyTuple (t1, v1, t2)
   | HintCallback ((v1, v2)) ->
       let v1 = list hint_type v1 and v2 = option hint_type v2 in 
-      raise Todo
-  | HintShape v1 ->
+      let params = v1 |> List.map G.param_of_type in
+      let fret = 
+        match v2 with
+        | Some t -> t
+        | None -> G.TyBuiltin ("void", fake "void")
+      in
+      G.TyFun (params, fret)
+  | HintShape (tok, (t1, v1, t2)) ->
       let v1 =
         list
           (fun (v1, v2) ->
-             let v1 = string_const_expr v1 and v2 = hint_type v2 in ())
+             let v1 = string_const_expr v1 and v2 = hint_type v2 in
+             raise Todo
+          )
           v1
-      in
-      raise Todo
-  | HintTypeConst v1 ->
-      let v1 =
-        (match v1 with
-         | (v1, v2) -> let v1 = hint_type v1 and v2 = hint_type v2 in ())
-      in
-      raise Todo
-  | HintVariadic v1 -> let v1 = option hint_type v1 in
-      raise Todo
+      in 
+      G.TyAnd (t1, v1, t2)
+
+  | HintTypeConst (_, tok,_) -> 
+    error tok "HintTypeConst not supported, facebook-ext"
+  | HintVariadic (tok, _) -> 
+    error tok "HintVariadic not supported"
 
 and class_name v = hint_type v
 
@@ -531,26 +543,27 @@ and class_var {
 and method_def v = func_def v
 
 and type_def { t_name = t_name; t_kind = t_kind } =
-  let id = ident t_name in let kind = type_def_kind t_kind in
+  let id = ident t_name in let kind = type_def_kind (snd t_name) t_kind in
   let ent = G.basic_entity id [] in
   ent, { G.tbody = kind }
 
-and type_def_kind =
+and type_def_kind tok =
   function
   | Alias v1 -> let v1 = hint_type v1 in
       G.AliasType v1
   | Newtype v1 -> let v1 = hint_type v1 in
       G.NewType v1
-  | ClassConstType v1 -> let v1 = option hint_type v1 in
-      raise Todo
+  | ClassConstType _v1 -> 
+    error tok "ClassConstType not supported, facebook-ext"
+      
 
 and program v = 
   list stmt v
 
 let any =
   function
-  | Program v1 -> let v1 = program v1 in G.Pr v1
-  | Stmt v1 -> let v1 = stmt v1 in G.S v1
-  | Expr2 v1 -> let v1 = expr v1 in G.E v1
-  | Param v1 -> let v1 = parameter v1 in G.Pa v1
+  | Program v1 -> let v1 = program v1   in G.Pr v1
+  | Stmt v1    -> let v1 = stmt v1      in G.S v1
+  | Expr2 v1   -> let v1 = expr v1      in G.E v1
+  | Param v1   -> let v1 = parameter v1 in G.Pa v1
 
