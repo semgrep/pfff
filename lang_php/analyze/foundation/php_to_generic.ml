@@ -416,18 +416,22 @@ and func_def {
                f_attrs = f_attrs;
                f_body = f_body
              } =
-  let arg = ident f_name in
-  let arg = function_kind f_kind in
-  let arg = parameters f_params in
-  let arg = option hint_type f_return_type in
-  let arg = bool f_ref in
-  let arg = list modifier m_modifiers in
-  let arg =
+  let id = ident f_name in
+  let _fkind = function_kind f_kind in
+  let params = parameters f_params in
+  let fret = option hint_type f_return_type in
+  let _is_refTODO = bool f_ref in
+  let modifiers = list modifier m_modifiers 
+    |> List.map (fun m -> G.KeywordAttr m) in
+  (* todo: transform in UseOuterDecl before first body stmt *)
+  let _lusesTODO =
     list (fun (v1, v2) -> let v1 = bool v1 and v2 = var v2 in ())
       l_uses in
-  let arg = list attribute f_attrs in
-  let arg = list stmt f_body in 
-  raise Todo
+  let attrs = list attribute f_attrs in
+  let body = list stmt f_body |> G.stmt1 in 
+  let ent = G.basic_entity id (modifiers @ attrs) in
+  let def = { G.fparams = params; frettype = fret; fbody = body } in
+  ent, def
 
 and function_kind =
   function
@@ -483,10 +487,10 @@ and constant_def { cst_name = cst_name; cst_body = cst_body; cst_tok = tok } =
   let ent = G.basic_entity id attr in
   ent, { G.vinit = body; vtype = None }
 
-and enum_type { e_base = e_base; e_constraint = e_constraint } =
+and enum_type tok { e_base = e_base; e_constraint = e_constraint } =
   let arg = hint_type e_base in
   let arg = option hint_type e_constraint in
-  raise Todo
+  error tok "enum type not supported"
 
 and class_def {
                 c_name = c_name;
@@ -502,21 +506,23 @@ and class_def {
                 c_variables = c_variables;
                 c_methods = c_methods
               } =
-  let arg = ident c_name in
-  let arg = class_kind c_kind in
-  let arg = option class_name c_extends in
-  let arg = list class_name c_implements in
-  let arg = list class_name c_uses in
+  let tok = snd c_name in
 
-  let arg = option enum_type c_enum_type in
-  let arg = list xhp_field c_xhp_fields in
-  let arg = list class_name c_xhp_attr_inherit in
+  let id = ident c_name in
+  let kind = class_kind c_kind in
+  let extends    = option class_name c_extends in
+  let implements = list class_name c_implements in
+  let uses       = list class_name c_uses in
 
-  let arg = list attribute c_attrs in
+  let _enum = option (enum_type tok) c_enum_type in
+  let _xhp1 = list xhp_field c_xhp_fields in
+  let _xhp2 = list class_name c_xhp_attr_inherit in
 
-  let arg = list constant_def c_constants in
-  let arg = list class_var c_variables in
-  let arg = list method_def c_methods in 
+  let attrs = list attribute c_attrs in
+
+  let csts = list constant_def c_constants in
+  let vars = list class_var c_variables in
+  let methods  = list method_def c_methods in 
   raise Todo
 
 and class_kind =
