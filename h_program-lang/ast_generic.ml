@@ -528,7 +528,7 @@ and pattern =
   | PatList of pattern list (* TODO bracket *)
   | PatKeyVal of pattern * pattern (* a kind of PatTuple *)
 
-  (* special case of PatVar *)
+  (* special case of PatId *)
   | PatUnderscore of tok
 
   (* OCaml *)
