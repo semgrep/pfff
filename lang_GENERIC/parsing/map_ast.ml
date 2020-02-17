@@ -701,9 +701,11 @@ and
                          ckind = v_ckind;
                          cextends = v_cextends;
                          cimplements = v_cimplements;
-                         cbody = v_cbody
+                         cbody = v_cbody;
+                         cmixins = v_cmixins;
                        } =
   let v_cbody = map_of_list map_field v_cbody in
+  let v_cmixins = map_of_list map_type_ v_cmixins in
   let v_cimplements = map_of_list map_type_ v_cimplements in
   let v_cextends = map_of_list map_type_ v_cextends in
   let v_ckind = map_class_kind v_ckind in 
@@ -711,7 +713,8 @@ and
                          ckind = v_ckind;
                          cextends = v_cextends;
                          cimplements = v_cimplements;
-                         cbody = v_cbody
+                         cbody = v_cbody;
+                         cmixins = v_cmixins;
                        }
 
 and map_class_kind =

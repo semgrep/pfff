@@ -339,7 +339,8 @@ and class_ { c_extends = c_extends; c_body = c_body } =
     | None -> [] 
     | Some e -> [G.OtherType (G.OT_Expr, [G.E e])]
   in
-  { G.ckind = G.Class; cextends = extends; cimplements = []; cbody = v2;}, []
+  { G.ckind = G.Class; cextends = extends; 
+    cimplements = []; cmixins = []; cbody = v2;}, []
 and property x =
    match x with
   | Field ((v1, v2, v3)) ->

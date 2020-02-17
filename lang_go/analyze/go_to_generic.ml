@@ -142,7 +142,7 @@ let rec type_ =
       let s = gensym () in
       let ent = G.basic_entity (s, t) [] in
       let def = G.ClassDef { G.ckind = G.Interface; 
-          cextends = []; cimplements = []; 
+          cextends = []; cimplements = []; cmixins = [];
           cbody = v1; } in
       Common.push (ent, def) anon_types;
       G.TyName (mk_name s t)

@@ -827,6 +827,7 @@ and class_definition = {
  (* usually just one parent, and type_ should be a TyApply *)
   cextends: type_ list;
   cimplements: type_ list;
+  cmixins: type_ list; (* PHP 'uses' *)
   (* newscope: *)
   cbody: field list; (* TODO bracket *)
 }

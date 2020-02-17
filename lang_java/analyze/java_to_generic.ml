@@ -220,7 +220,7 @@ and expr e =
          let anonclass = G.AnonClass { G.
                 ckind = G.Class;
                 cextends = [v1];
-                cimplements = [];
+                cimplements = []; cmixins = [];
                 cbody = decls |> List.map (fun x -> G.FieldStmt x) } in
          G.Call (G.IdSpecial (G.New, fake_info()), (G.Arg anonclass)::v2)
       )
@@ -488,6 +488,7 @@ and class_decl {
       ckind = v2;
       cextends = Common.opt_to_list v5;
       cimplements = v6;
+      cmixins = [];
       cbody = fields;
     } in
   ent, cdef

@@ -899,11 +899,15 @@ and
                          ckind = v_ckind;
                          cextends = v_cextends;
                          cimplements = v_cimplements;
-                         cbody = v_cbody
+                         cbody = v_cbody;
+                         cmixins = v_cmixins;
                        } =
   let bnds = [] in
   let arg = Ocaml.vof_list vof_field v_cbody in
   let bnd = ("cbody", arg) in
+  let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_list vof_type_ v_cmixins in
+  let bnd = ("cmixins", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_list vof_type_ v_cimplements in
   let bnd = ("cimplements", arg) in
