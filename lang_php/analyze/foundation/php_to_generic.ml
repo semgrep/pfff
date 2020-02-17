@@ -523,11 +523,16 @@ and class_def {
     |> List.map (fun m -> G.KeywordAttr m) in
   let attrs = list attribute c_attrs in
 
-  let _csts = list constant_def c_constants in
-  let _vars = list class_var c_variables in
-  let _methods  = list method_def c_methods in 
+  let csts = list constant_def c_constants in
+  let vars = list class_var c_variables in
+  let methods  = list method_def c_methods in 
 
-  let fields = raise Todo in
+  let fields = 
+    (csts |> List.map (fun (ent, var) -> ent, G.VarDef var)) @
+    (vars |> List.map (fun (ent, var) -> ent, G.VarDef var)) @
+    (methods |> List.map (fun (ent, var) -> ent, G.FuncDef var))
+  in
+  
 
   let ent = G.basic_entity id (attrs @ modifiers) in
   let def = { G.
@@ -535,7 +540,7 @@ and class_def {
     cextends = extends |> Common.opt_to_list;
     cimplements = implements;
     cmixins = uses;
-    cbody = fields;
+    cbody = fields |> List.map (fun def -> G.FieldStmt (G.DefStmt def));
   } in
   ent, def
 
