@@ -28,7 +28,6 @@ type visitor_in = {
 
   kdef: (definition  -> unit) * visitor_out -> definition  -> unit;
   kdir: (directive  -> unit) * visitor_out -> directive  -> unit;
-  kitem: (item  -> unit) * visitor_out -> item  -> unit;
 
   kattr: (attribute  -> unit) * visitor_out -> attribute  -> unit;
   kparam: (parameter  -> unit) * visitor_out -> parameter  -> unit;
@@ -48,7 +47,6 @@ let default_visitor =
 
     kdef   = (fun (k,_) x -> k x);
     kdir   = (fun (k,_) x -> k x);
-    kitem   = (fun (k,_) x -> k x);
 
     kattr   = (fun (k,_) x -> k x);
     kparam   = (fun (k,_) x -> k x);
@@ -610,7 +608,7 @@ and v_module_definition_kind =
   function
   | ModuleAlias v1 -> let v1 = v_name v1 in ()
   | ModuleStruct ((v1, v2)) ->
-      let v1 = v_option v_dotted_ident v1 and v2 = v_list v_item v2 in ()
+      let v1 = v_option v_dotted_ident v1 and v2 = v_stmts v2 in ()
   | OtherModule ((v1, v2)) ->
       let v1 = v_other_module_operator v1 and v2 = v_list v_any v2 in ()
 and v_other_module_operator = function | OMO_Functor -> ()
@@ -648,12 +646,7 @@ and v_other_directive_operator =
   | OI_Export -> ()
   | OI_ImportCss -> ()
   | OI_ImportEffect -> ()
-and v_item x = 
-  let k x = 
-    v_stmt x
-  in
-  vin.kitem (k, all_functions) x
-and v_program v = v_list v_item v
+and v_program v = v_stmts v
 and v_any =
   function
   | N v1 -> let v1 = v_name v1 in ()
