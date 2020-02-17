@@ -801,7 +801,7 @@ and class_def env def =
   );
 
   let self = Ast.str_of_ident def.c_name in
-  let in_trait = match def.c_kind with Trait -> true | _ -> false in
+  let in_trait = match def.c_kind with Trait, _ -> true | _ -> false in
   (* opti: do not capture def in parent(), otherwise gc can't collect def *)
   let extend = def.c_extends in
   let parent () =

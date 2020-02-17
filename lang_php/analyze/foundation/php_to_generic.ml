@@ -523,17 +523,17 @@ and class_def {
   let csts = list constant_def c_constants in
   let vars = list class_var c_variables in
   let methods  = list method_def c_methods in 
-  raise Todo
+  let ent = G.basic_entity id attrs in
+  let def = 
+    raise Todo in
+  ent, def
 
-and class_kind =
-  function
-  | ClassRegular -> ()
-  | ClassFinal -> ()
-  | ClassAbstract -> ()
-  | ClassAbstractFinal -> ()
-  | Interface -> ()
-  | Trait -> ()
-  | Enum -> ()
+and class_kind (x, t) =
+  match x with
+  | Class -> G.Class, t
+  | Interface -> G.Interface, t
+  | Trait -> G.Trait, t
+  | Enum -> error t "Enum not supported"
 
 and xhp_field (v1, v2) = let v1 = class_var v1 and v2 = bool v2 in ()
 

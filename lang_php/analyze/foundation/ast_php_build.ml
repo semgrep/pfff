@@ -634,8 +634,10 @@ and class_def env c =
   let _, body, _ = c.c_body in
   let (methods, implicit_fields) =
     List.fold_right (class_body env) body ([], []) in
+  let kind, modifiers = class_type env c.c_type in
   {
-    A.c_kind = class_type env c.c_type ;
+    A.c_kind = kind;
+    A.c_modifiers = modifiers;
     A.c_name = ident env c.c_name;
     A.c_attrs = attributes env c.c_attrs;
     A.c_xhp_fields = List.fold_right (xhp_fields env) body [];
@@ -670,13 +672,14 @@ and class_def env c =
   }
 
 and class_type _env = function
-  | ClassRegular _ -> A.ClassRegular
-  | ClassFinal _ -> A.ClassFinal
-  | ClassAbstract _ -> A.ClassAbstract
-  | ClassAbstractFinal _ -> A.ClassAbstractFinal
-  | Interface _ -> A.Interface
-  | Trait _ -> A.Trait
-  | Enum _ -> A.Enum
+  | ClassRegular tok -> (A.Class, tok), []
+  | ClassFinal (tokf, tok) -> (A.Class, tok), [Final, tokf]
+  | ClassAbstract (toka, tok) -> (A.Class, tok), [Abstract, toka]
+  | ClassAbstractFinal (toka, tokf, tok) -> 
+    (A.Class, tok), [Abstract, toka; Final, tokf]
+  | Interface tok -> (A.Interface, tok), []
+  | Trait tok -> (A.Trait, tok), []
+  | Enum tok -> (A.Enum, tok), []
 
 and interfaces env (_, intfs) =
   let intfs = comma_list intfs in

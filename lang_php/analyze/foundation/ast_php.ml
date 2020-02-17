@@ -394,7 +394,7 @@ and enum_type = {
 
 and class_def = {
   c_name: ident;
-  c_kind: class_kind;
+  c_kind: class_kind wrap;
 
   c_extends: class_name option;
   c_implements: class_name list;
@@ -404,6 +404,7 @@ and class_def = {
    * constraint) of the enum? *)
   c_enum_type: enum_type option;
 
+  c_modifiers: modifier list;
   c_attrs: attribute list;
   (* xhp attributes. less: other xhp decl, e.g. children, @required, etc *)
   c_xhp_fields: xhp_field list;
@@ -414,8 +415,7 @@ and class_def = {
 }
 
 and class_kind =
-    (* todo: put Final, Abstract as modifier list in class_def *)
-  | ClassRegular | ClassFinal | ClassAbstract | ClassAbstractFinal
+  | Class
   | Interface
   | Trait
   | Enum

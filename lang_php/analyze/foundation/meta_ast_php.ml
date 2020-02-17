@@ -429,6 +429,7 @@ and vof_hint_type =
 and
   vof_class_def {
                   c_kind = v_c_type;
+                  c_modifiers = v_c_modifiers;
                   c_name = v_c_name;
                   c_extends = v_c_extends;
                   c_attrs = v_c_attrs;
@@ -469,7 +470,10 @@ and
   let arg = Ocaml.vof_option vof_class_name v_c_extends in
   let bnd = ("c_extends", arg) in
   let bnds = bnd :: bnds in
-  let arg = vof_class_type v_c_type in
+  let arg = Ocaml.vof_list vof_modifier v_c_modifiers in
+  let bnd = ("c_modifiers", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_wrap vof_class_type v_c_type in
   let bnd = ("c_kind", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_wrapped_string v_c_name in
@@ -492,10 +496,7 @@ and
 and vof_class_name x = vof_hint_type x
 and vof_class_type =
   function
-  | ClassRegular -> Ocaml.VSum (("ClassRegular", []))
-  | ClassFinal -> Ocaml.VSum (("ClassFinal", []))
-  | ClassAbstract -> Ocaml.VSum (("ClassAbstract", []))
-  | ClassAbstractFinal -> Ocaml.VSum (("ClassAbstractFinal", []))
+  | Class -> Ocaml.VSum (("Class", []))
   | Interface -> Ocaml.VSum (("Interface", []))
   | Trait -> Ocaml.VSum (("Trait", []))
   | Enum -> Ocaml.VSum (("Enum", []))
