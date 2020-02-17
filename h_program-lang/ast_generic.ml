@@ -25,8 +25,8 @@
  *  - Java
  *  - C
  *  - Go
+ *  - PHP
  *  - TOFINISH OCaml
- *  - TODO PHP
  *
  * rational: In the end, programming languages have a lot in common.
  * Even though most interesting analysis are probably better done on a
@@ -823,7 +823,7 @@ and type_definition = {
 (* ------------------------------------------------------------------------- *)
 (* less: could be a special kind of type_definition *)
 and class_definition = {
-  ckind: class_kind;
+  ckind: class_kind (* wrap TODO *);
  (* usually just one parent, and type_ should be a TyApply *)
   cextends: type_ list;
   cimplements: type_ list;

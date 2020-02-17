@@ -509,7 +509,7 @@ and class_def {
   let tok = snd c_name in
 
   let id = ident c_name in
-  let kind = class_kind c_kind in
+  let kind, _tok = class_kind c_kind in
   let extends    = option class_name c_extends in
   let implements = list class_name c_implements in
   let uses       = list class_name c_uses in
@@ -523,9 +523,17 @@ and class_def {
   let csts = list constant_def c_constants in
   let vars = list class_var c_variables in
   let methods  = list method_def c_methods in 
+
+  let fields = raise Todo in
+
   let ent = G.basic_entity id attrs in
-  let def = 
-    raise Todo in
+  let def = { G.
+    ckind = kind;
+    cextends = extends |> Common.opt_to_list;
+    cimplements = implements;
+    cmixins = uses;
+    cbody = fields;
+  } in
   ent, def
 
 and class_kind (x, t) =
