@@ -32,14 +32,13 @@ module G = Ast_generic
 let id       = fun x -> x
 let option   = Common.map_opt
 let list     = List.map
-let vref f x = ref (f !x)
 
 let bool   = id
 let string = id
 
 let error = Ast_generic.error
 let fake  = Ast_generic.fake
-let fake_bracket = Ast_generic.fake_bracket
+let _fake_bracket = Ast_generic.fake_bracket
 
 (*****************************************************************************)
 (* Entry point *)
@@ -68,14 +67,14 @@ let name_of_qualified_ident xs =
 
 let name v = qualified_ident v
 
-let rec fixOp x = x
-and binaryOp (x, t) =
+let fixOp x = x
+let binaryOp (x, t) =
   match x with
   | BinaryConcat -> Right (G.Concat, t)
   | CombinedComparison -> Left (G.Cmp, t)
   | ArithOp op -> Left (op, t)
 
-and unaryOp x = x
+let unaryOp x = x
 
 let modifierbis =
   function
@@ -245,7 +244,7 @@ and expr =
       let v1 = expr v1 and v2 = expr v2 in 
       G.ArrayAccess (v1, v2)
   | Array_get ((v1, None)) ->
-      let v1 = expr v1 in
+      let _v1 = expr v1 in
       raise Todo
   | Obj_get ((v1, t, Id [v2])) -> 
       let v1 = expr v1 and v2 = ident v2 in
@@ -258,9 +257,9 @@ and expr =
   | Class_get ((v1, t, v2)) -> let v1 = expr v1 and v2 = expr v2 in
       G.DotAccess (v1, t, G.FDynamic v2)
   | New ((t, v1, v2)) -> let v1 = expr v1 and v2 = list expr v2 in 
-      G.Call (G.IdSpecial(New, t), (v1::v2) |> List.map G.expr_to_arg)
+      G.Call (G.IdSpecial(G.New, t), (v1::v2) |> List.map G.expr_to_arg)
   | InstanceOf ((t, v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in
-      G.Call (G.IdSpecial(Instanceof, t), ([v1;v2]) |> List.map G.expr_to_arg)
+      G.Call (G.IdSpecial(G.Instanceof, t), ([v1;v2]) |> List.map G.expr_to_arg)
   | Assign ((v1, t, v3)) ->
       let v1 = expr v1
       and v3 = expr v3
@@ -328,6 +327,7 @@ and expr =
       let tok = snd v1.f_name in
       (match v1 with
       | { f_kind = AnonLambda; f_ref = false; m_modifiers = [];
+          f_name = _ignored;
           l_uses = []; f_attrs = [];
           f_params = ps; f_return_type = rett;
           f_body = body } ->
@@ -425,7 +425,7 @@ and func_def {
     |> List.map (fun m -> G.KeywordAttr m) in
   (* todo: transform in UseOuterDecl before first body stmt *)
   let _lusesTODO =
-    list (fun (v1, v2) -> let v1 = bool v1 and v2 = var v2 in ())
+    list (fun (v1, v2) -> let _v1 = bool v1 and _v2 = var v2 in ())
       l_uses in
   let attrs = list attribute f_attrs in
   let body = list stmt f_body |> G.stmt1 in 
@@ -464,7 +464,7 @@ and parameter {
     pattrs = attrs; pinfo = G.empty_id_info() } in
   (match p_ref with
   | None -> pclassic
-  | Some tok -> G.OtherParam (G.OPO_Ref, [G.Pa pclassic])
+  | Some _tok -> G.OtherParam (G.OPO_Ref, [G.Pa pclassic])
   )
 
 and modifier v = wrap modifierbis v
@@ -488,13 +488,14 @@ and constant_def { cst_name = cst_name; cst_body = cst_body; cst_tok = tok } =
   ent, { G.vinit = body; vtype = None }
 
 and enum_type tok { e_base = e_base; e_constraint = e_constraint } =
-  let arg = hint_type e_base in
-  let arg = option hint_type e_constraint in
+  let _ = hint_type e_base in
+  let _ = option hint_type e_constraint in
   error tok "enum type not supported"
 
 and class_def {
                 c_name = c_name;
                 c_kind = c_kind;
+                c_modifiers = c_modifiers;
                 c_extends = c_extends;
                 c_implements = c_implements;
                 c_uses = c_uses;
@@ -518,15 +519,17 @@ and class_def {
   let _xhp1 = list xhp_field c_xhp_fields in
   let _xhp2 = list class_name c_xhp_attr_inherit in
 
+  let modifiers = list modifier c_modifiers
+    |> List.map (fun m -> G.KeywordAttr m) in
   let attrs = list attribute c_attrs in
 
-  let csts = list constant_def c_constants in
-  let vars = list class_var c_variables in
-  let methods  = list method_def c_methods in 
+  let _csts = list constant_def c_constants in
+  let _vars = list class_var c_variables in
+  let _methods  = list method_def c_methods in 
 
   let fields = raise Todo in
 
-  let ent = G.basic_entity id attrs in
+  let ent = G.basic_entity id (attrs @ modifiers) in
   let def = { G.
     ckind = kind;
     cextends = extends |> Common.opt_to_list;
@@ -543,7 +546,7 @@ and class_kind (x, t) =
   | Trait -> G.Trait, t
   | Enum -> error t "Enum not supported"
 
-and xhp_field (v1, v2) = let v1 = class_var v1 and v2 = bool v2 in ()
+and xhp_field (v1, v2) = let _v1 = class_var v1 and _v2 = bool v2 in ()
 
 and class_var {
                 cv_name = cname;
@@ -551,10 +554,14 @@ and class_var {
                 cv_value = cvalue;
                 cv_modifiers = cmodifiers
               } =
-  let arg = var cname in
-  let arg = option hint_type ctype in
-  let arg = option expr cvalue in
-  let arg = list modifier cmodifiers in ()
+  let id = var cname in
+  let typ = option hint_type ctype in
+  let value = option expr cvalue in
+  let modifiers = list modifier cmodifiers 
+    |> List.map (fun m -> G.KeywordAttr m) in
+  let ent = G.basic_entity id modifiers in
+  let def = {G.vtype = typ; vinit = value } in
+  ent, def
 
 and method_def v = func_def v
 

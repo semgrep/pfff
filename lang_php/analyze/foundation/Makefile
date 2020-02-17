@@ -90,6 +90,3 @@ clean::
 
 visitor_pil.cmo: visitor_pil.ml
 	$(OCAMLC) -w y -c $<
-
-php_to_generic.cmo: php_to_generic.ml
-	ocamlc $(INCLUDES) -g -w y -c $<
