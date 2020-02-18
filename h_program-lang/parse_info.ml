@@ -1,6 +1,7 @@
 (* Yoann Padioleau
  *
  * Copyright (C) 2010 Facebook
+ * Copyright (C) 2020 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -36,7 +37,7 @@ type token_location = {
   (* with tarzan *)
 
 let fake_token_location = {
-  charpos = -1; str = ""; line = -1; column = -1; file = "FAKE TOKEN";
+  charpos = -1; str = ""; line = -1; column = -1; file = "FAKE TOKEN LOCATION";
 }
 let first_loc_of_file file = {
   charpos = 0; str = ""; line = 1; column = 0; file = file;
@@ -265,22 +266,10 @@ let lexical_error s lexbuf =
     then pr2_once ("LEXER: " ^ s)
     else ()
 
-
 (*****************************************************************************)
 (* Accessors *)
 (*****************************************************************************)
 
-(*
-val rewrap_token_location : token_location.token_location -> info -> info
-let rewrap_token_location pi ii =
-  {ii with pinfo =
-    (match ii.pinfo with
-    | OriginTok _oldpi -> OriginTok pi
-    | FakeTokStr _  | Ab | ExpandedTok _ ->
-        failwith "rewrap_parseinfo: no OriginTok"
-    )
-  }
-*)
 let token_location_of_info ii =
   match ii.token with
   | OriginTok pinfo -> pinfo
@@ -293,10 +282,6 @@ let token_location_of_info ii =
     -> failwith "token_location_of_info: no OriginTok"
 
 (* for error reporting *)
-(*
-let string_of_token_location x =
-  spf "%s at %s:%d:%d" x.str x.file x.line x.column
-*)
 let string_of_token_location x =
   spf "%s:%d:%d" x.file x.line x.column
 
@@ -321,46 +306,8 @@ let is_origintok ii =
   | OriginTok _ -> true
   | _ -> false
 
-(*
-let opos_of_info ii = 
-  PI.get_orig_info (function x -> x.PI.charpos) ii
-
-val pos_of_tok     : Parser_cpp.token -> int
-val str_of_tok     : Parser_cpp.token -> string
-val file_of_tok    : Parser_cpp.token -> Common.filename
-
-let pos_of_tok x =  Ast.opos_of_info (info_of_tok x)
-let str_of_tok x =  Ast.str_of_info (info_of_tok x)
-let file_of_tok x = Ast.file_of_info (info_of_tok x)
-let pinfo_of_tok x = Ast.pinfo_of_info (info_of_tok x)
-
-val is_origin : Parser_cpp.token -> bool
-val is_expanded : Parser_cpp.token -> bool
-val is_fake : Parser_cpp.token -> bool
-val is_abstract : Parser_cpp.token -> bool
-
-
-let is_origin x =
-  match pinfo_of_tok x with Parse_info.OriginTok _ -> true | _ -> false
-let is_expanded x =
-  match pinfo_of_tok x with Parse_info.ExpandedTok _ -> true | _ -> false
-let is_fake x =
-  match pinfo_of_tok x with Parse_info.FakeTokStr _ -> true | _ -> false
-let is_abstract x =
-  match pinfo_of_tok x with Parse_info.Ab -> true | _ -> false
-*)
 
 (* info about the current location *)
-(*
-let get_pi = function
-  | OriginTok pi -> pi
-  | ExpandedTok (_,pi,_) -> pi
-  | FakeTokStr (_,(Some (pi,_))) -> pi
-  | FakeTokStr (_,None) ->
-      failwith "FakeTokStr None"
-  | Ab ->
-      failwith "Ab"
-*)
 
 (* original info *)
 let get_original_token_location = function
@@ -370,28 +317,6 @@ let get_original_token_location = function
   | Ab -> failwith "Ab"
 
 (* used by token_helpers *)
-(*
-let get_info f ii =
-  match ii.token with
-  | OriginTok pi -> f pi
-  | ExpandedTok (_,pi,_) -> f pi
-  | FakeTokStr (_,Some (pi,_)) -> f pi
-  | FakeTokStr (_,None) ->
-      failwith "FakeTokStr None"
-  | Ab ->
-      failwith "Ab"
-*)
-(*
-let get_orig_info f ii =
-  match ii.token with
-  | OriginTok pi -> f pi
-  | ExpandedTok (pi,_, _) -> f pi
-  | FakeTokStr (_,Some (pi,_)) -> f pi
-  | FakeTokStr (_,None ) ->
-      failwith "FakeTokStr None"
-  | Ab ->
-      failwith "Ab"
-*)
 
 (* not used but used to be useful in coccinelle *)
 type posrv =
@@ -447,35 +372,6 @@ let min_max_ii_by_pos xs =
         let minii' = if pos_leq e minii then e else minii in
         minii', maxii'
       ) (x,x)
-
-
-(*
-let mk_info_item2 ~info_of_tok toks  =
-  let buf = Buffer.create 100 in
-  let s =
-    (* old: get_slice_file filename (line1, line2) *)
-    begin
-      toks +> List.iter (fun tok ->
-        let info = info_of_tok tok in
-        match info.token with
-        | OriginTok _
-        | ExpandedTok _ ->
-            Buffer.add_string buf (str_of_info info)
-
-        (* the virtual semicolon *)
-        | FakeTokStr _ ->
-            ()
-        | Ab  -> raise Impossible
-      );
-      Buffer.contents buf
-    end
-  in
-  (s, toks)
-
-let mk_info_item_DEPRECATED ~info_of_tok a =
-  Common.profile_code "Parsing.mk_info_item"
-    (fun () -> mk_info_item2 ~info_of_tok a)
-*)
 
 
 
@@ -869,20 +765,6 @@ let error_message_info info =
   error_message_token_location pinfo
 
 
-(*
-let error_message_short = fun filename (lexeme, lexstart) ->
-  try
-  let charpos = lexstart in
-  let (line, pos, linecontent) =  info_from_charpos charpos filename in
-  spf "File \"%s\", line %d"  filename line
-
-  with End_of_file ->
-    begin
-      ("PB in Common.error_message, position " ^ i_to_s lexstart ^
-          " given out of file:" ^ filename);
-    end
-*)
-
 let print_bad line_error (start_line, end_line) filelines  =
   begin
     pr2 ("badcount: " ^ i_to_s (end_line - start_line));
@@ -896,13 +778,11 @@ let print_bad line_error (start_line, end_line) filelines  =
         else s
       in
 
-
       if i =|= line_error
       then  pr2 ("BAD:!!!!!" ^ " " ^ line)
       else  pr2 ("bad:" ^ " " ^      line)
     done
   end
-
 
 (*****************************************************************************)
 (* Parsing statistics *)
@@ -918,33 +798,6 @@ let print_bad line_error (start_line, end_line) filelines  =
  *)
 
 let print_parsing_stat_list ?(verbose=false)statxs =
-(* old:
-  let total = List.length statxs in
-  let perfect =
-    statxs
-      +> List.filter (function
-      | {bad = n; _} when n = 0 -> true
-      | _ -> false)
-      +> List.length
-  in
-
-  pr2 "\n\n\n---------------------------------------------------------------";
-  pr2 (
-  (spf "NB total files = %d; " total) ^
-  (spf "perfect = %d; " perfect) ^
-  (spf "=========> %d" ((100 * perfect) / total)) ^ "%"
-  );
-
-  let good = statxs +> List.fold_left (fun acc {correct = x; _} -> acc+x) 0 in
-  let bad  = statxs +> List.fold_left (fun acc {bad = x; _} -> acc+x) 0  in
-
-  let gf, badf = float_of_int good, float_of_int bad in
-  pr2 (
-  (spf "nb good = %d,  nb bad = %d " good bad) ^
-  (spf "=========> %f"  (100.0 *. (gf /. (gf +. badf))) ^ "%"
-   )
-  )
-*)
   let total = (List.length statxs) in
   let perfect = 
     statxs 
