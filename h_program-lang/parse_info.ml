@@ -17,36 +17,20 @@ open Common
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(*
- * Some helpers for the different lexers and parsers in pfff.
+(* Some helpers for the different lexers and parsers in pfff.
+ *
  * The main types are:
  * ('token_location' < 'token_origin' < 'token_mutable') * token_kind
- * 
  *)
 
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
 
-(* Currently, lexing.ml in the standard OCaml libray does not handle
- * the line number position.
- * Even if there are certain fields in the lexing structure, they are not
- * maintained by the lexing engine so the following code does not work:
- *
- *   let pos = Lexing.lexeme_end_p lexbuf in
- *   sprintf "at file %s, line %d, char %d" pos.pos_fname pos.pos_lnum
- *      (pos.pos_cnum - pos.pos_bol) in
- *
- * Hence those types and functions below to overcome the previous limitation,
- * (see especially complete_token_location_large()).
- *)
 type token_location = {
     str: string;
     charpos: int;
-
-    line: int;
-    column: int;
-
+    line: int; column: int;
     file: filename;
   }
   (* with tarzan *)
@@ -54,7 +38,6 @@ type token_location = {
 let fake_token_location = {
   charpos = -1; str = ""; line = -1; column = -1; file = "FAKE TOKEN";
 }
-
 let first_loc_of_file file = {
   charpos = 0; str = ""; line = 1; column = 0; file = file;
 }
@@ -706,6 +689,21 @@ let full_charpos_to_pos_large a =
   profile_code "Common.full_charpos_to_pos_large"
     (fun () -> full_charpos_to_pos_large2 a)
 
+(* Currently, lexing.ml, in the standard OCaml libray, does not handle
+ * the line number position.
+ * Even if there are certain fields in the lexing structure, they are not
+ * maintained by the lexing engine so the following code does not work:
+ *
+ *   let pos = Lexing.lexeme_end_p lexbuf in
+ *   sprintf "at file %s, line %d, char %d" pos.pos_fname pos.pos_lnum
+ *      (pos.pos_cnum - pos.pos_bol) in
+ *
+ * Hence those types and functions below to overcome the previous limitation,
+ * (see especially complete_token_location_large()).
+ * alt: 
+ *   - in each lexer you need to take care of newlines and update manually
+ *     the field.
+ *)
 let complete_token_location_large filename table x =
   { x with
     file = filename;
