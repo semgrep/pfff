@@ -12,34 +12,19 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common
 
 module PI = Parse_info
-
-(*****************************************************************************)
-(* Helpers *)
-(*****************************************************************************)
-
-let is_eof = function
-  | Parser_sql.EOF _ -> true
-  | _ -> false
+module TH   = Token_helpers_sql
 
 (*****************************************************************************)
 (* Lexing only *)
 (*****************************************************************************)
 
 let tokens2 file = 
-  Common.with_open_infile file (fun chan ->
-    let lexbuf = Lexing.from_channel chan in
+  let token lexbuf = Lexer_sql.lexer lexbuf in
+  Parse_info.tokenize_all_and_adjust_pos 
+    file token TH.visitor_info_of_tok TH.is_eof
 
-    let rec aux acc = 
-      let tok = Lexer_sql.lexer lexbuf in
-      if is_eof tok
-      then List.rev (tok::acc)
-      else aux (tok::acc)
-    in
-    aux []
-  )
 let tokens a = 
   Common.profile_code "Parse_sql.tokens" (fun () -> tokens2 a)
 
@@ -51,12 +36,8 @@ let parse2 file =
   Common.with_open_infile file (fun chan ->
     let lexbuf = Lexing.from_channel chan in
 
-    try 
-      let _expr = Parser_sql.main Lexer_sql.lexer lexbuf in
-      ()
-    with
-    | Parsing.Parse_error -> 
-        pr2 (Parse_info.error_message file (PI.lexbuf_to_strpos lexbuf))
+    let _expr = Parser_sql.main Lexer_sql.lexer lexbuf in
+    ()
   )
 
 let parse a = 

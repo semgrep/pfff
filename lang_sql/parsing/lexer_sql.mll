@@ -179,5 +179,3 @@ rule lexer = parse
       then pr2_once ("LEXER:unrecognised symbol, in token rule:"^tok lexbuf);
       TUnknown (tokinfo lexbuf)
     }
-
-

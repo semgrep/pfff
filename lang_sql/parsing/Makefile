@@ -8,7 +8,7 @@ TARGET=lib
 
 SRC= ast_sql.ml \
      parser_sql.ml lexer_sql.ml \
-     parse_sql.ml \
+     token_helpers_sql.ml parse_sql.ml \
      test_parsing_sql.ml
 
 SYSLIBS= str.cma unix.cma 
