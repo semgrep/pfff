@@ -6,9 +6,6 @@
 
 let strict_lexer = ref false
 
-(* todo: not that useful, probably can remove *)
-let show_parsing_error_full = ref true
-
 (*x: flag_parsing_php.ml *)
 let short_open_tag = ref true
 (*x: flag_parsing_php.ml *)
@@ -35,8 +32,6 @@ let xhp_command = "xhpize"
 let obsolete_merge_tokens_xhp = ref false
 
 (*s: flag_parsing_php.ml pp related flags *)
-
-let caching_parsing = ref false
 
 open Common
 

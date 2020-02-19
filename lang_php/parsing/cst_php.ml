@@ -17,14 +17,15 @@ open Common
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(*
- * This module defines a Concrete Syntax Tree (CST) for PHP 5.2 with
+(* Concrete Syntax Tree (CST) for PHP.
+ *
+ * Currently, the CST supports mostly PHP 5.2 with
  * a few extensions from PHP 5.3 (e.g. closures, namespace, const) and
  * PHP 5.4 (e.g. traits) as well as support for many Facebook
  * extensions (XHP, generators, annotations, generics, collections,
  * type definitions, implicit fields via constructor parameters).
  *
- * a CST is convenient in a refactoring context or code visualization
+ * A CST is convenient in a refactoring context or code visualization
  * context, but if you need to do some heavy static analysis, consider
  * instead lang_php/analyze/foundation/pil.ml which defines a
  * PHP Intermediate Language a la CIL.

@@ -264,7 +264,7 @@ let test_stat_php xs =
       Statistics_php.stat_of_program h file ast;
       ()
       
-    with Parse_php.Parse_error (_) ->
+    with Parsing.Parse_error ->
       h#update "parsing error" (fun x -> x + 1);
   ));
   (* old:      
