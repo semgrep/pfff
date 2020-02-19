@@ -430,14 +430,14 @@ and _token state = parse
        FSTRING_START (tokinfo lexbuf)  
      }
 
-  | stringprefix '\''
-      { sq_shortstrlit state (tokinfo lexbuf) lexbuf }
-  | stringprefix '"'
-      { dq_shortstrlit state (tokinfo lexbuf) lexbuf }
-  | stringprefix "'''"
-      { sq_longstrlit state (tokinfo lexbuf) lexbuf }
-  | stringprefix "\"\"\""
-      { dq_longstrlit state (tokinfo lexbuf) lexbuf }
+  | stringprefix as pre '\''
+      { sq_shortstrlit state (tokinfo lexbuf) pre lexbuf }
+  | stringprefix as pre '"'
+      { dq_shortstrlit state (tokinfo lexbuf) pre lexbuf }
+  | stringprefix as pre "'''"
+      { sq_longstrlit state (tokinfo lexbuf) pre lexbuf }
+  | stringprefix as pre "\"\"\""
+      { dq_longstrlit state (tokinfo lexbuf) pre lexbuf }
 
   (* ----------------------------------------------------------------------- *)
   (* eof *)
@@ -452,35 +452,35 @@ and _token state = parse
 (* Rules on strings *)
 (*****************************************************************************)
 
-and sq_shortstrlit state pos = parse
+and sq_shortstrlit state pos pre = parse
   | (([^ '\\' '\r' '\n' '\''] | escapeseq)* as s) '\'' 
      { 
        let full_str = Lexing.lexeme lexbuf in
-       STR (unescaped s, PI.tok_add_s full_str pos) }
+       STR (unescaped s, pre, PI.tok_add_s full_str pos) }
  | eof { error "EOF in string" lexbuf; EOF (tokinfo lexbuf) }
  | _  { error "unrecognized symbol in string" lexbuf; TUnknown(tokinfo lexbuf)}
 
 (* because here we're using 'shortest', do not put a rule for '| _ { ... }' *)
-and sq_longstrlit state pos = shortest
+and sq_longstrlit state pos pre = shortest
 | (([^ '\\'] | escapeseq)* as s) "'''"
     { 
       let full_str = Lexing.lexeme lexbuf in
-      STR (unescaped s, PI.tok_add_s full_str pos) 
+      STR (unescaped s, pre, PI.tok_add_s full_str pos) 
     }
 
-and dq_shortstrlit state pos = parse
+and dq_shortstrlit state pos pre = parse
   | (([^ '\\' '\r' '\n' '\"'] | escapeseq)* as s) '"' 
      { 
        let full_str = Lexing.lexeme lexbuf in
-       STR (unescaped s, PI.tok_add_s full_str pos) }
+       STR (unescaped s, pre, PI.tok_add_s full_str pos) }
  | eof { error "EOF in string" lexbuf; EOF (tokinfo lexbuf) }
  | _  { error "unrecognized symbol in string" lexbuf; TUnknown(tokinfo lexbuf)}
 
-and dq_longstrlit state pos = shortest
+and dq_longstrlit state pos pre = shortest
   | (([^ '\\'] | escapeseq)* as s) "\"\"\""
       { 
         let full_str = Lexing.lexeme lexbuf in
-        STR (unescaped s, PI.tok_add_s full_str pos) }
+        STR (unescaped s, pre, PI.tok_add_s full_str pos) }
 
 (*****************************************************************************)
 (* Rules on interpolated strings *)

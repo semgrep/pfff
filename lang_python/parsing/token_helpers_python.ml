@@ -49,7 +49,7 @@ let visitor_info_of_tok f = function
   | LONGINT (x, ii) -> LONGINT (x, f ii)
   | FLOAT (x, ii) -> FLOAT (x, f ii)
   | IMAG (x, ii) -> IMAG (x, f ii)
-  | STR (x, ii) -> STR (x, f ii)
+  | STR (x, pre, ii) -> STR (x, pre, f ii)
 
   | NONE (ii) -> NONE (f ii)
   | TRUE (ii) -> TRUE (f ii)

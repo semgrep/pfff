@@ -302,6 +302,7 @@ and expr =
    | New  (* usually associated with Call(New, [ArgType _;...]) *)
 
    | Concat (* used for interpolated strings constructs *)
+   | EncodedString of string wrap (* only for Python for now (e.g., b"foo") *)
    | Spread (* inline list var, in Container or call context *)
 
    (* used for unary and binary operations *)

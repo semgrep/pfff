@@ -37,6 +37,10 @@ let rec vof_expr =
   | Str v1 ->
       let v1 = (vof_wrap Ocaml.vof_string) v1
       in Ocaml.VSum (("Str", [ v1 ]))
+  | EncodedStr ((v1, v2)) ->
+      let v1 = (vof_wrap Ocaml.vof_string) v1
+      and v2 = Ocaml.vof_string v2
+      in Ocaml.VSum (("EncodedStr", [ v1; v2 ]))
   | InterpolatedString v1 ->
       let v1 = Ocaml.vof_list vof_expr v1 in
       Ocaml.VSum (("InterpolatedString", [v1]))

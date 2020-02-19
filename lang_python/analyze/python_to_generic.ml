@@ -114,6 +114,12 @@ let rec expr (x: expr) =
   | Str (v1) -> 
       let v1 = wrap string v1 in
       G.L (G.String (v1))
+  | EncodedStr (v1, pre) ->
+      let v1 = wrap string v1 in
+      (* reuse same tok *)
+      let tok = snd v1 in
+      G.Call (G.IdSpecial (G.EncodedString (pre, tok), tok),
+        [G.Arg (G.L (G.String (v1)))])
 
   | InterpolatedString xs ->
     G.Call (G.IdSpecial (G.Concat, fake "concat"), 
