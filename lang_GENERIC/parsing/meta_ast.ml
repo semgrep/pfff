@@ -251,6 +251,9 @@ and vof_special =
   | New -> Ocaml.VSum (("New", []))
   | Concat -> Ocaml.VSum (("Concat", []))
   | Spread -> Ocaml.VSum (("Spread", []))
+  | EncodedString v1 ->
+      let v1 = vof_wrap Ocaml.vof_string v1 in
+      Ocaml.VSum (("EncodedString", [v1]))
   | ArithOp v1 ->
       let v1 = vof_arithmetic_operator v1 in Ocaml.VSum (("ArithOp", [ v1 ]))
   | IncrDecr (v) ->

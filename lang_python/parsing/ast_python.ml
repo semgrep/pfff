@@ -113,6 +113,7 @@ type resolved_name =
 type expr =
   | Num of number (* n *)
   | Str of string wrap (* s *)
+  | EncodedStr of string wrap * string (* prefix *)
   (* python3: now officially reserved keywords *)
   | Bool of bool wrap
   | None_ of tok

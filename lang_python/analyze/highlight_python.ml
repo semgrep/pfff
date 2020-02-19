@@ -411,7 +411,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
 
 
     (* values  *)
-    | T.STR (_s,ii) ->
+    | T.STR (_s,_pre, ii) ->
         tag ii String
     | T.FLOAT (_,ii) | T.INT (_,ii) | T.LONGINT (_,ii) ->
         tag ii Number

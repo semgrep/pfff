@@ -108,7 +108,7 @@ let mk_str ii =
 %token <string    * Ast_python.tok> INT LONGINT
 %token <string  * Ast_python.tok> FLOAT
 %token <string * Ast_python.tok> IMAG
-%token <string * Ast_python.tok> STR
+%token <string * string * Ast_python.tok> STR
 
 /*(*-----------------------------------------*)*/
 /*(*2 Keyword tokens *)*/
@@ -681,7 +681,8 @@ atom_repr: BACKQUOTE testlist1 BACKQUOTE { Repr ($1, tuple_expr $2, $3) }
 /*(*----------------------------*)*/
 
 string:
-  | STR { Str $1 }
+  | STR { let (s, pre, tok) = $1 in 
+          if pre = "" then Str (s, tok) else EncodedStr ((s, tok), pre) }
   | FSTRING_START interpolated_list FSTRING_END { InterpolatedString $2 }
 
 interpolated:
