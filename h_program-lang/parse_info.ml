@@ -212,9 +212,6 @@ let mk_tokens_state toks = {
 (* Lexer helpers *)
 (*****************************************************************************)
 
-let lexbuf_to_strpos lexbuf     =
-  (Lexing.lexeme lexbuf, Lexing.lexeme_start lexbuf)
-
 let tokinfo_str_pos str pos =
   {
     token = OriginTok {
@@ -244,21 +241,19 @@ let yyback n lexbuf =
 (* Errors *)
 (*****************************************************************************)
 (* this can be used in the different lexer/parsers in pfff *)
+(* coupling: see related error in Error_code and its exn_to_error *)
 exception Lexical_error of string * t
 exception Parsing_error of t
 exception Ast_builder_error of string * t
 exception Other_error of string * t
 
+exception NoTokenLocation of string
+
 let tokinfo lexbuf  = 
   tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
 
 let lexical_error s lexbuf =
-  let info = 
-    try 
-      tokinfo lexbuf 
-    with Failure s -> 
-      failwith (spf "lexical_error: failure to get token info: %s" s)
-  in
+  let info = tokinfo lexbuf in
   if !Flag_parsing.exn_when_lexical_error
   then raise (Lexical_error (s, info))
   else
@@ -453,90 +448,14 @@ let rewrap_str s ii =
 let tok_add_s s ii  =
   rewrap_str ((str_of_info ii) ^ s) ii
 
-
 (*****************************************************************************)
 (* Adjust file pos *)
 (*****************************************************************************)
 
-(* A changen is a stand-in for a file for the underlying code.  We use
- * channels in the underlying parsing code as this avoids loading
- * potentially very large source files directly into memory before we
- * even parse them, but this makes it difficult to parse small chunks of
- * code.  The changen works around this problem by providing a channel,
- * size and source for underlying data.  This allows us to wrap a string
- * in a channel, or pass a file, depending on our needs. 
- *)
-type changen = unit -> (in_channel * int * Common.filename)
+let full_charpos_to_pos_large2 = fun file ->
 
-(* Many functions in parse_php were implemented in terms of files and
- * are now adapted to work in terms of changens.  However, we wish to
- * provide the original API to users.  This wraps changen-based functions
- * and makes them operate on filenames again. 
- *)
-let file_wrap_changen : (changen -> 'a) -> (Common.filename -> 'a) = fun f ->
-  (fun file ->
-    f (fun () -> (open_in file, Common2.filesize file, file)))
-
-
-(*
-let full_charpos_to_pos_from_changen changen =
-  let (chan, chansize, _) = changen () in
-
-  let size = (chansize + 2) in
-
-    let arr = Array.create size  (0,0) in
-
-    let charpos   = ref 0 in
-    let line  = ref 0 in
-
-    let rec full_charpos_to_pos_aux () =
-     try
-       let s = (input_line chan) in
-       incr line;
-
-       (* '... +1 do'  cos input_line dont return the trailing \n *)
-       for i = 0 to (String.length s - 1) + 1 do
-         arr.(!charpos + i) <- (!line, i);
-       done;
-       charpos := !charpos + String.length s + 1;
-       full_charpos_to_pos_aux();
-
-     with End_of_file ->
-       for i = !charpos to Array.length arr - 1 do
-         arr.(i) <- (!line, 0);
-       done;
-       ();
-    in
-    begin
-      full_charpos_to_pos_aux ();
-      close_in chan;
-      arr
-    end
-
-let full_charpos_to_pos2 = file_wrap_changen full_charpos_to_pos_from_changen
-
-let full_charpos_to_pos a =
-  profile_code "Common.full_charpos_to_pos" (fun () -> full_charpos_to_pos2 a)
-*)
-
-(*
-let test_charpos file =
-  full_charpos_to_pos file +> Common2.dump +> pr2
-*)
-
-(*
-let complete_token_location filename table x =
-  { x with
-    file = filename;
-    line   = fst (table.(x.charpos));
-    column = snd (table.(x.charpos));
-  }
-*)
-
-let full_charpos_to_pos_large_from_changen = fun changen ->
-  let (chan, chansize, _) = changen () in
-
-  let size = (chansize + 2) in
+    let chan = open_in file in
+    let size = Common2.filesize file + 2 in
 
     (* old: let arr = Array.create size  (0,0) in *)
     let arr1 = Bigarray.Array1.create
@@ -577,9 +496,6 @@ let full_charpos_to_pos_large_from_changen = fun changen ->
       close_in chan;
       (fun i -> arr1.{i}, arr2.{i})
     end
-
-let full_charpos_to_pos_large2 =
-  file_wrap_changen full_charpos_to_pos_large_from_changen
 
 let full_charpos_to_pos_large a =
   profile_code "Common.full_charpos_to_pos_large"

@@ -73,6 +73,8 @@ exception Ast_builder_error of string * t
 (* other stuff *)
 exception Other_error of string * t
 
+exception NoTokenLocation of string
+
 val lexical_error: string -> Lexing.lexbuf -> unit
 
 val fake_token_location : token_location
@@ -126,7 +128,6 @@ val yyback: int -> Lexing.lexbuf -> unit
 
 (* can deprecate? *)
 val tokinfo_str_pos:  string -> int -> t
-val lexbuf_to_strpos: Lexing.lexbuf -> string * int
 
 val rewrap_str: string -> t -> t
 val tok_add_s: string -> t -> t
@@ -156,9 +157,3 @@ val complete_token_location_large :
 val error_message : Common.filename -> (string * int) -> string
 val error_message_info :  t -> string
 val print_bad: int -> int * int -> string array -> unit
-
-(* channel, size, source *)
-type changen = unit -> (in_channel * int * Common.filename)
-(* Create filename-arged functions from changen-type ones *)
-val file_wrap_changen : (changen -> 'a) -> (Common.filename -> 'a)
-val full_charpos_to_pos_large_from_changen : changen -> (int -> (int * int))
