@@ -16,7 +16,7 @@ let vof_dotted_name v = Ocaml.vof_list vof_name v
 
 let vof_module_name (v1, v2) = 
   let v1 = vof_dotted_name v1
-  and v2 = Ocaml.vof_option Ocaml.vof_int v2 in
+  and v2 = Ocaml.vof_option (Ocaml.vof_list vof_tok) v2 in
   Ocaml.VTuple [v1; v2]
 
 let vof_resolved_name =

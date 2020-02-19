@@ -75,7 +75,7 @@ and v_dotted_name v = v_list v_name v
 
 and v_module_name (v1, v2) = 
   let v1 = v_dotted_name v1 in
-  let v2 = v_option v_int v2 in
+  let v2 = v_option (v_list v_tok) v2 in
   ()
 
 and v_resolved_name =
