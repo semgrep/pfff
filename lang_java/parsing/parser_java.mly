@@ -276,10 +276,29 @@ compilation_unit:
   |                                         type_declarations_opt
     { { package = None; imports = []; decls = $1; } }
 
+
+
 sgrep_spatch_pattern:
- | expression EOF { AExpr $1 }
- | statement EOF { AStmt $1 }
- | statement block_statements EOF { AStmts ($1::$2) }
+ | expression        EOF { AExpr $1 }
+ | statement_no_dots EOF { AStmt $1 }
+ | statement_no_dots statement_sgrep_list EOF { AStmts ($1::$2) }
+
+/*(* coupling: copy paste of statement, without dots *)*/
+statement_no_dots:
+ | statement_without_trailing_substatement  { $1 }
+ | labeled_statement  { $1 }
+ | if_then_statement  { $1 }
+ | if_then_else_statement  { $1 }
+ | while_statement  { $1 }
+ | for_statement  { $1 }
+
+statement_sgrep:
+ | block_statement { $1 }
+
+statement_sgrep_list:
+ | statement_sgrep { $1 }
+ | statement_sgrep_list statement_sgrep { $1 @ $2 }
+
 
 /*(*************************************************************************)*/
 /*(*1 Package, Import, Type *)*/
@@ -485,8 +504,6 @@ method_invocation:
 
 argument: 
  | expression { $1 }
- /*(* sgrep-ext: *)*/
- | DOTS { Flag_parsing.sgrep_guard (Ellipses $1) }
 
 /*(*----------------------------*)*/
 /*(*2 Arithmetic *)*/
@@ -632,6 +649,9 @@ conditional_expression:
 assignment_expression:
  | conditional_expression  { $1 }
  | assignment              { $1 }
+ /*(* sgrep-ext: *)*/
+ | DOTS { Flag_parsing.sgrep_guard (Ellipses $1) }
+
 
 /*(* javaext: was assignment_expression for rhs, but we want lambdas there*)*/
 assignment: left_hand_side assignment_operator expression
@@ -733,7 +753,7 @@ statement:
  | while_statement  { $1 }
  | for_statement  { $1 }
  /*(* sgrep-ext: *)*/
- | DOTS           { Flag_parsing.sgrep_guard (Expr (Ellipses $1))}
+ | DOTS { Flag_parsing.sgrep_guard (Expr (Ellipses $1)) }
 
 statement_without_trailing_substatement:
  | block  { $1 }
