@@ -447,7 +447,7 @@ and stmt_aux x =
         let st = G.Throw (t, e) in
         [G.OtherStmt (G.OS_ThrowFrom, [G.E from; G.S st])]
       | None ->
-        [G.OtherStmt (G.OS_ThrowNothing, [])]
+        [G.OtherStmt (G.OS_ThrowNothing, [G.Tk t])]
       )
                   
   | TryExcept ((t, v1, v2, v3)) ->
