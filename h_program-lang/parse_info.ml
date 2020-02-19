@@ -272,9 +272,8 @@ let token_location_of_info ii =
   | ExpandedTok (pinfo_pp, _pinfo_orig, _offset) -> pinfo_pp
   | FakeTokStr (_, (Some (pi, _))) -> pi
 
-  | FakeTokStr (_, None)
-  | Ab
-    -> failwith "token_location_of_info: no OriginTok"
+  | FakeTokStr (_, None) -> raise (NoTokenLocation "FakeTokStr")
+  | Ab -> raise (NoTokenLocation "Ab")
 
 (* for error reporting *)
 let string_of_token_location x =
@@ -308,8 +307,8 @@ let is_origintok ii =
 let get_original_token_location = function
   | OriginTok pi -> pi
   | ExpandedTok (pi,_, _) -> pi
-  | FakeTokStr (_,_) -> failwith "no position information"
-  | Ab -> failwith "Ab"
+  | FakeTokStr (_,_) -> raise (NoTokenLocation "FakeTokStr")
+  | Ab -> raise (NoTokenLocation "Ab")
 
 (* used by token_helpers *)
 
@@ -327,9 +326,8 @@ let compare_pos ii1 ii2 =
     | FakeTokStr (s, Some (pi_orig, offset)) ->
         Virt (pi_orig, offset)
 *)
-    | FakeTokStr _
-    | Ab
-      -> failwith "get_pos: Ab or FakeTok"
+    | FakeTokStr _ -> raise (NoTokenLocation "compare_pos: FakeTokStr")
+    | Ab -> raise (NoTokenLocation "compare_pos: Ab")
     | ExpandedTok (_pi_pp, pi_orig, offset) ->
         Virt (pi_orig, offset)
   in
@@ -358,7 +356,7 @@ let compare_pos ii1 ii2 =
 
 let min_max_ii_by_pos xs =
   match xs with
-  | [] -> failwith "empty list, max_min_ii_by_pos"
+  | [] -> raise (NoTokenLocation "min_max, empty list")
   | [x] -> (x, x)
   | x::xs ->
       let pos_leq p1 p2 = (compare_pos p1 p2) =|= (-1) in
@@ -367,8 +365,6 @@ let min_max_ii_by_pos xs =
         let minii' = if pos_leq e minii then e else minii in
         minii', maxii'
       ) (x,x)
-
-
 
 (*
 I used to have:
