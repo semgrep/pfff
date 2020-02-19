@@ -1321,6 +1321,8 @@ let files_of_dir_or_files_no_vcs_nofilter xs =
         cmd_to_list_and_status cmd in
       (match status with
       | Unix.WEXITED 0 -> xs
+      (* bugfix: 'find -type f' does not like empty directories, but it's ok *)
+      | Unix.WEXITED 1 when Array.length (Sys.readdir x) = 0 -> []
       | _ -> raise (CmdError (status,
                          (spf "CMD = %s, RESULT = %s"
                              cmd (String.concat "\n" xs))))
