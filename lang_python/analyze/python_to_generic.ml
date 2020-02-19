@@ -55,6 +55,26 @@ let name v = wrap string v
 
 let dotted_name v = list name v
 
+let module_name (v1, dots) = 
+  let v1 = dotted_name v1 in
+  match dots with
+  | None -> G.DottedName v1
+  (* transforming '. foo.bar' in G.Filename "./foo/bar" *)
+  | Some toks ->
+      let count = 
+        toks |> List.map Parse_info.str_of_info 
+          |> String.concat "" |> String.length in
+      let tok = List.hd toks in
+      let elems = v1 |> List.map fst in
+      let prefixes = 
+        match count with
+        | 1 -> ["."]
+        | 2 -> [".."]
+        | n -> Common2.repeat ".." (n -1)
+      in
+      let s = String.concat "/" (prefixes @ elems) in
+      G.FileName (s, tok)
+
 let gensym_TODO = -1 
 
 let resolved_name name =
@@ -471,18 +491,18 @@ and stmt_aux x =
   | Assert ((t, v1, v2)) -> let v1 = expr v1 and v2 = option expr v2 in
       [G.Assert (t, v1, v2)]
 
-  | ImportAs (t, (v1, _dotsAlwaysNone), v2) -> 
-      let dotted = dotted_name v1 and nopt = option name v2 in
-      [G.DirectiveStmt (G.ImportAs (t, G.DottedName dotted, nopt))]
-  | ImportAll (t, (v1, _dotsAlwaysNone), v2) -> 
-      let dotted = dotted_name v1 and v2 = info v2 in
-      [G.DirectiveStmt (G.ImportAll (t, G.DottedName dotted, v2))]
+  | ImportAs (t, v1, v2) -> 
+      let mname = module_name v1 and nopt = option name v2 in
+      [G.DirectiveStmt (G.ImportAs (t, mname, nopt))]
+  | ImportAll (t, v1, v2) -> 
+      let mname = module_name v1 and v2 = info v2 in
+      [G.DirectiveStmt (G.ImportAll (t, mname, v2))]
 
-  | ImportFrom (t, (v1, _dotsTODO), v2) ->
-      let v1 = dotted_name v1
+  | ImportFrom (t, v1, v2) ->
+      let v1 = module_name v1
       and v2 = list alias v2
       in
-      [G.DirectiveStmt (G.ImportFrom (t, G.DottedName v1, v2))]
+      [G.DirectiveStmt (G.ImportFrom (t, v1, v2))]
 
   | Global (t, v1) | NonLocal (t, v1)
     -> let v1 = list name v1 in

@@ -90,7 +90,7 @@ type dotted_name = name list
 type module_name = 
  dotted_name * 
  (* https://realpython.com/absolute-vs-relative-python-imports/ *)
- int option (* levels, for relative imports *)
+ (tok (* . or ... toks *) list) option (* levels, for relative imports *)
 
 (* TODO: reuse ast_generic one? *)
 type resolved_name =
