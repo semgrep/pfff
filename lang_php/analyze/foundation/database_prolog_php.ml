@@ -550,7 +550,7 @@ let build2 ?(show_progress=true) root files =
            (parts |> List.map (fun s -> spf "'%s'" s) |> Common.join ",")));
 
      try
-       let (ast, toks) = Parse_php.ast_and_tokens file in
+       let (ast, toks), _stat = Parse_php.parse file in
 
        (match toks with
        (* <?hh //xxx *)
@@ -578,7 +578,7 @@ let build2 ?(show_progress=true) root files =
 
        let ast = Unsugar_php.unsugar_self_parent_program ast in
        visit ~add readable ast;
-     with Parse_php.Parse_error _ | Cst_php.TodoNamespace _ ->
+     with Parsing.Parse_error | Cst_php.TodoNamespace _ ->
        add (P.Misc (spf "problem('%s', parse_error)" file))
    );
 

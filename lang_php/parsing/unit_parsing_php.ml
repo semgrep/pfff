@@ -69,7 +69,7 @@ let unittest =
         let _ = Parse_php.program_of_string "echo 1+" in
         assert_failure "it should have thrown a Parse_error exception"
       with
-       Parse_php.Parse_error _ -> 
+       Parse_info.Parsing_error _ -> 
          ()
       (* old:
        * The PHP parser does not return an exception when a PHP file contains
@@ -90,7 +90,7 @@ let unittest =
         let _ = Parse_php.program_of_string "function foo($x, ...$rest=123) {}" in
         assert_failure "it should have thrown a Parse_error exception"
       with
-       Parse_php.Parse_error _ ->
+       Parse_info.Parsing_error _ ->
          ()
     );
 
@@ -100,7 +100,7 @@ let unittest =
         let _ = Parse_php.program_of_string "function foo($x, ...$rest, ...$another) {}" in
         assert_failure "it should have thrown a Parse_error exception"
       with
-       Parse_php.Parse_error _ ->
+       Parse_info.Parsing_error _ ->
          ()
     );
     "rejecting non-tail variadic param without variable name" >:: (fun () ->
@@ -109,7 +109,7 @@ let unittest =
         let _ = Parse_php.program_of_string "function foo($x, ..., ...$rest) {}" in
         assert_failure "it should have thrown a Parse_error exception"
       with
-       Parse_php.Parse_error _ ->
+       Parse_info.Parsing_error _ ->
          ()
     );
 
@@ -119,7 +119,7 @@ let unittest =
         let _ = Parse_php.program_of_string "function foo(int ...) {}" in
         assert_failure "it should have thrown a Parse_error exception"
       with
-       Parse_php.Parse_error _ ->
+       Parse_info.Parsing_error _ ->
          ()
     );
 
@@ -130,7 +130,7 @@ let unittest =
         try
           let _ = Parse_php.parse_program file in
           ()
-        with Parse_php.Parse_error _ ->
+        with Parse_info.Parsing_error _ ->
           assert_failure (spf "it should correctly parse %s" file)
       )
     );
@@ -180,7 +180,7 @@ let unittest =
         try
           let _ = Parse_php.program_of_string x in
           ()
-        with Parse_php.Parse_error _ ->
+        with Parse_info.Parsing_error _ ->
           assert_failure (spf "it should correctly parse %s" x)
       in
 

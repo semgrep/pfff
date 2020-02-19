@@ -136,7 +136,7 @@ let php_defs_of_files_or_dirs ?(verbose=false) ?(include_hack=false) xs =
     k ();
     let (ast) =
       try  Parse_php.parse_program file
-      with Parse_php.Parse_error _err ->
+      with Parsing.Parse_error ->
         Common.pr2 (spf "warning: parsing problem in %s" file);
         []
     in

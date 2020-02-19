@@ -1,6 +1,7 @@
 (* Yoann Padioleau
  *
  * Copyright (C) 2010 Facebook
+ * Copyright (C) 2020 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -17,44 +18,27 @@ open Common
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(*
- * Some helpers for the different lexers and parsers in pfff.
+(* Some helpers for the different lexers and parsers in pfff.
+ *
  * The main types are:
  * ('token_location' < 'token_origin' < 'token_mutable') * token_kind
- * 
  *)
 
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
 
-(* Currently, lexing.ml in the standard OCaml libray does not handle
- * the line number position.
- * Even if there are certain fields in the lexing structure, they are not
- * maintained by the lexing engine so the following code does not work:
- *
- *   let pos = Lexing.lexeme_end_p lexbuf in
- *   sprintf "at file %s, line %d, char %d" pos.pos_fname pos.pos_lnum
- *      (pos.pos_cnum - pos.pos_bol) in
- *
- * Hence those types and functions below to overcome the previous limitation,
- * (see especially complete_token_location_large()).
- *)
 type token_location = {
     str: string;
     charpos: int;
-
-    line: int;
-    column: int;
-
+    line: int; column: int;
     file: filename;
   }
   (* with tarzan *)
 
 let fake_token_location = {
-  charpos = -1; str = ""; line = -1; column = -1; file = "FAKE TOKEN";
+  charpos = -1; str = ""; line = -1; column = -1; file = "FAKE TOKEN LOCATION";
 }
-
 let first_loc_of_file file = {
   charpos = 0; str = ""; line = 1; column = 0; file = file;
 }
@@ -228,9 +212,6 @@ let mk_tokens_state toks = {
 (* Lexer helpers *)
 (*****************************************************************************)
 
-let lexbuf_to_strpos lexbuf     =
-  (Lexing.lexeme lexbuf, Lexing.lexeme_start lexbuf)
-
 let tokinfo_str_pos str pos =
   {
     token = OriginTok {
@@ -260,21 +241,19 @@ let yyback n lexbuf =
 (* Errors *)
 (*****************************************************************************)
 (* this can be used in the different lexer/parsers in pfff *)
+(* coupling: see related error in Error_code and its exn_to_error *)
 exception Lexical_error of string * t
 exception Parsing_error of t
 exception Ast_builder_error of string * t
 exception Other_error of string * t
 
+exception NoTokenLocation of string
+
 let tokinfo lexbuf  = 
   tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
 
 let lexical_error s lexbuf =
-  let info = 
-    try 
-      tokinfo lexbuf 
-    with Failure s -> 
-      failwith (spf "lexical_error: failure to get token info: %s" s)
-  in
+  let info = tokinfo lexbuf in
   if !Flag_parsing.exn_when_lexical_error
   then raise (Lexical_error (s, info))
   else
@@ -282,22 +261,10 @@ let lexical_error s lexbuf =
     then pr2_once ("LEXER: " ^ s)
     else ()
 
-
 (*****************************************************************************)
 (* Accessors *)
 (*****************************************************************************)
 
-(*
-val rewrap_token_location : token_location.token_location -> info -> info
-let rewrap_token_location pi ii =
-  {ii with pinfo =
-    (match ii.pinfo with
-    | OriginTok _oldpi -> OriginTok pi
-    | FakeTokStr _  | Ab | ExpandedTok _ ->
-        failwith "rewrap_parseinfo: no OriginTok"
-    )
-  }
-*)
 let token_location_of_info ii =
   match ii.token with
   | OriginTok pinfo -> pinfo
@@ -305,15 +272,10 @@ let token_location_of_info ii =
   | ExpandedTok (pinfo_pp, _pinfo_orig, _offset) -> pinfo_pp
   | FakeTokStr (_, (Some (pi, _))) -> pi
 
-  | FakeTokStr (_, None)
-  | Ab
-    -> failwith "token_location_of_info: no OriginTok"
+  | FakeTokStr (_, None) -> raise (NoTokenLocation "FakeTokStr")
+  | Ab -> raise (NoTokenLocation "Ab")
 
 (* for error reporting *)
-(*
-let string_of_token_location x =
-  spf "%s at %s:%d:%d" x.str x.file x.line x.column
-*)
 let string_of_token_location x =
   spf "%s:%d:%d" x.file x.line x.column
 
@@ -338,77 +300,17 @@ let is_origintok ii =
   | OriginTok _ -> true
   | _ -> false
 
-(*
-let opos_of_info ii = 
-  PI.get_orig_info (function x -> x.PI.charpos) ii
-
-val pos_of_tok     : Parser_cpp.token -> int
-val str_of_tok     : Parser_cpp.token -> string
-val file_of_tok    : Parser_cpp.token -> Common.filename
-
-let pos_of_tok x =  Ast.opos_of_info (info_of_tok x)
-let str_of_tok x =  Ast.str_of_info (info_of_tok x)
-let file_of_tok x = Ast.file_of_info (info_of_tok x)
-let pinfo_of_tok x = Ast.pinfo_of_info (info_of_tok x)
-
-val is_origin : Parser_cpp.token -> bool
-val is_expanded : Parser_cpp.token -> bool
-val is_fake : Parser_cpp.token -> bool
-val is_abstract : Parser_cpp.token -> bool
-
-
-let is_origin x =
-  match pinfo_of_tok x with Parse_info.OriginTok _ -> true | _ -> false
-let is_expanded x =
-  match pinfo_of_tok x with Parse_info.ExpandedTok _ -> true | _ -> false
-let is_fake x =
-  match pinfo_of_tok x with Parse_info.FakeTokStr _ -> true | _ -> false
-let is_abstract x =
-  match pinfo_of_tok x with Parse_info.Ab -> true | _ -> false
-*)
 
 (* info about the current location *)
-(*
-let get_pi = function
-  | OriginTok pi -> pi
-  | ExpandedTok (_,pi,_) -> pi
-  | FakeTokStr (_,(Some (pi,_))) -> pi
-  | FakeTokStr (_,None) ->
-      failwith "FakeTokStr None"
-  | Ab ->
-      failwith "Ab"
-*)
 
 (* original info *)
 let get_original_token_location = function
   | OriginTok pi -> pi
   | ExpandedTok (pi,_, _) -> pi
-  | FakeTokStr (_,_) -> failwith "no position information"
-  | Ab -> failwith "Ab"
+  | FakeTokStr (_,_) -> raise (NoTokenLocation "FakeTokStr")
+  | Ab -> raise (NoTokenLocation "Ab")
 
 (* used by token_helpers *)
-(*
-let get_info f ii =
-  match ii.token with
-  | OriginTok pi -> f pi
-  | ExpandedTok (_,pi,_) -> f pi
-  | FakeTokStr (_,Some (pi,_)) -> f pi
-  | FakeTokStr (_,None) ->
-      failwith "FakeTokStr None"
-  | Ab ->
-      failwith "Ab"
-*)
-(*
-let get_orig_info f ii =
-  match ii.token with
-  | OriginTok pi -> f pi
-  | ExpandedTok (pi,_, _) -> f pi
-  | FakeTokStr (_,Some (pi,_)) -> f pi
-  | FakeTokStr (_,None ) ->
-      failwith "FakeTokStr None"
-  | Ab ->
-      failwith "Ab"
-*)
 
 (* not used but used to be useful in coccinelle *)
 type posrv =
@@ -424,9 +326,8 @@ let compare_pos ii1 ii2 =
     | FakeTokStr (s, Some (pi_orig, offset)) ->
         Virt (pi_orig, offset)
 *)
-    | FakeTokStr _
-    | Ab
-      -> failwith "get_pos: Ab or FakeTok"
+    | FakeTokStr _ -> raise (NoTokenLocation "compare_pos: FakeTokStr")
+    | Ab -> raise (NoTokenLocation "compare_pos: Ab")
     | ExpandedTok (_pi_pp, pi_orig, offset) ->
         Virt (pi_orig, offset)
   in
@@ -455,7 +356,7 @@ let compare_pos ii1 ii2 =
 
 let min_max_ii_by_pos xs =
   match xs with
-  | [] -> failwith "empty list, max_min_ii_by_pos"
+  | [] -> raise (NoTokenLocation "min_max, empty list")
   | [x] -> (x, x)
   | x::xs ->
       let pos_leq p1 p2 = (compare_pos p1 p2) =|= (-1) in
@@ -464,37 +365,6 @@ let min_max_ii_by_pos xs =
         let minii' = if pos_leq e minii then e else minii in
         minii', maxii'
       ) (x,x)
-
-
-(*
-let mk_info_item2 ~info_of_tok toks  =
-  let buf = Buffer.create 100 in
-  let s =
-    (* old: get_slice_file filename (line1, line2) *)
-    begin
-      toks +> List.iter (fun tok ->
-        let info = info_of_tok tok in
-        match info.token with
-        | OriginTok _
-        | ExpandedTok _ ->
-            Buffer.add_string buf (str_of_info info)
-
-        (* the virtual semicolon *)
-        | FakeTokStr _ ->
-            ()
-        | Ab  -> raise Impossible
-      );
-      Buffer.contents buf
-    end
-  in
-  (s, toks)
-
-let mk_info_item_DEPRECATED ~info_of_tok a =
-  Common.profile_code "Parsing.mk_info_item"
-    (fun () -> mk_info_item2 ~info_of_tok a)
-*)
-
-
 
 (*
 I used to have:
@@ -574,90 +444,14 @@ let rewrap_str s ii =
 let tok_add_s s ii  =
   rewrap_str ((str_of_info ii) ^ s) ii
 
-
 (*****************************************************************************)
 (* Adjust file pos *)
 (*****************************************************************************)
 
-(* A changen is a stand-in for a file for the underlying code.  We use
- * channels in the underlying parsing code as this avoids loading
- * potentially very large source files directly into memory before we
- * even parse them, but this makes it difficult to parse small chunks of
- * code.  The changen works around this problem by providing a channel,
- * size and source for underlying data.  This allows us to wrap a string
- * in a channel, or pass a file, depending on our needs. 
- *)
-type changen = unit -> (in_channel * int * Common.filename)
+let full_charpos_to_pos_large2 = fun file ->
 
-(* Many functions in parse_php were implemented in terms of files and
- * are now adapted to work in terms of changens.  However, we wish to
- * provide the original API to users.  This wraps changen-based functions
- * and makes them operate on filenames again. 
- *)
-let file_wrap_changen : (changen -> 'a) -> (Common.filename -> 'a) = fun f ->
-  (fun file ->
-    f (fun () -> (open_in file, Common2.filesize file, file)))
-
-
-(*
-let full_charpos_to_pos_from_changen changen =
-  let (chan, chansize, _) = changen () in
-
-  let size = (chansize + 2) in
-
-    let arr = Array.create size  (0,0) in
-
-    let charpos   = ref 0 in
-    let line  = ref 0 in
-
-    let rec full_charpos_to_pos_aux () =
-     try
-       let s = (input_line chan) in
-       incr line;
-
-       (* '... +1 do'  cos input_line dont return the trailing \n *)
-       for i = 0 to (String.length s - 1) + 1 do
-         arr.(!charpos + i) <- (!line, i);
-       done;
-       charpos := !charpos + String.length s + 1;
-       full_charpos_to_pos_aux();
-
-     with End_of_file ->
-       for i = !charpos to Array.length arr - 1 do
-         arr.(i) <- (!line, 0);
-       done;
-       ();
-    in
-    begin
-      full_charpos_to_pos_aux ();
-      close_in chan;
-      arr
-    end
-
-let full_charpos_to_pos2 = file_wrap_changen full_charpos_to_pos_from_changen
-
-let full_charpos_to_pos a =
-  profile_code "Common.full_charpos_to_pos" (fun () -> full_charpos_to_pos2 a)
-*)
-
-(*
-let test_charpos file =
-  full_charpos_to_pos file +> Common2.dump +> pr2
-*)
-
-(*
-let complete_token_location filename table x =
-  { x with
-    file = filename;
-    line   = fst (table.(x.charpos));
-    column = snd (table.(x.charpos));
-  }
-*)
-
-let full_charpos_to_pos_large_from_changen = fun changen ->
-  let (chan, chansize, _) = changen () in
-
-  let size = (chansize + 2) in
+    let chan = open_in file in
+    let size = Common2.filesize file + 2 in
 
     (* old: let arr = Array.create size  (0,0) in *)
     let arr1 = Bigarray.Array1.create
@@ -699,13 +493,25 @@ let full_charpos_to_pos_large_from_changen = fun changen ->
       (fun i -> arr1.{i}, arr2.{i})
     end
 
-let full_charpos_to_pos_large2 =
-  file_wrap_changen full_charpos_to_pos_large_from_changen
-
 let full_charpos_to_pos_large a =
   profile_code "Common.full_charpos_to_pos_large"
     (fun () -> full_charpos_to_pos_large2 a)
 
+(* Currently, lexing.ml, in the standard OCaml libray, does not handle
+ * the line number position.
+ * Even if there are certain fields in the lexing structure, they are not
+ * maintained by the lexing engine so the following code does not work:
+ *
+ *   let pos = Lexing.lexeme_end_p lexbuf in
+ *   sprintf "at file %s, line %d, char %d" pos.pos_fname pos.pos_lnum
+ *      (pos.pos_cnum - pos.pos_bol) in
+ *
+ * Hence those types and functions below to overcome the previous limitation,
+ * (see especially complete_token_location_large()).
+ * alt: 
+ *   - in each lexer you need to take care of newlines and update manually
+ *     the field.
+ *)
 let complete_token_location_large filename table x =
   { x with
     file = filename;
@@ -871,20 +677,6 @@ let error_message_info info =
   error_message_token_location pinfo
 
 
-(*
-let error_message_short = fun filename (lexeme, lexstart) ->
-  try
-  let charpos = lexstart in
-  let (line, pos, linecontent) =  info_from_charpos charpos filename in
-  spf "File \"%s\", line %d"  filename line
-
-  with End_of_file ->
-    begin
-      ("PB in Common.error_message, position " ^ i_to_s lexstart ^
-          " given out of file:" ^ filename);
-    end
-*)
-
 let print_bad line_error (start_line, end_line) filelines  =
   begin
     pr2 ("badcount: " ^ i_to_s (end_line - start_line));
@@ -898,13 +690,11 @@ let print_bad line_error (start_line, end_line) filelines  =
         else s
       in
 
-
       if i =|= line_error
       then  pr2 ("BAD:!!!!!" ^ " " ^ line)
       else  pr2 ("bad:" ^ " " ^      line)
     done
   end
-
 
 (*****************************************************************************)
 (* Parsing statistics *)
@@ -920,33 +710,6 @@ let print_bad line_error (start_line, end_line) filelines  =
  *)
 
 let print_parsing_stat_list ?(verbose=false)statxs =
-(* old:
-  let total = List.length statxs in
-  let perfect =
-    statxs
-      +> List.filter (function
-      | {bad = n; _} when n = 0 -> true
-      | _ -> false)
-      +> List.length
-  in
-
-  pr2 "\n\n\n---------------------------------------------------------------";
-  pr2 (
-  (spf "NB total files = %d; " total) ^
-  (spf "perfect = %d; " perfect) ^
-  (spf "=========> %d" ((100 * perfect) / total)) ^ "%"
-  );
-
-  let good = statxs +> List.fold_left (fun acc {correct = x; _} -> acc+x) 0 in
-  let bad  = statxs +> List.fold_left (fun acc {bad = x; _} -> acc+x) 0  in
-
-  let gf, badf = float_of_int good, float_of_int bad in
-  pr2 (
-  (spf "nb good = %d,  nb bad = %d " good bad) ^
-  (spf "=========> %f"  (100.0 *. (gf /. (gf +. badf))) ^ "%"
-   )
-  )
-*)
   let total = (List.length statxs) in
   let perfect = 
     statxs 

@@ -13,7 +13,7 @@ module T = Parser_php
 (*****************************************************************************)
 
 let pp_file file =
-  let (ast, tokens) = Parse_php.ast_and_tokens file in
+  let (ast, tokens), _ = Parse_php.parse file in
   let ast = Ast_pp_build.program_with_comments tokens ast in
 
   let buf = Buffer.create 256 in
@@ -67,7 +67,7 @@ function bar() { }
 "
     in
     let file = Parse_php.tmp_php_file_from_string content in
-    let (ast, toks) = Parse_php.ast_and_tokens file in
+    let (ast, toks), _ = Parse_php.parse file in
     let chunks = Unparse_pretty_print_mix.split_chunks toks ast in
     (match chunks with
     | [(Unparse_pretty_print_mix.Func def1, toks1);

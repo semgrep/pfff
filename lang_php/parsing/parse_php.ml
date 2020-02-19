@@ -23,7 +23,6 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* A PHP parser.
  *
  * related work:
@@ -46,133 +45,76 @@ let error_msg_tok tok =
 (*****************************************************************************)
 (* Lexing only *)
 (*****************************************************************************)
-let tokens_from_changen ?(init_state=Lexer_php.INITIAL) changen =
-  let table     = PI.full_charpos_to_pos_large_from_changen changen in
+let tokens2 ?(init_state=Lexer_php.INITIAL) file =
+  Lexer_php.reset();
+  Lexer_php._mode_stack := [init_state];
 
-  let (chan, _, file) = changen () in
+  let token lexbuf = 
+    let tok =
+      (* for yyless emulation *)
+      match !Lexer_php._pending_tokens with
+      | x::xs -> 
+          Lexer_php._pending_tokens := xs; 
+          x
+      | [] ->
+        (match Lexer_php.current_mode () with
+        | Lexer_php.INITIAL -> 
+            Lexer_php.initial lexbuf
+        | Lexer_php.ST_IN_SCRIPTING -> 
+            Lexer_php.st_in_scripting lexbuf
+        | Lexer_php.ST_IN_SCRIPTING2 -> 
+            Lexer_php.st_in_scripting lexbuf
+        | Lexer_php.ST_DOUBLE_QUOTES -> 
+            Lexer_php.st_double_quotes lexbuf
+        | Lexer_php.ST_BACKQUOTE -> 
+            Lexer_php.st_backquote lexbuf
+        | Lexer_php.ST_LOOKING_FOR_PROPERTY -> 
+            Lexer_php.st_looking_for_property lexbuf
+        | Lexer_php.ST_LOOKING_FOR_VARNAME -> 
+            Lexer_php.st_looking_for_varname lexbuf
+        | Lexer_php.ST_VAR_OFFSET -> 
+            Lexer_php.st_var_offset lexbuf
+        | Lexer_php.ST_START_HEREDOC s ->
+            Lexer_php.st_start_heredoc s lexbuf
+        | Lexer_php.ST_START_NOWDOC s ->
+            Lexer_php.st_start_nowdoc s lexbuf
 
-  Common.finalize (fun () ->
-    let lexbuf = Lexing.from_channel chan in
+        (* xhp: *)
+        | Lexer_php.ST_IN_XHP_TAG current_tag ->
+            if not !Flag_php.xhp_builtin
+            then raise Impossible;
 
-    Lexer_php.reset();
-    Lexer_php._mode_stack := [init_state];
+            Lexer_php.st_in_xhp_tag current_tag lexbuf
+        | Lexer_php.ST_IN_XHP_TEXT current_tag ->
+            if not !Flag_php.xhp_builtin
+            then raise Impossible;
 
-    try 
-      let phptoken lexbuf = 
-          (* for yyless emulation *)
-          match !Lexer_php._pending_tokens with
-          | x::xs -> 
-              Lexer_php._pending_tokens := xs; 
-              x
-          | [] ->
-            (match Lexer_php.current_mode () with
-            | Lexer_php.INITIAL -> 
-                Lexer_php.initial lexbuf
-            | Lexer_php.ST_IN_SCRIPTING -> 
-                Lexer_php.st_in_scripting lexbuf
-            | Lexer_php.ST_IN_SCRIPTING2 -> 
-                Lexer_php.st_in_scripting lexbuf
-            | Lexer_php.ST_DOUBLE_QUOTES -> 
-                Lexer_php.st_double_quotes lexbuf
-            | Lexer_php.ST_BACKQUOTE -> 
-                Lexer_php.st_backquote lexbuf
-            | Lexer_php.ST_LOOKING_FOR_PROPERTY -> 
-                Lexer_php.st_looking_for_property lexbuf
-            | Lexer_php.ST_LOOKING_FOR_VARNAME -> 
-                Lexer_php.st_looking_for_varname lexbuf
-            | Lexer_php.ST_VAR_OFFSET -> 
-                Lexer_php.st_var_offset lexbuf
-            | Lexer_php.ST_START_HEREDOC s ->
-                Lexer_php.st_start_heredoc s lexbuf
-            | Lexer_php.ST_START_NOWDOC s ->
-                Lexer_php.st_start_nowdoc s lexbuf
-
-            (* xhp: *)
-            | Lexer_php.ST_IN_XHP_TAG current_tag ->
-                if not !Flag_php.xhp_builtin
-                then raise Impossible;
-
-                Lexer_php.st_in_xhp_tag current_tag lexbuf
-            | Lexer_php.ST_IN_XHP_TEXT current_tag ->
-                if not !Flag_php.xhp_builtin
-                then raise Impossible;
-
-                Lexer_php.st_in_xhp_text current_tag lexbuf
-            )
-      in
-
-      let rec tokens_aux acc = 
-        let tok = phptoken lexbuf in
-
-        if !Flag.debug_lexer then Common.pr2_gen tok;
-        if not (TH.is_comment tok)
-        then Lexer_php._last_non_whitespace_like_token := Some tok;
-
-        let tok = tok |> TH.visitor_info_of_tok (fun ii ->
-        { ii with PI.token=
-          (* could assert pinfo.filename = file ? *)
-               match ii.PI.token with
-               | PI.OriginTok pi ->
-                          PI.OriginTok 
-                            (PI.complete_token_location_large file table pi)
-               | PI.FakeTokStr _
-               | PI.Ab  
-               | PI.ExpandedTok _
-                        -> raise Impossible
-                  })
-        in
-
-        if TH.is_eof tok
-        then List.rev (tok::acc)
-        else tokens_aux (tok::acc)
-    in
-    tokens_aux []
-  with
-  | Lexer_php.Lexical s -> 
-      failwith ("lexical error " ^ s ^ "\n =" ^ 
-                   (PI.error_message file (PI.lexbuf_to_strpos lexbuf)))
-  | e -> raise e
- )
- (fun () -> close_in chan)
-
-let tokens2 ?init_state =
-  PI.file_wrap_changen (tokens_from_changen ?init_state)
+            Lexer_php.st_in_xhp_text current_tag lexbuf
+        )
+     in
+     if not (TH.is_comment tok)
+     then Lexer_php._last_non_whitespace_like_token := Some tok;
+     tok
+  in
+  Parse_info.tokenize_all_and_adjust_pos 
+   file token TH.visitor_info_of_tok TH.is_eof
 
 let tokens ?init_state a = 
   Common.profile_code "Parse_php.tokens" (fun () -> tokens2 ?init_state a)
 
-(*****************************************************************************)
-(* Helper for main entry point *)
-(*****************************************************************************)
-(* Hacked lex. This function use refs passed by parse.
- * 'tr' means 'token refs'.
- *)
-let rec lexer_function tr = fun lexbuf ->
-  match tr.PI.rest with
-  | [] -> (pr2 "LEXER: ALREADY AT END"; tr.PI.current)
-  | v::xs -> 
-      tr.PI.rest <- xs;
-      tr.PI.current <- v;
-      tr.PI.passed <- v::tr.PI.passed;
 
-      if TH.is_comment v ||
-        (* TODO a little bit specific to FB ? *)
-        (match v with
-        | Parser_php.T_OPEN_TAG _ -> true
-        | Parser_php.T_CLOSE_TAG _ -> true
-        | _ -> false
-        )
-      then lexer_function (*~pass*) tr lexbuf
-      else v
+let is_comment v =
+   TH.is_comment v ||
+   (* TODO a little bit specific to FB ? *)
+   (match v with
+   | Parser_php.T_OPEN_TAG _ -> true
+   | Parser_php.T_CLOSE_TAG _ -> true
+   | _ -> false
+   )
 
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
-
-(* could move that in h_program-lang/, but maybe clearer to put it closer
- * to the parsing function.
- *)
-exception Parse_error of PI.t
 
 let parse2 ?(pp=(!Flag_php.pp_default)) filename =
 
@@ -231,11 +173,11 @@ let parse2 ?(pp=(!Flag_php.pp_default)) filename =
   in
   let toks = Parsing_hacks_php.fix_tokens toks in
 
-  let tr = PI.mk_tokens_state toks in
+  let tr, lexer, lexbuf_fake = 
+    Parse_info.mk_lexer_for_yacc toks is_comment in
 
   let checkpoint = TH.line_of_tok tr.PI.current in
 
-  let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
   let elems = 
     try (
       (* -------------------------------------------------- *)
@@ -243,9 +185,9 @@ let parse2 ?(pp=(!Flag_php.pp_default)) filename =
       (* -------------------------------------------------- *)
       Left 
         (Common.profile_code "Parser_php.main" (fun () ->
-          (Parser_php.main (lexer_function tr) lexbuf_fake)
+          Parser_php.main lexer lexbuf_fake
         ))
-    ) with e ->
+    ) with Parsing.Parse_error ->
 
       let line_error = TH.line_of_tok tr.PI.current in
 
@@ -257,130 +199,47 @@ let parse2 ?(pp=(!Flag_php.pp_default)) filename =
 
       let info_of_bads = Common2.map_eff_rev TH.info_of_tok tr.PI.passed in 
 
-      Right (info_of_bads, line_error, current, e)
+      Right (info_of_bads, line_error, current)
   in
 
   match elems with
   | Left xs ->
       stat.PI.correct <- (Common.cat filename |> List.length);
-
-      (xs, toks), 
-      stat
-  | Right (info_of_bads, line_error, cur, exn) ->
+      (xs, toks), stat
+  | Right (info_of_bads, line_error, cur) ->
 
       if not !Flag.error_recovery 
-      then raise (Parse_error (TH.info_of_tok cur));
-
-      (match exn with
-      | Lexer_php.Lexical _ 
-      | Parsing.Parse_error 
-          (*| Semantic_c.Semantic _  *)
-        -> ()
-      | e -> raise e
-      );
+      then raise (PI.Parsing_error (TH.info_of_tok cur));
 
       if !Flag.show_parsing_error
-      then 
-        (match exn with
-        (* Lexical is not anymore launched I think *)
-        | Lexer_php.Lexical s -> 
-            pr2 ("lexical error " ^s^ "\n =" ^ error_msg_tok cur)
-        | Parsing.Parse_error -> 
-            pr2 ("parse error \n = " ^ error_msg_tok cur)
-              (* | Semantic_java.Semantic (s, i) -> 
-                 pr2 ("semantic error " ^s^ "\n ="^ error_msg_tok tr.current)
-          *)
-        | _e -> raise Impossible
-        );
+      then pr2 ("parse error\n = " ^ error_msg_tok cur);
       let checkpoint2 = Common.cat filename |> List.length in
 
-
-      if !Flag_php.show_parsing_error_full
+      if !Flag.show_parsing_error
       then PI.print_bad line_error (checkpoint, checkpoint2) filelines;
-
       stat.PI.bad     <- Common.cat filename |> List.length;
 
       let info_item = (List.rev tr.PI.passed) in 
       ([Ast.NotParsedCorrectly info_of_bads], info_item), 
       stat
 
-let _hmemo_parse_php = Hashtbl.create 101
-
-let parse_memo ?pp file = 
-  if not !Flag_php.caching_parsing
-  then parse2 ?pp file
-  else
-    Common.memoized _hmemo_parse_php file (fun () -> 
-      Common.profile_code "Parse_php.parse_no_memo" (fun () ->
-        parse2 ?pp file
-      )
-    )
-
 let parse ?pp a = 
-  Common.profile_code "Parse_php.parse" (fun () -> parse_memo ?pp a)
+  Common.profile_code "Parse_php.parse" (fun () -> parse2 ?pp a)
 
 let parse_program ?pp file = 
   let ((ast, _toks), _stat) = parse ?pp file in
   ast
 
-let ast_and_tokens file =
-  let ((ast, toks), _stat) = parse file in
-  (ast, toks)
-
 (*****************************************************************************)
 (* Sub parsers *)
 (*****************************************************************************)
 
-let parse_any_from_changen (changen : PI.changen) =
-  let toks = tokens_from_changen ~init_state:Lexer_php.ST_IN_SCRIPTING changen  in
-
-  let tr = PI.mk_tokens_state toks in
-  let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
-
-  try 
-    Parser_php.sgrep_spatch_pattern (lexer_function tr) lexbuf_fake
-  with exn ->
-    let cur = tr.PI.current in
-    if !Flag.show_parsing_error
-    then 
-    (match exn with
-     (* Lexical is not anymore launched I think *)
-     | Lexer_php.Lexical s -> 
-         pr2 ("lexical error " ^s^ "\n =" ^ error_msg_tok cur)
-     | Parsing.Parse_error -> 
-         pr2 ("parse error \n = " ^ error_msg_tok cur)
-    (* | Semantic_java.Semantic (s, i) -> 
-         pr2 ("semantic error " ^s^ "\n ="^ error_msg_tok tr.current)
-    *)
-     | _ -> raise exn
-    );
-    raise exn
-
-let parse_any = PI.file_wrap_changen parse_any_from_changen
-
-(* any_of_string() allows small chunks of PHP to be parsed without
- * having to use the filesystem by leveraging the changen mechanism.
- * In order to supply a string as a channel we must create a socket
- * pair and write our string to it.  This is not ideal and may fail if
- * we try to parse too many short strings without closing the channel,
- * or if the string is so large that the OS blocks our socket. 
- *)
-let any_of_string s =
-  let len = String.length s in
-  let changen = (fun () ->
-    let (socket_a, socket_b) = Unix.(socketpair PF_UNIX SOCK_STREAM 0) in
-    let fake_filename = "" in
-    let (data_in, data_out) =
-      Unix.(in_channel_of_descr socket_a, out_channel_of_descr socket_b) in
-    output_string data_out s;
-    flush data_out;
-    close_out data_out;
-    (data_in, len, fake_filename)) in
-  (* disable showing parsing errors as there is no filename and
-   * error_msg_tok() would throw a Sys_error exception
-   *)
-  Common.save_excursion Flag.show_parsing_error false (fun () ->
-    parse_any_from_changen changen
+let any_of_string s = 
+  Common2.with_tmp_file ~str:s ~ext:"java" (fun file ->
+    let toks = tokens ~init_state:Lexer_php.ST_IN_SCRIPTING file in
+    let toks = Parsing_hacks_php.fix_tokens toks in
+    let _tr, lexer, lexbuf_fake = PI.mk_lexer_for_yacc toks is_comment in
+    Parser_php.sgrep_spatch_pattern lexer lexbuf_fake
   )
 
 (* 
@@ -441,71 +300,3 @@ let (xdebug_expr_of_string: string -> Cst_php.expr) = fun _s ->
   expr
 *)
   raise Todo
-
-(* The default PHP parser function stores position information for all tokens,
- * build some Parse_php.info_items for each toplevel entities, and
- * do other things which are most of the time useful for some analysis
- * but starts to really slow down parsing for huge (generated) PHP files.
- * Enters parse_fast() that disables most of those things.
- * Note that it may not parse correctly all PHP code, so use with
- * caution.
- *)
-let parse_fast file =
-  let chan = open_in file in
-  let lexbuf = Lexing.from_channel chan in
-  Lexer_php.reset();
-  Lexer_php._mode_stack := [Lexer_php.INITIAL];
-
-  let rec php_next_token lexbuf = 
-    let tok =
-    (* for yyless emulation *)
-    match !Lexer_php._pending_tokens with
-    | x::xs -> 
-      Lexer_php._pending_tokens := xs; 
-      x
-    | [] ->
-      (match Lexer_php.current_mode () with
-      | Lexer_php.INITIAL -> 
-        Lexer_php.initial lexbuf
-      | Lexer_php.ST_IN_SCRIPTING -> 
-        Lexer_php.st_in_scripting lexbuf
-      | Lexer_php.ST_IN_SCRIPTING2 -> 
-        Lexer_php.st_in_scripting lexbuf
-      | Lexer_php.ST_DOUBLE_QUOTES -> 
-        Lexer_php.st_double_quotes lexbuf
-      | Lexer_php.ST_BACKQUOTE -> 
-        Lexer_php.st_backquote lexbuf
-      | Lexer_php.ST_LOOKING_FOR_PROPERTY -> 
-        Lexer_php.st_looking_for_property lexbuf
-      | Lexer_php.ST_LOOKING_FOR_VARNAME -> 
-        Lexer_php.st_looking_for_varname lexbuf
-      | Lexer_php.ST_VAR_OFFSET -> 
-        Lexer_php.st_var_offset lexbuf
-      | Lexer_php.ST_START_HEREDOC s ->
-        Lexer_php.st_start_heredoc s lexbuf
-      | Lexer_php.ST_START_NOWDOC s ->
-        Lexer_php.st_start_nowdoc s lexbuf
-      | Lexer_php.ST_IN_XHP_TAG current_tag ->
-        Lexer_php.st_in_xhp_tag current_tag lexbuf
-      | Lexer_php.ST_IN_XHP_TEXT current_tag ->
-        Lexer_php.st_in_xhp_text current_tag lexbuf
-      )
-    in
-    match tok with
-    | Parser_php.T_COMMENT _ | Parser_php.T_DOC_COMMENT _
-    | Parser_php.TSpaces _ | Parser_php.TNewline _
-    | Parser_php.TCommentPP _
-    | Parser_php.T_OPEN_TAG _
-    | Parser_php.T_CLOSE_TAG _ ->
-       php_next_token lexbuf
-    | _ -> tok
-  in
-  try 
-    let res = Parser_php.main php_next_token lexbuf in
-    close_in chan;
-    res
-  with Parsing.Parse_error ->
-    pr2 (spf "parsing error in php fast parser: %s" 
-           (Lexing.lexeme lexbuf));
-    raise Parsing.Parse_error
-

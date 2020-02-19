@@ -447,7 +447,7 @@ and stmt_aux x =
         let st = G.Throw (t, e) in
         [G.OtherStmt (G.OS_ThrowFrom, [G.E from; G.S st])]
       | None ->
-        [G.OtherStmt (G.OS_ThrowNothing, [])]
+        [G.OtherStmt (G.OS_ThrowNothing, [G.Tk t])]
       )
                   
   | TryExcept ((t, v1, v2, v3)) ->
@@ -502,7 +502,7 @@ and stmt_aux x =
       | _ -> [G.OtherStmt (G.OS_Async, [G.S x])]
       )
 
-  | Pass _t -> [G.OtherStmt (G.OS_Pass, [])]
+  | Pass t -> [G.OtherStmt (G.OS_Pass, [G.Tk t])]
   | Break t -> [G.Break (t, G.LNone)]
   | Continue t -> [G.Continue (t, G.LNone)]
 

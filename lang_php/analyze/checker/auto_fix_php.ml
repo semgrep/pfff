@@ -119,7 +119,7 @@ let try_auto_fix error =
   match error.Error_php.typ with
   | Error_php.FormatStringMismatch func_name ->
     let file = PI.file_of_info error.Error_php.loc in
-    let (ast, toks) = Parse_php.ast_and_tokens file in
+    let (ast, toks), _stat = Parse_php.parse file in
     let visitor = V.mk_visitor { V.default_visitor with
       V.kexpr = (fun (k,_) e ->
         (match e with
