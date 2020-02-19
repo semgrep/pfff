@@ -502,7 +502,7 @@ and stmt_aux x =
       | _ -> [G.OtherStmt (G.OS_Async, [G.S x])]
       )
 
-  | Pass _t -> [G.OtherStmt (G.OS_Pass, [])]
+  | Pass t -> [G.OtherStmt (G.OS_Pass, [G.Tk t])]
   | Break t -> [G.Break (t, G.LNone)]
   | Continue t -> [G.Continue (t, G.LNone)]
 
