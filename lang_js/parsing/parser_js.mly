@@ -254,12 +254,28 @@ declaration:
 
 sgrep_spatch_pattern:
  | assignment_expression_no_statement EOF      { Expr $1 }
- | statement EOF                               { Stmt $1 }
- | statement statement_sgrep_list EOF                { Stmts ($1::$2) }
+ | statement_no_dots EOF                               { Stmt $1 }
+ | statement_no_dots statement_sgrep_list EOF                { Stmts ($1::$2) }
+
+/*(* coupling: copy paste of statement, without dots *)*/
+statement_no_dots:
+ | block                { $1 }
+ | variable_statement   { $1 }
+ | empty_statement      { $1 }
+ | expression_statement { $1 }
+ | if_statement         { $1 }
+ | iteration_statement  { $1 }
+ | continue_statement   { $1 }
+ | break_statement      { $1 }
+ | return_statement     { $1 }
+ | with_statement       { $1 }
+ | labelled_statement   { $1 }
+ | switch_statement     { $1 }
+ | throw_statement      { $1 }
+ | try_statement        { $1 }
 
 statement_sgrep:
  | statement { $1 }
- | T_DOTS { ExprStmt (Ellipses $1, None) }
 
 statement_sgrep_list:
  | statement_sgrep { [$1] }
@@ -888,7 +904,8 @@ statement:
  | switch_statement     { $1 }
  | throw_statement      { $1 }
  | try_statement        { $1 }
-
+ /*(* sgrep-ext: *)*/
+ | T_DOTS { ExprStmt (Ellipses $1, None) }
 
 block:
  | T_LCURLY statement_list T_RCURLY { Block ($1, $2, $3) }
@@ -1015,6 +1032,7 @@ expression:
  | assignment_expression { $1 }
  | expression T_COMMA assignment_expression { Seq ($1, $2, $3) }
 
+/*(* coupling: see also assignment_expression_no_statement *)*/
 assignment_expression:
  | conditional_expression { $1 }
  | left_hand_side_expression assignment_operator assignment_expression
@@ -1029,6 +1047,9 @@ assignment_expression:
  | async_arrow_function { Arrow $1 }
  /*(* typescript: 1.6, because <> cant be used in TSX files *)*/
  | left_hand_side_expression T_AS type_ { $1 (* TODO $2 $3 *) }
+
+ /*(* sgrep-ext: can't move in primary_expr, get s/r conflicts *)*/
+ | T_DOTS { Flag_parsing.sgrep_guard (Ellipses $1) }
 
 assignment_operator:
  | T_ASSIGN         { A_eq , $1 }
@@ -1262,8 +1283,6 @@ argument:
  /*(* es6: spread operator, allowed not only in last position *)*/
  | T_DOTS assignment_expression
      { (uop U_spread $1 $2) }
- /*(* sgrep-ext: *)*/
- | T_DOTS { Flag_parsing.sgrep_guard (Ellipses $1) }
 
 /*(*----------------------------*)*/
 /*(*2 XHP embeded html *)*/

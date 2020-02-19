@@ -63,6 +63,8 @@ let fix_tokens_asi xs =
       | LDDD _
       ) as x) ::((TCommentNewline ii | EOF ii) as y)::xs ->
           (match x, y, !Flag_parsing.sgrep_mode with
+          (* do NOT ASI *)
+
           (* sgrep-ext: only in sgrep-mode *)
           | LDDD _, _, false
           (* sgrep-ext: we don't want $X==$X to be transformed
@@ -70,10 +72,10 @@ let fix_tokens_asi xs =
            *)
           | _, EOF _, true
            ->
-          (* do NOT ASI *)
             x::y::aux env xs
-          | _ ->
+
           (* otherwise do ASI *)
+          | _ ->
           let iifake = Parse_info.rewrap_str "FAKE ';'" ii in
           (* implicit semicolon insertion *)
           x::LSEMICOLON iifake::y::aux env xs

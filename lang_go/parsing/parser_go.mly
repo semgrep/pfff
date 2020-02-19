@@ -256,10 +256,15 @@ file: package imports xdcl_list EOF
 
 package: LPACKAGE sym LSEMICOLON { $1, $2 }
 
+/*(* Go does some ASI so we do not need like in Java to use stmt_no_dots
+   * to allow '...' without trailing semicolon and avoid ambiguities.
+   *)*/
 sgrep_spatch_pattern: 
- | expr EOF       { E $1 }
+ | expr         EOF       { E $1 }
+ /*(* should be stmt_no_simple_stmt to remove 1 s/r conflict *)*/
  | stmt EOF       { S $1 }
- | stmt LSEMICOLON stmt LSEMICOLON stmt_list EOF { Ss ($1::$3::List.rev $5) }
+ | stmt LSEMICOLON stmt LSEMICOLON stmt_list EOF 
+    { Ss ($1::$3::List.rev $5) }
 
 /*(*************************************************************************)*/
 /*(*1 Import *)*/
@@ -338,8 +343,6 @@ stmt:
 | compound_stmt   { $1 }
 | common_dcl      { DeclStmts $1 }
 | non_dcl_stmt    { $1 }
- /*(* sgrep-ext: *)*/
-| LDDD  { Flag_parsing.sgrep_guard (SimpleStmt (ExprStmt (Ellipsis $1)))}
 
 compound_stmt: LBRACE stmt_list RBRACE { Block (List.rev $2) }
 
@@ -495,6 +498,9 @@ expr:
 /*(* old: was in expression, to give better error message, but better here *)*/
 |   expr LCOMM expr    { Send ($1, $2, $3) }
 
+ /*(* sgrep-ext: *)*/
+ | LDDD { Flag_parsing.sgrep_guard (Ellipsis $1) }
+
 uexpr:
 |   pexpr { $1 }
 
@@ -589,8 +595,6 @@ pseudocall:
 
 argument: 
  | expr_or_type { $1 }
- /*(* sgrep-ext: *)*/
- | LDDD { Flag_parsing.sgrep_guard (Left (Ellipsis $1)) }
 
 
 
@@ -731,8 +735,11 @@ fnret_type:
 
 
 othertype:
-|   LBRACKET oexpr RBRACKET ntype 
-      { match $2 with None -> TSlice $4 | Some e -> TArray (e, $4) }
+|   LBRACKET oexpr_no_dots RBRACKET ntype 
+      { match $2 with 
+        | None -> TSlice $4 
+        | Some e -> TArray (e, $4) 
+      }
 |   LBRACKET LDDD RBRACKET ntype  
       { TArrayEllipsis ($2, $4) }
 
@@ -743,6 +750,33 @@ othertype:
 
 |   structtype    { $1 }
 |   interfacetype { $1 }
+
+oexpr_no_dots:
+|/*(*empty*)*/ { None }
+|   expr_no_dots       { Some $1 }
+expr_no_dots:
+|   uexpr              { $1 }
+|   expr LOROR expr    { mk_bin $1 Or $2 $3 }
+|   expr LANDAND expr  { mk_bin $1 And $2 $3 }
+|   expr LEQEQ expr    { mk_bin $1 Eq $2 $3 }
+|   expr LNE expr      { mk_bin $1 NotEq $2 $3 }
+|   expr LLT expr      { mk_bin $1 Lt $2 $3 }
+|   expr LLE expr      { mk_bin $1 LtE $2 $3 }
+|   expr LGE expr      { mk_bin $1 GtE $2 $3 }
+|   expr LGT expr      { mk_bin $1 Gt $2 $3 }
+|   expr LPLUS expr    { mk_bin $1 Plus $2 $3 }
+|   expr LMINUS expr   { mk_bin $1 Minus $2 $3 }
+|   expr LPIPE expr    { mk_bin $1 BitOr $2 $3 }
+|   expr LHAT expr     { mk_bin $1 BitXor $2 $3 }
+|   expr LMULT expr    { mk_bin $1 Mult $2 $3 }
+|   expr LDIV expr     { mk_bin $1 Div $2 $3 }
+|   expr LPERCENT expr { mk_bin $1 Mod $2 $3 }
+|   expr LAND expr     { mk_bin $1 BitAnd $2 $3 }
+|   expr LANDNOT expr  { mk_bin $1 BitNot (* BitAndNot aka BitClear *) $2 $3 }
+|   expr LLSH expr     { mk_bin $1 LSL $2 $3 }
+|   expr LRSH expr     { mk_bin $1 LSR $2 $3 }
+|   expr LCOMM expr    { Send ($1, $2, $3) }
+
 
 
 dotdotdot:
