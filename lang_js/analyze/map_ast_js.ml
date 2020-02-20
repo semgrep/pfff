@@ -235,10 +235,11 @@ and map_for_header =
       and v2 = map_expr v2
       and v3 = map_expr v3
       in ForClassic ((v1, v2, v3))
-  | ForIn ((v1, v2)) ->
+  | ForIn ((v1, t, v2)) ->
+      let t = map_tok t in
       let v1 = Ocaml.map_of_either map_var map_expr v1
       and v2 = map_expr v2
-      in ForIn ((v1, v2))
+      in ForIn ((v1, t, v2))
 and map_case =
   function
   | Case ((t, v1, v2)) ->

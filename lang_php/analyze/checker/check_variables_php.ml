@@ -491,7 +491,7 @@ and stmt env = function
       exprl env (es1 @ es2 @ es3);
       stmtl env xs
 
-  | Foreach (_, e1, pattern, xs) ->
+  | Foreach (_, e1, _, pattern, xs) ->
       expr env e1;
       foreach_pattern env pattern;
       stmtl env xs

@@ -252,7 +252,7 @@ and for_header =
          G.ForClassic ([G.ForInitExpr e], Some v2, Some v3)
       )
       
-  | ForIn ((v1, v2)) ->
+  | ForIn ((v1, t, v2)) ->
       let v2 = expr v2 in
       let pattern = 
         match v1 with
@@ -262,7 +262,7 @@ and for_header =
             let e = expr e in
             G.expr_to_pattern e
       in
-      G.ForEach (pattern, v2)
+      G.ForEach (pattern, t, v2)
 
 and case =
   function

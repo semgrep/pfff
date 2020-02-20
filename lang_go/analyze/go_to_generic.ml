@@ -397,17 +397,17 @@ and stmt =
       let opt =  option 
           (fun (v1, v2) -> let v1 = list expr v1 and v2 = tok v2 in 
             v1, v2) v1
-      and _v2 = tok v2
+      and v2 = tok v2
       and v3 = expr v3
       and v4 = stmt v4
       in 
       (match opt with
       | None -> 
          let pattern = G.PatUnderscore (fake "_") in
-         G.For (t, G.ForEach (pattern, v3), v4)
+         G.For (t, G.ForEach (pattern, v2, v3), v4)
       | Some (xs, _tokEqOrColonEqTODO) -> 
           let pattern = G.PatTuple (xs |> List.map G.expr_to_pattern) in
-          G.For (t, G.ForEach (pattern, v3), v4)
+          G.For (t, G.ForEach (pattern, v2, v3), v4)
       )
   | Return ((v1, v2)) ->
       let v1 = tok v1 and v2 = option (list expr) v2 in

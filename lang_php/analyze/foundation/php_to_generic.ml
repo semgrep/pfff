@@ -133,12 +133,12 @@ let rec stmt_aux =
           list_expr_to_opt v3),
         G.stmt1 v4)]
           
-  | Foreach ((t, v1, v2, v3)) ->
+  | Foreach ((t, v1, t2, v2, v3)) ->
       let v1 = expr v1
       and v2 = foreach_pattern v2
       and v3 = list stmt v3
       in 
-      [G.For (t, G.ForEach (v2, v1), G.stmt1 v3)]
+      [G.For (t, G.ForEach (v2, t2, v1), G.stmt1 v3)]
   | Return (t, v1) -> let v1 = option expr v1 in 
       [G.Return (t, v1)]
   | Break (t, v1) -> 

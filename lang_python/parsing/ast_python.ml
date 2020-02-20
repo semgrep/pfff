@@ -280,7 +280,7 @@ type stmt =
   | AugAssign of expr (* target *) * operator wrap (* op *) * expr (* value *)
 
   | For of tok * pattern (* (pattern) introduce new vars *) * 
-           expr (* 'in' iter *) * 
+           tok * expr (* 'in' iter *) * 
            stmt list (* body *) * stmt list (* orelse *)
   | While of tok * expr (* test *) * stmt list (* body *) * 
              stmt list (* orelse *)

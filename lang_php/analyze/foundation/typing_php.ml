@@ -269,7 +269,7 @@ and stmt env= function
   | Switch (_, e, cl) ->
       let t = expr env e in
       casel env t cl
-  | Foreach (_, e1, pat, stl) ->
+  | Foreach (_, e1, _, pat, stl) ->
       let a = expr env e1 in
       let a' =
         match pat with

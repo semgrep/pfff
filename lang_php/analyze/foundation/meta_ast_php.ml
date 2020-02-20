@@ -60,12 +60,13 @@ and vof_stmt =
       let v1 = vof_expr v1
       and v2 = Ocaml.vof_list vof_case v2
       in Ocaml.VSum (("Switch", [ t; v1; v2 ]))
-  | Foreach ((t, v1, v2, v3)) ->
+  | Foreach ((t, v1, t2, v2, v3)) ->
       let t = vof_tok t in
+      let t2 = vof_tok t2 in
       let v1 = vof_expr v1
       and v2 = vof_pattern v2
       and v3 = Ocaml.vof_list vof_stmt v3
-      in Ocaml.VSum (("Foreach", [ t; v1; v2; v3 ]))
+      in Ocaml.VSum (("Foreach", [ t; v1; t2; v2; v3 ]))
   | Return (t, v1) ->
       let t = vof_tok t in
       let v1 = Ocaml.vof_option vof_expr v1

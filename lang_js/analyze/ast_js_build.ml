@@ -346,7 +346,7 @@ and stmt env = function
      let e3 = expr_opt env e3opt in
      let st = stmt1 env st in
      [A.For (t, A.ForClassic (e1, e2, e3), st)]
-  | C.ForIn (t, _, lhs_var, _, e2, _, st) ->
+  | C.ForIn (t, _, lhs_var, tin, e2, _, st) ->
     let e1 =
       match lhs_var with
       | C.LHS2 e -> Right (expr env e)
@@ -359,7 +359,7 @@ and stmt env = function
     in 
     let e2 = expr env e2 in
     let st = stmt1 env st in
-    [A.For (t, A.ForIn (e1, e2), st)]
+    [A.For (t, A.ForIn (e1, tin, e2), st)]
   | C.ForOf (_tTODO, _, lhs_var, tokof, e2, _, st) ->
     (try 
       Transpile_js.forof (lhs_var, tokof, e2, st) 

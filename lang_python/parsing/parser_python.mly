@@ -531,9 +531,9 @@ while_stmt:
 
 for_stmt:
   | FOR exprlist IN testlist COLON suite
-      { For ($1, tuple_expr_store $2, tuple_expr $4, $6, []) }
+      { For ($1, tuple_expr_store $2, $3, tuple_expr $4, $6, []) }
   | FOR exprlist IN testlist COLON suite ELSE COLON suite
-      { For ($1, tuple_expr_store $2, tuple_expr $4, $6, $9) }
+      { For ($1, tuple_expr_store $2, $3, tuple_expr $4, $6, $9) }
 
 
 try_stmt:

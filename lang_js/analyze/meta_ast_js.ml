@@ -195,10 +195,11 @@ and vof_for_header =
       and v2 = vof_expr v2
       and v3 = vof_expr v3
       in Ocaml.VSum (("ForClassic", [ v1; v2; v3 ]))
-  | ForIn ((v1, v2)) ->
+  | ForIn ((v1, t, v2)) ->
+      let t = vof_tok t in
       let v1 = Ocaml.vof_either vof_var vof_expr v1
       and v2 = vof_expr v2
-      in Ocaml.VSum (("ForIn", [ v1; v2 ]))
+      in Ocaml.VSum (("ForIn", [ v1; t; v2 ]))
 and vof_case =
   function
   | Case ((t, v1, v2)) ->

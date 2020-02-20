@@ -199,11 +199,11 @@ and stmt env st acc =
       let e = expr env e in
       let scl = switch_case_list env scl in
       A.Switch (tok, e, scl) :: acc
-  | Foreach (tok, _, e, _awaitTodo, _, pat, _, cst) ->
+  | Foreach (tok, _, e, _awaitTodo, tas, pat, _, cst) ->
       let e = expr env e in
       let pat = foreach_pattern env pat in
       let cst = colon_stmt env cst in
-      A.Foreach (tok, e, pat, cst) :: acc
+      A.Foreach (tok, e, tas, pat, cst) :: acc
   | Break (tok, e, _) -> A.Break (tok, opt expr env e) :: acc
   | Continue (tok, eopt, _) -> A.Continue (tok, opt expr env eopt) :: acc
   | Return (tok, eopt, _) -> A.Return (tok, opt expr env eopt) :: acc

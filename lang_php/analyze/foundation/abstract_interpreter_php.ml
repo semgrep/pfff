@@ -393,7 +393,7 @@ and stmt env heap x =
       let heap = List.fold_left (case env) heap cl in
       heap
   (* todo: explain *)
-  | Foreach (_, a, pattern, stl) ->
+  | Foreach (_, a, _, pattern, stl) ->
      let heap, a = expr env heap a in
      (match pattern with
       | Var _ ->

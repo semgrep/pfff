@@ -196,7 +196,8 @@ and v_for_header =
       and v2 = v_expr v2
       and v3 = v_expr v3
       in ()
-  | ForIn ((v1, v2)) ->
+  | ForIn ((v1, t, v2)) ->
+      let t = v_tok t in
       let v1 = v_either v_var v_expr v1 and v2 = v_expr v2 in ()
 
 and v_case =

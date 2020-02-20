@@ -436,13 +436,13 @@ and stmt_aux x =
               G.OtherStmt (G.OS_WhileOrElse, v3 |> List.map (fun x -> G.S x))]]
       )
             
-  | For ((t, v1, v2, v3, v4)) ->
+  | For ((t, v1, t2, v2, v3, v4)) ->
       let foreach = pattern v1
       and ins = expr v2
       and body = list_stmt1 v3
       and orelse = list stmt v4
       in
-      let header = G.ForEach (foreach, ins) in
+      let header = G.ForEach (foreach, t2, ins) in
       (match orelse with
       | [] -> [G.For (t, header, body)]
       | _ -> [G.Block [

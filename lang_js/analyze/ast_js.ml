@@ -222,7 +222,7 @@ and stmt =
   (* less: could use some Special instead? *)
   and for_header = 
    | ForClassic of vars_or_expr * expr * expr
-   | ForIn of var_or_expr * expr
+   | ForIn of var_or_expr * tok * expr
 
     (* the expr is usually just an assign *)
     and vars_or_expr = (var list, expr) Common.either

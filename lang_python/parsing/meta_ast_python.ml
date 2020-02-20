@@ -292,13 +292,14 @@ let rec vof_stmt =
       and v2 = vof_wrap vof_operator v2
       and v3 = vof_expr v3
       in Ocaml.VSum (("AugAssign", [ v1; v2; v3 ]))
-  | For ((t, v1, v2, v3, v4)) ->
+  | For ((t, v1, t2, v2, v3, v4)) ->
       let t = vof_tok t in
-      let v1 = vof_pattern v1
+      let v1 = vof_pattern v1 in
+      let t2 = vof_tok t2
       and v2 = vof_expr v2
       and v3 = Ocaml.vof_list vof_stmt v3
       and v4 = Ocaml.vof_list vof_stmt v4
-      in Ocaml.VSum (("For", [ t; v1; v2; v3; v4 ]))
+      in Ocaml.VSum (("For", [ t; v1; t2; v2; v3; v4 ]))
   | While ((t, v1, v2, v3)) ->
       let t = vof_tok t in
       let v1 = vof_expr v1

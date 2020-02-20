@@ -60,7 +60,7 @@ module Deps = struct
         let acc = exprl acc el3 in
         stmtl acc stl
     | Switch (_, e, cl) -> casel (expr acc e) cl
-    | Foreach (_, e1, e2, stl) ->
+    | Foreach (_, e1, _, e2, stl) ->
         let acc = expr acc e1 in
         let acc = expr acc e2 in
         stmtl acc stl

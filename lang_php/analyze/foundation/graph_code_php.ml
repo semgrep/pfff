@@ -725,7 +725,7 @@ and stmt_bis env x =
   | For (_, es1, es2, es3, xs) ->
       exprl env (es1 @ es2 @ es3);
       stmtl env xs
-  | Foreach (_, e1, e2, xs) ->
+  | Foreach (_, e1, _, e2, xs) ->
       exprl env [e1;e2];
       stmtl env xs;
   | Return (_, eopt)  | Break (_, eopt) | Continue (_, eopt) ->

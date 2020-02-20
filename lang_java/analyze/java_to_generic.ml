@@ -378,7 +378,7 @@ and for_control tok =
         | Some t -> G.PatVar (t, Some (ent.G.name, G.empty_id_info ()))
         | None -> error tok "TODO: Catch without type"
       in
-      G.ForEach (pat, v2)
+      G.ForEach (pat, G.fake "in", v2)
 
 and for_init =
   function

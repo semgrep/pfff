@@ -424,7 +424,7 @@ and stmt =
   | While   of tok * expr * stmt
   | DoWhile of tok * stmt * expr
   (* newscope: *)
-  | For of tok * for_header * stmt
+  | For of tok (* 'for', 'foreach'*) * for_header * stmt
 
   (* The expr can be None for Go.
    * less: could be merged with ExprStmt (MatchPattern ...) *)
@@ -484,7 +484,9 @@ and stmt =
                     expr option (* cond *) * 
                     expr option (* next *)
     (* newvar: *)
-    | ForEach of pattern * (* TODO tok *) expr (* pattern 'in' expr *)
+    | ForEach of pattern * 
+                 tok (* 'in' Python, 'range' Go, 'as' PHP, '' Java *) * 
+                 expr (* pattern 'in' expr *)
 
     and for_var_or_expr = 
     (* newvar: *)

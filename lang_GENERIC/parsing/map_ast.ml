@@ -470,8 +470,9 @@ and map_for_header =
       and v2 = map_of_option map_expr v2
       and v3 = map_of_option map_expr v3
       in ForClassic ((v1, v2, v3))
-  | ForEach ((v1, v2)) ->
-      let v1 = map_pattern v1 and v2 = map_expr v2 in ForEach ((v1, v2))
+  | ForEach ((v1, t, v2)) ->
+      let t = map_tok t in
+      let v1 = map_pattern v1 and v2 = map_expr v2 in ForEach ((v1, t, v2))
 
 and map_for_var_or_expr =
   function

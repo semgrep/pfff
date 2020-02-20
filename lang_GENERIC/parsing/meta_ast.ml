@@ -590,10 +590,11 @@ and vof_for_header =
       and v2 = Ocaml.vof_option vof_expr v2
       and v3 = Ocaml.vof_option vof_expr v3
       in Ocaml.VSum (("ForClassic", [ v1; v2; v3 ]))
-  | ForEach ((v1, v2)) ->
+  | ForEach ((v1, t, v2)) ->
+      let t = vof_tok t in
       let v1 = vof_pattern v1
       and v2 = vof_expr v2
-      in Ocaml.VSum (("ForEach", [ v1; v2 ]))
+      in Ocaml.VSum (("ForEach", [ v1; t; v2 ]))
 and vof_for_var_or_expr =
   function
   | ForInitVar ((v1, v2)) ->
