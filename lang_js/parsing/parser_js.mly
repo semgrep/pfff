@@ -254,8 +254,12 @@ declaration:
 
 sgrep_spatch_pattern:
  | assignment_expression_no_statement EOF      { Expr $1 }
- | statement_no_dots EOF                               { Stmt $1 }
- | statement_no_dots statement_sgrep_list EOF                { Stmts ($1::$2) }
+ | item_no_dots EOF                            { Item $1 }
+ | item_no_dots statement_sgrep_list EOF       { Items ($1::$2) }
+
+item_no_dots:
+ | statement_no_dots { St $1 }
+ | declaration { $1 }
 
 /*(* coupling: copy paste of statement, without dots *)*/
 statement_no_dots:
@@ -275,7 +279,8 @@ statement_no_dots:
  | try_statement        { $1 }
 
 statement_sgrep:
- | statement { $1 }
+ | statement { St $1 }
+ | declaration  { $1 }
 
 statement_sgrep_list:
  | statement_sgrep { [$1] }
@@ -539,6 +544,8 @@ formal_parameter:
  | T_DOTS identifier annotation
      { ParamClassic { (mk_param $2) 
                       with p_dots = Some $1; p_type = Some $3; } }
+ /*(* sgrep-ext: *)*/
+ | T_DOTS         { Flag_parsing.sgrep_guard (ParamEllipsis $1) }
 
 
 /*(*----------------------------*)*/
@@ -905,7 +912,7 @@ statement:
  | throw_statement      { $1 }
  | try_statement        { $1 }
  /*(* sgrep-ext: *)*/
- | T_DOTS { ExprStmt (Ellipses $1, None) }
+ | T_DOTS { ExprStmt (Ellipsis $1, None) }
 
 block:
  | T_LCURLY statement_list T_RCURLY { Block ($1, $2, $3) }
@@ -1049,7 +1056,7 @@ assignment_expression:
  | left_hand_side_expression T_AS type_ { $1 (* TODO $2 $3 *) }
 
  /*(* sgrep-ext: can't move in primary_expr, get s/r conflicts *)*/
- | T_DOTS { Flag_parsing.sgrep_guard (Ellipses $1) }
+ | T_DOTS { Flag_parsing.sgrep_guard (Ellipsis $1) }
 
 assignment_operator:
  | T_ASSIGN         { A_eq , $1 }

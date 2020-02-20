@@ -564,7 +564,7 @@ and expr env e =
 
   | Conditional (e1, e2, e3) ->
     List.iter (expr env) [e1;e2;e3]
-  | Ellipses _ -> ()
+  | Ellipsis _ -> ()
 
 (* ---------------------------------------------------------------------- *)
 (* Entities *)
@@ -593,7 +593,10 @@ and property_name env = function
 and fun_ env f = 
   (* less: need fold_with_env here? can not use previous param in p_default? *)
   parameters env f.f_params;
-  let params = f.f_params |> List.map (fun p -> s_of_n p.p_name) in
+  let params = f.f_params |> Common.map_filter (function
+        | ParamClassic p -> Some (s_of_n p.p_name)
+        | ParamEllipsis _ -> None
+  ) in
   let env = { env with 
         locals = params @ env.locals; 
         (* new scope, but still inherits enclosing vars *)
@@ -602,8 +605,10 @@ and fun_ env f =
   stmt env f.f_body
 
 and parameters env xs = List.iter (parameter env) xs
-and parameter env p =
-  Common.opt (expr env) p.p_default  
+and parameter env = function
+  | ParamEllipsis _ -> ()
+  | ParamClassic p -> 
+      Common.opt (expr env) p.p_default  
 
 (*****************************************************************************)
 (* Main entry point *)

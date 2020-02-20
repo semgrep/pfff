@@ -178,7 +178,7 @@ type expr =
    | Encaps of name option * tok (* ` *) * encaps list * tok (* ` *)
  
    (* sgrep-ext: *)
-   | Ellipses of tok
+   | Ellipsis of tok
 
    (* facebook-ext: *)
    | XhpHtml of xhp_html
@@ -420,6 +420,8 @@ and func_decl = {
   and parameter_binding =
    | ParamClassic of parameter
    | ParamPattern of parameter_pattern
+   (* sgrep-ext: *)
+   | ParamEllipsis of tok
 
   and parameter = {
    p_name: name;
@@ -628,6 +630,7 @@ type any =
   | Stmts of stmt list
   | Pattern of pattern
   | Item of item
+  | Items of item list
   | Program of program
  (* with tarzan *)
 

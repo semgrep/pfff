@@ -190,7 +190,7 @@ and expr =
   | Conditional of expr * expr * expr
 
   (* sgrep-ext: *)
-  | Ellipses of tok
+  | Ellipsis of tok
 
 (* ------------------------------------------------------------------------- *)
 (* Statements *)
@@ -248,9 +248,12 @@ and var = {
 
 and fun_ = {
   f_props: fun_prop wrap list;
-  f_params: parameter list;
+  f_params: parameter_binding list;
   f_body: stmt;
 }
+  and parameter_binding =
+   | ParamClassic of parameter
+   | ParamEllipsis of tok
   and parameter = {
     p_name: name;
     p_default: expr option;

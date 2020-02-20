@@ -82,7 +82,7 @@ and v_expr (x: expr) =
   let k x =  match x with
   | L v1 -> let v1 = v_litteral v1 in ()
   | V v1 -> let v1 = v_name v1 in ()
-  | Ellipses v1 -> let v1 = v_tok v1 in ()
+  | Ellipsis v1 -> let v1 = v_tok v1 in ()
   | This v1 -> let v1 = v_tok v1 in ()
   | Super v1 -> let v1 = v_tok v1 in ()
   | NewTarget ((v1, v2, v3)) ->
@@ -490,6 +490,7 @@ and v_parameter_binding =
   function
   | ParamClassic v1 -> let v1 = v_parameter v1 in ()
   | ParamPattern v1 -> let v1 = v_parameter_pattern v1 in ()
+  | ParamEllipsis v1 -> let v1 = v_tok v1 in ()
 and
   v_parameter_pattern {
                         ppat = v_ppat;
@@ -712,6 +713,7 @@ and v_any =  function
   | Stmts v1 -> let v1 = v_list v_st v1 in ()
   | Pattern v1 -> let v1 = v_pattern v1 in ()
   | Item v1 -> let v1 = v_item v1 in ()
+  | Items v1 -> let v1 = v_list v_item v1 in ()
   | Program v1 -> let v1 = v_program v1 in ()
 
 and all_functions x = v_any x
