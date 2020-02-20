@@ -155,7 +155,7 @@ and expr (x: expr) =
   | ArrAccess ((v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in 
       G.ArrayAccess (v1, v2)
   | Obj v1 -> let flds = obj_ v1 in G.Record flds
-  | Ellipses v1 -> let v1 = info v1 in G.Ellipsis v1
+  | Ellipsis v1 -> let v1 = info v1 in G.Ellipsis v1
   | Class (v1, _v2TODO) -> 
       let def, _more_attrsTODOEMPTY  = class_ v1 in
       G.AnonClass def
@@ -308,9 +308,13 @@ and var_kind (x, tok) =
 
 and fun_ { f_props = f_props; f_params = f_params; f_body = f_body } =
   let v1 = list fun_prop f_props in
-  let v2 = list parameter f_params in 
+  let v2 = list parameter_binding f_params in 
   let v3 = stmt f_body in
   { G.fparams = v2; frettype = None; fbody = v3; }, v1
+
+and parameter_binding = function
+ | ParamClassic x -> G.ParamClassic (parameter x)
+ | ParamEllipsis x -> G.ParamEllipsis x
 
 and parameter x =
  match x with
@@ -318,7 +322,7 @@ and parameter x =
   let v1 = name p_name in
   let v2 = option expr p_default in 
   let v3 = bool p_dots in
-  G.ParamClassic { 
+   { 
     G.pname = Some v1; pdefault = v2; ptype = None;
     pattrs = (match v3 with None -> [] | Some tok -> [G.attr G.Variadic tok]);
     pinfo = G.empty_id_info ();

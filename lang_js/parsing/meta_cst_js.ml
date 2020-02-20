@@ -66,7 +66,7 @@ let rec vof_expr =
   function
   | L v1 -> let v1 = vof_litteral v1 in Ocaml.VSum (("L", [ v1 ]))
   | V v1 -> let v1 = vof_name v1 in Ocaml.VSum (("V", [ v1 ]))
-  | Ellipses v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Ellipses", [ v1 ]))
+  | Ellipsis v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Ellipsis", [ v1 ]))
   | This v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("This", [ v1 ]))
   | Super v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Super", [ v1 ]))
   | NewTarget ((v1, v2, v3)) ->
@@ -586,6 +586,8 @@ and vof_parameter_binding =
   | ParamPattern v1 ->
       let v1 = vof_parameter_pattern v1
       in Ocaml.VSum (("ParamPattern", [ v1 ]))
+  | ParamEllipsis v1 ->
+      let v1 = vof_tok v1 in Ocaml.VSum (("ParamEllipsis", [ v1 ]))
 
 and
   vof_parameter_pattern {
@@ -946,6 +948,7 @@ let vof_any_orig =
   | Stmt v1 -> let v1 = vof_st v1 in Ocaml.VSum (("Stmt", [ v1 ]))
   | Stmts v1 -> let v1 = Ocaml.vof_list vof_st v1 in Ocaml.VSum (("Stmts", [ v1 ]))
   | Item v1 -> let v1 = vof_item v1 in Ocaml.VSum (("Item",[v1 ]))
+  | Items v1 -> let v1 = Ocaml.vof_list vof_item v1 in Ocaml.VSum (("Items",[v1 ]))
   | Pattern v1 -> let v1 = vof_pattern v1 in Ocaml.VSum (("Pattern",[v1 ]))
   | Program v1 -> let v1 = vof_program_orig v1 in Ocaml.VSum (("Program",[v1]))
 

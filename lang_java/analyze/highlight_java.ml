@@ -76,7 +76,9 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
           let var = x.m_var in
           let ident = var.name in
           tag_ident ident (Entity (Method, (Def2 fake_no_def2)));
-          x.m_formals |> List.iter (fun v ->
+          x.m_formals |> List.iter (function
+            | Ast.ParamEllipsis _  -> ()
+            | Ast.ParamClassic v ->
             let ident = v.name in
             tag_ident ident (Parameter Def)
           )

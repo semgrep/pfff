@@ -146,7 +146,7 @@ and map_expr =
       let v1 = map_expr v1 and v2 = map_tok v2 and v3 = map_expr v3 in
       Assign ((v1, v2, v3))
   | Obj v1 -> let v1 = map_obj_ v1 in Obj ((v1))
-  | Ellipses v1 -> let v1 = map_tok v1 in Ellipses ((v1))
+  | Ellipsis v1 -> let v1 = map_tok v1 in Ellipsis ((v1))
   | Class (v1, v2) -> 
     let v1 = map_class_ v1 in
     let v2 = map_option map_name v2 in
@@ -267,9 +267,15 @@ and
   map_fun_ { f_props = v_f_props; f_params = v_f_params; f_body = v_f_body }
            =
   let v_f_body = map_stmt v_f_body in
-  let v_f_params = map_of_list map_parameter v_f_params in
+  let v_f_params = map_of_list map_parameter_binding v_f_params in
   let v_f_props = map_of_list (map_wrap map_fun_prop) v_f_props in 
   { f_props = v_f_props; f_params = v_f_params; f_body = v_f_body }
+
+and map_parameter_binding =
+  function
+  | ParamClassic v1 -> let v1 = map_parameter v1 in ParamClassic v1
+  | ParamEllipsis v1 -> let v1 = map_tok v1 in ParamEllipsis v1
+
 and
   map_parameter {
                   p_name = v_p_name;

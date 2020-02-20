@@ -206,7 +206,7 @@ and expr =
   | Lambda of parameters * stmt
 
   (* sgrep-ext: *)
-  | Ellipses of tok
+  | Ellipsis of tok
 
   and literal = 
   | Int of string wrap
@@ -319,7 +319,11 @@ and method_decl = {
   m_body: stmt
 }
 
-  and parameters = parameter list
+  and parameters = parameter_binding list
+    and parameter_binding = 
+     | ParamClassic of parameter
+     (* sgrep-ext: *)
+     | ParamEllipsis of tok
     and parameter = var_definition
 
 and field = var_with_init
@@ -416,6 +420,7 @@ type any =
   | AField of field
   | AClass of class_decl
   | ADecl of decl
+  | ADecls of decls
   | AProgram of program
  (* with tarzan *)
 

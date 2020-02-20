@@ -86,6 +86,7 @@ and v_any x = match x with
   | AExpr e   -> v_expr e
   | AStmt s    -> v_stmt s
   | AStmts s    -> v_list v_stmt s
+  | ADecls s    -> v_list v_decl s
   | ATyp t     -> v_typ t
   | AVar v     -> v_var v
   | AInit i   -> v_init i
@@ -158,7 +159,7 @@ and v_literal =
 
 and v_expr (x : expr) =
   let k x = match x with
-    | Ellipses v1 -> let v1 = v_tok v1 in ()
+    | Ellipsis v1 -> let v1 = v_tok v1 in ()
     | Name v1 -> let v1 = v_name v1 in ()
     | NameOrClassType v1 -> let v1 = v_name_or_class_type v1 in ()
     | Literal v1 -> let v1 = v_literal v1 in ()
@@ -202,7 +203,16 @@ and v_expr (x : expr) =
   in
   vin.kexpr (k, all_functions) x
 
-and v_parameters v = v_vars v
+and v_parameters v = v_list v_parameter_binding v
+
+
+and v_parameter_binding =
+  function
+  | ParamClassic v1 -> let v1 = v_parameter v1 in ()
+  | ParamEllipsis v1 -> let v1 = v_tok v1 in ()
+
+and v_parameter x = v_var x
+
 and v_ref_type v = v_typ v
 and v_arith_op _v = ()
 
@@ -299,7 +309,7 @@ and v_var x =
   in
   vin.kvar (k, all_functions) x
 
-and v_vars v = v_list v_var v
+
 and v_var_with_init { f_var = v_f_var; f_init = v_f_init } =
   let arg = v_var v_f_var in let arg = v_option v_init v_f_init in ()
 and v_init (x : init) =
@@ -316,7 +326,7 @@ and v_method_decl (x : method_decl) =
          m_throws = v_m_throws;
          m_body = v_m_body
       } ->  let arg = v_var v_m_var in
-            let arg = v_vars v_m_formals in
+            let arg = v_parameters v_m_formals in
             let arg = v_list v_qualified_ident v_m_throws in
             let arg = v_stmt v_m_body in ()
   in

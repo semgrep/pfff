@@ -98,7 +98,7 @@ and vof_expr =
       and v2 = vof_expr v2
       in Ocaml.VSum (("ArrAccess", [ v1; v2 ]))
   | Obj v1 -> let v1 = vof_obj_ v1 in Ocaml.VSum (("Obj", [ v1 ]))
-  | Ellipses v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Ellipses", [ v1 ]))
+  | Ellipsis v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Ellipsis", [ v1 ]))
   | Class (v1, v2) -> 
      let v1 = vof_class_ v1 in 
      let v2 = Ocaml.vof_option vof_name v2 in
@@ -239,13 +239,21 @@ and
   let arg = vof_stmt v_f_body in
   let bnd = ("f_body", arg) in
   let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_list vof_parameter v_f_params in
+  let arg = Ocaml.vof_list vof_parameter_binding v_f_params in
   let bnd = ("f_params", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_list (vof_wrap vof_fun_prop) v_f_props in
   let bnd = ("f_props", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
-and
-  vof_parameter {
+
+
+and vof_parameter_binding =
+  function
+  | ParamClassic v1 ->
+      let v1 = vof_parameter v1 in Ocaml.VSum (("ParamClassic", [ v1 ]))
+  | ParamEllipsis v1 ->
+      let v1 = vof_tok v1 in Ocaml.VSum (("ParamEllipsis", [ v1 ]))
+
+and  vof_parameter {
                   p_name = v_p_name;
                   p_default = v_p_default;
                   p_dots = v_p_dots

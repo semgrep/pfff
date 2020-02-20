@@ -130,7 +130,7 @@ and vof_literal =
 
 and vof_expr =
   function
-  | Ellipses v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Ellipses", [ v1 ]))
+  | Ellipsis v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Ellipsis", [ v1 ]))
   | Name v1 -> let v1 = vof_name v1 in Ocaml.VSum (("Name", [ v1 ]))
   | NameOrClassType v1 ->
       let v1 = vof_name_or_class_type v1
@@ -215,7 +215,17 @@ and vof_expr =
       and v2 = vof_stmt v2
       in Ocaml.VSum (("Lambda", [ v1; v2 ]))
 and vof_arguments v = Ocaml.vof_list vof_expr v
-and vof_parameters x = vof_vars x
+and vof_parameters x = Ocaml.vof_list vof_parameter_binding x
+
+and vof_parameter_binding =
+  function
+  | ParamClassic v1 ->
+      let v1 = vof_parameter v1 in Ocaml.VSum (("ParamClassic", [ v1 ]))
+  | ParamEllipsis v1 ->
+      let v1 = vof_tok v1 in Ocaml.VSum (("ParamEllipsis", [ v1 ]))
+
+and vof_parameter x = vof_var x
+
 and vof_op v = vof_wrap Meta_ast_generic_common.vof_incr_decr v
 and vof_stmt =
   function
@@ -331,6 +341,7 @@ and vof_catch (t, v1, v2) =
   let t = vof_tok t in
   let v1 = vof_var v1 and v2 = vof_stmt v2 in Ocaml.VTuple [ t; v1; v2 ]
 and vof_catches v = Ocaml.vof_list vof_catch v
+
 and vof_var { name = v_v_name; mods = v_v_mods; type_ = v_v_type } =
   let bnds = [] in
   let arg = Ocaml.vof_option vof_typ v_v_type in
@@ -342,7 +353,8 @@ and vof_var { name = v_v_name; mods = v_v_mods; type_ = v_v_type } =
   let arg = vof_ident v_v_name in
   let bnd = ("v_name", arg) in let bnds = bnd :: bnds 
   in Ocaml.VDict bnds
-and vof_vars v = Ocaml.vof_list vof_var v
+
+
 and vof_var_with_init { f_var = v_f_var; f_init = v_f_init } =
   let bnds = [] in
   let arg = Ocaml.vof_option vof_init v_f_init in
@@ -370,7 +382,7 @@ and
   let arg = Ocaml.vof_list vof_qualified_ident v_m_throws in
   let bnd = ("m_throws", arg) in
   let bnds = bnd :: bnds in
-  let arg = vof_vars v_m_formals in
+  let arg = vof_parameters v_m_formals in
   let bnd = ("m_formals", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_var v_m_var in
@@ -508,6 +520,8 @@ let vof_any =
   | AStmt v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("AStmt", [ v1 ]))
   | AStmts v1 -> let v1 = Ocaml.vof_list vof_stmt v1 in 
       Ocaml.VSum (("AStmt", [ v1 ]))
+  | ADecls v1 -> let v1 = Ocaml.vof_list vof_decl v1 in 
+      Ocaml.VSum (("ADecls", [ v1 ]))
   | ATyp v1 -> let v1 = vof_typ v1 in Ocaml.VSum (("ATyp", [ v1 ]))
   | AVar v1 -> let v1 = vof_var v1 in Ocaml.VSum (("AVar", [ v1 ]))
   | AInit v1 -> let v1 = vof_init v1 in Ocaml.VSum (("AInit", [ v1 ]))

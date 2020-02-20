@@ -124,7 +124,7 @@ and v_expr (x: expr) =
         let v1 = v_expr v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()
   | ArrAccess ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_expr v2 in ()
   | Obj v1 -> let v1 = v_obj_ v1 in ()
-  | Ellipses v1 -> let v1 = v_tok v1 in ()
+  | Ellipsis v1 -> let v1 = v_tok v1 in ()
   | Class (v1, v2) -> let v1 = v_class_ v1 in let v2 = v_option v_name v2 in ()
   | ObjAccess ((v1, t, v2)) ->
       let v1 = v_expr v1 and v2 = v_property_name v2 in
@@ -222,7 +222,12 @@ and v_var_kind = function | Var -> () | Let -> () | Const -> ()
 
 and v_fun_ { f_props = v_f_props; f_params = v_f_params; f_body = v_f_body } =
   let arg = v_list (v_wrap v_fun_prop) v_f_props in
-  let arg = v_list v_parameter v_f_params in let arg = v_stmt v_f_body in ()
+  let arg = v_list v_parameter_binding v_f_params in let arg = v_stmt v_f_body in ()
+
+and v_parameter_binding =
+  function
+  | ParamClassic v1 -> let v1 = v_parameter v1 in ()
+  | ParamEllipsis v1 -> let v1 = v_tok v1 in ()
 
 and v_parameter x =
  let k x = 

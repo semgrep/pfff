@@ -104,9 +104,11 @@ let add_locals env vs =
   { env with locals = locals @ env.locals } 
 
 let add_params env ps = 
-  let params = ps |> List.map (fun p ->
+  let params = ps |> Common.map_filter (function
+   | A.ParamEllipsis _ -> None
+   | A.ParamClassic p ->
     let s = s_of_n p.A.p_name in
-    s, A.Param
+    Some (s, A.Param)
   ) in
   { env with locals = params @ env.locals } 
 
@@ -559,8 +561,8 @@ and expr env = function
   | C.XhpHtml x -> Transpile_js.xhp (expr env) x
   | C.Paren x ->
      expr env (C.unparen x)
-  | C.Ellipses x ->
-     A.Ellipses x
+  | C.Ellipsis x ->
+     A.Ellipsis x
 
 and expr_opt env = function
   | None -> A.Nop
@@ -684,7 +686,8 @@ and func_props _env kind props =
    ))
 
 and parameter_binding env idx = function
- | C.ParamClassic p -> parameter env p, []
+ | C.ParamClassic p -> A.ParamClassic (parameter env p), []
+ | C.ParamEllipsis t -> A.ParamEllipsis t, []
  | C.ParamPattern x -> 
      let tok = (C.Pattern x.C.ppat) |> Lib_parsing_js.ii_of_any |> List.hd in
      let intermediate = spf "!arg%d!" idx, tok in
@@ -703,7 +706,7 @@ and parameter_binding env idx = function
                  } 
          in
          let p = parameter env p in
-         p, vars |> List.map (fun x -> A.VarDecl x)
+         A.ParamClassic p, vars |> List.map (fun x -> A.VarDecl x)
      with Failure s ->
        raise (TodoConstruct(spf "ParamPattern:%s" s, tok))
      )
@@ -835,6 +838,7 @@ let any x =
   | C.Expr x -> A.Expr (expr env x)
   | C.Stmt x -> A.Stmt (stmt1 env x)
   | C.Stmts x -> A.Stmts (List.map (stmt1 env) x)
+  | C.Items x -> A.Stmts (stmt_item_list env x)
   | C.Pattern _x -> raise Todo
-  | C.Item _x -> raise Todo
+  | C.Item x -> A.Stmt (stmt1_item_list env [x])
   | C.Program _x -> raise Todo

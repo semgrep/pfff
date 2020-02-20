@@ -78,7 +78,7 @@ type var_decl_id =
   | ArrayDecl of var_decl_id
 
 let mk_param_id id = 
-  { mods = []; type_ = None; name = id; }
+  ParamClassic { mods = []; type_ = None; name = id; }
 
 (* Move array dimensions from variable name to type. *)
 let rec canon_var mods t_opt v =
@@ -279,9 +279,14 @@ compilation_unit:
 
 
 sgrep_spatch_pattern:
- | expression        EOF { AExpr $1 }
- | statement_no_dots EOF { AStmt $1 }
- | statement_no_dots statement_sgrep_list EOF { AStmts ($1::$2) }
+ | expression         EOF { AExpr $1 }
+ | item_no_dots       EOF { ADecl $1 }
+ | item_no_dots statement_sgrep_list EOF { ADecls ($1::$2) }
+
+item_no_dots:
+ | statement_no_dots { Init (false, $1) }
+ /*(* TODO: add class_member_declaration, and its method_declaration here,
+    * but many conflicts *)*/
 
 /*(* coupling: copy paste of statement, without dots *)*/
 statement_no_dots:
@@ -293,11 +298,11 @@ statement_no_dots:
  | for_statement  { $1 }
 
 statement_sgrep:
- | block_statement { $1 }
+ | statement { Init (false, $1) }
 
 statement_sgrep_list:
- | statement_sgrep { $1 }
- | statement_sgrep_list statement_sgrep { $1 @ $2 }
+ | statement_sgrep { [$1] }
+ | statement_sgrep_list statement_sgrep { $1 @ [$2] }
 
 
 /*(*************************************************************************)*/
@@ -650,7 +655,7 @@ assignment_expression:
  | conditional_expression  { $1 }
  | assignment              { $1 }
  /*(* sgrep-ext: *)*/
- | DOTS { Flag_parsing.sgrep_guard (Ellipses $1) }
+ | DOTS { Flag_parsing.sgrep_guard (Ellipsis $1) }
 
 
 /*(* javaext: was assignment_expression for rhs, but we want lambdas there*)*/
@@ -692,9 +697,9 @@ lambda_param_list:
 
 lambda_param:
  | variable_modifiers lambda_parameter_type variable_declarator_id 
-    { canon_var $1 $2 $3  }
+    { ParamClassic (canon_var $1 $2 $3)  }
  |                    lambda_parameter_type variable_declarator_id 
-    { canon_var [] $1 $2 }
+    { ParamClassic (canon_var [] $1 $2) }
  | variable_arity_parameter { $1 }
 
 lambda_parameter_type:
@@ -705,9 +710,9 @@ unann_type: type_ { $1 }
 
 variable_arity_parameter: 
  | variable_modifiers unann_type DOTS identifier 
-    { canon_var $1 (Some $2) (IdentDecl $4) }
+    { ParamClassic (canon_var $1 (Some $2) (IdentDecl $4)) }
  |                    unann_type DOTS identifier 
-    { canon_var [] (Some $1) (IdentDecl $3) }
+    { ParamClassic (canon_var [] (Some $1) (IdentDecl $3)) }
 
 /*(* no need %prec LOW_PRIORITY_RULE as in parser_js.mly ?*)*/
 lambda_body:
@@ -753,7 +758,7 @@ statement:
  | while_statement  { $1 }
  | for_statement  { $1 }
  /*(* sgrep-ext: *)*/
- | DOTS { Flag_parsing.sgrep_guard (Expr (Ellipses $1)) }
+ | DOTS { Flag_parsing.sgrep_guard (Expr (Ellipsis $1)) }
 
 statement_without_trailing_substatement:
  | block  { $1 }
@@ -1167,8 +1172,11 @@ explicit_constructor_invocation:
 
 formal_parameters: LP formal_parameter_list_opt RP { $2 }
 
-formal_parameter: variable_modifiers_opt type_ variable_declarator_id_bis
-  { canon_var $1 (Some $2) $3 }
+formal_parameter: 
+ | variable_modifiers_opt type_ variable_declarator_id_bis
+  { ParamClassic (canon_var $1 (Some $2) $3) }
+ /*(* sgrep-ext: *)*/
+ | DOTS { ParamEllipsis $1 }
 
 variable_declarator_id_bis:
  | variable_declarator_id      { $1 }
