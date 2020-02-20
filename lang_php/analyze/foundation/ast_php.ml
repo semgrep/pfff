@@ -412,6 +412,7 @@ and class_def = {
   c_constants: constant_def list;
   c_variables: class_var list;
   c_methods: method_def list;
+  c_braces: unit bracket;
 }
 
 and class_kind =

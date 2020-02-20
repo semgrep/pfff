@@ -143,7 +143,7 @@ and vof_expr =
   | NewClass ((v1, v2, v3)) ->
       let v1 = vof_typ v1
       and v2 = vof_arguments v2
-      and v3 = Ocaml.vof_option vof_decls v3
+      and v3 = Ocaml.vof_option (vof_bracket vof_decls) v3
       in Ocaml.VSum (("NewClass", [ v1; v2; v3 ]))
   | NewArray ((v1, v2, v3, v4)) ->
       let v1 = vof_typ v1
@@ -155,7 +155,7 @@ and vof_expr =
       let v1 = vof_expr v1
       and v2 = vof_ident v2
       and v3 = vof_arguments v3
-      and v4 = Ocaml.vof_option vof_decls v4
+      and v4 = Ocaml.vof_option (vof_bracket vof_decls) v4
       in Ocaml.VSum (("NewQualifiedClass", [ v1; v2; v3; v4 ]))
   | Call ((v1, v2)) ->
       let v1 = vof_expr v1
@@ -423,7 +423,7 @@ and
                    cl_body = v_cl_body
                  } =
   let bnds = [] in
-  let arg = vof_decls v_cl_body in
+  let arg = vof_bracket vof_decls v_cl_body in
   let bnd = ("cl_body", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_list vof_ref_type v_cl_impls in
@@ -458,7 +458,7 @@ and vof_decl =
       let v1 = Ocaml.vof_bool v1
       and v2 = vof_stmt v2
       in Ocaml.VSum (("Init", [ v1; v2 ]))
-and vof_decls v = Ocaml.vof_list vof_decl v
+and vof_decls v = (Ocaml.vof_list vof_decl) v
 
 and vof_import = function
   | ImportAll (t, v1, v2) ->

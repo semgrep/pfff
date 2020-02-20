@@ -447,8 +447,9 @@ and v_pattern x =
   match x with
   | PatRecord v1 ->
       let v1 =
-        v_list
-          (fun (v1, v2) -> let v1 = v_name v1 and v2 = v_pattern v2 in ()) v1
+        v_bracket (v_list
+          (fun (v1, v2) -> let v1 = v_name v1 and v2 = v_pattern v2 in ()))
+          v1
       in ()
   | PatId ((v1, v2)) -> let v1 = v_ident v1 and v2 = v_id_info v2 in ()
   | PatVar ((v1, v2)) ->
@@ -463,7 +464,7 @@ and v_pattern x =
   | PatConstructor ((v1, v2)) ->
       let v1 = v_name v1 and v2 = v_list v_pattern v2 in ()
   | PatTuple v1 -> let v1 = v_list v_pattern v1 in ()
-  | PatList v1 -> let v1 = v_list v_pattern v1 in ()
+  | PatList v1 -> let v1 = v_bracket (v_list v_pattern) v1 in ()
   | PatKeyVal ((v1, v2)) -> let v1 = v_pattern v1 and v2 = v_pattern v2 in ()
   | PatUnderscore v1 -> let v1 = v_tok v1 in ()
   | PatDisj ((v1, v2)) -> let v1 = v_pattern v1 and v2 = v_pattern v2 in ()
@@ -574,7 +575,7 @@ and v_type_definition_kind =
   | OrType v1 ->
       let v1 = v_list v_or_type_element v1
       in ()
-  | AndType v1 -> let v1 = v_list v_field v1 in ()
+  | AndType v1 -> let v1 = v_bracket (v_list v_field) v1 in ()
   | AliasType v1 -> let v1 = v_type_ v1 in ()
   | NewType v1 -> let v1 = v_type_ v1 in ()
   | Exception ((v1, v2)) ->
@@ -605,7 +606,7 @@ and
   let arg = v_class_kind v_ckind in
   let arg = v_list v_type_ v_cextends in
   let arg = v_list v_type_ v_cimplements in
-  let arg = v_list v_field v_cbody in
+  let arg = v_bracket (v_list v_field) v_cbody in
   ()
 and v_class_kind = function | Class -> () | Interface -> () | Trait -> ()
 

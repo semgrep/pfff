@@ -268,7 +268,7 @@ and vof_fun_prop =
 and vof_obj_ v = vof_bracket (Ocaml.vof_list vof_property) v
 and vof_class_ { c_extends = v_c_extends; c_body = v_c_body } =
   let bnds = [] in
-  let arg = Ocaml.vof_list vof_property v_c_body in
+  let arg = vof_bracket (Ocaml.vof_list vof_property) v_c_body in
   let bnd = ("c_body", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_option vof_expr v_c_extends in

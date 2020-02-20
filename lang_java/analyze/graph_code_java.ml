@@ -457,7 +457,7 @@ and class_decl env def =
     import_of_inherited_classes env (full_str, E.Class)
   in
   decls {env with imported_namespace = imports @ env.imported_namespace }
-    def.cl_body
+    (unbracket def.cl_body)
 
 (* Java allow some forms of overloading, so the same method name can be
  * used multiple times.

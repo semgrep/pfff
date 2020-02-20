@@ -336,7 +336,7 @@ and obj_ v = bracket (list property) v
 
 and class_ { c_extends = c_extends; c_body = c_body } =
   let v1 = option expr c_extends in
-  let v2 = list property c_body in 
+  let v2 = bracket (list property) c_body in 
   (* todo: could analyze arg to look for Id *)
   let extends = 
     match v1 with

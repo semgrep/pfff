@@ -655,14 +655,14 @@ and toplevel env x =
           let env = add_node_and_edge_if_defs_mode env (name, E.Type) None in
           hook_def env x;
           (* this is used for InitListExpr *)
-          let fields = flds |> Common.map_filter (function
+          let fields = flds |> unbracket |> Common.map_filter (function
             | { fld_name = Some name; _ } -> Some (Ast.str_of_name name)
             | _ -> None
           )
           in
           Hashtbl.replace env.fields (prefix ^ s) fields;
 
-          flds |> List.iter (fun { fld_name = nameopt; fld_type = t; } ->
+          flds |> unbracket |> List.iter (fun { fld_name = nameopt; fld_type = t; } ->
             nameopt |> Common.do_option (fun name ->
               add_node_and_edge_if_defs_mode env (name, E.Field) (Some t)
               |>ignore;
@@ -671,7 +671,7 @@ and toplevel env x =
         end
       end else begin
         let env = add_node_and_edge_if_defs_mode env (name, E.Type) None in
-        flds |> List.iter (fun { fld_name = nameopt; fld_type = t; } ->
+        flds |> unbracket |> List.iter (fun { fld_name = nameopt; fld_type = t; } ->
           match nameopt with
           | Some name -> 
             let typ = Some t in

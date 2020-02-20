@@ -643,11 +643,11 @@ and vof_pattern =
       let v1 = vof_type_ v1 in Ocaml.VSum (("PatType", [ v1 ]))
   | PatRecord v1 ->
       let v1 =
-        Ocaml.vof_list
+        vof_bracket (Ocaml.vof_list
           (fun (v1, v2) ->
              let v1 = vof_name v1
              and v2 = vof_pattern v2
-             in Ocaml.VTuple [ v1; v2 ])
+             in Ocaml.VTuple [ v1; v2 ]))
           v1
       in Ocaml.VSum (("PatRecord", [ v1 ]))
   | PatConstructor ((v1, v2)) ->
@@ -671,7 +671,7 @@ and vof_pattern =
       let v1 = Ocaml.vof_list vof_pattern v1
       in Ocaml.VSum (("PatTuple", [ v1 ]))
   | PatList v1 ->
-      let v1 = Ocaml.vof_list vof_pattern v1
+      let v1 = vof_bracket (Ocaml.vof_list vof_pattern) v1
       in Ocaml.VSum (("PatList", [ v1 ]))
   | PatKeyVal ((v1, v2)) ->
       let v1 = vof_pattern v1
@@ -865,7 +865,7 @@ and vof_type_definition_kind =
       let v1 = Ocaml.vof_list vof_or_type_element v1
       in Ocaml.VSum (("OrType", [ v1 ]))
   | AndType v1 ->
-      let v1 = Ocaml.vof_list vof_field v1
+      let v1 = vof_bracket (Ocaml.vof_list vof_field) v1
       in Ocaml.VSum (("AndType", [ v1 ]))
   | AliasType v1 ->
       let v1 = vof_type_ v1 in Ocaml.VSum (("AliasType", [ v1 ]))
@@ -913,7 +913,7 @@ and
                          cmixins = v_cmixins;
                        } =
   let bnds = [] in
-  let arg = Ocaml.vof_list vof_field v_cbody in
+  let arg = vof_bracket (Ocaml.vof_list vof_field) v_cbody in
   let bnd = ("cbody", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_list vof_type_ v_cmixins in

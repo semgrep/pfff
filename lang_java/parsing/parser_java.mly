@@ -1042,7 +1042,7 @@ interfaces: IMPLEMENTS ref_type_list /*(* was interface_type_list *)*/  { $2 }
 /*(*----------------------------*)*/
 /*(*2 Class body *)*/
 /*(*----------------------------*)*/
-class_body: LC class_body_declarations_opt RC  { $2 }
+class_body: LC class_body_declarations_opt RC  { $1, $2, $3 }
 
 class_body_declaration:
  | class_member_declaration  { $1 }
@@ -1202,7 +1202,7 @@ extends_interfaces:
 /*(*2 Interface body *)*/
 /*(*----------------------------*)*/
 
-interface_body:	LC interface_member_declarations_opt RC  { $2 }
+interface_body:	LC interface_member_declarations_opt RC  { $1, $2, $3 }
 
 interface_member_declaration:
  | constant_declaration  { $1 }

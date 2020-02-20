@@ -524,14 +524,14 @@ and pattern =
   (* Or-Type, used also to match OCaml exceptions *)
   | PatConstructor of name * pattern list
   (* And-Type*)
-  | PatRecord of (name * pattern) list (* TODO: bracket *)
+  | PatRecord of (name * pattern) list bracket
 
   (* newvar:! *)
   | PatId of ident * id_info (* Always Local or Param *)
 
   (* special cases of PatConstructor *)
   | PatTuple of pattern list (* at least 2 elements *)
-  | PatList of pattern list (* TODO bracket *)
+  | PatList of pattern list bracket
   | PatKeyVal of pattern * pattern (* a kind of PatTuple *)
 
   (* special case of PatId *)
@@ -777,7 +777,7 @@ and type_definition = {
    (* field.vtype should be defined here 
     * record/struct (for class see class_definition 
     *)
-   | AndType of field list (* TODO bracket  *)
+   | AndType of field list bracket
 
    (* a.k.a typedef in C (and alias type in Go) *)
    | AliasType of type_
@@ -830,7 +830,7 @@ and class_definition = {
   cimplements: type_ list;
   cmixins: type_ list; (* PHP 'uses' *)
   (* newscope: *)
-  cbody: field list; (* TODO bracket *)
+  cbody: field list bracket;
 }
   and class_kind = 
     | Class
@@ -1086,3 +1086,5 @@ let funcdef_to_lambda (ent, def) resolved =
  *)
 let fake s = Parse_info.fake_info s
 let fake_bracket x = fake "(", x, fake ")"
+let unbracket (_, x, _) = x
+

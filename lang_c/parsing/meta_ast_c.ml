@@ -329,7 +329,7 @@ let
   vof_struct_def { s_name = v_s_name; s_kind = v_s_kind; s_flds = v_s_flds }
                  =
   let bnds = [] in
-  let arg = Ocaml.vof_list vof_field_def v_s_flds in
+  let arg = vof_bracket (Ocaml.vof_list vof_field_def) v_s_flds in
   let bnd = ("s_flds", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_struct_kind v_s_kind in

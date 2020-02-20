@@ -504,7 +504,8 @@ and class_def {
                 c_xhp_attr_inherit = c_xhp_attr_inherit;
                 c_constants = c_constants;
                 c_variables = c_variables;
-                c_methods = c_methods
+                c_methods = c_methods;
+                c_braces = (t1, (), t2);
               } =
   let tok = snd c_name in
 
@@ -539,7 +540,9 @@ and class_def {
     cextends = extends |> Common.opt_to_list;
     cimplements = implements;
     cmixins = uses;
-    cbody = fields |> List.map (fun def -> G.FieldStmt (G.DefStmt def));
+    cbody = t1, 
+      fields |> List.map (fun def -> G.FieldStmt (G.DefStmt def)), 
+      t2;
   } in
   ent, def
 

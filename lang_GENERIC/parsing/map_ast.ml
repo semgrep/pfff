@@ -488,9 +488,9 @@ and map_pattern =
   function
   | PatRecord v1 ->
       let v1 =
-        map_of_list
+        map_bracket (map_of_list
           (fun (v1, v2) ->
-             let v1 = map_name v1 and v2 = map_pattern v2 in (v1, v2))
+             let v1 = map_name v1 and v2 = map_pattern v2 in (v1, v2)))
           v1
       in PatRecord ((v1))
   | PatId ((v1, v2)) ->
@@ -510,7 +510,8 @@ and map_pattern =
       and v2 = map_of_list map_pattern v2
       in PatConstructor ((v1, v2))
   | PatTuple v1 -> let v1 = map_of_list map_pattern v1 in PatTuple ((v1))
-  | PatList v1 -> let v1 = map_of_list map_pattern v1 in PatList ((v1))
+  | PatList v1 -> let v1 = map_bracket (map_of_list map_pattern) v1 in 
+      PatList ((v1))
   | PatKeyVal ((v1, v2)) ->
       let v1 = map_pattern v1 and v2 = map_pattern v2 in PatKeyVal ((v1, v2))
   | PatUnderscore v1 -> let v1 = map_tok v1 in PatUnderscore ((v1))
@@ -674,7 +675,8 @@ and map_type_definition_kind =
   function
   | OrType v1 ->
       let v1 = map_of_list map_or_type_element v1 in OrType ((v1))
-  | AndType v1 -> let v1 = map_of_list map_field v1 in AndType ((v1))
+  | AndType v1 -> let v1 = map_bracket (map_of_list map_field) v1 in 
+      AndType ((v1))
   | AliasType v1 -> let v1 = map_type_ v1 in AliasType ((v1))
   | NewType v1 -> let v1 = map_type_ v1 in NewType ((v1))
   | Exception ((v1, v2)) ->
@@ -712,7 +714,7 @@ and
                          cbody = v_cbody;
                          cmixins = v_cmixins;
                        } =
-  let v_cbody = map_of_list map_field v_cbody in
+  let v_cbody = map_bracket (map_of_list map_field) v_cbody in
   let v_cmixins = map_of_list map_type_ v_cmixins in
   let v_cimplements = map_of_list map_type_ v_cimplements in
   let v_cextends = map_of_list map_type_ v_cextends in

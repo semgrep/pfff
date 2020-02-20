@@ -213,7 +213,7 @@ and expr e =
   | NewClass ((v1, v2, v3)) ->
       let v1 = typ v1
       and v2 = arguments v2
-      and v3 = option decls v3 in
+      and v3 = option (bracket decls) v3 in
       (match v3 with
       | None -> G.Call (G.IdSpecial (G.New, fake_info()), (G.ArgType v1)::v2)
       | Some decls -> 
@@ -221,7 +221,9 @@ and expr e =
                 ckind = G.Class;
                 cextends = [v1];
                 cimplements = []; cmixins = [];
-                cbody = decls |> List.map (fun x -> G.FieldStmt x) } in
+                cbody = decls |> bracket (List.map (fun x -> G.FieldStmt x))
+                }
+            in
          G.Call (G.IdSpecial (G.New, fake_info()), (G.Arg anonclass)::v2)
       )
   | NewArray ((v1, v2, v3, v4)) ->
@@ -250,11 +252,11 @@ and expr e =
       let v1 = expr v1
       and v2 = ident v2
       and v3 = arguments v3
-      and v4 = option decls v4
+      and v4 = option (bracket decls) v4
       in 
       let any = 
         [G.E v1; G.Id v2] @ (v3 |> List.map (fun arg -> G.Ar arg)) @
-        (Common.opt_to_list v4 |> List.flatten |> List.map
+        (Common.opt_to_list v4 |> List.map G.unbracket |> List.flatten |> List.map
             (fun st -> G.S st)) in
        G.OtherExpr (G.OE_NewQualifiedClass, any)
 
@@ -483,8 +485,8 @@ and class_decl {
   let v4 = modifiers cl_mods in
   let v5 = option typ cl_extends in
   let v6 = list ref_type cl_impls in 
-  let v7 = decls cl_body in 
-  let fields = v7 |> List.map (fun x -> G.FieldStmt x) in
+  let v7 = bracket decls cl_body in 
+  let fields = v7 |> bracket (List.map (fun x -> G.FieldStmt x)) in
   let ent = { (G.basic_entity v1 v4) with
       G.tparams = v3 } in
   let cdef = { G.

@@ -191,7 +191,7 @@ and v_storage = function | Extern -> () | Static -> () | DefaultStorage -> ()
 and  v_struct_def { s_name = v_s_name; s_kind = v_s_kind; s_flds = v_s_flds } =
   let arg = v_name v_s_name in
   let arg = v_struct_kind v_s_kind in
-  let arg = v_list v_field_def v_s_flds in ()
+  let arg = v_bracket (v_list v_field_def) v_s_flds in ()
   
 and v_field_def { fld_name = v_fld_name; fld_type = v_fld_type } =
   let arg = v_option v_name v_fld_name in let arg = v_type_ v_fld_type in ()

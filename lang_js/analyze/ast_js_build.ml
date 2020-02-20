@@ -787,8 +787,8 @@ and array_arr env tok xs =
 and class_decl env x =
   let extends = opt (fun env (_, typ) -> nominal_type env typ) env 
     x.C.c_extends in
-  let xs = x.C.c_body |> C.unparen |> List.map (class_element env) |> 
-    List.flatten in
+  let xs = x.C.c_body |> bracket_keep 
+      (fun xs -> xs |> List.map (class_element env) |> List.flatten) in
   { A.c_extends = extends; c_body = xs }
 
 and nominal_type env (e, _) = expr env e

@@ -159,11 +159,11 @@ and expr =
   | ClassLiteral of typ
 
   (* the 'decls option' is for anon classes *)
-  | NewClass of typ * arguments * decls option
+  | NewClass of typ * arguments * decls bracket option
   (* the int counts the number of [], new Foo[][] => 2 *)
   | NewArray of typ * arguments * int * init option
   (* see tests/java/parsing/NewQualified.java *)
-  | NewQualifiedClass of expr * ident * arguments * decls option
+  | NewQualifiedClass of expr * ident * arguments * decls bracket option
 
   | Call of expr * arguments
 
@@ -358,7 +358,7 @@ and class_decl = {
   cl_impls: ref_type list;
 
   (* javaext: the methods body used to be always empty for interface *)
-  cl_body: decls
+  cl_body: decls bracket;
 }
   and class_kind = ClassRegular | Interface
 

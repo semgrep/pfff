@@ -444,6 +444,7 @@ and
                   c_variables = v_c_variables;
                   c_methods = v_c_body;
                   c_enum_type = v_c_enum_type;
+                  c_braces = v_c_braces;
                 } =
   let bnds = [] in
   let arg = Ocaml.vof_option vof_enum_type v_c_enum_type in
@@ -475,6 +476,9 @@ and
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_list vof_modifier v_c_modifiers in
   let bnd = ("c_modifiers", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_bracket Ocaml.vof_unit v_c_braces in
+  let bnd = ("c_braces", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_wrap vof_class_type v_c_type in
   let bnd = ("c_kind", arg) in

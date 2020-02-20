@@ -236,12 +236,12 @@ and pattern =
       G.PatConstructor (n, [v1;v3])
   | PatTuple v1 -> let v1 = list pattern v1 in 
                    G.PatTuple v1
-  | PatList v1 -> let v1 = list pattern v1 in G.PatList v1
+  | PatList v1 -> let v1 = bracket (list pattern) v1 in G.PatList v1
   | PatUnderscore v1 -> let v1 = tok v1 in G.PatUnderscore v1
   | PatRecord v1 ->
       let v1 =
-        list
-          (fun (v1, v2) -> let v1 = name v1 and v2 = pattern v2 in v1, v2) v1
+        bracket (list
+          (fun (v1, v2) -> let v1 = name v1 and v2 = pattern v2 in v1, v2)) v1
       in 
       G.PatRecord v1
   | PatAs ((v1, v2)) -> 
@@ -293,7 +293,7 @@ and type_def_kind =
       in G.OrType v1
   | RecordType v1 ->
       let v1 =
-        list
+        bracket (list
           (fun (v1, v2, v3) ->
              let v1 = ident v1
              and v2 = type_ v2
@@ -304,7 +304,7 @@ and type_def_kind =
                | Some tok -> [G.attr G.Mutable tok] 
                | None -> []) in
             G.FieldStmt (G.DefStmt
-             (ent, G.VarDef { G.vinit = None; vtype = Some v2 })))
+             (ent, G.VarDef { G.vinit = None; vtype = Some v2 }))))
           v1
       in G.AndType v1
   

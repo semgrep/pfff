@@ -267,7 +267,7 @@ and obj_ = property list bracket
 and class_ = { 
   (* usually simply an Id *)
   c_extends: expr option;
-  c_body: property list;
+  c_body: property list bracket;
 }
 
   and property = 

@@ -397,7 +397,7 @@ and stmt_aux x =
       let ent = G.basic_entity v1 v4 in
       let def = { G.ckind = G.Class; cextends = v2; 
                   cimplements = []; cmixins = [];
-                  cbody = v3 |> List.map (fun x -> G.FieldStmt x);
+                  cbody = fake_bracket (v3 |> List.map(fun x ->G.FieldStmt x);)
                 } in
       [G.DefStmt (ent, G.ClassDef def)]
 

@@ -631,7 +631,7 @@ and type_def_kind env = function
 
 
 and class_def env c =
-  let _, body, _ = c.c_body in
+  let t1, body, t2 = c.c_body in
   let (methods, implicit_fields) =
     List.fold_right (class_body env) body ([], []) in
   let kind, modifiers = class_type env c.c_type in
@@ -669,6 +669,7 @@ and class_def env c =
                 | None -> None
                 | Some (_, cnstr_ty) -> Some (hint_type env cnstr_ty))
           });
+    A.c_braces = t1, (), t2;
   }
 
 and class_type _env = function

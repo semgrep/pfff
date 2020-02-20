@@ -576,7 +576,7 @@ and obj_ env xs =
 
 and class_ env c = 
   Common.opt (expr env) c.c_extends;
-  List.iter (property env) c.c_body
+  List.iter (property env) (unbracket c.c_body)
 
 and property env = function
   | Field (pname, _props, e) ->
