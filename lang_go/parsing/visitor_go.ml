@@ -118,8 +118,14 @@ and v_type_ x =
 
 and v_chan_dir = function | TSend -> () | TRecv -> () | TBidirectional -> ()
 and v_func_type { fparams = v_fparams; fresults = v_fresults } =
-  let arg = v_list v_parameter v_fparams in
-  let arg = v_list v_parameter v_fresults in ()
+  let arg = v_list v_parameter_binding v_fparams in
+  let arg = v_list v_parameter_binding v_fresults in ()
+
+and v_parameter_binding =
+  function
+  | ParamClassic v1 -> let v1 = v_parameter v1 in ()
+  | ParamEllipsis v1 -> let v1 = v_tok v1 in ()
+
 and v_parameter x =
   let k { pname = v_pname; ptype = v_ptype; pdots = v_pdots } =
   let arg = v_option v_ident v_pname in

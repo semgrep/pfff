@@ -82,9 +82,13 @@ type type_ =
 
   and chan_dir = TSend | TRecv | TBidirectional
   and func_type =  { 
-    fparams: parameter list; 
-    fresults: parameter list;
+    fparams: parameter_binding list; 
+    fresults: parameter_binding list;
   }
+    and parameter_binding = 
+     | ParamClassic of parameter
+     (* sgrep-ext: *)
+     | ParamEllipsis of tok
     and parameter = {
       pname: ident option;
       ptype: type_;

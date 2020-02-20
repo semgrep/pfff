@@ -60,11 +60,20 @@ and vof_chan_dir =
 
 and vof_func_type { fparams = v_fparams; fresults = v_fresults } =
   let bnds = [] in
-  let arg = Ocaml.vof_list vof_parameter v_fresults in
+  let arg = Ocaml.vof_list vof_parameter_binding v_fresults in
   let bnd = ("fresults", arg) in
   let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_list vof_parameter v_fparams in
+  let arg = Ocaml.vof_list vof_parameter_binding v_fparams in
   let bnd = ("fparams", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+
+and vof_parameter_binding =
+  function
+  | ParamClassic v1 ->
+      let v1 = vof_parameter v1 in Ocaml.VSum (("ParamClassic", [ v1 ]))
+  | ParamEllipsis v1 ->
+      let v1 = vof_tok v1 in Ocaml.VSum (("ParamEllipsis", [ v1 ]))
+
+
 and vof_parameter { pname = v_pname; ptype = v_ptype; pdots = v_pdots } =
   let bnds = [] in
   let arg = Ocaml.vof_option vof_tok v_pdots in

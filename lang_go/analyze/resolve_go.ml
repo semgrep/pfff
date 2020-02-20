@@ -73,10 +73,10 @@ let default_env () = {
 let nosym = -1 
 
 let params_of_parameters xs = 
-  xs |> Common.map_filter (fun p ->
-      match p.pname with
-      | Some id -> Some (Ast.str_of_id id, (G.Param nosym))
-      | _ -> None
+  xs |> Common.map_filter (function
+     | ParamClassic { pname = Some id; _ } ->
+        Some (Ast.str_of_id id, (G.Param nosym))
+     | _ -> None
     )
 let local_or_global env id =
   if !(env.ctx) = AtToplevel then G.Global [id] else G.Local nosym
@@ -121,7 +121,7 @@ let resolve prog =
          )
       | DMethod (id, receiver, _) ->
          env |> add_name_env id (G.Global [id]); (* could add package name?*)
-         let new_names = params_of_parameters [receiver] in
+         let new_names = params_of_parameters [ParamClassic receiver] in
          with_added_env new_names env (fun () ->
           with_new_context InFunction env (fun () ->
            k x
