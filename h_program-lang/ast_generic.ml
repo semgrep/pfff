@@ -382,7 +382,7 @@ and expr =
     | OE_Define | OE_Arguments 
     | OE_NewTarget
     | OE_Delete | OE_YieldStar
-    | OE_Encaps (* todo: convert to regular funcall? use Concat? *)
+    | OE_EncapsName (* todo: convert to regular funcall? use Concat? *)
     | OE_Require (* todo: lift to DirectiveStmt? transform in Import? *) 
     | OE_UseStrict (* todo: lift up to program attribute/directive? *)
     (* Python *)

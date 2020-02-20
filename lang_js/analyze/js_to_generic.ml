@@ -116,7 +116,7 @@ let special (x, tok) =
       | Some n -> 
             let n = name n in
             SR_NeedArgs (fun args ->
-            G.OtherExpr (G.OE_Encaps,(G.Id n)::(args|>List.map(fun e ->G.E e))))
+            G.OtherExpr (G.OE_EncapsName,(G.Id n)::(args|>List.map(fun e ->G.E e))))
       )
   | ArithOp op -> SR_Special (G.ArithOp op)
   | IncrDecr v -> SR_Special (G.IncrDecr v)

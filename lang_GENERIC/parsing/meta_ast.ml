@@ -339,7 +339,7 @@ and vof_other_expr_operator =
   | OE_NewTarget -> Ocaml.VSum (("OE_NewTarget", []))
   | OE_Delete -> Ocaml.VSum (("OE_Delete", []))
   | OE_YieldStar -> Ocaml.VSum (("OE_YieldStar", []))
-  | OE_Encaps -> Ocaml.VSum (("OE_Encaps", []))
+  | OE_EncapsName -> Ocaml.VSum (("OE_EncapsName", []))
   | OE_Require -> Ocaml.VSum (("OE_Require", []))
   | OE_UseStrict -> Ocaml.VSum (("OE_UseStrict", []))
   | OE_In -> Ocaml.VSum (("OE_In", []))
