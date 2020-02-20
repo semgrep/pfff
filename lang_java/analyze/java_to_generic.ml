@@ -200,7 +200,7 @@ and literal = function
 
 and expr e =
   match e with
-  | Ellipses v1 -> let v1 = tok v1 in G.Ellipsis v1
+  | Ellipsis v1 -> let v1 = tok v1 in G.Ellipsis v1
   | Name v1 -> let (a,b) = name v1 in G.Name ((a,b), G.empty_id_info())
   | NameOrClassType _v1 -> 
       let ii = Lib_parsing_java.ii_of_any (AExpr e) in
@@ -405,8 +405,6 @@ and catch (tok, v1, v2) = let ent, typ = var v1 and v2 = stmt v2 in
 and catches v = list catch v
 
 
-and vars v = list var v
-
 and var_with_init { f_var = f_var; f_init = f_init } =
   let ent, t = var f_var in 
   let init = option init f_init in
@@ -419,10 +417,13 @@ and init =
   | ArrayInit v1 -> let v1 = bracket (list init) v1 in
       G.Container (G.Array, v1)
 
-and params v = 
-  let v = vars v in
-  v |> List.map (fun (ent, t) ->
-      G.ParamClassic (entity_to_param ent t))
+and params v = List.map parameter_binding v 
+and parameter_binding = function
+  | ParamClassic v ->
+      let (ent, t) = var v in
+      G.ParamClassic (entity_to_param ent t)
+  | ParamEllipsis t -> G.ParamEllipsis t
+
 and
   method_decl {
                   m_var = m_var;
@@ -556,6 +557,7 @@ let any =
   | AExpr v1 -> let v1 = expr v1 in G.E v1
   | AStmt v1 -> let v1 = stmt v1 in G.S v1
   | AStmts v1 -> let v1 = List.map stmt v1 in G.Ss v1
+  | ADecls v1 -> let v1 = List.map decl v1 in G.Ss v1
   | ATyp v1 -> let v1 = typ v1 in G.T v1
   | AVar v1 -> let ent, t = var v1 in 
       G.Def (ent, G.VarDef {G.vtype = t; vinit = None})

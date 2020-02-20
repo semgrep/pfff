@@ -485,7 +485,10 @@ and method_decl env def =
      * share the same name so yes need full_ident as a qualifier.
     *)
     current_qualifier = full_ident;
-    params_or_locals = (def.m_formals |> List.map p_or_l)
+    params_or_locals = 
+      (def.m_formals |> Common.map_filter (function 
+             | ParamClassic p -> Some p | ParamEllipsis _ -> None) 
+                     |> List.map p_or_l)
       @
      (* with methods of anon classes we need to lookup enclosing
       * final parameters/locals
@@ -497,7 +500,10 @@ and method_decl env def =
   }
   in
   var env def.m_var;
-  List.iter (var env) def.m_formals;
+  def.m_formals |> List.iter (function
+      | ParamEllipsis _ -> ()
+      | ParamClassic v -> var env v
+  );
   (* todo: m_throws *)
   stmt env def.m_body
 
@@ -783,7 +789,7 @@ and expr env = function
   | InstanceOf (e, tref) ->
       expr env e;
       typ env (tref);
-  | Ellipses _ -> ()
+  | Ellipsis _ -> ()
   | Lambda (_params, _st) -> raise Todo (* imitate method_decl code *)
       
 
