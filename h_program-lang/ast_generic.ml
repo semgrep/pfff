@@ -555,7 +555,7 @@ and pattern =
 
   and other_pattern_operator =
   (* Python *)
-  | OP_ExprPattern (* todo: should transform via expr_to_pattern() below *)
+  | OP_Expr (* todo: should transform via expr_to_pattern() below *)
 
 (*****************************************************************************)
 (* Type *)
@@ -1018,7 +1018,7 @@ let expr_to_arg e =
  *)
 let expr_to_pattern e =
   (* TODO: diconstruct e and generate the right pattern (PatLiteral, ...) *)
-  OtherPat (OP_ExprPattern, [E e])
+  OtherPat (OP_Expr, [E e])
 
 let expr_to_type e =
   (* TODO: diconstruct e and generate the right type (TyBuiltin, ...) *)

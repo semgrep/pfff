@@ -693,7 +693,7 @@ and vof_pattern =
       in Ocaml.VSum (("OtherPat", [ v1; v2 ]))
 and vof_other_pattern_operator =
   function
-  | OP_ExprPattern -> Ocaml.VSum (("OP_ExprPattern", []))
+  | OP_Expr -> Ocaml.VSum (("OP_Expr", []))
 and vof_definition (v1, v2) =
   let v1 = vof_entity v1
   and v2 = vof_definition_kind v2
