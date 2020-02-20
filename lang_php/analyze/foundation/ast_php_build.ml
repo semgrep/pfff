@@ -934,15 +934,15 @@ and foreach_pattern env pat =
     A.List (t1, xs, t2)
 
 
-and catch env (_, (_, (fq, dn), _), (_, stdl, _)) =
+and catch env (t, (_, (fq, dn), _), (_, stdl, _)) =
   let stdl = List.fold_right (stmt_and_def env) stdl [] in
   let fq = hint_type env fq in
   let dn = dname dn in
-  fq, dn, stdl
+  t, fq, dn, stdl
 
-and finally env (_, (_, stdl, _)) =
+and finally env (t, (_, stdl, _)) =
   let stdl = List.fold_right (stmt_and_def env) stdl [] in
-  stdl
+  t, stdl
 
 and static_var env (x, e) =
   dname x, opt static_scalar_affect env e

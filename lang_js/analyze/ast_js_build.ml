@@ -388,12 +388,12 @@ and stmt env = function
     [A.Throw (t, e)]
   | C.Try (t, st, catchopt, finally_opt) ->
     let st = stmt1 env st in
-    let catchopt = opt (fun env (_, arg, st) ->
+    let catchopt = opt (fun env (t, arg, st) ->
        let arg = name env (C.unparen arg) in
        let st = stmt1 env st in
-       (arg, st)
+       (t, arg, st)
        ) env catchopt in
-    let finally_opt = opt (fun env (_, st) -> stmt1 env st) env finally_opt in
+    let finally_opt = opt (fun env (t, st) -> t, stmt1 env st) env finally_opt in
     [A.Try (t, st, catchopt, finally_opt)]
 
 and stmt_of_stmts xs = 

@@ -241,7 +241,7 @@ and stmt =
 
   | Sync of expr * stmt
 
-  | Try of tok * stmt * catches * stmt option
+  | Try of tok * stmt * catches * (tok * stmt) option
   | Throw of tok * expr
 
   (* decl as statement *)
@@ -266,7 +266,7 @@ and for_control =
     | ForInitVars of var_with_init list
     | ForInitExprs of expr list
 
-and catch = var_definition * stmt
+and catch = tok * var_definition * stmt
 and catches = catch list
 
 (*****************************************************************************)

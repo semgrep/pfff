@@ -485,9 +485,9 @@ and case env heap x =
       let heap = stmtl env heap stl in
       heap
 
-and catch env heap (_, _, stl) =
+and catch env heap (_, _, _, stl) =
   stmtl env heap stl
-and finally env heap (stl) =
+and finally env heap (_, stl) =
   stmtl env heap stl
 
 (* ---------------------------------------------------------------------- *)

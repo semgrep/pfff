@@ -346,11 +346,12 @@ let rec vof_stmt =
       and v2 = Ocaml.vof_list vof_excepthandler v2
       and v3 = Ocaml.vof_list vof_stmt v3
       in Ocaml.VSum (("TryExcept", [ t; v1; v2; v3 ]))
-  | TryFinally ((t, v1, v2)) ->
+  | TryFinally ((t, v1, t2, v2)) ->
       let t = vof_tok t in
-      let v1 = Ocaml.vof_list vof_stmt v1
-      and v2 = Ocaml.vof_list vof_stmt v2
-      in Ocaml.VSum (("TryFinally", [ t; v1; v2 ]))
+      let v1 = Ocaml.vof_list vof_stmt v1 in
+      let t2 = vof_tok t2 in
+      let v2 = Ocaml.vof_list vof_stmt v2 in
+      Ocaml.VSum (("TryFinally", [ t; v1; t2; v2 ]))
   | Assert ((t, v1, v2)) ->
       let t = vof_tok t in
       let v1 = vof_expr v1
@@ -412,11 +413,12 @@ let rec vof_stmt =
 
 and vof_excepthandler =
   function
-  | ExceptHandler ((v1, v2, v3)) ->
+  | ExceptHandler ((t, v1, v2, v3)) ->
+      let t = vof_tok t in
       let v1 = Ocaml.vof_option vof_type_ v1
       and v2 = Ocaml.vof_option vof_name v2
       and v3 = Ocaml.vof_list vof_stmt v3
-      in Ocaml.VSum (("ExceptHandler", [ v1; v2; v3 ]))
+      in Ocaml.VSum (("ExceptHandler", [ t; v1; v2; v3 ]))
 and vof_decorator v = vof_expr v
 and vof_alias (v1, v2) =
   let v1 = vof_name v1

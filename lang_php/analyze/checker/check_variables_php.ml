@@ -536,12 +536,12 @@ and stmt env = function
  * todo? could use local ? could have a UnusedExceptionParameter ?
  * less: could use ref 1, the exception is often not used
  *)
-and catch env (_hint_type, name, xs) =
+and catch env (_t, _hint_type, name, xs) =
   let (s, tok) = s_tok_of_ident name in
   env.vars := Map_.add s (tok, S.LocalExn, ref 0) !(env.vars);
   stmtl env xs
 
-and finally env (xs) =
+and finally env (_t, xs) =
   stmtl env xs
 
 and case env = function

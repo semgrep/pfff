@@ -246,7 +246,7 @@ and v_stmt (x : stmt) =
       let t = v_info t in
       let v1 = v_stmt v1
       and v2 = v_catches v2
-      and v3 = v_option v_stmt v3
+      and v3 = v_option v_tok_and_stmt v3
       in ()
   | Throw (t, v1) -> 
       let t = v_info t in
@@ -258,6 +258,11 @@ and v_stmt (x : stmt) =
         let v1 = v_expr v1 and v2 = v_option v_expr v2 in ()
   in
   vin.kstmt (k, all_functions) x
+
+and v_tok_and_stmt (t, v) = 
+  let t = v_tok t in
+  let v = v_stmt v in
+  ()
 
 and v_stmts v = v_list v_stmt v
 and v_case = function 
@@ -280,7 +285,9 @@ and v_for_init =
   function
   | ForInitVars v1 -> let v1 = v_list v_var_with_init v1 in ()
   | ForInitExprs v1 -> let v1 = v_list v_expr v1 in ()
-and v_catch (v1, v2) = let v1 = v_var v1 and v2 = v_stmt v2 in ()
+and v_catch (t, v1, v2) = 
+  let t = v_tok t in 
+  let v1 = v_var v1 and v2 = v_stmt v2 in ()
 and v_catches v = v_list v_catch v
 and v_var x =
   let k x = match x with

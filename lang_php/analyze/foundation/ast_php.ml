@@ -187,8 +187,8 @@ and stmt =
     | Default of tok * stmt list
 
   (* catch(Exception $exn) { ... } => ("Exception", "$exn", [...]) *)
-  and catch = hint_type  * var * stmt list
-  and finally = stmt list
+  and catch = tok * hint_type * var * stmt list
+  and finally = tok * stmt list
 
 (* ------------------------------------------------------------------------- *)
 (* Expression *)

@@ -573,9 +573,15 @@ and vof_case =
   | Default t -> 
       let t = vof_tok t in
       Ocaml.VSum (("Default", [t]))
-and vof_catch (v1, v2) =
-  let v1 = vof_pattern v1 and v2 = vof_stmt v2 in Ocaml.VTuple [ v1; v2 ]
-and vof_finally v = vof_stmt v
+and vof_catch (t, v1, v2) =
+  let t = vof_tok t in 
+  let v1 = vof_pattern v1 and v2 = vof_stmt v2 in Ocaml.VTuple [ t; v1; v2 ]
+and vof_finally v = vof_tok_and_stmt v
+and vof_tok_and_stmt (t, v) = 
+  let t = vof_tok t in
+  let v = vof_stmt v in
+  Ocaml.VTuple [t; v]
+
 and vof_label v = vof_ident v
 and vof_for_header =
   function

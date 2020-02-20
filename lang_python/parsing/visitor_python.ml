@@ -341,8 +341,9 @@ and v_stmt x =
       and v2 = v_list v_excepthandler v2
       and v3 = v_list v_stmt v3
       in ()
-  | TryFinally ((t, v1, v2)) ->
+  | TryFinally ((t, v1, t2, v2)) ->
         let t = v_info t in
+        let t2 = v_info t2 in
       let v1 = v_list v_stmt v1 and v2 = v_list v_stmt v2 in ()
   | Assert ((t, v1, v2)) -> 
         let t = v_info t in
@@ -381,7 +382,8 @@ and v_stmt x =
 
 and v_excepthandler =
   function
-  | ExceptHandler ((v1, v2, v3)) ->
+  | ExceptHandler ((t, v1, v2, v3)) ->
+      let t = v_tok t in
       let v1 = v_option v_type_ v1
       and v2 = v_option v_name v2
       and v3 = v_list v_stmt v3

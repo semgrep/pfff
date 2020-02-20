@@ -212,17 +212,16 @@ and case =
   | Default (t, v1) -> let v1 = list stmt v1 in
       [G.Default t], G.stmt1 v1
 
-and catch (v1, v2, v3) =
+and catch (t, v1, v2, v3) =
   let v1 = hint_type v1 and v2 = var v2 and v3 = list stmt v3 in
   let pat = G.PatVar (v1, Some (v2, G.empty_id_info())) in
-  pat, G.stmt1 v3
+  t, pat, G.stmt1 v3
 
 and finally (v: finally list) = 
-  let xs = list (list stmt) v in
-  let xs = List.flatten xs in
+  let xs = list (fun (t, xs) -> t, list stmt xs) v in
   match xs with
   | [] -> None
-  | xs -> Some (G.stmt1 xs)
+  | (t,x)::xs -> Some (t, G.stmt1 (x @ (List.map snd xs |> List.flatten)))
 
 and expr =
   function

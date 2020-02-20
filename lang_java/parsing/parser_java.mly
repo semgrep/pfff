@@ -901,12 +901,12 @@ try_statement:
     Try ($1, $3, $4, $5)
   }
 
-finally: FINALLY block  { $2 }
+finally: FINALLY block  { $1, $2 }
 
 catch_clause:
- | CATCH LP catch_formal_parameter RP block  { $3, $5 }
+ | CATCH LP catch_formal_parameter RP block  { $1, $3, $5 }
  /*(* javaext: not in 2nd edition java language specification.*) */
- | CATCH LP catch_formal_parameter RP empty_statement  { $3, $5 }
+ | CATCH LP catch_formal_parameter RP empty_statement  { $1, $3, $5 }
 
 /*(* javaext: ? was just formal_parameter before *)*/
 catch_formal_parameter: 

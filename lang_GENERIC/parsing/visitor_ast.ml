@@ -418,8 +418,12 @@ and v_case = function
       let t = v_tok t in
       ()
 
-and v_catch (v1, v2) = let v1 = v_pattern v1 and v2 = v_stmt v2 in ()
-and v_finally v = v_stmt v
+and v_catch (t, v1, v2) = 
+  let t = v_tok t in
+  let v1 = v_pattern v1 and v2 = v_stmt v2 in ()
+and v_finally (t, v) = 
+  let t = v_tok t in
+  v_stmt v
 and v_label v = v_ident v
 and v_for_header =
   function

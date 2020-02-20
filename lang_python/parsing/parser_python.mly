@@ -542,16 +542,16 @@ try_stmt:
   | TRY COLON suite excepthandler_list ELSE COLON suite
       { TryExcept ($1, $3, $4, $7) }
   | TRY COLON suite excepthandler_list ELSE COLON suite FINALLY COLON suite
-      { TryFinally ($1, [TryExcept ($1, $3, $4, $7)], $10) }
+      { TryFinally ($1, [TryExcept ($1, $3, $4, $7)], $8, $10) }
   | TRY COLON suite excepthandler_list FINALLY COLON suite
-      { TryFinally ($1, [TryExcept ($1, $3, $4, [])], $7) }
+      { TryFinally ($1, [TryExcept ($1, $3, $4, [])], $5, $7) }
   | TRY COLON suite FINALLY COLON suite
-      { TryFinally ($1, $3, $6) }
+      { TryFinally ($1, $3, $4, $6) }
 
 excepthandler:
-  | EXCEPT              COLON suite { ExceptHandler (None, None, $3) }
-  | EXCEPT test         COLON suite { ExceptHandler (Some $2, None, $4) }
-  | EXCEPT test AS NAME COLON suite { ExceptHandler (Some $2, Some $4, $6) }
+  | EXCEPT              COLON suite { ExceptHandler ($1, None, None, $3) }
+  | EXCEPT test         COLON suite { ExceptHandler ($1, Some $2, None, $4) }
+  | EXCEPT test AS NAME COLON suite { ExceptHandler ($1, Some $2, Some $4, $6)}
 
 with_stmt:
   | WITH with_inner { $2 $1 }

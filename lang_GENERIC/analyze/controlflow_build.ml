@@ -686,7 +686,7 @@ and (cfg_cases:
 and (cfg_catches: state -> F.nodei -> F.nodei -> Ast.catch list -> F.nodei) =
  fun state previ tryendi catches ->
    catches |> List.fold_left (fun previ catch ->
-     let (_pattern, stmt) = catch in
+     let (_t, _pattern, stmt) = catch in
 
      let i () = info_opt (S stmt) in
 

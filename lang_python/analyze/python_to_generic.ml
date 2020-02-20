@@ -489,10 +489,10 @@ and stmt_aux x =
               ]]
       )
 
-  | TryFinally ((t, v1, v2)) ->
+  | TryFinally ((t, v1, t2, v2)) ->
       let v1 = list_stmt1 v1 and v2 = list_stmt1 v2 in
       (* could lift down the Try in v1 *)
-      [G.Try (t, v1, [], Some v2)]
+      [G.Try (t, v1, [], Some (t2, v2))]
 
   | Assert ((t, v1, v2)) -> let v1 = expr v1 and v2 = option expr v2 in
       [G.Assert (t, v1, v2)]
@@ -550,11 +550,11 @@ and pattern e =
 
 and excepthandler =
   function
-  | ExceptHandler ((v1, v2, v3)) ->
+  | ExceptHandler ((t, v1, v2, v3)) ->
       let v1 = option pattern v1 (* a type actually, even tuple of types *)
       and v2 = option name v2
       and v3 = list_stmt1 v3
-      in 
+      in t,
       (match v1, v2 with
       | Some e, None ->
          e

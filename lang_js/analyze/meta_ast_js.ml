@@ -176,13 +176,18 @@ and vof_stmt =
       let v1 = vof_stmt v1
       and v2 =
         Ocaml.vof_option
-          (fun (v1, v2) ->
+          (fun (t, v1, v2) ->
+             let t = vof_tok t in
              let v1 = vof_wrap Ocaml.vof_string v1
              and v2 = vof_stmt v2
-             in Ocaml.VTuple [ v1; v2 ])
+             in Ocaml.VTuple [ t; v1; v2 ])
           v2
-      and v3 = Ocaml.vof_option vof_stmt v3
+      and v3 = Ocaml.vof_option vof_tok_and_stmt v3
       in Ocaml.VSum (("Try", [ t; v1; v2; v3 ]))
+and vof_tok_and_stmt (t, v) = 
+  let t = vof_tok t in
+  let v = vof_stmt v in
+  Ocaml.VTuple [t; v]
 and vof_for_header =
   function
   | ForClassic ((v1, v2, v3)) ->

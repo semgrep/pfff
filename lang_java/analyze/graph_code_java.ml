@@ -639,7 +639,7 @@ and stmt env = function
   | Try (_, st, xs, stopt) ->
       stmt env st;
       catches env xs;
-      stmts env (Common2.option_to_list stopt);
+      stopt |> Common.do_option (fun (_, st) -> stmt env st);
   | Throw (_, e) -> expr env e
   | Assert (_, e, eopt) ->
       exprs env (e::Common2.option_to_list eopt)
@@ -670,7 +670,7 @@ and case env = function
   | Default _ -> ()
 
 and catches env xs = List.iter (catch env) xs
-and catch env (v, st) =
+and catch env (_, v, st) =
   var env v;
   let env = { env with params_or_locals = p_or_l v :: env.params_or_locals } in
   stmt env st

@@ -146,14 +146,16 @@ and vof_case =
       let t = vof_tok t in
       let v1 = Ocaml.vof_list vof_stmt v1 in 
       Ocaml.VSum (("Default", [ t; v1 ]))
-and vof_catch (v1, v2, v3) =
+and vof_catch (t, v1, v2, v3) =
+  let t = vof_tok t in 
   let v1 = vof_hint_type v1
   and v2 = vof_var v2
   and v3 = Ocaml.vof_list vof_stmt v3
-  in Ocaml.VTuple [ v1; v2; v3 ]
-and vof_finally (v1) =
+  in Ocaml.VTuple [ t; v1; v2; v3 ]
+and vof_finally (t, v1) =
+  let t = vof_tok t in 
   let v1 = Ocaml.vof_list vof_stmt v1
-  in Ocaml.VTuple [ v1 ]
+  in Ocaml.VTuple [ t; v1 ]
 and vof_expr =
   function
   | Int v1 -> let v1 = vof_wrapped_string v1 in Ocaml.VSum (("Int", [ v1 ]))

@@ -212,7 +212,7 @@ and stmt =
   | Label of label * stmt
  
   | Throw of tok * expr
-  | Try of tok * stmt * catch option * stmt option
+  | Try of tok * stmt * catch option * (tok * stmt) option
 
   (* less: ModuleDirective of module_directive 
    * ES6 modules can appear only at the toplevel
@@ -232,7 +232,7 @@ and stmt =
    | Case of tok * expr * stmt
    | Default of tok * stmt
 
-  and catch = name * stmt
+  and catch = tok * name * stmt
 
 (* ------------------------------------------------------------------------- *)
 (* Entities *)

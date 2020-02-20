@@ -163,7 +163,9 @@ and expr =
       G.MatchPattern (v1, v2)
   | Try ((t, v1, v2)) ->
       let v1 = expr v1 and v2 = list match_case v2 in 
-      let catches = v2 |> List.map (fun (pat, e) -> pat, G.ExprStmt e) in
+      let catches = v2 |> List.map (fun (pat, e) -> 
+            fake "catch", pat, G.ExprStmt e
+        ) in
       let st = G.Try (t, G.ExprStmt v1, catches, None) in
       G.OtherExpr (G.OE_StmtExpr, [G.S st])
 

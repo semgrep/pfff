@@ -450,10 +450,16 @@ and map_case =
       let t = map_tok t in
       Default t
 
-and map_catch (v1, v2) =
-  let v1 = map_pattern v1 and v2 = map_stmt v2 in (v1, v2)
+and map_catch (t, v1, v2) =
+  let t = map_tok t in
+  let v1 = map_pattern v1 and v2 = map_stmt v2 in (t, v1, v2)
 
-and map_finally v = map_stmt v
+and map_finally v = map_tok_and_stmt v
+
+and map_tok_and_stmt (t, v) = 
+  let t = map_tok t in
+  let v = map_stmt v in
+  (t, v)
 
 and map_label v = map_ident v
 

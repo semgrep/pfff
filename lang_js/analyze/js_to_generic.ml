@@ -223,12 +223,16 @@ and stmt x =
   | Try ((t, v1, v2, v3)) ->
       let v1 = stmt v1
       and v2 =
-        option (fun (v1, v2) -> 
+        option (fun (t, v1, v2) -> 
            let v1 = name v1 and v2 = stmt v2 in
-           G.PatId (v1, G.empty_id_info()), v2
+           t, G.PatId (v1, G.empty_id_info()), v2
        ) v2
-      and v3 = option stmt v3 in
+      and v3 = option tok_and_stmt v3 in
       G.Try (t, v1, Common.opt_to_list v2, v3)
+
+and tok_and_stmt (t, v) = 
+  let v = stmt v in
+  (t, v)
 
 and for_header =
   function

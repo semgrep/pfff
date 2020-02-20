@@ -82,10 +82,10 @@ module Deps = struct
     | Default (_, stl) -> stmtl acc stl
 
   and catchl acc l = List.fold_left catch acc l
-  and catch acc (_, _, stl) = stmtl acc stl
+  and catch acc (_, _, _, stl) = stmtl acc stl
 
   and finallyl acc l = List.fold_left finally acc l
-  and finally acc (stl) = stmtl acc stl
+  and finally acc (_, stl) = stmtl acc stl
 
   and exprl acc l = List.fold_left expr acc l
   and expr_opt acc = function None -> acc | Some e -> expr acc e

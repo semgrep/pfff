@@ -297,7 +297,7 @@ type stmt =
   | Raise of tok * (expr * expr option (* from *)) option
   | TryExcept of tok * stmt list (* body *) * excepthandler list (* handlers *)
            * stmt list (* orelse *)
-  | TryFinally of tok * stmt list (* body *) * stmt list (* finalbody *)
+  | TryFinally of tok * stmt list (* body *) * tok * stmt list (* finalbody *)
   | Assert of tok * expr (* test *) * expr option (* msg *)
 
   | Global of tok * name list (* names *)
@@ -333,6 +333,7 @@ type stmt =
 
 and excepthandler = 
   ExceptHandler of 
+    tok *
     pattern option (* type, possibly a list of types as in (Error,Fatal) *) * 
     name option (* name, introduce new var, todo: only if pattern is Some *) * 
     stmt list (* body *)

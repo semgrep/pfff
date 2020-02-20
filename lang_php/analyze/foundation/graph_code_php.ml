@@ -742,10 +742,10 @@ and stmt_bis env x =
   | Global (_, xs) -> exprl env xs
 
 (* todo: add deps to type hint? *)
-and catch env (_hint_type, _name, xs) =
+and catch env (_t, _hint_type, _name, xs) =
   stmtl env xs
 
-and finally env (xs) =
+and finally env (_t, xs) =
   stmtl env xs
 
 and case env = function

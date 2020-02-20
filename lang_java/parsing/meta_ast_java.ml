@@ -278,7 +278,7 @@ and vof_stmt =
       let t = vof_tok t in
       let v1 = vof_stmt v1
       and v2 = vof_catches v2
-      and v3 = Ocaml.vof_option vof_stmt v3
+      and v3 = Ocaml.vof_option vof_tok_and_stmt v3
       in Ocaml.VSum (("Try", [ t; v1; v2; v3 ]))
   | Throw (t, v1) -> 
       let t = vof_tok t in
@@ -292,6 +292,12 @@ and vof_stmt =
       let v1 = vof_expr v1
       and v2 = Ocaml.vof_option vof_expr v2
       in Ocaml.VSum (("Assert", [ t; v1; v2 ]))
+
+and vof_tok_and_stmt (t, v) = 
+  let t = vof_tok t in
+  let v = vof_stmt v in
+  Ocaml.VTuple [t; v]
+
 and vof_stmts v = Ocaml.vof_list vof_stmt v
 and vof_case =
   function
@@ -321,8 +327,9 @@ and vof_for_init =
   | ForInitExprs v1 ->
       let v1 = Ocaml.vof_list vof_expr v1
       in Ocaml.VSum (("ForInitExprs", [ v1 ]))
-and vof_catch (v1, v2) =
-  let v1 = vof_var v1 and v2 = vof_stmt v2 in Ocaml.VTuple [ v1; v2 ]
+and vof_catch (t, v1, v2) =
+  let t = vof_tok t in
+  let v1 = vof_var v1 and v2 = vof_stmt v2 in Ocaml.VTuple [ t; v1; v2 ]
 and vof_catches v = Ocaml.vof_list vof_catch v
 and vof_var { name = v_v_name; mods = v_v_mods; type_ = v_v_type } =
   let bnds = [] in
