@@ -157,7 +157,7 @@ and stmt =
   | Do of tok * stmt list * expr
   | For of tok * expr list * expr list * expr list * stmt list
   (* 'foreach ($xs as $k)','... ($xs as $k => $v)', '... ($xs as list($...))'*)
-  | Foreach of tok * expr * foreach_pattern * stmt list
+  | Foreach of tok * expr * tok * foreach_pattern * stmt list
 
   | Return of tok * expr option
   | Break of tok * expr option | Continue of tok * expr option
@@ -187,8 +187,8 @@ and stmt =
     | Default of tok * stmt list
 
   (* catch(Exception $exn) { ... } => ("Exception", "$exn", [...]) *)
-  and catch = hint_type  * var * stmt list
-  and finally = stmt list
+  and catch = tok * hint_type * var * stmt list
+  and finally = tok * stmt list
 
 (* ------------------------------------------------------------------------- *)
 (* Expression *)
@@ -412,6 +412,7 @@ and class_def = {
   c_constants: constant_def list;
   c_variables: class_var list;
   c_methods: method_def list;
+  c_braces: unit bracket;
 }
 
 and class_kind =

@@ -176,13 +176,18 @@ and vof_stmt =
       let v1 = vof_stmt v1
       and v2 =
         Ocaml.vof_option
-          (fun (v1, v2) ->
+          (fun (t, v1, v2) ->
+             let t = vof_tok t in
              let v1 = vof_wrap Ocaml.vof_string v1
              and v2 = vof_stmt v2
-             in Ocaml.VTuple [ v1; v2 ])
+             in Ocaml.VTuple [ t; v1; v2 ])
           v2
-      and v3 = Ocaml.vof_option vof_stmt v3
+      and v3 = Ocaml.vof_option vof_tok_and_stmt v3
       in Ocaml.VSum (("Try", [ t; v1; v2; v3 ]))
+and vof_tok_and_stmt (t, v) = 
+  let t = vof_tok t in
+  let v = vof_stmt v in
+  Ocaml.VTuple [t; v]
 and vof_for_header =
   function
   | ForClassic ((v1, v2, v3)) ->
@@ -190,10 +195,11 @@ and vof_for_header =
       and v2 = vof_expr v2
       and v3 = vof_expr v3
       in Ocaml.VSum (("ForClassic", [ v1; v2; v3 ]))
-  | ForIn ((v1, v2)) ->
+  | ForIn ((v1, t, v2)) ->
+      let t = vof_tok t in
       let v1 = Ocaml.vof_either vof_var vof_expr v1
       and v2 = vof_expr v2
-      in Ocaml.VSum (("ForIn", [ v1; v2 ]))
+      in Ocaml.VSum (("ForIn", [ v1; t; v2 ]))
 and vof_case =
   function
   | Case ((t, v1, v2)) ->
@@ -262,7 +268,7 @@ and vof_fun_prop =
 and vof_obj_ v = vof_bracket (Ocaml.vof_list vof_property) v
 and vof_class_ { c_extends = v_c_extends; c_body = v_c_body } =
   let bnds = [] in
-  let arg = Ocaml.vof_list vof_property v_c_body in
+  let arg = vof_bracket (Ocaml.vof_list vof_property) v_c_body in
   let bnd = ("c_body", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_option vof_expr v_c_extends in

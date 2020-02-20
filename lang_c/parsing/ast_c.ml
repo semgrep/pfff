@@ -237,7 +237,7 @@ type func_def = {
 type struct_def = {
   s_name: name;
   s_kind: struct_kind;
-  s_flds: field_def list;
+  s_flds: field_def list bracket;
 }
   (* less: could merge with var_decl, but field have no storage normally *)
   and field_def = { 

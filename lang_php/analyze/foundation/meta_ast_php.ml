@@ -60,12 +60,13 @@ and vof_stmt =
       let v1 = vof_expr v1
       and v2 = Ocaml.vof_list vof_case v2
       in Ocaml.VSum (("Switch", [ t; v1; v2 ]))
-  | Foreach ((t, v1, v2, v3)) ->
+  | Foreach ((t, v1, t2, v2, v3)) ->
       let t = vof_tok t in
+      let t2 = vof_tok t2 in
       let v1 = vof_expr v1
       and v2 = vof_pattern v2
       and v3 = Ocaml.vof_list vof_stmt v3
-      in Ocaml.VSum (("Foreach", [ t; v1; v2; v3 ]))
+      in Ocaml.VSum (("Foreach", [ t; v1; t2; v2; v3 ]))
   | Return (t, v1) ->
       let t = vof_tok t in
       let v1 = Ocaml.vof_option vof_expr v1
@@ -146,14 +147,16 @@ and vof_case =
       let t = vof_tok t in
       let v1 = Ocaml.vof_list vof_stmt v1 in 
       Ocaml.VSum (("Default", [ t; v1 ]))
-and vof_catch (v1, v2, v3) =
+and vof_catch (t, v1, v2, v3) =
+  let t = vof_tok t in 
   let v1 = vof_hint_type v1
   and v2 = vof_var v2
   and v3 = Ocaml.vof_list vof_stmt v3
-  in Ocaml.VTuple [ v1; v2; v3 ]
-and vof_finally (v1) =
+  in Ocaml.VTuple [ t; v1; v2; v3 ]
+and vof_finally (t, v1) =
+  let t = vof_tok t in 
   let v1 = Ocaml.vof_list vof_stmt v1
-  in Ocaml.VTuple [ v1 ]
+  in Ocaml.VTuple [ t; v1 ]
 and vof_expr =
   function
   | Int v1 -> let v1 = vof_wrapped_string v1 in Ocaml.VSum (("Int", [ v1 ]))
@@ -441,6 +444,7 @@ and
                   c_variables = v_c_variables;
                   c_methods = v_c_body;
                   c_enum_type = v_c_enum_type;
+                  c_braces = v_c_braces;
                 } =
   let bnds = [] in
   let arg = Ocaml.vof_option vof_enum_type v_c_enum_type in
@@ -472,6 +476,9 @@ and
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_list vof_modifier v_c_modifiers in
   let bnd = ("c_modifiers", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_bracket Ocaml.vof_unit v_c_braces in
+  let bnd = ("c_braces", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_wrap vof_class_type v_c_type in
   let bnd = ("c_kind", arg) in

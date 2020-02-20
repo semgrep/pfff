@@ -216,11 +216,17 @@ and map_stmt =
       let v1 = map_stmt v1
       and v2 =
         map_of_option
-          (fun (v1, v2) ->
-             let v1 = map_name v1 and v2 = map_stmt v2 in (v1, v2))
+          (fun (t, v1, v2) ->
+            let t = map_tok t in
+             let v1 = map_name v1 and v2 = map_stmt v2 in (t, v1, v2))
           v2
-      and v3 = map_of_option map_stmt v3
+      and v3 = map_of_option map_tok_and_stmt v3
       in Try ((t, v1, v2, v3))
+
+and map_tok_and_stmt (t, v) = 
+  let t = map_tok t in
+  let v = map_stmt v in
+  (t, v)
 
 and map_for_header =
   function
@@ -229,10 +235,11 @@ and map_for_header =
       and v2 = map_expr v2
       and v3 = map_expr v3
       in ForClassic ((v1, v2, v3))
-  | ForIn ((v1, v2)) ->
+  | ForIn ((v1, t, v2)) ->
+      let t = map_tok t in
       let v1 = Ocaml.map_of_either map_var map_expr v1
       and v2 = map_expr v2
-      in ForIn ((v1, v2))
+      in ForIn ((v1, t, v2))
 and map_case =
   function
   | Case ((t, v1, v2)) ->
@@ -281,7 +288,7 @@ and map_fun_prop =
   | Async -> Async
 and map_obj_ v = map_bracket (map_of_list map_property) v
 and map_class_ { c_extends = v_c_extends; c_body = v_c_body } =
-  let v_c_body = map_of_list map_property v_c_body in
+  let v_c_body = map_bracket (map_of_list map_property) v_c_body in
   let v_c_extends = map_of_option map_expr v_c_extends in 
   { c_extends = v_c_extends; c_body = v_c_body }
 and map_property =

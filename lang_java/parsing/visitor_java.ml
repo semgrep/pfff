@@ -78,7 +78,7 @@ and v_incr_decr _x = ()
 and v_modifiers _ = ()
 
 and v_program x =
-  let k x = v_list v_decl x.decls in
+  let k x = (v_list v_decl) x.decls in
   vin.kprogram (k, all_functions) x
 
 and v_any x = match x with
@@ -166,7 +166,7 @@ and v_expr (x : expr) =
     | NewClass ((v1, v2, v3)) ->
       let v1 = v_typ v1
       and v2 = v_arguments v2
-      and v3 = v_option v_decls v3
+      and v3 = v_option (v_bracket v_decls) v3
       in ()
     | NewArray ((v1, v2, v3, v4)) ->
       let v1 = v_typ v1
@@ -178,7 +178,7 @@ and v_expr (x : expr) =
       let v1 = v_expr v1
       and v2 = v_ident v2
       and v3 = v_arguments v3
-      and v4 = v_option v_decls v4
+      and v4 = v_option (v_bracket v_decls) v4
       in ()
     | Call ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_arguments v2 in ()
     | Dot ((v1, t, v2)) -> 
@@ -246,7 +246,7 @@ and v_stmt (x : stmt) =
       let t = v_info t in
       let v1 = v_stmt v1
       and v2 = v_catches v2
-      and v3 = v_option v_stmt v3
+      and v3 = v_option v_tok_and_stmt v3
       in ()
   | Throw (t, v1) -> 
       let t = v_info t in
@@ -258,6 +258,11 @@ and v_stmt (x : stmt) =
         let v1 = v_expr v1 and v2 = v_option v_expr v2 in ()
   in
   vin.kstmt (k, all_functions) x
+
+and v_tok_and_stmt (t, v) = 
+  let t = v_tok t in
+  let v = v_stmt v in
+  ()
 
 and v_stmts v = v_list v_stmt v
 and v_case = function 
@@ -280,7 +285,9 @@ and v_for_init =
   function
   | ForInitVars v1 -> let v1 = v_list v_var_with_init v1 in ()
   | ForInitExprs v1 -> let v1 = v_list v_expr v1 in ()
-and v_catch (v1, v2) = let v1 = v_var v1 and v2 = v_stmt v2 in ()
+and v_catch (t, v1, v2) = 
+  let t = v_tok t in 
+  let v1 = v_var v1 and v2 = v_stmt v2 in ()
 and v_catches v = v_list v_catch v
 and v_var x =
   let k x = match x with
@@ -355,7 +362,8 @@ and v_class_decl (x : class_decl) =
            let arg = v_list v_type_parameter v_cl_tparams in
            let arg = v_modifiers v_cl_mods in
            let arg = v_option v_typ v_cl_extends in
-           let arg = v_list v_ref_type v_cl_impls in let arg = v_decls v_cl_body in ()
+           let arg = v_list v_ref_type v_cl_impls in 
+        let arg = v_bracket v_decls v_cl_body in ()
   in
   vin.kclass (k, all_functions) x
 
@@ -371,7 +379,7 @@ and v_decl x =
   vin.kdecl (k, all_functions) x
 
 
-and v_decls v = v_list v_decl v
+and v_decls v = (v_list v_decl) v
 
 (* end not-really-auto generation... *)
 and all_functions x = v_any x

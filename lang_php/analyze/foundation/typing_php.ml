@@ -269,7 +269,7 @@ and stmt env= function
   | Switch (_, e, cl) ->
       let t = expr env e in
       casel env t cl
-  | Foreach (_, e1, pat, stl) ->
+  | Foreach (_, e1, _, pat, stl) ->
       let a = expr env e1 in
       let a' =
         match pat with
@@ -336,10 +336,10 @@ and case env t = function
   | Default (_, stl) -> stmtl env stl
 
 and catchl env l = List.iter (catch env) l
-and catch env (_, _, stl) = stmtl env stl
+and catch env (_, _, _, stl) = stmtl env stl
 
 and finallyl env l = List.iter (finally env) l
-and finally env (stl) = stmtl env stl
+and finally env (_, stl) = stmtl env stl
 
 and exprl env l = List.map (expr env) l
 and iexprl env l = ignore (exprl env l)

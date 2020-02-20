@@ -307,16 +307,16 @@ let func_def {
 let rec
   struct_def { s_name = s_name; s_kind = s_kind; s_flds = s_flds } =
   let v1 = name s_name in
-  let v3 = list field_def s_flds in 
+  let v3 = bracket (list field_def) s_flds in 
   let entity = G.basic_entity v1 [] in
   (match s_kind with
   | Struct -> 
-        let fields = v3 |> List.map (fun (n, t) -> 
-              G.basic_field n None (Some t)) in
+        let fields = bracket (List.map (fun (n, t) -> 
+              G.basic_field n None (Some t))) v3 in
         entity, G.TypeDef ({ G.tbody = G.AndType fields })
   | Union ->
-        let ctors = v3 |> List.map (fun (n, t) -> 
-              G.OrUnion (n,t))  in
+        let ctors = v3 |> G.unbracket |> (List.map (fun (n, t) -> 
+              G.OrUnion (n,t)))   in
         entity, G.TypeDef ({ G.tbody = G.OrType ctors })
   )
 

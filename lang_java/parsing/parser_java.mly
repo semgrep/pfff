@@ -901,12 +901,12 @@ try_statement:
     Try ($1, $3, $4, $5)
   }
 
-finally: FINALLY block  { $2 }
+finally: FINALLY block  { $1, $2 }
 
 catch_clause:
- | CATCH LP catch_formal_parameter RP block  { $3, $5 }
+ | CATCH LP catch_formal_parameter RP block  { $1, $3, $5 }
  /*(* javaext: not in 2nd edition java language specification.*) */
- | CATCH LP catch_formal_parameter RP empty_statement  { $3, $5 }
+ | CATCH LP catch_formal_parameter RP empty_statement  { $1, $3, $5 }
 
 /*(* javaext: ? was just formal_parameter before *)*/
 catch_formal_parameter: 
@@ -1042,7 +1042,7 @@ interfaces: IMPLEMENTS ref_type_list /*(* was interface_type_list *)*/  { $2 }
 /*(*----------------------------*)*/
 /*(*2 Class body *)*/
 /*(*----------------------------*)*/
-class_body: LC class_body_declarations_opt RC  { $2 }
+class_body: LC class_body_declarations_opt RC  { $1, $2, $3 }
 
 class_body_declaration:
  | class_member_declaration  { $1 }
@@ -1202,7 +1202,7 @@ extends_interfaces:
 /*(*2 Interface body *)*/
 /*(*----------------------------*)*/
 
-interface_body:	LC interface_member_declarations_opt RC  { $2 }
+interface_body:	LC interface_member_declarations_opt RC  { $1, $2, $3 }
 
 interface_member_declaration:
  | constant_declaration  { $1 }

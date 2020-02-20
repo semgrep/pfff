@@ -658,7 +658,7 @@ and full_type env x =
       { c_kind = (kind, tok);
         c_name = name_opt;
         c_inherit = _inh;
-        c_members = (_, xs, _);
+        c_members = (t1, xs, t2);
       } ->
         let name =
           match name_opt with
@@ -671,7 +671,7 @@ and full_type env x =
         let def' = { A.
           s_name = name;
           s_kind = struct_kind env kind;
-          s_flds = class_members_sequencable env xs |> List.flatten;
+          s_flds = (t1, class_members_sequencable env xs |> List.flatten, t2);
         }
         in
         env.struct_defs_toadd <- def' :: env.struct_defs_toadd;

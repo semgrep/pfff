@@ -100,7 +100,7 @@ and v_type_def_kind =
   | TyAlgebric v1 -> let v1 = v_pipe_list v_constructor_declaration v1 in
                      A.AlgebricType v1
   | TyRecord v1 ->
-      let v1 = v_brace (v_semicolon_list v_label_declaration) v1 in
+      let v1 = v_bracket_keep (v_semicolon_list v_label_declaration) v1 in
       A.RecordType v1
                                                                  
 and v_constructor_declaration (v1, v2) =
@@ -338,11 +338,11 @@ and v_pattern x =
       A.PatConsInfix (v1, v2, v3)
   | PatTuple v1 -> let v1 = v_comma_list v_pattern v1 in 
                    A.PatTuple v1
-  | PatList v1 -> let v1 = v_bracket (v_semicolon_list v_pattern) v1 in 
+  | PatList v1 -> let v1 = v_bracket_keep (v_semicolon_list v_pattern) v1 in 
                   A.PatList v1
   | PatUnderscore v1 -> let v1 = v_tok v1 in A.PatUnderscore v1
   | PatRecord v1 ->
-      let v1 = v_brace (v_semicolon_list v_field_pattern) v1 in 
+      let v1 = v_bracket_keep (v_semicolon_list v_field_pattern) v1 in 
       A.PatRecord v1
   | PatAs ((v1, v2, v3)) ->
       let v1 = v_pattern v1 and _v2 = v_tok v2 and v3 = v_name v3 in 

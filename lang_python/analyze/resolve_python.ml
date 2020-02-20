@@ -220,7 +220,7 @@ let resolve prog =
        )
      | TryExcept (_, stmts1, excepts, stmts2) ->
        v (Stmts stmts1);
-       excepts |> List.iter (fun (ExceptHandler (_typ, e, body)) ->
+       excepts |> List.iter (fun (ExceptHandler (_t, _typ, e, body)) ->
          match e with
          | None -> v (Stmts body)
          | Some name ->

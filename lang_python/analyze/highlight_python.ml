@@ -235,7 +235,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
        );
        k x
      | TryExcept (_, _stmts1, excepts, _stmts2) ->
-       excepts |> List.iter (fun (ExceptHandler (_typ, e, _)) ->
+       excepts |> List.iter (fun (ExceptHandler (_t, _typ, e, _)) ->
          match e with
          | None -> ()
          | Some name ->

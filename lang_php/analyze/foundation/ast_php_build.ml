@@ -199,11 +199,11 @@ and stmt env st acc =
       let e = expr env e in
       let scl = switch_case_list env scl in
       A.Switch (tok, e, scl) :: acc
-  | Foreach (tok, _, e, _awaitTodo, _, pat, _, cst) ->
+  | Foreach (tok, _, e, _awaitTodo, tas, pat, _, cst) ->
       let e = expr env e in
       let pat = foreach_pattern env pat in
       let cst = colon_stmt env cst in
-      A.Foreach (tok, e, pat, cst) :: acc
+      A.Foreach (tok, e, tas, pat, cst) :: acc
   | Break (tok, e, _) -> A.Break (tok, opt expr env e) :: acc
   | Continue (tok, eopt, _) -> A.Continue (tok, opt expr env eopt) :: acc
   | Return (tok, eopt, _) -> A.Return (tok, opt expr env eopt) :: acc
@@ -631,7 +631,7 @@ and type_def_kind env = function
 
 
 and class_def env c =
-  let _, body, _ = c.c_body in
+  let t1, body, t2 = c.c_body in
   let (methods, implicit_fields) =
     List.fold_right (class_body env) body ([], []) in
   let kind, modifiers = class_type env c.c_type in
@@ -669,6 +669,7 @@ and class_def env c =
                 | None -> None
                 | Some (_, cnstr_ty) -> Some (hint_type env cnstr_ty))
           });
+    A.c_braces = t1, (), t2;
   }
 
 and class_type _env = function
@@ -934,15 +935,15 @@ and foreach_pattern env pat =
     A.List (t1, xs, t2)
 
 
-and catch env (_, (_, (fq, dn), _), (_, stdl, _)) =
+and catch env (t, (_, (fq, dn), _), (_, stdl, _)) =
   let stdl = List.fold_right (stmt_and_def env) stdl [] in
   let fq = hint_type env fq in
   let dn = dname dn in
-  fq, dn, stdl
+  t, fq, dn, stdl
 
-and finally env (_, (_, stdl, _)) =
+and finally env (t, (_, stdl, _)) =
   let stdl = List.fold_right (stmt_and_def env) stdl [] in
-  stdl
+  t, stdl
 
 and static_var env (x, e) =
   dname x, opt static_scalar_affect env e

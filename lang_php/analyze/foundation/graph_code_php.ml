@@ -725,7 +725,7 @@ and stmt_bis env x =
   | For (_, es1, es2, es3, xs) ->
       exprl env (es1 @ es2 @ es3);
       stmtl env xs
-  | Foreach (_, e1, e2, xs) ->
+  | Foreach (_, e1, _, e2, xs) ->
       exprl env [e1;e2];
       stmtl env xs;
   | Return (_, eopt)  | Break (_, eopt) | Continue (_, eopt) ->
@@ -742,10 +742,10 @@ and stmt_bis env x =
   | Global (_, xs) -> exprl env xs
 
 (* todo: add deps to type hint? *)
-and catch env (_hint_type, _name, xs) =
+and catch env (_t, _hint_type, _name, xs) =
   stmtl env xs
 
-and finally env (xs) =
+and finally env (_t, xs) =
   stmtl env xs
 
 and case env = function

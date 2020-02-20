@@ -116,7 +116,7 @@ let special (x, tok) =
       | Some n -> 
             let n = name n in
             SR_NeedArgs (fun args ->
-            G.OtherExpr (G.OE_Encaps,(G.Id n)::(args|>List.map(fun e ->G.E e))))
+            G.OtherExpr (G.OE_EncapsName,(G.Id n)::(args|>List.map(fun e ->G.E e))))
       )
   | ArithOp op -> SR_Special (G.ArithOp op)
   | IncrDecr v -> SR_Special (G.IncrDecr v)
@@ -223,12 +223,16 @@ and stmt x =
   | Try ((t, v1, v2, v3)) ->
       let v1 = stmt v1
       and v2 =
-        option (fun (v1, v2) -> 
+        option (fun (t, v1, v2) -> 
            let v1 = name v1 and v2 = stmt v2 in
-           G.PatId (v1, G.empty_id_info()), v2
+           t, G.PatId (v1, G.empty_id_info()), v2
        ) v2
-      and v3 = option stmt v3 in
+      and v3 = option tok_and_stmt v3 in
       G.Try (t, v1, Common.opt_to_list v2, v3)
+
+and tok_and_stmt (t, v) = 
+  let v = stmt v in
+  (t, v)
 
 and for_header =
   function
@@ -248,7 +252,7 @@ and for_header =
          G.ForClassic ([G.ForInitExpr e], Some v2, Some v3)
       )
       
-  | ForIn ((v1, v2)) ->
+  | ForIn ((v1, t, v2)) ->
       let v2 = expr v2 in
       let pattern = 
         match v1 with
@@ -258,7 +262,7 @@ and for_header =
             let e = expr e in
             G.expr_to_pattern e
       in
-      G.ForEach (pattern, v2)
+      G.ForEach (pattern, t, v2)
 
 and case =
   function
@@ -332,7 +336,7 @@ and obj_ v = bracket (list property) v
 
 and class_ { c_extends = c_extends; c_body = c_body } =
   let v1 = option expr c_extends in
-  let v2 = list property c_body in 
+  let v2 = bracket (list property) c_body in 
   (* todo: could analyze arg to look for Id *)
   let extends = 
     match v1 with

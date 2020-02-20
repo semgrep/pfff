@@ -39,10 +39,10 @@
  * to be too generic as in ast_fuzzy.ml, where we have a very general 
  * tree of nodes, but all the structure of the original AST is lost.
  * 
- * TODO:
+ * todo:
  *  - later: add Ruby, Rust, Scala (difficult)
  *  - later: add C++ (argh)
- *  - see ast_fuzzy.ml TODOs for ideas to use ast_generic for sgrep.
+ *  - see ast_fuzzy.ml todos for ideas to use ast_generic for sgrep.
  *
  * related work:
  *  - ast_fuzzy.ml (in this directory)
@@ -91,7 +91,7 @@
  *    introduce a new variable should have a relevant comment 'newvar:'
  *  - to correctly resolve names, each constructs that introduce a new scope
  *    should have a relevant comment 'newscope:'
- *  - TODO each language should add the VarDefs that defines the locals
+ *  - todo: each language should add the VarDefs that defines the locals
  *    used in a function (instead of having the first Assign play the role
  *    of a VarDef, as done in Python for example).
  *
@@ -143,7 +143,7 @@ type resolved_name =
   | Local of gensym
   | Param of gensym (* could merge with Local *)
   (* for closures; can refer to a Local or Param *)
-  | EnclosedVar of gensym (* TODO? and depth? *)
+  | EnclosedVar of gensym (* todo? and depth? *)
 
   (* both dotted_ident must at least contain one element *)
   | Global of dotted_ident (* or just name? *) (* can also use 0 for gensym *)
@@ -159,7 +159,8 @@ type resolved_name =
   and gensym = int (* a unique gensym'ed number *)
  (* with tarzan *)
 
-(* big mutually recursive types because of the use of 'any' in OtherXxx *)
+(* Start of big mutually recursive types because of the use of 'any' 
+ * in OtherXxx *)
 
 type name = ident * name_info
   and name_info = { 
@@ -188,7 +189,8 @@ and expr =
 
   (* composite values *)
   | Container of container_operator * expr list bracket
-  | Tuple of expr list (* special case of Container, at least 2 elements *) 
+  (* special case of Container, at least 2 elements *) 
+  | Tuple of expr list 
 
   (* And-type (field.vinit should be a Some) *)
   | Record of field list bracket
@@ -201,7 +203,8 @@ and expr =
   (* usually an argument of a New (used in Java, Javascript) *)
   | AnonClass of class_definition
 
-  (* todo: newvar: sometimes abused to also introduce a newvar (as in Python)
+  (* todo: newvar: 
+   * Name is sometimes abused to also introduce a newvar (as in Python)
    * but ultimately those cases should be rewritten to first introduce a
    * VarDef. 
    * todo: Sometimes some DotAccess should really be transformed in Name
@@ -337,7 +340,7 @@ and expr =
   and field_ident =
     | FId of ident
     | FName of name (* OCaml *)
-    | FDynamic of expr
+    | FDynamic of expr (* PHP, JS (even though use ArrayAccess for that) *)
 
 
   (* newscope: newvar: *)
@@ -372,21 +375,21 @@ and expr =
         (* OCaml *)
         | OA_ArgQuestion
 
-  (* TODO: reduce, or move in other_special? *)
+  (* todo: reduce, or move in other_special? *)
   and other_expr_operator = 
     (* Javascript *)
     | OE_Exports | OE_Module 
     | OE_Define | OE_Arguments 
     | OE_NewTarget
     | OE_Delete | OE_YieldStar
-    | OE_Encaps (* todo: convert to regular funcall? use Concat? *)
+    | OE_EncapsName (* todo: convert to regular funcall? use Concat? *)
     | OE_Require (* todo: lift to DirectiveStmt? transform in Import? *) 
     | OE_UseStrict (* todo: lift up to program attribute/directive? *)
     (* Python *)
     | OE_In | OE_NotIn (* less: could be part of a obj_operator? *)
     | OE_Invert
     | OE_Slices (* see also SliceAccess *)
-    (* TODO: newvar: *)
+    (* todo: newvar: *)
     | OE_CompForIf | OE_CompFor | OE_CompIf
     | OE_CmpOps
     | OE_Repr (* todo: move to special, special Dump *)
@@ -414,14 +417,14 @@ and stmt =
   | DirectiveStmt of directive
 
   (* newscope: in C++/Java/Go *)
-  | Block of stmt list (* TODO: bracket *)
+  | Block of stmt list (* todo: bracket *)
   (* EmptyStmt = Block [], or separate so can not be matched by $S? *)
 
   | If of tok (* 'if' or 'elif' *) * expr * stmt * stmt
-  | While of tok * expr * stmt
+  | While   of tok * expr * stmt
   | DoWhile of tok * stmt * expr
   (* newscope: *)
-  | For of tok * for_header * stmt
+  | For of tok (* 'for', 'foreach'*) * for_header * stmt
 
   (* The expr can be None for Go.
    * less: could be merged with ExprStmt (MatchPattern ...) *)
@@ -462,9 +465,9 @@ and stmt =
     | CaseEqualExpr of tok * expr
 
   (* newvar: newscope: usually a PatVar *)
-  and catch = (* TODO tok *) pattern * stmt
+  and catch = tok (* 'catch', 'except' in Python *) * pattern * stmt
   (* newscope: *)
-  and finally = (* TODO tok * *) stmt
+  and finally = tok (* 'finally' *) * stmt
 
   and label = ident
   and label_ident =
@@ -481,7 +484,9 @@ and stmt =
                     expr option (* cond *) * 
                     expr option (* next *)
     (* newvar: *)
-    | ForEach of pattern * (* TODO tok *) expr (* pattern 'in' expr *)
+    | ForEach of pattern * 
+                 tok (* 'in' Python, 'range' Go, 'as' PHP, '' Java *) * 
+                 expr (* pattern 'in' expr *)
 
     and for_var_or_expr = 
     (* newvar: *)
@@ -490,13 +495,13 @@ and stmt =
 
   and other_stmt_with_stmt_operator = 
     (* Python *)
-    | OSWS_With (* TODO: newvar: in OtherStmtWithStmt with LetPattern 
+    | OSWS_With (* newvar: in OtherStmtWithStmt with LetPattern 
                  * and newscope: *)
 
   and other_stmt_operator = 
     (* Python *)
     | OS_Delete 
-    (* TODO: reduce? transpile? *)
+    (* todo: reduce? transpile? *)
     | OS_ForOrElse | OS_WhileOrElse | OS_TryOrElse
     | OS_ThrowFrom | OS_ThrowNothing 
     | OS_Pass
@@ -519,14 +524,14 @@ and pattern =
   (* Or-Type, used also to match OCaml exceptions *)
   | PatConstructor of name * pattern list
   (* And-Type*)
-  | PatRecord of field_pattern list (* TODO: bracket *)
+  | PatRecord of (name * pattern) list bracket
 
   (* newvar:! *)
   | PatId of ident * id_info (* Always Local or Param *)
 
   (* special cases of PatConstructor *)
-  | PatTuple of pattern list
-  | PatList of pattern list (* TODO bracket *)
+  | PatTuple of pattern list (* at least 2 elements *)
+  | PatList of pattern list bracket
   | PatKeyVal of pattern * pattern (* a kind of PatTuple *)
 
   (* special case of PatId *)
@@ -548,11 +553,9 @@ and pattern =
 
   | OtherPat of other_pattern_operator * any list
 
-  and field_pattern = name * pattern
-
   and other_pattern_operator =
   (* Python *)
-  | OP_ExprPattern (* todo: should transform via expr_to_pattern() below *)
+  | OP_Expr (* todo: should transform via expr_to_pattern() below *)
 
 (*****************************************************************************)
 (* Type *)
@@ -562,7 +565,7 @@ and type_ =
   (* todo? a type_builtin = TInt | TBool | ...? see Literal *)
   | TyBuiltin of string wrap (* int, bool, etc. could be TApply with no args *)
  
-   (* less: could merge with TyApply (name, []) 
+   (* old: was originally TyApply (name, []), but better to differentiate.
     * todo? may need also TySpecial because the name can actually be
     *  self/parent/static (e.g., in PHP)
     *)
@@ -610,7 +613,7 @@ and type_ =
   (* Python *)
   | OT_Expr | OT_Arg (* todo: should use expr_to_type() below when can *)
   (* C *)
-  (* TODO? convert in unique names with TyName? *)
+  (* todo? convert in unique names with TyName? *)
   | OT_StructName | OT_UnionName | OT_EnumName 
   (* PHP *)
   | OT_ShapeComplex (* complex TyAnd with complex keys *) 
@@ -674,7 +677,7 @@ and definition = entity * definition_kind (* (or decl) *)
   and definition_kind =
     (* newvar: can be used also for methods, nested functions, lambdas.
      * note: can have empty "body" when the def is actually a declaration
-     * in a header file (called a prototype in C) 
+     * in a header file (called a prototype in C).
      *)
     | FuncDef   of function_definition
     (* newvar: can be used also for constants, fields *)
@@ -689,18 +692,17 @@ and definition = entity * definition_kind (* (or decl) *)
     (* in header file (e.g., .mli in OCaml or 'module sig') *)
     | Signature of type_
     (* Only used inside a function.
-     * Need for languages without local VarDef (e.g., Python/PHP)
+     * Needed for languages without local VarDef (e.g., Python/PHP)
      * where the first use is also its declaration. In that case when we
      * want to access a global we need to disambiguate with creating a new
      * local.
      *)
-    | UseOuterDecl of tok (* 'global' or 'nonlocal' Python, 'use' PHP *)
+    | UseOuterDecl of tok (* 'global' or 'nonlocal' in Python, 'use' in PHP *)
 
-(* template/generics/polymorphic *)
+(* template/generics/polymorphic-type *)
 and type_parameter = ident * type_parameter_constraints
 
   and type_parameter_constraints = type_parameter_constraint list
-
    and type_parameter_constraint = 
      | Extends of type_
  
@@ -709,7 +711,6 @@ and type_parameter = ident * type_parameter_constraints
 (* ------------------------------------------------------------------------- *)
 (* less: could be merged with variable_definition *)
 and function_definition = {
- (* less: could be merged in entity.type_ *)
  fparams: parameters;
  frettype: type_ option; (* return type *)
  (* newscope:
@@ -720,7 +721,7 @@ and function_definition = {
     (* newvar: *)
     and parameter =
      | ParamClassic of parameter_classic
-     | ParamPattern of pattern
+     | ParamPattern of pattern (* in OCaml, but also now JS *)
      (* sgrep: ... in parameters
       * note: foo(...x) of Js/Go is using the Variadic attribute, not this *)
      | ParamEllipsis of tok
@@ -744,7 +745,7 @@ and function_definition = {
      (* Python *)
      | OPO_KwdParam | OPO_SingleStarParam
      (* Go *)
-     | OPO_Receiver (* of parameter_classic, used to tag the "self" parameter *)
+     | OPO_Receiver (* of parameter_classic, used to tag the "self" parameter*)
      (* PHP *) 
      | OPO_Ref (* of parameter_classic *)
 
@@ -761,7 +762,6 @@ and variable_definition = {
    * followed by an Assign (possibly to Null). See vardef_to_assign().
    *)
   vinit: expr option;
-  (* less: could merge in entity.type_ *)
   vtype: type_ option;
 }
 
@@ -777,26 +777,27 @@ and type_definition = {
    (* field.vtype should be defined here 
     * record/struct (for class see class_definition 
     *)
-   | AndType of field list (* TODO bracket  *)
+   | AndType of field list bracket
 
    (* a.k.a typedef in C (and alias type in Go) *)
    | AliasType of type_
-   | NewType of type_ (* Haskell/Hack/Go ('type x foo' vs 'type x = foo') *)
+   (* Haskell/Hack/Go ('type x foo' vs 'type x = foo') *)
+   | NewType of type_ 
 
    | Exception of ident (* same name than entity *) * type_ list
 
    | OtherTypeKind of other_type_kind_operator * any list
 
-  and or_type_element =
-    | OrConstructor of ident * type_ list
-    | OrEnum of ident * expr option
-    | OrUnion of ident * type_
+    and or_type_element =
+      | OrConstructor of ident * type_ list
+      | OrEnum of ident * expr option
+      | OrUnion of ident * type_
 
-    | OtherOr of other_or_type_element_operator * any list
+      | OtherOr of other_or_type_element_operator * any list
 
-      and other_or_type_element_operator =
-      (* Java *)
-      | OOTEO_EnumWithMethods | OOTEO_EnumWithArguments
+       and other_or_type_element_operator =
+       (* Java *)
+       | OOTEO_EnumWithMethods | OOTEO_EnumWithArguments
 
  (* Field definition and use, for classes and records.
   * note: I don't call it field_definition because it's used both to
@@ -810,10 +811,9 @@ and type_definition = {
   * for interface methods.
   *)
   and field = 
+    | FieldStmt of stmt
     | FieldDynamic of expr (* dynamic name *) * attribute list * expr (*value*)
     | FieldSpread of tok (* ... *) * expr (* usually a Name *)
-
-    | FieldStmt of stmt
 
   and other_type_kind_operator = 
      (* OCaml *)
@@ -830,7 +830,7 @@ and class_definition = {
   cimplements: type_ list;
   cmixins: type_ list; (* PHP 'uses' *)
   (* newscope: *)
-  cbody: field list; (* TODO bracket *)
+  cbody: field list bracket;
 }
   and class_kind = 
     | Class
@@ -1018,7 +1018,7 @@ let expr_to_arg e =
  *)
 let expr_to_pattern e =
   (* TODO: diconstruct e and generate the right pattern (PatLiteral, ...) *)
-  OtherPat (OP_ExprPattern, [E e])
+  OtherPat (OP_Expr, [E e])
 
 let expr_to_type e =
   (* TODO: diconstruct e and generate the right type (TyBuiltin, ...) *)
@@ -1086,3 +1086,5 @@ let funcdef_to_lambda (ent, def) resolved =
  *)
 let fake s = Parse_info.fake_info s
 let fake_bracket x = fake "(", x, fake ")"
+let unbracket (_, x, _) = x
+

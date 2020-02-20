@@ -163,7 +163,9 @@ and expr =
       G.MatchPattern (v1, v2)
   | Try ((t, v1, v2)) ->
       let v1 = expr v1 and v2 = list match_case v2 in 
-      let catches = v2 |> List.map (fun (pat, e) -> pat, G.ExprStmt e) in
+      let catches = v2 |> List.map (fun (pat, e) -> 
+            fake "catch", pat, G.ExprStmt e
+        ) in
       let st = G.Try (t, G.ExprStmt v1, catches, None) in
       G.OtherExpr (G.OE_StmtExpr, [G.S st])
 
@@ -234,12 +236,12 @@ and pattern =
       G.PatConstructor (n, [v1;v3])
   | PatTuple v1 -> let v1 = list pattern v1 in 
                    G.PatTuple v1
-  | PatList v1 -> let v1 = list pattern v1 in G.PatList v1
+  | PatList v1 -> let v1 = bracket (list pattern) v1 in G.PatList v1
   | PatUnderscore v1 -> let v1 = tok v1 in G.PatUnderscore v1
   | PatRecord v1 ->
       let v1 =
-        list
-          (fun (v1, v2) -> let v1 = name v1 and v2 = pattern v2 in v1, v2) v1
+        bracket (list
+          (fun (v1, v2) -> let v1 = name v1 and v2 = pattern v2 in v1, v2)) v1
       in 
       G.PatRecord v1
   | PatAs ((v1, v2)) -> 
@@ -291,7 +293,7 @@ and type_def_kind =
       in G.OrType v1
   | RecordType v1 ->
       let v1 =
-        list
+        bracket (list
           (fun (v1, v2, v3) ->
              let v1 = ident v1
              and v2 = type_ v2
@@ -302,7 +304,7 @@ and type_def_kind =
                | Some tok -> [G.attr G.Mutable tok] 
                | None -> []) in
             G.FieldStmt (G.DefStmt
-             (ent, G.VarDef { G.vinit = None; vtype = Some v2 })))
+             (ent, G.VarDef { G.vinit = None; vtype = Some v2 }))))
           v1
       in G.AndType v1
   

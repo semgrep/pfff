@@ -339,7 +339,7 @@ and vof_other_expr_operator =
   | OE_NewTarget -> Ocaml.VSum (("OE_NewTarget", []))
   | OE_Delete -> Ocaml.VSum (("OE_Delete", []))
   | OE_YieldStar -> Ocaml.VSum (("OE_YieldStar", []))
-  | OE_Encaps -> Ocaml.VSum (("OE_Encaps", []))
+  | OE_EncapsName -> Ocaml.VSum (("OE_EncapsName", []))
   | OE_Require -> Ocaml.VSum (("OE_Require", []))
   | OE_UseStrict -> Ocaml.VSum (("OE_UseStrict", []))
   | OE_In -> Ocaml.VSum (("OE_In", []))
@@ -573,9 +573,15 @@ and vof_case =
   | Default t -> 
       let t = vof_tok t in
       Ocaml.VSum (("Default", [t]))
-and vof_catch (v1, v2) =
-  let v1 = vof_pattern v1 and v2 = vof_stmt v2 in Ocaml.VTuple [ v1; v2 ]
-and vof_finally v = vof_stmt v
+and vof_catch (t, v1, v2) =
+  let t = vof_tok t in 
+  let v1 = vof_pattern v1 and v2 = vof_stmt v2 in Ocaml.VTuple [ t; v1; v2 ]
+and vof_finally v = vof_tok_and_stmt v
+and vof_tok_and_stmt (t, v) = 
+  let t = vof_tok t in
+  let v = vof_stmt v in
+  Ocaml.VTuple [t; v]
+
 and vof_label v = vof_ident v
 and vof_for_header =
   function
@@ -584,10 +590,11 @@ and vof_for_header =
       and v2 = Ocaml.vof_option vof_expr v2
       and v3 = Ocaml.vof_option vof_expr v3
       in Ocaml.VSum (("ForClassic", [ v1; v2; v3 ]))
-  | ForEach ((v1, v2)) ->
+  | ForEach ((v1, t, v2)) ->
+      let t = vof_tok t in
       let v1 = vof_pattern v1
       and v2 = vof_expr v2
-      in Ocaml.VSum (("ForEach", [ v1; v2 ]))
+      in Ocaml.VSum (("ForEach", [ v1; t; v2 ]))
 and vof_for_var_or_expr =
   function
   | ForInitVar ((v1, v2)) ->
@@ -636,11 +643,11 @@ and vof_pattern =
       let v1 = vof_type_ v1 in Ocaml.VSum (("PatType", [ v1 ]))
   | PatRecord v1 ->
       let v1 =
-        Ocaml.vof_list
+        vof_bracket (Ocaml.vof_list
           (fun (v1, v2) ->
              let v1 = vof_name v1
              and v2 = vof_pattern v2
-             in Ocaml.VTuple [ v1; v2 ])
+             in Ocaml.VTuple [ v1; v2 ]))
           v1
       in Ocaml.VSum (("PatRecord", [ v1 ]))
   | PatConstructor ((v1, v2)) ->
@@ -664,7 +671,7 @@ and vof_pattern =
       let v1 = Ocaml.vof_list vof_pattern v1
       in Ocaml.VSum (("PatTuple", [ v1 ]))
   | PatList v1 ->
-      let v1 = Ocaml.vof_list vof_pattern v1
+      let v1 = vof_bracket (Ocaml.vof_list vof_pattern) v1
       in Ocaml.VSum (("PatList", [ v1 ]))
   | PatKeyVal ((v1, v2)) ->
       let v1 = vof_pattern v1
@@ -686,7 +693,7 @@ and vof_pattern =
       in Ocaml.VSum (("OtherPat", [ v1; v2 ]))
 and vof_other_pattern_operator =
   function
-  | OP_ExprPattern -> Ocaml.VSum (("OP_ExprPattern", []))
+  | OP_Expr -> Ocaml.VSum (("OP_Expr", []))
 and vof_definition (v1, v2) =
   let v1 = vof_entity v1
   and v2 = vof_definition_kind v2
@@ -858,7 +865,7 @@ and vof_type_definition_kind =
       let v1 = Ocaml.vof_list vof_or_type_element v1
       in Ocaml.VSum (("OrType", [ v1 ]))
   | AndType v1 ->
-      let v1 = Ocaml.vof_list vof_field v1
+      let v1 = vof_bracket (Ocaml.vof_list vof_field) v1
       in Ocaml.VSum (("AndType", [ v1 ]))
   | AliasType v1 ->
       let v1 = vof_type_ v1 in Ocaml.VSum (("AliasType", [ v1 ]))
@@ -906,7 +913,7 @@ and
                          cmixins = v_cmixins;
                        } =
   let bnds = [] in
-  let arg = Ocaml.vof_list vof_field v_cbody in
+  let arg = vof_bracket (Ocaml.vof_list vof_field) v_cbody in
   let bnd = ("cbody", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_list vof_type_ v_cmixins in

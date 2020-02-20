@@ -177,12 +177,18 @@ and v_stmt x =
       let v1 = v_stmt v1
       and v2 =
         v_option
-          (fun (v1, v2) -> let v1 = v_name v1 and v2 = v_stmt v2 in ()) v2
-      and v3 = v_option v_stmt v3
+          (fun (t, v1, v2) -> 
+              let t = v_tok t in
+              let v1 = v_name v1 and v2 = v_stmt v2 in ()) v2
+      and v3 = v_option v_tok_and_stmt v3
       in ()
   in
   vin.kstmt (k, all_functions) x
 
+and v_tok_and_stmt (t, v) = 
+  let t = v_tok t in
+  let v = v_stmt v in
+  ()
 and v_for_header =
   function
   | ForClassic ((v1, v2, v3)) ->
@@ -190,7 +196,8 @@ and v_for_header =
       and v2 = v_expr v2
       and v3 = v_expr v3
       in ()
-  | ForIn ((v1, v2)) ->
+  | ForIn ((v1, t, v2)) ->
+      let t = v_tok t in
       let v1 = v_either v_var v_expr v1 and v2 = v_expr v2 in ()
 
 and v_case =
@@ -233,7 +240,7 @@ and v_fun_prop =
 and v_obj_ v = v_bracket (v_list v_property) v
 and v_class_ { c_extends = v_c_extends; c_body = v_c_body } =
   let arg = v_option v_expr v_c_extends in
-  let arg = v_list v_property v_c_body in ()
+  let arg = v_bracket (v_list v_property) v_c_body in ()
 and v_property x =
   (* tweak *)
   let k x =  match x with

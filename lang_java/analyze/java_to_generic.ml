@@ -213,7 +213,7 @@ and expr e =
   | NewClass ((v1, v2, v3)) ->
       let v1 = typ v1
       and v2 = arguments v2
-      and v3 = option decls v3 in
+      and v3 = option (bracket decls) v3 in
       (match v3 with
       | None -> G.Call (G.IdSpecial (G.New, fake_info()), (G.ArgType v1)::v2)
       | Some decls -> 
@@ -221,7 +221,9 @@ and expr e =
                 ckind = G.Class;
                 cextends = [v1];
                 cimplements = []; cmixins = [];
-                cbody = decls |> List.map (fun x -> G.FieldStmt x) } in
+                cbody = decls |> bracket (List.map (fun x -> G.FieldStmt x))
+                }
+            in
          G.Call (G.IdSpecial (G.New, fake_info()), (G.Arg anonclass)::v2)
       )
   | NewArray ((v1, v2, v3, v4)) ->
@@ -250,11 +252,11 @@ and expr e =
       let v1 = expr v1
       and v2 = ident v2
       and v3 = arguments v3
-      and v4 = option decls v4
+      and v4 = option (bracket decls) v4
       in 
       let any = 
         [G.E v1; G.Id v2] @ (v3 |> List.map (fun arg -> G.Ar arg)) @
-        (Common.opt_to_list v4 |> List.flatten |> List.map
+        (Common.opt_to_list v4 |> List.map G.unbracket |> List.flatten |> List.map
             (fun st -> G.S st)) in
        G.OtherExpr (G.OE_NewQualifiedClass, any)
 
@@ -334,8 +336,8 @@ and stmt =
       G.OtherStmt (G.OS_Sync, [G.E v1; G.S v2])
   | Try ((t, v1, v2, v3)) ->
       let v1 = stmt v1
-      and v2 = catches t v2
-      and v3 = option stmt v3
+      and v2 = catches v2
+      and v3 = option tok_and_stmt v3
       in
       G.Try (t,v1, v2, v3)
   | Throw (t, v1) -> let v1 = expr v1 in
@@ -347,6 +349,9 @@ and stmt =
   | Assert ((t, v1, v2)) -> let v1 = expr v1 and v2 = option expr v2 in
       G.Assert (t, v1, v2)
 
+and tok_and_stmt (t, v) = 
+  let v = stmt v in
+  (t, v)
 
 and stmts v = list stmt v
 
@@ -375,7 +380,7 @@ and for_control tok =
         | Some t -> G.PatVar (t, Some (ent.G.name, G.empty_id_info ()))
         | None -> error tok "TODO: Catch without type"
       in
-      G.ForEach (pat, v2)
+      G.ForEach (pat, G.fake "in", v2)
 
 and for_init =
   function
@@ -390,14 +395,14 @@ and var { name = name; mods = mods; type_ = xtyp } =
   let v3 = option typ xtyp in
   G.basic_entity v1 v2, v3
 
-and catch tok (v1, v2) = let ent, typ = var v1 and v2 = stmt v2 in
+and catch (tok, v1, v2) = let ent, typ = var v1 and v2 = stmt v2 in
   let pat = 
     match typ with
     | Some t -> G.PatVar (t, Some (ent.G.name, G.empty_id_info ()))
     | None -> error tok "TODO: Catch without type"
   in
-  pat, v2
-and catches t v = list (catch t) v
+  tok, pat, v2
+and catches v = list catch v
 
 
 and vars v = list var v
@@ -480,8 +485,8 @@ and class_decl {
   let v4 = modifiers cl_mods in
   let v5 = option typ cl_extends in
   let v6 = list ref_type cl_impls in 
-  let v7 = decls cl_body in 
-  let fields = v7 |> List.map (fun x -> G.FieldStmt x) in
+  let v7 = bracket decls cl_body in 
+  let fields = v7 |> bracket (List.map (fun x -> G.FieldStmt x)) in
   let ent = { (G.basic_entity v1 v4) with
       G.tparams = v3 } in
   let cdef = { G.

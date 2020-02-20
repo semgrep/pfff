@@ -150,10 +150,10 @@ and pattern =
   (* special cases of PatConstructor *)
   | PatConsInfix of pattern * tok (* :: *) * pattern
   | PatTuple of pattern list
-  | PatList of pattern list
+  | PatList of pattern list bracket
 
   | PatUnderscore of tok
-  | PatRecord of (name * pattern) list
+  | PatRecord of (name * pattern) list bracket
 
   | PatAs of pattern * ident
   (* ocaml disjunction patterns extension *)
@@ -197,7 +197,7 @@ type type_declaration = {
    (* or type *)
    | AlgebricType of (ident * type_ list) list
    (* and type *)
-   | RecordType   of (ident * type_ * tok option (* mutable *)) list
+   | RecordType   of (ident * type_ * tok option (* mutable *)) list bracket
 
  (* with tarzan *)
 

@@ -596,7 +596,7 @@ let return_fact env instr =
 let facts_of_def env def =
   match def with
   | StructDef def -> 
-      def.s_flds |> Common.map_filter (fun fld ->
+      def.s_flds |> Ast_generic.unbracket |> Common.map_filter (fun fld ->
         match fld.fld_name with
         (* todo: kencc ext field! *)
         | None -> None

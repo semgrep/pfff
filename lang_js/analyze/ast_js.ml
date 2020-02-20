@@ -212,7 +212,7 @@ and stmt =
   | Label of label * stmt
  
   | Throw of tok * expr
-  | Try of tok * stmt * catch option * stmt option
+  | Try of tok * stmt * catch option * (tok * stmt) option
 
   (* less: ModuleDirective of module_directive 
    * ES6 modules can appear only at the toplevel
@@ -222,7 +222,7 @@ and stmt =
   (* less: could use some Special instead? *)
   and for_header = 
    | ForClassic of vars_or_expr * expr * expr
-   | ForIn of var_or_expr * expr
+   | ForIn of var_or_expr * tok * expr
 
     (* the expr is usually just an assign *)
     and vars_or_expr = (var list, expr) Common.either
@@ -232,7 +232,7 @@ and stmt =
    | Case of tok * expr * stmt
    | Default of tok * stmt
 
-  and catch = name * stmt
+  and catch = tok * name * stmt
 
 (* ------------------------------------------------------------------------- *)
 (* Entities *)
@@ -267,7 +267,7 @@ and obj_ = property list bracket
 and class_ = { 
   (* usually simply an Id *)
   c_extends: expr option;
-  c_body: property list;
+  c_body: property list bracket;
 }
 
   and property = 

@@ -133,12 +133,12 @@ let rec stmt_aux =
           list_expr_to_opt v3),
         G.stmt1 v4)]
           
-  | Foreach ((t, v1, v2, v3)) ->
+  | Foreach ((t, v1, t2, v2, v3)) ->
       let v1 = expr v1
       and v2 = foreach_pattern v2
       and v3 = list stmt v3
       in 
-      [G.For (t, G.ForEach (v2, v1), G.stmt1 v3)]
+      [G.For (t, G.ForEach (v2, t2, v1), G.stmt1 v3)]
   | Return (t, v1) -> let v1 = option expr v1 in 
       [G.Return (t, v1)]
   | Break (t, v1) -> 
@@ -212,17 +212,16 @@ and case =
   | Default (t, v1) -> let v1 = list stmt v1 in
       [G.Default t], G.stmt1 v1
 
-and catch (v1, v2, v3) =
+and catch (t, v1, v2, v3) =
   let v1 = hint_type v1 and v2 = var v2 and v3 = list stmt v3 in
   let pat = G.PatVar (v1, Some (v2, G.empty_id_info())) in
-  pat, G.stmt1 v3
+  t, pat, G.stmt1 v3
 
 and finally (v: finally list) = 
-  let xs = list (list stmt) v in
-  let xs = List.flatten xs in
+  let xs = list (fun (t, xs) -> t, list stmt xs) v in
   match xs with
   | [] -> None
-  | xs -> Some (G.stmt1 xs)
+  | (t,x)::xs -> Some (t, G.stmt1 (x @ (List.map snd xs |> List.flatten)))
 
 and expr =
   function
@@ -505,7 +504,8 @@ and class_def {
                 c_xhp_attr_inherit = c_xhp_attr_inherit;
                 c_constants = c_constants;
                 c_variables = c_variables;
-                c_methods = c_methods
+                c_methods = c_methods;
+                c_braces = (t1, (), t2);
               } =
   let tok = snd c_name in
 
@@ -540,7 +540,9 @@ and class_def {
     cextends = extends |> Common.opt_to_list;
     cimplements = implements;
     cmixins = uses;
-    cbody = fields |> List.map (fun def -> G.FieldStmt (G.DefStmt def));
+    cbody = t1, 
+      fields |> List.map (fun def -> G.FieldStmt (G.DefStmt def)), 
+      t2;
   } in
   ent, def
 
