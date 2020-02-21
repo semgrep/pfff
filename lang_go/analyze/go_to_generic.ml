@@ -549,6 +549,10 @@ and program { package = pack; imports = imports; decls = decls } =
   let arg3 = list top_decl decls in
   let arg_types = !anon_types |> List.map (fun x -> G.DefStmt x) in
   arg1 :: arg2 @ arg_types @ arg3
+
+and item = function
+ | ITop x -> top_decl x
+ | IStmt x -> stmt x
   
 and any x =
   anon_types := [];
@@ -562,6 +566,8 @@ and any x =
   | P v1 -> let v1 = program v1 in G.Pr v1
   | Ident v1 -> let v1 = ident v1 in G.Id v1
   | Ss v1 -> let v1 = list stmt v1 in G.Ss v1
+  | Item v1 -> let v1 = item v1 in G.S v1
+  | Items v1 -> let v1 = list item v1 in G.Ss v1
   in
   if !anon_types <> []
   then failwith "TODO: anon_types not empty";

@@ -263,10 +263,24 @@ package: LPACKAGE sym LSEMICOLON { $1, $2 }
    *)*/
 sgrep_spatch_pattern: 
  | expr         EOF       { E $1 }
- /*(* should be stmt_no_simple_stmt to remove 1 s/r conflict *)*/
- | stmt EOF       { S $1 }
- | stmt LSEMICOLON stmt LSEMICOLON stmt_list EOF 
-    { Ss ($1::$3::List.rev $5) }
+ /*(* should be item_no_simple_stmt to remove 1 s/r conflict *)*/
+ | item LSEMICOLON EOF       { Item $1 }
+ /*(* make version with and without LSEMICOLON which is inserted
+    * if the item as a newline before the EOF (which leads to ASI)
+    *)*/
+ | item            EOF       { Item $1 }
+ | item LSEMICOLON item LSEMICOLON item_list EOF 
+    { Items ($1::$3::List.rev $5) }
+
+item: 
+ | stmt   { IStmt $1 }
+ | xfndcl { ITop $1 }
+
+item_list:
+|   item { [$1] }
+|   item_list LSEMICOLON item { $3::$1 }
+
+ 
 
 /*(*************************************************************************)*/
 /*(*1 Import *)*/
@@ -873,6 +887,9 @@ arg_type:
 |   sym name_or_type { ParamClassic { pname= Some $1; ptype = $2; pdots = None } }
 |   sym dotdotdot    { ParamClassic { pname= Some $1; ptype = snd $2; pdots = Some (fst $2)}}
 |       dotdotdot    { ParamClassic { pname= None; ptype = snd $1; pdots = Some (fst $1)} }
+ /*(* sgrep-ext: *)*/
+ | LDDD { Flag_parsing.sgrep_guard (ParamEllipsis $1) }
+
 
 name_or_type:  ntype { $1 }
 

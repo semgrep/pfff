@@ -323,6 +323,11 @@ type program = {
 (* Any *)
 (*****************************************************************************)
 
+(* this is just for sgrep *)
+type item = 
+  | ITop of top_decl
+  | IStmt of stmt
+
 type any = 
  | E of expr
  | S of stmt
@@ -333,6 +338,8 @@ type any =
 
  | Ident of ident
  | Ss of stmt list
+ | Item of item
+ | Items of item list
  (* with tarzan *)
 
 (*****************************************************************************)

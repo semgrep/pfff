@@ -123,9 +123,14 @@ let any_of_string s =
     let toks = Common.exclude TH.is_comment_or_space toks_orig in
     (* insert implicit SEMICOLON and replace some LBRACE with LBODY *)
     let toks = Parsing_hacks_go.fix_tokens toks in
-    let _tr, lexer, lexbuf_fake = PI.mk_lexer_for_yacc toks TH.is_irrelevant in
+    let tr, lexer, lexbuf_fake = PI.mk_lexer_for_yacc toks TH.is_irrelevant in
     (* -------------------------------------------------- *)
     (* Call parser *)
     (* -------------------------------------------------- *)
-    Parser_go.sgrep_spatch_pattern lexer lexbuf_fake
+    try 
+      Parser_go.sgrep_spatch_pattern lexer lexbuf_fake
+    with Parsing.Parse_error ->
+      let cur = tr.PI.current in
+      pr2 ("parse error \n = " ^ error_msg_tok cur);
+      raise (PI.Parsing_error (TH.info_of_tok cur))
   )

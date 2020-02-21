@@ -371,6 +371,10 @@ and v_program x =
   let arg = v_list v_top_decl v_decls in ()
   in
   vin.kprogram (k, all_functions) x
+
+and v_item = function
+ | ITop v1 -> v_top_decl v1
+ | IStmt v1 -> v_stmt v1
   
 and v_any =
   function
@@ -382,6 +386,8 @@ and v_any =
   | P v1 -> let v1 = v_program v1 in ()
   | Ident v1 -> let v1 = v_ident v1 in ()
   | Ss v1 -> let v1 = v_list v_stmt v1 in ()
+  | Item v1 -> let v1 = v_item v1 in ()
+  | Items v1 -> let v1 = v_list v_item v1 in ()
 
 and all_functions x = v_any x
 in
