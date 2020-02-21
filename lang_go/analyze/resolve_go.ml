@@ -106,8 +106,15 @@ let resolve prog =
             add_name_env (Filename.basename path, ii) 
               (G.ImportedModule (G.FileName (path,ii))) env
           | ImportNamed id -> 
-            add_name_env id
-              (G.ImportedModule (G.FileName (path,ii))) env
+            (* TODO: hacky, but right now we transform
+             * import sub "x.y.z" in sub = [z] so later 
+             * sub.bar will be allowed to match z.bar
+             *)
+            (* add_name_env id
+              (G.ImportedModule (G.FileName (path,ii))) env *)
+             add_name_env id
+               (G.ImportedModule (G.DottedName [(Filename.basename path, ii)]))
+                  env;
           | ImportDot _ -> ()
       );
       k x
