@@ -54,12 +54,14 @@ let ii_of_any = Lib_parsing_go.ii_of_any
 (* TODO? do results "parameters" can have names? *)
 let return_type_of_results results = 
   match results with
-  | [] | [{G. ptype = None; _}] -> None
-  | [{G. ptype = Some t; _}] -> Some t
+  | [] | [G.ParamClassic {G. ptype = None; _}] -> None
+  | [G.ParamClassic {G. ptype = Some t; _}] -> Some t
   | xs -> Some (G.TyTuple (xs |> List.map (function
-            | { G.ptype = Some t;_ } -> t
-            | { G.ptype = None; _ } -> raise Impossible
+            | G.ParamClassic { G.ptype = Some t;_ } -> t
+            | G.ParamClassic { G.ptype = None; _ } -> raise Impossible
+            | _ -> raise Impossible
             ) |> G.fake_bracket))
+  
 
 let list_to_tuple_or_expr xs =
   match xs with
@@ -69,7 +71,7 @@ let list_to_tuple_or_expr xs =
 
 let mk_func_def params ret st =
  { G.
-    fparams = params |> List.map (fun x -> G.ParamClassic x);
+    fparams = params;
     frettype = ret;
     fbody = st;
   }
@@ -125,6 +127,10 @@ let rec type_ =
         | None -> G.TyBuiltin (fake_id "void")
         | Some t -> t
       in
+      let params = params |> Common.map_filter (function
+           | G.ParamClassic x -> Some x
+           | _ -> None
+       ) in
       G.TyFun (params, ret)
   | TMap ((t, v1, v2)) -> let v1 = type_ v1 and v2 = type_ v2 in 
       G.TyNameApply (mk_name "map" t, [G.TypeArg v1; G.TypeArg v2])
@@ -153,11 +159,18 @@ and chan_dir = function
   | TBidirectional -> G.TyName (fake_name "bidirectional")
 
 and func_type { fparams = fparams; fresults = fresults } =
-  let fparams = list parameter fparams in
-  let fresults = list parameter fresults in
+  let fparams = list parameter_binding fparams in
+  let fresults = list parameter_binding fresults in
   fparams, return_type_of_results fresults
 
-and parameter { pname = pname; ptype = ptype; pdots = pdots } =
+and parameter_binding x = 
+ match x with
+ | ParamClassic x -> G.ParamClassic (parameter x)
+ | ParamEllipsis t -> G.ParamEllipsis t
+
+and parameter x = 
+  match x with
+  { pname = pname; ptype = ptype; pdots = pdots } ->
   let arg1 = option ident pname in
   let arg2 = type_ ptype in 
   let arg3 = option tok pdots in 
@@ -166,6 +179,7 @@ and parameter { pname = pname; ptype = ptype; pdots = pdots } =
     pattrs = (match arg3 with None -> [] | Some tok -> [G.attr G.Variadic tok]);
     pinfo = G.empty_id_info ()
     }
+
 
 and struct_field (v1, v2) =
   let v1 = struct_field_kind v1 and _v2TODO = option tag v2 in
@@ -501,7 +515,8 @@ and top_decl =
       let ent = G.basic_entity v1 [] in
       G.DefStmt (ent, G.FuncDef (mk_func_def params ret v3))
   | DMethod ((v1, v2, (v3, v4))) ->
-      let v1 = ident v1 and v2 = parameter v2
+      let v1 = ident v1 
+      and v2 = parameter v2
       and (params, ret) = func_type v3 and v4 = stmt v4 in
       let ent = G.basic_entity v1 [] in
       let def = mk_func_def params ret v4 in
@@ -534,6 +549,11 @@ and program { package = pack; imports = imports; decls = decls } =
   let arg3 = list top_decl decls in
   let arg_types = !anon_types |> List.map (fun x -> G.DefStmt x) in
   arg1 :: arg2 @ arg_types @ arg3
+
+and item = function
+ | ITop x -> top_decl x
+ | IImport x -> let x = import x in G.DirectiveStmt x
+ | IStmt x -> stmt x
   
 and any x =
   anon_types := [];
@@ -547,6 +567,8 @@ and any x =
   | P v1 -> let v1 = program v1 in G.Pr v1
   | Ident v1 -> let v1 = ident v1 in G.Id v1
   | Ss v1 -> let v1 = list stmt v1 in G.Ss v1
+  | Item v1 -> let v1 = item v1 in G.S v1
+  | Items v1 -> let v1 = list item v1 in G.Ss v1
   in
   if !anon_types <> []
   then failwith "TODO: anon_types not empty";

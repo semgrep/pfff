@@ -115,7 +115,7 @@ let type_to_id x =
 let adjust_signatures params =
   let params = List.rev params in
   let all_types = 
-   params |> List.for_all (function {pname = None; _} -> true | _ ->false) in
+   params |> List.for_all (function ParamClassic {pname = None; _} -> true | _ ->false) in
   if all_types
   then params
   else 
@@ -129,13 +129,15 @@ let adjust_signatures params =
               end
       | x::xs ->
         (match x with
-          | { pname = Some _; ptype = t; _ } ->
+          | ParamClassic { pname = Some _; ptype = t; _ } ->
              ((acc |> List.rev |> List.map (fun id -> 
-               { pname = Some id; ptype = t; pdots = None })) @ [x]) @
+               ParamClassic { pname = Some id; ptype = t; pdots = None })) @
+               [x]) @
                aux [] xs
-          | { pname = None; ptype = id_typ; _ } ->
+          | ParamClassic { pname = None; ptype = id_typ; _ } ->
             let id = type_to_id id_typ in
             aux (id::acc) xs
+          | ParamEllipsis t -> (ParamEllipsis t):: aux [] xs
         )
     in
     aux [] params
@@ -261,10 +263,25 @@ package: LPACKAGE sym LSEMICOLON { $1, $2 }
    *)*/
 sgrep_spatch_pattern: 
  | expr         EOF       { E $1 }
- /*(* should be stmt_no_simple_stmt to remove 1 s/r conflict *)*/
- | stmt EOF       { S $1 }
- | stmt LSEMICOLON stmt LSEMICOLON stmt_list EOF 
-    { Ss ($1::$3::List.rev $5) }
+ /*(* should be item_no_simple_stmt to remove 1 s/r conflict *)*/
+ | item LSEMICOLON EOF       { item1 $1 }
+ /*(* make version with and without LSEMICOLON which is inserted
+    * if the item as a newline before the EOF (which leads to ASI)
+    *)*/
+ | item            EOF       { item1 $1 }
+ | item LSEMICOLON item LSEMICOLON item_list EOF 
+    { Items ($1 @ $3 @ List.rev $5) }
+
+item: 
+ | stmt   { [IStmt $1] }
+ | import { $1 |> List.map (fun x -> IImport x) }
+ | xfndcl { [ITop $1] }
+
+item_list:
+|   item { $1 }
+|   item_list LSEMICOLON item { $3 @ $1 }
+
+ 
 
 /*(*************************************************************************)*/
 /*(*1 Import *)*/
@@ -720,7 +737,7 @@ fntype: LFUNC LPAREN oarg_type_list_ocomma RPAREN fnres
 fnres:
 | /*(*empty *)*/    %prec NotParen      { [] }
 |   fnret_type                          
-    { [{ pname = None; ptype = $1; pdots = None }] }
+    { [ParamClassic { pname = None; ptype = $1; pdots = None }] }
 |   LPAREN oarg_type_list_ocomma RPAREN { $2 }
 
 fnret_type:
@@ -850,8 +867,9 @@ fndcl:
      {
       fun body ->
         match $2 with
-        | [x] -> DMethod ($4, x, ({ fparams = $6; fresults = $8 }, body))
+        | [ParamClassic x] -> DMethod ($4, x, ({ fparams = $6; fresults = $8 }, body))
         | [] -> error $1 "method has no receiver"
+        | [ParamEllipsis _] -> error $1 "method has ... for receiver"
         | _::_::_ -> error $1 "method has multiple receivers"
     }
 
@@ -866,10 +884,13 @@ fnliteral: fnlitdcl lbrace stmt_list RBRACE
 fnlitdcl: fntype { $1 }
 
 arg_type:
-|       name_or_type { { pname= None; ptype = $1; pdots = None } }
-|   sym name_or_type { { pname= Some $1; ptype = $2; pdots = None } }
-|   sym dotdotdot    { { pname= Some $1; ptype = snd $2; pdots = Some (fst $2)}}
-|       dotdotdot    { { pname= None; ptype = snd $1; pdots = Some (fst $1)} }
+|       name_or_type { ParamClassic { pname= None; ptype = $1; pdots = None } }
+|   sym name_or_type { ParamClassic { pname= Some $1; ptype = $2; pdots = None } }
+|   sym dotdotdot    { ParamClassic { pname= Some $1; ptype = snd $2; pdots = Some (fst $2)}}
+|       dotdotdot    { ParamClassic { pname= None; ptype = snd $1; pdots = Some (fst $1)} }
+ /*(* sgrep-ext: *)*/
+ | LDDD { Flag_parsing.sgrep_guard (ParamEllipsis $1) }
+
 
 name_or_type:  ntype { $1 }
 

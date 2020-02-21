@@ -373,7 +373,36 @@ and type_parent v =
 
 and list_stmt1 xs =
   match (list stmt xs) with
-  | [e] -> e
+  (* bugfix: We do not want actually to optimize and remove the
+   * intermediate Block because otherwise sgrep will not work
+   * correctly with a list of stmt. 
+   *
+   * old: | [e] -> e
+   *
+   * For example
+   * if $E:
+   *   ...
+   *   foo()
+   *
+   * will not match code like
+   *
+   * if True:
+   *   foo()
+   * 
+   * because above we have a Block ([Ellipsis; foo()] and down we would
+   * have just (foo()). We do want Block ([foo()]].
+   *
+   * Unless the body is actually just a metavar, in which case we probably
+   * want to match a list of stmts, as in
+   *
+   *  if $E:
+   *    $S
+   *
+   * in which case we remove the G.Block around it.
+   * hacky ...
+   *)
+  | [G.ExprStmt (G.Name (_)) as x] -> x
+
   | xs -> G.Block xs
 
 and stmt_aux x =

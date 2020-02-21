@@ -118,8 +118,14 @@ and v_type_ x =
 
 and v_chan_dir = function | TSend -> () | TRecv -> () | TBidirectional -> ()
 and v_func_type { fparams = v_fparams; fresults = v_fresults } =
-  let arg = v_list v_parameter v_fparams in
-  let arg = v_list v_parameter v_fresults in ()
+  let arg = v_list v_parameter_binding v_fparams in
+  let arg = v_list v_parameter_binding v_fresults in ()
+
+and v_parameter_binding =
+  function
+  | ParamClassic v1 -> let v1 = v_parameter v1 in ()
+  | ParamEllipsis v1 -> let v1 = v_tok v1 in ()
+
 and v_parameter x =
   let k { pname = v_pname; ptype = v_ptype; pdots = v_pdots } =
   let arg = v_option v_ident v_pname in
@@ -365,6 +371,10 @@ and v_program x =
   let arg = v_list v_top_decl v_decls in ()
   in
   vin.kprogram (k, all_functions) x
+
+and v_item = function
+ | ITop v1 -> v_top_decl v1
+ | IStmt v1 -> v_stmt v1
   
 and v_any =
   function
@@ -376,6 +386,8 @@ and v_any =
   | P v1 -> let v1 = v_program v1 in ()
   | Ident v1 -> let v1 = v_ident v1 in ()
   | Ss v1 -> let v1 = v_list v_stmt v1 in ()
+  | Item v1 -> let v1 = v_item v1 in ()
+  | Items v1 -> let v1 = v_list v_item v1 in ()
 
 and all_functions x = v_any x
 in

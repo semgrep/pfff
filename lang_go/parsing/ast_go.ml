@@ -82,9 +82,13 @@ type type_ =
 
   and chan_dir = TSend | TRecv | TBidirectional
   and func_type =  { 
-    fparams: parameter list; 
-    fresults: parameter list;
+    fparams: parameter_binding list; 
+    fresults: parameter_binding list;
   }
+    and parameter_binding = 
+     | ParamClassic of parameter
+     (* sgrep-ext: *)
+     | ParamEllipsis of tok
     and parameter = {
       pname: ident option;
       ptype: type_;
@@ -319,6 +323,12 @@ type program = {
 (* Any *)
 (*****************************************************************************)
 
+(* this is just for sgrep *)
+type item = 
+  | ITop of top_decl
+  | IImport of import
+  | IStmt of stmt
+
 type any = 
  | E of expr
  | S of stmt
@@ -329,6 +339,8 @@ type any =
 
  | Ident of ident
  | Ss of stmt list
+ | Item of item
+ | Items of item list
  (* with tarzan *)
 
 (*****************************************************************************)
@@ -339,5 +351,11 @@ let stmt1 xs =
   | [] -> Empty
   | [st] -> st
   | xs -> Block xs
+
+let item1 xs =
+  match xs with
+  | [] -> raise Common.Impossible
+  | [x] -> Item x
+  | xs -> Items xs
 
 let str_of_id (s,_) = s
