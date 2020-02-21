@@ -552,6 +552,7 @@ and program { package = pack; imports = imports; decls = decls } =
 
 and item = function
  | ITop x -> top_decl x
+ | IImport x -> let x = import x in G.DirectiveStmt x
  | IStmt x -> stmt x
   
 and any x =

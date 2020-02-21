@@ -423,6 +423,7 @@ let vof_program { package = v_package; imports = v_imports; decls = v_decls }
 
 let vof_item = function
   | ITop v1 -> let v1 = vof_top_decl v1 in Ocaml.VSum (("ITop", [ v1 ]))
+  | IImport v1 -> let v1 = vof_import v1 in Ocaml.VSum (("IImport", [ v1 ]))
   | IStmt v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("IStmt", [ v1 ]))
   
 let vof_any =

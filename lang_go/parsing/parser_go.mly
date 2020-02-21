@@ -264,21 +264,22 @@ package: LPACKAGE sym LSEMICOLON { $1, $2 }
 sgrep_spatch_pattern: 
  | expr         EOF       { E $1 }
  /*(* should be item_no_simple_stmt to remove 1 s/r conflict *)*/
- | item LSEMICOLON EOF       { Item $1 }
+ | item LSEMICOLON EOF       { item1 $1 }
  /*(* make version with and without LSEMICOLON which is inserted
     * if the item as a newline before the EOF (which leads to ASI)
     *)*/
- | item            EOF       { Item $1 }
+ | item            EOF       { item1 $1 }
  | item LSEMICOLON item LSEMICOLON item_list EOF 
-    { Items ($1::$3::List.rev $5) }
+    { Items ($1 @ $3 @ List.rev $5) }
 
 item: 
- | stmt   { IStmt $1 }
- | xfndcl { ITop $1 }
+ | stmt   { [IStmt $1] }
+ | import { $1 |> List.map (fun x -> IImport x) }
+ | xfndcl { [ITop $1] }
 
 item_list:
-|   item { [$1] }
-|   item_list LSEMICOLON item { $3::$1 }
+|   item { $1 }
+|   item_list LSEMICOLON item { $3 @ $1 }
 
  
 

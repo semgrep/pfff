@@ -326,6 +326,7 @@ type program = {
 (* this is just for sgrep *)
 type item = 
   | ITop of top_decl
+  | IImport of import
   | IStmt of stmt
 
 type any = 
@@ -350,5 +351,11 @@ let stmt1 xs =
   | [] -> Empty
   | [st] -> st
   | xs -> Block xs
+
+let item1 xs =
+  match xs with
+  | [] -> raise Common.Impossible
+  | [x] -> Item x
+  | xs -> Items xs
 
 let str_of_id (s,_) = s
