@@ -44,6 +44,7 @@ let parse_with_lang lang file =
     Java_to_generic.program ast
   | Lang.Go ->
     let ast = Parse_go.parse_program file in
+    Resolve_go.resolve ast;
     Go_to_generic.program ast
   | Lang.ML ->
     let cst = Parse_ml.parse_program file in
