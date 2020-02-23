@@ -66,12 +66,14 @@ type 'a bracket = 'a G.bracket
 (* Names *)
 (*****************************************************************************)
 
-(* The string is the result of name resolution and variable disambiguation
+type ident = string wrap
+
+(* The string below is the result of name resolution and variable disambiguation
  * using gensym. The string is guaranteed to be global and unique 
  * (no need to handle variable shadowing, block scoping, etc; this has 
  * been done already).
  *)
-type var = string wrap * var_info
+type var = ident * var_info
   (* similar to G.id_info *)
   and var_info = {
    (* the refs below are shared with Ast_generic.id_info, so modifying them
@@ -90,10 +92,10 @@ type var = string wrap * var_info
 type lval = 
   | Var of var
   (* computed field names are not handled here but in special *)
-  | Dot of var * ident
+  | Dot   of var * ident
   | Index of var * exp
-  (* only C *)
-  | Deref of var * tok
+  (* only in C *)
+  | Deref of tok
 
 (*****************************************************************************)
 (* Expression *)
@@ -106,25 +108,52 @@ and exp =
   | Cast of type_ * exp
 
  and composite_kind =
-  | Tuple
-  | Array | List | Set
-  | Dict
+  | Tuple of tok
+  | Array of tok | List of tok
+  | Dict of tok
+  | Constructor of ident
 
-and argument = exp
+type argument = exp
 
 (*****************************************************************************)
 (* Instruction *)
 (*****************************************************************************)
 
-and instr =
+type instr =
   | Set of lval * exp
+  | SetAnon of lval * anonymous_entity
   | Call of lval option * var * argument list
-  | Special of lval option * special_kind * argument list
+  | Special of lval option * special_kind wrap * argument list
+
+  and special_kind = 
+    | Eval
+    | New
+    | Typeof | Instanceof | Sizeof
+    | Operator of F.arithmetic_operator | Concat
+    | Spread
+    | TupleAccess of int
+    | Yield | Await
+    (* only in C/PHP *)
+    | Ref
+
+  and anonymous_entity =
+    | Lambda of G.function_definition
+    | AnonClass of G.class_definition
 
 (*****************************************************************************)
 (* Statemement *)
 (*****************************************************************************)
-(* See ast_generic.ml *)
+type stmt = 
+  | Instr of instr list
+  | Block of stmt list
+  | If of tok * exp * stmt * stmt
+  | Loop of tok * stmt
+  | Return of tok * exp option
+  | Label of label * stmt
+  | Goto of tok  * label
+  | Try of stmt * (var * stmt) list * stmt option
+
+and label = ident
 
 (*****************************************************************************)
 (* Defs *)
