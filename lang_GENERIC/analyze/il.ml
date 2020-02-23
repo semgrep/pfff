@@ -30,9 +30,9 @@
  *  - no AssignOp, or Decr/Incr, just Assign
  *  - Calls are now instructions (not nested inside complex expressions)
  *    and all its arguments are variables?
+ *  - Naming has been performed, no more ident vs name
  *  - Lambdas are now instructions (not nested again)
  *  - Seq are instructions
- *  - Naming has been performed, no more ident vs name
  * 
  * Note that we still want to be close to the original code so that
  * error reported on the IL can be mapped back to error on the original code
@@ -66,7 +66,22 @@ type 'a bracket = 'a G.bracket
 (* Names *)
 (*****************************************************************************)
 
-type var = string wrap * G.id_info
+(* The string is the result of name resolution and variable disambiguation
+ * using gensym. The string is guaranteed to be global and unique 
+ * (no need to handle variable shadowing, block scoping, etc; this has 
+ * been done already).
+ *)
+type var = string wrap * var_info
+  (* similar to G.id_info *)
+  and var_info = {
+   (* the refs below are shared with Ast_generic.id_info, so modifying them
+    * will by side effect modify also the refs in the generic AST.
+    *)
+    var_resolved: G.resolved_name option ref; 
+    var_type: G.type_ option ref;
+
+    var_orig: G.name option; (* None for temporary variables *)
+  }
 
 (*****************************************************************************)
 (* Lvalue *)
@@ -74,6 +89,7 @@ type var = string wrap * G.id_info
 
 type lval = 
   | Var of var
+  (* computed field names are not handled here but in special *)
   | Dot of var * ident
   | Index of var * exp
   (* only C *)
@@ -85,7 +101,7 @@ type lval =
 
 and exp = 
   | Literal of G.literal
-  | Composite of composite_kind * exp list
+  | Composite of composite_kind * exp list bracket
   | Lvalue of lval
   | Cast of type_ * exp
 
@@ -102,7 +118,7 @@ and argument = exp
 
 and instr =
   | Set of lval * exp
-  | Call of lval option * exp * argument list
+  | Call of lval option * var * argument list
   | Special of lval option * special_kind * argument list
 
 (*****************************************************************************)
