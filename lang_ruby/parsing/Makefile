@@ -8,7 +8,7 @@ OPAMPKG=pfff-lang_ruby
 -include $(TOP)/Makefile.config
 
 SRC= utils.ml \
-  ast_ruby.ml abbr_ruby.ml ast_ruby_helpers.ml \
+  ast_ruby.ml ast_ruby_helpers.ml \
   meta_ast_ruby.ml ast_printer.ml \
   parser_ruby_helpers.ml \
   newParser.ml \
