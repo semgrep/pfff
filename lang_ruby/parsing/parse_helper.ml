@@ -43,7 +43,7 @@ let free_delimiter str pos =
 
 let mk_block ast pos = match ast with
   | [e] -> e
-  | lst -> Ast.E_Block(lst,pos)
+  | lst -> Ast.Block(lst,pos)
 
 (*
 let rec replace_heredoc state ast = match ast with

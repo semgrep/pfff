@@ -12,55 +12,55 @@ let cmp_opt f x y = match x,y with
   | Some e1, Some e2 -> f e1 e2
 
 let rec cmp_expr e1 e2 = match e1,e2 with
-  | E_ModuleDef(e1,body1, _), E_ModuleDef(e2,body2, _) -> 
+  | ModuleDef(e1,body1, _), ModuleDef(e2,body2, _) -> 
       cmp2 (cmp_expr e1 e2) cmp_body_exn body1 body2
 
-  | E_Identifier(k1,s1,_), E_Identifier(k2,s2,_) -> 
+  | Identifier(k1,s1,_), Identifier(k2,s2,_) -> 
       cmp2 (pcompare k1 k2) pcompare s1 s2
 
-  | E_Empty, E_Empty -> 0
-  | E_Literal(k1,_), E_Literal(k2,_) -> cmp_lit k1 k2
+  | Empty, Empty -> 0
+  | Literal(k1,_), Literal(k2,_) -> cmp_lit k1 k2
 
-  | E_Alias(e11,e12,_), E_Alias(e21,e22,_) -> 
+  | Alias(e11,e12,_), Alias(e21,e22,_) -> 
       cmp2 (cmp_expr e11 e21) cmp_expr e12 e22
 
-  | E_Undef(e1,__), E_Undef(e2,_) -> cmp_expr_list e1 e2
+  | Undef(e1,__), Undef(e2,_) -> cmp_expr_list e1 e2
 
-  | E_Unary(u1,e1,_), E_Unary(u2,e2,_) ->
+  | Unary(u1,e1,_), Unary(u2,e2,_) ->
       cmp2 (pcompare u1 u2) cmp_expr e1 e2
 
-  | E_Binop(e11,o1,e12,_), E_Binop(e21,o2,e22,_) ->
+  | Binop(e11,o1,e12,_), Binop(e21,o2,e22,_) ->
       cmp2 (cmp2 (pcompare o1 o2) cmp_expr e11 e21) cmp_expr e12 e22
 
-  | E_UOperator(u1,_), E_UOperator(u2,_) -> pcompare u1 u2
-  | E_Operator(b1,_), E_Operator(b2,_) -> pcompare b1 b2
+  | UOperator(u1,_), UOperator(u2,_) -> pcompare u1 u2
+  | Operator(b1,_), Operator(b2,_) -> pcompare b1 b2
 
-  | E_Hash (b1,el1,_), E_Hash (b2,el2,_) ->
+  | Hash (b1,el1,_), Hash (b2,el2,_) ->
       cmp2 (pcompare b1 b2) cmp_expr_list el1 el2
 
-  | E_Return(el1,_), E_Return(el2,_)
-  | E_Yield(el1,_), E_Yield (el2,_)
-  | E_Block(el1,_), E_Block (el2,_)
-  | E_Array (el1,_), E_Array (el2,_)
-  | E_Tuple (el1,_), E_Tuple (el2,_)
-  | E_BeginBlock (el1,_), E_BeginBlock (el2,_)
-  | E_EndBlock (el1,_), E_EndBlock (el2,_) -> cmp_expr_list el1 el2
+  | Return(el1,_), Return(el2,_)
+  | Yield(el1,_), Yield (el2,_)
+  | Block(el1,_), Block (el2,_)
+  | Array (el1,_), Array (el2,_)
+  | Tuple (el1,_), Tuple (el2,_)
+  | BeginBlock (el1,_), BeginBlock (el2,_)
+  | EndBlock (el1,_), EndBlock (el2,_) -> cmp_expr_list el1 el2
 
-  | E_ExnBlock(body1,_), E_ExnBlock(body2,_) ->
+  | ExnBlock(body1,_), ExnBlock(body2,_) ->
       cmp_body_exn body1 body2
 
-  | E_Ternary(e11,e12,e13,_), E_Ternary(e21,e22,e23,_) ->
+  | Ternary(e11,e12,e13,_), Ternary(e21,e22,e23,_) ->
       cmp2 (cmp2 (cmp_expr e11 e21) cmp_expr e12 e22) cmp_expr e13 e23
 
-  | E_For(fl1,e1,el1,_),E_For(fl2,e2,el2,_) ->
+  | For(fl1,e1,el1,_),For(fl2,e2,el2,_) ->
       cmp2 (cmp2 (cmp_list cmp_formal fl1 fl2) cmp_expr e1 e2) cmp_expr_list el1 el2
 
-  | E_While(b1,e1,el1,_), E_While(b2,e2,el2,_) ->
+  | While(b1,e1,el1,_), While(b2,e2,el2,_) ->
       cmp2 (cmp2 (cmp_expr e1 e2) cmp_expr_list el1 el2) pcompare b1 b2
-  | E_Until(b1,e1,el1,_), E_Until(b2,e2,el2,_) ->
+  | Until(b1,e1,el1,_), Until(b2,e2,el2,_) ->
       cmp2 (cmp2 (cmp_expr e1 e2) cmp_expr_list el1 el2) pcompare b1 b2
 
-  | E_MethodCall (e1,el1,eo1,_), E_MethodCall(e2,el2,eo2,_) ->
+  | MethodCall (e1,el1,eo1,_), MethodCall(e2,el2,eo2,_) ->
       begin match cmp2 (cmp_expr e1 e2) cmp_expr_list el1 el2 with
 	| 0 -> begin
 	    match eo1,eo2 with
@@ -72,25 +72,25 @@ let rec cmp_expr e1 e2 = match e1,e2 with
 	| c -> c
       end
 
-  | E_Unless(e1,el11, el12,_), E_Unless(e2,el21, el22,_)
-  | E_If(e1,el11, el12,_), E_If(e2,el21,el22,_) ->
+  | Unless(e1,el11, el12,_), Unless(e2,el21, el22,_)
+  | If(e1,el11, el12,_), If(e2,el21,el22,_) ->
       cmp2 (cmp2 (cmp_expr e1 e2) cmp_expr_list el11 el21) 
 	cmp_expr_list el12 el22
 
-  | E_MethodDef(e1, fl1, body1, _), E_MethodDef(e2, fl2, body2, _) ->
+  | MethodDef(e1, fl1, body1, _), MethodDef(e2, fl2, body2, _) ->
       cmp2 (cmp2 (cmp_expr e1 e2) (cmp_list cmp_formal) fl1 fl2) cmp_body_exn body1 body2
 
-  | E_CodeBlock(b1,sl1,el1,_), E_CodeBlock(b2,sl2,el2,_) ->
+  | CodeBlock(b1,sl1,el1,_), CodeBlock(b2,sl2,el2,_) ->
       cmp2 (pcompare b1 b2)
 	(cmp2 (cmp_opt (cmp_list cmp_formal) sl1 sl2) cmp_expr_list) el1 el2
 
-  | E_ClassDef(e1,iho1, body1, _), E_ClassDef(e2,iho2,body2, _) ->
+  | ClassDef(e1,iho1, body1, _), ClassDef(e2,iho2,body2, _) ->
       begin match (cmp2 (cmp_expr e1 e2) cmp_body_exn body1 body2) with
 	| 0 -> cmp_expr_opt cmp_inh iho1 iho2
 	| c -> c
       end
 
-  | E_Case(c1,_), E_Case(c2,_) ->
+  | Case(c1,_), Case(c2,_) ->
       let c (l11,l12) (l21,l22) =
 	cmp2 (cmp_expr_list l11 l21) cmp_expr_list l12 l22
       in
@@ -193,37 +193,37 @@ let compare_ast ast1 ast2 = cmp_list cmp_expr ast1 ast2
 let equal_ast a1 a2 = (compare_ast a1 a2) == 0
 
 let pos_of = function
-  | E_Empty -> Lexing.dummy_pos
-  | E_Literal (_, pos)
-  | E_Alias (_,_, pos)
-  | E_Undef (_,pos)
-  | E_Identifier (_, _, pos)
-  | E_Unary ( _ , _ , pos)
-  | E_Binop ( _ , _ , _ , pos)
-  | E_Ternary ( _ , _ , _ , pos)
-  | E_Hash ( _,_,pos)
-  | E_Array ( _  , pos)
-  | E_Tuple ( _  , pos)
-  | E_MethodCall ( _ , _  , _ , pos)
-  | E_While (_, _ , _  , pos)
-  | E_Until (_, _ , _  , pos)
-  | E_Unless ( _ , _  , _  , pos)
-  | E_For ( _  , _ , _  , pos)
-  | E_If ( _ , _  , _  , pos)
-  | E_ModuleDef ( _ , _ , pos)
-  | E_MethodDef ( _ , _  , _,  pos)
-  | E_CodeBlock (_,  _  , _  , pos)
-  | E_ClassDef ( _ , _ , _, pos)
-  | E_BeginBlock ( _  , pos)
-  | E_EndBlock ( _  , pos)
-  | E_ExnBlock ( _ , pos)
-  | E_Case ( _ , pos)
-  | E_Operator ( _ , pos)
-  | E_UOperator ( _ , pos)
-  | E_Return ( _  , pos)
-  | E_Yield ( _  , pos)
-  | E_Block ( _  , pos)
-  | E_Annotate (_,_,pos) -> pos
+  | Empty -> Lexing.dummy_pos
+  | Literal (_, pos)
+  | Alias (_,_, pos)
+  | Undef (_,pos)
+  | Identifier (_, _, pos)
+  | Unary ( _ , _ , pos)
+  | Binop ( _ , _ , _ , pos)
+  | Ternary ( _ , _ , _ , pos)
+  | Hash ( _,_,pos)
+  | Array ( _  , pos)
+  | Tuple ( _  , pos)
+  | MethodCall ( _ , _  , _ , pos)
+  | While (_, _ , _  , pos)
+  | Until (_, _ , _  , pos)
+  | Unless ( _ , _  , _  , pos)
+  | For ( _  , _ , _  , pos)
+  | If ( _ , _  , _  , pos)
+  | ModuleDef ( _ , _ , pos)
+  | MethodDef ( _ , _  , _,  pos)
+  | CodeBlock (_,  _  , _  , pos)
+  | ClassDef ( _ , _ , _, pos)
+  | BeginBlock ( _  , pos)
+  | EndBlock ( _  , pos)
+  | ExnBlock ( _ , pos)
+  | Case ( _ , pos)
+  | Operator ( _ , pos)
+  | UOperator ( _ , pos)
+  | Return ( _  , pos)
+  | Yield ( _  , pos)
+  | Block ( _  , pos)
+  | Annotate (_,_,pos) -> pos
 
 let binary_op_of_string = function
   | "="    -> Op_ASSIGN   
@@ -268,38 +268,38 @@ let binary_op_of_string = function
 let rec mod_expr f expr = 
   let processed_expr =
     match expr with
-      | E_Alias(expr1, expr2, pos) ->
-          E_Alias(
+      | Alias(expr1, expr2, pos) ->
+          Alias(
             (mod_expr f expr1),
             (mod_expr f expr2),
             pos
           )
-      | E_Undef(expr', pos) -> 
-          E_Undef(List.map (mod_expr f) expr', pos)
-      | E_Unary(uop, expr, pos) -> 
-          E_Unary(uop, (mod_expr f expr), pos)
-      | E_Binop(expr1, binary_op, expr2, pos) ->
-          E_Binop(
+      | Undef(expr', pos) -> 
+          Undef(List.map (mod_expr f) expr', pos)
+      | Unary(uop, expr, pos) -> 
+          Unary(uop, (mod_expr f expr), pos)
+      | Binop(expr1, binary_op, expr2, pos) ->
+          Binop(
             (mod_expr f expr1),
             binary_op,
             (mod_expr f expr2),
             pos
           )
-      | E_Ternary(expr1, expr2, expr3, pos) ->
-          E_Ternary(
+      | Ternary(expr1, expr2, expr3, pos) ->
+          Ternary(
             (mod_expr f expr1),
             (mod_expr f expr2),
             (mod_expr f expr3),
             pos
           )
-      | E_Hash(b,el, pos) ->
-          E_Hash(b,List.map (mod_expr f) el, pos)
-      | E_Array(el, pos) ->
-          E_Array((List.map (mod_expr f) el), pos)
-      | E_Tuple(el, pos) ->
-          E_Tuple((List.map (mod_expr f) el), pos)
-      | E_MethodCall(expr1, el, eo, pos) ->
-          E_MethodCall(
+      | Hash(b,el, pos) ->
+          Hash(b,List.map (mod_expr f) el, pos)
+      | Array(el, pos) ->
+          Array((List.map (mod_expr f) el), pos)
+      | Tuple(el, pos) ->
+          Tuple((List.map (mod_expr f) el), pos)
+      | MethodCall(expr1, el, eo, pos) ->
+          MethodCall(
             mod_expr f expr1, 
             List.map (mod_expr f) el,
             (
@@ -309,67 +309,67 @@ let rec mod_expr f expr =
             ),
             pos
           )
-      | E_While(b, expr, el, pos) ->
-          E_While(
+      | While(b, expr, el, pos) ->
+          While(
             b, (mod_expr f expr), (List.map (mod_expr f) el), pos
           )
-      | E_Until(b, expr, el, pos) ->
-          E_Until(
+      | Until(b, expr, el, pos) ->
+          Until(
             b, (mod_expr f expr), (List.map (mod_expr f) el), pos
           )
-      | E_Unless(expr, el1, el2, pos) ->
-          E_Unless(
+      | Unless(expr, el1, el2, pos) ->
+          Unless(
             (mod_expr f expr),
             (List.map (mod_expr f) el1),
             (List.map (mod_expr f) el2),
             pos
           )
-      | E_For(formals, expr, el, pos) ->
-          E_For(
+      | For(formals, expr, el, pos) ->
+          For(
             formals, 
             (mod_expr f expr),
             (List.map (mod_expr f) el),
             pos
           )
-      | E_If(expr, el1, el2, pos) ->
-          E_If(
+      | If(expr, el1, el2, pos) ->
+          If(
             (mod_expr f expr),
             (List.map (mod_expr f) el1),
             (List.map (mod_expr f) el2),
             pos
           )
-      | E_ModuleDef(expr, body, pos) ->
-          E_ModuleDef(
+      | ModuleDef(expr, body, pos) ->
+          ModuleDef(
             (mod_expr f expr),
             (mod_body_exn f body),
             pos
           )
-      | E_MethodDef(expr, formals, body, pos) ->
-          E_MethodDef(
+      | MethodDef(expr, formals, body, pos) ->
+          MethodDef(
             (mod_expr f expr), 
             formals, 
             (mod_body_exn f body), 
             pos
           ) 
-      | E_CodeBlock(b, formals, el, pos) ->
-          E_CodeBlock(b, formals, (List.map (mod_expr f) el), pos)
-      | E_ClassDef(expr, i_kind, body, pos) ->
-          E_ClassDef(
+      | CodeBlock(b, formals, el, pos) ->
+          CodeBlock(b, formals, (List.map (mod_expr f) el), pos)
+      | ClassDef(expr, i_kind, body, pos) ->
+          ClassDef(
             (mod_expr f expr), 
             i_kind, 
             (mod_body_exn f body),
             pos
           )
-      | E_BeginBlock(el, pos) -> E_BeginBlock(List.map (mod_expr f) el, pos)
-      | E_EndBlock(el, pos) -> E_EndBlock(List.map (mod_expr f) el, pos)
-      | E_ExnBlock(body, pos) -> E_ExnBlock(mod_body_exn f body, pos)
-      | E_Case(block, pos) -> E_Case(mod_case_block f block, pos)
-      | E_Return(el, pos) -> E_Return((List.map (mod_expr f) el), pos)
-      | E_Yield(el, pos) -> E_Yield((List.map (mod_expr f) el), pos)
-      | E_Block(el, pos) -> E_Block((List.map (mod_expr f) el), pos)
-      | E_Annotate(e,annot,pos) -> E_Annotate(mod_expr_annot f e, annot,pos)
+      | BeginBlock(el, pos) -> BeginBlock(List.map (mod_expr f) el, pos)
+      | EndBlock(el, pos) -> EndBlock(List.map (mod_expr f) el, pos)
+      | ExnBlock(body, pos) -> ExnBlock(mod_body_exn f body, pos)
+      | Case(block, pos) -> Case(mod_case_block f block, pos)
+      | Return(el, pos) -> Return((List.map (mod_expr f) el), pos)
+      | Yield(el, pos) -> Yield((List.map (mod_expr f) el), pos)
+      | Block(el, pos) -> Block((List.map (mod_expr f) el), pos)
+      | Annotate(e,annot,pos) -> Annotate(mod_expr_annot f e, annot,pos)
 
-      | E_UOperator _ | E_Operator _ | E_Identifier _ | E_Literal _ | E_Empty -> 
+      | UOperator _ | Operator _ | Identifier _ | Literal _ | Empty -> 
           expr
   in
     f processed_expr
@@ -407,35 +407,35 @@ let mod_ast f ast = List.map (mod_expr f) ast
 
 (** sets the position of the expression; use it with mod_ast **)
 let set_pos pos = function
-  | E_Literal(lit_kind, _) -> E_Literal(lit_kind, pos) 
-  | E_Alias(e1, e2, _) -> E_Alias(e1, e2, pos)
-  | E_Undef(elist, _) -> E_Undef(elist, pos)
-  | E_Identifier(id_kind, str, _) -> E_Identifier(id_kind, str, pos)
-  | E_Unary(unary_op, e, _) -> E_Unary(unary_op, e, pos)
-  | E_Binop(expr1, binary_op, expr2, _) -> E_Binop(expr1, binary_op, expr2, pos)
-  | E_Ternary(expr1, expr2, expr3, _) -> E_Ternary(expr1, expr2, expr3, pos)
-  | E_Hash(b,el, _) -> E_Hash(b,el, pos)
-  | E_Array(el, _) -> E_Array(el, pos)
-  | E_Tuple(el, _) -> E_Tuple(el, pos)
-  | E_MethodCall(expr1, el, eo, _) -> E_MethodCall(expr1, el, eo, pos)
-  | E_While(b, expr, el, _) -> E_While(b, expr, el, pos)
-  | E_Until(b, expr, el, _) -> E_Until(b, expr, el, pos)
-  | E_Unless(expr, el1, el2, _) -> E_Unless(expr, el1, el2, pos)
-  | E_For(formals, expr, el, _) -> E_For(formals, expr, el, pos)
-  | E_If(expr, el1, el2, _) -> E_If(expr, el1, el2, pos)
-  | E_ModuleDef(expr, body, _) -> E_ModuleDef(expr, body, pos)
-  | E_MethodDef(expr, formals, body, _) -> 
-      E_MethodDef(expr, formals, body, pos)
-  | E_CodeBlock(b, formals, el, _) -> E_CodeBlock(b, formals, el, pos)
-  | E_ClassDef(expr, i_kind, body, _) ->
-      E_ClassDef(expr, i_kind, body, pos)
-  | E_BeginBlock(el, _) -> E_BeginBlock(el, pos)
-  | E_EndBlock(el, _) -> E_EndBlock(el, pos)
-  | E_ExnBlock(body, _) -> E_ExnBlock(body, pos)
-  | E_Case(block, _) -> E_Case(block, pos)
-  | E_Return(el, _) -> E_Return(el, pos)
-  | E_Yield(el, _) -> E_Yield(el, pos)
-  | E_Block(el, _) -> E_Block(el, pos)
+  | Literal(lit_kind, _) -> Literal(lit_kind, pos) 
+  | Alias(e1, e2, _) -> Alias(e1, e2, pos)
+  | Undef(elist, _) -> Undef(elist, pos)
+  | Identifier(id_kind, str, _) -> Identifier(id_kind, str, pos)
+  | Unary(unary_op, e, _) -> Unary(unary_op, e, pos)
+  | Binop(expr1, binary_op, expr2, _) -> Binop(expr1, binary_op, expr2, pos)
+  | Ternary(expr1, expr2, expr3, _) -> Ternary(expr1, expr2, expr3, pos)
+  | Hash(b,el, _) -> Hash(b,el, pos)
+  | Array(el, _) -> Array(el, pos)
+  | Tuple(el, _) -> Tuple(el, pos)
+  | MethodCall(expr1, el, eo, _) -> MethodCall(expr1, el, eo, pos)
+  | While(b, expr, el, _) -> While(b, expr, el, pos)
+  | Until(b, expr, el, _) -> Until(b, expr, el, pos)
+  | Unless(expr, el1, el2, _) -> Unless(expr, el1, el2, pos)
+  | For(formals, expr, el, _) -> For(formals, expr, el, pos)
+  | If(expr, el1, el2, _) -> If(expr, el1, el2, pos)
+  | ModuleDef(expr, body, _) -> ModuleDef(expr, body, pos)
+  | MethodDef(expr, formals, body, _) -> 
+      MethodDef(expr, formals, body, pos)
+  | CodeBlock(b, formals, el, _) -> CodeBlock(b, formals, el, pos)
+  | ClassDef(expr, i_kind, body, _) ->
+      ClassDef(expr, i_kind, body, pos)
+  | BeginBlock(el, _) -> BeginBlock(el, pos)
+  | EndBlock(el, _) -> EndBlock(el, pos)
+  | ExnBlock(body, _) -> ExnBlock(body, pos)
+  | Case(block, _) -> Case(block, pos)
+  | Return(el, _) -> Return(el, pos)
+  | Yield(el, _) -> Yield(el, pos)
+  | Block(el, _) -> Block(el, pos)
   | _ as expr -> expr
 
 let id_kind s pos = match s.[0] with
@@ -451,32 +451,32 @@ let id_kind s pos = match s.[0] with
   | _ -> Log.fatal (Log.of_loc pos) "unknown id_kind in cfg_refactor: %s" s
 
 let msg_of_str a pos = match a with
-  | "+" -> E_Operator(Op_PLUS,pos)
-  | "-" -> E_Operator(Op_MINUS,pos)
-  | "*" -> E_Operator(Op_TIMES,pos)
-  | "/" -> E_Operator(Op_DIV,pos)
-  | "%" -> E_Operator(Op_REM,pos)
-  | "<=>" -> E_Operator(Op_CMP,pos)
-  | "==" -> E_Operator(Op_EQ,pos)
-  | "===" -> E_Operator(Op_EQQ,pos)
-  | ">=" -> E_Operator(Op_GEQ,pos)
-  | "<=" -> E_Operator(Op_LEQ,pos)
-  | "<" -> E_Operator(Op_LT,pos)
-  | ">" -> E_Operator(Op_GT,pos)
-  | "&" -> E_Operator(Op_BAND,pos)
-  | "|" -> E_Operator(Op_BOR,pos)
-  | "=~" -> E_Operator(Op_MATCH,pos)
-  | "^" -> E_Operator(Op_XOR,pos)
-  | "**" -> E_Operator(Op_POW,pos)
-  | "[]" -> E_Operator(Op_AREF,pos)
-  | "[]=" -> E_Operator(Op_ASET,pos)
-  | "<<" -> E_Operator(Op_LSHIFT,pos)
-  | ">>" -> E_Operator(Op_RSHIFT,pos)
+  | "+" -> Operator(Op_PLUS,pos)
+  | "-" -> Operator(Op_MINUS,pos)
+  | "*" -> Operator(Op_TIMES,pos)
+  | "/" -> Operator(Op_DIV,pos)
+  | "%" -> Operator(Op_REM,pos)
+  | "<=>" -> Operator(Op_CMP,pos)
+  | "==" -> Operator(Op_EQ,pos)
+  | "===" -> Operator(Op_EQQ,pos)
+  | ">=" -> Operator(Op_GEQ,pos)
+  | "<=" -> Operator(Op_LEQ,pos)
+  | "<" -> Operator(Op_LT,pos)
+  | ">" -> Operator(Op_GT,pos)
+  | "&" -> Operator(Op_BAND,pos)
+  | "|" -> Operator(Op_BOR,pos)
+  | "=~" -> Operator(Op_MATCH,pos)
+  | "^" -> Operator(Op_XOR,pos)
+  | "**" -> Operator(Op_POW,pos)
+  | "[]" -> Operator(Op_AREF,pos)
+  | "[]=" -> Operator(Op_ASET,pos)
+  | "<<" -> Operator(Op_LSHIFT,pos)
+  | ">>" -> Operator(Op_RSHIFT,pos)
 
-  | "-@" -> E_UOperator(Op_UMinus,pos)
-  | "+@" -> E_UOperator(Op_UPlus,pos)
-  | "~@" | "~" -> E_UOperator(Op_UTilde,pos)
-  | s -> E_Identifier(id_kind s pos, s, pos)
+  | "-@" -> UOperator(Op_UMinus,pos)
+  | "+@" -> UOperator(Op_UPlus,pos)
+  | "~@" | "~" -> UOperator(Op_UTilde,pos)
+  | s -> Identifier(id_kind s pos, s, pos)
 
 
 let str_uop = function
@@ -533,12 +533,12 @@ let name_of_annot_id = function
   | TIdent_Scoped(_,s) -> s
 
 let rec names_of_expr_id pos = function
-  | E_Identifier(ID_Assign _,s,_) -> [s ^ "="]
-  | E_Identifier(_,s,_) -> [s]
-  | E_Binop(_,(Op_SCOPE|Op_DOT),r,_) -> names_of_expr_id pos r
-  | E_Unary(Op_UScope,r,_) -> names_of_expr_id pos r
-  | E_Operator(op,_) -> [str_binop op]
-  | E_UOperator(uop,_) -> 
+  | Identifier(ID_Assign _,s,_) -> [s ^ "="]
+  | Identifier(_,s,_) -> [s]
+  | Binop(_,(Op_SCOPE|Op_DOT),r,_) -> names_of_expr_id pos r
+  | Unary(Op_UScope,r,_) -> names_of_expr_id pos r
+  | Operator(op,_) -> [str_binop op]
+  | UOperator(uop,_) -> 
       (* some unary ops can be specified without their @ postfix, so
          we allow both forms *)
       let s = str_uop uop in
@@ -546,8 +546,8 @@ let rec names_of_expr_id pos = function
   | _ -> Log.fatal (Log.of_loc pos) "expr id"
 
 let verify_annotation_name e annot pos = match annot,e with
-  | ClassType(aname,_,_), E_ClassDef(class_id,_,_,_)
-  | ClassType(aname,_,_), E_ModuleDef(class_id,_,_) ->
+  | ClassType(aname,_,_), ClassDef(class_id,_,_,_)
+  | ClassType(aname,_,_), ModuleDef(class_id,_,_) ->
       let names = names_of_expr_id pos class_id in
       if not (List.mem aname names)
       then Log.fatal (Log.of_loc pos)
@@ -557,7 +557,7 @@ let verify_annotation_name e annot pos = match annot,e with
       Log.fatal (Log.of_loc pos) "class annotation on non-class expr"
 
   | MethodType [], _ -> assert false
-  | MethodType ((annot_id,_,_)::_), E_MethodDef(meth_id,_,_,_) ->
+  | MethodType ((annot_id,_,_)::_), MethodDef(meth_id,_,_,_) ->
       let names = names_of_expr_id pos meth_id in
       let aname = name_of_annot_id annot_id in
       if not (List.mem aname names)

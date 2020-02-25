@@ -52,56 +52,56 @@ and format_lit_kind ppf kind = match kind with
   | Lit_False -> pp_print_string ppf "false"
     
 and format_expr ppf expr = match expr with
-  | E_Empty -> fprintf ppf "<empty>"
-  | E_Literal(kind,_) -> format_lit_kind ppf kind
-  | E_Alias (e1,e2,_) -> 
+  | Empty -> fprintf ppf "<empty>"
+  | Literal(kind,_) -> format_lit_kind ppf kind
+  | Alias (e1,e2,_) -> 
       fprintf ppf "alias %a %a"
 	format_expr e1
 	format_expr e2
 
-  | E_Undef (e1,_) -> 
+  | Undef (e1,_) -> 
       fprintf ppf "undef %a"
 	(format_comma_list format_expr) e1
 
-  | E_Identifier(id_kind,string,p) -> format_id ppf id_kind string
+  | Identifier(id_kind,string,p) -> format_id ppf id_kind string
 
-  | E_Unary(uop, expr,_) ->
+  | Unary(uop, expr,_) ->
       fprintf ppf "uop(%s,%a)"
 	(str_uop uop) format_expr expr
 
-  | E_Binop(expr1, binary_op, expr2,_) ->
+  | Binop(expr1, binary_op, expr2,_) ->
       begin match binary_op with
 	| Op_SCOPE
 	| Op_DOT -> fprintf ppf "%a%a%a" 
 	| o -> match expr1,expr2 with
-	    | E_Binop(_,_,_,_),_
-	    | _, E_Binop(_,_,_,_) -> fprintf ppf "(@[%a %a@ %a@])"
+	    | Binop(_,_,_,_),_
+	    | _, Binop(_,_,_,_) -> fprintf ppf "(@[%a %a@ %a@])"
 	    | _ ->fprintf ppf "(%a %a %a)"
       end
 	format_expr expr1
 	format_binop binary_op
 
 	format_expr expr2
-  | E_Operator(bop,_) -> format_binop ppf bop
-  | E_UOperator(uop,_) -> pp_print_string ppf (str_uop uop)
+  | Operator(bop,_) -> format_binop ppf bop
+  | UOperator(uop,_) -> pp_print_string ppf (str_uop uop)
 
-  | E_Hash(_,el,_) -> fprintf ppf "{@[%a@]}" format_expr_comma_list el
-  | E_Array(el,_) -> fprintf ppf "[@[%a@]]" format_expr_comma_list el
+  | Hash(_,el,_) -> fprintf ppf "{@[%a@]}" format_expr_comma_list el
+  | Array(el,_) -> fprintf ppf "[@[%a@]]" format_expr_comma_list el
 
-  | E_Tuple(el,_) -> fprintf ppf "Tup(@[%a@])" format_expr_comma_list el
+  | Tuple(el,_) -> fprintf ppf "Tup(@[%a@])" format_expr_comma_list el
 
-  | E_Return(el,_) -> fprintf ppf "return(@[%a@])" format_expr_comma_list el
-  | E_Yield(el,_) -> fprintf ppf "yield(@[%a@])" format_expr_comma_list el
+  | Return(el,_) -> fprintf ppf "return(@[%a@])" format_expr_comma_list el
+  | Yield(el,_) -> fprintf ppf "yield(@[%a@])" format_expr_comma_list el
 
-  | E_Block(el,_) -> fprintf ppf "@[<v 2>block(%a)@]" format_expr_break_list el
+  | Block(el,_) -> fprintf ppf "@[<v 2>block(%a)@]" format_expr_break_list el
 
-  | E_MethodCall (expr1, expr_list, eo,_) ->
+  | MethodCall (expr1, expr_list, eo,_) ->
       begin match eo with
 	| None -> 
 	    fprintf ppf "MC(%a(@[%a@]))"
 	      format_expr expr1
 	      format_expr_comma_list expr_list
-	| Some (E_CodeBlock(b,_,_,_) as cb) -> 
+	| Some (CodeBlock(b,_,_,_) as cb) -> 
 	    let fmt = 
 	      if b 
 	      then fprintf ppf "@[<v 0>@[<v 2>MC(%a(@[%a@]) { @,%a@]@,})@]"
@@ -113,22 +113,22 @@ and format_expr ppf expr = match expr with
 	| Some _ -> assert false
       end
 	
-  | E_Ternary (expr1, expr2, expr3,_) -> 
+  | Ternary (expr1, expr2, expr3,_) -> 
       fprintf ppf "@[(%a ? %a : %a)@]"
 	format_expr expr1
 	format_expr expr2
 	format_expr expr3
 
-  | E_While (b, expr, body,_) -> format_loop ppf "while" b expr body
-  | E_Until (b, expr, body,_) -> format_loop ppf "until" b expr body
+  | While (b, expr, body,_) -> format_loop ppf "while" b expr body
+  | Until (b, expr, body,_) -> format_loop ppf "until" b expr body
 
-  | E_For ( formals, expr, body,_) -> 
+  | For ( formals, expr, body,_) -> 
       fprintf ppf "@[<v 0>@[<v 2>for %a in %a@,%a@]@;end@]"
 	format_formals formals
 	format_expr expr
 	format_expr_break_list body
 
-  | E_ModuleDef (name,body, _) -> 
+  | ModuleDef (name,body, _) -> 
       fprintf ppf "@[<v 0>@[<v 2>module %a@,%a@]@,"
 	format_expr name
 	format_expr_break_list body.body_exprs;
@@ -137,7 +137,7 @@ and format_expr ppf expr = match expr with
       format_else ppf body.else_expr;
       fprintf ppf "end@]"
 
-  | E_MethodDef (mname,formals,body, _) ->
+  | MethodDef (mname,formals,body, _) ->
       fprintf ppf "@[<v 0>@[<v 2>def %a(@[%a@])@,%a@]@,"
 	format_expr mname
 	format_formals formals
@@ -146,7 +146,7 @@ and format_expr ppf expr = match expr with
       format_ensure ppf body.ensure_expr;
       format_else ppf body.else_expr;
       fprintf ppf "end@]"      
-  | E_CodeBlock(_,formals,exps,_) -> 
+  | CodeBlock(_,formals,exps,_) -> 
       begin match formals with
         | None 
 	| Some [] -> fprintf ppf "%a" format_expr_break_list exps
@@ -154,16 +154,16 @@ and format_expr ppf expr = match expr with
 	    format_expr_break_list exps
       end 
 
-  | E_BeginBlock(el,_) -> 
+  | BeginBlock(el,_) -> 
       fprintf ppf "@[<v 0>@[<v 2>BEGIN {@,%a@]@,}@]"
 	format_expr_break_list el
-  | E_EndBlock(el,_) -> 
+  | EndBlock(el,_) -> 
       fprintf ppf "@[<v 0>@[<v 2>END {@,%a@],}@]"
 	format_expr_break_list el
 
-  | E_Case(c,_) -> format_case ppf c
+  | Case(c,_) -> format_case ppf c
 
-  | E_ClassDef(name,inh,body, _) -> 
+  | ClassDef(name,inh,body, _) -> 
       fprintf ppf "@[<v 0>@[<v 2>class %a %a@,%a@]@,"
 	format_expr name
 	format_inheritance inh
@@ -173,7 +173,7 @@ and format_expr ppf expr = match expr with
       format_else ppf body.else_expr;
       fprintf ppf "end@]"      
 	
-  | E_ExnBlock (body,_) -> 
+  | ExnBlock (body,_) -> 
       fprintf ppf "@[<v 0>@[<v 2>begin@,%a@]@,"
 	format_expr_break_list body.body_exprs;
       format_rescues ppf body.rescue_exprs;
@@ -181,7 +181,7 @@ and format_expr ppf expr = match expr with
       format_ensure ppf body.ensure_expr;
       fprintf ppf "end@]"      
 	
-  | E_Unless(guard,then_e,else_e,_) ->
+  | Unless(guard,then_e,else_e,_) ->
       fprintf ppf "@[<v 0>@[<v 2>unless (%a) then@,%a@]@,"
 	format_expr guard
 	format_expr_break_list then_e;
@@ -189,7 +189,7 @@ and format_expr ppf expr = match expr with
 	fprintf ppf "@[<v 2>else@,%a@]@," format_expr_break_list else_e;
       fprintf ppf "end@]"
 
-  | E_If(guard,then_e,else_e,_) ->
+  | If(guard,then_e,else_e,_) ->
       fprintf ppf "@[<v 0>@[<v 2>if (%a) then@,%a@]@,"
 	format_expr guard
 	format_expr_break_list then_e;
@@ -197,7 +197,7 @@ and format_expr ppf expr = match expr with
 	fprintf ppf "@[<v 2>else@,%a@]@," format_expr_break_list else_e;
       fprintf ppf "end@]"
 
-  | E_Annotate(e,te,pos) -> 
+  | Annotate(e,te,pos) -> 
       fprintf ppf "%a@,%a" Annotation.format_annotation te format_expr e
 
 and format_expr_comma_list ppf = function
@@ -214,7 +214,7 @@ and format_expr_break_list ppf = function
 
 and format_loop ppf lname is_do expr body = 
   if is_do then begin match body with
-    | [E_ExnBlock _ as b] ->
+    | [ExnBlock _ as b] ->
 	fprintf ppf "@[<v 0>%a @[<v 0>%s %a@]@]"
 	  format_expr b
 	  lname
