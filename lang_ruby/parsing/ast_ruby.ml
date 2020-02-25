@@ -54,8 +54,6 @@ type tok = Lexing.position
 (*****************************************************************************)
 
 type expr = 
-  | Empty
-
   | Literal of lit_kind * tok
 
   | Identifier of id_kind * string * tok
@@ -70,41 +68,47 @@ type expr =
   | Binop of expr * binary_op * expr * tok
   | Ternary of expr * expr * expr * tok
 
-
   | MethodCall of expr * expr list * expr option * tok
 
-  | Alias of expr * expr * tok
-  | Undef of expr list * tok
+  | CodeBlock of bool * formal_param list option * expr list * tok
 
 (*****************************************************************************)
 (* Statement *)
 (*****************************************************************************)
 
+  | Empty
+  | Block of expr list * tok
+
+  | If of expr * expr list * expr list * tok
   | While of bool * expr * expr list * tok
   | Until of bool * expr * expr list * tok
   | Unless of expr * expr list * expr list * tok
   | For of formal_param list * expr * expr list * tok
-  | If of expr * expr list * expr list * tok
 
   | Return of expr list * tok
   | Yield of expr list * tok
-  | Block of expr list * tok
+
+  | Case of case_block * tok
+
+  | ExnBlock of body_exn * tok
 
 (*****************************************************************************)
 (* Definitions *)
 (*****************************************************************************)
 
-  | ModuleDef of expr * body_exn * tok
-  | MethodDef of expr * formal_param list * body_exn * tok
   | ClassDef of expr * inheritance_kind option * body_exn * tok
+  | MethodDef of expr * formal_param list * body_exn * tok
+  | ModuleDef of expr * body_exn * tok
 
-  | CodeBlock of bool * formal_param list option * expr list * tok
   | BeginBlock of expr list * tok
   | EndBlock of expr list * tok
-  | ExnBlock of body_exn * tok
 
-  | Case of case_block * tok
+  | Alias of expr * expr * tok
+  | Undef of expr list * tok
 
+(*****************************************************************************)
+(* Type *)
+(*****************************************************************************)
   | Annotate of expr * Annotation.t * tok
 
 (*****************************************************************************)
@@ -122,6 +126,17 @@ and lit_kind =
   | Lit_Self
   | Lit_True
   | Lit_False
+
+  and string_kind = 
+    | String_Single of string
+    | String_Double of interp_string
+    | String_Tick of interp_string
+
+  and interp_string = string_contents list
+
+  and string_contents = 
+    | StrChars of string
+    | StrExpr of expr
 
 and id_kind = 
   | ID_Lowercase (* prefixed by [a-z] or _ *)
@@ -170,13 +185,9 @@ and binary_op =
   | Op_DOT2     (* .. *)
   | Op_DOT3     (* ... *)
 
-
-
-and string_contents = 
-  | StrChars of string
-  | StrExpr of expr
-
-and interp_string = string_contents list
+(*****************************************************************************)
+(* Misc *)
+(*****************************************************************************)
 
 and formal_param = 
   | Formal_id of expr
@@ -186,19 +197,13 @@ and formal_param =
   | Formal_tuple of formal_param list
   | Formal_default of string * expr
 
-and string_kind = 
-  | String_Single of string
-  | String_Double of interp_string
-  | String_Tick of interp_string
-
-
 and inheritance_kind = 
   | Class_Inherit of expr
   | Inst_Inherit of expr
 
 and body_exn = {
   body_exprs: expr list;
-  rescue_exprs: (expr*expr) list;
+  rescue_exprs: (expr * expr) list;
   ensure_expr: expr list;
   else_expr: expr list;
 }
