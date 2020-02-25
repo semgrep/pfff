@@ -1,3 +1,4 @@
+open Common
 open Ast_ruby
 
 let pcompare = Pervasives.compare
@@ -374,7 +375,7 @@ let rec mod_expr f expr =
     f processed_expr
 
 and mod_expr_annot f expr_annot = 
-  Log.warn "mod_expr_annot";
+  pr2 "mod_expr_annot";
   expr_annot 
 
 and mod_case_block f block =
@@ -447,7 +448,8 @@ let id_kind s pos = match s.[0] with
       | 'a'..'z' | 'A'..'Z' | '_' -> ID_Global
       | _ -> ID_Builtin
     end
-  | _ -> Log.fatal (Log.of_loc pos) "unknown id_kind in cfg_refactor: %s" s
+  | _ -> failwith (*(Log.of_loc pos)*) 
+    (spf "unknown id_kind in cfg_refactor: %s" s)
 
 let msg_of_str a pos = match a with
   | "+" -> Operator(Op_PLUS,pos)
