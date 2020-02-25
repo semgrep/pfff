@@ -32,6 +32,8 @@ JSONCMA=external/deps-netsys/netsys_oothr.cma external/deps-netsys/netsys.cma\
         external/deps-netstring/netstring.cma\
         external/json-wheel/jsonwheel.cma 
 
+DYPCMA=external/dyp/dyp.cma external/getopt/getopt.cma 
+
 # could be FEATURE_OCAMLGRAPH, or should give dependencies between features
 GRAPHCMA=external/ocamlgraph/graph.cma commons_wrappers/graph/lib.cma
 GRAPHDIRS=commons_wrappers/graph 
@@ -41,12 +43,13 @@ GRAPHDIRS=commons_wrappers/graph
 #------------------------------------------------------------------------------
 # Main variables
 #------------------------------------------------------------------------------
-BASICSYSLIBS=bigarray.cma str.cma unix.cma
+BASICSYSLIBS=nums.cma bigarray.cma str.cma unix.cma
 
 # used small utilities that I dont want to depend on too much things
 BASICLIBS=commons/lib.cma \
  commons_core/lib.cma \
  $(JSONCMA) \
+ $(DYPCMA) \
  globals/lib.cma \
  h_files-format/lib.cma \
  h_program-lang/lib.cma \
@@ -63,6 +66,7 @@ BASICLIBS=commons/lib.cma \
   lang_java/analyze/lib.cma \
  lang_python/parsing/lib.cma \
   lang_python/analyze/lib.cma \
+ lang_ruby/parsing/lib.cma \
  lang_go/parsing/lib.cma \
   lang_go/analyze/lib.cma \
  lang_csharp/parsing/lib.cma \
@@ -82,7 +86,7 @@ BASICLIBS=commons/lib.cma \
  lang_FUZZY/parsing/lib.cma \
 
 
-SYSLIBS=bigarray.cma str.cma unix.cma
+SYSLIBS=nums.cma bigarray.cma str.cma unix.cma
 SYSLIBS+=$(OCAMLCOMPILERCMA)
 
 # use for the other programs
@@ -90,6 +94,7 @@ LIBS= commons/lib.cma \
     commons_core/lib.cma \
     commons_ocollection/lib.cma \
        $(JSONCMA) \
+       $(DYPCMA) \
        $(GRAPHCMA) \
        $(EXTLIBCMA) $(PTCMA) $(ZIPCMA) $(JAVALIBCMA) \
     globals/lib.cma \
@@ -126,6 +131,7 @@ LIBS= commons/lib.cma \
      lang_java/analyze/lib.cma \
     lang_python/parsing/lib.cma \
      lang_python/analyze/lib.cma \
+    lang_ruby/parsing/lib.cma \
     lang_go/parsing/lib.cma \
      lang_go/analyze/lib.cma \
     lang_csharp/parsing/lib.cma \
@@ -173,6 +179,7 @@ MAKESUBDIRS=commons commons_ocollection commons_core \
    lang_java/analyze \
   lang_python/parsing \
    lang_python/analyze \
+  lang_ruby/parsing \
   lang_go/parsing \
    lang_go/analyze \
   lang_csharp/parsing \
@@ -200,6 +207,7 @@ MAKESUBDIRS=commons commons_ocollection commons_core \
 INCLUDEDIRS=$(MAKESUBDIRS) \
  external/deps-netsys \
  external/json-wheel \
+ external/dyp external/getopt \
  commons_wrappers/graph \
 
 # cpp causes some 'warning: missing terminating' errors

@@ -7,13 +7,15 @@ OPAMPKG=pfff-lang_ruby
 
 -include $(TOP)/Makefile.config
 
-SRC= config.ml log.ml utils.ml build_vars.ml \
+SRC= build_vars.ml config.ml log.ml utils.ml \
   visitor.ml \
   annotation.ml ast.ml ast_printer.ml \
-  newLexer.ml newParser.ml \
-  rubyLexerState.ml \
   typeAnnotLexer.ml typeAnnotParser.ml \
-  parse_helper.ml
+  newParser.ml \
+  rubyLexerState.ml \
+  newLexer.ml \
+  parse_helper.ml \
+  test_parsing_ruby.ml 
 
 
 SYSLIBS= str.cma unix.cma 
@@ -55,6 +57,7 @@ clean::
 	rm -f newLexer.ml
 beforedepend:: newLexer.ml
 
+newParser.ml newParser.mli: typeAnnotParser.cmo typeAnnotLexer.cmo
 
 newParser.ml newParser.mli: newParser.dyp
 	dypgen --pv-obj --ocamlc '$(INCLUDES)' $<
