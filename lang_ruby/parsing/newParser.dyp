@@ -1,0 +1,1404 @@
+
+{
+  open Ast
+    
+  module Env = Utils.StrSet
+
+  let env_stack = 
+    let s = Stack.create () in
+      Stack.push Env.empty s;
+      s
+    
+  let enter_scope dyp = 
+    Stack.push Env.empty env_stack
+
+  let leave_scope dyp = 
+    ignore(Stack.pop env_stack)
+
+  let clear_env () = 
+    Stack.clear env_stack;
+    enter_scope ()
+
+  let set_env new_env = 
+    Stack.clear env_stack;
+    Stack.push new_env env_stack
+      
+  let env () = Stack.top env_stack
+
+  let assigned_id id = Env.mem id (env())
+
+  let seen_str dyp id = 
+    let env = Stack.pop env_stack in
+      Stack.push (Env.add id env) env_stack
+
+  let rec seen dyp = function
+    | E_Identifier(ID_Lowercase,s,_) -> seen_str dyp s
+    | E_Array(es,_) | E_Tuple(es,_) -> List.iter (seen dyp) es
+    | _ -> ()
+
+  let state_override = ref false
+  let begin_override () =
+    let b = !state_override in
+      state_override := false;
+      b
+
+  let is_exnblock = function | E_ExnBlock _ -> true | _ -> false
+
+  let mk_block lst pos = match lst with
+    | [x] -> x
+    | _ -> E_Block(lst,pos)
+
+  let rec add_eq = function
+    | E_Identifier(k,s,p) -> E_Identifier(ID_Assign(k), s,p)
+    | E_Binop(e1,Op_SCOPE,e2,p) -> E_Binop(e1,Op_SCOPE, add_eq e2,p)
+    | E_Binop(e1,Op_DOT,e2,p) -> E_Binop(e1,Op_DOT, add_eq e2,p)
+    | E_Operator(Op_AREF,p) -> E_Operator(Op_ASET,p)
+    | _ -> failwith "add_eq"
+
+  (* turn %w{a b c} into ["a";"b";"c"]  *)
+  let bslash_spc_re = Str.regexp "\\\\ " 
+  let ws_re = Str.regexp "[ \t\r\n]+"
+  let split_single_string_to_array str pos = 
+    let chunks = 
+      List.map (fun chunk -> Str.split ws_re chunk) 
+        (Str.split_delim bslash_spc_re str)
+    in
+    let strings =
+      let rec reduce acc chunks = match acc, chunks with
+        | _, [] -> List.rev acc (* done *)
+        | [], [chunk] -> chunk  (* no / found *)
+        | [], []::chunks_t -> (* space in the front??? *)
+            reduce [""] chunks_t
+        | [], chunks_h::chunks_t -> (* other first iter *)
+            reduce (List.rev chunks_h) chunks_t
+        | acc_h::acc_t, []::chunks_t -> 
+            reduce ((acc_h ^ " ")::acc_t) chunks_t
+        | acc_h::acc_t, chunks_h::chunks_t -> 
+            let first = List.hd chunks_h in
+            let rest_rev = List.rev(List.tl chunks_h) in
+              reduce (rest_rev @ ((acc_h ^ " " ^ first)::acc_t)) chunks_t
+      in reduce [] chunks
+    in
+    let strings = List.map
+      (fun s -> E_Literal(Lit_String(String_Single s), pos)) strings
+    in
+      E_Array(strings,pos)
+
+  (* turn %W{a#{b} c} into ["a#{b}"; "c"] *) 
+  let split_double_string_to_array sc pos =
+    let ds s = E_Literal(Lit_String(String_Double s),pos) in
+      (* first we create a stream of tokens with the grammar of
+	   (Expr | Code | String | Delmi)*
+	 by splitting the strings on whitespace.  This stream will be
+	 in reverse order.
+      *)
+    let rec tokenize acc = function
+      | [] -> acc
+      | (Ast.StrExpr e)::tl -> tokenize ((`Expr e)::acc) tl
+      | (Ast.StrChars s)::tl -> 
+	  let splits = Str.full_split ws_re s in
+	  let acc = 
+	    List.fold_left
+	      (fun acc -> function
+		 | Str.Text s -> (`String s)::acc
+		 | Str.Delim _ -> `Delim::acc
+	      ) acc splits
+	  in tokenize acc tl
+    in
+      (* then we split the (reversed) stream at the delimeters, which
+	 mark the entries in the array.  This produces a list in the
+	 correct order. *)
+    let rec parse acc curr = function
+      | [] -> 
+	  if curr = [] 
+	  then acc (* delim at end *)
+	  else (ds curr)::acc
+      | `Delim::tl -> 
+	  if curr = [] then parse acc curr tl (* delim at start *)
+	  else parse ((ds curr)::acc) [] tl
+      | (`Expr s)::tl -> parse acc ((Ast.StrExpr s)::curr) tl
+      | (`String s)::tl -> parse acc ((Ast.StrChars s)::curr) tl
+    in
+    let toks = tokenize [] sc in
+    let lst = parse [] [] toks in
+      E_Array(lst, pos)
+
+  let str_of_interp sc = match sc with
+    | []  -> ""
+    | [Ast.StrChars s] -> s
+    | _ -> failwith "unexpected escapes in string"
+
+  let merge_string_lits s1 s2 = match s1,s2 with
+    | E_Literal(Lit_String(s1),p), E_Literal(Lit_String(s2),_) ->
+	let s' = match s1, s2 with
+	  | String_Tick _, _ | _, String_Tick _ -> assert false
+	  | String_Single s1, String_Single s2 -> String_Single (s1 ^ s2)
+	  | String_Double sc1, String_Double sc2 -> String_Double (sc1 @ sc2)
+	  | String_Single s, String_Double sc -> 
+	      String_Double ((Ast.StrChars s)::sc)
+	  | String_Double sc,String_Single s -> 
+	      String_Double (sc @ [Ast.StrChars s])
+	in
+	  E_Literal((Lit_String s'),p)
+    | _ -> assert false
+
+  let process_user_string m str pos = match m with
+    | "r" -> E_Literal(Lit_Regexp (str,""),pos)
+    | "w" -> split_single_string_to_array (str_of_interp str) pos
+    | "W" -> split_double_string_to_array str pos
+    | "q" -> E_Literal(Lit_String(String_Single (str_of_interp str)),pos)
+    | "Q" -> E_Literal(Lit_String(String_Double str),pos)
+    | "x" -> E_Literal(Lit_String(String_Tick str),pos)
+    | "" -> E_Literal(Lit_String(String_Double str),pos)
+    | _ -> failwith (Printf.sprintf "unhandled string modifier: %s" m)
+
+  let rec starts_with = function
+    | E_Binop(l,_,_,_) -> starts_with l
+    | E_MethodCall(l,_,_,_) -> starts_with l
+    | E_Ternary(l,_,_,_) -> starts_with l
+    | e -> e
+
+  let rec ends_with = function
+    | E_Binop(_,_,r,_) -> ends_with r
+    | E_MethodCall(m,[],None,_) -> ends_with m
+    | E_Ternary(_,_,r,_) -> ends_with r
+    | e -> e
+	
+  let rec replace_end expr new_e = match expr with
+    | E_Binop(l,o,r,p) -> E_Binop(l,o,replace_end r new_e,p)
+    | E_MethodCall(m,[],None,p) -> E_MethodCall(replace_end m new_e,[],None,p)
+    | E_Ternary(g,l,r,p) -> E_Ternary(g,l,replace_end r new_e,p)
+    | e -> new_e
+
+  let is_cond_modifier = function
+    | E_If _ | E_Unless _ | E_Until _ | E_While _ -> true
+    | _ -> false
+
+  let well_formed_do guard body = match ends_with guard with
+    | E_MethodCall(_,_,Some (E_CodeBlock(false,_,_,_)),_) ->
+	raise Dyp.Giveup
+    | _ ->()
+
+  let well_formed_return args = match args with
+    | [] -> ()
+    | hd::tl -> 
+	if is_cond_modifier (Utils.last args) then raise Dyp.Giveup;
+	match starts_with hd with
+	    (* f(x) should be not be f((x))
+	       needed e.g. f(x)[y]
+	    *)
+	  | E_Block _ -> raise Dyp.Giveup
+	  | _ -> ()
+
+  let well_formed_command m args = match args with
+    | [] -> ()
+	(* f(x) should be not be f((x))
+	   needed e.g. f(x)[y] *)
+    | [E_Block _] -> raise Dyp.Giveup
+    | _ -> if List.exists is_cond_modifier args then raise Dyp.Giveup
+
+  let rec hash_literal_as_args args = 
+    let rec work acc lst = match lst with
+      | [] -> acc
+      | (E_Binop(_,Op_ASSOC,_,p))::tl ->
+          let rec hash_args acc = function
+            | [] -> acc, None
+            | [E_Unary(Op_UAmper,_,_) as blk] -> acc, Some blk
+            | (E_Binop(_,Op_ASSOC,_,_) as hd)::tl -> 
+                hash_args (hd::acc) tl
+            | _ -> raise Dyp.Giveup
+          in
+          let args,blk = hash_args [] lst in
+          let acc = E_Hash(false,List.rev args,p)::acc in
+          let acc = match blk with
+            | None -> acc
+            | Some b -> b::acc
+          in acc
+              
+      | hd::tl -> work (hd::acc) tl
+    in
+      List.rev (work [] args)
+
+  let rec methodcall m args cb pos = 
+    let args = hash_literal_as_args args in
+    match m,args,cb with
+      | _,[E_Empty],_ -> methodcall m [] cb pos
+
+      | E_Return(_), [], None -> m
+      | E_Return([],p),args,None -> E_Return(args,p)
+      | E_Yield(_), [], None -> m
+      | E_Yield([],p),args,None -> E_Yield(args,p)
+      | E_Literal(Lit_True,p), [],None
+      | E_Literal(Lit_False,p),[],None
+      | E_Identifier(_,_,p),     [],None -> m
+
+      | E_Literal _,_,_ -> raise Dyp.Giveup
+
+      | E_Binop(x,Op_SCOPE,y,_),[],None -> m
+
+      | E_Binop(x,Op_DOT,y,p),_,_ -> E_MethodCall(unfold_dot x y p, args, cb,p)
+      | _ -> E_MethodCall(m,args,cb,pos)
+
+  and unfold_dot l r pos = 
+    match l with
+    (* unfold nested a.b.c to become (a.b()).c() *)
+      | E_Binop(a,Op_DOT,b,p) ->
+	  let l' = methodcall (unfold_dot a b p) [] None p in
+	    E_Binop(l',Op_DOT,r,pos)
+	      
+      | _ -> E_Binop(l,Op_DOT,r,pos)
+
+  and check_for_dot = function
+    | E_Binop(l,Op_DOT,r,p) -> methodcall (unfold_dot l r p) [] None p
+    | e -> e
+	
+  and scope l r = 
+    let l = check_for_dot l in
+      E_Binop(l,Op_SCOPE,r,pos_of l)
+	
+  let tuple = function
+    | [] -> E_Empty
+    | [x] -> x
+    | lst -> E_Tuple(lst,pos_of (List.hd lst))
+
+  let command_codeblock cmd cb = 
+    match cmd with 
+      | E_MethodCall(c,args,None,p) -> E_MethodCall(c,args,Some cb,p)
+      | E_Binop(_,Op_DOT,_,p)
+      | E_Binop(_,Op_SCOPE,_,p) -> E_MethodCall(cmd,[],Some cb,p)
+      | E_Identifier(_,_,p) -> E_MethodCall(cmd,[],Some cb,p)
+      | _ -> raise Dyp.Giveup
+
+(* sometimes the lexer gets can't properly handle x!= as x(!=) and
+   erronously produces (x!)= *)
+  let fix_broken_neq l op r = 
+    let default = l, op, r in
+    match op with
+    | Op_ASSIGN -> begin match ends_with l with
+	| E_Identifier(k,s,p) ->
+	    let len = String.length s in
+	      if s.[len-1] == '!'
+	      then 
+		let s' = String.sub s 0 (len-1) in
+		let l' = replace_end l (E_Identifier(k,s',p)) in
+		  l', Op_NEQ, r
+	      else default
+	| _ -> default
+      end
+    | _ -> default
+
+(* sometimes the lexer gets can't properly handle x=> as x(=>) and
+   erronously produces (x=)> *)
+  let fix_broken_assoc l op r = 
+    let default = l, op, r in
+    match op with
+    | Op_GT -> begin match ends_with l with
+	| E_Identifier(ID_Assign ik,s,p) ->
+	    let l' = replace_end l (E_Identifier(ik,s,p)) in
+	      l', Op_ASSOC, r
+	| E_Literal(Lit_Atom(sc), pos) ->
+	    let astr,rest = match List.rev sc with
+	      | (Ast.StrChars s)::tl -> s,tl
+	      | _ -> "a",[]
+	    in
+	    let len = String.length astr in
+	      if astr.[len-1] == '='
+	      then 
+		let s' = String.sub astr 0 (len-1) in
+		let sc' = List.rev ((Ast.StrChars s')::rest) in
+		let l' = replace_end l (E_Literal(Lit_Atom(sc'),pos)) in
+		  l', Op_ASSOC, r
+	      else default
+	| _ -> default
+      end
+    | _ -> default
+
+  let expr_priority = function
+    | E_Unary(Op_UBang,_,_) | E_Unary(Op_UTilde,_,_)| E_Unary(Op_UPlus,_,_) -> 2000
+    | E_Unary(Op_UMinus,_,_) -> 1900
+    | E_Binop(_,Op_POW,_,_) -> 1800
+    | E_Binop(_,Op_DIV,_,_) | E_Binop(_,Op_REM,_,_) | E_Binop(_,Op_TIMES,_,_) -> 1700
+    | E_Binop(_,Op_MINUS,_,_) -> 1500
+    | E_Binop(_,Op_PLUS,_,_) -> 1500
+    | E_Binop(_,Op_LSHIFT,_,_) | E_Binop(_,Op_RSHIFT,_,_) -> 1400
+    | E_Binop(_,Op_BAND,_,_) -> 1300
+    | E_Binop(_,Op_BOR,_,_) | E_Binop(_,Op_XOR,_,_) -> 1200
+
+    | E_Binop(_,Op_LEQ,_,_) | E_Binop(_,Op_LT,_,_) 
+    | E_Binop(_,Op_GEQ,_,_) | E_Binop(_,Op_GT,_,_) -> 1100
+
+    | E_Binop(_,Op_MATCH,_,_) | E_Binop(_,Op_NMATCH,_,_) | E_Binop(_,Op_NEQ,_,_) 
+    | E_Binop(_,Op_CMP,_,_) | E_Binop(_,Op_EQ,_,_) | E_Binop(_,Op_EQQ,_,_) -> 1000
+
+    | E_Binop(_,Op_DOT2,_,_) | E_Binop(_,Op_DOT3,_,_) -> 800
+
+    | E_Binop(_,Op_AND,_,_) -> 750
+    | E_Binop(_,Op_OR,_,_) -> 700
+    | E_Binop(_,Op_ASSIGN,_,_) | E_Binop(_,Op_OP_ASGN _,_,_) -> 600
+
+    | E_Ternary _ -> 500
+    | E_Binop(_,Op_ASSOC,_,_) -> 400
+
+    | E_Unary(Op_UNot,_,_) -> 200
+    | E_Binop(_,Op_kAND,_,_) | E_Binop(_,Op_kOR,_,_) -> 100
+
+    | E_Binop _ | E_Unary _ | _ -> max_int
+	
+  let binop_priority = function
+    | E_Unary _ -> max_int
+    | e -> expr_priority e
+
+  let prune_uop uop arg pos = 
+    let e = E_Unary(uop,arg,pos) in
+    let p = expr_priority e in
+    let p' = expr_priority arg in
+      if p' < p then raise Dyp.Giveup
+      else e
+
+  let prune_right_assoc l op r = 
+    let l,op,r = fix_broken_neq l op r in
+    let l,op,r = fix_broken_assoc l op r in
+    let e = E_Binop(l,op,r,(pos_of l)) in
+    let p = binop_priority e in
+    let pl = binop_priority l in
+    let pr = binop_priority r in
+      if pr < p || pl <= p
+      then raise Dyp.Giveup
+      else e
+
+  (* right: (x - y) - z 
+     prune: x - (y - z)
+  *)
+  let prune_left_assoc l op r = 
+    let l,op,r = fix_broken_neq l op r in
+    let l,op,r = fix_broken_assoc l op r in
+    let e = E_Binop(l,op,r,(pos_of l)) in
+      match l,op,r with
+        | _, _, E_Binop(_,Op_ASSIGN,_,_) ->  e
+
+        | _ ->
+            let p = binop_priority e in
+            let pl = binop_priority l in
+            let pr = binop_priority r in
+              if pr <= p || pl < p
+              then raise Dyp.Giveup
+              else e
+
+  let prune_tern e1 e2 e3 pos = 
+    let e = E_Ternary(e1,e2,e3,pos) in
+    let p = expr_priority e in
+    let p1 = expr_priority e1 in      
+      (*Printf.eprintf "tern: %s\n" (Ast_printer.string_of_expr e);*)
+      if p1 <= p then raise Dyp.Giveup
+      else e
+
+  let uniq_list cmp lst =
+    let rec u = function
+      | [] -> []
+      | [x] -> [x]
+      | x1::x2::tl ->
+	  if cmp x1 x2 = 0
+	  then u (x1::tl) else x1 :: (u (x2::tl))
+    in
+      u (List.sort cmp lst)
+
+  let gup_empty = function
+    | E_Empty -> raise Dyp.Giveup
+    | _ -> ()
+
+  let do_fail s l to_s =
+    let len = List.length l in
+      if len > 1 then begin
+	Printf.eprintf "<%s>: %d\n" s len;
+	List.iter (fun x -> Printf.eprintf " %s\n" (to_s x)) l;
+	failwith s
+      end
+
+  let rec rhs_do_codeblock = function
+    | E_MethodCall(_,_,Some (E_CodeBlock(false,_,_,_)),_) -> true
+    | E_Binop(_,_,r,_)
+    | E_MethodCall(r,[],None,_)
+    | E_Ternary(_,_,r,_) -> rhs_do_codeblock r
+    | E_Hash(false,el,_) -> rhs_do_codeblock (Utils.last el)
+
+    | e -> 
+        Printf.eprintf "got: %s\n" (Ast_printer.string_of_expr e);
+        false
+
+  let resolve_block_delim with_cb no_cb = match with_cb,no_cb with
+    | _, E_MethodCall(_,[],None,_) -> 
+        Printf.eprintf "here2??\n";[with_cb;no_cb]
+    | E_MethodCall(m1',args1,Some do_block,_),
+        E_MethodCall(m2',args_ne,None,_) -> 
+	(* look for cmd arg1,...,(argn do block end) *)
+        if rhs_do_codeblock (Utils.last args_ne)
+        then [with_cb]
+        else [with_cb;no_cb]
+    | _ -> assert false
+        
+  let merge_binop l newest = 
+    let l' = uniq_list Ast.compare_expr l in
+    let fail () = 
+      let l' = uniq_list Ast.compare_expr (newest::l') in
+	do_fail "binop" l' Ast_printer.string_of_expr;
+	l'
+    in
+    let rec nested_assign = function
+      | E_Binop(_,(Op_ASSIGN|Op_OP_ASGN _),_,_) -> true
+      | E_Binop(_,_,(E_Binop _ as r),_) -> nested_assign r
+      | _ -> false
+    in
+      match l',newest with
+        | [E_Binop(_,Op_ASSIGN,_,_)], E_Binop(_,Op_ASSIGN,_,_) ->
+            Printf.eprintf "fail1\n";
+            fail ()
+
+        | [E_Binop(l,_,_,_)], correct when nested_assign l -> [correct]
+        | [correct], E_Binop(l,_,_,_) when nested_assign l -> [correct]
+
+        | _ -> Printf.eprintf "fail2\n";fail()
+
+  let merge_topcall l newest = 
+    let l' = uniq_list Ast.compare_expr l in
+      match l',newest with
+	| [(E_MethodCall(_,_,Some (E_CodeBlock(false,_,_,_)),_) as with_cb)],
+	  (E_MethodCall(_,_,None,_) as no_cb)
+	| [(E_MethodCall(_,_,None,_) as no_cb)],
+	  (E_MethodCall(_,_,Some (E_CodeBlock(false,_,_,_)),_) as with_cb) ->
+	    (* resolve "x y{z}" vs "x y do z end" *)
+	    resolve_block_delim with_cb no_cb;
+	| _ ->
+	    let l' = uniq_list Ast.compare_expr (newest::l') in
+	      do_fail "topcall" l' Ast_printer.string_of_expr;
+	      l'
+
+  let merge_stmt l newest = 
+    let l' = uniq_list Ast.compare_expr l in
+      match l',newest with
+	| [(E_MethodCall(_,_,Some (E_CodeBlock(false,_,_,_)),_) as with_cb)],
+	  (E_MethodCall(_,_,None,_) as no_cb)
+	| [(E_MethodCall(_,_,None,_) as no_cb)],
+	  (E_MethodCall(_,_,Some (E_CodeBlock(false,_,_,_)),_) as with_cb) ->
+	    (* resolve "x y{z}" vs "x y do z end" *)
+	    resolve_block_delim with_cb no_cb;
+
+	| [E_ExnBlock({body_exprs = [E_Binop(_,Op_ASSIGN,_,_)]},_)],
+	    (E_Binop(_,Op_ASSIGN,(E_ExnBlock _),_) as correct)
+	| ([E_Binop(_,Op_ASSIGN,(E_ExnBlock _),_) as correct]),
+	    E_ExnBlock({body_exprs = [E_Binop(_,Op_ASSIGN,_,_)]},_) ->
+	      (* x = y rescue 3 is a special case where the rescue binds
+		 solely to "y" and not the full assignment *)
+	    [correct]
+
+	| [E_ExnBlock({body_exprs = [E_Binop(_,Op_OP_ASGN _,_,_)]},_) as correct],
+	      E_Binop(_,Op_OP_ASGN _,(E_ExnBlock _),_)
+	| [E_Binop(_,Op_OP_ASGN _,(E_ExnBlock _),_)],
+	      (E_ExnBlock({body_exprs = [E_Binop(_,Op_OP_ASGN _,_,_)]},_) as correct) ->
+	      (* However, using any other assign-operator, reverts to the 
+                 other semantics *)
+	    [correct]
+
+	(* top-level assignment has a higher priority than any other op *)
+	| [E_Binop(l,(Op_ASSIGN|Op_OP_ASGN _ as op),r,pos)], (E_Binop _ | E_Ternary _) ->
+	    let l,op,r = fix_broken_neq l op r in
+	      [E_Binop(l,op,r,pos)]
+
+	(* we can't use is_cond_modifier to check for a rescue modifier,
+	   so we do it here *)	   
+	| [E_If(E_ExnBlock _,_,_,_) | E_Unless(E_ExnBlock _,_,_,_)
+	  | E_Until(_,E_ExnBlock _,_,_) | E_While(_,E_ExnBlock _,_,_)],
+	    (E_ExnBlock _ as correct)
+	| [(E_ExnBlock _ as correct)], 
+	    (E_If(E_ExnBlock _,_,_,_) | E_Unless(E_ExnBlock _,_,_,_)
+	    | E_Until(_,E_ExnBlock _,_,_) | E_While(_,E_ExnBlock _,_,_)) ->
+	    [correct]
+
+	| _ ->
+	    let l' = uniq_list Ast.compare_expr (newest::l') in
+	      do_fail "stmt" l' Ast_printer.string_of_expr;
+	      l'
+
+  let merge_expr s l newest =
+    let l' = uniq_list Ast.compare_expr (newest::l) in
+      do_fail s l' Ast_printer.string_of_expr;
+      l'
+
+  let merge_expr_list s l newest = 
+    let l' = uniq_list Ast.compare_ast (newest::l) in
+      do_fail s l' Ast_printer.string_of_ast;
+      l'
+
+  let merge_formal_list s l newest = 
+    let f x = Utils.format_to_string Ast_printer.format_formals x in
+    let l' = uniq_list compare (newest::l) in
+      do_fail s l' f;
+      l'
+
+  let merge_rest s l n = 
+    let l' = n::l in
+      do_fail s l' (fun x -> "??");
+      l'
+
+  let merge_rescue s l n = 
+    let cmp (x1,y1) (x2,y2) = 
+      Utils.cmp2 (Ast.compare_expr x1 x2) Ast.compare_expr y1 y2
+    in
+    let l' = uniq_list cmp (n::l) in
+      do_fail s l' 
+	(fun (x,y) -> 
+	   Printf.sprintf "%s: %s" 
+	     (Ast_printer.string_of_expr x)
+	     (Ast_printer.string_of_expr y)
+	);
+      l'
+
+  (*let () = Dyp.dypgen_verbose := max_int*)
+
+  let dyp_merge_eols = merge_rest "eols"
+  let dyp_merge_some_eols = merge_rest "some_eols "
+  let dyp_merge_main= merge_rest "main"
+  let dyp_merge_stmt_list= merge_expr_list "stmt_list"
+  let dyp_merge_stmt= merge_stmt (*merge_expr "stmt"*)
+  let dyp_merge_topcall= merge_topcall
+  let dyp_merge_arg_comma_list_trail= merge_rest "arg_comma_list_trail"
+  let dyp_merge_arg_comma_nonempty_list= merge_rest "arg_comma_nonempty_list"
+  let dyp_merge_arg_comma_star_list= merge_rest "arg_comma_star_list"
+  let dyp_merge_func= merge_expr "func"
+  let dyp_merge_star_amper= merge_rest "star_amper"
+  let dyp_merge_call_args= merge_expr_list "call_args"
+  let dyp_merge_command= merge_expr "command"
+  let dyp_merge_command_name= merge_expr "command_name"
+  let dyp_merge_binop= merge_binop
+  let dyp_merge_arg= merge_binop (*arg "arg"*)
+  let dyp_merge_expr= merge_expr "expr"
+  let dyp_merge_primary= merge_expr "primary"
+  let dyp_merge_array_item = merge_rest "array_item"
+  let dyp_merge_array_body_rest= merge_rest "array_body_rest"
+  let dyp_merge_array_body= merge_expr_list "array_body"
+  let dyp_merge_scoped_id= merge_rest "scoped_id"
+  let dyp_merge_class_inheritance= merge_rest "class_inheritance"
+  let dyp_merge_do_sep= merge_rest "do_sep"
+  let dyp_merge_code_block= merge_rest "code_block"
+  let dyp_merge_code_block_body= merge_rest "code_block_body"
+  let dyp_merge_formal_arg= merge_rest "formal_arg"
+  let dyp_merge_formal_arg_nonempty_list= merge_formal_list "formal_arg_nonempty_list"
+  let dyp_merge_formal_arg_list= merge_formal_list "formal_arg_list"
+  let dyp_merge_method_formals= merge_formal_list "method_formals"
+  let dyp_merge_lhs= merge_rest "lhs"
+  let dyp_merge_mlhs= merge_rest "mlhs"
+  let dyp_merge_mlhs_clean= merge_expr_list "mlhs_clean"
+  let dyp_merge_mlhs_rest= merge_rest "mlhs_rest"
+  let dyp_merge_mlhs_item= merge_rest "mlhs_item"
+  let dyp_merge_command_codeblock= merge_rest "command_codeblock"
+  let dyp_merge_mrhs= merge_expr_list "mrhs"
+  let dyp_merge_then_sep= merge_rest "then_sep"
+  let dyp_merge_when_clauses= merge_rest "when_clauses"
+  let dyp_merge_body_exn= merge_rest "body_exn"
+  let dyp_merge_rescue_clause= merge_rescue "rescue_clause"
+  let dyp_merge_rescue_list= merge_rest "rescue_list"
+  let dyp_merge_case_else= merge_rest "case_else"
+  let dyp_merge_ensure_clause= merge_rest "ensure_clause"
+  let dyp_merge_if_else_clauses= merge_rest "if_else_clauses"
+  let dyp_merge_meth_or_atom= merge_rest "meth_or_atom"
+  let dyp_merge_method_name= merge_expr "method_name"
+  let dyp_merge_assignable= merge_rest "assignable"
+  let dyp_merge_message_identifier= merge_rest "message_identifier"
+  let dyp_merge_bin_op= merge_rest "bin_op"
+  let dyp_merge_unary_op= merge_rest "unary_op"
+  let dyp_merge_keyword_as_id= merge_rest "keyword_as_id"
+  let dyp_merge_identifier= merge_rest "identifier"
+  let dyp_merge_constant= merge_rest "constant"
+
+  let dyp_merge l n = 
+    Printf.eprintf "<all> branches: %d\n%!" (List.length l);
+    n::l
+    (*Dyp.keep_all*)
+
+  (* DAVIDAN: This function is for parsing type annotation *)
+  let parse_type_info t_info pos = 
+    let lexbuf = Lexing.from_string t_info in 
+    let () = lexbuf.Lexing.lex_curr_p <- pos in
+      try TypeAnnotParser.input TypeAnnotLexer.token lexbuf
+      with Parsing.Parse_error | Failure("lexing: empty token") ->
+        Log.fatal Log.empty
+          "Parsing error in type annotation in %s prior to line %d" 
+          lexbuf.Lexing.lex_curr_p.Lexing.pos_fname 
+          lexbuf.Lexing.lex_curr_p.Lexing.pos_lnum
+
+  let build_annot t annot_str pos = 
+    match parse_type_info annot_str pos with
+      | None -> t
+      | Some annot -> 
+          Ast.verify_annotation_name t annot pos;
+          E_Annotate(t,annot,pos)
+}
+
+%token <Lexing.position> T_DOT          /* . */
+%token <Lexing.position> T_COMMA        /* , */
+%token <Lexing.position> T_PLUS 	/* + */
+%token <Lexing.position> T_UPLUS 	/* unary + */
+%token <Lexing.position> T_MINUS	/* - */
+%token <Lexing.position> T_UMINUS	/* unary - */
+%token <Lexing.position> T_POW		/* ** */
+%token <Lexing.position> T_CMP  	/* <=> */
+%token <Lexing.position> T_ASSIGN       /* = */
+%token <Lexing.position> T_EQ  		/* == */
+%token <Lexing.position> T_EQQ  	/* === */
+%token <Lexing.position> T_NEQ  	/* != */
+%token <Lexing.position> T_GEQ  	/* >= */
+%token <Lexing.position> T_LEQ  	/* <= */
+%token <Lexing.position> T_LT 		/* < */
+%token <Lexing.position> T_GT  		/* > */
+%token <Lexing.position> T_ANDOP 
+       <Lexing.position> T_OROP         /* && and || */
+%token <Lexing.position> T_MATCH
+        <Lexing.position> T_NMATCH	/* =~ and !~ */
+%token <Lexing.position> T_DOT2
+       <Lexing.position> T_DOT3	/* .. and ... */
+%token <Lexing.position> T_LSHFT
+       <Lexing.position> T_RSHFT	/* << and >> */
+%token <string*Lexing.position> T_OP_ASGN	/* +=, -=  etc. */
+%token <Lexing.position> T_ASSOC	/* => */
+%token <Lexing.position> T_LPAREN	/* _( */
+%token <Lexing.position> T_LPAREN_ARG	/* ( */
+%token <Lexing.position> T_RPAREN	/* ) */
+%token <Lexing.position> T_LBRACK_ARG	/* [ as in x[y] = 2 */
+%token <Lexing.position> T_LBRACK	/* [ as in x [y] aka x([y]) */
+%token <Lexing.position> T_RBRACK	/* ] */
+%token <Lexing.position> T_LBRACE	/* { for hash */
+%token <Lexing.position> T_LBRACE_ARG	/* { for code block */
+%token <Lexing.position> T_RBRACE	/* } */
+%token <Lexing.position> T_STAR		/* * */
+%token <Lexing.position> T_USTAR	/* * */
+%token <Lexing.position> T_SLASH	/* / */
+%token <Lexing.position> T_PERCENT	/* % */
+%token <Lexing.position> T_QUESTION     /* ? */
+%token <Lexing.position> T_COLON        /* : */
+%token <Lexing.position> T_CARROT       /* ^ */
+%token <Lexing.position> T_VBAR         /* | */
+%token <Lexing.position> T_BANG         /* ! */
+%token <Lexing.position> T_TILDE        /* ~ */
+%token <Lexing.position> T_AMPER	/* & */
+%token <Lexing.position> T_UAMPER	/* & */
+%token <Lexing.position> T_SEMICOLON    /* ; */
+%token <Lexing.position> T_SCOPE        /* x::y */
+%token <Lexing.position> T_USCOPE       /* f ::y */
+%token <string * string * Lexing.position> T_CAST /* ##% e : t */
+
+%token <string * Lexing.position> T_UID
+%token <string * Lexing.position> T_LID
+%token <string * Lexing.position> T_GLOBAL_VAR
+%token <string * Lexing.position> T_INST_VAR
+%token <string * Lexing.position> T_CLASS_VAR
+%token <Ast.interp_string * Lexing.position> T_ATOM
+%token <int * Lexing.position> T_FIXNUM
+%token <Big_int.big_int * Lexing.position> T_BIGNUM
+%token <string * float * Lexing.position> T_FLOAT
+%token <string * Lexing.position> T_BUILTIN_VAR
+
+/* keywords */
+%token <string*Lexing.position>  K_CLASS
+       <string*Lexing.position> K_MODULE
+       <string*Lexing.position> K_DEF
+       <Lexing.position> K_END
+       <Lexing.position> K_ALIAS
+       <Lexing.position> K_UNDEF
+       <Lexing.position> K_BEGIN
+       <Lexing.position> K_RESCUE
+       <Lexing.position> K_ENSURE
+       <Lexing.position> K_IF
+       <Lexing.position> K_UNLESS
+       <Lexing.position> K_THEN
+       <Lexing.position> K_ELSIF
+       <Lexing.position> K_ELSE
+       <Lexing.position> K_CASE
+       <Lexing.position> K_WHEN
+       <Lexing.position> K_WHILE
+       <Lexing.position> K_UNTIL
+       <Lexing.position> K_FOR
+       <Lexing.position> K_IN
+       <Lexing.position> K_DO
+       <Lexing.position> K_RETURN
+       <Lexing.position> K_AND
+       <Lexing.position> K_OR
+       <Lexing.position> K_NOT
+       <Lexing.position> K_lBEGIN
+       <Lexing.position> K_lEND
+       <Lexing.position> K_NIL
+       <Lexing.position> K_YIELD
+       <Lexing.position> K_SELF
+       <Lexing.position> K_TRUE
+       <Lexing.position> K_FALSE
+/*
+	K_DEFINED
+	K_SUPER
+	K_BREAK
+	K_REDO
+	K_RETRY
+	K_NEXT*/
+     /* K___LINE__
+	K___FILE__
+      */
+
+%token <string * Lexing.position> T_SINGLE_STRING
+%token <Ast.interp_string * Lexing.position> T_DOUBLE_STRING
+%token <string * Ast.interp_string * Lexing.position> T_USER_STRING
+%token <Lexing.position> T_DOUBLE_BEG
+%token <Lexing.position> T_TICK_BEG
+%token <string * Lexing.position> T_USER_BEG
+%token <Lexing.position> T_REGEXP_BEG
+%token <string> T_REGEXP_MOD
+%token <Ast.interp_string * string * Lexing.position> T_REGEXP
+%token <Lexing.position> T_ATOM_BEG
+%token <string * Lexing.position> T_INTERP_STR
+%token <string * Lexing.position> T_INTERP_END
+
+%token T_EOL
+%token T_EOF
+
+%start <Ast.expr list> main
+
+%%
+
+eols:
+  | {}
+  | eols T_EOL {}
+
+some_eols :
+  | T_EOL eols {}
+
+main:
+  | eols stmt_list[program] T_EOF { program }
+
+stmt_list:
+  | {[]}
+  | stmt[s] { [s] }
+  | T_SEMICOLON eols stmt_list[ss] 
+      { dyp.Dyp.will_shift <- false; ss }
+  | stmt[s] eol_or_semi eols stmt_list[ss]
+      { dyp.Dyp.will_shift <- false; s:: ss }
+
+assign_op: 
+  | T_ASSIGN {Op_ASSIGN}
+  | T_OP_ASGN[op,pos] { Op_OP_ASGN (binary_op_of_string op) }
+
+/* tokens that need to reduce immediately to guide the lexer */
+scope_begin:  K_BEGIN[pos] {enter_scope dyp;pos}
+scope_end:    K_END[pos]   {enter_scope dyp;pos}
+scope_def:    K_DEF[pos]   {enter_scope dyp;pos}
+scope_class:  K_CLASS[t_info,pos]  {enter_scope dyp;t_info,pos}
+scope_module: K_MODULE[t_info,pos] {enter_scope dyp;t_info,pos}
+seen_id: identifier[i] {seen dyp i;i}
+
+stmt:
+  | T_CAST[annot,e,pos]
+      { build_annot (E_Identifier(ID_Lowercase,e,pos)) annot pos}
+
+  | K_ALIAS[pos] meth_or_atom[e1] meth_or_atom[e2] { E_Alias(e1,e2,pos) }
+  | K_UNDEF[pos] meth_or_atom_list[e1] { E_Undef(e1,pos) }
+  | stmt[s] K_IF[pos]     eols stmt[guard] 
+      { if is_cond_modifier guard then raise Dyp.Giveup; E_If(guard, [s], [],pos) }
+  | stmt[s] K_UNLESS[pos] eols stmt[guard]
+      { if is_cond_modifier guard then raise Dyp.Giveup; E_Unless(guard, [s], [],pos) }
+  | stmt[s] K_UNTIL[pos]  eols stmt[guard] 
+      { if is_cond_modifier guard then raise Dyp.Giveup; 
+	E_Until(is_exnblock s,guard, [s],pos) }
+  | stmt[s] K_WHILE[pos]  eols stmt[guard]
+      { if is_cond_modifier guard then raise Dyp.Giveup;
+	E_While(is_exnblock s,guard, [s],pos) }
+  | stmt[s] K_RESCUE[pos] eols stmt[guard]
+      { if is_cond_modifier guard then raise Dyp.Giveup;
+	E_ExnBlock({body_exprs = [s]; rescue_exprs = [(E_Empty,guard)];
+		    ensure_expr = []; else_expr = []}, pos)}
+
+      /* handle special case for x = y rescue z where rescue binds to 
+	just the rhs, not the full assignment (unlike the other modifiers)
+      */
+  | lhs_assign_op[l,op] eols arg[r] K_RESCUE[pos] eols stmt[guard]
+      { if is_cond_modifier guard then raise Dyp.Giveup;
+	let r' = E_ExnBlock({body_exprs = [r]; rescue_exprs = [(E_Empty,guard)];
+			     ensure_expr = []; else_expr = []}, pos)
+	in (*prune_binop l op r'*) E_Binop(l,op,r',pos)}
+
+  | scope_begin[pos] eols T_LBRACE eols stmt_list[body] T_RBRACE
+      {leave_scope dyp; E_BeginBlock(body,pos)}
+  | scope_end[pos] eols T_LBRACE eols stmt_list[body] T_RBRACE
+      {leave_scope dyp; E_EndBlock(body,pos)}
+
+  | topcall[c] { c }
+  | mlhs_assign_op[l,op] eols mrhs[r]
+      { (*prune_binop (tuple l) op (tuple r)*) 
+	let lhs = tuple l in
+	  E_Binop(lhs,op,(tuple r),(pos_of lhs))
+      }
+  | expr[e] { e }
+  | T_USTAR[pos] primary[e] { E_Unary(Op_UStar,e,pos) }
+
+lhs_assign_op: lhs[l] assign_op[op] {seen dyp l; l,op}
+mlhs_assign_op: mlhs[l] assign_op[op] {List.iter (seen dyp) l; l,op}
+
+topcall:
+  | func[f] { f }
+  | func[c] code_block[cb]
+      { match c with
+	| E_MethodCall(m,args,None,pos) -> methodcall m args (Some cb) pos
+	| _ -> methodcall c [] (Some cb) (pos_of c)}
+
+  | command[c] {c}
+  | command_name[m] call_args[args] do_codeblock[cb]
+      { well_formed_command m args;
+	methodcall m args (Some cb) (pos_of m)}
+
+arg_comma_list_trail:
+  | arg_comma_star_list[e] {e}
+  | arg_comma_star_list[e] T_COMMA {e}
+
+arg_comma_nonempty_list:
+  | arg[a] { [a] }
+  | arg[a] T_COMMA eols arg_comma_nonempty_list[al] 
+      { dyp.Dyp.will_shift <- false; a::al }
+
+arg_comma_star_list:
+  | { [] }
+  | star_amper[a] { a }
+  | arg_comma_nonempty_list[args] {args}
+  | arg_comma_nonempty_list[args] T_COMMA eols star_amper[a]
+      { dyp.Dyp.will_shift <- false;
+	args @ a }
+
+func:
+  | command_name[c] lparen eols call_args[args] eols T_RPAREN
+      {
+	match args with
+	  | [] -> E_MethodCall(c,args,None,pos_of c) 
+	  | _ -> methodcall c args None (pos_of c)
+      }
+  | command_name[c] lparen eols command[a] eols T_RPAREN
+      {E_MethodCall(c,[a],None,pos_of c)}
+
+star_amper:
+  | T_USTAR[pos] arg[a] { [E_Unary(Op_UStar,a,pos)] }
+  | T_UAMPER[pos] arg[a] { [E_Unary(Op_UAmper,a,pos)] }
+  | T_USTAR[pos1] arg[a1] T_COMMA eols T_UAMPER[pos2] arg[a2]
+      { [E_Unary(Op_UStar,a1,pos1); E_Unary(Op_UAmper,a2,pos2)] }
+
+call_args:
+  | { [] }
+  | arg_comma_star_list[args] { args }
+  | T_LBRACK[pos] eols call_args[args] eols T_RBRACK { [E_Array(args,pos)] }
+
+command:
+  | K_YIELD[pos] call_args[args] 
+      { well_formed_return args;
+	E_Yield(args,pos) }
+  | command_name[m] call_args[args]
+      { well_formed_command m args;
+	methodcall m args None (pos_of m)}
+  | command_name[cmd] command[cmd2]
+    {well_formed_command cmd [cmd2];
+     methodcall cmd [cmd2] None (pos_of cmd)}
+
+command_name:
+  | identifier[id] {id}
+  | primary[p] T_DOT eols message_identifier[m]
+      { unfold_dot p m (pos_of p)}
+  | command_name[p] T_DOT eols message_identifier[m]
+      { unfold_dot p m (pos_of p)}
+  | primary[p] T_SCOPE message_identifier[m] 
+      { scope p m }
+  | command_name[p] T_SCOPE message_identifier[m]
+      { scope p m }
+
+lhs_prune_binop: lhs[l] {match l with E_Binop _ -> raise Dyp.Giveup | _ -> l}
+lhs_pruned_assign_op: lhs_prune_binop[l] assign_op[op] {seen dyp l; l,op}
+
+arg:
+  | primary[p] {p}
+  | unary_op[o,pos] eols arg[a] { prune_uop o a pos }
+  | lhs_pruned_assign_op[l,op] eols arg[r] 
+      { prune_right_assoc l op r }
+
+  | arg[l] bin_op[bop] eols arg[r]{ prune_left_assoc l bop r }
+  | arg[l] T_ANDOP eols arg[r] { prune_left_assoc l Op_AND r }
+  | arg[l] T_OROP eols arg[r]  { prune_left_assoc l Op_OR r }
+  | arg[e1] T_QUESTION[pos] eols expr[e2] T_COLON eols expr[e3]   
+    { prune_tern e1 e2 e3 (pos_of e1) }
+
+expr:
+  | K_RETURN[pos] call_args[args]
+      { well_formed_return args; E_Return(args,pos) }
+  | K_RETURN[pos] arg[p]
+      { match p with
+	| E_Block([x],_) -> E_Return([x],pos)
+	| arg -> if is_cond_modifier arg then raise Dyp.Giveup;
+	    E_Return([arg],pos) }
+
+  | K_YIELD[pos] call_args[args] 
+      { well_formed_return args;
+	E_Yield(args,pos) }
+  | expr[e1] K_AND eols expr[e2] { prune_left_assoc e1 Op_kAND e2 }
+  | expr[e1] K_OR eols expr[e2]  { prune_left_assoc e1 Op_kOR e2 }
+  | K_NOT[pos] eols expr[e]           { prune_uop Op_UNot e pos}
+  | T_BANG[pos] eols expr[e]          { prune_uop Op_UBang e pos}
+  | command[c]              {c}
+  | arg[a]                  { a }
+
+primary:
+  | T_LPAREN[pos] eols stmt_list[ss] T_RPAREN
+      { (* don't collapse the block here to prevent the disambiguation
+	  rules from erroneously firing	*) E_Block(ss,pos) }
+  | constant[c] { c }
+  | identifier[id] { id }
+  | command_name[c] { methodcall c [] None (pos_of c)}
+  | command_name[c] code_block[cb] { command_codeblock c cb }
+  | primary[p] T_SCOPE identifier[id] { scope p id }
+  | T_USCOPE[pos] identifier[id] { E_Unary(Op_UScope,id,pos) }
+  | primary[p] T_LBRACK_ARG[pos1] eols arg_comma_list_trail[args] eols T_RBRACK
+      { methodcall (E_Binop(p,Op_DOT,E_Operator(Op_AREF,pos1),pos_of p)) args None (pos_of p)}
+
+  | T_LBRACK[pos] eols array_body[body] eols T_RBRACK { E_Array(body,pos) }
+  | T_LBRACE[pos] eols array_body[body] eols T_RBRACE { E_Hash(true,body,pos) }
+  | K_RETURN[pos] { E_Return([],pos)}
+/*  | K_RETURN[pos] T_LPAREN eols call_args[args] eols T_RPAREN { E_Return(args,pos)}
+  | K_RETURN[pos] lparen eols expr[arg] eols T_RPAREN { E_Return([arg],pos)}*/
+  | K_YIELD[pos] { E_Yield([],pos)}
+  | K_YIELD[pos] lparen eols call_args[args] eols T_RPAREN { E_Yield(args,pos)}
+  | K_YIELD[pos] lparen eols expr[arg] eols T_RPAREN { E_Yield([arg],pos)}
+
+  | func[f] { f }
+  | func[f] code_block[cb] {match f with
+      | E_MethodCall(m,args,None,pos) -> methodcall m args (Some cb) pos
+      | _ -> methodcall f [] (Some cb) (pos_of f)}
+
+  | K_IF[pos] expr[guard] then_sep stmt_list[body] if_else_clauses[else_e] K_lEND
+    { E_If(guard,body,else_e,pos) }
+
+  | K_UNLESS[pos] expr[guard] then_sep stmt_list[body] case_else[else_e] K_lEND
+    { E_Unless(guard,body, else_e,pos) }
+
+  | K_WHILE[pos] expr[guard] do_sep stmt_list[body] K_lEND
+    { well_formed_do guard body; E_While(false,guard,body,pos) }
+
+  | K_UNTIL[pos] expr[guard] do_sep stmt_list[body] K_lEND
+    { well_formed_do guard body;E_Until(false,guard,body,pos) }
+
+  | K_CASE[pos] some_eols when_clauses[whens] case_else[else_e] K_lEND
+    { E_Case({case_guard = E_Empty; case_whens = whens; case_else = else_e},pos) }
+
+  | K_CASE[pos] eols expr[e] eols when_clauses[whens] case_else[else_e] K_lEND
+    { E_Case({case_guard = e; case_whens = whens; case_else = else_e},pos) }
+
+  | K_CASE[pos] eols expr[e] T_SEMICOLON eols when_clauses[whens] case_else[else_e] K_lEND
+
+    { E_Case({case_guard = e; case_whens = whens; case_else = else_e},pos) }
+
+  | K_FOR[pos] formal_arg_list[vars] K_IN arg[range] do_sep stmt_list[body] K_lEND
+    { well_formed_do range body; E_For(vars,range,body,pos) }
+
+  | K_lBEGIN[pos] eols body_exn[body]  K_lEND { E_ExnBlock(body,pos) }
+
+  | scope_class[t_info, pos] eols scoped_id[class_name] class_inheritance[inh] do_sep
+      body_exn[body] K_lEND
+      { leave_scope dyp;
+        build_annot (E_ClassDef(class_name, inh, body, pos)) t_info pos}
+
+  | scope_class[t_info, pos] T_LSHFT arg[id] eols body_exn[body] K_lEND
+      { leave_scope dyp;
+        let t = E_ClassDef(E_Empty, Some (Inst_Inherit id), body, pos) in
+          build_annot t t_info pos
+      }
+
+  | scope_module[t_info, pos] scoped_id[name] eols body_exn[body] K_lEND 
+      { leave_scope dyp;
+        build_annot (E_ModuleDef (name,body, pos)) t_info pos
+      }
+
+  | scope_def[t_info,pos] method_name[meth_name] method_formals[formals] eols
+      body_exn[body] K_lEND
+      { leave_scope dyp;
+        let t = E_MethodDef (meth_name, formals, body, pos) in
+          build_annot t t_info pos
+      }
+
+array_item: 
+  | arg[e] { e }
+  | constant[c] T_LBRACK[pos1] eols call_args[args] eols T_RBRACK
+      {methodcall
+	 (E_Binop(c, Op_DOT, E_Operator(Op_AREF,pos1), pos_of c)) 
+	 args None (pos_of c)
+      }
+
+array_body_rest:
+  | { [] }
+  | array_item[e] { [e] }
+  | star_amper[es] { es }
+  | array_item[e] T_COMMA eols array_body_rest[es] 
+      { dyp.Dyp.will_shift <- false;
+	e::es }
+
+array_body:
+  | command[c] { [c] }
+  | array_body_rest[es] { es }
+
+scoped_id:
+  | identifier[id] { id }
+  | T_USCOPE[pos] identifier[id] { E_Unary(Op_UScope,id,pos)}
+  | scoped_id[id1] T_SCOPE identifier[id2]    { E_Binop(id1,Op_SCOPE,id2,pos_of id1) }
+  | scoped_id[id1] T_SCOPE keyword_as_id[id2] { E_Binop(id1,Op_SCOPE,id2,pos_of id1) }
+
+class_inheritance:
+ | {None}
+ | T_LT primary[p] { Some (Class_Inherit p) }
+
+do_sep:
+    | T_SEMICOLON eols {}
+    | T_COLON eols {}
+    | some_eols {}
+    | eols K_DO eols {}
+
+brace_codeblock:
+  | T_LBRACE_ARG[pos] eols code_block_body[b] T_RBRACE
+      { let args,body = b in E_CodeBlock(true,args,body,pos) }
+
+do_codeblock:
+  | K_DO[pos] eols code_block_body[b] K_lEND
+      { let args,body = b in E_CodeBlock(false,args,body,pos) }
+      
+code_block:
+  | brace_codeblock[cb] {cb}
+  | do_codeblock[cb] {cb}
+
+code_block_body:
+    /* for when the lexer sees "||" instead of two "|"'s */
+  | T_OROP eols stmt_list[body] {(Some [],body)}
+  | T_VBAR formal_arg_list[args] T_VBAR eols stmt_list[body]
+      {(Some args,body)}
+  | stmt_list[body]
+    {(None, body)}
+
+formal_arg:
+  | identifier[id] { seen dyp id; Formal_id id }
+  | T_UAMPER T_LID[id,pos] { seen_str dyp id; Formal_amp id }
+  | T_AMPER T_LID[id,pos] { seen_str dyp id; Formal_amp id }
+  | T_USTAR T_LID[id,pos]  { seen_str dyp id; Formal_star id}
+  | T_USTAR {Formal_rest}
+  | T_LID[id,pos] T_ASSIGN eols arg[e] { seen_str dyp id; Formal_default (id,e) }
+  | lparen formal_arg_nonempty_list[f] T_RPAREN { Formal_tuple f }
+
+formal_arg_nonempty_list:
+  | formal_arg[f] { [f] }
+  | formal_arg[f] T_COMMA { [f;Formal_rest] }
+  | formal_arg[f] T_COMMA eols formal_arg_nonempty_list[fs] 
+      { dyp.Dyp.will_shift <- false; f::fs }
+
+formal_arg_list:
+  | { [] }
+  | formal_arg_nonempty_list[l] {l}
+
+method_formals:
+  | eol_or_semi { [] }
+  | formal_arg_nonempty_list[formals] eol_or_semi
+      {match formals with
+	  (Formal_tuple _)::_ -> raise Dyp.Giveup
+	| e -> e
+      }
+  | lparen eols formal_arg_list[formals] eols T_RPAREN {
+      (* RPAREN usually puts the lexer in an end state, but we need to
+         force it to an end state *)
+      state_override := true; formals}
+
+lhs:
+  | scoped_id[id] { id }
+  | primary[p] T_LBRACK_ARG[pos] eols arg_comma_star_list[args] eols T_RBRACK
+      { methodcall (E_Binop(p,Op_DOT,E_Operator(Op_AREF,pos),pos_of p)) args None (pos_of p)}
+  | primary[p] T_DOT eols message_identifier[m]
+      { methodcall (E_Binop(p,Op_DOT,m,pos_of p)) [] None (pos_of p)}
+
+mlhs:
+  | mlhs_clean[ls] {ls}
+  | mlhs_clean[ls] T_COMMA[pos] { ls @ [E_UOperator(Op_UStar,pos)] }
+
+mlhs_clean:
+  | T_LPAREN eols mlhs[l] eols T_RPAREN { [(tuple l)] }
+  | mlhs_item[l] { [l] }
+  | mlhs_item[l] T_COMMA eols mlhs_rest[ls] { l::ls}
+  | T_USTAR[pos] lhs[l] { [E_Unary(Op_UStar,l,pos)] }
+
+mlhs_rest:
+  | mlhs_item[l] { [l] }
+  | mlhs_item[l] T_COMMA eols mlhs_rest[ls] 
+      { dyp.Dyp.will_shift <- false; l::ls}
+  | T_USTAR[pos] lhs[l] { [E_Unary(Op_UStar,l,pos)] }
+
+mlhs_item:
+  | lhs[l] {l}
+  | T_USTAR[pos] { E_UOperator(Op_UStar,pos) } 
+  | T_LPAREN eols mlhs[ls] eols T_RPAREN { tuple ls }
+
+command_codeblock:
+  | command[c] { c }
+  | command_name[c] code_block[cb] { command_codeblock c cb }
+
+mrhs:
+  | arg_comma_star_list[args]
+      { match args with [] -> raise Dyp.Giveup | _ -> args}
+  | topcall[c] { [c] }
+  | T_LBRACK[pos] eols call_args[r] eols T_RBRACK { [E_Array(r,pos)] }
+  | T_USTAR[pos] arg[a] { [E_Unary(Op_UStar,a,pos)] }
+  | T_USTAR[pos] command_codeblock[c] { [E_Unary(Op_UStar,c,pos)] }
+
+  | T_USTAR[pos1] T_LBRACK[pos2] eols call_args[r] eols T_RBRACK
+      { [E_Unary(Op_UStar,E_Array(r,pos2),pos1)] }
+
+then_sep:
+    | T_SEMICOLON eols {}
+    | T_COLON eols {}
+    | some_eols {}
+    | eols K_THEN eols {}
+
+when_clauses:
+  | { [] }
+  | K_WHEN arg_comma_star_list[e] then_sep stmt_list[es] when_clauses[rest]
+    { (e,es) :: rest }
+
+body_exn:
+ | stmt_list[body] rescue_list[resc_e] 
+     case_else[else_e] ensure_clause[ens_e]
+     { {body_exprs = body;
+	rescue_exprs = resc_e;
+	ensure_expr = ens_e;
+	else_expr = else_e} }
+
+rescue_clause:
+  | K_RESCUE[resc_pos] then_sep stmt_list[body]
+      { let pos = match body with
+	  | [] -> resc_pos 
+	  | hd::_ -> pos_of hd
+	in (E_Empty,mk_block body pos) }
+
+  | K_RESCUE[pos] T_ASSOC seen_id[bind] then_sep stmt_list[body]
+      { (E_Binop(E_Empty,Op_ASSOC,bind,pos), mk_block body pos) }
+
+  | K_RESCUE[pos] arg_comma_star_list[exn] then_sep stmt_list[body]
+    { (tuple exn,mk_block body pos) }
+
+  | K_RESCUE[pos] arg_comma_star_list[exn] 
+    { (tuple exn,E_Empty) }
+
+eol_or_semi:
+ | T_SEMICOLON {}
+ | T_EOL {}
+
+rescue_list_rest:
+  | { [] }
+  | rescue_clause[r] rescue_list_rest[rs] { r::rs }
+
+rescue_list:
+  | { [] }
+    /* need to force an eol/semi here to disambiguate the rescue modifier */
+  | eol_or_semi rescue_clause[r] rescue_list[rs] /*_rest*/
+      { r::rs }
+
+case_else:
+  | { [] }
+  | K_ELSE eols stmt_list[ss] { ss }
+
+ensure_clause:
+  | { [] }
+  | K_ENSURE eols stmt_list[body] { body }
+
+if_else_clauses:
+  | { [] }
+  | K_ELSE eols stmt_list[body]
+    { body }
+  | K_ELSIF[pos] eols expr[guard] then_sep stmt_list[body] if_else_clauses[rest]
+    { [E_If( guard, body, rest, pos) ] }
+
+meth_or_atom:
+    | method_name[e]  {e}
+    | T_ATOM[a,pos] { E_Literal((Lit_Atom a),pos) }
+
+meth_or_atom_list:
+    | meth_or_atom[e] { [e] }
+    | meth_or_atom[e] T_COMMA meth_or_atom_list[lst]{ e::lst }
+
+method_name:
+  | message_identifier[e] { e }
+  | method_name[e] T_ASSIGN { add_eq e }
+  | method_name[id1] T_DOT eols message_identifier[id2] 
+      { E_Binop(id1,Op_DOT,id2,pos_of id1) }
+  | method_name[id1] T_DOT eols assignable[id2] T_ASSIGN
+      { E_Binop(id1,Op_DOT,add_eq id2,pos_of id1) }
+
+  | T_USCOPE[pos] identifier[id]     { E_Unary(Op_UScope,id,pos)}
+  | T_USCOPE[pos] keyword_as_id[id]  { E_Unary(Op_UScope,id,pos)}
+
+  | method_name[id1] T_SCOPE identifier[id2]    { scope id1 id2 }
+  | method_name[id1] T_SCOPE keyword_as_id[id2] { scope id1 id2 }
+  | T_LPAREN[pos] eols stmt_list[ss] T_RPAREN T_DOT message_identifier[m]
+      { E_Binop(mk_block ss (pos_of (List.hd ss)), Op_DOT,m, pos) }
+
+assignable:
+  | identifier[e]  { e }
+  | keyword_as_id[k] { k }
+  | T_LBRACK_ARG[pos] T_RBRACK { E_Operator(Op_AREF,pos) }
+  | T_LBRACK[pos] T_RBRACK     { E_Operator(Op_AREF,pos) }
+
+message_identifier:
+  | assignable[e] { e }
+  | T_LBRACK_ARG[pos] T_RBRACK T_ASSIGN { E_Operator(Op_ASET,pos) }
+  | bin_op[op] { E_Operator(op,Lexing.dummy_pos) }
+  | T_UPLUS[pos]       { E_UOperator(Op_UPlus,pos) }
+  | T_UMINUS[pos]      { E_UOperator(Op_UMinus,pos) }
+  | T_TILDE[pos]       { E_UOperator(Op_UTilde,pos) }
+
+bin_op:
+  | T_CMP    { Op_CMP } 
+  | T_EQ     { Op_EQ }
+  | T_SLASH  { Op_DIV }
+  | T_PERCENT{ Op_REM }
+  | T_EQQ    { Op_EQQ }
+  | T_NEQ    { Op_NEQ }
+  | T_GEQ    { Op_GEQ }
+  | T_LEQ    { Op_LEQ }
+  | T_MATCH  { Op_MATCH }
+  | T_NMATCH { Op_NMATCH }
+  | T_CARROT { Op_XOR }
+  | T_POW    { Op_POW }
+  | T_VBAR   { Op_BOR }
+  | T_ASSOC  { Op_ASSOC }
+  | T_AMPER  { Op_BAND }
+  | T_PLUS   { Op_PLUS }
+  | T_MINUS  { Op_MINUS }
+  | T_STAR   { Op_TIMES }
+  | T_LSHFT  { Op_LSHIFT }
+  | T_RSHFT  { Op_RSHIFT }
+  | T_LT     { Op_LT }
+  | T_GT     { Op_GT }
+  | T_DOT2   { Op_DOT2 }
+  | T_DOT3   { Op_DOT3 }
+
+unary_op:
+  | T_UPLUS[pos]   { Op_UPlus,pos }
+  | T_UMINUS[pos]  { Op_UMinus,pos }
+  | T_TILDE[pos]   { Op_UTilde,pos }
+  | T_BANG[pos]    { Op_UBang,pos }
+
+keyword_as_id:
+  | K_CLASS[t_info,pos]   { E_Identifier(ID_Lowercase, "class", pos) }
+  | K_MODULE[t_info, pos]  { E_Identifier(ID_Lowercase, "module", pos) }
+  | K_DEF[t_info,pos]     { E_Identifier(ID_Lowercase, "def", pos) }
+  | K_END[pos]     { E_Identifier(ID_Uppercase, "END", pos) }
+  | K_ALIAS[pos]   { E_Identifier(ID_Lowercase, "alias", pos) }
+  | K_UNDEF[pos]   { E_Identifier(ID_Lowercase, "undef", pos) }
+  | K_BEGIN[pos]   { E_Identifier(ID_Lowercase, "BEGIN", pos) }
+  | K_RESCUE[pos]  { E_Identifier(ID_Lowercase, "rescue", pos) }
+  | K_ENSURE[pos]  { E_Identifier(ID_Lowercase, "ensure", pos) }
+  | K_IF[pos]      { E_Identifier(ID_Lowercase, "if", pos) }
+  | K_UNLESS[pos]  { E_Identifier(ID_Lowercase, "unless", pos) }
+  | K_THEN[pos]    { E_Identifier(ID_Lowercase, "then", pos) }
+  | K_ELSIF[pos]   { E_Identifier(ID_Lowercase, "elsif", pos) }
+  | K_ELSE[pos]    { E_Identifier(ID_Lowercase, "else", pos) }
+  | K_CASE[pos]    { E_Identifier(ID_Lowercase, "case", pos) }
+  | K_WHEN[pos]    { E_Identifier(ID_Lowercase, "when", pos) }
+  | K_WHILE[pos]   { E_Identifier(ID_Lowercase, "while", pos) }
+  | K_UNTIL[pos]   { E_Identifier(ID_Lowercase, "until", pos) }
+  | K_FOR[pos]     { E_Identifier(ID_Lowercase, "for", pos) }
+  | K_IN[pos]      { E_Identifier(ID_Lowercase, "in", pos) }
+  | K_DO[pos]      { E_Identifier(ID_Lowercase, "do", pos) }
+  | K_RETURN[pos]  { E_Identifier(ID_Lowercase, "return", pos) }
+  | K_AND[pos]     { E_Identifier(ID_Lowercase, "and", pos) }
+  | K_OR[pos]      { E_Identifier(ID_Lowercase, "or", pos) }
+  | K_NOT[pos]     { E_Identifier(ID_Lowercase, "not", pos) }
+/*  | K_DEFINED[pos] { E_Identifier(ID_Lowercase, "defined?", pos) }*/
+  | K_lBEGIN[pos]  { E_Identifier(ID_Lowercase, "begin", pos) }
+  | K_lEND[pos]    { E_Identifier(ID_Lowercase, "end", pos) }
+  | K_YIELD[pos]   { E_Identifier(ID_Lowercase, "yield", pos) }
+
+identifier:
+  | T_BUILTIN_VAR[id,pos] { E_Identifier(ID_Builtin, id, pos) }
+  | T_GLOBAL_VAR[id,pos]  { E_Identifier (ID_Global, id, pos) }
+  | T_UID[id,pos]  { E_Identifier (ID_Uppercase, id, pos)}
+  | K_NIL[pos]     { E_Literal(Lit_Nil,pos) }
+  | K_SELF[pos]    { E_Literal(Lit_Self,pos) }
+  | K_TRUE[pos]    { E_Literal(Lit_True,pos) }
+  | K_FALSE[pos]   { E_Literal(Lit_False,pos) }
+  | T_LID[id,pos]  { E_Identifier (ID_Lowercase, id, pos)}
+  | T_INST_VAR[id,pos]    { E_Identifier(ID_Instance, id, pos) }
+  | T_CLASS_VAR[id,pos]    { E_Identifier(ID_Class, id, pos) }
+
+one_string:
+  | T_SINGLE_STRING[s,pos] { E_Literal( Lit_String(String_Single s), pos) }
+  | T_DOUBLE_BEG[pos] interp_str[istr] 
+      { E_Literal(Lit_String (String_Double istr),pos) }
+
+  | T_DOUBLE_STRING[s,pos] { E_Literal( Lit_String(String_Double s), pos) }
+  | T_USER_STRING[m,str,pos] { process_user_string m str pos }
+  | T_USER_BEG[m,pos] interp_str[str] { process_user_string m str pos }
+
+string:
+  | one_string[s] {s} /* ("abc" 'def') is the string "abcdef" */
+
+  | string[s1] one_string[s2] { merge_string_lits s1 s2 }
+
+constant:
+  | string[s] { s }
+
+  | T_TICK_BEG[pos] interp_str[istr]
+      { E_Literal (Lit_String (String_Tick istr),pos) }
+
+  | T_ATOM_BEG[pos] interp_str[istr] 
+      { E_Literal (Lit_Atom istr,pos) }
+
+  | T_REGEXP_BEG[pos] interp_str[istr] T_REGEXP_MOD[mods]
+      { E_Literal(Lit_Regexp (istr,mods),pos) }
+  | T_REGEXP[s,m,pos] { E_Literal(Lit_Regexp (s,m),pos) }
+
+  | T_FIXNUM[i,pos] { E_Literal(Lit_FixNum i,pos) }
+  | T_BIGNUM[i,pos] { E_Literal(Lit_BigNum i,pos) }
+  | T_FLOAT[s,f,pos] { E_Literal((Lit_Float(s,f)),pos) }
+  | T_ATOM[a,pos] { E_Literal (Lit_Atom a,pos) }
+
+interp_str:
+  | T_SINGLE_STRING[str,p] {[StrChars str]}
+  | interp_str_work[i] 
+      {match i with [] -> [StrChars ""] | lst -> lst}
+
+interp_str_work:
+  | T_INTERP_STR[s,pos] interp_code[tl]
+      { if s = "" then tl else (StrChars s)::tl }
+
+  | T_INTERP_END[s,pos2] 
+      { if s = "" then [] else [StrChars s] }
+
+interp_code:
+  | eols stmt_list[ss] interp_str_work[tl]
+      { match ss with
+          | [] -> tl
+          | x::_ -> StrExpr (mk_block ss (pos_of x))::tl }
+
+  | T_INTERP_END[s,pos] 
+      { if s = "" then [] else [StrChars s] }
+
+lparen:
+  | T_LPAREN[pos] {pos}
+  | T_LPAREN_ARG[pos] {pos}
+
+%mli { 
+  module Env : Set.S with type t = Utils.StrSet.t
+  val assigned_id : string -> bool
+  val clear_env : unit -> unit
+  val env : unit -> Env.t
+  val set_env : Env.t -> unit
+  val begin_override : unit -> bool
+  module Dyp_symbols : sig
+    val str_token : token -> string
+  end
+}
+
+
+/*
+Local Variables: 
+ mode:tuareg
+End:
+*/
