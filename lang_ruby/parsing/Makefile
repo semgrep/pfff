@@ -1,0 +1,81 @@
+TOP=../..
+##############################################################################
+# Variables
+##############################################################################
+TARGET=lib
+OPAMPKG=pfff-lang_ruby
+
+-include $(TOP)/Makefile.config
+
+SRC= config.ml log.ml utils.ml build_vars.ml \
+  visitor.ml \
+  annotation.ml ast.ml ast_printer.ml \
+  newLexer.ml newParser.ml \
+  rubyLexerState.ml \
+  typeAnnotLexer.ml typeAnnotParser.ml \
+  parse_helper.ml
+
+
+SYSLIBS= str.cma unix.cma 
+
+LIBS=$(TOP)/commons/lib.cma \
+ $(TOP)/h_program-lang/lib.cma \
+
+INCLUDEDIRS= $(TOP)/commons \
+  $(TOP)/external/dyp $(TOP)/external/getopt \
+  $(TOP)/commons_core \
+  $(TOP)/globals \
+  $(TOP)/h_program-lang \
+
+##############################################################################
+# Generic variables
+##############################################################################
+-include $(TOP)/Makefile.common
+
+##############################################################################
+# Top rules
+##############################################################################
+all:: $(TARGET).cma
+all.opt:: $(TARGET).cmxa
+
+$(TARGET).cma: $(OBJS)
+	$(OCAMLC) -a -o $(TARGET).cma $(OBJS)
+$(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
+	$(OCAMLOPT) -a -o $(TARGET).cmxa $(OPTOBJS)
+$(TARGET).top: $(OBJS) $(LIBS)
+	$(OCAMLMKTOP) -o $(TARGET).top $(SYSLIBS) $(LIBS) $(OBJS)
+
+clean::
+	rm -f $(TARGET).top
+
+
+newLexer.ml: newLexer.mll
+	$(OCAMLLEX) $<
+clean::
+	rm -f newLexer.ml
+beforedepend:: newLexer.ml
+
+
+newParser.ml newParser.mli: newParser.dyp
+	dypgen --pv-obj --ocamlc '$(INCLUDES)' $<
+clean::
+	rm -f newParser.ml newParser.mli 
+beforedepend:: newParser.ml newParser.mli
+
+
+#TODO: remove at some point
+typeAnnotParser.ml typeAnnotParser.mli: typeAnnotParser.mly
+	$(OCAMLYACC) $<
+clean::
+	rm -f typeAnnotParser.ml typeAnnotParser.mli 
+beforedepend:: typeAnnotParser.ml typeAnnotParser.mli
+
+
+typeAnnotLexer.ml: typeAnnotLexer.mll
+	$(OCAMLLEX) $<
+clean::
+	rm -f typeAnnotLexer.ml
+beforedepend:: typeAnnotLexer.ml
+
+#visitor_python.cmo: visitor_python.ml
+#	ocamlc $(INCLUDES) -w y -c $<
