@@ -1,77 +1,115 @@
-(* TODO: pad:
-* [AST Format of the Whitequark parser](https://github.com/whitequark/parser/blob/master/doc/AST_FORMAT.md)
- * https://rubygems.org/gems/ast
+(* Mike Furr
+ *
+ * Copyright (C) 2010 Mike Furr
+ * Copyright (C) 2020 r2c
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the <organization> nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *)
 
-type pos = Lexing.position
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+(* Abstract Syntax Tree for Ruby 1.9
+ *
+ * Most of the code in this file derives from code from 
+ * Mike Furr in diamondback-ruby.
+ *
+ * todo: 
+ *  - [AST Format of the Whitequark parser](https://github.com/whitequark/parser/blob/master/doc/AST_FORMAT.md)
+ *  - https://rubygems.org/gems/ast
+ *)
 
-type string_contents = 
-  | StrChars of string
-  | StrExpr of expr
+(*****************************************************************************)
+(* Names *)
+(*****************************************************************************)
 
-and interp_string = string_contents list
+(* ------------------------------------------------------------------------- *)
+(* Token/info *)
+(* ------------------------------------------------------------------------- *)
+(* TODO: type tok = Parse_info.t and wrap and bracket *)
+type tok = Lexing.position
 
-and formal_param = 
-  | Formal_id of expr
-  | Formal_amp of string
-  | Formal_star of string (* as in *x *)
-  | Formal_rest (* just '*' *)
-  | Formal_tuple of formal_param list
-  | Formal_default of string * expr
+(*****************************************************************************)
+(* Expression *)
+(*****************************************************************************)
 
-and string_kind = 
-  | String_Single of string
-  | String_Double of interp_string
-  | String_Tick of interp_string
+type expr = 
+  | Empty
 
-and inheritance_kind = 
-  | Class_Inherit of expr
-  | Inst_Inherit of expr
+  | Literal of lit_kind * tok
 
-and body_exn = {
-  body_exprs: expr list;
-  rescue_exprs: (expr*expr) list;
-  ensure_expr: expr list;
-  else_expr: expr list;
-}
+  | Identifier of id_kind * string * tok
+  | Operator of binary_op * tok
+  | UOperator of unary_op * tok
 
-and case_block = {
-  case_guard : expr;
-  case_whens: (expr list * expr list) list;
-  case_else: expr list;
-}
-and expr = 
-  | E_Empty
-  | E_Literal of lit_kind * pos
-  | E_Alias of expr * expr* pos
-  | E_Undef of expr list * pos
-  | E_Identifier of id_kind * string * pos
-  | E_Unary of unary_op * expr * pos
-  | E_Binop of expr * binary_op * expr * pos
-  | E_Ternary of expr * expr * expr * pos
-  | E_Hash of bool * expr list * pos
-  | E_Array of expr list * pos
-  | E_Tuple of expr list * pos
-  | E_MethodCall of expr * expr list * expr option * pos
-  | E_While of bool * expr * expr list * pos
-  | E_Until of bool * expr * expr list * pos
-  | E_Unless of expr * expr list * expr list * pos
-  | E_For of formal_param list * expr * expr list * pos
-  | E_If of expr * expr list * expr list * pos
-  | E_ModuleDef of expr * body_exn * pos
-  | E_MethodDef of expr * formal_param list * body_exn * pos
-  | E_CodeBlock of bool * formal_param list option * expr list * pos
-  | E_ClassDef of expr * inheritance_kind option * body_exn * pos
-  | E_BeginBlock of expr list * pos
-  | E_EndBlock of expr list * pos
-  | E_ExnBlock of body_exn * pos
-  | E_Case of case_block * pos
-  | E_Operator of binary_op * pos
-  | E_UOperator of unary_op * pos
-  | E_Return of expr list * pos
-  | E_Yield of expr list * pos
-  | E_Block of expr list * pos
-  | E_Annotate of expr * Annotation.t * pos
+  | Hash of bool * expr list * tok
+  | Array of expr list * tok
+  | Tuple of expr list * tok
+
+  | Unary of unary_op * expr * tok
+  | Binop of expr * binary_op * expr * tok
+  | Ternary of expr * expr * expr * tok
+
+
+  | MethodCall of expr * expr list * expr option * tok
+
+  | Alias of expr * expr * tok
+  | Undef of expr list * tok
+
+(*****************************************************************************)
+(* Statement *)
+(*****************************************************************************)
+
+  | While of bool * expr * expr list * tok
+  | Until of bool * expr * expr list * tok
+  | Unless of expr * expr list * expr list * tok
+  | For of formal_param list * expr * expr list * tok
+  | If of expr * expr list * expr list * tok
+
+  | Return of expr list * tok
+  | Yield of expr list * tok
+  | Block of expr list * tok
+
+(*****************************************************************************)
+(* Definitions *)
+(*****************************************************************************)
+
+  | ModuleDef of expr * body_exn * tok
+  | MethodDef of expr * formal_param list * body_exn * tok
+  | ClassDef of expr * inheritance_kind option * body_exn * tok
+
+  | CodeBlock of bool * formal_param list option * expr list * tok
+  | BeginBlock of expr list * tok
+  | EndBlock of expr list * tok
+  | ExnBlock of body_exn * tok
+
+  | Case of case_block * tok
+
+  | Annotate of expr * Annotation.t * tok
+
+(*****************************************************************************)
+(* Misc *)
+(*****************************************************************************)
 
 and lit_kind = 
   | Lit_FixNum of int
@@ -95,8 +133,7 @@ and id_kind =
   | ID_Assign of id_kind (* postfixed by = *)
 
 and unary_op = 
-  | Op_UMinus    (* -x *)
-  | Op_UPlus     (* +x *)
+  | Op_UMinus    (* -x *)  | Op_UPlus     (* +x *)
   | Op_UBang     (* !x *)
   | Op_UTilde    (* ~x *)
   | Op_UNot      (* not x *)
@@ -108,42 +145,74 @@ and unary_op =
 
 and binary_op = 
   | Op_ASSIGN   (* = *)
-  | Op_PLUS     (* + *)
-  | Op_MINUS    (* - *)
-  | Op_TIMES    (* * *)
-  | Op_REM      (* % *)
-  | Op_DIV      (* / *)
+  | Op_PLUS     (* + *)  | Op_MINUS    (* - *)
+  | Op_TIMES    (* * *)  | Op_REM      (* % *)  | Op_DIV      (* / *)
   | Op_CMP  	(* <=> *)
-  | Op_EQ  	(* == *)
-  | Op_EQQ  	(* === *)
+  | Op_EQ  	(* == *)  | Op_EQQ  	(* === *)
   | Op_NEQ  	(* != *)
-  | Op_GEQ  	(* >= *)
-  | Op_LEQ  	(* <= *)
-  | Op_LT       (* < *)
-  | Op_GT       (* > *)
-  | Op_AND      (* && *)
-  | Op_OR	(* || *)
-  | Op_BAND     (* & *)
-  | Op_BOR      (* | *)
+  | Op_GEQ  	(* >= *)  | Op_LEQ  	(* <= *)
+  | Op_LT       (* < *)  | Op_GT       (* > *)
+  | Op_AND      (* && *)  | Op_OR	(* || *)
+  | Op_BAND     (* & *)  | Op_BOR      (* | *)
   | Op_MATCH    (* =~ *)
   | Op_NMATCH   (* !~ *)
   | Op_XOR      (* ^ *)
   | Op_POW      (* ** *)
-  | Op_kAND     (* and *)
-  | Op_kOR      (* or *)
+  | Op_kAND     (* and *)  | Op_kOR      (* or *)
   | Op_ASSOC    (* => *)
   | Op_DOT      (* . *)
   | Op_SCOPE    (* :: *)
   | Op_AREF     (* [] *)
   | Op_ASET     (* []= *)
-  | Op_LSHIFT   (* < < *)
-  | Op_RSHIFT   (* > > *)
+  | Op_LSHIFT   (* < < *)  | Op_RSHIFT   (* > > *)
 (*  | Op_Custom of string*)   (* ?? *)
   | Op_OP_ASGN of binary_op  (* +=, -=, ... *)
   | Op_DOT2     (* .. *)
   | Op_DOT3     (* ... *)
 
 
+
+and string_contents = 
+  | StrChars of string
+  | StrExpr of expr
+
+and interp_string = string_contents list
+
+and formal_param = 
+  | Formal_id of expr
+  | Formal_amp of string
+  | Formal_star of string (* as in *x *)
+  | Formal_rest (* just '*' *)
+  | Formal_tuple of formal_param list
+  | Formal_default of string * expr
+
+and string_kind = 
+  | String_Single of string
+  | String_Double of interp_string
+  | String_Tick of interp_string
+
+
+and inheritance_kind = 
+  | Class_Inherit of expr
+  | Inst_Inherit of expr
+
+and body_exn = {
+  body_exprs: expr list;
+  rescue_exprs: (expr*expr) list;
+  ensure_expr: expr list;
+  else_expr: expr list;
+}
+
+and case_block = {
+  case_guard : expr;
+  case_whens: (expr list * expr list) list;
+  case_else: expr list;
+}
+
+(*****************************************************************************)
+(* Toplevel *)
+(*****************************************************************************)
+
 type ast = expr list
 
-
+type pos = tok
