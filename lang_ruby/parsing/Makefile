@@ -9,7 +9,7 @@ OPAMPKG=pfff-lang_ruby
 
 SRC= build_vars.ml config.ml log.ml utils.ml \
   visitor.ml \
-  annotation.ml ast.ml ast_printer.ml \
+  annotation.ml ast_ruby.ml ast_printer.ml \
   typeAnnotLexer.ml typeAnnotParser.ml \
   newParser.ml \
   rubyLexerState.ml \

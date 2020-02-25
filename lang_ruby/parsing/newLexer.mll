@@ -40,7 +40,7 @@
       lexbuf.lex_curr_p <- update_pos str lexbuf.lex_curr_p;
       assert ((String.length lexbuf.lex_buffer) == lexbuf.lex_buffer_len)
       
-  let contents_of_str s = [Ast.StrChars s]
+  let contents_of_str s = [Ast_ruby.StrChars s]
 
   (* returns true if string following the modifier m (e.g., %m{...})
      should be parsed as a single quoted or double quoted (interpreted)

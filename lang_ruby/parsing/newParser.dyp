@@ -1,6 +1,6 @@
 
 {
-  open Ast
+  open Ast_ruby
     
   module Env = Utils.StrSet
 
@@ -94,8 +94,8 @@
       *)
     let rec tokenize acc = function
       | [] -> acc
-      | (Ast.StrExpr e)::tl -> tokenize ((`Expr e)::acc) tl
-      | (Ast.StrChars s)::tl -> 
+      | (Ast_ruby.StrExpr e)::tl -> tokenize ((`Expr e)::acc) tl
+      | (Ast_ruby.StrChars s)::tl -> 
 	  let splits = Str.full_split ws_re s in
 	  let acc = 
 	    List.fold_left
@@ -116,8 +116,8 @@
       | `Delim::tl -> 
 	  if curr = [] then parse acc curr tl (* delim at start *)
 	  else parse ((ds curr)::acc) [] tl
-      | (`Expr s)::tl -> parse acc ((Ast.StrExpr s)::curr) tl
-      | (`String s)::tl -> parse acc ((Ast.StrChars s)::curr) tl
+      | (`Expr s)::tl -> parse acc ((Ast_ruby.StrExpr s)::curr) tl
+      | (`String s)::tl -> parse acc ((Ast_ruby.StrChars s)::curr) tl
     in
     let toks = tokenize [] sc in
     let lst = parse [] [] toks in
@@ -125,7 +125,7 @@
 
   let str_of_interp sc = match sc with
     | []  -> ""
-    | [Ast.StrChars s] -> s
+    | [Ast_ruby.StrChars s] -> s
     | _ -> failwith "unexpected escapes in string"
 
   let merge_string_lits s1 s2 = match s1,s2 with
@@ -135,9 +135,9 @@
 	  | String_Single s1, String_Single s2 -> String_Single (s1 ^ s2)
 	  | String_Double sc1, String_Double sc2 -> String_Double (sc1 @ sc2)
 	  | String_Single s, String_Double sc -> 
-	      String_Double ((Ast.StrChars s)::sc)
+	      String_Double ((Ast_ruby.StrChars s)::sc)
 	  | String_Double sc,String_Single s -> 
-	      String_Double (sc @ [Ast.StrChars s])
+	      String_Double (sc @ [Ast_ruby.StrChars s])
 	in
 	  E_Literal((Lit_String s'),p)
     | _ -> assert false
@@ -298,14 +298,14 @@
 	      l', Op_ASSOC, r
 	| E_Literal(Lit_Atom(sc), pos) ->
 	    let astr,rest = match List.rev sc with
-	      | (Ast.StrChars s)::tl -> s,tl
+	      | (Ast_ruby.StrChars s)::tl -> s,tl
 	      | _ -> "a",[]
 	    in
 	    let len = String.length astr in
 	      if astr.[len-1] == '='
 	      then 
 		let s' = String.sub astr 0 (len-1) in
-		let sc' = List.rev ((Ast.StrChars s')::rest) in
+		let sc' = List.rev ((Ast_ruby.StrChars s')::rest) in
 		let l' = replace_end l (E_Literal(Lit_Atom(sc'),pos)) in
 		  l', Op_ASSOC, r
 	      else default
@@ -448,9 +448,9 @@
   let merge_binop xs =
     wrap xs (fun xs ->
       let newest, l = List.hd xs, List.tl xs in
-    let l' = uniq_list Ast.compare_expr l in
+    let l' = uniq_list Ast_ruby.compare_expr l in
     let fail () = 
-      let l' = uniq_list Ast.compare_expr (newest::l') in
+      let l' = uniq_list Ast_ruby.compare_expr (newest::l') in
 	do_fail "binop" l' Ast_printer.string_of_expr;
 	l'
     in
@@ -474,7 +474,7 @@
     wrap xs (fun xs ->
       let newest, l = List.hd xs, List.tl xs in
 
-    let l' = uniq_list Ast.compare_expr l in
+    let l' = uniq_list Ast_ruby.compare_expr l in
       match l',newest with
 	| [(E_MethodCall(_,_,Some (E_CodeBlock(false,_,_,_)),_) as with_cb)],
 	  (E_MethodCall(_,_,None,_) as no_cb)
@@ -483,7 +483,7 @@
 	    (* resolve "x y{z}" vs "x y do z end" *)
 	    resolve_block_delim with_cb no_cb;
 	| _ ->
-	    let l' = uniq_list Ast.compare_expr (newest::l') in
+	    let l' = uniq_list Ast_ruby.compare_expr (newest::l') in
 	      do_fail "topcall" l' Ast_printer.string_of_expr;
 	      l'
     )
@@ -492,7 +492,7 @@
    wrap xs (fun xs ->
       let newest, l = List.hd xs, List.tl xs in
 
-    let l' = uniq_list Ast.compare_expr l in
+    let l' = uniq_list Ast_ruby.compare_expr l in
       match l',newest with
 	| [(E_MethodCall(_,_,Some (E_CodeBlock(false,_,_,_)),_) as with_cb)],
 	  (E_MethodCall(_,_,None,_) as no_cb)
@@ -533,7 +533,7 @@
 	    [correct]
 
 	| _ ->
-	    let l' = uniq_list Ast.compare_expr (newest::l') in
+	    let l' = uniq_list Ast_ruby.compare_expr (newest::l') in
 	      do_fail "stmt" l' Ast_printer.string_of_expr;
 	      l'
   )
@@ -541,14 +541,14 @@
 
   let merge_expr s xs =
     wrap xs (fun xs ->
-    let l' = uniq_list Ast.compare_expr xs in
+    let l' = uniq_list Ast_ruby.compare_expr xs in
       do_fail s l' Ast_printer.string_of_expr;
       l'
     )
 
   let merge_expr_list s xs =
     wrap xs (fun xs ->
-    let l' = uniq_list Ast.compare_ast (xs) in
+    let l' = uniq_list Ast_ruby.compare_ast (xs) in
       do_fail s l' Ast_printer.string_of_ast;
       l'
     )
@@ -572,7 +572,7 @@
     wrap xs (fun xs ->
 
     let cmp (x1,y1) (x2,y2) = 
-      Utils.cmp2 (Ast.compare_expr x1 x2) Ast.compare_expr y1 y2
+      Utils.cmp2 (Ast_ruby.compare_expr x1 x2) Ast_ruby.compare_expr y1 y2
     in
     let l' = uniq_list cmp xs in
       do_fail s l' 
@@ -663,7 +663,7 @@
     match parse_type_info annot_str pos with
       | None -> t
       | Some annot -> 
-          Ast.verify_annotation_name t annot pos;
+          Ast_ruby.verify_annotation_name t annot pos;
           E_Annotate(t,annot,pos)
 }
 
@@ -724,7 +724,7 @@
 %token <string * Lexing.position> T_GLOBAL_VAR
 %token <string * Lexing.position> T_INST_VAR
 %token <string * Lexing.position> T_CLASS_VAR
-%token <Ast.interp_string * Lexing.position> T_ATOM
+%token <Ast_ruby.interp_string * Lexing.position> T_ATOM
 %token <int * Lexing.position> T_FIXNUM
 %token <Big_int.big_int * Lexing.position> T_BIGNUM
 %token <string * float * Lexing.position> T_FLOAT
@@ -775,14 +775,14 @@
       */
 
 %token <string * Lexing.position> T_SINGLE_STRING
-%token <Ast.interp_string * Lexing.position> T_DOUBLE_STRING
-%token <string * Ast.interp_string * Lexing.position> T_USER_STRING
+%token <Ast_ruby.interp_string * Lexing.position> T_DOUBLE_STRING
+%token <string * Ast_ruby.interp_string * Lexing.position> T_USER_STRING
 %token <Lexing.position> T_DOUBLE_BEG
 %token <Lexing.position> T_TICK_BEG
 %token <string * Lexing.position> T_USER_BEG
 %token <Lexing.position> T_REGEXP_BEG
 %token <string> T_REGEXP_MOD
-%token <Ast.interp_string * string * Lexing.position> T_REGEXP
+%token <Ast_ruby.interp_string * string * Lexing.position> T_REGEXP
 %token <Lexing.position> T_ATOM_BEG
 %token <string * Lexing.position> T_INTERP_STR
 %token <string * Lexing.position> T_INTERP_END
@@ -790,7 +790,7 @@
 %token T_EOL
 %token T_EOF
 
-%start <Ast.expr list> main
+%start <Ast_ruby.expr list> main
 
 %%
 

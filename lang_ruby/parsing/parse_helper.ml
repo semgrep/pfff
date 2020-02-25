@@ -1,3 +1,4 @@
+module Ast = Ast_ruby
 
 open Utils
 
