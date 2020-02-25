@@ -10,6 +10,7 @@ OPAMPKG=pfff-lang_ruby
 SRC= utils.ml \
   ast_ruby.ml abbr_ruby.ml ast_ruby_helpers.ml \
   meta_ast_ruby.ml ast_printer.ml \
+  parser_ruby_helpers.ml \
   newParser.ml \
   rubyLexerState.ml \
   newLexer.ml \
