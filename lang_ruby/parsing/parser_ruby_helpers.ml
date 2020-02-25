@@ -333,9 +333,11 @@ module H = Ast_ruby_helpers
 
     | Binop(_,Op_AND,_,_) -> 750
     | Binop(_,Op_OR,_,_) -> 700
+
+    | Ternary _ -> 650
+
     | Binop(_,Op_ASSIGN,_,_) | Binop(_,Op_OP_ASGN _,_,_) -> 600
 
-    | Ternary _ -> 500
     | Binop(_,Op_ASSOC,_,_) -> 400
 
     | Unary(Op_UNot,_,_) -> 200
@@ -405,11 +407,16 @@ module H = Ast_ruby_helpers
     | Empty -> raise Dyp.Giveup
     | _ -> ()
 
-  let do_fail s l to_s =
+  let do_fail s l to_s to_v =
     let len = List.length l in
       if len > 1 then begin
 	Printf.eprintf "<%s>: %d\n" s len;
 	List.iter (fun x -> Printf.eprintf " %s\n" (to_s x)) l;
+         l |> List.iter (fun x -> 
+          let v = to_v x in
+          let s = Ocaml.string_of_v v in
+          Common.pr2 s;
+         );
 	failwith s
       end
 
@@ -450,7 +457,7 @@ module H = Ast_ruby_helpers
     let l' = uniq_list H.compare_expr l in
     let fail () = 
       let l' = uniq_list H.compare_expr (newest::l') in
-	do_fail "binop" l' Ast_printer.string_of_expr;
+	do_fail "binop" l' Ast_printer.string_of_expr Meta_ast_ruby.vof_expr;
 	l'
     in
     let rec nested_assign = function
@@ -483,7 +490,7 @@ module H = Ast_ruby_helpers
 	    resolve_block_delim with_cb no_cb;
 	| _ ->
 	    let l' = uniq_list H.compare_expr (newest::l') in
-	      do_fail "topcall" l' Ast_printer.string_of_expr;
+	      do_fail "topcall" l' Ast_printer.string_of_expr Meta_ast_ruby.vof_expr;
 	      l'
     )
 
@@ -533,7 +540,7 @@ module H = Ast_ruby_helpers
 
 	| _ ->
 	    let l' = uniq_list H.compare_expr (newest::l') in
-	      do_fail "stmt" l' Ast_printer.string_of_expr;
+	      do_fail "stmt" l' Ast_printer.string_of_expr Meta_ast_ruby.vof_expr;
 	      l'
   )
 
@@ -541,14 +548,14 @@ module H = Ast_ruby_helpers
   let merge_expr s xs =
     wrap xs (fun xs ->
     let l' = uniq_list H.compare_expr xs in
-      do_fail s l' Ast_printer.string_of_expr;
+      do_fail s l' Ast_printer.string_of_expr Meta_ast_ruby.vof_expr;
       l'
     )
 
   let merge_expr_list s xs =
     wrap xs (fun xs ->
     let l' = uniq_list H.compare_ast (xs) in
-      do_fail s l' Ast_printer.string_of_ast;
+      do_fail s l' Ast_printer.string_of_ast Meta_ast_ruby.vof_ast;
       l'
     )
 
@@ -556,14 +563,14 @@ module H = Ast_ruby_helpers
     wrap xs (fun xs ->
     let f x = Utils.format_to_string Ast_printer.format_formals x in
     let l' = uniq_list compare (xs) in
-      do_fail s l' f;
+      do_fail s l' f (fun _x -> Ocaml.VUnit);
       l'
     )
 
   let merge_rest s xs = 
     wrap xs (fun xs ->
     let l' = xs in
-      do_fail s l' (fun _x -> "??");
+      do_fail s l' (fun _x -> "??") (fun _x -> Ocaml.VUnit);
       l'
     )
 
@@ -579,6 +586,6 @@ module H = Ast_ruby_helpers
 	   Printf.sprintf "%s: %s" 
 	     (Ast_printer.string_of_expr x)
 	     (Ast_printer.string_of_expr y)
-	);
+	) (fun _x -> Ocaml.VUnit);
       l'
    )
