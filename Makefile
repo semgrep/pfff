@@ -32,7 +32,7 @@ JSONCMA=external/deps-netsys/netsys_oothr.cma external/deps-netsys/netsys.cma\
         external/deps-netstring/netstring.cma\
         external/json-wheel/jsonwheel.cma 
 
-DYPCMA=external/dyp/dyp.cma external/getopt/getopt.cma 
+DYPCMA=external/dyp/dyp.cma
 
 # could be FEATURE_OCAMLGRAPH, or should give dependencies between features
 GRAPHCMA=external/ocamlgraph/graph.cma commons_wrappers/graph/lib.cma
@@ -207,7 +207,7 @@ MAKESUBDIRS=commons commons_ocollection commons_core \
 INCLUDEDIRS=$(MAKESUBDIRS) \
  external/deps-netsys \
  external/json-wheel \
- external/dyp external/getopt \
+ external/dyp \
  commons_wrappers/graph \
 
 # cpp causes some 'warning: missing terminating' errors

@@ -26,7 +26,7 @@ LIBS=$(TOP)/commons/lib.cma \
  $(TOP)/h_program-lang/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons \
-  $(TOP)/external/dyp $(TOP)/external/getopt \
+  $(TOP)/external/dyp \
   $(TOP)/commons_core \
   $(TOP)/globals \
   $(TOP)/h_program-lang \
