@@ -129,9 +129,9 @@ and lit_kind =
   | False
 
   and string_kind = 
-    | String_Single of string
-    | String_Double of interp_string
-    | String_Tick of interp_string
+    | Single of string
+    | Double of interp_string
+    | Tick of interp_string
 
   and interp_string = string_contents list
 

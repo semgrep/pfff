@@ -26,9 +26,9 @@ open Ast_ruby
 	    Identifier(kind, x, pos)
 
   let str kind pos = Literal((String kind),pos)
-  let single_str s = str (String_Single s)
-  let double_str s = str (String_Double [StrChars s])
-  let tick_str s = str (String_Tick [StrChars s])
+  let single_str s = str (Single s)
+  let double_str s = str (Double [StrChars s])
+  let tick_str s = str (Tick [StrChars s])
   let regexp s m pos = Literal(Regexp([StrChars s],m),pos)
   let atom s pos = Literal(Atom([StrChars s]),pos)
 

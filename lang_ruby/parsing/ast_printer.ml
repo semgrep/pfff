@@ -10,11 +10,11 @@ let format_uop ppf op = pp_print_string ppf (str_uop op)
 let format_binop ppf op = pp_print_string ppf (str_binop op)
 (*
 let format_string_kind ppf = function
-  | String_Single _ -> pp_print_string ppf "Single"
-  | String_Double _ -> pp_print_string ppf "Double"
-(*  | String_User -> pp_print_string ppf "User"*)
-  | String_Tick _ -> pp_print_string ppf "Tick"
-  | String_Heredoc _ -> pp_print_string ppf "Heredoc"
+  | Single _ -> pp_print_string ppf "Single"
+  | Double _ -> pp_print_string ppf "Double"
+(*  | User -> pp_print_string ppf "User"*)
+  | Tick _ -> pp_print_string ppf "Tick"
+  | Heredoc _ -> pp_print_string ppf "Heredoc"
 *)
 
 let rec format_id ppf kind s = match kind with
@@ -34,9 +34,9 @@ and format_interp_string ppf sc =
   List.iter (fprintf ppf "i(%a)" format_string_contents) sc
 
 and format_string_kind ppf = function
-  | String_Single s -> fprintf ppf "'%s'" s
-  | String_Double sc -> fprintf ppf "\"%a\"" format_interp_string sc
-  | String_Tick sc -> fprintf ppf "`%a`" format_interp_string sc
+  | Single s -> fprintf ppf "'%s'" s
+  | Double sc -> fprintf ppf "\"%a\"" format_interp_string sc
+  | Tick sc -> fprintf ppf "`%a`" format_interp_string sc
 
 and format_lit_kind ppf kind = match kind with
   | FixNum i -> fprintf ppf "%d" i

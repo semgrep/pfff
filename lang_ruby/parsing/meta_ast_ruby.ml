@@ -183,12 +183,12 @@ and vof_lit_kind =
   | False -> Ocaml.VSum (("False", []))
 and vof_string_kind =
   function
-  | String_Single v1 ->
-      let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("String_Single", [ v1 ]))
-  | String_Double v1 ->
-      let v1 = vof_interp_string v1 in Ocaml.VSum (("String_Double", [ v1 ]))
-  | String_Tick v1 ->
-      let v1 = vof_interp_string v1 in Ocaml.VSum (("String_Tick", [ v1 ]))
+  | Single v1 ->
+      let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("Single", [ v1 ]))
+  | Double v1 ->
+      let v1 = vof_interp_string v1 in Ocaml.VSum (("Double", [ v1 ]))
+  | Tick v1 ->
+      let v1 = vof_interp_string v1 in Ocaml.VSum (("Tick", [ v1 ]))
 and vof_interp_string v = Ocaml.vof_list vof_string_contents v
 and vof_string_contents =
   function
