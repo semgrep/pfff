@@ -69,7 +69,7 @@ type expr =
   | Binop of expr * binary_op * expr * tok
   | Ternary of expr * expr * expr * tok
 
-  | MethodCall of expr * expr list * expr option * tok
+  | Call of expr * expr list * expr option * tok
 
   | CodeBlock of bool * formal_param list option * expr list * tok
 
@@ -176,7 +176,9 @@ and binary_op =
   | Op_POW      (* ** *)
   | Op_kAND     (* and *)  | Op_kOR      (* or *)
   | Op_ASSOC    (* => *)
+
   | Op_DOT      (* . *)
+
   | Op_SCOPE    (* :: *)
   | Op_AREF     (* [] *)
   | Op_ASET     (* []= *)

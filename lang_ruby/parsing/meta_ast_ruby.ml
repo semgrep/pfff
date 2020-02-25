@@ -57,12 +57,12 @@ let rec vof_expr =
       and v3 = vof_expr v3
       and v4 = vof_tok v4
       in Ocaml.VSum (("Ternary", [ v1; v2; v3; v4 ]))
-  | MethodCall ((v1, v2, v3, v4)) ->
+  | Call ((v1, v2, v3, v4)) ->
       let v1 = vof_expr v1
       and v2 = Ocaml.vof_list vof_expr v2
       and v3 = Ocaml.vof_option vof_expr v3
       and v4 = vof_tok v4
-      in Ocaml.VSum (("MethodCall", [ v1; v2; v3; v4 ]))
+      in Ocaml.VSum (("Call", [ v1; v2; v3; v4 ]))
   | CodeBlock ((v1, v2, v3, v4)) ->
       let v1 = Ocaml.vof_bool v1
       and v2 = Ocaml.vof_option (Ocaml.vof_list vof_formal_param) v2

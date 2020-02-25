@@ -95,7 +95,7 @@ and format_expr ppf expr = match expr with
 
   | Block(el,_) -> fprintf ppf "@[<v 2>block(%a)@]" format_expr_break_list el
 
-  | MethodCall (expr1, expr_list, eo,_) ->
+  | Call (expr1, expr_list, eo,_) ->
       begin match eo with
 	| None -> 
 	    fprintf ppf "MC(%a(@[%a@]))"

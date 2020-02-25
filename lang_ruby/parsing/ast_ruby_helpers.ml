@@ -60,7 +60,7 @@ let rec cmp_expr e1 e2 = match e1,e2 with
   | Until(b1,e1,el1,_), Until(b2,e2,el2,_) ->
       cmp2 (cmp2 (cmp_expr e1 e2) cmp_expr_list el1 el2) pcompare b1 b2
 
-  | MethodCall (e1,el1,eo1,_), MethodCall(e2,el2,eo2,_) ->
+  | Call (e1,el1,eo1,_), Call(e2,el2,eo2,_) ->
       begin match cmp2 (cmp_expr e1 e2) cmp_expr_list el1 el2 with
 	| 0 -> begin
 	    match eo1,eo2 with
@@ -204,7 +204,7 @@ let pos_of = function
   | Hash ( _,_,pos)
   | Array ( _  , pos)
   | Tuple ( _  , pos)
-  | MethodCall ( _ , _  , _ , pos)
+  | Call ( _ , _  , _ , pos)
   | While (_, _ , _  , pos)
   | Until (_, _ , _  , pos)
   | Unless ( _ , _  , _  , pos)
@@ -298,8 +298,8 @@ let rec mod_expr f expr =
           Array((List.map (mod_expr f) el), pos)
       | Tuple(el, pos) ->
           Tuple((List.map (mod_expr f) el), pos)
-      | MethodCall(expr1, el, eo, pos) ->
-          MethodCall(
+      | Call(expr1, el, eo, pos) ->
+          Call(
             mod_expr f expr1, 
             List.map (mod_expr f) el,
             (
@@ -417,7 +417,7 @@ let set_pos pos = function
   | Hash(b,el, _) -> Hash(b,el, pos)
   | Array(el, _) -> Array(el, pos)
   | Tuple(el, _) -> Tuple(el, pos)
-  | MethodCall(expr1, el, eo, _) -> MethodCall(expr1, el, eo, pos)
+  | Call(expr1, el, eo, _) -> Call(expr1, el, eo, pos)
   | While(b, expr, el, _) -> While(b, expr, el, pos)
   | Until(b, expr, el, _) -> Until(b, expr, el, pos)
   | Unless(expr, el1, el2, _) -> Unless(expr, el1, el2, pos)
