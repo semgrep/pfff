@@ -1,12 +1,10 @@
-module Ast = Ast_ruby
-
-open Ast
-open Ast_ruby_helpers
+open Ast_ruby
+module H = Ast_ruby_helpers
 open Format
 
-let format_uop ppf op = pp_print_string ppf (str_uop op)
+let format_uop ppf op = pp_print_string ppf (H.str_uop op)
 
-let format_binop ppf op = pp_print_string ppf (str_binop op)
+let format_binop ppf op = pp_print_string ppf (H.str_binop op)
 (*
 let format_string_kind ppf = function
   | Single _ -> pp_print_string ppf "Single"
@@ -66,7 +64,7 @@ and format_expr ppf expr = match expr with
 
   | Unary(uop, expr,_) ->
       fprintf ppf "uop(%s,%a)"
-	(str_uop uop) format_expr expr
+	(H.str_uop uop) format_expr expr
 
   | Binop(expr1, binary_op, expr2,_) ->
       begin match binary_op with
@@ -82,7 +80,7 @@ and format_expr ppf expr = match expr with
 
 	format_expr expr2
   | Operator(bop,_) -> format_binop ppf bop
-  | UOperator(uop,_) -> pp_print_string ppf (str_uop uop)
+  | UOperator(uop,_) -> pp_print_string ppf (H.str_uop uop)
 
   | Hash(_,el,_) -> fprintf ppf "{@[%a@]}" format_expr_comma_list el
   | Array(el,_) -> fprintf ppf "[@[%a@]]" format_expr_comma_list el
