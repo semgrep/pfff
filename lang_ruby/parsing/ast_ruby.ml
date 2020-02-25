@@ -48,6 +48,7 @@
 (* ------------------------------------------------------------------------- *)
 (* TODO: type tok = Parse_info.t and wrap and bracket *)
 type tok = Lexing.position
+ (* with tarzan *)
 
 (*****************************************************************************)
 (* Expression *)
@@ -214,10 +215,14 @@ and case_block = {
   case_else: expr list;
 }
 
+ (* with tarzan *)
+
 (*****************************************************************************)
 (* Toplevel *)
 (*****************************************************************************)
 
 type ast = expr list
+ (* with tarzan *)
 
 type pos = tok
+ (* with tarzan *)
