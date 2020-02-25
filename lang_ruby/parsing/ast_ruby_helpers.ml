@@ -119,14 +119,14 @@ and cmp_lit c1 c2 = match c1,c2 with
   | _ -> pcompare c1 c2
 
 and cmp_string sk1 sk2 = match sk1,sk2 with
-  | String_Single s1, String_Single s2 -> String.compare s1 s2
-  | String_Single s1, _ -> -1
-  | _, String_Single s2 -> 1
-  | String_Tick i1, String_Tick i2
-  | String_Double i1, String_Double i2 ->
+  | Single s1, Single s2 -> String.compare s1 s2
+  | Single s1, _ -> -1
+  | _, Single s2 -> 1
+  | Tick i1, Tick i2
+  | Double i1, Double i2 ->
       cmp_list cmp_interp i1 i2
-  | String_Double _, String_Tick _ -> -1
-  | String_Tick _, String_Double _ -> 1
+  | Double _, Tick _ -> -1
+  | Tick _, Double _ -> 1
 
 and cmp_interp i1 i2 = match i1, i2 with
   | StrChars s1, StrChars s2 -> String.compare s1 s2

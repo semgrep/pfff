@@ -81,13 +81,13 @@
       in reduce [] chunks
     in
     let strings = List.map
-      (fun s -> Literal(String(String_Single s), pos)) strings
+      (fun s -> Literal(String(Single s), pos)) strings
     in
       Array(strings,pos)
 
   (* turn %W{a#{b} c} into ["a#{b}"; "c"] *) 
   let split_double_string_to_array sc pos =
-    let ds s = Literal(String(String_Double s),pos) in
+    let ds s = Literal(String(Double s),pos) in
       (* first we create a stream of tokens with the grammar of
 	   (Expr | Code | String | Delmi)*
 	 by splitting the strings on whitespace.  This stream will be
@@ -132,13 +132,13 @@
   let merge_string_lits s1 s2 = match s1,s2 with
     | Literal(String(s1),p), Literal(String(s2),_) ->
 	let s' = match s1, s2 with
-	  | String_Tick _, _ | _, String_Tick _ -> assert false
-	  | String_Single s1, String_Single s2 -> String_Single (s1 ^ s2)
-	  | String_Double sc1, String_Double sc2 -> String_Double (sc1 @ sc2)
-	  | String_Single s, String_Double sc -> 
-	      String_Double ((Ast_ruby.StrChars s)::sc)
-	  | String_Double sc,String_Single s -> 
-	      String_Double (sc @ [Ast_ruby.StrChars s])
+	  | Tick _, _ | _, Tick _ -> assert false
+	  | Single s1, Single s2 -> Single (s1 ^ s2)
+	  | Double sc1, Double sc2 -> Double (sc1 @ sc2)
+	  | Single s, Double sc -> 
+	      Double ((Ast_ruby.StrChars s)::sc)
+	  | Double sc,Single s -> 
+	      Double (sc @ [Ast_ruby.StrChars s])
 	in
 	  Literal((String s'),p)
     | _ -> assert false
@@ -147,10 +147,10 @@
     | "r" -> Literal(Regexp (str,""),pos)
     | "w" -> split_single_string_to_array (str_of_interp str) pos
     | "W" -> split_double_string_to_array str pos
-    | "q" -> Literal(String(String_Single (str_of_interp str)),pos)
-    | "Q" -> Literal(String(String_Double str),pos)
-    | "x" -> Literal(String(String_Tick str),pos)
-    | "" -> Literal(String(String_Double str),pos)
+    | "q" -> Literal(String(Single (str_of_interp str)),pos)
+    | "Q" -> Literal(String(Double str),pos)
+    | "x" -> Literal(String(Tick str),pos)
+    | "" -> Literal(String(Double str),pos)
     | _ -> failwith (Printf.sprintf "unhandled string modifier: %s" m)
 
   let rec starts_with = function
@@ -1361,11 +1361,11 @@ identifier:
   | T_CLASS_VAR<id,pos>    { Identifier(ID_Class, id, pos) }
 
 one_string:
-  | T_SINGLE_STRING<s,pos> { Literal( String(String_Single s), pos) }
+  | T_SINGLE_STRING<s,pos> { Literal( String(Single s), pos) }
   | T_DOUBLE_BEG<pos> interp_str<istr> 
-      { Literal(String (String_Double istr),pos) }
+      { Literal(String (Double istr),pos) }
 
-  | T_DOUBLE_STRING<s,pos> { Literal( String(String_Double s), pos) }
+  | T_DOUBLE_STRING<s,pos> { Literal( String(Double s), pos) }
   | T_USER_STRING<m,str,pos> { process_user_string m str pos }
   | T_USER_BEG<m,pos> interp_str<str> { process_user_string m str pos }
 
@@ -1378,7 +1378,7 @@ constant:
   | string<s> { s }
 
   | T_TICK_BEG<pos> interp_str<istr>
-      { Literal (String (String_Tick istr),pos) }
+      { Literal (String (Tick istr),pos) }
 
   | T_ATOM_BEG<pos> interp_str<istr> 
       { Literal (Atom istr,pos) }
