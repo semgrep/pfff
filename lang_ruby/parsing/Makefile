@@ -7,7 +7,7 @@ OPAMPKG=pfff-lang_ruby
 
 -include $(TOP)/Makefile.config
 
-SRC= build_vars.ml config.ml log.ml utils.ml \
+SRC= build_vars.ml config.ml utils.ml \
   visitor.ml \
   ast_ruby.ml abbr_ruby.ml ast_ruby_helpers.ml \
   meta_ast_ruby.ml ast_printer.ml \
