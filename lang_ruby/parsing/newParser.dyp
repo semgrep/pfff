@@ -198,7 +198,7 @@
     | [Block _] -> raise Dyp.Giveup
     | _ -> if List.exists is_cond_modifier args then raise Dyp.Giveup
 
-  let rec hash_literal_as_args args = 
+  let hash_literal_as_args args = 
     let rec work acc lst = match lst with
       | [] -> acc
       | (Binop(_,Op_ASSOC,_,p))::tl ->
@@ -502,18 +502,18 @@
 	    (* resolve "x y{z}" vs "x y do z end" *)
 	    resolve_block_delim with_cb no_cb;
 
-	| [ExnBlock({body_exprs = [Binop(_,Op_ASSIGN,_,_)]},_)],
+	| [ExnBlock({body_exprs = [Binop(_,Op_ASSIGN,_,_)]; _},_)],
 	    (Binop(_,Op_ASSIGN,(ExnBlock _),_) as correct)
 	| ([Binop(_,Op_ASSIGN,(ExnBlock _),_) as correct]),
-	    ExnBlock({body_exprs = [Binop(_,Op_ASSIGN,_,_)]},_) ->
+	    ExnBlock({body_exprs = [Binop(_,Op_ASSIGN,_,_)]; _},_) ->
 	      (* x = y rescue 3 is a special case where the rescue binds
 		 solely to "y" and not the full assignment *)
 	    [correct]
 
-	| [ExnBlock({body_exprs = [Binop(_,Op_OP_ASGN _,_,_)]},_) as correct],
+	| [ExnBlock({body_exprs = [Binop(_,Op_OP_ASGN _,_,_)]; _},_) as correct],
 	      Binop(_,Op_OP_ASGN _,(ExnBlock _),_)
 	| [Binop(_,Op_OP_ASGN _,(ExnBlock _),_)],
-	      (ExnBlock({body_exprs = [Binop(_,Op_OP_ASGN _,_,_)]},_) as correct) ->
+	      (ExnBlock({body_exprs = [Binop(_,Op_OP_ASGN _,_,_)]; _},_) as correct) ->
 	      (* However, using any other assign-operator, reverts to the 
                  other semantics *)
 	    [correct]

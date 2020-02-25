@@ -41,7 +41,7 @@ and format_lit_kind ppf kind = match kind with
   | FixNum i -> fprintf ppf "%d" i
   | BigNum big -> 
       fprintf ppf "%s" (Big_int.string_of_big_int big)
-  | Float(s,f) -> fprintf ppf "%s" s
+  | Float(s,_f) -> fprintf ppf "%s" s
   | String (skind) -> format_string_kind ppf skind
   | Atom sc -> fprintf ppf ":%a" format_interp_string sc
   | Regexp (str,m) -> fprintf ppf "Regexp(@[%a@],%s)" format_interp_string str m
@@ -62,7 +62,7 @@ and format_expr ppf expr = match expr with
       fprintf ppf "undef %a"
 	(Utils.format_comma_list format_expr) e1
 
-  | Id(id_kind,string,p) -> format_id ppf id_kind string
+  | Id(id_kind,string,_p) -> format_id ppf id_kind string
 
   | Unary(uop, expr,_) ->
       fprintf ppf "uop(%s,%a)"
@@ -72,7 +72,7 @@ and format_expr ppf expr = match expr with
       begin match binary_op with
 	| Op_SCOPE
 	| Op_DOT -> fprintf ppf "%a%a%a" 
-	| o -> match expr1,expr2 with
+	| _o -> match expr1,expr2 with
 	    | Binop(_,_,_,_),_
 	    | _, Binop(_,_,_,_) -> fprintf ppf "(@[%a %a@ %a@])"
 	    | _ ->fprintf ppf "(%a %a %a)"

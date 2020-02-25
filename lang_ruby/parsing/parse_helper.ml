@@ -24,39 +24,6 @@ let uniq_list lst =
   let l = List.map fst lst in
     u (List.sort H.compare_ast l)
 
-
-(* determines if the given Ast.expr is a special case *)
-let single_delims = (* copied from newLexer *)
-  ['!'; '@'; '#'; '$'; '%'; '^'; '&'; '*';
-   ';'; '.'; '?'; '`'; '~'; '|'; '+'; '_';
-   '-'; '\\'; '/'; ':'; '"'; '\'']
-
-(* return a string delimiter (%|..|) that is not used in the string *)
-let free_delimiter str pos = 
-  try List.find (fun d -> not (String.contains str d)) single_delims
-  with Not_found -> 
-    Printf.eprintf "%s:%d, need to try harder to wrap string in delimiter\n"
-      pos.Lexing.pos_fname pos.Lexing.pos_lnum;
-    exit(1)
-
-let mk_block ast pos = match ast with
-  | [e] -> e
-  | lst -> Ast.Block(lst,pos)
-
-(*
-let rec replace_heredoc state ast = match ast with
-  | Ast.E_Literal(Ast.String(Ast.Heredoc(i,interp)),pos) ->
-      let s = Hashtbl.find state.RubyLexerState.heredoc_tbl i in
-      let d = free_delimiter s pos in
-      let full_s = 
-        if interp then Printf.sprintf "%%%c%s%c" d s d
-        else Printf.sprintf "%%q%c%s%c" d s d
-      in
-      let ast = parse_string_with_state state full_s in 
-        mk_block ast pos
-  | e -> e
-*)
-
 let rec parse_lexbuf_with_state ?env state lexbuf = 
   try 
     NewParser.clear_env ();
@@ -67,7 +34,7 @@ let rec parse_lexbuf_with_state ?env state lexbuf =
       begin match lst with
         | [ast] -> (*Ast.mod_ast (replace_heredoc state) ast*) 
             ast
-        | l -> failwith "ambiguous parse"
+        | _l -> failwith "ambiguous parse"
       end
   with Dyp.Syntax_error ->
     let msg = Printf.sprintf "parse error in file %s, line: %d, token: '%s'\n"

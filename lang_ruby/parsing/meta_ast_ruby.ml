@@ -2,10 +2,9 @@
 
 open Ast_ruby
 
-let vof_tok v = Ocaml.VUnit
+let vof_tok _v = Ocaml.VUnit
   (* Lexing.vof_position v *)
 
-let vof_annotation _v =  Ocaml.VUnit
 let vof_big_int _v = Ocaml.VUnit
 
 let rec vof_expr =
@@ -317,6 +316,6 @@ and
   
 let vof_ast v = Ocaml.vof_list vof_expr v
   
-let vof_pos v = vof_tok v
+let _vof_pos v = vof_tok v
   
 
