@@ -459,7 +459,7 @@ website:
 
 
 graph:
-	./codegraph_build -lang cmt -symlinks -derived_data -verbose .
+	~/github/codegraph/_build/default/bin/main_codegraph_build.exe -lang cmt -symlinks -derived_data -verbose .
 prolog:
 	./codequery.opt -lang cmt -build .
 	mv facts.pl facts_pl

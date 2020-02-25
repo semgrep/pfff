@@ -1,6 +1,7 @@
 
 {
   open Ast_ruby
+  open Ast_ruby_helpers
     
   module Env = Utils.StrSet
 
@@ -448,9 +449,9 @@
   let merge_binop xs =
     wrap xs (fun xs ->
       let newest, l = List.hd xs, List.tl xs in
-    let l' = uniq_list Ast_ruby.compare_expr l in
+    let l' = uniq_list compare_expr l in
     let fail () = 
-      let l' = uniq_list Ast_ruby.compare_expr (newest::l') in
+      let l' = uniq_list compare_expr (newest::l') in
 	do_fail "binop" l' Ast_printer.string_of_expr;
 	l'
     in
@@ -474,7 +475,7 @@
     wrap xs (fun xs ->
       let newest, l = List.hd xs, List.tl xs in
 
-    let l' = uniq_list Ast_ruby.compare_expr l in
+    let l' = uniq_list compare_expr l in
       match l',newest with
 	| [(E_MethodCall(_,_,Some (E_CodeBlock(false,_,_,_)),_) as with_cb)],
 	  (E_MethodCall(_,_,None,_) as no_cb)
@@ -483,7 +484,7 @@
 	    (* resolve "x y{z}" vs "x y do z end" *)
 	    resolve_block_delim with_cb no_cb;
 	| _ ->
-	    let l' = uniq_list Ast_ruby.compare_expr (newest::l') in
+	    let l' = uniq_list compare_expr (newest::l') in
 	      do_fail "topcall" l' Ast_printer.string_of_expr;
 	      l'
     )
@@ -492,7 +493,7 @@
    wrap xs (fun xs ->
       let newest, l = List.hd xs, List.tl xs in
 
-    let l' = uniq_list Ast_ruby.compare_expr l in
+    let l' = uniq_list compare_expr l in
       match l',newest with
 	| [(E_MethodCall(_,_,Some (E_CodeBlock(false,_,_,_)),_) as with_cb)],
 	  (E_MethodCall(_,_,None,_) as no_cb)
@@ -533,7 +534,7 @@
 	    [correct]
 
 	| _ ->
-	    let l' = uniq_list Ast_ruby.compare_expr (newest::l') in
+	    let l' = uniq_list compare_expr (newest::l') in
 	      do_fail "stmt" l' Ast_printer.string_of_expr;
 	      l'
   )
@@ -541,14 +542,14 @@
 
   let merge_expr s xs =
     wrap xs (fun xs ->
-    let l' = uniq_list Ast_ruby.compare_expr xs in
+    let l' = uniq_list compare_expr xs in
       do_fail s l' Ast_printer.string_of_expr;
       l'
     )
 
   let merge_expr_list s xs =
     wrap xs (fun xs ->
-    let l' = uniq_list Ast_ruby.compare_ast (xs) in
+    let l' = uniq_list compare_ast (xs) in
       do_fail s l' Ast_printer.string_of_ast;
       l'
     )
@@ -572,7 +573,7 @@
     wrap xs (fun xs ->
 
     let cmp (x1,y1) (x2,y2) = 
-      Utils.cmp2 (Ast_ruby.compare_expr x1 x2) Ast_ruby.compare_expr y1 y2
+      Utils.cmp2 (compare_expr x1 x2) compare_expr y1 y2
     in
     let l' = uniq_list cmp xs in
       do_fail s l' 
@@ -663,7 +664,7 @@
     match parse_type_info annot_str pos with
       | None -> t
       | Some annot -> 
-          Ast_ruby.verify_annotation_name t annot pos;
+          verify_annotation_name t annot pos;
           E_Annotate(t,annot,pos)
 }
 
