@@ -1,7 +1,7 @@
 
 {
   open Ast_ruby
-  open Ast_ruby_helpers
+  module H = Ast_ruby_helpers
   open Parser_ruby_helpers    
 
   (*let () = Dyp.dypgen_verbose := max_int*)
@@ -220,7 +220,7 @@ stmt_list:
 
 assign_op: 
   | T_ASSIGN {Op_ASSIGN}
-  | T_OP_ASGN<op,pos> { Op_OP_ASGN (binary_op_of_string op) }
+  | T_OP_ASGN<op,pos> { Op_OP_ASGN (H.binary_op_of_string op) }
 
 /* tokens that need to reduce immediately to guide the lexer */
 scope_begin:  K_BEGIN<pos> {enter_scope dyp;pos}
@@ -266,7 +266,7 @@ stmt:
   | mlhs_assign_op<l,op> eols mrhs<r>
       { (*prune_binop (tuple l) op (tuple r)*) 
 	let lhs = tuple l in
-	  Binop(lhs,op,(tuple r),(pos_of lhs))
+	  Binop(lhs,op,(tuple r),(H.pos_of lhs))
       }
   | expr<e> { e }
   | T_USTAR<pos> primary<e> { Unary(Op_UStar,e,pos) }
@@ -279,12 +279,12 @@ topcall:
   | func<c> code_block<cb>
       { match c with
 	| Call(m,args,None,pos) -> methodcall m args (Some cb) pos
-	| _ -> methodcall c [] (Some cb) (pos_of c)}
+	| _ -> methodcall c [] (Some cb) (H.pos_of c)}
 
   | command<c> {c}
   | command_name<m> call_args<args> do_codeblock<cb>
       { well_formed_command m args;
-	methodcall m args (Some cb) (pos_of m)}
+	methodcall m args (Some cb) (H.pos_of m)}
 
 arg_comma_list_trail:
   | arg_comma_star_list<e> {e}
@@ -306,11 +306,11 @@ func:
   | command_name<c> lparen eols call_args<args> eols T_RPAREN
       {
 	match args with
-	  | [] -> Call(c,args,None,pos_of c) 
-	  | _ -> methodcall c args None (pos_of c)
+	  | [] -> Call(c,args,None,H.pos_of c) 
+	  | _ -> methodcall c args None (H.pos_of c)
       }
   | command_name<c> lparen eols command<a> eols T_RPAREN
-      {Call(c,[a],None,pos_of c)}
+      {Call(c,[a],None,H.pos_of c)}
 
 star_amper:
   | T_USTAR<pos> arg<a> { [Unary(Op_UStar,a,pos)] }
@@ -329,17 +329,17 @@ command:
 	Yield(args,pos) }
   | command_name<m> call_args<args>
       { well_formed_command m args;
-	methodcall m args None (pos_of m)}
+	methodcall m args None (H.pos_of m)}
   | command_name<cmd> command<cmd2>
     {well_formed_command cmd [cmd2];
-     methodcall cmd [cmd2] None (pos_of cmd)}
+     methodcall cmd [cmd2] None (H.pos_of cmd)}
 
 command_name:
   | identifier<id> {id}
   | primary<p> T_DOT eols message_identifier<m>
-      { unfold_dot p m (pos_of p)}
+      { unfold_dot p m (H.pos_of p)}
   | command_name<p> T_DOT eols message_identifier<m>
-      { unfold_dot p m (pos_of p)}
+      { unfold_dot p m (H.pos_of p)}
   | primary<p> T_SCOPE message_identifier<m> 
       { scope p m }
   | command_name<p> T_SCOPE message_identifier<m>
@@ -358,7 +358,7 @@ arg:
   | arg<l> T_ANDOP eols arg<r> { prune_left_assoc l Op_AND r }
   | arg<l> T_OROP eols arg<r>  { prune_left_assoc l Op_OR r }
   | arg<e1> T_QUESTION<pos> eols expr<e2> T_COLON eols expr<e3>   
-    { prune_tern e1 e2 e3 (pos_of e1) }
+    { prune_tern e1 e2 e3 (H.pos_of e1) }
 
 expr:
   | K_RETURN<pos> call_args<args>
@@ -385,12 +385,12 @@ primary:
 	  rules from erroneously firing	*) Block(ss,pos) }
   | constant<c> { c }
   | identifier<id> { id }
-  | command_name<c> { methodcall c [] None (pos_of c)}
+  | command_name<c> { methodcall c [] None (H.pos_of c)}
   | command_name<c> code_block<cb> { command_codeblock c cb }
   | primary<p> T_SCOPE identifier<id> { scope p id }
   | T_USCOPE<pos> identifier<id> { Unary(Op_UScope,id,pos) }
   | primary<p> T_LBRACK_ARG<pos1> eols arg_comma_list_trail<args> eols T_RBRACK
-      { methodcall (Binop(p,Op_DOT,Operator(Op_AREF,pos1),pos_of p)) args None (pos_of p)}
+      { methodcall (Binop(p,Op_DOT,Operator(Op_AREF,pos1),H.pos_of p)) args None (H.pos_of p)}
 
   | T_LBRACK<pos> eols array_body<body> eols T_RBRACK { Array(body,pos) }
   | T_LBRACE<pos> eols array_body<body> eols T_RBRACE { Hash(true,body,pos) }
@@ -404,7 +404,7 @@ primary:
   | func<f> { f }
   | func<f> code_block<cb> {match f with
       | Call(m,args,None,pos) -> methodcall m args (Some cb) pos
-      | _ -> methodcall f [] (Some cb) (pos_of f)}
+      | _ -> methodcall f [] (Some cb) (H.pos_of f)}
 
   | K_IF<pos> expr<guard> then_sep stmt_list<body> if_else_clauses<else_e> K_lEND
     { If(guard,body,else_e,pos) }
@@ -460,8 +460,8 @@ array_item:
   | arg<e> { e }
   | constant<c> T_LBRACK<pos1> eols call_args<args> eols T_RBRACK
       {methodcall
-	 (Binop(c, Op_DOT, Operator(Op_AREF,pos1), pos_of c)) 
-	 args None (pos_of c)
+	 (Binop(c, Op_DOT, Operator(Op_AREF,pos1), H.pos_of c)) 
+	 args None (H.pos_of c)
       }
 
 array_body_rest:
@@ -478,8 +478,8 @@ array_body:
 scoped_id:
   | identifier<id> { id }
   | T_USCOPE<pos> identifier<id> { Unary(Op_UScope,id,pos)}
-  | scoped_id<id1> T_SCOPE identifier<id2>    { Binop(id1,Op_SCOPE,id2,pos_of id1) }
-  | scoped_id<id1> T_SCOPE keyword_as_id<id2> { Binop(id1,Op_SCOPE,id2,pos_of id1) }
+  | scoped_id<id1> T_SCOPE identifier<id2>    { Binop(id1,Op_SCOPE,id2,H.pos_of id1) }
+  | scoped_id<id1> T_SCOPE keyword_as_id<id2> { Binop(id1,Op_SCOPE,id2,H.pos_of id1) }
 
 class_inheritance:
  | {None}
@@ -545,9 +545,9 @@ method_formals:
 lhs:
   | scoped_id<id> { id }
   | primary<p> T_LBRACK_ARG<pos> eols arg_comma_star_list<args> eols T_RBRACK
-      { methodcall (Binop(p,Op_DOT,Operator(Op_AREF,pos),pos_of p)) args None (pos_of p)}
+      { methodcall (Binop(p,Op_DOT,Operator(Op_AREF,pos),H.pos_of p)) args None (H.pos_of p)}
   | primary<p> T_DOT eols message_identifier<m>
-      { methodcall (Binop(p,Op_DOT,m,pos_of p)) [] None (pos_of p)}
+      { methodcall (Binop(p,Op_DOT,m,H.pos_of p)) [] None (H.pos_of p)}
 
 mlhs:
   | mlhs_clean<ls> {ls}
@@ -608,7 +608,7 @@ rescue_clause:
   | K_RESCUE<resc_pos> then_sep stmt_list<body>
       { let pos = match body with
 	  | [] -> resc_pos 
-	  | hd::_ -> pos_of hd
+	  | hd::_ -> H.pos_of hd
 	in (Empty,mk_block body pos) }
 
   | K_RESCUE<pos> T_ASSOC seen_id<bind> then_sep stmt_list<body>
@@ -661,9 +661,9 @@ method_name:
   | message_identifier<e> { e }
   | method_name<e> T_ASSIGN { add_eq e }
   | method_name<id1> T_DOT eols message_identifier<id2> 
-      { Binop(id1,Op_DOT,id2,pos_of id1) }
+      { Binop(id1,Op_DOT,id2,H.pos_of id1) }
   | method_name<id1> T_DOT eols assignable<id2> T_ASSIGN
-      { Binop(id1,Op_DOT,add_eq id2,pos_of id1) }
+      { Binop(id1,Op_DOT,add_eq id2,H.pos_of id1) }
 
   | T_USCOPE<pos> identifier<id>     { Unary(Op_UScope,id,pos)}
   | T_USCOPE<pos> keyword_as_id<id>  { Unary(Op_UScope,id,pos)}
@@ -671,7 +671,7 @@ method_name:
   | method_name<id1> T_SCOPE identifier<id2>    { scope id1 id2 }
   | method_name<id1> T_SCOPE keyword_as_id<id2> { scope id1 id2 }
   | T_LPAREN<pos> eols stmt_list<ss> T_RPAREN T_DOT message_identifier<m>
-      { Binop(mk_block ss (pos_of (List.hd ss)), Op_DOT,m, pos) }
+      { Binop(mk_block ss (H.pos_of (List.hd ss)), Op_DOT,m, pos) }
 
 assignable:
   | identifier<e>  { e }
@@ -810,7 +810,7 @@ interp_code:
   | eols stmt_list<ss> interp_str_work<tl>
       { match ss with
           | [] -> tl
-          | x::_ -> StrExpr (mk_block ss (pos_of x))::tl }
+          | x::_ -> StrExpr (mk_block ss (H.pos_of x))::tl }
 
   | T_INTERP_END<s,pos> 
       { if s = "" then [] else [StrChars s] }
