@@ -3,7 +3,6 @@ module Ast = Ast_ruby
 open Ast
 open Ast_ruby_helpers
 open Format
-open Utils
 
 let format_uop ppf op = pp_print_string ppf (str_uop op)
 
@@ -61,7 +60,7 @@ and format_expr ppf expr = match expr with
 
   | Undef (e1,_) -> 
       fprintf ppf "undef %a"
-	(format_comma_list format_expr) e1
+	(Utils.format_comma_list format_expr) e1
 
   | Id(id_kind,string,p) -> format_id ppf id_kind string
 
@@ -288,8 +287,8 @@ let print_ast ast =
   pp_print_newline std_formatter ()
 
 let string_of_expr e = 
-  format_to_string format_expr e
+  Utils.format_to_string format_expr e
 
 let string_of_ast ast = 
-  format_to_string format_ast ast
+  Utils.format_to_string format_ast ast
 
