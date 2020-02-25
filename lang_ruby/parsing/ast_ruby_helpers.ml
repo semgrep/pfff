@@ -101,20 +101,20 @@ let rec cmp_expr e1 e2 = match e1,e2 with
   | _ -> Utils.cmp_ctors e1 e2
 
 and cmp_lit c1 c2 = match c1,c2 with
-  | Lit_FixNum i1, Lit_FixNum i2 -> pcompare i1 i2
-  | Lit_BigNum b1, Lit_BigNum b2 -> Big_int.compare_big_int b1 b2
-  | Lit_Float(s1,f1), Lit_Float (s2,f2) -> 
+  | FixNum i1, FixNum i2 -> pcompare i1 i2
+  | BigNum b1, BigNum b2 -> Big_int.compare_big_int b1 b2
+  | Float(s1,f1), Float (s2,f2) -> 
       let c1 = pcompare (float_of_string s1) (float_of_string s2) in
         cmp2 c1 pcompare f1 f2
-  | Lit_String(k1), Lit_String(k2) -> cmp_string k1 k2
-  | Lit_Atom s1, Lit_Atom s2 -> cmp_list cmp_interp s1 s2
-  | Lit_Regexp (s1,m1), Lit_Regexp (s2,m2) -> 
+  | String(k1), String(k2) -> cmp_string k1 k2
+  | Atom s1, Atom s2 -> cmp_list cmp_interp s1 s2
+  | Regexp (s1,m1), Regexp (s2,m2) -> 
       cmp2 (cmp_list cmp_interp s1 s2) pcompare m1 m2
 
-  | Lit_Nil, Lit_Nil
-  | Lit_Self, Lit_Self 
-  | Lit_True, Lit_True
-  | Lit_False, Lit_False -> 0
+  | Nil, Nil
+  | Self, Self 
+  | True, True
+  | False, False -> 0
 
   | _ -> pcompare c1 c2
 

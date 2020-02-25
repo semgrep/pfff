@@ -47,7 +47,7 @@ let mk_block ast pos = match ast with
 
 (*
 let rec replace_heredoc state ast = match ast with
-  | Ast.E_Literal(Ast.Lit_String(Ast.String_Heredoc(i,interp)),pos) ->
+  | Ast.E_Literal(Ast.String(Ast.String_Heredoc(i,interp)),pos) ->
       let s = Hashtbl.find state.RubyLexerState.heredoc_tbl i in
       let d = free_delimiter s pos in
       let full_s = 
