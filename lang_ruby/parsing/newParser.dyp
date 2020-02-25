@@ -33,7 +33,7 @@
       Stack.push (Env.add id env) env_stack
 
   let rec seen dyp = function
-    | Identifier(ID_Lowercase,s,_) -> seen_str dyp s
+    | Id(ID_Lowercase,s,_) -> seen_str dyp s
     | Array(es,_) | Tuple(es,_) -> List.iter (seen dyp) es
     | _ -> ()
 
@@ -50,7 +50,7 @@
     | _ -> Block(lst,pos)
 
   let rec add_eq = function
-    | Identifier(k,s,p) -> Identifier(ID_Assign(k), s,p)
+    | Id(k,s,p) -> Id(ID_Assign(k), s,p)
     | Binop(e1,Op_SCOPE,e2,p) -> Binop(e1,Op_SCOPE, add_eq e2,p)
     | Binop(e1,Op_DOT,e2,p) -> Binop(e1,Op_DOT, add_eq e2,p)
     | Operator(Op_AREF,p) -> Operator(Op_ASET,p)
@@ -231,7 +231,7 @@
       | Yield([],p),args,None -> Yield(args,p)
       | Literal(True,p), [],None
       | Literal(False,p),[],None
-      | Identifier(_,_,p),     [],None -> m
+      | Id(_,_,p),     [],None -> m
 
       | Literal _,_,_ -> raise Dyp.Giveup
 
@@ -267,7 +267,7 @@
       | Call(c,args,None,p) -> Call(c,args,Some cb,p)
       | Binop(_,Op_DOT,_,p)
       | Binop(_,Op_SCOPE,_,p) -> Call(cmd,[],Some cb,p)
-      | Identifier(_,_,p) -> Call(cmd,[],Some cb,p)
+      | Id(_,_,p) -> Call(cmd,[],Some cb,p)
       | _ -> raise Dyp.Giveup
 
 (* sometimes the lexer gets can't properly handle x!= as x(!=) and
@@ -276,12 +276,12 @@
     let default = l, op, r in
     match op with
     | Op_ASSIGN -> begin match ends_with l with
-	| Identifier(k,s,p) ->
+	| Id(k,s,p) ->
 	    let len = String.length s in
 	      if s.[len-1] == '!'
 	      then 
 		let s' = String.sub s 0 (len-1) in
-		let l' = replace_end l (Identifier(k,s',p)) in
+		let l' = replace_end l (Id(k,s',p)) in
 		  l', Op_NEQ, r
 	      else default
 	| _ -> default
@@ -294,8 +294,8 @@
     let default = l, op, r in
     match op with
     | Op_GT -> begin match ends_with l with
-	| Identifier(ID_Assign ik,s,p) ->
-	    let l' = replace_end l (Identifier(ik,s,p)) in
+	| Id(ID_Assign ik,s,p) ->
+	    let l' = replace_end l (Id(ik,s,p)) in
 	      l', Op_ASSOC, r
 	| Literal(Atom(sc), pos) ->
 	    let astr,rest = match List.rev sc with
@@ -827,7 +827,7 @@ seen_id: identifier<i> {seen dyp i;i}
 
 stmt:
   | T_CAST<annot,e,pos>
-      { build_annot (Identifier(ID_Lowercase,e,pos)) annot pos}
+      { build_annot (Id(ID_Lowercase,e,pos)) annot pos}
 
   | K_ALIAS<pos> meth_or_atom<e1> meth_or_atom<e2> { Alias(e1,e2,pos) }
   | K_UNDEF<pos> meth_or_atom_list<e1> { Undef(e1,pos) }
@@ -1318,47 +1318,47 @@ unary_op:
   | T_BANG<pos>    { Op_UBang,pos }
 
 keyword_as_id:
-  | K_CLASS<t_info,pos>   { Identifier(ID_Lowercase, "class", pos) }
-  | K_MODULE<t_info,pos>  { Identifier(ID_Lowercase, "module", pos) }
-  | K_DEF<t_info,pos>     { Identifier(ID_Lowercase, "def", pos) }
-  | K_END<pos>     { Identifier(ID_Uppercase, "END", pos) }
-  | K_ALIAS<pos>   { Identifier(ID_Lowercase, "alias", pos) }
-  | K_UNDEF<pos>   { Identifier(ID_Lowercase, "undef", pos) }
-  | K_BEGIN<pos>   { Identifier(ID_Lowercase, "BEGIN", pos) }
-  | K_RESCUE<pos>  { Identifier(ID_Lowercase, "rescue", pos) }
-  | K_ENSURE<pos>  { Identifier(ID_Lowercase, "ensure", pos) }
-  | K_IF<pos>      { Identifier(ID_Lowercase, "if", pos) }
-  | K_UNLESS<pos>  { Identifier(ID_Lowercase, "unless", pos) }
-  | K_THEN<pos>    { Identifier(ID_Lowercase, "then", pos) }
-  | K_ELSIF<pos>   { Identifier(ID_Lowercase, "elsif", pos) }
-  | K_ELSE<pos>    { Identifier(ID_Lowercase, "else", pos) }
-  | K_CASE<pos>    { Identifier(ID_Lowercase, "case", pos) }
-  | K_WHEN<pos>    { Identifier(ID_Lowercase, "when", pos) }
-  | K_WHILE<pos>   { Identifier(ID_Lowercase, "while", pos) }
-  | K_UNTIL<pos>   { Identifier(ID_Lowercase, "until", pos) }
-  | K_FOR<pos>     { Identifier(ID_Lowercase, "for", pos) }
-  | K_IN<pos>      { Identifier(ID_Lowercase, "in", pos) }
-  | K_DO<pos>      { Identifier(ID_Lowercase, "do", pos) }
-  | K_RETURN<pos>  { Identifier(ID_Lowercase, "return", pos) }
-  | K_AND<pos>     { Identifier(ID_Lowercase, "and", pos) }
-  | K_OR<pos>      { Identifier(ID_Lowercase, "or", pos) }
-  | K_NOT<pos>     { Identifier(ID_Lowercase, "not", pos) }
-/*  | K_DEFINED<pos> { Identifier(ID_Lowercase, "defined?", pos) }*/
-  | K_lBEGIN<pos>  { Identifier(ID_Lowercase, "begin", pos) }
-  | K_lEND<pos>    { Identifier(ID_Lowercase, "end", pos) }
-  | K_YIELD<pos>   { Identifier(ID_Lowercase, "yield", pos) }
+  | K_CLASS<t_info,pos>   { Id(ID_Lowercase, "class", pos) }
+  | K_MODULE<t_info,pos>  { Id(ID_Lowercase, "module", pos) }
+  | K_DEF<t_info,pos>     { Id(ID_Lowercase, "def", pos) }
+  | K_END<pos>     { Id(ID_Uppercase, "END", pos) }
+  | K_ALIAS<pos>   { Id(ID_Lowercase, "alias", pos) }
+  | K_UNDEF<pos>   { Id(ID_Lowercase, "undef", pos) }
+  | K_BEGIN<pos>   { Id(ID_Lowercase, "BEGIN", pos) }
+  | K_RESCUE<pos>  { Id(ID_Lowercase, "rescue", pos) }
+  | K_ENSURE<pos>  { Id(ID_Lowercase, "ensure", pos) }
+  | K_IF<pos>      { Id(ID_Lowercase, "if", pos) }
+  | K_UNLESS<pos>  { Id(ID_Lowercase, "unless", pos) }
+  | K_THEN<pos>    { Id(ID_Lowercase, "then", pos) }
+  | K_ELSIF<pos>   { Id(ID_Lowercase, "elsif", pos) }
+  | K_ELSE<pos>    { Id(ID_Lowercase, "else", pos) }
+  | K_CASE<pos>    { Id(ID_Lowercase, "case", pos) }
+  | K_WHEN<pos>    { Id(ID_Lowercase, "when", pos) }
+  | K_WHILE<pos>   { Id(ID_Lowercase, "while", pos) }
+  | K_UNTIL<pos>   { Id(ID_Lowercase, "until", pos) }
+  | K_FOR<pos>     { Id(ID_Lowercase, "for", pos) }
+  | K_IN<pos>      { Id(ID_Lowercase, "in", pos) }
+  | K_DO<pos>      { Id(ID_Lowercase, "do", pos) }
+  | K_RETURN<pos>  { Id(ID_Lowercase, "return", pos) }
+  | K_AND<pos>     { Id(ID_Lowercase, "and", pos) }
+  | K_OR<pos>      { Id(ID_Lowercase, "or", pos) }
+  | K_NOT<pos>     { Id(ID_Lowercase, "not", pos) }
+/*  | K_DEFINED<pos> { Id(ID_Lowercase, "defined?", pos) }*/
+  | K_lBEGIN<pos>  { Id(ID_Lowercase, "begin", pos) }
+  | K_lEND<pos>    { Id(ID_Lowercase, "end", pos) }
+  | K_YIELD<pos>   { Id(ID_Lowercase, "yield", pos) }
 
 identifier:
-  | T_BUILTIN_VAR<id,pos> { Identifier(ID_Builtin, id, pos) }
-  | T_GLOBAL_VAR<id,pos>  { Identifier (ID_Global, id, pos) }
-  | T_UID<id,pos>  { Identifier (ID_Uppercase, id, pos)}
+  | T_BUILTIN_VAR<id,pos> { Id(ID_Builtin, id, pos) }
+  | T_GLOBAL_VAR<id,pos>  { Id (ID_Global, id, pos) }
+  | T_UID<id,pos>  { Id (ID_Uppercase, id, pos)}
   | K_NIL<pos>     { Literal(Nil,pos) }
   | K_SELF<pos>    { Literal(Self,pos) }
   | K_TRUE<pos>    { Literal(True,pos) }
   | K_FALSE<pos>   { Literal(False,pos) }
-  | T_LID<id,pos>  { Identifier (ID_Lowercase, id, pos)}
-  | T_INST_VAR<id,pos>    { Identifier(ID_Instance, id, pos) }
-  | T_CLASS_VAR<id,pos>    { Identifier(ID_Class, id, pos) }
+  | T_LID<id,pos>  { Id (ID_Lowercase, id, pos)}
+  | T_INST_VAR<id,pos>    { Id(ID_Instance, id, pos) }
+  | T_CLASS_VAR<id,pos>    { Id(ID_Class, id, pos) }
 
 one_string:
   | T_SINGLE_STRING<s,pos> { Literal( String(Single s), pos) }

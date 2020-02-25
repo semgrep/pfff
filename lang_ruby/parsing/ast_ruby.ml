@@ -57,7 +57,7 @@ type tok = Lexing.position
 type expr = 
   | Literal of lit_kind * tok
 
-  | Identifier of id_kind * string * tok
+  | Id of id_kind * string * tok
   | Operator of binary_op * tok
   | UOperator of unary_op * tok
 
