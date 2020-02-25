@@ -155,19 +155,19 @@
 
   let rec starts_with = function
     | Binop(l,_,_,_) -> starts_with l
-    | MethodCall(l,_,_,_) -> starts_with l
+    | Call(l,_,_,_) -> starts_with l
     | Ternary(l,_,_,_) -> starts_with l
     | e -> e
 
   let rec ends_with = function
     | Binop(_,_,r,_) -> ends_with r
-    | MethodCall(m,[],None,_) -> ends_with m
+    | Call(m,[],None,_) -> ends_with m
     | Ternary(_,_,r,_) -> ends_with r
     | e -> e
 	
   let rec replace_end expr new_e = match expr with
     | Binop(l,o,r,p) -> Binop(l,o,replace_end r new_e,p)
-    | MethodCall(m,[],None,p) -> MethodCall(replace_end m new_e,[],None,p)
+    | Call(m,[],None,p) -> Call(replace_end m new_e,[],None,p)
     | Ternary(g,l,r,p) -> Ternary(g,l,replace_end r new_e,p)
     | e -> new_e
 
@@ -176,7 +176,7 @@
     | _ -> false
 
   let well_formed_do guard body = match ends_with guard with
-    | MethodCall(_,_,Some (CodeBlock(false,_,_,_)),_) ->
+    | Call(_,_,Some (CodeBlock(false,_,_,_)),_) ->
 	raise Dyp.Giveup
     | _ ->()
 
@@ -237,8 +237,8 @@
 
       | Binop(x,Op_SCOPE,y,_),[],None -> m
 
-      | Binop(x,Op_DOT,y,p),_,_ -> MethodCall(unfold_dot x y p, args, cb,p)
-      | _ -> MethodCall(m,args,cb,pos)
+      | Binop(x,Op_DOT,y,p),_,_ -> Call(unfold_dot x y p, args, cb,p)
+      | _ -> Call(m,args,cb,pos)
 
   and unfold_dot l r pos = 
     match l with
@@ -264,10 +264,10 @@
 
   let command_codeblock cmd cb = 
     match cmd with 
-      | MethodCall(c,args,None,p) -> MethodCall(c,args,Some cb,p)
+      | Call(c,args,None,p) -> Call(c,args,Some cb,p)
       | Binop(_,Op_DOT,_,p)
-      | Binop(_,Op_SCOPE,_,p) -> MethodCall(cmd,[],Some cb,p)
-      | Identifier(_,_,p) -> MethodCall(cmd,[],Some cb,p)
+      | Binop(_,Op_SCOPE,_,p) -> Call(cmd,[],Some cb,p)
+      | Identifier(_,_,p) -> Call(cmd,[],Some cb,p)
       | _ -> raise Dyp.Giveup
 
 (* sometimes the lexer gets can't properly handle x!= as x(!=) and
@@ -416,9 +416,9 @@
       end
 
   let rec rhs_do_codeblock = function
-    | MethodCall(_,_,Some (CodeBlock(false,_,_,_)),_) -> true
+    | Call(_,_,Some (CodeBlock(false,_,_,_)),_) -> true
     | Binop(_,_,r,_)
-    | MethodCall(r,[],None,_)
+    | Call(r,[],None,_)
     | Ternary(_,_,r,_) -> rhs_do_codeblock r
     | Hash(false,el,_) -> rhs_do_codeblock (Utils.last el)
 
@@ -427,10 +427,10 @@
         false
 
   let resolve_block_delim with_cb no_cb = match with_cb,no_cb with
-    | _, MethodCall(_,[],None,_) -> 
+    | _, Call(_,[],None,_) -> 
         Printf.eprintf "here2??\n";[with_cb;no_cb]
-    | MethodCall(m1',args1,Some do_block,_),
-        MethodCall(m2',args_ne,None,_) -> 
+    | Call(m1',args1,Some do_block,_),
+        Call(m2',args_ne,None,_) -> 
 	(* look for cmd arg1,...,(argn do block end) *)
         if rhs_do_codeblock (Utils.last args_ne)
         then [with_cb]
@@ -477,10 +477,10 @@
 
     let l' = uniq_list compare_expr l in
       match l',newest with
-	| [(MethodCall(_,_,Some (CodeBlock(false,_,_,_)),_) as with_cb)],
-	  (MethodCall(_,_,None,_) as no_cb)
-	| [(MethodCall(_,_,None,_) as no_cb)],
-	  (MethodCall(_,_,Some (CodeBlock(false,_,_,_)),_) as with_cb) ->
+	| [(Call(_,_,Some (CodeBlock(false,_,_,_)),_) as with_cb)],
+	  (Call(_,_,None,_) as no_cb)
+	| [(Call(_,_,None,_) as no_cb)],
+	  (Call(_,_,Some (CodeBlock(false,_,_,_)),_) as with_cb) ->
 	    (* resolve "x y{z}" vs "x y do z end" *)
 	    resolve_block_delim with_cb no_cb;
 	| _ ->
@@ -495,10 +495,10 @@
 
     let l' = uniq_list compare_expr l in
       match l',newest with
-	| [(MethodCall(_,_,Some (CodeBlock(false,_,_,_)),_) as with_cb)],
-	  (MethodCall(_,_,None,_) as no_cb)
-	| [(MethodCall(_,_,None,_) as no_cb)],
-	  (MethodCall(_,_,Some (CodeBlock(false,_,_,_)),_) as with_cb) ->
+	| [(Call(_,_,Some (CodeBlock(false,_,_,_)),_) as with_cb)],
+	  (Call(_,_,None,_) as no_cb)
+	| [(Call(_,_,None,_) as no_cb)],
+	  (Call(_,_,Some (CodeBlock(false,_,_,_)),_) as with_cb) ->
 	    (* resolve "x y{z}" vs "x y do z end" *)
 	    resolve_block_delim with_cb no_cb;
 
@@ -876,7 +876,7 @@ topcall:
   | func<f> { f }
   | func<c> code_block<cb>
       { match c with
-	| MethodCall(m,args,None,pos) -> methodcall m args (Some cb) pos
+	| Call(m,args,None,pos) -> methodcall m args (Some cb) pos
 	| _ -> methodcall c [] (Some cb) (pos_of c)}
 
   | command<c> {c}
@@ -904,11 +904,11 @@ func:
   | command_name<c> lparen eols call_args<args> eols T_RPAREN
       {
 	match args with
-	  | [] -> MethodCall(c,args,None,pos_of c) 
+	  | [] -> Call(c,args,None,pos_of c) 
 	  | _ -> methodcall c args None (pos_of c)
       }
   | command_name<c> lparen eols command<a> eols T_RPAREN
-      {MethodCall(c,[a],None,pos_of c)}
+      {Call(c,[a],None,pos_of c)}
 
 star_amper:
   | T_USTAR<pos> arg<a> { [Unary(Op_UStar,a,pos)] }
@@ -1001,7 +1001,7 @@ primary:
 
   | func<f> { f }
   | func<f> code_block<cb> {match f with
-      | MethodCall(m,args,None,pos) -> methodcall m args (Some cb) pos
+      | Call(m,args,None,pos) -> methodcall m args (Some cb) pos
       | _ -> methodcall f [] (Some cb) (pos_of f)}
 
   | K_IF<pos> expr<guard> then_sep stmt_list<body> if_else_clauses<else_e> K_lEND

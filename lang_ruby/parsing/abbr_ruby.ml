@@ -40,7 +40,7 @@ open Ast_ruby
           Binop(work rest,Op_SCOPE,ident x pos,pos)
     in work (List.rev lst)
 
-  let mcall targ args ?cb pos = MethodCall(targ,args,cb,pos)
+  let mcall targ args ?cb pos = Call(targ,args,cb,pos)
 
   let cb ?args body pos = CodeBlock(true,args,body,pos)
 
