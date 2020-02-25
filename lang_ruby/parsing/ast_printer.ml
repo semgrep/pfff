@@ -1,6 +1,7 @@
 module Ast = Ast_ruby
 
 open Ast
+open Ast_ruby_helpers
 open Format
 open Utils
 
