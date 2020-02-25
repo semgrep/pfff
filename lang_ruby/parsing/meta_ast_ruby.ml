@@ -161,26 +161,26 @@ let rec vof_expr =
       in Ocaml.VSum (("Annotate", [ v1; v2; v3 ]))
 and vof_lit_kind =
   function
-  | Lit_FixNum v1 ->
-      let v1 = Ocaml.vof_int v1 in Ocaml.VSum (("Lit_FixNum", [ v1 ]))
-  | Lit_BigNum v1 ->
-      let v1 = vof_big_int v1 in Ocaml.VSum (("Lit_BigNum", [ v1 ]))
-  | Lit_Float ((v1, v2)) ->
+  | FixNum v1 ->
+      let v1 = Ocaml.vof_int v1 in Ocaml.VSum (("FixNum", [ v1 ]))
+  | BigNum v1 ->
+      let v1 = vof_big_int v1 in Ocaml.VSum (("BigNum", [ v1 ]))
+  | Float ((v1, v2)) ->
       let v1 = Ocaml.vof_string v1
       and v2 = Ocaml.vof_float v2
-      in Ocaml.VSum (("Lit_Float", [ v1; v2 ]))
-  | Lit_String v1 ->
-      let v1 = vof_string_kind v1 in Ocaml.VSum (("Lit_String", [ v1 ]))
-  | Lit_Atom v1 ->
-      let v1 = vof_interp_string v1 in Ocaml.VSum (("Lit_Atom", [ v1 ]))
-  | Lit_Regexp ((v1, v2)) ->
+      in Ocaml.VSum (("Float", [ v1; v2 ]))
+  | String v1 ->
+      let v1 = vof_string_kind v1 in Ocaml.VSum (("String", [ v1 ]))
+  | Atom v1 ->
+      let v1 = vof_interp_string v1 in Ocaml.VSum (("Atom", [ v1 ]))
+  | Regexp ((v1, v2)) ->
       let v1 = vof_interp_string v1
       and v2 = Ocaml.vof_string v2
-      in Ocaml.VSum (("Lit_Regexp", [ v1; v2 ]))
-  | Lit_Nil -> Ocaml.VSum (("Lit_Nil", []))
-  | Lit_Self -> Ocaml.VSum (("Lit_Self", []))
-  | Lit_True -> Ocaml.VSum (("Lit_True", []))
-  | Lit_False -> Ocaml.VSum (("Lit_False", []))
+      in Ocaml.VSum (("Regexp", [ v1; v2 ]))
+  | Nil -> Ocaml.VSum (("Nil", []))
+  | Self -> Ocaml.VSum (("Self", []))
+  | True -> Ocaml.VSum (("True", []))
+  | False -> Ocaml.VSum (("False", []))
 and vof_string_kind =
   function
   | String_Single v1 ->

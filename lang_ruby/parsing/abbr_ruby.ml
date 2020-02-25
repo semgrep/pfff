@@ -1,12 +1,12 @@
 open Ast_ruby
 
-  let fixnum i pos = Literal(Lit_FixNum i, pos)
-  let float f pos = Literal(Lit_Float(string_of_float f, f), pos)
+  let fixnum i pos = Literal(FixNum i, pos)
+  let float f pos = Literal(Float(string_of_float f, f), pos)
 
-  let ltrue pos = Literal(Lit_True,pos)
-  let lfalse pos = Literal(Lit_False,pos)
-  let lself pos = Literal(Lit_Self,pos)
-  let lnil pos = Literal(Lit_Nil,pos)
+  let ltrue pos = Literal(True,pos)
+  let lfalse pos = Literal(False,pos)
+  let lself pos = Literal(Self,pos)
+  let lnil pos = Literal(Nil,pos)
 
   let ident x pos =
     let len = String.length x in
@@ -25,12 +25,12 @@ open Ast_ruby
 	  else      
 	    Identifier(kind, x, pos)
 
-  let str kind pos = Literal((Lit_String kind),pos)
+  let str kind pos = Literal((String kind),pos)
   let single_str s = str (String_Single s)
   let double_str s = str (String_Double [StrChars s])
   let tick_str s = str (String_Tick [StrChars s])
-  let regexp s m pos = Literal(Lit_Regexp([StrChars s],m),pos)
-  let atom s pos = Literal(Lit_Atom([StrChars s]),pos)
+  let regexp s m pos = Literal(Regexp([StrChars s],m),pos)
+  let atom s pos = Literal(Atom([StrChars s]),pos)
 
   let scoped_ident lst pos = 
     let rec work = function

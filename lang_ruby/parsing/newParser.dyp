@@ -81,13 +81,13 @@
       in reduce [] chunks
     in
     let strings = List.map
-      (fun s -> Literal(Lit_String(String_Single s), pos)) strings
+      (fun s -> Literal(String(String_Single s), pos)) strings
     in
       Array(strings,pos)
 
   (* turn %W{a#{b} c} into ["a#{b}"; "c"] *) 
   let split_double_string_to_array sc pos =
-    let ds s = Literal(Lit_String(String_Double s),pos) in
+    let ds s = Literal(String(String_Double s),pos) in
       (* first we create a stream of tokens with the grammar of
 	   (Expr | Code | String | Delmi)*
 	 by splitting the strings on whitespace.  This stream will be
@@ -130,7 +130,7 @@
     | _ -> failwith "unexpected escapes in string"
 
   let merge_string_lits s1 s2 = match s1,s2 with
-    | Literal(Lit_String(s1),p), Literal(Lit_String(s2),_) ->
+    | Literal(String(s1),p), Literal(String(s2),_) ->
 	let s' = match s1, s2 with
 	  | String_Tick _, _ | _, String_Tick _ -> assert false
 	  | String_Single s1, String_Single s2 -> String_Single (s1 ^ s2)
@@ -140,17 +140,17 @@
 	  | String_Double sc,String_Single s -> 
 	      String_Double (sc @ [Ast_ruby.StrChars s])
 	in
-	  Literal((Lit_String s'),p)
+	  Literal((String s'),p)
     | _ -> assert false
 
   let process_user_string m str pos = match m with
-    | "r" -> Literal(Lit_Regexp (str,""),pos)
+    | "r" -> Literal(Regexp (str,""),pos)
     | "w" -> split_single_string_to_array (str_of_interp str) pos
     | "W" -> split_double_string_to_array str pos
-    | "q" -> Literal(Lit_String(String_Single (str_of_interp str)),pos)
-    | "Q" -> Literal(Lit_String(String_Double str),pos)
-    | "x" -> Literal(Lit_String(String_Tick str),pos)
-    | "" -> Literal(Lit_String(String_Double str),pos)
+    | "q" -> Literal(String(String_Single (str_of_interp str)),pos)
+    | "Q" -> Literal(String(String_Double str),pos)
+    | "x" -> Literal(String(String_Tick str),pos)
+    | "" -> Literal(String(String_Double str),pos)
     | _ -> failwith (Printf.sprintf "unhandled string modifier: %s" m)
 
   let rec starts_with = function
@@ -229,8 +229,8 @@
       | Return([],p),args,None -> Return(args,p)
       | Yield(_), [], None -> m
       | Yield([],p),args,None -> Yield(args,p)
-      | Literal(Lit_True,p), [],None
-      | Literal(Lit_False,p),[],None
+      | Literal(True,p), [],None
+      | Literal(False,p),[],None
       | Identifier(_,_,p),     [],None -> m
 
       | Literal _,_,_ -> raise Dyp.Giveup
@@ -297,7 +297,7 @@
 	| Identifier(ID_Assign ik,s,p) ->
 	    let l' = replace_end l (Identifier(ik,s,p)) in
 	      l', Op_ASSOC, r
-	| Literal(Lit_Atom(sc), pos) ->
+	| Literal(Atom(sc), pos) ->
 	    let astr,rest = match List.rev sc with
 	      | (Ast_ruby.StrChars s)::tl -> s,tl
 	      | _ -> "a",[]
@@ -307,7 +307,7 @@
 	      then 
 		let s' = String.sub astr 0 (len-1) in
 		let sc' = List.rev ((Ast_ruby.StrChars s')::rest) in
-		let l' = replace_end l (Literal(Lit_Atom(sc'),pos)) in
+		let l' = replace_end l (Literal(Atom(sc'),pos)) in
 		  l', Op_ASSOC, r
 	      else default
 	| _ -> default
@@ -1249,7 +1249,7 @@ if_else_clauses:
 
 meth_or_atom:
     | method_name<e>  {e}
-    | T_ATOM<a,pos> { Literal((Lit_Atom a),pos) }
+    | T_ATOM<a,pos> { Literal((Atom a),pos) }
 
 meth_or_atom_list:
     | meth_or_atom<e> { [e] }
@@ -1352,20 +1352,20 @@ identifier:
   | T_BUILTIN_VAR<id,pos> { Identifier(ID_Builtin, id, pos) }
   | T_GLOBAL_VAR<id,pos>  { Identifier (ID_Global, id, pos) }
   | T_UID<id,pos>  { Identifier (ID_Uppercase, id, pos)}
-  | K_NIL<pos>     { Literal(Lit_Nil,pos) }
-  | K_SELF<pos>    { Literal(Lit_Self,pos) }
-  | K_TRUE<pos>    { Literal(Lit_True,pos) }
-  | K_FALSE<pos>   { Literal(Lit_False,pos) }
+  | K_NIL<pos>     { Literal(Nil,pos) }
+  | K_SELF<pos>    { Literal(Self,pos) }
+  | K_TRUE<pos>    { Literal(True,pos) }
+  | K_FALSE<pos>   { Literal(False,pos) }
   | T_LID<id,pos>  { Identifier (ID_Lowercase, id, pos)}
   | T_INST_VAR<id,pos>    { Identifier(ID_Instance, id, pos) }
   | T_CLASS_VAR<id,pos>    { Identifier(ID_Class, id, pos) }
 
 one_string:
-  | T_SINGLE_STRING<s,pos> { Literal( Lit_String(String_Single s), pos) }
+  | T_SINGLE_STRING<s,pos> { Literal( String(String_Single s), pos) }
   | T_DOUBLE_BEG<pos> interp_str<istr> 
-      { Literal(Lit_String (String_Double istr),pos) }
+      { Literal(String (String_Double istr),pos) }
 
-  | T_DOUBLE_STRING<s,pos> { Literal( Lit_String(String_Double s), pos) }
+  | T_DOUBLE_STRING<s,pos> { Literal( String(String_Double s), pos) }
   | T_USER_STRING<m,str,pos> { process_user_string m str pos }
   | T_USER_BEG<m,pos> interp_str<str> { process_user_string m str pos }
 
@@ -1378,19 +1378,19 @@ constant:
   | string<s> { s }
 
   | T_TICK_BEG<pos> interp_str<istr>
-      { Literal (Lit_String (String_Tick istr),pos) }
+      { Literal (String (String_Tick istr),pos) }
 
   | T_ATOM_BEG<pos> interp_str<istr> 
-      { Literal (Lit_Atom istr,pos) }
+      { Literal (Atom istr,pos) }
 
   | T_REGEXP_BEG<pos> interp_str<istr> T_REGEXP_MOD<mods>
-      { Literal(Lit_Regexp (istr,mods),pos) }
-  | T_REGEXP<s,m,pos> { Literal(Lit_Regexp (s,m),pos) }
+      { Literal(Regexp (istr,mods),pos) }
+  | T_REGEXP<s,m,pos> { Literal(Regexp (s,m),pos) }
 
-  | T_FIXNUM<i,pos> { Literal(Lit_FixNum i,pos) }
-  | T_BIGNUM<i,pos> { Literal(Lit_BigNum i,pos) }
-  | T_FLOAT<s,f,pos> { Literal((Lit_Float(s,f)),pos) }
-  | T_ATOM<a,pos> { Literal (Lit_Atom a,pos) }
+  | T_FIXNUM<i,pos> { Literal(FixNum i,pos) }
+  | T_BIGNUM<i,pos> { Literal(BigNum i,pos) }
+  | T_FLOAT<s,f,pos> { Literal((Float(s,f)),pos) }
+  | T_ATOM<a,pos> { Literal (Atom a,pos) }
 
 interp_str:
   | T_SINGLE_STRING<str,p> {[StrChars str]}

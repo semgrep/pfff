@@ -39,17 +39,17 @@ and format_string_kind ppf = function
   | String_Tick sc -> fprintf ppf "`%a`" format_interp_string sc
 
 and format_lit_kind ppf kind = match kind with
-  | Lit_FixNum i -> fprintf ppf "%d" i
-  | Lit_BigNum big -> 
+  | FixNum i -> fprintf ppf "%d" i
+  | BigNum big -> 
       fprintf ppf "%s" (Big_int.string_of_big_int big)
-  | Lit_Float(s,f) -> fprintf ppf "%s" s
-  | Lit_String (skind) -> format_string_kind ppf skind
-  | Lit_Atom sc -> fprintf ppf ":%a" format_interp_string sc
-  | Lit_Regexp (str,m) -> fprintf ppf "Regexp(@[%a@],%s)" format_interp_string str m
-  | Lit_Nil -> pp_print_string ppf "nil"
-  | Lit_Self -> pp_print_string ppf "self"
-  | Lit_True -> pp_print_string ppf "true"
-  | Lit_False -> pp_print_string ppf "false"
+  | Float(s,f) -> fprintf ppf "%s" s
+  | String (skind) -> format_string_kind ppf skind
+  | Atom sc -> fprintf ppf ":%a" format_interp_string sc
+  | Regexp (str,m) -> fprintf ppf "Regexp(@[%a@],%s)" format_interp_string str m
+  | Nil -> pp_print_string ppf "nil"
+  | Self -> pp_print_string ppf "self"
+  | True -> pp_print_string ppf "true"
+  | False -> pp_print_string ppf "false"
     
 and format_expr ppf expr = match expr with
   | Empty -> fprintf ppf "<empty>"

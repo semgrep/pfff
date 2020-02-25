@@ -117,16 +117,16 @@ type expr =
 (*****************************************************************************)
 
 and lit_kind = 
-  | Lit_FixNum of int
-  | Lit_BigNum of Big_int.big_int
-  | Lit_Float of string * float
-  | Lit_String of string_kind
-  | Lit_Atom of interp_string
-  | Lit_Regexp of interp_string * string
-  | Lit_Nil
-  | Lit_Self
-  | Lit_True
-  | Lit_False
+  | FixNum of int
+  | BigNum of Big_int.big_int
+  | Float of string * float
+  | String of string_kind
+  | Atom of interp_string
+  | Regexp of interp_string * string
+  | Nil
+  | Self
+  | True
+  | False
 
   and string_kind = 
     | String_Single of string
