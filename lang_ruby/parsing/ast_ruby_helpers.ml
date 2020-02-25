@@ -121,8 +121,8 @@ and cmp_lit c1 c2 = match c1,c2 with
 
 and cmp_string sk1 sk2 = match sk1,sk2 with
   | Single s1, Single s2 -> String.compare s1 s2
-  | Single s1, _ -> -1
-  | _, Single s2 -> 1
+  | Single _s1, _ -> -1
+  | _, Single _s2 -> 1
   | Tick i1, Tick i2
   | Double i1, Double i2 ->
       cmp_list cmp_interp i1 i2
@@ -172,18 +172,6 @@ and cmp_body_exn b1 b2 =
     
 and cmp_expr_list el1 el2 = cmp_list cmp_expr el1 el2
 
-and cmp_hash hl1 hl2 = 
-  cmp_list 
-    (fun (e1,eo1) (e2,eo2) ->
-      match cmp_expr e1 e2 with
-	| 0 -> begin match eo1, eo2 with
-	    | None, None ->  0
-	    | None, Some _ -> -1
-	    | Some _, None -> 1
-	    | Some e1', Some e2' -> cmp_expr e1' e2'
-	  end
-	| c -> c
-    ) hl1 hl2
 
 let compare_expr = cmp_expr
 
@@ -374,10 +362,6 @@ let rec mod_expr f expr =
   in
     f processed_expr
 
-and mod_expr_annot f expr_annot = 
-  pr2 "mod_expr_annot";
-  expr_annot 
-
 and mod_case_block f block =
   {
     case_guard = mod_expr f block.case_guard;
@@ -438,7 +422,7 @@ let set_pos pos = function
   | Block(el, _) -> Block(el, pos)
   | _ as expr -> expr
 
-let id_kind s pos = match s.[0] with
+let id_kind s _pos = match s.[0] with
   | 'a'..'z' | '_' -> ID_Lowercase
   | 'A'..'Z' -> ID_Uppercase
   | '@' -> 

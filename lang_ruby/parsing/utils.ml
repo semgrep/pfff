@@ -32,7 +32,7 @@ let default_opt def opt = match opt with
 let rec last = function
   | [] -> raise (Invalid_argument "last")
   | [x] -> x
-  | x::tl -> last tl
+  | _x::tl -> last tl
 
 let format_delim_list delim format_f ppf = function
   | [] -> ()

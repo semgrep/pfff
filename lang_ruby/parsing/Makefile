@@ -59,7 +59,7 @@ clean::
 beforedepend:: newLexer.ml
 
 newParser.ml newParser.mli: newParser.dyp
-	dypgen --pv-obj --ocamlc '$(INCLUDES)' $<
+	dypgen --pv-obj --ocamlc '$(INCLUDES) -w y' $<
 clean::
 	rm -f newParser.ml newParser.mli 
 beforedepend:: newParser.ml newParser.mli
@@ -67,3 +67,6 @@ beforedepend:: newParser.ml newParser.mli
 
 #visitor_python.cmo: visitor_python.ml
 #	ocamlc $(INCLUDES) -w y -c $<
+
+newParser.cmo: newParser.ml
+	ocamlc $(INCLUDES) -w y -c $<

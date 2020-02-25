@@ -2,13 +2,12 @@
   open NewParser
   open RubyLexerState
   open Lexing
-  open Printf
 
   let pop_lexer state = 
     let (_:cps_lexer) = Stack.pop state.lexer_stack in
       ()
 
-  let fail_eof f state lexbuf = 
+  let fail_eof _f _state _lexbuf = 
     failwith "parse error: premature end of file"
 
   (* emit the token [tok] and then proceed with the continuation [k] *)
@@ -30,15 +29,16 @@
       }
 
   let push_back str lexbuf = 
-    let pre_str = String.sub lexbuf.lex_buffer 0 lexbuf.lex_curr_pos in
+    let pre_str = Bytes.sub lexbuf.lex_buffer 0 lexbuf.lex_curr_pos in
     let post_str = 
-      String.sub lexbuf.lex_buffer lexbuf.lex_curr_pos
+      Bytes.sub lexbuf.lex_buffer lexbuf.lex_curr_pos
         (lexbuf.lex_buffer_len-lexbuf.lex_curr_pos)
     in
-      lexbuf.lex_buffer <- pre_str ^ str ^ post_str;
+      lexbuf.lex_buffer <- 
+        Bytes.of_string (Bytes.to_string pre_str ^ str ^ Bytes.to_string post_str);
       lexbuf.lex_buffer_len <- lexbuf.lex_buffer_len + (String.length str);
       lexbuf.lex_curr_p <- update_pos str lexbuf.lex_curr_p;
-      assert ((String.length lexbuf.lex_buffer) == lexbuf.lex_buffer_len)
+      assert ((Bytes.length lexbuf.lex_buffer) == lexbuf.lex_buffer_len)
       
   let contents_of_str s = [Ast_ruby.StrChars s]
 
@@ -187,7 +187,7 @@
   let t_percent s lb = beg_state s; T_PERCENT lb.lex_curr_p
   let t_lshft s lb = beg_state s; T_LSHFT lb.lex_curr_p
   let t_colon s lb = beg_state s; T_COLON lb.lex_curr_p
-  let t_eol s lb = beg_state s; T_EOL
+  let t_eol s _lb = beg_state s; T_EOL
 
   (* return a fresh Buffer.t that is preloaded with the contents of [str] *)
   let buf_of_string str = 
@@ -402,7 +402,7 @@ and top_lexer state = parse
       let tok = choose_capital_for_id id lexbuf.lex_curr_p in
         begin match state.expr_state, tok with
           | Expr_Def, _ -> mid_state state
-          | _, T_LID(id, pos) ->
+          | _, T_LID(id, _pos) ->
               if NewParser.assigned_id id 
               then local_state state
               else mid_state state
@@ -496,8 +496,8 @@ and atom state = parse
 
   | '$'
       { let str = match dollar state lexbuf with
-          | T_GLOBAL_VAR(s,p) -> s
-          | T_BUILTIN_VAR(s,p) -> s
+          | T_GLOBAL_VAR(s,_p) -> s
+          | T_BUILTIN_VAR(s,_p) -> s
           | _ -> assert false
         in def_end_state state; 
           T_ATOM(contents_of_str str, lexbuf.lex_curr_p) }
@@ -524,12 +524,12 @@ and char_code state = parse
 and char_code_work = parse
   | [^'\n''\t'] as c {T_FIXNUM(Char.code c, lexbuf.lex_curr_p)}
   | "\\C-" (['a'-'z''A'-'Z'] as c)
-      { T_FIXNUM((Char.code (Char.uppercase c)) - 64, lexbuf.lex_curr_p)}
+      { T_FIXNUM((Char.code (Char.uppercase_ascii c)) - 64, lexbuf.lex_curr_p)}
   | "\\M-" (['a'-'z''A'-'Z'] as c)
       { T_FIXNUM((Char.code c) + 128, lexbuf.lex_curr_p)}
   | "\\M-\\C-" (['a'-'z''A'-'Z'] as c)
   | "\\C-\\M-" (['a'-'z''A'-'Z'] as c)
-      { T_FIXNUM((Char.code (Char.uppercase c)) + 64, lexbuf.lex_curr_p)}
+      { T_FIXNUM((Char.code (Char.uppercase_ascii c)) + 64, lexbuf.lex_curr_p)}
 
   | "\\\\" {T_FIXNUM(Char.code '\\', lexbuf.lex_curr_p)}
   | "\\s" {T_FIXNUM(Char.code ' ', lexbuf.lex_curr_p)}
@@ -731,7 +731,7 @@ and interp_code start cont state = parse
          (* a continuation to read in Ruby tokens until we see an
             unbalanced '}', at which point we abort that continuation
             and restart the [cont] function *)
-       let k state future_lexbuf = 
+       let k state _future_lexbuf = 
          match top_lexer state lexbuf with
            | T_LBRACE _ | T_LBRACE_ARG _ as tok -> 
                incr level; tok
