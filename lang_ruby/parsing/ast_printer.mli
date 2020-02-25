@@ -1,3 +1,4 @@
+module Ast = Ast_ruby
 
 (** This module produces a verbose, debug-friendly description of a
     Ruby AST.  It is intended purely to debug the parser and not for

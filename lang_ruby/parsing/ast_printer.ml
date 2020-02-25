@@ -1,3 +1,4 @@
+module Ast = Ast_ruby
 
 open Ast
 open Format

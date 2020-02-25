@@ -1,3 +1,4 @@
+module Ast = Ast_ruby
 
 val parse_lexbuf : Lexing.lexbuf -> Ast.ast
 
