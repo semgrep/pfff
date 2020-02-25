@@ -1,5 +1,8 @@
 # -*- sh -*-
 
+file: lang_ruby/parsing/newParser.ml
+file: lang_ruby/parsing/newParser_temp.ml
+
 # ignore for now
 dir: web
 dir: facebook
