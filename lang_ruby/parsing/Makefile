@@ -15,7 +15,8 @@ SRC= build_vars.ml config.ml log.ml utils.ml \
   rubyLexerState.ml \
   newLexer.ml \
   parse_helper.ml \
-  test_parsing_ruby.ml 
+  parse_ruby.ml \
+  test_parsing_ruby.ml unit_parsing_ruby.ml 
 
 
 SYSLIBS= str.cma unix.cma 

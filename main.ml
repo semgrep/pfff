@@ -67,12 +67,14 @@ let pfff_extra_actions () = [
 
 let all_actions () = 
   pfff_extra_actions() @
+
   Test_parsing_ml.actions()@
   Test_parsing_skip.actions()@
 
   Test_parsing_php.actions()@
   Test_parsing_js.actions()@
   Test_parsing_python.actions()@
+  Test_parsing_ruby.actions()@
 
   Test_parsing_c.actions()@
   Test_parsing_cpp.actions()@
@@ -84,8 +86,8 @@ let all_actions () =
   Test_parsing_lisp.actions()@
   Test_parsing_hs.actions()@
 
+  (* beta *)
   Test_parsing_csharp.actions()@
-
   Test_parsing_rust.actions()@
   Test_parsing_erlang.actions()@
 

@@ -34,7 +34,8 @@ let test_parse xs =
     let (_xs, stat) =
      Common.save_excursion Flag.error_recovery true (fun () ->
      Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
-       raise Todo
+       let ast =  Parse_helper.parse_file file in
+       ast, Parse_info.default_stat file
     )) in
     Common.push stat stat_list;
   ));
