@@ -223,7 +223,7 @@ let pos_of = function
   | Return ( _  , pos)
   | Yield ( _  , pos)
   | Block ( _  , pos)
-  | Annotate (_,_,pos) -> pos
+   -> pos
 
 let binary_op_of_string = function
   | "="    -> Op_ASSIGN   
@@ -367,7 +367,6 @@ let rec mod_expr f expr =
       | Return(el, pos) -> Return((List.map (mod_expr f) el), pos)
       | Yield(el, pos) -> Yield((List.map (mod_expr f) el), pos)
       | Block(el, pos) -> Block((List.map (mod_expr f) el), pos)
-      | Annotate(e,annot,pos) -> Annotate(mod_expr_annot f e, annot,pos)
 
       | UOperator _ | Operator _ | Id _ | Literal _ | Empty -> 
           expr
@@ -525,47 +524,4 @@ let rec str_binop = function
   | Op_DOT2     -> ".."
   | Op_DOT3     -> "..."
 
-open Annotation
 
-let name_of_annot_id = function
-  | TIdent_Relative s
-  | TIdent_Absolute s
-  | TIdent_Scoped(_,s) -> s
-
-let rec names_of_expr_id pos = function
-  | Id(ID_Assign _,s,_) -> [s ^ "="]
-  | Id(_,s,_) -> [s]
-  | Binop(_,(Op_SCOPE|Op_DOT),r,_) -> names_of_expr_id pos r
-  | Unary(Op_UScope,r,_) -> names_of_expr_id pos r
-  | Operator(op,_) -> [str_binop op]
-  | UOperator(uop,_) -> 
-      (* some unary ops can be specified without their @ postfix, so
-         we allow both forms *)
-      let s = str_uop uop in
-        [s; s ^ "@"]
-  | _ -> Log.fatal (Log.of_loc pos) "expr id"
-
-let verify_annotation_name e annot pos = match annot,e with
-  | ClassType(aname,_,_), ClassDef(class_id,_,_,_)
-  | ClassType(aname,_,_), ModuleDef(class_id,_,_) ->
-      let names = names_of_expr_id pos class_id in
-      if not (List.mem aname names)
-      then Log.fatal (Log.of_loc pos)
-        "annotation for %s does not match ruby name %s" aname (List.hd names)
-
-  | ClassType _, _ ->
-      Log.fatal (Log.of_loc pos) "class annotation on non-class expr"
-
-  | MethodType [], _ -> assert false
-  | MethodType ((annot_id,_,_)::_), MethodDef(meth_id,_,_,_) ->
-      let names = names_of_expr_id pos meth_id in
-      let aname = name_of_annot_id annot_id in
-      if not (List.mem aname names)
-      then Log.fatal (Log.of_loc pos)
-        "annotation for %s does not match ruby method name %s" aname (List.hd names)
-
-  | MethodType _, _ ->
-      Log.fatal (Log.of_loc pos) "method annotation on non-method expr"
-
-  | ExprType _, _ -> ()
-      

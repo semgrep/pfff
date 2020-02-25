@@ -110,7 +110,6 @@ type expr =
 (*****************************************************************************)
 (* Type *)
 (*****************************************************************************)
-  | Annotate of expr * Annotation.t * tok
 
 (*****************************************************************************)
 (* Misc *)
@@ -120,11 +119,15 @@ and lit_kind =
   | FixNum of int
   | BigNum of Big_int.big_int
   | Float of string * float
+
   | String of string_kind
-  | Atom of interp_string
   | Regexp of interp_string * string
+
+  | Atom of interp_string
+
   | Nil
   | Self
+
   | True
   | False
 
@@ -153,14 +156,13 @@ and unary_op =
   | Op_UBang     (* !x *)
   | Op_UTilde    (* ~x *)
   | Op_UNot      (* not x *)
-(*  | Op_UDefined*)  (* defined? x *)
   | Op_UAmper    (* & *)
   | Op_UStar     (* * *)
+
   | Op_UScope    (* ::x *)
 
 
 and binary_op = 
-  | Op_ASSIGN   (* = *)
   | Op_PLUS     (* + *)  | Op_MINUS    (* - *)
   | Op_TIMES    (* * *)  | Op_REM      (* % *)  | Op_DIV      (* / *)
   | Op_CMP  	(* <=> *)
@@ -175,16 +177,19 @@ and binary_op =
   | Op_XOR      (* ^ *)
   | Op_POW      (* ** *)
   | Op_kAND     (* and *)  | Op_kOR      (* or *)
-  | Op_ASSOC    (* => *)
+
+  | Op_ASSIGN   (* = *)
+  | Op_OP_ASGN of binary_op  (* +=, -=, ... *)
 
   | Op_DOT      (* . *)
-
   | Op_SCOPE    (* :: *)
+
+  | Op_ASSOC    (* => *)
+
   | Op_AREF     (* [] *)
   | Op_ASET     (* []= *)
   | Op_LSHIFT   (* < < *)  | Op_RSHIFT   (* > > *)
-(*  | Op_Custom of string*)   (* ?? *)
-  | Op_OP_ASGN of binary_op  (* +=, -=, ... *)
+
   | Op_DOT2     (* .. *)
   | Op_DOT3     (* ... *)
 

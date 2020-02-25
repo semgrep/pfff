@@ -18,7 +18,5 @@ val set_pos : pos -> expr -> expr
    returns an expression suitable for use within a MethodDef *)
 val msg_of_str : string -> pos -> expr
 
-val verify_annotation_name : expr -> Annotation.t -> pos -> unit
-
 val str_uop : unary_op -> string
 val str_binop : binary_op -> string
