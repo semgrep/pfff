@@ -197,9 +197,6 @@ and format_expr ppf expr = match expr with
 	fprintf ppf "@[<v 2>else@,%a@]@," format_expr_break_list else_e;
       fprintf ppf "end@]"
 
-  | Annotate(e,te,pos) -> 
-      fprintf ppf "%a@,%a" Annotation.format_annotation te format_expr e
-
 and format_expr_comma_list ppf = function
   | [] -> ()
   | hd::[] -> format_expr ppf hd

@@ -154,11 +154,7 @@ let rec vof_expr =
       let v1 = Ocaml.vof_list vof_expr v1
       and v2 = vof_tok v2
       in Ocaml.VSum (("Undef", [ v1; v2 ]))
-  | Annotate ((v1, v2, v3)) ->
-      let v1 = vof_expr v1
-      and v2 = vof_annotation v2
-      and v3 = vof_tok v3
-      in Ocaml.VSum (("Annotate", [ v1; v2; v3 ]))
+
 and vof_lit_kind =
   function
   | FixNum v1 ->

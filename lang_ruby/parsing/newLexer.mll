@@ -221,8 +221,6 @@ let string_single_delim = [
   ',' '.' '?' '`' '~' '|' '+' '_'
   '-' '\\' '/' ':' '"' '\'']
 
-let type_annot_re = "##%" [^ '\n']* nl_re
-let opt_type_annot_re = "#O#%" [^ '\n']* nl_re
 let e = "" (* epsilon *)
 
 rule token state = parse
@@ -344,16 +342,6 @@ and top_lexer state = parse
   | nl_re {incr_line lexbuf; t_eol state lexbuf}
   | eof   {T_EOF}
 
-  (* ws_re* '(' ([^')']+ as typ) ')' ws_re* (id_re as e) ws_re**)
-  | "###%" ws_re* (id_re as e) ws_re* ':' ws_re* ([^'\n']*  as annot)
-      {let annot_str = (insert_delimiters "cast") ^ " " ^ annot in
-         beg_state state; T_CAST(annot_str,e,lexbuf.lex_curr_p)}
-
-  | opt_type_annot_re as line
-  | type_annot_re as line
-      {incr_line lexbuf;
-       type_annot state (buf_of_string line) lexbuf
-      }
 
   | "class" as cls    
       {def_state state; K_CLASS ((insert_delimiters cls), lexbuf.lex_curr_p) }
@@ -551,32 +539,6 @@ and char_code_work = parse
   | "\\(" {T_FIXNUM(Char.code '(', lexbuf.lex_curr_p)}
   | "\\)" {T_FIXNUM(Char.code ')', lexbuf.lex_curr_p)}
 
-and type_annot state buf = parse
-  | type_annot_re as line
-       {incr_line lexbuf; 
-        Buffer.add_string buf line;
-        type_annot state buf lexbuf
-       }
-
-  | [' ''\t']+  {type_annot state buf lexbuf}
-
-  | "class" as c
-      { def_state state; 
-        let marker = insert_delimiters c in
-        let annot = marker ^ Buffer.contents buf in
-          K_CLASS (annot, lexbuf.lex_curr_p) 
-      }
-  | "def" as def
-      { def_state state;
-        let marker = insert_delimiters def in
-        let annot = marker ^ Buffer.contents buf in
-          K_DEF (annot, lexbuf.lex_curr_p) }
-  | "module" as m   
-      {def_state state;
-        let marker = insert_delimiters m in
-        let annot = marker ^ Buffer.contents buf in
-          K_MODULE (annot, lexbuf.lex_curr_p)
-      }
 
 and comment state = parse
   | [^'\n']* '\n' { incr_line lexbuf;t_eol state lexbuf }

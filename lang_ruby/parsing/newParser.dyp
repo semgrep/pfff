@@ -649,23 +649,10 @@
     )
     (*Dyp.keep_all*)
 
-  (* DAVIDAN: This function is for parsing type annotation *)
-  let parse_type_info t_info pos = 
-    let lexbuf = Lexing.from_string t_info in 
-    let () = lexbuf.Lexing.lex_curr_p <- pos in
-      try TypeAnnotParser.input TypeAnnotLexer.token lexbuf
-      with Parsing.Parse_error | Failure("lexing: empty token") ->
-        Log.fatal Log.empty
-          "Parsing error in type annotation in %s prior to line %d" 
-          lexbuf.Lexing.lex_curr_p.Lexing.pos_fname 
-          lexbuf.Lexing.lex_curr_p.Lexing.pos_lnum
 
-  let build_annot t annot_str pos = 
-    match parse_type_info annot_str pos with
-      | None -> t
-      | Some annot -> 
-          verify_annotation_name t annot pos;
-          Annotate(t,annot,pos)
+  let build_annot t _annot_str _pos = 
+    t
+
 }
 
 %token <Lexing.position> T_DOT          /* . */
@@ -718,7 +705,6 @@
 %token <Lexing.position> T_SEMICOLON    /* ; */
 %token <Lexing.position> T_SCOPE        /* x::y */
 %token <Lexing.position> T_USCOPE       /* f ::y */
-%token <string * string * Lexing.position> T_CAST /* ##% e : t */
 
 %token <string * Lexing.position> T_UID
 %token <string * Lexing.position> T_LID
@@ -826,9 +812,6 @@ scope_module: K_MODULE<t_info,pos> {enter_scope dyp;t_info,pos}
 seen_id: identifier<i> {seen dyp i;i}
 
 stmt:
-  | T_CAST<annot,e,pos>
-      { build_annot (Id(ID_Lowercase,e,pos)) annot pos}
-
   | K_ALIAS<pos> meth_or_atom<e1> meth_or_atom<e2> { Alias(e1,e2,pos) }
   | K_UNDEF<pos> meth_or_atom_list<e1> { Undef(e1,pos) }
   | stmt<s> K_IF<pos>     eols stmt<guard> 

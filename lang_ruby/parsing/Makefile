@@ -9,10 +9,8 @@ OPAMPKG=pfff-lang_ruby
 
 SRC= build_vars.ml config.ml log.ml utils.ml \
   visitor.ml \
-  annotation.ml \
   ast_ruby.ml abbr_ruby.ml ast_ruby_helpers.ml \
   meta_ast_ruby.ml ast_printer.ml \
-  typeAnnotLexer.ml typeAnnotParser.ml \
   newParser.ml \
   rubyLexerState.ml \
   newLexer.ml \
@@ -61,28 +59,12 @@ clean::
 	rm -f newLexer.ml
 beforedepend:: newLexer.ml
 
-newParser.ml newParser.mli: typeAnnotParser.cmo typeAnnotLexer.cmo
-
 newParser.ml newParser.mli: newParser.dyp
 	dypgen --pv-obj --ocamlc '$(INCLUDES)' $<
 clean::
 	rm -f newParser.ml newParser.mli 
 beforedepend:: newParser.ml newParser.mli
 
-
-#TODO: remove at some point
-typeAnnotParser.ml typeAnnotParser.mli: typeAnnotParser.mly
-	$(OCAMLYACC) $<
-clean::
-	rm -f typeAnnotParser.ml typeAnnotParser.mli 
-beforedepend:: typeAnnotParser.ml typeAnnotParser.mli
-
-
-typeAnnotLexer.ml: typeAnnotLexer.mll
-	$(OCAMLLEX) $<
-clean::
-	rm -f typeAnnotLexer.ml
-beforedepend:: typeAnnotLexer.ml
 
 #visitor_python.cmo: visitor_python.ml
 #	ocamlc $(INCLUDES) -w y -c $<
