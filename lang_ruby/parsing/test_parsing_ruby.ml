@@ -34,7 +34,7 @@ let test_parse xs =
     let (_xs, stat) =
      Common.save_excursion Flag.error_recovery true (fun () ->
      Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
-       let ast =  Parse_helper.parse_file file in
+       let ast =  Parse_ruby.parse_program file in
        ast, Parse_info.default_stat file
     )) in
     Common.push stat stat_list;
@@ -44,8 +44,8 @@ let test_parse xs =
 
 
 let test_dump file =
-  let _ast = raise Todo in
-  let v = raise Todo (* Meta_ast_python.vof_program ast *) in
+  let ast = Parse_ruby.parse_program file in
+  let v = Meta_ast_ruby.vof_ast ast in
   let s = Ocaml.string_of_v v in
   pr s
 
