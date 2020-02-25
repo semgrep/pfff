@@ -18,6 +18,7 @@ SRC= build_vars.ml config.ml log.ml utils.ml \
   newLexer.ml \
   parse_helper.ml \
   parse_ruby.ml \
+  lib_parsing_ruby.ml \
   test_parsing_ruby.ml unit_parsing_ruby.ml 
 
 
