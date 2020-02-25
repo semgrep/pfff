@@ -63,7 +63,7 @@ and format_expr ppf expr = match expr with
       fprintf ppf "undef %a"
 	(format_comma_list format_expr) e1
 
-  | Identifier(id_kind,string,p) -> format_id ppf id_kind string
+  | Id(id_kind,string,p) -> format_id ppf id_kind string
 
   | Unary(uop, expr,_) ->
       fprintf ppf "uop(%s,%a)"

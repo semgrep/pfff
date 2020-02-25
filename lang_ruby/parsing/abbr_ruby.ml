@@ -11,7 +11,7 @@ open Ast_ruby
   let ident x pos =
     let len = String.length x in
       if len = 0 then
-        Identifier(ID_Uppercase, "", pos)
+        Id(ID_Uppercase, "", pos)
       else
         let kind = match x.[0] with
 	  | 'a'..'z' | '_' -> ID_Lowercase
@@ -21,9 +21,9 @@ open Ast_ruby
 	  | _ -> raise (Invalid_argument "ast_id")
         in
 	  if x.[len-1] = '=' then
-	    Identifier(ID_Assign kind, String.sub x 0 (len-1), pos)
+	    Id(ID_Assign kind, String.sub x 0 (len-1), pos)
 	  else      
-	    Identifier(kind, x, pos)
+	    Id(kind, x, pos)
 
   let str kind pos = Literal((String kind),pos)
   let single_str s = str (Single s)

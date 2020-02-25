@@ -14,11 +14,11 @@ let rec vof_expr =
       let v1 = vof_lit_kind v1
       and v2 = vof_tok v2
       in Ocaml.VSum (("Literal", [ v1; v2 ]))
-  | Identifier ((v1, v2, v3)) ->
+  | Id ((v1, v2, v3)) ->
       let v1 = vof_id_kind v1
       and v2 = Ocaml.vof_string v2
       and v3 = vof_tok v3
-      in Ocaml.VSum (("Identifier", [ v1; v2; v3 ]))
+      in Ocaml.VSum (("Id", [ v1; v2; v3 ]))
   | Operator ((v1, v2)) ->
       let v1 = vof_binary_op v1
       and v2 = vof_tok v2
