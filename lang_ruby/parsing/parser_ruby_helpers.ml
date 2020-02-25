@@ -1,5 +1,5 @@
 open Ast_ruby
-open Ast_ruby_helpers
+module H = Ast_ruby_helpers
 
   module Env = Utils.StrSet
 
@@ -253,12 +253,12 @@ open Ast_ruby_helpers
 	
   and scope l r = 
     let l = check_for_dot l in
-      Binop(l,Op_SCOPE,r,pos_of l)
+      Binop(l,Op_SCOPE,r,H.pos_of l)
 	
   let tuple = function
     | [] -> Empty
     | [x] -> x
-    | lst -> Tuple(lst,pos_of (List.hd lst))
+    | lst -> Tuple(lst,H.pos_of (List.hd lst))
 
   let command_codeblock cmd cb = 
     match cmd with 
@@ -357,7 +357,7 @@ open Ast_ruby_helpers
   let prune_right_assoc l op r = 
     let l,op,r = fix_broken_neq l op r in
     let l,op,r = fix_broken_assoc l op r in
-    let e = Binop(l,op,r,(pos_of l)) in
+    let e = Binop(l,op,r,(H.pos_of l)) in
     let p = binop_priority e in
     let pl = binop_priority l in
     let pr = binop_priority r in
@@ -371,7 +371,7 @@ open Ast_ruby_helpers
   let prune_left_assoc l op r = 
     let l,op,r = fix_broken_neq l op r in
     let l,op,r = fix_broken_assoc l op r in
-    let e = Binop(l,op,r,(pos_of l)) in
+    let e = Binop(l,op,r,(H.pos_of l)) in
       match l,op,r with
         | _, _, Binop(_,Op_ASSIGN,_,_) ->  e
 
@@ -447,9 +447,9 @@ open Ast_ruby_helpers
   let merge_binop xs =
     wrap xs (fun xs ->
       let newest, l = List.hd xs, List.tl xs in
-    let l' = uniq_list compare_expr l in
+    let l' = uniq_list H.compare_expr l in
     let fail () = 
-      let l' = uniq_list compare_expr (newest::l') in
+      let l' = uniq_list H.compare_expr (newest::l') in
 	do_fail "binop" l' Ast_printer.string_of_expr;
 	l'
     in
@@ -473,7 +473,7 @@ open Ast_ruby_helpers
     wrap xs (fun xs ->
       let newest, l = List.hd xs, List.tl xs in
 
-    let l' = uniq_list compare_expr l in
+    let l' = uniq_list H.compare_expr l in
       match l',newest with
 	| [(Call(_,_,Some (CodeBlock(false,_,_,_)),_) as with_cb)],
 	  (Call(_,_,None,_) as no_cb)
@@ -482,7 +482,7 @@ open Ast_ruby_helpers
 	    (* resolve "x y{z}" vs "x y do z end" *)
 	    resolve_block_delim with_cb no_cb;
 	| _ ->
-	    let l' = uniq_list compare_expr (newest::l') in
+	    let l' = uniq_list H.compare_expr (newest::l') in
 	      do_fail "topcall" l' Ast_printer.string_of_expr;
 	      l'
     )
@@ -491,7 +491,7 @@ open Ast_ruby_helpers
    wrap xs (fun xs ->
       let newest, l = List.hd xs, List.tl xs in
 
-    let l' = uniq_list compare_expr l in
+    let l' = uniq_list H.compare_expr l in
       match l',newest with
 	| [(Call(_,_,Some (CodeBlock(false,_,_,_)),_) as with_cb)],
 	  (Call(_,_,None,_) as no_cb)
@@ -532,7 +532,7 @@ open Ast_ruby_helpers
 	    [correct]
 
 	| _ ->
-	    let l' = uniq_list compare_expr (newest::l') in
+	    let l' = uniq_list H.compare_expr (newest::l') in
 	      do_fail "stmt" l' Ast_printer.string_of_expr;
 	      l'
   )
@@ -540,14 +540,14 @@ open Ast_ruby_helpers
 
   let merge_expr s xs =
     wrap xs (fun xs ->
-    let l' = uniq_list compare_expr xs in
+    let l' = uniq_list H.compare_expr xs in
       do_fail s l' Ast_printer.string_of_expr;
       l'
     )
 
   let merge_expr_list s xs =
     wrap xs (fun xs ->
-    let l' = uniq_list compare_ast (xs) in
+    let l' = uniq_list H.compare_ast (xs) in
       do_fail s l' Ast_printer.string_of_ast;
       l'
     )
@@ -571,7 +571,7 @@ open Ast_ruby_helpers
     wrap xs (fun xs ->
 
     let cmp (x1,y1) (x2,y2) = 
-      Utils.cmp2 (compare_expr x1 x2) compare_expr y1 y2
+      Utils.cmp2 (H.compare_expr x1 x2) H.compare_expr y1 y2
     in
     let l' = uniq_list cmp xs in
       do_fail s l' 
