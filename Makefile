@@ -476,7 +476,7 @@ layers:
 
 EFUNSCLIENT=/home/pad/github/fork-efuns/efuns_client
 visual:
-	./codemap -screen_size 3 -filter pfff -efuns_client $(EFUNSCLIENT) -emacs_client /dev/null .
+	~/github/codemap/_build/default/bin/main_codemap.exe -screen_size 3 -filter pfff -efuns_client $(EFUNSCLIENT) -emacs_client /dev/null .
 loc:
 	./codemap -no_legend -profile -screen_size 3 -filter pfff -test_loc .
 
