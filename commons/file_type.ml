@@ -93,7 +93,8 @@ let file_type_of_file2 file =
   match e with
 
   | "ml" | "mli" 
-  | "mly" | "mll"    
+  | "mly" | "mll"
+  | "dyp" (* dypgen =~ GLR ocamlyacc *)
       -> PL (ML e)
   | "mlb" (* mlburg *)
   | "mlp" (* used in some source *)
