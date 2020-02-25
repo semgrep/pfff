@@ -1,5 +1,6 @@
 module Ast = Ast_ruby
 module H = Ast_ruby_helpers
+module HH = Parser_ruby_helpers
 
 let set_lexbuf_fname lexbuf name = 
   lexbuf.Lexing.lex_curr_p <-
@@ -24,11 +25,12 @@ let uniq_list lst =
   let l = List.map fst lst in
     u (List.sort H.compare_ast l)
 
+
 let rec parse_lexbuf_with_state ?env state lexbuf = 
   try 
-    NewParser.clear_env ();
+    HH.clear_env ();
     let env = Utils.default_opt Utils.StrSet.empty env in
-    let () = NewParser.set_env env in
+    let () = HH.set_env env in
     let lst = NewParser.main (NewLexer.token state) lexbuf in
     let lst = uniq_list lst in
       begin match lst with

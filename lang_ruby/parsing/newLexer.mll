@@ -1,5 +1,6 @@
 {
   open NewParser
+  open Parser_ruby_helpers
   open RubyLexerState
   open Lexing
 
@@ -403,7 +404,7 @@ and top_lexer state = parse
         begin match state.expr_state, tok with
           | Expr_Def, _ -> mid_state state
           | _, T_LID(id, _pos) ->
-              if NewParser.assigned_id id 
+              if assigned_id id 
               then local_state state
               else mid_state state
           | _ -> mid_state state
