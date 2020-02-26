@@ -1,4 +1,79 @@
+(* Mike Furr
+ *
+ * Copyright (C) 2010 Mike Furr
+ * Copyright (C) 2020 r2c
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the <organization> nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *)
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+(* Ruby Intermediate Language for Ruby 1.9.
+ *
+ * Most of the code in this file derives from code from
+ * Mike Furr in diamondback-ruby.
+ *
+ * For more information, See "The Ruby Intermediate Language" paper at DLS'09.
+ *)
+
+(*****************************************************************************)
+(* Names *)
+(*****************************************************************************)
+(* ------------------------------------------------------------------------- *)
+(* Token/info *)
+(* ------------------------------------------------------------------------- *)
+
 type pos = Lexing.position
+
+(* ------------------------------------------------------------------------- *)
+(* Names *)
+(* ------------------------------------------------------------------------- *)
+
+type var_kind = 
+  | Var_Local
+  | Var_Instance
+  | Var_Class
+  | Var_Global
+  | Var_Constant
+  | Var_Builtin
+
+type identifier = [
+  | `ID_Var of var_kind * string
+  | `ID_Self
+  | `ID_Scope of identifier * string
+  | `ID_UScope of string
+  | `ID_Nil
+  | `ID_True
+  | `ID_False
+]
+
+(* convenience alias that is a subtype of identifier *)
+type builtin_or_global = [`ID_Var of var_kind (* [`Var_Builtin|`Var_Global] *) * string]
+
+(*****************************************************************************)
+(* Expression *)
+(*****************************************************************************)
 
 type unary_op =
   | Op_UMinus | Op_UPlus
@@ -20,38 +95,12 @@ type binary_op =
   | Op_ARef
   | Op_ASet
 
-type var_kind = 
-  | Var_Local
-  | Var_Instance
-  | Var_Class
-  | Var_Global
-  | Var_Constant
-  | Var_Builtin
-
-type identifier = [
-  | `ID_Var of var_kind * string
-  | `ID_Self
-  | `ID_Scope of identifier * string
-  | `ID_UScope of string
-  | `ID_Nil
-  | `ID_True
-  | `ID_False
-]
-
 type msg_id = 
   | ID_UOperator of unary_op
   | ID_Operator of binary_op
   | ID_MethodName of string
   | ID_Assign of string
   | ID_Super
-
-
-(* convenience alias that is a subtype of identifier *)
-type builtin_or_global = [`ID_Var of var_kind (* [`Var_Builtin|`Var_Global] *) * string]
-
-type alias_kind =
-  | Alias_Method of msg_id * msg_id
-  | Alias_Global of builtin_or_global * builtin_or_global
 
 type ('expr,'star_expr) literal_ = [
     `Lit_FixNum of int
@@ -91,68 +140,60 @@ type lhs = [
   | identifier star
  ]
 
-type def_name = 
-  | Instance_Method of msg_id
-  | Singleton_Method of identifier * msg_id
+(*****************************************************************************)
+(* Statement (and CFG) *)
+(*****************************************************************************)
 
-type rescue_guard = 
-  | Rescue_Expr of tuple_expr
-  | Rescue_Bind of tuple_expr * identifier
+type stmt = {
+  snode : stmt_node;
+  pos : pos;
+  sid : int;
+  mutable lexical_locals : Utils_ruby.StrSet.t;
+  mutable preds : stmt Set_.t;
+  mutable succs : stmt Set_.t;
+}
 
+and stmt_node = 
+  | Expression of expr
 
-type class_kind = 
-  | MetaClass of identifier
-  | NominalClass of identifier * identifier option
-      
+  | Assign of lhs * tuple_expr
+  | MethodCall of lhs option * method_call
 
-and method_formal_param = [
-    `Formal_meth_id of string
-  | `Formal_amp of string
-  | `Formal_star of string
-  | `Formal_default of string * tuple_expr
-]
-
-and block_formal_param = [
-    `Formal_block_id of var_kind * string
-  | `Formal_star of string
-  | `Formal_tuple of block_formal_param list
-]
-      
-type any_formal = [block_formal_param|method_formal_param]
-
-  type stmt = {
-    snode : stmt_node;
-    pos : pos;
-    sid : int;
-    mutable lexical_locals : Utils_ruby.StrSet.t;
-    mutable preds : stmt Set_.t;
-    mutable succs : stmt Set_.t;
-  }
-
-  and stmt_node = 
   | Seq of stmt list
-  | Alias of alias_kind
   | If of expr * stmt * stmt
-  | Case of case_block
   | While of expr * stmt
   | For of block_formal_param list * expr * stmt 
-  | MethodCall of lhs option * method_call
-  | Assign of lhs * tuple_expr
-  | Expression of expr
+  | Case of case_block
+
   | Return of tuple_expr option
   | Yield of lhs option * star_expr list
-  | Module  of lhs option * identifier * stmt
-  | Method of def_name * method_formal_param list * stmt
-  | Class of lhs option * class_kind * stmt
-  | ExnBlock of exn_block
-  | Begin of stmt 
-  | End of stmt 
-  | Defined of identifier * stmt
-  | Undef of msg_id list
   | Break of tuple_expr option
   | Next of tuple_expr option
   | Redo
   | Retry
+
+  | ExnBlock of exn_block
+
+  | Begin of stmt 
+  | End of stmt 
+
+  | Module  of lhs option * identifier * stmt
+  | Class of lhs option * class_kind * stmt
+  | Method of def_name * method_formal_param list * stmt
+
+  | Defined of identifier * stmt
+  | Alias of alias_kind
+  | Undef of msg_id list
+
+  and method_call = {
+    mc_target : expr option;
+    mc_msg : msg_id;
+    mc_args : star_expr list;
+    mc_cb : codeblock option;
+  }
+     and codeblock = 
+      | CB_Arg of expr
+      | CB_Block of block_formal_param list * stmt
 
   and exn_block = {
     exn_body : stmt;
@@ -161,28 +202,54 @@ type any_formal = [block_formal_param|method_formal_param]
     exn_ensure : stmt option;
   }
       
-  and rescue_block = {
-    rescue_guards : rescue_guard list;
-    rescue_body : stmt;
-  }
+     and rescue_block = {
+       rescue_guards : rescue_guard list;
+       rescue_body : stmt;
+     }
+
+     and rescue_guard = 
+       | Rescue_Expr of tuple_expr
+       | Rescue_Bind of tuple_expr * identifier
       
   and case_block = {
     case_guard : expr;
     case_whens: (tuple_expr * stmt) list;
     case_else: stmt option;
   }
-      
-  and method_call = {
-    mc_target : expr option;
-    mc_msg : msg_id;
-    mc_args : star_expr list;
-    mc_cb : codeblock option;
-  }
-      
-  and codeblock = 
-    | CB_Arg of expr
-    | CB_Block of block_formal_param list * stmt
 
+  and alias_kind =
+    | Alias_Method of msg_id * msg_id
+    | Alias_Global of builtin_or_global * builtin_or_global
 
+(*****************************************************************************)
+(* Definitions *)
+(*****************************************************************************)
 
-  type t = stmt
+and class_kind = 
+  | MetaClass of identifier
+  | NominalClass of identifier * identifier option
+
+and def_name = 
+  | Instance_Method of msg_id
+  | Singleton_Method of identifier * msg_id
+
+  and method_formal_param = [
+      `Formal_meth_id of string
+    | `Formal_amp of string
+    | `Formal_star of string
+    | `Formal_default of string * tuple_expr
+  ]
+
+  and block_formal_param = [
+      `Formal_block_id of var_kind * string
+    | `Formal_star of string
+    | `Formal_tuple of block_formal_param list
+  ]
+
+type any_formal = [block_formal_param|method_formal_param]
+
+(*****************************************************************************)
+(* Toplevel *)
+(*****************************************************************************)
+
+type t = stmt
