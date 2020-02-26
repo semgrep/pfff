@@ -186,20 +186,20 @@ let uniq () = incr uniq_counter; !uniq_counter
 
 module Abbr = struct
 
-  let local s = Var(Var_Local,s)
-  let ivar s =Var(Var_Instance,s)
-  let cvar s =Var(Var_Class,s)
-  let global s =Var(Var_Global,s)
-  let const s =Var(Var_Constant,s)
-  let builtin s =Var(Var_Builtin,s)
+  let local s = Var(Local,s)
+  let ivar s =Var(Instance,s)
+  let cvar s =Var(Class,s)
+  let global s =Var(Global,s)
+  let const s =Var(Constant,s)
+  let builtin s =Var(Builtin,s)
 
   let var x =
     try 
       let kind = match x.[0] with
-        | 'a'..'z' | '_' -> Var_Local
-        | '@' -> if x.[1] = '@' then Var_Class else Var_Instance
-        | '$' -> Var_Global
-        | 'A'..'Z' -> Var_Constant
+        | 'a'..'z' | '_' -> Local
+        | '@' -> if x.[1] = '@' then Class else Instance
+        | '$' -> Global
+        | 'A'..'Z' -> Constant
         | _ -> raise (Invalid_argument "ast_id")
       in
         Var(kind,x)
@@ -221,7 +221,7 @@ module Abbr = struct
   let access_path lst = 
     let rec work = function
       | [] -> assert false
-      | [x] -> Var(Var_Constant, x)
+      | [x] -> Var(Constant, x)
       | x::(_::_ as rest) -> Scope(work rest,x)
     in (work (List.rev lst) : (*access_path_t :>*) identifier)
 
@@ -373,7 +373,7 @@ let empty_stmt () = mkstmt (Expression (EId Nil)) Lexing.dummy_pos
 
 let fresh_local _s = 
   let i = uniq () in
-    Var(Var_Local,Printf.sprintf "__fresh_%d" i)
+    Var(Local,Printf.sprintf "__fresh_%d" i)
 
 let _strip_colon s = 
   assert(s.[0] == ':');
@@ -838,9 +838,9 @@ class alpha_visitor ~var ~sub =
 object(_self)
   inherit scoped_visitor
   method! visit_id id = match id with
-    | Var(Var_Local,s) ->
+    | Var(Local,s) ->
         if String.compare var s = 0 
-        then ChangeTo (Var(Var_Local,sub))
+        then ChangeTo (Var(Local,sub))
         else DoChildren
     | _ -> DoChildren
 end
@@ -849,7 +849,7 @@ let alpha_convert_local ~var ~sub s =
   visit_stmt (new alpha_visitor ~var ~sub) s
 
 let rec locals_of_lhs acc (lhs:lhs) = match lhs with
-  | LId (Var(Var_Local,s)) -> StrSet.add s acc
+  | LId (Var(Local,s)) -> StrSet.add s acc
   | LId (_) -> acc
   | LTup (lst) -> List.fold_left locals_of_lhs acc lst
   | LStar ((s))  -> locals_of_lhs acc (LId s : lhs)
@@ -861,7 +861,7 @@ let rec locals_of_any_formal acc (p:any_formal) = match p with
   | B (Formal_star2 s)
   | M (Formal_amp s)
   | M (Formal_meth_id s)
-  | B (Formal_block_id(Var_Local, s)) -> StrSet.add s acc
+  | B (Formal_block_id(Local, s)) -> StrSet.add s acc
   | B (Formal_block_id _) -> acc
   | B (Formal_tuple lst)  -> 
       let lst = lst |> List.map b_to_any in
@@ -886,7 +886,7 @@ object(_self)
     SkipChildren
 
   method! visit_rescue_guard rg = match rg with
-    | Rescue_Bind(_te,Var(Var_Local,s)) -> 
+    | Rescue_Bind(_te,Var(Local,s)) -> 
         seen <- StrSet.add s seen;
         SkipChildren
     | Rescue_Bind _

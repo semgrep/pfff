@@ -30,12 +30,12 @@ let rec vof_identifier =
   | False -> Ocaml.VSum ((" False", []))
 and vof_var_kind =
   function
-  | Var_Local -> Ocaml.VSum (("Var_Local", []))
-  | Var_Instance -> Ocaml.VSum (("Var_Instance", []))
-  | Var_Class -> Ocaml.VSum (("Var_Class", []))
-  | Var_Global -> Ocaml.VSum (("Var_Global", []))
-  | Var_Constant -> Ocaml.VSum (("Var_Constant", []))
-  | Var_Builtin -> Ocaml.VSum (("Var_Builtin", []))
+  | Local -> Ocaml.VSum (("Local", []))
+  | Instance -> Ocaml.VSum (("Instance", []))
+  | Class -> Ocaml.VSum (("Class", []))
+  | Global -> Ocaml.VSum (("Global", []))
+  | Constant -> Ocaml.VSum (("Constant", []))
+  | Builtin -> Ocaml.VSum (("Builtin", []))
   
 let vof_builtin_or_global (v1, v2) =
   let v1 = vof_var_kind v1
