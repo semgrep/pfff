@@ -186,12 +186,12 @@ let uniq () = incr uniq_counter; !uniq_counter
 
 module Abbr = struct
 
-  let local s = `ID_Var(Var_Local,s)
-  let ivar s =`ID_Var(Var_Instance,s)
-  let cvar s =`ID_Var(Var_Class,s)
-  let global s =`ID_Var(Var_Global,s)
-  let const s =`ID_Var(Var_Constant,s)
-  let builtin s =`ID_Var(Var_Builtin,s)
+  let local s = Var(Var_Local,s)
+  let ivar s =Var(Var_Instance,s)
+  let cvar s =Var(Var_Class,s)
+  let global s =Var(Var_Global,s)
+  let const s =Var(Var_Constant,s)
+  let builtin s =Var(Var_Builtin,s)
 
   let var x =
     try 
@@ -202,26 +202,28 @@ module Abbr = struct
         | 'A'..'Z' -> Var_Constant
         | _ -> raise (Invalid_argument "ast_id")
       in
-        `ID_Var(kind,x)
+        Var(kind,x)
     with _ -> failwith "Cfg.Abbr.var"
 
-  let iself = `ID_Self
-  let inil = `ID_Nil
-  let itrue = `ID_True
-  let ifalse = `ID_False
+  let iself = Self
+  let inil = Nil
+  let itrue = True
+  let ifalse = False
 
   (* convience type for coercing the rested polymorhpic variant used in access_path *)
+(*
   type access_path_t = [
-     | `ID_Var of var_kind (* always [Var_Constant or Var_Local] *) * string
-     | `ID_Scope of access_path_t * string
+     | `ID2_Var of var_kind (* always [Var_Constant or Var_Local] *) * string
+     | `ID2_Scope of access_path_t * string
   ]
+*)
 
   let access_path lst = 
     let rec work = function
       | [] -> assert false
-      | [x] -> `ID_Var(Var_Constant, x)
-      | x::(_::_ as rest) -> `ID_Scope(work rest,x)
-    in (work (List.rev lst) : access_path_t :> [>identifier])
+      | [x] -> Var(Var_Constant, x)
+      | x::(_::_ as rest) -> Scope(work rest,x)
+    in (work (List.rev lst) : (*access_path_t :>*) identifier)
 
   let num i = FixNum i
   let bignum n = BigNum n
@@ -241,7 +243,7 @@ module Abbr = struct
   let expr e pos = mkstmt (Expression(e :> expr)) pos
 
   let seq lst pos = match lst with
-    | [] -> expr (EId `ID_Nil) pos
+    | [] -> expr (EId Nil) pos
     | ({snode=Seq _; _} as blk)::[] -> blk
     | x::[] -> x
     | l -> 
@@ -367,11 +369,11 @@ end
 
 let pos_of s = s.pos
 
-let empty_stmt () = mkstmt (Expression (EId `ID_Nil)) Lexing.dummy_pos
+let empty_stmt () = mkstmt (Expression (EId Nil)) Lexing.dummy_pos
 
 let fresh_local _s = 
   let i = uniq () in
-    `ID_Var(Var_Local,Printf.sprintf "__fresh_%d" i)
+    Var(Var_Local,Printf.sprintf "__fresh_%d" i)
 
 let _strip_colon s = 
   assert(s.[0] == ':');
@@ -576,17 +578,17 @@ let rec visit_literal vtor l =
 and visit_expr vtor (e:expr) = 
   visit vtor#visit_expr e begin function
     | ELit (l) -> (ELit (visit_literal vtor l) : expr)
-    | EId (#identifier as id) -> (EId (visit_id vtor id) : expr)
+    | EId (id) -> (EId (visit_id vtor id) : expr)
   end
 
 and visit_lhs vtor (lhs:lhs) = 
   visit vtor#visit_lhs lhs begin function
-    | LId (#identifier as id) -> LId (visit_id vtor id :> identifier)
+    | LId (id) -> LId (visit_id vtor id :> identifier)
     | LTup (lhs_l) -> 
 	let lhs_l' = map_preserve List.map (visit_lhs vtor) lhs_l in
 	  if lhs_l == lhs_l' then lhs
 	  else LTup (lhs_l')
-    | LStar ( (#identifier as id)) -> 
+    | LStar ((id)) -> 
 	let id' = visit_id vtor id in
 	  if id==id' then lhs else (LStar ( id') : lhs)
   end
@@ -836,9 +838,9 @@ class alpha_visitor ~var ~sub =
 object(_self)
   inherit scoped_visitor
   method! visit_id id = match id with
-    | `ID_Var(Var_Local,s) ->
+    | Var(Var_Local,s) ->
         if String.compare var s = 0 
-        then ChangeTo (`ID_Var(Var_Local,sub))
+        then ChangeTo (Var(Var_Local,sub))
         else DoChildren
     | _ -> DoChildren
 end
@@ -847,10 +849,10 @@ let alpha_convert_local ~var ~sub s =
   visit_stmt (new alpha_visitor ~var ~sub) s
 
 let rec locals_of_lhs acc (lhs:lhs) = match lhs with
-  | LId (`ID_Var(Var_Local,s)) -> StrSet.add s acc
-  | LId (#identifier) -> acc
+  | LId (Var(Var_Local,s)) -> StrSet.add s acc
+  | LId (_) -> acc
   | LTup (lst) -> List.fold_left locals_of_lhs acc lst
-  | LStar ((#identifier as s))  -> locals_of_lhs acc (LId s : lhs)
+  | LStar ((s))  -> locals_of_lhs acc (LId s : lhs)
 
 
 let rec locals_of_any_formal acc (p:any_formal) = match p with
@@ -884,7 +886,7 @@ object(_self)
     SkipChildren
 
   method! visit_rescue_guard rg = match rg with
-    | Rescue_Bind(_te,`ID_Var(Var_Local,s)) -> 
+    | Rescue_Bind(_te,Var(Var_Local,s)) -> 
         seen <- StrSet.add s seen;
         SkipChildren
     | Rescue_Bind _

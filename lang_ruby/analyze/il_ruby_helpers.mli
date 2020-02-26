@@ -78,19 +78,19 @@ val compute_cfg_locals : ?env:StrSet.t -> stmt -> unit
 *)
 module Abbr : sig
 
-  val local : string -> [>identifier]
-  val ivar : string -> [>identifier]
-  val cvar : string -> [>identifier]
-  val global  : string -> [>identifier]
-  val const  : string -> [>identifier]
-  val builtin : string -> [>identifier]
+  val local : string -> identifier
+  val ivar : string -> identifier
+  val cvar : string -> identifier
+  val global  : string -> identifier
+  val const  : string -> identifier
+  val builtin : string -> identifier
 
-  val var : string -> [>identifier]
-  val iself : [>identifier]
-  val inil : [>identifier]
-  val itrue : [>identifier]
-  val ifalse : [>identifier]
-  val access_path : string list -> [>identifier]
+  val var : string -> identifier
+  val iself : identifier
+  val inil : identifier
+  val itrue : identifier
+  val ifalse : identifier
+  val access_path : string list -> identifier
     
   val num : int -> literal
   val bignum : Big_int.big_int -> literal
@@ -104,7 +104,7 @@ module Abbr : sig
 
   val seq : stmt list -> pos -> stmt
 
-  val alias_g : link:[<builtin_or_global] -> orig:[<builtin_or_global] -> pos -> stmt
+  val alias_g : link:builtin_or_global -> orig:builtin_or_global -> pos -> stmt
 
   val alias_m : link:msg_id -> orig:msg_id -> pos -> stmt
 
@@ -138,41 +138,41 @@ module Abbr : sig
   val return : ?v:tuple_expr -> pos -> stmt
   val yield : ?lhs:lhs -> ?args:star_expr list-> pos -> stmt
 
-  val module_s : ?lhs:lhs -> [<identifier] -> stmt -> pos -> stmt
+  val module_s : ?lhs:lhs -> identifier -> stmt -> pos -> stmt
 
-  val nameclass : ?lhs:lhs -> [<identifier] -> ?inh:[<identifier] -> stmt
+  val nameclass : ?lhs:lhs -> identifier -> ?inh:identifier -> stmt
     -> pos -> stmt
-  val metaclass : ?lhs:lhs -> [<identifier] -> stmt -> pos -> stmt
+  val metaclass : ?lhs:lhs -> identifier -> stmt -> pos -> stmt
 
   (* Method definition for a regular method name *)
-  val mdef : ?targ:[<identifier] -> string -> method_formal_param list
+  val mdef : ?targ:identifier -> string -> method_formal_param list
     -> stmt -> pos -> stmt
 
   (* Method definition for a assignable method name *)
-  val adef : ?targ:[<identifier] -> string -> method_formal_param list
+  val adef : ?targ:identifier -> string -> method_formal_param list
     -> stmt -> pos -> stmt
 
   (* Method definition for a binary operator *)
-  val opdef : ?targ:[<identifier] -> binary_op -> method_formal_param list
+  val opdef : ?targ:identifier -> binary_op -> method_formal_param list
     -> stmt -> pos -> stmt
 
   (* Method definition for a unary operator *)
-  val uopdef : ?targ:[<identifier] -> unary_op -> method_formal_param list
+  val uopdef : ?targ:identifier -> unary_op -> method_formal_param list
     -> stmt -> pos -> stmt
 
-  val meth : ?targ:[<identifier] -> def_name -> method_formal_param list
+  val meth : ?targ:identifier -> def_name -> method_formal_param list
     -> stmt -> pos -> stmt
 
-  val rguard : ?bind:[<identifier] -> tuple_expr -> rescue_guard
+  val rguard : ?bind:identifier -> tuple_expr -> rescue_guard
   val rblock : rescue_guard list -> stmt -> rescue_block
 
   (* A rescue clause with a single guard *)
-  val rescue : ?bind:[<identifier] -> tuple_expr -> stmt -> rescue_block
+  val rescue : ?bind:identifier -> tuple_expr -> stmt -> rescue_block
 
   val exnblock : stmt -> rescue_block list -> ?eelse:stmt -> ?ensure:stmt
     -> pos -> stmt
 
-  val defined : [<identifier] -> stmt -> pos -> stmt
+  val defined : identifier -> stmt -> pos -> stmt
   val undef : msg_id list -> pos -> stmt
   val break : ?v:tuple_expr -> pos -> stmt
   val next : ?v:tuple_expr -> pos -> stmt
