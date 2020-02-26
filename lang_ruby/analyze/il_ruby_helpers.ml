@@ -3,6 +3,7 @@ module Utils = Utils_ruby
 
 open Il_ruby  
 
+
 let uniq_counter = ref 0
 let uniq () = incr uniq_counter; !uniq_counter
 
@@ -222,20 +223,20 @@ module Abbr = struct
       | x::(_::_ as rest) -> `ID_Scope(work rest,x)
     in (work (List.rev lst) : access_path_t :> [>identifier])
 
-  let num i = `Lit_FixNum i
-  let bignum n = `Lit_BigNum n
-  let float f = `Lit_Float(string_of_float f, f)
-  let str s = `Lit_String s
-  let atom s = `Lit_Atom s
-  let regexp ?(o="") str = `Lit_Regexp(o,str)
+  let num i = FixNum i
+  let bignum n = BigNum n
+  let float f = Float(string_of_float f, f)
+  let str s = String s
+  let atom s = Atom s
+  let regexp ?(o="") str = Regexp(o,str)
   let array lst = 
-    (`Lit_Array lst : [`Lit_Array of star_expr list] :> [>literal])
+    Array lst
 
   let hash lst = 
-    (`Lit_Hash lst : [`Lit_Hash of (expr*expr) list] :> [>literal])
+    Hash lst
 
   let range ?(inc=true) l u = 
-    (`Lit_Range(inc,l,u) : [`Lit_Range of bool * expr * expr] :> [>literal])
+    (Range(inc,l,u))
 
   let expr e pos = mkstmt (Expression(e :> expr)) pos
 
@@ -551,30 +552,30 @@ let visit_def_name vtor dn =
       
 let rec visit_literal vtor l = 
   visit vtor#visit_literal l begin function
-    | `Lit_Array star_lst ->
+    | Array star_lst ->
 	let lst' = map_preserve List.map (visit_star_expr vtor) star_lst in
-	  if star_lst==lst' then l else `Lit_Array lst'
+	  if star_lst==lst' then l else Array lst'
 	    
-    | `Lit_Hash pair_lst ->
+    | Hash pair_lst ->
 	let lst' = map_preserve List.map
 	  (fun ((e1,e2) as pair) ->
 	     let e1' = visit_expr vtor e1 in
 	     let e2' = visit_expr vtor e2 in
 	       if e1==e1' && e2==e2' then pair else (e1',e2')
 	  ) pair_lst
-	in if pair_lst==lst' then l else `Lit_Hash lst'
+	in if pair_lst==lst' then l else Hash lst'
 	    
-    | `Lit_Range(b,e1,e2) ->
+    | Range(b,e1,e2) ->
 	let e1' = visit_expr vtor e1 in
 	let e2' = visit_expr vtor e2 in
-	  if e1==e1' && e2==e2' then l else `Lit_Range(b,e1',e2')
+	  if e1==e1' && e2==e2' then l else Range(b,e1',e2')
 	    
     | _ -> l
   end
 
 and visit_expr vtor (e:expr) = 
   visit vtor#visit_expr e begin function
-    | ELit (#literal as l) -> (ELit (visit_literal vtor l) : expr)
+    | ELit (l) -> (ELit (visit_literal vtor l) : expr)
     | EId (#identifier as id) -> (EId (visit_id vtor id) : expr)
   end
 

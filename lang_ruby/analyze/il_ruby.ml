@@ -102,19 +102,19 @@ type msg_id =
 (* Expression *)
 (*****************************************************************************)
 
-type ('expr,'star_expr) literal_ = [
-    `Lit_FixNum of int
-  | `Lit_BigNum of Big_int.big_int
-  | `Lit_Float of string * float
-  | `Lit_String of string
+type ('expr,'star_expr) literal_ =
+  | FixNum of int
+  | BigNum of Big_int.big_int
+  | Float of string * float
+  | String of string
 
-  | `Lit_Atom of string
-  | `Lit_Regexp of string * string
-  | `Lit_Range of bool * 'expr * 'expr
+  | Atom of string
+  | Regexp of string * string
+  | Range of bool * 'expr * 'expr
 
-  | `Lit_Array of 'star_expr list
-  | `Lit_Hash of ('expr * 'expr) list
-]
+  | Array of 'star_expr list
+  | Hash of ('expr * 'expr) list
+
 
 type 'a expr_ = 
  | EId of identifier 
