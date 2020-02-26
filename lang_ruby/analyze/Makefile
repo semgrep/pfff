@@ -6,7 +6,8 @@ TARGET=lib
 OPAMPKG=pfff-lang_ruby-analyze
 
 SRC= dQueue.ml log.ml \
-  visitor.ml cfg.ml cfg_printer.ml cfg_refactor.ml \
+  il_ruby.ml il_ruby_helpers.ml \
+  visitor.ml cfg_printer.ml cfg_refactor.ml \
   test_analyze_ruby.ml
 
 -include $(TOP)/Makefile.config

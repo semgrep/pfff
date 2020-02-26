@@ -1,5 +1,5 @@
 
-open Cfg
+open Il_ruby
 
 (** The signature for a CFG pretty printer.  Where appropraite, type
     declaration present in the Cfg module have a corresponding format
