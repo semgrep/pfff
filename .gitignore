@@ -275,12 +275,5 @@ tmp
 /data/js_stdlib/stdlib.js
 /tests/php/codegraph/pfff_test.log
 /external/OPAM_DIR
-/lang_ruby/parsing/newLexer.ml
-/lang_ruby/parsing/newParser.extract_type
-/lang_ruby/parsing/newParser.ml
-/lang_ruby/parsing/newParser.mli
-/lang_ruby/parsing/newParser_temp.ml
-/lang_ruby/parsing/typeAnnotLexer.ml
-/lang_ruby/parsing/typeAnnotParser.ml
-/lang_ruby/parsing/typeAnnotParser.mli
-/lang_ruby/parsing/typeAnnotParser.output
+
+/lang_ruby/parsing/parser_ruby.extract_type

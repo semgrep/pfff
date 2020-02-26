@@ -1,4 +1,5 @@
-open Utils
+open Utils_ruby
+module Utils = Utils_ruby
 
 type pos = Lexing.position
 

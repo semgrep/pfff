@@ -1,7 +1,7 @@
 
 open Format
 open Cfg
-open Utils
+open Utils_ruby
 
 module type CfgPrinter = sig
   val format_unary_op : Format.formatter -> unary_op -> unit
@@ -508,7 +508,7 @@ module UnParse_F(P : CfgPrinter) : UnParser = struct
            cont (Buffer.contents buf)
         ) ppf
 
-  let sprintf k = ksformat Utils.id k
+  let sprintf k = ksformat Utils_ruby.id k
 
   let (++) k i1 i2 = k (i1 i2)    
 end
