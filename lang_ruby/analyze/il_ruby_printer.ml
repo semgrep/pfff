@@ -129,7 +129,7 @@ module Code_F(PP : CfgPrinter) = struct
 
   let format_star_expr ppf : star_expr -> unit = function
     | SE (#expr as e) -> PP.format_expr ppf e
-    | SStar (`Star e) -> fprintf ppf "*%a" PP.format_expr e (* XXX *)
+    | SStar (e) -> fprintf ppf "*%a" PP.format_expr e (* XXX *)
 
   let format_tuple_expr ppf : tuple_expr -> unit = function
     | TTup ((el)) -> 
