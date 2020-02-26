@@ -585,9 +585,9 @@ and visit_lhs vtor (lhs:lhs) =
 	let lhs_l' = map_preserve List.map (visit_lhs vtor) lhs_l in
 	  if lhs_l == lhs_l' then lhs
 	  else LTup (lhs_l')
-    | LStar (`Star (#identifier as id)) -> 
+    | LStar ( (#identifier as id)) -> 
 	let id' = visit_id vtor id in
-	  if id==id' then lhs else (LStar (`Star id') : lhs)
+	  if id==id' then lhs else (LStar ( id') : lhs)
   end
 
 and visit_star_expr vtor star = match star with
@@ -603,13 +603,13 @@ let rec visit_tuple vtor tup =
   	  let lst' = map_preserve List.map (visit_tuple vtor) lst in
 	  if lst == lst' then tup
 	  else TTup (lst')
-    | TStar (`Star (TE (#expr as e))) -> 
+    | TStar ((TE (#expr as e))) -> 
 	  let e' = visit_expr vtor e in
-	  if e==e' then tup else (TStar (`Star (TE e')) : tuple_expr)
-    | TStar (`Star (TTup (lst))) -> 
+	  if e==e' then tup else (TStar ((TE e')) : tuple_expr)
+    | TStar ((TTup (lst))) -> 
 	  let lst' = map_preserve List.map (visit_tuple vtor) lst in
 	  if lst == lst' then tup
-	  else TStar (`Star(TTup ( lst')))
+	  else TStar ((TTup (lst')))
     | _ -> failwith "Impossible" (* TStar (`Star (TStar _) *)
   end
 
@@ -849,7 +849,7 @@ let rec locals_of_lhs acc (lhs:lhs) = match lhs with
   | LId (`ID_Var(Var_Local,s)) -> StrSet.add s acc
   | LId (#identifier) -> acc
   | LTup (lst) -> List.fold_left locals_of_lhs acc lst
-  | LStar (`Star (#identifier as s))  -> locals_of_lhs acc (LId s : lhs)
+  | LStar ((#identifier as s))  -> locals_of_lhs acc (LId s : lhs)
 
 
 let rec locals_of_any_formal acc (p:any_formal) = match p with
