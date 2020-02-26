@@ -76,17 +76,17 @@ module Code_F(PP : CfgPrinter) = struct
   let format_binary_op ppf op = pp_print_string ppf (str_binop op)
 
   let format_identifier ppf : identifier -> unit = function
-    | `ID_Var(_,s) -> pp_print_string ppf s
-    | `ID_Scope(i1,i2) -> fprintf ppf "%a::%s" PP.format_identifier i1 i2
-    | `ID_UScope(i1) -> fprintf ppf "::%s" i1
-    | `ID_Self -> pp_print_string ppf "self"
-    | `ID_Nil -> pp_print_string ppf "nil"
-    | `ID_True -> pp_print_string ppf "true"
-    | `ID_False -> pp_print_string ppf "false"
+    | Var(_,s) -> pp_print_string ppf s
+    | Scope(i1,i2) -> fprintf ppf "%a::%s" PP.format_identifier i1 i2
+    | UScope(i1) -> fprintf ppf "::%s" i1
+    | Self -> pp_print_string ppf "self"
+    | Nil -> pp_print_string ppf "nil"
+    | True -> pp_print_string ppf "true"
+    | False -> pp_print_string ppf "false"
 
   let format_def_id ppf : identifier -> unit = function
-    | `ID_Scope(i1,i2) -> fprintf ppf "(%a::%s)" PP.format_def_id i1 i2
-    | `ID_UScope(i1) -> fprintf ppf "(::%s)" i1
+    | Scope(i1,i2) -> fprintf ppf "(%a::%s)" PP.format_def_id i1 i2
+    | UScope(i1) -> fprintf ppf "(::%s)" i1
     | i -> PP.format_identifier ppf i
 
   let format_msg_id ppf : msg_id -> unit = function
@@ -125,7 +125,7 @@ module Code_F(PP : CfgPrinter) = struct
 
   let format_expr ppf : expr -> unit = function
     | ELit (l) -> PP.format_literal ppf l
-    | EId (#identifier as id) -> PP.format_identifier ppf id
+    | EId (id) -> PP.format_identifier ppf id
 
   let format_star_expr ppf : star_expr -> unit = function
     | SE (e) -> PP.format_expr ppf e
@@ -140,8 +140,8 @@ module Code_F(PP : CfgPrinter) = struct
     | TStar ((TStar _)) -> failwith "Impossible"
 
   let format_lhs ppf : lhs -> unit = function
-    | LId (#identifier as id) -> PP.format_identifier ppf id
-    | LStar ((#identifier as i)) -> fprintf ppf "*%a" PP.format_identifier i
+    | LId (id) -> PP.format_identifier ppf id
+    | LStar ((i)) -> fprintf ppf "*%a" PP.format_identifier i
     | LTup ((el)) -> 
         fprintf ppf "(@[%a@])" (format_comma_list PP.format_lhs) el
 
@@ -211,9 +211,11 @@ module Code_F(PP : CfgPrinter) = struct
 	  PP.format_msg_id m2
 
     | Alias(Alias_Global(v1,v2)) -> 
+          let v1 = Var v1 in
+          let v2 = Var v2 in
         fprintf ppf "alias %a %a" 
-          PP.format_identifier (v1 :> identifier) 
-          PP.format_identifier (v2 :> identifier) 
+          PP.format_identifier (v1 : identifier) 
+          PP.format_identifier (v2 : identifier) 
 
     | If(guard,then_e,else_e) ->
         fprintf ppf "@[<v 0>@[<v 2>if %a then@,%a@]@,"
@@ -375,7 +377,7 @@ module Err_F(PP : CfgPrinter) = struct
   include Super
 
   let format_identifier ppf : identifier -> unit = function
-    | `ID_Var(_,s) -> 
+    | Var(_,s) -> 
         (* print _ instead of RIL temporaries *)
         if is_tmp_var s then pp_print_string ppf "_"
         else pp_print_string ppf s
@@ -397,7 +399,7 @@ module Err_F(PP : CfgPrinter) = struct
           then fprintf ppf "%s" "implicit return"  
           else Super.format_stmt ppf stmt
 
-   | Yield(Some(LId (`ID_Var(_,s))),e) ->
+   | Yield(Some(LId (Var(_,s))),e) ->
        (* remove any implicit assign inserted by RIL.  Such as [__tmp = yield()] *)
        if is_tmp_var s 
        then fprintf ppf "yield(@[%a@])" (format_comma_list PP.format_star_expr) e

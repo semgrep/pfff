@@ -58,18 +58,17 @@ type var_kind =
   | Var_Constant
   | Var_Builtin
 
-type identifier = [
-  | `ID_Var of var_kind * string
-  | `ID_Self
-  | `ID_Scope of identifier * string
-  | `ID_UScope of string
-  | `ID_Nil
-  | `ID_True
-  | `ID_False
-]
+type identifier =
+  | Var of (var_kind * string)
+  | Self
+  | Scope of identifier * string
+  | UScope of string
+  | Nil
+  | True
+  | False
 
 (* convenience alias that is a subtype of identifier *)
-type builtin_or_global = [`ID_Var of var_kind (* [`Var_Builtin|`Var_Global] *) * string]
+type builtin_or_global = var_kind (* [`Var_Builtin|`Var_Global] *) * string
 
 type msg_id = 
   | ID_UOperator of unary_op
