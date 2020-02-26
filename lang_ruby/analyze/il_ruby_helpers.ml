@@ -185,20 +185,20 @@ let uniq () = incr uniq_counter; !uniq_counter
 
 module Abbr = struct
 
-  let local s = `ID_Var(`Var_Local,s)
-  let ivar s =`ID_Var(`Var_Instance,s)
-  let cvar s =`ID_Var(`Var_Class,s)
-  let global s =`ID_Var(`Var_Global,s)
-  let const s =`ID_Var(`Var_Constant,s)
-  let builtin s =`ID_Var(`Var_Builtin,s)
+  let local s = `ID_Var(Var_Local,s)
+  let ivar s =`ID_Var(Var_Instance,s)
+  let cvar s =`ID_Var(Var_Class,s)
+  let global s =`ID_Var(Var_Global,s)
+  let const s =`ID_Var(Var_Constant,s)
+  let builtin s =`ID_Var(Var_Builtin,s)
 
   let var x =
     try 
       let kind = match x.[0] with
-        | 'a'..'z' | '_' -> `Var_Local
-        | '@' -> if x.[1] = '@' then `Var_Class else `Var_Instance
-        | '$' -> `Var_Global
-        | 'A'..'Z' -> `Var_Constant
+        | 'a'..'z' | '_' -> Var_Local
+        | '@' -> if x.[1] = '@' then Var_Class else Var_Instance
+        | '$' -> Var_Global
+        | 'A'..'Z' -> Var_Constant
         | _ -> raise (Invalid_argument "ast_id")
       in
         `ID_Var(kind,x)
@@ -211,14 +211,14 @@ module Abbr = struct
 
   (* convience type for coercing the rested polymorhpic variant used in access_path *)
   type access_path_t = [
-     | `ID_Var of [`Var_Constant] * string
+     | `ID_Var of var_kind (* always [Var_Constant or Var_Local] *) * string
      | `ID_Scope of access_path_t * string
   ]
 
   let access_path lst = 
     let rec work = function
       | [] -> assert false
-      | [x] -> `ID_Var(`Var_Constant, x)
+      | [x] -> `ID_Var(Var_Constant, x)
       | x::(_::_ as rest) -> `ID_Scope(work rest,x)
     in (work (List.rev lst) : access_path_t :> [>identifier])
 
@@ -370,7 +370,7 @@ let empty_stmt () = mkstmt (Expression `ID_Nil) Lexing.dummy_pos
 
 let fresh_local _s = 
   let i = uniq () in
-    `ID_Var(`Var_Local,Printf.sprintf "__fresh_%d" i)
+    `ID_Var(Var_Local,Printf.sprintf "__fresh_%d" i)
 
 let _strip_colon s = 
   assert(s.[0] == ':');
@@ -834,9 +834,9 @@ class alpha_visitor ~var ~sub =
 object(_self)
   inherit scoped_visitor
   method! visit_id id = match id with
-    | `ID_Var(`Var_Local,s) ->
+    | `ID_Var(Var_Local,s) ->
         if String.compare var s = 0 
-        then ChangeTo (`ID_Var(`Var_Local,sub))
+        then ChangeTo (`ID_Var(Var_Local,sub))
         else DoChildren
     | _ -> DoChildren
 end
@@ -845,7 +845,7 @@ let alpha_convert_local ~var ~sub s =
   visit_stmt (new alpha_visitor ~var ~sub) s
 
 let rec locals_of_lhs acc (lhs:lhs) = match lhs with
-  | `ID_Var(`Var_Local,s) -> StrSet.add s acc
+  | `ID_Var(Var_Local,s) -> StrSet.add s acc
   | #identifier -> acc
   | `Tuple lst -> List.fold_left locals_of_lhs acc lst
   | `Star (#identifier as s)  -> locals_of_lhs acc (s :> lhs)
@@ -855,7 +855,7 @@ let rec locals_of_any_formal acc (p:any_formal) = match p with
   | `Formal_star s
   | `Formal_amp s
   | `Formal_meth_id s
-  | `Formal_block_id(`Var_Local, s) -> StrSet.add s acc
+  | `Formal_block_id(Var_Local, s) -> StrSet.add s acc
   | `Formal_block_id _ -> acc
   | `Formal_tuple lst  -> 
       List.fold_left locals_of_any_formal acc (lst :> any_formal list)
@@ -877,7 +877,7 @@ object(_self)
     SkipChildren
 
   method! visit_rescue_guard rg = match rg with
-    | Rescue_Bind(_te,`ID_Var(`Var_Local,s)) -> 
+    | Rescue_Bind(_te,`ID_Var(Var_Local,s)) -> 
         seen <- StrSet.add s seen;
         SkipChildren
     | Rescue_Bind _
