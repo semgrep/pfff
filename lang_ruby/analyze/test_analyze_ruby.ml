@@ -60,7 +60,7 @@ let test_parse xs =
     let str = Str.global_replace (Str.regexp "/") "__" dirname in
     Common2.regression_testing newscore 
       (Filename.concat score_path
-       ("score_parsing__" ^str ^ ext ^ ".marshalled"))
+       ("score_il__" ^str ^ ext ^ ".marshalled"))
   );
 
   ()
