@@ -1,41 +1,32 @@
 type pos = Lexing.position
 
 type unary_op =
-    Op_UMinus
-  | Op_UPlus
+  | Op_UMinus | Op_UPlus
   | Op_UTilde
 
 type binary_op =
-  | Op_Plus
-  | Op_Minus
-  | Op_Times
-  | Op_Rem
-  | Op_Div
+  | Op_Plus | Op_Minus
+  | Op_Times | Op_Rem | Op_Div
+  | Op_Pow
   | Op_CMP
-  | Op_EQ
-  | Op_EQQ
-  | Op_GEQ
-  | Op_LEQ
-  | Op_LT
-  | Op_GT
-  | Op_BAnd
-  | Op_BOr
+  | Op_EQ | Op_EQQ
+  | Op_GEQ | Op_LEQ
+  | Op_LT | Op_GT
+  | Op_BAnd  | Op_BOr
+  | Op_LShift | Op_RShift
+
   | Op_Match
   | Op_XOR
-  | Op_Pow
   | Op_ARef
   | Op_ASet
-  | Op_LShift
-  | Op_RShift
 
-type var_kind = [
-    `Var_Local
-  | `Var_Instance
-  | `Var_Class
-  | `Var_Global
-  | `Var_Constant
-  | `Var_Builtin
-]
+type var_kind = 
+  | Var_Local
+  | Var_Instance
+  | Var_Class
+  | Var_Global
+  | Var_Constant
+  | Var_Builtin
 
 type identifier = [
   | `ID_Var of var_kind * string
@@ -56,7 +47,7 @@ type msg_id = [
 ]
 
 (* convenience alias that is a subtype of identifier *)
-type builtin_or_global = [`ID_Var of [`Var_Builtin|`Var_Global] * string]
+type builtin_or_global = [`ID_Var of var_kind (* [`Var_Builtin|`Var_Global] *) * string]
 
 type alias_kind =
   | Alias_Method of msg_id * msg_id
