@@ -68,8 +68,8 @@ let test_parse xs =
 
 let test_dump file =
   let ast = Parse_ruby.parse_program file in
-  let cfg = Cfg_refactor.refactor_ast ast in
-  Cfg_printer.CodePrinter.print_stmt stderr cfg
+  let cfg = Il_ruby_build.refactor_ast ast in
+  Il_ruby_printer.CodePrinter.print_stmt stderr cfg
 
 
 (*****************************************************************************)
