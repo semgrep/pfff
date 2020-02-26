@@ -38,10 +38,10 @@ let acc_append acc1 acc2 =
   }
 
 let rec seen_lhs acc (lhs:lhs) = match lhs with
-  | LId (`ID_Var(_,str)) | LStar (`Star (`ID_Var(_,str))) ->
+  | LId (`ID_Var(_,str)) | LStar ((`ID_Var(_,str))) ->
       {acc with seen = StrSet.add str acc.seen}
 
-  | LId (#identifier) | LStar (`Star (#identifier)) -> acc
+  | LId (#identifier) | LStar ((#identifier)) -> acc
   | LTup (ls) -> List.fold_left seen_lhs acc ls
 
 let uniq_counter = ref 0
@@ -317,7 +317,7 @@ let rec tuple_of_lhs (lhs:lhs) pos : tuple_expr = match lhs with
   | LTup ((l)) -> 
       let l' = List.map (fun x -> tuple_of_lhs x pos) l in
         TTup ((l'))
-  | LStar (`Star (#identifier as id)) -> TStar (`Star (TE id))
+  | LStar ((#identifier as id)) -> TStar ((TE id))
 
 let make_tuple_option : tuple_expr list -> tuple_expr option = function
   | [] -> None
@@ -961,8 +961,8 @@ and refactor_tuple_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.tuple
     | Ast.Unary(Ast.Op_UStar, e, _pos) -> 
         let acc, e' = refactor_tuple_expr acc e in
           begin match e' with
-            | (TE _ | TTup _) as e' -> acc, TStar (`Star e')
-            | TStar #star -> 
+            | (TE _ | TTup _) as e' -> acc, TStar (e')
+            | TStar (_) -> 
                 Log.fatal Log.empty "refactor_tuple_expr: nested / double star expression"
           end
     | _ -> 
@@ -989,13 +989,13 @@ and refactor_lhs acc e : (stmt acc * lhs * stmt acc) =
         let acc, v = fresh acc in
       let v' = match v with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
 
-          acc, LStar (`Star v'), acc_emptyq acc
+          acc, LStar (v'), acc_emptyq acc
           
     | Ast.Unary(Ast.Op_UStar, e, pos) -> 
         let acc, e',after = refactor_lhs acc e in
           begin match e' with
-            | LId (#identifier as id) -> acc, LStar (`Star id), after
-            | LTup (_)| LStar (`Star _) -> 
+            | LId (#identifier as id) -> acc, LStar (id), after
+            | LTup (_)| LStar ( _) -> 
                 Log.fatal (Log.of_loc pos) "refactor_lhs: nested star?"
           end
 

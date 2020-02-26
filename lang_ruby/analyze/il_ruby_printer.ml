@@ -135,13 +135,13 @@ module Code_F(PP : CfgPrinter) = struct
     | TTup ((el)) -> 
         fprintf ppf "@[%a@]" (format_comma_list PP.format_tuple_expr) el
     | TE (#expr as e) -> PP.format_expr ppf e
-    | TStar (`Star (TTup (_el) as tup)) -> fprintf ppf "*%a" PP.format_tuple_expr tup
-    | TStar (`Star (TE (#expr as e))) -> fprintf ppf "*%a" PP.format_expr e
-    | TStar (`Star (TStar _)) -> failwith "Impossible"
+    | TStar ((TTup (_el) as tup)) -> fprintf ppf "*%a" PP.format_tuple_expr tup
+    | TStar ((TE (#expr as e))) -> fprintf ppf "*%a" PP.format_expr e
+    | TStar ((TStar _)) -> failwith "Impossible"
 
   let format_lhs ppf : lhs -> unit = function
     | LId (#identifier as id) -> PP.format_identifier ppf id
-    | LStar (`Star (#identifier as i)) -> fprintf ppf "*%a" PP.format_identifier i
+    | LStar ((#identifier as i)) -> fprintf ppf "*%a" PP.format_identifier i
     | LTup ((el)) -> 
         fprintf ppf "(@[%a@])" (format_comma_list PP.format_lhs) el
 
