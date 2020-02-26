@@ -61,12 +61,12 @@ type identifier =
   | False
 
 and var_kind = 
-  | Var_Local
-  | Var_Instance
-  | Var_Class
-  | Var_Global
-  | Var_Constant
-  | Var_Builtin
+  | Local
+  | Instance
+  | Class
+  | Global
+  | Constant
+  | Builtin
  (* with tarzan *)
 
 (* convenience alias that is a subtype of identifier *)

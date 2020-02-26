@@ -49,12 +49,12 @@ let uniq () = incr uniq_counter; !uniq_counter
 
 let fresh acc = 
   let fresh_name = "__tmp_" ^ (string_of_int (uniq ())) in
-  let id = Var (Var_Local, fresh_name) in
+  let id = Var (Local, fresh_name) in
     (seen_lhs acc (LId id)), LId id
 
 let fresh_global pos = 
   let name = sprintf "$__druby_global_%d_%d" pos.Lexing.pos_lnum (uniq()) in
-    Var(Var_Global, name)
+    Var(Global, name)
 
 let formal_counter = ref 0
 let fresh_formal () = incr formal_counter; !formal_counter
@@ -64,14 +64,14 @@ let re_init () = uniq_counter := 0
 let gen_super_args params : (star_expr list * expr option) option  =
   let work = function
   | Formal_default(s,_)
-  | Formal_meth_id s -> SE (EId (Var(Var_Local,s)))
+  | Formal_meth_id s -> SE (EId (Var(Local,s)))
   | Formal_amp _s -> assert false
-  | Formal_star s -> SStar ((EId (Var(Var_Local,s))))
+  | Formal_star s -> SStar ((EId (Var(Local,s))))
   in
     match List.rev params with
       | (Formal_amp s)::rest -> 
           let args = List.rev_map work rest in
-            Some (args, Some (EId (Var(Var_Local,s))))
+            Some (args, Some (EId (Var(Local,s))))
       | lst  -> 
           Some (List.rev_map work lst, None)
 
@@ -113,7 +113,7 @@ let unescape_single_string s =
    accumulator as necessary.
 *)
 let or_opt acc fin lang once s pos =
-  let v = Scope(Var(Var_Constant, "Regexp"),s) in
+  let v = Scope(Var(Constant, "Regexp"),s) in
     match fin with
       | Some e ->
           let acc, lhs = fresh acc in
@@ -216,19 +216,19 @@ let special_of_string pos x : expr =
   | _ -> raise (Invalid_argument "special_of_string")
 
 let refactor_id_kind pos : Ast.id_kind -> var_kind = function
-  | Ast.ID_Lowercase -> Var_Local
-  | Ast.ID_Instance -> Var_Instance
-  | Ast.ID_Class -> Var_Class
-  | Ast.ID_Global -> Var_Global
-  | Ast.ID_Uppercase -> Var_Constant
-  | Ast.ID_Builtin -> Var_Builtin
+  | Ast.ID_Lowercase -> Local
+  | Ast.ID_Instance -> Instance
+  | Ast.ID_Class -> Class
+  | Ast.ID_Global -> Global
+  | Ast.ID_Uppercase -> Constant
+  | Ast.ID_Builtin -> Builtin
   | Ast.ID_Assign _ik -> 
       Log.fatal (Log.of_loc pos)
         "trying to refactor id_assign, but should be handled elsewhere"
 
 let refactor_builtin_or_global pos = function
-  | Ast.ID_Builtin -> Var_Builtin
-  | Ast.ID_Global -> Var_Global
+  | Ast.ID_Builtin -> Builtin
+  | Ast.ID_Global -> Global
   | _ ->
       Log.fatal (Log.of_loc pos)
         "trying to refactor other kind into builtin or global"
@@ -348,7 +348,7 @@ let _replace_last f = function
       | hd::tl -> List.rev ( (f hd):: tl)
 
 let _method_formal_of_id : identifier -> method_formal_param = function
-  | Var(Var_Local,s) -> Formal_meth_id(s)
+  | Var(Local,s) -> Formal_meth_id(s)
   | _ -> Log.fatal Log.empty "method_formal_of_id: non-id"
 
 let _block_formal_of_id : identifier -> block_formal_param = function
@@ -559,7 +559,7 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
     | Ast.Unary(Ast.Op_UScope,e,pos) ->
         let acc,e' = refactor_id acc e in
         let s = match e' with
-          | Var(Var_Constant, s) -> s
+          | Var(Constant, s) -> s
           | _ -> Log.fatal (Log.of_loc pos) "unknown right hand of uscope: %a"
               CodePrinter.format_identifier e'
         in
@@ -601,7 +601,7 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         let acc,e1' = refactor_id acc e1 in
         let acc,e2' = refactor_id acc e2 in
         let s = match e2' with
-          | Var(Var_Constant, s) -> s
+          | Var(Constant, s) -> s
           | _ -> Log.fatal (Log.of_loc pos) "unknown right hand of scope: %a"
               CodePrinter.format_identifier e2'
         in
@@ -690,7 +690,7 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
     | Ast.Id(Ast.ID_Lowercase,s, pos) as e -> 
         if is_special s then acc, (special_of_string pos s)
         else if StrSet.mem s acc.seen
-        then acc, EId (Var(Var_Local, s))
+        then acc, EId (Var(Local, s))
         else if s = "super"
         then 
           let acc, lhs = fresh acc in
@@ -1002,7 +1002,7 @@ and refactor_lhs acc e : (stmt acc * lhs * stmt acc) =
 
     | Ast.Id(Ast.ID_Lowercase,s, _pos)  -> 
         if is_literal s then Log.fatal Log.empty "lhs literal?"
-        else acc, LId (Var(Var_Local, s)), acc_emptyq acc
+        else acc, LId (Var(Local, s)), acc_emptyq acc
 
     | Ast.Id(ik,s, pos) -> 
         if is_literal s then Log.fatal Log.empty "lhs literal?"
@@ -1415,7 +1415,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
   | Ast.Binop((Ast.Id(Ast.ID_Lowercase,s, _pos'),
                  Ast.Op_OP_ASGN Ast.Op_AND, rhs, pos))
       when not (StrSet.mem s acc.seen || is_special s) ->
-      let id' = Var(Var_Local, s) in
+      let id' = Var(Local, s) in
       let acc = add_seen s acc in
         Log.err ~ctx:(Log.of_loc pos)
           "removing dead code: %a" Ast_ruby_printer.format_expr rhs;
@@ -1712,7 +1712,7 @@ and refactor_method_formal (acc:stmt acc) t _pos : stmt acc * method_formal_para
   | Ast.Formal_rest -> 
       let acc, id = fresh acc in
       let s = match id with
-        | LId (Var(Var_Local,s)) -> s
+        | LId (Var(Local,s)) -> s
         | _ -> assert false
       in
         acc, Formal_star(s)
@@ -1736,7 +1736,7 @@ and refactor_method_formal (acc:stmt acc) t _pos : stmt acc * method_formal_para
               let acc, v = fresh acc in
               let v' = match v with LId (id) -> id | _ -> failwith "Impossible" in
 
-              let formal_id = (Var(Var_Local, f)) in
+              let formal_id = (Var(Local, f)) in
               let acc = seen_lhs acc (LId formal_id) in
               let s'' = add_last_assign ~do_break:false formal_id s' in
               let blk = [
@@ -1759,7 +1759,7 @@ and refactor_block_formal acc t pos : stmt acc * block_formal_param = match t wi
   | Ast.Formal_rest -> 
       let acc, id = fresh acc in
       let s = match id with
-        | LId (Var(Var_Local,s)) -> s
+        | LId (Var(Local,s)) -> s
         | _ -> assert false
       in
         acc, Formal_star2(s)
