@@ -122,7 +122,9 @@ type 'a expr_ = [ identifier | ('a expr_,'a) literal_ ]
 
 (* a star_expr is either an expr or a (`Star of expr), i.e., no
    nested Star's are allowed *)
-type star_expr = [ star_expr expr_ | (star_expr expr_) star]
+type star_expr = 
+  | SE of star_expr expr_ 
+  | SStar of (star_expr expr_) star
 
 type expr = star_expr expr_
 
