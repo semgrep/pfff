@@ -1,5 +1,5 @@
 
-val refactor_ast : ?env:Utils.StrSet.t -> Ast.expr list -> Cfg.stmt
+val refactor_ast : ?env:Utils.StrSet.t -> Ast_ruby.expr list -> Cfg.stmt
   (** Convert an Ast into a Cfg *)
 
 val re_init : unit -> unit

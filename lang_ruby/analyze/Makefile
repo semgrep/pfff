@@ -5,7 +5,8 @@ TOP=../..
 TARGET=lib
 OPAMPKG=pfff-lang_ruby-analyze
 
-SRC= visitor.ml cfg.ml cfg_refactor.ml
+SRC= dQueue.ml log.ml \
+  visitor.ml cfg.ml cfg_printer.ml cfg_refactor.ml
 
 -include $(TOP)/Makefile.config
 

@@ -41,6 +41,7 @@ let format_delim_list delim format_f ppf = function
       List.iter (Format.fprintf ppf (delim ^^ "%a") format_f) tl
 
 let format_comma_list f ppf lst = format_delim_list ",@ " f ppf lst
+let format_break_list f ppf lst = format_delim_list "@," f ppf lst
 
 let format_to_string f e = 
   let buf = Buffer.create 128 in
@@ -48,6 +49,12 @@ let format_to_string f e =
     f ppf e;
     Format.pp_print_flush ppf ();
     Buffer.contents buf
+
+
+let format_option format_e ppf = function
+  | None -> ()
+  | Some e -> format_e ppf e
+
       
 let string_fold_left f acc s = 
   let len = String.length s in
@@ -83,3 +90,42 @@ let map_opt_preserve f = function
   | (Some x) as s -> 
       let x' = f x in 
         if x != x' then Some x' else s
+
+(* escapes specified character(s) by going over each character of the string *)
+type esc_mode = 
+    NonEsc of string
+  | Esc of string
+
+let escape_chars haystack esc_chars = 
+  let bslash = String.make 1 (Char.chr 92) in (* back slash *)
+  let rec fold_left f (a : esc_mode) (s : string) : esc_mode = match s with
+    | "" -> a
+    | s ->
+      let acc = (f a (String.sub s 0 1)) in
+        try
+          fold_left f acc (String.sub s 1 ((String.length s) - 1))
+        with Invalid_argument(_) -> acc
+  in
+  let result =
+    fold_left 
+      (fun (mode : esc_mode) (c : string) -> match mode with
+        | NonEsc(s) -> (* nonescaping mode *)
+            if List.mem (String.get c 0) esc_chars then NonEsc(s ^ bslash ^ c)
+            else if c = "\\" then Esc(s ^ c)
+            else NonEsc(s ^ c) 
+        | Esc(s) -> (* escaping mode; only one char is allowed anyway *)
+            NonEsc(s ^ c) 
+      ) (NonEsc("")) haystack
+  in
+    match result with
+      | NonEsc(s) -> s
+      | Esc(s) -> 
+          Printf.fprintf stderr 
+            "[WARN] string has inappropriate format (Esc) orig:%s res:%s\n" 
+            haystack s;
+          haystack (* but supposed to be an error *)
+
+let is_tmp_var s = 
+  let re = Str.regexp "__tmp_" in
+    if Str.string_match re s 0 then true
+    else s = "_"

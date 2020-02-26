@@ -38,7 +38,7 @@ let str_uop = function
   | Op_UPlus    -> "+"
   | Op_UTilde   -> "~"
 
-let rec str_binop = function
+let str_binop = function
   | Op_Plus     -> "+"
   | Op_Minus    -> "-"
   | Op_Times    -> "*"
@@ -105,7 +105,7 @@ module Code_F(PP : CfgPrinter) = struct
     | `Lit_FixNum i -> fprintf ppf "%d" i
     | `Lit_BigNum big -> 
         fprintf ppf "%s" (Big_int.string_of_big_int big)
-    | `Lit_Float(s,f) -> fprintf ppf "%s" s
+    | `Lit_Float(s,_f) -> fprintf ppf "%s" s
     | `Lit_String str -> fprintf ppf "%%{%s}" (escape_chars str ['{'; '}'])
     | `Lit_Atom str -> fprintf ppf ":\"%s\"" (escape_chars str ['"'])
     | `Lit_Regexp (str,m) -> 
@@ -135,7 +135,7 @@ module Code_F(PP : CfgPrinter) = struct
     | `Tuple(el) -> 
         fprintf ppf "@[%a@]" (format_comma_list PP.format_tuple_expr) el
     | #expr as e -> PP.format_expr ppf e
-    | `Star (`Tuple el as tup) -> fprintf ppf "*%a" PP.format_tuple_expr tup
+    | `Star (`Tuple _el as tup) -> fprintf ppf "*%a" PP.format_tuple_expr tup
     | `Star (#expr as e) -> fprintf ppf "*%a" PP.format_expr e
 
   let format_lhs ppf : lhs -> unit = function
@@ -164,7 +164,7 @@ module Code_F(PP : CfgPrinter) = struct
     format_comma_list PP.format_any_formal ppf l;
     fprintf ppf "@]"
 
-  let format_method_arg_expr ppf = function
+  let _format_method_arg_expr ppf = function
     | #star_expr as s -> PP.format_star_expr ppf s
     | `Proc e -> fprintf ppf "&%a" PP.format_expr e
 
@@ -238,33 +238,24 @@ module Code_F(PP : CfgPrinter) = struct
     | Assign(id,e) ->
         fprintf ppf "%a = %a" PP.format_lhs id PP.format_tuple_expr e
 
-    | Expression(e) -> 
-        begin match stmt.annotation with
-          | None -> PP.format_expr ppf e
-          | Some annot -> 
-              fprintf ppf "%a%a" Annotation.format_annotation annot 
-                PP.format_expr e
-        end  
+    | Expression(e) -> PP.format_expr ppf e
   
     | Module(lhs_o,m,body) ->
-        fprintf ppf "@[<v 0>%a@[<v 2>%amodule %a@,%a@]@,"
-          (format_option Annotation.format_annotation) stmt.annotation
+        fprintf ppf "@[<v 0>@[<v 2>%amodule %a@,%a@]@,"
 	  format_lhs_opt lhs_o
 	  PP.format_identifier m
 	  PP.format_stmt body;
         fprintf ppf "end@]"
           
     | Method(meth,formals,body) ->
-        fprintf ppf "@[<v 0>%a@[<v 2>def %a(@[%a@])@,%a@]@,"
-	  (format_option Annotation.format_annotation) stmt.annotation
+        fprintf ppf "@[<v 0>@[<v 2>def %a(@[%a@])@,%a@]@,"
 	  format_def_name meth
 	  format_formals (formals :> any_formal list)
 	  PP.format_stmt body;
         fprintf ppf "end@]"      
 
     | Class(lhs_o,ck,body) ->
-        fprintf ppf "@[<v 0>%a@[<v 2>%aclass %a@,%a@]@,"
-	  (format_option Annotation.format_annotation) stmt.annotation
+        fprintf ppf "@[<v 0>@[<v 2>%aclass %a@,%a@]@,"
 	  format_lhs_opt lhs_o
 	  PP.format_class_kind ck
 	  PP.format_stmt body;
@@ -319,7 +310,7 @@ module Code_F(PP : CfgPrinter) = struct
     | NominalClass(id,Some inh) -> 
         fprintf ppf "@[%a < %a@]" PP.format_identifier id PP.format_identifier inh
 
-  let format_comma_delim_stmt ppf stmt = match stmt.snode with
+  let _format_comma_delim_stmt ppf stmt = match stmt.snode with
     | Seq l -> format_comma_list PP.format_stmt ppf l
     | _ -> PP.format_stmt ppf stmt
         
@@ -351,7 +342,7 @@ module Code_F(PP : CfgPrinter) = struct
   let format_codeblock ppf (formals,body) =  
     match formals with
       | [] -> fprintf ppf "||@,  @[<v 0>%a@]" PP.format_stmt body
-      | lst-> fprintf ppf "|%a|@,  @[<v 0>%a@]" 
+      | _lst -> fprintf ppf "|%a|@,  @[<v 0>%a@]" 
 	  PP.format_formals (formals :> any_formal list)
 	    PP.format_stmt body
 
@@ -388,7 +379,7 @@ module Err_F(PP : CfgPrinter) = struct
     | i -> Super.format_identifier ppf i
 
   let format_stmt ppf stmt : unit = match stmt.snode with
-    | MethodCall(lhs_o, {mc_msg=`ID_MethodName "safe_require";mc_args=[s1;_]}) ->
+    | MethodCall(lhs_o, {mc_msg=`ID_MethodName "safe_require";mc_args=[s1;_]; _}) ->
         fprintf ppf "%arequire(%a)"
           format_lhs_opt lhs_o PP.format_star_expr s1
 
@@ -425,7 +416,7 @@ module Err_F(PP : CfgPrinter) = struct
    match formals with
        (* omit the empty block parameter list || *)
      | [] -> fprintf ppf "%a" format_stmt body
-     | lst-> Super.format_codeblock ppf cb
+     | _lst-> Super.format_codeblock ppf cb
 
 end
 
