@@ -45,6 +45,7 @@
 (* ------------------------------------------------------------------------- *)
 
 type pos = Lexing.position
+ (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Names *)
@@ -66,9 +67,11 @@ and var_kind =
   | Var_Global
   | Var_Constant
   | Var_Builtin
+ (* with tarzan *)
 
 (* convenience alias that is a subtype of identifier *)
 type builtin_or_global = var_kind (* [`Var_Builtin|`Var_Global] *) * string
+ (* with tarzan *)
 
 type msg_id = 
   | ID_UOperator of unary_op
@@ -96,6 +99,7 @@ type msg_id =
     | Op_XOR
     | Op_ARef
     | Op_ASet
+ (* with tarzan *)
 
 (*****************************************************************************)
 (* Expression *)
@@ -123,18 +127,21 @@ and literal =
 and star_expr = 
   | SE of expr
   | SStar of expr
+ (* with tarzan *)
 
 
 type tuple_expr = 
   | TTup of tuple_expr list
   | TE of expr
   | TStar of tuple_expr  (* again, no nested stars *)
+ (* with tarzan *)
 
 (* lhs is like a tuple expression, but no literals are allowed *)
 type lhs = 
   | LId of identifier
   | LTup of lhs list
   | LStar of identifier
+ (* with tarzan *)
 
 (*****************************************************************************)
 (* Statement (and CFG) *)
@@ -239,12 +246,14 @@ and def_name =
     | Formal_block_id of var_kind * string
     | Formal_star2 of string
     | Formal_tuple of block_formal_param list
+ (* with tarzan *)
 
 (*****************************************************************************)
 (* Toplevel *)
 (*****************************************************************************)
 
 type t = stmt
+ (* with tarzan *)
 
 (*****************************************************************************)
 (* Misc *)
@@ -253,6 +262,7 @@ type t = stmt
 type any_formal =
   | B of block_formal_param
   | M of method_formal_param
+ (* with tarzan *)
 
 let b_to_any x = B x
 let m_to_any x = M x
