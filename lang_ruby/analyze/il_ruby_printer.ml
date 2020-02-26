@@ -145,14 +145,17 @@ module Code_F(PP : CfgPrinter) = struct
         fprintf ppf "(@[%a@])" (format_comma_list PP.format_lhs) el
 
   let format_any_formal ppf (f:any_formal) =  match f with
-    | `Formal_meth_id(s)
-    | `Formal_block_id(_,s) -> pp_print_string ppf s
-    | `Formal_amp s -> fprintf ppf "&%s" s
-    | `Formal_star(s) -> fprintf ppf "*%s" s
-    | `Formal_tuple t -> PP.format_formal_tuple ppf (t :> any_formal list)
-    | `Formal_default(s,e) -> 
+    | M (`Formal_meth_id(s))
+    | B (`Formal_block_id(_,s)) -> pp_print_string ppf s
+    | M (`Formal_amp s) -> fprintf ppf "&%s" s
+    | M (`Formal_star(s)) -> fprintf ppf "*%s" s
+    | B (`Formal_tuple t) -> 
+          let t = List.map b_to_any t in
+          PP.format_formal_tuple ppf (t : any_formal list)
+    | M (`Formal_default(s,e)) -> 
         fprintf ppf "@[%s = @[%a@]@]"
 	  s PP.format_tuple_expr e
+    | B (`Formal_star s) -> fprintf ppf "*%s" s
 
   let format_formal_tuple ppf (l : any_formal list) = 
     fprintf ppf "(@[";
@@ -248,9 +251,10 @@ module Code_F(PP : CfgPrinter) = struct
         fprintf ppf "end@]"
           
     | Method(meth,formals,body) ->
+          let formals = formals |> List.map m_to_any in
         fprintf ppf "@[<v 0>@[<v 2>def %a(@[%a@])@,%a@]@,"
 	  format_def_name meth
-	  format_formals (formals :> any_formal list)
+	  format_formals (formals : any_formal list)
 	  PP.format_stmt body;
         fprintf ppf "end@]"      
 
@@ -262,8 +266,9 @@ module Code_F(PP : CfgPrinter) = struct
         fprintf ppf "end@]"      
 
     | For(formals,guard,body) ->
+          let formals = formals |> List.map b_to_any in
         fprintf ppf "@[<v 0>@[<v 2>for %a in %a@,%a@]@;end@]"
-	  PP.format_formals (formals :> any_formal list)
+	  PP.format_formals (formals : any_formal list)
 	  PP.format_expr guard
 	  PP.format_stmt body
 
@@ -340,6 +345,7 @@ module Code_F(PP : CfgPrinter) = struct
 	      base () PP.format_codeblock (formals,body)
 
   let format_codeblock ppf (formals,body) =  
+    let formals = formals |> List.map b_to_any in
     match formals with
       | [] -> fprintf ppf "||@,  @[<v 0>%a@]" PP.format_stmt body
       | _lst -> fprintf ppf "|%a|@,  @[<v 0>%a@]" 

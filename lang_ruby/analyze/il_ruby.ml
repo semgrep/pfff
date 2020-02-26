@@ -246,10 +246,16 @@ and def_name =
     | `Formal_tuple of block_formal_param list
   ]
 
-type any_formal = [block_formal_param|method_formal_param]
+type any_formal =
+  | B of block_formal_param
+  | M of method_formal_param
 
 (*****************************************************************************)
 (* Toplevel *)
 (*****************************************************************************)
 
 type t = stmt
+
+let b_to_any x = B x
+let m_to_any x = M x
+
