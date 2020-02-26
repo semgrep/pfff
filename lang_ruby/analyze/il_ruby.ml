@@ -132,92 +132,13 @@ and block_formal_param = [
       
 type any_formal = [block_formal_param|method_formal_param]
 
-(* Some type-fu to get mutually recursive types and the Set functor *)
-module rec StmtRec : 
-sig  
-
-  type stmt = private {
-    snode : stmt_node;
-    pos : pos;
-    sid : int;
-    mutable lexical_locals : Utils_ruby.StrSet.t;
-    mutable preds : StmtSet.t;
-    mutable succs : StmtSet.t;
-  }
-
-  and stmt_node = 
-  | Seq of stmt list
-  | Alias of alias_kind
-  | If of expr * stmt * stmt
-  | Case of case_block
-  | While of expr * stmt
-  | For of block_formal_param list * expr * stmt 
-  | MethodCall of lhs option * method_call
-  | Assign of lhs * tuple_expr
-  | Expression of expr
-  | Return of tuple_expr option
-  | Yield of lhs option * star_expr list
-  | Module  of lhs option * identifier * stmt
-  | Method of def_name * method_formal_param list * stmt
-  | Class of lhs option * class_kind * stmt
-  | ExnBlock of exn_block
-  | Begin of stmt 
-  | End of stmt 
-  | Defined of identifier * stmt
-  | Undef of msg_id list
-  | Break of tuple_expr option
-  | Next of tuple_expr option
-  | Redo
-  | Retry
-
-  and exn_block = {
-    exn_body : stmt;
-    exn_rescue : rescue_block list;
-    exn_else : stmt option;
-    exn_ensure : stmt option;
-  }
-      
-  and rescue_block = {
-    rescue_guards : rescue_guard list;
-    rescue_body : stmt;
-  }
-      
-  and case_block = {
-    case_guard : expr;
-    case_whens: (tuple_expr * stmt) list;
-    case_else: stmt option;
-  }
-      
-  and method_call = {
-    mc_target : expr option;
-    mc_msg : msg_id;
-    mc_args : star_expr list;
-    mc_cb : codeblock option;
-  }
-      
-  and codeblock = 
-    | CB_Arg of expr
-    | CB_Block of block_formal_param list * stmt
-
-  type t = stmt
-
-  val compare : t -> t -> int
-
-  val mkstmt : stmt_node -> pos -> stmt
-  val update_stmt : stmt -> stmt_node -> stmt
-  val fold_stmt : ('a -> stmt -> 'a) -> 'a -> stmt -> 'a
-  val compute_cfg : stmt -> unit
-  val update_locals : stmt -> Utils_ruby.StrSet.t -> unit
-
-end = struct
-
   type stmt = {
     snode : stmt_node;
     pos : pos;
     sid : int;
     mutable lexical_locals : Utils_ruby.StrSet.t;
-    mutable preds : StmtSet.t;
-    mutable succs : StmtSet.t;
+    mutable preds : stmt Set_.t;
+    mutable succs : stmt Set_.t;
   }
 
   and stmt_node = 
@@ -262,17 +183,19 @@ end = struct
     case_whens: (tuple_expr * stmt) list;
     case_else: stmt option;
   }
-    
+      
   and method_call = {
     mc_target : expr option;
     mc_msg : msg_id;
     mc_args : star_expr list;
     mc_cb : codeblock option;
   }
-
+      
   and codeblock = 
     | CB_Arg of expr
     | CB_Block of block_formal_param list * stmt
+
+
 
   type t = stmt
   let compare t1 t2 = compare t1.sid t2.sid
@@ -281,16 +204,16 @@ end = struct
     {snode = snode;
      pos = pos;
      lexical_locals = Utils_ruby.StrSet.empty;
-     preds=StmtSet.empty;
-     succs=StmtSet.empty;
+     preds=Set_.empty;
+     succs=Set_.empty;
      sid = uniq()}
 
   let update_stmt stmt snode = 
     {snode = snode;
      pos = stmt.pos;
      lexical_locals = stmt.lexical_locals;
-     preds=StmtSet.empty;
-     succs=StmtSet.empty;
+     preds=Set_.empty;
+     succs=Set_.empty;
      sid = uniq()}
 
   let update_locals stmt locals = stmt.lexical_locals <- locals
@@ -338,10 +261,10 @@ end = struct
     | Defined _ | Undef _ | Break _ | Redo | Retry | Next _ 
         -> f acc stmt
 
-  let rec compute_cfg_succ stmt (succs:StmtSet.t) = match stmt.snode with
+  let rec compute_cfg_succ stmt (succs:stmt Set_.t) = match stmt.snode with
     | Seq [] -> stmt.succs <- succs;
     | Seq ((hd::_) as l) -> 
-        stmt.succs <- StmtSet.add hd stmt.succs;
+        stmt.succs <- Set_.add hd stmt.succs;
         compute_cfg_succ_list succs l
 
     | MethodCall _ (* handle CB *)
@@ -362,58 +285,58 @@ end = struct
         begin match cb.case_else with
 	  | None -> ()
 	  | Some else' -> 
-	      stmt.succs <- StmtSet.add else' stmt.succs;
+	      stmt.succs <- Set_.add else' stmt.succs;
 	      compute_cfg_succ else' succs
         end
 
     | ExnBlock eb -> 
-        stmt.succs <- StmtSet.add eb.exn_body stmt.succs;
+        stmt.succs <- Set_.add eb.exn_body stmt.succs;
         let succs' =  match eb.exn_ensure, eb.exn_else with
 	  | None, None -> succs
 	  | Some x, None
 	  | None, Some x -> 
 	      compute_cfg_succ x succs;
-	      StmtSet.add x succs
+	      Set_.add x succs
 	  | Some x1, Some x2 ->
 	      compute_cfg_succ x1 succs;
 	      compute_cfg_succ x2 succs;
-	      StmtSet.add x1 (StmtSet.add x2 succs)
+	      Set_.add x1 (Set_.add x2 succs)
         in
         let succs' = 
 	  List.fold_left
 	    (fun acc resc ->
 	       compute_cfg_succ resc.rescue_body succs;
-	       StmtSet.add resc.rescue_body acc
+	       Set_.add resc.rescue_body acc
 	    ) succs' eb.exn_rescue
         in
 	  compute_cfg_succ eb.exn_body succs'
 	    
     | If(_g,t,f) -> 
-        stmt.succs <- StmtSet.add t (StmtSet.add f stmt.succs);
+        stmt.succs <- Set_.add t (Set_.add f stmt.succs);
         compute_cfg_succ t succs;
         compute_cfg_succ f succs
 
     | While(_g,body) ->
-        stmt.succs <- StmtSet.add body stmt.succs;
-        body.succs <- StmtSet.add stmt body.succs;
+        stmt.succs <- Set_.add body stmt.succs;
+        body.succs <- Set_.add stmt body.succs;
         compute_cfg_succ body succs
 
     | For(_params,_guard,body) ->
-        stmt.succs <- StmtSet.union (StmtSet.add body succs) stmt.succs;
-        body.succs <- StmtSet.union succs body.succs;
+        stmt.succs <- Set_.union (Set_.add body succs) stmt.succs;
+        body.succs <- Set_.union succs body.succs;
         compute_cfg_succ body succs
 
-    | Return _ -> stmt.succs <- StmtSet.empty
-    | Yield _ -> stmt.succs <- StmtSet.union succs stmt.succs
+    | Return _ -> stmt.succs <- Set_.empty
+    | Yield _ -> stmt.succs <- Set_.union succs stmt.succs
 
     | Module(_,_,body)
     | Class(_,_,body) -> 
-        stmt.succs <- StmtSet.add body stmt.succs;
+        stmt.succs <- Set_.add body stmt.succs;
         compute_cfg_succ body succs
 
     | Method(_,_,body) ->
         stmt.succs <- succs;
-        compute_cfg_succ body StmtSet.empty
+        compute_cfg_succ body Set_.empty
 	  
     | Undef _ | Break _ | Redo | Retry | Next _ -> 
         failwith "handle control op in successor computation"
@@ -421,40 +344,31 @@ end = struct
     (* These can't actually appear in a method *)
     | Begin(body)
     | End(body) -> 
-        stmt.succs <- StmtSet.add body stmt.succs;
+        stmt.succs <- Set_.add body stmt.succs;
         compute_cfg_succ body succs
 	  
   and compute_cfg_succ_list last = function
     | [] -> assert false
     | hd::[] -> compute_cfg_succ hd last
     | h1::((h2::_) as tl) -> 
-        compute_cfg_succ h1 (StmtSet.singleton h2);
+        compute_cfg_succ h1 (Set_.singleton h2);
         compute_cfg_succ_list last tl
 
   let preds_from_succs stmt = 
     fold_stmt 
       (fun () stmt ->
-         StmtSet.iter
+         Set_.iter
 	   (fun succ ->
-	      succ.preds <- StmtSet.add stmt succ.preds
+	      succ.preds <- Set_.add stmt succ.preds
 	   ) stmt.succs
       ) () stmt
       
   let compute_cfg stmt = 
     let () = fold_stmt 
       (fun () s -> 
-         s.preds <- StmtSet.empty; 
-         s.succs <- StmtSet.empty
+         s.preds <- Set_.empty; 
+         s.succs <- Set_.empty
       ) () stmt 
     in
-      compute_cfg_succ stmt StmtSet.empty;
+      compute_cfg_succ stmt Set_.empty;
       preds_from_succs stmt
-
-end 
-
-and StmtSet : Set.S with type elt = StmtRec.t 
-  = Set.Make(StmtRec)
-
-type 'a set = StmtSet.t
-
-include StmtRec
