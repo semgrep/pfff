@@ -313,16 +313,16 @@ let msg_id_from_string = function
   | s -> ID_MethodName s
 
 let rec tuple_of_lhs (lhs:lhs) pos : tuple_expr = match lhs with
-  | LId (#identifier as id) -> id
+  | LId (#identifier as id) -> TE (id)
   | LTup (`Tuple(l)) -> 
       let l' = List.map (fun x -> tuple_of_lhs x pos) l in
-        `Tuple(l')
-  | LStar (`Star (#identifier as id)) -> `Star id
+        TTup (`Tuple(l'))
+  | LStar (`Star (#identifier as id)) -> TStar (`Star (TE id))
 
 let make_tuple_option : tuple_expr list -> tuple_expr option = function
   | [] -> None
   | [x] -> Some x
-  | lst -> Some (`Tuple lst)
+  | lst -> Some (TTup (`Tuple lst))
 
 let make_assignable_msg (m : msg_id) : msg_id = match m with
   | ID_MethodName s -> ID_Assign s
@@ -394,7 +394,8 @@ let rec convert_to_return (add_f : tuple_expr -> stmt_node) acc stmt = match stm
 
   | For(_params,guard,_body) ->
       let q = DQueue.enqueue stmt DQueue.empty in
-      let ret = mkstmt (add_f (guard :> tuple_expr)) stmt.pos in
+      let guard' = TE guard in
+      let ret = mkstmt (add_f (guard' : tuple_expr)) stmt.pos in
         DQueue.enqueue ret q
 
   | If(g,t,f) ->
@@ -413,7 +414,8 @@ let rec convert_to_return (add_f : tuple_expr -> stmt_node) acc stmt = match stm
         DQueue.append q (convert_to_return add_f acc last)
 
   | Expression e ->
-      let ret = mkstmt (add_f (e :> tuple_expr)) stmt.pos in
+      let e' = TE e in
+      let ret = mkstmt (add_f (e' : tuple_expr)) stmt.pos in
         DQueue.enqueue ret DQueue.empty
       
   | Yield(None,args) ->
@@ -422,7 +424,8 @@ let rec convert_to_return (add_f : tuple_expr -> stmt_node) acc stmt = match stm
       let _, v = fresh (acc_emptyq acc) in
       let yield = C.yield ~lhs:v ~args stmt.pos in
       let v' = match v with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
-      let ret = mkstmt (add_f v') stmt.pos in
+      let v'' = TE v' in
+      let ret = mkstmt (add_f v'') stmt.pos in
       let q = DQueue.enqueue yield DQueue.empty in
         DQueue.enqueue ret q
 
@@ -432,7 +435,8 @@ let rec convert_to_return (add_f : tuple_expr -> stmt_node) acc stmt = match stm
       let _, v = fresh (acc_emptyq acc) in
       let meth = mkstmt (MethodCall(Some v,mc)) stmt.pos in
       let v' = match v with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
-      let ret = mkstmt (add_f v') stmt.pos in
+      let v'' = TE v' in
+      let ret = mkstmt (add_f v'') stmt.pos in
       let q = DQueue.enqueue meth DQueue.empty in
         DQueue.enqueue ret q
 
@@ -443,8 +447,9 @@ let rec convert_to_return (add_f : tuple_expr -> stmt_node) acc stmt = match stm
       let q = DQueue.enqueue stmt DQueue.empty in
         DQueue.enqueue ret q
 
-  | Defined(id,_s) ->
-      let ret = mkstmt (add_f (id :> tuple_expr)) stmt.pos in
+  | Defined(#identifier as id,_s) ->
+      let id' = TE id in
+      let ret = mkstmt (add_f (id' : tuple_expr)) stmt.pos in
       let q = DQueue.enqueue stmt DQueue.empty in
         DQueue.enqueue ret q
 
@@ -458,7 +463,7 @@ let rec convert_to_return (add_f : tuple_expr -> stmt_node) acc stmt = match stm
   | Class _
   | Alias _ -> 
       let q = DQueue.enqueue stmt DQueue.empty in
-      let ret = mkstmt (add_f `ID_Nil) stmt.pos in
+      let ret = mkstmt (add_f (TE `ID_Nil)) stmt.pos in
         DQueue.enqueue ret q
 
   | Begin _ | End _ -> 
@@ -488,7 +493,7 @@ let proc_transform block = match block with
 
 let add_final_return return_f acc pos =
   if DQueue.is_empty acc.q
-  then acc_enqueue (mkstmt (return_f `ID_Nil) pos) acc
+  then acc_enqueue (mkstmt (return_f (TE `ID_Nil)) pos) acc
   else 
     let q,last = DQueue.pop_back acc.q in
     let last_q = convert_to_return return_f acc last in
@@ -572,8 +577,8 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
     | Ast.Unary((Ast.Op_UBang | Ast.Op_UNot),e,pos) ->
         let acc,v = fresh acc in
       let v' = match v with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
-        let t = C.assign v `ID_True pos in
-        let f = C.assign v `ID_False pos in
+        let t = C.assign v (TE `ID_True) pos in
+        let f = C.assign v (TE `ID_False) pos in
         let acc,e' = refactor_expr acc e in
         let acc = acc_enqueue (C.if_s e' ~t:f ~f:t pos) acc in
           acc, v'
@@ -609,8 +614,8 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
       let t2' = match t2 with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
 
         let acc = refactor_binop_into_mc acc (Some t1) e1 Ast.Op_EQ e2 pos in
-        let t = C.assign t2 `ID_True pos in
-        let f = C.assign t2 `ID_False pos in
+        let t = C.assign t2 (TE `ID_True) pos in
+        let f = C.assign t2 (TE `ID_False) pos in
         let acc = acc_enqueue (C.if_s t1' ~t:f ~f:t pos) acc in
           acc, t2'
 
@@ -620,8 +625,8 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         let acc, t2 = fresh acc in
       let t2' = match t2 with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
         let acc = refactor_binop_into_mc acc (Some t1) e1 Ast.Op_MATCH e2 pos in
-        let t = C.assign t2 `ID_True pos in
-        let f = C.assign t2 `ID_False pos in
+        let t = C.assign t2 (TE `ID_True) pos in
+        let f = C.assign t2 (TE `ID_False) pos in
         let acc = acc_enqueue (C.if_s t1' ~t:f ~f:t pos) acc in
           acc, t2'
 
@@ -917,7 +922,7 @@ and refactor_and_if (acc:stmt acc) l r pos : stmt acc * expr =
   let r_acc = refactor_stmt (acc_emptyq acc) r in
   let acc, v = fresh acc in
       let v' = match v with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
-  let vl = C.assign v l' pos in
+  let vl = C.assign v (TE l') pos in
   let v_acc = add_final_return (fun t -> Assign(v,t)) r_acc pos in
   let vr = C.seq (DQueue.to_list v_acc.q) pos in
     (* the && operator returns the value of the last expression evaluated, 
@@ -935,7 +940,7 @@ and refactor_or_if acc l r pos =
        inside the true branch of the If *)
   let acc, v = fresh acc in
       let v' = match v with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
-  let vl = C.assign v l' pos in
+  let vl = C.assign v (TE l') pos in
   let return_f t = Assign(v,t) in
   let r_acc = refactor_stmt (acc_emptyq acc) r in
   let v_acc = add_final_return return_f r_acc pos in
@@ -951,18 +956,19 @@ and refactor_tuple_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.tuple
   match e with
     | Ast.Tuple(l,_pos) -> 
         let acc,l' = refactor_list refactor_tuple_expr (acc,DQueue.empty) l in
-          acc, `Tuple((DQueue.to_list l'))
+          acc, TTup (`Tuple((DQueue.to_list l')))
 
     | Ast.Unary(Ast.Op_UStar, e, _pos) -> 
         let acc, e' = refactor_tuple_expr acc e in
           begin match e' with
-            | (#expr | #tuple) as e' -> acc, `Star e'
-            | #star -> 
+            | (TE #expr | TTup #tuple) as e' -> acc, TStar (`Star e')
+            | TStar #star -> 
                 Log.fatal Log.empty "refactor_tuple_expr: nested / double star expression"
           end
     | _ -> 
         let acc, expr = refactor_expr acc e in
-        let expr = (expr :> tuple_expr) in
+        let expr' = TE expr in
+        let expr = (expr' : tuple_expr) in
           acc, expr
 
 and refactor_lhs acc e : (stmt acc * lhs * stmt acc) = 
@@ -1088,14 +1094,14 @@ and add_last_assign ~do_break (id:identifier) (s : stmt) : stmt =
   let lhs = (LId id : lhs) in match s.snode with
     | Seq(lst) -> begin match List.rev lst with
           (* empty evaluates to nil *)
-        | [] -> C.assign lhs `ID_Nil s.pos
+        | [] -> C.assign lhs (TE `ID_Nil) s.pos
         | last::rest ->
             let last' = add_last_assign ~do_break id last in
               C.seq (List.rev (last'::rest)) s.pos
       end
 
     | Expression(e) -> (* x becomes id = x *)
-        C.assign lhs e s.pos
+        C.assign lhs (TE e) s.pos
           
     | Assign(e1,_) -> (* id2 = e becomes id2 = e; id = id2 *)
         let new_s = C.assign lhs (tuple_of_lhs e1 s.pos) s.pos in
@@ -1118,16 +1124,16 @@ and add_last_assign ~do_break (id:identifier) (s : stmt) : stmt =
     | While(g, body) ->
         let body' = add_last_assign ~do_break:true id body in
           (* the while body may never execute, so put a nil assign first *)
-        let nilassgn = C.assign lhs `ID_Nil s.pos in
+        let nilassgn = C.assign lhs (TE `ID_Nil) s.pos in
           C.seq [nilassgn;(C.while_s g body' s.pos)] s.pos
 
     | For(flist,g,body) -> 
-        let new_s = C.assign (LId id) g s.pos in
+        let new_s = C.assign (LId id) (TE g) s.pos in
         let body' = add_last_assign ~do_break:true id body in
           C.seq [new_s;C.for_s flist (id:>expr) body' s.pos] s.pos
 
-    | Defined(id2,_) -> 
-        let new_s = C.assign (LId id) id2 s.pos in
+    | Defined(#identifier as id2,_) -> 
+        let new_s = C.assign (LId id) (TE id2) s.pos in
           C.seq [s;new_s] s.pos
             
     | ExnBlock(exn) -> 
@@ -1158,7 +1164,7 @@ and add_last_assign ~do_break (id:identifier) (s : stmt) : stmt =
     | Return _ -> s (* no need to assign the result of a return statement *)
 
     | Break o when do_break ->
-        let rhs = default_opt `ID_Nil o in
+        let rhs = default_opt (TE `ID_Nil) o in
           C.seq [C.assign (LId id) rhs s.pos;C.break s.pos] s.pos
 
     | Break _ | Redo | Retry | Next _ -> s (* control jumps elsewhere *)
@@ -1170,7 +1176,7 @@ and add_last_assign ~do_break (id:identifier) (s : stmt) : stmt =
     | Alias _
     | Begin _
     | End _ -> 
-        let new_s = C.assign lhs `ID_Nil s.pos in
+        let new_s = C.assign lhs (TE `ID_Nil) s.pos in
           C.seq [s;new_s] s.pos
 
 and refactor_method_call_assign (acc:stmt acc) (lhs : lhs option) = function
@@ -1411,7 +1417,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
       let acc = add_seen s acc in
         Log.err ~ctx:(Log.of_loc pos)
           "removing dead code: %a" Ast_ruby_printer.format_expr rhs;
-        acc_enqueue (C.assign (LId id') `ID_Nil pos) acc
+        acc_enqueue (C.assign (LId id') (TE `ID_Nil) pos) acc
 
   (* special case for 'x ||= e' when this is the first assignment to x.
      In this case, x is always set to e (the || can never fail) *) 
@@ -1719,7 +1725,9 @@ and refactor_method_formal (acc:stmt acc) t _pos : stmt acc * method_formal_para
       let s' = C.seq (DQueue.to_list default_acc.q) pos
       in
         match s'.snode with
-          | Expression e -> acc, Formal_default(f, (e :> tuple_expr))
+          | Expression e -> 
+            let e' = TE e in
+            acc, Formal_default(f, (e' : tuple_expr))
           | _ -> 
               let def = `Lit_Atom (sprintf "__rat_default_%d" (fresh_formal())) in
               let eql = ID_MethodName "eql?" in
@@ -1736,7 +1744,8 @@ and refactor_method_formal (acc:stmt acc) t _pos : stmt acc * method_formal_para
               in
               let pre = C.seq blk pos in
               let acc = acc_enqueue pre acc in
-                acc, Formal_default (f, def)
+              let def' = TE def in
+                acc, Formal_default (f, def')
 
 and refactor_block_formal acc t pos : stmt acc * block_formal_param = match t with
   | Ast.Formal_id Ast.Id(ik,str,pos) -> 
@@ -1779,7 +1788,7 @@ and refactor_case acc case pos =
          let g' = match DQueue.to_list glist with
            | [] -> assert false
            | [x] -> x
-           | lst -> `Tuple lst
+           | lst -> TTup (`Tuple lst)
          in
          let body_acc = refactor_stmt_list (acc_emptyq acc) body in
          let body' = C.seq (DQueue.to_list body_acc.q) pos in

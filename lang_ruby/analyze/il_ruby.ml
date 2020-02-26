@@ -98,7 +98,6 @@ type msg_id =
     | Op_ARef
     | Op_ASet
 
-
 (*****************************************************************************)
 (* Expression *)
 (*****************************************************************************)
@@ -110,11 +109,13 @@ type ('expr,'star_expr) literal_ = [
   | `Lit_BigNum of Big_int.big_int
   | `Lit_Float of string * float
   | `Lit_String of string
+
   | `Lit_Atom of string
   | `Lit_Regexp of string * string
+  | `Lit_Range of bool * 'expr * 'expr
+
   | `Lit_Array of 'star_expr list
   | `Lit_Hash of ('expr * 'expr) list
-  | `Lit_Range of bool * 'expr * 'expr
 ]
 
 type 'a expr_ = [ identifier | ('a expr_,'a) literal_ ]
@@ -130,11 +131,10 @@ type expr = star_expr expr_
 
 type 'a tuple = [`Tuple of 'a list]
 
-type tuple_expr = [
-  | tuple_expr tuple
-  | expr
-  | [tuple_expr tuple | expr] star  (* again, no nested stars *)
-]
+type tuple_expr = 
+  | TTup of tuple_expr tuple
+  | TE of expr
+  | TStar of tuple_expr star  (* again, no nested stars *)
 
 (* lhs is like a tuple expression, but no literals are allowed *)
 type lhs = 

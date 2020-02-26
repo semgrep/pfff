@@ -598,18 +598,19 @@ and visit_star_expr vtor star = match star with
 
 let rec visit_tuple vtor tup = 
   visit vtor#visit_tuple tup begin function
-    | #expr as e -> (visit_expr vtor e :> tuple_expr)
-    | `Tuple lst ->
-	let lst' = map_preserve List.map (visit_tuple vtor) lst in
+    | TE (#expr as e) -> TE (visit_expr vtor e : expr)
+    | TTup (`Tuple lst) ->
+  	  let lst' = map_preserve List.map (visit_tuple vtor) lst in
 	  if lst == lst' then tup
-	  else `Tuple lst'
-    | `Star (#expr as e) -> 
-	let e' = visit_expr vtor e in
-	  if e==e' then tup else (`Star e' :> tuple_expr)
-    | `Star (`Tuple lst) -> 
-	let lst' = map_preserve List.map (visit_tuple vtor) lst in
+	  else TTup (`Tuple lst')
+    | TStar (`Star (TE (#expr as e))) -> 
+	  let e' = visit_expr vtor e in
+	  if e==e' then tup else (TStar (`Star (TE e')) : tuple_expr)
+    | TStar (`Star (TTup (`Tuple lst))) -> 
+	  let lst' = map_preserve List.map (visit_tuple vtor) lst in
 	  if lst == lst' then tup
-	  else `Star(`Tuple lst')
+	  else TStar (`Star(TTup (`Tuple lst')))
+    | _ -> failwith "Impossible" (* TStar (`Star (TStar _) *)
   end
 
 

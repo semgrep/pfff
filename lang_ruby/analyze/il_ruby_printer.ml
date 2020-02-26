@@ -132,11 +132,12 @@ module Code_F(PP : CfgPrinter) = struct
     | `Star e -> fprintf ppf "*%a" PP.format_expr e (* XXX *)
 
   let format_tuple_expr ppf : tuple_expr -> unit = function
-    | `Tuple(el) -> 
+    | TTup (`Tuple(el)) -> 
         fprintf ppf "@[%a@]" (format_comma_list PP.format_tuple_expr) el
-    | #expr as e -> PP.format_expr ppf e
-    | `Star (`Tuple _el as tup) -> fprintf ppf "*%a" PP.format_tuple_expr tup
-    | `Star (#expr as e) -> fprintf ppf "*%a" PP.format_expr e
+    | TE (#expr as e) -> PP.format_expr ppf e
+    | TStar (`Star (TTup (`Tuple _el) as tup)) -> fprintf ppf "*%a" PP.format_tuple_expr tup
+    | TStar (`Star (TE (#expr as e))) -> fprintf ppf "*%a" PP.format_expr e
+    | TStar (`Star (TStar _)) -> failwith "Impossible"
 
   let format_lhs ppf : lhs -> unit = function
     | LId (#identifier as id) -> PP.format_identifier ppf id
