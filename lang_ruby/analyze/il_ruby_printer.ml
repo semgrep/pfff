@@ -90,11 +90,11 @@ module Code_F(PP : CfgPrinter) = struct
     | i -> PP.format_identifier ppf i
 
   let format_msg_id ppf : msg_id -> unit = function
-    | `ID_UOperator uop -> PP.format_unary_op ppf uop
-    | `ID_Operator binop -> PP.format_binary_op ppf binop
-    | `ID_MethodName(s) -> pp_print_string ppf s
-    | `ID_Assign(s) -> pp_print_string ppf (s ^ "=")
-    | `ID_Super -> pp_print_string ppf "super"
+    | ID_UOperator uop -> PP.format_unary_op ppf uop
+    | ID_Operator binop -> PP.format_binary_op ppf binop
+    | ID_MethodName(s) -> pp_print_string ppf s
+    | ID_Assign(s) -> pp_print_string ppf (s ^ "=")
+    | ID_Super -> pp_print_string ppf "super"
 
   let format_def_name ppf = function
     | Instance_Method e -> PP.format_msg_id ppf e
@@ -379,7 +379,7 @@ module Err_F(PP : CfgPrinter) = struct
     | i -> Super.format_identifier ppf i
 
   let format_stmt ppf stmt : unit = match stmt.snode with
-    | MethodCall(lhs_o, {mc_msg=`ID_MethodName "safe_require";mc_args=[s1;_]; _}) ->
+    | MethodCall(lhs_o, {mc_msg=ID_MethodName "safe_require";mc_args=[s1;_]; _}) ->
         fprintf ppf "%arequire(%a)"
           format_lhs_opt lhs_o PP.format_star_expr s1
 

@@ -115,7 +115,7 @@ let or_opt acc fin lang once s pos =
     match fin with
       | Some e ->
           let acc, lhs = fresh acc in
-          let call = C.mcall ~lhs ~targ:e (`ID_Operator(Op_BOr)) [v] pos in
+          let call = C.mcall ~lhs ~targ:e (ID_Operator(Op_BOr)) [v] pos in
           let acc = acc_enqueue call acc in
             acc, Some lhs, lang, once
       | None ->
@@ -281,32 +281,32 @@ let refactor_binop pos : Ast.binary_op -> binary_op = function
         (H.str_binop bop)
 
 let msg_id_from_string = function
-  | "+" -> `ID_Operator Op_Plus
-  | "-" -> `ID_Operator Op_Minus    
-  | "*" -> `ID_Operator Op_Times    
-  | "/" -> `ID_Operator Op_Div      
-  | "%" -> `ID_Operator Op_Rem      
-  | "<=>" -> `ID_Operator Op_CMP          
-  | "==" -> `ID_Operator Op_EQ          
-  | "===" -> `ID_Operator Op_EQQ          
-  | ">=" -> `ID_Operator Op_GEQ          
-  | "<=" -> `ID_Operator Op_LEQ          
-  | "<" -> `ID_Operator Op_LT          
-  | ">" -> `ID_Operator Op_GT          
-  | "&" -> `ID_Operator Op_BAnd     
-  | "|" -> `ID_Operator Op_BOr      
-  | "=~" -> `ID_Operator Op_Match
-  | "^" -> `ID_Operator Op_XOR      
-  | "**" -> `ID_Operator Op_Pow
-  | "[]" -> `ID_Operator Op_ARef
-  | "[]=" -> `ID_Operator Op_ASet
-  | "<<" -> `ID_Operator Op_LShift
-  | ">>" -> `ID_Operator Op_RShift
+  | "+" -> ID_Operator Op_Plus
+  | "-" -> ID_Operator Op_Minus    
+  | "*" -> ID_Operator Op_Times    
+  | "/" -> ID_Operator Op_Div      
+  | "%" -> ID_Operator Op_Rem      
+  | "<=>" -> ID_Operator Op_CMP          
+  | "==" -> ID_Operator Op_EQ          
+  | "===" -> ID_Operator Op_EQQ          
+  | ">=" -> ID_Operator Op_GEQ          
+  | "<=" -> ID_Operator Op_LEQ          
+  | "<" -> ID_Operator Op_LT          
+  | ">" -> ID_Operator Op_GT          
+  | "&" -> ID_Operator Op_BAnd     
+  | "|" -> ID_Operator Op_BOr      
+  | "=~" -> ID_Operator Op_Match
+  | "^" -> ID_Operator Op_XOR      
+  | "**" -> ID_Operator Op_Pow
+  | "[]" -> ID_Operator Op_ARef
+  | "[]=" -> ID_Operator Op_ASet
+  | "<<" -> ID_Operator Op_LShift
+  | ">>" -> ID_Operator Op_RShift
 
-  | "-@" -> `ID_UOperator Op_UMinus
-  | "+@" -> `ID_UOperator Op_UPlus
-  | "~@" | "~" -> `ID_UOperator Op_UTilde
-  | s -> `ID_MethodName s
+  | "-@" -> ID_UOperator Op_UMinus
+  | "+@" -> ID_UOperator Op_UPlus
+  | "~@" | "~" -> ID_UOperator Op_UTilde
+  | s -> ID_MethodName s
 
 let rec tuple_of_lhs (lhs:lhs) pos : tuple_expr = match lhs with
   | #identifier as id -> id
@@ -321,19 +321,19 @@ let make_tuple_option : tuple_expr list -> tuple_expr option = function
   | lst -> Some (`Tuple lst)
 
 let make_assignable_msg (m : msg_id) : msg_id = match m with
-  | `ID_MethodName s -> `ID_Assign s
+  | ID_MethodName s -> ID_Assign s
 
-  | `ID_Assign _ ->
+  | ID_Assign _ ->
       (*Log.fatal Log.empty*) 
     failwith "make_assignable_msg: already assignable????"
 
-  | `ID_Operator Op_ARef -> `ID_Operator Op_ASet
+  | ID_Operator Op_ARef -> ID_Operator Op_ASet
 
-  | `ID_Operator _
-  | `ID_UOperator _ -> 
+  | ID_Operator _
+  | ID_UOperator _ -> 
       Log.fatal Log.empty "make_assignable_msg: non [] operator????"
 
-  | `ID_Super -> Log.fatal Log.empty "make_assignable_msg: super??"
+  | ID_Super -> Log.fatal Log.empty "make_assignable_msg: super??"
         
 
 let _replace_last f = function
@@ -571,7 +571,7 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
 
     | Ast.Unary(uop,e, pos) -> 
         let acc,e' = refactor_expr acc e in
-        let msg = `ID_UOperator (refactor_uop pos uop) in
+        let msg = ID_UOperator (refactor_uop pos uop) in
           make_call_expr acc (Some e') msg [] None pos
 
     (* A::m is really a method call *)
@@ -717,9 +717,9 @@ and refactor_defined acc lhs args pos =
 and refactor_super acc lhs pos = match acc.super_args with
   | None -> Log.fatal (Log.of_loc pos) "super called outside of method"
   | Some(args,None) ->
-      acc_enqueue (C.mcall ?lhs `ID_Super args pos) acc
+      acc_enqueue (C.mcall ?lhs ID_Super args pos) acc
   | Some(args,Some e) ->
-      acc_enqueue (C.mcall ?lhs `ID_Super args ~cb:(CB_Arg e) pos) acc
+      acc_enqueue (C.mcall ?lhs ID_Super args ~cb:(CB_Arg e) pos) acc
 
 (* turn /foo#{bar}/mods into a call to Regexp.new *)
 and construct_explicit_regexp acc pos re_interp mods = 
@@ -741,7 +741,7 @@ and construct_explicit_regexp acc pos re_interp mods =
     | Some v -> str::v::new_opts
     in
     let call = C.mcall ~lhs ~targ:(`ID_UScope "Regexp")
-      (`ID_MethodName "new") new_opts pos
+      (ID_MethodName "new") new_opts pos
     in      
       acc_enqueue call acc
   in
@@ -765,14 +765,14 @@ and refactor_interp_string acc istr pos =
     | Ast.StrChars s -> acc, `Lit_String s
     | Ast.StrExpr ast_e -> 
         let acc, e = refactor_expr acc ast_e in
-          make_call_expr acc (Some e) (`ID_MethodName "to_s") [] None pos
+          make_call_expr acc (Some e) (ID_MethodName "to_s") [] None pos
   in
   let rec helper acc expr_acc l = match l with
     | [] -> acc, expr_acc
     | hd::tl -> 
         let acc, e = refactor_contents acc hd in
         let acc, expr_acc = 
-          make_call_expr acc (Some expr_acc) (`ID_Operator Op_Plus) [e] None pos 
+          make_call_expr acc (Some expr_acc) (ID_Operator Op_Plus) [e] None pos 
         in
           helper acc expr_acc tl
   in
@@ -795,12 +795,12 @@ and refactor_lit acc (l : Ast.lit_kind) pos : stmt acc * expr = match l with
       refactor_interp_string acc s pos
   | Ast.String(Ast.Tick s) -> 
       let acc, e = refactor_interp_string acc s pos in
-        make_call_expr acc None (`ID_MethodName "__backtick") [e] None pos
+        make_call_expr acc None (ID_MethodName "__backtick") [e] None pos
 
   | Ast.Atom [Ast.StrChars s] -> acc, `Lit_Atom s
   | Ast.Atom istr -> 
       let acc, str = refactor_interp_string acc istr pos in
-        make_call_expr acc (Some str) (`ID_MethodName "to_sym") [] None pos
+        make_call_expr acc (Some str) (ID_MethodName "to_sym") [] None pos
 
   | Ast.Regexp([Ast.StrChars s1],s2) -> 
       let s1' = escape_regexp s1 in
@@ -878,7 +878,7 @@ and refactor_hash_list acc l pos =
 and refactor_binop_into_mc acc res e1 bop e2 pos = 
   let acc,e1' = refactor_expr acc e1 in
   let acc,e2' = refactor_method_arg_no_cb acc e2 in 
-  let call = C.mcall ?lhs:res ~targ:e1' (`ID_Operator (refactor_binop pos bop))
+  let call = C.mcall ?lhs:res ~targ:e1' (ID_Operator (refactor_binop pos bop))
     [e2'] pos
   in acc_enqueue call acc
 
@@ -1004,20 +1004,20 @@ and refactor_id (acc:stmt acc) e : stmt acc * identifier =
           CodePrinter.format_literal l
 
 and refactor_msg (acc:stmt acc) msg : stmt acc * msg_id = match msg with
-  | Ast.Operator(bop, pos) ->  acc, `ID_Operator (refactor_binop pos bop)
-  | Ast.UOperator(uop, pos) -> acc, `ID_UOperator (refactor_uop pos uop)
+  | Ast.Operator(bop, pos) ->  acc, ID_Operator (refactor_binop pos bop)
+  | Ast.UOperator(uop, pos) -> acc, ID_UOperator (refactor_uop pos uop)
 
   | Ast.Id((Ast.ID_Lowercase | Ast.ID_Uppercase ), s, _pos) -> 
-      acc, `ID_MethodName s
+      acc, ID_MethodName s
 
   | Ast.Id(Ast.ID_Assign(Ast.ID_Lowercase),s, _pos)
   | Ast.Id(Ast.ID_Assign(Ast.ID_Uppercase),s, _pos) -> 
-      acc, `ID_Assign s
+      acc, ID_Assign s
 
   | Ast.Literal((Ast.Nil | Ast.Self | Ast.True | Ast.False) as lk
                     ,_pos) ->
       let lks = format_to_string Ast_ruby_printer.format_lit_kind lk in
-        acc, `ID_MethodName lks
+        acc, ID_MethodName lks
   | e ->
       Log.fatal (Log.of_loc (H.pos_of e)) "refactor_msg unknown msg: %s\n"
         (Ast_ruby_printer.string_of_expr e)
@@ -1173,7 +1173,7 @@ and refactor_method_call_assign (acc:stmt acc) (lhs : lhs option) = function
                      [], Some cb, pos) ->
       let cb' = refactor_codeblock acc cb in
       let cb' = proc_transform cb' in
-      let call = C.mcall ?lhs (`ID_MethodName m) [] ~cb:cb' pos in
+      let call = C.mcall ?lhs (ID_MethodName m) [] ~cb:cb' pos in
         acc_enqueue call acc
 
   | Ast.Call(Ast.Id(Ast.ID_Lowercase,"define_method",_),
@@ -1202,7 +1202,7 @@ and refactor_method_call_assign (acc:stmt acc) (lhs : lhs option) = function
       in
       let acc,msg' = match msg with
         | Ast.Id(Ast.ID_Lowercase, "super", _) -> 
-            acc, `ID_Super
+            acc, ID_Super
         | _ -> refactor_msg acc msg 
       in
       let acc,args',cb' = refactor_method_args_and_cb acc args cb in
@@ -1233,7 +1233,7 @@ and refactor_assignment (acc: stmt acc) lhs rhs pos = match lhs,rhs with
           let rhs_ary = `Lit_Array [rhs_arg] in
           let acc, tmp = fresh acc in
           let call = C.mcall ~lhs:tmp ~targ:lhs_ary
-            (`ID_Operator Op_Plus) [rhs_ary] pos 
+            (ID_Operator Op_Plus) [rhs_ary] pos 
           in
             (acc_enqueue call acc), [`Star tmp]
         end
@@ -1241,7 +1241,7 @@ and refactor_assignment (acc: stmt acc) lhs rhs pos = match lhs,rhs with
           (* lhs has no *-exprs, so safe to just concat args *)
           acc, DQueue.to_list (DQueue.enqueue rhs_arg lhs_args)
       in
-      let call = C.mcall ~targ:targ' (`ID_Operator Op_ASet) args pos in
+      let call = C.mcall ~targ:targ' (ID_Operator Op_ASet) args pos in
         acc_enqueue call acc
 
   (* handle x.y = e specially to avoid duping the rhs into a temp *)
@@ -1536,7 +1536,7 @@ and refactor_method_name (acc:stmt acc) e : stmt acc * def_name = match e with
         acc, (Singleton_Method (targ',msg'))
 
   | Ast.Literal(Ast.Atom [Ast.StrChars s], _pos) -> 
-      acc, (Instance_Method (`ID_MethodName s))
+      acc, (Instance_Method (ID_MethodName s))
 
   | Ast.Literal(Ast.Atom _, pos) -> 
       Log.fatal (Log.of_loc pos) "interpreted atom string in method name?"
@@ -1684,7 +1684,7 @@ and refactor_method_formal (acc:stmt acc) t _pos : stmt acc * method_formal_para
           | Expression e -> acc, `Formal_default(f, (e :> tuple_expr))
           | _ -> 
               let def = `Lit_Atom (sprintf "__rat_default_%d" (fresh_formal())) in
-              let eql = `ID_MethodName "eql?" in
+              let eql = ID_MethodName "eql?" in
               let acc, v = fresh acc in
               let formal_id = `ID_Var(Var_Local, f) in
               let acc = seen_lhs acc formal_id in

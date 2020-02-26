@@ -38,13 +38,13 @@ type identifier = [
   | `ID_False
 ]
 
-type msg_id = [
-  | `ID_UOperator of unary_op
-  | `ID_Operator of binary_op
-  | `ID_MethodName of string
-  | `ID_Assign of string
-  | `ID_Super
-]
+type msg_id = 
+  | ID_UOperator of unary_op
+  | ID_Operator of binary_op
+  | ID_MethodName of string
+  | ID_Assign of string
+  | ID_Super
+
 
 (* convenience alias that is a subtype of identifier *)
 type builtin_or_global = [`ID_Var of var_kind (* [`Var_Builtin|`Var_Global] *) * string]

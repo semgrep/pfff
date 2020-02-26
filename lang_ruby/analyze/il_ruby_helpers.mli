@@ -106,7 +106,7 @@ module Abbr : sig
 
   val alias_g : link:[<builtin_or_global] -> orig:[<builtin_or_global] -> pos -> stmt
 
-  val alias_m : link:[<msg_id] -> orig:[<msg_id] -> pos -> stmt
+  val alias_m : link:msg_id -> orig:msg_id -> pos -> stmt
 
   val if_s : [<expr] -> t:stmt -> f:stmt -> pos -> stmt
 
@@ -130,7 +130,7 @@ module Abbr : sig
   val super : ?lhs:[<lhs] -> [<star_expr] list -> ?cb:codeblock -> pos -> stmt
 
   val mcall : ?lhs:[<lhs] -> ?targ:[<expr] ->
-    [<msg_id] -> [<star_expr] list -> ?cb:codeblock -> pos -> stmt
+    msg_id -> [<star_expr] list -> ?cb:codeblock -> pos -> stmt
 
   val assign : [<lhs] -> [<tuple_expr] -> pos -> stmt
 
@@ -173,7 +173,7 @@ module Abbr : sig
     -> pos -> stmt
 
   val defined : [<identifier] -> stmt -> pos -> stmt
-  val undef : [<msg_id] list -> pos -> stmt
+  val undef : msg_id list -> pos -> stmt
   val break : ?v:[<tuple_expr] -> pos -> stmt
   val next : ?v:[<tuple_expr] -> pos -> stmt
   val redo : pos -> stmt
