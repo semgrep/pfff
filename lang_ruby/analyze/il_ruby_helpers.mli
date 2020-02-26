@@ -2,6 +2,17 @@ open Utils_ruby
 
 open Il_ruby
 
+val compare : t -> t -> int
+  
+val mkstmt : stmt_node -> pos -> stmt
+
+val update_stmt : stmt -> stmt_node -> stmt
+
+ 
+val fold_stmt : ('a -> stmt -> 'a) -> 'a -> stmt -> 'a
+val compute_cfg : stmt -> unit
+
+
 val empty_stmt : unit -> stmt
 
 val fresh_local : stmt -> identifier
