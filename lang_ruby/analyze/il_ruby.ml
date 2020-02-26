@@ -116,7 +116,9 @@ type ('expr,'star_expr) literal_ = [
   | `Lit_Hash of ('expr * 'expr) list
 ]
 
-type 'a expr_ = [ identifier | ('a expr_,'a) literal_ ]
+type 'a expr_ = 
+ | EId of identifier 
+ | ELit of ('a expr_,'a) literal_
 
 (* a star_expr is either an expr or a (`Star of expr), i.e., no
    nested Star's are allowed *)
