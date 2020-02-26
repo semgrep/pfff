@@ -114,7 +114,7 @@ module Abbr : sig
 
   val while_s : [<expr] -> stmt -> pos -> stmt
 
-  val for_s : [<block_formal_param] list -> [<expr] -> stmt -> pos -> stmt
+  val for_s : block_formal_param list -> [<expr] -> stmt -> pos -> stmt
 
   val uop : ?lhs:[<lhs] -> unary_op -> [<expr] -> ?cb:codeblock -> pos -> stmt
 

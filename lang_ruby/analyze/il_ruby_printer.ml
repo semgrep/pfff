@@ -145,17 +145,17 @@ module Code_F(PP : CfgPrinter) = struct
         fprintf ppf "(@[%a@])" (format_comma_list PP.format_lhs) el
 
   let format_any_formal ppf (f:any_formal) =  match f with
-    | M (`Formal_meth_id(s))
-    | B (`Formal_block_id(_,s)) -> pp_print_string ppf s
-    | M (`Formal_amp s) -> fprintf ppf "&%s" s
-    | M (`Formal_star(s)) -> fprintf ppf "*%s" s
-    | B (`Formal_tuple t) -> 
+    | M (Formal_meth_id(s))
+    | B (Formal_block_id(_,s)) -> pp_print_string ppf s
+    | M (Formal_amp s) -> fprintf ppf "&%s" s
+    | M (Formal_star(s)) -> fprintf ppf "*%s" s
+    | B (Formal_tuple t) -> 
           let t = List.map b_to_any t in
           PP.format_formal_tuple ppf (t : any_formal list)
-    | M (`Formal_default(s,e)) -> 
+    | M (Formal_default(s,e)) -> 
         fprintf ppf "@[%s = @[%a@]@]"
 	  s PP.format_tuple_expr e
-    | B (`Formal_star s) -> fprintf ppf "*%s" s
+    | B (Formal_star2 s) -> fprintf ppf "*%s" s
 
   let format_formal_tuple ppf (l : any_formal list) = 
     fprintf ppf "(@[";

@@ -63,13 +63,13 @@ let re_init () = uniq_counter := 0
 
 let gen_super_args params =
   let work = function
-  | `Formal_default(s,_)
-  | `Formal_meth_id s -> `ID_Var(Var_Local,s)
-  | `Formal_amp _s -> assert false
-  | `Formal_star s -> `Star (`ID_Var(Var_Local,s))
+  | Formal_default(s,_)
+  | Formal_meth_id s -> `ID_Var(Var_Local,s)
+  | Formal_amp _s -> assert false
+  | Formal_star s -> `Star (`ID_Var(Var_Local,s))
   in
     match List.rev params with
-      | (`Formal_amp s)::rest -> 
+      | (Formal_amp s)::rest -> 
           let args = List.rev_map work rest in
             Some (args, Some (`ID_Var(Var_Local,s)))
       | lst  -> 
@@ -343,11 +343,11 @@ let _replace_last f = function
       | hd::tl -> List.rev ( (f hd):: tl)
 
 let _method_formal_of_id : identifier -> method_formal_param = function
-  | `ID_Var(Var_Local,s) -> `Formal_meth_id(s)
+  | `ID_Var(Var_Local,s) -> Formal_meth_id(s)
   | _ -> Log.fatal Log.empty "method_formal_of_id: non-id"
 
 let _block_formal_of_id : identifier -> block_formal_param = function
-  | `ID_Var(k,s) -> `Formal_block_id(k,s)
+  | `ID_Var(k,s) -> Formal_block_id(k,s)
   | _ -> 
       Log.fatal Log.empty "block_formal_of_id: non-id"
 
@@ -1651,17 +1651,17 @@ and refactor_method_formal (acc:stmt acc) t _pos : stmt acc * method_formal_para
   match t with
   | Ast.Formal_id Ast.Id(Ast.ID_Lowercase,str,_pos) -> 
       let acc = {acc with seen = StrSet.add str acc.seen} in
-        acc, `Formal_meth_id(str)
+        acc, Formal_meth_id(str)
 
   | Ast.Formal_id _ -> 
       Log.fatal Log.empty "refactor_method_formal: non-local method formal?"
 
   | Ast.Formal_amp s ->
-      {acc with seen = StrSet.add s acc.seen}, `Formal_amp s
+      {acc with seen = StrSet.add s acc.seen}, Formal_amp s
 
   | Ast.Formal_star(str) -> 
       let acc = {acc with seen = StrSet.add str acc.seen} in
-        acc, `Formal_star(str)
+        acc, Formal_star(str)
 
   | Ast.Formal_rest -> 
       let acc, id = fresh acc in
@@ -1669,7 +1669,7 @@ and refactor_method_formal (acc:stmt acc) t _pos : stmt acc * method_formal_para
         | `ID_Var(Var_Local,s) -> s
         | _ -> assert false
       in
-        acc, `Formal_star(s)
+        acc, Formal_star(s)
 
   | Ast.Formal_tuple(_f_lst) -> Log.fatal Log.empty "refactor_method_formal: formal_tuple?"
 
@@ -1681,7 +1681,7 @@ and refactor_method_formal (acc:stmt acc) t _pos : stmt acc * method_formal_para
       let s' = C.seq (DQueue.to_list default_acc.q) pos
       in
         match s'.snode with
-          | Expression e -> acc, `Formal_default(f, (e :> tuple_expr))
+          | Expression e -> acc, Formal_default(f, (e :> tuple_expr))
           | _ -> 
               let def = `Lit_Atom (sprintf "__rat_default_%d" (fresh_formal())) in
               let eql = ID_MethodName "eql?" in
@@ -1696,26 +1696,26 @@ and refactor_method_formal (acc:stmt acc) t _pos : stmt acc * method_formal_para
               in
               let pre = C.seq blk pos in
               let acc = acc_enqueue pre acc in
-                acc, `Formal_default (f, def)
+                acc, Formal_default (f, def)
 
 and refactor_block_formal acc t pos : stmt acc * block_formal_param = match t with
   | Ast.Formal_id Ast.Id(ik,str,pos) -> 
-      (add_seen str acc), `Formal_block_id(refactor_id_kind pos ik,str)
+      (add_seen str acc), Formal_block_id(refactor_id_kind pos ik,str)
   | Ast.Formal_id _ ->
       Log.fatal (Log.of_loc pos) "refactor_block_formal: non-identifier in formal id"
 
-  | Ast.Formal_star(s) -> (add_seen s acc), `Formal_star(s)
+  | Ast.Formal_star(s) -> (add_seen s acc), Formal_star2(s)
   | Ast.Formal_rest -> 
       let acc, id = fresh acc in
       let s = match id with
         | `ID_Var(Var_Local,s) -> s
         | _ -> assert false
       in
-        acc, `Formal_star(s)
+        acc, Formal_star2(s)
 
   | Ast.Formal_tuple(f_lst) ->
       let acc, lst = refactor_block_formal_list acc f_lst pos in
-        acc, `Formal_tuple lst
+        acc, Formal_tuple lst
   | Ast.Formal_amp _s -> Log.fatal (Log.of_loc pos) "refactor_block_formal: & arg?"
   | Ast.Formal_default _ -> Log.fatal (Log.of_loc pos) "refactor_block_formal: default arg?"
 

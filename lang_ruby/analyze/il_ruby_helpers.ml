@@ -637,12 +637,12 @@ end
 
 let visit_method_param vtor p =
   visit vtor#visit_method_param p begin function
-      `Formal_meth_id _
-    | `Formal_amp _
-    | `Formal_star _ -> p
-    | `Formal_default(s,tup) ->
+      Formal_meth_id _
+    | Formal_amp _
+    | Formal_star _ -> p
+    | Formal_default(s,tup) ->
 	let tup' = visit_tuple vtor tup in
-	  if tup'==tup then p else `Formal_default(s,tup')
+	  if tup'==tup then p else Formal_default(s,tup')
   end
 
 let visit_alias_kind (vtor:cfg_visitor) ak = match ak with
@@ -850,17 +850,18 @@ let rec locals_of_lhs acc (lhs:lhs) = match lhs with
   | `Tuple lst -> List.fold_left locals_of_lhs acc lst
   | `Star (#identifier as s)  -> locals_of_lhs acc (s :> lhs)
 
-type any_formal = [block_formal_param|method_formal_param]
 
 let rec locals_of_any_formal acc (p:any_formal) = match p with
-  | `Formal_default(s,_)
-  | `Formal_star s
-  | `Formal_amp s
-  | `Formal_meth_id s
-  | `Formal_block_id(Var_Local, s) -> StrSet.add s acc
-  | `Formal_block_id _ -> acc
-  | `Formal_tuple lst  -> 
-      List.fold_left locals_of_any_formal acc (lst :> any_formal list)
+  | M (Formal_default(s,_))
+  | M (Formal_star s)
+  | B (Formal_star2 s)
+  | M (Formal_amp s)
+  | M (Formal_meth_id s)
+  | B (Formal_block_id(Var_Local, s)) -> StrSet.add s acc
+  | B (Formal_block_id _) -> acc
+  | B (Formal_tuple lst)  -> 
+      let lst = lst |> List.map b_to_any in
+      List.fold_left locals_of_any_formal acc (lst : any_formal list)
 
 class compute_locals_vtor seen_env = 
 object(_self)
@@ -872,10 +873,12 @@ object(_self)
     SkipChildren
 
   method! visit_method_param p = 
-    seen <- locals_of_any_formal seen (p :> any_formal);
+    let p = m_to_any p in
+    seen <- locals_of_any_formal seen (p : any_formal);
     SkipChildren
   method! visit_block_param p = 
-    seen <- locals_of_any_formal seen (p :> any_formal);
+    let p = b_to_any p in
+    seen <- locals_of_any_formal seen (p : any_formal);
     SkipChildren
 
   method! visit_rescue_guard rg = match rg with
