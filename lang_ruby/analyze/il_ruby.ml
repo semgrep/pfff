@@ -127,19 +127,15 @@ type star_expr = [ star_expr expr_ | (star_expr expr_) star]
 type expr = star_expr expr_
 
 
-
-
-type 'a tuple = [`Tuple of 'a list]
-
 type tuple_expr = 
-  | TTup of tuple_expr tuple
+  | TTup of tuple_expr list
   | TE of expr
   | TStar of tuple_expr star  (* again, no nested stars *)
 
 (* lhs is like a tuple expression, but no literals are allowed *)
 type lhs = 
   | LId of identifier
-  | LTup of lhs tuple
+  | LTup of lhs list
   | LStar of identifier star
 
 (*****************************************************************************)

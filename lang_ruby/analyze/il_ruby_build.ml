@@ -42,7 +42,7 @@ let rec seen_lhs acc (lhs:lhs) = match lhs with
       {acc with seen = StrSet.add str acc.seen}
 
   | LId (#identifier) | LStar (`Star (#identifier)) -> acc
-  | LTup (`Tuple ls) -> List.fold_left seen_lhs acc ls
+  | LTup (ls) -> List.fold_left seen_lhs acc ls
 
 let uniq_counter = ref 0
 let uniq () = incr uniq_counter; !uniq_counter
@@ -314,15 +314,15 @@ let msg_id_from_string = function
 
 let rec tuple_of_lhs (lhs:lhs) pos : tuple_expr = match lhs with
   | LId (#identifier as id) -> TE (id)
-  | LTup (`Tuple(l)) -> 
+  | LTup ((l)) -> 
       let l' = List.map (fun x -> tuple_of_lhs x pos) l in
-        TTup (`Tuple(l'))
+        TTup ((l'))
   | LStar (`Star (#identifier as id)) -> TStar (`Star (TE id))
 
 let make_tuple_option : tuple_expr list -> tuple_expr option = function
   | [] -> None
   | [x] -> Some x
-  | lst -> Some (TTup (`Tuple lst))
+  | lst -> Some (TTup (lst))
 
 let make_assignable_msg (m : msg_id) : msg_id = match m with
   | ID_MethodName s -> ID_Assign s
@@ -956,12 +956,12 @@ and refactor_tuple_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.tuple
   match e with
     | Ast.Tuple(l,_pos) -> 
         let acc,l' = refactor_list refactor_tuple_expr (acc,DQueue.empty) l in
-          acc, TTup (`Tuple((DQueue.to_list l')))
+          acc, TTup (((DQueue.to_list l')))
 
     | Ast.Unary(Ast.Op_UStar, e, _pos) -> 
         let acc, e' = refactor_tuple_expr acc e in
           begin match e' with
-            | (TE #expr | TTup #tuple) as e' -> acc, TStar (`Star e')
+            | (TE _ | TTup _) as e' -> acc, TStar (`Star e')
             | TStar #star -> 
                 Log.fatal Log.empty "refactor_tuple_expr: nested / double star expression"
           end
@@ -983,7 +983,7 @@ and refactor_lhs acc e : (stmt acc * lhs * stmt acc) =
                 work (acc,es,after) tl
         in
         let acc,l',after = work (acc,DQueue.empty,acc_emptyq acc) l in
-          acc, LTup (`Tuple((DQueue.to_list l'))), after
+          acc, LTup (((DQueue.to_list l'))), after
             
     | Ast.UOperator(Ast.Op_UStar,_pos) ->
         let acc, v = fresh acc in
@@ -995,7 +995,7 @@ and refactor_lhs acc e : (stmt acc * lhs * stmt acc) =
         let acc, e',after = refactor_lhs acc e in
           begin match e' with
             | LId (#identifier as id) -> acc, LStar (`Star id), after
-            | LTup (`Tuple _)| LStar (`Star _) -> 
+            | LTup (_)| LStar (`Star _) -> 
                 Log.fatal (Log.of_loc pos) "refactor_lhs: nested star?"
           end
 
@@ -1788,7 +1788,7 @@ and refactor_case acc case pos =
          let g' = match DQueue.to_list glist with
            | [] -> assert false
            | [x] -> x
-           | lst -> TTup (`Tuple lst)
+           | lst -> TTup (lst)
          in
          let body_acc = refactor_stmt_list (acc_emptyq acc) body in
          let body' = C.seq (DQueue.to_list body_acc.q) pos in
