@@ -850,6 +850,8 @@ let rec locals_of_lhs acc (lhs:lhs) = match lhs with
   | `Tuple lst -> List.fold_left locals_of_lhs acc lst
   | `Star (#identifier as s)  -> locals_of_lhs acc (s :> lhs)
 
+type any_formal = [block_formal_param|method_formal_param]
+
 let rec locals_of_any_formal acc (p:any_formal) = match p with
   | `Formal_default(s,_)
   | `Formal_star s
