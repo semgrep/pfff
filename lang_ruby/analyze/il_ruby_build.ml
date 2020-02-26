@@ -1,7 +1,7 @@
 open Common
 open Printf
 open Il_ruby
-open Cfg_printer
+open Il_ruby_printer
 open Utils_ruby
 module Utils = Utils_ruby
 module Ast = Ast_ruby
@@ -1767,7 +1767,7 @@ let refactor_ast ?env ast =
       | (hd::_) as lst -> C.seq lst (pos_of hd)
 
 let kreparse ?env ?filename ?lineno cont k =
-  let module U = Cfg_printer.CodeUnparser in
+  let module U = Il_ruby_printer.CodeUnparser in
   let cont str = 
     let ast = Parse_ruby.parse_string ?env ?filename ?lineno str in
       cont (refactor_ast ast ?env)

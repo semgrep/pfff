@@ -8,7 +8,7 @@ val re_init : unit -> unit
       testing. *)
 
 val reparse : ?env:Utils_ruby.StrSet.t -> ?filename:string -> ?lineno:int -> 
-  (Il_ruby.stmt,'a) Cfg_printer.CodeUnparser.fmt -> 'a
+  (Il_ruby.stmt,'a) Il_ruby_printer.CodeUnparser.fmt -> 'a
   (** This function takes an unparsing descript as described in
       Cfg_printer and converts the unparsed string back into a
       Cfg.stmt, allowing for easy tree rewriting as describedy by
@@ -22,7 +22,7 @@ val reparse : ?env:Utils_ruby.StrSet.t -> ?filename:string -> ?lineno:int ->
   *) 
 
 val kreparse : ?env:Utils_ruby.StrSet.t -> ?filename:string -> ?lineno:int -> 
-  (Il_ruby.stmt -> 'a) -> ('a,'b) Cfg_printer.CodeUnparser.fmt -> 'b
+  (Il_ruby.stmt -> 'a) -> ('a,'b) Il_ruby_printer.CodeUnparser.fmt -> 'b
   (** Similar to reparse, but passes the final stmt to the supplied
       continuation *)
 
