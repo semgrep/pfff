@@ -61,12 +61,12 @@ let fresh_formal () = incr formal_counter; !formal_counter
 
 let re_init () = uniq_counter := 0
 
-let gen_super_args params =
+let gen_super_args params : (star_expr list * expr option) option  =
   let work = function
   | Formal_default(s,_)
-  | Formal_meth_id s -> `ID_Var(Var_Local,s)
+  | Formal_meth_id s -> SE (`ID_Var(Var_Local,s))
   | Formal_amp _s -> assert false
-  | Formal_star s -> `Star (`ID_Var(Var_Local,s))
+  | Formal_star s -> SStar (`Star (`ID_Var(Var_Local,s)))
   in
     match List.rev params with
       | (Formal_amp s)::rest -> 
@@ -75,7 +75,7 @@ let gen_super_args params =
       | lst  -> 
           Some (List.rev_map work lst, None)
 
-let make_call_expr acc targ msg args cb pos = 
+let make_call_expr acc targ msg (args: star_expr list) cb pos : stmt acc * expr = 
   let acc, lhs = fresh acc in
   let lhs' = match lhs with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
 
@@ -119,7 +119,7 @@ let or_opt acc fin lang once s pos =
           let acc, lhs = fresh acc in
   let lhs' = match lhs with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
 
-          let call = C.mcall ~lhs ~targ:e (ID_Operator(Op_BOr)) [v] pos in
+          let call = C.mcall ~lhs ~targ:e (ID_Operator(Op_BOr)) [SE v] pos in
           let acc = acc_enqueue call acc in
             acc, Some lhs', lang, once
       | None ->
@@ -765,11 +765,11 @@ and construct_explicit_regexp acc pos re_interp mods =
     let acc,str = refactor_interp_string acc re_interp pos in
     let new_opts = match lang with
       | None -> []
-      | Some c -> [`Lit_String (String.make 1 c)]
+      | Some c -> [SE (`Lit_String (String.make 1 c))]
     in
     let new_opts = match re_opts with
-    | None -> str::`Lit_FixNum 0::new_opts
-    | Some v -> str::v::new_opts
+    | None -> (SE str)::(SE (`Lit_FixNum 0))::new_opts
+    | Some v -> (SE str)::(SE v)::new_opts
     in
     let call = C.mcall ~lhs ~targ:(`ID_UScope "Regexp")
       (ID_MethodName "new") new_opts pos
@@ -797,14 +797,14 @@ and refactor_interp_string acc istr pos =
     | Ast.StrChars s -> acc, `Lit_String s
     | Ast.StrExpr ast_e -> 
         let acc, e = refactor_expr acc ast_e in
-          make_call_expr acc (Some e) (ID_MethodName "to_s") [] None pos
+        make_call_expr acc (Some e) (ID_MethodName "to_s") [] None pos
   in
   let rec helper acc expr_acc l = match l with
     | [] -> acc, expr_acc
     | hd::tl -> 
         let acc, e = refactor_contents acc hd in
         let acc, expr_acc = 
-          make_call_expr acc (Some expr_acc) (ID_Operator Op_Plus) [e] None pos 
+          make_call_expr acc (Some expr_acc) (ID_Operator Op_Plus) [SE e] None pos 
         in
           helper acc expr_acc tl
   in
@@ -827,7 +827,7 @@ and refactor_lit acc (l : Ast.lit_kind) pos : stmt acc * expr = match l with
       refactor_interp_string acc s pos
   | Ast.String(Ast.Tick s) -> 
       let acc, e = refactor_interp_string acc s pos in
-        make_call_expr acc None (ID_MethodName "__backtick") [e] None pos
+        make_call_expr acc None (ID_MethodName "__backtick") [SE e] None pos
 
   | Ast.Atom [Ast.StrChars s] -> acc, `Lit_Atom s
   | Ast.Atom istr -> 
@@ -850,10 +850,10 @@ and refactor_lit acc (l : Ast.lit_kind) pos : stmt acc * expr = match l with
 and refactor_star_expr (acc:stmt acc) e : stmt acc * star_expr = match e with
   | Ast.Unary(Ast.Op_UStar, e, _pos) -> 
       let acc, e' = refactor_expr acc e in
-        acc, `Star e'
+        acc, SStar (`Star e')
   | e ->
       let acc, e' = refactor_expr acc e in
-        acc, (e' :> star_expr)
+        acc, (SE e' :> star_expr)
 
 and refactor_method_arg_no_cb acc e : stmt acc * star_expr = match e with 
   | Ast.Unary(Ast.Op_UAmper, _eBUG, pos) -> 
@@ -1018,8 +1018,9 @@ and refactor_lhs acc e : (stmt acc * lhs * stmt acc) =
         let after, args', cb = refactor_method_args_and_cb after args None in
         let after, last_arg = fresh after in
       let last_arg' = match last_arg with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
+        let last_arg'' = SE last_arg' in
 
-        let args' = args' @ [last_arg'] in
+        let args' = args' @ [last_arg''] in
         let mc_stmt = C.mcall ~targ:targ' msg' args' ?cb pos in
         let after = acc_enqueue mc_stmt after in
           acc, last_arg, after
@@ -1260,25 +1261,25 @@ and refactor_assignment (acc: stmt acc) (lhs: Ast.expr) (rhs: Ast.expr)
     _ ->
       let acc,targ' = refactor_expr acc targ in
       let acc,rhs_arg = refactor_star_expr acc rhs in
-      let acc,lhs_args = refactor_list refactor_star_expr (acc,DQueue.empty) args in
+      let acc,(lhs_args: star_expr DQueue.t) = refactor_list refactor_star_expr (acc,DQueue.empty) args in
       let lhs_list = DQueue.to_list lhs_args in
       (* We need to be careful here because the lhs arguments can
          contain a star expression (x[*y] = z) and x.[]=( *y,z) is not
          a valid method call, thus we contruct a separate array for
          the arguments in this case. *)
       let acc,args = 
-        if List.exists (function `Star _ -> true| _ -> false) lhs_list
+        if List.exists (function SStar (`Star _) -> true| _ -> false) lhs_list
         then begin
           (* construct tmp = [*lhs] + [rhs] *)
           let lhs_ary = `Lit_Array lhs_list in
           let rhs_ary = `Lit_Array [rhs_arg] in
           let acc, tmp = fresh acc in
-      let tmp' = match tmp with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
+          let tmp' = match tmp with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
 
           let call = C.mcall ~lhs:tmp ~targ:lhs_ary
-            (ID_Operator Op_Plus) [rhs_ary] pos 
+            (ID_Operator Op_Plus) [SE rhs_ary] pos 
           in
-            (acc_enqueue call acc), [`Star tmp']
+            (acc_enqueue call acc), [SStar (`Star tmp')]
         end
         else
           (* lhs has no *-exprs, so safe to just concat args *)
@@ -1732,13 +1733,13 @@ and refactor_method_formal (acc:stmt acc) t _pos : stmt acc * method_formal_para
               let def = `Lit_Atom (sprintf "__rat_default_%d" (fresh_formal())) in
               let eql = ID_MethodName "eql?" in
               let acc, v = fresh acc in
-      let v' = match v with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
+              let v' = match v with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
 
               let formal_id = (`ID_Var(Var_Local, f)) in
               let acc = seen_lhs acc (LId formal_id) in
               let s'' = add_last_assign ~do_break:false formal_id s' in
               let blk = [
-                C.mcall ~lhs:v ~targ:(C.local f) eql [def] pos;
+                C.mcall ~lhs:v ~targ:(C.local f) eql [SE def] pos;
                 C.if_s v' ~t:s'' ~f:(C.expr `ID_Nil pos) pos;
                 ]
               in

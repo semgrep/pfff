@@ -98,7 +98,7 @@ module Abbr : sig
   val str : string -> [>literal]
   val atom : string -> [>literal]
   val regexp : ?o:string -> string-> [>literal]
-  val array : [<star_expr] list -> [>literal]
+  val array : star_expr list -> [>literal]
   val hash : ([<expr]*[<expr]) list -> [>literal]
   val range : ?inc:bool -> [<expr] -> [<expr] -> [>literal]
 
@@ -119,24 +119,24 @@ module Abbr : sig
   val uop : ?lhs:lhs -> unary_op -> [<expr] -> ?cb:codeblock -> pos -> stmt
 
   val binop : ?lhs:lhs -> [<expr] ->
-    binary_op -> [<star_expr] -> ?cb:codeblock -> pos -> stmt
+    binary_op -> star_expr -> ?cb:codeblock -> pos -> stmt
 
   val call : ?lhs:lhs -> ?targ:[<expr] ->
-    string -> [<star_expr] list -> ?cb:codeblock -> pos -> stmt
+    string -> star_expr list -> ?cb:codeblock -> pos -> stmt
 
   val massign : ?lhs:lhs -> ?targ:[<expr] ->
-    string -> [<star_expr] list -> ?cb:codeblock -> pos -> stmt
+    string -> star_expr list -> ?cb:codeblock -> pos -> stmt
 
-  val super : ?lhs:lhs -> [<star_expr] list -> ?cb:codeblock -> pos -> stmt
+  val super : ?lhs:lhs -> star_expr list -> ?cb:codeblock -> pos -> stmt
 
   val mcall : ?lhs:lhs -> ?targ:[<expr] ->
-    msg_id -> [<star_expr] list -> ?cb:codeblock -> pos -> stmt
+    msg_id -> star_expr list -> ?cb:codeblock -> pos -> stmt
 
   val assign : lhs -> tuple_expr -> pos -> stmt
 
   val expr : [<expr] -> pos -> stmt
   val return : ?v:tuple_expr -> pos -> stmt
-  val yield : ?lhs:lhs -> ?args:[<star_expr] list-> pos -> stmt
+  val yield : ?lhs:lhs -> ?args:star_expr list-> pos -> stmt
 
   val module_s : ?lhs:lhs -> [<identifier] -> stmt -> pos -> stmt
 

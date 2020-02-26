@@ -128,8 +128,8 @@ module Code_F(PP : CfgPrinter) = struct
     | #identifier as id -> PP.format_identifier ppf id
 
   let format_star_expr ppf : star_expr -> unit = function
-    | #expr as e -> PP.format_expr ppf e
-    | `Star e -> fprintf ppf "*%a" PP.format_expr e (* XXX *)
+    | SE (#expr as e) -> PP.format_expr ppf e
+    | SStar (`Star e) -> fprintf ppf "*%a" PP.format_expr e (* XXX *)
 
   let format_tuple_expr ppf : tuple_expr -> unit = function
     | TTup ((el)) -> 
@@ -167,10 +167,6 @@ module Code_F(PP : CfgPrinter) = struct
     fprintf ppf "@[<hov>";
     format_comma_list PP.format_any_formal ppf l;
     fprintf ppf "@]"
-
-  let _format_method_arg_expr ppf = function
-    | #star_expr as s -> PP.format_star_expr ppf s
-    | `Proc e -> fprintf ppf "&%a" PP.format_expr e
 
   let format_lhs_opt ppf o = match o with
     | None -> ()

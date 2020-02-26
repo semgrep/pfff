@@ -229,7 +229,7 @@ module Abbr = struct
   let atom s = `Lit_Atom s
   let regexp ?(o="") str = `Lit_Regexp(o,str)
   let array lst = 
-    (`Lit_Array lst : [`Lit_Array of [<star_expr] list] :> [>literal])
+    (`Lit_Array lst : [`Lit_Array of star_expr list] :> [>literal])
 
   let hash lst = 
     (`Lit_Hash lst : [`Lit_Hash of ([<expr]*[<expr]) list] :> [>literal])
@@ -359,8 +359,8 @@ module Abbr = struct
   let retry pos = mkstmt Retry pos
   let redo pos = mkstmt Redo pos
 
-  let _r1 p = call ~lhs:(LId (local "x")) "foo" [float 1.0] p
-  let _r2 p = binop (float 3.0) Op_Times (local "x") p
+  let _r1 p = call ~lhs:(LId (local "x")) "foo" [SE (float 1.0)] p
+  let _r2 p = binop (float 3.0) Op_Times (SE (local "x")) p
 
 end
 
@@ -591,10 +591,10 @@ and visit_lhs vtor (lhs:lhs) =
   end
 
 and visit_star_expr vtor star = match star with
-  | #expr as e -> (visit_expr vtor e :> star_expr)
-  | `Star e -> 
+  | SE (#expr as e) -> SE (visit_expr vtor e)
+  | SStar (`Star e) -> 
       let e' = visit_expr vtor e in
-        if e==e' then star else `Star e'
+        if e==e' then star else SStar (`Star e')
 
 let rec visit_tuple vtor tup = 
   visit vtor#visit_tuple tup begin function
