@@ -1,8 +1,6 @@
-
-open Printf
 open Utils
 
-type pos = Log.pos
+type pos = Lexing.position
 
 type unary_op =
     Op_UMinus
@@ -142,7 +140,6 @@ sig
     snode : stmt_node;
     pos : pos;
     sid : int;
-    annotation : Annotation.t option;
     mutable lexical_locals : StrSet.t;
     mutable preds : StmtSet.t;
     mutable succs : StmtSet.t;
@@ -208,7 +205,6 @@ sig
 
   val mkstmt : stmt_node -> pos -> stmt
   val update_stmt : stmt -> stmt_node -> stmt
-  val add_annotation : stmt -> Annotation.t -> stmt
   val fold_stmt : ('a -> stmt -> 'a) -> 'a -> stmt -> 'a
   val compute_cfg : stmt -> unit
   val update_locals : stmt -> StrSet.t -> unit
@@ -219,7 +215,6 @@ end = struct
     snode : stmt_node;
     pos : pos;
     sid : int;
-    annotation : Annotation.t option;
     mutable lexical_locals : StrSet.t;
     mutable preds : StmtSet.t;
     mutable succs : StmtSet.t;
@@ -288,7 +283,6 @@ end = struct
      lexical_locals = StrSet.empty;
      preds=StmtSet.empty;
      succs=StmtSet.empty;
-     annotation=None;
      sid = uniq()}
 
   let update_stmt stmt snode = 
@@ -297,15 +291,12 @@ end = struct
      lexical_locals = stmt.lexical_locals;
      preds=StmtSet.empty;
      succs=StmtSet.empty;
-     annotation=stmt.annotation;
      sid = uniq()}
 
   let update_locals stmt locals = stmt.lexical_locals <- locals
 
-  let add_annotation stmt annot = {stmt with annotation=Some annot}
-
   let rec fold_stmt f acc stmt = match stmt.snode with
-    | If(g,ts,fs) -> fold_stmt f (fold_stmt f (f acc stmt) ts) fs
+    | If(_g,ts,fs) -> fold_stmt f (fold_stmt f (f acc stmt) ts) fs
 
     | Seq(sl) -> List.fold_left (fold_stmt f) (f acc stmt) sl
 
@@ -316,20 +307,20 @@ end = struct
     | Begin(s)
     | End(s) -> fold_stmt f (f acc stmt) s
 
-    | While(g,body) ->
+    | While(_g,body) ->
         fold_stmt f (f acc stmt)  body
 
     | Case(c) ->
         let acc = f acc stmt in
         let acc = List.fold_left
-	  (fun acc (w,b) ->
+	  (fun acc (_w,b) ->
 	     fold_stmt f acc b 
 	  ) acc c.case_whens
         in
-	  do_opt ~none:acc ~some:(fold_stmt f acc) c.case_else
+	  Utils.do_opt ~none:acc ~some:(fold_stmt f acc) c.case_else
 
-    | MethodCall(_,{mc_cb = (None|Some (CB_Arg _))}) -> f acc stmt
-    | MethodCall(_,{mc_cb = Some (CB_Block(_,cb_body))}) -> 
+    | MethodCall(_,{mc_cb = (None|Some (CB_Arg _)); _}) -> f acc stmt
+    | MethodCall(_,{mc_cb = Some (CB_Block(_,cb_body)); _}) -> 
         fold_stmt f (f acc stmt) cb_body
 	  
     | ExnBlock(b) ->
@@ -361,7 +352,7 @@ end = struct
 
     | Case cb -> 
         List.iter
-	  (fun (guard,body) ->
+	  (fun (_guard,body) ->
 	     (*
 	       stmt.succs <- StmtSet.add guard stmt.succs;
 	       compute_cfg_succ guard (StmtSet.singleton body);
@@ -397,17 +388,17 @@ end = struct
         in
 	  compute_cfg_succ eb.exn_body succs'
 	    
-    | If(g,t,f) -> 
+    | If(_g,t,f) -> 
         stmt.succs <- StmtSet.add t (StmtSet.add f stmt.succs);
         compute_cfg_succ t succs;
         compute_cfg_succ f succs
 
-    | While(g,body) ->
+    | While(_g,body) ->
         stmt.succs <- StmtSet.add body stmt.succs;
         body.succs <- StmtSet.add stmt body.succs;
         compute_cfg_succ body succs
 
-    | For(params,guard,body) ->
+    | For(_params,_guard,body) ->
         stmt.succs <- StmtSet.union (StmtSet.add body succs) stmt.succs;
         body.succs <- StmtSet.union succs body.succs;
         compute_cfg_succ body succs
@@ -425,7 +416,7 @@ end = struct
         compute_cfg_succ body StmtSet.empty
 	  
     | Undef _ | Break _ | Redo | Retry | Next _ -> 
-        Log.fixme "handle control op in successor computation"
+        failwith "handle control op in successor computation"
 
     (* These can't actually appear in a method *)
     | Begin(body)
@@ -526,7 +517,7 @@ module Abbr = struct
 
   let seq lst pos = match lst with
     | [] -> expr `ID_Nil pos
-    | ({snode=Seq _} as blk)::[] -> blk
+    | ({snode=Seq _; _} as blk)::[] -> blk
     | x::[] -> x
     | l -> 
         let revl = List.fold_left
@@ -597,7 +588,9 @@ module Abbr = struct
     let args' = default_opt [] (args :> star_expr list option) in
       mkstmt (Yield((lhs :> lhs option),args')) pos
 
-  let meth ?targ def args body pos = mkstmt(Method(def,args,body)) pos
+  let meth ?targ def args body pos = 
+    ignore targ;
+    mkstmt(Method(def,args,body)) pos
 
   let method_ ?targ msg args body pos = 
     let def = match targ with
@@ -642,8 +635,8 @@ module Abbr = struct
   let retry pos = mkstmt Retry pos
   let redo pos = mkstmt Redo pos
 
-  let r1 p = call ~lhs:(local "x") "foo" [float 1.0] p
-  let r2 p = binop (float 3.0) Op_Times (local "x") p
+  let _r1 p = call ~lhs:(local "x") "foo" [float 1.0] p
+  let _r2 p = binop (float 3.0) Op_Times (local "x") p
 
 end
 
@@ -651,11 +644,11 @@ let pos_of s = s.pos
 
 let empty_stmt () = mkstmt (Expression `ID_Nil) Lexing.dummy_pos
 
-let fresh_local s = 
+let fresh_local _s = 
   let i = uniq () in
     `ID_Var(`Var_Local,Printf.sprintf "__fresh_%d" i)
 
-let strip_colon s = 
+let _strip_colon s = 
   assert(s.[0] == ':');
   String.sub s 1 (String.length s - 1)
 
@@ -692,7 +685,6 @@ let msg_id_of_string str = match str with
         else `ID_MethodName s
 
 let rec stmt_eq (s1:stmt) (s2:stmt) = 
-  (eq_opt Annotation.equal_annotation s1.annotation s2.annotation) &&
     snode_eq s1.snode s2.snode
 
 and snode_eq s1 s2 = match s1, s2 with
@@ -701,7 +693,7 @@ and snode_eq s1 s2 = match s1, s2 with
 	  List.fold_left2 (fun acc s1 s2 -> acc && stmt_eq s1 s2) true l1 l2
 	with Invalid_argument _ -> false
       end
-  | Alias(ak1), Alias(ak2) -> ak1 = ak1
+  | Alias(ak1), Alias(ak2) -> ak1 = ak2 (* BUG! was ak1 = ak1 *)
   | If(g1,t1,f1),If(g2,t2,f2) -> g1 = g2 && stmt_eq t1 t2 && stmt_eq f1 f2
   | Case c1, Case c2 -> case_eq c1 c2
 
@@ -735,7 +727,7 @@ and methodcall_eq mc1 mc2 =
     (mc1.mc_msg = mc2.mc_msg)
   &&
     (mc1.mc_args = mc2.mc_args)
-  && eq_opt codeblock_eq mc1.mc_cb mc2.mc_cb 
+  && Utils.eq_opt codeblock_eq mc1.mc_cb mc2.mc_cb 
 
 and codeblock_eq c1 c2 = match c1,c2 with
   | CB_Arg e1, CB_Arg e2 -> e1 = e2
@@ -773,7 +765,6 @@ open Visitor
 
 class type cfg_visitor = object
 
-  method visit_annotation : Annotation.t visit_method
   method visit_stmt : stmt visit_method
 
   method visit_id : identifier visit_method
@@ -790,28 +781,27 @@ class type cfg_visitor = object
 end
 
 class default_visitor : cfg_visitor = 
-object(self)
-  method visit_annotation _ = DoChildren
-  method visit_literal l = DoChildren
-  method visit_id id = DoChildren
-  method visit_expr e = DoChildren
-  method visit_lhs lhs = DoChildren
-  method visit_tuple tup = DoChildren
-  method visit_msg_id id = DoChildren
-  method visit_rescue_guard rg = DoChildren
-  method visit_def_name dn = DoChildren
-  method visit_class_kind ck = DoChildren
-  method visit_method_param p = DoChildren
-  method visit_block_param p = DoChildren
+object(_self)
+  method visit_literal _l = DoChildren
+  method visit_id _id = DoChildren
+  method visit_expr _e = DoChildren
+  method visit_lhs _lhs = DoChildren
+  method visit_tuple _tup = DoChildren
+  method visit_msg_id _id = DoChildren
+  method visit_rescue_guard _rg = DoChildren
+  method visit_def_name _dn = DoChildren
+  method visit_class_kind _ck = DoChildren
+  method visit_method_param _p = DoChildren
+  method visit_block_param _p = DoChildren
 
-  method visit_stmt stmt = DoChildren
+  method visit_stmt _stmt = DoChildren
 end
 
 class scoped_visitor = 
-object(self)
+object(_self)
   inherit default_visitor
 
-  method visit_stmt stmt = match stmt.snode with
+  method! visit_stmt stmt = match stmt.snode with
       (* these start a new scope *)
     | Begin _ | End _ | Class _ | Module _ | Method _ -> SkipChildren
     | _ -> DoChildren
@@ -938,7 +928,7 @@ let visit_alias_kind (vtor:cfg_visitor) ak = match ak with
 	if m1 == m1' && m2 == m2' then ak
 	else Alias_Method(m1',m2')
 
-  | Alias_Global(s1,s2) -> ak
+  | Alias_Global(_s1,_s2) -> ak
           
 let rec visit_stmt (vtor:cfg_visitor) stmt = 
   visit vtor#visit_stmt stmt (visit_stmt_children vtor)
@@ -1117,9 +1107,9 @@ and visit_stmt_children vtor stmt = match stmt.snode with
 
 
 class alpha_visitor ~var ~sub = 
-object(self)
+object(_self)
   inherit scoped_visitor
-  method visit_id id = match id with
+  method! visit_id id = match id with
     | `ID_Var(`Var_Local,s) ->
         if String.compare var s = 0 
         then ChangeTo (`ID_Var(`Var_Local,sub))
@@ -1147,29 +1137,29 @@ let rec locals_of_any_formal acc (p:any_formal) = match p with
       List.fold_left locals_of_any_formal acc (lst :> any_formal list)
 
 class compute_locals_vtor seen_env = 
-object(self)
+object(_self)
   inherit default_visitor
   val mutable seen = seen_env
     
-  method visit_lhs lhs = 
+  method! visit_lhs lhs = 
     seen <- locals_of_lhs seen lhs;
     SkipChildren
 
-  method visit_method_param p = 
+  method! visit_method_param p = 
     seen <- locals_of_any_formal seen (p :> any_formal);
     SkipChildren
-  method visit_block_param p = 
+  method! visit_block_param p = 
     seen <- locals_of_any_formal seen (p :> any_formal);
     SkipChildren
 
-  method visit_rescue_guard rg = match rg with
-    | Rescue_Bind(te,`ID_Var(`Var_Local,s)) -> 
+  method! visit_rescue_guard rg = match rg with
+    | Rescue_Bind(_te,`ID_Var(`Var_Local,s)) -> 
         seen <- StrSet.add s seen;
         SkipChildren
     | Rescue_Bind _
     | Rescue_Expr _ -> SkipChildren
 
-  method visit_stmt stmt = 
+  method! visit_stmt stmt = 
     update_locals stmt seen;
     match stmt.snode with
         (* these start a new scope *)

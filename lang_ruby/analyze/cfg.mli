@@ -139,7 +139,6 @@ type stmt = private {
   snode : stmt_node;
   pos : pos;
   sid : int;
-  annotation : Annotation.t option;
   mutable lexical_locals : StrSet.t;
   (* temp_map *)
   mutable preds : stmt set;
@@ -211,8 +210,6 @@ val mkstmt : stmt_node -> pos -> stmt
 
 val update_stmt : stmt -> stmt_node -> stmt
 
-val add_annotation : stmt -> Annotation.t -> stmt
-  
 val fold_stmt : ('a -> stmt -> 'a) -> 'a -> stmt -> 'a
 val compute_cfg : stmt -> unit
 
@@ -228,7 +225,6 @@ val msg_id_of_string : string -> msg_id
 
 class type cfg_visitor = object
 
-  method visit_annotation : Annotation.t Visitor.visit_method
   method visit_stmt : stmt Visitor.visit_method
 
   method visit_id : identifier Visitor.visit_method
