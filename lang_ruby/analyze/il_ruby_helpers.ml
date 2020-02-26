@@ -3,6 +3,10 @@ module Utils = Utils_ruby
 
 open Il_ruby  
 
+let uniq_counter = ref 0
+let uniq () = incr uniq_counter; !uniq_counter
+
+
   let compare t1 t2 = compare t1.sid t2.sid
 
   let mkstmt snode pos = 
