@@ -1,5 +1,6 @@
 open Ast_ruby
 module H = Ast_ruby_helpers
+module Utils = Utils_ruby
 open Format
 
 let format_uop ppf op = pp_print_string ppf (H.str_uop op)

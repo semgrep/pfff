@@ -7,14 +7,14 @@ OPAMPKG=pfff-lang_ruby
 
 -include $(TOP)/Makefile.config
 
-SRC= utils.ml \
-  ast_ruby.ml ast_ruby_helpers.ml \
-  meta_ast_ruby.ml ast_printer.ml \
+SRC= utils_ruby.ml \
+  ast_ruby.ml \
+  ast_ruby_helpers.ml \
+  meta_ast_ruby.ml ast_ruby_printer.ml \
   parser_ruby_helpers.ml \
-  newParser.ml \
-  rubyLexerState.ml \
-  newLexer.ml \
-  parse_helper.ml \
+  parser_ruby.ml \
+  lexer_parser_ruby.ml \
+  lexer_ruby.ml \
   parse_ruby.ml \
   lib_parsing_ruby.ml \
   test_parsing_ruby.ml unit_parsing_ruby.ml 
@@ -53,21 +53,21 @@ clean::
 	rm -f $(TARGET).top
 
 
-newLexer.ml: newLexer.mll
+lexer_ruby.ml: lexer_ruby.mll
 	$(OCAMLLEX) $<
 clean::
-	rm -f newLexer.ml
-beforedepend:: newLexer.ml
+	rm -f lexer_ruby.ml
+beforedepend:: lexer_ruby.ml
 
-newParser.ml newParser.mli: newParser.dyp
+parser_ruby.ml parser_ruby.mli: parser_ruby.dyp
 	dypgen --pv-obj --ocamlc '$(INCLUDES) -w y' $<
 clean::
-	rm -f newParser.ml newParser.mli 
-beforedepend:: newParser.ml newParser.mli
+	rm -f parser_ruby.ml parser_ruby.mli 
+#beforedepend:: parser_ruby.ml parser_ruby.mli
 
 
 #visitor_python.cmo: visitor_python.ml
 #	ocamlc $(INCLUDES) -w y -c $<
 
-newParser.cmo: newParser.ml
+parser_ruby.cmo: parser_ruby.ml
 	ocamlc $(INCLUDES) -w y -c $<
