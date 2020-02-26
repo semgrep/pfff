@@ -28,9 +28,6 @@ type binary_op =
   | Op_LShift
   | Op_RShift
 
-let uniq_counter = ref 0
-let uniq () = incr uniq_counter; !uniq_counter
-
 type var_kind = [
     `Var_Local
   | `Var_Instance
