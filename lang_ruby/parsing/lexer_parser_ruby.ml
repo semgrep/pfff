@@ -11,7 +11,7 @@ type t = {
   lexer_stack : cps_lexer Stack.t;
 }
 
-and cps_lexer = t -> Lexing.lexbuf -> NewParser.token
+and cps_lexer = t -> Lexing.lexbuf -> Parser_ruby.token
 
 let beg_state t = t.expr_state <- Expr_Beg
 let mid_state t = t.expr_state <- Expr_Mid

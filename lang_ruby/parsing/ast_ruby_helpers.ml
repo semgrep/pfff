@@ -1,5 +1,6 @@
 open Common
 open Ast_ruby
+module Utils = Utils_ruby
 
 let pcompare = Pervasives.compare
 

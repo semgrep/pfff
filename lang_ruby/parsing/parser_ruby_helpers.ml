@@ -1,4 +1,7 @@
 open Ast_ruby
+module Utils = Utils_ruby
+module Ast_printer = Ast_ruby_printer
+
 module H = Ast_ruby_helpers
 
   module Env = Utils.StrSet

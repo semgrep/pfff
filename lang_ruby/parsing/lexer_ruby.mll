@@ -1,7 +1,7 @@
 {
-  open NewParser
+  open Parser_ruby
   open Parser_ruby_helpers
-  open RubyLexerState
+  open Lexer_parser_ruby
   open Lexing
 
   let pop_lexer state = 
