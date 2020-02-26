@@ -224,7 +224,7 @@ module Code_F(PP : CfgPrinter) = struct
         format_else ppf else_e;
         fprintf ppf "end@]"
 
-    | MethodCall(lhs_o,mc) -> 
+    | Call(lhs_o,mc) -> 
         fprintf ppf "@[<v 0>%a%a@]" format_lhs_opt lhs_o PP.format_method_call mc
           
     | Return(e) -> fprintf ppf "return @[%a@]" (format_option PP.format_tuple_expr) e
@@ -242,14 +242,14 @@ module Code_F(PP : CfgPrinter) = struct
 
     | Expression(e) -> PP.format_expr ppf e
   
-    | Module(lhs_o,m,body) ->
+    | ModuleDef(lhs_o,m,body) ->
         fprintf ppf "@[<v 0>@[<v 2>%amodule %a@,%a@]@,"
 	  format_lhs_opt lhs_o
 	  PP.format_identifier m
 	  PP.format_stmt body;
         fprintf ppf "end@]"
           
-    | Method(meth,formals,body) ->
+    | MethodDef(meth,formals,body) ->
           let formals = formals |> List.map m_to_any in
         fprintf ppf "@[<v 0>@[<v 2>def %a(@[%a@])@,%a@]@,"
 	  format_def_name meth
@@ -257,7 +257,7 @@ module Code_F(PP : CfgPrinter) = struct
 	  PP.format_stmt body;
         fprintf ppf "end@]"      
 
-    | Class(lhs_o,ck,body) ->
+    | ClassDef(lhs_o,ck,body) ->
         fprintf ppf "@[<v 0>@[<v 2>%aclass %a@,%a@]@,"
 	  format_lhs_opt lhs_o
 	  PP.format_class_kind ck
@@ -384,7 +384,7 @@ module Err_F(PP : CfgPrinter) = struct
     | i -> Super.format_identifier ppf i
 
   let format_stmt ppf stmt : unit = match stmt.snode with
-    | MethodCall(lhs_o, {mc_msg=ID_MethodName "safe_require";mc_args=[s1;_]; _}) ->
+    | Call(lhs_o, {mc_msg=ID_MethodName "safe_require";mc_args=[s1;_]; _}) ->
         fprintf ppf "%arequire(%a)"
           format_lhs_opt lhs_o PP.format_star_expr s1
 
