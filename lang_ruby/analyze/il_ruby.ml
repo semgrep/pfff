@@ -50,14 +50,6 @@ type pos = Lexing.position
 (* Names *)
 (* ------------------------------------------------------------------------- *)
 
-type var_kind = 
-  | Var_Local
-  | Var_Instance
-  | Var_Class
-  | Var_Global
-  | Var_Constant
-  | Var_Builtin
-
 type identifier =
   | Var of (var_kind * string)
   | Self
@@ -66,6 +58,14 @@ type identifier =
   | Nil
   | True
   | False
+
+and var_kind = 
+  | Var_Local
+  | Var_Instance
+  | Var_Class
+  | Var_Global
+  | Var_Constant
+  | Var_Builtin
 
 (* convenience alias that is a subtype of identifier *)
 type builtin_or_global = var_kind (* [`Var_Builtin|`Var_Global] *) * string
