@@ -592,9 +592,9 @@ and visit_lhs vtor (lhs:lhs) =
 
 and visit_star_expr vtor star = match star with
   | SE (#expr as e) -> SE (visit_expr vtor e)
-  | SStar (`Star e) -> 
+  | SStar (e) -> 
       let e' = visit_expr vtor e in
-        if e==e' then star else SStar (`Star e')
+        if e==e' then star else SStar (e')
 
 let rec visit_tuple vtor tup = 
   visit vtor#visit_tuple tup begin function

@@ -66,7 +66,7 @@ let gen_super_args params : (star_expr list * expr option) option  =
   | Formal_default(s,_)
   | Formal_meth_id s -> SE (`ID_Var(Var_Local,s))
   | Formal_amp _s -> assert false
-  | Formal_star s -> SStar (`Star (`ID_Var(Var_Local,s)))
+  | Formal_star s -> SStar ((`ID_Var(Var_Local,s)))
   in
     match List.rev params with
       | (Formal_amp s)::rest -> 
@@ -850,7 +850,7 @@ and refactor_lit acc (l : Ast.lit_kind) pos : stmt acc * expr = match l with
 and refactor_star_expr (acc:stmt acc) e : stmt acc * star_expr = match e with
   | Ast.Unary(Ast.Op_UStar, e, _pos) -> 
       let acc, e' = refactor_expr acc e in
-        acc, SStar (`Star e')
+        acc, SStar (e')
   | e ->
       let acc, e' = refactor_expr acc e in
         acc, (SE e' :> star_expr)
@@ -1268,7 +1268,7 @@ and refactor_assignment (acc: stmt acc) (lhs: Ast.expr) (rhs: Ast.expr)
          a valid method call, thus we contruct a separate array for
          the arguments in this case. *)
       let acc,args = 
-        if List.exists (function SStar (`Star _) -> true| _ -> false) lhs_list
+        if List.exists (function SStar (_) -> true| _ -> false) lhs_list
         then begin
           (* construct tmp = [*lhs] + [rhs] *)
           let lhs_ary = `Lit_Array lhs_list in
@@ -1279,7 +1279,7 @@ and refactor_assignment (acc: stmt acc) (lhs: Ast.expr) (rhs: Ast.expr)
           let call = C.mcall ~lhs:tmp ~targ:lhs_ary
             (ID_Operator Op_Plus) [SE rhs_ary] pos 
           in
-            (acc_enqueue call acc), [SStar (`Star tmp')]
+            (acc_enqueue call acc), [SStar (tmp')]
         end
         else
           (* lhs has no *-exprs, so safe to just concat args *)

@@ -102,8 +102,6 @@ type msg_id =
 (* Expression *)
 (*****************************************************************************)
 
-type 'a star = [ `Star of 'a]
-
 type ('expr,'star_expr) literal_ = [
     `Lit_FixNum of int
   | `Lit_BigNum of Big_int.big_int
@@ -124,7 +122,7 @@ type 'a expr_ = [ identifier | ('a expr_,'a) literal_ ]
    nested Star's are allowed *)
 type star_expr = 
   | SE of star_expr expr_ 
-  | SStar of (star_expr expr_) star
+  | SStar of star_expr expr_
 
 type expr = star_expr expr_
 
