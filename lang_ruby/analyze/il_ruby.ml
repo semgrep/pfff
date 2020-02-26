@@ -71,36 +71,39 @@ type identifier = [
 (* convenience alias that is a subtype of identifier *)
 type builtin_or_global = [`ID_Var of var_kind (* [`Var_Builtin|`Var_Global] *) * string]
 
-(*****************************************************************************)
-(* Expression *)
-(*****************************************************************************)
-
-type unary_op =
-  | Op_UMinus | Op_UPlus
-  | Op_UTilde
-
-type binary_op =
-  | Op_Plus | Op_Minus
-  | Op_Times | Op_Rem | Op_Div
-  | Op_Pow
-  | Op_CMP
-  | Op_EQ | Op_EQQ
-  | Op_GEQ | Op_LEQ
-  | Op_LT | Op_GT
-  | Op_BAnd  | Op_BOr
-  | Op_LShift | Op_RShift
-
-  | Op_Match
-  | Op_XOR
-  | Op_ARef
-  | Op_ASet
-
 type msg_id = 
   | ID_UOperator of unary_op
   | ID_Operator of binary_op
   | ID_MethodName of string
   | ID_Assign of string
   | ID_Super
+
+  and unary_op =
+    | Op_UMinus | Op_UPlus
+    | Op_UTilde
+  
+  and binary_op =
+    | Op_Plus | Op_Minus
+    | Op_Times | Op_Rem | Op_Div
+    | Op_Pow
+    | Op_CMP
+    | Op_EQ | Op_EQQ
+    | Op_GEQ | Op_LEQ
+    | Op_LT | Op_GT
+    | Op_BAnd  | Op_BOr
+    | Op_LShift | Op_RShift
+  
+    | Op_Match
+    | Op_XOR
+    | Op_ARef
+    | Op_ASet
+
+
+(*****************************************************************************)
+(* Expression *)
+(*****************************************************************************)
+
+type 'a star = [ `Star of 'a]
 
 type ('expr,'star_expr) literal_ = [
     `Lit_FixNum of int
@@ -114,9 +117,6 @@ type ('expr,'star_expr) literal_ = [
   | `Lit_Range of bool * 'expr * 'expr
 ]
 
-type 'a star = [ `Star of 'a]
-type 'a tuple = [`Tuple of 'a list]
-
 type 'a expr_ = [ identifier | ('a expr_,'a) literal_ ]
 
 (* a star_expr is either an expr or a (`Star of expr), i.e., no
@@ -124,6 +124,13 @@ type 'a expr_ = [ identifier | ('a expr_,'a) literal_ ]
 type star_expr = [ star_expr expr_ | (star_expr expr_) star]
 
 type expr = star_expr expr_
+
+
+
+
+
+type 'a tuple = [`Tuple of 'a list]
+
 
 type literal = (expr,star_expr) literal_
 
