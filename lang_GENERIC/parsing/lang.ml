@@ -35,15 +35,23 @@ type t =
 (* Helpers *)
 (*****************************************************************************)
 
-let lang_of_string_opt x = 
-  match String.lowercase_ascii x with
-  | "py" | "python"     -> Some Python
-  | "js" | "javascript" -> Some Javascript
-  | "c"  -> Some C
-  | "ml" | "ocaml" -> Some ML
-  | "java" -> Some Java
-  | "go" | "golang" -> Some Go
-  | _ -> None
+let list_of_lang = [
+      "py", Python;
+      "python", Python;
+      "js", Javascript;
+      "javascript", Javascript;
+      "c", C;
+      "ml", ML;
+      "ocaml", ML;
+      "java", Java;
+      "go", Go;
+      "golang", Go;
+    ]
+
+let lang_of_string_map = Common.hash_of_list list_of_lang
+
+let lang_of_string_opt x = Hashtbl.find_opt lang_of_string_map (String.lowercase_ascii x)
+
 
 let lang_of_filename_opt filename =
  let typ = File_type.file_type_of_file filename in
