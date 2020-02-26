@@ -124,19 +124,19 @@ module Code_F(PP : CfgPrinter) = struct
         fprintf ppf "(%a..%a)" PP.format_expr l PP.format_expr u
 
   let format_expr ppf : expr -> unit = function
-    | #literal as l -> PP.format_literal ppf l
-    | #identifier as id -> PP.format_identifier ppf id
+    | ELit (#literal as l) -> PP.format_literal ppf l
+    | EId (#identifier as id) -> PP.format_identifier ppf id
 
   let format_star_expr ppf : star_expr -> unit = function
-    | SE (#expr as e) -> PP.format_expr ppf e
+    | SE (e) -> PP.format_expr ppf e
     | SStar (e) -> fprintf ppf "*%a" PP.format_expr e (* XXX *)
 
   let format_tuple_expr ppf : tuple_expr -> unit = function
     | TTup ((el)) -> 
         fprintf ppf "@[%a@]" (format_comma_list PP.format_tuple_expr) el
-    | TE (#expr as e) -> PP.format_expr ppf e
+    | TE (e) -> PP.format_expr ppf e
     | TStar ((TTup (_el) as tup)) -> fprintf ppf "*%a" PP.format_tuple_expr tup
-    | TStar ((TE (#expr as e))) -> fprintf ppf "*%a" PP.format_expr e
+    | TStar ((TE (e))) -> fprintf ppf "*%a" PP.format_expr e
     | TStar ((TStar _)) -> failwith "Impossible"
 
   let format_lhs ppf : lhs -> unit = function

@@ -232,15 +232,15 @@ module Abbr = struct
     (`Lit_Array lst : [`Lit_Array of star_expr list] :> [>literal])
 
   let hash lst = 
-    (`Lit_Hash lst : [`Lit_Hash of ([<expr]*[<expr]) list] :> [>literal])
+    (`Lit_Hash lst : [`Lit_Hash of (expr*expr) list] :> [>literal])
 
   let range ?(inc=true) l u = 
-    (`Lit_Range(inc,l,u) : [`Lit_Range of bool * [<expr] * [<expr]] :> [>literal])
+    (`Lit_Range(inc,l,u) : [`Lit_Range of bool * expr * expr] :> [>literal])
 
   let expr e pos = mkstmt (Expression(e :> expr)) pos
 
   let seq lst pos = match lst with
-    | [] -> expr `ID_Nil pos
+    | [] -> expr (EId `ID_Nil) pos
     | ({snode=Seq _; _} as blk)::[] -> blk
     | x::[] -> x
     | l -> 
@@ -359,14 +359,14 @@ module Abbr = struct
   let retry pos = mkstmt Retry pos
   let redo pos = mkstmt Redo pos
 
-  let _r1 p = call ~lhs:(LId (local "x")) "foo" [SE (float 1.0)] p
-  let _r2 p = binop (float 3.0) Op_Times (SE (local "x")) p
+  let _r1 p = call ~lhs:(LId (local "x")) "foo" [SE (ELit (float 1.0))] p
+  let _r2 p = binop (ELit (float 3.0)) Op_Times (SE (EId (local "x"))) p
 
 end
 
 let pos_of s = s.pos
 
-let empty_stmt () = mkstmt (Expression `ID_Nil) Lexing.dummy_pos
+let empty_stmt () = mkstmt (Expression (EId `ID_Nil)) Lexing.dummy_pos
 
 let fresh_local _s = 
   let i = uniq () in
@@ -574,8 +574,8 @@ let rec visit_literal vtor l =
 
 and visit_expr vtor (e:expr) = 
   visit vtor#visit_expr e begin function
-    | #literal as l -> (visit_literal vtor l :> expr)
-    | #identifier as id -> (visit_id vtor id :> expr)
+    | ELit (#literal as l) -> (ELit (visit_literal vtor l) : expr)
+    | EId (#identifier as id) -> (EId (visit_id vtor id) : expr)
   end
 
 and visit_lhs vtor (lhs:lhs) = 
@@ -591,19 +591,19 @@ and visit_lhs vtor (lhs:lhs) =
   end
 
 and visit_star_expr vtor star = match star with
-  | SE (#expr as e) -> SE (visit_expr vtor e)
+  | SE (e) -> SE (visit_expr vtor e)
   | SStar (e) -> 
       let e' = visit_expr vtor e in
         if e==e' then star else SStar (e')
 
 let rec visit_tuple vtor tup = 
   visit vtor#visit_tuple tup begin function
-    | TE (#expr as e) -> TE (visit_expr vtor e : expr)
+    | TE (e) -> TE (visit_expr vtor e : expr)
     | TTup (lst) ->
   	  let lst' = map_preserve List.map (visit_tuple vtor) lst in
 	  if lst == lst' then tup
 	  else TTup (lst')
-    | TStar ((TE (#expr as e))) -> 
+    | TStar ((TE (e))) -> 
 	  let e' = visit_expr vtor e in
 	  if e==e' then tup else (TStar ((TE e')) : tuple_expr)
     | TStar ((TTup (lst))) -> 

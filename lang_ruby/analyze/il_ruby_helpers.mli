@@ -99,8 +99,8 @@ module Abbr : sig
   val atom : string -> [>literal]
   val regexp : ?o:string -> string-> [>literal]
   val array : star_expr list -> [>literal]
-  val hash : ([<expr]*[<expr]) list -> [>literal]
-  val range : ?inc:bool -> [<expr] -> [<expr] -> [>literal]
+  val hash : (expr*expr) list -> [>literal]
+  val range : ?inc:bool -> expr -> expr -> [>literal]
 
   val seq : stmt list -> pos -> stmt
 
@@ -108,33 +108,33 @@ module Abbr : sig
 
   val alias_m : link:msg_id -> orig:msg_id -> pos -> stmt
 
-  val if_s : [<expr] -> t:stmt -> f:stmt -> pos -> stmt
+  val if_s : expr -> t:stmt -> f:stmt -> pos -> stmt
 
-  val case : ?default:stmt -> [<expr] -> (tuple_expr*stmt) list -> pos -> stmt
+  val case : ?default:stmt -> expr -> (tuple_expr*stmt) list -> pos -> stmt
 
-  val while_s : [<expr] -> stmt -> pos -> stmt
+  val while_s : expr -> stmt -> pos -> stmt
 
-  val for_s : block_formal_param list -> [<expr] -> stmt -> pos -> stmt
+  val for_s : block_formal_param list -> expr -> stmt -> pos -> stmt
 
-  val uop : ?lhs:lhs -> unary_op -> [<expr] -> ?cb:codeblock -> pos -> stmt
+  val uop : ?lhs:lhs -> unary_op -> expr -> ?cb:codeblock -> pos -> stmt
 
-  val binop : ?lhs:lhs -> [<expr] ->
+  val binop : ?lhs:lhs -> expr ->
     binary_op -> star_expr -> ?cb:codeblock -> pos -> stmt
 
-  val call : ?lhs:lhs -> ?targ:[<expr] ->
+  val call : ?lhs:lhs -> ?targ:expr ->
     string -> star_expr list -> ?cb:codeblock -> pos -> stmt
 
-  val massign : ?lhs:lhs -> ?targ:[<expr] ->
+  val massign : ?lhs:lhs -> ?targ:expr ->
     string -> star_expr list -> ?cb:codeblock -> pos -> stmt
 
   val super : ?lhs:lhs -> star_expr list -> ?cb:codeblock -> pos -> stmt
 
-  val mcall : ?lhs:lhs -> ?targ:[<expr] ->
+  val mcall : ?lhs:lhs -> ?targ:expr ->
     msg_id -> star_expr list -> ?cb:codeblock -> pos -> stmt
 
   val assign : lhs -> tuple_expr -> pos -> stmt
 
-  val expr : [<expr] -> pos -> stmt
+  val expr : expr -> pos -> stmt
   val return : ?v:tuple_expr -> pos -> stmt
   val yield : ?lhs:lhs -> ?args:star_expr list-> pos -> stmt
 
