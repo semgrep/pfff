@@ -1,5 +1,4 @@
 
-open Config
 open Format
 
 type pos = Lexing.position
@@ -57,7 +56,7 @@ let format_pos ppf pos =
     ((*Filename.basename*) pos.Lexing.pos_fname)
     pos.Lexing.pos_lnum 
     
-let lvl i = conf.debug_level >= i
+let lvl _i = (*conf.debug_level >= i*) true
 
 let stderr_ppf = formatter_of_out_channel stderr
 
@@ -117,7 +116,8 @@ let flush () = Format.pp_print_flush stderr_ppf ()
 
 let () = at_exit flush
 
-let fixme ?(ctx=Ctx_Empty) fmt = show true conf.no_dup_errors ctx "FIXME" fmt
+let fixme ?(ctx=Ctx_Empty) fmt = 
+  show true (*conf.no_dup_errors*)true ctx "FIXME" fmt
 
 let debug ?pos fmt = match pos with
   | None -> show (lvl 10) false Ctx_Empty "DEBUG" fmt
@@ -129,7 +129,7 @@ let warn ?(ctx=Ctx_Empty) fmt = show (lvl 1) false ctx "WARNING" fmt
 
 let show_raise ctx code fmt = 
   let fail m = 
-    if not conf.error_raises_exc
+    if not (*conf.error_raises_exc*)false
     then output_msg_ctx stderr_ppf m ctx; 
     Format.pp_print_flush stderr_ppf ();
     failwith m 
@@ -137,10 +137,10 @@ let show_raise ctx code fmt =
     output_header fail code fmt
 
 let err ?(ctx=Ctx_Empty) fmt = 
-  if conf.error_raises_exc 
+  if (*conf.error_raises_exc *)false
   then show_raise ctx "ERROR" fmt
-  else show true conf.no_dup_errors ctx "ERROR" fmt
+  else show true (*conf.no_dup_errors*)true ctx "ERROR" fmt
 
 let fatal ctx fmt = 
-  conf.print_error_ctx <- true;
+  (*conf.print_error_ctx <- true;*)
   show_raise ctx "FATAL" fmt

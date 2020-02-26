@@ -4,7 +4,7 @@ type 'a t = 'a list * 'a list
 
 let empty = [], []
 
-let is_empty (f,r) = match f with [] -> true | _ -> false
+let is_empty (f,_r) = match f with [] -> true | _ -> false
 
 (* smart construct to enforce that the first list is only empty
    when the entire queue is empty *)
@@ -24,7 +24,7 @@ let hd = function
 
 let tl = function
   | [],_ -> failwith "tl"
-  | x::tl,r -> queue tl r
+  | _x::tl,r -> queue tl r
 
 let pop = function
   | [],_ -> failwith "pop"
@@ -132,10 +132,10 @@ let to_cursor t = Top,t
 
 let current (_,t) = hd t
 
-let hd_at c = current c
-let tl_at (_,t) = tl t
+let _hd_at c = current c
+let _tl_at (_,t) = tl t
 
-let at_right (p,t) = is_empty t
+let at_right (_p,t) = is_empty t
 let at_left = function Top,_ -> true | _ -> false
 
 let move_right (p,t) = match t with
