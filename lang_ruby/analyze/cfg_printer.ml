@@ -1,6 +1,6 @@
 
 open Format
-open Cfg
+open Il_ruby
 open Utils_ruby
 
 module type CfgPrinter = sig

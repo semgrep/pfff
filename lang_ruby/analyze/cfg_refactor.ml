@@ -1,13 +1,14 @@
 open Common
 open Printf
-open Cfg
+open Il_ruby
 open Cfg_printer
 open Utils_ruby
 module Utils = Utils_ruby
 module Ast = Ast_ruby
 module H = Ast_ruby_helpers
 
-module C = Cfg.Abbr
+open Il_ruby_helpers
+module C = Il_ruby_helpers.Abbr
 
 type 'a acc = {
   q : 'a DQueue.t;
@@ -496,7 +497,7 @@ let refactor_formal_list f acc lst pos =
     ) (acc,[]) lst
   in acc, List.rev rlst
 
-let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Cfg.expr = 
+let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr = 
   match e with
     | Ast.Binop(_, Ast.Op_OP_ASGN _, _, _) 
     | Ast.If _ | Ast.Yield _ | Ast.Return _  
@@ -917,7 +918,7 @@ and refactor_or_if acc l r pos =
   let acc = acc_enqueue (C.if_s l' ~t:vl ~f:vr pos) acc in
     (acc_seen acc v_acc), v
       
-and refactor_tuple_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Cfg.tuple_expr =
+and refactor_tuple_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.tuple_expr =
   match e with
     | Ast.Tuple(l,_pos) -> 
         let acc,l' = refactor_list refactor_tuple_expr (acc,DQueue.empty) l in
