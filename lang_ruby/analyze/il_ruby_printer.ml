@@ -102,29 +102,29 @@ module Code_F(PP : CfgPrinter) = struct
         fprintf ppf "%a.%a" PP.format_def_id e1 PP.format_msg_id e2
 
   let format_literal ppf : literal -> unit = function
-    | `Lit_FixNum i -> fprintf ppf "%d" i
-    | `Lit_BigNum big -> 
+    | FixNum i -> fprintf ppf "%d" i
+    | BigNum big -> 
         fprintf ppf "%s" (Big_int.string_of_big_int big)
-    | `Lit_Float(s,_f) -> fprintf ppf "%s" s
-    | `Lit_String str -> fprintf ppf "%%{%s}" (escape_chars str ['{'; '}'])
-    | `Lit_Atom str -> fprintf ppf ":\"%s\"" (escape_chars str ['"'])
-    | `Lit_Regexp (str,m) -> 
+    | Float(s,_f) -> fprintf ppf "%s" s
+    | String str -> fprintf ppf "%%{%s}" (escape_chars str ['{'; '}'])
+    | Atom str -> fprintf ppf ":\"%s\"" (escape_chars str ['"'])
+    | Regexp (str,m) -> 
         fprintf ppf "%%r{%s}%s" str (*(escape_chars str ['{'; '}'])*) m
-    | `Lit_Array lst -> fprintf ppf "[@[%a@]]" 
+    | Array lst -> fprintf ppf "[@[%a@]]" 
         (format_comma_list PP.format_star_expr) lst
-    | `Lit_Hash lst -> 
+    | Hash lst -> 
         let format_assoc ppf (l,r) = 
 	  fprintf ppf "%a => %a" PP.format_expr l PP.format_expr r
         in
 	  fprintf ppf "{@[%a@]}" (format_comma_list format_assoc) lst
-    | `Lit_Range(true,l,u) ->
+    | Range(true,l,u) ->
         fprintf ppf "(%a...%a)" PP.format_expr l PP.format_expr u
 
-    | `Lit_Range(false,l,u) ->
+    | Range(false,l,u) ->
         fprintf ppf "(%a..%a)" PP.format_expr l PP.format_expr u
 
   let format_expr ppf : expr -> unit = function
-    | ELit (#literal as l) -> PP.format_literal ppf l
+    | ELit (l) -> PP.format_literal ppf l
     | EId (#identifier as id) -> PP.format_identifier ppf id
 
   let format_star_expr ppf : star_expr -> unit = function

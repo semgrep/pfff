@@ -211,8 +211,8 @@ let special_of_string pos x : expr =
   match x with
   | "true"  -> EId (`ID_True)
   | "false" -> EId (`ID_False)
-  | "__FILE__" -> ELit (`Lit_String (pos.Lexing.pos_fname))
-  | "__LINE__" -> ELit (`Lit_FixNum (pos.Lexing.pos_lnum))
+  | "__FILE__" -> ELit (String (pos.Lexing.pos_fname))
+  | "__LINE__" -> ELit (FixNum (pos.Lexing.pos_lnum))
   | _ -> raise (Invalid_argument "special_of_string")
 
 let refactor_id_kind pos : Ast.id_kind -> var_kind = function
@@ -566,14 +566,14 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
           acc, EId (`ID_UScope s)
 
     | Ast.Unary(Ast.Op_UMinus, Ast.Literal(Ast.FixNum i,_), _pos) -> 
-        acc, ELit (`Lit_FixNum (-i))
+        acc, ELit (FixNum (-i))
 
     | Ast.Unary(Ast.Op_UMinus, Ast.Literal(Ast.BigNum i,_), _pos) -> 
-        acc, ELit (`Lit_BigNum (Big_int.minus_big_int i))
+        acc, ELit (BigNum (Big_int.minus_big_int i))
 
     | Ast.Unary(Ast.Op_UMinus, Ast.Literal(Ast.Float(s,f),_), _pos) -> 
         assert(s.[0] != '-');
-        acc, ELit (`Lit_Float("-" ^ s, (~-. f)))
+        acc, ELit (Float("-" ^ s, (~-. f)))
 
     | Ast.Unary((Ast.Op_UBang | Ast.Op_UNot),e,pos) ->
         let acc,v = fresh acc in
@@ -642,17 +642,17 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
     | Ast.Binop(e1,Ast.Op_ASSOC,e2,_pos) ->
         let acc,e1' = refactor_expr acc e1 in
         let acc,e2' = refactor_expr acc e2 in
-          acc, ELit (`Lit_Hash [ e1', e2'])
+          acc, ELit (Hash [ e1', e2'])
 
     | Ast.Binop(e1,Ast.Op_DOT2,e2,_pos) ->
         let acc,e1' = refactor_expr acc e1 in
         let acc,e2' = refactor_expr acc e2 in
-          acc, ELit (`Lit_Range(false, e1', e2'))
+          acc, ELit (Range(false, e1', e2'))
 
     | Ast.Binop(e1,Ast.Op_DOT3,e2,_pos) ->
         let acc,e1' = refactor_expr acc e1 in
         let acc,e2' = refactor_expr acc e2 in
-          acc, ELit (`Lit_Range(true, e1', e2'))
+          acc, ELit (Range(true, e1', e2'))
             
     | Ast.Binop(e1,Ast.Op_ASSIGN,e2, pos) -> 
         let acc,e1',after = refactor_lhs acc e1 in
@@ -701,7 +701,7 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
 
     (* handles $0 *)
     | Ast.Id(Ast.ID_Global, "0", _pos) ->
-        acc, ELit (`Lit_String (*Config.conf.Config.ruby_file*)"TODO:ruby_file")
+        acc, ELit (String (*Config.conf.Config.ruby_file*)"TODO:ruby_file")
 
     | Ast.Id(ik,s, pos) -> 
         if is_special s then acc, (special_of_string pos s)
@@ -713,11 +713,11 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
     | Ast.Tuple(l,_pos) 
     | Ast.Array(l,_pos) ->
         let acc,l' = refactor_list refactor_star_expr (acc,DQueue.empty) l in
-          acc, ELit (`Lit_Array (DQueue.to_list l'))
+          acc, ELit (Array (DQueue.to_list l'))
 
     | Ast.Hash(_b,l,pos) ->
         let acc, hl = refactor_hash_list acc l pos in
-          acc, ELit (`Lit_Hash hl)
+          acc, ELit (Hash hl)
 
     | Ast.Operator(_,pos)
     | Ast.UOperator(_,pos) -> 
@@ -766,10 +766,10 @@ and construct_explicit_regexp acc pos re_interp mods : stmt acc * expr =
     let acc,str = refactor_interp_string acc re_interp pos in
     let new_opts = match lang with
       | None -> []
-      | Some c -> [SE (ELit (`Lit_String (String.make 1 c)))]
+      | Some c -> [SE (ELit (String (String.make 1 c)))]
     in
     let new_opts = match re_opts with
-    | None -> (SE str)::(SE (ELit (`Lit_FixNum 0)))::new_opts
+    | None -> (SE str)::(SE (ELit (FixNum 0)))::new_opts
     | Some v -> (SE str)::(SE v)::new_opts
     in
     let call = C.mcall ~lhs ~targ:(EId (`ID_UScope "Regexp"))
@@ -795,7 +795,7 @@ and construct_explicit_regexp acc pos re_interp mods : stmt acc * expr =
 
 and refactor_interp_string acc istr pos = 
   let refactor_contents acc : Ast.string_contents -> stmt acc * expr = function
-    | Ast.StrChars s -> acc, ELit (`Lit_String s)
+    | Ast.StrChars s -> acc, ELit (String s)
     | Ast.StrExpr ast_e -> 
         let acc, e = refactor_expr acc ast_e in
         make_call_expr acc (Some e) (ID_MethodName "to_s") [] None pos
@@ -811,18 +811,18 @@ and refactor_interp_string acc istr pos =
   in
     (* unfold once to get start of expr_acc *)
     match istr with
-      | [] -> acc, ELit (`Lit_String "")
+      | [] -> acc, ELit (String "")
       | hd::tl -> 
           let acc, e = refactor_contents acc hd in
             helper acc e tl
               
 and refactor_lit acc (l : Ast.lit_kind) pos : stmt acc * expr = match l with
-  | Ast.FixNum i -> acc, ELit (`Lit_FixNum i)
-  | Ast.BigNum i -> acc, ELit (`Lit_BigNum i)
-  | Ast.Float(s,f) -> acc, ELit (`Lit_Float(s,f))
+  | Ast.FixNum i -> acc, ELit (FixNum i)
+  | Ast.BigNum i -> acc, ELit (BigNum i)
+  | Ast.Float(s,f) -> acc, ELit (Float(s,f))
 
   | Ast.String(Ast.Single s) -> 
-        acc, ELit (`Lit_String (unescape_single_string s))
+        acc, ELit (String (unescape_single_string s))
 
   | Ast.String(Ast.Double s) -> 
       refactor_interp_string acc s pos
@@ -830,14 +830,14 @@ and refactor_lit acc (l : Ast.lit_kind) pos : stmt acc * expr = match l with
       let acc, e = refactor_interp_string acc s pos in
         make_call_expr acc None (ID_MethodName "__backtick") [SE e] None pos
 
-  | Ast.Atom [Ast.StrChars s] -> acc, ELit (`Lit_Atom s)
+  | Ast.Atom [Ast.StrChars s] -> acc, ELit (Atom s)
   | Ast.Atom istr -> 
       let acc, str = refactor_interp_string acc istr pos in
         make_call_expr acc (Some str) (ID_MethodName "to_sym") [] None pos
 
   | Ast.Regexp([Ast.StrChars s1],s2) -> 
       let s1' = escape_regexp s1 in
-        acc, ELit (`Lit_Regexp(s1',s2))
+        acc, ELit (Regexp(s1',s2))
 
   | Ast.Regexp(s1,s2) -> construct_explicit_regexp acc pos s1 s2
               
@@ -1032,7 +1032,7 @@ and refactor_lhs acc e : (stmt acc * lhs * stmt acc) =
     | _ -> 
         match refactor_expr acc e with
           | acc, EId (#identifier as id) -> acc, LId id, acc_emptyq acc
-          | _acc, ELit (#literal) -> Log.fatal Log.empty "lhs literal?"
+          | _acc, ELit (_) -> Log.fatal Log.empty "lhs literal?"
   in
   let acc = seen_lhs acc lhs in
     acc, lhs,after
@@ -1040,7 +1040,7 @@ and refactor_lhs acc e : (stmt acc * lhs * stmt acc) =
 and refactor_id (acc:stmt acc) e : stmt acc * identifier = 
   match refactor_expr acc e with 
     | (acc,EId (#identifier as id)) -> acc, id
-    | _,ELit (#literal as l) -> 
+    | _,ELit (l) -> 
         Log.fatal (Log.of_loc (H.pos_of e)) "lhs_of_expr: literal %a" 
           CodePrinter.format_literal l
 
@@ -1067,7 +1067,7 @@ and refactor_symbol_or_msg (acc:stmt acc) sym_msg = match sym_msg with
   | Ast.Literal(Ast.Atom(interp),pos) ->
       let acc, e = refactor_interp_string acc interp pos in
         begin match e with 
-          | ELit (`Lit_String s) -> acc, msg_id_from_string s
+          | ELit (String s) -> acc, msg_id_from_string s
           | _ -> Log.fatal Log.empty "alias with symbol interp string?"
         end
   | msg -> refactor_msg acc msg
@@ -1272,8 +1272,8 @@ and refactor_assignment (acc: stmt acc) (lhs: Ast.expr) (rhs: Ast.expr)
         if List.exists (function SStar (_) -> true| _ -> false) lhs_list
         then begin
           (* construct tmp = [*lhs] + [rhs] *)
-          let lhs_ary = `Lit_Array lhs_list in
-          let rhs_ary = `Lit_Array [rhs_arg] in
+          let lhs_ary = Array lhs_list in
+          let rhs_ary = Array [rhs_arg] in
           let acc, tmp = fresh acc in
           let tmp' = match tmp with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
 
@@ -1731,7 +1731,7 @@ and refactor_method_formal (acc:stmt acc) t _pos : stmt acc * method_formal_para
             let e' = TE e in
             acc, Formal_default(f, (e' : tuple_expr))
           | _ -> 
-              let def = `Lit_Atom (sprintf "__rat_default_%d" (fresh_formal())) in
+              let def = Atom (sprintf "__rat_default_%d" (fresh_formal())) in
               let eql = ID_MethodName "eql?" in
               let acc, v = fresh acc in
               let v' = match v with LId (#identifier as id) -> id | _ -> failwith "Impossible" in

@@ -92,15 +92,15 @@ module Abbr : sig
   val ifalse : [>identifier]
   val access_path : string list -> [>identifier]
     
-  val num : int -> [>literal]
-  val bignum : Big_int.big_int -> [>literal]
-  val float : float -> [>literal]
-  val str : string -> [>literal]
-  val atom : string -> [>literal]
-  val regexp : ?o:string -> string-> [>literal]
-  val array : star_expr list -> [>literal]
-  val hash : (expr*expr) list -> [>literal]
-  val range : ?inc:bool -> expr -> expr -> [>literal]
+  val num : int -> literal
+  val bignum : Big_int.big_int -> literal
+  val float : float -> literal
+  val str : string -> literal
+  val atom : string -> literal
+  val regexp : ?o:string -> string-> literal
+  val array : star_expr list -> literal
+  val hash : (expr*expr) list -> literal
+  val range : ?inc:bool -> expr -> expr -> literal
 
   val seq : stmt list -> pos -> stmt
 
