@@ -291,18 +291,18 @@ module Abbr = struct
     in mkstmt (MethodCall((lhs:>lhs option),mc)) pos
 
   let call ?lhs ?targ msg args ?cb pos = 
-    mcall ?lhs ?targ (`ID_MethodName msg) args ?cb pos
+    mcall ?lhs ?targ (ID_MethodName msg) args ?cb pos
 
   let massign ?lhs ?targ msg args ?cb pos = 
-    mcall ?lhs ?targ (`ID_Assign msg) args ?cb pos
+    mcall ?lhs ?targ (ID_Assign msg) args ?cb pos
 
   let uop ?lhs msg targ ?cb pos = 
-    mcall ?lhs ~targ (`ID_UOperator msg) [] ?cb pos
+    mcall ?lhs ~targ (ID_UOperator msg) [] ?cb pos
 
   let binop ?lhs targ msg arg ?cb pos = 
-    mcall ?lhs ~targ (`ID_Operator msg) [arg] ?cb pos
+    mcall ?lhs ~targ (ID_Operator msg) [arg] ?cb pos
 
-  let super ?lhs args ?cb pos = mcall ?lhs `ID_Super args ?cb pos
+  let super ?lhs args ?cb pos = mcall ?lhs ID_Super args ?cb pos
 
   let assign lhs tup pos = 
     mkstmt (Assign((lhs:>lhs),(tup:>tuple_expr))) pos
@@ -334,10 +334,10 @@ module Abbr = struct
   let module_s ?lhs name body pos = 
     mkstmt (Module((lhs :> lhs option),(name :> identifier),body)) pos
 
-  let mdef ?targ s args body pos =  method_ ?targ (`ID_MethodName s) args body pos
-  let adef ?targ s args body pos =  method_ ?targ (`ID_Assign s) args body pos
-  let opdef ?targ o args body pos =  method_ ?targ (`ID_Operator o) args body pos
-  let uopdef ?targ o args body pos =  method_ ?targ (`ID_UOperator o) args body pos
+  let mdef ?targ s args body pos =  method_ ?targ (ID_MethodName s) args body pos
+  let adef ?targ s args body pos =  method_ ?targ (ID_Assign s) args body pos
+  let opdef ?targ o args body pos =  method_ ?targ (ID_Operator o) args body pos
+  let uopdef ?targ o args body pos =  method_ ?targ (ID_UOperator o) args body pos
 
 
   let rguard ?bind guard = match bind with
@@ -377,36 +377,36 @@ let _strip_colon s =
   String.sub s 1 (String.length s - 1)
 
 let msg_id_of_string str = match str with
-  | "+" -> `ID_Operator Op_Plus
-  | "-" -> `ID_Operator Op_Minus
-  | "*" -> `ID_Operator Op_Times
-  | "%" -> `ID_Operator Op_Rem
-  | "/" -> `ID_Operator Op_Div
-  | "<=>" -> `ID_Operator Op_CMP
-  | "==" -> `ID_Operator Op_EQ
-  | "===" -> `ID_Operator Op_EQQ
-  | ">=" -> `ID_Operator Op_GEQ
-  | "<=" -> `ID_Operator Op_LEQ
-  | "<" -> `ID_Operator Op_LT
-  | ">" -> `ID_Operator Op_GT
-  | "&" -> `ID_Operator Op_BAnd
-  | "|" -> `ID_Operator Op_BOr
-  | "=~" -> `ID_Operator Op_Match
-  | "^" -> `ID_Operator Op_XOR
-  | "**" -> `ID_Operator Op_Pow
-  | "[]" -> `ID_Operator Op_ARef
-  | "[]=" -> `ID_Operator Op_ASet
-  | "<<" -> `ID_Operator Op_LShift
-  | ">>" -> `ID_Operator Op_RShift
-  | "-@" -> `ID_UOperator Op_UMinus
-  | "+@" -> `ID_UOperator Op_UPlus
-  | "~@" | "~" -> `ID_UOperator Op_UTilde
+  | "+" -> ID_Operator Op_Plus
+  | "-" -> ID_Operator Op_Minus
+  | "*" -> ID_Operator Op_Times
+  | "%" -> ID_Operator Op_Rem
+  | "/" -> ID_Operator Op_Div
+  | "<=>" -> ID_Operator Op_CMP
+  | "==" -> ID_Operator Op_EQ
+  | "===" -> ID_Operator Op_EQQ
+  | ">=" -> ID_Operator Op_GEQ
+  | "<=" -> ID_Operator Op_LEQ
+  | "<" -> ID_Operator Op_LT
+  | ">" -> ID_Operator Op_GT
+  | "&" -> ID_Operator Op_BAnd
+  | "|" -> ID_Operator Op_BOr
+  | "=~" -> ID_Operator Op_Match
+  | "^" -> ID_Operator Op_XOR
+  | "**" -> ID_Operator Op_Pow
+  | "[]" -> ID_Operator Op_ARef
+  | "[]=" -> ID_Operator Op_ASet
+  | "<<" -> ID_Operator Op_LShift
+  | ">>" -> ID_Operator Op_RShift
+  | "-@" -> ID_UOperator Op_UMinus
+  | "+@" -> ID_UOperator Op_UPlus
+  | "~@" | "~" -> ID_UOperator Op_UTilde
   | s -> 
       let len = String.length s in
       let all_but_one = String.sub s (len-1) 1 in
         if all_but_one = "="
-        then `ID_Assign all_but_one
-        else `ID_MethodName s
+        then ID_Assign all_but_one
+        else ID_MethodName s
 
 let rec stmt_eq (s1:stmt) (s2:stmt) = 
     snode_eq s1.snode s2.snode
