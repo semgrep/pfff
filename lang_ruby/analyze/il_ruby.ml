@@ -233,18 +233,16 @@ and def_name =
   | Instance_Method of msg_id
   | Singleton_Method of identifier * msg_id
 
-  and method_formal_param = [
-      `Formal_meth_id of string
-    | `Formal_amp of string
-    | `Formal_star of string
-    | `Formal_default of string * tuple_expr
-  ]
+  and method_formal_param =
+    | Formal_meth_id of string
+    | Formal_amp of string
+    | Formal_star of string
+    | Formal_default of string * tuple_expr
 
-  and block_formal_param = [
-      `Formal_block_id of var_kind * string
-    | `Formal_star of string
-    | `Formal_tuple of block_formal_param list
-  ]
+  and block_formal_param =
+    | Formal_block_id of var_kind * string
+    | Formal_star2 of string
+    | Formal_tuple of block_formal_param list
 
 type any_formal =
   | B of block_formal_param
