@@ -67,6 +67,7 @@ BASICLIBS=commons/lib.cma \
  lang_python/parsing/lib.cma \
   lang_python/analyze/lib.cma \
  lang_ruby/parsing/lib.cma \
+  lang_ruby/analyze/lib.cma \
  lang_go/parsing/lib.cma \
   lang_go/analyze/lib.cma \
  lang_csharp/parsing/lib.cma \
@@ -132,6 +133,7 @@ LIBS= commons/lib.cma \
     lang_python/parsing/lib.cma \
      lang_python/analyze/lib.cma \
     lang_ruby/parsing/lib.cma \
+     lang_ruby/analyze/lib.cma \
     lang_go/parsing/lib.cma \
      lang_go/analyze/lib.cma \
     lang_csharp/parsing/lib.cma \
@@ -180,6 +182,7 @@ MAKESUBDIRS=commons commons_ocollection commons_core \
   lang_python/parsing \
    lang_python/analyze \
   lang_ruby/parsing \
+   lang_ruby/analyze \
   lang_go/parsing \
    lang_go/analyze \
   lang_csharp/parsing \
