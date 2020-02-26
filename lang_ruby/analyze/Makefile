@@ -6,7 +6,8 @@ TARGET=lib
 OPAMPKG=pfff-lang_ruby-analyze
 
 SRC= dQueue.ml log.ml \
-  visitor.ml cfg.ml cfg_printer.ml cfg_refactor.ml
+  visitor.ml cfg.ml cfg_printer.ml cfg_refactor.ml \
+  test_analyze_ruby.ml
 
 -include $(TOP)/Makefile.config
 
@@ -15,7 +16,7 @@ LIBS=$(TOP)/commons/lib.cma \
      $(TOP)/h_program-lang/lib.cma \
      ../parsing/lib.cma \
 
-INCLUDEDIRS= $(TOP)/commons \
+INCLUDEDIRS= $(TOP)/commons $(TOP)/commons_core \
    $(TOP)/h_program-lang \
    $(TOP)/globals \
    ../parsing \
