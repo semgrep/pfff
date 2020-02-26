@@ -101,7 +101,11 @@ type msg_id =
 (* Expression *)
 (*****************************************************************************)
 
-type ('expr,'star_expr) literal_ =
+type expr = 
+ | EId of identifier 
+ | ELit of literal
+
+and literal =
   | FixNum of int
   | BigNum of Big_int.big_int
   | Float of string * float
@@ -109,23 +113,16 @@ type ('expr,'star_expr) literal_ =
 
   | Atom of string
   | Regexp of string * string
-  | Range of bool * 'expr * 'expr
+  | Range of bool * expr * expr
 
-  | Array of 'star_expr list
-  | Hash of ('expr * 'expr) list
-
-
-type 'a expr_ = 
- | EId of identifier 
- | ELit of ('a expr_,'a) literal_
+  | Array of star_expr list
+  | Hash of (expr * expr) list
 
 (* a star_expr is either an expr or a (`Star of expr), i.e., no
    nested Star's are allowed *)
-type star_expr = 
-  | SE of star_expr expr_ 
-  | SStar of star_expr expr_
-
-type expr = star_expr expr_
+and star_expr = 
+  | SE of expr
+  | SStar of expr
 
 
 type tuple_expr = 
@@ -256,8 +253,6 @@ type t = stmt
 type any_formal =
   | B of block_formal_param
   | M of method_formal_param
-
-type literal = (expr,star_expr) literal_
 
 let b_to_any x = B x
 let m_to_any x = M x
