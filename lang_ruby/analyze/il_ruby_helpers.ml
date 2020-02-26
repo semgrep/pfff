@@ -359,7 +359,7 @@ module Abbr = struct
   let retry pos = mkstmt Retry pos
   let redo pos = mkstmt Redo pos
 
-  let _r1 p = call ~lhs:(local "x") "foo" [float 1.0] p
+  let _r1 p = call ~lhs:(LId (local "x")) "foo" [float 1.0] p
   let _r2 p = binop (float 3.0) Op_Times (local "x") p
 
 end
@@ -580,14 +580,14 @@ and visit_expr vtor (e:expr) =
 
 and visit_lhs vtor (lhs:lhs) = 
   visit vtor#visit_lhs lhs begin function
-    | #identifier as id -> (visit_id vtor id :> lhs)
-    | `Tuple lhs_l -> 
+    | LId (#identifier as id) -> LId (visit_id vtor id :> identifier)
+    | LTup (`Tuple lhs_l) -> 
 	let lhs_l' = map_preserve List.map (visit_lhs vtor) lhs_l in
 	  if lhs_l == lhs_l' then lhs
-	  else `Tuple lhs_l'
-    | `Star (#identifier as id) -> 
+	  else LTup (`Tuple lhs_l')
+    | LStar (`Star (#identifier as id)) -> 
 	let id' = visit_id vtor id in
-	  if id==id' then lhs else (`Star id' :> lhs)
+	  if id==id' then lhs else (LStar (`Star id') : lhs)
   end
 
 and visit_star_expr vtor star = match star with
@@ -845,10 +845,10 @@ let alpha_convert_local ~var ~sub s =
   visit_stmt (new alpha_visitor ~var ~sub) s
 
 let rec locals_of_lhs acc (lhs:lhs) = match lhs with
-  | `ID_Var(Var_Local,s) -> StrSet.add s acc
-  | #identifier -> acc
-  | `Tuple lst -> List.fold_left locals_of_lhs acc lst
-  | `Star (#identifier as s)  -> locals_of_lhs acc (s :> lhs)
+  | LId (`ID_Var(Var_Local,s)) -> StrSet.add s acc
+  | LId (#identifier) -> acc
+  | LTup (`Tuple lst) -> List.fold_left locals_of_lhs acc lst
+  | LStar (`Star (#identifier as s))  -> locals_of_lhs acc (LId s : lhs)
 
 
 let rec locals_of_any_formal acc (p:any_formal) = match p with

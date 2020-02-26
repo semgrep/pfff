@@ -139,9 +139,9 @@ module Code_F(PP : CfgPrinter) = struct
     | `Star (#expr as e) -> fprintf ppf "*%a" PP.format_expr e
 
   let format_lhs ppf : lhs -> unit = function
-    | #identifier as id -> PP.format_identifier ppf id
-    | `Star (#identifier as i) -> fprintf ppf "*%a" PP.format_identifier i
-    | `Tuple(el) -> 
+    | LId (#identifier as id) -> PP.format_identifier ppf id
+    | LStar (`Star (#identifier as i)) -> fprintf ppf "*%a" PP.format_identifier i
+    | LTup (`Tuple(el)) -> 
         fprintf ppf "(@[%a@])" (format_comma_list PP.format_lhs) el
 
   let format_any_formal ppf (f:any_formal) =  match f with
@@ -400,7 +400,7 @@ module Err_F(PP : CfgPrinter) = struct
           then fprintf ppf "%s" "implicit return"  
           else Super.format_stmt ppf stmt
 
-   | Yield(Some(`ID_Var(_,s)),e) ->
+   | Yield(Some(LId (`ID_Var(_,s))),e) ->
        (* remove any implicit assign inserted by RIL.  Such as [__tmp = yield()] *)
        if is_tmp_var s 
        then fprintf ppf "yield(@[%a@])" (format_comma_list PP.format_star_expr) e

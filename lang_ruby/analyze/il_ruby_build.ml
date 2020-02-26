@@ -38,11 +38,11 @@ let acc_append acc1 acc2 =
   }
 
 let rec seen_lhs acc (lhs:lhs) = match lhs with
-  | `ID_Var(_,str) | `Star (`ID_Var(_,str)) ->
+  | LId (`ID_Var(_,str)) | LStar (`Star (`ID_Var(_,str))) ->
       {acc with seen = StrSet.add str acc.seen}
 
-  | #identifier | `Star (#identifier) -> acc
-  | `Tuple ls -> List.fold_left seen_lhs acc ls
+  | LId (#identifier) | LStar (`Star (#identifier)) -> acc
+  | LTup (`Tuple ls) -> List.fold_left seen_lhs acc ls
 
 let uniq_counter = ref 0
 let uniq () = incr uniq_counter; !uniq_counter
@@ -50,7 +50,7 @@ let uniq () = incr uniq_counter; !uniq_counter
 let fresh acc = 
   let fresh_name = "__tmp_" ^ (string_of_int (uniq ())) in
   let id = `ID_Var (Var_Local, fresh_name) in
-    (seen_lhs acc id), id
+    (seen_lhs acc (LId id)), LId id
 
 let fresh_global pos = 
   let name = sprintf "$__druby_global_%d_%d" pos.Lexing.pos_lnum (uniq()) in
@@ -77,8 +77,10 @@ let gen_super_args params =
 
 let make_call_expr acc targ msg args cb pos = 
   let acc, lhs = fresh acc in
+  let lhs' = match lhs with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
+
   let call = C.mcall ~lhs ?targ msg args ?cb pos in
-    (acc_enqueue call acc), lhs
+   (acc_enqueue call acc), lhs'
 
 (* convert a single quoted string into a double quoated string.  We do
    three transformations:
@@ -115,9 +117,11 @@ let or_opt acc fin lang once s pos =
     match fin with
       | Some e ->
           let acc, lhs = fresh acc in
+  let lhs' = match lhs with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
+
           let call = C.mcall ~lhs ~targ:e (ID_Operator(Op_BOr)) [v] pos in
           let acc = acc_enqueue call acc in
-            acc, Some lhs, lang, once
+            acc, Some lhs', lang, once
       | None ->
           acc, Some v, lang, once
 
@@ -309,11 +313,11 @@ let msg_id_from_string = function
   | s -> ID_MethodName s
 
 let rec tuple_of_lhs (lhs:lhs) pos : tuple_expr = match lhs with
-  | #identifier as id -> id
-  | `Tuple(l) -> 
+  | LId (#identifier as id) -> id
+  | LTup (`Tuple(l)) -> 
       let l' = List.map (fun x -> tuple_of_lhs x pos) l in
         `Tuple(l')
-  | `Star (#identifier as id) -> `Star id
+  | LStar (`Star (#identifier as id)) -> `Star id
 
 let make_tuple_option : tuple_expr list -> tuple_expr option = function
   | [] -> None
@@ -417,7 +421,8 @@ let rec convert_to_return (add_f : tuple_expr -> stmt_node) acc stmt = match stm
          after the return *)
       let _, v = fresh (acc_emptyq acc) in
       let yield = C.yield ~lhs:v ~args stmt.pos in
-      let ret = mkstmt (add_f v) stmt.pos in
+      let v' = match v with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
+      let ret = mkstmt (add_f v') stmt.pos in
       let q = DQueue.enqueue yield DQueue.empty in
         DQueue.enqueue ret q
 
@@ -426,7 +431,8 @@ let rec convert_to_return (add_f : tuple_expr -> stmt_node) acc stmt = match stm
          after the return *)
       let _, v = fresh (acc_emptyq acc) in
       let meth = mkstmt (MethodCall(Some v,mc)) stmt.pos in
-      let ret = mkstmt (add_f v) stmt.pos in
+      let v' = match v with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
+      let ret = mkstmt (add_f v') stmt.pos in
       let q = DQueue.enqueue meth DQueue.empty in
         DQueue.enqueue ret q
 
@@ -516,14 +522,16 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         let rest,s' = DQueue.pop_back acc'.q in
         let acc = {acc' with q = rest} in
         let acc, v = fresh acc in
+      let v' = match v with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
           (* move the assignment expression into the statement *)
-        let ss = add_last_assign ~do_break:false v s' in
+        let ss = add_last_assign ~do_break:false v' s' in
         let acc = acc_enqueue ss acc in
-          acc, v
+          acc, v'
 
     | Ast.ClassDef _
     | Ast.ModuleDef _ -> 
         let acc, v = fresh acc in
+      let v' = match v with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
         let st_acc = refactor_stmt (acc_emptyq acc) e in
         let acc = acc_seen acc st_acc in
         let rest,s = DQueue.pop_back st_acc.q in
@@ -537,9 +545,9 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
               Log.fatal (Log.of_loc (H.pos_of e))
                 "[BUG] Class/module? xlate error: %a(%a)" 
                 CodePrinter.format_stmt s
-                CodePrinter.format_identifier v
+                CodePrinter.format_identifier v'
         in
-          acc_enqueue s' acc, v
+          acc_enqueue s' acc, v'
 
 
     | Ast.Unary(Ast.Op_UScope,e,pos) ->
@@ -563,11 +571,12 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
 
     | Ast.Unary((Ast.Op_UBang | Ast.Op_UNot),e,pos) ->
         let acc,v = fresh acc in
+      let v' = match v with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
         let t = C.assign v `ID_True pos in
         let f = C.assign v `ID_False pos in
         let acc,e' = refactor_expr acc e in
         let acc = acc_enqueue (C.if_s e' ~t:f ~f:t pos) acc in
-          acc, v
+          acc, v'
 
     | Ast.Unary(uop,e, pos) -> 
         let acc,e' = refactor_expr acc e in
@@ -577,9 +586,10 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
     (* A::m is really a method call *)
     | Ast.Binop(_e1BUG,Ast.Op_SCOPE,(Ast.Id(Ast.ID_Lowercase,_,_)),pos) -> 
         let acc,v = fresh acc in
+      let v' = match v with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
         let acc = seen_lhs acc v in
         let e' = Ast.Call(e,[], None, pos) in
-          (refactor_method_call_assign acc (Some v) e'), v
+          (refactor_method_call_assign acc (Some v) e'), v'
 
     | Ast.Binop(e1,Ast.Op_SCOPE,e2, pos) -> 
         let acc,e1' = refactor_id acc e1 in
@@ -593,21 +603,27 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
 
     | Ast.Binop(e1,Ast.Op_NEQ,e2,pos) ->
         let acc, t1 = fresh acc in
+      let t1' = match t1 with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
+
         let acc, t2 = fresh acc in
+      let t2' = match t2 with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
+
         let acc = refactor_binop_into_mc acc (Some t1) e1 Ast.Op_EQ e2 pos in
         let t = C.assign t2 `ID_True pos in
         let f = C.assign t2 `ID_False pos in
-        let acc = acc_enqueue (C.if_s t1 ~t:f ~f:t pos) acc in
-          acc, t2
+        let acc = acc_enqueue (C.if_s t1' ~t:f ~f:t pos) acc in
+          acc, t2'
 
     | Ast.Binop(e1,Ast.Op_NMATCH,e2,pos) ->
         let acc, t1 = fresh acc in
+      let t1' = match t1 with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
         let acc, t2 = fresh acc in
+      let t2' = match t2 with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
         let acc = refactor_binop_into_mc acc (Some t1) e1 Ast.Op_MATCH e2 pos in
         let t = C.assign t2 `ID_True pos in
         let f = C.assign t2 `ID_False pos in
-        let acc = acc_enqueue (C.if_s t1 ~t:f ~f:t pos) acc in
-          acc, t2
+        let acc = acc_enqueue (C.if_s t1' ~t:f ~f:t pos) acc in
+          acc, t2'
 
     | Ast.Binop(_,Ast.Op_DOT,_, pos) -> 
         Log.fatal (Log.of_loc pos) "refactor_expr got dot expr??"
@@ -638,26 +654,32 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         let acc = acc_enqueue (C. assign e1' e2' pos) acc in
         let acc = acc_append acc after in
         let e1_id = match e1' with
-          | #identifier as id -> id
+          | LId (#identifier as id) -> id
           | _ -> Log.fatal Log.empty "nested multi-assign in refactor_expr"
         in
           acc, e1_id
             
     | Ast.Binop(e1,bop,e2, pos) -> 
         let acc, v = fresh acc in
+      let v' = match v with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
+
         let acc = refactor_binop_into_mc acc (Some v) e1 bop e2 pos in
-          acc, v
+          acc, v'
 
     | Ast.Call(Ast.Id(Ast.ID_Lowercase,"defined?", _p),
                        args, cb, pos) ->
         let _ = map_opt (fun _ -> Log.fatal (Log.of_loc pos) "cb for 'defined?' ??") cb in
         let acc, v = fresh acc in
-          refactor_defined acc v args pos, v
+      let v' = match v with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
+
+          refactor_defined acc v args pos, v'
 
     | Ast.Call(_msgBUG, _argsBUG, _cb, _pos) -> 
         let acc,v = fresh acc in
+      let v' = match v with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
+
         let acc = seen_lhs acc v in
-          (refactor_method_call_assign acc (Some v) e), v
+          (refactor_method_call_assign acc (Some v) e), v'
 
     | Ast.Id(Ast.ID_Lowercase,s, pos) as e -> 
         if is_special s then acc, (special_of_string pos s)
@@ -666,7 +688,9 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         else if s = "super"
         then 
           let acc, lhs = fresh acc in
-            (refactor_super acc (Some lhs) pos), lhs
+      let lhs' = match lhs with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
+
+          (refactor_super acc (Some lhs) pos), lhs'
         else refactor_expr acc (Ast.Call(e,[],None,pos))
 
     (* handles $0 *)
@@ -705,6 +729,8 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
     | Ast.Empty -> Log.fatal Log.empty "refactor_expr: empty expr??"
 
 and refactor_defined acc lhs args pos = 
+  let lhs' = match lhs with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
+
   let arg = match args with
     | [x] -> x
     | _ -> Log.fatal (Log.of_loc pos) "multiple args to defined?"
@@ -712,7 +738,7 @@ and refactor_defined acc lhs args pos =
   let inside_acc = refactor_stmt (acc_emptyq acc) arg in
   let acc = acc_seen acc inside_acc in
   let s = C.seq (DQueue.to_list inside_acc.q) pos in
-    acc_enqueue (C.defined lhs s pos) acc
+    acc_enqueue (C.defined lhs' s pos) acc
 
 and refactor_super acc lhs pos = match acc.super_args with
   | None -> Log.fatal (Log.of_loc pos) "super called outside of method"
@@ -748,7 +774,7 @@ and construct_explicit_regexp acc pos re_interp mods =
     if once then begin
       let glob = fresh_global pos in
       let f_acc = acc_emptyq acc in
-      let f_acc = build_call f_acc glob in
+      let f_acc = build_call f_acc (LId glob) in
       let acc = acc_seen acc f_acc in
       let if_e = 
         C.if_s glob pos
@@ -758,7 +784,8 @@ and construct_explicit_regexp acc pos re_interp mods =
         acc_enqueue if_e acc, glob
     end else
       let acc, lhs = fresh acc in
-        build_call acc lhs, lhs
+      let lhs' = match lhs with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
+        build_call acc lhs, lhs'
 
 and refactor_interp_string acc istr pos = 
   let refactor_contents acc : Ast.string_contents -> stmt acc * expr = function
@@ -889,6 +916,7 @@ and refactor_and_if (acc:stmt acc) l r pos : stmt acc * expr =
        place all refactoring code inside the true branch of the If *)
   let r_acc = refactor_stmt (acc_emptyq acc) r in
   let acc, v = fresh acc in
+      let v' = match v with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
   let vl = C.assign v l' pos in
   let v_acc = add_final_return (fun t -> Assign(v,t)) r_acc pos in
   let vr = C.seq (DQueue.to_list v_acc.q) pos in
@@ -897,7 +925,7 @@ and refactor_and_if (acc:stmt acc) l r pos : stmt acc * expr =
        and  "[not false] && x" returns x
     *)
   let acc = acc_enqueue (C.if_s l' ~t:vr ~f:vl pos) acc in
-    (acc_seen acc v_acc), v
+    (acc_seen acc v_acc), v'
 
 and refactor_or_if acc l r pos = 
   let acc,l' = refactor_expr acc l in
@@ -906,6 +934,7 @@ and refactor_or_if acc l r pos =
        initial condition was false.  Thus we place all refactoring code
        inside the true branch of the If *)
   let acc, v = fresh acc in
+      let v' = match v with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
   let vl = C.assign v l' pos in
   let return_f t = Assign(v,t) in
   let r_acc = refactor_stmt (acc_emptyq acc) r in
@@ -916,7 +945,7 @@ and refactor_or_if acc l r pos =
        and  "[not false] || x" returns [not false]
     *)
   let acc = acc_enqueue (C.if_s l' ~t:vl ~f:vr pos) acc in
-    (acc_seen acc v_acc), v
+    (acc_seen acc v_acc), v'
       
 and refactor_tuple_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.tuple_expr =
   match e with
@@ -948,27 +977,29 @@ and refactor_lhs acc e : (stmt acc * lhs * stmt acc) =
                 work (acc,es,after) tl
         in
         let acc,l',after = work (acc,DQueue.empty,acc_emptyq acc) l in
-          acc, `Tuple((DQueue.to_list l')), after
+          acc, LTup (`Tuple((DQueue.to_list l'))), after
             
     | Ast.UOperator(Ast.Op_UStar,_pos) ->
         let acc, v = fresh acc in
-          acc, (`Star v), acc_emptyq acc
+      let v' = match v with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
+
+          acc, LStar (`Star v'), acc_emptyq acc
           
     | Ast.Unary(Ast.Op_UStar, e, pos) -> 
         let acc, e',after = refactor_lhs acc e in
           begin match e' with
-            | #identifier as id -> acc, `Star id, after
-            | `Tuple _| `Star _ -> 
+            | LId (#identifier as id) -> acc, LStar (`Star id), after
+            | LTup (`Tuple _)| LStar (`Star _) -> 
                 Log.fatal (Log.of_loc pos) "refactor_lhs: nested star?"
           end
 
     | Ast.Id(Ast.ID_Lowercase,s, _pos)  -> 
         if is_literal s then Log.fatal Log.empty "lhs literal?"
-        else acc, `ID_Var(Var_Local, s), acc_emptyq acc
+        else acc, LId (`ID_Var(Var_Local, s)), acc_emptyq acc
 
     | Ast.Id(ik,s, pos) -> 
         if is_literal s then Log.fatal Log.empty "lhs literal?"
-        else acc, `ID_Var(refactor_id_kind pos ik, s), acc_emptyq acc
+        else acc, LId (`ID_Var(refactor_id_kind pos ik, s)), acc_emptyq acc
           
     | Ast.Binop(_e1,Ast.Op_DOT,_e2,_pos) ->
         Log.fatal Log.empty "dot expression on lhs?"
@@ -980,7 +1011,9 @@ and refactor_lhs acc e : (stmt acc * lhs * stmt acc) =
         let msg' = make_assignable_msg msg' in
         let after, args', cb = refactor_method_args_and_cb after args None in
         let after, last_arg = fresh after in
-        let args' = args' @ [last_arg] in
+      let last_arg' = match last_arg with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
+
+        let args' = args' @ [last_arg'] in
         let mc_stmt = C.mcall ~targ:targ' msg' args' ?cb pos in
         let after = acc_enqueue mc_stmt after in
           acc, last_arg, after
@@ -990,7 +1023,7 @@ and refactor_lhs acc e : (stmt acc * lhs * stmt acc) =
 
     | _ -> 
         match refactor_expr acc e with
-          | acc, (#identifier as id) -> acc, id, acc_emptyq acc
+          | acc, (#identifier as id) -> acc, LId id, acc_emptyq acc
           | _acc, #literal -> Log.fatal Log.empty "lhs literal?"
   in
   let acc = seen_lhs acc lhs in
@@ -1052,7 +1085,7 @@ and _map_codeblock acc cb_o = map_opt (refactor_codeblock acc) cb_o
    if (guard) then x = result else x = result end
 *)
 and add_last_assign ~do_break (id:identifier) (s : stmt) : stmt = 
-  let lhs = (id :> lhs) in match s.snode with
+  let lhs = (LId id : lhs) in match s.snode with
     | Seq(lst) -> begin match List.rev lst with
           (* empty evaluates to nil *)
         | [] -> C.assign lhs `ID_Nil s.pos
@@ -1089,12 +1122,12 @@ and add_last_assign ~do_break (id:identifier) (s : stmt) : stmt =
           C.seq [nilassgn;(C.while_s g body' s.pos)] s.pos
 
     | For(flist,g,body) -> 
-        let new_s = C.assign id g s.pos in
+        let new_s = C.assign (LId id) g s.pos in
         let body' = add_last_assign ~do_break:true id body in
           C.seq [new_s;C.for_s flist (id:>expr) body' s.pos] s.pos
 
     | Defined(id2,_) -> 
-        let new_s = C.assign id id2 s.pos in
+        let new_s = C.assign (LId id) id2 s.pos in
           C.seq [s;new_s] s.pos
             
     | ExnBlock(exn) -> 
@@ -1126,7 +1159,7 @@ and add_last_assign ~do_break (id:identifier) (s : stmt) : stmt =
 
     | Break o when do_break ->
         let rhs = default_opt `ID_Nil o in
-          C.seq [C.assign id rhs s.pos;C.break s.pos] s.pos
+          C.seq [C.assign (LId id) rhs s.pos;C.break s.pos] s.pos
 
     | Break _ | Redo | Retry | Next _ -> s (* control jumps elsewhere *)
 
@@ -1164,7 +1197,7 @@ and refactor_method_call_assign (acc:stmt acc) (lhs : lhs option) = function
       let _ = map_opt (fun _ -> Log.fatal (Log.of_loc pos) "cb for 'defined?' ??") cb in
       let acc, v = match lhs with
         | None -> fresh acc
-        | Some (#identifier as id) -> acc, id
+        | Some (LId (#identifier as id)) -> acc, LId id
         | Some _ -> Log.fatal (Log.of_loc pos) "non-ident = defined?"
       in
         refactor_defined acc v args pos
@@ -1212,7 +1245,9 @@ and refactor_method_call_assign (acc:stmt acc) (lhs : lhs option) = function
   | _ -> raise (Invalid_argument "CFG:refactor_method_call_assign")
 
 (* return the accumulator and resulting lhs expression for an assignment *)
-and refactor_assignment (acc: stmt acc) lhs rhs pos = match lhs,rhs with
+and refactor_assignment (acc: stmt acc) (lhs: Ast.expr) (rhs: Ast.expr) 
+ (pos: Ast.pos) : stmt acc = 
+  match lhs,rhs with
   (* x[y] = z is really x.[]=(y,z) *)
   | Ast.Call(
       Ast.Binop(targ, Ast.Op_DOT,Ast.Operator(Ast.Op_AREF,_),_), args,None,_),
@@ -1232,10 +1267,12 @@ and refactor_assignment (acc: stmt acc) lhs rhs pos = match lhs,rhs with
           let lhs_ary = `Lit_Array lhs_list in
           let rhs_ary = `Lit_Array [rhs_arg] in
           let acc, tmp = fresh acc in
+      let tmp' = match tmp with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
+
           let call = C.mcall ~lhs:tmp ~targ:lhs_ary
             (ID_Operator Op_Plus) [rhs_ary] pos 
           in
-            (acc_enqueue call acc), [`Star tmp]
+            (acc_enqueue call acc), [`Star tmp']
         end
         else
           (* lhs has no *-exprs, so safe to just concat args *)
@@ -1275,7 +1312,8 @@ and refactor_assignment (acc: stmt acc) lhs rhs pos = match lhs,rhs with
       let acc = acc_enqueue (C.assign lhs' rhs' pos) acc in
         acc_append acc after
 
-and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc = match e with
+and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc = 
+  match e with
   | Ast.Alias(Ast.Id(Ast.ID_Builtin|Ast.ID_Global as k1,s1, p1), 
                 Ast.Id(Ast.ID_Builtin|Ast.ID_Global as k2,s2, p2) ,p3) ->
       let g1 = `ID_Var(refactor_builtin_or_global p1 k1,s1) in
@@ -1373,7 +1411,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc = match e with
       let acc = add_seen s acc in
         Log.err ~ctx:(Log.of_loc pos)
           "removing dead code: %a" Ast_ruby_printer.format_expr rhs;
-        acc_enqueue (C.assign id' `ID_Nil pos) acc
+        acc_enqueue (C.assign (LId id') `ID_Nil pos) acc
 
   (* special case for 'x ||= e' when this is the first assignment to x.
      In this case, x is always set to e (the || can never fail) *) 
@@ -1613,7 +1651,7 @@ and refactor_rescue_guard acc (e:Ast.expr) : StrSet.t * rescue_guard =
           then Log.fatal (Log.of_loc pos) "methodcall in rescue binder??"
         in
         let bind = match bind_lhs with
-          | #identifier as id -> id
+          | LId (#identifier as id) -> id
           | _ -> Log.fatal (Log.of_loc pos) "non-identifier in rescue binder"
         in
           if not (DQueue.is_empty acc.q)
@@ -1666,7 +1704,7 @@ and refactor_method_formal (acc:stmt acc) t _pos : stmt acc * method_formal_para
   | Ast.Formal_rest -> 
       let acc, id = fresh acc in
       let s = match id with
-        | `ID_Var(Var_Local,s) -> s
+        | LId (`ID_Var(Var_Local,s)) -> s
         | _ -> assert false
       in
         acc, Formal_star(s)
@@ -1686,12 +1724,14 @@ and refactor_method_formal (acc:stmt acc) t _pos : stmt acc * method_formal_para
               let def = `Lit_Atom (sprintf "__rat_default_%d" (fresh_formal())) in
               let eql = ID_MethodName "eql?" in
               let acc, v = fresh acc in
-              let formal_id = `ID_Var(Var_Local, f) in
-              let acc = seen_lhs acc formal_id in
+      let v' = match v with LId (#identifier as id) -> id | _ -> failwith "Impossible" in
+
+              let formal_id = (`ID_Var(Var_Local, f)) in
+              let acc = seen_lhs acc (LId formal_id) in
               let s'' = add_last_assign ~do_break:false formal_id s' in
               let blk = [
                 C.mcall ~lhs:v ~targ:(C.local f) eql [def] pos;
-                C.if_s v ~t:s'' ~f:(C.expr `ID_Nil pos) pos;
+                C.if_s v' ~t:s'' ~f:(C.expr `ID_Nil pos) pos;
                 ]
               in
               let pre = C.seq blk pos in
@@ -1708,7 +1748,7 @@ and refactor_block_formal acc t pos : stmt acc * block_formal_param = match t wi
   | Ast.Formal_rest -> 
       let acc, id = fresh acc in
       let s = match id with
-        | `ID_Var(Var_Local,s) -> s
+        | LId (`ID_Var(Var_Local,s)) -> s
         | _ -> assert false
       in
         acc, Formal_star2(s)
