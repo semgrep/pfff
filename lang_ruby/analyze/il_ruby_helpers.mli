@@ -110,7 +110,7 @@ module Abbr : sig
 
   val if_s : [<expr] -> t:stmt -> f:stmt -> pos -> stmt
 
-  val case : ?default:stmt -> [<expr] -> ([<tuple_expr]*stmt) list -> pos -> stmt
+  val case : ?default:stmt -> [<expr] -> (tuple_expr*stmt) list -> pos -> stmt
 
   val while_s : [<expr] -> stmt -> pos -> stmt
 
@@ -132,10 +132,10 @@ module Abbr : sig
   val mcall : ?lhs:lhs -> ?targ:[<expr] ->
     msg_id -> [<star_expr] list -> ?cb:codeblock -> pos -> stmt
 
-  val assign : lhs -> [<tuple_expr] -> pos -> stmt
+  val assign : lhs -> tuple_expr -> pos -> stmt
 
   val expr : [<expr] -> pos -> stmt
-  val return : ?v:[<tuple_expr] -> pos -> stmt
+  val return : ?v:tuple_expr -> pos -> stmt
   val yield : ?lhs:lhs -> ?args:[<star_expr] list-> pos -> stmt
 
   val module_s : ?lhs:lhs -> [<identifier] -> stmt -> pos -> stmt
@@ -163,19 +163,19 @@ module Abbr : sig
   val meth : ?targ:[<identifier] -> def_name -> method_formal_param list
     -> stmt -> pos -> stmt
 
-  val rguard : ?bind:[<identifier] -> [<tuple_expr] -> rescue_guard
+  val rguard : ?bind:[<identifier] -> tuple_expr -> rescue_guard
   val rblock : rescue_guard list -> stmt -> rescue_block
 
   (* A rescue clause with a single guard *)
-  val rescue : ?bind:[<identifier] -> [<tuple_expr] -> stmt -> rescue_block
+  val rescue : ?bind:[<identifier] -> tuple_expr -> stmt -> rescue_block
 
   val exnblock : stmt -> rescue_block list -> ?eelse:stmt -> ?ensure:stmt
     -> pos -> stmt
 
   val defined : [<identifier] -> stmt -> pos -> stmt
   val undef : msg_id list -> pos -> stmt
-  val break : ?v:[<tuple_expr] -> pos -> stmt
-  val next : ?v:[<tuple_expr] -> pos -> stmt
+  val break : ?v:tuple_expr -> pos -> stmt
+  val next : ?v:tuple_expr -> pos -> stmt
   val redo : pos -> stmt
   val retry : pos -> stmt
 
