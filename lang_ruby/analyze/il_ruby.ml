@@ -128,11 +128,7 @@ type expr = star_expr expr_
 
 
 
-
 type 'a tuple = [`Tuple of 'a list]
-
-
-type literal = (expr,star_expr) literal_
 
 type tuple_expr = [
   | tuple_expr tuple
@@ -264,6 +260,8 @@ type t = stmt
 type any_formal =
   | B of block_formal_param
   | M of method_formal_param
+
+type literal = (expr,star_expr) literal_
 
 let b_to_any x = B x
 let m_to_any x = M x
