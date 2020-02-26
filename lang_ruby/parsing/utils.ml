@@ -57,3 +57,29 @@ let string_fold_left f acc s =
         if idx < len then work (idx+1) (f acc s.[idx])
         else acc
       in work 0 acc
+
+let do_opt ~none:none ~some:some opt = match opt with
+  | None -> none
+  | Some s -> some s
+
+let eq_opt f o1 o2 = match o1, o2 with
+  | None, None -> true
+  | Some x1, Some x2 -> f x1 x2
+  | _ -> false
+
+let map_preserve map f t = 
+  let changed = ref false in
+  let t' = 
+    map (fun v ->
+           let v' = f v in
+             if v != v'
+             then changed := true;
+             v'
+        ) t
+  in if !changed then t' else t
+
+let map_opt_preserve f = function
+  | None -> None
+  | (Some x) as s -> 
+      let x' = f x in 
+        if x != x' then Some x' else s
