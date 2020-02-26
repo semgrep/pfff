@@ -137,11 +137,10 @@ type tuple_expr = [
 ]
 
 (* lhs is like a tuple expression, but no literals are allowed *)
-type lhs = [
-  | identifier
-  | lhs tuple
-  | identifier star
- ]
+type lhs = 
+  | LId of identifier
+  | LTup of lhs tuple
+  | LStar of identifier star
 
 (*****************************************************************************)
 (* Statement (and CFG) *)
