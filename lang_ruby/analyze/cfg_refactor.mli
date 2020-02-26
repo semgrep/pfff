@@ -1,5 +1,5 @@
 
-val refactor_ast : ?env:Utils.StrSet.t -> Ast_ruby.expr list -> Cfg.stmt
+val refactor_ast : ?env:Utils_ruby.StrSet.t -> Ast_ruby.expr list -> Cfg.stmt
   (** Convert an Ast into a Cfg *)
 
 val re_init : unit -> unit
@@ -7,7 +7,7 @@ val re_init : unit -> unit
       provide unique identifier names.  Should only be necessary for
       testing. *)
 
-val reparse : ?env:Utils.StrSet.t -> ?filename:string -> ?lineno:int -> 
+val reparse : ?env:Utils_ruby.StrSet.t -> ?filename:string -> ?lineno:int -> 
   (Cfg.stmt,'a) Cfg_printer.CodeUnparser.fmt -> 'a
   (** This function takes an unparsing descript as described in
       Cfg_printer and converts the unparsed string back into a
@@ -21,15 +21,15 @@ val reparse : ?env:Utils.StrSet.t -> ?filename:string -> ?lineno:int ->
       [x].
   *) 
 
-val kreparse : ?env:Utils.StrSet.t -> ?filename:string -> ?lineno:int -> 
+val kreparse : ?env:Utils_ruby.StrSet.t -> ?filename:string -> ?lineno:int -> 
   (Cfg.stmt -> 'a) -> ('a,'b) Cfg_printer.CodeUnparser.fmt -> 'b
   (** Similar to reparse, but passes the final stmt to the supplied
       continuation *)
 
-val freparse : ?env:Utils.StrSet.t -> ?filename:string -> ?lineno:int -> 
+val freparse : ?env:Utils_ruby.StrSet.t -> ?filename:string -> ?lineno:int -> 
   ('a, Format.formatter, unit, Cfg.stmt) format4 -> 'a
   (** Similar to reparse, but uses a format string instead *)
 
-val kfreparse : ?env:Utils.StrSet.t -> ?filename:string -> ?lineno:int -> 
+val kfreparse : ?env:Utils_ruby.StrSet.t -> ?filename:string -> ?lineno:int -> 
   (Cfg.stmt -> 'b) -> ('a, Format.formatter, unit, 'b) format4 -> 'a
   (** Similar to kreparse, but uses a format string instead *)

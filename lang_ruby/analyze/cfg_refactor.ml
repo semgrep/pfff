@@ -2,7 +2,8 @@ open Common
 open Printf
 open Cfg
 open Cfg_printer
-open Utils
+open Utils_ruby
+module Utils = Utils_ruby
 module Ast = Ast_ruby
 module H = Ast_ruby_helpers
 
@@ -1014,11 +1015,11 @@ and refactor_msg (acc:stmt acc) msg : stmt acc * msg_id = match msg with
 
   | Ast.Literal((Ast.Nil | Ast.Self | Ast.True | Ast.False) as lk
                     ,_pos) ->
-      let lks = format_to_string Ast_printer.format_lit_kind lk in
+      let lks = format_to_string Ast_ruby_printer.format_lit_kind lk in
         acc, `ID_MethodName lks
   | e ->
       Log.fatal (Log.of_loc (H.pos_of e)) "refactor_msg unknown msg: %s\n"
-        (Ast_printer.string_of_expr e)
+        (Ast_ruby_printer.string_of_expr e)
 
 and refactor_symbol_or_msg (acc:stmt acc) sym_msg = match sym_msg with
   | Ast.Literal(Ast.Atom(interp),pos) ->
@@ -1370,7 +1371,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc = match e with
       let id' = `ID_Var(`Var_Local, s) in
       let acc = add_seen s acc in
         Log.err ~ctx:(Log.of_loc pos)
-          "removing dead code: %a" Ast_printer.format_expr rhs;
+          "removing dead code: %a" Ast_ruby_printer.format_expr rhs;
         acc_enqueue (C.assign id' `ID_Nil pos) acc
 
   (* special case for 'x ||= e' when this is the first assignment to x.
@@ -1524,7 +1525,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc = match e with
   | Ast.CodeBlock _ as s -> 
       Log.fatal (Log.of_loc (H.pos_of s))
         "refactor_stmt: unknown stmt to refactor: %s\n"
-        (Ast_printer.string_of_expr s)
+        (Ast_ruby_printer.string_of_expr s)
       
 and refactor_method_name (acc:stmt acc) e : stmt acc * def_name = match e with
   | Ast.Binop(targ,Ast.Op_SCOPE,msg, _pos)
@@ -1638,7 +1639,7 @@ and refactor_rescue_guard acc (e:Ast.expr) : StrSet.t * rescue_guard =
 
     | e -> 
         Log.fixme ~ctx:(Log.of_loc (H.pos_of e))
-          "rescue gaurd: %a" Ast_printer.format_expr e;
+          "rescue gaurd: %a" Ast_ruby_printer.format_expr e;
         let acc, e' = refactor_tuple_expr acc e in
           if (not (DQueue.is_empty acc.q)) || not (StrSet.is_empty acc.seen)
           then Log.fatal (Log.of_loc (H.pos_of e))
@@ -1767,7 +1768,7 @@ let refactor_ast ?env ast =
 let kreparse ?env ?filename ?lineno cont k =
   let module U = Cfg_printer.CodeUnparser in
   let cont str = 
-    let ast = Parse_helper.parse_string ?env ?filename ?lineno str in
+    let ast = Parse_ruby.parse_string ?env ?filename ?lineno str in
       cont (refactor_ast ast ?env)
   in
     U.ksformat cont k
@@ -1778,7 +1779,7 @@ let reparse ?env ?filename ?lineno k =
 let kfreparse ?env ?filename ?lineno cont = 
   Log.kfsprintf
     (fun str -> 
-       let ast = Parse_helper.parse_string ?env ?filename ?lineno str in
+       let ast = Parse_ruby.parse_string ?env ?filename ?lineno str in
          cont (refactor_ast ast ?env)
     ) 
 
