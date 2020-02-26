@@ -581,10 +581,10 @@ and visit_expr vtor (e:expr) =
 and visit_lhs vtor (lhs:lhs) = 
   visit vtor#visit_lhs lhs begin function
     | LId (#identifier as id) -> LId (visit_id vtor id :> identifier)
-    | LTup (`Tuple lhs_l) -> 
+    | LTup (lhs_l) -> 
 	let lhs_l' = map_preserve List.map (visit_lhs vtor) lhs_l in
 	  if lhs_l == lhs_l' then lhs
-	  else LTup (`Tuple lhs_l')
+	  else LTup (lhs_l')
     | LStar (`Star (#identifier as id)) -> 
 	let id' = visit_id vtor id in
 	  if id==id' then lhs else (LStar (`Star id') : lhs)
@@ -599,17 +599,17 @@ and visit_star_expr vtor star = match star with
 let rec visit_tuple vtor tup = 
   visit vtor#visit_tuple tup begin function
     | TE (#expr as e) -> TE (visit_expr vtor e : expr)
-    | TTup (`Tuple lst) ->
+    | TTup (lst) ->
   	  let lst' = map_preserve List.map (visit_tuple vtor) lst in
 	  if lst == lst' then tup
-	  else TTup (`Tuple lst')
+	  else TTup (lst')
     | TStar (`Star (TE (#expr as e))) -> 
 	  let e' = visit_expr vtor e in
 	  if e==e' then tup else (TStar (`Star (TE e')) : tuple_expr)
-    | TStar (`Star (TTup (`Tuple lst))) -> 
+    | TStar (`Star (TTup (lst))) -> 
 	  let lst' = map_preserve List.map (visit_tuple vtor) lst in
 	  if lst == lst' then tup
-	  else TStar (`Star(TTup (`Tuple lst')))
+	  else TStar (`Star(TTup ( lst')))
     | _ -> failwith "Impossible" (* TStar (`Star (TStar _) *)
   end
 
@@ -848,7 +848,7 @@ let alpha_convert_local ~var ~sub s =
 let rec locals_of_lhs acc (lhs:lhs) = match lhs with
   | LId (`ID_Var(Var_Local,s)) -> StrSet.add s acc
   | LId (#identifier) -> acc
-  | LTup (`Tuple lst) -> List.fold_left locals_of_lhs acc lst
+  | LTup (lst) -> List.fold_left locals_of_lhs acc lst
   | LStar (`Star (#identifier as s))  -> locals_of_lhs acc (LId s : lhs)
 
 
