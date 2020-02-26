@@ -3,6 +3,182 @@ module Utils = Utils_ruby
 
 open Il_ruby  
 
+  let compare t1 t2 = compare t1.sid t2.sid
+
+  let mkstmt snode pos = 
+    {snode = snode;
+     pos = pos;
+     lexical_locals = Utils_ruby.StrSet.empty;
+     preds=Set_.empty;
+     succs=Set_.empty;
+     sid = uniq()}
+
+  let update_stmt stmt snode = 
+    {snode = snode;
+     pos = stmt.pos;
+     lexical_locals = stmt.lexical_locals;
+     preds=Set_.empty;
+     succs=Set_.empty;
+     sid = uniq()}
+
+  let update_locals stmt locals = stmt.lexical_locals <- locals
+
+  let rec fold_stmt f acc stmt = match stmt.snode with
+    | If(_g,ts,fs) -> fold_stmt f (fold_stmt f (f acc stmt) ts) fs
+
+    | Seq(sl) -> List.fold_left (fold_stmt f) (f acc stmt) sl
+
+    | For(_,_,s)
+    | Module(_,_,s)
+    | Method(_,_,s)
+    | Class(_,_,s)
+    | Begin(s)
+    | End(s) -> fold_stmt f (f acc stmt) s
+
+    | While(_g,body) ->
+        fold_stmt f (f acc stmt)  body
+
+    | Case(c) ->
+        let acc = f acc stmt in
+        let acc = List.fold_left
+	  (fun acc (_w,b) ->
+	     fold_stmt f acc b 
+	  ) acc c.case_whens
+        in
+	  Utils_ruby.do_opt ~none:acc ~some:(fold_stmt f acc) c.case_else
+
+    | MethodCall(_,{mc_cb = (None|Some (CB_Arg _)); _}) -> f acc stmt
+    | MethodCall(_,{mc_cb = Some (CB_Block(_,cb_body)); _}) -> 
+        fold_stmt f (f acc stmt) cb_body
+	  
+    | ExnBlock(b) ->
+        let acc = f acc stmt in
+        let acc = fold_stmt f acc b.exn_body in
+        let acc = List.fold_left
+	  (fun acc rb -> 
+	     fold_stmt f acc rb.rescue_body
+	  ) acc b.exn_rescue 
+        in
+        let acc = Utils_ruby.do_opt ~none:acc ~some:(fold_stmt f acc) b.exn_ensure in
+	  Utils_ruby.do_opt ~none:acc ~some:(fold_stmt f acc) b.exn_else
+
+    | Alias _ | Assign _ | Expression _ | Return _ | Yield _
+    | Defined _ | Undef _ | Break _ | Redo | Retry | Next _ 
+        -> f acc stmt
+
+  let rec compute_cfg_succ stmt (succs:stmt Set_.t) = match stmt.snode with
+    | Seq [] -> stmt.succs <- succs;
+    | Seq ((hd::_) as l) -> 
+        stmt.succs <- Set_.add hd stmt.succs;
+        compute_cfg_succ_list succs l
+
+    | MethodCall _ (* handle CB *)
+    | Assign _
+    | Expression _
+    | Defined _
+    | Alias _ -> stmt.succs <- succs
+
+    | Case cb -> 
+        List.iter
+	  (fun (_guard,body) ->
+	     (*
+	       stmt.succs <- StmtSet.add guard stmt.succs;
+	       compute_cfg_succ guard (StmtSet.singleton body);
+	     *)
+	     compute_cfg_succ body succs;
+	  ) cb.case_whens;
+        begin match cb.case_else with
+	  | None -> ()
+	  | Some else' -> 
+	      stmt.succs <- Set_.add else' stmt.succs;
+	      compute_cfg_succ else' succs
+        end
+
+    | ExnBlock eb -> 
+        stmt.succs <- Set_.add eb.exn_body stmt.succs;
+        let succs' =  match eb.exn_ensure, eb.exn_else with
+	  | None, None -> succs
+	  | Some x, None
+	  | None, Some x -> 
+	      compute_cfg_succ x succs;
+	      Set_.add x succs
+	  | Some x1, Some x2 ->
+	      compute_cfg_succ x1 succs;
+	      compute_cfg_succ x2 succs;
+	      Set_.add x1 (Set_.add x2 succs)
+        in
+        let succs' = 
+	  List.fold_left
+	    (fun acc resc ->
+	       compute_cfg_succ resc.rescue_body succs;
+	       Set_.add resc.rescue_body acc
+	    ) succs' eb.exn_rescue
+        in
+	  compute_cfg_succ eb.exn_body succs'
+	    
+    | If(_g,t,f) -> 
+        stmt.succs <- Set_.add t (Set_.add f stmt.succs);
+        compute_cfg_succ t succs;
+        compute_cfg_succ f succs
+
+    | While(_g,body) ->
+        stmt.succs <- Set_.add body stmt.succs;
+        body.succs <- Set_.add stmt body.succs;
+        compute_cfg_succ body succs
+
+    | For(_params,_guard,body) ->
+        stmt.succs <- Set_.union (Set_.add body succs) stmt.succs;
+        body.succs <- Set_.union succs body.succs;
+        compute_cfg_succ body succs
+
+    | Return _ -> stmt.succs <- Set_.empty
+    | Yield _ -> stmt.succs <- Set_.union succs stmt.succs
+
+    | Module(_,_,body)
+    | Class(_,_,body) -> 
+        stmt.succs <- Set_.add body stmt.succs;
+        compute_cfg_succ body succs
+
+    | Method(_,_,body) ->
+        stmt.succs <- succs;
+        compute_cfg_succ body Set_.empty
+	  
+    | Undef _ | Break _ | Redo | Retry | Next _ -> 
+        failwith "handle control op in successor computation"
+
+    (* These can't actually appear in a method *)
+    | Begin(body)
+    | End(body) -> 
+        stmt.succs <- Set_.add body stmt.succs;
+        compute_cfg_succ body succs
+	  
+  and compute_cfg_succ_list last = function
+    | [] -> assert false
+    | hd::[] -> compute_cfg_succ hd last
+    | h1::((h2::_) as tl) -> 
+        compute_cfg_succ h1 (Set_.singleton h2);
+        compute_cfg_succ_list last tl
+
+  let preds_from_succs stmt = 
+    fold_stmt 
+      (fun () stmt ->
+         Set_.iter
+	   (fun succ ->
+	      succ.preds <- Set_.add stmt succ.preds
+	   ) stmt.succs
+      ) () stmt
+      
+  let compute_cfg stmt = 
+    let () = fold_stmt 
+      (fun () s -> 
+         s.preds <- Set_.empty; 
+         s.succs <- Set_.empty
+      ) () stmt 
+    in
+      compute_cfg_succ stmt Set_.empty;
+      preds_from_succs stmt
+
+
 module Abbr = struct
 
   let local s = `ID_Var(`Var_Local,s)
