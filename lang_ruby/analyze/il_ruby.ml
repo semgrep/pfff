@@ -160,7 +160,7 @@ and stmt_node =
   | Expression of expr
 
   | Assign of lhs * tuple_expr
-  | MethodCall of lhs option * method_call
+  | Call of lhs option * method_call
 
   | Seq of stmt list
   | If of expr * stmt * stmt
@@ -180,9 +180,9 @@ and stmt_node =
   | Begin of stmt 
   | End of stmt 
 
-  | Module  of lhs option * identifier * stmt
-  | Class of lhs option * class_kind * stmt
-  | Method of def_name * method_formal_param list * stmt
+  | ModuleDef  of lhs option * identifier * stmt
+  | ClassDef of lhs option * class_kind * stmt
+  | MethodDef of def_name * method_formal_param list * stmt
 
   | Defined of identifier * stmt
   | Alias of alias_kind

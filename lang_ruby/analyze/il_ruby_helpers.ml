@@ -34,9 +34,9 @@ let uniq () = incr uniq_counter; !uniq_counter
     | Seq(sl) -> List.fold_left (fold_stmt f) (f acc stmt) sl
 
     | For(_,_,s)
-    | Module(_,_,s)
-    | Method(_,_,s)
-    | Class(_,_,s)
+    | ModuleDef(_,_,s)
+    | MethodDef(_,_,s)
+    | ClassDef(_,_,s)
     | Begin(s)
     | End(s) -> fold_stmt f (f acc stmt) s
 
@@ -52,8 +52,8 @@ let uniq () = incr uniq_counter; !uniq_counter
         in
 	  Utils_ruby.do_opt ~none:acc ~some:(fold_stmt f acc) c.case_else
 
-    | MethodCall(_,{mc_cb = (None|Some (CB_Arg _)); _}) -> f acc stmt
-    | MethodCall(_,{mc_cb = Some (CB_Block(_,cb_body)); _}) -> 
+    | Call(_,{mc_cb = (None|Some (CB_Arg _)); _}) -> f acc stmt
+    | Call(_,{mc_cb = Some (CB_Block(_,cb_body)); _}) -> 
         fold_stmt f (f acc stmt) cb_body
 	  
     | ExnBlock(b) ->
@@ -77,7 +77,7 @@ let uniq () = incr uniq_counter; !uniq_counter
         stmt.succs <- Set_.add hd stmt.succs;
         compute_cfg_succ_list succs l
 
-    | MethodCall _ (* handle CB *)
+    | Call _ (* handle CB *)
     | Assign _
     | Expression _
     | Defined _
@@ -139,12 +139,12 @@ let uniq () = incr uniq_counter; !uniq_counter
     | Return _ -> stmt.succs <- Set_.empty
     | Yield _ -> stmt.succs <- Set_.union succs stmt.succs
 
-    | Module(_,_,body)
-    | Class(_,_,body) -> 
+    | ModuleDef(_,_,body)
+    | ClassDef(_,_,body) -> 
         stmt.succs <- Set_.add body stmt.succs;
         compute_cfg_succ body succs
 
-    | Method(_,_,body) ->
+    | MethodDef(_,_,body) ->
         stmt.succs <- succs;
         compute_cfg_succ body Set_.empty
 	  
@@ -291,7 +291,7 @@ module Abbr = struct
               mc_msg = (msg :> msg_id);
               mc_args=(args :> star_expr list);
               mc_cb = cb}
-    in mkstmt (MethodCall((lhs:>lhs option),mc)) pos
+    in mkstmt (Call((lhs:>lhs option),mc)) pos
 
   let call ?lhs ?targ msg args ?cb pos = 
     mcall ?lhs ?targ (ID_MethodName msg) args ?cb pos
@@ -317,25 +317,25 @@ module Abbr = struct
 
   let meth ?targ def args body pos = 
     ignore targ;
-    mkstmt(Method(def,args,body)) pos
+    mkstmt(MethodDef(def,args,body)) pos
 
   let method_ ?targ msg args body pos = 
     let def = match targ with
       | None -> Instance_Method msg
       | Some i -> Singleton_Method((i :> identifier), msg)
     in
-      mkstmt (Method(def,args,body)) pos
+      mkstmt (MethodDef(def,args,body)) pos
 
   let nameclass ?lhs name ?inh body pos = 
     let kind = NominalClass((name :> identifier),(inh :> identifier option)) in
-      mkstmt (Class((lhs :> lhs option),kind,body)) pos
+      mkstmt (ClassDef((lhs :> lhs option),kind,body)) pos
                 
   let metaclass ?lhs name body pos = 
     let kind = MetaClass(name :> identifier) in
-      mkstmt (Class((lhs :> lhs option),kind,body)) pos
+      mkstmt (ClassDef((lhs :> lhs option),kind,body)) pos
 
   let module_s ?lhs name body pos = 
-    mkstmt (Module((lhs :> lhs option),(name :> identifier),body)) pos
+    mkstmt (ModuleDef((lhs :> lhs option),(name :> identifier),body)) pos
 
   let mdef ?targ s args body pos =  method_ ?targ (ID_MethodName s) args body pos
   let adef ?targ s args body pos =  method_ ?targ (ID_Assign s) args body pos
@@ -427,15 +427,15 @@ and snode_eq s1 s2 = match s1, s2 with
   | While(g1,b1), While(g2,b2) -> g1 = g2 && stmt_eq b1 b2
   | For(p1,g1,b1), For(p2,g2,b2) -> p1 = p2 && g1 = g2 && stmt_eq b1 b2
 
-  | MethodCall(l1,mc1),MethodCall(l2,mc2) -> l1 = l2 && methodcall_eq mc1 mc2
+  | Call(l1,mc1),Call(l2,mc2) -> l1 = l2 && methodcall_eq mc1 mc2
   | Assign(l1,r1), Assign(l2,r2) -> l1 = l2 && r1 = r2
   | Expression e1, Expression e2 -> e1 = e2
   | Return e1, Return e2 -> e1 = e2
   | Yield(l1,p1), Yield(l2,p2) -> l1 = l2 && p1 = p2
-  | Module(lo1,i1,s1),Module(lo2,i2,s2) -> 
+  | ModuleDef(lo1,i1,s1),ModuleDef(lo2,i2,s2) -> 
       lo1 = lo2 && i1 = i2 && stmt_eq s1 s2
-  | Method(n1,p1,s1), Method(n2,p2,s2) -> n1 = n2 && p1 = p2 && stmt_eq s1 s2
-  | Class(lo1,k1,b1), Class(lo2,k2, b2) -> 
+  | MethodDef(n1,p1,s1), MethodDef(n2,p2,s2) -> n1 = n2 && p1 = p2 && stmt_eq s1 s2
+  | ClassDef(lo1,k1,b1), ClassDef(lo2,k2, b2) -> 
       lo1 = lo2 && k1 = k2 && stmt_eq b1 b2
   | ExnBlock e1, ExnBlock e2 -> exn_eq e1 e2
   | Begin s1, Begin s2 -> stmt_eq s1 s2
@@ -530,7 +530,7 @@ object(_self)
 
   method! visit_stmt stmt = match stmt.snode with
       (* these start a new scope *)
-    | Begin _ | End _ | Class _ | Module _ | Method _ -> SkipChildren
+    | Begin _ | End _ | ClassDef _ | ModuleDef _ | MethodDef _ -> SkipChildren
     | _ -> DoChildren
 end
 
@@ -672,7 +672,7 @@ and visit_stmt_children vtor stmt = match stmt.snode with
 	  if ak == ak' then stmt
 	  else update_stmt stmt (Alias ak')
 
-    | MethodCall(lhso, mc) ->
+    | Call(lhso, mc) ->
 	let lhso' = map_opt_preserve (visit_lhs vtor) lhso in
 	let targ' = map_opt_preserve (visit_expr vtor) mc.mc_target in
 	let msg' = visit_msg_id vtor mc.mc_msg in
@@ -696,7 +696,7 @@ and visit_stmt_children vtor stmt = match stmt.snode with
 	  then stmt 
 	  else 
 	    let mc' = {mc_target=targ';mc_msg=msg';mc_args=args';mc_cb=cb'}
-	    in update_stmt stmt (MethodCall(lhso',mc'))
+	    in update_stmt stmt (Call(lhso',mc'))
 
     | Yield(lhso, args) ->
 	let lhso' = map_opt_preserve (visit_lhs vtor) lhso in
@@ -780,28 +780,28 @@ and visit_stmt_children vtor stmt = match stmt.snode with
 		      exn_rescue=rescue'}
 	    in update_stmt stmt (ExnBlock e')
 
-    | Class(lhso, cls, body) ->
+    | ClassDef(lhso, cls, body) ->
 	let lhso' = map_opt_preserve (visit_lhs vtor) lhso in
 	let cls' = visit_class_kind vtor cls in
 	let body' = visit_stmt vtor body in
 	  if cls==cls' && body==body'
 	  then stmt
-	  else update_stmt stmt (Class(lhso',cls',body'))
+	  else update_stmt stmt (ClassDef(lhso',cls',body'))
 
-    | Module(lhso, id, body) ->
+    | ModuleDef(lhso, id, body) ->
 	let lhso' = map_opt_preserve (visit_lhs vtor) lhso in
 	let id' = visit_id vtor id in
 	let body' = visit_stmt vtor body in
 	  if id==id' && body==body' then stmt
-	  else update_stmt stmt (Module(lhso',id',body'))
+	  else update_stmt stmt (ModuleDef(lhso',id',body'))
 
-    | Method(def_name, args, body) ->
+    | MethodDef(def_name, args, body) ->
 	let def_name' = visit_def_name vtor def_name in
 	let args' = map_preserve List.map (visit_method_param vtor) args in
 	let body' = visit_stmt vtor body in
 	  if def_name==def_name' && args==args' && body==body'
 	  then stmt 
-	  else update_stmt stmt (Method(def_name',args',body'))
+	  else update_stmt stmt (MethodDef(def_name',args',body'))
 
     | Expression e ->
 	let e' = visit_expr vtor e in
@@ -896,7 +896,7 @@ object(_self)
     update_locals stmt seen;
     match stmt.snode with
         (* these start a new scope *)
-      | Begin _ | End _  | Class _ | Module _ | Method _ -> 
+      | Begin _ | End _  | ClassDef _ | ModuleDef _ | MethodDef _ -> 
           let vtor' = ({<seen=StrSet.empty >} :> cfg_visitor) in
             ignore (visit_stmt_children vtor' stmt);
             SkipChildren

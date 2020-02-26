@@ -179,10 +179,10 @@ and vof_stmt_node =
       let v1 = vof_lhs v1
       and v2 = vof_tuple_expr v2
       in Ocaml.VSum (("Assign", [ v1; v2 ]))
-  | MethodCall ((v1, v2)) ->
+  | Call ((v1, v2)) ->
       let v1 = Ocaml.vof_option vof_lhs v1
       and v2 = vof_method_call v2
-      in Ocaml.VSum (("MethodCall", [ v1; v2 ]))
+      in Ocaml.VSum (("Call", [ v1; v2 ]))
   | Seq v1 ->
       let v1 = Ocaml.vof_list vof_stmt v1 in Ocaml.VSum (("Seq", [ v1 ]))
   | If ((v1, v2, v3)) ->
@@ -219,21 +219,21 @@ and vof_stmt_node =
       let v1 = vof_exn_block v1 in Ocaml.VSum (("ExnBlock", [ v1 ]))
   | Begin v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("Begin", [ v1 ]))
   | End v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("End", [ v1 ]))
-  | Module ((v1, v2, v3)) ->
+  | ModuleDef ((v1, v2, v3)) ->
       let v1 = Ocaml.vof_option vof_lhs v1
       and v2 = vof_identifier v2
       and v3 = vof_stmt v3
-      in Ocaml.VSum (("Module", [ v1; v2; v3 ]))
-  | Class ((v1, v2, v3)) ->
+      in Ocaml.VSum (("ModuleDef", [ v1; v2; v3 ]))
+  | ClassDef ((v1, v2, v3)) ->
       let v1 = Ocaml.vof_option vof_lhs v1
       and v2 = vof_class_kind v2
       and v3 = vof_stmt v3
-      in Ocaml.VSum (("Class", [ v1; v2; v3 ]))
-  | Method ((v1, v2, v3)) ->
+      in Ocaml.VSum (("ClassDef", [ v1; v2; v3 ]))
+  | MethodDef ((v1, v2, v3)) ->
       let v1 = vof_def_name v1
       and v2 = Ocaml.vof_list vof_method_formal_param v2
       and v3 = vof_stmt v3
-      in Ocaml.VSum (("Method", [ v1; v2; v3 ]))
+      in Ocaml.VSum (("MethodDef", [ v1; v2; v3 ]))
   | Defined ((v1, v2)) ->
       let v1 = vof_identifier v1
       and v2 = vof_stmt v2

@@ -430,11 +430,11 @@ let rec convert_to_return (add_f : tuple_expr -> stmt_node) acc stmt = match stm
       let q = DQueue.enqueue yield DQueue.empty in
         DQueue.enqueue ret q
 
-  | MethodCall(None,mc) ->
+  | Call(None,mc) ->
       (* we don't need to track v here since its immediately dead
          after the return *)
       let _, v = fresh (acc_emptyq acc) in
-      let meth = mkstmt (MethodCall(Some v,mc)) stmt.pos in
+      let meth = mkstmt (Call(Some v,mc)) stmt.pos in
       let v' = match v with LId (id) -> id | _ -> failwith "Impossible" in
       let v'' = TE (EId v') in
       let ret = mkstmt (add_f v'') stmt.pos in
@@ -442,7 +442,7 @@ let rec convert_to_return (add_f : tuple_expr -> stmt_node) acc stmt = match stm
         DQueue.enqueue ret q
 
   | Assign(lhs,_)
-  | MethodCall(Some lhs,_)
+  | Call(Some lhs,_)
   | Yield(Some lhs,_) ->
       let ret = mkstmt (add_f (tuple_of_lhs lhs stmt.pos)) stmt.pos in
       let q = DQueue.enqueue stmt DQueue.empty in
@@ -459,9 +459,9 @@ let rec convert_to_return (add_f : tuple_expr -> stmt_node) acc stmt = match stm
 
   | Undef _
   | While _
-  | Module _
-  | Method _
-  | Class _
+  | ModuleDef _
+  | MethodDef _
+  | ClassDef _
   | Alias _ -> 
       let q = DQueue.enqueue stmt DQueue.empty in
       let ret = mkstmt (add_f (TE (EId Nil))) stmt.pos in
@@ -477,8 +477,8 @@ class proc_transformer = object
   method! visit_stmt s = match s.snode with
     | Return args -> ChangeTo (update_stmt s (Next args))
 
-    | Module _ | Method _ | Class _ (* new scope *)
-    | While _ | For _ | MethodCall _ (* nested blocks *) ->
+    | ModuleDef _ | MethodDef _ | ClassDef _ (* new scope *)
+    | While _ | For _ | Call _ (* nested blocks *) ->
         SkipChildren
         
     | _ -> DoChildren
@@ -543,10 +543,10 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         let rest,s = DQueue.pop_back st_acc.q in
         let acc = acc_append acc {acc with q=rest} in
         let s' = match s.snode with
-          | Class(None,ck,body) ->
-              mkstmt (Class(Some v,ck,body)) s.pos
-          | Module(None,name,body) ->
-              mkstmt (Module(Some v,name,body)) s.pos
+          | ClassDef(None,ck,body) ->
+              mkstmt (ClassDef(Some v,ck,body)) s.pos
+          | ModuleDef(None,name,body) ->
+              mkstmt (ModuleDef(Some v,name,body)) s.pos
           | _ -> 
               Log.fatal (Log.of_loc (H.pos_of e))
                 "[BUG] Class/module? xlate error: %a(%a)" 
@@ -1109,11 +1109,11 @@ and add_last_assign ~do_break (id:identifier) (s : stmt) : stmt =
         let new_s = C.assign lhs (tuple_of_lhs e1 s.pos) s.pos in
           C.seq [s;new_s] s.pos
 
-    | MethodCall(None, mc) -> (* x.f() becomes id = x.f() *)
-        mkstmt (MethodCall(Some lhs, mc)) s.pos
+    | Call(None, mc) -> (* x.f() becomes id = x.f() *)
+        mkstmt (Call(Some lhs, mc)) s.pos
     | Yield(None,es) -> C.yield ~lhs ~args:es s.pos
         
-    | MethodCall(Some id2, _) (* id2=x.f() becomes id2=x.(); id=id2 *)
+    | Call(Some id2, _) (* id2=x.f() becomes id2=x.(); id=id2 *)
     | Yield(Some id2,_) ->
         let new_s = C.assign lhs (tuple_of_lhs id2 s.pos) s.pos in
           C.seq [s;new_s] s.pos
@@ -1172,9 +1172,9 @@ and add_last_assign ~do_break (id:identifier) (s : stmt) : stmt =
     | Break _ | Redo | Retry | Next _ -> s (* control jumps elsewhere *)
 
     | Undef _
-    | Module _ (* All of these return nil *)
-    | Method _
-    | Class _ 
+    | ModuleDef _ (* All of these return nil *)
+    | MethodDef _
+    | ClassDef _ 
     | Alias _
     | Begin _
     | End _ -> 
