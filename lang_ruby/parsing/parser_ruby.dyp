@@ -127,51 +127,51 @@ let dyp_merge xs =
 
 %token <Lexing.position> T_DOT          /* . */
 %token <Lexing.position> T_COMMA        /* , */
-%token <Lexing.position> T_PLUS 	/* + */
-%token <Lexing.position> T_UPLUS 	/* unary + */
-%token <Lexing.position> T_MINUS	/* - */
-%token <Lexing.position> T_UMINUS	/* unary - */
-%token <Lexing.position> T_POW		/* ** */
-%token <Lexing.position> T_CMP  	/* <=> */
+%token <Lexing.position> T_PLUS     /* + */
+%token <Lexing.position> T_UPLUS    /* unary + */
+%token <Lexing.position> T_MINUS    /* - */
+%token <Lexing.position> T_UMINUS   /* unary - */
+%token <Lexing.position> T_POW      /* ** */
+%token <Lexing.position> T_CMP      /* <=> */
 %token <Lexing.position> T_ASSIGN       /* = */
-%token <Lexing.position> T_EQ  		/* == */
-%token <Lexing.position> T_EQQ  	/* === */
-%token <Lexing.position> T_NEQ  	/* != */
-%token <Lexing.position> T_GEQ  	/* >= */
-%token <Lexing.position> T_LEQ  	/* <= */
-%token <Lexing.position> T_LT 		/* < */
-%token <Lexing.position> T_GT  		/* > */
+%token <Lexing.position> T_EQ       /* == */
+%token <Lexing.position> T_EQQ      /* === */
+%token <Lexing.position> T_NEQ      /* != */
+%token <Lexing.position> T_GEQ      /* >= */
+%token <Lexing.position> T_LEQ      /* <= */
+%token <Lexing.position> T_LT       /* < */
+%token <Lexing.position> T_GT       /* > */
 %token <Lexing.position> T_ANDOP 
        <Lexing.position> T_OROP         /* && and || */
 %token <Lexing.position> T_MATCH
-        <Lexing.position> T_NMATCH	/* =~ and !~ */
+        <Lexing.position> T_NMATCH  /* =~ and !~ */
 %token <Lexing.position> T_DOT2
-       <Lexing.position> T_DOT3	/* .. and ... */
+       <Lexing.position> T_DOT3 /* .. and ... */
 %token <Lexing.position> T_LSHFT
-       <Lexing.position> T_RSHFT	/* << and >> */
-%token <string*Lexing.position> T_OP_ASGN	/* +=, -=  etc. */
-%token <Lexing.position> T_ASSOC	/* => */
-%token <Lexing.position> T_LPAREN	/* _( */
-%token <Lexing.position> T_LPAREN_ARG	/* ( */
-%token <Lexing.position> T_RPAREN	/* ) */
-%token <Lexing.position> T_LBRACK_ARG	/* [ as in x[y] = 2 */
-%token <Lexing.position> T_LBRACK	/* [ as in x [y] aka x([y]) */
-%token <Lexing.position> T_RBRACK	/* ] */
-%token <Lexing.position> T_LBRACE	/* { for hash */
-%token <Lexing.position> T_LBRACE_ARG	/* { for code block */
-%token <Lexing.position> T_RBRACE	/* } */
-%token <Lexing.position> T_STAR		/* * */
-%token <Lexing.position> T_USTAR	/* * */
-%token <Lexing.position> T_SLASH	/* / */
-%token <Lexing.position> T_PERCENT	/* % */
+       <Lexing.position> T_RSHFT    /* << and >> */
+%token <string*Lexing.position> T_OP_ASGN   /* +=, -=  etc. */
+%token <Lexing.position> T_ASSOC    /* => */
+%token <Lexing.position> T_LPAREN   /* _( */
+%token <Lexing.position> T_LPAREN_ARG   /* ( */
+%token <Lexing.position> T_RPAREN   /* ) */
+%token <Lexing.position> T_LBRACK_ARG   /* [ as in x[y] = 2 */
+%token <Lexing.position> T_LBRACK   /* [ as in x [y] aka x([y]) */
+%token <Lexing.position> T_RBRACK   /* ] */
+%token <Lexing.position> T_LBRACE   /* { for hash */
+%token <Lexing.position> T_LBRACE_ARG   /* { for code block */
+%token <Lexing.position> T_RBRACE   /* } */
+%token <Lexing.position> T_STAR     /* * */
+%token <Lexing.position> T_USTAR    /* * */
+%token <Lexing.position> T_SLASH    /* / */
+%token <Lexing.position> T_PERCENT  /* % */
 %token <Lexing.position> T_QUESTION     /* ? */
 %token <Lexing.position> T_COLON        /* : */
 %token <Lexing.position> T_CARROT       /* ^ */
 %token <Lexing.position> T_VBAR         /* | */
 %token <Lexing.position> T_BANG         /* ! */
 %token <Lexing.position> T_TILDE        /* ~ */
-%token <Lexing.position> T_AMPER	/* & */
-%token <Lexing.position> T_UAMPER	/* & */
+%token <Lexing.position> T_AMPER    /* & */
+%token <Lexing.position> T_UAMPER   /* & */
 %token <Lexing.position> T_SEMICOLON    /* ; */
 %token <Lexing.position> T_SCOPE        /* x::y */
 %token <Lexing.position> T_USCOPE       /* f ::y */
@@ -221,14 +221,14 @@ let dyp_merge xs =
        <Lexing.position> K_TRUE
        <Lexing.position> K_FALSE
 /*
-	K_DEFINED
-	K_SUPER
-	K_BREAK
-	K_REDO
-	K_RETRY
-	K_NEXT*/
+    K_DEFINED
+    K_SUPER
+    K_BREAK
+    K_REDO
+    K_RETRY
+    K_NEXT*/
      /* K___LIN_
-	K___FIL_
+    K___FIL_
       */
 
 %token <string * Lexing.position> T_SINGLE_STRING
@@ -319,16 +319,16 @@ stmt:
   | stmt<s> K_RESCUE<pos> eols stmt<guard>
       { if is_cond_modifier guard then raise Dyp.Giveup;
         S (ExnBlock({body_exprs = [s]; rescue_exprs = [(S Empty,guard)];
-		    ensure_expr = []; else_expr = []}, pos)) }
+            ensure_expr = []; else_expr = []}, pos)) }
 
       /* handle special case for x = y rescue z where rescue binds to 
-	just the rhs, not the full assignment (unlike the other modifiers)
+    just the rhs, not the full assignment (unlike the other modifiers)
       */
   | lhs_assign_op<l,op> eols arg<r> K_RESCUE<pos> eols stmt<guard>
       { if is_cond_modifier guard then raise Dyp.Giveup;
         let r' = S (ExnBlock({body_exprs = [r]; rescue_exprs = [(S Empty,guard)];
-			     ensure_expr = []; else_expr = []}, pos))
-	in (*prune_binop l op r'*) 
+                 ensure_expr = []; else_expr = []}, pos))
+    in (*prune_binop l op r'*) 
          Binop(l,op,r',pos)}
 
   | scope_begin<pos> eols T_LBRACE eols stmt_list<body> T_RBRACE
@@ -340,7 +340,7 @@ stmt:
       { c }
   | mlhs_assign_op<l,op> eols mrhs<r>
       { (*prune_binop (tuple l) op (tuple r)*) 
-	let lhs = tuple l in
+    let lhs = tuple l in
          Binop(lhs,op,(tuple r),(H.pos_of lhs))
       }
   | expr<e> 
@@ -355,13 +355,13 @@ topcall:
   | func<f> { f }
   | func<c> code_block<cb>
       { match c with
-	| Call(m,args,None,pos) -> methodcall m args (Some cb) pos
-	| _ -> methodcall c [] (Some cb) (H.pos_of c)}
+    | Call(m,args,None,pos) -> methodcall m args (Some cb) pos
+    | _ -> methodcall c [] (Some cb) (H.pos_of c)}
 
   | command<c> {c}
   | command_name<m> call_args<args> do_codeblock<cb>
       { well_formed_command m args;
-	methodcall m args (Some cb) (H.pos_of m)}
+    methodcall m args (Some cb) (H.pos_of m)}
 
 arg_comma_list_trail:
   | arg_comma_star_list<e> {e}
@@ -404,10 +404,10 @@ call_args:
 command:
   | K_YIELD<pos> call_args<args> 
       { well_formed_return args;
-	S (Yield(args,pos)) }
+    S (Yield(args,pos)) }
   | command_name<m> call_args<args>
       { well_formed_command m args;
-	methodcall m args None (H.pos_of m)}
+    methodcall m args None (H.pos_of m)}
   | command_name<cmd> command<cmd2>
     {well_formed_command cmd [cmd2];
      methodcall cmd [cmd2] None (H.pos_of cmd)}
@@ -478,7 +478,7 @@ expr:
 primary:
   | T_LPAREN<pos> eols stmt_list<ss> T_RPAREN
       { (* don't collapse the block here to prevent the disambiguation
-	  rules from erroneously firing	*) 
+      rules from erroneously firing *) 
          S (Block(ss,pos)) }
   | constant<c> { c }
   | identifier<id> { id }
@@ -555,8 +555,8 @@ array_item:
   | arg<e> { e }
   | constant<c> T_LBRACK<pos1> eols call_args<args> eols T_RBRACK
       {methodcall
-	 (Binop(c, Op_DOT, Operator(Op_AREF,pos1), H.pos_of c)) 
-	 args None (H.pos_of c)
+     (Binop(c, Op_DOT, Operator(Op_AREF,pos1), H.pos_of c)) 
+     args None (H.pos_of c)
       }
 
 array_body_rest:
@@ -629,8 +629,8 @@ method_formals:
   | eol_or_semi { [] }
   | formal_arg_nonempty_list<formals> eol_or_semi
       {match formals with
-	  (Formal_tuple _)::_ -> raise Dyp.Giveup
-	| e -> e
+      (Formal_tuple _)::_ -> raise Dyp.Giveup
+    | e -> e
       }
   | lparen eols formal_arg_list<formals> eols T_RPAREN {
       (* RPAREN usually puts the lexer in an end state, but we need to
@@ -695,16 +695,16 @@ body_exn:
  | stmt_list<body> rescue_list<resc_e> 
      case_else<else_e> ensure_clause<ens_e>
      { {body_exprs = body;
-	rescue_exprs = resc_e;
-	ensure_expr = ens_e;
-	else_expr = else_e} }
+    rescue_exprs = resc_e;
+    ensure_expr = ens_e;
+    else_expr = else_e} }
 
 rescue_clause:
   | K_RESCUE<resc_pos> then_sep stmt_list<body>
       { let pos = match body with
-	  | [] -> resc_pos 
-	  | hd::_ -> H.pos_of hd
-	in (S Empty,mk_block body pos) }
+      | [] -> resc_pos 
+      | hd::_ -> H.pos_of hd
+    in (S Empty,mk_block body pos) }
 
   | K_RESCUE<pos> T_ASSOC seen_id<bind> then_sep stmt_list<body>
       { (Binop(S Empty,Op_ASSOC,bind,pos), mk_block body pos) }

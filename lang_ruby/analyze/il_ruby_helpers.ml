@@ -46,26 +46,26 @@ let uniq () = incr uniq_counter; !uniq_counter
     | Case(c) ->
         let acc = f acc stmt in
         let acc = List.fold_left
-	  (fun acc (_w,b) ->
-	     fold_stmt f acc b 
-	  ) acc c.case_whens
+      (fun acc (_w,b) ->
+         fold_stmt f acc b 
+      ) acc c.case_whens
         in
-	  Utils_ruby.do_opt ~none:acc ~some:(fold_stmt f acc) c.case_else
+      Utils_ruby.do_opt ~none:acc ~some:(fold_stmt f acc) c.case_else
 
     | Call(_,{mc_cb = (None|Some (CB_Arg _)); _}) -> f acc stmt
     | Call(_,{mc_cb = Some (CB_Block(_,cb_body)); _}) -> 
         fold_stmt f (f acc stmt) cb_body
-	  
+      
     | ExnBlock(b) ->
         let acc = f acc stmt in
         let acc = fold_stmt f acc b.exn_body in
         let acc = List.fold_left
-	  (fun acc rb -> 
-	     fold_stmt f acc rb.rescue_body
-	  ) acc b.exn_rescue 
+      (fun acc rb -> 
+         fold_stmt f acc rb.rescue_body
+      ) acc b.exn_rescue 
         in
         let acc = Utils_ruby.do_opt ~none:acc ~some:(fold_stmt f acc) b.exn_ensure in
-	  Utils_ruby.do_opt ~none:acc ~some:(fold_stmt f acc) b.exn_else
+      Utils_ruby.do_opt ~none:acc ~some:(fold_stmt f acc) b.exn_else
 
     | Alias _ | Assign _ | Expression _ | Return _ | Yield _
     | Defined _ | Undef _ | Break _ | Redo | Retry | Next _ 
@@ -85,42 +85,42 @@ let uniq () = incr uniq_counter; !uniq_counter
 
     | Case cb -> 
         List.iter
-	  (fun (_guard,body) ->
-	     (*
-	       stmt.succs <- StmtSet.add guard stmt.succs;
-	       compute_cfg_succ guard (StmtSet.singleton body);
-	     *)
-	     compute_cfg_succ body succs;
-	  ) cb.case_whens;
+      (fun (_guard,body) ->
+         (*
+           stmt.succs <- StmtSet.add guard stmt.succs;
+           compute_cfg_succ guard (StmtSet.singleton body);
+         *)
+         compute_cfg_succ body succs;
+      ) cb.case_whens;
         begin match cb.case_else with
-	  | None -> ()
-	  | Some else' -> 
-	      stmt.succs <- Set_.add else' stmt.succs;
-	      compute_cfg_succ else' succs
+      | None -> ()
+      | Some else' -> 
+          stmt.succs <- Set_.add else' stmt.succs;
+          compute_cfg_succ else' succs
         end
 
     | ExnBlock eb -> 
         stmt.succs <- Set_.add eb.exn_body stmt.succs;
         let succs' =  match eb.exn_ensure, eb.exn_else with
-	  | None, None -> succs
-	  | Some x, None
-	  | None, Some x -> 
-	      compute_cfg_succ x succs;
-	      Set_.add x succs
-	  | Some x1, Some x2 ->
-	      compute_cfg_succ x1 succs;
-	      compute_cfg_succ x2 succs;
-	      Set_.add x1 (Set_.add x2 succs)
+      | None, None -> succs
+      | Some x, None
+      | None, Some x -> 
+          compute_cfg_succ x succs;
+          Set_.add x succs
+      | Some x1, Some x2 ->
+          compute_cfg_succ x1 succs;
+          compute_cfg_succ x2 succs;
+          Set_.add x1 (Set_.add x2 succs)
         in
         let succs' = 
-	  List.fold_left
-	    (fun acc resc ->
-	       compute_cfg_succ resc.rescue_body succs;
-	       Set_.add resc.rescue_body acc
-	    ) succs' eb.exn_rescue
+      List.fold_left
+        (fun acc resc ->
+           compute_cfg_succ resc.rescue_body succs;
+           Set_.add resc.rescue_body acc
+        ) succs' eb.exn_rescue
         in
-	  compute_cfg_succ eb.exn_body succs'
-	    
+      compute_cfg_succ eb.exn_body succs'
+        
     | If(_g,t,f) -> 
         stmt.succs <- Set_.add t (Set_.add f stmt.succs);
         compute_cfg_succ t succs;
@@ -147,7 +147,7 @@ let uniq () = incr uniq_counter; !uniq_counter
     | MethodDef(_,_,body) ->
         stmt.succs <- succs;
         compute_cfg_succ body Set_.empty
-	  
+      
     | Undef _ | Break _ | Redo | Retry | Next _ -> 
         failwith "handle control op in successor computation"
 
@@ -156,7 +156,7 @@ let uniq () = incr uniq_counter; !uniq_counter
     | End(body) -> 
         stmt.succs <- Set_.add body stmt.succs;
         compute_cfg_succ body succs
-	  
+      
   and compute_cfg_succ_list last = function
     | [] -> assert false
     | hd::[] -> compute_cfg_succ hd last
@@ -168,9 +168,9 @@ let uniq () = incr uniq_counter; !uniq_counter
     fold_stmt 
       (fun () stmt ->
          Set_.iter
-	   (fun succ ->
-	      succ.preds <- Set_.add stmt succ.preds
-	   ) stmt.succs
+       (fun succ ->
+          succ.preds <- Set_.add stmt succ.preds
+       ) stmt.succs
       ) () stmt
       
   let compute_cfg stmt = 
@@ -417,8 +417,8 @@ let rec stmt_eq (s1:stmt) (s2:stmt) =
 and snode_eq s1 s2 = match s1, s2 with
   | Seq l1, Seq l2 -> 
       begin try
-	  List.fold_left2 (fun acc s1 s2 -> acc && stmt_eq s1 s2) true l1 l2
-	with Invalid_argument _ -> false
+      List.fold_left2 (fun acc s1 s2 -> acc && stmt_eq s1 s2) true l1 l2
+    with Invalid_argument _ -> false
       end
   | Alias(ak1), Alias(ak2) -> ak1 = ak2 (* BUG! was ak1 = ak1 *)
   | If(g1,t1,f1),If(g2,t2,f2) -> g1 = g2 && stmt_eq t1 t2 && stmt_eq f1 f2
@@ -466,8 +466,8 @@ and rescue_block_eq rb1 rb2 =
   try
     List.fold_left2
       (fun acc b1 b2 -> 
-	acc && b1.rescue_guards = b2.rescue_guards &&
-	  stmt_eq b1.rescue_body b2.rescue_body
+    acc && b1.rescue_guards = b2.rescue_guards &&
+      stmt_eq b1.rescue_body b2.rescue_body
       ) true rb1 rb2
   with Invalid_argument _ -> false
 
@@ -481,9 +481,9 @@ and case_eq c1 c2 =
   (c1.case_guard = c2.case_guard) 
   &&
     begin try List.fold_left2
-	(fun acc (e1,s1) (e2,s2) -> 
-	  acc && e1 = e2 && stmt_eq s1 s2
-	) true c1.case_whens c2.case_whens
+    (fun acc (e1,s1) (e2,s2) -> 
+      acc && e1 = e2 && stmt_eq s1 s2
+    ) true c1.case_whens c2.case_whens
       with Invalid_argument _ -> false
     end
   && eq_opt stmt_eq c1.case_else c2.case_else
@@ -543,35 +543,35 @@ let visit_block_param vtor p = visit_leaf vtor#visit_block_param p
 let visit_def_name vtor dn = 
   visit vtor#visit_def_name dn begin function
     | Instance_Method msg ->
-	let msg' = visit_msg_id vtor msg in
-	  if msg'==msg then dn else Instance_Method msg'
+    let msg' = visit_msg_id vtor msg in
+      if msg'==msg then dn else Instance_Method msg'
     | Singleton_Method(id,msg) ->
-	let id' = visit_id vtor id in
-	let msg' = visit_msg_id vtor msg in
-	  if id'==id && msg'==msg then dn
-	  else Singleton_Method(id',msg')
+    let id' = visit_id vtor id in
+    let msg' = visit_msg_id vtor msg in
+      if id'==id && msg'==msg then dn
+      else Singleton_Method(id',msg')
   end
       
 let rec visit_literal vtor l = 
   visit vtor#visit_literal l begin function
     | Array star_lst ->
-	let lst' = map_preserve List.map (visit_star_expr vtor) star_lst in
-	  if star_lst==lst' then l else Array lst'
-	    
+    let lst' = map_preserve List.map (visit_star_expr vtor) star_lst in
+      if star_lst==lst' then l else Array lst'
+        
     | Hash pair_lst ->
-	let lst' = map_preserve List.map
-	  (fun ((e1,e2) as pair) ->
-	     let e1' = visit_expr vtor e1 in
-	     let e2' = visit_expr vtor e2 in
-	       if e1==e1' && e2==e2' then pair else (e1',e2')
-	  ) pair_lst
-	in if pair_lst==lst' then l else Hash lst'
-	    
+    let lst' = map_preserve List.map
+      (fun ((e1,e2) as pair) ->
+         let e1' = visit_expr vtor e1 in
+         let e2' = visit_expr vtor e2 in
+           if e1==e1' && e2==e2' then pair else (e1',e2')
+      ) pair_lst
+    in if pair_lst==lst' then l else Hash lst'
+        
     | Range(b,e1,e2) ->
-	let e1' = visit_expr vtor e1 in
-	let e2' = visit_expr vtor e2 in
-	  if e1==e1' && e2==e2' then l else Range(b,e1',e2')
-	    
+    let e1' = visit_expr vtor e1 in
+    let e2' = visit_expr vtor e2 in
+      if e1==e1' && e2==e2' then l else Range(b,e1',e2')
+        
     | _ -> l
   end
 
@@ -585,12 +585,12 @@ and visit_lhs vtor (lhs:lhs) =
   visit vtor#visit_lhs lhs begin function
     | LId (id) -> LId (visit_id vtor id :> identifier)
     | LTup (lhs_l) -> 
-	let lhs_l' = map_preserve List.map (visit_lhs vtor) lhs_l in
-	  if lhs_l == lhs_l' then lhs
-	  else LTup (lhs_l')
+    let lhs_l' = map_preserve List.map (visit_lhs vtor) lhs_l in
+      if lhs_l == lhs_l' then lhs
+      else LTup (lhs_l')
     | LStar ((id)) -> 
-	let id' = visit_id vtor id in
-	  if id==id' then lhs else (LStar ( id') : lhs)
+    let id' = visit_id vtor id in
+      if id==id' then lhs else (LStar ( id') : lhs)
   end
 
 and visit_star_expr vtor star = match star with
@@ -603,16 +603,16 @@ let rec visit_tuple vtor tup =
   visit vtor#visit_tuple tup begin function
     | TE (e) -> TE (visit_expr vtor e : expr)
     | TTup (lst) ->
-  	  let lst' = map_preserve List.map (visit_tuple vtor) lst in
-	  if lst == lst' then tup
-	  else TTup (lst')
+      let lst' = map_preserve List.map (visit_tuple vtor) lst in
+      if lst == lst' then tup
+      else TTup (lst')
     | TStar ((TE (e))) -> 
-	  let e' = visit_expr vtor e in
-	  if e==e' then tup else (TStar ((TE e')) : tuple_expr)
+      let e' = visit_expr vtor e in
+      if e==e' then tup else (TStar ((TE e')) : tuple_expr)
     | TStar ((TTup (lst))) -> 
-	  let lst' = map_preserve List.map (visit_tuple vtor) lst in
-	  if lst == lst' then tup
-	  else TStar ((TTup (lst')))
+      let lst' = map_preserve List.map (visit_tuple vtor) lst in
+      if lst == lst' then tup
+      else TStar ((TTup (lst')))
     | _ -> failwith "Impossible" (* TStar (`Star (TStar _) *)
   end
 
@@ -620,23 +620,23 @@ let rec visit_tuple vtor tup =
 let visit_rescue_guard vtor rg = 
   visit vtor#visit_rescue_guard rg begin function
     | Rescue_Expr tup -> 
-	let tup' = visit_tuple vtor tup in
-	  if tup' == tup then rg else Rescue_Expr tup'
+    let tup' = visit_tuple vtor tup in
+      if tup' == tup then rg else Rescue_Expr tup'
     | Rescue_Bind(tup,id) ->
-	let tup' = visit_tuple vtor tup in
-	let id' = visit_id vtor id in
-	  if tup'==tup && id'==id then rg else Rescue_Bind(tup',id')
+    let tup' = visit_tuple vtor tup in
+    let id' = visit_id vtor id in
+      if tup'==tup && id'==id then rg else Rescue_Bind(tup',id')
   end
 
 let visit_class_kind vtor ck = 
   visit vtor#visit_class_kind ck begin function
     | MetaClass(id) -> 
-	let id' = visit_id vtor id in
-	  if id==id' then ck else MetaClass id'
+    let id' = visit_id vtor id in
+      if id==id' then ck else MetaClass id'
     | NominalClass(id1,id2) ->
-	let id1' = visit_id vtor id1 in
-	let id2' = map_opt_preserve (visit_id vtor) id2 in
-	  if id1'==id1 && id2'==id2 then ck else NominalClass(id1',id2')
+    let id1' = visit_id vtor id1 in
+    let id2' = map_opt_preserve (visit_id vtor) id2 in
+      if id1'==id1 && id2'==id2 then ck else NominalClass(id1',id2')
 end
 
 let visit_method_param vtor p =
@@ -645,16 +645,16 @@ let visit_method_param vtor p =
     | Formal_amp _
     | Formal_star _ -> p
     | Formal_default(s,tup) ->
-	let tup' = visit_tuple vtor tup in
-	  if tup'==tup then p else Formal_default(s,tup')
+    let tup' = visit_tuple vtor tup in
+      if tup'==tup then p else Formal_default(s,tup')
   end
 
 let visit_alias_kind (vtor:cfg_visitor) ak = match ak with
   | Alias_Method(m1,m2) ->
       let m1' = visit_msg_id vtor m1 in
       let m2' = visit_msg_id vtor m2 in
-	if m1 == m1' && m2 == m2' then ak
-	else Alias_Method(m1',m2')
+    if m1 == m1' && m2 == m2' then ak
+    else Alias_Method(m1',m2')
 
   | Alias_Global(_s1,_s2) -> ak
           
@@ -663,172 +663,172 @@ let rec visit_stmt (vtor:cfg_visitor) stmt =
 
 and visit_stmt_children vtor stmt = match stmt.snode with
     | Seq sl -> 
-	let sl' = map_preserve List.map (visit_stmt vtor) sl in
-	  if sl == sl' then stmt
-	  else update_stmt stmt (Seq sl')
+    let sl' = map_preserve List.map (visit_stmt vtor) sl in
+      if sl == sl' then stmt
+      else update_stmt stmt (Seq sl')
 
     | Alias(ak) -> 
-	let ak' = visit_alias_kind vtor ak in
-	  if ak == ak' then stmt
-	  else update_stmt stmt (Alias ak')
+    let ak' = visit_alias_kind vtor ak in
+      if ak == ak' then stmt
+      else update_stmt stmt (Alias ak')
 
     | Call(lhso, mc) ->
-	let lhso' = map_opt_preserve (visit_lhs vtor) lhso in
-	let targ' = map_opt_preserve (visit_expr vtor) mc.mc_target in
-	let msg' = visit_msg_id vtor mc.mc_msg in
-	let args' = map_preserve List.map (visit_star_expr vtor) mc.mc_args in
-	let cb' = map_opt_preserve 
-	  (fun cb -> match cb with
+    let lhso' = map_opt_preserve (visit_lhs vtor) lhso in
+    let targ' = map_opt_preserve (visit_expr vtor) mc.mc_target in
+    let msg' = visit_msg_id vtor mc.mc_msg in
+    let args' = map_preserve List.map (visit_star_expr vtor) mc.mc_args in
+    let cb' = map_opt_preserve 
+      (fun cb -> match cb with
              | CB_Arg e -> 
                  let e' = visit_expr vtor e in
                    if e == e' then cb else CB_Arg e'
              | CB_Block(formals,body) -> 
-	     let formals' = map_preserve List.map 
-	       (visit_block_param vtor) formals 
-	     in
-	     let body' = visit_stmt vtor body in
-	       if formals'==formals && body'==body
-	       then cb else CB_Block(formals',body')
-	  ) mc.mc_cb
-	in
-	  if lhso == lhso' && mc.mc_target==targ' && mc.mc_msg == msg' 
-	    && mc.mc_args==args' && mc.mc_cb == cb'
-	  then stmt 
-	  else 
-	    let mc' = {mc_target=targ';mc_msg=msg';mc_args=args';mc_cb=cb'}
-	    in update_stmt stmt (Call(lhso',mc'))
+         let formals' = map_preserve List.map 
+           (visit_block_param vtor) formals 
+         in
+         let body' = visit_stmt vtor body in
+           if formals'==formals && body'==body
+           then cb else CB_Block(formals',body')
+      ) mc.mc_cb
+    in
+      if lhso == lhso' && mc.mc_target==targ' && mc.mc_msg == msg' 
+        && mc.mc_args==args' && mc.mc_cb == cb'
+      then stmt 
+      else 
+        let mc' = {mc_target=targ';mc_msg=msg';mc_args=args';mc_cb=cb'}
+        in update_stmt stmt (Call(lhso',mc'))
 
     | Yield(lhso, args) ->
-	let lhso' = map_opt_preserve (visit_lhs vtor) lhso in
-	let args' = map_preserve List.map (visit_star_expr vtor) args in
-	  if lhso == lhso' && args == args' 
-	  then stmt else update_stmt stmt (Yield(lhso',args'))
-	    
+    let lhso' = map_opt_preserve (visit_lhs vtor) lhso in
+    let args' = map_preserve List.map (visit_star_expr vtor) args in
+      if lhso == lhso' && args == args' 
+      then stmt else update_stmt stmt (Yield(lhso',args'))
+        
     | Assign(lhs,rhs) -> 
-	let lhs' = visit_lhs vtor lhs in
-	let rhs' = visit_tuple vtor rhs in
-	  if lhs == lhs' && rhs == rhs'
-	  then stmt else update_stmt stmt (Assign(lhs',rhs'))
+    let lhs' = visit_lhs vtor lhs in
+    let rhs' = visit_tuple vtor rhs in
+      if lhs == lhs' && rhs == rhs'
+      then stmt else update_stmt stmt (Assign(lhs',rhs'))
 
     | For(blist,guard,body) -> 
-	let blist' = map_preserve List.map (visit_block_param vtor) blist in
-	let guard' = visit_expr vtor guard in
-	let body' = visit_stmt vtor body in
-	  if guard == guard' && body == body' && blist == blist'
-	  then stmt else update_stmt stmt (For(blist',guard',body'))
+    let blist' = map_preserve List.map (visit_block_param vtor) blist in
+    let guard' = visit_expr vtor guard in
+    let body' = visit_stmt vtor body in
+      if guard == guard' && body == body' && blist == blist'
+      then stmt else update_stmt stmt (For(blist',guard',body'))
 
     | Begin s ->
-	let s' = visit_stmt vtor s in 
-	  if s == s' then stmt else update_stmt stmt (Begin s')
-	    
+    let s' = visit_stmt vtor s in 
+      if s == s' then stmt else update_stmt stmt (Begin s')
+        
     | End s ->
-	let s' = visit_stmt vtor s in 
-	  if s == s' then stmt else update_stmt stmt (End s')
+    let s' = visit_stmt vtor s in 
+      if s == s' then stmt else update_stmt stmt (End s')
 
     | While(g, body) ->
-	let g' = visit_expr vtor g in
-	let body' = visit_stmt vtor body in
-	  if g == g' && body == body'
-	  then stmt else update_stmt stmt (While(g',body'))
+    let g' = visit_expr vtor g in
+    let body' = visit_stmt vtor body in
+      if g == g' && body == body'
+      then stmt else update_stmt stmt (While(g',body'))
 
     | If(g, s1, s2) ->
-	let g' = visit_expr vtor g in
-	let s1' = visit_stmt vtor s1 in
-	let s2' = visit_stmt vtor s2 in
-	  if g == g' && s1 == s1' && s2 == s2'
-	  then stmt else update_stmt stmt (If(g',s1',s2'))
+    let g' = visit_expr vtor g in
+    let s1' = visit_stmt vtor s1 in
+    let s2' = visit_stmt vtor s2 in
+      if g == g' && s1 == s1' && s2 == s2'
+      then stmt else update_stmt stmt (If(g',s1',s2'))
 
     | Case c ->
-	let guard' = visit_expr vtor c.case_guard in
-	let whens' = 
-	  map_preserve List.map
-	    (fun ((g,s) as w) -> 
-	       let g' = visit_tuple vtor g in
-	       let s' = visit_stmt vtor s in
-		 if g' == g && s == s' then w else (g',s')
-	    ) c.case_whens
-	in
-	let else' = map_opt_preserve (visit_stmt vtor) c.case_else in
-	  if guard' == c.case_guard && whens' = c.case_whens
-	      && else' == c.case_else 
-	  then stmt 
-	  else 
-	    let c' = {case_guard=guard';case_whens=whens';case_else=else'} in
-	      update_stmt stmt (Case c')
+    let guard' = visit_expr vtor c.case_guard in
+    let whens' = 
+      map_preserve List.map
+        (fun ((g,s) as w) -> 
+           let g' = visit_tuple vtor g in
+           let s' = visit_stmt vtor s in
+         if g' == g && s == s' then w else (g',s')
+        ) c.case_whens
+    in
+    let else' = map_opt_preserve (visit_stmt vtor) c.case_else in
+      if guard' == c.case_guard && whens' = c.case_whens
+          && else' == c.case_else 
+      then stmt 
+      else 
+        let c' = {case_guard=guard';case_whens=whens';case_else=else'} in
+          update_stmt stmt (Case c')
 
     | ExnBlock e ->
-	let body' = visit_stmt vtor e.exn_body in
-	let else' = map_opt_preserve (visit_stmt vtor) e.exn_else in
-	let ensure' = map_opt_preserve (visit_stmt vtor) e.exn_ensure in
-	let rescue' = 
-	  map_preserve List.map
-	    (fun resc -> 
-	       let guards' = 
-		 map_preserve List.map (visit_rescue_guard vtor) resc.rescue_guards
-	       in
-	       let rbody' = visit_stmt vtor resc.rescue_body in
-		 if guards' == resc.rescue_guards && rbody'=resc.rescue_body
-		 then resc
-		 else {rescue_guards=guards';rescue_body=rbody'}
-	    )  e.exn_rescue
-	in
-	  if body' == e.exn_body && else'==e.exn_else &&
-	    ensure' == e.exn_ensure && rescue'==e.exn_rescue
-	  then stmt
-	  else 
-	    let e' = {exn_body=body';exn_else=else';exn_ensure=ensure';
-		      exn_rescue=rescue'}
-	    in update_stmt stmt (ExnBlock e')
+    let body' = visit_stmt vtor e.exn_body in
+    let else' = map_opt_preserve (visit_stmt vtor) e.exn_else in
+    let ensure' = map_opt_preserve (visit_stmt vtor) e.exn_ensure in
+    let rescue' = 
+      map_preserve List.map
+        (fun resc -> 
+           let guards' = 
+         map_preserve List.map (visit_rescue_guard vtor) resc.rescue_guards
+           in
+           let rbody' = visit_stmt vtor resc.rescue_body in
+         if guards' == resc.rescue_guards && rbody'=resc.rescue_body
+         then resc
+         else {rescue_guards=guards';rescue_body=rbody'}
+        )  e.exn_rescue
+    in
+      if body' == e.exn_body && else'==e.exn_else &&
+        ensure' == e.exn_ensure && rescue'==e.exn_rescue
+      then stmt
+      else 
+        let e' = {exn_body=body';exn_else=else';exn_ensure=ensure';
+              exn_rescue=rescue'}
+        in update_stmt stmt (ExnBlock e')
 
     | ClassDef(lhso, cls, body) ->
-	let lhso' = map_opt_preserve (visit_lhs vtor) lhso in
-	let cls' = visit_class_kind vtor cls in
-	let body' = visit_stmt vtor body in
-	  if cls==cls' && body==body'
-	  then stmt
-	  else update_stmt stmt (ClassDef(lhso',cls',body'))
+    let lhso' = map_opt_preserve (visit_lhs vtor) lhso in
+    let cls' = visit_class_kind vtor cls in
+    let body' = visit_stmt vtor body in
+      if cls==cls' && body==body'
+      then stmt
+      else update_stmt stmt (ClassDef(lhso',cls',body'))
 
     | ModuleDef(lhso, id, body) ->
-	let lhso' = map_opt_preserve (visit_lhs vtor) lhso in
-	let id' = visit_id vtor id in
-	let body' = visit_stmt vtor body in
-	  if id==id' && body==body' then stmt
-	  else update_stmt stmt (ModuleDef(lhso',id',body'))
+    let lhso' = map_opt_preserve (visit_lhs vtor) lhso in
+    let id' = visit_id vtor id in
+    let body' = visit_stmt vtor body in
+      if id==id' && body==body' then stmt
+      else update_stmt stmt (ModuleDef(lhso',id',body'))
 
     | MethodDef(def_name, args, body) ->
-	let def_name' = visit_def_name vtor def_name in
-	let args' = map_preserve List.map (visit_method_param vtor) args in
-	let body' = visit_stmt vtor body in
-	  if def_name==def_name' && args==args' && body==body'
-	  then stmt 
-	  else update_stmt stmt (MethodDef(def_name',args',body'))
+    let def_name' = visit_def_name vtor def_name in
+    let args' = map_preserve List.map (visit_method_param vtor) args in
+    let body' = visit_stmt vtor body in
+      if def_name==def_name' && args==args' && body==body'
+      then stmt 
+      else update_stmt stmt (MethodDef(def_name',args',body'))
 
     | Expression e ->
-	let e' = visit_expr vtor e in
-	  if e==e' then stmt else update_stmt stmt (Expression e')
+    let e' = visit_expr vtor e in
+      if e==e' then stmt else update_stmt stmt (Expression e')
 
     | Defined(id, istmt) ->
-	let id' = visit_id vtor id in
-	let istmt' = visit_stmt vtor istmt in
-	  if id==id' && istmt==istmt' then stmt 
-	  else update_stmt stmt (Defined(id',istmt'))
+    let id' = visit_id vtor id in
+    let istmt' = visit_stmt vtor istmt in
+      if id==id' && istmt==istmt' then stmt 
+      else update_stmt stmt (Defined(id',istmt'))
 
     | Return tup_o ->
-	let tup_o' = map_opt_preserve (visit_tuple vtor) tup_o in
-	  if tup_o == tup_o' then stmt else update_stmt stmt (Return tup_o')
+    let tup_o' = map_opt_preserve (visit_tuple vtor) tup_o in
+      if tup_o == tup_o' then stmt else update_stmt stmt (Return tup_o')
 
     | Break tup_o ->
-	let tup_o' = map_opt_preserve (visit_tuple vtor) tup_o in
-	  if tup_o == tup_o' then stmt else update_stmt stmt (Break tup_o')
-	    
+    let tup_o' = map_opt_preserve (visit_tuple vtor) tup_o in
+      if tup_o == tup_o' then stmt else update_stmt stmt (Break tup_o')
+        
     | Next tup_o ->
-	let tup_o' = map_opt_preserve (visit_tuple vtor) tup_o in
-	  if tup_o == tup_o' then stmt else update_stmt stmt (Next tup_o')
-	    
+    let tup_o' = map_opt_preserve (visit_tuple vtor) tup_o in
+      if tup_o == tup_o' then stmt else update_stmt stmt (Next tup_o')
+        
     | Undef msg_l ->
-	let msg_l' = map_preserve List.map (visit_msg_id vtor) msg_l in
-	  if msg_l == msg_l' then stmt
-	  else update_stmt stmt (Undef msg_l')
+    let msg_l' = map_preserve List.map (visit_msg_id vtor) msg_l in
+      if msg_l == msg_l' then stmt
+      else update_stmt stmt (Undef msg_l')
 
     | Redo | Retry -> stmt
 

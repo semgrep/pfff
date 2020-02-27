@@ -38,9 +38,9 @@ let pop_back = function
   | hd::[], [] -> empty, hd
   | f::fs, [] ->
       match List.rev fs with
-	| [] -> assert false
-	| r::rs -> (queue [f] rs), r
-	
+    | [] -> assert false
+    | r::rs -> (queue [f] rs), r
+    
 let length (f,r) = (List.length f) + (List.length r)
 
 let append (f1,r1) (f2,r2) = 
@@ -105,8 +105,8 @@ let list_to_string to_s = function
   | [] -> "[]"
   | hd::tl ->
       Printf.sprintf "[%s%s]"
-	(to_s hd)
-	(List.fold_left (fun acc t -> acc ^ ", " ^ (to_s t)) "" tl)
+    (to_s hd)
+    (List.fold_left (fun acc t -> acc ^ ", " ^ (to_s t)) "" tl)
 
 let to_string to_s (f,r) = 
   "Q" ^ (list_to_string to_s f) ^ 

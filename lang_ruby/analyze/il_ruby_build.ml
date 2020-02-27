@@ -365,8 +365,8 @@ let rec convert_to_return (add_f : tuple_expr -> stmt_node) acc stmt = match stm
       in
       (* body doesn't return if there's an else stmt *)
       let body = match eb.exn_else with
-	| Some(_) -> eb.exn_body
-	| None -> q_to_stmt (convert_to_return add_f acc eb.exn_body)
+    | Some(_) -> eb.exn_body
+    | None -> q_to_stmt (convert_to_return add_f acc eb.exn_body)
       in
       let rescue = List.map convert_rescue eb.exn_rescue in
       let ensure = eb.exn_ensure in (* ensure doesn't return a value *)

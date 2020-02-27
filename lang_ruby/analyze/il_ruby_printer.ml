@@ -44,13 +44,13 @@ let str_binop = function
   | Op_Times    -> "*"
   | Op_Div      -> "/"
   | Op_Rem      -> "%"
-  | Op_CMP  	-> "<=>"
-  | Op_EQ  	-> "=="
-  | Op_EQQ  	-> "==="
-  | Op_GEQ  	-> ">="
-  | Op_LEQ  	-> "<="
-  | Op_LT  	-> "<"
-  | Op_GT  	-> ">"
+  | Op_CMP      -> "<=>"
+  | Op_EQ   -> "=="
+  | Op_EQQ      -> "==="
+  | Op_GEQ      -> ">="
+  | Op_LEQ      -> "<="
+  | Op_LT   -> "<"
+  | Op_GT   -> ">"
   | Op_BAnd     -> "&"
   | Op_BOr      -> "|"
   | Op_Match    -> "=~"
@@ -114,9 +114,9 @@ module Code_F(PP : CfgPrinter) = struct
         (format_comma_list PP.format_star_expr) lst
     | Hash lst -> 
         let format_assoc ppf (l,r) = 
-	  fprintf ppf "%a => %a" PP.format_expr l PP.format_expr r
+      fprintf ppf "%a => %a" PP.format_expr l PP.format_expr r
         in
-	  fprintf ppf "{@[%a@]}" (format_comma_list format_assoc) lst
+      fprintf ppf "{@[%a@]}" (format_comma_list format_assoc) lst
     | Range(true,l,u) ->
         fprintf ppf "(%a...%a)" PP.format_expr l PP.format_expr u
 
@@ -155,7 +155,7 @@ module Code_F(PP : CfgPrinter) = struct
           PP.format_formal_tuple ppf (t : any_formal list)
     | M (Formal_default(s,e)) -> 
         fprintf ppf "@[%s = @[%a@]@]"
-	  s PP.format_tuple_expr e
+      s PP.format_tuple_expr e
     | B (Formal_star2 s) -> fprintf ppf "*%s" s
 
   let format_formal_tuple ppf (l : any_formal list) = 
@@ -176,11 +176,11 @@ module Code_F(PP : CfgPrinter) = struct
     | [] -> ()
     | lst -> 
         List.iter
-	  (fun resc -> 
-	     fprintf ppf "@[<v 2>rescue %a@,%a@]@," 
-	       (format_comma_list PP.format_rescue_guard) resc.rescue_guards 
-	       PP.format_stmt resc.rescue_body
-	  ) lst
+      (fun resc -> 
+         fprintf ppf "@[<v 2>rescue %a@,%a@]@," 
+           (format_comma_list PP.format_rescue_guard) resc.rescue_guards 
+           PP.format_stmt resc.rescue_body
+      ) lst
 
   let format_exn_ensure ppf s = fprintf ppf "@[<v 2>ensure@,%a@]@," PP.format_stmt s
 
@@ -190,8 +190,8 @@ module Code_F(PP : CfgPrinter) = struct
     List.iter
       (fun (guards,body) -> 
          fprintf ppf "@[<v 2>@[<hv 2>when @[%a@] then@]@,%a@]@,"
-	   PP.format_tuple_expr guards
-	   PP.format_stmt body
+       PP.format_tuple_expr guards
+       PP.format_stmt body
       ) whens
 
   let format_case ppf c = 
@@ -207,8 +207,8 @@ module Code_F(PP : CfgPrinter) = struct
 
     | Alias(Alias_Method(m1,m2)) -> 
         fprintf ppf "alias %a %a" 
-	  PP.format_msg_id m1
-	  PP.format_msg_id m2
+      PP.format_msg_id m1
+      PP.format_msg_id m2
 
     | Alias(Alias_Global(v1,v2)) -> 
           let v1 = Var v1 in
@@ -219,8 +219,8 @@ module Code_F(PP : CfgPrinter) = struct
 
     | If(guard,then_e,else_e) ->
         fprintf ppf "@[<v 0>@[<v 2>if %a then@,%a@]@,"
-	  PP.format_expr guard
-	  PP.format_stmt then_e;
+      PP.format_expr guard
+      PP.format_stmt then_e;
         format_else ppf else_e;
         fprintf ppf "end@]"
 
@@ -244,51 +244,51 @@ module Code_F(PP : CfgPrinter) = struct
   
     | ModuleDef(lhs_o,m,body) ->
         fprintf ppf "@[<v 0>@[<v 2>%amodule %a@,%a@]@,"
-	  format_lhs_opt lhs_o
-	  PP.format_identifier m
-	  PP.format_stmt body;
+      format_lhs_opt lhs_o
+      PP.format_identifier m
+      PP.format_stmt body;
         fprintf ppf "end@]"
           
     | MethodDef(meth,formals,body) ->
           let formals = formals |> List.map m_to_any in
         fprintf ppf "@[<v 0>@[<v 2>def %a(@[%a@])@,%a@]@,"
-	  format_def_name meth
-	  format_formals (formals : any_formal list)
-	  PP.format_stmt body;
+      format_def_name meth
+      format_formals (formals : any_formal list)
+      PP.format_stmt body;
         fprintf ppf "end@]"      
 
     | ClassDef(lhs_o,ck,body) ->
         fprintf ppf "@[<v 0>@[<v 2>%aclass %a@,%a@]@,"
-	  format_lhs_opt lhs_o
-	  PP.format_class_kind ck
-	  PP.format_stmt body;
+      format_lhs_opt lhs_o
+      PP.format_class_kind ck
+      PP.format_stmt body;
         fprintf ppf "end@]"      
 
     | For(formals,guard,body) ->
           let formals = formals |> List.map b_to_any in
         fprintf ppf "@[<v 0>@[<v 2>for %a in %a@,%a@]@;end@]"
-	  PP.format_formals (formals : any_formal list)
-	  PP.format_expr guard
-	  PP.format_stmt body
+      PP.format_formals (formals : any_formal list)
+      PP.format_expr guard
+      PP.format_stmt body
 
     | Begin(body) ->
         fprintf ppf "@[<v 0>@[<v 2>BEGIN {@,%a@]@,}@]"
-	  PP.format_stmt body
+      PP.format_stmt body
 
     | End(body) ->
         fprintf ppf "@[<v 0>@[<v 2>END {@,%a@],}@]"
-	  PP.format_stmt body
+      PP.format_stmt body
 
     | While(guard,body)  -> 
         fprintf ppf "@[<v 0>@[<v 2>while %a@,%a@]@,end@]"
-	  PP.format_expr guard
-	  PP.format_stmt body
+      PP.format_expr guard
+      PP.format_stmt body
 
     | Case(c) -> PP.format_case ppf c
 
     | ExnBlock(b) -> 
         fprintf ppf "@[<v 0>@[<v 2>begin@,%a@]@,"
-	  PP.format_stmt b.exn_body;
+      PP.format_stmt b.exn_body;
         format_rescues ppf b.exn_rescue;
         format_option format_else ppf b.exn_else;
         format_option format_exn_ensure ppf b.exn_ensure;
@@ -340,16 +340,16 @@ module Code_F(PP : CfgPrinter) = struct
             then fprintf ppf "%a%a)" base () format_expr e
             else fprintf ppf "%a,%a)" base () format_expr e
         | Some (CB_Block(formals,body)) -> 
-	    fprintf ppf "%a) {%a@,}"
-	      base () PP.format_codeblock (formals,body)
+        fprintf ppf "%a) {%a@,}"
+          base () PP.format_codeblock (formals,body)
 
   let format_codeblock ppf (formals,body) =  
     let formals = formals |> List.map b_to_any in
     match formals with
       | [] -> fprintf ppf "||@,  @[<v 0>%a@]" PP.format_stmt body
       | _lst -> fprintf ppf "|%a|@,  @[<v 0>%a@]" 
-	  PP.format_formals (formals :> any_formal list)
-	    PP.format_stmt body
+      PP.format_formals (formals :> any_formal list)
+        PP.format_stmt body
 
   let format_cfg ppf cfg = fprintf ppf "@[<v 0>%a@]\n" PP.format_stmt cfg
 
