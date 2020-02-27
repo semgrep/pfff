@@ -20,8 +20,8 @@ let uniq_list lst =
     | [] -> []
     | [x] -> [x]
     | x1::x2::tl ->
-	if H.equal_ast x1 x2
-	then u (x1::tl) else x1 :: (u (x2::tl))
+    if H.equal_ast x1 x2
+    then u (x1::tl) else x1 :: (u (x2::tl))
   in
   let l = List.map fst lst in
     u (List.sort H.compare_ast l)

@@ -90,34 +90,34 @@ module H = Ast_ruby_helpers
   let split_double_string_to_array sc pos =
     let ds s = Literal(String(Double s),pos) in
       (* first we create a stream of tokens with the grammar of
-	   (Expr | Code | String | Delmi)*
-	 by splitting the strings on whitespace.  This stream will be
-	 in reverse order.
+       (Expr | Code | String | Delmi)*
+     by splitting the strings on whitespace.  This stream will be
+     in reverse order.
       *)
     let rec tokenize acc = function
       | [] -> acc
       | (Ast_ruby.StrExpr e)::tl -> tokenize ((`Expr e)::acc) tl
       | (Ast_ruby.StrChars s)::tl -> 
-	  let splits = Str.full_split ws_re s in
-	  let acc = 
-	    List.fold_left
-	      (fun acc -> function
-		 | Str.Text s -> (`String s)::acc
-		 | Str.Delim _ -> `Delim::acc
-	      ) acc splits
-	  in tokenize acc tl
+      let splits = Str.full_split ws_re s in
+      let acc = 
+        List.fold_left
+          (fun acc -> function
+         | Str.Text s -> (`String s)::acc
+         | Str.Delim _ -> `Delim::acc
+          ) acc splits
+      in tokenize acc tl
     in
       (* then we split the (reversed) stream at the delimeters, which
-	 mark the entries in the array.  This produces a list in the
-	 correct order. *)
+     mark the entries in the array.  This produces a list in the
+     correct order. *)
     let rec parse acc curr = function
       | [] -> 
-	  if curr = [] 
-	  then acc (* delim at end *)
-	  else (ds curr)::acc
+      if curr = [] 
+      then acc (* delim at end *)
+      else (ds curr)::acc
       | `Delim::tl -> 
-	  if curr = [] then parse acc curr tl (* delim at start *)
-	  else parse ((ds curr)::acc) [] tl
+      if curr = [] then parse acc curr tl (* delim at start *)
+      else parse ((ds curr)::acc) [] tl
       | (`Expr s)::tl -> parse acc ((Ast_ruby.StrExpr s)::curr) tl
       | (`String s)::tl -> parse acc ((Ast_ruby.StrChars s)::curr) tl
     in
@@ -132,16 +132,16 @@ module H = Ast_ruby_helpers
 
   let merge_string_lits s1 s2 = match s1,s2 with
     | Literal(String(s1),p), Literal(String(s2),_) ->
-	let s' = match s1, s2 with
-	  | Tick _, _ | _, Tick _ -> assert false
-	  | Single s1, Single s2 -> Single (s1 ^ s2)
-	  | Double sc1, Double sc2 -> Double (sc1 @ sc2)
-	  | Single s, Double sc -> 
-	      Double ((Ast_ruby.StrChars s)::sc)
-	  | Double sc,Single s -> 
-	      Double (sc @ [Ast_ruby.StrChars s])
-	in
-	  Literal((String s'),p)
+    let s' = match s1, s2 with
+      | Tick _, _ | _, Tick _ -> assert false
+      | Single s1, Single s2 -> Single (s1 ^ s2)
+      | Double sc1, Double sc2 -> Double (sc1 @ sc2)
+      | Single s, Double sc -> 
+          Double ((Ast_ruby.StrChars s)::sc)
+      | Double sc,Single s -> 
+          Double (sc @ [Ast_ruby.StrChars s])
+    in
+      Literal((String s'),p)
     | _ -> assert false
 
   let process_user_string m str pos = match m with
@@ -165,7 +165,7 @@ module H = Ast_ruby_helpers
     | Call(m,[],None,_) -> ends_with m
     | Ternary(_,_,r,_) -> ends_with r
     | e -> e
-	
+    
   let rec replace_end expr new_e = match expr with
     | Binop(l,o,r,p) -> Binop(l,o,replace_end r new_e,p)
     | Call(m,[],None,p) -> Call(replace_end m new_e,[],None,p)
@@ -178,24 +178,24 @@ module H = Ast_ruby_helpers
 
   let well_formed_do guard _body = match ends_with guard with
     | Call(_,_,Some (CodeBlock(false,_,_,_)),_) ->
-	raise Dyp.Giveup
+    raise Dyp.Giveup
     | _ ->()
 
   let well_formed_return args = match args with
     | [] -> ()
     | hd::_tl -> 
-	if is_cond_modifier (Utils.last args) then raise Dyp.Giveup;
-	match starts_with hd with
-	    (* f(x) should be not be f((x))
-	       needed e.g. f(x)[y]
-	    *)
-	  | S Block _ -> raise Dyp.Giveup
-	  | _ -> ()
+    if is_cond_modifier (Utils.last args) then raise Dyp.Giveup;
+    match starts_with hd with
+        (* f(x) should be not be f((x))
+           needed e.g. f(x)[y]
+        *)
+      | S Block _ -> raise Dyp.Giveup
+      | _ -> ()
 
   let well_formed_command _m args = match args with
     | [] -> ()
-	(* f(x) should be not be f((x))
-	   needed e.g. f(x)[y] *)
+    (* f(x) should be not be f((x))
+       needed e.g. f(x)[y] *)
     | [S Block _] -> raise Dyp.Giveup
     | _ -> if List.exists is_cond_modifier args then raise Dyp.Giveup
 
@@ -245,19 +245,19 @@ module H = Ast_ruby_helpers
     match l with
     (* unfold nested a.b.c to become (a.b()).c() *)
       | Binop(a,Op_DOT,b,p) ->
-	  let l' = methodcall (unfold_dot a b p) [] None p in
-	    Binop(l',Op_DOT,r,pos)
-	      
+      let l' = methodcall (unfold_dot a b p) [] None p in
+        Binop(l',Op_DOT,r,pos)
+          
       | _ -> Binop(l,Op_DOT,r,pos)
 
   and check_for_dot = function
     | Binop(l,Op_DOT,r,p) -> methodcall (unfold_dot l r p) [] None p
     | e -> e
-	
+    
   and scope l r = 
     let l = check_for_dot l in
       Binop(l,Op_SCOPE,r,H.pos_of l)
-	
+    
   let tuple = function
     | [] -> S Empty
     | [x] -> x
@@ -277,15 +277,15 @@ module H = Ast_ruby_helpers
     let default = l, op, r in
     match op with
     | Op_ASSIGN -> begin match ends_with l with
-	| Id(k,s,p) ->
-	    let len = String.length s in
-	      if s.[len-1] == '!'
-	      then 
-		let s' = String.sub s 0 (len-1) in
-		let l' = replace_end l (Id(k,s',p)) in
-		  l', Op_NEQ, r
-	      else default
-	| _ -> default
+    | Id(k,s,p) ->
+        let len = String.length s in
+          if s.[len-1] == '!'
+          then 
+        let s' = String.sub s 0 (len-1) in
+        let l' = replace_end l (Id(k,s',p)) in
+          l', Op_NEQ, r
+          else default
+    | _ -> default
       end
     | _ -> default
 
@@ -295,23 +295,23 @@ module H = Ast_ruby_helpers
     let default = l, op, r in
     match op with
     | Op_GT -> begin match ends_with l with
-	| Id(ID_Assign ik,s,p) ->
-	    let l' = replace_end l (Id(ik,s,p)) in
-	      l', Op_ASSOC, r
-	| Literal(Atom(sc), pos) ->
-	    let astr,rest = match List.rev sc with
-	      | (Ast_ruby.StrChars s)::tl -> s,tl
-	      | _ -> "a",[]
-	    in
-	    let len = String.length astr in
-	      if astr.[len-1] == '='
-	      then 
-		let s' = String.sub astr 0 (len-1) in
-		let sc' = List.rev ((Ast_ruby.StrChars s')::rest) in
-		let l' = replace_end l (Literal(Atom(sc'),pos)) in
-		  l', Op_ASSOC, r
-	      else default
-	| _ -> default
+    | Id(ID_Assign ik,s,p) ->
+        let l' = replace_end l (Id(ik,s,p)) in
+          l', Op_ASSOC, r
+    | Literal(Atom(sc), pos) ->
+        let astr,rest = match List.rev sc with
+          | (Ast_ruby.StrChars s)::tl -> s,tl
+          | _ -> "a",[]
+        in
+        let len = String.length astr in
+          if astr.[len-1] == '='
+          then 
+        let s' = String.sub astr 0 (len-1) in
+        let sc' = List.rev ((Ast_ruby.StrChars s')::rest) in
+        let l' = replace_end l (Literal(Atom(sc'),pos)) in
+          l', Op_ASSOC, r
+          else default
+    | _ -> default
       end
     | _ -> default
 
@@ -347,7 +347,7 @@ module H = Ast_ruby_helpers
     | Binop(_,Op_kAND,_,_) | Binop(_,Op_kOR,_,_) -> 100
 
     | Binop _ | Unary _ | _ -> max_int
-	
+    
   let binop_priority = function
     | Unary _ -> max_int
     | e -> expr_priority e
@@ -401,8 +401,8 @@ module H = Ast_ruby_helpers
       | [] -> []
       | [x] -> [x]
       | x1::x2::tl ->
-	  if cmp x1 x2 = 0
-	  then u (x1::tl) else x1 :: (u (x2::tl))
+      if cmp x1 x2 = 0
+      then u (x1::tl) else x1 :: (u (x2::tl))
     in
       u (List.sort cmp lst)
 
@@ -413,14 +413,14 @@ module H = Ast_ruby_helpers
   let do_fail s l to_s to_v =
     let len = List.length l in
       if len > 1 then begin
-	Printf.eprintf "<%s>: %d\n" s len;
-	List.iter (fun x -> Printf.eprintf " %s\n" (to_s x)) l;
+    Printf.eprintf "<%s>: %d\n" s len;
+    List.iter (fun x -> Printf.eprintf " %s\n" (to_s x)) l;
          l |> List.iter (fun x -> 
           let v = to_v x in
           let s = Ocaml.string_of_v v in
           Common.pr2 s;
          );
-	failwith s
+    failwith s
       end
 
   let rec rhs_do_codeblock = function
@@ -439,7 +439,7 @@ module H = Ast_ruby_helpers
         Printf.eprintf "here2??\n";[with_cb;no_cb]
     | Call(_m1',_args1,Some _do_block,_),
         Call(_m2',args_ne,None,_) -> 
-	(* look for cmd arg1,...,(argn do block end) *)
+    (* look for cmd arg1,...,(argn do block end) *)
         if rhs_do_codeblock (Utils.last args_ne)
         then [with_cb]
         else [with_cb;no_cb]
@@ -460,8 +460,8 @@ module H = Ast_ruby_helpers
     let l' = uniq_list H.compare_expr l in
     let fail () = 
       let l' = uniq_list H.compare_expr (newest::l') in
-	do_fail "binop" l' Ast_printer.string_of_expr Meta_ast_ruby.vof_expr;
-	l'
+    do_fail "binop" l' Ast_printer.string_of_expr Meta_ast_ruby.vof_expr;
+    l'
     in
     let rec nested_assign = function
       | Binop(_,(Op_ASSIGN|Op_OP_ASGN _),_,_) -> true
@@ -485,16 +485,16 @@ module H = Ast_ruby_helpers
 
     let l' = uniq_list H.compare_expr l in
       match l',newest with
-	| [(Call(_,_,Some (CodeBlock(false,_,_,_)),_) as with_cb)],
-	  (Call(_,_,None,_) as no_cb)
-	| [(Call(_,_,None,_) as no_cb)],
-	  (Call(_,_,Some (CodeBlock(false,_,_,_)),_) as with_cb) ->
-	    (* resolve "x y{z}" vs "x y do z end" *)
-	    resolve_block_delim with_cb no_cb;
-	| _ ->
-	    let l' = uniq_list H.compare_expr (newest::l') in
-	      do_fail "topcall" l' Ast_printer.string_of_expr Meta_ast_ruby.vof_expr;
-	      l'
+    | [(Call(_,_,Some (CodeBlock(false,_,_,_)),_) as with_cb)],
+      (Call(_,_,None,_) as no_cb)
+    | [(Call(_,_,None,_) as no_cb)],
+      (Call(_,_,Some (CodeBlock(false,_,_,_)),_) as with_cb) ->
+        (* resolve "x y{z}" vs "x y do z end" *)
+        resolve_block_delim with_cb no_cb;
+    | _ ->
+        let l' = uniq_list H.compare_expr (newest::l') in
+          do_fail "topcall" l' Ast_printer.string_of_expr Meta_ast_ruby.vof_expr;
+          l'
     )
 
   let merge_stmt xs = 
@@ -503,48 +503,48 @@ module H = Ast_ruby_helpers
 
     let l' = uniq_list H.compare_expr l in
       match l',newest with
-	| [(Call(_,_,Some (CodeBlock(false,_,_,_)),_) as with_cb)],
-	  (Call(_,_,None,_) as no_cb)
-	| [(Call(_,_,None,_) as no_cb)],
-	  (Call(_,_,Some (CodeBlock(false,_,_,_)),_) as with_cb) ->
-	    (* resolve "x y{z}" vs "x y do z end" *)
-	    resolve_block_delim with_cb no_cb;
+    | [(Call(_,_,Some (CodeBlock(false,_,_,_)),_) as with_cb)],
+      (Call(_,_,None,_) as no_cb)
+    | [(Call(_,_,None,_) as no_cb)],
+      (Call(_,_,Some (CodeBlock(false,_,_,_)),_) as with_cb) ->
+        (* resolve "x y{z}" vs "x y do z end" *)
+        resolve_block_delim with_cb no_cb;
 
-	| [S ExnBlock({body_exprs = [Binop(_,Op_ASSIGN,_,_)]; _},_)],
-	    (Binop(_,Op_ASSIGN,(S ExnBlock _),_) as correct)
-	| ([Binop(_,Op_ASSIGN,(S ExnBlock _),_) as correct]),
-	    S ExnBlock({body_exprs = [Binop(_,Op_ASSIGN,_,_)]; _},_) ->
-	      (* x = y rescue 3 is a special case where the rescue binds
-		 solely to "y" and not the full assignment *)
-	    [correct]
+    | [S ExnBlock({body_exprs = [Binop(_,Op_ASSIGN,_,_)]; _},_)],
+        (Binop(_,Op_ASSIGN,(S ExnBlock _),_) as correct)
+    | ([Binop(_,Op_ASSIGN,(S ExnBlock _),_) as correct]),
+        S ExnBlock({body_exprs = [Binop(_,Op_ASSIGN,_,_)]; _},_) ->
+          (* x = y rescue 3 is a special case where the rescue binds
+         solely to "y" and not the full assignment *)
+        [correct]
 
-	| [S ExnBlock({body_exprs = [Binop(_,Op_OP_ASGN _,_,_)]; _},_) as correct],
-	      Binop(_,Op_OP_ASGN _,(S ExnBlock _),_)
-	| [Binop(_,Op_OP_ASGN _,(S ExnBlock _),_)],
-	      (S ExnBlock({body_exprs = [Binop(_,Op_OP_ASGN _,_,_)]; _},_) as correct) ->
-	      (* However, using any other assign-operator, reverts to the 
+    | [S ExnBlock({body_exprs = [Binop(_,Op_OP_ASGN _,_,_)]; _},_) as correct],
+          Binop(_,Op_OP_ASGN _,(S ExnBlock _),_)
+    | [Binop(_,Op_OP_ASGN _,(S ExnBlock _),_)],
+          (S ExnBlock({body_exprs = [Binop(_,Op_OP_ASGN _,_,_)]; _},_) as correct) ->
+          (* However, using any other assign-operator, reverts to the 
                  other semantics *)
-	    [correct]
+        [correct]
 
-	(* top-level assignment has a higher priority than any other op *)
-	| [Binop(l,(Op_ASSIGN|Op_OP_ASGN _ as op),r,pos)], (Binop _ | Ternary _) ->
-	    let l,op,r = fix_broken_neq l op r in
-	      [Binop(l,op,r,pos)]
+    (* top-level assignment has a higher priority than any other op *)
+    | [Binop(l,(Op_ASSIGN|Op_OP_ASGN _ as op),r,pos)], (Binop _ | Ternary _) ->
+        let l,op,r = fix_broken_neq l op r in
+          [Binop(l,op,r,pos)]
 
-	(* we can't use is_cond_modifier to check for a rescue modifier,
-	   so we do it here *)	   
-	| [S If(S ExnBlock _,_,_,_) | S Unless(S ExnBlock _,_,_,_)
-	  | S Until(_,S ExnBlock _,_,_) | S While(_,S ExnBlock _,_,_)],
-	    (S ExnBlock _ as correct)
-	| [(S ExnBlock _ as correct)], 
-	    (S If(S ExnBlock _,_,_,_) | S Unless(S ExnBlock _,_,_,_)
-	    | S Until(_,S ExnBlock _,_,_) | S While(_,S ExnBlock _,_,_)) ->
-	    [correct]
+    (* we can't use is_cond_modifier to check for a rescue modifier,
+       so we do it here *)     
+    | [S If(S ExnBlock _,_,_,_) | S Unless(S ExnBlock _,_,_,_)
+      | S Until(_,S ExnBlock _,_,_) | S While(_,S ExnBlock _,_,_)],
+        (S ExnBlock _ as correct)
+    | [(S ExnBlock _ as correct)], 
+        (S If(S ExnBlock _,_,_,_) | S Unless(S ExnBlock _,_,_,_)
+        | S Until(_,S ExnBlock _,_,_) | S While(_,S ExnBlock _,_,_)) ->
+        [correct]
 
-	| _ ->
-	    let l' = uniq_list H.compare_expr (newest::l') in
-	      do_fail "stmt" l' Ast_printer.string_of_expr Meta_ast_ruby.vof_expr;
-	      l'
+    | _ ->
+        let l' = uniq_list H.compare_expr (newest::l') in
+          do_fail "stmt" l' Ast_printer.string_of_expr Meta_ast_ruby.vof_expr;
+          l'
   )
 
 
@@ -585,10 +585,10 @@ module H = Ast_ruby_helpers
     in
     let l' = uniq_list cmp xs in
       do_fail s l' 
-	(fun (x,y) -> 
-	   Printf.sprintf "%s: %s" 
-	     (Ast_printer.string_of_expr x)
-	     (Ast_printer.string_of_expr y)
-	) (fun _x -> Ocaml.VUnit);
+    (fun (x,y) -> 
+       Printf.sprintf "%s: %s" 
+         (Ast_printer.string_of_expr x)
+         (Ast_printer.string_of_expr y)
+    ) (fun _x -> Ocaml.VUnit);
       l'
    )

@@ -43,8 +43,8 @@ let kfsprintf f fmt =
     Format.pp_set_margin ppf (*(Format.pp_get_margin std_formatter ())*) 80;
     Format.kfprintf
       (fun ppf -> 
-	 Format.pp_print_flush ppf ();
-	 f (Buffer.contents b)
+     Format.pp_print_flush ppf ();
+     f (Buffer.contents b)
       ) ppf fmt
 
 let in_ctx ctx ?pos fmt = match pos with
@@ -96,19 +96,19 @@ let output_msg_ctx ppf msg ctx =
 let show b no_dup ctx code fmt = 
   output_header
     (fun msg -> 
-       if b then begin	 
-	 let buf = Buffer.create 127 in
-	 let ppf = Format.formatter_of_buffer buf in
-	 let () = output_msg_ctx ppf msg ctx in
-	   if no_dup then
-	     let full_msg = Buffer.contents buf in
-	       if Hashtbl.mem dup_tbl full_msg
-	       then ()
-	       else begin
-		 Hashtbl.add dup_tbl full_msg ();
-		 pp_print_string stderr_ppf full_msg
-	       end
-	   else Buffer.output_buffer stderr buf
+       if b then begin   
+     let buf = Buffer.create 127 in
+     let ppf = Format.formatter_of_buffer buf in
+     let () = output_msg_ctx ppf msg ctx in
+       if no_dup then
+         let full_msg = Buffer.contents buf in
+           if Hashtbl.mem dup_tbl full_msg
+           then ()
+           else begin
+         Hashtbl.add dup_tbl full_msg ();
+         pp_print_string stderr_ppf full_msg
+           end
+       else Buffer.output_buffer stderr buf
        end
     ) code fmt
 

@@ -64,41 +64,41 @@ let rec cmp_expr e1 e2 = match e1,e2 with
 
   | Call (e1,el1,eo1,_), Call(e2,el2,eo2,_) ->
       begin match cmp2 (cmp_expr e1 e2) cmp_expr_list el1 el2 with
-	| 0 -> begin
-	    match eo1,eo2 with
-	      | None, None -> 0
-	      | None, Some _ -> -1
-	      | Some _, None -> 1
-	      | Some x1, Some x2 -> cmp_expr x1 x2
-	  end
-	| c -> c
+    | 0 -> begin
+        match eo1,eo2 with
+          | None, None -> 0
+          | None, Some _ -> -1
+          | Some _, None -> 1
+          | Some x1, Some x2 -> cmp_expr x1 x2
+      end
+    | c -> c
       end
 
   | S Unless(e1,el11, el12,_), S Unless(e2,el21, el22,_)
   | S If(e1,el11, el12,_), S If(e2,el21,el22,_) ->
       cmp2 (cmp2 (cmp_expr e1 e2) cmp_expr_list el11 el21) 
-	cmp_expr_list el12 el22
+    cmp_expr_list el12 el22
 
   | D MethodDef(e1, fl1, body1, _), D MethodDef(e2, fl2, body2, _) ->
       cmp2 (cmp2 (cmp_expr e1 e2) (cmp_list cmp_formal) fl1 fl2) cmp_body_exn body1 body2
 
   | CodeBlock(b1,sl1,el1,_), CodeBlock(b2,sl2,el2,_) ->
       cmp2 (pcompare b1 b2)
-	(cmp2 (cmp_opt (cmp_list cmp_formal) sl1 sl2) cmp_expr_list) el1 el2
+    (cmp2 (cmp_opt (cmp_list cmp_formal) sl1 sl2) cmp_expr_list) el1 el2
 
   | D ClassDef(e1,iho1, body1, _), D ClassDef(e2,iho2,body2, _) ->
       begin match (cmp2 (cmp_expr e1 e2) cmp_body_exn body1 body2) with
-	| 0 -> cmp_expr_opt cmp_inh iho1 iho2
-	| c -> c
+    | 0 -> cmp_expr_opt cmp_inh iho1 iho2
+    | c -> c
       end
 
   | S Case(c1,_), S Case(c2,_) ->
       let c (l11,l12) (l21,l22) =
-	cmp2 (cmp_expr_list l11 l21) cmp_expr_list l12 l22
+    cmp2 (cmp_expr_list l11 l21) cmp_expr_list l12 l22
       in
-	cmp2 (cmp2 (cmp_expr c1.case_guard c2.case_guard)
-		 (cmp_list c) c1.case_whens c2.case_whens)
-	  cmp_expr_list c1.case_else c2.case_else
+    cmp2 (cmp2 (cmp_expr c1.case_guard c2.case_guard)
+         (cmp_list c) c1.case_whens c2.case_whens)
+      cmp_expr_list c1.case_else c2.case_else
 
   | _ -> Utils.cmp_ctors e1 e2
 
@@ -165,10 +165,10 @@ and cmp_expr_pair (e11,e12) (e21,e22) =
 and cmp_body_exn b1 b2 = 
   cmp2 
     (cmp2
-	(cmp2 (cmp_expr_list b1.body_exprs b2.body_exprs)
-	    (cmp_list cmp_expr_pair) b1.rescue_exprs b2.rescue_exprs
-	)
-	cmp_expr_list b1.ensure_expr b2.ensure_expr
+    (cmp2 (cmp_expr_list b1.body_exprs b2.body_exprs)
+        (cmp_list cmp_expr_pair) b1.rescue_exprs b2.rescue_exprs
+    )
+    cmp_expr_list b1.ensure_expr b2.ensure_expr
     ) cmp_expr_list b1.else_expr b2.else_expr
     
 and cmp_expr_list el1 el2 = cmp_list cmp_expr el1 el2
@@ -222,16 +222,16 @@ let binary_op_of_string = function
   | "*"    -> Op_TIMES    
   | "/"    -> Op_DIV      
   | "%"    -> Op_REM      
-  | "<=>"  -> Op_CMP  	
-  | "=="   -> Op_EQ  	
-  | "==="  -> Op_EQQ  	
-  | "!="   -> Op_NEQ  	
-  | ">="   -> Op_GEQ  	
-  | "<="   -> Op_LEQ  	
-  | "<"    -> Op_LT  	
-  | ">"    -> Op_GT  	
+  | "<=>"  -> Op_CMP    
+  | "=="   -> Op_EQ     
+  | "==="  -> Op_EQQ    
+  | "!="   -> Op_NEQ    
+  | ">="   -> Op_GEQ    
+  | "<="   -> Op_LEQ    
+  | "<"    -> Op_LT     
+  | ">"    -> Op_GT     
   | "&&"   -> Op_AND      
-  | "||"   -> Op_OR	
+  | "||"   -> Op_OR 
   | "&"    -> Op_BAND     
   | "|"    -> Op_BOR      
   | "=~"   -> Op_MATCH    
@@ -482,16 +482,16 @@ let rec str_binop = function
   | Op_TIMES    -> "*"
   | Op_DIV      -> "/"
   | Op_REM      -> "%"
-  | Op_CMP  	-> "<=>"
-  | Op_EQ  	-> "=="
-  | Op_EQQ  	-> "==="
-  | Op_NEQ  	-> "!="
-  | Op_GEQ  	-> ">="
-  | Op_LEQ  	-> "<="
-  | Op_LT  	-> "<"
-  | Op_GT  	-> ">"
+  | Op_CMP      -> "<=>"
+  | Op_EQ   -> "=="
+  | Op_EQQ      -> "==="
+  | Op_NEQ      -> "!="
+  | Op_GEQ      -> ">="
+  | Op_LEQ      -> "<="
+  | Op_LT   -> "<"
+  | Op_GT   -> ">"
   | Op_AND      -> "&&"
-  | Op_OR	-> "||"
+  | Op_OR   -> "||"
   | Op_BAND     -> "&"
   | Op_BOR      -> "|"
   | Op_MATCH    -> "=~"
