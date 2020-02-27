@@ -260,24 +260,24 @@ let buf_of_string str =
 (* Regexp aliases *)
 (*****************************************************************************)
 
-let ws_re = ['\t' ' '] 
-let nl_re = '\n' | "\r\n"
-let alpha_re = ['a'-'z''A'-'Z']
-let num_re = ['0'-'9']
+let ws = ['\t' ' '] 
+let nl = '\n' | "\r\n"
+let alpha = ['a'-'z''A'-'Z']
+let num = ['0'-'9']
 
-let alphanum_re = alpha_re | num_re
-let rubynum_re = num_re ("_" | num_re)* 
-let fixnum_re = rubynum_re
-let post_fixnum_re = ("_" | num_re)* 
+let alphanum = alpha | num
+let rubynum = num ("_" | num)* 
+let fixnum = rubynum
+let post_fixnum = ("_" | num)* 
 
-let rubyfloat_re = rubynum_re ('.' (rubynum_re))? ("e" ("-"|"+")? rubynum_re+)?
-let post_rubyfloat_re = 
-  post_fixnum_re ('.' (rubynum_re))? ("e" ("-"|"+")? rubynum_re+)?
+let rubyfloat = rubynum ('.' (rubynum))? ("e" ("-"|"+")? rubynum+)?
+let post_rubyfloat = 
+  post_fixnum ('.' (rubynum))? ("e" ("-"|"+")? rubynum+)?
 
-let id_start = '_' | alpha_re
-let id_body = '_' | alphanum_re
+let id_start = '_' | alpha
+let id_body = '_' | alphanum
 let id_suffix = '?'| '!' (*('!' [^'=']?)*)
-let id_re = id_start id_body* id_suffix?
+let id = id_start id_body* id_suffix?
 
 let string_single_delim = [
   '!' '@' '#' '$' '%' '^' '&' '*'
@@ -306,40 +306,40 @@ and top_lexer state = parse
 
     (* need the ws here to force a longest match preference over the
        rules below *)
-  | ws_re* ((['+' '-' '*' '&' '|' '%' '^'] | "||" | "&&" | "<<" | ">>") as op) '='
+  | ws* ((['+' '-' '*' '&' '|' '%' '^'] | "||" | "&&" | "<<" | ">>") as op) '='
       {S.beg_state state; T_OP_ASGN(op, lexbuf.lex_curr_p)}
 
   (* /= can be either regexp or op_asgn *)
-  | ws_re* "/=" 
+  | ws* "/=" 
       {match state.S.expr_state with 
          | S.Expr_Beg -> regexp_string (buf_of_string "=") state lexbuf
          | _ -> S.beg_state state; T_OP_ASGN("/", lexbuf.lex_curr_p)
       }
 
   (* need precedence over single form *)
-  | ws_re* "**" {S.beg_state state;T_POW lexbuf.lex_curr_p }
-  | ws_re* "&&" {S.beg_state state;T_ANDOP lexbuf.lex_curr_p }
+  | ws* "**" {S.beg_state state;T_POW lexbuf.lex_curr_p }
+  | ws* "&&" {S.beg_state state;T_ANDOP lexbuf.lex_curr_p }
 
   (* the following lexemes may represent various tokens depending on
      the expression state and surrounding spaces.  Space before and
      after is typically the binop form, while a space before but not
      after is uop.  *)
-  | ws_re+ '-' 
+  | ws+ '-' 
       {let binop = on_def (postfix_at t_uminus t_minus) t_minus
        in space_uop uop_minus_lit t_uminus binop state lexbuf}
-  | ws_re+ '+' 
+  | ws+ '+' 
       {let binop = on_def (postfix_at t_uplus t_plus) t_plus
        in space_uop uop_plus_lit t_uplus binop state lexbuf}
-  | ws_re+ '*' {space_uop t_ustar t_ustar t_star state lexbuf}
-  | ws_re+ '&' {space_uop t_uamper t_uamper t_amper state lexbuf}
-  | ws_re+ '[' 
+  | ws+ '*' {space_uop t_ustar t_ustar t_star state lexbuf}
+  | ws+ '&' {space_uop t_uamper t_uamper t_amper state lexbuf}
+  | ws+ '[' 
       {let binop = on_local t_lbrack_arg t_lbrack in 
          space_uop t_lbrack t_lbrack binop state lexbuf}
-  | ws_re+ '(' 
+  | ws+ '(' 
       {let binop = on_local t_lparen_arg t_lparen in 
          space_uop t_lparen t_lparen binop state lexbuf}
-  | ws_re+ '%' {space_tok percent t_percent state lexbuf}
-  | ws_re+ '?' {space_tok char_code t_quest state lexbuf}
+  | ws+ '%' {space_tok percent t_percent state lexbuf}
+  | ws+ '?' {space_tok char_code t_quest state lexbuf}
       
   (* no space is usually a binop, but is parsed as a uop at expr_beg
      or if there is a trailing @ in the def state *)
@@ -357,18 +357,18 @@ and top_lexer state = parse
 
   (* need to explicitly separate out cases for / since spaces can
      be significant if they occur inside of a regexp *)
-  | ws_re+ '/' (ws_re+ as spc)
+  | ws+ '/' (ws+ as spc)
       {on_beg (regexp_string (buf_of_string spc)) t_slash state lexbuf}
-  | ws_re+ '/' (nl_re as nl)
+  | ws+ '/' (nl as nl)
       {incr_line lexbuf;
        on_beg (regexp_string (buf_of_string nl)) t_slash state lexbuf}
-  | ws_re+ '/' {space_tok regexp t_slash state lexbuf}
+  | ws+ '/' {space_tok regexp t_slash state lexbuf}
   | '/' {on_beg regexp t_slash state lexbuf}
 
   (* heredoc vs shift tokens *)
   | "<<-" {heredoc_header heredoc_string_lead state lexbuf}
-  | "<<" ws_re {S.beg_state state; t_lshft state lexbuf}
-  | "<<" nl_re {S.beg_state state; incr_line lexbuf;t_lshft state lexbuf}
+  | "<<" ws {S.beg_state state; t_lshft state lexbuf}
+  | "<<" nl {S.beg_state state; incr_line lexbuf;t_lshft state lexbuf}
   | "<<" {match state.S.expr_state with
             | S.Expr_End | S.Expr_Local | S.Expr_Def -> 
                 S.beg_state state;T_LSHFT lexbuf.lex_curr_p
@@ -414,10 +414,10 @@ and top_lexer state = parse
   | "=begin" [^'\n']* '\n' {S.beg_state state; incr_line lexbuf; 
                             delim_comment state lexbuf}
 
-  | num_re {postfix_numeric Utils.id (lexeme lexbuf) state lexbuf}
+  | num {postfix_numeric Utils.id (lexeme lexbuf) state lexbuf}
 
   | "\\\n" {incr_line lexbuf; top_lexer state lexbuf}
-  | nl_re {incr_line lexbuf; t_eol state lexbuf}
+  | nl {incr_line lexbuf; t_eol state lexbuf}
 
   | eof   {T_EOF}
 
@@ -479,16 +479,16 @@ and top_lexer state = parse
 
   | ":" {on_end t_colon atom state lexbuf}
 
-  | ws_re+ "::" { T_USCOPE lexbuf.lex_curr_p }
+  | ws+ "::" { T_USCOPE lexbuf.lex_curr_p }
   | "::" { on_beg t_uscope t_scope state lexbuf }
 
-  | ("@@" id_re) as id {S.end_state state; T_CLASS_VAR(id, lexbuf.lex_curr_p)}
-  | ('@' id_re) as id {S.end_state state; T_INST_VAR(id, lexbuf.lex_curr_p)}
+  | ("@@" id) as id {S.end_state state; T_CLASS_VAR(id, lexbuf.lex_curr_p)}
+  | ('@' id) as id {S.end_state state; T_INST_VAR(id, lexbuf.lex_curr_p)}
 
   (* ----------------------------------------------------------------------- *)
   (* Ident *)
   (* ----------------------------------------------------------------------- *)
-  | id_re as id { 
+  | id as id { 
       let tok = choose_capital_for_id id lexbuf.lex_curr_p in
         begin match state.S.expr_state, tok with
           | S.Expr_Def, _ -> S.mid_state state
@@ -502,7 +502,7 @@ and top_lexer state = parse
     }
 
   | '$' {dollar state lexbuf}
-  | ws_re+  {top_lexer state lexbuf}
+  | ws+  {top_lexer state lexbuf}
 
 
 (*****************************************************************************)
@@ -510,8 +510,8 @@ and top_lexer state = parse
 (*****************************************************************************)
 
 and dollar state = parse
-  | id_re as id {S.end_state state;T_GLOBAL_VAR("$"^id, lexbuf.lex_curr_p) }
-  | ("-" alphanum_re) as v 
+  | id as id {S.end_state state;T_GLOBAL_VAR("$"^id, lexbuf.lex_curr_p) }
+  | ("-" alphanum) as v 
       {S.end_state state;T_BUILTIN_VAR("$"^v, lexbuf.lex_curr_p) }
   | ( ['0'-'9']+) as v 
       {S.end_state state;T_BUILTIN_VAR("$" ^ v, lexbuf.lex_curr_p)}
@@ -523,8 +523,8 @@ and dollar state = parse
 (*****************************************************************************)
 
 and space_tok tok binop state = parse
-  | ws_re+ {binop state lexbuf}
-  | nl_re  {incr_line lexbuf; binop state lexbuf}
+  | ws+ {binop state lexbuf}
+  | nl  {incr_line lexbuf; binop state lexbuf}
   | e {on_def binop (on_local binop tok) state lexbuf}
 
 (*****************************************************************************)
@@ -533,8 +533,8 @@ and space_tok tok binop state = parse
 
 and space_uop uop spc_uop binop state = parse
     (* space before and after is binop (unless at expr_beg) *)
-  | ws_re+ {on_beg spc_uop binop state lexbuf}
-  | nl_re  {incr_line lexbuf; on_beg spc_uop binop state lexbuf}
+  | ws+ {on_beg spc_uop binop state lexbuf}
+  | nl  {incr_line lexbuf; on_beg spc_uop binop state lexbuf}
 
   | e 
       {match state.S.expr_state with
@@ -553,15 +553,15 @@ and postfix_numeric cont start state = parse
       { S.end_state state; 
         cont (convert_to_base10 ~base:2 num lexbuf.lex_curr_p)}
 
-  | ('o'|'O') ((num_re|'_')+ as num)
+  | ('o'|'O') ((num|'_')+ as num)
       { S.end_state state; 
         cont (convert_to_base10 ~base:8 num lexbuf.lex_curr_p)}
 
-  | "x" ((num_re|['a'-'f''A'-'F''_'])+ as num)
+  | "x" ((num|['a'-'f''A'-'F''_'])+ as num)
       { S.end_state state; 
         cont (convert_to_base10 ~base:16 num lexbuf.lex_curr_p)}
 
-  | (num_re|'_')* as num
+  | (num|'_')* as num
       { S.end_state state;
         if start = "0" 
         then cont (convert_to_base10 ~base:8 num lexbuf.lex_curr_p)
@@ -575,7 +575,7 @@ and postfix_numeric cont start state = parse
           in cont tok
       }
 
-  | post_rubyfloat_re
+  | post_rubyfloat
       { S.end_state state;
         let str = (start ^ (lexeme lexbuf)) in
         let str = remove_underscores str in
@@ -588,11 +588,11 @@ and postfix_numeric cont start state = parse
 (*****************************************************************************)
 
 and uop_minus_lit state = parse
-  | num_re { postfix_numeric negate_numeric (lexeme lexbuf) state lexbuf}
+  | num { postfix_numeric negate_numeric (lexeme lexbuf) state lexbuf}
   | e { t_uminus state lexbuf}
 
 and uop_plus_lit state = parse
-  | num_re { postfix_numeric Utils.id (lexeme lexbuf) state lexbuf}
+  | num { postfix_numeric Utils.id (lexeme lexbuf) state lexbuf}
   | e { t_uplus state lexbuf}
 
 (*****************************************************************************)
@@ -621,7 +621,7 @@ and atom state = parse
         in def_end_state state; 
           T_ATOM(contents_of_str str, lexbuf.lex_curr_p) }
 
-  | ('@'* id_re) '='?
+  | ('@'* id) '='?
       {def_end_state state; 
        T_ATOM((contents_of_str (lexeme lexbuf)), lexbuf.lex_curr_p) }
   | '"'  {def_end_state state;
@@ -632,9 +632,9 @@ and atom state = parse
            emit_extra (T_ATOM_BEG lexbuf.lex_curr_p)
              (non_interp_string '\'' (Buffer.create 31)) state lexbuf}
 
-  | nl_re  {incr_line lexbuf; t_colon state lexbuf}
+  | nl  {incr_line lexbuf; t_colon state lexbuf}
 
-  | ws_re
+  | ws
   | e     {t_colon state lexbuf}
 
 (*****************************************************************************)
@@ -722,14 +722,14 @@ and regexp_delim delim_f escape_f buf state = parse
     }
 
 and regexp_modifier state = parse
-  | (alpha_re* as modifiers) {T_REGEXP_MOD modifiers}
+  | (alpha* as modifiers) {T_REGEXP_MOD modifiers}
 
 (*****************************************************************************)
 (* Percent *)
 (*****************************************************************************)
 
 and percent state = parse
-  | (alpha_re? as modifier)(string_single_delim as d)
+  | (alpha? as modifier)(string_single_delim as d)
       {S.end_state state; 
        let f = 
          if modifier_is_single modifier
@@ -741,7 +741,7 @@ and percent state = parse
          else emit_extra (T_USER_BEG(modifier, lexbuf.lex_curr_p)) f state lexbuf
       }
 
-  | (alpha_re? as modifier) (['{' '<' '(' '['] as d_start)
+  | (alpha? as modifier) (['{' '<' '(' '['] as d_start)
       {S.end_state state; 
        let d_end = close_delim d_start in
        let level = ref 0 in
@@ -775,7 +775,7 @@ and regexp state = parse
 (*****************************************************************************)
 
 and heredoc_header lead_f state = parse
-  | '\''([^'\'']+ as delim)'\'' ([^'\n']* nl_re as rest)
+  | '\''([^'\'']+ as delim)'\'' ([^'\n']* nl as rest)
       {incr_line lexbuf;
        let cont str state lexbuf = 
          S.end_state state;
@@ -785,8 +785,8 @@ and heredoc_header lead_f state = parse
           lead_f cont (Buffer.create 31) delim state lexbuf
       }
 
-  | '"'([^'"']+ as delim)'"' ([^'\n']* nl_re as rest)
-  | (id_body+ as delim) ([^'\n']* nl_re as rest)
+  | '"'([^'"']+ as delim)'"' ([^'\n']* nl as rest)
+  | (id_body+ as delim) ([^'\n']* nl as rest)
       {incr_line lexbuf;
        let pos = lexbuf.lex_curr_p in
        let cont str state future_lexbuf = 
