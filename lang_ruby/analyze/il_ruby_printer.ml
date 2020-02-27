@@ -205,12 +205,12 @@ module Code_F(PP : CfgPrinter) = struct
     | Seq(stmt_list) -> 
         fprintf ppf  "@[<v 0>%a@]" (format_break_list PP.format_stmt) stmt_list
 
-    | Alias(Alias_Method(m1,m2)) -> 
+    | D Alias(Alias_Method(m1,m2)) -> 
         fprintf ppf "alias %a %a" 
       PP.format_msg_id m1
       PP.format_msg_id m2
 
-    | Alias(Alias_Global(v1,v2)) -> 
+    | D Alias(Alias_Global(v1,v2)) -> 
           let v1 = Var v1 in
           let v2 = Var v2 in
         fprintf ppf "alias %a %a" 
@@ -224,7 +224,7 @@ module Code_F(PP : CfgPrinter) = struct
         format_else ppf else_e;
         fprintf ppf "end@]"
 
-    | Call(lhs_o,mc) -> 
+    | I Call(lhs_o,mc) -> 
         fprintf ppf "@[<v 0>%a%a@]" format_lhs_opt lhs_o PP.format_method_call mc
           
     | Return(e) -> fprintf ppf "return @[%a@]" (format_option PP.format_tuple_expr) e
@@ -237,19 +237,19 @@ module Code_F(PP : CfgPrinter) = struct
                 (format_option PP.format_lhs) lhs 
                 (format_comma_list PP.format_star_expr) e
       )
-    | Assign(id,e) ->
+    | I Assign(id,e) ->
         fprintf ppf "%a = %a" PP.format_lhs id PP.format_tuple_expr e
 
-    | Expression(e) -> PP.format_expr ppf e
+    | I Expression(e) -> PP.format_expr ppf e
   
-    | ModuleDef(lhs_o,m,body) ->
+    | D ModuleDef(lhs_o,m,body) ->
         fprintf ppf "@[<v 0>@[<v 2>%amodule %a@,%a@]@,"
       format_lhs_opt lhs_o
       PP.format_identifier m
       PP.format_stmt body;
         fprintf ppf "end@]"
           
-    | MethodDef(meth,formals,body) ->
+    | D MethodDef(meth,formals,body) ->
           let formals = formals |> List.map m_to_any in
         fprintf ppf "@[<v 0>@[<v 2>def %a(@[%a@])@,%a@]@,"
       format_def_name meth
@@ -257,7 +257,7 @@ module Code_F(PP : CfgPrinter) = struct
       PP.format_stmt body;
         fprintf ppf "end@]"      
 
-    | ClassDef(lhs_o,ck,body) ->
+    | D ClassDef(lhs_o,ck,body) ->
         fprintf ppf "@[<v 0>@[<v 2>%aclass %a@,%a@]@,"
       format_lhs_opt lhs_o
       PP.format_class_kind ck
@@ -294,7 +294,7 @@ module Code_F(PP : CfgPrinter) = struct
         format_option format_exn_ensure ppf b.exn_ensure;
         fprintf ppf "end@]"      
 
-    | Defined(id, s) -> fprintf ppf "%a = defined?((@[<v>%a@]))" PP.format_identifier id PP.format_stmt s
+    | D Defined(id, s) -> fprintf ppf "%a = defined?((@[<v>%a@]))" PP.format_identifier id PP.format_stmt s
     | Redo  -> pp_print_string ppf "redo"
     | Retry -> pp_print_string ppf "retry"
 
@@ -304,7 +304,7 @@ module Code_F(PP : CfgPrinter) = struct
     | Next(None)  -> pp_print_string ppf "next"
     | Next(Some tup)  -> fprintf ppf "next @[%a@] " PP.format_tuple_expr tup
 
-    | Undef es -> fprintf ppf "undef @[%a@]"
+    | D Undef es -> fprintf ppf "undef @[%a@]"
         (format_comma_list PP.format_msg_id) es
 
 
@@ -384,7 +384,7 @@ module Err_F(PP : CfgPrinter) = struct
     | i -> Super.format_identifier ppf i
 
   let format_stmt ppf stmt : unit = match stmt.snode with
-    | Call(lhs_o, {mc_msg=ID_MethodName "safe_require";mc_args=[s1;_]; _}) ->
+    | I Call(lhs_o, {mc_msg=ID_MethodName "safe_require";mc_args=[s1;_]; _}) ->
         fprintf ppf "%arequire(%a)"
           format_lhs_opt lhs_o PP.format_star_expr s1
 

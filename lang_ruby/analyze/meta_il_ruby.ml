@@ -173,13 +173,13 @@ let rec
   
 and vof_stmt_node =
   function
-  | Expression v1 ->
+  | I Expression v1 ->
       let v1 = vof_expr v1 in Ocaml.VSum (("Expression", [ v1 ]))
-  | Assign ((v1, v2)) ->
+  | I Assign ((v1, v2)) ->
       let v1 = vof_lhs v1
       and v2 = vof_tuple_expr v2
       in Ocaml.VSum (("Assign", [ v1; v2 ]))
-  | Call ((v1, v2)) ->
+  | I Call ((v1, v2)) ->
       let v1 = Ocaml.vof_option vof_lhs v1
       and v2 = vof_method_call v2
       in Ocaml.VSum (("Call", [ v1; v2 ]))
@@ -219,27 +219,27 @@ and vof_stmt_node =
       let v1 = vof_exn_block v1 in Ocaml.VSum (("ExnBlock", [ v1 ]))
   | Begin v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("Begin", [ v1 ]))
   | End v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("End", [ v1 ]))
-  | ModuleDef ((v1, v2, v3)) ->
+  | D ModuleDef ((v1, v2, v3)) ->
       let v1 = Ocaml.vof_option vof_lhs v1
       and v2 = vof_identifier v2
       and v3 = vof_stmt v3
       in Ocaml.VSum (("ModuleDef", [ v1; v2; v3 ]))
-  | ClassDef ((v1, v2, v3)) ->
+  | D ClassDef ((v1, v2, v3)) ->
       let v1 = Ocaml.vof_option vof_lhs v1
       and v2 = vof_class_kind v2
       and v3 = vof_stmt v3
       in Ocaml.VSum (("ClassDef", [ v1; v2; v3 ]))
-  | MethodDef ((v1, v2, v3)) ->
+  | D MethodDef ((v1, v2, v3)) ->
       let v1 = vof_def_name v1
       and v2 = Ocaml.vof_list vof_method_formal_param v2
       and v3 = vof_stmt v3
       in Ocaml.VSum (("MethodDef", [ v1; v2; v3 ]))
-  | Defined ((v1, v2)) ->
+  | D Defined ((v1, v2)) ->
       let v1 = vof_identifier v1
       and v2 = vof_stmt v2
       in Ocaml.VSum (("Defined", [ v1; v2 ]))
-  | Alias v1 -> let v1 = vof_alias_kind v1 in Ocaml.VSum (("Alias", [ v1 ]))
-  | Undef v1 ->
+  | D Alias v1 -> let v1 = vof_alias_kind v1 in Ocaml.VSum (("Alias", [ v1 ]))
+  | D Undef v1 ->
       let v1 = Ocaml.vof_list vof_msg_id v1 in Ocaml.VSum (("Undef", [ v1 ]))
 and
   vof_method_call {

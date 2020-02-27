@@ -132,24 +132,45 @@ and star_expr =
  (* with tarzan *)
 
 
-type tuple_expr = 
-  | TTup of tuple_expr list
-  | TE of expr
-  | TStar of tuple_expr  (* again, no nested stars *)
- (* with tarzan *)
+(*****************************************************************************)
+(* Instruction *)
+(*****************************************************************************)
+type instr =
+  | Expression of expr
+  | Assign of lhs * tuple_expr
+  | Call of lhs option * method_call
 
-(* lhs is like a tuple expression, but no literals are allowed *)
-type lhs = 
-  | LId of identifier
-  | LTup of lhs list
-  | LStar of identifier
- (* with tarzan *)
+  (* lhs is like a tuple expression, but no literals are allowed *)
+  and lhs = 
+    | LId of identifier
+    | LTup of lhs list
+    | LStar of identifier
+
+  and tuple_expr = 
+    | TTup of tuple_expr list
+    | TE of expr
+    | TStar of tuple_expr  (* again, no nested stars *)
+
+  and method_call = {
+    mc_target : expr option;
+    mc_msg : msg_id;
+    mc_args : star_expr list;
+    mc_cb : codeblock option;
+  }
+     and codeblock = 
+      | CB_Arg of expr
+      | CB_Block of block_formal_param list * stmt (* recurse stmt *)
+
+      and block_formal_param =
+        | Formal_block_id of var_kind * string
+        | Formal_star2 of string
+        | Formal_tuple of block_formal_param list
 
 (*****************************************************************************)
 (* Statement (and CFG) *)
 (*****************************************************************************)
 
-type stmt = {
+and stmt = {
   snode : stmt_node;
   pos : pos;
   sid : int;
@@ -159,10 +180,8 @@ type stmt = {
 }
 
 and stmt_node = 
-  | Expression of expr
-
-  | Assign of lhs * tuple_expr
-  | Call of lhs option * method_call
+  | I of instr
+  | D of definition
 
   | Seq of stmt list (* a.k.a Block *)
   | If of expr * stmt * stmt
@@ -181,24 +200,6 @@ and stmt_node =
 
   | Begin of stmt 
   | End of stmt 
-
-  | ModuleDef  of lhs option * identifier * stmt
-  | ClassDef of lhs option * class_kind * stmt
-  | MethodDef of def_name * method_formal_param list * stmt
-
-  | Defined of identifier * stmt
-  | Alias of alias_kind
-  | Undef of msg_id list
-
-  and method_call = {
-    mc_target : expr option;
-    mc_msg : msg_id;
-    mc_args : star_expr list;
-    mc_cb : codeblock option;
-  }
-     and codeblock = 
-      | CB_Arg of expr
-      | CB_Block of block_formal_param list * stmt
 
   and exn_block = {
     exn_body : stmt;
@@ -225,29 +226,33 @@ and stmt_node =
 (*****************************************************************************)
 (* Definitions *)
 (*****************************************************************************)
+and definition =
+  | ModuleDef  of lhs option * identifier * stmt
+  | ClassDef of lhs option * class_kind * stmt
+  | MethodDef of def_name * method_formal_param list * stmt
 
-and class_kind = 
-  | MetaClass of identifier
-  | NominalClass of identifier * identifier option
+  | Defined of identifier * stmt
+  | Alias of alias_kind
+  | Undef of msg_id list
 
-and def_name = 
-  | Instance_Method of msg_id
-  | Singleton_Method of identifier * msg_id
-
-  and method_formal_param =
-    | Formal_meth_id of string
-    | Formal_amp of string
-    | Formal_star of string
-    | Formal_default of string * tuple_expr
-
-  and block_formal_param =
-    | Formal_block_id of var_kind * string
-    | Formal_star2 of string
-    | Formal_tuple of block_formal_param list
-
-and alias_kind =
-  | Alias_Method of msg_id * msg_id
-  | Alias_Global of builtin_or_global * builtin_or_global
+  and class_kind = 
+    | MetaClass of identifier
+    | NominalClass of identifier * identifier option
+  
+  and def_name = 
+    | Instance_Method of msg_id
+    | Singleton_Method of identifier * msg_id
+  
+    and method_formal_param =
+      | Formal_meth_id of string
+      | Formal_amp of string
+      | Formal_star of string
+      | Formal_default of string * tuple_expr
+  
+  
+  and alias_kind =
+    | Alias_Method of msg_id * msg_id
+    | Alias_Global of builtin_or_global * builtin_or_global
 
  (* with tarzan *)
 
