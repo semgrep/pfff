@@ -29,6 +29,7 @@
 
 open Ast_ruby
 module H = Ast_ruby_helpers
+module HH = Parser_ruby_helpers
 open Parser_ruby_helpers
 
 (*let () = Dyp.dypgen_verbose := max_int*)
@@ -635,7 +636,7 @@ method_formals:
   | lparen eols formal_arg_list<formals> eols T_RPAREN {
       (* RPAREN usually puts the lexer in an end state, but we need to
          force it to an end state *)
-      state_override := true; formals}
+      HH.state_override := true; formals}
 
 lhs:
   | scoped_id<id> { id }
