@@ -31,6 +31,8 @@
  *    braces, angles, commas, semicolons, etc. No ParenExpr.
  *    The only token information kept is for identifiers for error reporting.
  *    See 'wrap' below.
+ *    update: we actually keep the different kinds of brackets for sgrep, but
+ *    they are all agglomerated in a general 'bracket' type. 
  *  - no types (but could revisit this decision)
  *  - no Typescript (no interface)
  *  - no U, B, Yield, Await, Seq, ... just Apply (and Special Id)
