@@ -2,6 +2,12 @@ open Ast_ruby
 module Utils = Utils_ruby
 module Ast_printer = Ast_ruby_printer
 
+let state_override = ref false
+let begin_override () =
+  let b = !state_override in
+    state_override := false;
+    b
+
 module H = Ast_ruby_helpers
 
   module Env = Utils.StrSet
@@ -38,11 +44,6 @@ module H = Ast_ruby_helpers
     | Array(es,_) | Tuple(es,_) -> List.iter (seen dyp) es
     | _ -> ()
 
-  let state_override = ref false
-  let begin_override () =
-    let b = !state_override in
-      state_override := false;
-      b
 
   let is_exnblock = function | S ExnBlock _ -> true | _ -> false
 

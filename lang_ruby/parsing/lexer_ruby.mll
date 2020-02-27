@@ -26,9 +26,10 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *)
-open Parser_ruby
-open Parser_ruby_helpers
-open Lexer_parser_ruby
+open Parser_ruby (* the tokens *)
+module S2 = Parser_ruby_helpers
+module S = Lexer_parser_ruby
+module Utils = Utils_ruby
 open Lexing
 
 (*****************************************************************************)
@@ -42,20 +43,13 @@ open Lexing
 (*****************************************************************************)
 
 (* ---------------------------------------------------------------------- *)
-(* Lexer state *)
+(* Lexer/Parser state *)
 (* ---------------------------------------------------------------------- *)
 (* See lexer_parser_ruby.ml *)
 
 let pop_lexer state = 
-  let (_:cps_lexer) = Stack.pop state.lexer_stack in
+  let (_:S.cps_lexer) = Stack.pop state.S.lexer_stack in
     ()
-
-(* ---------------------------------------------------------------------- *)
-(* Misc *)
-(* ---------------------------------------------------------------------- *)
-
-let fail_eof _f _state _lexbuf = 
-  failwith "parse error: premature end of file"
 
 (* emit the token [tok] and then proceed with the continuation [k] *)
 let emit_extra tok k state lexbuf = 
@@ -63,8 +57,56 @@ let emit_extra tok k state lexbuf =
     pop_lexer state;
     k state lexbuf
   in
-  Stack.push once state.lexer_stack;
+  Stack.push once state.S.lexer_stack;
   tok
+
+(* helper for transitioning between states *)
+let beg_choose want yes no state lexbuf = 
+  if state.S.expr_state == want 
+  then yes state lexbuf else no state lexbuf
+    
+type chooser = S.cps_lexer -> S.cps_lexer -> S.cps_lexer
+
+(* state transition functions *)
+let on_beg : chooser = beg_choose S.Expr_Beg
+let on_mid : chooser = beg_choose S.Expr_Mid 
+let on_end : chooser = beg_choose S.Expr_End 
+let on_def : chooser = beg_choose S.Expr_Def 
+let on_local : chooser = beg_choose S.Expr_Local 
+
+(* CPS terminators *)
+let t_uminus s lb     = S.beg_state s; T_UMINUS lb.lex_curr_p
+let t_minus  s lb     = S.beg_state s; T_MINUS lb.lex_curr_p
+let t_uplus  s lb     = S.beg_state s; T_UPLUS lb.lex_curr_p
+let t_plus   s lb     = S.beg_state s; T_PLUS lb.lex_curr_p
+let t_ustar  s lb     = S.beg_state s; T_USTAR lb.lex_curr_p
+let t_star   s lb     = S.beg_state s; T_STAR lb.lex_curr_p
+let t_uamper s lb     = S.beg_state s; T_UAMPER lb.lex_curr_p
+let t_amper  s lb     = S.beg_state s; T_AMPER lb.lex_curr_p
+let t_slash  s lb     = S.beg_state s; T_SLASH lb.lex_curr_p
+let t_quest  s lb     = S.beg_state s; T_QUESTION lb.lex_curr_p
+let t_tilde  s lb     = S.beg_state s; T_TILDE lb.lex_curr_p
+let t_scope  s lb     = S.beg_state s; T_SCOPE lb.lex_curr_p
+let t_uscope s lb     = S.beg_state s; T_USCOPE lb.lex_curr_p
+let t_lbrack s lb     = S.beg_state s; T_LBRACK lb.lex_curr_p
+let t_lbrack_arg s lb = S.beg_state s; T_LBRACK_ARG lb.lex_curr_p
+let t_lparen s lb     = S.beg_state s; T_LPAREN lb.lex_curr_p
+let t_lparen_arg s lb = S.beg_state s; T_LPAREN_ARG lb.lex_curr_p
+let t_lbrace s lb     = S.beg_state s; T_LBRACE lb.lex_curr_p
+let t_lbrace_arg s lb = S.beg_state s; T_LBRACE_ARG lb.lex_curr_p
+let t_percent s lb    = S.beg_state s; T_PERCENT lb.lex_curr_p
+let t_lshft s lb      = S.beg_state s; T_LSHFT lb.lex_curr_p
+let t_colon s lb      = S.beg_state s; T_COLON lb.lex_curr_p
+let t_eol s _lb       = S.beg_state s; T_EOL
+
+(* transitions to End unless in Def, in which case do nothing (stays in Def) *)
+let def_end_state state = match state.S.expr_state with
+  | S.Expr_Def -> ()
+  | _ -> S.end_state state
+
+(* ---------------------------------------------------------------------- *)
+(* Lexing state *)
+(* ---------------------------------------------------------------------- *)
 
 let update_pos str pos = 
   let chars = String.length str in
@@ -86,6 +128,22 @@ let push_back str lexbuf =
     lexbuf.lex_buffer_len <- lexbuf.lex_buffer_len + (String.length str);
     lexbuf.lex_curr_p <- update_pos str lexbuf.lex_curr_p;
     assert ((Bytes.length lexbuf.lex_buffer) == lexbuf.lex_buffer_len)
+
+(* increment the line count and start of line counters for the lexbuf *)
+let incr_line lexbuf =
+  let pos = lexbuf.lex_curr_p in
+  lexbuf.lex_curr_p <- { pos with
+    pos_lnum = pos.pos_lnum + 1;
+    pos_bol = pos.pos_cnum;
+  }
+
+(* ---------------------------------------------------------------------- *)
+(* Misc *)
+(* ---------------------------------------------------------------------- *)
+
+let fail_eof _f _state _lexbuf = 
+  failwith "parse error: premature end of file"
+
     
 let contents_of_str s = [Ast_ruby.StrChars s]
 
@@ -122,13 +180,6 @@ let remove_underscores str =
 
 let to_bignum str = Big_int.big_int_of_string (remove_underscores str)
 
-(* increment the line count and start of line counters for the lexbuf *)
-let incr_line lexbuf =
-  let pos = lexbuf.lex_curr_p in
-  lexbuf.lex_curr_p <- { pos with
-    pos_lnum = pos.pos_lnum + 1;
-    pos_bol = pos.pos_cnum;
-  }
 
 (* base 16 -> base 10 helper *)
 let num_of_hex_digit = function
@@ -197,55 +248,12 @@ let choose_capital_for_id id pos =
    def, class, module; to distinguish K_DEF from def *)
 let insert_delimiters s = "%" ^ s  ^ "%"
 
-(* helper for transitioning between states *)
-let beg_choose want yes no state lexbuf = 
-  if state.expr_state == want 
-  then yes state lexbuf else no state lexbuf
-    
-type chooser = cps_lexer -> cps_lexer -> cps_lexer
-
-(* state transition functions *)
-let on_beg : chooser = beg_choose Expr_Beg
-let on_mid : chooser = beg_choose Expr_Mid 
-let on_end : chooser = beg_choose Expr_End 
-let on_def : chooser = beg_choose Expr_Def 
-let on_local : chooser = beg_choose Expr_Local 
-
-(* CPS terminators *)
-let t_uminus s lb = beg_state s; T_UMINUS lb.lex_curr_p
-let t_minus  s lb = beg_state s; T_MINUS lb.lex_curr_p
-let t_uplus  s lb = beg_state s; T_UPLUS lb.lex_curr_p
-let t_plus   s lb = beg_state s; T_PLUS lb.lex_curr_p
-let t_ustar  s lb = beg_state s; T_USTAR lb.lex_curr_p
-let t_star   s lb = beg_state s; T_STAR lb.lex_curr_p
-let t_uamper s lb = beg_state s; T_UAMPER lb.lex_curr_p
-let t_amper  s lb = beg_state s; T_AMPER lb.lex_curr_p
-let t_slash  s lb = beg_state s; T_SLASH lb.lex_curr_p
-let t_quest  s lb = beg_state s; T_QUESTION lb.lex_curr_p
-let t_tilde  s lb = beg_state s; T_TILDE lb.lex_curr_p
-let t_scope  s lb = beg_state s; T_SCOPE lb.lex_curr_p
-let t_uscope s lb = beg_state s; T_USCOPE lb.lex_curr_p
-let t_lbrack s lb = beg_state s; T_LBRACK lb.lex_curr_p
-let t_lbrack_arg s lb = beg_state s; T_LBRACK_ARG lb.lex_curr_p
-let t_lparen s lb = beg_state s; T_LPAREN lb.lex_curr_p
-let t_lparen_arg s lb = beg_state s; T_LPAREN_ARG lb.lex_curr_p
-let t_lbrace s lb = beg_state s; T_LBRACE lb.lex_curr_p
-let t_lbrace_arg s lb = beg_state s; T_LBRACE_ARG lb.lex_curr_p
-let t_percent s lb = beg_state s; T_PERCENT lb.lex_curr_p
-let t_lshft s lb = beg_state s; T_LSHFT lb.lex_curr_p
-let t_colon s lb = beg_state s; T_COLON lb.lex_curr_p
-let t_eol s _lb = beg_state s; T_EOL
-
 (* return a fresh Buffer.t that is preloaded with the contents of [str] *)
 let buf_of_string str = 
   let b = Buffer.create 31 in
     Buffer.add_string b str;
     b
 
-(* transitions to End unless in Def, in which case does nothing (stays in Def) *)
-let def_end_state state = match state.expr_state with
-  | Expr_Def -> ()
-  | _ -> end_state state
 }
 
 (*****************************************************************************)
@@ -283,8 +291,8 @@ let e = "" (* epsilon *)
 (*****************************************************************************)
 
 rule token state = parse
-  | e { if begin_override() then beg_state state;
-       (Stack.top state.lexer_stack) state lexbuf }
+  | e { if S2.begin_override() then S.beg_state state;
+       (Stack.top state.S.lexer_stack) state lexbuf }
 
 (*****************************************************************************)
 (* Top_lexer *)
@@ -299,18 +307,18 @@ and top_lexer state = parse
     (* need the ws here to force a longest match preference over the
        rules below *)
   | ws_re* ((['+' '-' '*' '&' '|' '%' '^'] | "||" | "&&" | "<<" | ">>") as op) '='
-      {beg_state state; T_OP_ASGN(op, lexbuf.lex_curr_p)}
+      {S.beg_state state; T_OP_ASGN(op, lexbuf.lex_curr_p)}
 
   (* /= can be either regexp or op_asgn *)
   | ws_re* "/=" 
-      {match state.expr_state with 
-         | Expr_Beg -> regexp_string (buf_of_string "=") state lexbuf
-         | _ -> beg_state state; T_OP_ASGN("/", lexbuf.lex_curr_p)
+      {match state.S.expr_state with 
+         | S.Expr_Beg -> regexp_string (buf_of_string "=") state lexbuf
+         | _ -> S.beg_state state; T_OP_ASGN("/", lexbuf.lex_curr_p)
       }
 
   (* need precedence over single form *)
-  | ws_re* "**" {beg_state state;T_POW lexbuf.lex_curr_p }
-  | ws_re* "&&" {beg_state state;T_ANDOP lexbuf.lex_curr_p }
+  | ws_re* "**" {S.beg_state state;T_POW lexbuf.lex_curr_p }
+  | ws_re* "&&" {S.beg_state state;T_ANDOP lexbuf.lex_curr_p }
 
   (* the following lexemes may represent various tokens depending on
      the expression state and surrounding spaces.  Space before and
@@ -359,51 +367,51 @@ and top_lexer state = parse
 
   (* heredoc vs shift tokens *)
   | "<<-" {heredoc_header heredoc_string_lead state lexbuf}
-  | "<<" ws_re {beg_state state; t_lshft state lexbuf}
-  | "<<" nl_re {beg_state state; incr_line lexbuf;t_lshft state lexbuf}
-  | "<<" {match state.expr_state with
-            | Expr_End | Expr_Local | Expr_Def -> 
-                beg_state state;T_LSHFT lexbuf.lex_curr_p
-            | Expr_Mid | Expr_Beg -> 
+  | "<<" ws_re {S.beg_state state; t_lshft state lexbuf}
+  | "<<" nl_re {S.beg_state state; incr_line lexbuf;t_lshft state lexbuf}
+  | "<<" {match state.S.expr_state with
+            | S.Expr_End | S.Expr_Local | S.Expr_Def -> 
+                S.beg_state state;T_LSHFT lexbuf.lex_curr_p
+            | S.Expr_Mid | S.Expr_Beg -> 
                 heredoc_header heredoc_string state lexbuf}
 
   (* now all of the 'normal' tokens which are otherwise well behaved *)
-  | '.'   {def_state state;T_DOT lexbuf.lex_curr_p }
-  | ','   {beg_state state;T_COMMA lexbuf.lex_curr_p }
-  | '!'   {beg_state state;T_BANG lexbuf.lex_curr_p }
-  | '~'   {match state.expr_state with
+  | '.'   {S.def_state state;T_DOT lexbuf.lex_curr_p }
+  | ','   {S.beg_state state;T_COMMA lexbuf.lex_curr_p }
+  | '!'   {S.beg_state state;T_BANG lexbuf.lex_curr_p }
+  | '~'   {match state.S.expr_state with
                (* when defining the ~ method, allow an optional @ postfix *)
-             | Expr_Def -> postfix_at t_tilde t_tilde state lexbuf
+             | S.Expr_Def -> postfix_at t_tilde t_tilde state lexbuf
              | _ -> t_tilde state lexbuf }
-  | "<=>" {beg_state state;T_CMP lexbuf.lex_curr_p }
-  | "="   {beg_state state;T_ASSIGN lexbuf.lex_curr_p }
-  | "=="  {beg_state state;T_EQ lexbuf.lex_curr_p }
-  | "===" {beg_state state;T_EQQ lexbuf.lex_curr_p }
-  | "!="  {beg_state state;T_NEQ lexbuf.lex_curr_p }
-  | ">="  {beg_state state;T_GEQ lexbuf.lex_curr_p }
-  | "<="  {beg_state state;T_LEQ lexbuf.lex_curr_p }
-  | "<"   {beg_state state;T_LT lexbuf.lex_curr_p }
-  | ">"   {beg_state state;T_GT lexbuf.lex_curr_p }
-  | "||"  {beg_state state;T_OROP lexbuf.lex_curr_p }
-  | "=~"  {beg_state state;T_MATCH lexbuf.lex_curr_p }
-  | "!~"  {beg_state state;T_NMATCH lexbuf.lex_curr_p }
-  | ">>"  {beg_state state;T_RSHFT lexbuf.lex_curr_p}
-  | "=>"  {beg_state state;T_ASSOC lexbuf.lex_curr_p}
-  | ')'   {end_state state;T_RPAREN lexbuf.lex_curr_p}
-  | ']'   {end_state state;T_RBRACK lexbuf.lex_curr_p}
-  | '}'   {end_state state;T_RBRACE lexbuf.lex_curr_p}
-  | "..." {beg_state state;T_DOT3 lexbuf.lex_curr_p}
-  | ".."  {beg_state state;T_DOT2 lexbuf.lex_curr_p}
+  | "<=>" {S.beg_state state;T_CMP lexbuf.lex_curr_p }
+  | "="   {S.beg_state state;T_ASSIGN lexbuf.lex_curr_p }
+  | "=="  {S.beg_state state;T_EQ lexbuf.lex_curr_p }
+  | "===" {S.beg_state state;T_EQQ lexbuf.lex_curr_p }
+  | "!="  {S.beg_state state;T_NEQ lexbuf.lex_curr_p }
+  | ">="  {S.beg_state state;T_GEQ lexbuf.lex_curr_p }
+  | "<="  {S.beg_state state;T_LEQ lexbuf.lex_curr_p }
+  | "<"   {S.beg_state state;T_LT lexbuf.lex_curr_p }
+  | ">"   {S.beg_state state;T_GT lexbuf.lex_curr_p }
+  | "||"  {S.beg_state state;T_OROP lexbuf.lex_curr_p }
+  | "=~"  {S.beg_state state;T_MATCH lexbuf.lex_curr_p }
+  | "!~"  {S.beg_state state;T_NMATCH lexbuf.lex_curr_p }
+  | ">>"  {S.beg_state state;T_RSHFT lexbuf.lex_curr_p}
+  | "=>"  {S.beg_state state;T_ASSOC lexbuf.lex_curr_p}
+  | ')'   {S.end_state state;T_RPAREN lexbuf.lex_curr_p}
+  | ']'   {S.end_state state;T_RBRACK lexbuf.lex_curr_p}
+  | '}'   {S.end_state state;T_RBRACE lexbuf.lex_curr_p}
+  | "..." {S.beg_state state;T_DOT3 lexbuf.lex_curr_p}
+  | ".."  {S.beg_state state;T_DOT2 lexbuf.lex_curr_p}
   | '#'   {comment state lexbuf}
   | '`'   {tick_string state lexbuf}
-  | '^'   {beg_state state;T_CARROT lexbuf.lex_curr_p}
-  | '|'   {beg_state state;T_VBAR lexbuf.lex_curr_p}
-  | ';'   {beg_state state;T_SEMICOLON lexbuf.lex_curr_p}
-  | '\''  {end_state state; 
+  | '^'   {S.beg_state state;T_CARROT lexbuf.lex_curr_p}
+  | '|'   {S.beg_state state;T_VBAR lexbuf.lex_curr_p}
+  | ';'   {S.beg_state state;T_SEMICOLON lexbuf.lex_curr_p}
+  | '\''  {S.end_state state; 
            non_interp_string '\'' (Buffer.create 31) state lexbuf}
   | '\"'  {double_string state lexbuf}
 
-  | "=begin" [^'\n']* '\n' {beg_state state; incr_line lexbuf; 
+  | "=begin" [^'\n']* '\n' {S.beg_state state; incr_line lexbuf; 
                             delim_comment state lexbuf}
 
   | num_re {postfix_numeric Utils.id (lexeme lexbuf) state lexbuf}
@@ -419,48 +427,48 @@ and top_lexer state = parse
   (* ----------------------------------------------------------------------- *)
 
   | "class" as cls    
-      {def_state state; K_CLASS ((insert_delimiters cls), lexbuf.lex_curr_p) }
+      {S.def_state state; K_CLASS ((insert_delimiters cls), lexbuf.lex_curr_p) }
   | "def" as def
-      {def_state state; K_DEF ((insert_delimiters def), lexbuf.lex_curr_p) }
+      {S.def_state state; K_DEF ((insert_delimiters def), lexbuf.lex_curr_p) }
   | "module" as m   
-      {def_state state;K_MODULE ((insert_delimiters m), lexbuf.lex_curr_p)}
+      {S.def_state state;K_MODULE ((insert_delimiters m), lexbuf.lex_curr_p)}
 
-  | "alias"    {def_state state;K_ALIAS lexbuf.lex_curr_p}
-  | "undef"    {def_state state;K_UNDEF lexbuf.lex_curr_p}
-  | "and"      {beg_state state;K_AND lexbuf.lex_curr_p}
-  | "begin"    {beg_state state;K_lBEGIN lexbuf.lex_curr_p}
-  | "BEGIN"    {beg_state state;K_BEGIN lexbuf.lex_curr_p}
-  | "case"     {beg_state state;K_CASE lexbuf.lex_curr_p}
-  | "do"       {beg_state state;K_DO lexbuf.lex_curr_p}
-  | "else"     {beg_state state;K_ELSE lexbuf.lex_curr_p}
-  | "elsif"    {beg_state state;K_ELSIF lexbuf.lex_curr_p}
-  | "END"      {beg_state state;K_END lexbuf.lex_curr_p}
-  | "end"      {end_state state;K_lEND lexbuf.lex_curr_p}
-  | "ensure"   {beg_state state;K_ENSURE lexbuf.lex_curr_p}
-  | "for"      {beg_state state;K_FOR lexbuf.lex_curr_p}
-  | "if"       {beg_state state;K_IF lexbuf.lex_curr_p}
-  | "in"       {beg_state state;K_IN lexbuf.lex_curr_p}
-  | "not"      {beg_state state;K_NOT lexbuf.lex_curr_p}
-  | "or"       {beg_state state;K_OR lexbuf.lex_curr_p}
-  | "rescue"   {beg_state state;K_RESCUE lexbuf.lex_curr_p}
-  | "return"   {beg_state state;K_RETURN lexbuf.lex_curr_p}
-  | "then"     {beg_state state;K_THEN lexbuf.lex_curr_p}
-  | "unless"   {beg_state state;K_UNLESS lexbuf.lex_curr_p}
-  | "until"    {beg_state state;K_UNTIL lexbuf.lex_curr_p}
-  | "when"     {beg_state state;K_WHEN lexbuf.lex_curr_p}
-  | "while"    {beg_state state;K_WHILE lexbuf.lex_curr_p}
-  | "yield"    {mid_state state;K_YIELD lexbuf.lex_curr_p}
-  | "nil"      {end_state state;K_NIL lexbuf.lex_curr_p}
-  | "self"     {end_state state;K_SELF lexbuf.lex_curr_p}
-  | "true"     {end_state state;K_TRUE lexbuf.lex_curr_p}
-  | "false"    {end_state state;K_FALSE lexbuf.lex_curr_p}
+  | "alias"    {S.def_state state;K_ALIAS lexbuf.lex_curr_p}
+  | "undef"    {S.def_state state;K_UNDEF lexbuf.lex_curr_p}
+  | "and"      {S.beg_state state;K_AND lexbuf.lex_curr_p}
+  | "begin"    {S.beg_state state;K_lBEGIN lexbuf.lex_curr_p}
+  | "BEGIN"    {S.beg_state state;K_BEGIN lexbuf.lex_curr_p}
+  | "case"     {S.beg_state state;K_CASE lexbuf.lex_curr_p}
+  | "do"       {S.beg_state state;K_DO lexbuf.lex_curr_p}
+  | "else"     {S.beg_state state;K_ELSE lexbuf.lex_curr_p}
+  | "elsif"    {S.beg_state state;K_ELSIF lexbuf.lex_curr_p}
+  | "END"      {S.beg_state state;K_END lexbuf.lex_curr_p}
+  | "end"      {S.end_state state;K_lEND lexbuf.lex_curr_p}
+  | "ensure"   {S.beg_state state;K_ENSURE lexbuf.lex_curr_p}
+  | "for"      {S.beg_state state;K_FOR lexbuf.lex_curr_p}
+  | "if"       {S.beg_state state;K_IF lexbuf.lex_curr_p}
+  | "in"       {S.beg_state state;K_IN lexbuf.lex_curr_p}
+  | "not"      {S.beg_state state;K_NOT lexbuf.lex_curr_p}
+  | "or"       {S.beg_state state;K_OR lexbuf.lex_curr_p}
+  | "rescue"   {S.beg_state state;K_RESCUE lexbuf.lex_curr_p}
+  | "return"   {S.beg_state state;K_RETURN lexbuf.lex_curr_p}
+  | "then"     {S.beg_state state;K_THEN lexbuf.lex_curr_p}
+  | "unless"   {S.beg_state state;K_UNLESS lexbuf.lex_curr_p}
+  | "until"    {S.beg_state state;K_UNTIL lexbuf.lex_curr_p}
+  | "when"     {S.beg_state state;K_WHEN lexbuf.lex_curr_p}
+  | "while"    {S.beg_state state;K_WHILE lexbuf.lex_curr_p}
+  | "yield"    {S.mid_state state;K_YIELD lexbuf.lex_curr_p}
+  | "nil"      {S.end_state state;K_NIL lexbuf.lex_curr_p}
+  | "self"     {S.end_state state;K_SELF lexbuf.lex_curr_p}
+  | "true"     {S.end_state state;K_TRUE lexbuf.lex_curr_p}
+  | "false"    {S.end_state state;K_FALSE lexbuf.lex_curr_p}
 (* No longer lex separately
-  | "defined?" {mid_state state;K_DEFINED}
-  | "super"    {mid_state state;K_SUPER}
-  | "break"    {beg_state state;K_BREAK}
-  | "redo"     {beg_state state;K_REDO}
-  | "retry"    {beg_state state;K_RETRY}
-  | "next"     {beg_state state;K_NEXT}
+  | "defined?" {S.mid_state state;K_DEFINED}
+  | "super"    {S.mid_state state;K_SUPER}
+  | "break"    {S.beg_state state;K_BREAK}
+  | "redo"     {S.beg_state state;K_REDO}
+  | "retry"    {S.beg_state state;K_RETRY}
+  | "next"     {S.beg_state state;K_NEXT}
 *)
 
   | "__END__"  { end_lexbuf lexbuf}
@@ -474,21 +482,21 @@ and top_lexer state = parse
   | ws_re+ "::" { T_USCOPE lexbuf.lex_curr_p }
   | "::" { on_beg t_uscope t_scope state lexbuf }
 
-  | ("@@" id_re) as id {end_state state; T_CLASS_VAR(id, lexbuf.lex_curr_p)}
-  | ('@' id_re) as id {end_state state; T_INST_VAR(id, lexbuf.lex_curr_p)}
+  | ("@@" id_re) as id {S.end_state state; T_CLASS_VAR(id, lexbuf.lex_curr_p)}
+  | ('@' id_re) as id {S.end_state state; T_INST_VAR(id, lexbuf.lex_curr_p)}
 
   (* ----------------------------------------------------------------------- *)
   (* Ident *)
   (* ----------------------------------------------------------------------- *)
   | id_re as id { 
       let tok = choose_capital_for_id id lexbuf.lex_curr_p in
-        begin match state.expr_state, tok with
-          | Expr_Def, _ -> mid_state state
+        begin match state.S.expr_state, tok with
+          | S.Expr_Def, _ -> S.mid_state state
           | _, T_LID(id, _pos) ->
-              if assigned_id id 
-              then local_state state
-              else mid_state state
-          | _ -> mid_state state
+              if S2.assigned_id id 
+              then S.local_state state
+              else S.mid_state state
+          | _ -> S.mid_state state
         end;
         tok
     }
@@ -502,13 +510,13 @@ and top_lexer state = parse
 (*****************************************************************************)
 
 and dollar state = parse
-  | id_re as id {end_state state;T_GLOBAL_VAR("$"^id, lexbuf.lex_curr_p) }
+  | id_re as id {S.end_state state;T_GLOBAL_VAR("$"^id, lexbuf.lex_curr_p) }
   | ("-" alphanum_re) as v 
-      {end_state state;T_BUILTIN_VAR("$"^v, lexbuf.lex_curr_p) }
+      {S.end_state state;T_BUILTIN_VAR("$"^v, lexbuf.lex_curr_p) }
   | ( ['0'-'9']+) as v 
-      {end_state state;T_BUILTIN_VAR("$" ^ v, lexbuf.lex_curr_p)}
+      {S.end_state state;T_BUILTIN_VAR("$" ^ v, lexbuf.lex_curr_p)}
   | ( [^'a'-'z''A'-'Z''#'])
-      {end_state state;T_BUILTIN_VAR("$"^(lexeme lexbuf), lexbuf.lex_curr_p)}
+      {S.end_state state;T_BUILTIN_VAR("$"^(lexeme lexbuf), lexbuf.lex_curr_p)}
 
 (*****************************************************************************)
 (* space_tok *)
@@ -529,11 +537,11 @@ and space_uop uop spc_uop binop state = parse
   | nl_re  {incr_line lexbuf; on_beg spc_uop binop state lexbuf}
 
   | e 
-      {match state.expr_state with
-         | Expr_Def
-         | Expr_Local
-         | Expr_End -> binop state lexbuf
-         | Expr_Beg | Expr_Mid -> uop state lexbuf
+      {match state.S.expr_state with
+         | S.Expr_Def
+         | S.Expr_Local
+         | S.Expr_End -> binop state lexbuf
+         | S.Expr_Beg | S.Expr_Mid -> uop state lexbuf
       }
 
 (*****************************************************************************)
@@ -542,19 +550,19 @@ and space_uop uop spc_uop binop state = parse
 
 and postfix_numeric cont start state = parse
   | "b" (['0''1''_']+ as num)
-      { end_state state; 
+      { S.end_state state; 
         cont (convert_to_base10 ~base:2 num lexbuf.lex_curr_p)}
 
   | ('o'|'O') ((num_re|'_')+ as num)
-      { end_state state; 
+      { S.end_state state; 
         cont (convert_to_base10 ~base:8 num lexbuf.lex_curr_p)}
 
   | "x" ((num_re|['a'-'f''A'-'F''_'])+ as num)
-      { end_state state; 
+      { S.end_state state; 
         cont (convert_to_base10 ~base:16 num lexbuf.lex_curr_p)}
 
   | (num_re|'_')* as num
-      { end_state state;
+      { S.end_state state;
         if start = "0" 
         then cont (convert_to_base10 ~base:8 num lexbuf.lex_curr_p)
         else 
@@ -568,7 +576,7 @@ and postfix_numeric cont start state = parse
       }
 
   | post_rubyfloat_re
-      { end_state state;
+      { S.end_state state;
         let str = (start ^ (lexeme lexbuf)) in
         let str = remove_underscores str in
         let tok = T_FLOAT(str, float_of_string (str), lexbuf.lex_curr_p) in
@@ -634,7 +642,7 @@ and atom state = parse
 (*****************************************************************************)
 
 and char_code state = parse
-  | e {beg_state state; char_code_work lexbuf}
+  | e {S.beg_state state; char_code_work lexbuf}
 
 and char_code_work = parse
   | [^'\n''\t'] as c {T_FIXNUM(Char.code c, lexbuf.lex_curr_p)}
@@ -685,12 +693,12 @@ and non_interp_string delim buf state = parse
       }
 
 and double_string state = parse 
-  | e {end_state state;
+  | e {S.end_state state;
        emit_extra (T_DOUBLE_BEG lexbuf.lex_curr_p)
          (interp_string_lexer '"') state lexbuf}
 
 and tick_string state = parse 
-  | e {end_state state;
+  | e {S.end_state state;
        emit_extra (T_TICK_BEG lexbuf.lex_curr_p)
          (interp_string_lexer '`') state lexbuf}
 
@@ -707,8 +715,8 @@ and regexp_delim delim_f escape_f buf state = parse
         pop_lexer state;
         regexp_modifier state lexbuf
       in
-        Stack.push k state.lexer_stack;
-        end_state state;
+        Stack.push k state.S.lexer_stack;
+        S.end_state state;
         emit_extra (T_REGEXP_BEG lexbuf.lex_curr_p)
           (interp_lexer fail_eof delim_f escape_f buf) state lexbuf
     }
@@ -722,7 +730,7 @@ and regexp_modifier state = parse
 
 and percent state = parse
   | (alpha_re? as modifier)(string_single_delim as d)
-      {end_state state; 
+      {S.end_state state; 
        let f = 
          if modifier_is_single modifier
          then non_interp_string d (Buffer.create 31)
@@ -734,7 +742,7 @@ and percent state = parse
       }
 
   | (alpha_re? as modifier) (['{' '<' '(' '['] as d_start)
-      {end_state state; 
+      {S.end_state state; 
        let d_end = close_delim d_start in
        let level = ref 0 in
        let at_end d = 
@@ -770,7 +778,7 @@ and heredoc_header lead_f state = parse
   | '\''([^'\'']+ as delim)'\'' ([^'\n']* nl_re as rest)
       {incr_line lexbuf;
        let cont str state lexbuf = 
-         end_state state;
+         S.end_state state;
          push_back rest lexbuf;
          T_SINGLE_STRING(str, lexbuf.lex_curr_p)
        in
@@ -792,7 +800,7 @@ and heredoc_header lead_f state = parse
             (lead_f cont (Buffer.create 31) delim) state lexbuf
       }
       
-  | e {beg_state state; T_LSHFT lexbuf.lex_curr_p}
+  | e {S.beg_state state; T_LSHFT lexbuf.lex_curr_p}
 
 and heredoc_string cont buf delim state = parse (* for <<EOF *)
   | eof {fail_eof (heredoc_string cont buf delim) state lexbuf}
@@ -822,7 +830,7 @@ and heredoc_string_lead cont buf delim state = parse (* for <<-EOF *)
 
 and interp_heredoc_lexer state = parse
   | e {let f buf state lexbuf = 
-         end_state state;
+         S.end_state state;
          T_INTERP_END(Buffer.contents buf,lexbuf.lex_curr_p)
        in 
        let nope _  = false in
@@ -848,7 +856,7 @@ and interp_lexer do_eof delim_f escape_f buf state = parse
        else Buffer.add_string buf (lexeme lexbuf);
        interp_lexer do_eof delim_f escape_f buf state lexbuf}
 
-  | "#{" {beg_state state;
+  | "#{" {S.beg_state state;
           let tok = T_INTERP_STR(Buffer.contents buf,lexbuf.lex_curr_p) in
           let k state lexbuf =
             interp_lexer do_eof delim_f escape_f (Buffer.create 31) state lexbuf
@@ -866,7 +874,7 @@ and interp_lexer do_eof delim_f escape_f buf state = parse
       }
 
 and interp_code start cont state = parse
-  | e {beg_state state;
+  | e {S.beg_state state;
        let level = ref 0 in
          (* a continuation to read in Ruby tokens until we see an
             unbalanced '}', at which point we abort that continuation
@@ -886,7 +894,7 @@ and interp_code start cont state = parse
                end
            | tok -> tok
        in
-         Stack.push k state.lexer_stack;
+         Stack.push k state.S.lexer_stack;
          start
       }
 
