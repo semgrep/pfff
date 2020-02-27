@@ -10,6 +10,7 @@ module H = Ast_ruby_helpers
 open Il_ruby_helpers
 module C = Il_ruby_helpers.Abbr
 
+
 type 'a acc = {
   q : 'a DQueue.t;
   seen : StrSet.t;
@@ -59,7 +60,7 @@ let fresh_global pos =
 let formal_counter = ref 0
 let fresh_formal () = incr formal_counter; !formal_counter
 
-let re_init () = uniq_counter := 0
+let _re_init () = uniq_counter := 0
 
 let gen_super_args params : (star_expr list * expr option) option  =
   let work = function
@@ -1819,6 +1820,45 @@ let refactor_ast ?env ast =
       | [] -> empty_stmt ()
       | (hd::_) as lst -> C.seq lst (pos_of hd)
 
+
+
+
+(*
+val re_init : unit -> unit
+  (** Re-initialize the global state of the module that is used to
+      provide unique identifier names.  Should only be necessary for
+      testing. *)
+
+val reparse : ?env:Utils_ruby.StrSet.t -> ?filename:string -> ?lineno:int -> 
+  (Il_ruby.stmt,'a) Il_ruby_printer.CodeUnparser.fmt -> 'a
+  (** This function takes an unparsing descript as described in
+      Cfg_printer and converts the unparsed string back into a
+      Cfg.stmt, allowing for easy tree rewriting as describedy by
+      Demaille, Levillain, and Sigoure's SAC'09 paper.  For example,
+
+      open Cfg_printer.CodeUnparser
+      reparse (s"x = " ++ expr) my_expr
+
+      returns the statement that assigns [my_expr] into the variable
+      [x].
+  *) 
+
+val kreparse : ?env:Utils_ruby.StrSet.t -> ?filename:string -> ?lineno:int -> 
+  (Il_ruby.stmt -> 'a) -> ('a,'b) Il_ruby_printer.CodeUnparser.fmt -> 'b
+  (** Similar to reparse, but passes the final stmt to the supplied
+      continuation *)
+
+val freparse : ?env:Utils_ruby.StrSet.t -> ?filename:string -> ?lineno:int -> 
+  ('a, Format.formatter, unit, Il_ruby.stmt) format4 -> 'a
+  (** Similar to reparse, but uses a format string instead *)
+
+val kfreparse : ?env:Utils_ruby.StrSet.t -> ?filename:string -> ?lineno:int -> 
+  (Il_ruby.stmt -> 'b) -> ('a, Format.formatter, unit, 'b) format4 -> 'a
+  (** Similar to kreparse, but uses a format string instead *)
+*)
+
+
+(*
 let kreparse ?env ?filename ?lineno cont k =
   let module U = Il_ruby_printer.CodeUnparser in
   let cont str = 
@@ -1839,3 +1879,4 @@ let kfreparse ?env ?filename ?lineno cont =
 
 let freparse ?env ?filename ?lineno = 
   kfreparse ?env ?filename ?lineno Utils.id
+*)
