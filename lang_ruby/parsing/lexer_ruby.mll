@@ -1,222 +1,275 @@
 {
-  open Parser_ruby
-  open Parser_ruby_helpers
-  open Lexer_parser_ruby
-  open Lexing
+(* Mike Furr
+ *
+ * Copyright (C) 2010 Mike Furr
+ * Copyright (C) 2020 r2c
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the <organization> nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *)
+open Parser_ruby
+open Parser_ruby_helpers
+open Lexer_parser_ruby
+open Lexing
 
-  let pop_lexer state = 
-    let (_:cps_lexer) = Stack.pop state.lexer_stack in
-      ()
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+(* The Ruby lexer.
+ *)
 
-  let fail_eof _f _state _lexbuf = 
-    failwith "parse error: premature end of file"
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
 
-  (* emit the token [tok] and then proceed with the continuation [k] *)
-  let emit_extra tok k state lexbuf = 
-    let once state _ = 
-      pop_lexer state;
-      k state lexbuf
-    in
-      Stack.push once state.lexer_stack;
-      tok
+(* ---------------------------------------------------------------------- *)
+(* Lexer state *)
+(* ---------------------------------------------------------------------- *)
 
-  let update_pos str pos = 
-    let chars = String.length str in
-    let line_counter acc = function '\n' -> acc+1 | _ -> acc in
-    let lines = Utils.string_fold_left line_counter 0 str in
-      {pos with
-         pos_cnum = pos.pos_cnum - chars;
-         pos_lnum = pos.pos_lnum - lines;
-      }
+let pop_lexer state = 
+  let (_:cps_lexer) = Stack.pop state.lexer_stack in
+    ()
 
-  let push_back str lexbuf = 
-    let pre_str = Bytes.sub lexbuf.lex_buffer 0 lexbuf.lex_curr_pos in
-    let post_str = 
-      Bytes.sub lexbuf.lex_buffer lexbuf.lex_curr_pos
-        (lexbuf.lex_buffer_len-lexbuf.lex_curr_pos)
-    in
-      lexbuf.lex_buffer <- 
-        Bytes.of_string (Bytes.to_string pre_str ^ str ^ Bytes.to_string post_str);
-      lexbuf.lex_buffer_len <- lexbuf.lex_buffer_len + (String.length str);
-      lexbuf.lex_curr_p <- update_pos str lexbuf.lex_curr_p;
-      assert ((Bytes.length lexbuf.lex_buffer) == lexbuf.lex_buffer_len)
-      
-  let contents_of_str s = [Ast_ruby.StrChars s]
+(* ---------------------------------------------------------------------- *)
+(* Misc *)
+(* ---------------------------------------------------------------------- *)
 
-  (* returns true if string following the modifier m (e.g., %m{...})
-     should be parsed as a single quoted or double quoted (interpreted)
-     string *)
-  let modifier_is_single = function
-    | "r" -> false
-    | "w" -> true
-    | "W" -> false
-    | "q" -> true
-    | "Q" -> false
-    | "x" -> false
-    | "" -> false
-    | m ->  failwith (Printf.sprintf "unhandled string modifier: %s" m)
+let fail_eof _f _state _lexbuf = 
+  failwith "parse error: premature end of file"
 
-  (* Ruby numerics can include _ to separate arbitrary digits.  This
-     returns a new string representing a numeric with all _s removed *)
-  let remove_underscores str = 
-    let len = String.length str in
-    let buf = Buffer.create len in
-      String.iter
-        (function
-           | '.'
-           | '-' (* needed for 2.3e-4 *)
-           | '+' (* needed for 2.3e+4 *)
-           | 'e'
-           | ('a'..'f') | ('A'..'F') | 'x'
-           | ('0'..'9') as i -> Buffer.add_char buf i
-           | '_' -> ()
-           | _ -> failwith "non number and non-'_' in fixnum"
-        ) str;
-      Buffer.contents buf
+(* emit the token [tok] and then proceed with the continuation [k] *)
+let emit_extra tok k state lexbuf = 
+  let once state _ = 
+    pop_lexer state;
+    k state lexbuf
+  in
+  Stack.push once state.lexer_stack;
+  tok
 
-  let to_bignum str = Big_int.big_int_of_string (remove_underscores str)
-
-  (* increment the line count and start of line counters for the lexbuf *)
-  let incr_line lexbuf =
-    let pos = lexbuf.lex_curr_p in
-    lexbuf.lex_curr_p <- { pos with
-      pos_lnum = pos.pos_lnum + 1;
-      pos_bol = pos.pos_cnum;
+let update_pos str pos = 
+  let chars = String.length str in
+  let line_counter acc = function '\n' -> acc+1 | _ -> acc in
+  let lines = Utils.string_fold_left line_counter 0 str in
+    {pos with
+       pos_cnum = pos.pos_cnum - chars;
+       pos_lnum = pos.pos_lnum - lines;
     }
 
-  (* base 16 -> base 10 helper *)
-  let num_of_hex_digit = function
-    | '0' -> 0
-    | '1' -> 1
-    | '2' -> 2
-    | '3' -> 3
-    | '4' -> 4
-    | '5' -> 5
-    | '6' -> 6
-    | '7' -> 7
-    | '8' -> 8
-    | '9' -> 9
-    | 'a' | 'A' -> 10
-    | 'b' | 'B' -> 11
-    | 'c' | 'C' -> 12
-    | 'd' | 'D' -> 13
-    | 'e' | 'E' -> 14
-    | 'f' | 'F' -> 15
-    | c -> failwith (Printf.sprintf "num_of_hex_digit: %c" c)
+let push_back str lexbuf = 
+  let pre_str = Bytes.sub lexbuf.lex_buffer 0 lexbuf.lex_curr_pos in
+  let post_str = 
+    Bytes.sub lexbuf.lex_buffer lexbuf.lex_curr_pos
+      (lexbuf.lex_buffer_len-lexbuf.lex_curr_pos)
+  in
+    lexbuf.lex_buffer <- 
+      Bytes.of_string (Bytes.to_string pre_str ^ str ^ Bytes.to_string post_str);
+    lexbuf.lex_buffer_len <- lexbuf.lex_buffer_len + (String.length str);
+    lexbuf.lex_curr_p <- update_pos str lexbuf.lex_curr_p;
+    assert ((Bytes.length lexbuf.lex_buffer) == lexbuf.lex_buffer_len)
+    
+let contents_of_str s = [Ast_ruby.StrChars s]
 
-  (* converts the number stored in [str] initially represented in base
-     [base] into a base 10 token (fixnum or bignum) *)
-  let convert_to_base10 ~base str pos = 
-    let str = remove_underscores str in
-    let base10 x exp = (* compute x * (base ** exp) *)
-      Big_int.mult_big_int x 
-        (Big_int.power_int_positive_int base exp)
-    in
-    let rec helper acc idx exp = 
-      if idx < 0 then acc
-      else
-        let digit = num_of_hex_digit str.[idx] in
-        let b10 = base10 (Big_int.big_int_of_int digit) exp in
-        let acc' = Big_int.add_big_int b10 acc in
-          helper acc' (idx - 1) (exp + 1)
-    in
-    let len = String.length str in
-    let num = helper Big_int.zero_big_int (len-1) 0 in
-      if Big_int.is_int_big_int num
-      then T_FIXNUM(Big_int.int_of_big_int num, pos)
-      else T_BIGNUM(num, pos)
+(* returns true if string following the modifier m (e.g., %m{...})
+   should be parsed as a single quoted or double quoted (interpreted)
+   string *)
+let modifier_is_single = function
+  | "r" -> false
+  | "w" -> true
+  | "W" -> false
+  | "q" -> true
+  | "Q" -> false
+  | "x" -> false
+  | "" -> false
+  | m ->  failwith (Printf.sprintf "unhandled string modifier: %s" m)
 
-  let negate_numeric = function
-    | T_FIXNUM(n,p) -> T_FIXNUM(-n,p)
-    | T_FLOAT(s,n,p) -> T_FLOAT("-"^s,-.n,p)
-    | T_BIGNUM(n,p) -> T_BIGNUM(Big_int.minus_big_int n,p)
-    | _ -> assert false
+(* Ruby numerics can include _ to separate arbitrary digits.  This
+   returns a new string representing a numeric with all _s removed *)
+let remove_underscores str = 
+  let len = String.length str in
+  let buf = Buffer.create len in
+    String.iter
+      (function
+         | '.'
+         | '-' (* needed for 2.3e-4 *)
+         | '+' (* needed for 2.3e+4 *)
+         | 'e'
+         | ('a'..'f') | ('A'..'F') | 'x'
+         | ('0'..'9') as i -> Buffer.add_char buf i
+         | '_' -> ()
+         | _ -> failwith "non number and non-'_' in fixnum"
+      ) str;
+    Buffer.contents buf
 
-  let close_delim = function
-    | '{' -> '}'
-    | '<' -> '>'
-    | '(' -> ')'
-    | '[' -> ']'
-    | _ -> assert false
+let to_bignum str = Big_int.big_int_of_string (remove_underscores str)
 
-  (* chooses the T_LID or T_UID token based on the first character of [id] *)
-  let choose_capital_for_id id pos = 
-    assert (String.length id > 0);
-    match (id).[0] with
-      | 'a'..'z' | '_' -> T_LID(id, pos)
-      | 'A'..'Z' -> T_UID(id, pos)
-      | _ -> failwith "unknown prefix char for ID: this shouldn't happen"
+(* increment the line count and start of line counters for the lexbuf *)
+let incr_line lexbuf =
+  let pos = lexbuf.lex_curr_p in
+  lexbuf.lex_curr_p <- { pos with
+    pos_lnum = pos.pos_lnum + 1;
+    pos_bol = pos.pos_cnum;
+  }
 
-  (* David: the reason for this is because method name can be
-     def, class, module; to distinguish K_DEF from def *)
-  let insert_delimiters s = "%" ^ s  ^ "%"
+(* base 16 -> base 10 helper *)
+let num_of_hex_digit = function
+  | '0' -> 0
+  | '1' -> 1
+  | '2' -> 2
+  | '3' -> 3
+  | '4' -> 4
+  | '5' -> 5
+  | '6' -> 6
+  | '7' -> 7
+  | '8' -> 8
+  | '9' -> 9
+  | 'a' | 'A' -> 10
+  | 'b' | 'B' -> 11
+  | 'c' | 'C' -> 12
+  | 'd' | 'D' -> 13
+  | 'e' | 'E' -> 14
+  | 'f' | 'F' -> 15
+  | c -> failwith (Printf.sprintf "num_of_hex_digit: %c" c)
 
-  (* helper for transitioning between states *)
-  let beg_choose want yes no state lexbuf = 
-    if state.expr_state == want 
-    then yes state lexbuf else no state lexbuf
-      
-  type chooser = cps_lexer -> cps_lexer -> cps_lexer
+(* converts the number stored in [str] initially represented in base
+   [base] into a base 10 token (fixnum or bignum) *)
+let convert_to_base10 ~base str pos = 
+  let str = remove_underscores str in
+  let base10 x exp = (* compute x * (base ** exp) *)
+    Big_int.mult_big_int x 
+      (Big_int.power_int_positive_int base exp)
+  in
+  let rec helper acc idx exp = 
+    if idx < 0 then acc
+    else
+      let digit = num_of_hex_digit str.[idx] in
+      let b10 = base10 (Big_int.big_int_of_int digit) exp in
+      let acc' = Big_int.add_big_int b10 acc in
+        helper acc' (idx - 1) (exp + 1)
+  in
+  let len = String.length str in
+  let num = helper Big_int.zero_big_int (len-1) 0 in
+    if Big_int.is_int_big_int num
+    then T_FIXNUM(Big_int.int_of_big_int num, pos)
+    else T_BIGNUM(num, pos)
 
-  (* state transition functions *)
-  let on_beg : chooser = beg_choose Expr_Beg
-  let on_mid : chooser = beg_choose Expr_Mid 
-  let on_end : chooser = beg_choose Expr_End 
-  let on_def : chooser = beg_choose Expr_Def 
-  let on_local : chooser = beg_choose Expr_Local 
+let negate_numeric = function
+  | T_FIXNUM(n,p) -> T_FIXNUM(-n,p)
+  | T_FLOAT(s,n,p) -> T_FLOAT("-"^s,-.n,p)
+  | T_BIGNUM(n,p) -> T_BIGNUM(Big_int.minus_big_int n,p)
+  | _ -> assert false
 
-  (* CPS terminators *)
-  let t_uminus s lb = beg_state s; T_UMINUS lb.lex_curr_p
-  let t_minus  s lb = beg_state s; T_MINUS lb.lex_curr_p
-  let t_uplus  s lb = beg_state s; T_UPLUS lb.lex_curr_p
-  let t_plus   s lb = beg_state s; T_PLUS lb.lex_curr_p
-  let t_ustar  s lb = beg_state s; T_USTAR lb.lex_curr_p
-  let t_star   s lb = beg_state s; T_STAR lb.lex_curr_p
-  let t_uamper s lb = beg_state s; T_UAMPER lb.lex_curr_p
-  let t_amper  s lb = beg_state s; T_AMPER lb.lex_curr_p
-  let t_slash  s lb = beg_state s; T_SLASH lb.lex_curr_p
-  let t_quest  s lb = beg_state s; T_QUESTION lb.lex_curr_p
-  let t_tilde  s lb = beg_state s; T_TILDE lb.lex_curr_p
-  let t_scope  s lb = beg_state s; T_SCOPE lb.lex_curr_p
-  let t_uscope s lb = beg_state s; T_USCOPE lb.lex_curr_p
-  let t_lbrack s lb = beg_state s; T_LBRACK lb.lex_curr_p
-  let t_lbrack_arg s lb = beg_state s; T_LBRACK_ARG lb.lex_curr_p
-  let t_lparen s lb = beg_state s; T_LPAREN lb.lex_curr_p
-  let t_lparen_arg s lb = beg_state s; T_LPAREN_ARG lb.lex_curr_p
-  let t_lbrace s lb = beg_state s; T_LBRACE lb.lex_curr_p
-  let t_lbrace_arg s lb = beg_state s; T_LBRACE_ARG lb.lex_curr_p
-  let t_percent s lb = beg_state s; T_PERCENT lb.lex_curr_p
-  let t_lshft s lb = beg_state s; T_LSHFT lb.lex_curr_p
-  let t_colon s lb = beg_state s; T_COLON lb.lex_curr_p
-  let t_eol s _lb = beg_state s; T_EOL
+let close_delim = function
+  | '{' -> '}'
+  | '<' -> '>'
+  | '(' -> ')'
+  | '[' -> ']'
+  | _ -> assert false
 
-  (* return a fresh Buffer.t that is preloaded with the contents of [str] *)
-  let buf_of_string str = 
-    let b = Buffer.create 31 in
-      Buffer.add_string b str;
-      b
+(* chooses the T_LID or T_UID token based on the first character of [id] *)
+let choose_capital_for_id id pos = 
+  assert (String.length id > 0);
+  match (id).[0] with
+    | 'a'..'z' | '_' -> T_LID(id, pos)
+    | 'A'..'Z' -> T_UID(id, pos)
+    | _ -> failwith "unknown prefix char for ID: this shouldn't happen"
 
-  (* transitions to End unless in Def, in which case does nothing (stays in Def) *)
-  let def_end_state state = match state.expr_state with
-    | Expr_Def -> ()
-    | _ -> end_state state
+(* David: the reason for this is because method name can be
+   def, class, module; to distinguish K_DEF from def *)
+let insert_delimiters s = "%" ^ s  ^ "%"
+
+(* helper for transitioning between states *)
+let beg_choose want yes no state lexbuf = 
+  if state.expr_state == want 
+  then yes state lexbuf else no state lexbuf
+    
+type chooser = cps_lexer -> cps_lexer -> cps_lexer
+
+(* state transition functions *)
+let on_beg : chooser = beg_choose Expr_Beg
+let on_mid : chooser = beg_choose Expr_Mid 
+let on_end : chooser = beg_choose Expr_End 
+let on_def : chooser = beg_choose Expr_Def 
+let on_local : chooser = beg_choose Expr_Local 
+
+(* CPS terminators *)
+let t_uminus s lb = beg_state s; T_UMINUS lb.lex_curr_p
+let t_minus  s lb = beg_state s; T_MINUS lb.lex_curr_p
+let t_uplus  s lb = beg_state s; T_UPLUS lb.lex_curr_p
+let t_plus   s lb = beg_state s; T_PLUS lb.lex_curr_p
+let t_ustar  s lb = beg_state s; T_USTAR lb.lex_curr_p
+let t_star   s lb = beg_state s; T_STAR lb.lex_curr_p
+let t_uamper s lb = beg_state s; T_UAMPER lb.lex_curr_p
+let t_amper  s lb = beg_state s; T_AMPER lb.lex_curr_p
+let t_slash  s lb = beg_state s; T_SLASH lb.lex_curr_p
+let t_quest  s lb = beg_state s; T_QUESTION lb.lex_curr_p
+let t_tilde  s lb = beg_state s; T_TILDE lb.lex_curr_p
+let t_scope  s lb = beg_state s; T_SCOPE lb.lex_curr_p
+let t_uscope s lb = beg_state s; T_USCOPE lb.lex_curr_p
+let t_lbrack s lb = beg_state s; T_LBRACK lb.lex_curr_p
+let t_lbrack_arg s lb = beg_state s; T_LBRACK_ARG lb.lex_curr_p
+let t_lparen s lb = beg_state s; T_LPAREN lb.lex_curr_p
+let t_lparen_arg s lb = beg_state s; T_LPAREN_ARG lb.lex_curr_p
+let t_lbrace s lb = beg_state s; T_LBRACE lb.lex_curr_p
+let t_lbrace_arg s lb = beg_state s; T_LBRACE_ARG lb.lex_curr_p
+let t_percent s lb = beg_state s; T_PERCENT lb.lex_curr_p
+let t_lshft s lb = beg_state s; T_LSHFT lb.lex_curr_p
+let t_colon s lb = beg_state s; T_COLON lb.lex_curr_p
+let t_eol s _lb = beg_state s; T_EOL
+
+(* return a fresh Buffer.t that is preloaded with the contents of [str] *)
+let buf_of_string str = 
+  let b = Buffer.create 31 in
+    Buffer.add_string b str;
+    b
+
+(* transitions to End unless in Def, in which case does nothing (stays in Def) *)
+let def_end_state state = match state.expr_state with
+  | Expr_Def -> ()
+  | _ -> end_state state
 }
+
+(*****************************************************************************)
+(* Regexp aliases *)
+(*****************************************************************************)
 
 let ws_re = ['\t' ' '] 
 let nl_re = '\n' | "\r\n"
 let alpha_re = ['a'-'z''A'-'Z']
 let num_re = ['0'-'9']
+
 let alphanum_re = alpha_re | num_re
 let rubynum_re = num_re ("_" | num_re)* 
 let fixnum_re = rubynum_re
 let post_fixnum_re = ("_" | num_re)* 
+
 let rubyfloat_re = rubynum_re ('.' (rubynum_re))? ("e" ("-"|"+")? rubynum_re+)?
 let post_rubyfloat_re = 
   post_fixnum_re ('.' (rubynum_re))? ("e" ("-"|"+")? rubynum_re+)?
+
 let id_start = '_' | alpha_re
 let id_body = '_' | alphanum_re
 let id_suffix = '?'| '!' (*('!' [^'=']?)*)
 let id_re = id_start id_body* id_suffix?
+
 let string_single_delim = [
   '!' '@' '#' '$' '%' '^' '&' '*'
   ',' '.' '?' '`' '~' '|' '+' '_'
@@ -224,11 +277,24 @@ let string_single_delim = [
 
 let e = "" (* epsilon *)
 
+(*****************************************************************************)
+(* Rule initial *)
+(*****************************************************************************)
+
 rule token state = parse
-  | e {if begin_override() then beg_state state;
-       (Stack.top state.lexer_stack) state lexbuf}
+  | e { if begin_override() then beg_state state;
+       (Stack.top state.lexer_stack) state lexbuf }
+
+(*****************************************************************************)
+(* Top_lexer *)
+(*****************************************************************************)
 
 and top_lexer state = parse
+
+  (* ----------------------------------------------------------------------- *)
+  (* symbols *)
+  (* ----------------------------------------------------------------------- *)
+
     (* need the ws here to force a longest match preference over the
        rules below *)
   | ws_re* ((['+' '-' '*' '&' '|' '%' '^'] | "||" | "&&" | "<<" | ">>") as op) '='
@@ -335,14 +401,21 @@ and top_lexer state = parse
   | '\''  {end_state state; 
            non_interp_string '\'' (Buffer.create 31) state lexbuf}
   | '\"'  {double_string state lexbuf}
+
   | "=begin" [^'\n']* '\n' {beg_state state; incr_line lexbuf; 
                             delim_comment state lexbuf}
 
   | num_re {postfix_numeric Utils.id (lexeme lexbuf) state lexbuf}
+
   | "\\\n" {incr_line lexbuf; top_lexer state lexbuf}
   | nl_re {incr_line lexbuf; t_eol state lexbuf}
+
   | eof   {T_EOF}
 
+
+  (* ----------------------------------------------------------------------- *)
+  (* Keywords *)
+  (* ----------------------------------------------------------------------- *)
 
   | "class" as cls    
       {def_state state; K_CLASS ((insert_delimiters cls), lexbuf.lex_curr_p) }
@@ -389,7 +462,11 @@ and top_lexer state = parse
   | "next"     {beg_state state;K_NEXT}
 *)
 
-  | "__END__" {end_lexbuf lexbuf}
+  | "__END__"  { end_lexbuf lexbuf}
+
+  (* ----------------------------------------------------------------------- *)
+  (* Misc *)
+  (* ----------------------------------------------------------------------- *)
 
   | ":" {on_end t_colon atom state lexbuf}
 
@@ -399,6 +476,9 @@ and top_lexer state = parse
   | ("@@" id_re) as id {end_state state; T_CLASS_VAR(id, lexbuf.lex_curr_p)}
   | ('@' id_re) as id {end_state state; T_INST_VAR(id, lexbuf.lex_curr_p)}
 
+  (* ----------------------------------------------------------------------- *)
+  (* Ident *)
+  (* ----------------------------------------------------------------------- *)
   | id_re as id { 
       let tok = choose_capital_for_id id lexbuf.lex_curr_p in
         begin match state.expr_state, tok with
@@ -415,6 +495,11 @@ and top_lexer state = parse
   | '$' {dollar state lexbuf}
   | ws_re+  {top_lexer state lexbuf}
 
+
+(*****************************************************************************)
+(* dollar *)
+(*****************************************************************************)
+
 and dollar state = parse
   | id_re as id {end_state state;T_GLOBAL_VAR("$"^id, lexbuf.lex_curr_p) }
   | ("-" alphanum_re) as v 
@@ -424,10 +509,18 @@ and dollar state = parse
   | ( [^'a'-'z''A'-'Z''#'])
       {end_state state;T_BUILTIN_VAR("$"^(lexeme lexbuf), lexbuf.lex_curr_p)}
 
+(*****************************************************************************)
+(* space_tok *)
+(*****************************************************************************)
+
 and space_tok tok binop state = parse
   | ws_re+ {binop state lexbuf}
   | nl_re  {incr_line lexbuf; binop state lexbuf}
   | e {on_def binop (on_local binop tok) state lexbuf}
+
+(*****************************************************************************)
+(* space_uop *)
+(*****************************************************************************)
 
 and space_uop uop spc_uop binop state = parse
     (* space before and after is binop (unless at expr_beg) *)
@@ -441,6 +534,10 @@ and space_uop uop spc_uop binop state = parse
          | Expr_End -> binop state lexbuf
          | Expr_Beg | Expr_Mid -> uop state lexbuf
       }
+
+(*****************************************************************************)
+(* postfix_numeric *)
+(*****************************************************************************)
 
 and postfix_numeric cont start state = parse
   | "b" (['0''1''_']+ as num)
@@ -477,6 +574,10 @@ and postfix_numeric cont start state = parse
           cont tok
       }
 
+(*****************************************************************************)
+(* uop *)
+(*****************************************************************************)
+
 and uop_minus_lit state = parse
   | num_re { postfix_numeric negate_numeric (lexeme lexbuf) state lexbuf}
   | e { t_uminus state lexbuf}
@@ -485,9 +586,17 @@ and uop_plus_lit state = parse
   | num_re { postfix_numeric Utils.id (lexeme lexbuf) state lexbuf}
   | e { t_uplus state lexbuf}
 
+(*****************************************************************************)
+(* postfix_at *)
+(*****************************************************************************)
+
 and postfix_at uop binop state = parse
   | '@' {uop state lexbuf}
   | e  {binop state lexbuf}
+
+(*****************************************************************************)
+(* atom *)
+(*****************************************************************************)
 
 and atom state = parse
   | ['+' '-' '*' '/' '!' '~' '<' '>' '=' '&' '|' '%' '^' '@']+ 
@@ -519,6 +628,10 @@ and atom state = parse
   | ws_re
   | e     {t_colon state lexbuf}
 
+(*****************************************************************************)
+(* char_code *)
+(*****************************************************************************)
+
 and char_code state = parse
   | e {beg_state state; char_code_work lexbuf}
 
@@ -541,12 +654,20 @@ and char_code_work = parse
   | "\\)" {T_FIXNUM(Char.code ')', lexbuf.lex_curr_p)}
 
 
+(*****************************************************************************)
+(* Comments *)
+(*****************************************************************************)
+
 and comment state = parse
   | [^'\n']* '\n' { incr_line lexbuf;t_eol state lexbuf }
 
 and delim_comment state = parse
   | "=end" [^'\n']* '\n' { incr_line lexbuf;top_lexer state lexbuf}
   | [^'\n']* '\n' { incr_line lexbuf; delim_comment state lexbuf}
+
+(*****************************************************************************)
+(* Strings *)
+(*****************************************************************************)
 
 and non_interp_string delim buf state = parse
   | eof   {failwith "eof in string"}
@@ -572,6 +693,10 @@ and tick_string state = parse
        emit_extra (T_TICK_BEG lexbuf.lex_curr_p)
          (interp_string_lexer '`') state lexbuf}
 
+(*****************************************************************************)
+(* Regexps *)
+(*****************************************************************************)
+
 and regexp_string buf state = parse
   | e {regexp_delim ((==)'/') ((==)'/') buf state lexbuf}
 
@@ -589,6 +714,10 @@ and regexp_delim delim_f escape_f buf state = parse
 
 and regexp_modifier state = parse
   | (alpha_re* as modifiers) {T_REGEXP_MOD modifiers}
+
+(*****************************************************************************)
+(* Percent *)
+(*****************************************************************************)
 
 and percent state = parse
   | (alpha_re? as modifier)(string_single_delim as d)
@@ -631,6 +760,10 @@ and percent state = parse
 
 and regexp state = parse
   | e {regexp_string (Buffer.create 31) state lexbuf}
+
+(*****************************************************************************)
+(* Heredoc *)
+(*****************************************************************************)
 
 and heredoc_header lead_f state = parse
   | '\''([^'\'']+ as delim)'\'' ([^'\n']* nl_re as rest)
@@ -682,6 +815,10 @@ and heredoc_string_lead cont buf delim state = parse (* for <<-EOF *)
           heredoc_string_lead cont buf delim state lexbuf
         end}
 
+(*****************************************************************************)
+(* Interpolated strings *)
+(*****************************************************************************)
+
 and interp_heredoc_lexer state = parse
   | e {let f buf state lexbuf = 
          end_state state;
@@ -690,6 +827,7 @@ and interp_heredoc_lexer state = parse
        let nope _  = false in
          interp_lexer f nope nope (Buffer.create 31) state lexbuf
       }
+
 
 and interp_string_lexer delim state = parse
   | e {let chk x = x == delim in
@@ -751,7 +889,11 @@ and interp_code start cont state = parse
          start
       }
 
+(*****************************************************************************)
+(* __END__ *)
+(*****************************************************************************)
+
 and end_lexbuf = parse
-  | eof   {T_EOF}
-  | _ {end_lexbuf lexbuf}
+  | _     { end_lexbuf lexbuf }
+  | eof   { T_EOF }
 
