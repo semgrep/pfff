@@ -11,10 +11,26 @@ let test_tokens file =
   if not (file =~ ".*\\.rb") 
   then pr2 "warning: seems not a ruby file";
 
+(*
   Flag.verbose_lexing := true;
   Flag.verbose_parsing := true;
   Flag.exn_when_lexical_error := true;
+*)
 
+  let ic = open_in file in
+  let lexbuf = Lexing.from_channel ic in
+  let state = Lexer_parser_ruby.create Lexer_ruby.top_lexer in 
+
+  Parser_ruby_helpers.clear_env ();
+  let env = Utils_ruby.default_opt Utils_ruby.StrSet.empty None in
+  Parser_ruby_helpers.set_env env ;
+  let lexerf = Lexer_ruby.token state in
+  let lexerf = fun lexbuf ->
+      let res = lexerf lexbuf in
+      pr2_gen res;
+      res
+  in
+  let _lst = Parser_ruby.main lexerf lexbuf in
   raise Todo
 
 let test_parse xs =
