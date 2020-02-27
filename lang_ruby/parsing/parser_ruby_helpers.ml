@@ -7,7 +7,6 @@ module H = Ast_ruby_helpers
 (* Prelude *)
 (*****************************************************************************)
 
-
 (*
 val env_stack : Env.t Stack.t
 val env : unit -> Env.t
@@ -329,17 +328,18 @@ let command_codeblock cmd cb =
 let fix_broken_neq l op r = 
   let default = l, op, r in
   match op with
-  | Op_ASSIGN -> begin match ends_with l with
-  | Id(k,s,p) ->
-      let len = String.length s in
-        if s.[len-1] == '!'
-        then 
-      let s' = String.sub s 0 (len-1) in
-      let l' = replace_end l (Id(k,s',p)) in
-        l', Op_NEQ, r
-        else default
-  | _ -> default
-    end
+  | Op_ASSIGN -> 
+      begin match ends_with l with
+       | Id(k,s,p) ->
+         let len = String.length s in
+         if s.[len-1] == '!'
+         then 
+           let s' = String.sub s 0 (len-1) in
+           let l' = replace_end l (Id(k,s',p)) in
+            l', Op_NEQ, r
+          else default
+       | _ -> default
+       end
   | _ -> default
 
 (* sometimes the lexer gets can't properly handle x=> as x(=>) and

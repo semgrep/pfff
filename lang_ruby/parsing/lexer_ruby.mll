@@ -501,8 +501,12 @@ and top_lexer state = parse
         tok
     }
 
-  | '$' {dollar state lexbuf}
-  | ws+  {top_lexer state lexbuf}
+  (* ----------------------------------------------------------------------- *)
+  (* Misc *)
+  (* ----------------------------------------------------------------------- *)
+
+  | '$'  { dollar state lexbuf}
+  | ws+  { top_lexer state lexbuf}
 
 
 (*****************************************************************************)
@@ -510,13 +514,14 @@ and top_lexer state = parse
 (*****************************************************************************)
 
 and dollar state = parse
-  | id as id {S.end_state state;T_GLOBAL_VAR("$"^id, lexbuf.lex_curr_p) }
+  | id as id 
+      {S.end_state state; T_GLOBAL_VAR("$"^id, lexbuf.lex_curr_p) }
   | ("-" alphanum) as v 
-      {S.end_state state;T_BUILTIN_VAR("$"^v, lexbuf.lex_curr_p) }
+      {S.end_state state; T_BUILTIN_VAR("$"^v, lexbuf.lex_curr_p) }
   | ( ['0'-'9']+) as v 
-      {S.end_state state;T_BUILTIN_VAR("$" ^ v, lexbuf.lex_curr_p)}
+      {S.end_state state; T_BUILTIN_VAR("$" ^ v, lexbuf.lex_curr_p)}
   | ( [^'a'-'z''A'-'Z''#'])
-      {S.end_state state;T_BUILTIN_VAR("$"^(lexeme lexbuf), lexbuf.lex_curr_p)}
+      {S.end_state state; T_BUILTIN_VAR("$"^(lexeme lexbuf), lexbuf.lex_curr_p)}
 
 (*****************************************************************************)
 (* space_tok *)

@@ -822,34 +822,34 @@ array_item:
 /*(*************************************************************************)*/
 
 identifier:
-  | T_BUILTIN_VAR<id,pos> { Id(ID_Builtin, id, pos) }
-  | T_GLOBAL_VAR<id,pos>  { Id (ID_Global, id, pos) }
-  | T_UID<id,pos>  { Id (ID_Uppercase, id, pos)}
-  | K_NIL<pos>     { Literal(Nil,pos) }
-  | K_SELF<pos>    { Literal(Self,pos) }
-  | K_TRUE<pos>    { Literal(True,pos) }
-  | K_FALSE<pos>   { Literal(False,pos) }
-  | T_LID<id,pos>  { Id (ID_Lowercase, id, pos)}
-  | T_INST_VAR<id,pos>    { Id(ID_Instance, id, pos) }
+  | T_BUILTIN_VAR<id,pos>  { Id (ID_Builtin, id, pos) }
+  | T_GLOBAL_VAR<id,pos>   { Id (ID_Global, id, pos) }
+  | T_UID<id,pos>          { Id (ID_Uppercase, id, pos)}
+  | K_NIL<pos>             { Literal(Nil,pos) }
+  | K_SELF<pos>            { Literal(Self,pos) }
+  | K_TRUE<pos>            { Literal(True,pos) }
+  | K_FALSE<pos>           { Literal(False,pos) }
+  | T_LID<id,pos>          { Id (ID_Lowercase, id, pos)}
+  | T_INST_VAR<id,pos>     { Id(ID_Instance, id, pos) }
   | T_CLASS_VAR<id,pos>    { Id(ID_Class, id, pos) }
 
 scoped_id:
-  | identifier<id> { id }
-  | T_USCOPE<pos> identifier<id> { Unary(Op_UScope,id,pos)}
+  | identifier<id>                            { id }
+  | T_USCOPE<pos> identifier<id>              { Unary(Op_UScope,id,pos)}
   | scoped_id<id1> T_SCOPE identifier<id2>    { Binop(id1,Op_SCOPE,id2,H.pos_of id1) }
   | scoped_id<id1> T_SCOPE keyword_as_id<id2> { Binop(id1,Op_SCOPE,id2,H.pos_of id1) }
 
 message_identifier:
-  | assignable<e> { e }
+  | assignable<e>                       { e }
   | T_LBRACK_ARG<pos> T_RBRACK T_ASSIGN { Operator(Op_ASET,pos) }
-  | bin_op<op> { Operator(op,Lexing.dummy_pos) }
-  | T_UPLUS<pos>       { UOperator(Op_UPlus,pos) }
-  | T_UMINUS<pos>      { UOperator(Op_UMinus,pos) }
-  | T_TILDE<pos>       { UOperator(Op_UTilde,pos) }
+  | bin_op<op>                          { Operator(op,Lexing.dummy_pos) }
+  | T_UPLUS<pos>                        { UOperator(Op_UPlus,pos) }
+  | T_UMINUS<pos>                       { UOperator(Op_UMinus,pos) }
+  | T_TILDE<pos>                        { UOperator(Op_UTilde,pos) }
 
 assignable:
-  | identifier<e>  { e }
-  | keyword_as_id<k> { k }
+  | identifier<e>              { e }
+  | keyword_as_id<k>           { k }
   | T_LBRACK_ARG<pos> T_RBRACK { Operator(Op_AREF,pos) }
   | T_LBRACK<pos> T_RBRACK     { Operator(Op_AREF,pos) }
 
