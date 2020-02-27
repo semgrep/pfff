@@ -44,11 +44,11 @@ module H = Ast_ruby_helpers
       state_override := false;
       b
 
-  let is_exnblock = function | ExnBlock _ -> true | _ -> false
+  let is_exnblock = function | S ExnBlock _ -> true | _ -> false
 
   let mk_block lst pos = match lst with
     | [x] -> x
-    | _ -> Block(lst,pos)
+    | _ -> S (Block(lst,pos))
 
   let rec add_eq = function
     | Id(k,s,p) -> Id(ID_Assign(k), s,p)
@@ -173,7 +173,7 @@ module H = Ast_ruby_helpers
     | _e -> new_e
 
   let is_cond_modifier = function
-    | If _ | Unless _ | Until _ | While _ -> true
+    | S If _ | S Unless _ | S Until _ | S While _ -> true
     | _ -> false
 
   let well_formed_do guard _body = match ends_with guard with
@@ -189,14 +189,14 @@ module H = Ast_ruby_helpers
 	    (* f(x) should be not be f((x))
 	       needed e.g. f(x)[y]
 	    *)
-	  | Block _ -> raise Dyp.Giveup
+	  | S Block _ -> raise Dyp.Giveup
 	  | _ -> ()
 
   let well_formed_command _m args = match args with
     | [] -> ()
 	(* f(x) should be not be f((x))
 	   needed e.g. f(x)[y] *)
-    | [Block _] -> raise Dyp.Giveup
+    | [S Block _] -> raise Dyp.Giveup
     | _ -> if List.exists is_cond_modifier args then raise Dyp.Giveup
 
   let hash_literal_as_args args = 
@@ -224,12 +224,12 @@ module H = Ast_ruby_helpers
   let rec methodcall m args cb pos = 
     let args = hash_literal_as_args args in
     match m,args,cb with
-      | _,[Empty],_ -> methodcall m [] cb pos
+      | _,[S Empty],_ -> methodcall m [] cb pos
 
-      | Return(_), [], None -> m
-      | Return([],p),args,None -> Return(args,p)
-      | Yield(_), [], None -> m
-      | Yield([],p),args,None -> Yield(args,p)
+      | S Return(_), [], None -> m
+      | S Return([],p),args,None -> S (Return(args,p))
+      | S Yield(_), [], None -> m
+      | S Yield([],p),args,None -> S (Yield(args,p))
       | Literal(True,_p), [],None
       | Literal(False,_p),[],None
       | Id(_,_,_p),     [],None -> m
@@ -259,7 +259,7 @@ module H = Ast_ruby_helpers
       Binop(l,Op_SCOPE,r,H.pos_of l)
 	
   let tuple = function
-    | [] -> Empty
+    | [] -> S Empty
     | [x] -> x
     | lst -> Tuple(lst,H.pos_of (List.hd lst))
 
@@ -510,18 +510,18 @@ module H = Ast_ruby_helpers
 	    (* resolve "x y{z}" vs "x y do z end" *)
 	    resolve_block_delim with_cb no_cb;
 
-	| [ExnBlock({body_exprs = [Binop(_,Op_ASSIGN,_,_)]; _},_)],
-	    (Binop(_,Op_ASSIGN,(ExnBlock _),_) as correct)
-	| ([Binop(_,Op_ASSIGN,(ExnBlock _),_) as correct]),
-	    ExnBlock({body_exprs = [Binop(_,Op_ASSIGN,_,_)]; _},_) ->
+	| [S ExnBlock({body_exprs = [Binop(_,Op_ASSIGN,_,_)]; _},_)],
+	    (Binop(_,Op_ASSIGN,(S ExnBlock _),_) as correct)
+	| ([Binop(_,Op_ASSIGN,(S ExnBlock _),_) as correct]),
+	    S ExnBlock({body_exprs = [Binop(_,Op_ASSIGN,_,_)]; _},_) ->
 	      (* x = y rescue 3 is a special case where the rescue binds
 		 solely to "y" and not the full assignment *)
 	    [correct]
 
-	| [ExnBlock({body_exprs = [Binop(_,Op_OP_ASGN _,_,_)]; _},_) as correct],
-	      Binop(_,Op_OP_ASGN _,(ExnBlock _),_)
-	| [Binop(_,Op_OP_ASGN _,(ExnBlock _),_)],
-	      (ExnBlock({body_exprs = [Binop(_,Op_OP_ASGN _,_,_)]; _},_) as correct) ->
+	| [S ExnBlock({body_exprs = [Binop(_,Op_OP_ASGN _,_,_)]; _},_) as correct],
+	      Binop(_,Op_OP_ASGN _,(S ExnBlock _),_)
+	| [Binop(_,Op_OP_ASGN _,(S ExnBlock _),_)],
+	      (S ExnBlock({body_exprs = [Binop(_,Op_OP_ASGN _,_,_)]; _},_) as correct) ->
 	      (* However, using any other assign-operator, reverts to the 
                  other semantics *)
 	    [correct]
@@ -533,12 +533,12 @@ module H = Ast_ruby_helpers
 
 	(* we can't use is_cond_modifier to check for a rescue modifier,
 	   so we do it here *)	   
-	| [If(ExnBlock _,_,_,_) | Unless(ExnBlock _,_,_,_)
-	  | Until(_,ExnBlock _,_,_) | While(_,ExnBlock _,_,_)],
-	    (ExnBlock _ as correct)
-	| [(ExnBlock _ as correct)], 
-	    (If(ExnBlock _,_,_,_) | Unless(ExnBlock _,_,_,_)
-	    | Until(_,ExnBlock _,_,_) | While(_,ExnBlock _,_,_)) ->
+	| [S If(S ExnBlock _,_,_,_) | S Unless(S ExnBlock _,_,_,_)
+	  | S Until(_,S ExnBlock _,_,_) | S While(_,S ExnBlock _,_,_)],
+	    (S ExnBlock _ as correct)
+	| [(S ExnBlock _ as correct)], 
+	    (S If(S ExnBlock _,_,_,_) | S Unless(S ExnBlock _,_,_,_)
+	    | S Until(_,S ExnBlock _,_,_) | S While(_,S ExnBlock _,_,_)) ->
 	    [correct]
 
 	| _ ->

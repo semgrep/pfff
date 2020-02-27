@@ -50,14 +50,14 @@ and format_lit_kind ppf kind = match kind with
   | False -> pp_print_string ppf "false"
     
 and format_expr ppf expr = match expr with
-  | Empty -> fprintf ppf "<empty>"
+  | S Empty -> fprintf ppf "<empty>"
   | Literal(kind,_) -> format_lit_kind ppf kind
-  | Alias (e1,e2,_) -> 
+  | D Alias (e1,e2,_) -> 
       fprintf ppf "alias %a %a"
 	format_expr e1
 	format_expr e2
 
-  | Undef (e1,_) -> 
+  | D Undef (e1,_) -> 
       fprintf ppf "undef %a"
 	(Utils.format_comma_list format_expr) e1
 
@@ -88,10 +88,10 @@ and format_expr ppf expr = match expr with
 
   | Tuple(el,_) -> fprintf ppf "Tup(@[%a@])" format_expr_comma_list el
 
-  | Return(el,_) -> fprintf ppf "return(@[%a@])" format_expr_comma_list el
-  | Yield(el,_) -> fprintf ppf "yield(@[%a@])" format_expr_comma_list el
+  | S Return(el,_) -> fprintf ppf "return(@[%a@])" format_expr_comma_list el
+  | S Yield(el,_) -> fprintf ppf "yield(@[%a@])" format_expr_comma_list el
 
-  | Block(el,_) -> fprintf ppf "@[<v 2>block(%a)@]" format_expr_break_list el
+  | S Block(el,_) -> fprintf ppf "@[<v 2>block(%a)@]" format_expr_break_list el
 
   | Call (expr1, expr_list, eo,_) ->
       begin match eo with
@@ -117,16 +117,16 @@ and format_expr ppf expr = match expr with
 	format_expr expr2
 	format_expr expr3
 
-  | While (b, expr, body,_) -> format_loop ppf "while" b expr body
-  | Until (b, expr, body,_) -> format_loop ppf "until" b expr body
+  | S While (b, expr, body,_) -> format_loop ppf "while" b expr body
+  | S Until (b, expr, body,_) -> format_loop ppf "until" b expr body
 
-  | For ( formals, expr, body,_) -> 
+  | S For ( formals, expr, body,_) -> 
       fprintf ppf "@[<v 0>@[<v 2>for %a in %a@,%a@]@;end@]"
 	format_formals formals
 	format_expr expr
 	format_expr_break_list body
 
-  | ModuleDef (name,body, _) -> 
+  | D ModuleDef (name,body, _) -> 
       fprintf ppf "@[<v 0>@[<v 2>module %a@,%a@]@,"
 	format_expr name
 	format_expr_break_list body.body_exprs;
@@ -135,7 +135,7 @@ and format_expr ppf expr = match expr with
       format_else ppf body.else_expr;
       fprintf ppf "end@]"
 
-  | MethodDef (mname,formals,body, _) ->
+  | D MethodDef (mname,formals,body, _) ->
       fprintf ppf "@[<v 0>@[<v 2>def %a(@[%a@])@,%a@]@,"
 	format_expr mname
 	format_formals formals
@@ -152,16 +152,16 @@ and format_expr ppf expr = match expr with
 	    format_expr_break_list exps
       end 
 
-  | BeginBlock(el,_) -> 
+  | D BeginBlock(el,_) -> 
       fprintf ppf "@[<v 0>@[<v 2>BEGIN {@,%a@]@,}@]"
 	format_expr_break_list el
-  | EndBlock(el,_) -> 
+  | D EndBlock(el,_) -> 
       fprintf ppf "@[<v 0>@[<v 2>END {@,%a@],}@]"
 	format_expr_break_list el
 
-  | Case(c,_) -> format_case ppf c
+  | S Case(c,_) -> format_case ppf c
 
-  | ClassDef(name,inh,body, _) -> 
+  | D ClassDef(name,inh,body, _) -> 
       fprintf ppf "@[<v 0>@[<v 2>class %a %a@,%a@]@,"
 	format_expr name
 	format_inheritance inh
@@ -171,7 +171,7 @@ and format_expr ppf expr = match expr with
       format_else ppf body.else_expr;
       fprintf ppf "end@]"      
 	
-  | ExnBlock (body,_) -> 
+  | S ExnBlock (body,_) -> 
       fprintf ppf "@[<v 0>@[<v 2>begin@,%a@]@,"
 	format_expr_break_list body.body_exprs;
       format_rescues ppf body.rescue_exprs;
@@ -179,7 +179,7 @@ and format_expr ppf expr = match expr with
       format_ensure ppf body.ensure_expr;
       fprintf ppf "end@]"      
 	
-  | Unless(guard,then_e,else_e,_) ->
+  | S Unless(guard,then_e,else_e,_) ->
       fprintf ppf "@[<v 0>@[<v 2>unless (%a) then@,%a@]@,"
 	format_expr guard
 	format_expr_break_list then_e;
@@ -187,7 +187,7 @@ and format_expr ppf expr = match expr with
 	fprintf ppf "@[<v 2>else@,%a@]@," format_expr_break_list else_e;
       fprintf ppf "end@]"
 
-  | If(guard,then_e,else_e,_) ->
+  | S If(guard,then_e,else_e,_) ->
       fprintf ppf "@[<v 0>@[<v 2>if (%a) then@,%a@]@,"
 	format_expr guard
 	format_expr_break_list then_e;
@@ -209,7 +209,7 @@ and format_expr_break_list ppf = function
 
 and format_loop ppf lname is_do expr body = 
   if is_do then begin match body with
-    | [ExnBlock _ as b] ->
+    | [S ExnBlock _ as b] ->
 	fprintf ppf "@[<v 0>%a @[<v 0>%s %a@]@]"
 	  format_expr b
 	  lname

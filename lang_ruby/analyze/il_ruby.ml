@@ -110,6 +110,7 @@ type expr =
  | ELit of literal
 
 and literal =
+  (* atomic *)
   | FixNum of int
   | BigNum of Big_int.big_int
   | Float of string * float
@@ -117,8 +118,9 @@ and literal =
 
   | Atom of string
   | Regexp of string * string
-  | Range of bool * expr * expr
 
+  (* composite *)
+  | Range of bool * expr * expr
   | Array of star_expr list
   | Hash of (expr * expr) list
 
@@ -162,7 +164,7 @@ and stmt_node =
   | Assign of lhs * tuple_expr
   | Call of lhs option * method_call
 
-  | Seq of stmt list
+  | Seq of stmt list (* a.k.a Block *)
   | If of expr * stmt * stmt
   | While of expr * stmt
   | For of block_formal_param list * expr * stmt 
@@ -220,10 +222,6 @@ and stmt_node =
     case_else: stmt option;
   }
 
-  and alias_kind =
-    | Alias_Method of msg_id * msg_id
-    | Alias_Global of builtin_or_global * builtin_or_global
-
 (*****************************************************************************)
 (* Definitions *)
 (*****************************************************************************)
@@ -246,6 +244,11 @@ and def_name =
     | Formal_block_id of var_kind * string
     | Formal_star2 of string
     | Formal_tuple of block_formal_param list
+
+and alias_kind =
+  | Alias_Method of msg_id * msg_id
+  | Alias_Global of builtin_or_global * builtin_or_global
+
  (* with tarzan *)
 
 (*****************************************************************************)
