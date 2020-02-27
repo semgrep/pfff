@@ -29,7 +29,10 @@
 
 open Ast_ruby
 module H = Ast_ruby_helpers
-module HH = Parser_ruby_helpers
+(* for state *)
+module S2 = Parser_ruby_helpers
+(* for merging *)
+module M = Parser_ruby_helpers
 open Parser_ruby_helpers
 
 (*let () = Dyp.dypgen_verbose := max_int*)
@@ -95,6 +98,22 @@ let dyp_merge xs =
   xs
   )
   (*Dyp.keep_all*)
+
+let mk_block lst pos = match lst with
+  | [x] -> x
+  | _ -> S (Block(lst,pos))
+
+let is_exnblock = function 
+  | S ExnBlock _ -> true 
+  | _ -> false
+
+let rec add_eq = function
+  | Id(k,s,p) -> Id(ID_Assign(k), s,p)
+  | Binop(e1,Op_SCOPE,e2,p) -> Binop(e1,Op_SCOPE, add_eq e2,p)
+  | Binop(e1,Op_DOT,e2,p) -> Binop(e1,Op_DOT, add_eq e2,p)
+  | Operator(Op_AREF,p) -> Operator(Op_ASET,p)
+  | _ -> failwith "add_eq"
+
 }
 
 /*(*************************************************************************)*/
@@ -437,7 +456,7 @@ arg:
   | arg<l> T_ANDOP eols arg<r> { prune_left_assoc l Op_AND r }
   | arg<l> T_OROP eols arg<r>  { prune_left_assoc l Op_OR r }
   | arg<e1> T_QUESTION<pos> eols expr<e2> T_COLON eols expr<e3>   
-    { prune_tern e1 e2 e3 (H.pos_of e1) }
+    { M.prune_tern e1 e2 e3 (H.pos_of e1) }
 
 /*(*************************************************************************)*/
 /*(*1 Expressions *)*/
@@ -636,7 +655,7 @@ method_formals:
   | lparen eols formal_arg_list<formals> eols T_RPAREN {
       (* RPAREN usually puts the lexer in an end state, but we need to
          force it to an end state *)
-      HH.state_override := true; formals}
+      S2.state_override := true; formals}
 
 lhs:
   | scoped_id<id> { id }
