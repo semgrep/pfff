@@ -14,7 +14,7 @@ val seen_str : 'a -> string -> unit
 
 val is_cond_modifier : Ast_ruby.expr -> bool
 
-val tuple : Ast_ruby.expr list -> Ast_ruby.expr
+
 val unfold_dot :
   Ast_ruby.expr -> Ast_ruby.expr -> Ast_ruby.tok -> Ast_ruby.expr
 val methodcall :

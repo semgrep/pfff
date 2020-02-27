@@ -308,20 +308,16 @@ and check_for_dot = function
   
 and scope l r = 
   let l = check_for_dot l in
-    Binop(l,Op_SCOPE,r,H.pos_of l)
+  Binop(l,Op_SCOPE,r,H.pos_of l)
   
-let tuple = function
-  | [] -> S Empty
-  | [x] -> x
-  | lst -> Tuple(lst,H.pos_of (List.hd lst))
 
 let command_codeblock cmd cb = 
   match cmd with 
-    | Call(c,args,None,p) -> Call(c,args,Some cb,p)
-    | Binop(_,Op_DOT,_,p)
-    | Binop(_,Op_SCOPE,_,p) -> Call(cmd,[],Some cb,p)
-    | Id(_,_,p) -> Call(cmd,[],Some cb,p)
-    | _ -> raise Dyp.Giveup
+  | Call(c,args,None,p) -> Call(c,args,Some cb,p)
+  | Binop(_,Op_DOT,_,p)
+  | Binop(_,Op_SCOPE,_,p) -> Call(cmd,[],Some cb,p)
+  | Id(_,_,p) -> Call(cmd,[],Some cb,p)
+  | _ -> raise Dyp.Giveup
 
 (* sometimes the lexer gets can't properly handle x!= as x(!=) and
    erronously produces (x!)= *)
