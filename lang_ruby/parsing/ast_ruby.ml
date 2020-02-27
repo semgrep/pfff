@@ -37,6 +37,12 @@
  * todo: 
  *  - [AST Format of the Whitequark parser](https://github.com/whitequark/parser/blob/master/doc/AST_FORMAT.md)
  *  - https://rubygems.org/gems/ast
+ *  - new AST format in RubyVM in ruby 2.6 (see wikipedia page on Ruby)
+ * 
+ * history:
+ *  - 2010 diamondback-ruby latest version
+ *  - 2020 integrate in pfff diamondback-ruby parser, AST and IL (called cfg)
+ *  - lots of small refactorings, see modif-orig.txt
  *)
 
 (*****************************************************************************)
@@ -49,6 +55,19 @@
 (* TODO: type tok = Parse_info.t and wrap and bracket *)
 type tok = Lexing.position
  (* with tarzan *)
+
+(* ------------------------------------------------------------------------- *)
+(* Ident/name *)
+(* ------------------------------------------------------------------------- *)
+
+type id_kind = 
+  | ID_Lowercase (* prefixed by [a-z] or _ *)
+  | ID_Instance  (* prefixed by @ *)
+  | ID_Class     (* prefixed by @@ *)
+  | ID_Global    (* prefixed by $ *)
+  | ID_Uppercase (* prefixed by [A-Z] *)
+  | ID_Builtin   (* prefixed by $, followed by non-alpha *)
+  | ID_Assign of id_kind (* postfixed by = *)
 
 (*****************************************************************************)
 (* Expression *)
@@ -73,47 +92,8 @@ type expr =
 
   | CodeBlock of bool * formal_param list option * expr list * tok
 
-(*****************************************************************************)
-(* Statement *)
-(*****************************************************************************)
-
-  | Empty
-  | Block of expr list * tok
-
-  | If of expr * expr list * expr list * tok
-  | While of bool * expr * expr list * tok
-  | Until of bool * expr * expr list * tok
-  | Unless of expr * expr list * expr list * tok
-  | For of formal_param list * expr * expr list * tok
-
-  | Return of expr list * tok
-  | Yield of expr list * tok
-
-  | Case of case_block * tok
-
-  | ExnBlock of body_exn * tok
-
-(*****************************************************************************)
-(* Definitions *)
-(*****************************************************************************)
-
-  | ClassDef of expr * inheritance_kind option * body_exn * tok
-  | MethodDef of expr * formal_param list * body_exn * tok
-  | ModuleDef of expr * body_exn * tok
-
-  | BeginBlock of expr list * tok
-  | EndBlock of expr list * tok
-
-  | Alias of expr * expr * tok
-  | Undef of expr list * tok
-
-(*****************************************************************************)
-(* Type *)
-(*****************************************************************************)
-
-(*****************************************************************************)
-(* Misc *)
-(*****************************************************************************)
+  | S of stmt
+  | D of definition
 
 and lit_kind = 
   | FixNum of int
@@ -138,18 +118,9 @@ and lit_kind =
 
   and interp_string = string_contents list
 
-  and string_contents = 
-    | StrChars of string
-    | StrExpr of expr
-
-and id_kind = 
-  | ID_Lowercase (* prefixed by [a-z] or _ *)
-  | ID_Instance  (* prefixed by @ *)
-  | ID_Class     (* prefixed by @@ *)
-  | ID_Global    (* prefixed by $ *)
-  | ID_Uppercase (* prefixed by [A-Z] *)
-  | ID_Builtin   (* prefixed by $, followed by non-alpha *)
-  | ID_Assign of id_kind (* postfixed by = *)
+    and string_contents = 
+      | StrChars of string
+      | StrExpr of expr
 
 and unary_op = 
   | Op_UMinus    (* -x *)  | Op_UPlus     (* +x *)
@@ -194,35 +165,79 @@ and binary_op =
   | Op_DOT3     (* ... *)
 
 (*****************************************************************************)
-(* Misc *)
+(* Statement *)
 (*****************************************************************************)
+(* Note that in Ruby everything is an expr, but I still like to split expr
+ * with the different "subtypes" stmt and definition.
+ * Note that ../analyze/il_ruby.ml has proper separate expr and stmt types.
+ *)
+and stmt =
+  | Empty
+  | Block of expr list * tok
 
-and formal_param = 
-  | Formal_id of expr
-  | Formal_amp of string
-  | Formal_star of string (* as in *x *)
-  | Formal_rest (* just '*' *)
-  | Formal_tuple of formal_param list
-  | Formal_default of string * expr
+  | If of expr * expr list * expr list * tok
+  | While of bool * expr * expr list * tok
+  | Until of bool * expr * expr list * tok
+  | Unless of expr * expr list * expr list * tok
+  | For of formal_param list * expr * expr list * tok
 
-and inheritance_kind = 
-  | Class_Inherit of expr
-  | Inst_Inherit of expr
+  | Return of expr list * tok
+  | Yield of expr list * tok
 
-and body_exn = {
-  body_exprs: expr list;
-  rescue_exprs: (expr * expr) list;
-  ensure_expr: expr list;
-  else_expr: expr list;
-}
+  | Case of case_block * tok
 
-and case_block = {
-  case_guard : expr;
-  case_whens: (expr list * expr list) list;
-  case_else: expr list;
-}
+  | ExnBlock of body_exn * tok
+
+  and case_block = {
+    case_guard : expr;
+    case_whens: (expr list * expr list) list;
+    case_else: expr list;
+  }
+  
+  and body_exn = {
+    body_exprs: expr list;
+    rescue_exprs: (expr * expr) list;
+    ensure_expr: expr list;
+    else_expr: expr list;
+  }
+
+(*****************************************************************************)
+(* Definitions *)
+(*****************************************************************************)
+and definition =
+  | ModuleDef of expr * body_exn * tok
+  | ClassDef of expr * inheritance_kind option * body_exn * tok
+  | MethodDef of expr * formal_param list * body_exn * tok
+
+  | BeginBlock of expr list * tok
+  | EndBlock of expr list * tok
+
+  | Alias of expr * expr * tok
+  | Undef of expr list * tok
+
+  and formal_param = 
+    | Formal_id of expr
+    | Formal_amp of string
+    | Formal_star of string (* as in *x *)
+    | Formal_rest (* just '*' *)
+    | Formal_tuple of formal_param list
+    | Formal_default of string * expr
+  
+  and inheritance_kind = 
+    | Class_Inherit of expr
+    | Inst_Inherit of expr
 
  (* with tarzan *)
+
+(*****************************************************************************)
+(* Type *)
+(*****************************************************************************)
+(* Was called Annotation in diamondback-ruby but was using its own specific
+ * comment format. 
+ * less: maybe leverage the new work on gradual typing of Ruby in
+ * Sorbet and steep?
+ *)
+
 
 (*****************************************************************************)
 (* Toplevel *)

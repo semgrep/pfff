@@ -68,88 +68,88 @@ let rec vof_expr =
       and v3 = Ocaml.vof_list vof_expr v3
       and v4 = vof_tok v4
       in Ocaml.VSum (("CodeBlock", [ v1; v2; v3; v4 ]))
-  | Empty -> Ocaml.VSum (("Empty", []))
-  | Block ((v1, v2)) ->
+  | S Empty -> Ocaml.VSum (("Empty", []))
+  | S Block ((v1, v2)) ->
       let v1 = Ocaml.vof_list vof_expr v1
       and v2 = vof_tok v2
       in Ocaml.VSum (("Block", [ v1; v2 ]))
-  | If ((v1, v2, v3, v4)) ->
+  | S If ((v1, v2, v3, v4)) ->
       let v1 = vof_expr v1
       and v2 = Ocaml.vof_list vof_expr v2
       and v3 = Ocaml.vof_list vof_expr v3
       and v4 = vof_tok v4
       in Ocaml.VSum (("If", [ v1; v2; v3; v4 ]))
-  | While ((v1, v2, v3, v4)) ->
+  | S While ((v1, v2, v3, v4)) ->
       let v1 = Ocaml.vof_bool v1
       and v2 = vof_expr v2
       and v3 = Ocaml.vof_list vof_expr v3
       and v4 = vof_tok v4
       in Ocaml.VSum (("While", [ v1; v2; v3; v4 ]))
-  | Until ((v1, v2, v3, v4)) ->
+  | S Until ((v1, v2, v3, v4)) ->
       let v1 = Ocaml.vof_bool v1
       and v2 = vof_expr v2
       and v3 = Ocaml.vof_list vof_expr v3
       and v4 = vof_tok v4
       in Ocaml.VSum (("Until", [ v1; v2; v3; v4 ]))
-  | Unless ((v1, v2, v3, v4)) ->
+  | S Unless ((v1, v2, v3, v4)) ->
       let v1 = vof_expr v1
       and v2 = Ocaml.vof_list vof_expr v2
       and v3 = Ocaml.vof_list vof_expr v3
       and v4 = vof_tok v4
       in Ocaml.VSum (("Unless", [ v1; v2; v3; v4 ]))
-  | For ((v1, v2, v3, v4)) ->
+  | S For ((v1, v2, v3, v4)) ->
       let v1 = Ocaml.vof_list vof_formal_param v1
       and v2 = vof_expr v2
       and v3 = Ocaml.vof_list vof_expr v3
       and v4 = vof_tok v4
       in Ocaml.VSum (("For", [ v1; v2; v3; v4 ]))
-  | Return ((v1, v2)) ->
+  | S Return ((v1, v2)) ->
       let v1 = Ocaml.vof_list vof_expr v1
       and v2 = vof_tok v2
       in Ocaml.VSum (("Return", [ v1; v2 ]))
-  | Yield ((v1, v2)) ->
+  | S Yield ((v1, v2)) ->
       let v1 = Ocaml.vof_list vof_expr v1
       and v2 = vof_tok v2
       in Ocaml.VSum (("Yield", [ v1; v2 ]))
-  | Case ((v1, v2)) ->
+  | S Case ((v1, v2)) ->
       let v1 = vof_case_block v1
       and v2 = vof_tok v2
       in Ocaml.VSum (("Case", [ v1; v2 ]))
-  | ExnBlock ((v1, v2)) ->
+  | S ExnBlock ((v1, v2)) ->
       let v1 = vof_body_exn v1
       and v2 = vof_tok v2
       in Ocaml.VSum (("ExnBlock", [ v1; v2 ]))
-  | ClassDef ((v1, v2, v3, v4)) ->
+  | D ClassDef ((v1, v2, v3, v4)) ->
       let v1 = vof_expr v1
       and v2 = Ocaml.vof_option vof_inheritance_kind v2
       and v3 = vof_body_exn v3
       and v4 = vof_tok v4
       in Ocaml.VSum (("ClassDef", [ v1; v2; v3; v4 ]))
-  | MethodDef ((v1, v2, v3, v4)) ->
+  | D MethodDef ((v1, v2, v3, v4)) ->
       let v1 = vof_expr v1
       and v2 = Ocaml.vof_list vof_formal_param v2
       and v3 = vof_body_exn v3
       and v4 = vof_tok v4
       in Ocaml.VSum (("MethodDef", [ v1; v2; v3; v4 ]))
-  | ModuleDef ((v1, v2, v3)) ->
+  | D ModuleDef ((v1, v2, v3)) ->
       let v1 = vof_expr v1
       and v2 = vof_body_exn v2
       and v3 = vof_tok v3
       in Ocaml.VSum (("ModuleDef", [ v1; v2; v3 ]))
-  | BeginBlock ((v1, v2)) ->
+  | D BeginBlock ((v1, v2)) ->
       let v1 = Ocaml.vof_list vof_expr v1
       and v2 = vof_tok v2
       in Ocaml.VSum (("BeginBlock", [ v1; v2 ]))
-  | EndBlock ((v1, v2)) ->
+  | D EndBlock ((v1, v2)) ->
       let v1 = Ocaml.vof_list vof_expr v1
       and v2 = vof_tok v2
       in Ocaml.VSum (("EndBlock", [ v1; v2 ]))
-  | Alias ((v1, v2, v3)) ->
+  | D Alias ((v1, v2, v3)) ->
       let v1 = vof_expr v1
       and v2 = vof_expr v2
       and v3 = vof_tok v3
       in Ocaml.VSum (("Alias", [ v1; v2; v3 ]))
-  | Undef ((v1, v2)) ->
+  | D Undef ((v1, v2)) ->
       let v1 = Ocaml.vof_list vof_expr v1
       and v2 = vof_tok v2
       in Ocaml.VSum (("Undef", [ v1; v2 ]))
