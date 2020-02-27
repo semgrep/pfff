@@ -31,7 +31,7 @@ let test_tokens file =
       res
   in
   let _lst = Parser_ruby.main lexerf lexbuf in
-  raise Todo
+  ()
 
 let test_parse xs =
   let xs = List.map Common.fullpath xs in

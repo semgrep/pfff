@@ -330,6 +330,9 @@ let fix_broken_neq l op r =
   match op with
   | Op_ASSIGN -> 
       begin match ends_with l with
+       (* bugfix: do not transform $! *)
+       | Id(ID_Builtin, "$!", _) -> default
+
        | Id(k,s,p) ->
          let len = String.length s in
          if s.[len-1] == '!'
