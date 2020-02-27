@@ -44,6 +44,7 @@ open Lexing
 (* ---------------------------------------------------------------------- *)
 (* Lexer state *)
 (* ---------------------------------------------------------------------- *)
+(* See lexer_parser_ruby.ml *)
 
 let pop_lexer state = 
   let (_:cps_lexer) = Stack.pop state.lexer_stack in
