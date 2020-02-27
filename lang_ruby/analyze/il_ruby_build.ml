@@ -415,7 +415,7 @@ let rec convert_to_return (add_f : tuple_expr -> stmt_node) acc stmt = match stm
       let q,last = DQueue.pop_back q in
         DQueue.append q (convert_to_return add_f acc last)
 
-  | Expression e ->
+  | I Expression e ->
       let e' = TE e in
       let ret = mkstmt (add_f (e' : tuple_expr)) stmt.pos in
         DQueue.enqueue ret DQueue.empty
@@ -431,25 +431,25 @@ let rec convert_to_return (add_f : tuple_expr -> stmt_node) acc stmt = match stm
       let q = DQueue.enqueue yield DQueue.empty in
         DQueue.enqueue ret q
 
-  | Call(None,mc) ->
+  | I Call(None,mc) ->
       (* we don't need to track v here since its immediately dead
          after the return *)
       let _, v = fresh (acc_emptyq acc) in
-      let meth = mkstmt (Call(Some v,mc)) stmt.pos in
+      let meth = mkstmt (I (Call(Some v,mc))) stmt.pos in
       let v' = match v with LId (id) -> id | _ -> failwith "Impossible" in
       let v'' = TE (EId v') in
       let ret = mkstmt (add_f v'') stmt.pos in
       let q = DQueue.enqueue meth DQueue.empty in
         DQueue.enqueue ret q
 
-  | Assign(lhs,_)
-  | Call(Some lhs,_)
+  | I Assign(lhs,_)
+  | I Call(Some lhs,_)
   | Yield(Some lhs,_) ->
       let ret = mkstmt (add_f (tuple_of_lhs lhs stmt.pos)) stmt.pos in
       let q = DQueue.enqueue stmt DQueue.empty in
         DQueue.enqueue ret q
 
-  | Defined(id,_s) ->
+  | D Defined(id,_s) ->
       let id' = TE (EId id) in
       let ret = mkstmt (add_f (id' : tuple_expr)) stmt.pos in
       let q = DQueue.enqueue stmt DQueue.empty in
@@ -458,12 +458,12 @@ let rec convert_to_return (add_f : tuple_expr -> stmt_node) acc stmt = match stm
   | Break _ | Redo | Retry | Next _ -> 
       DQueue.enqueue stmt DQueue.empty (* control jumps elsewhere *)
 
-  | Undef _
+  | D Undef _
   | While _
-  | ModuleDef _
-  | MethodDef _
-  | ClassDef _
-  | Alias _ -> 
+  | D ModuleDef _
+  | D MethodDef _
+  | D ClassDef _
+  | D Alias _ -> 
       let q = DQueue.enqueue stmt DQueue.empty in
       let ret = mkstmt (add_f (TE (EId Nil))) stmt.pos in
         DQueue.enqueue ret q
@@ -478,8 +478,8 @@ class proc_transformer = object
   method! visit_stmt s = match s.snode with
     | Return args -> ChangeTo (update_stmt s (Next args))
 
-    | ModuleDef _ | MethodDef _ | ClassDef _ (* new scope *)
-    | While _ | For _ | Call _ (* nested blocks *) ->
+    | D ModuleDef _ | D MethodDef _ | D ClassDef _ (* new scope *)
+    | While _ | For _ | I Call _ (* nested blocks *) ->
         SkipChildren
         
     | _ -> DoChildren
@@ -546,10 +546,10 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         let rest,s = DQueue.pop_back st_acc.q in
         let acc = acc_append acc {acc with q=rest} in
         let s' = match s.snode with
-          | ClassDef(None,ck,body) ->
-              mkstmt (ClassDef(Some v,ck,body)) s.pos
-          | ModuleDef(None,name,body) ->
-              mkstmt (ModuleDef(Some v,name,body)) s.pos
+          | D ClassDef(None,ck,body) ->
+              mkstmt (D (ClassDef(Some v,ck,body))) s.pos
+          | D ModuleDef(None,name,body) ->
+              mkstmt (D (ModuleDef(Some v,name,body))) s.pos
           | _ -> 
               Log.fatal (Log.of_loc (H.pos_of e))
                 "[BUG] Class/module? xlate error: %a(%a)" 
@@ -927,7 +927,7 @@ and refactor_and_if (acc:stmt acc) l r pos : stmt acc * expr =
   let acc, v = fresh acc in
       let v' = match v with LId (id) -> id | _ -> failwith "Impossible" in
   let vl = C.assign v (TE l') pos in
-  let v_acc = add_final_return (fun t -> Assign(v,t)) r_acc pos in
+  let v_acc = add_final_return (fun t -> I (Assign(v,t))) r_acc pos in
   let vr = C.seq (DQueue.to_list v_acc.q) pos in
     (* the && operator returns the value of the last expression evaluated, 
        thus "[not true] && _" returns [not true]
@@ -945,7 +945,7 @@ and refactor_or_if acc l r pos =
   let acc, v = fresh acc in
       let v' = match v with LId (id) -> id | _ -> failwith "Impossible" in
   let vl = C.assign v (TE l') pos in
-  let return_f t = Assign(v,t) in
+  let return_f t = I (Assign(v,t)) in
   let r_acc = refactor_stmt (acc_emptyq acc) r in
   let v_acc = add_final_return return_f r_acc pos in
   let vr = C.seq (DQueue.to_list v_acc.q) pos in
@@ -1105,18 +1105,18 @@ and add_last_assign ~do_break (id:identifier) (s : stmt) : stmt =
               C.seq (List.rev (last'::rest)) s.pos
       end
 
-    | Expression(e) -> (* x becomes id = x *)
+    | I Expression(e) -> (* x becomes id = x *)
         C.assign lhs (TE e) s.pos
           
-    | Assign(e1,_) -> (* id2 = e becomes id2 = e; id = id2 *)
+    | I Assign(e1,_) -> (* id2 = e becomes id2 = e; id = id2 *)
         let new_s = C.assign lhs (tuple_of_lhs e1 s.pos) s.pos in
           C.seq [s;new_s] s.pos
 
-    | Call(None, mc) -> (* x.f() becomes id = x.f() *)
-        mkstmt (Call(Some lhs, mc)) s.pos
+    | I Call(None, mc) -> (* x.f() becomes id = x.f() *)
+        mkstmt (I (Call(Some lhs, mc))) s.pos
     | Yield(None,es) -> C.yield ~lhs ~args:es s.pos
         
-    | Call(Some id2, _) (* id2=x.f() becomes id2=x.(); id=id2 *)
+    | I Call(Some id2, _) (* id2=x.f() becomes id2=x.(); id=id2 *)
     | Yield(Some id2,_) ->
         let new_s = C.assign lhs (tuple_of_lhs id2 s.pos) s.pos in
           C.seq [s;new_s] s.pos
@@ -1137,7 +1137,7 @@ and add_last_assign ~do_break (id:identifier) (s : stmt) : stmt =
         let body' = add_last_assign ~do_break:true id body in
           C.seq [new_s;C.for_s flist (EId id:expr) body' s.pos] s.pos
 
-    | Defined(id2,_) -> 
+    | D Defined(id2,_) -> 
         let new_s = C.assign (LId id) (TE (EId id2)) s.pos in
           C.seq [s;new_s] s.pos
             
@@ -1174,11 +1174,11 @@ and add_last_assign ~do_break (id:identifier) (s : stmt) : stmt =
 
     | Break _ | Redo | Retry | Next _ -> s (* control jumps elsewhere *)
 
-    | Undef _
-    | ModuleDef _ (* All of these return nil *)
-    | MethodDef _
-    | ClassDef _ 
-    | Alias _
+    | D Undef _
+    | D ModuleDef _ (* All of these return nil *)
+    | D MethodDef _
+    | D ClassDef _ 
+    | D Alias _
     | Begin _
     | End _ -> 
         let new_s = C.assign lhs (TE (EId Nil)) s.pos in
@@ -1730,7 +1730,7 @@ and refactor_method_formal (acc:stmt acc) t _pos : stmt acc * method_formal_para
       let s' = C.seq (DQueue.to_list default_acc.q) pos
       in
         match s'.snode with
-          | Expression e -> 
+          | I Expression e -> 
             let e' = TE e in
             acc, Formal_default(f, (e' : tuple_expr))
           | _ -> 
