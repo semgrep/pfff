@@ -512,11 +512,13 @@ let refactor_formal_list f acc lst pos =
 let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr = 
   match e with
     | Ast.Binop(_, Ast.Op_OP_ASGN _, _, _) 
-    | Ast.If _ | Ast.Yield _ | Ast.Return _  
-    | Ast.Case _ | Ast.ExnBlock _ | Ast.EndBlock _
-    | Ast.BeginBlock _  | Ast.CodeBlock _ | Ast.MethodDef _ 
-    | Ast.For _ | Ast.Unless _ | Ast.Until _
-    | Ast.While _ | Ast.Ternary _ | Ast.Alias _ | Ast.Undef _ as s ->
+    | Ast.S Ast.If _ | Ast.S Ast.Yield _ | Ast.S Ast.Return _  
+    | Ast.S Ast.Case _ | Ast.S Ast.ExnBlock _ 
+    | Ast.D Ast.EndBlock _ | Ast.D Ast.BeginBlock _  
+    | Ast.CodeBlock _ | Ast.D Ast.MethodDef _ 
+    | Ast.S Ast.For _ | Ast.S Ast.Unless _ | Ast.S Ast.Until _
+    | Ast.S Ast.While _ 
+    | Ast.Ternary _ | Ast.D Ast.Alias _ | Ast.D Ast.Undef _ as s ->
         (* These cases are where stmts are embedded in expressions,
            like x = (if g then 1 else 2 end) To handle this, we create
            a fresh variable are store the result of each possible
@@ -534,8 +536,8 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         let acc = acc_enqueue ss acc in
           acc, EId v'
 
-    | Ast.ClassDef _
-    | Ast.ModuleDef _ -> 
+    | Ast.D Ast.ClassDef _
+    | Ast.D Ast.ModuleDef _ -> 
         let acc, v = fresh acc in
       let v' = match v with LId (id) -> id | _ -> failwith "Impossible" in
         let st_acc = refactor_stmt (acc_emptyq acc) e in
@@ -725,14 +727,14 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         Log.fatal (Log.of_loc pos) "operator / uoperator in refactor_expr"
           
 
-    | Ast.Block(l,_pos) -> begin match List.rev l with
+    | Ast.S Ast.Block(l,_pos) -> begin match List.rev l with
         | [] -> Log.fatal Log.empty "refactor_expr: empty block???"
         | last::rest ->
             let acc = refactor_stmt_list acc (List.rev rest) in
               refactor_expr acc last
       end
         
-    | Ast.Empty -> Log.fatal Log.empty "refactor_expr: empty expr??"
+    | Ast.S Ast.Empty -> Log.fatal Log.empty "refactor_expr: empty expr??"
 
 and refactor_defined acc lhs args pos = 
   let lhs' = match lhs with LId (id) -> id | _ -> failwith "Impossible" in
@@ -1223,7 +1225,7 @@ and refactor_method_call_assign (acc:stmt acc) (lhs : lhs option) = function
       let params = Utils.default_opt [] params_o in
       let name = H.msg_of_str mname atompos in
       let body = {Ast.body_exprs = cb_body;rescue_exprs=[];ensure_expr=[];else_expr=[]} in
-      let e' = Ast.MethodDef(name,params,body, pos) in
+      let e' = Ast.D (Ast.MethodDef(name,params,body, pos)) in
         refactor_stmt acc e'
 
   | Ast.Call(Ast.Binop(targ,Ast.Op_DOT,msg,_pos1), args, cb, pos2)
@@ -1322,18 +1324,18 @@ and refactor_assignment (acc: stmt acc) (lhs: Ast.expr) (rhs: Ast.expr)
 
 and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc = 
   match e with
-  | Ast.Alias(Ast.Id(Ast.ID_Builtin|Ast.ID_Global as k1,s1, p1), 
+  | Ast.D Ast.Alias(Ast.Id(Ast.ID_Builtin|Ast.ID_Global as k1,s1, p1), 
                 Ast.Id(Ast.ID_Builtin|Ast.ID_Global as k2,s2, p2) ,p3) ->
       let g1 = (refactor_builtin_or_global p1 k1,s1) in
       let g2 = (refactor_builtin_or_global p2 k2,s2) in
         acc_enqueue (C.alias_g ~link:g1 ~orig:g2 p3) acc
 
-  | Ast.Alias(e1,e2, pos) -> 
+  | Ast.D Ast.Alias(e1,e2, pos) -> 
       let acc,e1' = refactor_symbol_or_msg acc e1 in
       let acc,e2' = refactor_symbol_or_msg acc e2 in
         acc_enqueue (C.alias_m ~link:e1' ~orig:e2' pos) acc
 
-  | Ast.Undef(e1, pos) -> 
+  | Ast.D Ast.Undef(e1, pos) -> 
       let acc,e1' = refactor_list refactor_symbol_or_msg (acc,DQueue.empty) e1 in
         acc_enqueue (C.undef (DQueue.to_list e1') pos) acc
 
@@ -1347,8 +1349,8 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
       let acc = acc_seen acc facc in
         acc_enqueue (mkstmt (If(g',ts,fs)) pos) acc
 
-  | Ast.If(g,t,f,pos)
-  | Ast.Unless(g,f,t, pos) ->
+  | Ast.S Ast.If(g,t,f,pos)
+  | Ast.S Ast.Unless(g,f,t, pos) ->
       let acc,g' = refactor_expr acc g in
       let tacc = refactor_stmt_list (acc_emptyq acc) t in
       let ts = C.seq (DQueue.to_list tacc.q) pos in
@@ -1358,23 +1360,23 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
       let acc = {acc with seen = StrSet.union acc.seen facc.seen} in
         acc_enqueue (C.if_s g' ~t:ts ~f:fs pos) acc
 
-  | Ast.Case(case,pos) -> refactor_case acc case pos
+  | Ast.S Ast.Case(case,pos) -> refactor_case acc case pos
 
-  | Ast.Return(args,pos) ->
+  | Ast.S Ast.Return(args,pos) ->
       let acc,args' = refactor_list refactor_tuple_expr (acc,DQueue.empty) args in
       let tup = make_tuple_option (DQueue.to_list args') in
         acc_enqueue (C.return ?v:tup pos) acc
 
-  | Ast.Yield(args,pos) ->
+  | Ast.S Ast.Yield(args,pos) ->
       let acc,args' = refactor_list refactor_method_arg_no_cb (acc,DQueue.empty) args in
         acc_enqueue (C.yield ~args:(DQueue.to_list args') pos) acc
 
-  | Ast.Block(el,pos) -> 
+  | Ast.S Ast.Block(el,pos) -> 
       let blk_acc = refactor_stmt_list (acc_emptyq acc) el in
       let acc = {acc with seen = StrSet.union acc.seen blk_acc.seen} in
         acc_enqueue (C.seq (DQueue.to_list blk_acc.q) pos) acc
 
-  | Ast.Binop(e1,Ast.Op_ASSIGN,(Ast.Yield(args,_pos1)), pos2) ->
+  | Ast.Binop(e1,Ast.Op_ASSIGN,(Ast.S Ast.Yield(args,_pos1)), pos2) ->
       let acc,e1',after = refactor_lhs acc e1 in
       let acc,args' = refactor_list refactor_method_arg_no_cb (acc,DQueue.empty) args in
       let yield_s = C.yield ~lhs:e1' ~args:(DQueue.to_list args') pos2 in
@@ -1462,7 +1464,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
       let acc,e' = refactor_expr acc e in
         acc_enqueue (C.expr e' (H.pos_of e)) acc
 
-  | Ast.While(true,g,body, pos) -> (* do .. while *)
+  | Ast.S Ast.While(true,g,body, pos) -> (* do .. while *)
       let gpos = H.pos_of g in
       let body_acc = refactor_stmt_list (acc_emptyq acc) body in
       let body_acc,g' = refactor_expr body_acc g in
@@ -1472,7 +1474,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
       let acc = acc_seen acc body_acc in
         acc_enqueue (C.while_s (EId True) body' pos) acc
 
-  | Ast.While(false,g,body, pos) -> (* while .. do *)
+  | Ast.S Ast.While(false,g,body, pos) -> (* while .. do *)
       let gpos = H.pos_of g in
       let while_acc,g' = refactor_expr (acc_emptyq acc) g in
       let body_acc = refactor_stmt_list (acc_emptyq while_acc) body in
@@ -1488,10 +1490,10 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
           let acc = acc_seen acc body_acc in
             acc_enqueue (C.while_s (EId True) while_body pos) acc
 
-  | Ast.Until(b,g,body, pos) -> 
-      refactor_stmt acc (Ast.While(b,Ast.Unary(Ast.Op_UNot,g,pos),body,pos))
+  | Ast.S Ast.Until(b,g,body, pos) -> 
+      refactor_stmt acc (Ast.S (Ast.While(b,Ast.Unary(Ast.Op_UNot,g,pos),body,pos)))
 
-  | Ast.For(formals,guard,body, pos) ->
+  | Ast.S Ast.For(formals,guard,body, pos) ->
       let acc, formals = refactor_block_formal_list acc formals pos in
       let acc, g_expr = refactor_expr acc guard in
       let body_acc = refactor_stmt_list (acc_emptyq acc) body in
@@ -1499,13 +1501,13 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
       let acc = acc_seen acc body_acc in
         acc_enqueue (C.for_s formals g_expr body' pos) acc
 
-  | Ast.ModuleDef(m,body, pos) ->
+  | Ast.D Ast.ModuleDef(m,body, pos) ->
       let acc,m' = refactor_id acc m in
       let body_acc = refactor_body (acc_empty acc) body pos in
       let body' = C.seq (DQueue.to_list body_acc.q) pos in
         acc_enqueue (C.module_s m' body' pos) acc
 
-  | Ast.MethodDef(meth,params,body, pos) ->
+  | Ast.D Ast.MethodDef(meth,params,body, pos) ->
       let acc,mn = refactor_method_name acc meth in
       let in_acc, params' = 
         refactor_method_formal_list (acc_empty acc) params pos 
@@ -1531,7 +1533,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
       let body' = C.seq (DQueue.to_list body_acc.q) pos in
         acc_enqueue (C.meth mn params' body' pos) acc
 
-  | Ast.ClassDef(clazz,inh,body, pos) ->
+  | Ast.D Ast.ClassDef(clazz,inh,body, pos) ->
       let body_acc = refactor_body (acc_empty acc) body pos in
         begin match inh with
           | None -> 
@@ -1546,26 +1548,26 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
                 acc_enqueue (C.nameclass clazz' ~inh:e' body' pos) acc
 
           | Some (Ast.Inst_Inherit e) -> 
-              assert(clazz = Ast.Empty);
+              assert(clazz = Ast.S Ast.Empty);
               let acc,e' = refactor_id acc e in
               let body_lst = DQueue.to_list body_acc.q in
               let body' = C.seq body_lst pos in
                 acc_enqueue (C.metaclass e' body' pos) acc
         end
 
-  | Ast.BeginBlock(lst,pos) ->
+  | Ast.D Ast.BeginBlock(lst,pos) ->
       let body_acc = refactor_stmt_list (acc_empty acc) lst in
       let body' = C.seq (DQueue.to_list body_acc.q) pos in
         acc_enqueue (mkstmt (Begin body') pos) acc
 
-  | Ast.EndBlock(lst,pos) ->
+  | Ast.D Ast.EndBlock(lst,pos) ->
       let body_acc = refactor_stmt_list (acc_empty acc) lst in
       let body' = C.seq (DQueue.to_list body_acc.q) pos in
         acc_enqueue (mkstmt (End body') pos) acc
 
-  | Ast.ExnBlock(body,pos) -> refactor_body acc body pos
+  | Ast.S Ast.ExnBlock(body,pos) -> refactor_body acc body pos
 
-  | Ast.Empty -> acc
+  | Ast.S Ast.Empty -> acc
 
   | Ast.Operator _
   | Ast.UOperator _
@@ -1626,7 +1628,7 @@ and refactor_body (acc:stmt acc) b pos : stmt acc =
 and refactor_rescue pos acc (gs,rescue_body) : stmt acc * rescue_block =
   let guard_exprs = match gs with
     | Ast.Tuple(l,_) -> l
-    | Ast.Empty -> []
+    | Ast.S Ast.Empty -> []
     | x -> [x]
   in
   let acc_just_set, rev_guards = 
@@ -1647,7 +1649,7 @@ and refactor_rescue pos acc (gs,rescue_body) : stmt acc * rescue_block =
 
 and refactor_rescue_guard acc (e:Ast.expr) : StrSet.t * rescue_guard = 
   match e with
-    | Ast.Binop(Ast.Empty,Ast.Op_ASSOC,bind_e, pos) -> 
+    | Ast.Binop(Ast.S Ast.Empty,Ast.Op_ASSOC,bind_e, pos) -> 
         let obj = Ast.Id(Ast.ID_Uppercase,"StandardError", pos) in
           refactor_rescue_guard acc (Ast.Binop(obj,Ast.Op_ASSOC,bind_e, pos))
 
@@ -1778,7 +1780,7 @@ and refactor_method_formal_list acc lst pos =
 
 and refactor_case acc case pos = 
   let acc,g' = match case.Ast.case_guard with
-    | Ast.Empty -> acc, EId True
+    | Ast.S Ast.Empty -> acc, EId True
     | e -> refactor_expr acc e
   in
   let acc, whens' = 
