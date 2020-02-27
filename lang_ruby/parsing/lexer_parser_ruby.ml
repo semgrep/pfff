@@ -26,7 +26,6 @@ let create entry =
      lexer_stack = stk;
     }
 
-
 let to_string = function
   | Expr_Beg -> "Expr_Beg"
   | Expr_Mid -> "Expr_Mid"
