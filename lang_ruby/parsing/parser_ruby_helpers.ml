@@ -7,6 +7,41 @@ module H = Ast_ruby_helpers
 (* Prelude *)
 (*****************************************************************************)
 
+
+(*
+val env_stack : Env.t Stack.t
+val env : unit -> Env.t
+val bslash_spc_re : Str.regexp
+
+val ws_re : Str.regexp
+val split_single_string_to_array : string -> Ast_ruby.tok -> Ast_ruby.expr
+val split_double_string_to_array :
+  Ast_ruby.string_contents list -> Ast_ruby.tok -> Ast_ruby.expr
+val str_of_interp : Ast_ruby.string_contents list -> string
+val starts_with : Ast_ruby.expr -> Ast_ruby.expr
+val ends_with : Ast_ruby.expr -> Ast_ruby.expr
+val replace_end : Ast_ruby.expr -> Ast_ruby.expr -> Ast_ruby.expr
+val hash_literal_as_args : Ast_ruby.expr list -> Ast_ruby.expr list
+val check_for_dot : Ast_ruby.expr -> Ast_ruby.expr
+val fix_broken_neq :
+  Ast_ruby.expr ->
+  Ast_ruby.binary_op -> 'a -> Ast_ruby.expr * Ast_ruby.binary_op * 'a
+val fix_broken_assoc :
+  Ast_ruby.expr ->
+  Ast_ruby.binary_op -> 'a -> Ast_ruby.expr * Ast_ruby.binary_op * 'a
+
+val expr_priority : Ast_ruby.expr -> int
+
+val binop_priority : Ast_ruby.expr -> int
+
+val do_fail : string -> 'a list -> ('a -> string) -> ('a -> Ocaml.v) -> unit
+
+val rhs_do_codeblock : Ast_ruby.expr -> bool
+
+val resolve_block_delim :
+  Ast_ruby.expr -> Ast_ruby.expr -> Ast_ruby.expr list
+*)
+
 (*****************************************************************************)
 (* Generic helpers (could be in common.ml or utils_ruby.ml) *)
 (*****************************************************************************)
