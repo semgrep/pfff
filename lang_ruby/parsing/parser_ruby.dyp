@@ -103,6 +103,11 @@ let mk_block lst pos = match lst with
   | [x] -> x
   | _ -> S (Block(lst,pos))
 
+let tuple = function
+  | [] -> S Empty
+  | [x] -> x
+  | lst -> Tuple(lst,H.pos_of (List.hd lst))
+
 let is_exnblock = function 
   | S ExnBlock _ -> true 
   | _ -> false
@@ -113,6 +118,7 @@ let rec add_eq = function
   | Binop(e1,Op_DOT,e2,p) -> Binop(e1,Op_DOT, add_eq e2,p)
   | Operator(Op_AREF,p) -> Operator(Op_ASET,p)
   | _ -> failwith "add_eq"
+
 
 }
 
