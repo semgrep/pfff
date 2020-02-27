@@ -970,6 +970,7 @@ let gensym () =
   incr gensym_counter;
   !gensym_counter
 
+let gensym_TODO = -1 
 
 let empty_name_info = 
   { name_qualifier = None; name_typeargs = None;}
@@ -980,6 +981,9 @@ let empty_var =
 let empty_id_info () = 
   { id_resolved = ref None; id_type = ref None; }
 
+let basic_id_info resolved = 
+  { id_resolved = ref (Some resolved); id_type = ref None; }
+
 (*
 let name_of_id id = 
   (id, empty_name_info), empty_id_info ()
@@ -988,7 +992,8 @@ let name_of_id id =
 
 let param_of_id id = { 
     pname = Some id;
-    pdefault = None; ptype = None; pattrs = []; pinfo = empty_id_info ();
+    pdefault = None; ptype = None; pattrs = []; pinfo = 
+      (basic_id_info (Param gensym_TODO));
 }
 let param_of_type typ = {
     ptype = Some typ;

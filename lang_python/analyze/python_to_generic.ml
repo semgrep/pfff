@@ -75,12 +75,11 @@ let module_name (v1, dots) =
       let s = String.concat "/" (prefixes @ elems) in
       G.FileName (s, tok)
 
-let gensym_TODO = -1 
 
 let resolved_name name =
   function
-  | LocalVar -> Some (G.Local gensym_TODO)
-  | Parameter -> Some (G.Param gensym_TODO)
+  | LocalVar -> Some (G.Local G.gensym_TODO)
+  | Parameter -> Some (G.Param G.gensym_TODO)
   | GlobalVar -> Some (G.Global [name])
   | ClassField -> None
   | ImportedModule xs -> Some (G.ImportedModule (G.DottedName xs))
