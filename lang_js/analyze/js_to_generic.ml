@@ -61,11 +61,9 @@ let label v = wrap string v
 
 let qualified_name x = [x, fake "TODO qualified name"]
 
-let gensym_TODO = -1
-
 let resolved_name = function
-  | Local -> Some (G.Local gensym_TODO)
-  | Param -> Some (G.Param gensym_TODO)
+  | Local -> Some (G.Local G.gensym_TODO)
+  | Param -> Some (G.Param G.gensym_TODO)
   | Global x -> Some (G.Global (qualified_name x))
   | NotResolved -> None
 
@@ -285,7 +283,8 @@ and def_of_var { v_name = x_name; v_kind = x_kind;
       { ent with G.attrs = ent.G.attrs @ more_attrs}, G.ClassDef def
   | _ -> 
        let v3 = expr x_init in 
-       let _v4TODO = vref resolved_name x_resolved in
+       let v4 = vref resolved_name x_resolved in
+       ent.G.info.G.id_resolved := !v4;
        ent, G.VarDef { G.vinit = Some v3; G.vtype = None }
    )
 
@@ -294,9 +293,9 @@ and var_of_var { v_name = x_name; v_kind = x_kind;
   let v1 = name x_name in
   let v2 = var_kind x_kind in 
   let ent = G.basic_entity v1 [v2] in
-
   let v3 = expr x_init in 
-  let _v4TODO = vref resolved_name x_resolved in
+  let v4 = vref resolved_name x_resolved in
+  ent.G.info.G.id_resolved := !v4;
   ent, { G.vinit = Some v3; G.vtype = None }
 
 

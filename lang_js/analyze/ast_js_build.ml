@@ -31,6 +31,7 @@ module G = Ast_generic (* for the operators *)
 (*****************************************************************************)
 (* used only to tag Id to avoid repetition in the code highlighter 
  * less: factorize code with graph_code_js?
+ * todo: move that in a separate resolve_js.ml ?
  *)
 type env = {
   (* I handle block scope by not using
@@ -96,8 +97,11 @@ let add_locals env vs =
   let locals = vs |> Common.map_filter (fun v ->
     let s = s_of_n v.A.v_name in
     match fst v.A.v_kind with
-    | A.Let | A.Const -> Some (s, A.Local)
+    | A.Let | A.Const -> 
+        v.A.v_resolved := A.Local;
+        Some (s, A.Local)
     | A.Var ->
+        v.A.v_resolved := A.Local;
         Hashtbl.replace env.vars s true;
         None
      ) in
