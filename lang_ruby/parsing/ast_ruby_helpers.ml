@@ -183,7 +183,10 @@ let compare_ast ast1 ast2 = cmp_list cmp_expr ast1 ast2
 let equal_ast a1 a2 = (compare_ast a1 a2) == 0
 
 let pos_of = function
-  | S Empty -> Lexing.dummy_pos
+  | S Empty -> 
+    (*Lexing.dummy_pos*)
+    raise Todo
+
   | Literal (_, pos)
   | D Alias (_,_, pos)
   | D Undef (_,pos)
@@ -213,7 +216,12 @@ let pos_of = function
   | S Return ( _  , pos)
   | S Yield ( _  , pos)
   | S Block ( _  , pos)
-   -> pos
+   -> 
+    ignore(pos);
+    raise Todo
+
+let pos2_of _x =
+  raise Todo
 
 let binary_op_of_string = function
   | "="    -> Op_ASSIGN   

@@ -5,6 +5,8 @@ type ctx
 
 val empty : ctx
 val of_loc : pos -> ctx
+val of_tok : Parse_info.t -> ctx
+
 val loc : pos -> ctx -> ctx
 val of_msg : string -> ctx
 val msg : string -> ctx -> ctx

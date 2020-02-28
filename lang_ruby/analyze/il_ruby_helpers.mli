@@ -2,9 +2,11 @@ open Utils_ruby
 
 open Il_ruby
 
+type pos2 = Parse_info.t
+
 val compare : t -> t -> int
   
-val mkstmt : stmt_node -> pos -> stmt
+val mkstmt : stmt_node -> pos2 -> stmt
 
 val update_stmt : stmt -> stmt_node -> stmt
 
@@ -17,7 +19,7 @@ val empty_stmt : unit -> stmt
 
 val fresh_local : stmt -> identifier
 
-val pos_of : stmt -> pos
+val pos_of : stmt -> pos2
 
 val stmt_eq : stmt -> stmt -> bool
 
@@ -102,66 +104,66 @@ module Abbr : sig
   val hash : (expr*expr) list -> literal
   val range : ?inc:bool -> expr -> expr -> literal
 
-  val seq : stmt list -> pos -> stmt
+  val seq : stmt list -> pos2 -> stmt
 
-  val alias_g : link:builtin_or_global -> orig:builtin_or_global -> pos -> stmt
+  val alias_g : link:builtin_or_global -> orig:builtin_or_global -> pos2 -> stmt
 
-  val alias_m : link:msg_id -> orig:msg_id -> pos -> stmt
+  val alias_m : link:msg_id -> orig:msg_id -> pos2 -> stmt
 
-  val if_s : expr -> t:stmt -> f:stmt -> pos -> stmt
+  val if_s : expr -> t:stmt -> f:stmt -> pos2 -> stmt
 
-  val case : ?default:stmt -> expr -> (tuple_expr*stmt) list -> pos -> stmt
+  val case : ?default:stmt -> expr -> (tuple_expr*stmt) list -> pos2 -> stmt
 
-  val while_s : expr -> stmt -> pos -> stmt
+  val while_s : expr -> stmt -> pos2 -> stmt
 
-  val for_s : block_formal_param list -> expr -> stmt -> pos -> stmt
+  val for_s : block_formal_param list -> expr -> stmt -> pos2 -> stmt
 
-  val uop : ?lhs:lhs -> unary_op -> expr -> ?cb:codeblock -> pos -> stmt
+  val uop : ?lhs:lhs -> unary_op -> expr -> ?cb:codeblock -> pos2 -> stmt
 
   val binop : ?lhs:lhs -> expr ->
-    binary_op -> star_expr -> ?cb:codeblock -> pos -> stmt
+    binary_op -> star_expr -> ?cb:codeblock -> pos2 -> stmt
 
   val call : ?lhs:lhs -> ?targ:expr ->
-    string -> star_expr list -> ?cb:codeblock -> pos -> stmt
+    string -> star_expr list -> ?cb:codeblock -> pos2 -> stmt
 
   val massign : ?lhs:lhs -> ?targ:expr ->
-    string -> star_expr list -> ?cb:codeblock -> pos -> stmt
+    string -> star_expr list -> ?cb:codeblock -> pos2 -> stmt
 
-  val super : ?lhs:lhs -> star_expr list -> ?cb:codeblock -> pos -> stmt
+  val super : ?lhs:lhs -> star_expr list -> ?cb:codeblock -> pos2 -> stmt
 
   val mcall : ?lhs:lhs -> ?targ:expr ->
-    msg_id -> star_expr list -> ?cb:codeblock -> pos -> stmt
+    msg_id -> star_expr list -> ?cb:codeblock -> pos2 -> stmt
 
-  val assign : lhs -> tuple_expr -> pos -> stmt
+  val assign : lhs -> tuple_expr -> pos2 -> stmt
 
-  val expr : expr -> pos -> stmt
-  val return : ?v:tuple_expr -> pos -> stmt
-  val yield : ?lhs:lhs -> ?args:star_expr list-> pos -> stmt
+  val expr : expr -> pos2 -> stmt
+  val return : ?v:tuple_expr -> pos2 -> stmt
+  val yield : ?lhs:lhs -> ?args:star_expr list-> pos2 -> stmt
 
-  val module_s : ?lhs:lhs -> identifier -> stmt -> pos -> stmt
+  val module_s : ?lhs:lhs -> identifier -> stmt -> pos2 -> stmt
 
   val nameclass : ?lhs:lhs -> identifier -> ?inh:identifier -> stmt
-    -> pos -> stmt
-  val metaclass : ?lhs:lhs -> identifier -> stmt -> pos -> stmt
+    -> pos2 -> stmt
+  val metaclass : ?lhs:lhs -> identifier -> stmt -> pos2 -> stmt
 
   (* Method definition for a regular method name *)
   val mdef : ?targ:identifier -> string -> method_formal_param list
-    -> stmt -> pos -> stmt
+    -> stmt -> pos2 -> stmt
 
   (* Method definition for a assignable method name *)
   val adef : ?targ:identifier -> string -> method_formal_param list
-    -> stmt -> pos -> stmt
+    -> stmt -> pos2 -> stmt
 
   (* Method definition for a binary operator *)
   val opdef : ?targ:identifier -> binary_op -> method_formal_param list
-    -> stmt -> pos -> stmt
+    -> stmt -> pos2 -> stmt
 
   (* Method definition for a unary operator *)
   val uopdef : ?targ:identifier -> unary_op -> method_formal_param list
-    -> stmt -> pos -> stmt
+    -> stmt -> pos2 -> stmt
 
   val meth : ?targ:identifier -> def_name -> method_formal_param list
-    -> stmt -> pos -> stmt
+    -> stmt -> pos2 -> stmt
 
   val rguard : ?bind:identifier -> tuple_expr -> rescue_guard
   val rblock : rescue_guard list -> stmt -> rescue_block
@@ -170,13 +172,13 @@ module Abbr : sig
   val rescue : ?bind:identifier -> tuple_expr -> stmt -> rescue_block
 
   val exnblock : stmt -> rescue_block list -> ?eelse:stmt -> ?ensure:stmt
-    -> pos -> stmt
+    -> pos2 -> stmt
 
-  val defined : identifier -> stmt -> pos -> stmt
-  val undef : msg_id list -> pos -> stmt
-  val break : ?v:tuple_expr -> pos -> stmt
-  val next : ?v:tuple_expr -> pos -> stmt
-  val redo : pos -> stmt
-  val retry : pos -> stmt
+  val defined : identifier -> stmt -> pos2 -> stmt
+  val undef : msg_id list -> pos2 -> stmt
+  val break : ?v:tuple_expr -> pos2 -> stmt
+  val next : ?v:tuple_expr -> pos2 -> stmt
+  val redo : pos2 -> stmt
+  val retry : pos2 -> stmt
 
 end

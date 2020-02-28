@@ -53,8 +53,9 @@ let fresh acc =
   let id = Var (Local, fresh_name) in
     (seen_lhs acc (LId id)), LId id
 
-let fresh_global pos = 
-  let name = sprintf "$__druby_global_%d_%d" pos.Lexing.pos_lnum (uniq()) in
+let fresh_global _pos = 
+  let name = sprintf "$__druby_global_%d_%d" 
+    (raise Common.Todo)(*pos.Lexing.pos_lnum*) (uniq()) in
     Var(Global, name)
 
 let formal_counter = ref 0
@@ -145,12 +146,12 @@ let parse_regexp_options acc str pos : (stmt acc * expr option * char option * b
         begin match lang with
           | None -> acc,fin,Some c,once
           | Some c' ->
-              Log.err ~ctx:(Log.of_loc pos)
+              Log.err ~ctx:(Log.of_tok pos)
                 "multiple language modifiers for regexp: %c %c??"
                 c c';
               acc,fin,Some c',once
         end
-    | c -> Log.fatal (Log.of_loc pos) "unknown regexp modifier: %c" c
+    | c -> Log.fatal (Log.of_tok pos) "unknown regexp modifier: %c" c
   in
     string_fold_left build_opt (acc,None,None,false) str
 
@@ -208,12 +209,12 @@ let is_special = function
       true
   | _ -> false
 
-let special_of_string pos x : expr =
+let special_of_string _pos x : expr =
   match x with
   | "true"  -> EId (True)
   | "false" -> EId (False)
-  | "__FILE__" -> ELit (String (pos.Lexing.pos_fname))
-  | "__LINE__" -> ELit (FixNum (pos.Lexing.pos_lnum))
+  | "__FILE__" -> ELit (String ((*pos.Lexing.pos_fname*)raise Common.Todo))
+  | "__LINE__" -> ELit (FixNum ((*pos.Lexing.pos_lnum*)raise Common.Todo))
   | _ -> raise (Invalid_argument "special_of_string")
 
 let refactor_id_kind pos : Ast.id_kind -> var_kind = function
@@ -224,14 +225,14 @@ let refactor_id_kind pos : Ast.id_kind -> var_kind = function
   | Ast.ID_Uppercase -> Constant
   | Ast.ID_Builtin -> Builtin
   | Ast.ID_Assign _ik -> 
-      Log.fatal (Log.of_loc pos)
+      Log.fatal (Log.of_tok pos)
         "trying to refactor id_assign, but should be handled elsewhere"
 
 let refactor_builtin_or_global pos = function
   | Ast.ID_Builtin -> Builtin
   | Ast.ID_Global -> Global
   | _ ->
-      Log.fatal (Log.of_loc pos)
+      Log.fatal (Log.of_tok pos)
         "trying to refactor other kind into builtin or global"
 
 let refactor_uop pos = function
@@ -243,7 +244,7 @@ let refactor_uop pos = function
   | Ast.Op_UNot
   | Ast.Op_UAmper
   | Ast.Op_UScope -> 
-      Log.fatal (Log.of_loc pos)
+      Log.fatal (Log.of_tok pos)
      "trying to refactor construct posing as unary op"
 
 let refactor_binop pos : Ast.binary_op -> binary_op = function
@@ -282,7 +283,7 @@ let refactor_binop pos : Ast.binary_op -> binary_op = function
   | Ast.Op_SCOPE
   | Ast.Op_DOT2
   | Ast.Op_DOT3 as bop -> 
-      Log.fatal (Log.of_loc pos)
+      Log.fatal (Log.of_tok pos)
         "trying to refactor construct posing as binary op: %s"
         (H.str_binop bop)
 
@@ -469,7 +470,7 @@ let rec convert_to_return (add_f : tuple_expr -> stmt_node) acc stmt = match stm
         DQueue.enqueue ret q
 
   | Begin _ | End _ -> 
-      (*Log.fatal (Log.of_loc stmt.pos)*) failwith
+      (*Log.fatal (Log.of_tok stmt.pos)*) failwith
         "BEGIN or END block can not be used inside a method"
 
 open Visitor
@@ -551,7 +552,7 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
           | D ModuleDef(None,name,body) ->
               mkstmt (D (ModuleDef(Some v,name,body))) s.pos
           | _ -> 
-              Log.fatal (Log.of_loc (H.pos_of e))
+              Log.fatal (Log.of_tok (H.pos2_of e))
                 "[BUG] Class/module? xlate error: %a(%a)" 
                 CodePrinter.format_stmt s
                 CodePrinter.format_identifier v'
@@ -563,7 +564,7 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         let acc,e' = refactor_id acc e in
         let s = match e' with
           | Var(Constant, s) -> s
-          | _ -> Log.fatal (Log.of_loc pos) "unknown right hand of uscope: %a"
+          | _ -> Log.fatal (Log.of_tok pos) "unknown right hand of uscope: %a"
               CodePrinter.format_identifier e'
         in
           acc, EId (UScope s)
@@ -605,7 +606,7 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         let acc,e2' = refactor_id acc e2 in
         let s = match e2' with
           | Var(Constant, s) -> s
-          | _ -> Log.fatal (Log.of_loc pos) "unknown right hand of scope: %a"
+          | _ -> Log.fatal (Log.of_tok pos) "unknown right hand of scope: %a"
               CodePrinter.format_identifier e2'
         in
           acc, EId (Scope(e1', s))
@@ -635,7 +636,7 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
           acc, (EId t2')
 
     | Ast.Binop(_,Ast.Op_DOT,_, pos) -> 
-        Log.fatal (Log.of_loc pos) "refactor_expr got dot expr??"
+        Log.fatal (Log.of_tok pos) "refactor_expr got dot expr??"
 
     | Ast.Binop(e1, (Ast.Op_AND|Ast.Op_kAND), e2, pos) ->
         refactor_and_if acc e1 e2 pos
@@ -677,7 +678,7 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
 
     | Ast.Call(Ast.Id(Ast.ID_Lowercase,"defined?", _p),
                        args, cb, pos) ->
-        let _ = map_opt (fun _ -> Log.fatal (Log.of_loc pos) "cb for 'defined?' ??") cb in
+        let _ = map_opt (fun _ -> Log.fatal (Log.of_tok pos) "cb for 'defined?' ??") cb in
         let acc, v = fresh acc in
         let v' = match v with LId (id) -> id | _ -> failwith "Impossible" in
 
@@ -725,7 +726,7 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
     | Ast.Operator(_,pos)
     | Ast.UOperator(_,pos) -> 
         (* these should be handled by the def/methodcall rules *)
-        Log.fatal (Log.of_loc pos) "operator / uoperator in refactor_expr"
+        Log.fatal (Log.of_tok pos) "operator / uoperator in refactor_expr"
           
 
     | Ast.S Ast.Block(l,_pos) -> begin match List.rev l with
@@ -742,7 +743,7 @@ and refactor_defined acc lhs args pos =
 
   let arg = match args with
     | [x] -> x
-    | _ -> Log.fatal (Log.of_loc pos) "multiple args to defined?"
+    | _ -> Log.fatal (Log.of_tok pos) "multiple args to defined?"
   in
   let inside_acc = refactor_stmt (acc_emptyq acc) arg in
   let acc = acc_seen acc inside_acc in
@@ -750,7 +751,7 @@ and refactor_defined acc lhs args pos =
     acc_enqueue (C.defined lhs' s pos) acc
 
 and refactor_super acc lhs pos = match acc.super_args with
-  | None -> Log.fatal (Log.of_loc pos) "super called outside of method"
+  | None -> Log.fatal (Log.of_tok pos) "super called outside of method"
   | Some(args,None) ->
       acc_enqueue (C.mcall ?lhs ID_Super args pos) acc
   | Some(args,Some e) ->
@@ -861,7 +862,7 @@ and refactor_star_expr (acc:stmt acc) e : stmt acc * star_expr = match e with
 
 and refactor_method_arg_no_cb acc e : stmt acc * star_expr = match e with 
   | Ast.Unary(Ast.Op_UAmper, _eBUG, pos) -> 
-      Log.fatal (Log.of_loc pos) "unexpected & arg in method arguments"
+      Log.fatal (Log.of_tok pos) "unexpected & arg in method arguments"
   | e -> refactor_star_expr acc e
 
 and refactor_method_args_and_cb acc arg_list cb = 
@@ -870,7 +871,7 @@ and refactor_method_args_and_cb acc arg_list cb =
         let acc, e' = refactor_expr acc e in
           acc, (List.rev rest), Some (CB_Arg e')
     | (Ast.Unary(Ast.Op_UAmper, _, pos)::_), Some _ -> 
-        Log.fatal (Log.of_loc pos)
+        Log.fatal (Log.of_tok pos)
           "method can't have both an &-argument and code block"
     | _lst, Some cb_e -> acc, arg_list, Some (refactor_codeblock acc cb_e)
     | _lst, None -> acc, arg_list, None
@@ -887,7 +888,7 @@ and refactor_hash_list acc l pos =
   let rec pair_list acc = function
     | [] -> acc
     | x::[] -> 
-        Log.fatal (Log.of_loc pos) "odd number of elements in hash: %s" 
+        Log.fatal (Log.of_tok pos) "odd number of elements in hash: %s" 
           (format_to_string CodePrinter.format_expr x)
     | x::y::tl -> pair_list ((x,y)::acc) tl
   in
@@ -901,7 +902,7 @@ and refactor_hash_list acc l pos =
                      let acc,e1' = refactor_expr acc e1 in
                      let acc,e2' = refactor_expr acc e2 in
                        acc, (e1', e2')::lst
-                 | _ -> Log.fatal (Log.of_loc pos) "non assoc expression in hash list?"
+                 | _ -> Log.fatal (Log.of_tok pos) "non assoc expression in hash list?"
               ) (acc,[]) l
           in
             acc, List.rev rlst
@@ -1000,7 +1001,7 @@ and refactor_lhs acc e : (stmt acc * lhs * stmt acc) =
           begin match e' with
             | LId (id) -> acc, LStar (id), after
             | LTup (_)| LStar ( _) -> 
-                Log.fatal (Log.of_loc pos) "refactor_lhs: nested star?"
+                Log.fatal (Log.of_tok pos) "refactor_lhs: nested star?"
           end
 
     | Ast.Id(Ast.ID_Lowercase,s, _pos)  -> 
@@ -1044,7 +1045,7 @@ and refactor_id (acc:stmt acc) e : stmt acc * identifier =
   match refactor_expr acc e with 
     | (acc,EId (id)) -> acc, id
     | _,ELit (l) -> 
-        Log.fatal (Log.of_loc (H.pos_of e)) "lhs_of_expr: literal %a" 
+        Log.fatal (Log.of_tok (H.pos2_of e)) "lhs_of_expr: literal %a" 
           CodePrinter.format_literal l
 
 and refactor_msg (acc:stmt acc) msg : stmt acc * msg_id = match msg with
@@ -1063,7 +1064,7 @@ and refactor_msg (acc:stmt acc) msg : stmt acc * msg_id = match msg with
       let lks = format_to_string Ast_ruby_printer.format_lit_kind lk in
         acc, ID_MethodName lks
   | e ->
-      Log.fatal (Log.of_loc (H.pos_of e)) "refactor_msg unknown msg: %s\n"
+      Log.fatal (Log.of_tok (H.pos2_of e)) "refactor_msg unknown msg: %s\n"
         (Ast_ruby_printer.string_of_expr e)
 
 and refactor_symbol_or_msg (acc:stmt acc) sym_msg = match sym_msg with
@@ -1202,14 +1203,14 @@ and refactor_method_call_assign (acc:stmt acc) (lhs : lhs option) = function
 
 
   | Ast.Call(Ast.Id(Ast.ID_Lowercase,"undef",p1), _args, None, _p2) ->
-      Log.fatal (Log.of_loc p1) "undef as method?"
+      Log.fatal (Log.of_tok p1) "undef as method?"
 
   | Ast.Call(Ast.Id(Ast.ID_Lowercase,"defined?", _p), args, cb, pos) ->
-      let _ = map_opt (fun _ -> Log.fatal (Log.of_loc pos) "cb for 'defined?' ??") cb in
+      let _ = map_opt (fun _ -> Log.fatal (Log.of_tok pos) "cb for 'defined?' ??") cb in
       let acc, v = match lhs with
         | None -> fresh acc
         | Some (LId (id)) -> acc, LId id
-        | Some _ -> Log.fatal (Log.of_loc pos) "non-ident = defined?"
+        | Some _ -> Log.fatal (Log.of_tok pos) "non-ident = defined?"
       in
         refactor_defined acc v args pos
 
@@ -1241,7 +1242,7 @@ and refactor_method_call_assign (acc:stmt acc) (lhs : lhs option) = function
       let () = match msg, args with
         | Ast.Id(Ast.ID_Lowercase,("proc"|"lambda"),_),
           [Ast.Unary(Ast.Op_UAmper,_,_)] ->
-            Log.err ~ctx:(Log.of_loc pos) "unsupported proc/lambda with &block param"
+            Log.err ~ctx:(Log.of_tok pos) "unsupported proc/lambda with &block param"
         | _ -> ()
       in
       let acc,msg' = match msg with
@@ -1257,7 +1258,7 @@ and refactor_method_call_assign (acc:stmt acc) (lhs : lhs option) = function
 
 (* return the accumulator and resulting lhs expression for an assignment *)
 and refactor_assignment (acc: stmt acc) (lhs: Ast.expr) (rhs: Ast.expr) 
- (pos: Ast.pos) : stmt acc = 
+ (pos: Ast.pos2) : stmt acc = 
   match lhs,rhs with
   (* x[y] = z is really x.[]=(y,z) *)
   | Ast.Call(
@@ -1294,7 +1295,7 @@ and refactor_assignment (acc: stmt acc) (lhs: Ast.expr) (rhs: Ast.expr)
 
   (* handle x.y = e specially to avoid duping the rhs into a temp *)
   | Ast.Call(Ast.Binop(targ,Ast.Op_DOT,msg,_),args,None,_), _ ->
-      if args <> [] then Log.fatal (Log.of_loc pos) "args on lhs of assignable?";
+      if args <> [] then Log.fatal (Log.of_tok pos) "args on lhs of assignable?";
       let acc,targ' = refactor_expr acc targ in
       let acc,msg' = refactor_msg acc msg in
       let msg' = make_assignable_msg msg' in
@@ -1420,7 +1421,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
       when not (StrSet.mem s acc.seen || is_special s) ->
       let id' = Var(Local, s) in
       let acc = add_seen s acc in
-        Log.err ~ctx:(Log.of_loc pos)
+        Log.err ~ctx:(Log.of_tok pos)
           "removing dead code: %a" Ast_ruby_printer.format_expr rhs;
         acc_enqueue (C.assign (LId id') (TE (EId Nil)) pos) acc
 
@@ -1463,10 +1464,10 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
   | Ast.Unary _
   | Ast.Binop _ as e ->
       let acc,e' = refactor_expr acc e in
-        acc_enqueue (C.expr e' (H.pos_of e)) acc
+        acc_enqueue (C.expr e' (H.pos2_of e)) acc
 
   | Ast.S Ast.While(true,g,body, pos) -> (* do .. while *)
-      let gpos = H.pos_of g in
+      let gpos = H.pos2_of g in
       let body_acc = refactor_stmt_list (acc_emptyq acc) body in
       let body_acc,g' = refactor_expr body_acc g in
       let guard = C.if_s g' (C.next gpos) (C.break gpos) gpos in
@@ -1476,7 +1477,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
         acc_enqueue (C.while_s (EId True) body' pos) acc
 
   | Ast.S Ast.While(false,g,body, pos) -> (* while .. do *)
-      let gpos = H.pos_of g in
+      let gpos = H.pos2_of g in
       let while_acc,g' = refactor_expr (acc_emptyq acc) g in
       let body_acc = refactor_stmt_list (acc_emptyq while_acc) body in
         if (DQueue.is_empty while_acc.q) then
@@ -1573,7 +1574,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
   | Ast.Operator _
   | Ast.UOperator _
   | Ast.CodeBlock _ as s -> 
-      Log.fatal (Log.of_loc (H.pos_of s))
+      Log.fatal (Log.of_tok (H.pos2_of s))
         "refactor_stmt: unknown stmt to refactor: %s\n"
         (Ast_ruby_printer.string_of_expr s)
       
@@ -1588,7 +1589,7 @@ and refactor_method_name (acc:stmt acc) e : stmt acc * def_name = match e with
       acc, (Instance_Method (ID_MethodName s))
 
   | Ast.Literal(Ast.Atom _, pos) -> 
-      Log.fatal (Log.of_loc pos) "interpreted atom string in method name?"
+      Log.fatal (Log.of_tok pos) "interpreted atom string in method name?"
   | e -> 
       let acc,id = refactor_msg acc e in
         acc, (Instance_Method id)
@@ -1659,15 +1660,15 @@ and refactor_rescue_guard acc (e:Ast.expr) : StrSet.t * rescue_guard =
         let acc, bind_lhs,after = refactor_lhs acc bind_e in
         let () = 
           if not (DQueue.is_empty after.q)
-          then Log.fatal (Log.of_loc pos) "methodcall in rescue binder??"
+          then Log.fatal (Log.of_tok pos) "methodcall in rescue binder??"
         in
         let bind = match bind_lhs with
           | LId (id) -> id
-          | _ -> Log.fatal (Log.of_loc pos) "non-identifier in rescue binder"
+          | _ -> Log.fatal (Log.of_tok pos) "non-identifier in rescue binder"
         in
           if not (DQueue.is_empty acc.q)
           then begin
-            Log.fatal (Log.of_loc pos) "rescue binding created hoisted expression?"
+            Log.fatal (Log.of_tok pos) "rescue binding created hoisted expression?"
           end;
           acc.seen, Rescue_Bind(exn,bind)
 
@@ -1682,17 +1683,17 @@ and refactor_rescue_guard acc (e:Ast.expr) : StrSet.t * rescue_guard =
                  Printf.eprintf "resc: %s\n" 
                    (CodePrinter.string_of_cfg s)
               ) acc.q;
-            Log.fatal (Log.of_loc (H.pos_of e))
+            Log.fatal (Log.of_tok (H.pos2_of e))
               "rescue1 guard created hoisted expression?"
           end;
           acc.seen, Rescue_Expr e'
 
     | e -> 
-        Log.fixme ~ctx:(Log.of_loc (H.pos_of e))
+        Log.fixme ~ctx:(Log.of_tok (H.pos2_of e))
           "rescue gaurd: %a" Ast_ruby_printer.format_expr e;
         let acc, e' = refactor_tuple_expr acc e in
           if (not (DQueue.is_empty acc.q)) || not (StrSet.is_empty acc.seen)
-          then Log.fatal (Log.of_loc (H.pos_of e))
+          then Log.fatal (Log.of_tok (H.pos2_of e))
             "rescue guard created hoisted expression?";
           acc.seen, Rescue_Expr e'
             
@@ -1723,7 +1724,7 @@ and refactor_method_formal (acc:stmt acc) t _pos : stmt acc * method_formal_para
   | Ast.Formal_tuple(_f_lst) -> Log.fatal Log.empty "refactor_method_formal: formal_tuple?"
 
   | Ast.Formal_default (f,s) ->
-      let pos = H.pos_of s in
+      let pos = H.pos2_of s in
       let default_acc = refactor_stmt (acc_emptyq acc) s in
       let acc = acc_seen acc default_acc in
       let acc = {acc with seen = StrSet.add f acc.seen} in
@@ -1756,7 +1757,7 @@ and refactor_block_formal acc t pos : stmt acc * block_formal_param = match t wi
   | Ast.Formal_id Ast.Id(ik,str,pos) -> 
       (add_seen str acc), Formal_block_id(refactor_id_kind pos ik,str)
   | Ast.Formal_id _ ->
-      Log.fatal (Log.of_loc pos) "refactor_block_formal: non-identifier in formal id"
+      Log.fatal (Log.of_tok pos) "refactor_block_formal: non-identifier in formal id"
 
   | Ast.Formal_star(s) -> (add_seen s acc), Formal_star2(s)
   | Ast.Formal_rest -> 
@@ -1770,8 +1771,8 @@ and refactor_block_formal acc t pos : stmt acc * block_formal_param = match t wi
   | Ast.Formal_tuple(f_lst) ->
       let acc, lst = refactor_block_formal_list acc f_lst pos in
         acc, Formal_tuple lst
-  | Ast.Formal_amp _s -> Log.fatal (Log.of_loc pos) "refactor_block_formal: & arg?"
-  | Ast.Formal_default _ -> Log.fatal (Log.of_loc pos) "refactor_block_formal: default arg?"
+  | Ast.Formal_amp _s -> Log.fatal (Log.of_tok pos) "refactor_block_formal: & arg?"
+  | Ast.Formal_default _ -> Log.fatal (Log.of_tok pos) "refactor_block_formal: default arg?"
 
 and refactor_block_formal_list acc lst pos = 
   refactor_formal_list refactor_block_formal acc lst pos
