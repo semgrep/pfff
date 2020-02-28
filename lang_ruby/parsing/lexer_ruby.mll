@@ -244,16 +244,11 @@ let choose_capital_for_id id pos =
     | 'A'..'Z' -> T_UID(id, pos)
     | _ -> failwith "unknown prefix char for ID: this shouldn't happen"
 
-(* David: the reason for this is because method name can be
-   def, class, module; to distinguish K_DEF from def *)
-let insert_delimiters s = "%" ^ s  ^ "%"
-
 (* return a fresh Buffer.t that is preloaded with the contents of [str] *)
 let buf_of_string str = 
   let b = Buffer.create 31 in
     Buffer.add_string b str;
     b
-
 }
 
 (*****************************************************************************)
@@ -271,8 +266,7 @@ let fixnum = rubynum
 let post_fixnum = ("_" | num)* 
 
 let rubyfloat = rubynum ('.' (rubynum))? ("e" ("-"|"+")? rubynum+)?
-let post_rubyfloat = 
-  post_fixnum ('.' (rubynum))? ("e" ("-"|"+")? rubynum+)?
+let post_rubyfloat = post_fixnum ('.' (rubynum))? ("e" ("-"|"+")? rubynum+)?
 
 let id_start = '_' | alpha
 let id_body = '_' | alphanum
@@ -292,7 +286,7 @@ let e = "" (* epsilon *)
 
 rule token state = parse
   | e { if S2.begin_override() then S.beg_state state;
-       (Stack.top state.S.lexer_stack) state lexbuf }
+        (Stack.top state.S.lexer_stack) state lexbuf }
 
 (*****************************************************************************)
 (* Top_lexer *)
@@ -301,19 +295,30 @@ rule token state = parse
 and top_lexer state = parse
 
   (* ----------------------------------------------------------------------- *)
+  (* spacing/comments *)
+  (* ----------------------------------------------------------------------- *)
+  | '#'   {comment state lexbuf}
+
+  | "=begin" [^'\n']* '\n' {S.beg_state state; incr_line lexbuf; 
+                            delim_comment state lexbuf}
+  | "\\\n" {incr_line lexbuf; top_lexer state lexbuf}
+  | nl     {incr_line lexbuf; t_eol state lexbuf}
+
+  | ws+  { top_lexer state lexbuf}
+
+  (* ----------------------------------------------------------------------- *)
   (* symbols *)
   (* ----------------------------------------------------------------------- *)
 
-    (* need the ws here to force a longest match preference over the
-       rules below *)
+  (* need the ws here to force longest match preference over the rules below *)
   | ws* ((['+' '-' '*' '&' '|' '%' '^'] | "||" | "&&" | "<<" | ">>") as op) '='
       {S.beg_state state; T_OP_ASGN(op, lexbuf.lex_curr_p)}
 
   (* /= can be either regexp or op_asgn *)
   | ws* "/=" 
-      {match state.S.expr_state with 
-         | S.Expr_Beg -> regexp_string (buf_of_string "=") state lexbuf
-         | _ -> S.beg_state state; T_OP_ASGN("/", lexbuf.lex_curr_p)
+      { match state.S.expr_state with 
+        | S.Expr_Beg -> regexp_string (buf_of_string "=") state lexbuf
+        | _ -> S.beg_state state; T_OP_ASGN("/", lexbuf.lex_curr_p)
       }
 
   (* need precedence over single form *)
@@ -325,19 +330,21 @@ and top_lexer state = parse
      after is typically the binop form, while a space before but not
      after is uop.  *)
   | ws+ '-' 
-      {let binop = on_def (postfix_at t_uminus t_minus) t_minus
-       in space_uop uop_minus_lit t_uminus binop state lexbuf}
+      { let binop = on_def (postfix_at t_uminus t_minus) t_minus
+        in space_uop uop_minus_lit t_uminus binop state lexbuf }
   | ws+ '+' 
       {let binop = on_def (postfix_at t_uplus t_plus) t_plus
        in space_uop uop_plus_lit t_uplus binop state lexbuf}
   | ws+ '*' {space_uop t_ustar t_ustar t_star state lexbuf}
   | ws+ '&' {space_uop t_uamper t_uamper t_amper state lexbuf}
+
   | ws+ '[' 
-      {let binop = on_local t_lbrack_arg t_lbrack in 
-         space_uop t_lbrack t_lbrack binop state lexbuf}
+      { let binop = on_local t_lbrack_arg t_lbrack in 
+        space_uop t_lbrack t_lbrack binop state lexbuf }
   | ws+ '(' 
-      {let binop = on_local t_lparen_arg t_lparen in 
-         space_uop t_lparen t_lparen binop state lexbuf}
+      { let binop = on_local t_lparen_arg t_lparen in 
+        space_uop t_lparen t_lparen binop state lexbuf}
+
   | ws+ '%' {space_tok percent t_percent state lexbuf}
   | ws+ '?' {space_tok char_code t_quest state lexbuf}
       
@@ -347,42 +354,51 @@ and top_lexer state = parse
            (on_beg uop_minus_lit t_minus) state lexbuf}
   | '+' {on_def (postfix_at t_uplus t_plus)
            (on_beg uop_plus_lit t_plus) state lexbuf}
-  | '*' {on_beg t_ustar t_star state lexbuf }
+  | '*' {on_beg t_ustar  t_star state lexbuf }
   | '&' {on_beg t_uamper t_amper state lexbuf }
-  | '[' {on_beg t_lbrack t_lbrack_arg state lexbuf}
+  
   | '(' {on_beg t_lparen t_lparen_arg state lexbuf}
+  | '[' {on_beg t_lbrack t_lbrack_arg state lexbuf}
   | '{' {on_beg t_lbrace t_lbrace_arg state lexbuf}
+
+  | ')'   {S.end_state state;T_RPAREN lexbuf.lex_curr_p}
+  | ']'   {S.end_state state;T_RBRACK lexbuf.lex_curr_p}
+  | '}'   {S.end_state state;T_RBRACE lexbuf.lex_curr_p}
+
   | '%' {on_beg percent t_percent state lexbuf}
   | '?' {on_beg char_code t_quest state lexbuf}
 
   (* need to explicitly separate out cases for / since spaces can
      be significant if they occur inside of a regexp *)
   | ws+ '/' (ws+ as spc)
-      {on_beg (regexp_string (buf_of_string spc)) t_slash state lexbuf}
+      { on_beg (regexp_string (buf_of_string spc)) t_slash state lexbuf}
   | ws+ '/' (nl as nl)
-      {incr_line lexbuf;
-       on_beg (regexp_string (buf_of_string nl)) t_slash state lexbuf}
+      { incr_line lexbuf;
+        on_beg (regexp_string (buf_of_string nl)) t_slash state lexbuf }
   | ws+ '/' {space_tok regexp t_slash state lexbuf}
-  | '/' {on_beg regexp t_slash state lexbuf}
+  | '/'     {on_beg regexp t_slash state lexbuf}
 
   (* heredoc vs shift tokens *)
   | "<<-" {heredoc_header heredoc_string_lead state lexbuf}
   | "<<" ws {S.beg_state state; t_lshft state lexbuf}
   | "<<" nl {S.beg_state state; incr_line lexbuf;t_lshft state lexbuf}
-  | "<<" {match state.S.expr_state with
-            | S.Expr_End | S.Expr_Local | S.Expr_Def -> 
+  | "<<"    { match state.S.expr_state with
+              | S.Expr_End | S.Expr_Local | S.Expr_Def -> 
                 S.beg_state state;T_LSHFT lexbuf.lex_curr_p
-            | S.Expr_Mid | S.Expr_Beg -> 
+              | S.Expr_Mid | S.Expr_Beg -> 
                 heredoc_header heredoc_string state lexbuf}
 
   (* now all of the 'normal' tokens which are otherwise well behaved *)
-  | '.'   {S.def_state state;T_DOT lexbuf.lex_curr_p }
+  | '.'   {S.def_state state;T_DOT   lexbuf.lex_curr_p }
   | ','   {S.beg_state state;T_COMMA lexbuf.lex_curr_p }
-  | '!'   {S.beg_state state;T_BANG lexbuf.lex_curr_p }
+  | ';'   {S.beg_state state;T_SEMICOLON lexbuf.lex_curr_p}
+
+  | '!'   {S.beg_state state;T_BANG  lexbuf.lex_curr_p }
   | '~'   {match state.S.expr_state with
-               (* when defining the ~ method, allow an optional @ postfix *)
+             (* when defining the ~ method, allow an optional @ postfix *)
              | S.Expr_Def -> postfix_at t_tilde t_tilde state lexbuf
              | _ -> t_tilde state lexbuf }
+
   | "<=>" {S.beg_state state;T_CMP lexbuf.lex_curr_p }
   | "="   {S.beg_state state;T_ASSIGN lexbuf.lex_curr_p }
   | "=="  {S.beg_state state;T_EQ lexbuf.lex_curr_p }
@@ -397,42 +413,44 @@ and top_lexer state = parse
   | "!~"  {S.beg_state state;T_NMATCH lexbuf.lex_curr_p }
   | ">>"  {S.beg_state state;T_RSHFT lexbuf.lex_curr_p}
   | "=>"  {S.beg_state state;T_ASSOC lexbuf.lex_curr_p}
-  | ')'   {S.end_state state;T_RPAREN lexbuf.lex_curr_p}
-  | ']'   {S.end_state state;T_RBRACK lexbuf.lex_curr_p}
-  | '}'   {S.end_state state;T_RBRACE lexbuf.lex_curr_p}
-  | "..." {S.beg_state state;T_DOT3 lexbuf.lex_curr_p}
-  | ".."  {S.beg_state state;T_DOT2 lexbuf.lex_curr_p}
-  | '#'   {comment state lexbuf}
-  | '`'   {tick_string state lexbuf}
   | '^'   {S.beg_state state;T_CARROT lexbuf.lex_curr_p}
   | '|'   {S.beg_state state;T_VBAR lexbuf.lex_curr_p}
-  | ';'   {S.beg_state state;T_SEMICOLON lexbuf.lex_curr_p}
+
+  | "..." {S.beg_state state;T_DOT3 lexbuf.lex_curr_p}
+  | ".."  {S.beg_state state;T_DOT2 lexbuf.lex_curr_p}
+
+  | ":" {on_end t_colon atom state lexbuf}
+
+  | ws+ "::" { T_USCOPE lexbuf.lex_curr_p }
+  |     "::" { on_beg t_uscope t_scope state lexbuf }
+
+  | ("@@" id) as id {S.end_state state; T_CLASS_VAR(id, lexbuf.lex_curr_p)}
+  | ('@' id)  as id {S.end_state state; T_INST_VAR(id, lexbuf.lex_curr_p)}
+
+  | '$'  { dollar state lexbuf}
+
+  (* ----------------------------------------------------------------------- *)
+  (* Constant *)
+  (* ----------------------------------------------------------------------- *)
+
+  | num { postfix_numeric Utils.id (lexeme lexbuf) state lexbuf }
+
+  (* ----------------------------------------------------------------------- *)
+  (* Strings *)
+  (* ----------------------------------------------------------------------- *)
+
+  | '`'   {tick_string state lexbuf}
   | '\''  {S.end_state state; 
            non_interp_string '\'' (Buffer.create 31) state lexbuf}
   | '\"'  {double_string state lexbuf}
-
-  | "=begin" [^'\n']* '\n' {S.beg_state state; incr_line lexbuf; 
-                            delim_comment state lexbuf}
-
-  | num {postfix_numeric Utils.id (lexeme lexbuf) state lexbuf}
-
-  | "\\\n" {incr_line lexbuf; top_lexer state lexbuf}
-  | nl {incr_line lexbuf; t_eol state lexbuf}
-
-  | eof   {T_EOF}
-
 
   (* ----------------------------------------------------------------------- *)
   (* Keywords *)
   (* ----------------------------------------------------------------------- *)
 
-  | "class" as cls    
-      {S.def_state state; K_CLASS ((insert_delimiters cls), lexbuf.lex_curr_p) }
-  | "def" as def
-      {S.def_state state; K_DEF ((insert_delimiters def), lexbuf.lex_curr_p) }
-  | "module" as m   
-      {S.def_state state;K_MODULE ((insert_delimiters m), lexbuf.lex_curr_p)}
-
+  | "class"    {S.def_state state;K_CLASS  lexbuf.lex_curr_p}
+  | "def"      {S.def_state state;K_DEF    lexbuf.lex_curr_p}
+  | "module"   {S.def_state state;K_MODULE lexbuf.lex_curr_p}
   | "alias"    {S.def_state state;K_ALIAS lexbuf.lex_curr_p}
   | "undef"    {S.def_state state;K_UNDEF lexbuf.lex_curr_p}
   | "and"      {S.beg_state state;K_AND lexbuf.lex_curr_p}
@@ -470,20 +488,7 @@ and top_lexer state = parse
   | "retry"    {S.beg_state state;K_RETRY}
   | "next"     {S.beg_state state;K_NEXT}
 *)
-
   | "__END__"  { end_lexbuf lexbuf}
-
-  (* ----------------------------------------------------------------------- *)
-  (* Misc *)
-  (* ----------------------------------------------------------------------- *)
-
-  | ":" {on_end t_colon atom state lexbuf}
-
-  | ws+ "::" { T_USCOPE lexbuf.lex_curr_p }
-  |     "::" { on_beg t_uscope t_scope state lexbuf }
-
-  | ("@@" id) as id {S.end_state state; T_CLASS_VAR(id, lexbuf.lex_curr_p)}
-  | ('@' id)  as id {S.end_state state; T_INST_VAR(id, lexbuf.lex_curr_p)}
 
   (* ----------------------------------------------------------------------- *)
   (* Ident *)
@@ -502,11 +507,9 @@ and top_lexer state = parse
     }
 
   (* ----------------------------------------------------------------------- *)
-  (* Misc *)
+  (* eof *)
   (* ----------------------------------------------------------------------- *)
-
-  | '$'  { dollar state lexbuf}
-  | ws+  { top_lexer state lexbuf}
+  | eof   {T_EOF}
 
 
 (*****************************************************************************)
@@ -673,11 +676,11 @@ and char_code_work = parse
 (*****************************************************************************)
 
 and comment state = parse
-  | [^'\n']* '\n' { incr_line lexbuf;t_eol state lexbuf }
+  | [^'\n']* '\n' { incr_line lexbuf; t_eol state lexbuf }
 
 and delim_comment state = parse
-  | "=end" [^'\n']* '\n' { incr_line lexbuf;top_lexer state lexbuf}
-  | [^'\n']* '\n' { incr_line lexbuf; delim_comment state lexbuf}
+  | "=end" [^'\n']* '\n' { incr_line lexbuf; top_lexer state lexbuf}
+  | [^'\n']* '\n'        { incr_line lexbuf; delim_comment state lexbuf}
 
 (*****************************************************************************)
 (* Strings *)
