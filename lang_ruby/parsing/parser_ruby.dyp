@@ -294,7 +294,7 @@ eols:
 stmt_list:
   | /*empty*/ { [] }
   | stmt<s>   { [s] }
-  | T_SEMICOLON         eols stmt_list<ss> @{ ss,     [Dyp.Dont_shift] }
+  |         T_SEMICOLON eols stmt_list<ss> @{ ss,     [Dyp.Dont_shift] }
   | stmt<s> eol_or_semi eols stmt_list<ss> @{ s:: ss, [Dyp.Dont_shift] }
 
 /*(*************************************************************************)*/
@@ -370,8 +370,9 @@ topcall:
   | func<f> { f }
   | func<c> code_block<cb>
       { match c with
-    | Call(m,args,None,pos) -> methodcall m args (Some cb) pos
-    | _ -> methodcall c [] (Some cb) (H.pos_of c)}
+        | Call(m,args,None,pos) -> methodcall m args (Some cb) pos
+        | _ -> methodcall c [] (Some cb) (H.pos_of c)
+      }
 
   | command<c> {c}
   | command_name<m> call_args<args> do_codeblock<cb>
@@ -385,13 +386,13 @@ topcall:
 command:
   | K_YIELD<pos> call_args<args> 
       { well_formed_return args;
-    S (Yield(args,pos)) }
+        S (Yield(args,pos)) }
   | command_name<m> call_args<args>
       { well_formed_command m args;
-    methodcall m args None (H.pos_of m)}
+        methodcall m args None (H.pos_of m)}
   | command_name<cmd> command<cmd2>
-    {well_formed_command cmd [cmd2];
-     methodcall cmd [cmd2] None (H.pos_of cmd)}
+      { well_formed_command cmd [cmd2];
+        methodcall cmd [cmd2] None (H.pos_of cmd)}
 
 command_name:
   | identifier<id> {id}
@@ -426,13 +427,14 @@ lparen:
 arg:
   | primary<p> {p}
 
-  | unary_op<o,pos> eols arg<a> { prune_uop o a pos }
   | lhs_pruned_assign_op<l,op> eols arg<r> 
       { prune_right_assoc l op r }
 
+  | unary_op<o,pos>    eols arg<a> { prune_uop o a pos }
   | arg<l> bin_op<bop> eols arg<r> { prune_left_assoc l bop r }
   | arg<l> T_ANDOP     eols arg<r> { prune_left_assoc l Op_AND r }
   | arg<l> T_OROP      eols arg<r> { prune_left_assoc l Op_OR r }
+
   | arg<e1> T_QUESTION<pos> eols expr<e2> T_COLON eols expr<e3>   
     { M.prune_tern e1 e2 e3 (H.pos_of e1) }
 
@@ -549,7 +551,8 @@ expr:
       { match p with
         | S Block([x],_) -> S (Return([x],pos))
         | arg -> if is_cond_modifier arg then raise Dyp.Giveup;
-        S (Return([arg],pos)) }
+                 S (Return([arg],pos)) 
+      }
 
   | K_YIELD<pos> call_args<args> 
       { well_formed_return args;
@@ -560,7 +563,7 @@ expr:
   | K_NOT<pos>  eols expr<e>     { prune_uop Op_UNot e pos}
   | T_BANG<pos> eols expr<e>     { prune_uop Op_UBang e pos}
 
-  | command<c>              {c}
+  | command<c>              { c }
   | arg<a>                  { a }
 
 /*(*************************************************************************)*/
@@ -588,6 +591,7 @@ primary:
 
   | primary<p> T_SCOPE identifier<id>  { scope p id }
   | T_USCOPE<pos> identifier<id>       { Unary(Op_UScope,id,pos) }
+
   | primary<p> T_LBRACK_ARG<pos1> eols arg_comma_list_trail<args> eols T_RBRACK
       { methodcall (Binop(p,Op_DOT,Operator(Op_AREF,pos1),H.pos_of p)) 
                    args None (H.pos_of p)
@@ -602,8 +606,8 @@ primary:
  * | K_RETURN<pos> lparen eols expr<arg> eols T_RPAREN { S (Return([arg],pos))}
  */
   | K_YIELD<pos> { S (Yield([],pos)) }
-  | K_YIELD<pos> lparen eols call_args<args> eols T_RPAREN {S(Yield(args,pos))}
-  | K_YIELD<pos> lparen eols expr<arg> eols T_RPAREN { S (Yield([arg],pos))}
+  | K_YIELD<pos> lparen eols call_args<args> eols T_RPAREN{S(Yield(args,pos))}
+  | K_YIELD<pos> lparen eols expr<arg>       eols T_RPAREN{S(Yield([arg],pos))}
 
   | K_IF<pos> expr<guard> then_sep stmt_list<body> if_else_clauses<else_e> K_lEND
     { S (If(guard,body,else_e,pos)) }
@@ -619,8 +623,9 @@ primary:
     { well_formed_do guard body;
       S (Until(false,guard,body,pos)) }
 
-  | K_CASE<pos> some_eols when_clauses<whens> case_else<else_e> K_lEND
-    { S (Case({case_guard = S Empty; case_whens = whens; case_else = else_e},pos)) }
+  | K_CASE<pos> some_eols         when_clauses<whens> case_else<else_e> K_lEND
+    { S (Case({case_guard = S Empty; case_whens = whens; case_else = else_e},
+        pos)) }
 
   | K_CASE<pos> eols expr<e> eols when_clauses<whens> case_else<else_e> K_lEND
     { S (Case({case_guard = e; case_whens = whens; case_else = else_e},pos)) }
