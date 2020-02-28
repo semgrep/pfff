@@ -182,7 +182,7 @@ let compare_ast ast1 ast2 = cmp_list cmp_expr ast1 ast2
 
 let equal_ast a1 a2 = (compare_ast a1 a2) == 0
 
-let pos_of = function
+let tok_of = function
   | S Empty -> 
     (*Lexing.dummy_pos*)
     raise Todo
@@ -219,9 +219,6 @@ let pos_of = function
    -> 
     ignore(pos);
     raise Todo
-
-let pos2_of _x =
-  raise Todo
 
 let binary_op_of_string = function
   | "="    -> Op_ASSIGN   
@@ -399,7 +396,7 @@ and mod_body_exn f body =
 let mod_ast f ast = List.map (mod_expr f) ast
 
 (** sets the position of the expression; use it with mod_ast **)
-let set_pos pos = function
+let set_tok pos = function
   | Literal(lit_kind, _) -> Literal(lit_kind, pos) 
   | D Alias(e1, e2, _) -> D (Alias(e1, e2, pos))
   | D Undef(elist, _) -> D (Undef(elist, pos))

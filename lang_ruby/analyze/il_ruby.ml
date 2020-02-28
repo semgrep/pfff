@@ -44,7 +44,7 @@
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
 
-type pos = Parse_info.t
+type tok = Parse_info.t
  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
@@ -172,7 +172,7 @@ type instr =
 
 and stmt = {
   snode : stmt_node;
-  pos : pos;
+  pos : tok;
   sid : int;
   mutable lexical_locals : Utils_ruby.StrSet.t;
   mutable preds : stmt Set_.t;

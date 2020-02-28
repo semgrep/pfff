@@ -552,7 +552,7 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
           | D ModuleDef(None,name,body) ->
               mkstmt (D (ModuleDef(Some v,name,body))) s.pos
           | _ -> 
-              Log.fatal (Log.of_tok (H.pos2_of e))
+              Log.fatal (Log.of_tok (H.tok_of e))
                 "[BUG] Class/module? xlate error: %a(%a)" 
                 CodePrinter.format_stmt s
                 CodePrinter.format_identifier v'
@@ -1045,7 +1045,7 @@ and refactor_id (acc:stmt acc) e : stmt acc * identifier =
   match refactor_expr acc e with 
     | (acc,EId (id)) -> acc, id
     | _,ELit (l) -> 
-        Log.fatal (Log.of_tok (H.pos2_of e)) "lhs_of_expr: literal %a" 
+        Log.fatal (Log.of_tok (H.tok_of e)) "lhs_of_expr: literal %a" 
           CodePrinter.format_literal l
 
 and refactor_msg (acc:stmt acc) msg : stmt acc * msg_id = match msg with
@@ -1064,7 +1064,7 @@ and refactor_msg (acc:stmt acc) msg : stmt acc * msg_id = match msg with
       let lks = format_to_string Ast_ruby_printer.format_lit_kind lk in
         acc, ID_MethodName lks
   | e ->
-      Log.fatal (Log.of_tok (H.pos2_of e)) "refactor_msg unknown msg: %s\n"
+      Log.fatal (Log.of_tok (H.tok_of e)) "refactor_msg unknown msg: %s\n"
         (Ast_ruby_printer.string_of_expr e)
 
 and refactor_symbol_or_msg (acc:stmt acc) sym_msg = match sym_msg with
@@ -1258,7 +1258,7 @@ and refactor_method_call_assign (acc:stmt acc) (lhs : lhs option) = function
 
 (* return the accumulator and resulting lhs expression for an assignment *)
 and refactor_assignment (acc: stmt acc) (lhs: Ast.expr) (rhs: Ast.expr) 
- (pos: Ast.pos2) : stmt acc = 
+ (pos: Ast.tok) : stmt acc = 
   match lhs,rhs with
   (* x[y] = z is really x.[]=(y,z) *)
   | Ast.Call(
@@ -1464,10 +1464,10 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
   | Ast.Unary _
   | Ast.Binop _ as e ->
       let acc,e' = refactor_expr acc e in
-        acc_enqueue (C.expr e' (H.pos2_of e)) acc
+        acc_enqueue (C.expr e' (H.tok_of e)) acc
 
   | Ast.S Ast.While(true,g,body, pos) -> (* do .. while *)
-      let gpos = H.pos2_of g in
+      let gpos = H.tok_of g in
       let body_acc = refactor_stmt_list (acc_emptyq acc) body in
       let body_acc,g' = refactor_expr body_acc g in
       let guard = C.if_s g' (C.next gpos) (C.break gpos) gpos in
@@ -1477,7 +1477,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
         acc_enqueue (C.while_s (EId True) body' pos) acc
 
   | Ast.S Ast.While(false,g,body, pos) -> (* while .. do *)
-      let gpos = H.pos2_of g in
+      let gpos = H.tok_of g in
       let while_acc,g' = refactor_expr (acc_emptyq acc) g in
       let body_acc = refactor_stmt_list (acc_emptyq while_acc) body in
         if (DQueue.is_empty while_acc.q) then
@@ -1574,7 +1574,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
   | Ast.Operator _
   | Ast.UOperator _
   | Ast.CodeBlock _ as s -> 
-      Log.fatal (Log.of_tok (H.pos2_of s))
+      Log.fatal (Log.of_tok (H.tok_of s))
         "refactor_stmt: unknown stmt to refactor: %s\n"
         (Ast_ruby_printer.string_of_expr s)
       
@@ -1683,17 +1683,17 @@ and refactor_rescue_guard acc (e:Ast.expr) : StrSet.t * rescue_guard =
                  Printf.eprintf "resc: %s\n" 
                    (CodePrinter.string_of_cfg s)
               ) acc.q;
-            Log.fatal (Log.of_tok (H.pos2_of e))
+            Log.fatal (Log.of_tok (H.tok_of e))
               "rescue1 guard created hoisted expression?"
           end;
           acc.seen, Rescue_Expr e'
 
     | e -> 
-        Log.fixme ~ctx:(Log.of_tok (H.pos2_of e))
+        Log.fixme ~ctx:(Log.of_tok (H.tok_of e))
           "rescue gaurd: %a" Ast_ruby_printer.format_expr e;
         let acc, e' = refactor_tuple_expr acc e in
           if (not (DQueue.is_empty acc.q)) || not (StrSet.is_empty acc.seen)
-          then Log.fatal (Log.of_tok (H.pos2_of e))
+          then Log.fatal (Log.of_tok (H.tok_of e))
             "rescue guard created hoisted expression?";
           acc.seen, Rescue_Expr e'
             
@@ -1724,7 +1724,7 @@ and refactor_method_formal (acc:stmt acc) t _pos : stmt acc * method_formal_para
   | Ast.Formal_tuple(_f_lst) -> Log.fatal Log.empty "refactor_method_formal: formal_tuple?"
 
   | Ast.Formal_default (f,s) ->
-      let pos = H.pos2_of s in
+      let pos = H.tok_of s in
       let default_acc = refactor_stmt (acc_emptyq acc) s in
       let acc = acc_seen acc default_acc in
       let acc = {acc with seen = StrSet.add f acc.seen} in
