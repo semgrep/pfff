@@ -2,46 +2,18 @@ module H = Ast_ruby_helpers
 module HH = Parser_ruby_helpers
 module Utils = Utils_ruby
 
-(*
-val set_lexbuf_fname : Lexing.lexbuf -> string -> unit
-val set_lexbuf_lineno : Lexing.lexbuf -> int -> unit
-val uniq_list : (Ast_ruby.expr list * 'a) list -> Ast_ruby.expr list list
-val parse_lexbuf_with_state :
-  ?env:Utils.StrSet.t -> Lexer_ruby.S.t -> Lexing.lexbuf -> Ast_ruby.ast
-val parse_string_with_state :
-  Lexer_ruby.S.t ->
-  ?env:Utils.StrSet.t ->
-  ?filename:string -> ?lineno:int -> string -> Ast_ruby.ast
-val parse_lexbuf : Lexing.lexbuf -> Ast_ruby.ast
-val parse_string :
-  ?env:Utils.StrSet.t ->
-  ?filename:string -> ?lineno:int -> string -> Ast_ruby.ast
-
-val parse_file : string -> Ast_ruby.ast
-*)
-
-let set_lexbuf_fname lexbuf name = 
-  lexbuf.Lexing.lex_curr_p <-
-    {lexbuf.Lexing.lex_curr_p with
-       Lexing.pos_fname = name
-    }
-
-let set_lexbuf_lineno lexbuf line = 
-  lexbuf.Lexing.lex_curr_p <-
-    {lexbuf.Lexing.lex_curr_p with
-       Lexing.pos_lnum = line
-    }
 
 let uniq_list lst =
   let rec u = function
     | [] -> []
     | [x] -> [x]
     | x1::x2::tl ->
-    if H.equal_ast x1 x2
-    then u (x1::tl) else x1 :: (u (x2::tl))
+      if H.equal_ast x1 x2
+      then u (x1::tl) 
+      else x1 :: (u (x2::tl))
   in
   let l = List.map fst lst in
-    u (List.sort H.compare_ast l)
+  u (List.sort H.compare_ast l)
 
 
 let parse_lexbuf_with_state ?env state lexbuf = 
@@ -71,12 +43,11 @@ let parse_lexbuf lexbuf =
 let parse_file fname = 
   let ic = open_in fname in
   let lexbuf = Lexing.from_channel ic in
-  let () = set_lexbuf_fname lexbuf fname in
-    try
+  try
       let res = parse_lexbuf lexbuf in
         close_in ic;
         res
-    with e -> close_in ic; raise e
+  with e -> close_in ic; raise e
 
 (* entry point *)
 let parse_program file = 
