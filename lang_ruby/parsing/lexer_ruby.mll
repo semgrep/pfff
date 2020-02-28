@@ -480,10 +480,10 @@ and top_lexer state = parse
   | ":" {on_end t_colon atom state lexbuf}
 
   | ws+ "::" { T_USCOPE lexbuf.lex_curr_p }
-  | "::" { on_beg t_uscope t_scope state lexbuf }
+  |     "::" { on_beg t_uscope t_scope state lexbuf }
 
   | ("@@" id) as id {S.end_state state; T_CLASS_VAR(id, lexbuf.lex_curr_p)}
-  | ('@' id) as id {S.end_state state; T_INST_VAR(id, lexbuf.lex_curr_p)}
+  | ('@' id)  as id {S.end_state state; T_INST_VAR(id, lexbuf.lex_curr_p)}
 
   (* ----------------------------------------------------------------------- *)
   (* Ident *)
