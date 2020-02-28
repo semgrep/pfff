@@ -246,6 +246,3 @@ and definition =
 type ast = expr list
  (* with tarzan *)
 
-type pos = Lexing.position
-type pos2 = tok
- (* with tarzan *)

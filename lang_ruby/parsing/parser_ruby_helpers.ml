@@ -308,7 +308,7 @@ and check_for_dot = function
   
 and scope l r = 
   let l = check_for_dot l in
-  Binop(l,Op_SCOPE,r,H.pos2_of l)
+  Binop(l,Op_SCOPE,r,H.tok_of l)
   
 
 let command_codeblock cmd cb = 
@@ -419,7 +419,7 @@ let prune_uop uop arg pos =
 let prune_right_assoc l op r = 
   let l,op,r = fix_broken_neq l op r in
   let l,op,r = fix_broken_assoc l op r in
-  let e = Binop(l,op,r,(H.pos2_of l)) in
+  let e = Binop(l,op,r,(H.tok_of l)) in
   let p = binop_priority e in
   let pl = binop_priority l in
   let pr = binop_priority r in
@@ -433,7 +433,7 @@ let prune_right_assoc l op r =
 let prune_left_assoc l op r = 
   let l,op,r = fix_broken_neq l op r in
   let l,op,r = fix_broken_assoc l op r in
-  let e = Binop(l,op,r,(H.pos2_of l)) in
+  let e = Binop(l,op,r,(H.tok_of l)) in
     match l,op,r with
       | _, _, Binop(_,Op_ASSIGN,_,_) ->  e
 
