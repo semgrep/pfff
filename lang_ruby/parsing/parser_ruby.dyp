@@ -106,7 +106,7 @@ let mk_block lst pos = match lst with
 let tuple = function
   | [] -> S Empty
   | [x] -> x
-  | lst -> Tuple(lst,H.pos_of (List.hd lst))
+  | lst -> Tuple(lst,H.pos2_of (List.hd lst))
 
 let is_exnblock = function 
   | S ExnBlock _ -> true 
@@ -130,128 +130,75 @@ let rec add_eq = function
 /*(*2 The space/comment tokens *)*/
 /*(*-----------------------------------------*)*/
 
+%token <Parse_info.t> T_EOL
+%token <Parse_info.t> T_EOF
+
 /*(*-----------------------------------------*)*/
 /*(*2 The normal tokens *)*/
 /*(*-----------------------------------------*)*/
+
+%token <string * Parse_info.t> T_UID
+%token <string * Parse_info.t> T_LID
+%token <string * Parse_info.t> T_GLOBAL_VAR
+%token <string * Parse_info.t> T_INST_VAR
+%token <string * Parse_info.t> T_CLASS_VAR
+%token <string * Parse_info.t> T_BUILTIN_VAR
+
+%token <Ast_ruby.interp_string * Parse_info.t> T_ATOM
+%token <int * Parse_info.t>             T_FIXNUM
+%token <Big_int.big_int * Parse_info.t> T_BIGNUM
+%token <string * float * Parse_info.t>  T_FLOAT
+
+%token <string * Parse_info.t> T_SINGLE_STRING
+%token <Ast_ruby.interp_string * Parse_info.t> T_DOUBLE_STRING
+%token <string * Ast_ruby.interp_string * Parse_info.t> T_USER_STRING
+%token <Parse_info.t> T_DOUBLE_BEG
+%token <Parse_info.t> T_TICK_BEG
+%token <string * Parse_info.t> T_USER_BEG
+%token <Parse_info.t> T_REGEXP_BEG
+%token <string * Parse_info.t>  T_REGEXP_MOD
+%token <Ast_ruby.interp_string * string * Parse_info.t> T_REGEXP
+%token <Parse_info.t> T_ATOM_BEG
+%token <string * Parse_info.t> T_INTERP_STR
+%token <string * Parse_info.t> T_INTERP_END
 
 /*(*-----------------------------------------*)*/
 /*(*2 Keyword tokens *)*/
 /*(*-----------------------------------------*)*/
 
-/*(*-----------------------------------------*)*/
-/*(*2 Punctuation tokens *)*/
-/*(*-----------------------------------------*)*/
-
-/*(* syntax *)*/
-
-/*(* operators *)*/
-
-
-/*(*-----------------------------------------*)*/
-/*(*2 Extra tokens: *)*/
-/*(*-----------------------------------------*)*/
-
-%token <Lexing.position> T_DOT          /* . */
-%token <Lexing.position> T_COMMA        /* , */
-
-%token <Lexing.position> T_PLUS     /* + */
-%token <Lexing.position> T_UPLUS    /* unary + */
-%token <Lexing.position> T_MINUS    /* - */
-%token <Lexing.position> T_UMINUS   /* unary - */
-%token <Lexing.position> T_POW      /* ** */
-%token <Lexing.position> T_CMP      /* <=> */
-%token <Lexing.position> T_ASSIGN       /* = */
-%token <Lexing.position> T_EQ       /* == */
-%token <Lexing.position> T_EQQ      /* === */
-%token <Lexing.position> T_NEQ      /* != */
-%token <Lexing.position> T_GEQ      /* >= */
-%token <Lexing.position> T_LEQ      /* <= */
-%token <Lexing.position> T_LT       /* < */
-%token <Lexing.position> T_GT       /* > */
-%token <Lexing.position> T_ANDOP 
-       <Lexing.position> T_OROP         /* && and || */
-%token <Lexing.position> T_MATCH
-        <Lexing.position> T_NMATCH  /* =~ and !~ */
-
-%token <Lexing.position> T_DOT2
-       <Lexing.position> T_DOT3 /* .. and ... */
-
-%token <Lexing.position> T_LSHFT
-       <Lexing.position> T_RSHFT    /* << and >> */
-
-%token <string*Lexing.position> T_OP_ASGN   /* +=, -=  etc. */
-
-%token <Lexing.position> T_ASSOC    /* => */
-%token <Lexing.position> T_LPAREN   /* _( */
-%token <Lexing.position> T_LPAREN_ARG   /* ( */
-%token <Lexing.position> T_RPAREN   /* ) */
-%token <Lexing.position> T_LBRACK_ARG   /* [ as in x[y] = 2 */
-%token <Lexing.position> T_LBRACK   /* [ as in x [y] aka x([y]) */
-%token <Lexing.position> T_RBRACK   /* ] */
-%token <Lexing.position> T_LBRACE   /* { for hash */
-%token <Lexing.position> T_LBRACE_ARG   /* { for code block */
-%token <Lexing.position> T_RBRACE   /* } */
-%token <Lexing.position> T_STAR     /* * */
-%token <Lexing.position> T_USTAR    /* * */
-%token <Lexing.position> T_SLASH    /* / */
-%token <Lexing.position> T_PERCENT  /* % */
-%token <Lexing.position> T_QUESTION     /* ? */
-%token <Lexing.position> T_COLON        /* : */
-%token <Lexing.position> T_CARROT       /* ^ */
-%token <Lexing.position> T_VBAR         /* | */
-%token <Lexing.position> T_BANG         /* ! */
-%token <Lexing.position> T_TILDE        /* ~ */
-%token <Lexing.position> T_AMPER    /* & */
-%token <Lexing.position> T_UAMPER   /* & */
-%token <Lexing.position> T_SEMICOLON    /* ; */
-%token <Lexing.position> T_SCOPE        /* x::y */
-%token <Lexing.position> T_USCOPE       /* f ::y */
-
-%token <string * Lexing.position> T_UID
-%token <string * Lexing.position> T_LID
-%token <string * Lexing.position> T_GLOBAL_VAR
-%token <string * Lexing.position> T_INST_VAR
-%token <string * Lexing.position> T_CLASS_VAR
-%token <string * Lexing.position> T_BUILTIN_VAR
-
-%token <Ast_ruby.interp_string * Lexing.position> T_ATOM
-%token <int * Lexing.position>             T_FIXNUM
-%token <Big_int.big_int * Lexing.position> T_BIGNUM
-%token <string * float * Lexing.position>  T_FLOAT
-
 /* keywords */
-%token <Lexing.position> K_CLASS
-       <Lexing.position> K_MODULE
-       <Lexing.position> K_DEF
-       <Lexing.position> K_END
-       <Lexing.position> K_ALIAS
-       <Lexing.position> K_UNDEF
-       <Lexing.position> K_BEGIN
-       <Lexing.position> K_RESCUE
-       <Lexing.position> K_ENSURE
-       <Lexing.position> K_IF
-       <Lexing.position> K_UNLESS
-       <Lexing.position> K_THEN
-       <Lexing.position> K_ELSIF
-       <Lexing.position> K_ELSE
-       <Lexing.position> K_CASE
-       <Lexing.position> K_WHEN
-       <Lexing.position> K_WHILE
-       <Lexing.position> K_UNTIL
-       <Lexing.position> K_FOR
-       <Lexing.position> K_IN
-       <Lexing.position> K_DO
-       <Lexing.position> K_RETURN
-       <Lexing.position> K_AND
-       <Lexing.position> K_OR
-       <Lexing.position> K_NOT
-       <Lexing.position> K_lBEGIN
-       <Lexing.position> K_lEND
-       <Lexing.position> K_NIL
-       <Lexing.position> K_YIELD
-       <Lexing.position> K_SELF
-       <Lexing.position> K_TRUE
-       <Lexing.position> K_FALSE
+%token <Parse_info.t> K_CLASS
+       <Parse_info.t> K_MODULE
+       <Parse_info.t> K_DEF
+       <Parse_info.t> K_END
+       <Parse_info.t> K_ALIAS
+       <Parse_info.t> K_UNDEF
+       <Parse_info.t> K_BEGIN
+       <Parse_info.t> K_RESCUE
+       <Parse_info.t> K_ENSURE
+       <Parse_info.t> K_IF
+       <Parse_info.t> K_UNLESS
+       <Parse_info.t> K_THEN
+       <Parse_info.t> K_ELSIF
+       <Parse_info.t> K_ELSE
+       <Parse_info.t> K_CASE
+       <Parse_info.t> K_WHEN
+       <Parse_info.t> K_WHILE
+       <Parse_info.t> K_UNTIL
+       <Parse_info.t> K_FOR
+       <Parse_info.t> K_IN
+       <Parse_info.t> K_DO
+       <Parse_info.t> K_RETURN
+       <Parse_info.t> K_AND
+       <Parse_info.t> K_OR
+       <Parse_info.t> K_NOT
+       <Parse_info.t> K_lBEGIN
+       <Parse_info.t> K_lEND
+       <Parse_info.t> K_NIL
+       <Parse_info.t> K_YIELD
+       <Parse_info.t> K_SELF
+       <Parse_info.t> K_TRUE
+       <Parse_info.t> K_FALSE
 /*
     K_DEFINED
     K_SUPER
@@ -263,21 +210,76 @@ let rec add_eq = function
     K___FIL_
 */
 
-%token <string * Lexing.position> T_SINGLE_STRING
-%token <Ast_ruby.interp_string * Lexing.position> T_DOUBLE_STRING
-%token <string * Ast_ruby.interp_string * Lexing.position> T_USER_STRING
-%token <Lexing.position> T_DOUBLE_BEG
-%token <Lexing.position> T_TICK_BEG
-%token <string * Lexing.position> T_USER_BEG
-%token <Lexing.position> T_REGEXP_BEG
-%token <string> T_REGEXP_MOD
-%token <Ast_ruby.interp_string * string * Lexing.position> T_REGEXP
-%token <Lexing.position> T_ATOM_BEG
-%token <string * Lexing.position> T_INTERP_STR
-%token <string * Lexing.position> T_INTERP_END
+/*(*-----------------------------------------*)*/
+/*(*2 Punctuation tokens *)*/
+/*(*-----------------------------------------*)*/
 
-%token T_EOL
-%token T_EOF
+/*(* syntax *)*/
+%token <Parse_info.t> T_DOT          /* . */
+%token <Parse_info.t> T_COMMA        /* , */
+
+%token <Parse_info.t> T_ASSOC    /* => */
+%token <Parse_info.t> T_LPAREN   /* _( */
+%token <Parse_info.t> T_LPAREN_ARG   /* ( */
+%token <Parse_info.t> T_RPAREN   /* ) */
+%token <Parse_info.t> T_LBRACK_ARG   /* [ as in x[y] = 2 */
+%token <Parse_info.t> T_LBRACK   /* [ as in x [y] aka x([y]) */
+%token <Parse_info.t> T_RBRACK   /* ] */
+%token <Parse_info.t> T_LBRACE   /* { for hash */
+%token <Parse_info.t> T_LBRACE_ARG   /* { for code block */
+%token <Parse_info.t> T_RBRACE   /* } */
+
+%token <Parse_info.t> T_QUESTION     /* ? */
+%token <Parse_info.t> T_COLON        /* : */
+
+%token <Parse_info.t> T_SEMICOLON    /* ; */
+%token <Parse_info.t> T_SCOPE        /* x::y */
+%token <Parse_info.t> T_USCOPE       /* f ::y */
+
+/*(* operators *)*/
+
+%token <Parse_info.t> T_PLUS     /* + */
+%token <Parse_info.t> T_UPLUS    /* unary + */
+%token <Parse_info.t> T_MINUS    /* - */
+%token <Parse_info.t> T_UMINUS   /* unary - */
+%token <Parse_info.t> T_POW      /* ** */
+%token <Parse_info.t> T_CMP      /* <=> */
+%token <Parse_info.t> T_ASSIGN       /* = */
+%token <Parse_info.t> T_EQ       /* == */
+%token <Parse_info.t> T_EQQ      /* === */
+%token <Parse_info.t> T_NEQ      /* != */
+%token <Parse_info.t> T_GEQ      /* >= */
+%token <Parse_info.t> T_LEQ      /* <= */
+%token <Parse_info.t> T_LT       /* < */
+%token <Parse_info.t> T_GT       /* > */
+%token <Parse_info.t> T_ANDOP 
+       <Parse_info.t> T_OROP         /* && and || */
+%token <Parse_info.t> T_MATCH
+        <Parse_info.t> T_NMATCH  /* =~ and !~ */
+
+%token <Parse_info.t> T_DOT2
+       <Parse_info.t> T_DOT3 /* .. and ... */
+
+%token <Parse_info.t> T_LSHFT
+       <Parse_info.t> T_RSHFT    /* << and >> */
+
+%token <string*Parse_info.t> T_OP_ASGN   /* +=, -=  etc. */
+
+%token <Parse_info.t> T_STAR     /* * */
+%token <Parse_info.t> T_USTAR    /* * */
+%token <Parse_info.t> T_SLASH    /* / */
+%token <Parse_info.t> T_PERCENT  /* % */
+
+%token <Parse_info.t> T_CARROT       /* ^ */
+%token <Parse_info.t> T_VBAR         /* | */
+%token <Parse_info.t> T_BANG         /* ! */
+%token <Parse_info.t> T_TILDE        /* ~ */
+%token <Parse_info.t> T_AMPER    /* & */
+%token <Parse_info.t> T_UAMPER   /* & */
+
+/*(*-----------------------------------------*)*/
+/*(*2 Extra tokens: *)*/
+/*(*-----------------------------------------*)*/
 
 /*(*************************************************************************)*/
 /*(*1 Rules type declaration *)*/
@@ -361,7 +363,7 @@ stmt:
   | mlhs_assign_op<l,op> eols mrhs<r>
       { (*prune_binop (tuple l) op (tuple r)*) 
          let lhs = tuple l in
-         Binop(lhs,op,(tuple r),(H.pos_of lhs))
+         Binop(lhs,op,(tuple r),(H.pos2_of lhs))
       }
   | expr<e> 
       { e }
@@ -377,13 +379,13 @@ topcall:
   | func<c> code_block<cb>
       { match c with
         | Call(m,args,None,pos) -> methodcall m args (Some cb) pos
-        | _ -> methodcall c [] (Some cb) (H.pos_of c)
+        | _ -> methodcall c [] (Some cb) (H.pos2_of c)
       }
 
   | command<c> {c}
   | command_name<m> call_args<args> do_codeblock<cb>
       { well_formed_command m args;
-        methodcall m args (Some cb) (H.pos_of m)}
+        methodcall m args (Some cb) (H.pos2_of m)}
 
 /*(*----------------------------*)*/
 /*(*2 Command *)*/
@@ -395,17 +397,17 @@ command:
         S (Yield(args,pos)) }
   | command_name<m> call_args<args>
       { well_formed_command m args;
-        methodcall m args None (H.pos_of m)}
+        methodcall m args None (H.pos2_of m)}
   | command_name<cmd> command<cmd2>
       { well_formed_command cmd [cmd2];
-        methodcall cmd [cmd2] None (H.pos_of cmd)}
+        methodcall cmd [cmd2] None (H.pos2_of cmd)}
 
 command_name:
   | identifier<id> {id}
   | primary<p> T_DOT eols message_identifier<m>
-      { unfold_dot p m (H.pos_of p)}
+      { unfold_dot p m (H.pos2_of p)}
   | command_name<p> T_DOT eols message_identifier<m>
-      { unfold_dot p m (H.pos_of p)}
+      { unfold_dot p m (H.pos2_of p)}
   | primary<p> T_SCOPE message_identifier<m> 
       { scope p m }
   | command_name<p> T_SCOPE message_identifier<m>
@@ -417,11 +419,11 @@ command_name:
 func:
   | command_name<c> lparen eols call_args<args> eols T_RPAREN
       { match args with
-        | [] -> Call(c,args,None,H.pos_of c) 
-        | _ -> methodcall c args None (H.pos_of c)
+        | [] -> Call(c,args,None,H.pos2_of c) 
+        | _ -> methodcall c args None (H.pos2_of c)
       }
   | command_name<c> lparen eols command<a> eols T_RPAREN
-      { Call(c,[a],None,H.pos_of c)}
+      { Call(c,[a],None,H.pos2_of c)}
 
 lparen:
   | T_LPAREN<pos> {pos}
@@ -442,7 +444,7 @@ arg:
   | arg<l> T_OROP      eols arg<r> { prune_left_assoc l Op_OR r }
 
   | arg<e1> T_QUESTION<pos> eols expr<e2> T_COLON eols expr<e3>   
-    { M.prune_tern e1 e2 e3 (H.pos_of e1) }
+    { M.prune_tern e1 e2 e3 (H.pos2_of e1) }
 
 call_args:
   | /*empty*/ { [] }
@@ -486,9 +488,9 @@ lhs_assign_op: lhs<l> assign_op<op>   {seen dyp l; l,op}
 lhs:
   | scoped_id<id> { id }
   | primary<p> T_LBRACK_ARG<pos> eols arg_comma_star_list<args> eols T_RBRACK
-      { methodcall (Binop(p,Op_DOT,Operator(Op_AREF,pos),H.pos_of p)) args None (H.pos_of p)}
+      { methodcall (Binop(p,Op_DOT,Operator(Op_AREF,pos),H.pos2_of p)) args None (H.pos2_of p)}
   | primary<p> T_DOT eols message_identifier<m>
-      { methodcall (Binop(p,Op_DOT,m,H.pos_of p)) [] None (H.pos_of p)}
+      { methodcall (Binop(p,Op_DOT,m,H.pos2_of p)) [] None (H.pos2_of p)}
 
 /*(*----------------------------*)*/
 /*(*2 Multiple LHS *)*/
@@ -585,22 +587,22 @@ primary:
   | constant<c> { c }
   | identifier<id> { id }
 
-  | command_name<c>                { methodcall c [] None (H.pos_of c)}
+  | command_name<c>                { methodcall c [] None (H.pos2_of c)}
   | command_name<c> code_block<cb> { command_codeblock c cb }
 
   | func<f>                { f }
   | func<f> code_block<cb> 
       { match f with
         | Call(m,args,None,pos) -> methodcall m args (Some cb) pos
-        | _ -> methodcall f [] (Some cb) (H.pos_of f)
+        | _ -> methodcall f [] (Some cb) (H.pos2_of f)
       }
 
   | primary<p> T_SCOPE identifier<id>  { scope p id }
   | T_USCOPE<pos> identifier<id>       { Unary(Op_UScope,id,pos) }
 
   | primary<p> T_LBRACK_ARG<pos1> eols arg_comma_list_trail<args> eols T_RBRACK
-      { methodcall (Binop(p,Op_DOT,Operator(Op_AREF,pos1),H.pos_of p)) 
-                   args None (H.pos_of p)
+      { methodcall (Binop(p,Op_DOT,Operator(Op_AREF,pos1),H.pos2_of p)) 
+                   args None (H.pos2_of p)
       }
 
   | T_LBRACK<pos> eols array_body<body> eols T_RBRACK { Array(body,pos) }
@@ -701,7 +703,7 @@ constant:
   | T_TICK_BEG<pos> interp_str<istr>
       { Literal (String (Tick istr),pos) }
 
-  | T_REGEXP_BEG<pos> interp_str<istr> T_REGEXP_MOD<mods>
+  | T_REGEXP_BEG<pos> interp_str<istr> T_REGEXP_MOD<mods, _posTODO>
       { Literal(Regexp (istr,mods),pos) }
   | T_REGEXP<s,m,pos> 
       { Literal(Regexp (s,m),pos) }
@@ -740,7 +742,7 @@ interp_code:
   | eols stmt_list<ss> interp_str_work<tl>
       { match ss with
           | [] -> tl
-          | x::_ -> StrExpr (mk_block ss (H.pos_of x))::tl }
+          | x::_ -> StrExpr (mk_block ss (H.pos2_of x))::tl }
 
   | T_INTERP_END<s,pos> 
       { if s = "" then [] else [StrChars s] }
@@ -759,7 +761,7 @@ rescue_clause:
   | K_RESCUE<resc_pos> then_sep stmt_list<body>
       { let pos = match body with
       | [] -> resc_pos 
-      | hd::_ -> H.pos_of hd
+      | hd::_ -> H.pos2_of hd
       in (S Empty,mk_block body pos) 
       }
 
@@ -828,8 +830,8 @@ array_item:
   | arg<e> { e }
   | constant<c> T_LBRACK<pos1> eols call_args<args> eols T_RBRACK
       {methodcall
-     (Binop(c, Op_DOT, Operator(Op_AREF,pos1), H.pos_of c)) 
-     args None (H.pos_of c)
+     (Binop(c, Op_DOT, Operator(Op_AREF,pos1), H.pos2_of c)) 
+     args None (H.pos2_of c)
       }
 
 /*(*************************************************************************)*/
@@ -853,12 +855,12 @@ identifier:
 scoped_id:
   | identifier<id>                            { id }
   | T_USCOPE<pos> identifier<id>              { Unary(Op_UScope,id,pos)}
-  | scoped_id<id1> T_SCOPE identifier<id2>    { Binop(id1,Op_SCOPE,id2,H.pos_of id1) }
-  | scoped_id<id1> T_SCOPE keyword_as_id<id2> { Binop(id1,Op_SCOPE,id2,H.pos_of id1) }
+  | scoped_id<id1> T_SCOPE identifier<id2>    { Binop(id1,Op_SCOPE,id2,H.pos2_of id1) }
+  | scoped_id<id1> T_SCOPE keyword_as_id<id2> { Binop(id1,Op_SCOPE,id2,H.pos2_of id1) }
 
 message_identifier:
   | assignable<e>                       { e }
-  | bin_op<op>                          { Operator(op,Lexing.dummy_pos) }
+  | bin_op<op>                          { Operator(op,(*Lexing.dummy_pos*)raise Common.Todo) }
   | T_LBRACK_ARG<pos> T_RBRACK T_ASSIGN { Operator(Op_ASET,pos) }
   | T_UPLUS<pos>                        { UOperator(Op_UPlus,pos) }
   | T_UMINUS<pos>                       { UOperator(Op_UMinus,pos) }
@@ -935,9 +937,9 @@ method_name:
 
   | method_name<e> T_ASSIGN { add_eq e }
   | method_name<id1> T_DOT eols message_identifier<id2> 
-      { Binop(id1,Op_DOT,id2,H.pos_of id1) }
+      { Binop(id1,Op_DOT,id2,H.pos2_of id1) }
   | method_name<id1> T_DOT eols assignable<id2> T_ASSIGN
-      { Binop(id1,Op_DOT,add_eq id2,H.pos_of id1) }
+      { Binop(id1,Op_DOT,add_eq id2,H.pos2_of id1) }
 
   | T_USCOPE<pos> identifier<id>     { Unary(Op_UScope,id,pos)}
   | T_USCOPE<pos> keyword_as_id<id>  { Unary(Op_UScope,id,pos)}
@@ -945,7 +947,7 @@ method_name:
   | method_name<id1> T_SCOPE identifier<id2>    { scope id1 id2 }
   | method_name<id1> T_SCOPE keyword_as_id<id2> { scope id1 id2 }
   | T_LPAREN<pos> eols stmt_list<ss> T_RPAREN T_DOT message_identifier<m>
-      { Binop(mk_block ss (H.pos_of (List.hd ss)), Op_DOT,m, pos) }
+      { Binop(mk_block ss (H.pos2_of (List.hd ss)), Op_DOT,m, pos) }
 
 /*(*************************************************************************)*/
 /*(*1 Class definition *)*/

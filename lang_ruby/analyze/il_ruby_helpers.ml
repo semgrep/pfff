@@ -3,6 +3,8 @@ module Utils = Utils_ruby
 
 open Il_ruby  
 
+type pos2 = Parse_info.t
+
 
 let uniq_counter = ref 0
 let uniq () = incr uniq_counter; !uniq_counter
@@ -372,7 +374,8 @@ end
 
 let pos_of s = s.pos
 
-let empty_stmt () = mkstmt (I (Expression (EId Nil))) Lexing.dummy_pos
+let empty_stmt () = mkstmt (I (Expression (EId Nil))) 
+  (*Lexing.dummy_pos*)(raise Common.Todo)
 
 let fresh_local _s = 
   let i = uniq () in

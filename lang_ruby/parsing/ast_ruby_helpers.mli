@@ -7,7 +7,9 @@ val compare_ast : expr list -> expr list -> int
 val equal_ast : expr list -> expr list -> bool
 
 val pos_of : expr -> pos
-val set_pos : pos -> expr -> expr
+
+val pos2_of : expr -> pos2
+val set_pos : pos2 -> expr -> expr
 
 val binary_op_of_string : string -> binary_op
 
@@ -15,7 +17,7 @@ val mod_ast : (expr -> expr) -> expr list -> expr list
 
 (* converts the method name or operator in the given string and
    returns an expression suitable for use within a MethodDef *)
-val msg_of_str : string -> pos -> expr
+val msg_of_str : string -> pos2 -> expr
 
 val str_uop : unary_op -> string
 val str_binop : binary_op -> string

@@ -52,8 +52,8 @@
 (* ------------------------------------------------------------------------- *)
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
-(* TODO: type tok = Parse_info.t and wrap and bracket *)
-type tok = Lexing.position
+(* TODO: wrap and bracket *)
+type tok = Parse_info.t
  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
@@ -246,5 +246,6 @@ and definition =
 type ast = expr list
  (* with tarzan *)
 
-type pos = tok
+type pos = Lexing.position
+type pos2 = tok
  (* with tarzan *)

@@ -12,6 +12,8 @@ type ctx =
 let empty = Ctx_Empty
 let loc pos ctx = Ctx_Pos(pos,ctx)
 let of_loc pos = loc pos Ctx_Empty
+let of_tok _x = raise Common.Todo
+
 let msg str ctx = Ctx_Msg(str,ctx)
 let of_msg str = msg str Ctx_Empty
 let merge c1 c2 = Ctx_Merge(c1,c2)
