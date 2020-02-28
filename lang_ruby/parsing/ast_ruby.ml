@@ -62,10 +62,10 @@ type tok = Parse_info.t
 
 type id_kind = 
   | ID_Lowercase (* prefixed by [a-z] or _ *)
+  | ID_Uppercase (* prefixed by [A-Z] *)
   | ID_Instance  (* prefixed by @ *)
   | ID_Class     (* prefixed by @@ *)
   | ID_Global    (* prefixed by $ *)
-  | ID_Uppercase (* prefixed by [A-Z] *)
   | ID_Builtin   (* prefixed by $, followed by non-alpha *)
   | ID_Assign of id_kind (* postfixed by = *)
 
