@@ -153,6 +153,7 @@ let rec add_eq = function
 
 %token <Lexing.position> T_DOT          /* . */
 %token <Lexing.position> T_COMMA        /* , */
+
 %token <Lexing.position> T_PLUS     /* + */
 %token <Lexing.position> T_UPLUS    /* unary + */
 %token <Lexing.position> T_MINUS    /* - */
@@ -171,11 +172,15 @@ let rec add_eq = function
        <Lexing.position> T_OROP         /* && and || */
 %token <Lexing.position> T_MATCH
         <Lexing.position> T_NMATCH  /* =~ and !~ */
+
 %token <Lexing.position> T_DOT2
        <Lexing.position> T_DOT3 /* .. and ... */
+
 %token <Lexing.position> T_LSHFT
        <Lexing.position> T_RSHFT    /* << and >> */
+
 %token <string*Lexing.position> T_OP_ASGN   /* +=, -=  etc. */
+
 %token <Lexing.position> T_ASSOC    /* => */
 %token <Lexing.position> T_LPAREN   /* _( */
 %token <Lexing.position> T_LPAREN_ARG   /* ( */
@@ -207,16 +212,17 @@ let rec add_eq = function
 %token <string * Lexing.position> T_GLOBAL_VAR
 %token <string * Lexing.position> T_INST_VAR
 %token <string * Lexing.position> T_CLASS_VAR
-%token <Ast_ruby.interp_string * Lexing.position> T_ATOM
-%token <int * Lexing.position> T_FIXNUM
-%token <Big_int.big_int * Lexing.position> T_BIGNUM
-%token <string * float * Lexing.position> T_FLOAT
 %token <string * Lexing.position> T_BUILTIN_VAR
 
+%token <Ast_ruby.interp_string * Lexing.position> T_ATOM
+%token <int * Lexing.position>             T_FIXNUM
+%token <Big_int.big_int * Lexing.position> T_BIGNUM
+%token <string * float * Lexing.position>  T_FLOAT
+
 /* keywords */
-%token <string*Lexing.position>  K_CLASS
-       <string*Lexing.position> K_MODULE
-       <string*Lexing.position> K_DEF
+%token <Lexing.position> K_CLASS
+       <Lexing.position> K_MODULE
+       <Lexing.position> K_DEF
        <Lexing.position> K_END
        <Lexing.position> K_ALIAS
        <Lexing.position> K_UNDEF
@@ -252,10 +258,10 @@ let rec add_eq = function
     K_BREAK
     K_REDO
     K_RETRY
-    K_NEXT*/
-     /* K___LIN_
+    K_NEXT
+    K___LIN_
     K___FIL_
-      */
+*/
 
 %token <string * Lexing.position> T_SINGLE_STRING
 %token <Ast_ruby.interp_string * Lexing.position> T_DOUBLE_STRING
@@ -305,8 +311,8 @@ stmt_list:
 scope_begin:  K_BEGIN<pos> {enter_scope dyp;pos}
 scope_end:    K_END<pos>   {enter_scope dyp;pos}
 scope_def:    K_DEF<pos>   {enter_scope dyp;pos}
-scope_class:  K_CLASS<t_info,pos>  {enter_scope dyp;t_info,pos}
-scope_module: K_MODULE<t_info,pos> {enter_scope dyp;t_info,pos}
+scope_class:  K_CLASS<pos>  {enter_scope dyp;pos}
+scope_module: K_MODULE<pos> {enter_scope dyp;pos}
 
 /*(*************************************************************************)*/
 /*(*1 Statement *)*/
@@ -640,20 +646,20 @@ primary:
 
   | K_lBEGIN<pos> eols body_exn<body>  K_lEND { S (ExnBlock(body,pos)) }
 
-  | scope_class<t_info,pos> eols scoped_id<class_name> class_inheritance<inh> do_sep
+  | scope_class<pos> eols scoped_id<class_name> class_inheritance<inh> do_sep
       body_exn<body> K_lEND
       { leave_scope dyp;
         D (ClassDef(class_name, inh, body, pos))}
 
-  | scope_class<t_info,pos> T_LSHFT arg<id> eols body_exn<body> K_lEND
+  | scope_class<pos> T_LSHFT arg<id> eols body_exn<body> K_lEND
       { leave_scope dyp;
         D (ClassDef(S Empty, Some (Inst_Inherit id), body, pos)) }
 
-  | scope_module<t_info,pos> scoped_id<name> eols body_exn<body> K_lEND 
+  | scope_module<pos> scoped_id<name> eols body_exn<body> K_lEND 
       { leave_scope dyp;
         D (ModuleDef (name,body, pos)) }
 
-  | scope_def<t_info,pos> method_name<meth_name> method_formals<formals> eols
+  | scope_def<pos> method_name<meth_name> method_formals<formals> eols
       body_exn<body> K_lEND
       { leave_scope dyp;
         D (MethodDef (meth_name, formals, body, pos)) }
@@ -680,22 +686,25 @@ then_sep:
 /*(*----------------------------*)*/
 
 constant:
+  | T_FIXNUM<i,pos>  { Literal(FixNum i,pos) }
+  | T_BIGNUM<i,pos>  { Literal(BigNum i,pos) }
+  | T_FLOAT<s,f,pos> { Literal((Float(s,f)),pos) }
+
   | string<s> { s }
+
+  | T_ATOM<a,pos> 
+      { Literal (Atom a,pos) }
+  | T_ATOM_BEG<pos> interp_str<istr> 
+      { Literal (Atom istr,pos) }
+
 
   | T_TICK_BEG<pos> interp_str<istr>
       { Literal (String (Tick istr),pos) }
 
-  | T_ATOM_BEG<pos> interp_str<istr> 
-      { Literal (Atom istr,pos) }
-
   | T_REGEXP_BEG<pos> interp_str<istr> T_REGEXP_MOD<mods>
       { Literal(Regexp (istr,mods),pos) }
-  | T_REGEXP<s,m,pos> { Literal(Regexp (s,m),pos) }
-
-  | T_FIXNUM<i,pos> { Literal(FixNum i,pos) }
-  | T_BIGNUM<i,pos> { Literal(BigNum i,pos) }
-  | T_FLOAT<s,f,pos> { Literal((Float(s,f)),pos) }
-  | T_ATOM<a,pos> { Literal (Atom a,pos) }
+  | T_REGEXP<s,m,pos> 
+      { Literal(Regexp (s,m),pos) }
 
 /*(*----------------------------*)*/
 /*(*2 strings *)*/
@@ -766,19 +775,14 @@ rescue_clause:
 seen_id: identifier<i> {seen dyp i;i}
 
 
-rescue_list_rest:
-  | { [] }
-  | rescue_clause<r> rescue_list_rest<rs> { r::rs }
-
 rescue_list:
-  | { [] }
-    /* need to force an eol/semi here to disambiguate the rescue modifier */
+  | /* empty */ { [] }
+  /* need to force an eol/semi here to disambiguate the rescue modifier */
   | eol_or_semi rescue_clause<r> rescue_list<rs> /*_rest*/
       { r::rs }
 
-
 ensure_clause:
-  | { [] }
+  | /* empty */ { [] }
   | K_ENSURE eols stmt_list<body> { body }
 
 /*(*----------------------------*)*/
@@ -786,14 +790,14 @@ ensure_clause:
 /*(*----------------------------*)*/
 
 if_else_clauses:
-  | { [] }
+  | /* empty */ { [] }
   | K_ELSE eols stmt_list<body>
     { body }
   | K_ELSIF<pos> eols expr<guard> then_sep stmt_list<body> if_else_clauses<rest>
     { [S (If( guard, body, rest, pos)) ] }
 
 case_else:
-  | { [] }
+  | /* empty */ { [] }
   | K_ELSE eols stmt_list<ss> { ss }
 
 /*(*----------------------------*)*/
@@ -801,7 +805,7 @@ case_else:
 /*(*----------------------------*)*/
 
 when_clauses:
-  | { [] }
+  | /* empty */ { [] }
   | K_WHEN arg_comma_star_list<e> then_sep stmt_list<es> when_clauses<rest>
     { (e,es) :: rest }
 
@@ -833,16 +837,18 @@ array_item:
 /*(*************************************************************************)*/
 
 identifier:
+  | T_LID<id,pos>          { Id (ID_Lowercase, id, pos)}
+  | T_UID<id,pos>          { Id (ID_Uppercase, id, pos)}
+
   | T_BUILTIN_VAR<id,pos>  { Id (ID_Builtin, id, pos) }
   | T_GLOBAL_VAR<id,pos>   { Id (ID_Global, id, pos) }
-  | T_UID<id,pos>          { Id (ID_Uppercase, id, pos)}
+  | T_INST_VAR<id,pos>     { Id (ID_Instance, id, pos) }
+  | T_CLASS_VAR<id,pos>    { Id (ID_Class, id, pos) }
+
   | K_NIL<pos>             { Literal(Nil,pos) }
   | K_SELF<pos>            { Literal(Self,pos) }
   | K_TRUE<pos>            { Literal(True,pos) }
   | K_FALSE<pos>           { Literal(False,pos) }
-  | T_LID<id,pos>          { Id (ID_Lowercase, id, pos)}
-  | T_INST_VAR<id,pos>     { Id(ID_Instance, id, pos) }
-  | T_CLASS_VAR<id,pos>    { Id(ID_Class, id, pos) }
 
 scoped_id:
   | identifier<id>                            { id }
@@ -852,8 +858,8 @@ scoped_id:
 
 message_identifier:
   | assignable<e>                       { e }
-  | T_LBRACK_ARG<pos> T_RBRACK T_ASSIGN { Operator(Op_ASET,pos) }
   | bin_op<op>                          { Operator(op,Lexing.dummy_pos) }
+  | T_LBRACK_ARG<pos> T_RBRACK T_ASSIGN { Operator(Op_ASET,pos) }
   | T_UPLUS<pos>                        { UOperator(Op_UPlus,pos) }
   | T_UMINUS<pos>                       { UOperator(Op_UMinus,pos) }
   | T_TILDE<pos>                        { UOperator(Op_UTilde,pos) }
@@ -866,41 +872,29 @@ assignable:
 
 
 bin_op:
-  | T_CMP    { Op_CMP } 
-  | T_EQ     { Op_EQ }
-  | T_SLASH  { Op_DIV }
-  | T_PERCENT{ Op_REM }
-  | T_EQQ    { Op_EQQ }
-  | T_NEQ    { Op_NEQ }
-  | T_GEQ    { Op_GEQ }
-  | T_LEQ    { Op_LEQ }
-  | T_MATCH  { Op_MATCH }
-  | T_NMATCH { Op_NMATCH }
-  | T_CARROT { Op_XOR }
+  | T_PLUS   { Op_PLUS }   | T_MINUS  { Op_MINUS }
+  | T_STAR   { Op_TIMES }  | T_SLASH  { Op_DIV } | T_PERCENT{ Op_REM }
   | T_POW    { Op_POW }
-  | T_VBAR   { Op_BOR }
+  | T_LSHFT  { Op_LSHIFT } | T_RSHFT  { Op_RSHIFT }
+  | T_LT     { Op_LT }     | T_GT     { Op_GT }
+  | T_GEQ    { Op_GEQ }    | T_LEQ    { Op_LEQ }
+  | T_EQ     { Op_EQ }     | T_EQQ    { Op_EQQ } | T_NEQ    { Op_NEQ }
+  | T_CMP    { Op_CMP } 
+  | T_MATCH  { Op_MATCH } | T_NMATCH { Op_NMATCH }
+  | T_AMPER  { Op_BAND } | T_VBAR   { Op_BOR }  | T_CARROT { Op_XOR } 
+
   | T_ASSOC  { Op_ASSOC }
-  | T_AMPER  { Op_BAND }
-  | T_PLUS   { Op_PLUS }
-  | T_MINUS  { Op_MINUS }
-  | T_STAR   { Op_TIMES }
-  | T_LSHFT  { Op_LSHIFT }
-  | T_RSHFT  { Op_RSHIFT }
-  | T_LT     { Op_LT }
-  | T_GT     { Op_GT }
   | T_DOT2   { Op_DOT2 }
   | T_DOT3   { Op_DOT3 }
 
 unary_op:
-  | T_UPLUS<pos>   { Op_UPlus,pos }
-  | T_UMINUS<pos>  { Op_UMinus,pos }
-  | T_TILDE<pos>   { Op_UTilde,pos }
-  | T_BANG<pos>    { Op_UBang,pos }
+  | T_UPLUS<pos>   { Op_UPlus,pos }  | T_UMINUS<pos>  { Op_UMinus,pos }
+  | T_TILDE<pos>   { Op_UTilde,pos } | T_BANG<pos>    { Op_UBang,pos }
 
 keyword_as_id:
-  | K_CLASS<t_info,pos>   { Id(ID_Lowercase, "class", pos) }
-  | K_MODULE<t_info,pos>  { Id(ID_Lowercase, "module", pos) }
-  | K_DEF<t_info,pos>     { Id(ID_Lowercase, "def", pos) }
+  | K_CLASS<pos>   { Id(ID_Lowercase, "class", pos) }
+  | K_MODULE<pos>  { Id(ID_Lowercase, "module", pos) }
+  | K_DEF<pos>     { Id(ID_Lowercase, "def", pos) }
   | K_END<pos>     { Id(ID_Uppercase, "END", pos) }
   | K_ALIAS<pos>   { Id(ID_Lowercase, "alias", pos) }
   | K_UNDEF<pos>   { Id(ID_Lowercase, "undef", pos) }
@@ -923,10 +917,10 @@ keyword_as_id:
   | K_AND<pos>     { Id(ID_Lowercase, "and", pos) }
   | K_OR<pos>      { Id(ID_Lowercase, "or", pos) }
   | K_NOT<pos>     { Id(ID_Lowercase, "not", pos) }
-/*  | K_DEFINED<pos> { Id(ID_Lowercase, "defined?", pos) }*/
   | K_lBEGIN<pos>  { Id(ID_Lowercase, "begin", pos) }
   | K_lEND<pos>    { Id(ID_Lowercase, "end", pos) }
   | K_YIELD<pos>   { Id(ID_Lowercase, "yield", pos) }
+/*  | K_DEFINED<pos> { Id(ID_Lowercase, "defined?", pos) }*/
 
 meth_or_atom:
     | method_name<e>  {e}
@@ -938,6 +932,7 @@ meth_or_atom_list:
 
 method_name:
   | message_identifier<e> { e }
+
   | method_name<e> T_ASSIGN { add_eq e }
   | method_name<id1> T_DOT eols message_identifier<id2> 
       { Binop(id1,Op_DOT,id2,H.pos_of id1) }
