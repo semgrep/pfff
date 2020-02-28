@@ -192,58 +192,6 @@ let uniq () = incr uniq_counter; !uniq_counter
 module Abbr = struct
 
   let local s = Var(Local,s)
-  let ivar s =Var(Instance,s)
-  let cvar s =Var(Class,s)
-  let global s =Var(Global,s)
-  let const s =Var(Constant,s)
-  let builtin s =Var(Builtin,s)
-
-  let var x =
-    try 
-      let kind = match x.[0] with
-        | 'a'..'z' | '_' -> Local
-        | '@' -> if x.[1] = '@' then Class else Instance
-        | '$' -> Global
-        | 'A'..'Z' -> Constant
-        | _ -> raise (Invalid_argument "ast_id")
-      in
-        Var(kind,x)
-    with _ -> failwith "Cfg.Abbr.var"
-
-  let iself = Self
-  let inil = Nil
-  let itrue = True
-  let ifalse = False
-
-  (* convience type for coercing the rested polymorhpic variant used in access_path *)
-(*
-  type access_path_t = [
-     | `ID2_Var of var_kind (* always [Var_Constant or Var_Local] *) * string
-     | `ID2_Scope of access_path_t * string
-  ]
-*)
-
-  let access_path lst = 
-    let rec work = function
-      | [] -> assert false
-      | [x] -> Var(Constant, x)
-      | x::(_::_ as rest) -> Scope(work rest,x)
-    in (work (List.rev lst) : (*access_path_t :>*) identifier)
-
-  let num i = FixNum i
-  let bignum n = BigNum n
-  let float f = Float(string_of_float f, f)
-  let str s = String s
-  let atom s = Atom s
-  let regexp ?(o="") str = Regexp(o,str)
-  let array lst = 
-    Array lst
-
-  let hash lst = 
-    Hash lst
-
-  let range ?(inc=true) l u = 
-    (Range(inc,l,u))
 
   let expr e pos = mkstmt (I (Expression(e :> expr))) pos
 
@@ -298,20 +246,6 @@ module Abbr = struct
               mc_cb = cb}
     in mkstmt (I (Call((lhs:>lhs option),mc))) pos
 
-  let call ?lhs ?targ msg args ?cb pos = 
-    mcall ?lhs ?targ (ID_MethodName msg) args ?cb pos
-
-  let massign ?lhs ?targ msg args ?cb pos = 
-    mcall ?lhs ?targ (ID_Assign msg) args ?cb pos
-
-  let uop ?lhs msg targ ?cb pos = 
-    mcall ?lhs ~targ (ID_UOperator msg) [] ?cb pos
-
-  let binop ?lhs targ msg arg ?cb pos = 
-    mcall ?lhs ~targ (ID_Operator msg) [arg] ?cb pos
-
-  let super ?lhs args ?cb pos = mcall ?lhs ID_Super args ?cb pos
-
   let assign lhs tup pos = 
     mkstmt (I (Assign((lhs:>lhs),(tup:>tuple_expr)))) pos
 
@@ -324,13 +258,6 @@ module Abbr = struct
     ignore targ;
     mkstmt(D (MethodDef(def,args,body))) pos
 
-  let method_ ?targ msg args body pos = 
-    let def = match targ with
-      | None -> Instance_Method msg
-      | Some i -> Singleton_Method((i :> identifier), msg)
-    in
-      mkstmt (D (MethodDef(def,args,body))) pos
-
   let nameclass ?lhs name ?inh body pos = 
     let kind = NominalClass((name :> identifier),(inh :> identifier option)) in
       mkstmt (D (ClassDef((lhs :> lhs option),kind,body))) pos
@@ -342,20 +269,8 @@ module Abbr = struct
   let module_s ?lhs name body pos = 
     mkstmt (D (ModuleDef((lhs :> lhs option),(name :> identifier),body))) pos
 
-  let mdef ?targ s args body pos =  method_ ?targ (ID_MethodName s) args body pos
-  let adef ?targ s args body pos =  method_ ?targ (ID_Assign s) args body pos
-  let opdef ?targ o args body pos =  method_ ?targ (ID_Operator o) args body pos
-  let uopdef ?targ o args body pos =  method_ ?targ (ID_UOperator o) args body pos
-
-
-  let rguard ?bind guard = match bind with
-    | None -> Rescue_Expr (guard :> tuple_expr)
-    | Some s -> Rescue_Bind((guard :>tuple_expr), (s :> identifier))
-
   let rblock guards stmt = {rescue_guards=guards; rescue_body=stmt}
     
-  let rescue ?bind guard stmt = rblock [rguard ?bind guard] stmt
-
   let exnblock body rescues ?eelse ?ensure pos =
     mkstmt (ExnBlock {exn_body=body;exn_rescue=rescues;
                       exn_else=eelse;exn_ensure=ensure}) pos
@@ -366,9 +281,6 @@ module Abbr = struct
   let next ?v pos = mkstmt (Next (v:>tuple_expr option)) pos
   let retry pos = mkstmt Retry pos
   let redo pos = mkstmt Redo pos
-
-  let _r1 p = call ~lhs:(LId (local "x")) "foo" [SE (ELit (float 1.0))] p
-  let _r2 p = binop (ELit (float 3.0)) Op_Times (SE (EId (local "x"))) p
 
 end
 
@@ -913,4 +825,3 @@ end
 
 let compute_cfg_locals ?(env=StrSet.empty) stmt = 
   ignore(visit_stmt (new compute_locals_vtor env) stmt)
-
