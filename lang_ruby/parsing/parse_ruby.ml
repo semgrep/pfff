@@ -2,7 +2,6 @@ module H = Ast_ruby_helpers
 module HH = Parser_ruby_helpers
 module Utils = Utils_ruby
 
-
 let uniq_list lst =
   let rec u = function
     | [] -> []
@@ -16,29 +15,29 @@ let uniq_list lst =
   u (List.sort H.compare_ast l)
 
 
-let parse_lexbuf_with_state ?env state lexbuf = 
+let parse_lexbuf lexbuf = 
+  let state = Lexer_parser_ruby.create Lexer_ruby.top_lexer in 
   try 
     HH.clear_env ();
-    let env = Utils.default_opt Utils.StrSet.empty env in
-    let () = HH.set_env env in
-    let lst = Parser_ruby.main (Lexer_ruby.token state) lexbuf in
+    let env = Utils.default_opt Utils.StrSet.empty None in
+    HH.set_env env;
+
+    let lexer = Lexer_ruby.token state in
+
+    let lst = Parser_ruby.main lexer lexbuf in
     let lst = uniq_list lst in
-      begin match lst with
-        | [ast] -> (*Ast.mod_ast (replace_heredoc state) ast*) 
+    (match lst with
+    | [ast] -> (*Ast.mod_ast (replace_heredoc state) ast*) 
             ast
-        | _l -> failwith "ambiguous parse"
-      end
+    | _l -> failwith "ambiguous parse"
+    )
   with Dyp.Syntax_error ->
     let msg = Printf.sprintf "parse error in file %s, line: %d, token: '%s'\n"
       lexbuf.Lexing.lex_curr_p.Lexing.pos_fname
       lexbuf.Lexing.lex_curr_p.Lexing.pos_lnum
       (Lexing.lexeme lexbuf)
     in
-      failwith msg
-
-let parse_lexbuf lexbuf = 
-  let state = Lexer_parser_ruby.create Lexer_ruby.top_lexer in 
-  parse_lexbuf_with_state state lexbuf
+    failwith msg
 
 let parse_file fname = 
   let ic = open_in fname in
