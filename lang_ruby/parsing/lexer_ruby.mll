@@ -306,6 +306,8 @@ and top_lexer state = parse
 
   | ws+  { top_lexer state lexbuf}
 
+  | "__END__"  { end_lexbuf lexbuf}
+
   (* ----------------------------------------------------------------------- *)
   (* symbols *)
   (* ----------------------------------------------------------------------- *)
@@ -488,7 +490,6 @@ and top_lexer state = parse
   | "retry"    {S.beg_state state;K_RETRY}
   | "next"     {S.beg_state state;K_NEXT}
 *)
-  | "__END__"  { end_lexbuf lexbuf}
 
   (* ----------------------------------------------------------------------- *)
   (* Ident *)
@@ -513,6 +514,101 @@ and top_lexer state = parse
 
 
 (*****************************************************************************)
+(* Comments *)
+(*****************************************************************************)
+
+and comment state = parse
+  | [^'\n']* '\n' { incr_line lexbuf; t_eol state lexbuf }
+
+and delim_comment state = parse
+  | "=end" [^'\n']* '\n' { incr_line lexbuf; top_lexer state lexbuf}
+  | [^'\n']* '\n'        { incr_line lexbuf; delim_comment state lexbuf}
+
+and end_lexbuf = parse
+  | _     { end_lexbuf lexbuf }
+  | eof   { T_EOF }
+
+(*****************************************************************************)
+(* space_tok *)
+(*****************************************************************************)
+
+and space_tok tok binop state = parse
+  | ws+ { binop state lexbuf }
+  | nl  { incr_line lexbuf; binop state lexbuf }
+  | e   { on_def binop (on_local binop tok) state lexbuf}
+
+(*****************************************************************************)
+(* uop/binop *)
+(*****************************************************************************)
+
+and space_uop uop spc_uop binop state = parse
+  (* space before and after is binop (unless at expr_beg) *)
+  | ws+ {on_beg spc_uop binop state lexbuf}
+  | nl  {incr_line lexbuf; on_beg spc_uop binop state lexbuf}
+  | e   {match state.S.expr_state with
+         | S.Expr_Def
+         | S.Expr_Local
+         | S.Expr_End -> binop state lexbuf
+         | S.Expr_Beg | S.Expr_Mid -> uop state lexbuf
+         }
+
+and uop_minus_lit state = parse
+  | num { postfix_numeric negate_numeric (lexeme lexbuf) state lexbuf}
+  | e   { t_uminus state lexbuf}
+
+and uop_plus_lit state = parse
+  | num { postfix_numeric Utils.id (lexeme lexbuf) state lexbuf}
+  | e   { t_uplus state lexbuf}
+
+
+and postfix_at uop binop state = parse
+  | '@' { uop state lexbuf}
+  | e   { binop state lexbuf}
+
+(*****************************************************************************)
+(* Percent *)
+(*****************************************************************************)
+
+and percent state = parse
+  | (alpha? as modifier)(string_single_delim as d)
+      {S.end_state state; 
+       let f = 
+         if modifier_is_single modifier
+         then non_interp_string d (Buffer.create 31)
+         else interp_string_lexer d
+       in
+         if modifier = "r"
+         then regexp_delim ((==)d) ((==)d) (Buffer.create 31) state lexbuf
+         else emit_extra (T_USER_BEG(modifier, lexbuf.lex_curr_p)) f state lexbuf
+      }
+
+  | (alpha? as modifier) (['{' '<' '(' '['] as d_start)
+      {S.end_state state; 
+       let d_end = close_delim d_start in
+       let level = ref 0 in
+       let at_end d = 
+         if d = d_end then
+           if !level = 0 then true
+           else (decr level; false)
+         else
+           if d = d_start
+           then (incr level; false)
+           else false
+       in
+       let chk d = d == d_start || d == d_end in
+       let f = 
+         if modifier_is_single modifier
+         then non_interp_string d_end (Buffer.create 31)
+         else interp_lexer fail_eof at_end chk (Buffer.create 31)
+       in
+         if modifier = "r"
+         then regexp_delim at_end chk (Buffer.create 31) state lexbuf
+         else emit_extra (T_USER_BEG(modifier, lexbuf.lex_curr_p)) f state lexbuf
+      }
+
+  | e {t_percent state lexbuf}
+
+(*****************************************************************************)
 (* dollar *)
 (*****************************************************************************)
 
@@ -522,35 +618,9 @@ and dollar state = parse
   | ("-" alphanum) as v 
       {S.end_state state; T_BUILTIN_VAR("$"^v, lexbuf.lex_curr_p) }
   | ( ['0'-'9']+) as v 
-      {S.end_state state; T_BUILTIN_VAR("$" ^ v, lexbuf.lex_curr_p)}
+      {S.end_state state; T_BUILTIN_VAR("$"^v, lexbuf.lex_curr_p)}
   | ( [^'a'-'z''A'-'Z''#'])
       {S.end_state state; T_BUILTIN_VAR("$"^(lexeme lexbuf), lexbuf.lex_curr_p)}
-
-(*****************************************************************************)
-(* space_tok *)
-(*****************************************************************************)
-
-and space_tok tok binop state = parse
-  | ws+ {binop state lexbuf}
-  | nl  {incr_line lexbuf; binop state lexbuf}
-  | e {on_def binop (on_local binop tok) state lexbuf}
-
-(*****************************************************************************)
-(* space_uop *)
-(*****************************************************************************)
-
-and space_uop uop spc_uop binop state = parse
-    (* space before and after is binop (unless at expr_beg) *)
-  | ws+ {on_beg spc_uop binop state lexbuf}
-  | nl  {incr_line lexbuf; on_beg spc_uop binop state lexbuf}
-
-  | e 
-      {match state.S.expr_state with
-         | S.Expr_Def
-         | S.Expr_Local
-         | S.Expr_End -> binop state lexbuf
-         | S.Expr_Beg | S.Expr_Mid -> uop state lexbuf
-      }
 
 (*****************************************************************************)
 (* postfix_numeric *)
@@ -590,26 +660,6 @@ and postfix_numeric cont start state = parse
         let tok = T_FLOAT(str, float_of_string (str), lexbuf.lex_curr_p) in
           cont tok
       }
-
-(*****************************************************************************)
-(* uop *)
-(*****************************************************************************)
-
-and uop_minus_lit state = parse
-  | num { postfix_numeric negate_numeric (lexeme lexbuf) state lexbuf}
-  | e { t_uminus state lexbuf}
-
-and uop_plus_lit state = parse
-  | num { postfix_numeric Utils.id (lexeme lexbuf) state lexbuf}
-  | e { t_uplus state lexbuf}
-
-(*****************************************************************************)
-(* postfix_at *)
-(*****************************************************************************)
-
-and postfix_at uop binop state = parse
-  | '@' {uop state lexbuf}
-  | e  {binop state lexbuf}
 
 (*****************************************************************************)
 (* atom *)
@@ -670,18 +720,6 @@ and char_code_work = parse
   | "\\(" {T_FIXNUM(Char.code '(', lexbuf.lex_curr_p)}
   | "\\)" {T_FIXNUM(Char.code ')', lexbuf.lex_curr_p)}
 
-
-(*****************************************************************************)
-(* Comments *)
-(*****************************************************************************)
-
-and comment state = parse
-  | [^'\n']* '\n' { incr_line lexbuf; t_eol state lexbuf }
-
-and delim_comment state = parse
-  | "=end" [^'\n']* '\n' { incr_line lexbuf; top_lexer state lexbuf}
-  | [^'\n']* '\n'        { incr_line lexbuf; delim_comment state lexbuf}
-
 (*****************************************************************************)
 (* Strings *)
 (*****************************************************************************)
@@ -714,8 +752,11 @@ and tick_string state = parse
 (* Regexps *)
 (*****************************************************************************)
 
+and regexp state = parse
+  | e { regexp_string (Buffer.create 31) state lexbuf }
+
 and regexp_string buf state = parse
-  | e {regexp_delim ((==)'/') ((==)'/') buf state lexbuf}
+  | e { regexp_delim ((==)'/') ((==)'/') buf state lexbuf }
 
 and regexp_delim delim_f escape_f buf state = parse 
   | e {
@@ -731,52 +772,6 @@ and regexp_delim delim_f escape_f buf state = parse
 
 and regexp_modifier state = parse
   | (alpha* as modifiers) {T_REGEXP_MOD modifiers}
-
-(*****************************************************************************)
-(* Percent *)
-(*****************************************************************************)
-
-and percent state = parse
-  | (alpha? as modifier)(string_single_delim as d)
-      {S.end_state state; 
-       let f = 
-         if modifier_is_single modifier
-         then non_interp_string d (Buffer.create 31)
-         else interp_string_lexer d
-       in
-         if modifier = "r"
-         then regexp_delim ((==)d) ((==)d) (Buffer.create 31) state lexbuf
-         else emit_extra (T_USER_BEG(modifier, lexbuf.lex_curr_p)) f state lexbuf
-      }
-
-  | (alpha? as modifier) (['{' '<' '(' '['] as d_start)
-      {S.end_state state; 
-       let d_end = close_delim d_start in
-       let level = ref 0 in
-       let at_end d = 
-         if d = d_end then
-           if !level = 0 then true
-           else (decr level; false)
-         else
-           if d = d_start
-           then (incr level; false)
-           else false
-       in
-       let chk d = d == d_start || d == d_end in
-       let f = 
-         if modifier_is_single modifier
-         then non_interp_string d_end (Buffer.create 31)
-         else interp_lexer fail_eof at_end chk (Buffer.create 31)
-       in
-         if modifier = "r"
-         then regexp_delim at_end chk (Buffer.create 31) state lexbuf
-         else emit_extra (T_USER_BEG(modifier, lexbuf.lex_curr_p)) f state lexbuf
-      }
-
-  | e {t_percent state lexbuf}
-
-and regexp state = parse
-  | e {regexp_string (Buffer.create 31) state lexbuf}
 
 (*****************************************************************************)
 (* Heredoc *)
@@ -832,10 +827,6 @@ and heredoc_string_lead cont buf delim state = parse (* for <<-EOF *)
           heredoc_string_lead cont buf delim state lexbuf
         end}
 
-(*****************************************************************************)
-(* Interpolated strings *)
-(*****************************************************************************)
-
 and interp_heredoc_lexer state = parse
   | e {let f buf state lexbuf = 
          S.end_state state;
@@ -846,9 +837,13 @@ and interp_heredoc_lexer state = parse
       }
 
 
+(*****************************************************************************)
+(* Interpolated strings *)
+(*****************************************************************************)
+
 and interp_string_lexer delim state = parse
-  | e {let chk x = x == delim in
-         interp_lexer fail_eof chk chk (Buffer.create 31) state lexbuf}
+  | e { let chk x = x == delim in
+        interp_lexer fail_eof chk chk (Buffer.create 31) state lexbuf }
 
 (* tokenize a interpreted string into string / code *)
 and interp_lexer do_eof delim_f escape_f buf state = parse
@@ -905,12 +900,3 @@ and interp_code start cont state = parse
          Stack.push k state.S.lexer_stack;
          start
       }
-
-(*****************************************************************************)
-(* __END__ *)
-(*****************************************************************************)
-
-and end_lexbuf = parse
-  | _     { end_lexbuf lexbuf }
-  | eof   { T_EOF }
-
