@@ -44,7 +44,7 @@ let uniq_list lst =
     u (List.sort H.compare_ast l)
 
 
-let rec parse_lexbuf_with_state ?env state lexbuf = 
+let parse_lexbuf_with_state ?env state lexbuf = 
   try 
     HH.clear_env ();
     let env = Utils.default_opt Utils.StrSet.empty env in
@@ -64,21 +64,9 @@ let rec parse_lexbuf_with_state ?env state lexbuf =
     in
       failwith msg
 
-and parse_string_with_state state ?env ?filename ?lineno str = 
-  let lexbuf = Lexing.from_string str in
-  let fname = match filename with None -> str | Some x -> x in
-  let line = match lineno with None -> 1 | Some x -> x in 
-    set_lexbuf_fname lexbuf fname;
-    set_lexbuf_lineno lexbuf line;
-    parse_lexbuf_with_state ?env state lexbuf
-
 let parse_lexbuf lexbuf = 
   let state = Lexer_parser_ruby.create Lexer_ruby.top_lexer in 
-    parse_lexbuf_with_state state lexbuf
-
-let _parse_string ?env ?filename ?lineno str = 
-  let state = Lexer_parser_ruby.create Lexer_ruby.top_lexer in 
-    parse_string_with_state state ?env ?filename ?lineno str
+  parse_lexbuf_with_state state lexbuf
 
 let parse_file fname = 
   let ic = open_in fname in
