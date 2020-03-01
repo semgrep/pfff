@@ -183,9 +183,7 @@ let compare_ast ast1 ast2 = cmp_list cmp_expr ast1 ast2
 let equal_ast a1 a2 = (compare_ast a1 a2) == 0
 
 let tok_of = function
-  | S Empty -> 
-    (*Lexing.dummy_pos*)
-    raise Todo
+  | S Empty -> Parse_info.fake_info "Empty"
 
   | Literal (_, pos)
   | D Alias (_,_, pos)
@@ -216,9 +214,7 @@ let tok_of = function
   | S Return ( _  , pos)
   | S Yield ( _  , pos)
   | S Block ( _  , pos)
-   -> 
-    ignore(pos);
-    raise Todo
+   -> pos
 
 let binary_op_of_string = function
   | "="    -> Op_ASSIGN   

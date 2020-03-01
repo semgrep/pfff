@@ -53,10 +53,12 @@ let fresh acc =
   let id = Var (Local, fresh_name) in
     (seen_lhs acc (LId id)), LId id
 
-let fresh_global _pos = 
+let fresh_global pos = 
   let name = sprintf "$__druby_global_%d_%d" 
-    (raise Common.Todo)(*pos.Lexing.pos_lnum*) (uniq()) in
-    Var(Global, name)
+      (Parse_info.line_of_info pos)
+     (uniq()) 
+  in
+  Var(Global, name)
 
 let formal_counter = ref 0
 let fresh_formal () = incr formal_counter; !formal_counter
@@ -209,12 +211,12 @@ let is_special = function
       true
   | _ -> false
 
-let special_of_string _pos x : expr =
+let special_of_string pos x : expr =
   match x with
   | "true"  -> EId (True)
   | "false" -> EId (False)
-  | "__FILE__" -> ELit (String ((*pos.Lexing.pos_fname*)raise Common.Todo))
-  | "__LINE__" -> ELit (FixNum ((*pos.Lexing.pos_lnum*)raise Common.Todo))
+  | "__FILE__" -> ELit (String (Parse_info.file_of_info pos))
+  | "__LINE__" -> ELit (FixNum (Parse_info.line_of_info pos))
   | _ -> raise (Invalid_argument "special_of_string")
 
 let refactor_id_kind pos : Ast.id_kind -> var_kind = function

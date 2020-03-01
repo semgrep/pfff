@@ -287,7 +287,7 @@ end
 let pos_of s = s.pos
 
 let empty_stmt () = mkstmt (I (Expression (EId Nil))) 
-  (*Lexing.dummy_pos*)(raise Common.Todo)
+  (Parse_info.fake_info "empty_stmt")
 
 let fresh_local _s = 
   let i = uniq () in
