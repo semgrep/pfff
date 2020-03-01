@@ -860,7 +860,7 @@ scoped_id:
 
 message_identifier:
   | assignable<e>                       { e }
-  | bin_op<op>                          { Operator(op,(*Lexing.dummy_pos*)raise Common.Todo) }
+  | bin_op<op>                          { Operator(op,Parse_info.fake_info "OP") }
   | T_LBRACK_ARG<pos> T_RBRACK T_ASSIGN { Operator(Op_ASET,pos) }
   | T_UPLUS<pos>                        { UOperator(Op_UPlus,pos) }
   | T_UMINUS<pos>                       { UOperator(Op_UMinus,pos) }
