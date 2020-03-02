@@ -615,6 +615,9 @@ let any =
   function
   | Expr v1 -> let v1 = expr v1 in G.E v1
   | Stmt v1 -> let v1 = stmt v1 in G.S v1
+  (* TODO? should use list stmt_aux here? Some intermediate Block
+   * could be inserted preventing some sgrep matching?
+   *)
   | Stmts v1 -> let v1 = list stmt v1 in G.Ss v1
   | Program v1 -> let v1 = program v1 in G.Pr v1
   | DictElem v1 -> let v1 = dictorset_elt v1 in G.E v1

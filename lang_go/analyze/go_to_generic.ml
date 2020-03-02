@@ -78,8 +78,8 @@ let mk_func_def params ret st =
 
 let wrap_init_in_block_maybe x v =
   match x with
-  | None -> v
-  | Some e -> G.Block [G.ExprStmt e;v]
+  | None -> [v]
+  | Some e -> [G.Block [G.ExprStmt e;v]]
 
 (*****************************************************************************)
 (* Entry point *)
@@ -347,22 +347,36 @@ and simple = function
           [G.Arg v1]))
 
 
-and stmt2 = function
-  | DeclStmts v1 -> list decl v1
-  | x -> [stmt x]
-  
-and stmt =
+(* invariant: you should not use 'list stmt', but instead always
+ * use list stmt_aux ... |> List.flatten
+ *)
+and stmt x = 
+  G.stmt1 (stmt_aux x)
+
+and stmt_aux =
   function
   | DeclStmts v1 -> 
+   (* bugfix: 
+    *  old: let v1 = list decl v1 in 
+    *       G.Block v1
+    * but in sgrep with
+    *   var $X = "...";
+    *   ...
+    *   var $Y = $X
+    * we do no want the DeclStmts to be put under an extra Block
+    * otherwise they will not match. This is why stmt_aux need
+    * to return a list of stmts that may or may not be put inside
+    * a Block depending on the context (Ss and Items will not).
+    *)
       let v1 = list decl v1 in 
-      G.Block v1
-  | Block v1 -> let v1 = list stmt2 v1 |> List.flatten in 
-      G.Block v1
+      v1
+  | Block v1 -> let v1 = list stmt_aux v1 |> List.flatten in 
+      [G.Block v1]
   | Empty -> 
-      G.Block []
+      [G.Block []]
   | SimpleStmt v1 ->
       let v1 = simple v1 in
-      G.ExprStmt v1
+      [G.ExprStmt v1]
   | If ((t, v1, v2, v3, v4)) ->
       let v1 = option simple v1
       and v2 = expr v2
@@ -396,7 +410,7 @@ and stmt =
         (G.Switch (v0, v2, v3))
   | Select ((v1, v2)) ->
       let v1 = tok v1 and v2 = list comm_clause v2 in 
-      G.Switch (v1, None, v2)
+      [G.Switch (v1, None, v2)]
   | For (t, (v1, v2, v3), v4) ->
       let v1 = option simple v1
       and v2 = option expr v2
@@ -405,7 +419,7 @@ and stmt =
       in
       (* TODO: some of v1 are really ForInitVar *)
       let init = match v1 with None -> [] | Some e -> [G.ForInitExpr e] in
-      G.For (t, G.ForClassic (init, v2, v3), v4)
+      [G.For (t, G.ForClassic (init, v2, v3), v4)]
         
   | Range ((t, v1, v2, v3, v4)) ->
       let opt =  option 
@@ -418,35 +432,35 @@ and stmt =
       (match opt with
       | None -> 
          let pattern = G.PatUnderscore (fake "_") in
-         G.For (t, G.ForEach (pattern, v2, v3), v4)
+         [G.For (t, G.ForEach (pattern, v2, v3), v4)]
       | Some (xs, _tokEqOrColonEqTODO) -> 
           let pattern = G.PatTuple (xs |> List.map G.expr_to_pattern) in
-          G.For (t, G.ForEach (pattern, v2, v3), v4)
+          [G.For (t, G.ForEach (pattern, v2, v3), v4)]
       )
   | Return ((v1, v2)) ->
       let v1 = tok v1 and v2 = option (list expr) v2 in
-      G.Return (v1, v2 |> Common.map_opt (list_to_tuple_or_expr))
+      [G.Return (v1, v2 |> Common.map_opt (list_to_tuple_or_expr))]
   | Break ((v1, v2)) -> 
       let v1 = tok v1 and v2 = option ident v2 in 
-      G.Break (v1, G.opt_to_label_ident v2)
+      [G.Break (v1, G.opt_to_label_ident v2)]
   | Continue ((v1, v2)) ->
       let v1 = tok v1 and v2 = option ident v2 in
-      G.Continue (v1, G.opt_to_label_ident v2)
+      [G.Continue (v1, G.opt_to_label_ident v2)]
   | Goto ((v1, v2)) -> 
       let v1 = tok v1 and v2 = ident v2 in 
-      G.Goto (v1, v2)
+      [G.Goto (v1, v2)]
   | Fallthrough v1 -> 
       let v1 = tok v1 in 
-      G.OtherStmt (G.OS_Fallthrough, [G.Tk v1])
+      [G.OtherStmt (G.OS_Fallthrough, [G.Tk v1])]
   | Label ((v1, v2)) -> 
       let v1 = ident v1 and v2 = stmt v2 in 
-      G.Label (v1, v2)
+      [G.Label (v1, v2)]
   | Go ((v1, v2)) -> 
       let _v1 = tok v1 and (e, args) = call_expr v2 in 
-      G.OtherStmt (G.OS_Go, [G.E (G.Call (e, args))])
+      [G.OtherStmt (G.OS_Go, [G.E (G.Call (e, args))])]
   | Defer ((v1, v2)) -> 
       let _v1 = tok v1 and (e, args) = call_expr v2 in 
-      G.OtherStmt (G.OS_Defer, [G.E (G.Call (e, args))])
+      [G.OtherStmt (G.OS_Defer, [G.E (G.Call (e, args))])]
 
 and case_clause (v1, v2) = let v1 = case_kind v1 and v2 = stmt v2 in 
   v1, v2
@@ -550,10 +564,13 @@ and program { package = pack; imports = imports; decls = decls } =
   let arg_types = !anon_types |> List.map (fun x -> G.DefStmt x) in
   arg1 :: arg2 @ arg_types @ arg3
 
-and item = function
- | ITop x -> top_decl x
- | IImport x -> let x = import x in G.DirectiveStmt x
- | IStmt x -> stmt x
+and item_aux = function
+ | ITop x -> [top_decl x]
+ | IImport x -> let x = import x in [G.DirectiveStmt x]
+ | IStmt x -> stmt_aux x
+
+and item x  = 
+  G.stmt1 (item_aux x)
   
 and any x =
   anon_types := [];
@@ -566,9 +583,10 @@ and any x =
   | I v1 -> let v1 = import v1 in G.S (G.DirectiveStmt v1)
   | P v1 -> let v1 = program v1 in G.Pr v1
   | Ident v1 -> let v1 = ident v1 in G.Id v1
-  | Ss v1 -> let v1 = list stmt v1 in G.Ss v1
+  (* not used anymore, Items is now used for sgrep *)
+  | Ss v1 -> let v1 = list stmt_aux v1 in G.Ss (List.flatten v1)
   | Item v1 -> let v1 = item v1 in G.S v1
-  | Items v1 -> let v1 = list item v1 in G.Ss v1
+  | Items v1 -> let v1 = list item_aux v1 in G.Ss (List.flatten v1)
   in
   if !anon_types <> []
   then failwith "TODO: anon_types not empty";
