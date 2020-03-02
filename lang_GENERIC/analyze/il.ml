@@ -27,7 +27,7 @@
  * 
  * related work:
  *  - CIL, C Intermediate Language, Necula et al, CC'00
- *  - RIL, The Ruby Intermediate Language, Furr et al, DSL'09
+ *  - RIL, The Ruby Intermediate Language, Furr et al, DLS'09
  *  - C-- in OCaml?
  *  - Rust IL?
  *  - LLVM IR (but too far away from original code? complicated 
