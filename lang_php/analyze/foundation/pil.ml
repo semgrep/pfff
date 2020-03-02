@@ -51,5 +51,5 @@
  * 
  * References:
  *  [1] CIL, C Intermediate Language, Necula et al, CC'00
- *  [2] The Ruby Intermediate Language, Furr et al, DSL'09
+ *  [2] The Ruby Intermediate Language, Furr et al, DLS'09
  *)

@@ -1,4 +1,4 @@
 See https://whitequark.org/blog/2013/04/01/ruby-hacking-guide-ch-11-finite-state-lexer/
 
-See "Ruby Intermediate Language" paper a DSL'09
+See "Ruby Intermediate Language" paper a DLS'09
 
