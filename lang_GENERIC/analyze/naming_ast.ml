@@ -114,16 +114,14 @@ module V = Visitor_ast
 (*****************************************************************************)
 type context = 
   | AtToplevel
-(*
   | InClass
-  | InFunction (* or Method *)
-*)
-  (* TODO? InLambda *)
+  (* separate InMethod? InLambda? just look for InFunction::InClass::_ *)
+  | InFunction 
 
 type resolved_name = Ast_generic.resolved_name
 
 type env = {
-  ctx: context ref; (* stack ref? *)
+  ctx: context list ref;
   (* todo: use for module aliasing
    * todo: local/param, block vars, globals
    * todo: use for types for Go
@@ -140,7 +138,7 @@ type env = {
 }
 
 let default_env () = {
-  ctx = ref AtToplevel;
+  ctx = ref [AtToplevel];
   names = ref [];
   constants = ref [];
 }
@@ -159,21 +157,33 @@ let _with_added_env xs env f =
 let _add_ident_env ident kind env =
   env.names := (Ast.str_of_ident ident, kind)::!(env.names)
 
-let _with_new_context ctx env f = 
-  Common.save_excursion env.ctx ctx f
+let with_new_context ctx env f = 
+  Common.save_excursion env.ctx (ctx::!(env.ctx)) f
 
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
 
 let resolve _lang prog =
-  let _env = default_env () in
+  let env = default_env () in
 
   (* would be better to use a classic recursive with environment visit *)
   let visitor = V.mk_visitor { V.default_visitor with
+    V.kfunction_definition = (fun (k, _v) x ->
+      with_new_context InFunction env (fun () ->
+        k x
+      )
+    );
+    V.kclass_definition = (fun (k, _v) x ->
+      with_new_context InClass env (fun () ->
+        k x
+      )
+    );
+
     V.kexpr = (fun (k, _v) x ->
           k x
     );
+
   }
   in
   visitor (Pr prog)
