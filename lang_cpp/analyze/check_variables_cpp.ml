@@ -23,7 +23,8 @@ module S = Scope_code
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(*
+(* A variable checker and local name resolver for C/C++.
+ *
  * This file mostly deals with scoping issues. Scoping is different
  * from typing! Those are 2 orthogonal programming language notions.
  * 
