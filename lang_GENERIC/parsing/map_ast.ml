@@ -84,18 +84,21 @@ and map_module_name =
   | FileName v1 -> let v1 = map_wrap map_of_string v1 in FileName ((v1))
   | DottedName v1 -> let v1 = map_dotted_ident v1 in DottedName ((v1))
 
-and map_resolved_name =
+and map_resolved_name (v1, v2) =
+  let v1 = map_resolved_name_kind v1 in
+  let v2 = map_of_int v2 in
+  (v1, v2)
+and map_resolved_name_kind =
   function
-  | Local v1 -> let v1 = map_gensym v1 in Local ((v1))
-  | Param v1 -> let v1 = map_gensym v1 in Param ((v1))
-  | EnclosedVar v1 -> let v1 = map_gensym v1 in EnclosedVar ((v1))
+  | Local  -> Local
+  | Param  -> Param
+  | EnclosedVar  -> EnclosedVar
   | Global v1 -> let v1 = map_dotted_ident v1 in Global ((v1))
   | ImportedModule v1 ->
       let v1 = map_module_name v1 in ImportedModule ((v1))
   | Macro -> Macro
   | EnumConstant -> EnumConstant
   | TypeName -> TypeName
-and map_gensym v = map_of_int v
   
 
 and map_name (v1, v2) =

@@ -78,12 +78,12 @@ let module_name (v1, dots) =
 
 let resolved_name name =
   function
-  | LocalVar -> Some (G.Local G.gensym_TODO)
-  | Parameter -> Some (G.Param G.gensym_TODO)
-  | GlobalVar -> Some (G.Global [name])
+  | LocalVar -> Some (G.Local, G.sid_TODO)
+  | Parameter -> Some (G.Param, G.sid_TODO)
+  | GlobalVar -> Some (G.Global [name], G.sid_TODO)
   | ClassField -> None
-  | ImportedModule xs -> Some (G.ImportedModule (G.DottedName xs))
-  | ImportedEntity xs -> Some (G.Global xs)
+  | ImportedModule xs -> Some (G.ImportedModule (G.DottedName xs), G.sid_TODO)
+  | ImportedEntity xs -> Some (G.Global xs, G.sid_TODO)
   | NotResolved -> None
 
 let expr_context =

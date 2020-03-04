@@ -210,7 +210,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
 
     V.kexpr = (fun (k, _) x ->
       (match x with
-      | Call (Selector (Id (_m, {contents=Some G.ImportedModule _}),_,fld),_)->
+      | Call (Selector (Id (_m, {contents=Some (G.ImportedModule _,_)}),_,fld),_)->
           tag_ident fld (Entity (E.Function, use2));
       | Call (Selector (_, _, fld),_) ->
           tag_ident fld (Entity (E.Method, use2));
@@ -220,11 +220,11 @@ let visit_program ~tag_hook _prefs (program, toks) =
         (match !resolved with
         | None -> ()
         | Some x ->
-          (match x with
+          (match fst x with
           | G.ImportedModule _ -> tag_ident id (Entity (E.Module, use2))
-          | G.Param _ -> tag_ident id (Parameter (Use))
-          | G.Local _ -> tag_ident id (Local (Use)) 
-          | G.EnclosedVar _ -> tag_ident id (Local Use) (* TODO *)
+          | G.Param -> tag_ident id (Parameter (Use))
+          | G.Local -> tag_ident id (Local (Use)) 
+          | G.EnclosedVar -> tag_ident id (Local Use) (* TODO *)
           (* unless matched before in a Call *)
           | G.Global _ -> tag_ident id (Entity (E.Global, use2))
           | G.TypeName -> tag_ident id (Entity (E.Type, use2))

@@ -62,9 +62,9 @@ let label v = wrap string v
 let qualified_name x = [x, fake "TODO qualified name"]
 
 let resolved_name = function
-  | Local -> Some (G.Local G.gensym_TODO)
-  | Param -> Some (G.Param G.gensym_TODO)
-  | Global x -> Some (G.Global (qualified_name x))
+  | Local -> Some (G.Local, G.sid_TODO)
+  | Param -> Some (G.Param, G.sid_TODO)
+  | Global x -> Some (G.Global (qualified_name x), G.sid_TODO)
   | NotResolved -> None
 
 type special_result = 

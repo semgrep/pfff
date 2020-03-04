@@ -590,15 +590,13 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
     * a definition and an assign.
     *)
    | DefStmt (ent, VarDef def) ->
-     let gensym_TODO = -1 in
-     let resolved = Some (Local gensym_TODO) in
+     let resolved = Some (Local, Ast.sid_TODO) in
      cfg_simple_node state previ 
        (ExprStmt (Ast.vardef_to_assign (ent, def) resolved))
 
    (* just to factorize code, a nested func is really like a lambda *)
    | DefStmt (ent, FuncDef def) ->
-     let gensym_TODO = -1 in
-     let resolved = Some (Local gensym_TODO) in
+     let resolved = Some (Local, Ast.sid_TODO) in
      cfg_simple_node state previ 
        (ExprStmt (Ast.funcdef_to_lambda (ent, def) resolved))
 
