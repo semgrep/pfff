@@ -164,8 +164,7 @@ and identifier_ =
 *)
 
 
-
-(* name_of_qualified_ident *)
+(* id_or_name_of_qualified_ident *)
 and name v =
   let res = list1
     (fun (v1, v2) ->
@@ -175,18 +174,13 @@ and name v =
   in
   (match List.rev res with
   | [] -> raise Impossible (* list1 *)
-  | [name] -> 
-        let info = { G.
-            name_typeargs = None; (* could be v1TODO above *)
-            name_qualifier = None;
-          } in
-        (name, info)
+  | [name] -> G.Id (name, G.empty_id_info())
   | name::y::xs ->
-        let info = { G.
+        let name_info = { G.
             name_typeargs = None; (* could be v1TODO above *)
             name_qualifier = Some (List.rev (y::xs));
           } in
-        (name, info)
+        G.IdQualified ((name, name_info), G.empty_id_info())
   )
 
 
@@ -201,7 +195,7 @@ and literal = function
 and expr e =
   match e with
   | Ellipsis v1 -> let v1 = tok v1 in G.Ellipsis v1
-  | Name v1 -> let (a,b) = name v1 in G.Name ((a,b), G.empty_id_info())
+  | Name v1 -> name v1
   | NameOrClassType _v1 -> 
       let ii = Lib_parsing_java.ii_of_any (AExpr e) in
       error (List.hd ii) 
@@ -255,7 +249,7 @@ and expr e =
       and v4 = option (bracket decls) v4
       in 
       let any = 
-        [G.E v1; G.Id v2] @ (v3 |> List.map (fun arg -> G.Ar arg)) @
+        [G.E v1; G.I v2] @ (v3 |> List.map (fun arg -> G.Ar arg)) @
         (Common.opt_to_list v4 |> List.map G.unbracket |> List.flatten |> List.map
             (fun st -> G.S st)) in
        G.OtherExpr (G.OE_NewQualifiedClass, any)
@@ -553,7 +547,7 @@ let program v =
 
 let any =
   function
-  | AIdent v1 -> let v1 = ident v1 in G.Id v1
+  | AIdent v1 -> let v1 = ident v1 in G.I v1
   | AExpr v1 -> let v1 = expr v1 in G.E v1
   | AStmt v1 -> let v1 = stmt v1 in G.S v1
   | AStmts v1 -> let v1 = List.map stmt v1 in G.Ss v1

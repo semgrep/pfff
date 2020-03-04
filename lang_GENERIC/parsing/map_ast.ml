@@ -165,8 +165,10 @@ and map_expr x =
   | AnonClass ((v1)) ->
       let v1 = map_class_definition v1 in AnonClass ((v1))
   | Xml v1 -> let v1 = map_xml v1 in Xml v1
-  | Name ((v1, v2)) ->
-      let v1 = map_name v1 and v2 = map_id_info v2 in Name ((v1, v2))
+  | Id ((v1, v2)) ->
+      let v1 = map_ident v1 and v2 = map_id_info v2 in Id ((v1, v2))
+  | IdQualified ((v1, v2)) ->
+      let v1 = map_name v1 and v2 = map_id_info v2 in IdQualified ((v1, v2))
   | IdSpecial v1 -> let v1 = map_wrap map_special v1 in IdSpecial ((v1))
   | Call ((v1, v2)) ->
       let v1 = map_expr v1 and v2 = map_arguments v2 in Call ((v1, v2))
@@ -779,7 +781,7 @@ and map_program v = map_of_list map_item v
 and map_any =
   function
   | Tk v1 -> let v1 = map_tok v1 in Tk v1
-  | Id v1 -> let v1 = map_ident v1 in Id ((v1))
+  | I v1 -> let v1 = map_ident v1 in I ((v1))
   | N v1 -> let v1 = map_name v1 in N ((v1))
   | En v1 -> let v1 = map_entity v1 in En ((v1))
   | E v1 -> let v1 = map_expr v1 in E ((v1))
