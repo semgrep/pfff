@@ -12,6 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
+open Common
 
 (*****************************************************************************)
 (* Prelude *)
@@ -1116,6 +1117,12 @@ let funcdef_to_lambda (ent, def) resolved =
   let name = Id (ent.name, idinfo) in
   let v = Lambda def in
   Assign (name, Parse_info.fake_info "=", v)
+
+let has_keyword_attr kwd attrs = 
+  attrs |> List.exists (function
+    | KeywordAttr (kwd2, _) -> kwd =*= kwd2
+    | _ -> false
+  )
 
 (* Try avoid using them! if you build new constructs, you should try
  * to derive the tokens in those new constructs from existing constructs.
