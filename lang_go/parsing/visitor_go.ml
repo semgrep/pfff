@@ -374,6 +374,7 @@ and v_program x =
 
 and v_item = function
  | ITop v1 -> v_top_decl v1
+ | IImport v1 -> v_import v1
  | IStmt v1 -> v_stmt v1
   
 and v_any =

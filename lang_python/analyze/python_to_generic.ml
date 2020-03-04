@@ -142,8 +142,7 @@ let rec expr (x: expr) =
       and v3 = vref (resolved_name v1) v3
       in 
       G.Name ((v1, G.empty_name_info),
-               { G.id_type = ref None;
-                 id_resolved = v3 })
+               { (G.empty_id_info ()) with G.id_resolved = v3 })
           
   | Tuple ((CompList v1, v2)) ->
       let (_, v1, _) = bracket (list expr) v1 

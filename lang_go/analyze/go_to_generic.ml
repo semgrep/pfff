@@ -218,7 +218,9 @@ and expr =
       G.L v1
   | Id (v1, vref) -> let v1 = ident v1 in 
       G.Name ((v1, G.empty_name_info), 
-        { G.id_resolved = vref; id_type = ref None })
+        (* we share the resolved_name ref! so any naming done on the
+         * generic AST will have a (wanted) side effect on the Go AST *)
+        { (G.empty_id_info()) with G.id_resolved = vref; })
   | Selector ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = tok v2 and v3 = ident v3 in
       G.DotAccess (v1, v2, G.FId v3)

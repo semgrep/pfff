@@ -76,6 +76,10 @@ module V = Visitor_ast
  *    Other_xxx category). However, there's potentially lots of code 
  *    duplication for each language and it's easy for a language to fall
  *    behind.
+ *    A nice compromise might be to do most of the work in naming_ast.ml
+ *    but still have lang-specific resolve_xxx.ml to tag special
+ *    constructs that override what naming_ast.ml would do. 
+ *    See if_not_already_set()
  *
  * TODO:
  *  - generalize the original "resolvers":

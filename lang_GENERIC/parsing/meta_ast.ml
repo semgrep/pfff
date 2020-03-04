@@ -58,15 +58,21 @@ and
   let arg = Ocaml.vof_option vof_qualifier v_name_qualifier in
   let bnd = ("name_qualifier", arg) in
   let bnds = bnd :: bnds in Ocaml.VDict bnds
-and vof_id_info { id_resolved = v_id_resolved; id_type = v_id_type } =
+and vof_id_info { id_resolved = v_id_resolved; id_type = v_id_type; 
+    id_const_literal = v3;
+  } =
   let bnds = [] in
+  let arg = Ocaml.vof_ref (Ocaml.vof_option vof_literal) v3 in
+  let bnd = ("id_const_literal", arg) in
+  let bnds = bnd :: bnds in
   let arg = Ocaml.vof_ref (Ocaml.vof_option vof_type_) v_id_type in
   let bnd = ("id_type", arg) in
   let bnds = bnd :: bnds in
   let arg =
     Ocaml.vof_ref (Ocaml.vof_option vof_resolved_name) v_id_resolved in
   let bnd = ("id_resolved", arg) in
-  let bnds = bnd :: bnds in Ocaml.VDict bnds
+  let bnds = bnd :: bnds in 
+  Ocaml.VDict bnds
 
 
 

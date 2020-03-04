@@ -138,7 +138,7 @@ type module_name =
   | FileName of string wrap   (* ex: Js import, C #include, Go import *)
  (* with tarzan *)
 
-(* see also scope_code.ml *)
+(* see naming_ast.ml *)
 type resolved_name =
   | Local of gensym
   | Param of gensym (* could merge with Local *)
@@ -177,6 +177,10 @@ type name = ident * name_info
 and id_info = {
     id_resolved: resolved_name option ref; (* variable tagger (naming) *)
     id_type:     type_         option ref; (* type checker (typing) *)
+    (* sgrep: this is for sgrep constant propagation hack.
+     * todo? associate only with Name? part of name_info?
+     *)
+    id_const_literal: literal option ref;
   }
 
 (*****************************************************************************)
@@ -979,10 +983,14 @@ let empty_var =
   { vinit = None; vtype = None }
 
 let empty_id_info () = 
-  { id_resolved = ref None; id_type = ref None; }
+  { id_resolved = ref None; id_type = ref None;
+    id_const_literal = ref None;
+  }
 
 let basic_id_info resolved = 
-  { id_resolved = ref (Some resolved); id_type = ref None; }
+  { id_resolved = ref (Some resolved); id_type = ref None; 
+    id_const_literal = ref None;
+  }
 
 (*
 let name_of_id id = 

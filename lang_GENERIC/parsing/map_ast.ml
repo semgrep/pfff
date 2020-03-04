@@ -108,11 +108,16 @@ and
   let v_name_typeargs = map_of_option map_type_arguments v_name_typeargs in
   let v_name_qualifier = map_of_option map_qualifier v_name_qualifier
   in { name_qualifier = v_name_qualifier; name_typeargs = v_name_typeargs  }
-and map_id_info { id_resolved = v_id_resolved; id_type = v_id_type } =
+and map_id_info { id_resolved = v_id_resolved; id_type = v_id_type;
+    id_const_literal = v3
+  } =
+  let v3 = map_of_ref (map_of_option map_literal) v3 in
   let v_id_type = map_of_ref (map_of_option map_type_) v_id_type in
   let v_id_resolved =
     map_of_ref (map_of_option map_resolved_name) v_id_resolved
-  in { id_resolved = v_id_resolved; id_type = v_id_type }
+  in { id_resolved = v_id_resolved; id_type = v_id_type;
+       id_const_literal = v3
+     }
 
 
 and map_xml {
