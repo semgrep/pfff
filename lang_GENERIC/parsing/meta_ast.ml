@@ -27,12 +27,15 @@ let vof_module_name =
 
 let vof_dotted_ident = vof_dotted_name
 
-let rec vof_resolved_name =
+let rec vof_resolved_name (v1, v2) =
+  let v1 = vof_resolved_name_kind v1 in
+  let v2 = Ocaml.vof_int v2 in
+  Ocaml.VTuple [ v1; v2 ]
+and vof_resolved_name_kind = 
   function
-  | Local v1 -> let v1 = vof_gensym v1 in Ocaml.VSum (("Local", [ v1 ]))
-  | Param v1 -> let v1 = vof_gensym v1 in Ocaml.VSum (("Param", [ v1 ]))
-  | EnclosedVar v1 ->
-      let v1 = vof_gensym v1 in Ocaml.VSum (("EnclosedVar", [ v1 ]))
+  | Local  ->  Ocaml.VSum (("Local", [ ]))
+  | Param  -> Ocaml.VSum (("Param", [ ]))
+  | EnclosedVar -> Ocaml.VSum (("EnclosedVar", [ ]))
   | Global v1 ->
       let v1 = vof_dotted_ident v1 in Ocaml.VSum (("Global", [ v1 ]))
   | ImportedModule v1 ->
@@ -40,7 +43,6 @@ let rec vof_resolved_name =
   | Macro -> Ocaml.VSum (("Macro", []))
   | EnumConstant -> Ocaml.VSum (("EnumConstant", []))
   | TypeName -> Ocaml.VSum (("TypeName", []))
-and vof_gensym v = Ocaml.vof_int v
 
 
 let rec vof_name (v1, v2) =

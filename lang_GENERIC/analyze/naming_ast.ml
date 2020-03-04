@@ -12,6 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
+open Common
 open Ast_generic
 module Ast = Ast_generic
 module V = Visitor_ast
@@ -142,9 +143,9 @@ type env = {
    * todo: use for module aliasing
    * todo: use for types for Go
    *)
-  names: (string * resolved_name) list ref;
+  names: (string, resolved_name) assoc ref;
   (* todo: constant propagation for sgrep *)
-  constants: (string * literal) list ref;
+  constants: (string, sid * literal) assoc ref;
   (* todo?
    * (* block scope *)
    * locals: (string * resolved_name) list ref; 

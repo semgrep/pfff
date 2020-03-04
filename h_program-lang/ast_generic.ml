@@ -138,12 +138,28 @@ type module_name =
   | FileName of string wrap   (* ex: Js import, C #include, Go import *)
  (* with tarzan *)
 
-(* see naming_ast.ml *)
-type resolved_name =
-  | Local of gensym
-  | Param of gensym (* could merge with Local *)
+(* A single unique id. uid would be a better name, but it usually 
+ * means "user id" for people.
+ *
+ * This single id simplifies further analysis which need less to care about 
+ * maintaining scoping information, for example to deal with variable
+ * shadowing, or functions using the same parameter names 
+ * (even though you still need to handle specially recursive functions), etc.
+ *
+ * See naming_ast.ml for more information. 
+ * 
+ * Most generic ASTs have a fake value (sid_TODO = -1) at first. 
+ * You need to call Naming_ast.resolve (or one of the lang-specific
+ * Resolve_xxx.resolve) on the generic AST to set it correctly.
+ *)
+type sid = int (* a single unique gensym'ed number. See gensym() below *)
+
+and resolved_name = resolved_name_kind * sid
+  and resolved_name_kind =
+  | Local
+  | Param (* could merge with Local *)
   (* for closures; can refer to a Local or Param *)
-  | EnclosedVar of gensym (* todo? and depth? *)
+  | EnclosedVar (* todo? and depth? *)
 
   (* both dotted_ident must at least contain one element *)
   | Global of dotted_ident (* or just name? *) (* can also use 0 for gensym *)
@@ -152,11 +168,6 @@ type resolved_name =
   | Macro
   | EnumConstant
 
-  (* this simplifies further analysis which need less to care about 
-   * maintaining scoping information to deal with variable shadowing, 
-   * functions using the same parameter names, etc.
-   *)
-  and gensym = int (* a unique gensym'ed number *)
  (* with tarzan *)
 
 (* Start of big mutually recursive types because of the use of 'any' 
@@ -967,14 +978,15 @@ let error tok msg =
 (* Helpers *)
 (*****************************************************************************)
 
-(* use 0 for globals, if needed *)
+(* You can use 0 for globals, even though this will work only on a single
+ * file. Any global analysis will need to set a unique ID for globals too. *)
 let gensym_counter = ref 0
-(* see gensym type in resolved_name *)
+(* see sid type in resolved_name *)
 let gensym () = 
   incr gensym_counter;
   !gensym_counter
-
-let gensym_TODO = -1 
+(* before Naming_ast.resolve can do its job *)
+let sid_TODO = -1 
 
 let empty_name_info = 
   { name_qualifier = None; name_typeargs = None;}
@@ -1001,7 +1013,7 @@ let name_of_id id =
 let param_of_id id = { 
     pname = Some id;
     pdefault = None; ptype = None; pattrs = []; pinfo = 
-      (basic_id_info (Param gensym_TODO));
+      (basic_id_info (Param, sid_TODO));
 }
 let param_of_type typ = {
     ptype = Some typ;
