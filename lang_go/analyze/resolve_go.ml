@@ -88,9 +88,11 @@ let resolve prog =
 
     (* defs *)
     V.kprogram = (fun (k, _) x ->
+
       let file = Parse_info.file_of_info (fst x.package), fst x.package in
       let packid = snd x.package in
       add_name_env packid (G.ImportedModule (G.FileName file)) env;
+
       x.imports |> List.iter (fun { i_path = (path, ii); i_kind = kind; _ } ->
           match kind with
           | ImportOrig -> 

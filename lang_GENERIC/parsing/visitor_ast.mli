@@ -16,6 +16,11 @@ type visitor_in = {
   kentity: (entity -> unit)  * visitor_out -> entity  -> unit;
   kstmts: (stmt list  -> unit) * visitor_out -> stmt list -> unit;
 
+  kfunction_definition: (function_definition -> unit) * visitor_out -> 
+    function_definition -> unit;
+  kclass_definition: (class_definition -> unit) * visitor_out -> 
+    class_definition -> unit;
+
   kinfo: (tok -> unit)  * visitor_out -> tok  -> unit;
 }
 and visitor_out = any -> unit

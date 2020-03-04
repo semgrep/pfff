@@ -35,6 +35,11 @@ type visitor_in = {
   kentity: (entity -> unit)  * visitor_out -> entity  -> unit;
   kstmts: (stmt list  -> unit) * visitor_out -> stmt list -> unit;
 
+  kfunction_definition: (function_definition -> unit) * visitor_out -> 
+    function_definition -> unit;
+  kclass_definition: (class_definition -> unit) * visitor_out -> 
+    class_definition -> unit;
+
   kinfo: (tok -> unit)  * visitor_out -> tok  -> unit;
 }
 and visitor_out = any -> unit
@@ -53,6 +58,9 @@ let default_visitor =
     kident   = (fun (k,_) x -> k x);
     kentity   = (fun (k,_) x -> k x);
     kstmts   = (fun (k,_) x -> k x);
+
+    kfunction_definition   = (fun (k,_) x -> k x);
+    kclass_definition   = (fun (k,_) x -> k x);
 
     kinfo   = (fun (k,_) x -> k x);
   }
@@ -514,8 +522,8 @@ and v_def_kind =
   | Signature v1 -> let v1 = v_type_ v1 in ()
   | UseOuterDecl v1 -> let v1 = v_tok v1 in ()
 
-and
-  v_function_definition {
+and v_function_definition x =
+  let k {
                           fparams = v_fparams;
                           frettype = v_frettype;
                           fbody = v_fbody;
@@ -524,6 +532,8 @@ and
   let arg = v_option v_type_ v_frettype in
   let arg = v_stmt v_fbody in 
   ()
+  in
+  vin.kfunction_definition (k, all_functions) x
 and v_parameters v = v_list v_parameter v
 and v_parameter x =
   let k x =
@@ -596,8 +606,8 @@ and v_or_type_element =
       in ()
 and v_other_or_type_element_operator _x = ()
 
-and
-  v_class_definition {
+and v_class_definition x = 
+  let k {
                        ckind = v_ckind;
                        cextends = v_cextends;
                        cimplements = v_cimplements;
@@ -608,6 +618,8 @@ and
   let arg = v_list v_type_ v_cimplements in
   let arg = v_bracket (v_list v_field) v_cbody in
   ()
+  in
+  vin.kclass_definition (k, all_functions) x
 and v_class_kind = function | Class -> () | Interface -> () | Trait -> ()
 
 and v_module_definition { mbody = v_mbody } =
