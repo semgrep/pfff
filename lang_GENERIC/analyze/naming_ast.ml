@@ -33,12 +33,15 @@ module V = Visitor_ast
  * when you see in the AST the use of the identifier 'a', this 'a'
  * could reference a local variable, or a parameter, or a global, 
  * or a global defined in another module but imported in the current
- * namespace, or a variable defined in a block that shadows an enclosing
- * variable with the same name.
+ * namespace, or a variable defined in a nested block that "shadows" an
+ * enclosing variable with the same name.
  * By resolving once and for all all uses of an entity to its definition,
  * for example by renaming some shadow variables (see Ast_generic.gensym),
  * we simpify further phases that don't have to maintain a complex environment 
- * to deal with scoping issues.
+ * to deal with scoping issues (see the essence Of Python paper 
+ * "Python: The Full Monty" where they show that even complex IDEs still
+ * don't correctly handle Python scoping rules and perform wrong renaming
+ * refactorings).
  *
  * Resolving names by tagging identifiers is also useful for 
  * codemap/efuns to colorize identifiers (locals, params, globals, unknowns)
@@ -49,6 +52,12 @@ module V = Visitor_ast
  * related).
  * 
  * alternatives:
+ *  - CURRENT: generic naming and use of a 'ref resolved_name' to annotate
+ *    the generic AST. Note that the use of a ref that can be shared with
+ *    the lang-specific AST (e.g., ast_go.ml) allows tools like codemap/efuns
+ *    to benefit from the generic naming analysis while still caring only
+ *    about the lang-specific AST (even though we may want at some point
+ *    to have a generic highlighter).
  *  - define a separate type for a named ast, e.g., nast.ml (as done in 
  *    hack/skip) instead of modifying refs, with a unique identifier
  *    for each entity. However, this is tedious to
@@ -122,8 +131,11 @@ type resolved_name = Ast_generic.resolved_name
 
 type env = {
   ctx: context list ref;
-  (* todo: use for module aliasing
-   * todo: local/param, block vars, globals
+  (* todo: local/param
+   * todo: block vars
+   * todo: enclosed vars (closures)
+   * todo: globals
+   * todo: use for module aliasing
    * todo: use for types for Go
    *)
   names: (string * resolved_name) list ref;
@@ -179,7 +191,6 @@ let resolve _lang prog =
         k x
       )
     );
-
     V.kexpr = (fun (k, _v) x ->
           k x
     );
