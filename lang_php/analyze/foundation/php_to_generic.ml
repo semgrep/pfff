@@ -232,13 +232,13 @@ and expr =
   | String v1 -> let v1 = wrap string v1 in 
       G.L (G.String v1)
   | Id v1 -> let v1 = name_of_qualified_ident v1 in 
-      G.Name (v1, G.empty_id_info ())
+      G.IdQualified (v1, G.empty_id_info ())
   | IdSpecial v1 ->
       let v1 = wrap special v1 in
       G.IdSpecial (v1)
   (* unify Id and Var, finally *)      
   | Var v1 -> let v1 = var v1 in 
-      G.Name ((v1, G.empty_name_info), G.empty_id_info())
+      G.Id (v1, G.empty_id_info())
   | Array_get ((v1, Some v2)) ->
       let v1 = expr v1 and v2 = expr v2 in 
       G.ArrayAccess (v1, v2)
@@ -313,7 +313,7 @@ and expr =
       let v1 = name_of_qualified_ident v1 
       and v2 = bracket (list array_value) v2 in 
       G.Call (G.IdSpecial (G.New, fake "new"),
-        [G.Arg (G.Name (v1, G.empty_id_info()));
+        [G.Arg (G.IdQualified (v1, G.empty_id_info()));
          G.Arg (G.Container (G.Dict, v2))])
   | Xhp v1 -> let v1 = xml v1 in 
       G.Xml v1

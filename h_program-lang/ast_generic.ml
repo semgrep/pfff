@@ -189,7 +189,7 @@ and id_info = {
     id_resolved: resolved_name option ref; (* variable tagger (naming) *)
     id_type:     type_         option ref; (* type checker (typing) *)
     (* sgrep: this is for sgrep constant propagation hack.
-     * todo? associate only with Name? part of name_info?
+     * todo? associate only with Id?
      *)
     id_const_literal: literal option ref;
   }
@@ -218,16 +218,26 @@ and expr =
   (* usually an argument of a New (used in Java, Javascript) *)
   | AnonClass of class_definition
 
-  (* todo: newvar: 
-   * Name is sometimes abused to also introduce a newvar (as in Python)
+  (* This used to be called Name and was generalizing Id and IdQualified
+   * but some analysis are easier when they just need to
+   * handle simple Id, hence the split. For example, there were some bugs
+   * in sgrep because sometimes an identifier was an ident (in function header)
+   * and sometimes a name (when called). For naming, we also need to do
+   * things differently for Id vs IdQualified and would need many time to
+   * inspect the name.name_qualifier to know if we have an Id or IdQualified.
+   * We do the same split for Fid vs FName for fields.
+   * todo: newvar: 
+   * Id is sometimes abused to also introduce a newvar (as in Python)
    * but ultimately those cases should be rewritten to first introduce a
    * VarDef. 
-   * todo: Sometimes some DotAccess should really be transformed in Name
+   *)
+  | Id of ident * id_info
+  (* todo: Sometimes some DotAccess should really be transformed in IdQualified
    * with a better qualifier because the obj is actually the name of a package
    * or module, but you may need advanced semantic information and global
    * analysis to disambiguate.
    *)
-  | Name of name * id_info
+  | IdQualified of name * id_info
   | IdSpecial of special wrap
 
   (* operators and function application *)
@@ -353,7 +363,7 @@ and expr =
     and prefix_postfix = Prefix | Postfix
 
   and field_ident =
-    | FId of ident
+    | FId of ident (* hard to put '* id_info' here, hard to resolve *)
     | FName of name (* OCaml *)
     | FDynamic of expr (* PHP, JS (even though use ArrayAccess for that) *)
 
@@ -583,6 +593,7 @@ and type_ =
    (* old: was originally TyApply (name, []), but better to differentiate.
     * todo? may need also TySpecial because the name can actually be
     *  self/parent/static (e.g., in PHP)
+    * todo? maybe go even further and differentiate TyId vs TyIdQualified?
     *)
   | TyName of name
   (* covers tuples, list, etc.*)
@@ -931,7 +942,7 @@ and program = item list
 
 (* mentioned in many OtherXxx so must be part of the mutually recursive type *)
 and any =
-  | Id of ident
+  | I of ident
   | N of name
   | En of entity
 
@@ -1091,7 +1102,7 @@ let is_boolean_operator = function
 (* used in controlflow_build *)
 let vardef_to_assign (ent, def) resolved =
   let idinfo = { (empty_id_info()) with id_resolved = ref resolved } in
-  let name = Name ((ent.name, empty_name_info), idinfo) in
+  let name = Id (ent.name, idinfo) in
   let v = 
     match def.vinit with
    | Some v -> v
@@ -1102,7 +1113,7 @@ let vardef_to_assign (ent, def) resolved =
 (* used in controlflow_build *)
 let funcdef_to_lambda (ent, def) resolved =
   let idinfo = { (empty_id_info()) with id_resolved = ref resolved } in
-  let name = Name ((ent.name, empty_name_info), idinfo) in
+  let name = Id (ent.name, idinfo) in
   let v = Lambda def in
   Assign (name, Parse_info.fake_info "=", v)
 

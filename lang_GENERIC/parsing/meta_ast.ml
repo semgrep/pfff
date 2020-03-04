@@ -135,10 +135,14 @@ and vof_expr =
   | AnonClass v1 ->
       let v1 = vof_class_definition v1
       in Ocaml.VSum (("AnonClass", [ v1 ]))
-  | Name ((v1, v2)) ->
+  | Id ((v1, v2)) ->
+      let v1 = vof_ident v1
+      and v2 = vof_id_info v2
+      in Ocaml.VSum (("Id", [ v1; v2 ]))
+  | IdQualified ((v1, v2)) ->
       let v1 = vof_name v1
       and v2 = vof_id_info v2
-      in Ocaml.VSum (("Name", [ v1; v2 ]))
+      in Ocaml.VSum (("IdQualified", [ v1; v2 ]))
   | IdSpecial v1 ->
       let v1 = vof_wrap vof_special v1 in Ocaml.VSum (("IdSpecial", [ v1 ]))
   | Call ((v1, v2)) ->
@@ -993,7 +997,7 @@ and vof_any =
   | Dir v1 -> let v1 = vof_directive v1 in Ocaml.VSum (("Di", [ v1 ]))
   | Fld v1 -> let v1 = vof_field v1 in Ocaml.VSum (("Fld", [ v1 ]))
   | Di v1 -> let v1 = vof_dotted_name v1 in Ocaml.VSum (("Dn", [ v1 ]))
-  | Id v1 -> let v1 = vof_ident v1 in Ocaml.VSum (("Id", [ v1 ]))
+  | I v1 -> let v1 = vof_ident v1 in Ocaml.VSum (("I", [ v1 ]))
   | Pa v1 -> let v1 = vof_parameter v1 in Ocaml.VSum (("Pa", [ v1 ]))
   | Ar v1 -> let v1 = vof_argument v1 in Ocaml.VSum (("Ar", [ v1 ]))
   | At v1 -> let v1 = vof_attribute v1 in Ocaml.VSum (("At", [ v1 ]))

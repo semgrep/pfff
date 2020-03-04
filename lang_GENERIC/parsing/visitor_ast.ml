@@ -172,7 +172,8 @@ and v_expr x =
   | Lambda ((v1)) -> let v1 = v_function_definition v1 in ()
   | AnonClass ((v1)) -> let v1 = v_class_definition v1 in ()
   | Xml v1 -> let v1 = v_xml v1 in ()
-  | Name ((v1, v2)) -> let v1 = v_name v1 and v2 = v_id_info v2 in ()
+  | Id ((v1, v2)) -> let v1 = v_ident v1 and v2 = v_id_info v2 in ()
+  | IdQualified ((v1, v2)) -> let v1 = v_name v1 and v2 = v_id_info v2 in ()
   | IdSpecial v1 -> let v1 = v_wrap v_special v1 in ()
   | Call ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_arguments v2 in ()
   | Assign ((v1, v2, v3)) -> 
@@ -688,7 +689,7 @@ and v_any =
   | Ar v1 -> let v1 = v_argument v1 in ()
   | At v1 -> let v1 = v_attribute v1 in ()
   | Pr v1 -> let v1 = v_program v1 in ()
-  | Id v1 -> let v1 = v_ident v1 in ()
+  | I v1 -> let v1 = v_ident v1 in ()
   | Tk v1 -> let v1 = v_tok v1 in ()
   
 
