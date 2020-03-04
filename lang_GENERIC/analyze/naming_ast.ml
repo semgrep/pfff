@@ -255,7 +255,6 @@ let resolve _lang prog =
        );
        k x
     );
-
   }
   in
   visitor (Pr prog)
