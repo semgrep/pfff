@@ -48,7 +48,7 @@ module V = Visitor_ast
  * codemap/efuns to colorize identifiers (locals, params, globals, unknowns)
  * differently.
  * 
- * TODO Note that we also abuse this module to provide advanced features to
+ * Note that we also abuse this module to provide advanced features to
  * sgrep such as the constant propagation of literals (which is arguably naming
  * related).
  * 
@@ -80,7 +80,7 @@ module V = Visitor_ast
  *    A nice compromise might be to do most of the work in naming_ast.ml
  *    but still have lang-specific resolve_xxx.ml to tag special
  *    constructs that override what naming_ast.ml would do. 
- *    See if_not_already_set()
+ *    See set_if_not_already_set()
  *
  * TODO:
  *  - generalize the original "resolvers":
@@ -137,7 +137,7 @@ type resolved_name = Ast_generic.resolved_name
 type env = {
   ctx: context list ref;
   (* todo: local/param
-   * todo: block vars
+   * todo: block vars => list list with new_scope/del_scope/lookup
    * todo: enclosed vars (closures)
    * todo: globals
    * todo: use for module aliasing
@@ -171,11 +171,30 @@ let _with_added_env xs env f =
   let newnames = xs @ !(env.names) in
   Common.save_excursion env.names newnames f
 
-let _add_ident_env ident kind env =
-  env.names := (Ast.str_of_ident ident, kind)::!(env.names)
+let add_ident_env ident resolved env =
+  env.names := (Ast.str_of_ident ident, resolved)::!(env.names)
+
+let add_constant_env ident (sid, literal) env =
+  env.constants := (Ast.str_of_ident ident, (sid, literal))::!(env.constants)
 
 let with_new_context ctx env f = 
   Common.save_excursion env.ctx (ctx::!(env.ctx)) f
+
+let top_context env = 
+  match !(env.ctx) with
+  | [] -> raise Impossible
+  | x::_xs -> x
+
+let is_local_or_global_ctx env =
+  match top_context env with
+  | AtToplevel | InFunction -> true
+  | InClass -> false
+
+let resolved_name_kind env =
+  match top_context env with
+  | AtToplevel -> Global [] (* TODO *)
+  | InFunction -> Local
+  | InClass -> raise Impossible
 
 (*****************************************************************************)
 (* Entry point *)
@@ -196,8 +215,45 @@ let resolve _lang prog =
         k x
       )
     );
+    V.kdef = (fun (k, _v) x ->
+      match x with
+      (* literal constant propagation! *)
+      | { name = id; info = id_info; attrs = attrs; _}, 
+         VarDef ({ vinit = Some (L literal); _})
+         when Ast.has_keyword_attr Const attrs && 
+              is_local_or_global_ctx env
+         ->
+            let sid = Ast.gensym () in
+            let resolved = resolved_name_kind env, sid in
+            (* TODO? 
+             * set_if_not_already_set? id_info resolved;
+             *)
+            id_info.id_const_literal := Some literal;
+            add_ident_env id resolved env;
+            add_constant_env id (sid, literal) env;
+             
+            k x
+      | _ -> k x
+    );
+
+
     V.kexpr = (fun (k, _v) x ->
-          k x
+       (match x with
+       | Id (id, id_info) ->
+          let s = Ast.str_of_ident id in
+          (match List.assoc_opt s !(env.names) with
+          | Some ((_kind, sid) as _resolved) -> 
+               (* TODO: set_if_not_already_set id_info resolved *)
+               (match List.assoc_opt s !(env.constants) with
+               | Some (sid2, literal) when sid = sid2 ->
+                   id_info.id_const_literal := Some literal
+               | _ -> ()
+               )
+          | None -> () 
+          )
+       | _ -> ()
+       );
+       k x
     );
 
   }
