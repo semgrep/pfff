@@ -5,11 +5,12 @@ TOP=../..
 TARGET=lib
 OPAMPKG=pfff-lang_GENERIC-analyze
 
-SRC= controlflow.ml controlflow_build.ml \
+SRC= \
+  naming_ast.ml normalize_ast.ml \
+  controlflow.ml controlflow_build.ml \
   controlflow_visitor.ml \
   lrvalue.ml \
   dataflow.ml dataflow_reaching.ml dataflow_liveness.ml \
-  normalize_ast.ml \
   test_analyze_generic.ml
 
 -include $(TOP)/Makefile.config

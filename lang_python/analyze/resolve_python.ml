@@ -21,13 +21,6 @@ module V = Visitor_python
 (*****************************************************************************)
 (* Identifiers tagger (so we can colorize them differently in codemap/efuns).
  *
- * See also Ast_python.resolved_name.
- *
- * TODO: generalize for ast_generic at some point?
- * This naming phase helps dealing with:
- *  - scoping issues in static analysis as it deals with
-      * variable shadowing (every variables now have a different name)
- *  - coloring identifiers in codemap/efuns
  *)
 
 (*****************************************************************************)
@@ -52,7 +45,6 @@ let default_env () = {
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-
 (* because we use a Visitor instead of a clean recursive 
  * function passing down an environment, we need to emulate a scoped
  * environment by using save_excursion.

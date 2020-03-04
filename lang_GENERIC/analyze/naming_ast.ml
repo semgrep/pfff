@@ -1,0 +1,179 @@
+(* Yoann Padioleau
+ *
+ * Copyright (C) 2020 r2c
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1 as published by the Free Software Foundation, with the
+ * special exception on linking described in file license.txt.
+ * 
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
+ * license.txt for more details.
+ *)
+open Ast_generic
+module Ast = Ast_generic
+module V = Visitor_ast
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+(* The goal of this module is to resolve names, a.k.a naming or
+ * scope resolution, and to do it in a generic way on the generic AST.
+ * 
+ * In a compiler frontend you often have those phases:
+ *  - lexing
+ *  - parsing
+ *  - naming (the goal of this file)
+ *  - typing
+ *  
+ * The goal of naming is to simplify further phases by having each
+ * use of an entity clearly linked to its definition. For example,
+ * when you see in the AST the use of the identifier 'a', this 'a'
+ * could reference a local variable, or a parameter, or a global, 
+ * or a global defined in another module but imported in the current
+ * namespace, or a variable defined in a block that shadows an enclosing
+ * variable with the same name.
+ * By resolving once and for all all uses of an entity to its definition,
+ * for example by renaming some shadow variables (see Ast_generic.gensym),
+ * we simpify further phases that don't have to maintain a complex environment 
+ * to deal with scoping issues.
+ *
+ * Resolving names by tagging identifiers is also useful for 
+ * codemap/efuns to colorize identifiers (locals, params, globals, unknowns)
+ * differently.
+ * 
+ * TODO Note that we also abuse this module to provide advanced features to
+ * sgrep such as the constant propagation of literals (which is arguably naming
+ * related).
+ * 
+ * alternatives:
+ *  - define a separate type for a named ast, e.g., nast.ml (as done in 
+ *    hack/skip) instead of modifying refs, with a unique identifier
+ *    for each entity. However, this is tedious to
+ *    write as both types are almost identical (maybe a functor could help,
+ *    or a generic aast type as in recent hack code). Moreover, this is really
+ *    useful for complex global analysis (or at least semi-global as in 
+ *    OCaml where you still need to open many .cmi when you locally type a .ml)
+ *    such as typing where we want to resolve every use of a global.
+ *    For sgrep, where we might for quite some time restrict ourselves to
+ *    local analysis, maybe the ref implementation technique is good enough.
+ *  - implement a resolve_xxx.ml for each language instead of doing
+ *    on the generic AST. That is what I was doing previously, which
+ *    has some advantages (some language-specific constructs that introduce
+ *    new variables, for example Python comprehensions, are hard to analyze
+ *    once converted to the generic AST because they are under an 
+ *    Other_xxx category). However, there's potentially lots of code 
+ *    duplication for each language and it's easy for a language to fall
+ *    behind.
+ *
+ * TODO:
+ *  - generalize the original "resolvers":
+ *    * resolve_go.ml
+ *    * resolve_python.ml
+ *    * ast_js_build.ml
+ *    * check_variables_cpp.ml
+ *    * check_variables_php.ml
+ *  - introduce extra VarDef for languages that do not have them like
+ *    Python/PHP where the first use is a def (which in turn requires
+ *    special construct like 'global' or 'nonlocal' to disable this).
+ *  - use gensym to create unique identifiers for locals/params
+ *  - go:
+ *    * in theory if/for/switch with their init declare new scope, as well 
+ *      as Block
+ *    * should do first pass to get all toplevel decl as you can use
+ *      forward ref in Go
+ *  - get rid of the original "resolvers":
+ *    * resolve_xxx.ml
+ *    * ast_js_build.ml
+ *    * check_variables_xxx.ml
+ *  - get rid of or unify scope_code.ml, scope_php.ml, and 
+ *    ast_generic.resolved_name
+ *
+ * history:
+ *  - PHP deadcode detector with global analysis and global code database
+ *  - local name resolution for PHP and C/C++ in check_variables_cpp.ml and
+ *    check_variables_php.ml for codemap semantic highlighting of identifiers
+ *    (mainly local vs params vs globals vs unknown) and for checkModule
+ *    (scheck ancestor). Use of a ref for C/C++.
+ *  - graph_code_xxx.ml global name resolution for PHP, then Java,
+ *    then ML, then ML via cmt, then Clang ASTs, then C, then Javascript
+ *  - separate named AST (nast.ml) and naming phase for Hack
+ *  - local name resolution for code highlighting for Javascript, then Python
+ *    to better colorize identifiers in codemap/efuns, but separate from
+ *    a variable checker (resolve_xxx.ml instead of check_variables_xxx.ml)
+ *  - AST generic and its resolved_name ref
+ *  - simple resolve_python.ml with variable and import resolution
+ *  - separate resolve_go.ml  with import resolution
+ *  - try to unify those resolvers in one file, naming_ast.ml
+ *)
+
+(*****************************************************************************)
+(* Type *)
+(*****************************************************************************)
+type context = 
+  | AtToplevel
+(*
+  | InClass
+  | InFunction (* or Method *)
+*)
+  (* TODO? InLambda *)
+
+type resolved_name = Ast_generic.resolved_name
+
+type env = {
+  ctx: context ref; (* stack ref? *)
+  (* todo: use for module aliasing
+   * todo: local/param, block vars, globals
+   * todo: use for types for Go
+   *)
+  names: (string * resolved_name) list ref;
+  (* todo: constant propagation for sgrep *)
+  constants: (string * literal) list ref;
+  (* todo?
+   * (* block scope *)
+   * locals: (string * resolved_name) list ref; 
+   * (* javascript function scope *)
+   * vars: (string, bool) Hashtbl.t; 
+   *)
+}
+
+let default_env () = {
+  ctx = ref AtToplevel;
+  names = ref [];
+  constants = ref [];
+}
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+(* because we use a Visitor instead of a clean recursive 
+ * function passing down an environment, we need to emulate a scoped
+ * environment by using save_excursion.
+ *)
+let _with_added_env xs env f = 
+  let newnames = xs @ !(env.names) in
+  Common.save_excursion env.names newnames f
+
+let _add_ident_env ident kind env =
+  env.names := (Ast.str_of_ident ident, kind)::!(env.names)
+
+let _with_new_context ctx env f = 
+  Common.save_excursion env.ctx ctx f
+
+(*****************************************************************************)
+(* Entry point *)
+(*****************************************************************************)
+
+let resolve _lang prog =
+  let _env = default_env () in
+
+  (* would be better to use a classic recursive with environment visit *)
+  let visitor = V.mk_visitor { V.default_visitor with
+    V.kexpr = (fun (k, _v) x ->
+          k x
+    );
+  }
+  in
+  visitor (Pr prog)

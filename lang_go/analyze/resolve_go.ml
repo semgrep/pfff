@@ -22,15 +22,6 @@ module G = Ast_generic
 (*****************************************************************************)
 (* Identifiers tagger (so we can colorize them differently in codemap/efuns).
  *
- * mostly copy paste of resolve_python.ml
- *
- * todo: 
- *  - generalize for ast_generic at some point? hard? better to do on
- *    lang-specific AST?
- *  - in theory if/for/switch with their init declare new scope, as well 
- *    as Block
- *  - should do first pass to get all toplevel decl as you can use
- *    forward ref in Go
  *)
 
 (*****************************************************************************)

@@ -24,7 +24,8 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(*
+(* A variable checker and local name resolver for PHP.
+ *
  * This module helps find stupid PHP mistakes related to variables. See
  * tests/php/scheck/variables.php for examples of bugs currently
  * detected by this checker. This module not only checks but also annotates
