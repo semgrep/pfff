@@ -65,7 +65,7 @@ type qualified_ident = ident list (* 1 or 2 elements *)
 (* Type *)
 (*****************************************************************************)
 type type_ =
- | TName of qualified_ident (* included the basic types: bool/int/... *)
+ | TName of qualified_ident (* includes the basic types: bool/int/... *)
  | TPtr of tok * type_
 
  | TArray of expr * type_
@@ -179,8 +179,8 @@ and expr =
   | Int of string wrap
   | Float of string wrap
   | Imag of string wrap
-  | Rune of string wrap
-  | String of string wrap
+  | Rune of string wrap (* unicode char *)
+  | String of string wrap (* unicode string *)
 
   and index = expr
   and arguments = argument list

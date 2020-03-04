@@ -192,7 +192,7 @@ and struct_field_kind =
   | EmbeddedField ((v1, v2)) ->
       let _v1TODO = option tok v1 and v2 = qualified_ident v2 in
       let name = name_of_qualified_ident v2 in
-      G.FieldSpread (fake "...", G.Name (name, G.empty_id_info()))
+      G.FieldSpread (fake "...", G.IdQualified (name, G.empty_id_info()))
 
 and tag v = wrap string v
 
@@ -206,7 +206,7 @@ and interface_field =
           (ent, G.FuncDef (mk_func_def params ret (G.Block []))))
   | EmbeddedInterface v1 -> let v1 = qualified_ident v1 in 
       let name = name_of_qualified_ident v1 in
-      G.FieldSpread (fake "...", G.Name (name, G.empty_id_info()))
+      G.FieldSpread (fake "...", G.IdQualified (name, G.empty_id_info()))
 
 and expr_or_type v = either expr type_ v
 
@@ -217,8 +217,10 @@ and expr =
   | BasicLit v1 -> let v1 = literal v1 in 
       G.L v1
   | Id (v1, vref) -> let v1 = ident v1 in 
-      G.Name ((v1, G.empty_name_info), 
-        { G.id_resolved = vref; id_type = ref None })
+      G.Id (v1,
+           (* we share the resolved_name ref! so any naming done on the
+           * generic AST will have a (wanted) side effect on the Go AST *)
+           { (G.empty_id_info()) with G.id_resolved = vref; })
   | Selector ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = tok v2 and v3 = ident v3 in
       G.DotAccess (v1, v2, G.FId v3)
@@ -582,7 +584,7 @@ and any x =
   | Decl v1 -> let v1 = decl v1 in G.S v1
   | I v1 -> let v1 = import v1 in G.S (G.DirectiveStmt v1)
   | P v1 -> let v1 = program v1 in G.Pr v1
-  | Ident v1 -> let v1 = ident v1 in G.Id v1
+  | Ident v1 -> let v1 = ident v1 in G.I v1
   (* not used anymore, Items is now used for sgrep *)
   | Ss v1 -> let v1 = list stmt_aux v1 in G.Ss (List.flatten v1)
   | Item v1 -> let v1 = item v1 in G.S v1

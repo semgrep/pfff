@@ -84,18 +84,21 @@ and map_module_name =
   | FileName v1 -> let v1 = map_wrap map_of_string v1 in FileName ((v1))
   | DottedName v1 -> let v1 = map_dotted_ident v1 in DottedName ((v1))
 
-and map_resolved_name =
+and map_resolved_name (v1, v2) =
+  let v1 = map_resolved_name_kind v1 in
+  let v2 = map_of_int v2 in
+  (v1, v2)
+and map_resolved_name_kind =
   function
-  | Local v1 -> let v1 = map_gensym v1 in Local ((v1))
-  | Param v1 -> let v1 = map_gensym v1 in Param ((v1))
-  | EnclosedVar v1 -> let v1 = map_gensym v1 in EnclosedVar ((v1))
+  | Local  -> Local
+  | Param  -> Param
+  | EnclosedVar  -> EnclosedVar
   | Global v1 -> let v1 = map_dotted_ident v1 in Global ((v1))
   | ImportedModule v1 ->
       let v1 = map_module_name v1 in ImportedModule ((v1))
   | Macro -> Macro
   | EnumConstant -> EnumConstant
   | TypeName -> TypeName
-and map_gensym v = map_of_int v
   
 
 and map_name (v1, v2) =
@@ -108,11 +111,16 @@ and
   let v_name_typeargs = map_of_option map_type_arguments v_name_typeargs in
   let v_name_qualifier = map_of_option map_qualifier v_name_qualifier
   in { name_qualifier = v_name_qualifier; name_typeargs = v_name_typeargs  }
-and map_id_info { id_resolved = v_id_resolved; id_type = v_id_type } =
+and map_id_info { id_resolved = v_id_resolved; id_type = v_id_type;
+    id_const_literal = v3
+  } =
+  let v3 = map_of_ref (map_of_option map_literal) v3 in
   let v_id_type = map_of_ref (map_of_option map_type_) v_id_type in
   let v_id_resolved =
     map_of_ref (map_of_option map_resolved_name) v_id_resolved
-  in { id_resolved = v_id_resolved; id_type = v_id_type }
+  in { id_resolved = v_id_resolved; id_type = v_id_type;
+       id_const_literal = v3
+     }
 
 
 and map_xml {
@@ -157,8 +165,10 @@ and map_expr x =
   | AnonClass ((v1)) ->
       let v1 = map_class_definition v1 in AnonClass ((v1))
   | Xml v1 -> let v1 = map_xml v1 in Xml v1
-  | Name ((v1, v2)) ->
-      let v1 = map_name v1 and v2 = map_id_info v2 in Name ((v1, v2))
+  | Id ((v1, v2)) ->
+      let v1 = map_ident v1 and v2 = map_id_info v2 in Id ((v1, v2))
+  | IdQualified ((v1, v2)) ->
+      let v1 = map_name v1 and v2 = map_id_info v2 in IdQualified ((v1, v2))
   | IdSpecial v1 -> let v1 = map_wrap map_special v1 in IdSpecial ((v1))
   | Call ((v1, v2)) ->
       let v1 = map_expr v1 and v2 = map_arguments v2 in Call ((v1, v2))
@@ -771,7 +781,7 @@ and map_program v = map_of_list map_item v
 and map_any =
   function
   | Tk v1 -> let v1 = map_tok v1 in Tk v1
-  | Id v1 -> let v1 = map_ident v1 in Id ((v1))
+  | I v1 -> let v1 = map_ident v1 in I ((v1))
   | N v1 -> let v1 = map_name v1 in N ((v1))
   | En v1 -> let v1 = map_entity v1 in En ((v1))
   | E v1 -> let v1 = map_expr v1 in E ((v1))

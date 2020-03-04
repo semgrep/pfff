@@ -33,6 +33,13 @@ let test_dfg_generic file =
    )
  )
 
+let test_naming_generic file =
+  let ast = Parse_generic.parse_program file in
+  let lang = Common2.some (Lang.lang_of_filename_opt file) in
+  Naming_ast.resolve lang ast;
+  let v = Meta_ast.vof_any (Ast_generic.Pr ast) in
+  let s = Ocaml.string_of_v v in
+  pr2 s
 
 
 let actions () = [
@@ -40,4 +47,6 @@ let actions () = [
   Common.mk_action_1_arg test_cfg_generic;
   "-dfg_generic", " <file>",
   Common.mk_action_1_arg test_dfg_generic;
+  "-naming_generic", " <file>",
+  Common.mk_action_1_arg test_naming_generic;
 ]

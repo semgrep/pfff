@@ -22,15 +22,6 @@ module G = Ast_generic
 (*****************************************************************************)
 (* Identifiers tagger (so we can colorize them differently in codemap/efuns).
  *
- * mostly copy paste of resolve_python.ml
- *
- * todo: 
- *  - generalize for ast_generic at some point? hard? better to do on
- *    lang-specific AST?
- *  - in theory if/for/switch with their init declare new scope, as well 
- *    as Block
- *  - should do first pass to get all toplevel decl as you can use
- *    forward ref in Go
  *)
 
 (*****************************************************************************)
@@ -70,16 +61,16 @@ let default_env () = {
   names = ref [];
 }
 
-let nosym = -1 
-
 let params_of_parameters xs = 
   xs |> Common.map_filter (function
      | ParamClassic { pname = Some id; _ } ->
-        Some (Ast.str_of_id id, (G.Param nosym))
+        Some (Ast.str_of_id id, (G.Param, G.sid_TODO))
      | _ -> None
     )
 let local_or_global env id =
-  if !(env.ctx) = AtToplevel then G.Global [id] else G.Local nosym
+  if !(env.ctx) = AtToplevel 
+  then G.Global [id], G.sid_TODO
+  else G.Local, G.sid_TODO
 
 (*****************************************************************************)
 (* Entry point *)
@@ -97,14 +88,16 @@ let resolve prog =
 
     (* defs *)
     V.kprogram = (fun (k, _) x ->
+
       let file = Parse_info.file_of_info (fst x.package), fst x.package in
       let packid = snd x.package in
-      add_name_env packid (G.ImportedModule (G.FileName file)) env;
+      add_name_env packid (G.ImportedModule (G.FileName file), G.sid_TODO) env;
+
       x.imports |> List.iter (fun { i_path = (path, ii); i_kind = kind; _ } ->
           match kind with
           | ImportOrig -> 
             add_name_env (Filename.basename path, ii) 
-              (G.ImportedModule (G.FileName (path,ii))) env
+              (G.ImportedModule (G.FileName (path,ii)), G.sid_TODO) env
           | ImportNamed id -> 
             (* TODO: hacky, but right now we transform
              * import sub "x.y.z" in sub = [z] so later 
@@ -113,7 +106,8 @@ let resolve prog =
             (* add_name_env id
               (G.ImportedModule (G.FileName (path,ii))) env *)
              add_name_env id
-               (G.ImportedModule (G.DottedName [(Filename.basename path, ii)]))
+               (G.ImportedModule (G.DottedName [(Filename.basename path, ii)]),
+                    G.sid_TODO)
                   env;
           | ImportDot _ -> ()
       );
@@ -122,12 +116,12 @@ let resolve prog =
     V.ktop_decl = (fun (k, _) x ->
       (match x with 
       | DFunc (id, _) ->
-         env |> add_name_env id (G.Global [id]); (* could add package name?*)
+         env |> add_name_env id (G.Global [id], G.sid_TODO); (* could add package name?*)
          with_new_context InFunction env (fun () ->
            k x
          )
       | DMethod (id, receiver, _) ->
-         env |> add_name_env id (G.Global [id]); (* could add package name?*)
+         env |> add_name_env id (G.Global [id], G.sid_TODO); (* could add package name?*)
          let new_names = params_of_parameters [ParamClassic receiver] in
          with_added_env new_names env (fun () ->
           with_new_context InFunction env (fun () ->
@@ -146,7 +140,7 @@ let resolve prog =
          * you can pass a type as an argument in Go?
          *)
       | DTypeAlias (id, _, _)  | DTypeDef (id, _) ->
-         env |> add_name_env id (G.TypeName)
+         env |> add_name_env id (G.TypeName, G.sid_TODO)
       );
       k x
     );

@@ -73,7 +73,7 @@ and type_ =
 and expr =
   function
   | L v1 -> let v1 = literal v1 in G.L v1
-  | Name v1 -> let v1 = name v1 in G.Name (v1, G.empty_id_info ())
+  | Name v1 -> let v1 = name v1 in G.IdQualified (v1, G.empty_id_info ())
   | Constructor ((v1, v2)) ->
       let v1 = name v1 and v2 = option expr v2 in
       G.Constructor (v1, Common.opt_to_list v2)
@@ -82,11 +82,11 @@ and expr =
   | Sequence v1 -> let v1 = list expr v1 in G.Seq v1
   | Prefix ((v1, v2)) -> let v1 = wrap string v1 and v2 = expr v2 in
                          let n = v1, G.empty_name_info in
-                         G.Call (G.Name (n, G.empty_id_info()), [G.Arg v2])
+                         G.Call (G.IdQualified (n, G.empty_id_info()), [G.Arg v2])
   | Infix ((v1, v2, v3)) ->
     let n = v2, G.empty_name_info in
     let v1 = expr v1 and v3 = expr v3 in
-    G.Call (G.Name (n, G.empty_id_info()), [G.Arg v1; G.Arg v3])
+    G.Call (G.IdQualified (n, G.empty_id_info()), [G.Arg v1; G.Arg v3])
 
   | Call ((v1, v2)) -> let v1 = expr v1 and v2 = list argument v2 in
                        G.Call (v1, v2)
@@ -137,7 +137,7 @@ and expr =
       )
   | New ((v1, v2)) -> let v1 = tok v1 and v2 = name v2 in 
                       G.Call (G.IdSpecial (G.New, v1), 
-                              [G.Arg (G.Name (v2, G.empty_id_info()))])
+                              [G.Arg (G.IdQualified (v2, G.empty_id_info()))])
   | ObjAccess ((v1, t, v2)) -> 
       let v1 = expr v1 and v2 = ident v2 in
       let t = tok t in
@@ -183,7 +183,7 @@ and expr =
       in 
       let ent = G.basic_entity v1 [] in
       let var = { G.vinit = Some v2; vtype = None } in
-      let n = G.Name ((v1, G.empty_name_info), G.empty_id_info()) in
+      let n = G.IdQualified ((v1, G.empty_name_info), G.empty_id_info()) in
       let next = (G.AssignOp (n, (nextop, tok), G.L (G.Int ("1", tok)))) in
       let cond = G.Call (G.IdSpecial (G.ArithOp condop, tok),
                          [G.Arg n; G.Arg v4]) in
@@ -207,7 +207,7 @@ and argument =
     G.ArgKwd (v1, v2)
   | ArgQuestion ((v1, v2)) -> 
     let v1 = ident v1 and v2 = expr v2 in
-    G.ArgOther (G.OA_ArgQuestion, [G.Id v1; G.E v2])                          
+    G.ArgOther (G.OA_ArgQuestion, [G.I v1; G.E v2])                          
 
 and match_case (v1, (v2, v3)) =
   let v1 = pattern v1 and v2 = expr v2 and v3 = option expr v3 in

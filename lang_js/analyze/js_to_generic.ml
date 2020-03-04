@@ -62,9 +62,9 @@ let label v = wrap string v
 let qualified_name x = [x, fake "TODO qualified name"]
 
 let resolved_name = function
-  | Local -> Some (G.Local G.gensym_TODO)
-  | Param -> Some (G.Param G.gensym_TODO)
-  | Global x -> Some (G.Global (qualified_name x))
+  | Local -> Some (G.Local, G.sid_TODO)
+  | Param -> Some (G.Param, G.sid_TODO)
+  | Global x -> Some (G.Global (qualified_name x), G.sid_TODO)
   | NotResolved -> None
 
 type special_result = 
@@ -114,7 +114,7 @@ let special (x, tok) =
       | Some n -> 
             let n = name n in
             SR_NeedArgs (fun args ->
-            G.OtherExpr (G.OE_EncapsName,(G.Id n)::(args|>List.map(fun e ->G.E e))))
+            G.OtherExpr (G.OE_EncapsName,(G.I n)::(args|>List.map(fun e ->G.E e))))
       )
   | ArithOp op -> SR_Special (G.ArithOp op)
   | IncrDecr v -> SR_Special (G.IncrDecr v)
@@ -132,10 +132,9 @@ and expr (x: expr) =
   | Regexp v1 -> let v1 = wrap string v1 in G.L (G.Regexp v1)
   | Id (v1, refresolved) -> 
       let v1 = name v1 in
-      let v2 = G.empty_name_info in
       let v3 = { (G.empty_id_info ()) with
                  G.id_resolved = vref resolved_name refresolved } in
-      G.Name ((v1, v2), v3)
+      G.Id (v1, v3)
 
   | IdSpecial (v1) -> 
       let x = special v1 in
@@ -393,12 +392,12 @@ and module_directive x =
       G.ImportAs (t, G.FileName v2, Some v1)
   | ImportCss ((v1)) ->
       let v1 = name v1 in
-      G.OtherDirective (G.OI_ImportCss, [G.Id v1])
+      G.OtherDirective (G.OI_ImportCss, [G.I v1])
   | ImportEffect ((v1)) ->
       let v1 = name v1 in
-      G.OtherDirective (G.OI_ImportEffect, [G.Id v1])
+      G.OtherDirective (G.OI_ImportEffect, [G.I v1])
   | Export ((v1)) -> let v1 = name v1 in
-      G.OtherDirective (G.OI_Export, [G.Id v1])
+      G.OtherDirective (G.OI_Export, [G.I v1])
 
 and program v = list toplevel v
 

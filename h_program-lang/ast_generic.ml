@@ -12,6 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
+open Common
 
 (*****************************************************************************)
 (* Prelude *)
@@ -138,12 +139,28 @@ type module_name =
   | FileName of string wrap   (* ex: Js import, C #include, Go import *)
  (* with tarzan *)
 
-(* see also scope_code.ml *)
-type resolved_name =
-  | Local of gensym
-  | Param of gensym (* could merge with Local *)
+(* A single unique id. uid would be a better name, but it usually 
+ * means "user id" for people.
+ *
+ * This single id simplifies further analysis which need less to care about 
+ * maintaining scoping information, for example to deal with variable
+ * shadowing, or functions using the same parameter names 
+ * (even though you still need to handle specially recursive functions), etc.
+ *
+ * See naming_ast.ml for more information. 
+ * 
+ * Most generic ASTs have a fake value (sid_TODO = -1) at first. 
+ * You need to call Naming_ast.resolve (or one of the lang-specific
+ * Resolve_xxx.resolve) on the generic AST to set it correctly.
+ *)
+type sid = int (* a single unique gensym'ed number. See gensym() below *)
+
+and resolved_name = resolved_name_kind * sid
+  and resolved_name_kind =
+  | Local
+  | Param (* could merge with Local *)
   (* for closures; can refer to a Local or Param *)
-  | EnclosedVar of gensym (* todo? and depth? *)
+  | EnclosedVar (* todo? and depth? *)
 
   (* both dotted_ident must at least contain one element *)
   | Global of dotted_ident (* or just name? *) (* can also use 0 for gensym *)
@@ -152,11 +169,6 @@ type resolved_name =
   | Macro
   | EnumConstant
 
-  (* this simplifies further analysis which need less to care about 
-   * maintaining scoping information to deal with variable shadowing, 
-   * functions using the same parameter names, etc.
-   *)
-  and gensym = int (* a unique gensym'ed number *)
  (* with tarzan *)
 
 (* Start of big mutually recursive types because of the use of 'any' 
@@ -177,6 +189,10 @@ type name = ident * name_info
 and id_info = {
     id_resolved: resolved_name option ref; (* variable tagger (naming) *)
     id_type:     type_         option ref; (* type checker (typing) *)
+    (* sgrep: this is for sgrep constant propagation hack.
+     * todo? associate only with Id?
+     *)
+    id_const_literal: literal option ref;
   }
 
 (*****************************************************************************)
@@ -203,16 +219,26 @@ and expr =
   (* usually an argument of a New (used in Java, Javascript) *)
   | AnonClass of class_definition
 
-  (* todo: newvar: 
-   * Name is sometimes abused to also introduce a newvar (as in Python)
+  (* This used to be called Name and was generalizing Id and IdQualified
+   * but some analysis are easier when they just need to
+   * handle simple Id, hence the split. For example, there were some bugs
+   * in sgrep because sometimes an identifier was an ident (in function header)
+   * and sometimes a name (when called). For naming, we also need to do
+   * things differently for Id vs IdQualified and would need many time to
+   * inspect the name.name_qualifier to know if we have an Id or IdQualified.
+   * We do the same split for Fid vs FName for fields.
+   * todo: newvar: 
+   * Id is sometimes abused to also introduce a newvar (as in Python)
    * but ultimately those cases should be rewritten to first introduce a
    * VarDef. 
-   * todo: Sometimes some DotAccess should really be transformed in Name
+   *)
+  | Id of ident * id_info
+  (* todo: Sometimes some DotAccess should really be transformed in IdQualified
    * with a better qualifier because the obj is actually the name of a package
    * or module, but you may need advanced semantic information and global
    * analysis to disambiguate.
    *)
-  | Name of name * id_info
+  | IdQualified of name * id_info
   | IdSpecial of special wrap
 
   (* operators and function application *)
@@ -338,7 +364,7 @@ and expr =
     and prefix_postfix = Prefix | Postfix
 
   and field_ident =
-    | FId of ident
+    | FId of ident (* hard to put '* id_info' here, hard to resolve *)
     | FName of name (* OCaml *)
     | FDynamic of expr (* PHP, JS (even though use ArrayAccess for that) *)
 
@@ -568,6 +594,7 @@ and type_ =
    (* old: was originally TyApply (name, []), but better to differentiate.
     * todo? may need also TySpecial because the name can actually be
     *  self/parent/static (e.g., in PHP)
+    * todo? maybe go even further and differentiate TyId vs TyIdQualified?
     *)
   | TyName of name
   (* covers tuples, list, etc.*)
@@ -916,7 +943,7 @@ and program = item list
 
 (* mentioned in many OtherXxx so must be part of the mutually recursive type *)
 and any =
-  | Id of ident
+  | I of ident
   | N of name
   | En of entity
 
@@ -963,14 +990,15 @@ let error tok msg =
 (* Helpers *)
 (*****************************************************************************)
 
-(* use 0 for globals, if needed *)
+(* You can use 0 for globals, even though this will work only on a single
+ * file. Any global analysis will need to set a unique ID for globals too. *)
 let gensym_counter = ref 0
-(* see gensym type in resolved_name *)
+(* see sid type in resolved_name *)
 let gensym () = 
   incr gensym_counter;
   !gensym_counter
-
-let gensym_TODO = -1 
+(* before Naming_ast.resolve can do its job *)
+let sid_TODO = -1 
 
 let empty_name_info = 
   { name_qualifier = None; name_typeargs = None;}
@@ -979,10 +1007,14 @@ let empty_var =
   { vinit = None; vtype = None }
 
 let empty_id_info () = 
-  { id_resolved = ref None; id_type = ref None; }
+  { id_resolved = ref None; id_type = ref None;
+    id_const_literal = ref None;
+  }
 
 let basic_id_info resolved = 
-  { id_resolved = ref (Some resolved); id_type = ref None; }
+  { id_resolved = ref (Some resolved); id_type = ref None; 
+    id_const_literal = ref None;
+  }
 
 (*
 let name_of_id id = 
@@ -993,7 +1025,7 @@ let name_of_id id =
 let param_of_id id = { 
     pname = Some id;
     pdefault = None; ptype = None; pattrs = []; pinfo = 
-      (basic_id_info (Param gensym_TODO));
+      (basic_id_info (Param, sid_TODO));
 }
 let param_of_type typ = {
     ptype = Some typ;
@@ -1071,7 +1103,7 @@ let is_boolean_operator = function
 (* used in controlflow_build *)
 let vardef_to_assign (ent, def) resolved =
   let idinfo = { (empty_id_info()) with id_resolved = ref resolved } in
-  let name = Name ((ent.name, empty_name_info), idinfo) in
+  let name = Id (ent.name, idinfo) in
   let v = 
     match def.vinit with
    | Some v -> v
@@ -1082,9 +1114,15 @@ let vardef_to_assign (ent, def) resolved =
 (* used in controlflow_build *)
 let funcdef_to_lambda (ent, def) resolved =
   let idinfo = { (empty_id_info()) with id_resolved = ref resolved } in
-  let name = Name ((ent.name, empty_name_info), idinfo) in
+  let name = Id (ent.name, idinfo) in
   let v = Lambda def in
   Assign (name, Parse_info.fake_info "=", v)
+
+let has_keyword_attr kwd attrs = 
+  attrs |> List.exists (function
+    | KeywordAttr (kwd2, _) -> kwd =*= kwd2
+    | _ -> false
+  )
 
 (* Try avoid using them! if you build new constructs, you should try
  * to derive the tokens in those new constructs from existing constructs.

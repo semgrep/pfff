@@ -27,12 +27,15 @@ let vof_module_name =
 
 let vof_dotted_ident = vof_dotted_name
 
-let rec vof_resolved_name =
+let rec vof_resolved_name (v1, v2) =
+  let v1 = vof_resolved_name_kind v1 in
+  let v2 = Ocaml.vof_int v2 in
+  Ocaml.VTuple [ v1; v2 ]
+and vof_resolved_name_kind = 
   function
-  | Local v1 -> let v1 = vof_gensym v1 in Ocaml.VSum (("Local", [ v1 ]))
-  | Param v1 -> let v1 = vof_gensym v1 in Ocaml.VSum (("Param", [ v1 ]))
-  | EnclosedVar v1 ->
-      let v1 = vof_gensym v1 in Ocaml.VSum (("EnclosedVar", [ v1 ]))
+  | Local  ->  Ocaml.VSum (("Local", [ ]))
+  | Param  -> Ocaml.VSum (("Param", [ ]))
+  | EnclosedVar -> Ocaml.VSum (("EnclosedVar", [ ]))
   | Global v1 ->
       let v1 = vof_dotted_ident v1 in Ocaml.VSum (("Global", [ v1 ]))
   | ImportedModule v1 ->
@@ -40,7 +43,6 @@ let rec vof_resolved_name =
   | Macro -> Ocaml.VSum (("Macro", []))
   | EnumConstant -> Ocaml.VSum (("EnumConstant", []))
   | TypeName -> Ocaml.VSum (("TypeName", []))
-and vof_gensym v = Ocaml.vof_int v
 
 
 let rec vof_name (v1, v2) =
@@ -58,15 +60,21 @@ and
   let arg = Ocaml.vof_option vof_qualifier v_name_qualifier in
   let bnd = ("name_qualifier", arg) in
   let bnds = bnd :: bnds in Ocaml.VDict bnds
-and vof_id_info { id_resolved = v_id_resolved; id_type = v_id_type } =
+and vof_id_info { id_resolved = v_id_resolved; id_type = v_id_type; 
+    id_const_literal = v3;
+  } =
   let bnds = [] in
+  let arg = Ocaml.vof_ref (Ocaml.vof_option vof_literal) v3 in
+  let bnd = ("id_const_literal", arg) in
+  let bnds = bnd :: bnds in
   let arg = Ocaml.vof_ref (Ocaml.vof_option vof_type_) v_id_type in
   let bnd = ("id_type", arg) in
   let bnds = bnd :: bnds in
   let arg =
     Ocaml.vof_ref (Ocaml.vof_option vof_resolved_name) v_id_resolved in
   let bnd = ("id_resolved", arg) in
-  let bnds = bnd :: bnds in Ocaml.VDict bnds
+  let bnds = bnd :: bnds in 
+  Ocaml.VDict bnds
 
 
 
@@ -127,10 +135,14 @@ and vof_expr =
   | AnonClass v1 ->
       let v1 = vof_class_definition v1
       in Ocaml.VSum (("AnonClass", [ v1 ]))
-  | Name ((v1, v2)) ->
+  | Id ((v1, v2)) ->
+      let v1 = vof_ident v1
+      and v2 = vof_id_info v2
+      in Ocaml.VSum (("Id", [ v1; v2 ]))
+  | IdQualified ((v1, v2)) ->
       let v1 = vof_name v1
       and v2 = vof_id_info v2
-      in Ocaml.VSum (("Name", [ v1; v2 ]))
+      in Ocaml.VSum (("IdQualified", [ v1; v2 ]))
   | IdSpecial v1 ->
       let v1 = vof_wrap vof_special v1 in Ocaml.VSum (("IdSpecial", [ v1 ]))
   | Call ((v1, v2)) ->
@@ -985,7 +997,7 @@ and vof_any =
   | Dir v1 -> let v1 = vof_directive v1 in Ocaml.VSum (("Di", [ v1 ]))
   | Fld v1 -> let v1 = vof_field v1 in Ocaml.VSum (("Fld", [ v1 ]))
   | Di v1 -> let v1 = vof_dotted_name v1 in Ocaml.VSum (("Dn", [ v1 ]))
-  | Id v1 -> let v1 = vof_ident v1 in Ocaml.VSum (("Id", [ v1 ]))
+  | I v1 -> let v1 = vof_ident v1 in Ocaml.VSum (("I", [ v1 ]))
   | Pa v1 -> let v1 = vof_parameter v1 in Ocaml.VSum (("Pa", [ v1 ]))
   | Ar v1 -> let v1 = vof_argument v1 in Ocaml.VSum (("Ar", [ v1 ]))
   | At v1 -> let v1 = vof_attribute v1 in Ocaml.VSum (("At", [ v1 ]))
