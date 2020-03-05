@@ -386,7 +386,7 @@ and module_directive x =
   match x with
   | Import ((t, v1, v2, v3)) ->
       let v1 = name v1 and v2 = name v2 and v3 = filename v3 in 
-      G.ImportFrom (t, G.FileName v3, [v1, Some v2])
+      G.ImportFrom (t, G.FileName v3, (Some (v1, Some v2)))
   | ModuleAlias ((t, v1, v2)) ->
       let v1 = name v1 and v2 = filename v2 in
       G.ImportAs (t, G.FileName v2, Some v1)

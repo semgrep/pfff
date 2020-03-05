@@ -896,7 +896,7 @@ and macro_definition = {
 and directive = 
   (* newvar: *)
   | ImportFrom of tok (* 'import'/'from' for Python, 'include' for C *) * 
-                  module_name * alias list
+                  module_name * alias option
   (* less: unfold the alias list? *)
   | ImportAs   of tok * module_name * ident option (* as name *)
   (* bad practice! hard to resolve name locally *)
