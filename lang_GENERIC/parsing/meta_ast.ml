@@ -950,7 +950,7 @@ and vof_directive =
   | ImportFrom ((t, v1, v2)) ->
       let t = vof_tok t in
       let v1 = vof_module_name v1
-      and v2 = Ocaml.vof_list vof_alias v2
+      and v2 = Ocaml.vof_option vof_alias v2
       in Ocaml.VSum (("ImportFrom", [ t; v1; v2 ]))
   | ImportAs ((t, v1, v2)) ->
       let t = vof_tok t in
