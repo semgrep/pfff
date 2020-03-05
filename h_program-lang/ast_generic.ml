@@ -857,13 +857,15 @@ and class_definition = {
   cimplements: type_ list;
   cmixins: type_ list; (* PHP 'uses' *)
   (* newscope: *)
-  cbody: field list bracket;
+  cbody: cbody list bracket;
 }
   and class_kind = 
     | Class
     | Interface
     | Trait
-
+  and cbody = 
+    | CField of field
+    | CEllipsis of tok
 (* ------------------------------------------------------------------------- *)
 (* Module definition  *)
 (* ------------------------------------------------------------------------- *)
