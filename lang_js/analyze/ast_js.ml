@@ -95,7 +95,7 @@ type name = string wrap
 type qualified_name = string
  (* with tarzan *)
 
-(* alt: reuse Scope_code.t, but not really worth it.*)
+(* todo: use Ast_generic.resolved_name at some point, and share the ref! *)
 type resolved_name =
   (* this can be computed by ast_js_build.ml *)
   | Local

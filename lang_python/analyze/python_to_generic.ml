@@ -76,14 +76,14 @@ let module_name (v1, dots) =
       G.FileName (s, tok)
 
 
-let resolved_name name =
+let resolved_name =
   function
   | LocalVar -> Some (G.Local, G.sid_TODO)
   | Parameter -> Some (G.Param, G.sid_TODO)
-  | GlobalVar -> Some (G.Global [name], G.sid_TODO)
+  | GlobalVar -> Some (G.Global, G.sid_TODO)
   | ClassField -> None
   | ImportedModule xs -> Some (G.ImportedModule (G.DottedName xs), G.sid_TODO)
-  | ImportedEntity xs -> Some (G.Global xs, G.sid_TODO)
+  | ImportedEntity xs -> Some (G.ImportedEntity xs, G.sid_TODO)
   | NotResolved -> None
 
 let expr_context =
@@ -139,7 +139,7 @@ let rec expr (x: expr) =
   | Name ((v1, v2, v3)) ->
       let v1 = name v1
       and _v2TODO = expr_context v2
-      and v3 = vref (resolved_name v1) v3
+      and v3 = vref resolved_name v3
       in 
       G.Id (v1 ,{ (G.empty_id_info ()) with G.id_resolved = v3 })
           
