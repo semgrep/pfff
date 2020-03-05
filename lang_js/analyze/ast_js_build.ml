@@ -24,6 +24,9 @@ module G = Ast_generic (* for the operators *)
 (* Cst_js to Ast_js.
  *
  * See also transpile_js.ml for important helper functions.
+ * This also currently resolve certain names
+ * todo: this should be move out of here in resolve_js.ml, or even better
+ *  generalized in naming_ast.ml
  *)
 
 (*****************************************************************************)

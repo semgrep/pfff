@@ -64,6 +64,8 @@ let default_env () = {
 let params_of_parameters xs = 
   xs |> Common.map_filter (function
      | ParamClassic { pname = Some id; _ } ->
+        (* less: we should also set id_info here at the def site,
+         * but currently managed by naming_ast.ml *)
         Some (Ast.str_of_id id, (G.Param, G.sid_TODO))
      | _ -> None
     )
@@ -92,6 +94,10 @@ let resolve prog =
     (* defs *)
     V.kprogram = (fun (k, _) x ->
 
+      (* this is mainly for codemap to not report as error the use of
+       * the current package name in the current file (which may access
+       * entities defined in the same package but defined in another file)
+       *)
       let file = Parse_info.file_of_info (fst x.package), fst x.package in
       let packid = snd x.package in
       add_name_env packid (G.ImportedModule (G.FileName file), G.sid_TODO) env;
@@ -120,6 +126,9 @@ let resolve prog =
       (match x with 
       | DFunc (id, _) ->
          env |> add_name_env id (G.Global, G.sid_TODO);
+         (* note that kfunction later will do the with_added_env for params
+          * to factorize code between DFunc and DMethod.
+          *)
          with_new_context InFunction env (fun () ->
            k x
          )
