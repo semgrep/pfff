@@ -274,12 +274,13 @@ and class_ = {
   c_extends: expr option;
   c_body: property list bracket;
 }
-
   and property = 
     (* expr is a Fun for methods *)
     | Field of property_name * property_prop wrap list * expr
     (* less: can unsugar? *)
     | FieldSpread of tok * expr
+    (* sgrep-ext: used for {fld1: 1, ... } which is distinct from spreading *)
+    | FieldEllipsis of tok
 
   and property_prop =
     | Static

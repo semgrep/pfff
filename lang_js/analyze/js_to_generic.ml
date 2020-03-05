@@ -338,7 +338,7 @@ and obj_ v = bracket (list property) v
 
 and class_ { c_extends = c_extends; c_body = c_body } =
   let v1 = option expr c_extends in
-  let v2 = bracket (list property) c_body in 
+  let v2 = bracket (list property) c_body in
   (* todo: could analyze arg to look for Id *)
   let extends = 
     match v1 with
@@ -366,7 +366,8 @@ and property x =
   | FieldSpread (t, v1) -> 
       let v1 = expr v1 in 
       G.FieldSpread (t, v1)
-
+  | FieldEllipsis v1 -> 
+      G.FieldStmt (G.ExprStmt (G.Ellipsis v1))
 and property_prop (x, tok) =
   match x with
   | Static -> G.attr G.Static tok

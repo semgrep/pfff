@@ -624,6 +624,8 @@ class_element:
     }
 
  | semicolon                       { C_extrasemicolon $1 }
+  /*(* sgrep-ext: enable class body matching *)*/
+ | T_DOTS { Flag_parsing.sgrep_guard (CEllipsis $1) }
 
 access_modifiers: 
  | access_modifiers access_modifier { }

@@ -584,6 +584,7 @@ and property env = function
      expr env e
   | FieldSpread (_, e) ->
      expr env e
+  | FieldEllipsis _ -> ()
 
 and property_name env = function
   | PN _n2 -> ()

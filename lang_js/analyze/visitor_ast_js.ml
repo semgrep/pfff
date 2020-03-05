@@ -255,6 +255,7 @@ and v_property x =
       and v3 = v_expr v3
       in ()
   | FieldSpread (t, v1) -> let t = v_tok t in let v1 = v_expr v1 in ()
+  | FieldEllipsis v1 -> let v1 = v_tok v1 in ()
   in
   vin.kprop (k, all_functions) x
 

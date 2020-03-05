@@ -814,6 +814,7 @@ and class_element env = function
     in
     [method_ env props x]
   | C.C_extrasemicolon _ -> []
+  | C.CEllipsis t -> [A.FieldEllipsis t]
 
 and method_ env props x =
   let fun_ = func_decl env x in

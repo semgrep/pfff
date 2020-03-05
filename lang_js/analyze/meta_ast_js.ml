@@ -291,6 +291,8 @@ and vof_property =
   | FieldSpread (t, v1) ->
       let t = vof_tok t in
       let v1 = vof_expr v1 in Ocaml.VSum (("FieldSpread", [ t; v1 ]))
+  | FieldEllipsis v1 ->
+      let v1 = vof_tok v1 in Ocaml.VSum (("FieldEllipsis", [ v1 ]))
 and vof_property_prop =
   function
   | Static -> Ocaml.VSum (("Static", []))
