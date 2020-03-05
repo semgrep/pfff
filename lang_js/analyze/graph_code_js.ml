@@ -576,10 +576,7 @@ and obj_ env xs =
 
 and class_ env c = 
   Common.opt (expr env) c.c_extends;
-  List.iter (c_body_binding env) (unbracket c.c_body)
-and c_body_binding env = function
-| CEllipsis _ -> ()
-| CBodyClassic p -> property env p
+  List.iter (property env) (unbracket c.c_body)
 
 and property env = function
   | Field (pname, _props, e) ->
@@ -587,6 +584,7 @@ and property env = function
      expr env e
   | FieldSpread (_, e) ->
      expr env e
+  | FieldEllipsis _ -> ()
 
 and property_name env = function
   | PN _n2 -> ()

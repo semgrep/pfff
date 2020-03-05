@@ -338,7 +338,7 @@ and obj_ v = bracket (list property) v
 
 and class_ { c_extends = c_extends; c_body = c_body } =
   let v1 = option expr c_extends in
-  let v2 = bracket (list c_body_binding) c_body in
+  let v2 = bracket (list property) c_body in
   (* todo: could analyze arg to look for Id *)
   let extends = 
     match v1 with
@@ -347,9 +347,6 @@ and class_ { c_extends = c_extends; c_body = c_body } =
   in
   { G.ckind = G.Class; cextends = extends; 
     cimplements = []; cmixins = []; cbody = v2;}, []
-and c_body_binding = function
-  | CBodyClassic x -> property x
-  | CEllipsis x -> G.FieldStmt (G.ExprStmt (G.Ellipsis x))
 and property x =
    match x with
   | Field ((v1, v2, v3)) ->
@@ -369,7 +366,8 @@ and property x =
   | FieldSpread (t, v1) -> 
       let v1 = expr v1 in 
       G.FieldSpread (t, v1)
-
+  | FieldEllipsis v1 -> 
+      G.FieldStmt (G.ExprStmt (G.Ellipsis v1))
 and property_prop (x, tok) =
   match x with
   | Static -> G.attr G.Static tok

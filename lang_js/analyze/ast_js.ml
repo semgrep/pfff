@@ -272,17 +272,15 @@ and obj_ = property list bracket
 and class_ = { 
   (* usually simply an Id *)
   c_extends: expr option;
-  c_body: c_body_biding list bracket;
+  c_body: property list bracket;
 }
-  and c_body_biding =
-    | CBodyClassic of property
-    | CEllipsis of tok
-
   and property = 
     (* expr is a Fun for methods *)
     | Field of property_name * property_prop wrap list * expr
     (* less: can unsugar? *)
     | FieldSpread of tok * expr
+    (* sgrep-ext: used for {fld1: 1, ... } which is distinct from spreading *)
+    | FieldEllipsis of tok
 
   and property_prop =
     | Static
