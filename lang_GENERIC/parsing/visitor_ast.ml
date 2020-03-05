@@ -620,13 +620,10 @@ and v_class_definition x =
   let arg = v_class_kind v_ckind in
   let arg = v_list v_type_ v_cextends in
   let arg = v_list v_type_ v_cimplements in
-  let arg = v_bracket (v_list v_class_body) v_cbody in
+  let arg = v_bracket (v_list v_field) v_cbody in
   ()
   in
   vin.kclass_definition (k, all_functions) x
-and v_class_body = function
-  | CField v1 -> let v1 = v_field v1 in ()
-  | CEllipsis v1 -> let v1 = v_tok v1 in ()
 and v_class_kind = function | Class -> () | Interface -> () | Trait -> ()
 
 and v_module_definition { mbody = v_mbody } =

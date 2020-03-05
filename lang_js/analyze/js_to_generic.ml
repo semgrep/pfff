@@ -348,8 +348,8 @@ and class_ { c_extends = c_extends; c_body = c_body } =
   { G.ckind = G.Class; cextends = extends; 
     cimplements = []; cmixins = []; cbody = v2;}, []
 and c_body_binding = function
-  | CBodyClassic x -> G.CField(property x)
-  | CEllipsis x -> G.CEllipsis x
+  | CBodyClassic x -> property x
+  | CEllipsis x -> G.FieldStmt (G.ExprStmt (G.Ellipsis x))
 and property x =
    match x with
   | Field ((v1, v2, v3)) ->

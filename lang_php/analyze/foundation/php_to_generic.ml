@@ -541,7 +541,7 @@ and class_def {
     cimplements = implements;
     cmixins = uses;
     cbody = t1, 
-      fields |> List.map (fun def -> G.CField (G.FieldStmt (G.DefStmt def))), 
+      fields |> List.map (fun def -> G.FieldStmt (G.DefStmt def)), 
       t2;
   } in
   ent, def

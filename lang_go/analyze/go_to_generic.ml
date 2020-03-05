@@ -202,11 +202,11 @@ and interface_field =
       let v1 = ident v1 in
       let (params, ret) = func_type v2 in
       let ent = G.basic_entity v1 [] in
-      G.CField (G.FieldStmt (G.DefStmt 
-          (ent, G.FuncDef (mk_func_def params ret (G.Block [])))))
+      G.FieldStmt (G.DefStmt 
+          (ent, G.FuncDef (mk_func_def params ret (G.Block []))))
   | EmbeddedInterface v1 -> let v1 = qualified_ident v1 in 
       let name = name_of_qualified_ident v1 in
-      G.CField (G.FieldSpread (fake "...", G.IdQualified (name, G.empty_id_info())))
+      G.FieldSpread (fake "...", G.IdQualified (name, G.empty_id_info()))
 
 and expr_or_type v = either expr type_ v
 
