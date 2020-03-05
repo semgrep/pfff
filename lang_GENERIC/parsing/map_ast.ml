@@ -724,7 +724,7 @@ and
                          cbody = v_cbody;
                          cmixins = v_cmixins;
                        } =
-  let v_cbody = map_bracket (map_of_list map_c_body_binding) v_cbody in
+  let v_cbody = map_bracket (map_of_list map_field) v_cbody in
   let v_cmixins = map_of_list map_type_ v_cmixins in
   let v_cimplements = map_of_list map_type_ v_cimplements in
   let v_cextends = map_of_list map_type_ v_cextends in
@@ -736,9 +736,6 @@ and
                          cbody = v_cbody;
                          cmixins = v_cmixins;
                        }
-and map_c_body_binding = function
-  | CField v1 -> let v1 = map_field v1 in CField v1
-  | CEllipsis v1 -> let v1 = map_tok v1 in CEllipsis v1
 
 and map_class_kind =
   function | Class -> Class | Interface -> Interface | Trait -> Trait
