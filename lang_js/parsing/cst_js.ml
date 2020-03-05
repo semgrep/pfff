@@ -534,6 +534,8 @@ and class_decl = {
   | C_field of field_decl * sc
   (* unparser: *)
   | C_extrasemicolon of sc
+  (* sgrep-ext: *)
+  | CEllipsis of tok
 
   (* es6: *)
   and static_opt = tok option (* static *)

@@ -621,6 +621,7 @@ and v_class_stmt =
   | C_method ((v1, v2)) ->
       let v1 = v_option v_tok v1 and v2 = v_func_decl v2 in ()
   | C_extrasemicolon v1 -> let v1 = v_sc v1 in ()
+  | CEllipsis v1 -> let v1 = v_tok v1 in ()
 
 and v_item =
   function
