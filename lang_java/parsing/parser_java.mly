@@ -276,7 +276,11 @@ compilation_unit:
   |                                         type_declarations_opt
     { { package = None; imports = []; decls = $1; } }
 
-
+declaration:
+ | class_declaration     { Class $1 }
+ | interface_declaration  { Class $1 }
+ | enum_declaration       { Enum $1 }
+ | method_declaration  { Method $1 }
 
 sgrep_spatch_pattern:
  | expression         EOF { AExpr $1 }
@@ -285,8 +289,7 @@ sgrep_spatch_pattern:
 
 item_no_dots:
  | statement_no_dots { Init (false, $1) }
- /*(* TODO: add class_member_declaration, and its method_declaration here,
-    * but many conflicts *)*/
+ | declaration { $1 }
 
 /*(* coupling: copy paste of statement, without dots *)*/
 statement_no_dots:
@@ -1055,8 +1058,7 @@ class_body_declaration:
  | static_initializer  { [$1] }
  /* (* javaext: 1.? *)*/
  | instance_initializer  { [$1] }
-
-
+ 
 class_member_declaration:
  | field_declaration  { $1 }
  | method_declaration  { [Method $1] }
@@ -1072,6 +1074,9 @@ class_member_declaration:
  | annotation_type_declaration { ast_todo }
 
  | SM  { [] }
+ /* (* sgrep-ext: allows ... inside class body *) */
+ | DOTS { [DeclEllipsis $1] }
+
 
 static_initializer: STATIC block  { Init (true, $2) }
 

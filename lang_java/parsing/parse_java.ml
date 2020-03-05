@@ -97,7 +97,6 @@ let parse2 filename =
       (Some xs, toks), stat
 
   | Right (_info_of_bads, line_error, cur) ->
-
       if not !Flag.error_recovery
       then raise (PI.Parsing_error (TH.info_of_tok cur));
 
