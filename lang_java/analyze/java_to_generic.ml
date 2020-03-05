@@ -537,7 +537,7 @@ let compilation_unit { package = pack;
   let imports = v2 |> List.map (fun import -> G.DirectiveStmt import) in
   let package = 
     match v1 with
-    | None -> items @ imports
+    | None -> []
     | Some (t, x) -> [G.DirectiveStmt (G.Package (t, x))]
   in
   package @ imports @ items
