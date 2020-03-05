@@ -834,6 +834,8 @@ and vof_class_stmt =
       in Ocaml.VSum (("C_method", [ v1; v2 ]))
   | C_extrasemicolon v1 ->
       let v1 = vof_sc v1 in Ocaml.VSum (("C_extrasemicolon", [ v1 ]))
+  | CEllipsis v1 ->
+      let v1 = vof_tok v1 in Ocaml.VSum (("CEllipsis", [ v1 ]))
 
 and vof_import =
   function
