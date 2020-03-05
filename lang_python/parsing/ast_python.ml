@@ -28,6 +28,8 @@
  *
  * See also:
  *  - http://trevorjim.com/python-is-not-context-free/
+ *  - https://github.com/gvanrossum/pegen a WIP to write the Python grammar
+ *    using a PEG parser
  *
  * Note that this AST supports partly Python2 syntax with the special
  * print and exec statements. It does not support the special tuple

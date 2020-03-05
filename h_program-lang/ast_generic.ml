@@ -27,7 +27,7 @@ open Common
  *  - C
  *  - Go
  *  - PHP
- *  - TOFINISH OCaml
+ *  - OCaml (unfinished)
  *
  * rational: In the end, programming languages have a lot in common.
  * Even though most interesting analysis are probably better done on a
@@ -41,7 +41,8 @@ open Common
  * tree of nodes, but all the structure of the original AST is lost.
  * 
  * todo:
- *  - later: add Ruby, Rust, Scala (difficult)
+ *  - add Ruby
+ *  - later: add Rust, Scala (difficult)
  *  - later: add C++ (argh)
  *  - see ast_fuzzy.ml todos for ideas to use ast_generic for sgrep.
  *
@@ -135,7 +136,7 @@ type dotted_ident = ident list (* at least 1 element *)
 (* module_name can also be used for a package name or a namespace *)
 type module_name =
   | DottedName of dotted_ident (* ex: Python *)
-  (* in that case the '.' is really the '/' *)
+  (* in FileName the '/' is similar to the '.' in DottedName *)
   | FileName of string wrap   (* ex: Js import, C #include, Go import *)
  (* with tarzan *)
 
@@ -157,15 +158,33 @@ type sid = int (* a single unique gensym'ed number. See gensym() below *)
 
 and resolved_name = resolved_name_kind * sid
   and resolved_name_kind =
-  | Local
-  | Param (* could merge with Local *)
-  (* for closures; can refer to a Local or Param *)
-  | EnclosedVar (* todo? and depth? *)
+  (* Global is useful in codemap/efuns to highlight differently and warn
+   * about the use of globals inside functions.
+   * old: Global was merged with ImportedEntity before but simpler to split, as
+   * anyway I was putting often an empty list for dotted_ident with a 
+   * todo note in the code.
+   *)
+  | Global 
+  (* Those could be merged, but again this is useful in codemap/efuns *)
+  | Local | Param 
+  (* For closures; can refer to a Local or Param.
+   * With sid this is potentially less useful for scoping-related issues,
+   * but this can be useful in codemap to again highlight specially 
+   * enclosed vars.
+   *)
+  | EnclosedVar (* less: add depth? *)
 
-  (* both dotted_ident must at least contain one element *)
-  | Global of dotted_ident (* or just name? *) (* can also use 0 for gensym *)
+  (* sgrep: those cases allow to match entities/modules even if they were
+   * aliased when imported.
+   * both dotted_ident must at least contain one element *)
+  | ImportedEntity of dotted_ident (* can also use 0 for gensym *)
   | ImportedModule of module_name
-  | TypeName (* in Go, where you can pass types as arguments *)
+
+  (* used in Go, where you can pass types as arguments and where we
+   * need to resolve those cases
+   *)
+  | TypeName 
+  (* used for C *)
   | Macro
   | EnumConstant
 
@@ -219,7 +238,7 @@ and expr =
   (* usually an argument of a New (used in Java, Javascript) *)
   | AnonClass of class_definition
 
-  (* This used to be called Name and was generalizing Id and IdQualified
+  (* old: this used to be called Name and was generalizing Id and IdQualified
    * but some analysis are easier when they just need to
    * handle simple Id, hence the split. For example, there were some bugs
    * in sgrep because sometimes an identifier was an ident (in function header)
@@ -243,7 +262,7 @@ and expr =
 
   (* operators and function application *)
   | Call of expr * arguments
-  (* (XHP, JSX, TSX), could transpile also *)
+  (* (XHP, JSX, TSX), could be transpiled also (done in il.ml?) *)
   | Xml of xml
   (* IntepolatedString of expr list is simulated with a 
    * Call(IdSpecial (Concat ...)) *)
@@ -254,7 +273,7 @@ and expr =
    * Assign can also be abused to declare new variables, but you should use
    * variable_definition for that.
    * less: should be in stmt, but most languages allow this at expr level :(
-   * todo: do il_generic where normalize this AST with expr/instr/stmt
+   * todo: see il.ml where we normalize this AST with expr/instr/stmt
    * update: should even be in a separate simple_stmt, as in Go
    *)
   | Assign of expr * tok (* =, or sometimes := in Go, <- in OCaml *) * expr
@@ -264,7 +283,8 @@ and expr =
   | LetPattern of pattern * expr
 
   (* can be used for Record, Class, or Module access depending on expr.
-   * In the last case it should be rewritten as a Name with a qualifier though.
+   * In the last case it should be rewritten as a IdQualified with a
+   * qualifier though.
    *)
   | DotAccess of expr * tok (* ., ::, ->, # *) * field_ident 
   (* in Js ArrayAccess is also abused to perform DotAccess (..., FDynamic) *)
@@ -290,8 +310,9 @@ and expr =
   | Ref   of tok (* &, address of *) * expr 
   | DeRef of tok (* '*' in C, '!' or '<-' in OCaml, ^ in Reason *) * expr 
 
-  (* sgrep: *)
-  | Ellipsis of tok (* '...' in args, stmts (and also types in Python) *)
+  (* sgrep: ... in expressions, args, stmts, items, and fields
+   * (and unfortunately also in types in Python) *)
+  | Ellipsis of tok (* '...' *)
   | TypedMetavar of ident * tok (* : *) * type_
 
   | OtherExpr of other_expr_operator * any list

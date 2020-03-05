@@ -104,9 +104,12 @@ let resolve prog =
 
   (* would be better to use a classic recursive with environment visit *)
   let visitor = V.mk_visitor { V.default_visitor with
-    (* No need to resolve at the definition sites (for parameters, locals).
+    (* old: No need to resolve at the definition sites (for params, locals).
      * This will be patterned-match specially anyway in the highlighter. What
      * you want is to tag the use sites, and to maintain the right environment.
+     * update: we need to tag the def sites like the use sites! otherwise sgrep
+     * will not be able to equal a metavar matching a def and later a use.
+     * todo: this should be done better at some point in naming_ast.ml
      *)
     V.kexpr = (fun (k, v) x ->
       match x with
@@ -168,7 +171,7 @@ let resolve prog =
          if !(env.ctx) = InFunction
          then env |> add_name_env name (LocalVar);
      | ClassDef (name, _bases, _body, _decorators) ->
-           env |> add_name_env name (ImportedEntity [name]); (* could be more precise *)
+           env |> add_name_env name (GlobalVar);
            with_new_context InClass env (fun () ->
                k x              
             )
@@ -233,4 +236,3 @@ let resolve prog =
     );  
   } in
   visitor (Program prog)
-

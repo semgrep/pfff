@@ -33,6 +33,7 @@ let parse_with_lang lang file =
     Python_to_generic.program ast
   | Lang.Javascript ->
     let cst = Parse_js.parse_program file in
+    (* does also the job of a Resolve_js.resolve ast *)
     let ast = Ast_js_build.program cst in
     Js_to_generic.program ast
   | Lang.C ->

@@ -64,12 +64,14 @@ let default_env () = {
 let params_of_parameters xs = 
   xs |> Common.map_filter (function
      | ParamClassic { pname = Some id; _ } ->
+        (* less: we should also set id_info here at the def site,
+         * but currently managed by naming_ast.ml *)
         Some (Ast.str_of_id id, (G.Param, G.sid_TODO))
      | _ -> None
     )
-let local_or_global env id =
+let local_or_global env =
   if !(env.ctx) = AtToplevel 
-  then G.Global [id], G.sid_TODO
+  then G.Global, G.sid_TODO
   else G.Local, G.sid_TODO
 
 (*****************************************************************************)
@@ -81,14 +83,21 @@ let resolve prog =
 
   (* would be better to use a classic recursive with environment visit *)
   let visitor = V.mk_visitor { V.default_visitor with
-    (* No need to resolve at the definition sites (for parameters, locals).
+    (* old: No need to resolve at the definition sites (for params, locals).
      * This will be pattern-matched specially anyway in the highlighter. What
      * you want is to tag the use sites, and to maintain the right environment.
+     * update: we need to tag the def sites like the use sites! otherwise sgrep
+     * will not be able to equal a metavar matching a def and later a use.
+     * todo: this should be done better at some point in naming_ast.ml
      *)
 
     (* defs *)
     V.kprogram = (fun (k, _) x ->
 
+      (* this is mainly for codemap to not report as error the use of
+       * the current package name in the current file (which may access
+       * entities defined in the same package but defined in another file)
+       *)
       let file = Parse_info.file_of_info (fst x.package), fst x.package in
       let packid = snd x.package in
       add_name_env packid (G.ImportedModule (G.FileName file), G.sid_TODO) env;
@@ -116,12 +125,15 @@ let resolve prog =
     V.ktop_decl = (fun (k, _) x ->
       (match x with 
       | DFunc (id, _) ->
-         env |> add_name_env id (G.Global [id], G.sid_TODO); (* could add package name?*)
+         env |> add_name_env id (G.Global, G.sid_TODO);
+         (* note that kfunction later will do the with_added_env for params
+          * to factorize code between DFunc and DMethod.
+          *)
          with_new_context InFunction env (fun () ->
            k x
          )
       | DMethod (id, receiver, _) ->
-         env |> add_name_env id (G.Global [id], G.sid_TODO); (* could add package name?*)
+         env |> add_name_env id (G.Global, G.sid_TODO);
          let new_names = params_of_parameters [ParamClassic receiver] in
          with_added_env new_names env (fun () ->
           with_new_context InFunction env (fun () ->
@@ -133,7 +145,7 @@ let resolve prog =
     V.kdecl = (fun (k, _) x -> 
       (match x with
       | DConst (id, _, _) | DVar (id, _, _) ->
-         env |> add_name_env id (local_or_global env id)
+         env |> add_name_env id (local_or_global env)
         (* we do care about types because sometimes we don't know an Id
          * is actually a type, e.g., when passed to make()
          * less: could hardcode recognizing make()? or other cases where
@@ -148,7 +160,7 @@ let resolve prog =
       (match x with
       | SimpleStmt (DShortVars (xs, _, _)) | Range (_, Some (xs, _),_, _, _) ->
          xs |> List.iter (function
-           | Id (id, _) -> env |> add_name_env id (local_or_global env id)
+           | Id (id, _) -> env |> add_name_env id (local_or_global env)
            | _ -> ()
          )
 

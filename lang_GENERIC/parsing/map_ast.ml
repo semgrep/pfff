@@ -93,7 +93,8 @@ and map_resolved_name_kind =
   | Local  -> Local
   | Param  -> Param
   | EnclosedVar  -> EnclosedVar
-  | Global v1 -> let v1 = map_dotted_ident v1 in Global ((v1))
+  | Global -> Global
+  | ImportedEntity v1 -> let v1 = map_dotted_ident v1 in ImportedEntity ((v1))
   | ImportedModule v1 ->
       let v1 = map_module_name v1 in ImportedModule ((v1))
   | Macro -> Macro

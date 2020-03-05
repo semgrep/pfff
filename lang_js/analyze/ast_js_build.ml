@@ -24,6 +24,9 @@ module G = Ast_generic (* for the operators *)
 (* Cst_js to Ast_js.
  *
  * See also transpile_js.ml for important helper functions.
+ * This also currently resolve certain names
+ * todo: this should be move out of here in resolve_js.ml, or even better
+ *  generalized in naming_ast.ml
  *)
 
 (*****************************************************************************)
@@ -96,12 +99,15 @@ let is_local env n =
 let add_locals env vs = 
   let locals = vs |> Common.map_filter (fun v ->
     let s = s_of_n v.A.v_name in
+    (* we need to tag the def sites like the use sites otherwise sgrep
+     * will not be able to equal a metavar matching a def and later a use.
+     * todo: this should be done better at some point in naming_ast.ml
+     *)
+    v.A.v_resolved := A.Local;
     match fst v.A.v_kind with
     | A.Let | A.Const -> 
-        v.A.v_resolved := A.Local;
         Some (s, A.Local)
     | A.Var ->
-        v.A.v_resolved := A.Local;
         Hashtbl.replace env.vars s true;
         None
      ) in

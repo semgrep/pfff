@@ -80,7 +80,7 @@ module V = Visitor_ast
  *    A nice compromise might be to do most of the work in naming_ast.ml
  *    but still have lang-specific resolve_xxx.ml to tag special
  *    constructs that override what naming_ast.ml would do. 
- *    See set_if_not_already_set()
+ *    See set_resolved()
  *
  * TODO:
  *  - generalize the original "resolvers":
@@ -92,12 +92,15 @@ module V = Visitor_ast
  *  - introduce extra VarDef for languages that do not have them like
  *    Python/PHP where the first use is a def (which in turn requires
  *    special construct like 'global' or 'nonlocal' to disable this).
- *  - use gensym to create unique identifiers for locals/params
  *  - go:
+ *    * handle DShortVars and Foreach local vars, DMethod receiver parameter,
+ *      and TypeName for new types
  *    * in theory if/for/switch with their init declare new scope, as well 
  *      as Block
  *    * should do first pass to get all toplevel decl as you can use
  *      forward ref in Go
+ *  - python:
+ *     * Global/NonLocal directives
  *  - get rid of the original "resolvers":
  *    * resolve_xxx.ml
  *    * ast_js_build.ml
@@ -136,15 +139,14 @@ type resolved_name = Ast_generic.resolved_name
 
 type env = {
   ctx: context list ref;
-  (* todo: local/param
+  (* handle locals/params/globals, TODO
    * todo: block vars => list list with new_scope/del_scope/lookup
    * todo: enclosed vars (closures)
-   * todo: globals
-   * todo: use for module aliasing
+   * todo: use for module aliasing and imported aliased entities
    * todo: use for types for Go
    *)
   names: (string, resolved_name) assoc ref;
-  (* todo: constant propagation for sgrep *)
+  (* basic constant propagation of literals for sgrep *)
   constants: (string, sid * literal) assoc ref;
   (* todo?
    * (* block scope *)
@@ -161,13 +163,13 @@ let default_env () = {
 }
 
 (*****************************************************************************)
-(* Helpers *)
+(* Environment Helpers *)
 (*****************************************************************************)
 (* because we use a Visitor instead of a clean recursive 
  * function passing down an environment, we need to emulate a scoped
  * environment by using save_excursion.
  *)
-let _with_added_env xs env f = 
+let with_added_env xs env f = 
   let newnames = xs @ !(env.names) in
   Common.save_excursion env.names newnames f
 
@@ -185,6 +187,16 @@ let top_context env =
   | [] -> raise Impossible
   | x::_xs -> x
 
+let set_resolved id_info x =
+  (* TODO? maybe do it only if we have something better than what the
+   * lang-specific resolved found?
+   *)
+  id_info.id_resolved := Some x
+
+(*****************************************************************************)
+(* Other Helpers *)
+(*****************************************************************************)
+
 let is_local_or_global_ctx env =
   match top_context env with
   | AtToplevel | InFunction -> true
@@ -192,9 +204,19 @@ let is_local_or_global_ctx env =
 
 let resolved_name_kind env =
   match top_context env with
-  | AtToplevel -> Global [] (* TODO *)
+  | AtToplevel -> Global
   | InFunction -> Local
   | InClass -> raise Impossible
+
+let params_of_parameters xs =
+ xs |> Common.map_filter (function
+  | ParamClassic { pname = Some id; pinfo = id_info; _ } ->
+        let sid = Ast.gensym () in
+        let resolved = Param, sid in
+        set_resolved id_info resolved;
+        Some (Ast.str_of_ident id, resolved)
+   | _ -> None
+  )
 
 (*****************************************************************************)
 (* Entry point *)
@@ -205,10 +227,20 @@ let resolve _lang prog =
 
   (* would be better to use a classic recursive with environment visit *)
   let visitor = V.mk_visitor { V.default_visitor with
+    (* the defs *)
+
     V.kfunction_definition = (fun (k, _v) x ->
+      (* todo: add the function as a Global. In fact we should do a first
+       * pass for some languages to add all of them first, because
+       * Go for example allow the use of forward function reference
+       * (no need to declarare prototype and forward decls as in C).
+       *)
+      let new_params = params_of_parameters x.fparams in
       with_new_context InFunction env (fun () ->
+      (* todo: with_new_function_scope env ... *)
+      with_added_env new_params env (fun () ->
         k x
-      )
+      ))
     );
     V.kclass_definition = (fun (k, _v) x ->
       with_new_context InClass env (fun () ->
@@ -217,44 +249,53 @@ let resolve _lang prog =
     );
     V.kdef = (fun (k, _v) x ->
       match x with
-      (* literal constant propagation! *)
       | { name = id; info = id_info; attrs = attrs; _}, 
-         VarDef ({ vinit = Some (L literal); _})
-         when Ast.has_keyword_attr Const attrs && 
-              is_local_or_global_ctx env
-         ->
-            let sid = Ast.gensym () in
-            let resolved = resolved_name_kind env, sid in
-            (* TODO? 
-             * set_if_not_already_set? id_info resolved;
-             *)
-            id_info.id_const_literal := Some literal;
-            add_ident_env id resolved env;
-            add_constant_env id (sid, literal) env;
-             
-            k x
+        VarDef ({ vinit = vinit; _}) when is_local_or_global_ctx env ->
+          (* name resolution *)
+          let sid = Ast.gensym () in
+          let resolved = resolved_name_kind env, sid in
+          add_ident_env id resolved env;
+          set_resolved id_info resolved;
+
+          (* literal constant propagation! *)
+          (match vinit with 
+          | Some (L literal) when Ast.has_keyword_attr Const attrs && 
+                                   is_local_or_global_ctx env ->
+              id_info.id_const_literal := Some literal;
+              add_constant_env id (sid, literal) env;
+          | _ -> ()
+          );
+           
+          k x
       | _ -> k x
     );
 
+
+    (* the uses *)
 
     V.kexpr = (fun (k, _v) x ->
        (match x with
        | Id (id, id_info) ->
           let s = Ast.str_of_ident id in
           (match List.assoc_opt s !(env.names) with
-          | Some ((_kind, sid) as _resolved) -> 
-               (* TODO: set_if_not_already_set id_info resolved *)
-               (match List.assoc_opt s !(env.constants) with
-               | Some (sid2, literal) when sid = sid2 ->
-                   id_info.id_const_literal := Some literal
-               | _ -> ()
-               )
+          | Some ((_kind, sid) as resolved) -> 
+             (* name resolution *)
+             set_resolved id_info resolved;
+
+             (* constant propagation *)
+             (match List.assoc_opt s !(env.constants) with
+             | Some (sid2, literal) when sid = sid2 ->
+                 id_info.id_const_literal := Some literal
+             | _ -> ()
+             )
+          (* hopefully the lang-specific resolved may have resolved that *)
           | None -> () 
           )
        | _ -> ()
        );
        k x
     );
+
   }
   in
   visitor (Pr prog)

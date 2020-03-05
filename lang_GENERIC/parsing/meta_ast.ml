@@ -36,8 +36,9 @@ and vof_resolved_name_kind =
   | Local  ->  Ocaml.VSum (("Local", [ ]))
   | Param  -> Ocaml.VSum (("Param", [ ]))
   | EnclosedVar -> Ocaml.VSum (("EnclosedVar", [ ]))
-  | Global v1 ->
-      let v1 = vof_dotted_ident v1 in Ocaml.VSum (("Global", [ v1 ]))
+  | Global -> Ocaml.VSum (("Global", [ ]))
+  | ImportedEntity v1 ->
+      let v1 = vof_dotted_ident v1 in Ocaml.VSum (("ImportedEntity", [ v1 ]))
   | ImportedModule v1 ->
       let v1 = vof_module_name v1 in Ocaml.VSum (("ImportedModule", [ v1 ]))
   | Macro -> Ocaml.VSum (("Macro", []))
