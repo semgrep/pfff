@@ -385,6 +385,7 @@ and v_decl x =
   | Field v1 -> let v1 = v_field v1 in ()
   | Enum v1 -> let v1 = v_enum_decl v1 in ()
   | Init ((v1, v2)) -> let v1 = v_bool v1 and v2 = v_stmt v2 in ()
+  | DeclEllipsis v1 -> let v1 = v_tok v1 in ()
   in
   vin.kdecl (k, all_functions) x
 

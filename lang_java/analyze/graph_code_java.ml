@@ -400,6 +400,7 @@ and decl env = function
   | Method def, _ -> method_decl env def
   | Field def, _ -> field_decl env def
   | Enum def, _ -> enum_decl env def
+  | DeclEllipsis _, _-> ()
   | Init (_is_static, st), n ->
       let name = spf "__init__%d" n in
       let full_ident = env.current_qualifier @ [name, fakeInfo name] in

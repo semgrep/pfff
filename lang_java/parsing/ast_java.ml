@@ -365,7 +365,6 @@ and class_decl = {
   cl_body: decls bracket;
 }
   and class_kind = ClassRegular | Interface
-
 (*****************************************************************************)
 (* Declaration *)
 (*****************************************************************************)
@@ -378,6 +377,8 @@ and decl =
   | Method of method_decl
   | Field of field
   | Init of bool (* static *) * stmt
+  (* sgrep-ext: allows ... inside interface, class declerations *)
+  | DeclEllipsis of tok
 
 and decls = decl list
 
