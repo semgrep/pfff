@@ -161,7 +161,7 @@ let default_env () = {
 }
 
 (*****************************************************************************)
-(* Helpers *)
+(* Environment Helpers *)
 (*****************************************************************************)
 (* because we use a Visitor instead of a clean recursive 
  * function passing down an environment, we need to emulate a scoped
@@ -185,6 +185,10 @@ let top_context env =
   | [] -> raise Impossible
   | x::_xs -> x
 
+(*****************************************************************************)
+(* Other Helpers *)
+(*****************************************************************************)
+
 let is_local_or_global_ctx env =
   match top_context env with
   | AtToplevel | InFunction -> true
@@ -192,7 +196,7 @@ let is_local_or_global_ctx env =
 
 let resolved_name_kind env =
   match top_context env with
-  | AtToplevel -> Global [] (* TODO *)
+  | AtToplevel -> Global
   | InFunction -> Local
   | InClass -> raise Impossible
 
