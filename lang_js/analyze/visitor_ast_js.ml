@@ -245,11 +245,7 @@ and v_fun_prop =
 and v_obj_ v = v_bracket (v_list v_property) v
 and v_class_ { c_extends = v_c_extends; c_body = v_c_body } =
   let arg = v_option v_expr v_c_extends in
-  let arg = v_bracket (v_list v_class_body_binding) v_c_body in ()
-and v_class_body_binding =
-  function
-  | CBodyClassic v1 -> let v1 = v_property v1 in ()
-  | CEllipsis v1 -> let v1 = v_tok v1 in ()
+  let arg = v_bracket (v_list v_property) v_c_body in ()
 and v_property x =
   (* tweak *)
   let k x =  match x with
@@ -259,6 +255,7 @@ and v_property x =
       and v3 = v_expr v3
       in ()
   | FieldSpread (t, v1) -> let t = v_tok t in let v1 = v_expr v1 in ()
+  | FieldEllipsis v1 -> let v1 = v_tok v1 in ()
   in
   vin.kprop (k, all_functions) x
 

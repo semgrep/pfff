@@ -294,13 +294,9 @@ and map_fun_prop =
   | Async -> Async
 and map_obj_ v = map_bracket (map_of_list map_property) v
 and map_class_ { c_extends = v_c_extends; c_body = v_c_body } =
-  let v_c_body = map_bracket (map_of_list map_c_body_binding) v_c_body in
+  let v_c_body = map_bracket (map_of_list map_property) v_c_body in
   let v_c_extends = map_of_option map_expr v_c_extends in 
   { c_extends = v_c_extends; c_body = v_c_body }
-and map_c_body_binding =
-  function
-  | CBodyClassic v1 -> let v1 = map_property v1 in CBodyClassic v1
-  | CEllipsis v1 -> let v1 = map_tok v1 in CEllipsis v1
 and map_property =
   function
   | Field ((v1, v2, v3)) ->
@@ -310,6 +306,9 @@ and map_property =
       in Field ((v1, v2, v3))
   | FieldSpread (t, v1) -> 
       let t = map_tok t in let v1 = map_expr v1 in FieldSpread ((t, v1))
+  | FieldEllipsis v1 ->
+      let v1 = map_tok v1 in FieldEllipsis v1
+      
 and map_property_prop =
   function
   | Static -> Static
