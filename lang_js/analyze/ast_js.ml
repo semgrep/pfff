@@ -272,8 +272,11 @@ and obj_ = property list bracket
 and class_ = { 
   (* usually simply an Id *)
   c_extends: expr option;
-  c_body: property list bracket;
+  c_body: c_body_biding list bracket;
 }
+  and c_body_biding =
+    | CBodyClassic of property
+    | CEllipsis of tok
 
   and property = 
     (* expr is a Fun for methods *)

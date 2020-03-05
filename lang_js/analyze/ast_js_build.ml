@@ -805,15 +805,16 @@ and class_element env = function
     let pn = property_name env fld.C.fld_name in
     let props = [] in (* TODO fld.fld_static *)
     let e = init_opt env fld.C.fld_init in
-    [A.Field (pn, props, e)]
+    [A.CBodyClassic (A.Field (pn, props, e))]
   | C.C_method (static_opt, x) ->
     let props = 
       match static_opt with
       | None -> []
       | Some tok -> [A.Static, tok]
     in
-    [method_ env props x]
+    [A.CBodyClassic (method_ env props x)]
   | C.C_extrasemicolon _ -> []
+  | C.CEllipsis t -> [A.CEllipsis t]
 
 and method_ env props x =
   let fun_ = func_decl env x in
