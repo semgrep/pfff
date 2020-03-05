@@ -925,7 +925,7 @@ and
                          cmixins = v_cmixins;
                        } =
   let bnds = [] in
-  let arg = vof_bracket (Ocaml.vof_list vof_field) v_cbody in
+  let arg = vof_bracket (Ocaml.vof_list vof_c_body_binding) v_cbody in
   let bnd = ("cbody", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_list vof_type_ v_cmixins in
@@ -939,6 +939,11 @@ and
   let bnds = bnd :: bnds in
   let arg = vof_class_kind v_ckind in
   let bnd = ("ckind", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+and vof_c_body_binding = function
+  | CField v1 ->
+    let v1 = vof_field v1 in Ocaml.VSum (("CField", [ v1 ]))
+  | CEllipsis v1 ->
+    let v1 = vof_tok v1 in Ocaml.VSum (("CEllipsis", [ v1 ]))
 and vof_class_kind =
   function
   | Class -> Ocaml.VSum (("Class", []))
