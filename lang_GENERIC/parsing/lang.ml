@@ -72,6 +72,14 @@ let string_of_lang = function
   | ML -> "ML"
   | Go -> "Golang"
 
+(* Manually pulled from file_type_of_file2 in file_type.ml *)
+let ext_of_lang = function
+  | Python -> ["py"; "pyi"]
+  | Javascript -> ["js"]
+  | Java -> ["java"]
+  | C -> ["c"]
+  | ML -> ["mli"; "ml"; "mly"; "mll"]
+  | Go -> ["go"]
 
 let find_source lang xs = 
   Common.files_of_dir_or_files_no_vcs_nofilter xs 
