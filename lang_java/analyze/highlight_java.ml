@@ -87,6 +87,7 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
           tag_ident ident (Entity (Class, (Def2 fake_no_def2)))
       | Ast.Init (_bool, _stmt) ->
           ()
+      | Ast.DeclEllipsis _ -> ()
       );
       k d
     );

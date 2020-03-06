@@ -470,6 +470,7 @@ and vof_decl =
       let v1 = Ocaml.vof_bool v1
       and v2 = vof_stmt v2
       in Ocaml.VSum (("Init", [ v1; v2 ]))
+  | DeclEllipsis v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("DeclEllipsis", [ v1 ]))
 and vof_decls v = (Ocaml.vof_list vof_decl) v
 
 and vof_import = function

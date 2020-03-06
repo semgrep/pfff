@@ -510,7 +510,7 @@ and decl decl =
       G.DefStmt (ent, G.TypeDef def)
   | Init ((v1, v2)) -> let _v1TODO = bool v1 and v2 = stmt v2 in
       v2
-
+  | DeclEllipsis v1 ->  G.ExprStmt (G.Ellipsis v1)
 and decls v = list decl v
 
 and import = function
