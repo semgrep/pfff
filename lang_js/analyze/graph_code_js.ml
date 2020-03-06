@@ -429,7 +429,24 @@ and stmt env = function
      stmt env st
    );
    finalopt |> Common.opt (fun (_t, st) -> stmt env st);
-
+ | ImportDecl (_, name1, name2, (file, tok)) ->
+    if env.phase = Uses then begin
+      let str1 = s_of_n name1 in
+      let str2 = s_of_n name2 in
+      let path_opt = Module_path_js.resolve_path
+        ~root:env.root
+        ~pwd:(Filename.dirname env.file_readable)
+        file in
+      let readable = 
+        match path_opt with
+        | None -> 
+          env.pr2_and_log (spf "could not resolve path %s at %s" file
+                              (Parse_info.string_of_info tok));
+          spf "NOTFOUND-|%s|.js" file
+        | Some fullpath -> Common.readable env.root fullpath
+      in
+      Hashtbl.replace env.imports str2 (mk_qualified_name readable str1)
+    end
 and for_header env = function
  | ForClassic (e1, e2, e3) ->
    let env =

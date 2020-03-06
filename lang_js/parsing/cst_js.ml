@@ -572,6 +572,7 @@ and item =
   (* typing-ext: *)
   | InterfaceDecl of interface_decl
   | ItemTodo of tok (* last tok, needed for ASI to work *)
+  | ImportDecl of (tok (* import *) * import * sc)
 
 (* ------------------------------------------------------------------------- *)
 (* Module *)
@@ -619,7 +620,6 @@ and export =
   (* es6-ext: *)
   | Import of (tok (* import *) * import * sc)
   | Export of (tok (* export *) * export)
-
  and program = module_item list
  (* with tarzan *)
 

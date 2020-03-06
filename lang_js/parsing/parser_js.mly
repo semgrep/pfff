@@ -260,6 +260,7 @@ sgrep_spatch_pattern:
 item_no_dots:
  | statement_no_dots { St $1 }
  | declaration { $1 }
+ | import_declaration { ImportDecl $1 }
 
 /*(* coupling: copy paste of statement, without dots *)*/
 statement_no_dots:

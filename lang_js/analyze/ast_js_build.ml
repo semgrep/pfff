@@ -295,7 +295,16 @@ and item default_opt env = function
     raise (UnhandledConstruct ("Typescript", x.C.i_tok))
   | C.ItemTodo tok ->
     raise (TodoConstruct ("ItemTodo", tok))
-
+  | C.ImportDecl (_, x, _) ->
+    match x with
+    | C.ImportFrom ((default_opt, _), (tok, path)) ->
+      let file = path_to_file path in
+      (match default_opt with
+      | Some n -> 
+        [A.ImportDecl (tok, (A.default_entity, snd n),  name env n, file)]
+      | None -> []
+      )
+    | C.ImportEffect ((_, _)) -> []
 (* ------------------------------------------------------------------------- *)
 (* Names *)
 (* ------------------------------------------------------------------------- *)

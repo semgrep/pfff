@@ -184,6 +184,12 @@ and vof_stmt =
           v2
       and v3 = Ocaml.vof_option vof_tok_and_stmt v3
       in Ocaml.VSum (("Try", [ t; v1; v2; v3 ]))
+  | ImportDecl ((t, v1, v2, v3)) ->
+      let t =  vof_tok t in
+      let v1 = vof_name v1
+      and v2 = vof_name v2
+      and v3 = vof_filename v3
+      in Ocaml.VSum (("ImportDecl", [ t; v1; v2; v3 ]))
 and vof_tok_and_stmt (t, v) = 
   let t = vof_tok t in
   let v = vof_stmt v in

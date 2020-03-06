@@ -747,6 +747,15 @@ and vof_item =
       let v1 = vof_class_decl v1 in Ocaml.VSum (("ClassDecl", [ v1 ]))
   | InterfaceDecl v1 ->
       let v1 = vof_interface_decl v1 in Ocaml.VSum (("InterfaceDecl", [ v1 ]))
+  | ImportDecl v1 ->
+      let v1 =
+        (match v1 with
+         | (v1, v2, v3) ->
+             let v1 = vof_tok v1
+             and v2 = vof_import v2
+             and v3 = vof_sc v3
+             in Ocaml.VTuple [ v1; v2; v3 ])
+      in Ocaml.VSum (("ImportDecl", [ v1 ]))
 
 and  vof_class_decl {
                    c_tok = v_c_tok;

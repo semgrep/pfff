@@ -220,6 +220,8 @@ and stmt =
    * ES6 modules can appear only at the toplevel
   *  but CommonJS require() can be inside ifs
   *)
+  | ImportDecl of tok * name * name (* 'name1 as name2', often name1=name2 *) * 
+      filename
 
   (* less: could use some Special instead? *)
   and for_header = 

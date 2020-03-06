@@ -630,7 +630,12 @@ and v_item =
   | FunDecl v1 -> let v1 = v_func_decl v1 in ()
   | ClassDecl v1 -> let v1 = v_class_decl v1 in ()
   | InterfaceDecl v1 -> let v1 = v_interface_decl v1 in ()
-
+  | ImportDecl v1 ->
+      let v1 =
+        (match v1 with
+         | (v1, v2, v3) ->
+             let v1 = v_tok v1 and v2 = v_import v2 and v3 = v_sc v3 in ())
+      in ()
 and v_import =
   function
   | ImportFrom v1 ->

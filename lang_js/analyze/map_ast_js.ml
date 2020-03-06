@@ -222,7 +222,12 @@ and map_stmt =
           v2
       and v3 = map_of_option map_tok_and_stmt v3
       in Try ((t, v1, v2, v3))
-
+  | ImportDecl ((t, v1, v2, v3)) ->
+      let t = map_tok t in
+      let v1 = map_name v1
+      and v2 = map_name v2
+      and v3 = map_filename v3
+      in ImportDecl ((t, v1, v2, v3))
 and map_tok_and_stmt (t, v) = 
   let t = map_tok t in
   let v = map_stmt v in

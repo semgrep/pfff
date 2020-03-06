@@ -226,6 +226,9 @@ and stmt x =
        ) v2
       and v3 = option tok_and_stmt v3 in
       G.Try (t, v1, Common.opt_to_list v2, v3)
+  | ImportDecl ((t, v1, v2, v3)) ->
+      let v1 = name v1 and v2 = name v2 and v3 = filename v3 in 
+      G.DirectiveStmt (G.ImportFrom (t, G.FileName v3, (Some (v1, Some v2))))
 
 and tok_and_stmt (t, v) = 
   let v = stmt v in

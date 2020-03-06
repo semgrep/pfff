@@ -182,6 +182,9 @@ and v_stmt x =
               let v1 = v_name v1 and v2 = v_stmt v2 in ()) v2
       and v3 = v_option v_tok_and_stmt v3
       in ()
+  | ImportDecl ((t, v1, v2, v3)) ->
+      let t = v_tok t in
+      let v1 = v_name v1 and v2 = v_name v2 and v3 = v_filename v3 in ()
   in
   vin.kstmt (k, all_functions) x
 
