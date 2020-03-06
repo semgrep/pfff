@@ -14,3 +14,4 @@ val files_of_dirs_or_files: t -> Common.path list ->
   Common.filename list
 
 val string_of_lang: t -> string
+val ext_of_lang: t -> string list
