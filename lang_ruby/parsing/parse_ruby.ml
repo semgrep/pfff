@@ -25,7 +25,6 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *)
-open Common
 module H = Ast_ruby_helpers
 module HH = Parser_ruby_helpers
 module Utils = Utils_ruby
@@ -57,16 +56,17 @@ let parse_program file =
   Common.with_open_infile file (fun chan -> 
     let lexbuf = Lexing.from_channel chan in
     let state = Lexer_parser_ruby.create Lexer_ruby.top_lexer in 
-    let table     = Parse_info.full_charpos_to_pos_large file in
+    let _table     = Parse_info.full_charpos_to_pos_large file in
 
     let adjust_info ii = 
+     ii (*
       { ii with PI.token =
         (* could assert pinfo.filename = file ? *)
          match ii.PI.token with
          | PI.OriginTok pi -> PI.OriginTok
            (PI.complete_token_location_large file table pi)
          | _ -> raise Todo
-      }      
+      }      *)
     in
 
     try 
