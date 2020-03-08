@@ -15,6 +15,7 @@ SRC= utils_ruby.ml \
   parser_ruby.ml \
   lexer_parser_ruby.ml \
   lexer_ruby.ml \
+  token_helpers_ruby.ml \
   parse_ruby.ml \
   lib_parsing_ruby.ml \
   test_parsing_ruby.ml unit_parsing_ruby.ml 

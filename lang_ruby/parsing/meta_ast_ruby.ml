@@ -2,8 +2,7 @@
 
 open Ast_ruby
 
-let vof_tok _v = Ocaml.VUnit
-  (* Lexing.vof_position v *)
+let vof_tok v = Meta_parse_info.vof_info_adjustable_precision v
 
 let vof_big_int _v = Ocaml.VUnit
 

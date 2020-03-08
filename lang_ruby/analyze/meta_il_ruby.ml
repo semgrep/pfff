@@ -2,7 +2,7 @@
 
 open Il_ruby
 
-let vof_pos _v = (*Lexing.vof_position v *) Ocaml.VUnit
+let vof_pos v = Meta_parse_info.vof_info_adjustable_precision v
 let vof_big_int _x = Ocaml.VUnit
 
 let vof_t _f _set = Ocaml.VUnit
