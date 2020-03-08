@@ -30,7 +30,6 @@ open Parser_ruby (* the tokens *)
 module S2 = Parser_ruby_helpers
 module S = Lexer_parser_ruby
 module Utils = Utils_ruby
-open Lexing
 
 (*****************************************************************************)
 (* Prelude *)
@@ -110,21 +109,21 @@ let def_end_state state = match state.S.expr_state with
 
 let update_pos str pos = 
   let chars = String.length str in
-  {pos with pos_cnum = pos.pos_cnum - chars; }
+  {pos with Lexing.pos_cnum = pos.Lexing.pos_cnum - chars; }
 
 (* for heredoc *)
 let push_back str lexbuf = 
   (* todo: just use Parse_info.yyback? need lex_buffer modifications? *)
-  let pre_str = Bytes.sub lexbuf.lex_buffer 0 lexbuf.lex_curr_pos in
+  let pre_str = Bytes.sub lexbuf.Lexing.lex_buffer 0 lexbuf.Lexing.lex_curr_pos in
   let post_str = 
-    Bytes.sub lexbuf.lex_buffer lexbuf.lex_curr_pos
-      (lexbuf.lex_buffer_len-lexbuf.lex_curr_pos)
+    Bytes.sub lexbuf.Lexing.lex_buffer lexbuf.Lexing.lex_curr_pos
+      (lexbuf.Lexing.lex_buffer_len-lexbuf.Lexing.lex_curr_pos)
   in
-    lexbuf.lex_buffer <- 
+    lexbuf.Lexing.lex_buffer <- 
       Bytes.of_string (Bytes.to_string pre_str ^ str ^ Bytes.to_string post_str);
-    lexbuf.lex_buffer_len <- lexbuf.lex_buffer_len + (String.length str);
-    lexbuf.lex_curr_p <- update_pos str lexbuf.lex_curr_p;
-    assert ((Bytes.length lexbuf.lex_buffer) == lexbuf.lex_buffer_len)
+    lexbuf.Lexing.lex_buffer_len <- lexbuf.Lexing.lex_buffer_len + (String.length str);
+    lexbuf.Lexing.lex_curr_p <- update_pos str lexbuf.Lexing.lex_curr_p;
+    assert ((Bytes.length lexbuf.Lexing.lex_buffer) == lexbuf.Lexing.lex_buffer_len)
 
 (* ---------------------------------------------------------------------- *)
 (* Misc *)
@@ -422,7 +421,7 @@ and top_lexer state = parse
   (* Constant *)
   (* ----------------------------------------------------------------------- *)
 
-  | num { postfix_numeric Utils.id (lexeme lexbuf) state lexbuf }
+  | num { postfix_numeric Utils.id (Lexing.lexeme lexbuf) state lexbuf }
 
   (* ----------------------------------------------------------------------- *)
   (* Strings *)
@@ -540,11 +539,11 @@ and space_uop uop spc_uop binop state = parse
          }
 
 and uop_minus_lit state = parse
-  | num { postfix_numeric negate_numeric (lexeme lexbuf) state lexbuf}
+  | num { postfix_numeric negate_numeric (Lexing.lexeme lexbuf) state lexbuf}
   | e   { t_uminus state lexbuf}
 
 and uop_plus_lit state = parse
-  | num { postfix_numeric Utils.id (lexeme lexbuf) state lexbuf}
+  | num { postfix_numeric Utils.id (Lexing.lexeme lexbuf) state lexbuf}
   | e   { t_uplus state lexbuf}
 
 
@@ -607,7 +606,7 @@ and dollar state = parse
   | ( ['0'-'9']+) as v 
       {S.end_state state; T_BUILTIN_VAR("$"^v, (tk lexbuf))}
   | ( [^'a'-'z''A'-'Z''#'])
-      {S.end_state state; T_BUILTIN_VAR("$"^(lexeme lexbuf), (tk lexbuf))}
+      {S.end_state state; T_BUILTIN_VAR("$"^(Lexing.lexeme lexbuf), (tk lexbuf))}
 
 (*****************************************************************************)
 (* postfix_numeric *)
@@ -642,7 +641,7 @@ and postfix_numeric cont start state = parse
 
   | post_rubyfloat
       { S.end_state state;
-        let str = (start ^ (lexeme lexbuf)) in
+        let str = (start ^ (Lexing.lexeme lexbuf)) in
         let str = remove_underscores str in
         let tok = T_FLOAT(str, float_of_string (str), (tk lexbuf)) in
           cont tok
@@ -656,7 +655,7 @@ and atom state = parse
   | ['+' '-' '*' '/' '!' '~' '<' '>' '=' '&' '|' '%' '^' '@']+ 
   | '[' ']' ('='?) (* these can only appear together like this (I think) *)
   | '`' {def_end_state state; 
-         T_ATOM((contents_of_str (lexeme lexbuf)), (tk lexbuf)) }
+         T_ATOM((contents_of_str (Lexing.lexeme lexbuf)), (tk lexbuf)) }
 
   | '$'
       { let str = match dollar state lexbuf with
@@ -668,7 +667,7 @@ and atom state = parse
 
   | ('@'* id) '='?
       {def_end_state state; 
-       T_ATOM((contents_of_str (lexeme lexbuf)), (tk lexbuf)) }
+       T_ATOM((contents_of_str (Lexing.lexeme lexbuf)), (tk lexbuf)) }
   | '"'  {def_end_state state;
           emit_extra (T_ATOM_BEG (tk lexbuf))
             (interp_string_lexer '"') state lexbuf}
@@ -714,9 +713,9 @@ and char_code_work = parse
 and non_interp_string delim buf state = parse
   | eof   {failwith "eof in string"}
 
-  | '\\'? '\n' { Buffer.add_string buf (lexeme lexbuf);
+  | '\\'? '\n' { Buffer.add_string buf (Lexing.lexeme lexbuf);
                  non_interp_string delim buf state lexbuf }
-  | "\\" _ { Buffer.add_string buf (lexeme lexbuf);
+  | "\\" _ { Buffer.add_string buf (Lexing.lexeme lexbuf);
              non_interp_string delim buf state lexbuf}
   | _ as c
       {if c == delim 
@@ -775,10 +774,11 @@ and heredoc_header lead_f state = parse
 
   | '"'([^'"']+ as delim)'"' ([^'\n']* nl as rest)
   | (id_body+ as delim) ([^'\n']* nl as rest)
-      { let pos = lexbuf.lex_curr_p in
+      { (* todo: why special adjustments here? *)
+        let pos = lexbuf.Lexing.lex_curr_p in
         let cont str state future_lexbuf = 
          let str_lexbuf = Lexing.from_string str in
-           str_lexbuf.lex_curr_p <- pos;
+           str_lexbuf.Lexing.lex_curr_p <- pos;
            push_back rest future_lexbuf;
            interp_heredoc_lexer state str_lexbuf
        in
@@ -795,7 +795,7 @@ and heredoc_string cont buf delim state = parse (* for <<EOF *)
       { if tok = delim
         then cont (Buffer.contents buf) state lexbuf
         else begin 
-          Buffer.add_string buf (lexeme lexbuf);
+          Buffer.add_string buf (Lexing.lexeme lexbuf);
           heredoc_string cont buf delim state lexbuf
         end}
 
@@ -805,7 +805,7 @@ and heredoc_string_lead cont buf delim state = parse (* for <<-EOF *)
       { if tok = delim
         then cont (Buffer.contents buf) state lexbuf
         else begin 
-          Buffer.add_string buf (lexeme lexbuf);
+          Buffer.add_string buf (Lexing.lexeme lexbuf);
           heredoc_string_lead cont buf delim state lexbuf
         end}
 
@@ -838,7 +838,7 @@ and interp_lexer do_eof delim_f escape_f buf state = parse
   | "\\" (_ as c)
       {if escape_f c
        then Buffer.add_char buf c
-       else Buffer.add_string buf (lexeme lexbuf);
+       else Buffer.add_string buf (Lexing.lexeme lexbuf);
        interp_lexer do_eof delim_f escape_f buf state lexbuf}
 
   | "#{" {S.beg_state state;
