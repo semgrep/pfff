@@ -49,8 +49,7 @@ let tk lexbuf = Parse_info.tokinfo lexbuf
 (* See lexer_parser_ruby.ml *)
 
 let pop_lexer state = 
-  let (_:S.cps_lexer) = Stack.pop state.S.lexer_stack in
-    ()
+  Stack.pop state.S.lexer_stack |> ignore
 
 (* emit the token [tok] and then proceed with the continuation [k] *)
 let emit_extra tok k state lexbuf = 
@@ -111,14 +110,11 @@ let def_end_state state = match state.S.expr_state with
 
 let update_pos str pos = 
   let chars = String.length str in
-  let line_counter acc = function '\n' -> acc+1 | _ -> acc in
-  let lines = Utils.string_fold_left line_counter 0 str in
-    {pos with
-       pos_cnum = pos.pos_cnum - chars;
-       pos_lnum = pos.pos_lnum - lines;
-    }
+  {pos with pos_cnum = pos.pos_cnum - chars; }
 
+(* for heredoc *)
 let push_back str lexbuf = 
+  (* todo: just use Parse_info.yyback? need lex_buffer modifications? *)
   let pre_str = Bytes.sub lexbuf.lex_buffer 0 lexbuf.lex_curr_pos in
   let post_str = 
     Bytes.sub lexbuf.lex_buffer lexbuf.lex_curr_pos
@@ -833,7 +829,7 @@ and interp_string_lexer delim state = parse
 
 (* tokenize a interpreted string into string / code *)
 and interp_lexer do_eof delim_f escape_f buf state = parse
-  | eof {do_eof buf state lexbuf}
+  | eof    { do_eof buf state lexbuf}
 
   | "\\\n" { interp_lexer do_eof delim_f escape_f buf state lexbuf}
   | '\n'   { Buffer.add_char buf '\n';
