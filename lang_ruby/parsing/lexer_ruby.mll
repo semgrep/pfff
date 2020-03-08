@@ -130,14 +130,6 @@ let push_back str lexbuf =
     lexbuf.lex_curr_p <- update_pos str lexbuf.lex_curr_p;
     assert ((Bytes.length lexbuf.lex_buffer) == lexbuf.lex_buffer_len)
 
-(* increment the line count and start of line counters for the lexbuf *)
-let incr_line lexbuf =
-  let pos = lexbuf.lex_curr_p in
-  lexbuf.lex_curr_p <- { pos with
-    pos_lnum = pos.pos_lnum + 1;
-    pos_bol = pos.pos_cnum;
-  }
-
 (* ---------------------------------------------------------------------- *)
 (* Misc *)
 (* ---------------------------------------------------------------------- *)
@@ -300,10 +292,9 @@ and top_lexer state = parse
   (* ----------------------------------------------------------------------- *)
   | '#'   {comment state lexbuf}
 
-  | "=begin" [^'\n']* '\n' {S.beg_state state; incr_line lexbuf; 
-                            delim_comment state lexbuf}
-  | "\\\n" {incr_line lexbuf; top_lexer state lexbuf}
-  | nl     {incr_line lexbuf; t_eol state lexbuf}
+  | "=begin" [^'\n']* '\n' {S.beg_state state; delim_comment state lexbuf}
+  | "\\\n" { top_lexer state lexbuf}
+  | nl     { t_eol state lexbuf}
 
   | ws+  { top_lexer state lexbuf}
 
@@ -376,15 +367,14 @@ and top_lexer state = parse
   | ws+ '/' (ws+ as spc)
       { on_beg (regexp_string (buf_of_string spc)) t_slash state lexbuf}
   | ws+ '/' (nl as nl)
-      { incr_line lexbuf;
-        on_beg (regexp_string (buf_of_string nl)) t_slash state lexbuf }
-  | ws+ '/' {space_tok regexp t_slash state lexbuf}
-  | '/'     {on_beg regexp t_slash state lexbuf}
+      { on_beg (regexp_string (buf_of_string nl)) t_slash state lexbuf }
+  | ws+ '/' { space_tok regexp t_slash state lexbuf}
+  | '/'     { on_beg regexp t_slash state lexbuf}
 
   (* heredoc vs shift tokens *)
   | "<<-" {heredoc_header heredoc_string_lead state lexbuf}
   | "<<" ws {S.beg_state state; t_lshft state lexbuf}
-  | "<<" nl {S.beg_state state; incr_line lexbuf;t_lshft state lexbuf}
+  | "<<" nl {S.beg_state state; t_lshft state lexbuf}
   | "<<"    { match state.S.expr_state with
               | S.Expr_End | S.Expr_Local | S.Expr_Def -> 
                 S.beg_state state;T_LSHFT (tk lexbuf)
@@ -519,11 +509,11 @@ and top_lexer state = parse
 (*****************************************************************************)
 
 and comment state = parse
-  | [^'\n']* '\n' { incr_line lexbuf; t_eol state lexbuf }
+  | [^'\n']* '\n' { t_eol state lexbuf }
 
 and delim_comment state = parse
-  | "=end" [^'\n']* '\n' { incr_line lexbuf; top_lexer state lexbuf}
-  | [^'\n']* '\n'        { incr_line lexbuf; delim_comment state lexbuf}
+  | "=end" [^'\n']* '\n' { top_lexer state lexbuf}
+  | [^'\n']* '\n'        { delim_comment state lexbuf}
 
 and end_lexbuf = parse
   | _     { end_lexbuf lexbuf }
@@ -535,7 +525,7 @@ and end_lexbuf = parse
 
 and space_tok tok binop state = parse
   | ws+ { binop state lexbuf }
-  | nl  { incr_line lexbuf; binop state lexbuf }
+  | nl  { binop state lexbuf }
   | e   { on_def binop (on_local binop tok) state lexbuf}
 
 (*****************************************************************************)
@@ -544,8 +534,8 @@ and space_tok tok binop state = parse
 
 and space_uop uop spc_uop binop state = parse
   (* space before and after is binop (unless at expr_beg) *)
-  | ws+ {on_beg spc_uop binop state lexbuf}
-  | nl  {incr_line lexbuf; on_beg spc_uop binop state lexbuf}
+  | ws+ { on_beg spc_uop binop state lexbuf}
+  | nl  { on_beg spc_uop binop state lexbuf}
   | e   {match state.S.expr_state with
          | S.Expr_Def
          | S.Expr_Local
@@ -691,7 +681,7 @@ and atom state = parse
            emit_extra (T_ATOM_BEG (tk lexbuf))
              (non_interp_string '\'' (Buffer.create 31)) state lexbuf}
 
-  | nl  {incr_line lexbuf; t_colon state lexbuf}
+  | nl  { t_colon state lexbuf}
 
   | ws
   | e     {t_colon state lexbuf}
@@ -728,11 +718,10 @@ and char_code_work = parse
 and non_interp_string delim buf state = parse
   | eof   {failwith "eof in string"}
 
-  | '\\'? '\n' {incr_line lexbuf; 
-                Buffer.add_string buf (lexeme lexbuf);
-                non_interp_string delim buf state lexbuf}
-  | "\\" _ {Buffer.add_string buf (lexeme lexbuf);
-            non_interp_string delim buf state lexbuf}
+  | '\\'? '\n' { Buffer.add_string buf (lexeme lexbuf);
+                 non_interp_string delim buf state lexbuf }
+  | "\\" _ { Buffer.add_string buf (lexeme lexbuf);
+             non_interp_string delim buf state lexbuf}
   | _ as c
       {if c == delim 
        then T_SINGLE_STRING(Buffer.contents buf,(tk lexbuf))
@@ -780,8 +769,7 @@ and regexp_modifier state = parse
 
 and heredoc_header lead_f state = parse
   | '\''([^'\'']+ as delim)'\'' ([^'\n']* nl as rest)
-      {incr_line lexbuf;
-       let cont str state lexbuf = 
+      { let cont str state lexbuf = 
          S.end_state state;
          push_back rest lexbuf;
          T_SINGLE_STRING(str, (tk lexbuf))
@@ -791,9 +779,8 @@ and heredoc_header lead_f state = parse
 
   | '"'([^'"']+ as delim)'"' ([^'\n']* nl as rest)
   | (id_body+ as delim) ([^'\n']* nl as rest)
-      {incr_line lexbuf;
-       let pos = lexbuf.lex_curr_p in
-       let cont str state future_lexbuf = 
+      { let pos = lexbuf.lex_curr_p in
+        let cont str state future_lexbuf = 
          let str_lexbuf = Lexing.from_string str in
            str_lexbuf.lex_curr_p <- pos;
            push_back rest future_lexbuf;
@@ -809,8 +796,7 @@ and heredoc_header lead_f state = parse
 and heredoc_string cont buf delim state = parse (* for <<EOF *)
   | eof {fail_eof (heredoc_string cont buf delim) state lexbuf}
   | ([^'\n']* as tok) ('\n'|eof)
-      { incr_line lexbuf;
-        if tok = delim
+      { if tok = delim
         then cont (Buffer.contents buf) state lexbuf
         else begin 
           Buffer.add_string buf (lexeme lexbuf);
@@ -820,8 +806,7 @@ and heredoc_string cont buf delim state = parse (* for <<EOF *)
 and heredoc_string_lead cont buf delim state = parse (* for <<-EOF *)
   | eof {fail_eof (heredoc_string_lead cont buf delim) state lexbuf}
   | [' ''\t']* ([^'\n']* as tok) ('\n'|eof)
-      { incr_line lexbuf;
-        if tok = delim
+      { if tok = delim
         then cont (Buffer.contents buf) state lexbuf
         else begin 
           Buffer.add_string buf (lexeme lexbuf);
@@ -850,9 +835,9 @@ and interp_string_lexer delim state = parse
 and interp_lexer do_eof delim_f escape_f buf state = parse
   | eof {do_eof buf state lexbuf}
 
-  | "\\\n" {incr_line lexbuf; interp_lexer do_eof delim_f escape_f buf state lexbuf}
-  | '\n' {incr_line lexbuf; Buffer.add_char buf '\n';
-          interp_lexer do_eof delim_f escape_f buf state lexbuf}
+  | "\\\n" { interp_lexer do_eof delim_f escape_f buf state lexbuf}
+  | '\n'   { Buffer.add_char buf '\n';
+             interp_lexer do_eof delim_f escape_f buf state lexbuf}
       
   | "\\" (_ as c)
       {if escape_f c
