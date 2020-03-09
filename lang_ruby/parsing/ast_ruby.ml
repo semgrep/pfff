@@ -243,6 +243,6 @@ and definition =
 (* Toplevel *)
 (*****************************************************************************)
 
-type ast = expr list
+type program = expr list
  (* with tarzan *)
 

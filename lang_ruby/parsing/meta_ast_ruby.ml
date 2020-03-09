@@ -313,7 +313,7 @@ and
   let arg = vof_expr v_case_guard in
   let bnd = ("case_guard", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
   
-let vof_ast v = Ocaml.vof_list vof_expr v
+let vof_program v = Ocaml.vof_list vof_expr v
   
 let _vof_pos v = vof_tok v
   

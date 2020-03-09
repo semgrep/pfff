@@ -65,7 +65,7 @@ val merge_stmt :
 
 
 val merge_expr_list :
-  string -> (Ast_ruby.ast * 'a * 'b) list -> Ast_ruby.ast list * 'a * 'b
+  string -> (Ast_ruby.program * 'a * 'b) list -> Ast_ruby.program list * 'a * 'b
 
 val merge_formal_list :
   string ->
