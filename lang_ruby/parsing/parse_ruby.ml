@@ -115,7 +115,12 @@ let parse file =
       (* -------------------------------------------------- *)
       (* Call parser *)
       (* -------------------------------------------------- *)
-      let lst = Parser_ruby.main lexer lexbuf in
+      let lst = 
+          (* GLR parsing can be very time consuming *)
+          Common.timeout_function 5 (fun () ->
+            Parser_ruby.main lexer lexbuf 
+          )
+      in
 
       (* check for ambiguous parse trees *)
       let l = List.map fst lst in
@@ -128,8 +133,8 @@ let parse file =
       stat.PI.correct <- n;
       (Some ast, List.rev !toks), stat
 
-    with (Dyp.Syntax_error | Failure _ | Stack.Empty
-          
+    with (Dyp.Syntax_error 
+         | Failure _ | Stack.Empty | Common.Timeout
          ) as exn ->
       let cur = 
         match !toks with
@@ -138,14 +143,12 @@ let parse file =
       in
       if not !Flag.error_recovery && exn = Dyp.Syntax_error
       then raise (PI.Parsing_error (TH.info_of_tok cur));
-
-      (match exn with
-      | Failure s ->
-        if !Flag.error_recovery
-        then pr2 (spf "Failure:%s: msg =  %s" file s)
-        else raise (PI.Other_error (s, TH.info_of_tok cur))
-      | _ -> ()
-      );
+      if not !Flag.error_recovery && exn <> Dyp.Syntax_error
+      then begin
+         let s = Common.exn_to_s exn in
+         pr2 (spf "Exn on %s = %s" file s);
+         raise (PI.Other_error (s, TH.info_of_tok cur));
+      end;
   
       if !Flag.show_parsing_error
       then begin
@@ -156,7 +159,7 @@ let parse file =
         Parse_info.print_bad line_error (0, checkpoint2) filelines;
       end;
   
-      stat.PI.bad     <- n;
+      stat.PI.bad <- n;
       (None, List.rev !toks), stat
   )
 
