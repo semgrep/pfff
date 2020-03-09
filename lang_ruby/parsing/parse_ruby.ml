@@ -25,11 +25,75 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *)
+open Common
+module Flag = Flag_parsing
+module PI = Parse_info
+module TH = Token_helpers_ruby
+
 module H = Ast_ruby_helpers
 module HH = Parser_ruby_helpers
 module Utils = Utils_ruby
-module PI = Parse_info
-module TH = Token_helpers_ruby
+
+(*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
+(* the token list contains also the comment-tokens *)
+type program_and_tokens = 
+  Ast_ruby.program option * Parser_ruby.token list (* may be partial *)
+
+(*****************************************************************************)
+(* Error diagnostic  *)
+(*****************************************************************************)
+let error_msg_tok tok = 
+  Parse_info.error_message_info (TH.info_of_tok tok)
+
+(*****************************************************************************)
+(* Lexing only *)
+(*****************************************************************************)
+
+(* todo? reuse Parse_info.tokenize_all_and_adjust_pos, but that
+ * would require to have completely independent lexer and parser
+ * which seems not possible with Ruby.
+ *)
+let mk_lexer file chan =
+
+  let lexbuf = Lexing.from_channel chan in
+  let state = Lexer_parser_ruby.create Lexer_ruby.top_lexer in 
+
+  let _table     = Parse_info.full_charpos_to_pos_large file in
+  (* TODO: generate som index out_of_bound exns *)
+  let adjust_info ii = 
+   ii (*
+    { ii with PI.token =
+      (* could assert pinfo.filename = file ? *)
+       match ii.PI.token with
+       | PI.OriginTok pi -> PI.OriginTok
+         (PI.complete_token_location_large file table pi)
+       | _ -> raise Todo
+    }      *)
+  in
+  let toks = ref [] in
+
+  (* set the environment *)
+  HH.clear_env ();
+  let env = Utils.default_opt Utils.StrSet.empty None in
+  HH.set_env env;
+  
+  let lexer lexbuf = 
+    let tok = 
+     try
+       Lexer_ruby.token state lexbuf
+     with PI.Lexical_error (s, info) ->
+       raise (PI.Lexical_error (s, adjust_info info))
+    in 
+    if !Flag_parsing.debug_lexer 
+    then Common.pr2_gen tok;
+
+   let tok = tok |> TH.visitor_info_of_tok adjust_info in
+   Common.push tok toks;
+   tok
+  in
+  toks, lexbuf, lexer
 
 (*****************************************************************************)
 (* Helpers *)
@@ -51,55 +115,50 @@ let uniq_list lst =
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
-let parse_program file = 
-  (* todo: reuse Parse_info.tokenize_all_and_adjust_pos *)
+let parse file = 
+  let stat = Parse_info.default_stat file in
+  let n = Common2.nblines_file file in
+
   Common.with_open_infile file (fun chan -> 
-    let lexbuf = Lexing.from_channel chan in
-    let state = Lexer_parser_ruby.create Lexer_ruby.top_lexer in 
-    let _table     = Parse_info.full_charpos_to_pos_large file in
-
-    let adjust_info ii = 
-     ii (*
-      { ii with PI.token =
-        (* could assert pinfo.filename = file ? *)
-         match ii.PI.token with
-         | PI.OriginTok pi -> PI.OriginTok
-           (PI.complete_token_location_large file table pi)
-         | _ -> raise Todo
-      }      *)
-    in
-
+    let toks, lexbuf, lexer = mk_lexer file chan in
     try 
-      HH.clear_env ();
-      let env = Utils.default_opt Utils.StrSet.empty None in
-      HH.set_env env;
-    
-      let lexer lexbuf = 
-        let tok = 
-         try
-           Lexer_ruby.token state lexbuf
-         with PI.Lexical_error (s, info) ->
-           raise (PI.Lexical_error (s, adjust_info info))
-        in 
-        if !Flag_parsing.debug_lexer 
-        then Common.pr2_gen tok;
-
-       let tok = tok |> TH.visitor_info_of_tok adjust_info in
-       tok
-      in
-    
+      (* -------------------------------------------------- *)
+      (* Call parser *)
+      (* -------------------------------------------------- *)
       let lst = Parser_ruby.main lexer lexbuf in
+
       let lst = uniq_list lst in
       (match lst with
       | [ast] -> (*Ast.mod_ast (replace_heredoc state) ast*) 
-              ast
-      | _l -> failwith "ambiguous parse"
+              stat.PI.correct <- n;
+              (Some ast, List.rev !toks), stat
+      | _l -> 
+          pr2 (spf "%s:1:0 ambiguous parse" file);
+          stat.PI.bad <- n;
+          (None, List.rev !toks), stat
       )
     with Dyp.Syntax_error ->
-      let msg = Printf.sprintf "parse error in file %s, line: %d, token: '%s'\n"
-        lexbuf.Lexing.lex_curr_p.Lexing.pos_fname
-        lexbuf.Lexing.lex_curr_p.Lexing.pos_lnum
-        (Lexing.lexeme lexbuf)
+      let cur = 
+        match !toks with
+        | [] -> raise Impossible
+        | x::_xs -> x
       in
-      failwith msg
+      if not !Flag.error_recovery
+      then raise (PI.Parsing_error (TH.info_of_tok cur));
+  
+      if !Flag.show_parsing_error
+      then begin
+        pr2 ("parse error \n = " ^ error_msg_tok cur);
+        let filelines = Common2.cat_array file in
+        let checkpoint2 = Common.cat file |> List.length in
+        let line_error = PI.line_of_info (TH.info_of_tok cur) in
+        Parse_info.print_bad line_error (0, checkpoint2) filelines;
+      end;
+  
+      stat.PI.bad     <- n;
+      (None, List.rev !toks), stat
   )
+
+let parse_program file =
+  let ((ast, _toks), _stat) = parse file in
+  Common2.some ast
