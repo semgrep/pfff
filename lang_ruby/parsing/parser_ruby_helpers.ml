@@ -51,9 +51,10 @@ let uniq_list cmp lst =
     | [x] -> [x]
     | x1::x2::tl ->
     if cmp x1 x2 = 0
-    then u (x1::tl) else x1 :: (u (x2::tl))
+    then u (x1::tl) 
+    else x1 :: (u (x2::tl))
   in
-    u (List.sort cmp lst)
+   u (List.sort cmp lst)
 
 (*****************************************************************************)
 (* Lexer/Parser extra state *)
@@ -460,7 +461,7 @@ let prune_tern e1 e2 e3 pos =
 
 let do_fail s l to_s to_v =
   let len = List.length l in
-    if len > 1 then begin
+  if len > 1 then begin
   Printf.eprintf "<%s>: %d\n" s len;
   List.iter (fun x -> Printf.eprintf " %s\n" (to_s x)) l;
        l |> List.iter (fun x -> 
@@ -469,7 +470,7 @@ let do_fail s l to_s to_v =
         Common.pr2 s;
        );
   failwith s
-    end
+  end
 
 (* wrapper to adapt to new dypgen merge interface *)
 let wrap xs f =

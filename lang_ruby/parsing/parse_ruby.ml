@@ -60,17 +60,24 @@ let mk_lexer file chan =
   let lexbuf = Lexing.from_channel chan in
   let state = Lexer_parser_ruby.create Lexer_ruby.top_lexer in 
 
-  let _table     = Parse_info.full_charpos_to_pos_large file in
-  (* TODO: generate som index out_of_bound exns *)
+  let table     = Parse_info.full_charpos_to_pos_large file in
+
   let adjust_info ii = 
-   ii (*
     { ii with PI.token =
       (* could assert pinfo.filename = file ? *)
        match ii.PI.token with
-       | PI.OriginTok pi -> PI.OriginTok
-         (PI.complete_token_location_large file table pi)
-       | _ -> raise Todo
-    }      *)
+       | PI.OriginTok pi -> 
+          (try 
+            PI.OriginTok
+              (PI.complete_token_location_large file table pi)
+           with Invalid_argument("index out of bounds") ->
+              (* TODO: fix! *)
+              (* pr2_gen pi *)
+              pr2_once (spf "TODO:%s: adjust info out-of-bounds" file);
+              PI.OriginTok pi
+           )
+       | _ -> failwith "adjust_info: no an OriginTok"
+    }
   in
   let toks = ref [] in
 
@@ -86,7 +93,7 @@ let mk_lexer file chan =
      with PI.Lexical_error (s, info) ->
        raise (PI.Lexical_error (s, adjust_info info))
     in 
-    if !Flag_parsing.debug_lexer 
+    if !Flag_parsing.debug_lexer
     then Common.pr2_gen tok;
 
    let tok = tok |> TH.visitor_info_of_tok adjust_info in
@@ -94,23 +101,6 @@ let mk_lexer file chan =
    tok
   in
   toks, lexbuf, lexer
-
-(*****************************************************************************)
-(* Helpers *)
-(*****************************************************************************)
-
-let uniq_list lst =
-  let rec u = function
-    | [] -> []
-    | [x] -> [x]
-    | x1::x2::tl ->
-      if H.equal_ast x1 x2
-      then u (x1::tl) 
-      else x1 :: (u (x2::tl))
-  in
-  let l = List.map fst lst in
-  u (List.sort H.compare_ast l)
-
 
 (*****************************************************************************)
 (* Entry point *)
@@ -127,24 +117,35 @@ let parse file =
       (* -------------------------------------------------- *)
       let lst = Parser_ruby.main lexer lexbuf in
 
-      let lst = uniq_list lst in
-      (match lst with
-      | [ast] -> (*Ast.mod_ast (replace_heredoc state) ast*) 
-              stat.PI.correct <- n;
-              (Some ast, List.rev !toks), stat
-      | _l -> 
-          pr2 (spf "%s:1:0 ambiguous parse" file);
-          stat.PI.bad <- n;
-          (None, List.rev !toks), stat
-      )
-    with Dyp.Syntax_error ->
+      (* check for ambiguous parse trees *)
+      let l = List.map fst lst in
+      let l' = HH.uniq_list (fun a b -> if H.equal_ast a b then 0 else -1) l in
+      HH.do_fail "program" l'
+          Ast_ruby_printer.string_of_ast Meta_ast_ruby.vof_program;
+
+      let ast = List.hd l' in
+      (*orig-todo? Ast.mod_ast (replace_heredoc state) ast*) 
+      stat.PI.correct <- n;
+      (Some ast, List.rev !toks), stat
+
+    with (Dyp.Syntax_error | Failure _ | Stack.Empty
+          
+         ) as exn ->
       let cur = 
         match !toks with
-        | [] -> raise Impossible
+        | [] -> failwith (spf "No token at all for %s" file)
         | x::_xs -> x
       in
-      if not !Flag.error_recovery
+      if not !Flag.error_recovery && exn = Dyp.Syntax_error
       then raise (PI.Parsing_error (TH.info_of_tok cur));
+
+      (match exn with
+      | Failure s ->
+        if !Flag.error_recovery
+        then pr2 (spf "Failure:%s: msg =  %s" file s)
+        else raise (PI.Other_error (s, TH.info_of_tok cur))
+      | _ -> ()
+      );
   
       if !Flag.show_parsing_error
       then begin

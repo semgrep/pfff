@@ -51,8 +51,9 @@ let test_parse xs =
     let (_xs, stat) =
      Common.save_excursion Flag.error_recovery true (fun () ->
      Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
+     Common.save_excursion Flag.show_parsing_error false (fun () ->
         Parse_ruby.parse file
-    )) in
+    ))) in
 
     Common.push stat stat_list;
     let s = spf "bad = %d" stat.PI.bad in
