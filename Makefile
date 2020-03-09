@@ -386,6 +386,7 @@ INSTALL_SUBDIRS= \
   lang_haskell/parsing lang_haskell/analyze \
   lang_csharp/parsing lang_csharp/analyze \
   lang_html/parsing lang_html/analyze \
+  lang_ruby/parsing  lang_ruby/analyze \
   lang_text/ \
   lang_GENERIC/parsing  lang_GENERIC/analyze \
   lang_FUZZY/parsing \
