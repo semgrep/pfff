@@ -40,7 +40,11 @@ module Utils = Utils_ruby
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+
+(* shortcuts *)
+let _tok = Lexing.lexeme
 let tk lexbuf = Parse_info.tokinfo lexbuf
+let _error = Parse_info.lexical_error
 
 (* ---------------------------------------------------------------------- *)
 (* Lexer/Parser state *)
@@ -505,6 +509,8 @@ and top_lexer state = parse
 
 and comment state = parse
   | [^'\n']* '\n' { t_eol state lexbuf }
+  | [^'\n']* { comment state lexbuf }
+  | eof { T_EOF (tk lexbuf) }
 
 and delim_comment state = parse
   | "=end" [^'\n']* '\n' { top_lexer state lexbuf}
