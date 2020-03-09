@@ -160,6 +160,7 @@ let parse file =
       end;
   
       stat.PI.bad <- n;
+      if exn = Common.Timeout then stat.PI.have_timeout <- true;
       (None, List.rev !toks), stat
   )
 
