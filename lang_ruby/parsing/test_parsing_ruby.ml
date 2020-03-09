@@ -10,7 +10,6 @@ module Flag = Flag_parsing
 let test_tokens file = 
   if not (file =~ ".*\\.rb") 
   then pr2 "warning: seems not a ruby file";
-
 (*
   Flag.verbose_lexing := true;
   Flag.verbose_parsing := true;
@@ -32,6 +31,7 @@ let test_tokens file =
   in
   let _lst = Parser_ruby.main lexerf lexbuf in
   ()
+
 
 let test_parse xs =
   let xs = List.map Common.fullpath xs in
@@ -83,7 +83,6 @@ let test_parse xs =
   );
 
   ()
-
 
 
 let test_dump file =
