@@ -79,6 +79,7 @@ let visit_program ~tag_hook _prefs (_program, toks) =
        ()
 
     (* comments *)
+    | T.T_EOL ii
 
     (* values  *)
 
@@ -88,6 +89,117 @@ let visit_program ~tag_hook _prefs (_program, toks) =
 
     (* symbols *)
 
-   | _ -> failwith "TODO"
+    (* TODO *)
+
+    | T.T_UAMPER ii
+    | T.T_AMPER ii
+    | T.T_TILDE ii
+    | T.T_BANG ii
+    | T.T_VBAR ii
+    | T.T_CARROT ii
+    | T.T_PERCENT ii
+    | T.T_SLASH ii
+    | T.T_USTAR ii
+    | T.T_STAR ii
+    | T.T_RSHFT ii
+    | T.T_LSHFT ii
+    | T.T_DOT3 ii
+    | T.T_DOT2 ii
+    | T.T_NMATCH ii
+    | T.T_MATCH ii
+    | T.T_OROP ii
+    | T.T_ANDOP ii
+    | T.T_GT ii
+    | T.T_LT ii
+    | T.T_LEQ ii
+    | T.T_GEQ ii
+    | T.T_NEQ ii
+    | T.T_EQQ ii
+    | T.T_EQ ii
+    | T.T_ASSIGN ii
+    | T.T_CMP ii
+    | T.T_POW ii
+    | T.T_UMINUS ii
+    | T.T_MINUS ii
+    | T.T_UPLUS ii
+    | T.T_PLUS ii
+    | T.T_USCOPE ii
+    | T.T_SCOPE ii
+    | T.T_SEMICOLON ii
+    | T.T_COLON ii
+    | T.T_QUESTION ii
+    | T.T_RBRACE ii
+    | T.T_LBRACE_ARG ii
+    | T.T_LBRACE ii
+    | T.T_RBRACK ii
+    | T.T_LBRACK ii
+    | T.T_LBRACK_ARG ii
+    | T.T_RPAREN ii
+    | T.T_LPAREN_ARG ii
+    | T.T_LPAREN ii
+    | T.T_ASSOC ii
+    | T.T_COMMA ii
+    | T.T_DOT ii
+
+    | T.K_FALSE ii
+    | T.K_TRUE ii
+    | T.K_SELF ii
+    | T.K_YIELD ii
+    | T.K_NIL ii
+    | T.K_lEND ii
+    | T.K_lBEGIN ii
+    | T.K_NOT ii
+    | T.K_OR ii
+    | T.K_AND ii
+    | T.K_RETURN ii
+    | T.K_DO ii
+    | T.K_IN ii
+    | T.K_FOR ii
+    | T.K_UNTIL ii
+    | T.K_WHILE ii
+    | T.K_WHEN ii
+    | T.K_CASE ii
+    | T.K_ELSE ii
+    | T.K_ELSIF ii
+    | T.K_THEN ii
+    | T.K_UNLESS ii
+    | T.K_IF ii
+    | T.K_ENSURE ii
+    | T.K_RESCUE ii
+    | T.K_BEGIN ii
+    | T.K_UNDEF ii
+    | T.K_ALIAS ii
+    | T.K_END ii
+    | T.K_DEF ii
+    | T.K_MODULE ii
+    | T.K_CLASS ii
+
+    | T.T_ATOM_BEG ii
+    | T.T_REGEXP_BEG ii
+    | T.T_TICK_BEG ii
+    | T.T_DOUBLE_BEG ii
+
+    | T.T_OP_ASGN (_, ii)
+    | T.T_INTERP_END (_, ii)
+    | T.T_INTERP_STR (_, ii)
+    | T.T_REGEXP_MOD (_, ii)
+    | T.T_USER_BEG (_, ii)
+    | T.T_SINGLE_STRING (_, ii)
+    | T.T_BUILTIN_VAR (_, ii)
+    | T.T_CLASS_VAR (_, ii)
+    | T.T_INST_VAR (_, ii)
+    | T.T_GLOBAL_VAR (_, ii)
+    | T.T_LID (_, ii)
+    | T.T_UID (_, ii)
+
+    | T.T_REGEXP (_,_, ii)
+    | T.T_USER_STRING (_,_, ii)
+    | T.T_DOUBLE_STRING (_, ii)
+    | T.T_FLOAT (_,_, ii)
+    | T.T_BIGNUM (_, ii)
+    | T.T_FIXNUM (_, ii)
+    | T.T_ATOM (_, ii)
+      -> tag ii Error
+
   );
   ()
