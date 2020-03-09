@@ -150,7 +150,7 @@ let parse file =
          raise (PI.Other_error (s, TH.info_of_tok cur));
       end;
   
-      if !Flag.show_parsing_error
+      if !Flag.show_parsing_error && exn = Dyp.Syntax_error
       then begin
         pr2 ("parse error \n = " ^ error_msg_tok cur);
         let filelines = Common2.cat_array file in
