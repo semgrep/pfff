@@ -98,7 +98,7 @@ let test_dump file =
     Meta_parse_info.full_info = true;
   };
   let ast = Parse_ruby.parse_program file in
-  let v = Meta_ast_ruby.vof_ast ast in
+  let v = Meta_ast_ruby.vof_program ast in
   let s = Ocaml.string_of_v v in
   pr s
 

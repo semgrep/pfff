@@ -614,7 +614,7 @@ let merge_expr s xs =
 let merge_expr_list s xs =
   wrap xs (fun xs ->
   let l' = uniq_list H.compare_ast (xs) in
-    do_fail s l' Ast_printer.string_of_ast Meta_ast_ruby.vof_ast;
+    do_fail s l' Ast_printer.string_of_ast Meta_ast_ruby.vof_program;
     l'
   )
 

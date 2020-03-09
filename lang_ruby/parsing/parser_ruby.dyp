@@ -285,7 +285,7 @@ let rec add_eq = function
 /*(*1 Rules type declaration *)*/
 /*(*************************************************************************)*/
 
-%start <Ast_ruby.ast> main
+%start <Ast_ruby.program> main
 
 %%
 
