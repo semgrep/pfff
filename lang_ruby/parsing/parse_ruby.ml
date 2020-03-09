@@ -141,14 +141,14 @@ let parse file =
         | [] -> failwith (spf "No token at all for %s" file)
         | x::_xs -> x
       in
+      (* todo: need to fix those! *)
+      let s = Common.exn_to_s exn in
+      pr2 (spf "Exn on %s = %s" file s);
+
       if not !Flag.error_recovery && exn = Dyp.Syntax_error
       then raise (PI.Parsing_error (TH.info_of_tok cur));
       if not !Flag.error_recovery && exn <> Dyp.Syntax_error
-      then begin
-         let s = Common.exn_to_s exn in
-         pr2 (spf "Exn on %s = %s" file s);
-         raise (PI.Other_error (s, TH.info_of_tok cur));
-      end;
+      then raise (PI.Other_error (s, TH.info_of_tok cur));
   
       if !Flag.show_parsing_error && exn = Dyp.Syntax_error
       then begin
