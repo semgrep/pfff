@@ -441,6 +441,7 @@ let rewrap_str s ii =
     )
   }
 
+(* less: should use Buffer and not ^ so we should not need that *)
 let tok_add_s s ii  =
   rewrap_str ((str_of_info ii) ^ s) ii
 
