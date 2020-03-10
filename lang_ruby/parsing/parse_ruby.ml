@@ -86,7 +86,7 @@ let mk_lexer file chan =
   let env = Utils.default_opt Utils.StrSet.empty None in
   HH.set_env env;
   
-  let lexer lexbuf = 
+  let rec lexer lexbuf = 
     let tok = 
      try
        Lexer_ruby.token state lexbuf
@@ -96,9 +96,11 @@ let mk_lexer file chan =
     if !Flag_parsing.debug_lexer
     then Common.pr2_gen tok;
 
-   let tok = tok |> TH.visitor_info_of_tok adjust_info in
-   Common.push tok toks;
-   tok
+    let tok = tok |> TH.visitor_info_of_tok adjust_info in
+    Common.push tok toks;
+    if TH.is_comment tok
+    then lexer lexbuf
+    else tok
   in
   toks, lexbuf, lexer
 

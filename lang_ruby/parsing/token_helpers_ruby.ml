@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common
 open Parser_ruby
 
 (*****************************************************************************)
@@ -22,8 +21,10 @@ let is_eof = function
   | T_EOF _ -> true
   | _ -> false
 
+(* do not filter T_EOL here! they are used in the grammar *)
 let is_comment = function
-  | _ -> raise Todo
+  | T_SPACE _ | T_COMMENT _ -> true
+  | _ -> false
 
 (*****************************************************************************)
 (* Visitors *)
@@ -32,6 +33,9 @@ let is_comment = function
 let visitor_info_of_tok f = function
   | T_EOF ii -> T_EOF (f ii)
   | T_EOL ii -> T_EOL (f ii)
+  | T_SPACE ii -> T_SPACE (f ii)
+  | T_COMMENT ii -> T_COMMENT (f ii)
+  | T_UNKNOWN ii -> T_UNKNOWN (f ii)
 
   | T_UAMPER ii -> T_UAMPER (f ii)
   | T_AMPER ii -> T_AMPER (f ii)
