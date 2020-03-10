@@ -153,8 +153,8 @@ type usedef2 =
 type category =  
   (* pad's addons (actually Pixel added a special font in Emacs for numbers) *)
   | Boolean | Number
-
   | String | Regexp
+  | Atom
   | Null
 
   (* classic emacs mode *)
@@ -715,6 +715,7 @@ let info_of_category = function
   | Boolean -> [`FOREGROUND "pink3";]
   | String -> [`FOREGROUND "MediumSeaGreen";]
   | Regexp -> [`FOREGROUND "green3";]
+  | Atom -> [`FOREGROUND "misty rose";]
   | Null -> [`FOREGROUND "cyan3";]
 
 

@@ -1,7 +1,7 @@
 
 type category =
   (* values *)
-  | Boolean | Number | String (* or Char *) | Regexp | Null
+  | Boolean | Number | String (* or Char *) | Regexp | Atom | Null
 
   (* keywords *)
   | Keyword 
