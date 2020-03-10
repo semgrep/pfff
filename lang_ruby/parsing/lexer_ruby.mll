@@ -65,17 +65,17 @@ let emit_extra tok k state lexbuf =
 
 (* helper for transitioning between states *)
 let beg_choose want yes no state lexbuf = 
-  if state.S.expr_state == want 
+  if state.S.state == want 
   then yes state lexbuf else no state lexbuf
     
 type chooser = S.cps_lexer -> S.cps_lexer -> S.cps_lexer
 
 (* state transition functions *)
-let on_beg : chooser = beg_choose S.Expr_Beg
-let on_mid : chooser = beg_choose S.Expr_Mid 
-let on_end : chooser = beg_choose S.Expr_End 
-let on_def : chooser = beg_choose S.Expr_Def 
-let on_local : chooser = beg_choose S.Expr_Local 
+let on_beg : chooser = beg_choose S.Bol
+let on_mid : chooser = beg_choose S.AfterCommand
+let on_end : chooser = beg_choose S.EndOfExpr 
+let on_def : chooser = beg_choose S.AfterDef 
+let on_local : chooser = beg_choose S.AfterLocal 
 
 (* CPS terminators *)
 let t_uminus s lb     = S.beg_state s; T_UMINUS (tk lb)
@@ -103,8 +103,8 @@ let t_colon s lb      = S.beg_state s; T_COLON (tk lb)
 let t_eol s lb       = S.beg_state s; T_EOL (tk lb)
 
 (* transitions to End unless in Def, in which case do nothing (stays in Def) *)
-let def_end_state state = match state.S.expr_state with
-  | S.Expr_Def -> ()
+let def_end_state state = match state.S.state with
+  | S.AfterDef -> ()
   | _ -> S.end_state state
 
 (* ---------------------------------------------------------------------- *)
@@ -309,8 +309,8 @@ and top_lexer state = parse
 
   (* /= can be either regexp or op_asgn *)
   | ws* "/=" 
-      { match state.S.expr_state with 
-        | S.Expr_Beg -> regexp_string (buf_of_string "=") state lexbuf
+      { match state.S.state with 
+        | S.Bol -> regexp_string (buf_of_string "=") state lexbuf
         | _ -> S.beg_state state; T_OP_ASGN("/", (tk lexbuf))
       }
 
@@ -374,10 +374,10 @@ and top_lexer state = parse
   | "<<-" {heredoc_header heredoc_string_lead state lexbuf}
   | "<<" ws {S.beg_state state; t_lshft state lexbuf}
   | "<<" nl {S.beg_state state; t_lshft state lexbuf}
-  | "<<"    { match state.S.expr_state with
-              | S.Expr_End | S.Expr_Local | S.Expr_Def -> 
+  | "<<"    { match state.S.state with
+              | S.EndOfExpr | S.AfterLocal | S.AfterDef -> 
                 S.beg_state state;T_LSHFT (tk lexbuf)
-              | S.Expr_Mid | S.Expr_Beg -> 
+              | S.AfterCommand | S.Bol -> 
                 heredoc_header heredoc_string state lexbuf}
 
   (* now all of the 'normal' tokens which are otherwise well behaved *)
@@ -386,9 +386,9 @@ and top_lexer state = parse
   | ';'   {S.beg_state state;T_SEMICOLON (tk lexbuf)}
 
   | '!'   {S.beg_state state;T_BANG  (tk lexbuf) }
-  | '~'   {match state.S.expr_state with
+  | '~'   {match state.S.state with
              (* when defining the ~ method, allow an optional @ postfix *)
-             | S.Expr_Def -> postfix_at t_tilde t_tilde state lexbuf
+             | S.AfterDef -> postfix_at t_tilde t_tilde state lexbuf
              | _ -> t_tilde state lexbuf }
 
   | "<=>" {S.beg_state state;T_CMP (tk lexbuf) }
@@ -486,8 +486,8 @@ and top_lexer state = parse
   (* ----------------------------------------------------------------------- *)
   | id as id { 
       let tok = choose_capital_for_id id (tk lexbuf) in
-        begin match state.S.expr_state, tok with
-          | S.Expr_Def, _ -> S.mid_state state
+        begin match state.S.state, tok with
+          | S.AfterDef, _ -> S.mid_state state
           | _, T_LID(id, _pos) ->
               if S2.assigned_id id 
               then S.local_state state
@@ -537,11 +537,11 @@ and space_uop uop spc_uop binop state = parse
   (* space before and after is binop (unless at expr_beg) *)
   | ws+ { on_beg spc_uop binop state lexbuf}
   | nl  { on_beg spc_uop binop state lexbuf}
-  | e   {match state.S.expr_state with
-         | S.Expr_Def
-         | S.Expr_Local
-         | S.Expr_End -> binop state lexbuf
-         | S.Expr_Beg | S.Expr_Mid -> uop state lexbuf
+  | e   {match state.S.state with
+         | S.AfterDef
+         | S.AfterLocal
+         | S.EndOfExpr -> binop state lexbuf
+         | S.Bol | S.AfterCommand -> uop state lexbuf
          }
 
 and uop_minus_lit state = parse
