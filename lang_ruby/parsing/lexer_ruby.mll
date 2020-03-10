@@ -46,9 +46,8 @@ module PI = Parse_info
 let tok = Lexing.lexeme
 let tk = PI.tokinfo
 let _error = PI.lexical_error
-let add_s = PI.tok_add_s
 let add_to_tok lexbuf t = 
-  add_s (tok lexbuf) t
+  PI.tok_add_s (tok lexbuf) t
 
 (* ---------------------------------------------------------------------- *)
 (* Lexer/Parser state *)
