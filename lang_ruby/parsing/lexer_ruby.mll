@@ -55,7 +55,7 @@ let pop_lexer state =
   Stack.pop state.S.lexer_stack |> ignore
 
 (* emit the token [tok] and then proceed with the continuation [k] *)
-let emit_extra tok k state lexbuf = 
+let emit_extra tok k = fun state lexbuf ->
   let once state _ = 
     pop_lexer state;
     k state lexbuf
@@ -64,9 +64,10 @@ let emit_extra tok k state lexbuf =
   tok
 
 (* helper for transitioning between states *)
-let beg_choose want yes no state lexbuf = 
+let beg_choose want yes no = fun state lexbuf ->
   if state.S.state == want 
-  then yes state lexbuf else no state lexbuf
+  then yes state lexbuf 
+  else no state lexbuf
     
 type chooser = S.cps_lexer -> S.cps_lexer -> S.cps_lexer
 
@@ -100,10 +101,13 @@ let t_lbrace_arg s lb = S.beg_state s; T_LBRACE_ARG (tk lb)
 let t_percent s lb    = S.beg_state s; T_PERCENT (tk lb)
 let t_lshft s lb      = S.beg_state s; T_LSHFT (tk lb)
 let t_colon s lb      = S.beg_state s; T_COLON (tk lb)
-let t_eol s lb       = S.beg_state s; T_EOL (tk lb)
+let t_eol s lb        = S.beg_state s; T_EOL (tk lb)
 
-(* transitions to End unless in Def, in which case do nothing (stays in Def) *)
-let def_end_state state = match state.S.state with
+(* For atom lexer.
+ * transitions to End unless in Def, in which case do nothing (stays in Def)
+ *)
+let end_state_unless_afterdef state = 
+  match state.S.state with
   | S.AfterDef -> ()
   | _ -> S.end_state state
 
@@ -115,7 +119,7 @@ let update_pos str pos =
   let chars = String.length str in
   {pos with Lexing.pos_cnum = pos.Lexing.pos_cnum - chars; }
 
-(* for heredoc *)
+(* For heredoc lexer. *)
 let push_back str lexbuf = 
   (* todo: just use Parse_info.yyback? need lex_buffer modifications? *)
   let pre_str = Bytes.sub lexbuf.Lexing.lex_buffer 0 lexbuf.Lexing.lex_curr_pos in
@@ -660,7 +664,7 @@ and postfix_numeric cont start state = parse
 and atom state = parse
   | ['+' '-' '*' '/' '!' '~' '<' '>' '=' '&' '|' '%' '^' '@']+ 
   | '[' ']' ('='?) (* these can only appear together like this (I think) *)
-  | '`' {def_end_state state; 
+  | '`' {end_state_unless_afterdef state; 
          T_ATOM((contents_of_str (Lexing.lexeme lexbuf)), (tk lexbuf)) }
 
   | '$'
@@ -668,17 +672,17 @@ and atom state = parse
           | T_GLOBAL_VAR(s,_p) -> s
           | T_BUILTIN_VAR(s,_p) -> s
           | _ -> assert false
-        in def_end_state state; 
+        in end_state_unless_afterdef state; 
           T_ATOM(contents_of_str str, (tk lexbuf)) }
 
   | ('@'* id) '='?
-      {def_end_state state; 
+      {end_state_unless_afterdef state; 
        T_ATOM((contents_of_str (Lexing.lexeme lexbuf)), (tk lexbuf)) }
-  | '"'  {def_end_state state;
+  | '"'  {end_state_unless_afterdef state;
           emit_extra (T_ATOM_BEG (tk lexbuf))
             (interp_string_lexer '"') state lexbuf}
 
-  | '\''  {def_end_state state;
+  | '\''  {end_state_unless_afterdef state;
            emit_extra (T_ATOM_BEG (tk lexbuf))
              (non_interp_string '\'' (Buffer.create 31)) state lexbuf}
 

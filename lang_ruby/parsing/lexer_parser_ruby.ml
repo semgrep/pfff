@@ -5,11 +5,16 @@ type state =
   | AfterDef (* after a 'def' or '.' token *)
   | AfterLocal (* after a local variable *)
 
+(* alternatives:
+ *  - THIS FILE: use continuation and special epsilon trick in 
+ *    Lexer_ruby.token to do the switch
+ *  - instead of passing continuations, have a state for each lexer rule
+ *    and let the lexer caller do the switch (see parse_php.ml)
+ *)
 type t = { 
   mutable state : state;
   lexer_stack : cps_lexer Stack.t;
 }
-
 and cps_lexer = t -> Lexing.lexbuf -> Parser_ruby.token
 
 let beg_state t = t.state <- Bol
