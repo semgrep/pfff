@@ -35,6 +35,7 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+(* todo: reuse PI.Lexical_error *)
 exception Lexical of string
 
 let error s =
@@ -54,13 +55,10 @@ let yyback n lexbuf =
   lexbuf.Lexing.lex_curr_p <- { currp with
     Lexing.pos_cnum = currp.Lexing.pos_cnum - n;
   }
-let tok lexbuf =
-  Lexing.lexeme lexbuf
-let tokinfo lexbuf  =
-  PI.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
-
-let tok_add_s s ii  =
-  PI.rewrap_str ((PI.str_of_info ii) ^ s) ii
+(* shortcuts *)
+let tok = Lexing.lexeme
+let tokinfo = PI.tokinfo
+let tok_add_s = PI.tok_add_s
 
 (* all string passed to T_IDENT or T_VARIABLE should go through case_str *)
 let case_str s =
