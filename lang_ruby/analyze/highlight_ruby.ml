@@ -76,12 +76,16 @@ let visit_program ~tag_hook _prefs (_program, toks) =
     match tok with
 
     (* specials *)
-    | T.T_EOF _ii -> 
+    | T.T_SPACE _
+    | T.T_EOF _ -> 
        ()
+    | T.T_UNKNOWN ii ->
+       tag ii Error
 
     (* comments *)
     (* in lexer_ruby.mll comments and space and newlines are sometimes 
      * put together *)
+    | T.T_COMMENT ii
     | T.T_EOL ii ->
        tag_if_not_tagged ii Comment
 

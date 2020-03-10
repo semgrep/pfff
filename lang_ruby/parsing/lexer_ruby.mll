@@ -30,6 +30,7 @@ open Parser_ruby (* the tokens *)
 module S2 = Parser_ruby_helpers
 module S = Lexer_parser_ruby
 module Utils = Utils_ruby
+module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude *)
@@ -42,9 +43,12 @@ module Utils = Utils_ruby
 (*****************************************************************************)
 
 (* shortcuts *)
-let _tok = Lexing.lexeme
-let tk lexbuf = Parse_info.tokinfo lexbuf
-let _error = Parse_info.lexical_error
+let tok = Lexing.lexeme
+let tk = PI.tokinfo
+let _error = PI.lexical_error
+let add_s = PI.tok_add_s
+let add_to_tok lexbuf t = 
+  add_s (tok lexbuf) t
 
 (* ---------------------------------------------------------------------- *)
 (* Lexer/Parser state *)
@@ -101,7 +105,8 @@ let t_lbrace_arg s lb = S.beg_state s; T_LBRACE_ARG (tk lb)
 let t_percent s lb    = S.beg_state s; T_PERCENT (tk lb)
 let t_lshft s lb      = S.beg_state s; T_LSHFT (tk lb)
 let t_colon s lb      = S.beg_state s; T_COLON (tk lb)
-let t_eol s lb        = S.beg_state s; T_EOL (tk lb)
+
+let t_eol t s _lb        = S.beg_state s; T_EOL t
 
 (* For atom lexer.
  * transitions to End unless in Def, in which case do nothing (stays in Def)
@@ -282,6 +287,7 @@ let e = "" (* epsilon *)
 
 rule token state = parse
   | e { if S2.begin_override() then S.beg_state state;
+        (* running the current lexer *)
         (Stack.top state.S.lexer_stack) state lexbuf }
 
 (*****************************************************************************)
@@ -293,15 +299,16 @@ and top_lexer state = parse
   (* ----------------------------------------------------------------------- *)
   (* spacing/comments *)
   (* ----------------------------------------------------------------------- *)
-  | '#'   {comment state lexbuf}
-
-  | "=begin" [^'\n']* '\n' {S.beg_state state; delim_comment state lexbuf}
-  | "\\\n" { top_lexer state lexbuf}
-  | nl     { t_eol state lexbuf}
-
-  | ws+  { top_lexer state lexbuf}
-
-  | "__END__"  { end_lexbuf lexbuf}
+  | '#'    { comment (tk lexbuf) state lexbuf }
+  | "=begin" [^'\n']* '\n' 
+           { S.beg_state state; 
+             delim_comment (tk lexbuf) state lexbuf }
+  | "\\\n" { emit_extra (T_SPACE (tk lexbuf))
+             top_lexer state lexbuf}
+  | nl     { t_eol (tk lexbuf) state lexbuf}
+  | ws+    { emit_extra (T_SPACE (tk lexbuf))
+             top_lexer state lexbuf }
+  | "__END__"  { end_lexbuf (tk lexbuf) state lexbuf }
 
   (* ----------------------------------------------------------------------- *)
   (* symbols *)
@@ -511,18 +518,22 @@ and top_lexer state = parse
 (* Comments *)
 (*****************************************************************************)
 
-and comment state = parse
-  | [^'\n']* '\n' { t_eol state lexbuf }
-  | [^'\n']* { comment state lexbuf }
-  | eof { T_EOF (tk lexbuf) }
+and comment t state = parse
+  | [^'\n']* { comment (add_to_tok lexbuf t) state lexbuf }
+  | '\n'     { emit_extra (T_COMMENT t) 
+               (t_eol (tk lexbuf)) state lexbuf }
+  | eof      { emit_extra (T_COMMENT t) (fun _state lexbuf -> 
+               T_EOF (tk lexbuf)) state lexbuf }
 
-and delim_comment state = parse
-  | "=end" [^'\n']* '\n' { top_lexer state lexbuf}
-  | [^'\n']* '\n'        { delim_comment state lexbuf}
+and delim_comment t state = parse
+  | "=end" [^'\n']* '\n' { emit_extra (T_COMMENT (add_to_tok lexbuf t))
+                           top_lexer state lexbuf }
+  | [^'\n']* '\n'        { delim_comment (add_to_tok lexbuf t) state lexbuf }
 
-and end_lexbuf = parse
-  | _     { end_lexbuf lexbuf }
-  | eof   { T_EOF (tk lexbuf) }
+and end_lexbuf t state = parse
+  | _     { end_lexbuf (add_to_tok lexbuf t) state lexbuf }
+  | eof   { emit_extra (T_COMMENT t) (fun _state lexbuf ->
+            T_EOF (tk lexbuf)) state lexbuf }
 
 (*****************************************************************************)
 (* space_tok *)

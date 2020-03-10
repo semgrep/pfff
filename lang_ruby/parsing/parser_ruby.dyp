@@ -132,6 +132,9 @@ let rec add_eq = function
 
 %token <Parse_info.t> T_EOL
 %token <Parse_info.t> T_EOF
+%token <Parse_info.t> T_SPACE
+%token <Parse_info.t> T_COMMENT
+%token <Parse_info.t> T_UNKNOWN
 
 /*(*-----------------------------------------*)*/
 /*(*2 The normal tokens *)*/
