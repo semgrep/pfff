@@ -153,8 +153,6 @@ let rec add_eq = function
 %token <string * float * Parse_info.t>  T_FLOAT
 
 %token <string * Parse_info.t> T_SINGLE_STRING
-%token <Ast_ruby.interp_string * Parse_info.t> T_DOUBLE_STRING
-%token <string * Ast_ruby.interp_string * Parse_info.t> T_USER_STRING
 %token <Parse_info.t> T_DOUBLE_BEG
 %token <Parse_info.t> T_TICK_BEG
 %token <string * Parse_info.t> T_USER_BEG
@@ -720,12 +718,11 @@ string:
   | string<s1> one_string<s2> { merge_string_lits s1 s2 }
 
 one_string:
-  | T_SINGLE_STRING<s,pos> { Literal( String(Single s), pos) }
+  | T_SINGLE_STRING<s,pos> 
+      { Literal(String(Single s), pos) }
   | T_DOUBLE_BEG<pos> interp_str<istr> 
-      { Literal(String (Double istr),pos) }
+      { Literal(String (Double istr), pos) }
 
-  | T_DOUBLE_STRING<s,pos> { Literal( String(Double s), pos) }
-  | T_USER_STRING<m,str,pos> { process_user_string m str pos }
   | T_USER_BEG<m,pos> interp_str<str> { process_user_string m str pos }
 
 

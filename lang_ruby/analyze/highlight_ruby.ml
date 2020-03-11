@@ -99,10 +99,8 @@ let visit_program ~tag_hook _prefs (_program, toks) =
     | T.T_ATOM (_, ii) | T.T_ATOM_BEG ii ->
        tag ii Atom
     | T.T_SINGLE_STRING (_, ii)
-    | T.T_DOUBLE_STRING (_, ii)
     | T.T_INTERP_STR (_, ii)
     | T.T_INTERP_END (_, ii)
-    | T.T_USER_STRING (_,_, ii)
     | T.T_DOUBLE_BEG ii
     | T.T_USER_BEG (_, ii)
      -> tag ii String
