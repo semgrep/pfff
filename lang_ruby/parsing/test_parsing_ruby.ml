@@ -19,7 +19,7 @@ let test_tokens file =
 
   let ic = open_in file in
   let lexbuf = Lexing.from_channel ic in
-  let state = Lexer_parser_ruby.create Lexer_ruby.top_lexer in 
+  let state = Lexer_parser_ruby.create ("top_lexer", Lexer_ruby.top_lexer) in 
 
   Parser_ruby_helpers.clear_env ();
   let env = Utils_ruby.default_opt Utils_ruby.StrSet.empty None in

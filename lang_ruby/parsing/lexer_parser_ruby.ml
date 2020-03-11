@@ -13,7 +13,7 @@ type state =
  *)
 type t = { 
   mutable state : state;
-  lexer_stack : cps_lexer Stack.t;
+  lexer_stack : (string (* to debug *) * cps_lexer) Stack.t;
 }
 and cps_lexer = t -> Lexing.lexbuf -> Parser_ruby.token
 
@@ -30,3 +30,15 @@ let create entry =
      lexer_stack = stk;
     }
 
+let string_of_state = function
+  | Bol -> "Bol"
+  | AfterCommand -> "AfterCommand"
+  | EndOfExpr -> "EndOfExpr"
+  | AfterDef -> "AfterDef"
+  | AfterLocal -> "AfterLocal"
+
+let string_of_t x = 
+  Common.spf "state = %s, stack = [%s]" 
+     (string_of_state x.state)
+     (x.lexer_stack |> Stack.to_seq |> List.of_seq 
+      |> List.map fst |> String.concat ",")
