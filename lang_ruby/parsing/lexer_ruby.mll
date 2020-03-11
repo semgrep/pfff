@@ -50,7 +50,9 @@ module Utils = Utils_ruby
 (*****************************************************************************)
 
 (* shortcuts *)
+(* TODO: rename str *)
 let tok = Lexing.lexeme
+(* TODO: rename tok *)
 let tk = PI.tokinfo
 (* later: use T_UNKNOWN and this function *)
 let _error = PI.lexical_error
@@ -641,7 +643,7 @@ and percent state = parse
        let f = 
          if modifier_is_single modifier
          then non_interp_string d_end (Buffer.create 31) (tk lexbuf)
-         else interp_lexer fail_eof at_end chk (Buffer.create 31)
+         else interp_lexer2 fail_eof at_end chk (Buffer.create 31)
        in
          if modifier = "r"
          then regexp_delim at_end chk (Buffer.create 31) state lexbuf
@@ -810,29 +812,36 @@ and interp_string_lexer delim state = parse
   | e { let chk x = 
           x == delim 
         in
-        interp_lexer fail_eof chk chk (Buffer.create 31) state lexbuf 
+        let t  = tk lexbuf in
+        interp_lexer fail_eof chk chk (Buffer.create 31) t state lexbuf 
+      }
+
+and interp_lexer2 do_eof delim_f escape_f buf state = parse
+  | e { let t = tk lexbuf in
+        interp_lexer do_eof delim_f escape_f buf t state lexbuf 
       }
 
 (* tokenize a interpreted string into string / code *)
-and interp_lexer do_eof delim_f escape_f buf state = parse
+and interp_lexer do_eof delim_f escape_f buf t state = parse
   | eof    { do_eof buf state lexbuf}
 
-  | "\\\n" { interp_lexer do_eof delim_f escape_f buf state lexbuf }
+  | "\\\n" { interp_lexer do_eof delim_f escape_f buf t state lexbuf }
   | '\n'   { Buffer.add_char buf '\n';
-             interp_lexer do_eof delim_f escape_f buf state lexbuf }
+             interp_lexer do_eof delim_f escape_f buf t state lexbuf }
       
   | "\\" (_ as c)
       { if escape_f c
         then Buffer.add_char buf c
-        else Buffer.add_string buf (Lexing.lexeme lexbuf);
-        interp_lexer do_eof delim_f escape_f buf state lexbuf 
+        else Buffer.add_string buf (tok lexbuf);
+        interp_lexer do_eof delim_f escape_f buf t state lexbuf 
       }
 
   | "#{" 
       { S.beg_state state;
-        let tok = T_INTERP_STR(Buffer.contents buf, (tk lexbuf)) in
+        let t = PI.tok_add_s (Buffer.contents buf ^ tok lexbuf) t in
+        let tok = T_INTERP_STR(Buffer.contents buf, t) in
         let k state lexbuf =
-           interp_lexer do_eof delim_f escape_f (Buffer.create 31) 
+           interp_lexer2 do_eof delim_f escape_f (Buffer.create 31) 
              state lexbuf
         in
         interp_code tok k state lexbuf
@@ -840,10 +849,12 @@ and interp_lexer do_eof delim_f escape_f buf state = parse
 
   | _ as c
       { if delim_f c 
-        then T_INTERP_END(Buffer.contents buf, (tk lexbuf))
+        then 
+          let t = PI.tok_add_s (Buffer.contents buf ^ tok lexbuf) t in
+          T_INTERP_END(Buffer.contents buf, t)
         else begin
           Buffer.add_char buf c; 
-          interp_lexer do_eof delim_f escape_f buf state lexbuf
+          interp_lexer do_eof delim_f escape_f buf t state lexbuf
         end
        }
 
@@ -891,7 +902,7 @@ and regexp_delim delim_f escape_f buf state = parse
         Stack.push ("k in regexp_delim", k) state.S.lexer_stack;
         S.end_state state;
         emit_extra (T_REGEXP_BEG (tk lexbuf))
-        (interp_lexer fail_eof delim_f escape_f buf) state lexbuf
+        (interp_lexer2 fail_eof delim_f escape_f buf) state lexbuf
       }
  
 and regexp_modifier state = parse
@@ -949,12 +960,12 @@ and heredoc_string_lead cont buf delim state = parse (* for <<-EOF *)
         end}
 
 and interp_heredoc_lexer state = parse
-  | e {let f buf state lexbuf = 
-         S.end_state state;
-         T_INTERP_END(Buffer.contents buf,(tk lexbuf))
-       in 
-       let nope _  = false in
-         interp_lexer f nope nope (Buffer.create 31) state lexbuf
+  | e { let f buf state lexbuf = 
+           S.end_state state;
+           T_INTERP_END(Buffer.contents buf,(tk lexbuf))
+         in 
+         let nope _  = false in
+         interp_lexer2 f nope nope (Buffer.create 31) state lexbuf
       }
 
 
