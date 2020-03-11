@@ -119,7 +119,7 @@ let parse file =
       (* -------------------------------------------------- *)
       let lst = 
           (* GLR parsing can be very time consuming *)
-          Common.timeout_function 5 (fun () ->
+          Common.timeout_function 10 (fun () ->
             Parser_ruby.main lexer lexbuf 
           )
       in
