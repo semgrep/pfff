@@ -328,7 +328,7 @@ and top_lexer state = parse
              token state lexbuf}
 
   (* ----------------------------------------------------------------------- *)
-  (* symbols *)
+  (* symbols with spaces before *)
   (* ----------------------------------------------------------------------- *)
 
   (* need the ws here to force longest match preference over the rules below *)
@@ -368,13 +368,17 @@ and top_lexer state = parse
 
   | ws+ '%' {space_tok percent t_percent state lexbuf}
   | ws+ '?' {space_tok char_code t_quest state lexbuf}
+
+  (* ----------------------------------------------------------------------- *)
+  (* symbols *)
+  (* ----------------------------------------------------------------------- *)
       
   (* no space is usually a binop, but is parsed as a uop at expr_beg
      or if there is a trailing @ in the def state *)
   | '-' {on_def (postfix_at t_uminus t_minus)
-           (on_beg uop_minus_lit t_minus) state lexbuf}
+                (on_beg uop_minus_lit t_minus) state lexbuf}
   | '+' {on_def (postfix_at t_uplus t_plus)
-           (on_beg uop_plus_lit t_plus) state lexbuf}
+                (on_beg uop_plus_lit t_plus) state lexbuf}
   | '*' {on_beg t_ustar  t_star state lexbuf }
   | '&' {on_beg t_uamper t_amper state lexbuf }
   
@@ -468,38 +472,54 @@ and top_lexer state = parse
   (* Keywords *)
   (* ----------------------------------------------------------------------- *)
 
+  (* goto AfterDef state *)
   | "class"    {S.def_state state;K_CLASS  (tk lexbuf)}
   | "def"      {S.def_state state;K_DEF    (tk lexbuf)}
   | "module"   {S.def_state state;K_MODULE (tk lexbuf)}
   | "alias"    {S.def_state state;K_ALIAS (tk lexbuf)}
   | "undef"    {S.def_state state;K_UNDEF (tk lexbuf)}
-  | "and"      {S.beg_state state;K_AND (tk lexbuf)}
-  | "begin"    {S.beg_state state;K_lBEGIN (tk lexbuf)}
-  | "BEGIN"    {S.beg_state state;K_BEGIN (tk lexbuf)}
-  | "case"     {S.beg_state state;K_CASE (tk lexbuf)}
-  | "do"       {S.beg_state state;K_DO (tk lexbuf)}
-  | "else"     {S.beg_state state;K_ELSE (tk lexbuf)}
-  | "elsif"    {S.beg_state state;K_ELSIF (tk lexbuf)}
-  | "END"      {S.beg_state state;K_END (tk lexbuf)}
+
+  (* goto EndOfExpr state *)
   | "end"      {S.end_state state;K_lEND (tk lexbuf)}
-  | "ensure"   {S.beg_state state;K_ENSURE (tk lexbuf)}
-  | "for"      {S.beg_state state;K_FOR (tk lexbuf)}
-  | "if"       {S.beg_state state;K_IF (tk lexbuf)}
-  | "in"       {S.beg_state state;K_IN (tk lexbuf)}
-  | "not"      {S.beg_state state;K_NOT (tk lexbuf)}
-  | "or"       {S.beg_state state;K_OR (tk lexbuf)}
-  | "rescue"   {S.beg_state state;K_RESCUE (tk lexbuf)}
-  | "return"   {S.beg_state state;K_RETURN (tk lexbuf)}
-  | "then"     {S.beg_state state;K_THEN (tk lexbuf)}
-  | "unless"   {S.beg_state state;K_UNLESS (tk lexbuf)}
-  | "until"    {S.beg_state state;K_UNTIL (tk lexbuf)}
-  | "when"     {S.beg_state state;K_WHEN (tk lexbuf)}
-  | "while"    {S.beg_state state;K_WHILE (tk lexbuf)}
-  | "yield"    {S.mid_state state;K_YIELD (tk lexbuf)}
+
   | "nil"      {S.end_state state;K_NIL (tk lexbuf)}
   | "self"     {S.end_state state;K_SELF (tk lexbuf)}
   | "true"     {S.end_state state;K_TRUE (tk lexbuf)}
   | "false"    {S.end_state state;K_FALSE (tk lexbuf)}
+
+  (* goto begin state *)
+  | "for"      {S.beg_state state;K_FOR (tk lexbuf)}
+  | "do"       {S.beg_state state;K_DO (tk lexbuf)}
+  | "until"    {S.beg_state state;K_UNTIL (tk lexbuf)}
+  | "while"    {S.beg_state state;K_WHILE (tk lexbuf)}
+
+  | "if"       {S.beg_state state;K_IF (tk lexbuf)}
+  | "else"     {S.beg_state state;K_ELSE (tk lexbuf)}
+  | "elsif"    {S.beg_state state;K_ELSIF (tk lexbuf)}
+  | "then"     {S.beg_state state;K_THEN (tk lexbuf)}
+  | "unless"   {S.beg_state state;K_UNLESS (tk lexbuf)}
+
+  | "return"   {S.beg_state state;K_RETURN (tk lexbuf)}
+
+  | "or"       {S.beg_state state;K_OR (tk lexbuf)}
+  | "not"      {S.beg_state state;K_NOT (tk lexbuf)}
+  | "and"      {S.beg_state state;K_AND (tk lexbuf)}
+
+  | "case"     {S.beg_state state;K_CASE (tk lexbuf)}
+
+  | "ensure"   {S.beg_state state;K_ENSURE (tk lexbuf)}
+  | "rescue"   {S.beg_state state;K_RESCUE (tk lexbuf)}
+
+  | "begin"    {S.beg_state state;K_lBEGIN (tk lexbuf)}
+  | "BEGIN"    {S.beg_state state;K_BEGIN (tk lexbuf)}
+  | "END"      {S.beg_state state;K_END (tk lexbuf)}
+
+  | "in"       {S.beg_state state;K_IN (tk lexbuf)}
+  | "when"     {S.beg_state state;K_WHEN (tk lexbuf)}
+
+  (* goto AfterCommand state *)
+  | "yield"    {S.mid_state state;K_YIELD (tk lexbuf)}
+
 (* No longer lex separately
   | "defined?" {S.mid_state state;K_DEFINED}
   | "super"    {S.mid_state state;K_SUPER}
@@ -529,7 +549,6 @@ and top_lexer state = parse
   (* eof *)
   (* ----------------------------------------------------------------------- *)
   | eof   { T_EOF (tk lexbuf) }
-
 
 (*****************************************************************************)
 (* Comments *)
