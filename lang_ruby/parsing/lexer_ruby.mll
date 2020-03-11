@@ -457,7 +457,7 @@ and top_lexer state = parse
   (* Constant *)
   (* ----------------------------------------------------------------------- *)
 
-  | num { postfix_numeric Utils.id (Lexing.lexeme lexbuf) state lexbuf }
+  | num { postfix_numeric Utils.id (tok lexbuf) (tk lexbuf) state lexbuf }
 
   (* ----------------------------------------------------------------------- *)
   (* Strings *)
@@ -596,11 +596,11 @@ and space_uop uop spc_uop binop state = parse
          }
 
 and uop_minus_lit state = parse
-  | num { postfix_numeric negate_numeric (Lexing.lexeme lexbuf) state lexbuf}
+  | num { postfix_numeric negate_numeric (tok lexbuf) (tk lexbuf) state lexbuf}
   | e   { t_uminus state lexbuf}
 
 and uop_plus_lit state = parse
-  | num { postfix_numeric Utils.id (Lexing.lexeme lexbuf) state lexbuf}
+  | num { postfix_numeric Utils.id (tok lexbuf) (tk lexbuf) state lexbuf}
   | e   { t_uplus state lexbuf}
 
 
@@ -669,39 +669,39 @@ and dollar state = parse
 (* postfix_numeric *)
 (*****************************************************************************)
 
-and postfix_numeric cont start state = parse
+and postfix_numeric f start t state = parse
   | "b" (['0''1''_']+ as num)
       { S.end_state state; 
-        cont (convert_to_base10 ~base:2 num (tk lexbuf))}
+        f (convert_to_base10 ~base:2 num (add_to_tok lexbuf t))}
 
   | ('o'|'O') ((num|'_')+ as num)
       { S.end_state state; 
-        cont (convert_to_base10 ~base:8 num (tk lexbuf))}
+        f (convert_to_base10 ~base:8 num (add_to_tok lexbuf t))}
 
   | "x" ((num|['a'-'f''A'-'F''_'])+ as num)
       { S.end_state state; 
-        cont (convert_to_base10 ~base:16 num (tk lexbuf))}
+        f (convert_to_base10 ~base:16 num (add_to_tok lexbuf t))}
 
   | (num|'_')* as num
       { S.end_state state;
         if start = "0" 
-        then cont (convert_to_base10 ~base:8 num (tk lexbuf))
+        then f (convert_to_base10 ~base:8 num (add_to_tok lexbuf t))
         else 
           let str = (start ^ num) in
           let num = to_bignum str in
           let tok = 
             if Big_int.is_int_big_int num
-            then T_FIXNUM(Big_int.int_of_big_int num, (tk lexbuf))
-            else T_BIGNUM(num, (tk lexbuf))
-          in cont tok
+            then T_FIXNUM(Big_int.int_of_big_int num, (add_to_tok lexbuf t))
+            else T_BIGNUM(num, (add_to_tok lexbuf t))
+          in f tok
       }
 
   | post_rubyfloat
       { S.end_state state;
         let str = (start ^ (Lexing.lexeme lexbuf)) in
         let str = remove_underscores str in
-        let tok = T_FLOAT(str, float_of_string (str), (tk lexbuf)) in
-          cont tok
+        let tok = T_FLOAT(str, float_of_string (str), (add_to_tok lexbuf t)) in
+        f tok
       }
 
 (*****************************************************************************)
