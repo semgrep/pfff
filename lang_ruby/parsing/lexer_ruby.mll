@@ -764,13 +764,13 @@ and char_code_work = parse
   | "\\C-\\M-" (['a'-'z''A'-'Z'] as c)
       { T_FIXNUM((Char.code (Char.uppercase_ascii c)) + 64, (tk lexbuf))}
 
-  | "\\\\" {T_FIXNUM(Char.code '\\', (tk lexbuf))}
-  | "\\s" {T_FIXNUM(Char.code ' ', (tk lexbuf))}
-  | "\\n" {T_FIXNUM(Char.code '\n', (tk lexbuf))}
-  | "\\t" {T_FIXNUM(Char.code '\t', (tk lexbuf))}
-  | "\\r" {T_FIXNUM(Char.code '\r', (tk lexbuf))}
-  | "\\(" {T_FIXNUM(Char.code '(', (tk lexbuf))}
-  | "\\)" {T_FIXNUM(Char.code ')', (tk lexbuf))}
+  | "\\\\" { T_FIXNUM(Char.code '\\', (tk lexbuf))}
+  | "\\s"  { T_FIXNUM(Char.code ' ', (tk lexbuf))}
+  | "\\n"  { T_FIXNUM(Char.code '\n', (tk lexbuf))}
+  | "\\t"  { T_FIXNUM(Char.code '\t', (tk lexbuf))}
+  | "\\r"  { T_FIXNUM(Char.code '\r', (tk lexbuf))}
+  | "\\("  { T_FIXNUM(Char.code '(', (tk lexbuf))}
+  | "\\)"  { T_FIXNUM(Char.code ')', (tk lexbuf))}
 
 (*****************************************************************************)
 (* Strings *)
