@@ -2,6 +2,7 @@ open Common
 
 module PI = Parse_info
 module Flag = Flag_parsing
+module TH = Token_helpers_ruby
 
 (*****************************************************************************)
 (* Subsystem testing *)
@@ -23,11 +24,17 @@ let test_tokens file =
   Parser_ruby_helpers.clear_env ();
   let env = Utils_ruby.default_opt Utils_ruby.StrSet.empty None in
   Parser_ruby_helpers.set_env env ;
+
   let lexerf = Lexer_ruby.token state in
   let lexerf = fun lexbuf ->
-      let res = lexerf lexbuf in
-      pr2_gen res;
-      res
+      let rec aux lexbuf = 
+        let res = lexerf lexbuf in
+        pr2_gen res;
+        if TH.is_comment res
+        then aux lexbuf
+        else res
+      in
+      aux lexbuf
   in
   let _lst = Parser_ruby.main lexerf lexbuf in
   ()
@@ -51,7 +58,7 @@ let test_parse xs =
     let (_xs, stat) =
      Common.save_excursion Flag.error_recovery true (fun () ->
      Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
-     Common.save_excursion Flag.show_parsing_error false (fun () ->
+     Common.save_excursion Flag.show_parsing_error true (fun () ->
         Parse_ruby.parse file
     ))) in
 
