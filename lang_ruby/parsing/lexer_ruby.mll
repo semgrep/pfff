@@ -110,8 +110,8 @@ let t_lbrace s lb     = S.beg_state s; T_LBRACE (tk lb)
 let t_lbrace_arg s lb = S.beg_state s; T_LBRACE_ARG (tk lb)
 let t_percent s lb    = S.beg_state s; T_PERCENT (tk lb)
 let t_lshft s lb      = S.beg_state s; T_LSHFT (tk lb)
-let t_colon s lb      = S.beg_state s; T_COLON (tk lb)
 
+let t_colon t s _lb      = S.beg_state s; T_COLON t
 let t_eol t s _lb        = S.beg_state s; T_EOL t
 
 (* For atom lexer.
@@ -443,7 +443,8 @@ and top_lexer state = parse
   | "..." {S.beg_state state;T_DOT3 (tk lexbuf)}
   | ".."  {S.beg_state state;T_DOT2 (tk lexbuf)}
 
-  | ":" {on_end t_colon atom state lexbuf}
+  | ":"   { let t = tk lexbuf in
+            on_end (t_colon t) (atom t) state lexbuf }
 
   | ws+ "::" { T_USCOPE (tk lexbuf) }
   |     "::" { on_beg t_uscope t_scope state lexbuf }
@@ -708,35 +709,40 @@ and postfix_numeric f start t state = parse
 (* atom *)
 (*****************************************************************************)
 
-and atom state = parse
+and atom t state = parse
   | ['+' '-' '*' '/' '!' '~' '<' '>' '=' '&' '|' '%' '^' '@']+ 
   | '[' ']' ('='?) (* these can only appear together like this (I think) *)
-  | '`' {end_state_unless_afterdef state; 
-         T_ATOM((contents_of_str (Lexing.lexeme lexbuf)), (tk lexbuf)) }
+  | '`' 
+    { end_state_unless_afterdef state; 
+      T_ATOM((contents_of_str (tok lexbuf)), (add_to_tok lexbuf t)) }
 
   | '$'
-      { let str = match dollar state lexbuf with
+     { let str = 
+         match dollar state lexbuf with
           | T_GLOBAL_VAR(s,_p) -> s
           | T_BUILTIN_VAR(s,_p) -> s
           | _ -> assert false
-        in end_state_unless_afterdef state; 
-          T_ATOM(contents_of_str str, (tk lexbuf)) }
+        in 
+        end_state_unless_afterdef state; 
+        T_ATOM(contents_of_str str, (add_to_tok lexbuf t)) }
 
   | ('@'* id) '='?
-      {end_state_unless_afterdef state; 
-       T_ATOM((contents_of_str (Lexing.lexeme lexbuf)), (tk lexbuf)) }
-  | '"'  {end_state_unless_afterdef state;
-          emit_extra (T_ATOM_BEG (tk lexbuf))
-            (interp_string_lexer '"') state lexbuf}
+      { end_state_unless_afterdef state; 
+        T_ATOM((contents_of_str (tok lexbuf)), (add_to_tok lexbuf t)) }
+  | '"'  
+      { end_state_unless_afterdef state;
+        emit_extra (T_ATOM_BEG (add_to_tok lexbuf t))
+        (interp_string_lexer '"') state lexbuf }
 
-  | '\''  {end_state_unless_afterdef state;
-           emit_extra (T_ATOM_BEG (tk lexbuf))
-             (non_interp_string '\'' (Buffer.create 31)) state lexbuf}
+  | '\''  
+      { end_state_unless_afterdef state;
+        emit_extra (T_ATOM_BEG (add_to_tok lexbuf t))
+        (non_interp_string '\'' (Buffer.create 31)) state lexbuf }
 
-  | nl  { t_colon state lexbuf}
-
+  (* TODO: miss space and newline tokens here, yyback? *)
+  | nl   { t_colon t state lexbuf }
   | ws
-  | e     {t_colon state lexbuf}
+  | e    { t_colon t state lexbuf}
 
 (*****************************************************************************)
 (* char_code *)
