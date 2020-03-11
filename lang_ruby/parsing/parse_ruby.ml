@@ -58,7 +58,8 @@ let error_msg_tok tok =
 let mk_lexer file chan =
 
   let lexbuf = Lexing.from_channel chan in
-  let state = Lexer_parser_ruby.create Lexer_ruby.top_lexer in 
+  let state = Lexer_parser_ruby.create
+      ("top_lexer", Lexer_ruby.top_lexer) in 
 
   let table     = Parse_info.full_charpos_to_pos_large file in
 

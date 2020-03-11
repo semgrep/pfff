@@ -26,11 +26,14 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *)
+open Common
+module Flag = Flag_parsing
+module PI = Parse_info
+
 open Parser_ruby (* the tokens *)
 module S2 = Parser_ruby_helpers
 module S = Lexer_parser_ruby
 module Utils = Utils_ruby
-module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude *)
@@ -63,7 +66,7 @@ let emit_extra tok k = fun state lexbuf ->
     pop_lexer state;
     k state lexbuf
   in
-  Stack.push once state.S.lexer_stack;
+  Stack.push ("once" ^ Common.dump tok, once) state.S.lexer_stack;
   tok
 
 (* helper for transitioning between states *)
@@ -286,8 +289,10 @@ let e = "" (* epsilon *)
 
 rule token state = parse
   | e { if S2.begin_override() then S.beg_state state;
+        if !Flag.debug_lexer 
+        then pr2 (Lexer_parser_ruby.string_of_t state);
         (* running the current lexer *)
-        let current = Stack.top state.S.lexer_stack in
+        let (_, current) = Stack.top state.S.lexer_stack in
         current state lexbuf 
        }
 
@@ -771,7 +776,7 @@ and regexp_delim delim_f escape_f buf state = parse
         pop_lexer state;
         regexp_modifier state lexbuf
       in
-        Stack.push k state.S.lexer_stack;
+        Stack.push ("k in regexp_delim", k) state.S.lexer_stack;
         S.end_state state;
         emit_extra (T_REGEXP_BEG (tk lexbuf))
           (interp_lexer fail_eof delim_f escape_f buf) state lexbuf
@@ -901,6 +906,6 @@ and interp_code start cont state = parse
                end
            | tok -> tok
        in
-       Stack.push k state.S.lexer_stack;
+       Stack.push ("k in interp_code", k) state.S.lexer_stack;
        start
       }
