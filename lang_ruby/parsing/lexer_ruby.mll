@@ -967,5 +967,3 @@ and interp_heredoc_lexer state = parse
          let nope _  = false in
          interp_lexer2 f nope nope (Buffer.create 31) state lexbuf
       }
-
-
