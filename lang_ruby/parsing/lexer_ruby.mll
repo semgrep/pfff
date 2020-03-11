@@ -39,6 +39,10 @@ module Utils = Utils_ruby
 (* Prelude *)
 (*****************************************************************************)
 (* The Ruby lexer.
+ *
+ * TODO:
+ *  - simplify the lexer state and use a regular stack of states as in
+ *    lexer_php.mll instead of all those continuations?
  *)
 
 (*****************************************************************************)
@@ -66,7 +70,7 @@ let emit_extra tok k = fun state lexbuf ->
     pop_lexer state;
     k state lexbuf
   in
-  Stack.push ("once" ^ Common.dump tok, once) state.S.lexer_stack;
+  Stack.push ("once-" ^ Common.dump tok, once) state.S.lexer_stack;
   tok
 
 (* helper for transitioning between states *)
@@ -309,12 +313,19 @@ and top_lexer state = parse
   | "=begin" [^'\n']* '\n' 
            { S.beg_state state; 
              delim_comment (tk lexbuf) state lexbuf }
-  | "\\\n" { emit_extra (T_SPACE (tk lexbuf))
-             top_lexer state lexbuf}
-  | nl     { t_eol (tk lexbuf) state lexbuf}
-  | ws+    { (* emit_extra (T_SPACE (tk lexbuf)) *)
-             top_lexer state lexbuf }
   | "__END__"  { end_lexbuf (tk lexbuf) state lexbuf }
+
+  | nl     { t_eol (tk lexbuf) state lexbuf}
+  | ws+    { emit_extra (T_SPACE (tk lexbuf))
+             (* bugfix: we were passing top_lexer, but this does not work
+              * because when called from interp_code, we don't want to
+              * run after top_lexer, we want to run interp_code, that is
+              * the "current" lexer (triggered by token())
+              * which will treat '}' specially.
+              *)
+             token state lexbuf }
+  | "\\\n" { emit_extra (T_SPACE (tk lexbuf))
+             token state lexbuf}
 
   (* ----------------------------------------------------------------------- *)
   (* symbols *)
@@ -904,7 +915,8 @@ and interp_code start cont state = parse
                  decr level;
                  tok
                end
-           | tok -> tok
+           | tok -> 
+               tok
        in
        Stack.push ("k in interp_code", k) state.S.lexer_stack;
        start
