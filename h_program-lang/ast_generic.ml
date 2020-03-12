@@ -939,7 +939,7 @@ and directive =
   and other_directive_operator = 
   (* Javascript *)
   | OI_Export 
-  | OI_ImportCss | OI_ImportEffect
+  | OI_ImportCss | OI_ImportEffect (* less: not used anymore *)
   (* C/PHP *)
   (* TODO: Pragma/Declare, move OE_UseStrict here for JS? *)
 

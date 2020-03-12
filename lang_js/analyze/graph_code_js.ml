@@ -367,7 +367,7 @@ and module_directive env x =
       let s = s_of_n name in
       Hashtbl.replace env.vars s true;
   | ImportCss (_file) -> ()
-  | ImportEffect (_file) -> ()
+  | ImportEffect (_, _file) -> ()
 
 and toplevels env xs = List.iter (toplevel env) xs
 

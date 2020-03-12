@@ -155,9 +155,11 @@ and module_item env = function
 
 and import env = function
   | C.ImportEffect ((file, tok)) ->
+     (* TODO: reusing the tok of the file for the import kwd, bad *)
+     let t0 = tok in
      if file =~ ".*\\.css$"
      then [A.ImportCss (file, tok)]
-     else [A.ImportEffect (file, tok)]
+     else [A.ImportEffect (t0, (file, tok))]
   | C.ImportFrom ((default_opt, names_opt), (tok, path)) ->
     let file = path_to_file path in
     (match default_opt with
