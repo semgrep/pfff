@@ -711,10 +711,9 @@ and v_program v = v_list v_module_item v
 and v_any =  function
   | Expr v1 -> let v1 = v_expr v1 in ()
   | Stmt v1 -> let v1 = v_st v1 in ()
-  | Stmts v1 -> let v1 = v_list v_st v1 in ()
   | Pattern v1 -> let v1 = v_pattern v1 in ()
-  | Item v1 -> let v1 = v_item v1 in ()
-  | Items v1 -> let v1 = v_list v_item v1 in ()
+  | ModuleItem v1 -> let v1 = v_module_item v1 in ()
+  | ModuleItems v1 -> let v1 = v_list v_module_item v1 in ()
   | Program v1 -> let v1 = v_program v1 in ()
 
 and all_functions x = v_any x

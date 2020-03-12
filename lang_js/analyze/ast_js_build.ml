@@ -81,7 +81,7 @@ let first_tok_of_item x =
   begin
     let vout = Visitor_js.mk_visitor hooks in
     try 
-      vout (C.Item x);
+      vout (C.ModuleItem (C.It x));
       failwith "first_to_of_item: could not find a token";
     with Found tok -> tok
   end
@@ -408,6 +408,11 @@ and stmt env = function
     let finally_opt = opt (fun env (t, st) -> t, stmt1 env st) env finally_opt in
     [A.Try (t, st, catchopt, finally_opt)]
 
+(* note that this should be avoided as much as possible for sgrep, because
+ * what was before a simple sequence of stmts in the same block can suddently
+ * be in different blocks.
+ * Use stmt_item_list when you can!
+ *)
 and stmt_of_stmts xs = 
   match xs with
   | [] -> A.Block []
@@ -848,8 +853,13 @@ let any x =
   match x with
   | C.Expr x -> A.Expr (expr env x)
   | C.Stmt x -> A.Stmt (stmt1 env x)
-  | C.Stmts x -> A.Stmts (List.map (stmt1 env) x)
-  | C.Items x -> A.Stmts (stmt_item_list env x)
   | C.Pattern _x -> raise Todo
-  | C.Item x -> A.Stmt (stmt1_item_list env [x])
+  (* todo? module_item1_list env [x] *)
+  | C.ModuleItem x -> 
+      (match module_item env x with
+      | [x] -> A.Item x
+      | xs -> A.Items xs
+      )
+  (* todo? module_item_list env [x] *)
+  | C.ModuleItems x -> A.Items (module_items env x)
   | C.Program _x -> raise Todo
