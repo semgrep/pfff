@@ -646,9 +646,9 @@ and
 and v_directive x =
   let k x = 
   match x with
-  | ImportFrom ((t, v1, v2)) ->
+  | ImportFrom ((t, v1, v2, v3)) ->
       let t = v_tok t in
-      let v1 = v_module_name v1 and v2 = v_option v_alias v2 in ()
+      let v1 = v_module_name v1 and _ = v_alias (v2, v3) in ()
   | ImportAs ((t, v1, v2)) ->
       let t = v_tok t in
       let v1 = v_module_name v1 and v2 = v_option v_ident v2 in ()

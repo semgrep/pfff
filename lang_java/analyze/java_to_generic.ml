@@ -517,7 +517,7 @@ and import = function
   | ImportAll (t, xs, tok) -> G.ImportAll (t, G.DottedName xs, tok)
   | ImportFrom (t, xs, id) -> 
       let id = ident id in
-      G.ImportFrom (t, G.DottedName xs, (Some (id, None)))
+      G.ImportFrom (t, G.DottedName xs, id, None)
 
 
 let package (t, qu) = 
