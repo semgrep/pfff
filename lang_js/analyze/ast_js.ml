@@ -312,8 +312,8 @@ type module_directive =
   | ModuleAlias of tok * name * filename (* import * as 'name' from 'file' *)
 
   | ImportCss of filename
-  (* those should not exist *)
-  | ImportEffect of filename
+  (* those should not exist (except for sgrep where they are useful) *)
+  | ImportEffect of tok * filename
 
 (* ------------------------------------------------------------------------- *)
 (* Toplevel *)
