@@ -547,11 +547,14 @@ and import { i_path = i_path; i_kind = i_kind; i_tok } =
   let (s,tok) = i_path in
   import_kind i_tok i_kind module_name (Filename.basename s, tok)
   
-and import_kind itok kind module_name id =
+and import_kind itok kind module_name _id_no_more_used =
   match kind with
   | ImportOrig -> 
-     (* in Go, import "a/b/c" is really equivalent to import c "a/b/c" *)
-      G.ImportAs (itok, module_name, Some id)
+     (* old: in Go, import "a/b/c" is really equivalent to import c "a/b/c",
+      * but we don't do return anymore G.ImportAs (itok, module_name, Some id)
+      * otherwise sgrep can not know if an alias was explicitely given or not
+      *)
+      G.ImportAs (itok, module_name, None)
   | ImportNamed v1 -> let v1 = ident v1 in 
       G.ImportAs (itok, module_name, Some v1)
   | ImportDot v1 -> let v1 = tok v1 in 
