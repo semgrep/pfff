@@ -629,10 +629,9 @@ and export =
 type any =
   | Expr of expr
   | Stmt of stmt
-  | Stmts of stmt list
   | Pattern of pattern
-  | Item of item
-  | Items of item list
+  | ModuleItem of module_item
+  | ModuleItems of module_item list
   | Program of program
  (* with tarzan *)
 
