@@ -142,6 +142,29 @@ let adjust_signatures params =
     in
     aux [] params
 
+(* bugfix: the parser used to add some extra Empty at the end of some Block
+ * because of the way Go handles semicolons (see tests/go/misc_empty.go).
+ * Indeed stmt_list accept ';' as a separator (and with ASI it can even
+ * be ommitted), but to allow also ';' as a terminator, the grammar
+ * allow empty stmt. This does not interact well with sgrep because
+ * a pattern like 'foo(); bar();' will implicitely have an Empty
+ * at the end which will prevent it to match many things. This is why
+ * we remove those implicitely added Empty.
+ *)
+let rev_and_fix_stmts xs =
+  List.rev (
+    match xs with
+    | Empty::xs -> xs
+    | _ -> xs
+  )
+
+let rev_and_fix_items xs =
+  List.rev (
+    match xs with
+    | IStmt Empty::xs -> xs
+    | _ -> xs
+  )
+
 %}
 
 /*(*************************************************************************)*/
@@ -270,7 +293,7 @@ sgrep_spatch_pattern:
     *)*/
  | item            EOF       { item1 $1 }
  | item LSEMICOLON item LSEMICOLON item_list EOF 
-    { Items ($1 @ $3 @ List.rev $5) }
+    { Items ($1 @ $3 @ rev_and_fix_items $5) }
 
 item: 
  | stmt   { [IStmt $1] }
@@ -356,12 +379,17 @@ typedcl:
 /*(*************************************************************************)*/
 
 stmt:
+/*(* stmt_list requires ; as a separator, so Go allows empty stmt
+   * so that it can also be used as a terminator (hacky).
+   * See rev_and_fix_stmts for more information.
+   *)*/
 | /*(*empty*)*/   { Empty }
+
 | compound_stmt   { $1 }
 | common_dcl      { DeclStmts $1 }
 | non_dcl_stmt    { $1 }
 
-compound_stmt: LBRACE stmt_list RBRACE { Block (List.rev $2) }
+compound_stmt: LBRACE stmt_list RBRACE { Block (rev_and_fix_stmts $2) }
 
 non_dcl_stmt:
 |   simple_stmt { SimpleStmt $1 }
@@ -436,7 +464,7 @@ for_stmt:
     { Range ($1, None, $2, $3, $4) }
 
 
-loop_body: LBODY stmt_list RBRACE { Block (List.rev $2) }
+loop_body: LBODY stmt_list RBRACE { Block (rev_and_fix_stmts $2) }
 
 
 /*(* split in 2, switch expr and switch types *)*/
@@ -874,12 +902,12 @@ fndcl:
     }
 
 fnbody:
-|  /*(*empty *)*/          {  Empty }
-|  LBRACE stmt_list RBRACE { Block (List.rev $2) }
+|  /*(*empty *)*/          { Empty }
+|  LBRACE stmt_list RBRACE { Block (rev_and_fix_stmts $2) }
 
 
 fnliteral: fnlitdcl lbrace stmt_list RBRACE 
-    { FuncLit ($1, stmt1 (List.rev $3)) }
+    { FuncLit ($1, stmt1 (rev_and_fix_stmts $3)) }
 
 fnlitdcl: fntype { $1 }
 
