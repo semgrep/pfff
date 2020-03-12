@@ -332,10 +332,10 @@ and toplevel env x =
 
 and module_directive env x =
   match x with
-  | Import (_, name1, name2, (file, tok)) ->
+  | Import (_, name1, name2opt, (file, tok)) ->
     if env.phase = Uses then begin
       let str1 = s_of_n name1 in
-      let str2 = s_of_n name2 in
+      let str2_opt = Common.map_opt s_of_n name2opt in
       let path_opt = Module_path_js.resolve_path
         ~root:env.root
         ~pwd:(Filename.dirname env.file_readable)
@@ -348,7 +348,9 @@ and module_directive env x =
           spf "NOTFOUND-|%s|.js" file
         | Some fullpath -> Common.readable env.root fullpath
       in
-      Hashtbl.replace env.imports str2 (mk_qualified_name readable str1)
+      str2_opt |> Common.do_option (fun str2 ->
+        Hashtbl.replace env.imports str2 (mk_qualified_name readable str1)
+      )
     end
   | Export (name) -> 
      if env.phase = Defs then begin
@@ -367,7 +369,7 @@ and module_directive env x =
       let s = s_of_n name in
       Hashtbl.replace env.vars s true;
   | ImportCss (_file) -> ()
-  | ImportEffect (_file) -> ()
+  | ImportEffect (_, _file) -> ()
 
 and toplevels env xs = List.iter (toplevel env) xs
 

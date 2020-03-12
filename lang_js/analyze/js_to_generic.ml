@@ -386,17 +386,21 @@ let rec toplevel x =
 and module_directive x = 
   match x with
   | Import ((t, v1, v2, v3)) ->
-      let v1 = name v1 and v2 = name v2 and v3 = filename v3 in 
-      G.ImportFrom (t, G.FileName v3, v1, Some v2)
+      let v1 = name v1 and v2 = option name v2 and v3 = filename v3 in 
+      G.ImportFrom (t, G.FileName v3, v1, v2)
   | ModuleAlias ((t, v1, v2)) ->
       let v1 = name v1 and v2 = filename v2 in
       G.ImportAs (t, G.FileName v2, Some v1)
   | ImportCss ((v1)) ->
       let v1 = name v1 in
       G.OtherDirective (G.OI_ImportCss, [G.I v1])
-  | ImportEffect ((v1)) ->
+  (* sgrep: we used to convert this in an OI_ImportEffect, but
+   * we now want import "foo" to be used to match any form of import
+   *)
+  | ImportEffect ((t, v1)) ->
       let v1 = name v1 in
-      G.OtherDirective (G.OI_ImportEffect, [G.I v1])
+      (* old: G.OtherDirective (G.OI_ImportEffect, [G.I v1]) *)
+      G.ImportAs (t, G.FileName v1, None)
   | Export ((v1)) -> let v1 = name v1 in
       G.OtherDirective (G.OI_Export, [G.I v1])
 
