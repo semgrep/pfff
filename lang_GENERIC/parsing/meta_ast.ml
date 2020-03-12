@@ -947,11 +947,11 @@ and vof_class_kind =
   | Trait -> Ocaml.VSum (("Trait", []))
 and vof_directive =
   function
-  | ImportFrom ((t, v1, v2)) ->
+  | ImportFrom ((t, v1, v2, v3)) ->
       let t = vof_tok t in
       let v1 = vof_module_name v1
-      and v2 = vof_alias v2
-      in Ocaml.VSum (("ImportFrom", [ t; v1; v2 ]))
+      and v2, v3 = vof_alias (v2, v3)
+      in Ocaml.VSum (("ImportFrom", [ t; v1; v2; v3 ]))
   | ImportAs ((t, v1, v2)) ->
       let t = vof_tok t in
       let v1 = vof_module_name v1
@@ -976,7 +976,7 @@ and vof_directive =
 and vof_alias (v1, v2) =
   let v1 = vof_ident v1
   and v2 = Ocaml.vof_option vof_ident v2
-  in Ocaml.VTuple [ v1; v2 ]
+  in v1, v2
 and vof_other_directive_operator =
   function
   | OI_Export -> Ocaml.VSum (("OI_Export", []))

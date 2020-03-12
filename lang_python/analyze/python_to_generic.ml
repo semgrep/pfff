@@ -534,8 +534,8 @@ and stmt_aux x =
       let v1 = module_name v1
       and v2 = list alias v2
       in
-      List.map (fun (import_alias) -> 
-        G.DirectiveStmt (G.ImportFrom (t, v1, import_alias))
+      List.map (fun (a, b) -> 
+        G.DirectiveStmt (G.ImportFrom (t, v1, a, b))
       ) v2
 
   | Global (t, v1) | NonLocal (t, v1)

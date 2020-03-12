@@ -743,11 +743,11 @@ and map_class_kind =
 
 and map_directive =
   function
-  | ImportFrom ((t, v1, v2)) ->
+  | ImportFrom ((t, v1, v2, v3)) ->
       let t = map_tok t in
       let v1 = map_module_name v1
-      and v2 = map_alias v2
-      in ImportFrom ((t, v1, v2))
+      and v2, v3 = map_alias (v2, v3)
+      in ImportFrom ((t, v1, v2, v3))
   | ImportAs ((t, v1, v2)) ->
       let t = map_tok t in
       let v1 = map_module_name v1
