@@ -917,9 +917,8 @@ and macro_definition = {
 and directive = 
   (* newvar: *)
   | ImportFrom of tok (* 'import'/'from' for Python, 'include' for C *) * 
-                  module_name * alias
-  (* less: unfold the alias list? *)
-  | ImportAs   of tok * module_name * ident option (* as name *)
+                  module_name * ident * alias option (* as name alias *)
+  | ImportAs   of tok * module_name * alias option (* as name *)
   (* bad practice! hard to resolve name locally *)
   | ImportAll  of tok * module_name * tok (* '.' in Go, '*' in Java/Python *)
 
@@ -935,7 +934,7 @@ and directive =
 
   | OtherDirective of other_directive_operator * any list
 
-  and alias = ident * ident option (* as name *)
+  and alias = ident (* as name *)
 
   and other_directive_operator = 
   (* Javascript *)
