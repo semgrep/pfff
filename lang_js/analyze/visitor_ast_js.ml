@@ -275,7 +275,7 @@ and v_module_directive x =
   match x with
   | Import ((t, v1, v2, v3)) ->
       let t = v_tok t in
-      let v1 = v_name v1 and v2 = v_name v2 and v3 = v_filename v3 in ()
+      let v1 = v_name v1 and v2 = v_option v_name v2 and v3 = v_filename v3 in ()
   | ImportCss ((v1)) ->
       let v1 = v_name v1 in ()
   | ImportEffect ((v0, v1)) ->
