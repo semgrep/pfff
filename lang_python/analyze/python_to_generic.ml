@@ -535,7 +535,7 @@ and stmt_aux x =
       and v2 = list alias v2
       in
       List.map (fun (import_alias) -> 
-        G.DirectiveStmt (G.ImportFrom (t, v1, Some import_alias))
+        G.DirectiveStmt (G.ImportFrom (t, v1, import_alias))
       ) v2
 
   | Global (t, v1) | NonLocal (t, v1)

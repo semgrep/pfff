@@ -746,7 +746,7 @@ and map_directive =
   | ImportFrom ((t, v1, v2)) ->
       let t = map_tok t in
       let v1 = map_module_name v1
-      and v2 = map_of_option map_alias v2
+      and v2 = map_alias v2
       in ImportFrom ((t, v1, v2))
   | ImportAs ((t, v1, v2)) ->
       let t = map_tok t in
