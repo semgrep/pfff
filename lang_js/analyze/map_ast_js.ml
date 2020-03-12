@@ -327,7 +327,7 @@ and map_module_directive =
   | Import ((t, v1, v2, v3)) ->
       let t = map_tok t in
       let v1 = map_name v1
-      and v2 = map_name v2
+      and v2 = map_of_option map_name v2
       and v3 = map_filename v3
       in Import ((t, v1, v2, v3))
   | ImportCss ((v1)) ->

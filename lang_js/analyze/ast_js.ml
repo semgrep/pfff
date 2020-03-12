@@ -304,8 +304,7 @@ type module_directive =
    * when you do 'import "react"' to get a resolved path).
    * See Module_path_js to resolve paths.
    *)
-  | Import of tok * name * name (* 'name1 as name2', often name1=name2 *) * 
-      filename
+  | Import of tok * name * name option (* 'name1 as name2' *) * filename
   | Export of name
 
   (* hard to unsugar in Import because we do not have the list of names *)

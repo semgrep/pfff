@@ -164,7 +164,7 @@ and import env = function
     let file = path_to_file path in
     (match default_opt with
     | Some n -> 
-       [A.Import (tok, (A.default_entity, snd n),  name env n, file)]
+       [A.Import (tok, (A.default_entity, snd n),  Some (name env n), file)]
     | None -> []
     ) @
     (match names_opt with
@@ -179,8 +179,8 @@ and import env = function
            let n1 = name env n1 in
            let n2 = 
               match n2opt with
-              | None -> n1
-              | Some (_, n2) -> name env n2
+              | None -> None
+              | Some (_, n2) -> Some (name env n2)
            in
            A.Import (tok, n1, n2, file)
          )
@@ -229,7 +229,7 @@ and export env tok = function
      let n1 = name env n1 in
      let tmpname = ("!tmp_" ^ fst n1, snd n1) in
      let file = path_to_file path in
-     let import = A.Import (tok, n1, tmpname, file) in
+     let import = A.Import (tok, n1, Some tmpname, file) in
      let id = A.Id (tmpname, not_resolved()) in
      match n2opt with
      | None -> 
