@@ -948,9 +948,10 @@ let vof_any_orig =
   function
   | Expr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Expr", [ v1 ]))
   | Stmt v1 -> let v1 = vof_st v1 in Ocaml.VSum (("Stmt", [ v1 ]))
-  | Stmts v1 -> let v1 = Ocaml.vof_list vof_st v1 in Ocaml.VSum (("Stmts", [ v1 ]))
-  | Item v1 -> let v1 = vof_item v1 in Ocaml.VSum (("Item",[v1 ]))
-  | Items v1 -> let v1 = Ocaml.vof_list vof_item v1 in Ocaml.VSum (("Items",[v1 ]))
+  | ModuleItem v1 -> let v1 = vof_module_item v1 in 
+      Ocaml.VSum (("ModuleItem",[v1 ]))
+  | ModuleItems v1 -> let v1 = Ocaml.vof_list vof_module_item v1 in 
+      Ocaml.VSum (("ModuleItems",[v1 ]))
   | Pattern v1 -> let v1 = vof_pattern v1 in Ocaml.VSum (("Pattern",[v1 ]))
   | Program v1 -> let v1 = vof_program_orig v1 in Ocaml.VSum (("Program",[v1]))
 

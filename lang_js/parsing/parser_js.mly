@@ -254,8 +254,13 @@ declaration:
 
 sgrep_spatch_pattern:
  | assignment_expression_no_statement EOF      { Expr $1 }
- | item_no_dots EOF                            { Item $1 }
- | item_no_dots statement_sgrep_list EOF       { Items ($1::$2) }
+ | module_item_no_dots EOF                          { ModuleItem $1 }
+ | module_item_no_dots module_item_sgrep_list EOF   { ModuleItems ($1::$2) }
+
+module_item_no_dots:
+ | item_no_dots { It $1 }
+ | import_declaration { Import $1 }
+ | export_declaration { Export $1 }
 
 item_no_dots:
  | statement_no_dots { St $1 }
@@ -278,13 +283,9 @@ statement_no_dots:
  | throw_statement      { $1 }
  | try_statement        { $1 }
 
-statement_sgrep:
- | statement { St $1 }
- | declaration  { $1 }
-
-statement_sgrep_list:
- | statement_sgrep { [$1] }
- | statement_sgrep_list statement_sgrep { $1 @ [$2] }
+module_item_sgrep_list:
+ | module_item { [$1] }
+ | module_item_sgrep_list module_item { $1 @ [$2] }
 
 /*(*************************************************************************)*/
 /*(*1 Namespace *)*/
