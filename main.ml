@@ -10,7 +10,9 @@ open Common
 (* A "driver" for the different parsers in pfff.
  * 
  * Also useful to dump the CST or AST of a language (-dump_xxx).
- * related: https://astexplorer.net/, supports many languages, many parsers
+ *
+ * related: 
+ *  - https://astexplorer.net/, supports many languages, many parsers
  *)
 
 (*****************************************************************************)
@@ -96,6 +98,7 @@ let all_actions () =
 
   Test_parsing_sql.actions()@
 
+  Test_parsing_generic.actions() @
 (*
   Test_analyze_cpp.actions () ++
   Test_analyze_php.actions () ++
@@ -108,8 +111,11 @@ let all_actions () =
 let options () = [
   "-verbose", Arg.Set verbose, 
   " ";
-  "-lang", Arg.Set_string lang, 
-  (spf " <str> choose language (default = %s)" !lang);
+  "-lang", Arg.String (fun s ->
+    lang := s;
+    (* a big ugly *)
+    Test_parsing_generic.lang := s;
+  ), (spf " <str> choose language (default = %s)" !lang);
   ] @
   Flag_parsing.cmdline_flags_verbose () @
   Flag_parsing.cmdline_flags_debugging () @
