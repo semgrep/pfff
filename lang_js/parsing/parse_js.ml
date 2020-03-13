@@ -332,6 +332,9 @@ let (program_of_string: string -> Cst_js.program) = fun s ->
 let any_of_string s = 
   Common2.with_tmp_file ~str:s ~ext:"js" (fun file ->
     let toks = tokens file in
+    (* TODO? run the parsing hack fixes? ASI  
+     * introduce lots of regressions in sgrep make test?
+     *)
     let _tr, lexer, lexbuf_fake = PI.mk_lexer_for_yacc toks TH.is_comment in
     Parser_js.sgrep_spatch_pattern lexer lexbuf_fake
   )
