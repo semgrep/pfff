@@ -60,6 +60,18 @@ let fake_tok s = {
   transfo = Parse_info.NoTransfo;
 }
 
+(* ugly, but in a sgrep pattern, anonymous functions are parsed as a toplevel
+ * function declaration (because 'function_declaration' accepts identifier_opt,
+ * see its comment to see the reason), which then causes an exception
+ * in Ast_js_build which does not accept anonymous toplevel function.
+ * This is why we intercept this case by returning instead an Expr pattern.
+ *)
+let fix_sgrep_module_item x =
+  match x with
+  | It (FunDecl ({ f_kind = F_func (_, None); _ } as decl)) ->
+      Expr (Function decl)
+  | _ -> ModuleItem x
+
 %}
 
 /*(*************************************************************************)*/
@@ -217,7 +229,7 @@ main: program EOF { $1 }
 
 program: module_item_list_opt { $1 }
 
-
+/*(* parse item by item, to allow error recovery and skipping some code *)*/
 module_item_or_eof:
  | module_item { Some $1 }
  | EOF { None }
@@ -253,8 +265,8 @@ declaration:
 /*(*************************************************************************)*/
 
 sgrep_spatch_pattern:
- | assignment_expression_no_statement EOF      { Expr $1 }
- | module_item_no_dots EOF                          { ModuleItem $1 }
+ | assignment_expression_no_statement EOF           { Expr $1 }
+ | module_item_no_dots EOF                          { fix_sgrep_module_item $1}
  | module_item_no_dots module_item_sgrep_list EOF   { ModuleItems ($1::$2) }
 
 module_item_no_dots:
