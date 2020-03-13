@@ -405,7 +405,7 @@ and func_decl = {
 }
 
   and func_kind =
-    (* None for anonymous functions (in expressions or 'export default' decl) *)
+    (* None for anonymous functions (in expressions or 'export default' decl)*)
     | F_func of tok * name option
     | F_method of property_name
     | F_get of tok * property_name
