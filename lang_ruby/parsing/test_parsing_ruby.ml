@@ -93,10 +93,12 @@ let test_parse xs =
 
 
 let test_dump file =
+  if false then begin
   Meta_parse_info._current_precision := { 
     Meta_parse_info.default_dumper_precision with
     Meta_parse_info.full_info = true;
   };
+  end;
   let ast = Parse_ruby.parse_program file in
   let v = Meta_ast_ruby.vof_program ast in
   let s = Ocaml.string_of_v v in
