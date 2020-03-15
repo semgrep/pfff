@@ -100,22 +100,25 @@ let t_ustar  s lb     = S.beg_state s; T_USTAR (tk lb)
 let t_star   s lb     = S.beg_state s; T_STAR (tk lb)
 let t_uamper s lb     = S.beg_state s; T_UAMPER (tk lb)
 let t_amper  s lb     = S.beg_state s; T_AMPER (tk lb)
+
 let t_slash  s lb     = S.beg_state s; T_SLASH (tk lb)
 let t_quest  s lb     = S.beg_state s; T_QUESTION (tk lb)
 let t_tilde  s lb     = S.beg_state s; T_TILDE (tk lb)
 let t_scope  s lb     = S.beg_state s; T_SCOPE (tk lb)
 let t_uscope s lb     = S.beg_state s; T_USCOPE (tk lb)
+
 let t_lbrack s lb     = S.beg_state s; T_LBRACK (tk lb)
 let t_lbrack_arg s lb = S.beg_state s; T_LBRACK_ARG (tk lb)
 let t_lparen s lb     = S.beg_state s; T_LPAREN (tk lb)
 let t_lparen_arg s lb = S.beg_state s; T_LPAREN_ARG (tk lb)
 let t_lbrace s lb     = S.beg_state s; T_LBRACE (tk lb)
 let t_lbrace_arg s lb = S.beg_state s; T_LBRACE_ARG (tk lb)
+
 let t_percent s lb    = S.beg_state s; T_PERCENT (tk lb)
 let t_lshft s lb      = S.beg_state s; T_LSHFT (tk lb)
 
 let t_colon t s _lb      = S.beg_state s; T_COLON t
-let t_eol t s _lb        = S.beg_state s; T_EOL t
+let t_eol   t s _lb      = S.beg_state s; T_EOL t
 
 (* For atom lexer.
  * Transitions to End unless in Def, in which case do nothing (stays in Def).
@@ -335,7 +338,7 @@ and top_lexer state = parse
              token state lexbuf}
 
   (* ----------------------------------------------------------------------- *)
-  (* symbols with spaces before *)
+  (* symbols with spaces before (see tests/.../array_vs_call.rb) *)
   (* ----------------------------------------------------------------------- *)
 
   (* need the ws here to force longest match preference over the rules below *)
@@ -352,8 +355,10 @@ and top_lexer state = parse
       }
 
   (* need precedence over single form *)
-  | ws* "**" {S.beg_state state;T_POW (tk lexbuf) }
-  | ws* "&&" {S.beg_state state;T_ANDOP (tk lexbuf) }
+  | ws* "**" 
+      { S.beg_state state;T_POW (tk lexbuf) }
+  | ws* "&&" 
+      { S.beg_state state;T_ANDOP (tk lexbuf) }
 
   (* the following lexemes may represent various tokens depending on
      the expression state and surrounding spaces.  Space before and
@@ -363,20 +368,28 @@ and top_lexer state = parse
       { let binop = on_def (postfix_at t_uminus t_minus) t_minus
         in space_uop uop_minus_lit t_uminus binop state lexbuf }
   | ws+ '+' 
-      {let binop = on_def (postfix_at t_uplus t_plus) t_plus
-       in space_uop uop_plus_lit t_uplus binop state lexbuf}
-  | ws+ '*' { space_uop t_ustar t_ustar t_star state lexbuf}
-  | ws+ '&' { space_uop t_uamper t_uamper t_amper state lexbuf}
+      { let binop = on_def (postfix_at t_uplus t_plus) t_plus
+        in space_uop uop_plus_lit t_uplus binop state lexbuf}
+  | ws+ '*' 
+      { space_uop t_ustar t_ustar t_star state lexbuf}
+  | ws+ '&' 
+      { space_uop t_uamper t_uamper t_amper state lexbuf}
 
   | ws+ '[' 
-      { let binop = on_local t_lbrack_arg t_lbrack in 
+      { let _t = tk lexbuf in
+        let binop = on_local t_lbrack_arg t_lbrack in 
         space_uop t_lbrack t_lbrack binop state lexbuf }
   | ws+ '(' 
-      { let binop = on_local t_lparen_arg t_lparen in 
-        space_uop t_lparen t_lparen binop state lexbuf}
+      { let _t = tk lexbuf in
+        let binop = on_local t_lparen_arg t_lparen in 
+        space_uop t_lparen t_lparen binop state lexbuf }
 
-  | ws+ '%' { space_tok percent t_percent state lexbuf}
-  | ws+ '?' { space_tok char_code t_quest state lexbuf}
+  | ws+ '%' 
+      { let _t = tk lexbuf in 
+        space_tok percent t_percent state lexbuf }
+  | ws+ '?' 
+      { let _t = tk lexbuf in 
+        space_tok char_code t_quest state lexbuf }
 
   (* ----------------------------------------------------------------------- *)
   (* symbols *)
@@ -577,6 +590,7 @@ and end_lexbuf t state = parse
 (*****************************************************************************)
 
 and space_tok tok binop state = parse
+  (* space before and after is binop (unless at expr_beg) *)
   | ws+ { binop state lexbuf }
   | nl  { binop state lexbuf }
   | e   { on_def binop (on_local binop tok) state lexbuf}
@@ -587,13 +601,11 @@ and space_tok tok binop state = parse
 
 and space_uop uop spc_uop binop state = parse
   (* space before and after is binop (unless at expr_beg) *)
-  | ws+ { on_beg spc_uop binop state lexbuf}
-  | nl  { on_beg spc_uop binop state lexbuf}
-  | e   {match state.S.state with
-         | S.AfterDef
-         | S.AfterLocal
-         | S.EndOfExpr -> binop state lexbuf
-         | S.Bol | S.AfterCommand -> uop state lexbuf
+  | ws+ { on_beg spc_uop binop state lexbuf }
+  | nl  { on_beg spc_uop binop state lexbuf }
+  | e   { match state.S.state with
+          | S.AfterDef | S.AfterLocal | S.EndOfExpr -> binop state lexbuf
+          | S.Bol | S.AfterCommand -> uop state lexbuf
          }
 
 and uop_minus_lit state = parse
