@@ -30,67 +30,75 @@
 open Ast_ruby
 module H = Ast_ruby_helpers
 (* for state *)
-module S2 = Parser_ruby_helpers
+module S = Parser_ruby_helpers
 (* for merging *)
 module M = Parser_ruby_helpers
 open Parser_ruby_helpers
 
 (*let () = Dyp.dypgen_verbose := max_int*)
 
-let dyp_merge_Obj_eols                   = merge_rest "eols"
-let dyp_merge_Obj_some_eols              = merge_rest "some_eols "
-let dyp_merge_Obj_main                   = merge_rest "main"
-let dyp_merge_Obj_stmt_list              = merge_expr_list "stmt_list"
+
 let dyp_merge_Obj_stmt                   = merge_stmt (*merge_expr "stmt"*)
+
+let dyp_merge_Obj_command                = merge_expr "command"
+let dyp_merge_Obj_command_name           = merge_expr "command_name"
+let dyp_merge_Obj_expr                   = merge_expr "expr"
+let dyp_merge_Obj_primary                = merge_expr "primary"
+let dyp_merge_Obj_func                   = merge_expr "func"
+let dyp_merge_Obj_method_name            = merge_expr "method_name"
+
+let dyp_merge_Obj_stmt_list              = merge_expr_list "stmt_list"
+let dyp_merge_Obj_call_args              = merge_expr_list "call_args"
+let dyp_merge_Obj_array_body             = merge_expr_list "array_body"
+let dyp_merge_Obj_mlhs_clean             = merge_expr_list "mlhs_clean"
+let dyp_merge_Obj_mrhs                   = merge_expr_list "mrhs"
+
+let dyp_merge_Obj_formal_arg_list   = merge_formal_list "formal_arg_list"
+let dyp_merge_Obj_method_formals    = merge_formal_list "method_formals"
+let dyp_merge_Obj_formal_arg_nonempty_list= merge_formal_list "formal_arg_nonempty_list"
+
+let dyp_merge_Obj_binop                  = merge_binop
+let dyp_merge_Obj_arg                    = merge_binop (*arg "arg"*)
+
+let dyp_merge_Obj_rescue_clause          = merge_rescue "rescue_clause"
+
 let dyp_merge_Obj_topcall                = merge_topcall
+
 let dyp_merge_Obj_arg_comma_list_trail   = merge_rest "arg_comma_list_trail"
 let dyp_merge_Obj_arg_comma_nonempty_list= merge_rest "arg_comma_nonempty_list"
 let dyp_merge_Obj_arg_comma_star_list    = merge_rest "arg_comma_star_list"
-let dyp_merge_Obj_func                   = merge_expr "func"
 let dyp_merge_Obj_star_amper             = merge_rest "star_amper"
-let dyp_merge_Obj_call_args              = merge_expr_list "call_args"
-let dyp_merge_Obj_command                = merge_expr "command"
-let dyp_merge_Obj_command_name           = merge_expr "command_name"
-let dyp_merge_Obj_binop                  = merge_binop
-let dyp_merge_Obj_arg                    = merge_binop (*arg "arg"*)
-let dyp_merge_Obj_expr                   = merge_expr "expr"
-let dyp_merge_Obj_primary                = merge_expr "primary"
 let dyp_merge_Obj_array_item             = merge_rest "array_item"
 let dyp_merge_Obj_array_body_rest        = merge_rest "array_body_rest"
-let dyp_merge_Obj_array_body             = merge_expr_list "array_body"
 let dyp_merge_Obj_scoped_id              = merge_rest "scoped_id"
 let dyp_merge_Obj_class_inheritance      = merge_rest "class_inheritance"
 let dyp_merge_Obj_do_sep                 = merge_rest "do_sep"
 let dyp_merge_Obj_code_block             = merge_rest "code_block"
 let dyp_merge_Obj_code_block_body        = merge_rest "code_block_body"
 let dyp_merge_Obj_formal_arg             = merge_rest "formal_arg"
-let dyp_merge_Obj_formal_arg_nonempty_list= merge_formal_list "formal_arg_nonempty_list"
-let dyp_merge_Obj_formal_arg_list   = merge_formal_list "formal_arg_list"
-let dyp_merge_Obj_method_formals    = merge_formal_list "method_formals"
-let dyp_merge_Obj_lhs               = merge_rest "lhs"
-let dyp_merge_Obj_mlhs              = merge_rest "mlhs"
-let dyp_merge_Obj_mlhs_clean        = merge_expr_list "mlhs_clean"
-let dyp_merge_Obj_mlhs_rest         = merge_rest "mlhs_rest"
-let dyp_merge_Obj_mlhs_item         = merge_rest "mlhs_item"
-let dyp_merge_Obj_command_codeblock = merge_rest "command_codeblock"
-let dyp_merge_Obj_mrhs              = merge_expr_list "mrhs"
-let dyp_merge_Obj_then_sep          = merge_rest "then_sep"
-let dyp_merge_Obj_when_clauses      = merge_rest "when_clauses"
-let dyp_merge_Obj_body_exn          = merge_rest "body_exn"
-let dyp_merge_Obj_rescue_clause     = merge_rescue "rescue_clause"
-let dyp_merge_Obj_rescue_list       = merge_rest "rescue_list"
-let dyp_merge_Obj_case_else         = merge_rest "case_else"
-let dyp_merge_Obj_ensure_clause     = merge_rest "ensure_clause"
-let dyp_merge_Obj_if_else_clauses   = merge_rest "if_else_clauses"
-let dyp_merge_Obj_meth_or_atom      = merge_rest "meth_or_atom"
-let dyp_merge_Obj_method_name       = merge_expr "method_name"
-let dyp_merge_Obj_assignable        = merge_rest "assignable"
-let dyp_merge_Obj_message_identifier= merge_rest "message_identifier"
-let dyp_merge_Obj_bin_op            = merge_rest "bin_op"
-let dyp_merge_Obj_unary_op          = merge_rest "unary_op"
-let dyp_merge_Obj_keyword_as_id     = merge_rest "keyword_as_id"
-let dyp_merge_Obj_identifier        = merge_rest "identifier"
-let dyp_merge_Obj_constant          = merge_rest "constant"
+let dyp_merge_Obj_lhs                    = merge_rest "lhs"
+let dyp_merge_Obj_mlhs                   = merge_rest "mlhs"
+let dyp_merge_Obj_mlhs_rest              = merge_rest "mlhs_rest"
+let dyp_merge_Obj_mlhs_item              = merge_rest "mlhs_item"
+let dyp_merge_Obj_command_codeblock      = merge_rest "command_codeblock"
+let dyp_merge_Obj_then_sep               = merge_rest "then_sep"
+let dyp_merge_Obj_when_clauses           = merge_rest "when_clauses"
+let dyp_merge_Obj_body_exn               = merge_rest "body_exn"
+let dyp_merge_Obj_rescue_list            = merge_rest "rescue_list"
+let dyp_merge_Obj_case_else              = merge_rest "case_else"
+let dyp_merge_Obj_ensure_clause          = merge_rest "ensure_clause"
+let dyp_merge_Obj_if_else_clauses        = merge_rest "if_else_clauses"
+let dyp_merge_Obj_meth_or_atom           = merge_rest "meth_or_atom"
+let dyp_merge_Obj_assignable             = merge_rest "assignable"
+let dyp_merge_Obj_message_identifier     = merge_rest "message_identifier"
+let dyp_merge_Obj_bin_op                 = merge_rest "bin_op"
+let dyp_merge_Obj_unary_op               = merge_rest "unary_op"
+let dyp_merge_Obj_keyword_as_id          = merge_rest "keyword_as_id"
+let dyp_merge_Obj_identifier             = merge_rest "identifier"
+let dyp_merge_Obj_constant               = merge_rest "constant"
+let dyp_merge_Obj_eols                   = merge_rest "eols"
+let dyp_merge_Obj_some_eols              = merge_rest "some_eols "
+let dyp_merge_Obj_main                   = merge_rest "main"
 
 let dyp_merge xs =
   wrap xs (fun xs ->
@@ -118,7 +126,6 @@ let rec add_eq = function
   | Binop(e1,Op_DOT,e2,p) -> Binop(e1,Op_DOT, add_eq e2,p)
   | Operator(Op_AREF,p) -> Operator(Op_ASET,p)
   | _ -> failwith "add_eq"
-
 
 }
 
@@ -294,7 +301,7 @@ let rec add_eq = function
 /*(*1 Toplevel *)*/
 /*(*************************************************************************)*/
 
-main: eols stmt_list<program> T_EOF { program }
+main: eols stmt_list<xs> T_EOF { xs }
 
 eols:
   | /*empty*/  {}
@@ -303,22 +310,27 @@ eols:
 stmt_list:
   | /*empty*/ { [] }
   | stmt<s>   { [s] }
+  | stmt<s> eol_or_semi eols stmt_list<ss> @{ s::ss,  [Dyp.Dont_shift] }
   |         T_SEMICOLON eols stmt_list<ss> @{ ss,     [Dyp.Dont_shift] }
-  | stmt<s> eol_or_semi eols stmt_list<ss> @{ s:: ss, [Dyp.Dont_shift] }
+
+/*(* called T or TERM in original grammar *)*/
+eol_or_semi:
+ | T_SEMICOLON {}
+ | T_EOL {}
 
 /*(*************************************************************************)*/
 /*(*1 Lexer/Parser *)*/
 /*(*************************************************************************)*/
 
 /* tokens that need to reduce immediately to guide the lexer */
-scope_begin:  K_BEGIN<pos> {enter_scope dyp;pos}
-scope_end:    K_END<pos>   {enter_scope dyp;pos}
-scope_def:    K_DEF<pos>   {enter_scope dyp;pos}
-scope_class:  K_CLASS<pos>  {enter_scope dyp;pos}
-scope_module: K_MODULE<pos> {enter_scope dyp;pos}
+scope_begin:  K_BEGIN<pos>  {S.enter_scope dyp; pos}
+scope_end:    K_END<pos>    {S.enter_scope dyp; pos}
+scope_def:    K_DEF<pos>    {S.enter_scope dyp; pos}
+scope_class:  K_CLASS<pos>  {S.enter_scope dyp; pos}
+scope_module: K_MODULE<pos> {S.enter_scope dyp; pos}
 
 /*(*************************************************************************)*/
-/*(*1 Statement *)*/
+/*(*1 Statement (part 1) *)*/
 /*(*************************************************************************)*/
 
 stmt:
@@ -327,21 +339,21 @@ stmt:
   | K_UNDEF<pos> meth_or_atom_list<e1> 
       { D (Undef(e1,pos)) }
 
-  | stmt<s> K_IF<pos>     eols stmt<guard> 
-      { if is_cond_modifier guard then raise Dyp.Giveup; 
-        S (If(guard, [s], [],pos)) }
-  | stmt<s> K_UNLESS<pos> eols stmt<guard>
-      { if is_cond_modifier guard then raise Dyp.Giveup; 
-        S (Unless(guard, [s], [],pos)) }
-  | stmt<s> K_UNTIL<pos>  eols stmt<guard> 
-      { if is_cond_modifier guard then raise Dyp.Giveup; 
-        S (Until(is_exnblock s,guard, [s],pos)) }
-  | stmt<s> K_WHILE<pos>  eols stmt<guard>
-      { if is_cond_modifier guard then raise Dyp.Giveup;
-        S (While(is_exnblock s,guard, [s],pos)) }
-  | stmt<s> K_RESCUE<pos> eols stmt<guard>
-      { if is_cond_modifier guard then raise Dyp.Giveup;
-        S (ExnBlock({body_exprs = [s]; rescue_exprs = [(S Empty,guard)];
+  | stmt<s> K_IF<pos>     eols stmt<g> 
+      { if is_cond_modifier g then raise Dyp.Giveup; 
+        S (If(g, [s], [], pos)) }
+  | stmt<s> K_UNLESS<pos> eols stmt<g>
+      { if is_cond_modifier g then raise Dyp.Giveup; 
+        S (Unless(g, [s], [], pos)) }
+  | stmt<s> K_UNTIL<pos>  eols stmt<g> 
+      { if is_cond_modifier g then raise Dyp.Giveup; 
+        S (Until(is_exnblock s, g, [s], pos)) }
+  | stmt<s> K_WHILE<pos>  eols stmt<g>
+      { if is_cond_modifier g then raise Dyp.Giveup;
+        S (While(is_exnblock s,g, [s],pos)) }
+  | stmt<s> K_RESCUE<pos> eols stmt<g>
+      { if is_cond_modifier g then raise Dyp.Giveup;
+        S (ExnBlock({body_exprs = [s]; rescue_exprs = [(S Empty,g)];
             ensure_expr = []; else_expr = []}, pos)) }
 
   /* handle special case for x = y rescue z where rescue binds to 
@@ -353,21 +365,22 @@ stmt:
                  ensure_expr = []; else_expr = []}, pos))
          in (*prune_binop l op r'*) 
          Binop(l,op,r',pos)}
-
-  | scope_begin<pos> eols T_LBRACE eols stmt_list<body> T_RBRACE
-      { leave_scope dyp; D (BeginBlock(body,pos))}
-  | scope_end<pos> eols T_LBRACE eols stmt_list<body> T_RBRACE
-      { leave_scope dyp; D (EndBlock(body,pos))}
-
-  | topcall<c> 
-      { c }
   | mlhs_assign_op<l,op> eols mrhs<r>
       { (*prune_binop (tuple l) op (tuple r)*) 
          let lhs = tuple l in
          Binop(lhs,op,(tuple r),(H.tok_of lhs))
       }
+
+  | scope_begin<pos> eols T_LBRACE eols stmt_list<xs> T_RBRACE
+      { S.leave_scope dyp; D (BeginBlock(xs,pos))}
+  | scope_end<pos>  eols T_LBRACE  eols stmt_list<xs> T_RBRACE
+      { S.leave_scope dyp; D (EndBlock(xs,pos))}
+
+  | topcall<c> 
+      { c }
   | expr<e> 
       { e }
+
   | T_USTAR<pos> primary<e> 
       { Unary(Op_UStar,e,pos) }
 
@@ -376,41 +389,48 @@ stmt:
 /*(*************************************************************************)*/
 
 topcall:
-  | func<f> { f }
-  | func<c> code_block<cb>
-      { match c with
+  | func<f> 
+      { f }
+  | func<f> code_block<cb>
+      { match f with
         | Call(m,args,None,pos) -> methodcall m args (Some cb) pos
-        | _ -> methodcall c [] (Some cb) (H.tok_of c)
-      }
+        | _ -> methodcall f [] (Some cb) (H.tok_of f) }
 
-  | command<c> {c}
-  | command_name<m> call_args<args> do_codeblock<cb>
-      { well_formed_command m args;
-        methodcall m args (Some cb) (H.tok_of m)}
+  | command<c> 
+      { c }
+  | command_name<m> call_args<xs> do_codeblock<cb>
+      { well_formed_command m xs;
+        methodcall m xs (Some cb) (H.tok_of m)}
 
 /*(*----------------------------*)*/
 /*(*2 Command *)*/
 /*(*----------------------------*)*/
 
 command:
-  | K_YIELD<pos> call_args<args> 
-      { well_formed_return args;
-        S (Yield(args,pos)) }
-  | command_name<m> call_args<args>
-      { well_formed_command m args;
-        methodcall m args None (H.tok_of m)}
+  | command_name<m> call_args<xs>
+      { well_formed_command m xs;
+        methodcall m xs None (H.tok_of m)}
+  | K_YIELD<pos>    call_args<xs> 
+      { well_formed_return xs;
+        S (Yield(xs,pos)) }
+
+  /*(* recursive *)*/
   | command_name<cmd> command<cmd2>
       { well_formed_command cmd [cmd2];
         methodcall cmd [cmd2] None (H.tok_of cmd)}
 
 command_name:
-  | identifier<id> {id}
+  | identifier<id> 
+      { id }
+
   | primary<p> T_DOT eols message_identifier<m>
       { unfold_dot p m (H.tok_of p)}
+  | primary<p> T_SCOPE    message_identifier<m> 
+      { scope p m }
+
+  /*(* recursive *)*/
   | command_name<p> T_DOT eols message_identifier<m>
       { unfold_dot p m (H.tok_of p)}
-  | primary<p> T_SCOPE message_identifier<m> 
-      { scope p m }
   | command_name<p> T_SCOPE message_identifier<m>
       { scope p m }
 
@@ -433,6 +453,7 @@ lparen:
 /*(*----------------------------*)*/
 /*(*2 Arg *)*/
 /*(*----------------------------*)*/
+
 arg:
   | primary<p> {p}
 
@@ -448,7 +469,7 @@ arg:
     { M.prune_tern e1 e2 e3 (H.tok_of e1) }
 
 call_args:
-  | /*empty*/ { [] }
+  | /*empty*/                 { [] }
   | arg_comma_star_list<args> { args }
   | T_LBRACK<pos> eols call_args<args> eols T_RBRACK { [Array(args,pos)] }
 
@@ -549,7 +570,7 @@ command_codeblock:
 
 
 /*(*************************************************************************)*/
-/*(*1 Expressions *)*/
+/*(*1 Expressions (or statement part 2) *)*/
 /*(*************************************************************************)*/
 
 expr:
@@ -562,7 +583,7 @@ expr:
         | arg -> if is_cond_modifier arg then raise Dyp.Giveup;
                  S (Return([arg],pos)) 
       }
-
+  /*(* stmt-->topcall-->command-->K_YIELD vs stmt-->expr-->K_YIELD *)*/
   | K_YIELD<pos> call_args<args> 
       { well_formed_return args;
         S (Yield(args,pos)) }
@@ -572,7 +593,9 @@ expr:
   | K_NOT<pos>  eols expr<e>     { prune_uop Op_UNot e pos}
   | T_BANG<pos> eols expr<e>     { prune_uop Op_UBang e pos}
 
+  /*(* stmt-->topcall-->command vs stmt-->expr-->command *)*/
   | command<c>              { c }
+
   | arg<a>                  { a }
 
 /*(*************************************************************************)*/
@@ -588,9 +611,12 @@ primary:
   | constant<c> { c }
   | identifier<id> { id }
 
+  /*(* stmt-->topcall-->command-->command_name (with empty call_args) vs
+     * stmt-->expr-->arg-->primary-->command_name *)*/
   | command_name<c>                { methodcall c [] None (H.tok_of c)}
   | command_name<c> code_block<cb> { command_codeblock c cb }
 
+  /*(* stmt-->topcall vs stmt-->expr-->arg-->primary *)*/
   | func<f>                { f }
   | func<f> code_block<cb> 
       { match f with
@@ -820,19 +846,16 @@ array_body:
   | array_body_rest<es> { es }
 
 array_body_rest:
-  | { [] }
-  | array_item<e> { [e] }
-  | star_amper<es> { es }
-  | array_item<e> T_COMMA eols array_body_rest<es> 
-      @{ e::es, [Dyp.Dont_shift] }
+  | /*(*empty*)*/    { [] }
+  | array_item<e>    { [e] }
+  | star_amper<es>   { es }
+  | array_item<e> T_COMMA eols array_body_rest<es> @{ e::es, [Dyp.Dont_shift] }
 
 array_item: 
   | arg<e> { e }
   | constant<c> T_LBRACK<pos1> eols call_args<args> eols T_RBRACK
-      {methodcall
-     (Binop(c, Op_DOT, Operator(Op_AREF,pos1), H.tok_of c)) 
-     args None (H.tok_of c)
-      }
+      { methodcall (Binop(c, Op_DOT, Operator(Op_AREF,pos1), H.tok_of c)) 
+                     args None (H.tok_of c) }
 
 /*(*************************************************************************)*/
 /*(*1 Name *)*/
@@ -858,6 +881,8 @@ scoped_id:
   | scoped_id<id1> T_SCOPE identifier<id2>    { Binop(id1,Op_SCOPE,id2,H.tok_of id1) }
   | scoped_id<id1> T_SCOPE keyword_as_id<id2> { Binop(id1,Op_SCOPE,id2,H.tok_of id1) }
 
+
+/*(* for use *)*/
 message_identifier:
   | assignable<e>                       { e }
   | bin_op<op>                          { Operator(op,Parse_info.fake_info "OP") }
@@ -870,8 +895,32 @@ assignable:
   | identifier<e>              { e }
   | keyword_as_id<k>           { k }
   | T_LBRACK_ARG<pos> T_RBRACK { Operator(Op_AREF,pos) }
-  | T_LBRACK<pos> T_RBRACK     { Operator(Op_AREF,pos) }
+  | T_LBRACK<pos>     T_RBRACK { Operator(Op_AREF,pos) }
 
+
+/*(* for definition *)*/
+method_name:
+  | message_identifier<e> { e }
+
+  | method_name<e> T_ASSIGN { add_eq e }
+  | method_name<id1> T_DOT eols message_identifier<id2> 
+      { Binop(id1,Op_DOT,id2,H.tok_of id1) }
+  | method_name<id1> T_DOT eols assignable<id2> T_ASSIGN
+      { Binop(id1,Op_DOT,add_eq id2,H.tok_of id1) }
+
+  | T_USCOPE<pos> identifier<id>     { Unary(Op_UScope,id,pos)}
+  | T_USCOPE<pos> keyword_as_id<id>  { Unary(Op_UScope,id,pos)}
+
+  | method_name<id1> T_SCOPE identifier<id2>    { scope id1 id2 }
+  | method_name<id1> T_SCOPE keyword_as_id<id2> { scope id1 id2 }
+  | T_LPAREN<pos> eols stmt_list<ss> T_RPAREN T_DOT message_identifier<m>
+      { Binop(mk_block ss (H.tok_of (List.hd ss)), Op_DOT,m, pos) }
+
+meth_or_atom:
+    | method_name<e>  { e }
+    | T_ATOM<a,pos>   { Literal((Atom a),pos) }
+
+/*(* operator overloading *)*/
 
 bin_op:
   | T_PLUS   { Op_PLUS }   | T_MINUS  { Op_MINUS }
@@ -924,30 +973,7 @@ keyword_as_id:
   | K_YIELD<pos>   { Id(ID_Lowercase, "yield", pos) }
 /*  | K_DEFINED<pos> { Id(ID_Lowercase, "defined?", pos) }*/
 
-meth_or_atom:
-    | method_name<e>  {e}
-    | T_ATOM<a,pos> { Literal((Atom a),pos) }
 
-meth_or_atom_list:
-    | meth_or_atom<e> { [e] }
-    | meth_or_atom<e> T_COMMA meth_or_atom_list<lst>{ e::lst }
-
-method_name:
-  | message_identifier<e> { e }
-
-  | method_name<e> T_ASSIGN { add_eq e }
-  | method_name<id1> T_DOT eols message_identifier<id2> 
-      { Binop(id1,Op_DOT,id2,H.tok_of id1) }
-  | method_name<id1> T_DOT eols assignable<id2> T_ASSIGN
-      { Binop(id1,Op_DOT,add_eq id2,H.tok_of id1) }
-
-  | T_USCOPE<pos> identifier<id>     { Unary(Op_UScope,id,pos)}
-  | T_USCOPE<pos> keyword_as_id<id>  { Unary(Op_UScope,id,pos)}
-
-  | method_name<id1> T_SCOPE identifier<id2>    { scope id1 id2 }
-  | method_name<id1> T_SCOPE keyword_as_id<id2> { scope id1 id2 }
-  | T_LPAREN<pos> eols stmt_list<ss> T_RPAREN T_DOT message_identifier<m>
-      { Binop(mk_block ss (H.tok_of (List.hd ss)), Op_DOT,m, pos) }
 
 /*(*************************************************************************)*/
 /*(*1 Class definition *)*/
@@ -1019,16 +1045,16 @@ method_formals:
   | lparen eols formal_arg_list<formals> eols T_RPAREN {
       (* RPAREN usually puts the lexer in an end state, but we need to
          force it to an end state *)
-      S2.state_override := true; formals}
+      S.state_override := true; formals}
 
 /*(*************************************************************************)*/
 /*(*1 Misc *)*/
 /*(*************************************************************************)*/
 
-/* called T or TERM in original grammar */
-eol_or_semi:
- | T_SEMICOLON {}
- | T_EOL {}
 
 some_eols :
   | T_EOL eols {}
+
+meth_or_atom_list:
+    | meth_or_atom<e> { [e] }
+    | meth_or_atom<e> T_COMMA meth_or_atom_list<lst>{ e::lst }
