@@ -269,9 +269,7 @@ let rec add_eq = function
 /*(*************************************************************************)*/
 /*(*1 Rules type declaration *)*/
 /*(*************************************************************************)*/
-
 %start <Ast_ruby.program> main
-
 %%
 
 /*(*************************************************************************)*/
@@ -279,10 +277,6 @@ let rec add_eq = function
 /*(*************************************************************************)*/
 
 main: eols stmt_list<xs> T_EOF { xs }
-
-eols:
-  | /*empty*/  {}
-  | eols T_EOL {}
 
 stmt_list:
   | /*empty*/ { [] }
@@ -292,21 +286,16 @@ stmt_list:
   | /*empty*/ T_SEMICOLON   eols stmt_list<ss> @{ ss,     [Dyp.Dont_shift] }
   | stmt<s>   eol_or_semi   eols stmt_list<ss> @{ s::ss,  [Dyp.Dont_shift] }
 
+eols:
+  | /*empty*/  {}
+  /*(* recursive *)*/
+  | eols T_EOL {}
+
 /*(* called T or TERM in original grammar *)*/
 eol_or_semi:
  | T_SEMICOLON {}
  | T_EOL {}
 
-/*(*************************************************************************)*/
-/*(*1 Lexer/Parser *)*/
-/*(*************************************************************************)*/
-
-/* tokens that need to reduce immediately to guide the lexer */
-scope_begin:  K_BEGIN<pos>  {S.enter_scope dyp; pos}
-scope_end:    K_END<pos>    {S.enter_scope dyp; pos}
-scope_def:    K_DEF<pos>    {S.enter_scope dyp; pos}
-scope_class:  K_CLASS<pos>  {S.enter_scope dyp; pos}
-scope_module: K_MODULE<pos> {S.enter_scope dyp; pos}
 
 /*(*************************************************************************)*/
 /*(*1 Statement (part 1) *)*/
@@ -350,9 +339,9 @@ stmt:
          Binop(lhs,op,(tuple r),(H.tok_of lhs))
       }
 
-  | scope_begin<pos> eols T_LBRACE eols stmt_list<xs> T_RBRACE
+  | scope_BEGIN<pos> eols T_LBRACE eols stmt_list<xs> T_RBRACE
       { S.leave_scope dyp; D (BeginBlock(xs,pos))}
-  | scope_end<pos>  eols T_LBRACE  eols stmt_list<xs> T_RBRACE
+  | scope_END<pos>  eols T_LBRACE  eols stmt_list<xs> T_RBRACE
       { S.leave_scope dyp; D (EndBlock(xs,pos))}
 
   | topcall<c> 
@@ -362,6 +351,10 @@ stmt:
 
   | T_USTAR<pos> primary<e> 
       { Unary(Op_UStar,e,pos) }
+
+/* tokens that need to reduce immediately to guide the lexer */
+scope_BEGIN:  K_BEGIN<pos>  {S.enter_scope dyp; pos}
+scope_END:    K_END<pos>    {S.enter_scope dyp; pos}
 
 /*(*************************************************************************)*/
 /*(*1 Call *)*/
@@ -417,15 +410,15 @@ command_name:
 /*(*2 Func *)*/
 /*(*----------------------------*)*/
 func:
-  | command_name<c> lparen eols call_args<xs> eols T_RPAREN
+  | command_name<c> any_LPAREN eols call_args<xs> eols T_RPAREN
       { match xs with
         | [] -> Call(c, xs, None, H.tok_of c) 
         | _ -> M.methodcall c xs None (H.tok_of c)
       }
-  | command_name<c> lparen eols command<a> eols T_RPAREN
+  | command_name<c> any_LPAREN eols command<a> eols T_RPAREN
       { Call(c,[a],None,H.tok_of c)}
 
-lparen:
+any_LPAREN:
   | T_LPAREN<pos> {pos}
   | T_LPAREN_ARG<pos> {pos}
 
@@ -618,14 +611,15 @@ primary:
   | T_LBRACK<pos> eols array_body<xs> eols T_RBRACK { Array(xs, pos) }
   | T_LBRACE<pos> eols array_body<xs> eols T_RBRACE { Hash(true, xs, pos) }
 
+
   | K_RETURN<pos> { S (Return([],pos)) }
 /*  
  * | K_RETURN<pos>T_LPAREN eols call_args<args> eols T_RPAREN{Return(args,pos)}
- * | K_RETURN<pos> lparen eols expr<arg> eols T_RPAREN { S (Return([arg],pos))}
+ * | K_RETURN<pos> any_LPAREN eols expr<arg> eols T_RPAREN { S (Return([arg],pos))}
  */
   | K_YIELD<pos> { S (Yield([],pos)) }
-  | K_YIELD<pos> lparen eols call_args<xs> eols T_RPAREN { S (Yield(xs, pos))}
-  | K_YIELD<pos> lparen eols expr<e>       eols T_RPAREN { S (Yield([e], pos))}
+  | K_YIELD<pos> any_LPAREN eols call_args<xs> eols T_RPAREN { S (Yield(xs, pos))}
+  | K_YIELD<pos> any_LPAREN eols expr<e>       eols T_RPAREN { S (Yield([e], pos))}
 
   | K_IF<pos> expr<g> then_sep stmt_list<xs> if_else_clauses<else_e> K_lEND
     { S (If(g, xs, else_e, pos)) }
@@ -658,23 +652,9 @@ primary:
 
   | K_lBEGIN<pos> eols body_exn<body>  K_lEND { S (ExnBlock(body,pos)) }
 
-  | scope_class<pos> eols scoped_id<class_name> class_inheritance<inh> do_sep
-      body_exn<body> K_lEND
-      { S.leave_scope dyp;
-        D (ClassDef(class_name, inh, body, pos))}
-
-  | scope_class<pos> T_LSHFT arg<id> eols body_exn<body> K_lEND
-      { S.leave_scope dyp;
-        D (ClassDef(S Empty, Some (Inst_Inherit id), body, pos)) }
-
-  | scope_module<pos> scoped_id<name> eols body_exn<body> K_lEND 
-      { S.leave_scope dyp;
-        D (ModuleDef (name,body, pos)) }
-
-  | scope_def<pos> method_name<meth_name> method_formals<formals> eols
-      body_exn<body> K_lEND
-      { S.leave_scope dyp;
-        D (MethodDef (meth_name, formals, body, pos)) }
+  | class_definition { $1 }
+  | module_definition { $1 }
+  | method_definition { $1 }
 
 arg_comma_list_trail:
   | arg_comma_star_list<e> {e}
@@ -841,6 +821,14 @@ array_item:
 /*(*1 Function definition *)*/
 /*(*************************************************************************)*/
 
+method_definition: scope_DEF<pos> method_name<id> method_formals<xs> eols
+  body_exn<body> K_lEND
+      { S.leave_scope dyp;
+        D (MethodDef (id, xs, body, pos)) }
+
+/* tokens that need to reduce immediately to guide the lexer */
+scope_DEF:    K_DEF<pos>    {S.enter_scope dyp; pos}
+
 /*(*----------------------------*)*/
 /*(*2 Code Block *)*/
 /*(*----------------------------*)*/
@@ -875,7 +863,7 @@ formal_arg:
 
   | T_USTAR                { Formal_rest }
   | T_LID<id,pos> T_ASSIGN eols arg<e> { M.seen_str dyp id; Formal_default (id,e) }
-  | lparen formal_arg_nonempty_list<f> T_RPAREN { Formal_tuple f }
+  | any_LPAREN formal_arg_nonempty_list<f> T_RPAREN { Formal_tuple f }
 
 formal_arg_nonempty_list:
   | formal_arg<f> { [f] }
@@ -894,15 +882,33 @@ method_formals:
       { match xs with
         | (Formal_tuple _)::_ -> raise Dyp.Giveup
         | e -> e }
-  | lparen eols formal_arg_list<xs> eols T_RPAREN 
+  | any_LPAREN eols formal_arg_list<xs> eols T_RPAREN 
       { (* RPAREN usually puts the lexer in an end state, but we need to
          force it to an end state *)
          S.state_override := true; 
          xs }
 
 /*(*************************************************************************)*/
-/*(*1 Class definition *)*/
+/*(*1 Class/Module definition *)*/
 /*(*************************************************************************)*/
+
+class_definition:
+  | scope_CLASS<pos> eols scoped_id<id> class_inheritance<inh> do_sep
+      body_exn<body> K_lEND
+      { S.leave_scope dyp;
+        D (ClassDef(id, inh, body, pos))}
+
+  | scope_CLASS<pos> T_LSHFT arg<id> eols body_exn<body> K_lEND
+      { S.leave_scope dyp;
+        D (ClassDef(S Empty, Some (Inst_Inherit id), body, pos)) }
+
+module_definition: scope_MODULE<pos> scoped_id<id> eols body_exn<body> K_lEND 
+      { S.leave_scope dyp;
+        D (ModuleDef (id, body, pos)) }
+
+/* tokens that need to reduce immediately to guide the lexer */
+scope_CLASS:  K_CLASS<pos>  {S.enter_scope dyp; pos}
+scope_MODULE: K_MODULE<pos> {S.enter_scope dyp; pos}
 
 class_inheritance:
  | /*(* empty *)*/ { None }
