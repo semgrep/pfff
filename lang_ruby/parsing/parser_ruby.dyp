@@ -310,8 +310,10 @@ eols:
 stmt_list:
   | /*empty*/ { [] }
   | stmt<s>   { [s] }
-  | stmt<s> eol_or_semi eols stmt_list<ss> @{ s::ss,  [Dyp.Dont_shift] }
-  |         T_SEMICOLON eols stmt_list<ss> @{ ss,     [Dyp.Dont_shift] }
+
+  /*(* recursive *)*/
+  | /*empty*/ T_SEMICOLON   eols stmt_list<ss> @{ ss,     [Dyp.Dont_shift] }
+  | stmt<s>   eol_or_semi   eols stmt_list<ss> @{ s::ss,  [Dyp.Dont_shift] }
 
 /*(* called T or TERM in original grammar *)*/
 eol_or_semi:
@@ -431,17 +433,17 @@ command_name:
   /*(* recursive *)*/
   | command_name<p> T_DOT eols message_identifier<m>
       { unfold_dot p m (H.tok_of p)}
-  | command_name<p> T_SCOPE message_identifier<m>
+  | command_name<p> T_SCOPE    message_identifier<m>
       { scope p m }
 
 /*(*----------------------------*)*/
 /*(*2 Func *)*/
 /*(*----------------------------*)*/
 func:
-  | command_name<c> lparen eols call_args<args> eols T_RPAREN
-      { match args with
-        | [] -> Call(c,args,None,H.tok_of c) 
-        | _ -> methodcall c args None (H.tok_of c)
+  | command_name<c> lparen eols call_args<xs> eols T_RPAREN
+      { match xs with
+        | [] -> Call(c, xs, None, H.tok_of c) 
+        | _ -> methodcall c xs None (H.tok_of c)
       }
   | command_name<c> lparen eols command<a> eols T_RPAREN
       { Call(c,[a],None,H.tok_of c)}
@@ -461,6 +463,7 @@ arg:
       { prune_right_assoc l op r }
 
   | unary_op<o,pos>    eols arg<a> { prune_uop o a pos }
+
   | arg<l> bin_op<bop> eols arg<r> { prune_left_assoc l bop r }
   | arg<l> T_ANDOP     eols arg<r> { prune_left_assoc l Op_AND r }
   | arg<l> T_OROP      eols arg<r> { prune_left_assoc l Op_OR r }
@@ -470,26 +473,29 @@ arg:
 
 call_args:
   | /*empty*/                 { [] }
-  | arg_comma_star_list<args> { args }
-  | T_LBRACK<pos> eols call_args<args> eols T_RBRACK { [Array(args,pos)] }
+  | arg_comma_star_list<xs>   { xs }
+  | T_LBRACK<pos> eols call_args<xs> eols T_RBRACK { [Array(xs, pos)] }
 
 arg_comma_star_list:
+  /*(* call_args-->empty vs call_args-->arg_comma_star_list-->empty *)*/
   | /*empty*/     { [] }
   | star_amper<a> { a }
-  | arg_comma_nonempty_list<args> {args}
-  | arg_comma_nonempty_list<args> T_COMMA eols star_amper<a>
-      @{ args @ a, [Dyp.Dont_shift] }
+
+  | arg_comma_nonempty_list<xs> { xs }
+  | arg_comma_nonempty_list<xs> T_COMMA eols star_amper<a>
+      @{ xs @ a, [Dyp.Dont_shift] }
 
 arg_comma_nonempty_list:
   | arg<a> { [a] }
-  | arg<a> T_COMMA eols arg_comma_nonempty_list<al> 
-      @{ a::al, [Dyp.Dont_shift] }
+  /*(* recursive *)*/
+  | arg<a> T_COMMA eols arg_comma_nonempty_list<al> @{ a::al, [Dyp.Dont_shift]}
 
 star_amper:
   | T_USTAR<pos> arg<a> 
       { [Unary(Op_UStar,a,pos)] }
   | T_UAMPER<pos> arg<a> 
       { [Unary(Op_UAmper,a,pos)] }
+
   | T_USTAR<pos1> arg<a1> T_COMMA eols T_UAMPER<pos2> arg<a2>
       { [Unary(Op_UStar,a1,pos1); Unary(Op_UAmper,a2,pos2)] }
 
@@ -498,7 +504,7 @@ star_amper:
 /*(*************************************************************************)*/
 
 assign_op: 
-  | T_ASSIGN {Op_ASSIGN}
+  | T_ASSIGN          { Op_ASSIGN }
   | T_OP_ASGN<op,pos> { Op_OP_ASGN (H.binary_op_of_string op) }
 
 /*(*----------------------------*)*/
@@ -508,9 +514,10 @@ assign_op:
 lhs_assign_op: lhs<l> assign_op<op>   {seen dyp l; l,op}
 
 lhs:
-  | scoped_id<id> { id }
-  | primary<p> T_LBRACK_ARG<pos> eols arg_comma_star_list<args> eols T_RBRACK
-      { methodcall (Binop(p,Op_DOT,Operator(Op_AREF,pos),H.tok_of p)) args None (H.tok_of p)}
+  | scoped_id<id> 
+      { id }
+  | primary<p> T_LBRACK_ARG<pos> eols arg_comma_star_list<xs> eols T_RBRACK
+      { methodcall (Binop(p,Op_DOT,Operator(Op_AREF,pos),H.tok_of p)) xs None (H.tok_of p)}
   | primary<p> T_DOT eols message_identifier<m>
       { methodcall (Binop(p,Op_DOT,m,H.tok_of p)) [] None (H.tok_of p)}
 
@@ -554,18 +561,16 @@ lhs_prune_binop: lhs<l> {match l with Binop _ -> raise Dyp.Giveup | _ -> l}
 /*(*----------------------------*)*/
 
 mrhs:
-  | arg_comma_star_list<args>
-      { match args with [] -> raise Dyp.Giveup | _ -> args}
+  | arg_comma_star_list<xs> { match xs with [] -> raise Dyp.Giveup | _ -> xs }
   | topcall<c> { [c] }
-  | T_LBRACK<pos> eols call_args<r> eols T_RBRACK { [Array(r,pos)] }
-  | T_USTAR<pos> arg<a> { [Unary(Op_UStar,a,pos)] }
-  | T_USTAR<pos> command_codeblock<c> { [Unary(Op_UStar,c,pos)] }
-
-  | T_USTAR<pos1> T_LBRACK<pos2> eols call_args<r> eols T_RBRACK
-      { [Unary(Op_UStar,Array(r,pos2),pos1)] }
+  | T_LBRACK<pos> eols call_args<xs> eols T_RBRACK { [Array(xs,pos)] }
+  | T_USTAR<pos> arg<a>                            { [Unary(Op_UStar,a,pos)] }
+  | T_USTAR<pos> command_codeblock<c>              { [Unary(Op_UStar,c,pos)] }
+  | T_USTAR<pos1> T_LBRACK<pos2> eols call_args<xs> eols T_RBRACK
+      { [Unary(Op_UStar,Array(xs,pos2),pos1)] }
 
 command_codeblock:
-  | command<c> { c }
+  | command<c>                     { c }
   | command_name<c> code_block<cb> { command_codeblock c cb }
 
 
@@ -574,9 +579,10 @@ command_codeblock:
 /*(*************************************************************************)*/
 
 expr:
-  | K_RETURN<pos> call_args<args>
-      { well_formed_return args; 
-        S (Return(args,pos)) }
+  | K_RETURN<pos> call_args<xs>
+      { well_formed_return xs; 
+        S (Return(xs,pos)) }
+ /*(* call_args-->arg_comma_star_list-->arg_comma_nonempty_list->arg vs arg*)*/
   | K_RETURN<pos> arg<p>
       { match p with
         | S Block([x],_) -> S (Return([x],pos))
@@ -584,9 +590,9 @@ expr:
                  S (Return([arg],pos)) 
       }
   /*(* stmt-->topcall-->command-->K_YIELD vs stmt-->expr-->K_YIELD *)*/
-  | K_YIELD<pos> call_args<args> 
-      { well_formed_return args;
-        S (Yield(args,pos)) }
+  | K_YIELD<pos> call_args<xs> 
+      { well_formed_return xs;
+        S (Yield(xs,pos)) }
 
   | expr<e1> K_AND eols expr<e2> { prune_left_assoc e1 Op_kAND e2 }
   | expr<e1> K_OR eols expr<e2>  { prune_left_assoc e1 Op_kOR e2 }
@@ -627,13 +633,13 @@ primary:
   | primary<p> T_SCOPE identifier<id>  { scope p id }
   | T_USCOPE<pos> identifier<id>       { Unary(Op_UScope,id,pos) }
 
-  | primary<p> T_LBRACK_ARG<pos1> eols arg_comma_list_trail<args> eols T_RBRACK
+  | primary<p> T_LBRACK_ARG<pos1> eols arg_comma_list_trail<xs> eols T_RBRACK
       { methodcall (Binop(p,Op_DOT,Operator(Op_AREF,pos1),H.tok_of p)) 
-                   args None (H.tok_of p)
+                   xs None (H.tok_of p)
       }
 
-  | T_LBRACK<pos> eols array_body<body> eols T_RBRACK { Array(body,pos) }
-  | T_LBRACE<pos> eols array_body<body> eols T_RBRACE { Hash(true,body,pos) }
+  | T_LBRACK<pos> eols array_body<xs> eols T_RBRACK { Array(xs, pos) }
+  | T_LBRACE<pos> eols array_body<xs> eols T_RBRACE { Hash(true, xs, pos) }
 
   | K_RETURN<pos> { S (Return([],pos)) }
 /*  
@@ -641,37 +647,37 @@ primary:
  * | K_RETURN<pos> lparen eols expr<arg> eols T_RPAREN { S (Return([arg],pos))}
  */
   | K_YIELD<pos> { S (Yield([],pos)) }
-  | K_YIELD<pos> lparen eols call_args<args> eols T_RPAREN{S(Yield(args,pos))}
-  | K_YIELD<pos> lparen eols expr<arg>       eols T_RPAREN{S(Yield([arg],pos))}
+  | K_YIELD<pos> lparen eols call_args<xs> eols T_RPAREN { S (Yield(xs, pos))}
+  | K_YIELD<pos> lparen eols expr<e>       eols T_RPAREN { S (Yield([e], pos))}
 
-  | K_IF<pos> expr<guard> then_sep stmt_list<body> if_else_clauses<else_e> K_lEND
-    { S (If(guard,body,else_e,pos)) }
+  | K_IF<pos> expr<g> then_sep stmt_list<xs> if_else_clauses<else_e> K_lEND
+    { S (If(g, xs, else_e, pos)) }
 
-  | K_UNLESS<pos> expr<guard> then_sep stmt_list<body> case_else<else_e> K_lEND
-    { S (Unless(guard,body, else_e,pos)) }
+  | K_UNLESS<pos> expr<g> then_sep stmt_list<xs> case_else<else_e> K_lEND
+    { S (Unless(g, xs, else_e, pos)) }
 
-  | K_WHILE<pos> expr<guard> do_sep stmt_list<body> K_lEND
-    { well_formed_do guard body; 
-      S (While(false,guard,body,pos)) }
+  | K_WHILE<pos> expr<g> do_sep stmt_list<xs> K_lEND
+    { well_formed_do g xs; 
+      S (While(false, g, xs, pos)) }
 
-  | K_UNTIL<pos> expr<guard> do_sep stmt_list<body> K_lEND
-    { well_formed_do guard body;
-      S (Until(false,guard,body,pos)) }
+  | K_UNTIL<pos> expr<g> do_sep stmt_list<xs> K_lEND
+    { well_formed_do g xs;
+      S (Until(false, g , xs, pos)) }
 
-  | K_CASE<pos> some_eols         when_clauses<whens> case_else<else_e> K_lEND
-    { S (Case({case_guard = S Empty; case_whens = whens; case_else = else_e},
+  | K_CASE<pos> some_eols         when_clauses<xs> case_else<else_e> K_lEND
+    { S (Case({case_guard = S Empty; case_whens = xs; case_else = else_e},
         pos)) }
 
-  | K_CASE<pos> eols expr<e> eols when_clauses<whens> case_else<else_e> K_lEND
-    { S (Case({case_guard = e; case_whens = whens; case_else = else_e},pos)) }
+  | K_CASE<pos> eols expr<e> eols when_clauses<xs> case_else<else_e> K_lEND
+    { S (Case({case_guard = e; case_whens = xs; case_else = else_e},pos)) }
 
-  | K_CASE<pos> eols expr<e> T_SEMICOLON eols when_clauses<whens> case_else<else_e> K_lEND
+  | K_CASE<pos> eols expr<e> T_SEMICOLON eols when_clauses<xs> case_else<else_e> K_lEND
 
-    { S (Case({case_guard = e; case_whens = whens; case_else = else_e},pos)) }
+    { S (Case({case_guard = e; case_whens = xs; case_else = else_e},pos)) }
 
-  | K_FOR<pos> formal_arg_list<vars> K_IN arg<range> do_sep stmt_list<body> K_lEND
-    { well_formed_do range body; 
-      S (For(vars,range,body,pos)) }
+  | K_FOR<pos> formal_arg_list<vars> K_IN arg<a> do_sep stmt_list<xs> K_lEND
+    { well_formed_do a xs; 
+      S (For(vars, a, xs, pos)) }
 
   | K_lBEGIN<pos> eols body_exn<body>  K_lEND { S (ExnBlock(body,pos)) }
 
@@ -719,28 +725,23 @@ constant:
   | T_BIGNUM<i,pos>  { Literal(BigNum i,pos) }
   | T_FLOAT<s,f,pos> { Literal((Float(s,f)),pos) }
 
-  | string<s> { s }
+  | string<s>        { s }
 
-  | T_ATOM<a,pos> 
-      { Literal (Atom a,pos) }
-  | T_ATOM_BEG<pos> interp_str<istr> 
-      { Literal (Atom istr,pos) }
+  | T_ATOM<a,pos>    { Literal (Atom a,pos) }
+  | T_ATOM_BEG<pos> interp_str<istr> { Literal (Atom istr,pos) }
 
-
-  | T_TICK_BEG<pos> interp_str<istr>
-      { Literal (String (Tick istr),pos) }
-
+  | T_REGEXP<s,m,pos> { Literal(Regexp (s,m),pos) }
   | T_REGEXP_BEG<pos> interp_str<istr> T_REGEXP_MOD<mods, _posTODO>
       { Literal(Regexp (istr,mods),pos) }
-  | T_REGEXP<s,m,pos> 
-      { Literal(Regexp (s,m),pos) }
+
+  | T_TICK_BEG<pos> interp_str<istr> { Literal (String (Tick istr),pos) }
 
 /*(*----------------------------*)*/
 /*(*2 strings *)*/
 /*(*----------------------------*)*/
 string:
   | one_string<s> {s} /* ("abc" 'def') is the string "abcdef" */
-
+  /*(* recursive *)*/
   | string<s1> one_string<s2> { merge_string_lits s1 s2 }
 
 one_string:
@@ -778,24 +779,24 @@ interp_code:
 /*(*----------------------------*)*/
 
 body_exn:
- | stmt_list<body> rescue_list<resc_e> case_else<else_e> ensure_clause<ens_e>
-     { { body_exprs = body; rescue_exprs = resc_e; 
+ | stmt_list<xs> rescue_list<resc_e> case_else<else_e> ensure_clause<ens_e>
+     { { body_exprs = xs; rescue_exprs = resc_e; 
         ensure_expr = ens_e; else_expr = else_e} 
      }
 
 rescue_clause:
-  | K_RESCUE<resc_pos> then_sep stmt_list<body>
-      { let pos = match body with
-      | [] -> resc_pos 
-      | hd::_ -> H.tok_of hd
-      in (S Empty,mk_block body pos) 
+  | K_RESCUE<resc_pos> then_sep stmt_list<xs>
+      { let pos = match xs with
+        | [] -> resc_pos 
+        | hd::_ -> H.tok_of hd
+        in (S Empty, mk_block xs pos) 
       }
 
-  | K_RESCUE<pos> T_ASSOC seen_id<bind> then_sep stmt_list<body>
-      { (Binop(S Empty,Op_ASSOC,bind,pos), mk_block body pos) }
+  | K_RESCUE<pos> T_ASSOC seen_id<bind> then_sep stmt_list<xs>
+      { (Binop(S Empty,Op_ASSOC,bind,pos), mk_block xs pos) }
 
-  | K_RESCUE<pos> arg_comma_star_list<exn> then_sep stmt_list<body>
-    { (tuple exn,mk_block body pos) }
+  | K_RESCUE<pos> arg_comma_star_list<exn> then_sep stmt_list<xs>
+    { (tuple exn,mk_block xs pos) }
 
   | K_RESCUE<pos> arg_comma_star_list<exn> 
     { (tuple exn,S Empty) }
@@ -811,7 +812,7 @@ rescue_list:
 
 ensure_clause:
   | /* empty */ { [] }
-  | K_ENSURE eols stmt_list<body> { body }
+  | K_ENSURE eols stmt_list<xs> { xs }
 
 /*(*----------------------------*)*/
 /*(*2 IfThenElse *)*/
@@ -821,12 +822,12 @@ if_else_clauses:
   | /* empty */ { [] }
   | K_ELSE eols stmt_list<body>
     { body }
-  | K_ELSIF<pos> eols expr<guard> then_sep stmt_list<body> if_else_clauses<rest>
-    { [S (If( guard, body, rest, pos)) ] }
+  | K_ELSIF<pos> eols expr<g> then_sep stmt_list<xs> if_else_clauses<rest>
+    { [S (If(g, xs, rest, pos)) ] }
 
 case_else:
   | /* empty */ { [] }
-  | K_ELSE eols stmt_list<ss> { ss }
+  | K_ELSE eols stmt_list<xs> { xs }
 
 /*(*----------------------------*)*/
 /*(*2 Case *)*/
@@ -849,13 +850,15 @@ array_body_rest:
   | /*(*empty*)*/    { [] }
   | array_item<e>    { [e] }
   | star_amper<es>   { es }
+
+  /*(* recursive *)*/
   | array_item<e> T_COMMA eols array_body_rest<es> @{ e::es, [Dyp.Dont_shift] }
 
 array_item: 
   | arg<e> { e }
-  | constant<c> T_LBRACK<pos1> eols call_args<args> eols T_RBRACK
+  | constant<c> T_LBRACK<pos1> eols call_args<xs> eols T_RBRACK
       { methodcall (Binop(c, Op_DOT, Operator(Op_AREF,pos1), H.tok_of c)) 
-                     args None (H.tok_of c) }
+                     xs None (H.tok_of c) }
 
 /*(*************************************************************************)*/
 /*(*1 Name *)*/
@@ -902,19 +905,20 @@ assignable:
 method_name:
   | message_identifier<e> { e }
 
+  | T_USCOPE<pos> identifier<id>     { Unary(Op_UScope,id,pos)}
+  | T_USCOPE<pos> keyword_as_id<id>  { Unary(Op_UScope,id,pos)}
+
+  /*(* recursive *)*/
   | method_name<e> T_ASSIGN { add_eq e }
   | method_name<id1> T_DOT eols message_identifier<id2> 
       { Binop(id1,Op_DOT,id2,H.tok_of id1) }
   | method_name<id1> T_DOT eols assignable<id2> T_ASSIGN
       { Binop(id1,Op_DOT,add_eq id2,H.tok_of id1) }
-
-  | T_USCOPE<pos> identifier<id>     { Unary(Op_UScope,id,pos)}
-  | T_USCOPE<pos> keyword_as_id<id>  { Unary(Op_UScope,id,pos)}
-
   | method_name<id1> T_SCOPE identifier<id2>    { scope id1 id2 }
   | method_name<id1> T_SCOPE keyword_as_id<id2> { scope id1 id2 }
-  | T_LPAREN<pos> eols stmt_list<ss> T_RPAREN T_DOT message_identifier<m>
-      { Binop(mk_block ss (H.tok_of (List.hd ss)), Op_DOT,m, pos) }
+
+  | T_LPAREN<pos> eols stmt_list<xs> T_RPAREN T_DOT message_identifier<m>
+      { Binop(mk_block xs (H.tok_of (List.hd xs)), Op_DOT,m, pos) }
 
 meth_or_atom:
     | method_name<e>  { e }
@@ -980,7 +984,7 @@ keyword_as_id:
 /*(*************************************************************************)*/
 
 class_inheritance:
- | {None}
+ | /*(* empty *)*/ { None }
  | T_LT primary<p> { Some (Class_Inherit p) }
 
 /*(*************************************************************************)*/
@@ -997,60 +1001,58 @@ code_block:
 
 brace_codeblock:
   | T_LBRACE_ARG<pos> eols code_block_body<b> T_RBRACE
-      { let args,body = b in CodeBlock(true,args,body,pos) }
+      { let args, body = b in CodeBlock(true,args,body,pos) }
 
 code_block_body:
   /* for when the lexer sees "||" instead of two "|"'s */
-  | T_OROP eols stmt_list<body> 
-      { (Some [],body) }
-  | T_VBAR formal_arg_list<args> T_VBAR eols stmt_list<body>
-      { (Some args,body) }
-  | stmt_list<body>
-      { (None, body) }
+  | T_OROP eols stmt_list<xs>                               { (Some [], xs) }
+  | T_VBAR formal_arg_list<args> T_VBAR eols stmt_list<xs>  { (Some args, xs) }
+  | stmt_list<xs>                                           { (None, xs) }
 
 do_codeblock:
   | K_DO<pos> eols code_block_body<b> K_lEND
-      { let args,body = b in CodeBlock(false,args,body,pos) }
+      { let args, body = b in CodeBlock(false,args,body,pos) }
 
 /*(*----------------------------*)*/
 /*(*2 parameters *)*/
 /*(*----------------------------*)*/
 
 formal_arg:
-  | identifier<id> { seen dyp id; Formal_id id }
+  | identifier<id>         { seen dyp id; Formal_id id }
   | T_UAMPER T_LID<id,pos> { seen_str dyp id; Formal_amp id }
-  | T_AMPER T_LID<id,pos> { seen_str dyp id; Formal_amp id }
+  | T_AMPER T_LID<id,pos>  { seen_str dyp id; Formal_amp id }
   | T_USTAR T_LID<id,pos>  { seen_str dyp id; Formal_star id}
-  | T_USTAR {Formal_rest}
+
+  | T_USTAR                { Formal_rest }
   | T_LID<id,pos> T_ASSIGN eols arg<e> { seen_str dyp id; Formal_default (id,e) }
   | lparen formal_arg_nonempty_list<f> T_RPAREN { Formal_tuple f }
 
 formal_arg_nonempty_list:
   | formal_arg<f> { [f] }
-  | formal_arg<f> T_COMMA { [f;Formal_rest] }
+  | formal_arg<f> T_COMMA { [f; Formal_rest] }
+  /*(* recursive *)*/
   | formal_arg<f> T_COMMA eols formal_arg_nonempty_list<fs> 
-      @{ f::fs, [Dyp.Dont_shift] }
+       @{ f::fs, [Dyp.Dont_shift] }
 
 formal_arg_list:
-  | { [] }
-  | formal_arg_nonempty_list<l> {l}
+  | /*(* empty *)*/              { [] }
+  | formal_arg_nonempty_list<xs> { xs }
 
 method_formals:
   | eol_or_semi { [] }
-  | formal_arg_nonempty_list<formals> eol_or_semi
-      {match formals with
-      (Formal_tuple _)::_ -> raise Dyp.Giveup
-    | e -> e
-      }
-  | lparen eols formal_arg_list<formals> eols T_RPAREN {
-      (* RPAREN usually puts the lexer in an end state, but we need to
+  | formal_arg_nonempty_list<xs> eol_or_semi
+      { match xs with
+        | (Formal_tuple _)::_ -> raise Dyp.Giveup
+        | e -> e }
+  | lparen eols formal_arg_list<xs> eols T_RPAREN 
+      { (* RPAREN usually puts the lexer in an end state, but we need to
          force it to an end state *)
-      S.state_override := true; formals}
+         S.state_override := true; 
+         xs }
 
 /*(*************************************************************************)*/
 /*(*1 Misc *)*/
 /*(*************************************************************************)*/
-
 
 some_eols :
   | T_EOL eols {}
