@@ -231,7 +231,7 @@ let NEWLINE = ("\r"|"\n"|"\r\n")
 let HEXA = ['0'-'9''a'-'f''A'-'F']
 
 (* JSX allows also '.' *)
-let XHPLABEL =	['a'-'z''A'-'Z''_']['a'-'z''A'-'Z''0'-'9''_''-''.']*
+let XHPLABEL =	['a'-'z''A'-'Z''_']['a'-'z''A'-'Z''0'-'9''_''-'  '.']*
 let XHPTAG = XHPLABEL (":" XHPLABEL)*
 let XHPATTR = XHPLABEL (":" XHPLABEL)*
 
@@ -331,8 +331,9 @@ rule initial = parse
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)
   (* ----------------------------------------------------------------------- *)
-  (* note that a Javascript identifier can have a leading '$', which means
-   * sgrep for JS will have some limitations.
+  (* sgrep-ext: no need for extension actually. A Javascript identifier 
+   * can have a leading '$', which means sgrep for JS will have some 
+   * limitations.
    *)
   | ['a'-'z''A'-'Z' '$' '_']['a'-'z''A'-'Z''$''_''0'-'9']* {
       let s = tok lexbuf in
@@ -652,6 +653,8 @@ and st_in_xhp_tag current_tag = parse
   (* attribute management *)
   | XHPATTR { T_XHP_ATTR(tok lexbuf, tokinfo lexbuf) }
   | "="     { T_ASSIGN(tokinfo lexbuf) }
+  (* sgrep-ext: *)
+  | "$" XHPATTR { Flag.sgrep_guard (T_XHP_ATTR(tok lexbuf, tokinfo lexbuf))}
 
   | ("'"|'"') as quote {
       let info = tokinfo lexbuf in
