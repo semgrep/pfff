@@ -398,10 +398,11 @@ and expr =
      *)
     and xml = {
       xml_tag: ident;
-      xml_attrs: (ident * xml_attr_value) list;
+      xml_attrs: xml_attribute list;
       xml_body: xml_body list;
     }
-     and xml_attr_value = expr
+     and xml_attribute = ident * xml_attr_value
+       and xml_attr_value = expr
      and xml_body =
       | XmlText of string wrap
       | XmlExpr of expr
