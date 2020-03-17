@@ -301,10 +301,10 @@ and expr =
 
     and xml = {
       xml_tag: ident;
-      xml_attrs: (ident * xhp_attr) list;
+      xml_attrs: (ident * xhp_attr_value) list;
       xml_body: xhp list;
     }
-     and xhp_attr = expr
+     and xhp_attr_value = expr
 
 (* only Var, List, or Arrow, and apparently also Array_get is ok, so
  * basically any lvalue

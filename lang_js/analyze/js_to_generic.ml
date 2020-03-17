@@ -54,6 +54,7 @@ let wrap = fun _of_a (v1, v2) ->
 let bracket of_a (t1, x, t2) = (info t1, of_a x, info t2)
 
 let name v = wrap id v
+let ident x = name x
 
 let filename v = wrap string v
 
@@ -124,6 +125,22 @@ let rec property_name =
   | PN v1 -> let v1 = name v1 in Left v1
   | PN_Computed v1 -> let v1 = expr v1 in Right v1
 
+and xhp =
+  function
+  | XmlText v1 -> let v1 = string v1 in G.XmlText v1
+  | XmlExpr v1 -> let v1 = expr v1 in G.XmlExpr v1
+  | XmlXml v1 -> let v1 = xml v1 in G.XmlXml v1
+
+and xml { xml_tag = xml_tag; xml_attrs = xml_attrs; xml_body = xml_body } =
+  let tag = ident xml_tag in
+  let attrs =
+    list (fun (v1, v2) -> let v1 = ident v1 and v2 = xhp_attr v2 in v1, v2)
+    xml_attrs in
+  let body = list xhp xml_body in 
+  { G.xml_tag = tag; xml_attrs = attrs; xml_body = body }
+
+and xhp_attr v          = expr v
+
 and expr (x: expr) =
   match x with
   | Bool v1 -> let v1 = wrap bool v1 in G.L (G.Bool v1)
@@ -188,6 +205,7 @@ and expr (x: expr) =
   | Conditional ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in
       G.Conditional (v1, v2, v3)
+  | Xml v1 -> let v1 = xml v1 in G.Xml v1
 
 and stmt x =
   match x with

@@ -393,12 +393,15 @@ and expr =
   (* newscope: newvar: *)
   and action = pattern * expr
 
+    (* less: could make it more generic by adding a 'expr so it could be
+     * reused in ast_js.ml, ast_php.ml
+     *)
     and xml = {
       xml_tag: ident;
-      xml_attrs: (ident * xml_attr) list;
+      xml_attrs: (ident * xml_attr_value) list;
       xml_body: xml_body list;
     }
-     and xml_attr = expr
+     and xml_attr_value = expr
      and xml_body =
       | XmlText of string wrap
       | XmlExpr of expr
@@ -1150,4 +1153,3 @@ let has_keyword_attr kwd attrs =
 let fake s = Parse_info.fake_info s
 let fake_bracket x = fake "(", x, fake ")"
 let unbracket (_, x, _) = x
-
