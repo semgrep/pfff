@@ -56,6 +56,11 @@ exception TodoConstruct of string * Parse_info.t
 (* The string is usually "advanced es6" or "Typescript" *)
 exception UnhandledConstruct of string * Parse_info.t
 
+(* for sgrep we want to keep the xml, but for the abtract interpreter
+ * we prefer to transpile it
+ *)
+let transpile_xml = ref false
+
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
@@ -575,11 +580,64 @@ and expr env = function
     let xs = List.map (encaps env) xs in
     A.Apply (A.IdSpecial (special, tok), xs)
 
-  | C.XhpHtml x -> Transpile_js.xhp (expr env) x
+  | C.XhpHtml x -> 
+      if !transpile_xml
+      then Transpile_js.xhp (expr env) x
+      else A.Xml (xhp_html env x)
+
   | C.Paren x ->
      expr env (C.unparen x)
   | C.Ellipsis x ->
      A.Ellipsis x
+
+and xhp_html env = function
+  | C.Xhp (tag, attrl, _, body, _) ->
+      let tag, tok = tag in
+      let attrl = List.map (xhp_attribute env) attrl in
+      { A.xml_tag = (A.string_of_xhp_tag tag, tok);
+        A.xml_attrs = attrl;
+        A.xml_body = List.map (xhp_body env) body;
+      }
+  | C.XhpSingleton (tag, attrl, _) ->
+      let tag, tok = tag in
+      let attrl = List.map (xhp_attribute env) attrl in
+      { A.xml_tag = (A.string_of_xhp_tag tag, tok);
+        A.xml_attrs = attrl;
+        A.xml_body = [];
+      }
+
+and xhp_attribute env = function
+  | C.XhpAttrValue (id, _, v) ->
+      id, xhp_attr_value env v
+  (* TODO: need to extend ast_generic *)
+  | C.XhpAttrNoValue id ->
+      id, A.IdSpecial (A.Null, fake "null")
+  | C.XhpAttrSpread (_, (tok, e), _) -> 
+      let e = expr env e in
+      (* TODO *)
+      let id = "...", tok in
+      id, A.Apply (A.IdSpecial (A.Spread, fake "spread"), [e])
+
+and xhp_attr_value env = function
+  | C.XhpAttrString s -> A.String s
+  | C.XhpAttrExpr (_, e, _) -> expr env e
+(* TODO
+  | C.SgrepXhpAttrValueMvar _ ->
+      (* should never use the abstract interpreter on a sgrep pattern *)
+      raise Common.Impossible
+*)
+
+and xhp_body env = function
+  | C.XhpText x -> A.XmlText x
+  | C.XhpExpr (_, e, _) -> 
+      let e = Common.map_opt (expr env) e in
+      (match e with
+      | Some e -> A.XmlExpr e
+      | None -> 
+            (* TODO: what is that? *) 
+            A.XmlExpr (A.IdSpecial (A.Null, fake "null"))
+      )
+  | C.XhpNested xml -> A.XmlXml (xhp_html env xml)
 
 and expr_opt env = function
   | None -> A.Nop
