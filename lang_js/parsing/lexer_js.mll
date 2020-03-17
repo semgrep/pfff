@@ -489,6 +489,11 @@ rule initial = parse
       ->
       push_mode (ST_IN_XHP_TAG tag);
       T_XHP_OPEN_TAG(tag, tokinfo lexbuf)
+
+    (* sgrep-ext: *)
+    | None when !Flag.sgrep_mode ->
+      push_mode (ST_IN_XHP_TAG tag);
+      T_XHP_OPEN_TAG(tag, tokinfo lexbuf)
     | _ ->
       Parse_info.yyback (String.length tag) lexbuf;
       T_LESS_THAN(tokinfo lexbuf)
