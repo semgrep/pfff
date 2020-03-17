@@ -17,6 +17,7 @@ let vof_bracket of_a (_t1, x, _t2) =
   of_a x
   
 let vof_name v = vof_wrap Ocaml.vof_string v
+let vof_ident x = vof_name x
 
 let vof_resolved_name = function
   | Local -> Ocaml.VSum (("Local", []))
@@ -67,8 +68,44 @@ let rec vof_property_name =
   | PN v1 -> let v1 = vof_name v1 in Ocaml.VSum (("PN", [ v1 ]))
   | PN_Computed v1 ->
       let v1 = vof_expr v1 in Ocaml.VSum (("PN_Computed", [ v1 ]))
+
+
+and
+  vof_xml {
+            xml_tag = v_xml_tag;
+            xml_attrs = v_xml_attrs;
+            xml_body = v_xml_body
+          } =
+  let bnds = [] in
+  let arg = Ocaml.vof_list vof_xml_body v_xml_body in
+  let bnd = ("xml_body", arg) in
+  let bnds = bnd :: bnds in
+  let arg =
+    Ocaml.vof_list
+      (fun (v1, v2) ->
+         let v1 = vof_ident v1
+         and v2 = vof_xml_attr v2
+         in Ocaml.VTuple [ v1; v2 ])
+      v_xml_attrs in
+  let bnd = ("xml_attrs", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_ident v_xml_tag in
+  let bnd = ("xml_tag", arg) in let bnds = bnd :: bnds in 
+  Ocaml.VDict bnds
+
+and vof_xml_attr v = vof_expr v
+
+and vof_xml_body =
+  function
+  | XmlText v1 ->
+      let v1 = vof_wrap Ocaml.vof_string v1
+      in Ocaml.VSum (("XmlText", [ v1 ]))
+  | XmlExpr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("XmlExpr", [ v1 ]))
+  | XmlXml v1 -> let v1 = vof_xml v1 in Ocaml.VSum (("XmlXml", [ v1 ]))
+
 and vof_expr =
   function
+  | Xml v1 -> let v1 = vof_xml v1 in Ocaml.VSum (("Xml", [ v1 ]))
   | Arr v1 ->
      let v1 = vof_bracket (Ocaml.vof_list vof_expr) v1 in Ocaml.VSum (("Arr", [v1]))
   | Bool v1 ->

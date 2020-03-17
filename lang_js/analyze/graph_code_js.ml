@@ -566,7 +566,21 @@ and expr env e =
 
   | Conditional (e1, e2, e3) ->
     List.iter (expr env) [e1;e2;e3]
+  | Xml x -> xml env x
   | Ellipsis _ -> ()
+
+and xml env x =
+  (* TODO add_use_edge env ([x.xml_tag], E.Class); *)
+  x.xml_attrs |> List.iter (fun (_identTODO, xhp_attr) ->
+    (* TODO add_use_edge_lookup ~xhp:true env ([x.xml_tag], ident) E.Field; *)
+    expr env xhp_attr
+  );
+  x.xml_body |> List.iter (xhp env)
+
+and xhp env = function
+  | XmlText _s -> ()
+  | XmlExpr e -> expr env e
+  | XmlXml x -> xml env x
 
 (* ---------------------------------------------------------------------- *)
 (* Entities *)

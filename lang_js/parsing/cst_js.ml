@@ -115,7 +115,7 @@ and sc = tok option
 type name = string wrap
  (* with tarzan *)
 
-(* facebook-ext: *)
+(* facebook-ext: was a string list in PHP (where ':' was the separator) *)
 type xhp_tag = string
  (* with tarzan *)
 

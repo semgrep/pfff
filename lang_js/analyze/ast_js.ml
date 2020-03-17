@@ -84,6 +84,7 @@ type 'a bracket = tok * 'a * tok
 (* todo: should rename ident *)
 type name = string wrap
  (* with tarzan *)
+type ident = string wrap
 
 (* For bar() in a/b/foo.js the qualified_name is 'a/b/foo.bar'. 
  * I remove the filename extension for codegraph (which assumes
@@ -188,11 +189,25 @@ and expr =
   | Fun of fun_ * name option (* when recursive or assigned in module.exports*)
   | Apply of expr * expr list
 
+  (* copy-paste of Ast_generic.xml (but with different 'expr') *)
+  | Xml of xml
+
   (* could unify with Apply, but need Lazy special then *)
   | Conditional of expr * expr * expr
 
   (* sgrep-ext: *)
   | Ellipsis of tok
+
+    and xml = {
+      xml_tag: ident;
+      xml_attrs: (ident * xml_attr_value) list;
+      xml_body: xml_body list;
+    }
+     and xml_attr_value = expr
+     and xml_body =
+      | XmlText of string wrap
+      | XmlExpr of expr
+      | XmlXml of xml
 
 (* ------------------------------------------------------------------------- *)
 (* Statements *)
@@ -350,3 +365,5 @@ let str_of_name (s, _) = s
 let tok_of_name (_, tok) = tok
 
 let unwrap x = fst x
+
+and string_of_xhp_tag s = s

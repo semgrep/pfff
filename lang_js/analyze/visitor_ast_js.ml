@@ -68,6 +68,7 @@ and v_bracket: 'a. ('a -> unit) -> 'a bracket -> unit =
   let v1 = v_info v1 and v2 = of_a v2 and v3 = v_info v3 in ()
 
 and v_name v = v_wrap v_string v
+and v_ident x = v_name x
 
 and v_filename v = v_wrap v_string v
 
@@ -110,9 +111,26 @@ and v_property_name =
 
 and v_label v = v_wrap v_string v
 
+and
+  v_xml { xml_tag = v_xml_tag; xml_attrs = v_xml_attrs; xml_body = vv_xml_body
+        } =
+  let v_xml_tag = v_ident v_xml_tag in
+  let v_xml_attrs =
+    v_list (fun (v1, v2) -> let v1 = v_ident v1 and v2 = v_xml_attr v2 in ())
+      v_xml_attrs in
+  let vv_xml_body = v_list v_xml_body vv_xml_body in 
+  ()
+and v_xml_attr v = v_expr v
+and v_xml_body =
+  function
+  | XmlText v1 -> let v1 = v_wrap v_string v1 in ()
+  | XmlExpr v1 -> let v1 = v_expr v1 in ()
+  | XmlXml v1 -> let v1 = v_xml v1 in ()
+
 and v_expr (x: expr) =
   (* tweak *)
   let k x =  match x with
+  | Xml v1 -> let v1 = v_xml v1 in ()
   | Bool v1 -> let v1 = v_wrap v_bool v1 in ()
   | Num v1 -> let v1 = v_wrap v_string v1 in ()
   | String v1 -> let v1 = v_wrap v_string v1 in ()
