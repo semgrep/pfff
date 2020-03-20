@@ -98,21 +98,21 @@ type name = tok (*::*) option  * (qualifier * tok (*::*)) list * ident_or_op
 
  and ident_or_op =
    (* function name, macro name, variable, classname, enumname, namespace *)
-   | IdIdent of simple_ident
+   | IdIdent of ident
    (* c++ext: *)  
-   | IdTemplateId of simple_ident * template_arguments
-   | IdDestructor of tok(*~*) * simple_ident
+   | IdTemplateId of ident * template_arguments
+   | IdDestructor of tok(*~*) * ident
    | IdOperator of tok * (operator * tok list)
    | IdConverter of tok * fullType
 
-   and simple_ident = string wrap
+   and ident = string wrap
  
    and template_arguments = template_argument comma_list angle
     and template_argument = (fullType, expression) Common.either
 
  and qualifier = 
-   | QClassname of simple_ident (* classname or namespacename *)
-   | QTemplateId of simple_ident * template_arguments
+   | QClassname of ident (* classname or namespacename *)
+   | QTemplateId of ident * template_arguments
 
  (* special cases *)
  and class_name     = name (* only IdIdent or IdTemplateId *)
@@ -162,8 +162,8 @@ and fullType = typeQualifier * typeC
   | Array           of constExpression option bracket * fullType
   | FunctionType    of functionType
 
-  | EnumName        of tok (* 'enum' *) * simple_ident (*enum_name*)
-  | StructUnionName of structUnion wrap * simple_ident (*ident_name*)
+  | EnumName        of tok (* 'enum' *) * ident (*enum_name*)
+  | StructUnionName of structUnion wrap * ident (*ident_name*)
   (* c++ext: TypeName can now correspond also to a classname or enumname
    * and is a name so can have some IdTemplateId in it.
    *)
@@ -429,7 +429,7 @@ and statement =
         (exprStatement * sc * exprStatement * sc * exprStatement) paren *
         statement
     (* cppext: *)
-    | MacroIteration of simple_ident * argument comma_list paren * statement
+    | MacroIteration of ident * argument comma_list paren * statement
 
   and jump  = 
     | Goto of tok * string wrap
@@ -467,11 +467,11 @@ and block_declaration =
   | DeclList of onedecl comma_list * sc
 
   (* cppext: todo? now factorize with MacroTop ?  *)
-  | MacroDecl of tok list * simple_ident * argument comma_list paren * tok
+  | MacroDecl of tok list * ident * argument comma_list paren * tok
   (* c++ext: using namespace *)
   | UsingDecl of (tok * name * sc)
   | UsingDirective of tok * tok (*'namespace'*) *  namespace_name * sc
-  | NameSpaceAlias of tok * simple_ident * tok (*=*) * namespace_name * sc
+  | NameSpaceAlias of tok * ident * tok (*=*) * namespace_name * sc
   (* gccext: *)
   | Asm of tok * tok option (*volatile*) * asmbody paren * sc
 
@@ -518,12 +518,12 @@ and block_declaration =
       | InitList of initialiser comma_list brace
       (* gccext: *)
       | InitDesignators of designator list * tok (*=*) * initialiser
-      | InitFieldOld  of simple_ident * tok (*:*) * initialiser
+      | InitFieldOld  of ident * tok (*:*) * initialiser
       | InitIndexOld  of expression bracket * initialiser
 
       (* ex: [2].y = x,  or .y[2]  or .y.x. They can be nested *)
       and designator =
-        | DesignatorField of tok(*:*) * simple_ident
+        | DesignatorField of tok(*:*) * ident
         | DesignatorIndex of expression bracket
         | DesignatorRange of (expression * tok (*...*) * expression) bracket
               
@@ -555,7 +555,7 @@ and func_definition = {
      ft_throw: exn_spec option;
    }
      and parameter = {
-        p_name: simple_ident option;
+        p_name: ident option;
         p_type: fullType;
         p_register: tok option;
         (* c++ext: *)
@@ -575,19 +575,19 @@ and func_definition = {
  and method_decl =
    | MethodDecl of onedecl * (tok * tok) option (* '=' '0' *) * sc
    | ConstructorDecl of 
-       simple_ident * parameter comma_list paren * sc
+       ident * parameter comma_list paren * sc
    | DestructorDecl of 
-       tok(*~*) * simple_ident * tok option paren * exn_spec option * sc
+       tok(*~*) * ident * tok option paren * exn_spec option * sc
 
 (* ------------------------------------------------------------------------- *)
 (* enum definition *)
 (* ------------------------------------------------------------------------- *)
 (* less: use a record *)
 and enum_definition =
-    tok (*enum*) * simple_ident option * enum_elem comma_list brace  
+    tok (*enum*) * ident option * enum_elem comma_list brace  
 
     and enum_elem = {
-      e_name: simple_ident;
+      e_name: ident;
       e_val: (tok (*=*) * constExpression) option;
     }
 
@@ -643,7 +643,7 @@ and class_definition = {
       *)
       and fieldkind = 
         | FieldDecl of onedecl
-        | BitField of simple_ident option * tok(*:*) *
+        | BitField of ident option * tok(*:*) *
             fullType * constExpression
             (* fullType => BitFieldInt | BitFieldUnsigned *) 
    
@@ -657,10 +657,10 @@ and class_definition = {
 (* cppext: cpp directives, #ifdef, #define and #include body *)
 (* ------------------------------------------------------------------------- *)
 and cpp_directive =
-  | Define of tok (* #define*) * simple_ident * define_kind * define_val
+  | Define of tok (* #define*) * ident * define_kind * define_val
   (* TODO: should split tok in 2 *)
   | Include of tok (* #include s *) * inc_kind * string (* path *)
-  | Undef of simple_ident (* #undef xxx *)
+  | Undef of ident (* #undef xxx *)
   | PragmaAndCo of tok
 
   and define_kind =
@@ -726,7 +726,7 @@ and declaration =
   | ExternC     of tok * tok * declaration
   | ExternCList of tok * tok * declaration_sequencable list brace
   (* the list can be empty *)
-  | NameSpace of tok * simple_ident * declaration_sequencable list brace
+  | NameSpace of tok * ident * declaration_sequencable list brace
   (* after have some semantic info *)
   | NameSpaceExtend of string * declaration_sequencable list 
   | NameSpaceAnon   of tok * declaration_sequencable list brace
@@ -747,8 +747,8 @@ and declaration =
     | CppDirectiveDecl of cpp_directive
     | IfdefDecl of ifdef_directive (* * toplevel list *)
     (* cppext: *)
-    | MacroTop of simple_ident * argument comma_list paren * tok option
-    | MacroVarTop of simple_ident * sc
+    | MacroTop of ident * argument comma_list paren * tok option
+    | MacroVarTop of ident * sc
     (* could also be in decl *)
     | NotParsedCorrectly of tok list
 
