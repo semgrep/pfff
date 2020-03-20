@@ -1,9 +1,10 @@
 (* Yoann Padioleau
  * 
- * Copyright (C) 2010-2014 Facebook
- * Copyright (C) 2008-2009 University of Urbana Champaign
- * Copyright (C) 2006-2007 Ecole des Mines de Nantes
  * Copyright (C) 2002 Yoann Padioleau
+ * Copyright (C) 2006-2007 Ecole des Mines de Nantes
+ * Copyright (C) 2008-2009 University of Urbana Champaign
+ * Copyright (C) 2010-2014 Facebook
+ * Copyright (C) 2020 r2c
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
@@ -190,7 +191,7 @@ and fullType = typeQualifier * typeC
   | ParenType of fullType paren
 
   and  baseType = 
-    | Void 
+    | Void
     | IntType   of intType 
     | FloatType of floatType
 
@@ -424,7 +425,7 @@ and statement =
 
   and iteration     = 
     | While   of tok * expression paren * statement
-    | DoWhile of tok * statement * tok * expression paren * tok (*;*)
+    | DoWhile of tok * statement * tok * expression paren * sc
     | For of 
         tok *
         (exprStatement * sc * exprStatement * sc * exprStatement) paren *
@@ -465,16 +466,16 @@ and block_declaration =
   * note: before the need for unparser, I didn't have a DeclList but just 
   * a Decl.
   *)
-  | DeclList of onedecl comma_list * tok (*;*)
+  | DeclList of onedecl comma_list * sc
 
   (* cppext: todo? now factorize with MacroTop ?  *)
   | MacroDecl of tok list * simple_ident * argument comma_list paren * tok
   (* c++ext: using namespace *)
-  | UsingDecl of (tok * name * tok (*;*))
-  | UsingDirective of tok * tok (*'namespace'*) *  namespace_name * tok(*;*)
-  | NameSpaceAlias of tok * simple_ident * tok (*=*) * namespace_name * tok(*;*)
+  | UsingDecl of (tok * name * sc)
+  | UsingDirective of tok * tok (*'namespace'*) *  namespace_name * sc
+  | NameSpaceAlias of tok * simple_ident * tok (*=*) * namespace_name * sc
   (* gccext: *)
-  | Asm of tok * tok option (*volatile*) * asmbody paren * tok(*;*)
+  | Asm of tok * tok option (*volatile*) * asmbody paren * sc
 
   (* gccext: *)
   and asmbody = tok list (* string list *) * colon list
@@ -574,11 +575,11 @@ and func_definition = {
   | Destructor of func_definition
 
  and method_decl =
-   | MethodDecl of onedecl * (tok * tok) option (* '=' '0' *) * tok(*;*)
+   | MethodDecl of onedecl * (tok * tok) option (* '=' '0' *) * sc
    | ConstructorDecl of 
-       simple_ident * parameter comma_list paren * tok(*;*)
+       simple_ident * parameter comma_list paren * sc
    | DestructorDecl of 
-       tok(*~*) * simple_ident * tok option paren * exn_spec option * tok(*;*)
+       tok(*~*) * simple_ident * tok option paren * exn_spec option * sc
 
 (* ------------------------------------------------------------------------- *)
 (* enum definition *)
@@ -623,17 +624,17 @@ and class_definition = {
     | Access of access_spec wrap * tok (*:*)
 
     (* before unparser, I didn't have a FieldDeclList but just a Field. *)
-    | MemberField of fieldkind comma_list * tok (*';'*)
+    | MemberField of fieldkind comma_list * sc
     | MemberFunc of func_or_else    
     | MemberDecl of method_decl
          
-    | QualifiedIdInClass of name (* ?? *) * tok(*;*)
+    | QualifiedIdInClass of name (* ?? *) * sc
          
     | TemplateDeclInClass of (tok * template_parameters * declaration)
-    | UsingDeclInClass of (tok (*using*) * name * tok (*;*))
+    | UsingDeclInClass of (tok (*using*) * name * sc)
 
      (* gccext: and maybe c++ext: *)
-    | EmptyField  of tok (*;*)
+    | EmptyField  of sc
 
      (* At first I thought that a bitfield could be only Signed/Unsigned.
       * But it seems that gcc allow char i:4. C rule must say that you
@@ -733,7 +734,7 @@ and declaration =
   | NameSpaceAnon   of tok * declaration_sequencable list brace
 
   (* gccext: allow redundant ';' *)
-  | EmptyDef of tok
+  | EmptyDef of sc
 
   | DeclTodo
 
@@ -749,7 +750,7 @@ and declaration =
     | IfdefDecl of ifdef_directive (* * toplevel list *)
     (* cppext: *)
     | MacroTop of simple_ident * argument comma_list paren * tok option
-    | MacroVarTop of simple_ident * tok (* ; *)
+    | MacroVarTop of simple_ident * sc
     (* could also be in decl *)
     | NotParsedCorrectly of tok list
 
