@@ -727,7 +727,7 @@ basic_type_2:
 
 statement: 
  | compound        { Compound $1, noii }
- | expr_statement  { ExprStatement(fst $1), snd $1 }
+ | expr_statement  { ExprStatement (fst $1, snd $1), noii }
  | labeled         { Labeled      (fst $1), snd $1 }
  | selection       { Selection    (fst $1), snd $1 }
  | iteration       { Iteration    (fst $1), snd $1 }
@@ -756,7 +756,9 @@ statement:
  | try_block { $1 }
 
  /*(* sgrep-ext: *)*/
- | TEllipsis   { Flag_parsing.sgrep_guard (ExprStatement (Some (Ellipses $1,noii)),noii)}
+ | TEllipsis   
+   { Flag_parsing.sgrep_guard (ExprStatement (Some (Ellipses $1,noii), $1),
+                               noii) }
 
  /*(* c++ext: TODO put at good place later *)*/
  | Tswitch TOPar decl_spec init_declarator_list TCPar statement
@@ -777,7 +779,7 @@ compound:
 
 
 expr_statement: 
- | expr_opt TPtVirg { $1, [$2] }
+ | expr_opt TPtVirg { $1, $2 }
 
 /*(* note that case 1: case 2: i++;    would be correctly parsed, but with 
    * a Case  (1, (Case (2, i++)))  :(  
@@ -792,9 +794,9 @@ labeled:
 /*(* classic else ambiguity resolved by a %prec, see conflicts.txt *)*/
 selection: 
  | Tif TOPar expr TCPar statement              %prec LOW_PRIORITY_RULE
-     { If ($1, ($2, $3, $4), $5, None, (ExprStatement None, [])), noii }
+     { If ($1, ($2, $3, $4), $5, None), noii }
  | Tif TOPar expr TCPar statement Telse statement 
-     { If ($1, ($2, $3, $4), $5, Some $6, $7), noii }
+     { If ($1, ($2, $3, $4), $5, Some ($6, $7)), noii }
  | Tswitch TOPar expr TCPar statement             
      { Switch ($1, ($2, $3, $4), $5), noii }
 
@@ -804,7 +806,7 @@ iteration:
  | Tdo statement Twhile TOPar expr TCPar TPtVirg                 
      { DoWhile ($1, $2, $3, ($4, $5, $6), $7), noii }
  | Tfor TOPar expr_statement expr_statement expr_opt TCPar statement
-     { For ($1, ($2, ($3,$4, ($5, [])), $6), $7), noii }
+     { For ($1, ($2, (fst $3, snd $3, fst $4, snd $4, $5), $6), $7), noii }
  /*(* cppext: *)*/
  | TIdent_MacroIterator TOPar argument_list_opt TCPar statement
      { MacroIteration ($1, ($2, $3, $4), $5), noii }
@@ -1631,16 +1633,16 @@ asmbody:
  | string_list { $1, [] } /*(* in old kernel *)*/
 
 colon_asm: 
- | TCol colon_option_list { Colon $2, [$1]   }
+ | TCol colon_option_list { Colon ($1, $2) }
 
 colon_option: 
- | TString                      { ColonMisc, [snd $1] }
- | TString TOPar asm_expr TCPar { ColonExpr ($2, $3, $4), [snd $1] } 
+ | TString                      { ColonMisc [snd $1] }
+ | TString TOPar asm_expr TCPar { ColonExpr ([snd $1], ($2, $3, $4)) } 
  /*(* cppext: certainly a macro *)*/
  | TOCro TIdent TCCro TString TOPar asm_expr TCPar
-     { ColonExpr ($5, $6, $7), [$1;snd $2;$3;snd $4] }
- | TIdent                           { ColonMisc, [snd $1] }
- | /*(* empty *)*/                  { ColonMisc, [] }
+     { ColonExpr ([$1;snd $2;$3;snd $4], ($5, $6, $7))  }
+ | TIdent                           { ColonMisc [snd $1] }
+ | /*(* empty *)*/                  { ColonMisc [] }
 
 asm_expr: assign_expr { $1 }
 
@@ -1817,7 +1819,8 @@ define_val:
  /*(* for statement-like macro with fixed number of arguments *)*/
  | Tdo statement Twhile TOPar expr TCPar 
      { match $5 with
-       | (C (Int ("0"))), [tok] -> DefineDoWhileZero ($2,  [$1;$3;$4;tok;$6])
+       | (C (Int ("0"))), [tok] -> 
+         DefineDoWhileZero ($1, $2, $3, ($4, tok, $6))
        | _ -> raise Parsing.Parse_error
      }
  /*(* for statement-like macro with varargs *)*/
@@ -1831,13 +1834,13 @@ define_val:
 
 
 param_define:
- | ident               { fst $1, [snd $1] }
+ | ident               { $1 }
 
- | TDefParamVariadic    { fst $1, [snd $1] } 
- | TEllipsis            { "...", [$1] }
+ | TDefParamVariadic    { $1 } 
+ | TEllipsis            { "...", $1 }
  /*(* they reuse keywords :(  *)*/
- | Tregister            { "register", [$1] }
- | Tnew                 { "new", [$1] }
+ | Tregister            { "register", $1 }
+ | Tnew                 { "new", $1 }
 
 
 cpp_ifdef_directive: 

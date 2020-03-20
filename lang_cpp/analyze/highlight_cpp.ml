@@ -427,10 +427,8 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     V.kcpp = (fun (k,_) def ->
       (match def with
       | Ast.Define (_, _id, DefineFunc params, _body) ->
-          params |> Ast.unparen |> Ast.uncomma |> List.iter (fun (name) ->
-            match name with
-            | (_s, [ii]) -> tag ii (Parameter Def)
-            | _ -> ()
+          params |> Ast.unparen |> Ast.uncomma |> List.iter (fun (_s, ii) ->
+            tag ii (Parameter Def)
           )
       | _ -> ()
       );

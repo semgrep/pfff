@@ -72,6 +72,10 @@ and 'a angle   = tok * 'a * tok
 
 and 'a comma_list = 'a wrapx list
 and 'a comma_list2 = ('a, tok (* the comma *)) Common.either list
+
+(* semicolon *)
+and sc = tok
+
  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
@@ -211,7 +215,7 @@ and typeQualifier =
 
 (* TODO: like in parsing_c/
  * (* gccext: cppext: *)
- * and attribute = attributebis wrapx
+ * and attribute = attributebis wrap
  *  and attributebis =
  *   | Attribute of string 
  *)
@@ -377,7 +381,7 @@ and expression = expressionbis wrapx
 and statement = statementbis wrapx 
  and statementbis = 
   | Compound      of compound   (* new scope *)
-  | ExprStatement of exprStatement
+  | ExprStatement of exprStatement * sc
   | Labeled       of labeled
   | Selection     of selection
   | Iteration     of iteration
@@ -412,7 +416,7 @@ and statement = statementbis wrapx
     | Default of statement
 
   and selection     = 
-   | If of tok * expression paren * statement * tok option * statement
+   | If of tok * expression paren * statement * (tok * statement) option
    (* need to check that all elements in the compound start
     * with a case:, otherwise it's unreachable code.
     *)
@@ -423,7 +427,7 @@ and statement = statementbis wrapx
     | DoWhile of tok * statement * tok * expression paren * tok (*;*)
     | For of 
         tok *
-        (exprStatement wrapx * exprStatement wrapx * exprStatement wrapx) paren *
+        (exprStatement * sc * exprStatement * sc * exprStatement) paren *
         statement
     (* cppext: *)
     | MacroIteration of simple_ident * argument comma_list paren * statement
@@ -473,10 +477,11 @@ and block_declaration =
   | Asm of tok * tok option (*volatile*) * asmbody paren * tok(*;*)
 
   (* gccext: *)
-  and asmbody = tok list (* string list *) * colon wrapx (* : *) list
-      and colon = Colon of colon_option comma_list
-      and colon_option = colon_optionbis wrapx
-          and colon_optionbis = ColonMisc | ColonExpr of expression paren
+  and asmbody = tok list (* string list *) * colon list
+      and colon = Colon of tok (* : *) * colon_option comma_list
+      and colon_option = 
+            | ColonExpr of tok list * expression paren
+            | ColonMisc of tok list
 
 (* ------------------------------------------------------------------------- *)
 (* Variable definition (and also field definition) *)
@@ -612,7 +617,7 @@ and class_definition = {
   (* used in inheritance spec (base_clause) and class_member *)
   and access_spec = Public | Private | Protected
 
-  (* was called field wrapx before *)
+  (* was called 'field wrap' before *)
   and class_member = 
     (* could put outside and take class_member list *)
     | Access of access_spec wrap * tok (*:*)
@@ -661,18 +666,19 @@ and cpp_directive =
 
   and define_kind =
    | DefineVar
-   | DefineFunc   of string wrapx comma_list paren
+   | DefineFunc   of string wrap comma_list paren
    and define_val = 
      | DefineExpr of expression
      | DefineStmt of statement
      | DefineType of fullType
      | DefineFunction of func_definition
      | DefineInit of initialiser (* in practice only { } with possible ',' *)
-     (* ?? *)
-     | DefineText of string wrapx
+     (* ?? dead? *)
+     | DefineText of string wrap
      | DefineEmpty
 
-     | DefineDoWhileZero of statement wrapx (* do { } while(0) *)
+     (* do ... while(0) *)
+     | DefineDoWhileZero of tok * statement * tok * tok paren
      | DefinePrintWrapper of tok (* if *) * expression paren * name
 
      | DefineTodo
@@ -682,7 +688,7 @@ and cpp_directive =
     | Standard (* <> *)
     | Weird (* ex: #include SYSTEM_H *)
 
-  (* less: 'a ifdefed = 'a list wrapx (* ifdef elsif else endif *) *)
+  (* less: 'a ifdefed = 'a list wrap (* ifdef elsif else endif *) *)
   and ifdef_directive = ifdefkind wrap
      and ifdefkind = 
        | Ifdef (* todo? of string? *)
