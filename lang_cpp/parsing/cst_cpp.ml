@@ -63,7 +63,7 @@ type tok = Parse_info.t
 
 (* a shortcut to annotate some information with token/position information *)
 and 'a wrapx  = 'a * tok list (* TODO: change to 'a * tok *)
-and 'a wrap2  = 'a * tok
+and 'a wrap  = 'a * tok
 
 and 'a paren   = tok * 'a * tok
 and 'a brace   = tok * 'a * tok
@@ -100,7 +100,7 @@ type name = tok (*::*) option  * (qualifier * tok (*::*)) list * ident
    | IdOperator of tok * (operator * tok list)
    | IdConverter of tok * fullType
 
-   and simple_ident = string wrap2
+   and simple_ident = string wrap
  
    and template_arguments = template_argument comma_list angle
     and template_argument = (fullType, expression) Common.either
@@ -122,12 +122,12 @@ type name = tok (*::*) option  * (qualifier * tok (*::*)) list * ident
  *  | RegularName of string wrap
  *
  *  (* cppext: *)
- *  | CppConcatenatedName of (string wrap) wrap2 (* the ## separators *) list
+ *  | CppConcatenatedName of (string wrap) wrap (* the ## separators *) list
  *  (* normally only used inside list of things, as in parameters or arguments
  *   * in which case, cf cpp-manual, it has a special meaning *)
  *  | CppVariadicName of string wrap (* ## s *)
  *  | CppIdentBuilder of string wrap (* s ( ) *) * 
- *                      ((string wrap) wrap2 list) (* arguments *)
+ *                      ((string wrap) wrap list) (* arguments *)
  *)
 
 (* ------------------------------------------------------------------------- *)
@@ -160,7 +160,7 @@ and fullType = typeQualifier * typeC
   | FunctionType    of functionType
 
   | EnumName        of tok (* 'enum' *) * simple_ident (*enum_name*)
-  | StructUnionName of structUnion wrap2 * simple_ident (*ident_name*)
+  | StructUnionName of structUnion wrap * simple_ident (*ident_name*)
   (* c++ext: TypeName can now correspond also to a classname or enumname
    * and is a name so can have some IdTemplateId in it.
    *)
@@ -278,7 +278,7 @@ and expression = expressionbis wrapx
   | This of tok
   | ConstructedObject of fullType * argument comma_list paren
   | TypeId     of tok * (fullType, expression) Common.either paren
-  | CplusplusCast of cast_operator wrap2 * fullType angle * expression paren
+  | CplusplusCast of cast_operator wrap * fullType angle * expression paren
   | New of tok (*::*) option * tok * 
       argument comma_list paren option (* placement *) *
       fullType *
@@ -495,7 +495,7 @@ and block_declaration =
     v_storage: storage;
     (* v_attr: attribute list; *) (* gccext: *)
   }
-    and storage = NoSto | StoTypedef of tok | Sto of storageClass wrap2
+    and storage = NoSto | StoTypedef of tok | Sto of storageClass wrap
       and storageClass  = Auto | Static | Register | Extern
    (* Friend ???? Mutable? *)
 
@@ -591,7 +591,7 @@ and enum_definition =
 (* Class definition *)
 (* ------------------------------------------------------------------------- *)
 and class_definition = {
-  c_kind: structUnion wrap2; 
+  c_kind: structUnion wrap; 
   (* the ident can be a template_id when do template specialization. *)
   c_name: ident_name(*class_name??*) option;
   (* c++ext: *)
@@ -606,7 +606,7 @@ and class_definition = {
   and base_clause = {
     i_name: class_name;
     i_virtual: tok option;
-    i_access: access_spec wrap2 option;
+    i_access: access_spec wrap option;
   }
 
   (* used in inheritance spec (base_clause) and class_member *)
@@ -615,7 +615,7 @@ and class_definition = {
   (* was called field wrapx before *)
   and class_member = 
     (* could put outside and take class_member list *)
-    | Access of access_spec wrap2 * tok (*:*)
+    | Access of access_spec wrap * tok (*:*)
 
     (* before unparser, I didn't have a FieldDeclList but just a Field. *)
     | MemberField of fieldkind comma_list * tok (*';'*)
@@ -683,7 +683,7 @@ and cpp_directive =
     | Weird (* ex: #include SYSTEM_H *)
 
   (* less: 'a ifdefed = 'a list wrapx (* ifdef elsif else endif *) *)
-  and ifdef_directive = ifdefkind wrap2
+  and ifdef_directive = ifdefkind wrap
      and ifdefkind = 
        | Ifdef (* todo? of string? *)
        (* less: IfIf of formula_cpp ? *)
