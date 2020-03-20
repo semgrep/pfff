@@ -44,10 +44,15 @@ let test_parse_common xs fullxs ext  =
     k();
 
     let (_xs, stat) =
+     try (
       Common.save_excursion Flag.error_recovery true (fun () ->
       Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
         Parse_js.parse file
-      ))
+
+      )) 
+     ) with Stack_overflow as exn ->
+       pr2 (spf "PB on %s, exn = %s" file (Common.exn_to_s exn));
+       (None, []), { (PI.default_stat file) with PI.bad = Common2.nblines file }
     in
     Common.push stat stat_list;
     let s = spf "bad = %d" stat.Parse_info.bad in

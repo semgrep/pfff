@@ -654,7 +654,14 @@ and st_in_xhp_tag current_tag = parse
   | XHPATTR { T_XHP_ATTR(tok lexbuf, tokinfo lexbuf) }
   | "="     { T_ASSIGN(tokinfo lexbuf) }
   (* sgrep-ext: *)
-  | "$" XHPATTR { Flag.sgrep_guard (T_XHP_ATTR(tok lexbuf, tokinfo lexbuf))}
+  | "$" XHPATTR { 
+      if !Flag.sgrep_mode
+      then  T_XHP_ATTR(tok lexbuf, tokinfo lexbuf)
+      else begin
+        error ("unrecognised symbol, in JSX rule:"^tok lexbuf) lexbuf;
+        TUnknown (tokinfo lexbuf)
+      end
+    }
 
   | ("'"|'"') as quote {
       let info = tokinfo lexbuf in
