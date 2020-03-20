@@ -94,9 +94,9 @@ and sc = tok
  * converters can not have an associated Qtop. But I prefered to simplify
  * and have a unique type for all those different kinds of names.
  *)
-type name = tok (*::*) option  * (qualifier * tok (*::*)) list * ident  
+type name = tok (*::*) option  * (qualifier * tok (*::*)) list * ident_or_op
 
- and ident =
+ and ident_or_op =
    (* function name, macro name, variable, classname, enumname, namespace *)
    | IdIdent of simple_ident
    (* c++ext: *)  
