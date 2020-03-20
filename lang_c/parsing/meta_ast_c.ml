@@ -25,16 +25,22 @@ and vof_unaryOp =
 
 let rec vof_assignOp =
   function
-  | Cst_cpp.SimpleAssign _TODO -> Ocaml.VSum (("SimpleAssign", []))
-  | Cst_cpp.OpAssign v1 ->
-      let v1 = vof_arithOp v1 in Ocaml.VSum (("OpAssign", [ v1 ]))
+  | Cst_cpp.SimpleAssign t -> 
+      let v1 = vof_tok t in
+      Ocaml.VSum (("SimpleAssign", [v1]))
+  | Cst_cpp.OpAssign (v1, v2) ->
+      let v1 = vof_arithOp v1 in 
+      let v2 = vof_tok v2 in
+      Ocaml.VSum (("OpAssign", [ v1; v2 ]))
 and vof_fixOp =
   function
   | Cst_cpp.Dec -> Ocaml.VSum (("Dec", []))
   | Cst_cpp.Inc -> Ocaml.VSum (("Inc", []))
 and vof_binaryOp =
   function
-  | Cst_cpp.Arith v1 -> let v1 = vof_arithOp v1 in Ocaml.VSum (("Arith", [ v1 ]))
+  | Cst_cpp.Arith v1 -> 
+      let v1 = vof_arithOp v1 in 
+      Ocaml.VSum (("Arith", [ v1 ]))
   | Cst_cpp.Logical v1 ->
       let v1 = vof_logicalOp v1 in Ocaml.VSum (("Logical", [ v1 ]))
 and vof_arithOp =
