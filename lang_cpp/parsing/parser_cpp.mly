@@ -473,25 +473,25 @@ cond_expr:
 
 arith_expr: 
  | pm_expr                     { $1 }
- | arith_expr TMul    arith_expr { mk_e(Binary ($1, Arith Mul,      $3)) [$2] }
- | arith_expr TDiv    arith_expr { mk_e(Binary ($1, Arith Div,      $3)) [$2] }
- | arith_expr TMod    arith_expr { mk_e(Binary ($1, Arith Mod,      $3)) [$2] }
+ | arith_expr TMul    arith_expr { mk_e(Binary ($1, (Arith Mul,$2),      $3)) noii }
+ | arith_expr TDiv    arith_expr { mk_e(Binary ($1, (Arith Div,$2),      $3))noii }
+ | arith_expr TMod    arith_expr { mk_e(Binary ($1, (Arith Mod, $2),      $3)) noii }
 
- | arith_expr TPlus   arith_expr { mk_e(Binary ($1, Arith Plus,     $3)) [$2] }
- | arith_expr TMinus  arith_expr { mk_e(Binary ($1, Arith Minus,    $3)) [$2] }
- | arith_expr TShl    arith_expr { mk_e(Binary ($1, Arith DecLeft,  $3)) [$2] }
- | arith_expr TShr    arith_expr { mk_e(Binary ($1, Arith DecRight, $3)) [$2] }
- | arith_expr TInf    arith_expr { mk_e(Binary ($1, Logical Inf,    $3)) [$2] }
- | arith_expr TSup    arith_expr { mk_e(Binary ($1, Logical Sup,    $3)) [$2] }
- | arith_expr TInfEq  arith_expr { mk_e(Binary ($1, Logical InfEq,  $3)) [$2] }
- | arith_expr TSupEq  arith_expr { mk_e(Binary ($1, Logical SupEq,  $3)) [$2] }
- | arith_expr TEqEq   arith_expr { mk_e(Binary ($1, Logical Eq,     $3)) [$2] }
- | arith_expr TNotEq  arith_expr { mk_e(Binary ($1, Logical NotEq,  $3)) [$2] }
- | arith_expr TAnd    arith_expr { mk_e(Binary ($1, Arith And,      $3)) [$2] }
- | arith_expr TOr     arith_expr { mk_e(Binary ($1, Arith Or,       $3)) [$2] }
- | arith_expr TXor    arith_expr { mk_e(Binary ($1, Arith Xor,      $3)) [$2] }
- | arith_expr TAndLog arith_expr { mk_e(Binary ($1, Logical AndLog, $3)) [$2] }
- | arith_expr TOrLog  arith_expr { mk_e(Binary ($1, Logical OrLog,  $3)) [$2] }
+ | arith_expr TPlus   arith_expr { mk_e(Binary ($1, (Arith Plus, $2),     $3)) noii }
+ | arith_expr TMinus  arith_expr { mk_e(Binary ($1, (Arith Minus, $2),    $3)) noii }
+ | arith_expr TShl    arith_expr { mk_e(Binary ($1, (Arith DecLeft, $2),  $3)) noii }
+ | arith_expr TShr    arith_expr { mk_e(Binary ($1, (Arith DecRight, $2), $3)) noii }
+ | arith_expr TInf    arith_expr { mk_e(Binary ($1, (Logical Inf, $2),    $3)) noii }
+ | arith_expr TSup    arith_expr { mk_e(Binary ($1, (Logical Sup, $2),    $3)) noii }
+ | arith_expr TInfEq  arith_expr { mk_e(Binary ($1, (Logical InfEq, $2),  $3)) noii }
+ | arith_expr TSupEq  arith_expr { mk_e(Binary ($1, (Logical SupEq, $2),  $3)) noii }
+ | arith_expr TEqEq   arith_expr { mk_e(Binary ($1, (Logical Eq, $2),     $3)) noii }
+ | arith_expr TNotEq  arith_expr { mk_e(Binary ($1, (Logical NotEq, $2),  $3)) noii }
+ | arith_expr TAnd    arith_expr { mk_e(Binary ($1, (Arith And, $2),      $3)) noii }
+ | arith_expr TOr     arith_expr { mk_e(Binary ($1, (Arith Or, $2),       $3)) noii }
+ | arith_expr TXor    arith_expr { mk_e(Binary ($1, (Arith Xor, $2),      $3)) noii }
+ | arith_expr TAndLog arith_expr { mk_e(Binary ($1, (Logical AndLog, $2), $3)) noii }
+ | arith_expr TOrLog  arith_expr { mk_e(Binary ($1, (Logical OrLog, $2),  $3)) noii }
 
 pm_expr: 
  | cast_expr { $1 }
