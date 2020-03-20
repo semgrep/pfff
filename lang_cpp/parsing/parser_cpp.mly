@@ -629,7 +629,7 @@ cpp_cast_operator:
 cast_constructor_expr:
  | TIdent_TypedefConstr TOPar argument_list_opt TCPar 
      { let name = None, noQscope, IdIdent $1 in
-       let ft = nQ, (TypeName name, noii) in
+       let ft = nQ, (TypeName name) in
        mk_e(ConstructedObject (ft, ($2, $3, $4))) noii  
      }
  | basic_type_2 TOPar argument_list_opt TCPar 
@@ -710,16 +710,16 @@ taction_list:
 const_expr: cond_expr { $1  }
 
 basic_type_2: 
- | Tchar_Constr    { (BaseType (IntType CChar)), [$1]}
- | Tint_Constr     { (BaseType (IntType (Si (Signed,CInt)))), [$1]}
- | Tfloat_Constr   { (BaseType (FloatType CFloat)),  [$1]}
- | Tdouble_Constr  { (BaseType (FloatType CDouble)), [$1] }
+ | Tchar_Constr    { (BaseType (IntType (CChar, [$1]))) }
+ | Tint_Constr     { (BaseType (IntType (Si (Signed,CInt), [$1])))}
+ | Tfloat_Constr   { (BaseType (FloatType (CFloat, [$1]))) }
+ | Tdouble_Constr  { (BaseType (FloatType (CDouble, [$1]))) }
 
- | Twchar_t_Constr { (BaseType (IntType WChar_t)),         [$1] }
+ | Twchar_t_Constr { (BaseType (IntType (WChar_t, [$1]))) }
 
- | Tshort_Constr   { (BaseType (IntType (Si (Signed, CShort)))),  [$1] }
- | Tlong_Constr    { (BaseType (IntType (Si (Signed, CLong)))),   [$1] }
- | Tbool_Constr    { (BaseType (IntType CBool)),         [$1] }
+ | Tshort_Constr   { (BaseType (IntType (Si (Signed, CShort), [$1]))) }
+ | Tlong_Constr    { (BaseType (IntType (Si (Signed, CLong), [$1]))) }
+ | Tbool_Constr    { (BaseType (IntType (CBool, [$1]))) }
 
 /*(*************************************************************************)*/
 /*(*1 Statements *)*/
@@ -879,18 +879,18 @@ type_spec:
 
 
 simple_type_specifier:
- | Tvoid                { Right3 (BaseType Void),            [$1] }
- | Tchar                { Right3 (BaseType (IntType CChar)), [$1]}
- | Tint                 { Right3 (BaseType (IntType (Si (Signed,CInt)))), [$1]}
- | Tfloat               { Right3 (BaseType (FloatType CFloat)),  [$1]}
- | Tdouble              { Right3 (BaseType (FloatType CDouble)), [$1] }
+ | Tvoid                { Right3 (BaseType (Void $1)),            noii }
+ | Tchar                { Right3 (BaseType (IntType (CChar, [$1]))), noii}
+ | Tint                 { Right3 (BaseType (IntType (Si (Signed,CInt), [$1]))), noii}
+ | Tfloat               { Right3 (BaseType (FloatType (CFloat, [$1]))),  noii}
+ | Tdouble              { Right3 (BaseType (FloatType (CDouble, [$1]))), noii }
  | Tshort               { Middle3 Short,  [$1]}
  | Tlong                { Middle3 Long,   [$1]}
  | Tsigned              { Left3 Signed,   [$1]}
  | Tunsigned            { Left3 UnSigned, [$1]}
  /*(*c++ext: *)*/
- | Tbool                { Right3 (BaseType (IntType CBool)),            [$1] }
- | Twchar_t             { Right3 (BaseType (IntType WChar_t)),         [$1] }
+ | Tbool                { Right3 (BaseType (IntType (CBool, [$1]))),noii }
+ | Twchar_t             { Right3 (BaseType (IntType (WChar_t, [$1]))), noii }
 
  /*(* gccext: *)*/
  | Ttypeof TOPar assign_expr TCPar { Right3 (TypeOf ($1,($2,Right $3,$4))),noii}
@@ -983,34 +983,34 @@ declarator:
 
 /*(* so must do  int * const p; if the pointer is constant, not the pointee *)*/
 pointer: 
- | TMul                        { fun x ->(nQ,         (Pointer ($1, x), noii))}
- | TMul cv_qualif_list         { fun x ->($2.qualifD, (Pointer ($1, x), noii))}
- | TMul pointer                { fun x ->(nQ,         (Pointer ($1, $2 x),noii))}
- | TMul cv_qualif_list pointer { fun x ->($2.qualifD, (Pointer ($1, $3 x),noii))}
+ | TMul                        { fun x ->(nQ,         (Pointer ($1, x)))}
+ | TMul cv_qualif_list         { fun x ->($2.qualifD, (Pointer ($1, x)))}
+ | TMul pointer                { fun x ->(nQ,         (Pointer ($1, $2 x)))}
+ | TMul cv_qualif_list pointer { fun x ->($2.qualifD, (Pointer ($1, $3 x)))}
  /*(*c++ext: no qualif for ref *)*/
- | TAnd                        { fun x ->(nQ,    (Reference ($1, x),noii))}
- | TAnd pointer                { fun x ->(nQ,    (Reference ($1, $2 x),noii))}
+ | TAnd                        { fun x ->(nQ,    (Reference ($1, x)))}
+ | TAnd pointer                { fun x ->(nQ,    (Reference ($1, $2 x)))}
 
 direct_d: 
  | declarator_id
      { ($1, fun x -> x) }
  | TOPar declarator TCPar      /*(* forunparser: old: $2 *)*/ 
-     { (fst $2, fun x -> (nQ, (ParenType ($1, (snd $2) x, $3), noii))) }
+     { (fst $2, fun x -> (nQ, (ParenType ($1, (snd $2) x, $3)))) }
  | direct_d TOCro            TCCro         
-     { (fst $1, fun x->(snd $1) (nQ,(Array (($2,None,$3),x), noii))) }
+     { (fst $1, fun x->(snd $1) (nQ,(Array (($2,None,$3),x)))) }
  | direct_d TOCro const_expr TCCro
-     { (fst $1, fun x->(snd $1) (nQ,(Array (($2, Some $3, $4),x),noii))) }
+     { (fst $1, fun x->(snd $1) (nQ,(Array (($2, Some $3, $4),x)))) }
  | direct_d TOPar TCPar const_opt exn_spec_opt
      { (fst $1, fun x-> (snd $1) 
          (nQ, (FunctionType {
            ft_ret= x; ft_params = ($2, [], $3);
-           ft_dots = None; ft_const = $4; ft_throw = $5; }, noii)))
+           ft_dots = None; ft_const = $4; ft_throw = $5; })))
      }
  | direct_d TOPar parameter_type_list TCPar const_opt exn_spec_opt
      { (fst $1, fun x-> (snd $1) 
           (nQ,(FunctionType { 
             ft_ret = x; ft_params = ($2,fst $3,$4); 
-            ft_dots = snd $3; ft_const = $5; ft_throw = $6; }, noii)))
+            ft_dots = snd $3; ft_const = $5; ft_throw = $6; })))
      }
 
 /*(*----------------------------*)*/
@@ -1031,32 +1031,32 @@ abstract_declarator:
 
 direct_abstract_declarator: 
  | TOPar abstract_declarator TCPar /*(* forunparser: old: $2 *)*/
-     { (fun x -> (nQ, (ParenType ($1, $2 x, $3), noii))) }
+     { (fun x -> (nQ, (ParenType ($1, $2 x, $3)))) }
  | TOCro            TCCro                            
-     { fun x ->   (nQ, (Array (($1,None, $2), x), noii))}
+     { fun x ->   (nQ, (Array (($1,None, $2), x)))}
  | TOCro const_expr TCCro                            
-     { fun x ->   (nQ, (Array (($1, Some $2, $3), x), noii))}
+     { fun x ->   (nQ, (Array (($1, Some $2, $3), x)))}
  | direct_abstract_declarator TOCro            TCCro 
-     { fun x ->$1 (nQ, (Array (($2, None, $3), x), noii)) }
+     { fun x ->$1 (nQ, (Array (($2, None, $3), x))) }
  | direct_abstract_declarator TOCro const_expr TCCro
-     { fun x ->$1 (nQ, (Array (($2, Some $3, $4), x), noii)) }
+     { fun x ->$1 (nQ, (Array (($2, Some $3, $4), x))) }
  | TOPar TCPar                                       
      { fun x -> (nQ, (FunctionType {
        ft_ret = x; ft_params = ($1,[],$2); 
-       ft_dots = None; ft_const = None; ft_throw = None;}, noii)) }
+       ft_dots = None; ft_const = None; ft_throw = None;})) }
  | TOPar parameter_type_list TCPar
      { fun x -> (nQ, (FunctionType {
          ft_ret = x; ft_params = ($1,fst $2,$3); 
-         ft_dots = snd $2; ft_const = None; ft_throw = None; }, noii)) }
+         ft_dots = snd $2; ft_const = None; ft_throw = None; })) }
  | direct_abstract_declarator TOPar TCPar const_opt exn_spec_opt
      { fun x -> $1 (nQ, (FunctionType {
          ft_ret = x; ft_params = ($2,[],$3); 
-         ft_dots = None; ft_const = $4; ft_throw = $5; }, noii)) }
+         ft_dots = None; ft_const = $4; ft_throw = $5; })) }
  | direct_abstract_declarator TOPar parameter_type_list TCPar const_opt 
     exn_spec_opt
      { fun x -> $1 (nQ, (FunctionType {
          ft_ret = x; ft_params = ($2,fst $3,$4); 
-         ft_dots = snd $3; ft_const = $5; ft_throw = $6; }, noii)) }
+         ft_dots = snd $3; ft_const = $5; ft_throw = $6; })) }
 
 /*(*-----------------------------------------------------------------------*)*/
 /*(*2 Parameters (use decl_spec not type_spec just for 'register') *)*/
@@ -1107,7 +1107,7 @@ parameter_decl2:
  /*(* when the typedef inference didn't work *)*/
  | TIdent
      { 
-       let t = nQ, (TypeName (None, [], IdIdent $1), noii) in
+       let t = nQ, (TypeName (None, [], IdIdent $1)) in
        { p_name = None; p_type = t; p_val = None; p_register = None; }
      }
 
