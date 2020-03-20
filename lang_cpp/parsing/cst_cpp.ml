@@ -385,7 +385,7 @@ and statement = statementbis wrapx
   | Labeled       of labeled
   | Selection     of selection
   | Iteration     of iteration
-  | Jump          of jump
+  | Jump          of jump * sc
 
   (* c++ext: in C this constructor could be outside the statement type, in a
    * decl type, because declarations are only at the beginning of a compound
@@ -410,10 +410,11 @@ and statement = statementbis wrapx
   and exprStatement = expression option
 
   and labeled = 
-    | Label   of string * statement
-    | Case    of expression * statement 
-    | CaseRange of expression * expression * statement (* gccext: *)
-    | Default of statement
+    | Label   of string wrap * tok (* : *) * statement
+    | Case    of tok * expression * tok (* : *) * statement 
+    | CaseRange of tok * expression * tok (* ... *) * expression * 
+                   tok (* : *) * statement (* gccext: *)
+    | Default of tok * tok (* : *) * statement
 
   and selection     = 
    | If of tok * expression paren * statement * (tok * statement) option
@@ -433,11 +434,11 @@ and statement = statementbis wrapx
     | MacroIteration of simple_ident * argument comma_list paren * statement
 
   and jump  = 
-    | Goto of string
-    | Continue | Break 
-    | Return   | ReturnExpr of expression
-    (* gccext: goto *exp ';' *)
-    | GotoComputed of expression
+    | Goto of tok * string wrap
+    | Continue of tok | Break of tok
+    | Return of tok   | ReturnExpr of tok * expression
+    (* gccext: goto *exp *)
+    | GotoComputed of tok * tok * expression
 
   (* c++ext: *)
   and handler = tok * exception_declaration paren * compound

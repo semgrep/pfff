@@ -385,7 +385,7 @@ and cpp_def_val for_debug env x =
 (* ---------------------------------------------------------------------- *)
 
 and stmt env x =
-  let (st, ii) = x in
+  let (st, _ii) = x in
   match st with
   | Compound x -> A.Block (compound env x)
   | Selection s ->
@@ -424,19 +424,18 @@ and stmt env x =
 
   | Labeled lbl ->
       (match lbl with
-      | Label (s, st) ->
-          A.Label ((s, List.hd ii), stmt env st)
+      | Label (s, _, st) ->
+          A.Label (s, stmt env st)
       | Case _ | CaseRange _ | Default _ ->
           debug (Stmt x); raise CaseOutsideSwitch
       )
-  | Jump j ->
-      let tok = List.hd ii in
+  | Jump (j, _) ->
       (match j with
-      | Goto s -> A.Goto (tok, (s, tok))
-      | Return -> A.Return (tok, None);
-      | ReturnExpr e -> A.Return (tok, Some (expr env e))
-      | Continue -> A.Continue tok
-      | Break -> A.Break tok
+      | Goto (tok, s) -> A.Goto (tok, s)
+      | Return tok -> A.Return (tok, None);
+      | ReturnExpr (tok, e) -> A.Return (tok, Some (expr env e))
+      | Continue tok -> A.Continue tok
+      | Break tok -> A.Break tok
       | GotoComputed _ -> debug (Stmt x); raise Todo
       )
 
@@ -469,13 +468,13 @@ and cases env x =
         | [] -> []
         | x::xs ->
             (match x with
-            | StmtElem ((Labeled (Case (_, st))), _)
-            | StmtElem ((Labeled (Default st)), _)
+            | StmtElem ((Labeled (Case (_, _, _, st))), _)
+            | StmtElem ((Labeled (Default (_, _, st))), _)
               ->
                 let xs', rest =
                   (StmtElem st::xs) |> Common.span (function
-                  | StmtElem ((Labeled (Case (_, _st))), _)
-                  | StmtElem ((Labeled (Default _st)), _) -> false
+                  | StmtElem ((Labeled (Case (_, _, _, _st))), _)
+                  | StmtElem ((Labeled (Default (_, _, _st))), _) -> false
                   | _ -> true
                   )
                 in
@@ -486,11 +485,9 @@ and cases env x =
                     raise MacroInCase
                 ) xs' in
                 (match x with
-                | StmtElem ((Labeled (Case (e, _))), ii) ->
-                    let tok = List.hd ii in
+                | StmtElem ((Labeled (Case (tok, e, _, _))), _ii) ->
                     A.Case (tok, expr env e, stmts)
-                | StmtElem ((Labeled (Default _st)), ii) ->
-                    let tok = List.hd ii in
+                | StmtElem ((Labeled (Default (tok, _, _st))), _ii) ->
                     A.Default (tok, stmts)
                 | _ -> raise Impossible
                 )::aux rest

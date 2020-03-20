@@ -728,10 +728,10 @@ basic_type_2:
 statement: 
  | compound        { Compound $1, noii }
  | expr_statement  { ExprStatement (fst $1, snd $1), noii }
- | labeled         { Labeled      (fst $1), snd $1 }
- | selection       { Selection    (fst $1), snd $1 }
+ | labeled         { Labeled      ($1), noii }
+ | selection       { Selection    $1, noii }
  | iteration       { Iteration    (fst $1), snd $1 }
- | jump TPtVirg    { Jump         (fst $1), snd $1 @ [$2] }
+ | jump TPtVirg    { Jump         ($1, $2), noii }
 
  /*(* cppext: *)*/
  | TIdent_MacroStmt { MacroStmt, [$1] }
@@ -785,20 +785,21 @@ expr_statement:
    * a Case  (1, (Case (2, i++)))  :(  
    *)*/
 labeled: 
- | ident            TCol statement   { Label (fst $1, $3),  [snd $1; $2] }
- | Tcase const_expr TCol statement   { Case ($2, $4),       [$1; $3] }
- | Tcase const_expr TEllipsis const_expr TCol statement 
-     { CaseRange ($2, $4, $6), [$1;$3;$5] } /*(* gccext: allow range *)*/
- | Tdefault         TCol statement   { Default $3,             [$1; $2] } 
+ | ident            TCol statement   { Label ($1, $2, $3) }
+ | Tcase const_expr TCol statement   { Case ($1, $2, $3, $4) }
+  /*(* gccext: allow range *)*/
+ | Tcase const_expr TEllipsis const_expr TCol statement
+     { CaseRange ($1, $2, $3, $4, $5, $6) } 
+ | Tdefault         TCol statement   { Default ($1, $2, $3) } 
 
 /*(* classic else ambiguity resolved by a %prec, see conflicts.txt *)*/
 selection: 
  | Tif TOPar expr TCPar statement              %prec LOW_PRIORITY_RULE
-     { If ($1, ($2, $3, $4), $5, None), noii }
+     { If ($1, ($2, $3, $4), $5, None) }
  | Tif TOPar expr TCPar statement Telse statement 
-     { If ($1, ($2, $3, $4), $5, Some ($6, $7)), noii }
+     { If ($1, ($2, $3, $4), $5, Some ($6, $7)) }
  | Tswitch TOPar expr TCPar statement             
-     { Switch ($1, ($2, $3, $4), $5), noii }
+     { Switch ($1, ($2, $3, $4), $5) }
 
 iteration: 
  | Twhile TOPar expr TCPar statement                             
@@ -813,12 +814,12 @@ iteration:
 
 /*(* the ';' in the caller grammar rule will be appended to the infos *)*/
 jump: 
- | Tgoto ident  { Goto (fst $2),  [$1;snd $2] } 
- | Tcontinue    { Continue,       [$1] }
- | Tbreak       { Break,          [$1] }
- | Treturn      { Return,         [$1] } 
- | Treturn expr { ReturnExpr $2,  [$1] }
- | Tgoto TMul expr { GotoComputed $3, [$1;$2] }
+ | Tgoto ident  { Goto ($1, $2) } 
+ | Tcontinue    { Continue $1 }
+ | Tbreak       { Break $1 }
+ | Treturn      { Return $1 } 
+ | Treturn expr { ReturnExpr ($1, $2) }
+ | Tgoto TMul expr { GotoComputed ($1, $2, $3) }
 
 
 /*(*----------------------------*)*/

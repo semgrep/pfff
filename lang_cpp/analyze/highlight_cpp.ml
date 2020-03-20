@@ -223,11 +223,10 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
 
     V.kstmt = (fun (k, _) x ->
       match x with
-      | Labeled (Ast.Label (_s, _st)), ii ->
-          ii |> List.iter (fun ii -> tag ii KeywordExn);
+      | Labeled (Ast.Label ((_, ii1), ii2, _st)), _ii ->
+          [ii1;ii2] |> List.iter (fun ii -> tag ii KeywordExn);
           k x
-      | Jump (Goto _s), ii ->
-          let (_iigoto, lblii, _iiptvirg) = Common2.tuple_of_list3 ii in
+      | Jump (Goto (_, (_s, lblii)), _), _ii ->
           tag lblii KeywordExn;
           k x
       | _ -> k x
