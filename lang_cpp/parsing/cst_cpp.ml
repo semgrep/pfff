@@ -151,10 +151,8 @@ type name = tok (*::*) option  * (qualifier * tok (*::*)) list * ident
  * himself (but we can do it for pointer).
  *)
 and fullType = typeQualifier * typeC
- and typeC = typeCbis wrapx
-
  (* less: rename to TBase, TPointer, etc *)
- and typeCbis =
+ and typeC =
   | BaseType        of baseType
 
   | Pointer         of tok (*'*'*) * fullType
@@ -191,9 +189,9 @@ and fullType = typeQualifier * typeC
   | ParenType of fullType paren
 
   and  baseType = 
-    | Void
-    | IntType   of intType 
-    | FloatType of floatType
+    | Void of tok
+    | IntType   of intType * tok list
+    | FloatType of floatType * tok list
 
      (* stdC: type section. 'char' and 'signed char' are different *)
       and intType   = 
@@ -807,7 +805,7 @@ let uncomma xs = List.map fst xs
 let unparen (_, x, _) = x
 let unbrace (_, x, _) = x
 
-let unwrap_typeC (_qu, (typeC, _ii)) = typeC
+let unwrap_typeC (_qu, (typeC)) = typeC
 
 (* When want add some info in AST that does not correspond to 
  * an existing C element.

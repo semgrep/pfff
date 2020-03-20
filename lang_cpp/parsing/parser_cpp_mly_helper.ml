@@ -16,6 +16,8 @@ let warning s v =
 
 exception Semantic of string * Cst_cpp.tok
 
+let fake s = Parse_info.fake_info s
+
 (*****************************************************************************)
 (* Parse helpers functions *)
 (*****************************************************************************)
@@ -32,7 +34,7 @@ type shortLong = Short | Long | LongLong
  *)
 type decl = { 
   storageD: storage;
-  typeD: (sign option * shortLong option * typeCbis option) wrapx;
+  typeD: (sign option * shortLong option * typeC option) wrapx;
   qualifD: typeQualifier;
   inlineD: bool wrapx;
 } 
@@ -125,30 +127,31 @@ let type_and_storage_from_decl
  | (None, None, None)     -> 
    (* c++ext: *)
    (match st with
-   | Sto (Auto, ii) -> BaseType Void(*  TODO *), [ii]
+   | Sto (Auto, ii) -> BaseType (Void ii)(* TODO AST *)
    | _ ->
     (* mine (originally default to int, but this looks like bad style) *)
      let decl = 
-      { v_namei = None; v_type = qu, (BaseType Void, iit); v_storage = st } in
+      { v_namei = None; v_type = qu, (BaseType (Void (List.hd iit))); v_storage = st } in
      raise (Semantic ("no type (could default to 'int')", 
                     List.hd (Lib_parsing_cpp.ii_of_any (OneDecl decl))))
    )
- | (None, None, Some t)   -> (t, iit)
-	 
- | (Some sign,   None, (None| Some (BaseType (IntType (Si (_,CInt))))))  -> 
-     BaseType(IntType (Si (sign, CInt))), iit
- | ((None|Some Signed),Some x,(None|Some(BaseType(IntType (Si (_,CInt)))))) -> 
-     BaseType(IntType (Si (Signed, [Short,CShort; Long, CLong; LongLong, CLongLong] |> List.assoc x))), iit
- | (Some UnSigned, Some x, (None| Some (BaseType (IntType (Si (_,CInt))))))-> 
-     BaseType(IntType (Si (UnSigned, [Short,CShort; Long, CLong; LongLong, CLongLong] |> List.assoc x))), iit
- | (Some sign,   None, (Some (BaseType (IntType CChar))))   -> BaseType(IntType (Si (sign, CChar2))), iit
- | (None, Some Long,(Some(BaseType(FloatType CDouble))))    -> BaseType (FloatType (CLongDouble)), iit
+ | (None, None, Some t)   -> t
+ | (Some sign,   None, (None| Some (BaseType (IntType (Si (_,CInt), _)))))-> 
+     BaseType(IntType (Si (sign, CInt), noii))
+ | ((None|Some Signed), Some x, (None|Some(BaseType(IntType (Si (_,CInt), _))))) -> 
+     BaseType(IntType (Si (Signed, [Short,CShort; Long, CLong; LongLong, CLongLong] |> List.assoc x), noii))
+ | (Some UnSigned, Some x, (None| Some (BaseType (IntType (Si (_,CInt), _)))))-> 
+     BaseType(IntType (Si (UnSigned, [Short,CShort; Long, CLong; LongLong, CLongLong] |> List.assoc x), noii))
+ | (Some sign,   None, (Some (BaseType (IntType (CChar, ii)))))   -> 
+     BaseType(IntType (Si (sign, CChar2), ii))
+ | (None, Some Long,(Some(BaseType(FloatType (CDouble, ii)))))    -> 
+     BaseType (FloatType (CLongDouble, ii))
 
  | (Some _,_, Some _) ->  
    raise (Semantic("signed, unsigned valid only for char and int", List.hd iit))
- | (_,Some _,(Some(BaseType(FloatType (CFloat|CLongDouble))))) -> 
+ | (_,Some _,(Some(BaseType(FloatType ((CFloat|CLongDouble), _))))) -> 
    raise (Semantic ("long or short specified with floatint type", List.hd iit))
- | (_,Some Short,(Some(BaseType(FloatType CDouble)))) ->
+ | (_,Some Short,(Some(BaseType(FloatType (CDouble, _))))) ->
      raise (Semantic ("the only valid combination is long double", List.hd iit))
        
  | (_, Some _, Some _) -> 
@@ -204,7 +207,7 @@ let type_and_storage_for_funcdef_from_decl decl =
  *)
 let (fixOldCDecl: fullType -> fullType) = fun ty ->
   match snd ty with
-  | FunctionType ({ft_params=params;_}),_iifunc -> 
+  | FunctionType ({ft_params=params;_}) -> 
       (* stdC: If the prototype declaration declares a parameter for a
        * function that you are defining (it is part of a function
        * definition), then you must write a name within the declarator.
@@ -212,7 +215,7 @@ let (fixOldCDecl: fullType -> fullType) = fun ty ->
       (match Ast.unparen params with
       | [{p_name = None; p_type = ty2;_},_] -> 
           (match Ast.unwrap_typeC ty2 with
-          | BaseType Void -> ty
+          | BaseType (Void _) -> ty
           | _ ->
             (* less: there is some valid case actually, when use interfaces
              * and generic callbacks where specific instances do not
@@ -252,14 +255,14 @@ let (fixOldCDecl: fullType -> fullType) = fun ty ->
 (* TODO: this is ugly ... use record! *)
 let fixFunc ((name, ty, sto), cp) =
   match ty with
-  | (aQ,(FunctionType ({ft_params=params; _} as ftyp),_iifunc)) ->
+  | (aQ,(FunctionType ({ft_params=params; _} as ftyp))) ->
       (* it must be nullQualif, cos parser construct only this *)
       assert (aQ =*= nQ);
 
       (match Ast.unparen params with
       [{p_name= None; p_type = ty2;_}, _] ->
           (match Ast.unwrap_typeC ty2 with
-          | BaseType Void -> ()
+          | BaseType (Void _) -> ()
           (* failwith "internal errror: fixOldCDecl not good" *)
           | _ -> ()
           )
@@ -279,13 +282,13 @@ let fixFieldOrMethodDecl (xs, semicolon) =
   match xs with
   | [FieldDecl({
       v_namei = Some (name, ini_opt);
-      v_type = (q, (FunctionType ft, ii_ft));
+      v_type = (q, (FunctionType ft));
       v_storage = sto;
     }), _noiicomma] ->
       (* todo? define another type instead of onedecl? *)
       MemberDecl (MethodDecl ({
         v_namei = Some (name, None);
-        v_type = (q, (FunctionType ft, ii_ft));
+        v_type = (q, (FunctionType ft));
         v_storage = sto;
       }, 
       (match ini_opt with
@@ -315,7 +318,7 @@ let mk_constructor id (lp, params, rp) cp =
     | None -> [], None
   in
   let ftyp = {
-    ft_ret = nQ, (BaseType Void, noii);
+    ft_ret = nQ, (BaseType (Void (fake "void")));
     ft_params= (lp, params, rp);
     ft_dots = None;
     (* TODO *)
@@ -329,7 +332,7 @@ let mk_constructor id (lp, params, rp) cp =
 
 let mk_destructor tilde id (lp, _voidopt, rp) exnopt cp =
   let ftyp = {
-    ft_ret = nQ, (BaseType Void, noii);
+    ft_ret = nQ, (BaseType (Void (fake "void")));
     ft_params= (lp,  [], rp);
     ft_dots = None;
     ft_const = None;

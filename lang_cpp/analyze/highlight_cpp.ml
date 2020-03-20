@@ -303,7 +303,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
 
       | New (_colon, _tok, _placement, ft, _args) ->
           (match ft with
-          | _nq, ((TypeName (name)), _) ->
+          | _nq, ((TypeName (name))) ->
               Ast.ii_of_id_name name |> List.iter (fun ii -> 
                 tag ii (Entity (Class, (Use2 fake_no_use2)));
               )
@@ -333,8 +333,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     );
 
     V.ktypeC = (fun (k, _) x ->
-      let (typeCbis, _)  = x in
-      match typeCbis with
+      match x with
       | TypeName (name) ->
           Ast.ii_of_id_name name |> List.iter (fun ii -> 
             (* new Xxx and other places have priority *)

@@ -606,20 +606,20 @@ and argument env x =
 (* Type *)
 (* ---------------------------------------------------------------------- *)
 and full_type env x =
-  let (_qu, (t, ii)) = x in
+  let (_qu, (t)) = x in
   match t with
   | Pointer (tok, t) -> A.TPointer (tok, full_type env t)
   | BaseType t ->
-      let s = 
+      let s, ii = 
         (match t with
-        | Void -> "void"
-        | FloatType ft ->
+        | Void ii -> "void", ii
+        | FloatType (ft, iis) ->
             (match ft with
-            | CFloat -> "float" 
+            | CFloat -> "float"
             | CDouble -> "double" 
             | CLongDouble -> "long_double"
-            )
-        | IntType it ->
+            ), List.hd iis
+        | IntType (it, iis) ->
             (match it with
             | CChar -> "char"
             | Si (si, base) ->
@@ -638,10 +638,10 @@ and full_type env x =
                 )
             | CBool | WChar_t ->
                 debug (Type x); raise CplusplusConstruct
-            )
+            ), List.hd iis
         )
       in
-      A.TBase (s, List.hd ii)
+      A.TBase (s, ii)
 
   | FunctionType ft -> A.TFunction (function_type env ft)
   | Array ((_, eopt, _), ft) -> 
