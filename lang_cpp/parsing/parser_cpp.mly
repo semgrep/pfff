@@ -459,7 +459,7 @@ assign_expr:
  | cast_expr TAssign assign_expr { mk_e(Assignment ($1,fst $2,$3)) [snd $2]}
  | cast_expr TEq     assign_expr { mk_e(Assignment ($1,SimpleAssign,$3)) [$2]}
  /*(*c++ext: *)*/
- | Tthrow assign_expr_opt        { mk_e (Throw $2) [$1] }
+ | Tthrow assign_expr_opt        { mk_e (Throw ($1, $2)) noii }
 
 /*(* gccext: allow optional then part hence opt_expr 
    * bugfix: in C grammar they put 'TCol cond_expr', but in fact it must be

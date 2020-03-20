@@ -289,7 +289,7 @@ and expr = expressionbis wrapx
 
   | Delete      of tok (*::*) option * expr
   | DeleteArray of tok (*::*) option * expr
-  | Throw of expr option 
+  | Throw of tok * expr option 
 
   (* forunparser: *)
   | ParenExpr of expr paren
