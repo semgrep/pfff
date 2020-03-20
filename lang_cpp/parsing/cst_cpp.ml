@@ -108,7 +108,7 @@ type name = tok (*::*) option  * (qualifier * tok (*::*)) list * ident_or_op
    and ident = string wrap
  
    and template_arguments = template_argument comma_list angle
-    and template_argument = (fullType, expression) Common.either
+    and template_argument = (fullType, expr) Common.either
 
  and qualifier = 
    | QClassname of ident (* classname or namespacename *)
@@ -178,7 +178,7 @@ and fullType = typeQualifier * typeC
    * ident) type ident;' because when you want to do a macro(char[256],
    * x), then it will generate invalid code, but with a '#define
    * macro(type, ident) __typeof(type) ident;' it will work. *)
-  | TypeOf of tok * (fullType, expression) Common.either paren
+  | TypeOf of tok * (fullType, expr) Common.either paren
 
   (* should be really just at toplevel *)
   | EnumDef of enum_definition (* => string * int list *)
@@ -228,7 +228,7 @@ and typeQualifier =
  * have an StatementExpr and a new (local) struct defined. Same for
  * Constructor.
  *)
-and expression = expressionbis wrapx
+and expr = expressionbis wrapx
  and expressionbis = 
   (* Id can be an enumeration constant, variable, function name.
    * cppext: Id can also be the name of a macro. sparse says
@@ -242,35 +242,35 @@ and expression = expressionbis wrapx
   (* I used to have FunCallSimple but not that useful, and we want scope info
    * for FunCallSimple too because can have fn(...) where fn is actually
    * a local *)
-  | Call of expression * argument comma_list paren
+  | Call of expr * argument comma_list paren
 
   (* gccext: x ? /* empty */ : y <=> x ? x : y; *)
-  | CondExpr       of expression * expression option * expression
+  | CondExpr       of expr * expr option * expr
 
   (* should be considered as statements, bad C langage *)
-  | Sequence       of expression * expression                   
-  | Assignment     of expression * assignOp * expression        
+  | Sequence       of expr * expr                   
+  | Assignment     of expr * assignOp * expr        
 
-  | Postfix        of expression * fixOp                        
-  | Infix          of expression * fixOp
+  | Postfix        of expr * fixOp                        
+  | Infix          of expr * fixOp
   (* contains GetRef and Deref!! todo: lift up? *)
-  | Unary          of expression * unaryOp                      
-  | Binary         of expression * binaryOp * expression        
+  | Unary          of expr * unaryOp                      
+  | Binary         of expr * binaryOp * expr        
 
-  | ArrayAccess    of expression * expression bracket
+  | ArrayAccess    of expr * expr bracket
 
    (* The Pt is redundant normally, could be replace by DeRef RecordAccess *)
-  | RecordAccess   of expression * tok (* . *)  * name
-  | RecordPtAccess of expression * tok (* -> *) * name
+  | RecordAccess   of expr * tok (* . *)  * name
+  | RecordPtAccess of expr * tok (* -> *) * name
 
-  (* c++ext: note that second paramater is an expression, not a name *)
-  | RecordStarAccess   of expression * tok (* .* *) * expression
-  | RecordPtStarAccess of expression * tok (* ->* *) * expression
+  (* c++ext: note that second paramater is an expr, not a name *)
+  | RecordStarAccess   of expr * tok (* .* *) * expr
+  | RecordPtStarAccess of expr * tok (* ->* *) * expr
 
-  | SizeOfExpr     of tok * expression
+  | SizeOfExpr     of tok * expr
   | SizeOfType     of tok * fullType paren
 
-  | Cast          of fullType paren * expression
+  | Cast          of fullType paren * expr
 
   (* gccext: *)        
   | StatementExpr of compound paren (* ( {  } ) new scope*)
@@ -280,19 +280,19 @@ and expression = expressionbis wrapx
   (* c++ext: *)
   | This of tok
   | ConstructedObject of fullType * argument comma_list paren
-  | TypeId     of tok * (fullType, expression) Common.either paren
-  | CplusplusCast of cast_operator wrap * fullType angle * expression paren
+  | TypeId     of tok * (fullType, expr) Common.either paren
+  | CplusplusCast of cast_operator wrap * fullType angle * expr paren
   | New of tok (*::*) option * tok * 
       argument comma_list paren option (* placement *) *
       fullType *
       argument comma_list paren option (* initializer *)
 
-  | Delete      of tok (*::*) option * expression
-  | DeleteArray of tok (*::*) option * expression
-  | Throw of expression option 
+  | Delete      of tok (*::*) option * expr
+  | DeleteArray of tok (*::*) option * expr
+  | Throw of expr option 
 
   (* forunparser: *)
-  | ParenExpr of expression paren
+  | ParenExpr of expr paren
 
   (* sgrep-ext: *)
   | Ellipses of tok
@@ -304,8 +304,8 @@ and expression = expressionbis wrapx
     mutable i_scope: Scope_code.t;
   }
 
-  (* cppext: normmally just expression *)
-  and argument = (expression, weird_argument) Common.either
+  (* cppext: normmally just expr *)
+  and argument = (expr, weird_argument) Common.either
    and weird_argument = 
        | ArgType of fullType
        (* for really unparsable stuff ... we just bailout *)
@@ -367,12 +367,12 @@ and expression = expressionbis wrapx
   and cast_operator = 
     | Static_cast | Dynamic_cast | Const_cast | Reinterpret_cast
 
- and constExpression = expression (* => int *)
+ and constExpression = expr (* => int *)
 
 (* ------------------------------------------------------------------------- *)
 (* Statements *)
 (* ------------------------------------------------------------------------- *)
-(* note: assignement is not a statement, it's an expression :(
+(* note: assignement is not a statement, it's an expr :(
  * (wonderful C language).
  * note: I use 'and' for type definition because gccext allows statements as
  * expressions, so we need mutual recursive type definition now.
@@ -405,25 +405,25 @@ and statement =
    *)
   and compound = statement_sequencable list brace
 
-  and exprStatement = expression option
+  and exprStatement = expr option
 
   and labeled = 
     | Label   of string wrap * tok (* : *) * statement
-    | Case    of tok * expression * tok (* : *) * statement 
-    | CaseRange of tok * expression * tok (* ... *) * expression * 
+    | Case    of tok * expr * tok (* : *) * statement 
+    | CaseRange of tok * expr * tok (* ... *) * expr * 
                    tok (* : *) * statement (* gccext: *)
     | Default of tok * tok (* : *) * statement
 
   and selection     = 
-   | If of tok * expression paren * statement * (tok * statement) option
+   | If of tok * expr paren * statement * (tok * statement) option
    (* need to check that all elements in the compound start
     * with a case:, otherwise it's unreachable code.
     *)
-   | Switch of tok * expression paren * statement 
+   | Switch of tok * expr paren * statement 
 
   and iteration     = 
-    | While   of tok * expression paren * statement
-    | DoWhile of tok * statement * tok * expression paren * sc
+    | While   of tok * expr paren * statement
+    | DoWhile of tok * statement * tok * expr paren * sc
     | For of 
         tok *
         (exprStatement * sc * exprStatement * sc * exprStatement) paren *
@@ -434,9 +434,9 @@ and statement =
   and jump  = 
     | Goto of tok * string wrap
     | Continue of tok | Break of tok
-    | Return of tok   | ReturnExpr of tok * expression
+    | Return of tok   | ReturnExpr of tok * expr
     (* gccext: goto *exp *)
-    | GotoComputed of tok * tok * expression
+    | GotoComputed of tok * tok * expr
 
   (* c++ext: *)
   and handler = tok * exception_declaration paren * compound
@@ -479,7 +479,7 @@ and block_declaration =
   and asmbody = tok list (* string list *) * colon list
       and colon = Colon of tok (* : *) * colon_option comma_list
       and colon_option = 
-            | ColonExpr of tok list * expression paren
+            | ColonExpr of tok list * expr paren
             | ColonMisc of tok list
 
 (* ------------------------------------------------------------------------- *)
@@ -514,18 +514,18 @@ and block_declaration =
      | ObjInit of argument comma_list paren
 
     and initialiser =
-      | InitExpr of expression 
+      | InitExpr of expr 
       | InitList of initialiser comma_list brace
       (* gccext: *)
       | InitDesignators of designator list * tok (*=*) * initialiser
       | InitFieldOld  of ident * tok (*:*) * initialiser
-      | InitIndexOld  of expression bracket * initialiser
+      | InitIndexOld  of expr bracket * initialiser
 
       (* ex: [2].y = x,  or .y[2]  or .y.x. They can be nested *)
       and designator =
         | DesignatorField of tok(*:*) * ident
-        | DesignatorIndex of expression bracket
-        | DesignatorRange of (expression * tok (*...*) * expression) bracket
+        | DesignatorIndex of expr bracket
+        | DesignatorRange of (expr * tok (*...*) * expr) bracket
               
         
 (* ------------------------------------------------------------------------- *)
@@ -559,7 +559,7 @@ and func_definition = {
         p_type: fullType;
         p_register: tok option;
         (* c++ext: *)
-        p_val: (tok (*=*) * expression) option;
+        p_val: (tok (*=*) * expr) option;
       }
     and exn_spec = (tok * name comma_list2 paren)
 
@@ -667,7 +667,7 @@ and cpp_directive =
    | DefineVar
    | DefineFunc   of string wrap comma_list paren
    and define_val = 
-     | DefineExpr of expression
+     | DefineExpr of expr
      | DefineStmt of statement
      | DefineType of fullType
      | DefineFunction of func_definition
@@ -678,7 +678,7 @@ and cpp_directive =
 
      (* do ... while(0) *)
      | DefineDoWhileZero of tok * statement * tok * tok paren
-     | DefinePrintWrapper of tok (* if *) * expression paren * name
+     | DefinePrintWrapper of tok (* if *) * expr paren * name
 
      | DefineTodo
 
@@ -764,7 +764,7 @@ and any =
   | Toplevel of toplevel
   | Cpp of cpp_directive
   | Stmt of statement
-  | Expr of expression
+  | Expr of expr
   | Type of fullType
   | Name of name
 
