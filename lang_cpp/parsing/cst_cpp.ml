@@ -377,7 +377,7 @@ and expr = expressionbis wrapx
  * note: I use 'and' for type definition because gccext allows statements as
  * expressions, so we need mutual recursive type definition now.
  *)
-and statement =
+and stmt =
   | Compound      of compound   (* new scope *)
   | ExprStatement of exprStatement * sc
   | Labeled       of labeled
@@ -400,36 +400,36 @@ and statement =
   | StmtTodo of tok
 
   (* cppext: c++ext:
-   * old: compound = (declaration list * statement list)
-   * old: (declaration, statement) either list 
+   * old: compound = (declaration list * stmt list)
+   * old: (declaration, stmt) either list 
    *)
-  and compound = statement_sequencable list brace
+  and compound = stmt_sequencable list brace
 
   and exprStatement = expr option
 
   and labeled = 
-    | Label   of string wrap * tok (* : *) * statement
-    | Case    of tok * expr * tok (* : *) * statement 
+    | Label   of string wrap * tok (* : *) * stmt
+    | Case    of tok * expr * tok (* : *) * stmt 
     | CaseRange of tok * expr * tok (* ... *) * expr * 
-                   tok (* : *) * statement (* gccext: *)
-    | Default of tok * tok (* : *) * statement
+                   tok (* : *) * stmt (* gccext: *)
+    | Default of tok * tok (* : *) * stmt
 
   and selection     = 
-   | If of tok * expr paren * statement * (tok * statement) option
+   | If of tok * expr paren * stmt * (tok * stmt) option
    (* need to check that all elements in the compound start
     * with a case:, otherwise it's unreachable code.
     *)
-   | Switch of tok * expr paren * statement 
+   | Switch of tok * expr paren * stmt 
 
   and iteration     = 
-    | While   of tok * expr paren * statement
-    | DoWhile of tok * statement * tok * expr paren * sc
+    | While   of tok * expr paren * stmt
+    | DoWhile of tok * stmt * tok * expr paren * sc
     | For of 
         tok *
         (exprStatement * sc * exprStatement * sc * exprStatement) paren *
-        statement
+        stmt
     (* cppext: *)
-    | MacroIteration of ident * argument comma_list paren * statement
+    | MacroIteration of ident * argument comma_list paren * stmt
 
   and jump  = 
     | Goto of tok * string wrap
@@ -444,18 +444,18 @@ and statement =
      | ExnDeclEllipsis of tok
      | ExnDecl of parameter
 
-  (* easier to put at statement_list level than statement level *)
-  and statement_sequencable = 
-    | StmtElem of statement
+  (* easier to put at stmt_list level than stmt level *)
+  and stmt_sequencable = 
+    | StmtElem of stmt
     (* cppext: *) 
     | CppDirectiveStmt of cpp_directive
-    | IfdefStmt of ifdef_directive (* * statement list *)
+    | IfdefStmt of ifdef_directive (* * stmt list *)
 
 
 (* ------------------------------------------------------------------------- *)
 (* Block Declaration *)
 (* ------------------------------------------------------------------------- *)
-(* a.k.a declaration_statement *)
+(* a.k.a declaration_stmt *)
 and block_declaration = 
  (* Before I had a Typedef constructor, but why make this special case and not
   * have also StructDef, EnumDef, so that 'struct t {...} v' which would
@@ -668,7 +668,7 @@ and cpp_directive =
    | DefineFunc   of string wrap comma_list paren
    and define_val = 
      | DefineExpr of expr
-     | DefineStmt of statement
+     | DefineStmt of stmt
      | DefineType of fullType
      | DefineFunction of func_definition
      | DefineInit of initialiser (* in practice only { } with possible ',' *)
@@ -677,7 +677,7 @@ and cpp_directive =
      | DefineEmpty
 
      (* do ... while(0) *)
-     | DefineDoWhileZero of tok * statement * tok * tok paren
+     | DefineDoWhileZero of tok * stmt * tok * tok paren
      | DefinePrintWrapper of tok (* if *) * expr paren * name
 
      | DefineTodo
@@ -740,7 +740,7 @@ and declaration =
  and template_parameter = parameter (* todo? more? *)
   and template_parameters = template_parameter comma_list angle
 
-  (* easier to put at statement_list level than statement level *)
+  (* easier to put at stmt_list level than stmt level *)
   and declaration_sequencable = 
     | DeclElem of declaration
     (* cppext: *) 
@@ -763,7 +763,7 @@ and any =
   | Program of program
   | Toplevel of toplevel
   | Cpp of cpp_directive
-  | Stmt of statement
+  | Stmt of stmt
   | Expr of expr
   | Type of fullType
   | Name of name
@@ -775,7 +775,7 @@ and any =
   | ClassMember of class_member
   | OneDecl of onedecl
   | Init of initialiser
-  | Stmts of statement list
+  | Stmts of stmt list
 
   | Constant of constant
 

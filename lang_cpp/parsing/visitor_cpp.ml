@@ -27,7 +27,7 @@ open Cst_cpp
 (* hooks *)
 type visitor_in = {
   kexpr: expr vin;
-  kstmt: statement vin;
+  kstmt: stmt vin;
   kinit: initialiser vin;
   ktypeC: typeC vin;
 
