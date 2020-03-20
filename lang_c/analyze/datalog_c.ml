@@ -266,9 +266,9 @@ let instrs_of_expr env e =
     let v = fresh_var env tokwrap in
     let tok = snd tokwrap in
     let i2 = 
-      instr_of_expr (A.Assign ((Cst_cpp.SimpleAssign, tok), A.Id v, e2)) in
+      instr_of_expr (A.Assign ((Cst_cpp.SimpleAssign tok, tok), A.Id v, e2)) in
     Common.push i2 instrs;
-    instr_of_expr (A.Assign ((Cst_cpp.SimpleAssign, tok), A.Id v, e3));
+    instr_of_expr (A.Assign ((Cst_cpp.SimpleAssign tok, tok), A.Id v, e3));
 
   (* like GccConstructor can be outside Assign context when in macro *)
   (* todo: an alloc is hidden here?? *)
@@ -277,7 +277,7 @@ let instrs_of_expr env e =
       let tokwrap = tokwrap_of_expr e in
       let v = fresh_var env tokwrap in
       let tok = snd tokwrap in
-      instr_of_expr (A.Assign ((Cst_cpp.SimpleAssign, tok), A.Id v, e))
+      instr_of_expr (A.Assign ((Cst_cpp.SimpleAssign tok, tok), A.Id v, e))
 
   and rvalue_of_simple_expr e =
   match e with

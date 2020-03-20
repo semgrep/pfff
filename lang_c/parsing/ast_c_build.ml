@@ -531,15 +531,15 @@ and expr env e =
   | ArrayAccess (e1, (_, e2, _)) ->
       A.ArrayAccess (expr env e1, expr env e2)
   | Binary (e1, op, e2) -> A.Binary (expr env e1, (op, List.hd toks), expr env e2)
-  | Unary (e, op) -> A.Unary (expr env e, (op, List.hd toks))
-  | Infix  (e, op) -> A.Infix (expr env e, (op, List.hd toks))
-  | Postfix (e, op) -> A.Postfix (expr env e, (op, List.hd toks))
+  | Unary (e, op) -> A.Unary (expr env e, (op))
+  | Infix  (e, op) -> A.Infix (expr env e, (op))
+  | Postfix (e, op) -> A.Postfix (expr env e, (op))
 
   | Assignment (e1, op, e2) -> 
       A.Assign ((op, List.hd toks), expr env e1, expr env e2)
-  | Sequence (e1, e2) -> 
+  | Sequence (e1, _, e2) -> 
       A.Sequence (expr env e1, expr env e2)
-  | CondExpr (e1, e2opt, e3) ->
+  | CondExpr (e1, _, e2opt, _, e3) ->
       A.CondExpr (expr env e1, 
                  (match e2opt with
                  | Some e2 -> expr env e2
