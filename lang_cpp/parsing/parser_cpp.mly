@@ -234,7 +234,7 @@ open Parser_cpp_mly_helper
 %type <Cst_cpp.any> sgrep_spatch_pattern
 
 %type <Cst_cpp.statement> statement
-%type <Cst_cpp.expression> expr
+%type <Cst_cpp.expr> expr
 %type <Cst_cpp.fullType> type_id
 %type <(Cst_cpp.name) * (Cst_cpp.fullType -> Cst_cpp.fullType)> declarator
 %type <(Cst_cpp.name)> type_cplusplus_id
