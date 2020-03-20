@@ -730,11 +730,11 @@ statement:
  | expr_statement  { ExprStatement (fst $1, snd $1), noii }
  | labeled         { Labeled      ($1), noii }
  | selection       { Selection    $1, noii }
- | iteration       { Iteration    (fst $1), snd $1 }
+ | iteration       { Iteration    $1, noii }
  | jump TPtVirg    { Jump         ($1, $2), noii }
 
  /*(* cppext: *)*/
- | TIdent_MacroStmt { MacroStmt, [$1] }
+ | TIdent_MacroStmt { MacroStmt $1, noii }
 
  /*
  (* cppext: c++ext: because of cpp, some stuff looks like declaration but are in
@@ -762,16 +762,16 @@ statement:
 
  /*(* c++ext: TODO put at good place later *)*/
  | Tswitch TOPar decl_spec init_declarator_list TCPar statement
-     { StmtTodo, noii }
+     { StmtTodo $1, noii }
  | Tif TOPar decl_spec init_declarator_list TCPar statement  %prec LOW_PRIORITY_RULE
-     { StmtTodo, noii }
+     { StmtTodo $1, noii }
  | Tif TOPar decl_spec init_declarator_list TCPar statement Telse statement 
-     { StmtTodo, noii }
+     { StmtTodo $1 , noii }
  | Twhile TOPar decl_spec init_declarator_list TCPar statement                
-     { StmtTodo, noii }
+     { StmtTodo $1, noii }
  /*(* c++ext: for(int i = 0; i < n; i++)*)*/
  | Tfor TOPar simple_declaration expr_statement expr_opt TCPar statement
-     { StmtTodo, noii }
+     { StmtTodo $1, noii }
 
 
 compound: 
@@ -803,14 +803,14 @@ selection:
 
 iteration: 
  | Twhile TOPar expr TCPar statement                             
-     { While ($1, ($2, $3, $4), $5), noii }
+     { While ($1, ($2, $3, $4), $5) }
  | Tdo statement Twhile TOPar expr TCPar TPtVirg                 
-     { DoWhile ($1, $2, $3, ($4, $5, $6), $7), noii }
+     { DoWhile ($1, $2, $3, ($4, $5, $6), $7) }
  | Tfor TOPar expr_statement expr_statement expr_opt TCPar statement
-     { For ($1, ($2, (fst $3, snd $3, fst $4, snd $4, $5), $6), $7), noii }
+     { For ($1, ($2, (fst $3, snd $3, fst $4, snd $4, $5), $6), $7) }
  /*(* cppext: *)*/
  | TIdent_MacroIterator TOPar argument_list_opt TCPar statement
-     { MacroIteration ($1, ($2, $3, $4), $5), noii }
+     { MacroIteration ($1, ($2, $3, $4), $5) }
 
 /*(* the ';' in the caller grammar rule will be appended to the infos *)*/
 jump: 

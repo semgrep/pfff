@@ -397,9 +397,9 @@ and statement = statementbis wrapx
   (* gccext: *)
   | NestedFunc of func_definition
   (* cppext: *)
-  | MacroStmt
+  | MacroStmt of tok
 
-  | StmtTodo
+  | StmtTodo of tok
 
   (* cppext: c++ext:
    * old: compound = (declaration list * statement list)
