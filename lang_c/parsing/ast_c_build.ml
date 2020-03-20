@@ -384,8 +384,7 @@ and cpp_def_val for_debug env x =
 (* Stmt *)
 (* ---------------------------------------------------------------------- *)
 
-and stmt env x =
-  let (st, _ii) = x in
+and stmt env st =
   match st with
   | Compound x -> A.Block (compound env x)
   | Selection s ->
@@ -412,7 +411,7 @@ and stmt env x =
           )
 
       | MacroIteration _ ->
-          debug (Stmt x); raise Todo
+          debug (Stmt st); raise Todo
       )
   | ExprStatement (eopt, _) ->
       (match eopt with
@@ -427,7 +426,7 @@ and stmt env x =
       | Label (s, _, st) ->
           A.Label (s, stmt env st)
       | Case _ | CaseRange _ | Default _ ->
-          debug (Stmt x); raise CaseOutsideSwitch
+          debug (Stmt st); raise CaseOutsideSwitch
       )
   | Jump (j, _) ->
       (match j with
@@ -436,14 +435,14 @@ and stmt env x =
       | ReturnExpr (tok, e) -> A.Return (tok, Some (expr env e))
       | Continue tok -> A.Continue tok
       | Break tok -> A.Break tok
-      | GotoComputed _ -> debug (Stmt x); raise Todo
+      | GotoComputed _ -> debug (Stmt st); raise Todo
       )
 
   | Try (_, _, _) ->
-      debug (Stmt x); raise CplusplusConstruct
+      debug (Stmt st); raise CplusplusConstruct
 
   | (NestedFunc _ | StmtTodo _ | MacroStmt _ ) ->
-      debug (Stmt x); raise Todo
+      debug (Stmt st); raise Todo
 
 and compound env (_, xs, _) =
   statements_sequencable env xs |> List.flatten
@@ -459,8 +458,7 @@ and statement_sequencable env x =
   | CppDirectiveStmt x -> debug (Cpp x); raise Todo
   | IfdefStmt _ -> raise Impossible
 
-and cases env x =
-  let (st, ii) = x in
+and cases env st =
   match st with
   | Compound (l, xs, r) ->
       let rec aux xs =
@@ -468,26 +466,26 @@ and cases env x =
         | [] -> []
         | x::xs ->
             (match x with
-            | StmtElem ((Labeled (Case (_, _, _, st))), _)
-            | StmtElem ((Labeled (Default (_, _, st))), _)
+            | StmtElem ((Labeled (Case (_, _, _, st))))
+            | StmtElem ((Labeled (Default (_, _, st))))
               ->
                 let xs', rest =
                   (StmtElem st::xs) |> Common.span (function
-                  | StmtElem ((Labeled (Case (_, _, _, _st))), _)
-                  | StmtElem ((Labeled (Default (_, _, _st))), _) -> false
+                  | StmtElem ((Labeled (Case (_, _, _, _st))))
+                  | StmtElem ((Labeled (Default (_, _, _st)))) -> false
                   | _ -> true
                   )
                 in
                 let stmts = List.map (function
                   | StmtElem st -> stmt env st
                   | x -> 
-                    debug (Stmt (Compound (l, [x], r), ii));
+                    debug (Stmt (Compound (l, [x], r)));
                     raise MacroInCase
                 ) xs' in
                 (match x with
-                | StmtElem ((Labeled (Case (tok, e, _, _))), _ii) ->
+                | StmtElem ((Labeled (Case (tok, e, _, _)))) ->
                     A.Case (tok, expr env e, stmts)
-                | StmtElem ((Labeled (Default (tok, _, _st))), _ii) ->
+                | StmtElem ((Labeled (Default (tok, _, _st)))) ->
                     A.Default (tok, stmts)
                 | _ -> raise Impossible
                 )::aux rest
@@ -496,7 +494,7 @@ and cases env x =
       in
       aux xs
   | _ -> 
-      debug (Stmt x); raise Todo
+      debug (Stmt st); raise Todo
 
 and block_declaration env block_decl =
   match block_decl with
