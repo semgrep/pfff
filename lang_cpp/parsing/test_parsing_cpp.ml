@@ -1,5 +1,6 @@
 open Common
 
+module PI = Parse_info
 module Flag = Flag_parsing
 module Stat = Parse_info
 
@@ -28,10 +29,17 @@ let test_parse_cpp ?lang xs  =
 
   fullxs |> Console.progress (fun k -> List.iter (fun file -> 
     k();
-    let (_xs, stat) = 
+    let (_xs, stat) =
+    try (
+     Common.save_excursion Flag.error_recovery true (fun () ->
+     Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
       match lang with
      | None -> Parse_cpp.parse file
      | Some lang -> Parse_cpp.parse_with_lang ~lang file 
+     ))
+    ) with exn -> (* TODO: be more strict, List.hd failure, Stack overflow *)
+       pr2 (spf "PB on %s, exn = %s" file (Common.exn_to_s exn));
+       [], { (PI.default_stat file) with PI.bad = Common2.nblines file }
     in
     Common.push stat stat_list;
 
@@ -151,6 +159,8 @@ let actions () = [
     Common.mk_action_n_arg test_parse_cpp;
     "-parse_cpp_c", "   <file or dir>", 
     Common.mk_action_n_arg (test_parse_cpp ~lang:Flag_cpp.C);
+    "-parse_cpp_cplusplus", "   <file or dir>", 
+    Common.mk_action_n_arg (test_parse_cpp ~lang:Flag_cpp.Cplusplus);
 
     "-dump_cpp", "   <file>", 
     Common.mk_action_1_arg test_dump_cpp;
@@ -163,5 +173,4 @@ let actions () = [
     Common.mk_action_n_arg test_parse_cpp_fuzzy;
     "-dump_cpp_fuzzy", "   <file>", 
     Common.mk_action_1_arg test_dump_cpp_fuzzy;
-
 ]
