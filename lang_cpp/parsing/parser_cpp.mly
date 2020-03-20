@@ -344,7 +344,7 @@ operator_kind:
  | TEqEq  { BinaryOp (Logical Eq),    [$1] }
  | TNotEq { BinaryOp (Logical NotEq), [$1] }
  /*(* =    +=   -=   *=   /=   %=       ^=   &=   |=   >>=  <<=   *)*/
- | TEq     { AssignOp SimpleAssign, [$1] }     
+ | TEq     { AssignOp (SimpleAssign $1), noii }     
  | TAssign { AssignOp (fst $1), [snd $1] } 
  /*(* ! ~ *)*/
  | TTilde { UnaryTildeOp, [$1] }
@@ -449,7 +449,7 @@ ident:
 
 expr: 
  | assign_expr             { $1 }
- | expr TComma assign_expr { mk_e (Sequence ($1,$3)) [$2] }
+ | expr TComma assign_expr { mk_e (Sequence ($1, $2, $3)) noii }
 
 /*(* bugfix: in C grammar they put 'unary_expr', but in fact it must be 
    * 'cast_expr', otherwise (int * ) xxx = &yy; is not allowed
@@ -457,7 +457,7 @@ expr:
 assign_expr: 
  | cond_expr                     { $1 }
  | cast_expr TAssign assign_expr { mk_e(Assignment ($1,fst $2,$3)) [snd $2]}
- | cast_expr TEq     assign_expr { mk_e(Assignment ($1,SimpleAssign,$3)) [$2]}
+ | cast_expr TEq     assign_expr { mk_e(Assignment ($1,SimpleAssign $2,$3)) noii}
  /*(*c++ext: *)*/
  | Tthrow assign_expr_opt        { mk_e (Throw ($1, $2)) noii }
 
@@ -468,7 +468,7 @@ assign_expr:
 cond_expr: 
  | arith_expr   { $1 }
  | arith_expr TWhy expr_opt TCol assign_expr 
-     { mk_e (CondExpr ($1,$3,$5)) [$2;$4] } 
+     { mk_e (CondExpr ($1,$2, $3, $4, $5)) noii } 
 
 
 arith_expr: 
@@ -507,9 +507,9 @@ cast_expr:
 
 unary_expr: 
  | postfix_expr                    { $1 }
- | TInc unary_expr                 { mk_e(Infix ($2, Inc))    [$1] }
- | TDec unary_expr                 { mk_e(Infix ($2, Dec))    [$1] }
- | unary_op cast_expr              { mk_e(Unary ($2, fst $1)) [snd $1] }
+ | TInc unary_expr                 { mk_e(Infix ($2, (Inc, $1)))    noii }
+ | TDec unary_expr                 { mk_e(Infix ($2, (Dec, $1)))    noii }
+ | unary_op cast_expr              { mk_e(Unary ($2, $1)) noii }
  | Tsizeof unary_expr              { mk_e(SizeOfExpr ($1, $2)) noii }
  | Tsizeof TOPar type_id TCPar { mk_e(SizeOfType ($1, ($2, $3, $4))) noii }
  /*(*c++ext: *)*/
@@ -542,8 +542,8 @@ postfix_expr:
  | postfix_expr TPtrOp template_opt tcolcol_opt id_expression  
      { let name = ($4, fst $5, snd $5) in mk_e(RecordPtAccess($1,$2,name))[$2]}
 
- | postfix_expr TInc          { mk_e(Postfix ($1, Inc)) [$2] }
- | postfix_expr TDec          { mk_e(Postfix ($1, Dec)) [$2] }
+ | postfix_expr TInc          { mk_e(Postfix ($1, (Inc, $2))) noii }
+ | postfix_expr TDec          { mk_e(Postfix ($1, (Dec, $2))) noii }
 
  /*(* gccext: also called compound literals *)*/
  | compound_literal_expr { $1 }

@@ -77,7 +77,7 @@ let rec unaryOp (a, tok) =
   | GetRefLabel -> (fun e -> G.OtherExpr (G.OE_GetRefLabel, [G.E e]))
 and assignOp =
   function 
-  | SimpleAssign -> None
+  | SimpleAssign _tok -> None
   | OpAssign v1 -> let v1 = arithOp v1 in Some v1
 
 and fixOp = function | Dec -> G.Decr | Inc -> G.Incr

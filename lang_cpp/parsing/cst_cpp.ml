@@ -245,16 +245,16 @@ and expr = expressionbis wrapx
   | Call of expr * argument comma_list paren
 
   (* gccext: x ? /* empty */ : y <=> x ? x : y; *)
-  | CondExpr       of expr * expr option * expr
+  | CondExpr       of expr * tok * expr option * tok * expr
 
   (* should be considered as statements, bad C langage *)
-  | Sequence       of expr * expr                   
+  | Sequence       of expr * tok (* , *) * expr                   
   | Assignment     of expr * assignOp * expr        
 
-  | Postfix        of expr * fixOp                        
-  | Infix          of expr * fixOp
+  | Postfix        of expr * fixOp wrap
+  | Infix          of expr * fixOp wrap
   (* contains GetRef and Deref!! todo: lift up? *)
-  | Unary          of expr * unaryOp                      
+  | Unary          of expr * unaryOp wrap
   | Binary         of expr * binaryOp * expr        
 
   | ArrayAccess    of expr * expr bracket
@@ -337,7 +337,7 @@ and expr = expressionbis wrapx
     (* gccext: via &&label notation *)
     | GetRefLabel
     | UnPlus |  UnMinus | Tilde | Not 
-  and assignOp = SimpleAssign | OpAssign of arithOp
+  and assignOp = SimpleAssign of tok | OpAssign of arithOp
   and fixOp    = Dec | Inc
 
   and binaryOp = Arith of arithOp | Logical of logicalOp

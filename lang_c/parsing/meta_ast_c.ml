@@ -25,7 +25,7 @@ and vof_unaryOp =
 
 let rec vof_assignOp =
   function
-  | Cst_cpp.SimpleAssign -> Ocaml.VSum (("SimpleAssign", []))
+  | Cst_cpp.SimpleAssign _TODO -> Ocaml.VSum (("SimpleAssign", []))
   | Cst_cpp.OpAssign v1 ->
       let v1 = vof_arithOp v1 in Ocaml.VSum (("OpAssign", [ v1 ]))
 and vof_fixOp =
