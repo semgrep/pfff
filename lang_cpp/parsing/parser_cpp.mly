@@ -1,10 +1,11 @@
 %{
 (* Yoann Padioleau
  * 
- * Copyright (C) 2010-2014 Facebook
- * Copyright (C) 2008-2009 University of Urbana Champaign
- * Copyright (C) 2006-2007 Ecole des Mines de Nantes
  * Copyright (C) 2002 Yoann Padioleau
+ * Copyright (C) 2006-2007 Ecole des Mines de Nantes
+ * Copyright (C) 2008-2009 University of Urbana Champaign
+ * Copyright (C) 2010-2014 Facebook
+ * Copyright (C) 2020 r2c
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
@@ -20,11 +21,12 @@ open Common
 open Cst_cpp
 open Parser_cpp_mly_helper
 
-(* see todo_mly for stuff temporarily commented out
+(* See cst_cpp.ml for more information.
  *
- * TODO: http://www.nongnu.org/hcb/ for recent hyperlinked grammar
- * see also http://www.externsoft.ch/download/cpp-iso.html
- *
+ * TODO: 
+ *  - http://www.nongnu.org/hcb/ for recent hyperlinked grammar
+ *  - http://www.externsoft.ch/download/cpp-iso.html
+ *  - tree-sitter-cpp grammar
  *)
 
 %}
@@ -660,7 +662,23 @@ argument:
  /*(* sgrep-ext: *)*/
  | TEllipsis { Flag_parsing.sgrep_guard (Left (Ellipses $1, noii)) }
 
-/* see todo_mly */
+ /* put in comment while trying to parse plan9 */
+ | action_higherordermacro { Right (ArgAction $1) }
+
+action_higherordermacro: 
+ | taction_list 
+    { if null $1
+      then ActMisc [Parse_info.fake_info "action"]
+      else ActMisc $1
+    }
+
+/* was especially used for the Linux kernel */
+taction_list: 
+   /*(* c++ext: to remove some conflicts (from 13 to 4)
+   * | (* empty *) { [] } 
+   *)*/
+ | TAny_Action { [$1] }
+ | taction_list TAny_Action { $1 @ [$2] }
 
 /*(*----------------------------*)*/
 /*(*2 workarounds *)*/
@@ -717,6 +735,19 @@ statement:
 
  /*(* sgrep-ext: *)*/
  | TEllipsis   { Flag_parsing.sgrep_guard (ExprStatement (Some (Ellipses $1,noii)),noii)}
+
+ /*(* c++ext: TODO put at good place later *)*/
+ | Tswitch TOPar decl_spec init_declarator_list TCPar statement
+     { StmtTodo, noii }
+ | Tif TOPar decl_spec init_declarator_list TCPar statement  %prec LOW_PRIORITY_RULE
+     { StmtTodo, noii }
+ | Tif TOPar decl_spec init_declarator_list TCPar statement Telse statement 
+     { StmtTodo, noii }
+ | Twhile TOPar decl_spec init_declarator_list TCPar statement                
+     { StmtTodo, noii }
+ /*(* c++ext: for(int i = 0; i < n; i++)*)*/
+ | Tfor TOPar simple_declaration expr_statement expr_opt TCPar statement
+     { StmtTodo, noii }
 
 
 compound: 
