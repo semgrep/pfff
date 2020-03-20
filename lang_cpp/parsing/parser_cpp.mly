@@ -82,7 +82,7 @@ open Parser_cpp_mly_helper
 %token <Parse_info.t> TOPar TCPar TOBrace TCBrace TOCro TCCro 
 
 %token <Parse_info.t> TDot TComma TPtrOp     TInc TDec
-%token <Cst_cpp.assignOp * Parse_info.t> TAssign 
+%token <Cst_cpp.assignOp> TAssign 
 %token <Parse_info.t> TEq  TWhy  TTilde TBang  TEllipsis  TCol  TPtVirg
 %token <Parse_info.t> 
   TOrLog TAndLog TOr TXor TAnd  TEqEq TNotEq TInfEq TSupEq
@@ -345,7 +345,7 @@ operator_kind:
  | TNotEq { BinaryOp (Logical NotEq), [$1] }
  /*(* =    +=   -=   *=   /=   %=       ^=   &=   |=   >>=  <<=   *)*/
  | TEq     { AssignOp (SimpleAssign $1), noii }     
- | TAssign { AssignOp (fst $1), [snd $1] } 
+ | TAssign { AssignOp ($1), noii } 
  /*(* ! ~ *)*/
  | TTilde { UnaryTildeOp, [$1] }
  | TBang  { UnaryNotOp,   [$1] }
@@ -456,7 +456,7 @@ expr:
    *)*/
 assign_expr: 
  | cond_expr                     { $1 }
- | cast_expr TAssign assign_expr { mk_e(Assignment ($1,fst $2,$3)) [snd $2]}
+ | cast_expr TAssign assign_expr { mk_e(Assignment ($1, $2,$3)) noii}
  | cast_expr TEq     assign_expr { mk_e(Assignment ($1,SimpleAssign $2,$3)) noii}
  /*(*c++ext: *)*/
  | Tthrow assign_expr_opt        { mk_e (Throw ($1, $2)) noii }

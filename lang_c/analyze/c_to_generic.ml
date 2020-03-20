@@ -78,7 +78,7 @@ let rec unaryOp (a, tok) =
 and assignOp =
   function 
   | SimpleAssign _tok -> None
-  | OpAssign v1 -> let v1 = arithOp v1 in Some v1
+  | OpAssign (v1, _tok) -> let v1 = arithOp v1 in Some v1
 
 and fixOp = function | Dec -> G.Decr | Inc -> G.Incr
 and binaryOp = function

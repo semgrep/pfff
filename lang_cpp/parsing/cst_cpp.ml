@@ -337,7 +337,7 @@ and expr = expressionbis wrapx
     (* gccext: via &&label notation *)
     | GetRefLabel
     | UnPlus |  UnMinus | Tilde | Not 
-  and assignOp = SimpleAssign of tok | OpAssign of arithOp
+  and assignOp = SimpleAssign of tok | OpAssign of arithOp wrap
   and fixOp    = Dec | Inc
 
   and binaryOp = Arith of arithOp | Logical of logicalOp

@@ -476,7 +476,8 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     | T.TOBrace ii | T.TOBrace_DefineInit ii | T.TCBrace ii 
     | T.TOCro ii | T.TCCro ii
     | T.TDot ii | T.TComma ii | T.TPtrOp ii  
-    | T.TAssign (_, ii)
+    | T.TAssign (SimpleAssign ii)
+    | T.TAssign (OpAssign (_, ii))
     | T.TEq ii 
     | T.TWhy ii | T.TTilde ii | T.TBang ii 
     | T.TEllipsis ii 
