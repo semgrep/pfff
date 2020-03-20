@@ -74,9 +74,10 @@ open Parser_cpp_mly_helper
 %token <string * Parse_info.t> TIdent_Typedef
 
 /*
-(* coupling: some tokens like TOPar and TCPar are used as synchronisation point 
- * in parsing_hack.ml. So if you define a special token like TOParDefine and
- * TCParEOL, then you must take care to also modify token_helpers.ml
+(* coupling: some tokens like TOPar and TCPar are used as synchronisation  
+ * point in parsing_hack.ml. So if you define a special token like
+ * TOParDefine and TCParEOL, then you must take care to also modify 
+ * token_helpers.ml
  *)*/
 %token <Parse_info.t> TOPar TCPar TOBrace TCBrace TOCro TCCro 
 
@@ -212,7 +213,6 @@ open Parser_cpp_mly_helper
 /*(* see conflicts.txt *)*/
 %nonassoc Telse
 
-
 %left TOrLog
 %left TAndLog
 %left TOr
@@ -278,6 +278,28 @@ translation_unit:
 external_declaration: 
  | function_definition            { Func (FunctionOrMethod $1) }
  | block_declaration              { BlockDecl $1 }
+
+/*(*************************************************************************)*/
+/*(*1 toplevel *)*/
+/*(*************************************************************************)*/
+
+toplevel: 
+ | toplevel_aux { Some $1 }
+ | EOF          { None }
+
+toplevel_aux:
+ | declaration         { DeclElem $1 }
+
+ | cpp_directive       { CppDirectiveDecl $1 }
+ | cpp_ifdef_directive /*(*external_declaration_list ...*)*/ { IfdefDecl $1 }
+ | cpp_other           { $1 }
+
+ /*
+ (* when have error recovery, we can end up skipping the
+  * beginning of the file, and so get trailing unclose } at
+  * end
+  *)*/
+ | TCBrace { DeclElem (EmptyDef $1) }
 
 /*(*************************************************************************)*/
 /*(*1 sgrep *)*/
@@ -1461,6 +1483,7 @@ function_spec:
 storage_class_spec: 
  | Tstatic      { Sto (Static,  $1) }
  | Textern      { Sto (Extern,  $1) }
+ /*(* c++ext: now really used, not as in C, for type inferred variables *)*/
  | Tauto        { Sto (Auto,    $1) }
  | Tregister    { Sto (Register,$1) }
  /*(* c++ext: *)*/
@@ -1839,27 +1862,6 @@ cpp_other:
   /*(* ex: EXPORT_NO_SYMBOLS; *)*/
  | TIdent TPtVirg { MacroVarTop ($1, $2) }
 
-/*(*************************************************************************)*/
-/*(*1 toplevel *)*/
-/*(*************************************************************************)*/
-
-toplevel: 
- | toplevel_aux { Some $1 }
- | EOF          { None }
-
-toplevel_aux:
- | declaration         { DeclElem $1 }
-
- | cpp_directive       { CppDirectiveDecl $1 }
- | cpp_ifdef_directive /*(*external_declaration_list ...*)*/ { IfdefDecl $1 }
- | cpp_other           { $1 }
-
- /*
- (* when have error recovery, we can end up skipping the
-  * beginning of the file, and so get trailing unclose } at
-  * end
-  *)*/
- | TCBrace { DeclElem (EmptyDef $1) }
 
 /*(*************************************************************************)*/
 /*(*1 xxx_list, xxx_opt *)*/
