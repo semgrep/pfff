@@ -380,10 +380,32 @@ and expr = expressionbis wrapx
 and stmt =
   | Compound      of compound   (* new scope *)
   | ExprStatement of expr option * sc
-  | Labeled       of labeled
-  | Selection     of selection
-  | Iteration     of iteration
+
+  (* selection *)
+  | If of tok * expr paren * stmt * (tok * stmt) option
+   (* need to check that all elements in the compound start
+    * with a case:, otherwise it's unreachable code.
+    *)
+  | Switch of tok * expr paren * stmt 
+
+  (* iteration *)
+  | While   of tok * expr paren * stmt
+  | DoWhile of tok * stmt * tok * expr paren * sc
+  | For of 
+      tok *
+      (expr option * sc * expr option * sc * expr option) paren *
+      stmt
+  (* cppext: *)
+  | MacroIteration of ident * argument comma_list paren * stmt
+
   | Jump          of jump * sc
+
+  (* labeled *)
+  | Label   of string wrap * tok (* : *) * stmt
+  | Case    of tok * expr * tok (* : *) * stmt 
+  | CaseRange of tok * expr * tok (* ... *) * expr * 
+                 tok (* : *) * stmt (* gccext: *)
+  | Default of tok * tok (* : *) * stmt
 
   (* c++ext: in C this constructor could be outside the statement type, in a
    * decl type, because declarations are only at the beginning of a compound
@@ -404,30 +426,6 @@ and stmt =
    * old: (declaration, stmt) either list 
    *)
   and compound = stmt_sequencable list brace
-
-  and labeled = 
-    | Label   of string wrap * tok (* : *) * stmt
-    | Case    of tok * expr * tok (* : *) * stmt 
-    | CaseRange of tok * expr * tok (* ... *) * expr * 
-                   tok (* : *) * stmt (* gccext: *)
-    | Default of tok * tok (* : *) * stmt
-
-  and selection     = 
-   | If of tok * expr paren * stmt * (tok * stmt) option
-   (* need to check that all elements in the compound start
-    * with a case:, otherwise it's unreachable code.
-    *)
-   | Switch of tok * expr paren * stmt 
-
-  and iteration     = 
-    | While   of tok * expr paren * stmt
-    | DoWhile of tok * stmt * tok * expr paren * sc
-    | For of 
-        tok *
-        (expr option * sc * expr option * sc * expr option) paren *
-        stmt
-    (* cppext: *)
-    | MacroIteration of ident * argument comma_list paren * stmt
 
   and jump  = 
     | Goto of tok * string wrap

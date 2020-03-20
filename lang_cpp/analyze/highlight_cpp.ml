@@ -223,7 +223,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
 
     V.kstmt = (fun (k, _) x ->
       match x with
-      | Labeled (Ast.Label ((_, ii1), ii2, _st)) ->
+      | (Ast.Label ((_, ii1), ii2, _st)) ->
           [ii1;ii2] |> List.iter (fun ii -> tag ii KeywordExn);
           k x
       | Jump (Goto (_, (_s, lblii)), _) ->

@@ -387,17 +387,14 @@ and cpp_def_val for_debug env x =
 and stmt env st =
   match st with
   | Compound x -> A.Block (compound env x)
-  | Selection s ->
-      (match s with
+
       | If (t, (_, e, _), st1, Some (_, st2)) ->
           A.If (t, expr env e, stmt env st1, stmt env st2)
       | If (t, (_, e, _), st1, None) ->
           A.If (t, expr env e, stmt env st1, A.Block [])
       | Switch (tok, (_, e, _), st) ->
           A.Switch (tok, expr env e, cases env st)
-        )
-  | Iteration i ->
-      (match i with
+
       | While (t, (_, e, _), st) ->
           A.While (t, expr env e, stmt env st)
       | DoWhile (t, st, _, (_, e, _), _) ->
@@ -412,7 +409,7 @@ and stmt env st =
 
       | MacroIteration _ ->
           debug (Stmt st); raise Todo
-      )
+
   | ExprStatement (eopt, _) ->
       (match eopt with
       | None -> A.Block []
@@ -421,13 +418,11 @@ and stmt env st =
   | DeclStmt block_decl ->
       block_declaration env block_decl
 
-  | Labeled lbl ->
-      (match lbl with
       | Label (s, _, st) ->
           A.Label (s, stmt env st)
       | Case _ | CaseRange _ | Default _ ->
           debug (Stmt st); raise CaseOutsideSwitch
-      )
+
   | Jump (j, _) ->
       (match j with
       | Goto (tok, s) -> A.Goto (tok, s)
@@ -466,13 +461,13 @@ and cases env st =
         | [] -> []
         | x::xs ->
             (match x with
-            | StmtElem ((Labeled (Case (_, _, _, st))))
-            | StmtElem ((Labeled (Default (_, _, st))))
+            | StmtElem (((Case (_, _, _, st))))
+            | StmtElem (((Default (_, _, st))))
               ->
                 let xs', rest =
                   (StmtElem st::xs) |> Common.span (function
-                  | StmtElem ((Labeled (Case (_, _, _, _st))))
-                  | StmtElem ((Labeled (Default (_, _, _st)))) -> false
+                  | StmtElem (((Case (_, _, _, _st))))
+                  | StmtElem (((Default (_, _, _st)))) -> false
                   | _ -> true
                   )
                 in
@@ -483,9 +478,9 @@ and cases env st =
                     raise MacroInCase
                 ) xs' in
                 (match x with
-                | StmtElem ((Labeled (Case (tok, e, _, _)))) ->
+                | StmtElem (((Case (tok, e, _, _)))) ->
                     A.Case (tok, expr env e, stmts)
-                | StmtElem ((Labeled (Default (tok, _, _st)))) ->
+                | StmtElem (((Default (tok, _, _st)))) ->
                     A.Default (tok, stmts)
                 | _ -> raise Impossible
                 )::aux rest

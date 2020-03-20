@@ -728,9 +728,9 @@ basic_type_2:
 statement: 
  | compound        { Compound $1 }
  | expr_statement  { ExprStatement (fst $1, snd $1) }
- | labeled         { Labeled      ($1) }
- | selection       { Selection    $1 }
- | iteration       { Iteration    $1 }
+ | labeled         { $1 }
+ | selection       { $1 }
+ | iteration       { $1 }
  | jump TPtVirg    { Jump         ($1, $2) }
 
  /*(* cppext: *)*/
