@@ -280,9 +280,9 @@ let token_kind_of_tok t =
  * cant be a pair of a sum type, it must be directly a sum type.
  *)
 let info_of_tok = function
-  | TString ((_s, _isWchar), i) -> i
-  | TChar  ((_s, _isWchar), i) -> i
-  | TFloat ((_s, _floatType), i) -> i
+  | TString ((_s, i), _isWchar) -> i
+  | TChar  ((_s, i), _isWchar) -> i
+  | TFloat ((_s, i), _floatType) -> i
 
   | TAssign  (_assignOp, i) -> i
 
@@ -496,9 +496,9 @@ let info_of_tok = function
 
 (* used by tokens to complete the parse_info with filename, line, col infos *)
 let visitor_info_of_tok f = function
-  | TString ((s, isWchar), i)  -> TString ((s, isWchar), f i) 
-  | TChar  ((s, isWchar), i)   -> TChar  ((s, isWchar), f i) 
-  | TFloat ((s, floatType), i) -> TFloat ((s, floatType), f i) 
+  | TString ((s, i), isWchar)  -> TString ((s, f i),isWchar)
+  | TChar  ((s, i), isWchar)   -> TChar  ((s, f i), isWchar)
+  | TFloat ((s, i), floatType) -> TFloat ((s, f i), floatType)
   | TAssign  (assignOp, i)     -> TAssign  (assignOp, f i) 
 
   | TIdent  (s, i)       -> TIdent  (s, f i) 

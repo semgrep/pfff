@@ -514,7 +514,7 @@ and block_declaration env block_decl =
 and expr env e =
   let (e', toks) = e in
   match e' with
-  | C cst -> constant env toks cst
+  | C cst -> constant env cst
 
   | Id (n, _) -> A.Id (name env n)
   | Ellipses tok -> A.Ellipses tok
@@ -578,15 +578,15 @@ and expr env e =
 
   | ParenExpr (_, e, _) -> expr env e
 
-and constant _env toks x = 
+and constant _env x = 
   match x with
-  | Int s -> A.Int (s, List.hd toks)
-  | Float (s, _) -> A.Float (s, List.hd toks)
-  | Char (s, _) -> A.Char (s, List.hd toks)
-  | String (s, _) -> A.String (s, List.hd toks)
+  | Int (s, ii) -> A.Int (s, ii)
+  | Float ((s, ii), _) -> A.Float (s, ii)
+  | Char ((s, ii), _) -> A.Char (s, ii)
+  | String ((s, ii), _) -> A.String (s, ii)
 
   | Bool _ -> raise CplusplusConstruct
-  | MultiString -> A.String ("TODO", List.hd toks)
+  | MultiString iis -> A.String ("TODO", iis |> List.hd |> snd)
 
 and argument env x =
   match x with

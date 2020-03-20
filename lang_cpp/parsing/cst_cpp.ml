@@ -322,13 +322,13 @@ and expr = expressionbis wrapx
    * integer only. 
    *)
   and constant = 
-    | Int    of (string  (* * intType*)) 
-    | Float  of (string * floatType)
-    | Char   of (string * isWchar) (* normally it is equivalent to Int *)
-    | String of (string * isWchar) 
-    | MultiString  (* can contain MacroString *)
+    | Int    of (string wrap  (* * intType*)) 
+    | Float  of (string wrap * floatType)
+    | Char   of (string wrap * isWchar) (* normally it is equivalent to Int *)
+    | String of (string wrap * isWchar) 
+    | MultiString of string wrap list  (* can contain MacroString *)
     (* c++ext: *)
-    | Bool of bool
+    | Bool of bool wrap
     and isWchar = IsWchar | IsChar
 
   and unaryOp  = 
@@ -472,7 +472,7 @@ and block_declaration =
   | Asm of tok * tok option (*volatile*) * asmbody paren * sc
 
   (* gccext: *)
-  and asmbody = tok list (* string list *) * colon list
+  and asmbody = string wrap list * colon list
       and colon = Colon of tok (* : *) * colon_option comma_list
       and colon_option = 
             | ColonExpr of tok list * expr paren
