@@ -983,13 +983,13 @@ declarator:
 
 /*(* so must do  int * const p; if the pointer is constant, not the pointee *)*/
 pointer: 
- | TMul                        { fun x ->(nQ,         (Pointer x,     [$1]))}
- | TMul cv_qualif_list         { fun x ->($2.qualifD, (Pointer x,     [$1]))}
- | TMul pointer                { fun x ->(nQ,         (Pointer ($2 x),[$1]))}
- | TMul cv_qualif_list pointer { fun x ->($2.qualifD, (Pointer ($3 x),[$1]))}
+ | TMul                        { fun x ->(nQ,         (Pointer ($1, x), noii))}
+ | TMul cv_qualif_list         { fun x ->($2.qualifD, (Pointer ($1, x), noii))}
+ | TMul pointer                { fun x ->(nQ,         (Pointer ($1, $2 x),noii))}
+ | TMul cv_qualif_list pointer { fun x ->($2.qualifD, (Pointer ($1, $3 x),noii))}
  /*(*c++ext: no qualif for ref *)*/
- | TAnd                        { fun x ->(nQ,    (Reference x,    [$1]))}
- | TAnd pointer                { fun x ->(nQ,    (Reference ($2 x),[$1]))}
+ | TAnd                        { fun x ->(nQ,    (Reference ($1, x),noii))}
+ | TAnd pointer                { fun x ->(nQ,    (Reference ($1, $2 x),noii))}
 
 direct_d: 
  | declarator_id

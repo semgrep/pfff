@@ -608,7 +608,7 @@ and argument env x =
 and full_type env x =
   let (_qu, (t, ii)) = x in
   match t with
-  | Pointer t -> A.TPointer (List.hd ii, full_type env t)
+  | Pointer (tok, t) -> A.TPointer (tok, full_type env t)
   | BaseType t ->
       let s = 
         (match t with
