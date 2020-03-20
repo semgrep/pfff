@@ -13,7 +13,7 @@
  * license.txt for more details.
  *)
 
-open Ocaml
+(*open Ocaml*)
 open Cst_cpp
 
 (*****************************************************************************)
@@ -68,7 +68,10 @@ let default_visitor =
     kinit = (fun (k,_) x -> k x);
   }
 
+let (mk_visitor: visitor_in -> visitor_out) = fun _vin ->
+  raise Common.Todo
 
+(*
 let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 
 (* start of auto generation *)
@@ -879,3 +882,4 @@ in
  v_any
 
   
+*)

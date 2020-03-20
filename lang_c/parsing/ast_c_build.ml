@@ -345,7 +345,7 @@ and cpp_directive env x =
       | DefineFunc(args) ->
           [A.Macro(name, 
                  args |> unparen |> uncomma |> List.map (fun (s, ii) ->
-                   (s, List.hd ii)
+                   (s, ii)
                  ),
                  v)]
       )
@@ -364,7 +364,7 @@ and cpp_def_val for_debug env x =
   match x with
   | DefineExpr e -> A.CppExpr (expr env e)
   | DefineStmt st -> A.CppStmt (stmt env st)
-  | DefineDoWhileZero (st, _) -> A.CppStmt (stmt env st)
+  | DefineDoWhileZero (_, st, _, _) -> A.CppStmt (stmt env st)
   | DefinePrintWrapper (_, (_, e, _), id) -> 
     A.CppExpr (
       A.CondExpr (expr env e,
@@ -390,8 +390,10 @@ and stmt env x =
   | Compound x -> A.Block (compound env x)
   | Selection s ->
       (match s with
-      | If (t, (_, e, _), st1, _, st2) ->
+      | If (t, (_, e, _), st1, Some (_, st2)) ->
           A.If (t, expr env e, stmt env st1, stmt env st2)
+      | If (t, (_, e, _), st1, None) ->
+          A.If (t, expr env e, stmt env st1, A.Block [])
       | Switch (tok, (_, e, _), st) ->
           A.Switch (tok, expr env e, cases env st)
         )
@@ -401,7 +403,7 @@ and stmt env x =
           A.While (t, expr env e, stmt env st)
       | DoWhile (t, st, _, (_, e, _), _) ->
           A.DoWhile (t, stmt env st, expr env e)
-      | For (t, (_, ((est1, _), (est2, _), (est3, _)), _), st) ->
+      | For (t, (_, (est1, _, est2, _, est3), _), st) ->
           A.For (t,
             Common2.fmap (expr env) est1,
             Common2.fmap (expr env) est2,
@@ -412,7 +414,7 @@ and stmt env x =
       | MacroIteration _ ->
           debug (Stmt x); raise Todo
       )
-  | ExprStatement eopt ->
+  | ExprStatement (eopt, _) ->
       (match eopt with
       | None -> A.Block []
       | Some e -> A.ExprSt (expr env e)
