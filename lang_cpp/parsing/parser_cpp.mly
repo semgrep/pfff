@@ -726,15 +726,15 @@ basic_type_2:
 /*(*************************************************************************)*/
 
 statement: 
- | compound        { Compound $1, noii }
- | expr_statement  { ExprStatement (fst $1, snd $1), noii }
- | labeled         { Labeled      ($1), noii }
- | selection       { Selection    $1, noii }
- | iteration       { Iteration    $1, noii }
- | jump TPtVirg    { Jump         ($1, $2), noii }
+ | compound        { Compound $1 }
+ | expr_statement  { ExprStatement (fst $1, snd $1) }
+ | labeled         { Labeled      ($1) }
+ | selection       { Selection    $1 }
+ | iteration       { Iteration    $1 }
+ | jump TPtVirg    { Jump         ($1, $2) }
 
  /*(* cppext: *)*/
- | TIdent_MacroStmt { MacroStmt $1, noii }
+ | TIdent_MacroStmt { MacroStmt $1 }
 
  /*
  (* cppext: c++ext: because of cpp, some stuff looks like declaration but are in
@@ -750,28 +750,27 @@ statement:
  | declaration_statement { $1 }
 
  /*(* gccext: if move in statement then can have r/r conflict with define *)*/
- | function_definition { NestedFunc $1, noii }
+ | function_definition { NestedFunc $1 }
 
  /*(* c++ext: *)*/
  | try_block { $1 }
 
  /*(* sgrep-ext: *)*/
  | TEllipsis   
-   { Flag_parsing.sgrep_guard (ExprStatement (Some (Ellipses $1,noii), $1),
-                               noii) }
+   { Flag_parsing.sgrep_guard (ExprStatement (Some (Ellipses $1,noii), $1)) }
 
  /*(* c++ext: TODO put at good place later *)*/
  | Tswitch TOPar decl_spec init_declarator_list TCPar statement
-     { StmtTodo $1, noii }
+     { StmtTodo $1 }
  | Tif TOPar decl_spec init_declarator_list TCPar statement  %prec LOW_PRIORITY_RULE
-     { StmtTodo $1, noii }
+     { StmtTodo $1 }
  | Tif TOPar decl_spec init_declarator_list TCPar statement Telse statement 
-     { StmtTodo $1 , noii }
+     { StmtTodo $1 }
  | Twhile TOPar decl_spec init_declarator_list TCPar statement                
-     { StmtTodo $1, noii }
+     { StmtTodo $1 }
  /*(* c++ext: for(int i = 0; i < n; i++)*)*/
  | Tfor TOPar simple_declaration expr_statement expr_opt TCPar statement
-     { StmtTodo $1, noii }
+     { StmtTodo $1 }
 
 
 compound: 
@@ -851,10 +850,10 @@ statement_seq:
 /*(*----------------------------*)*/
 
 declaration_statement:
- | block_declaration { DeclStmt $1, noii }
+ | block_declaration { DeclStmt $1 }
 
 try_block: 
- | Ttry compound handler_list { Try ($1, $2, $3), noii }
+ | Ttry compound handler_list { Try ($1, $2, $3) }
 
 handler: 
  | Tcatch TOPar exception_decl TCPar compound { ($1, ($2, $3, $4), $5) }

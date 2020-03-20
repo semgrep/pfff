@@ -378,8 +378,7 @@ and expression = expressionbis wrapx
  * note: I use 'and' for type definition because gccext allows statements as
  * expressions, so we need mutual recursive type definition now.
  *)
-and statement = statementbis wrapx 
- and statementbis = 
+and statement =
   | Compound      of compound   (* new scope *)
   | ExprStatement of exprStatement * sc
   | Labeled       of labeled
