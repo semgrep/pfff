@@ -80,7 +80,7 @@ let rec v_info x =
 
 and v_tok v = v_info v
 
-and v_wrap:'a. ('a -> unit) -> 'a wrap -> unit = 
+and v_wrap:'a. ('a -> unit) -> 'a wrapx -> unit = 
  fun _of_a (v1, v2) -> 
    let v1 = _of_a v1 and v2 = v_list v_info v2 in ()
 and v_wrap2:'a. ('a -> unit) -> 'a wrap2 -> unit = 

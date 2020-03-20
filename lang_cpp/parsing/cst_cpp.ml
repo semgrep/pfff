@@ -62,7 +62,7 @@
 type tok = Parse_info.t
 
 (* a shortcut to annotate some information with token/position information *)
-and 'a wrap  = 'a * tok list (* TODO: change to 'a * tok *)
+and 'a wrapx  = 'a * tok list (* TODO: change to 'a * tok *)
 and 'a wrap2  = 'a * tok
 
 and 'a paren   = tok * 'a * tok
@@ -70,7 +70,7 @@ and 'a brace   = tok * 'a * tok
 and 'a bracket = tok * 'a * tok 
 and 'a angle   = tok * 'a * tok 
 
-and 'a comma_list = 'a wrap list
+and 'a comma_list = 'a wrapx list
 and 'a comma_list2 = ('a, tok (* the comma *)) Common.either list
  (* with tarzan *)
 
@@ -146,7 +146,7 @@ type name = tok (*::*) option  * (qualifier * tok (*::*)) list * ident
  * himself (but we can do it for pointer).
  *)
 and fullType = typeQualifier * typeC
- and typeC = typeCbis wrap
+ and typeC = typeCbis wrapx
 
  (* less: rename to TBase, TPointer, etc *)
  and typeCbis =
@@ -211,7 +211,7 @@ and typeQualifier =
 
 (* TODO: like in parsing_c/
  * (* gccext: cppext: *)
- * and attribute = attributebis wrap
+ * and attribute = attributebis wrapx
  *  and attributebis =
  *   | Attribute of string 
  *)
@@ -225,7 +225,7 @@ and typeQualifier =
  * have an StatementExpr and a new (local) struct defined. Same for
  * Constructor.
  *)
-and expression = expressionbis wrap
+and expression = expressionbis wrapx
  and expressionbis = 
   (* Id can be an enumeration constant, variable, function name.
    * cppext: Id can also be the name of a macro. sparse says
@@ -374,7 +374,7 @@ and expression = expressionbis wrap
  * note: I use 'and' for type definition because gccext allows statements as
  * expressions, so we need mutual recursive type definition now.
  *)
-and statement = statementbis wrap 
+and statement = statementbis wrapx 
  and statementbis = 
   | Compound      of compound   (* new scope *)
   | ExprStatement of exprStatement
@@ -423,7 +423,7 @@ and statement = statementbis wrap
     | DoWhile of tok * statement * tok * expression paren * tok (*;*)
     | For of 
         tok *
-        (exprStatement wrap * exprStatement wrap * exprStatement wrap) paren *
+        (exprStatement wrapx * exprStatement wrapx * exprStatement wrapx) paren *
         statement
     (* cppext: *)
     | MacroIteration of simple_ident * argument comma_list paren * statement
@@ -473,9 +473,9 @@ and block_declaration =
   | Asm of tok * tok option (*volatile*) * asmbody paren * tok(*;*)
 
   (* gccext: *)
-  and asmbody = tok list (* string list *) * colon wrap (* : *) list
+  and asmbody = tok list (* string list *) * colon wrapx (* : *) list
       and colon = Colon of colon_option comma_list
-      and colon_option = colon_optionbis wrap
+      and colon_option = colon_optionbis wrapx
           and colon_optionbis = ColonMisc | ColonExpr of expression paren
 
 (* ------------------------------------------------------------------------- *)
@@ -612,7 +612,7 @@ and class_definition = {
   (* used in inheritance spec (base_clause) and class_member *)
   and access_spec = Public | Private | Protected
 
-  (* was called field wrap before *)
+  (* was called field wrapx before *)
   and class_member = 
     (* could put outside and take class_member list *)
     | Access of access_spec wrap2 * tok (*:*)
@@ -661,7 +661,7 @@ and cpp_directive =
 
   and define_kind =
    | DefineVar
-   | DefineFunc   of string wrap comma_list paren
+   | DefineFunc   of string wrapx comma_list paren
    and define_val = 
      | DefineExpr of expression
      | DefineStmt of statement
@@ -669,10 +669,10 @@ and cpp_directive =
      | DefineFunction of func_definition
      | DefineInit of initialiser (* in practice only { } with possible ',' *)
      (* ?? *)
-     | DefineText of string wrap
+     | DefineText of string wrapx
      | DefineEmpty
 
-     | DefineDoWhileZero of statement wrap (* do { } while(0) *)
+     | DefineDoWhileZero of statement wrapx (* do { } while(0) *)
      | DefinePrintWrapper of tok (* if *) * expression paren * name
 
      | DefineTodo
@@ -682,7 +682,7 @@ and cpp_directive =
     | Standard (* <> *)
     | Weird (* ex: #include SYSTEM_H *)
 
-  (* less: 'a ifdefed = 'a list wrap (* ifdef elsif else endif *) *)
+  (* less: 'a ifdefed = 'a list wrapx (* ifdef elsif else endif *) *)
   and ifdef_directive = ifdefkind wrap2
      and ifdefkind = 
        | Ifdef (* todo? of string? *)

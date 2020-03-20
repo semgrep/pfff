@@ -32,9 +32,9 @@ type shortLong = Short | Long | LongLong
  *)
 type decl = { 
   storageD: storage;
-  typeD: (sign option * shortLong option * typeCbis option) wrap;
+  typeD: (sign option * shortLong option * typeCbis option) wrapx;
   qualifD: typeQualifier;
-  inlineD: bool wrap;
+  inlineD: bool wrapx;
 } 
 
 let nullDecl = {
