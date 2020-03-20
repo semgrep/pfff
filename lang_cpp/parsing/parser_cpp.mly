@@ -66,8 +66,8 @@ open Parser_cpp_mly_helper
 /*(*-----------------------------------------*)*/
 
 %token <string * Parse_info.t>                       TInt
-%token <(string * Cst_cpp.floatType) * Parse_info.t> TFloat
-%token <(string * Cst_cpp.isWchar) * Parse_info.t>   TChar TString
+%token <(string * Parse_info.t) * Cst_cpp.floatType> TFloat
+%token <(string * Parse_info.t) * Cst_cpp.isWchar>   TChar TString
 
 %token <string * Parse_info.t> TIdent 
 /*(* fresh_token: appear after some fix_tokens in parsing_hack.ml *)*/
@@ -559,19 +559,19 @@ primary_expr:
  /*(*c++ext: cf below now. old: TIdent { mk_e(Ident  (fst $1)) [snd $1] }  *)*/
 
  /*(* constants a.k.a literal *)*/
- | TInt    { mk_e(C (Int    (fst $1))) [snd $1] }
- | TFloat  { mk_e(C (Float  (fst $1))) [snd $1] }
- | TString { mk_e(C (String (fst $1))) [snd $1] }
- | TChar   { mk_e(C (Char   (fst $1))) [snd $1] }
+ | TInt    { mk_e(C (Int    ($1))) noii }
+ | TFloat  { mk_e(C (Float  ($1))) noii }
+ | TString { mk_e(C (String ($1))) noii }
+ | TChar   { mk_e(C (Char   ($1))) noii }
  /*(*c++ext: *)*/
- | Ttrue   { mk_e(C (Bool false)) [$1] }
- | Tfalse  { mk_e(C (Bool false)) [$1] }
+ | Ttrue   { mk_e(C (Bool (true, $1))) noii }
+ | Tfalse  { mk_e(C (Bool (false, $1))) noii }
 
   /*(* forunparser: *)*/
  | TOPar expr TCPar { mk_e(ParenExpr ($1, $2, $3)) noii }  
 
  /*(* gccext: cppext: *)*/
- | string_elem string_list { mk_e(C (MultiString)) ($1 @ $2) }
+ | string_elem string_list { mk_e(C (MultiString ($1 :: $2))) noii }
  /*(* gccext: allow statement as expressions via ({ statement }) *)*/
  | TOPar compound TCPar    { mk_e(StatementExpr ($1, $2, $3)) noii }
 
@@ -668,9 +668,9 @@ compound_literal_expr:
      { mk_e(GccConstructor (($1, $2, $3), ($4, List.rev $5, $7))) noii }
 
 string_elem:
- | TString { [snd $1] }
+ | TString { fst $1 }
  /*(* cppext:  ex= printk (KERN_INFO "xxx" UTS_RELEASE)  *)*/
- | TIdent_MacroString { [$1] }
+ | TIdent_MacroString { "<MACRO>", $1 }
 
 /*(*----------------------------*)*/
 /*(*2 cppext: *)*/
@@ -1636,11 +1636,11 @@ colon_asm:
  | TCol colon_option_list { Colon ($1, $2) }
 
 colon_option: 
- | TString                      { ColonMisc [snd $1] }
- | TString TOPar asm_expr TCPar { ColonExpr ([snd $1], ($2, $3, $4)) } 
+ | TString                      { ColonMisc [snd (fst $1)] }
+ | TString TOPar asm_expr TCPar { ColonExpr ([snd (fst $1)], ($2, $3, $4)) } 
  /*(* cppext: certainly a macro *)*/
  | TOCro TIdent TCCro TString TOPar asm_expr TCPar
-     { ColonExpr ([$1;snd $2;$3;snd $4], ($5, $6, $7))  }
+     { ColonExpr ([$1;snd $2;$3;snd (fst $4)], ($5, $6, $7))  }
  | TIdent                           { ColonMisc [snd $1] }
  | /*(* empty *)*/                  { ColonMisc [] }
 
@@ -1716,9 +1716,9 @@ template_parameter:
 /*(* c++ext: could also do a extern_string_opt to factorize stuff *)*/
 linkage_specification:
  | Textern TString declaration 
-     { ExternC ($1, (snd $2), $3) }
+     { ExternC ($1, (snd (fst $2)), $3) }
  | Textern TString TOBrace declaration_list_opt TCBrace 
-     { ExternCList ($1, (snd $2), ($3, $4, $5)) }
+     { ExternCList ($1, (snd (fst $2)), ($3, $4, $5)) }
 
 
 namespace_definition:
@@ -1819,7 +1819,7 @@ define_val:
  /*(* for statement-like macro with fixed number of arguments *)*/
  | Tdo statement Twhile TOPar expr TCPar 
      { match $5 with
-       | (C (Int ("0"))), [tok] -> 
+       | (C (Int ("0", tok))), _noii -> 
          DefineDoWhileZero ($1, $2, $3, ($4, tok, $6))
        | _ -> raise Parsing.Parse_error
      }
@@ -1871,8 +1871,8 @@ cpp_other:
 /*(*************************************************************************)*/
 
 string_list: 
- | string_elem { $1 }
- | string_list string_elem { $1 @ $2 } 
+ | string_elem { [$1] }
+ | string_list string_elem { $1 @ [$2] } 
 
 colon_asm_list: 
  | colon_asm { [$1] }
