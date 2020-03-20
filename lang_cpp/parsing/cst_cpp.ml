@@ -157,9 +157,9 @@ and fullType = typeQualifier * typeC
  and typeCbis =
   | BaseType        of baseType
 
-  | Pointer         of (* '*' *) fullType
+  | Pointer         of tok (*'*'*) * fullType
   (* c++ext: *)
-  | Reference       of (* '&' *) fullType 
+  | Reference       of tok (*'&'*) * fullType 
 
   | Array           of constExpression option bracket * fullType
   | FunctionType    of functionType
