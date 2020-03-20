@@ -255,7 +255,7 @@ and expr = expressionbis wrapx
   | Infix          of expr * fixOp wrap
   (* contains GetRef and Deref!! todo: lift up? *)
   | Unary          of expr * unaryOp wrap
-  | Binary         of expr * binaryOp * expr        
+  | Binary         of expr * binaryOp wrap * expr        
 
   | ArrayAccess    of expr * expr bracket
 

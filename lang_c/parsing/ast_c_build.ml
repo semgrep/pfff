@@ -530,7 +530,7 @@ and expr env e =
 
   | ArrayAccess (e1, (_, e2, _)) ->
       A.ArrayAccess (expr env e1, expr env e2)
-  | Binary (e1, op, e2) -> A.Binary (expr env e1, (op, List.hd toks), expr env e2)
+  | Binary (e1, op, e2) -> A.Binary (expr env e1, (op), expr env e2)
   | Unary (e, op) -> A.Unary (expr env e, (op))
   | Infix  (e, op) -> A.Infix (expr env e, (op))
   | Postfix (e, op) -> A.Postfix (expr env e, (op))
