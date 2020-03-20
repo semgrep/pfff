@@ -297,7 +297,7 @@ and expr = expressionbis wrapx
   (* sgrep-ext: *)
   | Ellipses of tok
 
-  | ExprTodo
+  | ExprTodo of tok
 
   (* see check_variables_cpp.ml *)
   and ident_info = {
