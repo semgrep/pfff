@@ -379,7 +379,7 @@ and expr = expressionbis wrapx
  *)
 and stmt =
   | Compound      of compound   (* new scope *)
-  | ExprStatement of exprStatement * sc
+  | ExprStatement of expr option * sc
   | Labeled       of labeled
   | Selection     of selection
   | Iteration     of iteration
@@ -405,8 +405,6 @@ and stmt =
    *)
   and compound = stmt_sequencable list brace
 
-  and exprStatement = expr option
-
   and labeled = 
     | Label   of string wrap * tok (* : *) * stmt
     | Case    of tok * expr * tok (* : *) * stmt 
@@ -426,7 +424,7 @@ and stmt =
     | DoWhile of tok * stmt * tok * expr paren * sc
     | For of 
         tok *
-        (exprStatement * sc * exprStatement * sc * exprStatement) paren *
+        (expr option * sc * expr option * sc * expr option) paren *
         stmt
     (* cppext: *)
     | MacroIteration of ident * argument comma_list paren * stmt
