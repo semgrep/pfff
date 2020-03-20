@@ -608,7 +608,7 @@ cast_operator_expr:
      { mk_e (CplusplusCast ($1, ($2, $3, $4), ($5, $6, $7))) noii }
 /*(* TODO: remove once we don't skip template arguments *)*/
  | cpp_cast_operator TOPar expr TCPar
-     { mk_e ExprTodo noii }
+     { mk_e (ExprTodo $2) noii }
 
 /*(*c++ext:*)*/
 cpp_cast_operator:
