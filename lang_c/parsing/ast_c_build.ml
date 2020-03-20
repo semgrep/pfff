@@ -442,7 +442,7 @@ and stmt env x =
   | Try (_, _, _) ->
       debug (Stmt x); raise CplusplusConstruct
 
-  | (NestedFunc _ | StmtTodo | MacroStmt ) ->
+  | (NestedFunc _ | StmtTodo _ | MacroStmt _ ) ->
       debug (Stmt x); raise Todo
 
 and compound env (_, xs, _) =
