@@ -19,28 +19,31 @@
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* A (mostly) Concrete Syntax Tree for C/C++/Cpp.
+(* A Concrete Syntax Tree for C/C++/Cpp.
  *
- * This is a big file ... C++ is a big and complicated language ...
- * This file started with a simple AST for C. It was then extended
- * to deal with cpp idioms (see 'cppext:' tag), gcc extensions (see gccext:),
- * and finally C++ constructs (see c++ext:). A few kencc extensions
- * were also recently added (see kenccext:).
+ * This is a big file. C++ is a big and complicated language, and dealing
+ * directly with preprocessor constructs from cpp makes the language 
+ * even bigger.
+ *
+ * This file started as a simple AST for C. It was then extended
+ * to deal with cpp idioms (see 'cppext:' tag) and converted to a CST.
+ * Then, it was extented again to deal with gcc extensions (see gccext:),
+ * and C++ constructs (see c++ext:). A few kencc (then plan9 compiler)
+ * extensions were also recently added (see kenccext:).
  * 
- * gcc introduced StatementExpr which made expr and statement mutually
- * recursive. It also added NestedFunc for even more mutual recursivity ...
+ * gcc introduced StatementExpr which made 'expr' and 'stmt' mutually
+ * recursive. It also added NestedFunc for even more mutual recursivity.
  * With C++ templates, because template arguments can be types or expressions
  * and because templates are also qualifiers, almost all types
  * are now mutually recursive ...
  *
- * Some stuff are tagged 'semantic:' which means that they are computed
- * after parsing. 
+ * Some stuff are tagged 'semantic:' which means that they can be computed
+ * only after parsing. 
  * 
  * See also lang_c/parsing/ast_c.ml and lang_clang/parsing/ast_clang.ml
  * (as well as mini/ast_minic.ml).
  * 
  * todo: 
- *  - migrate everything to wrap2, e.g. no more expressionbis, statementbis
  *  - support C++0x11, e.g. lambdas
  * 
  * related work:
@@ -55,16 +58,22 @@
  *)
 
 (*****************************************************************************)
-(* The AST C++ related types *)
+(* The CST related types *)
 (*****************************************************************************)
 (* ------------------------------------------------------------------------- *)
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
+
+(* Contains among other things the position of the token through
+ * the Parse_info.token_location embedded inside it, as well as the
+ * transformation field that makes possible spatch on C/C++/cpp code.
+ *)
 type tok = Parse_info.t
 
 (* a shortcut to annotate some information with token/position information *)
-and 'a wrapx  = 'a * tok list (* TODO: change to 'a * tok *)
 and 'a wrap  = 'a * tok
+
+and 'a wrapx  = 'a * tok list
 
 and 'a paren   = tok * 'a * tok
 and 'a brace   = tok * 'a * tok
@@ -101,6 +110,7 @@ type name = tok (*::*) option  * (qualifier * tok (*::*)) list * ident_or_op
    | IdIdent of ident
    (* c++ext: *)  
    | IdTemplateId of ident * template_arguments
+   (* c++ext: for operator overloading *)
    | IdDestructor of tok(*~*) * ident
    | IdOperator of tok * (operator * tok list)
    | IdConverter of tok * fullType
@@ -108,6 +118,7 @@ type name = tok (*::*) option  * (qualifier * tok (*::*)) list * ident_or_op
    and ident = string wrap
  
    and template_arguments = template_argument comma_list angle
+    (* C++ allows integers for template arguments! (=~ dependent types) *)
     and template_argument = (fullType, expr) Common.either
 
  and qualifier = 
@@ -135,9 +146,9 @@ type name = tok (*::*) option  * (qualifier * tok (*::*)) list * ident_or_op
  *                      ((string wrap) wrap list) (* arguments *)
  *)
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* Types *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* We could have a more precise type in fullType, in expression, etc, but
  * it would require too much things at parsing time such as checking whether
  * there is no conflicts structname, computing value, etc. It's better to
@@ -165,7 +176,7 @@ and fullType = typeQualifier * typeC
   | EnumName        of tok (* 'enum' *) * ident (*enum_name*)
   | StructUnionName of structUnion wrap * ident (*ident_name*)
   (* c++ext: TypeName can now correspond also to a classname or enumname
-   * and is a name so can have some IdTemplateId in it.
+   * and it is a name so it can have some IdTemplateId in it.
    *)
   | TypeName of name(*typedef_name*)
   (* only to disambiguate I think *)
@@ -219,10 +230,9 @@ and typeQualifier =
  *   | Attribute of string 
  *)
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* Expressions *)
-(* ------------------------------------------------------------------------- *)
-
+(*****************************************************************************)
 (* Because of StatementExpr, we can have more 'new scope', but it's
  * rare I think. For instance with 'array of constExpression' we could
  * have an StatementExpr and a new (local) struct defined. Same for
@@ -234,6 +244,7 @@ and expr =
    *  "an identifier with a meaning is a symbol". 
    * c++ext: Id is now a 'name' instead of a 'string' and can be
    *  also an operator name.
+   * todo: split in Id vs IdQualified like in ast_generic.ml?
    *)
   | Id of name * ident_info (* semantic: see check_variables_cpp.ml *) 
   | C of constant
@@ -248,7 +259,7 @@ and expr =
 
   (* should be considered as statements, bad C langage *)
   | Sequence       of expr * tok (* , *) * expr                   
-  | Assignment     of expr * assignOp * expr        
+  | Assign         of expr * assignOp * expr        
 
   | Postfix        of expr * fixOp wrap
   | Infix          of expr * fixOp wrap
@@ -368,9 +379,9 @@ and expr =
 
  and constExpression = expr (* => int *)
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* Statements *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* note: assignement is not a statement, it's an expr :(
  * (wonderful C language).
  * note: I use 'and' for type definition because gccext allows statements as
@@ -447,6 +458,9 @@ and stmt =
     | IfdefStmt of ifdef_directive (* * stmt list *)
 
 
+(*****************************************************************************)
+(* Declarations *)
+(*****************************************************************************)
 (* ------------------------------------------------------------------------- *)
 (* Block Declaration *)
 (* ------------------------------------------------------------------------- *)
@@ -648,6 +662,9 @@ and class_definition = {
     | CppDirectiveStruct of cpp_directive
     | IfdefStruct of ifdef_directive (*  * field list *)
 
+(*****************************************************************************)
+(* Cpp *)
+(*****************************************************************************)
 (* ------------------------------------------------------------------------- *)
 (* cppext: cpp directives, #ifdef, #define and #include body *)
 (* ------------------------------------------------------------------------- *)
@@ -700,9 +717,10 @@ and cpp_directive =
    *     IfdefTag of (int (* tag *) * int (* total with this tag *))
    *)
 
-(* ------------------------------------------------------------------------- *)
-(* The toplevel elements *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
+(* Toplevel *)
+(*****************************************************************************)
+
 (* it's not really 'toplevel' because the elements below can be nested
  * inside namespaces or some extern. It's not really 'declaration'
  * either because it can defines stuff. But I keep the C++ standard
@@ -751,9 +769,9 @@ and toplevel = declaration_sequencable
 
 and program = toplevel list
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* Any *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 and any = 
   | Program of program
   | Toplevel of toplevel

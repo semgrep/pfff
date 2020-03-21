@@ -534,7 +534,7 @@ and expr env e =
   | Infix  (e, op) -> A.Infix (expr env e, (op))
   | Postfix (e, op) -> A.Postfix (expr env e, (op))
 
-  | Assignment (e1, op, e2) -> 
+  | Assign (e1, op, e2) -> 
       A.Assign ((op), expr env e1, expr env e2)
   | Sequence (e1, _, e2) -> 
       A.Sequence (expr env e1, expr env e2)
