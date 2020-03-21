@@ -315,12 +315,12 @@ and expr =
   }
 
   (* cppext: normmally just expr *)
-  and argument = (expr, weird_argument) Common.either
-   and weird_argument = 
+  and argument = 
+       | Arg of expr
        | ArgType of fullType
        (* for really unparsable stuff ... we just bailout *)
        | ArgAction of action_macro
-      and action_macro = 
+       and action_macro = 
          | ActMisc of tok list
 
   (* I put 'string' for Int and Float because 'int' would not be enough.
