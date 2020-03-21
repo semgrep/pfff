@@ -374,7 +374,7 @@ and cpp_def_val for_debug env x =
   | DefineInit init -> A.CppExpr (initialiser env init)
 
   | DefineEmpty (* A.CppEmpty*) 
-  | ( DefineText _| DefineFunction _
+  | ( DefineFunction _
     | DefineType _
     | DefineTodo
     ) -> 

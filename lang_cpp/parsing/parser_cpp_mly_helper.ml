@@ -39,6 +39,8 @@ type decl = {
   inlineD: bool wrapx;
 } 
 
+let noii = []
+
 let nullDecl = {
   storageD = NoSto;
   typeD = (None, None, None), noii;
