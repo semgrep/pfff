@@ -468,8 +468,8 @@ and stmt =
 and block_declaration = 
  (* Before I had a Typedef constructor, but why make this special case and not
   * have also StructDef, EnumDef, so that 'struct t {...} v' which would
-  * then generate two declarations. If you want a cleaner C AST use
-  * ast_c.ml.
+  * then generate two declarations. 
+  * If you want a cleaner C AST use ast_c.ml.
   * note: before the need for unparser, I didn't have a DeclList but just 
   * a Decl.
   *)
@@ -477,6 +477,7 @@ and block_declaration =
 
   (* cppext: todo? now factorize with MacroTop ?  *)
   | MacroDecl of tok list * ident * argument comma_list paren * tok
+
   (* c++ext: using namespace *)
   | UsingDecl of (tok * name * sc)
   | UsingDirective of tok * tok (*'namespace'*) *  namespace_name * sc
@@ -505,7 +506,7 @@ and block_declaration =
     *)
     v_namei: (name * init option) option;
     v_type: fullType;
-    v_storage: storage;
+    v_storage: storage; (* TODO: use for c++0x 'auto' inferred locals *)
     (* v_attr: attribute list; *) (* gccext: *)
   }
     and storage = NoSto | StoTypedef of tok | Sto of storageClass wrap
@@ -543,7 +544,7 @@ and block_declaration =
 (* Normally we should define another type functionType2 because there 
  * are more restrictions on what can define a function than a pointer 
  * function. For instance a function declaration can omit the name of the
- * parameter wheras a function definition can not. But, in some cases such
+ * parameter whereas a function definition can not. But, in some cases such
  * as 'f(void) {', there is no name too, so I simplified and reused the 
  * same functionType type for both declarations and function definitions.
  *)
@@ -560,20 +561,21 @@ and func_definition = {
      ft_params: parameter comma_list paren;
      ft_dots: (tok(*,*) * tok(*...*)) option;
      (* c++ext: *) 
-     ft_const: tok option; (* only for methods *)
+     ft_const: tok option; (* only for methods, TODO put in attribute? *)
      ft_throw: exn_spec option;
    }
      and parameter = {
         p_name: ident option;
         p_type: fullType;
-        p_register: tok option;
+        p_register: tok option; (* TODO put in attribute? *)
         (* c++ext: *)
         p_val: (tok (*=*) * expr) option;
       }
     and exn_spec = (tok * name comma_list2 paren)
 
  (* less: simplify? need differentiate at this level? could have
-  * is_ctor, is_dtor helper instead.
+  * is_ctor, is_dtor helper instead. 
+  * TODO do via attributes?
   *)
  and func_or_else =
   | FunctionOrMethod of func_definition
@@ -644,7 +646,7 @@ and class_definition = {
     | EmptyField  of sc
 
      (* At first I thought that a bitfield could be only Signed/Unsigned.
-      * But it seems that gcc allow char i:4. C rule must say that you
+      * But it seems that gcc allows char i:4. C rule must say that you
       * can cast into int so enum too, ... 
       * c++ext: FieldDecl was before Simple of string option * fullType
       * but in c++ fields can also have storage (e.g. static) so now reuse
@@ -652,8 +654,7 @@ and class_definition = {
       *)
       and fieldkind = 
         | FieldDecl of onedecl
-        | BitField of ident option * tok(*:*) *
-            fullType * constExpression
+        | BitField of ident option * tok(*:*) * fullType * constExpression
             (* fullType => BitFieldInt | BitFieldUnsigned *) 
    
   and class_member_sequencable = 
@@ -670,7 +671,7 @@ and class_definition = {
 (* ------------------------------------------------------------------------- *)
 and cpp_directive =
   | Define of tok (* #define*) * ident * define_kind * define_val
-  (* TODO: should split tok in 2 *)
+  (* less: should split tok in 2 *)
   | Include of tok (* #include s *) * inc_kind * string (* path *)
   | Undef of ident (* #undef xxx *)
   | PragmaAndCo of tok
@@ -684,8 +685,7 @@ and cpp_directive =
      | DefineType of fullType
      | DefineFunction of func_definition
      | DefineInit of initialiser (* in practice only { } with possible ',' *)
-     (* ?? dead? *)
-     | DefineText of string wrap
+     (* ?? dead? DefineText of string wrap *)
      | DefineEmpty
 
      (* do ... while(0) *)
@@ -756,17 +756,20 @@ and declaration =
   (* easier to put at stmt_list level than stmt level *)
   and declaration_sequencable = 
     | DeclElem of declaration
+
     (* cppext: *) 
     | CppDirectiveDecl of cpp_directive
     | IfdefDecl of ifdef_directive (* * toplevel list *)
     (* cppext: *)
     | MacroTop of ident * argument comma_list paren * tok option
     | MacroVarTop of ident * sc
+
     (* could also be in decl *)
     | NotParsedCorrectly of tok list
 
 and toplevel = declaration_sequencable
 
+(* finally *)
 and program = toplevel list
 
 (*****************************************************************************)
