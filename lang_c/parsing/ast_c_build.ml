@@ -426,8 +426,8 @@ and stmt env st =
   | Jump (j, _) ->
       (match j with
       | Goto (tok, s) -> A.Goto (tok, s)
-      | Return tok -> A.Return (tok, None);
-      | ReturnExpr (tok, e) -> A.Return (tok, Some (expr env e))
+      | Return (tok, None) -> A.Return (tok, None);
+      | Return (tok, Some e) -> A.Return (tok, Some (expr env e))
       | Continue tok -> A.Continue tok
       | Break tok -> A.Break tok
       | GotoComputed _ -> debug (Stmt st); raise Todo

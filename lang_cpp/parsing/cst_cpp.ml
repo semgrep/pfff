@@ -324,7 +324,7 @@ and expr =
          | ActMisc of tok list
 
   (* I put 'string' for Int and Float because 'int' would not be enough.
-   * Indeed OCaml int are 31 bits. So it's simpler to use 'string'. 
+   * Indeed OCaml ints are 31 bits. So it's simpler to use 'string'. 
    * Same reason to have 'string' instead of 'int list' for the String case.
    * 
    * note: '-2' is not a constant; it is the unary operator '-'
@@ -440,7 +440,7 @@ and stmt =
   and jump  = 
     | Goto of tok * string wrap
     | Continue of tok | Break of tok
-    | Return of tok   | ReturnExpr of tok * expr
+    | Return of tok * expr option
     (* gccext: goto *exp *)
     | GotoComputed of tok * tok * expr
 

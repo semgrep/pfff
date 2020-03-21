@@ -816,8 +816,8 @@ jump:
  | Tgoto ident  { Goto ($1, $2) } 
  | Tcontinue    { Continue $1 }
  | Tbreak       { Break $1 }
- | Treturn      { Return $1 } 
- | Treturn expr { ReturnExpr ($1, $2) }
+ | Treturn      { Return ($1, None) } 
+ | Treturn expr { Return ($1, Some $2) }
  | Tgoto TMul expr { GotoComputed ($1, $2, $3) }
 
 
