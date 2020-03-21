@@ -456,8 +456,8 @@ expr:
    *)*/
 assign_expr: 
  | cond_expr                     { $1 }
- | cast_expr TAssign assign_expr { mk_e(Assignment ($1, $2,$3))}
- | cast_expr TEq     assign_expr { mk_e(Assignment ($1,SimpleAssign $2,$3))}
+ | cast_expr TAssign assign_expr { mk_e(Assign ($1, $2,$3))}
+ | cast_expr TEq     assign_expr { mk_e(Assign ($1,SimpleAssign $2,$3))}
  /*(*c++ext: *)*/
  | Tthrow assign_expr_opt        { mk_e (Throw ($1, $2)) }
 
