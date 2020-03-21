@@ -113,13 +113,13 @@ type name = tok (*::*) option  * (qualifier * tok (*::*)) list * ident_or_op
    (* c++ext: for operator overloading *)
    | IdDestructor of tok(*~*) * ident
    | IdOperator of tok * (operator * tok list)
-   | IdConverter of tok * fullType
+   | IdConverter of tok * type_
 
    and ident = string wrap
  
    and template_arguments = template_argument comma_list angle
     (* C++ allows integers for template arguments! (=~ dependent types) *)
-    and template_argument = (fullType, expr) Common.either
+    and template_argument = (type_, expr) Common.either
 
  and qualifier = 
    | QClassname of ident (* classname or namespacename *)
@@ -149,11 +149,11 @@ type name = tok (*::*) option  * (qualifier * tok (*::*)) list * ident_or_op
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
-(* We could have a more precise type in fullType, in expression, etc, but
+(* We could have a more precise type in type_, in expression, etc, but
  * it would require too much things at parsing time such as checking whether
  * there is no conflicts structname, computing value, etc. It's better to
  * separate concerns, so I put '=>' to mean what we would really like. In fact
- * what we really like is defining another fullType, expression, etc
+ * what we really like is defining another type_, expression, etc
  * from scratch, because many stuff are just sugar.
  * 
  * invariant: Array and FunctionType have also typeQualifier but they
@@ -161,16 +161,16 @@ type name = tok (*::*) option  * (qualifier * tok (*::*)) list * ident_or_op
  * grammar, you see that we can never specify const for the array
  * himself (but we can do it for pointer).
  *)
-and fullType = typeQualifier * typeC
+and type_ = typeQualifier * typeC
  (* less: rename to TBase, TPointer, etc *)
  and typeC =
   | BaseType        of baseType
 
-  | Pointer         of tok (*'*'*) * fullType
+  | Pointer         of tok (*'*'*) * type_
   (* c++ext: *)
-  | Reference       of tok (*'&'*) * fullType 
+  | Reference       of tok (*'&'*) * type_ 
 
-  | Array           of constExpression option bracket * fullType
+  | Array           of constExpression option bracket * type_
   | FunctionType    of functionType
 
   | EnumName        of tok (* 'enum' *) * ident (*enum_name*)
@@ -189,7 +189,7 @@ and fullType = typeQualifier * typeC
    * ident) type ident;' because when you want to do a macro(char[256],
    * x), then it will generate invalid code, but with a '#define
    * macro(type, ident) __typeof(type) ident;' it will work. *)
-  | TypeOf of tok * (fullType, expr) Common.either paren
+  | TypeOf of tok * (type_, expr) Common.either paren
 
   (* should be really just at toplevel *)
   | EnumDef of enum_definition (* => string * int list *)
@@ -197,7 +197,7 @@ and fullType = typeQualifier * typeC
   | StructDef of class_definition 
 
   (* forunparser: *)
-  | ParenType of fullType paren
+  | ParenType of type_ paren
 
   and  baseType = 
     | Void of tok
@@ -278,23 +278,23 @@ and expr =
   | RecordPtStarAccess of expr * tok (* ->* *) * expr
 
   | SizeOfExpr     of tok * expr
-  | SizeOfType     of tok * fullType paren
+  | SizeOfType     of tok * type_ paren
 
-  | Cast          of fullType paren * expr
+  | Cast          of type_ paren * expr
 
   (* gccext: *)        
   | StatementExpr of compound paren (* ( {  } ) new scope*)
   (* gccext: kenccext: *)
-  | GccConstructor  of fullType paren * initialiser comma_list brace
+  | GccConstructor  of type_ paren * initialiser comma_list brace
 
   (* c++ext: *)
   | This of tok
-  | ConstructedObject of fullType * argument comma_list paren
-  | TypeId     of tok * (fullType, expr) Common.either paren
-  | CplusplusCast of cast_operator wrap * fullType angle * expr paren
+  | ConstructedObject of type_ * argument comma_list paren
+  | TypeId     of tok * (type_, expr) Common.either paren
+  | CplusplusCast of cast_operator wrap * type_ angle * expr paren
   | New of tok (*::*) option * tok * 
       argument comma_list paren option (* placement *) *
-      fullType *
+      type_ *
       argument comma_list paren option (* initializer *)
 
   | Delete      of tok (*::*) option * tok * expr
@@ -317,7 +317,7 @@ and expr =
   (* cppext: normmally just expr *)
   and argument = 
        | Arg of expr
-       | ArgType of fullType
+       | ArgType of type_
        (* for really unparsable stuff ... we just bailout *)
        | ArgAction of action_macro
        and action_macro = 
@@ -505,7 +505,7 @@ and block_declaration =
      * kenccext: name can also be empty because of anonymous fields.
     *)
     v_namei: (name * init option) option;
-    v_type: fullType;
+    v_type: type_;
     v_storage: storage; (* TODO: use for c++0x 'auto' inferred locals *)
     (* v_attr: attribute list; *) (* gccext: *)
   }
@@ -557,7 +557,7 @@ and func_definition = {
    (*f_attr: attribute list;*) (* gccext: *)
   }
    and functionType = { 
-     ft_ret: fullType; (* fake return type for ctor/dtor *)
+     ft_ret: type_; (* fake return type for ctor/dtor *)
      ft_params: parameter comma_list paren;
      ft_dots: (tok(*,*) * tok(*...*)) option;
      (* c++ext: *) 
@@ -566,7 +566,7 @@ and func_definition = {
    }
      and parameter = {
         p_name: ident option;
-        p_type: fullType;
+        p_type: type_;
         p_register: tok option; (* TODO put in attribute? *)
         (* c++ext: *)
         p_val: (tok (*=*) * expr) option;
@@ -648,14 +648,14 @@ and class_definition = {
      (* At first I thought that a bitfield could be only Signed/Unsigned.
       * But it seems that gcc allows char i:4. C rule must say that you
       * can cast into int so enum too, ... 
-      * c++ext: FieldDecl was before Simple of string option * fullType
+      * c++ext: FieldDecl was before Simple of string option * type_
       * but in c++ fields can also have storage (e.g. static) so now reuse
       * ondecl.
       *)
       and fieldkind = 
         | FieldDecl of onedecl
-        | BitField of ident option * tok(*:*) * fullType * constExpression
-            (* fullType => BitFieldInt | BitFieldUnsigned *) 
+        | BitField of ident option * tok(*:*) * type_ * constExpression
+            (* type_ => BitFieldInt | BitFieldUnsigned *) 
    
   and class_member_sequencable = 
     | ClassElem of class_member
@@ -682,7 +682,7 @@ and cpp_directive =
    and define_val = 
      | DefineExpr of expr
      | DefineStmt of stmt
-     | DefineType of fullType
+     | DefineType of type_
      | DefineFunction of func_definition
      | DefineInit of initialiser (* in practice only { } with possible ',' *)
      (* ?? dead? DefineText of string wrap *)
@@ -781,7 +781,7 @@ and any =
   | Cpp of cpp_directive
   | Stmt of stmt
   | Expr of expr
-  | Type of fullType
+  | Type of type_
   | Name of name
 
   | BlockDecl2 of block_declaration
@@ -820,7 +820,7 @@ let uncomma xs = List.map fst xs
 let unparen (_, x, _) = x
 let unbrace (_, x, _) = x
 
-let unwrap_typeC (_qu, (typeC)) = typeC
+let unwrap_typeC (_qu, typeC) = typeC
 
 (* When want add some info in AST that does not correspond to 
  * an existing C element.

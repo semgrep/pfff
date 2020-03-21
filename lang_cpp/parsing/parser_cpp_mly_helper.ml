@@ -207,7 +207,7 @@ let type_and_storage_for_funcdef_from_decl decl =
  * with VF a typedef of func cos here we dont see the name of the
  * argument (in the typedef)
  *)
-let (fixOldCDecl: fullType -> fullType) = fun ty ->
+let (fixOldCDecl: type_ -> type_) = fun ty ->
   match snd ty with
   | FunctionType ({ft_params=params;_}) -> 
       (* stdC: If the prototype declaration declares a parameter for a
