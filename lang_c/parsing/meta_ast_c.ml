@@ -124,7 +124,7 @@ and vof_expr =
       and v2 = Ocaml.vof_list vof_expr v2
       in Ocaml.VSum (("Call", [ v1; v2 ]))
   | Assign ((v1, v2, v3)) ->
-      let v1 = vof_wrap vof_assignOp v1
+      let v1 = vof_assignOp v1
       and v2 = vof_expr v2
       and v3 = vof_expr v3
       in Ocaml.VSum (("Assign", [ v1; v2; v3 ]))

@@ -512,15 +512,14 @@ and block_declaration env block_decl =
 (* ---------------------------------------------------------------------- *)
 
 and expr env e =
-  let (e', toks) = e in
-  match e' with
+  match e with
   | C cst -> constant env cst
 
   | Id (n, _) -> A.Id (name env n)
   | Ellipses tok -> A.Ellipses tok
 
   | RecordAccess (e, t, n) ->
-      A.RecordPtAccess (A.Unary (expr env e, (GetRef,List.hd toks)), 
+      A.RecordPtAccess (A.Unary (expr env e, (GetRef,t)), 
         t, name env n)
   | RecordPtAccess (e, t, n) ->
       A.RecordPtAccess (expr env e, t, name env n)
@@ -536,7 +535,7 @@ and expr env e =
   | Postfix (e, op) -> A.Postfix (expr env e, (op))
 
   | Assignment (e1, op, e2) -> 
-      A.Assign ((op, List.hd toks), expr env e1, expr env e2)
+      A.Assign ((op), expr env e1, expr env e2)
   | Sequence (e1, _, e2) -> 
       A.Sequence (expr env e1, expr env e2)
   | CondExpr (e1, _, e2opt, _, e3) ->
@@ -565,10 +564,10 @@ and expr env e =
     raise CplusplusConstruct
 
   | StatementExpr _
-  | ExprTodo
+  | ExprTodo _
     ->
       debug (Expr e); raise Todo
-  | Throw _|DeleteArray (_, _)|Delete (_, _)|New (_, _, _, _, _)
+  | Throw _|DeleteArray (_, _, _, _)|Delete (_, _, _)|New (_, _, _, _, _)
   | CplusplusCast (_, _, _)
   | This _
   | RecordPtStarAccess (_, _, _)|RecordStarAccess (_, _, _)

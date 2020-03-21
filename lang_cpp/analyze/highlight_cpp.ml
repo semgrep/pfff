@@ -233,8 +233,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     );
 
     V.kexpr = (fun (k, _) x ->
-      let ebis, _ = x in
-      match ebis with
+      match x with
       | Id (name, idinfo) ->
           (match name with
           | (_, _, IdIdent (s, ii)) ->
@@ -261,7 +260,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
           )
           
       | Call (e, _args) ->
-          (match unwrap e with
+          (match e with
           | Id (name, scope) -> 
             (match name with
             | _, _, IdIdent (s, ii) ->
