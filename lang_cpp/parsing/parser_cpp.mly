@@ -677,15 +677,15 @@ string_elem:
 /*(*----------------------------*)*/
 
 argument:
- | assign_expr { Left $1 }
+ | assign_expr { Arg $1 }
 /*(* cppext: *)*/
 /*(* actually this can happen also when have a wrong typedef inference ...*)*/
- | type_id { Right (ArgType $1)  }
+ | type_id { ArgType $1  }
  /*(* sgrep-ext: *)*/
- | TEllipsis { Flag_parsing.sgrep_guard (Left (Ellipses $1)) }
+ | TEllipsis { Flag_parsing.sgrep_guard (Arg (Ellipses $1)) }
 
  /* put in comment while trying to parse plan9 */
- | action_higherordermacro { Right (ArgAction $1) }
+ | action_higherordermacro { ArgAction $1 }
 
 action_higherordermacro: 
  | taction_list 

@@ -589,9 +589,9 @@ and constant _env x =
 
 and argument env x =
   match x with
-  | Left e -> Some (expr env e)
+  | Arg e -> Some (expr env e)
   (* TODO! can't just skip it ... *)
-  | Right _w -> 
+  | ArgType _  | ArgAction _ -> 
       pr2 ("type argument, maybe wrong typedef inference!");
       debug (Argument x); 
       None
