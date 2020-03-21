@@ -467,6 +467,7 @@ rule token = parse
   (* gccext: apparently gcc allows dollar in variable names. I've found such 
    * things a few times in Linux and in glibc. 
    * No need to look in keyword_table here; definitly a TIdent.
+   * sgrep-ext: can use $X in sgrep too.
    *)
   | (letter | '$') (letter | digit | '$')*
       { 
@@ -603,7 +604,7 @@ and char = parse
          (* cppext:  can have   \ for multiline in string too *)
          | '\n' -> () 
          | _ -> error ("unrecognised symbol in char:"^tok lexbuf) lexbuf;
-	 );
+         );
           x ^ char lexbuf
        }
   | eof { error "WEIRD end of file in char" lexbuf; ""}
@@ -635,8 +636,8 @@ and string  = parse
          (* cppext:  can have   \ for multiline in string too *)
          | '\n' -> () 
          | _ -> error ("unrecognised symbol in string:"^tok lexbuf) lexbuf;
-	 );
-          x ^ string lexbuf
+         );
+         x ^ string lexbuf
        }
   | eof { error "WEIRD end of file in string" lexbuf; ""}
 
