@@ -196,7 +196,7 @@ let visit_prog prog =
     (* 3: checking uses *)
 
     V.kexpr = (fun (k, _) x ->
-      match (Ast.unwrap x) with
+      match x with
       | Id (name, idinfo) ->
           (* assert scope_ref = S.Unknown ? *)
           let s = Ast.string_of_name_tmp name in

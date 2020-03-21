@@ -173,10 +173,13 @@ let instrs_of_expr env e =
   | A.Assign (op, e1, A.ArrayInit xs) ->
     let ys = xs |> unbracket |> List.map (fun (idxopt, value) ->
       (* less? recompute e1 each time? should store in intermediate val? *)
+      let tok = 
+         match op with A2.SimpleAssign tok -> tok | A2.OpAssign (_, tok) -> tok
+      in
       let access =
         match idxopt with
         | Some e -> A.ArrayAccess(e1, e)
-        | None -> A.ArrayAccess(e1, A.Int ("0", snd op))
+        | None -> A.ArrayAccess(e1, A.Int ("0", tok))
       in
       A.Assign(op, access, value)
     )
@@ -187,10 +190,13 @@ let instrs_of_expr env e =
   (* todo: actually an alloc is hidden there! *)
   | A.Assign (op, e1, A.RecordInit xs) ->
     let ys = xs |> unbracket |> List.map (fun (name, value) ->
+      let tok = 
+         match op with A2.SimpleAssign tok -> tok | A2.OpAssign (_, tok) -> tok
+      in
       (* less? recompute e1 each time? should store in intermediate val? *)
       let access = 
         A.RecordPtAccess
-          (A.Unary (e1, (A2.GetRef, snd op)),
+          (A.Unary (e1, (A2.GetRef, tok)),
            Parse_info.fake_info "->",
            name)
       in
@@ -266,9 +272,9 @@ let instrs_of_expr env e =
     let v = fresh_var env tokwrap in
     let tok = snd tokwrap in
     let i2 = 
-      instr_of_expr (A.Assign ((Cst_cpp.SimpleAssign tok, tok), A.Id v, e2)) in
+      instr_of_expr (A.Assign ((Cst_cpp.SimpleAssign tok), A.Id v, e2)) in
     Common.push i2 instrs;
-    instr_of_expr (A.Assign ((Cst_cpp.SimpleAssign tok, tok), A.Id v, e3));
+    instr_of_expr (A.Assign ((Cst_cpp.SimpleAssign tok), A.Id v, e3));
 
   (* like GccConstructor can be outside Assign context when in macro *)
   (* todo: an alloc is hidden here?? *)
@@ -277,7 +283,7 @@ let instrs_of_expr env e =
       let tokwrap = tokwrap_of_expr e in
       let v = fresh_var env tokwrap in
       let tok = snd tokwrap in
-      instr_of_expr (A.Assign ((Cst_cpp.SimpleAssign tok, tok), A.Id v, e))
+      instr_of_expr (A.Assign ((Cst_cpp.SimpleAssign tok), A.Id v, e))
 
   and rvalue_of_simple_expr e =
   match e with

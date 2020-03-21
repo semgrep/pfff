@@ -228,8 +228,7 @@ and typeQualifier =
  * have an StatementExpr and a new (local) struct defined. Same for
  * Constructor.
  *)
-and expr = expressionbis wrapx
- and expressionbis = 
+and expr = 
   (* Id can be an enumeration constant, variable, function name.
    * cppext: Id can also be the name of a macro. sparse says
    *  "an identifier with a meaning is a symbol". 
@@ -287,8 +286,8 @@ and expr = expressionbis wrapx
       fullType *
       argument comma_list paren option (* initializer *)
 
-  | Delete      of tok (*::*) option * expr
-  | DeleteArray of tok (*::*) option * expr
+  | Delete      of tok (*::*) option * tok * expr
+  | DeleteArray of tok (*::*) option * tok * unit bracket * expr
   | Throw of tok * expr option 
 
   (* forunparser: *)

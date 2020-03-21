@@ -293,7 +293,7 @@ let fixFieldOrMethodDecl (xs, semicolon) =
       }, 
       (match ini_opt with
       | None -> None
-      | Some (EqInit(tokeq, InitExpr(C(Int ("0", iizero)), _noii))) ->
+      | Some (EqInit(tokeq, InitExpr(C(Int ("0", iizero))))) ->
           Some (tokeq, iizero)
       | _ ->
           raise (Semantic ("can't assign expression to method decl", semicolon))
@@ -305,7 +305,7 @@ let fixFieldOrMethodDecl (xs, semicolon) =
 (*-------------------------------------------------------------------------- *)
 (* shortcuts *)
 (*-------------------------------------------------------------------------- *)
-let mk_e e ii = (e, ii)
+let mk_e e = e
 
 let mk_funcall e1 args = 
   Call (e1, args)

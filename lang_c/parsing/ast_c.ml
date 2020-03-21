@@ -137,7 +137,7 @@ and expr =
   | Call of expr * argument list
 
   (* should be a statement ... but see Datalog_c.instr *)
-  | Assign of Cst_cpp.assignOp wrap * expr * expr
+  | Assign of Cst_cpp.assignOp * expr * expr
 
   | ArrayAccess of expr * expr (* x[y] *)
   (* Why x->y instead of x.y choice? it's easier then with datalog

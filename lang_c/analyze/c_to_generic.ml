@@ -77,8 +77,8 @@ let rec unaryOp (a, tok) =
   | GetRefLabel -> (fun e -> G.OtherExpr (G.OE_GetRefLabel, [G.E e]))
 and assignOp =
   function 
-  | SimpleAssign _tok -> None
-  | OpAssign (v1, _tok) -> let v1 = arithOp v1 in Some v1
+  | SimpleAssign tok -> Left tok
+  | OpAssign (v1, tok) -> let v1 = arithOp v1 in Right (v1, tok)
 
 and fixOp = function | Dec -> G.Decr | Inc -> G.Incr
 and binaryOp = function
@@ -154,13 +154,13 @@ and expr =
   | Call ((v1, v2)) -> let v1 = expr v1 and v2 = list argument v2 in
       G.Call (v1, v2)
   | Assign ((v1, v2, v3)) ->
-      let v1 = wrap assignOp v1
+      let v1 = assignOp v1
       and v2 = expr v2
       and v3 = expr v3
       in
       (match v1 with
-      | None, tok -> G.Assign (v2, tok, v3)
-      | Some op, tok -> G.AssignOp (v2, (op, tok), v3)
+      | Left tok -> G.Assign (v2, tok, v3)
+      | Right (op, tok) -> G.AssignOp (v2, (op, tok), v3)
       )
   | ArrayAccess ((v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in
       G.ArrayAccess (v1, v2) 
