@@ -235,8 +235,8 @@ open Parser_cpp_mly_helper
 
 %type <Cst_cpp.stmt> statement
 %type <Cst_cpp.expr> expr
-%type <Cst_cpp.fullType> type_id
-%type <(Cst_cpp.name) * (Cst_cpp.fullType -> Cst_cpp.fullType)> declarator
+%type <Cst_cpp.type_> type_id
+%type <(Cst_cpp.name) * (Cst_cpp.type_ -> Cst_cpp.type_)> declarator
 %type <(Cst_cpp.name)> type_cplusplus_id
 %%
 
