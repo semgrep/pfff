@@ -469,6 +469,8 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
         tag ii String
     | T.Tfalse ii | T.Ttrue ii  ->
         tag ii Boolean
+    | T.Tnullptr ii -> 
+        tag ii Null
 
     | T.TPtVirg ii
     | T.TOPar ii | T.TOPar_CplusplusInit ii | T.TOPar_Define ii | T.TCPar ii
@@ -520,6 +522,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     | T.Tdefault ii 
     | T.Tsizeof ii 
     | T.Trestrict ii 
+    | T.Tconstexpr ii | T.Tthread_local ii
       -> 
         tag ii Keyword
 
