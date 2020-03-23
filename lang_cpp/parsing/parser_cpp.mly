@@ -167,6 +167,7 @@ module PI = Parse_info
    Tvirtual 
    Tnamespace Tusing 
    Tbool    Tfalse Ttrue 
+   Tnullptr
    Twchar_t 
    Tconst_cast Tdynamic_cast Tstatic_cast Treinterpret_cast 
    Texplicit Tmutable 
@@ -555,29 +556,32 @@ postfix_expr:
 
 
 primary_expr: 
+ | literal { $1 }
+ /*(* c++ext: *)*/
+ | Tthis { mk_e(This $1) }
  /*(*c++ext: cf below now. old: TIdent { mk_e(Ident  (fst $1)) [snd $1] }  *)*/
 
- /*(* constants a.k.a literal *)*/
- | TInt    { mk_e(C (Int    ($1))) }
- | TFloat  { mk_e(C (Float  ($1))) }
- | TString { mk_e(C (String ($1))) }
- | TChar   { mk_e(C (Char   ($1))) }
- /*(*c++ext: *)*/
- | Ttrue   { mk_e(C (Bool (true, $1))) }
- | Tfalse  { mk_e(C (Bool (false, $1))) }
-
-  /*(* forunparser: *)*/
+ /*(* forunparser: *)*/
  | TOPar expr TCPar { mk_e(ParenExpr ($1, $2, $3)) }  
-
- /*(* gccext: cppext: *)*/
- | string_elem string_list { mk_e(C (MultiString ($1 :: $2))) }
  /*(* gccext: allow statement as expressions via ({ statement }) *)*/
  | TOPar compound TCPar    { mk_e(StatementExpr ($1, $2, $3)) }
 
- /*(* c++ext: *)*/
- | Tthis { mk_e(This $1) }
  /*(* contains identifier rule *)*/
  | primary_cplusplus_id { $1 }
+
+literal:
+ /*(* constants a.k.a literal *)*/
+ | TInt    { mk_e(C (Int    ($1))) }
+ | TFloat  { mk_e(C (Float  ($1))) }
+ | TChar   { mk_e(C (Char   ($1))) }
+ | TString { mk_e(C (String ($1))) }
+ /*(* gccext: cppext: *)*/
+ | string_elem string_list { mk_e(C (MultiString ($1 :: $2))) }
+ /*(*c++ext: *)*/
+ | Ttrue   { mk_e(C (Bool (true, $1))) }
+ | Tfalse  { mk_e(C (Bool (false, $1))) }
+ /*(*c++0x: *)*/
+ | Tnullptr { ExprTodo $1 }
 
 /*(*----------------------------*)*/
 /*(*2 c++ext: *)*/
@@ -590,6 +594,7 @@ primary_cplusplus_id:
  | id_expression 
      { let name = (None, fst $1, snd $1) in 
        mk_e (Id (name, noIdInfo())) }
+ /*(* grammar_c++: is in qualified_id inside id_expression instead? *)*/
  | TColCol TIdent  
      { let name = Some $1, noQscope, IdIdent $2 in 
        mk_e (Id (name, noIdInfo())) }

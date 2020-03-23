@@ -31,13 +31,15 @@ module PI = Parse_info
 (* The C/cpp/C++ lexer.
  *
  * This lexer generates tokens for C (int, while, ...), C++ (new, delete, ...),
- * CPP (#define, #ifdef, ...).
+ * and CPP (#define, #ifdef, ...).
  * It also generate tokens for comments and spaces. This means that
  * it can not be used as-is. Some post-filtering
- * has to be done to feed it to a parser. Note that C and C++ are not
- * context free languages and so some idents must be disambiguated
- * in some ways. TIdent below must thus be post-processed too (as well
- * as other tokens like '<' for C++). See parsing_hack.ml for examples.
+ * has to be done to feed it to a parser. 
+ *
+ * Note that C and C++ are not context-free languages and so some idents
+ * must be disambiguated in some ways. TIdent below must thus be 
+ * post-processed too (as well as other tokens like '<' for C++). 
+ * See parsing_hack.ml for examples.
  * 
  * note: We can't use Lexer_parser._lexer_hint here to do different
  * things because we now call the lexer to get all the tokens
@@ -63,21 +65,40 @@ let tok_add_s = Parse_info.tok_add_s
 (* opti: less convenient, but using a hash is faster than using a match *)
 let keyword_table = Common.hash_of_list [
 
-  (* c: *)
   "void",   (fun ii -> Tvoid ii); 
   "char",   (fun ii -> Tchar ii);    
   "short",  (fun ii -> Tshort ii); "int",    (fun ii -> Tint ii); 
   "long",   (fun ii -> Tlong ii); 
   "float",  (fun ii -> Tfloat ii); "double", (fun ii -> Tdouble ii);  
+  (* c++ext: *)
+  "bool", (fun ii -> Tbool ii);
+  "true", (fun ii -> Ttrue ii); "false", (fun ii -> Tfalse ii);
+  "wchar_t", (fun ii -> Twchar_t ii);
+  (* c++0x: TODO *)
+  "char16_t", (fun ii -> Twchar_t ii); "char32_t", (fun ii -> Twchar_t ii);
+  "nullptr", (fun ii -> Tnullptr ii);
 
   "unsigned", (fun ii -> Tunsigned ii); "signed",   (fun ii -> Tsigned ii);
-  
+
+  (* c: and also now a c++0x: *)
   "auto",     (fun ii -> Tauto ii);    
+
   "register", (fun ii -> Tregister ii);  
   "extern",   (fun ii -> Textern ii); 
   "static",   (fun ii -> Tstatic ii);
 
   "const",    (fun ii -> Tconst ii); "volatile", (fun ii -> Tvolatile ii); 
+  (* c99:  *)
+  "__restrict__",    (fun ii -> Trestrict ii);  
+  (* gccext: and also a c++ext: *)
+  "inline",     (fun ii -> Tinline ii); 
+  (* c++ext:  *)
+  "friend"    , (fun ii -> Tfriend ii);
+  "explicit", (fun ii -> Texplicit ii);
+  "mutable", (fun ii -> Tmutable ii);
+  "virtual", (fun ii -> Tvirtual ii);
+  (* c++0x:  *)
+  "constexpr", (fun ii -> Tconst ii); (* TODO *)
   
   "struct",  (fun ii -> Tstruct ii);
   "union",   (fun ii -> Tunion ii); 
@@ -101,11 +122,6 @@ let keyword_table = Common.hash_of_list [
   "asm",     (fun ii -> Tasm ii); 
   "__attribute__", (fun ii -> Tattribute ii);
   "typeof", (fun ii -> Ttypeof ii);
-  (* also a c++ext: *)
-  "inline",     (fun ii -> Tinline ii); 
-
-  (* c99:  *)
-  "__restrict__",    (fun ii -> Trestrict ii);  
 
   (* c++ext: see also TH.is_cpp_keyword *)
   "class", (fun ii -> Tclass ii);
@@ -128,26 +144,13 @@ let keyword_table = Common.hash_of_list [
   "private"   , (fun ii -> Tprivate ii);
   "protected" , (fun ii -> Tprotected ii);
 
-  "friend"    , (fun ii -> Tfriend ii);
-
-  "virtual", (fun ii -> Tvirtual ii);
-
   "namespace", (fun ii -> Tnamespace ii);
   "using", (fun ii -> Tusing ii);
-
-  "bool", (fun ii -> Tbool ii);
-
-  "true", (fun ii -> Ttrue ii); "false", (fun ii -> Tfalse ii);
-
-  "wchar_t", (fun ii -> Twchar_t ii);
 
   "const_cast"       , (fun ii -> Tconst_cast ii);
   "dynamic_cast"     , (fun ii -> Tdynamic_cast ii);
   "static_cast"      , (fun ii -> Tstatic_cast ii);
   "reinterpret_cast" , (fun ii -> Treinterpret_cast ii);
-
-  "explicit", (fun ii -> Texplicit ii);
-  "mutable", (fun ii -> Tmutable ii);
  ]
 
 let error_radix s = 
