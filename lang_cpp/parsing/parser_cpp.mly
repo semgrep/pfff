@@ -791,14 +791,11 @@ iteration:
      { While ($1, ($2, $3, $4), $5) }
  | Tdo statement Twhile TOPar expr TCPar TPtVirg                 
      { DoWhile ($1, $2, $3, ($4, $5, $6), $7) }
- | Tfor TOPar expr_statement expr_statement expr_opt TCPar statement
+ | Tfor TOPar for_init_stmt expr_statement expr_opt TCPar statement
      { For ($1, ($2, (fst $3, snd $3, fst $4, snd $4, $5), $6), $7) }
  /*(* cppext: *)*/
  | TIdent_MacroIterator TOPar argument_list_opt TCPar statement
      { MacroIteration ($1, ($2, $3, $4), $5) }
- /*(* c++ext: for(int i = 0; i < n; i++)*)*/
- | Tfor TOPar simple_declaration expr_statement expr_opt TCPar statement
-     { StmtTodo $1 }
 
 /*(* the ';' in the caller grammar rule will be appended to the infos *)*/
 jump: 
@@ -809,13 +806,6 @@ jump:
  | Treturn expr { Return ($1, Some $2) }
  | Tgoto TMul expr { GotoComputed ($1, $2, $3) }
 
-
-
-condition:
-  | expr { $1 }
-  /*(* c++ext: TODO AST *)*/
-  | decl_spec_seq declaratori TEq initializer_clause 
-     { ExprTodo (PI.fake_info "TODO") }
 
 /*(*----------------------------*)*/
 /*(*2 cppext: *)*/
@@ -847,6 +837,18 @@ statement_seq:
 
 declaration_statement:
  | block_declaration { DeclStmt $1 }
+
+
+condition:
+  | expr { $1 }
+  /*(* c++ext: TODO AST *)*/
+  | decl_spec_seq declaratori TEq initializer_clause 
+     { ExprTodo (PI.fake_info "TODO") }
+
+for_init_stmt:
+  | expr_statement { $1 }
+  /*(* c++ext: for(int i = 0; i < n; i++)*)*/
+  | simple_declaration { None, PI.fake_info ";" } 
 
 try_block: 
  | Ttry compound handler_list { Try ($1, $2, $3) }
@@ -1575,7 +1577,6 @@ gcc_comma_opt_struct:
 
 block_declaration:
  | simple_declaration { $1 }
-
  /*(*gccext: *)*/
  | asm_definition     { $1 }
  /*(*c++ext: *)*/
