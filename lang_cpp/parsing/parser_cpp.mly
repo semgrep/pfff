@@ -170,7 +170,6 @@ open Parser_cpp_mly_helper
    Twchar_t 
    Tconst_cast Tdynamic_cast Tstatic_cast Treinterpret_cast 
    Texplicit Tmutable 
-   Texport
 %token <Parse_info.t> TPtrOpStar TDotStar
 
 %token <Parse_info.t> TColCol 
@@ -1696,7 +1695,6 @@ declaration_seq:
 /*(*2 c++ext: *)*/
 /*(*----------------------------*)*/
 
-/*(*todo: export_opt, but generates lots of conflicts *)*/ 
 template_declaration:
  | Ttemplate TInf_Template template_parameter_list TSup_Template declaration
    { ($1, ($2, $3, $4), $5) }
@@ -2009,16 +2007,6 @@ typename_opt:
 template_opt:
  | Ttemplate     { [$1] }
  | /*(*empty*)*/ { [] }
-
-/*
-export_opt:
- | Texport   { Some $1 }
- | (*empty*) { None }
-
-ptvirg_opt:
- | TPtVirg { [$1] }
- | { [] }
-*/
 
 void_opt:
  | Tvoid         { Some $1 }

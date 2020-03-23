@@ -201,7 +201,6 @@ let is_cpp_keyword = function
   | Texplicit _
   | Tmutable _
  
-  | Texport _
       -> true
 
   | _ -> false

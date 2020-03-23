@@ -148,8 +148,6 @@ let keyword_table = Common.hash_of_list [
 
   "explicit", (fun ii -> Texplicit ii);
   "mutable", (fun ii -> Tmutable ii);
-
-  "export", (fun ii -> Texport ii);
  ]
 
 let error_radix s = 

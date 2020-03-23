@@ -575,7 +575,6 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     | T.Tconst_cast ii | T.Tdynamic_cast ii
     | T.Tstatic_cast ii | T.Treinterpret_cast ii
     | T.Texplicit ii | T.Tmutable ii  
-    | T.Texport ii 
       ->
         tag ii Keyword
 
