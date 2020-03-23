@@ -217,6 +217,9 @@ module PI = Parse_info
    Tthread_local
    Tdecltype
 
+/*(* fresh_token: for new[] delete[] *)*/
+%token <Parse_info.t> TOCro_Lambda
+
 /*(*************************************************************************)*/
 /*(*1 Priorities *)*/
 /*(*************************************************************************)*/
@@ -588,6 +591,8 @@ primary_expr:
 
  /*(* contains identifier rule *)*/
  | primary_cplusplus_id { $1 }
+ /*(* c++0x: *)*/
+ | lambda_introducer compound { ExprTodo $1 }
 
 literal:
  /*(* constants a.k.a literal *)*/
@@ -680,6 +685,34 @@ new_placement:
 
 new_initializer: 
  | TOPar argument_list_opt TCPar { ($1, $2, $3) }
+
+/*(*----------------------------*)*/
+/*(*2 c++0x: lambdas! *)*/
+/*(*----------------------------*)*/
+lambda_introducer: 
+ | TOCro_Lambda TCCro { $1 }
+ | TOCro_Lambda lambda_capture TCCro { $1 }
+
+lambda_capture:
+ | capture_list { }
+ | capture_default { }
+ | capture_default TComma capture_list { }
+
+capture_default:
+ | TAnd { } 
+ | TEq  { }
+
+capture_list:
+ | capture { }
+ | capture_list TComma capture { }
+ | capture_list TComma capture TEllipsis { }
+ | capture TEllipsis { }
+
+
+capture:
+ | ident { }
+ | TAnd ident { }
+ | Tthis { }
 
 /*(*----------------------------*)*/
 /*(*2 gccext: *)*/
@@ -1542,11 +1575,12 @@ initialize2:
  | ident TCol initialize2
      { InitFieldOld ($1, $2, $3) }
 
-/*(* kenccext: c++ext:, but conflcit with array designators *)*/
- | TOCro const_expr TCCro initialize2
-     { InitIndexOld (($1, $2, $3), $4) }
+/*(* kenccext: c++ext:, but conflict with array designators and lambdas! *)*/
  | TOCro const_expr TCCro  TEq initialize2
      { InitDesignators ([DesignatorIndex($1, $2, $3)], $4, $5) }
+/*(* conflicts with c++0x lambda! *)*/
+ | TOCro const_expr TCCro initialize2
+     { InitIndexOld (($1, $2, $3), $4) }
 
 /*(* they can be nested, can have a .x.[3].y *)*/
 designator: 

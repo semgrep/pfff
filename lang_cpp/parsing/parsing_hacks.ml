@@ -12,12 +12,15 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
  *)
+open Common
 
-module Flag = Flag_parsing_cpp
+module Flag = Flag_parsing
+module Flag_cpp = Flag_parsing_cpp
 module TH = Token_helpers_cpp
 module TV = Token_views_cpp
 module T = Parser_cpp
 module PI = Parse_info
+module F = Ast_fuzzy
 
 (*****************************************************************************)
 (* Prelude *)
@@ -120,6 +123,56 @@ let fix_tokens_for_language lang xs =
   )
 
 (*****************************************************************************)
+(* Fuzzy build *)
+(*****************************************************************************)
+
+let fix_tokens_fuzzy toks =
+ try 
+  let trees = Lib_ast_fuzzy.mk_trees { Lib_ast_fuzzy.
+     tokf = TH.info_of_tok;
+     kind = TH.token_kind_of_tok;
+  } toks 
+  in
+  let retag_lambda = Hashtbl.create 101 in
+
+  let rec aux env trees =
+      match trees with
+      | [] -> ()
+      (* [...] { } *) 
+      | F.Bracket (l, xs, _r)::F.Braces _::ys ->
+          Hashtbl.add retag_lambda l true;
+          aux env xs;
+          aux env ys
+
+      | x::xs -> 
+          (match x with
+          | F.Parens (_, xs, _) -> iter_parens env xs
+          | F.Braces (_, xs, _) -> aux env xs
+          | F.Angle _ | F.Bracket _ 
+          | F.Metavar _ | F.Dots _ | F.Tok _ -> ()
+          );
+          aux env xs
+  and iter_parens env xs =
+      xs |> List.iter (function
+        | Left trees -> aux env trees
+        | Right _comma -> ()
+      )
+  in
+  aux () trees;
+
+  (* use the tagged information and transform tokens *)
+  toks |> List.map (function
+    | T.TOCro info when Hashtbl.mem retag_lambda info ->
+      T.TOCro_Lambda info
+    | x -> x
+  )
+
+  with Lib_ast_fuzzy.Unclosed (msg, info) ->
+   if !Flag.error_recovery
+   then toks
+   else raise (Parse_info.Lexical_error (msg, info))
+
+(*****************************************************************************)
 (* Fix tokens *)
 (*****************************************************************************)
 (* 
@@ -149,7 +202,7 @@ let fix_tokens_for_language lang xs =
 let fix_tokens_c ~macro_defs tokens =
 
   let tokens = Parsing_hacks_define.fix_tokens_define tokens in
-  let tokens = fix_tokens_for_language Flag.C tokens in
+  let tokens = fix_tokens_for_language Flag_cpp.C tokens in
 
   let tokens2 = ref (tokens |> Common2.acc_map TV.mk_token_extended) in
 
@@ -190,7 +243,7 @@ let fix_tokens_c ~macro_defs tokens =
 
 let fix_tokens_cpp ~macro_defs tokens = 
   let tokens = Parsing_hacks_define.fix_tokens_define tokens in
-  (* let tokens = fix_tokens_for_language Flag.Cplusplus tokens in *)
+  (* let tokens = fix_tokens_for_language Flag_cpp.Cplusplus tokens in *)
 
   let tokens2 = ref (tokens |> Common2.acc_map TV.mk_token_extended) in
   
@@ -265,7 +318,9 @@ let fix_tokens_cpp ~macro_defs tokens =
   (* the pending of find_qualifier_comentize *)
   Parsing_hacks_cpp.reclassify_tokens_before_idents_or_typedefs multi_grouped;
   
-  insert_virtual_positions (!tokens2 |> Common2.acc_map (fun x -> x.TV.t))
+  let toks = 
+    insert_virtual_positions (!tokens2 |> Common2.acc_map (fun x -> x.TV.t)) in
+  fix_tokens_fuzzy toks
 
 
 let fix_tokens ~macro_defs lang a = 
