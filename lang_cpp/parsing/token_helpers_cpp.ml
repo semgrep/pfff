@@ -278,221 +278,6 @@ let token_kind_of_tok t =
 (* Because ocamlyacc force us to do it that way. The ocamlyacc token 
  * cant be a pair of a sum type, it must be directly a sum type.
  *)
-let info_of_tok = function
-  | TString ((_s, i), _isWchar) -> i
-  | TChar  ((_s, i), _isWchar) -> i
-  | TFloat ((_s, i), _floatType) -> i
-
-  | TAssign  (Cst_cpp.SimpleAssign i) -> i
-  | TAssign  (Cst_cpp.OpAssign (_, i)) -> i
-
-  | TIdent  (_s, i) -> i
-  | TIdent_Typedef  (_s, i) -> i
-
-  | TInt  (_s, i) -> i
-
-  (*cppext:*) 
-  | TDefine (ii) -> ii 
-  | TInclude (_includes, _filename, i1) ->     i1
-
-  | TUndef (_s, ii) -> ii
-  | TCppDirectiveOther (ii) -> ii
-
-  | TCommentNewline_DefineEndOfMacro (i1) ->     i1
-  | TOPar_Define (i1) ->     i1
-  | TIdent_Define  (_s, i) -> i
-  | TOBrace_DefineInit (i1) ->     i1
-
-  | TCppEscapedNewline (ii) -> ii
-  | TDefParamVariadic (_s, i1) ->     i1
-
-
-  | TUnknown             (i) -> i
-
-  | TIdent_MacroStmt             (i) -> i
-  | TIdent_MacroString             (i) -> i
-  | TIdent_MacroIterator             (_s,i) -> i
-  | TIdent_MacroDecl             (_s, i) -> i
-  | Tconst_MacroDeclConst             (i) -> i
-(*  | TMacroTop             (_s,i) -> i *)
-  | TCPar_EOL (i1) ->     i1
-
-  | TAny_Action             (i) -> i
-
-  | TComment             (i) -> i
-  | TCommentSpace        (i) -> i
-  | TComment_Pp          (_cppkind, i) -> i
-  | TComment_Cpp          (_cppkind, i) -> i
-  | TCommentNewline        (i) -> i
-
-  | TIfdef               (i) -> i
-  | TIfdefelse           (i) -> i
-  | TIfdefelif           (i) -> i
-  | TEndif               (i) -> i
-  | TIfdefBool           (_b, i) -> i
-  | TIfdefMisc           (_b, i) -> i
-  | TIfdefVersion           (_b, i) -> i
-
-  | TOPar                (i) -> i
-  | TOPar_CplusplusInit                (i) -> i
-  | TCPar                (i) -> i
-  | TOBrace              (i) -> i
-  | TCBrace              (i) -> i
-  | TOCro                (i) -> i
-  | TCCro                (i) -> i
-  | TDot                 (i) -> i
-  | TComma               (i) -> i
-  | TPtrOp               (i) -> i
-  | TInc                 (i) -> i
-  | TDec                 (i) -> i
-  | TEq                  (i) -> i
-  | TWhy                 (i) -> i
-  | TTilde               (i) -> i
-  | TBang                (i) -> i
-  | TEllipsis            (i) -> i
-  | TCol              (i) -> i
-  | TPtVirg              (i) -> i
-  | TOrLog               (i) -> i
-  | TAndLog              (i) -> i
-  | TOr                  (i) -> i
-  | TXor                 (i) -> i
-  | TAnd                 (i) -> i
-  | TEqEq                (i) -> i
-  | TNotEq               (i) -> i
-  | TInf                 (i) -> i
-  | TSup                 (i) -> i
-  | TInfEq               (i) -> i
-  | TSupEq               (i) -> i
-  | TShl                 (i) -> i
-  | TShr                 (i) -> i
-  | TPlus                (i) -> i
-  | TMinus               (i) -> i
-  | TMul                 (i) -> i
-  | TDiv                 (i) -> i
-  | TMod                 (i) -> i
-
-  | Tchar                (i) -> i
-  | Tshort               (i) -> i
-  | Tint                 (i) -> i
-  | Tdouble              (i) -> i
-  | Tfloat               (i) -> i
-  | Tlong                (i) -> i
-  | Tunsigned            (i) -> i
-  | Tsigned              (i) -> i
-  | Tvoid                (i) -> i
-  | Tauto                (i) -> i
-  | Tregister            (i) -> i
-  | Textern              (i) -> i
-  | Tstatic              (i) -> i
-  | Tconst               (i) -> i
-  | Tvolatile            (i) -> i
-
-  | Trestrict (i) -> i
-
-  | Tstruct              (i) -> i
-  | Tenum                (i) -> i
-  | Ttypedef             (i) -> i
-  | Tunion               (i) -> i
-  | Tbreak               (i) -> i
-  | Telse                (i) -> i
-  | Tswitch              (i) -> i
-  | Tcase                (i) -> i
-  | Tcontinue            (i) -> i
-  | Tfor                 (i) -> i
-  | Tdo                  (i) -> i
-  | Tif                  (i) -> i
-  | Twhile               (i) -> i
-  | Treturn              (i) -> i
-  | Tgoto                (i) -> i
-  | Tdefault             (i) -> i
-  | Tsizeof              (i) -> i
-
-  (* gccext: *)
-  | Tasm                 (i) -> i
-  | Tattribute           (i) -> i
-  | Tinline              (i) -> i
-  | Ttypeof              (i) -> i
-
-  (* c++ext: *)
-  | Tclass (i) -> i
-  | Tthis (i) -> i
-
-  | Tnew (i) -> i
-  | Tdelete (i) -> i
-
-  | Ttemplate (i) -> i
-  | Ttypeid (i) -> i
-  | Ttypename (i) -> i
-
-  | Tcatch (i) -> i
-  | Ttry (i) -> i
-  | Tthrow (i) -> i
-
-  | Toperator (i) -> i
-
-  | Tpublic (i) -> i
-  | Tprivate (i) -> i
-  | Tprotected (i) -> i
-  | Tfriend (i) -> i
-
-  | Tvirtual (i) -> i
-
-  | Tnamespace (i) -> i
-  | Tusing (i) -> i
-
-  | Tbool (i) -> i
-  | Ttrue (i) -> i
-  | Tfalse (i) -> i
-
-  | Twchar_t (i) -> i
-
-  | Tconst_cast (i) -> i
-  | Tdynamic_cast (i) -> i
-  | Tstatic_cast (i) -> i
-  | Treinterpret_cast (i) -> i
-
-  | Texplicit (i) -> i
-  | Tmutable (i) -> i
-  | Texport (i) -> i
-
-  | TColCol (i) -> i
-  | TColCol_BeforeTypedef (i) -> i
-
-  | TPtrOpStar (i) -> i
-  | TDotStar(i) -> i
-
-  | TIdent_ClassnameInQualifier  (_s, i) -> i
-  | TIdent_ClassnameInQualifier_BeforeTypedef  (_s, i) -> i
-  | TIdent_Templatename  (_s, i) -> i
-  | TIdent_Constructor  (_s, i) -> i
-  | TIdent_TypedefConstr  (_s, i) -> i
-  | TIdent_TemplatenameInQualifier  (_s, i) -> i
-  | TIdent_TemplatenameInQualifier_BeforeTypedef  (_s, i) -> i
-
-  | TInf_Template                 (i) -> i
-  | TSup_Template                 (i) -> i
-
-  | TOCro_new                 (i) -> i
-  | TCCro_new                (i) -> i
-
-  | TInt_ZeroVirtual        (i) -> i
-
-  | Tchar_Constr (i) -> i
-  | Tint_Constr  (i) -> i
-  | Tfloat_Constr (i) -> i
-  | Tdouble_Constr  (i) -> i
-  | Twchar_t_Constr (i) -> i
-
-  | Tshort_Constr  (i) -> i
-  | Tlong_Constr   (i) -> i
-  | Tbool_Constr  (i) -> i
-
-  | Tunsigned_Constr i -> i
-  | Tsigned_Constr i -> i
-
-  | EOF                  (i) -> i
-  
-
 
 (* used by tokens to complete the parse_info with filename, line, col infos *)
 let visitor_info_of_tok f = function
@@ -674,10 +459,6 @@ let visitor_info_of_tok f = function
   | Texplicit (i) -> Texplicit (f i)
   | Tmutable (i) -> Tmutable (f i)
 
-  | Texport (i) -> Texport (f i)
-
-
-
   | TColCol (i) -> TColCol (f i)
   | TColCol_BeforeTypedef (i) -> TColCol_BeforeTypedef (f i)
 
@@ -721,6 +502,12 @@ let visitor_info_of_tok f = function
 
   | EOF                  (i) -> EOF                  (f i) 
 
+let info_of_tok tok = 
+  let res = ref None in
+  visitor_info_of_tok (fun ii -> res := Some ii; ii) tok |> ignore;
+  match !res with
+  | Some x -> x
+  | None -> Parse_info.fake_info "NOTOK"
 
 (*****************************************************************************)
 (* Accessors *)
