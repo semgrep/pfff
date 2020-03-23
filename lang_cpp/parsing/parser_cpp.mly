@@ -42,7 +42,7 @@ module PI = Parse_info
  * and always contain a '_' in their name.
  *)*/
 
-/*(* unrecognized token, will generate parse error *)*/
+/*(* unrecognized token (use for error recovery during lexing) *)*/
 %token <Parse_info.t> TUnknown
 
 %token <Parse_info.t> EOF
@@ -167,10 +167,9 @@ module PI = Parse_info
    Tvirtual 
    Tnamespace Tusing 
    Tbool    Tfalse Ttrue 
-   Tnullptr
    Twchar_t 
    Tconst_cast Tdynamic_cast Tstatic_cast Treinterpret_cast 
-   Texplicit Tmutable 
+   Texplicit Tmutable
 %token <Parse_info.t> TPtrOpStar TDotStar
 
 %token <Parse_info.t> TColCol 
@@ -204,6 +203,14 @@ module PI = Parse_info
   Tsigned_Constr Tunsigned_Constr
 /*(* fresh_token: appears after solved if next token is a typedef *)*/
 %token <Parse_info.t> TColCol_BeforeTypedef
+
+/*(*-----------------------------------------*)*/
+/*(*2 c++0x: extra tokens *)*/
+/*(*-----------------------------------------*)*/
+%token <Parse_info.t>
+   Tnullptr
+   Tconstexpr
+   Tthread_local
 
 /*(*************************************************************************)*/
 /*(*1 Priorities *)*/
@@ -1465,14 +1472,17 @@ decl_spec_seq:
 decl_spec:
  | storage_class_spec { addStorageD $1 }
  | type_spec          { addTypeD  $1 }
+ | function_spec      { addInlineD (snd $1)(*TODO*) }
+
 /*(* grammar_c++: cv_qualif is not here but instead inline in type_spec. 
  * I prefer to keep as before but I take care when
  * they speak about type_spec to translate instead in type+qualif_spec
  * (which is spec_qualif_list)*)*/
  | cv_qualif          { addQualifD $1 }
- | function_spec      { addInlineD (snd $1)(*TODO*) }
+
  | Ttypedef           { addStorageD (StoTypedef $1) }
- | Tfriend            { addInlineD $1 (*TODO*)}
+ | Tfriend            { addInlineD $1 (*TODO*) }
+ | Tconstexpr         { addInlineD $1 (*TODO*) }
 
 /*(* grammar_c++: they put 'explicit' in function_spec, 'typedef' and 'friend' 
  * in decl_spec. But it's just estethic as no other rules directly
@@ -1496,6 +1506,8 @@ storage_class_spec:
  | Tregister    { Sto (Register,$1) }
  /*(* c++ext: *)*/
  | Tmutable     { Sto (Register,$1) (*TODO*) }
+ /*(* c++0x: *)*/
+ | Tthread_local { Sto (Register,$1) (*TODO*) }
 
 /*(*-----------------------------------------------------------------------*)*/
 /*(*2 declarators (right part of type and variable) *)*/
