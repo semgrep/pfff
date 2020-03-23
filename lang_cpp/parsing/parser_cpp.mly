@@ -713,6 +713,8 @@ capture:
  | ident { }
  | TAnd ident { }
  | Tthis { }
+ /*(* grammar_c++: not in latest *)*/
+ | ident TEq assign_expr { }
 
 /*(*----------------------------*)*/
 /*(*2 gccext: *)*/
@@ -961,11 +963,15 @@ simple_type_specifier:
   * See parsing_hacks_typedef.ml. See also conflicts.txt
   *)*/
  | type_cplusplus_id { Right3 (TypeName $1), noii }
+
+ /*(* c++0x: *)*/
+ | decltype_specifier { Middle3 Long, noii }
+
+decltype_specifier:
  /*(* c++0x: TODO *)*/
- | Tdecltype TOPar expr TCPar { Right3(TypeOf ($1,($2,Right $3,$4))),noii }
+ | Tdecltype TOPar expr TCPar { $1  }
  /*(* TODO: because of wrong typedef inference *)*/
- | Tdecltype TOPar TIdent_Typedef TCPar 
-     { Middle3 Long, [$1] }
+ | Tdecltype TOPar TIdent_Typedef TCPar { $1 }
 
 /*(*todo: can have a ::opt nested_name_specifier_opt before ident*)*/
 elaborated_type_specifier: 
