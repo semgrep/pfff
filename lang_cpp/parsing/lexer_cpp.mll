@@ -98,7 +98,8 @@ let keyword_table = Common.hash_of_list [
   "mutable", (fun ii -> Tmutable ii);
   "virtual", (fun ii -> Tvirtual ii);
   (* c++0x:  *)
-  "constexpr", (fun ii -> Tconst ii); (* TODO *)
+  "constexpr", (fun ii -> Tconstexpr ii);
+  "thread_local", (fun ii -> Tthread_local ii);
   
   "struct",  (fun ii -> Tstruct ii);
   "union",   (fun ii -> Tunion ii); 

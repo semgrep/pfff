@@ -281,7 +281,9 @@ let token_kind_of_tok t =
 
 (* used by tokens to complete the parse_info with filename, line, col infos *)
 let visitor_info_of_tok f = function
+  | Tthread_local i -> Tthread_local (f i)
   | Tnullptr i -> Tnullptr (f i)
+  | Tconstexpr i -> Tconstexpr (f i)
   | TString ((s, i), isWchar)  -> TString ((s, f i),isWchar)
   | TChar  ((s, i), isWchar)   -> TChar  ((s, f i), isWchar)
   | TFloat ((s, i), floatType) -> TFloat ((s, f i), floatType)
