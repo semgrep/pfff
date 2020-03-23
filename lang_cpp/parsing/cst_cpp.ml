@@ -28,8 +28,9 @@
  * This file started as a simple AST for C. It was then extended
  * to deal with cpp idioms (see 'cppext:' tag) and converted to a CST.
  * Then, it was extented again to deal with gcc extensions (see gccext:),
- * and C++ constructs (see c++ext:). A few kencc (then plan9 compiler)
- * extensions were also recently added (see kenccext:).
+ * and C++ constructs (see c++ext:), and a few kencc (the plan9 compiler)
+ * extensions (see kenccext:). Finally it was extended to deal with
+ * a few C++0x and C++11 extensions (see c++0x:).
  * 
  * gcc introduced StatementExpr which made 'expr' and 'stmt' mutually
  * recursive. It also added NestedFunc for even more mutual recursivity.
@@ -73,6 +74,7 @@ type tok = Parse_info.t
 (* a shortcut to annotate some information with token/position information *)
 and 'a wrap  = 'a * tok
 
+(* TODO: delete *)
 and 'a wrapx  = 'a * tok list
 
 and 'a paren   = tok * 'a * tok
@@ -314,11 +316,12 @@ and expr =
     mutable i_scope: Scope_code.t;
   }
 
-  (* cppext: normmally just expr *)
+ (* cppext: normally should just have type argument = expr *)
   and argument = 
        | Arg of expr
+       (* cppext: *)
        | ArgType of type_
-       (* for really unparsable stuff ... we just bailout *)
+       (* cppext: for really unparsable stuff ... we just bailout *)
        | ArgAction of action_macro
        and action_macro = 
          | ActMisc of tok list
@@ -336,17 +339,19 @@ and expr =
     | Float  of (string wrap * floatType)
     | Char   of (string wrap * isWchar) (* normally it is equivalent to Int *)
     | String of (string wrap * isWchar) 
+
     | MultiString of string wrap list  (* can contain MacroString *)
     (* c++ext: *)
     | Bool of bool wrap
+
     and isWchar = IsWchar | IsChar
 
   and unaryOp  = 
+    | UnPlus |  UnMinus | Tilde | Not 
     (* less: could be lift up, those are really important operators *)
     | GetRef | DeRef 
     (* gccext: via &&label notation *)
     | GetRefLabel
-    | UnPlus |  UnMinus | Tilde | Not 
   and assignOp = SimpleAssign of tok | OpAssign of arithOp wrap
   and fixOp    = Dec | Inc
 
@@ -396,7 +401,7 @@ and stmt =
    (* need to check that all elements in the compound start
     * with a case:, otherwise it's unreachable code.
     *)
-  | Switch of tok * expr paren * stmt 
+  | Switch of tok * expr paren * stmt
 
   (* iteration *)
   | While   of tok * expr paren * stmt
@@ -412,9 +417,9 @@ and stmt =
 
   (* labeled *)
   | Label   of string wrap * tok (* : *) * stmt
-  | Case    of tok * expr * tok (* : *) * stmt 
-  | CaseRange of tok * expr * tok (* ... *) * expr * 
-                 tok (* : *) * stmt (* gccext: *)
+  | Case      of tok * expr * tok (* : *) * stmt 
+  (* gccext: *)
+  | CaseRange of tok * expr * tok (* ... *) * expr * tok (* : *) * stmt 
   | Default of tok * tok (* : *) * stmt
 
   (* c++ext: in C this constructor could be outside the statement type, in a
