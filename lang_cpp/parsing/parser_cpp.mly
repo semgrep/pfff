@@ -20,6 +20,7 @@ open Common
 
 open Cst_cpp
 open Parser_cpp_mly_helper
+module PI = Parse_info
 
 (* See cst_cpp.ml for more information.
  *
@@ -28,7 +29,6 @@ open Parser_cpp_mly_helper
  *  - http://www.externsoft.ch/download/cpp-iso.html
  *  - tree-sitter-cpp grammar
  *)
-
 %}
 
 /*(*************************************************************************)*/
@@ -689,7 +689,7 @@ argument:
 action_higherordermacro: 
  | taction_list 
     { if null $1
-      then ActMisc [Parse_info.fake_info "action"]
+      then ActMisc [PI.fake_info "action"]
       else ActMisc $1
     }
 
@@ -758,19 +758,6 @@ statement:
  | TEllipsis   
    { Flag_parsing.sgrep_guard (ExprStatement (Some (Ellipses $1), $1)) }
 
- /*(* c++ext: TODO put at good place later *)*/
- | Tswitch TOPar decl_spec init_declarator_list TCPar statement
-     { StmtTodo $1 }
- | Tif TOPar decl_spec init_declarator_list TCPar statement  %prec LOW_PRIORITY_RULE
-     { StmtTodo $1 }
- | Tif TOPar decl_spec init_declarator_list TCPar statement Telse statement 
-     { StmtTodo $1 }
- | Twhile TOPar decl_spec init_declarator_list TCPar statement                
-     { StmtTodo $1 }
- /*(* c++ext: for(int i = 0; i < n; i++)*)*/
- | Tfor TOPar simple_declaration expr_statement expr_opt TCPar statement
-     { StmtTodo $1 }
-
 
 compound: 
  | TOBrace statement_list_opt TCBrace { ($1, $2, $3) }
@@ -792,15 +779,15 @@ labeled:
 
 /*(* classic else ambiguity resolved by a %prec, see conflicts.txt *)*/
 selection: 
- | Tif TOPar expr TCPar statement              %prec LOW_PRIORITY_RULE
+ | Tif TOPar condition TCPar statement              %prec LOW_PRIORITY_RULE
      { If ($1, ($2, $3, $4), $5, None) }
- | Tif TOPar expr TCPar statement Telse statement 
+ | Tif TOPar condition TCPar statement Telse statement 
      { If ($1, ($2, $3, $4), $5, Some ($6, $7)) }
- | Tswitch TOPar expr TCPar statement             
+ | Tswitch TOPar condition TCPar statement             
      { Switch ($1, ($2, $3, $4), $5) }
 
 iteration: 
- | Twhile TOPar expr TCPar statement                             
+ | Twhile TOPar condition TCPar statement                             
      { While ($1, ($2, $3, $4), $5) }
  | Tdo statement Twhile TOPar expr TCPar TPtVirg                 
      { DoWhile ($1, $2, $3, ($4, $5, $6), $7) }
@@ -809,6 +796,9 @@ iteration:
  /*(* cppext: *)*/
  | TIdent_MacroIterator TOPar argument_list_opt TCPar statement
      { MacroIteration ($1, ($2, $3, $4), $5) }
+ /*(* c++ext: for(int i = 0; i < n; i++)*)*/
+ | Tfor TOPar simple_declaration expr_statement expr_opt TCPar statement
+     { StmtTodo $1 }
 
 /*(* the ';' in the caller grammar rule will be appended to the infos *)*/
 jump: 
@@ -819,6 +809,12 @@ jump:
  | Treturn expr { Return ($1, Some $2) }
  | Tgoto TMul expr { GotoComputed ($1, $2, $3) }
 
+
+
+condition:
+  | expr { $1 }
+  /*(* c++ext: TODO AST *)*/
+  | decl_spec_seq init_declarator_list { ExprTodo (PI.fake_info "TODO") }
 
 /*(*----------------------------*)*/
 /*(*2 cppext: *)*/
@@ -1058,37 +1054,37 @@ direct_abstract_declarator:
          ft_dots = snd $3; ft_const = $5; ft_throw = $6; })) }
 
 /*(*-----------------------------------------------------------------------*)*/
-/*(*2 Parameters (use decl_spec not type_spec just for 'register') *)*/
+/*(*2 Parameters (use decl_spec_seq not type_spec just for 'register') *)*/
 /*(*-----------------------------------------------------------------------*)*/
 parameter_type_list: 
  | parameter_list                  { $1, None }
  | parameter_list TComma TEllipsis { $1, Some ($2,$3) }
 
 parameter_decl: 
- | decl_spec declarator
+ | decl_spec_seq declarator
      { let (t_ret,reg) = type_and_register_from_decl $1 in
        let (name, ftyp) = fixNameForParam $2 in
        { p_name = Some name; p_type = ftyp t_ret;
          p_register = reg; p_val = None } }
- | decl_spec abstract_declarator
+ | decl_spec_seq abstract_declarator
      { let (t_ret, reg) = type_and_register_from_decl $1 in
        { p_name = None; p_type = $2 t_ret; 
          p_register = reg; p_val = None } }
- | decl_spec
+ | decl_spec_seq
      { let (t_ret, reg) = type_and_register_from_decl $1 in
        { p_name = None; p_type = t_ret; p_register = reg; p_val = None } }
 
 /*(*c++ext: default parameter value, copy paste *)*/
- | decl_spec declarator TEq assign_expr
+ | decl_spec_seq declarator TEq assign_expr
      { let (t_ret, reg) = type_and_register_from_decl $1 in 
        let (name, ftyp) = fixNameForParam $2 in
        { p_name = Some name; p_type = ftyp t_ret; 
          p_register = reg; p_val = Some ($3, $4) } }
- | decl_spec abstract_declarator TEq assign_expr
+ | decl_spec_seq abstract_declarator TEq assign_expr
      { let (t_ret, reg) = type_and_register_from_decl $1 in
        { p_name = None; p_type = $2 t_ret; 
          p_register = reg; p_val = Some ($3, $4) } }
- | decl_spec TEq assign_expr
+ | decl_spec_seq TEq assign_expr
      { let (t_ret, reg) = type_and_register_from_decl $1 in
        { p_name = None; p_type = t_ret; 
          p_register = reg; p_val = Some($2,$3) } }
@@ -1320,13 +1316,13 @@ member_declaration:
 /*(*2 field declaration *)*/
 /*(*-----------------------------------------------------------------------*)*/
 field_declaration:
- | decl_spec TPtVirg 
+ | decl_spec_seq TPtVirg 
      { (* gccext: allow empty elements if it is a structdef or enumdef *)
        let (t_ret, sto, _inline) = type_and_storage_from_decl $1 in
        let onedecl = { v_namei = None; v_type = t_ret; v_storage = sto } in
        ([(FieldDecl onedecl),noii], $2)
      }
- | decl_spec member_declarator_list TPtVirg 
+ | decl_spec_seq member_declarator_list TPtVirg 
      { let (t_ret, sto, _inline) = type_and_storage_from_decl $1 in
        ($2 |> (List.map (fun (f, iivirg) -> f t_ret sto, iivirg)), $3)
      }
@@ -1419,11 +1415,11 @@ enumerator:
 /*(*************************************************************************)*/
 
 simple_declaration:
- | decl_spec TPtVirg
+ | decl_spec_seq TPtVirg
      { let (t_ret, sto, _inline) = type_and_storage_from_decl $1 in 
        DeclList ([{v_namei = None; v_type = t_ret; v_storage = sto},noii],$2)
      }
- | decl_spec init_declarator_list TPtVirg 
+ | decl_spec_seq init_declarator_list TPtVirg 
      { let (t_ret, sto, _inline) = type_and_storage_from_decl $1 in
        DeclList (
          ($2 |> List.map (fun (((name, f), iniopt), iivirg) ->
@@ -1444,37 +1440,31 @@ simple_declaration:
      { MacroDecl ([$1;$2], $3, ($4, $5, $6), $7) }
 
 /*(*-----------------------------------------------------------------------*)*/
-/*
-(* In c++ grammar they put 'explicit' in function_spec, 'typedef' and 'friend' 
+
+decl_spec_seq:
+ | decl_spec               { $1 nullDecl }
+ | decl_spec decl_spec_seq { $1 $2 }
+
+decl_spec:
+ | storage_class_spec { addStorageD $1 }
+ | type_spec          { addTypeD  $1 }
+/*(* grammar_c++: cv_qualif is not here but instead inline in type_spec. 
+ * I prefer to keep as before but I take care when
+ * they speak about type_spec to translate instead in type+qualif_spec
+ * (which is spec_qualif_list)*)*/
+ | cv_qualif          { addQualifD $1 }
+ | function_spec      { addInlineD (snd $1)(*TODO*) }
+ | Ttypedef           { addStorageD (StoTypedef $1) }
+ | Tfriend            { addInlineD $1 (*TODO*)}
+
+/*(* grammar_c++: they put 'explicit' in function_spec, 'typedef' and 'friend' 
  * in decl_spec. But it's just estethic as no other rules directly
  * mention function_spec or storage_spec. They just want to say that 
  * 'virtual' applies only to functions, but they have no way to check that 
  * syntaxically. I could keep as before, as in the C grammar. 
  * For 'explicit' I prefer to put it directly
- * with the ctor as I already have a special heuristic for constructor.
- * They also don't put the cv_qualif here but instead inline it in
- * type_spec. I prefer to keep as before but I take care when
- * they speak about type_spec to translate instead in type+qualif_spec
- * (which is spec_qualif_list)
- * 
- * todo? can simplify by putting all in _opt ? must have at least one otherwise
- * decl_list is ambiguous ? (no cos have ';' between decl) 
+ * with the ctor as I already have a special heuristic for constructor. 
  *)*/
-decl_spec: 
- | storage_class_spec      { {nullDecl with storageD = $1 } }
- | type_spec               { addTypeD $1 nullDecl }
- | cv_qualif               { {nullDecl with qualifD  = $1 } }
- | function_spec           { {nullDecl with inlineD = (true, [snd $1]) } (*TODO*) }
- | Ttypedef     { {nullDecl with storageD = StoTypedef $1 } }
- | Tfriend      { {nullDecl with inlineD = (true, [$1]) } (*TODO*) }
-
- | storage_class_spec decl_spec { addStorageD $1 $2 }
- | type_spec          decl_spec { addTypeD  $1 $2 }
- | cv_qualif          decl_spec { addQualifD $1 $2 }
- | function_spec      decl_spec { addInlineD (snd $1) $2 (*TODO*) }
- | Ttypedef           decl_spec { addStorageD (StoTypedef $1) $2 }
- | Tfriend            decl_spec { addInlineD $1 $2 (*TODO*)}
-
 function_spec:
  /*(*gccext: and c++ext: *)*/
  | Tinline { Inline, $1 }
@@ -1768,7 +1758,7 @@ ctor_dtor:
 function_definition: start_fun compound 
      { fixFunc ($1, $2) }
 
-start_fun: decl_spec declarator
+start_fun: decl_spec_seq declarator
      { let (t_ret, sto) = type_and_storage_for_funcdef_from_decl $1 in
        (fst $2, fixOldCDecl ((snd $2) t_ret), sto)
      }
@@ -1822,7 +1812,7 @@ define_val:
        | _ -> raise Parsing.Parse_error
      }
  /*(* for statement-like macro with varargs *)*/
- | Tif TOPar expr TCPar id_expression
+ | Tif TOPar condition TCPar id_expression
      { let name = (None, fst $5, snd $5) in 
        DefinePrintWrapper ($1, ($2, $3, $4), name) 
      }
@@ -1882,7 +1872,7 @@ colon_option_list:
 
 
 argument_list: 
- | argument                           { [$1, []] }
+ | argument                      { [$1, []] }
  | argument_list TComma argument { $1 @ [$3,    [$2]] }
 
 
