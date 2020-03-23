@@ -22,10 +22,14 @@ open Cst_cpp
 open Parser_cpp_mly_helper
 module PI = Parse_info
 
-(* See cst_cpp.ml for more information.
+(* This file contains a grammar for C/C++/Cpp.
+ * See cst_cpp.ml for more information.
+ *
+ * reference:
+ *  - orig_c.mly and orig_cpp.mly in this directory
+ *  - http://www.nongnu.org/hcb/ for an up-to-date hyperlinked C++ grammar
  *
  * TODO: 
- *  - http://www.nongnu.org/hcb/ for recent hyperlinked grammar
  *  - http://www.externsoft.ch/download/cpp-iso.html
  *  - tree-sitter-cpp grammar
  *)
@@ -1376,50 +1380,6 @@ member_declarator:
  | TCol const_expr            
      { (fun t_ret _stoTODO -> BitField (None, $1, t_ret, $2)) }
 
-/*(*-----------------------------------------------------------------------*)*/
-/*(*2 c++ext: constructor special case *)*/
-/*(*-----------------------------------------------------------------------*)*/
-
-/*(* special case for ctor/dtor because they don't have a return type.
-   * TODOAST on the ctor_spec and chain of calls
-   *)*/
-ctor_dtor_member:
- | ctor_spec TIdent_Constructor TOPar parameter_type_list_opt TCPar
-     ctor_mem_initializer_list_opt
-     compound
-     { MemberFunc (Constructor (mk_constructor $2 ($3, $4, $5) $7)) }
-
- | ctor_spec TIdent_Constructor TOPar parameter_type_list_opt TCPar TPtVirg 
-     { MemberDecl (ConstructorDecl ($2, ($3, opt_to_list_params $4, $5), $6)) }
-
- | dtor_spec TTilde ident TOPar void_opt TCPar exn_spec_opt compound
-     { MemberFunc (Destructor (mk_destructor $2 $3 ($4, $5, $6) $7 $8)) }
- | dtor_spec TTilde ident TOPar void_opt TCPar exn_spec_opt TPtVirg
-     { MemberDecl (DestructorDecl ($2, $3, ($4, $5, $6), $7, $8)) }
-
-
-ctor_spec:
- | Texplicit { }
- | Tinline { }
- | /*(*empty*)*/ { }
-
-dtor_spec:
- | Tvirtual { }
- | Tinline { }
- | /*(*empty*)*/ { }
-
-ctor_mem_initializer_list_opt: 
- | TCol mem_initializer_list { () }
- | /*(* empty *)*/ { () }
-
-mem_initializer: 
- | mem_initializer_id TOPar argument_list_opt TCPar { () }
-
-/*(* factorize with declarator_id ? specialisation *)*/
-mem_initializer_id:
-/* specialsiation | TIdent { () } */
- | primary_cplusplus_id { () }
-
 /*(*************************************************************************)*/
 /*(*1 Enum definition *)*/
 /*(*************************************************************************)*/
@@ -1755,10 +1715,39 @@ unnamed_namespace_definition:
      { NameSpaceAnon ($1, ($2, $3, $4)) }
 
 
+/*(*************************************************************************)*/
+/*(*1 Function definition *)*/
+/*(*************************************************************************)*/
+
+function_definition: 
+ | decl_spec_seq declarator function_body 
+     { let (t_ret, sto) = type_and_storage_for_funcdef_from_decl $1 in
+       let x = (fst $2, fixOldCDecl ((snd $2) t_ret), sto) in
+       fixFunc (x, $3) 
+     }
+ /*(* c++0x: TODO 2 more s/r conflicts and regressions! *)*/
 /*
-(* Special case cos ctor/dtor do not have return type. 
- * TODO scope ? do a start_constructor ? 
- *)*/
+ | decl_spec_seq declarator TEq Tdefault TPtVirg  
+     { let (t_ret, sto) = type_and_storage_for_funcdef_from_decl $1 in
+       let x = (fst $2, fixOldCDecl ((snd $2) t_ret), sto) in
+       let body = ($3, [], $4) in(* TODO *)
+       fixFunc (x, body) 
+     }
+ | decl_spec_seq declarator TEq Tdelete TPtVirg  
+     { let (t_ret, sto) = type_and_storage_for_funcdef_from_decl $1 in
+       let x = (fst $2, fixOldCDecl ((snd $2) t_ret), sto) in
+       let body = ($3, [], $4) in(* TODO *)
+       fixFunc (x, body) 
+     }
+*/
+function_body: 
+ | compound { $1 }
+
+/*(*-----------------------------------------------------------------------*)*/
+/*(*2 c++ext: constructor special case *)*/
+/*(*-----------------------------------------------------------------------*)*/
+
+/*(* Special case cos ctor/dtor do not have return type. *)*/
 ctor_dtor:
  | nested_name_specifier TIdent_Constructor TOPar parameter_type_list_opt TCPar
      ctor_mem_initializer_list_opt
@@ -1779,17 +1768,55 @@ ctor_dtor:
  | TTilde ident TOPar void_opt TCPar exn_spec_opt compound
      { DeclTodo }
 
-/*(*************************************************************************)*/
-/*(*1 Function definition *)*/
-/*(*************************************************************************)*/
 
-function_definition: start_fun compound 
-     { fixFunc ($1, $2) }
 
-start_fun: decl_spec_seq declarator
-     { let (t_ret, sto) = type_and_storage_for_funcdef_from_decl $1 in
-       (fst $2, fixOldCDecl ((snd $2) t_ret), sto)
-     }
+/*(* special case for ctor/dtor because they don't have a return type.
+   * TODOAST on the ctor_spec and chain of calls
+   *)*/
+ctor_dtor_member: 
+ | ctor_spec TIdent_Constructor TOPar parameter_type_list_opt TCPar
+     ctor_mem_initializer_list_opt
+     compound
+     { MemberFunc (Constructor (mk_constructor $2 ($3, $4, $5) $7)) }
+ | ctor_spec TIdent_Constructor TOPar parameter_type_list_opt TCPar TPtVirg 
+     { MemberDecl (ConstructorDecl ($2, ($3, opt_to_list_params $4, $5), $6)) }
+ | ctor_spec TIdent_Constructor TOPar parameter_type_list_opt TCPar TEq Tdelete TPtVirg 
+     { MemberDecl (ConstructorDecl ($2, ($3, opt_to_list_params $4, $5), $6)) }
+ | ctor_spec TIdent_Constructor TOPar parameter_type_list_opt TCPar TEq Tdefault TPtVirg 
+     { MemberDecl (ConstructorDecl ($2, ($3, opt_to_list_params $4, $5), $6)) }
+
+ | dtor_spec TTilde ident TOPar void_opt TCPar exn_spec_opt compound
+     { MemberFunc (Destructor (mk_destructor $2 $3 ($4, $5, $6) $7 $8)) }
+ | dtor_spec TTilde ident TOPar void_opt TCPar exn_spec_opt TPtVirg
+     { MemberDecl (DestructorDecl ($2, $3, ($4, $5, $6), $7, $8)) }
+ | dtor_spec TTilde ident TOPar void_opt TCPar exn_spec_opt TEq Tdelete TPtVirg
+     { MemberDecl (DestructorDecl ($2, $3, ($4, $5, $6), $7, $8)) }
+ | dtor_spec TTilde ident TOPar void_opt TCPar exn_spec_opt TEq Tdefault TPtVirg
+     { MemberDecl (DestructorDecl ($2, $3, ($4, $5, $6), $7, $8)) }
+
+
+ctor_spec:
+ | Texplicit { }
+ | Tinline { }
+ | /*(*empty*)*/ { }
+
+dtor_spec:
+ | Tvirtual { }
+ | Tinline { }
+ | /*(*empty*)*/ { }
+
+ctor_mem_initializer_list_opt: 
+ | TCol mem_initializer_list { () }
+ | /*(* empty *)*/ { () }
+
+mem_initializer: 
+ | mem_initializer_id TOPar argument_list_opt TCPar { () }
+
+/*(* factorize with declarator_id ? specialisation *)*/
+mem_initializer_id:
+/* specialsiation | TIdent { () } */
+ | primary_cplusplus_id { () }
+
 
 /*(*************************************************************************)*/
 /*(*1 Cpp directives *)*/
