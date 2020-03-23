@@ -793,6 +793,9 @@ iteration:
      { DoWhile ($1, $2, $3, ($4, $5, $6), $7) }
  | Tfor TOPar for_init_stmt expr_statement expr_opt TCPar statement
      { For ($1, ($2, (fst $3, snd $3, fst $4, snd $4, $5), $6), $7) }
+ /*(* c++ext: *)*/
+ | Tfor TOPar for_range_decl TCol for_range_init TCPar statement
+     { StmtTodo $1 }
  /*(* cppext: *)*/
  | TIdent_MacroIterator TOPar argument_list_opt TCPar statement
      { MacroIteration ($1, ($2, $3, $4), $5) }
@@ -849,6 +852,12 @@ for_init_stmt:
   | expr_statement { $1 }
   /*(* c++ext: for(int i = 0; i < n; i++)*)*/
   | simple_declaration { None, PI.fake_info ";" } 
+
+/*(* grammar_c++: should be type_spec_seq but conflicts
+   * could solve with special TOPar_foreach *)*/
+for_range_decl: decl_spec_seq declarator { }
+
+for_range_init: expr { }
 
 try_block: 
  | Ttry compound handler_list { Try ($1, $2, $3) }
