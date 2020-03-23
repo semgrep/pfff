@@ -543,6 +543,7 @@ unary_op:
 
 postfix_expr: 
  | primary_expr               { $1 }
+
  | postfix_expr TOCro expr TCCro                
      { mk_e(ArrayAccess ($1, ($2, $3, $4))) }
  | postfix_expr TOPar argument_list_opt TCPar  
@@ -558,13 +559,20 @@ postfix_expr:
  | postfix_expr TDec          { mk_e(Postfix ($1, (Dec, $2))) }
 
  /*(* gccext: also called compound literals *)*/
- | compound_literal_expr { $1 }
+ | TOPar type_id TCPar braced_init_list
+     { mk_e(GccConstructor (($1, $2, $3), $4)) }
+
 
  /*(* c++ext: *)*/
  | cast_operator_expr { $1 }
  | Ttypeid TOPar unary_expr TCPar { mk_e(TypeId ($1, ($2, Right $3, $4))) }
  | Ttypeid TOPar type_id    TCPar { mk_e(TypeId ($1, ($2, Left $3, $4))) }
  | cast_constructor_expr { $1 }
+
+ /*(* c++0x: *)*/
+ | simple_type_specifier braced_init_list  { ExprTodo (Common2.fst3 $2) }
+ /*(* TODO: should be typename, but require new parsing_hack_typedef *)*/
+ | TIdent braced_init_list { ExprTodo (Common2.fst3 $2) }
 
 
 primary_expr: 
@@ -676,12 +684,6 @@ new_initializer:
 /*(*----------------------------*)*/
 /*(*2 gccext: *)*/
 /*(*----------------------------*)*/
-
-compound_literal_expr:
- | TOPar type_id TCPar TOBrace TCBrace 
-     { mk_e(GccConstructor (($1, $2, $3), ($4, [], $5))) }
- | TOPar type_id TCPar TOBrace initialize_list gcc_comma_opt TCBrace
-     { mk_e(GccConstructor (($1, $2, $3), ($4, List.rev $5, $7))) }
 
 string_elem:
  | TString { fst $1 }
@@ -1505,11 +1507,14 @@ gcc_asm_decl:
 initializer_clause: 
  | assign_expr                                    
      { InitExpr $1 }
- | TOBrace initialize_list gcc_comma_opt_struct  TCBrace
-     { InitList ($1, List.rev $2, $4) (*$3*) }
- /*(* gccext: *)*/
- | TOBrace TCBrace
-     { InitList ($1, [], $2) } 
+ | braced_init_list 
+     { InitList $1 }
+
+braced_init_list:
+ | TOBrace initialize_list gcc_comma_opt_struct TCBrace 
+    { ($1, List.rev $2, $4) (*$3*) }
+ | TOBrace TCBrace   
+    { ($1, [], $2) }
 
 /*
 (* opti: This time we use the weird order of non-terminal which requires in 
@@ -1527,10 +1532,8 @@ initialize_list:
 initialize2: 
  | cond_expr 
      { InitExpr $1 } 
- | TOBrace initialize_list gcc_comma_opt_struct TCBrace
-     { InitList ($1, List.rev $2, $4) (*$3*) }
- | TOBrace TCBrace
-     { InitList ($1, [], $2) }
+ | braced_init_list 
+     { InitList $1 }
 
  /*(* gccext: labeled elements, a.k.a designators *)*/
  | designator_list TEq initialize2 
