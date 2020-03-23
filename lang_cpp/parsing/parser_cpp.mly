@@ -814,7 +814,8 @@ jump:
 condition:
   | expr { $1 }
   /*(* c++ext: TODO AST *)*/
-  | decl_spec_seq init_declarator_list { ExprTodo (PI.fake_info "TODO") }
+  | decl_spec_seq declaratori TEq initializer_clause 
+     { ExprTodo (PI.fake_info "TODO") }
 
 /*(*----------------------------*)*/
 /*(*2 cppext: *)*/
@@ -1485,7 +1486,7 @@ storage_class_spec:
 /*(*-----------------------------------------------------------------------*)*/
 init_declarator:  
  | declaratori                  { ($1, None) }
- | declaratori TEq initialize   { ($1, Some (EqInit ($2, $3))) }
+ | declaratori TEq initializer_clause   { ($1, Some (EqInit ($2, $3))) }
  /*
  (* c++ext: c++ initializer via call to constructor. Note that this
   * is different from TypedefIdent2, here the declaratori is an ident,
@@ -1508,7 +1509,7 @@ gcc_asm_decl:
 /*(*-----------------------------------------------------------------------*)*/
 /*(*2 initializers *)*/
 /*(*-----------------------------------------------------------------------*)*/
-initialize: 
+initializer_clause: 
  | assign_expr                                    
      { InitExpr $1 }
  | TOBrace initialize_list gcc_comma_opt_struct  TCBrace
