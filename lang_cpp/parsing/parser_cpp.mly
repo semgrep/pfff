@@ -215,6 +215,7 @@ module PI = Parse_info
    Tnullptr
    Tconstexpr
    Tthread_local
+   Tdecltype
 
 /*(*************************************************************************)*/
 /*(*1 Priorities *)*/
@@ -916,8 +917,8 @@ simple_type_specifier:
  | Twchar_t             { Right3 (BaseType (IntType (WChar_t, [$1]))), noii }
 
  /*(* gccext: *)*/
- | Ttypeof TOPar assign_expr TCPar { Right3 (TypeOf ($1,($2,Right $3,$4))),noii}
- | Ttypeof TOPar type_id     TCPar { Right3 (TypeOf ($1,($2,Left $3,$4))),noii}
+ | Ttypeof TOPar assign_expr TCPar { Right3(TypeOf ($1,($2,Right $3,$4))),noii}
+ | Ttypeof TOPar type_id     TCPar { Right3(TypeOf ($1,($2,Left $3,$4))),noii}
 
  /*
  (* history: cant put TIdent {} cos it makes the grammar ambiguous and 
@@ -925,7 +926,11 @@ simple_type_specifier:
   * See parsing_hacks_typedef.ml. See also conflicts.txt
   *)*/
  | type_cplusplus_id { Right3 (TypeName $1), noii }
-
+ /*(* c++0x: TODO *)*/
+ | Tdecltype TOPar expr TCPar { Right3(TypeOf ($1,($2,Right $3,$4))),noii }
+ /*(* TODO: because of wrong typedef inference *)*/
+ | Tdecltype TOPar TIdent_Typedef TCPar 
+     { Middle3 Long, [$1] }
 
 /*(*todo: can have a ::opt nested_name_specifier_opt before ident*)*/
 elaborated_type_specifier: 

@@ -87,7 +87,8 @@ let keyword_table = Common.hash_of_list [
   "extern",   (fun ii -> Textern ii); 
   "static",   (fun ii -> Tstatic ii);
 
-  "const",    (fun ii -> Tconst ii); "volatile", (fun ii -> Tvolatile ii); 
+  "const",    (fun ii -> Tconst ii); 
+  "volatile", (fun ii -> Tvolatile ii); 
   (* c99:  *)
   "__restrict__",    (fun ii -> Trestrict ii);  
   (* gccext: and also a c++ext: *)
@@ -118,11 +119,16 @@ let keyword_table = Common.hash_of_list [
   "goto",    (fun ii -> Tgoto ii);
   
   "sizeof", (fun ii -> Tsizeof ii);   
+  (* gccext: *)
+  "typeof", (fun ii -> Ttypeof ii);
+  (* c++ext: *)
+  "typename" ,   (fun ii -> Ttypename ii);
+  (* c++0x: *)
+  "decltype" ,   (fun ii -> Tdecltype ii);
 
   (* gccext: more (cpp) aliases are in macros.h *)
   "asm",     (fun ii -> Tasm ii); 
   "__attribute__", (fun ii -> Tattribute ii);
-  "typeof", (fun ii -> Ttypeof ii);
 
   (* c++ext: see also TH.is_cpp_keyword *)
   "class", (fun ii -> Tclass ii);
@@ -133,7 +139,6 @@ let keyword_table = Common.hash_of_list [
 
   "template" ,   (fun ii -> Ttemplate ii);
   "typeid"   ,   (fun ii -> Ttypeid ii);
-  "typename" ,   (fun ii -> Ttypename ii);
 
   "catch" , (fun ii -> Tcatch ii);
   "try"   , (fun ii -> Ttry ii);
@@ -152,6 +157,8 @@ let keyword_table = Common.hash_of_list [
   "dynamic_cast"     , (fun ii -> Tdynamic_cast ii);
   "static_cast"      , (fun ii -> Tstatic_cast ii);
   "reinterpret_cast" , (fun ii -> Treinterpret_cast ii);
+
+  (* c++0x: *)
  ]
 
 let error_radix s = 
