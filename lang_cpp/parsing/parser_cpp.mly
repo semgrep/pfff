@@ -1431,10 +1431,27 @@ member_declarator:
 /*(*************************************************************************)*/
 
 enum_specifier: 
- | Tenum        TOBrace enumerator_list gcc_comma_opt TCBrace
-     { EnumDef ($1, None, ($2, $3, $5)) (*$4*) }
- | Tenum ident  TOBrace enumerator_list gcc_comma_opt TCBrace
-     { EnumDef ($1, Some $2, ($3, $4, $6)) (*$5*) }
+ | enum_head TOBrace enumerator_list gcc_comma_opt TCBrace
+     { EnumDef ($1, None(* TODO *), ($2, $3, $5)) (*$4*) }
+ /*(* c++0x: *)*/
+ | enum_head TOBrace TCBrace
+     { EnumDef ($1, None(* TODO *), ($2, [], $3)) }
+
+enum_head: 
+ | Tenum { $1 }
+ | Tenum ident { $1 }
+
+/*
+enum_head:
+ | enum_key ident { $1 }
+ | enum_key { $1 }
+
+enum_key:
+ | Tenum { $1 }
+ (* conflicts? *)
+ | Tenum Tclass_enum { $1 }
+ | Tenum Tstruct_enum { $1 }
+*/
 
 enumerator: 
  | ident                { { e_name = $1; e_val = None; } }
