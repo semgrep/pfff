@@ -261,13 +261,28 @@ let is_privacy_keyword = function
   | _ -> false
 
 
+(*****************************************************************************)
+(* Fuzzy parsing *)
+(*****************************************************************************)
+
 let token_kind_of_tok t =
   match t with
-  (* todo: ( ) { } ... *)
-
   | TComment _ | TComment_Pp _ | TComment_Cpp _ -> PI.Esthet PI.Comment
   | TCommentSpace _ -> PI.Esthet PI.Space
   | TCommentNewline _ -> PI.Esthet PI.Newline
+
+  | TOPar _ | TOPar_Define _ | TOPar_CplusplusInit _ -> PI.LPar
+  | TCPar _ | TCPar_EOL _ -> PI.RPar
+
+  | TOBrace _ | TOBrace_DefineInit _ -> PI.LBrace
+  | TCBrace _ -> PI.RBrace
+
+  | TOCro _ | TOCro_Lambda _ -> PI.LBracket
+  | TCCro _ -> PI.RBracket
+
+  (* not always balanced: TInf and TSup! *)
+  | TInf_Template _ -> PI.LAngle
+  | TSup_Template _ -> PI.RAngle
 
   | _ -> PI.Other
 
@@ -487,6 +502,7 @@ let visitor_info_of_tok f = function
 
   | TOCro_new                 (i) -> TOCro_new                 (f i) 
   | TCCro_new                 (i) -> TCCro_new                 (f i) 
+  | TOCro_Lambda                 (i) -> TOCro_Lambda                 (f i) 
 
 
   | TInt_ZeroVirtual (i) -> TInt_ZeroVirtual (f i)
