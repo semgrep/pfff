@@ -571,7 +571,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     | T.Tvirtual ii  ->
         tag ii KeywordObject
 
-    | T.Ttemplate ii | T.Ttypeid ii | T.Ttypename ii  
+    | T.Ttemplate ii | T.Ttypeid ii | T.Ttypename ii  | T.Tdecltype ii
     | T.Toperator ii  
     | T.Tpublic ii | T.Tprivate ii | T.Tprotected ii | T.Tfriend ii  
     | T.Tusing ii  
