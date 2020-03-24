@@ -372,6 +372,7 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
           (* Call parser *)
           (* -------------------------------------------------- *)
           Parser_cpp.toplevel (lexer_function tr) lexbuf_fake
+          (* |> List.hd |> fst (* when use Parser_cpp2.toplevel *)  *)
         with e -> 
           if not !Flag.error_recovery 
           then raise (Parse_info.Parsing_error (TH.info_of_tok tr.PI.current));
@@ -527,3 +528,37 @@ let any_of_string lang s =
        (* -------------------------------------------------- *)
        Parser_cpp.sgrep_spatch_pattern (lexer_function tr) lexbuf_fake
   )
+
+(* experimental *)
+let parse_with_dypgen file =
+
+  (* -------------------------------------------------- *)
+  (* call lexer and get all the tokens *)
+  (* -------------------------------------------------- *)
+  let toks_orig = tokens file in
+  let lang = Flag_parsing_cpp.Cplusplus in
+
+  let toks = 
+    try Parsing_hacks.fix_tokens ~macro_defs:_defs lang toks_orig
+    with Token_views_cpp.UnclosedSymbol s ->
+      pr2 s;
+      if !Flag_cpp.debug_cplusplus 
+      then raise (Token_views_cpp.UnclosedSymbol s)
+      else toks_orig
+  in
+
+  let tr = Parse_info.mk_tokens_state toks in
+  let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
+
+  (* -------------------------------------------------- *)
+  (* Call parser *)
+  (* -------------------------------------------------- *)
+  (* TODO: not sure why but calling main is significanctly faster
+   * than calling toplevel in a loop
+   *)
+  try 
+    Parser_cpp2.main (lexer_function tr) lexbuf_fake
+    |> List.hd |> fst
+  with Dyp.Syntax_error ->
+     raise (Parse_info.Parsing_error (TH.info_of_tok tr.PI.current))
+

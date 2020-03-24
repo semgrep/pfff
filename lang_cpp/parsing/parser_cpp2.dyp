@@ -403,20 +403,19 @@ let dyp_merge xs =
  * xxx_list, xxx_opt
  *)*/
 /*(*************************************************************************)*/
-/*(*1 translation_unit (unused) *)*/
+/*(*1 translation_unit  *)*/
 /*(*************************************************************************)*/
 
-/*(* no more used now that use error recovery, but good to keep *)*/
 main:  
  | translation_unit EOF     { $1 }
 
 translation_unit: 
- | external_declaration                      { [DeclElem $1] }
- | translation_unit external_declaration     { $1 @ [DeclElem $2] }
+ | declaration_seq2  { List.rev $1 }
+ | /* empty */       { [] }
 
-external_declaration: 
- | function_definition            { Func (FunctionOrMethod $1) }
- | block_declaration              { BlockDecl $1 }
+declaration_seq2:
+ | toplevel_aux                  { [$1] }
+ | declaration_seq2 toplevel_aux { $2::$1 }
 
 /*(*************************************************************************)*/
 /*(*1 toplevel *)*/

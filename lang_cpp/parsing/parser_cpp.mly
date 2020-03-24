@@ -1630,12 +1630,12 @@ initialize2:
 designator: 
  | TDot ident 
      { DesignatorField ($1, $2) } 
-/* conflict with kenccext
+/*(* conflict with kenccext
  | TOCro const_expr TCCro     %prec LOW_PRIORITY_RULE
      { DesignatorIndex ($1, $2, $3) }
  | TOCro const_expr TEllipsis const_expr TCCro 
      { DesignatorRange ($1, ($2, $3, $4), $5) }
-*/
+*)*/
 /*(*----------------------------*)*/
 /*(*2 workarounds *)*/
 /*(*----------------------------*)*/
