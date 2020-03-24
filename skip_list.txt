@@ -2,6 +2,8 @@
 
 file: lang_ruby/parsing/parser_ruby.ml
 file: lang_ruby/parsing/parser_ruby_temp.ml
+file: lang_cpp/parsing/parser_cpp2.ml
+file: lang_cpp/parsing/parser_cpp2_temp.ml
 
 # ignore for now
 dir: web

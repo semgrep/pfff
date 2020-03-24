@@ -34,6 +34,7 @@ module Semantic = Parser_cpp_mly_helper
  * See "Parsing C/C++ Code without Pre-Preprocessing - Yoann Padioleau, CC'09"
  * avalaible at http://padator.org/papers/yacfe-cc09.pdf
  *)
+let use_dypgen = false
 
 (*****************************************************************************)
 (* Types *)
@@ -366,20 +367,37 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
     (* for some statistics *)
     let was_define = ref false in
 
+    let parse_toplevel tr lexbuf_fake =
+      if not use_dypgen
+      then Parser_cpp.toplevel (lexer_function tr) lexbuf_fake 
+      else
+       let (save1, save2, save3) = tr.PI.rest, tr.PI.current, tr.PI.passed in
+       try 
+         Parser_cpp.toplevel (lexer_function tr) lexbuf_fake 
+       with _e ->
+         tr.PI.rest <- save1; tr.PI.current <- save2; tr.PI.passed <- save3;
+         (try 
+           Parser_cpp2.toplevel (lexer_function tr) lexbuf_fake 
+           |> List.hd |> fst
+          with Failure "hd" -> 
+            pr2 "no elements"; 
+            raise Parsing.Parse_error
+          )
+    in
+
     let elem = 
       (try 
           (* -------------------------------------------------- *)
           (* Call parser *)
           (* -------------------------------------------------- *)
-          Parser_cpp.toplevel (lexer_function tr) lexbuf_fake
-          (* |> List.hd |> fst (* when use Parser_cpp2.toplevel *)  *)
+          parse_toplevel tr lexbuf_fake
         with e -> 
           if not !Flag.error_recovery 
           then raise (Parse_info.Parsing_error (TH.info_of_tok tr.PI.current));
 
           if !Flag.show_parsing_error then
             (match e with
-            | Parsing.Parse_error -> 
+            | Parsing.Parse_error | Dyp.Syntax_error -> 
               pr2 ("parse error \n = " ^ error_msg_tok tr.PI.current)
             | Semantic.Semantic (s, _i) -> 
               pr2 ("semantic error " ^s^ "\n ="^ error_msg_tok tr.PI.current)
@@ -523,15 +541,14 @@ let any_of_string lang s =
   let tr = Parse_info.mk_tokens_state toks in
   let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
 
-       (* -------------------------------------------------- *)
-       (* Call parser *)
-       (* -------------------------------------------------- *)
-       Parser_cpp.sgrep_spatch_pattern (lexer_function tr) lexbuf_fake
+  (* -------------------------------------------------- *)
+  (* Call parser *)
+  (* -------------------------------------------------- *)
+  Parser_cpp.sgrep_spatch_pattern (lexer_function tr) lexbuf_fake
   )
 
 (* experimental *)
 let parse_with_dypgen file =
-
   (* -------------------------------------------------- *)
   (* call lexer and get all the tokens *)
   (* -------------------------------------------------- *)
@@ -561,4 +578,3 @@ let parse_with_dypgen file =
     |> List.hd |> fst
   with Dyp.Syntax_error ->
      raise (Parse_info.Parsing_error (TH.info_of_tok tr.PI.current))
-
