@@ -56,6 +56,10 @@ We do many things ...
 
 * C++
 
+* Lambda
+
+[a] in primary_expr can be a designator or the start of a lambda.
+
 * TODO ':'
 
 When have 'class X :' we don't know if it's the start of possibly a

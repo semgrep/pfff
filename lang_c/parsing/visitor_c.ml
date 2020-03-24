@@ -87,7 +87,7 @@ and v_expr x =
   | Ellipses v1 -> let v1 = v_info v1 in ()
   | Call ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_list v_argument v2 in ()
   | Assign ((v1, v2, v3)) ->
-      let v1 = v_wrap Ast_cpp.v_assignOp v1
+      let v1 = Ast_cpp.v_assignOp v1
       and v2 = v_expr v2
       and v3 = v_expr v3
       in ()

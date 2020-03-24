@@ -31,13 +31,15 @@ module PI = Parse_info
 (* The C/cpp/C++ lexer.
  *
  * This lexer generates tokens for C (int, while, ...), C++ (new, delete, ...),
- * CPP (#define, #ifdef, ...).
+ * and CPP (#define, #ifdef, ...).
  * It also generate tokens for comments and spaces. This means that
  * it can not be used as-is. Some post-filtering
- * has to be done to feed it to a parser. Note that C and C++ are not
- * context free languages and so some idents must be disambiguated
- * in some ways. TIdent below must thus be post-processed too (as well
- * as other tokens like '<' for C++). See parsing_hack.ml for examples.
+ * has to be done to feed it to a parser. 
+ *
+ * Note that C and C++ are not context-free languages and so some idents
+ * must be disambiguated in some ways. TIdent below must thus be 
+ * post-processed too (as well as other tokens like '<' for C++). 
+ * See parsing_hack.ml for examples.
  * 
  * note: We can't use Lexer_parser._lexer_hint here to do different
  * things because we now call the lexer to get all the tokens
@@ -63,21 +65,42 @@ let tok_add_s = Parse_info.tok_add_s
 (* opti: less convenient, but using a hash is faster than using a match *)
 let keyword_table = Common.hash_of_list [
 
-  (* c: *)
   "void",   (fun ii -> Tvoid ii); 
   "char",   (fun ii -> Tchar ii);    
   "short",  (fun ii -> Tshort ii); "int",    (fun ii -> Tint ii); 
   "long",   (fun ii -> Tlong ii); 
   "float",  (fun ii -> Tfloat ii); "double", (fun ii -> Tdouble ii);  
+  (* c++ext: *)
+  "bool", (fun ii -> Tbool ii);
+  "true", (fun ii -> Ttrue ii); "false", (fun ii -> Tfalse ii);
+  "wchar_t", (fun ii -> Twchar_t ii);
+  (* c++0x: TODO *)
+  "char16_t", (fun ii -> Twchar_t ii); "char32_t", (fun ii -> Twchar_t ii);
+  "nullptr", (fun ii -> Tnullptr ii);
 
   "unsigned", (fun ii -> Tunsigned ii); "signed",   (fun ii -> Tsigned ii);
-  
+
+  (* c: and also now a c++0x: *)
   "auto",     (fun ii -> Tauto ii);    
+
   "register", (fun ii -> Tregister ii);  
   "extern",   (fun ii -> Textern ii); 
   "static",   (fun ii -> Tstatic ii);
 
-  "const",    (fun ii -> Tconst ii); "volatile", (fun ii -> Tvolatile ii); 
+  "const",    (fun ii -> Tconst ii); 
+  "volatile", (fun ii -> Tvolatile ii); 
+  (* c99:  *)
+  "__restrict__",    (fun ii -> Trestrict ii);  
+  (* gccext: and also a c++ext: *)
+  "inline",     (fun ii -> Tinline ii); 
+  (* c++ext:  *)
+  "friend"    , (fun ii -> Tfriend ii);
+  "explicit", (fun ii -> Texplicit ii);
+  "mutable", (fun ii -> Tmutable ii);
+  "virtual", (fun ii -> Tvirtual ii);
+  (* c++0x:  *)
+  "constexpr", (fun ii -> Tconstexpr ii);
+  "thread_local", (fun ii -> Tthread_local ii);
   
   "struct",  (fun ii -> Tstruct ii);
   "union",   (fun ii -> Tunion ii); 
@@ -96,16 +119,16 @@ let keyword_table = Common.hash_of_list [
   "goto",    (fun ii -> Tgoto ii);
   
   "sizeof", (fun ii -> Tsizeof ii);   
+  (* gccext: *)
+  "typeof", (fun ii -> Ttypeof ii);
+  (* c++ext: *)
+  "typename" ,   (fun ii -> Ttypename ii);
+  (* c++0x: *)
+  "decltype" ,   (fun ii -> Tdecltype ii);
 
   (* gccext: more (cpp) aliases are in macros.h *)
   "asm",     (fun ii -> Tasm ii); 
   "__attribute__", (fun ii -> Tattribute ii);
-  "typeof", (fun ii -> Ttypeof ii);
-  (* also a c++ext: *)
-  "inline",     (fun ii -> Tinline ii); 
-
-  (* c99:  *)
-  "__restrict__",    (fun ii -> Trestrict ii);  
 
   (* c++ext: see also TH.is_cpp_keyword *)
   "class", (fun ii -> Tclass ii);
@@ -116,7 +139,6 @@ let keyword_table = Common.hash_of_list [
 
   "template" ,   (fun ii -> Ttemplate ii);
   "typeid"   ,   (fun ii -> Ttypeid ii);
-  "typename" ,   (fun ii -> Ttypename ii);
 
   "catch" , (fun ii -> Tcatch ii);
   "try"   , (fun ii -> Ttry ii);
@@ -128,28 +150,15 @@ let keyword_table = Common.hash_of_list [
   "private"   , (fun ii -> Tprivate ii);
   "protected" , (fun ii -> Tprotected ii);
 
-  "friend"    , (fun ii -> Tfriend ii);
-
-  "virtual", (fun ii -> Tvirtual ii);
-
   "namespace", (fun ii -> Tnamespace ii);
   "using", (fun ii -> Tusing ii);
-
-  "bool", (fun ii -> Tbool ii);
-
-  "true", (fun ii -> Ttrue ii); "false", (fun ii -> Tfalse ii);
-
-  "wchar_t", (fun ii -> Twchar_t ii);
 
   "const_cast"       , (fun ii -> Tconst_cast ii);
   "dynamic_cast"     , (fun ii -> Tdynamic_cast ii);
   "static_cast"      , (fun ii -> Tstatic_cast ii);
   "reinterpret_cast" , (fun ii -> Treinterpret_cast ii);
 
-  "explicit", (fun ii -> Texplicit ii);
-  "mutable", (fun ii -> Tmutable ii);
-
-  "export", (fun ii -> Texport ii);
+  (* c++0x: *)
  ]
 
 let error_radix s = 
@@ -400,16 +409,16 @@ rule token = parse
 
   | "="  { TEq(tokinfo lexbuf) } 
 
-  | "-=" { TAssign (OpAssign Minus, (tokinfo lexbuf))} 
-  | "+=" { TAssign (OpAssign Plus, (tokinfo lexbuf))} 
-  | "*=" { TAssign (OpAssign Mul, (tokinfo lexbuf))}   
-  | "/=" { TAssign (OpAssign Div, (tokinfo lexbuf))} 
-  | "%=" { TAssign (OpAssign Mod, (tokinfo lexbuf))} 
-  | "&=" { TAssign (OpAssign And, (tokinfo lexbuf))}  
-  | "|=" { TAssign (OpAssign Or, (tokinfo lexbuf)) } 
-  | "^=" { TAssign(OpAssign Xor, (tokinfo lexbuf))} 
-  | "<<=" {TAssign (OpAssign DecLeft, (tokinfo lexbuf)) } 
-  | ">>=" {TAssign (OpAssign DecRight, (tokinfo lexbuf))}
+  | "-=" { TAssign (OpAssign (Minus, (tokinfo lexbuf)))} 
+  | "+=" { TAssign (OpAssign (Plus, (tokinfo lexbuf)))} 
+  | "*=" { TAssign (OpAssign (Mul, (tokinfo lexbuf)))}   
+  | "/=" { TAssign (OpAssign (Div, (tokinfo lexbuf)))} 
+  | "%=" { TAssign (OpAssign (Mod, (tokinfo lexbuf)))} 
+  | "&=" { TAssign (OpAssign (And, (tokinfo lexbuf)))}  
+  | "|=" { TAssign (OpAssign (Or, (tokinfo lexbuf))) } 
+  | "^=" { TAssign(OpAssign (Xor, (tokinfo lexbuf)))} 
+  | "<<=" {TAssign (OpAssign (DecLeft, (tokinfo lexbuf))) } 
+  | ">>=" {TAssign (OpAssign (DecRight, (tokinfo lexbuf)))}
 
   | "==" { TEqEq(tokinfo lexbuf) }  | "!=" { TNotEq(tokinfo lexbuf) } 
   | ">=" { TSupEq(tokinfo lexbuf) } | "<=" { TInfEq(tokinfo lexbuf) } 
@@ -467,6 +476,7 @@ rule token = parse
   (* gccext: apparently gcc allows dollar in variable names. I've found such 
    * things a few times in Linux and in glibc. 
    * No need to look in keyword_table here; definitly a TIdent.
+   * sgrep-ext: can use $X in sgrep too.
    *)
   | (letter | '$') (letter | digit | '$')*
       { 
@@ -484,23 +494,27 @@ rule token = parse
   | "'"     
       { let info = tokinfo lexbuf in 
         let s = char lexbuf   in 
-        TChar     ((s,   IsChar),  (info |> tok_add_s (s ^ "'"))) 
+        let t = info |> tok_add_s (s ^ "'") in
+        TChar     ((s, t),   IsChar)
       }
   | '"'     
       { let info = tokinfo lexbuf in
         let s = string lexbuf in 
-        TString   ((s,   IsChar),  (info |> tok_add_s (s ^ "\""))) 
+        let t = info |> tok_add_s (s ^ "\"") in
+        TString   ((s, t),   IsChar)
       }
   (* wide character encoding, TODO L'toto' valid ? what is allowed ? *)
   | 'L' "'" 
       { let info = tokinfo lexbuf in 
         let s = char lexbuf   in 
-        TChar     ((s,   IsWchar),  (info |> tok_add_s (s ^ "'"))) 
+        let t = info |> tok_add_s (s ^ "'") in
+        TChar     ((s,t),   IsWchar)
       } 
   | 'L' '"' 
       { let info = tokinfo lexbuf in 
         let s = string lexbuf in 
-        TString   ((s,   IsWchar),  (info |> tok_add_s (s ^ "\""))) 
+        let t = info |> tok_add_s (s ^ "\"") in
+        TString   ((s,t),   IsWchar)
       }
 
   (* Take care of the order ? No because lex try the longest match. The
@@ -517,9 +531,9 @@ rule token = parse
         )?
     ) as x { TInt (x, tokinfo lexbuf) }
 
-  | (real ['f' 'F']) as x { TFloat ((x, CFloat),      tokinfo lexbuf) }
-  | (real ['l' 'L']) as x { TFloat ((x, CLongDouble), tokinfo lexbuf) }
-  | (real as x)           { TFloat ((x, CDouble),     tokinfo lexbuf) }
+  | (real ['f' 'F']) as x { TFloat ((x, tokinfo lexbuf), CFloat) }
+  | (real ['l' 'L']) as x { TFloat ((x, tokinfo lexbuf), CLongDouble) }
+  | (real as x)           { TFloat ((x, tokinfo lexbuf), CDouble) }
 
   | ['0'] ['0'-'9']+  
       { error (error_radix "octal" ^ tok lexbuf) lexbuf; 
@@ -599,7 +613,7 @@ and char = parse
          (* cppext:  can have   \ for multiline in string too *)
          | '\n' -> () 
          | _ -> error ("unrecognised symbol in char:"^tok lexbuf) lexbuf;
-	 );
+         );
           x ^ char lexbuf
        }
   | eof { error "WEIRD end of file in char" lexbuf; ""}
@@ -631,8 +645,8 @@ and string  = parse
          (* cppext:  can have   \ for multiline in string too *)
          | '\n' -> () 
          | _ -> error ("unrecognised symbol in string:"^tok lexbuf) lexbuf;
-	 );
-          x ^ string lexbuf
+         );
+         x ^ string lexbuf
        }
   | eof { error "WEIRD end of file in string" lexbuf; ""}
 

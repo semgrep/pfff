@@ -13,7 +13,7 @@
  * license.txt for more details.
  *)
 
-open Ocaml
+(*open Ocaml*)
 open Cst_cpp
 
 (*****************************************************************************)
@@ -26,8 +26,8 @@ open Cst_cpp
 
 (* hooks *)
 type visitor_in = {
-  kexpr: expression vin;
-  kstmt: statement vin;
+  kexpr: expr vin;
+  kstmt: stmt vin;
   kinit: initialiser vin;
   ktypeC: typeC vin;
 
@@ -68,7 +68,10 @@ let default_visitor =
     kinit = (fun (k,_) x -> k x);
   }
 
+let (mk_visitor: visitor_in -> visitor_out) = fun _vin ->
+  raise Common.Todo
 
+(*
 let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 
 (* start of auto generation *)
@@ -80,10 +83,10 @@ let rec v_info x =
 
 and v_tok v = v_info v
 
-and v_wrap:'a. ('a -> unit) -> 'a wrap -> unit = 
+and v_wrapx:'a. ('a -> unit) -> 'a wrapx -> unit = 
  fun _of_a (v1, v2) -> 
    let v1 = _of_a v1 and v2 = v_list v_info v2 in ()
-and v_wrap2:'a. ('a -> unit) -> 'a wrap2 -> unit = 
+and v_wrap:'a. ('a -> unit) -> 'a wrap -> unit = 
  fun _of_a (v1, v2) -> 
    let v1 = _of_a v1 and v2 = v_info v2 in ()
 and v_paren:'a. ('a -> unit) -> 'a paren -> unit =
@@ -99,7 +102,7 @@ and v_angle: 'a. ('a -> unit) -> 'a angle -> unit =
  fun _of_a (v1, v2, v3) ->
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
 and v_comma_list: 'a. ('a -> unit) -> 'a comma_list -> unit = fun
-  _of_a -> v_list (v_wrap _of_a)
+  _of_a -> v_list (v_wrapx _of_a)
 and v_comma_list2: 'a. ('a -> unit) -> 'a comma_list2 -> unit = 
  fun _of_a ->
    v_list (Ocaml.v_either _of_a v_tok)
@@ -114,7 +117,7 @@ and v_name (v1, v2, v3) =
   
 and v_ident =
   function
-  | IdIdent v1 -> let v1 = v_wrap2 v_string v1 in ()
+  | IdIdent v1 -> let v1 = v_wrap v_string v1 in ()
   | IdOperator ((v1, v2)) ->
       let v1 = v_tok v1
       and v2 =
@@ -123,17 +126,17 @@ and v_ident =
       in ()
   | IdConverter ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_fullType v2 in ()
   | IdDestructor ((v1, v2)) ->
-      let v1 = v_tok v1 and v2 = v_wrap2 v_string v2 in ()
+      let v1 = v_tok v1 and v2 = v_wrap v_string v2 in ()
   | IdTemplateId ((v1, v2)) ->
-      let v1 = v_wrap2 v_string v1 and v2 = v_template_arguments v2 in ()
+      let v1 = v_wrap v_string v1 and v2 = v_template_arguments v2 in ()
 and v_template_arguments v = v_angle (v_comma_list v_template_argument) v
 and v_template_argument v = Ocaml.v_either v_fullType v_expression v
 and v_either_ft_or_expr v = Ocaml.v_either v_fullType v_expression v
 and v_qualifier =
   function
-  | QClassname v1 -> let v1 = v_wrap2 v_string v1 in ()
+  | QClassname v1 -> let v1 = v_wrap v_string v1 in ()
   | QTemplateId ((v1, v2)) ->
-      let v1 = v_wrap2 v_string v1 and v2 = v_template_arguments v2 in ()
+      let v1 = v_wrap v_string v1 and v2 = v_template_arguments v2 in ()
 and v_class_name v = v_name v
 and v_namespace_name v = v_name v
 and v_typedef_name v = v_name v
@@ -142,7 +145,7 @@ and v_ident_name v = v_name v
 and v_fullType (v1, v2) =
   let v1 = v_typeQualifier v1 and v2 = v_typeC v2 in ()
 and v_typeC v = 
-  let k v = v_wrap v_typeCbis v in
+  let k v = v_wrapx v_typeCbis v in
   vin.ktypeC (k, all_functions) v
 
 and v_typeCbis =
@@ -157,14 +160,14 @@ and v_typeCbis =
   | FunctionType v1 -> let v1 = v_functionType v1 in ()
   | EnumDef ((v1, v2, v3)) ->
       let v1 = v_tok v1
-      and v2 = v_option (v_wrap2 v_string) v2
+      and v2 = v_option (v_wrap v_string) v2
       and v3 = v_brace (v_comma_list v_enum_elem) v3
       in ()
   | StructDef v1 -> let v1 = v_class_definition v1 in ()
   | EnumName ((v1, v2)) ->
-      let v1 = v_tok v1 and v2 = v_wrap2 v_string v2 in ()
+      let v1 = v_tok v1 and v2 = v_wrap v_string v2 in ()
   | StructUnionName ((v1, v2)) ->
-      let v1 = v_wrap2 v_structUnion v1 and v2 = v_wrap2 v_string v2 in ()
+      let v1 = v_wrap v_structUnion v1 and v2 = v_wrap v_string v2 in ()
   | TypeName ((v1)) ->
       let v1 = v_name v1 in ()
   | TypenameKwd ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_name v2 in ()
@@ -193,7 +196,7 @@ and v_base =
 and v_sign = function | Signed -> () | UnSigned -> ()
 and v_floatType = function | CFloat -> () | CDouble -> () | CLongDouble -> ()
 and v_enum_elem { e_name = v_e_name; e_val = v_e_val } =
-  let arg = v_wrap2 v_string v_e_name in
+  let arg = v_wrap v_string v_e_name in
   let arg =
     v_option
       (fun (v1, v2) -> let v1 = v_tok v1 and v2 = v_constExpression v2 in ())
@@ -203,7 +206,7 @@ and v_typeQualifier { const = v_const; volatile = v_volatile } =
   let arg = v_option v_tok v_const in
   let arg = v_option v_tok v_volatile in ()
 and v_expression v = 
-  let k x = v_wrap v_expressionbis x in
+  let k x = v_wrapx v_expressionbis x in
   vin.kexpr (k, all_functions) v
 
 and v_expressionbis =
@@ -263,7 +266,7 @@ and v_expressionbis =
   | TypeId ((v1, v2)) ->
       let v1 = v_tok v1 and v2 = v_paren v_either_ft_or_expr v2 in ()
   | CplusplusCast ((v1, v2, v3)) ->
-      let v1 = v_wrap2 v_cast_operator v1
+      let v1 = v_wrap v_cast_operator v1
       and v2 = v_angle v_fullType v2
       and v3 = v_paren v_expression v3
       in ()
@@ -377,7 +380,7 @@ and v_cast_operator =
 and v_constExpression v = v_expression v
 
 and v_statement v = 
-  let k v = v_wrap v_statementbis v in
+  let k v = v_wrapx v_statementbis v in
   vin.kstmt (k, all_functions) v
 
 and v_statementbis =
@@ -450,15 +453,15 @@ and v_iteration =
       and v2 =
         v_paren
           (fun (v1, v2, v3) ->
-             let v1 = v_wrap v_exprStatement v1
-             and v2 = v_wrap v_exprStatement v2
-             and v3 = v_wrap v_exprStatement v3
+             let v1 = v_wrapx v_exprStatement v1
+             and v2 = v_wrapx v_exprStatement v2
+             and v3 = v_wrapx v_exprStatement v3
              in ())
           v2
       and v3 = v_statement v3
       in ()
   | MacroIteration ((v1, v2, v3)) ->
-      let v1 = v_wrap2 v_string v1
+      let v1 = v_wrap v_string v1
       and v2 = v_paren (v_comma_list v_argument) v2
       and v3 = v_statement v3
       in ()
@@ -485,7 +488,7 @@ and v_block_declaration x =
       let v1 = v_comma_list v_onedecl v1 and v2 = v_tok v2 in ()
   | MacroDecl ((v1, v2, v3, v4)) ->
       let v1 = v_list v_tok v1
-      and v2 = v_wrap2 v_string v2
+      and v2 = v_wrap v_string v2
       and v3 = v_paren (v_comma_list v_argument) v3
       and v4 = v_tok v4
       in ()
@@ -503,7 +506,7 @@ and v_block_declaration x =
       in ()
   | NameSpaceAlias ((v1, v2, v3, v4, v5)) ->
       let v1 = v_tok v1
-      and v2 = v_wrap2 v_string v2
+      and v2 = v_wrap v_string v2
       and v3 = v_tok v3
       and v4 = v_namespace_name v4
       and v5 = v_tok v5
@@ -530,7 +533,7 @@ and v_storagebis =
   function
   | NoSto -> ()
   | StoTypedef v1 -> v_tok v1
-  | Sto v1 -> let v1 = v_wrap2 v_storageClass v1 in ()
+  | Sto v1 -> let v1 = v_wrap v_storageClass v1 in ()
 and v_storageClass =
   function | Auto -> () | Static -> () | Register -> () | Extern -> ()
 and v_func_specifier = function | Inline -> () | Virtual -> ()
@@ -549,7 +552,7 @@ and v_initialiser x =
       and v3 = v_initialiser v3
       in ()
   | InitFieldOld ((v1, v2, v3)) ->
-      let v1 = v_wrap2 v_string v1
+      let v1 = v_wrap v_string v1
       and v2 = v_tok v2
       and v3 = v_initialiser v3
       in ()
@@ -561,7 +564,7 @@ and v_initialiser x =
 and v_designator =
   function
   | DesignatorField ((v1, v2)) ->
-      let v1 = v_tok v1 and v2 = v_wrap2 v_string v2 in ()
+      let v1 = v_tok v1 and v2 = v_wrap v_string v2 in ()
   | DesignatorIndex v1 -> let v1 = v_bracket v_expression v1 in ()
   | DesignatorRange v1 ->
       let v1 =
@@ -574,10 +577,10 @@ and v_designator =
           v1
       in ()
 and v_asmbody (v1, v2) =
-  let v1 = v_list v_tok v1 and v2 = v_list (v_wrap v_colon) v2 in ()
+  let v1 = v_list v_tok v1 and v2 = v_list (v_wrapx v_colon) v2 in ()
 and v_colon =
   function | Colon v1 -> let v1 = v_comma_list v_colon_option v1 in ()
-and v_colon_option v = v_wrap v_colon_optionbis v
+and v_colon_option v = v_wrapx v_colon_optionbis v
 and v_colon_optionbis =
   function
   | ColonMisc -> ()
@@ -621,7 +624,7 @@ and
                 p_register = v_p_register;
                 p_val = v_p_val
               } ->
-  let arg = v_option (v_wrap2 v_string) v_p_name in
+  let arg = v_option (v_wrap v_string) v_p_name in
   let arg = v_fullType v_p_type in
   let arg = v_option v_tok v_p_register in
   let arg =
@@ -648,7 +651,7 @@ and
                        c_inherit = v_c_inherit;
                        c_members = v_c_members
                      } ->
-  let arg = v_wrap2 v_structUnion v_c_kind in
+  let arg = v_wrap v_structUnion v_c_kind in
   let arg = v_option v_ident_name v_c_name in
   let arg =
     v_option
@@ -668,17 +671,17 @@ and
                 } =
   let arg = v_class_name v_i_name in
   let arg = v_option v_tok v_i_virtual in
-  let arg = v_option (v_wrap2 v_access_spec) v_i_access in ()
+  let arg = v_option (v_wrap v_access_spec) v_i_access in ()
 and v_access_spec = function | Public -> () | Private -> () | Protected -> ()
 
 and v_method_decl = function
   | ConstructorDecl ((v1, v2, v3)) ->
-      let v1 = v_wrap2 v_string v1
+      let v1 = v_wrap v_string v1
       and v2 = v_paren (v_comma_list v_parameter) v2
       and v3 = v_tok v3 in ()
   | DestructorDecl ((v1, v2, v3, v4, v5)) ->
       let v1 = v_tok v1
-      and v2 = v_wrap2 v_string v2
+      and v2 = v_wrap v_string v2
       and v3 = v_paren (v_option v_tok) v3
       and v4 = v_option v_exn_spec v4
       and v5 = v_tok v5
@@ -696,7 +699,7 @@ and v_class_member x =
   let k =
   function
   | Access ((v1, v2)) ->
-      let v1 = v_wrap2 v_access_spec v1 and v2 = v_tok v2 in ()
+      let v1 = v_wrap v_access_spec v1 and v2 = v_tok v2 in ()
   | MemberField (v1, v2) -> 
       let v1 = (v_comma_list v_fieldkind) v1 in 
       let v2 = v_tok v2 in
@@ -728,7 +731,7 @@ and v_fieldkind x =
   let k = function
   | FieldDecl v1 -> let v1 = v_onedecl v1 in ()
   | BitField ((v1, v2, v3, v4)) ->
-      let v1 = v_option (v_wrap2 v_string) v1
+      let v1 = v_option (v_wrap v_string) v1
       and v2 = v_tok v2
       and v3 = v_fullType v3
       and v4 = v_constExpression v4
@@ -745,7 +748,7 @@ and v_cpp_directive x =
   let k = function
   | Define ((v1, v2, v3, v4)) ->
       let v1 = v_tok v1
-      and v2 = v_wrap2 v_string v2
+      and v2 = v_wrap v_string v2
       and v3 = v_define_kind v3
       and v4 = v_define_val v4
       in ()
@@ -754,7 +757,7 @@ and v_cpp_directive x =
     and v2 = v_inc_kind v2 
     and v3 = v_string v3
     in ()
-  | Undef v1 -> let v1 = v_wrap2 v_string v1 in ()
+  | Undef v1 -> let v1 = v_wrap v_string v1 in ()
   | PragmaAndCo v1 -> let v1 = v_tok v1 in ()
   in
   vin.kcpp (k, all_functions) x
@@ -762,7 +765,7 @@ and v_define_kind =
   function
   | DefineVar -> ()
   | DefineFunc v1 ->
-      let v1 = v_paren (v_comma_list (v_wrap v_string)) v1 in ()
+      let v1 = v_paren (v_comma_list (v_wrapx v_string)) v1 in ()
 and v_define_val =
   function
   | DefinePrintWrapper ((v1, v2, v3)) ->
@@ -773,10 +776,10 @@ and v_define_val =
   | DefineExpr v1 -> let v1 = v_expression v1 in ()
   | DefineStmt v1 -> let v1 = v_statement v1 in ()
   | DefineType v1 -> let v1 = v_fullType v1 in ()
-  | DefineDoWhileZero v1 -> let v1 = v_wrap v_statement v1 in ()
+  | DefineDoWhileZero v1 -> let v1 = v_wrapx v_statement v1 in ()
   | DefineFunction v1 -> let v1 = v_func_definition v1 in ()
   | DefineInit v1 -> let v1 = v_initialiser v1 in ()
-  | DefineText v1 -> let v1 = v_wrap v_string v1 in ()
+  | DefineText v1 -> let v1 = v_wrapx v_string v1 in ()
   | DefineEmpty -> ()
   | DefineTodo -> ()
 and v_inc_kind =
@@ -785,7 +788,7 @@ and v_inc_kind =
   | Standard -> ()
   | Weird -> ()
 and v_inc_elem v = v_string v
-and v_ifdef_directive v = v_wrap2 v_ifdefkind v
+and v_ifdef_directive v = v_wrap v_ifdefkind v
 and v_ifdefkind =
   function
   | Ifdef -> ()
@@ -815,7 +818,7 @@ and v_declaration x =
       in ()
   | NameSpace ((v1, v2, v3)) ->
       let v1 = v_tok v1
-      and v2 = v_wrap2 v_string v2
+      and v2 = v_wrap v_string v2
       and v3 = v_brace (v_list v_declaration_sequencable) v3
       in ()
   | NameSpaceExtend ((v1, v2)) ->
@@ -838,12 +841,12 @@ and v_declaration_sequencable x =
   | CppDirectiveDecl v1 -> let v1 = v_cpp_directive v1 in ()
   | IfdefDecl v1 -> let v1 = v_ifdef_directive v1 in ()
   | MacroTop ((v1, v2, v3)) ->
-      let v1 = v_wrap2 v_string v1
+      let v1 = v_wrap v_string v1
       and v2 = v_paren (v_comma_list v_argument) v2
       and v3 = v_option v_tok v3
       in ()
   | MacroVarTop ((v1, v2)) ->
-      let v1 = v_wrap2 v_string v1 and v2 = v_tok v2 in ()
+      let v1 = v_wrap v_string v1 and v2 = v_tok v2 in ()
   in
   vin.ktoplevel (k, all_functions) x
 and v_toplevel v = v_declaration_sequencable v
@@ -879,3 +882,4 @@ in
  v_any
 
   
+*)

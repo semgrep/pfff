@@ -345,7 +345,7 @@ and cpp_directive env x =
       | DefineFunc(args) ->
           [A.Macro(name, 
                  args |> unparen |> uncomma |> List.map (fun (s, ii) ->
-                   (s, List.hd ii)
+                   (s, ii)
                  ),
                  v)]
       )
@@ -364,7 +364,7 @@ and cpp_def_val for_debug env x =
   match x with
   | DefineExpr e -> A.CppExpr (expr env e)
   | DefineStmt st -> A.CppStmt (stmt env st)
-  | DefineDoWhileZero (st, _) -> A.CppStmt (stmt env st)
+  | DefineDoWhileZero (_, st, _, _) -> A.CppStmt (stmt env st)
   | DefinePrintWrapper (_, (_, e, _), id) -> 
     A.CppExpr (
       A.CondExpr (expr env e,
@@ -374,7 +374,7 @@ and cpp_def_val for_debug env x =
   | DefineInit init -> A.CppExpr (initialiser env init)
 
   | DefineEmpty (* A.CppEmpty*) 
-  | ( DefineText _| DefineFunction _
+  | ( DefineFunction _
     | DefineType _
     | DefineTodo
     ) -> 
@@ -384,24 +384,22 @@ and cpp_def_val for_debug env x =
 (* Stmt *)
 (* ---------------------------------------------------------------------- *)
 
-and stmt env x =
-  let (st, ii) = x in
+and stmt env st =
   match st with
   | Compound x -> A.Block (compound env x)
-  | Selection s ->
-      (match s with
-      | If (t, (_, e, _), st1, _, st2) ->
+
+      | If (t, (_, e, _), st1, Some (_, st2)) ->
           A.If (t, expr env e, stmt env st1, stmt env st2)
+      | If (t, (_, e, _), st1, None) ->
+          A.If (t, expr env e, stmt env st1, A.Block [])
       | Switch (tok, (_, e, _), st) ->
           A.Switch (tok, expr env e, cases env st)
-        )
-  | Iteration i ->
-      (match i with
+
       | While (t, (_, e, _), st) ->
           A.While (t, expr env e, stmt env st)
       | DoWhile (t, st, _, (_, e, _), _) ->
           A.DoWhile (t, stmt env st, expr env e)
-      | For (t, (_, ((est1, _), (est2, _), (est3, _)), _), st) ->
+      | For (t, (_, (est1, _, est2, _, est3), _), st) ->
           A.For (t,
             Common2.fmap (expr env) est1,
             Common2.fmap (expr env) est2,
@@ -410,9 +408,9 @@ and stmt env x =
           )
 
       | MacroIteration _ ->
-          debug (Stmt x); raise Todo
-      )
-  | ExprStatement eopt ->
+          debug (Stmt st); raise Todo
+
+  | ExprStatement (eopt, _) ->
       (match eopt with
       | None -> A.Block []
       | Some e -> A.ExprSt (expr env e)
@@ -420,29 +418,26 @@ and stmt env x =
   | DeclStmt block_decl ->
       block_declaration env block_decl
 
-  | Labeled lbl ->
-      (match lbl with
-      | Label (s, st) ->
-          A.Label ((s, List.hd ii), stmt env st)
+      | Label (s, _, st) ->
+          A.Label (s, stmt env st)
       | Case _ | CaseRange _ | Default _ ->
-          debug (Stmt x); raise CaseOutsideSwitch
-      )
-  | Jump j ->
-      let tok = List.hd ii in
+          debug (Stmt st); raise CaseOutsideSwitch
+
+  | Jump (j, _) ->
       (match j with
-      | Goto s -> A.Goto (tok, (s, tok))
-      | Return -> A.Return (tok, None);
-      | ReturnExpr e -> A.Return (tok, Some (expr env e))
-      | Continue -> A.Continue tok
-      | Break -> A.Break tok
-      | GotoComputed _ -> debug (Stmt x); raise Todo
+      | Goto (tok, s) -> A.Goto (tok, s)
+      | Return (tok, None) -> A.Return (tok, None);
+      | Return (tok, Some e) -> A.Return (tok, Some (expr env e))
+      | Continue tok -> A.Continue tok
+      | Break tok -> A.Break tok
+      | GotoComputed _ -> debug (Stmt st); raise Todo
       )
 
   | Try (_, _, _) ->
-      debug (Stmt x); raise CplusplusConstruct
+      debug (Stmt st); raise CplusplusConstruct
 
-  | (NestedFunc _ | StmtTodo | MacroStmt ) ->
-      debug (Stmt x); raise Todo
+  | (NestedFunc _ | StmtTodo _ | MacroStmt _ ) ->
+      debug (Stmt st); raise Todo
 
 and compound env (_, xs, _) =
   statements_sequencable env xs |> List.flatten
@@ -458,8 +453,7 @@ and statement_sequencable env x =
   | CppDirectiveStmt x -> debug (Cpp x); raise Todo
   | IfdefStmt _ -> raise Impossible
 
-and cases env x =
-  let (st, ii) = x in
+and cases env st =
   match st with
   | Compound (l, xs, r) ->
       let rec aux xs =
@@ -467,28 +461,26 @@ and cases env x =
         | [] -> []
         | x::xs ->
             (match x with
-            | StmtElem ((Labeled (Case (_, st))), _)
-            | StmtElem ((Labeled (Default st)), _)
+            | StmtElem (((Case (_, _, _, st))))
+            | StmtElem (((Default (_, _, st))))
               ->
                 let xs', rest =
                   (StmtElem st::xs) |> Common.span (function
-                  | StmtElem ((Labeled (Case (_, _st))), _)
-                  | StmtElem ((Labeled (Default _st)), _) -> false
+                  | StmtElem (((Case (_, _, _, _st))))
+                  | StmtElem (((Default (_, _, _st)))) -> false
                   | _ -> true
                   )
                 in
                 let stmts = List.map (function
                   | StmtElem st -> stmt env st
                   | x -> 
-                    debug (Stmt (Compound (l, [x], r), ii));
+                    debug (Stmt (Compound (l, [x], r)));
                     raise MacroInCase
                 ) xs' in
                 (match x with
-                | StmtElem ((Labeled (Case (e, _))), ii) ->
-                    let tok = List.hd ii in
+                | StmtElem (((Case (tok, e, _, _)))) ->
                     A.Case (tok, expr env e, stmts)
-                | StmtElem ((Labeled (Default _st)), ii) ->
-                    let tok = List.hd ii in
+                | StmtElem (((Default (tok, _, _st)))) ->
                     A.Default (tok, stmts)
                 | _ -> raise Impossible
                 )::aux rest
@@ -497,7 +489,7 @@ and cases env x =
       in
       aux xs
   | _ -> 
-      debug (Stmt x); raise Todo
+      debug (Stmt st); raise Todo
 
 and block_declaration env block_decl =
   match block_decl with
@@ -520,15 +512,14 @@ and block_declaration env block_decl =
 (* ---------------------------------------------------------------------- *)
 
 and expr env e =
-  let (e', toks) = e in
-  match e' with
-  | C cst -> constant env toks cst
+  match e with
+  | C cst -> constant env cst
 
   | Id (n, _) -> A.Id (name env n)
   | Ellipses tok -> A.Ellipses tok
 
   | RecordAccess (e, t, n) ->
-      A.RecordPtAccess (A.Unary (expr env e, (GetRef,List.hd toks)), 
+      A.RecordPtAccess (A.Unary (expr env e, (GetRef,t)), 
         t, name env n)
   | RecordPtAccess (e, t, n) ->
       A.RecordPtAccess (expr env e, t, name env n)
@@ -538,16 +529,16 @@ and expr env e =
 
   | ArrayAccess (e1, (_, e2, _)) ->
       A.ArrayAccess (expr env e1, expr env e2)
-  | Binary (e1, op, e2) -> A.Binary (expr env e1, (op, List.hd toks), expr env e2)
-  | Unary (e, op) -> A.Unary (expr env e, (op, List.hd toks))
-  | Infix  (e, op) -> A.Infix (expr env e, (op, List.hd toks))
-  | Postfix (e, op) -> A.Postfix (expr env e, (op, List.hd toks))
+  | Binary (e1, op, e2) -> A.Binary (expr env e1, (op), expr env e2)
+  | Unary (e, op) -> A.Unary (expr env e, (op))
+  | Infix  (e, op) -> A.Infix (expr env e, (op))
+  | Postfix (e, op) -> A.Postfix (expr env e, (op))
 
-  | Assignment (e1, op, e2) -> 
-      A.Assign ((op, List.hd toks), expr env e1, expr env e2)
-  | Sequence (e1, e2) -> 
+  | Assign (e1, op, e2) -> 
+      A.Assign ((op), expr env e1, expr env e2)
+  | Sequence (e1, _, e2) -> 
       A.Sequence (expr env e1, expr env e2)
-  | CondExpr (e1, e2opt, e3) ->
+  | CondExpr (e1, _, e2opt, _, e3) ->
       A.CondExpr (expr env e1, 
                  (match e2opt with
                  | Some e2 -> expr env e2
@@ -573,10 +564,10 @@ and expr env e =
     raise CplusplusConstruct
 
   | StatementExpr _
-  | ExprTodo
+  | ExprTodo _
     ->
       debug (Expr e); raise Todo
-  | Throw _|DeleteArray (_, _)|Delete (_, _)|New (_, _, _, _, _)
+  | Throw _|DeleteArray (_, _, _, _)|Delete (_, _, _)|New (_, _, _, _, _)
   | CplusplusCast (_, _, _)
   | This _
   | RecordPtStarAccess (_, _, _)|RecordStarAccess (_, _, _)
@@ -586,21 +577,21 @@ and expr env e =
 
   | ParenExpr (_, e, _) -> expr env e
 
-and constant _env toks x = 
+and constant _env x = 
   match x with
-  | Int s -> A.Int (s, List.hd toks)
-  | Float (s, _) -> A.Float (s, List.hd toks)
-  | Char (s, _) -> A.Char (s, List.hd toks)
-  | String (s, _) -> A.String (s, List.hd toks)
+  | Int (s, ii) -> A.Int (s, ii)
+  | Float ((s, ii), _) -> A.Float (s, ii)
+  | Char ((s, ii), _) -> A.Char (s, ii)
+  | String ((s, ii), _) -> A.String (s, ii)
 
   | Bool _ -> raise CplusplusConstruct
-  | MultiString -> A.String ("TODO", List.hd toks)
+  | MultiString iis -> A.String ("TODO", iis |> List.hd |> snd)
 
 and argument env x =
   match x with
-  | Left e -> Some (expr env e)
+  | Arg e -> Some (expr env e)
   (* TODO! can't just skip it ... *)
-  | Right _w -> 
+  | ArgType _  | ArgAction _ -> 
       pr2 ("type argument, maybe wrong typedef inference!");
       debug (Argument x); 
       None
@@ -609,20 +600,20 @@ and argument env x =
 (* Type *)
 (* ---------------------------------------------------------------------- *)
 and full_type env x =
-  let (_qu, (t, ii)) = x in
+  let (_qu, (t)) = x in
   match t with
-  | Pointer t -> A.TPointer (List.hd ii, full_type env t)
+  | Pointer (tok, t) -> A.TPointer (tok, full_type env t)
   | BaseType t ->
-      let s = 
+      let s, ii = 
         (match t with
-        | Void -> "void"
-        | FloatType ft ->
+        | Void ii -> "void", ii
+        | FloatType (ft, iis) ->
             (match ft with
-            | CFloat -> "float" 
+            | CFloat -> "float"
             | CDouble -> "double" 
             | CLongDouble -> "long_double"
-            )
-        | IntType it ->
+            ), List.hd iis
+        | IntType (it, iis) ->
             (match it with
             | CChar -> "char"
             | Si (si, base) ->
@@ -641,10 +632,10 @@ and full_type env x =
                 )
             | CBool | WChar_t ->
                 debug (Type x); raise CplusplusConstruct
-            )
+            ), List.hd iis
         )
       in
-      A.TBase (s, List.hd ii)
+      A.TBase (s, ii)
 
   | FunctionType ft -> A.TFunction (function_type env ft)
   | Array ((_, eopt, _), ft) -> 

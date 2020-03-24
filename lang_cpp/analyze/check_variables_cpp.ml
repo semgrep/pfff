@@ -150,12 +150,8 @@ let visit_prog prog =
       do_in_new_scope_and_check (fun () -> 
         (match x with
         | Define (_, _id, DefineFunc params, _body) ->
-            params |> Ast.unparen |> Ast.uncomma |> List.iter (fun (name) ->
-              (match name with
-              | (s, [ii]) ->
+            params |> Ast.unparen |> Ast.uncomma |> List.iter (fun (s, ii) ->
                 add_binding (None, noQscope, IdIdent (s,ii)) (S.Param, ref 0);
-              | _ -> ()
-              );
             );
         | _ -> ()
         );
@@ -200,7 +196,7 @@ let visit_prog prog =
     (* 3: checking uses *)
 
     V.kexpr = (fun (k, _) x ->
-      match (Ast.unwrap x) with
+      match x with
       | Id (name, idinfo) ->
           (* assert scope_ref = S.Unknown ? *)
           let s = Ast.string_of_name_tmp name in

@@ -223,19 +223,17 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
 
     V.kstmt = (fun (k, _) x ->
       match x with
-      | Labeled (Ast.Label (_s, _st)), ii ->
-          ii |> List.iter (fun ii -> tag ii KeywordExn);
+      | (Ast.Label ((_, ii1), ii2, _st)) ->
+          [ii1;ii2] |> List.iter (fun ii -> tag ii KeywordExn);
           k x
-      | Jump (Goto _s), ii ->
-          let (_iigoto, lblii, _iiptvirg) = Common2.tuple_of_list3 ii in
+      | Jump (Goto (_, (_s, lblii)), _) ->
           tag lblii KeywordExn;
           k x
       | _ -> k x
     );
 
     V.kexpr = (fun (k, _) x ->
-      let ebis, _ = x in
-      match ebis with
+      match x with
       | Id (name, idinfo) ->
           (match name with
           | (_, _, IdIdent (s, ii)) ->
@@ -262,7 +260,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
           )
           
       | Call (e, _args) ->
-          (match unwrap e with
+          (match e with
           | Id (name, scope) -> 
             (match name with
             | _, _, IdIdent (s, ii) ->
@@ -304,7 +302,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
 
       | New (_colon, _tok, _placement, ft, _args) ->
           (match ft with
-          | _nq, ((TypeName (name)), _) ->
+          | _nq, ((TypeName (name))) ->
               Ast.ii_of_id_name name |> List.iter (fun ii -> 
                 tag ii (Entity (Class, (Use2 fake_no_use2)));
               )
@@ -334,8 +332,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     );
 
     V.ktypeC = (fun (k, _) x ->
-      let (typeCbis, _)  = x in
-      match typeCbis with
+      match x with
       | TypeName (name) ->
           Ast.ii_of_id_name name |> List.iter (fun ii -> 
             (* new Xxx and other places have priority *)
@@ -427,10 +424,8 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     V.kcpp = (fun (k,_) def ->
       (match def with
       | Ast.Define (_, _id, DefineFunc params, _body) ->
-          params |> Ast.unparen |> Ast.uncomma |> List.iter (fun (name) ->
-            match name with
-            | (_s, [ii]) -> tag ii (Parameter Def)
-            | _ -> ()
+          params |> Ast.unparen |> Ast.uncomma |> List.iter (fun (_s, ii) ->
+            tag ii (Parameter Def)
           )
       | _ -> ()
       );
@@ -468,19 +463,24 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
           | _ -> tag ii Comment
           )
 
-    | T.TInt (_,ii) | T.TFloat (_,ii) ->
+    | T.TInt (_,ii) | T.TFloat ((_,ii), _) ->
         tag ii Number
-    | T.TString (_s,ii) | T.TChar (_s,ii) ->
+    | T.TString ((_s,ii), _) | T.TChar ((_s,ii), _) ->
         tag ii String
     | T.Tfalse ii | T.Ttrue ii  ->
         tag ii Boolean
+    | T.Tnullptr ii -> 
+        tag ii Null
 
     | T.TPtVirg ii
+    
     | T.TOPar ii | T.TOPar_CplusplusInit ii | T.TOPar_Define ii | T.TCPar ii
     | T.TOBrace ii | T.TOBrace_DefineInit ii | T.TCBrace ii 
-    | T.TOCro ii | T.TCCro ii
+    | T.TOCro ii | T.TOCro_Lambda ii | T.TCCro ii
+
     | T.TDot ii | T.TComma ii | T.TPtrOp ii  
-    | T.TAssign (_, ii)
+    | T.TAssign (SimpleAssign ii)
+    | T.TAssign (OpAssign (_, ii))
     | T.TEq ii 
     | T.TWhy ii | T.TTilde ii | T.TBang ii 
     | T.TEllipsis ii 
@@ -524,6 +524,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     | T.Tdefault ii 
     | T.Tsizeof ii 
     | T.Trestrict ii 
+    | T.Tconstexpr ii | T.Tthread_local ii
       -> 
         tag ii Keyword
 
@@ -572,14 +573,13 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     | T.Tvirtual ii  ->
         tag ii KeywordObject
 
-    | T.Ttemplate ii | T.Ttypeid ii | T.Ttypename ii  
+    | T.Ttemplate ii | T.Ttypeid ii | T.Ttypename ii  | T.Tdecltype ii
     | T.Toperator ii  
     | T.Tpublic ii | T.Tprivate ii | T.Tprotected ii | T.Tfriend ii  
     | T.Tusing ii  
     | T.Tconst_cast ii | T.Tdynamic_cast ii
     | T.Tstatic_cast ii | T.Treinterpret_cast ii
     | T.Texplicit ii | T.Tmutable ii  
-    | T.Texport ii 
       ->
         tag ii Keyword
 

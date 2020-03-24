@@ -45,12 +45,15 @@ type file_type =
   | Makefile
   | Script of string (* sh, csh, awk, sed, etc *)
 
-  | C of string | Cplusplus of string | ObjectiveC of string 
+  | C of string | Cplusplus of string 
   | Java | Csharp
+  | ObjectiveC of string 
+  | Swift
 
   | Perl | Python | Ruby | Lua
 
-  | Erlang | Go | Rust
+  | Erlang 
+  | Go | Rust
   | Beta
   | Pascal
 
@@ -64,7 +67,7 @@ type file_type =
 
   | MiscPL of string
 
-   and lisp_type = CommonLisp | Elisp | Scheme
+   and lisp_type = CommonLisp | Elisp | Scheme | Clojure
 
    and webpl_type = 
      | Php of string (* php or phpt or script *)
@@ -131,6 +134,7 @@ let file_type_of_file2 file =
   | "tcc" -> PL (Cplusplus e)
 
   | "m" | "mm" -> PL (ObjectiveC e)
+  | "swift" -> PL Swift
 
   | "java" -> PL Java
   | "cs" -> PL Csharp
@@ -142,6 +146,7 @@ let file_type_of_file2 file =
   | "scm" | "rkt" | "ss" | "lsp" -> PL (Lisp Scheme)
   | "lisp" -> PL (Lisp CommonLisp)
   | "el" -> PL (Lisp Elisp)
+  | "clj" -> PL (Lisp Clojure)
 
   (* Perl or Prolog ... I made my choice *)
   | "pl" -> PL (Prolog "pl")

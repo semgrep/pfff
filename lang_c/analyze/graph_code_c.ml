@@ -623,7 +623,7 @@ and toplevel env x =
             eopt |> Common.do_option (fun e ->
               let n = name in
               expr_toplevel env 
-                (Assign ((Cst_cpp.SimpleAssign, snd n), Id n, e))
+                (Assign ((Cst_cpp.SimpleAssign (snd n)), Id n, e))
             )
       | _ -> raise Impossible
       )
@@ -782,7 +782,7 @@ and stmt env = function
         (match eopt with
         | None -> ()
         | Some e ->
-          expr_toplevel env (Assign ((Cst_cpp.SimpleAssign, snd n), Id n, e))
+          expr_toplevel env (Assign ((Cst_cpp.SimpleAssign (snd n)), Id n, e))
         )
 
       )

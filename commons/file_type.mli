@@ -14,7 +14,8 @@ type file_type =
   | Prolog of string
   | Makefile
   | Script of string
-  | C of string | Cplusplus of string | ObjectiveC of string | Java | Csharp
+  | C of string | Cplusplus of string | Java | Csharp | ObjectiveC of string 
+  | Swift
   | Perl | Python | Ruby | Lua
   | Erlang | Go | Rust
   | Beta
@@ -26,7 +27,7 @@ type file_type =
   | Thrift
   | MiscPL of string
 
-   and lisp_type = CommonLisp | Elisp | Scheme
+   and lisp_type = CommonLisp | Elisp | Scheme | Clojure
 
    and webpl_type = 
      | Php of string
