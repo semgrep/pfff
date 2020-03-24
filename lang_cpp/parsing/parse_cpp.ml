@@ -372,7 +372,6 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
           (* Call parser *)
           (* -------------------------------------------------- *)
           Parser_cpp.toplevel (lexer_function tr) lexbuf_fake
-          |> List.hd |> fst
         with e -> 
           if not !Flag.error_recovery 
           then raise (Parse_info.Parsing_error (TH.info_of_tok tr.PI.current));
@@ -527,5 +526,4 @@ let any_of_string lang s =
        (* Call parser *)
        (* -------------------------------------------------- *)
        Parser_cpp.sgrep_spatch_pattern (lexer_function tr) lexbuf_fake
-       |> List.hd |> fst
   )

@@ -278,3 +278,4 @@ tmp
 
 /lang_ruby/parsing/parser_ruby.extract_type
 /lang_cpp/parsing/parser_cpp.extract_type
+/lang_cpp/parsing/parser_cpp2.extract_type
