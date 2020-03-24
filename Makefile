@@ -32,7 +32,9 @@ JSONCMA=external/deps-netsys/netsys_oothr.cma external/deps-netsys/netsys.cma\
         external/deps-netstring/netstring.cma\
         external/json-wheel/jsonwheel.cma 
 
+ifeq ($(FEATURE_RUBY), 1)
 DYPCMA=external/dyp/dyp.cma
+endif
 
 # could be FEATURE_OCAMLGRAPH, or should give dependencies between features
 GRAPHCMA=external/ocamlgraph/graph.cma commons_wrappers/graph/lib.cma
