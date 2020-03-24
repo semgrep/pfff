@@ -74,7 +74,9 @@ let all_actions () =
   Test_parsing_php.actions()@
   Test_parsing_js.actions()@
   Test_parsing_python.actions()@
+#if FEATURE_RUBY
   Test_parsing_ruby.actions()@
+#endif
 
   Test_parsing_c.actions()@
   Test_parsing_cpp.actions()@
