@@ -1,4 +1,4 @@
-%{
+{
 (* Yoann Padioleau
  * 
  * Copyright (C) 2002 Yoann Padioleau
@@ -33,7 +33,7 @@ module PI = Parse_info
  *  - http://www.externsoft.ch/download/cpp-iso.html
  *  - tree-sitter-cpp grammar
  *)
-%}
+}
 
 /*(*************************************************************************)*/
 /*(*1 Tokens *)*/
@@ -58,7 +58,9 @@ module PI = Parse_info
 (* coupling: Token_helpers.is_real_comment and other related functions.
  * disappear in parse_cpp.ml via TH.is_comment in lexer_function
  *)*/
-%token <Parse_info.t> TCommentSpace TCommentNewline TComment
+%token <Parse_info.t> TCommentSpace 
+%token <Parse_info.t> TCommentNewline 
+%token <Parse_info.t> TComment
 
 /*(* fresh_token: cppext: appears after parsing_hack_pp and disappear *)*/
 %token <(Token_cpp.cppcommentkind * Parse_info.t)> TComment_Pp
@@ -71,7 +73,8 @@ module PI = Parse_info
 
 %token <string * Parse_info.t>                       TInt
 %token <(string * Parse_info.t) * Cst_cpp.floatType> TFloat
-%token <(string * Parse_info.t) * Cst_cpp.isWchar>   TChar TString
+%token <(string * Parse_info.t) * Cst_cpp.isWchar>   TChar 
+%token <(string * Parse_info.t) * Cst_cpp.isWchar>   TString
 
 %token <string * Parse_info.t> TIdent 
 /*(* fresh_token: appear after some fix_tokens in parsing_hack.ml *)*/
@@ -83,28 +86,87 @@ module PI = Parse_info
  * TOParDefine and TCParEOL, then you must take care to also modify 
  * token_helpers.ml
  *)*/
-%token <Parse_info.t> TOPar TCPar TOBrace TCBrace TOCro TCCro 
+%token <Parse_info.t> TOPar 
+%token <Parse_info.t> TCPar
+%token <Parse_info.t> TOBrace
+%token <Parse_info.t> TCBrace
+%token <Parse_info.t> TOCro
+%token <Parse_info.t> TCCro 
 
-%token <Parse_info.t> TDot TComma TPtrOp     TInc TDec
+%token <Parse_info.t> TDot
+%token <Parse_info.t> TComma
+%token <Parse_info.t> TPtrOp
+%token <Parse_info.t> TInc
+%token <Parse_info.t> TDec
 %token <Cst_cpp.assignOp> TAssign 
-%token <Parse_info.t> TEq  TWhy  TTilde TBang  TEllipsis  TCol  TPtVirg
-%token <Parse_info.t> 
-  TOrLog TAndLog TOr TXor TAnd  TEqEq TNotEq TInfEq TSupEq
-  TShl TShr 
-  TPlus TMinus TMul TDiv TMod 
+%token <Parse_info.t> TEq 
+%token <Parse_info.t> TWhy
+%token <Parse_info.t> TTilde
+%token <Parse_info.t> TBang
+%token <Parse_info.t> TEllipsis
+%token <Parse_info.t> TCol
+%token <Parse_info.t> TPtVirg
+
+%token <Parse_info.t> TOrLog
+%token <Parse_info.t> TAndLog
+%token <Parse_info.t> TOr
+%token <Parse_info.t> TXor
+%token <Parse_info.t> TAnd
+%token <Parse_info.t> TEqEq
+%token <Parse_info.t> TNotEq
+%token <Parse_info.t> TInfEq
+%token <Parse_info.t> TSupEq
+%token <Parse_info.t> TShl
+%token <Parse_info.t> TShr 
+%token <Parse_info.t> TPlus
+%token <Parse_info.t> TMinus
+%token <Parse_info.t> TMul
+%token <Parse_info.t> TDiv
+%token <Parse_info.t> TMod 
 
 /*(*c++ext: see also TInf2 and TSup2 *)*/
-%token <Parse_info.t> TInf TSup 
+%token <Parse_info.t> TInf
+%token <Parse_info.t> TSup 
 
-%token <Parse_info.t>
-  Tchar Tshort Tint Tdouble Tfloat Tlong Tunsigned Tsigned Tvoid
-  Tauto Tregister Textern Tstatic 
-  Ttypedef 
-  Tconst Tvolatile
-  Tstruct Tunion Tenum 
-  Tbreak Telse Tswitch Tcase Tcontinue Tfor Tdo Tif  Twhile Treturn
-  Tgoto Tdefault
-  Tsizeof  
+%token <Parse_info.t> Tchar
+%token <Parse_info.t> Tshort
+%token <Parse_info.t> Tint
+%token <Parse_info.t> Tdouble
+%token <Parse_info.t> Tfloat
+%token <Parse_info.t> Tlong
+%token <Parse_info.t> Tunsigned
+%token <Parse_info.t> Tsigned
+%token <Parse_info.t> Tvoid
+
+%token <Parse_info.t> Tauto
+%token <Parse_info.t> Tregister
+%token <Parse_info.t> Textern
+%token <Parse_info.t> Tstatic 
+
+%token <Parse_info.t> Ttypedef 
+
+%token <Parse_info.t> Tconst
+%token <Parse_info.t> Tvolatile
+
+%token <Parse_info.t> Tstruct
+%token <Parse_info.t> Tunion
+%token <Parse_info.t> Tenum 
+
+%token <Parse_info.t> Tbreak
+%token <Parse_info.t> Telse
+%token <Parse_info.t> Tswitch
+%token <Parse_info.t> Tcase
+%token <Parse_info.t> Tcontinue
+%token <Parse_info.t> Tfor
+%token <Parse_info.t> Tdo
+%token <Parse_info.t> Tif
+%token <Parse_info.t> Twhile
+%token <Parse_info.t> Treturn
+
+%token <Parse_info.t> Tgoto
+%token <Parse_info.t> Tdefault
+
+%token <Parse_info.t> Tsizeof  
 
 /*(* C99 *)*/
 %token <Parse_info.t> Trestrict
@@ -112,7 +174,8 @@ module PI = Parse_info
 /*(*-----------------------------------------*)*/
 /*(*2 gccext: extra tokens *)*/
 /*(*-----------------------------------------*)*/
-%token <Parse_info.t> Tasm Ttypeof
+%token <Parse_info.t> Tasm 
+%token <Parse_info.t> Ttypeof
 /*(* less: disappear in parsing_hacks_pp, not present in AST for now *)*/
 %token <Parse_info.t> Tattribute
 /*(* also c++ext: *)*/
@@ -138,8 +201,14 @@ module PI = Parse_info
 
 /*(* cppext: #ifdef *)*/
 /*(* coupling: Token_helpers.is_cpp_instruction *)*/
-%token <Parse_info.t>          TIfdef TIfdefelse TIfdefelif TEndif
-%token <(bool * Parse_info.t)> TIfdefBool TIfdefMisc TIfdefVersion
+%token <Parse_info.t> TIfdef
+%token <Parse_info.t> TIfdefelse
+%token <Parse_info.t> TIfdefelif
+%token <Parse_info.t> TEndif
+
+%token <(bool * Parse_info.t)> TIfdefBool
+%token <(bool * Parse_info.t)> TIfdefMisc
+%token <(bool * Parse_info.t)> TIfdefVersion
 
 /*(* cppext: other *)*/
 %token <string * Parse_info.t> TUndef
@@ -161,29 +230,59 @@ module PI = Parse_info
 /*(*-----------------------------------------*)*/
 /*(*2 c++ext: extra tokens *)*/
 /*(*-----------------------------------------*)*/
-%token <Parse_info.t>
-   Tclass Tthis 
-   Tnew Tdelete 
-   Ttemplate Ttypeid Ttypename 
-   Tcatch Ttry Tthrow 
-   Toperator 
-   Tpublic Tprivate Tprotected    Tfriend 
-   Tvirtual 
-   Tnamespace Tusing 
-   Tbool    Tfalse Ttrue 
-   Twchar_t 
-   Tconst_cast Tdynamic_cast Tstatic_cast Treinterpret_cast 
-   Texplicit Tmutable
-%token <Parse_info.t> TPtrOpStar TDotStar
+%token <Parse_info.t> Tclass
+%token <Parse_info.t> Tthis 
+
+%token <Parse_info.t> Tnew
+%token <Parse_info.t> Tdelete 
+
+%token <Parse_info.t> Ttemplate
+%token <Parse_info.t> Ttypeid
+%token <Parse_info.t> Ttypename 
+
+%token <Parse_info.t> Tcatch
+%token <Parse_info.t> Ttry
+%token <Parse_info.t> Tthrow 
+
+%token <Parse_info.t> Toperator 
+
+%token <Parse_info.t> Tpublic
+%token <Parse_info.t> Tprivate
+%token <Parse_info.t> Tprotected
+%token <Parse_info.t> Tfriend 
+
+%token <Parse_info.t> Tvirtual 
+
+%token <Parse_info.t> Tnamespace
+%token <Parse_info.t> Tusing 
+
+%token <Parse_info.t> Tbool
+%token <Parse_info.t> Tfalse
+%token <Parse_info.t> Ttrue 
+
+%token <Parse_info.t> Twchar_t 
+
+%token <Parse_info.t> Tconst_cast
+%token <Parse_info.t> Tdynamic_cast
+%token <Parse_info.t> Tstatic_cast
+%token <Parse_info.t> Treinterpret_cast 
+ 
+%token <Parse_info.t> Texplicit
+%token <Parse_info.t> Tmutable
+
+%token <Parse_info.t> TPtrOpStar
+%token <Parse_info.t> TDotStar
 
 %token <Parse_info.t> TColCol 
 
 /*(* fresh_token: for constructed object, in parsing_hacks_cpp.ml *)*/
 %token <Parse_info.t> TOPar_CplusplusInit
 /*(* fresh_token: for template *)*/
-%token <Parse_info.t> TInf_Template TSup_Template
+%token <Parse_info.t> TInf_Template
+%token <Parse_info.t> TSup_Template
 /*(* fresh_token: for new[] delete[] *)*/
-%token <Parse_info.t> TOCro_new TCCro_new
+%token <Parse_info.t> TOCro_new 
+%token <Parse_info.t>TCCro_new
 /*(* fresh_token: for pure virtual method. TODO add stuff in parsing_hack *)*/
 %token <Parse_info.t> TInt_ZeroVirtual
 /*(* fresh_token: why can't use TypedefIdent? conflict? *)*/
@@ -201,41 +300,39 @@ module PI = Parse_info
 /*(* for cast_constructor, before a '(', unused for now *)*/
 %token <string * Parse_info.t> TIdent_TypedefConstr
 /*(* fresh_token: for constructed (basic) objects *)*/
-%token <Parse_info.t> 
-  Tchar_Constr Tint_Constr Tfloat_Constr Tdouble_Constr Twchar_t_Constr
-  Tshort_Constr Tlong_Constr Tbool_Constr
-  Tsigned_Constr Tunsigned_Constr
+%token <Parse_info.t> Tchar_Constr
+%token <Parse_info.t> Tint_Constr
+%token <Parse_info.t> Tfloat_Constr
+%token <Parse_info.t> Tdouble_Constr
+%token <Parse_info.t> Twchar_t_Constr
+
+%token <Parse_info.t> Tshort_Constr
+%token <Parse_info.t> Tlong_Constr
+%token <Parse_info.t> Tbool_Constr
+
+%token <Parse_info.t> Tsigned_Constr
+%token <Parse_info.t> Tunsigned_Constr
 /*(* fresh_token: appears after solved if next token is a typedef *)*/
 %token <Parse_info.t> TColCol_BeforeTypedef
 
 /*(*-----------------------------------------*)*/
 /*(*2 c++0x: extra tokens *)*/
 /*(*-----------------------------------------*)*/
-%token <Parse_info.t>
-   Tnullptr
-   Tconstexpr
-   Tthread_local
-   Tdecltype
+%token <Parse_info.t> Tnullptr
+%token<Parse_info.t> Tconstexpr
+%token<Parse_info.t> Tthread_local
+%token<Parse_info.t> Tdecltype
 
 /*(* fresh_token: for new[] delete[] *)*/
 %token <Parse_info.t> TOCro_Lambda
 
-/*(*************************************************************************)*/
-/*(*1 Priorities *)*/
-/*(*************************************************************************)*/
-/*(* must be at the top so that it has the lowest priority *)*/
-%nonassoc LOW_PRIORITY_RULE
-/*(* see conflicts.txt *)*/
-%nonassoc Telse
-
-/*(* TODO: remove those too but conflicts *)*/
-%left TAnd 
-%left TMul
 
 /*(*************************************************************************)*/
 /*(*1 Rules type declaration *)*/
 /*(*************************************************************************)*/
-%start main toplevel sgrep_spatch_pattern
+%start <Cst_cpp.program> main
+%start <Cst_cpp.toplevel option> toplevel 
+%start <Cst_cpp.any> sgrep_spatch_pattern
 
 %type <Cst_cpp.program> main
 %type <Cst_cpp.toplevel option> toplevel
@@ -854,7 +951,7 @@ labeled:
 
 /*(* classic else ambiguity resolved by a %prec, see conflicts.txt *)*/
 selection: 
- | Tif TOPar condition TCPar statement              %prec LOW_PRIORITY_RULE
+ | Tif TOPar condition TCPar statement              /*%prec LOW_PRIORITY_RULE*/
      { If ($1, ($2, $3, $4), $5, None) }
  | Tif TOPar condition TCPar statement Telse statement 
      { If ($1, ($2, $3, $4), $5, Some ($6, $7)) }
@@ -1258,7 +1355,7 @@ type_id:
  * in new_declarator and its leading ptr_operator
  *)*/
 new_type_id: 
- | spec_qualif_list %prec LOW_PRIORITY_RULE   
+ | spec_qualif_list /*%prec LOW_PRIORITY_RULE   */
      { let (t_ret, _, _) = type_and_storage_from_decl $1 in  t_ret }
  | spec_qualif_list new_declarator 
      { let (t_ret, _, _) = type_and_storage_from_decl $1 in (* TODOAST *) t_ret }
@@ -1266,7 +1363,7 @@ new_type_id:
 new_declarator: 
  | ptr_operator new_declarator 
      { () }
- | ptr_operator %prec LOW_PRIORITY_RULE
+ | ptr_operator /*%prec LOW_PRIORITY_RULE*/
      { () }
  | direct_new_declarator 
      { () }
@@ -1293,7 +1390,7 @@ conversion_type_id:
      { let tx = addTypeD $1 nullDecl in
        let (t_ret, _, _) = type_and_storage_from_decl tx in t_ret 
      }
- | simple_type_specifier %prec LOW_PRIORITY_RULE 
+ | simple_type_specifier /*%prec LOW_PRIORITY_RULE */
      { let tx = addTypeD $1 nullDecl in
        let (t_ret, _, _) = type_and_storage_from_decl tx in t_ret 
      }
@@ -1301,7 +1398,7 @@ conversion_type_id:
 conversion_declarator: 
  | ptr_operator conversion_declarator 
      { () }
- | ptr_operator %prec LOW_PRIORITY_RULE
+ | ptr_operator /*%prec LOW_PRIORITY_RULE*/
      { () }
 
 /*(*************************************************************************)*/

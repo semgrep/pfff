@@ -29,6 +29,7 @@ LIBS=$(TOP)/commons/lib.cma \
 
 INCLUDEDIRS= \
  $(TOP)/commons \
+ $(TOP)/external/dyp \
  $(TOP)/commons_core \
  $(TOP)/globals \
  $(TOP)/h_program-lang \
@@ -72,6 +73,9 @@ parser_cpp.ml parser_cpp.mli: parser_cpp.dyp
 clean::
 	rm -f parser_cpp.ml parser_cpp.mli 
 #beforedepend:: parser_cpp.ml parser_cpp.mli
+
+parser_cpp.cmo: parser_cpp.ml
+	ocamlc $(INCLUDES) -w y -c $<
 
 
 
