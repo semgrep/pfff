@@ -61,11 +61,18 @@ clean::
 beforedepend:: lexer_cpp.ml
 
 
-parser_cpp.ml parser_cpp.mli: parser_cpp.mly
-	$(OCAMLYACC) $<
+#parser_cpp.ml parser_cpp.mli: parser_cpp.mly
+#	$(OCAMLYACC) $<
+#clean::
+#	rm -f parser_cpp.ml parser_cpp.mli parser_cpp.output
+#beforedepend:: parser_cpp.ml parser_cpp.mli
+
+parser_cpp.ml parser_cpp.mli: parser_cpp.dyp
+	dypgen --pv-obj --ocamlc '$(INCLUDES) -w y' $<
 clean::
-	rm -f parser_cpp.ml parser_cpp.mli parser_cpp.output
-beforedepend:: parser_cpp.ml parser_cpp.mli
+	rm -f parser_cpp.ml parser_cpp.mli 
+#beforedepend:: parser_cpp.ml parser_cpp.mli
+
 
 
 visitor_cpp.cmo: visitor_cpp.ml
