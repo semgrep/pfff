@@ -43,8 +43,7 @@ let tokinfo = Parse_info.tokinfo
 let error = Parse_info.lexical_error
 
 (* less: should use Buffer and not ^ so we should not need that *)
-let tok_add_s s ii  =
-  PI.rewrap_str ((PI.str_of_info ii) ^ s) ii
+let tok_add_s = PI.tok_add_s
 
 let hexa_to_int = function
   | '0'..'9' as x -> Char.code x - Char.code '0'

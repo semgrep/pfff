@@ -32,6 +32,10 @@ JSONCMA=external/deps-netsys/netsys_oothr.cma external/deps-netsys/netsys.cma\
         external/deps-netstring/netstring.cma\
         external/json-wheel/jsonwheel.cma 
 
+ifeq ($(FEATURE_RUBY), 1)
+DYPCMA=external/dyp/dyp.cma
+endif
+
 # could be FEATURE_OCAMLGRAPH, or should give dependencies between features
 GRAPHCMA=external/ocamlgraph/graph.cma commons_wrappers/graph/lib.cma
 GRAPHDIRS=commons_wrappers/graph 
@@ -41,12 +45,13 @@ GRAPHDIRS=commons_wrappers/graph
 #------------------------------------------------------------------------------
 # Main variables
 #------------------------------------------------------------------------------
-BASICSYSLIBS=bigarray.cma str.cma unix.cma
+BASICSYSLIBS=nums.cma bigarray.cma str.cma unix.cma
 
 # used small utilities that I dont want to depend on too much things
 BASICLIBS=commons/lib.cma \
  commons_core/lib.cma \
  $(JSONCMA) \
+ $(DYPCMA) \
  globals/lib.cma \
  h_files-format/lib.cma \
  h_program-lang/lib.cma \
@@ -81,8 +86,14 @@ BASICLIBS=commons/lib.cma \
   lang_GENERIC/analyze/lib.cma \
  lang_FUZZY/parsing/lib.cma \
 
+ifeq ($(FEATURE_RUBY), 1)
+BASICLIBS+=\
+ lang_ruby/parsing/lib.cma \
+  lang_ruby/analyze/lib.cma \
 
-SYSLIBS=bigarray.cma str.cma unix.cma
+endif
+
+SYSLIBS=nums.cma bigarray.cma str.cma unix.cma
 SYSLIBS+=$(OCAMLCOMPILERCMA)
 
 # use for the other programs
@@ -90,6 +101,7 @@ LIBS= commons/lib.cma \
     commons_core/lib.cma \
     commons_ocollection/lib.cma \
        $(JSONCMA) \
+       $(DYPCMA) \
        $(GRAPHCMA) \
        $(EXTLIBCMA) $(PTCMA) $(ZIPCMA) $(JAVALIBCMA) \
     globals/lib.cma \
@@ -142,6 +154,13 @@ LIBS= commons/lib.cma \
     lang_GENERIC/parsing/lib.cma \
      lang_GENERIC/analyze/lib.cma \
     lang_FUZZY/parsing/lib.cma \
+
+ifeq ($(FEATURE_RUBY), 1)
+LIBS+=\
+    lang_ruby/parsing/lib.cma \
+     lang_ruby/analyze/lib.cma \
+
+endif
 
 MAKESUBDIRS=commons commons_ocollection commons_core \
   $(GRAPHDIRS) \
@@ -197,9 +216,17 @@ MAKESUBDIRS=commons commons_ocollection commons_core \
   metagen \
   demos
 
+ifeq ($(FEATURE_RUBY), 1)
+MAKESUBDIRS+=\
+  lang_ruby/parsing \
+   lang_ruby/analyze \
+
+endif
+
 INCLUDEDIRS=$(MAKESUBDIRS) \
  external/deps-netsys \
  external/json-wheel \
+ external/dyp \
  commons_wrappers/graph \
 
 # cpp causes some 'warning: missing terminating' errors
@@ -379,6 +406,12 @@ INSTALL_SUBDIRS= \
   lang_GENERIC/parsing  lang_GENERIC/analyze \
   lang_FUZZY/parsing \
 
+ifeq ($(FEATURE_RUBY), 1)
+INSTALL_SUBDIRS+=\
+  lang_ruby/parsing  lang_ruby/analyze \
+
+endif
+
 
 
 
@@ -451,7 +484,7 @@ website:
 
 
 graph:
-	./codegraph_build -lang cmt -symlinks -derived_data -verbose .
+	~/github/codegraph/_build/default/bin/main_codegraph_build.exe -lang cmt -symlinks -derived_data -verbose .
 prolog:
 	./codequery.opt -lang cmt -build .
 	mv facts.pl facts_pl
@@ -468,7 +501,7 @@ layers:
 
 EFUNSCLIENT=/home/pad/github/fork-efuns/efuns_client
 visual:
-	./codemap -screen_size 3 -filter pfff -efuns_client $(EFUNSCLIENT) -emacs_client /dev/null .
+	~/github/codemap/_build/default/bin/main_codemap.exe -screen_size 3 -filter pfff -efuns_client $(EFUNSCLIENT) -emacs_client /dev/null .
 loc:
 	./codemap -no_legend -profile -screen_size 3 -filter pfff -test_loc .
 

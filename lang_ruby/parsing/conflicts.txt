@@ -1,0 +1,9 @@
+See https://whitequark.org/blog/2013/04/01/ruby-hacking-guide-ch-11-finite-state-lexer/
+
+See "Ruby Intermediate Language" paper a DLS'09
+
+* opening '[' and a[i] vs a [i], array access vs call
+
+T_LBRACK vs T_LBRACK_ARG
+
+

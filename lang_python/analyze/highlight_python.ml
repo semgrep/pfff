@@ -54,6 +54,8 @@ let builtin_functions = Common.hashset_of_list [
  *)
 
 let visit_program ~tag_hook _prefs (program, toks) =
+
+  (* tagger wrappers *)
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->
     tag_hook ii categ;

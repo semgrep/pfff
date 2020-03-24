@@ -275,3 +275,5 @@ tmp
 /data/js_stdlib/stdlib.js
 /tests/php/codegraph/pfff_test.log
 /external/OPAM_DIR
+
+/lang_ruby/parsing/parser_ruby.extract_type
