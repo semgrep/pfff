@@ -154,13 +154,13 @@ let test_parse_cpp_dyp xs =
   fullxs |> Console.progress (fun k -> List.iter (fun file -> 
     k ();
     Common.save_excursion Flag_parsing_cpp.strict_lexer true (fun () ->
-      try 
-        Error_code.try_with_print_exn_and_reraise file (fun () ->
-          let _cst = Parse_cpp.parse_with_dypgen file in
-          ()
-        )
+      try (
+       let _cst = Parse_cpp.parse_with_dypgen file in
+       ()
+     )
       with exn ->
-        pr2 (spf "PB with: %s, exn = %s" file (Common.exn_to_s exn)); 
+        pr2 (spf "PB with: %s, exn = %s" file (Common.exn_to_s exn));
+        ()
     )
   ))
 
