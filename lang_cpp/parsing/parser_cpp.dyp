@@ -33,6 +33,40 @@ module PI = Parse_info
  *  - http://www.externsoft.ch/download/cpp-iso.html
  *  - tree-sitter-cpp grammar
  *)
+
+module M = struct
+
+(* wrapper to adapt to new dypgen merge interface *)
+let wrap xs f =
+  match xs with
+  | [] -> failwith "Impossible: Empty list in merge"
+  | (x,gd,od)::rest ->
+    let l = x::(List.map (fun (x, _, _) -> x) rest ) in
+    f l, gd, od
+
+let merge_stmt xs=
+ wrap xs (fun xs ->
+   [List.hd xs]
+ )
+
+let merge_expr xs=
+ wrap xs (fun xs ->
+   [List.hd xs]
+ )
+end
+
+(*let () = Dyp.dypgen_verbose := max_int*)
+
+let dyp_merge_Obj_stmt                   = M.merge_stmt
+let dyp_merge_Obj_expr                   = M.merge_expr
+
+let dyp_merge xs =
+  M.wrap xs (fun xs ->
+  Printf.eprintf "<all> branches: %d\n%!" (List.length xs);
+  xs
+  )
+  (*Dyp.keep_all*)
+
 }
 
 /*(*************************************************************************)*/
