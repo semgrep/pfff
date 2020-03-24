@@ -66,8 +66,6 @@ BASICLIBS=commons/lib.cma \
   lang_java/analyze/lib.cma \
  lang_python/parsing/lib.cma \
   lang_python/analyze/lib.cma \
- lang_ruby/parsing/lib.cma \
-  lang_ruby/analyze/lib.cma \
  lang_go/parsing/lib.cma \
   lang_go/analyze/lib.cma \
  lang_csharp/parsing/lib.cma \
@@ -86,6 +84,12 @@ BASICLIBS=commons/lib.cma \
   lang_GENERIC/analyze/lib.cma \
  lang_FUZZY/parsing/lib.cma \
 
+ifeq ($(FEATURE_RUBY), 1)
+BASICLIBS+=\
+ lang_ruby/parsing/lib.cma \
+  lang_ruby/analyze/lib.cma \
+
+endif
 
 SYSLIBS=nums.cma bigarray.cma str.cma unix.cma
 SYSLIBS+=$(OCAMLCOMPILERCMA)
@@ -132,8 +136,6 @@ LIBS= commons/lib.cma \
      lang_java/analyze/lib.cma \
     lang_python/parsing/lib.cma \
      lang_python/analyze/lib.cma \
-    lang_ruby/parsing/lib.cma \
-     lang_ruby/analyze/lib.cma \
     lang_go/parsing/lib.cma \
      lang_go/analyze/lib.cma \
     lang_csharp/parsing/lib.cma \
@@ -150,6 +152,13 @@ LIBS= commons/lib.cma \
     lang_GENERIC/parsing/lib.cma \
      lang_GENERIC/analyze/lib.cma \
     lang_FUZZY/parsing/lib.cma \
+
+ifeq ($(FEATURE_RUBY), 1)
+LIBS+=\
+    lang_ruby/parsing/lib.cma \
+     lang_ruby/analyze/lib.cma \
+
+endif
 
 MAKESUBDIRS=commons commons_ocollection commons_core \
   $(GRAPHDIRS) \
@@ -181,8 +190,6 @@ MAKESUBDIRS=commons commons_ocollection commons_core \
    lang_java/analyze \
   lang_python/parsing \
    lang_python/analyze \
-  lang_ruby/parsing \
-   lang_ruby/analyze \
   lang_go/parsing \
    lang_go/analyze \
   lang_csharp/parsing \
@@ -206,6 +213,13 @@ MAKESUBDIRS=commons commons_ocollection commons_core \
   lang_FUZZY/parsing \
   metagen \
   demos
+
+ifeq ($(FEATURE_RUBY), 1)
+MAKESUBDIRS+=\
+  lang_ruby/parsing \
+   lang_ruby/analyze \
+
+endif
 
 INCLUDEDIRS=$(MAKESUBDIRS) \
  external/deps-netsys \
@@ -386,10 +400,15 @@ INSTALL_SUBDIRS= \
   lang_haskell/parsing lang_haskell/analyze \
   lang_csharp/parsing lang_csharp/analyze \
   lang_html/parsing lang_html/analyze \
-  lang_ruby/parsing  lang_ruby/analyze \
   lang_text/ \
   lang_GENERIC/parsing  lang_GENERIC/analyze \
   lang_FUZZY/parsing \
+
+ifeq ($(FEATURE_RUBY), 1)
+INSTALL_SUBDIRS+=\
+  lang_ruby/parsing  lang_ruby/analyze \
+
+endif
 
 
 
