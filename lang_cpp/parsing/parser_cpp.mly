@@ -228,16 +228,9 @@ module PI = Parse_info
 /*(* see conflicts.txt *)*/
 %nonassoc Telse
 
-%left TOrLog
-%left TAndLog
-%left TOr
-%left TXor
+/*(* TODO: remove those too but conflicts *)*/
 %left TAnd 
-%left TEqEq TNotEq
-%left TInf TSup TInfEq TSupEq 
-%left TShl TShr
-%left TPlus TMinus
-%left TMul TDiv TMod 
+%left TMul
 
 /*(*************************************************************************)*/
 /*(*1 Rules type declaration *)*/
@@ -481,32 +474,60 @@ assign_expr:
    * 'assign_expr', otherwise   pnp ? x : x = 0x388  is not allowed
    *)*/
 cond_expr: 
- | arith_expr   { $1 }
- | arith_expr TWhy expr_opt TCol assign_expr 
+ | logical_or_expr   { $1 }
+ | logical_or_expr TWhy expr_opt TCol assign_expr 
      { mk_e (CondExpr ($1,$2, $3, $4, $5)) } 
 
+/*(* old: was in single arith_expr rule with %left prio, but dypgen cant *)*/
+multiplicative_expr:
+ | pm_expr { $1 }
+ | multiplicative_expr TMul pm_expr { Binary($1,(Arith Mul,$2),$3) }
+ | multiplicative_expr TDiv pm_expr { Binary($1,(Arith Div,$2),$3) }
+ | multiplicative_expr TMod pm_expr { Binary($1,(Arith Mod,$2),$3) }
 
-arith_expr: 
- | pm_expr                     { $1 }
- | arith_expr TMul    arith_expr { mk_e(Binary ($1, (Arith Mul,$2),      $3)) }
- | arith_expr TDiv    arith_expr { mk_e(Binary ($1, (Arith Div,$2),      $3)) }
- | arith_expr TMod    arith_expr { mk_e(Binary ($1, (Arith Mod, $2),      $3))}
+additive_expr:
+ | multiplicative_expr { $1 }
+ | additive_expr TPlus multiplicative_expr { Binary($1,(Arith Plus,$2),$3) }
+ | additive_expr TMinus multiplicative_expr { Binary($1,(Arith Minus,$2),$3) }
 
- | arith_expr TPlus   arith_expr { mk_e(Binary ($1, (Arith Plus, $2),     $3))}
- | arith_expr TMinus  arith_expr { mk_e(Binary ($1, (Arith Minus, $2),    $3))}
- | arith_expr TShl    arith_expr { mk_e(Binary ($1, (Arith DecLeft, $2),  $3))}
- | arith_expr TShr    arith_expr { mk_e(Binary ($1, (Arith DecRight, $2), $3))}
- | arith_expr TInf    arith_expr { mk_e(Binary ($1, (Logical Inf, $2),    $3))}
- | arith_expr TSup    arith_expr { mk_e(Binary ($1, (Logical Sup, $2),    $3))}
- | arith_expr TInfEq  arith_expr { mk_e(Binary ($1, (Logical InfEq, $2),  $3))}
- | arith_expr TSupEq  arith_expr { mk_e(Binary ($1, (Logical SupEq, $2),  $3))}
- | arith_expr TEqEq   arith_expr { mk_e(Binary ($1, (Logical Eq, $2),     $3))}
- | arith_expr TNotEq  arith_expr { mk_e(Binary ($1, (Logical NotEq, $2),  $3))}
- | arith_expr TAnd    arith_expr { mk_e(Binary ($1, (Arith And, $2),      $3))}
- | arith_expr TOr     arith_expr { mk_e(Binary ($1, (Arith Or, $2),       $3))}
- | arith_expr TXor    arith_expr { mk_e(Binary ($1, (Arith Xor, $2),      $3))}
- | arith_expr TAndLog arith_expr { mk_e(Binary ($1, (Logical AndLog, $2), $3))}
- | arith_expr TOrLog  arith_expr { mk_e(Binary ($1, (Logical OrLog, $2),  $3))}
+shift_expr:
+ | additive_expr { $1 }
+ | shift_expr TShl additive_expr { Binary($1,(Arith DecLeft,$2),$3) }
+ | shift_expr TShr additive_expr { Binary($1,(Arith DecRight,$2),$3) }
+
+relational_expr:
+ | shift_expr { $1 }
+ | relational_expr TInf shift_expr { Binary($1,(Logical Inf,$2),$3) }
+ | relational_expr TSup shift_expr { Binary($1,(Logical Sup,$2),$3) }
+ | relational_expr TInfEq shift_expr { Binary($1,(Logical InfEq,$2),$3) }
+ | relational_expr TSupEq shift_expr { Binary($1,(Logical SupEq,$2),$3) }
+
+equality_expr:
+ | relational_expr { $1 }
+ | equality_expr TEqEq relational_expr { Binary($1,(Logical Eq,$2),$3) }
+ | equality_expr TNotEq relational_expr { Binary($1,(Logical NotEq,$2),$3) }
+
+and_expr:
+ | equality_expr { $1 }
+ | and_expr TAnd equality_expr { Binary($1,(Arith And,$2),$3) }
+
+exclusive_or_expr:
+ | and_expr { $1 }
+ | exclusive_or_expr TXor and_expr { Binary($1,(Arith Xor,$2),$3) }
+
+inclusive_or_expr:
+ | exclusive_or_expr { $1 }
+ | inclusive_or_expr TOr exclusive_or_expr { Binary($1,(Arith Or,$2),$3) }
+
+logical_and_expr:
+ | inclusive_or_expr { $1 }
+ | logical_and_expr TAndLog inclusive_or_expr { Binary($1,(Logical AndLog,$2),$3) }
+
+logical_or_expr:
+ | logical_and_expr { $1 }
+ | logical_or_expr TOrLog logical_and_expr { Binary($1,(Logical OrLog,$2),$3) }
+
+
 
 pm_expr: 
  | cast_expr { $1 }
