@@ -66,7 +66,7 @@ beforedepend:: lexer_cpp.ml
 parser_cpp.ml parser_cpp.mli: parser_cpp.mly
 	$(OCAMLYACC) $<
 clean::
-	rm -f parser_cpp.ml parser_cpp.mli parser_cpp.output
+	rm -f parser_cpp.ml parser_cpp.mli parser_cpp.output parser_cpp.conflicts
 beforedepend:: parser_cpp.ml parser_cpp.mli
 
 parser_cpp2.ml parser_cpp2.mli: parser_cpp2.dyp
@@ -76,12 +76,13 @@ parser_cpp2.ml parser_cpp2.mli: parser_cpp2.dyp
 	perl -p -i -e 's/ TUnknown of.*/*)/' \
          parser_cpp2.ml*
 clean::
-	rm -f parser_cpp2.ml parser_cpp2.mli 
-#beforedepend:: parser_cpp.ml parser_cpp.mli
+	rm -f parser_cpp2.ml parser_cpp2.mli parser_cpp2.extract_type parser_cpp2_temp.ml
 
+# does not work well with dypgen so have to do that below
+#beforedepend:: parser_cpp.ml parser_cpp.mli
+parser_cpp2.cmo: parser_cpp2.cmi
 parser_cpp2.cmo: parser_cpp2.ml
 	ocamlc $(INCLUDES) -w y -c $<
-
 
 
 visitor_cpp.cmo: visitor_cpp.ml
