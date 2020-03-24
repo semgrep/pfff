@@ -15,6 +15,7 @@ val parse_with_lang:
   ?lang:Flag_parsing_cpp.language ->
   Common.filename -> (toplevels_and_tokens * Parse_info.parsing_stat)
 
+
 (* other parsers *)
 val any_of_string: 
  Flag_parsing_cpp.language -> string -> Cst_cpp.any
@@ -22,6 +23,10 @@ val any_of_string:
 val parse_fuzzy:
   Common.filename -> 
   Ast_fuzzy.trees * (Parse_info.token_kind * Parse_info.t) list
+
+val parse_with_dypgen:
+  Common.filename -> Cst_cpp.program
+
 
 (* usually correspond to what is inside your macros.h *)
 val _defs : (string, Pp_token.define_body) Hashtbl.t

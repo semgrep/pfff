@@ -12,7 +12,7 @@ SRC= flag_parsing_cpp.ml \
      type_cpp.ml \
      meta_cst_cpp.ml \
      visitor_cpp.ml lib_parsing_cpp.ml \
-     parser_cpp_mly_helper.ml parser_cpp.ml lexer_cpp.ml \
+     parser_cpp_mly_helper.ml parser_cpp.ml parser_cpp2.ml lexer_cpp.ml \
      token_helpers_cpp.ml token_views_cpp.ml token_views_context.ml \
      parsing_hacks_lib.ml pp_token.ml \
      parsing_hacks_pp.ml parsing_hacks_cpp.ml parsing_hacks_typedef.ml \
@@ -29,6 +29,7 @@ LIBS=$(TOP)/commons/lib.cma \
 
 INCLUDEDIRS= \
  $(TOP)/commons \
+ $(TOP)/external/dyp \
  $(TOP)/commons_core \
  $(TOP)/globals \
  $(TOP)/h_program-lang \
@@ -60,12 +61,28 @@ clean::
 	rm -f lexer_cpp.ml
 beforedepend:: lexer_cpp.ml
 
+#OCAMLYACC=menhir --explain
 
 parser_cpp.ml parser_cpp.mli: parser_cpp.mly
 	$(OCAMLYACC) $<
 clean::
-	rm -f parser_cpp.ml parser_cpp.mli parser_cpp.output
+	rm -f parser_cpp.ml parser_cpp.mli parser_cpp.output parser_cpp.conflicts
 beforedepend:: parser_cpp.ml parser_cpp.mli
+
+parser_cpp2.ml parser_cpp2.mli: parser_cpp2.dyp
+	dypgen --pv-obj --ocamlc '$(INCLUDES) -w y' $<
+	perl -p -i -e 's/type token =/type token = Parser_cpp.token open Parser_cpp(*/' \
+         parser_cpp2.ml*
+	perl -p -i -e 's/ TUnknown of.*/*)/' \
+         parser_cpp2.ml*
+clean::
+	rm -f parser_cpp2.ml parser_cpp2.mli parser_cpp2.extract_type parser_cpp2_temp.ml
+
+# does not work well with dypgen so have to do that below
+#beforedepend:: parser_cpp.ml parser_cpp.mli
+parser_cpp2.cmo: parser_cpp2.cmi
+parser_cpp2.cmo: parser_cpp2.ml
+	ocamlc $(INCLUDES) -w y -c $<
 
 
 visitor_cpp.cmo: visitor_cpp.ml
