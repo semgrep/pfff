@@ -163,6 +163,12 @@ let test_parse_cpp_dyp xs =
         pr2 (spf "PB with: %s, exn = %s" file (Common.exn_to_s exn)); 
     )
   ))
+
+let test_dump_cpp_dyp file =
+  let ast = Parse_cpp.parse_with_dypgen file in
+  let v = Meta_cst_cpp.vof_program ast in
+  let s = Ocaml.string_of_v v in
+  pr s
   
 (*****************************************************************************)
 (* Main entry for Arg *)
@@ -187,6 +193,8 @@ let actions () = [
     Common.mk_action_1_arg test_dump_cpp_full;
     "-dump_cpp_view", "   <file>", 
     Common.mk_action_1_arg test_dump_cpp_view;
+    "-dump_cpp_dyp", "   <file>", 
+    Common.mk_action_1_arg test_dump_cpp_dyp;
 
     "-parse_cpp_fuzzy", "   <files or dirs>", 
     Common.mk_action_n_arg test_parse_cpp_fuzzy;
