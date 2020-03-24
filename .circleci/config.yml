@@ -5,7 +5,7 @@ jobs:
       - image: returntocorp/sgrep-build:2.1
     steps:
       - checkout
-      - run: eval $(opam env); opam install .
+      - run: eval $(opam env); opam remove pfff -y; opam install .
 
   test:
     docker:
@@ -14,7 +14,7 @@ jobs:
         PFFF_HOME: /home/opam/project
     steps:
       - checkout
-      - run: eval $(opam env); opam install .
+      - run: eval $(opam env); opam remove pfff -y; opam install .
 workflows:
   version: 2.1
   build_and_test:
