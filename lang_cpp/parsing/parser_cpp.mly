@@ -79,12 +79,14 @@ module PI = Parse_info
  * TOParDefine and TCParEOL, then you must take care to also modify 
  * token_helpers.ml
  *)
-%token <Parse_info.t> TOPar TCPar TOBrace TCBrace TOCro TCCro 
+%token <Parse_info.t> TOPar "(" TCPar ")" 
+%token <Parse_info.t> TOBrace "{" TCBrace "}" 
+%token <Parse_info.t> TOCro "[" TCCro "]"
 
 %token <Parse_info.t> TDot TPtrOp     TInc TDec
 %token <Parse_info.t> TComma "," TPtVirg ";"
 %token <Cst_cpp.assignOp> TAssign 
-%token <Parse_info.t> TEq  TWhy  TTilde TBang    TCol   TEllipsis
+%token <Parse_info.t> TEq  TWhy  TTilde TBang TCol TEllipsis "..."
 %token <Parse_info.t> 
   TOrLog TAndLog TOr TXor TAnd  TEqEq TNotEq TInfEq TSupEq
   TShl TShr 
@@ -292,7 +294,7 @@ toplevel_aux:
 
  (* when have error recovery, we can end up skipping the
   * beginning of the file, and so get trailing unclosed } at the end *)
- | TCBrace { DeclElem (EmptyDef $1) }
+ | "}" { DeclElem (EmptyDef $1) }
 
 (*************************************************************************)
 (* sgrep *)
@@ -365,8 +367,8 @@ operator_kind:
  | TPtrOpStar { PtrOpOp PtrStarOp, [$1] }  
  | TPtrOp     { PtrOpOp PtrOp,     [$1] }
  (* () [] (double tokens) *)
- | TOPar TCPar { AccessOp ParenOp, [$1;$2] }
- | TOCro TCCro { AccessOp ArrayOp, [$1;$2] }
+ | "(" ")" { AccessOp ParenOp, [$1;$2] }
+ | "[" "]" { AccessOp ArrayOp, [$1;$2] }
  (* new delete *)
  | Tnew    { AllocOp NewOp,    [$1] } 
  | Tdelete { AllocOp DeleteOp, [$1] }
@@ -509,7 +511,7 @@ pm_expr:
 
 cast_expr: 
  | unary_expr                    { $1 }
- | TOPar type_id TCPar cast_expr { Cast (($1, $2, $3), $4) }
+ | "(" type_id ")" cast_expr { Cast (($1, $2, $3), $4) }
 
 unary_expr: 
  | postfix_expr                    { $1 }
@@ -517,7 +519,7 @@ unary_expr:
  | TDec unary_expr                 { Infix ($2, (Dec, $1)) }
  | unary_op cast_expr              { Unary ($2, $1) }
  | Tsizeof unary_expr              { SizeOfExpr ($1, $2) }
- | Tsizeof TOPar type_id TCPar { SizeOfType ($1, ($2, $3, $4)) }
+ | Tsizeof "(" type_id ")" { SizeOfType ($1, ($2, $3, $4)) }
  (*c++ext: *)
  | new_expr      { $1 }
  | delete_expr   { $1 }
@@ -537,8 +539,8 @@ unary_op:
 postfix_expr: 
  | primary_expr               { $1 }
 
- | postfix_expr TOCro expr TCCro              { ArrayAccess ($1, ($2, $3,$4)) }
- | postfix_expr TOPar argument_list_opt TCPar { mk_funcall $1 ($2, $3, $4) }
+ | postfix_expr "[" expr "]"              { ArrayAccess ($1, ($2, $3,$4)) }
+ | postfix_expr "(" argument_list_opt ")" { mk_funcall $1 ($2, $3, $4) }
 
  (*c++ext: ident is now a id_expression *)
  | postfix_expr TDot   Ttemplate? "::"?  id_expression
@@ -550,12 +552,12 @@ postfix_expr:
  | postfix_expr TDec          { Postfix ($1, (Dec, $2)) }
 
  (* gccext: also called compound literals *)
- | TOPar type_id TCPar braced_init_list { GccConstructor (($1, $2, $3), $4) }
+ | "(" type_id ")" braced_init_list { GccConstructor (($1, $2, $3), $4) }
 
  (* c++ext: *)
  | cast_operator_expr { $1 }
- | Ttypeid TOPar unary_expr TCPar { TypeId ($1, ($2, Right $3, $4)) }
- | Ttypeid TOPar type_id    TCPar { TypeId ($1, ($2, Left $3, $4)) }
+ | Ttypeid "(" unary_expr ")" { TypeId ($1, ($2, Right $3, $4)) }
+ | Ttypeid "(" type_id    ")" { TypeId ($1, ($2, Left $3, $4)) }
  | cast_constructor_expr { $1 }
 
  (* c++0x: *)
@@ -571,9 +573,9 @@ primary_expr:
  (*c++ext: cf below now. old: TIdent { Ident  (fst $1) [snd $1] }  *)
 
  (* forunparser: *)
- | TOPar expr TCPar { ParenExpr ($1, $2, $3) }  
+ | "(" expr ")" { ParenExpr ($1, $2, $3) }  
  (* gccext: allow statement as expressions via ({ statement }) *)
- | TOPar compound TCPar    { StatementExpr ($1, $2, $3) }
+ | "(" compound ")"    { StatementExpr ($1, $2, $3) }
 
  (* contains identifier rule *)
  | primary_cplusplus_id { $1 }
@@ -619,10 +621,10 @@ primary_cplusplus_id:
 
 (*could use TInf here *)
 cast_operator_expr: 
- | cpp_cast_operator TInf_Template type_id  TSup_Template TOPar expr TCPar 
+ | cpp_cast_operator TInf_Template type_id  TSup_Template "(" expr ")" 
      { CplusplusCast ($1, ($2, $3, $4), ($5, $6, $7)) }
 (* TODO: remove once we don't skip template arguments *)
- | cpp_cast_operator TOPar expr TCPar
+ | cpp_cast_operator "(" expr ")"
      { ExprTodo $2 }
 
 (*c++ext:*)
@@ -641,12 +643,12 @@ cpp_cast_operator:
  * need a classname3?
 *)
 cast_constructor_expr:
- | TIdent_TypedefConstr TOPar argument_list_opt TCPar 
+ | TIdent_TypedefConstr "(" argument_list_opt ")" 
      { let name = None, noQscope, IdIdent $1 in
        let ft = nQ, (TypeName name) in
        ConstructedObject (ft, ($2, $3, $4))  
      }
- | basic_type_2 TOPar argument_list_opt TCPar 
+ | basic_type_2 "(" argument_list_opt ")" 
      { let ft = nQ, $1 in
        ConstructedObject (ft, ($2, $3, $4))
      }
@@ -655,8 +657,8 @@ cast_constructor_expr:
 new_expr:
  | "::"? Tnew new_placement?   new_type_id  new_initializer?
      { New ($1, $2, $3, $4, $5)  }
-(* ambiguity then on the TOPar
- "::"? Tnew new_placement? TOPar type_id TCPar new_initializer?
+(* ambiguity then on the "("
+ "::"? Tnew new_placement? "(" type_id ")" new_initializer?
   *)
 
 delete_expr:
@@ -665,16 +667,16 @@ delete_expr:
  | "::"? Tdelete TOCro_new TCCro_new cast_expr 
      { DeleteArray ($1,$2,($3,(),$4), $5) }
 
-new_placement: TOPar argument_list TCPar { ($1, $2, $3) }
+new_placement: "(" argument_list ")" { ($1, $2, $3) }
 
-new_initializer: TOPar argument_list_opt TCPar { ($1, $2, $3) }
+new_initializer: "(" argument_list_opt ")" { ($1, $2, $3) }
 
 (*----------------------------*)
 (* c++0x: lambdas! *)
 (*----------------------------*)
 lambda_introducer: 
- | TOCro_Lambda TCCro { $1 }
- | TOCro_Lambda lambda_capture TCCro { $1 }
+ | TOCro_Lambda "]" { $1 }
+ | TOCro_Lambda lambda_capture "]" { $1 }
 
 lambda_capture:
  | capture_list { }
@@ -688,8 +690,8 @@ capture_default:
 capture_list:
  | capture { }
  | capture_list "," capture { }
- | capture_list "," capture TEllipsis { }
- | capture TEllipsis { }
+ | capture_list "," capture "..." { }
+ | capture "..." { }
 
 
 capture:
@@ -718,7 +720,7 @@ argument:
 (* actually this can happen also when have a wrong typedef inference ...*)
  | type_id { ArgType $1  }
  (* sgrep-ext: *)
- | TEllipsis { Flag_parsing.sgrep_guard (Arg (Ellipses $1)) }
+ | "..." { Flag_parsing.sgrep_guard (Arg (Ellipses $1)) }
 
  (* put in comment while trying to parse plan9 *)
  | action_higherordermacro { ArgAction $1 }
@@ -791,12 +793,12 @@ statement:
  | try_block { $1 }
 
  (* sgrep-ext: *)
- | TEllipsis   
+ | "..."   
    { Flag_parsing.sgrep_guard (ExprStatement (Some (Ellipses $1), $1)) }
 
 
 compound: 
- | TOBrace statement_seq* TCBrace { ($1, $2, $3) }
+ | "{" statement_seq* "}" { ($1, $2, $3) }
 
 
 expr_statement: 
@@ -809,31 +811,31 @@ labeled:
  | ident            TCol statement   { Label ($1, $2, $3) }
  | Tcase const_expr TCol statement   { Case ($1, $2, $3, $4) }
   (* gccext: allow range *)
- | Tcase const_expr TEllipsis const_expr TCol statement
+ | Tcase const_expr "..." const_expr TCol statement
      { CaseRange ($1, $2, $3, $4, $5, $6) } 
  | Tdefault         TCol statement   { Default ($1, $2, $3) } 
 
 (* classic else ambiguity resolved by a %prec, see conflicts.txt *)
 selection: 
- | Tif TOPar condition TCPar statement              %prec LOW_PRIORITY_RULE
+ | Tif "(" condition ")" statement              %prec LOW_PRIORITY_RULE
      { If ($1, ($2, $3, $4), $5, None) }
- | Tif TOPar condition TCPar statement Telse statement 
+ | Tif "(" condition ")" statement Telse statement 
      { If ($1, ($2, $3, $4), $5, Some ($6, $7)) }
- | Tswitch TOPar condition TCPar statement             
+ | Tswitch "(" condition ")" statement             
      { Switch ($1, ($2, $3, $4), $5) }
 
 iteration: 
- | Twhile TOPar condition TCPar statement                             
+ | Twhile "(" condition ")" statement                             
      { While ($1, ($2, $3, $4), $5) }
- | Tdo statement Twhile TOPar expr TCPar ";"                 
+ | Tdo statement Twhile "(" expr ")" ";"                 
      { DoWhile ($1, $2, $3, ($4, $5, $6), $7) }
- | Tfor TOPar for_init_stmt expr_statement expr? TCPar statement
+ | Tfor "(" for_init_stmt expr_statement expr? ")" statement
      { For ($1, ($2, (fst $3, snd $3, fst $4, snd $4, $5), $6), $7) }
  (* c++ext: *)
- | Tfor TOPar for_range_decl TCol for_range_init TCPar statement
+ | Tfor "(" for_range_decl TCol for_range_init ")" statement
      { StmtTodo $1 }
  (* cppext: *)
- | TIdent_MacroIterator TOPar argument_list_opt TCPar statement
+ | TIdent_MacroIterator "(" argument_list_opt ")" statement
      { MacroIteration ($1, ($2, $3, $4), $5) }
 
 (* the ';' in the caller grammar rule will be appended to the infos *)
@@ -887,11 +889,11 @@ try_block:
  | Ttry compound handler+ { Try ($1, $2, $3) }
 
 handler: 
- | Tcatch TOPar exception_decl TCPar compound { ($1, ($2, $3, $4), $5) }
+ | Tcatch "(" exception_decl ")" compound { ($1, ($2, $3, $4), $5) }
 
 exception_decl:
  | parameter_decl { ExnDecl $1 }
- | TEllipsis      { ExnDeclEllipsis $1 }
+ | "..."      { ExnDeclEllipsis $1 }
 
 (*************************************************************************)
 (* Types *)
@@ -924,8 +926,8 @@ simple_type_specifier:
  | Twchar_t             { Right3 (BaseType (IntType (WChar_t, [$1]))), noii }
 
  (* gccext: *)
- | Ttypeof TOPar assign_expr TCPar { Right3(TypeOf ($1,($2,Right $3,$4))),noii}
- | Ttypeof TOPar type_id     TCPar { Right3(TypeOf ($1,($2,Left $3,$4))),noii}
+ | Ttypeof "(" assign_expr ")" { Right3(TypeOf ($1,($2,Right $3,$4))),noii}
+ | Ttypeof "(" type_id     ")" { Right3(TypeOf ($1,($2,Left $3,$4))),noii}
 
  (* history: cant put TIdent {} cos it makes the grammar ambiguous and 
   * generates lots of conflicts => we must use some tricks. 
@@ -938,9 +940,9 @@ simple_type_specifier:
 
 decltype_specifier:
  (* c++0x: TODO *)
- | Tdecltype TOPar expr TCPar { $1  }
+ | Tdecltype "(" expr ")" { $1  }
  (* TODO: because of wrong typedef inference *)
- | Tdecltype TOPar TIdent_Typedef TCPar { $1 }
+ | Tdecltype "(" TIdent_Typedef ")" { $1 }
 
 (*todo: can have a ::opt nested_name_specifier_opt before ident*)
 elaborated_type_specifier: 
@@ -1029,19 +1031,19 @@ pointer:
 direct_d: 
  | declarator_id
      { ($1, fun x -> x) }
- | TOPar declarator TCPar      (* forunparser: old: $2 *) 
+ | "(" declarator ")"      (* forunparser: old: $2 *) 
      { (fst $2, fun x -> (nQ, (ParenType ($1, (snd $2) x, $3)))) }
- | direct_d TOCro            TCCro         
+ | direct_d "["            "]"         
      { (fst $1, fun x->(snd $1) (nQ,(Array (($2,None,$3),x)))) }
- | direct_d TOCro const_expr TCCro
+ | direct_d "[" const_expr "]"
      { (fst $1, fun x->(snd $1) (nQ,(Array (($2, Some $3, $4),x)))) }
- | direct_d TOPar TCPar const_opt exn_spec?
+ | direct_d "(" ")" const_opt exn_spec?
      { (fst $1, fun x-> (snd $1) 
          (nQ, (FunctionType {
            ft_ret= x; ft_params = ($2, [], $3);
            ft_dots = None; ft_const = $4; ft_throw = $5; })))
      }
- | direct_d TOPar parameter_type_list TCPar const_opt exn_spec?
+ | direct_d "(" parameter_type_list ")" const_opt exn_spec?
      { (fst $1, fun x-> (snd $1) 
           (nQ,(FunctionType { 
             ft_ret = x; ft_params = ($2,fst $3,$4); 
@@ -1065,29 +1067,29 @@ abstract_declarator:
  | pointer direct_abstract_declarator { fun x -> x |> $2 |> $1 }
 
 direct_abstract_declarator: 
- | TOPar abstract_declarator TCPar (* forunparser: old: $2 *)
+ | "(" abstract_declarator ")" (* forunparser: old: $2 *)
      { (fun x -> (nQ, (ParenType ($1, $2 x, $3)))) }
- | TOCro            TCCro                            
+ | "["            "]"                            
      { fun x ->   (nQ, (Array (($1,None, $2), x)))}
- | TOCro const_expr TCCro                            
+ | "[" const_expr "]"                            
      { fun x ->   (nQ, (Array (($1, Some $2, $3), x)))}
- | direct_abstract_declarator TOCro            TCCro 
+ | direct_abstract_declarator "["            "]" 
      { fun x ->$1 (nQ, (Array (($2, None, $3), x))) }
- | direct_abstract_declarator TOCro const_expr TCCro
+ | direct_abstract_declarator "[" const_expr "]"
      { fun x ->$1 (nQ, (Array (($2, Some $3, $4), x))) }
- | TOPar TCPar                                       
+ | "(" ")"                                       
      { fun x -> (nQ, (FunctionType {
        ft_ret = x; ft_params = ($1,[],$2); 
        ft_dots = None; ft_const = None; ft_throw = None;})) }
- | TOPar parameter_type_list TCPar
+ | "(" parameter_type_list ")"
      { fun x -> (nQ, (FunctionType {
          ft_ret = x; ft_params = ($1,fst $2,$3); 
          ft_dots = snd $2; ft_const = None; ft_throw = None; })) }
- | direct_abstract_declarator TOPar TCPar const_opt exn_spec?
+ | direct_abstract_declarator "(" ")" const_opt exn_spec?
      { fun x -> $1 (nQ, (FunctionType {
          ft_ret = x; ft_params = ($2,[],$3); 
          ft_dots = None; ft_const = $4; ft_throw = $5; })) }
- | direct_abstract_declarator TOPar parameter_type_list TCPar const_opt 
+ | direct_abstract_declarator "(" parameter_type_list ")" const_opt 
     exn_spec?
      { fun x -> $1 (nQ, (FunctionType {
          ft_ret = x; ft_params = ($2,fst $3,$4); 
@@ -1098,7 +1100,7 @@ direct_abstract_declarator:
 (*-----------------------------------------------------------------------*)
 parameter_type_list: 
  | parameter_list                  { $1, None }
- | parameter_list "," TEllipsis { $1, Some ($2,$3) }
+ | parameter_list "," "..." { $1, Some ($2,$3) }
 
 parameter_decl: 
  | decl_spec_seq declarator
@@ -1154,9 +1156,9 @@ parameter_decl2:
  * need typedef heuristic for throw() but can be also an expression ...
  *)
 exn_spec: 
- | Tthrow TOPar TCPar { ($1, ($2, [], $3)) }
- | Tthrow TOPar exn_name TCPar { ($1, ($2, [Left $3], $4)) }
- | Tthrow TOPar exn_name "," exn_name TCPar 
+ | Tthrow "(" ")" { ($1, ($2, [], $3)) }
+ | Tthrow "(" exn_name ")" { ($1, ($2, [Left $3], $4)) }
+ | Tthrow "(" exn_name "," exn_name ")" 
      { ($1, ($2, [Left $3; Right $4; Left $5], $6))  }
 
 exn_name: ident
@@ -1219,12 +1221,12 @@ ptr_operator:
  | TAnd { () }
 
 direct_new_declarator:
- | TOCro expr TCCro { () }
- | direct_new_declarator TOCro expr TCCro { () }
+ | "[" expr "]" { () }
+ | direct_new_declarator "[" expr "]" { () }
 
 (* in c++ grammar they do 'type_spec_seq conversion_declaratoropt'. We
  * can not replace with a simple 'type_id' cos here we must not allow
- * functionType otherwise there is conflicts on TOPar.
+ * functionType otherwise there is conflicts on "(".
  * TODO: right now do simple_type_specifier because conflict 
  * when do full type_spec.
  *   type_spec conversion_declaratoropt
@@ -1252,7 +1254,7 @@ conversion_declarator:
 
 (* this can come from a simple_declaration/decl_spec *)
 class_specifier: 
- | class_head TOBrace member_specification_opt TCBrace 
+ | class_head "{" member_specification_opt "}" 
      { let (kind, nameopt, baseopt) = $1 in
        { c_kind = kind; c_name = nameopt; 
          c_inherit = baseopt; c_members = ($2, $3, $4) } }
@@ -1395,10 +1397,10 @@ member_declarator:
 
 (* gccext: c++0x: most ","? are trailing commas extensions (as in Perl) *)
 enum_specifier: 
- | enum_head TOBrace enumerator_list ","? TCBrace
+ | enum_head "{" enumerator_list ","? "}"
      { EnumDef ($1, None(* TODO *), ($2, $3, $5)) (*$4*) }
  (* c++0x: *)
- | enum_head TOBrace TCBrace
+ | enum_head "{" "}"
      { EnumDef ($1, None(* TODO *), ($2, [], $3)) }
 
 
@@ -1438,12 +1440,12 @@ simple_declaration:
          )), $3)
      } 
  (* cppext: *)
- | TIdent_MacroDecl TOPar argument_list TCPar ";" 
+ | TIdent_MacroDecl "(" argument_list ")" ";" 
      { MacroDecl ([], $1, ($2, $3, $4), $5) }
- | Tstatic TIdent_MacroDecl TOPar argument_list TCPar ";" 
+ | Tstatic TIdent_MacroDecl "(" argument_list ")" ";" 
      { MacroDecl ([$1], $2, ($3, $4, $5), $6) }
  | Tstatic Tconst_MacroDeclConst 
-    TIdent_MacroDecl TOPar argument_list TCPar ";" 
+    TIdent_MacroDecl "(" argument_list ")" ";" 
      { MacroDecl ([$1;$2], $3, ($4, $5, $6), $7) }
 
 (*-----------------------------------------------------------------------*)
@@ -1503,7 +1505,7 @@ init_declarator:
   * is different from TypedefIdent2, here the declaratori is an ident,
   * not the constructorname hence the need for a TOPar_CplusplusInit
   *)
- | declaratori TOPar_CplusplusInit argument_list_opt TCPar 
+ | declaratori TOPar_CplusplusInit argument_list_opt ")" 
      { ($1, Some (ObjInit ($2, $3, $4))) }
 
 (*----------------------------*)
@@ -1515,7 +1517,7 @@ declaratori:
  | declarator gcc_asm_decl   { $1 }
 
 gcc_asm_decl: 
- | Tasm Tvolatile? TOPar asmbody TCPar        {  }
+ | Tasm Tvolatile? "(" asmbody ")"        {  }
 			  
 (*-----------------------------------------------------------------------*)
 (* initializers *)
@@ -1525,8 +1527,8 @@ initializer_clause:
  | braced_init_list { InitList $1 }
 
 braced_init_list:
- | TOBrace TCBrace                       { ($1, [], $2) }
- | TOBrace initialize_list ","? TCBrace  { ($1, List.rev $2, $4) (*$3*) }
+ | "{" "}"                       { ($1, [], $2) }
+ | "{" initialize_list ","? "}"  { ($1, List.rev $2, $4) (*$3*) }
 
 (* opti: This time we use the weird order of non-terminal which requires in 
  * the "caller" to do a List.rev cos quite critical. With this wierd order it
@@ -1549,18 +1551,18 @@ initialize2:
  | ident TCol initialize2       { InitFieldOld ($1, $2, $3) }
 
 (* kenccext: c++ext:, but conflict with array designators and lambdas! *)
- | TOCro const_expr TCCro  TEq initialize2
+ | "[" const_expr "]"  TEq initialize2
      { InitDesignators ([DesignatorIndex($1, $2, $3)], $4, $5) }
 (* conflicts with c++0x lambda! *)
- | TOCro const_expr TCCro initialize2  { InitIndexOld (($1, $2, $3), $4) }
+ | "[" const_expr "]" initialize2  { InitIndexOld (($1, $2, $3), $4) }
 
 (* they can be nested, can have a .x.[3].y *)
 designator: 
  | TDot ident   { DesignatorField ($1, $2) } 
 (* conflict with kenccext
- | TOCro const_expr TCCro     %prec LOW_PRIORITY_RULE
+ | "[" const_expr "]"     %prec LOW_PRIORITY_RULE
      { DesignatorIndex ($1, $2, $3) }
- | TOCro const_expr TEllipsis const_expr TCCro 
+ | "[" const_expr "..." const_expr "]" 
      { DesignatorRange ($1, ($2, $3, $4), $5) }
 *)
 
@@ -1609,7 +1611,7 @@ using_declaration:
 
 (* gccext: c++ext: also apparently *)
 asm_definition:
- | Tasm Tvolatile? TOPar asmbody TCPar ";"           
+ | Tasm Tvolatile? "(" asmbody ")" ";"           
      { Asm($1, $2, ($3, $4, $5), $6) }
 
 asmbody: 
@@ -1621,9 +1623,9 @@ colon_asm:
 
 colon_option: 
  | TString                      { ColonMisc [snd (fst $1)] }
- | TString TOPar asm_expr TCPar { ColonExpr ([snd (fst $1)], ($2, $3, $4)) } 
+ | TString "(" asm_expr ")" { ColonExpr ([snd (fst $1)], ($2, $3, $4)) } 
  (* cppext: certainly a macro *)
- | TOCro TIdent TCCro TString TOPar asm_expr TCPar
+ | "[" TIdent "]" TString "(" asm_expr ")"
      { ColonExpr ([$1;snd $2;$3;snd (fst $4)], ($5, $6, $7))  }
  | TIdent                           { ColonMisc [snd $1] }
  | (* empty *)                  { ColonMisc [] }
@@ -1699,7 +1701,7 @@ template_parameter:
 linkage_specification:
  | Textern TString declaration 
      { ExternC ($1, (snd (fst $2)), $3) }
- | Textern TString TOBrace declaration_list_opt TCBrace 
+ | Textern TString "{" declaration_list_opt "}" 
      { ExternCList ($1, (snd (fst $2)), ($3, $4, $5)) }
 
 
@@ -1712,11 +1714,11 @@ namespace_definition:
  * an identifier was already a namespace. So here I have just a single rule.
  *)
 named_namespace_definition: 
- | Tnamespace TIdent TOBrace declaration_list_opt TCBrace 
+ | Tnamespace TIdent "{" declaration_list_opt "}" 
      { NameSpace ($1, $2, ($3, $4, $5)) }
 
 unnamed_namespace_definition:
- | Tnamespace TOBrace declaration_list_opt TCBrace 
+ | Tnamespace "{" declaration_list_opt "}" 
      { NameSpaceAnon ($1, ($2, $3, $4)) }
 
 
@@ -1754,7 +1756,7 @@ function_body:
 
 (* Special case cos ctor/dtor do not have return type. *)
 ctor_dtor:
- | nested_name_specifier TIdent_Constructor TOPar parameter_type_list_opt TCPar
+ | nested_name_specifier TIdent_Constructor "(" parameter_type_list_opt ")"
      ctor_mem_initializer_list_opt
      compound
      { DeclTodo }
@@ -1762,15 +1764,15 @@ ctor_dtor:
       TypedefIdent2 transfo by putting a guard in the lalr(k) rule by
       checking if have a ~ before
    *)
- | nested_name_specifier TTilde ident TOPar Tvoid? TCPar compound
+ | nested_name_specifier TTilde ident "(" Tvoid? ")" compound
      { DeclTodo }
 
 (* TODO: remove once we don't skip qualifiers *)
- | Tinline? TIdent_Constructor TOPar parameter_type_list_opt TCPar
+ | Tinline? TIdent_Constructor "(" parameter_type_list_opt ")"
      ctor_mem_initializer_list_opt
      compound
      { DeclTodo }
- | TTilde ident TOPar Tvoid? TCPar exn_spec? compound
+ | TTilde ident "(" Tvoid? ")" exn_spec? compound
      { DeclTodo }
 
 
@@ -1779,24 +1781,24 @@ ctor_dtor:
    * TODOAST on the ctor_spec and chain of calls
    *)
 ctor_dtor_member: 
- | ctor_spec TIdent_Constructor TOPar parameter_type_list_opt TCPar
+ | ctor_spec TIdent_Constructor "(" parameter_type_list_opt ")"
      ctor_mem_initializer_list_opt
      compound
      { MemberFunc (Constructor (mk_constructor $2 ($3, $4, $5) $7)) }
- | ctor_spec TIdent_Constructor TOPar parameter_type_list_opt TCPar ";" 
+ | ctor_spec TIdent_Constructor "(" parameter_type_list_opt ")" ";" 
      { MemberDecl (ConstructorDecl ($2, ($3, opt_to_list_params $4, $5), $6)) }
- | ctor_spec TIdent_Constructor TOPar parameter_type_list_opt TCPar TEq Tdelete ";" 
+ | ctor_spec TIdent_Constructor "(" parameter_type_list_opt ")" TEq Tdelete ";" 
      { MemberDecl (ConstructorDecl ($2, ($3, opt_to_list_params $4, $5), $6)) }
- | ctor_spec TIdent_Constructor TOPar parameter_type_list_opt TCPar TEq Tdefault ";" 
+ | ctor_spec TIdent_Constructor "(" parameter_type_list_opt ")" TEq Tdefault ";" 
      { MemberDecl (ConstructorDecl ($2, ($3, opt_to_list_params $4, $5), $6)) }
 
- | dtor_spec TTilde ident TOPar Tvoid? TCPar exn_spec? compound
+ | dtor_spec TTilde ident "(" Tvoid? ")" exn_spec? compound
      { MemberFunc (Destructor (mk_destructor $2 $3 ($4, $5, $6) $7 $8)) }
- | dtor_spec TTilde ident TOPar Tvoid? TCPar exn_spec? ";"
+ | dtor_spec TTilde ident "(" Tvoid? ")" exn_spec? ";"
      { MemberDecl (DestructorDecl ($2, $3, ($4, $5, $6), $7, $8)) }
- | dtor_spec TTilde ident TOPar Tvoid? TCPar exn_spec? TEq Tdelete ";"
+ | dtor_spec TTilde ident "(" Tvoid? ")" exn_spec? TEq Tdelete ";"
      { MemberDecl (DestructorDecl ($2, $3, ($4, $5, $6), $7, $8)) }
- | dtor_spec TTilde ident TOPar Tvoid? TCPar exn_spec? TEq Tdefault ";"
+ | dtor_spec TTilde ident "(" Tvoid? ")" exn_spec? TEq Tdefault ";"
      { MemberDecl (DestructorDecl ($2, $3, ($4, $5, $6), $7, $8)) }
 
 
@@ -1815,7 +1817,7 @@ ctor_mem_initializer_list_opt:
  | (* empty *) { () }
 
 mem_initializer: 
- | mem_initializer_id TOPar argument_list_opt TCPar { () }
+ | mem_initializer_id "(" argument_list_opt ")" { () }
 
 (* factorize with declarator_id ? specialisation *)
 mem_initializer_id:
@@ -1848,7 +1850,7 @@ cpp_directive:
   * A TOPar_Define is a TOPar that was just next to the ident (no space).
   * See parsing_hacks_define.ml
   *)
- | TDefine TIdent_Define TOPar_Define param_define_list_opt TCPar 
+ | TDefine TIdent_Define TOPar_Define param_define_list_opt ")" 
     define_val TCommentNewline_DefineEndOfMacro
      { Define ($1, $2, (DefineFunc ($3, $4, $5)), $6) (*$7*) }
 
@@ -1865,18 +1867,18 @@ define_val:
  | expr      { DefineExpr $1 }
  | statement { DefineStmt $1 }
  (* for statement-like macro with fixed number of arguments *)
- | Tdo statement Twhile TOPar expr TCPar 
+ | Tdo statement Twhile "(" expr ")" 
      { match $5 with
        | (C (Int ("0", tok))) -> 
          DefineDoWhileZero ($1, $2, $3, ($4, tok, $6))
        | _ -> raise Parsing.Parse_error
      }
  (* for statement-like macro with varargs *)
- | Tif TOPar condition TCPar id_expression
+ | Tif "(" condition ")" id_expression
      { let name = (None, fst $5, snd $5) in 
        DefinePrintWrapper ($1, ($2, $3, $4), name) 
      }
- | TOBrace_DefineInit initialize_list TCBrace ","?
+ | TOBrace_DefineInit initialize_list "}" ","?
     { DefineInit (InitList ($1, List.rev $2, $3) (*$4*))  }
  | (* empty *) { DefineEmpty }
 
@@ -1885,7 +1887,7 @@ param_define:
  | ident               { $1 }
 
  | TDefParamVariadic    { $1 } 
- | TEllipsis            { "...", $1 }
+ | "..."            { "...", $1 }
  (* they reuse keywords :(  *)
  | Tregister            { "register", $1 }
  | Tnew                 { "new", $1 }
@@ -1903,11 +1905,11 @@ cpp_ifdef_directive:
 
 cpp_other:
 (* cppext: *)
- | TIdent TOPar argument_list TCPar ";"
+ | TIdent "(" argument_list ")" ";"
      { MacroTop ($1, ($2, $3, $4), Some $5) } 
 
  (* TCPar_EOL to fix the end-of-stream bug of ocamlyacc *)
- | TIdent TOPar argument_list TCPar_EOL
+ | TIdent "(" argument_list TCPar_EOL
      { MacroTop ($1, ($2, $3, $4), None) } 
 
   (* ex: EXPORT_NO_SYMBOLS; *)
