@@ -258,6 +258,9 @@ let find_typedefs xxs =
 
   (* xx ** yy
    * less could be a multiplication too, but with less probability
+   * TODO: now that do & -> * and && -> *, make sure it's not an FP!
+   * xx * *yy is probably a valid multiplication!
+   * xx && * yy is probably an and
    *)
   | ({t=TIdent (s,i1)} as tok1)::{t=TMul _}::{t=TMul _}::{t=TIdent _}::xs ->
       change_tok tok1 (TIdent_Typedef (s, i1));
