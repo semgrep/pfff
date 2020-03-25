@@ -793,7 +793,7 @@ statement:
  (* sgrep-ext: *)
  | "..." { Flag_parsing.sgrep_guard (ExprStatement (Some (Ellipses $1), $1)) }
 
-compound: "{" statement_seq* "}" { ($1, $2, $3) }
+compound: "{" statement_cpp* "}" { ($1, $2, $3) }
 
 expr_statement: expr? ";" { $1, $2 }
 
@@ -843,7 +843,7 @@ jump:
 (* cppext: *)
 (*----------------------------*)
 
-statement_seq:
+statement_cpp:
  | statement { StmtElem $1 }
  (* cppext: *)
  | cpp_directive 
@@ -1632,15 +1632,7 @@ declaration:
 (* cppext: *)
 (*----------------------------*)
 
-declaration_list_opt: 
- | (*empty*) { [] }
- | declaration_list { $1 }
-
-declaration_list: 
- | declaration_seq                  { [$1]   }
- | declaration_list declaration_seq { $1 @ [$2] }
-
-declaration_seq:
+declaration_cpp:
  | declaration { DeclElem $1 }
  (* cppext: *)
  | cpp_directive 
@@ -1671,7 +1663,7 @@ template_parameter:
 linkage_specification:
  | Textern TString declaration 
      { ExternC ($1, (snd (fst $2)), $3) }
- | Textern TString "{" declaration_list_opt "}" 
+ | Textern TString "{" optl(declaration_cpp+) "}" 
      { ExternCList ($1, (snd (fst $2)), ($3, $4, $5)) }
 
 
@@ -1684,10 +1676,10 @@ namespace_definition:
  * an identifier was already a namespace. So here I have just a single rule.
  *)
 named_namespace_definition: 
- | Tnamespace TIdent "{" declaration_list_opt "}" 
+ | Tnamespace TIdent "{" optl(declaration_cpp+) "}" 
      { NameSpace ($1, $2, ($3, $4, $5)) }
 
-unnamed_namespace_definition: Tnamespace "{" declaration_list_opt "}" 
+unnamed_namespace_definition: Tnamespace "{" optl(declaration_cpp+) "}" 
      { NameSpaceAnon ($1, ($2, $3, $4)) }
 
 (*************************************************************************)
