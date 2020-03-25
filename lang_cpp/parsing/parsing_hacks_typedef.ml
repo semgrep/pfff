@@ -1,7 +1,7 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2011,2014 Facebook
  * Copyright (C) 2002-2008 Yoann Padioleau
+ * Copyright (C) 2011-2014 Facebook
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
@@ -24,8 +24,8 @@ open Parsing_hacks_lib
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* 
- * This file gathers parsing heuristics related to the typedefs.
+(* This file gathers parsing heuristics related to typedefs.
+ *
  * C does not have a context-free grammar; C requires the parser to know when
  * an ident corresponds to a typedef or an ident. This normally means that
  * we must call cpp on the file and have the lexer and parser cooperate
@@ -43,11 +43,12 @@ open Parsing_hacks_lib
  *  - TODO merge multiple ** or *& or whatever
  * 
  * history:
- *  - We used to make the lexer and parser cooperate in a lexerParser.ml file
- *  - this was not enough because of declarations such as 'acpi acpi;'
+ *  - We used to make the lexer and parser cooperate in a lexerParser.ml file.
+ *    However, this was not enough because of declarations such as 'acpi acpi;'
  *    and so we had to enable/disable the ident->typedef mechanism 
  *    which requires even more lexer/parser cooperation
- *  - this was ugly too so now we use a typedef "inference" mechanism
+ *  - This forced-cooperation was ugly so we switched to
+ *    a typedef "inference" mechanism
  *  - we refined the typedef inference to sometimes use InParameter hint
  *    and more contextual information from token_views_context.ml
  *)
@@ -80,11 +81,6 @@ let look_like_declaration_context tok_before =
   | _ when TH.is_privacy_keyword tok_before -> true
   | _ -> false
 
-let fakeInfo = { Parse_info.
-    token = Parse_info.FakeTokStr ("",None); 
-    transfo = Parse_info.NoTransfo;
-  }
-
 (*****************************************************************************)
 (* Better View *)
 (*****************************************************************************)
@@ -96,7 +92,7 @@ let  filter_for_typedef multi_groups =
    * declaration.
    *)
   let multi_groups = 
-    Tok(mk_token_fake (TPtVirg (fakeInfo)))::multi_groups in
+    Tok(mk_token_fake (TPtVirg (Parse_info.fake_info ";")))::multi_groups in
 
   let _template_args = ref [] in
 
@@ -160,11 +156,9 @@ let  filter_for_typedef multi_groups =
   [TV.tokens_of_multi_grouped xs]
 
 (*****************************************************************************)
-(* Main heuristics *)
+(* Heuristics *)
 (*****************************************************************************)
-
-(* 
- * Below we assume a view without:
+(* Below we assume a view without:
  *  - comments and cpp-directives
  *  - template stuff and qualifiers (but not TIdent_ClassnameAsQualifier)
  *  - const/volatile/restrict
