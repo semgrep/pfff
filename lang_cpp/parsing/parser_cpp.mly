@@ -81,9 +81,10 @@ module PI = Parse_info
  *)
 %token <Parse_info.t> TOPar TCPar TOBrace TCBrace TOCro TCCro 
 
-%token <Parse_info.t> TDot TComma TPtrOp     TInc TDec
+%token <Parse_info.t> TDot TPtrOp     TInc TDec
+%token <Parse_info.t> TComma ","
 %token <Cst_cpp.assignOp> TAssign 
-%token <Parse_info.t> TEq  TWhy  TTilde TBang  TEllipsis  TCol  TPtVirg
+%token <Parse_info.t> TEq  TWhy  TTilde TBang    TCol  TPtVirg TEllipsis
 %token <Parse_info.t> 
   TOrLog TAndLog TOr TXor TAnd  TEqEq TNotEq TInfEq TSupEq
   TShl TShr 
@@ -430,7 +431,7 @@ ident:
 
 expr: 
  | assign_expr             { $1 }
- | expr TComma assign_expr { Sequence ($1, $2, $3) }
+ | expr "," assign_expr { Sequence ($1, $2, $3) }
 
 (* bugfix: in the C grammar they put 'unary_expr', but in fact it must be 
  * 'cast_expr', otherwise (int * ) xxx = &yy; is not allowed *)
@@ -678,7 +679,7 @@ lambda_introducer:
 lambda_capture:
  | capture_list { }
  | capture_default { }
- | capture_default TComma capture_list { }
+ | capture_default "," capture_list { }
 
 capture_default:
  | TAnd { } 
@@ -686,8 +687,8 @@ capture_default:
 
 capture_list:
  | capture { }
- | capture_list TComma capture { }
- | capture_list TComma capture TEllipsis { }
+ | capture_list "," capture { }
+ | capture_list "," capture TEllipsis { }
  | capture TEllipsis { }
 
 
@@ -1097,7 +1098,7 @@ direct_abstract_declarator:
 (*-----------------------------------------------------------------------*)
 parameter_type_list: 
  | parameter_list                  { $1, None }
- | parameter_list TComma TEllipsis { $1, Some ($2,$3) }
+ | parameter_list "," TEllipsis { $1, Some ($2,$3) }
 
 parameter_decl: 
  | decl_spec_seq declarator
@@ -1134,7 +1135,7 @@ parameter_decl:
 
 parameter_list: 
  | parameter_decl2                       { [$1, []] }
- | parameter_list TComma parameter_decl2 { $1 @ [$3,  [$2]] }
+ | parameter_list "," parameter_decl2 { $1 @ [$3,  [$2]] }
 
 parameter_decl2:
  | parameter_decl { $1 }
@@ -1155,7 +1156,7 @@ parameter_decl2:
 exn_spec: 
  | Tthrow TOPar TCPar { ($1, ($2, [], $3)) }
  | Tthrow TOPar exn_name TCPar { ($1, ($2, [Left $3], $4)) }
- | Tthrow TOPar exn_name TComma exn_name TCPar 
+ | Tthrow TOPar exn_name "," exn_name TCPar 
      { ($1, ($2, [Left $3; Right $4; Left $5], $6))  }
 
 exn_name: ident
@@ -1392,8 +1393,9 @@ member_declarator:
 (* Enum definition *)
 (*************************************************************************)
 
+(* gccext: c++0x: most ","? are trailing commas extensions (as in Perl) *)
 enum_specifier: 
- | enum_head TOBrace enumerator_list gcc_comma_opt TCBrace
+ | enum_head TOBrace enumerator_list ","? TCBrace
      { EnumDef ($1, None(* TODO *), ($2, $3, $5)) (*$4*) }
  (* c++0x: *)
  | enum_head TOBrace TCBrace
@@ -1519,16 +1521,12 @@ gcc_asm_decl:
 (* initializers *)
 (*-----------------------------------------------------------------------*)
 initializer_clause: 
- | assign_expr                                    
-     { InitExpr $1 }
- | braced_init_list 
-     { InitList $1 }
+ | assign_expr      { InitExpr $1 }
+ | braced_init_list { InitList $1 }
 
 braced_init_list:
- | TOBrace initialize_list gcc_comma_opt_struct TCBrace 
-    { ($1, List.rev $2, $4) (*$3*) }
- | TOBrace TCBrace   
-    { ($1, [], $2) }
+ | TOBrace TCBrace                       { ($1, [], $2) }
+ | TOBrace initialize_list ","? TCBrace  { ($1, List.rev $2, $4) (*$3*) }
 
 (* opti: This time we use the weird order of non-terminal which requires in 
  * the "caller" to do a List.rev cos quite critical. With this wierd order it
@@ -1537,46 +1535,34 @@ braced_init_list:
  *)
 initialize_list: 
  | initialize2                        { [$1,   []] }
- | initialize_list TComma initialize2 { ($3,  [$2])::$1 }
+ | initialize_list "," initialize2 { ($3,  [$2])::$1 }
 
 
 (* gccext: condexpr and no assign_expr cos can have ambiguity with comma *)
 initialize2: 
- | cond_expr 
-     { InitExpr $1 } 
- | braced_init_list 
-     { InitList $1 }
+ | cond_expr        { InitExpr $1 } 
+ | braced_init_list { InitList $1 }
 
  (* gccext: labeled elements, a.k.a designators *)
- | designator+ TEq initialize2 
-     { InitDesignators ($1, $2, $3) }
+ | designator+ TEq initialize2  { InitDesignators ($1, $2, $3) }
  (* gccext: old format, in old kernel for instance *)
- | ident TCol initialize2
-     { InitFieldOld ($1, $2, $3) }
+ | ident TCol initialize2       { InitFieldOld ($1, $2, $3) }
 
 (* kenccext: c++ext:, but conflict with array designators and lambdas! *)
  | TOCro const_expr TCCro  TEq initialize2
      { InitDesignators ([DesignatorIndex($1, $2, $3)], $4, $5) }
 (* conflicts with c++0x lambda! *)
- | TOCro const_expr TCCro initialize2
-     { InitIndexOld (($1, $2, $3), $4) }
+ | TOCro const_expr TCCro initialize2  { InitIndexOld (($1, $2, $3), $4) }
 
 (* they can be nested, can have a .x.[3].y *)
 designator: 
- | TDot ident 
-     { DesignatorField ($1, $2) } 
+ | TDot ident   { DesignatorField ($1, $2) } 
 (* conflict with kenccext
  | TOCro const_expr TCCro     %prec LOW_PRIORITY_RULE
      { DesignatorIndex ($1, $2, $3) }
  | TOCro const_expr TEllipsis const_expr TCCro 
      { DesignatorRange ($1, ($2, $3, $4), $5) }
 *)
-(*----------------------------*)
-(* workarounds *)
-(*----------------------------*)
-gcc_comma_opt_struct: 
- | TComma           { Some $1 } 
- | (* empty *)  { None  }
 
 (*************************************************************************)
 (* Block declaration (namespace and asm) *)
@@ -1890,7 +1876,7 @@ define_val:
      { let name = (None, fst $5, snd $5) in 
        DefinePrintWrapper ($1, ($2, $3, $4), name) 
      }
- | TOBrace_DefineInit initialize_list TCBrace comma_opt 
+ | TOBrace_DefineInit initialize_list TCBrace ","?
     { DefineInit (InitList ($1, List.rev $2, $3) (*$4*))  }
  | (* empty *) { DefineEmpty }
 
@@ -1934,57 +1920,47 @@ cpp_other:
 
 colon_option_list: 
  | colon_option { [$1, []] } 
- | colon_option_list TComma colon_option { $1 @ [$3, [$2]] }
+ | colon_option_list "," colon_option { $1 @ [$3, [$2]] }
 
 argument_list: 
  | argument                      { [$1, []] }
- | argument_list TComma argument { $1 @ [$3,    [$2]] }
+ | argument_list "," argument { $1 @ [$3,    [$2]] }
 
 enumerator_list: 
  | enumerator                        { [$1,          []]   }
- | enumerator_list TComma enumerator { $1 @ [$3,    [$2]] }
+ | enumerator_list "," enumerator { $1 @ [$3,    [$2]] }
 
 init_declarator_list: 
  | init_declarator                             { [$1,   []] }
- | init_declarator_list TComma init_declarator { $1 @ [$3,     [$2]] }
+ | init_declarator_list "," init_declarator { $1 @ [$3,     [$2]] }
 
 member_declarator_list: 
  | member_declarator                             { [$1,   []] }
- | member_declarator_list TComma member_declarator { $1 @ [$3,     [$2]] }
+ | member_declarator_list "," member_declarator { $1 @ [$3,     [$2]] }
 
 
 param_define_list_opt: 
  | (* empty *) { [] }
  | param_define                           { [$1, []] }
- | param_define_list_opt TComma param_define  { $1 @ [$3, [$2]] }
+ | param_define_list_opt "," param_define  { $1 @ [$3, [$2]] }
 
 mem_initializer_list: 
  | mem_initializer                           { [$1, []] }
- | mem_initializer_list TComma mem_initializer  { $1 @ [$3, [$2]] }
+ | mem_initializer_list "," mem_initializer  { $1 @ [$3, [$2]] }
 
 template_argument_list:
  | template_argument { [$1, []] }
- | template_argument_list TComma template_argument { $1 @ [$3, [$2]] }
+ | template_argument_list "," template_argument { $1 @ [$3, [$2]] }
 
 template_parameter_list: 
  | template_parameter { [$1, []] }
- | template_parameter_list TComma template_parameter { $1 @ [$3, [$2]] }
+ | template_parameter_list "," template_parameter { $1 @ [$3, [$2]] }
 
 base_specifier_list: 
  | base_specifier                               { [$1,           []] }
- | base_specifier_list TComma base_specifier    { $1 @ [$3,     [$2]] }
+ | base_specifier_list "," base_specifier    { $1 @ [$3,     [$2]] }
 
 (*-----------------------------------------------------------------------*)
-
-(* gccext:  which allow a trailing ',' in enum, as in perl *)
-gcc_comma_opt: 
- | TComma {  [$1] } 
- | (* empty *)  {  []  }
-
-comma_opt:
- | TComma { [$1] }
- | { [] }
-
 
 argument_list_opt:
  | argument_list { $1 }
