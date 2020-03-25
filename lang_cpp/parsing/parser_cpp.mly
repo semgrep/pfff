@@ -82,9 +82,9 @@ module PI = Parse_info
 %token <Parse_info.t> TOPar TCPar TOBrace TCBrace TOCro TCCro 
 
 %token <Parse_info.t> TDot TPtrOp     TInc TDec
-%token <Parse_info.t> TComma ","
+%token <Parse_info.t> TComma "," TPtVirg ";"
 %token <Cst_cpp.assignOp> TAssign 
-%token <Parse_info.t> TEq  TWhy  TTilde TBang    TCol  TPtVirg TEllipsis
+%token <Parse_info.t> TEq  TWhy  TTilde TBang    TCol   TEllipsis
 %token <Parse_info.t> 
   TOrLog TAndLog TOr TXor TAnd  TEqEq TNotEq TInfEq TSupEq
   TShl TShr 
@@ -767,7 +767,7 @@ statement:
  | labeled         { $1 }
  | selection       { $1 }
  | iteration       { $1 }
- | jump TPtVirg    { Jump         ($1, $2) }
+ | jump ";"    { Jump         ($1, $2) }
 
  (* cppext: *)
  | TIdent_MacroStmt { MacroStmt $1 }
@@ -800,7 +800,7 @@ compound:
 
 
 expr_statement: 
- | expr? TPtVirg { $1, $2 }
+ | expr? ";" { $1, $2 }
 
 (* note that case 1: case 2: i++;    would be correctly parsed, but with 
    * a Case  (1, (Case (2, i++)))  :(  
@@ -825,7 +825,7 @@ selection:
 iteration: 
  | Twhile TOPar condition TCPar statement                             
      { While ($1, ($2, $3, $4), $5) }
- | Tdo statement Twhile TOPar expr TCPar TPtVirg                 
+ | Tdo statement Twhile TOPar expr TCPar ";"                 
      { DoWhile ($1, $2, $3, ($4, $5, $6), $7) }
  | Tfor TOPar for_init_stmt expr_statement expr? TCPar statement
      { For ($1, ($2, (fst $3, snd $3, fst $4, snd $4, $5), $6), $7) }
@@ -1329,7 +1329,7 @@ access_specifier:
 member_declaration:
  | field_declaration      { fixFieldOrMethodDecl $1 }
  | function_definition    { MemberFunc (FunctionOrMethod $1) }
- | qualified_id TPtVirg   
+ | qualified_id ";"   
      { let name = (None, fst $1, snd $1) in
        QualifiedIdInClass (name, $2)
      }
@@ -1347,19 +1347,19 @@ member_declaration:
     * 'x;' in a structure, maybe default to int but not practical for my way of
     * parsing
     *)
- | TPtVirg    { EmptyField $1 }
+ | ";"    { EmptyField $1 }
 
 (*-----------------------------------------------------------------------*)
 (* field declaration *)
 (*-----------------------------------------------------------------------*)
 field_declaration:
- | decl_spec_seq TPtVirg 
+ | decl_spec_seq ";" 
      { (* gccext: allow empty elements if it is a structdef or enumdef *)
        let (t_ret, sto, _inline) = type_and_storage_from_decl $1 in
        let onedecl = { v_namei = None; v_type = t_ret; v_storage = sto } in
        ([(FieldDecl onedecl),noii], $2)
      }
- | decl_spec_seq member_declarator_list TPtVirg 
+ | decl_spec_seq member_declarator_list ";" 
      { let (t_ret, sto, _inline) = type_and_storage_from_decl $1 in
        ($2 |> (List.map (fun (f, iivirg) -> f t_ret sto, iivirg)), $3)
      }
@@ -1422,11 +1422,11 @@ enumerator:
 (*************************************************************************)
 
 simple_declaration:
- | decl_spec_seq TPtVirg
+ | decl_spec_seq ";"
      { let (t_ret, sto, _inline) = type_and_storage_from_decl $1 in 
        DeclList ([{v_namei = None; v_type = t_ret; v_storage = sto},noii],$2)
      }
- | decl_spec_seq init_declarator_list TPtVirg 
+ | decl_spec_seq init_declarator_list ";" 
      { let (t_ret, sto, _inline) = type_and_storage_from_decl $1 in
        DeclList (
          ($2 |> List.map (fun (((name, f), iniopt), iivirg) ->
@@ -1438,12 +1438,12 @@ simple_declaration:
          )), $3)
      } 
  (* cppext: *)
- | TIdent_MacroDecl TOPar argument_list TCPar TPtVirg 
+ | TIdent_MacroDecl TOPar argument_list TCPar ";" 
      { MacroDecl ([], $1, ($2, $3, $4), $5) }
- | Tstatic TIdent_MacroDecl TOPar argument_list TCPar TPtVirg 
+ | Tstatic TIdent_MacroDecl TOPar argument_list TCPar ";" 
      { MacroDecl ([$1], $2, ($3, $4, $5), $6) }
  | Tstatic Tconst_MacroDeclConst 
-    TIdent_MacroDecl TOPar argument_list TCPar TPtVirg 
+    TIdent_MacroDecl TOPar argument_list TCPar ";" 
      { MacroDecl ([$1;$2], $3, ($4, $5, $6), $7) }
 
 (*-----------------------------------------------------------------------*)
@@ -1584,23 +1584,23 @@ block_declaration:
 
 namespace_alias_definition:
  | Tnamespace TIdent TEq "::"? nested_name_specifier_opt namespace_name
-    TPtVirg
+    ";"
      { let name = $4, $5, IdIdent $6 in NameSpaceAlias ($1, $2, $3, name, $7) }
 
 using_directive:
  | Tusing Tnamespace "::"? nested_name_specifier_opt namespace_name 
-    TPtVirg
+    ";"
      { let name = $3, $4, IdIdent $5 in UsingDirective ($1, $2, name, $6) }
 
-(* conflict on TColCol in 'Tusing TColCol unqualified_id TPtVirg'
+(* conflict on TColCol in 'Tusing TColCol unqualified_id ";"'
    * need LALR(2) to see if after tcol have a nested_name_specifier
    * or put opt on nested_name_specifier too
   *)
 using_declaration:
- | Tusing Ttypename? "::"? nested_name_specifier unqualified_id TPtVirg
+ | Tusing Ttypename? "::"? nested_name_specifier unqualified_id ";"
      { let name = ($3, $4, $5) in $1, name, $6 (*$2*) }
 (* TODO: remove once we don't skip qualifier ? *)
- | Tusing Ttypename? "::"? unqualified_id TPtVirg 
+ | Tusing Ttypename? "::"? unqualified_id ";" 
      { let name = ($3, [], $4) in $1, name, $5 (*$2*) }
   
 (*----------------------------*)
@@ -1609,7 +1609,7 @@ using_declaration:
 
 (* gccext: c++ext: also apparently *)
 asm_definition:
- | Tasm Tvolatile? TOPar asmbody TCPar TPtVirg           
+ | Tasm Tvolatile? TOPar asmbody TCPar ";"           
      { Asm($1, $2, ($3, $4, $5), $6) }
 
 asmbody: 
@@ -1652,7 +1652,7 @@ declaration:
  | namespace_definition              { $1 }
 
  (* sometimes the function ends with }; instead of just } *)
- | TPtVirg    { EmptyDef $1 } 
+ | ";"    { EmptyDef $1 } 
 
 
 (*----------------------------*)
@@ -1732,13 +1732,13 @@ function_definition:
      }
  (* c++0x: TODO 2 more s/r conflicts and regressions! *)
 (*
- | decl_spec_seq declarator TEq Tdefault TPtVirg  
+ | decl_spec_seq declarator TEq Tdefault ";"  
      { let (t_ret, sto) = type_and_storage_for_funcdef_from_decl $1 in
        let x = (fst $2, fixOldCDecl ((snd $2) t_ret), sto) in
        let body = ($3, [], $4) in(* TODO *)
        fixFunc (x, body) 
      }
- | decl_spec_seq declarator TEq Tdelete TPtVirg  
+ | decl_spec_seq declarator TEq Tdelete ";"  
      { let (t_ret, sto) = type_and_storage_for_funcdef_from_decl $1 in
        let x = (fst $2, fixOldCDecl ((snd $2) t_ret), sto) in
        let body = ($3, [], $4) in(* TODO *)
@@ -1783,20 +1783,20 @@ ctor_dtor_member:
      ctor_mem_initializer_list_opt
      compound
      { MemberFunc (Constructor (mk_constructor $2 ($3, $4, $5) $7)) }
- | ctor_spec TIdent_Constructor TOPar parameter_type_list_opt TCPar TPtVirg 
+ | ctor_spec TIdent_Constructor TOPar parameter_type_list_opt TCPar ";" 
      { MemberDecl (ConstructorDecl ($2, ($3, opt_to_list_params $4, $5), $6)) }
- | ctor_spec TIdent_Constructor TOPar parameter_type_list_opt TCPar TEq Tdelete TPtVirg 
+ | ctor_spec TIdent_Constructor TOPar parameter_type_list_opt TCPar TEq Tdelete ";" 
      { MemberDecl (ConstructorDecl ($2, ($3, opt_to_list_params $4, $5), $6)) }
- | ctor_spec TIdent_Constructor TOPar parameter_type_list_opt TCPar TEq Tdefault TPtVirg 
+ | ctor_spec TIdent_Constructor TOPar parameter_type_list_opt TCPar TEq Tdefault ";" 
      { MemberDecl (ConstructorDecl ($2, ($3, opt_to_list_params $4, $5), $6)) }
 
  | dtor_spec TTilde ident TOPar Tvoid? TCPar exn_spec? compound
      { MemberFunc (Destructor (mk_destructor $2 $3 ($4, $5, $6) $7 $8)) }
- | dtor_spec TTilde ident TOPar Tvoid? TCPar exn_spec? TPtVirg
+ | dtor_spec TTilde ident TOPar Tvoid? TCPar exn_spec? ";"
      { MemberDecl (DestructorDecl ($2, $3, ($4, $5, $6), $7, $8)) }
- | dtor_spec TTilde ident TOPar Tvoid? TCPar exn_spec? TEq Tdelete TPtVirg
+ | dtor_spec TTilde ident TOPar Tvoid? TCPar exn_spec? TEq Tdelete ";"
      { MemberDecl (DestructorDecl ($2, $3, ($4, $5, $6), $7, $8)) }
- | dtor_spec TTilde ident TOPar Tvoid? TCPar exn_spec? TEq Tdefault TPtVirg
+ | dtor_spec TTilde ident TOPar Tvoid? TCPar exn_spec? TEq Tdefault ";"
      { MemberDecl (DestructorDecl ($2, $3, ($4, $5, $6), $7, $8)) }
 
 
@@ -1903,7 +1903,7 @@ cpp_ifdef_directive:
 
 cpp_other:
 (* cppext: *)
- | TIdent TOPar argument_list TCPar TPtVirg
+ | TIdent TOPar argument_list TCPar ";"
      { MacroTop ($1, ($2, $3, $4), Some $5) } 
 
  (* TCPar_EOL to fix the end-of-stream bug of ocamlyacc *)
@@ -1911,7 +1911,7 @@ cpp_other:
      { MacroTop ($1, ($2, $3, $4), None) } 
 
   (* ex: EXPORT_NO_SYMBOLS; *)
- | TIdent TPtVirg { MacroVarTop ($1, $2) }
+ | TIdent ";" { MacroVarTop ($1, $2) }
 
 
 (*************************************************************************)
