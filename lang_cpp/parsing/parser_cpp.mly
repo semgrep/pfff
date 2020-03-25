@@ -91,7 +91,7 @@ module PI = Parse_info
 %token <Cst_cpp.assignOp> TAssign 
 %token <Parse_info.t> TEq "=" TWhy "?"  TTilde TBang TCol ":" TEllipsis "..."
 %token <Parse_info.t> 
-  TOrLog TAndLog TOr TXor TAnd "&"  TEqEq TNotEq TInfEq TSupEq
+  TOrLog TAndLog "&&" TOr TXor TAnd "&"  TEqEq TNotEq TInfEq TSupEq
   TShl TShr 
   TPlus TMinus TMul "*" TDiv TMod 
 
@@ -363,7 +363,7 @@ operator_kind:
  | TShr { BinaryOp (Arith DecRight), [$1] }
  (* &&   || *)
  | TOrLog  { BinaryOp (Logical OrLog), [$1] } 
- | TAndLog { BinaryOp (Logical AndLog), [$1] }
+ | "&&" { BinaryOp (Logical AndLog), [$1] }
  (* < >  <=   >=  *)
  | TInf { BinaryOp (Logical Inf), [$1] } | TSup { BinaryOp (Logical Sup), [$1]}
  | TInfEq { BinaryOp (Logical InfEq), [$1] }   
@@ -500,7 +500,7 @@ inclusive_or_expr:
 
 logical_and_expr:
  | inclusive_or_expr { $1 }
- | logical_and_expr TAndLog inclusive_or_expr { Binary($1,(Logical AndLog,$2),$3) }
+ | logical_and_expr "&&" inclusive_or_expr { Binary($1,(Logical AndLog,$2),$3) }
 
 logical_or_expr:
  | logical_and_expr { $1 }
@@ -538,7 +538,7 @@ unary_op:
  | TBang  { Not,        $1 }
  (* gccext: have that a lot in old kernel to get address of local label.
   * See gcc manual "local labels as values". *)
- | TAndLog { GetRefLabel, $1 }
+ | "&&" { GetRefLabel, $1 }
 
 
 postfix_expr: 
