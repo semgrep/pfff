@@ -309,13 +309,13 @@ toplevel_aux:
   *)*/
  | TCBrace { DeclElem (EmptyDef $1) }
 
-/*(*************************************************************************)*/
-/*(*1 sgrep *)*/
-/*(*************************************************************************)*/
+(*************************************************************************)
+(*1 sgrep *)
+(*************************************************************************)
 sgrep_spatch_pattern:
  | expr      EOF { Expr $1 }
  | statement EOF { Stmt $1 }
- | statement statement_list EOF { Stmts ($1::$2) }
+ | statement statement+ EOF { Stmts ($1::$2) }
 
 
 /*(*************************************************************************)*/
@@ -835,7 +835,7 @@ statement:
 
 
 compound: 
- | TOBrace statement_list_opt TCBrace { ($1, $2, $3) }
+ | TOBrace statement_seq* TCBrace { ($1, $2, $3) }
 
 
 expr_statement: 
@@ -1090,13 +1090,13 @@ direct_d:
      { (fst $1, fun x->(snd $1) (nQ,(Array (($2,None,$3),x)))) }
  | direct_d TOCro const_expr TCCro
      { (fst $1, fun x->(snd $1) (nQ,(Array (($2, Some $3, $4),x)))) }
- | direct_d TOPar TCPar const_opt exn_spec_opt
+ | direct_d TOPar TCPar const_opt exn_spec?
      { (fst $1, fun x-> (snd $1) 
          (nQ, (FunctionType {
            ft_ret= x; ft_params = ($2, [], $3);
            ft_dots = None; ft_const = $4; ft_throw = $5; })))
      }
- | direct_d TOPar parameter_type_list TCPar const_opt exn_spec_opt
+ | direct_d TOPar parameter_type_list TCPar const_opt exn_spec?
      { (fst $1, fun x-> (snd $1) 
           (nQ,(FunctionType { 
             ft_ret = x; ft_params = ($2,fst $3,$4); 
@@ -1138,12 +1138,12 @@ direct_abstract_declarator:
      { fun x -> (nQ, (FunctionType {
          ft_ret = x; ft_params = ($1,fst $2,$3); 
          ft_dots = snd $2; ft_const = None; ft_throw = None; })) }
- | direct_abstract_declarator TOPar TCPar const_opt exn_spec_opt
+ | direct_abstract_declarator TOPar TCPar const_opt exn_spec?
      { fun x -> $1 (nQ, (FunctionType {
          ft_ret = x; ft_params = ($2,[],$3); 
          ft_dots = None; ft_const = $4; ft_throw = $5; })) }
  | direct_abstract_declarator TOPar parameter_type_list TCPar const_opt 
-    exn_spec_opt
+    exn_spec?
      { fun x -> $1 (nQ, (FunctionType {
          ft_ret = x; ft_params = ($2,fst $3,$4); 
          ft_dots = snd $3; ft_const = $5; ft_throw = $6; })) }
@@ -1209,7 +1209,7 @@ parameter_decl2:
  * TODO should be type-id-listopt. Also they can have qualifiers!
  * need typedef heuristic for throw() but can be also an expression ...
  *)*/
-exception_specification: 
+exn_spec: 
  | Tthrow TOPar TCPar { ($1, ($2, [], $3)) }
  | Tthrow TOPar exn_name TCPar { ($1, ($2, [Left $3], $4)) }
  | Tthrow TOPar exn_name TComma exn_name TCPar 
@@ -1458,21 +1458,17 @@ enum_specifier:
  | enum_head TOBrace TCBrace
      { EnumDef ($1, None(* TODO *), ($2, [], $3)) }
 
-enum_head: 
- | Tenum { $1 }
- | Tenum ident { $1 }
 
-/*
 enum_head:
  | enum_key ident { $1 }
  | enum_key { $1 }
 
+%inline
 enum_key:
  | Tenum { $1 }
- (* conflicts? *)
- | Tenum Tclass_enum { $1 }
- | Tenum Tstruct_enum { $1 }
-*/
+ | Tenum Tclass { $1 }
+ | Tenum Tstruct { $1 }
+
 
 enumerator: 
  | ident                { { e_name = $1; e_val = None; } }
@@ -1851,7 +1847,7 @@ ctor_dtor:
      ctor_mem_initializer_list_opt
      compound
      { DeclTodo }
- | TTilde ident TOPar void_opt TCPar exn_spec_opt compound
+ | TTilde ident TOPar void_opt TCPar exn_spec? compound
      { DeclTodo }
 
 
@@ -1871,13 +1867,13 @@ ctor_dtor_member:
  | ctor_spec TIdent_Constructor TOPar parameter_type_list_opt TCPar TEq Tdefault TPtVirg 
      { MemberDecl (ConstructorDecl ($2, ($3, opt_to_list_params $4, $5), $6)) }
 
- | dtor_spec TTilde ident TOPar void_opt TCPar exn_spec_opt compound
+ | dtor_spec TTilde ident TOPar void_opt TCPar exn_spec? compound
      { MemberFunc (Destructor (mk_destructor $2 $3 ($4, $5, $6) $7 $8)) }
- | dtor_spec TTilde ident TOPar void_opt TCPar exn_spec_opt TPtVirg
+ | dtor_spec TTilde ident TOPar void_opt TCPar exn_spec? TPtVirg
      { MemberDecl (DestructorDecl ($2, $3, ($4, $5, $6), $7, $8)) }
- | dtor_spec TTilde ident TOPar void_opt TCPar exn_spec_opt TEq Tdelete TPtVirg
+ | dtor_spec TTilde ident TOPar void_opt TCPar exn_spec? TEq Tdelete TPtVirg
      { MemberDecl (DestructorDecl ($2, $3, ($4, $5, $6), $7, $8)) }
- | dtor_spec TTilde ident TOPar void_opt TCPar exn_spec_opt TEq Tdefault TPtVirg
+ | dtor_spec TTilde ident TOPar void_opt TCPar exn_spec? TEq Tdefault TPtVirg
      { MemberDecl (DestructorDecl ($2, $3, ($4, $5, $6), $7, $8)) }
 
 
@@ -2109,11 +2105,6 @@ nested_name_specifier_opt2:
  | nested_name_specifier2 { $1 }
  | /*(* empty *)*/        { [] }
 
-
-
-exn_spec_opt: 
- | exception_specification { Some $1 }
- | /*(*empty*)*/           { None }
 
 
 /*(*c++ext: ??? *)*/
