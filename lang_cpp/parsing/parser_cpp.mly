@@ -871,9 +871,12 @@ for_init_stmt:
  (* c++ext: for(int i = 0; i < n; i++)*)
  | simple_declaration { None, PI.fake_info ";" } 
 
+for_range_decl: type_spec_seq declarator { }
+
 (* grammar_c++: should be type_spec_seq but conflicts
-   * could solve with special TOPar_foreach *)
-for_range_decl: decl_spec_seq declarator { }
+ * could solve with special TOPar_foreach *)
+%inline
+type_spec_seq: decl_spec_seq { $1 }
 
 for_range_init: expr { }
 
@@ -1385,18 +1388,25 @@ enum_specifier:
      { EnumDef ($1, None(* TODO *), ($2, [], $3)) }
 
 enum_head:
- | enum_key ident { $1 }
- | enum_key { $1 }
+ | enum_key ident? { $1 }
 
+enumerator: 
+ | ident                { { e_name = $1; e_val = None; } }
+ | ident "=" const_expr { { e_name = $1; e_val = Some ($2, $3); } }
+
+(*-----------------------------------------------------------------------*)
+(* c++ext: constructor special case *)
+(*-----------------------------------------------------------------------*)
 %inline
 enum_key:
  | Tenum { $1 }
  | Tenum Tclass { $1 }
  | Tenum Tstruct { $1 }
 
-enumerator: 
- | ident                { { e_name = $1; e_val = None; } }
- | ident "=" const_expr { { e_name = $1; e_val = Some ($2, $3); } }
+(* TODO conflicts
+enum_base: ":" type_spec_seq { }
+*)
+
 
 (*************************************************************************)
 (* Simple declaration, initializers *)
