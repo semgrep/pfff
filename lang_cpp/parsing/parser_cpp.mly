@@ -342,7 +342,7 @@ operator_kind:
  | TTilde { UnaryTildeOp, [$1] }
  | TBang  { UnaryNotOp,   [$1] }
  (* , *)
- | TComma { CommaOp,  [$1] }
+ | "," { CommaOp,  [$1] }
  (* +    -    *    /    %  *)
  | TPlus  { BinaryOp (Arith Plus),  [$1] }  
  | TMinus { BinaryOp (Arith Minus), [$1] }
@@ -464,7 +464,7 @@ multiplicative_expr:
 
 additive_expr:
  | multiplicative_expr { $1 }
- | additive_expr TPlus multiplicative_expr { Binary($1,(Arith Plus,$2),$3) }
+ | additive_expr TPlus  multiplicative_expr { Binary($1,(Arith Plus,$2),$3) }
  | additive_expr TMinus multiplicative_expr { Binary($1,(Arith Minus,$2),$3) }
 
 shift_expr:
@@ -513,23 +513,23 @@ pm_expr:
  | pm_expr TPtrOpStar cast_expr   { RecordPtStarAccess ($1, $2, $3) }
 
 cast_expr: 
- | unary_expr                    { $1 }
+ | unary_expr                { $1 }
  | "(" type_id ")" cast_expr { Cast (($1, $2, $3), $4) }
 
 unary_expr: 
- | postfix_expr                    { $1 }
- | TInc unary_expr                 { Infix ($2, (Inc, $1)) }
- | TDec unary_expr                 { Infix ($2, (Dec, $1)) }
- | unary_op cast_expr              { Unary ($2, $1) }
- | Tsizeof unary_expr              { SizeOfExpr ($1, $2) }
+ | postfix_expr            { $1 }
+ | TInc unary_expr         { Infix ($2, (Inc, $1)) }
+ | TDec unary_expr         { Infix ($2, (Dec, $1)) }
+ | unary_op cast_expr      { Unary ($2, $1) }
+ | Tsizeof unary_expr      { SizeOfExpr ($1, $2) }
  | Tsizeof "(" type_id ")" { SizeOfType ($1, ($2, $3, $4)) }
  (*c++ext: *)
  | new_expr      { $1 }
  | delete_expr   { $1 }
 
 unary_op: 
- | "&"   { GetRef,     $1 }
- | "*"   { DeRef,      $1 }
+ | "&"    { GetRef,     $1 }
+ | "*"    { DeRef,      $1 }
  | TPlus  { UnPlus,     $1 }
  | TMinus { UnMinus,    $1 }
  | TTilde { Tilde,      $1 }
@@ -665,8 +665,8 @@ new_expr:
   *)
 
 delete_expr:
- | "::"? Tdelete cast_expr 
-     { Delete ($1, $2, $3) }
+ | "::"? Tdelete cast_expr                     
+    { Delete ($1, $2, $3) }
  | "::"? Tdelete TOCro_new TCCro_new cast_expr 
      { DeleteArray ($1,$2,($3,(),$4), $5) }
 
@@ -678,7 +678,7 @@ new_initializer: "(" argument_list_opt ")" { ($1, $2, $3) }
 (* c++0x: lambdas! *)
 (*----------------------------*)
 lambda_introducer: 
- | TOCro_Lambda "]" { $1 }
+ | TOCro_Lambda                "]" { $1 }
  | TOCro_Lambda lambda_capture "]" { $1 }
 
 lambda_capture:
@@ -696,7 +696,6 @@ capture_list:
  | capture_list "," capture "..." { }
  | capture "..." { }
 
-
 capture:
  | ident { }
  | "&" ident { }
@@ -709,7 +708,7 @@ capture:
 (*----------------------------*)
 
 string_elem:
- | TString { fst $1 }
+ | TString            { fst $1 }
  (* cppext:  ex= printk (KERN_INFO "xxx" UTS_RELEASE)  *)
  | TIdent_MacroString { "<MACRO>", $1 }
 
@@ -721,27 +720,14 @@ argument:
  | assign_expr { Arg $1 }
 (* cppext: *)
 (* actually this can happen also when have a wrong typedef inference ...*)
- | type_id { ArgType $1  }
+ | type_id     { ArgType $1  }
  (* sgrep-ext: *)
  | "..." { Flag_parsing.sgrep_guard (Arg (Ellipses $1)) }
 
  (* put in comment while trying to parse plan9 *)
- | action_higherordermacro { ArgAction $1 }
-
-action_higherordermacro: 
- | taction_list 
-    { if null $1
-      then ActMisc [PI.fake_info "action"]
-      else ActMisc $1
-    }
-
-(* was especially used for the Linux kernel *)
-taction_list: 
-   (* c++ext: to remove some conflicts (from 13 to 4)
-   * | (* empty *) { [] } 
-   *)
- | TAny_Action { [$1] }
- | taction_list TAny_Action { $1 @ [$2] }
+ (* was especially used for the Linux kernel *)
+ (* c++ext: to remove some conflicts (from 13 to 4) pass from * to + *)
+ | TAny_Action+ { ArgAction (ActMisc $1) }
 
 (*----------------------------*)
 (* workarounds *)
@@ -772,7 +758,7 @@ statement:
  | labeled         { $1 }
  | selection       { $1 }
  | iteration       { $1 }
- | jump ";"    { Jump         ($1, $2) }
+ | jump ";"        { Jump         ($1, $2) }
 
  (* cppext: *)
  | TIdent_MacroStmt { MacroStmt $1 }
@@ -788,28 +774,19 @@ statement:
   * in statement instead of going through a stat_or_decl.
   *)
  | declaration_statement { $1 }
-
  (* gccext: if move in statement then can have r/r conflict with define *)
  | function_definition { NestedFunc $1 }
-
  (* c++ext: *)
  | try_block { $1 }
-
  (* sgrep-ext: *)
- | "..."   
-   { Flag_parsing.sgrep_guard (ExprStatement (Some (Ellipses $1), $1)) }
+ | "..." { Flag_parsing.sgrep_guard (ExprStatement (Some (Ellipses $1), $1)) }
 
+compound: "{" statement_seq* "}" { ($1, $2, $3) }
 
-compound: 
- | "{" statement_seq* "}" { ($1, $2, $3) }
-
-
-expr_statement: 
- | expr? ";" { $1, $2 }
+expr_statement: expr? ";" { $1, $2 }
 
 (* note that case 1: case 2: i++;    would be correctly parsed, but with 
-   * a Case  (1, (Case (2, i++)))  :(  
-   *)
+ * a Case  (1, (Case (2, i++)))  :(  *)
 labeled: 
  | ident            ":" statement   { Label ($1, $2, $3) }
  | Tcase const_expr ":" statement   { Case ($1, $2, $3, $4) }
@@ -850,7 +827,6 @@ jump:
  | Treturn expr { Return ($1, Some $2) }
  | Tgoto "*" expr { GotoComputed ($1, $2, $3) }
 
-
 (*----------------------------*)
 (* cppext: *)
 (*----------------------------*)
@@ -870,17 +846,16 @@ statement_seq:
 declaration_statement:
  | block_declaration { DeclStmt $1 }
 
-
 condition:
-  | expr { $1 }
-  (* c++ext: TODO AST *)
-  | decl_spec_seq declaratori "=" initializer_clause 
+ | expr { $1 }
+ (* c++ext: TODO AST *)
+ | decl_spec_seq declaratori "=" initializer_clause 
      { ExprTodo (PI.fake_info "TODO") }
 
 for_init_stmt:
-  | expr_statement { $1 }
-  (* c++ext: for(int i = 0; i < n; i++)*)
-  | simple_declaration { None, PI.fake_info ";" } 
+ | expr_statement { $1 }
+ (* c++ext: for(int i = 0; i < n; i++)*)
+ | simple_declaration { None, PI.fake_info ";" } 
 
 (* grammar_c++: should be type_spec_seq but conflicts
    * could solve with special TOPar_foreach *)
@@ -888,15 +863,13 @@ for_range_decl: decl_spec_seq declarator { }
 
 for_range_init: expr { }
 
-try_block: 
- | Ttry compound handler+ { Try ($1, $2, $3) }
+try_block: Ttry compound handler+ { Try ($1, $2, $3) }
 
-handler: 
- | Tcatch "(" exception_decl ")" compound { ($1, ($2, $3, $4), $5) }
+handler: Tcatch "(" exception_decl ")" compound { ($1, ($2, $3, $4), $5) }
 
 exception_decl:
  | parameter_decl { ExnDecl $1 }
- | "..."      { ExnDeclEllipsis $1 }
+ | "..."          { ExnDeclEllipsis $1 }
 
 (*************************************************************************)
 (* Types *)
@@ -966,8 +939,7 @@ type_cplusplus_id:
  | type_name                        { None, noQscope, $1 }
  | nested_name_specifier2 type_name { None, $1, $2 }
  | TColCol_BeforeTypedef type_name  { Some $1, noQscope, $2 }
- | TColCol_BeforeTypedef nested_name_specifier2 type_name 
-     { Some $1, $2, $3 }
+ | TColCol_BeforeTypedef nested_name_specifier2 type_name { Some $1, $2, $3 }
 
 (* in c++ grammar they put 
  *  typename: enum-name | typedef-name | class-name 
@@ -987,10 +959,10 @@ template_id:
  | TIdent_Templatename TInf_Template template_argument_list TSup_Template
     { IdTemplateId ($1, ($2, $3, $4)) }
 
-(*c++ext: in the c++ grammar they have also 'template-name' but this is catched 
- * in my case by type_id and its generic TypedefIdent, or will be parsed
- * as an Ident and so assign_expr. In this later case may need a ast post 
- * disambiguation analysis for some false positive.
+(*c++ext: in the c++ grammar they have also 'template-name' but this is 
+ * catched in my case by type_id and its generic TypedefIdent, or will be
+ * parsed as an Ident and so assign_expr. In this later case may need an AST 
+ * post-disambiguation analysis for some false positives.
  *)
 template_argument:
  | type_id     { Left $1 }
@@ -1057,8 +1029,7 @@ direct_d:
 (* c++ext: *)
 (*----------------------------*)
 declarator_id:
- | "::"? id_expression 
-     { ($1, fst $2, snd $2) }
+ | "::"? id_expression  { ($1, fst $2, snd $2) }
 (* TODO ::opt nested-name-specifieropt type-name*)
 
 (*-----------------------------------------------------------------------*)
@@ -1092,8 +1063,7 @@ direct_abstract_declarator:
      { fun x -> $1 (nQ, (FunctionType {
          ft_ret = x; ft_params = ($2,[],$3); 
          ft_dots = None; ft_const = $4; ft_throw = $5; })) }
- | direct_abstract_declarator "(" parameter_type_list ")" const_opt 
-    exn_spec?
+ | direct_abstract_declarator "(" parameter_type_list ")" const_opt exn_spec?
      { fun x -> $1 (nQ, (FunctionType {
          ft_ret = x; ft_params = ($2,fst $3,$4); 
          ft_dots = snd $3; ft_const = $5; ft_throw = $6; })) }
@@ -1102,7 +1072,7 @@ direct_abstract_declarator:
 (* Parameters (use decl_spec_seq not type_spec just for 'register') *)
 (*-----------------------------------------------------------------------*)
 parameter_type_list: 
- | parameter_list                  { $1, None }
+ | parameter_list           { $1, None }
  | parameter_list "," "..." { $1, Some ($2,$3) }
 
 parameter_decl: 
@@ -1139,17 +1109,15 @@ parameter_decl:
 (*----------------------------*)
 
 parameter_list: 
- | parameter_decl2                       { [$1, []] }
+ | parameter_decl2                    { [$1, []] }
  | parameter_list "," parameter_decl2 { $1 @ [$3,  [$2]] }
 
 parameter_decl2:
  | parameter_decl { $1 }
  (* when the typedef inference didn't work *)
  | TIdent
-     { 
-       let t = nQ, (TypeName (None, [], IdIdent $1)) in
-       { p_name = None; p_type = t; p_val = None; p_register = None; }
-     }
+     { let t = nQ, (TypeName (None, [], IdIdent $1)) in
+       { p_name = None; p_type = t; p_val = None; p_register = None; } }
 
 (*----------------------------*)
 (* c++ext: *)
@@ -1159,15 +1127,14 @@ parameter_decl2:
  * need typedef heuristic for throw() but can be also an expression ...
  *)
 exn_spec: 
- | Tthrow "(" ")" { ($1, ($2, [], $3)) }
- | Tthrow "(" exn_name ")" { ($1, ($2, [Left $3], $4)) }
+ | Tthrow "(" ")"                        { ($1, ($2, [], $3)) }
+ | Tthrow "(" exn_name ")"               { ($1, ($2, [Left $3], $4)) }
  | Tthrow "(" exn_name "," exn_name ")" 
      { ($1, ($2, [Left $3; Right $4; Left $5], $6))  }
 
-exn_name: ident
-     { None, [], IdIdent $1 }
+exn_name: ident { None, [], IdIdent $1 }
 
-(*c++ext: in orig they put cv-qualifier-seqopt but it's never volatile so*)
+(*c++ext: in orig they put cv-qualifier-seqopt but it's never volatile so *)
 const_opt:
  | Tconst        { Some $1 }
  | (*empty*) { None }
@@ -1224,7 +1191,7 @@ ptr_operator:
  | "&" { () }
 
 direct_new_declarator:
- | "[" expr "]" { () }
+ | "[" expr "]"                       { () }
  | direct_new_declarator "[" expr "]" { () }
 
 (* in c++ grammar they do 'type_spec_seq conversion_declaratoropt'. We
@@ -1233,7 +1200,6 @@ direct_new_declarator:
  * TODO: right now do simple_type_specifier because conflict 
  * when do full type_spec.
  *   type_spec conversion_declaratoropt
- * 
  *)
 conversion_type_id: 
  | simple_type_specifier conversion_declarator 
@@ -1256,8 +1222,7 @@ conversion_declarator:
 (*************************************************************************)
 
 (* this can come from a simple_declaration/decl_spec *)
-class_specifier: 
- | class_head "{" member_specification_opt "}" 
+class_specifier: class_head "{" member_specification_opt "}" 
      { let (kind, nameopt, baseopt) = $1 in
        { c_kind = kind; c_name = nameopt; 
          c_inherit = baseopt; c_members = ($2, $3, $4) } }
@@ -1290,8 +1255,7 @@ class_key:
 (*----------------------------*)
 (* c++ext: inheritance rules *)
 (*----------------------------*)
-base_clause: 
- | ":" base_specifier_list { $1, $2 }
+base_clause: ":" base_specifier_list { $1, $2 }
 
 (* base-specifier:
    *  ::opt nested-name-specifieropt class-name
@@ -1406,7 +1370,6 @@ enum_specifier:
  | enum_head "{" "}"
      { EnumDef ($1, None(* TODO *), ($2, [], $3)) }
 
-
 enum_head:
  | enum_key ident { $1 }
  | enum_key { $1 }
@@ -1416,7 +1379,6 @@ enum_key:
  | Tenum { $1 }
  | Tenum Tclass { $1 }
  | Tenum Tstruct { $1 }
-
 
 enumerator: 
  | ident                { { e_name = $1; e_val = None; } }
@@ -1613,25 +1575,22 @@ using_declaration:
 (*----------------------------*)
 
 (* gccext: c++ext: also apparently *)
-asm_definition:
- | Tasm Tvolatile? "(" asmbody ")" ";"           
-     { Asm($1, $2, ($3, $4, $5), $6) }
+asm_definition: Tasm Tvolatile? "(" asmbody ")" ";" {Asm($1,$2,($3,$4,$5),$6)}
 
 asmbody: 
  | string_elem+ colon_asm+  { $1, $2 }
  | string_elem+ { $1, [] } (* in old kernel *)
 
-colon_asm: 
- | ":" colon_option_list { Colon ($1, $2) }
+colon_asm: ":" colon_option_list { Colon ($1, $2) }
 
 colon_option: 
- | TString                      { ColonMisc [snd (fst $1)] }
+ | TString                  { ColonMisc [snd (fst $1)] }
  | TString "(" asm_expr ")" { ColonExpr ([snd (fst $1)], ($2, $3, $4)) } 
  (* cppext: certainly a macro *)
  | "[" TIdent "]" TString "(" asm_expr ")"
      { ColonExpr ([$1;snd $2;$3;snd (fst $4)], ($5, $6, $7))  }
- | TIdent                           { ColonMisc [snd $1] }
- | (* empty *)                  { ColonMisc [] }
+ | TIdent                   { ColonMisc [snd $1] }
+ | (* empty *)              { ColonMisc [] }
 
 asm_expr: assign_expr { $1 }
 
@@ -1659,7 +1618,6 @@ declaration:
  (* sometimes the function ends with }; instead of just } *)
  | ";"    { EmptyDef $1 } 
 
-
 (*----------------------------*)
 (* cppext: *)
 (*----------------------------*)
@@ -1684,13 +1642,12 @@ declaration_seq:
 (* c++ext: *)
 (*----------------------------*)
 
-template_declaration:
- | Ttemplate TInf_Template template_parameter_list TSup_Template declaration
+template_declaration: 
+  Ttemplate TInf_Template template_parameter_list TSup_Template declaration
    { ($1, ($2, $3, $4), $5) }
 
-explicit_specialization:
- | Ttemplate TInf_Template TSup_Template declaration 
-     { TemplateSpecialization ($1, ($2, (), $3), $4) }
+explicit_specialization: Ttemplate TInf_Template TSup_Template declaration 
+   { TemplateSpecialization ($1, ($2, (), $3), $4) }
 
 (*todo: '| type_paramter' 
    * ambiguity with parameter_decl cos a type can also be 'class X'
@@ -1720,10 +1677,8 @@ named_namespace_definition:
  | Tnamespace TIdent "{" declaration_list_opt "}" 
      { NameSpace ($1, $2, ($3, $4, $5)) }
 
-unnamed_namespace_definition:
- | Tnamespace "{" declaration_list_opt "}" 
+unnamed_namespace_definition: Tnamespace "{" declaration_list_opt "}" 
      { NameSpaceAnon ($1, ($2, $3, $4)) }
-
 
 (*************************************************************************)
 (* Function definition *)
@@ -1827,7 +1782,6 @@ mem_initializer_id:
 (* specialsiation | TIdent { () } *)
  | primary_cplusplus_id { () }
 
-
 (*************************************************************************)
 (* Cpp directives *)
 (*************************************************************************)
@@ -1887,10 +1841,9 @@ define_val:
 
 
 param_define:
- | ident               { $1 }
-
+ | ident                { $1 }
  | TDefParamVariadic    { $1 } 
- | "..."            { "...", $1 }
+ | "..."                { "...", $1 }
  (* they reuse keywords :(  *)
  | Tregister            { "register", $1 }
  | Tnew                 { "new", $1 }
@@ -1908,16 +1861,11 @@ cpp_ifdef_directive:
 
 cpp_other:
 (* cppext: *)
- | TIdent "(" argument_list ")" ";"
-     { MacroTop ($1, ($2, $3, $4), Some $5) } 
-
+ | TIdent "(" argument_list ")" ";"   { MacroTop ($1, ($2, $3, $4), Some $5) } 
  (* TCPar_EOL to fix the end-of-stream bug of ocamlyacc *)
- | TIdent "(" argument_list TCPar_EOL
-     { MacroTop ($1, ($2, $3, $4), None) } 
-
+ | TIdent "(" argument_list TCPar_EOL { MacroTop ($1, ($2, $3, $4), None) } 
   (* ex: EXPORT_NO_SYMBOLS; *)
- | TIdent ";" { MacroVarTop ($1, $2) }
-
+ | TIdent ";"                         { MacroVarTop ($1, $2) }
 
 (*************************************************************************)
 (* xxx_list, xxx_opt *)
@@ -1926,6 +1874,7 @@ cpp_other:
 colon_option_list: 
  | colon_option { [$1, []] } 
  | colon_option_list "," colon_option { $1 @ [$3, [$2]] }
+
 
 argument_list_opt:
  | argument_list { $1 }
