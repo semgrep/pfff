@@ -1,11 +1,11 @@
 %{
 (* Yoann Padioleau
  * 
- * Copyright (C) 2002 Yoann Padioleau
+ * Copyright (C) 2002-2005 Yoann Padioleau
  * Copyright (C) 2006-2007 Ecole des Mines de Nantes
  * Copyright (C) 2008-2009 University of Urbana Champaign
  * Copyright (C) 2010-2014 Facebook
- * Copyright (C) 2020 r2c
+ * Copyright (C) 2019-2020 r2c
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
@@ -23,6 +23,9 @@ open Parser_cpp_mly_helper
 
 module PI = Parse_info
 
+(*************************************************************************)
+(* Prelude *)
+(*************************************************************************)
 (* This file contains a grammar for C/C++/Cpp.
  * See cst_cpp.ml for more information.
  *
@@ -86,11 +89,11 @@ module PI = Parse_info
 %token <Parse_info.t> TDot TPtrOp     TInc TDec
 %token <Parse_info.t> TComma "," TPtVirg ";"
 %token <Cst_cpp.assignOp> TAssign 
-%token <Parse_info.t> TEq  TWhy  TTilde TBang TCol TEllipsis "..."
+%token <Parse_info.t> TEq "=" TWhy "?"  TTilde TBang TCol ":" TEllipsis "..."
 %token <Parse_info.t> 
-  TOrLog TAndLog TOr TXor TAnd  TEqEq TNotEq TInfEq TSupEq
+  TOrLog TAndLog TOr TXor TAnd "&"  TEqEq TNotEq TInfEq TSupEq
   TShl TShr 
-  TPlus TMinus TMul TDiv TMod 
+  TPlus TMinus TMul "*" TDiv TMod 
 
 (*c++ext: see also TInf2 and TSup2 *)
 %token <Parse_info.t> TInf TSup 
@@ -333,7 +336,7 @@ operator_kind:
  | TEqEq  { BinaryOp (Logical Eq),    [$1] }
  | TNotEq { BinaryOp (Logical NotEq), [$1] }
  (* =    +=   -=   *=   /=   %=       ^=   &=   |=   >>=  <<=   *)
- | TEq     { AssignOp (SimpleAssign $1), noii }     
+ | "="     { AssignOp (SimpleAssign $1), noii }     
  | TAssign { AssignOp ($1), noii } 
  (* ! ~ *)
  | TTilde { UnaryTildeOp, [$1] }
@@ -343,13 +346,13 @@ operator_kind:
  (* +    -    *    /    %  *)
  | TPlus  { BinaryOp (Arith Plus),  [$1] }  
  | TMinus { BinaryOp (Arith Minus), [$1] }
- | TMul   { BinaryOp (Arith Mul),   [$1] }  
+ | "*"   { BinaryOp (Arith Mul),   [$1] }  
  | TDiv   { BinaryOp (Arith Div),   [$1] }
  | TMod   { BinaryOp (Arith Mod),   [$1] }
  (* ^ & |     <<   >>  *)
  | TOr   { BinaryOp (Arith Or),  [$1] }  
  | TXor  { BinaryOp (Arith Xor), [$1] } 
- | TAnd  { BinaryOp (Arith And), [$1]  } 
+ | "&"  { BinaryOp (Arith And), [$1]  } 
  | TShl   { BinaryOp (Arith DecLeft), [$1] }  
  | TShr   { BinaryOp (Arith DecRight), [$1] }
  (* &&   || *)
@@ -440,22 +443,22 @@ expr:
 assign_expr: 
  | cond_expr                     { $1 }
  | cast_expr TAssign assign_expr { Assign ($1, $2,$3)}
- | cast_expr TEq     assign_expr { Assign ($1,SimpleAssign $2,$3)}
+ | cast_expr "="     assign_expr { Assign ($1,SimpleAssign $2,$3)}
  (* c++ext: *)
  | Tthrow assign_expr?        { Throw ($1, $2) }
 
 (* gccext: allow optional then part hence expr? 
- * bugfix: in C grammar they put 'TCol cond_expr', but in fact it must be
+ * bugfix: in C grammar they put '":" cond_expr', but in fact it must be
  * 'assign_expr', otherwise   pnp ? x : x = 0x388  is not allowed
  *)
 cond_expr: 
  | logical_or_expr   { $1 }
- | logical_or_expr TWhy expr? TCol assign_expr { CondExpr ($1,$2, $3, $4, $5)} 
+ | logical_or_expr "?" expr? ":" assign_expr { CondExpr ($1,$2, $3, $4, $5)} 
 
 (* old: was in single arith_expr rule with %left prio, but dypgen cant *)
 multiplicative_expr:
  | pm_expr { $1 }
- | multiplicative_expr TMul pm_expr { Binary($1,(Arith Mul,$2),$3) }
+ | multiplicative_expr "*"  pm_expr { Binary($1,(Arith Mul,$2),$3) }
  | multiplicative_expr TDiv pm_expr { Binary($1,(Arith Div,$2),$3) }
  | multiplicative_expr TMod pm_expr { Binary($1,(Arith Mod,$2),$3) }
 
@@ -483,7 +486,7 @@ equality_expr:
 
 and_expr:
  | equality_expr { $1 }
- | and_expr TAnd equality_expr { Binary($1,(Arith And,$2),$3) }
+ | and_expr "&" equality_expr { Binary($1,(Arith And,$2),$3) }
 
 exclusive_or_expr:
  | and_expr { $1 }
@@ -525,8 +528,8 @@ unary_expr:
  | delete_expr   { $1 }
 
 unary_op: 
- | TAnd   { GetRef,     $1 }
- | TMul   { DeRef,      $1 }
+ | "&"   { GetRef,     $1 }
+ | "*"   { DeRef,      $1 }
  | TPlus  { UnPlus,     $1 }
  | TMinus { UnMinus,    $1 }
  | TTilde { Tilde,      $1 }
@@ -684,8 +687,8 @@ lambda_capture:
  | capture_default "," capture_list { }
 
 capture_default:
- | TAnd { } 
- | TEq  { }
+ | "&" { } 
+ | "="  { }
 
 capture_list:
  | capture { }
@@ -696,10 +699,10 @@ capture_list:
 
 capture:
  | ident { }
- | TAnd ident { }
+ | "&" ident { }
  | Tthis { }
  (* grammar_c++: not in latest *)
- | ident TEq assign_expr { }
+ | ident "=" assign_expr { }
 
 (*----------------------------*)
 (* gccext: *)
@@ -808,12 +811,12 @@ expr_statement:
    * a Case  (1, (Case (2, i++)))  :(  
    *)
 labeled: 
- | ident            TCol statement   { Label ($1, $2, $3) }
- | Tcase const_expr TCol statement   { Case ($1, $2, $3, $4) }
+ | ident            ":" statement   { Label ($1, $2, $3) }
+ | Tcase const_expr ":" statement   { Case ($1, $2, $3, $4) }
   (* gccext: allow range *)
- | Tcase const_expr "..." const_expr TCol statement
+ | Tcase const_expr "..." const_expr ":" statement
      { CaseRange ($1, $2, $3, $4, $5, $6) } 
- | Tdefault         TCol statement   { Default ($1, $2, $3) } 
+ | Tdefault         ":" statement   { Default ($1, $2, $3) } 
 
 (* classic else ambiguity resolved by a %prec, see conflicts.txt *)
 selection: 
@@ -832,7 +835,7 @@ iteration:
  | Tfor "(" for_init_stmt expr_statement expr? ")" statement
      { For ($1, ($2, (fst $3, snd $3, fst $4, snd $4, $5), $6), $7) }
  (* c++ext: *)
- | Tfor "(" for_range_decl TCol for_range_init ")" statement
+ | Tfor "(" for_range_decl ":" for_range_init ")" statement
      { StmtTodo $1 }
  (* cppext: *)
  | TIdent_MacroIterator "(" argument_list_opt ")" statement
@@ -845,7 +848,7 @@ jump:
  | Tbreak       { Break $1 }
  | Treturn      { Return ($1, None) } 
  | Treturn expr { Return ($1, Some $2) }
- | Tgoto TMul expr { GotoComputed ($1, $2, $3) }
+ | Tgoto "*" expr { GotoComputed ($1, $2, $3) }
 
 
 (*----------------------------*)
@@ -871,7 +874,7 @@ declaration_statement:
 condition:
   | expr { $1 }
   (* c++ext: TODO AST *)
-  | decl_spec_seq declaratori TEq initializer_clause 
+  | decl_spec_seq declaratori "=" initializer_clause 
      { ExprTodo (PI.fake_info "TODO") }
 
 for_init_stmt:
@@ -1020,13 +1023,13 @@ declarator:
 
 (* so must do  int * const p; if the pointer is constant, not the pointee *)
 pointer: 
- | TMul                        { fun x ->(nQ,         (Pointer ($1, x)))}
- | TMul cv_qualif_list         { fun x ->($2.qualifD, (Pointer ($1, x)))}
- | TMul pointer                { fun x ->(nQ,         (Pointer ($1, $2 x)))}
- | TMul cv_qualif_list pointer { fun x ->($2.qualifD, (Pointer ($1, $3 x)))}
+ | "*"                        { fun x ->(nQ,         (Pointer ($1, x)))}
+ | "*" cv_qualif_list         { fun x ->($2.qualifD, (Pointer ($1, x)))}
+ | "*" pointer                { fun x ->(nQ,         (Pointer ($1, $2 x)))}
+ | "*" cv_qualif_list pointer { fun x ->($2.qualifD, (Pointer ($1, $3 x)))}
  (*c++ext: no qualif for ref *)
- | TAnd                        { fun x ->(nQ,    (Reference ($1, x)))}
- | TAnd pointer                { fun x ->(nQ,    (Reference ($1, $2 x)))}
+ | "&"                        { fun x ->(nQ,    (Reference ($1, x)))}
+ | "&" pointer                { fun x ->(nQ,    (Reference ($1, $2 x)))}
 
 direct_d: 
  | declarator_id
@@ -1117,16 +1120,16 @@ parameter_decl:
        { p_name = None; p_type = t_ret; p_register = reg; p_val = None } }
 
 (*c++ext: default parameter value, copy paste *)
- | decl_spec_seq declarator TEq assign_expr
+ | decl_spec_seq declarator "=" assign_expr
      { let (t_ret, reg) = type_and_register_from_decl $1 in 
        let (name, ftyp) = fixNameForParam $2 in
        { p_name = Some name; p_type = ftyp t_ret; 
          p_register = reg; p_val = Some ($3, $4) } }
- | decl_spec_seq abstract_declarator TEq assign_expr
+ | decl_spec_seq abstract_declarator "=" assign_expr
      { let (t_ret, reg) = type_and_register_from_decl $1 in
        { p_name = None; p_type = $2 t_ret; 
          p_register = reg; p_val = Some ($3, $4) } }
- | decl_spec_seq TEq assign_expr
+ | decl_spec_seq "=" assign_expr
      { let (t_ret, reg) = type_and_register_from_decl $1 in
        { p_name = None; p_type = t_ret; 
          p_register = reg; p_val = Some($2,$3) } }
@@ -1198,7 +1201,7 @@ type_id:
 (* used for the type passed to new(). 
  * There is ambiguity with '*' and '&' cos when have new int *2, it can
  * be parsed as (new int) * 2 or (new int * ) 2.
- * cf p62 of Ellis. So when see a TMul or TAnd don't reduce here,
+ * cf p62 of Ellis. So when see a "*" or "&" don't reduce here,
  * shift, hence the prec when are to decide wether or not to enter
  * in new_declarator and its leading ptr_operator
  *)
@@ -1217,8 +1220,8 @@ new_declarator:
      { () }
 
 ptr_operator:
- | TMul { () }
- | TAnd { () }
+ | "*" { () }
+ | "&" { () }
 
 direct_new_declarator:
  | "[" expr "]" { () }
@@ -1288,7 +1291,7 @@ class_key:
 (* c++ext: inheritance rules *)
 (*----------------------------*)
 base_clause: 
- | TCol base_specifier_list { $1, $2 }
+ | ":" base_specifier_list { $1, $2 }
 
 (* base-specifier:
    *  ::opt nested-name-specifieropt class-name
@@ -1317,7 +1320,7 @@ class_name:
 member_specification:
  | member_declaration member_specification_opt    
      { ClassElem $1::$2 }
- | access_specifier TCol member_specification_opt 
+ | access_specifier ":" member_specification_opt 
      { ClassElem (Access ($1, $2))::$3 }
 
 access_specifier:
@@ -1375,7 +1378,7 @@ member_declarator:
          v_type = partialt t_ret; v_storage = sto; })
      }
  (* can also be an abstract when it's =0 on a function type *)
- | declarator TEq const_expr
+ | declarator "=" const_expr
      { let (name, partialt) = $1 in (fun t_ret sto -> 
        FieldDecl {
          v_namei = Some (name, Some (EqInit ($2, InitExpr $3)));
@@ -1384,11 +1387,11 @@ member_declarator:
      }
 
  (* normally just ident, but ambiguity so solve by inspetcing declarator *)
- | declarator TCol const_expr
+ | declarator ":" const_expr
      { let (name, _partialt) = fixNameForParam $1 in (fun t_ret _stoTODO -> 
        BitField (Some name, $2, t_ret, $3))
      }
- | TCol const_expr            
+ | ":" const_expr            
      { (fun t_ret _stoTODO -> BitField (None, $1, t_ret, $2)) }
 
 (*************************************************************************)
@@ -1417,7 +1420,7 @@ enum_key:
 
 enumerator: 
  | ident                { { e_name = $1; e_val = None; } }
- | ident TEq const_expr { { e_name = $1; e_val = Some ($2, $3); } }
+ | ident "=" const_expr { { e_name = $1; e_val = Some ($2, $3); } }
 
 (*************************************************************************)
 (* Simple declaration, initializers *)
@@ -1499,7 +1502,7 @@ storage_class_spec:
 (*-----------------------------------------------------------------------*)
 init_declarator:  
  | declaratori                  { ($1, None) }
- | declaratori TEq initializer_clause   { ($1, Some (EqInit ($2, $3))) }
+ | declaratori "=" initializer_clause   { ($1, Some (EqInit ($2, $3))) }
 
  (* c++ext: c++ initializer via call to constructor. Note that this
   * is different from TypedefIdent2, here the declaratori is an ident,
@@ -1546,12 +1549,12 @@ initialize2:
  | braced_init_list { InitList $1 }
 
  (* gccext: labeled elements, a.k.a designators *)
- | designator+ TEq initialize2  { InitDesignators ($1, $2, $3) }
+ | designator+ "=" initialize2  { InitDesignators ($1, $2, $3) }
  (* gccext: old format, in old kernel for instance *)
- | ident TCol initialize2       { InitFieldOld ($1, $2, $3) }
+ | ident ":" initialize2       { InitFieldOld ($1, $2, $3) }
 
 (* kenccext: c++ext:, but conflict with array designators and lambdas! *)
- | "[" const_expr "]"  TEq initialize2
+ | "[" const_expr "]"  "=" initialize2
      { InitDesignators ([DesignatorIndex($1, $2, $3)], $4, $5) }
 (* conflicts with c++0x lambda! *)
  | "[" const_expr "]" initialize2  { InitIndexOld (($1, $2, $3), $4) }
@@ -1585,7 +1588,7 @@ block_declaration:
 (*----------------------------*)
 
 namespace_alias_definition:
- | Tnamespace TIdent TEq "::"? nested_name_specifier_opt namespace_name
+ | Tnamespace TIdent "=" "::"? nested_name_specifier_opt namespace_name
     ";"
      { let name = $4, $5, IdIdent $6 in NameSpaceAlias ($1, $2, $3, name, $7) }
 
@@ -1619,7 +1622,7 @@ asmbody:
  | string_elem+ { $1, [] } (* in old kernel *)
 
 colon_asm: 
- | TCol colon_option_list { Colon ($1, $2) }
+ | ":" colon_option_list { Colon ($1, $2) }
 
 colon_option: 
  | TString                      { ColonMisc [snd (fst $1)] }
@@ -1734,13 +1737,13 @@ function_definition:
      }
  (* c++0x: TODO 2 more s/r conflicts and regressions! *)
 (*
- | decl_spec_seq declarator TEq Tdefault ";"  
+ | decl_spec_seq declarator "=" Tdefault ";"  
      { let (t_ret, sto) = type_and_storage_for_funcdef_from_decl $1 in
        let x = (fst $2, fixOldCDecl ((snd $2) t_ret), sto) in
        let body = ($3, [], $4) in(* TODO *)
        fixFunc (x, body) 
      }
- | decl_spec_seq declarator TEq Tdelete ";"  
+ | decl_spec_seq declarator "=" Tdelete ";"  
      { let (t_ret, sto) = type_and_storage_for_funcdef_from_decl $1 in
        let x = (fst $2, fixOldCDecl ((snd $2) t_ret), sto) in
        let body = ($3, [], $4) in(* TODO *)
@@ -1787,18 +1790,18 @@ ctor_dtor_member:
      { MemberFunc (Constructor (mk_constructor $2 ($3, $4, $5) $7)) }
  | ctor_spec TIdent_Constructor "(" parameter_type_list_opt ")" ";" 
      { MemberDecl (ConstructorDecl ($2, ($3, opt_to_list_params $4, $5), $6)) }
- | ctor_spec TIdent_Constructor "(" parameter_type_list_opt ")" TEq Tdelete ";" 
+ | ctor_spec TIdent_Constructor "(" parameter_type_list_opt ")" "=" Tdelete ";" 
      { MemberDecl (ConstructorDecl ($2, ($3, opt_to_list_params $4, $5), $6)) }
- | ctor_spec TIdent_Constructor "(" parameter_type_list_opt ")" TEq Tdefault ";" 
+ | ctor_spec TIdent_Constructor "(" parameter_type_list_opt ")" "=" Tdefault ";" 
      { MemberDecl (ConstructorDecl ($2, ($3, opt_to_list_params $4, $5), $6)) }
 
  | dtor_spec TTilde ident "(" Tvoid? ")" exn_spec? compound
      { MemberFunc (Destructor (mk_destructor $2 $3 ($4, $5, $6) $7 $8)) }
  | dtor_spec TTilde ident "(" Tvoid? ")" exn_spec? ";"
      { MemberDecl (DestructorDecl ($2, $3, ($4, $5, $6), $7, $8)) }
- | dtor_spec TTilde ident "(" Tvoid? ")" exn_spec? TEq Tdelete ";"
+ | dtor_spec TTilde ident "(" Tvoid? ")" exn_spec? "=" Tdelete ";"
      { MemberDecl (DestructorDecl ($2, $3, ($4, $5, $6), $7, $8)) }
- | dtor_spec TTilde ident "(" Tvoid? ")" exn_spec? TEq Tdefault ";"
+ | dtor_spec TTilde ident "(" Tvoid? ")" exn_spec? "=" Tdefault ";"
      { MemberDecl (DestructorDecl ($2, $3, ($4, $5, $6), $7, $8)) }
 
 
@@ -1813,7 +1816,7 @@ dtor_spec:
  | (*empty*) { }
 
 ctor_mem_initializer_list_opt: 
- | TCol mem_initializer_list { () }
+ | ":" mem_initializer_list { () }
  | (* empty *) { () }
 
 mem_initializer: 
