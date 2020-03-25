@@ -140,6 +140,7 @@ let  filter_for_typedef multi_groups =
          * todo: need propagate also the where?
          *)
         | TAnd ii -> Some (TV.Tok (mk_token_extended (TMul ii)))
+        | TAndLog ii -> Some (TV.Tok (mk_token_extended (TMul ii)))
 
         (* and operator into TIdent 
          * TODO: skip the token just after the operator keyword?
