@@ -416,8 +416,10 @@ class_or_namespace_name_for_qualifier:
  * those rules anyway without introducing conflicts.
  *)
 enum_name_or_typedef_name_or_simple_class_name: TIdent_Typedef { $1 }
+
 (* used only with namespace/using rules. We use Tclassname for stuff
  * like std::... todo? or just TIdent_Typedef? *)
+%inline
 namespace_name: TIdent { $1 }
 
 (*----------------------------*)
@@ -1863,8 +1865,8 @@ cpp_ifdef_directive:
 
 cpp_other:
 (* cppext: *)
- | TIdent "(" listc(argument) ")" ";"   { MacroTop ($1, ($2, $3, $4), Some $5) } 
+ | TIdent "(" listc(argument) ")" ";"   { MacroTop ($1, ($2, $3, $4),Some $5)} 
  (* TCPar_EOL to fix the end-of-stream bug of ocamlyacc *)
- | TIdent "(" listc(argument) TCPar_EOL { MacroTop ($1, ($2, $3, $4), None) } 
+ | TIdent "(" listc(argument) TCPar_EOL { MacroTop ($1, ($2, $3, $4),None) } 
   (* ex: EXPORT_NO_SYMBOLS; *)
- | TIdent ";"                         { MacroVarTop ($1, $2) }
+ | TIdent ";"                           { MacroVarTop ($1, $2) }
