@@ -284,13 +284,11 @@ module PI = Parse_info
 (* no more used now that use error recovery, but good to keep *)
 main: translation_unit EOF     { $1 }
 
-translation_unit: 
- | external_declaration                      { [DeclElem $1] }
- | translation_unit external_declaration     { $1 @ [DeclElem $2] }
+translation_unit: external_declaration+ { $1 }
 
 external_declaration: 
- | function_definition            { Func (FunctionOrMethod $1) }
- | block_declaration              { BlockDecl $1 }
+ | function_definition            { DeclElem (Func (FunctionOrMethod $1)) }
+ | block_declaration              { DeclElem (BlockDecl $1) }
 
 (*************************************************************************)
 (* toplevel *)
@@ -302,11 +300,10 @@ toplevel:
 
 toplevel_aux:
  | declaration         { DeclElem $1 }
-
+ (* cppext: *)
  | cpp_directive       { CppDirectiveDecl $1 }
  | cpp_ifdef_directive (*external_declaration_list ...*) { IfdefDecl $1 }
  | cpp_other           { $1 }
-
  (* when have error recovery, we can end up skipping the
   * beginning of the file, and so get trailing unclosed } at the end *)
  | "}" { DeclElem (EmptyDef $1) }
@@ -351,46 +348,37 @@ operator_kind:
  | "="     { AssignOp (SimpleAssign $1), noii }     
  | TAssign { AssignOp ($1), noii } 
  (* ! ~ *)
- | TTilde { UnaryTildeOp, [$1] }
- | TBang  { UnaryNotOp,   [$1] }
+ | TTilde { UnaryTildeOp, [$1] } | TBang { UnaryNotOp,   [$1] }
  (* , *)
  | "," { CommaOp,  [$1] }
  (* +    -    *    /    %  *)
- | TPlus  { BinaryOp (Arith Plus),  [$1] }  
+ | TPlus { BinaryOp (Arith Plus),  [$1] } 
  | TMinus { BinaryOp (Arith Minus), [$1] }
  | "*"   { BinaryOp (Arith Mul),   [$1] }  
- | TDiv   { BinaryOp (Arith Div),   [$1] }
- | TMod   { BinaryOp (Arith Mod),   [$1] }
+ | TDiv { BinaryOp (Arith Div), [$1] } | TMod { BinaryOp (Arith Mod),[$1] }
  (* ^ & |     <<   >>  *)
- | TOr   { BinaryOp (Arith Or),  [$1] }  
- | TXor  { BinaryOp (Arith Xor), [$1] } 
+ | TOr { BinaryOp (Arith Or),  [$1] } | TXor { BinaryOp (Arith Xor), [$1] } 
  | "&"  { BinaryOp (Arith And), [$1]  } 
- | TShl   { BinaryOp (Arith DecLeft), [$1] }  
- | TShr   { BinaryOp (Arith DecRight), [$1] }
+ | TShl { BinaryOp (Arith DecLeft), [$1] }
+ | TShr { BinaryOp (Arith DecRight), [$1] }
  (* &&   || *)
  | TOrLog  { BinaryOp (Logical OrLog), [$1] } 
  | TAndLog { BinaryOp (Logical AndLog), [$1] }
  (* < >  <=   >=  *)
- | TInf   { BinaryOp (Logical Inf), [$1] }  
- | TSup   { BinaryOp (Logical Sup), [$1] }
+ | TInf { BinaryOp (Logical Inf), [$1] } | TSup { BinaryOp (Logical Sup), [$1]}
  | TInfEq { BinaryOp (Logical InfEq), [$1] }   
  | TSupEq { BinaryOp (Logical SupEq), [$1] }
  (* ++   -- *)
- | TInc   { FixOp Inc, [$1] }  
- | TDec   { FixOp Dec, [$1] }
+ | TInc { FixOp Inc, [$1] } | TDec { FixOp Dec, [$1] }
  (* ->*  -> *)
- | TPtrOpStar { PtrOpOp PtrStarOp, [$1] }  
- | TPtrOp     { PtrOpOp PtrOp,     [$1] }
+ | TPtrOpStar { PtrOpOp PtrStarOp, [$1] } | TPtrOp { PtrOpOp PtrOp,     [$1] }
  (* () [] (double tokens) *)
- | "(" ")" { AccessOp ParenOp, [$1;$2] }
- | "[" "]" { AccessOp ArrayOp, [$1;$2] }
+ | "(" ")" { AccessOp ParenOp, [$1;$2] } | "[" "]" { AccessOp ArrayOp, [$1;$2]}
  (* new delete *)
- | Tnew    { AllocOp NewOp,    [$1] } 
- | Tdelete { AllocOp DeleteOp, [$1] }
+ | Tnew    { AllocOp NewOp,    [$1] } | Tdelete { AllocOp DeleteOp, [$1] }
  (*new[] delete[] (tripple tokens) *)
  | Tnew    TOCro_new TCCro_new { AllocOp NewArrayOp,    [$1;$2;$3] }
  | Tdelete TOCro_new TCCro_new { AllocOp DeleteArrayOp, [$1;$2;$3] }
-
 
 
 qualified_id: 
@@ -848,21 +836,18 @@ jump:
 statement_cpp:
  | statement { StmtElem $1 }
  (* cppext: *)
- | cpp_directive 
-     { CppDirectiveStmt $1 }
- | cpp_ifdef_directive(* stat_or_decl_list ...*)  
-     { IfdefStmt $1 }
+ | cpp_directive                                  { CppDirectiveStmt $1 }
+ | cpp_ifdef_directive(* stat_or_decl_list ...*)  { IfdefStmt $1 }
 
 (*----------------------------*)
 (* c++ext: *)
 (*----------------------------*)
 
-declaration_statement:
- | block_declaration { DeclStmt $1 }
+declaration_statement: block_declaration { DeclStmt $1 }
 
 condition:
  | expr { $1 }
- (* c++ext: TODO AST *)
+ (* c++ext: *)
  | decl_spec_seq declaratori "=" initializer_clause 
      { ExprTodo (PI.fake_info "TODO") }
 
@@ -871,12 +856,7 @@ for_init_stmt:
  (* c++ext: for(int i = 0; i < n; i++)*)
  | simple_declaration { None, PI.fake_info ";" } 
 
-for_range_decl: type_spec_seq declarator { }
-
-(* grammar_c++: should be type_spec_seq but conflicts
- * could solve with special TOPar_foreach *)
-%inline
-type_spec_seq: decl_spec_seq { $1 }
+for_range_decl: type_spec_seq2 declarator { }
 
 for_range_init: expr { }
 
@@ -903,7 +883,6 @@ type_spec:
  | enum_specifier  { Right3 $1, noii }
  | class_specifier { Right3 (StructDef $1), noii }
 
-
 simple_type_specifier:
  | Tvoid                { Right3 (BaseType (Void $1)),            noii }
  | Tchar                { Right3 (BaseType (IntType (CChar, [$1]))), noii}
@@ -915,12 +894,12 @@ simple_type_specifier:
  | Tsigned              { Left3 Signed,   [$1]}
  | Tunsigned            { Left3 UnSigned, [$1]}
  (*c++ext: *)
- | Tbool                { Right3 (BaseType (IntType (CBool, [$1]))),noii }
+ | Tbool                { Right3 (BaseType (IntType (CBool, [$1]))), noii }
  | Twchar_t             { Right3 (BaseType (IntType (WChar_t, [$1]))), noii }
 
  (* gccext: *)
- | Ttypeof "(" assign_expr ")" { Right3(TypeOf ($1,($2,Right $3,$4))),noii}
- | Ttypeof "(" type_id     ")" { Right3(TypeOf ($1,($2,Left $3,$4))),noii}
+ | Ttypeof "(" assign_expr ")" { Right3(TypeOf ($1,($2,Right $3,$4))), noii}
+ | Ttypeof "(" type_id     ")" { Right3(TypeOf ($1,($2,Left $3,$4))), noii}
 
  (* history: cant put TIdent {} cos it makes the grammar ambiguous and 
   * generates lots of conflicts => we must use some tricks. 
@@ -933,19 +912,16 @@ simple_type_specifier:
 
 decltype_specifier:
  (* c++0x: TODO *)
- | Tdecltype "(" expr ")" { $1  }
+ | Tdecltype "(" expr ")"           { $1  }
  (* TODO: because of wrong typedef inference *)
  | Tdecltype "(" TIdent_Typedef ")" { $1 }
 
 (*todo: can have a ::opt optl(nested_name_specifier) before ident*)
 elaborated_type_specifier: 
- | Tenum ident 
-     { Right3 (EnumName ($1, $2)), noii }
- | class_key ident
-     { Right3 (StructUnionName ($1, $2)), noii }
+ | Tenum ident                  { Right3 (EnumName ($1, $2)), noii }
+ | class_key ident              { Right3 (StructUnionName ($1, $2)), noii }
  (* c++ext:  *)
- | Ttypename type_cplusplus_id
-     { Right3 (TypenameKwd ($1, $2)), noii }
+ | Ttypename type_cplusplus_id  { Right3 (TypenameKwd ($1, $2)), noii }
 
 (*----------------------------*)
 (* c++ext:  *)
@@ -1160,7 +1136,7 @@ const_opt:
 (* helper type rules *)
 (*-----------------------------------------------------------------------*)
 (* For type_id. No storage here. Was used before for field but 
-   * now structure fields can have storage so fields now use decl_spec. *)
+ * now structure fields can have storage so fields now use decl_spec. *)
 spec_qualif_list: 
  | type_spec                    { addTypeD $1 nullDecl }
  | cv_qualif                    { {nullDecl with qualifD = $1} }
@@ -1172,8 +1148,13 @@ cv_qualif_list:
  | cv_qualif                  { {nullDecl with qualifD = $1 } }
  | cv_qualif_list cv_qualif   { addQualifD $2 $1 }
 
+(* grammar_c++: should be type_spec_seq but conflicts
+ * could solve with special TOPar_foreach *)
+%inline
+type_spec_seq2: decl_spec_seq { $1 }
+
 (*-----------------------------------------------------------------------*)
-(* xxx_type_id *)
+(* type_id *)
 (*-----------------------------------------------------------------------*)
 
 (* For cast, sizeof, throw. Was called type_name in old C grammar. *)
@@ -1388,7 +1369,7 @@ enum_specifier:
      { EnumDef ($1, None(* TODO *), ($2, [], $3)) }
 
 enum_head:
- | enum_key ident? { $1 }
+ | enum_key ident? (*ioption(enum_base)*) { $1 }
 
 enumerator: 
  | ident                { { e_name = $1; e_val = None; } }
@@ -1404,9 +1385,8 @@ enum_key:
  | Tenum Tstruct { $1 }
 
 (* TODO conflicts
-enum_base: ":" type_spec_seq { }
+enum_base: ":" type_spec_seq2 { }
 *)
-
 
 (*************************************************************************)
 (* Simple declaration, initializers *)
@@ -1647,10 +1627,8 @@ declaration:
 declaration_cpp:
  | declaration { DeclElem $1 }
  (* cppext: *)
- | cpp_directive 
-     { CppDirectiveDecl $1 }
- | cpp_ifdef_directive(* stat_or_decl_list ...*)  
-     { IfdefDecl $1 }
+ | cpp_directive                                 { CppDirectiveDecl $1 }
+ | cpp_ifdef_directive(* stat_or_decl_list ...*) { IfdefDecl $1 }
 
 (*----------------------------*)
 (* c++ext: *)
