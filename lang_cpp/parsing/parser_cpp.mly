@@ -36,7 +36,7 @@ module PI = Parse_info
 %}
 
 (*************************************************************************)
-(*1 Tokens *)
+(* Tokens *)
 (*************************************************************************)
 (* Some tokens below are not even used in this file because they are filtered
  * in some intermediate phases (e.g. the comment tokens). Some tokens
@@ -51,7 +51,7 @@ module PI = Parse_info
 %token <Parse_info.t> EOF
 
 (*-----------------------------------------*)
-(*2 The space/comment tokens *)
+(* The space/comment tokens *)
 (*-----------------------------------------*)
 (* coupling: Token_helpers.is_real_comment and other related functions.
  * disappear in parse_cpp.ml via TH.is_comment in lexer_function
@@ -64,7 +64,7 @@ module PI = Parse_info
 %token <(Token_cpp.cpluspluscommentkind * Parse_info.t)> TComment_Cpp
 
 (*-----------------------------------------*)
-(*2 The C tokens *)
+(* The C tokens *)
 (*-----------------------------------------*)
 
 %token <string * Parse_info.t>                       TInt
@@ -107,7 +107,7 @@ module PI = Parse_info
 %token <Parse_info.t> Trestrict
 
 (*-----------------------------------------*)
-(*2 gccext: extra tokens *)
+(* gccext: extra tokens *)
 (*-----------------------------------------*)
 %token <Parse_info.t> Tasm Ttypeof
 (* less: disappear in parsing_hacks_pp, not present in AST for now *)
@@ -116,7 +116,7 @@ module PI = Parse_info
 %token <Parse_info.t> Tinline 
 
 (*-----------------------------------------*)
-(*2 cppext: extra tokens *)
+(* cppext: extra tokens *)
 (*-----------------------------------------*)
 
 (* cppext: #define  *)
@@ -156,7 +156,7 @@ module PI = Parse_info
 %token <Parse_info.t> TAny_Action
 
 (*-----------------------------------------*)
-(*2 c++ext: extra tokens *)
+(* c++ext: extra tokens *)
 (*-----------------------------------------*)
 %token <Parse_info.t>
    Tclass Tthis 
@@ -206,7 +206,7 @@ module PI = Parse_info
 %token <Parse_info.t> TColCol_BeforeTypedef
 
 (*-----------------------------------------*)
-(*2 c++0x: extra tokens *)
+(* c++0x: extra tokens *)
 (*-----------------------------------------*)
 %token <Parse_info.t>
    Tnullptr
@@ -218,7 +218,7 @@ module PI = Parse_info
 %token <Parse_info.t> TOCro_Lambda
 
 (*************************************************************************)
-(*1 Priorities *)
+(* Priorities *)
 (*************************************************************************)
 (* must be at the top so that it has the lowest priority *)
 %nonassoc LOW_PRIORITY_RULE
@@ -230,7 +230,7 @@ module PI = Parse_info
 %left TMul
 
 (*************************************************************************)
-(*1 Rules type declaration *)
+(* Rules type declaration *)
 (*************************************************************************)
 %start main toplevel sgrep_spatch_pattern
 
@@ -246,7 +246,7 @@ module PI = Parse_info
 %%
 
 (*************************************************************************)
-(*1 TOC *)
+(* TOC *)
 (*************************************************************************)
 (* translation_unit (obsolete)
  * 
@@ -267,8 +267,9 @@ module PI = Parse_info
  * generic workarounds (obrace, cbrace for context setting)
  * xxx_list, xxx_opt
  *)
+
 (*************************************************************************)
-(*1 translation_unit (unused) *)
+(* translation_unit (unused) *)
 (*************************************************************************)
 
 (* no more used now that use error recovery, but good to keep *)
@@ -284,7 +285,7 @@ external_declaration:
  | block_declaration              { BlockDecl $1 }
 
 (*************************************************************************)
-(*1 toplevel *)
+(* toplevel *)
 (*************************************************************************)
 
 toplevel: 
@@ -305,7 +306,7 @@ toplevel_aux:
  | TCBrace { DeclElem (EmptyDef $1) }
 
 (*************************************************************************)
-(*1 sgrep *)
+(* sgrep *)
 (*************************************************************************)
 sgrep_spatch_pattern:
  | expr      EOF { Expr $1 }
@@ -314,7 +315,7 @@ sgrep_spatch_pattern:
 
 
 (*************************************************************************)
-(*1 Ident, scope *)
+(* Ident, scope *)
 (*************************************************************************)
 
 id_expression:
@@ -420,7 +421,7 @@ namespace_name:
  | TIdent { $1 }
 
 (*----------------------------*)
-(*2 workarounds *)
+(* workarounds *)
 (*----------------------------*)
 nested_name_specifier2: 
  | class_or_namespace_name_for_qualifier2 
@@ -443,7 +444,7 @@ ident:
  | TIdent_Typedef { $1 }
 
 (*************************************************************************)
-(*1 Expressions *)
+(* Expressions *)
 (*************************************************************************)
 
 expr: 
@@ -621,7 +622,7 @@ literal:
  | Tnullptr { ExprTodo $1 }
 
 (*----------------------------*)
-(*2 c++ext: *)
+(* c++ext: *)
 (*----------------------------*)
 
 (* can't factorize with following rule :(
@@ -698,7 +699,7 @@ new_initializer:
  | TOPar argument_list_opt TCPar { ($1, $2, $3) }
 
 (*----------------------------*)
-(*2 c++0x: lambdas! *)
+(* c++0x: lambdas! *)
 (*----------------------------*)
 lambda_introducer: 
  | TOCro_Lambda TCCro { $1 }
@@ -728,7 +729,7 @@ capture:
  | ident TEq assign_expr { }
 
 (*----------------------------*)
-(*2 gccext: *)
+(* gccext: *)
 (*----------------------------*)
 
 string_elem:
@@ -737,7 +738,7 @@ string_elem:
  | TIdent_MacroString { "<MACRO>", $1 }
 
 (*----------------------------*)
-(*2 cppext: *)
+(* cppext: *)
 (*----------------------------*)
 
 argument:
@@ -767,7 +768,7 @@ taction_list:
  | taction_list TAny_Action { $1 @ [$2] }
 
 (*----------------------------*)
-(*2 workarounds *)
+(* workarounds *)
 (*----------------------------*)
 
 (* would like evalInt $1 but require too much info *)
@@ -786,7 +787,7 @@ basic_type_2:
  | Tbool_Constr    { (BaseType (IntType (CBool, [$1]))) }
 
 (*************************************************************************)
-(*1 Statements *)
+(* Statements *)
 (*************************************************************************)
 
 statement: 
@@ -875,7 +876,7 @@ jump:
 
 
 (*----------------------------*)
-(*2 cppext: *)
+(* cppext: *)
 (*----------------------------*)
 
 statement_list_opt:
@@ -899,7 +900,7 @@ statement_seq:
      { IfdefStmt $1 }
 
 (*----------------------------*)
-(*2 c++ext: *)
+(* c++ext: *)
 (*----------------------------*)
 
 declaration_statement:
@@ -934,11 +935,11 @@ exception_decl:
  | TEllipsis      { ExnDeclEllipsis $1 }
 
 (*************************************************************************)
-(*1 Types *)
+(* Types *)
 (*************************************************************************)
 
 (*-----------------------------------------------------------------------*)
-(*2 Type spec, left part of a type *)
+(* Type spec, left part of a type *)
 (*-----------------------------------------------------------------------*)
 
 (* in c++ grammar they put 'cv_qualifier' here but I prefer keep as before *)
@@ -993,7 +994,7 @@ elaborated_type_specifier:
      { Right3 (TypenameKwd ($1, $2)), noii }
 
 (*----------------------------*)
-(*2 c++ext:  *)
+(* c++ext:  *)
 (*----------------------------*)
 
 (* cant factorize with a tcolcol_opt2 *)
@@ -1032,7 +1033,7 @@ template_argument:
  | assign_expr { Right $1 }
 
 (*-----------------------------------------------------------------------*)
-(*2 Qualifiers *)
+(* Qualifiers *)
 (*-----------------------------------------------------------------------*)
 
 (* was called type_qualif before *)
@@ -1043,7 +1044,7 @@ cv_qualif:
  | Trestrict { (* TODO *) {const=None ; volatile=None} }
 
 (*-----------------------------------------------------------------------*)
-(*2 Declarator, right part of a type + second part of decl (the ident)   *)
+(* Declarator, right part of a type + second part of decl (the ident)   *)
 (*-----------------------------------------------------------------------*)
 (* declarator return a couple: 
  *  (name, partial type (a function to be applied to return type))
@@ -1089,7 +1090,7 @@ direct_d:
      }
 
 (*----------------------------*)
-(*2 c++ext: *)
+(* c++ext: *)
 (*----------------------------*)
 declarator_id:
  | tcolcol_opt id_expression 
@@ -1097,7 +1098,7 @@ declarator_id:
 (* TODO ::opt nested-name-specifieropt type-name*)
 
 (*-----------------------------------------------------------------------*)
-(*2 Abstract Declarator (right part of a type, no ident) *)
+(* Abstract Declarator (right part of a type, no ident) *)
 (*-----------------------------------------------------------------------*)
 abstract_declarator: 
  | pointer                            { $1 }
@@ -1134,7 +1135,7 @@ direct_abstract_declarator:
          ft_dots = snd $3; ft_const = $5; ft_throw = $6; })) }
 
 (*-----------------------------------------------------------------------*)
-(*2 Parameters (use decl_spec_seq not type_spec just for 'register') *)
+(* Parameters (use decl_spec_seq not type_spec just for 'register') *)
 (*-----------------------------------------------------------------------*)
 parameter_type_list: 
  | parameter_list                  { $1, None }
@@ -1170,7 +1171,7 @@ parameter_decl:
          p_register = reg; p_val = Some($2,$3) } }
 
 (*----------------------------*)
-(*2 workarounds *)
+(* workarounds *)
 (*----------------------------*)
 
 parameter_list: 
@@ -1187,7 +1188,7 @@ parameter_decl2:
      }
 
 (*----------------------------*)
-(*2 c++ext: *)
+(* c++ext: *)
 (*----------------------------*)
 (*c++ext: specialisation 
  * TODO should be type-id-listopt. Also they can have qualifiers!
@@ -1208,7 +1209,7 @@ const_opt:
  | (*empty*) { None }
 
 (*-----------------------------------------------------------------------*)
-(*2 helper type rules *)
+(* helper type rules *)
 (*-----------------------------------------------------------------------*)
 (* For type_id. No storage here. Was used before for field but 
    * now structure fields can have storage so fields now use decl_spec. *)
@@ -1224,7 +1225,7 @@ cv_qualif_list:
  | cv_qualif_list cv_qualif   { addQualifD $2 $1 }
 
 (*-----------------------------------------------------------------------*)
-(*2 xxx_type_id *)
+(* xxx_type_id *)
 (*-----------------------------------------------------------------------*)
 
 (* For cast, sizeof, throw. Was called type_name in old C grammar. *)
@@ -1287,7 +1288,7 @@ conversion_declarator:
      { () }
 
 (*************************************************************************)
-(*1 Class and struct definitions *)
+(* Class and struct definitions *)
 (*************************************************************************)
 
 (* this can come from a simple_declaration/decl_spec *)
@@ -1323,7 +1324,7 @@ class_key:
  | Tclass    { Class, $1 }
 
 (*----------------------------*)
-(*2 c++ext: inheritance rules *)
+(* c++ext: inheritance rules *)
 (*----------------------------*)
 base_clause: 
  | TCol base_specifier_list { $1, $2 }
@@ -1348,7 +1349,7 @@ class_name:
  | TIdent             { None, noQscope, IdIdent $1 }
 
 (*----------------------------*)
-(*2 c++ext: members *)
+(* c++ext: members *)
 (*----------------------------*)
 
 (* todo? add cpp_directive possibility here too *)
@@ -1390,7 +1391,7 @@ member_declaration:
  | TPtVirg    { EmptyField $1 }
 
 (*-----------------------------------------------------------------------*)
-(*2 field declaration *)
+(* field declaration *)
 (*-----------------------------------------------------------------------*)
 field_declaration:
  | decl_spec_seq TPtVirg 
@@ -1430,7 +1431,7 @@ member_declarator:
      { (fun t_ret _stoTODO -> BitField (None, $1, t_ret, $2)) }
 
 (*************************************************************************)
-(*1 Enum definition *)
+(* Enum definition *)
 (*************************************************************************)
 
 enum_specifier: 
@@ -1457,7 +1458,7 @@ enumerator:
  | ident TEq const_expr { { e_name = $1; e_val = Some ($2, $3); } }
 
 (*************************************************************************)
-(*1 Simple declaration, initializers *)
+(* Simple declaration, initializers *)
 (*************************************************************************)
 
 simple_declaration:
@@ -1532,7 +1533,7 @@ storage_class_spec:
  | Tthread_local { Sto (Register,$1) (*TODO*) }
 
 (*-----------------------------------------------------------------------*)
-(*2 declarators (right part of type and variable) *)
+(* declarators (right part of type and variable) *)
 (*-----------------------------------------------------------------------*)
 init_declarator:  
  | declaratori                  { ($1, None) }
@@ -1546,7 +1547,7 @@ init_declarator:
      { ($1, Some (ObjInit ($2, $3, $4))) }
 
 (*----------------------------*)
-(*2 gccext: *)
+(* gccext: *)
 (*----------------------------*)
 declaratori: 
  | declarator                { $1 }
@@ -1557,7 +1558,7 @@ gcc_asm_decl:
  | Tasm volatile_opt TOPar asmbody TCPar        {  }
 			  
 (*-----------------------------------------------------------------------*)
-(*2 initializers *)
+(* initializers *)
 (*-----------------------------------------------------------------------*)
 initializer_clause: 
  | assign_expr                                    
@@ -1613,14 +1614,14 @@ designator:
      { DesignatorRange ($1, ($2, $3, $4), $5) }
 *)
 (*----------------------------*)
-(*2 workarounds *)
+(* workarounds *)
 (*----------------------------*)
 gcc_comma_opt_struct: 
  | TComma           { Some $1 } 
  | (* empty *)  { None  }
 
 (*************************************************************************)
-(*1 Block declaration (namespace and asm) *)
+(* Block declaration (namespace and asm) *)
 (*************************************************************************)
 
 block_declaration:
@@ -1634,7 +1635,7 @@ block_declaration:
 
 
 (*----------------------------*)
-(*2 c++ext: *)
+(* c++ext: *)
 (*----------------------------*)
 
 namespace_alias_definition:
@@ -1659,7 +1660,7 @@ using_declaration:
      { let name = ($3, [], $4) in $1, name, $5 (*$2*) }
   
 (*----------------------------*)
-(*2 gccext: c++ext: *)
+(* gccext: c++ext: *)
 (*----------------------------*)
 
 (* gccext: c++ext: also apparently *)
@@ -1686,7 +1687,7 @@ colon_option:
 asm_expr: assign_expr { $1 }
 
 (*************************************************************************)
-(*1 Declaration, in c++ sense *)
+(* Declaration, in c++ sense *)
 (*************************************************************************)
 (* in grammar they have 'explicit_instantiation' but it is equal to 
  * to template_declaration and so is ambiguous.
@@ -1711,7 +1712,7 @@ declaration:
 
 
 (*----------------------------*)
-(*2 cppext: *)
+(* cppext: *)
 (*----------------------------*)
 
 declaration_list_opt: 
@@ -1731,7 +1732,7 @@ declaration_seq:
      { IfdefDecl $1 }
 
 (*----------------------------*)
-(*2 c++ext: *)
+(* c++ext: *)
 (*----------------------------*)
 
 template_declaration:
@@ -1776,7 +1777,7 @@ unnamed_namespace_definition:
 
 
 (*************************************************************************)
-(*1 Function definition *)
+(* Function definition *)
 (*************************************************************************)
 
 function_definition: 
@@ -1804,7 +1805,7 @@ function_body:
  | compound { $1 }
 
 (*-----------------------------------------------------------------------*)
-(*2 c++ext: constructor special case *)
+(* c++ext: constructor special case *)
 (*-----------------------------------------------------------------------*)
 
 (* Special case cos ctor/dtor do not have return type. *)
@@ -1879,7 +1880,7 @@ mem_initializer_id:
 
 
 (*************************************************************************)
-(*1 Cpp directives *)
+(* Cpp directives *)
 (*************************************************************************)
 
 (* cppext: *)
@@ -1970,7 +1971,7 @@ cpp_other:
 
 
 (*************************************************************************)
-(*1 xxx_list, xxx_opt *)
+(* xxx_list, xxx_opt *)
 (*************************************************************************)
 
 string_list: 
