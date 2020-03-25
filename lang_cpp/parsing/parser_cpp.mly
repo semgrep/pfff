@@ -541,9 +541,9 @@ postfix_expr:
  | postfix_expr TOPar argument_list_opt TCPar { mk_funcall $1 ($2, $3, $4) }
 
  (*c++ext: ident is now a id_expression *)
- | postfix_expr TDot   template_opt "::"?  id_expression
+ | postfix_expr TDot   Ttemplate? "::"?  id_expression
      { let name = ($4, fst $5, snd $5) in RecordAccess ($1,$2,name) }
- | postfix_expr TPtrOp template_opt "::"? id_expression  
+ | postfix_expr TPtrOp Ttemplate? "::"? id_expression  
      { let name = ($4, fst $5, snd $5) in RecordPtAccess($1,$2,name)  }
 
  | postfix_expr TInc          { Postfix ($1, (Inc, $2)) }
@@ -653,10 +653,10 @@ cast_constructor_expr:
 
 (* c++ext: * simple case: new A(x1, x2); *)
 new_expr:
- | "::"? Tnew new_placement_opt   new_type_id  new_initializer_opt
+ | "::"? Tnew new_placement?   new_type_id  new_initializer?
      { New ($1, $2, $3, $4, $5)  }
 (* ambiguity then on the TOPar
- "::"? Tnew new_placement_opt TOPar type_id TCPar new_initializer_opt
+ "::"? Tnew new_placement? TOPar type_id TCPar new_initializer?
   *)
 
 delete_expr:
@@ -1268,10 +1268,10 @@ class_specifier:
 class_head: 
  | class_key 
      { $1, None, None }
- | class_key ident base_clause_opt
+ | class_key ident base_clause?
      { let name = None, noQscope, IdIdent $2 in
        $1, Some name, $3 }
- | class_key nested_name_specifier ident base_clause_opt
+ | class_key nested_name_specifier ident base_clause?
      { let name = None, $2, IdIdent $3 in
        $1, Some name, $4 }
 
@@ -1515,7 +1515,7 @@ declaratori:
  | declarator gcc_asm_decl   { $1 }
 
 gcc_asm_decl: 
- | Tasm volatile_opt TOPar asmbody TCPar        {  }
+ | Tasm Tvolatile? TOPar asmbody TCPar        {  }
 			  
 (*-----------------------------------------------------------------------*)
 (* initializers *)
@@ -1597,10 +1597,10 @@ using_directive:
    * or put opt on nested_name_specifier too
   *)
 using_declaration:
- | Tusing typename_opt "::"? nested_name_specifier unqualified_id TPtVirg
+ | Tusing Ttypename? "::"? nested_name_specifier unqualified_id TPtVirg
      { let name = ($3, $4, $5) in $1, name, $6 (*$2*) }
 (* TODO: remove once we don't skip qualifier ? *)
- | Tusing typename_opt "::"? unqualified_id TPtVirg 
+ | Tusing Ttypename? "::"? unqualified_id TPtVirg 
      { let name = ($3, [], $4) in $1, name, $5 (*$2*) }
   
 (*----------------------------*)
@@ -1609,7 +1609,7 @@ using_declaration:
 
 (* gccext: c++ext: also apparently *)
 asm_definition:
- | Tasm volatile_opt TOPar asmbody TCPar TPtVirg           
+ | Tasm Tvolatile? TOPar asmbody TCPar TPtVirg           
      { Asm($1, $2, ($3, $4, $5), $6) }
 
 asmbody: 
@@ -1762,15 +1762,15 @@ ctor_dtor:
       TypedefIdent2 transfo by putting a guard in the lalr(k) rule by
       checking if have a ~ before
    *)
- | nested_name_specifier TTilde ident TOPar void_opt TCPar compound
+ | nested_name_specifier TTilde ident TOPar Tvoid? TCPar compound
      { DeclTodo }
 
 (* TODO: remove once we don't skip qualifiers *)
- | inline_opt TIdent_Constructor TOPar parameter_type_list_opt TCPar
+ | Tinline? TIdent_Constructor TOPar parameter_type_list_opt TCPar
      ctor_mem_initializer_list_opt
      compound
      { DeclTodo }
- | TTilde ident TOPar void_opt TCPar exn_spec? compound
+ | TTilde ident TOPar Tvoid? TCPar exn_spec? compound
      { DeclTodo }
 
 
@@ -1790,13 +1790,13 @@ ctor_dtor_member:
  | ctor_spec TIdent_Constructor TOPar parameter_type_list_opt TCPar TEq Tdefault TPtVirg 
      { MemberDecl (ConstructorDecl ($2, ($3, opt_to_list_params $4, $5), $6)) }
 
- | dtor_spec TTilde ident TOPar void_opt TCPar exn_spec? compound
+ | dtor_spec TTilde ident TOPar Tvoid? TCPar exn_spec? compound
      { MemberFunc (Destructor (mk_destructor $2 $3 ($4, $5, $6) $7 $8)) }
- | dtor_spec TTilde ident TOPar void_opt TCPar exn_spec? TPtVirg
+ | dtor_spec TTilde ident TOPar Tvoid? TCPar exn_spec? TPtVirg
      { MemberDecl (DestructorDecl ($2, $3, ($4, $5, $6), $7, $8)) }
- | dtor_spec TTilde ident TOPar void_opt TCPar exn_spec? TEq Tdelete TPtVirg
+ | dtor_spec TTilde ident TOPar Tvoid? TCPar exn_spec? TEq Tdelete TPtVirg
      { MemberDecl (DestructorDecl ($2, $3, ($4, $5, $6), $7, $8)) }
- | dtor_spec TTilde ident TOPar void_opt TCPar exn_spec? TEq Tdefault TPtVirg
+ | dtor_spec TTilde ident TOPar Tvoid? TCPar exn_spec? TEq Tdefault TPtVirg
      { MemberDecl (DestructorDecl ($2, $3, ($4, $5, $6), $7, $8)) }
 
 
@@ -1922,9 +1922,14 @@ colon_option_list:
  | colon_option { [$1, []] } 
  | colon_option_list "," colon_option { $1 @ [$3, [$2]] }
 
+argument_list_opt:
+ | argument_list { $1 }
+ | (*empty*) { [] }
+
 argument_list: 
  | argument                      { [$1, []] }
  | argument_list "," argument { $1 @ [$3,    [$2]] }
+
 
 enumerator_list: 
  | enumerator                        { [$1,          []]   }
@@ -1962,19 +1967,13 @@ base_specifier_list:
 
 (*-----------------------------------------------------------------------*)
 
-argument_list_opt:
- | argument_list { $1 }
- | (*empty*) { [] }
-
 parameter_type_list_opt:
  | parameter_type_list { Some $1 }
  | (*empty*)       { None }
 
-
 member_specification_opt:
  | member_specification { $1 }
  | (*empty*)        { [] }
-
 
 nested_name_specifier_opt:
  | nested_name_specifier { $1 }
@@ -1983,40 +1982,3 @@ nested_name_specifier_opt:
 nested_name_specifier_opt2:
  | nested_name_specifier2 { $1 }
  | (* empty *)        { [] }
-
-
-
-(*c++ext: ??? *)
-new_placement_opt:
- | new_placement { Some $1 }
- | (*empty*) { None }
-
-new_initializer_opt:
- | new_initializer { Some $1 }
- | (*empty*) { None }
-
-
-
-base_clause_opt: 
- | base_clause   { Some $1 }
- | (*empty*) { None }
-
-typename_opt:
- | Ttypename     { [$1] }
- | (*empty*) { [] }
-
-template_opt:
- | Ttemplate     { [$1] }
- | (*empty*) { [] }
-
-void_opt:
- | Tvoid         { Some $1 }
- | (*empty*) { None }
-
-inline_opt:
- | Tinline         { Some $1 }
- | (*empty*) { None }
-
-volatile_opt:
- | Tvolatile     { Some $1 }
- | (*empty*) { None }
