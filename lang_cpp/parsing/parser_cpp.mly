@@ -266,6 +266,18 @@ module PI = Parse_info
  *)
 
 (*************************************************************************)
+(* Macros *)
+(*************************************************************************)
+
+%public listc(X):
+ | X { [$1, []] }
+ | listc(X) "," X { $1 @ [$3, [$2]] }
+
+%public optl(X):
+ | (* empty *) { [] }
+ | X           { $1 }
+
+(*************************************************************************)
 (* translation_unit (unused) *)
 (*************************************************************************)
 
@@ -386,7 +398,7 @@ qualified_id:
    { $1, $2 }
 
 nested_name_specifier: 
- | class_or_namespace_name_for_qualifier "::" nested_name_specifier_opt 
+ | class_or_namespace_name_for_qualifier "::" optl(nested_name_specifier)
    { ($1, $2)::$3 }
 
 (* context dependent *)
@@ -394,7 +406,7 @@ class_or_namespace_name_for_qualifier:
  | TIdent_ClassnameInQualifier 
      { QClassname $1 }
  | TIdent_TemplatenameInQualifier 
-    TInf_Template template_argument_list TSup_Template
+     TInf_Template listc(template_argument) TSup_Template
      { QTemplateId ($1, ($2, $3, $4)) }
 
 
@@ -413,14 +425,14 @@ namespace_name: TIdent { $1 }
 (*----------------------------*)
 nested_name_specifier2: 
  | class_or_namespace_name_for_qualifier2 
-    TColCol_BeforeTypedef nested_name_specifier_opt2 
+    TColCol_BeforeTypedef optl(nested_name_specifier2)
      { ($1, $2)::$3 }
 
 class_or_namespace_name_for_qualifier2:
  | TIdent_ClassnameInQualifier_BeforeTypedef 
      { QClassname $1  }
  | TIdent_TemplatenameInQualifier_BeforeTypedef 
-    TInf_Template template_argument_list TSup_Template
+    TInf_Template listc(template_argument) TSup_Template
      { QTemplateId ($1, ($2, $3, $4)) }
 
 (* Why this ? Why not s/ident/TIdent ? cos there is multiple namespaces in C, 
@@ -543,7 +555,7 @@ postfix_expr:
  | primary_expr               { $1 }
 
  | postfix_expr "[" expr "]"              { ArrayAccess ($1, ($2, $3,$4)) }
- | postfix_expr "(" argument_list_opt ")" { mk_funcall $1 ($2, $3, $4) }
+ | postfix_expr "(" optl(listc(argument)) ")" { mk_funcall $1 ($2, $3, $4) }
 
  (*c++ext: ident is now a id_expression *)
  | postfix_expr TDot   Ttemplate? "::"?  id_expression
@@ -604,7 +616,7 @@ literal:
 (*----------------------------*)
 
 (* can't factorize with following rule :(
- * | "::"? nested_name_specifier_opt TIdent
+ * | "::"? optl(nested_name_specifier) TIdent
  *)
 primary_cplusplus_id:
  | id_expression 
@@ -646,12 +658,12 @@ cpp_cast_operator:
  * need a classname3?
 *)
 cast_constructor_expr:
- | TIdent_TypedefConstr "(" argument_list_opt ")" 
+ | TIdent_TypedefConstr "(" optl(listc(argument)) ")" 
      { let name = None, noQscope, IdIdent $1 in
        let ft = nQ, (TypeName name) in
        ConstructedObject (ft, ($2, $3, $4))  
      }
- | basic_type_2 "(" argument_list_opt ")" 
+ | basic_type_2 "(" optl(listc(argument)) ")" 
      { let ft = nQ, $1 in
        ConstructedObject (ft, ($2, $3, $4))
      }
@@ -670,9 +682,9 @@ delete_expr:
  | "::"? Tdelete TOCro_new TCCro_new cast_expr 
      { DeleteArray ($1,$2,($3,(),$4), $5) }
 
-new_placement: "(" argument_list ")" { ($1, $2, $3) }
+new_placement: "(" listc(argument) ")" { ($1, $2, $3) }
 
-new_initializer: "(" argument_list_opt ")" { ($1, $2, $3) }
+new_initializer: "(" optl(listc(argument)) ")" { ($1, $2, $3) }
 
 (*----------------------------*)
 (* c++0x: lambdas! *)
@@ -815,7 +827,7 @@ iteration:
  | Tfor "(" for_range_decl ":" for_range_init ")" statement
      { StmtTodo $1 }
  (* cppext: *)
- | TIdent_MacroIterator "(" argument_list_opt ")" statement
+ | TIdent_MacroIterator "(" optl(listc(argument)) ")" statement
      { MacroIteration ($1, ($2, $3, $4), $5) }
 
 (* the ';' in the caller grammar rule will be appended to the infos *)
@@ -920,7 +932,7 @@ decltype_specifier:
  (* TODO: because of wrong typedef inference *)
  | Tdecltype "(" TIdent_Typedef ")" { $1 }
 
-(*todo: can have a ::opt nested_name_specifier_opt before ident*)
+(*todo: can have a ::opt optl(nested_name_specifier) before ident*)
 elaborated_type_specifier: 
  | Tenum ident 
      { Right3 (EnumName ($1, $2)), noii }
@@ -956,7 +968,7 @@ type_name:
  | template_id { $1 }
 
 template_id:
- | TIdent_Templatename TInf_Template template_argument_list TSup_Template
+ | TIdent_Templatename TInf_Template listc(template_argument) TSup_Template
     { IdTemplateId ($1, ($2, $3, $4)) }
 
 (*c++ext: in the c++ grammar they have also 'template-name' but this is 
@@ -1222,7 +1234,7 @@ conversion_declarator:
 (*************************************************************************)
 
 (* this can come from a simple_declaration/decl_spec *)
-class_specifier: class_head "{" member_specification_opt "}" 
+class_specifier: class_head "{" optl(member_specification) "}" 
      { let (kind, nameopt, baseopt) = $1 in
        { c_kind = kind; c_name = nameopt; 
          c_inherit = baseopt; c_members = ($2, $3, $4) } }
@@ -1255,7 +1267,7 @@ class_key:
 (*----------------------------*)
 (* c++ext: inheritance rules *)
 (*----------------------------*)
-base_clause: ":" base_specifier_list { $1, $2 }
+base_clause: ":" listc(base_specifier) { $1, $2 }
 
 (* base-specifier:
    *  ::opt nested-name-specifieropt class-name
@@ -1282,9 +1294,9 @@ class_name:
 
 (* todo? add cpp_directive possibility here too *)
 member_specification:
- | member_declaration member_specification_opt    
+ | member_declaration optl(member_specification)
      { ClassElem $1::$2 }
- | access_specifier ":" member_specification_opt 
+ | access_specifier ":" optl(member_specification)
      { ClassElem (Access ($1, $2))::$3 }
 
 access_specifier:
@@ -1328,7 +1340,7 @@ field_declaration:
        let onedecl = { v_namei = None; v_type = t_ret; v_storage = sto } in
        ([(FieldDecl onedecl),noii], $2)
      }
- | decl_spec_seq member_declarator_list ";" 
+ | decl_spec_seq listc(member_declarator) ";" 
      { let (t_ret, sto, _inline) = type_and_storage_from_decl $1 in
        ($2 |> (List.map (fun (f, iivirg) -> f t_ret sto, iivirg)), $3)
      }
@@ -1364,7 +1376,7 @@ member_declarator:
 
 (* gccext: c++0x: most ","? are trailing commas extensions (as in Perl) *)
 enum_specifier: 
- | enum_head "{" enumerator_list ","? "}"
+ | enum_head "{" listc(enumerator) ","? "}"
      { EnumDef ($1, None(* TODO *), ($2, $3, $5)) (*$4*) }
  (* c++0x: *)
  | enum_head "{" "}"
@@ -1393,7 +1405,7 @@ simple_declaration:
      { let (t_ret, sto, _inline) = type_and_storage_from_decl $1 in 
        DeclList ([{v_namei = None; v_type = t_ret; v_storage = sto},noii],$2)
      }
- | decl_spec_seq init_declarator_list ";" 
+ | decl_spec_seq listc(init_declarator) ";" 
      { let (t_ret, sto, _inline) = type_and_storage_from_decl $1 in
        DeclList (
          ($2 |> List.map (fun (((name, f), iniopt), iivirg) ->
@@ -1405,12 +1417,12 @@ simple_declaration:
          )), $3)
      } 
  (* cppext: *)
- | TIdent_MacroDecl "(" argument_list ")" ";" 
+ | TIdent_MacroDecl "(" listc(argument) ")" ";" 
      { MacroDecl ([], $1, ($2, $3, $4), $5) }
- | Tstatic TIdent_MacroDecl "(" argument_list ")" ";" 
+ | Tstatic TIdent_MacroDecl "(" listc(argument) ")" ";" 
      { MacroDecl ([$1], $2, ($3, $4, $5), $6) }
  | Tstatic Tconst_MacroDeclConst 
-    TIdent_MacroDecl "(" argument_list ")" ";" 
+    TIdent_MacroDecl "(" listc(argument) ")" ";" 
      { MacroDecl ([$1;$2], $3, ($4, $5, $6), $7) }
 
 (*-----------------------------------------------------------------------*)
@@ -1470,7 +1482,7 @@ init_declarator:
   * is different from TypedefIdent2, here the declaratori is an ident,
   * not the constructorname hence the need for a TOPar_CplusplusInit
   *)
- | declaratori TOPar_CplusplusInit argument_list_opt ")" 
+ | declaratori TOPar_CplusplusInit optl(listc(argument)) ")" 
      { ($1, Some (ObjInit ($2, $3, $4))) }
 
 (*----------------------------*)
@@ -1550,12 +1562,12 @@ block_declaration:
 (*----------------------------*)
 
 namespace_alias_definition:
- | Tnamespace TIdent "=" "::"? nested_name_specifier_opt namespace_name
+ | Tnamespace TIdent "=" "::"? optl(nested_name_specifier) namespace_name
     ";"
      { let name = $4, $5, IdIdent $6 in NameSpaceAlias ($1, $2, $3, name, $7) }
 
 using_directive:
- | Tusing Tnamespace "::"? nested_name_specifier_opt namespace_name 
+ | Tusing Tnamespace "::"? optl(nested_name_specifier) namespace_name 
     ";"
      { let name = $3, $4, IdIdent $5 in UsingDirective ($1, $2, name, $6) }
 
@@ -1581,7 +1593,7 @@ asmbody:
  | string_elem+ colon_asm+  { $1, $2 }
  | string_elem+ { $1, [] } (* in old kernel *)
 
-colon_asm: ":" colon_option_list { Colon ($1, $2) }
+colon_asm: ":" listc(colon_option) { Colon ($1, $2) }
 
 colon_option: 
  | TString                  { ColonMisc [snd (fst $1)] }
@@ -1643,7 +1655,7 @@ declaration_seq:
 (*----------------------------*)
 
 template_declaration: 
-  Ttemplate TInf_Template template_parameter_list TSup_Template declaration
+  Ttemplate TInf_Template listc(template_parameter) TSup_Template declaration
    { ($1, ($2, $3, $4), $5) }
 
 explicit_specialization: Ttemplate TInf_Template TSup_Template declaration 
@@ -1714,7 +1726,7 @@ function_body:
 
 (* Special case cos ctor/dtor do not have return type. *)
 ctor_dtor:
- | nested_name_specifier TIdent_Constructor "(" parameter_type_list_opt ")"
+ | nested_name_specifier TIdent_Constructor "(" parameter_type_list? ")"
      ctor_mem_initializer_list_opt
      compound
      { DeclTodo }
@@ -1726,7 +1738,7 @@ ctor_dtor:
      { DeclTodo }
 
 (* TODO: remove once we don't skip qualifiers *)
- | Tinline? TIdent_Constructor "(" parameter_type_list_opt ")"
+ | Tinline? TIdent_Constructor "(" parameter_type_list? ")"
      ctor_mem_initializer_list_opt
      compound
      { DeclTodo }
@@ -1739,15 +1751,15 @@ ctor_dtor:
    * TODOAST on the ctor_spec and chain of calls
    *)
 ctor_dtor_member: 
- | ctor_spec TIdent_Constructor "(" parameter_type_list_opt ")"
+ | ctor_spec TIdent_Constructor "(" parameter_type_list? ")"
      ctor_mem_initializer_list_opt
      compound
      { MemberFunc (Constructor (mk_constructor $2 ($3, $4, $5) $7)) }
- | ctor_spec TIdent_Constructor "(" parameter_type_list_opt ")" ";" 
+ | ctor_spec TIdent_Constructor "(" parameter_type_list? ")" ";" 
      { MemberDecl (ConstructorDecl ($2, ($3, opt_to_list_params $4, $5), $6)) }
- | ctor_spec TIdent_Constructor "(" parameter_type_list_opt ")" "=" Tdelete ";" 
+ | ctor_spec TIdent_Constructor "(" parameter_type_list? ")" "=" Tdelete ";" 
      { MemberDecl (ConstructorDecl ($2, ($3, opt_to_list_params $4, $5), $6)) }
- | ctor_spec TIdent_Constructor "(" parameter_type_list_opt ")" "=" Tdefault ";" 
+ | ctor_spec TIdent_Constructor "(" parameter_type_list? ")" "=" Tdefault ";" 
      { MemberDecl (ConstructorDecl ($2, ($3, opt_to_list_params $4, $5), $6)) }
 
  | dtor_spec TTilde ident "(" Tvoid? ")" exn_spec? compound
@@ -1771,11 +1783,11 @@ dtor_spec:
  | (*empty*) { }
 
 ctor_mem_initializer_list_opt: 
- | ":" mem_initializer_list { () }
+ | ":" listc(mem_initializer) { () }
  | (* empty *) { () }
 
 mem_initializer: 
- | mem_initializer_id "(" argument_list_opt ")" { () }
+ | mem_initializer_id "(" optl(listc(argument)) ")" { () }
 
 (* factorize with declarator_id ? specialisation *)
 mem_initializer_id:
@@ -1807,7 +1819,7 @@ cpp_directive:
   * A TOPar_Define is a TOPar that was just next to the ident (no space).
   * See parsing_hacks_define.ml
   *)
- | TDefine TIdent_Define TOPar_Define param_define_list_opt ")" 
+ | TDefine TIdent_Define TOPar_Define optl(listc(param_define)) ")" 
     define_val TCommentNewline_DefineEndOfMacro
      { Define ($1, $2, (DefineFunc ($3, $4, $5)), $6) (*$7*) }
 
@@ -1861,78 +1873,8 @@ cpp_ifdef_directive:
 
 cpp_other:
 (* cppext: *)
- | TIdent "(" argument_list ")" ";"   { MacroTop ($1, ($2, $3, $4), Some $5) } 
+ | TIdent "(" listc(argument) ")" ";"   { MacroTop ($1, ($2, $3, $4), Some $5) } 
  (* TCPar_EOL to fix the end-of-stream bug of ocamlyacc *)
- | TIdent "(" argument_list TCPar_EOL { MacroTop ($1, ($2, $3, $4), None) } 
+ | TIdent "(" listc(argument) TCPar_EOL { MacroTop ($1, ($2, $3, $4), None) } 
   (* ex: EXPORT_NO_SYMBOLS; *)
  | TIdent ";"                         { MacroVarTop ($1, $2) }
-
-(*************************************************************************)
-(* xxx_list, xxx_opt *)
-(*************************************************************************)
-
-colon_option_list: 
- | colon_option { [$1, []] } 
- | colon_option_list "," colon_option { $1 @ [$3, [$2]] }
-
-
-argument_list_opt:
- | argument_list { $1 }
- | (*empty*) { [] }
-
-argument_list: 
- | argument                      { [$1, []] }
- | argument_list "," argument { $1 @ [$3,    [$2]] }
-
-
-enumerator_list: 
- | enumerator                        { [$1,          []]   }
- | enumerator_list "," enumerator { $1 @ [$3,    [$2]] }
-
-init_declarator_list: 
- | init_declarator                             { [$1,   []] }
- | init_declarator_list "," init_declarator { $1 @ [$3,     [$2]] }
-
-member_declarator_list: 
- | member_declarator                             { [$1,   []] }
- | member_declarator_list "," member_declarator { $1 @ [$3,     [$2]] }
-
-
-param_define_list_opt: 
- | (* empty *) { [] }
- | param_define                           { [$1, []] }
- | param_define_list_opt "," param_define  { $1 @ [$3, [$2]] }
-
-mem_initializer_list: 
- | mem_initializer                           { [$1, []] }
- | mem_initializer_list "," mem_initializer  { $1 @ [$3, [$2]] }
-
-template_argument_list:
- | template_argument { [$1, []] }
- | template_argument_list "," template_argument { $1 @ [$3, [$2]] }
-
-template_parameter_list: 
- | template_parameter { [$1, []] }
- | template_parameter_list "," template_parameter { $1 @ [$3, [$2]] }
-
-base_specifier_list: 
- | base_specifier                               { [$1,           []] }
- | base_specifier_list "," base_specifier    { $1 @ [$3,     [$2]] }
-
-(*-----------------------------------------------------------------------*)
-
-parameter_type_list_opt:
- | parameter_type_list { Some $1 }
- | (*empty*)       { None }
-
-member_specification_opt:
- | member_specification { $1 }
- | (*empty*)        { [] }
-
-nested_name_specifier_opt:
- | nested_name_specifier { $1 }
- | (* empty *)       { [] }
-
-nested_name_specifier_opt2:
- | nested_name_specifier2 { $1 }
- | (* empty *)        { [] }
