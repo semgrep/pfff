@@ -154,15 +154,21 @@ let test_parse_cpp_dyp xs =
   fullxs |> Console.progress (fun k -> List.iter (fun file -> 
     k ();
     Common.save_excursion Flag_parsing_cpp.strict_lexer true (fun () ->
-      try 
-        Error_code.try_with_print_exn_and_reraise file (fun () ->
-          let _cst = Parse_cpp.parse_with_dypgen file in
-          ()
-        )
+      try (
+       let _cst = Parse_cpp.parse_with_dypgen file in
+       ()
+     )
       with exn ->
-        pr2 (spf "PB with: %s, exn = %s" file (Common.exn_to_s exn)); 
+        pr2 (spf "PB with: %s, exn = %s" file (Common.exn_to_s exn));
+        ()
     )
   ))
+
+let test_dump_cpp_dyp file =
+  let ast = Parse_cpp.parse_with_dypgen file in
+  let v = Meta_cst_cpp.vof_program ast in
+  let s = Ocaml.string_of_v v in
+  pr s
   
 (*****************************************************************************)
 (* Main entry for Arg *)
@@ -187,6 +193,8 @@ let actions () = [
     Common.mk_action_1_arg test_dump_cpp_full;
     "-dump_cpp_view", "   <file>", 
     Common.mk_action_1_arg test_dump_cpp_view;
+    "-dump_cpp_dyp", "   <file>", 
+    Common.mk_action_1_arg test_dump_cpp_dyp;
 
     "-parse_cpp_fuzzy", "   <files or dirs>", 
     Common.mk_action_n_arg test_parse_cpp_fuzzy;

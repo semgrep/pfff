@@ -133,8 +133,8 @@ let is_binary_operator = function
   | _ -> false 
 
 let is_binary_operator_except_star = function
-  (* | TAnd _ *) (*|  TMul _*)
-  | TOrLog _ | TAndLog _ |  TOr _ |  TXor _   
+  (* | TAnd _ *) (*|  TMul _*) (* | TAndLog _ *)
+  | TOrLog _ |  TOr _ |  TXor _   
   | TEqEq _ |  TNotEq _  | TInf _ |  TSup _ |  TInfEq _ |  TSupEq _ 
   | TShl _ | TShr _  
   | TPlus _ |  TMinus _  |  TDiv _ |  TMod _ 

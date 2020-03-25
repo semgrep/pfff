@@ -26,14 +26,13 @@ open Parsing_hacks_lib
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* 
- * This file gathers parsing heuristics related to C++.
+(* This file gathers parsing heuristics related to C++.
+ *
  * See also Token_views_cpp.set_context_tag and 
- * Parsing_hacks_typedef.filter_for_typedef that have
+ * Parsing_hacks_typedef.filter_for_typedef that have also some
  * heuristics specific to C++.
  * 
  * TODO: * TIdent_TemplatenameInQualifier 
- * 
  *)
 
 (*****************************************************************************)
@@ -180,7 +179,7 @@ let find_template_inf_sup xs =
   aux xs
 
 (*****************************************************************************)
-(* Main heuristics *)
+(* Heuristics *)
 (*****************************************************************************)
 
 let reclassify_tokens_before_idents_or_typedefs xs =

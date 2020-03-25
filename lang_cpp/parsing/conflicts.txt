@@ -1,8 +1,7 @@
--*- org -*-
+# -*- org -*-
 
 TODO:
 http://blog.robertelder.org/jim-roskind-grammar/
-
 http://eli.thegreenplace.net/2007/11/24/the-context-sensitivity-of-cs-grammar/
 
 * Typedefs 
@@ -13,7 +12,7 @@ simple_type_specifier:
 
  (* history: cant put TIdent {} cos it makes the grammar ambiguous and 
   * generates lots of conflicts => we must use some tricks. 
-  * We used make the lexer and parser cooperate (in a lexerParser.ml file).
+  * We used to make the lexer and parser cooperate (in a lexerParser.ml file).
   * But this was not enough because of declarations such as 'acpi acpi;'
   * and so we had to enable/disable the ident->typedef mechanism 
   * (which requires even more lexer/parser cooperation). But

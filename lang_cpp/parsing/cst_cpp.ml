@@ -1,10 +1,10 @@
 (* Yoann Padioleau
  * 
- * Copyright (C) 2002 Yoann Padioleau
+ * Copyright (C) 2002-2005 Yoann Padioleau
  * Copyright (C) 2006-2007 Ecole des Mines de Nantes
  * Copyright (C) 2008-2009 University of Urbana Champaign
  * Copyright (C) 2010-2014 Facebook
- * Copyright (C) 2020 r2c
+ * Copyright (C) 2019-2020 r2c
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)

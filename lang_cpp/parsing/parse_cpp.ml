@@ -397,7 +397,12 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
 
           if !Flag.show_parsing_error then
             (match e with
-            | Parsing.Parse_error | Dyp.Syntax_error -> 
+            (* ocamlyacc *)
+            | Parsing.Parse_error 
+            (* dypgen *)
+            | Dyp.Syntax_error
+            (* menhir *)
+            | Parser_cpp.Error -> 
               pr2 ("parse error \n = " ^ error_msg_tok tr.PI.current)
             | Semantic.Semantic (s, _i) -> 
               pr2 ("semantic error " ^s^ "\n ="^ error_msg_tok tr.PI.current)

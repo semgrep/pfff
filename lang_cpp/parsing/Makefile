@@ -61,7 +61,7 @@ clean::
 	rm -f lexer_cpp.ml
 beforedepend:: lexer_cpp.ml
 
-#OCAMLYACC=menhir --explain
+OCAMLYACC=menhir --unused-tokens --explain
 
 parser_cpp.ml parser_cpp.mli: parser_cpp.mly
 	$(OCAMLYACC) $<
