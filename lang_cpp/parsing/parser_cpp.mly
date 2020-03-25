@@ -233,6 +233,7 @@ module PI = Parse_info
 (* TODO: remove those too but conflicts *)
 %left TAnd 
 %left TMul
+%left TAndLog
 
 (*************************************************************************)
 (* Rules type declaration *)
@@ -995,6 +996,9 @@ pointer:
  (*c++ext: no qualif for ref *)
  | "&"                        { fun x ->(nQ,    (Reference ($1, x)))}
  | "&" pointer                { fun x ->(nQ,    (Reference ($1, $2 x)))}
+ (* c++0x: TODO AST *)
+ | "&&"                        { fun x ->(nQ,    (Reference ($1, x)))}
+ | "&&" pointer                { fun x ->(nQ,    (Reference ($1, $2 x)))}
 
 direct_d: 
  | declarator_id
@@ -1186,7 +1190,10 @@ new_declarator:
 
 ptr_operator:
  | "*" { () }
+ (* c++ext: *)
  | "&" { () }
+ (* c++0x: TODO AST *)
+ | "&&" { () }
 
 direct_new_declarator:
  | "[" expr "]"                       { () }

@@ -27,8 +27,7 @@ open Parsing_hacks_lib
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* 
- * This file gathers parsing heuristics related to the C preprocessor cpp.
+(* This file gathers parsing heuristics related to the C preprocessor cpp.
  *)
 
 (*****************************************************************************)
