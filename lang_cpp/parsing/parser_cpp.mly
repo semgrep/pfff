@@ -1561,20 +1561,18 @@ block_declaration:
 (* c++ext: *)
 (*----------------------------*)
 
-namespace_alias_definition:
- | Tnamespace TIdent "=" "::"? optl(nested_name_specifier) namespace_name
-    ";"
-     { let name = $4, $5, IdIdent $6 in NameSpaceAlias ($1, $2, $3, name, $7) }
+namespace_alias_definition: Tnamespace TIdent "=" qualified_namespace_spec ";"
+  { NameSpaceAlias ($1, $2, $3, $4, $5) }
 
-using_directive:
- | Tusing Tnamespace "::"? optl(nested_name_specifier) namespace_name 
-    ";"
-     { let name = $3, $4, IdIdent $5 in UsingDirective ($1, $2, name, $6) }
+using_directive: Tusing Tnamespace qualified_namespace_spec ";"
+  { UsingDirective ($1, $2, $3, $4) }
+
+qualified_namespace_spec: "::"? optl(nested_name_specifier) namespace_name
+  { $1, $2, IdIdent $3 }
 
 (* conflict on TColCol in 'Tusing TColCol unqualified_id ";"'
-   * need LALR(2) to see if after tcol have a nested_name_specifier
-   * or put opt on nested_name_specifier too
-  *)
+ * need LALR(2) to see if after tcol have a nested_name_specifier
+ * or put opt on nested_name_specifier too *)
 using_declaration:
  | Tusing Ttypename? "::"? nested_name_specifier unqualified_id ";"
      { let name = ($3, $4, $5) in $1, name, $6 (*$2*) }
