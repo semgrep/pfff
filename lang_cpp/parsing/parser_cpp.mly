@@ -55,8 +55,7 @@ module PI = Parse_info
 (* The space/comment tokens *)
 (*-----------------------------------------*)
 (* coupling: Token_helpers.is_real_comment and other related functions.
- * disappear in parse_cpp.ml via TH.is_comment in lexer_function
- *)
+ * disappear in parse_cpp.ml via TH.is_comment in lexer_function *)
 %token <Parse_info.t> TCommentSpace TCommentNewline TComment
 
 (* fresh_token: cppext: appears after parsing_hack_pp and disappear *)
@@ -291,8 +290,7 @@ toplevel_aux:
  | cpp_other           { $1 }
 
  (* when have error recovery, we can end up skipping the
-  * beginning of the file, and so get trailing unclosed } at the end
-  *)
+  * beginning of the file, and so get trailing unclosed } at the end *)
  | TCBrace { DeclElem (EmptyDef $1) }
 
 (*************************************************************************)
@@ -326,8 +324,7 @@ operator_function_id: Toperator operator_kind { IdOperator ($1, $2) }
 conversion_function_id: Toperator conversion_type_id { IdConverter ($1, $2) }
 
 (* no deref getref operator (cos ambiguity with Mul and And)
- * no unaryplus/minus op either 
- *)
+ * no unaryplus/minus op either *)
 operator_kind:
  (* != == *)
  | TEqEq  { BinaryOp (Logical Eq),    [$1] }
@@ -402,7 +399,7 @@ class_or_namespace_name_for_qualifier:
  *)
 enum_name_or_typedef_name_or_simple_class_name: TIdent_Typedef { $1 }
 (* used only with namespace/using rules. We use Tclassname for stuff
-   * like std::... todo? or just TIdent_Typedef? *)
+ * like std::... todo? or just TIdent_Typedef? *)
 namespace_name: TIdent { $1 }
 
 (*----------------------------*)
@@ -422,8 +419,7 @@ class_or_namespace_name_for_qualifier2:
 
 (* Why this ? Why not s/ident/TIdent ? cos there is multiple namespaces in C, 
  * so a label can have the same name that a typedef, same for field and tags
- * hence sometimes the use of ident instead of TIdent.
- *)
+ * hence sometimes the use of ident instead of TIdent. *)
 ident: 
  | TIdent         { $1 }
  | TIdent_Typedef { $1 }
@@ -436,23 +432,22 @@ expr:
  | assign_expr             { $1 }
  | expr TComma assign_expr { Sequence ($1, $2, $3) }
 
-(* bugfix: in C grammar they put 'unary_expr', but in fact it must be 
- * 'cast_expr', otherwise (int * ) xxx = &yy; is not allowed
- *)
+(* bugfix: in the C grammar they put 'unary_expr', but in fact it must be 
+ * 'cast_expr', otherwise (int * ) xxx = &yy; is not allowed *)
 assign_expr: 
  | cond_expr                     { $1 }
  | cast_expr TAssign assign_expr { Assign ($1, $2,$3)}
  | cast_expr TEq     assign_expr { Assign ($1,SimpleAssign $2,$3)}
  (* c++ext: *)
- | Tthrow assign_expr_opt        { Throw ($1, $2) }
+ | Tthrow assign_expr?        { Throw ($1, $2) }
 
-(* gccext: allow optional then part hence opt_expr 
+(* gccext: allow optional then part hence expr? 
  * bugfix: in C grammar they put 'TCol cond_expr', but in fact it must be
  * 'assign_expr', otherwise   pnp ? x : x = 0x388  is not allowed
  *)
 cond_expr: 
  | logical_or_expr   { $1 }
- | logical_or_expr TWhy expr_opt TCol assign_expr { CondExpr ($1,$2, $3, $4, $5)} 
+ | logical_or_expr TWhy expr? TCol assign_expr { CondExpr ($1,$2, $3, $4, $5)} 
 
 (* old: was in single arith_expr rule with %left prio, but dypgen cant *)
 multiplicative_expr:
@@ -480,7 +475,7 @@ relational_expr:
 
 equality_expr:
  | relational_expr { $1 }
- | equality_expr TEqEq relational_expr { Binary($1,(Logical Eq,$2),$3) }
+ | equality_expr TEqEq relational_expr  { Binary($1,(Logical Eq,$2),$3) }
  | equality_expr TNotEq relational_expr { Binary($1,(Logical NotEq,$2),$3) }
 
 and_expr:
@@ -508,13 +503,11 @@ logical_or_expr:
 pm_expr: 
  | cast_expr { $1 }
  (*c++ext: .* and ->*, note that not next to . and -> and take expr *)
- | pm_expr TDotStar   cast_expr
-     { RecordStarAccess   ($1, $2,$3) }
- | pm_expr TPtrOpStar cast_expr
-     { RecordPtStarAccess ($1, $2, $3) }
+ | pm_expr TDotStar   cast_expr   { RecordStarAccess   ($1, $2,$3) }
+ | pm_expr TPtrOpStar cast_expr   { RecordPtStarAccess ($1, $2, $3) }
 
 cast_expr: 
- | unary_expr                        { $1 }
+ | unary_expr                    { $1 }
  | TOPar type_id TCPar cast_expr { Cast (($1, $2, $3), $4) }
 
 unary_expr: 
@@ -536,18 +529,15 @@ unary_op:
  | TTilde { Tilde,      $1 }
  | TBang  { Not,        $1 }
  (* gccext: have that a lot in old kernel to get address of local label.
-    * cf gcc manual "local labels as values".
-    *)
+  * See gcc manual "local labels as values". *)
  | TAndLog { GetRefLabel, $1 }
 
 
 postfix_expr: 
  | primary_expr               { $1 }
 
- | postfix_expr TOCro expr TCCro                
-     { ArrayAccess ($1, ($2, $3,$4)) }
- | postfix_expr TOPar argument_list_opt TCPar  
-     { mk_funcall $1 ($2, $3, $4) }
+ | postfix_expr TOCro expr TCCro              { ArrayAccess ($1, ($2, $3,$4)) }
+ | postfix_expr TOPar argument_list_opt TCPar { mk_funcall $1 ($2, $3, $4) }
 
  (*c++ext: ident is now a id_expression *)
  | postfix_expr TDot   template_opt tcolcol_opt  id_expression
@@ -559,9 +549,7 @@ postfix_expr:
  | postfix_expr TDec          { Postfix ($1, (Dec, $2)) }
 
  (* gccext: also called compound literals *)
- | TOPar type_id TCPar braced_init_list
-     { GccConstructor (($1, $2, $3), $4) }
-
+ | TOPar type_id TCPar braced_init_list { GccConstructor (($1, $2, $3), $4) }
 
  (* c++ext: *)
  | cast_operator_expr { $1 }
@@ -598,7 +586,7 @@ literal:
  | TChar   { C (Char   ($1)) }
  | TString { C (String ($1)) }
  (* gccext: cppext: *)
- | string_elem string_list { C (MultiString ($1 :: $2)) }
+ | string_elem string_elem+ { C (MultiString ($1 :: $2)) }
  (*c++ext: *)
  | Ttrue   { C (Bool (true, $1)) }
  | Tfalse  { C (Bool (false, $1)) }
@@ -813,7 +801,7 @@ compound:
 
 
 expr_statement: 
- | expr_opt TPtVirg { $1, $2 }
+ | expr? TPtVirg { $1, $2 }
 
 (* note that case 1: case 2: i++;    would be correctly parsed, but with 
    * a Case  (1, (Case (2, i++)))  :(  
@@ -840,7 +828,7 @@ iteration:
      { While ($1, ($2, $3, $4), $5) }
  | Tdo statement Twhile TOPar expr TCPar TPtVirg                 
      { DoWhile ($1, $2, $3, ($4, $5, $6), $7) }
- | Tfor TOPar for_init_stmt expr_statement expr_opt TCPar statement
+ | Tfor TOPar for_init_stmt expr_statement expr? TCPar statement
      { For ($1, ($2, (fst $3, snd $3, fst $4, snd $4, $5), $6), $7) }
  (* c++ext: *)
  | Tfor TOPar for_range_decl TCol for_range_init TCPar statement
@@ -897,7 +885,7 @@ for_range_decl: decl_spec_seq declarator { }
 for_range_init: expr { }
 
 try_block: 
- | Ttry compound handler_list { Try ($1, $2, $3) }
+ | Ttry compound handler+ { Try ($1, $2, $3) }
 
 handler: 
  | Tcatch TOPar exception_decl TCPar compound { ($1, ($2, $3, $4), $5) }
@@ -1562,7 +1550,7 @@ initialize2:
      { InitList $1 }
 
  (* gccext: labeled elements, a.k.a designators *)
- | designator_list TEq initialize2 
+ | designator+ TEq initialize2 
      { InitDesignators ($1, $2, $3) }
  (* gccext: old format, in old kernel for instance *)
  | ident TCol initialize2
@@ -1641,8 +1629,8 @@ asm_definition:
      { Asm($1, $2, ($3, $4, $5), $6) }
 
 asmbody: 
- | string_list colon_asm_list  { $1, $2 }
- | string_list { $1, [] } (* in old kernel *)
+ | string_elem+ colon_asm+  { $1, $2 }
+ | string_elem+ { $1, [] } (* in old kernel *)
 
 colon_asm: 
  | TCol colon_option_list { Colon ($1, $2) }
@@ -1946,28 +1934,17 @@ cpp_other:
 (* xxx_list, xxx_opt *)
 (*************************************************************************)
 
-string_list: 
- | string_elem { [$1] }
- | string_list string_elem { $1 @ [$2] } 
-
-colon_asm_list: 
- | colon_asm { [$1] }
- | colon_asm_list colon_asm  { $1 @ [$2] }
-
 colon_option_list: 
  | colon_option { [$1, []] } 
  | colon_option_list TComma colon_option { $1 @ [$3, [$2]] }
-
 
 argument_list: 
  | argument                      { [$1, []] }
  | argument_list TComma argument { $1 @ [$3,    [$2]] }
 
-
 enumerator_list: 
  | enumerator                        { [$1,          []]   }
  | enumerator_list TComma enumerator { $1 @ [$3,    [$2]] }
-
 
 init_declarator_list: 
  | init_declarator                             { [$1,   []] }
@@ -1978,22 +1955,10 @@ member_declarator_list:
  | member_declarator_list TComma member_declarator { $1 @ [$3,     [$2]] }
 
 
-
-
 param_define_list_opt: 
  | (* empty *) { [] }
  | param_define                           { [$1, []] }
  | param_define_list_opt TComma param_define  { $1 @ [$3, [$2]] }
-
-designator_list: 
- | designator { [$1] }
- | designator_list designator { $1 @ [$2] }
-
-
-handler_list:
- | handler { [$1] }
- | handler_list handler { $1 @ [$2] }
-
 
 mem_initializer_list: 
  | mem_initializer                           { [$1, []] }
@@ -2006,7 +1971,6 @@ template_argument_list:
 template_parameter_list: 
  | template_parameter { [$1, []] }
  | template_parameter_list TComma template_parameter { $1 @ [$3, [$2]] }
-
 
 base_specifier_list: 
  | base_specifier                               { [$1,           []] }
@@ -2022,16 +1986,6 @@ gcc_comma_opt:
 comma_opt:
  | TComma { [$1] }
  | { [] }
-
-
-assign_expr_opt: 
- | assign_expr     { Some $1 }
- | (* empty *) { None }
-
-expr_opt: 
- | expr            { Some $1 }
- | (* empty *) { None }
-
 
 
 argument_list_opt:
