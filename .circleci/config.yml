@@ -5,7 +5,7 @@ jobs:
       - image: returntocorp/sgrep-build:2.1
     steps:
       - checkout
-      - run: eval $(opam env); opam remove pfff -y --force; make uninstall-libs;opam install .
+      - run: eval $(opam env); opam install grain_dypgen menhir; ./configure -novisual && make depend && make
 
   test:
     docker:
@@ -14,7 +14,7 @@ jobs:
         PFFF_HOME: /home/opam/project
     steps:
       - checkout
-      - run: eval $(opam env); opam remove pfff -y --force; make uninstall-libs; opam install .
+      - run: eval $(opam env); opam install grain_dypgen menhir; ./configure -novisual && make depend && make test
 workflows:
   version: 2.1
   build_and_test:
