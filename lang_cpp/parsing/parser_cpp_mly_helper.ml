@@ -307,6 +307,7 @@ let fixFieldOrMethodDecl (xs, semicolon) =
 (*-------------------------------------------------------------------------- *)
 (* shortcuts *)
 (*-------------------------------------------------------------------------- *)
+(* used only in the .dyp now *)
 let mk_e e = e
 
 let mk_funcall e1 args = 

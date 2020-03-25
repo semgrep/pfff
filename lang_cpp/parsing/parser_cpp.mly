@@ -20,6 +20,7 @@ open Common
 
 open Cst_cpp
 open Parser_cpp_mly_helper
+
 module PI = Parse_info
 
 (* This file contains a grammar for C/C++/Cpp.
@@ -66,7 +67,6 @@ module PI = Parse_info
 (*-----------------------------------------*)
 (* The C tokens *)
 (*-----------------------------------------*)
-
 %token <string * Parse_info.t>                       TInt
 %token <(string * Parse_info.t) * Cst_cpp.floatType> TFloat
 %token <(string * Parse_info.t) * Cst_cpp.isWchar>   TChar TString
@@ -237,7 +237,6 @@ module PI = Parse_info
 %start <Cst_cpp.any> sgrep_spatch_pattern
 
 %%
-
 (*************************************************************************)
 (* TOC *)
 (*************************************************************************)
@@ -266,8 +265,7 @@ module PI = Parse_info
 (*************************************************************************)
 
 (* no more used now that use error recovery, but good to keep *)
-main:  
- | translation_unit EOF     { $1 }
+main: translation_unit EOF     { $1 }
 
 translation_unit: 
  | external_declaration                      { [DeclElem $1] }
@@ -293,19 +291,18 @@ toplevel_aux:
  | cpp_other           { $1 }
 
  (* when have error recovery, we can end up skipping the
-  * beginning of the file, and so get trailing unclose } at
-  * end
+  * beginning of the file, and so get trailing unclosed } at the end
   *)
  | TCBrace { DeclElem (EmptyDef $1) }
 
 (*************************************************************************)
 (* sgrep *)
 (*************************************************************************)
+
 sgrep_spatch_pattern:
  | expr      EOF { Expr $1 }
  | statement EOF { Stmt $1 }
  | statement statement+ EOF { Stmts ($1::$2) }
-
 
 (*************************************************************************)
 (* Ident, scope *)
@@ -316,7 +313,7 @@ id_expression:
  | qualified_id { $1 }
 
 (* todo:
- * ~id class_name,  conflict  IdDestructor TODO
+ * ~id class_name,  conflict  IdDestructor
  * template-id,   conflict
  *)
 unqualified_id:
@@ -324,14 +321,11 @@ unqualified_id:
  | operator_function_id   { $1 }
  | conversion_function_id { $1 }
 
-operator_function_id: 
- | Toperator operator_kind
-    { IdOperator ($1, $2) }
+operator_function_id: Toperator operator_kind { IdOperator ($1, $2) }
 
-conversion_function_id:
- | Toperator conversion_type_id
-    { IdConverter ($1, $2) }
-(* no deref getref operator (cos ambiguity with Mul and And), 
+conversion_function_id: Toperator conversion_type_id { IdConverter ($1, $2) }
+
+(* no deref getref operator (cos ambiguity with Mul and And)
  * no unaryplus/minus op either 
  *)
 operator_kind:
@@ -406,12 +400,10 @@ class_or_namespace_name_for_qualifier:
  * we don't have such contextual information and we can merge 
  * those rules anyway without introducing conflicts.
  *)
-enum_name_or_typedef_name_or_simple_class_name:
- | TIdent_Typedef { $1 }
+enum_name_or_typedef_name_or_simple_class_name: TIdent_Typedef { $1 }
 (* used only with namespace/using rules. We use Tclassname for stuff
    * like std::... todo? or just TIdent_Typedef? *)
-namespace_name:
- | TIdent { $1 }
+namespace_name: TIdent { $1 }
 
 (*----------------------------*)
 (* workarounds *)
@@ -442,26 +434,25 @@ ident:
 
 expr: 
  | assign_expr             { $1 }
- | expr TComma assign_expr { mk_e (Sequence ($1, $2, $3)) }
+ | expr TComma assign_expr { Sequence ($1, $2, $3) }
 
 (* bugfix: in C grammar they put 'unary_expr', but in fact it must be 
-   * 'cast_expr', otherwise (int * ) xxx = &yy; is not allowed
-   *)
+ * 'cast_expr', otherwise (int * ) xxx = &yy; is not allowed
+ *)
 assign_expr: 
  | cond_expr                     { $1 }
- | cast_expr TAssign assign_expr { mk_e(Assign ($1, $2,$3))}
- | cast_expr TEq     assign_expr { mk_e(Assign ($1,SimpleAssign $2,$3))}
- (*c++ext: *)
- | Tthrow assign_expr_opt        { mk_e (Throw ($1, $2)) }
+ | cast_expr TAssign assign_expr { Assign ($1, $2,$3)}
+ | cast_expr TEq     assign_expr { Assign ($1,SimpleAssign $2,$3)}
+ (* c++ext: *)
+ | Tthrow assign_expr_opt        { Throw ($1, $2) }
 
 (* gccext: allow optional then part hence opt_expr 
-   * bugfix: in C grammar they put 'TCol cond_expr', but in fact it must be
-   * 'assign_expr', otherwise   pnp ? x : x = 0x388  is not allowed
-   *)
+ * bugfix: in C grammar they put 'TCol cond_expr', but in fact it must be
+ * 'assign_expr', otherwise   pnp ? x : x = 0x388  is not allowed
+ *)
 cond_expr: 
  | logical_or_expr   { $1 }
- | logical_or_expr TWhy expr_opt TCol assign_expr 
-     { mk_e (CondExpr ($1,$2, $3, $4, $5)) } 
+ | logical_or_expr TWhy expr_opt TCol assign_expr { CondExpr ($1,$2, $3, $4, $5)} 
 
 (* old: was in single arith_expr rule with %left prio, but dypgen cant *)
 multiplicative_expr:
@@ -518,21 +509,21 @@ pm_expr:
  | cast_expr { $1 }
  (*c++ext: .* and ->*, note that not next to . and -> and take expr *)
  | pm_expr TDotStar   cast_expr
-     { mk_e (RecordStarAccess   ($1, $2, $3))}
+     { RecordStarAccess   ($1, $2,$3) }
  | pm_expr TPtrOpStar cast_expr
-     { mk_e (RecordPtStarAccess ($1, $2, $3))}
+     { RecordPtStarAccess ($1, $2, $3) }
 
 cast_expr: 
  | unary_expr                        { $1 }
- | TOPar type_id TCPar cast_expr { mk_e (Cast (($1, $2, $3), $4)) }
+ | TOPar type_id TCPar cast_expr { Cast (($1, $2, $3), $4) }
 
 unary_expr: 
  | postfix_expr                    { $1 }
- | TInc unary_expr                 { mk_e(Infix ($2, (Inc, $1))) }
- | TDec unary_expr                 { mk_e(Infix ($2, (Dec, $1))) }
- | unary_op cast_expr              { mk_e(Unary ($2, $1)) }
- | Tsizeof unary_expr              { mk_e(SizeOfExpr ($1, $2)) }
- | Tsizeof TOPar type_id TCPar { mk_e(SizeOfType ($1, ($2, $3, $4))) }
+ | TInc unary_expr                 { Infix ($2, (Inc, $1)) }
+ | TDec unary_expr                 { Infix ($2, (Dec, $1)) }
+ | unary_op cast_expr              { Unary ($2, $1) }
+ | Tsizeof unary_expr              { SizeOfExpr ($1, $2) }
+ | Tsizeof TOPar type_id TCPar { SizeOfType ($1, ($2, $3, $4)) }
  (*c++ext: *)
  | new_expr      { $1 }
  | delete_expr   { $1 }
@@ -554,28 +545,28 @@ postfix_expr:
  | primary_expr               { $1 }
 
  | postfix_expr TOCro expr TCCro                
-     { mk_e(ArrayAccess ($1, ($2, $3, $4))) }
+     { ArrayAccess ($1, ($2, $3,$4)) }
  | postfix_expr TOPar argument_list_opt TCPar  
-     { mk_e(mk_funcall $1 ($2, $3, $4)) }
+     { mk_funcall $1 ($2, $3, $4) }
 
  (*c++ext: ident is now a id_expression *)
  | postfix_expr TDot   template_opt tcolcol_opt  id_expression
-     { let name = ($4, fst $5, snd $5) in mk_e(RecordAccess ($1,$2,name)) }
+     { let name = ($4, fst $5, snd $5) in RecordAccess ($1,$2,name) }
  | postfix_expr TPtrOp template_opt tcolcol_opt id_expression  
-     { let name = ($4, fst $5, snd $5) in mk_e(RecordPtAccess($1,$2,name))  }
+     { let name = ($4, fst $5, snd $5) in RecordPtAccess($1,$2,name)  }
 
- | postfix_expr TInc          { mk_e(Postfix ($1, (Inc, $2))) }
- | postfix_expr TDec          { mk_e(Postfix ($1, (Dec, $2))) }
+ | postfix_expr TInc          { Postfix ($1, (Inc, $2)) }
+ | postfix_expr TDec          { Postfix ($1, (Dec, $2)) }
 
  (* gccext: also called compound literals *)
  | TOPar type_id TCPar braced_init_list
-     { mk_e(GccConstructor (($1, $2, $3), $4)) }
+     { GccConstructor (($1, $2, $3), $4) }
 
 
  (* c++ext: *)
  | cast_operator_expr { $1 }
- | Ttypeid TOPar unary_expr TCPar { mk_e(TypeId ($1, ($2, Right $3, $4))) }
- | Ttypeid TOPar type_id    TCPar { mk_e(TypeId ($1, ($2, Left $3, $4))) }
+ | Ttypeid TOPar unary_expr TCPar { TypeId ($1, ($2, Right $3, $4)) }
+ | Ttypeid TOPar type_id    TCPar { TypeId ($1, ($2, Left $3, $4)) }
  | cast_constructor_expr { $1 }
 
  (* c++0x: *)
@@ -587,13 +578,13 @@ postfix_expr:
 primary_expr: 
  | literal { $1 }
  (* c++ext: *)
- | Tthis { mk_e(This $1) }
- (*c++ext: cf below now. old: TIdent { mk_e(Ident  (fst $1)) [snd $1] }  *)
+ | Tthis { This $1 }
+ (*c++ext: cf below now. old: TIdent { Ident  (fst $1) [snd $1] }  *)
 
  (* forunparser: *)
- | TOPar expr TCPar { mk_e(ParenExpr ($1, $2, $3)) }  
+ | TOPar expr TCPar { ParenExpr ($1, $2, $3) }  
  (* gccext: allow statement as expressions via ({ statement }) *)
- | TOPar compound TCPar    { mk_e(StatementExpr ($1, $2, $3)) }
+ | TOPar compound TCPar    { StatementExpr ($1, $2, $3) }
 
  (* contains identifier rule *)
  | primary_cplusplus_id { $1 }
@@ -602,15 +593,15 @@ primary_expr:
 
 literal:
  (* constants a.k.a literal *)
- | TInt    { mk_e(C (Int    ($1))) }
- | TFloat  { mk_e(C (Float  ($1))) }
- | TChar   { mk_e(C (Char   ($1))) }
- | TString { mk_e(C (String ($1))) }
+ | TInt    { C (Int    ($1)) }
+ | TFloat  { C (Float  ($1)) }
+ | TChar   { C (Char   ($1)) }
+ | TString { C (String ($1)) }
  (* gccext: cppext: *)
- | string_elem string_list { mk_e(C (MultiString ($1 :: $2))) }
+ | string_elem string_list { C (MultiString ($1 :: $2)) }
  (*c++ext: *)
- | Ttrue   { mk_e(C (Bool (true, $1))) }
- | Tfalse  { mk_e(C (Bool (false, $1))) }
+ | Ttrue   { C (Bool (true, $1)) }
+ | Tfalse  { C (Bool (false, $1)) }
  (*c++0x: *)
  | Tnullptr { ExprTodo $1 }
 
@@ -624,26 +615,26 @@ literal:
 primary_cplusplus_id:
  | id_expression 
      { let name = (None, fst $1, snd $1) in 
-       mk_e (Id (name, noIdInfo())) }
+       Id (name, noIdInfo()) }
  (* grammar_c++: is in qualified_id inside id_expression instead? *)
  | TColCol TIdent  
      { let name = Some $1, noQscope, IdIdent $2 in 
-       mk_e (Id (name, noIdInfo())) }
+       Id (name, noIdInfo()) }
  | TColCol operator_function_id 
      { let qop = $2 in
        let name = (Some $1, noQscope, qop) in 
-       mk_e (Id (name, noIdInfo())) }
+       Id (name, noIdInfo()) }
  | TColCol qualified_id 
      { let name = (Some $1, fst $2, snd $2) in 
-       mk_e (Id (name, noIdInfo())) }
+       Id (name, noIdInfo()) }
 
 (*could use TInf here *)
 cast_operator_expr: 
  | cpp_cast_operator TInf_Template type_id  TSup_Template TOPar expr TCPar 
-     { mk_e (CplusplusCast ($1, ($2, $3, $4), ($5, $6, $7))) }
+     { CplusplusCast ($1, ($2, $3, $4), ($5, $6, $7)) }
 (* TODO: remove once we don't skip template arguments *)
  | cpp_cast_operator TOPar expr TCPar
-     { mk_e (ExprTodo $2) }
+     { ExprTodo $2 }
 
 (*c++ext:*)
 cpp_cast_operator:
@@ -664,26 +655,26 @@ cast_constructor_expr:
  | TIdent_TypedefConstr TOPar argument_list_opt TCPar 
      { let name = None, noQscope, IdIdent $1 in
        let ft = nQ, (TypeName name) in
-       mk_e(ConstructedObject (ft, ($2, $3, $4)))  
+       ConstructedObject (ft, ($2, $3, $4))  
      }
  | basic_type_2 TOPar argument_list_opt TCPar 
      { let ft = nQ, $1 in
-       mk_e(ConstructedObject (ft, ($2, $3, $4)))
+       ConstructedObject (ft, ($2, $3, $4))
      }
 
 (* c++ext: * simple case: new A(x1, x2); *)
 new_expr:
  | tcolcol_opt Tnew new_placement_opt   new_type_id  new_initializer_opt
-     { mk_e (New ($1, $2, $3, $4, $5))  }
+     { New ($1, $2, $3, $4, $5)  }
 (* ambiguity then on the TOPar
  tcolcol_opt Tnew new_placement_opt TOPar type_id TCPar new_initializer_opt
   *)
 
 delete_expr:
  | tcolcol_opt Tdelete cast_expr 
-     { mk_e (Delete ($1, $2, $3)) }
+     { Delete ($1, $2, $3) }
  | tcolcol_opt Tdelete TOCro_new TCCro_new cast_expr 
-     { mk_e (DeleteArray ($1, $2, ($3, (), $4), $5)) }
+     { DeleteArray ($1, $2, ($3, (), $4), $5) }
 
 new_placement: 
  | TOPar argument_list TCPar { ($1, $2, $3) }
@@ -871,18 +862,6 @@ jump:
 (*----------------------------*)
 (* cppext: *)
 (*----------------------------*)
-
-statement_list_opt:
- | (*empty*) { [] }
- | statement_seq_list { $1 }
-
-statement_seq_list:
- | statement_seq { [$1] }
- | statement_seq_list statement_seq { $1 @ [$2] }
-
-statement_list:
- | statement { [$1] }
- | statement_list statement { $1 @ [$2] }
 
 statement_seq:
  | statement { StmtElem $1 }
