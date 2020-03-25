@@ -172,7 +172,7 @@ module PI = Parse_info
    Texplicit Tmutable
 %token <Parse_info.t> TPtrOpStar TDotStar
 
-%token <Parse_info.t> TColCol 
+%token <Parse_info.t> TColCol "::"
 
 (* fresh_token: for constructed object, in parsing_hacks_cpp.ml *)
 %token <Parse_info.t> TOPar_CplusplusInit
@@ -380,7 +380,7 @@ qualified_id:
    { $1, $2 }
 
 nested_name_specifier: 
- | class_or_namespace_name_for_qualifier TColCol nested_name_specifier_opt 
+ | class_or_namespace_name_for_qualifier "::" nested_name_specifier_opt 
    { ($1, $2)::$3 }
 
 (* context dependent *)
@@ -540,9 +540,9 @@ postfix_expr:
  | postfix_expr TOPar argument_list_opt TCPar { mk_funcall $1 ($2, $3, $4) }
 
  (*c++ext: ident is now a id_expression *)
- | postfix_expr TDot   template_opt tcolcol_opt  id_expression
+ | postfix_expr TDot   template_opt "::"?  id_expression
      { let name = ($4, fst $5, snd $5) in RecordAccess ($1,$2,name) }
- | postfix_expr TPtrOp template_opt tcolcol_opt id_expression  
+ | postfix_expr TPtrOp template_opt "::"? id_expression  
      { let name = ($4, fst $5, snd $5) in RecordPtAccess($1,$2,name)  }
 
  | postfix_expr TInc          { Postfix ($1, (Inc, $2)) }
@@ -598,21 +598,21 @@ literal:
 (*----------------------------*)
 
 (* can't factorize with following rule :(
-   * | tcolcol_opt nested_name_specifier_opt TIdent
-   *)
+ * | "::"? nested_name_specifier_opt TIdent
+ *)
 primary_cplusplus_id:
  | id_expression 
      { let name = (None, fst $1, snd $1) in 
        Id (name, noIdInfo()) }
  (* grammar_c++: is in qualified_id inside id_expression instead? *)
- | TColCol TIdent  
+ | "::" TIdent  
      { let name = Some $1, noQscope, IdIdent $2 in 
        Id (name, noIdInfo()) }
- | TColCol operator_function_id 
+ | "::" operator_function_id 
      { let qop = $2 in
        let name = (Some $1, noQscope, qop) in 
        Id (name, noIdInfo()) }
- | TColCol qualified_id 
+ | "::" qualified_id 
      { let name = (Some $1, fst $2, snd $2) in 
        Id (name, noIdInfo()) }
 
@@ -652,23 +652,21 @@ cast_constructor_expr:
 
 (* c++ext: * simple case: new A(x1, x2); *)
 new_expr:
- | tcolcol_opt Tnew new_placement_opt   new_type_id  new_initializer_opt
+ | "::"? Tnew new_placement_opt   new_type_id  new_initializer_opt
      { New ($1, $2, $3, $4, $5)  }
 (* ambiguity then on the TOPar
- tcolcol_opt Tnew new_placement_opt TOPar type_id TCPar new_initializer_opt
+ "::"? Tnew new_placement_opt TOPar type_id TCPar new_initializer_opt
   *)
 
 delete_expr:
- | tcolcol_opt Tdelete cast_expr 
+ | "::"? Tdelete cast_expr 
      { Delete ($1, $2, $3) }
- | tcolcol_opt Tdelete TOCro_new TCCro_new cast_expr 
-     { DeleteArray ($1, $2, ($3, (), $4), $5) }
+ | "::"? Tdelete TOCro_new TCCro_new cast_expr 
+     { DeleteArray ($1,$2,($3,(),$4), $5) }
 
-new_placement: 
- | TOPar argument_list TCPar { ($1, $2, $3) }
+new_placement: TOPar argument_list TCPar { ($1, $2, $3) }
 
-new_initializer: 
- | TOPar argument_list_opt TCPar { ($1, $2, $3) }
+new_initializer: TOPar argument_list_opt TCPar { ($1, $2, $3) }
 
 (*----------------------------*)
 (* c++0x: lambdas! *)
@@ -1053,7 +1051,7 @@ direct_d:
 (* c++ext: *)
 (*----------------------------*)
 declarator_id:
- | tcolcol_opt id_expression 
+ | "::"? id_expression 
      { ($1, fst $2, snd $2) }
 (* TODO ::opt nested-name-specifieropt type-name*)
 
@@ -1599,12 +1597,12 @@ block_declaration:
 (*----------------------------*)
 
 namespace_alias_definition:
- | Tnamespace TIdent TEq tcolcol_opt nested_name_specifier_opt namespace_name
+ | Tnamespace TIdent TEq "::"? nested_name_specifier_opt namespace_name
     TPtVirg
      { let name = $4, $5, IdIdent $6 in NameSpaceAlias ($1, $2, $3, name, $7) }
 
 using_directive:
- | Tusing Tnamespace tcolcol_opt nested_name_specifier_opt namespace_name 
+ | Tusing Tnamespace "::"? nested_name_specifier_opt namespace_name 
     TPtVirg
      { let name = $3, $4, IdIdent $5 in UsingDirective ($1, $2, name, $6) }
 
@@ -1613,10 +1611,10 @@ using_directive:
    * or put opt on nested_name_specifier too
   *)
 using_declaration:
- | Tusing typename_opt tcolcol_opt nested_name_specifier unqualified_id TPtVirg
+ | Tusing typename_opt "::"? nested_name_specifier unqualified_id TPtVirg
      { let name = ($3, $4, $5) in $1, name, $6 (*$2*) }
 (* TODO: remove once we don't skip qualifier ? *)
- | Tusing typename_opt tcolcol_opt unqualified_id TPtVirg 
+ | Tusing typename_opt "::"? unqualified_id TPtVirg 
      { let name = ($3, [], $4) in $1, name, $5 (*$2*) }
   
 (*----------------------------*)
@@ -2046,7 +2044,3 @@ inline_opt:
 volatile_opt:
  | Tvolatile     { Some $1 }
  | (*empty*) { None }
-
-tcolcol_opt:
- | TColCol         { Some $1 }
- | (* empty *) { None }
