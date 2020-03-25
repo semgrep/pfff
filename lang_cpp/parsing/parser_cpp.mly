@@ -232,23 +232,18 @@ module PI = Parse_info
 (*************************************************************************)
 (* Rules type declaration *)
 (*************************************************************************)
-%start main toplevel sgrep_spatch_pattern
+%start <Cst_cpp.program> main 
+%start <Cst_cpp.toplevel option> toplevel
+%start <Cst_cpp.any> sgrep_spatch_pattern
 
-%type <Cst_cpp.program> main
-%type <Cst_cpp.toplevel option> toplevel
-%type <Cst_cpp.any> sgrep_spatch_pattern
-
-%type <Cst_cpp.stmt> statement
-%type <Cst_cpp.expr> expr
-%type <Cst_cpp.type_> type_id
-%type <(Cst_cpp.name) * (Cst_cpp.type_ -> Cst_cpp.type_)> declarator
-%type <(Cst_cpp.name)> type_cplusplus_id
 %%
 
 (*************************************************************************)
 (* TOC *)
 (*************************************************************************)
 (* translation_unit (obsolete)
+ * toplevel
+ * sgrep
  * 
  * ident
  * expression
@@ -259,13 +254,11 @@ module PI = Parse_info
  *   - aux part (parameters)
  * class/struct
  * enum
- * declaration, storage, initializers
- * block_declaration
+ * simple declaration (and storage, initializers)
+ * block_declaration (and namespace, using, asm)
+ * declaration (and template, namespace again)
+ * function definition
  * cpp directives
- * toplevel (= start grammar rule)
- * 
- * generic workarounds (obrace, cbrace for context setting)
- * xxx_list, xxx_opt
  *)
 
 (*************************************************************************)
