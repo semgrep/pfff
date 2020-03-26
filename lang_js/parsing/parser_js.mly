@@ -230,6 +230,10 @@ let fix_sgrep_module_item x =
 (*************************************************************************)
 (* Macros *)
 (*************************************************************************)
+%public listc(X):
+ | X { [Left $1] }
+ | listc(X) "," X { $1 @ [Right $2; Left $3] }
+
 %public optl(X):
  | (* empty *) { [] }
  | X           { $1 }
@@ -347,9 +351,9 @@ import_names:
 named_imports:
  | "{" "}" 
    { ($1, [], $2) }
- | "{" import_specifiers          "}" 
+ | "{" listc(import_specifier)          "}" 
    { ($1, $2, $3) }
- | "{" import_specifiers ","  "}" 
+ | "{" listc(import_specifier) ","  "}" 
    { ($1, $2 @ [Right $3], $4) }
 
 (* also valid for export *)
@@ -389,9 +393,9 @@ export_names:
 export_clause:
  | "{" "}" 
    { ($1, [], $2) }
- | "{" import_specifiers          "}" 
+ | "{" listc(import_specifier)          "}" 
    { ($1, $2, $3) }
- | "{" import_specifiers ","  "}" 
+ | "{" listc(import_specifier) ","  "}" 
    { ($1, $2 @ [Right $3], $4) }
 
 
@@ -401,20 +405,20 @@ export_clause:
 
 (* part of 'statement' *)
 variable_statement:
- | T_VAR variable_declaration_list sc  { VarsDecl ((Var, $1), $2, $3) }
+ | T_VAR listc(variable_declaration) sc  { VarsDecl ((Var, $1), $2, $3) }
 
 (* part of 'declaration' *)
 lexical_declaration:
  (* es6: *)
- | T_CONST variable_declaration_list sc { VarsDecl((Const, $1), $2,$3) }
- | T_LET variable_declaration_list sc { VarsDecl((Let, $1), $2,$3) }
+ | T_CONST listc(variable_declaration) sc { VarsDecl((Const, $1), $2,$3) }
+ | T_LET listc(variable_declaration) sc { VarsDecl((Let, $1), $2,$3) }
 
 
 (* one var from a list of vars *)
 variable_declaration:
- | identifier annotation_opt initializeur_opt
+ | identifier annotation? initializeur?
      { VarClassic { v_name = $1; v_type = $2; v_init = $3 } }
- | binding_pattern annotation_opt initializeur
+ | binding_pattern annotation? initializeur
      { VarPattern { vpat = $1; vpat_type = $2; vpat_init = Some $3 } }
 
 initializeur:
@@ -423,10 +427,10 @@ initializeur:
 
 
 for_variable_declaration:
- | T_VAR variable_declaration_list_no_in   { ((Var, $1), $2) }
+ | T_VAR listc(variable_declaration_no_in)   { ((Var, $1), $2) }
  (* es6: *)
- | T_CONST variable_declaration_list_no_in { ((Const, $1), $2) }
- | T_LET variable_declaration_list_no_in   { ((Let, $1), $2) }
+ | T_CONST listc(variable_declaration_no_in) { ((Const, $1), $2) }
+ | T_LET listc(variable_declaration_no_in)   { ((Let, $1), $2) }
 
 variable_declaration_no_in:
  | identifier initializer_no_in
@@ -444,7 +448,7 @@ for_single_variable_decl:
  | T_LET for_binding   { ((Let, $1), $2) }
 
 for_binding:
- | identifier annotation_opt 
+ | identifier annotation? 
    { VarClassic { v_name = $1; v_type = $2; v_init = None; } }
  | binding_pattern 
    { VarPattern { vpat = $1; vpat_type = None; vpat_init = None } }
@@ -469,7 +473,7 @@ binding_property_list:
 
 
 binding_property:
- | binding_identifier initializeur_opt   { PatId ($1, $2) }
+ | binding_identifier initializeur?   { PatId ($1, $2) }
  | property_name ":" binding_element { PatProp ($1, $2, $3) }
  (* can appear only at the end of a binding_property_list in ECMA *)
  | "..." binding_identifier { PatDots ($1, PatId ($2, None)) }
@@ -477,8 +481,8 @@ binding_property:
 
 (* in theory used also for formal parameter as is *)
 binding_element:
- | binding_identifier initializeur_opt { PatId ($1, $2) }
- | binding_pattern initializeur_opt    { PatNest ($1, $2) }
+ | binding_identifier initializeur? { PatId ($1, $2) }
+ | binding_pattern initializeur?    { PatNest ($1, $2) }
 
 
 array_binding_pattern:
@@ -505,17 +509,17 @@ binding_elision_element:
    * T_EXPORT T_DEFAULT? but then many ambiguities.
    *)
 function_declaration:
- T_FUNCTION identifier_opt call_signature "{" function_body "}"
+ T_FUNCTION identifier? call_signature "{" function_body "}"
      { mk_func_decl (F_func ($1, $2)) [] $3 ($4, $5, $6) }
 
 (* the identifier is really optional here *)
 function_expression:
- T_FUNCTION identifier_opt call_signature  "{" function_body "}"
+ T_FUNCTION identifier? call_signature  "{" function_body "}"
      { mk_func_decl (F_func ($1, $2)) [] $3 ($4, $5, $6) }
 
 (* typescript: *)
 call_signature: 
- generics_opt  "(" formal_parameter_list_opt ")"  annotation_opt 
+ generics?  "(" formal_parameter_list_opt ")"  annotation? 
   { $1, ($2, $3, $4), $5 }
 
 function_body:
@@ -548,7 +552,7 @@ formal_parameter:
     { let (tok,e) = $2 in ParamClassic 
       { (mk_param $1) with p_default = Some(DSome(tok,e)); } }
   (* until here this is mostly equivalent to the 'binding_element' rule *)
-  | binding_pattern annotation_opt initializeur_opt 
+  | binding_pattern annotation? initializeur? 
     { ParamPattern { ppat = $1; ppat_type = $2; ppat_default = $3 } }
 
  (* es6: spread *)
@@ -577,27 +581,27 @@ formal_parameter:
 (*----------------------------*)
 (* generators *)
 (*----------------------------*)
-(* TODO: identifier_opt in original grammar, why? *)
+(* TODO: identifier? in original grammar, why? *)
 generator_declaration:
   T_FUNCTION "*" identifier call_signature "{" function_body "}"
      { mk_func_decl (F_func ($1, Some $3)) [Generator $2] $4 ($5, $6, $7) }
 
 (* the identifier is optional here *)
 generator_expression:
- T_FUNCTION "*" identifier_opt call_signature "{" function_body "}"
+ T_FUNCTION "*" identifier? call_signature "{" function_body "}"
      { mk_func_decl (F_func ($1, $3)) [Generator $2] $4 ($5, $6, $7) }
 
 (*----------------------------*)
 (* asynchronous functions *)
 (*----------------------------*)
-(* TODO: identifier_opt in original grammar, why? *)
+(* TODO: identifier? in original grammar, why? *)
 async_declaration:
  | T_ASYNC T_FUNCTION identifier call_signature "{" function_body "}"
      { mk_func_decl (F_func ($2, Some $3)) [Async $1] $4 ($5, $6, $7) }
 
 (* the identifier is optional here *)
 async_function_expression:
- | T_ASYNC T_FUNCTION identifier_opt call_signature "{" function_body "}"
+ | T_ASYNC T_FUNCTION identifier? call_signature "{" function_body "}"
      { mk_func_decl (F_func ($2, $3)) [Async $1] $4 ($5, $6, $7) }
 
 (*************************************************************************)
@@ -608,13 +612,13 @@ async_function_expression:
    * TODO: use other tech to enforce this? extra rule after
    * T_EXPORT T_DEFAULT? but then many ambiguities.
    *)
-class_declaration: T_CLASS binding_identifier_opt generics_opt class_tail
+class_declaration: T_CLASS binding_identifier? generics? class_tail
    { let (extends, body) = $4 in
      { c_tok = $1; c_name = $2; c_type_params = $3;
        c_extends =extends; c_body = body }
    }
 
-class_tail: class_heritage_opt "{" class_body_opt "}" {$1,($2,$3,$4)}
+class_tail: class_heritage? "{" optl(class_body) "}" {$1,($2,$3,$4)}
 
 class_heritage: T_EXTENDS type_or_expression { ($1, $2) }
 
@@ -626,7 +630,7 @@ binding_identifier_opt:
  | binding_identifier { Some $1 }
 
 
-class_expression: T_CLASS binding_identifier_opt generics_opt class_tail
+class_expression: T_CLASS binding_identifier_opt generics? class_tail
    { let (extends, body) = $4 in
      Class { c_tok = $1;  c_name = $2; c_type_params = $3;
                c_extends =extends;c_body = body } }
@@ -640,11 +644,11 @@ class_element:
  |                  method_definition      { C_method (None, $1) }
  | access_modifiers method_definition      { C_method (None, $2) (* TODO $1 *) } 
 
- |                  property_name annotation_opt initializeur_opt sc 
+ |                  property_name annotation? initializeur? sc 
     { C_field ({ fld_static = None; fld_name = $1; fld_type = $2;
                 fld_init = $3 }, $4)
     }
- | access_modifiers property_name annotation_opt initializeur_opt sc 
+ | access_modifiers property_name annotation? initializeur? sc 
     { C_field ({ fld_static = None(*TODO $1*); fld_name = $2; fld_type = $3;
                 fld_init = $4 }, $5)
     }
@@ -679,13 +683,13 @@ method_definition:
   { mk_func_decl (F_method $2) [Generator $1] $3 ($4, $5, $6) }
  (* we enforce 0 parameter here *)
  | T_GET property_name
-    generics_opt "(" ")" annotation_opt
+    generics? "(" ")" annotation?
     "{" function_body "}"
   { mk_func_decl (F_get ($1, $2)) [] ($3, ($4, [], $5), $6) ($7, $8, $9) }
 
  (* we enforce 1 parameter here *)
  | T_SET property_name
-    generics_opt  "(" formal_parameter ")" annotation_opt
+    generics?  "(" formal_parameter ")" annotation?
     "{" function_body "}"
   { mk_func_decl (F_set ($1, $2)) [] ($3, ($4, [Left $5], $6), $7) ($8,$9,$10)}
 
@@ -700,12 +704,12 @@ method_definition:
 (* TODO: use type_ at the end here and you get conflicts on '[' 
  * Why? because [] can follow an interface_declaration? *)
 
-interface_declaration: T_INTERFACE binding_identifier generics_opt 
-  interface_extends_opt object_type
+interface_declaration: T_INTERFACE binding_identifier generics? 
+  interface_extends? object_type
    { { i_tok = $1;i_name = $2; (* TODO: interface_extends! *)
        i_type_params = $3; i_type = $5; } }
 
-interface_extends: T_EXTENDS type_reference_list { ($1, $2) }
+interface_extends: T_EXTENDS listc(type_reference) { ($1, $2) }
 
 (*************************************************************************)
 (* Type declaration *)
@@ -715,7 +719,7 @@ type_alias_declaration: T_TYPE identifier "=" type_ sc {
  match $5 with Some t -> t | None -> $3 }
 
 enum_declaration: 
-  const_opt T_ENUM identifier "{" enum_member_list trailing_comma "}" { $7 }
+  T_CONST? T_ENUM identifier "{" listc(enum_member) trailing_comma "}" { $7 }
 
 enum_member:
  | property_name { }
@@ -739,7 +743,7 @@ annotation: ":" type_ { TAnnot($1, $2) }
 
 complex_annotation:
  | annotation { $1 }
- | generics_opt "(" optl(param_type_list) ")" ":" type_
+ | generics? "(" optl(param_type_list) ")" ":" type_
     { TFunAnnot($1,($2,$3,$4),$5,$6) }
 
 (*----------------------------*)
@@ -770,7 +774,7 @@ primary_type2:
  | predefined_type { $1 }
  | type_reference { TName($1) }
  | object_type { $1 }
- | "[" type_list "]" { TTodo }
+ | "[" listc(type_) "]" { TTodo }
  (* not in Typescript grammar *)
  | T_STRING { TTodo }
 
@@ -972,15 +976,15 @@ iteration_statement:
      { While ($1, ($2, $3, $4), $5) }
 
  | T_FOR "("
-     expression_no_in_opt ";"
-     expression_opt ";"
-     expression_opt
+     expression_no_in? ";"
+     expression? ";"
+     expression?
      ")" statement
      { For ($1, $2, $3|>Common2.fmap (fun x -> LHS1 x), $4, $5, $6, $7,$8,$9)}
  | T_FOR "("
      for_variable_declaration ";"
-     expression_opt ";"
-     expression_opt
+     expression? ";"
+     expression?
      ")" statement
      { For ($1, $2, Some (ForVars $3), $4, $5, $6, $7, $8, $9) }
 
@@ -1367,7 +1371,7 @@ arrow_function:
          a_return_type = None; a_tok = $2; a_body = $3 } }
 
  (* can not factorize with TOPAR parameter_list TCPAR, see conflicts.txt *)
- | T_LPAREN_ARROW formal_parameter_list_opt ")" annotation_opt 
+ | T_LPAREN_ARROW formal_parameter_list_opt ")" annotation? 
     "->" arrow_body 
     { { a_params = AParams ($1, $2, $3); a_return_type = $4;
         a_tok = $5; a_body = $6; } }
@@ -1625,75 +1629,3 @@ trailing_comma:
 
 
 
-variable_declaration_list:
- | variable_declaration
-     { [Left $1]  }
- | variable_declaration_list "," variable_declaration
-     { $1 @ [Right $2; Left $3] }
-
-variable_declaration_list_no_in:
- | variable_declaration_no_in
-     { [Left $1] }
- | variable_declaration_list_no_in "," variable_declaration_no_in
-     { $1 @ [Right $2; Left $3] }
-
-import_specifiers:
- | import_specifier
-     { [Left $1]  }
- | import_specifiers "," import_specifier
-     { $1 @ [Right $2; Left $3] }
-
-type_reference_list:
- | type_reference { [Left $1]  }
- | type_reference_list "," type_reference { $1 @ [Right $2; Left $3] }
-
-type_list:
- | type_ { [Left $1]  }
- | type_list "," type_ { $1 @ [Right $2; Left $3] }
-
-enum_member_list:
- | enum_member { [Left $1]  }
- | enum_member_list "," enum_member { $1 @ [Right $2; Left $3] }
-
-
-expression_opt:
- | (* empty *) { None }
- | expression      { Some $1 }
-
-expression_no_in_opt:
- | (* empty *)  { None }
- | expression_no_in { Some $1 }
-
-class_heritage_opt:
- | (*empty*)   { None }
- | class_heritage { Some $1 }
-
-class_body_opt:
- | (*empty*)   { [] }
- | class_body { $1 }
-
-
-
-annotation_opt:
- | (* empty *) { None }
- | annotation    { Some $1 }
-
-generics_opt:
- | (* empty *) { None }
- | generics        { Some $1 }
-
-identifier_opt:
- | (* empty *) { None }
- | identifier { Some $1 }
-
-initializeur_opt:
- | (* empty *) { None }
- | initializeur { Some $1 }
-
-interface_extends_opt:
- | (* empty *) { None }
- | interface_extends { Some $1 }
-
-const_opt:
- | (* empty *) { None }
- | T_CONST { Some $1 }
