@@ -624,27 +624,23 @@ access_modifier:
 
  | T_READONLY { }
 
-
 (*----------------------------*)
 (* Method definition (in class or object literal) *)
 (*----------------------------*)
 method_definition:
- | property_name call_signature "{" function_body "}"
-  { mk_func_decl (F_method $1) [] $2 ($3, $4, $5) }
+ |     property_name call_signature "{" function_body "}"
+    { mk_func_decl (F_method $1) [] $2 ($3, $4, $5) }
 
  | "*" property_name call_signature "{" function_body "}"
-  { mk_func_decl (F_method $2) [Generator $1] $3 ($4, $5, $6) }
- (* we enforce 0 parameter here *)
- | T_GET property_name
-    generics? "(" ")" annotation?
-    "{" function_body "}"
-  { mk_func_decl (F_get ($1, $2)) [] ($3, ($4, [], $5), $6) ($7, $8, $9) }
+    { mk_func_decl (F_method $2) [Generator $1] $3 ($4, $5, $6) }
 
+ (* we enforce 0 parameter here *)
+ | T_GET property_name generics? "(" ")" annotation? "{" function_body "}"
+    { mk_func_decl (F_get ($1, $2)) [] ($3, ($4, [], $5), $6) ($7, $8, $9) }
  (* we enforce 1 parameter here *)
- | T_SET property_name
-    generics?  "(" formal_parameter ")" annotation?
+ | T_SET property_name  generics? "(" formal_parameter ")" annotation?
     "{" function_body "}"
-  { mk_func_decl (F_set ($1, $2)) [] ($3, ($4, [Left $5], $6), $7) ($8,$9,$10)}
+    { mk_func_decl (F_set ($1, $2)) [] ($3,($4, [Left $5],$6),$7) ($8,$9,$10)}
 
  (* es7: *)
  | T_ASYNC property_name call_signature  "{" function_body "}"
@@ -657,8 +653,8 @@ method_definition:
 (* TODO: use type_ at the end here and you get conflicts on '[' 
  * Why? because [] can follow an interface_declaration? *)
 
-interface_declaration: T_INTERFACE binding_identifier generics? 
-  interface_extends? object_type
+interface_declaration: 
+ T_INTERFACE binding_identifier generics? interface_extends? object_type
    { { i_tok = $1;i_name = $2; (* TODO: interface_extends! *)
        i_type_params = $3; i_type = $5; } }
 
@@ -668,8 +664,8 @@ interface_extends: T_EXTENDS listc(type_reference) { ($1, $2) }
 (* Type declaration *)
 (*************************************************************************)
 (* typescript: *)
-type_alias_declaration: T_TYPE identifier "=" type_ sc { 
- match $5 with Some t -> t | None -> $3 }
+type_alias_declaration: T_TYPE identifier "=" type_ sc 
+  { match $5 with Some t -> t | None -> $3 }
 
 enum_declaration: 
   T_CONST? T_ENUM identifier "{" listc(enum_member) trailing_comma "}" { $7 }
@@ -696,7 +692,7 @@ annotation: ":" type_ { TAnnot($1, $2) }
 
 complex_annotation:
  | annotation { $1 }
- | generics? "(" optl(param_type_list) ")" ":" type_
+ | generics? "(" optl(param_type_list) ")" ":" type_ 
     { TFunAnnot($1,($2,$3,$4),$5,$6) }
 
 (*----------------------------*)
@@ -706,9 +702,9 @@ complex_annotation:
 (* can't use 'type'; generate syntax error in parser_js.ml *)
 type_:
  | primary_or_union_type { $1 }
- | T_PLING type_ { TQuestion ($1, $2) }
- | T_LPAREN_ARROW optl(param_type_list) ")" "->" type_
-     { TFun (($1, $2, $3), $4, $5) }
+ | T_PLING type_         { TQuestion ($1, $2) }
+ | T_LPAREN_ARROW optl(param_type_list) ")" "->" type_ 
+    { TFun (($1, $2, $3), $4, $5) }
 
 primary_or_union_type:
  | primary_or_intersect_type { $1 }
@@ -724,9 +720,9 @@ primary_type:
  | primary_type "[" "]" { TTodo }
 
 primary_type2:
- | predefined_type { $1 }
- | type_reference { TName($1) }
- | object_type { $1 }
+ | predefined_type      { $1 }
+ | type_reference       { TName($1) }
+ | object_type          { $1 }
  | "[" listc(type_) "]" { TTodo }
  (* not in Typescript grammar *)
  | T_STRING { TTodo }
@@ -767,11 +763,9 @@ type_member:
     { ($1, $2, $3) }
  | property_name_typescript T_PLING complex_annotation sc_or_comma
     { ($1, $3, $4) (* TODO $2*) }
- | "[" T_IDENTIFIER ":" T_STRING_TYPE "]" 
-   complex_annotation sc_or_comma
+ | "[" T_IDENTIFIER ":" T_STRING_TYPE "]" complex_annotation sc_or_comma
     { (* TODO *) (PN_Id $2, $6, $7)  }
- | "[" T_IDENTIFIER ":" T_NUMBER_TYPE "]" 
-   complex_annotation sc_or_comma
+ | "[" T_IDENTIFIER ":" T_NUMBER_TYPE "]" complex_annotation sc_or_comma
     { (* TODO *) (PN_Id $2, $6, $7) }
 
 (* no [xxx] here *)
@@ -788,8 +782,7 @@ param_type_list:
  | optional_param_type_list           { $1 }
 
 (* partial type annotations are not supported *)
-param_type: identifier complex_annotation
-  { (RequiredParam($1), $2) }
+param_type: identifier complex_annotation { (RequiredParam($1), $2) }
 
 optional_param_type: identifier T_PLING complex_annotation
   { (OptionalParam($1,$2), $3) }
@@ -800,35 +793,23 @@ optional_param_type_list:
  | optional_param_type       { [Left $1] }
  | rest_param_type           { [Left $1] }
 
-rest_param_type: "..." identifier complex_annotation
-  { (RestParam($1,$2), $3) }
-
+rest_param_type: "..." identifier complex_annotation { (RestParam($1,$2), $3) }
 
 (*----------------------------*)
 (* Type parameters (type variables) *)
 (*----------------------------*)
 
-generics:
- | T_LESS_THAN type_parameter_list T_GREATER_THAN { $1, $2, $3 }
+generics: T_LESS_THAN listc(type_parameter) T_GREATER_THAN { $1, $2, $3 }
 
-type_parameter_list:
- | type_parameter                            { [Left $1] }
- | type_parameter_list "," type_parameter { $1 @ [Right $2; Left $3] }
-
-type_parameter:
- | T_IDENTIFIER { $1 }
+type_parameter: T_IDENTIFIER { $1 }
 
 (*----------------------------*)
 (* Type arguments *)
 (*----------------------------*)
 
 type_arguments:
- | T_LESS_THAN type_argument_list T_GREATER_THAN { $1, $2, $3 }
+ | T_LESS_THAN listc(type_argument) T_GREATER_THAN { $1, $2, $3 }
  | mismatched_type_arguments { $1 }
-
-type_argument_list:
- | type_argument                            { [Left $1] }
- | type_argument_list "," type_argument { $1 @ [Right $2; Left $3] }
 
 type_argument: type_ { $1 }
 
@@ -840,18 +821,18 @@ mismatched_type_arguments:
 
 type_argument_list1:
  | nominal_type1                            { [Left (TName $1)] }
- | type_argument_list "," nominal_type1 { $1 @ [Right $2; Left (TName $3)] }
+ | listc(type_argument) "," nominal_type1 { $1 @ [Right $2; Left (TName $3)] }
 
 nominal_type1:
  | type_name type_arguments1 { ($1, Some $2) }
 
 (* missing 1 closing > *)
 type_arguments1:
- | T_LESS_THAN type_argument_list { $1, $2, fake_tok ">" }
+ | T_LESS_THAN listc(type_argument) { $1, $2, fake_tok ">" }
 
 type_argument_list2:
  | nominal_type2                            { [Left (TName $1)] }
- | type_argument_list "," nominal_type2 { $1 @ [Right $2; Left (TName $3)] }
+ | listc(type_argument) "," nominal_type2 { $1 @ [Right $2; Left (TName $3)] }
 
 nominal_type2:
  | type_name type_arguments2 { ($1, Some $2) }
@@ -904,9 +885,8 @@ block:
  | "{" "}"                { Block ($1, [], $2) }
 
 statement_list:
- | item { [$1] }
+ | item                { [$1] }
  | statement_list item { $1 @ [$2] }
-
 
 empty_statement:
  | sc { Nop $1 }
