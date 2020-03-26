@@ -225,6 +225,11 @@ let fix_sgrep_module_item x =
  | X { [Left $1] }
  | listc(X) "," X { $1 @ [Right $2; Left $3] }
 
+%public listc2(X):
+ | X               { [$1] }
+ | listc2(X) "," X { $1 @ [Right $2; $3] }
+
+
 %public optl(X):
  | (* empty *) { [] }
  | X           { $1 }
@@ -957,13 +962,9 @@ case_block:
  | "{" optl(case_clause+) default_clause optl(case_clause+) "}"
      { ($1, $2 @ [$3] @ $4, $5) }
 
-case_clause:
- | T_CASE expression ":" statement_list { Case ($1, $2, $3, $4) }
- | T_CASE expression ":"                { Case ($1, $2, $3, []) }
+case_clause: T_CASE expression ":" optl(statement_list) { Case ($1, $2, $3, $4) }
 
-default_clause:
- | T_DEFAULT ":"                { Default ($1, $2, [])}
- | T_DEFAULT ":" statement_list { Default ($1, $2, $3) }
+default_clause: T_DEFAULT ":" optl(statement_list) { Default ($1, $2, $3) }
 
 (*************************************************************************)
 (* Expressions *)
@@ -1167,7 +1168,7 @@ element:
 
 object_literal:
  | "{" "}"                                             { ($1, [], $2) }
- | "{" property_name_and_value_list trailing_comma "}" { ($1, $2 @ $3, $4) }
+ | "{" listc2(property_name_and_value) trailing_comma "}" { ($1, $2 @ $3, $4) }
 
 property_name_and_value:
  | property_name ":" assignment_expression  { Left (P_field ($1, $2, $3)) }
@@ -1177,11 +1178,6 @@ property_name_and_value:
  (* es6: spread operator: *)
  | "..." assignment_expression              { Left (P_spread ($1, $2)) }
 
-property_name_and_value_list:
- | property_name_and_value            { [$1] }
- | property_name_and_value_list ","  property_name_and_value
-     { $1 @ [Right $2; $3] }
-
 (*----------------------------*)
 (* function call *)
 (*----------------------------*)
@@ -1190,19 +1186,14 @@ arguments: "(" argument_list_opt ")" { ($1, $2 , $3) }
 
 argument_list_opt:
  | (*empty*)   { [] }
- | argument_list trailing_comma  { List.rev ($2 @ $1)  }
-
-(* must be written in a left-recursive way (see conflicts.txt) *)
-argument_list:
- | argument                         { [Left $1] }
- | argument_list "," argument   { (Left $3)::(Right $2)::$1 }
+ (* argument_list must be written in a left-recursive way(see conflicts.txt) *)
+ | listc(argument) trailing_comma  { List.rev ($2 @ $1)  }
 
 (* assignment_expr because expr supports sequence of exprs with ',' *)
 argument:
- | assignment_expression { $1 }
+ | assignment_expression       { $1 }
  (* es6: spread operator, allowed not only in last position *)
- | "..." assignment_expression
-     { (uop U_spread $1 $2) }
+ | "..." assignment_expression { (uop U_spread $1 $2) }
 
 (*----------------------------*)
 (* XHP embeded html *)
@@ -1222,23 +1213,20 @@ xhp_child:
      { XhpExpr ($1, None , $2) (*TODO$3*) }
 
 xhp_attribute:
- | T_XHP_ATTR "=" xhp_attribute_value 
-    { XhpAttrValue ($1, $2, $3) }
- | "{" "..." assignment_expression "}" 
-    { XhpAttrSpread ($1, ($2, $3), $4) }
+ | T_XHP_ATTR "=" xhp_attribute_value    { XhpAttrValue ($1, $2, $3) }
+ | "{" "..." assignment_expression "}"   { XhpAttrSpread ($1, ($2, $3), $4) }
  (* jsxext: not in XHP *)
- | T_XHP_ATTR
-    { XhpAttrNoValue ($1) }
+ | T_XHP_ATTR                            { XhpAttrNoValue ($1) }
 
 xhp_attribute_value:
- | T_STRING { XhpAttrString ($1) }
+ | T_STRING              { XhpAttrString ($1) }
  | "{" expression sc "}" { XhpAttrExpr ($1, $2, $4)(*TODO$3*)}
 
 (*----------------------------*)
 (* interpolated strings *)
 (*----------------------------*)
 encaps:
- | T_ENCAPSED_STRING                  { EncapsString $1 }
+ | T_ENCAPSED_STRING             { EncapsString $1 }
  | T_DOLLARCURLY expression "}"  { EncapsExpr ($1, $2, $3) }
 
 (*----------------------------*)
@@ -1252,11 +1240,9 @@ arrow_function:
          a_return_type = None; a_tok = $2; a_body = $3 } }
 
  (* can not factorize with TOPAR parameter_list TCPAR, see conflicts.txt *)
- | T_LPAREN_ARROW formal_parameter_list_opt ")" annotation? 
-    "->" arrow_body 
+ | T_LPAREN_ARROW formal_parameter_list_opt ")" annotation? "->" arrow_body 
     { { a_params = AParams ($1, $2, $3); a_return_type = $4;
         a_tok = $5; a_body = $6; } }
-
 
 (* was called consise body in spec *)
 arrow_body:
@@ -1267,8 +1253,7 @@ arrow_body:
  (* ugly *)
  | function_expression { AExpr (Function $1) }
 
-async_arrow_function: 
- | T_ASYNC arrow_function { $2 }
+async_arrow_function: T_ASYNC arrow_function { $2 }
 
 (*----------------------------*)
 (* no in *)
@@ -1306,7 +1291,6 @@ post_in_expression_no_in:
  | post_in_expression_no_in T_BIT_OR post_in_expression             { bop B_bitor $1 $2 $3 }
  | post_in_expression_no_in T_AND post_in_expression                { bop B_and $1 $2 $3 }
  | post_in_expression_no_in T_OR post_in_expression                 { bop B_or $1 $2 $3 }
-
 
 (*----------------------------*)
 (* (no statement, and no object literal like { v: 1 }) *)
@@ -1441,9 +1425,9 @@ ident_semi_keyword:
  | T_ASYNC { $1 }
  (* TODO: would like to add T_IMPORT here, but cause conflicts *)
 
-(*alt: use the _last_non_whitespace_like_token trick and look if
-   * previous token was a period to return a T_IDENTFIER
-   *)
+(* alt: use the _last_non_whitespace_like_token trick and look if
+ * previous token was a period to return a T_IDENTFIER
+ *)
 ident_keyword: ident_keyword_bis { PI.str_of_info $1, $1 }
 
 ident_keyword_bis:
