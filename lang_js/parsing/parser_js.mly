@@ -884,15 +884,11 @@ block:
  | "{" statement_list "}" { Block ($1, $2, $3) }
  | "{" "}"                { Block ($1, [], $2) }
 
-statement_list:
- | item                { [$1] }
- | statement_list item { $1 @ [$2] }
+statement_list: item+ { $1 }
 
-empty_statement:
- | sc { Nop $1 }
+empty_statement: sc { Nop $1 }
 
-expression_statement:
- | expression_no_statement sc { ExprStmt ($1, $2) }
+expression_statement: expression_no_statement sc { ExprStmt ($1, $2) }
 
 
 if_statement:
@@ -908,28 +904,19 @@ iteration_statement:
  | T_WHILE "(" expression ")" statement
      { While ($1, ($2, $3, $4), $5) }
 
- | T_FOR "("
-     expression_no_in? ";"
-     expression? ";"
-     expression?
-     ")" statement
+ | T_FOR "(" expression_no_in? ";" expression? ";" expression? ")" statement
      { For ($1, $2, $3|>Common2.fmap (fun x -> LHS1 x), $4, $5, $6, $7,$8,$9)}
- | T_FOR "("
-     for_variable_declaration ";"
-     expression? ";"
-     expression?
-     ")" statement
+ | T_FOR "(" for_variable_declaration ";" expression? ";" expression? ")" 
+   statement
      { For ($1, $2, Some (ForVars $3), $4, $5, $6, $7, $8, $9) }
 
  | T_FOR "(" left_hand_side_expression T_IN expression ")" statement
      { ForIn ($1, $2, LHS2 $3, $4, $5, $6, $7) }
  | T_FOR "(" for_single_variable_decl T_IN expression ")"  statement
      { ForIn ($1, $2, ForVar $3, $4, $5, $6, $7) }
- | T_FOR "(" left_hand_side_expression T_OF assignment_expression 
-         ")" statement
+ | T_FOR "(" left_hand_side_expression T_OF assignment_expression ")" statement
      { ForOf ($1, $2, LHS2 $3, $4, $5, $6, $7) }
- | T_FOR "(" for_single_variable_decl T_OF assignment_expression
-        ")"  statement
+ | T_FOR "(" for_single_variable_decl T_OF assignment_expression ")"  statement
      { ForOf ($1, $2, ForVar $3, $4, $5, $6, $7) }
 
 
@@ -950,32 +937,28 @@ return_statement:
  | T_RETURN sc            { Return ($1, None, $2) }
 
 
-with_statement:
- | T_WITH "(" expression ")" statement { With ($1, ($2, $3, $4), $5) }
+with_statement: T_WITH "(" expression ")" statement 
+  { With ($1, ($2, $3, $4), $5) }
 
 
-switch_statement:
- | T_SWITCH "(" expression ")" case_block { Switch ($1, ($2, $3, $4), $5) }
+switch_statement: T_SWITCH "(" expression ")" case_block 
+  { Switch ($1, ($2, $3, $4), $5) }
 
 
 
-labelled_statement:
- | identifier ":" statement { Labeled ($1, $2, $3) }
+labelled_statement: identifier ":" statement { Labeled ($1, $2, $3) }
 
 
-throw_statement:
- | T_THROW expression sc { Throw ($1, $2, $3) }
+throw_statement: T_THROW expression sc { Throw ($1, $2, $3) }
 
 try_statement:
  | T_TRY block catch         { Try ($1, $2, Some $3, None)  }
  | T_TRY block       finally { Try ($1, $2, None, Some $3) }
  | T_TRY block catch finally { Try ($1, $2, Some $3, Some $4) }
 
-catch:
- | T_CATCH "(" identifier ")" block { $1, ($2, $3, $4), $5 }
+catch: T_CATCH "(" identifier ")" block { $1, ($2, $3, $4), $5 }
 
-finally:
- | T_FINALLY block { $1, $2 }
+finally: T_FINALLY block { $1, $2 }
 
 (*----------------------------*)
 (* auxillary statements *)
@@ -989,10 +972,10 @@ case_block:
 
 case_clause:
  | T_CASE expression ":" statement_list { Case ($1, $2, $3, $4) }
- | T_CASE expression ":" { Case ($1, $2, $3, []) }
+ | T_CASE expression ":"                { Case ($1, $2, $3, []) }
 
 default_clause:
- | T_DEFAULT ":" { Default ($1, $2, [])}
+ | T_DEFAULT ":"                { Default ($1, $2, [])}
  | T_DEFAULT ":" statement_list { Default ($1, $2, $3) }
 
 (*************************************************************************)
@@ -1018,7 +1001,6 @@ assignment_expression:
  | async_arrow_function { Arrow $1 }
  (* typescript: 1.6, because <> cant be used in TSX files *)
  | left_hand_side_expression T_AS type_ { $1 (* TODO $2 $3 *) }
-
  (* sgrep-ext: can't move in primary_expr, get s/r conflicts *)
  | "..." { Flag_parsing.sgrep_guard (Ellipsis $1) }
 
@@ -1042,9 +1024,7 @@ left_hand_side_expression:
 
 conditional_expression:
  | post_in_expression { $1 }
- | post_in_expression
-     T_PLING assignment_expression
-     ":" assignment_expression
+ | post_in_expression T_PLING assignment_expression ":" assignment_expression
      { Conditional ($1, $2, $3, $4, $5) }
 
 post_in_expression:
@@ -1166,70 +1146,52 @@ primary_expression_no_braces:
 (*----------------------------*)
 (* scalar *)
 (*----------------------------*)
-null_literal:
- | T_NULL { $1 }
-
 boolean_literal:
  | T_TRUE  { true, $1 }
  | T_FALSE { false, $1 }
 
-numeric_literal:
- | T_NUMBER { $1 }
-
-regex_literal:
- | T_REGEX { $1 }
-
-string_literal:
- | T_STRING { $1 }
+null_literal: T_NULL { $1 }
+numeric_literal: T_NUMBER { $1 }
+regex_literal: T_REGEX { $1 }
+string_literal: T_STRING { $1 }
 
 (*----------------------------*)
 (* array *)
 (*----------------------------*)
 
 array_literal:
- | "[" optl(elision) "]"              
-   { Array($1, $2, $3) }
- | "[" element_list_rev optl(elision) "]" 
-   { Array($1, List.rev $2 @ $3, $4) }
+ | "[" optl(elision) "]"                   { Array($1, $2, $3) }
+ | "[" element_list_rev optl(elision) "]"  { Array($1, List.rev $2 @ $3, $4) }
 
 (* TODO: conflict on "," *)
 element_list_rev:
  | optl(elision)   element                { (Left $2)::$1 }
  | element_list_rev "," element     { (Left $3) :: [Right $2] @ $1 }
- | element_list_rev "," elision element     { (Left $4) :: $3 @ [Right $2] @ $1 }
+ | element_list_rev "," elision element  { (Left $4) :: $3 @ [Right $2] @ $1 }
 
 element:
  | assignment_expression { $1 }
  (* es6: spread operator: *)
- | "..." assignment_expression
-     { uop U_spread $1 $2 }
+ | "..." assignment_expression { uop U_spread $1 $2 }
 
 (*----------------------------*)
 (* object *)
 (*----------------------------*)
 
 object_literal:
- | "{" "}"
-     { ($1, [], $2) }
- | "{" property_name_and_value_list trailing_comma "}"
-     { ($1, $2 @ $3, $4) }
-
+ | "{" "}"                                             { ($1, [], $2) }
+ | "{" property_name_and_value_list trailing_comma "}" { ($1, $2 @ $3, $4) }
 
 property_name_and_value:
- | property_name ":" assignment_expression
-     { Left (P_field ($1, $2, $3)) }
- | method_definition
-     { Left (P_method ($1)) }
+ | property_name ":" assignment_expression  { Left (P_field ($1, $2, $3)) }
+ | method_definition                        { Left (P_method ($1)) }
  (* es6: *)
- | identifier
-     { Left (P_shorthand ($1)) }
+ | identifier                               { Left (P_shorthand ($1)) }
  (* es6: spread operator: *)
- | "..." assignment_expression
-     { Left (P_spread ($1, $2)) }
+ | "..." assignment_expression              { Left (P_spread ($1, $2)) }
 
 property_name_and_value_list:
- | property_name_and_value     
-     { [$1] }
+ | property_name_and_value            { [$1] }
  | property_name_and_value_list ","  property_name_and_value
      { $1 @ [Right $2; $3] }
 
