@@ -314,9 +314,9 @@ module_item_sgrep_list:
 (*----------------------------*)
 
 import_declaration: 
- | T_IMPORT import_clause from_clause semicolon 
+ | T_IMPORT import_clause from_clause sc 
    { $1, ImportFrom ($2, $3), $4 }
- | T_IMPORT module_specifier semicolon 
+ | T_IMPORT module_specifier sc 
    { $1, ImportEffect $2, $3 }
 
 import_clause: 
@@ -367,17 +367,17 @@ export_declaration:
  | T_EXPORT declaration        { $1, ExportDecl $2 }
  (* in theory just func/gen/class, no lexical_decl *)
  | T_EXPORT T_DEFAULT declaration { $1, ExportDefaultDecl ($2, $3) }
- | T_EXPORT T_DEFAULT assignment_expression_no_statement semicolon 
+ | T_EXPORT T_DEFAULT assignment_expression_no_statement sc 
     { $1, ExportDefaultExpr ($2, $3, $4)  }
  (* ugly hack because should use assignment_expression above instead*)
- | T_EXPORT T_DEFAULT object_literal semicolon
+ | T_EXPORT T_DEFAULT object_literal sc
     { $1, ExportDefaultExpr ($2, Object $3, $4)  }
 
 
 export_names:
- | "*"        from_clause semicolon { ReExportNamespace ($1, $2, $3) }
- | export_clause from_clause semicolon { ReExportNames ($1, $2, $3) }
- | export_clause semicolon { ExportNames ($1, $2) }
+ | "*"        from_clause sc { ReExportNamespace ($1, $2, $3) }
+ | export_clause from_clause sc { ReExportNames ($1, $2, $3) }
+ | export_clause sc { ExportNames ($1, $2) }
 
 export_clause:
  | "{" "}" 
@@ -394,13 +394,13 @@ export_clause:
 
 (* part of 'statement' *)
 variable_statement:
- | T_VAR variable_declaration_list semicolon  { VarsDecl ((Var, $1), $2, $3) }
+ | T_VAR variable_declaration_list sc  { VarsDecl ((Var, $1), $2, $3) }
 
 (* part of 'declaration' *)
 lexical_declaration:
  (* es6: *)
- | T_CONST variable_declaration_list semicolon { VarsDecl((Const, $1), $2,$3) }
- | T_LET variable_declaration_list semicolon { VarsDecl((Let, $1), $2,$3) }
+ | T_CONST variable_declaration_list sc { VarsDecl((Const, $1), $2,$3) }
+ | T_LET variable_declaration_list sc { VarsDecl((Let, $1), $2,$3) }
 
 
 (* one var from a list of vars *)
@@ -633,16 +633,16 @@ class_element:
  |                  method_definition      { C_method (None, $1) }
  | access_modifiers method_definition      { C_method (None, $2) (* TODO $1 *) } 
 
- |                  property_name annotation_opt initializeur_opt semicolon 
+ |                  property_name annotation_opt initializeur_opt sc 
     { C_field ({ fld_static = None; fld_name = $1; fld_type = $2;
                 fld_init = $3 }, $4)
     }
- | access_modifiers property_name annotation_opt initializeur_opt semicolon 
+ | access_modifiers property_name annotation_opt initializeur_opt sc 
     { C_field ({ fld_static = None(*TODO $1*); fld_name = $2; fld_type = $3;
                 fld_init = $4 }, $5)
     }
 
- | semicolon                       { C_extrasemicolon $1 }
+ | sc                       { C_extrasemicolon $1 }
   (* sgrep-ext: enable class body matching *)
  | "..." { Flag_parsing.sgrep_guard (CEllipsis $1) }
 
@@ -704,7 +704,7 @@ interface_extends: T_EXTENDS type_reference_list { ($1, $2) }
 (* Type declaration *)
 (*************************************************************************)
 (* typescript: *)
-type_alias_declaration: T_TYPE identifier "=" type_ semicolon { 
+type_alias_declaration: T_TYPE identifier "=" type_ sc { 
  match $5 with Some t -> t | None -> $3 }
 
 enum_declaration: 
@@ -945,10 +945,10 @@ statement_list:
 
 
 empty_statement:
- | semicolon { Nop $1 }
+ | sc { Nop $1 }
 
 expression_statement:
- | expression_no_statement semicolon { ExprStmt ($1, $2) }
+ | expression_no_statement sc { ExprStmt ($1, $2) }
 
 
 if_statement:
@@ -959,7 +959,7 @@ if_statement:
 
 
 iteration_statement:
- | T_DO statement T_WHILE "(" expression ")" semicolon
+ | T_DO statement T_WHILE "(" expression ")" sc
      { Do ($1, $2, $3, ($4, $5, $6), $7) }
  | T_WHILE "(" expression ")" statement
      { While ($1, ($2, $3, $4), $5) }
@@ -994,17 +994,17 @@ initializer_no_in:
 
 
 continue_statement:
- | T_CONTINUE identifier semicolon { Continue ($1, Some $2, $3) }
- | T_CONTINUE semicolon            { Continue ($1, None, $2) }
+ | T_CONTINUE identifier sc { Continue ($1, Some $2, $3) }
+ | T_CONTINUE sc            { Continue ($1, None, $2) }
 
 break_statement:
- | T_BREAK identifier semicolon { Break ($1, Some $2, $3) }
- | T_BREAK semicolon            { Break ($1, None, $2) }
+ | T_BREAK identifier sc { Break ($1, Some $2, $3) }
+ | T_BREAK sc            { Break ($1, None, $2) }
 
 
 return_statement:
- | T_RETURN expression semicolon { Return ($1, Some $2, $3) }
- | T_RETURN semicolon            { Return ($1, None, $2) }
+ | T_RETURN expression sc { Return ($1, Some $2, $3) }
+ | T_RETURN sc            { Return ($1, None, $2) }
 
 
 with_statement:
@@ -1021,7 +1021,7 @@ labelled_statement:
 
 
 throw_statement:
- | T_THROW expression semicolon { Throw ($1, $2, $3) }
+ | T_THROW expression sc { Throw ($1, $2, $3) }
 
 try_statement:
  | T_TRY block catch         { Try ($1, $2, Some $3, None)  }
@@ -1324,7 +1324,7 @@ xhp_html:
 xhp_child:
  | T_XHP_TEXT           { XhpText $1 }
  | xhp_html             { XhpNested $1 }
- | "{" expression semicolon "}"
+ | "{" expression sc "}"
      { XhpExpr ($1, Some $2, $4) (*TODO$3*) }
  | "{" "}"
      { XhpExpr ($1, None , $2) (*TODO$3*) }
@@ -1340,7 +1340,7 @@ xhp_attribute:
 
 xhp_attribute_value:
  | T_STRING { XhpAttrString ($1) }
- | "{" expression semicolon "}" { XhpAttrExpr ($1, $2, $4)(*TODO$3*)}
+ | "{" expression sc "}" { XhpAttrExpr ($1, $2, $4)(*TODO$3*)}
 
 (*----------------------------*)
 (* interpolated strings *)
@@ -1593,12 +1593,12 @@ property_name:
 (* xxx_opt, xxx_list *)
 (*************************************************************************)
 
-semicolon:
- | ";"         { Some $1 }
+sc:
+ | ";"                 { Some $1 }
  | T_VIRTUAL_SEMICOLON { None }
 
 semicolon_or_comma:
- | semicolon { $1 }
+ | sc { $1 }
  | "," { Some $1 }
 
 elision:
