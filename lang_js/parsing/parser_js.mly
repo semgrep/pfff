@@ -1,8 +1,8 @@
 %{
 (* Yoann Padioleau
  *
- * Copyright (C) 2010, 2013, 2014 Facebook
- * Copyright (C) 2019 r2c
+ * Copyright (C) 2010-2014 Facebook
+ * Copyright (C) 2019-2020 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -52,18 +52,13 @@ open Cst_js
 
 let bop op a b c = B(a, (op, b), c)
 let uop op a b = U((op,a), b)
-let mk_param x = 
-  { p_name = x; p_type = None; p_default = None; p_dots = None; }
+let mk_param x = { p_name = x; p_type = None; p_default = None; p_dots = None;}
 let mk_func_decl kind props (t, ps, rt) (lc, xs, rc) = 
   { f_kind = kind; f_params= ps; f_body = (lc, xs, rc);
     f_type_params = t; f_return_type = rt; f_properties = props }
 
 (* for missing closing > for generics *)
-let fake_tok s = {
-  Parse_info.
-  token = Parse_info.FakeTokStr (s, None);
-  transfo = Parse_info.NoTransfo;
-}
+let fake_tok s = Parse_info.fake_info s
 
 (* ugly, but in a sgrep pattern, anonymous functions are parsed as a toplevel
  * function declaration (because 'function_declaration' accepts identifier_opt,
@@ -108,8 +103,7 @@ let fix_sgrep_module_item x =
 (* Keyword tokens *)
 (*-----------------------------------------*)
 (* coupling: if you add an element here, expand also ident_keyword_bis
-   * and also maybe the special hack for regexp in lexer_js.mll
-   *)
+ * and also maybe the special hack for regexp in lexer_js.mll *)
 %token <Cst_js.tok>
  T_FUNCTION T_CONST T_VAR T_LET
  T_IF T_ELSE
@@ -127,7 +121,6 @@ let fix_sgrep_module_item x =
  T_TYPE  T_ANY_TYPE T_NUMBER_TYPE T_BOOLEAN_TYPE T_STRING_TYPE  T_ENUM
  T_DECLARE T_MODULE
  T_PUBLIC T_PRIVATE T_PROTECTED  T_READONLY
- 
  
 (*-----------------------------------------*)
 (* Punctuation tokens *)
@@ -180,7 +173,7 @@ let fix_sgrep_module_item x =
 
 (* Automatically Inserted Semicolon (ASI), see parse_js.ml *)
 %token <Cst_js.tok> T_VIRTUAL_SEMICOLON
-(* '(' the opening parenthesis of the parameters preceding an arrow*)
+(* fresh_token: the opening '(' of the parameters preceding an '->' *)
 %token <Cst_js.tok> T_LPAREN_ARROW
 
 (*************************************************************************)
@@ -219,11 +212,9 @@ let fix_sgrep_module_item x =
 (*************************************************************************)
 (* Rules type declaration *)
 (*************************************************************************)
-
-%start main module_item_or_eof sgrep_spatch_pattern
-%type <Cst_js.module_item list> main
-%type <Cst_js.module_item option> module_item_or_eof
-%type <Cst_js.any> sgrep_spatch_pattern
+%start <Cst_js.module_item list> main
+%start <Cst_js.module_item option> module_item_or_eof 
+%start <Cst_js.any> sgrep_spatch_pattern
 
 %%
 
@@ -284,7 +275,7 @@ declaration:
 sgrep_spatch_pattern:
  | assignment_expression_no_statement EOF           { Expr $1 }
  | module_item_no_dots EOF                          { fix_sgrep_module_item $1}
- | module_item_no_dots module_item_sgrep_list EOF   { ModuleItems ($1::$2) }
+ | module_item_no_dots module_item+ EOF   { ModuleItems ($1::$2) }
 
 module_item_no_dots:
  | item_no_dots { It $1 }
@@ -1626,6 +1617,3 @@ elision2:
 trailing_comma:
  | (*empty*) { [] }
  | ","       { [Right $1] }
-
-
-

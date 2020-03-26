@@ -1,7 +1,7 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2010, 2012, 2013 Facebook
- * Copyright (C) 2019 r2c
+ * Copyright (C) 2010-2013 Facebook
+ * Copyright (C) 2019-2020 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
