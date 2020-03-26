@@ -938,20 +938,6 @@ assignment_expr:
  (* sgrep-ext: can't move in primary_expr, get s/r conflicts *)
  | "..." { Flag_parsing.sgrep_guard (Ellipsis $1) }
 
-assignment_operator:
- | "="         { A_eq , $1 }
- | T_MULT_ASSIGN    { A_mul, $1 }
- | T_DIV_ASSIGN     { A_div, $1 }
- | T_MOD_ASSIGN     { A_mod, $1 }
- | T_PLUS_ASSIGN    { A_add, $1 }
- | T_MINUS_ASSIGN   { A_sub, $1 }
- | T_LSHIFT_ASSIGN  { A_lsl, $1 }
- | T_RSHIFT_ASSIGN  { A_lsr, $1 }
- | T_RSHIFT3_ASSIGN { A_asr, $1 }
- | T_BIT_AND_ASSIGN { A_and, $1 }
- | T_BIT_XOR_ASSIGN { A_xor, $1 }
- | T_BIT_OR_ASSIGN  { A_or , $1 }
-
 left_hand_side_expr:
  | new_expr  { $1 }
  | call_expr { $1 }
@@ -1086,6 +1072,24 @@ null_literal: T_NULL { $1 }
 numeric_literal: T_NUMBER { $1 }
 regex_literal: T_REGEX { $1 }
 string_literal: T_STRING { $1 }
+
+(*----------------------------*)
+(* assign *)
+(*----------------------------*)
+
+assignment_operator:
+ | "="         { A_eq , $1 }
+ | T_MULT_ASSIGN    { A_mul, $1 }
+ | T_DIV_ASSIGN     { A_div, $1 }
+ | T_MOD_ASSIGN     { A_mod, $1 }
+ | T_PLUS_ASSIGN    { A_add, $1 }
+ | T_MINUS_ASSIGN   { A_sub, $1 }
+ | T_LSHIFT_ASSIGN  { A_lsl, $1 }
+ | T_RSHIFT_ASSIGN  { A_lsr, $1 }
+ | T_RSHIFT3_ASSIGN { A_asr, $1 }
+ | T_BIT_AND_ASSIGN { A_and, $1 }
+ | T_BIT_XOR_ASSIGN { A_xor, $1 }
+ | T_BIT_OR_ASSIGN  { A_or , $1 }
 
 (*----------------------------*)
 (* array *)
