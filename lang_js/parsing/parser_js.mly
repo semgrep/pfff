@@ -923,7 +923,7 @@ expr:
 
 (* coupling: see also assignment_expr_no_stmt *)
 assignment_expr:
- | conditional_expr { $1 }
+ | conditional_expr(d1) { $1 }
  | left_hand_side_expr(d1) assignment_operator assignment_expr { Assign($1,$2,$3)}
  (* es6: *)
  | arrow_function { Arrow $1 }
@@ -938,36 +938,39 @@ assignment_expr:
  (* sgrep-ext: can't move in primary_expr, get s/r conflicts *)
  | "..." { Flag_parsing.sgrep_guard (Ellipsis $1) }
 
+(*----------------------------*)
+(* Generic part (to factorize rules) *)
+(*----------------------------*)
+
+conditional_expr(x):
+ | post_in_expr(x) { $1 }
+ | post_in_expr(x) "?" assignment_expr ":" assignment_expr
+     { Conditional ($1, $2, $3, $4, $5) }
+
 left_hand_side_expr(x):
  | new_expr(x)  { $1 }
  | call_expr(x) { $1 }
 
-conditional_expr:
- | post_in_expr { $1 }
- | post_in_expr "?" assignment_expr ":" assignment_expr
-     { Conditional ($1, $2, $3, $4, $5) }
+post_in_expr(x):
+ | pre_in_expr(x) { $1 }
+ | post_in_expr(x) T_LESS_THAN post_in_expr(d1)          { bop B_lt $1 $2 $3 }
+ | post_in_expr(x) T_GREATER_THAN post_in_expr(d1)       { bop B_gt $1 $2 $3 }
+ | post_in_expr(x) T_LESS_THAN_EQUAL post_in_expr(d1)    { bop B_le $1 $2 $3 }
+ | post_in_expr(x) T_GREATER_THAN_EQUAL post_in_expr(d1) { bop B_ge $1 $2 $3 }
+ | post_in_expr(x) T_INSTANCEOF post_in_expr(d1)         { bop B_instanceof $1 $2 $3 }
 
-post_in_expr:
- | pre_in_expr(d1) { $1 }
- | post_in_expr T_LESS_THAN post_in_expr          { bop B_lt $1 $2 $3 }
- | post_in_expr T_GREATER_THAN post_in_expr       { bop B_gt $1 $2 $3 }
- | post_in_expr T_LESS_THAN_EQUAL post_in_expr    { bop B_le $1 $2 $3 }
- | post_in_expr T_GREATER_THAN_EQUAL post_in_expr { bop B_ge $1 $2 $3 }
- | post_in_expr T_INSTANCEOF post_in_expr         { bop B_instanceof $1 $2 $3 }
- | post_in_expr T_IN post_in_expr                 { bop B_in $1 $2 $3 }
- | post_in_expr T_EQUAL post_in_expr              { bop B_equal $1 $2 $3 }
- | post_in_expr T_NOT_EQUAL post_in_expr          { bop B_notequal $1 $2 $3 }
- | post_in_expr T_STRICT_EQUAL post_in_expr       { bop B_physequal $1 $2 $3 }
- | post_in_expr T_STRICT_NOT_EQUAL post_in_expr { bop B_physnotequal $1 $2 $3 }
- | post_in_expr T_BIT_AND post_in_expr            { bop B_bitand $1 $2 $3 }
- | post_in_expr T_BIT_XOR post_in_expr            { bop B_bitxor $1 $2 $3 }
- | post_in_expr T_BIT_OR post_in_expr             { bop B_bitor $1 $2 $3 }
- | post_in_expr T_AND post_in_expr                { bop B_and $1 $2 $3 }
- | post_in_expr T_OR post_in_expr                 { bop B_or $1 $2 $3 }
+ (* also T_IN! *)
+ | post_in_expr(x) T_IN post_in_expr(d1)                 { bop B_in $1 $2 $3 }
 
-(*----------------------------*)
-(* Generic part (to factorize rules) *)
-(*----------------------------*)
+ | post_in_expr(x) T_EQUAL post_in_expr(d1)              { bop B_equal $1 $2 $3 }
+ | post_in_expr(x) T_NOT_EQUAL post_in_expr(d1)          { bop B_notequal $1 $2 $3 }
+ | post_in_expr(x) T_STRICT_EQUAL post_in_expr(d1)       { bop B_physequal $1 $2 $3 }
+ | post_in_expr(x) T_STRICT_NOT_EQUAL post_in_expr(d1) { bop B_physnotequal $1 $2 $3 }
+ | post_in_expr(x) T_BIT_AND post_in_expr(d1)            { bop B_bitand $1 $2 $3 }
+ | post_in_expr(x) T_BIT_XOR post_in_expr(d1)            { bop B_bitxor $1 $2 $3 }
+ | post_in_expr(x) T_BIT_OR post_in_expr(d1)             { bop B_bitor $1 $2 $3 }
+ | post_in_expr(x) T_AND post_in_expr(d1)                { bop B_and $1 $2 $3 }
+ | post_in_expr(x) T_OR post_in_expr(d1)                 { bop B_or $1 $2 $3 }
 
 (* called unary_expr and update_expr in ECMA *)
 pre_in_expr(x):
@@ -1227,21 +1230,23 @@ conditional_expr_no_in:
 
 post_in_expr_no_in:
  | pre_in_expr(d1) { $1 }
- | post_in_expr_no_in T_LESS_THAN post_in_expr          { bop B_lt $1 $2 $3 }
- | post_in_expr_no_in T_GREATER_THAN post_in_expr       { bop B_gt $1 $2 $3 }
- | post_in_expr_no_in T_LESS_THAN_EQUAL post_in_expr    { bop B_le $1 $2 $3 }
- | post_in_expr_no_in T_GREATER_THAN_EQUAL post_in_expr { bop B_ge $1 $2 $3 }
- | post_in_expr_no_in T_INSTANCEOF post_in_expr         { bop B_instanceof $1 $2 $3 }
+ | post_in_expr_no_in T_LESS_THAN post_in_expr(d1)          { bop B_lt $1 $2 $3 }
+ | post_in_expr_no_in T_GREATER_THAN post_in_expr(d1)       { bop B_gt $1 $2 $3 }
+ | post_in_expr_no_in T_LESS_THAN_EQUAL post_in_expr(d1)    { bop B_le $1 $2 $3 }
+ | post_in_expr_no_in T_GREATER_THAN_EQUAL post_in_expr(d1) { bop B_ge $1 $2 $3 }
+ | post_in_expr_no_in T_INSTANCEOF post_in_expr(d1)         { bop B_instanceof $1 $2 $3 }
+
  (* no T_IN case *)
- | post_in_expr_no_in T_EQUAL post_in_expr              { bop B_equal $1 $2 $3 }
- | post_in_expr_no_in T_NOT_EQUAL post_in_expr          { bop B_notequal $1 $2 $3 }
- | post_in_expr_no_in T_STRICT_EQUAL post_in_expr       { bop B_physequal $1 $2 $3 }
- | post_in_expr_no_in T_STRICT_NOT_EQUAL post_in_expr   { bop B_physnotequal $1 $2 $3 }
- | post_in_expr_no_in T_BIT_AND post_in_expr            { bop B_bitand $1 $2 $3 }
- | post_in_expr_no_in T_BIT_XOR post_in_expr            { bop B_bitxor $1 $2 $3 }
- | post_in_expr_no_in T_BIT_OR post_in_expr             { bop B_bitor $1 $2 $3 }
- | post_in_expr_no_in T_AND post_in_expr                { bop B_and $1 $2 $3 }
- | post_in_expr_no_in T_OR post_in_expr                 { bop B_or $1 $2 $3 }
+
+ | post_in_expr_no_in T_EQUAL post_in_expr(d1)              { bop B_equal $1 $2 $3 }
+ | post_in_expr_no_in T_NOT_EQUAL post_in_expr(d1)          { bop B_notequal $1 $2 $3 }
+ | post_in_expr_no_in T_STRICT_EQUAL post_in_expr(d1)       { bop B_physequal $1 $2 $3 }
+ | post_in_expr_no_in T_STRICT_NOT_EQUAL post_in_expr(d1)   { bop B_physnotequal $1 $2 $3 }
+ | post_in_expr_no_in T_BIT_AND post_in_expr(d1)            { bop B_bitand $1 $2 $3 }
+ | post_in_expr_no_in T_BIT_XOR post_in_expr(d1)            { bop B_bitxor $1 $2 $3 }
+ | post_in_expr_no_in T_BIT_OR post_in_expr(d1)             { bop B_bitor $1 $2 $3 }
+ | post_in_expr_no_in T_AND post_in_expr(d1)                { bop B_and $1 $2 $3 }
+ | post_in_expr_no_in T_OR post_in_expr(d1)                 { bop B_or $1 $2 $3 }
 
 (*----------------------------*)
 (* (no stmt, and no object literal like { v: 1 }) *)
@@ -1251,8 +1256,8 @@ expr_no_stmt:
  | expr_no_stmt "," assignment_expr { Seq ($1, $2, $3) }
 
 assignment_expr_no_stmt:
- | conditional_expr_no_stmt { $1 }
- | left_hand_side_expr_no_stmt assignment_operator assignment_expr
+ | conditional_expr(d1_no_stmt) { $1 }
+ | left_hand_side_expr(d1_no_stmt) assignment_operator assignment_expr
      { Assign ($1, $2, $3) }
  (* es6: *)
  | arrow_function { Arrow $1 }
@@ -1260,33 +1265,6 @@ assignment_expr_no_stmt:
  | T_YIELD                               { Yield ($1, None, None) }
  | T_YIELD assignment_expr   { Yield ($1, None, Some $2) }
  | T_YIELD "*" assignment_expr { Yield ($1, Some $2, Some $3) }
-
-left_hand_side_expr_no_stmt:
- | new_expr(d1_no_stmt) { $1 }
- | call_expr(d1_no_stmt) { $1 }
-
-conditional_expr_no_stmt:
- | post_in_expr_no_stmt { $1 }
- | post_in_expr_no_stmt "?" assignment_expr ":" assignment_expr
-     { Conditional ($1, $2, $3, $4, $5) }
-
-post_in_expr_no_stmt:
- | pre_in_expr(d1_no_stmt) { $1 }
- | post_in_expr_no_stmt T_LESS_THAN post_in_expr          { bop B_lt $1 $2 $3 }
- | post_in_expr_no_stmt T_GREATER_THAN post_in_expr       { bop B_gt $1 $2 $3 }
- | post_in_expr_no_stmt T_LESS_THAN_EQUAL post_in_expr    { bop B_le $1 $2 $3 }
- | post_in_expr_no_stmt T_GREATER_THAN_EQUAL post_in_expr { bop B_ge $1 $2 $3 }
- | post_in_expr_no_stmt T_INSTANCEOF post_in_expr         { bop B_instanceof $1 $2 $3 }
- | post_in_expr_no_stmt T_IN post_in_expr                 { bop B_in $1 $2 $3 }
- | post_in_expr_no_stmt T_EQUAL post_in_expr              { bop B_equal $1 $2 $3 }
- | post_in_expr_no_stmt T_NOT_EQUAL post_in_expr          { bop B_notequal $1 $2 $3 }
- | post_in_expr_no_stmt T_STRICT_EQUAL post_in_expr       { bop B_physequal $1 $2 $3 }
- | post_in_expr_no_stmt T_STRICT_NOT_EQUAL post_in_expr   { bop B_physnotequal $1 $2 $3 }
- | post_in_expr_no_stmt T_BIT_AND post_in_expr            { bop B_bitand $1 $2 $3 }
- | post_in_expr_no_stmt T_BIT_XOR post_in_expr            { bop B_bitxor $1 $2 $3 }
- | post_in_expr_no_stmt T_BIT_OR post_in_expr             { bop B_bitor $1 $2 $3 }
- | post_in_expr_no_stmt T_AND post_in_expr                { bop B_and $1 $2 $3 }
- | post_in_expr_no_stmt T_OR post_in_expr                 { bop B_or $1 $2 $3 }
 
 (* no object_literal here *)
 d1_no_stmt: TUnknown TComment { raise Impossible }
