@@ -186,9 +186,9 @@ let compute_database ?(verbose=false) files_or_dirs =
          * precise pattern has to be first
          *)
 
-        | T.T_IDENTIFIER ("JX", ii1)
+        | T.T_ID ("JX", ii1)
           ::T.T_PERIOD(_)
-          ::T.T_IDENTIFIER (s, _ii_last)
+          ::T.T_ID (s, _ii_last)
           ::T.T_LPAREN(_)
           ::xs when PI.col_of_info ii1 <> 0 ->
 
@@ -205,7 +205,7 @@ let compute_database ?(verbose=false) files_or_dirs =
             aux_toks xs
 
         | T.T_PERIOD _
-          ::T.T_IDENTIFIER(s, _ii)
+          ::T.T_ID(s, _ii)
           ::T.T_LPAREN(_)
           ::xs
           ->
@@ -226,7 +226,7 @@ let compute_database ?(verbose=false) files_or_dirs =
             );
             aux_toks xs
         |
-          T.T_IDENTIFIER(s, ii)
+          T.T_ID(s, ii)
           ::T.T_LPAREN(_)
           ::xs
           ->

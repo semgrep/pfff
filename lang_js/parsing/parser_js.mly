@@ -61,7 +61,7 @@ let mk_func_decl kind props (t, ps, rt) (lc, xs, rc) =
 let fake_tok s = Parse_info.fake_info s
 
 (* ugly, but in a sgrep pattern, anonymous functions are parsed as a toplevel
- * function declaration (because 'function_declaration' accepts identifier_opt,
+ * function decl (because 'function_decl' accepts id_opt,
  * see its comment to see the reason), which then causes an exception
  * in Ast_js_build which does not accept anonymous toplevel function.
  * This is why we intercept this case by returning instead an Expr pattern.
@@ -92,7 +92,7 @@ let fix_sgrep_module_item x =
 
 (* tokens with a value *)
 %token<string * Cst_js.tok> T_NUMBER
-%token<string * Cst_js.tok> T_IDENTIFIER
+%token<string * Cst_js.tok> T_ID
 
 %token<string * Cst_js.tok> T_STRING 
 %token<string * Cst_js.tok> T_ENCAPSED_STRING
@@ -209,7 +209,7 @@ let fix_sgrep_module_item x =
 %right T_NOT T_BIT_NOT T_INCR T_DECR T_DELETE T_TYPEOF T_VOID T_AWAIT
 
 (*************************************************************************)
-(* Rules type declaration *)
+(* Rules type decl *)
 (*************************************************************************)
 %start <Cst_js.module_item list> main
 %start <Cst_js.module_item option> module_item_or_eof 
@@ -246,29 +246,29 @@ module_item_or_eof:
 
 module_item:
  | item { It $1 }
- | import_declaration { Import $1 }
- | export_declaration { Export $1 }
+ | import_decl { Import $1 }
+ | export_decl { Export $1 }
 
 (* item is also in stmt_list, inside every blocks *)
 item:
  | stmt   { St $1 }
- | declaration { $1 }
+ | decl { $1 }
 
-declaration:
- (* part of hoistable_declaration in the ECMA grammar *)
- | function_declaration  { FunDecl $1 }
+decl:
+ (* part of hoistable_decl in the ECMA grammar *)
+ | function_decl  { FunDecl $1 }
  (* es6: *)
- | generator_declaration { FunDecl $1 }
+ | generator_decl { FunDecl $1 }
  (* es7: *)
- | async_declaration     { FunDecl $1 }
+ | async_decl     { FunDecl $1 }
 
  (* es6: *)
- | lexical_declaration   { St $1 }
- | class_declaration     { ClassDecl $1 }
+ | lexical_decl   { St $1 }
+ | class_decl     { ClassDecl $1 }
  (* typescript: *)
- | interface_declaration { InterfaceDecl $1 }
- | type_alias_declaration { ItemTodo $1 }
- | enum_declaration       { ItemTodo $1 }
+ | interface_decl { InterfaceDecl $1 }
+ | type_alias_decl { ItemTodo $1 }
+ | enum_decl       { ItemTodo $1 }
 
 (*************************************************************************)
 (* sgrep *)
@@ -281,12 +281,12 @@ sgrep_spatch_pattern:
 
 module_item_no_dots:
  | item_no_dots       { It $1 }
- | import_declaration { Import $1 }
- | export_declaration { Export $1 }
+ | import_decl { Import $1 }
+ | export_decl { Export $1 }
 
 item_no_dots:
  | stmt_no_dots { St $1 }
- | declaration { $1 }
+ | decl { $1 }
 
 (* coupling: copy paste of stmt, without dots *)
 stmt_no_dots:
@@ -312,7 +312,7 @@ stmt_no_dots:
 (* import *)
 (*----------------------------*)
 
-import_declaration: 
+import_decl: 
  | T_IMPORT import_clause from_clause sc  { $1, ImportFrom ($2, $3), $4 }
  | T_IMPORT module_specifier sc           { $1, ImportEffect $2, $3 }
 
@@ -322,10 +322,10 @@ import_clause:
  | import_default "," import_names { Some $1, Some $3 }
  |                    import_names { None, Some $1 }
 
-import_default: binding_identifier { $1 }
+import_default: binding_id { $1 }
 
 import_names:
- | "*" T_AS binding_identifier  { ImportNamespace ($1, $2, $3) }
+ | "*" T_AS binding_id  { ImportNamespace ($1, $2, $3) }
  | named_imports                { ImportNames $1 }
  (* typing-ext: *)
  | T_TYPE named_imports         { ImportTypes ($1, $2) }
@@ -339,10 +339,10 @@ named_imports:
 from_clause: T_FROM module_specifier { ($1, $2) }
 
 import_specifier:
- | binding_identifier                 { $1, None }
- | identifier T_AS binding_identifier { $1, Some ($2, $3) }
+ | binding_id                 { $1, None }
+ | id T_AS binding_id { $1, Some ($2, $3) }
  (* not in ECMA, not sure what it means *)
- | T_DEFAULT T_AS binding_identifier  { ("default",$1), Some ($2, $3) }
+ | T_DEFAULT T_AS binding_id  { ("default",$1), Some ($2, $3) }
  | T_DEFAULT                         { ("default",$1), None }
 
 module_specifier: string_literal { $1 }
@@ -351,12 +351,12 @@ module_specifier: string_literal { $1 }
 (* export *)
 (*----------------------------*)
 
-export_declaration:
+export_decl:
  | T_EXPORT export_names       { $1, $2 }
  | T_EXPORT variable_stmt { $1, ExportDecl (St $2) }
- | T_EXPORT declaration        { $1, ExportDecl $2 }
+ | T_EXPORT decl        { $1, ExportDecl $2 }
  (* in theory just func/gen/class, no lexical_decl *)
- | T_EXPORT T_DEFAULT declaration { $1, ExportDefaultDecl ($2, $3) }
+ | T_EXPORT T_DEFAULT decl { $1, ExportDefaultDecl ($2, $3) }
  | T_EXPORT T_DEFAULT assignment_expr_no_stmt sc 
     { $1, ExportDefaultExpr ($2, $3, $4)  }
  (* ugly hack because should use assignment_expr above instead*)
@@ -375,23 +375,23 @@ export_clause:
  | "{" listc(import_specifier) ","  "}" { ($1, $2 @ [Right $3], $4) }
 
 (*************************************************************************)
-(* Variable declaration *)
+(* Variable decl *)
 (*************************************************************************)
 
 (* part of 'stmt' *)
-variable_stmt: T_VAR listc(variable_declaration) sc
+variable_stmt: T_VAR listc(variable_decl) sc
   { VarsDecl ((Var, $1), $2, $3) }
 
-(* part of 'declaration' *)
-lexical_declaration:
+(* part of 'decl' *)
+lexical_decl:
  (* es6: *)
- | T_CONST listc(variable_declaration) sc { VarsDecl((Const, $1), $2,$3) }
- | T_LET listc(variable_declaration) sc { VarsDecl((Let, $1), $2,$3) }
+ | T_CONST listc(variable_decl) sc { VarsDecl((Const, $1), $2,$3) }
+ | T_LET listc(variable_decl) sc { VarsDecl((Let, $1), $2,$3) }
 
 
 (* one var from a list of vars *)
-variable_declaration:
- | identifier annotation? initializeur?
+variable_decl:
+ | id annotation? initializeur?
      { VarClassic { v_name = $1; v_type = $2; v_init = $3 } }
  | binding_pattern annotation? initializeur
      { VarPattern { vpat = $1; vpat_type = $2; vpat_init = Some $3 } }
@@ -399,16 +399,16 @@ variable_declaration:
 initializeur: "=" assignment_expr { $1, $2 }
 
 
-for_variable_declaration:
- | T_VAR listc(variable_declaration_no_in)   { ((Var, $1), $2) }
+for_variable_decl:
+ | T_VAR listc(variable_decl_no_in)   { ((Var, $1), $2) }
  (* es6: *)
- | T_CONST listc(variable_declaration_no_in) { ((Const, $1), $2) }
- | T_LET listc(variable_declaration_no_in)   { ((Let, $1), $2) }
+ | T_CONST listc(variable_decl_no_in) { ((Const, $1), $2) }
+ | T_LET listc(variable_decl_no_in)   { ((Let, $1), $2) }
 
-variable_declaration_no_in:
- | identifier initializer_no_in
+variable_decl_no_in:
+ | id initializer_no_in
      { VarClassic { v_name = $1; v_init = Some $2; v_type =None } }
- | identifier
+ | id
      { VarClassic { v_name = $1; v_init = None; v_type = None } }
  | binding_pattern initializer_no_in
      { VarPattern { vpat = $1; vpat_init = Some $2; vpat_type = None } }
@@ -421,7 +421,7 @@ for_single_variable_decl:
  | T_LET  for_binding  { ((Let, $1), $2) }
 
 for_binding:
- | identifier annotation? 
+ | id annotation? 
    { VarClassic { v_name = $1; v_type = $2; v_init = None; } }
  | binding_pattern 
    { VarPattern { vpat = $1; vpat_type = None; vpat_init = None } }
@@ -439,15 +439,15 @@ object_binding_pattern:
  | "{" listc(binding_property) trailing_comma  "}" { PatObj ($1, $2 @ $3, $4) }
 
 binding_property:
- | binding_identifier initializeur?   { PatId ($1, $2) }
+ | binding_id initializeur?   { PatId ($1, $2) }
  | property_name ":" binding_element { PatProp ($1, $2, $3) }
  (* can appear only at the end of a binding_property_list in ECMA *)
- | "..." binding_identifier { PatDots ($1, PatId ($2, None)) }
+ | "..." binding_id { PatDots ($1, PatId ($2, None)) }
  | "..." binding_pattern    { PatDots ($1, PatNest ($2, None)) }
 
 (* in theory used also for formal parameter as is *)
 binding_element:
- | binding_identifier initializeur? { PatId ($1, $2) }
+ | binding_id initializeur? { PatId ($1, $2) }
  | binding_pattern    initializeur? { PatNest ($1, $2) }
 
 
@@ -463,7 +463,7 @@ binding_elision_element:
  |          binding_element { [Left $1] }
  | elision2 binding_element { $1 @ [Left $2] }
  (* can appear only at the end of a binding_property_list in ECMA *)
- | "..." binding_identifier { [Left (PatDots ($1, PatId ($2, None)))] }
+ | "..." binding_id { [Left (PatDots ($1, PatId ($2, None)))] }
  | "..." binding_pattern    { [Left (PatDots ($1, PatNest ($2, None)))] }
 
 (*************************************************************************)
@@ -474,11 +474,11 @@ binding_elision_element:
  * TODO: use other tech to enforce this? extra rule after
  * T_EXPORT T_DEFAULT? but then many ambiguities.
  *)
-function_declaration: T_FUNCTION identifier? call_signature "{"function_body"}"
+function_decl: T_FUNCTION id? call_signature "{"function_body"}"
    { mk_func_decl (F_func ($1, $2)) [] $3 ($4, $5, $6) }
 
-(* the identifier is really optional here *)
-function_expr: T_FUNCTION identifier? call_signature  "{"function_body"}"
+(* the id is really optional here *)
+function_expr: T_FUNCTION id? call_signature  "{"function_body"}"
    { mk_func_decl (F_func ($1, $2)) [] $3 ($4, $5, $6) }
 
 (* typescript: *)
@@ -506,10 +506,10 @@ formal_parameter_list:
  * We could also factorize with binding_element as done by ECMA.
  *)
 formal_parameter:
- | identifier            
+ | id            
    { ParamClassic (mk_param $1) }
  (* es6: default parameter *)
- | identifier initializeur
+ | id initializeur
     { let (tok,e) = $2 in ParamClassic 
       { (mk_param $1) with p_default = Some(DSome(tok,e)); } }
   (* until here this is mostly equivalent to the 'binding_element' rule *)
@@ -517,22 +517,22 @@ formal_parameter:
     { ParamPattern { ppat = $1; ppat_type = $2; ppat_default = $3 } }
 
  (* es6: spread *)
- | "..." identifier 
+ | "..." id 
     { ParamClassic { (mk_param $2) with p_dots = Some $1; } }
 
  (* typing-ext: *)
- | identifier annotation 
+ | id annotation 
     { ParamClassic { (mk_param $1) with p_type = Some $2; } }
- | identifier T_PLING
+ | id T_PLING
      { ParamClassic { (mk_param $1) with p_default = Some(DNone $2); } }
- | identifier T_PLING annotation
+ | id T_PLING annotation
      { ParamClassic { (mk_param $1) with 
                      p_type = Some $3; p_default = Some(DNone $2); } }
- | identifier annotation initializeur
+ | id annotation initializeur
      { let (tok,e) = $3 in ParamClassic 
        { (mk_param $1) with 
          p_type = Some $2; p_default = Some(DSome(tok,e)); } }
- | "..." identifier annotation
+ | "..." id annotation
      { ParamClassic { (mk_param $2) 
                       with p_dots = Some $1; p_type = Some $3; } }
  (* sgrep-ext: *)
@@ -541,27 +541,27 @@ formal_parameter:
 (*----------------------------*)
 (* generators *)
 (*----------------------------*)
-(* TODO: identifier? in original grammar, why? *)
-generator_declaration: 
- T_FUNCTION "*" identifier call_signature "{" function_body "}"
+(* TODO: id? in original grammar, why? *)
+generator_decl: 
+ T_FUNCTION "*" id call_signature "{" function_body "}"
      { mk_func_decl (F_func ($1, Some $3)) [Generator $2] $4 ($5, $6, $7) }
 
-(* the identifier is optional here *)
+(* the id is optional here *)
 generator_expr:
- T_FUNCTION "*" identifier? call_signature "{" function_body "}"
+ T_FUNCTION "*" id? call_signature "{" function_body "}"
      { mk_func_decl (F_func ($1, $3)) [Generator $2] $4 ($5, $6, $7) }
 
 (*----------------------------*)
 (* asynchronous functions *)
 (*----------------------------*)
-(* TODO: identifier? in original grammar, why? *)
-async_declaration:
- T_ASYNC T_FUNCTION identifier call_signature "{" function_body "}"
+(* TODO: id? in original grammar, why? *)
+async_decl:
+ T_ASYNC T_FUNCTION id call_signature "{" function_body "}"
      { mk_func_decl (F_func ($2, Some $3)) [Async $1] $4 ($5, $6, $7) }
 
-(* the identifier is optional here *)
+(* the id is optional here *)
 async_function_expr:
- T_ASYNC T_FUNCTION identifier? call_signature "{" function_body "}"
+ T_ASYNC T_FUNCTION id? call_signature "{" function_body "}"
      { mk_func_decl (F_func ($2, $3)) [Async $1] $4 ($5, $6, $7) }
 
 (*************************************************************************)
@@ -572,7 +572,7 @@ async_function_expr:
  * TODO: use other tech to enforce this? extra rule after
  * T_EXPORT T_DEFAULT? but then many ambiguities.
  *)
-class_declaration: T_CLASS binding_identifier? generics? class_tail
+class_decl: T_CLASS binding_id? generics? class_tail
    { let (extends, body) = $4 in
      { c_tok = $1; c_name = $2; c_type_params = $3;
        c_extends =extends; c_body = body } }
@@ -583,9 +583,9 @@ class_heritage: T_EXTENDS type_or_expr { ($1, $2) }
 
 class_body: class_element+ { $1 }
 
-binding_identifier: identifier { $1 }
+binding_id: id { $1 }
 
-class_expr: T_CLASS binding_identifier? generics? class_tail
+class_expr: T_CLASS binding_id? generics? class_tail
    { let (extends, body) = $4 in
      Class { c_tok = $1;  c_name = $2; c_type_params = $3;
                c_extends =extends;c_body = body } }
@@ -652,10 +652,10 @@ method_definition:
 (*************************************************************************)
 (* typescript: *)
 (* TODO: use type_ at the end here and you get conflicts on '[' 
- * Why? because [] can follow an interface_declaration? *)
+ * Why? because [] can follow an interface_decl? *)
 
-interface_declaration: 
- T_INTERFACE binding_identifier generics? interface_extends? object_type
+interface_decl: 
+ T_INTERFACE binding_id generics? interface_extends? object_type
    { { i_tok = $1;i_name = $2; (* TODO: interface_extends! *)
        i_type_params = $3; i_type = $5; } }
 
@@ -665,11 +665,11 @@ interface_extends: T_EXTENDS listc(type_reference) { ($1, $2) }
 (* Type declaration *)
 (*************************************************************************)
 (* typescript: *)
-type_alias_declaration: T_TYPE identifier "=" type_ sc 
+type_alias_decl: T_TYPE id "=" type_ sc 
   { match $5 with Some t -> t | None -> $3 }
 
-enum_declaration: 
-  T_CONST? T_ENUM identifier "{" listc(enum_member) trailing_comma "}" { $7 }
+enum_decl: 
+  T_CONST? T_ENUM id "{" listc(enum_member) trailing_comma "}" { $7 }
 
 enum_member:
  | property_name { }
@@ -744,12 +744,12 @@ type_reference:
 
 (* was called type_reference in Flow *)
 type_name: 
- | T_IDENTIFIER { V($1) }
- | module_name "." T_IDENTIFIER { V($3) }
+ | T_ID { V($1) }
+ | module_name "." T_ID { V($3) }
 
 module_name:
- | T_IDENTIFIER { V($1) }
- | module_name "." T_IDENTIFIER { V($3) (* TODO: $1 *) } 
+ | T_ID { V($1) }
+ | module_name "." T_ID { V($3) (* TODO: $1 *) } 
 
 union_type:     primary_or_union_type     T_BIT_OR primary_type { TTodo }
 
@@ -764,14 +764,14 @@ type_member:
     { ($1, $2, $3) }
  | property_name_typescript T_PLING complex_annotation sc_or_comma
     { ($1, $3, $4) (* TODO $2*) }
- | "[" T_IDENTIFIER ":" T_STRING_TYPE "]" complex_annotation sc_or_comma
+ | "[" T_ID ":" T_STRING_TYPE "]" complex_annotation sc_or_comma
     { (* TODO *) (PN_Id $2, $6, $7)  }
- | "[" T_IDENTIFIER ":" T_NUMBER_TYPE "]" complex_annotation sc_or_comma
+ | "[" T_ID ":" T_NUMBER_TYPE "]" complex_annotation sc_or_comma
     { (* TODO *) (PN_Id $2, $6, $7) }
 
 (* no [xxx] here *)
 property_name_typescript:
- | identifier    { PN_Id $1 }
+ | id    { PN_Id $1 }
  | string_literal  { PN_String $1 }
  | numeric_literal { PN_Num $1 }
  | ident_keyword   { PN_Id $1 }
@@ -783,9 +783,9 @@ param_type_list:
  | optional_param_type_list           { $1 }
 
 (* partial type annotations are not supported *)
-param_type: identifier complex_annotation { (RequiredParam($1), $2) }
+param_type: id complex_annotation { (RequiredParam($1), $2) }
 
-optional_param_type: identifier T_PLING complex_annotation
+optional_param_type: id T_PLING complex_annotation
   { (OptionalParam($1,$2), $3) }
 
 optional_param_type_list:
@@ -794,7 +794,7 @@ optional_param_type_list:
  | optional_param_type       { [Left $1] }
  | rest_param_type           { [Left $1] }
 
-rest_param_type: "..." identifier complex_annotation { (RestParam($1,$2), $3) }
+rest_param_type: "..." id complex_annotation { (RestParam($1,$2), $3) }
 
 (*----------------------------*)
 (* Type parameters (type variables) *)
@@ -802,7 +802,7 @@ rest_param_type: "..." identifier complex_annotation { (RestParam($1,$2), $3) }
 
 generics: T_LESS_THAN listc(type_parameter) T_GREATER_THAN { $1, $2, $3 }
 
-type_parameter: T_IDENTIFIER { $1 }
+type_parameter: T_ID { $1 }
 
 (*----------------------------*)
 (* Type arguments *)
@@ -905,7 +905,7 @@ iteration_stmt:
 
  | T_FOR "(" expr_no_in? ";" expr? ";" expr? ")" stmt
      { For ($1, $2, $3|>Common2.fmap (fun x -> LHS1 x), $4, $5, $6, $7,$8,$9)}
- | T_FOR "(" for_variable_declaration ";" expr? ";" expr? ")" 
+ | T_FOR "(" for_variable_decl ";" expr? ";" expr? ")" 
    stmt
      { For ($1, $2, Some (ForVars $3), $4, $5, $6, $7, $8, $9) }
 
@@ -921,9 +921,9 @@ iteration_stmt:
 
 initializer_no_in: "=" assignment_expr_no_in { $1, $2 }
 
-continue_stmt: T_CONTINUE identifier? sc { Continue ($1, $2, $3) }
+continue_stmt: T_CONTINUE id? sc { Continue ($1, $2, $3) }
 
-break_stmt: T_BREAK identifier? sc { Break ($1, $2, $3) }
+break_stmt: T_BREAK id? sc { Break ($1, $2, $3) }
 
 return_stmt: T_RETURN expr? sc { Return ($1, $2, $3) }
 
@@ -934,7 +934,7 @@ with_stmt: T_WITH "(" expr ")" stmt { With ($1, ($2, $3, $4), $5) }
 switch_stmt: T_SWITCH "(" expr ")" case_block { Switch ($1, ($2, $3, $4), $5) }
 
 
-labelled_stmt: identifier ":" stmt { Labeled ($1, $2, $3) }
+labelled_stmt: id ":" stmt { Labeled ($1, $2, $3) }
 
 
 throw_stmt: T_THROW expr sc { Throw ($1, $2, $3) }
@@ -944,7 +944,7 @@ try_stmt:
  | T_TRY block       finally { Try ($1, $2, None, Some $3) }
  | T_TRY block catch finally { Try ($1, $2, Some $3, Some $4) }
 
-catch: T_CATCH "(" identifier ")" block { $1, ($2, $3, $4), $5 }
+catch: T_CATCH "(" id ")" block { $1, ($2, $3, $4), $5 }
 
 finally: T_FINALLY block { $1, $2 }
 
@@ -1084,7 +1084,7 @@ member_expr:
  (* es6: *)
  | T_SUPER "[" expr "]" { Bracket(Super($1),($2,$3,$4))}
  | T_SUPER "." field_name { Period(Super($1), $2, $3) }
- | T_NEW "." identifier { 
+ | T_NEW "." id { 
      if fst $3 = "target"
      then NewTarget ($1, $2, snd $3)
      else raise (Parsing.Parse_error)
@@ -1104,7 +1104,7 @@ primary_expr:
 
 primary_expr_no_braces:
  | T_THIS          { This $1 }
- | identifier      { V $1 }
+ | id      { V $1 }
 
  | null_literal    { L(Null $1) }
  | boolean_literal { L(Bool $1) }
@@ -1124,7 +1124,7 @@ primary_expr_no_braces:
  (* templated string (aka interpolated strings) *)
  | T_BACKQUOTE optl(encaps+) T_BACKQUOTE
      { Encaps (None, $1, $2, $3) }
- | identifier T_BACKQUOTE optl(encaps+) T_BACKQUOTE
+ | id T_BACKQUOTE optl(encaps+) T_BACKQUOTE
      { Encaps (Some $1, $2, $3, $4) }
 
 (*----------------------------*)
@@ -1170,7 +1170,7 @@ property_name_and_value:
  | property_name ":" assignment_expr  { Left (P_field ($1, $2, $3)) }
  | method_definition                        { Left (P_method ($1)) }
  (* es6: *)
- | identifier                               { Left (P_shorthand ($1)) }
+ | id                               { Left (P_shorthand ($1)) }
  (* es6: spread operator: *)
  | "..." assignment_expr              { Left (P_spread ($1, $2)) }
 
@@ -1231,7 +1231,7 @@ encaps:
 
 (* TODO conflict with async and as then in indent_keyword_bis *)
 arrow_function:
- | identifier "->" arrow_body
+ | id "->" arrow_body
      { { a_params = ASingleParam (ParamClassic (mk_param $1)); 
          a_return_type = None; a_tok = $2; a_body = $3 } }
 
@@ -1400,8 +1400,8 @@ primary_expr_no_stmt:
 (* Entities, names *)
 (*************************************************************************)
 (* used for entities, parameters, labels, etc. *)
-identifier:
- | T_IDENTIFIER { $1 }
+id:
+ | T_ID { $1 }
  | ident_semi_keyword { PI.str_of_info $1, $1 }
 
 (* add here keywords which are not considered reserved by ECMA *)
@@ -1422,7 +1422,7 @@ ident_semi_keyword:
  (* TODO: would like to add T_IMPORT here, but cause conflicts *)
 
 (* alt: use the _last_non_whitespace_like_token trick and look if
- * previous token was a period to return a T_IDENTFIER
+ * previous token was a period to return a T_ID
  *)
 ident_keyword: ident_keyword_bis { PI.str_of_info $1, $1 }
 
@@ -1446,15 +1446,15 @@ ident_keyword_bis:
  | T_TYPEOF { $1 } | T_VOID { $1 }
 
 field_name:
- | identifier { $1 }
+ | id { $1 }
  | ident_keyword { $1 }
 
 method_name:
- | identifier { $1 }
+ | id { $1 }
  | ident_keyword { $1 }
 
 property_name:
- | identifier    { PN_Id $1 }
+ | id    { PN_Id $1 }
  | string_literal  { PN_String $1 }
  | numeric_literal { PN_Num $1 }
  | ident_keyword   { PN_Id $1 }
