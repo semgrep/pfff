@@ -273,12 +273,12 @@ declaration:
 (*************************************************************************)
 
 sgrep_spatch_pattern:
- | assignment_expression_no_statement EOF           { Expr $1 }
- | module_item_no_dots EOF                          { fix_sgrep_module_item $1}
+ | assignment_expression_no_statement EOF { Expr $1 }
+ | module_item_no_dots EOF                { fix_sgrep_module_item $1}
  | module_item_no_dots module_item+ EOF   { ModuleItems ($1::$2) }
 
 module_item_no_dots:
- | item_no_dots { It $1 }
+ | item_no_dots       { It $1 }
  | import_declaration { Import $1 }
  | export_declaration { Export $1 }
 
@@ -303,49 +303,35 @@ statement_no_dots:
  | throw_statement      { $1 }
  | try_statement        { $1 }
 
-module_item_sgrep_list:
- | module_item { [$1] }
- | module_item_sgrep_list module_item { $1 @ [$2] }
-
 (*************************************************************************)
 (* Namespace *)
 (*************************************************************************)
-
 (*----------------------------*)
 (* import *)
 (*----------------------------*)
 
 import_declaration: 
- | T_IMPORT import_clause from_clause sc 
-   { $1, ImportFrom ($2, $3), $4 }
- | T_IMPORT module_specifier sc 
-   { $1, ImportEffect $2, $3 }
+ | T_IMPORT import_clause from_clause sc  { $1, ImportFrom ($2, $3), $4 }
+ | T_IMPORT module_specifier sc           { $1, ImportEffect $2, $3 }
 
 import_clause: 
- | import_default { Some $1, None }
+ | import_default                  { Some $1, None }
  (* less: add "," in AST? *)
  | import_default "," import_names { Some $1, Some $3 }
- |                        import_names { None, Some $1 }
+ |                    import_names { None, Some $1 }
 
-import_default:
- | binding_identifier { $1 }
+import_default: binding_identifier { $1 }
 
 import_names:
- | "*" T_AS binding_identifier 
-   { ImportNamespace ($1, $2, $3) }
- | named_imports 
-   { ImportNames $1 }
+ | "*" T_AS binding_identifier  { ImportNamespace ($1, $2, $3) }
+ | named_imports                { ImportNames $1 }
  (* typing-ext: *)
- | T_TYPE named_imports
-   { ImportTypes ($1, $2) }
+ | T_TYPE named_imports         { ImportTypes ($1, $2) }
 
 named_imports:
- | "{" "}" 
-   { ($1, [], $2) }
- | "{" listc(import_specifier)          "}" 
-   { ($1, $2, $3) }
- | "{" listc(import_specifier) ","  "}" 
-   { ($1, $2 @ [Right $3], $4) }
+ | "{" "}"                             { ($1, [], $2) }
+ | "{" listc(import_specifier) "}"     { ($1, $2, $3) }
+ | "{" listc(import_specifier) "," "}" { ($1, $2 @ [Right $3], $4) }
 
 (* also valid for export *)
 from_clause: T_FROM module_specifier { ($1, $2) }
@@ -355,7 +341,7 @@ import_specifier:
  | identifier T_AS binding_identifier { $1, Some ($2, $3) }
  (* not in ECMA, not sure what it means *)
  | T_DEFAULT T_AS binding_identifier  { ("default",$1), Some ($2, $3) }
- | T_DEFAULT  { ("default",$1), None }
+ | T_DEFAULT                         { ("default",$1), None }
 
 module_specifier: string_literal { $1 }
 
@@ -377,26 +363,22 @@ export_declaration:
 
 
 export_names:
- | "*"        from_clause sc { ReExportNamespace ($1, $2, $3) }
+ | "*"           from_clause sc { ReExportNamespace ($1, $2, $3) }
  | export_clause from_clause sc { ReExportNames ($1, $2, $3) }
- | export_clause sc { ExportNames ($1, $2) }
+ | export_clause sc             { ExportNames ($1, $2) }
 
 export_clause:
- | "{" "}" 
-   { ($1, [], $2) }
- | "{" listc(import_specifier)          "}" 
-   { ($1, $2, $3) }
- | "{" listc(import_specifier) ","  "}" 
-   { ($1, $2 @ [Right $3], $4) }
-
+ | "{" "}"                              { ($1, [], $2) }
+ | "{" listc(import_specifier) "}"      { ($1, $2, $3) }
+ | "{" listc(import_specifier) ","  "}" { ($1, $2 @ [Right $3], $4) }
 
 (*************************************************************************)
 (* Variable declaration *)
 (*************************************************************************)
 
 (* part of 'statement' *)
-variable_statement:
- | T_VAR listc(variable_declaration) sc  { VarsDecl ((Var, $1), $2, $3) }
+variable_statement: T_VAR listc(variable_declaration) sc
+  { VarsDecl ((Var, $1), $2, $3) }
 
 (* part of 'declaration' *)
 lexical_declaration:
@@ -412,9 +394,7 @@ variable_declaration:
  | binding_pattern annotation? initializeur
      { VarPattern { vpat = $1; vpat_type = $2; vpat_init = Some $3 } }
 
-initializeur:
- | "=" assignment_expression { $1, $2 }
-
+initializeur: "=" assignment_expression { $1, $2 }
 
 
 for_variable_declaration:
@@ -436,7 +416,7 @@ for_single_variable_decl:
  | T_VAR for_binding { ((Var, $1), $2) }
  (* es6: *)
  | T_CONST for_binding { ((Const, $1), $2) }
- | T_LET for_binding   { ((Let, $1), $2) }
+ | T_LET  for_binding  { ((Let, $1), $2) }
 
 for_binding:
  | identifier annotation? 
@@ -453,15 +433,8 @@ binding_pattern:
  | array_binding_pattern { $1 }
 
 object_binding_pattern:
- | "{" "}" 
-    { PatObj ($1, [], $2)  }
- | "{" binding_property_list trailing_comma  "}" 
-    { PatObj ($1, $2 @ $3, $4) }
-
-binding_property_list:
- | binding_property                                { [Left $1]  }
- | binding_property_list "," binding_property  { $1 @ [Right $2; Left $3] }
-
+ | "{" "}"                                         { PatObj ($1, [], $2)  }
+ | "{" listc(binding_property) trailing_comma  "}" { PatObj ($1, $2 @ $3, $4) }
 
 binding_property:
  | binding_identifier initializeur?   { PatId ($1, $2) }
@@ -473,19 +446,19 @@ binding_property:
 (* in theory used also for formal parameter as is *)
 binding_element:
  | binding_identifier initializeur? { PatId ($1, $2) }
- | binding_pattern initializeur?    { PatNest ($1, $2) }
+ | binding_pattern    initializeur? { PatNest ($1, $2) }
 
 
 array_binding_pattern:
  | "[" binding_element_list "]" { PatArr ($1, $2, $3) }
 
+(* cant use listc() here, it's $1 not [$1] below *)
 binding_element_list:
  | binding_elision_element { $1 }
- | binding_element_list "," binding_elision_element 
-    {  $1 @ [Right $2] @ $3 }
+ | binding_element_list "," binding_elision_element {  $1 @ [Right $2] @ $3 }
 
 binding_elision_element:
- |         binding_element { [Left $1] }
+ |          binding_element { [Left $1] }
  | elision2 binding_element { $1 @ [Left $2] }
  (* can appear only at the end of a binding_property_list in ECMA *)
  | "..." binding_identifier { [Left (PatDots ($1, PatId ($2, None)))] }
@@ -496,26 +469,21 @@ binding_elision_element:
 (*************************************************************************)
 
 (* ugly: f_name is None only when part of an 'export default' decl 
-   * TODO: use other tech to enforce this? extra rule after
-   * T_EXPORT T_DEFAULT? but then many ambiguities.
-   *)
-function_declaration:
- T_FUNCTION identifier? call_signature "{" function_body "}"
-     { mk_func_decl (F_func ($1, $2)) [] $3 ($4, $5, $6) }
+ * TODO: use other tech to enforce this? extra rule after
+ * T_EXPORT T_DEFAULT? but then many ambiguities.
+ *)
+function_declaration: T_FUNCTION identifier? call_signature "{"function_body"}"
+   { mk_func_decl (F_func ($1, $2)) [] $3 ($4, $5, $6) }
 
 (* the identifier is really optional here *)
-function_expression:
- T_FUNCTION identifier? call_signature  "{" function_body "}"
-     { mk_func_decl (F_func ($1, $2)) [] $3 ($4, $5, $6) }
+function_expression: T_FUNCTION identifier? call_signature  "{"function_body"}"
+   { mk_func_decl (F_func ($1, $2)) [] $3 ($4, $5, $6) }
 
 (* typescript: *)
-call_signature: 
- generics?  "(" formal_parameter_list_opt ")"  annotation? 
+call_signature:  generics?  "(" formal_parameter_list_opt ")"  annotation? 
   { $1, ($2, $3, $4), $5 }
 
-function_body:
- | (* empty *) { [] }
- | statement_list  { $1 }
+function_body: optl(statement_list) { $1 }
 
 (*----------------------------*)
 (* parameters *)
@@ -531,10 +499,10 @@ formal_parameter_list:
  | formal_parameter                               { [Left $1] }
 
 (* The ECMA and Typescript grammars imposes more restrictions
-   * (some require_parameter, optional_parameter, rest_parameter)
-   * but I simplified.
-   * We could also factorize with binding_element as done by ECMA.
-   *)
+ * (some require_parameter, optional_parameter, rest_parameter)
+ * but I simplified.
+ * We could also factorize with binding_element as done by ECMA.
+ *)
 formal_parameter:
  | identifier            
    { ParamClassic (mk_param $1) }
@@ -573,8 +541,8 @@ formal_parameter:
 (* generators *)
 (*----------------------------*)
 (* TODO: identifier? in original grammar, why? *)
-generator_declaration:
-  T_FUNCTION "*" identifier call_signature "{" function_body "}"
+generator_declaration: 
+ T_FUNCTION "*" identifier call_signature "{" function_body "}"
      { mk_func_decl (F_func ($1, Some $3)) [Generator $2] $4 ($5, $6, $7) }
 
 (* the identifier is optional here *)
@@ -587,12 +555,12 @@ generator_expression:
 (*----------------------------*)
 (* TODO: identifier? in original grammar, why? *)
 async_declaration:
- | T_ASYNC T_FUNCTION identifier call_signature "{" function_body "}"
+ T_ASYNC T_FUNCTION identifier call_signature "{" function_body "}"
      { mk_func_decl (F_func ($2, Some $3)) [Async $1] $4 ($5, $6, $7) }
 
 (* the identifier is optional here *)
 async_function_expression:
- | T_ASYNC T_FUNCTION identifier? call_signature "{" function_body "}"
+ T_ASYNC T_FUNCTION identifier? call_signature "{" function_body "}"
      { mk_func_decl (F_func ($2, $3)) [Async $1] $4 ($5, $6, $7) }
 
 (*************************************************************************)
@@ -600,14 +568,13 @@ async_function_expression:
 (*************************************************************************)
 
 (* ugly: c_name is None only when part of an 'export default' decl 
-   * TODO: use other tech to enforce this? extra rule after
-   * T_EXPORT T_DEFAULT? but then many ambiguities.
-   *)
+ * TODO: use other tech to enforce this? extra rule after
+ * T_EXPORT T_DEFAULT? but then many ambiguities.
+ *)
 class_declaration: T_CLASS binding_identifier? generics? class_tail
    { let (extends, body) = $4 in
      { c_tok = $1; c_name = $2; c_type_params = $3;
-       c_extends =extends; c_body = body }
-   }
+       c_extends =extends; c_body = body } }
 
 class_tail: class_heritage? "{" optl(class_body) "}" {$1,($2,$3,$4)}
 
@@ -616,12 +583,8 @@ class_heritage: T_EXTENDS type_or_expression { ($1, $2) }
 class_body: class_element+ { $1 }
 
 binding_identifier: identifier { $1 }
-binding_identifier_opt: 
- | { None } 
- | binding_identifier { Some $1 }
 
-
-class_expression: T_CLASS binding_identifier_opt generics? class_tail
+class_expression: T_CLASS binding_identifier? generics? class_tail
    { let (extends, body) = $4 in
      Class { c_tok = $1;  c_name = $2; c_type_params = $3;
                c_extends =extends;c_body = body } }
@@ -630,24 +593,23 @@ class_expression: T_CLASS binding_identifier_opt generics? class_tail
 (* Class elements *)
 (*----------------------------*)
 
-(* can't factorize with static_opt, or access_modifier_opt; ambiguities*)
+(* can't factorize with static_opt, or access_modifier_opt; ambiguities *)
 class_element:
- |                  method_definition      { C_method (None, $1) }
- | access_modifiers method_definition      { C_method (None, $2) (* TODO $1 *) } 
+ |                  method_definition  { C_method (None, $1) }
+ | access_modifiers method_definition  { C_method (None, $2) (* TODO $1 *) } 
 
  |                  property_name annotation? initializeur? sc 
     { C_field ({ fld_static = None; fld_name = $1; fld_type = $2;
-                fld_init = $3 }, $4)
-    }
+                fld_init = $3 }, $4) }
  | access_modifiers property_name annotation? initializeur? sc 
     { C_field ({ fld_static = None(*TODO $1*); fld_name = $2; fld_type = $3;
-                fld_init = $4 }, $5)
-    }
+                fld_init = $4 }, $5) }
 
- | sc                       { C_extrasemicolon $1 }
+ | sc    { C_extrasemicolon $1 }
   (* sgrep-ext: enable class body matching *)
  | "..." { Flag_parsing.sgrep_guard (CEllipsis $1) }
 
+(* TODO: cant use access_modifier+, conflict *)
 access_modifiers: 
  | access_modifiers access_modifier { }
  | access_modifier { }
@@ -991,8 +953,7 @@ iteration_statement:
      { ForOf ($1, $2, ForVar $3, $4, $5, $6, $7) }
 
 
-initializer_no_in:
- | "=" assignment_expression_no_in { $1, $2 }
+initializer_no_in: "=" assignment_expression_no_in { $1, $2 }
 
 
 continue_statement:
