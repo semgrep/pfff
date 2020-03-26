@@ -864,11 +864,11 @@ iteration_stmt:
  | T_FOR "(" for_variable_decl ";" expr? ";" expr? ")" stmt
      { For ($1, $2, Some (ForVars $3), $4, $5, $6, $7, $8, $9) }
 
- | T_FOR "(" left_hand_side_expr T_IN expr ")" stmt
+ | T_FOR "(" left_hand_side_expr(d1) T_IN expr ")" stmt
      { ForIn ($1, $2, LHS2 $3, $4, $5, $6, $7) }
  | T_FOR "(" for_single_variable_decl T_IN expr ")"  stmt
      { ForIn ($1, $2, ForVar $3, $4, $5, $6, $7) }
- | T_FOR "(" left_hand_side_expr T_OF assignment_expr ")" stmt
+ | T_FOR "(" left_hand_side_expr(d1) T_OF assignment_expr ")" stmt
      { ForOf ($1, $2, LHS2 $3, $4, $5, $6, $7) }
  | T_FOR "(" for_single_variable_decl T_OF assignment_expr ")"  stmt
      { ForOf ($1, $2, ForVar $3, $4, $5, $6, $7) }
@@ -924,7 +924,7 @@ expr:
 (* coupling: see also assignment_expr_no_stmt *)
 assignment_expr:
  | conditional_expr { $1 }
- | left_hand_side_expr assignment_operator assignment_expr { Assign($1,$2,$3)}
+ | left_hand_side_expr(d1) assignment_operator assignment_expr { Assign($1,$2,$3)}
  (* es6: *)
  | arrow_function { Arrow $1 }
  (* es6: *)
@@ -934,13 +934,13 @@ assignment_expr:
  (* es7: *)
  | async_arrow_function { Arrow $1 }
  (* typescript: 1.6, because <> cant be used in TSX files *)
- | left_hand_side_expr T_AS type_ { $1 (* TODO $2 $3 *) }
+ | left_hand_side_expr(d1) T_AS type_ { $1 (* TODO $2 $3 *) }
  (* sgrep-ext: can't move in primary_expr, get s/r conflicts *)
  | "..." { Flag_parsing.sgrep_guard (Ellipsis $1) }
 
-left_hand_side_expr:
- | new_expr  { $1 }
- | call_expr { $1 }
+left_hand_side_expr(x):
+ | new_expr(x)  { $1 }
+ | call_expr(x) { $1 }
 
 conditional_expr:
  | post_in_expr { $1 }
@@ -948,7 +948,7 @@ conditional_expr:
      { Conditional ($1, $2, $3, $4, $5) }
 
 post_in_expr:
- | pre_in_expr { $1 }
+ | pre_in_expr(d1) { $1 }
  | post_in_expr T_LESS_THAN post_in_expr          { bop B_lt $1 $2 $3 }
  | post_in_expr T_GREATER_THAN post_in_expr       { bop B_gt $1 $2 $3 }
  | post_in_expr T_LESS_THAN_EQUAL post_in_expr    { bop B_le $1 $2 $3 }
@@ -965,58 +965,62 @@ post_in_expr:
  | post_in_expr T_AND post_in_expr                { bop B_and $1 $2 $3 }
  | post_in_expr T_OR post_in_expr                 { bop B_or $1 $2 $3 }
 
+(*----------------------------*)
+(* Generic part (to factorize rules) *)
+(*----------------------------*)
+
 (* called unary_expr and update_expr in ECMA *)
-(* coupling: modify also pre_in_expr_no_stmt *)
-pre_in_expr:
- | left_hand_side_expr                     { $1 }
+pre_in_expr(x):
+ | left_hand_side_expr(x)                     { $1 }
 
- | pre_in_expr T_INCR %prec p_POSTFIX      { uop U_post_increment $2 $1 }
- | pre_in_expr T_DECR %prec p_POSTFIX      { uop U_post_decrement $2 $1 }
- | T_INCR pre_in_expr                      { uop U_pre_increment $1 $2 }
- | T_DECR pre_in_expr                      { uop U_pre_decrement $1 $2 }
+ | pre_in_expr(x) T_INCR %prec p_POSTFIX      { uop U_post_increment $2 $1 }
+ | pre_in_expr(x) T_DECR %prec p_POSTFIX      { uop U_post_decrement $2 $1 }
+ | T_INCR pre_in_expr(d1)                      { uop U_pre_increment $1 $2 }
+ | T_DECR pre_in_expr(d1)                      { uop U_pre_decrement $1 $2 }
 
- | T_DELETE pre_in_expr                    { uop U_delete $1 $2 }
- | T_VOID pre_in_expr                      { uop U_void $1 $2 }
- | T_TYPEOF pre_in_expr                    { uop U_typeof $1 $2 }
+ | T_DELETE pre_in_expr(d1)                    { uop U_delete $1 $2 }
+ | T_VOID pre_in_expr(d1)                      { uop U_void $1 $2 }
+ | T_TYPEOF pre_in_expr(d1)                    { uop U_typeof $1 $2 }
 
- | T_PLUS pre_in_expr                      { uop U_plus $1 $2 }
- | T_MINUS pre_in_expr                     { uop U_minus $1 $2}
- | T_BIT_NOT pre_in_expr                   { uop U_bitnot $1 $2 }
- | T_NOT pre_in_expr                       { uop U_not $1 $2 }
+ | T_PLUS pre_in_expr(d1)                      { uop U_plus $1 $2 }
+ | T_MINUS pre_in_expr(d1)                     { uop U_minus $1 $2}
+ | T_BIT_NOT pre_in_expr(d1)                   { uop U_bitnot $1 $2 }
+ | T_NOT pre_in_expr(d1)                       { uop U_not $1 $2 }
  (* es7: *)
- | T_AWAIT pre_in_expr                     { Await ($1, $2) }
+ | T_AWAIT pre_in_expr(d1)                     { Await ($1, $2) }
 
- | pre_in_expr "*" pre_in_expr    { bop B_mul $1 $2 $3 }
- | pre_in_expr T_DIV pre_in_expr     { bop B_div $1 $2 $3 }
- | pre_in_expr T_MOD pre_in_expr     { bop B_mod $1 $2 $3 }
- | pre_in_expr T_PLUS pre_in_expr    { bop B_add $1 $2 $3 }
- | pre_in_expr T_MINUS pre_in_expr   { bop B_sub $1 $2 $3 }
- | pre_in_expr T_LSHIFT pre_in_expr  { bop B_lsl $1 $2 $3 }
- | pre_in_expr T_RSHIFT pre_in_expr  { bop B_lsr $1 $2 $3 }
- | pre_in_expr T_RSHIFT3 pre_in_expr { bop B_asr $1 $2 $3 }
+ | pre_in_expr(x) "*" pre_in_expr(d1)    { bop B_mul $1 $2 $3 }
+ | pre_in_expr(x) T_DIV pre_in_expr(d1)     { bop B_div $1 $2 $3 }
+ | pre_in_expr(x) T_MOD pre_in_expr(d1)     { bop B_mod $1 $2 $3 }
+ | pre_in_expr(x) T_PLUS pre_in_expr(d1)    { bop B_add $1 $2 $3 }
+ | pre_in_expr(x) T_MINUS pre_in_expr(d1)   { bop B_sub $1 $2 $3 }
+ | pre_in_expr(x) T_LSHIFT pre_in_expr(d1)  { bop B_lsl $1 $2 $3 }
+ | pre_in_expr(x) T_RSHIFT pre_in_expr(d1)  { bop B_lsr $1 $2 $3 }
+ | pre_in_expr(x) T_RSHIFT3 pre_in_expr(d1) { bop B_asr $1 $2 $3 }
 
  (* es7: *)
- | pre_in_expr T_EXPONENT pre_in_expr { bop B_expo $1 $2 $3 }
+ | pre_in_expr(x) T_EXPONENT pre_in_expr(d1) { bop B_expo $1 $2 $3 }
+
 
 (* coupling: modify also call_expr_no_stmt *)
-call_expr:
- | member_expr arguments                      { Apply ($1, $2) }
- | call_expr arguments                        { Apply ($1, $2) }
- | call_expr "[" expr "]"         { Bracket($1, ($2, $3,$4))}
- | call_expr "." method_name      { Period ($1, $2, $3) }
+call_expr(x):
+ | member_expr(x) arguments                      { Apply ($1, $2) }
+ | call_expr(x) arguments                        { Apply ($1, $2) }
+ | call_expr(x) "[" expr "]"         { Bracket($1, ($2, $3,$4))}
+ | call_expr(x) "." method_name      { Period ($1, $2, $3) }
  (* es6: *)
  | T_SUPER arguments { Apply(Super($1), $2) }
 
-new_expr:
- | member_expr    { $1 }
- | T_NEW new_expr { uop U_new $1 $2 }
+new_expr(x):
+ | member_expr(x)    { $1 }
+ | T_NEW new_expr(d1) { uop U_new $1 $2 }
 
 (* coupling: modify also member_expr_no_stmt *)
-member_expr:
- | primary_expr                   { $1 }
- | member_expr "[" expr "]"       { Bracket($1, ($2, $3, $4)) }
- | member_expr "." field_name     { Period ($1, $2, $3) }
- | T_NEW member_expr arguments    { Apply(uop U_new $1 $2, $3) }
+member_expr(x):
+ | primary_expr(x)                   { $1 }
+ | member_expr(x) "[" expr "]"       { Bracket($1, ($2, $3, $4)) }
+ | member_expr(x) "." field_name     { Period ($1, $2, $3) }
+ | T_NEW member_expr(d1) arguments    { Apply(uop U_new $1 $2, $3) }
  (* es6: *)
  | T_SUPER "[" expr "]"    { Bracket(Super($1),($2,$3,$4))}
  | T_SUPER "." field_name { Period(Super($1), $2, $3) }
@@ -1026,8 +1030,11 @@ member_expr:
      else raise (Parsing.Parse_error)
   }
 
-primary_expr:
+primary_expr(x):
  | primary_expr_no_braces { $1 }
+ | x { $1 }
+
+d1:
  | object_literal            { Object $1 }
  | function_expr             { Function $1 }
  (* es6: *)
@@ -1210,7 +1217,7 @@ expr_no_in:
 
 assignment_expr_no_in:
  | conditional_expr_no_in { $1 }
- | left_hand_side_expr assignment_operator assignment_expr_no_in
+ | left_hand_side_expr(d1) assignment_operator assignment_expr_no_in
      { Assign ($1, $2, $3) }
 
 conditional_expr_no_in:
@@ -1219,7 +1226,7 @@ conditional_expr_no_in:
      { Conditional ($1, $2, $3, $4, $5) }
 
 post_in_expr_no_in:
- | pre_in_expr { $1 }
+ | pre_in_expr(d1) { $1 }
  | post_in_expr_no_in T_LESS_THAN post_in_expr          { bop B_lt $1 $2 $3 }
  | post_in_expr_no_in T_GREATER_THAN post_in_expr       { bop B_gt $1 $2 $3 }
  | post_in_expr_no_in T_LESS_THAN_EQUAL post_in_expr    { bop B_le $1 $2 $3 }
@@ -1255,18 +1262,16 @@ assignment_expr_no_stmt:
  | T_YIELD "*" assignment_expr { Yield ($1, Some $2, Some $3) }
 
 left_hand_side_expr_no_stmt:
- | new_expr_no_stmt { $1 }
- | call_expr_no_stmt { $1 }
+ | new_expr(d1_no_stmt) { $1 }
+ | call_expr(d1_no_stmt) { $1 }
 
 conditional_expr_no_stmt:
  | post_in_expr_no_stmt { $1 }
  | post_in_expr_no_stmt "?" assignment_expr ":" assignment_expr
      { Conditional ($1, $2, $3, $4, $5) }
 
-
-
 post_in_expr_no_stmt:
- | pre_in_expr_no_stmt { $1 }
+ | pre_in_expr(d1_no_stmt) { $1 }
  | post_in_expr_no_stmt T_LESS_THAN post_in_expr          { bop B_lt $1 $2 $3 }
  | post_in_expr_no_stmt T_GREATER_THAN post_in_expr       { bop B_gt $1 $2 $3 }
  | post_in_expr_no_stmt T_LESS_THAN_EQUAL post_in_expr    { bop B_le $1 $2 $3 }
@@ -1283,63 +1288,8 @@ post_in_expr_no_stmt:
  | post_in_expr_no_stmt T_AND post_in_expr                { bop B_and $1 $2 $3 }
  | post_in_expr_no_stmt T_OR post_in_expr                 { bop B_or $1 $2 $3 }
 
-
-pre_in_expr_no_stmt:
- | left_hand_side_expr_no_stmt               { $1 }
- | pre_in_expr_no_stmt T_INCR                { uop U_post_increment $2 $1 }
- | pre_in_expr_no_stmt T_DECR                { uop U_post_decrement $2 $1 }
- | T_INCR pre_in_expr                        { uop U_pre_increment $1 $2 }
- | T_DECR pre_in_expr                        { uop U_pre_decrement $1 $2 }
-
- | T_DELETE pre_in_expr                      { uop U_delete $1 $2 }
- | T_VOID pre_in_expr                        { uop U_void $1 $2 }
- | T_TYPEOF pre_in_expr                      { uop U_typeof $1 $2 }
-
- | T_PLUS pre_in_expr                        { uop U_plus $1 $2 }
- | T_MINUS pre_in_expr                       { uop U_minus $1 $2}
- | T_BIT_NOT pre_in_expr                     { uop U_bitnot $1 $2 }
- | T_NOT pre_in_expr                         { uop U_not $1 $2 }
-
- (* es7: *)
- | T_AWAIT pre_in_expr                     { Await ($1, $2) }
-
- | pre_in_expr_no_stmt "*" pre_in_expr    { bop B_mul $1 $2 $3 }
- | pre_in_expr_no_stmt T_DIV pre_in_expr     { bop B_div $1 $2 $3 }
- | pre_in_expr_no_stmt T_MOD pre_in_expr     { bop B_mod $1 $2 $3 }
- | pre_in_expr_no_stmt T_PLUS pre_in_expr    { bop B_add $1 $2 $3 }
- | pre_in_expr_no_stmt T_MINUS pre_in_expr   { bop B_sub $1 $2 $3 }
- | pre_in_expr_no_stmt T_LSHIFT pre_in_expr  { bop B_lsl $1 $2 $3 }
- | pre_in_expr_no_stmt T_RSHIFT pre_in_expr  { bop B_lsr $1 $2 $3 }
- | pre_in_expr_no_stmt T_RSHIFT3 pre_in_expr { bop B_asr $1 $2 $3 }
-
- (* es7: *)
- | pre_in_expr_no_stmt T_EXPONENT pre_in_expr { bop B_expo $1 $2 $3 }
-
-
-call_expr_no_stmt:
- | member_expr_no_stmt arguments         { Apply ($1, $2) }
- | call_expr_no_stmt arguments           { Apply ($1, $2) }
- | call_expr_no_stmt "[" expr "]"        { Bracket($1, ($2, $3, $4)) }
- | call_expr_no_stmt "." method_name     { Period ($1, $2, $3) }
- (* es6: *)
- | T_SUPER arguments                     { Apply(Super($1), $2) }
-
-new_expr_no_stmt:
- | member_expr_no_stmt { $1 }
- | T_NEW new_expr      { uop U_new $1 $2 }
-
-member_expr_no_stmt:
- | primary_expr_no_stmt                                 { $1 }
- | member_expr_no_stmt "[" expr "]" { Bracket($1, ($2, $3, $4)) }
- | member_expr_no_stmt "." field_name              { Period ($1, $2, $3) }
- | T_NEW member_expr arguments                               { Apply(uop U_new $1 $2, $3) }
- (* es6: *)
- | T_SUPER "[" expr "]" { Bracket(Super($1),($2,$3,$4))}
- | T_SUPER "." field_name { Period(Super($1), $2, $3) }
-
 (* no object_literal here *)
-primary_expr_no_stmt:
- | primary_expr_no_braces { $1 }
+d1_no_stmt: TUnknown TComment { raise Impossible }
 
 (*************************************************************************)
 (* Entities, names *)
