@@ -131,7 +131,7 @@ let fix_sgrep_module_item x =
  T_LPAREN "(" T_RPAREN ")"
  T_LBRACKET "[" T_RBRACKET "]"
  T_SEMICOLON ";" T_COMMA "," T_PERIOD "." T_COLON ":"
- T_PLING 
+ T_PLING "?"
  T_ARROW "->" 
  T_DOTS "..."
  T_BACKQUOTE 
@@ -242,20 +242,20 @@ program: optl(module_item+) { $1 }
 (* parse item by item, to allow error recovery and skipping some code *)
 module_item_or_eof:
  | module_item { Some $1 }
- | EOF { None }
+ | EOF         { None }
 
 module_item:
- | item { It $1 }
+ | item        { It $1 }
  | import_decl { Import $1 }
  | export_decl { Export $1 }
 
 (* item is also in stmt_list, inside every blocks *)
 item:
- | stmt   { St $1 }
+ | stmt { St $1 }
  | decl { $1 }
 
 decl:
- (* part of hoistable_decl in the ECMA grammar *)
+ (* part of hoistable_declaration in the ECMA grammar *)
  | function_decl  { FunDecl $1 }
  (* es6: *)
  | generator_decl { FunDecl $1 }
@@ -280,13 +280,13 @@ sgrep_spatch_pattern:
  | module_item_no_dots module_item+ EOF  { ModuleItems ($1::$2) }
 
 module_item_no_dots:
- | item_no_dots       { It $1 }
- | import_decl { Import $1 }
- | export_decl { Export $1 }
+ | item_no_dots  { It $1 }
+ | import_decl   { Import $1 }
+ | export_decl   { Export $1 }
 
 item_no_dots:
  | stmt_no_dots { St $1 }
- | decl { $1 }
+ | decl         { $1 }
 
 (* coupling: copy paste of stmt, without dots *)
 stmt_no_dots:
@@ -325,10 +325,10 @@ import_clause:
 import_default: binding_id { $1 }
 
 import_names:
- | "*" T_AS binding_id  { ImportNamespace ($1, $2, $3) }
- | named_imports                { ImportNames $1 }
+ | "*" T_AS binding_id   { ImportNamespace ($1, $2, $3) }
+ | named_imports         { ImportNames $1 }
  (* typing-ext: *)
- | T_TYPE named_imports         { ImportTypes ($1, $2) }
+ | T_TYPE named_imports  { ImportTypes ($1, $2) }
 
 named_imports:
  | "{" "}"                             { ($1, [], $2) }
@@ -340,10 +340,10 @@ from_clause: T_FROM module_specifier { ($1, $2) }
 
 import_specifier:
  | binding_id                 { $1, None }
- | id T_AS binding_id { $1, Some ($2, $3) }
+ | id T_AS binding_id         { $1, Some ($2, $3) }
  (* not in ECMA, not sure what it means *)
  | T_DEFAULT T_AS binding_id  { ("default",$1), Some ($2, $3) }
- | T_DEFAULT                         { ("default",$1), None }
+ | T_DEFAULT                  { ("default",$1), None }
 
 module_specifier: string_literal { $1 }
 
@@ -379,8 +379,7 @@ export_clause:
 (*************************************************************************)
 
 (* part of 'stmt' *)
-variable_stmt: T_VAR listc(variable_decl) sc
-  { VarsDecl ((Var, $1), $2, $3) }
+variable_stmt: T_VAR listc(variable_decl) sc { VarsDecl ((Var, $1), $2, $3) }
 
 (* part of 'decl' *)
 lexical_decl:
@@ -421,10 +420,8 @@ for_single_variable_decl:
  | T_LET  for_binding  { ((Let, $1), $2) }
 
 for_binding:
- | id annotation? 
-   { VarClassic { v_name = $1; v_type = $2; v_init = None; } }
- | binding_pattern 
-   { VarPattern { vpat = $1; vpat_type = None; vpat_init = None } }
+ | id annotation?  { VarClassic { v_name = $1; v_type = $2; v_init = None; } }
+ | binding_pattern { VarPattern { vpat = $1; vpat_type=None;vpat_init=None } }
 
 (*----------------------------*)
 (* pattern *)
@@ -439,10 +436,10 @@ object_binding_pattern:
  | "{" listc(binding_property) trailing_comma  "}" { PatObj ($1, $2 @ $3, $4) }
 
 binding_property:
- | binding_id initializeur?   { PatId ($1, $2) }
+ | binding_id initializeur?          { PatId ($1, $2) }
  | property_name ":" binding_element { PatProp ($1, $2, $3) }
  (* can appear only at the end of a binding_property_list in ECMA *)
- | "..." binding_id { PatDots ($1, PatId ($2, None)) }
+ | "..." binding_id         { PatDots ($1, PatId ($2, None)) }
  | "..." binding_pattern    { PatDots ($1, PatNest ($2, None)) }
 
 (* in theory used also for formal parameter as is *)
@@ -451,8 +448,7 @@ binding_element:
  | binding_pattern    initializeur? { PatNest ($1, $2) }
 
 
-array_binding_pattern:
- | "[" binding_element_list "]" { PatArr ($1, $2, $3) }
+array_binding_pattern: "[" binding_element_list "]" { PatArr ($1, $2, $3) }
 
 (* cant use listc() here, it's $1 not [$1] below *)
 binding_element_list:
@@ -463,7 +459,7 @@ binding_elision_element:
  |          binding_element { [Left $1] }
  | elision2 binding_element { $1 @ [Left $2] }
  (* can appear only at the end of a binding_property_list in ECMA *)
- | "..." binding_id { [Left (PatDots ($1, PatId ($2, None)))] }
+ | "..." binding_id         { [Left (PatDots ($1, PatId ($2, None)))] }
  | "..." binding_pattern    { [Left (PatDots ($1, PatNest ($2, None)))] }
 
 (*************************************************************************)
@@ -474,15 +470,15 @@ binding_elision_element:
  * TODO: use other tech to enforce this? extra rule after
  * T_EXPORT T_DEFAULT? but then many ambiguities.
  *)
-function_decl: T_FUNCTION id? call_signature "{"function_body"}"
+function_decl: T_FUNCTION id? call_signature "{" function_body "}"
    { mk_func_decl (F_func ($1, $2)) [] $3 ($4, $5, $6) }
 
 (* the id is really optional here *)
-function_expr: T_FUNCTION id? call_signature  "{"function_body"}"
+function_expr: T_FUNCTION id? call_signature  "{" function_body "}"
    { mk_func_decl (F_func ($1, $2)) [] $3 ($4, $5, $6) }
 
 (* typescript: *)
-call_signature:  generics?  "(" formal_parameter_list_opt ")"  annotation? 
+call_signature: generics? "(" formal_parameter_list_opt ")"  annotation? 
   { $1, ($2, $3, $4), $5 }
 
 function_body: optl(stmt_list) { $1 }
@@ -498,7 +494,7 @@ formal_parameter_list_opt:
 (* must be written in a left-recursive way (see conflicts.txt) *)
 formal_parameter_list:
  | formal_parameter_list "," formal_parameter { (Left $3)::(Right $2)::$1 }
- | formal_parameter                               { [Left $1] }
+ | formal_parameter                           { [Left $1] }
 
 (* The ECMA and Typescript grammars imposes more restrictions
  * (some require_parameter, optional_parameter, rest_parameter)
@@ -523,46 +519,43 @@ formal_parameter:
  (* typing-ext: *)
  | id annotation 
     { ParamClassic { (mk_param $1) with p_type = Some $2; } }
- | id T_PLING
+ | id "?"
      { ParamClassic { (mk_param $1) with p_default = Some(DNone $2); } }
- | id T_PLING annotation
+ | id "?" annotation
      { ParamClassic { (mk_param $1) with 
                      p_type = Some $3; p_default = Some(DNone $2); } }
  | id annotation initializeur
      { let (tok,e) = $3 in ParamClassic 
        { (mk_param $1) with 
          p_type = Some $2; p_default = Some(DSome(tok,e)); } }
+
  | "..." id annotation
-     { ParamClassic { (mk_param $2) 
-                      with p_dots = Some $1; p_type = Some $3; } }
+    { ParamClassic { (mk_param $2) with p_dots = Some $1; p_type = Some $3;} }
  (* sgrep-ext: *)
- | "..."         { Flag_parsing.sgrep_guard (ParamEllipsis $1) }
+ | "..." 
+    { Flag_parsing.sgrep_guard (ParamEllipsis $1) }
 
 (*----------------------------*)
 (* generators *)
 (*----------------------------*)
 (* TODO: id? in original grammar, why? *)
-generator_decl: 
- T_FUNCTION "*" id call_signature "{" function_body "}"
-     { mk_func_decl (F_func ($1, Some $3)) [Generator $2] $4 ($5, $6, $7) }
+generator_decl: T_FUNCTION "*" id call_signature "{" function_body "}"
+   { mk_func_decl (F_func ($1, Some $3)) [Generator $2] $4 ($5, $6, $7) }
 
 (* the id is optional here *)
-generator_expr:
- T_FUNCTION "*" id? call_signature "{" function_body "}"
-     { mk_func_decl (F_func ($1, $3)) [Generator $2] $4 ($5, $6, $7) }
+generator_expr: T_FUNCTION "*" id? call_signature "{" function_body "}"
+   { mk_func_decl (F_func ($1, $3)) [Generator $2] $4 ($5, $6, $7) }
 
 (*----------------------------*)
 (* asynchronous functions *)
 (*----------------------------*)
 (* TODO: id? in original grammar, why? *)
-async_decl:
- T_ASYNC T_FUNCTION id call_signature "{" function_body "}"
-     { mk_func_decl (F_func ($2, Some $3)) [Async $1] $4 ($5, $6, $7) }
+async_decl: T_ASYNC T_FUNCTION id call_signature "{" function_body "}"
+   { mk_func_decl (F_func ($2, Some $3)) [Async $1] $4 ($5, $6, $7) }
 
 (* the id is optional here *)
-async_function_expr:
- T_ASYNC T_FUNCTION id? call_signature "{" function_body "}"
-     { mk_func_decl (F_func ($2, $3)) [Async $1] $4 ($5, $6, $7) }
+async_function_expr: T_ASYNC T_FUNCTION id? call_signature "{"function_body"}"
+   { mk_func_decl (F_func ($2, $3)) [Async $1] $4 ($5, $6, $7) }
 
 (*************************************************************************)
 (* Class declaration *)
@@ -654,8 +647,7 @@ method_definition:
 (* TODO: use type_ at the end here and you get conflicts on '[' 
  * Why? because [] can follow an interface_decl? *)
 
-interface_decl: 
- T_INTERFACE binding_id generics? interface_extends? object_type
+interface_decl: T_INTERFACE binding_id generics? interface_extends? object_type
    { { i_tok = $1;i_name = $2; (* TODO: interface_extends! *)
        i_type_params = $3; i_type = $5; } }
 
@@ -668,8 +660,7 @@ interface_extends: T_EXTENDS listc(type_reference) { ($1, $2) }
 type_alias_decl: T_TYPE id "=" type_ sc 
   { match $5 with Some t -> t | None -> $3 }
 
-enum_decl: 
-  T_CONST? T_ENUM id "{" listc(enum_member) trailing_comma "}" { $7 }
+enum_decl: T_CONST? T_ENUM id "{" listc(enum_member) trailing_comma "}" { $7 }
 
 enum_member:
  | property_name { }
@@ -694,7 +685,7 @@ annotation: ":" type_ { TAnnot($1, $2) }
 complex_annotation:
  | annotation { $1 }
  | generics? "(" optl(param_type_list) ")" ":" type_ 
-    { TFunAnnot($1,($2,$3,$4),$5,$6) }
+     { TFunAnnot($1,($2,$3,$4),$5,$6) }
 
 (*----------------------------*)
 (* Types *)
@@ -703,9 +694,9 @@ complex_annotation:
 (* can't use 'type'; generate syntax error in parser_js.ml *)
 type_:
  | primary_or_union_type { $1 }
- | T_PLING type_         { TQuestion ($1, $2) }
+ | "?" type_         { TQuestion ($1, $2) }
  | T_LPAREN_ARROW optl(param_type_list) ")" "->" type_ 
-    { TFun (($1, $2, $3), $4, $5) }
+   { TFun (($1, $2, $3), $4, $5) }
 
 primary_or_union_type:
  | primary_or_intersect_type { $1 }
@@ -762,7 +753,7 @@ object_type: "{" optl(type_member+) "}"  { TObj ($1, $2, $3) }
 type_member: 
  | property_name_typescript complex_annotation sc_or_comma
     { ($1, $2, $3) }
- | property_name_typescript T_PLING complex_annotation sc_or_comma
+ | property_name_typescript "?" complex_annotation sc_or_comma
     { ($1, $3, $4) (* TODO $2*) }
  | "[" T_ID ":" T_STRING_TYPE "]" complex_annotation sc_or_comma
     { (* TODO *) (PN_Id $2, $6, $7)  }
@@ -785,8 +776,7 @@ param_type_list:
 (* partial type annotations are not supported *)
 param_type: id complex_annotation { (RequiredParam($1), $2) }
 
-optional_param_type: id T_PLING complex_annotation
-  { (OptionalParam($1,$2), $3) }
+optional_param_type: id "?" complex_annotation { OptionalParam($1,$2),$3}
 
 optional_param_type_list:
  | optional_param_type "," optional_param_type_list
@@ -817,30 +807,26 @@ type_argument: type_ { $1 }
 (* a sequence of 2 or 3 closing > will be tokenized as >> or >>> *)
 (* thus, we allow type arguments to omit 1 or 2 closing > to make it up *)
 mismatched_type_arguments:
- | T_LESS_THAN type_argument_list1 T_RSHIFT { $1, $2, $3 }
+ | T_LESS_THAN type_argument_list1 T_RSHIFT  { $1, $2, $3 }
  | T_LESS_THAN type_argument_list2 T_RSHIFT3 { $1, $2, $3 }
 
 type_argument_list1:
- | nominal_type1                            { [Left (TName $1)] }
- | listc(type_argument) "," nominal_type1 { $1 @ [Right $2; Left (TName $3)] }
+ | nominal_type1                              { [Left (TName $1)] }
+ | listc(type_argument) "," nominal_type1     { $1 @ [Right $2;Left(TName $3)]}
 
-nominal_type1:
- | type_name type_arguments1 { ($1, Some $2) }
+nominal_type1: type_name type_arguments1 { ($1, Some $2) }
 
 (* missing 1 closing > *)
-type_arguments1:
- | T_LESS_THAN listc(type_argument) { $1, $2, fake_tok ">" }
+type_arguments1: T_LESS_THAN listc(type_argument)    { $1, $2, fake_tok ">" }
 
 type_argument_list2:
  | nominal_type2                            { [Left (TName $1)] }
- | listc(type_argument) "," nominal_type2 { $1 @ [Right $2; Left (TName $3)] }
+ | listc(type_argument) "," nominal_type2   { $1 @ [Right $2; Left(TName $3)]}
 
-nominal_type2:
- | type_name type_arguments2 { ($1, Some $2) }
+nominal_type2: type_name type_arguments2 { ($1, Some $2) }
 
 (* missing 2 closing > *)
-type_arguments2:
- | T_LESS_THAN type_argument_list1 { $1, $2, fake_tok ">" }
+type_arguments2: T_LESS_THAN type_argument_list1    { $1, $2, fake_tok ">" }
 
 (*----------------------------*)
 (* Type or expr *)
@@ -864,10 +850,10 @@ type_or_expr:
 (*************************************************************************)
 
 stmt:
- | block                { $1 }
+ | block           { $1 }
  | variable_stmt   { $1 }
  | empty_stmt      { $1 }
- | expr_stmt { $1 }
+ | expr_stmt       { $1 }
  | if_stmt         { $1 }
  | iteration_stmt  { $1 }
  | continue_stmt   { $1 }
@@ -891,22 +877,17 @@ expr_stmt: expr_no_stmt sc { ExprStmt ($1, $2) }
 
 
 if_stmt:
- | T_IF "(" expr ")" stmt T_ELSE stmt
-     { If ($1, ($2, $3, $4), $5, Some ($6, $7)) }
- | T_IF "(" expr ")" stmt %prec p_IF
-     { If ($1, ($2, $3, $4), $5, None) }
+ | T_IF "(" expr ")" stmt T_ELSE stmt { If ($1, ($2, $3, $4), $5,Some($6,$7)) }
+ | T_IF "(" expr ")" stmt %prec p_IF  { If ($1, ($2, $3, $4), $5, None) }
 
 
 iteration_stmt:
- | T_DO stmt T_WHILE "(" expr ")" sc
-     { Do ($1, $2, $3, ($4, $5, $6), $7) }
- | T_WHILE "(" expr ")" stmt
-     { While ($1, ($2, $3, $4), $5) }
+ | T_DO stmt T_WHILE "(" expr ")" sc   { Do ($1, $2, $3, ($4, $5, $6), $7) }
+ | T_WHILE "(" expr ")" stmt           { While ($1, ($2, $3, $4), $5) }
 
  | T_FOR "(" expr_no_in? ";" expr? ";" expr? ")" stmt
      { For ($1, $2, $3|>Common2.fmap (fun x -> LHS1 x), $4, $5, $6, $7,$8,$9)}
- | T_FOR "(" for_variable_decl ";" expr? ";" expr? ")" 
-   stmt
+ | T_FOR "(" for_variable_decl ";" expr? ";" expr? ")" stmt
      { For ($1, $2, Some (ForVars $3), $4, $5, $6, $7, $8, $9) }
 
  | T_FOR "(" left_hand_side_expr T_IN expr ")" stmt
@@ -922,17 +903,13 @@ iteration_stmt:
 initializer_no_in: "=" assignment_expr_no_in { $1, $2 }
 
 continue_stmt: T_CONTINUE id? sc { Continue ($1, $2, $3) }
-
-break_stmt: T_BREAK id? sc { Break ($1, $2, $3) }
+break_stmt:    T_BREAK    id? sc { Break ($1, $2, $3) }
 
 return_stmt: T_RETURN expr? sc { Return ($1, $2, $3) }
 
-
 with_stmt: T_WITH "(" expr ")" stmt { With ($1, ($2, $3, $4), $5) }
 
-
 switch_stmt: T_SWITCH "(" expr ")" case_block { Switch ($1, ($2, $3, $4), $5) }
-
 
 labelled_stmt: id ":" stmt { Labeled ($1, $2, $3) }
 
@@ -958,7 +935,7 @@ case_block:
  | "{" optl(case_clause+) default_clause optl(case_clause+) "}"
      { ($1, $2 @ [$3] @ $4, $5) }
 
-case_clause: T_CASE expr ":" optl(stmt_list) { Case ($1, $2, $3, $4) }
+case_clause: T_CASE expr ":" optl(stmt_list)  { Case ($1, $2, $3, $4) }
 
 default_clause: T_DEFAULT ":" optl(stmt_list) { Default ($1, $2, $3) }
 
@@ -973,14 +950,13 @@ expr:
 (* coupling: see also assignment_expr_no_stmt *)
 assignment_expr:
  | conditional_expr { $1 }
- | left_hand_side_expr assignment_operator assignment_expr
-     { Assign ($1, $2, $3) }
+ | left_hand_side_expr assignment_operator assignment_expr { Assign($1,$2,$3)}
  (* es6: *)
  | arrow_function { Arrow $1 }
  (* es6: *)
- | T_YIELD                               { Yield ($1, None, None) }
- | T_YIELD assignment_expr         { Yield ($1, None, Some $2) }
- | T_YIELD "*" assignment_expr  { Yield ($1, Some $2, Some $3) }
+ | T_YIELD                         { Yield ($1, None, None) }
+ | T_YIELD     assignment_expr     { Yield ($1, None, Some $2) }
+ | T_YIELD "*" assignment_expr     { Yield ($1, Some $2, Some $3) }
  (* es7: *)
  | async_arrow_function { Arrow $1 }
  (* typescript: 1.6, because <> cant be used in TSX files *)
@@ -1008,7 +984,7 @@ left_hand_side_expr:
 
 conditional_expr:
  | post_in_expr { $1 }
- | post_in_expr T_PLING assignment_expr ":" assignment_expr
+ | post_in_expr "?" assignment_expr ":" assignment_expr
      { Conditional ($1, $2, $3, $4, $5) }
 
 post_in_expr:
@@ -1022,7 +998,7 @@ post_in_expr:
  | post_in_expr T_EQUAL post_in_expr              { bop B_equal $1 $2 $3 }
  | post_in_expr T_NOT_EQUAL post_in_expr          { bop B_notequal $1 $2 $3 }
  | post_in_expr T_STRICT_EQUAL post_in_expr       { bop B_physequal $1 $2 $3 }
- | post_in_expr T_STRICT_NOT_EQUAL post_in_expr   { bop B_physnotequal $1 $2 $3 }
+ | post_in_expr T_STRICT_NOT_EQUAL post_in_expr { bop B_physnotequal $1 $2 $3 }
  | post_in_expr T_BIT_AND post_in_expr            { bop B_bitand $1 $2 $3 }
  | post_in_expr T_BIT_XOR post_in_expr            { bop B_bitxor $1 $2 $3 }
  | post_in_expr T_BIT_OR post_in_expr             { bop B_bitor $1 $2 $3 }
@@ -1066,8 +1042,8 @@ pre_in_expr:
 call_expr:
  | member_expr arguments                      { Apply ($1, $2) }
  | call_expr arguments                        { Apply ($1, $2) }
- | call_expr "[" expr "]" { Bracket($1, ($2, $3,$4))}
- | call_expr "." method_name             { Period ($1, $2, $3) }
+ | call_expr "[" expr "]"         { Bracket($1, ($2, $3,$4))}
+ | call_expr "." method_name      { Period ($1, $2, $3) }
  (* es6: *)
  | T_SUPER arguments { Apply(Super($1), $2) }
 
@@ -1077,12 +1053,12 @@ new_expr:
 
 (* coupling: modify also member_expr_no_stmt *)
 member_expr:
- | primary_expr                                 { $1 }
- | member_expr "[" expr "]" { Bracket($1, ($2, $3, $4)) }
- | member_expr "." field_name              { Period ($1, $2, $3) }
- | T_NEW member_expr arguments           { Apply(uop U_new $1 $2, $3) }
+ | primary_expr                   { $1 }
+ | member_expr "[" expr "]"       { Bracket($1, ($2, $3, $4)) }
+ | member_expr "." field_name     { Period ($1, $2, $3) }
+ | T_NEW member_expr arguments    { Apply(uop U_new $1 $2, $3) }
  (* es6: *)
- | T_SUPER "[" expr "]" { Bracket(Super($1),($2,$3,$4))}
+ | T_SUPER "[" expr "]"    { Bracket(Super($1),($2,$3,$4))}
  | T_SUPER "." field_name { Period(Super($1), $2, $3) }
  | T_NEW "." id { 
      if fst $3 = "target"
@@ -1092,7 +1068,7 @@ member_expr:
 
 primary_expr:
  | primary_expr_no_braces { $1 }
- | object_literal                  { Object $1 }
+ | object_literal            { Object $1 }
  | function_expr             { Function $1 }
  (* es6: *)
  | class_expr                { $1 }
@@ -1122,10 +1098,8 @@ primary_expr_no_braces:
  | xhp_html { XhpHtml $1 }
 
  (* templated string (aka interpolated strings) *)
- | T_BACKQUOTE optl(encaps+) T_BACKQUOTE
-     { Encaps (None, $1, $2, $3) }
- | id T_BACKQUOTE optl(encaps+) T_BACKQUOTE
-     { Encaps (Some $1, $2, $3, $4) }
+ |    T_BACKQUOTE optl(encaps+) T_BACKQUOTE  { Encaps (None, $1, $2, $3) }
+ | id T_BACKQUOTE optl(encaps+) T_BACKQUOTE  { Encaps (Some $1, $2, $3, $4) }
 
 (*----------------------------*)
 (* scalar *)
@@ -1168,9 +1142,9 @@ object_literal:
 
 property_name_and_value:
  | property_name ":" assignment_expr  { Left (P_field ($1, $2, $3)) }
- | method_definition                        { Left (P_method ($1)) }
+ | method_definition                  { Left (P_method ($1)) }
  (* es6: *)
- | id                               { Left (P_shorthand ($1)) }
+ | id                                 { Left (P_shorthand ($1)) }
  (* es6: spread operator: *)
  | "..." assignment_expr              { Left (P_spread ($1, $2)) }
 
@@ -1201,29 +1175,27 @@ xhp_html:
      { XhpSingleton ($1, $2, $3) }
 
 xhp_child:
- | T_XHP_TEXT           { XhpText $1 }
- | xhp_html             { XhpNested $1 }
- | "{" expr sc "}"
-     { XhpExpr ($1, Some $2, $4) (*TODO$3*) }
- | "{" "}"
-     { XhpExpr ($1, None , $2) (*TODO$3*) }
+ | T_XHP_TEXT        { XhpText $1 }
+ | xhp_html          { XhpNested $1 }
+ | "{" expr sc "}"   { XhpExpr ($1, Some $2, $4) (*TODO$3*) }
+ | "{" "}"           { XhpExpr ($1, None , $2) (*TODO$3*) }
 
 xhp_attribute:
- | T_XHP_ATTR "=" xhp_attribute_value    { XhpAttrValue ($1, $2, $3) }
- | "{" "..." assignment_expr "}"   { XhpAttrSpread ($1, ($2, $3), $4) }
+ | T_XHP_ATTR "=" xhp_attribute_value  { XhpAttrValue ($1, $2, $3) }
+ | "{" "..." assignment_expr "}"       { XhpAttrSpread ($1, ($2, $3), $4) }
  (* jsxext: not in XHP *)
- | T_XHP_ATTR                            { XhpAttrNoValue ($1) }
+ | T_XHP_ATTR                          { XhpAttrNoValue ($1) }
 
 xhp_attribute_value:
- | T_STRING              { XhpAttrString ($1) }
- | "{" expr sc "}" { XhpAttrExpr ($1, $2, $4)(*TODO$3*)}
+ | T_STRING           { XhpAttrString ($1) }
+ | "{" expr sc "}"    { XhpAttrExpr ($1, $2, $4)(*TODO$3*)}
 
 (*----------------------------*)
 (* interpolated strings *)
 (*----------------------------*)
 encaps:
- | T_ENCAPSED_STRING             { EncapsString $1 }
- | T_DOLLARCURLY expr "}"  { EncapsExpr ($1, $2, $3) }
+ | T_ENCAPSED_STRING        { EncapsString $1 }
+ | T_DOLLARCURLY expr "}"   { EncapsExpr ($1, $2, $3) }
 
 (*----------------------------*)
 (* arrow (short lambda) *)
@@ -1265,9 +1237,7 @@ assignment_expr_no_in:
 
 conditional_expr_no_in:
  | post_in_expr_no_in { $1 }
- | post_in_expr_no_in
-     T_PLING assignment_expr_no_in
-     ":" assignment_expr_no_in
+ | post_in_expr_no_in "?" assignment_expr_no_in ":" assignment_expr_no_in
      { Conditional ($1, $2, $3, $4, $5) }
 
 post_in_expr_no_in:
@@ -1312,9 +1282,7 @@ left_hand_side_expr_no_stmt:
 
 conditional_expr_no_stmt:
  | post_in_expr_no_stmt { $1 }
- | post_in_expr_no_stmt
-     T_PLING assignment_expr
-     ":" assignment_expr
+ | post_in_expr_no_stmt "?" assignment_expr ":" assignment_expr
      { Conditional ($1, $2, $3, $4, $5) }
 
 
@@ -1339,21 +1307,20 @@ post_in_expr_no_stmt:
 
 
 pre_in_expr_no_stmt:
- | left_hand_side_expr_no_stmt                     { $1 }
- | pre_in_expr_no_stmt T_INCR                      { uop U_post_increment $2 $1 }
- | pre_in_expr_no_stmt T_DECR                      { uop U_post_decrement $2 $1 }
- | T_INCR pre_in_expr                                   { uop U_pre_increment $1 $2 }
- | T_DECR pre_in_expr                                   { uop U_pre_decrement $1 $2 }
+ | left_hand_side_expr_no_stmt               { $1 }
+ | pre_in_expr_no_stmt T_INCR                { uop U_post_increment $2 $1 }
+ | pre_in_expr_no_stmt T_DECR                { uop U_post_decrement $2 $1 }
+ | T_INCR pre_in_expr                        { uop U_pre_increment $1 $2 }
+ | T_DECR pre_in_expr                        { uop U_pre_decrement $1 $2 }
 
- | T_DELETE pre_in_expr                                 { uop U_delete $1 $2 }
- | T_VOID pre_in_expr                                   { uop U_void $1 $2 }
- | T_TYPEOF pre_in_expr                                 { uop U_typeof $1 $2 }
+ | T_DELETE pre_in_expr                      { uop U_delete $1 $2 }
+ | T_VOID pre_in_expr                        { uop U_void $1 $2 }
+ | T_TYPEOF pre_in_expr                      { uop U_typeof $1 $2 }
 
-
- | T_PLUS pre_in_expr                                   { uop U_plus $1 $2 }
- | T_MINUS pre_in_expr                                  { uop U_minus $1 $2}
- | T_BIT_NOT pre_in_expr                                { uop U_bitnot $1 $2 }
- | T_NOT pre_in_expr                                    { uop U_not $1 $2 }
+ | T_PLUS pre_in_expr                        { uop U_plus $1 $2 }
+ | T_MINUS pre_in_expr                       { uop U_minus $1 $2}
+ | T_BIT_NOT pre_in_expr                     { uop U_bitnot $1 $2 }
+ | T_NOT pre_in_expr                         { uop U_not $1 $2 }
 
  (* es7: *)
  | T_AWAIT pre_in_expr                     { Await ($1, $2) }
@@ -1372,16 +1339,16 @@ pre_in_expr_no_stmt:
 
 
 call_expr_no_stmt:
- | member_expr_no_stmt arguments                      { Apply ($1, $2) }
- | call_expr_no_stmt arguments                        { Apply ($1, $2) }
- | call_expr_no_stmt "[" expr "]" { Bracket($1, ($2, $3, $4)) }
- | call_expr_no_stmt "." method_name              { Period ($1, $2, $3) }
+ | member_expr_no_stmt arguments         { Apply ($1, $2) }
+ | call_expr_no_stmt arguments           { Apply ($1, $2) }
+ | call_expr_no_stmt "[" expr "]"        { Bracket($1, ($2, $3, $4)) }
+ | call_expr_no_stmt "." method_name     { Period ($1, $2, $3) }
  (* es6: *)
- | T_SUPER arguments { Apply(Super($1), $2) }
+ | T_SUPER arguments                     { Apply(Super($1), $2) }
 
 new_expr_no_stmt:
  | member_expr_no_stmt { $1 }
- | T_NEW new_expr { uop U_new $1 $2 }
+ | T_NEW new_expr      { uop U_new $1 $2 }
 
 member_expr_no_stmt:
  | primary_expr_no_stmt                                 { $1 }
@@ -1401,7 +1368,7 @@ primary_expr_no_stmt:
 (*************************************************************************)
 (* used for entities, parameters, labels, etc. *)
 id:
- | T_ID { $1 }
+ | T_ID               { $1 }
  | ident_semi_keyword { PI.str_of_info $1, $1 }
 
 (* add here keywords which are not considered reserved by ECMA *)
