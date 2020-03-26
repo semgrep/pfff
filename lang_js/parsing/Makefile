@@ -56,6 +56,7 @@ clean::
 	rm -f lexer_js.ml
 beforedepend:: lexer_js.ml
 
+OCAMLYACC=menhir --unused-tokens --explain
 
 parser_js.ml parser_js.mli: parser_js.mly
 	$(OCAMLYACC) $<
