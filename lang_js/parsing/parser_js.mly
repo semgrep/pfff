@@ -921,7 +921,7 @@ expr:
  | assignment_expr { $1 }
  | expr "," assignment_expr { Seq ($1, $2, $3) }
 
-(* coupling: see also assignment_expr_no_stmt *)
+(* coupling: see also assignment_expr_no_stmt and extend if can? *)
 assignment_expr:
  | conditional_expr(d1) { $1 }
  | left_hand_side_expr_(d1) assignment_operator assignment_expr { Assign($1,$2,$3)}
@@ -1009,7 +1009,6 @@ pre_in_expr(x):
  | pre_in_expr(x) T_EXPONENT pre_in_expr(d1) { bop B_expo $1 $2 $3 }
 
 
-(* coupling: modify also call_expr_no_stmt *)
 call_expr(x):
  | member_expr(x) arguments                      { Apply ($1, $2) }
  | call_expr(x) arguments                        { Apply ($1, $2) }
@@ -1022,7 +1021,6 @@ new_expr(x):
  | member_expr(x)    { $1 }
  | T_NEW new_expr(d1) { uop U_new $1 $2 }
 
-(* coupling: modify also member_expr_no_stmt *)
 member_expr(x):
  | primary_expr(x)                   { $1 }
  | member_expr(x) "[" expr "]"       { Bracket($1, ($2, $3, $4)) }
