@@ -128,7 +128,7 @@ let fix_tokens toks =
     | T.T_LPAREN info when Hashtbl.mem retag_lparen info ->
       T.T_LPAREN_ARROW (info)
     | T.T_IMPORT info when Hashtbl.mem retag_keywords info ->
-      T.T_IDENTIFIER (PI.str_of_info info, info)
+      T.T_ID (PI.str_of_info info, info)
     | x -> x
   )
 
@@ -176,7 +176,7 @@ let fix_tokens_ASI xs =
       *    ++y;
       * is not valid.
       *)
-     | (T.T_IDENTIFIER _ | T.T_FALSE _ | T.T_TRUE _), (T.T_INCR _ | T.T_DECR _)
+     | (T.T_ID _ | T.T_FALSE _ | T.T_TRUE _), (T.T_INCR _ | T.T_DECR _)
         when TH.line_of_tok x <> TH.line_of_tok prev ->
         push_sc_before_x x;
      | _ -> ()
@@ -217,7 +217,7 @@ let fix_tokens_ASI xs =
      * <keyword>
      *)
     | T.T_RCURLY _, 
-      (T.T_IDENTIFIER _
+      (T.T_ID _
        | T.T_IF _ | T.T_SWITCH _ | T.T_FOR _
        | T.T_VAR _  | T.T_FUNCTION _ | T.T_LET _ | T.T_CONST _
        | T.T_RETURN _
@@ -234,7 +234,7 @@ let fix_tokens_ASI xs =
     (* this is valid only if the RPAREN is not the closing paren of an if*)
     | T.T_RPAREN info, 
       (T.T_VAR _ | T.T_IF _ | T.T_THIS _ | T.T_FOR _ | T.T_RETURN _ |
-       T.T_IDENTIFIER _ | T.T_CONTINUE _ 
+       T.T_ID _ | T.T_CONTINUE _ 
       ) when TH.line_of_tok x <> TH.line_of_tok prev 
              && not (Hashtbl.mem hrparens_if info) ->
         push_sc_before_x x;
@@ -245,7 +245,7 @@ let fix_tokens_ASI xs =
      * <keyword> 
      *)
     | T.T_RBRACKET _, 
-      (T.T_FOR _ | T.T_IF _ | T.T_VAR _ | T.T_IDENTIFIER _)
+      (T.T_FOR _ | T.T_IF _ | T.T_VAR _ | T.T_ID _)
       when TH.line_of_tok x <> TH.line_of_tok prev ->
         push_sc_before_x x;
         Common.push x res;
@@ -253,11 +253,11 @@ let fix_tokens_ASI xs =
     (* <literal> 
      * <keyword> 
      *)
-    | (T.T_IDENTIFIER _ 
+    | (T.T_ID _ 
         | T.T_NULL _ | T.T_STRING _ | T.T_REGEX _
         | T.T_FALSE _ | T.T_TRUE _
       ), 
-       (T.T_VAR _ | T.T_IDENTIFIER _ | T.T_IF _ | T.T_THIS _ |
+       (T.T_VAR _ | T.T_ID _ | T.T_IF _ | T.T_THIS _ |
         T.T_RETURN _ | T.T_BREAK _ | T.T_ELSE _
       ) when TH.line_of_tok x <> TH.line_of_tok prev ->
         push_sc_before_x x;
