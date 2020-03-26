@@ -73,7 +73,6 @@ let fix_sgrep_module_item x =
   | _ -> ModuleItem x
 
 %}
-
 (*************************************************************************)
 (* Tokens *)
 (*************************************************************************)
@@ -217,7 +216,6 @@ let fix_sgrep_module_item x =
 %start <Cst_js.any> sgrep_spatch_pattern
 
 %%
-
 (*************************************************************************)
 (* Macros *)
 (*************************************************************************)
@@ -228,7 +226,6 @@ let fix_sgrep_module_item x =
 %public listc2(X):
  | X               { [$1] }
  | listc2(X) "," X { $1 @ [Right $2; $3] }
-
 
 %public optl(X):
  | (* empty *) { [] }
@@ -278,9 +275,9 @@ declaration:
 (*************************************************************************)
 
 sgrep_spatch_pattern:
- | assignment_expr_no_stmt EOF { Expr $1 }
- | module_item_no_dots EOF                { fix_sgrep_module_item $1}
- | module_item_no_dots module_item+ EOF   { ModuleItems ($1::$2) }
+ | assignment_expr_no_stmt EOF           { Expr $1 }
+ | module_item_no_dots EOF               { fix_sgrep_module_item $1}
+ | module_item_no_dots module_item+ EOF  { ModuleItems ($1::$2) }
 
 module_item_no_dots:
  | item_no_dots       { It $1 }
@@ -293,10 +290,10 @@ item_no_dots:
 
 (* coupling: copy paste of stmt, without dots *)
 stmt_no_dots:
- | block                { $1 }
+ | block           { $1 }
  | variable_stmt   { $1 }
  | empty_stmt      { $1 }
- | expr_stmt { $1 }
+ | expr_stmt       { $1 }
  | if_stmt         { $1 }
  | iteration_stmt  { $1 }
  | continue_stmt   { $1 }
@@ -540,7 +537,6 @@ formal_parameter:
                       with p_dots = Some $1; p_type = Some $3; } }
  (* sgrep-ext: *)
  | "..."         { Flag_parsing.sgrep_guard (ParamEllipsis $1) }
-
 
 (*----------------------------*)
 (* generators *)
