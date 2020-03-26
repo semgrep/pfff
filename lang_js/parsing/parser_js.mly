@@ -453,7 +453,7 @@ binding_pattern:
 object_binding_pattern:
  | "{" "}" 
     { PatObj ($1, [], $2)  }
- | "{" binding_property_list trailing_comma5  "}" 
+ | "{" binding_property_list trailing_comma  "}" 
     { PatObj ($1, $2 @ $3, $4) }
 
 binding_property_list:
@@ -521,7 +521,7 @@ function_body:
 
 formal_parameter_list_opt:
  | (*empty*)   { [] }
- | formal_parameter_list trailing_comma2  { List.rev ($2 @ $1)  }
+ | formal_parameter_list trailing_comma  { List.rev ($2 @ $1)  }
 
 (* must be written in a left-recursive way (see conflicts.txt) *)
 formal_parameter_list:
@@ -708,7 +708,7 @@ type_alias_declaration: T_TYPE identifier "=" type_ sc {
  match $5 with Some t -> t | None -> $3 }
 
 enum_declaration: 
-  const_opt T_ENUM identifier "{" enum_member_list trailing_comma4 "}" { $7 }
+  const_opt T_ENUM identifier "{" enum_member_list trailing_comma "}" { $7 }
 
 enum_member:
  | property_name { }
@@ -1298,7 +1298,7 @@ arguments: "(" argument_list_opt ")" { ($1, $2 , $3) }
 
 argument_list_opt:
  | (*empty*)   { [] }
- | argument_list trailing_comma3  { List.rev ($2 @ $1)  }
+ | argument_list trailing_comma  { List.rev ($2 @ $1)  }
 
 (* must be written in a left-recursive way (see conflicts.txt) *)
 argument_list:
@@ -1590,7 +1590,7 @@ property_name:
  | "[" assignment_expression "]" { PN_Computed ($1, $2, $3) }
 
 (*************************************************************************)
-(* xxx_opt, xxx_list *)
+(* Misc *)
 (*************************************************************************)
 
 sc:
@@ -1609,26 +1609,11 @@ elision2:
  | "," { [Right $1] }
  | elision2 "," { $1 @ [Right $2] }
 
-(* es6: in object literals *)
+(* es6: in object literals, es8: in params, args, ts: in enums, patterns *)
+%inline
 trailing_comma:
  | (*empty*) { [] }
  | "," { [Right $1] }
-(* es8: in parameters and arguments *)
-trailing_comma2:
- | (*empty*) { [] }
- | "," { [Right $1] }
-trailing_comma3:
- | (*empty*) { [] }
- | "," { [Right $1] }
-(* typescript: enums *)
-trailing_comma4:
- | (*empty*) { [] }
- | "," { [Right $1] }
-(* in patterns *)
-trailing_comma5:
- | (*empty*) { [] }
- | "," { [Right $1] }
-
 
 
 class_element_list:
