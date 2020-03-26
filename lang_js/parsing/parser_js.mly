@@ -140,7 +140,7 @@ let fix_sgrep_module_item x =
  T_LBRACKET "[" T_RBRACKET "]"
  T_SEMICOLON ";" T_COMMA "," T_PERIOD "." T_COLON ":"
  T_PLING 
- T_ARROW 
+ T_ARROW "->" 
  T_DOTS "..."
  T_BACKQUOTE 
  T_DOLLARCURLY
@@ -228,12 +228,19 @@ let fix_sgrep_module_item x =
 %%
 
 (*************************************************************************)
+(* Macros *)
+(*************************************************************************)
+%public optl(X):
+ | (* empty *) { [] }
+ | X           { $1 }
+
+(*************************************************************************)
 (* Toplevel *)
 (*************************************************************************)
 
 main: program EOF { $1 }
 
-program: module_item_list_opt { $1 }
+program: optl(module_item+) { $1 }
 
 (* parse item by item, to allow error recovery and skipping some code *)
 module_item_or_eof:
@@ -611,7 +618,7 @@ class_tail: class_heritage_opt "{" class_body_opt "}" {$1,($2,$3,$4)}
 
 class_heritage: T_EXTENDS type_or_expression { ($1, $2) }
 
-class_body: class_element_list { $1 }
+class_body: class_element+ { $1 }
 
 binding_identifier: identifier { $1 }
 binding_identifier_opt: 
@@ -732,8 +739,8 @@ annotation: ":" type_ { TAnnot($1, $2) }
 
 complex_annotation:
  | annotation { $1 }
- | generics_opt "(" param_type_list_opt ")" ":" type_
-     { TFunAnnot($1,($2,$3,$4),$5,$6) }
+ | generics_opt "(" optl(param_type_list) ")" ":" type_
+    { TFunAnnot($1,($2,$3,$4),$5,$6) }
 
 (*----------------------------*)
 (* Types *)
@@ -743,7 +750,7 @@ complex_annotation:
 type_:
  | primary_or_union_type { $1 }
  | T_PLING type_ { TQuestion ($1, $2) }
- | T_LPAREN_ARROW param_type_list_opt ")" T_ARROW type_
+ | T_LPAREN_ARROW optl(param_type_list) ")" "->" type_
      { TFun (($1, $2, $3), $4, $5) }
 
 primary_or_union_type:
@@ -795,19 +802,19 @@ union_type:     primary_or_union_type     T_BIT_OR primary_type { TTodo }
 intersect_type: primary_or_intersect_type T_BIT_AND primary_type { TTodo }
 
 
-object_type: "{" type_member_list_opt "}"  { TObj ($1, $2, $3) } 
+object_type: "{" optl(type_member+) "}"  { TObj ($1, $2, $3) } 
 
 (* partial type annotations are not supported *)
 type_member: 
- | property_name_typescript complex_annotation semicolon_or_comma
+ | property_name_typescript complex_annotation sc_or_comma
     { ($1, $2, $3) }
- | property_name_typescript T_PLING complex_annotation semicolon_or_comma
+ | property_name_typescript T_PLING complex_annotation sc_or_comma
     { ($1, $3, $4) (* TODO $2*) }
  | "[" T_IDENTIFIER ":" T_STRING_TYPE "]" 
-   complex_annotation semicolon_or_comma
+   complex_annotation sc_or_comma
     { (* TODO *) (PN_Id $2, $6, $7)  }
  | "[" T_IDENTIFIER ":" T_NUMBER_TYPE "]" 
-   complex_annotation semicolon_or_comma
+   complex_annotation sc_or_comma
     { (* TODO *) (PN_Id $2, $6, $7) }
 
 (* no [xxx] here *)
@@ -1039,9 +1046,9 @@ finally:
 (*----------------------------*)
 
 case_block:
- | "{" case_clauses_opt "}"
+ | "{" optl(case_clause+) "}"
      { ($1, $2, $3) }
- | "{" case_clauses_opt default_clause case_clauses_opt "}"
+ | "{" optl(case_clause+) default_clause optl(case_clause+) "}"
      { ($1, $2 @ [$3] @ $4, $5) }
 
 case_clause:
@@ -1215,9 +1222,9 @@ primary_expression_no_braces:
  | xhp_html { XhpHtml $1 }
 
  (* templated string (aka interpolated strings) *)
- | T_BACKQUOTE encaps_list_opt T_BACKQUOTE
+ | T_BACKQUOTE optl(encaps+) T_BACKQUOTE
      { Encaps (None, $1, $2, $3) }
- | identifier T_BACKQUOTE encaps_list_opt T_BACKQUOTE
+ | identifier T_BACKQUOTE optl(encaps+) T_BACKQUOTE
      { Encaps (Some $1, $2, $3, $4) }
 
 (*----------------------------*)
@@ -1244,14 +1251,14 @@ string_literal:
 (*----------------------------*)
 
 array_literal:
- | "[" elision_opt "]"              
+ | "[" optl(elision) "]"              
    { Array($1, $2, $3) }
- | "[" element_list_rev elision_opt "]" 
+ | "[" element_list_rev optl(elision) "]" 
    { Array($1, List.rev $2 @ $3, $4) }
 
 (* TODO: conflict on "," *)
 element_list_rev:
- | elision_opt   element                { (Left $2)::$1 }
+ | optl(elision)   element                { (Left $2)::$1 }
  | element_list_rev "," element     { (Left $3) :: [Right $2] @ $1 }
  | element_list_rev "," elision element     { (Left $4) :: $3 @ [Right $2] @ $1 }
 
@@ -1316,9 +1323,9 @@ argument:
 (* XHP embeded html *)
 (*----------------------------*)
 xhp_html:
- | T_XHP_OPEN_TAG xhp_attributes T_XHP_GT xhp_children T_XHP_CLOSE_TAG
+ | T_XHP_OPEN_TAG xhp_attribute* T_XHP_GT xhp_child* T_XHP_CLOSE_TAG
      { Xhp ($1, $2, $3, $4, $5)  }
- | T_XHP_OPEN_TAG xhp_attributes T_XHP_SLASH_GT
+ | T_XHP_OPEN_TAG xhp_attribute* T_XHP_SLASH_GT
      { XhpSingleton ($1, $2, $3) }
 
 xhp_child:
@@ -1355,13 +1362,13 @@ encaps:
 
 (* TODO conflict with async and as then in indent_keyword_bis *)
 arrow_function:
- | identifier T_ARROW arrow_body
+ | identifier "->" arrow_body
      { { a_params = ASingleParam (ParamClassic (mk_param $1)); 
          a_return_type = None; a_tok = $2; a_body = $3 } }
 
  (* can not factorize with TOPAR parameter_list TCPAR, see conflicts.txt *)
  | T_LPAREN_ARROW formal_parameter_list_opt ")" annotation_opt 
-    T_ARROW arrow_body 
+    "->" arrow_body 
     { { a_params = AParams ($1, $2, $3); a_return_type = $4;
         a_tok = $5; a_body = $6; } }
 
@@ -1597,7 +1604,7 @@ sc:
  | ";"                 { Some $1 }
  | T_VIRTUAL_SEMICOLON { None }
 
-semicolon_or_comma:
+sc_or_comma:
  | sc { $1 }
  | "," { Some $1 }
 
@@ -1605,6 +1612,7 @@ elision:
  | "," { [Right $1] }
  | elision "," { $1 @ [Right $2] }
 
+(* can't inline this one, recursive rule *)
 elision2:
  | "," { [Right $1] }
  | elision2 "," { $1 @ [Right $2] }
@@ -1613,37 +1621,8 @@ elision2:
 %inline
 trailing_comma:
  | (*empty*) { [] }
- | "," { [Right $1] }
+ | ","       { [Right $1] }
 
-
-class_element_list:
- | class_element { [$1] }
- | class_element_list class_element { $1 @ [$2] }
-
-encaps_list:
- | encaps { [$1] }
- | encaps_list encaps { $1 @ [$2] }
-
-module_item_list:
- | module_item { [$1] }
- | module_item_list module_item { $1 @ [$2] }
-
-type_member_list:
- | type_member { [$1] }
- | type_member_list type_member { $1 @ [$2] }
-
-
-case_clauses:
- | case_clause { [$1] }
- | case_clauses case_clause { $1 @ [$2] }
-
-xhp_attributes:
- | (*empty*) { [] }
- | xhp_attributes xhp_attribute { $1 @ [$2] }
-
-xhp_children:
- | (*empty*) { [] }
- | xhp_children xhp_child { $1 @ [$2] }
 
 
 variable_declaration_list:
@@ -1693,17 +1672,7 @@ class_body_opt:
  | (*empty*)   { [] }
  | class_body { $1 }
 
-module_item_list_opt:
- | (*empty*)    { [] }
- | module_item_list { $1 }
 
-case_clauses_opt:
- | (* empty *) { [] }
- | case_clauses    { $1 }
-
-encaps_list_opt:
- | (* empty *) { [] }
- | encaps_list    { $1 }
 
 annotation_opt:
  | (* empty *) { None }
@@ -1728,19 +1697,3 @@ interface_extends_opt:
 const_opt:
  | (* empty *) { None }
  | T_CONST { Some $1 }
-
-
-
-
-
-type_member_list_opt:
- | (* empty *) { [] }
- | type_member_list { $1 }
-
-param_type_list_opt:
- | (* empty *) { [] }
- | param_type_list { $1 }
-
-elision_opt:
- | (* empty *) { [] }
- | elision { $1 }
