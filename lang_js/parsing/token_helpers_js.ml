@@ -61,7 +61,7 @@ let visitor_info_of_tok f = function
   | EOF ii -> EOF (f ii)
 
   | T_NUMBER (s, ii) -> T_NUMBER (s, (f ii))
-  | T_IDENTIFIER (s, ii) -> T_IDENTIFIER (s, f ii)
+  | T_ID (s, ii) -> T_ID (s, f ii)
   | T_STRING (s, ii) -> T_STRING (s, (f ii))
   | T_REGEX (s, ii) -> T_REGEX (s, (f ii))
 

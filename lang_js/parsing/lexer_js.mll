@@ -341,7 +341,7 @@ rule initial = parse
         Hashtbl.find keyword_table s (* need case insensitive ? *))
       with
       | Some f -> f info
-      | None -> T_IDENTIFIER (s, info)
+      | None -> T_ID (s, info)
     }
 
   (* ----------------------------------------------------------------------- *)
@@ -438,7 +438,7 @@ rule initial = parse
           | T_THIS _
           | T_INCR _ | T_DECR _
           | T_RBRACKET _ | T_RPAREN _
-          | T_IDENTIFIER _
+          | T_ID _
           (* typescript: ugly! keywords that are idents *)
           | T_NUMBER_TYPE _ | T_BOOLEAN_TYPE _ | T_ANY_TYPE _ | T_STRING_TYPE _
         ) ->
