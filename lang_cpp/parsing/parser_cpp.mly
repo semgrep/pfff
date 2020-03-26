@@ -270,11 +270,11 @@ module PI = Parse_info
 (* Macros *)
 (*************************************************************************)
 
-%public listc(X):
+listc(X):
  | X { [$1, []] }
  | listc(X) "," X { $1 @ [$3, [$2]] }
 
-%public optl(X):
+optl(X):
  | (* empty *) { [] }
  | X           { $1 }
 

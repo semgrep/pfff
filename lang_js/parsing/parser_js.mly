@@ -219,15 +219,15 @@ let fix_sgrep_module_item x =
 (*************************************************************************)
 (* Macros *)
 (*************************************************************************)
-%public listc(X):
+listc(X):
  | X { [Left $1] }
  | listc(X) "," X { $1 @ [Right $2; Left $3] }
 
-%public listc2(X):
+listc2(X):
  | X               { [$1] }
  | listc2(X) "," X { $1 @ [Right $2; $3] }
 
-%public optl(X):
+optl(X):
  | (* empty *) { [] }
  | X           { $1 }
 
