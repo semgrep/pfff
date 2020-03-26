@@ -864,11 +864,11 @@ iteration_stmt:
  | T_FOR "(" for_variable_decl ";" expr? ";" expr? ")" stmt
      { For ($1, $2, Some (ForVars $3), $4, $5, $6, $7, $8, $9) }
 
- | T_FOR "(" left_hand_side_expr(d1) T_IN expr ")" stmt
+ | T_FOR "(" left_hand_side_expr T_IN expr ")" stmt
      { ForIn ($1, $2, LHS2 $3, $4, $5, $6, $7) }
  | T_FOR "(" for_single_variable_decl T_IN expr ")"  stmt
      { ForIn ($1, $2, ForVar $3, $4, $5, $6, $7) }
- | T_FOR "(" left_hand_side_expr(d1) T_OF assignment_expr ")" stmt
+ | T_FOR "(" left_hand_side_expr T_OF assignment_expr ")" stmt
      { ForOf ($1, $2, LHS2 $3, $4, $5, $6, $7) }
  | T_FOR "(" for_single_variable_decl T_OF assignment_expr ")"  stmt
      { ForOf ($1, $2, ForVar $3, $4, $5, $6, $7) }
@@ -924,7 +924,7 @@ expr:
 (* coupling: see also assignment_expr_no_stmt *)
 assignment_expr:
  | conditional_expr(d1) { $1 }
- | left_hand_side_expr(d1) assignment_operator assignment_expr { Assign($1,$2,$3)}
+ | left_hand_side_expr_(d1) assignment_operator assignment_expr { Assign($1,$2,$3)}
  (* es6: *)
  | arrow_function { Arrow $1 }
  (* es6: *)
@@ -934,9 +934,11 @@ assignment_expr:
  (* es7: *)
  | async_arrow_function { Arrow $1 }
  (* typescript: 1.6, because <> cant be used in TSX files *)
- | left_hand_side_expr(d1) T_AS type_ { $1 (* TODO $2 $3 *) }
+ | left_hand_side_expr_(d1) T_AS type_ { $1 (* TODO $2 $3 *) }
  (* sgrep-ext: can't move in primary_expr, get s/r conflicts *)
  | "..." { Flag_parsing.sgrep_guard (Ellipsis $1) }
+
+left_hand_side_expr: left_hand_side_expr_(d1) { $1 }
 
 (*----------------------------*)
 (* Generic part (to factorize rules) *)
@@ -947,12 +949,13 @@ conditional_expr(x):
  | post_in_expr(x) "?" assignment_expr ":" assignment_expr
      { Conditional ($1, $2, $3, $4, $5) }
 
-left_hand_side_expr(x):
+left_hand_side_expr_(x):
  | new_expr(x)  { $1 }
  | call_expr(x) { $1 }
 
 post_in_expr(x):
  | pre_in_expr(x) { $1 }
+
  | post_in_expr(x) T_LESS_THAN post_in_expr(d1)          { bop B_lt $1 $2 $3 }
  | post_in_expr(x) T_GREATER_THAN post_in_expr(d1)       { bop B_gt $1 $2 $3 }
  | post_in_expr(x) T_LESS_THAN_EQUAL post_in_expr(d1)    { bop B_le $1 $2 $3 }
@@ -972,9 +975,10 @@ post_in_expr(x):
  | post_in_expr(x) T_AND post_in_expr(d1)                { bop B_and $1 $2 $3 }
  | post_in_expr(x) T_OR post_in_expr(d1)                 { bop B_or $1 $2 $3 }
 
+
 (* called unary_expr and update_expr in ECMA *)
 pre_in_expr(x):
- | left_hand_side_expr(x)                     { $1 }
+ | left_hand_side_expr_(x)                     { $1 }
 
  | pre_in_expr(x) T_INCR %prec p_POSTFIX      { uop U_post_increment $2 $1 }
  | pre_in_expr(x) T_DECR %prec p_POSTFIX      { uop U_post_decrement $2 $1 }
@@ -1037,7 +1041,9 @@ primary_expr(x):
  | primary_expr_no_braces { $1 }
  | x { $1 }
 
-d1:
+d1: primary_with_stmt { $1 }
+
+primary_with_stmt:
  | object_literal            { Object $1 }
  | function_expr             { Function $1 }
  (* es6: *)
@@ -1220,7 +1226,7 @@ expr_no_in:
 
 assignment_expr_no_in:
  | conditional_expr_no_in { $1 }
- | left_hand_side_expr(d1) assignment_operator assignment_expr_no_in
+ | left_hand_side_expr_(d1) assignment_operator assignment_expr_no_in
      { Assign ($1, $2, $3) }
 
 conditional_expr_no_in:
@@ -1256,8 +1262,8 @@ expr_no_stmt:
  | expr_no_stmt "," assignment_expr { Seq ($1, $2, $3) }
 
 assignment_expr_no_stmt:
- | conditional_expr(d1_no_stmt) { $1 }
- | left_hand_side_expr(d1_no_stmt) assignment_operator assignment_expr
+ | conditional_expr(primary_no_stmt) { $1 }
+ | left_hand_side_expr_(primary_no_stmt) assignment_operator assignment_expr
      { Assign ($1, $2, $3) }
  (* es6: *)
  | arrow_function { Arrow $1 }
@@ -1267,7 +1273,7 @@ assignment_expr_no_stmt:
  | T_YIELD "*" assignment_expr { Yield ($1, Some $2, Some $3) }
 
 (* no object_literal here *)
-d1_no_stmt: TUnknown TComment { raise Impossible }
+primary_no_stmt: TUnknown TComment { raise Impossible }
 
 (*************************************************************************)
 (* Entities, names *)
