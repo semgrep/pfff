@@ -880,9 +880,7 @@ statement:
  (* sgrep-ext: *)
  | "..." { ExprStmt (Ellipsis $1, None) }
 
-block:
- | "{" statement_list "}" { Block ($1, $2, $3) }
- | "{" "}"                { Block ($1, [], $2) }
+block: "{" optl(statement_list) "}" { Block ($1, $2, $3) }
 
 statement_list: item+ { $1 }
 
@@ -922,28 +920,17 @@ iteration_statement:
 
 initializer_no_in: "=" assignment_expression_no_in { $1, $2 }
 
+continue_statement: T_CONTINUE identifier? sc { Continue ($1, $2, $3) }
 
-continue_statement:
- | T_CONTINUE identifier sc { Continue ($1, Some $2, $3) }
- | T_CONTINUE sc            { Continue ($1, None, $2) }
+break_statement: T_BREAK identifier? sc { Break ($1, $2, $3) }
 
-break_statement:
- | T_BREAK identifier sc { Break ($1, Some $2, $3) }
- | T_BREAK sc            { Break ($1, None, $2) }
+return_statement: T_RETURN expression? sc { Return ($1, $2, $3) }
 
 
-return_statement:
- | T_RETURN expression sc { Return ($1, Some $2, $3) }
- | T_RETURN sc            { Return ($1, None, $2) }
+with_statement: T_WITH "(" expression ")" statement { With ($1, ($2, $3, $4), $5) }
 
 
-with_statement: T_WITH "(" expression ")" statement 
-  { With ($1, ($2, $3, $4), $5) }
-
-
-switch_statement: T_SWITCH "(" expression ")" case_block 
-  { Switch ($1, ($2, $3, $4), $5) }
-
+switch_statement: T_SWITCH "(" expression ")" case_block { Switch ($1, ($2, $3, $4), $5) }
 
 
 labelled_statement: identifier ":" statement { Labeled ($1, $2, $3) }
