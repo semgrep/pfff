@@ -155,13 +155,11 @@ let to_item xs =
  *)
 *)
 
-%nonassoc Tin
 %nonassoc below_SEMI
 %nonassoc TSemiColon                     (* below TEq ({lbl=...; lbl=...}) *)
 %nonassoc Tlet                           (* above TSemiColon ( ...; let ... in ...) *)
 %nonassoc below_WITH
 %nonassoc Tfunction Twith                 (* below TPipe  (match ... with ...) *)
-%nonassoc Tand             (* above Twith (module rec A: Tsig with ... and ...) *)
 %nonassoc Tthen                          (* below Telse (if ... then ...) *)
 %nonassoc Telse                          (* (if ... then ... else ...) *)
 %nonassoc TAssignMutable                 (* below TAssign (lbl <- x := e) *)
@@ -171,24 +169,21 @@ let to_item xs =
 %nonassoc below_COMMA
 %left     TComma                         (* expr/expr_comma_list (e,e,e) *)
 %right    TArrow                         (* core_type2 (t -> t -> t) *)
-%right    Tor BARBAR                     (* expr (e || e || e) *)
+%right    Tor                            (* expr (e || e || e) *)
 %right    TAnd TAndAnd                   (* expr (e && e && e) *)
 %nonassoc below_EQUAL
-%left     INFIXOP0 TEq TLess TGreater    (* expr (e OP e OP e) *)
+%left     TEq TLess TGreater    (* expr (e OP e OP e) *)
 %left     TBangEq
-%right    INFIXOP1                       (* expr (e OP e OP e) *)
 %right    TColonColon                    (* expr (e :: e :: e) *)
-%left     INFIXOP2 TPlus TPlusDot TMinus TMinusDot  (* expr (e OP e OP e) *)
-%left     INFIXOP3 TStar                 (* expr (e OP e OP e) *)
+%left     TPlus TPlusDot TMinus TMinusDot  (* expr (e OP e OP e) *)
+%left     TStar                 (* expr (e OP e OP e) *)
 %left     TInfixOperator (* pad: *)
-%right    INFIXOP4                       (* expr (e OP e OP e) *)
 %left     Tmod Tlor Tlxor Tland
 %right    Tlsr Tasr Tlsl
 
 %nonassoc prec_unary_minus prec_unary_plus (* unary - *)
 %nonassoc prec_constant_constructor      (* cf. simple_expr (C versus C x) *)
 %nonassoc prec_constr_appl               (* above Tas TPipe TColonColon TComma *)
-%nonassoc below_SHARP
 %nonassoc TSharp                         (* simple_expr/toplevel_directive *)
 %nonassoc below_DOT
 %nonassoc TDot
@@ -467,7 +462,7 @@ seq_expr:
 
 
 expr:
- | simple_expr %prec below_SHARP
+ | simple_expr
      { $1 }
  (* function application *)
  | simple_expr simple_labeled_expr_list
@@ -489,7 +484,7 @@ expr:
 
  | expr_comma_list %prec below_COMMA
      { Tuple $1 }
- | constr_longident simple_expr %prec below_SHARP
+ | constr_longident simple_expr
      { Constr ($1, Some $2) }
 
  | expr "::" expr
@@ -581,13 +576,13 @@ expr:
  | Tlet Topen mod_longident Tin seq_expr
       { ExprTodo }
 
- | Tassert simple_expr %prec below_SHARP
+ | Tassert simple_expr
      { ExprTodo }
 
- | name_tag simple_expr %prec below_SHARP
+ | name_tag simple_expr
      { ExprTodo }
 
- | Tlazy simple_expr %prec below_SHARP
+ | Tlazy simple_expr
      { ExprTodo }
 
   (* objects *)
@@ -678,7 +673,7 @@ simple_labeled_expr_list:
       { $1 @ [$2] }
 
 labeled_simple_expr:
- | simple_expr %prec below_SHARP
+ | simple_expr
       { ArgExpr $1 }
  | label_expr
       { $1 }
@@ -745,9 +740,9 @@ label_expr:
       { ArgImplicitTildeExpr ($1, Name $2) }
  | "?" label_ident
       { ArgImplicitQuestionExpr ($1, Name $2) }
- | TLabelDecl simple_expr %prec below_SHARP
+ | TLabelDecl simple_expr
       { ArgLabelTilde (Name $1 (* TODO remove the ~ and : *), $2) }
- | TOptLabelDecl simple_expr %prec below_SHARP
+ | TOptLabelDecl simple_expr
       { ArgLabelQuestion (Name $1 (* TODO remove the ~ and : *), $2) }
 
 (*----------------------------*)
@@ -985,10 +980,10 @@ simple_core_type_or_tuple:
 
 
 simple_core_type:
- | simple_core_type2  %prec below_SHARP
+ | simple_core_type2
       { $1 }
  (* weird diff between 'Foo of a * b' and 'Foo of (a * b)' *)
- | "(" core_type_comma_list ")" %prec below_SHARP
+ | "(" core_type_comma_list ")"
       { TyTuple2 (($1, $2, $3)) }
 
 simple_core_type2:
