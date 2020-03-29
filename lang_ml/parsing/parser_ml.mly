@@ -13,10 +13,11 @@
 open Common
 
 open Cst_ml
+
 (*************************************************************************)
 (* Prelude *)
 (*************************************************************************)
-(* This file contains a grammar for OCaml (3.07 with some extensions for 
+(* This file contains a grammar for OCaml (=~ 3.07 with some extensions for 
  * OCaml 4.xxx)
  * 
  * src: adapted from the official source of OCaml in its
@@ -130,7 +131,6 @@ let to_item xs =
 (*************************************************************************)
 (* Priorities *)
 (*************************************************************************)
-(*
 (* Precedences and associativities.
  *
  * Tokens and rules have precedences.  A reduce/reduce conflict is resolved
@@ -153,7 +153,6 @@ let to_item xs =
  * 
  * The precedences must be listed from low to high.
  *)
-*)
 
 %nonassoc below_SEMI
 %nonassoc TSemiColon                     (* below TEq ({lbl=...; lbl=...}) *)
@@ -169,6 +168,7 @@ let to_item xs =
 %nonassoc below_COMMA
 %left     TComma                         (* expr/expr_comma_list (e,e,e) *)
 %right    TArrow                         (* core_type2 (t -> t -> t) *)
+
 %right    Tor                            (* expr (e || e || e) *)
 %right    TAnd TAndAnd                   (* expr (e && e && e) *)
 %nonassoc below_EQUAL
@@ -196,18 +196,14 @@ let to_item xs =
 (* Rules type declaration *)
 (*************************************************************************)
 
-%start interface  implementation
-%type <Cst_ml.toplevel list> interface
-%type <Cst_ml.toplevel list> implementation
+%start <Cst_ml.toplevel list> interface
+%start <Cst_ml.toplevel list> implementation
 
 %%
-
 (*************************************************************************)
 (* TOC *)
 (*************************************************************************)
-(*
-(*
- * - toplevel
+(* - toplevel
  * - signature
  * - structure
  * - names
@@ -231,13 +227,12 @@ let to_item xs =
  * - xxx_opt, xxx_list
  * 
  *)
-*)
+
 (*************************************************************************)
 (* Toplevel, compilation units *)
 (*************************************************************************)
 
 interface:      signature EOF                        { $1 }
-
 implementation: structure EOF                        { $1 }
 
 (*************************************************************************)
@@ -329,11 +324,9 @@ structure_item_noattr:
 
  (* modules *)
  | Tmodule TUpperIdent module_binding
-      { 
-        match $3 with
+      { match $3 with
         | None -> ItemTodo $1
-        | Some (x, y) ->
-            Module ($1, Name $2, x, y) 
+        | Some (x, y) -> Module ($1, Name $2, x, y) 
       }
  | Tmodule Ttype ident "=" module_type
       { ItemTodo $1 }
@@ -389,13 +382,10 @@ name_tag: "`" ident   { }
 (* Labels *)
 (*----------------------------*)
 
-label_var:
-    TLowerIdent    { }
+label_var: TLowerIdent    { }
 
 (* for label arguments like ~x or ?x *)
-label_ident:
-    TLowerIdent   { $1 }
-
+label_ident: TLowerIdent   { $1 }
  
 (*----------------------------*)
 (* Qualified names *)
@@ -720,7 +710,6 @@ direction_flag:
  | Tto                                          { To $1 }
  | Tdownto                                      { Downto $1 }
 
-
 (*----------------------------*)
 (* Constants *)
 (*----------------------------*)
@@ -754,7 +743,6 @@ field_expr_list:
       { }
   | field_expr_list ";" label "=" expr
       { }
-
 
 (*************************************************************************)
 (* Patterns *)
