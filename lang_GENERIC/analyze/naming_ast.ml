@@ -270,6 +270,31 @@ let resolve _lang prog =
       | _ -> k x
     );
 
+    (* the import aliases *)
+    V.kdir = (fun (k, _v) x ->
+       (match x with
+       | ImportFrom (_, DottedName xs, id, Some (alias)) ->
+          (* for python *)
+          let sid = Ast.gensym () in
+          let resolved = ImportedEntity (xs @ [id]), sid in
+          add_ident_env alias resolved env;
+       | ImportAs (_, DottedName xs, Some alias) ->
+          (* for python *)
+          let sid = Ast.gensym () in
+          let resolved = ImportedModule (DottedName xs), sid in
+          add_ident_env alias resolved env;
+
+       | ImportAs (_, FileName (s, tok), Some alias) ->
+          (* for Go *)
+          let sid = Ast.gensym () in
+          let base = Filename.basename s, tok in
+          let resolved = ImportedModule (DottedName [base]), sid in
+          add_ident_env alias resolved env;
+
+       | _ -> ()
+       );
+       k x
+    );
 
     (* the uses *)
 

@@ -22,6 +22,9 @@ module G = Ast_generic
 (*****************************************************************************)
 (* Identifiers tagger (so we can colorize them differently in codemap/efuns).
  *
+ * TODO: switch gradually the code to naming_ast.ml generic tagger.
+ * note: This is not called anymore from parse_generic.ml. This is not
+ * used anymore by sgrep (but still used by codemap/efuns)
  *)
 
 (*****************************************************************************)
