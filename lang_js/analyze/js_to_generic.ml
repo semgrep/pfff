@@ -60,13 +60,18 @@ let filename v = wrap string v
 
 let label v = wrap string v
 
-let qualified_name x = [x, fake "TODO qualified name"]
-
-let resolved_name = function
+(* note: we do not care anymore about the language-specific tagger.
+ * we use instead the generic naming_ast.ml *)
+let resolved_name _x = 
+(* old:
+  let _qualified_name x = [x, fake "TODO qualified name"] in
+  match x with
   | Local -> Some (G.Local, G.sid_TODO)
   | Param -> Some (G.Param, G.sid_TODO)
   | Global x -> Some (G.ImportedEntity (qualified_name x), G.sid_TODO)
   | NotResolved -> None
+*)
+  None
 
 type special_result = 
   | SR_Special of G.special
