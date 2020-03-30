@@ -29,11 +29,15 @@ let parse_with_lang lang file =
   match lang with
   | Lang.Python ->
     let ast = Parse_python.parse_program file in
-    Resolve_python.resolve ast;
+    (* old: Resolve_python.resolve ast; 
+     * switched to call naming_ast.ml in sgrep to correct def and use tagger
+     *)
     Python_to_generic.program ast
   | Lang.Javascript ->
     let cst = Parse_js.parse_program file in
-    (* does also the job of a Resolve_js.resolve ast *)
+    (* does also the job of a Resolve_js.resolve ast
+     * but Js_to_generic does not use the tags
+     *)
     let ast = Ast_js_build.program cst in
     Js_to_generic.program ast
   | Lang.C ->
@@ -45,7 +49,9 @@ let parse_with_lang lang file =
     Java_to_generic.program ast
   | Lang.Go ->
     let ast = Parse_go.parse_program file in
-    Resolve_go.resolve ast;
+    (* old: Resolve_go.resolve ast;
+     * switched to call naming_ast.ml in sgrep to correct def and use tagger
+     *)
     Go_to_generic.program ast
   | Lang.ML ->
     let cst = Parse_ml.parse_program file in
