@@ -92,7 +92,7 @@ let (>>) x f = f x
 let ($) f g = function x -> f (g x)
 
 (* pad: from extString.ml *)
-let string_init len f =
+let _string_init len f =
   let s = Bytes.create len in
   for i = 0 to len - 1 do
     Bytes.unsafe_set s i (f i)
@@ -103,6 +103,7 @@ let string_init len f =
 (* Serialized string -> php *)
 (*****************************************************************************)
 
+(*
 let rec parse_one = parser
   | [< ''a'; '':'; n=number; '':'; ''{'; a=parse_array; ''}' >] -> ignore n;(*check n (List.length a);*) a
   | [< ''b'; '':'; n=number; '';' >] -> B (0 <> n)
@@ -135,6 +136,8 @@ and parse_int_array acc = parser
 and parse_str_array acc = parser
   | [< k=parse_str; v=parse_one; t >] -> parse_str_array ((k,v)::acc) t
   | [< >] -> List.rev acc
+*)
+let parse_one _ = failwith "TODO: port use of camlp4"
 
 let parse stream =
   let show () =
