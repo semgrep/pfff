@@ -278,6 +278,11 @@ let resolve _lang prog =
           let sid = Ast.gensym () in
           let resolved = ImportedEntity (xs @ [id]), sid in
           add_ident_env alias resolved env;
+       | ImportFrom (_, DottedName xs, id, None) ->
+          (* for python *)
+          let sid = Ast.gensym () in
+          let resolved = ImportedEntity (xs @ [id]), sid in
+          add_ident_env id resolved env;
        | ImportAs (_, DottedName xs, Some alias) ->
           (* for python *)
           let sid = Ast.gensym () in
