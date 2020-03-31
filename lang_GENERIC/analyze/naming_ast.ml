@@ -325,6 +325,20 @@ let resolve _lang prog =
        );
        k x
     );
+    V.kattr = (fun (k, _v) x ->
+      (match x with
+      | NamedAttr (id, id_info, _args) ->
+          let s = Ast.str_of_ident id in
+          (match List.assoc_opt s !(env.names) with
+          | Some resolved -> 
+             (* name resolution *)
+             set_resolved id_info resolved;
+          | _ -> ()          
+          )
+      | _ -> ()
+      );
+      k x
+     );
 
   }
   in
