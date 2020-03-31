@@ -472,11 +472,11 @@ and attribute v =
   match v with
   | Id [id] -> 
     let id = ident id in
-    G.NamedAttr (id, [])
+    G.NamedAttr (id, G.empty_id_info(), [])
   | Call (Id [id], args) ->
     let id = ident id in
     let args = list expr args in
-    G.NamedAttr (id, args |> List.map G.expr_to_arg)
+    G.NamedAttr (id, G.empty_id_info(), args |> List.map G.expr_to_arg)
   | _ -> raise Impossible (* see ast_php_build.ml *)
                  
 

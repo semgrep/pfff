@@ -465,10 +465,11 @@ and vof_keyword_attribute =
 and vof_attribute = function
   | KeywordAttr x -> let v1 = vof_wrap vof_keyword_attribute x in
     Ocaml.VSum (("KeywordAttr", [v1]))
-  | NamedAttr ((v1, v2)) ->
+  | NamedAttr ((v1, v2, v3)) ->
       let v1 = vof_ident v1
-      and v2 = Ocaml.vof_list vof_argument v2
-      in Ocaml.VSum (("NamedAttr", [ v1; v2 ]))
+      and v2 = vof_id_info v2
+      and v3 = Ocaml.vof_list vof_argument v3
+      in Ocaml.VSum (("NamedAttr", [ v1; v2; v3 ]))
   | OtherAttribute ((v1, v2)) ->
       let v1 = vof_other_attribute_operator v1
       and v2 = Ocaml.vof_list vof_any v2
