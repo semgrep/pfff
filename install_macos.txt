@@ -2,66 +2,10 @@ To install pfff under macOS, you must first install Brew (see http://brew.sh)
 or MacPorts (see http://www.macports.org/).
 
 Then, install a few packages, for example with Brew:
- $ brew install objective-caml camlp4
-
-For codemap and codegraph, you need also to install an X11 server.
-Install xquartz at http://xquartz.macosforge.org/landing/ and then install
-a few more packages:
- $ brew install gtk+
- $ brew install cairo
+ $ brew install objective-caml
 
 For codequery:
  $ brew install swi-prolog
 
 => you can now run './configure' and build the many pfff tools :) 
 See install.txt for the remaining steps.
-
-Troubles?
----------
-
-- If you are using homebrew you may have problems compiling ocamlgtk and 
-  ocamlcairo. First You need to 
-     export PKG_CONFIG_PATH=/opt/X11/lib/pkgconfig:/usr/local/opt/libpng/lib/pkgconfig
-  so that configure can find one cairo.pc (the cairo of brew is keg-only),
-  and libpng16.pc. To test you can do
-     'pkg-config gtk+-2.0 --cflags'
-  and play with PKG_CONFIG_PATH until this previous command works.
-  Once this works, you want to force to link with the new cairo library in
-  homebrew because the default one of MacOS is causing a segfault.
-  So add -L/usr/local/opt/cairo/lib in the generated config.make
-  of ocamlcairo for the CAIRO_LIBS variable
-  (yep it's unfortunate and ugly).
-  update: I was enable to make codemap/codegraph work on Macos Lion (10.7).
-  Even after playing with PKG_CONFIG_PATH I got some runtime errors
-  about Fatal error 35 with xquartz. I think recent version of Xquartz and
-  brew don't mix well with old versions of MacOS.
-
-- If you have problem installing cairo and get an error message like:
-  "Error: db46 requires the Java for Mac OS X development headers.
-  Error: Download the Java Developer Package from: 
-  <https://connect.apple.com/cgi-bin/WebObjects/MemberSite.woa/wa/getSoftware?bundleID=20719>"
-  "
-  then follows the link and install the Java Developer Package.
-
-  An alternative fix may be to reinstall XCode as indicated at:
-  http://yoodey.com/how-fix-db46-problem-macport-installation-or-install-db46-mac-os-x-1065
-
-- If you have problem installing gtk2 and get an error related to atk,
-  do: 
-    $ sudo port install gobject-introspection 
-  and
-    $ sudo port install gtk2
-  again.
-
-- If you have a problem when compiling pfff in its external/ocamlgtk directory
-  with an error like:
-  "Error: Error on dynamically loaded library: 
-   ./dlllablgtk2.so: dlopen(./dlllablgtk2.so, 138): 
-   Symbol not found: _g_simple_async_result_take_error"
- do:
-   $ sudo port selfupdate
-   $ sudo port upgrade outdated
- which should update glib2 and fix the bug.
-
-- For cairo and gtk don't use the quartz setting as it is currently
-  buggy under macports.
