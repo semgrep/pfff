@@ -1,5 +1,46 @@
 # -*- org -*-
 
+* 0.40 (Q1 2020) (Go/Ruby parsers, better Java/C++ parsers, generic naming)
+
+** introducing lang_go/
+parser ported from yacc grammar in official Go repository.
+
+** introducing lang_ruby/
+parser ported from Diamond-back Ruby, including its intermediate-language
+RIL.
+
+** GENERIC
+
+*** adapting ast_generic.ml to new languages: Go, PHP, Java.
+
+*** new generic naming_ast.ml to factorize naming across multiple languages
+right now supports mostly Python and Go though.
+
+*** started basic il.ml, for a generic Intermediate Language better
+suited for complex static analysis (a mix between CIL/RIL/...).
+
+** c++
+
+*** significant improvments to C++ parser, handle many c++11 features:
+foreach, lambda, &&, etc.
+
+*** switch to better cst_cpp.ml following consistent wrap technique
+like for the other languages.
+
+** java
+
+*** significant improvments to the java parser, handle many recent Java 9
+features
+
+** misc
+
+*** started using dypgen and menhir code generators instead of just ocamlyacc
+ported the Javascript, C++, and OCaml grammar to menhir 
+
+*** removed dependency to camlp4 so can be used with recent OCaml
+
+* -----------------------------------------------------------
+
 * 0.39 (Q4 2019) (real Python parser, a generic AST, a generic sgrep/scheck)
 10 years of Pfff! Started in November 2009 (while at Facebook).
 
