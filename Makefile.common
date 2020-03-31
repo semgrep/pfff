@@ -46,7 +46,7 @@ OPTOBJS?= $(SRC:.ml=.cmx)
 #-44 allow shadow module identifier (TODO: fix them)
 #-48 allow eliminating optional args, unclear how to fix without wide changes
 #-52 allow to match on Failure("hd")
-WARNING_FLAGS?=-w +a-4-6-29-41-44-45-48-52 -warn-error +a
+WARNING_FLAGS?=-w +a-4-6-29-41-44-45-48-52-67 -warn-error +a
 
 OCAMLCFLAGS=-g -thread $(WARNING_FLAGS) $(OCAMLCFLAGS_EXTRA) 
 
