@@ -359,10 +359,11 @@ and map_other_type_operator x = x
 and map_attribute = function
   | KeywordAttr v1 -> let v1 = map_wrap map_keyword_attribute v1 in 
       KeywordAttr v1
-  | NamedAttr ((v1, v2)) ->
+  | NamedAttr ((v1, v2, v3)) ->
       let v1 = map_ident v1
-      and v2 = map_of_list map_argument v2
-      in NamedAttr ((v1, v2))
+      and v2 = map_id_info v2
+      and v3 = map_of_list map_argument v3
+      in NamedAttr ((v1, v2, v3))
   | OtherAttribute ((v1, v2)) ->
       let v1 = map_other_attribute_operator v1
       and v2 = map_of_list map_any v2

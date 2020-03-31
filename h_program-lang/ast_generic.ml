@@ -678,7 +678,7 @@ and type_ =
 and attribute = 
   | KeywordAttr of keyword_attribute wrap
   (* for general @annotations *)
-  | NamedAttr of ident * argument list
+  | NamedAttr of ident * id_info * argument list
 
   | OtherAttribute of other_attribute_operator * any list
 
