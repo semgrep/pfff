@@ -52,7 +52,7 @@ clean::
 	rm -f $(TARGET).top
 
 
-PP=-pp camlp4o
+#PP=-pp camlp4o
 
 EXTRA_FLAGS=-w -3
 
