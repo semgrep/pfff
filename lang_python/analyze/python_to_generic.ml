@@ -596,7 +596,7 @@ and excepthandler =
 and expr_to_attribute v  = 
   match v with
   | G.Call (G.Id (id, _), args) -> 
-      G.NamedAttr (id, args)
+      G.NamedAttr (id, G.empty_id_info (), args)
   | _ -> G.OtherAttribute (G.OA_Expr, [G.E v])
 
 and decorator v = 

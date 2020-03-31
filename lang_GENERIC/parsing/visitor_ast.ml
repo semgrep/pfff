@@ -331,7 +331,8 @@ and v_attribute x =
   let k x = 
   match x with
   | KeywordAttr v1 -> let v1 = v_wrap v_keyword_attribute v1 in ()
-  | NamedAttr ((v1, v2)) -> let v1 = v_ident v1 and v2 = v_list v_argument v2 in ()
+  | NamedAttr ((v1, v2, v3)) -> let v1 = v_ident v1 and v2 = v_id_info v2 and
+    v3 = v_list v_argument v3 in ()
   | OtherAttribute ((v1, v2)) ->
       let v1 = v_other_attribute_operator v1 and v2 = v_list v_any v2 in ()
   in
