@@ -47,14 +47,13 @@ open Cst_ml
 let (qufix: long_name -> tok -> (string wrap) -> long_name) = 
  fun longname dottok ident ->
   match longname with
-  | xs, Name ident2 ->
-      xs @ [Name ident2, dottok], Name ident
+  | xs, Name ident2 ->xs @ [Name ident2, dottok], Name ident
 
 let to_item xs =
-  xs |> Common.map_filter (function
-  | TopItem x -> Some x
-  | _ -> None
-  )
+  xs |> Common.map_filter (function TopItem x -> Some x | _ -> None)
+
+let (@@) xs sc =
+  match sc with None -> xs | Some x -> xs @ [Right x]
 %}
 (*************************************************************************)
 (* Tokens *)
@@ -225,7 +224,6 @@ let to_item xs =
  * - modules
  * - attributes
  * - xxx_opt, xxx_list
- * 
  *)
 
 (*************************************************************************)
