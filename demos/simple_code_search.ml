@@ -17,7 +17,7 @@ module PI = Parse_info
  * 
  *    $ ocamlc -g -o simple_code_search \
  *      -I ../commons -I ../lang_php/parsing \
- *      str.cma unix.cma nums.cma bigarray.cma \
+ *      str.cma unix.cma bigarray.cma \
  *      ../commons/lib.cma ../h_program-lang/lib.cma \
  *      ../lang_php/parsing/lib.cma \
  *      simple_code_search.ml

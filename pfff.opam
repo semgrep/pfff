@@ -1,6 +1,6 @@
 opam-version: "2.0"
 name: "pfff"
-version: "0.40.3"
+version: "0.40.4"
 synopsis: "Tools and APIs for program analysis, code visualization, refactoring"
 description: """
 pfff is a set of tools and APIs to perform some static analysis,
@@ -35,7 +35,6 @@ install: [
 depends: [
   "ocaml" {>= "4.05.0"}
   "ocamlfind" {build}
-  "num"
   "ocamlgraph"
   "json-wheel"
   "conf-perl"

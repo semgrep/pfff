@@ -45,7 +45,7 @@ GRAPHDIRS=commons_wrappers/graph
 #------------------------------------------------------------------------------
 # Main variables
 #------------------------------------------------------------------------------
-BASICSYSLIBS=nums.cma bigarray.cma str.cma unix.cma
+BASICSYSLIBS=bigarray.cma str.cma unix.cma
 
 # used small utilities that I dont want to depend on too much things
 BASICLIBS=commons/lib.cma \
@@ -93,7 +93,7 @@ BASICLIBS+=\
 
 endif
 
-SYSLIBS=nums.cma bigarray.cma str.cma unix.cma
+SYSLIBS=bigarray.cma str.cma unix.cma
 SYSLIBS+=$(OCAMLCOMPILERCMA)
 
 # use for the other programs
