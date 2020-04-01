@@ -619,6 +619,9 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
    | OtherStmt _
        -> cfg_simple_node state previ stmt
 
+   | DisjStmt _ ->
+        raise Impossible (* only in sgrep context in a pattern *)
+
 
 and cfg_stmt_list state previ xs =
   xs |> List.fold_left (fun previ stmt ->
