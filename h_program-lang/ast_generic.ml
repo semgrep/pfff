@@ -314,6 +314,7 @@ and expr =
    * (and unfortunately also in types in Python) *)
   | Ellipsis of tok (* '...' *)
   | TypedMetavar of ident * tok (* : *) * type_
+  | DisjExpr of expr * expr
 
   | OtherExpr of other_expr_operator * any list
 
@@ -492,6 +493,9 @@ and stmt =
   | Throw of tok (* 'raise' in OCaml, 'throw' in Java/PHP *) * expr
   | Try of tok * stmt * catch list * finally option
   | Assert of tok * expr * expr option (* message *)
+
+  (* sgrep: *)
+  | DisjStmt of stmt * stmt
 
   (* this is important to correctly compute a CFG *)
   | OtherStmtWithStmt of other_stmt_with_stmt_operator * expr * stmt

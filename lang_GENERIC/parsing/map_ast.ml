@@ -147,6 +147,8 @@ and map_xml_body =
 
 and map_expr x =
   let k x = match x with
+  | DisjExpr (v1, v2) -> let v1 = map_expr v1 in let v2 = map_expr v2 in
+        DisjExpr (v1, v2)
   | L v1 -> let v1 = map_literal v1 in L ((v1))
   | Container ((v1, v2)) ->
       let v1 = map_container_operator v1
@@ -374,6 +376,8 @@ and map_other_attribute_operator x  = x
 
 and map_stmt x =
   let k x = match x with
+  | DisjStmt (v1, v2) -> let v1 = map_stmt v1 in let v2 = map_stmt v2 in
+        DisjStmt (v1, v2)
   | ExprStmt v1 -> let v1 = map_expr v1 in ExprStmt ((v1))
   | DefStmt v1 -> let v1 = map_definition v1 in DefStmt ((v1))
   | DirectiveStmt v1 -> let v1 = map_directive v1 in DirectiveStmt ((v1))
