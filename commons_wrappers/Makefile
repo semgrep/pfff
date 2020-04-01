@@ -41,7 +41,7 @@ SRC+=ocamlextra/oUnit.ml
 SRC+=ocamlextra/xML2.ml
 SRC+=ocamlextra/xHTML2.ml
 
-SYSLIBS=str.cma bigarray.cma unix.cma nums.cma
+SYSLIBS=str.cma bigarray.cma unix.cma
 
 INCLUDEDIRS=ocamlextra ocollection
 SUBDIRS=ocamlextra ocollection

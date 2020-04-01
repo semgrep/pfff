@@ -135,15 +135,15 @@ sync2:
 CMD=
 compile2:
 	ocamlc -I ../commons/ -I ../parsing_php/ \
-	  unix.cma str.cma bigarray.cma nums.cma \
+	  unix.cma str.cma bigarray.cma \
 	  ../commons/lib.cma ../parsing_php/parsing_php.cma \
 	  show_function_calls1.ml -o show_function_calls1
 	ocamlc -I ../commons/ -I ../parsing_php/ \
-	  unix.cma str.cma bigarray.cma nums.cma \
+	  unix.cma str.cma bigarray.cma \
 	  ../commons/lib.cma ../parsing_php/parsing_php.cma \
 	  show_function_calls2.ml -o show_function_calls2
 	ocamlc -I ../commons/ -I ../parsing_php/ \
-	  unix.cma str.cma bigarray.cma nums.cma \
+	  unix.cma str.cma bigarray.cma \
 	  ../commons/lib.cma ../parsing_php/parsing_php.cma \
 	  show_function_calls3.ml -o show_function_calls3
 
