@@ -15,7 +15,7 @@ LIBS=$(TOP)/commons/lib.cma \
 INCLUDEDIRS= $(TOP)/commons \
  $(TOP)/globals
 
-SYSLIBS=bigarray.cma nums.cma str.cma unix.cma 
+SYSLIBS=bigarray.cma str.cma unix.cma 
 
 ##############################################################################
 # Generic variables

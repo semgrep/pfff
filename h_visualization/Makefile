@@ -25,7 +25,7 @@ SRC+=gnuplot.ml html.ml latex.ml #dot.ml
 LIBS=$(TOP)/commons/lib.cma
 INCLUDEDIRS= $(TOP)/commons \
 
-SYSLIBS= nums.cma bigarray.cma str.cma unix.cma
+SYSLIBS= bigarray.cma str.cma unix.cma
 
 # graphics is not included by default because it can conflict with
 # applications using lablgtk
