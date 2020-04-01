@@ -193,6 +193,7 @@ let simple_node_of_stmt_opt stmt =
     |A.Return _|A.Continue _|A.Break _|A.Label (_, _)|A.Goto _
     |A.Throw _|A.Try (_, _, _, _)
     |A.OtherStmtWithStmt _
+    |A.DisjStmt _
     ) -> None
 
 let any_of_simple_node = function

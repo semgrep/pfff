@@ -161,6 +161,7 @@ and v_xml_body =
 and v_expr x =
   let k x = 
   match x with
+  | DisjExpr (v1, v2) -> let v1 = v_expr v1 in let v2 = v_expr v2 in ()
   | L v1 -> let v1 = v_literal v1 in ()
   | Ellipsis v1 -> let v1 = v_tok v1 in ()
   | Container ((v1, v2)) ->
@@ -354,6 +355,7 @@ and v_stmts xs =
 and v_stmt x =
   let k x =
   match x with
+  | DisjStmt (v1, v2) -> let v1 = v_stmt v1 in let v2 = v_stmt v2 in ()
   | ExprStmt v1 -> let v1 = v_expr v1 in ()
   | DefStmt v1 -> let v1 = v_def v1 in ()
   | DirectiveStmt v1 -> let v1 = v_directive v1 in ()

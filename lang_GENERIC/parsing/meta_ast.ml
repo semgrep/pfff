@@ -115,6 +115,8 @@ and vof_xml_body =
 
 and vof_expr =
   function
+  | DisjExpr (v1, v2) -> let v1 = vof_expr v1 in let v2 = vof_expr v2 in
+      Ocaml.VSum (("DisjExpr", [v1; v2]))
   | Xml v1 -> let v1 = vof_xml v1 in Ocaml.VSum (("Xml", [ v1 ]))
   | L v1 -> let v1 = vof_literal v1 in Ocaml.VSum (("L", [ v1 ]))
   | Container ((v1, v2)) ->
@@ -485,6 +487,8 @@ and vof_other_attribute_operator =
   | OA_Expr -> Ocaml.VSum (("OA_Expr", []))
 and vof_stmt =
   function
+  | DisjStmt (v1, v2) -> let v1 = vof_stmt v1 in let v2 = vof_stmt v2 in
+      Ocaml.VSum (("DisjStmt", [v1; v2]))
   | ExprStmt v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("ExprStmt", [ v1 ]))
   | DefStmt v1 ->
       let v1 = vof_definition v1 in Ocaml.VSum (("DefStmt", [ v1 ]))
