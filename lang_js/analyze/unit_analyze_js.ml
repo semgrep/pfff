@@ -11,14 +11,10 @@ open OUnit
 (*****************************************************************************)
 (* Unit tests *)
 (*****************************************************************************)
+let unittest =
+ "analyze_js" >::: [
 
-(*---------------------------------------------------------------------------*)
-(* Annotations *)
-(*---------------------------------------------------------------------------*)
-let annotation_unittest =
-  "annotation_js" >::: [
-
-    "commonjs annotations" >:: (fun () ->
+  "commonjs annotations" >:: (fun () ->
       let file_content = "
 /**
  * @providesModule my-module
@@ -43,14 +39,7 @@ function bar() {}
           annots
       )
     );
-  ]
 
-(*---------------------------------------------------------------------------*)
-(* Tags *)
-(*---------------------------------------------------------------------------*)
-
-let tags_unittest =
- "tags_js" >::: [
    "commonjs tags support" >:: (fun () ->
      let file_content = "
 /**
@@ -77,14 +66,31 @@ function foo() {}
            str
        else assert_failure "it should generate the write vi tags file"
      ));
- ]
 
-(*---------------------------------------------------------------------------*)
-(* Final suite *)
-(*---------------------------------------------------------------------------*)
+ "AST js building regression files" >:: (fun () ->
+      let dir = Filename.concat Config_pfff.path "/tests/js/parsing" in
+      let files = 
+        Common2.glob (spf "%s/*.js" dir) @
+(*
+        Common2.glob (spf "%s/jsx/*.js" dir) @
+        Common2.glob (spf "%s/typescript/*.js" dir) @
+*)
+        []
+      in
+      files |> List.iter (fun file ->
+        try
+          let cst = Parse_js.parse_program file in
+          Common.save_excursion Ast_js_build.transpile_xml false (fun () ->
+          Common.save_excursion Ast_js_build.transpile_pattern false (fun () ->
+            Ast_js_build.program cst  |> ignore
+          ))
+        with 
+        | Parse_info.Parsing_error _
+        | Parse_info.Lexical_error (_, _)
+        | Ast_js_build.TodoConstruct (_, _)
+        | Ast_js_build.UnhandledConstruct (_, _) ->
+          assert_failure (spf "it should correctly parse %s" file)
+      )
+    );
+]
 
-let unittest =
-  "analyze_js" >::: [
-    annotation_unittest;
-    tags_unittest;
-  ]

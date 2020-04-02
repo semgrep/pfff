@@ -60,6 +60,7 @@ exception UnhandledConstruct of string * Parse_info.t
  * we prefer to transpile it
  *)
 let transpile_xml = ref false
+let transpile_pattern = ref false
 
 (*****************************************************************************)
 (* Helpers *)
@@ -707,11 +708,66 @@ and encaps env = function
 and var_binding env vkind = function
   | C.VarClassic x -> [variable_declaration env vkind x]
   | C.VarPattern x -> 
-    (try Transpile_js.var_pattern (expr env, name env, property_name env) x
-     with Failure s ->
-       raise (TodoConstruct(spf "VarPattern:%s" s, 
-        (C.Pattern x.C.vpat) |> Lib_parsing_js.ii_of_any |> List.hd))
+    if !transpile_pattern
+    then
+     (try Transpile_js.var_pattern (expr env, name env, property_name env) x
+      with Failure s ->
+        raise (TodoConstruct(spf "VarPattern:%s" s, 
+               (C.Pattern x.C.vpat) |> Lib_parsing_js.ii_of_any |> List.hd))
      )
+    else 
+      let s = Ast_generic.special_multivardef_pattern in
+      let id = s, fake s in
+      let pat = pattern env x.C.vpat in
+      let (tok, init) = 
+        match x.C.vpat_init with Some x -> x | None -> raise Impossible in
+      let init = expr env init in
+      let assign = A.Assign (pat, tok, init) in
+      let vkind = var_kind env vkind in
+      (* less: use x.vpat_type *)
+      [{A.v_name = id; v_kind = vkind; v_init = assign;
+        v_resolved = not_resolved ()}]
+
+(* only when not !transpile_pattern *)
+and pattern env = function
+  | C.PatObj (t1, xs, t2) -> 
+     A.Obj (t1, xs |> C.uncomma |> List.map (function
+      | C.PatId (n, None) -> 
+         let n = name env n in
+         A.Field (A.PN n, [], A.Id (n, not_resolved()))
+      | C.PatId (n, Some (_tok, init)) -> 
+         let n = name env n in
+         let init = expr env init in
+         A.Field (A.PN n, [], init)
+      | C.PatProp (pname, _tok, pat) ->
+         let pname = property_name env pname in
+         let pat = pattern env pat in
+         A.Field (pname, [], pat)
+      | C.PatDots (t, pat) -> 
+        let e = pattern env pat in
+        A.FieldSpread (t, e)
+      | _ -> raise (TodoConstruct ("PatObj member", t1))
+      ), t2)
+         
+  (* TODO: comma_list can contain multiple Right in a row because of elision *)
+  | C.PatArr (t1, xs, t2) ->
+      A.Arr (t1, xs |> C.uncomma |> List.map (pattern env), t2)
+  | C.PatId (n, None) -> 
+      let n = name env n in
+      A.Id (n, not_resolved ())
+  | C.PatId (n, Some (tok, init)) -> 
+      let n = name env n in
+      let init = expr env init in
+      A.Assign(A.Id (n, not_resolved ()), tok, init)
+  (* only in PatObj *)
+  | C.PatProp (_, t, _) -> 
+      raise (TodoConstruct ("Impossible: PatProp outside PatObj", t))
+  (* only in PatArr *)
+  | C.PatDots (t, pat) -> 
+      let e = pattern env pat in
+      A.Apply (A.IdSpecial (A.Spread, t), [e])
+  | C.PatNest (pat, _init_optTODO) -> pattern env pat
+  
 
 and variable_declaration env vkind x =
   let n = name env x.C.v_name in

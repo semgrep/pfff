@@ -45,8 +45,9 @@
  *  - no class elements vs object elements
  *  - No Nop (EmptyStmt); transformed in an empty Block,
  *    (but a new Nop for empty expressions)
- *  - no patterns (they are transpiled, see transpile_js.ml)
- *  - no JSX (see transpile_js.ml)
+ *  - no patterns (they are transpiled, see transpile_js.ml, unless
+ *    Ast_js_build.transpile_pattern is false)
+ *  - no JSX (see transpile_js.ml, unless Ast_js_build.transpile_xml is false)
  *  - no ForOf (see transpile_js.ml)
  *  - no ExportDefaultDecl, ExportDefaultExpr, just unsugared in
  *    separate variable declarations and an Export name
@@ -59,8 +60,11 @@
  *)
 
 (*****************************************************************************)
-(* The AST related types *)
+(* Names *)
 (*****************************************************************************)
+(* ------------------------------------------------------------------------- *)
+(* Token/info *)
+(* ------------------------------------------------------------------------- *)
 
 (* Contains among other things the position of the token through
  * the Parse_info.token_location embedded inside it, as well as the
@@ -157,9 +161,9 @@ type property_name =
   | PN_Computed of expr
   (* less: Prototype *)
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* Expressions *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 and expr =
   | Bool of bool wrap
   | Num of string wrap
@@ -198,6 +202,7 @@ and expr =
   (* sgrep-ext: *)
   | Ellipsis of tok
 
+    (* transpiled to regular Calls when Ast_js_build.transpile_xml *)
     and xml = {
       xml_tag: ident;
       xml_attrs: (ident * xml_attr_value) list;
@@ -209,9 +214,9 @@ and expr =
       | XmlExpr of expr
       | XmlXml of xml
 
-(* ------------------------------------------------------------------------- *)
-(* Statements *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
+(* Statement *)
+(*****************************************************************************)
 and stmt = 
   | VarDecl of var
 
@@ -251,11 +256,22 @@ and stmt =
 
   and catch = tok * name * stmt
 
-(* ------------------------------------------------------------------------- *)
-(* Entities *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
+(* Pattern (destructuring binding) *)
+(*****************************************************************************)
+(* reuse Obj, Arr, etc.
+ * transpiled to regular assignments when Ast_js_build.transpile_pattern.
+ * sgrep: this is useful for sgrep to keep the ability to match over
+ * JS destructuring patterns.
+ *)
+and pattern = expr
 
+(*****************************************************************************)
+(* Definitions *)
+(*****************************************************************************)
 and var = { 
+  (* can be Ast_generic.special_multivardef_pattern when
+   * Ast_js_build.transpile_pattern is false with a vinit an Assign itself *)
   v_name: name;
   v_kind: var_kind wrap;
   v_init: expr;
@@ -303,9 +319,9 @@ and class_ = {
 
  (* with tarzan *)
 
-(* ------------------------------------------------------------------------- *)
-(* Module *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
+(* Directives *)
+(*****************************************************************************)
 (* ES6 module directives appear only at the toplevel. However, for 
  * CommomJS directives, some packages like react have dynamic imports
  * (to select dynamically which code to load depending on whether you run
@@ -329,9 +345,9 @@ type module_directive =
   (* those should not exist (except for sgrep where they are useful) *)
   | ImportEffect of tok * filename
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* Toplevel *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 type toplevel = 
   | V of var
   (* the tok is for graph_code to build a toplevel entity with a location *)
@@ -339,17 +355,16 @@ type toplevel =
   | M of module_directive
  (* with tarzan *)
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* Program *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 
 type program = toplevel list
  (* with tarzan *)
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* Any *)
-(* ------------------------------------------------------------------------- *)
-
+(*****************************************************************************)
 type any = 
   | Expr of expr
   | Stmt of stmt

@@ -42,8 +42,8 @@ open Common
  * 
  * todo:
  *  - add Ruby
- *  - later: add Rust, Scala (difficult)
- *  - later: add C++ (argh)
+ *  - add C++ (argh)
+ *  - add Rust, Scala (difficult)
  *  - see ast_fuzzy.ml todos for ideas to use ast_generic for sgrep.
  *
  * related work:
@@ -140,8 +140,8 @@ type module_name =
   | FileName of string wrap   (* ex: Js import, C #include, Go import *)
  (* with tarzan *)
 
-(* A single unique id. uid would be a better name, but it usually 
- * means "user id" for people.
+(* A single unique id: sid (uid would be a better name, but it usually 
+ * means "user id" for people).
  *
  * This single id simplifies further analysis which need less to care about 
  * maintaining scoping information, for example to deal with variable
@@ -268,7 +268,7 @@ and expr =
    * Call(IdSpecial (Concat ...)) *)
 
   (* The left part should be an lvalue (Name, DotAccess, ArrayAccess, Deref)
-   * but it can also be a pattern (Tuple, Container), but
+   * but it can also be a pattern (Tuple, Container, even Record), but
    * you should really use LetPattern for that.
    * Assign can also be abused to declare new variables, but you should use
    * variable_definition for that.
@@ -736,7 +736,10 @@ and definition = entity * definition_kind (* (or decl) *)
      * in a header file (called a prototype in C).
      *)
     | FuncDef   of function_definition
-    (* newvar: can be used also for constants, fields *)
+    (* newvar: can be used also for constants, fields 
+     * can contain special_multivardef_pattern ident in which case vinit
+     * is the pattern assignment.
+     *)
     | VarDef    of variable_definition
 
     | TypeDef   of type_definition
@@ -995,6 +998,18 @@ and any =
   | Pr of program
 
  (* with tarzan *)
+
+(* In JS one can do 'var {x,y} = foo();'. We used to transpile that
+ * in multiple vars, but in sgrep one may want to match over those patterns.
+ * However those multivars do not fit well with the (entity * definition_kind)
+ * model we currently use, so for now we need this ugly hack of converting
+ * the statement above in 
+ * ({name = "!MultiVarDef"}, VarDef {vinit = Assign (Record {...}, foo())}).
+ * This is bit ugly, but at some point we may want to remove completely
+ * VarDef by transforming them in Assign (see vardef_to_assign() below)
+ * so this temporary hack is not too bad.
+ *)
+let special_multivardef_pattern = "!MultiVarDef!"
 
 (*****************************************************************************)
 (* Wrappers *)
