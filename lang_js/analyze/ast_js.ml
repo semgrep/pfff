@@ -45,8 +45,9 @@
  *  - no class elements vs object elements
  *  - No Nop (EmptyStmt); transformed in an empty Block,
  *    (but a new Nop for empty expressions)
- *  - no patterns (they are transpiled, see transpile_js.ml)
- *  - no JSX (see transpile_js.ml)
+ *  - no patterns (they are transpiled, see transpile_js.ml, unless
+ *    Ast_js_build.transpile_pattern is false)
+ *  - no JSX (see transpile_js.ml, unless Ast_js_build.transpile_xml is false)
  *  - no ForOf (see transpile_js.ml)
  *  - no ExportDefaultDecl, ExportDefaultExpr, just unsugared in
  *    separate variable declarations and an Export name
@@ -201,6 +202,7 @@ and expr =
   (* sgrep-ext: *)
   | Ellipsis of tok
 
+    (* transpiled to regular Calls when Ast_js_build.transpile_xml *)
     and xml = {
       xml_tag: ident;
       xml_attrs: (ident * xml_attr_value) list;
@@ -254,11 +256,22 @@ and stmt =
 
   and catch = tok * name * stmt
 
-(* ------------------------------------------------------------------------- *)
-(* Entities *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
+(* Pattern (destructuring binding) *)
+(*****************************************************************************)
+(* reuse Obj, Arr, etc.
+ * transpiled to regular assignments when Ast_js_build.transpile_pattern.
+ * sgrep: this is useful for sgrep to keep the ability to match over
+ * JS destructuring patterns.
+ *)
+and pattern = expr
 
+(*****************************************************************************)
+(* Definitions *)
+(*****************************************************************************)
 and var = { 
+  (* can be Ast_generic.special_multivardef_pattern when
+   * Ast_js_build.transpile_pattern is false with a vinit an Assign itself *)
   v_name: name;
   v_kind: var_kind wrap;
   v_init: expr;
