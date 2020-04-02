@@ -42,8 +42,8 @@ open Common
  * 
  * todo:
  *  - add Ruby
- *  - later: add Rust, Scala (difficult)
- *  - later: add C++ (argh)
+ *  - add C++ (argh)
+ *  - add Rust, Scala (difficult)
  *  - see ast_fuzzy.ml todos for ideas to use ast_generic for sgrep.
  *
  * related work:
@@ -140,8 +140,8 @@ type module_name =
   | FileName of string wrap   (* ex: Js import, C #include, Go import *)
  (* with tarzan *)
 
-(* A single unique id. uid would be a better name, but it usually 
- * means "user id" for people.
+(* A single unique id: sid (uid would be a better name, but it usually 
+ * means "user id" for people).
  *
  * This single id simplifies further analysis which need less to care about 
  * maintaining scoping information, for example to deal with variable
@@ -268,7 +268,7 @@ and expr =
    * Call(IdSpecial (Concat ...)) *)
 
   (* The left part should be an lvalue (Name, DotAccess, ArrayAccess, Deref)
-   * but it can also be a pattern (Tuple, Container), but
+   * but it can also be a pattern (Tuple, Container, even Record), but
    * you should really use LetPattern for that.
    * Assign can also be abused to declare new variables, but you should use
    * variable_definition for that.
