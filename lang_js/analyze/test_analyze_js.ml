@@ -25,7 +25,12 @@ let test_parse_simple xs =
 let test_dump_ast file =
   try 
     let cst = Parse_js.parse_program file in
-    let ast = Ast_js_build.program cst in
+    let ast = 
+      Common.save_excursion Ast_js_build.transpile_xml false (fun () ->
+      Common.save_excursion Ast_js_build.transpile_pattern false (fun () ->
+        Ast_js_build.program cst 
+      ))
+    in
     let v = Meta_ast_js.vof_program ast in
     let s = Ocaml.string_of_v v in
     pr s
