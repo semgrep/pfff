@@ -139,10 +139,9 @@ type resolved_name = Ast_generic.resolved_name
 
 type env = {
   ctx: context list ref;
-  (* handle locals/params/globals, TODO
+  (* handle locals/params/globals
    * todo: block vars => list list with new_scope/del_scope/lookup
    * todo: enclosed vars (closures)
-   * todo: use for module aliasing and imported aliased entities
    * todo: use for types for Go
    *)
   names: (string, resolved_name) assoc ref;
@@ -154,12 +153,14 @@ type env = {
    * (* javascript function scope *)
    * vars: (string, bool) Hashtbl.t; 
    *)
+  in_lvalue: bool ref;
 }
 
 let default_env () = {
   ctx = ref [AtToplevel];
   names = ref [];
   constants = ref [];
+  in_lvalue = ref false;
 }
 
 (*****************************************************************************)
@@ -208,6 +209,7 @@ let resolved_name_kind env =
   | InFunction -> Local
   | InClass -> raise Impossible
 
+(* !also set the id_info of the parameter as a side effect! *)
 let params_of_parameters xs =
  xs |> Common.map_filter (function
   | ParamClassic { pname = Some id; pinfo = id_info; _ } ->
@@ -222,7 +224,7 @@ let params_of_parameters xs =
 (* Entry point *)
 (*****************************************************************************)
 
-let resolve _lang prog =
+let resolve lang prog =
   let env = default_env () in
 
   (* would be better to use a classic recursive with environment visit *)
@@ -250,6 +252,9 @@ let resolve _lang prog =
     V.kdef = (fun (k, _v) x ->
       match x with
       | { name = id; info = id_info; attrs = attrs; _}, 
+        (* note that some languages such as Python do not have VarDef 
+         * construct
+         * todo? should add those somewhere instead of in_lvalue detection? *)
         VarDef ({ vinit = vinit; _}) when is_local_or_global_ctx env ->
           (* name resolution *)
           let sid = Ast.gensym () in
@@ -257,7 +262,7 @@ let resolve _lang prog =
           add_ident_env id resolved env;
           set_resolved id_info resolved;
 
-          (* literal constant propagation! *)
+          (* sgrep: literal constant propagation! *)
           (match vinit with 
           | Some (L literal) when Ast.has_keyword_attr Const attrs && 
                                    is_local_or_global_ctx env ->
@@ -270,7 +275,7 @@ let resolve _lang prog =
       | _ -> k x
     );
 
-    (* the import aliases *)
+    (* sgrep: the import aliases *)
     V.kdir = (fun (k, _v) x ->
        (match x with
        | ImportFrom (_, DottedName xs, id, Some (alias)) ->
@@ -303,8 +308,16 @@ let resolve _lang prog =
 
     (* the uses *)
 
-    V.kexpr = (fun (k, _v) x ->
+    V.kexpr = (fun (k, vout) x ->
+       let recurse = ref true in
        (match x with
+       | Assign (e1, _, e2) | AssignOp (e1, _, e2) ->
+           Common.save_excursion env.in_lvalue true (fun () ->
+             vout (E e1);
+           );
+           vout (E e2);
+           recurse := false;
+
        | Id (id, id_info) ->
           let s = Ast.str_of_ident id in
           (match List.assoc_opt s !(env.names) with
@@ -312,18 +325,29 @@ let resolve _lang prog =
              (* name resolution *)
              set_resolved id_info resolved;
 
-             (* constant propagation *)
+             (* sgrep: constant propagation *)
              (match List.assoc_opt s !(env.constants) with
              | Some (sid2, literal) when sid = sid2 ->
                  id_info.id_const_literal := Some literal
              | _ -> ()
              )
-          (* hopefully the lang-specific resolved may have resolved that *)
-          | None -> () 
+          | None ->
+             (match !(env.in_lvalue), lang with
+             (* first use of a variable can be a VarDef in some languages *)
+             | true, Lang.Python (* Ruby? PHP? *) ->
+               (* mostly copy-paste of VarDef code *)
+               let sid = Ast.gensym () in
+               let resolved = resolved_name_kind env, sid in
+               add_ident_env id resolved env;
+               set_resolved id_info resolved;
+
+             (* hopefully the lang-specific resolved may have resolved that *)
+             | _ -> ()
+             )
           )
        | _ -> ()
        );
-       k x
+       if !recurse then k x
     );
     V.kattr = (fun (k, _v) x ->
       (match x with
