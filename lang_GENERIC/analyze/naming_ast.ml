@@ -127,7 +127,84 @@ module V = Visitor_ast
  *)
 
 (*****************************************************************************)
-(* Type *)
+(* Scope *)
+(*****************************************************************************)
+
+(* this includes the "single unique id" (sid) *)
+type resolved_name = Ast_generic.resolved_name
+
+type scope = (string, resolved_name) assoc
+
+type scopes = {
+  global: scope ref;
+  (* function, nested blocks, nested functions (lambdas) *)
+  blocks: scope list ref;
+  (* useful for python, kind of global scope but for entities *)
+  imported: scope ref;
+  (* todo? class? *)
+ }
+
+let default_scopes () = {
+  global = ref [];
+  blocks = ref [];
+  imported = ref [];
+}
+
+(* because we use a Visitor instead of a clean recursive 
+ * function passing down an environment, we need to emulate a scoped
+ * environment by using save_excursion.
+ *)
+let with_new_function_scope params scopes f =
+  Common.save_excursion scopes.blocks (params::!(scopes.blocks)) f
+
+let _with_new_block_scope _params _lang _scopes _f =
+  raise Todo
+
+let add_ident_current_scope id resolved scopes =
+  let s = Ast.str_of_ident id in
+  match !(scopes.blocks) with
+  | [] -> scopes.global := (s, resolved)::!(scopes.global)
+  | xs::xxs -> scopes.blocks := ((s, resolved)::xs)::xxs
+
+let add_ident_imported_scope id resolved scopes =
+  let s = Ast.str_of_ident id in
+  scopes.imported := (s, resolved)::!(scopes.imported)
+
+
+(* accessors *)
+let lookup_scope_opt id lang scopes =
+  let s = Ast.str_of_ident id in
+
+  let actual_scopes = 
+    match !(scopes.blocks) with
+    | [] -> [!(scopes.global);!(scopes.imported)]
+    | xs::xxs -> 
+       match lang with
+       | Lang.Python ->
+         (* just look current scope! no access to nested scopes or global *)
+         [xs; !(scopes.imported)]
+       | _ -> [xs] @ xxs @ [!(scopes.global); !(scopes.imported)]
+  in
+  let rec lookup xxs =
+     match xxs with
+     | [] -> None
+     | xs::xxs ->
+        (match List.assoc_opt s xs with
+        | None -> lookup xxs
+        | Some res -> Some res
+        )
+  in
+  lookup actual_scopes
+
+let _lookup_global_scope _id _scopes =
+  raise Todo
+
+let _lookup_nonlocal_scope _id _scopes =
+  raise Todo
+  
+
+(*****************************************************************************)
+(* Environment *)
 (*****************************************************************************)
 type context = 
   | AtToplevel
@@ -135,30 +212,25 @@ type context =
   (* separate InMethod? InLambda? just look for InFunction::InClass::_ *)
   | InFunction 
 
-type resolved_name = Ast_generic.resolved_name
-
 type env = {
   ctx: context list ref;
+
   (* handle locals/params/globals
-   * todo: block vars => list list with new_scope/del_scope/lookup
+   * todo: block vars
    * todo: enclosed vars (closures)
    * todo: use for types for Go
    *)
-  names: (string, resolved_name) assoc ref;
+  names: scopes;
+
   (* basic constant propagation of literals for sgrep *)
   constants: (string, sid * literal) assoc ref;
-  (* todo?
-   * (* block scope *)
-   * locals: (string * resolved_name) list ref; 
-   * (* javascript function scope *)
-   * vars: (string, bool) Hashtbl.t; 
-   *)
+
   in_lvalue: bool ref;
 }
 
 let default_env () = {
   ctx = ref [AtToplevel];
-  names = ref [];
+  names = (default_scopes());
   constants = ref [];
   in_lvalue = ref false;
 }
@@ -166,17 +238,6 @@ let default_env () = {
 (*****************************************************************************)
 (* Environment Helpers *)
 (*****************************************************************************)
-(* because we use a Visitor instead of a clean recursive 
- * function passing down an environment, we need to emulate a scoped
- * environment by using save_excursion.
- *)
-let with_added_env xs env f = 
-  let newnames = xs @ !(env.names) in
-  Common.save_excursion env.names newnames f
-
-let add_ident_env ident resolved env =
-  env.names := (Ast.str_of_ident ident, resolved)::!(env.names)
-
 let add_constant_env ident (sid, literal) env =
   env.constants := (Ast.str_of_ident ident, (sid, literal))::!(env.constants)
 
@@ -239,8 +300,7 @@ let resolve lang prog =
        *)
       let new_params = params_of_parameters x.fparams in
       with_new_context InFunction env (fun () ->
-      (* todo: with_new_function_scope env ... *)
-      with_added_env new_params env (fun () ->
+      with_new_function_scope new_params env.names (fun () ->
         k x
       ))
     );
@@ -259,7 +319,7 @@ let resolve lang prog =
           (* name resolution *)
           let sid = Ast.gensym () in
           let resolved = resolved_name_kind env, sid in
-          add_ident_env id resolved env;
+          add_ident_current_scope id resolved env.names;
           set_resolved id_info resolved;
 
           (* sgrep: literal constant propagation! *)
@@ -282,24 +342,24 @@ let resolve lang prog =
           (* for python *)
           let sid = Ast.gensym () in
           let resolved = ImportedEntity (xs @ [id]), sid in
-          add_ident_env alias resolved env;
+          add_ident_imported_scope alias resolved env.names;
        | ImportFrom (_, DottedName xs, id, None) ->
           (* for python *)
           let sid = Ast.gensym () in
           let resolved = ImportedEntity (xs @ [id]), sid in
-          add_ident_env id resolved env;
+          add_ident_imported_scope id resolved env.names;
        | ImportAs (_, DottedName xs, Some alias) ->
           (* for python *)
           let sid = Ast.gensym () in
           let resolved = ImportedModule (DottedName xs), sid in
-          add_ident_env alias resolved env;
+          add_ident_imported_scope alias resolved env.names;
 
        | ImportAs (_, FileName (s, tok), Some alias) ->
           (* for Go *)
           let sid = Ast.gensym () in
           let base = Filename.basename s, tok in
           let resolved = ImportedModule (DottedName [base]), sid in
-          add_ident_env alias resolved env;
+          add_ident_imported_scope alias resolved env.names;
 
        | _ -> ()
        );
@@ -319,13 +379,14 @@ let resolve lang prog =
            recurse := false;
 
        | Id (id, id_info) ->
-          let s = Ast.str_of_ident id in
-          (match List.assoc_opt s !(env.names) with
-          | Some ((_kind, sid) as resolved) -> 
+          (match lookup_scope_opt id lang env.names with
+          | Some (resolved) -> 
              (* name resolution *)
              set_resolved id_info resolved;
 
              (* sgrep: constant propagation *)
+             let (_kind, sid) = resolved in
+             let s = Ast.str_of_ident id in
              (match List.assoc_opt s !(env.constants) with
              | Some (sid2, literal) when sid = sid2 ->
                  id_info.id_const_literal := Some literal
@@ -338,7 +399,7 @@ let resolve lang prog =
                (* mostly copy-paste of VarDef code *)
                let sid = Ast.gensym () in
                let resolved = resolved_name_kind env, sid in
-               add_ident_env id resolved env;
+               add_ident_current_scope id resolved env.names;
                set_resolved id_info resolved;
 
              (* hopefully the lang-specific resolved may have resolved that *)
@@ -352,8 +413,7 @@ let resolve lang prog =
     V.kattr = (fun (k, _v) x ->
       (match x with
       | NamedAttr (id, id_info, _args) ->
-          let s = Ast.str_of_ident id in
-          (match List.assoc_opt s !(env.names) with
+          (match lookup_scope_opt id lang env.names with
           | Some resolved -> 
              (* name resolution *)
              set_resolved id_info resolved;
