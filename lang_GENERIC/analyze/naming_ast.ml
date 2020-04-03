@@ -414,11 +414,20 @@ let resolve lang prog =
     V.kexpr = (fun (k, vout) x ->
        let recurse = ref true in
        (match x with
+       (* todo: see lrvalue.ml 
+        * alternative? extra id_info tag?
+        *)
        | Assign (e1, _, e2) | AssignOp (e1, _, e2) ->
            Common.save_excursion env.in_lvalue true (fun () ->
              vout (E e1);
            );
            vout (E e2);
+           recurse := false;
+       | ArrayAccess (e1, e2) -> 
+           vout (E e1);
+           Common.save_excursion env.in_lvalue false (fun () ->
+             vout (E e2);
+           );
            recurse := false;
 
        | Id (id, id_info) ->
@@ -448,6 +457,10 @@ let resolve lang prog =
 
              (* hopefully the lang-specific resolved may have resolved that *)
              | _ -> 
+                (* TODO: this can happen because of in_lvalue bug detection, or
+                 * for certain entities like functions or classes which are
+                 * currently tagged
+                 *)
                 let (s, tok) = id in
                 error tok (spf "could not find %s in environment" s)
              )
