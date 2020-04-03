@@ -141,7 +141,7 @@ type scopes = {
   blocks: scope list ref;
   (* useful for python, kind of global scope but for entities *)
   imported: scope ref;
-  (* todo? class? *)
+  (* todo? class? function? (for 'var' in JS) *)
  }
 
 let default_scopes () = {
@@ -154,6 +154,7 @@ let default_scopes () = {
  * function passing down an environment, we need to emulate a scoped
  * environment by using save_excursion.
  *)
+
 let with_new_function_scope params scopes f =
   Common.save_excursion scopes.blocks (params::!(scopes.blocks)) f
 
@@ -166,42 +167,55 @@ let add_ident_current_scope id resolved scopes =
   | [] -> scopes.global := (s, resolved)::!(scopes.global)
   | xs::xxs -> scopes.blocks := ((s, resolved)::xs)::xxs
 
+(* for Python *)
 let add_ident_imported_scope id resolved scopes =
   let s = Ast.str_of_ident id in
   scopes.imported := (s, resolved)::!(scopes.imported)
 
+(* for JS 'var' *)
+let _add_ident_function_scope id _resolved _scopes =
+  let _s = Ast.str_of_ident id in
+  raise Todo
+
+let rec lookup s xxs =
+   match xxs with
+   | [] -> None
+   | xs::xxs ->
+      (match List.assoc_opt s xs with
+      | None -> lookup s xxs
+      | Some res -> Some res
+      )
 
 (* accessors *)
 let lookup_scope_opt id lang scopes =
   let s = Ast.str_of_ident id in
 
-  let actual_scopes = 
+  let actual_scopes =
     match !(scopes.blocks) with
     | [] -> [!(scopes.global);!(scopes.imported)]
     | xs::xxs -> 
        match lang with
-       | Lang.Python ->
-         (* just look current scope! no access to nested scopes or global *)
-         [xs; !(scopes.imported)]
-       | _ -> [xs] @ xxs @ [!(scopes.global); !(scopes.imported)]
+       (* just look current scope! no access to nested scopes or global *)
+       | Lang.Python -> 
+            [xs;                            !(scopes.imported)]
+       | _ ->  
+            [xs] @ xxs @ [!(scopes.global); !(scopes.imported)]
   in
-  let rec lookup xxs =
-     match xxs with
-     | [] -> None
-     | xs::xxs ->
-        (match List.assoc_opt s xs with
-        | None -> lookup xxs
-        | Some res -> Some res
-        )
-  in
-  lookup actual_scopes
+  lookup s actual_scopes
 
-let _lookup_global_scope _id _scopes =
-  raise Todo
+(* for Python, PHP? *)
+let lookup_global_scope id scopes =
+  let s = Ast.str_of_ident id in
+  lookup s [!(scopes.global)]
 
-let _lookup_nonlocal_scope _id _scopes =
-  raise Todo
-  
+(* for Python, PHP *)
+let lookup_nonlocal_scope id scopes =
+  let (s, tok) = id in
+  match !(scopes.blocks) with
+  | _::xxs -> lookup s xxs
+  | [] -> 
+      let _ = error tok "no outerscope" in
+      None
 
 (*****************************************************************************)
 (* Environment *)
@@ -254,6 +268,16 @@ let set_resolved id_info x =
    * lang-specific resolved found?
    *)
   id_info.id_resolved := Some x
+
+(*****************************************************************************)
+(* Error manangement *)
+(*****************************************************************************)
+let error_report = ref false
+
+let error tok s = 
+  if !error_report
+  then raise (Parse_info.Other_error (s,tok))
+  else ()
 
 (*****************************************************************************)
 (* Other Helpers *)
@@ -332,6 +356,25 @@ let resolve lang prog =
           );
            
           k x
+      | { name = id; info = id_info; _}, UseOuterDecl tok ->
+          let s = Parse_info.str_of_info tok in
+          let flookup = 
+             match s with
+             | "global" -> lookup_global_scope
+             | "nonlocal" -> lookup_nonlocal_scope
+             | _ -> 
+                error tok (spf "unrecognized UseOuterDecl directive: %s" s);
+                lookup_global_scope    
+          in
+          (match flookup id env.names with
+          | Some resolved ->
+             set_resolved id_info resolved;
+             add_ident_current_scope id resolved env.names
+          | None ->
+             error tok (spf "could not find %s for directive %s" 
+                              (Ast.str_of_ident id) s)
+          );
+          k x
       | _ -> k x
     );
 
@@ -403,7 +446,9 @@ let resolve lang prog =
                set_resolved id_info resolved;
 
              (* hopefully the lang-specific resolved may have resolved that *)
-             | _ -> ()
+             | _ -> 
+                let (s, tok) = id in
+                error tok (spf "could not find %s in environment" s)
              )
           )
        | _ -> ()
