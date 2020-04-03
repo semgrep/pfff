@@ -438,7 +438,8 @@ let resolve lang prog =
           | None ->
              (match !(env.in_lvalue), lang with
              (* first use of a variable can be a VarDef in some languages *)
-             | true, Lang.Python (* Ruby? PHP? *) ->
+             | true, Lang.Python (* Ruby? PHP? *) 
+               when is_local_or_global_ctx env ->
                (* mostly copy-paste of VarDef code *)
                let sid = Ast.gensym () in
                let resolved = resolved_name_kind env, sid in
