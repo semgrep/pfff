@@ -54,6 +54,8 @@ let to_item xs =
 
 let (@@) xs sc =
   match sc with None -> xs | Some x -> xs @ [Right x]
+let (^@) sc xs =
+  match sc with None -> xs | Some x -> [Right x] @ xs
 %}
 (*************************************************************************)
 (* Tokens *)
@@ -200,6 +202,14 @@ let (@@) xs sc =
 
 %%
 (*************************************************************************)
+(* Macros *)
+(*************************************************************************)
+list_and(X):
+ | X                      { [Left $1] }
+ | list_and(X) Tand X     { $1 @ [Right $2; Left $3] }
+
+
+(*************************************************************************)
 (* TOC *)
 (*************************************************************************)
 (* - toplevel
@@ -242,7 +252,7 @@ signature:
  | signature signature_item                     { $1 @ [TopItem $2] }
  | signature signature_item ";;" { $1 @ [TopItem $2; ScSc $3] }
 
-signature_item: signature_item_noattr post_item_attributes { $1 }
+signature_item: signature_item_noattr post_item_attribute* { $1 }
 
 signature_item_noattr:
  | Ttype type_declarations
@@ -264,7 +274,7 @@ signature_item_noattr:
      { ItemTodo $1 }
 
  (* objects *)
- | Tclass class_descriptions
+ | Tclass list_and(class_description)
       { ItemTodo $1 }
 
 (*----------------------------*)
@@ -301,7 +311,7 @@ structure_tail:
  | TSharpDirective structure_tail 
      { TopDirective $1::$2 }
 
-structure_item: structure_item_noattr post_item_attributes { $1 }
+structure_item: structure_item_noattr post_item_attribute* { $1 }
 
 structure_item_noattr:
  (* as in signature_item *)
@@ -332,9 +342,9 @@ structure_item_noattr:
       { ItemTodo $1 }
 
  (* objects *)
-  | Tclass class_declarations
+  | Tclass list_and(class_declaration)
       { ItemTodo $1 }
-  | Tclass Ttype class_type_declarations
+  | Tclass Ttype list_and(class_type_declaration)
       { ItemTodo $1 }
 
 (*************************************************************************)
@@ -467,8 +477,8 @@ expr:
        Fun ($1, $2::params, action)
      }
 
- | Tfunction opt_bar match_cases
-     { Function ($1, $2 @ $3) }
+ | Tfunction "|"? match_cases
+     { Function ($1, $2 ^@ $3) }
 
  | expr_comma_list %prec below_COMMA
      { Tuple $1 }
@@ -516,11 +526,11 @@ expr:
  | Tif seq_expr Tthen expr
      { If ($1, $2, $3, $4, None) }
 
- | Tmatch seq_expr Twith opt_bar match_cases
-     { Match ($1, $2, $3, $4 @ $5) }
+ | Tmatch seq_expr Twith "|"? match_cases
+     { Match ($1, $2, $3, $4 ^@ $5) }
 
- | Ttry seq_expr Twith opt_bar match_cases
-     { Try ($1, $2, $3, $4 @ $5) }
+ | Ttry seq_expr Twith "|"? match_cases
+     { Try ($1, $2, $3, $4 ^@ $5) }
 
  | Twhile seq_expr Tdo seq_expr Tdone
      { While ($1, $2, $3, $4, $5) }
@@ -860,9 +870,7 @@ type_constraint:
 (* Types definitions *)
 (*----------------------------*)
 
-type_declarations:
- | type_declaration                            { [Left $1] }
- | type_declarations Tand type_declaration     { $1 @ [Right $2; Left $3] }
+type_declarations: list_and(type_declaration) { $1 }
 
 type_declaration:
   type_parameters TLowerIdent type_kind (*TODO constraints*)
@@ -1040,20 +1048,13 @@ opt_ampersand:
  | TAnd                                   { }
  | (* empty *)                                 { }
 
-amper_type_list:
- | core_type                                   { }
- | amper_type_list TAnd core_type         { }
-
-
+amper_type_list: list_and(core_type) { $1 }
 
 (*************************************************************************)
 (* Let/Fun definitions *)
 (*************************************************************************)
 
-let_bindings:
- | let_binding                           { [Left $1] }
- | let_bindings Tand let_binding         { $1 @ [Right $2; Left $3] }
-
+let_bindings: list_and(let_binding) { $1 }
 
 let_binding:
  | val_ident fun_binding
@@ -1346,7 +1347,7 @@ module_type:
  | Tfunctor "(" TUpperIdent ":" module_type ")" "->" module_type
       %prec below_WITH
       { }
- | module_type Twith with_constraints
+ | module_type Twith list_and(with_constraint)
      { }
  | "(" module_type ")"
       { }
@@ -1401,32 +1402,3 @@ post_item_attribute:
 payload:
   | (* empty*) { }
   | TString { }
-
-
-(*************************************************************************)
-(* xxx_opt, xxx_list *)
-(*************************************************************************)
-
-opt_bar:
- | (*empty*)    { [] }
- | "|"            { [Right $1] }
-
-with_constraints:
- | with_constraint                             { [Left $1] }
- | with_constraints Tand with_constraint        { $1 @ [Right $2; Left $3] }
-
-class_declarations:
-  | class_declarations TAnd class_declaration   { }
-  | class_declaration                           { }
-
-class_descriptions:
-  | class_descriptions TAnd class_description   { }
-  | class_description                           { }
-
-class_type_declarations:
-  | class_type_declarations TAnd class_type_declaration  {  }
-  | class_type_declaration                               { }
-
-post_item_attributes:
-  | (*empty*)  { [] }
-  | post_item_attribute post_item_attributes { $1 :: $2 }
