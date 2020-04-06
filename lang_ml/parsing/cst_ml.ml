@@ -17,9 +17,9 @@ open Common
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(*
- * A Concrete Syntax Tree for OCaml.
+(* A Concrete Syntax Tree (CST) for OCaml.
  * 
+ * For an Abstract Syntax Tree (AST), see ../analyze/ast_ml.ml.
  *)
 
 (*****************************************************************************)
@@ -51,6 +51,7 @@ and 'a semicolon_list = ('a, tok (* ';' *)) Common.either list
 (* ------------------------------------------------------------------------- *)
 (* Names  *)
 (* ------------------------------------------------------------------------- *)
+(* TODO: rename ident *)
 type name = Name of string wrap
 
   (* lower and uppernames aliases, just for clarity *)
@@ -59,6 +60,7 @@ type name = Name of string wrap
 
  (* with tarzan *)
 
+(* TODO: rename name *)
 type long_name = qualifier * name
  and qualifier = (name * tok (*'.'*)) list
 
@@ -381,4 +383,3 @@ let module_of_long_name (qu, _) =
   qu |> List.map fst |> List.map str_of_name |> Common.join "."
 let module_infos_of_long_name (qu, _) = 
   qu |> List.map fst |> List.map info_of_name
-
