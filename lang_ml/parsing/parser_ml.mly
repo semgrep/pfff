@@ -616,10 +616,10 @@ simple_expr:
  | "{" record_expr "}"
      { Record ($1, $2, $3) }
 
- | "[" expr_semi_list opt_semi3 "]"
-     { List ($1, $2 @ $3, $4) }
+ | "[" expr_semi_list ";"? "]"
+     { List ($1, $2 @@ $3, $4) }
 
- | "[|" expr_semi_list opt_semi "|]"
+ | "[|" expr_semi_list ";"? "|]"
      { ExprTodo }
  | "[|" "|]"
      { ExprTodo }
@@ -639,7 +639,7 @@ simple_expr:
  | Tnew class_longident
      { New ($1, $2) }
 
- | "{<" field_expr_list opt_semi ">}"
+ | "{<" field_expr_list ";"? ">}"
       { ExprTodo }
 
 
@@ -680,8 +680,8 @@ expr_semi_list:
 
 
 record_expr:
- | lbl_expr_list opt_semi                    { RecordNormal ($1 @ $2) }
- | simple_expr Twith lbl_expr_list opt_semi  { RecordWith ($1, $2, $3 @ $4) }
+ | lbl_expr_list ";"?                    { RecordNormal ($1 @@ $2) }
+ | simple_expr Twith lbl_expr_list ";"?  { RecordWith ($1, $2, $3 @@ $4) }
 
 lbl_expr_list:
  | label_longident "=" expr
@@ -792,10 +792,10 @@ simple_pattern:
 
  | "{" lbl_pattern_list record_pattern_end "}"
       { PatRecord ($1, $2, (* $3 *) $4) }
- | "[" pattern_semi_list opt_semi4 "]"
-      { PatList (($1, $2 @ $3, $4)) }
+ | "[" pattern_semi_list ";"? "]"
+      { PatList (($1, $2 @@ $3, $4)) }
 
- | "[|" pattern_semi_list opt_semi "|]"
+ | "[|" pattern_semi_list ";"? "|]"
       { PatTodo }
  | "[|" "|]"
       { PatTodo }
@@ -825,9 +825,9 @@ lbl_pattern_list:
 
 
 record_pattern_end:
- | opt_semi                                    { }
+ | ";"?                                    { }
  (* new 3.12 feature! *)
- | ";" "_" opt_semi              { }
+ | ";" "_" ";"?              { }
 
 
 pattern_semi_list:
@@ -884,8 +884,8 @@ type_kind:
       { Some ($1, TyAlgebric $2) }
  | "=" (*TODO private_flag*) "|" constructor_declarations
       { Some ($1, TyAlgebric (Right $2::$3)) }
- | "=" (*TODO private_flag*) "{" label_declarations opt_semi2 "}"
-      { Some ($1, TyRecord ($2, ($3 @ $4), $5)) }
+ | "=" (*TODO private_flag*) "{" label_declarations ";"? "}"
+      { Some ($1, TyRecord ($2, ($3 @@ $4), $5)) }
 
 
 
@@ -1007,7 +1007,7 @@ core_type_list:
 
 meth_list:
   | field ";" meth_list                      { }
-  | field opt_semi                              {  }
+  | field ";"?                              {  }
   | ".."                                      {  }
 
 field:
@@ -1406,22 +1406,6 @@ payload:
 (*************************************************************************)
 (* xxx_opt, xxx_list *)
 (*************************************************************************)
-
-opt_semi:
- | (*empty*)    { [] }
- | ";"       { [Right $1] }
-
-opt_semi2:
- | (*empty*)    { [] }
- | ";"       { [Right $1] }
-
-opt_semi3:
- | (*empty*)    { [] }
- | ";"       { [Right $1] }
-
-opt_semi4:
- | (*empty*)    { [] }
- | ";"       { [Right $1] }
 
 opt_bar:
  | (*empty*)    { [] }
