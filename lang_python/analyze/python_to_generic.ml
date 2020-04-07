@@ -579,18 +579,19 @@ and pattern e =
 and excepthandler =
   function
   | ExceptHandler ((t, v1, v2, v3)) ->
-      let v1 = option pattern v1 (* a type actually, even tuple of types *)
+      let v1 = option expr v1 (* a type actually, even tuple of types *)
       and v2 = option name v2
       and v3 = list_stmt1 v3
-      in t,
+      in 
+      t,
       (match v1, v2 with
       | Some e, None ->
-         e
+         G.PatVar (G.expr_to_type e, None)
       | None, None -> 
          G.PatUnderscore (fake "_")
       | None, Some _ -> raise Impossible (* see the grammar *)
-      | Some pat, Some n ->
-         G.PatAs (pat, (n, G.empty_id_info ()))
+      | Some e, Some n ->
+         G.PatVar (G.expr_to_type e, Some (n, G.empty_id_info ()))
       ), v3
 
 and expr_to_attribute v  = 

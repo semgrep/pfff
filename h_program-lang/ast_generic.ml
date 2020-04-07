@@ -89,11 +89,12 @@ open Common
  *  - to correctly compute a CFG (Control Flow Graph), the stmt type 
  *    should list all constructs that contains other statements and 
  *    try to avoid to use the very generic OtherXxx of any
- *  - to correctly compute a DFG (Data Flow Graph), each constructs that
- *    introduce a new variable should have a relevant comment 'newvar:'
+ *  - to correctly compute a DFG (Data Flow Graph), and to correctly resolve
+ *    names (see naming_ast.ml), each constructs that introduce a new
+*     variable should have a relevant comment 'newvar:'
  *  - to correctly resolve names, each constructs that introduce a new scope
  *    should have a relevant comment 'newscope:'
- *  - todo: each language should add the VarDefs that defines the locals
+ *  - todo? each language should add the VarDefs that defines the locals
  *    used in a function (instead of having the first Assign play the role
  *    of a VarDef, as done in Python for example).
  *
@@ -240,16 +241,16 @@ and expr =
 
   (* old: this used to be called Name and was generalizing Id and IdQualified
    * but some analysis are easier when they just need to
-   * handle simple Id, hence the split. For example, there were some bugs
+   * handle a simple Id, hence the split. For example, there was some bugs
    * in sgrep because sometimes an identifier was an ident (in function header)
    * and sometimes a name (when called). For naming, we also need to do
-   * things differently for Id vs IdQualified and would need many time to
+   * things differently for Id vs IdQualified and would need many times to
    * inspect the name.name_qualifier to know if we have an Id or IdQualified.
    * We do the same split for Fid vs FName for fields.
-   * todo: newvar: 
-   * Id is sometimes abused to also introduce a newvar (as in Python)
-   * but ultimately those cases should be rewritten to first introduce a
-   * VarDef. 
+   * 
+   * newvar: Id is sometimes abused to also introduce a newvar (as in Python)
+   * but ultimately those cases should be rewritten to first introduce 
+   * a VarDef. 
    *)
   | Id of ident * id_info
   (* todo: Sometimes some DotAccess should really be transformed in IdQualified
@@ -472,6 +473,7 @@ and stmt =
   | Block of stmt list (* todo: bracket *)
   (* EmptyStmt = Block [], or separate so can not be matched by $S? *)
 
+  (* newscope: for vardef in expr in C++/Go/... *)
   | If of tok (* 'if' or 'elif' *) * expr * stmt * stmt
   | While   of tok * expr * stmt
   | DoWhile of tok * stmt * expr
@@ -550,8 +552,7 @@ and stmt =
 
   and other_stmt_with_stmt_operator = 
     (* Python *)
-    | OSWS_With (* newvar: in OtherStmtWithStmt with LetPattern 
-                 * and newscope: *)
+    | OSWS_With (* newscope: newvar: in OtherStmtWithStmt with LetPattern *)
 
   and other_stmt_operator = 
     (* Python *)
@@ -574,6 +575,12 @@ and stmt =
 (*****************************************************************************)
 (* Pattern *)
 (*****************************************************************************)
+(* This is quite similar to expr. A few constructs in expr have
+ * equivalent here prefixed with Pat (e.g., PaLiteral, PatId). We could
+ * maybe factorize with expr, and this may help sgrep, but I think it's
+ * cleaner to have a separate type because the scoping rules for a pattern and
+ * an expr are quite different and not any expr is allowed here.
+ *)
 and pattern = 
   | PatLiteral of literal
   (* Or-Type, used also to match OCaml exceptions *)
@@ -605,6 +612,9 @@ and pattern =
    * Also in foreach for Java.
    *)
   | PatVar of type_ * (ident * id_info) option
+
+  (* sgrep: *)
+  | DisjPat of pattern * pattern
 
   | OtherPat of other_pattern_operator * any list
 
@@ -1090,15 +1100,36 @@ let attr kwd tok =
 
 let expr_to_arg e = 
   Arg e
-(* Should fix those, try to transform in PatLiteral/... when can.
- * Note that in Go it's ok to have a complex expressions. It is just
+
+(* In Go a pattern can be a complex expressions. It is just
  * matched for equality with the thing it's matched against, so in that
  * case it should be a pattern like | _ when expr = x.
  * For Python you can actually have a PatDisj of exception classes.
+ * coupling: see pattern_to_expr below
  *)
-let expr_to_pattern e =
+let rec expr_to_pattern e =
   (* TODO: diconstruct e and generate the right pattern (PatLiteral, ...) *)
-  OtherPat (OP_Expr, [E e])
+  match e with
+  | Id (id, info) -> PatId (id, info)
+  | Tuple xs -> PatTuple (xs |> List.map expr_to_pattern)
+  | L l -> PatLiteral l
+  | Container(List, (t1, xs, t2)) -> 
+      PatList(t1, xs |> List.map expr_to_pattern, t2)
+  (* Todo:  PatKeyVal *)
+  | _ -> OtherPat (OP_Expr, [E e])
+
+exception NotAnExpr
+(* sgrep: this is to treat pattern metavars as expr metavars *)
+let rec pattern_to_expr p =
+  match p with
+  | PatId (id, info) -> Id (id, info)
+  | PatTuple xs -> Tuple (xs |> List.map pattern_to_expr)
+  | PatLiteral l -> L l
+  | PatList (t1, xs, t2) -> 
+      Container(List, (t1, xs |> List.map pattern_to_expr, t2))
+  | OtherPat (OP_Expr, [E e]) -> e
+  | PatAs _ | PatVar _ -> raise NotAnExpr
+  | _ -> raise NotAnExpr
 
 let expr_to_type e =
   (* TODO: diconstruct e and generate the right type (TyBuiltin, ...) *)
