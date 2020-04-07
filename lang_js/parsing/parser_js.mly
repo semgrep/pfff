@@ -50,6 +50,10 @@ open Cst_js
  *    Instead, in this grammar things are clearly separated.
  *)
 
+(*************************************************************************)
+(* Helpers *)
+(*************************************************************************)
+
 let bop op a b c = B(a, (op, b), c)
 let uop op a b = U((op,a), b)
 let mk_param x = { p_name = x; p_type = None; p_default = None; p_dots = None;}
@@ -72,6 +76,10 @@ let fix_sgrep_module_item x =
       Expr (Function decl)
   | _ -> ModuleItem x
 
+let (@@) xs sc =
+  match sc with None -> xs | Some x -> xs @ [Right x]
+let (^@) sc xs =
+  match sc with None -> xs | Some x -> [Right x] @ xs
 %}
 (*************************************************************************)
 (* Tokens *)
@@ -406,8 +414,8 @@ binding_pattern:
  | array_binding_pattern { $1 }
 
 object_binding_pattern:
- | "{" "}"                                         { PatObj ($1, [], $2)  }
- | "{" listc(binding_property) trailing_comma  "}" { PatObj ($1, $2 @ $3, $4) }
+ | "{" "}"                               { PatObj ($1, [], $2)  }
+ | "{" listc(binding_property) ","?  "}" { PatObj ($1, $2 @@ $3, $4) }
 
 binding_property:
  | binding_id initializeur?          { PatId ($1, $2) }
@@ -463,7 +471,7 @@ function_body: optl(stmt_list) { $1 }
 
 formal_parameter_list_opt:
  | (*empty*)   { [] }
- | formal_parameter_list trailing_comma  { List.rev ($2 @ $1)  }
+ | formal_parameter_list ","?  { List.rev ($2 ^@ $1) }
 
 (* must be written in a left-recursive way (see conflicts.txt) *)
 formal_parameter_list:
@@ -634,7 +642,7 @@ interface_extends: T_EXTENDS listc(type_reference) { ($1, $2) }
 type_alias_decl: T_TYPE id "=" type_ sc 
   { match $5 with Some t -> t | None -> $3 }
 
-enum_decl: T_CONST? T_ENUM id "{" listc(enum_member) trailing_comma "}" { $7 }
+enum_decl: T_CONST? T_ENUM id "{" listc(enum_member) ","? "}" { $7 }
 
 enum_member:
  | property_name { }
@@ -1129,8 +1137,8 @@ element:
 (*----------------------------*)
 
 object_literal:
- | "{" "}"                                             { ($1, [], $2) }
- | "{" listc2(property_name_and_value) trailing_comma "}" { ($1, $2 @ $3, $4) }
+ | "{" "}"                                      { ($1, [], $2) }
+ | "{" listc2(property_name_and_value) ","? "}" { ($1, $2 @@ $3, $4) }
 
 property_name_and_value:
  | property_name ":" assignment_expr  { Left (P_field ($1, $2, $3)) }
@@ -1149,7 +1157,7 @@ arguments: "(" argument_list_opt ")" { ($1, $2 , $3) }
 argument_list_opt:
  | (*empty*)   { [] }
  (* argument_list must be written in a left-recursive way(see conflicts.txt) *)
- | listc(argument) trailing_comma  { List.rev ($2 @ $1)  }
+ | listc(argument) ","?  { List.rev ($2 ^@ $1)  }
 
 (* assignment_expr because expr supports sequence of exprs with ',' *)
 argument:
@@ -1358,9 +1366,3 @@ elision:
 elision2:
  | "," { [Right $1] }
  | elision2 "," { $1 @ [Right $2] }
-
-(* es6: in object literals, es8: in params, args, ts: in enums, patterns *)
-%inline
-trailing_comma:
- | (*empty*) { [] }
- | ","       { [Right $1] }
