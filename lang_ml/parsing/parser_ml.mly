@@ -224,6 +224,10 @@ list_sep_term(X,Sep):
 
 list_and(X): list_sep(X, Tand) { $1 }
 
+qualified(X, Y): 
+ | Y       { [], Name $1 }
+ | X "." Y { qufix $1 $2 $3 }
+
 (*************************************************************************)
 (* TOC *)
 (*************************************************************************)
@@ -398,14 +402,6 @@ mod_ext_longident:
  | mod_ext_longident "(" mod_ext_longident ")" { [], Name ("TODOEXTMO", $2) }
 
 
-type_longident:
- | TLowerIdent                              { [], Name $1 }
- | mod_ext_longident "." TLowerIdent        { qufix $1 $2 $3 }
-
-val_longident:
- | val_ident                                  { [], Name $1 }
- | mod_longident "." val_ident                { qufix $1 $2 $3 }
-
 constr_longident:
  | mod_longident   %prec below_DOT     { $1 }
  | "[" "]"                             { [], Name ("[]TODO", $1) }
@@ -413,23 +409,14 @@ constr_longident:
  | Tfalse                              { [], Name ("false", $1) }
  | Ttrue                               { [], Name ("true", $1) }
 
+type_longident: qualified(mod_ext_longident, TLowerIdent) { $1 }
+val_longident:  qualified(mod_longident, val_ident) { $1 }
 (* record field name *)
-label_longident:
- | TLowerIdent                             { [], Name $1 }
- | mod_longident "." TLowerIdent           { qufix $1 $2 $3 }
-
-class_longident:
- | TLowerIdent                              { [], Name $1 }
- | mod_longident "." TLowerIdent            { qufix $1 $2 $3 }
-
-mty_longident:
- | ident                                     { [], Name $1 }
- | mod_ext_longident "." ident               { qufix $1 $2 $3 }
-
+label_longident: qualified(mod_longident, TLowerIdent) { $1 }
+class_longident: qualified(mod_longident, TLowerIdent) { $1 }
+mty_longident:   qualified(mod_ext_longident, ident) { $1 }
 (* it's mod_ext_longident, not mod_longident *)
-clty_longident:
- | TLowerIdent                               { [], Name $1 }
- | mod_ext_longident "." TLowerIdent         { qufix $1 $2 $3 }
+clty_longident: qualified(mod_ext_longident, TLowerIdent) { $1 }
 
 (*************************************************************************)
 (* Expressions *)
@@ -554,8 +541,7 @@ simple_expr:
 
  | "{" record_expr "}"           { Record ($1, $2, $3) }
  | "["  list_sep_term(expr, ";") "]"   { List ($1, $2, $3) }
- | "[|" list_sep_term(expr, ";") "|]" { ExprTodo }
- | "[|" "|]"                     { ExprTodo }
+ | "[|" list_sep_term(expr, ";")? "|]" { ExprTodo }
 
  (* array extension *)
  | simple_expr "." "(" seq_expr ")"  { ExprTodo }
