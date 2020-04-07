@@ -38,10 +38,6 @@ open Cst_ml
  * - http://www.mpi-sws.org/~rossberg/hamlet/
  *   solves ambiguities
  * - linear-ML parser
- * 
- * alternatives: 
- *   - use menhir ? 
- *   - use dypgen ?
  *)
 
 (*************************************************************************)
@@ -209,7 +205,6 @@ list_and(X):
  | X                      { [Left $1] }
  | list_and(X) Tand X     { $1 @ [Right $2; Left $3] }
 
-
 (*************************************************************************)
 (* TOC *)
 (*************************************************************************)
@@ -256,35 +251,26 @@ signature:
 signature_item: signature_item_noattr post_item_attribute* { $1 }
 
 signature_item_noattr:
- | Ttype type_declarations
-     { Type ($1, $2) }
- | Tval val_ident ":" core_type
-     { Val ($1, Name $2, $3, $4) }
+ | Ttype type_declarations                     { Type ($1, $2) }
+ | Tval val_ident ":" core_type                { Val ($1, Name $2, $3, $4) }
  | Texternal val_ident ":" core_type "=" primitive_declaration
      { External ($1, Name $2, $3, $4, $5, $6) }
- | Texception TUpperIdent constructor_arguments
-     { Exception ($1, Name $2, $3) }
+ | Texception TUpperIdent constructor_arguments { Exception ($1, Name $2, $3) }
 
  (* modules *)
- | Topen mod_longident
-     { Open ($1, $2) }
+ | Topen mod_longident                          { Open ($1, $2) }
 
- | Tmodule Ttype ident "=" module_type
-     { ItemTodo $1 }
- | Tmodule TUpperIdent module_declaration
-     { ItemTodo $1 }
+ | Tmodule Ttype ident "=" module_type          { ItemTodo $1 }
+ | Tmodule TUpperIdent module_declaration       { ItemTodo $1 }
 
  (* objects *)
- | Tclass list_and(class_description)
-      { ItemTodo $1 }
+ | Tclass list_and(class_description)           { ItemTodo $1 }
 
 (*----------------------------*)
 (* Misc *)
 (*----------------------------*)
 
-primitive_declaration:
- | TString                                      { [$1] }
- | TString primitive_declaration                { $1::$2 }
+primitive_declaration: TString+ { $1 }
 
 (*************************************************************************)
 (* Structure *)
@@ -292,68 +278,50 @@ primitive_declaration:
 
 (* pad: should not allow those toplevel seq_expr *)
 structure:
- | structure_tail                              { $1 }
+ |          structure_tail                     { $1 }
  | seq_expr structure_tail                     { TopSeqExpr $1::$2 }
 
 structure_tail:
- |  (* empty *)                                 
-     { [] }
- | ";;"                          
-     { [ScSc $1] }
- | ";;" seq_expr structure_tail  
-     { ScSc $1::TopSeqExpr $2::$3 }
- | ";;" structure_item structure_tail  
-     { ScSc $1::TopItem $2::$3 }
- | ";;" TSharpDirective  structure_tail  
-     { ScSc $1::TopDirective $2::$3 }
+ | (* empty *)                             { [] }
+ | ";;"                                    { [ScSc $1] }
+ | ";;" seq_expr structure_tail            { ScSc $1::TopSeqExpr $2::$3 }
+ | ";;" structure_item structure_tail      { ScSc $1::TopItem $2::$3 }
+ | ";;" TSharpDirective  structure_tail    { ScSc $1::TopDirective $2::$3 }
 
- | structure_item structure_tail                      
-     { TopItem $1::$2 }
- | TSharpDirective structure_tail 
-     { TopDirective $1::$2 }
+ | structure_item  structure_tail          { TopItem $1::$2 }
+ | TSharpDirective structure_tail          { TopDirective $1::$2 }
 
 structure_item: structure_item_noattr post_item_attribute* { $1 }
 
 structure_item_noattr:
  (* as in signature_item *)
- | Ttype type_declarations
-     { Type ($1, $2) }
- | Texception TUpperIdent constructor_arguments
-     { Exception ($1, Name $2, $3) }
+ | Ttype type_declarations                       { Type ($1, $2) }
+ | Texception TUpperIdent constructor_arguments  { Exception ($1, Name $2, $3)}
  | Texternal val_ident ":" core_type "=" primitive_declaration
      { External ($1, Name $2, $3, $4, $5, $6)  }
-
- | Topen mod_longident
-      { Open ($1, $2) }
+ | Topen mod_longident                           { Open ($1, $2) }
 
  (* start of deviation *)
- | Tlet rec_flag let_bindings
-      { Let ($1, $2, $3) }
-
-
+ | Tlet rec_flag let_bindings                    { Let ($1, $2, $3) }
  (* modules *)
  | Tmodule TUpperIdent module_binding
       { match $3 with
         | None -> ItemTodo $1
         | Some (x, y) -> Module ($1, Name $2, x, y) 
       }
- | Tmodule Ttype ident "=" module_type
-      { ItemTodo $1 }
- | Tinclude module_expr
-      { ItemTodo $1 }
+ | Tmodule Ttype ident "=" module_type           { ItemTodo $1 }
+ | Tinclude module_expr                          { ItemTodo $1 }
 
  (* objects *)
-  | Tclass list_and(class_declaration)
-      { ItemTodo $1 }
-  | Tclass Ttype list_and(class_type_declaration)
-      { ItemTodo $1 }
+  | Tclass list_and(class_declaration)            { ItemTodo $1 }
+  | Tclass Ttype list_and(class_type_declaration) { ItemTodo $1 }
 
 (*************************************************************************)
 (* Names *)
 (*************************************************************************)
 
 val_ident:
- | TLowerIdent                                { $1 }
+ | TLowerIdent                        { $1 }
  | "(" operator ")"                   { ("TODOOPERATOR", $1) }
 
 operator:
@@ -375,8 +343,8 @@ ident:
 
 constr_ident:
  | TUpperIdent     { $1 }
- | "(" ")" { "()TODO", $1 }
- | "::"     { "::", $1 }
+ | "(" ")"         { "()TODO", $1 }
+ | "::"            { "::", $1 }
  | Tfalse          { "false", $1 }
  | Ttrue           { "true", $1 }
 (*  | "[" "]"                           { } *)
@@ -401,115 +369,93 @@ label_ident: TLowerIdent   { $1 }
 (*----------------------------*)
 
 mod_longident:
- | TUpperIdent                       { [], Name $1 }
+ | TUpperIdent                      { [], Name $1 }
  | mod_longident "." TUpperIdent    { qufix $1 $2 $3 }
 
 mod_ext_longident:
- | TUpperIdent                                  { [], Name $1 }
+ | TUpperIdent                                 { [], Name $1 }
  | mod_ext_longident "." TUpperIdent           { qufix $1 $2 $3 }
- | mod_ext_longident "(" mod_ext_longident ")" 
-     { [], Name ("TODOEXTMODULE", $2) }
-
+ | mod_ext_longident "(" mod_ext_longident ")" { [], Name ("TODOEXTMO", $2) }
 
 
 type_longident:
- | TLowerIdent                               { [], Name $1 }
+ | TLowerIdent                              { [], Name $1 }
  | mod_ext_longident "." TLowerIdent        { qufix $1 $2 $3 }
 
 val_longident:
- | val_ident                                   { [], Name $1 }
+ | val_ident                                  { [], Name $1 }
  | mod_longident "." val_ident                { qufix $1 $2 $3 }
 
 constr_longident:
- | mod_longident       %prec below_DOT     { $1 }
- | "[" "]"                     { [], Name ("[]TODO", $1) }
- | "(" ")"                         { [], Name ("()TODO", $1) }
- | Tfalse                                  { [], Name ("false", $1) }
- | Ttrue                                   { [], Name ("true", $1) }
+ | mod_longident   %prec below_DOT     { $1 }
+ | "[" "]"                             { [], Name ("[]TODO", $1) }
+ | "(" ")"                             { [], Name ("()TODO", $1) }
+ | Tfalse                              { [], Name ("false", $1) }
+ | Ttrue                               { [], Name ("true", $1) }
 
 (* record field name *)
 label_longident:
- | TLowerIdent                              { [], Name $1 }
+ | TLowerIdent                             { [], Name $1 }
  | mod_longident "." TLowerIdent           { qufix $1 $2 $3 }
 
-
 class_longident:
- | TLowerIdent                               { [], Name $1 }
+ | TLowerIdent                              { [], Name $1 }
  | mod_longident "." TLowerIdent            { qufix $1 $2 $3 }
 
 mty_longident:
- | ident                                      { [], Name $1 }
+ | ident                                     { [], Name $1 }
  | mod_ext_longident "." ident               { qufix $1 $2 $3 }
 
 (* it's mod_ext_longident, not mod_longident *)
 clty_longident:
  | TLowerIdent                               { [], Name $1 }
- | mod_ext_longident "." TLowerIdent            { qufix $1 $2 $3 }
+ | mod_ext_longident "." TLowerIdent         { qufix $1 $2 $3 }
 
 (*************************************************************************)
 (* Expressions *)
 (*************************************************************************)
 
 seq_expr:
- | expr             %prec below_SEMI   { [Left $1] }
+ | expr      %prec below_SEMI   { [Left $1] }
  | expr ";" seq_expr            { Left $1::Right $2::$3 }
-
  (* bad ? should be removed ? but it's convenient in certain contexts like
-    * begin end to allow ; as a terminator
-    *)
+  * begin end to allow ; as a terminator *)
  | expr ";"                     { [Left $1; Right $2] }
 
 
 expr:
- | simple_expr
-     { $1 }
+ | simple_expr                               { $1 }
  (* function application *)
- | simple_expr simple_labeled_expr_list
+ | simple_expr labeled_simple_expr+
      { match $1 with
        | L name -> FunCallSimple (name, $2)
-       | _      -> FunCall ($1, $2)
-     }
+       | _      -> FunCall ($1, $2) }
 
- | Tlet rec_flag let_bindings Tin seq_expr
-     { LetIn ($1, $2, $3, $4, $5) }
+ | Tlet rec_flag let_bindings Tin seq_expr   { LetIn ($1, $2, $3, $4, $5) }
 
  | Tfun labeled_simple_pattern fun_def
      { let (params, action) = $3 in
-       Fun ($1, $2::params, action)
-     }
+       Fun ($1, $2::params, action) }
 
- | Tfunction "|"? match_cases
-     { Function ($1, $2 ^@ $3) }
+ | Tfunction "|"? match_cases                { Function ($1, $2 ^@ $3) }
 
- | expr_comma_list %prec below_COMMA
-     { Tuple $1 }
- | constr_longident simple_expr
-     { Constr ($1, Some $2) }
+ | expr_comma_list %prec below_COMMA         { Tuple $1 }
+ | constr_longident simple_expr              { Constr ($1, Some $2) }
 
- | expr "::" expr
-     { Infix ($1, ("::", $2), $3) (* TODO ? ConsList ? *) }
+ | expr "::" expr            { Infix ($1, ("::", $2), $3) (* TODO? ConsList?*)}
 
- | expr TInfixOperator expr
-     { Infix ($1, $2, $3) }
+ | expr TInfixOperator expr  { Infix ($1, $2, $3) }
 
- | expr Tmod expr 
-     { Infix ($1, ("mod", $2), $3) }
- | expr Tland expr 
-     { Infix ($1, ("land", $2), $3) }
- | expr Tlor expr 
-     { Infix ($1, ("lor", $2), $3) }
- | expr Tlxor expr 
-     { Infix ($1, ("lxor", $2), $3) }
+ | expr Tmod expr            { Infix ($1, ("mod", $2), $3) }
+ | expr Tland expr           { Infix ($1, ("land", $2), $3) }
+ | expr Tlor expr            { Infix ($1, ("lor", $2), $3) }
+ | expr Tlxor expr           { Infix ($1, ("lxor", $2), $3) }
+ 
+ | expr Tlsl expr            { Infix ($1, ("lsl", $2), $3) }
+ | expr Tlsr expr            { Infix ($1, ("lsr", $2), $3) }
+ | expr Tasr expr            { Infix ($1, ("asr", $2), $3) }
 
- | expr Tlsl expr 
-     { Infix ($1, ("lsl", $2), $3) }
- | expr Tlsr expr 
-     { Infix ($1, ("lsr", $2), $3) }
- | expr Tasr expr 
-     { Infix ($1, ("asr", $2), $3) }
-
- | expr TBangEq expr
-     { Infix ($1, ("!=", $2), $3) }
+ | expr TBangEq expr         { Infix ($1, ("!=", $2), $3) }
 
 (*
   | expr INFIXOP1 expr
@@ -522,19 +468,14 @@ expr:
       { mkinfix $1 $2 $3 }
 *)
 
- | Tif seq_expr Tthen expr Telse expr
-     { If ($1, $2, $3, $4, Some ($5, $6)) }
- | Tif seq_expr Tthen expr
-     { If ($1, $2, $3, $4, None) }
+ | Tif seq_expr Tthen expr Telse expr   { If ($1, $2, $3, $4, Some ($5, $6)) }
+ | Tif seq_expr Tthen expr              { If ($1, $2, $3, $4, None) }
 
- | Tmatch seq_expr Twith "|"? match_cases
-     { Match ($1, $2, $3, $4 ^@ $5) }
+ | Tmatch seq_expr Twith "|"? match_cases   { Match ($1, $2, $3, $4 ^@ $5) }
 
- | Ttry seq_expr Twith "|"? match_cases
-     { Try ($1, $2, $3, $4 ^@ $5) }
+ | Ttry seq_expr Twith "|"? match_cases     { Try ($1, $2, $3, $4 ^@ $5) }
 
- | Twhile seq_expr Tdo seq_expr Tdone
-     { While ($1, $2, $3, $4, $5) }
+ | Twhile seq_expr Tdo seq_expr Tdone       { While ($1, $2, $3, $4, $5) }
  | Tfor val_ident "=" seq_expr direction_flag seq_expr Tdo seq_expr Tdone
      { For ($1, Name $2, $3, $4, $5, $6, $7, $8, $9)  }
 
@@ -546,60 +487,43 @@ expr:
  | expr TMinus expr    { Infix ($1, ("-", $2), $3) }
  | expr TPlusDot expr  { Infix ($1, ("+.", $2), $3) }
  | expr TMinusDot expr { Infix ($1, ("-.", $2), $3) }
- | expr "*" expr     { Infix ($1, ("*", $2), $3) }
+ | expr "*" expr        { Infix ($1, ("*", $2), $3) }
  | expr TLess expr     { Infix ($1, ("<", $2), $3) }
  | expr TGreater expr  { Infix ($1, (">", $2), $3) }
  | expr Tor expr       { Infix ($1, ("or", $2), $3) }
  | expr TAnd expr      { Infix ($1, ("&", $2), $3) }
  | expr TAndAnd expr   { Infix ($1, ("&&", $2), $3) }
 
- | subtractive expr %prec prec_unary_minus
-     { Prefix ($1, $2) }
- | additive expr %prec prec_unary_plus
-     { Prefix ($1, $2) }
+ | subtractive expr %prec prec_unary_minus    { Prefix ($1, $2) }
+ | additive expr %prec prec_unary_plus        { Prefix ($1, $2) }
 
- | simple_expr "." label_longident "<-" expr
-      { FieldAssign ($1, $2, $3, $4, $5) }
-
+ | simple_expr "." label_longident "<-" expr  { FieldAssign ($1,$2,$3,$4,$5) }
 
  (* array extension *)
- | simple_expr "." "(" seq_expr ")" "<-" expr
-     { ExprTodo }
- | simple_expr "." "[" seq_expr "]" "<-" expr
-     { ExprTodo }
+ | simple_expr "." "(" seq_expr ")" "<-" expr { ExprTodo }
+ | simple_expr "." "[" seq_expr "]" "<-" expr { ExprTodo }
  (* bigarray extension, a.{i} <- v *)
- | simple_expr "." "{" expr "}" "<-" expr
-     { ExprTodo }
+ | simple_expr "." "{" expr "}" "<-" expr     { ExprTodo }
      
+ | Tlet Topen mod_longident Tin seq_expr      { ExprTodo }
 
- | Tlet Topen mod_longident Tin seq_expr
-      { ExprTodo }
+ | Tassert simple_expr                        { ExprTodo }
 
- | Tassert simple_expr
-     { ExprTodo }
+ | name_tag simple_expr                       { ExprTodo }
 
- | name_tag simple_expr
-     { ExprTodo }
-
- | Tlazy simple_expr
-     { ExprTodo }
+ | Tlazy simple_expr                          { ExprTodo }
 
   (* objects *)
-  | label "<-" expr
-      { ExprTodo }
+ | label "<-" expr                            { ExprTodo }
 
 
 simple_expr:
- | constant
-     { C $1 }
- | val_longident
-     { L $1 }
+ | constant          { C $1 }
+ | val_longident     { L $1 }
  (* this includes 'false' *)
- | constr_longident %prec prec_constant_constructor
-     { Constr ($1, None) }
+ | constr_longident %prec prec_constant_constructor  { Constr ($1, None) }
 
- | simple_expr "." label_longident
-     { FieldAccess ($1, $2, $3) }
+ | simple_expr "." label_longident  { FieldAccess ($1, $2, $3) }
 
  (* if only one expr then prefer to generate a ParenExpr *)
  | "(" seq_expr ")"
@@ -610,72 +534,45 @@ simple_expr:
      | _ -> Sequence ($1, $2, $3) 
      }
 
- | Tbegin seq_expr Tend
-     { Sequence ($1, $2, $3)  }
- | Tbegin Tend
-     { Sequence ($1, [], $2) }
+ | Tbegin seq_expr Tend     { Sequence ($1, $2, $3)  }
+ | Tbegin Tend              { Sequence ($1, [], $2) }
 
  (* bugfix: must be in simple_expr. Originally made the mistake to put it
-    * in expr: and the parser would then not recognize things like 'foo !x'
-    *)
- | TPrefixOperator simple_expr
-     { Prefix ($1, $2) }
- | "!" simple_expr
-     { RefAccess ($1, $2) }
+  * in expr: and the parser would then not recognize things like 'foo !x' *)
+ | TPrefixOperator simple_expr   { Prefix ($1, $2) }
+ | "!" simple_expr               { RefAccess ($1, $2) }
 
+ | "{" record_expr "}"           { Record ($1, $2, $3) }
 
- | "{" record_expr "}"
-     { Record ($1, $2, $3) }
+ | "[" expr_semi_list ";"? "]"   { List ($1, $2 @@ $3, $4) }
 
- | "[" expr_semi_list ";"? "]"
-     { List ($1, $2 @@ $3, $4) }
-
- | "[|" expr_semi_list ";"? "|]"
-     { ExprTodo }
- | "[|" "|]"
-     { ExprTodo }
+ | "[|" expr_semi_list ";"? "|]" { ExprTodo }
+ | "[|" "|]"                     { ExprTodo }
 
  (* array extension *)
- | simple_expr "." "(" seq_expr ")"
-     { ExprTodo }
- | simple_expr "." "[" seq_expr "]"
-     { ExprTodo }
+ | simple_expr "." "(" seq_expr ")"  { ExprTodo }
+ | simple_expr "." "[" seq_expr "]"  { ExprTodo }
  (* bigarray extension *)
- | simple_expr "." "{" expr "}"
-     { ExprTodo }
+ | simple_expr "." "{" expr "}"      { ExprTodo }
 
  (* object extension *)
- | simple_expr "#" label
-     { ObjAccess ($1, $2, Name $3) }
- | Tnew class_longident
-     { New ($1, $2) }
+ | simple_expr "#" label             { ObjAccess ($1, $2, Name $3) }
+ | Tnew class_longident              { New ($1, $2) }
 
- | "{<" field_expr_list ";"? ">}"
-      { ExprTodo }
-
+ | "{<" field_expr_list ";"? ">}"    { ExprTodo }
 
  (* name tag extension *)
- | name_tag %prec prec_constant_constructor
-     { ExprTodo }
+ | name_tag %prec prec_constant_constructor  { ExprTodo }
 
- | "(" seq_expr type_constraint ")"
-     { ExprTodo }
+ | "(" seq_expr type_constraint ")"          { ExprTodo }
 
  (* scoped open, 3.12 *)
- | mod_longident "." "(" seq_expr ")"
-     { ExprTodo }
+ | mod_longident "." "(" seq_expr ")"       { ExprTodo }
 
-simple_labeled_expr_list:
- | labeled_simple_expr
-      { [$1] }
- | simple_labeled_expr_list labeled_simple_expr
-      { $1 @ [$2] }
 
 labeled_simple_expr:
- | simple_expr
-      { ArgExpr $1 }
- | label_expr
-      { $1 }
+ | simple_expr     { ArgExpr $1 }
+ | label_expr      { $1 }
 
 
 expr_comma_list:
@@ -683,10 +580,8 @@ expr_comma_list:
  | expr "," expr                             { [Left $1; Right $2; Left $3] }
 
 expr_semi_list:
- | expr                                  { [Left $1] }
+ | expr                           { [Left $1] }
  | expr_semi_list ";" expr        { $1 @ [Right $2; Left $3] }
-
-
 
 
 
@@ -705,7 +600,6 @@ lbl_expr_list:
  | lbl_expr_list ";"     label_longident
      { $1 @ [Right $2; Left (FieldImplicitExpr $3)] }
 
-
 subtractive:
   | TMinus                                       { "-", $1 }
   | TMinusDot                                    { "-.", $1 }
@@ -713,7 +607,6 @@ subtractive:
 additive:
   | TPlus                                        { "+", $1 }
   | TPlusDot                                     { "+.", $1 }
-
 
 direction_flag:
  | Tto                                          { To $1 }
@@ -734,24 +627,18 @@ constant:
 (*----------------------------*)
 
 label_expr:
- | "~" label_ident
-      { ArgImplicitTildeExpr ($1, Name $2) }
- | "?" label_ident
-      { ArgImplicitQuestionExpr ($1, Name $2) }
- | TLabelDecl simple_expr
-      { ArgLabelTilde (Name $1 (* TODO remove the ~ and : *), $2) }
- | TOptLabelDecl simple_expr
-      { ArgLabelQuestion (Name $1 (* TODO remove the ~ and : *), $2) }
+ | "~" label_ident        { ArgImplicitTildeExpr ($1, Name $2) }
+ | "?" label_ident        { ArgImplicitQuestionExpr ($1, Name $2) }
+ | TLabelDecl simple_expr { ArgLabelTilde (Name $1 (* TODO del ~/:? *), $2) }
+ | TOptLabelDecl simple_expr { ArgLabelQuestion (Name $1 (* del too *), $2) }
 
 (*----------------------------*)
 (* objects *)
 (*----------------------------*)
 
 field_expr_list:
- |  label "=" expr
-      { }
-  | field_expr_list ";" label "=" expr
-      { }
+ |  label "=" expr                      { }
+  | field_expr_list ";" label "=" expr  { }
 
 (*************************************************************************)
 (* Patterns *)
@@ -767,63 +654,44 @@ match_action:
 
 
 pattern:
- | simple_pattern
-      { $1 }
+ | simple_pattern   { $1 }
 
- | constr_longident pattern %prec prec_constr_appl
-      { PatConstr ($1, Some $2) }
- | pattern_comma_list  %prec below_COMMA
-      { PatTuple ($1) }
- | pattern "::" pattern
-      { PatConsInfix ($1, $2, $3) }
+ | constr_longident pattern %prec prec_constr_appl  { PatConstr ($1, Some $2) }
+ | pattern_comma_list       %prec below_COMMA     { PatTuple ($1) }
+ | pattern "::" pattern                           { PatConsInfix ($1, $2, $3) }
 
- | pattern Tas val_ident
-      { PatAs ($1, $2, Name $3) }
+ | pattern Tas val_ident                          { PatAs ($1, $2, Name $3) }
 
  (* nested patterns *)
- | pattern "|" pattern
-      { PatDisj ($1, $2, $3) }
+ | pattern "|" pattern                            { PatDisj ($1, $2, $3) }
 
  (* name tag extension *)
- | name_tag pattern %prec prec_constr_appl
-      { PatTodo }
+ | name_tag pattern %prec prec_constr_appl        { PatTodo }
 
 
 
 
 simple_pattern:
- | val_ident %prec below_EQUAL
-      { PatVar (Name $1) }
- | constr_longident
-      { PatConstr ($1, None) }
- | "_"
-      { PatUnderscore $1 }
- | signed_constant
-      { PatConstant $1 }
+ | val_ident %prec below_EQUAL      { PatVar (Name $1) }
+ | constr_longident                 { PatConstr ($1, None) }
+ | "_"                              { PatUnderscore $1 }
+ | signed_constant                  { PatConstant $1 }
 
- | "{" lbl_pattern_list record_pattern_end "}"
-      { PatRecord ($1, $2, (* $3 *) $4) }
- | "[" pattern_semi_list ";"? "]"
-      { PatList (($1, $2 @@ $3, $4)) }
+ | "{" lbl_pattern_list record_pattern_end "}" { PatRecord ($1,$2,(*$3*) $4) }
+ | "[" pattern_semi_list ";"? "]"              { PatList (($1, $2 @@ $3, $4)) }
 
- | "[|" pattern_semi_list ";"? "|]"
-      { PatTodo }
- | "[|" "|]"
-      { PatTodo }
+ | "[|" pattern_semi_list ";"? "|]"            { PatTodo }
+ | "[|" "|]"                                   { PatTodo }
 
  (* note that let (x:...) a =  will trigger this rule *)
- | "(" pattern ":" core_type ")"
-      { PatTyped ($1, $2, $3, $4, $5) }
+ | "(" pattern ":" core_type ")"               { PatTyped ($1, $2, $3, $4, $5)}
 
  (* name tag extension *)
- | name_tag
-      { PatTodo }
+ | name_tag                    { PatTodo }
  (* range extension *)
- | TChar ".." TChar  
-    { PatTodo }
+ | TChar ".." TChar            { PatTodo }
 
- | "(" pattern ")"
-    { ParenPat ($1, $2, $3) }
+ | "(" pattern ")"             { ParenPat ($1, $2, $3) }
 
 
 lbl_pattern_list:
@@ -836,13 +704,13 @@ lbl_pattern_list:
 
 
 record_pattern_end:
- | ";"?                                    { }
+ | ";"?                      { }
  (* new 3.12 feature! *)
  | ";" "_" ";"?              { }
 
 
 pattern_semi_list:
- | pattern                                     { [Left $1] }
+ | pattern                              { [Left $1] }
  | pattern_semi_list ";" pattern        { $1 @[Right $2; Left $3] }
 
 pattern_comma_list:
@@ -863,7 +731,6 @@ signed_constant:
 
 type_constraint:
  | ":" core_type           { }
- 
  (* object cast extension *)
  | ":>" core_type    { }
 
@@ -873,14 +740,10 @@ type_constraint:
 
 type_declarations: list_and(type_declaration) { $1 }
 
-type_declaration:
-  type_parameters TLowerIdent type_kind (*TODO constraints*)
-   { 
-     match $3 with
-     | None -> 
-         TyAbstract ($1, Name $2)
-     | Some (tok_eq, type_kind) ->
-         TyDef ($1, Name $2, tok_eq, type_kind)
+type_declaration: type_parameters TLowerIdent type_kind (*TODO constraints*)
+   { match $3 with
+     | None -> TyAbstract ($1, Name $2)
+     | Some (tok_eq, type_kind) -> TyDef ($1, Name $2, tok_eq, type_kind)
    }
 
 
@@ -899,51 +762,37 @@ type_kind:
 
 
 constructor_declarations:
- | constructor_declaration                     { [Left $1] }
- | constructor_declarations "|" constructor_declaration 
-     { $1 @ [Right $2; Left $3] }
+ | constructor_declaration                               { [Left $1] }
+ | constructor_declarations "|" constructor_declaration  { $1 @ [Right $2; Left $3] }
 
-constructor_declaration:
-    constr_ident constructor_arguments          { Name $1, $2 }
+constructor_declaration: constr_ident constructor_arguments  { Name $1, $2 }
 
 constructor_arguments:
- | (*empty*)                            { NoConstrArg }
+ | (*empty*)                                { NoConstrArg }
  | Tof core_type_list                       { Of ($1, $2) }
 
-
 type_parameters:
- |  (*empty*)                              { TyNoParam  }
- | type_parameter                              { TyParam1 $1 }
+ |  (*empty*)                          { TyNoParam  }
+ | type_parameter                      { TyParam1 $1 }
  | "(" type_parameter_list ")"         { TyParamMulti (($1, $2, $3)) }
 
 type_parameter_list:
- | type_parameter                               { [Left $1] }
+ | type_parameter                            { [Left $1] }
  | type_parameter_list "," type_parameter    { $1 @ [Right $2; Left $3] }
 
-type_parameter:
-  (*TODO type_variance*) "'" ident   { ($1, Name $2) }
-
+type_parameter: (*TODO type_variance*) "'" ident   { ($1, Name $2) }
 
 
 label_declarations:
  | label_declaration                           { [Left $1] }
  | label_declarations ";" label_declaration   { $1 @[Right $2; Left $3]}
 
-label_declaration:
-  mutable_flag label ":" poly_type          
-   { 
-     {
-       fld_mutable = $1;
-       fld_name = Name $2;
-       fld_tok = $3;
-       fld_type = $4;
-     }
-   }
+label_declaration: mutable_flag label ":" poly_type          
+   { { fld_mutable = $1; fld_name = Name $2; fld_tok = $3; fld_type = $4; } }
 
 mutable_flag:
  | (*empty*)       { None }
- | Tmutable            { Some $1 }
-
+ | Tmutable        { Some $1 }
 
 (*----------------------------*)
 (* Types expressions *)
@@ -1212,7 +1061,7 @@ class_expr:
       { }
   | Tfun class_fun_def
       { }
-  | class_simple_expr simple_labeled_expr_list
+  | class_simple_expr labeled_simple_expr+
       { }
   | Tlet rec_flag let_bindings Tin class_expr
       { }
