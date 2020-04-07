@@ -269,7 +269,7 @@ signature:
 signature_item: signature_item_noattr post_item_attribute* { $1 }
 
 signature_item_noattr:
- | Ttype type_declarations                     { Type ($1, $2) }
+ | Ttype list_and(type_declaration)            { Type ($1, $2) }
  | Tval val_ident ":" core_type                { Val ($1, Name $2, $3, $4) }
  | Texternal val_ident ":" core_type "=" primitive_declaration
      { External ($1, Name $2, $3, $4, $5, $6) }
@@ -313,14 +313,14 @@ structure_item: structure_item_noattr post_item_attribute* { $1 }
 
 structure_item_noattr:
  (* as in signature_item *)
- | Ttype type_declarations                       { Type ($1, $2) }
+ | Ttype list_and(type_declaration)              { Type ($1, $2) }
  | Texception TUpperIdent constructor_arguments  { Exception ($1, Name $2, $3)}
  | Texternal val_ident ":" core_type "=" primitive_declaration
      { External ($1, Name $2, $3, $4, $5, $6)  }
  | Topen mod_longident                           { Open ($1, $2) }
 
  (* start of deviation *)
- | Tlet Trec? let_bindings                    { Let ($1, $2, $3) }
+ | Tlet Trec? list_and(let_binding)              { Let ($1, $2, $3) }
  (* modules *)
  | Tmodule TUpperIdent module_binding
       { match $3 with
@@ -343,7 +343,8 @@ val_ident:
  | "(" operator ")"                   { ("TODOOPERATOR", $1) }
 
 operator:
- | TPrefixOperator      { } | TInfixOperator       { }
+ | TPrefixOperator      { } 
+ | TInfixOperator       { }
  | "*"     { } | "="       { } | ":="   { } | "!"     { }
   (* but not Tand, because of conflict ? *)
  | Tor       { } | TAnd      { }
@@ -368,13 +369,14 @@ constr_ident:
 (*  | "[" "]"                           { } *)
 (*  | "(" "::" ")"                    { "::" } *)
 
-(* record field name *)
+(* record field name (not olabl label) *)
 label: TLowerIdent  { $1 }
 
+(* name tag extension *)
 name_tag: "`" ident   { }
 
 (*----------------------------*)
-(* Labels *)
+(* Labels (olabl labels) *)
 (*----------------------------*)
 
 label_var: TLowerIdent    { }
@@ -449,7 +451,7 @@ expr:
        | L name -> FunCallSimple (name, $2)
        | _      -> FunCall ($1, $2) }
 
- | Tlet Trec? let_bindings Tin seq_expr   { LetIn ($1, $2, $3, $4, $5) }
+ | Tlet Trec? list_and(let_binding) Tin seq_expr  { LetIn ($1, $2, $3, $4, $5)}
 
  | Tfun labeled_simple_pattern fun_def
      { let (params, action) = $3 in
@@ -474,17 +476,6 @@ expr:
  | expr Tasr expr            { Infix ($1, ("asr", $2), $3) }
 
  | expr TBangEq expr         { Infix ($1, ("!=", $2), $3) }
-
-(*
-  | expr INFIXOP1 expr
-      { mkinfix $1 $2 $3 }
-  | expr INFIXOP2 expr
-      { mkinfix $1 $2 $3 }
-  | expr INFIXOP3 expr
-      { mkinfix $1 $2 $3 }
-  | expr INFIXOP4 expr
-      { mkinfix $1 $2 $3 }
-*)
 
  | Tif seq_expr Tthen expr Telse expr   { If ($1, $2, $3, $4, Some ($5, $6)) }
  | Tif seq_expr Tthen expr              { If ($1, $2, $3, $4, None) }
@@ -535,6 +526,7 @@ expr:
  | label "<-" expr                            { ExprTodo }
 
 
+
 simple_expr:
  | constant          { C $1 }
  | val_longident     { L $1 }
@@ -561,8 +553,8 @@ simple_expr:
  | "!" simple_expr               { RefAccess ($1, $2) }
 
  | "{" record_expr "}"           { Record ($1, $2, $3) }
- | "["  expr_semi_list "]"   { List ($1, $2, $3) }
- | "[|" expr_semi_list "|]" { ExprTodo }
+ | "["  list_sep_term(expr, ";") "]"   { List ($1, $2, $3) }
+ | "[|" list_sep_term(expr, ";") "|]" { ExprTodo }
  | "[|" "|]"                     { ExprTodo }
 
  (* array extension *)
@@ -574,7 +566,7 @@ simple_expr:
  (* object extension *)
  | simple_expr "#" label             { ObjAccess ($1, $2, Name $3) }
  | Tnew class_longident              { New ($1, $2) }
- | "{<" field_expr_list ">}"         { ExprTodo }
+ | "{<" list_sep_term(field_expr, ";") ">}"         { ExprTodo }
 
  (* name tag extension *)
  | name_tag %prec prec_constant_constructor  { ExprTodo }
@@ -594,27 +586,23 @@ expr_comma_list:
  | expr_comma_list "," expr                  { $1 @ [Right $2; Left $3] }
  | expr "," expr                             { [Left $1; Right $2; Left $3] }
 
-expr_semi_list: list_sep_term(expr, ";") { $1 }
-
 
 record_expr:
- | lbl_expr_list                    { RecordNormal ($1) }
- | simple_expr Twith lbl_expr_list  { RecordWith ($1, $2, $3) }
+ |                   list_sep_term(lbl_expr, ";")  { RecordNormal ($1) }
+ | simple_expr Twith list_sep_term(lbl_expr, ";")  { RecordWith ($1, $2, $3) }
 
 lbl_expr: 
  | label_longident "=" expr { FieldExpr ($1, $2, $3) }
  (* new 3.12 feature! *)
  | label_longident          { FieldImplicitExpr ($1) }
 
-lbl_expr_list: list_sep_term(lbl_expr, ";") { $1 }
+additive:
+  | TPlus                                        { "+", $1 }
+  | TPlusDot                                     { "+.", $1 }
 
 subtractive:
   | TMinus                                       { "-", $1 }
   | TMinusDot                                    { "-.", $1 }
-
-additive:
-  | TPlus                                        { "+", $1 }
-  | TPlusDot                                     { "+.", $1 }
 
 direction_flag:
  | Tto                                          { To $1 }
@@ -643,8 +631,6 @@ label_expr:
 (*----------------------------*)
 (* objects *)
 (*----------------------------*)
-
-field_expr_list: list_sep_term(field_expr, ";") { $1 }
 
 field_expr: label "=" expr { }
 
@@ -689,9 +675,8 @@ simple_pattern:
  | signed_constant                  { PatConstant $1 }
 
  | "{" lbl_pattern_list record_pattern_end "}" { PatRecord ($1,$2,(*$3*) $4) }
- | "[" pattern_semi_list  "]"             { PatList (($1, $2, $3)) }
- | "[|" pattern_semi_list "|]"            { PatTodo }
- | "[|" "|]"                              { PatTodo }
+ | "["  list_sep_term(pattern, ";")  "]"       { PatList (($1, $2, $3)) }
+ | "[|" list_sep_term(pattern, ";")? "|]"       { PatTodo }
 
  (* note that let (x:...) a =  will trigger this rule *)
  | "(" pattern ":" core_type ")"               { PatTyped ($1, $2, $3, $4, $5)}
@@ -716,9 +701,6 @@ record_pattern_end:
  | ";"?                      { }
  (* new 3.12 feature! *)
  | ";" "_" ";"?              { }
-
-
-pattern_semi_list: list_sep_term(pattern, ";") { $1 }
 
 (* not exactly like list_sep() *)
 pattern_comma_list:
@@ -746,8 +728,6 @@ type_constraint:
 (* Types definitions *)
 (*----------------------------*)
 
-type_declarations: list_and(type_declaration) { $1 }
-
 type_declaration: type_parameters TLowerIdent type_kind (*TODO constraints*)
    { match $3 with
      | None -> TyAbstract ($1, Name $2)
@@ -760,33 +740,26 @@ type_kind:
       { None }
  | "=" core_type
       { Some ($1, TyCore $2) }
- | "=" constructor_declarations
+ | "=" list_sep(constructor_declaration, "|")
       { Some ($1, TyAlgebric $2) }
- | "=" (*TODO private_flag*) "|" constructor_declarations
+ | "=" (*TODO private_flag*) "|" list_sep(constructor_declaration, "|")
       { Some ($1, TyAlgebric (Right $2::$3)) }
- | "=" (*TODO private_flag*) "{" label_declarations "}"
+ | "=" (*TODO private_flag*) "{" list_sep_term(label_declaration, ";") "}"
       { Some ($1, TyRecord ($2, ($3), $4)) }
 
-
-
-constructor_declarations: list_sep(constructor_declaration, "|") { $1 }
 
 constructor_declaration: constr_ident constructor_arguments  { Name $1, $2 }
 
 constructor_arguments:
  | (*empty*)                                { NoConstrArg }
- | Tof core_type_list                       { Of ($1, $2) }
+ | Tof list_sep(simple_core_type, "*")      { Of ($1, $2) }
 
 type_parameters:
  |  (*empty*)                          { TyNoParam  }
  | type_parameter                      { TyParam1 $1 }
- | "(" type_parameter_list ")"         { TyParamMulti (($1, $2, $3)) }
-
-type_parameter_list: list_sep(type_parameter, ",") { $1 }
+ | "(" list_sep(type_parameter, ",") ")" { TyParamMulti (($1, $2, $3)) }
 
 type_parameter: (*TODO type_variance*) "'" ident   { ($1, Name $2) }
-
-label_declarations: list_sep_term(label_declaration, ";") { $1 }
 
 label_declaration: Tmutable? label ":" poly_type          
    { { fld_mutable = $1; fld_name = Name $2; fld_tok = $3; fld_type = $4; } }
@@ -815,34 +788,31 @@ core_type2:
 
 simple_core_type_or_tuple:
  | simple_core_type                        { $1 }
- | simple_core_type "*" core_type_list     { TyTuple (Left $1::Right $2::$3) }
+ | simple_core_type "*" list_sep(simple_core_type, "*")
+     { TyTuple (Left $1::Right $2::$3) }
 
 
 simple_core_type:
  | simple_core_type2   { $1 }
  (* weird diff between 'Foo of a * b' and 'Foo of (a * b)' *)
- | "(" core_type_comma_list ")" { TyTuple2 (($1, $2, $3)) }
+ | "(" list_sep(core_type, ",") ")" { TyTuple2 (($1, $2, $3)) }
 
 simple_core_type2:
  | "'" ident                                     { TyVar ($1, Name $2) }
  | type_longident                                { TyName ($1) }
  | simple_core_type2 type_longident              { TyApp (TyArg1 $1, $2) }
- | "(" core_type_comma_list ")" type_longident 
+ | "(" list_sep(core_type, ",") ")" type_longident 
       { TyApp (TyArgMulti (($1, $2, $3)), $4) }
 
  (* name tag extension *)
- | "[" row_field "|" row_field_list "]"          { TyTodo }
- | "[" "|" row_field_list "]"                    { TyTodo }
+ | "[" row_field "|" list_sep(row_field, "|") "]"          { TyTodo }
+ | "["           "|" list_sep(row_field, "|") "]"          { TyTodo }
  | "[" tag_field "]"                             { TyTodo }
 
  (* objects types *)
   | TLess meth_list TGreater                    { TyTodo }
   | TLess TGreater                              { TyTodo }
 
-
-core_type_comma_list: list_sep(core_type, ",") { $1 }
-
-core_type_list: list_sep(simple_core_type, "*") { $1 }
 
 meth_list:
   | field ";" meth_list                     { }
@@ -857,24 +827,17 @@ field: label ":" poly_type             { }
 
 poly_type: core_type { $1 }
 
-
-row_field_list: list_sep(row_field, "|") { }
-
 row_field:
  | tag_field                                   { }
  | simple_core_type2                           { }
 
 tag_field:
- | name_tag Tof TAnd? amper_type_list   { }
+ | name_tag Tof TAnd? list_and(core_type)   { }
  | name_tag       { }
-
-amper_type_list: list_and(core_type) { $1 }
 
 (*************************************************************************)
 (* Let/Fun definitions *)
 (*************************************************************************)
-
-let_bindings: list_and(let_binding) { $1 }
 
 let_binding:
  | val_ident fun_binding
@@ -945,9 +908,7 @@ class_type:
   | simple_core_type_or_tuple "->" class_type { }
 
 class_signature:
-  (*  LBRACKET core_type_comma_list RBRACKET clty_longident
-      {  }
-  *)
+ (*  LBRACKET list_sep(core_type, ",") RBRACKET clty_longident  {  } *)
   | clty_longident               {  }
   | Tobject class_sig_body Tend  {  }
 
@@ -990,23 +951,21 @@ class_declaration:
       { }
 
 class_type_parameters:
-  | (*empty*)                         { }
-  | "[" type_parameter_list "]"       { }
+  | (*empty*)                              { }
+  | "[" list_sep(type_parameter, ",") "]"  { }
 
 class_fun_binding:
-  | "=" class_expr
-      { }
-  | labeled_simple_pattern class_fun_binding
-      { }
+  | "=" class_expr  { }
+  | labeled_simple_pattern class_fun_binding  { }
 
 class_expr:
   | class_simple_expr                         { }
   | Tfun class_fun_def                        { }
   | class_simple_expr labeled_simple_expr+    { }
-  | Tlet Trec? let_bindings Tin class_expr    { }
+  | Tlet Trec? list_and(let_binding) Tin class_expr    { }
 
 class_simple_expr:
-  | "[" core_type_comma_list "]" class_longident   { }
+  | "[" list_sep(core_type, ",") "]" class_longident   { }
   | class_longident                                { }
   | Tobject class_structure Tend                   { }
 (* TODO | "(" class_expr ":" class_type ")" { } *)
@@ -1024,12 +983,9 @@ class_self_pattern:
   | (*empty*)                      { }
 
 
-
 class_fields:
-  | (*empty*)
-      { }
-  | class_fields Tinherit "!"? class_expr parent_binder
-      { }
+  | (*empty*)   { }
+  | class_fields Tinherit "!"? class_expr parent_binder   { }
   | class_fields Tval virtual_value  { }
   | class_fields Tval value          { }
   | class_fields virtual_method      { }
@@ -1037,11 +993,9 @@ class_fields:
 (* TODO | class_fields Tconstraint constrain { } *)
   | class_fields Tinitializer seq_expr  { }
 
-
 parent_binder:
   | Tas TLowerIdent { }
   | (* empty *) { }
-
 
 virtual_value:
   | "!"? Tmutable Tvirtual label ":" core_type  { }
