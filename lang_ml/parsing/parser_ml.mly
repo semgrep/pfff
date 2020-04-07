@@ -576,12 +576,12 @@ labeled_simple_expr:
  | simple_expr     { ArgExpr $1 }
  | label_expr      { $1 }
 
-
+(* a bit different than list_sep() *)
 expr_comma_list:
  | expr_comma_list "," expr                  { $1 @ [Right $2; Left $3] }
  | expr "," expr                             { [Left $1; Right $2; Left $3] }
 
-(* s/r if factorize with list_sep(expr, ";"), weird *)
+(* weird: cant factorize with list_sep(expr, ";") *)
 expr_semi_list:
  | expr                           { [Left $1] }
  | expr_semi_list ";" expr        { $1 @ [Right $2; Left $3] }
@@ -596,7 +596,8 @@ lbl_expr:
  (* new 3.12 feature! *)
  | label_longident          { FieldImplicitExpr ($1) }
 
-lbl_expr_list:
+(* weird: cant use list_sep *)
+lbl_expr_list: 
  | lbl_expr { [Left $1] }
  | lbl_expr_list ";" lbl_expr { $1 @ [Right $2; Left $3 ] }
 
@@ -648,6 +649,7 @@ field_expr: label "=" expr { }
 
 match_case: pattern match_action { ($1, $2) }
 
+(* cant factorize with list_sep *)
 match_cases:
  | match_case                     { [Left ($1)] }
  | match_cases "|" match_case { $1 @ [Right $2; Left ($3)] }
@@ -701,6 +703,7 @@ lbl_pattern:
  | label_longident "=" pattern               { PatField ($1, $2, $3) }
  | label_longident                           { PatImplicitField ($1) }
 
+(* cant factorize with list_sep *)
 lbl_pattern_list:
  | lbl_pattern { [Left $1] }
  | lbl_pattern_list ";" lbl_pattern { $1 @ [Right $2; Left $3] }
@@ -711,12 +714,12 @@ record_pattern_end:
  | ";" "_" ";"?              { }
 
 
-(* s/r if factorize with list_sep(expr, ";"), weird *)
+(* cant factorize with list_sep() *)
 pattern_semi_list:
  | pattern                              { [Left $1] }
  | pattern_semi_list ";" pattern        { $1 @[Right $2; Left $3] }
 
-(* s/r if factorize with list_sep(expr, ";"), weird *)
+(* cant factorize with list_sep *)
 pattern_comma_list:
  | pattern_comma_list "," pattern            { $1 @ [Right $2; Left $3] }
  | pattern "," pattern                       { [Left $1; Right $2; Left $3] }
@@ -782,7 +785,7 @@ type_parameter_list: list_sep(type_parameter, ",") { $1 }
 
 type_parameter: (*TODO type_variance*) "'" ident   { ($1, Name $2) }
 
-(* weird, can't use list_sep *)
+(* cant factorize with list_sep() *)
 label_declarations: 
  | label_declaration                          { [Left $1] }
  | label_declarations ";" label_declaration   { $1 @[Right $2; Left $3]}
