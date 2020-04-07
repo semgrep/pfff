@@ -316,6 +316,9 @@ and _token state = parse
   | '@'     { AT (tokinfo lexbuf) }
   (* part of python3 and also sgrep-ext: *)
   | "..."   { ELLIPSES (tokinfo lexbuf) }
+  (* sgrep-ext: *)
+  | "<..."  { Flag_parsing.sgrep_guard (LDots (tokinfo lexbuf)) }
+  | "...>"  { Flag_parsing.sgrep_guard (RDots (tokinfo lexbuf)) }
 
   | "!" { if !(state.mode) |> List.exists (function
             | STATE_IN_FSTRING_SINGLE 

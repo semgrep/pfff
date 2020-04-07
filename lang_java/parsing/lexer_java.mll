@@ -339,6 +339,9 @@ rule token = parse
   | "@" { AT(tokinfo lexbuf) }
   (* regular feature of Java for params and sgrep-ext: *)
   | "..."  { DOTS(tokinfo lexbuf) }
+  (* sgrep-ext: *)
+  | "<..."  { Flag_parsing.sgrep_guard (LDots (tokinfo lexbuf)) }
+  | "...>"  { Flag_parsing.sgrep_guard (RDots (tokinfo lexbuf)) }
   
   | "+="  { OPERATOR_EQ (Plus, tokinfo lexbuf) }
   | "-="  { OPERATOR_EQ (Minus, tokinfo lexbuf) }

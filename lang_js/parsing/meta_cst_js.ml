@@ -67,6 +67,8 @@ let rec vof_expr =
   | L v1 -> let v1 = vof_litteral v1 in Ocaml.VSum (("L", [ v1 ]))
   | V v1 -> let v1 = vof_name v1 in Ocaml.VSum (("V", [ v1 ]))
   | Ellipsis v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Ellipsis", [ v1 ]))
+  | DeepEllipsis v1 -> let v1 = vof_bracket vof_expr v1 in 
+      Ocaml.VSum (("DeepEllipsis", [ v1 ]))
   | This v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("This", [ v1 ]))
   | Super v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Super", [ v1 ]))
   | NewTarget ((v1, v2, v3)) ->

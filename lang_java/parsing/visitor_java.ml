@@ -160,6 +160,7 @@ and v_literal =
 and v_expr (x : expr) =
   let k x = match x with
     | Ellipsis v1 -> let v1 = v_tok v1 in ()
+    | DeepEllipsis v1 -> let v1 = v_bracket v_expr v1 in ()
     | Name v1 -> let v1 = v_name v1 in ()
     | NameOrClassType v1 -> let v1 = v_name_or_class_type v1 in ()
     | Literal v1 -> let v1 = v_literal v1 in ()

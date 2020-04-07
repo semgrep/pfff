@@ -325,6 +325,9 @@ rule initial = parse
   (* variable number of parameters (and sgrep-ext)
    * less: enforce directly attached to ident? *)
   | "..." { T_DOTS (tokinfo lexbuf) }
+  (* sgrep-ext: *)
+  | "<..."  { Flag_parsing.sgrep_guard (LDots (tokinfo lexbuf)) }
+  | "...>"  { Flag_parsing.sgrep_guard (RDots (tokinfo lexbuf)) }
 
 
   (* ----------------------------------------------------------------------- *)

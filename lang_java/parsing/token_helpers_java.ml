@@ -111,6 +111,9 @@ let visitor_info_of_tok f = function
 
   | AT (ii) -> AT (f ii)
   | DOTS (ii) -> DOTS (f ii)
+  | LDots (ii) -> LDots (f ii)
+  | RDots (ii) -> RDots (f ii)
+
   | ARROW (ii) -> ARROW (f ii)
 
   | VAR (ii) -> VAR (f ii)

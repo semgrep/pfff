@@ -179,6 +179,7 @@ type expr =
  
    (* sgrep-ext: *)
    | Ellipsis of tok
+   | DeepEllipsis of expr bracket
 
    (* facebook-ext: *)
    | XhpHtml of xhp_html

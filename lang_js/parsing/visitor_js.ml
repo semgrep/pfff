@@ -83,6 +83,7 @@ and v_expr (x: expr) =
   | L v1 -> let v1 = v_litteral v1 in ()
   | V v1 -> let v1 = v_name v1 in ()
   | Ellipsis v1 -> let v1 = v_tok v1 in ()
+  | DeepEllipsis v1 -> let v1 = v_bracket v_expr v1 in ()
   | This v1 -> let v1 = v_tok v1 in ()
   | Super v1 -> let v1 = v_tok v1 in ()
   | NewTarget ((v1, v2, v3)) ->

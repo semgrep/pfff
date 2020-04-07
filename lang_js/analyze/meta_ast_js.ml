@@ -136,6 +136,8 @@ and vof_expr =
       in Ocaml.VSum (("ArrAccess", [ v1; v2 ]))
   | Obj v1 -> let v1 = vof_obj_ v1 in Ocaml.VSum (("Obj", [ v1 ]))
   | Ellipsis v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Ellipsis", [ v1 ]))
+  | DeepEllipsis v1 -> let v1 = vof_bracket vof_expr v1 in 
+      Ocaml.VSum (("DeepEllipsis", [ v1 ]))
   | Class (v1, v2) -> 
      let v1 = vof_class_ v1 in 
      let v2 = Ocaml.vof_option vof_name v2 in

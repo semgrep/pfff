@@ -590,6 +590,9 @@ and expr env = function
      expr env (C.unparen x)
   | C.Ellipsis x ->
      A.Ellipsis x
+  | C.DeepEllipsis x ->
+     let x = bracket_keep (expr env) x in
+     A.DeepEllipsis x
 
 and xhp_html env = function
   | C.Xhp (tag, attrl, _, body, _) ->

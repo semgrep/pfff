@@ -282,7 +282,7 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
     | T.AT ii ->
         tag ii Punctuation
 
-    | T.DOTS ii ->
+    | T.DOTS ii | T.LDots ii | T.RDots ii ->
         tag ii Punctuation
 
     (* symbols *)

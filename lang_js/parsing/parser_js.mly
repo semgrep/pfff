@@ -144,6 +144,8 @@ let (^@) sc xs =
  T_DOTS "..."
  T_BACKQUOTE 
  T_DOLLARCURLY
+ LDots RDots
+
 
 (* operators *)
 %token <Cst_js.tok>
@@ -945,6 +947,7 @@ assignment_expr:
  | left_hand_side_expr_(d1) T_AS type_ { $1 (* TODO $2 $3 *) }
  (* sgrep-ext: can't move in primary_expr, get s/r conflicts *)
  | "..." { Flag_parsing.sgrep_guard (Ellipsis $1) }
+ | LDots expr RDots { Flag_parsing.sgrep_guard (DeepEllipsis ($1, $2, $3)) }
 
 left_hand_side_expr: left_hand_side_expr_(d1) { $1 }
 

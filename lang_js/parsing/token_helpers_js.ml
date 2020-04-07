@@ -157,7 +157,11 @@ let visitor_info_of_tok f = function
   | T_XHP_ATTR (s,ii) -> T_XHP_ATTR (s, f ii)
   | T_XHP_TEXT (s,ii) -> T_XHP_TEXT (s, f ii)
   | T_ARROW ii -> T_ARROW (f ii)
+
   | T_DOTS ii -> T_DOTS (f ii)
+  | LDots (ii) -> LDots (f ii)
+  | RDots (ii) -> RDots (f ii)
+
   | T_DOLLARCURLY ii -> T_DOLLARCURLY(f ii)
   | T_BACKQUOTE ii -> T_BACKQUOTE (f ii)
   | T_ENCAPSED_STRING (s, ii) -> T_ENCAPSED_STRING(s, f ii)

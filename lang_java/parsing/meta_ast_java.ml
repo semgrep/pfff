@@ -131,6 +131,8 @@ and vof_literal =
 and vof_expr =
   function
   | Ellipsis v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Ellipsis", [ v1 ]))
+  | DeepEllipsis v1 -> let v1 = vof_bracket vof_expr v1 in 
+      Ocaml.VSum (("DeepEllipsis", [ v1 ]))
   | Name v1 -> let v1 = vof_name v1 in Ocaml.VSum (("Name", [ v1 ]))
   | NameOrClassType v1 ->
       let v1 = vof_name_or_class_type v1
