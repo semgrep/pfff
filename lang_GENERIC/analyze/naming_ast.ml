@@ -408,6 +408,34 @@ let resolve lang prog =
        );
        k x
     );
+    V.kpattern = (fun (k, _vout) x ->
+      match x with
+      | PatId (id, id_info) when is_local_or_global_ctx env ->
+          (* todo: in Python it does not necessarily introduce
+           * a newvar if the ID was already declared before.
+           * Also inside a PatAs(PatId x,b), the 'x' is actually
+           * the name of a class, not a newly introduced local.
+           *)
+          (* mostly copy-paste of VarDef code *)
+          let sid = Ast.gensym () in
+          let resolved = resolved_name_kind env, sid in
+          add_ident_current_scope id resolved env.names;
+          set_resolved id_info resolved;
+          k x          
+      | PatVar (_e, Some (id, id_info)) when is_local_or_global_ctx env ->
+          (* mostly copy-paste of VarDef code *)
+          let sid = Ast.gensym () in
+          let resolved = resolved_name_kind env, sid in
+          add_ident_current_scope id resolved env.names;
+          set_resolved id_info resolved;
+          k x
+      | OtherPat _ -> 
+         Common.save_excursion env.in_lvalue true (fun () ->
+            k x
+         )
+      | _ -> k x
+      
+    );
 
     (* the uses *)
 

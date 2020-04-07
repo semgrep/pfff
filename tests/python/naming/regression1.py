@@ -6,5 +6,3 @@ class Position(Func):
 
     def __init__(self, expression, substring):
         super().__init__(expression, substring=substring)
-
-
