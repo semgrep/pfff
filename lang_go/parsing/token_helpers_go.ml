@@ -105,7 +105,11 @@ let visitor_info_of_tok f = function
   | LDOT (ii) -> LDOT (f ii)
   | LCOMMA (ii) -> LCOMMA (f ii)
   | LCOLAS (ii) -> LCOLAS (f ii)
+
   | LDDD (ii) -> LDDD (f ii)
+  | LDots (ii) -> LDots (f ii)
+  | RDots (ii) -> RDots (f ii)
+
   | LPLUS (ii) -> LPLUS (f ii)
   | LMINUS (ii) -> LMINUS (f ii)
   | LMULT (ii) -> LMULT (f ii)

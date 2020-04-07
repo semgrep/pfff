@@ -145,6 +145,7 @@ let mk_str ii =
  BACKQUOTE      /* ` */
  AT             /* @ */
  ELLIPSES       /* ... */
+ LDots RDots
 
 /*(* operators *)*/
 %token <Ast_python.tok> 
@@ -673,6 +674,7 @@ atom:
 
   /*(* typing-ext: sgrep-ext: *)*/
   | ELLIPSES    { Ellipsis $1 }
+  | LDots test RDots { Flag_parsing.sgrep_guard (DeepEllipsis ($1, $2, $3)) }
 
 atom_repr: BACKQUOTE testlist1 BACKQUOTE { Repr ($1, tuple_expr $2, $3) }
 

@@ -186,7 +186,7 @@ let expr_to_typename expr =
 %token <Parse_info.t> URS		/* >>> */
 
 %token <Parse_info.t> AT		/* @ */
-%token <Parse_info.t> DOTS		/* ... */
+%token <Parse_info.t> DOTS		/* ... */ LDots RDots
 %token <Parse_info.t> ARROW		/* -> */
 %token <Parse_info.t> COLONCOLON		/* :: */
 
@@ -659,6 +659,7 @@ assignment_expression:
  | assignment              { $1 }
  /*(* sgrep-ext: *)*/
  | DOTS { Flag_parsing.sgrep_guard (Ellipsis $1) }
+ | LDots expression RDots { Flag_parsing.sgrep_guard (DeepEllipsis ($1,$2,$3))}
 
 
 /*(* javaext: was assignment_expression for rhs, but we want lambdas there*)*/

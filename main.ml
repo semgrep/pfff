@@ -120,6 +120,8 @@ let options () = [
     (* a big ugly *)
     Test_parsing_generic.lang := s;
   ), (spf " <str> choose language (default = %s)" !lang);
+  "-sgrep_mode", Arg.Set Flag_parsing.sgrep_mode,
+  " enable sgrep mode parsing (to debug)";
   ] @
   Flag_parsing.cmdline_flags_verbose () @
   Flag_parsing.cmdline_flags_debugging () @

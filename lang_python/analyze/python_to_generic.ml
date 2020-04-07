@@ -107,6 +107,9 @@ let rec expr (x: expr) =
   | Ellipsis x ->
      let x = info x in
      G.Ellipsis x
+  | DeepEllipsis x ->
+     let x = bracket expr x in
+     G.DeepEllipsis x
   | Num v1 -> 
       let v1 = number v1 in 
       G.L v1

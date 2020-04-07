@@ -175,6 +175,7 @@ and expr (x: expr) =
       G.ArrayAccess (v1, v2)
   | Obj v1 -> let flds = obj_ v1 in G.Record flds
   | Ellipsis v1 -> let v1 = info v1 in G.Ellipsis v1
+  | DeepEllipsis v1 -> let v1 = bracket expr v1 in G.DeepEllipsis v1
   | Class (v1, _v2TODO) -> 
       let def, _more_attrsTODOEMPTY  = class_ v1 in
       G.AnonClass def

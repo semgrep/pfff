@@ -201,6 +201,7 @@ and expr =
 
   (* sgrep-ext: *)
   | Ellipsis of tok
+  | DeepEllipsis of expr bracket
 
     (* transpiled to regular Calls when Ast_js_build.transpile_xml *)
     and xml = {

@@ -43,10 +43,13 @@ let test_parse_python xs =
 
 
 let test_dump_python file =
-  let ast = Parse_python.parse_program file in
-  let v = Meta_ast_python.vof_program ast in
-  let s = Ocaml.string_of_v v in
-  pr s
+  Common.save_excursion Flag.error_recovery true (fun () ->
+  Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
+   let ast = Parse_python.parse_program file in
+   let v = Meta_ast_python.vof_program ast in
+   let s = Ocaml.string_of_v v in
+   pr s
+  ))
 
 (*****************************************************************************)
 (* Main entry for Arg *)

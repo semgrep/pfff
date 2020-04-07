@@ -26,10 +26,12 @@ let test_dump_pattern_generic file =
   | _ when !lang = "" -> failwith "use -lang"
   | Some lang ->
      let s = Common.read_file file in
-     let any = Parse_generic.parse_pattern lang s in
-     let v = Meta_ast.vof_any any in
-     let s = Ocaml.string_of_v v in
-     pr2 s
+     Error_code.try_with_print_exn_and_reraise file (fun () ->
+       let any = Parse_generic.parse_pattern lang s in
+       let v = Meta_ast.vof_any any in
+       let s = Ocaml.string_of_v v in
+        pr2 s
+     )
   | None -> failwith (spf "unsupported language: %s" !lang)
 
 

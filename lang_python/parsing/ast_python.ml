@@ -138,6 +138,7 @@ type expr =
   | TypedExpr of expr * type_
   (* sgrep-ext: *)
   | Ellipsis of tok (* should be only in .pyi, types Dict[str,...], or sgrep *)
+  | DeepEllipsis of expr bracket
   | TypedMetavar of name * tok * type_
 
   | BoolOp of boolop wrap (* op *) * expr list (* values *)

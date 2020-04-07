@@ -517,6 +517,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
     | T.SEMICOL ii
     | T.BACKQUOTE ii
     | T.ELLIPSES ii
+    | T.LDots ii | T.RDots ii
 
     | T.AT ii
         ->

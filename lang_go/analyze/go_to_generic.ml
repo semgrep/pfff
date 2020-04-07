@@ -262,6 +262,8 @@ and expr =
         [G.Arg v1; G.ArgType v2])
   | Ellipsis v1 -> let v1 = tok v1 in 
       G.Ellipsis v1
+  | DeepEllipsis v1 -> let v1 = bracket expr v1 in 
+      G.DeepEllipsis v1
   | FuncLit ((v1, v2)) -> 
       let (params, ret) = func_type v1 
       and v2 = stmt v2 

@@ -244,7 +244,7 @@ let visit_program ~tag_hook _prefs (cst, toks) =
     | T.T_SEMICOLON (ii)
     | T.T_COMMA (ii)
     | T.T_PERIOD (ii)
-    | T.T_DOTS ii
+    | T.T_DOTS ii | T.LDots ii | T.RDots ii
         -> tag ii Punctuation
 
     (* Operators *)

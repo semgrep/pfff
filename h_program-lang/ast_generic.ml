@@ -316,6 +316,7 @@ and expr =
   | Ellipsis of tok (* '...' *)
   | TypedMetavar of ident * tok (* : *) * type_
   | DisjExpr of expr * expr
+  | DeepEllipsis of expr bracket
 
   | OtherExpr of other_expr_operator * any list
 

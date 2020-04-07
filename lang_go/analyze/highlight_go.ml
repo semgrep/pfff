@@ -364,7 +364,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
     | T.LCOMM ii -> 
           tag ii KeywordConcurrency
 
-    | T.LDDD ii-> 
+    | T.LDDD ii | T.LDots ii | T.RDots ii -> 
           tag ii Punctuation
   );
   ()
