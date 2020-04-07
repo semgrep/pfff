@@ -63,7 +63,6 @@ let (^@) sc xs =
 
 (* unrecognized token, will generate parse error *)
 %token <Parse_info.t> TUnknown
-
 %token <Parse_info.t> EOF
 
 (*-----------------------------------------*)
@@ -196,7 +195,6 @@ let (^@) sc xs =
 (*************************************************************************)
 (* Rules type declaration *)
 (*************************************************************************)
-
 %start <Cst_ml.toplevel list> interface
 %start <Cst_ml.toplevel list> implementation
 
@@ -248,8 +246,8 @@ implementation: structure EOF                        { $1 }
 (*************************************************************************)
 
 signature:
- | (* empty *)                                  { [] }
- | signature signature_item                     { $1 @ [TopItem $2] }
+ | (* empty *)                   { [] }
+ | signature signature_item      { $1 @ [TopItem $2] }
  | signature signature_item ";;" { $1 @ [TopItem $2; ScSc $3] }
 
 signature_item: signature_item_noattr post_item_attribute* { $1 }
