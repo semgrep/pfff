@@ -201,9 +201,15 @@ let (^@) sc xs =
 (*************************************************************************)
 (* Macros *)
 (*************************************************************************)
-list_and(X):
+list_sep(X,Sep):
  | X                      { [Left $1] }
- | list_and(X) Tand X     { $1 @ [Right $2; Left $3] }
+ | list_sep(X,Sep) Sep X  { $1 @ [Right $2; Left $3] }
+
+listr_sep(X,Sep):
+ | X                      { [Left $1] }
+ | X Sep list_sep(X,Sep)  { [Left $1; Right $2] @ $3 }
+
+list_and(X): list_sep(X, Tand) { $1 }
 
 (*************************************************************************)
 (* TOC *)
@@ -579,6 +585,7 @@ expr_comma_list:
  | expr_comma_list "," expr                  { $1 @ [Right $2; Left $3] }
  | expr "," expr                             { [Left $1; Right $2; Left $3] }
 
+(* s/r if factorize with list_sep(expr, ";"), weird *)
 expr_semi_list:
  | expr                           { [Left $1] }
  | expr_semi_list ";" expr        { $1 @ [Right $2; Left $3] }
@@ -709,10 +716,12 @@ record_pattern_end:
  | ";" "_" ";"?              { }
 
 
+(* s/r if factorize with list_sep(expr, ";"), weird *)
 pattern_semi_list:
  | pattern                              { [Left $1] }
  | pattern_semi_list ";" pattern        { $1 @[Right $2; Left $3] }
 
+(* s/r if factorize with list_sep(expr, ";"), weird *)
 pattern_comma_list:
  | pattern_comma_list "," pattern            { $1 @ [Right $2; Left $3] }
  | pattern "," pattern                       { [Left $1; Right $2; Left $3] }
@@ -761,9 +770,7 @@ type_kind:
 
 
 
-constructor_declarations:
- | constructor_declaration                               { [Left $1] }
- | constructor_declarations "|" constructor_declaration  { $1 @ [Right $2; Left $3] }
+constructor_declarations: list_sep(constructor_declaration, "|") { $1 }
 
 constructor_declaration: constr_ident constructor_arguments  { Name $1, $2 }
 
@@ -776,15 +783,13 @@ type_parameters:
  | type_parameter                      { TyParam1 $1 }
  | "(" type_parameter_list ")"         { TyParamMulti (($1, $2, $3)) }
 
-type_parameter_list:
- | type_parameter                            { [Left $1] }
- | type_parameter_list "," type_parameter    { $1 @ [Right $2; Left $3] }
+type_parameter_list: list_sep(type_parameter, ",") { $1 }
 
 type_parameter: (*TODO type_variance*) "'" ident   { ($1, Name $2) }
 
-
-label_declarations:
- | label_declaration                           { [Left $1] }
+(* weird, can't use list_sep *)
+label_declarations: 
+ | label_declaration                          { [Left $1] }
  | label_declarations ";" label_declaration   { $1 @[Right $2; Left $3]}
 
 label_declaration: Tmutable? label ":" poly_type          
@@ -839,13 +844,9 @@ simple_core_type2:
   | TLess TGreater                              { TyTodo }
 
 
-core_type_comma_list:
- | core_type                               { [Left $1] }
- | core_type_comma_list "," core_type      { $1 @ [Right $2; Left $3] }
+core_type_comma_list: list_sep(core_type, ",") { $1 }
 
-core_type_list:
-  | simple_core_type                       { [Left $1] }
-  | core_type_list "*" simple_core_type    { $1 @ [Right $2; Left $3] }
+core_type_list: list_sep(simple_core_type, "*") { $1 }
 
 meth_list:
   | field ";" meth_list                     { }
@@ -861,9 +862,7 @@ field: label ":" poly_type             { }
 poly_type: core_type { $1 }
 
 
-row_field_list:
- | row_field                                   { }
- | row_field_list "|" row_field                { }
+row_field_list: list_sep(row_field, "|") { }
 
 row_field:
  | tag_field                                   { }
@@ -1125,13 +1124,9 @@ single_attr_id:
   | TUpperIdent { $1 }
 (* should also put all keywords here, but bad practice no? *)
 
-attr_id:
-  | single_attr_id {  }
-  | single_attr_id "." attr_id { }
+attr_id: listr_sep(single_attr_id, ".") { $1 }
 
 post_item_attribute: TBracketAtAt attr_id payload "]" { }
 
 (* in theory you can have a full structure here *)
-payload:
-  | (* empty*) { }
-  | TString { }
+payload: TString? { }
