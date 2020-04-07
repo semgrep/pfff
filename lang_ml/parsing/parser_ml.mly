@@ -235,7 +235,6 @@ list_and(X): list_sep(X, Tand) { $1 }
  * - classes (not in AST)
  * - modules
  * - attributes
- * - xxx_opt, xxx_list
  *)
 
 (*************************************************************************)
@@ -549,9 +548,7 @@ simple_expr:
  | "!" simple_expr               { RefAccess ($1, $2) }
 
  | "{" record_expr "}"           { Record ($1, $2, $3) }
-
  | "[" expr_semi_list ";"? "]"   { List ($1, $2 @@ $3, $4) }
-
  | "[|" expr_semi_list ";"? "|]" { ExprTodo }
  | "[|" "|]"                     { ExprTodo }
 
@@ -564,7 +561,6 @@ simple_expr:
  (* object extension *)
  | simple_expr "#" label             { ObjAccess ($1, $2, Name $3) }
  | Tnew class_longident              { New ($1, $2) }
-
  | "{<" field_expr_list ";"? ">}"    { ExprTodo }
 
  (* name tag extension *)
@@ -591,21 +587,18 @@ expr_semi_list:
  | expr_semi_list ";" expr        { $1 @ [Right $2; Left $3] }
 
 
-
 record_expr:
  | lbl_expr_list ";"?                    { RecordNormal ($1 @@ $2) }
  | simple_expr Twith lbl_expr_list ";"?  { RecordWith ($1, $2, $3 @@ $4) }
 
-lbl_expr_list:
- | label_longident "=" expr
-     { [Left (FieldExpr ($1, $2, $3))] }
- | lbl_expr_list ";"     label_longident "=" expr
-     { $1 @ [Right $2; Left (FieldExpr ($3, $4, $5))] }
+lbl_expr: 
+ | label_longident "=" expr { FieldExpr ($1, $2, $3) }
  (* new 3.12 feature! *)
- | label_longident
-      { [Left (FieldImplicitExpr ($1))] }
- | lbl_expr_list ";"     label_longident
-     { $1 @ [Right $2; Left (FieldImplicitExpr $3)] }
+ | label_longident          { FieldImplicitExpr ($1) }
+
+lbl_expr_list:
+ | lbl_expr { [Left $1] }
+ | lbl_expr_list ";" lbl_expr { $1 @ [Right $2; Left $3 ] }
 
 subtractive:
   | TMinus                                       { "-", $1 }
@@ -644,16 +637,20 @@ label_expr:
 (*----------------------------*)
 
 field_expr_list:
- |  label "=" expr                      { }
-  | field_expr_list ";" label "=" expr  { }
+ | field_expr                      { }
+ | field_expr_list ";" field_expr  { }
+
+field_expr: label "=" expr { }
 
 (*************************************************************************)
 (* Patterns *)
 (*************************************************************************)
 
+match_case: pattern match_action { ($1, $2) }
+
 match_cases:
- | pattern  match_action                     { [Left ($1, $2)] }
- | match_cases "|"    pattern match_action { $1 @ [Right $2; Left ($3, $4)] }
+ | match_case                     { [Left ($1)] }
+ | match_cases "|" match_case { $1 @ [Right $2; Left ($3)] }
 
 match_action:
  | "->" seq_expr                  { Action ($1, $2) }
@@ -700,15 +697,13 @@ simple_pattern:
 
  | "(" pattern ")"             { ParenPat ($1, $2, $3) }
 
+lbl_pattern: 
+ | label_longident "=" pattern               { PatField ($1, $2, $3) }
+ | label_longident                           { PatImplicitField ($1) }
 
 lbl_pattern_list:
- | label_longident "=" pattern               {[Left (PatField ($1, $2, $3))] }
- | label_longident                           {[Left (PatImplicitField ($1))]  }
- | lbl_pattern_list ";"   label_longident "=" pattern 
-     { $1 @ [Right $2; Left (PatField ($3, $4, $5))] }
- | lbl_pattern_list ";"   label_longident       
-     { $1 @ [Right $2; Left (PatImplicitField ($3))] }
-
+ | lbl_pattern { [Left $1] }
+ | lbl_pattern_list ";" lbl_pattern { $1 @ [Right $2; Left $3] }
 
 record_pattern_end:
  | ";"?                      { }
