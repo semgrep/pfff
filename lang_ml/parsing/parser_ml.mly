@@ -51,8 +51,6 @@ let (qufix: long_name -> tok -> (string wrap) -> long_name) =
 let to_item xs =
   xs |> Common.map_filter (function TopItem x -> Some x | _ -> None)
 
-let (@@) xs sc =
-  match sc with None -> xs | Some x -> xs @ [Right x]
 let (^@) sc xs =
   match sc with None -> xs | Some x -> [Right x] @ xs
 %}
@@ -205,9 +203,24 @@ list_sep(X,Sep):
  | X                      { [Left $1] }
  | list_sep(X,Sep) Sep X  { $1 @ [Right $2; Left $3] }
 
-listr_sep(X,Sep):
+(* does not work
+list_sep2(X,Sep):
  | X                      { [Left $1] }
- | X Sep list_sep(X,Sep)  { [Left $1; Right $2] @ $3 }
+ | X Sep                  { [Left $1; Right $2] }
+ | list_sep2(X,Sep) Sep X  { $1 @ [Right $2; Left $3] }
+*)
+
+listr_sep(X,Sep):
+ | X                       { [Left $1] }
+ | X Sep listr_sep(X,Sep)  { [Left $1; Right $2] @ $3 }
+
+(* list separated by Sep and possibly terminated by trailing Sep.
+ * This has to be recursive on the right, otherwise s/r conflict.
+ *)
+list_sep_term(X,Sep):
+ | X                       { [Left $1] }
+ | X Sep                   { [Left $1; Right $2] }
+ | X Sep list_sep_term(X,Sep)  { [Left $1; Right $2] @ $3 }
 
 list_and(X): list_sep(X, Tand) { $1 }
 
@@ -548,8 +561,8 @@ simple_expr:
  | "!" simple_expr               { RefAccess ($1, $2) }
 
  | "{" record_expr "}"           { Record ($1, $2, $3) }
- | "[" expr_semi_list ";"? "]"   { List ($1, $2 @@ $3, $4) }
- | "[|" expr_semi_list ";"? "|]" { ExprTodo }
+ | "["  expr_semi_list "]"   { List ($1, $2, $3) }
+ | "[|" expr_semi_list "|]" { ExprTodo }
  | "[|" "|]"                     { ExprTodo }
 
  (* array extension *)
@@ -561,7 +574,7 @@ simple_expr:
  (* object extension *)
  | simple_expr "#" label             { ObjAccess ($1, $2, Name $3) }
  | Tnew class_longident              { New ($1, $2) }
- | "{<" field_expr_list ";"? ">}"    { ExprTodo }
+ | "{<" field_expr_list ">}"         { ExprTodo }
 
  (* name tag extension *)
  | name_tag %prec prec_constant_constructor  { ExprTodo }
@@ -581,25 +594,19 @@ expr_comma_list:
  | expr_comma_list "," expr                  { $1 @ [Right $2; Left $3] }
  | expr "," expr                             { [Left $1; Right $2; Left $3] }
 
-(* weird: cant factorize with list_sep(expr, ";") *)
-expr_semi_list:
- | expr                           { [Left $1] }
- | expr_semi_list ";" expr        { $1 @ [Right $2; Left $3] }
+expr_semi_list: list_sep_term(expr, ";") { $1 }
 
 
 record_expr:
- | lbl_expr_list ";"?                    { RecordNormal ($1 @@ $2) }
- | simple_expr Twith lbl_expr_list ";"?  { RecordWith ($1, $2, $3 @@ $4) }
+ | lbl_expr_list                    { RecordNormal ($1) }
+ | simple_expr Twith lbl_expr_list  { RecordWith ($1, $2, $3) }
 
 lbl_expr: 
  | label_longident "=" expr { FieldExpr ($1, $2, $3) }
  (* new 3.12 feature! *)
  | label_longident          { FieldImplicitExpr ($1) }
 
-(* weird: cant use list_sep *)
-lbl_expr_list: 
- | lbl_expr { [Left $1] }
- | lbl_expr_list ";" lbl_expr { $1 @ [Right $2; Left $3 ] }
+lbl_expr_list: list_sep_term(lbl_expr, ";") { $1 }
 
 subtractive:
   | TMinus                                       { "-", $1 }
@@ -637,9 +644,7 @@ label_expr:
 (* objects *)
 (*----------------------------*)
 
-field_expr_list:
- | field_expr                      { }
- | field_expr_list ";" field_expr  { }
+field_expr_list: list_sep_term(field_expr, ";") { $1 }
 
 field_expr: label "=" expr { }
 
@@ -649,13 +654,13 @@ field_expr: label "=" expr { }
 
 match_case: pattern match_action { ($1, $2) }
 
-(* cant factorize with list_sep *)
+(* cant factorize with list_sep, or listr_sep *)
 match_cases:
- | match_case                     { [Left ($1)] }
- | match_cases "|" match_case { $1 @ [Right $2; Left ($3)] }
+ | match_case                   { [Left ($1)] }
+ | match_cases "|" match_case   { $1 @ [Right $2; Left ($3)] }
 
 match_action:
- | "->" seq_expr                  { Action ($1, $2) }
+ |                "->" seq_expr   { Action ($1, $2) }
  | Twhen seq_expr "->" seq_expr   { WhenAction ($1, $2, $3, $4) }
 
 
@@ -684,10 +689,9 @@ simple_pattern:
  | signed_constant                  { PatConstant $1 }
 
  | "{" lbl_pattern_list record_pattern_end "}" { PatRecord ($1,$2,(*$3*) $4) }
- | "[" pattern_semi_list ";"? "]"              { PatList (($1, $2 @@ $3, $4)) }
-
- | "[|" pattern_semi_list ";"? "|]"            { PatTodo }
- | "[|" "|]"                                   { PatTodo }
+ | "[" pattern_semi_list  "]"             { PatList (($1, $2, $3)) }
+ | "[|" pattern_semi_list "|]"            { PatTodo }
+ | "[|" "|]"                              { PatTodo }
 
  (* note that let (x:...) a =  will trigger this rule *)
  | "(" pattern ":" core_type ")"               { PatTyped ($1, $2, $3, $4, $5)}
@@ -703,7 +707,7 @@ lbl_pattern:
  | label_longident "=" pattern               { PatField ($1, $2, $3) }
  | label_longident                           { PatImplicitField ($1) }
 
-(* cant factorize with list_sep *)
+(* cant factorize with list_sep or list_sep_term *)
 lbl_pattern_list:
  | lbl_pattern { [Left $1] }
  | lbl_pattern_list ";" lbl_pattern { $1 @ [Right $2; Left $3] }
@@ -714,12 +718,9 @@ record_pattern_end:
  | ";" "_" ";"?              { }
 
 
-(* cant factorize with list_sep() *)
-pattern_semi_list:
- | pattern                              { [Left $1] }
- | pattern_semi_list ";" pattern        { $1 @[Right $2; Left $3] }
+pattern_semi_list: list_sep_term(pattern, ";") { $1 }
 
-(* cant factorize with list_sep *)
+(* not exactly like list_sep() *)
 pattern_comma_list:
  | pattern_comma_list "," pattern            { $1 @ [Right $2; Left $3] }
  | pattern "," pattern                       { [Left $1; Right $2; Left $3] }
@@ -763,8 +764,8 @@ type_kind:
       { Some ($1, TyAlgebric $2) }
  | "=" (*TODO private_flag*) "|" constructor_declarations
       { Some ($1, TyAlgebric (Right $2::$3)) }
- | "=" (*TODO private_flag*) "{" label_declarations ";"? "}"
-      { Some ($1, TyRecord ($2, ($3 @@ $4), $5)) }
+ | "=" (*TODO private_flag*) "{" label_declarations "}"
+      { Some ($1, TyRecord ($2, ($3), $4)) }
 
 
 
@@ -785,10 +786,7 @@ type_parameter_list: list_sep(type_parameter, ",") { $1 }
 
 type_parameter: (*TODO type_variance*) "'" ident   { ($1, Name $2) }
 
-(* cant factorize with list_sep() *)
-label_declarations: 
- | label_declaration                          { [Left $1] }
- | label_declarations ";" label_declaration   { $1 @[Right $2; Left $3]}
+label_declarations: list_sep_term(label_declaration, ";") { $1 }
 
 label_declaration: Tmutable? label ":" poly_type          
    { { fld_mutable = $1; fld_name = Name $2; fld_tok = $3; fld_type = $4; } }
