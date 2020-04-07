@@ -302,7 +302,7 @@ structure_item_noattr:
  | Topen mod_longident                           { Open ($1, $2) }
 
  (* start of deviation *)
- | Tlet rec_flag let_bindings                    { Let ($1, $2, $3) }
+ | Tlet Trec? let_bindings                    { Let ($1, $2, $3) }
  (* modules *)
  | Tmodule TUpperIdent module_binding
       { match $3 with
@@ -431,7 +431,7 @@ expr:
        | L name -> FunCallSimple (name, $2)
        | _      -> FunCall ($1, $2) }
 
- | Tlet rec_flag let_bindings Tin seq_expr   { LetIn ($1, $2, $3, $4, $5) }
+ | Tlet Trec? let_bindings Tin seq_expr   { LetIn ($1, $2, $3, $4, $5) }
 
  | Tfun labeled_simple_pattern fun_def
      { let (params, action) = $3 in
@@ -787,20 +787,14 @@ label_declarations:
  | label_declaration                           { [Left $1] }
  | label_declarations ";" label_declaration   { $1 @[Right $2; Left $3]}
 
-label_declaration: mutable_flag label ":" poly_type          
+label_declaration: Tmutable? label ":" poly_type          
    { { fld_mutable = $1; fld_name = Name $2; fld_tok = $3; fld_type = $4; } }
-
-mutable_flag:
- | (*empty*)       { None }
- | Tmutable        { Some $1 }
 
 (*----------------------------*)
 (* Types expressions *)
 (*----------------------------*)
 
-core_type:
- | core_type2
-    { $1 }
+core_type: core_type2 { $1 }
 
 core_type2:
  | simple_core_type_or_tuple
@@ -809,75 +803,62 @@ core_type2:
      { TyFunction ($1, $2, $3) }
 
  (* ext: olabl *)
- | TLowerIdent           ":" core_type2 "->" core_type2
+ | TLowerIdent     ":" core_type2 "->" core_type2
      { TyFunction ($3, $4, $5) (* TODO $1 $2 *)  }
  | "?" TLowerIdent ":" core_type2 "->" core_type2
      { TyFunction ($4, $5, $6) (* TODO $1 $2 *)  }
  (* pad: only because of lexer hack around labels *)
- | TOptLabelDecl                core_type2 "->" core_type2
+ | TOptLabelDecl    core_type2 "->" core_type2
      { TyFunction ($2, $3, $4) (* TODO $1 $2 *)  }
 
 
 simple_core_type_or_tuple:
- | simple_core_type                          { $1 }
+ | simple_core_type                        { $1 }
  | simple_core_type "*" core_type_list     { TyTuple (Left $1::Right $2::$3) }
 
 
 simple_core_type:
- | simple_core_type2
-      { $1 }
+ | simple_core_type2   { $1 }
  (* weird diff between 'Foo of a * b' and 'Foo of (a * b)' *)
- | "(" core_type_comma_list ")"
-      { TyTuple2 (($1, $2, $3)) }
+ | "(" core_type_comma_list ")" { TyTuple2 (($1, $2, $3)) }
 
 simple_core_type2:
- | "'" ident
-      { TyVar ($1, Name $2) }
- | type_longident
-      { TyName ($1) }
- | simple_core_type2 type_longident
-      { TyApp (TyArg1 $1, $2) }
- | "(" core_type_comma_list ")" type_longident
+ | "'" ident                                     { TyVar ($1, Name $2) }
+ | type_longident                                { TyName ($1) }
+ | simple_core_type2 type_longident              { TyApp (TyArg1 $1, $2) }
+ | "(" core_type_comma_list ")" type_longident 
       { TyApp (TyArgMulti (($1, $2, $3)), $4) }
 
  (* name tag extension *)
- | "[" row_field "|" row_field_list "]"
-      { TyTodo }
- | "[" "|" row_field_list "]"
-      { TyTodo }
- | "[" tag_field "]"
-      { TyTodo }
+ | "[" row_field "|" row_field_list "]"          { TyTodo }
+ | "[" "|" row_field_list "]"                    { TyTodo }
+ | "[" tag_field "]"                             { TyTodo }
 
  (* objects types *)
-  | TLess meth_list TGreater
-      { TyTodo }
-  | TLess TGreater
-      { TyTodo }
+  | TLess meth_list TGreater                    { TyTodo }
+  | TLess TGreater                              { TyTodo }
 
 
 core_type_comma_list:
- | core_type                                  { [Left $1] }
+ | core_type                               { [Left $1] }
  | core_type_comma_list "," core_type      { $1 @ [Right $2; Left $3] }
 
 core_type_list:
-  | simple_core_type                         { [Left $1] }
+  | simple_core_type                       { [Left $1] }
   | core_type_list "*" simple_core_type    { $1 @ [Right $2; Left $3] }
 
 meth_list:
-  | field ";" meth_list                      { }
+  | field ";" meth_list                     { }
   | field ";"?                              {  }
-  | ".."                                      {  }
+  | ".."                                    {  }
 
-field:
-    label ":" poly_type             { }
+field: label ":" poly_type             { }
 
 (*----------------------------*)
 (* Misc *)
 (*----------------------------*)
 
-poly_type:
- | core_type
-     { $1 }
+poly_type: core_type { $1 }
 
 
 row_field_list:
@@ -889,14 +870,8 @@ row_field:
  | simple_core_type2                           { }
 
 tag_field:
- | name_tag Tof opt_ampersand amper_type_list
-      { }
- | name_tag
-      { }
-
-opt_ampersand:
- | TAnd                                   { }
- | (* empty *)                                 { }
+ | name_tag Tof TAnd? amper_type_list   { }
+ | name_tag       { }
 
 amper_type_list: list_and(core_type) { $1 }
 
@@ -908,21 +883,16 @@ let_bindings: list_and(let_binding) { $1 }
 
 let_binding:
  | val_ident fun_binding
-      { 
-        let (params, (teq, body)) = $2 in
-        LetClassic {
-          l_name = Name $1;
-          l_params = params;
-          l_tok = teq;
-          l_body = body;
-        }
-      }
+      { let (params, (teq, body)) = $2 in
+        LetClassic { l_name = Name $1; l_params = params; l_tok = teq;
+                     l_body = body;
+        } }
  | pattern "=" seq_expr
       { LetPattern ($1, $2, $3) }
 
 
 fun_binding:
- | strict_binding { $1 }
+ | strict_binding               { $1 }
  (* let x arg1 arg2 : t = e *)
  | type_constraint "=" seq_expr { [], ($2, $3) (* TODO return triple with $1*)}
 
@@ -930,7 +900,7 @@ strict_binding:
  (* simple values, e.g. 'let x = 1' *)
  | "=" seq_expr  { [], ($1, $2) }
  (* function values, e.g. 'let x a b c = 1' *)
- | labeled_simple_pattern fun_binding { let (args, body) = $2 in $1::args, body }
+ | labeled_simple_pattern fun_binding { let (args, body) = $2 in $1::args,body}
 
 fun_def:
  | match_action                    { [], $1 }
@@ -942,32 +912,23 @@ labeled_simple_pattern:
   | label_pattern  { $1 }
 
 opt_default:
- | (*empty*)           { None  }
+ | (*empty*)               { None  }
  | "=" seq_expr            { Some ($1, $2) }
-
-rec_flag:
- | (*empty*)   { None }
- | Trec            { Some $1 }
 
 (*----------------------------*)
 (* Labels *)
 (*----------------------------*)
 
 label_pattern:
-  | "~" label_var
-      { ParamTodo }
+  | "~" label_var                                 { ParamTodo }
   (* ex: let x ~foo:a *)
-  | TLabelDecl simple_pattern
-      { ParamTodo }
-  | "~" "(" label_let_pattern ")"
-      { ParamTodo }
-  | "?" "(" label_let_pattern opt_default ")"
-      { ParamTodo }
-  | "?" label_var
-      { ParamTodo }
-
+  | TLabelDecl simple_pattern                     { ParamTodo }
+  | "~" "(" label_let_pattern ")"                 { ParamTodo }
+  | "?" "(" label_let_pattern opt_default ")"     { ParamTodo }
+  | "?" label_var                                 { ParamTodo }
+ 
 label_let_pattern:
- | label_var                   { }
+ | label_var                { }
  | label_var ":" core_type  { }
 
 (*************************************************************************)
@@ -977,12 +938,11 @@ label_let_pattern:
 (*----------------------------*)
 (* Class types *)
 (*----------------------------*)
-class_description:
- virtual_flag class_type_parameters TLowerIdent ":" class_type
+class_description: Tvirtual? class_type_parameters TLowerIdent ":" class_type
   { }
 
-class_type_declaration:
-  virtual_flag class_type_parameters TLowerIdent "=" class_signature
+class_type_declaration: 
+  Tvirtual? class_type_parameters TLowerIdent "=" class_signature
   { }
 
 class_type:
@@ -993,18 +953,14 @@ class_signature:
   (*  LBRACKET core_type_comma_list RBRACKET clty_longident
       {  }
   *)
-  | clty_longident
-      {  }
-  | Tobject class_sig_body Tend
-      {  }
+  | clty_longident               {  }
+  | Tobject class_sig_body Tend  {  }
 
-class_sig_body:
-    class_self_type class_sig_fields { }
+class_sig_body: class_self_type class_sig_fields { }
 
 class_self_type:
-    "(" core_type ")"
-      { }
   | (*empty*) {  }
+  | "(" core_type ")"  { }
 
 class_sig_fields:
   | class_sig_fields Tinherit class_signature    {  }
@@ -1012,27 +968,19 @@ class_sig_fields:
   | class_sig_fields method_type                {  }
 
   | class_sig_fields Tval value_type            {  }
-(*
-  | class_sig_fields Tconstraint constrain       {  }
-*)
+(* | class_sig_fields Tconstraint constrain       {  } *)
   | (*empty*)                               { }
 
-method_type:
-  | Tmethod private_flag label ":" poly_type { }
+method_type: Tmethod Tprivate? label ":" poly_type { }
 
 virtual_method_type:
-  | Tmethod Tprivate Tvirtual label ":" poly_type
-      {  }
-  | Tmethod Tvirtual private_flag label ":" poly_type
-      {  }
+  | Tmethod Tprivate Tvirtual label ":" poly_type    {  }
+  | Tmethod Tvirtual Tprivate? label ":" poly_type   {  }
 
 value_type:
-  | Tvirtual mutable_flag label ":" core_type
-      { }
-  | Tmutable virtual_flag label ":" core_type
-      {  }
-  | label ":" core_type
-      {  }
+  | Tvirtual Tmutable? label ":" core_type     { }
+  | Tmutable Tvirtual? label ":" core_type  {  }
+  | label ":" core_type     {  }
 
 (*----------------------------*)
 (* Class expressions *)
@@ -1042,12 +990,12 @@ value_type:
 (* Class definitions *)
 (*----------------------------*)
 
-class_declaration:
-    virtual_flag class_type_parameters TLowerIdent class_fun_binding
+class_declaration: 
+ Tvirtual? class_type_parameters TLowerIdent class_fun_binding
       { }
 
 class_type_parameters:
-  | (*empty*)                                   { }
+  | (*empty*)                         { }
   | "[" type_parameter_list "]"       { }
 
 class_fun_binding:
@@ -1057,150 +1005,90 @@ class_fun_binding:
       { }
 
 class_expr:
-  | class_simple_expr
-      { }
-  | Tfun class_fun_def
-      { }
-  | class_simple_expr labeled_simple_expr+
-      { }
-  | Tlet rec_flag let_bindings Tin class_expr
-      { }
+  | class_simple_expr                         { }
+  | Tfun class_fun_def                        { }
+  | class_simple_expr labeled_simple_expr+    { }
+  | Tlet Trec? let_bindings Tin class_expr    { }
 
 class_simple_expr:
-  | "[" core_type_comma_list "]" class_longident
-      { }
-  | class_longident
-      { }
-  | Tobject class_structure Tend
-      { }
-(* TODO
-  | "(" class_expr ":" class_type ")"
-      { }
-*)
-  | "(" class_expr ")"
-      { }
+  | "[" core_type_comma_list "]" class_longident   { }
+  | class_longident                                { }
+  | Tobject class_structure Tend                   { }
+(* TODO | "(" class_expr ":" class_type ")" { } *)
+  | "(" class_expr ")"                             { }
 
 class_fun_def:
-  | labeled_simple_pattern "->" class_expr
-      { }
-  | labeled_simple_pattern class_fun_def
-      { }
+  | labeled_simple_pattern "->" class_expr   { }
+  | labeled_simple_pattern class_fun_def     { }
 
-class_structure:
-    class_self_pattern class_fields
-      { }
+class_structure: class_self_pattern class_fields { }
 
 class_self_pattern:
-  | "(" pattern ")"
-      { }
-  | "(" pattern ":" core_type ")"
-      { }
-  | (*empty*)
-      { }
+  | "(" pattern ")"                { }
+  | "(" pattern ":" core_type ")"  { }
+  | (*empty*)                      { }
 
 
 
 class_fields:
   | (*empty*)
       { }
-  | class_fields Tinherit override_flag class_expr parent_binder
+  | class_fields Tinherit "!"? class_expr parent_binder
       { }
-  | class_fields Tval virtual_value
-      { }
-  | class_fields Tval value
-      { }
-  | class_fields virtual_method
-      { }
-  | class_fields concrete_method
-      { }
-(* TODO
-  | class_fields Tconstraint constrain
-      { }
-*)
-  | class_fields Tinitializer seq_expr
-      { }
+  | class_fields Tval virtual_value  { }
+  | class_fields Tval value          { }
+  | class_fields virtual_method      { }
+  | class_fields concrete_method     { }
+(* TODO | class_fields Tconstraint constrain { } *)
+  | class_fields Tinitializer seq_expr  { }
 
 
 parent_binder:
-  | Tas TLowerIdent
-          { }
-  | (* empty *)
-          { }
+  | Tas TLowerIdent { }
+  | (* empty *) { }
 
 
 virtual_value:
-  | override_flag Tmutable Tvirtual label ":" core_type
-      { }
-  | Tvirtual mutable_flag label ":" core_type
-      { }
+  | "!"? Tmutable Tvirtual label ":" core_type  { }
+  | Tvirtual Tmutable label ":" core_type                { }
 
 value:
-  | override_flag mutable_flag label "=" seq_expr
-      { }
-  | override_flag mutable_flag label type_constraint "=" seq_expr
-      { }
+  | "!"? Tmutable label "=" seq_expr      { }
+  | "!"? Tmutable label type_constraint "=" seq_expr  { }
 
 virtual_method:
-  | Tmethod override_flag Tprivate Tvirtual label ":" poly_type
-      { }
-  | Tmethod override_flag Tvirtual private_flag label ":" poly_type
-      { }
+  | Tmethod "!"? Tprivate Tvirtual label ":" poly_type  { }
+  | Tmethod "!"? Tvirtual Tprivate? label ":" poly_type { }
 
 concrete_method:
-  | Tmethod override_flag private_flag label strict_binding
-      { }
-  | Tmethod override_flag private_flag label ":" poly_type "=" seq_expr
-      { }
-
-
-
-virtual_flag:
- | (* empty*)                               { }
- | Tvirtual                                     { }
-
-(* 3.12? *)
-override_flag:
- | (*empty*)                                 { }
- | "!"                                        { }
-
-private_flag:
-    (* empty *)                                 { }
-  | Tprivate                                     { }
+  | Tmethod "!"? Tprivate? label strict_binding  { }
+  | Tmethod "!"? Tprivate? label ":" poly_type "=" seq_expr { }
 
 (*************************************************************************)
 (* Modules *)
 (*************************************************************************)
 
 module_binding:
- | "=" module_expr
-     { Some ($1, $2) }
- | "(" TUpperIdent ":" module_type ")" module_binding
-     { None }
- | ":" module_type "=" module_expr
-     { (* TODO $1 *) Some ($3, $4) }
+ | "=" module_expr                                     { Some ($1, $2) }
+ | "(" TUpperIdent ":" module_type ")" module_binding  { None }
+ | ":" module_type "=" module_expr                     { (*$1 *) Some($3, $4) }
 
 module_declaration:
- | ":" module_type
-      { }
- | "(" TUpperIdent ":" module_type ")" module_declaration
-     { }
+ | ":" module_type  { }
+ | "(" TUpperIdent ":" module_type ")" module_declaration { }
 
 (*----------------------------*)
 (* Module types *)
 (*----------------------------*)
 
 module_type:
- | mty_longident
-      { }
- | Tsig signature Tend
-      { }
+ | mty_longident         { }
+ | Tsig signature Tend   { }
  | Tfunctor "(" TUpperIdent ":" module_type ")" "->" module_type
-      %prec below_WITH
+    %prec below_WITH
       { }
- | module_type Twith list_and(with_constraint)
-     { }
- | "(" module_type ")"
-      { }
+ | module_type Twith list_and(with_constraint) { }
+ | "(" module_type ")"     { }
 
 
 with_constraint:
@@ -1209,7 +1097,7 @@ with_constraint:
    { }
 
 with_type_binder:
- | "="          {  }
+ | "="           {  }
  | "=" Tprivate  {  }
 
 (*----------------------------*)
@@ -1218,17 +1106,13 @@ with_type_binder:
 
 module_expr:
   (* when just do a module aliasing *)
-  | mod_longident
-      { ModuleName $1 }
+  | mod_longident       { ModuleName $1 }
   (* nested modules *)
-  | Tstruct structure Tend
-      { ModuleStruct ($1, to_item $2, $3) }
+  | Tstruct structure Tend { ModuleStruct ($1, to_item $2, $3) }
   (* functor definition *)
-  | Tfunctor "(" TUpperIdent ":" module_type ")" "->" module_expr
-      { ModuleTodo }
+  | Tfunctor "(" TUpperIdent ":" module_type ")" "->" module_expr { ModuleTodo}
   (* module/functor application *)
-  | module_expr "(" module_expr ")"
-      { ModuleTodo }
+  | module_expr "(" module_expr ")" { ModuleTodo }
 
 (*************************************************************************)
 (* Attributes *)
@@ -1245,8 +1129,7 @@ attr_id:
   | single_attr_id {  }
   | single_attr_id "." attr_id { }
 
-post_item_attribute:
-  TBracketAtAt attr_id payload "]" { }
+post_item_attribute: TBracketAtAt attr_id payload "]" { }
 
 (* in theory you can have a full structure here *)
 payload:
