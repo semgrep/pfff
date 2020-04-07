@@ -52,6 +52,7 @@ clean::
 	rm -f lexer_ml.ml
 beforedepend:: lexer_ml.ml
 
+OCAMLYACC=menhir --unused-tokens --explain --fixed-exception
 
 parser_ml.ml parser_ml.mli: parser_ml.mly
 	$(OCAMLYACC) $<
