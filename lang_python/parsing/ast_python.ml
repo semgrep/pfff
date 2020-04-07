@@ -336,7 +336,7 @@ type stmt =
 and excepthandler = 
   ExceptHandler of 
     tok *
-    pattern option (* type, possibly a list of types as in (Error,Fatal) *) * 
+    expr option (* type, possibly a list of types as in (Error,Fatal) *) * 
     name option (* name, introduce new var, todo: only if pattern is Some *) * 
     stmt list (* body *)
 
