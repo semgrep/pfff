@@ -44,6 +44,9 @@ open Cst_ml
  *   - use dypgen ?
  *)
 
+(*************************************************************************)
+(* Helpers *)
+(*************************************************************************)
 let (qufix: long_name -> tok -> (string wrap) -> long_name) = 
  fun longname dottok ident ->
   match longname with
@@ -1382,7 +1385,7 @@ module_expr:
 (* Attributes *)
 (*************************************************************************)
 
-(*pad: this is a limited implemen for now; just what I need for efuns *)
+(*pad: this is a limited implemenentation for now; just enough for efuns*)
 
 single_attr_id:
   | TLowerIdent { $1 }
