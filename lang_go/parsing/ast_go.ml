@@ -163,6 +163,7 @@ and expr =
 
  (* sgrep-ext: *)
  | Ellipsis of tok
+ | DeepEllipsis of expr bracket
 
  | FuncLit of function_
 

@@ -172,6 +172,7 @@ and map_expr =
       Assign ((v1, v2, v3))
   | Obj v1 -> let v1 = map_obj_ v1 in Obj ((v1))
   | Ellipsis v1 -> let v1 = map_tok v1 in Ellipsis ((v1))
+  | DeepEllipsis v1 -> let v1 = map_bracket map_expr v1 in DeepEllipsis ((v1))
   | Class (v1, v2) -> 
     let v1 = map_class_ v1 in
     let v2 = map_option map_name v2 in

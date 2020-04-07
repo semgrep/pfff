@@ -203,6 +203,9 @@ rule token = parse
 
   (* part of go and also sgrep-ext: *)
   | "..."   { LDDD (tokinfo lexbuf) }
+  (* sgrep-ext: *)
+  | "<..."  { Flag_parsing.sgrep_guard (LDots (tokinfo lexbuf)) }
+  | "...>"  { Flag_parsing.sgrep_guard (RDots (tokinfo lexbuf)) }
 
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)

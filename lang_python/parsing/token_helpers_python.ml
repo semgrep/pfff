@@ -59,6 +59,9 @@ let visitor_info_of_tok f = function
   | NONLOCAL (ii) -> NONLOCAL (f ii)
 
   | ELLIPSES (ii) -> ELLIPSES (f ii)
+  | LDots (ii) -> LDots (f ii)
+  | RDots (ii) -> RDots (f ii)
+
   | AND (ii) -> AND (f ii)
   | AS (ii) -> AS (f ii)
   | ASSERT (ii) -> ASSERT (f ii)

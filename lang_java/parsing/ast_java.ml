@@ -207,6 +207,7 @@ and expr =
 
   (* sgrep-ext: *)
   | Ellipsis of tok
+  | DeepEllipsis of expr bracket
 
   and literal = 
   | Int of string wrap

@@ -173,6 +173,8 @@ and vof_expr =
       in Ocaml.VSum (("TypeSwitchExpr", [ v1; v2 ]))
   | Ellipsis v1 ->
       let v1 = vof_tok v1 in Ocaml.VSum (("Ellipsis", [ v1 ]))
+  | DeepEllipsis v1 ->
+      let v1 = vof_bracket vof_expr v1 in Ocaml.VSum (("DeepEllipsis", [ v1 ]))
   | FuncLit ((v1, v2)) ->
       let v1 = vof_func_type v1
       and v2 = vof_stmt v2

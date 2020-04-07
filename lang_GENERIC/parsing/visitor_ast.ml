@@ -164,6 +164,7 @@ and v_expr x =
   | DisjExpr (v1, v2) -> let v1 = v_expr v1 in let v2 = v_expr v2 in ()
   | L v1 -> let v1 = v_literal v1 in ()
   | Ellipsis v1 -> let v1 = v_tok v1 in ()
+  | DeepEllipsis v1 -> let v1 = v_bracket v_expr v1 in ()
   | Container ((v1, v2)) ->
       let v1 = v_container_operator v1 and v2 = v_bracket (v_list v_expr) v2
       in ()

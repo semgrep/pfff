@@ -211,6 +211,8 @@ and vof_expr =
       let v1 = vof_expr v1 in Ocaml.VSum (("DeRef", [ t; v1 ]))
   | Ellipsis v1 -> 
       let v1 = vof_tok v1 in Ocaml.VSum (("Ellipsis", [ v1 ]))
+  | DeepEllipsis v1 -> 
+      let v1 = vof_bracket vof_expr v1 in Ocaml.VSum (("DeepEllipsis", [ v1 ]))
   | TypedMetavar ((v1, v2, v3)) ->
       let v1 = vof_ident v1
       and v2 = vof_tok v2

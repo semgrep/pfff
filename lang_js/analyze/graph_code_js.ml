@@ -567,7 +567,7 @@ and expr env e =
   | Conditional (e1, e2, e3) ->
     List.iter (expr env) [e1;e2;e3]
   | Xml x -> xml env x
-  | Ellipsis _ -> ()
+  | Ellipsis _ | DeepEllipsis _ -> ()
 
 and xml env x =
   (* TODO add_use_edge env ([x.xml_tag], E.Class); *)

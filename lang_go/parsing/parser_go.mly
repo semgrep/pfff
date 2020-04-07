@@ -216,6 +216,7 @@ let rev_and_fix_items xs =
   LCOLON LEQ LDOT LCOMMA
   LCOLAS /* := */
   LDDD
+  LDots RDots
   
 /*(* operators *)*/
 %token <Ast_go.tok> 
@@ -545,6 +546,7 @@ expr:
 
  /*(* sgrep-ext: *)*/
  | LDDD { Flag_parsing.sgrep_guard (Ellipsis $1) }
+ | LDots expr RDots { Flag_parsing.sgrep_guard (DeepEllipsis ($1, $2, $3)) }
 
 uexpr:
 |   pexpr { $1 }
