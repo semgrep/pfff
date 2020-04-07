@@ -533,6 +533,8 @@ and map_pattern =
   | PatUnderscore v1 -> let v1 = map_tok v1 in PatUnderscore ((v1))
   | PatDisj ((v1, v2)) ->
       let v1 = map_pattern v1 and v2 = map_pattern v2 in PatDisj ((v1, v2))
+  | DisjPat ((v1, v2)) ->
+      let v1 = map_pattern v1 and v2 = map_pattern v2 in DisjPat ((v1, v2))
   | PatTyped ((v1, v2)) ->
       let v1 = map_pattern v1 and v2 = map_type_ v2 in PatTyped ((v1, v2))
   | PatAs ((v1, v2)) ->

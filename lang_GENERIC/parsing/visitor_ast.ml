@@ -484,6 +484,7 @@ and v_pattern x =
   | PatKeyVal ((v1, v2)) -> let v1 = v_pattern v1 and v2 = v_pattern v2 in ()
   | PatUnderscore v1 -> let v1 = v_tok v1 in ()
   | PatDisj ((v1, v2)) -> let v1 = v_pattern v1 and v2 = v_pattern v2 in ()
+  | DisjPat ((v1, v2)) -> let v1 = v_pattern v1 and v2 = v_pattern v2 in ()
   | PatTyped ((v1, v2)) -> let v1 = v_pattern v1 and v2 = v_type_ v2 in ()
   | PatAs ((v1, v2)) ->
       let v1 = v_pattern v1

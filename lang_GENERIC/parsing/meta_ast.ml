@@ -642,7 +642,7 @@ and vof_pattern =
   | PatId ((v1, v2)) ->
       let v1 = vof_ident v1
       and v2 = vof_id_info v2
-      in Ocaml.VSum (("PatVar", [ v1; v2 ]))
+      in Ocaml.VSum (("PatId", [ v1; v2 ]))
 
   | PatVar ((v1, v2)) ->
       let v1 = vof_type_ v1
@@ -705,6 +705,10 @@ and vof_pattern =
       let v1 = vof_pattern v1
       and v2 = vof_type_ v2
       in Ocaml.VSum (("PatTyped", [ v1; v2 ]))
+  | DisjPat ((v1, v2)) ->
+      let v1 = vof_pattern v1
+      and v2 = vof_pattern v2
+      in Ocaml.VSum (("DisjPat", [ v1; v2 ]))
   | OtherPat ((v1, v2)) ->
       let v1 = vof_other_pattern_operator v1
       and v2 = Ocaml.vof_list vof_any v2
