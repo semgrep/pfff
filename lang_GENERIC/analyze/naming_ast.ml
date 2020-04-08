@@ -400,8 +400,9 @@ let resolve lang prog =
        | ImportAs (_, FileName (s, tok), Some alias) ->
           (* for Go *)
           let sid = Ast.gensym () in
-          let base = Filename.basename s, tok in
-          let resolved = ImportedModule (DottedName [base]), sid in
+          let identities = Str.split (Str.regexp "/") s |>
+            List.map(fun name -> name, tok) in
+          let resolved = ImportedEntity identities, sid in
           add_ident_imported_scope alias resolved env.names;
 
        | _ -> ()
