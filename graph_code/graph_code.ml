@@ -285,12 +285,20 @@ let default_filename =
 let iter_use_edges f g =
   G.iter_edges f g.use
 
+let iter_has_edges f g =
+  G.iter_edges f g.has
+
 let iter_nodes f g =
   G.iter_nodes f g.has
 
 let all_use_edges g =
   let res = ref [] in
   G.iter_edges (fun n1 n2 -> Common.push (n1, n2) res) g.use;
+  !res
+
+let all_has_edges g =
+  let res = ref [] in
+  G.iter_edges (fun n1 n2 -> Common.push (n1, n2) res) g.has;
   !res
 
 let all_nodes g =
