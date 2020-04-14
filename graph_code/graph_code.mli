@@ -99,8 +99,11 @@ val gensym: string -> string
 
 (* iteration *)
 val iter_use_edges: (node -> node -> unit) -> graph -> unit
+val iter_has_edges: (node -> node -> unit) -> graph -> unit
 val iter_nodes: (node -> unit) -> graph -> unit
+
 val all_use_edges: graph -> (node * node) list
+val all_has_edges: graph -> (node * node) list
 val all_nodes: graph -> node list
 
 (* statistics *)
