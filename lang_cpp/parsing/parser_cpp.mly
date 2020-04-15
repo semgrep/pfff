@@ -740,16 +740,16 @@ argument:
 const_expr: cond_expr { $1  }
 
 basic_type_2: 
- | Tchar_Constr    { (BaseType (IntType (CChar, [$1]))) }
- | Tint_Constr     { (BaseType (IntType (Si (Signed,CInt), [$1])))}
- | Tfloat_Constr   { (BaseType (FloatType (CFloat, [$1]))) }
- | Tdouble_Constr  { (BaseType (FloatType (CDouble, [$1]))) }
+ | Tchar_Constr    { (BaseType (IntType (CChar, $1))) }
+ | Tint_Constr     { (BaseType (IntType (Si (Signed,CInt), $1)))}
+ | Tfloat_Constr   { (BaseType (FloatType (CFloat, $1))) }
+ | Tdouble_Constr  { (BaseType (FloatType (CDouble, $1))) }
 
- | Twchar_t_Constr { (BaseType (IntType (WChar_t, [$1]))) }
+ | Twchar_t_Constr { (BaseType (IntType (WChar_t, $1))) }
 
- | Tshort_Constr   { (BaseType (IntType (Si (Signed, CShort), [$1]))) }
- | Tlong_Constr    { (BaseType (IntType (Si (Signed, CLong), [$1]))) }
- | Tbool_Constr    { (BaseType (IntType (CBool, [$1]))) }
+ | Tshort_Constr   { (BaseType (IntType (Si (Signed, CShort), $1))) }
+ | Tlong_Constr    { (BaseType (IntType (Si (Signed, CLong), $1))) }
+ | Tbool_Constr    { (BaseType (IntType (CBool, $1))) }
 
 (*************************************************************************)
 (* Statements *)
@@ -886,17 +886,17 @@ type_spec:
 
 simple_type_specifier:
  | Tvoid                { Right3 (BaseType (Void $1)),            noii }
- | Tchar                { Right3 (BaseType (IntType (CChar, [$1]))), noii}
- | Tint                 { Right3 (BaseType (IntType (Si (Signed,CInt), [$1]))), noii}
- | Tfloat               { Right3 (BaseType (FloatType (CFloat, [$1]))),  noii}
- | Tdouble              { Right3 (BaseType (FloatType (CDouble, [$1]))), noii }
+ | Tchar                { Right3 (BaseType (IntType (CChar, $1))), noii}
+ | Tint                 { Right3 (BaseType (IntType (Si (Signed,CInt), $1))), noii}
+ | Tfloat               { Right3 (BaseType (FloatType (CFloat, $1))),  noii}
+ | Tdouble              { Right3 (BaseType (FloatType (CDouble, $1))), noii }
  | Tshort               { Middle3 Short,  [$1]}
  | Tlong                { Middle3 Long,   [$1]}
  | Tsigned              { Left3 Signed,   [$1]}
  | Tunsigned            { Left3 UnSigned, [$1]}
  (*c++ext: *)
- | Tbool                { Right3 (BaseType (IntType (CBool, [$1]))), noii }
- | Twchar_t             { Right3 (BaseType (IntType (WChar_t, [$1]))), noii }
+ | Tbool                { Right3 (BaseType (IntType (CBool, $1))), noii }
+ | Twchar_t             { Right3 (BaseType (IntType (WChar_t, $1))), noii }
 
  (* gccext: *)
  | Ttypeof "(" assign_expr ")" { Right3(TypeOf ($1,($2,Right $3,$4))), noii}
