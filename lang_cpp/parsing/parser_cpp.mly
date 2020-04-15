@@ -909,7 +909,7 @@ simple_type_specifier:
  | type_cplusplus_id { Right3 (TypeName $1), noii }
 
  (* c++0x: *)
- | decltype_specifier { Middle3 Long, noii }
+ | decltype_specifier { Middle3 Long, [$1] }
 
 decltype_specifier:
  (* c++0x: TODO *)
