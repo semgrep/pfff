@@ -6,6 +6,8 @@ module Stat = Parse_info
 (*****************************************************************************)
 
 let test_parse_c xs =
+  Parse_cpp.init_defs !Flag_parsing_cpp.macros_h;
+
   let fullxs = Lib_parsing_c.find_source_files_of_dir_or_files xs in
   let stat_list = ref [] in
 
@@ -22,6 +24,7 @@ let test_parse_c xs =
   ()
 
 let test_dump_c file =
+  Parse_cpp.init_defs !Flag_parsing_cpp.macros_h;
   let ast = Parse_c.parse_program file in
   let v = Meta_ast_c.vof_program ast in
   let s = Ocaml.string_of_v v in

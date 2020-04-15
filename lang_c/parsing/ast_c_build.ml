@@ -607,13 +607,13 @@ and full_type env x =
       let s, ii = 
         (match t with
         | Void ii -> "void", ii
-        | FloatType (ft, iis) ->
+        | FloatType (ft, ii) ->
             (match ft with
             | CFloat -> "float"
             | CDouble -> "double" 
             | CLongDouble -> "long_double"
-            ), List.hd iis
-        | IntType (it, iis) ->
+            ), ii
+        | IntType (it, ii) ->
             (match it with
             | CChar -> "char"
             | Si (si, base) ->
@@ -632,7 +632,7 @@ and full_type env x =
                 )
             | CBool | WChar_t ->
                 debug (Type x); raise CplusplusConstruct
-            ), List.hd iis
+            ), ii
         )
       in
       A.TBase (s, ii)

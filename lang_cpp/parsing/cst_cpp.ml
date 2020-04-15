@@ -203,8 +203,8 @@ and type_ = typeQualifier * typeC
 
   and  baseType = 
     | Void of tok
-    | IntType   of intType * tok list
-    | FloatType of floatType * tok list
+    | IntType   of intType   * tok (* TOFIX there should be * tok list *)
+    | FloatType of floatType * tok (* TOFIX there should be * tok list *)
 
      (* stdC: type section. 'char' and 'signed char' are different *)
       and intType   = 
