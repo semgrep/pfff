@@ -133,19 +133,39 @@ let type_and_storage_from_decl
    | _ ->
     (* mine (originally default to int, but this looks like bad style) *)
      let decl = 
-      { v_namei = None; v_type = qu, (BaseType (Void (List.hd iit))); v_storage = st } in
+      { v_namei = None; v_type = qu, (BaseType (Void (List.hd iit))); 
+        v_storage = st } 
+     in
      raise (Semantic ("no type (could default to 'int')", 
                     List.hd (Lib_parsing_cpp.ii_of_any (OneDecl decl))))
    )
- | (None, None, Some t)   -> t
- | (Some sign,   None, (None| Some (BaseType (IntType (Si (_,CInt), _)))))-> 
-     BaseType(IntType (Si (sign, CInt), noii))
- | ((None|Some Signed), Some x, (None|Some(BaseType(IntType (Si (_,CInt), _))))) -> 
-     BaseType(IntType (Si (Signed, [Short,CShort; Long, CLong; LongLong, CLongLong] |> List.assoc x), noii))
- | (Some UnSigned, Some x, (None| Some (BaseType (IntType (Si (_,CInt), _)))))-> 
-     BaseType(IntType (Si (UnSigned, [Short,CShort; Long, CLong; LongLong, CLongLong] |> List.assoc x), noii))
+ | (None, None, Some t)   -> 
+    t
+ | (Some sign,  None, None) ->
+     BaseType(IntType (Si (sign, CInt), List.hd iit))
+ | (Some sign,  None, Some (BaseType (IntType (Si (_,CInt), t1)))) -> 
+     BaseType(IntType (Si (sign, CInt), t1))
+
+ | ((None|Some Signed), Some x, None) ->
+     BaseType(IntType (Si (Signed, 
+       [Short,CShort; Long, CLong; LongLong, CLongLong] |> List.assoc x), 
+              List.hd iit))
+ | ((None|Some Signed), Some x, Some(BaseType(IntType (Si (_,CInt), t1)))) -> 
+     BaseType(IntType (Si (Signed, 
+        [Short,CShort; Long, CLong; LongLong, CLongLong] |> List.assoc x), t1))
+
+ | (Some UnSigned, Some x, None) ->
+     BaseType(IntType (Si (UnSigned, 
+       [Short,CShort; Long, CLong; LongLong, CLongLong] |> List.assoc x), 
+          List.hd iit))
+
+ | (Some UnSigned, Some x, Some (BaseType (IntType (Si (_,CInt), t1))))-> 
+     BaseType(IntType (Si (UnSigned, 
+       [Short,CShort; Long, CLong; LongLong, CLongLong] |> List.assoc x), t1))
+
  | (Some sign,   None, (Some (BaseType (IntType (CChar, ii)))))   -> 
      BaseType(IntType (Si (sign, CChar2), ii))
+
  | (None, Some Long,(Some(BaseType(FloatType (CDouble, ii)))))    -> 
      BaseType (FloatType (CLongDouble, ii))
 

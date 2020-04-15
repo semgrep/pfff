@@ -16,7 +16,7 @@ let macros_h =
 
 let cmdline_flags_macrofile () = [
   "-macros", Arg.Set_string macros_h,
-  " <file>";
+  " <file> list of macros to expand";
 ]
 
 (*****************************************************************************)
