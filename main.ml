@@ -75,6 +75,7 @@ let all_actions () =
 
   Test_parsing_php.actions()@
   Test_parsing_js.actions()@
+  Test_analyze_js.actions()@
   Test_parsing_python.actions()@
 #if FEATURE_RUBY
   Test_parsing_ruby.actions()@
@@ -125,6 +126,7 @@ let options () = [
   ] @
   Flag_parsing.cmdline_flags_verbose () @
   Flag_parsing.cmdline_flags_debugging () @
+  Meta_parse_info.cmdline_flags_precision () @
 
   Flag_parsing_cpp.cmdline_flags_debugging () @
 

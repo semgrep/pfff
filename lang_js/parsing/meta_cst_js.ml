@@ -944,9 +944,9 @@ and vof_module_item =
 
   | It v1 -> let v1 = vof_item v1 in Ocaml.VSum (("It", [ v1 ]))
 
-and vof_program_orig v = Ocaml.vof_list vof_module_item v
+and vof_program v = Ocaml.vof_list vof_module_item v
 
-let vof_any_orig =
+let vof_any =
   function
   | Expr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Expr", [ v1 ]))
   | Stmt v1 -> let v1 = vof_st v1 in Ocaml.VSum (("Stmt", [ v1 ]))
@@ -955,17 +955,7 @@ let vof_any_orig =
   | ModuleItems v1 -> let v1 = Ocaml.vof_list vof_module_item v1 in 
       Ocaml.VSum (("ModuleItems",[v1 ]))
   | Pattern v1 -> let v1 = vof_pattern v1 in Ocaml.VSum (("Pattern",[v1 ]))
-  | Program v1 -> let v1 = vof_program_orig v1 in Ocaml.VSum (("Program",[v1]))
+  | Program v1 -> let v1 = vof_program v1 in Ocaml.VSum (("Program",[v1]))
 
 
 (* end auto generation *)
-
-let vof_any ?(precision=MPI.default_dumper_precision) x =
-  Common.save_excursion MPI._current_precision precision (fun () ->
-    vof_any_orig x
-  )
-
-let vof_program ?(precision=MPI.default_dumper_precision) x =
-  Common.save_excursion MPI._current_precision precision (fun () ->
-    vof_program_orig x
-  )
