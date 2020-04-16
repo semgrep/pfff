@@ -35,7 +35,7 @@ let test_dfg_generic file =
 
 let test_naming_generic file =
   let ast = Parse_generic.parse_program file in
-  let lang = Common2.some (Lang.lang_of_filename_opt file) in
+  let lang = List.hd (Lang.langs_of_filename file) in
   Naming_ast.resolve lang ast;
   let v = Meta_ast.vof_any (Ast_generic.Pr ast) in
   let s = Ocaml.string_of_v v in
