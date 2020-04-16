@@ -11,8 +11,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
  *)
-open Common
-
 module FT = File_type
 
 (*****************************************************************************)
@@ -24,7 +22,11 @@ module FT = File_type
 (*****************************************************************************)
 
 type t = 
-  | Python
+  (* Python will start in Python3 mode and fall back to Python2 in case
+   * of error. 
+   * Python2 and Python3 are for specific version of Python  (no fallback) 
+   *)
+  | Python | Python2 | Python3
   | Javascript
   | Java
   | Go
@@ -36,36 +38,44 @@ type t =
 (*****************************************************************************)
 
 let list_of_lang = [
-      "py", Python;
-      "python", Python;
-      "js", Javascript;
-      "javascript", Javascript;
-      "c", C;
-      "ml", ML;
-      "ocaml", ML;
-      "java", Java;
-      "go", Go;
-      "golang", Go;
-    ]
+    "py", Python;
+    "python", Python;
+    "python2", Python2;
+    "python3", Python3;
+
+    "js", Javascript;
+    "javascript", Javascript;
+
+    "go", Go;
+    "golang", Go;
+
+    "c", C;
+    "ml", ML;
+    "ocaml", ML;
+    "java", Java;
+  ]
 
 let lang_of_string_map = Common.hash_of_list list_of_lang
 
 let lang_of_string_opt x = Hashtbl.find_opt lang_of_string_map (String.lowercase_ascii x)
 
 
-let lang_of_filename_opt filename =
+let langs_of_filename filename =
  let typ = File_type.file_type_of_file filename in
  match typ with
- | FT.PL (FT.Web (FT.Js)) -> Some Javascript
- | FT.PL (FT.Python) -> Some Python
- | FT.PL (FT.C ("c" | "h" )) -> Some C
- | FT.PL (FT.ML _) -> Some ML
- | FT.PL (FT.Java) -> Some Java
- | FT.PL (FT.Go) -> Some Go
- | _ -> None
+ | FT.PL (FT.Web (FT.Js)) -> [Javascript]
+ | FT.PL (FT.Python) -> [Python;Python2;Python2]
+ (* .h could also be Cpp at some point *)
+ | FT.PL (FT.C ("c" | "h" )) -> [C]
+ | FT.PL (FT.ML _) -> [ML]
+ | FT.PL (FT.Java) -> [Java]
+ | FT.PL (FT.Go) -> [Go]
+ | _ -> []
 
 let string_of_lang = function
   | Python -> "Python"
+  | Python2 -> "Python2"
+  | Python3 -> "Python3"
   | Javascript -> "Javascript"
   | Java -> "Java"
   | C -> "C"
@@ -74,7 +84,7 @@ let string_of_lang = function
 
 (* Manually pulled from file_type_of_file2 in file_type.ml *)
 let ext_of_lang = function
-  | Python -> ["py"; "pyi"]
+  | Python | Python2 | Python3 -> ["py"; "pyi"]
   | Javascript -> ["js"]
   | Java -> ["java"]
   | C -> ["c"]
@@ -84,7 +94,7 @@ let ext_of_lang = function
 let find_source lang xs = 
   Common.files_of_dir_or_files_no_vcs_nofilter xs 
    |> List.filter (fun filename ->
-     lang_of_filename_opt filename =*= Some lang
+     List.mem lang (langs_of_filename filename)
   ) |> Common.sort
 
 (* this is used by sgrep, so it is probably better to keep the logic 
@@ -97,4 +107,3 @@ let files_of_dirs_or_files lang xs =
    * or not at all. Better just do one thing here.
    *)
   find_source lang xs
-

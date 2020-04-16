@@ -22,13 +22,23 @@ open Common
  *)
 
 (*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+let lang_to_python_parsing_mode = function
+  | Lang.Python -> Parse_python.Python
+  | Lang.Python2 -> Parse_python.Python2
+  | Lang.Python3 -> Parse_python.Python3
+  | s -> failwith (spf "not a python language:%s" (Lang.string_of_lang s))
+
+(*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
 
 let parse_with_lang lang file = 
   match lang with
-  | Lang.Python ->
-    let ast = Parse_python.parse_program file in
+  | Lang.Python | Lang.Python2 | Lang.Python3 ->
+    let parsing_mode = lang_to_python_parsing_mode lang in
+    let ast = Parse_python.parse_program ~parsing_mode file in
     (* old: Resolve_python.resolve ast; 
      * switched to call naming_ast.ml in sgrep to correct def and use tagger
      *)
@@ -60,16 +70,20 @@ let parse_with_lang lang file =
     raise Todo
 
 let parse_program file =
-  match Lang.lang_of_filename_opt file with
-  | Some x -> parse_with_lang x file
-  | None -> failwith (spf "unsupported file for AST generic: %s" file)
+  match Lang.langs_of_filename file with
+  | [x] -> parse_with_lang x file
+  | x::_xs -> 
+      (* print a warning? that we default to one? *)
+      parse_with_lang x file
+  | [] -> failwith (spf "unsupported file for AST generic: %s" file)
 
 
 let parse_pattern lang str =
   Common.save_excursion Flag_parsing.sgrep_mode true (fun () ->
   match lang with
-  | Lang.Python ->
-      let any = Parse_python.any_of_string str in
+  | Lang.Python | Lang.Python2 | Lang.Python3 ->
+      let parsing_mode = lang_to_python_parsing_mode lang in
+      let any = Parse_python.any_of_string ~parsing_mode str in
       Python_to_generic.any any
   | Lang.Javascript ->
       let any_cst = Parse_js.any_of_string str in
