@@ -74,39 +74,39 @@ let resolved_name _x =
   None
 
 type special_result = 
-  | SR_Special of G.special
-  | SR_Other of G.other_expr_operator
+  | SR_Special of G.special wrap
+  | SR_Other of G.other_expr_operator wrap
   | SR_Literal of G.literal
   | SR_NeedArgs of (G.expr list -> G.expr)
 
 let special (x, tok) = 
   match x with
-  | UseStrict -> SR_Other G.OE_UseStrict
+  | UseStrict -> SR_Other (G.OE_UseStrict, tok)
   | Null -> SR_Literal (G.Null tok) 
   | Undefined -> SR_Literal (G.Undefined tok)
-  | This -> SR_Special G.This
-  | Super -> SR_Special G.Super
-  | Require -> SR_Other G.OE_Require (* TODO: left up to include? *)
-  | Exports -> SR_Other G.OE_Exports
-  | Module -> SR_Other G.OE_Module
-  | Define -> SR_Other G.OE_Define
-  | Arguments -> SR_Other G.OE_Arguments
-  | New -> SR_Special G.New
-  | NewTarget -> SR_Other G.OE_NewTarget
-  | Eval -> SR_Special G.Eval
+  | This -> SR_Special (G.This, tok)
+  | Super -> SR_Special (G.Super, tok)
+  | Require -> SR_Other (G.OE_Require, tok) (* TODO: left up to include? *)
+  | Exports -> SR_Other (G.OE_Exports, tok)
+  | Module -> SR_Other (G.OE_Module, tok)
+  | Define -> SR_Other (G.OE_Define, tok)
+  | Arguments -> SR_Other (G.OE_Arguments, tok)
+  | New -> SR_Special (G.New, tok)
+  | NewTarget -> SR_Other (G.OE_NewTarget, tok)
+  | Eval -> SR_Special (G.Eval, tok)
   | Seq -> SR_NeedArgs (fun args -> G.Seq args)
-  | Typeof -> SR_Special G.Typeof
-  | Instanceof -> SR_Special G.Instanceof
-  | In -> SR_Other G.OE_In
-  | Delete -> SR_Other G.OE_Delete
+  | Typeof -> SR_Special (G.Typeof, tok)
+  | Instanceof -> SR_Special (G.Instanceof, tok)
+  | In -> SR_Other (G.OE_In, tok)
+  | Delete -> SR_Other (G.OE_Delete, tok)
   | Void -> SR_Literal (G.Unit tok)
-  | Spread -> SR_Special G.Spread
+  | Spread -> SR_Special (G.Spread, tok)
   | Yield -> SR_NeedArgs (fun args -> 
           match args with
           | [e] -> G.Yield (tok, Some e, false)
           | _ -> error tok "Impossible: Too many arguments to Yield"
           )
-  | YieldStar -> SR_Other G.OE_YieldStar
+  | YieldStar -> SR_Other (G.OE_YieldStar, tok)
   | Await -> SR_NeedArgs (fun args ->
           match args with
           | [e] -> G.Await (tok, e)
@@ -115,15 +115,15 @@ let special (x, tok) =
   | Encaps v1 -> 
       (match v1 with
       | None -> SR_NeedArgs (fun args -> 
-          G.Call (G.IdSpecial (G.Concat, fake "+"), 
+          G.Call (G.IdSpecial (G.Concat, tok), 
                   args |> List.map (fun e -> G.Arg e)))
       | Some n -> 
             let n = name n in
             SR_NeedArgs (fun args ->
             G.OtherExpr (G.OE_EncapsName,(G.I n)::(args|>List.map(fun e ->G.E e))))
       )
-  | ArithOp op -> SR_Special (G.ArithOp op)
-  | IncrDecr v -> SR_Special (G.IncrDecr v)
+  | ArithOp op -> SR_Special (G.ArithOp op, tok)
+  | IncrDecr v -> SR_Special (G.IncrDecr v, tok)
 
 let rec property_name =
   function
@@ -161,11 +161,11 @@ and expr (x: expr) =
   | IdSpecial (v1) -> 
       let x = special v1 in
       (match x with
-      | SR_Special v -> G.IdSpecial (v, snd v1)
+      | SR_Special v -> G.IdSpecial v
       | SR_NeedArgs _ -> 
           error (snd v1) "Impossible: should have been matched in Call first"
       | SR_Literal l -> G.L l
-      | SR_Other x -> G.OtherExpr (x, [])
+      | SR_Other (x, tok) -> G.OtherExpr (x, [G.Tk tok])
       )
   | Nop -> G.L (G.Null (fake "null"))
   | Assign ((v1, tok, v2)) -> let v1 = expr v1 and v2 = expr v2 in 
@@ -197,11 +197,11 @@ and expr (x: expr) =
       let v2 = list expr v2 in 
       (match x with
       | SR_Special v -> 
-        G.Call (G.IdSpecial (v, snd v1), v2 |> List.map (fun e -> G.Arg e))
+        G.Call (G.IdSpecial (v), v2 |> List.map (fun e -> G.Arg e))
       | SR_Literal _ ->
         error (snd v1) "Weird: literal in call position"
-      | SR_Other x -> (* ex: NewTarget *)
-        G.Call (G.OtherExpr (x, []), v2 |> List.map (fun e -> G.Arg e))
+      | SR_Other (x, tok) -> (* ex: NewTarget *)
+        G.Call (G.OtherExpr (x, [G.Tk tok]), v2 |> List.map (fun e -> G.Arg e))
       | SR_NeedArgs f ->
         f v2
       )

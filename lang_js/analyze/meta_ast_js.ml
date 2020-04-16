@@ -3,15 +3,12 @@
 
 open Ast_js
 
-let rec vof_tok _v = 
- (* Parse_info.vof_info v *)
- Ocaml.VUnit
+let rec vof_tok v = Meta_parse_info.vof_info_adjustable_precision v
 
-and vof_wrap _of_a (v1, v2) =
-  let v1 = _of_a v1 
-  and _v2 = vof_tok v2 in 
-  (* Ocaml.VTuple [ v1; v2 ] *)
-  v1
+and vof_wrap of_a (v1, v2) =
+  let v1 = of_a v1 
+  and v2 = vof_tok v2 in 
+  Ocaml.VTuple [ v1; v2 ]
 
 let vof_bracket of_a (_t1, x, _t2) =
   of_a x
