@@ -6,9 +6,9 @@ let test_parse_generic xs =
   let xs = List.map Common.fullpath xs in
   let files = Common.files_of_dir_or_files_no_vcs_nofilter xs in
   files |> List.iter (fun file ->
-    match Lang.lang_of_filename_opt file with
-    | None -> pr2 (spf "skipping %s" file)
-    | Some _ -> 
+    match Lang.langs_of_filename file with
+    | [] -> pr2 (spf "skipping %s" file)
+    | _x::_xs -> 
        Error_code.try_with_print_exn_and_reraise file (fun () ->
         let _ast = Parse_generic.parse_program file in
         ()
