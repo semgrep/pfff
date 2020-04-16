@@ -1028,7 +1028,10 @@ element_value_array_initializer:
  | LC element_values CM RC { $2 }
 
 /*(* should be statically a constant expression; can contain '+', '*', etc.*)*/
-expr1: conditional_expression { $1 }
+expr1: 
+ | conditional_expression { $1 }
+ (* sgrep-et: *)
+ | DOTS { Flag_parsing.sgrep_guard (Ellipsis $1) }
 
 /*(*************************************************************************)*/
 /*(*1 Class *)*/
