@@ -21,7 +21,7 @@ open Lexing
 
 open Parser_python
 module PI = Parse_info
-module Flag = Flag_parsing
+module Flag = Flag_parsing_python
 
 (*****************************************************************************)
 (* Prelude *)
@@ -183,7 +183,7 @@ let nonidchar = [^ 'a'-'z' 'A'-'Z' '0'-'9' '_']
 (* Rule initial *)
 (*****************************************************************************)
 
-rule token state = parse
+rule token python2 state = parse
   | e { 
         let curr_offset = state.curr_offset in
         let last_offset = Stack.top state.offset_stack in
@@ -195,7 +195,7 @@ rule token state = parse
             Stack.push curr_offset state.offset_stack; 
             INDENT (tokinfo lexbuf)
         (* curr_offset = last_offset *)
-        | _ -> _token state lexbuf 
+        | _ -> _token python2 state lexbuf 
       }
 
 (* this is just used to adjuste the state *)
@@ -212,7 +212,7 @@ and offset state = parse
        "\t" ^ offset state lexbuf 
      }
 
-and _token state = parse
+and _token python2 state = parse
 
   (* ----------------------------------------------------------------------- *)
   (* spacing/comments *)
@@ -377,17 +377,22 @@ and _token state = parse
         | "with"     -> WITH (tokinfo lexbuf)
         | "yield"    -> YIELD (tokinfo lexbuf)
       
-        (* python3-ext: *)
+        (* python3-ext: 
+         * coupling: if python3 has more special keywords, you may need to
+         * modify the heuristic in parse_python.ml that fallbacks to python2
+         * in case of a parse error.
+         *)
         | "None"    -> NONE (tokinfo lexbuf)
         | "True"    -> TRUE (tokinfo lexbuf)
         | "False"    -> FALSE (tokinfo lexbuf)
-        | "async"    -> ASYNC (tokinfo lexbuf)
-        | "await"    -> AWAIT (tokinfo lexbuf)
-        | "nonlocal"    -> NONLOCAL (tokinfo lexbuf)
+
+        | "async" when not python2 -> ASYNC (tokinfo lexbuf)
+        | "await" when not python2 -> AWAIT (tokinfo lexbuf)
+        | "nonlocal" when python2 -> NONLOCAL (tokinfo lexbuf)
 
         (* python2: *)
-        | "print" when !Flag_parsing_python.python2 -> PRINT (tokinfo lexbuf)
-        | "exec" when !Flag_parsing_python.python2 -> EXEC (tokinfo lexbuf)
+        | "print" when python2 -> PRINT (tokinfo lexbuf)
+        | "exec" when python2 -> EXEC (tokinfo lexbuf)
         (* python3-ext: no more: print, exec *)
 
         | _          -> NAME (id, (tokinfo lexbuf)) 

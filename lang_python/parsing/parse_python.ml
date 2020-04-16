@@ -18,6 +18,7 @@ module Flag = Flag_parsing
 module TH   = Token_helpers_python
 module PI = Parse_info
 module Lexer = Lexer_python
+module T = Parser_python
 
 (*****************************************************************************)
 (* Prelude *)
@@ -29,6 +30,12 @@ module Lexer = Lexer_python
 type program_and_tokens = 
   Ast_python.program option * Parser_python.token list
 
+type parsing_mode =
+  | Python2
+  | Python3
+  (* will start with Python3 and fallback to Python2 in case of an error *)
+  | Python 
+
 (*****************************************************************************)
 (* Error diagnostic  *)
 (*****************************************************************************)
@@ -39,19 +46,20 @@ let error_msg_tok tok =
 (* Lexing only *)
 (*****************************************************************************)
 
-let tokens2 file = 
+let tokens2 parsing_mode file = 
   let state = Lexer.create () in
+  let python2 = parsing_mode = Python2 in
   let token lexbuf = 
     match Lexer.top_mode state with
     | Lexer.STATE_TOKEN -> 
-      Lexer.token state lexbuf
+      Lexer.token python2 state lexbuf
     | Lexer.STATE_OFFSET -> 
         failwith "impossibe STATE_OFFSET in python lexer"
     | Lexer.STATE_UNDERSCORE_TOKEN -> 
-      let tok = Lexer._token state lexbuf in
+      let tok = Lexer._token python2 state lexbuf in
       (match tok with
-      | Parser_python.TCommentSpace _ -> ()
-      | Parser_python.FSTRING_START _ -> ()
+      | T.TCommentSpace _ -> ()
+      | T.FSTRING_START _ -> ()
       | _ -> 
           Lexer.set_mode state Lexer.STATE_TOKEN
       );
@@ -66,17 +74,20 @@ let tokens2 file =
   Parse_info.tokenize_all_and_adjust_pos 
     file token TH.visitor_info_of_tok TH.is_eof
 
-let tokens a = 
-  Common.profile_code "Parse_python.tokens" (fun () -> tokens2 a)
+let tokens a b = 
+  Common.profile_code "Parse_python.tokens" (fun () -> tokens2 a b)
 
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
-let rec parse2 filename = 
+
+let rec parse_basic ?(parsing_mode=Python) filename = 
   let stat = Parse_info.default_stat filename in
+
   (* this can throw Parse_info.Lexical_error *)
-  let toks = tokens filename in
+  let toks = tokens parsing_mode filename in
   let toks = Parsing_hacks_python.fix_tokens toks in
+
   let tr, lexer, lexbuf_fake = 
     Parse_info.mk_lexer_for_yacc toks TH.is_comment in
 
@@ -86,7 +97,7 @@ let rec parse2 filename =
     (* -------------------------------------------------- *)
     let xs =
       Common.profile_code "Parser_python.main" (fun () ->
-        Parser_python.main  lexer lexbuf_fake
+        Parser_python.main lexer lexbuf_fake
       )
     in
     stat.PI.correct <- (Common.cat filename |> List.length);
@@ -106,11 +117,17 @@ let rec parse2 filename =
      * significance of the print and exec identifiers, which may give
      * strange error messages for python3 code.
      *)
-    if not !Flag_parsing_python.python2 &&
+    if parsing_mode = Python &&
        (tr.PI.passed |> Common.take_safe 10 |> List.exists (function
-         | Parser_python.NAME (("print" | "exec"), _) -> true
+         | T.NAME (("print" | "exec"), _) 
+         | T.ASYNC _ | T.AWAIT _ | T.NONLOCAL _
+              -> true
          | _ -> false))
-    then parse_python2 filename
+    then 
+        (* note that we cant use tokens as the tokens are actually different
+         * in Python2 mode, but we could optimize things a bit and just
+         * transform those tokens here *)
+        parse_basic ~parsing_mode:Python2 filename
     else begin
       let cur = tr.PI.current in
       if not !Flag.error_recovery
@@ -129,16 +146,14 @@ let rec parse2 filename =
       stat.PI.bad     <- Common.cat filename |> List.length;
       (None, toks), stat
      end
-and parse_python2 a =
-  Common.save_excursion Flag_parsing_python.python2 true (fun () ->
-      parse2 a
-  )
 
-let parse a = 
-  Common.profile_code "Parse_python.parse" (fun () -> parse2 a)
 
-let parse_program file = 
-  let ((astopt, _toks), _stat) = parse file in
+let parse ?parsing_mode a = 
+  Common.profile_code "Parse_python.parse" (fun () -> 
+      parse_basic ?parsing_mode a)
+
+let parse_program ?parsing_mode file = 
+  let ((astopt, _toks), _stat) = parse ?parsing_mode file in
   Common2.some astopt
 
 (*****************************************************************************)
@@ -151,9 +166,9 @@ let (program_of_string: string -> Ast_python.program) = fun s ->
   )
 
 (* for sgrep/spatch *)
-let any_of_string s = 
+let any_of_string ?(parsing_mode=Python) s = 
   Common2.with_tmp_file ~str:s ~ext:"py" (fun file ->
-    let toks = tokens file in
+    let toks = tokens parsing_mode file in
     (* TODO? let toks = Parsing_hacks_python.fix_tokens toks_orig in  
      * but introduce lots of regressions in sgrep make test
      *)
