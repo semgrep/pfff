@@ -451,6 +451,7 @@ and expr =
     | OE_Repr (* todo: move to special, special Dump *)
     (* Java *)
     | OE_NameOrClassType | OE_ClassLiteral | OE_NewQualifiedClass
+    | OE_Annot
     (* C *)
     | OE_GetRefLabel
     | OE_ArrayInitDesignator (* [x] = ... todo? use ArrayAccess in container?*)

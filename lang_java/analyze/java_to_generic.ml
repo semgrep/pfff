@@ -38,7 +38,9 @@ let int = id
 
 let error = Ast_generic.error
 
-let fake_info () = Parse_info.fake_info "FAKE"
+let fake s = Parse_info.fake_info s
+(* todo: to remove at some point when Ast_java includes them directly *)
+let fake_bracket x = fake "(", x, fake ")"
 
 let entity_to_param { G.name; attrs; tparams = _unused; info } t = 
   { G. pname = Some name; ptype = t; pattrs = attrs; pinfo = info;
@@ -125,43 +127,58 @@ let rec modifier (x, tok) =
   | Volatile -> G.attr G.Volatile tok
   | Synchronized -> G.OtherAttribute (G.OA_Synchronized, [])
   | Native -> G.OtherAttribute (G.OA_Native, [])
-  | Annotation _v1 -> 
-      (* let _v1TODO = annotation v1 in *)
-      G.OtherAttribute (G.OA_AnnotJavaOther, [])
+  | Annotation v1 -> annotation v1
 
 and modifiers v = list modifier v
 
-(*  
 and annotation (v1, v2) =
-  let _v1 = name_or_class_type v1
-  and _v2 = option annotation_element v2
-  in ()
-  ()
+  let xs = match v2 with None -> [] | Some x -> annotation_element x in
+  (match name_or_class_type v1 with
+  | [Left id] -> G.NamedAttr (id, G.empty_id_info (), xs)
+  | _ -> 
+    (* TODO *)
+    G.OtherAttribute (G.OA_AnnotJavaOther, [])
+  )
+  
 
-and annotation_element =
-  function
-  | AnnotArgValue v1 -> let _v1 = element_value v1 in ()
-  | AnnotArgPairInit v1 -> let _v1 = list annotation_pair v1 in ()
-  | EmptyAnnotArg -> ()
-
-and element_value =
-  function
-  | AnnotExprInit v1 -> let _v1 = expr v1 in ()
-  | AnnotNestedAnnot v1 -> let _v1 = annotation v1 in ()
-  | AnnotArrayInit v1 -> let _v1 = list element_value v1 in ()
-and annotation_pair (v1, v2) =
-  let _v1 = ident v1 and _v2 = element_value v2 in ()
-
-and name_or_class_type v = list identifier_ v
+and name_or_class_type v = 
+  list identifier_ v |> List.flatten
 
 and identifier_ =
   function
-  | Id v1 -> let _v1 = ident v1 in ()
+  | Id v1 -> let v1 = ident v1 in [Left v1]
   | Id_then_TypeArgs ((v1, v2)) ->
-      let _v1 = ident v1 and _v2 = list type_argument v2 in ()
+      let v1 = ident v1 and v2 = list type_argument v2 in
+      [Left v1; Right v2]
   | TypeArgs_then_Id ((v1, v2)) ->
-      let _v1 = list type_argument v1 and _v2 = identifier_ v2 in ()
-*)
+      let v1 = list type_argument v1 and v2 = identifier_ v2 in
+      Right v1::v2
+
+
+and annotation_element =
+  function
+  | AnnotArgValue v1 -> 
+      let v1 = element_value v1 in 
+      [G.Arg v1]
+  | AnnotArgPairInit v1 -> 
+      list annotation_pair v1
+  | EmptyAnnotArg -> []
+
+and element_value =
+  function
+  | AnnotExprInit v1 -> let v1 = expr v1 in v1
+  | AnnotNestedAnnot v1 -> 
+      let v1 = annotation v1 in
+      G.OtherExpr (G.OE_Annot, [G.At v1])
+  | AnnotArrayInit v1 -> 
+      let v1 = list element_value v1 in
+      G.Container (G.List, fake_bracket v1)
+
+and annotation_pair (v1, v2) =
+  let v1 = ident v1 and v2 = element_value v2 in
+  G.ArgKwd (v1, v2)
+
+
 
 
 (* id_or_name_of_qualified_ident *)
@@ -210,7 +227,7 @@ and expr e =
       and v2 = arguments v2
       and v3 = option (bracket decls) v3 in
       (match v3 with
-      | None -> G.Call (G.IdSpecial (G.New, fake_info()), (G.ArgType v1)::v2)
+      | None -> G.Call (G.IdSpecial (G.New, fake "new"), (G.ArgType v1)::v2)
       | Some decls -> 
          let anonclass = G.AnonClass { G.
                 ckind = G.Class;
@@ -219,7 +236,7 @@ and expr e =
                 cbody = decls |> bracket (List.map (fun x -> G.FieldStmt x))
                 }
             in
-         G.Call (G.IdSpecial (G.New, fake_info()), (G.Arg anonclass)::v2)
+         G.Call (G.IdSpecial (G.New, fake "new"), (G.Arg anonclass)::v2)
       )
   | NewArray ((v1, v2, v3, v4)) ->
       let v1 = typ v1
@@ -236,7 +253,7 @@ and expr e =
       in
       let t = mk_array v3 in
       (match v4 with
-      | None -> G.Call (G.IdSpecial (G.New, fake_info()), (G.ArgType t)::v2)
+      | None -> G.Call (G.IdSpecial (G.New, fake "new"), (G.ArgType t)::v2)
       | Some _decls -> 
          let ii = Lib_parsing_java.ii_of_any (AExpr e) in
          error (List.hd ii) "TODO: NewArray with initializer not handled yet" 
@@ -273,7 +290,7 @@ and expr e =
   | Cast ((v1, v2)) -> let v1 = typ v1 and v2 = expr v2 in
     G.Cast (v1, v2)
   | InstanceOf ((v1, v2)) -> let v1 = expr v1 and v2 = ref_type v2 in
-    G.Call (G.IdSpecial (G.Instanceof, fake_info ()), 
+    G.Call (G.IdSpecial (G.Instanceof, fake "instanceof"), 
         [G.Arg v1; G.ArgType v2])
   | Conditional ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in
@@ -375,7 +392,7 @@ and for_control tok =
         | Some t -> G.PatVar (t, Some (ent.G.name, G.empty_id_info ()))
         | None -> error tok "TODO: Catch without type"
       in
-      G.ForEach (pat, G.fake "in", v2)
+      G.ForEach (pat, fake "in", v2)
 
 and for_init =
   function
