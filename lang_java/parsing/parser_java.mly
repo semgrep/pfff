@@ -1434,6 +1434,7 @@ type_declarations_opt:
  | type_declarations  { $1 }
 
 
+%inline
 modifiers_opt:
  | /*(*empty*)*/  { [] }
  | modifiers  { List.rev $1 }
