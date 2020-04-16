@@ -318,6 +318,8 @@ and expr =
   | DisjExpr of expr * expr
   | DeepEllipsis of expr bracket
 
+  (* TODO: other_expr_operator wrap, so enforce at least one token instead
+   * of relying that the any list contains at least one token *)
   | OtherExpr of other_expr_operator * any list
 
   and literal = 
@@ -504,6 +506,8 @@ and stmt =
   | OtherStmtWithStmt of other_stmt_with_stmt_operator * expr * stmt
   (* any here should not contain any statement! otherwise the CFG will be
    * incorrect and some analysis (e.g., liveness) will be incorrect.
+   * TODO: other_stmt_operator wrap, so enforce at least one token instead
+   * of relying that the any list contains at least one token
    *)
   | OtherStmt of other_stmt_operator * any list
 
