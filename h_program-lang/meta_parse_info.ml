@@ -101,6 +101,12 @@ let vof_info
 (* todo? could also do via a post processing phase with a OCaml.map_v ? *)
 let _current_precision = ref default_dumper_precision
 
+let cmdline_flags_precision () = [
+  "-full_token_info", Arg.Unit (fun () ->
+    _current_precision := { default_dumper_precision with full_info = true; };
+  ), " print also token information in dumper";
+ ]
+
 let vof_info_adjustable_precision x =
   if !_current_precision.full_info
   then vof_info x
@@ -111,4 +117,3 @@ let vof_info_adjustable_precision x =
           "col", Ocaml.VInt (col_of_info x);
         ]
       else Ocaml.VUnit
-

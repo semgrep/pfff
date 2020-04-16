@@ -4,11 +4,11 @@ open Ast_c
 
 let vof_info x = Meta_parse_info.vof_info_adjustable_precision x
 let vof_tok x = vof_info x
-let vof_wrap _of_a (v1, v2) =
-  let v1 = _of_a v1
-  and _v2TODO = vof_info v2
+let vof_wrap of_a (v1, v2) =
+  let v1 = of_a v1
+  and v2 = vof_info v2
   in
-  Ocaml.VTuple [ v1 (* ; v2 *) ]
+  Ocaml.VTuple [ v1;v2 ]
 
 let vof_bracket of_a (_t1, x, _t2) =
   of_a x
