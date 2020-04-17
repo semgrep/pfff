@@ -298,7 +298,7 @@ and v_for_init =
   | ForInitExprs v1 -> let v1 = v_list v_expr v1 in ()
 and v_catch (t, v1, v2) = 
   let t = v_tok t in 
-  let v1 = v_var v1 and v2 = v_stmt v2 in ()
+  let v1 = v_catch_var v1 and v2 = v_stmt v2 in ()
 and v_catches v = v_list v_catch v
 and v_var x =
   let k x = match x with
@@ -309,7 +309,10 @@ and v_var x =
       in ()
   in
   vin.kvar (k, all_functions) x
-
+and v_catch_var (v1, v2) =
+  let v1 = v_var v1 in
+  let v2 = v_list v_typ v2 in
+  ()
 
 and v_var_with_init { f_var = v_f_var; f_init = v_f_init } =
   let arg = v_var v_f_var in let arg = v_option v_init v_f_init in ()

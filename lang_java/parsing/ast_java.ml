@@ -267,7 +267,7 @@ and for_control =
     | ForInitVars of var_with_init list
     | ForInitExprs of expr list
 
-and catch = tok * var_definition * stmt
+and catch = tok * var_with_union_type * stmt
 and catches = catch list
 
 (*****************************************************************************)
@@ -298,6 +298,8 @@ and var_with_init = {
   and init =
     | ExprInit of expr
     | ArrayInit of init list bracket
+
+and var_with_union_type = (var_definition * typ list)
 
 (* ------------------------------------------------------------------------- *)
 (* Methods, fields *)

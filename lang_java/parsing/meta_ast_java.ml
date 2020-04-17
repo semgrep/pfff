@@ -341,7 +341,7 @@ and vof_for_init =
       in Ocaml.VSum (("ForInitExprs", [ v1 ]))
 and vof_catch (t, v1, v2) =
   let t = vof_tok t in
-  let v1 = vof_var v1 and v2 = vof_stmt v2 in Ocaml.VTuple [ t; v1; v2 ]
+  let v1 = vof_catch_var v1 and v2 = vof_stmt v2 in Ocaml.VTuple [ t; v1; v2 ]
 and vof_catches v = Ocaml.vof_list vof_catch v
 
 and vof_var { name = v_v_name; mods = v_v_mods; type_ = v_v_type } =
@@ -356,6 +356,10 @@ and vof_var { name = v_v_name; mods = v_v_mods; type_ = v_v_type } =
   let bnd = ("v_name", arg) in let bnds = bnd :: bnds 
   in Ocaml.VDict bnds
 
+and vof_catch_var (v1, v2) =
+  let v1 = vof_var v1 in
+  let v2 = Ocaml.vof_list vof_typ v2 in
+  Ocaml.VTuple [v1; v2]
 
 and vof_var_with_init { f_var = v_f_var; f_init = v_f_init } =
   let bnds = [] in

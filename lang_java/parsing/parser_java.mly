@@ -920,16 +920,16 @@ catch_clause:
 /*(* javaext: ? was just formal_parameter before *)*/
 catch_formal_parameter: 
   | variable_modifiers catch_type variable_declarator_id 
-      { canon_var $1 None (* TODO $2 *) $3 }
+      { canon_var $1 (Some (fst $2)) $3, snd $2 }
   |                    catch_type variable_declarator_id 
-      { canon_var [] None (* TODO $1 *) $2 }
+      { canon_var [] (Some (fst $1)) $2, snd $1 }
 
 /*(* javaext: ? *)*/
-catch_type: catch_type_list { }
+catch_type: catch_type_list { List.hd $1, List.tl $1 }
 
 catch_type_list:
-  | type_ { }
-  | catch_type_list OR type_ { }
+  | type_ { [$1] }
+  | catch_type_list OR type_ { $1 @ [$3] }
 
 /*(* javaext: ? *)*/
 resource_specification: LP resource_list semi_opt RP { }
