@@ -117,6 +117,10 @@ let expr_to_typename expr =
         pr2_gen expr;
         raise Todo
 
+let mk_adecl_or_adecls = function
+  | [] -> ADecls []
+  | [x] -> ADecl x
+  | xs -> ADecls xs
 %}
 
 /*(*************************************************************************)*/
@@ -284,12 +288,14 @@ declaration:
 
 sgrep_spatch_pattern:
  | expression         EOF { AExpr $1 }
- | item_no_dots       EOF { ADecl $1 }
- | item_no_dots statement_sgrep_list EOF { ADecls ($1::$2) }
+ | item_no_dots       EOF { mk_adecl_or_adecls $1 }
+ | item_no_dots statement_sgrep_list EOF { mk_adecl_or_adecls ($1 @ $2) }
 
 item_no_dots:
- | statement_no_dots { Init (false, $1) }
- | declaration { $1 }
+ | statement_no_dots { [Init (false, $1)] }
+ | declaration { [$1] }
+ | local_variable_declaration_statement 
+    { $1 |> List.map (fun x -> Init (false,x)) }
 
 /*(* coupling: copy paste of statement, without dots *)*/
 statement_no_dots:
