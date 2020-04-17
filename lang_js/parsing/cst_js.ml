@@ -208,7 +208,7 @@ type expr =
      and unop =
        | U_new | U_delete
        | U_typeof
-       | U_void 
+       | U_void
        | U_pre_increment  | U_pre_decrement
        | U_post_increment | U_post_decrement
        | U_plus | U_minus | U_not | U_bitnot

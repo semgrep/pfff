@@ -99,7 +99,16 @@ let special (x, tok) =
   | Instanceof -> SR_Special (G.Instanceof, tok)
   | In -> SR_Other (G.OE_In, tok)
   | Delete -> SR_Other (G.OE_Delete, tok)
-  | Void -> SR_Literal (G.Unit tok)
+  (* a kind of cast operator: 
+   * See https://stackoverflow.com/questions/7452341/what-does-void-0-mean
+   *)
+  | Void -> SR_NeedArgs (fun args -> 
+          match args with
+          | [e] -> 
+              let tvoid = G.TyBuiltin ("void", tok) in
+              G.Cast(tvoid, e)
+          | _ -> error tok "Impossible: Too many arguments to Void"
+          ) 
   | Spread -> SR_Special (G.Spread, tok)
   | Yield -> SR_NeedArgs (fun args -> 
           match args with
