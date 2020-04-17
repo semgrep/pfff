@@ -127,7 +127,11 @@ type special =
   (* Special apply *)
   | New | NewTarget
   | Eval (* builtin not in grammar *)
-  | Seq | Void
+  | Seq 
+  (* a kind of cast operator: 
+   * See https://stackoverflow.com/questions/7452341/what-does-void-0-mean
+   *)
+  | Void
   | Typeof | Instanceof
   | In | Delete 
   | Spread
