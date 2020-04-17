@@ -316,7 +316,7 @@ and expr =
   | Ellipsis of tok (* '...' *)
   | TypedMetavar of ident * tok (* : *) * type_
   | DisjExpr of expr * expr
-  | DeepEllipsis of expr bracket
+  | DeepEllipsis of expr bracket (* <... ...> *)
 
   (* TODO: other_expr_operator wrap, so enforce at least one token instead
    * of relying that the any list contains at least one token *)
@@ -352,8 +352,8 @@ and expr =
    | Eval
    | Typeof (* for C? and Go in switch x.(type) *)
    | Instanceof | Sizeof (* takes a ArgType *)
-   (* note that certain languages do not have a 'new' keyword (e.g., Python),
-    * instead certain 'Call' are really 'New' *)
+   (* note that certain languages do not have a 'new' keyword 
+    * (e.g., Python, Scala 3), instead certain 'Call' are really 'New' *)
    | New  (* usually associated with Call(New, [ArgType _;...]) *)
 
    | Concat (* used for interpolated strings constructs *)
@@ -595,10 +595,11 @@ and pattern =
   | PatRecord of (name * pattern) list bracket
 
   (* newvar:! *)
-  | PatId of ident * id_info (* Always Local or Param *)
+  | PatId of ident * id_info (* Usually Local/Param, Global in toplevel let *)
 
   (* special cases of PatConstructor *)
   | PatTuple of pattern list (* at least 2 elements *)
+  (* less: generalize to other container_operator? *)
   | PatList of pattern list bracket
   | PatKeyVal of pattern * pattern (* a kind of PatTuple *)
 
@@ -606,16 +607,16 @@ and pattern =
   | PatUnderscore of tok
 
   (* OCaml *)
-  | PatDisj  of pattern * pattern (* also for Java in catch *)
+  | PatDisj  of pattern * pattern (* also abused for catch in Java *)
   | PatTyped of pattern * type_
   | PatWhen  of pattern * expr
   | PatAs    of pattern * (ident * id_info)
 
-  (* For Go also in swtich x.(type) { case int: ... } *)
+  (* For Go also in switch x.(type) { case int: ... } *)
   | PatType of type_
-  (* In catch for Java/PHP. less: do instead PatAs (PatType(TyApply, var))?
-   *  or even PatAs (PatConstructor(id, []), var)?
-   * Also in foreach for Java.
+  (* In catch for Java/PHP, and foreach in Java.
+   * less: do instead PatAs (PatType(TyApply, var))?
+   *       or even    PatAs (PatConstructor(id, []), var)?
    *)
   | PatVar of type_ * (ident * id_info) option
 
@@ -664,9 +665,7 @@ and type_ =
    * via a TyName. Here we have flexible record types (a.k.a. rows in OCaml).
    *)
   | TyAnd of (ident * type_) list bracket
-  (* unused for now, but could be used for OCaml variants, or for 
-   * union types!
-   *)
+  (* unused for now, but could use for OCaml variants, or for union types! *)
   | TyOr of type_ list
 
   | OtherType of other_type_operator * any list
@@ -734,6 +733,7 @@ and attribute =
 and definition = entity * definition_kind (* (or decl) *)
 
   and entity = {
+    (* see special_multivardef_pattern below for many vardefs in one entity *)
     name: ident;
     attrs: attribute list;
     tparams: type_parameter list;
@@ -752,7 +752,7 @@ and definition = entity * definition_kind (* (or decl) *)
      * in a header file (called a prototype in C).
      *)
     | FuncDef   of function_definition
-    (* newvar: can be used also for constants, fields 
+    (* newvar: can be used also for constants, fields.
      * can contain special_multivardef_pattern ident in which case vinit
      * is the pattern assignment.
      *)
@@ -764,7 +764,7 @@ and definition = entity * definition_kind (* (or decl) *)
     | ModuleDef of module_definition
     | MacroDef of macro_definition
 
-    (* in header file (e.g., .mli in OCaml or 'module sig') *)
+    (* in a header file (e.g., .mli in OCaml or 'module sig') *)
     | Signature of type_
     (* Only used inside a function.
      * Needed for languages without local VarDef (e.g., Python/PHP)
@@ -796,7 +796,7 @@ and function_definition = {
     (* newvar: *)
     and parameter =
      | ParamClassic of parameter_classic
-     | ParamPattern of pattern (* in OCaml, but also now JS *)
+     | ParamPattern of pattern (* in OCaml, but also now JS, and Python2 *)
      (* sgrep: ... in parameters
       * note: foo(...x) of Js/Go is using the Variadic attribute, not this *)
      | ParamEllipsis of tok
@@ -850,13 +850,13 @@ and type_definition = {
   and type_definition_kind = 
    | OrType  of or_type_element list  (* enum/ADTs *)           
    (* field.vtype should be defined here 
-    * record/struct (for class see class_definition 
+    * record/struct (for class see class_definition)
     *)
    | AndType of field list bracket
 
    (* a.k.a typedef in C (and alias type in Go) *)
    | AliasType of type_
-   (* Haskell/Hack/Go ('type x foo' vs 'type x = foo') *)
+   (* Haskell/Hack/Go ('type x foo' vs 'type x = foo' in Go) *)
    | NewType of type_ 
 
    | Exception of ident (* same name than entity *) * type_ list
@@ -864,8 +864,11 @@ and type_definition = {
    | OtherTypeKind of other_type_kind_operator * any list
 
     and or_type_element =
+      (* OCaml *)
       | OrConstructor of ident * type_ list
+      (* C *)
       | OrEnum of ident * expr option
+      (* Java? *)
       | OrUnion of ident * type_
 
       | OtherOr of other_or_type_element_operator * any list
@@ -888,6 +891,7 @@ and type_definition = {
   and field = 
     | FieldStmt of stmt
     | FieldDynamic of expr (* dynamic name *) * attribute list * expr (*value*)
+    (* less: could abuse FieldStmt(ExprStmt(IdSpecial(Spread))) for that *)
     | FieldSpread of tok (* ... *) * expr (* usually a Name *)
 
   and other_type_kind_operator = 
@@ -900,10 +904,12 @@ and type_definition = {
 (* less: could be a special kind of type_definition *)
 and class_definition = {
   ckind: class_kind (* wrap TODO *);
- (* usually just one parent, and type_ should be a TyApply *)
-  cextends: type_ list;
-  cimplements: type_ list;
-  cmixins: type_ list; (* PHP 'uses' *)
+  (* usually just one parent, and type_ should be a TyApply *)
+  cextends:     type_ list;
+  (* class_kind in type_ must be Interface *)
+  cimplements:  type_ list;
+  (* class_kind in type_ is usually a Trait *)
+  cmixins:      type_ list; (* PHP 'uses' *)
   (* newscope: *)
   cbody: field list bracket;
 }
@@ -933,6 +939,7 @@ and module_definition = {
 (* ------------------------------------------------------------------------- *)
 (* Macro definition *)
 (* ------------------------------------------------------------------------- *)
+(* Used by cpp in C/C++ *)
 and macro_definition = {
   macroparams: ident list;
   macrobody: any list;
