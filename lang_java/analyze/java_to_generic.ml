@@ -407,7 +407,9 @@ and var { name = name; mods = mods; type_ = xtyp } =
   let v3 = option typ xtyp in
   G.basic_entity v1 v2, v3
 
-and catch (tok, v1, v2) = let ent, typ = var v1 and v2 = stmt v2 in
+and catch (tok, (v1, _union_types), v2) = 
+  let ent, typ = var v1 in
+  let v2 = stmt v2 in
   let pat = 
     match typ with
     | Some t -> G.PatVar (t, Some (ent.G.name, G.empty_id_info ()))
