@@ -677,7 +677,7 @@ and case env = function
   | Default _ -> ()
 
 and catches env xs = List.iter (catch env) xs
-and catch env (_, v, st) =
+and catch env (_, (v, _uniontypes), st) =
   var env v;
   let env = { env with params_or_locals = p_or_l v :: env.params_or_locals } in
   stmt env st

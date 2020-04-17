@@ -117,6 +117,10 @@ let expr_to_typename expr =
         pr2_gen expr;
         raise Todo
 
+let mk_adecl_or_adecls = function
+  | [] -> ADecls []
+  | [x] -> ADecl x
+  | xs -> ADecls xs
 %}
 
 /*(*************************************************************************)*/
@@ -284,12 +288,14 @@ declaration:
 
 sgrep_spatch_pattern:
  | expression         EOF { AExpr $1 }
- | item_no_dots       EOF { ADecl $1 }
- | item_no_dots statement_sgrep_list EOF { ADecls ($1::$2) }
+ | item_no_dots       EOF { mk_adecl_or_adecls $1 }
+ | item_no_dots statement_sgrep_list EOF { mk_adecl_or_adecls ($1 @ $2) }
 
 item_no_dots:
- | statement_no_dots { Init (false, $1) }
- | declaration { $1 }
+ | statement_no_dots { [Init (false, $1)] }
+ | declaration { [$1] }
+ | local_variable_declaration_statement 
+    { $1 |> List.map (fun x -> Init (false,x)) }
 
 /*(* coupling: copy paste of statement, without dots *)*/
 statement_no_dots:
@@ -920,16 +926,16 @@ catch_clause:
 /*(* javaext: ? was just formal_parameter before *)*/
 catch_formal_parameter: 
   | variable_modifiers catch_type variable_declarator_id 
-      { canon_var $1 None (* TODO $2 *) $3 }
+      { canon_var $1 (Some (fst $2)) $3, snd $2 }
   |                    catch_type variable_declarator_id 
-      { canon_var [] None (* TODO $1 *) $2 }
+      { canon_var [] (Some (fst $1)) $2, snd $1 }
 
 /*(* javaext: ? *)*/
-catch_type: catch_type_list { }
+catch_type: catch_type_list { List.hd $1, List.tl $1 }
 
 catch_type_list:
-  | type_ { }
-  | catch_type_list OR type_ { }
+  | type_ { [$1] }
+  | catch_type_list OR type_ { $1 @ [$3] }
 
 /*(* javaext: ? *)*/
 resource_specification: LP resource_list semi_opt RP { }
