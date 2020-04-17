@@ -254,9 +254,8 @@ and expr e =
       let t = mk_array v3 in
       (match v4 with
       | None -> G.Call (G.IdSpecial (G.New, fake "new"), (G.ArgType t)::v2)
-      | Some _decls -> 
-         let ii = Lib_parsing_java.ii_of_any (AExpr e) in
-         error (List.hd ii) "TODO: NewArray with initializer not handled yet" 
+      | Some e -> 
+         G.Call (G.IdSpecial (G.New, fake "new"), (G.ArgType t)::(G.Arg e)::v2)
       )
 
   (* x.new Y(...) {...} *)
@@ -390,7 +389,7 @@ and for_control tok =
       let pat = 
         match typ with
         | Some t -> G.PatVar (t, Some (ent.G.name, G.empty_id_info ()))
-        | None -> error tok "TODO: Catch without type"
+        | None -> error tok "TODO: Foreach without a type"
       in
       G.ForEach (pat, fake "in", v2)
 
@@ -413,7 +412,7 @@ and catch (tok, (v1, _union_types), v2) =
   let pat = 
     match typ with
     | Some t -> G.PatVar (t, Some (ent.G.name, G.empty_id_info ()))
-    | None -> error tok "TODO: Catch without type"
+    | None -> error tok "TODO: Catch without a type"
   in
   tok, pat, v2
 and catches v = list catch v
