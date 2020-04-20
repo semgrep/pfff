@@ -36,6 +36,15 @@ let _error _tok _s =
   let _ = G.Block [] in
   raise Todo
 
+let _error_any _any_generic _s =
+  raise Todo
+
+let _sgrep_construct _any_generic =
+  raise Todo
+
+let _todo _any_generic =
+  raise Todo
+
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)

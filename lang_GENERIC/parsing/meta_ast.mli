@@ -9,3 +9,6 @@ val vof_function_definition: Ast_generic.function_definition -> Ocaml.v
 val vof_class_definition: Ast_generic.class_definition -> Ocaml.v
 val vof_definition: Ast_generic.definition -> Ocaml.v
 val vof_directive: Ast_generic.directive -> Ocaml.v
+val vof_expr: Ast_generic.expr -> Ocaml.v
+val vof_stmt: Ast_generic.stmt -> Ocaml.v
+

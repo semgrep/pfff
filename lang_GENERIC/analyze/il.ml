@@ -103,6 +103,7 @@ type lval = {
 }
   and base = 
     | Var of var
+    | VarSpecial of var_special wrap
     (* for C *)
     | Mem of exp
 
@@ -121,6 +122,11 @@ type lval = {
   | Dot   of ident
   | Index of exp
 
+   (* transpile at some point? *)
+   and var_special =
+     | This | Super
+     | Self | Parent
+
 (*****************************************************************************)
 (* Expression *)
 (*****************************************************************************)
@@ -132,7 +138,7 @@ type lval = {
 and exp = {
   e: exp_kind;
   (* todo: etype: typ; *)
-  (* todo: eorig: G.expr; *)
+  eorig: G.expr;
  } 
   and exp_kind =
   | Literal of G.literal
@@ -159,15 +165,15 @@ type argument = exp
  *)
 type instr = {
   i: instr_kind;
-  (* todo: iorig: G.expr; *)
+  iorig: G.expr;
  }
   and instr_kind =
   | Set of lval * exp
   | SetAnon of lval * anonymous_entity
   | Call of lval option * exp * argument list
-  | Special of lval option * special_kind wrap * argument list
+  | CallSpecial of lval option * call_special wrap * argument list
 
-  and special_kind = 
+  and call_special = 
     | Eval
     | New
     | Typeof | Instanceof | Sizeof
@@ -188,7 +194,11 @@ type instr = {
 (*****************************************************************************)
 (* Statement *)
 (*****************************************************************************)
-type stmt = 
+type stmt = {
+  s: stmt_kind;
+  (* sorig: G.stmt; ?*)
+  }
+  and stmt_kind =
   | Instr of instr
 
   | If of tok * exp * stmt list * stmt list
