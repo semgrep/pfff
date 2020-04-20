@@ -49,6 +49,10 @@ let test_il_generic file =
 
   let v = V.mk_visitor { V.default_visitor with
       V.kfunction_definition = (fun (_k, _) def ->
+          let s = Meta_ast.vof_any (S def.fbody) |> Ocaml.string_of_v in
+          pr2 s;
+          pr2 "==>";
+
           let xs = Ast_to_il.stmt def.fbody in
           let v = Meta_il.vof_any (Il.Ss xs) in
           let s = Ocaml.string_of_v v in

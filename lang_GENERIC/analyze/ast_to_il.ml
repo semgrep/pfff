@@ -59,25 +59,29 @@ let todo any_generic =
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-let _fresh_var () = 
+let fresh_var _env tok = 
   let i = G.gensym () in
-  "_tmp", i
+  ("_tmp", tok), i
 
-let _fresh_label () = 
+let _fresh_label _env tok = 
   let i = G.gensym () in
-  "_label", i
+  ("_label", tok), i
+
+let fresh_lval env tok =
+  let var = fresh_var env tok in
+  { base = Var var; offset = NoOffset }
 
 let mk_e e eorig = 
   { e; eorig}
 
-let _mk_i i iorig =
+let mk_i i iorig =
   { i; iorig }
 
 let mk_s s =
   { s }
 
-let _add_instr env instr = 
-  Common.push env.instrs instr
+let add_instr env instr = 
+  Common.push instr env.instrs
 
 let prepend_and_reset_instrs env after = 
   let xs = !(env.instrs) in
@@ -98,8 +102,17 @@ let rec _lval _env _x =
 (*****************************************************************************)
 (* Expression *)
 (*****************************************************************************)
-and expr _env e =
+and expr env e =
   match e with
+  | G.Call (G.IdSpecial spec, args) ->
+      let tok = snd spec in
+      let lval = fresh_lval env tok in
+      let special = call_special env spec in
+      let args = arguments env args in
+      add_instr env (mk_i (I.CallSpecial (Some lval, special, args)) e);
+      mk_e (I.Lvalue lval) e
+  | G.L lit -> mk_e (I.Literal lit) e
+      
   | _ -> todo (G.E e)
   
 
@@ -108,6 +121,21 @@ and expr_opt env = function
       let void = G.Unit (G.fake "void") in
       mk_e (I.Literal void) (G.L void)
   | Some e -> expr env e
+
+and call_special _env (x, tok) = 
+  (match x with
+  | G.ArithOp op -> I.Operator op
+  | _ -> todo (G.E (G.IdSpecial (x, tok)))
+  ), tok
+
+(* TODO: dependency of order between arguments for instr? *)
+and arguments env xs = 
+  xs |> List.map (argument env)
+
+and argument env arg =
+  match arg with
+  | G.Arg e -> expr env e
+  | _ -> todo (G.Ar arg)
 
 (*****************************************************************************)
 (* Statement *)
@@ -123,6 +151,11 @@ and stmt env st =
       let e = expr_opt env eopt in
       prepend_and_reset_instrs env
       [mk_s (I.Return (tok, e))]
+
+  | G.ExprStmt e ->
+      let _e' = expr env e in
+      prepend_and_reset_instrs env []
+      
 
   | G.DisjStmt _ -> sgrep_construct (G.S st)
   | _ -> todo (G.S st)
