@@ -48,9 +48,8 @@ let test_il_generic file =
   Naming_ast.resolve lang ast;
 
   let v = V.mk_visitor { V.default_visitor with
-      V.kstmt = (fun (_k, _) st ->
-
-          let xs = Ast_to_il.stmt st in
+      V.kfunction_definition = (fun (_k, _) def ->
+          let xs = Ast_to_il.stmt def.fbody in
           let v = Meta_il.vof_any (Il.Ss xs) in
           let s = Ocaml.string_of_v v in
           pr2 s
