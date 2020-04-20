@@ -33,17 +33,32 @@ let rec vof_lval { base = v_base; offset = v_offset } =
 and vof_base =
   function
   | Var v1 -> let v1 = vof_var v1 in Ocaml.VSum (("Var", [ v1 ]))
+  | VarSpecial v1 ->
+      let v1 = vof_wrap vof_var_special v1
+      in Ocaml.VSum (("VarSpecial", [ v1 ]))
   | Mem v1 -> let v1 = vof_exp v1 in Ocaml.VSum (("Mem", [ v1 ]))
+
+and vof_var_special =
+  function
+  | This -> Ocaml.VSum (("This", []))
+  | Super -> Ocaml.VSum (("Super", []))
+  | Self -> Ocaml.VSum (("Self", []))
+  | Parent -> Ocaml.VSum (("Parent", []))
+
 and vof_offset =
   function
   | NoOffset -> Ocaml.VSum (("NoOffset", []))
   | Dot v1 -> let v1 = vof_ident v1 in Ocaml.VSum (("Dot", [ v1 ]))
   | Index v1 -> let v1 = vof_exp v1 in Ocaml.VSum (("Index", [ v1 ]))
 
-and vof_exp { e = v_e } =
+and vof_exp { e = v_e; eorig = v_eorig } =
   let bnds = [] in
+  let arg = G.vof_expr v_eorig in
+  let bnd = ("eorig", arg) in
+  let bnds = bnd :: bnds in
   let arg = vof_exp_kind v_e in
-  let bnd = ("e", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+  let bnd = ("e", arg) in let bnds = bnd :: bnds in 
+  Ocaml.VDict bnds
 
 and vof_exp_kind =
   function
@@ -68,11 +83,15 @@ and vof_composite_kind =
       let v1 = vof_name v1 in Ocaml.VSum (("Constructor", [ v1 ]))
   
 let vof_argument v = vof_exp v
-  
-let rec vof_instr { i = v_i } =
+
+let rec vof_instr { i = v_i; iorig = v_iorig } =
   let bnds = [] in
+  let arg = G.vof_expr v_iorig in
+  let bnd = ("iorig", arg) in
+  let bnds = bnd :: bnds in
   let arg = vof_instr_kind v_i in
-  let bnd = ("i", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+  let bnd = ("i", arg) in let bnds = bnd :: bnds in 
+  Ocaml.VDict bnds
 
 and vof_instr_kind =
   function
@@ -89,7 +108,7 @@ and vof_instr_kind =
       and v2 = vof_exp v2
       and v3 = Ocaml.vof_list vof_argument v3
       in Ocaml.VSum (("Call", [ v1; v2; v3 ]))
-  | Special ((v1, v2, v3)) ->
+  | CallSpecial ((v1, v2, v3)) ->
       let v1 = Ocaml.vof_option vof_lval v1
       and v2 = vof_wrap vof_special_kind v2
       and v3 = Ocaml.vof_list vof_argument v3
@@ -121,8 +140,13 @@ and vof_anonymous_entity =
   | AnonClass v1 ->
       let v1 = G.vof_class_definition v1
       in Ocaml.VSum (("AnonClass", [ v1 ]))
-  
-let rec vof_stmt =
+
+let rec vof_stmt { s = v_s } =
+  let bnds = [] in
+  let arg = vof_stmt_kind v_s in
+  let bnd = ("s", arg) in let bnds = bnd :: bnds in 
+  Ocaml.VDict bnds
+and vof_stmt_kind =
   function
   | Instr v1 -> let v1 = vof_instr v1 in Ocaml.VSum (("Instr", [ v1 ]))
   | If ((v1, v2, v3, v4)) ->
