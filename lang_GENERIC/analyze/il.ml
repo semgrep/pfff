@@ -16,7 +16,7 @@
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Intermediate language for static analysis.
+(* Intermediate Language (IL) for static analysis.
  *
  * Just like for the CST -> AST, the goal of an AST -> IL transformation
  * is to simplify things even more for program analysis purpose.
@@ -51,6 +51,8 @@
  *  - Rust IL?
  *  - LLVM IR (but too far away from original code? complicated 
  *    source maps)
+ *  - SiMPL language in BAP/BitBlaze dynamic analysis libraries
+ *    but probably too close to assembly/bytecode
  *)
 module G = Ast_generic
 
