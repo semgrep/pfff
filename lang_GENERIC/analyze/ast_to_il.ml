@@ -16,6 +16,7 @@ open Common
 
 open Il
 module G = Ast_generic
+module I = Il
 
 (*****************************************************************************)
 (* Prelude *)
@@ -29,22 +30,31 @@ module G = Ast_generic
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
+type env = {
+  instrs: instr list ref;
+}
+
+let empty_env () = {
+  instrs = ref [];
+}
+
 
 (*****************************************************************************)
 (* Error management *)
 (*****************************************************************************)
-let _error _tok _s =
-  let _ = G.Block [] in
-  raise Todo
+let error tok s =
+  raise (Parse_info.Ast_builder_error (s, tok))
 
-let _error_any _any_generic _s =
-  raise Todo
+let error_any any_generic msg =
+  let toks = Lib_ast.ii_of_any any_generic in
+  let s = Meta_ast.vof_any any_generic |> Ocaml.string_of_v in
+  error (List.hd toks) (spf "%s: %s" msg s)
 
-let _sgrep_construct _any_generic =
-  raise Todo
+let sgrep_construct any_generic =
+  error_any any_generic "Sgrep Construct"
 
-let _todo _any_generic =
-  raise Todo
+let todo any_generic =
+  error_any any_generic "TODO Construct"
 
 (*****************************************************************************)
 (* Helpers *)
@@ -63,12 +73,17 @@ let _mk_e e eorig =
 let _mk_i i iorig =
   { i; iorig }
 
-let _mk_s s =
+let mk_s s =
   { s }
+
+let _add_instr env instr = 
+  Common.push env.instrs instr
 
 (*****************************************************************************)
 (* lvalue *)
 (*****************************************************************************)
+let _lval _env _x =
+  raise Todo
 
 (*****************************************************************************)
 (* Assign *)
@@ -85,10 +100,19 @@ let _mk_s s =
 (*****************************************************************************)
 (* Statement *)
 (*****************************************************************************)
+and stmt _env st =
+  match st with
+  | G.DefStmt def -> [mk_s (I.DefStmt def)]
+  | G.DirectiveStmt dir -> [mk_s (I.DirectiveStmt dir)]
+
+  | G.DisjStmt _ -> sgrep_construct (G.S st)
+  | _ -> todo (G.S st)
 
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
 
-let stmt _st =
-  raise Todo
+let stmt st =
+  let env = empty_env () in
+  stmt env st
+
