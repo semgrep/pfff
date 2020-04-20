@@ -1,5 +1,6 @@
 open Common
 open Ast_generic
+module V = Visitor_ast
 
 let test_cfg_generic file =
   let ast = Parse_generic.parse_program file in
@@ -41,6 +42,22 @@ let test_naming_generic file =
   let s = Ocaml.string_of_v v in
   pr2 s
 
+let test_il_generic file =
+  let ast = Parse_generic.parse_program file in
+  let lang = List.hd (Lang.langs_of_filename file) in
+  Naming_ast.resolve lang ast;
+
+  let v = V.mk_visitor { V.default_visitor with
+      V.kstmt = (fun (_k, _) st ->
+
+          let xs = Ast_to_il.stmt st in
+          let v = Meta_il.vof_any (Il.Ss xs) in
+          let s = Ocaml.string_of_v v in
+          pr2 s
+      );
+   } in
+  v (Pr ast)
+
 
 let actions () = [
   "-cfg_generic", " <file>",
@@ -49,4 +66,6 @@ let actions () = [
   Common.mk_action_1_arg test_dfg_generic;
   "-naming_generic", " <file>",
   Common.mk_action_1_arg test_naming_generic;
+  "-il_generic", " <file>",
+  Common.mk_action_1_arg test_il_generic;
 ]
