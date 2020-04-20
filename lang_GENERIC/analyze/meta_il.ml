@@ -167,7 +167,7 @@ and vof_stmt_kind =
       in Ocaml.VSum (("Loop", [ v1; v2; v3 ]))
   | Return ((v1, v2)) ->
       let v1 = vof_tok v1
-      and v2 = Ocaml.vof_option vof_exp v2
+      and v2 = vof_exp v2
       in Ocaml.VSum (("Return", [ v1; v2 ]))
   | Goto ((v1, v2)) ->
       let v1 = vof_tok v1

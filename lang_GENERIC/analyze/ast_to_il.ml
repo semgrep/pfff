@@ -67,7 +67,7 @@ let _fresh_label () =
   let i = G.gensym () in
   "_label", i
 
-let _mk_e e eorig = 
+let mk_e e eorig = 
   { e; eorig}
 
 let _mk_i i iorig =
@@ -79,10 +79,16 @@ let mk_s s =
 let _add_instr env instr = 
   Common.push env.instrs instr
 
+let prepend_and_reset_instrs env after = 
+  let xs = !(env.instrs) in
+  env.instrs := [];
+  (xs |> List.map (fun instr -> mk_s (I.Instr instr))) @ after
+  
+
 (*****************************************************************************)
 (* lvalue *)
 (*****************************************************************************)
-let _lval _env _x =
+let rec _lval _env _x =
   raise Todo
 
 (*****************************************************************************)
@@ -92,21 +98,35 @@ let _lval _env _x =
 (*****************************************************************************)
 (* Expression *)
 (*****************************************************************************)
+and expr _env e =
+  match e with
+  | _ -> todo (G.E e)
+  
 
-(*****************************************************************************)
-(* Instruction *)
-(*****************************************************************************)
+and expr_opt env = function
+  | None -> 
+      let void = G.Unit (G.fake "void") in
+      mk_e (I.Literal void) (G.L void)
+  | Some e -> expr env e
 
 (*****************************************************************************)
 (* Statement *)
 (*****************************************************************************)
-and stmt _env st =
+and stmt env st =
   match st with
   | G.DefStmt def -> [mk_s (I.DefStmt def)]
   | G.DirectiveStmt dir -> [mk_s (I.DirectiveStmt dir)]
 
+  | G.Block xs -> List.map (stmt env) xs |> List.flatten
+
+  | G.Return (tok, eopt) ->
+      let e = expr_opt env eopt in
+      prepend_and_reset_instrs env
+      [mk_s (I.Return (tok, e))]
+
   | G.DisjStmt _ -> sgrep_construct (G.S st)
   | _ -> todo (G.S st)
+ 
 
 (*****************************************************************************)
 (* Entry point *)

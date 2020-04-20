@@ -209,7 +209,7 @@ type stmt = {
    *)
   | Loop of tok * exp * stmt list
 
-  | Return of tok * exp option
+  | Return of tok * exp (* use Unit instead of 'exp option' *)
 
   (* alt: do as in CIL and resolve that directly in 'Goto of stmt' *)
   | Goto of tok * label
