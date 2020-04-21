@@ -124,7 +124,8 @@ and vof_instr_kind =
       in Ocaml.VSum (("CallSpecial", [ v1; v2; v3 ]))
 and vof_special_kind =
   function
-  | ForeachIter -> Ocaml.VSum (("ForeachIter", []))
+  | ForeachNext -> Ocaml.VSum (("ForeachNext", []))
+  | ForeachHasNext -> Ocaml.VSum (("ForeachHasNext", []))
   | Eval -> Ocaml.VSum (("Eval", []))
   | New -> Ocaml.VSum (("New", []))
   | Typeof -> Ocaml.VSum (("Typeof", []))

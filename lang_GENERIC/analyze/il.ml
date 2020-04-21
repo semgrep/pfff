@@ -93,13 +93,6 @@ type ident = string wrap
  * can become control-flow sensitive! (e.g., DOOP)
  * 
  *)
-type var = ident * G.sid
- (* with tarzan *)
-
-(* for constructors and other global entities.
- * 'sid' below should be the result of global name resolution using 
- * codegraph or something similar.
- *)
 type name = ident * G.sid
  (* with tarzan *)
 
@@ -114,7 +107,7 @@ type lval = {
   (* todo: ltype: typ; *)
 }
   and base = 
-    | Var of var
+    | Var of name
     | VarSpecial of var_special wrap
     (* for C *)
     | Mem of exp
@@ -155,10 +148,10 @@ and exp = {
   and exp_kind =
   | Literal of G.literal
   | Composite of composite_kind * exp list bracket
-  | Lvalue of lval
+  | Lvalue of lval (* lvalue used in a rvalue context *)
   | Cast of G.type_ * exp
   (* This could be put in call_special, but dumped IL are then less readable
-   * (it introduces too many intermediate _tmp) *)
+   * (they are too many intermediate _tmp variables then) *)
   | Operator of G.arithmetic_operator wrap * exp list
 
  and composite_kind =
@@ -185,7 +178,7 @@ type instr = {
   and instr_kind =
   | Set of lval * exp
   | SetAnon of lval * anonymous_entity
-  | Call of lval option * exp * argument list
+  | Call of lval option * exp (* less: enforce lval? *) * argument list
   | CallSpecial of lval option * call_special wrap * argument list
   (* todo: PhiSSA! *)
 
@@ -197,9 +190,9 @@ type instr = {
     | Concat
     | Spread
     | Yield | Await
-    (* was in stmt before, but now that we have a clean instr, better
-     * to be here *)
-    | Assert | ForeachIter
+    (* was in stmt before, but with a new clean 'instr' type, better here *)
+    | Assert 
+    | ForeachNext | ForeachHasNext
     (* was in expr before (only in C/PHP) *)
     | Ref
     (* when transpiling certain features *)
@@ -235,8 +228,8 @@ type stmt = {
   | Goto of tok * label
   | Label of label
 
-  | Try of stmt list * (var * stmt list) list * stmt list
-  | Throw of tok * exp
+  | Try of stmt list * (name * stmt list) list * stmt list
+  | Throw of tok * exp (* less: enforce lval here? *)
   
   (* everything except VarDef which should be transformed in a Set *)
   | DefStmt of G.definition
