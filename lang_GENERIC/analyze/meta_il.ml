@@ -76,6 +76,10 @@ and vof_exp_kind =
       let v1 = G.vof_type_ v1
       and v2 = vof_exp v2
       in Ocaml.VSum (("Cast", [ v1; v2 ]))
+  | Operator (v1, v2) ->
+      let v1 = vof_wrap G.vof_arithmetic_operator v1 in
+      let v2 = Ocaml.vof_list vof_exp v2 in
+      Ocaml.VSum (("Operator", [ v1; v2 ]))
 and vof_composite_kind =
   function
   | Tuple -> Ocaml.VSum (("Tuple", []))
@@ -121,14 +125,12 @@ and vof_instr_kind =
       in Ocaml.VSum (("CallSpecial", [ v1; v2; v3 ]))
 and vof_special_kind =
   function
+  | ForeachIter -> Ocaml.VSum (("ForeachIter", []))
   | Eval -> Ocaml.VSum (("Eval", []))
   | New -> Ocaml.VSum (("New", []))
   | Typeof -> Ocaml.VSum (("Typeof", []))
   | Instanceof -> Ocaml.VSum (("Instanceof", []))
   | Sizeof -> Ocaml.VSum (("Sizeof", []))
-  | Operator v1 ->
-      let v1 = G.vof_arithmetic_operator v1
-      in Ocaml.VSum (("Operator", [ v1 ]))
   | Concat -> Ocaml.VSum (("Concat", []))
   | Spread -> Ocaml.VSum (("Spread", []))
   | Yield -> Ocaml.VSum (("Yield", []))
@@ -182,10 +184,9 @@ and vof_stmt_kind =
       let v1 = vof_tok v1
       and v2 = vof_label v2
       in Ocaml.VSum (("Goto", [ v1; v2 ]))
-  | Label ((v1, v2)) ->
+  | Label ((v1)) ->
       let v1 = vof_label v1
-      and v2 = Ocaml.vof_list vof_stmt v2
-      in Ocaml.VSum (("Label", [ v1; v2 ]))
+      in Ocaml.VSum (("Label", [ v1 ]))
   | Try ((v1, v2, v3)) ->
       let v1 = Ocaml.vof_list vof_stmt v1
       and v2 =

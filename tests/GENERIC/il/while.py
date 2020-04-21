@@ -1,3 +1,3 @@
 def foo():
-  while i < 1 + 2:
+  while i < 1 + eval(2):
     return 1

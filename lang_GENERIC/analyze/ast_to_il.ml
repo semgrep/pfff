@@ -115,6 +115,17 @@ let rec _lval _env _x =
 (*****************************************************************************)
 and expr env e =
   match e with
+  | G.Call (G.IdSpecial (G.ArithOp op, tok), args) ->
+      let args = arguments env args in
+      mk_e (Operator ((op, tok), args)) e
+  (* todo: if the xxx_to_generic forgot to generate Eval *)
+  | G.Call (G.Id (("eval", tok), { G.id_resolved = {contents = None}; _}), 
+      args) ->
+      let lval = fresh_lval env tok in
+      let special = Eval, tok in
+      let args = arguments env args in
+      add_instr env (mk_i (CallSpecial (Some lval, special, args)) e);
+      mk_e (Lvalue lval) e
   | G.Call (G.IdSpecial spec, args) ->
       let tok = snd spec in
       let lval = fresh_lval env tok in
@@ -122,6 +133,7 @@ and expr env e =
       let args = arguments env args in
       add_instr env (mk_i (CallSpecial (Some lval, special, args)) e);
       mk_e (Lvalue lval) e
+
   | G.L lit -> mk_e (Literal lit) e
   | G.Id (id, id_info) -> 
       let lval = lval_of_id_info env id id_info in
@@ -138,7 +150,8 @@ and expr_opt env = function
 
 and call_special _env (x, tok) = 
   (match x with
-  | G.ArithOp op -> Operator op
+  | G.ArithOp _op -> raise Impossible (* should be intercepted before *)
+  | G.Eval -> Eval
   | _ -> todo (G.E (G.IdSpecial (x, tok)))
   ), tok
 
@@ -151,9 +164,13 @@ and argument env arg =
   | G.Arg e -> expr env e
   | _ -> todo (G.Ar arg)
 
+(* just to ensure the code after does not call expr directly *)
+let expr_orig = expr
+let expr () = ()
 
 let expr_and_instrs env e =
-  let e = expr env e in
+  ignore(expr ());
+  let e = expr_orig env e in
   let xs = List.rev !(env.instrs) in
   env.instrs := [];
   e, (xs |> List.map (fun instr -> mk_s (Instr instr)))
