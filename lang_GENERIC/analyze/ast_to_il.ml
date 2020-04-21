@@ -228,12 +228,22 @@ let rec stmt env st =
       let e, ss = expr_and_instrs_opt env eopt in
       ss @ [mk_s (Return (tok, e))]
 
+  | G.Assert (tok, e, eopt) ->
+      let e', ss1 = expr_and_instrs env e in
+      let eopt', ss2 = expr_and_instrs_opt env eopt in
+      let special = Assert, tok in
+      (* less: wrong e? would not be able to match on Assert, or 
+       * need add sorig:
+       *)
+      ss1 @ ss2 @
+      [mk_s (Instr (mk_i (CallSpecial (None, special, [e'; eopt'])) e))]
       
   | G.DisjStmt _ -> sgrep_construct (G.S st)
   | G.OtherStmt _ | G.OtherStmtWithStmt _
-  | G.For (_, _, _) | G.Switch (_, _, _)
+  | G.For (_, _, _) 
+  | G.Switch (_, _, _)
   | G.Continue (_, _) | G.Break (_, _)
-  | G.Throw (_, _) | G.Try (_, _, _, _) | G.Assert (_, _, _)
+  | G.Throw (_, _) | G.Try (_, _, _, _) 
    -> todo (G.S st)
 
 (*****************************************************************************)

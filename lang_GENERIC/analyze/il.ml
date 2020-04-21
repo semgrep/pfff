@@ -34,6 +34,7 @@ module G = Ast_generic
  *  - Lambdas are now instructions (not nested again)
  *  - no Sgrep constructs
  *  - no For/Foreach/DoWhile/While, converted all in Loop
+ *  - less use of expr option (in Return/Assert/...)
  *  - TODO no Continue/Break, converted in goto
  *
  * TODO:
