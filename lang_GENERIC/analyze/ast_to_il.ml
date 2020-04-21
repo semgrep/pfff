@@ -44,6 +44,9 @@ let empty_env () = {
 let error tok s =
   raise (Parse_info.Ast_builder_error (s, tok))
 
+let warning tok s =
+  pr2 (spf "%s: %s" (Parse_info.string_of_info tok) s)
+
 let error_any any_generic msg =
   let toks = Lib_ast.ii_of_any any_generic in
   let s = Meta_ast.vof_any any_generic |> Ocaml.string_of_v in
@@ -70,14 +73,20 @@ let fresh_lval env tok =
   let var = fresh_var env tok in
   { base = Var var; offset = NoOffset }
 
-let lval_of_ent _env ent = 
+let lval_of_id_info _env id id_info =
   let sid = 
-    match !(ent.G.info.G.id_resolved) with
+    match !(id_info.G.id_resolved) with
     | Some (_resolved, sid) -> sid
-    | None -> error (snd ent.G.name) "the ident is not resolved"
+    | None -> 
+        warning (snd id) (spf "the ident '%s' is not resolved" (fst id));
+        -1
   in
-  let var = ent.G.name, sid in
+  let var = id, sid in
   { base = Var var; offset = NoOffset }
+  
+  
+let lval_of_ent env ent = 
+  lval_of_id_info env ent.G.name ent.G.info
 
 let mk_e e eorig = 
   { e; eorig}
@@ -90,12 +99,6 @@ let mk_s s =
 
 let add_instr env instr = 
   Common.push instr env.instrs
-
-let prepend_and_reset_instrs env after = 
-  let xs = !(env.instrs) in
-  env.instrs := [];
-  (xs |> List.map (fun instr -> mk_s (Instr instr))) @ after
-  
 
 (*****************************************************************************)
 (* lvalue *)
@@ -120,6 +123,9 @@ and expr env e =
       add_instr env (mk_i (CallSpecial (Some lval, special, args)) e);
       mk_e (Lvalue lval) e
   | G.L lit -> mk_e (Literal lit) e
+  | G.Id (id, id_info) -> 
+      let lval = lval_of_id_info env id id_info in
+      mk_e (Lvalue lval) e
       
   | _ -> todo (G.E e)
   
@@ -145,35 +151,64 @@ and argument env arg =
   | G.Arg e -> expr env e
   | _ -> todo (G.Ar arg)
 
+
+let expr_and_instrs env e =
+  let e = expr env e in
+  let xs = List.rev !(env.instrs) in
+  env.instrs := [];
+  e, (xs |> List.map (fun instr -> mk_s (Instr instr)))
+
+let expr_and_instrs_opt env eopt =
+  match eopt with
+  | None -> expr_opt env None, []
+  | Some e -> expr_and_instrs env e
+
 (*****************************************************************************)
 (* Statement *)
 (*****************************************************************************)
-and stmt env st =
+let rec stmt env st =
   match st with
-  | G.DefStmt (ent, G.VarDef { G.vinit = Some e; vtype = _typTODO}) ->
-    let e' = expr env e in
-    let lv = lval_of_ent env ent in
-    prepend_and_reset_instrs env
-     [mk_s (Instr (mk_i (Set (lv, e')) e))]; 
+  | G.ExprStmt e ->
+      (* optimize? pass context to expr when no need for return value? *)
+      let _e', ss = expr_and_instrs env e in
+      ss
 
+  | G.DefStmt (ent, G.VarDef { G.vinit = Some e; vtype = _typTODO}) ->
+    let e', ss = expr_and_instrs env e in
+    let lv = lval_of_ent env ent in
+    ss @ [mk_s (Instr (mk_i (Set (lv, e')) e))]; 
   | G.DefStmt def -> [mk_s (DefStmt def)]
   | G.DirectiveStmt dir -> [mk_s (DirectiveStmt dir)]
 
   | G.Block xs -> List.map (stmt env) xs |> List.flatten
 
-  | G.Return (tok, eopt) ->
-      let e = expr_opt env eopt in
-      prepend_and_reset_instrs env
-      [mk_s (Return (tok, e))]
+  | G.If (tok, e, st1, st2) ->
+    let e', ss = expr_and_instrs env e in
+    let st1 = stmt env st1 in
+    let st2 = stmt env st2 in
+    ss @ [mk_s (If (tok, e', st1, st2))]
 
-  | G.ExprStmt e ->
-      let _e' = expr env e in
-      prepend_and_reset_instrs env []
+  | G.While(tok, e, st) ->
+    let e', ss = expr_and_instrs env e in
+    let st = stmt env st in
+    ss @ [mk_s (Loop (tok, e', st @ ss))]
+  | G.DoWhile(tok, st, e) ->
+    let st = stmt env st in
+    let e', ss = expr_and_instrs env e in
+    st @ ss @ [mk_s (Loop (tok, e', st @ ss))]
+    
+     
+
+  | G.Return (tok, eopt) ->
+      let e, ss = expr_and_instrs_opt env eopt in
+      ss @ [mk_s (Return (tok, e))]
+
       
 
   | G.DisjStmt _ -> sgrep_construct (G.S st)
   | _ -> todo (G.S st)
- 
+(*
+*)
 
 (*****************************************************************************)
 (* Entry point *)
