@@ -64,11 +64,9 @@ let todo any_generic =
 let fresh_var _env tok = 
   let i = G.gensym () in
   ("_tmp", tok), i
-
 let _fresh_label _env tok = 
   let i = G.gensym () in
   ("_label", tok), i
-
 let fresh_lval env tok =
   let var = fresh_var env tok in
   { base = Var var; offset = NoOffset }
@@ -83,17 +81,21 @@ let lval_of_id_info _env id id_info =
   in
   let var = id, sid in
   { base = Var var; offset = NoOffset }
-  
-  
 let lval_of_ent env ent = 
   lval_of_id_info env ent.G.name ent.G.info
 
+(* TODO: should do first pass on body to get all labels and assign
+ * a gensym to each.
+ *)
+let label_of_label _env lbl =
+  lbl, -1
+let lookup_label _env lbl =
+  lbl, -1
+
 let mk_e e eorig = 
   { e; eorig}
-
 let mk_i i iorig =
   { i; iorig }
-
 let mk_s s =
   { s }
 
@@ -214,18 +216,25 @@ let rec stmt env st =
     let e', ss = expr_and_instrs env e in
     st @ ss @ [mk_s (Loop (tok, e', st @ ss))]
     
-     
+  | G.Label (lbl, st) ->
+      let lbl = label_of_label env lbl in
+      let st = stmt env st in
+      [mk_s (Label lbl)] @ st
+  | G.Goto (tok, lbl) ->
+      let lbl = lookup_label env lbl in
+      [mk_s (Goto (tok, lbl))]
 
   | G.Return (tok, eopt) ->
       let e, ss = expr_and_instrs_opt env eopt in
       ss @ [mk_s (Return (tok, e))]
 
       
-
   | G.DisjStmt _ -> sgrep_construct (G.S st)
-  | _ -> todo (G.S st)
-(*
-*)
+  | G.OtherStmt _ | G.OtherStmtWithStmt _
+  | G.For (_, _, _) | G.Switch (_, _, _)
+  | G.Continue (_, _) | G.Break (_, _)
+  | G.Throw (_, _) | G.Try (_, _, _, _) | G.Assert (_, _, _)
+   -> todo (G.S st)
 
 (*****************************************************************************)
 (* Entry point *)
