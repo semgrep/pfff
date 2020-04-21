@@ -16,7 +16,6 @@ open Common
 
 open Il
 module G = Ast_generic
-module I = Il
 
 (*****************************************************************************)
 (* Prelude *)
@@ -71,6 +70,15 @@ let fresh_lval env tok =
   let var = fresh_var env tok in
   { base = Var var; offset = NoOffset }
 
+let lval_of_ent _env ent = 
+  let sid = 
+    match !(ent.G.info.G.id_resolved) with
+    | Some (_resolved, sid) -> sid
+    | None -> error (snd ent.G.name) "the ident is not resolved"
+  in
+  let var = ent.G.name, sid in
+  { base = Var var; offset = NoOffset }
+
 let mk_e e eorig = 
   { e; eorig}
 
@@ -86,7 +94,7 @@ let add_instr env instr =
 let prepend_and_reset_instrs env after = 
   let xs = !(env.instrs) in
   env.instrs := [];
-  (xs |> List.map (fun instr -> mk_s (I.Instr instr))) @ after
+  (xs |> List.map (fun instr -> mk_s (Instr instr))) @ after
   
 
 (*****************************************************************************)
@@ -109,9 +117,9 @@ and expr env e =
       let lval = fresh_lval env tok in
       let special = call_special env spec in
       let args = arguments env args in
-      add_instr env (mk_i (I.CallSpecial (Some lval, special, args)) e);
-      mk_e (I.Lvalue lval) e
-  | G.L lit -> mk_e (I.Literal lit) e
+      add_instr env (mk_i (CallSpecial (Some lval, special, args)) e);
+      mk_e (Lvalue lval) e
+  | G.L lit -> mk_e (Literal lit) e
       
   | _ -> todo (G.E e)
   
@@ -119,12 +127,12 @@ and expr env e =
 and expr_opt env = function
   | None -> 
       let void = G.Unit (G.fake "void") in
-      mk_e (I.Literal void) (G.L void)
+      mk_e (Literal void) (G.L void)
   | Some e -> expr env e
 
 and call_special _env (x, tok) = 
   (match x with
-  | G.ArithOp op -> I.Operator op
+  | G.ArithOp op -> Operator op
   | _ -> todo (G.E (G.IdSpecial (x, tok)))
   ), tok
 
@@ -142,15 +150,21 @@ and argument env arg =
 (*****************************************************************************)
 and stmt env st =
   match st with
-  | G.DefStmt def -> [mk_s (I.DefStmt def)]
-  | G.DirectiveStmt dir -> [mk_s (I.DirectiveStmt dir)]
+  | G.DefStmt (ent, G.VarDef { G.vinit = Some e; vtype = _typTODO}) ->
+    let e' = expr env e in
+    let lv = lval_of_ent env ent in
+    prepend_and_reset_instrs env
+     [mk_s (Instr (mk_i (Set (lv, e')) e))]; 
+
+  | G.DefStmt def -> [mk_s (DefStmt def)]
+  | G.DirectiveStmt dir -> [mk_s (DirectiveStmt dir)]
 
   | G.Block xs -> List.map (stmt env) xs |> List.flatten
 
   | G.Return (tok, eopt) ->
       let e = expr_opt env eopt in
       prepend_and_reset_instrs env
-      [mk_s (I.Return (tok, e))]
+      [mk_s (Return (tok, e))]
 
   | G.ExprStmt e ->
       let _e' = expr env e in
@@ -168,4 +182,3 @@ and stmt env st =
 let stmt st =
   let env = empty_env () in
   stmt env st
-

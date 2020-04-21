@@ -80,6 +80,9 @@ type ident = string wrap
  * using a gensym (see naming_ast.ml). The pair is guaranteed to be 
  * global and unique (no need to handle variable shadowing, block scoping,
  * etc; this has been done already).
+ * TODO: use it to also do SSA! so some control-flow insensitive analysis
+ * can become control-flow sensitive! (e.g., DOOP)
+ * 
  *)
 type var = ident * G.sid
  (* with tarzan *)
@@ -172,6 +175,7 @@ type instr = {
   | SetAnon of lval * anonymous_entity
   | Call of lval option * exp * argument list
   | CallSpecial of lval option * call_special wrap * argument list
+  (* todo: PhiSSA! *)
 
   and call_special = 
     | Eval
@@ -217,6 +221,7 @@ type stmt = {
 
   | Try of stmt list * (var * stmt list) list * stmt list
   
+  (* everything except VarDef which should be transformed in a Set *)
   | DefStmt of G.definition
   | DirectiveStmt of G.directive
 
