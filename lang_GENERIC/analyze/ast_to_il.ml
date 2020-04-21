@@ -120,6 +120,8 @@ and expr env e =
   | G.Call (G.IdSpecial (G.ArithOp op, tok), args) ->
       let args = arguments env args in
       mk_e (Operator ((op, tok), args)) e
+  | G.Call (G.IdSpecial (G.IncrDecr (_incdec, _prepost), _tok), _args) ->
+      todo (G.E e)
   (* todo: if the xxx_to_generic forgot to generate Eval *)
   | G.Call (G.Id (("eval", tok), { G.id_resolved = {contents = None}; _}), 
       args) ->
@@ -152,9 +154,15 @@ and expr_opt env = function
 
 and call_special _env (x, tok) = 
   (match x with
-  | G.ArithOp _op -> raise Impossible (* should be intercepted before *)
+  | G.ArithOp _ | G.IncrDecr _ -> 
+        raise Impossible (* should be intercepted before *)
+  | G.This | G.Super | G.Self | G.Parent ->
+        raise Impossible (* should be intercepted before *)
   | G.Eval -> Eval
-  | _ -> todo (G.E (G.IdSpecial (x, tok)))
+  | G.Typeof -> Typeof | G.Instanceof -> Instanceof | G.Sizeof -> Sizeof
+  | G.New -> New 
+  | G.Concat -> Concat | G.Spread -> Spread
+  | G.EncodedString _ -> todo (G.E (G.IdSpecial (x, tok)))
   ), tok
 
 (* TODO: dependency of order between arguments for instr? *)
@@ -165,6 +173,15 @@ and argument env arg =
   match arg with
   | G.Arg e -> expr env e
   | _ -> todo (G.Ar arg)
+
+
+(*****************************************************************************)
+(* Pattern *)
+(*****************************************************************************)
+
+(*****************************************************************************)
+(* Exprs and instrs *)
+(*****************************************************************************)
 
 (* just to ensure the code after does not call expr directly *)
 let expr_orig = expr
@@ -218,7 +235,9 @@ let rec stmt env st =
     let e', ss = expr_and_instrs env e in
     st @ ss @ [mk_s (Loop (tok, e', st @ ss))]
 
-  | G.For (_, _, _) 
+  | G.For (_tok, G.ForEach (_pat, _tok2, _e), _st) 
+   -> todo (G.S st)
+  | G.For (_tok, G.ForClassic (_xs, _eopt1, _eopt2), _st) 
    -> todo (G.S st)
 
   (* TODO: repeat env work of controlflow_build.ml *)
