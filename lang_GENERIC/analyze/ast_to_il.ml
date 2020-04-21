@@ -215,6 +215,13 @@ let rec stmt env st =
     let st = stmt env st in
     let e', ss = expr_and_instrs env e in
     st @ ss @ [mk_s (Loop (tok, e', st @ ss))]
+
+  | G.For (_, _, _) 
+   -> todo (G.S st)
+
+  (* TODO: repeat env work of controlflow_build.ml *)
+  | G.Continue (_, _) | G.Break (_, _)
+   -> todo (G.S st)
     
   | G.Label (lbl, st) ->
       let lbl = label_of_label env lbl in
@@ -237,13 +244,15 @@ let rec stmt env st =
        *)
       ss1 @ ss2 @
       [mk_s (Instr (mk_i (CallSpecial (None, special, [e'; eopt'])) e))]
+
+  | G.Throw (tok, e) ->
+      let e, ss = expr_and_instrs env e in
+      ss @ [mk_s (Throw (tok, e))]
       
   | G.DisjStmt _ -> sgrep_construct (G.S st)
   | G.OtherStmt _ | G.OtherStmtWithStmt _
-  | G.For (_, _, _) 
   | G.Switch (_, _, _)
-  | G.Continue (_, _) | G.Break (_, _)
-  | G.Throw (_, _) | G.Try (_, _, _, _) 
+  | G.Try (_, _, _, _) 
    -> todo (G.S st)
 
 (*****************************************************************************)

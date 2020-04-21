@@ -33,7 +33,9 @@ module G = Ast_generic
  *  - Naming has been performed, no more ident vs name
  *  - Lambdas are now instructions (not nested again)
  *  - no Sgrep constructs
- *  - no For/Foreach/DoWhile/While, converted all in Loop
+ *  - no For/Foreach/DoWhile/While, converted all in Loop, and Foreach
+ *    in a new Special
+ *  - no Switch, converted in Ifs
  *  - less use of expr option (in Return/Assert/...)
  *  - TODO no Continue/Break, converted in goto
  *
@@ -195,12 +197,13 @@ type instr = {
     | Concat
     | Spread
     | Yield | Await
-    | Assert
+    (* was in stmt before, but now that we have a clean instr, better
+     * to be here *)
+    | Assert | ForeachIter
+    (* was in expr before (only in C/PHP) *)
+    | Ref
     (* when transpiling certain features *)
     | TupleAccess of int (* when transpiling tuples *)
-    | ForeachIter
-    (* only in C/PHP *)
-    | Ref
 
   and anonymous_entity =
     | Lambda of G.function_definition
@@ -217,10 +220,9 @@ type stmt = {
   and stmt_kind =
   | Instr of instr
 
+  (* Switch are converted to a series of If *)
   | If of tok * exp * stmt list * stmt list
-  (* less: could be transpiled? *)
-  | Switch of tok * exp * case_and_body list
-  (* While/DoWhile/For are converted in unified Loop construct.
+  (* While/DoWhile/For are converted in a unified Loop construct.
    * Break/Continue are handled via Label.
    * alt: we could go further and transform in If+Goto, but nice to
    * not be too far from the original code.
@@ -234,6 +236,7 @@ type stmt = {
   | Label of label
 
   | Try of stmt list * (var * stmt list) list * stmt list
+  | Throw of tok * exp
   
   (* everything except VarDef which should be transformed in a Set *)
   | DefStmt of G.definition
