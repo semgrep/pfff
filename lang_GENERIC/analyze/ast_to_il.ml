@@ -178,6 +178,11 @@ and argument env arg =
 (*****************************************************************************)
 (* Pattern *)
 (*****************************************************************************)
+and pattern env pat =
+  match pat with
+  | G.PatId (id, id_info) ->
+      Left (lval_of_id_info env id id_info)
+  | _ -> todo (G.P pat)
 
 (*****************************************************************************)
 (* Exprs and instrs *)
@@ -235,8 +240,33 @@ let rec stmt env st =
     let e', ss = expr_and_instrs env e in
     st @ ss @ [mk_s (Loop (tok, e', st @ ss))]
 
-  | G.For (_tok, G.ForEach (_pat, _tok2, _e), _st) 
-   -> todo (G.S st)
+  | G.For (tok, G.ForEach (pat, tok2, e), st) -> 
+      let e', ss = expr_and_instrs env e in
+      let st = stmt env st in
+
+      let next_lval = fresh_lval env tok2 in
+      let hasnext_lval = fresh_lval env tok2 in
+      let hasnext_call = mk_s (Instr (
+        mk_i (CallSpecial (Some hasnext_lval, (ForeachHasNext, tok2), [e']))e))
+      in
+      let next_call = mk_s (Instr(
+        mk_i (CallSpecial (Some next_lval, (ForeachNext, tok2), [e'])) e))
+      in
+      let lval = 
+        match pattern env pat with
+        | Left l -> l
+        | Right _ -> todo (G.P pat)
+      in
+      (* todo? same semantic? or need to take Ref? or pass lval
+       * directly in next_call instead of using intermediate next_lval?
+       *)
+      let assign = 
+        mk_s (Instr (mk_i (Set (lval, mk_e (Lvalue next_lval) e)) e)) in
+
+      (ss @ [hasnext_call]) @
+      [mk_s (Loop(tok, mk_e (Lvalue hasnext_lval) e, [next_call; assign;
+              ] @ st @ ((* ss @ ?*) [hasnext_call])))]
+      
   | G.For (_tok, G.ForClassic (_xs, _eopt1, _eopt2), _st) 
    -> todo (G.S st)
 
