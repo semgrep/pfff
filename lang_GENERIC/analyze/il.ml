@@ -148,6 +148,7 @@ and exp = {
   | Composite of composite_kind * exp list bracket
   | Lvalue of lval
   | Cast of G.type_ * exp
+  (* less: could put Operator of G.arithmetic_operator * exp list *)
 
  and composite_kind =
   | Tuple
