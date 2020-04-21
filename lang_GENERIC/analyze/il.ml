@@ -22,18 +22,23 @@ module G = Ast_generic
  * Just like for the CST -> AST, the goal of an AST -> IL transformation
  * is to simplify things even more for program analysis purpose.
  *
- * TODO Here are simplifications that could be done to the AST:
+ * Here are the simplifications done compared to the generic AST:
  *  - intermediate instr type (instr for instruction), for statements without
- *    any control flow
- *  - intermediate lvalue type, expressions are splitted in 
- *    lvalue vs regular expressions
- *  - Assign is now an instruction, not an expression
+ *    any control flow, moving Assign/Seq/Call out of expr
+ *  - new expr type (exp) for side-effect free expressions
+ *  - intermediate lvalue type; expressions are splitted in 
+ *    lvalue vs regular expressions, moved Dot/Index out of expr
+ *  - Assign/Seq/Calls are now instructions, not expressions
  *  - no AssignOp, or Decr/Incr, just Assign
- *  - Calls are now instructions (not nested inside complex expressions)
- *    and all its arguments are variables?
  *  - Naming has been performed, no more ident vs name
  *  - Lambdas are now instructions (not nested again)
- *  - Seq are instructions
+ *  - no Sgrep constructs
+ *  - no For/Foreach/DoWhile/While, converted all in Loop
+ *  - TODO no Continue/Break, converted in goto
+ *
+ * TODO:
+ *   - TODO? have all arguments of Calls be variables?
+ *
  * 
  * Note that we still want to be close to the original code so that
  * error reported on the IL can be mapped back to error on the original code
@@ -54,6 +59,7 @@ module G = Ast_generic
  *    source maps)
  *  - SiMPL language in BAP/BitBlaze dynamic analysis libraries
  *    but probably too close to assembly/bytecode
+ *  - Jimpl in Soot/Wala
  *)
 
 (*****************************************************************************)
@@ -148,7 +154,9 @@ and exp = {
   | Composite of composite_kind * exp list bracket
   | Lvalue of lval
   | Cast of G.type_ * exp
-  (* less: could put Operator of G.arithmetic_operator * exp list *)
+  (* This could be put in call_special, but dumped IL are then less readable
+   * (it introduces too many intermediate _tmp) *)
+  | Operator of G.arithmetic_operator wrap * exp list
 
  and composite_kind =
   | Tuple
@@ -182,12 +190,14 @@ type instr = {
     | Eval
     | New
     | Typeof | Instanceof | Sizeof
-    | Operator of G.arithmetic_operator | Concat
+    (* better in exp: | Operator of G.arithmetic_operator *)
+    | Concat
     | Spread
     | Yield | Await
     | Assert
     (* when transpiling certain features *)
     | TupleAccess of int (* when transpiling tuples *)
+    | ForeachIter
     (* only in C/PHP *)
     | Ref
 
@@ -210,7 +220,9 @@ type stmt = {
   (* less: could be transpiled? *)
   | Switch of tok * exp * case_and_body list
   (* While/DoWhile/For are converted in unified Loop construct.
-   * Break/Continue are handled via Label 
+   * Break/Continue are handled via Label.
+   * alt: we could go further and transform in If+Goto, but nice to
+   * not be too far from the original code.
    *)
   | Loop of tok * exp * stmt list
 
@@ -218,7 +230,7 @@ type stmt = {
 
   (* alt: do as in CIL and resolve that directly in 'Goto of stmt' *)
   | Goto of tok * label
-  | Label of label * stmt list
+  | Label of label
 
   | Try of stmt list * (var * stmt list) list * stmt list
   
