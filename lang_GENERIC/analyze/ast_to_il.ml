@@ -207,6 +207,8 @@ let rec stmt env st =
     let st2 = stmt env st2 in
     ss @ [mk_s (If (tok, e', st1, st2))]
 
+  | G.Switch (_, _, _) -> todo (G.S st)
+
   | G.While(tok, e, st) ->
     let e', ss = expr_and_instrs env e in
     let st = stmt env st in
@@ -248,12 +250,11 @@ let rec stmt env st =
   | G.Throw (tok, e) ->
       let e, ss = expr_and_instrs env e in
       ss @ [mk_s (Throw (tok, e))]
-      
-  | G.DisjStmt _ -> sgrep_construct (G.S st)
-  | G.OtherStmt _ | G.OtherStmtWithStmt _
-  | G.Switch (_, _, _)
   | G.Try (_, _, _, _) 
    -> todo (G.S st)
+      
+  | G.DisjStmt _ -> sgrep_construct (G.S st)
+  | G.OtherStmt _ | G.OtherStmtWithStmt _ -> todo (G.S st)
 
 (*****************************************************************************)
 (* Entry point *)
