@@ -12,11 +12,12 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
+module G = Ast_generic
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Intermediate language for static analysis.
+(* Intermediate Language (IL) for static analysis.
  *
  * Just like for the CST -> AST, the goal of an AST -> IL transformation
  * is to simplify things even more for program analysis purpose.
@@ -51,111 +52,198 @@
  *  - Rust IL?
  *  - LLVM IR (but too far away from original code? complicated 
  *    source maps)
+ *  - SiMPL language in BAP/BitBlaze dynamic analysis libraries
+ *    but probably too close to assembly/bytecode
  *)
-module G = Ast_generic
 
 (*****************************************************************************)
 (* Token (leaf) *)
 (*****************************************************************************)
 
+(* the classic *)
 type tok = G.tok
+ (* with tarzan *)
 type 'a wrap = 'a G.wrap
-type 'a bracket = 'a G.bracket
+ (* with tarzan *)
+(* useful mainly for empty containers *)
+type 'a bracket = tok * 'a * tok
+ (* with tarzan *)
 
 (*****************************************************************************)
 (* Names *)
 (*****************************************************************************)
 
 type ident = string wrap
+ (* with tarzan *)
 
-(* The string below is the result of name resolution and variable disambiguation
- * using gensym. The string is guaranteed to be global and unique 
- * (no need to handle variable shadowing, block scoping, etc; this has 
- * been done already).
+(* 'sid' below is the result of name resolution and variable disambiguation
+ * using a gensym (see naming_ast.ml). The pair is guaranteed to be 
+ * global and unique (no need to handle variable shadowing, block scoping,
+ * etc; this has been done already).
  *)
-type var = ident * var_info
-  (* similar to G.id_info *)
-  and var_info = {
-   (* the refs below are shared with Ast_generic.id_info, so modifying them
-    * will by side effect modify also the refs in the generic AST.
-    *)
-    var_resolved: G.resolved_name option ref; 
-    var_type: G.type_ option ref;
+type var = ident * G.sid
+ (* with tarzan *)
 
-    var_orig: G.name option; (* None for temporary variables *)
-  }
+(* for constructors and other global entities.
+ * 'sid' below should be the result of global name resolution using 
+ * codegraph or something similar.
+ *)
+type name = ident * G.sid
+ (* with tarzan *)
 
 (*****************************************************************************)
 (* Lvalue *)
 (*****************************************************************************)
 
-type lval = 
-  | Var of var
-  (* computed field names are not handled here but in special *)
-  | Dot   of var * ident
-  | Index of var * exp
-  (* only in C *)
-  | Deref of tok
+(* An lvalue, represented as in CIL as a pair. *)
+type lval = {
+  base: base;
+  offset: offset;
+  (* todo: ltype: typ; *)
+}
+  and base = 
+    | Var of var
+    | VarSpecial of var_special wrap
+    (* for C *)
+    | Mem of exp
+
+  and offset = 
+  | NoOffset
+  (* What about nested field access? foo.x.y? 
+   * - use intermediate variable for that. TODO? same semantic?
+   * - do as in CIL and have recursive offset and stop with NoOffset.
+   * What about computed field names? 
+   * - handle them in Special?
+   * - convert in Index?
+   * Note that Dot is used to access many different kinds of entities:
+   *  objects (fields), classes (static fields), but also packages, modules,
+   *  namespaces depending on the type of 'var' above.
+   *)
+  | Dot   of ident
+  | Index of exp
+
+   (* transpile at some point? *)
+   and var_special =
+     | This | Super
+     | Self | Parent
 
 (*****************************************************************************)
 (* Expression *)
 (*****************************************************************************)
 
-and exp = 
+(* We use use 'exp' instead of 'expr' to accentuate the difference 
+ * with Ast_generic.expr. 
+ * Here 'exp' does not contain any side effect!
+ *)
+and exp = {
+  e: exp_kind;
+  (* todo: etype: typ; *)
+  eorig: G.expr;
+ } 
+  and exp_kind =
   | Literal of G.literal
   | Composite of composite_kind * exp list bracket
   | Lvalue of lval
-  | Cast of type_ * exp
+  | Cast of G.type_ * exp
 
  and composite_kind =
-  | Tuple of tok
-  | Array of tok | List of tok
-  | Dict of tok
-  | Constructor of ident
+  | Tuple
+  | Array | List
+  | Dict
+  | Constructor of name (* OCaml *)
+ (* with tarzan *)
 
 type argument = exp
+ (* with tarzan *)
 
 (*****************************************************************************)
 (* Instruction *)
 (*****************************************************************************)
 
-type instr =
+(* Easier type to compute lvalue/rvalue set of a too general 'expr', which
+ * is now split in  instr vs exp vs lval.
+ *)
+type instr = {
+  i: instr_kind;
+  iorig: G.expr;
+ }
+  and instr_kind =
   | Set of lval * exp
   | SetAnon of lval * anonymous_entity
-  | Call of lval option * var * argument list
-  | Special of lval option * special_kind wrap * argument list
+  | Call of lval option * exp * argument list
+  | CallSpecial of lval option * call_special wrap * argument list
 
-  and special_kind = 
+  and call_special = 
     | Eval
     | New
     | Typeof | Instanceof | Sizeof
-    | Operator of F.arithmetic_operator | Concat
+    | Operator of G.arithmetic_operator | Concat
     | Spread
-    | TupleAccess of int
     | Yield | Await
+    | Assert
+    (* when transpiling certain features *)
+    | TupleAccess of int (* when transpiling tuples *)
     (* only in C/PHP *)
     | Ref
 
   and anonymous_entity =
     | Lambda of G.function_definition
     | AnonClass of G.class_definition
+ (* with tarzan *)
 
 (*****************************************************************************)
-(* Statemement *)
+(* Statement *)
 (*****************************************************************************)
-type stmt = 
-  | Instr of instr list
-  | Block of stmt list
-  | If of tok * exp * stmt * stmt
-  | Loop of tok * stmt
-  | Return of tok * exp option
-  | Label of label * stmt
-  | Goto of tok  * label
-  | Try of stmt * (var * stmt) list * stmt option
+type stmt = {
+  s: stmt_kind;
+  (* sorig: G.stmt; ?*)
+  }
+  and stmt_kind =
+  | Instr of instr
 
-and label = ident
+  | If of tok * exp * stmt list * stmt list
+  (* less: could be transpiled? *)
+  | Switch of tok * exp * case_and_body list
+  (* While/DoWhile/For are converted in unified Loop construct.
+   * Break/Continue are handled via Label 
+   *)
+  | Loop of tok * exp * stmt list
+
+  | Return of tok * exp (* use Unit instead of 'exp option' *)
+
+  (* alt: do as in CIL and resolve that directly in 'Goto of stmt' *)
+  | Goto of tok * label
+  | Label of label * stmt list
+
+  | Try of stmt list * (var * stmt list) list * stmt list
+  
+  | DefStmt of G.definition
+  | DirectiveStmt of G.directive
+
+   and case_and_body = case list * stmt list
+     and case = 
+       | Case of tok * exp
+       | Default of tok
+
+and label = ident * G.sid
+ (* with tarzan *)
 
 (*****************************************************************************)
 (* Defs *)
 (*****************************************************************************)
 (* See ast_generic.ml *)
+
+(*****************************************************************************)
+(* Any *)
+(*****************************************************************************)
+type any = 
+  | L of lval
+  | E of exp
+  | I of instr
+  | S of stmt
+  | Ss of stmt list
+ (* with tarzan *)
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)

@@ -45,58 +45,13 @@ GRAPHDIRS=commons_wrappers/graph
 #------------------------------------------------------------------------------
 # Main variables
 #------------------------------------------------------------------------------
-BASICSYSLIBS=bigarray.cma str.cma unix.cma
-
-# used small utilities that I dont want to depend on too much things
-BASICLIBS=commons/lib.cma \
- commons_core/lib.cma \
- $(JSONCMA) \
- $(DYPCMA) \
- globals/lib.cma \
- h_files-format/lib.cma \
- h_program-lang/lib.cma \
- lang_ml/parsing/lib.cma \
-  lang_ml/analyze/lib.cma \
- lang_skip/parsing/lib.cma \
- lang_nw/parsing/lib.cma \
- lang_php/parsing/lib.cma \
-  lang_php/pretty/lib.cma \
- lang_cpp/parsing/lib.cma \
- lang_c/parsing/lib.cma \
-  lang_c/analyze/lib.cma \
- lang_java/parsing/lib.cma \
-  lang_java/analyze/lib.cma \
- lang_python/parsing/lib.cma \
-  lang_python/analyze/lib.cma \
- lang_go/parsing/lib.cma \
-  lang_go/analyze/lib.cma \
- lang_csharp/parsing/lib.cma \
- lang_rust/parsing/lib.cma \
- lang_erlang/parsing/lib.cma \
- lang_haskell/parsing/lib.cma \
- lang_lisp/parsing/lib.cma \
- lang_html/parsing/lib.cma \
- lang_js/parsing/lib.cma \
-  lang_js/analyze/lib.cma \
- lang_css/parsing/lib.cma \
- lang_web/parsing/lib.cma \
- lang_text/lib.cma \
- lang_sql/parsing/lib.cma \
- lang_GENERIC/parsing/lib.cma \
-  lang_GENERIC/analyze/lib.cma \
- lang_FUZZY/parsing/lib.cma \
-
-ifeq ($(FEATURE_RUBY), 1)
-BASICLIBS+=\
- lang_ruby/parsing/lib.cma \
-  lang_ruby/analyze/lib.cma \
-
-endif
 
 SYSLIBS=bigarray.cma str.cma unix.cma
 SYSLIBS+=$(OCAMLCOMPILERCMA)
 
-# use for the other programs
+#old: I used to have a BASICLIBS for small pfff utilities and LIBS for 
+# the rest but now that codemap/codegraph are out of this repository, there
+# is less of a need to have BASICLIBS
 LIBS= commons/lib.cma \
     commons_core/lib.cma \
     commons_ocollection/lib.cma \
@@ -261,9 +216,9 @@ rec.opt:
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all.opt || exit 1; done
 
 
-$(TARGET): $(BASICLIBS) $(OBJS) main.cmo
+$(TARGET): $(LIBS) $(OBJS) main.cmo
 	$(OCAMLC) $(BYTECODE_STATIC) -o $@ $(SYSLIBS) $^
-$(TARGET).opt: $(BASICLIBS:.cma=.cmxa) $(OPTOBJS) main.cmx
+$(TARGET).opt: $(LIBS:.cma=.cmxa) $(OPTOBJS) main.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa)  $^
 $(TARGET).top: $(LIBS) $(OBJS)
 	$(OCAMLMKTOP) -o $@ $(SYSLIBS) threads.cma $^

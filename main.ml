@@ -104,6 +104,7 @@ let all_actions () =
   Test_parsing_sql.actions()@
 
   Test_parsing_generic.actions() @
+  Test_analyze_generic.actions() @
 (*
   Test_analyze_cpp.actions () ++
   Test_analyze_php.actions () ++
