@@ -30,6 +30,7 @@ module G = Ast_generic
 (* Types *)
 (*****************************************************************************)
 type env = {
+  (* instructions hidden inside expressions that we want to move out of 'exp'*)
   instrs: instr list ref;
 }
 
@@ -57,6 +58,9 @@ let sgrep_construct any_generic =
 
 let todo any_generic =
   error_any any_generic "TODO Construct"
+
+let impossible any_generic =
+  error_any any_generic "Impossible Construct"
 
 (*****************************************************************************)
 (* Helpers *)
@@ -108,16 +112,37 @@ let bracket_keep f (t1, x, t2) =
 (*****************************************************************************)
 (* lvalue *)
 (*****************************************************************************)
-let rec _lval _env _x =
-  raise Todo
+let rec lval env eorig =
+  match eorig with
+  | G.Id (id, id_info) ->
+      let lval = lval_of_id_info env id id_info in
+      lval
+  | _ -> todo (G.E eorig)
+
+(*****************************************************************************)
+(* Pattern *)
+(*****************************************************************************)
+and pattern env pat =
+  match pat with
+  | G.PatId (id, id_info) ->
+      Left (lval_of_id_info env id id_info)
+  | _ -> todo (G.P pat)
+
+and pattern_assign_statements env exp eorig pat =
+  let lval = 
+     match pattern env pat with
+     | Left l -> l
+     | Right _ -> todo (G.P pat)
+   in
+   [mk_s (Instr (mk_i (Set (lval, exp)) eorig))]
 
 (*****************************************************************************)
 (* Assign *)
 (*****************************************************************************)
 and assign env lhs _tok rhs_exp eorig =
   match lhs with
-  | G.Id (id, id_info) ->
-      let lval = lval_of_id_info env id id_info in
+  | G.Id (_, _) ->
+      let lval = lval env lhs in
       add_instr env (mk_i (Set (lval, rhs_exp)) eorig);
       mk_e (Lvalue lval) lhs
   | _ -> todo (G.E lhs)
@@ -125,13 +150,38 @@ and assign env lhs _tok rhs_exp eorig =
 (*****************************************************************************)
 (* Expression *)
 (*****************************************************************************)
+(* less: we could pass in an optional lval that we know the caller want
+ * to assign into, which would avoid creating useless fresh_var intermediates.
+ *)
 and expr env eorig =
   match eorig with
   | G.Call (G.IdSpecial (G.ArithOp op, tok), args) ->
       let args = arguments env args in
       mk_e (Operator ((op, tok), args)) eorig
-  | G.Call (G.IdSpecial (G.IncrDecr (_incdec, _prepost), _tok), _args) ->
-      todo (G.E eorig)
+  | G.Call (G.IdSpecial (G.IncrDecr (incdec, _prepostIGNORE), tok), args) ->
+      (* in theory in expr() we should return each time a list of pre-instr
+       * and a list of post-instrs to execute before and after the use
+       * of the expression. However this complicates the interface of 'expr()'.
+       * Right now, for the pre-instr we agglomerate them instead in env 
+       * and use them in 'expr_with_pre_instr()' below, but for the post
+       * we dont. Anyway, for our static analysis purpose it should not matter.
+       * We don't do fancy path-sensitive-evaluation-order-sensitive analysis.
+       *)
+      (match args with
+      | [G.Arg e] ->
+            let lval = lval env e in
+            let lvalexp = mk_e (Lvalue lval) e in
+            let op = 
+              (match incdec with | G.Incr -> G.Plus | G.Decr -> G.Minus), tok
+            in
+            let one = G.Int ("1", tok) in
+            let one_exp = mk_e (Literal one) (G.L one) in
+            let opexp = mk_e (Operator (op, [lvalexp; one_exp])) eorig in
+            add_instr env (mk_i (Set (lval, opexp)) eorig);
+            lvalexp
+      | _ -> impossible (G.E eorig)
+      )
+
   (* todo: if the xxx_to_generic forgot to generate Eval *)
   | G.Call (G.Id (("eval", tok), { G.id_resolved = {contents = None}; _}), 
       args) ->
@@ -147,8 +197,22 @@ and expr env eorig =
       let args = arguments env args in
       add_instr env (mk_i (CallSpecial (Some lval, special, args)) eorig);
       mk_e (Lvalue lval) eorig
-  | G.Call (_e, _args) ->
-      todo (G.E eorig)
+  | G.Call (e, args) ->
+      let e = expr env e in
+      (* In theory, instrs in args could have side effect on the value in 'e',
+       * but we will agglomerate all those instrs in the environment and
+       * the caller will call them in sequence (see expr_with_pre_instr).
+       * In theory, we should not execute those instrs before getting the
+       * value in 'e' in the caller, but for our static analysis purpose 
+       * we should not care about those edge cases. That would require
+       * to return in expr multiple arguments and thread things around; Not
+       * worth it.
+       *)
+      let args = arguments env args in
+      let tok = G.fake "call" in
+      let lval = fresh_lval env tok in
+      add_instr env (mk_i (Call (Some lval, e, args)) eorig);
+      mk_e (Lvalue lval) eorig
 
   | G.L lit -> mk_e (Literal lit) eorig
   | G.Id (id, id_info) -> 
@@ -161,7 +225,7 @@ and expr env eorig =
 
   | G.Seq xs ->
       (match List.rev xs with
-      | [] -> raise Impossible
+      | [] -> impossible (G.E eorig)
       | last::xs ->
          let xs = List.rev xs in
          xs |> List.iter (fun e -> let _eIGNORE = expr env e in ());
@@ -172,12 +236,27 @@ and expr env eorig =
       let xs = bracket_keep (List.map (expr env)) xs in
       let kind = composite_kind kind in
       mk_e (Composite (kind, xs)) eorig
-  | G.Tuple _
+  | G.Tuple xs -> 
+      let xs = List.map (expr env) xs in
+      mk_e (Composite (CTuple, G.fake_bracket xs)) eorig
+  | G.Record _ 
   -> todo (G.E eorig)
-  | G.Record _ | G.Constructor (_, _)
+  | G.Constructor (_, _)
   -> todo (G.E eorig)
-  | G.Lambda _ | G.AnonClass _ 
-  -> todo (G.E eorig)
+
+  | G.Lambda def ->
+      (* TODO: we should have a use def.f_tok *)
+      let tok = G.fake "lambda" in
+      let lval = fresh_lval env tok in
+      add_instr env (mk_i (SetAnon (lval, Lambda def)) eorig);
+      mk_e (Lvalue lval) eorig
+  | G.AnonClass def ->
+      (* TODO: should use def.ckind *)
+      let tok = Common2.fst3 def.G.cbody in
+      let lval = fresh_lval env tok in
+      add_instr env (mk_i (SetAnon (lval, AnonClass def)) eorig);
+      mk_e (Lvalue lval) eorig
+      
   | G.IdQualified (_, _)
   -> todo (G.E eorig)
   | G.IdSpecial _
@@ -241,24 +320,6 @@ and argument env arg =
   match arg with
   | G.Arg e -> expr env e
   | _ -> todo (G.Ar arg)
-
-
-(*****************************************************************************)
-(* Pattern *)
-(*****************************************************************************)
-and pattern env pat =
-  match pat with
-  | G.PatId (id, id_info) ->
-      Left (lval_of_id_info env id id_info)
-  | _ -> todo (G.P pat)
-
-and pattern_assign_statements env exp eorig pat =
-  let lval = 
-     match pattern env pat with
-     | Left l -> l
-     | Right _ -> todo (G.P pat)
-   in
-   [mk_s (Instr (mk_i (Set (lval, exp)) eorig))]
 
 (*****************************************************************************)
 (* Exprs and instrs *)
