@@ -413,7 +413,7 @@ and expr =
       | XmlExpr of expr
       | XmlXml of xml
 
-  and arguments = argument list
+  and arguments = argument list (* bracket? not in OCaml/Ruby *)
     and argument =
       (* regular argument *)
       | Arg of expr (* can be Call (IdSpecial Spread, Id foo) *)
