@@ -321,8 +321,10 @@ and expr env eorig =
   | G.Yield (_, _, _)
   | G.Await (_, _)
   -> todo (G.E eorig)
-  | G.Cast (_, _)
-  -> todo (G.E eorig)
+  | G.Cast (typ, e) ->
+      let e = expr env e in
+      mk_e (Cast (typ, e)) eorig
+
   | G.Ref (_, _)
   | G.DeRef (_, _)
   -> todo (G.E eorig)
