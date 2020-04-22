@@ -208,7 +208,7 @@ type instr = {
     | Assert 
     | ForeachNext | ForeachHasNext
     (* was in expr before (only in C/PHP) *)
-    | Ref
+    | Ref (* TODO: lift up, have SetRef? *)
     (* when transpiling certain features (e.g., patterns) *)
     (* | IntAccess of composite_kind * int (* for tuples/array/list *)
        | StringAccess of string (* for records/hashes *)
