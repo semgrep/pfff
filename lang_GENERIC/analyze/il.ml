@@ -23,21 +23,24 @@ module G = Ast_generic
  * is to simplify things even more for program analysis purpose.
  *
  * Here are the simplifications done compared to the generic AST:
- *  - intermediate instr type (instr for instruction), for statements without
- *    any control flow, moving Assign/Seq/Call out of expr
- *  - new expr type (exp) for side-effect free expressions
- *  - intermediate lvalue type; expressions are splitted in 
+ *  - intermediate 'instr' type (instr for instruction), for expression with
+ *    side effects and statements without any control flow, 
+ *    moving Assign/Seq/Call/Conditional out of 'expr'
+ *  - new expression type 'exp' for side-effect free expressions
+ *  - intermediate 'lvalue' type; expressions are splitted in 
  *    lvalue vs regular expressions, moved Dot/Index out of expr
+ *
  *  - Assign/Seq/Calls are now instructions, not expressions
  *  - no AssignOp, or Decr/Incr, just Assign
- *  - Naming has been performed, no more ident vs name
  *  - Lambdas are now instructions (not nested again)
  *  - no Sgrep constructs
  *  - no For/Foreach/DoWhile/While, converted all in Loop, and Foreach
  *    in a new Special
  *  - no Switch, converted in Ifs
- *  - less use of expr option (in Return/Assert/...)
  *  - TODO no Continue/Break, converted in goto
+ *  - less use of expr option (in Return/Assert/...)
+ *
+ *  - Naming has been performed, no more ident vs name
  *
  * TODO:
  *   - TODO? have all arguments of Calls be variables?
@@ -146,9 +149,15 @@ and exp = {
   eorig: G.expr;
  } 
   and exp_kind =
+  | Lvalue of lval (* lvalue used in a rvalue context *)
   | Literal of G.literal
   | Composite of composite_kind * exp list bracket
-  | Lvalue of lval (* lvalue used in a rvalue context *)
+  (* this could be a Composite where the arguments are CTuple with
+   * the Literal (String) as a key, but they are pretty important I think
+   * for some analysis so better to support them more directly.
+   * Could also be used for Dict.
+   *)
+  | Record of (ident * exp) list
   | Cast of G.type_ * exp
   (* This could be put in call_special, but dumped IL are then less readable
    * (they are too many intermediate _tmp variables then) *)
@@ -157,7 +166,7 @@ and exp = {
  and composite_kind =
   | CTuple
   | CArray | CList | CSet
-  | CDict
+  | CDict (* could be merged with Record *)
   | Constructor of name (* OCaml *)
  (* with tarzan *)
 

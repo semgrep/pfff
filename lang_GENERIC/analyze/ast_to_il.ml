@@ -30,12 +30,14 @@ module G = Ast_generic
 (* Types *)
 (*****************************************************************************)
 type env = {
-  (* instructions hidden inside expressions that we want to move out of 'exp'*)
-  instrs: instr list ref;
+  (* stmts hidden inside expressions that we want to move out of 'exp',
+   * usually simple Instr, but can be also If when handling Conditional expr.
+   *)
+  stmts: stmt list ref;
 }
 
 let empty_env () = {
-  instrs = ref [];
+  stmts = ref [];
 }
 
 
@@ -104,7 +106,11 @@ let mk_s s =
   { s }
 
 let add_instr env instr = 
-  Common.push instr env.instrs
+  Common.push (mk_s (Instr instr)) env.stmts
+let add_stmt env st = 
+  Common.push st env.stmts
+let add_stmts env xs = 
+  xs |> List.iter (add_stmt env)
 
 let bracket_keep f (t1, x, t2) =
   t1, f x, t2
@@ -246,6 +252,7 @@ and expr env eorig =
   | G.Tuple xs -> 
       let xs = List.map (expr env) xs in
       mk_e (Composite (CTuple, G.fake_bracket xs)) eorig
+
   | G.Record _ 
   -> todo (G.E eorig)
 
@@ -270,9 +277,38 @@ and expr env eorig =
   -> todo (G.E eorig)
   | G.SliceAccess (_, _, _, _)
   -> todo (G.E eorig)
-  | G.Conditional (_, _, _)
-  -> todo (G.E eorig)
 
+  (* e1 ? e2 : e3 ==> 
+   *  pre: lval = e1;
+   *       if(lval) { lval = e2 } else { lval = e3 }
+   *  exp: lval
+   *)
+  | G.Conditional (e1orig, e2orig, e3orig) -> 
+      let tok = G.fake "conditional" in
+      let lval = fresh_lval env tok in
+      let lvalexp = mk_e (Lvalue lval) e1orig in
+
+      (* not sure this is correct *)
+      let before = List.rev !(env.stmts) in
+      env.stmts := [];
+      let e1 = expr env e1orig in
+      let ss_for_e1 = List.rev !(env.stmts) in
+      env.stmts := [];
+      let e2 = expr env e2orig in
+      let ss_for_e2 = List.rev !(env.stmts) in
+      env.stmts := [];
+      let e3 = expr env e3orig in
+      let ss_for_e3 = List.rev !(env.stmts) in
+      env.stmts := [];
+
+      add_stmts env before;
+      add_stmts env ss_for_e1;
+      add_stmt env (mk_s (If (tok, e1,
+          ss_for_e2 @
+          [mk_s (Instr (mk_i (Set (lval, e2)) e2orig))],
+          ss_for_e3 @
+          [mk_s (Instr (mk_i (Set (lval, e3)) e3orig))])));
+      lvalexp
   | G.Xml _
   -> todo (G.E eorig)
 
@@ -335,28 +371,28 @@ and argument env arg =
 let expr_orig = expr
 let expr () = ()
 
-let expr_with_pre_instrs env e =
+let expr_with_pre_stmts env e =
   ignore(expr ());
   let e = expr_orig env e in
-  let xs = List.rev !(env.instrs) in
-  env.instrs := [];
-  (xs |> List.map (fun instr -> mk_s (Instr instr))), e
+  let xs = List.rev !(env.stmts) in
+  env.stmts := [];
+  xs, e
 
-let expr_with_pre_instrs_opt env eopt =
+let expr_with_pre_stmts_opt env eopt =
   match eopt with
   | None -> [], expr_opt env None
-  | Some e -> expr_with_pre_instrs env e
+  | Some e -> expr_with_pre_stmts env e
 
 let for_var_or_expr_list env xs =
   xs |> List.map (function
    | G.ForInitExpr e -> 
-        let ss, _eIGNORE = expr_with_pre_instrs env e in
+        let ss, _eIGNORE = expr_with_pre_stmts env e in
         ss
    | G.ForInitVar (ent, vardef) ->
       (* copy paste of VarDef case in stmt *)
       (match vardef with
       | { G.vinit = Some e; vtype = _typTODO} ->
-         let ss, e' = expr_with_pre_instrs env e in
+         let ss, e' = expr_with_pre_stmts env e in
          let lv = lval_of_ent env ent in
          ss @ [mk_s (Instr (mk_i (Set (lv, e')) e))]; 
       | _ -> []
@@ -370,11 +406,11 @@ let rec stmt env st =
   match st with
   | G.ExprStmt e ->
       (* optimize? pass context to expr when no need for return value? *)
-      let ss, _eIGNORE = expr_with_pre_instrs env e in
+      let ss, _eIGNORE = expr_with_pre_stmts env e in
       ss
 
   | G.DefStmt (ent, G.VarDef { G.vinit = Some e; vtype = _typTODO}) ->
-    let ss, e' = expr_with_pre_instrs env e in
+    let ss, e' = expr_with_pre_stmts env e in
     let lv = lval_of_ent env ent in
     ss @ [mk_s (Instr (mk_i (Set (lv, e')) e))]; 
   | G.DefStmt def -> [mk_s (DefStmt def)]
@@ -383,7 +419,7 @@ let rec stmt env st =
   | G.Block xs -> List.map (stmt env) xs |> List.flatten
 
   | G.If (tok, e, st1, st2) ->
-    let ss, e' = expr_with_pre_instrs env e in
+    let ss, e' = expr_with_pre_stmts env e in
     let st1 = stmt env st1 in
     let st2 = stmt env st2 in
     ss @ [mk_s (If (tok, e', st1, st2))]
@@ -391,16 +427,16 @@ let rec stmt env st =
   | G.Switch (_, _, _) -> todo (G.S st)
 
   | G.While(tok, e, st) ->
-    let ss, e' = expr_with_pre_instrs env e in
+    let ss, e' = expr_with_pre_stmts env e in
     let st = stmt env st in
     ss @ [mk_s (Loop (tok, e', st @ ss))]
   | G.DoWhile(tok, st, e) ->
     let st = stmt env st in
-    let ss, e' = expr_with_pre_instrs env e in
+    let ss, e' = expr_with_pre_stmts env e in
     st @ ss @ [mk_s (Loop (tok, e', st @ ss))]
 
   | G.For (tok, G.ForEach (pat, tok2, e), st) -> 
-      let ss, e' = expr_with_pre_instrs env e in
+      let ss, e' = expr_with_pre_stmts env e in
       let st = stmt env st in
 
       let next_lval = fresh_lval env tok2 in
@@ -431,13 +467,13 @@ let rec stmt env st =
         | None -> 
             let vtrue = G.Bool (true, tok) in
             [], mk_e (Literal (vtrue)) (G.L vtrue)
-        | Some e -> expr_with_pre_instrs env e
+        | Some e -> expr_with_pre_stmts env e
       in
       let next =
         match eopt2 with
         | None -> []
         | Some e -> 
-            let ss, _eIGNORE = expr_with_pre_instrs env e in
+            let ss, _eIGNORE = expr_with_pre_stmts env e in
             ss
       in
       ss1 @ ss2 @ 
@@ -456,12 +492,12 @@ let rec stmt env st =
       [mk_s (Goto (tok, lbl))]
 
   | G.Return (tok, eopt) ->
-      let ss, e = expr_with_pre_instrs_opt env eopt in
+      let ss, e = expr_with_pre_stmts_opt env eopt in
       ss @ [mk_s (Return (tok, e))]
 
   | G.Assert (tok, e, eopt) ->
-      let ss1, e' = expr_with_pre_instrs env e in
-      let ss2, eopt' = expr_with_pre_instrs_opt env eopt in
+      let ss1, e' = expr_with_pre_stmts env e in
+      let ss2, eopt' = expr_with_pre_stmts_opt env eopt in
       let special = Assert, tok in
       (* less: wrong e? would not be able to match on Assert, or 
        * need add sorig:
@@ -470,7 +506,7 @@ let rec stmt env st =
       [mk_s (Instr (mk_i (CallSpecial (None, special, [e'; eopt'])) e))]
 
   | G.Throw (tok, e) ->
-      let ss, e = expr_with_pre_instrs env e in
+      let ss, e = expr_with_pre_stmts env e in
       ss @ [mk_s (Throw (tok, e))]
   | G.Try (_, _, _, _) 
    -> todo (G.S st)

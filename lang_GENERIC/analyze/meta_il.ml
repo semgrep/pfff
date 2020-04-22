@@ -70,6 +70,15 @@ and vof_exp_kind =
       let v1 = vof_composite_kind v1
       and v2 = vof_bracket (Ocaml.vof_list vof_exp) v2
       in Ocaml.VSum (("Composite", [ v1; v2 ]))
+  | Record v1 ->
+      let v1 =
+        Ocaml.vof_list
+          (fun (v1, v2) ->
+             let v1 = vof_ident v1
+             and v2 = vof_exp v2
+             in Ocaml.VTuple [ v1; v2 ])
+          v1
+      in Ocaml.VSum (("Record", [ v1 ]))
   | Lvalue v1 -> let v1 = vof_lval v1 in Ocaml.VSum (("Lvalue", [ v1 ]))
   | Cast ((v1, v2)) ->
       let v1 = G.vof_type_ v1
