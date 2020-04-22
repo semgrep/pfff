@@ -81,10 +81,11 @@ and vof_exp_kind =
       Ocaml.VSum (("Operator", [ v1; v2 ]))
 and vof_composite_kind =
   function
-  | Tuple -> Ocaml.VSum (("Tuple", []))
-  | Array -> Ocaml.VSum (("Array", []))
-  | List -> Ocaml.VSum (("List", []))
-  | Dict -> Ocaml.VSum (("Dict", []))
+  | CTuple -> Ocaml.VSum (("CTuple", []))
+  | CArray -> Ocaml.VSum (("CArray", []))
+  | CList -> Ocaml.VSum (("CList", []))
+  | CSet -> Ocaml.VSum (("CSet", []))
+  | CDict -> Ocaml.VSum (("CDict", []))
   | Constructor v1 ->
       let v1 = vof_name v1 in Ocaml.VSum (("Constructor", [ v1 ]))
   
