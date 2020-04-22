@@ -111,39 +111,50 @@ let rec _lval _env _x =
 (*****************************************************************************)
 (* Assign *)
 (*****************************************************************************)
+and assign env lhs _tok rhs_exp eorig =
+  match lhs with
+  | G.Id (id, id_info) ->
+      let lval = lval_of_id_info env id id_info in
+      add_instr env (mk_i (Set (lval, rhs_exp)) eorig);
+      mk_e (Lvalue lval) lhs
+  | _ -> todo (G.E lhs)
 
 (*****************************************************************************)
 (* Expression *)
 (*****************************************************************************)
-and expr env e =
-  match e with
+and expr env eorig =
+  match eorig with
   | G.Call (G.IdSpecial (G.ArithOp op, tok), args) ->
       let args = arguments env args in
-      mk_e (Operator ((op, tok), args)) e
+      mk_e (Operator ((op, tok), args)) eorig
   | G.Call (G.IdSpecial (G.IncrDecr (_incdec, _prepost), _tok), _args) ->
-      todo (G.E e)
+      todo (G.E eorig)
   (* todo: if the xxx_to_generic forgot to generate Eval *)
   | G.Call (G.Id (("eval", tok), { G.id_resolved = {contents = None}; _}), 
       args) ->
       let lval = fresh_lval env tok in
       let special = Eval, tok in
       let args = arguments env args in
-      add_instr env (mk_i (CallSpecial (Some lval, special, args)) e);
-      mk_e (Lvalue lval) e
+      add_instr env (mk_i (CallSpecial (Some lval, special, args)) eorig);
+      mk_e (Lvalue lval) eorig
   | G.Call (G.IdSpecial spec, args) ->
       let tok = snd spec in
       let lval = fresh_lval env tok in
       let special = call_special env spec in
       let args = arguments env args in
-      add_instr env (mk_i (CallSpecial (Some lval, special, args)) e);
-      mk_e (Lvalue lval) e
+      add_instr env (mk_i (CallSpecial (Some lval, special, args)) eorig);
+      mk_e (Lvalue lval) eorig
 
-  | G.L lit -> mk_e (Literal lit) e
+  | G.L lit -> mk_e (Literal lit) eorig
   | G.Id (id, id_info) -> 
       let lval = lval_of_id_info env id id_info in
-      mk_e (Lvalue lval) e
+      mk_e (Lvalue lval) eorig
+
+  | G.Assign (e1, tok, e2) ->
+      let exp = expr env e2 in
+      assign env e1 tok exp eorig
       
-  | _ -> todo (G.E e)
+  | _ -> todo (G.E eorig)
   
 
 and expr_opt env = function
@@ -212,6 +223,22 @@ let expr_and_instrs_opt env eopt =
   | None -> expr_opt env None, []
   | Some e -> expr_and_instrs env e
 
+let for_var_or_expr_list env xs =
+  xs |> List.map (function
+   | G.ForInitExpr e -> 
+        let _eIGNORE, ss = expr_and_instrs env e in
+        ss
+   | G.ForInitVar (ent, vardef) ->
+      (* copy paste of VarDef case in stmt *)
+      (match vardef with
+      | { G.vinit = Some e; vtype = _typTODO} ->
+         let e', ss = expr_and_instrs env e in
+         let lv = lval_of_ent env ent in
+         ss @ [mk_s (Instr (mk_i (Set (lv, e')) e))]; 
+      | _ -> []
+      )
+  ) |> List.flatten
+
 (*****************************************************************************)
 (* Statement *)
 (*****************************************************************************)
@@ -219,7 +246,7 @@ let rec stmt env st =
   match st with
   | G.ExprStmt e ->
       (* optimize? pass context to expr when no need for return value? *)
-      let _e', ss = expr_and_instrs env e in
+      let _eIGNORE, ss = expr_and_instrs env e in
       ss
 
   | G.DefStmt (ent, G.VarDef { G.vinit = Some e; vtype = _typTODO}) ->
@@ -265,13 +292,32 @@ let rec stmt env st =
        *)
       let assign = 
         pattern_assign_statements env (mk_e (Lvalue next_lval) e) e pat in
+      let cond = mk_e (Lvalue hasnext_lval) e in
 
       (ss @ [hasnext_call]) @
-      [mk_s (Loop(tok, mk_e (Lvalue hasnext_lval) e, [next_call] @ assign @
+      [mk_s (Loop(tok, cond, [next_call] @ assign @
               st @ ((* ss @ ?*) [hasnext_call])))]
       
-  | G.For (_tok, G.ForClassic (_xs, _eopt1, _eopt2), _st) 
-   -> todo (G.S st)
+  | G.For (tok, G.ForClassic (xs, eopt1, eopt2), st) 
+   -> 
+      let ss1 = for_var_or_expr_list env xs in
+      let st = stmt env st in
+      let cond, ss2 =
+        match eopt1 with
+        | None -> 
+            let vtrue = G.Bool (true, tok) in
+            mk_e (Literal (vtrue)) (G.L vtrue), []
+        | Some e -> expr_and_instrs env e
+      in
+      let next =
+        match eopt2 with
+        | None -> []
+        | Some e -> 
+            let _eIGNORE, ss = expr_and_instrs env e in
+            ss
+      in
+      ss1 @ ss2 @ 
+      [mk_s (Loop(tok, cond, st @ next @ ss2))]
 
   (* TODO: repeat env work of controlflow_build.ml *)
   | G.Continue (_, _) | G.Break (_, _)
