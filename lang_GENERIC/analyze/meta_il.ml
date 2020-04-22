@@ -136,8 +136,10 @@ and vof_special_kind =
   | Yield -> Ocaml.VSum (("Yield", []))
   | Await -> Ocaml.VSum (("Await", []))
   | Assert -> Ocaml.VSum (("Assert", []))
+(*
   | TupleAccess v1 ->
       let v1 = Ocaml.vof_int v1 in Ocaml.VSum (("TupleAccess", [ v1 ]))
+*)
   | Ref -> Ocaml.VSum (("Ref", []))
 
 and vof_anonymous_entity =
