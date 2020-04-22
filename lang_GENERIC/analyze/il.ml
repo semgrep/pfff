@@ -238,7 +238,7 @@ type stmt = {
   | Try of stmt list * (name * stmt list) list * stmt list
   | Throw of tok * exp (* less: enforce lval here? *)
   
-  (* everything except VarDef which should be transformed in a Set *)
+  (* everything except VarDef (which is transformed in a Set instr) *)
   | DefStmt of G.definition
   | DirectiveStmt of G.directive
 
