@@ -144,6 +144,8 @@ and expr env eorig =
       let args = arguments env args in
       add_instr env (mk_i (CallSpecial (Some lval, special, args)) eorig);
       mk_e (Lvalue lval) eorig
+  | G.Call (_e, _args) ->
+      todo (G.E eorig)
 
   | G.L lit -> mk_e (Literal lit) eorig
   | G.Id (id, id_info) -> 
@@ -162,10 +164,31 @@ and expr env eorig =
          xs |> List.iter (fun e -> let _eIGNORE = expr env e in ());
          expr env last
       )
-                
-      
-  | _ -> todo (G.E eorig)
-  
+
+  | G.Container (_, _) | G.Tuple _
+  | G.Record _ | G.Constructor (_, _)
+  | G.Lambda _ | G.AnonClass _ 
+  | G.IdQualified (_, _)
+  | G.IdSpecial _
+  | G.Xml _
+  | G.AssignOp (_, _, _)
+  | G.LetPattern (_, _)
+  | G.DotAccess (_, _, _)
+  | G.ArrayAccess (_, _)
+  | G.SliceAccess (_, _, _, _)
+  | G.Conditional (_, _, _)
+  | G.MatchPattern (_, _)
+  | G.Yield (_, _, _)
+  | G.Await (_, _)
+  | G.Cast (_, _)
+  | G.Ref (_, _)
+  | G.DeRef (_, _)
+  -> todo (G.E eorig)
+
+  | G.Ellipsis _ |G.TypedMetavar (_, _, _)|G.DisjExpr (_, _)|G.DeepEllipsis _
+   -> sgrep_construct (G.E eorig)
+  | G.OtherExpr (_, _) -> todo (G.E eorig)
+
 
 and expr_opt env = function
   | None -> 
