@@ -222,6 +222,13 @@ and expr env eorig =
   | G.Assign (e1, tok, e2) ->
       let exp = expr env e2 in
       assign env e1 tok exp eorig
+  | G.AssignOp (e1, op, e2) -> 
+      let exp = expr env e2 in
+      let lval = lval env e1 in
+      let lvalexp = mk_e (Lvalue lval) e1 in
+      let opexp = mk_e (Operator(op, [lvalexp; exp])) eorig in
+      add_instr env (mk_i (Set (lval, opexp)) eorig);
+      lvalexp
 
   | G.Seq xs ->
       (match List.rev xs with
@@ -241,8 +248,6 @@ and expr env eorig =
       mk_e (Composite (CTuple, G.fake_bracket xs)) eorig
   | G.Record _ 
   -> todo (G.E eorig)
-  | G.Constructor (_, _)
-  -> todo (G.E eorig)
 
   | G.Lambda def ->
       (* TODO: we should have a use def.f_tok *)
@@ -257,13 +262,7 @@ and expr env eorig =
       add_instr env (mk_i (SetAnon (lval, AnonClass def)) eorig);
       mk_e (Lvalue lval) eorig
       
-  | G.IdQualified (_, _)
-  -> todo (G.E eorig)
   | G.IdSpecial _
-  -> todo (G.E eorig)
-  | G.Xml _
-  -> todo (G.E eorig)
-  | G.AssignOp (_, _, _)
   -> todo (G.E eorig)
   | G.DotAccess (_, _, _)
   -> todo (G.E eorig)
@@ -273,9 +272,16 @@ and expr env eorig =
   -> todo (G.E eorig)
   | G.Conditional (_, _, _)
   -> todo (G.E eorig)
+
+  | G.Xml _
+  -> todo (G.E eorig)
+
+  | G.IdQualified (_, _)
+  | G.Constructor (_, _)
   | G.LetPattern (_, _)
   | G.MatchPattern (_, _)
   -> todo (G.E eorig)
+
   | G.Yield (_, _, _)
   | G.Await (_, _)
   -> todo (G.E eorig)
