@@ -153,6 +153,16 @@ and expr env eorig =
   | G.Assign (e1, tok, e2) ->
       let exp = expr env e2 in
       assign env e1 tok exp eorig
+
+  | G.Seq xs ->
+      (match List.rev xs with
+      | [] -> raise Impossible
+      | last::xs ->
+         let xs = List.rev xs in
+         xs |> List.iter (fun e -> let _eIGNORE = expr env e in ());
+         expr env last
+      )
+                
       
   | _ -> todo (G.E eorig)
   
