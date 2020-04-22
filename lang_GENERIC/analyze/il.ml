@@ -184,7 +184,12 @@ type instr = {
 
   and call_special = 
     | Eval
-    | New
+    (* Note that in some languages (e.g., Python) some regular calls are
+     * actually New under the hood.
+     * The type_ argument is usually a name, but it can also be an name[] in
+     * Java/C++.
+     *)
+    | New (* TODO: lift? of type_ * argument list? *)
     | Typeof | Instanceof | Sizeof
     (* better in exp: | Operator of G.arithmetic_operator *)
     | Concat
@@ -195,8 +200,10 @@ type instr = {
     | ForeachNext | ForeachHasNext
     (* was in expr before (only in C/PHP) *)
     | Ref
-    (* when transpiling certain features *)
-    | TupleAccess of int (* when transpiling tuples *)
+    (* when transpiling certain features (e.g., patterns) *)
+    (* | IntAccess of composite_kind * int (* for tuples/array/list *)
+       | StringAccess of string (* for records/hashes *)
+    *)
 
   and anonymous_entity =
     | Lambda of G.function_definition
