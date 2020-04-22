@@ -155,9 +155,9 @@ and exp = {
   | Operator of G.arithmetic_operator wrap * exp list
 
  and composite_kind =
-  | Tuple
-  | Array | List
-  | Dict
+  | CTuple
+  | CArray | CList | CSet
+  | CDict
   | Constructor of name (* OCaml *)
  (* with tarzan *)
 

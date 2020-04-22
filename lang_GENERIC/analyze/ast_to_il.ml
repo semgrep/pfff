@@ -102,6 +102,9 @@ let mk_s s =
 let add_instr env instr = 
   Common.push instr env.instrs
 
+let bracket_keep f (t1, x, t2) =
+  t1, f x, t2
+
 (*****************************************************************************)
 (* lvalue *)
 (*****************************************************************************)
@@ -165,8 +168,10 @@ and expr env eorig =
          expr env last
       )
 
-  | G.Container (_, _) 
-  -> todo (G.E eorig)
+  | G.Container (kind, xs) ->
+      let xs = bracket_keep (List.map (expr env)) xs in
+      let kind = composite_kind kind in
+      mk_e (Composite (kind, xs)) eorig
   | G.Tuple _
   -> todo (G.E eorig)
   | G.Record _ | G.Constructor (_, _)
@@ -224,6 +229,9 @@ and call_special _env (x, tok) =
   | G.Concat -> Concat | G.Spread -> Spread
   | G.EncodedString _ -> todo (G.E (G.IdSpecial (x, tok)))
   ), tok
+
+and composite_kind = function
+  | G.Array -> CArray | G.List -> CList | G.Dict -> CDict | G.Set -> CSet
 
 (* TODO: dependency of order between arguments for instr? *)
 and arguments env xs = 
@@ -336,7 +344,7 @@ let rec stmt env st =
       let next_call = mk_s (Instr(
         mk_i (CallSpecial (Some next_lval, (ForeachNext, tok2), [e'])) e))
       in
-      (* todo? same semantic? or need to take Ref? or pass lval
+      (* same semantic? or need to take Ref? or pass lval
        * directly in next_call instead of using intermediate next_lval?
        *)
       let assign = 
