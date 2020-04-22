@@ -123,6 +123,25 @@ let rec lval env eorig =
   | G.Id (id, id_info) ->
       let lval = lval_of_id_info env id id_info in
       lval
+
+  | G.DotAccess (e1orig, tok, field) ->
+      let lval = lval env e1orig in
+      let base =
+        match lval.offset with
+        | NoOffset -> lval.base
+        | _ -> 
+            let fresh = fresh_lval env tok in
+            let lvalexp = mk_e (Lvalue lval) e1orig in
+            add_instr env (mk_i (Set (fresh, lvalexp)) e1orig);
+            fresh.base
+      in
+      let offset = 
+        match field with
+        | G.FId id -> Dot id
+        | G.FName _ | G.FDynamic _ -> todo (G.E eorig)
+      in
+      { base; offset }
+
   | _ -> todo (G.E eorig)
 
 (*****************************************************************************)
@@ -221,8 +240,9 @@ and expr env eorig =
       mk_e (Lvalue lval) eorig
 
   | G.L lit -> mk_e (Literal lit) eorig
-  | G.Id (id, id_info) -> 
-      let lval = lval_of_id_info env id id_info in
+
+  | G.Id (_, _) | G.DotAccess (_, _, _) ->
+      let lval = lval env eorig in
       mk_e (Lvalue lval) eorig
 
   | G.Assign (e1, tok, e2) ->
@@ -269,10 +289,18 @@ and expr env eorig =
       add_instr env (mk_i (SetAnon (lval, AnonClass def)) eorig);
       mk_e (Lvalue lval) eorig
       
-  | G.IdSpecial _
-  -> todo (G.E eorig)
-  | G.DotAccess (_, _, _)
-  -> todo (G.E eorig)
+  | G.IdSpecial (spec, tok) ->
+      let var_special = 
+        match spec with
+        | G.This -> This | G.Super -> Super 
+        | G.Self -> Self | G.Parent -> Parent
+        | _ -> error_any (G.E eorig) "not expected in var_special context"
+      in
+      let lval = { base = VarSpecial (var_special, tok); offset = NoOffset } in
+      mk_e (Lvalue lval) eorig
+
+
+
   | G.ArrayAccess (_, _)
   -> todo (G.E eorig)
   | G.SliceAccess (_, _, _, _)
