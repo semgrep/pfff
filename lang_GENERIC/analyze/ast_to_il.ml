@@ -142,6 +142,21 @@ let rec lval env eorig =
       in
       { base; offset }
 
+  | G.ArrayAccess (e1orig, e2orig) ->
+      let tok = G.fake "[]" in
+      let lval = lval env e1orig in
+      let e2 = expr env e2orig in
+      let base =
+        match lval.offset with
+        | NoOffset -> lval.base
+        | _ -> 
+            let fresh = fresh_lval env tok in
+            let lvalexp = mk_e (Lvalue lval) e1orig in
+            add_instr env (mk_i (Set (fresh, lvalexp)) e1orig);
+            fresh.base
+      in
+      { base; offset = Index e2 }
+
   | _ -> todo (G.E eorig)
 
 (*****************************************************************************)
@@ -241,7 +256,9 @@ and expr env eorig =
 
   | G.L lit -> mk_e (Literal lit) eorig
 
-  | G.Id (_, _) | G.DotAccess (_, _, _) ->
+  | G.Id (_, _) 
+  | G.DotAccess (_, _, _) | G.ArrayAccess (_, _) 
+    ->
       let lval = lval env eorig in
       mk_e (Lvalue lval) eorig
 
@@ -301,8 +318,6 @@ and expr env eorig =
 
 
 
-  | G.ArrayAccess (_, _)
-  -> todo (G.E eorig)
   | G.SliceAccess (_, _, _, _)
   -> todo (G.E eorig)
 
