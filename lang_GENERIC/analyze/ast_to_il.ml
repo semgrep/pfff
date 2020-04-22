@@ -165,22 +165,38 @@ and expr env eorig =
          expr env last
       )
 
-  | G.Container (_, _) | G.Tuple _
+  | G.Container (_, _) 
+  -> todo (G.E eorig)
+  | G.Tuple _
+  -> todo (G.E eorig)
   | G.Record _ | G.Constructor (_, _)
+  -> todo (G.E eorig)
   | G.Lambda _ | G.AnonClass _ 
+  -> todo (G.E eorig)
   | G.IdQualified (_, _)
+  -> todo (G.E eorig)
   | G.IdSpecial _
+  -> todo (G.E eorig)
   | G.Xml _
+  -> todo (G.E eorig)
   | G.AssignOp (_, _, _)
-  | G.LetPattern (_, _)
+  -> todo (G.E eorig)
   | G.DotAccess (_, _, _)
+  -> todo (G.E eorig)
   | G.ArrayAccess (_, _)
+  -> todo (G.E eorig)
   | G.SliceAccess (_, _, _, _)
+  -> todo (G.E eorig)
   | G.Conditional (_, _, _)
+  -> todo (G.E eorig)
+  | G.LetPattern (_, _)
   | G.MatchPattern (_, _)
+  -> todo (G.E eorig)
   | G.Yield (_, _, _)
   | G.Await (_, _)
+  -> todo (G.E eorig)
   | G.Cast (_, _)
+  -> todo (G.E eorig)
   | G.Ref (_, _)
   | G.DeRef (_, _)
   -> todo (G.E eorig)
@@ -244,28 +260,28 @@ and pattern_assign_statements env exp eorig pat =
 let expr_orig = expr
 let expr () = ()
 
-let expr_and_instrs env e =
+let expr_with_pre_instrs env e =
   ignore(expr ());
   let e = expr_orig env e in
   let xs = List.rev !(env.instrs) in
   env.instrs := [];
-  e, (xs |> List.map (fun instr -> mk_s (Instr instr)))
+  (xs |> List.map (fun instr -> mk_s (Instr instr))), e
 
-let expr_and_instrs_opt env eopt =
+let expr_with_pre_instrs_opt env eopt =
   match eopt with
-  | None -> expr_opt env None, []
-  | Some e -> expr_and_instrs env e
+  | None -> [], expr_opt env None
+  | Some e -> expr_with_pre_instrs env e
 
 let for_var_or_expr_list env xs =
   xs |> List.map (function
    | G.ForInitExpr e -> 
-        let _eIGNORE, ss = expr_and_instrs env e in
+        let ss, _eIGNORE = expr_with_pre_instrs env e in
         ss
    | G.ForInitVar (ent, vardef) ->
       (* copy paste of VarDef case in stmt *)
       (match vardef with
       | { G.vinit = Some e; vtype = _typTODO} ->
-         let e', ss = expr_and_instrs env e in
+         let ss, e' = expr_with_pre_instrs env e in
          let lv = lval_of_ent env ent in
          ss @ [mk_s (Instr (mk_i (Set (lv, e')) e))]; 
       | _ -> []
@@ -279,11 +295,11 @@ let rec stmt env st =
   match st with
   | G.ExprStmt e ->
       (* optimize? pass context to expr when no need for return value? *)
-      let _eIGNORE, ss = expr_and_instrs env e in
+      let ss, _eIGNORE = expr_with_pre_instrs env e in
       ss
 
   | G.DefStmt (ent, G.VarDef { G.vinit = Some e; vtype = _typTODO}) ->
-    let e', ss = expr_and_instrs env e in
+    let ss, e' = expr_with_pre_instrs env e in
     let lv = lval_of_ent env ent in
     ss @ [mk_s (Instr (mk_i (Set (lv, e')) e))]; 
   | G.DefStmt def -> [mk_s (DefStmt def)]
@@ -292,7 +308,7 @@ let rec stmt env st =
   | G.Block xs -> List.map (stmt env) xs |> List.flatten
 
   | G.If (tok, e, st1, st2) ->
-    let e', ss = expr_and_instrs env e in
+    let ss, e' = expr_with_pre_instrs env e in
     let st1 = stmt env st1 in
     let st2 = stmt env st2 in
     ss @ [mk_s (If (tok, e', st1, st2))]
@@ -300,16 +316,16 @@ let rec stmt env st =
   | G.Switch (_, _, _) -> todo (G.S st)
 
   | G.While(tok, e, st) ->
-    let e', ss = expr_and_instrs env e in
+    let ss, e' = expr_with_pre_instrs env e in
     let st = stmt env st in
     ss @ [mk_s (Loop (tok, e', st @ ss))]
   | G.DoWhile(tok, st, e) ->
     let st = stmt env st in
-    let e', ss = expr_and_instrs env e in
+    let ss, e' = expr_with_pre_instrs env e in
     st @ ss @ [mk_s (Loop (tok, e', st @ ss))]
 
   | G.For (tok, G.ForEach (pat, tok2, e), st) -> 
-      let e', ss = expr_and_instrs env e in
+      let ss, e' = expr_with_pre_instrs env e in
       let st = stmt env st in
 
       let next_lval = fresh_lval env tok2 in
@@ -335,18 +351,18 @@ let rec stmt env st =
    -> 
       let ss1 = for_var_or_expr_list env xs in
       let st = stmt env st in
-      let cond, ss2 =
+      let ss2, cond =
         match eopt1 with
         | None -> 
             let vtrue = G.Bool (true, tok) in
-            mk_e (Literal (vtrue)) (G.L vtrue), []
-        | Some e -> expr_and_instrs env e
+            [], mk_e (Literal (vtrue)) (G.L vtrue)
+        | Some e -> expr_with_pre_instrs env e
       in
       let next =
         match eopt2 with
         | None -> []
         | Some e -> 
-            let _eIGNORE, ss = expr_and_instrs env e in
+            let ss, _eIGNORE = expr_with_pre_instrs env e in
             ss
       in
       ss1 @ ss2 @ 
@@ -365,12 +381,12 @@ let rec stmt env st =
       [mk_s (Goto (tok, lbl))]
 
   | G.Return (tok, eopt) ->
-      let e, ss = expr_and_instrs_opt env eopt in
+      let ss, e = expr_with_pre_instrs_opt env eopt in
       ss @ [mk_s (Return (tok, e))]
 
   | G.Assert (tok, e, eopt) ->
-      let e', ss1 = expr_and_instrs env e in
-      let eopt', ss2 = expr_and_instrs_opt env eopt in
+      let ss1, e' = expr_with_pre_instrs env e in
+      let ss2, eopt' = expr_with_pre_instrs_opt env eopt in
       let special = Assert, tok in
       (* less: wrong e? would not be able to match on Assert, or 
        * need add sorig:
@@ -379,7 +395,7 @@ let rec stmt env st =
       [mk_s (Instr (mk_i (CallSpecial (None, special, [e'; eopt'])) e))]
 
   | G.Throw (tok, e) ->
-      let e, ss = expr_and_instrs env e in
+      let ss, e = expr_with_pre_instrs env e in
       ss @ [mk_s (Throw (tok, e))]
   | G.Try (_, _, _, _) 
    -> todo (G.S st)
