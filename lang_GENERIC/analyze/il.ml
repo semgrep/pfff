@@ -152,10 +152,11 @@ and exp = {
   | Lvalue of lval (* lvalue used in a rvalue context *)
   | Literal of G.literal
   | Composite of composite_kind * exp list bracket
-  (* this could be a Composite where the arguments are CTuple with
+  (* This could be a Composite where the arguments are CTuple with
    * the Literal (String) as a key, but they are pretty important I think
-   * for some analysis so better to support them more directly.
-   * Could also be used for Dict.
+   * for some analysis so better to support them more directly?
+   * Or should we transform that in a series of Set with Dot?
+   * This could also be used for Dict.
    *)
   | Record of (ident * exp) list
   | Cast of G.type_ * exp
