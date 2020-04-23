@@ -132,7 +132,7 @@ let rec lval env eorig =
         | _ -> 
             let fresh = fresh_lval env tok in
             let lvalexp = mk_e (Lvalue lval) e1orig in
-            add_instr env (mk_i (Set (fresh, lvalexp)) e1orig);
+            add_instr env (mk_i (Assign (fresh, lvalexp)) e1orig);
             fresh.base
       in
       let offset = 
@@ -152,7 +152,7 @@ let rec lval env eorig =
         | _ -> 
             let fresh = fresh_lval env tok in
             let lvalexp = mk_e (Lvalue lval) e1orig in
-            add_instr env (mk_i (Set (fresh, lvalexp)) e1orig);
+            add_instr env (mk_i (Assign (fresh, lvalexp)) e1orig);
             fresh.base
       in
       { base; offset = Index e2 }
@@ -174,7 +174,7 @@ and pattern_assign_statements env exp eorig pat =
      | Left l -> l
      | Right _ -> todo (G.P pat)
    in
-   [mk_s (Instr (mk_i (Set (lval, exp)) eorig))]
+   [mk_s (Instr (mk_i (Assign (lval, exp)) eorig))]
 
 (*****************************************************************************)
 (* Assign *)
@@ -183,7 +183,7 @@ and assign env lhs _tok rhs_exp eorig =
   match lhs with
   | G.Id (_, _) ->
       let lval = lval env lhs in
-      add_instr env (mk_i (Set (lval, rhs_exp)) eorig);
+      add_instr env (mk_i (Assign (lval, rhs_exp)) eorig);
       mk_e (Lvalue lval) lhs
   | _ -> todo (G.E lhs)
 
@@ -217,7 +217,7 @@ and expr env eorig =
             let one = G.Int ("1", tok) in
             let one_exp = mk_e (Literal one) (G.L one) in
             let opexp = mk_e (Operator (op, [lvalexp; one_exp])) eorig in
-            add_instr env (mk_i (Set (lval, opexp)) eorig);
+            add_instr env (mk_i (Assign (lval, opexp)) eorig);
             lvalexp
       | _ -> impossible (G.E eorig)
       )
@@ -270,7 +270,7 @@ and expr env eorig =
       let lval = lval env e1 in
       let lvalexp = mk_e (Lvalue lval) e1 in
       let opexp = mk_e (Operator(op, [lvalexp; exp])) eorig in
-      add_instr env (mk_i (Set (lval, opexp)) eorig);
+      add_instr env (mk_i (Assign (lval, opexp)) eorig);
       lvalexp
 
   | G.Seq xs ->
@@ -297,13 +297,13 @@ and expr env eorig =
       (* TODO: we should have a use def.f_tok *)
       let tok = G.fake "lambda" in
       let lval = fresh_lval env tok in
-      add_instr env (mk_i (SetAnon (lval, Lambda def)) eorig);
+      add_instr env (mk_i (AssignAnon (lval, Lambda def)) eorig);
       mk_e (Lvalue lval) eorig
   | G.AnonClass def ->
       (* TODO: should use def.ckind *)
       let tok = Common2.fst3 def.G.cbody in
       let lval = fresh_lval env tok in
-      add_instr env (mk_i (SetAnon (lval, AnonClass def)) eorig);
+      add_instr env (mk_i (AssignAnon (lval, AnonClass def)) eorig);
       mk_e (Lvalue lval) eorig
       
   | G.IdSpecial (spec, tok) ->
@@ -348,9 +348,9 @@ and expr env eorig =
       add_stmts env ss_for_e1;
       add_stmt env (mk_s (If (tok, e1,
           ss_for_e2 @
-          [mk_s (Instr (mk_i (Set (lval, e2)) e2orig))],
+          [mk_s (Instr (mk_i (Assign (lval, e2)) e2orig))],
           ss_for_e3 @
-          [mk_s (Instr (mk_i (Set (lval, e3)) e3orig))])));
+          [mk_s (Instr (mk_i (Assign (lval, e3)) e3orig))])));
       lvalexp
   | G.Xml _
   -> todo (G.E eorig)
@@ -439,7 +439,7 @@ let for_var_or_expr_list env xs =
       | { G.vinit = Some e; vtype = _typTODO} ->
          let ss, e' = expr_with_pre_stmts env e in
          let lv = lval_of_ent env ent in
-         ss @ [mk_s (Instr (mk_i (Set (lv, e')) e))]; 
+         ss @ [mk_s (Instr (mk_i (Assign (lv, e')) e))]; 
       | _ -> []
       )
   ) |> List.flatten
@@ -457,7 +457,7 @@ let rec stmt env st =
   | G.DefStmt (ent, G.VarDef { G.vinit = Some e; vtype = _typTODO}) ->
     let ss, e' = expr_with_pre_stmts env e in
     let lv = lval_of_ent env ent in
-    ss @ [mk_s (Instr (mk_i (Set (lv, e')) e))]; 
+    ss @ [mk_s (Instr (mk_i (Assign (lv, e')) e))]; 
   | G.DefStmt def -> [mk_s (DefStmt def)]
   | G.DirectiveStmt dir -> [mk_s (DirectiveStmt dir)]
 

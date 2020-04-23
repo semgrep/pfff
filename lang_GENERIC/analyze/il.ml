@@ -23,9 +23,10 @@ module G = Ast_generic
  * is to simplify things even more for program analysis purpose.
  *
  * Here are the simplifications done compared to the generic AST:
- *  - intermediate 'instr' type (instr for instruction), for expression with
+ *  - intermediate 'instr' type (instr for instruction), for expressions with
  *    side effects and statements without any control flow, 
- *    moving Assign/Seq/Call/Conditional out of 'expr'
+ *    moving Assign/Seq/Call/Conditional out of 'expr' and
+ *    moving Assert out of 'stmt'
  *  - new expression type 'exp' for side-effect free expressions
  *  - intermediate 'lvalue' type; expressions are splitted in 
  *    lvalue vs regular expressions, moved Dot/Index out of expr
@@ -33,13 +34,14 @@ module G = Ast_generic
  *  - Assign/Seq/Calls are now instructions, not expressions
  *  - no AssignOp, or Decr/Incr, just Assign
  *  - Lambdas are now instructions (not nested again)
- *  - no Sgrep constructs
- *  - no For/Foreach/DoWhile/While, converted all in Loop, and Foreach
- *    in a new Special
- *  - no Switch, converted in Ifs
- *  - TODO no Continue/Break, converted in goto
- *  - less use of expr option (in Return/Assert/...)
  *
+ *  - no For/Foreach/DoWhile/While, converted all in Loop, 
+ *  - no Foreach, converted in a Loop and 2 new special
+ *  - TODO no Switch, converted in Ifs
+ *  - TODO no Continue/Break, converted in goto
+ *  - less use of expr option (in Return/Assert/...), use Unit in those cases
+ *
+ *  - no Sgrep constructs
  *  - Naming has been performed, no more ident vs name
  *
  * TODO:
@@ -59,10 +61,12 @@ module G = Ast_generic
  * related work:
  *  - CIL, C Intermediate Language, Necula et al, CC'00
  *  - RIL, The Ruby Intermediate Language, Furr et al, DLS'09
- *  - C-- in OCaml?
+ *  - SIL? in Infer? or more a generic AST than a generic IL?
  *  - Rust IL?
+ *  - C-- in OCaml? too low-level?
  *  - LLVM IR (but too far away from original code? complicated 
  *    source maps)
+ *  - gcc RTL (too low-level? similar to 3-address code?)
  *  - SiMPL language in BAP/BitBlaze dynamic analysis libraries
  *    but probably too close to assembly/bytecode
  *  - Jimpl in Soot/Wala
@@ -93,7 +97,7 @@ type ident = string wrap
  * global and unique (no need to handle variable shadowing, block scoping,
  * etc; this has been done already).
  * TODO: use it to also do SSA! so some control-flow insensitive analysis
- * can become control-flow sensitive! (e.g., DOOP)
+ * can become control-flow sensitive? (e.g., DOOP)
  * 
  *)
 type name = ident * G.sid
@@ -122,10 +126,10 @@ type lval = {
    * - do as in CIL and have recursive offset and stop with NoOffset.
    * What about computed field names? 
    * - handle them in Special?
-   * - convert in Index?
+   * - convert in Index with a string exp?
    * Note that Dot is used to access many different kinds of entities:
-   *  objects (fields), classes (static fields), but also packages, modules,
-   *  namespaces depending on the type of 'var' above.
+   *  objects/records (fields), classes (static fields), but also 
+   *  packages, modules, namespaces depending on the type of 'var' above.
    *)
   | Dot   of ident
   | Index of exp
@@ -152,10 +156,10 @@ and exp = {
   | Lvalue of lval (* lvalue used in a rvalue context *)
   | Literal of G.literal
   | Composite of composite_kind * exp list bracket
-  (* This could be a Composite where the arguments are CTuple with
+  (* Record could be a Composite where the arguments are CTuple with
    * the Literal (String) as a key, but they are pretty important I think
-   * for some analysis so better to support them more directly?
-   * Or should we transform that in a series of Set with Dot?
+   * for some analysis so better to support them more directly.
+   * TODO should we transform that in a series of Assign with Dot? simpler?
    * This could also be used for Dict.
    *)
   | Record of (ident * exp) list
@@ -186,8 +190,9 @@ type instr = {
   iorig: G.expr;
  }
   and instr_kind =
-  | Set of lval * exp
-  | SetAnon of lval * anonymous_entity
+  (* was called Set in CIL, but a bit ambiguous with Set module *)
+  | Assign of lval * exp
+  | AssignAnon of lval * anonymous_entity
   | Call of lval option * exp (* less: enforce lval? *) * argument list
   | CallSpecial of lval option * call_special wrap * argument list
   (* todo: PhiSSA! *)

@@ -114,14 +114,14 @@ let rec vof_instr { i = v_i; iorig = v_iorig } =
 
 and vof_instr_kind =
   function
-  | Set ((v1, v2)) ->
+  | Assign ((v1, v2)) ->
       let v1 = vof_lval v1
       and v2 = vof_exp v2
-      in Ocaml.VSum (("Set", [ v1; v2 ]))
-  | SetAnon ((v1, v2)) ->
+      in Ocaml.VSum (("Assign", [ v1; v2 ]))
+  | AssignAnon ((v1, v2)) ->
       let v1 = vof_lval v1
       and v2 = vof_anonymous_entity v2
-      in Ocaml.VSum (("SetAnon", [ v1; v2 ]))
+      in Ocaml.VSum (("AssignAnon", [ v1; v2 ]))
   | Call ((v1, v2, v3)) ->
       let v1 = Ocaml.vof_option vof_lval v1
       and v2 = vof_exp v2
