@@ -702,15 +702,17 @@ format_token_list:
  | format_token                   { [$1] }
  | format_token format_token_list { $1::$2 }
 
+/*(* just put all the tokens? except RBRACE? *)*/
 format_token:
   | INT   { mk_str (snd $1) }
   | FLOAT { mk_str (snd $1) }
   | DOT   { mk_str $1 }
   | NAME  { mk_str (snd $1) }
-  | LT    { mk_str $1 }
-  | GT    { mk_str $1 }
+  | LT    { mk_str $1 } | GT    { mk_str $1 }
+  | ADD  { mk_str $1 }
   | BITXOR { mk_str $1 }
   | LBRACE test RBRACE { $2 }
+
 
 /*(*----------------------------*)*/
 /*(*2 containers *)*/
