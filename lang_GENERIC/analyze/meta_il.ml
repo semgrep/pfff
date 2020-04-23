@@ -263,7 +263,7 @@ let short_string_of_node_kind nkind =
   | NOther _ -> "<other>"
   | NInstr x ->
       (match x.i with
-      | Assign (lval, _) -> string_of_lval lval ^ " = "
+      | Assign (lval, _) -> string_of_lval lval ^ " = ..."
       | AssignAnon _ -> " ... = <lambda|class>"
       | Call (_lopt, exp, _) ->
             string_of_exp exp ^ "(...)"
