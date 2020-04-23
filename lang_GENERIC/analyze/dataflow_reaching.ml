@@ -73,8 +73,15 @@ let (defs: F.flow -> NodeiSet.t Dataflow.env) = fun flow ->
     ) env
   ) VarMap.empty
 
+module DataflowX = Dataflow.Make (struct
+  type node = F.node
+  type edge = F.edge
+  type flow = (node, edge) Ograph_extended.ograph_mutable
+  let short_string_of_node = F.short_string_of_node
+end)
+
 let (gens: F.flow -> VarSet.t array) = fun flow ->
-  let arr = Dataflow.new_node_array flow VarSet.empty in
+  let arr = DataflowX.new_node_array flow VarSet.empty in
   V.fold_on_node_and_expr (fun (ni, _nd) e arr ->
     let lvals = Lrvalue.lvalues_of_expr e in
     let vars = lvals |> List.map (fun ((s,_tok), _idinfo) -> s) in
@@ -87,7 +94,7 @@ let (gens: F.flow -> VarSet.t array) = fun flow ->
 let (kills:
    NodeiSet.t Dataflow.env -> F.flow -> (NodeiSet.t Dataflow.env) array) =
  fun defs flow -> 
-  let arr = Dataflow.new_node_array flow (Dataflow.empty_env()) in
+  let arr = DataflowX.new_node_array flow (Dataflow.empty_env()) in
   V.fold_on_node_and_expr (fun (ni, _nd) e () ->
     let lvals = Lrvalue.lvalues_of_expr e in
     let vars = lvals |> List.map (fun ((s,_tok), _idinfo) -> s) in
@@ -138,9 +145,9 @@ let (fixpoint: F.flow -> mapping) = fun flow ->
   let gen = gens flow in
   let kill = kills (defs flow) flow in
 
-  Dataflow.fixpoint
+  DataflowX.fixpoint
     ~eq:NodeiSet.equal
-    ~init:(Dataflow.new_node_array flow (Dataflow.empty_inout ()))
+    ~init:(DataflowX.new_node_array flow (Dataflow.empty_inout ()))
     ~trans:(transfer ~gen ~kill ~flow)
     ~forward:true
     ~flow
