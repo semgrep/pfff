@@ -110,8 +110,7 @@ let info_opt any =
 (* Algorithm *)
 (*****************************************************************************)
 
-(*
- * The CFG building algorithm works by iteratively visiting the
+(* The CFG building algorithm works by iteratively visiting the
  * statements in the AST of a function. At each statement,
  * the cfg_stmt function is called, and passed the index of the
  * previous node (if there is one), and returns the index of

@@ -61,6 +61,21 @@ let test_il_generic file =
    } in
   v (Pr ast)
 
+let test_cfg_il file =
+  let ast = Parse_generic.parse_program file in
+  let lang = List.hd (Lang.langs_of_filename file) in
+  Naming_ast.resolve lang ast;
+  
+  ast |> List.iter (fun item ->
+   (match item with
+   | DefStmt (_ent, FuncDef def) ->
+     let xs = Ast_to_il.stmt def.fbody in
+     let cfg = Ilflow_build.cfg_of_stmts xs in
+     Meta_il.display_cfg cfg;
+    | _ -> ()
+   )
+ )
+
 
 let actions () = [
   "-cfg_generic", " <file>",
@@ -71,4 +86,6 @@ let actions () = [
   Common.mk_action_1_arg test_naming_generic;
   "-il_generic", " <file>",
   Common.mk_action_1_arg test_il_generic;
+  "-cfg_il", " <file>",
+  Common.mk_action_1_arg test_cfg_il;
 ]
