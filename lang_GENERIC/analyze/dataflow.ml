@@ -15,8 +15,6 @@
  *)
 open Common
 
-module F = Controlflow
-
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -39,6 +37,18 @@ module F = Controlflow
 (* Types *)
 (*****************************************************************************)
 
+(* I was using directly Controlflow.xxx before, but now that we have both
+ * Controlflow.flow and Il.cfg, we need to functorize things.
+ *)
+module type Flow = sig
+  type node
+  type edge
+  type flow = (node, edge) Ograph_extended.ograph_mutable
+  val short_string_of_node: node -> string
+end
+
+type nodei = int
+ 
 (* The comparison function uses only the name of a variable (a string), so
  * two variables at different positions in the code will be agglomerated
  * correctly in the Set or Map.
@@ -141,7 +151,7 @@ fun env1 env2 ->
 
 
 let (add_var_and_nodei_to_env: 
-  var -> F.nodei -> NodeiSet.t env -> NodeiSet.t env) =
+  var -> nodei -> NodeiSet.t env -> NodeiSet.t env) =
  fun var ni env ->
   let set =
     try NodeiSet.add ni (VarMap.find var env)
@@ -151,7 +161,7 @@ let (add_var_and_nodei_to_env:
 
 
 let (add_vars_and_nodei_to_env: 
-  VarSet.t -> F.nodei -> NodeiSet.t env -> NodeiSet.t env) =
+  VarSet.t -> nodei -> NodeiSet.t env -> NodeiSet.t env) =
  fun varset ni env ->
   let acc = env in
   VarSet.fold (fun var acc -> add_var_and_nodei_to_env var ni acc) varset acc 
@@ -180,20 +190,6 @@ let (inout_to_str: ('a -> string) -> 'a inout -> string) = fun val2str inout ->
     (env_to_str val2str inout.in_env)
     (env_to_str val2str inout.out_env)
 
-let mapping_to_str (fl: F.flow) val2str mapping =
-  array_fold_left_idx (fun s ni v -> s ^
-    (spf "%2d <- %7s: %15s %s\n"
-      ni
-      ((fl#predecessors ni)#fold (fun s (ni, _) ->
-      csv_append s (string_of_int ni)) "")
-     (F.short_string_of_node (fl#nodes#find ni))
-     (inout_to_str val2str v)
-  )) "" mapping
-
-let (display_mapping: F.flow -> 'a mapping -> ('a -> string) -> unit) =
- fun flow mapping string_of_val ->
-   pr (mapping_to_str flow string_of_val mapping)
-
 (*****************************************************************************)
 (* Main generic entry point *)
 (*****************************************************************************)
@@ -210,7 +206,23 @@ let (display_mapping: F.flow -> 'a mapping -> ('a -> string) -> unit) =
  * value associated to a var, its reference variable get also
  * the update.
  *)
-type 'a transfn = 'a mapping -> F.nodei -> 'a inout
+type 'a transfn = 'a mapping -> nodei -> 'a inout
+
+module Make (F: Flow) = struct
+
+let mapping_to_str (fl: F.flow) val2str mapping =
+  array_fold_left_idx (fun s ni v -> s ^
+    (spf "%2d <- %7s: %15s %s\n"
+      ni
+      ((fl#predecessors ni)#fold (fun s (ni, _) ->
+      csv_append s (string_of_int ni)) "")
+     (F.short_string_of_node (fl#nodes#find ni))
+     (inout_to_str val2str v)
+  )) "" mapping
+
+let (display_mapping: F.flow -> 'a mapping -> ('a -> string) -> unit) =
+ fun flow mapping string_of_val ->
+   pr (mapping_to_str flow string_of_val mapping)
 
 let rec fixpoint_worker eq mapping trans flow succs workset =
   if NodeiSet.is_empty workset
@@ -275,3 +287,16 @@ let new_node_array (f: F.flow) v =
   );
   assert (!max_nodei + 1 >= nb_nodes);
   Array.make (!max_nodei + 1) v
+
+end
+
+(*
+module F = Controlflow
+module X1 = Make (struct
+  type node = F.node
+  type edge = F.edge
+  type flow = (node, edge) Ograph_extended.ograph_mutable
+  let short_string_of_node = F.short_string_of_node
+end
+)
+*)
