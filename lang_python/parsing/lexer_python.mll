@@ -386,9 +386,9 @@ and _token python2 state = parse
         | "True"    -> TRUE (tokinfo lexbuf)
         | "False"    -> FALSE (tokinfo lexbuf)
 
-        | "async" when not python2 -> ASYNC (tokinfo lexbuf)
-        | "await" when not python2 -> AWAIT (tokinfo lexbuf)
-        | "nonlocal" when python2 -> NONLOCAL (tokinfo lexbuf)
+        | "async"    when not python2 -> ASYNC (tokinfo lexbuf)
+        | "await"    when not python2 -> AWAIT (tokinfo lexbuf)
+        | "nonlocal" when not python2 -> NONLOCAL (tokinfo lexbuf)
 
         (* python2: *)
         | "print" when python2 -> PRINT (tokinfo lexbuf)
