@@ -17,6 +17,14 @@ let test_cfg_generic file =
    )
  )
 
+module F = Controlflow
+module DataflowX = Dataflow.Make (struct
+  type node = F.node
+  type edge = F.edge
+  type flow = (node, edge) Ograph_extended.ograph_mutable
+  let short_string_of_node = F.short_string_of_node
+end)
+
 let test_dfg_generic file =
   let ast = Parse_generic.parse_program file in
   ast |> List.iter (fun item ->
@@ -25,10 +33,10 @@ let test_dfg_generic file =
       let flow = Controlflow_build.cfg_of_func def in
       pr2 "Reaching definitions";
       let mapping = Dataflow_reaching.fixpoint flow in
-      Dataflow.display_mapping flow mapping Dataflow.ns_to_str;
+      DataflowX.display_mapping flow mapping Dataflow.ns_to_str;
       pr2 "Liveness";
       let mapping = Dataflow_liveness.fixpoint flow in
-      Dataflow.display_mapping flow mapping (fun () -> "()");
+      DataflowX.display_mapping flow mapping (fun () -> "()");
 
     | _ -> ()
    )

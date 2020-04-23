@@ -3,4 +3,4 @@
 type mapping = unit Dataflow.mapping
 
 (* main entry point *)
-val fixpoint : Dataflow.F.flow -> mapping
+val fixpoint : Controlflow.flow -> mapping
