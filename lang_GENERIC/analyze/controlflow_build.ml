@@ -118,7 +118,7 @@ let info_opt any =
  *
  * history:
  * - ver1: old code was returning a nodei, but break has no end, so
- *  cfg_stmt should return a nodei option.
+ *   cfg_stmt should return a nodei option.
  * - ver2: old code was taking a nodei, but should also take a nodei
  *   option. There can be deadcode in the function.
  *

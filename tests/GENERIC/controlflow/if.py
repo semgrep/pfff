@@ -4,5 +4,6 @@ def foo():
     return 1
   else:
     return 3
+  # unreachable return
   return 0
 

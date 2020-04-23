@@ -276,17 +276,21 @@ and label = ident * G.sid
  * See controlflow.ml for more information. *)
 type node = {
   n: node_kind;
-  t: Parse_info.t option;
+  (* old: there are tok in the nodes anyway 
+   * t: Parse_info.t option;
+   *)
 } 
   and node_kind = 
     | Enter | Exit 
     | TrueNode | FalseNode (* for Cond *)
     | Join (* after Cond *)
 
+    | NInstr of instr
+
     | NCond   of tok * exp
     | NReturn of tok * exp
     | NThrow  of tok * exp
-    | NInstr of instr
+
     | NOther of other_stmt
 (* with tarzan *)
 

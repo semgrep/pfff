@@ -14,6 +14,7 @@
  * license.txt for more details.
  *)
 open Common
+open Il
 module F = Il (* to be even more similar to controlflow_build.ml *)
 
 (*****************************************************************************)
@@ -37,7 +38,7 @@ module F = Il (* to be even more similar to controlflow_build.ml *)
  * The graph g is mutable, so most of the work is done by side effects on it.
  * No need to return a new state.
  *)
-type _state = {
+type state = {
   g: F.cfg;
 
   (* When there is a 'return' we need to know the exit node to link to *)
@@ -49,10 +50,10 @@ type _state = {
 (* Helpers *)
 (*****************************************************************************)
 
-let _add_arc (starti, nodei) g =
+let add_arc (starti, nodei) g =
   g#add_arc ((starti, nodei), F.Direct)
 
-let _add_arc_opt (starti_opt, nodei) g =
+let add_arc_opt (starti_opt, nodei) g =
   starti_opt |> Common.do_option (fun starti ->
     g#add_arc ((starti, nodei), F.Direct)
   )
@@ -78,5 +79,117 @@ let _add_arc_opt (starti_opt, nodei) g =
  *)
 
 
-let cfg_of_stmts _xs =
-  raise Todo
+let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
+ fun state previ stmt ->
+
+   match stmt.s with
+   | Instr x ->
+      let newi = state.g#add_node { F.n = F.NInstr x } in
+      state.g |> add_arc_opt (previ, newi);
+      Some newi
+
+   | If (tok, e, st1, st2) ->
+     (* previ -> newi --->  newfakethen -> ... -> finalthen --> lasti -> <rest>
+      *                |                                     |
+      *                |->  newfakeelse -> ... -> finalelse -|
+      *
+      * The lasti can be a Join when there is no return in either branch.
+      *)
+       let newi = state.g#add_node { F.n = F.NCond (tok, e) } in
+       state.g |> add_arc_opt (previ, newi);
+
+       let newfakethen = state.g#add_node { F.n = F.TrueNode } in
+       let newfakeelse = state.g#add_node { F.n = F.FalseNode } in
+       state.g |> add_arc (newi, newfakethen);
+       state.g |> add_arc (newi, newfakeelse);
+
+       let finalthen = cfg_stmt_list state (Some newfakethen) st1 in
+       let finalelse = cfg_stmt_list state (Some newfakeelse) st2 in
+
+       (match finalthen, finalelse with
+       | None, None ->
+           (* probably a return in both branches *)
+           None
+       | Some nodei, None
+       | None, Some nodei ->
+           Some nodei
+       | Some n1, Some n2 ->
+           let lasti = state.g#add_node { F.n = F.Join } in
+           state.g |> add_arc (n1, lasti);
+           state.g |> add_arc (n2, lasti);
+           Some lasti
+       )
+
+
+   | Loop (tok, e, st) ->
+     (* previ -> newi ---> newfakethen -> ... -> finalthen -
+      *             |---|-----------------------------------|
+      *                 |-> newfakelse 
+      *)
+       let newi = state.g#add_node { F.n = NCond (tok, e); } in
+       state.g |> add_arc_opt (previ, newi);
+
+       let newfakethen = state.g#add_node { F.n = F.TrueNode } in
+       let newfakeelse = state.g#add_node { F.n = F.FalseNode } in
+       state.g |> add_arc (newi, newfakethen);
+       state.g |> add_arc (newi, newfakeelse);
+
+       let finalthen = cfg_stmt_list state (Some newfakethen) st in
+       state.g |> add_arc_opt (finalthen, newi);
+       Some newfakeelse
+
+   | Label _ 
+   | Goto _
+     -> raise Todo
+
+   | Return (tok, e) ->
+       let newi = state.g#add_node { F.n = F.NReturn (tok, e); } in
+       state.g |> add_arc_opt (previ, newi);
+       state.g |> add_arc (newi, state.exiti);
+       (* the next statement if there is one will not be linked to
+        * this new node *)
+       None
+
+   | Try _
+   | Throw (_, _)
+     -> raise Todo
+
+   | OtherStmt x ->
+      let newi = state.g#add_node { F.n = F.NOther x } in
+      state.g |> add_arc_opt (previ, newi);
+      Some newi
+
+
+and cfg_stmt_list state previ xs =
+  xs |> List.fold_left (fun previ stmt ->
+    cfg_stmt state previ stmt
+  ) previ
+
+(*****************************************************************************)
+(* Main entry point *)
+(*****************************************************************************)
+
+let (cfg_of_stmts: stmt list -> F.cfg) =
+  fun xs ->
+  (* yes, I sometimes use objects, and even mutable objects in OCaml ... *)
+  let g = new Ograph_extended.ograph_mutable in
+
+  let enteri = g#add_node { F.n = F.Enter } in
+  let exiti  = g#add_node { F.n = F.Exit } in
+
+  let newi = enteri in
+
+  let state = {
+    g = g;
+    exiti = exiti;
+  }
+  in
+  let last_node_opt =
+    cfg_stmt_list state (Some newi) xs
+  in
+  (* maybe the body does not contain a single 'return', so by default
+   * connect last stmt to the exit node
+   *)
+  g |> add_arc_opt (last_node_opt, exiti);
+  g
+
