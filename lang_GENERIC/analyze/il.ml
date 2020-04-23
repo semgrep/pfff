@@ -317,6 +317,43 @@ type any =
  (* with tarzan *)
 
 (*****************************************************************************)
+(* L/Rvalue helpers *)
+(*****************************************************************************)
+let lvar_of_instr_opt x =
+  match x.i with
+  | Assign (lval, _) | AssignAnon (lval, _)
+  | Call (Some lval, _, _) | CallSpecial (Some lval, _, _) ->
+      (match lval.base with
+      | Var n -> Some n
+      | VarSpecial _ | Mem _ -> None
+      )
+  | _ -> None
+
+let exps_of_instr x =
+  match x.i with
+  | Assign (_, exp) -> [exp]
+  | AssignAnon _ -> []
+  | Call (_, e1, args) -> e1::args
+  | CallSpecial (_, _, args) -> args
+
+(* opti: could use a set *)
+let rec rvars_of_exp e =
+  match e.e with
+  | Lvalue ({base=Var var;_}) -> [var]
+  | Lvalue _ -> []
+  | Literal _ -> []
+  | Cast (_, e) -> rvars_of_exp e
+  | Composite (_, (_, xs, _)) | Operator (_, xs) -> rvars_of_exps xs 
+  | Record ys -> rvars_of_exps (ys |> List.map snd)  
+  
+and rvars_of_exps xs =
+  xs |> List.map (rvars_of_exp) |> List.flatten
+
+let rvars_of_instr x =
+  let exps = exps_of_instr x in
+  rvars_of_exps exps
+
+(*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
 let str_of_name ((s, _tok), _sid) = s
