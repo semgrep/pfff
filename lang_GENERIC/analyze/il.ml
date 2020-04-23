@@ -31,7 +31,7 @@ module G = Ast_generic
  *  - intermediate 'lvalue' type; expressions are splitted in 
  *    lvalue vs regular expressions, moved Dot/Index out of expr
  *
- *  - Assign/Seq/Calls are now instructions, not expressions
+ *  - Assign/Calls are now instructions, not expressions, and no more Seq
  *  - no AssignOp, or Decr/Incr, just Assign
  *  - Lambdas are now instructions (not nested again)
  *
@@ -159,7 +159,8 @@ and exp = {
   (* Record could be a Composite where the arguments are CTuple with
    * the Literal (String) as a key, but they are pretty important I think
    * for some analysis so better to support them more directly.
-   * TODO should we transform that in a series of Assign with Dot? simpler?
+   * TODO should we transform that in a New followed by a series of Assign
+   * with Dot? simpler?
    * This could also be used for Dict.
    *)
   | Record of (ident * exp) list
@@ -204,18 +205,18 @@ type instr = {
      * The type_ argument is usually a name, but it can also be an name[] in
      * Java/C++.
      *)
-    | New (* TODO: lift? of type_ * argument list? *)
+    | New (* TODO: lift up and add 'of type_ * argument list'? *)
     | Typeof | Instanceof | Sizeof
-    (* better in exp: | Operator of G.arithmetic_operator *)
+    (* old: better in exp: | Operator of G.arithmetic_operator *)
     | Concat
     | Spread
     | Yield | Await
     (* was in stmt before, but with a new clean 'instr' type, better here *)
-    | Assert 
-    | ForeachNext | ForeachHasNext
+    | Assert
     (* was in expr before (only in C/PHP) *)
-    | Ref (* TODO: lift up, have SetRef? *)
-    (* when transpiling certain features (e.g., patterns) *)
+    | Ref (* TODO: lift up, have AssignRef? *)
+    (* when transpiling certain features (e.g., patterns, foreach) *)
+    | ForeachNext | ForeachHasNext (* primitives called under the hood *)
     (* | IntAccess of composite_kind * int (* for tuples/array/list *)
        | StringAccess of string (* for records/hashes *)
     *)
@@ -252,15 +253,13 @@ type stmt = {
 
   | Try of stmt list * (name * stmt list) list * stmt list
   | Throw of tok * exp (* less: enforce lval here? *)
-  
-  (* everything except VarDef (which is transformed in a Set instr) *)
-  | DefStmt of G.definition
-  | DirectiveStmt of G.directive
 
-   and case_and_body = case list * stmt list
-     and case = 
-       | Case of tok * exp
-       | Default of tok
+  | OtherStmt of other_stmt
+
+  and other_stmt = 
+    (* everything except VarDef (which is transformed in a Set instr) *)
+    | DefStmt of G.definition
+    | DirectiveStmt of G.directive
 
 and label = ident * G.sid
  (* with tarzan *)
@@ -271,6 +270,37 @@ and label = ident * G.sid
 (* See ast_generic.ml *)
 
 (*****************************************************************************)
+(* Control-flow graph (CFG) *)
+(*****************************************************************************)
+(* Similar to controlflow.ml, but with a simpler node_kind.
+ * See controlflow.ml for more information. *)
+type node = {
+  n: node_kind;
+  t: Parse_info.t option;
+} 
+  and node_kind = 
+    | Enter | Exit 
+    | TrueNode | FalseNode (* for Cond *)
+    | Join (* after Cond *)
+
+    | NCond   of tok * exp
+    | NReturn of tok * exp
+    | NThrow  of tok * exp
+    | NInstr of instr
+    | NOther of other_stmt
+(* with tarzan *)
+
+(* For now there is just one kind of edge. Later we may have more, 
+ * see the ShadowNode idea of Julia Lawall.
+ *)
+type edge = Direct 
+
+type cfg = (node, edge) Ograph_extended.ograph_mutable
+
+(* an int representing the index of a node in the graph *)
+type nodei = Ograph_extended.nodei
+
+(*****************************************************************************)
 (* Any *)
 (*****************************************************************************)
 type any = 
@@ -279,6 +309,7 @@ type any =
   | I of instr
   | S of stmt
   | Ss of stmt list
+(*  | N of node *)
  (* with tarzan *)
 
 (*****************************************************************************)

@@ -209,6 +209,11 @@ and vof_stmt_kind =
           v2
       and v3 = Ocaml.vof_list vof_stmt v3
       in Ocaml.VSum (("Try", [ v1; v2; v3 ]))
+  | OtherStmt ((v1)) ->
+      let v1 = vof_other_stmt v1
+      in Ocaml.VSum (("OtherStmt", [ v1 ]))
+
+and vof_other_stmt = function
   | DefStmt v1 ->
       let v1 = G.vof_definition v1 in Ocaml.VSum (("DefStmt", [ v1 ]))
   | DirectiveStmt v1 ->
