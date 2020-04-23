@@ -12,6 +12,7 @@ SRC= \
   lrvalue.ml \
   dataflow.ml dataflow_reaching.ml dataflow_liveness.ml \
   il.ml meta_il.ml ast_to_il.ml ilflow_build.ml \
+  dataflow_tainting.ml \
   test_analyze_generic.ml
 
 -include $(TOP)/Makefile.config

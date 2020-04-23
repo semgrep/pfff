@@ -84,6 +84,30 @@ let test_cfg_il file =
    )
  )
 
+module F2 = Il
+module DataflowY = Dataflow.Make (struct
+  type node = F2.node
+  type edge = F2.edge
+  type flow = (node, edge) Ograph_extended.ograph_mutable
+  let short_string_of_node n = Meta_il.short_string_of_node_kind n.F2.n
+end)
+
+let test_dfg_tainting file =
+  let ast = Parse_generic.parse_program file in
+  let lang = List.hd (Lang.langs_of_filename file) in
+  Naming_ast.resolve lang ast;
+
+  ast |> List.iter (fun item ->
+   (match item with
+   | DefStmt (_ent, FuncDef def) ->
+     let xs = Ast_to_il.stmt def.fbody in
+     let flow = Ilflow_build.cfg_of_stmts xs in
+      pr2 "Tainting";
+      let mapping = Dataflow_tainting.fixpoint flow in
+      DataflowY.display_mapping flow mapping (fun () -> "()");
+    | _ -> ()
+   )
+ )
 
 let actions () = [
   "-cfg_generic", " <file>",
@@ -96,4 +120,6 @@ let actions () = [
   Common.mk_action_1_arg test_il_generic;
   "-cfg_il", " <file>",
   Common.mk_action_1_arg test_cfg_il;
+  "-dfg_tainting", " <file>",
+  Common.mk_action_1_arg test_dfg_tainting;
 ]
