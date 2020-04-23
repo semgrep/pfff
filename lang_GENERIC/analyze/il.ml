@@ -315,3 +315,13 @@ type any =
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+let str_of_name ((s, _tok), _sid) = s
+
+let find_node f cfg =
+  cfg#nodes#tolist |> Common.find_some (fun (nodei, node) ->
+    if f node then Some nodei else None
+  )
+
+let find_exit cfg = find_node (fun node -> node.n = Exit) cfg
+let find_enter cfg = find_node (fun node -> node.n = Enter) cfg
+
