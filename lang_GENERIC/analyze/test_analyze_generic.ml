@@ -17,6 +17,14 @@ let test_cfg_generic file =
    )
  )
 
+module F = Controlflow
+module DataflowX = Dataflow.Make (struct
+  type node = F.node
+  type edge = F.edge
+  type flow = (node, edge) Ograph_extended.ograph_mutable
+  let short_string_of_node = F.short_string_of_node
+end)
+
 let test_dfg_generic file =
   let ast = Parse_generic.parse_program file in
   ast |> List.iter (fun item ->
@@ -25,10 +33,10 @@ let test_dfg_generic file =
       let flow = Controlflow_build.cfg_of_func def in
       pr2 "Reaching definitions";
       let mapping = Dataflow_reaching.fixpoint flow in
-      Dataflow.display_mapping flow mapping Dataflow.ns_to_str;
+      DataflowX.display_mapping flow mapping Dataflow.ns_to_str;
       pr2 "Liveness";
       let mapping = Dataflow_liveness.fixpoint flow in
-      Dataflow.display_mapping flow mapping (fun () -> "()");
+      DataflowX.display_mapping flow mapping (fun () -> "()");
 
     | _ -> ()
    )
@@ -61,6 +69,45 @@ let test_il_generic file =
    } in
   v (Pr ast)
 
+let test_cfg_il file =
+  let ast = Parse_generic.parse_program file in
+  let lang = List.hd (Lang.langs_of_filename file) in
+  Naming_ast.resolve lang ast;
+  
+  ast |> List.iter (fun item ->
+   (match item with
+   | DefStmt (_ent, FuncDef def) ->
+     let xs = Ast_to_il.stmt def.fbody in
+     let cfg = Ilflow_build.cfg_of_stmts xs in
+     Meta_il.display_cfg cfg;
+    | _ -> ()
+   )
+ )
+
+module F2 = Il
+module DataflowY = Dataflow.Make (struct
+  type node = F2.node
+  type edge = F2.edge
+  type flow = (node, edge) Ograph_extended.ograph_mutable
+  let short_string_of_node n = Meta_il.short_string_of_node_kind n.F2.n
+end)
+
+let test_dfg_tainting file =
+  let ast = Parse_generic.parse_program file in
+  let lang = List.hd (Lang.langs_of_filename file) in
+  Naming_ast.resolve lang ast;
+
+  ast |> List.iter (fun item ->
+   (match item with
+   | DefStmt (_ent, FuncDef def) ->
+     let xs = Ast_to_il.stmt def.fbody in
+     let flow = Ilflow_build.cfg_of_stmts xs in
+      pr2 "Tainting";
+      let mapping = Dataflow_tainting.fixpoint flow in
+      DataflowY.display_mapping flow mapping (fun () -> "()");
+    | _ -> ()
+   )
+ )
 
 let actions () = [
   "-cfg_generic", " <file>",
@@ -71,4 +118,8 @@ let actions () = [
   Common.mk_action_1_arg test_naming_generic;
   "-il_generic", " <file>",
   Common.mk_action_1_arg test_il_generic;
+  "-cfg_il", " <file>",
+  Common.mk_action_1_arg test_cfg_il;
+  "-dfg_tainting", " <file>",
+  Common.mk_action_1_arg test_dfg_tainting;
 ]

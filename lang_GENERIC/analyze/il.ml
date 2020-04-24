@@ -22,18 +22,31 @@ module G = Ast_generic
  * Just like for the CST -> AST, the goal of an AST -> IL transformation
  * is to simplify things even more for program analysis purpose.
  *
- * TODO Here are simplifications that could be done to the AST:
- *  - intermediate instr type (instr for instruction), for statements without
- *    any control flow
- *  - intermediate lvalue type, expressions are splitted in 
- *    lvalue vs regular expressions
- *  - Assign is now an instruction, not an expression
+ * Here are the simplifications done compared to the generic AST:
+ *  - intermediate 'instr' type (instr for instruction), for expressions with
+ *    side effects and statements without any control flow, 
+ *    moving Assign/Seq/Call/Conditional out of 'expr' and
+ *    moving Assert out of 'stmt'
+ *  - new expression type 'exp' for side-effect free expressions
+ *  - intermediate 'lvalue' type; expressions are splitted in 
+ *    lvalue vs regular expressions, moved Dot/Index out of expr
+ *
+ *  - Assign/Calls are now instructions, not expressions, and no more Seq
  *  - no AssignOp, or Decr/Incr, just Assign
- *  - Calls are now instructions (not nested inside complex expressions)
- *    and all its arguments are variables?
- *  - Naming has been performed, no more ident vs name
  *  - Lambdas are now instructions (not nested again)
- *  - Seq are instructions
+ *
+ *  - no For/Foreach/DoWhile/While, converted all in Loop, 
+ *  - no Foreach, converted in a Loop and 2 new special
+ *  - TODO no Switch, converted in Ifs
+ *  - TODO no Continue/Break, converted in goto
+ *  - less use of expr option (in Return/Assert/...), use Unit in those cases
+ *
+ *  - no Sgrep constructs
+ *  - Naming has been performed, no more ident vs name
+ *
+ * TODO:
+ *   - TODO? have all arguments of Calls be variables?
+ *
  * 
  * Note that we still want to be close to the original code so that
  * error reported on the IL can be mapped back to error on the original code
@@ -48,12 +61,15 @@ module G = Ast_generic
  * related work:
  *  - CIL, C Intermediate Language, Necula et al, CC'00
  *  - RIL, The Ruby Intermediate Language, Furr et al, DLS'09
- *  - C-- in OCaml?
+ *  - SIL? in Infer? or more a generic AST than a generic IL?
  *  - Rust IL?
+ *  - C-- in OCaml? too low-level?
  *  - LLVM IR (but too far away from original code? complicated 
  *    source maps)
+ *  - gcc RTL (too low-level? similar to 3-address code?)
  *  - SiMPL language in BAP/BitBlaze dynamic analysis libraries
  *    but probably too close to assembly/bytecode
+ *  - Jimpl in Soot/Wala
  *)
 
 (*****************************************************************************)
@@ -80,13 +96,9 @@ type ident = string wrap
  * using a gensym (see naming_ast.ml). The pair is guaranteed to be 
  * global and unique (no need to handle variable shadowing, block scoping,
  * etc; this has been done already).
- *)
-type var = ident * G.sid
- (* with tarzan *)
-
-(* for constructors and other global entities.
- * 'sid' below should be the result of global name resolution using 
- * codegraph or something similar.
+ * TODO: use it to also do SSA! so some control-flow insensitive analysis
+ * can become control-flow sensitive? (e.g., DOOP)
+ * 
  *)
 type name = ident * G.sid
  (* with tarzan *)
@@ -102,7 +114,7 @@ type lval = {
   (* todo: ltype: typ; *)
 }
   and base = 
-    | Var of var
+    | Var of name
     | VarSpecial of var_special wrap
     (* for C *)
     | Mem of exp
@@ -114,10 +126,10 @@ type lval = {
    * - do as in CIL and have recursive offset and stop with NoOffset.
    * What about computed field names? 
    * - handle them in Special?
-   * - convert in Index?
+   * - convert in Index with a string exp?
    * Note that Dot is used to access many different kinds of entities:
-   *  objects (fields), classes (static fields), but also packages, modules,
-   *  namespaces depending on the type of 'var' above.
+   *  objects/records (fields), classes (static fields), but also 
+   *  packages, modules, namespaces depending on the type of 'var' above.
    *)
   | Dot   of ident
   | Index of exp
@@ -141,15 +153,26 @@ and exp = {
   eorig: G.expr;
  } 
   and exp_kind =
+  | Lvalue of lval (* lvalue used in a rvalue context *)
   | Literal of G.literal
   | Composite of composite_kind * exp list bracket
-  | Lvalue of lval
+  (* Record could be a Composite where the arguments are CTuple with
+   * the Literal (String) as a key, but they are pretty important I think
+   * for some analysis so better to support them more directly.
+   * TODO should we transform that in a New followed by a series of Assign
+   * with Dot? simpler?
+   * This could also be used for Dict.
+   *)
+  | Record of (ident * exp) list
   | Cast of G.type_ * exp
+  (* This could be put in call_special, but dumped IL are then less readable
+   * (they are too many intermediate _tmp variables then) *)
+  | Operator of G.arithmetic_operator wrap * exp list
 
  and composite_kind =
-  | Tuple
-  | Array | List
-  | Dict
+  | CTuple
+  | CArray | CList | CSet
+  | CDict (* could be merged with Record *)
   | Constructor of name (* OCaml *)
  (* with tarzan *)
 
@@ -168,23 +191,35 @@ type instr = {
   iorig: G.expr;
  }
   and instr_kind =
-  | Set of lval * exp
-  | SetAnon of lval * anonymous_entity
-  | Call of lval option * exp * argument list
+  (* was called Set in CIL, but a bit ambiguous with Set module *)
+  | Assign of lval * exp
+  | AssignAnon of lval * anonymous_entity
+  | Call of lval option * exp (* less: enforce lval? *) * argument list
   | CallSpecial of lval option * call_special wrap * argument list
+  (* todo: PhiSSA! *)
 
   and call_special = 
     | Eval
-    | New
+    (* Note that in some languages (e.g., Python) some regular calls are
+     * actually New under the hood.
+     * The type_ argument is usually a name, but it can also be an name[] in
+     * Java/C++.
+     *)
+    | New (* TODO: lift up and add 'of type_ * argument list'? *)
     | Typeof | Instanceof | Sizeof
-    | Operator of G.arithmetic_operator | Concat
+    (* old: better in exp: | Operator of G.arithmetic_operator *)
+    | Concat
     | Spread
     | Yield | Await
+    (* was in stmt before, but with a new clean 'instr' type, better here *)
     | Assert
-    (* when transpiling certain features *)
-    | TupleAccess of int (* when transpiling tuples *)
-    (* only in C/PHP *)
-    | Ref
+    (* was in expr before (only in C/PHP) *)
+    | Ref (* TODO: lift up, have AssignRef? *)
+    (* when transpiling certain features (e.g., patterns, foreach) *)
+    | ForeachNext | ForeachHasNext (* primitives called under the hood *)
+    (* | IntAccess of composite_kind * int (* for tuples/array/list *)
+       | StringAccess of string (* for records/hashes *)
+    *)
 
   and anonymous_entity =
     | Lambda of G.function_definition
@@ -201,11 +236,12 @@ type stmt = {
   and stmt_kind =
   | Instr of instr
 
+  (* Switch are converted to a series of If *)
   | If of tok * exp * stmt list * stmt list
-  (* less: could be transpiled? *)
-  | Switch of tok * exp * case_and_body list
-  (* While/DoWhile/For are converted in unified Loop construct.
-   * Break/Continue are handled via Label 
+  (* While/DoWhile/For are converted in a unified Loop construct.
+   * Break/Continue are handled via Label.
+   * alt: we could go further and transform in If+Goto, but nice to
+   * not be too far from the original code.
    *)
   | Loop of tok * exp * stmt list
 
@@ -213,17 +249,17 @@ type stmt = {
 
   (* alt: do as in CIL and resolve that directly in 'Goto of stmt' *)
   | Goto of tok * label
-  | Label of label * stmt list
+  | Label of label
 
-  | Try of stmt list * (var * stmt list) list * stmt list
-  
-  | DefStmt of G.definition
-  | DirectiveStmt of G.directive
+  | Try of stmt list * (name * stmt list) list * stmt list
+  | Throw of tok * exp (* less: enforce lval here? *)
 
-   and case_and_body = case list * stmt list
-     and case = 
-       | Case of tok * exp
-       | Default of tok
+  | OtherStmt of other_stmt
+
+  and other_stmt = 
+    (* everything except VarDef (which is transformed in a Set instr) *)
+    | DefStmt of G.definition
+    | DirectiveStmt of G.directive
 
 and label = ident * G.sid
  (* with tarzan *)
@@ -234,6 +270,41 @@ and label = ident * G.sid
 (* See ast_generic.ml *)
 
 (*****************************************************************************)
+(* Control-flow graph (CFG) *)
+(*****************************************************************************)
+(* Similar to controlflow.ml, but with a simpler node_kind.
+ * See controlflow.ml for more information. *)
+type node = {
+  n: node_kind;
+  (* old: there are tok in the nodes anyway 
+   * t: Parse_info.t option;
+   *)
+} 
+  and node_kind = 
+    | Enter | Exit 
+    | TrueNode | FalseNode (* for Cond *)
+    | Join (* after Cond *)
+
+    | NInstr of instr
+
+    | NCond   of tok * exp
+    | NReturn of tok * exp
+    | NThrow  of tok * exp
+
+    | NOther of other_stmt
+(* with tarzan *)
+
+(* For now there is just one kind of edge. Later we may have more, 
+ * see the ShadowNode idea of Julia Lawall.
+ *)
+type edge = Direct 
+
+type cfg = (node, edge) Ograph_extended.ograph_mutable
+
+(* an int representing the index of a node in the graph *)
+type nodei = Ograph_extended.nodei
+
+(*****************************************************************************)
 (* Any *)
 (*****************************************************************************)
 type any = 
@@ -242,8 +313,56 @@ type any =
   | I of instr
   | S of stmt
   | Ss of stmt list
+(*  | N of node *)
  (* with tarzan *)
+
+(*****************************************************************************)
+(* L/Rvalue helpers *)
+(*****************************************************************************)
+let lvar_of_instr_opt x =
+  match x.i with
+  | Assign (lval, _) | AssignAnon (lval, _)
+  | Call (Some lval, _, _) | CallSpecial (Some lval, _, _) ->
+      (match lval.base with
+      | Var n -> Some n
+      | VarSpecial _ | Mem _ -> None
+      )
+  | _ -> None
+
+let exps_of_instr x =
+  match x.i with
+  | Assign (_, exp) -> [exp]
+  | AssignAnon _ -> []
+  | Call (_, e1, args) -> e1::args
+  | CallSpecial (_, _, args) -> args
+
+(* opti: could use a set *)
+let rec rvars_of_exp e =
+  match e.e with
+  | Lvalue ({base=Var var;_}) -> [var]
+  | Lvalue _ -> []
+  | Literal _ -> []
+  | Cast (_, e) -> rvars_of_exp e
+  | Composite (_, (_, xs, _)) | Operator (_, xs) -> rvars_of_exps xs 
+  | Record ys -> rvars_of_exps (ys |> List.map snd)  
+  
+and rvars_of_exps xs =
+  xs |> List.map (rvars_of_exp) |> List.flatten
+
+let rvars_of_instr x =
+  let exps = exps_of_instr x in
+  rvars_of_exps exps
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+let str_of_name ((s, _tok), _sid) = s
+
+let find_node f cfg =
+  cfg#nodes#tolist |> Common.find_some (fun (nodei, node) ->
+    if f node then Some nodei else None
+  )
+
+let find_exit cfg = find_node (fun node -> node.n = Exit) cfg
+let find_enter cfg = find_node (fun node -> node.n = Enter) cfg
+

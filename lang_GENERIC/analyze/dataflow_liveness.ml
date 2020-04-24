@@ -13,7 +13,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 module F = Controlflow
 module D = Dataflow
 module V = Controlflow_visitor
@@ -51,6 +50,13 @@ module VarMap = Dataflow.VarMap
  *)
 type mapping = unit Dataflow.mapping
 
+module DataflowX = Dataflow.Make (struct
+  type node = F.node
+  type edge = F.edge
+  type flow = (node, edge) Ograph_extended.ograph_mutable
+  let short_string_of_node = F.short_string_of_node
+end)
+
 (*****************************************************************************)
 (* Gen/Kill *)
 (*****************************************************************************)
@@ -61,7 +67,7 @@ type mapping = unit Dataflow.mapping
  * reuse Dataflow.varmap_union and Dataflow.varmap_diff.
 *) 
 let (gens: F.flow -> (unit Dataflow.env) array) = fun flow ->
-  let arr = Dataflow.new_node_array flow VarMap.empty in
+  let arr = DataflowX.new_node_array flow VarMap.empty in
   V.fold_on_node_and_expr (fun (ni, _nd) e () ->
     (* rvalues here, to get the use of variables *)
     let rvals = Lrvalue.rvalues_of_expr e in
@@ -83,7 +89,7 @@ let (gens: F.flow -> (unit Dataflow.env) array) = fun flow ->
  *)
 let (kills: F.flow -> (unit Dataflow.env) array) =
  fun flow -> 
-  let arr = Dataflow.new_node_array flow (Dataflow.empty_env()) in
+  let arr = DataflowX.new_node_array flow (Dataflow.empty_env()) in
   V.fold_on_node_and_expr (fun (ni, _nd) e () ->
     let lvals = Lrvalue.lvalues_of_expr e in
     let vars = lvals |> List.map (fun ((s,_tok), _idinfo) -> s) in
@@ -136,9 +142,9 @@ let (fixpoint: F.flow -> mapping) = fun flow ->
   let gen = gens flow in
   let kill = kills flow in
 
-  Dataflow.fixpoint
+  DataflowX.fixpoint
     ~eq:(fun () () -> true)
-    ~init:(Dataflow.new_node_array flow (Dataflow.empty_inout ()))
+    ~init:(DataflowX.new_node_array flow (Dataflow.empty_inout ()))
     ~trans:(transfer ~gen ~kill ~flow)
     (* liveness is a backward analysis! *)
     ~forward:false
