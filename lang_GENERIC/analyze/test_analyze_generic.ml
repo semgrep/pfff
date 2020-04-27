@@ -103,7 +103,13 @@ let test_dfg_tainting file =
      let xs = Ast_to_il.stmt def.fbody in
      let flow = Ilflow_build.cfg_of_stmts xs in
       pr2 "Tainting";
-      let mapping = Dataflow_tainting.fixpoint flow in
+      let config = { Dataflow_tainting.
+        is_source = (fun _ -> false);
+        is_sink = (fun _ -> false);
+        is_sanitizer = (fun _ -> false);
+        found_tainted_sink = (fun _ _ -> ());
+        } in
+      let mapping = Dataflow_tainting.fixpoint config flow in
       DataflowY.display_mapping flow mapping (fun () -> "()");
     | _ -> ()
    )
