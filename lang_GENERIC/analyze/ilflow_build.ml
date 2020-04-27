@@ -154,7 +154,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
    | Throw (_, _)
      -> raise Todo
 
-   | OtherStmt x ->
+   | MiscStmt x ->
       let newi = state.g#add_node { F.n = F.NOther x } in
       state.g |> add_arc_opt (previ, newi);
       Some newi

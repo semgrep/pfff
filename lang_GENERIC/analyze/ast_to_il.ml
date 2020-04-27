@@ -458,8 +458,8 @@ let rec stmt env st =
     let ss, e' = expr_with_pre_stmts env e in
     let lv = lval_of_ent env ent in
     ss @ [mk_s (Instr (mk_i (Assign (lv, e')) e))]; 
-  | G.DefStmt def -> [mk_s (OtherStmt (DefStmt def))]
-  | G.DirectiveStmt dir -> [mk_s (OtherStmt (DirectiveStmt dir))]
+  | G.DefStmt def -> [mk_s (MiscStmt (DefStmt def))]
+  | G.DirectiveStmt dir -> [mk_s (MiscStmt (DirectiveStmt dir))]
 
   | G.Block xs -> List.map (stmt env) xs |> List.flatten
 

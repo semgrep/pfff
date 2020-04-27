@@ -35,6 +35,14 @@ module VarMap = Dataflow.VarMap
 
 type mapping = unit Dataflow.mapping
 
+type config = {
+  is_source: Il.instr -> bool;
+  is_sink: Il.instr -> bool;
+  is_sanitizer: Il.instr -> bool;
+
+  found_tainted_sink: Il.instr -> unit Dataflow.env -> unit;
+}
+
 module DataflowX = Dataflow.Make (struct
   type node = F.node
   type edge = F.edge
@@ -65,10 +73,8 @@ let union =
 let diff =
   Dataflow.varmap_diff (fun () () -> ()) (fun () -> true)
 
-let (transfer:
-   flow:F.cfg ->
-   unit Dataflow.transfn) =
- fun ~flow ->
+let (transfer: config -> flow:F.cfg -> unit Dataflow.transfn) =
+ fun config ~flow ->
   (* the transfer function to update the mapping at node index ni *)
   fun mapping ni ->
 
@@ -79,16 +85,35 @@ let (transfer:
   in
   let node = flow#nodes#assoc ni in
 
+  (* TODO: do that later? once everything if finished? *)
+  (match node.F.n with
+  | NInstr x ->
+    if config.is_sink x
+    then begin
+       (* TODO: use metavar in sink to know which argument we should check
+        * for taint?
+        *)
+       let rvars = Il.rvars_of_instr x in
+       if rvars |> List.exists (fun rvar -> VarMap.mem (str_of_name rvar) in')
+       then config.found_tainted_sink x in'
+    end
+  | Enter | Exit | TrueNode | FalseNode | Join
+  | NCond _| NReturn _ | NThrow _ | NOther _ -> ()
+  );
+
+
   let gen_ni_opt = 
     match node.F.n with
-    (* TODO: use semgrep pattern to find source functions instead of
-     * hardcoded source()
-     *)
     | NInstr x ->
        (match x.i with
        | Call (Some ({base=Var lvar; _}), 
                     {e=Lvalue({base=Var(("source",_),_);_}); _}, [])->
           Some lvar
+      (* this can use semgrep patterns under the hood to find source
+       * functions instead of the hardcoded source() above.
+       *)
+       | _ when config.is_source x ->
+           Il.lvar_of_instr_opt x
        | _ ->
            let lvar_opt = Il.lvar_of_instr_opt x in
            let rvars = Il.rvars_of_instr x in
@@ -108,20 +133,26 @@ let (transfer:
   in
   let kill_ni_opt = 
     (* if there was a source(), no need to look for a sanitize() given
-     * an instr can be at most one call
+     * an instr can be at most one call?
+     * old:
+     *  if gen_ni_opt <> None
+     *  then None
+     * but now gen_ni <> None does not necessarily mean we had a source().
+     * It can also be one tainted rvars which propagate to the lvar
      *)
-    if gen_ni_opt <> None
-    then None
-    else
     match node.F.n with
-    (* TODO: use semgrep pattern to find sanitize functions instead of
-     * hardcoded sanitize()
-     *)
     | NInstr x ->
        (match x.i with
+       | Call (Some ({base=Var _lvar; _}), 
+                    {e=Lvalue({base=Var(("source",_),_);_}); _}, [])->
+          None
+       | _ when config.is_source x -> None
+
        | Call (Some ({base=Var lvar; _}), 
                {e=Lvalue({base=Var(("sanitize",_),_);_}); _}, [])->
           Some lvar
+       | _ when config.is_sanitizer x ->
+           Il.lvar_of_instr_opt x
        | _ ->
            let lvar_opt = Il.lvar_of_instr_opt x in
            let rvars = Il.rvars_of_instr x in
@@ -149,11 +180,11 @@ let (transfer:
 (* Entry point *)
 (*****************************************************************************)
 
-let (fixpoint: F.cfg -> mapping) = fun flow ->
+let (fixpoint: config -> F.cfg -> mapping) = fun config flow ->
   DataflowX.fixpoint
     ~eq:(fun () () -> true)
     ~init:(DataflowX.new_node_array flow (Dataflow.empty_inout ()))
-    ~trans:(transfer ~flow)
+    ~trans:(transfer config ~flow)
     (* tainting is a forward analysis! *)
     ~forward:true
     ~flow
