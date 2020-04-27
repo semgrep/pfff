@@ -254,7 +254,7 @@ type stmt = {
   | Try of stmt list * (name * stmt list) list * stmt list
   | Throw of tok * exp (* less: enforce lval here? *)
 
-  | OtherStmt of other_stmt
+  | MiscStmt of other_stmt
 
   and other_stmt = 
     (* everything except VarDef (which is transformed in a Set instr) *)
@@ -327,7 +327,7 @@ let lvar_of_instr_opt x =
       | Var n -> Some n
       | VarSpecial _ | Mem _ -> None
       )
-  | _ -> None
+  | Call _ | CallSpecial _ -> None
 
 let exps_of_instr x =
   match x.i with
