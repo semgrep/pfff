@@ -60,7 +60,9 @@ type error = {
   sev: severity;
 }
  (* less: Advice | Noisy | Meticulous ? *)
- and severity = Error | Warning
+ (* The three-level breakdown here is based on this loose standard: *)
+ (* http://docs.oasis-open.org/sarif/sarif/v2.0/csprd01/sarif-v2.0-csprd01.html#_Ref493404972 *)
+ and severity = Error | Warning | Info
 
  and error_kind =
   (* parsing related errors. 
@@ -251,11 +253,16 @@ let error tok err =
 let warning tok err = 
   let loc = PI.token_location_of_info tok in
   Common.push { loc = loc; typ = err; sev = Warning } g_errors
+let info tok err = 
+  let loc = PI.token_location_of_info tok in
+  Common.push { loc = loc; typ = err; sev = Info } g_errors
 
 let error_loc loc err =
   Common.push (mk_error_loc loc err)  g_errors
 let warning_loc loc err = 
   Common.push { loc = loc; typ = err; sev = Warning } g_errors
+let info_loc loc err = 
+  Common.push { loc = loc; typ = err; sev = Info } g_errors
 
 (*****************************************************************************)
 (* Ranking *)
