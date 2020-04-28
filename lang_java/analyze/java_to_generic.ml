@@ -222,12 +222,12 @@ and expr e =
       G.L v1
   | ClassLiteral v1 -> let v1 = typ v1 in
       G.OtherExpr (G.OE_ClassLiteral, [G.T v1])
-  | NewClass ((v1, v2, v3)) ->
+  | NewClass ((v0, v1, v2, v3)) ->
       let v1 = typ v1
       and v2 = arguments v2
       and v3 = option (bracket decls) v3 in
       (match v3 with
-      | None -> G.Call (G.IdSpecial (G.New, fake "new"), (G.ArgType v1)::v2)
+      | None -> G.Call (G.IdSpecial (G.New, v0), (G.ArgType v1)::v2)
       | Some decls -> 
          let anonclass = G.AnonClass { G.
                 ckind = G.Class;
@@ -236,9 +236,9 @@ and expr e =
                 cbody = decls |> bracket (List.map (fun x -> G.FieldStmt x))
                 }
             in
-         G.Call (G.IdSpecial (G.New, fake "new"), (G.Arg anonclass)::v2)
+         G.Call (G.IdSpecial (G.New, v0), (G.Arg anonclass)::v2)
       )
-  | NewArray ((v1, v2, v3, v4)) ->
+  | NewArray ((v0, v1, v2, v3, v4)) ->
       let v1 = typ v1
       and v2 = arguments v2
       and v3 = int v3
