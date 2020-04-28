@@ -1,15 +1,26 @@
+open Common
 open OUnit
 
 (*****************************************************************************)
-(* Prelude *)
+(* Unit tests *)
 (*****************************************************************************)
 
 let unittest = 
-"foundation_java" >::: [
+"analyze_java" >::: [
 
-(*****************************************************************************)
-(* Tags *)
-(*****************************************************************************)
+    "regression files" >:: (fun () ->
+      let dir = Filename.concat Config_pfff.path "/tests/java/parsing" in
+      let files = Common2.glob (spf "%s/*.java" dir) in
+      files |> List.iter (fun file ->
+        try
+          let ast = Parse_java.parse_program file in
+          let _gen = Java_to_generic.program ast in
+          ()
+        with _exn ->
+          assert_failure (spf "it should generate a generic AST %s" file)
+      )
+    );
+
 (*
  "tags_java" >::: [
 
@@ -36,8 +47,4 @@ let unittest =
    );
  ]
 *)
-
-(*---------------------------------------------------------------------------*)
-(* Final suite *)
-(*---------------------------------------------------------------------------*)
 ]
