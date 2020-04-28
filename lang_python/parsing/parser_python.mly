@@ -81,7 +81,7 @@ let mk_name_param (name, t) =
   name, t
 
 let mk_str ii =
-  let s = Parse_info.string_of_info ii in
+  let s = Parse_info.str_of_info ii in
   Str (s, ii)
 
 %}
@@ -702,15 +702,20 @@ format_token_list:
  | format_token                   { [$1] }
  | format_token format_token_list { $1::$2 }
 
-/*(* just put all the tokens? except RBRACE? *)*/
+/*(* see "Format Specification Mini-Language at 
+   * https://docs.python.org/3/library/string.html#format-string-syntax
+   *)*/
 format_token:
   | INT   { mk_str (snd $1) }
   | FLOAT { mk_str (snd $1) }
   | DOT   { mk_str $1 }
   | NAME  { mk_str (snd $1) }
-  | LT    { mk_str $1 } | GT    { mk_str $1 }
-  | ADD  { mk_str $1 }
-  | BITXOR { mk_str $1 }
+  | LT { mk_str $1 } | GT { mk_str $1 } 
+  | EQ { mk_str $1 } | BITXOR { mk_str $1 }
+  | ADD  { mk_str $1 } | SUB { mk_str $1 }
+  | COMMA { mk_str $1 }
+  
+
   | LBRACE test RBRACE { $2 }
 
 
