@@ -6,7 +6,7 @@ type error = {
   loc: Parse_info.token_location;
   sev: severity;
 }
- and severity = Error | Warning
+ and severity = Error | Warning | Info
 
  and error_kind =
   (* parsing related *)
@@ -50,9 +50,11 @@ val g_errors: error list ref
 (* !modify g_errors! *)
 val error  : Parse_info.t -> error_kind -> unit
 val warning: Parse_info.t -> error_kind -> unit
+val info: Parse_info.t -> error_kind -> unit
 
 val error_loc  : Parse_info.token_location -> error_kind -> unit
 val warning_loc: Parse_info.token_location -> error_kind -> unit
+val info_loc: Parse_info.token_location -> error_kind -> unit
 
 (* string-of *)
 
