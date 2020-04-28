@@ -159,11 +159,12 @@ and expr =
   | ClassLiteral of typ
 
   (* the 'decls option' is for anon classes *)
-  | NewClass of typ * arguments * decls bracket option
+  | NewClass of tok * typ * arguments * decls bracket option
   (* the int counts the number of [], new Foo[][] => 2 *)
-  | NewArray of typ * arguments * int * init option
+  | NewArray of tok * typ * arguments * int * init option
   (* see tests/java/parsing/NewQualified.java *)
-  | NewQualifiedClass of expr * ident * arguments * decls bracket option
+  | NewQualifiedClass of expr * tok (* .new *) * ident * arguments * 
+      decls bracket option
 
   | Call of expr * arguments
 

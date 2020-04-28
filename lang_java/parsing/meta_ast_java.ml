@@ -142,23 +142,26 @@ and vof_expr =
       in Ocaml.VSum (("Literal", [ v1 ]))
   | ClassLiteral v1 ->
       let v1 = vof_typ v1 in Ocaml.VSum (("ClassLiteral", [ v1 ]))
-  | NewClass ((v1, v2, v3)) ->
+  | NewClass ((v0, v1, v2, v3)) ->
+      let v0 = vof_tok v0 in
       let v1 = vof_typ v1
       and v2 = vof_arguments v2
       and v3 = Ocaml.vof_option (vof_bracket vof_decls) v3
-      in Ocaml.VSum (("NewClass", [ v1; v2; v3 ]))
-  | NewArray ((v1, v2, v3, v4)) ->
+      in Ocaml.VSum (("NewClass", [ v0; v1; v2; v3 ]))
+  | NewArray ((v0, v1, v2, v3, v4)) ->
+      let v0 = vof_tok v0 in
       let v1 = vof_typ v1
       and v2 = vof_arguments v2
       and v3 = Ocaml.vof_int v3
       and v4 = Ocaml.vof_option vof_init v4
-      in Ocaml.VSum (("NewArray", [ v1; v2; v3; v4 ]))
-  | NewQualifiedClass ((v1, v2, v3, v4)) ->
-      let v1 = vof_expr v1
+      in Ocaml.VSum (("NewArray", [ v0; v1; v2; v3; v4 ]))
+  | NewQualifiedClass ((v0, v1, v2, v3, v4)) ->
+      let v0 = vof_expr v0 in
+      let v1 = vof_tok v1
       and v2 = vof_ident v2
       and v3 = vof_arguments v3
       and v4 = Ocaml.vof_option (vof_bracket vof_decls) v4
-      in Ocaml.VSum (("NewQualifiedClass", [ v1; v2; v3; v4 ]))
+      in Ocaml.VSum (("NewQualifiedClass", [ v0; v1; v2; v3; v4 ]))
   | Call ((v1, v2)) ->
       let v1 = vof_expr v1
       and v2 = vof_arguments v2

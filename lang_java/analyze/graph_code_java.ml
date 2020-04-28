@@ -730,7 +730,7 @@ and expr env = function
   | Literal _ -> ()
 
   | ClassLiteral t -> typ env t
-  | NewClass (t, args, decls_opt) ->
+  | NewClass (_tok, t, args, decls_opt) ->
       typ env t;
       exprs env args;
       (match decls_opt with
@@ -753,15 +753,15 @@ and expr env = function
           in
           class_decl env cdecl
       )
-  | NewQualifiedClass (_e, id, args, decls_opt) ->
+  | NewQualifiedClass (_e, tok, id, args, decls_opt) ->
       (*
       pr2 "NewQualifiedClass";
       pr2_gen (NewQualifiedClass (e, id, args, decls_opt));
       *)
       (* todo: need to resolve the type of 'e' *)
-      expr env (NewClass (TClass ([id, []]), args, decls_opt))
+      expr env (NewClass (tok, TClass ([id, []]), args, decls_opt))
 
-  | NewArray (t, args, _i, ini_opt) ->
+  | NewArray (_tok, t, args, _i, ini_opt) ->
       typ env t;
       exprs env args;
       init_opt env ini_opt
