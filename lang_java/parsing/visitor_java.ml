@@ -165,19 +165,22 @@ and v_expr (x : expr) =
     | NameOrClassType v1 -> let v1 = v_name_or_class_type v1 in ()
     | Literal v1 -> let v1 = v_literal v1 in ()
     | ClassLiteral v1 -> let v1 = v_typ v1 in ()
-    | NewClass ((v1, v2, v3)) ->
+    | NewClass ((v0, v1, v2, v3)) ->
+      let v0 = v_tok v0 in
       let v1 = v_typ v1
       and v2 = v_arguments v2
       and v3 = v_option (v_bracket v_decls) v3
       in ()
-    | NewArray ((v1, v2, v3, v4)) ->
+    | NewArray ((v0, v1, v2, v3, v4)) ->
+      let v0 = v_tok v0 in
       let v1 = v_typ v1
       and v2 = v_arguments v2
       and v3 = v_int v3
       and v4 = v_option v_init v4
       in ()
-    | NewQualifiedClass ((v1, v2, v3, v4)) ->
-      let v1 = v_expr v1
+    | NewQualifiedClass ((v0, v1, v2, v3, v4)) ->
+      let v0 = v_expr v0 in
+      let v1 = v_tok v1
       and v2 = v_ident v2
       and v3 = v_arguments v3
       and v4 = v_option (v_bracket v_decls) v4

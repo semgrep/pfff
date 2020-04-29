@@ -222,12 +222,12 @@ and expr e =
       G.L v1
   | ClassLiteral v1 -> let v1 = typ v1 in
       G.OtherExpr (G.OE_ClassLiteral, [G.T v1])
-  | NewClass ((v1, v2, v3)) ->
+  | NewClass ((v0, v1, v2, v3)) ->
       let v1 = typ v1
       and v2 = arguments v2
       and v3 = option (bracket decls) v3 in
       (match v3 with
-      | None -> G.Call (G.IdSpecial (G.New, fake "new"), (G.ArgType v1)::v2)
+      | None -> G.Call (G.IdSpecial (G.New, v0), (G.ArgType v1)::v2)
       | Some decls -> 
          let anonclass = G.AnonClass { G.
                 ckind = G.Class;
@@ -236,9 +236,9 @@ and expr e =
                 cbody = decls |> bracket (List.map (fun x -> G.FieldStmt x))
                 }
             in
-         G.Call (G.IdSpecial (G.New, fake "new"), (G.Arg anonclass)::v2)
+         G.Call (G.IdSpecial (G.New, v0), (G.Arg anonclass)::v2)
       )
-  | NewArray ((v1, v2, v3, v4)) ->
+  | NewArray ((v0, v1, v2, v3, v4)) ->
       let v1 = typ v1
       and v2 = arguments v2
       and v3 = int v3
@@ -246,27 +246,27 @@ and expr e =
       in 
       let rec mk_array n =
         if n <1 
-        then raise Impossible; (* see parser_java.mly dims rule *)
+        then raise Impossible; (* see parser_java.mly dims | dim_exprs rules *)
         if n = 1
         then G.TyArray (None, v1) 
         else G.TyArray (None, mk_array (n - 1))
       in
-      let t = mk_array v3 in
+      let t = mk_array (v3 + List.length v2) in
       (match v4 with
-      | None -> G.Call (G.IdSpecial (G.New, fake "new"), (G.ArgType t)::v2)
+      | None -> G.Call (G.IdSpecial (G.New, v0), (G.ArgType t)::v2)
       | Some e -> 
-         G.Call (G.IdSpecial (G.New, fake "new"), (G.ArgType t)::(G.Arg e)::v2)
+         G.Call (G.IdSpecial (G.New, v0), (G.ArgType t)::(G.Arg e)::v2)
       )
 
   (* x.new Y(...) {...} *)
-  | NewQualifiedClass ((v1, v2, v3, v4)) ->
-      let v1 = expr v1
+  | NewQualifiedClass ((v0, _tok, v2, v3, v4)) ->
+      let v0 = expr v0
       and v2 = ident v2
       and v3 = arguments v3
       and v4 = option (bracket decls) v4
       in 
       let any = 
-        [G.E v1; G.I v2] @ (v3 |> List.map (fun arg -> G.Ar arg)) @
+        [G.E v0; G.I v2] @ (v3 |> List.map (fun arg -> G.Ar arg)) @
         (Common.opt_to_list v4 |> List.map G.unbracket |> List.flatten |> List.map
             (fun st -> G.S st)) in
        G.OtherExpr (G.OE_NewQualifiedClass, any)

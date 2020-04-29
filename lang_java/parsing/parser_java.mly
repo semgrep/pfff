@@ -450,24 +450,24 @@ class_literal:
 class_instance_creation_expression:
  | NEW name LP argument_list_opt RP 
    class_body_opt
-       { NewClass (TClass (class_type $2), $4, $6) }
+       { NewClass ($1, TClass (class_type $2), $4, $6) }
  /*(* javaext: ? *)*/
  | primary DOT NEW identifier LP argument_list_opt RP class_body_opt
-       { NewQualifiedClass ($1, $4, $6, $8) }
+       { NewQualifiedClass ($1, $3, $4, $6, $8) }
  /*(* javaext: not in 2nd edition java language specification. *)*/
  | name DOT NEW identifier LP argument_list_opt RP class_body_opt
-       { NewQualifiedClass ((Name (name $1)), $4, $6, $8) }
+       { NewQualifiedClass ((Name (name $1)), $3, $4, $6, $8) }
 
 array_creation_expression:
  | NEW primitive_type dim_exprs dims_opt
-       { NewArray ($2, List.rev $3, $4, None) }
+       { NewArray ($1, $2, List.rev $3, $4, None) }
  | NEW name dim_exprs dims_opt
-       { NewArray (TClass (class_type ($2)), List.rev $3, $4, None) }
+       { NewArray ($1, TClass (class_type ($2)), List.rev $3, $4, None) }
  /*(* javaext: ? *)*/
  | NEW primitive_type dims array_initializer
-       { NewArray ($2, [], $3, Some $4) }
+       { NewArray ($1, $2, [], $3, Some $4) }
  | NEW name dims array_initializer
-       { NewArray (TClass (class_type ($2)), [], $3, Some $4) }
+       { NewArray ($1, TClass (class_type ($2)), [], $3, Some $4) }
 
 dim_expr: LB expression RB  { $2 }
 
