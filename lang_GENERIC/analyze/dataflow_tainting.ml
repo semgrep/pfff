@@ -1,3 +1,4 @@
+(*s: pfff/lang_GENERIC/analyze/dataflow_tainting.ml *)
 (* Yoann Padioleau
  *
  * Copyright (C) 2020 r2c
@@ -33,8 +34,11 @@ module VarMap = Dataflow.VarMap
 (* Types *)
 (*****************************************************************************)
 
+(*s: type [[Dataflow_tainting.mapping (pfff/lang_GENERIC/analyze/dataflow_tainting.ml)]] *)
 type mapping = unit Dataflow.mapping
+(*e: type [[Dataflow_tainting.mapping (pfff/lang_GENERIC/analyze/dataflow_tainting.ml)]] *)
 
+(*s: type [[Dataflow_tainting.config (pfff/lang_GENERIC/analyze/dataflow_tainting.ml)]] *)
 type config = {
   is_source: Il.instr -> bool;
   is_sink: Il.instr -> bool;
@@ -42,6 +46,7 @@ type config = {
 
   found_tainted_sink: Il.instr -> unit Dataflow.env -> unit;
 }
+(*e: type [[Dataflow_tainting.config (pfff/lang_GENERIC/analyze/dataflow_tainting.ml)]] *)
 
 module DataflowX = Dataflow.Make (struct
   type node = F.node
@@ -55,23 +60,31 @@ end)
 (* Helpers *)
 (*****************************************************************************)
 
+(*s: function [[Dataflow_tainting.str_of_name]] *)
 let str_of_name ((s, _tok), sid) =
     spf "%s:%d" s sid
+(*e: function [[Dataflow_tainting.str_of_name]] *)
 
+(*s: function [[Dataflow_tainting.option_to_varmap]] *)
 let option_to_varmap = function
   | None -> VarMap.empty
   | Some lvar -> VarMap.singleton (str_of_name lvar) ()
+(*e: function [[Dataflow_tainting.option_to_varmap]] *)
 
 (*****************************************************************************)
 (* Transfer *)
 (*****************************************************************************)
+(*s: constant [[Dataflow_tainting.union]] *)
 (* Not sure we can use the Gen/Kill framework here.
  *)
 
 let union = 
   Dataflow.varmap_union (fun () () -> ())
+(*e: constant [[Dataflow_tainting.union]] *)
+(*s: constant [[Dataflow_tainting.diff]] *)
 let diff =
   Dataflow.varmap_diff (fun () () -> ()) (fun () -> true)
+(*e: constant [[Dataflow_tainting.diff]] *)
 
 let (transfer: config -> flow:F.cfg -> unit Dataflow.transfn) =
  fun config ~flow ->
@@ -188,3 +201,4 @@ let (fixpoint: config -> F.cfg -> mapping) = fun config flow ->
     (* tainting is a forward analysis! *)
     ~forward:true
     ~flow
+(*e: pfff/lang_GENERIC/analyze/dataflow_tainting.ml *)

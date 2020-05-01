@@ -1,3 +1,4 @@
+(*s: pfff/lang_python/parsing/parse_python.ml *)
 (* Yoann Padioleau
  * 
  * Copyright (C) 2010 Facebook
@@ -27,25 +28,32 @@ module T = Parser_python
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
+(*s: type [[Parse_python.program_and_tokens (pfff/lang_python/parsing/parse_python.ml)]] *)
 type program_and_tokens = 
   Ast_python.program option * Parser_python.token list
+(*e: type [[Parse_python.program_and_tokens (pfff/lang_python/parsing/parse_python.ml)]] *)
 
+(*s: type [[Parse_python.parsing_mode (pfff/lang_python/parsing/parse_python.ml)]] *)
 type parsing_mode =
   | Python2
   | Python3
   (* will start with Python3 and fallback to Python2 in case of an error *)
   | Python 
+(*e: type [[Parse_python.parsing_mode (pfff/lang_python/parsing/parse_python.ml)]] *)
 
 (*****************************************************************************)
 (* Error diagnostic  *)
 (*****************************************************************************)
+(*s: function [[Parse_python.error_msg_tok]] *)
 let error_msg_tok tok = 
   Parse_info.error_message_info (TH.info_of_tok tok)
+(*e: function [[Parse_python.error_msg_tok]] *)
 
 (*****************************************************************************)
 (* Lexing only *)
 (*****************************************************************************)
 
+(*s: function [[Parse_python.tokens2]] *)
 let tokens2 parsing_mode file = 
   let state = Lexer.create () in
   let python2 = parsing_mode = Python2 in
@@ -73,14 +81,18 @@ let tokens2 parsing_mode file =
   in
   Parse_info.tokenize_all_and_adjust_pos 
     file token TH.visitor_info_of_tok TH.is_eof
+(*e: function [[Parse_python.tokens2]] *)
 
+(*s: function [[Parse_python.tokens]] *)
 let tokens a b = 
   Common.profile_code "Parse_python.tokens" (fun () -> tokens2 a b)
+(*e: function [[Parse_python.tokens]] *)
 
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 
+(*s: function [[Parse_python.parse_basic]] *)
 let rec parse_basic ?(parsing_mode=Python) filename = 
   let stat = Parse_info.default_stat filename in
 
@@ -146,15 +158,20 @@ let rec parse_basic ?(parsing_mode=Python) filename =
       stat.PI.bad     <- Common.cat filename |> List.length;
       (None, toks), stat
      end
+(*e: function [[Parse_python.parse_basic]] *)
 
 
+(*s: function [[Parse_python.parse]] *)
 let parse ?parsing_mode a = 
   Common.profile_code "Parse_python.parse" (fun () -> 
       parse_basic ?parsing_mode a)
+(*e: function [[Parse_python.parse]] *)
 
+(*s: function [[Parse_python.parse_program]] *)
 let parse_program ?parsing_mode file = 
   let ((astopt, _toks), _stat) = parse ?parsing_mode file in
   Common2.some astopt
+(*e: function [[Parse_python.parse_program]] *)
 
 (*****************************************************************************)
 (* Sub parsers *)
@@ -165,6 +182,7 @@ let (program_of_string: string -> Ast_python.program) = fun s ->
     parse_program file
   )
 
+(*s: function [[Parse_python.any_of_string]] *)
 (* for sgrep/spatch *)
 let any_of_string ?(parsing_mode=Python) s = 
   Common2.with_tmp_file ~str:s ~ext:"py" (fun file ->
@@ -178,6 +196,7 @@ let any_of_string ?(parsing_mode=Python) s =
     (* -------------------------------------------------- *)
     Parser_python.sgrep_spatch_pattern lexer lexbuf_fake
   )
+(*e: function [[Parse_python.any_of_string]] *)
 
 
 (*****************************************************************************)
@@ -194,3 +213,4 @@ let parse_fuzzy file =
   in
   trees, toks
 *)
+(*e: pfff/lang_python/parsing/parse_python.ml *)

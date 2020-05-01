@@ -1,3 +1,4 @@
+(*s: pfff/lang_python/parsing/unit_parsing_python.ml *)
 open Common
 open OUnit
 
@@ -5,6 +6,7 @@ open OUnit
 (* Unit tests *)
 (*****************************************************************************)
 
+(*s: constant [[Unit_parsing_python.unittest]] *)
 let unittest =
   "parsing_python" >::: [
 
@@ -20,3 +22,5 @@ let unittest =
       )
     );
  ]
+(*e: constant [[Unit_parsing_python.unittest]] *)
+(*e: pfff/lang_python/parsing/unit_parsing_python.ml *)

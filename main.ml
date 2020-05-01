@@ -1,3 +1,4 @@
+(*s: pfff/main.ml *)
 (*
  * Please imagine a long and boring GNU-style copyright notice 
  * appearing just here.
@@ -19,17 +20,23 @@ open Common
 (* Flags *)
 (*****************************************************************************)
 
+(*s: constant [[Main.verbose]] *)
 (* In addition to flags that can be tweaked via -xxx options (cf the
  * full list of options in the "the options" section below), this 
  * program also depends on external files?
  *)
 
 let verbose = ref false
+(*e: constant [[Main.verbose]] *)
 
+(*s: constant [[Main.lang]] *)
 let lang = ref "c"
+(*e: constant [[Main.lang]] *)
 
+(*s: constant [[Main.action]] *)
 (* action mode *)
 let action = ref ""
+(*e: constant [[Main.action]] *)
 
 (*****************************************************************************)
 (* Some debugging functions *)
@@ -42,18 +49,23 @@ let action = ref ""
 (*****************************************************************************)
 (* Main action *)
 (*****************************************************************************)
+(*s: function [[Main.main_action]] *)
 let main_action _xs = 
   raise Todo 
+(*e: function [[Main.main_action]] *)
 
 (*****************************************************************************)
 (* Extra Actions *)
 (*****************************************************************************)
+(*s: function [[Main.test_json_pretty_printer]] *)
 let test_json_pretty_printer file =
   let json = Json_io.load_json file in
   let s = Json_io.string_of_json json in
   pr s
+(*e: function [[Main.test_json_pretty_printer]] *)
 
 (* ---------------------------------------------------------------------- *)
+(*s: function [[Main.pfff_extra_actions]] *)
 let pfff_extra_actions () = [
   "-dump_json", " <file>",
   Common.mk_action_1_arg test_json_pretty_printer;
@@ -62,11 +74,13 @@ let pfff_extra_actions () = [
   "-layer_stat", " <file>",
   Common.mk_action_1_arg Test_program_lang.layer_stat;
 ]
+(*e: function [[Main.pfff_extra_actions]] *)
 
 (*****************************************************************************)
 (* The options *)
 (*****************************************************************************)
 
+(*s: function [[Main.all_actions]] *)
 let all_actions () = 
   pfff_extra_actions() @
 
@@ -112,8 +126,10 @@ let all_actions () =
   Test_analyze_c.actions() ++
 *)
   []
+(*e: function [[Main.all_actions]] *)
 
 
+(*s: function [[Main.options]] *)
 let options () = [
   "-verbose", Arg.Set verbose, 
   " ";
@@ -143,12 +159,14 @@ let options () = [
       exit 0;
     ), "  guess what";
   ]
+(*e: function [[Main.options]] *)
 
 
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 
+(*s: function [[Main.main]] *)
 let main () = 
 
   Gc.set {(Gc.get ()) with Gc.stack_limit = 1000 * 1024 * 1024};
@@ -191,9 +209,13 @@ let main () =
         failwith "too few arguments"
     )
   )
+(*e: function [[Main.main]] *)
 
 (*****************************************************************************)
+(*s: toplevel [[Main._1]] *)
 let _ =
   Common.main_boilerplate (fun () -> 
     main ();
   )
+(*e: toplevel [[Main._1]] *)
+(*e: pfff/main.ml *)

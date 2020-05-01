@@ -1,3 +1,4 @@
+(*s: pfff/lang_python/parsing/ast_python.ml *)
 (* Yoann Padioleau
  *
  * Copyright (C) 2010 Facebook
@@ -64,36 +65,49 @@
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
 
+(*s: type [[Ast_python.tok]] *)
 (* Contains among other things the position of the token through
  * the Parse_info.token_location embedded inside it, as well as the
  * transformation field that makes possible spatch on the code.
  *)
 type tok = Parse_info.t
  (* with tarzan *)
+(*e: type [[Ast_python.tok]] *)
 
+(*s: type [[Ast_python.wrap]] *)
 (* a shortcut to annotate some information with token/position information *)
 type 'a wrap = 'a * tok
  (* with tarzan *)
+(*e: type [[Ast_python.wrap]] *)
 
+(*s: type [[Ast_python.bracket]] *)
 (* round(), square[], curly{}, angle<> brackets *)
 type 'a bracket = tok * 'a * tok
  (* with tarzan *)
+(*e: type [[Ast_python.bracket]] *)
 
 (* ------------------------------------------------------------------------- *)
 (* Name *)
 (* ------------------------------------------------------------------------- *)
+(*s: type [[Ast_python.name]] *)
 type name = string wrap
  (* with tarzan *)
+(*e: type [[Ast_python.name]] *)
 
+(*s: type [[Ast_python.dotted_name]] *)
 (* note that name can be also the special "*" in an import context. *)
 type dotted_name = name list
  (* with tarzan *)
+(*e: type [[Ast_python.dotted_name]] *)
 
+(*s: type [[Ast_python.module_name]] *)
 type module_name = 
  dotted_name * 
  (* https://realpython.com/absolute-vs-relative-python-imports/ *)
  (tok (* . or ... toks *) list) option (* levels, for relative imports *)
+(*e: type [[Ast_python.module_name]] *)
 
+(*s: type [[Ast_python.resolved_name]] *)
 (* TODO: reuse ast_generic one? *)
 type resolved_name =
   (* this can be computed by a visitor *)
@@ -108,10 +122,12 @@ type resolved_name =
   (* default case *)
   | NotResolved
  (* with tarzan *)
+(*e: type [[Ast_python.resolved_name]] *)
 
 (*****************************************************************************)
 (* Expression *)
 (*****************************************************************************)
+(*s: type [[Ast_python.expr]] *)
 type expr =
   | Num of number (* n *)
   | Str of string wrap (* s *)
@@ -165,65 +181,93 @@ type expr =
   (* =~ ObjAccess *)
   | Attribute of expr (* value *) * tok (* . *) * name (* attr *) * 
        expr_context (* ctx *)
+(*e: type [[Ast_python.expr]] *)
 
+(*s: type [[Ast_python.number]] *)
   and number =
     | Int of string wrap
     | LongInt of string wrap
     | Float of string wrap
     | Imag of string wrap
+(*e: type [[Ast_python.number]] *)
 
   (* less: could reuse Ast_generic.arithmetic_operator *)
+(*s: type [[Ast_python.boolop]] *)
   and boolop = And | Or
+(*e: type [[Ast_python.boolop]] *)
 
   (* the % operator can also be used for strings! "foo %s" % name *)  
+(*s: type [[Ast_python.operator]] *)
   and operator = 
     | Add | Sub | Mult | Div 
     | Mod | Pow | FloorDiv
     | LShift | RShift 
     | BitOr | BitXor | BitAnd 
     | MatMult (* Matrix Multiplication *)
+(*e: type [[Ast_python.operator]] *)
   
+(*s: type [[Ast_python.unaryop]] *)
   and unaryop = Invert | Not | UAdd | USub
+(*e: type [[Ast_python.unaryop]] *)
   
+(*s: type [[Ast_python.cmpop]] *)
   and cmpop = 
     | Eq | NotEq 
     | Lt | LtE | Gt | GtE 
     | Is | IsNot 
     | In | NotIn
+(*e: type [[Ast_python.cmpop]] *)
   
  (* usually a Str or a simple expr.
   * TODO: should also handle format specifier, they are skipped for now
   * during parsing
   *)
+(*s: type [[Ast_python.interpolated]] *)
   and interpolated = expr
+(*e: type [[Ast_python.interpolated]] *)
 
+(*s: type [[Ast_python.list_or_comprehension]] *)
   and 'a list_or_comprehension = 
     | CompList of 'a list bracket
     | CompForIf of 'a comprehension
+(*e: type [[Ast_python.list_or_comprehension]] *)
 
+(*s: type [[Ast_python.comprehension]] *)
     and 'a comprehension = 'a * for_if list
+(*e: type [[Ast_python.comprehension]] *)
+(*s: type [[Ast_python.for_if]] *)
       and for_if =
       | CompFor of expr (* introduce new vars *) * (* in *) expr
       | CompIf of expr
+(*e: type [[Ast_python.for_if]] *)
   
+(*s: type [[Ast_python.dictorset_elt]] *)
   and dictorset_elt = 
     | KeyVal of expr * expr
     | Key of expr
     (* python3: *)
     | PowInline of expr
+(*e: type [[Ast_python.dictorset_elt]] *)
   
   (* AugLoad and AugStore are not used *)
+(*s: type [[Ast_python.expr_context]] *)
   and expr_context = 
     | Load | Store 
     | Del 
     | AugLoad | AugStore
     | Param
+(*e: type [[Ast_python.expr_context]] *)
   
+(*s: type [[Ast_python.slice]] *)
   and slice =
     | Slice of expr option (* lower *) * expr option (* upper *) * expr option (* step *)
     | Index of expr (* value *)
+(*e: type [[Ast_python.slice]] *)
   
+(*s: type [[Ast_python.parameters]] *)
   and parameters = parameter list
+(*e: type [[Ast_python.parameters]] *)
+(*s: type [[Ast_python.parameter]] *)
    and parameter = 
       (* the first expr can be only a Name or a Tuple (pattern?),
        * and the Name can have a type associated with it
@@ -236,13 +280,16 @@ type expr =
      | ParamPow  of (name * type_ option)
      (* sgrep-ext: *)
      | ParamEllipsis of tok
+(*e: type [[Ast_python.parameter]] *)
   
+(*s: type [[Ast_python.argument]] *)
   and argument = 
     | Arg of expr (* this can be Ellipsis for sgrep *)
     | ArgKwd of name (* arg *) * expr (* value *)
     | ArgStar of expr
     | ArgPow of expr
     | ArgComp of expr * for_if list
+(*e: type [[Ast_python.argument]] *)
  
   
 (*****************************************************************************)
@@ -254,22 +301,29 @@ type expr =
  * for https://www.python.org/dev/peps/pep-0526/ (variable annotations)
  * for its syntax.
  *)
+(*s: type [[Ast_python.type_]] *)
 and type_ = expr
+(*e: type [[Ast_python.type_]] *)
 
 (* used in inheritance, to allow default value for metaclass *)
+(*s: type [[Ast_python.type_parent]] *)
 and type_parent = argument
   (* with tarzan *)
+(*e: type [[Ast_python.type_parent]] *)
 
 (*****************************************************************************)
 (* Pattern *)
 (*****************************************************************************)
+(*s: type [[Ast_python.pattern]] *)
 (* Name, or Tuple? or more? *)
 type pattern = expr
   (* with tarzan *)
+(*e: type [[Ast_python.pattern]] *)
   
 (*****************************************************************************)
 (* Statement *)
 (*****************************************************************************)
+(*s: type [[Ast_python.stmt]] *)
 type stmt =
   | ExprStmt of expr (* value *)
 
@@ -332,14 +386,17 @@ type stmt =
         type_parent list (* bases *) * 
         stmt list (* body *) * 
         decorator list (* decorator_list *)
+(*e: type [[Ast_python.stmt]] *)
 
 
+(*s: type [[Ast_python.excepthandler]] *)
 and excepthandler = 
   ExceptHandler of 
     tok *
     expr option (* type, possibly a list of types as in (Error,Fatal) *) * 
     name option (* name, introduce new var, todo: only if pattern is Some *) * 
     stmt list (* body *)
+(*e: type [[Ast_python.excepthandler]] *)
 
 
 (*****************************************************************************)
@@ -349,7 +406,9 @@ and excepthandler =
 (* ------------------------------------------------------------------------- *)
 (* Decorators (a.k.a annotations) *)
 (* ------------------------------------------------------------------------- *)
+(*s: type [[Ast_python.decorator]] *)
 and decorator = expr
+(*e: type [[Ast_python.decorator]] *)
 
 (* ------------------------------------------------------------------------- *)
 (* Function (or method) definition *)
@@ -369,18 +428,23 @@ and decorator = expr
 (* ------------------------------------------------------------------------- *)
 (* Module import/export *)
 (* ------------------------------------------------------------------------- *)
+(*s: type [[Ast_python.alias]] *)
 and alias = name (* name *) * name option (* asname *)
+(*e: type [[Ast_python.alias]] *)
   (* with tarzan *)
 
 (*****************************************************************************)
 (* Toplevel *)
 (*****************************************************************************)
+(*s: type [[Ast_python.program]] *)
 type program = stmt list
   (* with tarzan *)
+(*e: type [[Ast_python.program]] *)
 
 (*****************************************************************************)
 (* Any *)
 (*****************************************************************************)
+(*s: type [[Ast_python.any]] *)
 type any =
   | Expr of expr
   | Stmt of stmt
@@ -389,15 +453,19 @@ type any =
 
   | DictElem of dictorset_elt
  (* with tarzan *)
+(*e: type [[Ast_python.any]] *)
 
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
+(*s: constant [[Ast_python.str_of_name]] *)
 let str_of_name = fst
+(*e: constant [[Ast_python.str_of_name]] *)
 
 (*****************************************************************************)
 (* Accessors *)
 (*****************************************************************************)
+(*s: function [[Ast_python.context_of_expr]] *)
 let context_of_expr = function
   | Attribute (_, _, _, ctx) -> Some ctx
   | Subscript (_, _, ctx) -> Some ctx
@@ -405,3 +473,5 @@ let context_of_expr = function
   | List (_, ctx)         -> Some ctx
   | Tuple (_, ctx)        -> Some ctx
   | _                     -> None
+(*e: function [[Ast_python.context_of_expr]] *)
+(*e: pfff/lang_python/parsing/ast_python.ml *)
