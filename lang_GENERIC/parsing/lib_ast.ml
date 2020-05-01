@@ -1,3 +1,4 @@
+(*s: pfff/lang_GENERIC/parsing/lib_ast.ml *)
 (* Yoann Padioleau
  *
  * Copyright (C) 2019 r2c
@@ -20,6 +21,7 @@ module M = Map_ast
 (* Extract infos *)
 (*****************************************************************************)
 
+(*s: function [[Lib_ast.extract_info_visitor]] *)
 let extract_info_visitor recursor = 
   let globals = ref [] in
   let hooks = { V.default_visitor with
@@ -30,14 +32,18 @@ let extract_info_visitor recursor =
     recursor vout;
     List.rev !globals
   end
+(*e: function [[Lib_ast.extract_info_visitor]] *)
 
+(*s: function [[Lib_ast.ii_of_any]] *)
 let ii_of_any any = 
   extract_info_visitor (fun visitor -> visitor any)
+(*e: function [[Lib_ast.ii_of_any]] *)
 
 
 (*****************************************************************************)
 (* Abstract position *)
 (*****************************************************************************)
+(*s: function [[Lib_ast.abstract_position_visitor]] *)
 let abstract_position_visitor recursor = 
   let hooks = { M.default_visitor with
     M.kinfo = (fun (_k, _) i -> 
@@ -48,5 +54,9 @@ let abstract_position_visitor recursor =
     let vout = M.mk_visitor hooks in
     recursor vout;
   end
+(*e: function [[Lib_ast.abstract_position_visitor]] *)
+(*s: function [[Lib_ast.abstract_position_info_any]] *)
 let abstract_position_info_any x = 
   abstract_position_visitor (fun visitor -> visitor.M.vany x)
+(*e: function [[Lib_ast.abstract_position_info_any]] *)
+(*e: pfff/lang_GENERIC/parsing/lib_ast.ml *)

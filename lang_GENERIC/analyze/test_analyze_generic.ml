@@ -1,7 +1,9 @@
+(*s: pfff/lang_GENERIC/analyze/test_analyze_generic.ml *)
 open Common
 open Ast_generic
 module V = Visitor_ast
 
+(*s: function [[Test_analyze_generic.test_cfg_generic]] *)
 let test_cfg_generic file =
   let ast = Parse_generic.parse_program file in
   ast |> List.iter (fun item ->
@@ -16,6 +18,7 @@ let test_cfg_generic file =
     | _ -> ()
    )
  )
+(*e: function [[Test_analyze_generic.test_cfg_generic]] *)
 
 module F = Controlflow
 module DataflowX = Dataflow.Make (struct
@@ -25,6 +28,7 @@ module DataflowX = Dataflow.Make (struct
   let short_string_of_node = F.short_string_of_node
 end)
 
+(*s: function [[Test_analyze_generic.test_dfg_generic]] *)
 let test_dfg_generic file =
   let ast = Parse_generic.parse_program file in
   ast |> List.iter (fun item ->
@@ -41,7 +45,9 @@ let test_dfg_generic file =
     | _ -> ()
    )
  )
+(*e: function [[Test_analyze_generic.test_dfg_generic]] *)
 
+(*s: function [[Test_analyze_generic.test_naming_generic]] *)
 let test_naming_generic file =
   let ast = Parse_generic.parse_program file in
   let lang = List.hd (Lang.langs_of_filename file) in
@@ -49,7 +55,9 @@ let test_naming_generic file =
   let v = Meta_ast.vof_any (Ast_generic.Pr ast) in
   let s = Ocaml.string_of_v v in
   pr2 s
+(*e: function [[Test_analyze_generic.test_naming_generic]] *)
 
+(*s: function [[Test_analyze_generic.test_il_generic]] *)
 let test_il_generic file =
   let ast = Parse_generic.parse_program file in
   let lang = List.hd (Lang.langs_of_filename file) in
@@ -68,7 +76,9 @@ let test_il_generic file =
       );
    } in
   v (Pr ast)
+(*e: function [[Test_analyze_generic.test_il_generic]] *)
 
+(*s: function [[Test_analyze_generic.test_cfg_il]] *)
 let test_cfg_il file =
   let ast = Parse_generic.parse_program file in
   let lang = List.hd (Lang.langs_of_filename file) in
@@ -83,6 +93,7 @@ let test_cfg_il file =
     | _ -> ()
    )
  )
+(*e: function [[Test_analyze_generic.test_cfg_il]] *)
 
 module F2 = Il
 module DataflowY = Dataflow.Make (struct
@@ -92,6 +103,7 @@ module DataflowY = Dataflow.Make (struct
   let short_string_of_node n = Meta_il.short_string_of_node_kind n.F2.n
 end)
 
+(*s: function [[Test_analyze_generic.test_dfg_tainting]] *)
 let test_dfg_tainting file =
   let ast = Parse_generic.parse_program file in
   let lang = List.hd (Lang.langs_of_filename file) in
@@ -114,7 +126,9 @@ let test_dfg_tainting file =
     | _ -> ()
    )
  )
+(*e: function [[Test_analyze_generic.test_dfg_tainting]] *)
 
+(*s: function [[Test_analyze_generic.actions]] *)
 let actions () = [
   "-cfg_generic", " <file>",
   Common.mk_action_1_arg test_cfg_generic;
@@ -129,3 +143,5 @@ let actions () = [
   "-dfg_tainting", " <file>",
   Common.mk_action_1_arg test_dfg_tainting;
 ]
+(*e: function [[Test_analyze_generic.actions]] *)
+(*e: pfff/lang_GENERIC/analyze/test_analyze_generic.ml *)

@@ -1,6 +1,8 @@
+(*s: pfff/lang_GENERIC/parsing/visitor_ast.mli *)
 open Ast_generic
 
 (* the hooks *)
+(*s: type [[Visitor_ast.visitor_in]] *)
 type visitor_in = {
   kexpr: (expr  -> unit) * visitor_out -> expr  -> unit;
   kstmt: (stmt  -> unit) * visitor_out -> stmt  -> unit;
@@ -23,14 +25,22 @@ type visitor_in = {
 
   kinfo: (tok -> unit)  * visitor_out -> tok  -> unit;
 }
+(*e: type [[Visitor_ast.visitor_in]] *)
+(*s: type [[Visitor_ast.visitor_out]] *)
 and visitor_out = any -> unit
+(*e: type [[Visitor_ast.visitor_out]] *)
 
+(*s: signature [[Visitor_ast.default_visitor]] *)
 val default_visitor : visitor_in
+(*e: signature [[Visitor_ast.default_visitor]] *)
 
+(*s: signature [[Visitor_ast.mk_visitor]] *)
 val mk_visitor: visitor_in -> visitor_out
+(*e: signature [[Visitor_ast.mk_visitor]] *)
 
 (* poor's man fold *)
 (* 
 val do_visit_with_ref:
   ('a list ref -> visitor_in) -> any -> 'a list
 *)
+(*e: pfff/lang_GENERIC/parsing/visitor_ast.mli *)

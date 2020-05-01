@@ -1,3 +1,4 @@
+(*s: pfff/lang_GENERIC/parsing/parse_generic.ml *)
 (* Yoann Padioleau
  *
  * Copyright (C) 2019 r2c
@@ -24,16 +25,19 @@ open Common
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+(*s: function [[Parse_generic.lang_to_python_parsing_mode]] *)
 let lang_to_python_parsing_mode = function
   | Lang.Python -> Parse_python.Python
   | Lang.Python2 -> Parse_python.Python2
   | Lang.Python3 -> Parse_python.Python3
   | s -> failwith (spf "not a python language:%s" (Lang.string_of_lang s))
+(*e: function [[Parse_generic.lang_to_python_parsing_mode]] *)
 
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
 
+(*s: function [[Parse_generic.parse_with_lang]] *)
 let parse_with_lang lang file = 
   match lang with
   | Lang.Python | Lang.Python2 | Lang.Python3 ->
@@ -68,7 +72,9 @@ let parse_with_lang lang file =
     let ast = Ast_ml_build.program cst in
     let _ = Ml_to_generic.program ast in
     raise Todo
+(*e: function [[Parse_generic.parse_with_lang]] *)
 
+(*s: function [[Parse_generic.parse_program]] *)
 let parse_program file =
   match Lang.langs_of_filename file with
   | [x] -> parse_with_lang x file
@@ -76,8 +82,10 @@ let parse_program file =
       (* print a warning? that we default to one? *)
       parse_with_lang x file
   | [] -> failwith (spf "unsupported file for AST generic: %s" file)
+(*e: function [[Parse_generic.parse_program]] *)
 
 
+(*s: function [[Parse_generic.parse_pattern]] *)
 let parse_pattern lang str =
   Common.save_excursion Flag_parsing.sgrep_mode true (fun () ->
   match lang with
@@ -101,3 +109,5 @@ let parse_pattern lang str =
   | Lang.ML -> 
       raise Todo
   )
+(*e: function [[Parse_generic.parse_pattern]] *)
+(*e: pfff/lang_GENERIC/parsing/parse_generic.ml *)

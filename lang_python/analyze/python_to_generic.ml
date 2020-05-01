@@ -1,3 +1,4 @@
+(*s: pfff/lang_python/analyze/python_to_generic.ml *)
 (* Yoann Padioleau
  *
  * Copyright (C) 2019 r2c
@@ -30,33 +31,60 @@ module G = Ast_generic
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+(*s: constant [[Python_to_generic.id]] *)
 let id = fun x -> x
+(*e: constant [[Python_to_generic.id]] *)
+(*s: constant [[Python_to_generic.option]] *)
 let option = Common.map_opt
+(*e: constant [[Python_to_generic.option]] *)
+(*s: constant [[Python_to_generic.list]] *)
 let list = List.map
+(*e: constant [[Python_to_generic.list]] *)
+(*s: function [[Python_to_generic.vref]] *)
 let vref f x = ref (f !x)
+(*e: function [[Python_to_generic.vref]] *)
 
+(*s: constant [[Python_to_generic.string]] *)
 let string = id
+(*e: constant [[Python_to_generic.string]] *)
+(*s: constant [[Python_to_generic.bool]] *)
 let bool = id
+(*e: constant [[Python_to_generic.bool]] *)
 
+(*s: function [[Python_to_generic.fake]] *)
 let fake s = Parse_info.fake_info s
+(*e: function [[Python_to_generic.fake]] *)
+(*s: function [[Python_to_generic.fake_bracket]] *)
 let fake_bracket x = fake "(", x, fake ")"
+(*e: function [[Python_to_generic.fake_bracket]] *)
 
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
 
+(*s: function [[Python_to_generic.info]] *)
 let info x = x
+(*e: function [[Python_to_generic.info]] *)
 
+(*s: constant [[Python_to_generic.wrap]] *)
 let wrap = fun _of_a (v1, v2) ->
   let v1 = _of_a v1 and v2 = info v2 in 
   (v1, v2)
+(*e: constant [[Python_to_generic.wrap]] *)
 
+(*s: function [[Python_to_generic.bracket]] *)
 let bracket of_a (t1, x, t2) = (info t1, of_a x, info t2)
+(*e: function [[Python_to_generic.bracket]] *)
 
+(*s: function [[Python_to_generic.name]] *)
 let name v = wrap string v
+(*e: function [[Python_to_generic.name]] *)
 
+(*s: function [[Python_to_generic.dotted_name]] *)
 let dotted_name v = list name v
+(*e: function [[Python_to_generic.dotted_name]] *)
 
+(*s: function [[Python_to_generic.module_name]] *)
 let module_name (v1, dots) = 
   let v1 = dotted_name v1 in
   match dots with
@@ -76,8 +104,10 @@ let module_name (v1, dots) =
       in
       let s = String.concat "/" (prefixes @ elems) in
       G.FileName (s, tok)
+(*e: function [[Python_to_generic.module_name]] *)
 
 
+(*s: function [[Python_to_generic.resolved_name]] *)
 let resolved_name =
   function
   | LocalVar -> Some (G.Local, G.sid_TODO)
@@ -87,7 +117,9 @@ let resolved_name =
   | ImportedModule xs -> Some (G.ImportedModule (G.DottedName xs), G.sid_TODO)
   | ImportedEntity xs -> Some (G.ImportedEntity xs, G.sid_TODO)
   | NotResolved -> None
+(*e: function [[Python_to_generic.resolved_name]] *)
 
+(*s: function [[Python_to_generic.expr_context]] *)
 let expr_context =
   function
   | Load -> ()
@@ -96,6 +128,7 @@ let expr_context =
   | AugLoad -> ()
   | AugStore -> ()
   | Param -> ()
+(*e: function [[Python_to_generic.expr_context]] *)
 
 
 let rec expr (x: expr) =
@@ -613,10 +646,13 @@ and alias (v1, v2) =
   let v1 = name v1 and v2 = option name v2 in 
   v1, v2
 
+(*s: function [[Python_to_generic.program]] *)
 let program v = 
   let v = list stmt v in
   v
+(*e: function [[Python_to_generic.program]] *)
 
+(*s: function [[Python_to_generic.any]] *)
 let any =
   function
   | Expr v1 -> let v1 = expr v1 in G.E v1
@@ -627,5 +663,7 @@ let any =
   | Stmts v1 -> let v1 = list stmt v1 in G.Ss v1
   | Program v1 -> let v1 = program v1 in G.Pr v1
   | DictElem v1 -> let v1 = dictorset_elt v1 in G.E v1
+(*e: function [[Python_to_generic.any]] *)
       
 
+(*e: pfff/lang_python/analyze/python_to_generic.ml *)
