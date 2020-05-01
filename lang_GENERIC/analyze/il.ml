@@ -1,3 +1,4 @@
+(*s: pfff/lang_GENERIC/analyze/il.ml *)
 (* Yoann Padioleau
  *
  * Copyright (C) 2020 r2c
@@ -76,22 +77,31 @@ module G = Ast_generic
 (* Token (leaf) *)
 (*****************************************************************************)
 
+(*s: type [[Il.tok]] *)
 (* the classic *)
 type tok = G.tok
  (* with tarzan *)
+(*e: type [[Il.tok]] *)
+(*s: type [[Il.wrap]] *)
 type 'a wrap = 'a G.wrap
  (* with tarzan *)
+(*e: type [[Il.wrap]] *)
+(*s: type [[Il.bracket]] *)
 (* useful mainly for empty containers *)
 type 'a bracket = tok * 'a * tok
  (* with tarzan *)
+(*e: type [[Il.bracket]] *)
 
 (*****************************************************************************)
 (* Names *)
 (*****************************************************************************)
 
+(*s: type [[Il.ident]] *)
 type ident = string wrap
  (* with tarzan *)
+(*e: type [[Il.ident]] *)
 
+(*s: type [[Il.name]] *)
 (* 'sid' below is the result of name resolution and variable disambiguation
  * using a gensym (see naming_ast.ml). The pair is guaranteed to be 
  * global and unique (no need to handle variable shadowing, block scoping,
@@ -102,23 +112,29 @@ type ident = string wrap
  *)
 type name = ident * G.sid
  (* with tarzan *)
+(*e: type [[Il.name]] *)
 
 (*****************************************************************************)
 (* Lvalue *)
 (*****************************************************************************)
 
 (* An lvalue, represented as in CIL as a pair. *)
+(*s: type [[Il.lval]] *)
 type lval = {
   base: base;
   offset: offset;
   (* todo: ltype: typ; *)
 }
+(*e: type [[Il.lval]] *)
+(*s: type [[Il.base]] *)
   and base = 
     | Var of name
     | VarSpecial of var_special wrap
     (* for C *)
     | Mem of exp
+(*e: type [[Il.base]] *)
 
+(*s: type [[Il.offset]] *)
   and offset = 
   | NoOffset
   (* What about nested field access? foo.x.y? 
@@ -133,11 +149,14 @@ type lval = {
    *)
   | Dot   of ident
   | Index of exp
+(*e: type [[Il.offset]] *)
 
    (* transpile at some point? *)
+(*s: type [[Il.var_special]] *)
    and var_special =
      | This | Super
      | Self | Parent
+(*e: type [[Il.var_special]] *)
 
 (*****************************************************************************)
 (* Expression *)
@@ -147,11 +166,14 @@ type lval = {
  * with Ast_generic.expr. 
  * Here 'exp' does not contain any side effect!
  *)
+(*s: type [[Il.exp]] *)
 and exp = {
   e: exp_kind;
   (* todo: etype: typ; *)
   eorig: G.expr;
  } 
+(*e: type [[Il.exp]] *)
+(*s: type [[Il.exp_kind]] *)
   and exp_kind =
   | Lvalue of lval (* lvalue used in a rvalue context *)
   | Literal of G.literal
@@ -168,16 +190,21 @@ and exp = {
   (* This could be put in call_special, but dumped IL are then less readable
    * (they are too many intermediate _tmp variables then) *)
   | Operator of G.arithmetic_operator wrap * exp list
+(*e: type [[Il.exp_kind]] *)
 
+(*s: type [[Il.composite_kind]] *)
  and composite_kind =
   | CTuple
   | CArray | CList | CSet
   | CDict (* could be merged with Record *)
   | Constructor of name (* OCaml *)
+(*e: type [[Il.composite_kind]] *)
  (* with tarzan *)
 
+(*s: type [[Il.argument]] *)
 type argument = exp
  (* with tarzan *)
+(*e: type [[Il.argument]] *)
 
 (*****************************************************************************)
 (* Instruction *)
@@ -186,10 +213,13 @@ type argument = exp
 (* Easier type to compute lvalue/rvalue set of a too general 'expr', which
  * is now split in  instr vs exp vs lval.
  *)
+(*s: type [[Il.instr]] *)
 type instr = {
   i: instr_kind;
   iorig: G.expr;
  }
+(*e: type [[Il.instr]] *)
+(*s: type [[Il.instr_kind]] *)
   and instr_kind =
   (* was called Set in CIL, but a bit ambiguous with Set module *)
   | Assign of lval * exp
@@ -197,7 +227,9 @@ type instr = {
   | Call of lval option * exp (* less: enforce lval? *) * argument list
   | CallSpecial of lval option * call_special wrap * argument list
   (* todo: PhiSSA! *)
+(*e: type [[Il.instr_kind]] *)
 
+(*s: type [[Il.call_special]] *)
   and call_special = 
     | Eval
     (* Note that in some languages (e.g., Python) some regular calls are
@@ -217,22 +249,28 @@ type instr = {
     | Ref (* TODO: lift up, have AssignRef? *)
     (* when transpiling certain features (e.g., patterns, foreach) *)
     | ForeachNext | ForeachHasNext (* primitives called under the hood *)
+(*e: type [[Il.call_special]] *)
     (* | IntAccess of composite_kind * int (* for tuples/array/list *)
        | StringAccess of string (* for records/hashes *)
     *)
 
+(*s: type [[Il.anonymous_entity]] *)
   and anonymous_entity =
     | Lambda of G.function_definition
     | AnonClass of G.class_definition
  (* with tarzan *)
+(*e: type [[Il.anonymous_entity]] *)
 
 (*****************************************************************************)
 (* Statement *)
 (*****************************************************************************)
+(*s: type [[Il.stmt]] *)
 type stmt = {
   s: stmt_kind;
   (* sorig: G.stmt; ?*)
   }
+(*e: type [[Il.stmt]] *)
+(*s: type [[Il.stmt_kind]] *)
   and stmt_kind =
   | Instr of instr
 
@@ -255,14 +293,19 @@ type stmt = {
   | Throw of tok * exp (* less: enforce lval here? *)
 
   | MiscStmt of other_stmt
+(*e: type [[Il.stmt_kind]] *)
 
+(*s: type [[Il.other_stmt]] *)
   and other_stmt = 
     (* everything except VarDef (which is transformed in a Set instr) *)
     | DefStmt of G.definition
     | DirectiveStmt of G.directive
+(*e: type [[Il.other_stmt]] *)
 
+(*s: type [[Il.label]] *)
 and label = ident * G.sid
  (* with tarzan *)
+(*e: type [[Il.label]] *)
 
 (*****************************************************************************)
 (* Defs *)
@@ -274,12 +317,15 @@ and label = ident * G.sid
 (*****************************************************************************)
 (* Similar to controlflow.ml, but with a simpler node_kind.
  * See controlflow.ml for more information. *)
+(*s: type [[Il.node]] *)
 type node = {
   n: node_kind;
   (* old: there are tok in the nodes anyway 
    * t: Parse_info.t option;
    *)
 } 
+(*e: type [[Il.node]] *)
+(*s: type [[Il.node_kind]] *)
   and node_kind = 
     | Enter | Exit 
     | TrueNode | FalseNode (* for Cond *)
@@ -293,20 +339,28 @@ type node = {
 
     | NOther of other_stmt
 (* with tarzan *)
+(*e: type [[Il.node_kind]] *)
 
+(*s: type [[Il.edge]] *)
 (* For now there is just one kind of edge. Later we may have more, 
  * see the ShadowNode idea of Julia Lawall.
  *)
 type edge = Direct 
+(*e: type [[Il.edge]] *)
 
+(*s: type [[Il.cfg]] *)
 type cfg = (node, edge) Ograph_extended.ograph_mutable
+(*e: type [[Il.cfg]] *)
 
+(*s: type [[Il.nodei]] *)
 (* an int representing the index of a node in the graph *)
 type nodei = Ograph_extended.nodei
+(*e: type [[Il.nodei]] *)
 
 (*****************************************************************************)
 (* Any *)
 (*****************************************************************************)
+(*s: type [[Il.any]] *)
 type any = 
   | L of lval
   | E of exp
@@ -314,11 +368,13 @@ type any =
   | S of stmt
   | Ss of stmt list
 (*  | N of node *)
+(*e: type [[Il.any]] *)
  (* with tarzan *)
 
 (*****************************************************************************)
 (* L/Rvalue helpers *)
 (*****************************************************************************)
+(*s: function [[Il.lvar_of_instr_opt]] *)
 let lvar_of_instr_opt x =
   match x.i with
   | Assign (lval, _) | AssignAnon (lval, _)
@@ -328,13 +384,16 @@ let lvar_of_instr_opt x =
       | VarSpecial _ | Mem _ -> None
       )
   | Call _ | CallSpecial _ -> None
+(*e: function [[Il.lvar_of_instr_opt]] *)
 
+(*s: function [[Il.exps_of_instr]] *)
 let exps_of_instr x =
   match x.i with
   | Assign (_, exp) -> [exp]
   | AssignAnon _ -> []
   | Call (_, e1, args) -> e1::args
   | CallSpecial (_, _, args) -> args
+(*e: function [[Il.exps_of_instr]] *)
 
 (* opti: could use a set *)
 let rec rvars_of_exp e =
@@ -349,20 +408,31 @@ let rec rvars_of_exp e =
 and rvars_of_exps xs =
   xs |> List.map (rvars_of_exp) |> List.flatten
 
+(*s: function [[Il.rvars_of_instr]] *)
 let rvars_of_instr x =
   let exps = exps_of_instr x in
   rvars_of_exps exps
+(*e: function [[Il.rvars_of_instr]] *)
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+(*s: function [[Il.str_of_name]] *)
 let str_of_name ((s, _tok), _sid) = s
+(*e: function [[Il.str_of_name]] *)
 
+(*s: function [[Il.find_node]] *)
 let find_node f cfg =
   cfg#nodes#tolist |> Common.find_some (fun (nodei, node) ->
     if f node then Some nodei else None
   )
+(*e: function [[Il.find_node]] *)
 
+(*s: function [[Il.find_exit]] *)
 let find_exit cfg = find_node (fun node -> node.n = Exit) cfg
+(*e: function [[Il.find_exit]] *)
+(*s: function [[Il.find_enter]] *)
 let find_enter cfg = find_node (fun node -> node.n = Enter) cfg
+(*e: function [[Il.find_enter]] *)
 
+(*e: pfff/lang_GENERIC/analyze/il.ml *)

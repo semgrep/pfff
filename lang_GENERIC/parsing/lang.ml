@@ -1,3 +1,4 @@
+(*s: pfff/lang_GENERIC/parsing/lang.ml *)
 (* Yoann Padioleau
  *
  * Copyright (C) 2019 r2c
@@ -21,6 +22,7 @@ module FT = File_type
 (* Types *)
 (*****************************************************************************)
 
+(*s: type [[Lang.t (pfff/lang_GENERIC/parsing/lang.ml)]] *)
 type t = 
   (* Python will start in Python3 mode and fall back to Python2 in case
    * of error. 
@@ -32,11 +34,13 @@ type t =
   | Go
   | C
   | ML
+(*e: type [[Lang.t (pfff/lang_GENERIC/parsing/lang.ml)]] *)
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
 
+(*s: constant [[Lang.list_of_lang]] *)
 let list_of_lang = [
     "py", Python;
     "python", Python;
@@ -54,12 +58,18 @@ let list_of_lang = [
     "ocaml", ML;
     "java", Java;
   ]
+(*e: constant [[Lang.list_of_lang]] *)
 
+(*s: constant [[Lang.lang_of_string_map]] *)
 let lang_of_string_map = Common.hash_of_list list_of_lang
+(*e: constant [[Lang.lang_of_string_map]] *)
 
+(*s: function [[Lang.lang_of_string_opt]] *)
 let lang_of_string_opt x = Hashtbl.find_opt lang_of_string_map (String.lowercase_ascii x)
+(*e: function [[Lang.lang_of_string_opt]] *)
 
 
+(*s: function [[Lang.langs_of_filename]] *)
 let langs_of_filename filename =
  let typ = File_type.file_type_of_file filename in
  match typ with
@@ -71,7 +81,9 @@ let langs_of_filename filename =
  | FT.PL (FT.Java) -> [Java]
  | FT.PL (FT.Go) -> [Go]
  | _ -> []
+(*e: function [[Lang.langs_of_filename]] *)
 
+(*s: function [[Lang.string_of_lang]] *)
 let string_of_lang = function
   | Python -> "Python"
   | Python2 -> "Python2"
@@ -81,7 +93,9 @@ let string_of_lang = function
   | C -> "C"
   | ML -> "ML"
   | Go -> "Golang"
+(*e: function [[Lang.string_of_lang]] *)
 
+(*s: function [[Lang.ext_of_lang]] *)
 (* Manually pulled from file_type_of_file2 in file_type.ml *)
 let ext_of_lang = function
   | Python | Python2 | Python3 -> ["py"; "pyi"]
@@ -90,13 +104,17 @@ let ext_of_lang = function
   | C -> ["c"]
   | ML -> ["mli"; "ml"; "mly"; "mll"]
   | Go -> ["go"]
+(*e: function [[Lang.ext_of_lang]] *)
 
+(*s: function [[Lang.find_source]] *)
 let find_source lang xs = 
   Common.files_of_dir_or_files_no_vcs_nofilter xs 
    |> List.filter (fun filename ->
      List.mem lang (langs_of_filename filename)
   ) |> Common.sort
+(*e: function [[Lang.find_source]] *)
 
+(*s: function [[Lang.files_of_dirs_or_files]] *)
 (* this is used by sgrep, so it is probably better to keep the logic 
  * simple and not perform any Skip_code filtering (bento already does that)
  *) 
@@ -107,3 +125,5 @@ let files_of_dirs_or_files lang xs =
    * or not at all. Better just do one thing here.
    *)
   find_source lang xs
+(*e: function [[Lang.files_of_dirs_or_files]] *)
+(*e: pfff/lang_GENERIC/parsing/lang.ml *)

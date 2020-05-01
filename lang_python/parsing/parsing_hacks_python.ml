@@ -1,3 +1,4 @@
+(*s: pfff/lang_python/parsing/parsing_hacks_python.ml *)
 (* Yoann Padioleau
  *
  * Copyright (C) 2019 r2c
@@ -50,11 +51,14 @@ module T = Parser_python
 (*****************************************************************************)
 
 
+(*s: function [[Parsing_hacks_python.add_dedent_aux]] *)
 let rec add_dedent_aux num ii xs =
   if num <= 0 
   then xs 
   else T.DEDENT ii::add_dedent_aux (num - 1) ii xs
+(*e: function [[Parsing_hacks_python.add_dedent_aux]] *)
 
+(*s: function [[Parsing_hacks_python.add_dedent]] *)
 let add_dedent num ii xs =
   if num <= 0 
   then xs 
@@ -63,10 +67,12 @@ let add_dedent num ii xs =
    * add_dedent_aux.
    *)
   else T.NEWLINE ii::add_dedent_aux num ii xs
+(*e: function [[Parsing_hacks_python.add_dedent]] *)
 
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
+(*s: function [[Parsing_hacks_python.fix_tokens]] *)
 let fix_tokens toks =
   let rec aux indent xs =
     match xs with
@@ -83,4 +89,6 @@ let fix_tokens toks =
         x::aux new_indent xs
   in
   aux 0 toks
+(*e: function [[Parsing_hacks_python.fix_tokens]] *)
 
+(*e: pfff/lang_python/parsing/parsing_hacks_python.ml *)

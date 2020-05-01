@@ -1,3 +1,5 @@
+(*s: pfff/lang_GENERIC/parsing/ast.ml *)
+(*s: type [[Ast.program]] *)
 (* 
  * See pfff/h_program-lang/ast_generic.ml.
  *
@@ -11,11 +13,25 @@
  *)
 
 type program = Ast_generic.program
+(*e: type [[Ast.program]] *)
 
+(*s: type [[Ast.name]] *)
 type name = Ast_generic.name
+(*e: type [[Ast.name]] *)
+(*s: type [[Ast.ident]] *)
 type ident = Ast_generic.ident
+(*e: type [[Ast.ident]] *)
+(*s: type [[Ast.id_info]] *)
 type id_info = Ast_generic.id_info
+(*e: type [[Ast.id_info]] *)
+(*s: type [[Ast.expr]] *)
 type expr = Ast_generic.expr
+(*e: type [[Ast.expr]] *)
+(*s: type [[Ast.stmt]] *)
 type stmt = Ast_generic.stmt
+(*e: type [[Ast.stmt]] *)
 
+(*s: type [[Ast.any]] *)
 type any = Ast_generic.any
+(*e: type [[Ast.any]] *)
+(*e: pfff/lang_GENERIC/parsing/ast.ml *)
