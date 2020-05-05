@@ -28,18 +28,19 @@ module T = Parser_python
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
-(*s: type [[Parse_python.program_and_tokens (pfff/lang_python/parsing/parse_python.ml)]] *)
+(*s: type [[Parse_python.program_and_tokens]] *)
+(* the token list contains also the comment-tokens *)
 type program_and_tokens = 
   Ast_python.program option * Parser_python.token list
-(*e: type [[Parse_python.program_and_tokens (pfff/lang_python/parsing/parse_python.ml)]] *)
+(*e: type [[Parse_python.program_and_tokens]] *)
 
-(*s: type [[Parse_python.parsing_mode (pfff/lang_python/parsing/parse_python.ml)]] *)
+(*s: type [[Parse_python.parsing_mode]] *)
 type parsing_mode =
   | Python2
   | Python3
   (* will start with Python3 and fallback to Python2 in case of an error *)
-  | Python 
-(*e: type [[Parse_python.parsing_mode (pfff/lang_python/parsing/parse_python.ml)]] *)
+  | Python
+(*e: type [[Parse_python.parsing_mode]] *)
 
 (*****************************************************************************)
 (* Error diagnostic  *)

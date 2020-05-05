@@ -1,7 +1,8 @@
 (*s: pfff/lang_GENERIC/analyze/dataflow_tainting.ml *)
+(*s: pad/r2c copyright *)
 (* Yoann Padioleau
  *
- * Copyright (C) 2020 r2c
+ * Copyright (C) 2019-2020 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -13,6 +14,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
+(*e: pad/r2c copyright *)
 open Common
 open Il
 
@@ -34,11 +36,13 @@ module VarMap = Dataflow.VarMap
 (* Types *)
 (*****************************************************************************)
 
-(*s: type [[Dataflow_tainting.mapping (pfff/lang_GENERIC/analyze/dataflow_tainting.ml)]] *)
+(*s: type [[Dataflow_tainting.mapping]] *)
+(* map for each node/var whether a variable is "tainted" *)
 type mapping = unit Dataflow.mapping
-(*e: type [[Dataflow_tainting.mapping (pfff/lang_GENERIC/analyze/dataflow_tainting.ml)]] *)
+(*e: type [[Dataflow_tainting.mapping]] *)
 
-(*s: type [[Dataflow_tainting.config (pfff/lang_GENERIC/analyze/dataflow_tainting.ml)]] *)
+(*s: type [[Dataflow_tainting.config]] *)
+(* this can use semgrep patterns under the hood *)
 type config = {
   is_source: Il.instr -> bool;
   is_sink: Il.instr -> bool;
@@ -46,7 +50,7 @@ type config = {
 
   found_tainted_sink: Il.instr -> unit Dataflow.env -> unit;
 }
-(*e: type [[Dataflow_tainting.config (pfff/lang_GENERIC/analyze/dataflow_tainting.ml)]] *)
+(*e: type [[Dataflow_tainting.config]] *)
 
 module DataflowX = Dataflow.Make (struct
   type node = F.node
@@ -74,10 +78,10 @@ let option_to_varmap = function
 (*****************************************************************************)
 (* Transfer *)
 (*****************************************************************************)
-(*s: constant [[Dataflow_tainting.union]] *)
 (* Not sure we can use the Gen/Kill framework here.
  *)
 
+(*s: constant [[Dataflow_tainting.union]] *)
 let union = 
   Dataflow.varmap_union (fun () () -> ())
 (*e: constant [[Dataflow_tainting.union]] *)

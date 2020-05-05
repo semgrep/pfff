@@ -39,16 +39,9 @@ let action = ref ""
 (*e: constant [[Main.action]] *)
 
 (*****************************************************************************)
-(* Some debugging functions *)
-(*****************************************************************************)
-
-(*****************************************************************************)
-(* Helpers *)
-(*****************************************************************************)
-
-(*****************************************************************************)
 (* Main action *)
 (*****************************************************************************)
+
 (*s: function [[Main.main_action]] *)
 let main_action _xs = 
   raise Todo 
@@ -57,6 +50,7 @@ let main_action _xs =
 (*****************************************************************************)
 (* Extra Actions *)
 (*****************************************************************************)
+
 (*s: function [[Main.test_json_pretty_printer]] *)
 let test_json_pretty_printer file =
   let json = Json_io.load_json file in
@@ -128,7 +122,6 @@ let all_actions () =
   []
 (*e: function [[Main.all_actions]] *)
 
-
 (*s: function [[Main.options]] *)
 let options () = [
   "-verbose", Arg.Set verbose, 
@@ -161,18 +154,13 @@ let options () = [
   ]
 (*e: function [[Main.options]] *)
 
-
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 
 (*s: function [[Main.main]] *)
 let main () = 
-
   Gc.set {(Gc.get ()) with Gc.stack_limit = 1000 * 1024 * 1024};
-  (* Common_extra.set_link(); 
-     let argv = Features.Distribution.mpi_adjust_argv Sys.argv in
-  *)
 
   let usage_msg = 
     "Usage: " ^ Common2.basename Sys.argv.(0) ^ 

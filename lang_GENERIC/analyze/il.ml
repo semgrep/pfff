@@ -1,18 +1,20 @@
 (*s: pfff/lang_GENERIC/analyze/il.ml *)
+(*s: pad/r2c copyright *)
 (* Yoann Padioleau
  *
- * Copyright (C) 2020 r2c
+ * Copyright (C) 2019-2020 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
+(*e: pad/r2c copyright *)
 module G = Ast_generic
 
 (*****************************************************************************)
@@ -395,6 +397,7 @@ let exps_of_instr x =
   | CallSpecial (_, _, args) -> args
 (*e: function [[Il.exps_of_instr]] *)
 
+(*s: function [[Il.rvars_of_exp]] *)
 (* opti: could use a set *)
 let rec rvars_of_exp e =
   match e.e with
@@ -407,6 +410,7 @@ let rec rvars_of_exp e =
   
 and rvars_of_exps xs =
   xs |> List.map (rvars_of_exp) |> List.flatten
+(*e: function [[Il.rvars_of_exp]] *)
 
 (*s: function [[Il.rvars_of_instr]] *)
 let rvars_of_instr x =

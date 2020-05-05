@@ -86,17 +86,14 @@ type token_kind =
 (*s: exception [[Parse_info.Lexical_error]] *)
 (* see also Parsing.Parse_error and Failure "empty token" raised by Lexing *)
 exception Lexical_error of string * t
-(* better than Parsing.Parse_error, which does not have location information *)
 (*e: exception [[Parse_info.Lexical_error]] *)
 (*s: exception [[Parse_info.Parsing_error]] *)
 (* better than Parsing.Parse_error, which does not have location information *)
 exception Parsing_error of t
-(* when convert from CST to AST *)
 (*e: exception [[Parse_info.Parsing_error]] *)
 (*s: exception [[Parse_info.Ast_builder_error]] *)
 (* when convert from CST to AST *)
 exception Ast_builder_error of string * t
-(* other stuff *)
 (*e: exception [[Parse_info.Ast_builder_error]] *)
 (*s: exception [[Parse_info.Other_error]] *)
 (* other stuff *)
