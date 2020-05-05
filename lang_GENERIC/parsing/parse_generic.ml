@@ -1,7 +1,8 @@
 (*s: pfff/lang_GENERIC/parsing/parse_generic.ml *)
+(*s: pad/r2c copyright *)
 (* Yoann Padioleau
  *
- * Copyright (C) 2019 r2c
+ * Copyright (C) 2019-2020 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -13,6 +14,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
+(*e: pad/r2c copyright *)
 open Common
 
 (*****************************************************************************)
@@ -34,7 +36,7 @@ let lang_to_python_parsing_mode = function
 (*e: function [[Parse_generic.lang_to_python_parsing_mode]] *)
 
 (*****************************************************************************)
-(* Entry point *)
+(* Entry points *)
 (*****************************************************************************)
 
 (*s: function [[Parse_generic.parse_with_lang]] *)

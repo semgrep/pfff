@@ -1,17 +1,20 @@
 (*s: pfff/lang_GENERIC/parsing/lang.ml *)
+(*s: pad/r2c copyright *)
 (* Yoann Padioleau
  *
- * Copyright (C) 2019 r2c
+ * Copyright (C) 2019-2020 r2c
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License (GPL)
- * version 2 as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * file license.txt for more details.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1 as published by the Free Software Foundation, with the
+ * special exception on linking described in file license.txt.
+ * 
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
+ * license.txt for more details.
  *)
+(*e: pad/r2c copyright *)
 module FT = File_type
 
 (*****************************************************************************)
@@ -22,19 +25,18 @@ module FT = File_type
 (* Types *)
 (*****************************************************************************)
 
-(*s: type [[Lang.t (pfff/lang_GENERIC/parsing/lang.ml)]] *)
+(*s: type [[Lang.t]] *)
 type t = 
-  (* Python will start in Python3 mode and fall back to Python2 in case
-   * of error. 
-   * Python2 and Python3 are for specific version of Python  (no fallback) 
-   *)
+  (* Python will start with Python3 mode and fall back to Python2 in case
+   * of error. Python2 and Python3 are for specific version of Python 
+   * (no fallback) *)
   | Python | Python2 | Python3
   | Javascript
   | Java
   | Go
   | C
   | ML
-(*e: type [[Lang.t (pfff/lang_GENERIC/parsing/lang.ml)]] *)
+(*e: type [[Lang.t]] *)
 
 (*****************************************************************************)
 (* Helpers *)

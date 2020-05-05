@@ -18,6 +18,6 @@ type config = {
 
 (*s: signature [[Dataflow_tainting.fixpoint]] *)
 (* main entry point *)
-val fixpoint : config ->Il.cfg -> mapping
+val fixpoint : config -> Il.cfg -> mapping
 (*e: signature [[Dataflow_tainting.fixpoint]] *)
 (*e: pfff/lang_GENERIC/analyze/dataflow_tainting.mli *)

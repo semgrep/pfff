@@ -1,17 +1,11 @@
 (*s: pfff/commons/common.mli *)
 
-(*s: signature [[Common.TODOOPERATOR]] *)
+(*s: signature equality operators *)
 val (=|=) : int    -> int    -> bool
-(*e: signature [[Common.TODOOPERATOR]] *)
-(*s: signature [[Common.TODOOPERATOR (pfff/commons/common.mli)]] *)
 val (=<=) : char   -> char   -> bool
-(*e: signature [[Common.TODOOPERATOR (pfff/commons/common.mli)]] *)
-(*s: signature [[Common.TODOOPERATOR (pfff/commons/common.mli)2]] *)
 val (=$=) : string -> string -> bool
-(*e: signature [[Common.TODOOPERATOR (pfff/commons/common.mli)2]] *)
-(*s: signature [[Common.TODOOPERATOR (pfff/commons/common.mli)3]] *)
 val (=:=) : bool   -> bool   -> bool
-(*e: signature [[Common.TODOOPERATOR (pfff/commons/common.mli)3]] *)
+(*e: signature equality operators *)
 
 (*s: signature [[Common.TODOOPERATOR (pfff/commons/common.mli)4]] *)
 val (=*=): 'a -> 'a -> bool
@@ -68,30 +62,18 @@ val s_to_i : string -> int
 val null_string : string -> bool
 (*e: signature [[Common.null_string]] *)
 
-(*s: signature [[Common.TODOOPERATOR (pfff/commons/common.mli)5]] *)
+(*s: signature match operator *)
 val (=~) : string -> string -> bool
-(*e: signature [[Common.TODOOPERATOR (pfff/commons/common.mli)5]] *)
-(*s: signature [[Common.matched1]] *)
+(*e: signature match operator *)
+(*s: signature matched functions *)
 val matched1 : string -> string
-(*e: signature [[Common.matched1]] *)
-(*s: signature [[Common.matched2]] *)
 val matched2 : string -> string * string
-(*e: signature [[Common.matched2]] *)
-(*s: signature [[Common.matched3]] *)
 val matched3 : string -> string * string * string
-(*e: signature [[Common.matched3]] *)
-(*s: signature [[Common.matched4]] *)
 val matched4 : string -> string * string * string * string
-(*e: signature [[Common.matched4]] *)
-(*s: signature [[Common.matched5]] *)
 val matched5 : string -> string * string * string * string * string
-(*e: signature [[Common.matched5]] *)
-(*s: signature [[Common.matched6]] *)
 val matched6 : string -> string * string * string * string * string * string
-(*e: signature [[Common.matched6]] *)
-(*s: signature [[Common.matched7]] *)
 val matched7 : string -> string * string * string * string * string * string * string
-(*e: signature [[Common.matched7]] *)
+(*e: signature matched functions *)
 
 (*s: signature [[Common.spf]] *)
 val spf : ('a, unit, string) format -> 'a

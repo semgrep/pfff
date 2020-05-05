@@ -1,7 +1,8 @@
 (*s: pfff/lang_python/parsing/parsing_hacks_python.ml *)
+(*s: pad/r2c copyright *)
 (* Yoann Padioleau
  *
- * Copyright (C) 2019 r2c
+ * Copyright (C) 2019-2020 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -13,6 +14,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
+(*e: pad/r2c copyright *)
 
 module T = Parser_python
 
@@ -49,7 +51,6 @@ module T = Parser_python
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-
 
 (*s: function [[Parsing_hacks_python.add_dedent_aux]] *)
 let rec add_dedent_aux num ii xs =
