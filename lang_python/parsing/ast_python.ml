@@ -71,34 +71,31 @@
  * transformation field that makes possible spatch on the code.
  *)
 type tok = Parse_info.t
- (* with tarzan *)
 (*e: type [[Ast_python.tok]] *)
-
+ (* with tarzan *)
 (*s: type [[Ast_python.wrap]] *)
 (* a shortcut to annotate some information with token/position information *)
 type 'a wrap = 'a * tok
- (* with tarzan *)
 (*e: type [[Ast_python.wrap]] *)
-
+ (* with tarzan *)
 (*s: type [[Ast_python.bracket]] *)
 (* round(), square[], curly{}, angle<> brackets *)
 type 'a bracket = tok * 'a * tok
- (* with tarzan *)
 (*e: type [[Ast_python.bracket]] *)
-
+ (* with tarzan *)
 (* ------------------------------------------------------------------------- *)
 (* Name *)
 (* ------------------------------------------------------------------------- *)
 (*s: type [[Ast_python.name]] *)
 type name = string wrap
- (* with tarzan *)
 (*e: type [[Ast_python.name]] *)
+ (* with tarzan *)
 
 (*s: type [[Ast_python.dotted_name]] *)
 (* note that name can be also the special "*" in an import context. *)
 type dotted_name = name list
- (* with tarzan *)
 (*e: type [[Ast_python.dotted_name]] *)
+ (* with tarzan *)
 
 (*s: type [[Ast_python.module_name]] *)
 type module_name = 
@@ -121,8 +118,8 @@ type resolved_name =
 
   (* default case *)
   | NotResolved
- (* with tarzan *)
 (*e: type [[Ast_python.resolved_name]] *)
+ (* with tarzan *)
 
 (*****************************************************************************)
 (* Expression *)
@@ -308,8 +305,8 @@ and type_ = expr
 (* used in inheritance, to allow default value for metaclass *)
 (*s: type [[Ast_python.type_parent]] *)
 and type_parent = argument
-  (* with tarzan *)
 (*e: type [[Ast_python.type_parent]] *)
+  (* with tarzan *)
 
 (*****************************************************************************)
 (* Pattern *)
@@ -317,9 +314,9 @@ and type_parent = argument
 (*s: type [[Ast_python.pattern]] *)
 (* Name, or Tuple? or more? *)
 type pattern = expr
-  (* with tarzan *)
 (*e: type [[Ast_python.pattern]] *)
-  
+  (* with tarzan *)
+
 (*****************************************************************************)
 (* Statement *)
 (*****************************************************************************)
@@ -437,8 +434,8 @@ and alias = name (* name *) * name option (* asname *)
 (*****************************************************************************)
 (*s: type [[Ast_python.program]] *)
 type program = stmt list
-  (* with tarzan *)
 (*e: type [[Ast_python.program]] *)
+  (* with tarzan *)
 
 (*****************************************************************************)
 (* Any *)
@@ -451,8 +448,8 @@ type any =
   | Program of program
 
   | DictElem of dictorset_elt
- (* with tarzan *)
 (*e: type [[Ast_python.any]] *)
+ (* with tarzan *)
 
 (*****************************************************************************)
 (* Wrappers *)

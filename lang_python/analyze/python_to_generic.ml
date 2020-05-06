@@ -132,7 +132,7 @@ let expr_context =
   | Param -> ()
 (*e: function [[Python_to_generic.expr_context]] *)
 
-
+(*s: function [[Python_to_generic.expr]] *)
 let rec expr (x: expr) =
   match x with
   | Bool v1 -> 
@@ -276,7 +276,9 @@ let rec expr (x: expr) =
       G.Await (t, v1)
   | Repr v1 -> let (_, v1, _) = bracket expr v1 in
       G.OtherExpr (G.OE_Repr, [G.E v1])
+(*e: function [[Python_to_generic.expr]] *)
 
+(*s: function [[Python_to_generic.argument]] *)
 and argument = function
   | Arg e -> let e = expr e in 
       G.Arg e
@@ -290,7 +292,9 @@ and argument = function
   | ArgComp (e, xs) ->
       let e = expr e in
       G.ArgOther (G.OA_ArgComp, (G.E e)::list for_if xs)
+(*e: function [[Python_to_generic.argument]] *)
 
+(*s: function [[Python_to_generic.for_if]] *)
 and for_if = function
   | CompFor (e1, e2) -> 
       let e1 = expr e1 in let e2 = expr e2 in
@@ -298,8 +302,9 @@ and for_if = function
   | CompIf (e1) -> 
       let e1 = expr e1 in
       G.E (G.OtherExpr (G.OE_CompIf, [G.E e1]))
+(*e: function [[Python_to_generic.for_if]] *)
 
-
+(*s: function [[Python_to_generic.dictorset_elt]] *)
 and dictorset_elt = function
   | KeyVal (v1, v2) -> let v1 = expr v1 in let v2 =  expr v2 in 
       G.Tuple [v1; v2]
@@ -309,19 +314,24 @@ and dictorset_elt = function
   | PowInline (v1) -> 
       let v1 = expr v1 in
       G.Call (G.IdSpecial (G.Spread, fake "spread"), [G.expr_to_arg v1])
-  
+(*e: function [[Python_to_generic.dictorset_elt]] *)
+
+(*s: function [[Python_to_generic.number]] *)
 and number =
   function
   | Int v1     -> let v1 = wrap id v1 in G.Int v1
   | LongInt v1 -> let v1 = wrap id v1 in G.Int v1
   | Float v1   -> let v1 = wrap id v1 in G.Float v1
   | Imag v1    -> let v1 = wrap string v1 in G.Imag v1
+(*e: function [[Python_to_generic.number]] *)
 
-
+(*s: function [[Python_to_generic.boolop]] *)
 and boolop = function 
   | And -> G.And
   | Or  -> G.Or
+(*e: function [[Python_to_generic.boolop]] *)
 
+(*s: function [[Python_to_generic.operator]] *)
 and operator =
   function
   | Add      -> G.Plus
@@ -337,13 +347,17 @@ and operator =
   | BitXor   -> G.BitXor
   | BitAnd   -> G.BitAnd
   | MatMult  -> G.MatMult
+(*e: function [[Python_to_generic.operator]] *)
 
+(*s: function [[Python_to_generic.unarop]] *)
 and unaryop = function 
   | Invert -> Right G.OE_Invert
   | Not    -> Left G.Not
   | UAdd   -> Left G.Plus
   | USub   -> Left G.Minus
+(*e: function [[Python_to_generic.unarop]] *)
 
+(*s: function [[Python_to_generic.cmpop]] *)
 and cmpop (a,b) =
   match a with
   | Eq    -> Left G.Eq, b
@@ -356,17 +370,23 @@ and cmpop (a,b) =
   | IsNot -> Left G.NotPhysEq, b
   | In    -> Right G.OE_In, b
   | NotIn -> Right G.OE_NotIn, b
+(*e: function [[Python_to_generic.cmpop]] *)
 
+(*s: function [[Python_to_generic.comprehension]] *)
 and comprehension f v1 v2 =
   let v1 = f v1 in
   let v2 = list for_if v2 in
   [G.OtherExpr (G.OE_CompForIf, (G.E v1)::v2)]
+(*e: function [[Python_to_generic.comprehension]] *)
 
+(*s: function [[Python_to_generic.comprehension2]] *)
 and comprehension2 f v1 v2 =
   let v1 = f v1 in
   let v2 = list for_if v2 in
   [G.OtherExpr (G.OE_CompForIf, (G.E v1)::v2)]
+(*e: function [[Python_to_generic.comprehension2]] *)
 
+(*s: function [[Python_to_generic.slice]] *)
 and slice e =
   function
   | Index v1 -> let v1 = expr v1 in G.ArrayAccess (e, v1)
@@ -376,7 +396,9 @@ and slice e =
       and v3 = option expr v3
       in
       G.SliceAccess (e, v1, v2, v3)
+(*e: function [[Python_to_generic.slice]] *)
 
+(*s: function [[Python_to_generic.parameters]] *)
 and parameters xs =
   xs |> List.map (function
   | ParamClassic ((n, topt), eopt) ->
@@ -398,16 +420,21 @@ and parameters xs =
    | ParamSingleStar tok ->
      G.OtherParam (G.OPO_SingleStarParam, [G.Tk tok])
   )
- 
+(*e: function [[Python_to_generic.parameters]] *)
 
+(*s: function [[Python_to_generic.type_]] *)
 and type_ v = 
   let v = expr v in
   G.expr_to_type v
+(*e: function [[Python_to_generic.type_]] *)
 
+(*s: function [[Python_to_generic.type_parent]] *)
 and type_parent v = 
   let v = argument v in
   G.OtherType (G.OT_Arg, [G.Ar v])
+(*e: function [[Python_to_generic.type_parent]] *)
 
+(*s: function [[Python_to_generic.list_stmt1]] *)
 and list_stmt1 xs =
   match (list stmt xs) with
   (* bugfix: We do not want actually to optimize and remove the
@@ -439,9 +466,11 @@ and list_stmt1 xs =
    * hacky ...
    *)
   | [G.ExprStmt (G.Id (_)) as x] -> x
-
   | xs -> G.Block xs
+(*e: function [[Python_to_generic.list_stmt1]] *)
 
+
+(*s: function [[Python_to_generic.stmt_aux]] *)
 and stmt_aux x =
   match x with
   | FunctionDef ((v1, v2, v3, v4, v5)) ->
@@ -466,6 +495,7 @@ and stmt_aux x =
                   cbody = fake_bracket (v3 |> List.map(fun x ->G.FieldStmt x);)
                 } in
       [G.DefStmt (ent, G.ClassDef def)]
+
 
   (* TODO: should turn some of those in G.LocalDef (G.VarDef ! ) *)
   | Assign ((v1, v2, v3)) -> 
@@ -609,13 +639,20 @@ and stmt_aux x =
       let id = Name (("exec", tok), Load, ref NotResolved) in
       stmt_aux (ExprStmt (Call (id, [Arg e])))
 
+(*e: function [[Python_to_generic.stmt_aux]] *)
+
+(*s: function [[Python_to_generic.stmt]] *)
 and stmt x = 
   G.stmt1 (stmt_aux x)
+(*e: function [[Python_to_generic.stmt]] *)
 
+(*s: function [[Python_to_generic.pattern]] *)
 and pattern e = 
   let e = expr e in
   G.expr_to_pattern e
+(*e: function [[Python_to_generic.pattern]] *)
 
+(*s: function [[Python_to_generic.excepthandler]] *)
 and excepthandler =
   function
   | ExceptHandler ((t, v1, v2, v3)) ->
@@ -633,20 +670,27 @@ and excepthandler =
       | Some e, Some n ->
          G.PatVar (G.expr_to_type e, Some (n, G.empty_id_info ()))
       ), v3
+(*e: function [[Python_to_generic.excepthandler]] *)
 
+(*s: function [[Python_to_generic.expr_to_attribute]] *)
 and expr_to_attribute v  = 
   match v with
   | G.Call (G.Id (id, _), args) -> 
       G.NamedAttr (id, G.empty_id_info (), args)
   | _ -> G.OtherAttribute (G.OA_Expr, [G.E v])
+(*e: function [[Python_to_generic.expr_to_attribute]] *)
 
+(*s: function [[Python_to_generic.decorator]] *)
 and decorator v = 
   let v = expr v in
   expr_to_attribute v
+(*e: function [[Python_to_generic.decorator]] *)
 
+(*s: function [[Python_to_generic.alias]] *)
 and alias (v1, v2) = 
   let v1 = name v1 and v2 = option name v2 in 
   v1, v2
+(*e: function [[Python_to_generic.alias]] *)
 
 (*s: function [[Python_to_generic.program]] *)
 let program v = 

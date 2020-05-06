@@ -4,8 +4,8 @@
 val vof_any: Ast_generic.any -> Ocaml.v
 (*e: signature [[Meta_ast.vof_any]] *)
 
-(*s: signature [[Meta_ast.vof_literal]] *)
 (* internals used by other dumpers, e.g., meta_il.ml *)
+(*s: signature [[Meta_ast.vof_literal]] *)
 val vof_literal: Ast_generic.literal -> Ocaml.v
 (*e: signature [[Meta_ast.vof_literal]] *)
 (*s: signature [[Meta_ast.vof_type_]] *)
