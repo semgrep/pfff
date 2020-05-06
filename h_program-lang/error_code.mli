@@ -94,9 +94,9 @@ val string_of_error_kind: error_kind -> string
 val check_id_of_error_kind: error_kind -> string
 (*e: signature [[Error_code.check_id_of_error_kind]] *)
 
-(*s: type [[Error_code.rank]] *)
 (* ranking *)
 
+(*s: type [[Error_code.rank]] *)
 type rank =
  | Never
  | OnlyStrict

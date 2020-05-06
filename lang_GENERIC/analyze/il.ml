@@ -82,17 +82,17 @@ module G = Ast_generic
 (*s: type [[Il.tok]] *)
 (* the classic *)
 type tok = G.tok
- (* with tarzan *)
 (*e: type [[Il.tok]] *)
+ (* with tarzan *)
 (*s: type [[Il.wrap]] *)
 type 'a wrap = 'a G.wrap
- (* with tarzan *)
 (*e: type [[Il.wrap]] *)
+ (* with tarzan *)
 (*s: type [[Il.bracket]] *)
 (* useful mainly for empty containers *)
 type 'a bracket = tok * 'a * tok
- (* with tarzan *)
 (*e: type [[Il.bracket]] *)
+ (* with tarzan *)
 
 (*****************************************************************************)
 (* Names *)
@@ -100,8 +100,8 @@ type 'a bracket = tok * 'a * tok
 
 (*s: type [[Il.ident]] *)
 type ident = string wrap
- (* with tarzan *)
 (*e: type [[Il.ident]] *)
+ (* with tarzan *)
 
 (*s: type [[Il.name]] *)
 (* 'sid' below is the result of name resolution and variable disambiguation
@@ -113,8 +113,8 @@ type ident = string wrap
  * 
  *)
 type name = ident * G.sid
- (* with tarzan *)
 (*e: type [[Il.name]] *)
+ (* with tarzan *)
 
 (*****************************************************************************)
 (* Lvalue *)
@@ -205,8 +205,8 @@ and exp = {
 
 (*s: type [[Il.argument]] *)
 type argument = exp
- (* with tarzan *)
 (*e: type [[Il.argument]] *)
+ (* with tarzan *)
 
 (*****************************************************************************)
 (* Instruction *)
@@ -260,8 +260,8 @@ type instr = {
   and anonymous_entity =
     | Lambda of G.function_definition
     | AnonClass of G.class_definition
- (* with tarzan *)
 (*e: type [[Il.anonymous_entity]] *)
+ (* with tarzan *)
 
 (*****************************************************************************)
 (* Statement *)
@@ -306,8 +306,8 @@ type stmt = {
 
 (*s: type [[Il.label]] *)
 and label = ident * G.sid
- (* with tarzan *)
 (*e: type [[Il.label]] *)
+ (* with tarzan *)
 
 (*****************************************************************************)
 (* Defs *)
@@ -340,8 +340,8 @@ type node = {
     | NThrow  of tok * exp
 
     | NOther of other_stmt
-(* with tarzan *)
 (*e: type [[Il.node_kind]] *)
+(* with tarzan *)
 
 (*s: type [[Il.edge]] *)
 (* For now there is just one kind of edge. Later we may have more, 

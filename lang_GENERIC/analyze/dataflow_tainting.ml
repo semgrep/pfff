@@ -52,6 +52,7 @@ type config = {
 }
 (*e: type [[Dataflow_tainting.config]] *)
 
+(*s: module [[Dataflow.Make(Il)]] *)
 module DataflowX = Dataflow.Make (struct
   type node = F.node
   type edge = F.edge
@@ -59,6 +60,7 @@ module DataflowX = Dataflow.Make (struct
   let short_string_of_node n = 
         Meta_il.short_string_of_node_kind n.F.n
 end)
+(*e: module [[Dataflow.Make(Il)]] *)
 
 (*****************************************************************************)
 (* Helpers *)
@@ -90,6 +92,7 @@ let diff =
   Dataflow.varmap_diff (fun () () -> ()) (fun () -> true)
 (*e: constant [[Dataflow_tainting.diff]] *)
 
+(*s: function [[Dataflow_tainting.transfer]] *)
 let (transfer: config -> flow:F.cfg -> unit Dataflow.transfn) =
  fun config ~flow ->
   (* the transfer function to update the mapping at node index ni *)
@@ -191,12 +194,13 @@ let (transfer: config -> flow:F.cfg -> unit Dataflow.transfn) =
 
   let out' = diff (union in' gen_ni) kill_ni in
   {D. in_env = in'; out_env = out'}
-
+(*e: function [[Dataflow_tainting.transfer]] *)
 
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
 
+(*s: function [[Dataflow_tainting.fixpoint]] *)
 let (fixpoint: config -> F.cfg -> mapping) = fun config flow ->
   DataflowX.fixpoint
     ~eq:(fun () () -> true)
@@ -205,4 +209,6 @@ let (fixpoint: config -> F.cfg -> mapping) = fun config flow ->
     (* tainting is a forward analysis! *)
     ~forward:true
     ~flow
+(*e: function [[Dataflow_tainting.fixpoint]] *)
+
 (*e: pfff/lang_GENERIC/analyze/dataflow_tainting.ml *)

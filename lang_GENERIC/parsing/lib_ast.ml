@@ -41,7 +41,6 @@ let ii_of_any any =
   extract_info_visitor (fun visitor -> visitor any)
 (*e: function [[Lib_ast.ii_of_any]] *)
 
-
 (*****************************************************************************)
 (* Abstract position *)
 (*****************************************************************************)

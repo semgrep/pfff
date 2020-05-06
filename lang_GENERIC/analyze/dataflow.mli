@@ -6,8 +6,12 @@ type nodei = int
 (*s: type [[Dataflow.var]] *)
 type var = string
 (*e: type [[Dataflow.var]] *)
+(*s: module [[Dataflow.VarMap]] *)
 module VarMap : Map.S with type key = String.t
+(*e: module [[Dataflow.VarMap]] *)
+(*s: module [[Dataflow.VarSet]] *)
 module VarSet : Set.S with type elt = String.t
+(*e: module [[Dataflow.VarSet]] *)
 
 (* Return value of a dataflow analysis.
  * The array is indexed by nodei.
@@ -51,7 +55,9 @@ val varmap_diff:
 (* common/useful 'a for mapping: a set of nodes (via their indices),
  * used for example in the reaching analysis.
  *)
+(*s: module [[Dataflow.NodeiSet]] *)
 module NodeiSet : Set.S with type elt = Int.t
+(*e: module [[Dataflow.NodeiSet]] *)
 (*s: signature [[Dataflow.union_env]] *)
 (* helpers *)
 val union_env : NodeiSet.t env -> NodeiSet.t env -> NodeiSet.t env
@@ -76,12 +82,15 @@ val ns_to_str : NodeiSet.t -> string
 (* we use now a functor so we can reuse the same code for dataflow on
  * the IL (Il.cfg) or generic AST (Controlflow.flow)
  *)
+(*s: module type [[Dataflow.Flow]] *)
 module type Flow = sig
   type node
   type edge
   type flow = (node, edge) Ograph_extended.ograph_mutable
   val short_string_of_node: node -> string
 end
+(*e: module type [[Dataflow.Flow]] *)
+(*s: functor signature [[Dataflow.Make]] *)
 module Make (F: Flow) : sig
 
 (* main entry point *)
@@ -99,4 +108,5 @@ val new_node_array: F.flow -> 'a -> 'a array
 val display_mapping :
   F.flow -> 'a mapping -> ('a -> string) -> unit
 end
+(*e: functor signature [[Dataflow.Make]] *)
 (*e: pfff/lang_GENERIC/analyze/dataflow.mli *)

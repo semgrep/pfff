@@ -114,14 +114,14 @@ open Common
  * transformation field that makes possible spatch on the code.
  *)
 type tok = Parse_info.t
- (* with tarzan *)
 (*e: type [[Ast_generic.tok]] *)
+ (* with tarzan *)
 
 (*s: type [[Ast_generic.wrap]] *)
 (* a shortcut to annotate some information with position information *)
 type 'a wrap = 'a * tok
- (* with tarzan *)
 (*e: type [[Ast_generic.wrap]] *)
+ (* with tarzan *)
 
 (*s: type [[Ast_generic.bracket]] *)
 (* Use for round(), square[], curly{}, and angle<> brackets. 
@@ -130,8 +130,8 @@ type 'a wrap = 'a * tok
  * something that can just be those brackets (e.g., an empty container).
  *)
 type 'a bracket = tok * 'a * tok
- (* with tarzan *)
 (*e: type [[Ast_generic.bracket]] *)
+ (* with tarzan *)
 
 (*****************************************************************************)
 (* Names *)
@@ -139,7 +139,6 @@ type 'a bracket = tok * 'a * tok
 
 (*s: type [[Ast_generic.ident]] *)
 type ident = string wrap
- (* with tarzan *)
 (*e: type [[Ast_generic.ident]] *)
 
 (*s: type [[Ast_generic.dotted_ident]] *)
@@ -1184,7 +1183,6 @@ and any =
 
   | Pr of program
 (*e: type [[Ast_generic.any]] *)
-
  (* with tarzan *)
 
 (*s: constant [[Ast_generic.special_multivardef_pattern]] *)
@@ -1271,13 +1269,12 @@ let basic_id_info resolved =
   }
 (*e: function [[Ast_generic.basic_id_info]] *)
 
-(*s: function [[Ast_generic.param_of_id]] *)
 (*
 let name_of_id id = 
   (id, empty_name_info), empty_id_info ()
 *)
 
-
+(*s: function [[Ast_generic.param_of_id]] *)
 let param_of_id id = { 
     pname = Some id;
     pdefault = None; ptype = None; pattrs = []; pinfo = 
@@ -1336,7 +1333,6 @@ let rec expr_to_pattern e =
 
 (*s: exception [[Ast_generic.NotAnExpr]] *)
 exception NotAnExpr
-(* sgrep: this is to treat pattern metavars as expr metavars *)
 (*e: exception [[Ast_generic.NotAnExpr]] *)
 (*s: function [[Ast_generic.pattern_to_expr]] *)
 (* sgrep: this is to treat pattern metavars as expr metavars *)
