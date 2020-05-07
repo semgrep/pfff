@@ -696,7 +696,16 @@ interpolated:
      { InterpolatedString ($2::mk_str $3::$4) }
 
 interpolant:
-/*(* "interpolant" is the "value" inside one of:
+/*(* Note that the f-string mini-language at
+   * https://docs.python.org/3/library/string.html#format-string-syntax
+   * simply states that this is parsed as an "expression"; we are now
+   * left trying to determine to which grammar rule an "expression"
+   * corresponds. However, testing with the cpython interpreter indicates
+   * that the testlist rule is what applies, as strings like:
+   *   f"{not True, 1}"
+   * are parsed by the interpreter.
+   *
+   * "interpolant" is the "value" inside one of:
    * f"{value}"
    * f"{value:format}"
    * f"{value!format}"
