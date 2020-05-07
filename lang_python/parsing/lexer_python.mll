@@ -128,6 +128,16 @@ let push_mode state mode = Common.push mode state.mode
 let pop_mode state = ignore(Common2.pop2 state.mode)
 let set_mode state mode = begin pop_mode state; push_mode state mode end
 
+let pr_mode mode = match mode with
+  | STATE_TOKEN -> pr2 "token"
+  | STATE_OFFSET -> pr2 "offset"
+  | STATE_UNDERSCORE_TOKEN -> pr2 "_token"
+  | STATE_IN_FSTRING_SINGLE -> pr2 "f'"
+  | STATE_IN_FSTRING_DOUBLE -> pr2 "f\""
+  | STATE_IN_FSTRING_TRIPLE -> pr2 "f\"\"\""
+
+let pr_state state = List.iter pr_mode !(state.mode)
+
 }
 
 (*****************************************************************************)
@@ -168,7 +178,7 @@ let floatnumber = pointfloat | exponentfloat
 
 let imagnumber = (floatnumber | intpart) ['j' 'J']
 
-let kind = 'b' | 'B' | 'f' | 'F'
+let kind = 'b' | 'B' | 'F'
 let encoding = 'u' | 'U' | 'r' | 'R'
 (* (encoding encoding) for python2 legacy support *)
 let stringprefix = (encoding | kind | (encoding kind) | (kind encoding) | (encoding encoding))?

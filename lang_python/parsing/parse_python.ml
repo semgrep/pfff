@@ -66,11 +66,12 @@ let tokens2 parsing_mode file =
         failwith "impossibe STATE_OFFSET in python lexer"
     | Lexer.STATE_UNDERSCORE_TOKEN -> 
       let tok = Lexer._token python2 state lexbuf in
-      (match tok with
-      | T.TCommentSpace _ -> ()
-      | T.FSTRING_START _ -> ()
-      | _ -> 
+      (match tok, Lexer.top_mode state with
+      | T.TCommentSpace _, _ -> ()
+      | T.FSTRING_START _, _ -> ()
+      | _, Lexer.STATE_UNDERSCORE_TOKEN ->
           Lexer.set_mode state Lexer.STATE_TOKEN
+      | _ -> ()
       );
       tok
     | Lexer.STATE_IN_FSTRING_SINGLE ->
