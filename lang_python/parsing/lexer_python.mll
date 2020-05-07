@@ -128,13 +128,14 @@ let push_mode state mode = Common.push mode state.mode
 let pop_mode state = ignore(Common2.pop2 state.mode)
 let set_mode state mode = begin pop_mode state; push_mode state mode end
 
-let pr_mode mode = match mode with
-  | STATE_TOKEN -> pr2 "token"
-  | STATE_OFFSET -> pr2 "offset"
-  | STATE_UNDERSCORE_TOKEN -> pr2 "_token"
-  | STATE_IN_FSTRING_SINGLE -> pr2 "f'"
-  | STATE_IN_FSTRING_DOUBLE -> pr2 "f\""
-  | STATE_IN_FSTRING_TRIPLE -> pr2 "f\"\"\""
+let pr_mode mode = pr2 (match mode with
+  | STATE_TOKEN -> "token"
+  | STATE_OFFSET -> "offset"
+  | STATE_UNDERSCORE_TOKEN -> "_token"
+  | STATE_IN_FSTRING_SINGLE -> "f'"
+  | STATE_IN_FSTRING_DOUBLE -> "f\""
+  | STATE_IN_FSTRING_TRIPLE -> "f\"\"\""
+)
 
 let pr_state state = List.iter pr_mode !(state.mode)
 

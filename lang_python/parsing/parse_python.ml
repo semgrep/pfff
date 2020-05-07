@@ -70,6 +70,14 @@ let tokens2 parsing_mode file =
       | T.TCommentSpace _, _ -> ()
       | T.FSTRING_START _, _ -> ()
       | _, Lexer.STATE_UNDERSCORE_TOKEN ->
+          (* Note that _token() may have changed the top state.
+           * For example, after having lexed 'f“{foo ', which puts us in a state
+           * ST_UNDERSCORE_TOKEN with a full stack of [ST_UNDERSCORE_TOKEN;
+           * ST_IN_F_STRING_DOUBLE; ST_UNDERSCORE_TOKEN], encountering a '}' will
+           * pop the stack and leave ST_IN_FSTRING_DOUBLE at the top, which we
+           * don't want to replace with ST_TOKEN. This is why we should switch
+           * back to ST_TOKEN only when the current state is
+           * STATE_UNDERSCORE_TOKEN. *)
           Lexer.set_mode state Lexer.STATE_TOKEN
       | _ -> ()
       );
