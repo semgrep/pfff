@@ -714,7 +714,7 @@ format_token:
   | EQ { mk_str $1 } | BITXOR { mk_str $1 }
   | ADD  { mk_str $1 } | SUB { mk_str $1 }
   | COMMA { mk_str $1 }
-  
+  | MOD { mk_str $1 }
 
   | LBRACE test RBRACE { $2 }
 
