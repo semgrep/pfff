@@ -66,11 +66,20 @@ let tokens2 parsing_mode file =
         failwith "impossibe STATE_OFFSET in python lexer"
     | Lexer.STATE_UNDERSCORE_TOKEN -> 
       let tok = Lexer._token python2 state lexbuf in
-      (match tok with
-      | T.TCommentSpace _ -> ()
-      | T.FSTRING_START _ -> ()
-      | _ -> 
+      (match tok, Lexer.top_mode state with
+      | T.TCommentSpace _, _ -> ()
+      | T.FSTRING_START _, _ -> ()
+      | _, Lexer.STATE_UNDERSCORE_TOKEN ->
+          (* Note that _token() may have changed the top state.
+           * For example, after having lexed 'f“{foo ', which puts us in a state
+           * ST_UNDERSCORE_TOKEN with a full stack of [ST_UNDERSCORE_TOKEN;
+           * ST_IN_F_STRING_DOUBLE; ST_UNDERSCORE_TOKEN], encountering a '}' will
+           * pop the stack and leave ST_IN_FSTRING_DOUBLE at the top, which we
+           * don't want to replace with ST_TOKEN. This is why we should switch
+           * back to ST_TOKEN only when the current state is
+           * STATE_UNDERSCORE_TOKEN. *)
           Lexer.set_mode state Lexer.STATE_TOKEN
+      | _ -> ()
       );
       tok
     | Lexer.STATE_IN_FSTRING_SINGLE ->

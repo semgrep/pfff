@@ -128,6 +128,17 @@ let push_mode state mode = Common.push mode state.mode
 let pop_mode state = ignore(Common2.pop2 state.mode)
 let set_mode state mode = begin pop_mode state; push_mode state mode end
 
+let pr_mode mode = pr2 (match mode with
+  | STATE_TOKEN -> "token"
+  | STATE_OFFSET -> "offset"
+  | STATE_UNDERSCORE_TOKEN -> "_token"
+  | STATE_IN_FSTRING_SINGLE -> "f'"
+  | STATE_IN_FSTRING_DOUBLE -> "f\""
+  | STATE_IN_FSTRING_TRIPLE -> "f\"\"\""
+)
+
+let pr_state state = List.iter pr_mode !(state.mode)
+
 }
 
 (*****************************************************************************)
@@ -168,10 +179,17 @@ let floatnumber = pointfloat | exponentfloat
 
 let imagnumber = (floatnumber | intpart) ['j' 'J']
 
-let kind = 'b' | 'B' | 'f' | 'F'
-let encoding = 'u' | 'U' | 'r' | 'R'
+let kind = 'b' | 'B'
+let rawprefix = 'r' | 'R'
+let encoding = 'u' | 'U' | rawprefix
 (* (encoding encoding) for python2 legacy support *)
 let stringprefix = (encoding | kind | (encoding kind) | (kind encoding) | (encoding encoding))?
+
+(* Per https://www.python.org/dev/peps/pep-0498/, 'f' can be combined with 'r' but
+ * not 'u' or 'b'
+ *)
+let fstringspecifier = 'f' | 'F'
+let fstringprefix = fstringspecifier | (fstringspecifier rawprefix) | (rawprefix fstringspecifier)
 
 let escapeseq = '\\' _
 
@@ -425,15 +443,15 @@ and _token python2 state = parse
   (* ----------------------------------------------------------------------- *)
   (* Strings *)
   (* ----------------------------------------------------------------------- *)
-  | 'f' "'"  { 
+  | fstringprefix "'"  {
        push_mode state STATE_IN_FSTRING_SINGLE;
        FSTRING_START (tokinfo lexbuf) 
     }
-  | 'f' '"'  { 
+  | fstringprefix '"'  {
        push_mode state STATE_IN_FSTRING_DOUBLE;
        FSTRING_START (tokinfo lexbuf) 
     }
-  | 'f' "\"\"\"" { 
+  | fstringprefix "\"\"\"" {
        push_mode state STATE_IN_FSTRING_TRIPLE;
        FSTRING_START (tokinfo lexbuf)  
      }
