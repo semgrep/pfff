@@ -689,11 +689,28 @@ string:
 
 interpolated:
   | FSTRING_STRING { Str $1 }
-  | FSTRING_LBRACE test RBRACE { $2 }
-  | FSTRING_LBRACE test COLON format_specifier RBRACE 
+  | FSTRING_LBRACE interpolant RBRACE { $2 }
+  | FSTRING_LBRACE interpolant COLON format_specifier RBRACE
      { InterpolatedString ($2::mk_str $3::$4) }
-  | FSTRING_LBRACE test BANG format_specifier RBRACE 
+  | FSTRING_LBRACE interpolant BANG format_specifier RBRACE
      { InterpolatedString ($2::mk_str $3::$4) }
+
+interpolant:
+/*(* Note that the f-string mini-language at
+   * https://docs.python.org/3/library/string.html#format-string-syntax
+   * simply states that this is parsed as an "expression"; we are now
+   * left trying to determine to which grammar rule an "expression"
+   * corresponds. However, testing with the cpython interpreter indicates
+   * that the testlist rule is what applies, as strings like:
+   *   f"{not True, 1}"
+   * are parsed by the interpreter.
+   *
+   * "interpolant" is the "value" inside one of:
+   * f"{value}"
+   * f"{value:format}"
+   * f"{value!format}"
+   *)*/
+  | testlist { tuple_expr $1 }
 
 /*(* todo: maybe need another lexing state when COLON inside FSTRING_LBRACE*)*/
 format_specifier: format_token_list { $1 }
