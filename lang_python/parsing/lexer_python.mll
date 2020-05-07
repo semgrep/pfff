@@ -178,10 +178,12 @@ let floatnumber = pointfloat | exponentfloat
 
 let imagnumber = (floatnumber | intpart) ['j' 'J']
 
-let kind = 'b' | 'B' | 'F'
+let kind = 'b' | 'B'
 let encoding = 'u' | 'U' | 'r' | 'R'
 (* (encoding encoding) for python2 legacy support *)
 let stringprefix = (encoding | kind | (encoding kind) | (kind encoding) | (encoding encoding))?
+
+let fstringprefix = ('f' | 'F')
 
 let escapeseq = '\\' _
 
@@ -435,15 +437,15 @@ and _token python2 state = parse
   (* ----------------------------------------------------------------------- *)
   (* Strings *)
   (* ----------------------------------------------------------------------- *)
-  | 'f' "'"  { 
+  | fstringprefix "'"  {
        push_mode state STATE_IN_FSTRING_SINGLE;
        FSTRING_START (tokinfo lexbuf) 
     }
-  | 'f' '"'  { 
+  | fstringprefix '"'  {
        push_mode state STATE_IN_FSTRING_DOUBLE;
        FSTRING_START (tokinfo lexbuf) 
     }
-  | 'f' "\"\"\"" { 
+  | fstringprefix "\"\"\"" {
        push_mode state STATE_IN_FSTRING_TRIPLE;
        FSTRING_START (tokinfo lexbuf)  
      }
