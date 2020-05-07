@@ -180,11 +180,16 @@ let floatnumber = pointfloat | exponentfloat
 let imagnumber = (floatnumber | intpart) ['j' 'J']
 
 let kind = 'b' | 'B'
-let encoding = 'u' | 'U' | 'r' | 'R'
+let rawprefix = 'r' | 'R'
+let encoding = 'u' | 'U' | rawprefix
 (* (encoding encoding) for python2 legacy support *)
 let stringprefix = (encoding | kind | (encoding kind) | (kind encoding) | (encoding encoding))?
 
-let fstringprefix = ('f' | 'F')
+(* Per https://www.python.org/dev/peps/pep-0498/, 'f' can be combined with 'r' but
+ * not 'u' or 'b'
+ *)
+let fstringspecifier = 'f' | 'F'
+let fstringprefix = fstringspecifier | (fstringspecifier rawprefix) | (rawprefix fstringspecifier)
 
 let escapeseq = '\\' _
 
