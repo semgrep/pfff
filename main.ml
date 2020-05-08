@@ -20,12 +20,12 @@ open Common
 (* Flags *)
 (*****************************************************************************)
 
-(*s: constant [[Main.verbose]] *)
 (* In addition to flags that can be tweaked via -xxx options (cf the
  * full list of options in the "the options" section below), this 
  * program also depends on external files?
  *)
 
+(*s: constant [[Main.verbose]] *)
 let verbose = ref false
 (*e: constant [[Main.verbose]] *)
 
@@ -63,10 +63,13 @@ let test_json_pretty_printer file =
 let pfff_extra_actions () = [
   "-dump_json", " <file>",
   Common.mk_action_1_arg test_json_pretty_printer;
+  (*s: [[Main.pfff_extra_actions]] other cases *)
   "-json_pp", " <file>",
   Common.mk_action_1_arg test_json_pretty_printer;
+  (*x: [[Main.pfff_extra_actions]] other cases *)
   "-layer_stat", " <file>",
   Common.mk_action_1_arg Test_program_lang.layer_stat;
+  (*e: [[Main.pfff_extra_actions]] other cases *)
 ]
 (*e: function [[Main.pfff_extra_actions]] *)
 
@@ -77,48 +80,50 @@ let pfff_extra_actions () = [
 (*s: function [[Main.all_actions]] *)
 let all_actions () = 
   pfff_extra_actions() @
-
-  Test_parsing_ml.actions()@
-  Test_parsing_skip.actions()@
-
-  Test_parsing_php.actions()@
-  Test_parsing_js.actions()@
-  Test_analyze_js.actions()@
-  Test_parsing_python.actions()@
-#if FEATURE_RUBY
-  Test_parsing_ruby.actions()@
-#endif
-
-  Test_parsing_c.actions()@
-  Test_parsing_cpp.actions()@
-  Test_parsing_java.actions()@
-  Test_parsing_go.actions()@
-
-  Test_parsing_nw.actions()@
-
-  Test_parsing_lisp.actions()@
-  Test_parsing_hs.actions()@
-
-  (* beta *)
-  Test_parsing_csharp.actions()@
-  Test_parsing_rust.actions()@
-  Test_parsing_erlang.actions()@
-
-  Test_parsing_text.actions()@
-  Test_parsing_html.actions()@
-  Test_parsing_css.actions()@
-  Test_parsing_web.actions()@
-
-  Test_parsing_sql.actions()@
-
+  (*s: [[Main.all_actions]] concatenated actions *)
   Test_parsing_generic.actions() @
-  Test_analyze_generic.actions() @
-(*
-  Test_analyze_cpp.actions () ++
-  Test_analyze_php.actions () ++
-  Test_analyze_ml.actions () ++
-  Test_analyze_c.actions() ++
-*)
+  (*x: [[Main.all_actions]] concatenated actions *)
+    Test_parsing_ml.actions()@
+    Test_parsing_skip.actions()@
+
+    Test_parsing_php.actions()@
+    Test_parsing_js.actions()@
+    Test_analyze_js.actions()@
+    Test_parsing_python.actions()@
+  #if FEATURE_RUBY
+    Test_parsing_ruby.actions()@
+  #endif
+
+    Test_parsing_c.actions()@
+    Test_parsing_cpp.actions()@
+    Test_parsing_java.actions()@
+    Test_parsing_go.actions()@
+
+    Test_parsing_nw.actions()@
+
+    Test_parsing_lisp.actions()@
+    Test_parsing_hs.actions()@
+
+    (* beta *)
+    Test_parsing_csharp.actions()@
+    Test_parsing_rust.actions()@
+    Test_parsing_erlang.actions()@
+
+    Test_parsing_text.actions()@
+    Test_parsing_html.actions()@
+    Test_parsing_css.actions()@
+    Test_parsing_web.actions()@
+
+    Test_parsing_sql.actions()@
+
+    Test_analyze_generic.actions() @
+  (*
+    Test_analyze_cpp.actions () ++
+    Test_analyze_php.actions () ++
+    Test_analyze_ml.actions () ++
+    Test_analyze_c.actions() ++
+  *)
+  (*e: [[Main.all_actions]] concatenated actions *)
   []
 (*e: function [[Main.all_actions]] *)
 
@@ -126,14 +131,20 @@ let all_actions () =
 let options () = [
   "-verbose", Arg.Set verbose, 
   " ";
+  (*s: [[Main.options]] main cases *)
   "-lang", Arg.String (fun s ->
     lang := s;
+    (*s: [[Main.options]] in [[-lang]] callback *)
     (* a big ugly *)
     Test_parsing_generic.lang := s;
+    (*e: [[Main.options]] in [[-lang]] callback *)
   ), (spf " <str> choose language (default = %s)" !lang);
+  (*x: [[Main.options]] main cases *)
   "-sgrep_mode", Arg.Set Flag_parsing.sgrep_mode,
   " enable sgrep mode parsing (to debug)";
+  (*e: [[Main.options]] main cases *)
   ] @
+  (*s: [[Main.options]] concatenated flags *)
   Flag_parsing.cmdline_flags_verbose () @
   Flag_parsing.cmdline_flags_debugging () @
   Meta_parse_info.cmdline_flags_precision () @
@@ -143,9 +154,12 @@ let options () = [
   Flag_parsing_php.cmdline_flags_pp () @
   Flag_parsing_cpp.cmdline_flags_macrofile () @
 
-  Common.options_of_actions action (all_actions()) @
   Common2.cmdline_flags_devel () @
   Common2.cmdline_flags_other () @
+  (*e: [[Main.options]] concatenated flags *)
+  (*s: [[Main.options]] concatenated actions *)
+  Common.options_of_actions action (all_actions()) @
+  (*e: [[Main.options]] concatenated actions *)
   [
     "-version",   Arg.Unit (fun () -> 
       pr2 (spf "pfff version: %s" Config_pfff.version);
@@ -160,10 +174,12 @@ let options () = [
 
 (*s: function [[Main.main]] *)
 let main () = 
+  (*s: [[Main.main()]] tune the GC *)
   Gc.set {(Gc.get ()) with Gc.stack_limit = 1000 * 1024 * 1024};
+  (*e: [[Main.main()]] tune the GC *)
 
   let usage_msg = 
-    "Usage: " ^ Common2.basename Sys.argv.(0) ^ 
+    "Usage: " ^ Filename.basename Sys.argv.(0) ^ 
       " [options] <file or dir> " ^ "\n" ^ "Options are:"
   in
   (* does side effect on many global flags *)
@@ -173,7 +189,7 @@ let main () =
   Common.profile_code "Main total" (fun () -> 
     
     (match args with
-    
+    (*s: [[Main.main()]] match [[args]] actions *)
     (* --------------------------------------------------------- *)
     (* actions, useful to debug subpart *)
     (* --------------------------------------------------------- *)
@@ -182,6 +198,7 @@ let main () =
 
     | _ when not (Common.null_string !action) -> 
         failwith ("unrecognized action or wrong params: " ^ !action)
+    (*e: [[Main.main()]] match [[args]] actions *)
 
     (* --------------------------------------------------------- *)
     (* main entry *)
