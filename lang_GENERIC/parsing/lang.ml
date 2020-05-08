@@ -27,10 +27,13 @@ module FT = File_type
 
 (*s: type [[Lang.t]] *)
 type t = 
+  | Python 
+  (*s: [[Lang.t]] extra Python cases *)
   (* Python will start with Python3 mode and fall back to Python2 in case
    * of error. Python2 and Python3 are for specific version of Python 
    * (no fallback) *)
-  | Python | Python2 | Python3
+  | Python2 | Python3
+  (*e: [[Lang.t]] extra Python cases *)
   | Javascript
   | Java
   | Go

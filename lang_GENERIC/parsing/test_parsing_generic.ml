@@ -48,14 +48,17 @@ let test_dump_pattern_generic file =
 let actions () = [
   "-parse_generic", " <dirs_or_files>",
   Common.mk_action_n_arg test_parse_generic;
+  (*s: [[Test_parsing_generic.actions]] other cases *)
   "-dump_generic", " <file>",
   Common.mk_action_1_arg test_dump_generic;
 
   (* now also in sgrep *)
   "-dump_ast", " <file>",
   Common.mk_action_1_arg test_dump_generic;
+  (*x: [[Test_parsing_generic.actions]] other cases *)
   "-dump_pattern", " <file>",
   Common.mk_action_1_arg test_dump_pattern_generic;
+  (*e: [[Test_parsing_generic.actions]] other cases *)
 ]
 (*e: function [[Test_parsing_generic.actions]] *)
 (*e: pfff/lang_GENERIC/parsing/test_parsing_generic.ml *)

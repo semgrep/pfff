@@ -9,8 +9,8 @@ type token_location = {
     line: int; column: int;
     file: Common.filename;
 } 
-(* see also type filepos = { l: int; c: int; } in common.mli *)
 (*e: type [[Parse_info.token_location]] *)
+(* see also type filepos = { l: int; c: int; } in common.mli *)
 
 (*s: type [[Parse_info.token_origin]] *)
 (* to deal with expanded tokens, e.g. preprocessor like cpp for C *)
@@ -55,7 +55,6 @@ type token_mutable = {
  * It's just a lexeme, but the word lexeme is not as known as token.
  *)
 type t = token_mutable
-(* deprecated *)
 (*e: type [[Parse_info.t]] *)
 (*s: type [[Parse_info.info_]] *)
 (* deprecated *)

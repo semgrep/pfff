@@ -252,23 +252,9 @@ and expr =
   (* basic (atomic) values *)
   | L of literal
 
-  (* composite values *)
-  | Container of container_operator * expr list bracket
-  (* special case of Container, at least 2 elements *) 
-  | Tuple of expr list 
-
-  (* And-type (field.vinit should be a Some) *)
-  | Record of field list bracket
-  (* Or-type (could be used instead of Container, Cons, Nil, etc.) *)
-  | Constructor of name * expr list
-  (* see also Call(IdSpecial (New,_), [ArgType _;...] for other values *)
-
-  (* very special value *)
-  | Lambda of function_definition
-  (* usually an argument of a New (used in Java, Javascript) *)
-  | AnonClass of class_definition
-
-  (* old: this used to be called Name and was generalizing Id and IdQualified
+  | Id of ident * id_info
+  (*s: [[Ast_generic.expr]] other identifier cases *)
+  (* old: Id above used to be called Name and was generalizing also IdQualified
    * but some analysis are easier when they just need to
    * handle a simple Id, hence the split. For example, there was some bugs
    * in sgrep because sometimes an identifier was an ident (in function header)
@@ -281,7 +267,6 @@ and expr =
    * but ultimately those cases should be rewritten to first introduce 
    * a VarDef. 
    *)
-  | Id of ident * id_info
   (* todo: Sometimes some DotAccess should really be transformed in IdQualified
    * with a better qualifier because the obj is actually the name of a package
    * or module, but you may need advanced semantic information and global
@@ -289,13 +274,16 @@ and expr =
    *)
   | IdQualified of name * id_info
   | IdSpecial of special wrap
+  (*e: [[Ast_generic.expr]] other identifier cases *)
 
   (* operators and function application *)
   | Call of expr * arguments
+  (*s: [[Ast_generic.expr]] other call cases *)
   (* (XHP, JSX, TSX), could be transpiled also (done in il.ml?) *)
   | Xml of xml
   (* IntepolatedString of expr list is simulated with a 
    * Call(IdSpecial (Concat ...)) *)
+  (*e: [[Ast_generic.expr]] other call cases *)
 
   (* The left part should be an lvalue (Name, DotAccess, ArrayAccess, Deref)
    * but it can also be a pattern (Tuple, Container, even Record), but
@@ -307,10 +295,12 @@ and expr =
    * update: should even be in a separate simple_stmt, as in Go
    *)
   | Assign of expr * tok (* =, or sometimes := in Go, <- in OCaml *) * expr
+  (*s: [[Ast_generic.expr]] other assign cases *)
   (* less: could desugar in Assign, should be only binary_operator *)
   | AssignOp of expr * arithmetic_operator wrap * expr
   (* newvar:! newscope:? in OCaml yes but we miss the 'in' part here  *)
   | LetPattern of pattern * expr
+  (*e: [[Ast_generic.expr]] other assign cases *)
 
   (* can be used for Record, Class, or Module access depending on expr.
    * In the last case it should be rewritten as a IdQualified with a
@@ -319,10 +309,31 @@ and expr =
   | DotAccess of expr * tok (* ., ::, ->, # *) * field_ident 
   (* in Js ArrayAccess is also abused to perform DotAccess (..., FDynamic) *)
   | ArrayAccess of expr * expr
+  (*s: [[Ast_generic.expr]] other array access cases *)
   (* could also use ArrayAccess with a Tuple rhs, or use a special *)
   | SliceAccess of expr * 
       expr option (* lower *) * expr option (* upper *) * expr option (* step*)
+  (*e: [[Ast_generic.expr]] other array access cases *)
 
+  (*s: [[Ast_generic.expr]] composite cases *)
+  (* composite values *)
+  | Container of container_operator * expr list bracket
+  (* special case of Container, at least 2 elements *) 
+  | Tuple of expr list 
+
+  (* And-type (field.vinit should be a Some) *)
+  | Record of field list bracket
+  (* Or-type (could be used instead of Container, Cons, Nil, etc.) *)
+  | Constructor of name * expr list
+  (* see also Call(IdSpecial (New,_), [ArgType _;...] for other values *)
+  (*e: [[Ast_generic.expr]] composite cases *)
+  (*s: [[Ast_generic.expr]] anonymous entity cases *)
+  (* very special value *)
+  | Lambda of function_definition
+  (* usually an argument of a New (used in Java, Javascript) *)
+  | AnonClass of class_definition
+  (*e: [[Ast_generic.expr]] anonymous entity cases *)
+  (*s: [[Ast_generic.expr]] other cases *)
   (* a.k.a ternary expression, or regular if in OCaml *)
   | Conditional of expr * expr * expr 
   | MatchPattern of expr * action list
@@ -339,17 +350,23 @@ and expr =
   (* less: could be in Special, but pretty important so I've lifted them here*)
   | Ref   of tok (* &, address of *) * expr 
   | DeRef of tok (* '*' in C, '!' or '<-' in OCaml, ^ in Reason *) * expr 
-
+  (*e: [[Ast_generic.expr]] other cases *)
+  (*s: [[Ast_generic.expr]] semgrep extensions cases *)
   (* sgrep: ... in expressions, args, stmts, items, and fields
    * (and unfortunately also in types in Python) *)
   | Ellipsis of tok (* '...' *)
-  | TypedMetavar of ident * tok (* : *) * type_
-  | DisjExpr of expr * expr
+  (*x: [[Ast_generic.expr]] semgrep extensions cases *)
   | DeepEllipsis of expr bracket (* <... ...> *)
-
+  (*x: [[Ast_generic.expr]] semgrep extensions cases *)
+  | DisjExpr of expr * expr
+  (*x: [[Ast_generic.expr]] semgrep extensions cases *)
+  | TypedMetavar of ident * tok (* : *) * type_
+  (*e: [[Ast_generic.expr]] semgrep extensions cases *)
+  (*s: [[Ast_generic.expr]] OtherXxx cases *)
   (* TODO: other_expr_operator wrap, so enforce at least one token instead
    * of relying that the any list contains at least one token *)
   | OtherExpr of other_expr_operator * any list
+  (*e: [[Ast_generic.expr]] OtherXxx cases *)
 (*e: type [[Ast_generic.expr]] *)
 
 (*s: type [[Ast_generic.literal]] *)
@@ -434,8 +451,10 @@ and expr =
 (*s: type [[Ast_generic.field_ident]] *)
   and field_ident =
     | FId of ident (* hard to put '* id_info' here, hard to resolve *)
+    (*s: [[Ast_generic.field_ident]] other cases *)
     | FName of name (* OCaml *)
     | FDynamic of expr (* PHP, JS (even though use ArrayAccess for that) *)
+    (*e: [[Ast_generic.field_ident]] other cases *)
 (*e: type [[Ast_generic.field_ident]] *)
 
 
@@ -530,19 +549,19 @@ and expr =
 (*****************************************************************************)
 (*s: type [[Ast_generic.stmt]] *)
 and stmt =
-  (* later: lift Call/Assign/Seq here and separate in expr/instr/stmt *)
+  (* See also il.ml where Call/Assign/Seq are not in expr and where there are
+   * separate expr, instr, and stmt types *)
   | ExprStmt of expr
-
-  | DefStmt of definition
-  | DirectiveStmt of directive
 
   (* newscope: in C++/Java/Go *)
   | Block of stmt list (* todo: bracket *)
-  (* EmptyStmt = Block [], or separate so can not be matched by $S? *)
+  (* EmptyStmt = Block [], or separate so can not be matched by $S? $ *)
 
   (* newscope: for vardef in expr in C++/Go/... *)
   | If of tok (* 'if' or 'elif' *) * expr * stmt * stmt
   | While   of tok * expr * stmt
+
+  (*s: [[Ast_generic.stmt]] other cases *)
   | DoWhile of tok * stmt * expr
   (* newscope: *)
   | For of tok (* 'for', 'foreach'*) * for_header * stmt
@@ -562,10 +581,17 @@ and stmt =
   | Throw of tok (* 'raise' in OCaml, 'throw' in Java/PHP *) * expr
   | Try of tok * stmt * catch list * finally option
   | Assert of tok * expr * expr option (* message *)
-
+  (*e: [[Ast_generic.stmt]] other cases *)
+  (*s: [[Ast_generic.stmt]] toplevel and nested construct cases *)
+  | DefStmt of definition
+  (*x: [[Ast_generic.stmt]] toplevel and nested construct cases *)
+  | DirectiveStmt of directive
+  (*e: [[Ast_generic.stmt]] toplevel and nested construct cases *)
+  (*s: [[Ast_generic.stmt]] semgrep extensions cases *)
   (* sgrep: *)
   | DisjStmt of stmt * stmt
-
+  (*e: [[Ast_generic.stmt]] semgrep extensions cases *)
+  (*s: [[Ast_generic.stmt]] OtherXxx cases *)
   (* this is important to correctly compute a CFG *)
   | OtherStmtWithStmt of other_stmt_with_stmt_operator * expr * stmt
   (* any here should not contain any statement! otherwise the CFG will be
@@ -574,6 +600,7 @@ and stmt =
    * of relying that the any list contains at least one token
    *)
   | OtherStmt of other_stmt_operator * any list
+  (*e: [[Ast_generic.stmt]] OtherXxx cases *)
 (*e: type [[Ast_generic.stmt]] *)
 
   (* newscope: *)
@@ -834,16 +861,20 @@ and attribute =
 (*****************************************************************************)
 (* Definitions *)
 (*****************************************************************************)
+(* definition (or just declaration sometimes) *)
 (*s: type [[Ast_generic.definition]] *)
-and definition = entity * definition_kind (* (or decl) *)
+and definition = entity * definition_kind
 (*e: type [[Ast_generic.definition]] *)
 
 (*s: type [[Ast_generic.entity]] *)
   and entity = {
     (* see special_multivardef_pattern below for many vardefs in one entity *)
     name: ident;
-    attrs: attribute list;
+    (*s: [[Ast_generic.entity]] other fields *)
     tparams: type_parameter list;
+    (*x: [[Ast_generic.entity]] other fields *)
+    attrs: attribute list;
+    (*e: [[Ast_generic.entity]] other fields *)
     (* naming/typing *)
     info: id_info;
     (* old: type_: type_ option; but redundant with the type information in
@@ -866,9 +897,9 @@ and definition = entity * definition_kind (* (or decl) *)
      * is the pattern assignment.
      *)
     | VarDef    of variable_definition
-
-    | TypeDef   of type_definition
     | ClassDef  of class_definition
+    (*s: [[Ast_generic.definition_kind]] other cases *)
+    | TypeDef   of type_definition
 
     | ModuleDef of module_definition
     | MacroDef of macro_definition
@@ -882,6 +913,7 @@ and definition = entity * definition_kind (* (or decl) *)
      * local.
      *)
     | UseOuterDecl of tok (* 'global' or 'nonlocal' in Python, 'use' in PHP *)
+    (*e: [[Ast_generic.definition_kind]] other cases *)
 (*e: type [[Ast_generic.definition_kind]] *)
 
 (* template/generics/polymorphic-type *)
@@ -1160,12 +1192,16 @@ and program = item list
 (* mentioned in many OtherXxx so must be part of the mutually recursive type *)
 (*s: type [[Ast_generic.any]] *)
 and any =
+  (*s: [[Ast_generic.any]] semgrep cases *)
+  | E of expr
+  | S of stmt
+  | Ss of stmt list
+  (*e: [[Ast_generic.any]] semgrep cases *)
+
   | I of ident
   | N of name
   | En of entity
 
-  | E of expr
-  | S of stmt
   | T of type_
   | P of pattern
 
@@ -1178,7 +1214,6 @@ and any =
   | Dk of definition_kind
   | Di of dotted_ident
   | Fld of field
-  | Ss of stmt list
   | Tk of tok
 
   | Pr of program
