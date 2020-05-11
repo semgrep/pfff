@@ -71,7 +71,7 @@ let tokens2 parsing_mode file =
       | T.FSTRING_START _, _ -> ()
       | _, Lexer.STATE_UNDERSCORE_TOKEN ->
           (* Note that _token() may have changed the top state.
-           * For example, after having lexed 'f“{foo ', which puts us in a state
+           * For example, after having lexed 'f"{foo '", which puts us in a state
            * ST_UNDERSCORE_TOKEN with a full stack of [ST_UNDERSCORE_TOKEN;
            * ST_IN_F_STRING_DOUBLE; ST_UNDERSCORE_TOKEN], encountering a '}' will
            * pop the stack and leave ST_IN_FSTRING_DOUBLE at the top, which we
