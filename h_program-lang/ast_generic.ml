@@ -1197,26 +1197,23 @@ and any =
   | S of stmt
   | Ss of stmt list
   (*e: [[Ast_generic.any]] semgrep cases *)
-
   | I of ident
-  | N of name
-  | En of entity
-
   | T of type_
   | P of pattern
-
+  | At of attribute
   | Def of definition
   | Dir of directive
-
+  | Pr of program
+  (*s: [[Ast_generic.any]] other cases *)
+  | N of name
+  | En of entity
   | Pa of parameter
   | Ar of argument
-  | At of attribute
   | Dk of definition_kind
   | Di of dotted_ident
   | Fld of field
   | Tk of tok
-
-  | Pr of program
+  (*e: [[Ast_generic.any]] other cases *)
 (*e: type [[Ast_generic.any]] *)
  (* with tarzan *)
 

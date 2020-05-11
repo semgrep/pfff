@@ -49,11 +49,11 @@ let actions () = [
   "-parse_generic", " <dirs_or_files>",
   Common.mk_action_n_arg test_parse_generic;
   (*s: [[Test_parsing_generic.actions]] other cases *)
-  "-dump_generic", " <file>",
-  Common.mk_action_1_arg test_dump_generic;
-
   (* now also in sgrep *)
   "-dump_ast", " <file>",
+  Common.mk_action_1_arg test_dump_generic;
+  (*x: [[Test_parsing_generic.actions]] other cases *)
+  "-dump_generic", " <file>",
   Common.mk_action_1_arg test_dump_generic;
   (*x: [[Test_parsing_generic.actions]] other cases *)
   "-dump_pattern", " <file>",
