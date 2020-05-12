@@ -252,6 +252,20 @@ and expr =
   (* basic (atomic) values *)
   | L of literal
 
+  (* composite values *)
+  | Container of container_operator * expr list bracket
+  (*s: [[Ast_generic.expr]] other composite cases *)
+  (* special case of Container, at least 2 elements *) 
+  | Tuple of expr list 
+  (*x: [[Ast_generic.expr]] other composite cases *)
+  (* And-type (field.vinit should be a Some) *)
+  | Record of field list bracket
+  (*x: [[Ast_generic.expr]] other composite cases *)
+  (* Or-type (could be used instead of Container, Cons, Nil, etc.) *)
+  | Constructor of name * expr list
+  (* see also Call(IdSpecial (New,_), [ArgType _;...] for other values *)
+  (*e: [[Ast_generic.expr]] other composite cases *)
+
   | Id of ident * id_info
   (*s: [[Ast_generic.expr]] other identifier cases *)
   (* old: Id above used to be called Name and was generalizing also IdQualified
@@ -273,6 +287,7 @@ and expr =
    * analysis to disambiguate.
    *)
   | IdQualified of name * id_info
+  (*x: [[Ast_generic.expr]] other identifier cases *)
   | IdSpecial of special wrap
   (*e: [[Ast_generic.expr]] other identifier cases *)
 
@@ -285,7 +300,7 @@ and expr =
    * Call(IdSpecial (Concat ...)) *)
   (*e: [[Ast_generic.expr]] other call cases *)
 
-  (* The left part should be an lvalue (Name, DotAccess, ArrayAccess, Deref)
+  (* The left part should be an lvalue (Id, DotAccess, ArrayAccess, Deref)
    * but it can also be a pattern (Tuple, Container, even Record), but
    * you should really use LetPattern for that.
    * Assign can also be abused to declare new variables, but you should use
@@ -307,26 +322,15 @@ and expr =
    * qualifier though.
    *)
   | DotAccess of expr * tok (* ., ::, ->, # *) * field_ident 
+
+  (*s: [[Ast_generic.expr]] array access cases *)
   (* in Js ArrayAccess is also abused to perform DotAccess (..., FDynamic) *)
   | ArrayAccess of expr * expr
-  (*s: [[Ast_generic.expr]] other array access cases *)
+  (*x: [[Ast_generic.expr]] array access cases *)
   (* could also use ArrayAccess with a Tuple rhs, or use a special *)
   | SliceAccess of expr * 
       expr option (* lower *) * expr option (* upper *) * expr option (* step*)
-  (*e: [[Ast_generic.expr]] other array access cases *)
-
-  (*s: [[Ast_generic.expr]] composite cases *)
-  (* composite values *)
-  | Container of container_operator * expr list bracket
-  (* special case of Container, at least 2 elements *) 
-  | Tuple of expr list 
-
-  (* And-type (field.vinit should be a Some) *)
-  | Record of field list bracket
-  (* Or-type (could be used instead of Container, Cons, Nil, etc.) *)
-  | Constructor of name * expr list
-  (* see also Call(IdSpecial (New,_), [ArgType _;...] for other values *)
-  (*e: [[Ast_generic.expr]] composite cases *)
+  (*e: [[Ast_generic.expr]] array access cases *)
   (*s: [[Ast_generic.expr]] anonymous entity cases *)
   (* very special value *)
   | Lambda of function_definition
@@ -351,6 +355,7 @@ and expr =
   | Ref   of tok (* &, address of *) * expr 
   | DeRef of tok (* '*' in C, '!' or '<-' in OCaml, ^ in Reason *) * expr 
   (*e: [[Ast_generic.expr]] other cases *)
+
   (*s: [[Ast_generic.expr]] semgrep extensions cases *)
   (* sgrep: ... in expressions, args, stmts, items, and fields
    * (and unfortunately also in types in Python) *)
@@ -566,6 +571,7 @@ and stmt =
   | If of tok (* 'if' or 'elif' *) * expr * stmt * stmt
   | While   of tok * expr * stmt
 
+  | Return   of tok * expr option
   (*s: [[Ast_generic.stmt]] other cases *)
   | DoWhile of tok * stmt * expr
   (* newscope: *)
@@ -576,7 +582,6 @@ and stmt =
   | Switch of tok (* 'switch' or also 'select' in Go *) * expr option * 
      case_and_body list
 
-  | Return   of tok * expr option
   | Continue of tok * label_ident
   | Break    of tok * label_ident
 
@@ -737,8 +742,10 @@ and pattern =
    *)
   | PatVar of type_ * (ident * id_info) option
 
+  (*s: [[Ast_generic.pattern]] semgrep extensions cases *)
   (* sgrep: *)
   | DisjPat of pattern * pattern
+  (*e: [[Ast_generic.pattern]] semgrep extensions cases *)
 
   | OtherPat of other_pattern_operator * any list
 (*e: type [[Ast_generic.pattern]] *)
@@ -767,11 +774,9 @@ and type_ =
 
   (* a special case of TApply, also a special case of TPointer *)
   | TyArray of (* const_expr *) expr option * type_
-  | TyPointer of tok * type_ (* | TODO TyRef of tok * type_ for C++ *)
   | TyTuple of type_ list bracket (* at least 2 elements *)
 
   (*s: [[Ast_generic.type_]] other cases *)
-
    (* old: was originally TyApply (name, []), but better to differentiate.
     * todo? may need also TySpecial because the name can actually be
     *  self/parent/static (e.g., in PHP)
@@ -782,6 +787,8 @@ and type_ =
   | TyNameApply of name * type_arguments
 
   | TyVar of ident (* type variable in polymorphic types (not a typedef) *)
+
+  | TyPointer of tok * type_ (* | TODO TyRef of tok * type_ for C++ *)
 
   | TyQuestion of type_ * tok (* a.k.a option type *)
 
@@ -835,8 +842,9 @@ and attribute =
   | KeywordAttr of keyword_attribute wrap
   (* for general @annotations *)
   | NamedAttr of ident * id_info * argument list
-
+  (*s: [[Ast_generic.attribute]] OtherXxx case *)
   | OtherAttribute of other_attribute_operator * any list
+  (*e: [[Ast_generic.attribute]] OtherXxx case *)
 (*e: type [[Ast_generic.attribute]] *)
 
 (*s: type [[Ast_generic.keyword_attribute]] *)
@@ -919,9 +927,10 @@ and definition = entity * definition_kind
 
     | ModuleDef of module_definition
     | MacroDef of macro_definition
-
+    (*x: [[Ast_generic.definition_kind]] other cases *)
     (* in a header file (e.g., .mli in OCaml or 'module sig') *)
     | Signature of type_
+    (*x: [[Ast_generic.definition_kind]] other cases *)
     (* Only used inside a function.
      * Needed for languages without local VarDef (e.g., Python/PHP)
      * where the first use is also its declaration. In that case when we
@@ -1469,7 +1478,7 @@ let is_boolean_operator = function
 (*e: function [[Ast_generic.is_boolean_operator]] *)
 
 (*s: function [[Ast_generic.vardef_to_assign]] *)
-(* used in controlflow_build *)
+(* used in controlflow_build and semgrep *)
 let vardef_to_assign (ent, def) resolved =
   let idinfo = { (empty_id_info()) with id_resolved = ref resolved } in
   let name = Id (ent.name, idinfo) in

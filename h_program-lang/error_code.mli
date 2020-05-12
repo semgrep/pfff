@@ -54,9 +54,9 @@ type annotation =
   | AtScheck of string
 (*e: type [[Error_code.annotation]] *)
 
-(*s: signature [[Error_code.g_errors]] *)
 (* main API *)
 
+(*s: signature [[Error_code.g_errors]] *)
 val g_errors: error list ref
 (*e: signature [[Error_code.g_errors]] *)
 
@@ -81,9 +81,9 @@ val warning_loc: Parse_info.token_location -> error_kind -> unit
 val info_loc: Parse_info.token_location -> error_kind -> unit
 (*e: signature [[Error_code.info_loc]] *)
 
-(*s: signature [[Error_code.string_of_error]] *)
 (* string-of *)
 
+(*s: signature [[Error_code.string_of_error]] *)
 val string_of_error: error -> string
 (*e: signature [[Error_code.string_of_error]] *)
 (*s: signature [[Error_code.string_of_error_kind]] *)
@@ -121,9 +121,9 @@ val annotation_at:
   Parse_info.token_location -> annotation option
 (*e: signature [[Error_code.annotation_at]] *)
 
-(*s: signature [[Error_code.options]] *)
 (* error adjustments *)
 
+(*s: signature [[Error_code.options]] *)
 val options: unit -> Common.cmdline_options
 (*e: signature [[Error_code.options]] *)
 
