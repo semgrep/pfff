@@ -252,6 +252,20 @@ and expr =
   (* basic (atomic) values *)
   | L of literal
 
+  (* composite values *)
+  | Container of container_operator * expr list bracket
+  (*s: [[Ast_generic.expr]] other composite cases *)
+  (* special case of Container, at least 2 elements *) 
+  | Tuple of expr list 
+  (*x: [[Ast_generic.expr]] other composite cases *)
+  (* And-type (field.vinit should be a Some) *)
+  | Record of field list bracket
+  (*x: [[Ast_generic.expr]] other composite cases *)
+  (* Or-type (could be used instead of Container, Cons, Nil, etc.) *)
+  | Constructor of name * expr list
+  (* see also Call(IdSpecial (New,_), [ArgType _;...] for other values *)
+  (*e: [[Ast_generic.expr]] other composite cases *)
+
   | Id of ident * id_info
   (*s: [[Ast_generic.expr]] other identifier cases *)
   (* old: Id above used to be called Name and was generalizing also IdQualified
@@ -273,6 +287,7 @@ and expr =
    * analysis to disambiguate.
    *)
   | IdQualified of name * id_info
+  (*x: [[Ast_generic.expr]] other identifier cases *)
   | IdSpecial of special wrap
   (*e: [[Ast_generic.expr]] other identifier cases *)
 
@@ -285,7 +300,7 @@ and expr =
    * Call(IdSpecial (Concat ...)) *)
   (*e: [[Ast_generic.expr]] other call cases *)
 
-  (* The left part should be an lvalue (Name, DotAccess, ArrayAccess, Deref)
+  (* The left part should be an lvalue (Id, DotAccess, ArrayAccess, Deref)
    * but it can also be a pattern (Tuple, Container, even Record), but
    * you should really use LetPattern for that.
    * Assign can also be abused to declare new variables, but you should use
@@ -307,26 +322,15 @@ and expr =
    * qualifier though.
    *)
   | DotAccess of expr * tok (* ., ::, ->, # *) * field_ident 
+
+  (*s: [[Ast_generic.expr]] array access cases *)
   (* in Js ArrayAccess is also abused to perform DotAccess (..., FDynamic) *)
   | ArrayAccess of expr * expr
-  (*s: [[Ast_generic.expr]] other array access cases *)
+  (*x: [[Ast_generic.expr]] array access cases *)
   (* could also use ArrayAccess with a Tuple rhs, or use a special *)
   | SliceAccess of expr * 
       expr option (* lower *) * expr option (* upper *) * expr option (* step*)
-  (*e: [[Ast_generic.expr]] other array access cases *)
-
-  (*s: [[Ast_generic.expr]] composite cases *)
-  (* composite values *)
-  | Container of container_operator * expr list bracket
-  (* special case of Container, at least 2 elements *) 
-  | Tuple of expr list 
-
-  (* And-type (field.vinit should be a Some) *)
-  | Record of field list bracket
-  (* Or-type (could be used instead of Container, Cons, Nil, etc.) *)
-  | Constructor of name * expr list
-  (* see also Call(IdSpecial (New,_), [ArgType _;...] for other values *)
-  (*e: [[Ast_generic.expr]] composite cases *)
+  (*e: [[Ast_generic.expr]] array access cases *)
   (*s: [[Ast_generic.expr]] anonymous entity cases *)
   (* very special value *)
   | Lambda of function_definition
@@ -351,6 +355,7 @@ and expr =
   | Ref   of tok (* &, address of *) * expr 
   | DeRef of tok (* '*' in C, '!' or '<-' in OCaml, ^ in Reason *) * expr 
   (*e: [[Ast_generic.expr]] other cases *)
+
   (*s: [[Ast_generic.expr]] semgrep extensions cases *)
   (* sgrep: ... in expressions, args, stmts, items, and fields
    * (and unfortunately also in types in Python) *)
@@ -362,11 +367,11 @@ and expr =
   (*x: [[Ast_generic.expr]] semgrep extensions cases *)
   | TypedMetavar of ident * tok (* : *) * type_
   (*e: [[Ast_generic.expr]] semgrep extensions cases *)
-  (*s: [[Ast_generic.expr]] OtherXxx cases *)
+  (*s: [[Ast_generic.expr]] OtherXxx case *)
   (* TODO: other_expr_operator wrap, so enforce at least one token instead
    * of relying that the any list contains at least one token *)
   | OtherExpr of other_expr_operator * any list
-  (*e: [[Ast_generic.expr]] OtherXxx cases *)
+  (*e: [[Ast_generic.expr]] OtherXxx case *)
 (*e: type [[Ast_generic.expr]] *)
 
 (*s: type [[Ast_generic.literal]] *)
@@ -493,12 +498,17 @@ and expr =
     and argument =
       (* regular argument *)
       | Arg of expr (* can be Call (IdSpecial Spread, Id foo) *)
+      (*s: [[Ast_generic.argument]] other cases *)
       (* keyword argument *)
       | ArgKwd of ident * expr
+      (*x: [[Ast_generic.argument]] other cases *)
       (* type argument for New, instanceof/sizeof/typeof, C macros *)
       | ArgType of type_
-
+      (*e: [[Ast_generic.argument]] other cases *)
+      (*s: [[Ast_generic.argument]] OtherXxx case *)
       | ArgOther of other_argument_operator * any list
+      (*e: [[Ast_generic.argument]] OtherXxx case *)
+
 (*e: type [[Ast_generic.argument]] *)
 
 (*s: type [[Ast_generic.other_argument_operator]] *)
@@ -561,6 +571,7 @@ and stmt =
   | If of tok (* 'if' or 'elif' *) * expr * stmt * stmt
   | While   of tok * expr * stmt
 
+  | Return   of tok * expr option
   (*s: [[Ast_generic.stmt]] other cases *)
   | DoWhile of tok * stmt * expr
   (* newscope: *)
@@ -571,7 +582,6 @@ and stmt =
   | Switch of tok (* 'switch' or also 'select' in Go *) * expr option * 
      case_and_body list
 
-  | Return   of tok * expr option
   | Continue of tok * label_ident
   | Break    of tok * label_ident
 
@@ -591,7 +601,7 @@ and stmt =
   (* sgrep: *)
   | DisjStmt of stmt * stmt
   (*e: [[Ast_generic.stmt]] semgrep extensions cases *)
-  (*s: [[Ast_generic.stmt]] OtherXxx cases *)
+  (*s: [[Ast_generic.stmt]] OtherXxx case *)
   (* this is important to correctly compute a CFG *)
   | OtherStmtWithStmt of other_stmt_with_stmt_operator * expr * stmt
   (* any here should not contain any statement! otherwise the CFG will be
@@ -600,7 +610,7 @@ and stmt =
    * of relying that the any list contains at least one token
    *)
   | OtherStmt of other_stmt_operator * any list
-  (*e: [[Ast_generic.stmt]] OtherXxx cases *)
+  (*e: [[Ast_generic.stmt]] OtherXxx case *)
 (*e: type [[Ast_generic.stmt]] *)
 
   (* newscope: *)
@@ -732,8 +742,10 @@ and pattern =
    *)
   | PatVar of type_ * (ident * id_info) option
 
+  (*s: [[Ast_generic.pattern]] semgrep extensions cases *)
   (* sgrep: *)
   | DisjPat of pattern * pattern
+  (*e: [[Ast_generic.pattern]] semgrep extensions cases *)
 
   | OtherPat of other_pattern_operator * any list
 (*e: type [[Ast_generic.pattern]] *)
@@ -753,16 +765,6 @@ and type_ =
   (* todo? a type_builtin = TInt | TBool | ...? see Literal *)
   | TyBuiltin of string wrap (* int, bool, etc. could be TApply with no args *)
  
-   (* old: was originally TyApply (name, []), but better to differentiate.
-    * todo? may need also TySpecial because the name can actually be
-    *  self/parent/static (e.g., in PHP)
-    * todo? maybe go even further and differentiate TyId vs TyIdQualified?
-    *)
-  | TyName of name
-  (* covers tuples, list, etc.*)
-  | TyNameApply of name * type_arguments
-  | TyVar of ident (* type variable in polymorphic types (not a typedef) *)
-
   (* old: was 'type_ list * type*' , but languages such as C and 
    * Go allow also to name those parameters, and Go even allow Variadic 
    * parameters so we need at least 'type_ * attributes', at which point 
@@ -772,10 +774,24 @@ and type_ =
 
   (* a special case of TApply, also a special case of TPointer *)
   | TyArray of (* const_expr *) expr option * type_
-  | TyPointer of tok * type_ (* | TyRef of tok * type_ for C++ *)
   | TyTuple of type_ list bracket (* at least 2 elements *)
+
+  (*s: [[Ast_generic.type_]] other cases *)
+   (* old: was originally TyApply (name, []), but better to differentiate.
+    * todo? may need also TySpecial because the name can actually be
+    *  self/parent/static (e.g., in PHP)
+    * todo? maybe go even further and differentiate TyId vs TyIdQualified?
+    *)
+  | TyName of name
+  (* covers tuples, list, etc.*)
+  | TyNameApply of name * type_arguments
+
+  | TyVar of ident (* type variable in polymorphic types (not a typedef) *)
+
+  | TyPointer of tok * type_ (* | TODO TyRef of tok * type_ for C++ *)
+
   | TyQuestion of type_ * tok (* a.k.a option type *)
- 
+
   (* Anonymous record type, a.k.a shape in PHP/Hack. See also AndType.
    * Most record types are defined via a TypeDef and are then referenced
    * via a TyName. Here we have flexible record types (a.k.a. rows in OCaml).
@@ -783,8 +799,10 @@ and type_ =
   | TyAnd of (ident * type_) list bracket
   (* unused for now, but could use for OCaml variants, or for union types! *)
   | TyOr of type_ list
-
+  (*e: [[Ast_generic.type_]] other cases *)
+  (*s: [[Ast_generic.type_]] OtherXxx case *)
   | OtherType of other_type_operator * any list
+  (*e: [[Ast_generic.type_]] OtherXxx case *)
 (*e: type [[Ast_generic.type_]] *)
   
 (*s: type [[Ast_generic.type_arguments]] *)
@@ -824,8 +842,9 @@ and attribute =
   | KeywordAttr of keyword_attribute wrap
   (* for general @annotations *)
   | NamedAttr of ident * id_info * argument list
-
+  (*s: [[Ast_generic.attribute]] OtherXxx case *)
   | OtherAttribute of other_attribute_operator * any list
+  (*e: [[Ast_generic.attribute]] OtherXxx case *)
 (*e: type [[Ast_generic.attribute]] *)
 
 (*s: type [[Ast_generic.keyword_attribute]] *)
@@ -866,22 +885,27 @@ and attribute =
 and definition = entity * definition_kind
 (*e: type [[Ast_generic.definition]] *)
 
+(* old: type_: type_ option; but redundant with the type information in
+ * the different definition_kind, as well as in id_info, and does not
+ * have any meanings for certain defs (e.g., ClassDef) so not worth
+ * factoring.
+ *
+ * see special_multivardef_pattern below for many vardefs in one entity in
+ * ident.
+ *)
 (*s: type [[Ast_generic.entity]] *)
   and entity = {
-    (* see special_multivardef_pattern below for many vardefs in one entity *)
     name: ident;
-    (*s: [[Ast_generic.entity]] other fields *)
-    tparams: type_parameter list;
-    (*x: [[Ast_generic.entity]] other fields *)
+    (*s: [[Ast_generic.entity]] attribute field *)
     attrs: attribute list;
-    (*e: [[Ast_generic.entity]] other fields *)
+    (*e: [[Ast_generic.entity]] attribute field *)
+    (*s: [[Ast_generic.entity]] id info field *)
     (* naming/typing *)
     info: id_info;
-    (* old: type_: type_ option; but redundant with the type information in
-     * the different definition_kind, as well as in id_info, and does not
-     * have any meanings for certain defs (e.g., ClassDef) so not worth
-     * factoring.
-     *)
+    (*e: [[Ast_generic.entity]] id info field *)
+    (*s: [[Ast_generic.entity]] other fields *)
+    tparams: type_parameter list;
+    (*e: [[Ast_generic.entity]] other fields *)
   }
 (*e: type [[Ast_generic.entity]] *)
 
@@ -903,9 +927,10 @@ and definition = entity * definition_kind
 
     | ModuleDef of module_definition
     | MacroDef of macro_definition
-
+    (*x: [[Ast_generic.definition_kind]] other cases *)
     (* in a header file (e.g., .mli in OCaml or 'module sig') *)
     | Signature of type_
+    (*x: [[Ast_generic.definition_kind]] other cases *)
     (* Only used inside a function.
      * Needed for languages without local VarDef (e.g., Python/PHP)
      * where the first use is also its declaration. In that case when we
@@ -944,17 +969,24 @@ and function_definition = {
 (*e: type [[Ast_generic.function_definition]] *)
 (*s: type [[Ast_generic.parameters]] *)
   and parameters = parameter list
-    (* newvar: *)
 (*e: type [[Ast_generic.parameters]] *)
 (*s: type [[Ast_generic.parameter]] *)
+    (* newvar: *)
     and parameter =
      | ParamClassic of parameter_classic
+     (*s: [[Ast_generic.parameter]] other cases *)
      | ParamPattern of pattern (* in OCaml, but also now JS, and Python2 *)
+     (*e: [[Ast_generic.parameter]] other cases *)
+     (*s: [[Ast_generic.parameter]] semgrep extension cases *)
      (* sgrep: ... in parameters
       * note: foo(...x) of Js/Go is using the Variadic attribute, not this *)
      | ParamEllipsis of tok
-
+     (*e: [[Ast_generic.parameter]] semgrep extension cases *)
+     (*s: [[Ast_generic.parameter]] OtherXxx case *)
      | OtherParam of other_parameter_operator * any list
+     (*e: [[Ast_generic.parameter]] OtherXxx case *)
+
+
 (*e: type [[Ast_generic.parameter]] *)
 
     (* less: could be merged with variable_definition, or pattern
@@ -966,10 +998,14 @@ and function_definition = {
      pname:    ident option;
      ptype:    type_ option;
      pdefault: expr  option;
+     (*s: [[Ast_generic.parameter_classic]] attribute field *)
      (* this covers '...' variadic parameters, see the Variadic attribute *)
      pattrs: attribute list;
+     (*e: [[Ast_generic.parameter_classic]] attribute field *)
+     (*s: [[Ast_generic.parameter_classic]] id info field *)
      (* naming *)
      pinfo: id_info; (* Always Param *)
+     (*e: [[Ast_generic.parameter_classic]] id info field *)
     }
 (*e: type [[Ast_generic.parameter_classic]] *)
 (*s: type [[Ast_generic.other_parameter_operator]] *)
@@ -1059,9 +1095,11 @@ and type_definition = {
 (*s: type [[Ast_generic.field]] *)
   and field = 
     | FieldStmt of stmt
+    (*s: [[Ast_generic.field]] other cases *)
     | FieldDynamic of expr (* dynamic name *) * attribute list * expr (*value*)
     (* less: could abuse FieldStmt(ExprStmt(IdSpecial(Spread))) for that *)
     | FieldSpread of tok (* ... *) * expr (* usually a Name *)
+    (*e: [[Ast_generic.field]] other cases *)
 (*e: type [[Ast_generic.field]] *)
 
 (*s: type [[Ast_generic.other_type_kind_operator]] *)
@@ -1077,12 +1115,14 @@ and type_definition = {
 (*s: type [[Ast_generic.class_definition]] *)
 and class_definition = {
   ckind: class_kind (* wrap TODO *);
+
   (* usually just one parent, and type_ should be a TyApply *)
   cextends:     type_ list;
   (* class_kind in type_ must be Interface *)
   cimplements:  type_ list;
   (* class_kind in type_ is usually a Trait *)
   cmixins:      type_ list; (* PHP 'uses' *)
+
   (* newscope: *)
   cbody: field list bracket;
 }
@@ -1137,10 +1177,12 @@ and directive =
   (* newvar: *)
   | ImportFrom of tok (* 'import'/'from' for Python, 'include' for C *) * 
                   module_name * ident * alias option (* as name alias *)
+  (*s: [[Ast_generic.directive]] other imports *)
   | ImportAs   of tok * module_name * alias option (* as name *)
   (* bad practice! hard to resolve name locally *)
   | ImportAll  of tok * module_name * tok (* '.' in Go, '*' in Java/Python *)
-
+  (*e: [[Ast_generic.directive]] other imports *)
+  (*s: [[Ast_generic.directive]] package cases *)
   (* packages are different from modules in that multiple files can reuse
    * the same package name; they are agglomarated in the same package
    *)
@@ -1150,8 +1192,10 @@ and directive =
    * consistent with other directives, so better to use PackageEnd.
    *)
   | PackageEnd of tok
-
+  (*e: [[Ast_generic.directive]] package cases *)
+  (*s: [[Ast_generic.directive]] OtherXxx cases *)
   | OtherDirective of other_directive_operator * any list
+  (*e: [[Ast_generic.directive]] OtherXxx cases *)
 (*e: type [[Ast_generic.directive]] *)
 
 (*s: type [[Ast_generic.alias]] *)
@@ -1197,26 +1241,23 @@ and any =
   | S of stmt
   | Ss of stmt list
   (*e: [[Ast_generic.any]] semgrep cases *)
-
   | I of ident
-  | N of name
-  | En of entity
-
   | T of type_
   | P of pattern
-
+  | At of attribute
   | Def of definition
   | Dir of directive
-
+  | Pr of program
+  (*s: [[Ast_generic.any]] other cases *)
+  | N of name
+  | En of entity
   | Pa of parameter
   | Ar of argument
-  | At of attribute
   | Dk of definition_kind
   | Di of dotted_ident
   | Fld of field
   | Tk of tok
-
-  | Pr of program
+  (*e: [[Ast_generic.any]] other cases *)
 (*e: type [[Ast_generic.any]] *)
  (* with tarzan *)
 
@@ -1437,7 +1478,7 @@ let is_boolean_operator = function
 (*e: function [[Ast_generic.is_boolean_operator]] *)
 
 (*s: function [[Ast_generic.vardef_to_assign]] *)
-(* used in controlflow_build *)
+(* used in controlflow_build and semgrep *)
 let vardef_to_assign (ent, def) resolved =
   let idinfo = { (empty_id_info()) with id_resolved = ref resolved } in
   let name = Id (ent.name, idinfo) in
