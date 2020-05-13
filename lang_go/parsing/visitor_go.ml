@@ -149,6 +149,7 @@ and v_expr_or_type v = v_either v_expr v_type_ v
 and v_expr x =
   let k = 
   function
+  | DeepEllipsis v1 -> v_bracket v_expr v1
   | BasicLit v1 -> let v1 = v_literal v1 in ()
   | CompositeLit ((v1, v2)) ->
       let v1 = v_type_ v1 and v2 = v_bracket (v_list v_init) v2 in ()

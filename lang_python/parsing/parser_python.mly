@@ -662,8 +662,7 @@ atom:
      match $1 with 
      | [] ->  raise Common.Impossible
      | [x] -> x
-     (* abused to also concatenate regular literal strings *)
-     | xs -> InterpolatedString xs
+     | xs -> ConcatenatedString xs
    }
 
   | atom_tuple  { $1 }

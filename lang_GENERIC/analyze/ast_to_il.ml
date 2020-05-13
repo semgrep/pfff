@@ -392,7 +392,7 @@ and call_special _env (x, tok) =
   | G.Eval -> Eval
   | G.Typeof -> Typeof | G.Instanceof -> Instanceof | G.Sizeof -> Sizeof
   | G.New -> New 
-  | G.Concat -> Concat | G.Spread -> Spread
+  | G.ConcatString _kindopt -> Concat | G.Spread -> Spread
   | G.EncodedString _ -> todo (G.E (G.IdSpecial (x, tok)))
   ), tok
 
