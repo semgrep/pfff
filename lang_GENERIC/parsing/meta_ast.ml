@@ -266,8 +266,8 @@ and vof_special =
   | Instanceof -> Ocaml.VSum (("Instanceof", []))
   | Sizeof -> Ocaml.VSum (("Sizeof", []))
   | New -> Ocaml.VSum (("New", []))
-  | InterpolatedConcat v1 -> 
-      let v1 = Ocaml.vof_option vof_interpolated_kind v1 in
+  | ConcatString v1 -> 
+      let v1 = vof_interpolated_kind v1 in
       Ocaml.VSum (("InterpolatedConcat", [v1]))
   | Spread -> Ocaml.VSum (("Spread", []))
   | EncodedString v1 ->
@@ -281,6 +281,8 @@ and vof_special =
 
 and vof_interpolated_kind = function
   | FString -> Ocaml.VSum ("FString", [])
+  | InterpolatedConcat -> Ocaml.VSum ("InterpolatedConcat", [])
+  | SequenceConcat -> Ocaml.VSum ("SequenceConcat", [])
 
 and vof_inc_dec (v1, v2) =
       let v1 = vof_incr_decr v1

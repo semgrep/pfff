@@ -306,7 +306,7 @@ and expr =
   | Unop (((v1, t), v2)) -> let v1 = unaryOp v1 and v2 = expr v2 in 
       G.Call (G.IdSpecial (G.ArithOp v1, t), [G.Arg v2])
   | Guil (t, v1, _) -> let v1 = list expr v1 in
-      G.Call (G.IdSpecial (G.InterpolatedConcat None, t), 
+      G.Call (G.IdSpecial (G.ConcatString G.InterpolatedConcat, t), 
         v1 |> List.map G.expr_to_arg)
   | ConsArray v1 -> let v1 = bracket (list array_value) v1 in
       G.Container (G.Array, v1)

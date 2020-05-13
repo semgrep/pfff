@@ -414,7 +414,7 @@ and expr =
    | New  (* usually associated with Call(New, [ArgType _;...]) *)
 
    (* used for interpolated strings constructs *)
-   | InterpolatedConcat of interpolated_kind option
+   | ConcatString of concat_string_kind
    | EncodedString of string wrap (* only for Python for now (e.g., b"foo") *)
    | Spread (* inline list var, in Container or call context *)
 
@@ -455,7 +455,20 @@ and expr =
 (*s: type [[Ast_generic.prefix_postfix]] *)
     and prefix_postfix = Prefix | Postfix
 (*e: type [[Ast_generic.prefix_postfix]] *)
-   and interpolated_kind = 
+   and concat_string_kind = 
+     (* many languages do not require a special syntax to use interpolated
+      * strings e.g. simply "this is {a}". Javascript uses backquotes.
+      *)
+     | InterpolatedConcat (* Javascript/PHP/Ruby/Perl *)
+     (* many languages have a binary Concat operator to concatenate strings,
+      * but some languages also allow the simple juxtaposition of multiple
+      * strings to be concatenated, e.g. "hello" "world" in Python.
+      *)
+     | SequenceConcat (* Python/C *)
+     (* Python requires the special f"" syntax to use interpolated strings,
+      * and some semgrep users may want to explicitely match only f-strings,
+      * which is why we record this information here.
+      *)
      | FString (* Python *)
 
 (*s: type [[Ast_generic.field_ident]] *)

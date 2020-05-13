@@ -262,7 +262,7 @@ and v_special =
   | EncodedString v1 -> let v1 = v_wrap v_string v1 in ()
   | ArithOp v1 -> let v1 = v_arithmetic_operator v1 in ()
   | IncrDecr ((v1, v2)) -> let v1 = v_incr_decr v1 and v2 = v_prepost v2 in ()
-  | InterpolatedConcat v1 -> let v1 = v_option v_interpolated_kind v1 in ()
+  | ConcatString v1 -> let v1 = v_interpolated_kind v1 in ()
 and v_interpolated_kind _ = ()
 and v_incr_decr _ = ()
 and v_prepost _ = ()

@@ -276,8 +276,8 @@ and map_special =
   | EncodedString v1 -> let v1 = map_wrap map_of_string v1 in EncodedString ((v1))
   | IncrDecr ((v1, v2)) ->
       let v1 = map_of_incdec v1 and v2 = map_of_prepost v2 in IncrDecr ((v1, v2))
-  | InterpolatedConcat v1 -> let v1 = map_of_option map_of_interpolated_kind v1 in
-      InterpolatedConcat v1
+  | ConcatString v1 -> let v1 = map_of_interpolated_kind v1 in
+      ConcatString v1
 
 and map_of_interpolated_kind x = x
 and map_of_incdec x = x

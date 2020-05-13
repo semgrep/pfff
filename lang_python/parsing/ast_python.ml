@@ -145,6 +145,7 @@ type expr =
   (* python3: f-strings
    * reference: https://www.python.org/dev/peps/pep-0498/ *)
   | InterpolatedString of interpolated list
+  | ConcatenatedString of interpolated list (* always Str *)
 
   (* python3: *)
   (* inside an Assign (or ExprStmt) *)

@@ -44,6 +44,9 @@ let rec vof_expr =
   | InterpolatedString v1 ->
       let v1 = Ocaml.vof_list vof_expr v1 in
       Ocaml.VSum (("InterpolatedString", [v1]))
+  | ConcatenatedString v1 ->
+      let v1 = Ocaml.vof_list vof_expr v1 in
+      Ocaml.VSum (("ConcatenatedString", [v1]))
   | Bool v1 ->
       let v1 = vof_wrap Ocaml.vof_bool v1 in Ocaml.VSum (("Bool", [ v1 ]))
   | None_ v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("None_", [ v1 ]))

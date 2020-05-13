@@ -161,7 +161,11 @@ let rec expr (x: expr) =
         [G.Arg (G.L (G.String (v1)))])
 
   | InterpolatedString xs ->
-    G.Call (G.IdSpecial (G.InterpolatedConcat (Some G.FString), fake "concat"), 
+    G.Call (G.IdSpecial (G.ConcatString G.FString, fake "concat"), 
+      xs |> List.map (fun x -> let x = expr x in G.Arg (x))
+    )
+  | ConcatenatedString xs ->
+    G.Call (G.IdSpecial (G.ConcatString G.SequenceConcat, fake "concat"), 
       xs |> List.map (fun x -> let x = expr x in G.Arg (x))
     )
   | TypedExpr (v1, v2) ->
