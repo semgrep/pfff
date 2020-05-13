@@ -209,6 +209,13 @@ let EscapeSequence =
 | OctalEscape
 | UnicodeEscape
 
+(* semgrep: we can use regexp in semgrep in strings and we want to
+ * support any escape characters there, e.g. eval("=~/.*dev\.corp/")
+ *)
+let EscapeSequence_semgrep =
+  '\\' _
+
+
 (* ugly: hardcoded stuff for fbandroid, error in SoundexTest.java *)
 let UnicodeX = "�"
 
@@ -270,6 +277,9 @@ rule token = parse
   | CharacterLiteral     { TChar (tok lexbuf, tokinfo lexbuf) }
   | '"' ( (StringCharacter | EscapeSequence)* as s) '"'
    { TString (s, tokinfo lexbuf) }
+  (* semgrep: *)
+  | '"' ( (StringCharacter | EscapeSequence | EscapeSequence_semgrep)* as s)'"'
+   { Flag.sgrep_guard (TString (s, tokinfo lexbuf)) }
   (* bool and null literals are keywords, see below *)
 
   (* ----------------------------------------------------------------------- *)
