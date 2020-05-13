@@ -5,6 +5,7 @@ open Ast_generic
 
 let vof_arithmetic_operator =
   function
+  | Concat -> Ocaml.VSum (("Concat", []))
   | Plus -> Ocaml.VSum (("Plus", []))
   | Minus -> Ocaml.VSum (("Minus", []))
   | Mult -> Ocaml.VSum (("Mult", []))

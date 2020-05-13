@@ -124,7 +124,7 @@ let special (x, tok) =
   | Encaps v1 -> 
       (match v1 with
       | None -> SR_NeedArgs (fun args -> 
-          G.Call (G.IdSpecial (G.Concat, tok), 
+          G.Call (G.IdSpecial (G.InterpolatedConcat None, tok), 
                   args |> List.map (fun e -> G.Arg e)))
       | Some n -> 
             let n = name n in

@@ -413,7 +413,8 @@ and expr =
     * (e.g., Python, Scala 3), instead certain 'Call' are really 'New' *)
    | New  (* usually associated with Call(New, [ArgType _;...]) *)
 
-   | Concat (* used for interpolated strings constructs *)
+   (* used for interpolated strings constructs *)
+   | InterpolatedConcat of interpolated_kind option
    | EncodedString of string wrap (* only for Python for now (e.g., b"foo") *)
    | Spread (* inline list var, in Container or call context *)
 
@@ -445,6 +446,8 @@ and expr =
       | NotPhysEq (* less: could be desugared to Not PhysEq *)
       | Lt | LtE | Gt | GtE  (* less: could be desugared to Or (Eq Lt) *)
       | Cmp (* <=>, PHP *)
+      (* todo: not really an arithmetic operator, maybe rename the type *)
+      | Concat (* '.' PHP *)
 (*e: type [[Ast_generic.arithmetic_operator]] *)
 (*s: type [[Ast_generic.incr_decr]] *)
     and incr_decr = Incr | Decr (* '++', '--' *)
@@ -452,6 +455,8 @@ and expr =
 (*s: type [[Ast_generic.prefix_postfix]] *)
     and prefix_postfix = Prefix | Postfix
 (*e: type [[Ast_generic.prefix_postfix]] *)
+   and interpolated_kind = 
+     | FString (* Python *)
 
 (*s: type [[Ast_generic.field_ident]] *)
   and field_ident =
@@ -1473,7 +1478,7 @@ let is_boolean_operator = function
  | Eq     | NotEq     
  | PhysEq | NotPhysEq 
  | Lt | LtE | Gt | GtE 
- | Cmp
+ | Cmp | Concat
    -> true
 (*e: function [[Ast_generic.is_boolean_operator]] *)
 

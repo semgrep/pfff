@@ -70,7 +70,7 @@ let name v = qualified_ident v
 let fixOp x = x
 let binaryOp (x, t) =
   match x with
-  | BinaryConcat -> Right (G.Concat, t)
+  | BinaryConcat -> Left (G.Concat, t)
   | CombinedComparison -> Left (G.Cmp, t)
   | ArithOp op -> Left (op, t)
 
@@ -306,7 +306,8 @@ and expr =
   | Unop (((v1, t), v2)) -> let v1 = unaryOp v1 and v2 = expr v2 in 
       G.Call (G.IdSpecial (G.ArithOp v1, t), [G.Arg v2])
   | Guil (t, v1, _) -> let v1 = list expr v1 in
-      G.Call (G.IdSpecial (G.Concat, t), v1 |> List.map G.expr_to_arg)
+      G.Call (G.IdSpecial (G.InterpolatedConcat None, t), 
+        v1 |> List.map G.expr_to_arg)
   | ConsArray v1 -> let v1 = bracket (list array_value) v1 in
       G.Container (G.Array, v1)
   | Collection ((v1, v2)) ->
