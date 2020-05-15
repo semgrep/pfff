@@ -86,33 +86,33 @@ let mk_str ii =
 
 %}
 
-/*(*************************************************************************)*/
-/*(*1 Tokens *)*/
-/*(*************************************************************************)*/
-%token <Ast_python.tok> TUnknown  /*(* unrecognized token *)*/
+(*************************************************************************)
+(* Tokens *)
+(*************************************************************************)
+%token <Ast_python.tok> TUnknown  (* unrecognized token *)
 %token <Ast_python.tok> EOF
 
-/*(*-----------------------------------------*)*/
-/*(*2 The space/comment tokens *)*/
-/*(*-----------------------------------------*)*/
-/*(* coupling: Token_helpers.is_comment *)*/
+(*-----------------------------------------*)
+(* The space/comment tokens *)
+(*-----------------------------------------*)
+(* coupling: Token_helpers.is_comment *)
 %token <Ast_python.tok> TCommentSpace TComment
-/*(* see the extra token below NEWLINE instead of TCommentNewline *)*/
+(* see the extra token below NEWLINE instead of TCommentNewline *)
 
-/*(*-----------------------------------------*)*/
-/*(*2 The normal tokens *)*/
-/*(*-----------------------------------------*)*/
+(*-----------------------------------------*)
+(* The normal tokens *)
+(*-----------------------------------------*)
 
-/*(* tokens with "values" *)*/
+(* tokens with "values" *)
 %token <string * Ast_python.tok> NAME
 %token <string    * Ast_python.tok> INT LONGINT
 %token <string  * Ast_python.tok> FLOAT
 %token <string * Ast_python.tok> IMAG
 %token <string * string * Ast_python.tok> STR
 
-/*(*-----------------------------------------*)*/
-/*(*2 Keyword tokens *)*/
-/*(*-----------------------------------------*)*/
+(*-----------------------------------------*)
+(* Keyword tokens *)
+(*-----------------------------------------*)
 %token <Ast_python.tok> 
  IF ELSE ELIF 
  WHILE FOR
@@ -126,74 +126,74 @@ let mk_str ii =
  NONE TRUE FALSE
  ASYNC AWAIT
  NONLOCAL
- /*(* python2: *)*/
+ (* python2: *)
  PRINT EXEC
 
-/*(*-----------------------------------------*)*/
-/*(*2 Punctuation tokens *)*/
-/*(*-----------------------------------------*)*/
+(*-----------------------------------------*)
+(* Punctuation tokens *)
+(*-----------------------------------------*)
  
-/*(* syntax *)*/
+(* syntax *)
 %token <Ast_python.tok> 
- LPAREN         /* ( */ RPAREN         /* ) */
- LBRACK         /* [ */ RBRACK         /* ] */
- LBRACE         /* { */ RBRACE         /* } */
- COLON          /* : */
- SEMICOL        /* ; */
- DOT            /* . */
- COMMA          /* , */
- BACKQUOTE      /* ` */
- AT             /* @ */
- ELLIPSES       /* ... */
+ LPAREN         (* ( *) RPAREN         (* ) *)
+ LBRACK         (* [ *) RBRACK         (* ] *)
+ LBRACE         (* { *) RBRACE         (* } *)
+ COLON          (* : *)
+ SEMICOL        (* ; *)
+ DOT            (* . *)
+ COMMA          (* , *)
+ BACKQUOTE      (* ` *)
+ AT             (* @ *)
+ ELLIPSES       (* ... *)
  LDots RDots
 
-/*(* operators *)*/
+(* operators *)
 %token <Ast_python.tok> 
-  ADD            /* + */  SUB            /* - */
-  MULT           /* * */  DIV            /* / */
-  MOD            /* % */
-  POW            /* ** */  FDIV           /* // */
-  BITOR          /* | */  BITAND         /* & */  BITXOR         /* ^ */
-  BITNOT         /* ~ */  LSHIFT         /* << */  RSHIFT         /* >> */
+  ADD            (* + *)  SUB            (* - *)
+  MULT           (* * *)  DIV            (* / *)
+  MOD            (* % *)
+  POW            (* ** *)  FDIV           (* // *)
+  BITOR          (* | *)  BITAND         (* & *)  BITXOR         (* ^ *)
+  BITNOT         (* ~ *)  LSHIFT         (* << *)  RSHIFT         (* >> *)
 
 %token <Ast_python.tok> 
-  EQ             /* = */
-  ADDEQ          /* += */ SUBEQ          /* -= */
-  MULTEQ         /* *= */ DIVEQ          /* /= */
-  MODEQ          /* %= */
-  POWEQ          /* **= */ FDIVEQ         /* //= */
-  ANDEQ          /* &= */ OREQ           /* |= */ XOREQ          /* ^= */
-  LSHEQ          /* <<= */ RSHEQ          /* >>= */
+  EQ             (* = *)
+  ADDEQ          (* += *) SUBEQ          (* -= *)
+  MULTEQ         (* *= *) DIVEQ          (* /= *)
+  MODEQ          (* %= *)
+  POWEQ          (* **= *) FDIVEQ         (* //= *)
+  ANDEQ          (* &= *) OREQ           (* |= *) XOREQ          (* ^= *)
+  LSHEQ          (* <<= *) RSHEQ          (* >>= *)
 
-  EQUAL          /* == */ NOTEQ          /* !=, <> */
-  LT             /* < */ GT             /* > */
-  LEQ            /* <= */ GEQ            /* >= */
+  EQUAL          (* == *) NOTEQ          (* !=, <> *)
+  LT             (* < *) GT             (* > *)
+  LEQ            (* <= *) GEQ            (* >= *)
 
-/*(*-----------------------------------------*)*/
-/*(*2 Extra tokens: *)*/
-/*(*-----------------------------------------*)*/
-/* fstrings */
+(*-----------------------------------------*)
+(* Extra tokens: *)
+(*-----------------------------------------*)
+(* fstrings *)
 %token <Ast_python.tok> FSTRING_START FSTRING_END
 %token <Ast_python.tok> FSTRING_LBRACE 
 %token <string * Ast_python.tok> FSTRING_STRING
 %token <Ast_python.tok> BANG
 
-/* layout */
+(* layout *)
 %token <Ast_python.tok> INDENT DEDENT 
 %token <Ast_python.tok> NEWLINE
 
-/*(*************************************************************************)*/
-/*(*1 Rules type declaration *)*/
-/*(*************************************************************************)*/
+(*************************************************************************)
+(* Rules type declaration *)
+(*************************************************************************)
 
 %start main sgrep_spatch_pattern
 %type <Ast_python.program> main
 %type <Ast_python.any>     sgrep_spatch_pattern
 %%
 
-/*(*************************************************************************)*/
-/*(*1 Toplevel *)*/
-/*(*************************************************************************)*/
+(*************************************************************************)
+(* Toplevel *)
+(*************************************************************************)
 
 main: file_input EOF { $1 }
 
@@ -213,10 +213,10 @@ sgrep_spatch_pattern:
 
  | stmt stmt stmt_list EOF { Stmts ($1 @ $2 @ $3) }
 
-/*(*************************************************************************)*/
-/*(*1 Import *)*/
-/*(*************************************************************************)*/
-/*(* In Python, imports can actually appear not just at the toplevel *)*/
+(*************************************************************************)
+(* Import *)
+(*************************************************************************)
+(* In Python, imports can actually appear not just at the toplevel *)
 import_stmt:
   | import_name { $1 }
   | import_from { $1 }
@@ -232,13 +232,13 @@ dotted_as_name:
 
 dotted_name:
   | NAME { [$1] }
-  | NAME DOT dotted_name { $1::$3 }
+  | NAME "." dotted_name { $1::$3 }
 
 
 import_from:
-  | FROM name_and_level IMPORT MULT
+  | FROM name_and_level IMPORT "*"
       { [ImportAll ($1, $2, $4)] }
-  | FROM name_and_level IMPORT LPAREN import_as_name_list RPAREN
+  | FROM name_and_level IMPORT "(" import_as_name_list ")"
       { [ImportFrom ($1, $2, $5)] }
   | FROM name_and_level IMPORT import_as_name_list
       { [ImportFrom ($1, $2, $4)] }
@@ -246,36 +246,36 @@ import_from:
 name_and_level:
   |           dotted_name { $1, None }
   | dot_level dotted_name { $2, Some $1 }
-  | DOT dot_level         { [("",$1(*TODO*))], Some ($1 :: $2) }
-  | ELLIPSES dot_level         { [("",$1(*TODO*))], Some ($1:: $2) }
+  | "." dot_level         { [("",$1(*TODO*))], Some ($1 :: $2) }
+  | "..." dot_level         { [("",$1(*TODO*))], Some ($1:: $2) }
 
 dot_level:
-  | /*(*empty *)*/ { [] }
-  | DOT dot_level  { $1::$2 }
-  | ELLIPSES dot_level { $1::$2 }
+  | (*empty *) { [] }
+  | "." dot_level  { $1::$2 }
+  | "..." dot_level { $1::$2 }
 
 import_as_name:
   | NAME         { $1, None }
   | NAME AS NAME { $1, Some $3 }
 
-/*(*************************************************************************)*/
-/*(*1 Variable definition *)*/
-/*(*************************************************************************)*/
+(*************************************************************************)
+(* Variable definition *)
+(*************************************************************************)
 
 expr_stmt: 
   | testlist_star_expr                       
       { ExprStmt (tuple_expr $1) }
-  /*(* typing-ext: *)*/
-  | testlist_star_expr COLON test
+  (* typing-ext: *)
+  | testlist_star_expr ":" test
       { ExprStmt (TypedExpr (tuple_expr $1, $3)) }
-  | testlist_star_expr COLON test EQ test
+  | testlist_star_expr ":" test "=" test
       { Assign ([TypedExpr (tuple_expr_store $1, $3)], $4, $5) }
 
   | testlist_star_expr augassign yield_expr  
       { AugAssign (tuple_expr_store $1, $2, $3) }
   | testlist_star_expr augassign testlist    
       { AugAssign (tuple_expr_store $1, $2, tuple_expr $3) }
-  | testlist_star_expr EQ expr_stmt_rhs_list 
+  | testlist_star_expr "=" expr_stmt_rhs_list 
       { Assign ((tuple_expr_store $1)::(fst $3), $2, snd $3) }
 
 test_or_star_expr:
@@ -289,7 +289,7 @@ star_expr_or_expr:
 expr_stmt_rhs_list:
   | expr_stmt_rhs                       
      { [], $1 }
-  | expr_stmt_rhs EQ expr_stmt_rhs_list 
+  | expr_stmt_rhs "=" expr_stmt_rhs_list 
      { (expr_store $1)::(fst $3), snd $3 }
 
 expr_stmt_rhs:
@@ -311,93 +311,93 @@ augassign:
   | ANDEQ   { BitAnd, $1 }
   | FDIVEQ  { FloorDiv, $1 }
 
-/*(*************************************************************************)*/
-/*(*1 Function definition *)*/
-/*(*************************************************************************)*/
-/*(* this rule is referenced in compound_stmt shown later *)*/
-funcdef: DEF NAME parameters return_type_opt COLON suite
+(*************************************************************************)
+(* Function definition *)
+(*************************************************************************)
+(* this rule is referenced in compound_stmt shown later *)
+funcdef: DEF NAME parameters return_type_opt ":" suite
     { FunctionDef ($2, $3, $4, $6, []) }
 
-async_funcdef: ASYNC DEF NAME parameters return_type_opt COLON suite
+async_funcdef: ASYNC DEF NAME parameters return_type_opt ":" suite
     { FunctionDef ($3, $4, $5, $7, [] (* TODO $1 *)) }
 
-/*(* typing-ext: *)*/
+(* typing-ext: *)
 return_type_opt: 
-  | /*(* empty *)*/ { None }
+  | (* empty *) { None }
   | SUB GT test     { Some $3 }
 
-/*(*----------------------------*)*/
-/*(*2 parameters *)*/
-/*(*----------------------------*)*/
+(*----------------------------*)
+(* parameters *)
+(*----------------------------*)
 
-parameters: LPAREN typedargslist RPAREN { $2 }
+parameters: "(" typedargslist ")" { $2 }
 
-/*(* typing-ext: *)*/
+(* typing-ext: *)
 typedargslist:
-  | /*(*empty*)*/                       { [] }
+  | (*empty*)                       { [] }
   | typed_parameter                     { [$1] }
-  | typed_parameter COMMA typedargslist { $1::$3 }
+  | typed_parameter "," typedargslist { $1::$3 }
 
-/*(* the original grammar enforces more restrictions on the order between
-   * Param, ParamStar, and ParamPow, but each language version relaxed it *)*/
+(* the original grammar enforces more restrictions on the order between
+   * Param, ParamStar, and ParamPow, but each language version relaxed it *)
 typed_parameter:
   | tfpdef           { ParamClassic (mk_name_param $1, None) }
-  /*(* TODO check default args come after variable args later *)*/
-  | tfpdef EQ test   { ParamClassic (mk_name_param $1, Some $3) }
-  | MULT tfpdef      { ParamStar (fst $2, snd $2) }
-  | MULT             { ParamSingleStar $1 }
-  | POW tfpdef       { ParamPow (fst $2, snd $2) }
-  /*(* sgrep-ext: *)*/
-  | ELLIPSES         { Flag_parsing.sgrep_guard (ParamEllipsis $1) }
+  (* TODO check default args come after variable args later *)
+  | tfpdef "=" test   { ParamClassic (mk_name_param $1, Some $3) }
+  | "*" tfpdef      { ParamStar (fst $2, snd $2) }
+  | "*"             { ParamSingleStar $1 }
+  | "**" tfpdef       { ParamPow (fst $2, snd $2) }
+  (* sgrep-ext: *)
+  | "..."         { Flag_parsing.sgrep_guard (ParamEllipsis $1) }
 
 tfpdef:
   | NAME            { $1, None }
-  /*(* typing-ext: *)*/
-  | NAME COLON test { $1, Some $3 }
+  (* typing-ext: *)
+  | NAME ":" test { $1, Some $3 }
 
 
-/*(* without types, as in lambda *)*/
+(* without types, as in lambda *)
 varargslist:
-  | /*(*empty*)*/               { [] }
+  | (*empty*)               { [] }
   | parameter                   { [$1] }
-  | parameter COMMA varargslist { $1::$3 }
+  | parameter "," varargslist { $1::$3 }
 
-/*(* python3-ext: can be in any order, ParamStar before or after Classic *)*/
+(* python3-ext: can be in any order, ParamStar before or after Classic *)
 parameter:
   | vfpdef         { ParamClassic (($1, None), None) }
-  | vfpdef EQ test { ParamClassic (($1, None), Some $3) }
-  | MULT NAME      { ParamStar ($2, None) }
-  | POW NAME       { ParamPow ($2, None) }
+  | vfpdef "=" test { ParamClassic (($1, None), Some $3) }
+  | "*" NAME      { ParamStar ($2, None) }
+  | "**" NAME       { ParamPow ($2, None) }
 
 vfpdef: NAME { $1 }
 
-/*(*************************************************************************)*/
-/*(*1 Class definition *)*/
-/*(*************************************************************************)*/
+(*************************************************************************)
+(* Class definition *)
+(*************************************************************************)
 
-classdef: CLASS NAME arglist_paren_opt COLON suite 
+classdef: CLASS NAME arglist_paren_opt ":" suite 
    { ClassDef ($2, $3, $5, []) }
 
 arglist_paren_opt: 
- | /*(* empty *)*/ { [] }
- | LPAREN RPAREN   { [] }
- /*(* python3-ext: was expr_list before *)*/
- | LPAREN arg_list RPAREN { $2 }
+ | (* empty *) { [] }
+ | "(" ")"   { [] }
+ (* python3-ext: was expr_list before *)
+ | "(" arg_list ")" { $2 }
 
-/*(*************************************************************************)*/
-/*(*1 Annotations *)*/
-/*(*************************************************************************)*/
+(*************************************************************************)
+(* Annotations *)
+(*************************************************************************)
 
 decorator:
-  | AT decorator_name arglist_paren_opt NEWLINE { Call ($2, $3) }
+  | "@" decorator_name arglist_paren_opt NEWLINE { Call ($2, $3) }
 
 decorator_name:
   | NAME                    { Name ($1, Load, ref NotResolved) }
-  | decorator_name DOT NAME { Attribute ($1, $2, $3, Load) }
+  | decorator_name "." NAME { Attribute ($1, $2, $3, Load) }
 
-/*(*************************************************************************)*/
-/*(*1 Statement *)*/
-/*(*************************************************************************)*/
+(*************************************************************************)
+(* Statement *)
+(*************************************************************************)
 
 stmt:
   | simple_stmt { $1 }
@@ -405,8 +405,8 @@ stmt:
 
 simple_stmt:
   | small_stmt NEWLINE { $1 }
-  | small_stmt SEMICOL NEWLINE { $1 }
-  | small_stmt SEMICOL simple_stmt { $1 @ $3 }
+  | small_stmt ";" NEWLINE { $1 }
+  | small_stmt ";" simple_stmt { $1 @ $3 }
 
 small_stmt:
   | expr_stmt   { [$1] }
@@ -417,27 +417,27 @@ small_stmt:
   | global_stmt { [$1] }
   | nonlocal_stmt { [$1] }
   | assert_stmt { [$1] }
-  /*(* python2: *)*/
+  (* python2: *)
   | print_stmt { [$1] }
   | exec_stmt { [$1] }
 
-/*(* for expr_stmt see above *)*/
+(* for expr_stmt see above *)
 
-/*(* python2: *)*/
+(* python2: *)
 print_stmt:
   | PRINT                     { Print ($1, None, [], true) }
   | PRINT test print_testlist { Print ($1, None, $2::(fst $3), snd $3) }
   | PRINT RSHIFT test { Print ($1, Some $3, [], true) }
-  | PRINT RSHIFT test COMMA test print_testlist 
+  | PRINT RSHIFT test "," test print_testlist 
      { Print ($1, Some $3, $5::(fst $6), snd $6) }
 print_testlist:
-  | /*(* empty *)*/  { [], true }
-  | COMMA test COMMA { [$2], false }
-  | COMMA test print_testlist { $2::(fst $3), snd $3 }
+  | (* empty *)  { [], true }
+  | "," test "," { [$2], false }
+  | "," test print_testlist { $2::(fst $3), snd $3 }
 exec_stmt:
   | EXEC expr { Exec ($1, $2, None, None) }
   | EXEC expr IN test { Exec ($1, $2, Some $4, None) }
-  | EXEC expr IN test COMMA test { Exec ($1, $2, Some $4, Some $6) }
+  | EXEC expr IN test "," test { Exec ($1, $2, Some $4, Some $6) }
 
 
 del_stmt: DEL exprlist { Delete ($1, List.map expr_del (to_list $2)) }
@@ -464,18 +464,18 @@ yield_stmt: yield_expr { ExprStmt ($1) }
 raise_stmt:
   | RAISE                           { Raise ($1, None) }
   | RAISE test                      { Raise ($1, Some ($2, None)) }
-  /*(* python3-ext: *)*/
+  (* python3-ext: *)
   | RAISE test FROM test            { Raise ($1, Some ($2, Some $4)) }
 
 
 global_stmt: GLOBAL name_list { Global ($1, $2) }
 
-/*(* python3-ext: *)*/
+(* python3-ext: *)
 nonlocal_stmt: NONLOCAL name_list { NonLocal ($1, $2) }
 
 assert_stmt:
   | ASSERT test            { Assert ($1, $2, None) }
-  | ASSERT test COMMA test { Assert ($1, $2, Some $4) }
+  | ASSERT test "," test { Assert ($1, $2, Some $4) }
 
 
 
@@ -489,9 +489,9 @@ compound_stmt:
   | funcdef     { $1 }
   | classdef    { $1 }
   | decorated   { $1 }
-  /*(* Note that there is no async_funcdef above. To avoid conflict
+  (* Note that there is no async_funcdef above. To avoid conflict
      * with async_stmt below, Python enforces the def to be decorated.
-     *)*/
+     *)
   | async_stmt  { $1 }
 
 decorated:
@@ -511,67 +511,67 @@ decorated:
      | _ -> raise Impossible
   }
 
-/*(* this is always preceded by a COLON *)*/
+(* this is always preceded by a ":" *)
 suite:
   | simple_stmt { $1 }
   | NEWLINE INDENT stmt_list DEDENT { $3 }
 
 
-if_stmt: IF test COLON suite elif_stmt_list { If ($1, $2, $4, $5) }
+if_stmt: IF test ":" suite elif_stmt_list { If ($1, $2, $4, $5) }
 
 elif_stmt_list:
-  | /*(*empty *)*/  { [] }
-  | ELIF test COLON suite elif_stmt_list { [If ($1, $2, $4, $5)] }
-  | ELSE COLON suite { $3 }
+  | (*empty *)  { [] }
+  | ELIF test ":" suite elif_stmt_list { [If ($1, $2, $4, $5)] }
+  | ELSE ":" suite { $3 }
 
 
 while_stmt:
-  | WHILE test COLON suite { While ($1, $2, $4, []) }
-  | WHILE test COLON suite ELSE COLON suite { While ($1, $2, $4, $7) }
+  | WHILE test ":" suite { While ($1, $2, $4, []) }
+  | WHILE test ":" suite ELSE ":" suite { While ($1, $2, $4, $7) }
 
 
 for_stmt:
-  | FOR exprlist IN testlist COLON suite
+  | FOR exprlist IN testlist ":" suite
       { For ($1, tuple_expr_store $2, $3, tuple_expr $4, $6, []) }
-  | FOR exprlist IN testlist COLON suite ELSE COLON suite
+  | FOR exprlist IN testlist ":" suite ELSE ":" suite
       { For ($1, tuple_expr_store $2, $3, tuple_expr $4, $6, $9) }
 
 
 try_stmt:
-  | TRY COLON suite excepthandler_list
+  | TRY ":" suite excepthandler_list
       { TryExcept ($1, $3, $4, []) }
-  | TRY COLON suite excepthandler_list ELSE COLON suite
+  | TRY ":" suite excepthandler_list ELSE ":" suite
       { TryExcept ($1, $3, $4, $7) }
-  | TRY COLON suite excepthandler_list ELSE COLON suite FINALLY COLON suite
+  | TRY ":" suite excepthandler_list ELSE ":" suite FINALLY ":" suite
       { TryFinally ($1, [TryExcept ($1, $3, $4, $7)], $8, $10) }
-  | TRY COLON suite excepthandler_list FINALLY COLON suite
+  | TRY ":" suite excepthandler_list FINALLY ":" suite
       { TryFinally ($1, [TryExcept ($1, $3, $4, [])], $5, $7) }
-  | TRY COLON suite FINALLY COLON suite
+  | TRY ":" suite FINALLY ":" suite
       { TryFinally ($1, $3, $4, $6) }
 
 excepthandler:
-  | EXCEPT              COLON suite { ExceptHandler ($1, None, None, $3) }
-  | EXCEPT test         COLON suite { ExceptHandler ($1, Some $2, None, $4) }
-  | EXCEPT test AS NAME COLON suite { ExceptHandler ($1, Some $2, Some $4, $6)}
+  | EXCEPT              ":" suite { ExceptHandler ($1, None, None, $3) }
+  | EXCEPT test         ":" suite { ExceptHandler ($1, Some $2, None, $4) }
+  | EXCEPT test AS NAME ":" suite { ExceptHandler ($1, Some $2, Some $4, $6)}
 
 with_stmt:
   | WITH with_inner { $2 $1 }
 
 with_inner:
-  | test         COLON suite      { fun t -> With (t, $1, None, $3) }
-  | test AS expr COLON suite      { fun t -> With (t, $1, Some $3, $5) }
-  | test         COMMA with_inner { fun t -> With (t, $1, None, [$3 t]) }
-  | test AS expr COMMA with_inner { fun t -> With (t, $1, Some $3, [$5 t]) }
+  | test         ":" suite      { fun t -> With (t, $1, None, $3) }
+  | test AS expr ":" suite      { fun t -> With (t, $1, Some $3, $5) }
+  | test         "," with_inner { fun t -> With (t, $1, None, [$3 t]) }
+  | test AS expr "," with_inner { fun t -> With (t, $1, Some $3, [$5 t]) }
 
-/*(* python3-ext: *)*/
+(* python3-ext: *)
 async_stmt: 
   | ASYNC funcdef   { Async ($1, $2) }
   | ASYNC with_stmt { Async ($1, $2) } 
   | ASYNC for_stmt  { Async ($1, $2) }
 
-/*(*************************************************************************)*/
-/*(*1 Expressions *)*/
-/*(*************************************************************************)*/
+(*************************************************************************)
+(* Expressions *)
+(*************************************************************************)
 
 expr:
   | xor_expr            { $1 }
@@ -603,11 +603,11 @@ term:
   | factor term_op term { BinOp ($1, $2, $3) }
 
 term_op:
-  | MULT    { Mult, $1 }
+  | "*"    { Mult, $1 }
   | DIV     { Div, $1 }
   | MOD     { Mod, $1 }
   | FDIV    { FloorDiv, $1 }
-  | AT      { MatMult, $1 }
+  | "@"      { MatMult, $1 }
 
 factor:
   | ADD factor    { UnaryOp ((UAdd,$1), $2) }
@@ -617,11 +617,11 @@ factor:
 
 power:
   | atom_expr            { $1 }
-  | atom_expr POW factor { BinOp ($1, (Pow,$2), $3) }
+  | atom_expr "**" factor { BinOp ($1, (Pow,$2), $3) }
 
-/*(*----------------------------*)*/
-/*(*2 Atom expr *)*/
-/*(*----------------------------*)*/
+(*----------------------------*)
+(* Atom expr *)
+(*----------------------------*)
 
 atom_expr: 
   | atom_and_trailers        { $1 }
@@ -630,20 +630,20 @@ atom_expr:
 atom_and_trailers:
   | atom { $1 }
 
-  | atom_and_trailers LPAREN          RPAREN { Call ($1, []) }
-  | atom_and_trailers LPAREN arg_list RPAREN { Call ($1, $3) }
+  | atom_and_trailers "("          ")" { Call ($1, []) }
+  | atom_and_trailers "(" arg_list ")" { Call ($1, $3) }
 
-  | atom_and_trailers LBRACK subscript_list   RBRACK
+  | atom_and_trailers "[" subscript_list   "]"
       { match $3 with
           (* TODO test* => Index (Tuple (elts)) *)
         | [s] -> Subscript ($1, [s], Load)
         | l -> Subscript ($1, (l), Load) }
 
-  | atom_and_trailers DOT NAME { Attribute ($1, $2, $3, Load) }
+  | atom_and_trailers "." NAME { Attribute ($1, $2, $3, Load) }
 
-/*(*----------------------------*)*/
-/*(*2 Atom *)*/
-/*(*----------------------------*)*/
+(*----------------------------*)
+(* Atom *)
+(*----------------------------*)
 
 atom:
   | NAME        { Name ($1, Load, ref NotResolved) }
@@ -671,15 +671,15 @@ atom:
 
   | atom_repr   { $1 }
 
-  /*(* typing-ext: sgrep-ext: *)*/
-  | ELLIPSES    { Ellipsis $1 }
-  | LDots test RDots { Flag_parsing.sgrep_guard (DeepEllipsis ($1, $2, $3)) }
+  (* typing-ext: sgrep-ext: *)
+  | "..."    { Ellipsis $1 }
+  | "<..." test "...>" { Flag_parsing.sgrep_guard (DeepEllipsis ($1, $2, $3)) }
 
-atom_repr: BACKQUOTE testlist1 BACKQUOTE { Repr ($1, tuple_expr $2, $3) }
+atom_repr: "`" testlist1 "`" { Repr ($1, tuple_expr $2, $3) }
 
-/*(*----------------------------*)*/
-/*(*2 strings *)*/
-/*(*----------------------------*)*/
+(*----------------------------*)
+(* strings *)
+(*----------------------------*)
 
 string:
   | STR { let (s, pre, tok) = $1 in 
@@ -688,14 +688,14 @@ string:
 
 interpolated:
   | FSTRING_STRING { Str $1 }
-  | FSTRING_LBRACE interpolant RBRACE { $2 }
-  | FSTRING_LBRACE interpolant COLON format_specifier RBRACE
+  | FSTRING_LBRACE interpolant "}" { $2 }
+  | FSTRING_LBRACE interpolant ":" format_specifier "}"
      { InterpolatedString ($2::mk_str $3::$4) }
-  | FSTRING_LBRACE interpolant BANG format_specifier RBRACE
+  | FSTRING_LBRACE interpolant BANG format_specifier "}"
      { InterpolatedString ($2::mk_str $3::$4) }
 
 interpolant:
-/*(* Note that the f-string mini-language at
+(* Note that the f-string mini-language at
    * https://docs.python.org/3/library/string.html#format-string-syntax
    * simply states that this is parsed as an "expression"; we are now
    * left trying to determine to which grammar rule an "expression"
@@ -708,73 +708,73 @@ interpolant:
    * f"{value}"
    * f"{value:format}"
    * f"{value!format}"
-   *)*/
+   *)
   | testlist { tuple_expr $1 }
 
-/*(* todo: maybe need another lexing state when COLON inside FSTRING_LBRACE*)*/
+(* todo: maybe need another lexing state when ":" inside FSTRING_LBRACE*)
 format_specifier: format_token_list { $1 }
 
 format_token_list:
  | format_token                   { [$1] }
  | format_token format_token_list { $1::$2 }
 
-/*(* see "Format Specification Mini-Language at 
+(* see "Format Specification Mini-Language at 
    * https://docs.python.org/3/library/string.html#format-string-syntax
-   *)*/
+   *)
 format_token:
   | INT   { mk_str (snd $1) }
   | FLOAT { mk_str (snd $1) }
-  | DOT   { mk_str $1 }
+  | "."   { mk_str $1 }
   | NAME  { mk_str (snd $1) }
   | LT { mk_str $1 } | GT { mk_str $1 } 
-  | EQ { mk_str $1 } | BITXOR { mk_str $1 }
+  | "=" { mk_str $1 } | BITXOR { mk_str $1 }
   | ADD  { mk_str $1 } | SUB { mk_str $1 }
-  | COMMA { mk_str $1 }
+  | "," { mk_str $1 }
   | MOD { mk_str $1 }
 
-  | LBRACE test RBRACE { $2 }
+  | "{" test "}" { $2 }
 
 
-/*(*----------------------------*)*/
-/*(*2 containers *)*/
-/*(*----------------------------*)*/
+(*----------------------------*)
+(* containers *)
+(*----------------------------*)
 
 atom_tuple:
-  | LPAREN               RPAREN { Tuple (CompList ($1, [], $2), Load) }
-  | LPAREN testlist_comp RPAREN { Tuple ($2, Load) }
-  | LPAREN yield_expr    RPAREN { $2 }
+  | "("               ")" { Tuple (CompList ($1, [], $2), Load) }
+  | "(" testlist_comp ")" { Tuple ($2, Load) }
+  | "(" yield_expr    ")" { $2 }
 
 atom_list:
-  | LBRACK               RBRACK { List (CompList ($1, [], $2), Load) }
-  | LBRACK testlist_comp RBRACK { List ($2, Load) }
+  | "["               "]" { List (CompList ($1, [], $2), Load) }
+  | "[" testlist_comp "]" { List ($2, Load) }
 
 atom_dict:
-  | LBRACE                RBRACE { DictOrSet (CompList ($1, [], $2)) }
-  | LBRACE dictorsetmaker RBRACE { DictOrSet ($2 ($1, $3)) }
+  | "{"                "}" { DictOrSet (CompList ($1, [], $2)) }
+  | "{" dictorsetmaker "}" { DictOrSet ($2 ($1, $3)) }
 
 dictorsetmaker: 
   | dictorset_elem comp_for { fun _ -> CompForIf ($1, $2) }
   | dictorset_elem_list     { fun (t1, t2) -> CompList (t1, $1, t2) }
 
 dictorset_elem:
-  | test COLON test { KeyVal ($1, $3) }
+  | test ":" test { KeyVal ($1, $3) }
   | test            { Key $1 }
   | star_expr       { Key $1 }
-  /*(* python3-ext: *)*/
-  | POW expr        { PowInline $2 }
+  (* python3-ext: *)
+  | "**" expr        { PowInline $2 }
 
-/*(*----------------------------*)*/
-/*(*2 Array access *)*/
-/*(*----------------------------*)*/
+(*----------------------------*)
+(* Array access *)
+(*----------------------------*)
 
 subscript:
   | test { Index ($1) }
-  | test_opt COLON test_opt { Slice ($1, $3, None) }
-  | test_opt COLON test_opt COLON test_opt { Slice ($1, $3, $5) }
+  | test_opt ":" test_opt { Slice ($1, $3, None) }
+  | test_opt ":" test_opt ":" test_opt { Slice ($1, $3, $5) }
 
-/*(*----------------------------*)*/
-/*(*2 test *)*/
-/*(*----------------------------*)*/
+(*----------------------------*)
+(* test *)
+(*----------------------------*)
 
 test:
   | or_test                      { $1 }
@@ -811,12 +811,12 @@ comp_op:
   | IN      { In, $1 }
   | NOT IN  { NotIn, $1 }
 
-/*(*----------------------------*)*/
-/*(*2 Advanced features *)*/
-/*(*----------------------------*)*/
+(*----------------------------*)
+(* Advanced features *)
+(*----------------------------*)
 
-/*(* python3-ext: *)*/
-star_expr: MULT expr { ExprStar $2 }
+(* python3-ext: *)
+star_expr: "*" expr { ExprStar $2 }
 
 
 yield_expr:
@@ -824,11 +824,11 @@ yield_expr:
   | YIELD FROM test { Yield ($1, Some $3, true) }
   | YIELD testlist  { Yield ($1, Some (tuple_expr $2), false) }
 
-lambdadef: LAMBDA varargslist COLON test { Lambda ($2, $4) }
+lambdadef: LAMBDA varargslist ":" test { Lambda ($2, $4) }
 
-/*(*----------------------------*)*/
-/*(*2 Comprehensions *)*/
-/*(*----------------------------*)*/
+(*----------------------------*)
+(* Comprehensions *)
+(*----------------------------*)
 
 testlist_comp:
   | test_or_star_expr comp_for { CompForIf ($1, $2) }
@@ -856,52 +856,52 @@ test_nocond:
   | or_test          { $1 }
   | lambdadef_nocond { $1 }
 
-lambdadef_nocond: LAMBDA varargslist COLON test_nocond { Lambda ($2, $4) }
+lambdadef_nocond: LAMBDA varargslist ":" test_nocond { Lambda ($2, $4) }
 
 
-/*(*----------------------------*)*/
-/*(*2 Arguments *)*/
-/*(*----------------------------*)*/
+(*----------------------------*)
+(* Arguments *)
+(*----------------------------*)
 
-/*(* python3-ext: can be any order, ArgStar before or after ArgKwd *)*/
+(* python3-ext: can be any order, ArgStar before or after ArgKwd *)
 argument:
   | test           { Arg $1 }
   | test comp_for  { ArgComp ($1, $2) }
 
-  /*(* python3-ext: *)*/
-  | MULT test      { ArgStar $2 }
-  | POW test       { ArgPow $2 }
+  (* python3-ext: *)
+  | "*" test      { ArgStar $2 }
+  | "**" test       { ArgPow $2 }
 
-  /*(* sgrep-ext: difficult to move in atom without s/r conflict so restricted
-     * to argument for now *)*/
-  | NAME COLON test 
+  (* sgrep-ext: difficult to move in atom without s/r conflict so restricted
+     * to argument for now *)
+  | NAME ":" test 
     { Flag_parsing.sgrep_guard (Arg (TypedMetavar ($1, $2, $3))) }
 
-  | test EQ test
+  | test "=" test
       { match $1 with
         | Name (id, _, _) -> ArgKwd (id, $3)
         | _ -> raise Parsing.Parse_error 
       }
 
-/*(*************************************************************************)*/
-/*(*1 xxx_opt, xxx_list *)*/
-/*(*************************************************************************)*/
+(*************************************************************************)
+(* xxx_opt, xxx_list *)
+(*************************************************************************)
 
-/*(* basic lists, 0 element allowed *)*/
+(* basic lists, 0 element allowed *)
 nl_or_stmt_list:
-  | /*(*empty*)*/               { [] }
+  | (*empty*)               { [] }
   | nl_or_stmt  nl_or_stmt_list { $1 @ $2 }
 
 stmt_list:
-  | /*(* empty *)*/ { [] }
+  | (* empty *) { [] }
   | stmt stmt_list  { $1 @ $2 }
 
 interpolated_list:
-  | /*(*empty*)*/      { [] }
+  | (*empty*)      { [] }
   | interpolated interpolated_list { $1::$2 }
 
 
-/*(* basic lists, at least one element *)*/
+(* basic lists, at least one element *)
 excepthandler_list:
   | excepthandler                    { [$1] }
   | excepthandler excepthandler_list { $1::$2 }
@@ -915,59 +915,59 @@ decorators:
   | decorator decorators { $1::$2 }
 
 
-/*(* list with commans and trailing comma *)*/
+(* list with commans and trailing comma *)
 import_as_name_list:
   | import_as_name                           { [$1] }
-  | import_as_name COMMA                     { [$1] }
-  | import_as_name COMMA import_as_name_list { $1::$3 }
+  | import_as_name ","                     { [$1] }
+  | import_as_name "," import_as_name_list { $1::$3 }
 
 
 subscript_list:
   | subscript                      { [$1] }
-  | subscript COMMA                { [$1] }
-  | subscript COMMA subscript_list { $1::$3 }
+  | subscript ","                { [$1] }
+  | subscript "," subscript_list { $1::$3 }
 
 arg_list:
   | argument                { [$1] }
-  | argument COMMA          { [$1] }
-  | argument COMMA arg_list  { $1::$3 }
+  | argument ","          { [$1] }
+  | argument "," arg_list  { $1::$3 }
 
 dictorset_elem_list:
   | dictorset_elem                            { [$1] }
-  | dictorset_elem COMMA                      { [$1] }
-  | dictorset_elem COMMA dictorset_elem_list { $1::$3 }
+  | dictorset_elem ","                      { [$1] }
+  | dictorset_elem "," dictorset_elem_list { $1::$3 }
 
 exprlist:
   | star_expr_or_expr                { Single $1 }
-  | star_expr_or_expr COMMA          { Tup [$1] }
-  | star_expr_or_expr COMMA exprlist { cons $1 $3 }
+  | star_expr_or_expr ","          { Tup [$1] }
+  | star_expr_or_expr "," exprlist { cons $1 $3 }
 
 testlist:
   | test                { Single $1 }
-  | test COMMA          { Tup [$1] }
-  | test COMMA testlist { cons $1 $3 }
+  | test ","          { Tup [$1] }
+  | test "," testlist { cons $1 $3 }
 
 
 testlist_star_expr:
   | test_or_star_expr                          { Single $1 }
-  | test_or_star_expr COMMA                    { Tup [$1] }
-  | test_or_star_expr COMMA testlist_star_expr { cons $1 $3 }
+  | test_or_star_expr ","                    { Tup [$1] }
+  | test_or_star_expr "," testlist_star_expr { cons $1 $3 }
 
-/*(* list with commas, but without trailing comma *)*/
+(* list with commas, but without trailing comma *)
 dotted_as_name_list:
   | dotted_as_name                           { [$1] }
-  | dotted_as_name COMMA dotted_as_name_list { $1::$3 }
+  | dotted_as_name "," dotted_as_name_list { $1::$3 }
 
 name_list:
   | NAME                 { [$1] }
-  | NAME COMMA name_list { $1::$3 }
+  | NAME "," name_list { $1::$3 }
 
 testlist1:
   | test                 { Single $1 }
-  | test COMMA testlist1 { cons $1 $3 }
+  | test "," testlist1 { cons $1 $3 }
 
 
-/*(* list with special separator (not comma) *)*/
+(* list with special separator (not comma) *)
 and_test_list:
   | and_test                  { [$1] }
   | and_test OR and_test_list { $1::$3 }
@@ -980,7 +980,7 @@ comparison_list:
   | expr                         { [], [$1] }
   | expr comp_op comparison_list { ($2)::(fst $3), $1::(snd $3) }
 
-/*(* opt *)*/
+(* opt *)
 test_opt:
-  | /*(*empty*)*/ { None }
+  | (*empty*) { None }
   | test          { Some $1 }
