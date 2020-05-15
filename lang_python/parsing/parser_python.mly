@@ -300,20 +300,18 @@ test_or_star_expr:
   | test      { $1 }
   | star_expr { $1 }
 
-star_expr_or_expr:
+expr_or_star_expr:
   | expr      { $1 }
   | star_expr { $1 }
 
-exprlist: tuple(star_expr_or_expr) { $1 }
+exprlist: tuple(expr_or_star_expr) { $1 }
 
 expr_stmt_rhs_list:
-  | expr_stmt_rhs                       
-     { [], $1 }
-  | expr_stmt_rhs "=" expr_stmt_rhs_list 
-     { (expr_store $1)::(fst $3), snd $3 }
+  | expr_stmt_rhs                         { [], $1 }
+  | expr_stmt_rhs "=" expr_stmt_rhs_list  { (expr_store $1)::(fst $3), snd $3 }
 
 expr_stmt_rhs:
-  | yield_expr         { $1 }
+  | yield_expr               { $1 }
   | tuple(test_or_star_expr) { tuple_expr $1 }
  
 
