@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2010 Facebook
  * Copyright (C) 2011-2015 Tomohiro Matsuyama
- * Copyright (C) 2019 r2c
+ * Copyright (C) 2019-2020 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -30,8 +30,8 @@
 open Common
 open Ast_python
 
-let fake s = Parse_info.fake_info s
-let fake_bracket x = fake "(", x, fake ")"
+let fake = Ast_generic.fake
+let fake_bracket = Ast_generic.fake_bracket
 
 (* intermediate helper type *)
 type single_or_tuple =
@@ -185,11 +185,13 @@ let mk_str ii =
 (*************************************************************************)
 (* Rules type declaration *)
 (*************************************************************************)
-
-%start main sgrep_spatch_pattern
-%type <Ast_python.program> main
-%type <Ast_python.any>     sgrep_spatch_pattern
+%start <Ast_python.program> main
+%start <Ast_python.any> sgrep_spatch_pattern
 %%
+
+(*************************************************************************)
+(* Macros *)
+(*************************************************************************)
 
 (*************************************************************************)
 (* Toplevel *)
@@ -207,7 +209,7 @@ sgrep_spatch_pattern:
  | test       EOF            { Expr $1 }
 
  | small_stmt EOF            { match $1 with [x] -> Stmt x | xs -> Stmts xs }
- | small_stmt NEWLINE EOF    {  match $1 with [x] -> Stmt x | xs -> Stmts xs }
+ | small_stmt NEWLINE EOF    { match $1 with [x] -> Stmt x | xs -> Stmts xs }
  | compound_stmt EOF         { Stmt $1 }
  | compound_stmt NEWLINE EOF { Stmt $1 }
 
@@ -315,16 +317,15 @@ augassign:
 (* Function definition *)
 (*************************************************************************)
 (* this rule is referenced in compound_stmt shown later *)
-funcdef: DEF NAME parameters return_type_opt ":" suite
+funcdef: DEF NAME parameters return_type? ":" suite
     { FunctionDef ($2, $3, $4, $6, []) }
 
-async_funcdef: ASYNC DEF NAME parameters return_type_opt ":" suite
+async_funcdef: ASYNC DEF NAME parameters return_type? ":" suite
     { FunctionDef ($3, $4, $5, $7, [] (* TODO $1 *)) }
 
 (* typing-ext: *)
-return_type_opt: 
-  | (* empty *) { None }
-  | SUB GT test     { Some $3 }
+return_type: 
+  | SUB GT test     { $3 }
 
 (*----------------------------*)
 (* parameters *)
@@ -375,12 +376,11 @@ vfpdef: NAME { $1 }
 (* Class definition *)
 (*************************************************************************)
 
-classdef: CLASS NAME arglist_paren_opt ":" suite 
-   { ClassDef ($2, $3, $5, []) }
+classdef: CLASS NAME arglist_paren_opt ":" suite { ClassDef ($2, $3, $5, []) }
 
 arglist_paren_opt: 
  | (* empty *) { [] }
- | "(" ")"   { [] }
+ | "(" ")"     { [] }
  (* python3-ext: was expr_list before *)
  | "(" arg_list ")" { $2 }
 
@@ -388,8 +388,7 @@ arglist_paren_opt:
 (* Annotations *)
 (*************************************************************************)
 
-decorator:
-  | "@" decorator_name arglist_paren_opt NEWLINE { Call ($2, $3) }
+decorator: "@" decorator_name arglist_paren_opt NEWLINE { Call ($2, $3) }
 
 decorator_name:
   | NAME                    { Name ($1, Load, ref NotResolved) }
@@ -429,11 +428,13 @@ print_stmt:
   | PRINT test print_testlist { Print ($1, None, $2::(fst $3), snd $3) }
   | PRINT RSHIFT test { Print ($1, Some $3, [], true) }
   | PRINT RSHIFT test "," test print_testlist 
-     { Print ($1, Some $3, $5::(fst $6), snd $6) }
+      { Print ($1, Some $3, $5::(fst $6), snd $6) }
+
 print_testlist:
   | (* empty *)  { [], true }
   | "," test "," { [$2], false }
   | "," test print_testlist { $2::(fst $3), snd $3 }
+
 exec_stmt:
   | EXEC expr { Exec ($1, $2, None, None) }
   | EXEC expr IN test { Exec ($1, $2, Some $4, None) }
@@ -474,7 +475,7 @@ global_stmt: GLOBAL name_list { Global ($1, $2) }
 nonlocal_stmt: NONLOCAL name_list { NonLocal ($1, $2) }
 
 assert_stmt:
-  | ASSERT test            { Assert ($1, $2, None) }
+  | ASSERT test          { Assert ($1, $2, None) }
   | ASSERT test "," test { Assert ($1, $2, Some $4) }
 
 
@@ -526,7 +527,7 @@ elif_stmt_list:
 
 
 while_stmt:
-  | WHILE test ":" suite { While ($1, $2, $4, []) }
+  | WHILE test ":" suite                { While ($1, $2, $4, []) }
   | WHILE test ":" suite ELSE ":" suite { While ($1, $2, $4, $7) }
 
 
@@ -554,8 +555,7 @@ excepthandler:
   | EXCEPT test         ":" suite { ExceptHandler ($1, Some $2, None, $4) }
   | EXCEPT test AS NAME ":" suite { ExceptHandler ($1, Some $2, Some $4, $6)}
 
-with_stmt:
-  | WITH with_inner { $2 $1 }
+with_stmt: WITH with_inner { $2 $1 }
 
 with_inner:
   | test         ":" suite      { fun t -> With (t, $1, None, $3) }
@@ -603,11 +603,11 @@ term:
   | factor term_op term { BinOp ($1, $2, $3) }
 
 term_op:
-  | "*"    { Mult, $1 }
+  | "*"     { Mult, $1 }
   | DIV     { Div, $1 }
   | MOD     { Mod, $1 }
   | FDIV    { FloorDiv, $1 }
-  | "@"      { MatMult, $1 }
+  | "@"     { MatMult, $1 }
 
 factor:
   | ADD factor    { UnaryOp ((UAdd,$1), $2) }
@@ -672,7 +672,7 @@ atom:
   | atom_repr   { $1 }
 
   (* typing-ext: sgrep-ext: *)
-  | "..."    { Ellipsis $1 }
+  | "..."              { Ellipsis $1 }
   | "<..." test "...>" { Flag_parsing.sgrep_guard (DeepEllipsis ($1, $2, $3)) }
 
 atom_repr: "`" testlist1 "`" { Repr ($1, tuple_expr $2, $3) }
