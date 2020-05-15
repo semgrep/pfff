@@ -87,6 +87,3 @@ $(TARGET).top: $(OBJS) $(LIBS)
 
 clean::
 	rm -f $(TARGET).top
-
-visitor_pil.cmo: visitor_pil.ml
-	$(OCAMLC) -w y -c $<

@@ -59,6 +59,3 @@ parser_java.ml parser_java.mli: parser_java.mly
 clean::
 	rm -f parser_java.ml parser_java.mli parser_java.output
 beforedepend:: parser_java.ml parser_java.mli
-
-visitor_java.cmo: visitor_java.ml
-	$(OCAMLC) -w y -c $<

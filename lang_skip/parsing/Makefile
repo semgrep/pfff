@@ -52,13 +52,8 @@ clean::
 	rm -f lexer_skip.ml
 beforedepend:: lexer_skip.ml
 
-
 parser_skip.ml parser_skip.mli: parser_skip.mly
 	$(OCAMLYACC) $<
 clean::
 	rm -f parser_skip.ml parser_skip.mli parser_skip.output
 beforedepend:: parser_skip.ml parser_skip.mli
-
-
-visitor_skip.cmo: visitor_skip.ml
-	$(OCAMLC) -w y -c $<

@@ -54,28 +54,8 @@ $(TARGET).top: $(OBJS) $(LIBS)
 clean::
 	rm -f $(TARGET).top
 
-
 lexer_lisp.ml: lexer_lisp.mll
 	$(OCAMLLEX) $<
 clean::
 	rm -f lexer_lisp.ml
 beforedepend:: lexer_lisp.ml
-
-
-#parser_nw.ml parser_nw.mli: parser_nw.mly
-#	$(OCAMLYACC) $<
-#clean::
-#	rm -f parser_nw.ml parser_nw.mli parser_nw.output
-#beforedepend:: parser_nw.ml parser_nw.mli
-#
-#
-#visitor_nw.cmo: visitor_nw.ml
-#	$(OCAMLC) -w y -c $<
-
-##############################################################################
-# Generic rules
-##############################################################################
-
-##############################################################################
-# Literate Programming rules
-##############################################################################

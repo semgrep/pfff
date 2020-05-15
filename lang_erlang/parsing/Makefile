@@ -61,21 +61,8 @@ clean::
 	rm -f lexer_erlang.ml
 beforedepend:: lexer_erlang.ml
 
-
 parser_erlang.ml parser_erlang.mli: parser_erlang.mly
 	$(OCAMLYACC) $<
 clean::
 	rm -f parser_erlang.ml parser_erlang.mli parser_erlang.output
 beforedepend:: parser_erlang.ml parser_erlang.mli
-
-
-visitor_erlang.cmo: visitor_erlang.ml
-	$(OCAMLC) -w y -c $<
-
-##############################################################################
-# Generic rules
-##############################################################################
-
-##############################################################################
-# Literate Programming rules
-##############################################################################

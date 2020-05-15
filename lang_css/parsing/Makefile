@@ -61,7 +61,3 @@ parser_css.ml parser_css.mli: parser_css.mly
 clean::
 	rm -f parser_css.ml parser_css.mli parser_css.output
 beforedepend:: parser_css.ml parser_css.mli
-
-
-visitor_css.cmo: visitor_css.ml
-	$(OCAMLC) -w y -c $<

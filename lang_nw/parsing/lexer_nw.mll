@@ -224,7 +224,7 @@ rule tex = parse
   (* ----------------------------------------------------------------------- *)
   | eof { EOF (tokinfo lexbuf |> Parse_info.rewrap_str "") }
   | _ { 
-        error ("unrecognised symbol, in token rule:"^tok lexbuf);
+        error ("unrecognised symbol, in token rule:"^tok lexbuf) lexbuf;
         TUnknown (tokinfo lexbuf)
     }
 
@@ -247,7 +247,7 @@ and noweb = parse
   (* ----------------------------------------------------------------------- *)
   | eof { EOF (tokinfo lexbuf |> Parse_info.rewrap_str "") }
   | _ { 
-      error ("unrecognised symbol, in noweb chunkname rule:"^tok lexbuf);
+      error ("unrecognised symbol, in noweb chunkname rule:"^tok lexbuf) lexbuf;
       TUnknown (tokinfo lexbuf)
     }
 
@@ -270,6 +270,6 @@ and verbatim endname = parse
   (* ----------------------------------------------------------------------- *)
   | eof { EOF (tokinfo lexbuf |> Parse_info.rewrap_str "") }
   | _ { 
-      error ("unrecognised symbol, in verbatim rule:"^tok lexbuf);
+      error ("unrecognised symbol, in verbatim rule:"^tok lexbuf) lexbuf;
       TUnknown (tokinfo lexbuf)
     }

@@ -63,7 +63,3 @@ parser_js.ml parser_js.mli: parser_js.mly
 clean::
 	rm -f parser_js.ml parser_js.mli parser_js.output
 beforedepend:: parser_js.ml parser_js.mli
-
-# to allow unused variable warnings
-visitor_js.cmo: visitor_js.ml
-	$(OCAMLC) -w y -c $<
