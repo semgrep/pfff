@@ -80,7 +80,3 @@ clean::
 TEMP=abstract_interpreter_js_XX
 $(TEMP).cmo: $(TEMP).ml
 	$(OCAMLC) -w -A -c $<
-
-# to allow unused variable warnings
-visitor_ast_js.cmo: visitor_ast_js.ml
-	$(OCAMLC) -w y -c $<

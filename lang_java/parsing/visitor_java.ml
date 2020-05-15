@@ -14,6 +14,9 @@ open Ocaml
 
 open Ast_java
 
+(* Disable warnings against unused variables *)
+[@@@warning "-26"]
+
 (* Continuation-style visitor for a subset of concepts; similar to
    visitor_php. The bulk of this file was generated with:
 

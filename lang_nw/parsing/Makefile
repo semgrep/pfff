@@ -55,11 +55,3 @@ lexer_nw.ml: lexer_nw.mll
 clean::
 	rm -f lexer_nw.ml
 beforedepend:: lexer_nw.ml
-
-
-# to allow unused variable warnings
-visitor_nw.cmo: visitor_nw.ml
-	$(OCAMLC) -w y -c $<
-# to allow warning -58 on matching Failure("hd")
-lexer_nw.cmo: lexer_nw.ml
-	$(OCAMLC) -w -A -c $<

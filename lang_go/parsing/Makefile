@@ -60,6 +60,3 @@ parser_go.ml parser_go.mli: parser_go.mly
 clean::
 	rm -f parser_go.ml parser_go.mli parser_go.output
 beforedepend:: parser_go.ml parser_go.mli
-
-visitor_go.cmo: visitor_go.ml
-	ocamlc $(INCLUDES) -w y -c $<

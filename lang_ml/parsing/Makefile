@@ -59,7 +59,3 @@ parser_ml.ml parser_ml.mli: parser_ml.mly
 clean::
 	rm -f parser_ml.ml parser_ml.mli parser_ml.output
 beforedepend:: parser_ml.ml parser_ml.mli
-
-
-visitor_ml.cmo: visitor_ml.ml
-	$(OCAMLC) -w y -c $<

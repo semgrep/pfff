@@ -15,6 +15,9 @@
 open Ocaml
 open Ast_generic
 
+(* Disable warnings against unused variables *)
+[@@@warning "-26"]
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -137,7 +140,10 @@ and
   let arg = v_option v_qualifier v_name_qualifier in
   let arg = v_option v_type_arguments v_name_typeargs in ()
 
-and v_id_info { id_resolved = v_id_resolved; id_type = v_id_type } =
+and v_id_info 
+  { id_resolved = v_id_resolved; id_type = v_id_type;
+    id_const_literal = _IGNORED;
+  } =
   let arg = v_ref (v_option v_resolved_name) v_id_resolved in
   let arg = v_ref (v_option v_type_) v_id_type in ()
 
@@ -514,11 +520,14 @@ and v_entity x =
    let {
              name = x_name;
              attrs = v_attrs;
-             tparams = v_tparams
+             tparams = v_tparams;
+             info = v_info;
            } = x in
    let arg = v_ident x_name in
    let arg = v_list v_attribute v_attrs in
-   let arg = v_list v_type_parameter v_tparams in ()
+   let arg = v_list v_type_parameter v_tparams in 
+   let arg = v_id_info v_info in
+   ()
   in
   vin.kentity (k, all_functions) x
 
@@ -561,8 +570,10 @@ and
                         pname = v_pname;
                         pdefault = v_pdefault;
                         ptype = v_ptype;
-                        pattrs = v_pattrs
+                        pattrs = v_pattrs;
+                        pinfo = v_pinfo;
                       } =
+  let arg = v_id_info v_pinfo in
   let arg = v_option v_ident v_pname in
   let arg = v_option v_expr v_pdefault in
   let arg = v_option v_type_ v_ptype in
@@ -622,11 +633,13 @@ and v_class_definition x =
                        ckind = v_ckind;
                        cextends = v_cextends;
                        cimplements = v_cimplements;
+                       cmixins = v_mixins;
                        cbody = v_cbody;
                      } =
   let arg = v_class_kind v_ckind in
   let arg = v_list v_type_ v_cextends in
   let arg = v_list v_type_ v_cimplements in
+  let arg = v_list v_type_ v_mixins in
   let arg = v_bracket (v_list v_field) v_cbody in
   ()
   in

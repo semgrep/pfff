@@ -85,9 +85,6 @@ parser_cpp2.cmo: parser_cpp2.ml
 	ocamlc $(INCLUDES) -w y -c $<
 
 
-visitor_cpp.cmo: visitor_cpp.ml
-	$(OCAMLC) -w y -c $<
-
 parsing_hacks.cmo: parsing_hacks.ml
 	$(OCAMLC) -w -9 -c $<
 parsing_hacks_cpp.cmo: parsing_hacks_cpp.ml

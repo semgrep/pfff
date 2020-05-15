@@ -67,15 +67,3 @@ parser_csharp.ml parser_csharp.mli: parser_csharp.mly
 clean::
 	rm -f parser_csharp.ml parser_csharp.mli parser_csharp.output
 beforedepend:: parser_csharp.ml parser_csharp.mli
-
-
-visitor_csharp.cmo: visitor_csharp.ml
-	$(OCAMLC) -w y -c $<
-
-##############################################################################
-# Generic rules
-##############################################################################
-
-##############################################################################
-# Literate Programming rules
-##############################################################################

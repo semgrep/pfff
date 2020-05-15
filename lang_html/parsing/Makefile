@@ -65,7 +65,3 @@ parser_html.ml parser_html.mli: parser_html.mly
 clean::
 	rm -f parser_html.ml parser_html.mli parser_html.output
 beforedepend:: parser_html.ml parser_html.mli
-
-
-visitor_html.cmo: visitor_html.ml
-	$(OCAMLC) -w y -c $<

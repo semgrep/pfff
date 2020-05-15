@@ -64,7 +64,3 @@ archi_code_lexer.ml: archi_code_lexer.mll
 clean::
 	rm -f archi_code_lexer.ml
 beforedepend:: archi_code_lexer.ml
-
-
-visitor_ast_generic.cmo: visitor_ast_generic.ml
-	$(OCAMLC) -w y -c $<

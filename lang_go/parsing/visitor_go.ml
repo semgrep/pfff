@@ -15,6 +15,9 @@
 open Ocaml (* v_string *)
 open Ast_go
 
+(* Disable warnings against unused variables *)
+[@@@warning "-26"]
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -351,7 +354,8 @@ and v_top_decl x =
   in
   vin.ktop_decl (k, all_functions) x
 
-and v_import { i_path = v_i_path; i_kind = v_i_kind } =
+and v_import { i_path = v_i_path; i_kind = v_i_kind; i_tok = t } =
+  let arg = v_tok t in
   let arg = v_wrap v_string v_i_path in
   let arg = v_import_kind v_i_kind in ()
   

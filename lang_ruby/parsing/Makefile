@@ -66,9 +66,5 @@ clean::
 	rm -f parser_ruby.ml parser_ruby.mli 
 #beforedepend:: parser_ruby.ml parser_ruby.mli
 
-
-#visitor_python.cmo: visitor_python.ml
-#	ocamlc $(INCLUDES) -w y -c $<
-
 parser_ruby.cmo: parser_ruby.ml
 	ocamlc $(INCLUDES) -w y -c $<

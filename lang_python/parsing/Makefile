@@ -54,11 +54,10 @@ clean::
 beforedepend:: lexer_python.ml
 
 
+OCAMLYACC=menhir --unused-tokens --explain --fixed-exception
+
 parser_python.ml parser_python.mli: parser_python.mly
 	$(OCAMLYACC) $<
 clean::
 	rm -f parser_python.ml parser_python.mli parser_python.output
 beforedepend:: parser_python.ml parser_python.mli
-
-visitor_python.cmo: visitor_python.ml
-	ocamlc $(INCLUDES) -w y -c $<

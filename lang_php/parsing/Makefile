@@ -62,16 +62,6 @@ clean::
 	rm -f parser_php.ml parser_php.mli parser_php.output
 beforedepend:: parser_php.ml parser_php.mli
 
-# to allow unused variable warnings
-visitor_php.cmo: visitor_php.ml
-	$(OCAMLC) -w y -c $<
-# to allow warning -58 on matching Failure("hd")
-lexer_php.cmo: lexer_php.ml
-	$(OCAMLC) -w -A -c $<
-
-pretty_print_php.cmo: pretty_print_php.ml
-	$(OCAMLC) -w y -c $<
-
 ##############################################################################
 # Literate Programming rules
 ##############################################################################

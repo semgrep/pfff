@@ -54,28 +54,14 @@ $(TARGET).top: $(OBJS) $(LIBS)
 clean::
 	rm -f $(TARGET).top
 
-
 lexer_rust.ml: lexer_rust.mll
 	$(OCAMLLEX) $<
 clean::
 	rm -f lexer_rust.ml
 beforedepend:: lexer_rust.ml
 
-
 parser_rust.ml parser_rust.mli: parser_rust.mly
 	$(OCAMLYACC) $<
 clean::
 	rm -f parser_rust.ml parser_rust.mli parser_rust.output
 beforedepend:: parser_rust.ml parser_rust.mli
-
-
-visitor_rust.cmo: visitor_rust.ml
-	$(OCAMLC) -w y -c $<
-
-##############################################################################
-# Generic rules
-##############################################################################
-
-##############################################################################
-# Literate Programming rules
-##############################################################################

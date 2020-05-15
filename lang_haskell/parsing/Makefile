@@ -59,22 +59,3 @@ lexer_hs.ml: lexer_hs.mll
 clean::
 	rm -f lexer_hs.ml
 beforedepend:: lexer_hs.ml
-
-
-#parser_nw.ml parser_nw.mli: parser_nw.mly
-#	$(OCAMLYACC) $<
-#clean::
-#	rm -f parser_nw.ml parser_nw.mli parser_nw.output
-#beforedepend:: parser_nw.ml parser_nw.mli
-#
-#
-#visitor_nw.cmo: visitor_nw.ml
-#	$(OCAMLC) -w y -c $<
-
-##############################################################################
-# Generic rules
-##############################################################################
-
-##############################################################################
-# Literate Programming rules
-##############################################################################
