@@ -30,9 +30,6 @@
 open Common
 open Ast_python
 
-let fake = Ast_generic.fake
-let fake_bracket = Ast_generic.fake_bracket
-
 (* intermediate helper type *)
 type single_or_tuple =
   | Single of expr
@@ -44,7 +41,7 @@ let cons e = function
 
 let tuple_expr = function
   | Single e -> e
-  | Tup l -> Tuple (CompList (fake_bracket l), Load)
+  | Tup l -> Tuple (CompList (Ast_generic.fake_bracket l), Load)
 
 let to_list = function
   | Single e -> [e]
@@ -193,13 +190,32 @@ let mk_str ii =
 (* Macros *)
 (*************************************************************************)
 
+list_sep(X,Sep):
+ | X                      { [$1] }
+ | list_sep(X,Sep) Sep X  { $1 @ [$3] }
+
+(* list separated by Sep and possibly terminated by trailing Sep.
+ * This has to be recursive on the right, otherwise s/r conflict.
+ *)
+list_sep_term(X,Sep):
+ | X                       { [$1] }
+ | X Sep                   { [$1] }
+ | X Sep list_sep_term(X,Sep)  { $1::$3 }
+
+list_comma(X): list_sep_term(X, ",") { $1 }
+
+tuple(X):
+ | X               { Single $1 }
+ | X ","           { Tup [$1] }
+ | X "," tuple(X)  { cons $1 $3 }
+
 (*************************************************************************)
 (* Toplevel *)
 (*************************************************************************)
 
 main: file_input EOF { $1 }
 
-file_input: nl_or_stmt_list { $1 }
+file_input: nl_or_stmt* { List.flatten $1 }
 
 nl_or_stmt:
  | NEWLINE { [] }
@@ -213,7 +229,7 @@ sgrep_spatch_pattern:
  | compound_stmt EOF         { Stmt $1 }
  | compound_stmt NEWLINE EOF { Stmt $1 }
 
- | stmt stmt stmt_list EOF { Stmts ($1 @ $2 @ $3) }
+ | stmt stmt stmt* EOF { Stmts ($1 @ $2 @ (List.flatten $3)) }
 
 (*************************************************************************)
 (* Import *)
@@ -224,7 +240,7 @@ import_stmt:
   | import_from { $1 }
 
 
-import_name: IMPORT dotted_as_name_list 
+import_name: IMPORT list_sep(dotted_as_name, ",")
   { $2 |> List.map (fun (v1, v2) -> let dots = None in 
          ImportAs ($1, (v1, dots), v2))   }
 
@@ -240,9 +256,9 @@ dotted_name:
 import_from:
   | FROM name_and_level IMPORT "*"
       { [ImportAll ($1, $2, $4)] }
-  | FROM name_and_level IMPORT "(" import_as_name_list ")"
+  | FROM name_and_level IMPORT "(" list_comma(import_as_name) ")"
       { [ImportFrom ($1, $2, $5)] }
-  | FROM name_and_level IMPORT import_as_name_list
+  | FROM name_and_level IMPORT list_comma(import_as_name)
       { [ImportFrom ($1, $2, $4)] }
 
 name_and_level:
@@ -382,7 +398,7 @@ arglist_paren_opt:
  | (* empty *) { [] }
  | "(" ")"     { [] }
  (* python3-ext: was expr_list before *)
- | "(" arg_list ")" { $2 }
+ | "(" list_comma(argument) ")" { $2 }
 
 (*************************************************************************)
 (* Annotations *)
@@ -469,10 +485,10 @@ raise_stmt:
   | RAISE test FROM test            { Raise ($1, Some ($2, Some $4)) }
 
 
-global_stmt: GLOBAL name_list { Global ($1, $2) }
+global_stmt: GLOBAL list_sep(NAME, ",") { Global ($1, $2) }
 
 (* python3-ext: *)
-nonlocal_stmt: NONLOCAL name_list { NonLocal ($1, $2) }
+nonlocal_stmt: NONLOCAL list_sep(NAME, ",") { NonLocal ($1, $2) }
 
 assert_stmt:
   | ASSERT test          { Assert ($1, $2, None) }
@@ -496,17 +512,17 @@ compound_stmt:
   | async_stmt  { $1 }
 
 decorated:
-  | decorators classdef { 
+  | decorator+ classdef { 
      match $2 with 
      | ClassDef (a, b, c, d) -> ClassDef (a, b, c, $1 @ d)
      | _ -> raise Impossible
    }
-  | decorators funcdef { 
+  | decorator+ funcdef { 
      match $2 with 
      | FunctionDef (a, b, c, d, e) -> FunctionDef (a, b, c, d, $1 @ e)
      | _ -> raise Impossible
    }
-  | decorators async_funcdef {
+  | decorator+ async_funcdef {
      match $2 with 
      | FunctionDef (a, b, c, d, e) -> FunctionDef (a, b, c, d, $1 @ e)
      | _ -> raise Impossible
@@ -515,7 +531,7 @@ decorated:
 (* this is always preceded by a ":" *)
 suite:
   | simple_stmt { $1 }
-  | NEWLINE INDENT stmt_list DEDENT { $3 }
+  | NEWLINE INDENT stmt* DEDENT { List.flatten $3 }
 
 
 if_stmt: IF test ":" suite elif_stmt_list { If ($1, $2, $4, $5) }
@@ -539,13 +555,13 @@ for_stmt:
 
 
 try_stmt:
-  | TRY ":" suite excepthandler_list
+  | TRY ":" suite excepthandler+
       { TryExcept ($1, $3, $4, []) }
-  | TRY ":" suite excepthandler_list ELSE ":" suite
+  | TRY ":" suite excepthandler+ ELSE ":" suite
       { TryExcept ($1, $3, $4, $7) }
-  | TRY ":" suite excepthandler_list ELSE ":" suite FINALLY ":" suite
+  | TRY ":" suite excepthandler+ ELSE ":" suite FINALLY ":" suite
       { TryFinally ($1, [TryExcept ($1, $3, $4, $7)], $8, $10) }
-  | TRY ":" suite excepthandler_list FINALLY ":" suite
+  | TRY ":" suite excepthandler+ FINALLY ":" suite
       { TryFinally ($1, [TryExcept ($1, $3, $4, [])], $5, $7) }
   | TRY ":" suite FINALLY ":" suite
       { TryFinally ($1, $3, $4, $6) }
@@ -631,9 +647,9 @@ atom_and_trailers:
   | atom { $1 }
 
   | atom_and_trailers "("          ")" { Call ($1, []) }
-  | atom_and_trailers "(" arg_list ")" { Call ($1, $3) }
+  | atom_and_trailers "(" list_comma(argument) ")" { Call ($1, $3) }
 
-  | atom_and_trailers "[" subscript_list   "]"
+  | atom_and_trailers "[" list_comma(subscript)   "]"
       { match $3 with
           (* TODO test* => Index (Tuple (elts)) *)
         | [s] -> Subscript ($1, [s], Load)
@@ -658,7 +674,7 @@ atom:
 
   | NONE        { None_ $1 }
 
-  | string_list { 
+  | string+ { 
      match $1 with 
      | [] ->  raise Common.Impossible
      | [x] -> x
@@ -677,6 +693,10 @@ atom:
 
 atom_repr: "`" testlist1 "`" { Repr ($1, tuple_expr $2, $3) }
 
+testlist1:
+  | test                 { Single $1 }
+  | test "," testlist1 { cons $1 $3 }
+
 (*----------------------------*)
 (* strings *)
 (*----------------------------*)
@@ -684,7 +704,7 @@ atom_repr: "`" testlist1 "`" { Repr ($1, tuple_expr $2, $3) }
 string:
   | STR { let (s, pre, tok) = $1 in 
           if pre = "" then Str (s, tok) else EncodedStr ((s, tok), pre) }
-  | FSTRING_START interpolated_list FSTRING_END { InterpolatedString $2 }
+  | FSTRING_START interpolated* FSTRING_END { InterpolatedString $2 }
 
 interpolated:
   | FSTRING_STRING { Str $1 }
@@ -754,7 +774,7 @@ atom_dict:
 
 dictorsetmaker: 
   | dictorset_elem comp_for { fun _ -> CompForIf ($1, $2) }
-  | dictorset_elem_list     { fun (t1, t2) -> CompList (t1, $1, t2) }
+  | list_comma(dictorset_elem)     { fun (t1, t2) -> CompList (t1, $1, t2) }
 
 dictorset_elem:
   | test ":" test { KeyVal ($1, $3) }
@@ -769,8 +789,8 @@ dictorset_elem:
 
 subscript:
   | test { Index ($1) }
-  | test_opt ":" test_opt { Slice ($1, $3, None) }
-  | test_opt ":" test_opt ":" test_opt { Slice ($1, $3, $5) }
+  | test? ":" test? { Slice ($1, $3, None) }
+  | test? ":" test? ":" test? { Slice ($1, $3, $5) }
 
 (*----------------------------*)
 (* test *)
@@ -783,12 +803,12 @@ test:
 
 
 or_test:
-  | and_test                  { $1 }
-  | and_test OR and_test_list { BoolOp ((Or,$2), $1::$3) }
+  | and_test                           { $1 }
+  | and_test OR list_sep(and_test, OR) { BoolOp ((Or,$2), $1::$3) }
 
 and_test:
-  | not_test                   { $1 }
-  | not_test AND not_test_list { BoolOp ((And,$2), $1::$3) }
+  | not_test                             { $1 }
+  | not_test AND list_sep(not_test, AND) { BoolOp ((And,$2), $1::$3) }
 
 
 not_test:
@@ -798,6 +818,10 @@ not_test:
 comparison:
   | expr                         { $1 }
   | expr comp_op comparison_list { Compare ($1, ($2)::(fst $3), snd $3) }
+
+comparison_list:
+  | expr                         { [], [$1] }
+  | expr comp_op comparison_list { ($2)::(fst $3), $1::(snd $3) }
 
 comp_op:
   | EQUAL   { Eq, $1 }
@@ -832,7 +856,7 @@ lambdadef: LAMBDA varargslist ":" test { Lambda ($2, $4) }
 
 testlist_comp:
   | test_or_star_expr comp_for { CompForIf ($1, $2) }
-  | testlist_star_expr         { CompList (fake_bracket (to_list $1)) }
+  | testlist_star_expr         { CompList (Ast_generic.fake_bracket (to_list $1)) }
 
 comp_for: 
  | sync_comp_for       { $1 }
@@ -887,55 +911,8 @@ argument:
 (* xxx_opt, xxx_list *)
 (*************************************************************************)
 
-(* basic lists, 0 element allowed *)
-nl_or_stmt_list:
-  | (*empty*)               { [] }
-  | nl_or_stmt  nl_or_stmt_list { $1 @ $2 }
-
-stmt_list:
-  | (* empty *) { [] }
-  | stmt stmt_list  { $1 @ $2 }
-
-interpolated_list:
-  | (*empty*)      { [] }
-  | interpolated interpolated_list { $1::$2 }
-
-
-(* basic lists, at least one element *)
-excepthandler_list:
-  | excepthandler                    { [$1] }
-  | excepthandler excepthandler_list { $1::$2 }
-
-string_list:
-  | string             { [$1] }
-  | string string_list { $1::$2 }
-
-decorators:
-  | decorator          { [$1] }
-  | decorator decorators { $1::$2 }
-
-
 (* list with commans and trailing comma *)
-import_as_name_list:
-  | import_as_name                           { [$1] }
-  | import_as_name ","                     { [$1] }
-  | import_as_name "," import_as_name_list { $1::$3 }
 
-
-subscript_list:
-  | subscript                      { [$1] }
-  | subscript ","                { [$1] }
-  | subscript "," subscript_list { $1::$3 }
-
-arg_list:
-  | argument                { [$1] }
-  | argument ","          { [$1] }
-  | argument "," arg_list  { $1::$3 }
-
-dictorset_elem_list:
-  | dictorset_elem                            { [$1] }
-  | dictorset_elem ","                      { [$1] }
-  | dictorset_elem "," dictorset_elem_list { $1::$3 }
 
 exprlist:
   | star_expr_or_expr                { Single $1 }
@@ -947,40 +924,7 @@ testlist:
   | test ","          { Tup [$1] }
   | test "," testlist { cons $1 $3 }
 
-
 testlist_star_expr:
   | test_or_star_expr                          { Single $1 }
   | test_or_star_expr ","                    { Tup [$1] }
   | test_or_star_expr "," testlist_star_expr { cons $1 $3 }
-
-(* list with commas, but without trailing comma *)
-dotted_as_name_list:
-  | dotted_as_name                           { [$1] }
-  | dotted_as_name "," dotted_as_name_list { $1::$3 }
-
-name_list:
-  | NAME                 { [$1] }
-  | NAME "," name_list { $1::$3 }
-
-testlist1:
-  | test                 { Single $1 }
-  | test "," testlist1 { cons $1 $3 }
-
-
-(* list with special separator (not comma) *)
-and_test_list:
-  | and_test                  { [$1] }
-  | and_test OR and_test_list { $1::$3 }
-
-not_test_list:
-  | not_test                   { [$1] }
-  | not_test AND not_test_list { $1::$3 }
-
-comparison_list:
-  | expr                         { [], [$1] }
-  | expr comp_op comparison_list { ($2)::(fst $3), $1::(snd $3) }
-
-(* opt *)
-test_opt:
-  | (*empty*) { None }
-  | test          { Some $1 }
