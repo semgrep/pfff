@@ -135,29 +135,29 @@ let mk_str ii =
  
 (* syntax *)
 %token <Ast_python.tok> 
- LPAREN         (* ( *) RPAREN         (* ) *)
- LBRACK         (* [ *) RBRACK         (* ] *)
- LBRACE         (* { *) RBRACE         (* } *)
- COLON          (* : *)
- SEMICOL        (* ; *)
- DOT            (* . *)
- COMMA          (* , *)
- BACKQUOTE      (* ` *)
- AT             (* @ *)
- ELLIPSES       (* ... *)
- LDots RDots
+ LPAREN "("     RPAREN ")"
+ LBRACK "["     RBRACK "]"
+ LBRACE "{"     RBRACE "}"
+ COLON  ":"
+ SEMICOL ";"
+ DOT     "."
+ COMMA   ","
+ BACKQUOTE "`"
+ AT        "@"
+ ELLIPSES  "..."
+ LDots "<..." RDots "...>"
 
 (* operators *)
 %token <Ast_python.tok> 
   ADD            (* + *)  SUB            (* - *)
-  MULT           (* * *)  DIV            (* / *)
+  MULT "*"       (* * *)  DIV            (* / *)
   MOD            (* % *)
-  POW            (* ** *)  FDIV           (* // *)
+  POW  "**"      (* ** *)  FDIV           (* // *)
   BITOR          (* | *)  BITAND         (* & *)  BITXOR         (* ^ *)
   BITNOT         (* ~ *)  LSHIFT         (* << *)  RSHIFT         (* >> *)
 
 %token <Ast_python.tok> 
-  EQ             (* = *)
+  EQ "="             (* = *)
   ADDEQ          (* += *) SUBEQ          (* -= *)
   MULTEQ         (* *= *) DIVEQ          (* /= *)
   MODEQ          (* %= *)
@@ -695,7 +695,7 @@ interpolated:
      { InterpolatedString ($2::mk_str $3::$4) }
 
 interpolant:
-(* Note that the f-string mini-language at
+  (* Note that the f-string mini-language at
    * https://docs.python.org/3/library/string.html#format-string-syntax
    * simply states that this is parsed as an "expression"; we are now
    * left trying to determine to which grammar rule an "expression"
@@ -718,9 +718,9 @@ format_token_list:
  | format_token                   { [$1] }
  | format_token format_token_list { $1::$2 }
 
-(* see "Format Specification Mini-Language at 
-   * https://docs.python.org/3/library/string.html#format-string-syntax
-   *)
+(* see "Format Specification Mini-Language" at 
+ * https://docs.python.org/3/library/string.html#format-string-syntax
+ *)
 format_token:
   | INT   { mk_str (snd $1) }
   | FLOAT { mk_str (snd $1) }
