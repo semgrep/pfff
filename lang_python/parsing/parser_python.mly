@@ -281,19 +281,19 @@ import_as_name:
 (*************************************************************************)
 
 expr_stmt: 
-  | testlist_star_expr                       
+  | tuple(test_or_star_expr)                       
       { ExprStmt (tuple_expr $1) }
   (* typing-ext: *)
-  | testlist_star_expr ":" test
+  | tuple(test_or_star_expr) ":" test
       { ExprStmt (TypedExpr (tuple_expr $1, $3)) }
-  | testlist_star_expr ":" test "=" test
+  | tuple(test_or_star_expr) ":" test "=" test
       { Assign ([TypedExpr (tuple_expr_store $1, $3)], $4, $5) }
 
-  | testlist_star_expr augassign yield_expr  
+  | tuple(test_or_star_expr) augassign yield_expr  
       { AugAssign (tuple_expr_store $1, $2, $3) }
-  | testlist_star_expr augassign testlist    
+  | tuple(test_or_star_expr) augassign tuple(test)
       { AugAssign (tuple_expr_store $1, $2, tuple_expr $3) }
-  | testlist_star_expr "=" expr_stmt_rhs_list 
+  | tuple(test_or_star_expr) "=" expr_stmt_rhs_list 
       { Assign ((tuple_expr_store $1)::(fst $3), $2, snd $3) }
 
 test_or_star_expr:
@@ -304,6 +304,8 @@ star_expr_or_expr:
   | expr      { $1 }
   | star_expr { $1 }
 
+exprlist: tuple(star_expr_or_expr) { $1 }
+
 expr_stmt_rhs_list:
   | expr_stmt_rhs                       
      { [], $1 }
@@ -312,7 +314,7 @@ expr_stmt_rhs_list:
 
 expr_stmt_rhs:
   | yield_expr         { $1 }
-  | testlist_star_expr { tuple_expr $1 }
+  | tuple(test_or_star_expr) { tuple_expr $1 }
  
 
 augassign:
@@ -474,7 +476,7 @@ continue_stmt: CONTINUE { Continue $1 }
 
 return_stmt:
   | RETURN          { Return ($1, None) }
-  | RETURN testlist { Return ($1, Some (tuple_expr $2)) }
+  | RETURN tuple(test) { Return ($1, Some (tuple_expr $2)) }
 
 yield_stmt: yield_expr { ExprStmt ($1) }
 
@@ -548,9 +550,9 @@ while_stmt:
 
 
 for_stmt:
-  | FOR exprlist IN testlist ":" suite
+  | FOR exprlist IN tuple(test) ":" suite
       { For ($1, tuple_expr_store $2, $3, tuple_expr $4, $6, []) }
-  | FOR exprlist IN testlist ":" suite ELSE ":" suite
+  | FOR exprlist IN tuple(test) ":" suite ELSE ":" suite
       { For ($1, tuple_expr_store $2, $3, tuple_expr $4, $6, $9) }
 
 
@@ -729,7 +731,7 @@ interpolant:
    * f"{value:format}"
    * f"{value!format}"
    *)
-  | testlist { tuple_expr $1 }
+  | tuple(test) { tuple_expr $1 }
 
 (* todo: maybe need another lexing state when ":" inside FSTRING_LBRACE*)
 format_specifier: format_token_list { $1 }
@@ -846,7 +848,7 @@ star_expr: "*" expr { ExprStar $2 }
 yield_expr:
   | YIELD           { Yield ($1, None, false) }
   | YIELD FROM test { Yield ($1, Some $3, true) }
-  | YIELD testlist  { Yield ($1, Some (tuple_expr $2), false) }
+  | YIELD tuple(test)  { Yield ($1, Some (tuple_expr $2), false) }
 
 lambdadef: LAMBDA varargslist ":" test { Lambda ($2, $4) }
 
@@ -856,7 +858,7 @@ lambdadef: LAMBDA varargslist ":" test { Lambda ($2, $4) }
 
 testlist_comp:
   | test_or_star_expr comp_for { CompForIf ($1, $2) }
-  | testlist_star_expr         { CompList (Ast_generic.fake_bracket (to_list $1)) }
+  | tuple(test_or_star_expr)         { CompList (Ast_generic.fake_bracket (to_list $1)) }
 
 comp_for: 
  | sync_comp_for       { $1 }
@@ -906,25 +908,3 @@ argument:
         | Name (id, _, _) -> ArgKwd (id, $3)
         | _ -> raise Parsing.Parse_error 
       }
-
-(*************************************************************************)
-(* xxx_opt, xxx_list *)
-(*************************************************************************)
-
-(* list with commans and trailing comma *)
-
-
-exprlist:
-  | star_expr_or_expr                { Single $1 }
-  | star_expr_or_expr ","          { Tup [$1] }
-  | star_expr_or_expr "," exprlist { cons $1 $3 }
-
-testlist:
-  | test                { Single $1 }
-  | test ","          { Tup [$1] }
-  | test "," testlist { cons $1 $3 }
-
-testlist_star_expr:
-  | test_or_star_expr                          { Single $1 }
-  | test_or_star_expr ","                    { Tup [$1] }
-  | test_or_star_expr "," testlist_star_expr { cons $1 $3 }
