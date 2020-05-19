@@ -289,6 +289,7 @@ declaration:
 sgrep_spatch_pattern:
  | expression         EOF { AExpr $1 }
  | item_no_dots       EOF { mk_adecl_or_adecls $1 }
+ | item_no_dots item_no_dots+ EOF { mk_adecl_or_adecls ($1 @ (List.flatten $2)) }
  | item_no_dots statement_sgrep_list EOF { mk_adecl_or_adecls ($1 @ $2) }
 
 item_no_dots:
