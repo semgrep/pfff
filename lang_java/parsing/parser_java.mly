@@ -289,8 +289,7 @@ declaration:
 sgrep_spatch_pattern:
  | expression         EOF { AExpr $1 }
  | item_no_dots       EOF { mk_adecl_or_adecls $1 }
- | item_no_dots item_no_dots+ EOF { mk_adecl_or_adecls ($1 @ (List.flatten $2)) }
- | item_no_dots statement_sgrep_list EOF { mk_adecl_or_adecls ($1 @ $2) }
+ | item_no_dots item_sgrep_list EOF { mk_adecl_or_adecls ($1 @ (List.flatten $2)) }
 
 item_no_dots:
  | statement_no_dots { [Init (false, $1)] }
@@ -307,12 +306,15 @@ statement_no_dots:
  | while_statement  { $1 }
  | for_statement  { $1 }
 
-statement_sgrep:
- | statement { Init (false, $1) }
+item_sgrep:
+ | statement { [Init (false, $1)] }
+ | declaration { [$1] }
+ | local_variable_declaration_statement 
+    { $1 |> List.map (fun x -> Init (false,x)) }
 
-statement_sgrep_list:
- | statement_sgrep { [$1] }
- | statement_sgrep_list statement_sgrep { $1 @ [$2] }
+item_sgrep_list:
+ | item_sgrep { [$1] }
+ | item_sgrep_list item_sgrep { $1 @ [$2] }
 
 
 /*(*************************************************************************)*/
