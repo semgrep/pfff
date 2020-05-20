@@ -1,2 +1,2 @@
 
-val resolve: Ast_python.program -> unit
+val resolve: AST_python.program -> unit

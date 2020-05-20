@@ -100,7 +100,7 @@ type ident = string wrap
 type qualified_name = string
  (* with tarzan *)
 
-(* todo: use Ast_generic.resolved_name at some point, and share the ref! *)
+(* todo: use AST_generic.resolved_name at some point, and share the ref! *)
 type resolved_name =
   (* this can be computed by ast_js_build.ml *)
   | Local
@@ -142,9 +142,9 @@ type special =
 
   | UseStrict
 
-  | ArithOp of Ast_generic.arithmetic_operator
+  | ArithOp of AST_generic.arithmetic_operator
   (* less: should be in statement and unsugared in x+=1 or even x = x + 1 *)
-  | IncrDecr of (Ast_generic.incr_decr * Ast_generic.prefix_postfix)
+  | IncrDecr of (AST_generic.incr_decr * AST_generic.prefix_postfix)
  (* with tarzan *)
 
 type label = string wrap
@@ -197,7 +197,7 @@ and expr =
   | Fun of fun_ * name option (* when recursive or assigned in module.exports*)
   | Apply of expr * expr list
 
-  (* copy-paste of Ast_generic.xml (but with different 'expr') *)
+  (* copy-paste of AST_generic.xml (but with different 'expr') *)
   | Xml of xml
 
   (* could unify with Apply, but need Lazy special then *)
@@ -275,7 +275,7 @@ and pattern = expr
 (* Definitions *)
 (*****************************************************************************)
 and var = { 
-  (* can be Ast_generic.special_multivardef_pattern when
+  (* can be AST_generic.special_multivardef_pattern when
    * Ast_js_build.transpile_pattern is false with a vinit an Assign itself *)
   v_name: name;
   v_kind: var_kind wrap;

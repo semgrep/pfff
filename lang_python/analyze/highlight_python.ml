@@ -14,7 +14,7 @@
  * license.txt for more details.
  *)
 
-open Ast_python
+open AST_python
 open Highlight_code
 module T = Parser_python
 module V = Visitor_python
@@ -107,7 +107,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
           )
         | _ when !in_decorator -> 
            tag_name name Highlight_code.Attribute
-        | Ast_python.Parameter ->
+        | AST_python.Parameter ->
              tag_name name (Highlight_code.Parameter Use)
         | GlobalVar ->
             let usedef = 
@@ -152,7 +152,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
        | Name (name, _ctx, _resolved) ->
            let kind = E.Function in
            tag_name name (Entity (kind, use2))
-       | Ast_python.Attribute (_e, _t, name, _ctx) ->
+       | AST_python.Attribute (_e, _t, name, _ctx) ->
            let kind = E.Method in
            tag_name name (Entity (kind, use2))
        | _ -> ()
@@ -162,7 +162,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
           | _ -> ();
        );
        k x
-     | Ast_python.Attribute (_e, _, name, _ctx) ->
+     | AST_python.Attribute (_e, _, name, _ctx) ->
          (match () with
          | _ when !in_type ->
           (match fst name with

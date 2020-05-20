@@ -18,7 +18,7 @@ open Highlight_code
 module T = Parser_go
 module V = Visitor_go
 module E = Entity_code
-module G = Ast_generic
+module G = AST_generic
 
 (*****************************************************************************)
 (* Prelude *)

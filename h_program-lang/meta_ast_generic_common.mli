@@ -1,7 +1,7 @@
 
 (* reused in other dumpers *)
-val vof_arithmetic_operator: Ast_generic.arithmetic_operator -> Ocaml.v
-val vof_incr_decr: Ast_generic.incr_decr -> Ocaml.v
-val vof_inc_dec: Ast_generic.incr_decr * Ast_generic.prefix_postfix -> Ocaml.v
-val vof_prepost: Ast_generic.prefix_postfix -> Ocaml.v
+val vof_arithmetic_operator: AST_generic.arithmetic_operator -> OCaml.v
+val vof_incr_decr: AST_generic.incr_decr -> OCaml.v
+val vof_inc_dec: AST_generic.incr_decr * AST_generic.prefix_postfix -> OCaml.v
+val vof_prepost: AST_generic.prefix_postfix -> OCaml.v
 

@@ -138,16 +138,16 @@ let rec vof_rectangle { p = v_p; q = v_q } =
   let bnd = ("q", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_point v_p in
-  let bnd = ("p", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+  let bnd = ("p", arg) in let bnds = bnd :: bnds in OCaml.VDict bnds
 and vof_point { x = v_x; y = v_y } =
   let bnds = [] in
-  let arg = Ocaml.vof_float v_y in
+  let arg = OCaml.vof_float v_y in
   let bnd = ("y", arg) in
   let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_float v_x in
-  let bnd = ("x", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+  let arg = OCaml.vof_float v_x in
+  let bnd = ("x", arg) in let bnds = bnd :: bnds in OCaml.VDict bnds
   
-let rec vof_treemap_rendering v = Ocaml.vof_list vof_treemap_rectangle v
+let rec vof_treemap_rendering v = OCaml.vof_list vof_treemap_rectangle v
 and
   vof_treemap_rectangle {
                           tr_rect = v_tr_rect;
@@ -157,27 +157,27 @@ and
                           tr_is_node = v_tr_is_node;
                         } =
   let bnds = [] in
-  let arg = Ocaml.vof_bool v_tr_is_node in
+  let arg = OCaml.vof_bool v_tr_is_node in
   let bnd = ("tr_is_node", arg) in
   let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_int v_tr_depth in
+  let arg = OCaml.vof_int v_tr_depth in
   let bnd = ("tr_depth", arg) in
   let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_string v_tr_label in
+  let arg = OCaml.vof_string v_tr_label in
   let bnd = ("tr_label", arg) in
   let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_int v_tr_color in
+  let arg = OCaml.vof_int v_tr_color in
   let bnd = ("tr_color", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_rectangle v_tr_rect in
   let bnd = ("tr_rect", arg) in 
   let bnds = bnd :: bnds in
-  Ocaml.VDict bnds
+  OCaml.VDict bnds
 
 
 let json_of_treemap_rendering rendering = 
   let v = vof_treemap_rendering rendering in
-  Ocaml.json_of_v v
+  OCaml.json_of_v v
 
 (*****************************************************************************)
 (* Testing *)

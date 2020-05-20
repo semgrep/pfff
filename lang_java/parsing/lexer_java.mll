@@ -14,7 +14,7 @@
  * Copyright (C) 2020 r2c
  *)
 
-open Ast_generic (* for arithmetic operators *)
+open AST_generic (* for arithmetic operators *)
 open Parser_java
 module Flag = Flag_parsing
 

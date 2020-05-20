@@ -15,7 +15,7 @@
 open Ast_go
 module Ast = Ast_go
 module V = Visitor_go
-module G = Ast_generic
+module G = AST_generic
 
 (*****************************************************************************)
 (* Prelude *)
@@ -34,7 +34,7 @@ type context =
   | AtToplevel
   | InFunction (* or Method *)
 
-type resolved_name = Ast_generic.resolved_name
+type resolved_name = AST_generic.resolved_name
 
 type env = {
   ctx: context ref;

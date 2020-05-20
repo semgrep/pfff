@@ -45,7 +45,7 @@ val annotations_of_program_with_comments:
 (* Helper. The string is the string of a comment (with its markers). *)
 val extract_annotations: string -> Cst_php.info -> annotation list
 
-val vof_annotation: annotation -> Ocaml.v
+val vof_annotation: annotation -> OCaml.v
 val str_debug_of_annotation: annotation -> string
 
 val annotations_before: Cst_php.tok -> Parser_php.token list -> annotation list

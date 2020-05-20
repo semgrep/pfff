@@ -26,7 +26,7 @@
  */
 %{
 open Common
-open Ast_generic (* for the arithmetic operator *)
+open AST_generic (* for the arithmetic operator *)
 open Ast_java
 
 (*****************************************************************************)
@@ -195,7 +195,7 @@ let mk_adecl_or_adecls = function
 %token <Parse_info.t> COLONCOLON		/* :: */
 
 
-%token <(Ast_generic.arithmetic_operator * Parse_info.t)> OPERATOR_EQ
+%token <(AST_generic.arithmetic_operator * Parse_info.t)> OPERATOR_EQ
 	/* += -= *= /= &= |= ^= %= <<= >>= >>>= */
 
 /*(* keywords tokens *)*/
@@ -546,29 +546,29 @@ postfix_expression:
  | post_decrement_expression  { $1 }
 
 post_increment_expression: postfix_expression INCR  
-  { Postfix ($1, (Ast_generic.Incr, $2)) }
+  { Postfix ($1, (AST_generic.Incr, $2)) }
 
 post_decrement_expression: postfix_expression DECR  
-  { Postfix ($1, (Ast_generic.Decr, $2)) }
+  { Postfix ($1, (AST_generic.Decr, $2)) }
 
 unary_expression:
  | pre_increment_expression  { $1 }
  | pre_decrement_expression  { $1 }
- | PLUS unary_expression  { Unary ((Ast_generic.Plus,$1), $2) }
- | MINUS unary_expression  { Unary ((Ast_generic.Minus,$1), $2) }
+ | PLUS unary_expression  { Unary ((AST_generic.Plus,$1), $2) }
+ | MINUS unary_expression  { Unary ((AST_generic.Minus,$1), $2) }
  | unary_expression_not_plus_minus  { $1 }
 
 pre_increment_expression: INCR unary_expression  
-  { Prefix ((Ast_generic.Incr, $1), $2) }
+  { Prefix ((AST_generic.Incr, $1), $2) }
 
 pre_decrement_expression: DECR unary_expression  
-  { Prefix ((Ast_generic.Decr, $1), $2) }
+  { Prefix ((AST_generic.Decr, $1), $2) }
 
 /*(* see conflicts.txt Cast note to understand the need of this rule *)*/
 unary_expression_not_plus_minus:
  | postfix_expression  { $1 }
- | COMPL unary_expression  { Unary ((Ast_generic.BitNot,$1), $2) }
- | NOT unary_expression    { Unary ((Ast_generic.Not,$1), $2) }
+ | COMPL unary_expression  { Unary ((AST_generic.BitNot,$1), $2) }
+ | NOT unary_expression    { Unary ((AST_generic.Not,$1), $2) }
  | cast_expression  { $1 }
 
 /*

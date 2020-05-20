@@ -216,9 +216,9 @@ rec.opt:
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all.opt || exit 1; done
 
 
-$(TARGET): $(LIBS) $(OBJS) main.cmo
+$(TARGET): $(LIBS) $(OBJS) Main.cmo
 	$(OCAMLC) $(BYTECODE_STATIC) -o $@ $(SYSLIBS) $^
-$(TARGET).opt: $(LIBS:.cma=.cmxa) $(OPTOBJS) main.cmx
+$(TARGET).opt: $(LIBS:.cma=.cmxa) $(OPTOBJS) Main.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa)  $^
 $(TARGET).top: $(LIBS) $(OBJS)
 	$(OCAMLMKTOP) -o $@ $(SYSLIBS) threads.cma $^

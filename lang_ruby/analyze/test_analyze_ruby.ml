@@ -70,7 +70,7 @@ let test_dump file =
   let ast = Parse_ruby.parse_program file in
   let cfg = Il_ruby_build.refactor_ast ast in
   let v = Meta_il_ruby.vof_stmt cfg in
-  let s = Ocaml.string_of_v v in
+  let s = OCaml.string_of_v v in
   pr s
 
 let test_pretty file =

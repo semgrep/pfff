@@ -177,7 +177,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
         let _v1 = v_tok v1 and _v2 = v_trees v2 and _v3 = v_tok v3 in ()
       | Parens ((v1, v2, v3)) ->
         let _v1 = v_tok v1
-        and _v2 = Ocaml.v_list (Ocaml.v_either v_trees v_tok) v2
+        and _v2 = OCaml.v_list (OCaml.v_either v_trees v_tok) v2
         and _v3 = v_tok v3
       in ()
 
@@ -227,7 +227,7 @@ let (mk_mapper: map_visitor -> (trees -> trees)) = fun hook ->
       in Braces ((v1, v2, v3))
     | Parens ((v1, v2, v3)) ->
       let v1 = map_tok v1
-      and v2 = List.map (Ocaml.map_of_either map_trees map_tok) v2
+      and v2 = List.map (OCaml.map_of_either map_trees map_tok) v2
       and v3 = map_tok v3
       in Parens ((v1, v2, v3))
     | Angle ((v1, v2, v3)) ->

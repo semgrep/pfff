@@ -9,4 +9,4 @@ type t =
   | NoScope
 
 val string_of_scope: t -> string
-val vof_scope: t -> Ocaml.v
+val vof_scope: t -> OCaml.v

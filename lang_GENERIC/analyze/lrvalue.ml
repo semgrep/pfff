@@ -15,8 +15,8 @@
  *)
 open Common
 
-open Ast_generic
-module V = Visitor_ast
+open AST_generic
+module V = Visitor_AST
 
 (*****************************************************************************)
 (* Prelude *)
@@ -41,8 +41,8 @@ type lhs_or_rhs =
 (*****************************************************************************)
 
 let error_todo any = 
-  let v = Meta_ast.vof_any any in
-  let s = Ocaml.string_of_v v in
+  let v = Meta_AST.vof_any any in
+  let s = OCaml.string_of_v v in
   pr2 s;
   failwith ("Dataflow_visitor:error_todo ")
 

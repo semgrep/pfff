@@ -7,13 +7,13 @@ OPAMPKG=pfff-lang_python
 
 -include $(TOP)/Makefile.config
 
-SRC= flag_parsing_python.ml ast_python.ml meta_ast_python.ml \
-     visitor_python.ml \
-     lib_parsing_python.ml \
-     parser_python.ml lexer_python.ml \
-     token_helpers_python.ml \
-     parsing_hacks_python.ml parse_python.ml \
-     test_parsing_python.ml unit_parsing_python.ml
+SRC= Flag_parsing_python.ml AST_python.ml Meta_AST_python.ml \
+     Visitor_python.ml \
+     Lib_parsing_python.ml \
+     Parser_python.ml Lexer_python.ml \
+     Token_helpers_python.ml \
+     Parsing_hacks_python.ml Parse_python.ml \
+     Test_parsing_python.ml Unit_parsing_python.ml
 
 SYSLIBS= str.cma unix.cma 
 
@@ -47,17 +47,17 @@ clean::
 	rm -f $(TARGET).top
 
 
-lexer_python.ml: lexer_python.mll
+Lexer_python.ml: Lexer_python.mll
 	$(OCAMLLEX) $<
 clean::
-	rm -f lexer_python.ml
-beforedepend:: lexer_python.ml
+	rm -f Lexer_python.ml
+beforedepend:: Lexer_python.ml
 
 
 OCAMLYACC=menhir --unused-tokens --explain --fixed-exception
 
-parser_python.ml parser_python.mli: parser_python.mly
+Parser_python.ml Parser_python.mli: Parser_python.mly
 	$(OCAMLYACC) $<
 clean::
-	rm -f parser_python.ml parser_python.mli parser_python.output
-beforedepend:: parser_python.ml parser_python.mli
+	rm -f Parser_python.ml Parser_python.mli Parser_python.output
+beforedepend:: Parser_python.ml Parser_python.mli

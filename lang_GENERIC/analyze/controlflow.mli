@@ -1,4 +1,4 @@
-open Ast_generic
+open AST_generic
 
 type node = {
   n: node_kind;

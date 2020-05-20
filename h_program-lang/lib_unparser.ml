@@ -66,23 +66,23 @@ let debug = ref false
 let rec vof_elt =
   function
   | OrigElt v1 ->
-      let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("OrigElt", [ v1 ]))
+      let v1 = OCaml.vof_string v1 in OCaml.VSum (("OrigElt", [ v1 ]))
   | Removed v1 -> 
-      let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("Removed", [ v1 ]))
+      let v1 = OCaml.vof_string v1 in OCaml.VSum (("Removed", [ v1 ]))
   | Added v1 ->
-      let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("Added", [ v1 ]))
+      let v1 = OCaml.vof_string v1 in OCaml.VSum (("Added", [ v1 ]))
   | Esthet2 (v1, v2) -> 
       let v1 = vof_esthet v1 in
-      let v2 = Ocaml.vof_string v2 in
-      Ocaml.VSum (("Esthet", [ v1; v2 ]))
+      let v2 = OCaml.vof_string v2 in
+      OCaml.VSum (("Esthet", [ v1; v2 ]))
 and vof_esthet =
   function
   | Comment ->
-      Ocaml.VSum (("Comment", []))
+      OCaml.VSum (("Comment", []))
   | Newline -> 
-      Ocaml.VSum (("Newline", []))
+      OCaml.VSum (("Newline", []))
   | Space ->
-      Ocaml.VSum (("Space", []))
+      OCaml.VSum (("Space", []))
 
 (*****************************************************************************)
 (* Helpers *)
@@ -311,7 +311,7 @@ let string_of_toks_using_transfo toks =
     let xs = elts_of_any toks in
 
     if !debug 
-    then xs |> List.iter (fun x -> pr2 (Ocaml.string_of_v (vof_elt x)));
+    then xs |> List.iter (fun x -> pr2 (OCaml.string_of_v (vof_elt x)));
 
     let xs = drop_esthet_between_removed xs in
     let xs = drop_trailing_comma_between_removed xs in

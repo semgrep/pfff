@@ -1,1 +1,1 @@
-val vof_trees: Ast_fuzzy.trees -> Ocaml.v
+val vof_trees: Ast_fuzzy.trees -> OCaml.v

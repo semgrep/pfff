@@ -44,7 +44,7 @@ let test_dump_simple file =
     let ast = Parse_php.parse_program file in
     let ast = Ast_php_build.program ast in
     let v = Meta_ast_php.vof_program ast in
-    let s = Ocaml.string_of_v v in
+    let s = OCaml.string_of_v v in
     pr s  
   )
 
@@ -378,7 +378,7 @@ let test_php_serialize file =
   let s = Common.read_file file in
   let php = Php_serialize.parse_string s in
   let v = Php_serialize.vof_php php in
-  let s = Ocaml.string_of_v v in
+  let s = OCaml.string_of_v v in
   pr2 s
 
 (*****************************************************************************)

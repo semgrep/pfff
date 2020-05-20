@@ -16,7 +16,7 @@ open Common
 
 open Ast_php
 module A = Ast_php
-module G = Ast_generic
+module G = AST_generic
 
 open Env_typing_php
 open Typing_helpers_php

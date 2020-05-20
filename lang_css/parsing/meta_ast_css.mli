@@ -1,2 +1,2 @@
 
-val vof_stylesheet: Ast_css.stylesheet -> Ocaml.v
+val vof_stylesheet: Ast_css.stylesheet -> OCaml.v

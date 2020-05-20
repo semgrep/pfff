@@ -12,7 +12,7 @@
  * file license.txt for more details.
  *)
 
-open Ocaml
+open OCaml
 open Ast_c
 
 (* Disable warnings against unused variables *)
@@ -112,7 +112,7 @@ and v_expr x =
   | CondExpr ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_expr v2 and v3 = v_expr v3 in ()
   | Sequence ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_expr v2 in ()
-  | SizeOf v1 -> let v1 = Ocaml.v_either v_expr v_type_ v1 in ()
+  | SizeOf v1 -> let v1 = OCaml.v_either v_expr v_type_ v1 in ()
   | ArrayInit v1 ->
       let v1 =
         v_bracket (v_list

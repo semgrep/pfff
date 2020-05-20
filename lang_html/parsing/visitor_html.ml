@@ -13,7 +13,7 @@
  * license.txt for more details.
  *)
 
-open Ocaml (* for v_int, v_bool, etc *)
+open OCaml (* for v_int, v_bool, etc *)
 
 open Ast_html
 

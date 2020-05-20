@@ -10,4 +10,4 @@ type php =
 
 val parse_string: string -> php
 
-val vof_php: php -> Ocaml.v
+val vof_php: php -> OCaml.v

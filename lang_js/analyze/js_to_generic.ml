@@ -15,12 +15,12 @@
 open Common
 
 open Ast_js
-module G = Ast_generic
+module G = AST_generic
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Ast_js to Ast_generic.
+(* Ast_js to AST_generic.
  *
  * See ast_generic.ml for more information.
  *)
@@ -36,7 +36,7 @@ let vref f x = ref (f !x)
 let bool = id
 let string = id
 
-let error = Ast_generic.error
+let error = AST_generic.error
 
 let fake s = Parse_info.fake_info s
 

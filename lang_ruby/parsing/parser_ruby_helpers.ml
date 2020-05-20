@@ -33,7 +33,7 @@ val expr_priority : Ast_ruby.expr -> int
 
 val binop_priority : Ast_ruby.expr -> int
 
-val do_fail : string -> 'a list -> ('a -> string) -> ('a -> Ocaml.v) -> unit
+val do_fail : string -> 'a list -> ('a -> string) -> ('a -> OCaml.v) -> unit
 
 val rhs_do_codeblock : Ast_ruby.expr -> bool
 
@@ -466,7 +466,7 @@ let do_fail s l to_s to_v =
   List.iter (fun x -> Printf.eprintf " %s\n" (to_s x)) l;
        l |> List.iter (fun x -> 
         let v = to_v x in
-        let s = Ocaml.string_of_v v in
+        let s = OCaml.string_of_v v in
         Common.pr2 s;
        );
   failwith s
@@ -623,14 +623,14 @@ let merge_formal_list s xs =
   wrap xs (fun xs ->
   let f x = Utils.format_to_string Ast_printer.format_formals x in
   let l' = uniq_list compare (xs) in
-    do_fail s l' f (fun _x -> Ocaml.VUnit);
+    do_fail s l' f (fun _x -> OCaml.VUnit);
     l'
   )
 
 let merge_rest s xs = 
   wrap xs (fun xs ->
   let l' = xs in
-    do_fail s l' (fun _x -> "??") (fun _x -> Ocaml.VUnit);
+    do_fail s l' (fun _x -> "??") (fun _x -> OCaml.VUnit);
     l'
   )
 
@@ -646,6 +646,6 @@ let merge_rescue s xs =
      Printf.sprintf "%s: %s" 
        (Ast_printer.string_of_expr x)
        (Ast_printer.string_of_expr y)
-  ) (fun _x -> Ocaml.VUnit);
+  ) (fun _x -> OCaml.VUnit);
     l'
  )

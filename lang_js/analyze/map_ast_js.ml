@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Ocaml
+open OCaml
 
 open Ast_js
 
@@ -257,13 +257,13 @@ and map_tok_and_stmt (t, v) =
 and map_for_header =
   function
   | ForClassic ((v1, v2, v3)) ->
-      let v1 = Ocaml.map_of_either (map_of_list map_var) map_expr v1
+      let v1 = OCaml.map_of_either (map_of_list map_var) map_expr v1
       and v2 = map_expr v2
       and v3 = map_expr v3
       in ForClassic ((v1, v2, v3))
   | ForIn ((v1, t, v2)) ->
       let t = map_tok t in
-      let v1 = Ocaml.map_of_either map_var map_expr v1
+      let v1 = OCaml.map_of_either map_var map_expr v1
       and v2 = map_expr v2
       in ForIn ((v1, t, v2))
 and map_case =

@@ -496,5 +496,5 @@ and v_any = function
   | Argument v1 -> let v1 = v_argument v1 in ()
   | Body v1 -> let v1 = v_seq_expr v1 in ()
   | Info v1 -> let v1 = v_info v1 in ()
-  | InfoList v1 -> let v1 = Ocaml.v_list v_info v1 in ()
+  | InfoList v1 -> let v1 = OCaml.v_list v_info v1 in ()
 *)

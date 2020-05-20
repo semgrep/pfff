@@ -12,8 +12,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Ast_python
-module Ast = Ast_python
+open AST_python
+module Ast = AST_python
 module V = Visitor_python
 
 (*****************************************************************************)

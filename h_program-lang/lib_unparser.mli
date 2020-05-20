@@ -10,7 +10,7 @@ val elts_of_any:
   (Parse_info.token_kind * Parse_info.t) list -> elt list
 
 (* debugging *)
-val vof_elt: elt -> Ocaml.v
+val vof_elt: elt -> OCaml.v
 
 (* heuristics *)
 val drop_esthet_between_removed: elt list -> elt list

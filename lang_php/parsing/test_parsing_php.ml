@@ -103,7 +103,7 @@ let test_json_fast_php file =
 let test_dump_php file =
   let cst = Parse_php.parse_program file in
   let v = Meta_cst_php.vof_any (Cst_php.Program cst) in
-  let s = Ocaml.string_of_v v in
+  let s = OCaml.string_of_v v in
   pr s
 
 (*****************************************************************************)

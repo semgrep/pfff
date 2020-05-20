@@ -144,18 +144,18 @@ let string_of_id_kind x =
 (* Meta *)
 (*****************************************************************************)
 
-let vof_filename = Ocaml.vof_string
+let vof_filename = OCaml.vof_string
 
 let vof_filepos { file = v_file; line = v_line; column = v_column } =
   let bnds = [] in
-  let arg = Ocaml.vof_int v_column in
+  let arg = OCaml.vof_int v_column in
   let bnd = ("column", arg) in
   let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_int v_line in
+  let arg = OCaml.vof_int v_line in
   let bnd = ("line", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_filename v_file in
-  let bnd = ("file", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+  let bnd = ("file", arg) in let bnds = bnd :: bnds in OCaml.VDict bnds
 
 (*****************************************************************************)
 (* Helpers *)

@@ -13,7 +13,7 @@
  * license.txt for more details.
  *)
 open Common
-open Ocaml
+open OCaml
 open Cst_js
 
 (* Disable warnings against unused variables *)

@@ -7,7 +7,7 @@ OPAMPKG=pfff-lang_python-analyze
 
 SRC= resolve_python.ml \
      highlight_python.ml \
-     python_to_generic.ml \
+     Python_to_generic.ml \
      database_light_python.ml \
      test_analyze_python.ml
 

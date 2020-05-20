@@ -15,7 +15,7 @@
 
 open Common
 
-open Ocaml (* for v_int, v_bool, etc *)
+open OCaml (* for v_int, v_bool, etc *)
 
 open Cst_php
 
@@ -53,7 +53,7 @@ module Scope_php = struct
 let v_phpscope _x = ()
 end
 
-(* todo? why don't use the one in Ocaml.ml ? because it generates
+(* todo? why don't use the one in OCaml.ml ? because it generates
  * a compilation error :(
  *)
 let v_ref _aref _x = () (* dont go into ref *)
@@ -978,7 +978,7 @@ and v_class_stmt x =
   | UseTrait (v1, v2, v3) ->
       let v1 = v_tok v1 in
       let v2 = v_comma_list v_fully_qualified_class_name v2 in
-      let v3 = Ocaml.v_either v_tok (v_brace (v_list v_trait_rule)) v3 in
+      let v3 = OCaml.v_either v_tok (v_brace (v_list v_trait_rule)) v3 in
       ()
   in
   vin.kclass_stmt (k, all_functions) x
@@ -997,7 +997,7 @@ and v_trait_rule =
       in ()
   | As ((v1, v2, v3, v4, v5)) ->
       let v1 =
-        Ocaml.v_either v_ident
+        OCaml.v_either v_ident
           (fun (v1, v2, v3) ->
              let v1 = v_name v1 and v2 = v_tok v2 and v3 = v_ident v3 in ())
           v1

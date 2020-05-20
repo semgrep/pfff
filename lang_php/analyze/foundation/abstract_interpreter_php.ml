@@ -19,7 +19,7 @@ open Env_interpreter_php
 open Abstract_interpreter_php_helpers
 
 module A = Ast_php
-module G = Ast_generic
+module G = AST_generic
 module Env = Env_interpreter_php
 module H = Abstract_interpreter_php_helpers
 module CG = Callgraph_php2

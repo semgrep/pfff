@@ -23,7 +23,7 @@ let test_parse_nw file =
 let test_dump_nw file =
   let ((trees, _toks), _stat) = Parse_nw.parse file in
   let v = Meta_ast_fuzzy.vof_trees trees in
-  let s = Ocaml.string_of_v v in
+  let s = OCaml.string_of_v v in
   pr2 s
 
 (*****************************************************************************)

@@ -84,6 +84,6 @@ val merge_rest : string -> ('a * 'b * 'c) list -> 'a list * 'b * 'c
 
 (* helpers used also in parse_ruby.ml *)
 val do_fail:
-  string -> 'a list -> ('a -> string) -> ('a -> Ocaml.v) -> unit
+  string -> 'a list -> ('a -> string) -> ('a -> OCaml.v) -> unit
 val uniq_list:
   ('a -> 'a -> int) -> 'a list -> 'a list

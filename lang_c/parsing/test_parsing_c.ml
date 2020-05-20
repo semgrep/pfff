@@ -27,7 +27,7 @@ let test_dump_c file =
   Parse_cpp.init_defs !Flag_parsing_cpp.macros_h;
   let ast = Parse_c.parse_program file in
   let v = Meta_ast_c.vof_program ast in
-  let s = Ocaml.string_of_v v in
+  let s = OCaml.string_of_v v in
   pr s
   
 (*****************************************************************************)

@@ -25,7 +25,7 @@ let default_dumper_precision = {
   type_info = false;
 }
 
-let vof_filename v = Ocaml.vof_string v
+let vof_filename v = OCaml.vof_string v
 
 let vof_token_location {
                      str = v_str;
@@ -38,53 +38,53 @@ let vof_token_location {
   let arg = vof_filename v_file in
   let bnd = ("file", arg) in
   let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_int v_column in
+  let arg = OCaml.vof_int v_column in
   let bnd = ("column", arg) in
   let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_int v_line in
+  let arg = OCaml.vof_int v_line in
   let bnd = ("line", arg) in
   let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_int v_charpos in
+  let arg = OCaml.vof_int v_charpos in
   let bnd = ("charpos", arg) in
   let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_string v_str in
-  let bnd = ("str", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+  let arg = OCaml.vof_string v_str in
+  let bnd = ("str", arg) in let bnds = bnd :: bnds in OCaml.VDict bnds
 
 
 let vof_token_origin =
   function
   | OriginTok v1 ->
-      let v1 = vof_token_location v1 in Ocaml.VSum (("OriginTok", [ v1 ]))
+      let v1 = vof_token_location v1 in OCaml.VSum (("OriginTok", [ v1 ]))
   | FakeTokStr (v1, opt) ->
-      let v1 = Ocaml.vof_string v1 in
-      let opt = Ocaml.vof_option (fun (p1, i) ->
-        Ocaml.VTuple [vof_token_location p1; Ocaml.vof_int i]
+      let v1 = OCaml.vof_string v1 in
+      let opt = OCaml.vof_option (fun (p1, i) ->
+        OCaml.VTuple [vof_token_location p1; OCaml.vof_int i]
       ) opt
       in
-      Ocaml.VSum (("FakeTokStr", [ v1; opt ]))
-  | Ab -> Ocaml.VSum (("Ab", []))
+      OCaml.VSum (("FakeTokStr", [ v1; opt ]))
+  | Ab -> OCaml.VSum (("Ab", []))
   | ExpandedTok (v1, v2, v3) ->
       let v1 = vof_token_location v1 in
       let v2 = vof_token_location v2 in
-      let v3 = Ocaml.vof_int v3 in
-      Ocaml.VSum (("ExpandedTok", [ v1; v2; v3 ]))
+      let v3 = OCaml.vof_int v3 in
+      OCaml.VSum (("ExpandedTok", [ v1; v2; v3 ]))
 
 
 let rec vof_transformation =
   function
-  | NoTransfo -> Ocaml.VSum (("NoTransfo", []))
-  | Remove -> Ocaml.VSum (("Remove", []))
-  | AddBefore v1 -> let v1 = vof_add v1 in Ocaml.VSum (("AddBefore", [ v1 ]))
-  | AddAfter v1 -> let v1 = vof_add v1 in Ocaml.VSum (("AddAfter", [ v1 ]))
-  | Replace v1 -> let v1 = vof_add v1 in Ocaml.VSum (("Replace", [ v1 ]))
-  | AddArgsBefore v1 -> let v1 = Ocaml.vof_list Ocaml.vof_string v1 in Ocaml.VSum
+  | NoTransfo -> OCaml.VSum (("NoTransfo", []))
+  | Remove -> OCaml.VSum (("Remove", []))
+  | AddBefore v1 -> let v1 = vof_add v1 in OCaml.VSum (("AddBefore", [ v1 ]))
+  | AddAfter v1 -> let v1 = vof_add v1 in OCaml.VSum (("AddAfter", [ v1 ]))
+  | Replace v1 -> let v1 = vof_add v1 in OCaml.VSum (("Replace", [ v1 ]))
+  | AddArgsBefore v1 -> let v1 = OCaml.vof_list OCaml.vof_string v1 in OCaml.VSum
   (("AddArgsBefore", [ v1 ]))
 
 and vof_add =
   function
   | AddStr v1 ->
-      let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("AddStr", [ v1 ]))
-  | AddNewlineAndIdent -> Ocaml.VSum (("AddNewlineAndIdent", []))
+      let v1 = OCaml.vof_string v1 in OCaml.VSum (("AddStr", [ v1 ]))
+  | AddNewlineAndIdent -> OCaml.VSum (("AddNewlineAndIdent", []))
 
 let vof_info
  { token = v_token; transfo = v_transfo } =
@@ -95,7 +95,7 @@ let vof_info
   let arg = vof_token_origin v_token in
   let bnd = ("token", arg) in 
   let bnds = bnd :: bnds in 
-  Ocaml.VDict bnds
+  OCaml.VDict bnds
 
 
 (* todo? could also do via a post processing phase with a OCaml.map_v ? *)
@@ -112,8 +112,8 @@ let vof_info_adjustable_precision x =
   then vof_info x
   else if !_current_precision.token_info
        then 
-        Ocaml.VDict [
-          "line", Ocaml.VInt (line_of_info x);
-          "col", Ocaml.VInt (col_of_info x);
+        OCaml.VDict [
+          "line", OCaml.VInt (line_of_info x);
+          "col", OCaml.VInt (col_of_info x);
         ]
-      else Ocaml.VUnit
+      else OCaml.VUnit

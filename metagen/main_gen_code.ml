@@ -29,7 +29,7 @@ let main_action _file =
 (* Extra actions *)
 (*****************************************************************************)
 let test_matcher_gen s = 
-  let t = Ocaml.get_type s in
+  let t = OCaml.get_type s in
   Gen_ml_code.gen_matcher (s, t)
 
 let test_matcher_all () = 

@@ -1,4 +1,4 @@
-open Ast_generic
+open AST_generic
 
 val cfg_of_func:   function_definition -> Controlflow.flow
 

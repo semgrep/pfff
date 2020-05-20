@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Ocaml
+open OCaml
 open Ast_skip
 
 (* Disable warnings against unused variables *)
@@ -52,7 +52,7 @@ let rec v_info x =
     } ->
 (*
     let _arg = Parse_info.v_pinfo v_pinfox in
-    let _arg = Ocaml.v_unit v_comments in 
+    let _arg = OCaml.v_unit v_comments in 
     let _arg = Parse_info.v_transformation v_transfo in 
 *)
     ()
