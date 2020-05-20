@@ -4,6 +4,10 @@ type nodei = int
 (*e: type [[Dataflow.nodei]] *)
 
 (*s: type [[Dataflow.var]] *)
+(* The comparison function uses only the name of a variable (a string), so
+ * two variables at different positions in the code will be agglomerated
+ * correctly in the Set or Map.
+ *)
 type var = string
 (*e: type [[Dataflow.var]] *)
 (*s: module [[Dataflow.VarMap]] *)
@@ -37,6 +41,18 @@ val empty_inout : unit -> 'a inout
 (*e: signature [[Dataflow.empty_inout]] *)
 
 (*s: type [[Dataflow.transfn]] *)
+(* The transition/transfer function. It is usually made from the
+ * gens and kills.
+ *
+ * todo? having only a transfer function is enough ? do we need to pass
+ * extra information to it ? maybe only the mapping is not enough. For
+ * instance if in the code there is $x = &$g, a reference, then
+ * we may want later to have access to this information. Maybe we
+ * should pass an extra env argument ? Or maybe can encode this
+ * sharing of reference in the 'a, so that when one update the
+ * value associated to a var, its reference variable get also
+ * the update.
+ *)
 type 'a transfn = 'a mapping -> nodei -> 'a inout
 (*e: type [[Dataflow.transfn]] *)
 

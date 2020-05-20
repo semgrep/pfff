@@ -1,3 +1,4 @@
+(*s: /home/pad/pfff/lang_GENERIC/analyze/AST_to_IL.ml *)
 (* Yoann Padioleau
  *
  * Copyright (C) 2020 r2c
@@ -29,54 +30,77 @@ module G = AST_generic
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
+(*s: type [[AST_to_IL.env]] *)
 type env = {
   (* stmts hidden inside expressions that we want to move out of 'exp',
    * usually simple Instr, but can be also If when handling Conditional expr.
    *)
   stmts: stmt list ref;
 }
+(*e: type [[AST_to_IL.env]] *)
 
+(*s: function [[AST_to_IL.empty_env]] *)
 let empty_env () = {
   stmts = ref [];
 }
+(*e: function [[AST_to_IL.empty_env]] *)
 
 
 (*****************************************************************************)
 (* Error management *)
 (*****************************************************************************)
+(*s: function [[AST_to_IL.error]] *)
 let error tok s =
   raise (Parse_info.Ast_builder_error (s, tok))
+(*e: function [[AST_to_IL.error]] *)
 
+(*s: function [[AST_to_IL.warning]] *)
 let warning tok s =
   pr2 (spf "%s: %s" (Parse_info.string_of_info tok) s)
+(*e: function [[AST_to_IL.warning]] *)
 
+(*s: function [[AST_to_IL.error_any]] *)
 let error_any any_generic msg =
   let toks = Lib_AST.ii_of_any any_generic in
   let s = Meta_AST.vof_any any_generic |> OCaml.string_of_v in
   error (List.hd toks) (spf "%s: %s" msg s)
+(*e: function [[AST_to_IL.error_any]] *)
 
+(*s: function [[AST_to_IL.sgrep_construct]] *)
 let sgrep_construct any_generic =
   error_any any_generic "Sgrep Construct"
+(*e: function [[AST_to_IL.sgrep_construct]] *)
 
+(*s: function [[AST_to_IL.todo]] *)
 let todo any_generic =
   error_any any_generic "TODO Construct"
+(*e: function [[AST_to_IL.todo]] *)
 
+(*s: function [[AST_to_IL.impossible]] *)
 let impossible any_generic =
   error_any any_generic "Impossible Construct"
+(*e: function [[AST_to_IL.impossible]] *)
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+(*s: function [[AST_to_IL.fresh_var]] *)
 let fresh_var _env tok = 
   let i = G.gensym () in
   ("_tmp", tok), i
+(*e: function [[AST_to_IL.fresh_var]] *)
+(*s: function [[AST_to_IL._fresh_label]] *)
 let _fresh_label _env tok = 
   let i = G.gensym () in
   ("_label", tok), i
+(*e: function [[AST_to_IL._fresh_label]] *)
+(*s: function [[AST_to_IL.fresh_lval]] *)
 let fresh_lval env tok =
   let var = fresh_var env tok in
   { base = Var var; offset = NoOffset }
+(*e: function [[AST_to_IL.fresh_lval]] *)
 
+(*s: function [[AST_to_IL.lval_of_id_info]] *)
 let lval_of_id_info _env id id_info =
   let sid = 
     match !(id_info.G.id_resolved) with
@@ -87,33 +111,54 @@ let lval_of_id_info _env id id_info =
   in
   let var = id, sid in
   { base = Var var; offset = NoOffset }
+(*e: function [[AST_to_IL.lval_of_id_info]] *)
+(*s: function [[AST_to_IL.lval_of_ent]] *)
 let lval_of_ent env ent = 
   lval_of_id_info env ent.G.name ent.G.info
+(*e: function [[AST_to_IL.lval_of_ent]] *)
 
+(*s: function [[AST_to_IL.label_of_label]] *)
 (* TODO: should do first pass on body to get all labels and assign
  * a gensym to each.
  *)
 let label_of_label _env lbl =
   lbl, -1
+(*e: function [[AST_to_IL.label_of_label]] *)
+(*s: function [[AST_to_IL.lookup_label]] *)
 let lookup_label _env lbl =
   lbl, -1
+(*e: function [[AST_to_IL.lookup_label]] *)
 
+(*s: function [[AST_to_IL.mk_e]] *)
 let mk_e e eorig = 
   { e; eorig}
+(*e: function [[AST_to_IL.mk_e]] *)
+(*s: function [[AST_to_IL.mk_i]] *)
 let mk_i i iorig =
   { i; iorig }
+(*e: function [[AST_to_IL.mk_i]] *)
+(*s: function [[AST_to_IL.mk_s]] *)
 let mk_s s =
   { s }
+(*e: function [[AST_to_IL.mk_s]] *)
 
+(*s: function [[AST_to_IL.add_instr]] *)
 let add_instr env instr = 
   Common.push (mk_s (Instr instr)) env.stmts
+(*e: function [[AST_to_IL.add_instr]] *)
+(*s: function [[AST_to_IL.add_stmt]] *)
 let add_stmt env st = 
   Common.push st env.stmts
+(*e: function [[AST_to_IL.add_stmt]] *)
+(*s: function [[AST_to_IL.add_stmts]] *)
 let add_stmts env xs = 
   xs |> List.iter (add_stmt env)
+(*e: function [[AST_to_IL.add_stmts]] *)
 
+(*s: function [[AST_to_IL.bracket_keep]] *)
 let bracket_keep f (t1, x, t2) =
   t1, f x, t2
+(*e: function [[AST_to_IL.bracket_keep]] *)
 
 (*****************************************************************************)
 (* lvalue *)
@@ -412,22 +457,31 @@ and argument env arg =
 (* Exprs and instrs *)
 (*****************************************************************************)
 
+(*s: constant [[AST_to_IL.expr_orig]] *)
 (* just to ensure the code after does not call expr directly *)
 let expr_orig = expr
+(*e: constant [[AST_to_IL.expr_orig]] *)
+(*s: function [[AST_to_IL.expr]] *)
 let expr () = ()
+(*e: function [[AST_to_IL.expr]] *)
 
+(*s: function [[AST_to_IL.expr_with_pre_stmts]] *)
 let expr_with_pre_stmts env e =
   ignore(expr ());
   let e = expr_orig env e in
   let xs = List.rev !(env.stmts) in
   env.stmts := [];
   xs, e
+(*e: function [[AST_to_IL.expr_with_pre_stmts]] *)
 
+(*s: function [[AST_to_IL.expr_with_pre_stmts_opt]] *)
 let expr_with_pre_stmts_opt env eopt =
   match eopt with
   | None -> [], expr_opt env None
   | Some e -> expr_with_pre_stmts env e
+(*e: function [[AST_to_IL.expr_with_pre_stmts_opt]] *)
 
+(*s: function [[AST_to_IL.for_var_or_expr_list]] *)
 let for_var_or_expr_list env xs =
   xs |> List.map (function
    | G.ForInitExpr e -> 
@@ -443,10 +497,12 @@ let for_var_or_expr_list env xs =
       | _ -> []
       )
   ) |> List.flatten
+(*e: function [[AST_to_IL.for_var_or_expr_list]] *)
 
 (*****************************************************************************)
 (* Statement *)
 (*****************************************************************************)
+(*s: function [[AST_to_IL.stmt]] *)
 let rec stmt env st =
   match st with
   | G.ExprStmt e ->
@@ -558,11 +614,15 @@ let rec stmt env st =
       
   | G.DisjStmt _ -> sgrep_construct (G.S st)
   | G.OtherStmt _ | G.OtherStmtWithStmt _ -> todo (G.S st)
+(*e: function [[AST_to_IL.stmt]] *)
 
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
 
+(*s: function [[AST_to_IL.stmt (/home/pad/pfff/lang_GENERIC/analyze/AST_to_IL.ml)]] *)
 let stmt st =
   let env = empty_env () in
   stmt env st
+(*e: function [[AST_to_IL.stmt (/home/pad/pfff/lang_GENERIC/analyze/AST_to_IL.ml)]] *)
+(*e: /home/pad/pfff/lang_GENERIC/analyze/AST_to_IL.ml *)

@@ -1,3 +1,4 @@
+(*s: pfff/lang_python/parsing/Parser_python.mly *)
 %{
 (* Yoann Padioleau
  *
@@ -906,3 +907,4 @@ argument:
         | Name (id, _, _) -> ArgKwd (id, $3)
         | _ -> raise Parsing.Parse_error 
       }
+(*e: pfff/lang_python/parsing/Parser_python.mly *)

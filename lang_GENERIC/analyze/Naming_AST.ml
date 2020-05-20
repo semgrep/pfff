@@ -1,3 +1,4 @@
+(*s: /home/pad/pfff/lang_GENERIC/analyze/Naming_AST.ml *)
 (* Yoann Padioleau
  *
  * Copyright (C) 2020 r2c
@@ -130,11 +131,16 @@ module V = Visitor_AST
 (* Scope *)
 (*****************************************************************************)
 
+(*s: type [[Naming_AST.resolved_name]] *)
 (* this includes the "single unique id" (sid) *)
 type resolved_name = AST_generic.resolved_name
+(*e: type [[Naming_AST.resolved_name]] *)
 
+(*s: type [[Naming_AST.scope]] *)
 type scope = (string, resolved_name) assoc
+(*e: type [[Naming_AST.scope]] *)
 
+(*s: type [[Naming_AST.scopes]] *)
 type scopes = {
   global: scope ref;
   (* function, nested blocks, nested functions (lambdas) *)
@@ -143,13 +149,17 @@ type scopes = {
   imported: scope ref;
   (* todo? class? function? (for 'var' in JS) *)
  }
+(*e: type [[Naming_AST.scopes]] *)
 
+(*s: function [[Naming_AST.default_scopes]] *)
 let default_scopes () = {
   global = ref [];
   blocks = ref [];
   imported = ref [];
 }
+(*e: function [[Naming_AST.default_scopes]] *)
 
+(*s: function [[Naming_AST.with_new_function_scope]] *)
 (* because we use a Visitor instead of a clean recursive 
  * function passing down an environment, we need to emulate a scoped
  * environment by using save_excursion.
@@ -157,26 +167,36 @@ let default_scopes () = {
 
 let with_new_function_scope params scopes f =
   Common.save_excursion scopes.blocks (params::!(scopes.blocks)) f
+(*e: function [[Naming_AST.with_new_function_scope]] *)
 
+(*s: function [[Naming_AST._with_new_block_scope]] *)
 let _with_new_block_scope _params _lang _scopes _f =
   raise Todo
+(*e: function [[Naming_AST._with_new_block_scope]] *)
 
+(*s: function [[Naming_AST.add_ident_current_scope]] *)
 let add_ident_current_scope id resolved scopes =
   let s = Ast.str_of_ident id in
   match !(scopes.blocks) with
   | [] -> scopes.global := (s, resolved)::!(scopes.global)
   | xs::xxs -> scopes.blocks := ((s, resolved)::xs)::xxs
+(*e: function [[Naming_AST.add_ident_current_scope]] *)
 
+(*s: function [[Naming_AST.add_ident_imported_scope]] *)
 (* for Python *)
 let add_ident_imported_scope id resolved scopes =
   let s = Ast.str_of_ident id in
   scopes.imported := (s, resolved)::!(scopes.imported)
+(*e: function [[Naming_AST.add_ident_imported_scope]] *)
 
+(*s: function [[Naming_AST._add_ident_function_scope]] *)
 (* for JS 'var' *)
 let _add_ident_function_scope id _resolved _scopes =
   let _s = Ast.str_of_ident id in
   raise Todo
+(*e: function [[Naming_AST._add_ident_function_scope]] *)
 
+(*s: function [[Naming_AST.lookup]] *)
 let rec lookup s xxs =
    match xxs with
    | [] -> None
@@ -185,7 +205,9 @@ let rec lookup s xxs =
       | None -> lookup s xxs
       | Some res -> Some res
       )
+(*e: function [[Naming_AST.lookup]] *)
 
+(*s: function [[Naming_AST.lookup_scope_opt]] *)
 (* accessors *)
 let lookup_scope_opt id lang scopes =
   let s = Ast.str_of_ident id in
@@ -202,12 +224,16 @@ let lookup_scope_opt id lang scopes =
             [xs] @ xxs @ [!(scopes.global); !(scopes.imported)]
   in
   lookup s actual_scopes
+(*e: function [[Naming_AST.lookup_scope_opt]] *)
 
+(*s: function [[Naming_AST.lookup_global_scope]] *)
 (* for Python, PHP? *)
 let lookup_global_scope id scopes =
   let s = Ast.str_of_ident id in
   lookup s [!(scopes.global)]
+(*e: function [[Naming_AST.lookup_global_scope]] *)
 
+(*s: function [[Naming_AST.lookup_nonlocal_scope]] *)
 (* for Python, PHP *)
 let lookup_nonlocal_scope id scopes =
   let (s, tok) = id in
@@ -216,16 +242,20 @@ let lookup_nonlocal_scope id scopes =
   | [] -> 
       let _ = error tok "no outerscope" in
       None
+(*e: function [[Naming_AST.lookup_nonlocal_scope]] *)
 
 (*****************************************************************************)
 (* Environment *)
 (*****************************************************************************)
+(*s: type [[Naming_AST.context]] *)
 type context = 
   | AtToplevel
   | InClass
   (* separate InMethod? InLambda? just look for InFunction::InClass::_ *)
   | InFunction 
+(*e: type [[Naming_AST.context]] *)
 
+(*s: type [[Naming_AST.env]] *)
 type env = {
   ctx: context list ref;
 
@@ -241,59 +271,79 @@ type env = {
 
   in_lvalue: bool ref;
 }
+(*e: type [[Naming_AST.env]] *)
 
+(*s: function [[Naming_AST.default_env]] *)
 let default_env () = {
   ctx = ref [AtToplevel];
   names = (default_scopes());
   constants = ref [];
   in_lvalue = ref false;
 }
+(*e: function [[Naming_AST.default_env]] *)
 
 (*****************************************************************************)
 (* Environment Helpers *)
 (*****************************************************************************)
+(*s: function [[Naming_AST.add_constant_env]] *)
 let add_constant_env ident (sid, literal) env =
   env.constants := (Ast.str_of_ident ident, (sid, literal))::!(env.constants)
+(*e: function [[Naming_AST.add_constant_env]] *)
 
+(*s: function [[Naming_AST.with_new_context]] *)
 let with_new_context ctx env f = 
   Common.save_excursion env.ctx (ctx::!(env.ctx)) f
+(*e: function [[Naming_AST.with_new_context]] *)
 
+(*s: function [[Naming_AST.top_context]] *)
 let top_context env = 
   match !(env.ctx) with
   | [] -> raise Impossible
   | x::_xs -> x
+(*e: function [[Naming_AST.top_context]] *)
 
+(*s: function [[Naming_AST.set_resolved]] *)
 let set_resolved id_info x =
   (* TODO? maybe do it only if we have something better than what the
    * lang-specific resolved found?
    *)
   id_info.id_resolved := Some x
+(*e: function [[Naming_AST.set_resolved]] *)
 
 (*****************************************************************************)
 (* Error manangement *)
 (*****************************************************************************)
+(*s: constant [[Naming_AST.error_report]] *)
 let error_report = ref false
+(*e: constant [[Naming_AST.error_report]] *)
 
+(*s: function [[Naming_AST.error]] *)
 let error tok s = 
   if !error_report
   then raise (Parse_info.Other_error (s,tok))
   else ()
+(*e: function [[Naming_AST.error]] *)
 
 (*****************************************************************************)
 (* Other Helpers *)
 (*****************************************************************************)
 
+(*s: function [[Naming_AST.is_local_or_global_ctx]] *)
 let is_local_or_global_ctx env =
   match top_context env with
   | AtToplevel | InFunction -> true
   | InClass -> false
+(*e: function [[Naming_AST.is_local_or_global_ctx]] *)
 
+(*s: function [[Naming_AST.resolved_name_kind]] *)
 let resolved_name_kind env =
   match top_context env with
   | AtToplevel -> Global
   | InFunction -> Local
   | InClass -> raise Impossible
+(*e: function [[Naming_AST.resolved_name_kind]] *)
 
+(*s: function [[Naming_AST.params_of_parameters]] *)
 (* !also set the id_info of the parameter as a side effect! *)
 let params_of_parameters xs =
  xs |> Common.map_filter (function
@@ -304,11 +354,13 @@ let params_of_parameters xs =
         Some (Ast.str_of_ident id, resolved)
    | _ -> None
   )
+(*e: function [[Naming_AST.params_of_parameters]] *)
 
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
 
+(*s: function [[Naming_AST.resolve]] *)
 let resolve lang prog =
   let env = default_env () in
 
@@ -514,3 +566,5 @@ let resolve lang prog =
   }
   in
   visitor (Pr prog)
+(*e: function [[Naming_AST.resolve]] *)
+(*e: /home/pad/pfff/lang_GENERIC/analyze/Naming_AST.ml *)
