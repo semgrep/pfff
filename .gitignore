@@ -4,6 +4,7 @@ tests/js/ai/todo2
 #not imported everything
 external/battery_included/ocamlgtk
 #facebook/
+*.orig
 
 #TODO
 todo
@@ -280,3 +281,7 @@ tmp
 /tests/php/codegraph/pfff_test.log
 /external/OPAM_DIR
 
+/lang_python/parsing/Parser_python.conflicts
+/lang_python/parsing/Lexer_python.ml
+/lang_python/parsing/Parser_python.ml
+/lang_python/parsing/Parser_python.mli

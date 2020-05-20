@@ -6,11 +6,11 @@
 -include ../Makefile.config
 
 #note: if you add a file (a .mli or .ml), dont forget to 'make depend'
-SRC=common.ml common2.ml \
- ocaml.ml\
+SRC=Common.ml common2.ml \
+ OCaml.ml\
  file_type.ml\
  set_.ml map_.ml \
- dumper.ml oUnit.ml
+ Dumper.ml OUnit.ml
 
 # lib.cma
 LIBNAME=lib
