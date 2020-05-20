@@ -11,7 +11,7 @@ SRC= \
   controlflow_visitor.ml \
   lrvalue.ml \
   Dataflow.ml dataflow_reaching.ml dataflow_liveness.ml \
-  IL.ml Meta_IL.ml AST_to_IL.ml CFG_build.ml \
+  IL.ml CFG.ml Meta_IL.ml AST_to_IL.ml CFG_build.ml \
   Dataflow_tainting.ml \
   Test_analyze_generic.ml
 
