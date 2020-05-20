@@ -78,7 +78,7 @@ let long_format = ref true
 (*****************************************************************************)
 let debug any =
   let v = Meta_ast_c.vof_any any in
-  let s = Ocaml.string_of_v v in
+  let s = OCaml.string_of_v v in
   let ii = Lib_parsing_c.ii_of_any any in
   pr2 (spf "PB: %s" (Parse_info.string_of_info (List.hd ii)));
   pr2 s
@@ -602,7 +602,7 @@ let return_fact env instr =
 let facts_of_def env def =
   match def with
   | StructDef def -> 
-      def.s_flds |> Ast_generic.unbracket |> Common.map_filter (fun fld ->
+      def.s_flds |> AST_generic.unbracket |> Common.map_filter (fun fld ->
         match fld.fld_name with
         (* todo: kencc ext field! *)
         | None -> None

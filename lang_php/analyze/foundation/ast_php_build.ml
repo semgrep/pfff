@@ -16,7 +16,7 @@ open Common
 
 open Cst_php
 module A = Ast_php
-module G = Ast_generic
+module G = AST_generic
 
 (*****************************************************************************)
 (* Prelude *)

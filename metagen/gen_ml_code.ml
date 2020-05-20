@@ -14,7 +14,7 @@
  *)
 open Common
 
-module O = Ocaml
+module O = OCaml
 module PPI = Pretty_printer_indent
 
 open PPI (* for the --> infix operators *)
@@ -55,12 +55,12 @@ let rec call_to_matcher t =
   | O.String -> "m_string"
 
   | _ -> 
-      (* pr2 (Ocaml.string_sexp_of_t t); *)
+      (* pr2 (OCaml.string_sexp_of_t t); *)
       pr2_gen t;
       raise Todo
 
-let (gen_matcher: string * Ocaml.t -> unit) = fun (s, t) ->
-  (* pr2 (Ocaml.string_sexp_of_t t); *)
+let (gen_matcher: string * OCaml.t -> unit) = fun (s, t) ->
+  (* pr2 (OCaml.string_sexp_of_t t); *)
 
   let e = PPI.init_printer stdout in
 

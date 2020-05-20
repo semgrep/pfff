@@ -51,7 +51,7 @@ let main_action file =
   pr2 "";
 
   let v = Meta_ast_php.vof_program ast in
-  let s = Ocaml.string_sexp_of_v v in
+  let s = OCaml.string_sexp_of_v v in
   pr2 s;
   pr2 "";
 
@@ -64,7 +64,7 @@ let main_action file =
 let test_python_gen s = 
   raise Todo
 (*
-  let t = Ocaml.get_type s in
+  let t = OCaml.get_type s in
   Python_php.generate_classes (s, t)
 *)
 

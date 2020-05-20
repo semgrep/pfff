@@ -16,7 +16,7 @@ open Common
 
 module A = Ast_js
 module C = Cst_js
-module G = Ast_generic (* for the operators *)
+module G = AST_generic (* for the operators *)
 
 (*****************************************************************************)
 (* Prelude *)
@@ -719,7 +719,7 @@ and var_binding env vkind = function
                (C.Pattern x.C.vpat) |> Lib_parsing_js.ii_of_any |> List.hd))
      )
     else 
-      let s = Ast_generic.special_multivardef_pattern in
+      let s = AST_generic.special_multivardef_pattern in
       let id = s, fake s in
       let pat = pattern env x.C.vpat in
       let (tok, init) = 

@@ -14,8 +14,8 @@
  * license.txt for more details.
  *)
 open Common
-open Il
-module F = Il (* to be even more similar to controlflow_build.ml *)
+open IL
+module F = IL (* to be even more similar to controlflow_build.ml *)
 
 (*****************************************************************************)
 (* Prelude *)

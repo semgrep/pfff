@@ -189,10 +189,10 @@ and expr =
 
   | ArrayAccess of expr * expr
 
-  | Unary of Ast_generic.arithmetic_operator (* +/-/~/! *) wrap * expr
-  | Postfix of expr * Ast_generic.incr_decr wrap
-  | Prefix of Ast_generic.incr_decr wrap * expr
-  | Infix of expr * Ast_generic.arithmetic_operator wrap * expr
+  | Unary of AST_generic.arithmetic_operator (* +/-/~/! *) wrap * expr
+  | Postfix of expr * AST_generic.incr_decr wrap
+  | Prefix of AST_generic.incr_decr wrap * expr
+  | Infix of expr * AST_generic.arithmetic_operator wrap * expr
 
   | Cast of typ * expr
 
@@ -201,7 +201,7 @@ and expr =
   | Conditional of expr * expr * expr
   (* ugly java, like in C assignement is an expression not a statement :( *)
   | Assign of expr * tok * expr
-  | AssignOp of expr * Ast_generic.arithmetic_operator wrap * expr
+  | AssignOp of expr * AST_generic.arithmetic_operator wrap * expr
 
   (* javaext: 1.? *)
   | Lambda of parameters * stmt

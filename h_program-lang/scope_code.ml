@@ -72,13 +72,13 @@ let string_of_scope = function
 
 let vof_scope x = 
   match x with
-  | Global -> Ocaml.VSum (("Global", []))
-  | Local -> Ocaml.VSum (("Local", []))
-  | Param -> Ocaml.VSum (("Param", []))
-  | Static -> Ocaml.VSum (("Static", []))
-  | Class -> Ocaml.VSum (("Class", []))
-  | LocalExn -> Ocaml.VSum (("LocalExn", []))
-  | LocalIterator -> Ocaml.VSum (("LocalIterator", []))
-  | ListBinded -> Ocaml.VSum (("ListBinded", []))
-  | Closed -> Ocaml.VSum (("Closed", []))
-  | NoScope -> Ocaml.VSum (("NoScope", []))
+  | Global -> OCaml.VSum (("Global", []))
+  | Local -> OCaml.VSum (("Local", []))
+  | Param -> OCaml.VSum (("Param", []))
+  | Static -> OCaml.VSum (("Static", []))
+  | Class -> OCaml.VSum (("Class", []))
+  | LocalExn -> OCaml.VSum (("LocalExn", []))
+  | LocalIterator -> OCaml.VSum (("LocalIterator", []))
+  | ListBinded -> OCaml.VSum (("ListBinded", []))
+  | Closed -> OCaml.VSum (("Closed", []))
+  | NoScope -> OCaml.VSum (("NoScope", []))

@@ -83,7 +83,7 @@ let test_dump_cpp file =
   Parse_cpp.init_defs !Flag_cpp.macros_h;
   let ast = Parse_cpp.parse_program file in
   let v = Meta_cst_cpp.vof_program ast in
-  let s = Ocaml.string_of_v v in
+  let s = OCaml.string_of_v v in
   pr s
 
 let test_dump_cpp_full file =
@@ -95,13 +95,13 @@ let test_dump_cpp_full file =
   }
   in
   let v = Meta_cst_cpp.vof_program ~precision ast in
-  let s = Ocaml.string_of_v v in
+  let s = OCaml.string_of_v v in
   pr s;
   toks |> List.iter (fun tok ->
     match tok with
     | Parser_cpp.TComment (ii) ->
         let v = Meta_parse_info.vof_info_adjustable_precision ii in
-        let s = Ocaml.string_of_v v in
+        let s = OCaml.string_of_v v in
         pr s
     | _ -> ()
   );
@@ -122,7 +122,7 @@ let test_dump_cpp_view file =
   let multi = Token_views_cpp.mk_multi extended in
   Token_views_context.set_context_tag_multi multi;
   let v = Token_views_cpp.vof_multi_grouped_list multi in
-  let s = Ocaml.string_of_v v in
+  let s = OCaml.string_of_v v in
   pr s
 
 
@@ -144,7 +144,7 @@ let test_parse_cpp_fuzzy xs =
 let test_dump_cpp_fuzzy file =
   let fuzzy, _toks = Parse_cpp.parse_fuzzy file in
   let v = Meta_ast_fuzzy.vof_trees fuzzy in
-  let s = Ocaml.string_of_v v in
+  let s = OCaml.string_of_v v in
   pr2 s
 
 let test_parse_cpp_dyp xs =
@@ -167,7 +167,7 @@ let test_parse_cpp_dyp xs =
 let test_dump_cpp_dyp file =
   let ast = Parse_cpp.parse_with_dypgen file in
   let v = Meta_cst_cpp.vof_program ast in
-  let s = Ocaml.string_of_v v in
+  let s = OCaml.string_of_v v in
   pr s
   
 (*****************************************************************************)

@@ -331,7 +331,7 @@ and expr =
           | EncapsDollarCurly of tok (* '${' *) * lvalue * tok
           | EncapsExpr of tok * expr * tok
 
-   and fixOp    = Ast_generic.incr_decr
+   and fixOp    = AST_generic.incr_decr
    and binaryOp = Arith of arithOp | Logical of logicalOp 
         | BinaryConcat (* . *) 
         | CombinedComparison

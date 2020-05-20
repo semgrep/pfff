@@ -14,8 +14,8 @@
  *)
 open Common
 
-open Il
-module G = Ast_generic
+open IL
+module G = AST_generic
 
 (*****************************************************************************)
 (* Prelude *)
@@ -51,8 +51,8 @@ let warning tok s =
   pr2 (spf "%s: %s" (Parse_info.string_of_info tok) s)
 
 let error_any any_generic msg =
-  let toks = Lib_ast.ii_of_any any_generic in
-  let s = Meta_ast.vof_any any_generic |> Ocaml.string_of_v in
+  let toks = Lib_AST.ii_of_any any_generic in
+  let s = Meta_AST.vof_any any_generic |> OCaml.string_of_v in
   error (List.hd toks) (spf "%s: %s" msg s)
 
 let sgrep_construct any_generic =

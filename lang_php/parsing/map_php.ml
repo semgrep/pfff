@@ -13,7 +13,7 @@
  * license.txt for more details.
  *)
 
-open Ocaml
+open OCaml
 
 open Cst_php
 
@@ -94,10 +94,10 @@ and map_angle: 'a. ('a -> 'a) -> 'a angle -> 'a angle =
   let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
 and map_comma_list_dots : 'a. ('a -> 'a) -> 'a comma_list_dots -> 'a comma_list_dots =
   fun _of_a xs ->
-  map_of_list (fun x -> Ocaml.map_of_either3 _of_a map_info map_info x) xs
+  map_of_list (fun x -> OCaml.map_of_either3 _of_a map_info map_info x) xs
 and map_comma_list:'a. ('a -> 'a) -> 'a comma_list -> 'a comma_list =
   fun _of_a xs ->
-  map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
+  map_of_list (fun x -> OCaml.map_of_either _of_a map_info x) xs
 
 
 and map_ident =
@@ -961,7 +961,7 @@ and map_class_stmt =
   | UseTrait (v1, v2, v3) ->
       let v1 = map_tok v1 in
       let v2 = map_comma_list map_fully_qualified_class_name v2 in
-      let v3 = Ocaml.map_of_either map_tok (map_brace (List.map map_trait_rule))
+      let v3 = OCaml.map_of_either map_tok (map_brace (List.map map_trait_rule))
         v3 in
       UseTrait (v1, v2, v3)
 
@@ -977,7 +977,7 @@ and map_trait_rule =
       in InsteadOf ((v1, v2, v3, v4, v5, v6))
   | As ((v1, v2, v3, v4, v5)) ->
       let v1 =
-        Ocaml.map_of_either map_ident
+        OCaml.map_of_either map_ident
           (fun (v1, v2, v3) ->
              let v1 = map_name v1
              and v2 = map_tok v2

@@ -1,2 +1,2 @@
 
-val vof_any: Ast_java.any -> Ocaml.v
+val vof_any: Ast_java.any -> OCaml.v

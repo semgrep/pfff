@@ -13,7 +13,7 @@
  * license.txt for more details.
  *)
 
-open Ast_generic
+open AST_generic
 
 (*****************************************************************************)
 (* Prelude *)
@@ -33,7 +33,7 @@ open Ast_generic
 (*****************************************************************************)
 
 let normalize2 any =
-  let visitor = Map_ast.mk_visitor { Map_ast.default_visitor with Map_ast.
+  let visitor = Map_AST.mk_visitor { Map_AST.default_visitor with Map_AST.
     kexpr = (fun (k, _) e ->
       (* apply on children *)
       let e = k e in
@@ -53,7 +53,7 @@ let normalize2 any =
       | _ -> e
     )
   } in
-  visitor.Map_ast.vany any
+  visitor.Map_AST.vany any
 
 let normalize a = 
   Common.profile_code "Normalize_ast.normalize" (fun () -> normalize2 a)

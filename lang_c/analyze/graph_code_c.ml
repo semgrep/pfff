@@ -421,7 +421,7 @@ let add_node_and_edge_if_defs_mode env (name, kind) typopt =
                let t = final_type env t in 
             *)
             let v = Meta_ast_c.vof_any (Type t) in
-            let _s = Ocaml.string_of_v v in
+            let _s = OCaml.string_of_v v in
             (* hmmm this is fed to prolog so need to be a simple string
              * without special quote in it, so for now let's skip
              *)

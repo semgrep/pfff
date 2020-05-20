@@ -15,12 +15,12 @@
 open Common
 
 open Ast_ml
-module G = Ast_generic
+module G = AST_generic
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Ast_ml to Ast_generic.
+(* Ast_ml to AST_generic.
  *
  * See ast_generic.ml for more information.
  *)

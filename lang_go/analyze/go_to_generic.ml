@@ -15,12 +15,12 @@
 open Common
 
 open Ast_go
-module G = Ast_generic
+module G = AST_generic
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Ast_go to Ast_generic.
+(* Ast_go to AST_generic.
  *
  * See ast_generic.ml for more information.
  *)
@@ -32,13 +32,13 @@ let id = fun x -> x
 let string = id
 let list = List.map
 let option = Common.map_opt
-let either = Ocaml.map_of_either
+let either = OCaml.map_of_either
 
 let arithmetic_operator = id
 let incr_decr = id
 let prefix_postfix = id
 
-let error = Ast_generic.error
+let error = AST_generic.error
 
 let name_of_qualified_ident = function
   | Left id -> id, G.empty_name_info

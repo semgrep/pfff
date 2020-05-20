@@ -32,7 +32,7 @@ let test_dump_ast file =
       ))
     in
     let v = Meta_ast_js.vof_program ast in
-    let s = Ocaml.string_of_v v in
+    let s = OCaml.string_of_v v in
     pr s
    with exn ->
       (match exn with

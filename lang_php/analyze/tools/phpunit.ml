@@ -676,7 +676,7 @@ let json_of_test_results v = json_of_list json_of_test_result v
 (*****************************************************************************)
 
 module Ocamlx = struct
-open Ocaml
+open OCaml
 
 let stag_incorrect_n_args _loc tag _v = 
   failwith ("stag_incorrect_n_args on: " ^ tag)
@@ -752,24 +752,24 @@ let test_status_ofv =
   let _loc = "Xxx.test_status"
   in
     function
-    | (Ocaml.VSum (((("Pass" as tag)), sexp_args)) as sexp) ->
+    | (OCaml.VSum (((("Pass" as tag)), sexp_args)) as sexp) ->
         (match sexp_args with
          | [ v1; v2 ] ->
-             let v1 = Ocaml.int_ofv v1
-             and v2 = Ocaml.int_ofv v2
+             let v1 = OCaml.int_ofv v1
+             and v2 = OCaml.int_ofv v2
              in Pass ((v1, v2))
          | _ -> Ocamlx.stag_incorrect_n_args _loc tag sexp)
 
-    | (Ocaml.VSum (((("Fail" as tag)), sexp_args)) as sexp) ->
+    | (OCaml.VSum (((("Fail" as tag)), sexp_args)) as sexp) ->
         (match sexp_args with
          | [ v1; v2 ] ->
-             let v1 = Ocaml.int_ofv v1
-             and v2 = Ocaml.int_ofv v2
+             let v1 = OCaml.int_ofv v1
+             and v2 = OCaml.int_ofv v2
              in Fail ((v1, v2))
          | _ -> Ocamlx.stag_incorrect_n_args _loc tag sexp)
-    | (Ocaml.VSum (((("Fatal" as tag)), sexp_args)) as sexp) ->
+    | (OCaml.VSum (((("Fatal" as tag)), sexp_args)) as sexp) ->
         (match sexp_args with
-         | [ v1 ] -> let v1 = Ocaml.string_ofv v1 in Fatal v1
+         | [ v1 ] -> let v1 = OCaml.string_ofv v1 in Fatal v1
          | _ -> Ocamlx.stag_incorrect_n_args _loc tag sexp)
     | sexp -> Ocamlx.unexpected_stag _loc sexp
 
@@ -777,7 +777,7 @@ let test_result_ofv =
   let _loc = "Xxx.test_result"
   in
     function
-    | (Ocaml.VDict field_sexps as sexp) ->
+    | (OCaml.VDict field_sexps as sexp) ->
         let t_file_field = ref None and t_status_field = ref None
         and t_time_field = ref None and t_memory_field = ref None
         and t_trace_nb_lines_field = ref None and t_shimmed_field = ref None
@@ -789,7 +789,7 @@ let test_result_ofv =
                  | "t_file" ->
                      (match !t_file_field with
                       | None ->
-                          let fvalue = Ocaml.string_ofv field_sexp
+                          let fvalue = OCaml.string_ofv field_sexp
                           in t_file_field := Some fvalue
                       | Some _ -> duplicates := field_name :: !duplicates)
                  | "t_status" ->
@@ -801,25 +801,25 @@ let test_result_ofv =
                  | "t_time" ->
                      (match !t_time_field with
                       | None ->
-                          let fvalue = Ocaml.int_ofv field_sexp
+                          let fvalue = OCaml.int_ofv field_sexp
                           in t_time_field := Some fvalue
                       | Some _ -> duplicates := field_name :: !duplicates)
                  | "t_memory" ->
                      (match !t_memory_field with
                       | None ->
-                          let fvalue = Ocaml.float_ofv field_sexp
+                          let fvalue = OCaml.float_ofv field_sexp
                           in t_memory_field := Some fvalue
                       | Some _ -> duplicates := field_name :: !duplicates)
                  | "t_trace_nb_lines" ->
                      (match !t_trace_nb_lines_field with
                       | None ->
-                          let fvalue = Ocaml.int_ofv field_sexp
+                          let fvalue = OCaml.int_ofv field_sexp
                           in t_trace_nb_lines_field := Some fvalue
                       | Some _ -> duplicates := field_name :: !duplicates)
                  | "t_shimmed" ->
                      (match !t_shimmed_field with
                       | None ->
-                          let fvalue = Ocaml.int_ofv field_sexp
+                          let fvalue = OCaml.int_ofv field_sexp
                           in t_shimmed_field := Some fvalue
                       | Some _ -> duplicates := field_name :: !duplicates)
                  | fld ->
@@ -864,7 +864,7 @@ let test_result_ofv =
 
 let test_results_ofv =
   let _loc = "Xxx.test_results"
-  in fun sexp -> Ocaml.list_ofv test_result_ofv sexp
+  in fun sexp -> OCaml.list_ofv test_result_ofv sexp
 
 
 (* finally can now load test results from a JSON data *)

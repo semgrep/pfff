@@ -13,9 +13,9 @@
  * license.txt for more details.
  *)
 open Common
-open Ast_generic
-module Ast = Ast_generic
-module V = Visitor_ast
+open AST_generic
+module Ast = AST_generic
+module V = Visitor_AST
 
 (*****************************************************************************)
 (* Prelude *)
@@ -37,7 +37,7 @@ module V = Visitor_ast
  * namespace, or a variable defined in a nested block that "shadows" an
  * enclosing variable with the same name.
  * By resolving once and for all all uses of an entity to its definition,
- * for example by renaming some shadow variables (see Ast_generic.gensym),
+ * for example by renaming some shadow variables (see AST_generic.gensym),
  * we simpify further phases that don't have to maintain a complex environment 
  * to deal with scoping issues (see the essence Of Python paper 
  * "Python: The Full Monty" where they show that even complex IDEs still
@@ -131,7 +131,7 @@ module V = Visitor_ast
 (*****************************************************************************)
 
 (* this includes the "single unique id" (sid) *)
-type resolved_name = Ast_generic.resolved_name
+type resolved_name = AST_generic.resolved_name
 
 type scope = (string, resolved_name) assoc
 

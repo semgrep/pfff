@@ -16,7 +16,7 @@ type layer = {
    macro_level: (kind * float (* percentage of rectangle *)) list;
  }
  (* ugly: the first letter of the propery cannot be in uppercase because
-  * of the ugly way Ocaml.json_of_v currently works.
+  * of the ugly way OCaml.json_of_v currently works.
   *)
  and kind = string
 

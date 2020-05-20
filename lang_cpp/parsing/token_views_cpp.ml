@@ -623,44 +623,44 @@ let tokens_of_multi_grouped xs =
 (*****************************************************************************)
 
 let vof_context = function
-  | InTopLevel -> Ocaml.VSum ("T", [])
-  | InClassStruct _s -> Ocaml.VSum ("C", [])
-  | InEnum  -> Ocaml.VSum ("E", [])
-  | InInitializer -> Ocaml.VSum ("I", [])
-  | InAssign -> Ocaml.VSum ("=", [])
-  | InParameter -> Ocaml.VSum ("P", [])
-  | InArgument -> Ocaml.VSum ("A", [])
-  | InFunction -> Ocaml.VSum ("F", [])
+  | InTopLevel -> OCaml.VSum ("T", [])
+  | InClassStruct _s -> OCaml.VSum ("C", [])
+  | InEnum  -> OCaml.VSum ("E", [])
+  | InInitializer -> OCaml.VSum ("I", [])
+  | InAssign -> OCaml.VSum ("=", [])
+  | InParameter -> OCaml.VSum ("P", [])
+  | InArgument -> OCaml.VSum ("A", [])
+  | InFunction -> OCaml.VSum ("F", [])
 (*
-  | InTemplateParam -> Ocaml.VSum ("<>", [])
+  | InTemplateParam -> OCaml.VSum ("<>", [])
 *)
 
 let vof_token_extended t =
   let info = TH.info_of_tok t.t in
   let str = PI.str_of_info info in
   let xs = List.map vof_context t.where in
-  Ocaml.VTuple [Ocaml.VString str; Ocaml.VList xs]
+  OCaml.VTuple [OCaml.VString str; OCaml.VList xs]
 
 let rec vof_multi_grouped =
   function
   | Braces ((v1, v2, v3)) ->
       let v1 = vof_token_extended v1
-      and v2 = Ocaml.vof_list vof_multi_grouped v2
-      and v3 = Ocaml.vof_option vof_token_extended v3
-      in Ocaml.VSum (("Braces", [ v1; v2; v3 ]))
+      and v2 = OCaml.vof_list vof_multi_grouped v2
+      and v3 = OCaml.vof_option vof_token_extended v3
+      in OCaml.VSum (("Braces", [ v1; v2; v3 ]))
   | Parens ((v1, v2, v3)) ->
       let v1 = vof_token_extended v1
-      and v2 = Ocaml.vof_list vof_multi_grouped v2
-      and v3 = Ocaml.vof_option vof_token_extended v3
-      in Ocaml.VSum (("Parens", [ v1; v2; v3 ]))
+      and v2 = OCaml.vof_list vof_multi_grouped v2
+      and v3 = OCaml.vof_option vof_token_extended v3
+      in OCaml.VSum (("Parens", [ v1; v2; v3 ]))
   | Angle ((v1, v2, v3)) ->
       let v1 = vof_token_extended v1
-      and v2 = Ocaml.vof_list vof_multi_grouped v2
-      and v3 = Ocaml.vof_option vof_token_extended v3
-      in Ocaml.VSum (("Angle", [ v1; v2; v3 ]))
-  | Tok v1 -> let v1 = vof_token_extended v1 in Ocaml.VSum (("Tok", [ v1 ]))
+      and v2 = OCaml.vof_list vof_multi_grouped v2
+      and v3 = OCaml.vof_option vof_token_extended v3
+      in OCaml.VSum (("Angle", [ v1; v2; v3 ]))
+  | Tok v1 -> let v1 = vof_token_extended v1 in OCaml.VSum (("Tok", [ v1 ]))
 
 
 let vof_multi_grouped_list xs =
-  let v = Ocaml.VList (xs |> List.map vof_multi_grouped) in
+  let v = OCaml.VList (xs |> List.map vof_multi_grouped) in
   v

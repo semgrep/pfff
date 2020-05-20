@@ -7,10 +7,10 @@ OPAMPKG=pfff-h_program-lang
 
 SRC= entity_code.ml scope_code.ml \
      flag_parsing.ml \
-     parse_info.ml meta_parse_info.ml \
+     Parse_info.ml meta_parse_info.ml \
      comment_code.ml \
      ast_fuzzy.ml meta_ast_fuzzy.ml lib_ast_fuzzy.ml \
-     ast_generic.ml meta_ast_generic_common.ml \
+     AST_generic.ml meta_ast_generic_common.ml \
      highlight_code.ml \
      archi_code.ml archi_code_lexer.ml archi_code_parse.ml \
      skip_code.ml \
@@ -19,7 +19,7 @@ SRC= entity_code.ml scope_code.ml \
      prolog_code.ml datalog_code.ml \
      layer_code.ml \
      tags_file.ml \
-     error_code.ml r2c.ml \
+     Error_code.ml R2c.ml \
      layer_parse_errors.ml \
      coverage_code.ml layer_coverage.ml \
      overlay_code.ml big_grep.ml pleac.ml info_code.ml \

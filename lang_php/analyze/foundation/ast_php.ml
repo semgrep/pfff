@@ -265,8 +265,8 @@ and expr =
   | Call of expr * expr list
 
   (* todo? transform into Call (builtin ...) ? *)
-  | Infix of Ast_generic.incr_decr wrap * expr
-  | Postfix of Ast_generic.incr_decr wrap * expr
+  | Infix of AST_generic.incr_decr wrap * expr
+  | Postfix of AST_generic.incr_decr wrap * expr
   | Binop of expr * binaryOp wrap * expr
   | Unop of unaryOp wrap * expr
   | Guil of expr list bracket
@@ -290,8 +290,8 @@ and expr =
   and binaryOp = 
    | BinaryConcat 
    | CombinedComparison
-   | ArithOp of Ast_generic.arithmetic_operator
-  and unaryOp = Ast_generic.arithmetic_operator
+   | ArithOp of AST_generic.arithmetic_operator
+  and unaryOp = AST_generic.arithmetic_operator
 
   (* pad: do we need that? could convert into something more basic *)
   and xhp =

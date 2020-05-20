@@ -8,12 +8,12 @@ OPAMPKG=pfff-lang_GENERIC
 -include $(TOP)/Makefile.config
 
 SRC= find_source.ml \
-     lang.ml \
-     ast.ml meta_ast.ml \
-     visitor_ast.ml map_ast.ml \
-     lib_ast.ml \
-     parse_generic.ml \
-     test_parsing_generic.ml
+     Lang.ml \
+     AST.ml Meta_AST.ml \
+     Visitor_AST.ml Map_AST.ml \
+     Lib_AST.ml \
+     Parse_generic.ml \
+     Test_parsing_generic.ml
 
 SYSLIBS= str.cma unix.cma 
 

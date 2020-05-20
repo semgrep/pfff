@@ -1,2 +1,2 @@
 
-val vof_any: Cst_ml.any -> Ocaml.v
+val vof_any: Cst_ml.any -> OCaml.v

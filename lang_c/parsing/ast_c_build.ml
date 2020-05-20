@@ -67,7 +67,7 @@ let empty_env () = {
 
 let debug any =
   let v = Meta_cst_cpp.vof_any any in
-  let s = Ocaml.string_of_v v in
+  let s = OCaml.string_of_v v in
   pr2 s
 
 let rec ifdef_skipper xs f =

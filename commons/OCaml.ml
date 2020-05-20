@@ -84,9 +84,9 @@ open Common
  * For instance to do a show, to pretty print value, then sexp is good,
  * because really you just want to write code that handle 2 cases, 
  * atoms and list. That's really what pretty printing is all about. You
- * could write a pretty printer for Ocaml.v, but it will need to handle
+ * could write a pretty printer for OCaml.v, but it will need to handle
  * 10 cases. Now if you want to write a code generator for python, or an ORM,
- * then Ocaml.v is better than sexp, because in sexp you lost some valuable
+ * then OCaml.v is better than sexp, because in sexp you lost some valuable
  * information (that you may have to reverse engineer, like whether 
  * a Sexp.List corresponds to a field, or a sum, or wether something is
  * null or an empty list, or wether it's an int or float, etc).
@@ -143,10 +143,10 @@ open Common
  *    if the type definition is complex. A good side effect of ocaml.ml
  *    is that it provides an intermediate step :) So even if you 
  *    could pretty print value from your def to sexp directly, you could
- *    also use transform your value into a Ocaml.v, then use 
+ *    also use transform your value into a OCaml.v, then use 
  *    the somehow more readable function that translate a v into a sexp,
  *    and same when wanting to read a value from a sexp, by using
- *    again Ocaml.v as an intermediate. It's nevertheless obviously
+ *    again OCaml.v as an intermediate. It's nevertheless obviously
  *    less efficient.
  * 
  *  - zephyr, or thrift ?

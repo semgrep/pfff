@@ -15,12 +15,12 @@
 open Common
 
 open Ast_java
-module G = Ast_generic
+module G = AST_generic
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Ast_java to Ast_generic.
+(* Ast_java to AST_generic.
  *
  * See ast_generic.ml for more information.
  *)
@@ -36,7 +36,7 @@ let string = id
 let bool = id
 let int = id
 
-let error = Ast_generic.error
+let error = AST_generic.error
 
 let fake s = Parse_info.fake_info s
 (* todo: to remove at some point when Ast_java includes them directly *)

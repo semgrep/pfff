@@ -101,7 +101,7 @@ let test_dump file =
   end;
   let ast = Parse_ruby.parse_program file in
   let v = Meta_ast_ruby.vof_program ast in
-  let s = Ocaml.string_of_v v in
+  let s = OCaml.string_of_v v in
   pr s
 
 (*****************************************************************************)

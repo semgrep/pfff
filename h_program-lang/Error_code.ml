@@ -353,7 +353,7 @@ let exn_to_error file exn =
     mk_error tok (AstBuilderError s);
   | Parse_info.Other_error (s, tok) ->
     mk_error tok (OtherParsingError s);
-  | Ast_generic.Error (s, tok) ->
+  | AST_generic.Error (s, tok) ->
     mk_error tok (AstGenericError s);
   (* this should never be captured *)
   | (Timeout | UnixExit _) as exn -> raise exn

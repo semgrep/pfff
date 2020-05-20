@@ -129,7 +129,7 @@ let unsugar_self_parent_any2 any =
             Some qualified_classname
         | Some x -> 
             failwith ("Warning: unknown extends clause\n" ^
-                       (Ocaml.string_of_v 
+                       (OCaml.string_of_v 
                           (Meta_cst_php.vof_any (Hint2 (snd x)))))
       in
 

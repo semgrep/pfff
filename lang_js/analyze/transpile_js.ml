@@ -16,7 +16,7 @@ open Common
 
 module A = Ast_js
 module C = Cst_js
-module G = Ast_generic
+module G = AST_generic
 
 (*****************************************************************************)
 (* Prelude *)

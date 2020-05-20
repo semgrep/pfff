@@ -12,8 +12,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Ocaml
-open Ast_generic
+open OCaml
+open AST_generic
 
 (* Disable warnings against unused variables *)
 [@@@warning "-26"]

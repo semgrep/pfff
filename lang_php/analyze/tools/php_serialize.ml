@@ -61,27 +61,27 @@ let rec vof_php =
   function
   | AI v1 ->
       let v1 =
-        Ocaml.vof_list
+        OCaml.vof_list
           (fun (v1, v2) ->
-             let v1 = Ocaml.vof_int v1
+             let v1 = OCaml.vof_int v1
              and v2 = vof_php v2
-             in Ocaml.VTuple [ v1; v2 ])
+             in OCaml.VTuple [ v1; v2 ])
           v1
-      in Ocaml.VSum (("AI", [ v1 ]))
+      in OCaml.VSum (("AI", [ v1 ]))
   | AS v1 ->
       let v1 =
-        Ocaml.vof_list
+        OCaml.vof_list
           (fun (v1, v2) ->
-             let v1 = Ocaml.vof_string v1
+             let v1 = OCaml.vof_string v1
              and v2 = vof_php v2
-             in Ocaml.VTuple [ v1; v2 ])
+             in OCaml.VTuple [ v1; v2 ])
           v1
-      in Ocaml.VSum (("AS", [ v1 ]))
-  | S v1 -> let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("S", [ v1 ]))
-  | I v1 -> let v1 = Ocaml.vof_int v1 in Ocaml.VSum (("I", [ v1 ]))
-  | B v1 -> let v1 = Ocaml.vof_bool v1 in Ocaml.VSum (("B", [ v1 ]))
-  | F v1 -> let v1 = Ocaml.vof_float v1 in Ocaml.VSum (("F", [ v1 ]))
-  | N -> Ocaml.VSum (("N", []))
+      in OCaml.VSum (("AS", [ v1 ]))
+  | S v1 -> let v1 = OCaml.vof_string v1 in OCaml.VSum (("S", [ v1 ]))
+  | I v1 -> let v1 = OCaml.vof_int v1 in OCaml.VSum (("I", [ v1 ]))
+  | B v1 -> let v1 = OCaml.vof_bool v1 in OCaml.VSum (("B", [ v1 ]))
+  | F v1 -> let v1 = OCaml.vof_float v1 in OCaml.VSum (("F", [ v1 ]))
+  | N -> OCaml.VSum (("N", []))
 
 (*****************************************************************************)
 (* Helpers *)

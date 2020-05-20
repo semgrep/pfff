@@ -13,7 +13,7 @@
  * license.txt for more details.
  *)
 
-(*open Ocaml*)
+(*open OCaml*)
 open Cst_cpp
 
 (*****************************************************************************)
@@ -105,7 +105,7 @@ and v_comma_list: 'a. ('a -> unit) -> 'a comma_list -> unit = fun
   _of_a -> v_list (v_wrapx _of_a)
 and v_comma_list2: 'a. ('a -> unit) -> 'a comma_list2 -> unit = 
  fun _of_a ->
-   v_list (Ocaml.v_either _of_a v_tok)
+   v_list (OCaml.v_either _of_a v_tok)
 
 and v_name (v1, v2, v3) =
   let v1 = v_option v_tok v1
@@ -130,8 +130,8 @@ and v_ident =
   | IdTemplateId ((v1, v2)) ->
       let v1 = v_wrap v_string v1 and v2 = v_template_arguments v2 in ()
 and v_template_arguments v = v_angle (v_comma_list v_template_argument) v
-and v_template_argument v = Ocaml.v_either v_fullType v_expression v
-and v_either_ft_or_expr v = Ocaml.v_either v_fullType v_expression v
+and v_template_argument v = OCaml.v_either v_fullType v_expression v
+and v_either_ft_or_expr v = OCaml.v_either v_fullType v_expression v
 and v_qualifier =
   function
   | QClassname v1 -> let v1 = v_wrap v_string v1 in ()
@@ -287,7 +287,7 @@ and v_expressionbis =
 and v_ident_info { i_scope = _v_i_scope } =
   (* todo? let arg = Scope_code.v_scope v_i_scope in () *)
   ()
-and v_argument v = Ocaml.v_either v_expression v_weird_argument v
+and v_argument v = OCaml.v_either v_expression v_weird_argument v
 and v_weird_argument =
   function
   | ArgType v1 -> let v1 = v_fullType v1 in ()

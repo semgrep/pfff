@@ -697,8 +697,8 @@ and expr_ env = function
 
 
 and fixop env = function
-  | Ast_generic.Incr -> Pp.print env "++"
-  | Ast_generic.Decr -> Pp.print env "--"
+  | AST_generic.Incr -> Pp.print env "++"
+  | AST_generic.Decr -> Pp.print env "--"
 
 and array_value pad env = function
   | Aval e ->

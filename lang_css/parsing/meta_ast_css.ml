@@ -6,126 +6,126 @@ open Ast_css
 let rec vof_selector (v1, v2) =
   let v1 = vof_simplesel v1
   and v2 =
-    Ocaml.vof_list
+    OCaml.vof_list
       (fun (v1, v2) ->
          let v1 = vof_combinator v1
          and v2 = vof_simplesel v2
-         in Ocaml.VTuple [ v1; v2 ])
+         in OCaml.VTuple [ v1; v2 ])
       v2
-  in Ocaml.VTuple [ v1; v2 ]
+  in OCaml.VTuple [ v1; v2 ]
 and vof_simplesel =
   function
   | Explicit ((v1, v2)) ->
       let v1 = vof_element v1
-      and v2 = Ocaml.vof_list vof_qualifier v2
-      in Ocaml.VSum (("Explicit", [ v1; v2 ]))
+      and v2 = OCaml.vof_list vof_qualifier v2
+      in OCaml.VSum (("Explicit", [ v1; v2 ]))
   | Generic ((v1, v2)) ->
       let v1 = vof_qualifier v1
-      and v2 = Ocaml.vof_list vof_qualifier v2
-      in Ocaml.VSum (("Generic", [ v1; v2 ]))
+      and v2 = OCaml.vof_list vof_qualifier v2
+      in OCaml.VSum (("Generic", [ v1; v2 ]))
 and vof_combinator =
   function
-  | Descendant -> Ocaml.VSum (("Descendant", []))
-  | GeneralSibling -> Ocaml.VSum (("GeneralSibling", []))
-  | AdjacentSibling -> Ocaml.VSum (("AdjacentSibling", []))
-  | Child -> Ocaml.VSum (("Child", []))
+  | Descendant -> OCaml.VSum (("Descendant", []))
+  | GeneralSibling -> OCaml.VSum (("GeneralSibling", []))
+  | AdjacentSibling -> OCaml.VSum (("AdjacentSibling", []))
+  | Child -> OCaml.VSum (("Child", []))
 and vof_element =
   function
-  | Tag v1 -> let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("Tag", [ v1 ]))
-  | Universal -> Ocaml.VSum (("Universal", []))
+  | Tag v1 -> let v1 = OCaml.vof_string v1 in OCaml.VSum (("Tag", [ v1 ]))
+  | Universal -> OCaml.VSum (("Universal", []))
 and vof_qualifier =
   function
-  | Id v1 -> let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("Id", [ v1 ]))
+  | Id v1 -> let v1 = OCaml.vof_string v1 in OCaml.VSum (("Id", [ v1 ]))
   | Class v1 ->
-      let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("Class", [ v1 ]))
+      let v1 = OCaml.vof_string v1 in OCaml.VSum (("Class", [ v1 ]))
   | Attr ((v1, v2)) ->
-      let v1 = Ocaml.vof_string v1
+      let v1 = OCaml.vof_string v1
       and v2 = vof_attr v2
-      in Ocaml.VSum (("Attr", [ v1; v2 ]))
+      in OCaml.VSum (("Attr", [ v1; v2 ]))
   | PseudoClass v1 ->
-      let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("PseudoClass", [ v1 ]))
+      let v1 = OCaml.vof_string v1 in OCaml.VSum (("PseudoClass", [ v1 ]))
   | PseudoElement v1 ->
-      let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("PseudoElement", [ v1 ]))
+      let v1 = OCaml.vof_string v1 in OCaml.VSum (("PseudoElement", [ v1 ]))
   | SelFunc ((v1, v2)) ->
-      let v1 = Ocaml.vof_string v1
+      let v1 = OCaml.vof_string v1
       and v2 = vof_functiont v2
-      in Ocaml.VSum (("SelFunc", [ v1; v2 ]))
+      in OCaml.VSum (("SelFunc", [ v1; v2 ]))
 and vof_functiont =
   function
   | Qualified v1 ->
-      let v1 = Ocaml.vof_list vof_qualifier v1
-      in Ocaml.VSum (("Qualified", [ v1 ]))
-  | Nth v1 -> let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("Nth", [ v1 ]))
+      let v1 = OCaml.vof_list vof_qualifier v1
+      in OCaml.VSum (("Qualified", [ v1 ]))
+  | Nth v1 -> let v1 = OCaml.vof_string v1 in OCaml.VSum (("Nth", [ v1 ]))
 and vof_attr =
   function
-  | AttrExists -> Ocaml.VSum (("AttrExists", []))
+  | AttrExists -> OCaml.VSum (("AttrExists", []))
   | AttrEquals v1 ->
-      let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("AttrEquals", [ v1 ]))
+      let v1 = OCaml.vof_string v1 in OCaml.VSum (("AttrEquals", [ v1 ]))
   | AttrIncludes v1 ->
-      let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("AttrIncludes", [ v1 ]))
+      let v1 = OCaml.vof_string v1 in OCaml.VSum (("AttrIncludes", [ v1 ]))
   | AttrDashmatch v1 ->
-      let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("AttrDashmatch", [ v1 ]))
+      let v1 = OCaml.vof_string v1 in OCaml.VSum (("AttrDashmatch", [ v1 ]))
   | AttrPrefix v1 ->
-      let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("AttrPrefix", [ v1 ]))
+      let v1 = OCaml.vof_string v1 in OCaml.VSum (("AttrPrefix", [ v1 ]))
   | AttrSuffix v1 ->
-      let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("AttrSuffix", [ v1 ]))
+      let v1 = OCaml.vof_string v1 in OCaml.VSum (("AttrSuffix", [ v1 ]))
   | AttrSubstring v1 ->
-      let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("AttrSubstring", [ v1 ]))
+      let v1 = OCaml.vof_string v1 in OCaml.VSum (("AttrSubstring", [ v1 ]))
   
 let rec vof_declaration (v1, v2, v3) =
   let v1 = vof_property v1
   and v2 = vof_expression v2
   and v3 = vof_important v3
-  in Ocaml.VTuple [ v1; v2; v3 ]
-and vof_property v = Ocaml.vof_string v
-and vof_important v = Ocaml.vof_bool v
-and vof_expression v = Ocaml.vof_list vof_sentence v
-and vof_sentence v = Ocaml.vof_list vof_term v
+  in OCaml.VTuple [ v1; v2; v3 ]
+and vof_property v = OCaml.vof_string v
+and vof_important v = OCaml.vof_bool v
+and vof_expression v = OCaml.vof_list vof_sentence v
+and vof_sentence v = OCaml.vof_list vof_term v
 and vof_term =
   function
-  | Calc v1 -> let v1 = vof_calc v1 in Ocaml.VSum (("Calc", [ v1 ]))
+  | Calc v1 -> let v1 = vof_calc v1 in OCaml.VSum (("Calc", [ v1 ]))
   | String v1 ->
-      let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("String", [ v1 ]))
+      let v1 = OCaml.vof_string v1 in OCaml.VSum (("String", [ v1 ]))
   | Ident v1 ->
-      let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("Ident", [ v1 ]))
-  | Uri v1 -> let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("Uri", [ v1 ]))
-  | Hash v1 -> let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("Hash", [ v1 ]))
+      let v1 = OCaml.vof_string v1 in OCaml.VSum (("Ident", [ v1 ]))
+  | Uri v1 -> let v1 = OCaml.vof_string v1 in OCaml.VSum (("Uri", [ v1 ]))
+  | Hash v1 -> let v1 = OCaml.vof_string v1 in OCaml.VSum (("Hash", [ v1 ]))
   | TermFunc ((v1, v2)) ->
-      let v1 = Ocaml.vof_string v1
+      let v1 = OCaml.vof_string v1
       and v2 = vof_expression v2
-      in Ocaml.VSum (("TermFunc", [ v1; v2 ]))
-  | Slash -> Ocaml.VSum (("Slash", []))
+      in OCaml.VSum (("TermFunc", [ v1; v2 ]))
+  | Slash -> OCaml.VSum (("Slash", []))
 and vof_calc =
   function
-  | Varref v1 -> let v1 = vof_variable v1 in Ocaml.VSum (("Varref", [ v1 ]))
+  | Varref v1 -> let v1 = vof_variable v1 in OCaml.VSum (("Varref", [ v1 ]))
   | Quantity v1 ->
-      let v1 = vof_quantity v1 in Ocaml.VSum (("Quantity", [ v1 ]))
+      let v1 = vof_quantity v1 in OCaml.VSum (("Quantity", [ v1 ]))
   | Sum ((v1, v2)) ->
       let v1 = vof_calc v1
       and v2 = vof_calc v2
-      in Ocaml.VSum (("Sum", [ v1; v2 ]))
+      in OCaml.VSum (("Sum", [ v1; v2 ]))
   | Sub ((v1, v2)) ->
       let v1 = vof_calc v1
       and v2 = vof_calc v2
-      in Ocaml.VSum (("Sub", [ v1; v2 ]))
+      in OCaml.VSum (("Sub", [ v1; v2 ]))
   | Mul ((v1, v2)) ->
       let v1 = vof_calc v1
       and v2 = vof_calc v2
-      in Ocaml.VSum (("Mul", [ v1; v2 ]))
+      in OCaml.VSum (("Mul", [ v1; v2 ]))
   | Div ((v1, v2)) ->
       let v1 = vof_calc v1
       and v2 = vof_calc v2
-      in Ocaml.VSum (("Div", [ v1; v2 ]))
+      in OCaml.VSum (("Div", [ v1; v2 ]))
 and vof_quantity (v1, v2) =
-  let v1 = Ocaml.vof_float v1
-  and v2 = Ocaml.vof_option Ocaml.vof_string v2
-  in Ocaml.VTuple [ v1; v2 ]
-and vof_variable v = Ocaml.vof_string v
+  let v1 = OCaml.vof_float v1
+  and v2 = OCaml.vof_option OCaml.vof_string v2
+  in OCaml.VTuple [ v1; v2 ]
+and vof_variable v = OCaml.vof_string v
   
 let vof_rule (v1, v2) =
-  let v1 = Ocaml.vof_list vof_selector v1
-  and v2 = Ocaml.vof_list vof_declaration v2
-  in Ocaml.VTuple [ v1; v2 ]
+  let v1 = OCaml.vof_list vof_selector v1
+  and v2 = OCaml.vof_list vof_declaration v2
+  in OCaml.VTuple [ v1; v2 ]
   
-let vof_stylesheet v = Ocaml.vof_list vof_rule v
+let vof_stylesheet v = OCaml.vof_list vof_rule v
   

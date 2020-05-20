@@ -216,7 +216,7 @@ let s_tok_of_ident name =
 (* to help debug *)
 let str_of_any any =
   let v = Meta_ast_php.vof_any any in
-  Ocaml.string_of_v v
+  OCaml.string_of_v v
 
 (*****************************************************************************)
 (* Vars passed by ref *)

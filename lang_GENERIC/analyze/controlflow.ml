@@ -14,8 +14,8 @@
  * license.txt for more details.
  *)
 
-open Ast_generic
-module A = Ast_generic
+open AST_generic
+module A = AST_generic
 
 (*****************************************************************************)
 (* Prelude *)

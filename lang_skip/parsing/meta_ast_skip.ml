@@ -3,7 +3,7 @@
 
 let vof_info v = Meta_parse_info.vof_info_adjustable_precision v
 let _vof_wrap _of_a (v1, v2) =
-  let v1 = _of_a v1 and v2 = vof_info v2 in Ocaml.VTuple [ v1; v2 ]
+  let v1 = _of_a v1 and v2 = vof_info v2 in OCaml.VTuple [ v1; v2 ]
 
 
 let vof_any _x =

@@ -28,7 +28,7 @@
  *  - http://inst.eecs.berkeley.edu/~cs164/sp10/python-grammar.html
  *)
 open Common
-open Ast_python
+open AST_python
 
 (* intermediate helper type *)
 type single_or_tuple =
@@ -41,7 +41,7 @@ let cons e = function
 
 let tuple_expr = function
   | Single e -> e
-  | Tup l -> Tuple (CompList (Ast_generic.fake_bracket l), Load)
+  | Tup l -> Tuple (CompList (AST_generic.fake_bracket l), Load)
 
 let to_list = function
   | Single e -> [e]
@@ -70,7 +70,7 @@ and expr_del = set_expr_ctx Del
 
 let tuple_expr_store l =
   let e = tuple_expr l in
-    match Ast_python.context_of_expr e with
+    match AST_python.context_of_expr e with
     | Some Param -> e
     | _ -> expr_store e
 
@@ -86,14 +86,14 @@ let mk_str ii =
 (*************************************************************************)
 (* Tokens *)
 (*************************************************************************)
-%token <Ast_python.tok> TUnknown  (* unrecognized token *)
-%token <Ast_python.tok> EOF
+%token <AST_python.tok> TUnknown  (* unrecognized token *)
+%token <AST_python.tok> EOF
 
 (*-----------------------------------------*)
 (* The space/comment tokens *)
 (*-----------------------------------------*)
 (* coupling: Token_helpers.is_comment *)
-%token <Ast_python.tok> TCommentSpace TComment
+%token <AST_python.tok> TCommentSpace TComment
 (* see the extra token below NEWLINE instead of TCommentNewline *)
 
 (*-----------------------------------------*)
@@ -101,16 +101,16 @@ let mk_str ii =
 (*-----------------------------------------*)
 
 (* tokens with "values" *)
-%token <string * Ast_python.tok> NAME
-%token <string    * Ast_python.tok> INT LONGINT
-%token <string  * Ast_python.tok> FLOAT
-%token <string * Ast_python.tok> IMAG
-%token <string * string * Ast_python.tok> STR
+%token <string * AST_python.tok> NAME
+%token <string    * AST_python.tok> INT LONGINT
+%token <string  * AST_python.tok> FLOAT
+%token <string * AST_python.tok> IMAG
+%token <string * string * AST_python.tok> STR
 
 (*-----------------------------------------*)
 (* Keyword tokens *)
 (*-----------------------------------------*)
-%token <Ast_python.tok> 
+%token <AST_python.tok> 
  IF ELSE ELIF 
  WHILE FOR
  RETURN CONTINUE BREAK PASS
@@ -131,7 +131,7 @@ let mk_str ii =
 (*-----------------------------------------*)
  
 (* syntax *)
-%token <Ast_python.tok> 
+%token <AST_python.tok> 
  LPAREN "("     RPAREN ")"
  LBRACK "["     RBRACK "]"
  LBRACE "{"     RBRACE "}"
@@ -145,7 +145,7 @@ let mk_str ii =
  LDots "<..." RDots "...>"
 
 (* operators *)
-%token <Ast_python.tok> 
+%token <AST_python.tok> 
   ADD            (* + *)  SUB            (* - *)
   MULT "*"       (* * *)  DIV            (* / *)
   MOD            (* % *)
@@ -153,7 +153,7 @@ let mk_str ii =
   BITOR          (* | *)  BITAND         (* & *)  BITXOR         (* ^ *)
   BITNOT         (* ~ *)  LSHIFT         (* << *)  RSHIFT         (* >> *)
 
-%token <Ast_python.tok> 
+%token <AST_python.tok> 
   EQ "="             (* = *)
   ADDEQ          (* += *) SUBEQ          (* -= *)
   MULTEQ         (* *= *) DIVEQ          (* /= *)
@@ -170,20 +170,20 @@ let mk_str ii =
 (* Extra tokens: *)
 (*-----------------------------------------*)
 (* fstrings *)
-%token <Ast_python.tok> FSTRING_START FSTRING_END
-%token <Ast_python.tok> FSTRING_LBRACE 
-%token <string * Ast_python.tok> FSTRING_STRING
-%token <Ast_python.tok> BANG
+%token <AST_python.tok> FSTRING_START FSTRING_END
+%token <AST_python.tok> FSTRING_LBRACE 
+%token <string * AST_python.tok> FSTRING_STRING
+%token <AST_python.tok> BANG
 
 (* layout *)
-%token <Ast_python.tok> INDENT DEDENT 
-%token <Ast_python.tok> NEWLINE
+%token <AST_python.tok> INDENT DEDENT 
+%token <AST_python.tok> NEWLINE
 
 (*************************************************************************)
 (* Rules type declaration *)
 (*************************************************************************)
-%start <Ast_python.program> main
-%start <Ast_python.any> sgrep_spatch_pattern
+%start <AST_python.program> main
+%start <AST_python.any> sgrep_spatch_pattern
 %%
 
 (*************************************************************************)
@@ -856,7 +856,7 @@ lambdadef: LAMBDA varargslist ":" test { Lambda ($2, $4) }
 
 testlist_comp:
   | test_or_star_expr comp_for { CompForIf ($1, $2) }
-  | tuple(test_or_star_expr)         { CompList (Ast_generic.fake_bracket (to_list $1)) }
+  | tuple(test_or_star_expr)         { CompList (AST_generic.fake_bracket (to_list $1)) }
 
 comp_for: 
  | sync_comp_for       { $1 }

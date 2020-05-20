@@ -16,12 +16,12 @@ open Common
 
 open Cst_php
 open Ast_php
-module G = Ast_generic
+module G = AST_generic
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Ast_php to Ast_generic.
+(* Ast_php to AST_generic.
  *
  * See ast_generic.ml for more information.
  *)
@@ -36,9 +36,9 @@ let list     = List.map
 let bool   = id
 let string = id
 
-let error = Ast_generic.error
-let fake  = Ast_generic.fake
-let _fake_bracket = Ast_generic.fake_bracket
+let error = AST_generic.error
+let fake  = AST_generic.fake
+let _fake_bracket = AST_generic.fake_bracket
 
 (*****************************************************************************)
 (* Entry point *)

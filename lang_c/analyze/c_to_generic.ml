@@ -14,7 +14,7 @@
  *)
 open Common
 
-module G = Ast_generic
+module G = AST_generic
 
 open Cst_cpp
 open Ast_c
@@ -22,7 +22,7 @@ open Ast_c
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Ast_c to Ast_generic.
+(* Ast_c to AST_generic.
  *
  * See ast_generic.ml for more information.
  *)

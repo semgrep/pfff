@@ -18,7 +18,7 @@
 -let test_dump_ml_fuzzy file =
 -  let fuzzy, _toks = Parse_ml.parse_fuzzy file in
 -  let v = Ast_fuzzy.vof_trees fuzzy in
--  let s = Ocaml.string_of_v v in
+-  let s = OCaml.string_of_v v in
 -  pr2 s
 -
 -  "-parse_ml_fuzzy", "   <file or dir>", 
@@ -45,7 +45,7 @@
 -let test_dump_fuzzy file =
 -  let fuzzy, _toks = Parse_skip.parse_fuzzy file in
 -  let v = Ast_fuzzy.vof_trees fuzzy in
--  let s = Ocaml.string_of_v v in
+-  let s = OCaml.string_of_v v in
 -  pr2 s
 -
 -

@@ -15,8 +15,8 @@
  *)
 open Common
 
-open Ast_generic
-module Ast = Ast_generic
+open AST_generic
+module Ast = AST_generic
 module F = Controlflow
 
 (*****************************************************************************)
@@ -102,7 +102,7 @@ let (lookup_some_ctx:
    aux 1 xs
 
 let info_opt any =
-  match Lib_ast.ii_of_any any with
+  match Lib_AST.ii_of_any any with
   | [] -> None
   | x::_xs -> Some x
 

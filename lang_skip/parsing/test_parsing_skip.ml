@@ -44,7 +44,7 @@ let test_parse xs =
 let test_dump file =
   let ast = Parse_skip.parse_program file in
   let v = Meta_ast_skip.vof_any (Program ast) in
-  let s = Ocaml.string_of_v v in
+  let s = OCaml.string_of_v v in
   pr s
 
 

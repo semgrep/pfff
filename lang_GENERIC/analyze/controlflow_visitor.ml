@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-module Ast = Ast_generic
+module Ast = AST_generic
 open Controlflow
 module F = Controlflow
 
@@ -30,7 +30,7 @@ module F = Controlflow
 (* Types *)
 (*****************************************************************************)
 
-type visitor_in = Visitor_ast.visitor_in
+type visitor_in = Visitor_AST.visitor_in
 type visitor_out = Controlflow.node -> unit
 
 (*****************************************************************************)
@@ -38,7 +38,7 @@ type visitor_out = Controlflow.node -> unit
 (*****************************************************************************)
 
 let mk_visitor vin = 
-  let visitor = Visitor_ast.mk_visitor vin in
+  let visitor = Visitor_AST.mk_visitor vin in
   fun node ->
     match node.F.n with
     (* Nothing is needed if the node has no expr information*)
