@@ -32,13 +32,14 @@ open AST_generic
 (* Entry point *)
 (*****************************************************************************)
 
-let normalize2 any =
+let normalize2 any lang =
   let visitor = Map_AST.mk_visitor { Map_AST.default_visitor with Map_AST.
     kexpr = (fun (k, _) e ->
       (* apply on children *)
       let e = k e in
       match e with
-      | Call (IdSpecial (ArithOp op, tok), [a; b]) ->
+      | Call (IdSpecial (ArithOp op, tok), [a; b]) when lang <> Lang.Python ->
+        (* != can be a method call in Python *)
         let rewrite_opt =
           match op with
           | NotEq -> Some (Not, Eq)
@@ -55,5 +56,5 @@ let normalize2 any =
   } in
   visitor.Map_AST.vany any
 
-let normalize a = 
-  Common.profile_code "Normalize_ast.normalize" (fun () -> normalize2 a)
+let normalize a lang =
+  Common.profile_code "Normalize_ast.normalize" (fun () -> normalize2 a lang)
