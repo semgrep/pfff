@@ -28,6 +28,14 @@ INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/external/json-wheel \
   $(TOP)/h_program-lang \
 
+NUM_PERMITTED_CONFLICTS= 1
+
+SCRIPTDIR= $(TOP)/scripts
+
+MENHIRLOG= menhir_out.log
+
+LANG= js
+
 ##############################################################################
 # Generic variables
 ##############################################################################
@@ -59,7 +67,8 @@ beforedepend:: lexer_js.ml
 OCAMLYACC=menhir --unused-tokens --explain --fixed-exception
 
 parser_js.ml parser_js.mli: parser_js.mly
-	$(OCAMLYACC) $<
+	  $(OCAMLYACC) $< 2> $(MENHIRLOG); $(SCRIPTDIR)/check_menhir_conflicts.sh $(MENHIRLOG) $(NUM_PERMITTED_CONFLICTS) $(LANG) parser_js.ml parser_js.mli
+
 clean::
-	rm -f parser_js.ml parser_js.mli parser_js.output
+	rm -f parser_js.ml parser_js.mli parser_js.output $(MENHIRLOG)
 beforedepend:: parser_js.ml parser_js.mli
