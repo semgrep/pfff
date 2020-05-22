@@ -34,6 +34,14 @@ INCLUDEDIRS= \
  $(TOP)/globals \
  $(TOP)/h_program-lang \
 
+NUM_PERMITTED_CONFLICTS= 2
+
+SCRIPTDIR= $(TOP)/scripts
+
+MENHIRLOG= menhir_out.log
+
+LANG= ml
+
 ##############################################################################
 # Generic variables
 ##############################################################################
@@ -64,9 +72,10 @@ beforedepend:: lexer_cpp.ml
 OCAMLYACC=menhir --unused-tokens --explain
 
 parser_cpp.ml parser_cpp.mli: parser_cpp.mly
-	$(OCAMLYACC) $<
+	$(OCAMLYACC) $< 2> $(MENHIRLOG) && $(SCRIPTDIR)/check_menhir_conflicts.sh $(MENHIRLOG) $(NUM_PERMITTED_CONFLICTS) $(LANG) parser_cpp.ml parser_cpp.mli
+
 clean::
-	rm -f parser_cpp.ml parser_cpp.mli parser_cpp.output parser_cpp.conflicts
+	rm -f parser_cpp.ml parser_cpp.mli parser_cpp.output parser_cpp.conflicts $(MENHIRLOG)
 beforedepend:: parser_cpp.ml parser_cpp.mli
 
 parser_cpp2.ml parser_cpp2.mli: parser_cpp2.dyp

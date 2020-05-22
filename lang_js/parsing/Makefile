@@ -28,7 +28,7 @@ INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/external/json-wheel \
   $(TOP)/h_program-lang \
 
-NUM_PERMITTED_CONFLICTS= 0
+NUM_PERMITTED_CONFLICTS= 2
 
 SCRIPTDIR= $(TOP)/scripts
 
