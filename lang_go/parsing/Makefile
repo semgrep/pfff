@@ -26,6 +26,14 @@ INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/globals \
   $(TOP)/h_program-lang \
 
+NUM_PERMITTED_CONFLICTS= 1
+
+SCRIPTDIR= $(TOP)/scripts
+
+OCAMLYLOG= ocamlyacc_out.log
+
+LANG= go
+
 ##############################################################################
 # Generic variables
 ##############################################################################
@@ -56,7 +64,7 @@ beforedepend:: lexer_go.ml
 
 
 parser_go.ml parser_go.mli: parser_go.mly
-	$(OCAMLYACC) $<
+	$(OCAMLYACC) $< 2> $(OCAMLYLOG) && $(SCRIPTDIR)/check_ocamlyacc_conflicts.sh $(OCAMLYLOG) $(NUM_PERMITTED_CONFLICTS) $(LANG) parser_go.ml parser_go.mli
 clean::
 	rm -f parser_go.ml parser_go.mli parser_go.output
 beforedepend:: parser_go.ml parser_go.mli
