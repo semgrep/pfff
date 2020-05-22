@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # Expected input: first arg is the file with menhir error messages
 #                 second arg is the max allowed conflicts
@@ -11,14 +12,14 @@ generated_mli_file=$5
 INSTR="To bypass this, manually set NUM_PERMITTED_CONFLICTS in pfff/lang_$lang/parsing/Makefile"
 
 # Parse conflicts output
-# Expect "Warning: [num] states have shift/reduce conflicts"
-# and/or "Warning: [num] states have reduce/reduce conflicts"
+# Expect "Warning: [num] shift/reduce conflicts were arbitrarily resolved"
+# and/or "Warning: [num] reduce/reduce conflicts were arbitrarily resolved"
 # Split by space to get [num]
 
-resultsr=`grep -i 'have shift/reduce conflicts' $FILE | cut -d ' ' -f 2` 
-resultrr=`grep -i 'have reduce/reduce conflicts' $FILE | cut -d ' ' -f 2` 
+resultsr=`grep -i 'shift/reduce conflicts were' $FILE | cut -d ' ' -f 2` 
+resultrr=`grep -i 'reduce/reduce conflicts were' $FILE | cut -d ' ' -f 2`
 result=$((resultsr+resultrr))
-MSG="Error: menhir found $result conflicts when $num are permitted. See pfff/lang_$lang/parsing/menhir_out.log for details. ($INSTR)"
+MSG="Error: menhir found $result arbitrarily resolved conflicts when $num are permitted. See pfff/lang_$lang/parsing/menhir_out.log for details. ($INSTR)"
 
 if (( $result > $num )); then
    echo $MSG 1>&2
