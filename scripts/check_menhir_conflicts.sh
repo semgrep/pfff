@@ -16,8 +16,15 @@ INSTR="To bypass this, manually set NUM_PERMITTED_CONFLICTS in pfff/lang_$lang/p
 # and/or "Warning: [num] reduce/reduce conflicts were arbitrarily resolved"
 # Split by space to get [num]
 
-resultsr=`grep -i 'shift/reduce conflicts were' $FILE | cut -d ' ' -f 2` 
-resultrr=`grep -i 'reduce/reduce conflicts were' $FILE | cut -d ' ' -f 2`
+resultsr=`grep -i 'shift/reduce conflict.* arbitrarily' $FILE | cut -d ' ' -f 2` 
+resultrr=`grep -i 'reduce/reduce conflict.* arbitrarily' $FILE | cut -d ' ' -f 2`
+if [[ $resultsr == one ]]; then
+   resultsr=1
+fi
+if [[ "$resultrr" == "one" ]]; then
+   resultrr=1
+fi
+
 result=$((resultsr+resultrr))
 MSG="Error: menhir found $result arbitrarily resolved conflicts when $num are permitted. See pfff/lang_$lang/parsing/menhir_out.log for details. ($INSTR)"
 
