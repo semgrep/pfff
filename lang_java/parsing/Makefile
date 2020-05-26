@@ -24,6 +24,14 @@ INCLUDEDIRS= $(TOP)/commons $(TOP)/commons_core \
   $(TOP)/h_program-lang \
   $(TOP)/globals
 
+NUM_PERMITTED_CONFLICTS= 0
+
+SCRIPTDIR= $(TOP)/scripts
+
+MENHIRLOG= menhir_out.log
+
+LANG= java
+
 ##############################################################################
 # Generic variables
 ##############################################################################
@@ -55,7 +63,8 @@ beforedepend:: lexer_java.ml
 OCAMLYACC=menhir --unused-tokens --explain --fixed-exception
 
 parser_java.ml parser_java.mli: parser_java.mly
-	$(OCAMLYACC) $<
+	$(OCAMLYACC) $< 2> $(MENHIRLOG) && $(SCRIPTDIR)/check_menhir_conflicts.sh $(MENHIRLOG) $(NUM_PERMITTED_CONFLICTS) $(LANG) parser_java.ml parser_java.mli
+
 clean::
-	rm -f parser_java.ml parser_java.mli parser_java.output
+	rm -f parser_java.ml parser_java.mli parser_java.output $(MENHIRLOG)
 beforedepend:: parser_java.ml parser_java.mli

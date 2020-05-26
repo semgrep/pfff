@@ -25,6 +25,14 @@ INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/globals \
   $(TOP)/h_program-lang \
 
+NUM_PERMITTED_CONFLICTS= 2
+
+SCRIPTDIR= $(TOP)/scripts
+
+MENHIRLOG= menhir_out.log
+
+LANG= python
+
 ##############################################################################
 # Generic variables
 ##############################################################################
@@ -57,7 +65,8 @@ beforedepend:: Lexer_python.ml
 OCAMLYACC=menhir --unused-tokens --explain --fixed-exception
 
 Parser_python.ml Parser_python.mli: Parser_python.mly
-	$(OCAMLYACC) $<
+	$(OCAMLYACC) $< 2> $(MENHIRLOG) && $(SCRIPTDIR)/check_menhir_conflicts.sh $(MENHIRLOG) $(NUM_PERMITTED_CONFLICTS) $(LANG) parser_python.ml parser_python.mli
+
 clean::
 	rm -f Parser_python.ml Parser_python.mli Parser_python.output
-beforedepend:: Parser_python.ml Parser_python.mli
+beforedepend:: Parser_python.ml Parser_python.mli $(MENHIRLOG)
