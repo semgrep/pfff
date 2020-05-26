@@ -1026,6 +1026,7 @@ call_expr(x):
  | call_expr(x) "[" expr "]"         { Bracket($1, ($2, $3,$4))}
  | call_expr(x) "." method_name      { Period ($1, $2, $3) }
  (* es6: *)
+ | call_expr(x) template_literal     { TemplateString (Some $1, $2) }
  | T_SUPER arguments { Apply(Super($1), $2) }
 
 new_expr(x):
@@ -1036,8 +1037,9 @@ member_expr(x):
  | primary_expr(x)                   { $1 }
  | member_expr(x) "[" expr "]"       { Bracket($1, ($2, $3, $4)) }
  | member_expr(x) "." field_name     { Period ($1, $2, $3) }
- | T_NEW member_expr(d1) arguments    { Apply(uop U_new $1 $2, $3) }
+ | T_NEW member_expr(d1) arguments   { Apply(uop U_new $1 $2, $3) }
  (* es6: *)
+ | member_expr(x) template_literal   { TemplateString (Some $1, $2) }
  | T_SUPER "[" expr "]"    { Bracket(Super($1),($2,$3,$4))}
  | T_SUPER "." field_name { Period(Super($1), $2, $3) }
  | T_NEW "." id { 
@@ -1082,9 +1084,7 @@ primary_expr_no_braces:
  (* xhp: do not put in 'expr', otherwise can't have xhp in function arg *)
  | xhp_html { XhpHtml $1 }
 
- (* templated string (aka interpolated strings) *)
- |    T_BACKQUOTE optl(encaps+) T_BACKQUOTE  { Encaps (None, $1, $2, $3) }
- | id T_BACKQUOTE optl(encaps+) T_BACKQUOTE  { Encaps (Some $1, $2, $3, $4) }
+ | template_literal { TemplateString (None, $1) }
 
 (*----------------------------*)
 (* scalar *)
@@ -1196,6 +1196,9 @@ xhp_attribute_value:
 (*----------------------------*)
 (* interpolated strings *)
 (*----------------------------*)
+(* templated string (a.k.a interpolated strings) *)
+template_literal: T_BACKQUOTE optl(encaps+) T_BACKQUOTE  { ($1, $2, $3) }
+
 encaps:
  | T_ENCAPSED_STRING        { EncapsString $1 }
  | T_DOLLARCURLY expr "}"   { EncapsExpr ($1, $2, $3) }

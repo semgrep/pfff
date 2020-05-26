@@ -49,9 +49,7 @@ let vof_special =
   | Yield -> OCaml.VSum (("Yield", []))
   | YieldStar -> OCaml.VSum (("YieldStar", []))
   | Await -> OCaml.VSum (("Await", []))
-  | Encaps v1 ->
-      let v1 = OCaml.vof_option vof_name v1
-      in OCaml.VSum (("Encaps", [ v1 ]))
+  | Encaps v1 -> let v1 = OCaml.vof_bool v1 in OCaml.VSum (("Await", [v1]))
   | ArithOp x -> Meta_ast_generic_common.vof_arithmetic_operator x
   | IncrDecr v1 -> let v1 = Meta_ast_generic_common.vof_inc_dec v1 in 
       OCaml.VSum (("IncrDecr", [ v1 ]))

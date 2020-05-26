@@ -576,9 +576,16 @@ and expr env = function
   | C.NewTarget (tok, _, _) ->
     A.Apply (A.IdSpecial (A.NewTarget, tok), [])
 
-  | C.Encaps (name_opt, tok, xs, _) ->
-    let special = A.Encaps name_opt in
+  | C.TemplateString (exp_opt, (tok, xs, _)) ->
+    let special = A.Encaps (exp_opt <> None) in
     let xs = List.map (encaps env) xs in
+    let xs = 
+        match exp_opt with
+        | None -> xs
+        | Some e ->
+            let e = expr env e in
+            e::xs
+    in
     A.Apply (A.IdSpecial (special, tok), xs)
 
   | C.XhpHtml x -> 

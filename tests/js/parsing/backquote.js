@@ -13,5 +13,3 @@ const getTermLinkMarkdownBlock = termTitle => {
   let anchor = util.getMarkDownAnchor(termTitle);
   return `* [\`${termTitle}\`](#${anchor})` + '\n';
 };
-
-

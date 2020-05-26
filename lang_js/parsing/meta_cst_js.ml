@@ -148,8 +148,8 @@ let rec vof_expr =
       let v1 = vof_paren vof_expr v1 in OCaml.VSum (("Paren", [ v1 ]))
   | XhpHtml v1 ->
       let v1 = vof_xhp_html v1 in OCaml.VSum (("XhpHtml", [ v1 ]))
-  | Encaps ((v1, v2, v3, v4)) ->
-      let v1 = OCaml.vof_option vof_name v1
+  | TemplateString ((v1, (v2, v3, v4))) ->
+      let v1 = OCaml.vof_option vof_expr v1
       and v2 = vof_tok v2
       and v3 = OCaml.vof_list vof_encaps v3
       and v4 = vof_tok v4

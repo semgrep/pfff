@@ -148,8 +148,8 @@ type expr =
    (* The comma_list can have successive Right because of "elision" *)
    | Array of expr comma_list bracket
 
-   (* Call, see also Encaps that is a sort of call when 'name' is not None.
-    * This covers Eval.
+   (* Call. This covers also Eval.
+    * See also TemplateString when first arg is not None.
     *)
    | Apply of expr * expr comma_list paren
 
@@ -174,8 +174,9 @@ type expr =
    (* es6: template (interpolated) strings 
     * less: you can get multiple EncapsString in encaps below; they
     * are not flatten together, to simplify the lexer/parser.
+    * The first expr option is usually a name or a field (e.g., foo.div).
     *)
-   | Encaps of name option * tok (* ` *) * encaps list * tok (* ` *)
+   | TemplateString of expr option * (tok (* ` *) * encaps list * tok (* ` *))
  
    (* sgrep-ext: *)
    | Ellipsis of tok

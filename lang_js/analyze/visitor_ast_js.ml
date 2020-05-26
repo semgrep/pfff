@@ -100,7 +100,7 @@ and v_special =
   | Yield -> ()
   | YieldStar -> ()
   | Await -> ()
-  | Encaps v1 -> let v1 = v_option v_name v1 in ()
+  | Encaps v1 -> let v1 = v_bool v1 in ()
   | ArithOp v -> let v = v_arith_op v in ()
   | IncrDecr v -> let v = v_inc_dec v in ()
 
