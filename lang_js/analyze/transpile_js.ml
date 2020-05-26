@@ -84,7 +84,7 @@ and xhp_body expr x =
   | C.XhpNested x -> xhp expr x
   | C.XhpExpr (_, eopt, _) -> 
      (match eopt with
-     | None -> A.Nop
+     | None -> A.String ("", fake "")
      | Some e -> expr e
      )
 
@@ -108,7 +108,7 @@ let var_of_simple_pattern (expr, fname) init_builder pat =
   | C.PatId (name, None) ->
     let name = fname name in
     let init = init_builder name in
-    { A.v_name = name; v_kind = A.Let, (fake "let"); v_init = init;
+    { A.v_name = name; v_kind = A.Let, (fake "let"); v_init = Some init;
       v_resolved = ref A.NotResolved;
     }
   (* { x = y } = varname; -~> x = pfff_builtin_default(varname.x, y) *)
@@ -118,7 +118,7 @@ let var_of_simple_pattern (expr, fname) init_builder pat =
     let init1 = init_builder name in
     let init = A.Apply (A.Id (("pfff_builtin_default", tok),ref A.NotResolved),
                        [init1; e]) in
-    { A.v_name = name; v_kind = A.Let, fake "let"; v_init = init;
+    { A.v_name = name; v_kind = A.Let, fake "let"; v_init = Some init;
       v_resolved = ref A.NotResolved;
     }
   | _ -> failwith "TODO: simple pattern not handled"
@@ -200,7 +200,8 @@ let var_pattern (expr, fname, fpname) x =
       | A.Id (name, _) -> name, []
       | _ ->
         let intermediate = gensym_name "tmp" tok in
-        let var = { A.v_name = intermediate; v_kind = A.Let, fake "let"; v_init = e;
+        let var = { A.v_name = intermediate; v_kind = A.Let, fake "let"; 
+                    v_init = Some e;
                     v_resolved = ref A.NotResolved } in
         intermediate, [var]
     in
@@ -230,10 +231,12 @@ let forof (lhs_var, tok, e2, st) (expr, stmt, var_binding) =
 
   let for_init = 
     Left [
-      { A.v_name = iterator; v_kind = A.Let, fake "let"; v_resolved = ref A.NotResolved;
-        v_init = A.Apply (A.ArrAccess (e2, symbol_iterator), []) };
-      { A.v_name = step; v_kind = A.Let, fake "let"; v_resolved = ref A.NotResolved;
-        v_init = A.Nop; }
+      { A.v_name = iterator; v_kind = A.Let, fake "let"; 
+        v_resolved = ref A.NotResolved;
+        v_init = Some (A.Apply (A.ArrAccess (e2, symbol_iterator), [])) };
+      { A.v_name = step; v_kind = A.Let, fake "let"; 
+        v_resolved = ref A.NotResolved;
+        v_init = None; }
     ]
   in
   let for_cond = 
@@ -277,4 +280,5 @@ let forof (lhs_var, tok, e2, st) (expr, stmt, var_binding) =
       var_binding vkind binding |> List.map (fun var -> A.VarDecl var)
   in 
   let finalst = vars_or_assign_stmts @ st  in
-  [A.For (fake "for", A.ForClassic (for_init, for_cond, A.Nop), A.Block finalst)]
+  [A.For (fake "for", A.ForClassic (for_init, Some for_cond, None), 
+      A.Block finalst)]

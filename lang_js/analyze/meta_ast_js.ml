@@ -121,7 +121,6 @@ and vof_expr =
       OCaml.VSum (("Id", [ v1; v2 ]))
   | IdSpecial v1 ->
       let v1 = vof_wrap vof_special v1 in OCaml.VSum (("IdSpecial", [ v1 ]))
-  | Nop -> OCaml.VSum (("Nop", []))
   | Assign ((v1, v2, v3)) ->
       let v1 = vof_expr v1
       and v2 = vof_tok v2
@@ -199,7 +198,8 @@ and vof_stmt =
       in OCaml.VSum (("Break", [ t; v1 ]))
   | Return (t, v1) -> 
       let t = vof_tok t in
-      let v1 = vof_expr v1 in OCaml.VSum (("Return", [ t; v1 ]))
+      let v1 = OCaml.vof_option vof_expr v1 in 
+      OCaml.VSum (("Return", [ t; v1 ]))
   | Label ((v1, v2)) ->
       let v1 = vof_label v1
       and v2 = vof_stmt v2
@@ -228,8 +228,8 @@ and vof_for_header =
   function
   | ForClassic ((v1, v2, v3)) ->
       let v1 = OCaml.vof_either (OCaml.vof_list vof_var) vof_expr v1
-      and v2 = vof_expr v2
-      and v3 = vof_expr v3
+      and v2 = OCaml.vof_option vof_expr v2
+      and v3 = OCaml.vof_option vof_expr v3
       in OCaml.VSum (("ForClassic", [ v1; v2; v3 ]))
   | ForIn ((v1, t, v2)) ->
       let t = vof_tok t in
@@ -255,7 +255,7 @@ and vof_var { v_name = v_v_name;
   let arg = OCaml.vof_ref vof_resolved_name v_v_resolved in
   let bnd = ("v_resolved", arg) in
   let bnds = bnd :: bnds in
-  let arg = vof_expr v_v_init in
+  let arg = OCaml.vof_option vof_expr v_v_init in
   let bnd = ("v_init", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_wrap vof_var_kind v_v_kind in
@@ -322,7 +322,7 @@ and vof_property =
   | Field ((v1, v2, v3)) ->
       let v1 = vof_property_name v1
       and v2 = OCaml.vof_list (vof_wrap vof_property_prop) v2
-      and v3 = vof_expr v3
+      and v3 = OCaml.vof_option vof_expr v3
       in OCaml.VSum (("Field", [ v1; v2; v3 ]))
   | FieldSpread (t, v1) ->
       let t = vof_tok t in

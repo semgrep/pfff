@@ -200,7 +200,7 @@ and export env tok = function
  | C.ExportDefaultExpr (tok, e, _)  -> 
    let e = expr env e in
    let n = A.default_entity, tok in
-   let v = {A.v_name = n; v_kind = A.Const, tok; v_init = e; 
+   let v = {A.v_name = n; v_kind = A.Const, tok; v_init = Some e; 
             v_resolved = not_resolved () } in
    [A.V v; A.M (A.Export (n))]
  | C.ExportDecl x ->
@@ -226,7 +226,8 @@ and export env tok = function
      | Some (_, n2) -> 
          let n2 = name env n2 in
          let id = A.Id (n1, not_resolved ()) in
-         let v = { A.v_name = n2; v_kind = A.Const, fake "const"; v_init = id;
+         let v = { A.v_name = n2; v_kind = A.Const, fake "const"; 
+                   v_init = Some id;
                    v_resolved = not_resolved () } in
          [A.V v; A.M (A.Export n2)]
   ) |> List.flatten
@@ -239,12 +240,14 @@ and export env tok = function
      let id = A.Id (tmpname, not_resolved()) in
      match n2opt with
      | None -> 
-       let v = { A.v_name = n1; v_kind = A.Const, fake "const"; v_init = id; 
+       let v = { A.v_name = n1; v_kind = A.Const, fake "const"; 
+                  v_init = Some id; 
                   v_resolved = not_resolved () } in
        [A.M import; A.V v; A.M (A.Export n1)]
      | Some (_, n2) ->
        let n2 = name env n2 in
-       let v = { A.v_name = n2; v_kind = A.Const, fake "const"; v_init = id; 
+       let v = { A.v_name = n2; v_kind = A.Const, fake "const"; 
+                  v_init = Some id; 
                   v_resolved = not_resolved () } in
        [A.M import; A.V v; A.M (A.Export n2)]
    ) |> List.flatten
@@ -261,17 +264,20 @@ and item default_opt env = function
     | C.F_func (_, Some x), None ->
       let n = name env x in
       [A.VarDecl {A.v_name = n; v_kind = A.Const, fake "const"; 
-                  v_init = A.Fun (fun_, None); v_resolved = not_resolved()}]
+                  v_init = Some (A.Fun (fun_, None)); 
+                  v_resolved = not_resolved()}]
 
     | C.F_func (_, None), Some tok ->
       let n = A.default_entity, tok in 
       [A.VarDecl {A.v_name = n; v_kind = A.Const, fake "const"; 
-                  v_init = A.Fun (fun_, None); v_resolved = not_resolved()}]
+                  v_init = Some (A.Fun (fun_, None)); 
+                  v_resolved = not_resolved()}]
     | C.F_func (_, Some x), Some tok ->
       let n1 = A.default_entity, tok in 
       let n2 = name env x in
       [A.VarDecl {A.v_name = n1; v_kind = A.Const, fake "const"; 
-                  v_init = A.Fun (fun_, Some n2); v_resolved = not_resolved()}]
+                  v_init = Some (A.Fun (fun_, Some n2)); 
+                  v_resolved = not_resolved()}]
 
     | C.F_func (_, None), None ->
        raise (UnhandledConstruct ("weird: anonymous func decl", 
@@ -285,16 +291,18 @@ and item default_opt env = function
     | Some x, None ->
       let n = name env x in
       [A.VarDecl {A.v_name = n; v_kind=A.Const, fake "const";
-                  v_init=A.Class (class_, None); v_resolved = not_resolved ()}]
+                  v_init= Some (A.Class (class_, None)); 
+                  v_resolved = not_resolved ()}]
     | None, Some tok ->
       let n = A.default_entity, tok in 
       [A.VarDecl {A.v_name = n; v_kind=A.Const, fake "const";
-                  v_init=A.Class (class_, None); v_resolved = not_resolved ()}]
+                  v_init= Some (A.Class (class_, None)); 
+                  v_resolved = not_resolved ()}]
     | Some x, Some tok ->
       let n1 = A.default_entity, tok in 
       let n2 = name env x in
       [A.VarDecl {A.v_name = n1; v_kind=A.Const, fake "const";
-                  v_init=A.Class (class_, Some n2); 
+                  v_init= Some (A.Class (class_, Some n2)); 
                   v_resolved = not_resolved ()}]
     | None, None ->
        raise (UnhandledConstruct ("weird: anonymous class decl", x.C.c_tok))
@@ -360,7 +368,7 @@ and stmt env = function
        | Some (C.ForVars ((vkind, vbindings))) ->
          Left (vbindings |> C.uncomma |> List.map (fun x -> 
              (var_binding env vkind x)) |> List.flatten)
-       | None -> Right (A.Nop)
+       | None -> Left []
      in
      let e2 = expr_opt env e2opt in
      let e3 = expr_opt env e3opt in
@@ -459,7 +467,8 @@ and stmt1_item_list env items =
 (* ------------------------------------------------------------------------- *)
 (* Expression *)
 (* ------------------------------------------------------------------------- *)
-and expr env = function
+and (expr: env -> C.expr -> A.expr) = fun env e ->
+  match e with
   | C.L x -> literal env x
   | C.V (s, tok) -> 
       let resolved = 
@@ -569,7 +578,7 @@ and expr env = function
        else A.YieldStar 
     in
     let e = expr_opt env eopt in
-    A.Apply (A.IdSpecial (special, tok), [e])
+    A.Apply (A.IdSpecial (special, tok), (e |> Common.opt_to_list))
   | C.Await (tok, e) ->
     let e = expr env e in
     A.Apply (A.IdSpecial (A.Await, tok), [e])
@@ -644,8 +653,8 @@ and xhp_body env = function
   | C.XhpNested xml -> A.XmlXml (xhp_html env xml)
 
 and expr_opt env = function
-  | None -> A.Nop
-  | Some e -> expr env e
+  | None -> None
+  | Some e -> Some (expr env e)
 
 and literal _env = function
   | C.Bool x -> A.Bool x
@@ -728,7 +737,7 @@ and var_binding env vkind = function
       let assign = A.Assign (pat, tok, init) in
       let vkind = var_kind env vkind in
       (* less: use x.vpat_type *)
-      [{A.v_name = id; v_kind = vkind; v_init = assign;
+      [{A.v_name = id; v_kind = vkind; v_init = Some assign;
         v_resolved = not_resolved ()}]
 
 (* only when not !transpile_pattern *)
@@ -737,15 +746,15 @@ and pattern env = function
      A.Obj (t1, xs |> C.uncomma |> List.map (function
       | C.PatId (n, None) -> 
          let n = name env n in
-         A.Field (A.PN n, [], A.Id (n, not_resolved()))
+         A.Field (A.PN n, [], Some (A.Id (n, not_resolved())))
       | C.PatId (n, Some (_tok, init)) -> 
          let n = name env n in
          let init = expr env init in
-         A.Field (A.PN n, [], init)
+         A.Field (A.PN n, [], Some init)
       | C.PatProp (pname, _tok, pat) ->
          let pname = property_name env pname in
          let pat = pattern env pat in
-         A.Field (pname, [], pat)
+         A.Field (pname, [], Some pat)
       | C.PatDots (t, pat) -> 
         let e = pattern env pat in
         A.FieldSpread (t, e)
@@ -780,9 +789,8 @@ and variable_declaration env vkind x =
 
 and init_opt env ini = 
   match ini with
-  (* less Undefined? *)
-  | None -> A.Nop
-  | Some (_, e) -> expr env e
+  | None -> None
+  | Some (_, e) -> Some (expr env e)
 
 and var_kind _env (x, tok) =
   match x with
@@ -847,13 +855,13 @@ and parameter_binding env idx = function
 
 and parameter env p =
   let name = name env p.C.p_name in
-  let d = opt default env p.C.p_default in
+  let d = default env p.C.p_default in
   { A.p_name = name; p_default = d; p_dots = p.C.p_dots }
 
 and default env = function
-  (* less: use Undefined? *)
-  | C.DNone _ -> A.Nop
-  | C.DSome (_, e) -> expr env e
+  | None -> None
+  | Some (C.DNone _) -> (* TODO what is that? *) None
+  | Some (C.DSome (_, e)) -> Some (expr env e)
 
 and arrow_func env x =
   (* todo: they can have some too, but not in CST for now *)
@@ -872,7 +880,7 @@ and arrow_func env x =
   let xs = 
     match x.C.a_body with
     (* Javascript has implicit returns for arrows like that *)
-    | C.AExpr e -> [A.Return (fake "return", expr env e)]
+    | C.AExpr e -> [A.Return (fake "return", Some (expr env e))]
     | C.ABody xs -> stmt_item_list env (xs |> C.unparen)
   in
   let body = stmt_of_stmts (vars @ xs) in
@@ -884,12 +892,12 @@ and property env = function
    let pname = property_name env pname in
    let e = expr env e in
    let props = [] in
-   A.Field (pname, props, e)
+   A.Field (pname, props, Some e)
  | C.P_method x ->
     method_ env [] x
   | C.P_shorthand n ->
     let n = name env n in
-    A.Field (A.PN n, [], A.Id (n, not_resolved ()))
+    A.Field (A.PN n, [], Some (A.Id (n, not_resolved ())))
   | C.P_spread (t, e) ->
     let e = expr env e in
     A.FieldSpread (t, e)
@@ -903,7 +911,7 @@ and _array_obj env idx tok xs =
     | Left e ->
       let n = A.PN (string_of_int idx, tok) in
       let e = expr env e in
-      let elt = A.Field (n, [], e) in
+      let elt = A.Field (n, [], Some e) in
       elt::_array_obj env idx tok xs
     )
 
@@ -916,8 +924,10 @@ and array_arr env tok xs =
      let e = expr env e in
      e::array_arr env tok xs
   | (Right _)::xs ->
-    let e = A.Nop in
-    e::array_arr env tok xs
+    (* TODO let e = A.Nop in e::array_arr ... invent a new Hole category
+     * or maybe an array_argument special type like for (call)argument.
+     *)
+    array_arr env tok xs
   | (Left _)::(Left _)::_ ->
     raise (TodoConstruct ("array_arr, 2 left? impossible?", tok))
 
@@ -961,7 +971,7 @@ and method_ env props x =
                                   fst3 x.C.f_params))
   in
   let fun_ = { fun_ with A.f_props = fprops @ fun_.A.f_props } in
-  A.Field (pname, props, A.Fun (fun_, None))
+  A.Field (pname, props, Some (A.Fun (fun_, None)))
 
 (* ------------------------------------------------------------------------- *)
 (* Misc *)

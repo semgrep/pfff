@@ -141,6 +141,8 @@ let fake s = Parse_info.fake_info s
 
 let unbracket (_, x, _) = x
 
+let option = Common.opt
+
 (*****************************************************************************)
 (* Qualified Name *)
 (*****************************************************************************)
@@ -179,11 +181,11 @@ let add_locals env vs =
      ) in
   { env with locals = locals @ env.locals } 
 
-let kind_of_expr v_kind e =
-  match e with
-  | Fun _ -> E.Function
-  | Class _ -> E.Class
-  | Obj _ -> E.Class
+let kind_of_expr_opt v_kind eopt =
+  match eopt with
+  | Some (Fun _) -> E.Function
+  | Some (Class _) -> E.Class
+  | Some (Obj _) -> E.Class
   | _ -> 
         (* without types, this might be wrong; a constant might
          * actually refer to a function, and a global to an object
@@ -191,6 +193,7 @@ let kind_of_expr v_kind e =
         if fst v_kind = Const 
         then E.Constant
         else E.Global
+
 
 (*****************************************************************************)
 (* Add Node *)
@@ -373,16 +376,16 @@ and module_directive env x =
 
 and toplevels env xs = List.iter (toplevel env) xs
 
-and name_expr env name v_kind e v_resolved =
-  let kind = kind_of_expr v_kind e in
+and name_expr env name v_kind eopt v_resolved =
+  let kind = kind_of_expr_opt v_kind eopt in
   let env = add_node_and_edge_if_defs_mode env (name, kind) in
   if env.phase = Uses 
   then begin 
-    expr env e;
+    option (expr env) eopt;
     let (qualified, _kind) = env.current in
     v_resolved := Global qualified;
     Hashtbl.add env.db qualified
-     { v_name = name; v_kind; v_init = e; v_resolved }
+     { v_name = name; v_kind; v_init = eopt; v_resolved }
   end
 
 (* ---------------------------------------------------------------------- *)
@@ -391,7 +394,7 @@ and name_expr env name v_kind e v_resolved =
 and stmt env = function
  | VarDecl v ->
     let env = add_locals env [v] in
-    expr env v.v_init
+    option (expr env) v.v_init
  | Block xs -> stmts env xs
  | ExprStmt e -> expr env e
  | If (_, e, st1, st2) ->
@@ -414,8 +417,8 @@ and stmt env = function
    Common.opt (label env) lopt
  | Break (_, lopt) ->
    Common.opt (label env) lopt
- | Return (_, e) ->
-   expr env e
+ | Return (_, eopt) ->
+   option (expr env) eopt
  | Label (l, st) ->
    label env l;
    stmt env st
@@ -425,7 +428,7 @@ and stmt env = function
    stmt env st1;
    catchopt |> Common.opt (fun (_t, n, st) -> 
      let v = { v_name = n; v_kind = Let, fake "let"; 
-              v_init = Nop; 
+               v_init = None; 
                v_resolved = ref Local } in
      let env = add_locals env [v] in
      stmt env st
@@ -444,8 +447,8 @@ and for_header env = function
        expr env e;
        env
    in
-   expr env e2;
-   expr env e3;
+   option (expr env) e2;
+   option (expr env) e3;
    env
  | ForIn (e1, _, e2) ->
    let env =
@@ -502,7 +505,6 @@ and expr env e =
 
 
   | IdSpecial _ -> ()
-  | Nop -> ()
   | Assign (e1, _tok, e2) ->
     expr env e1;
     expr env e2
@@ -516,7 +518,8 @@ and expr env e =
       match nopt with
       | None -> env
       | Some n -> 
-        let v = { v_name = n; v_kind = Let, fake "let"; v_init = Nop; (* TODO *)
+        let v = { v_name = n; v_kind = Let, fake "let"; 
+                  v_init = None;
                   v_resolved = ref Local}
         in
         add_locals env [v]
@@ -544,8 +547,8 @@ and expr env e =
       match nopt with
       | None -> env
       | Some n -> 
-        let v = { v_name = n; v_kind = Let, fake "let"; v_init = Nop; (* TODO *)
-                  v_resolved = ref Local}
+        let v = { v_name = n; v_kind = Let, fake "let"; 
+                  v_init = None; v_resolved = ref Local}
         in
         add_locals env [v]
     in
@@ -597,7 +600,7 @@ and class_ env c =
 and property env = function
   | Field (pname, _props, e) ->
      property_name env pname;
-     expr env e
+     option (expr env) e
   | FieldSpread (_, e) ->
      expr env e
   | FieldEllipsis _ -> ()

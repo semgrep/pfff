@@ -79,7 +79,7 @@ let visit_program ~tag_hook _prefs (cst, toks) =
      Visitor_ast_js.ktop = (fun (k, _) t ->
        (match t with
        | V {v_name = name; v_kind; v_init; v_resolved = _resolved } ->
-           let kind = Graph_code_js.kind_of_expr v_kind v_init in
+           let kind = Graph_code_js.kind_of_expr_opt v_kind v_init in
            tag_name name (Entity (kind, (Def2 fake_no_def2)));
        | _ -> ()
        );
@@ -87,7 +87,7 @@ let visit_program ~tag_hook _prefs (cst, toks) =
      );
      Visitor_ast_js.kprop = (fun (k,_) x ->
       (match x with
-      | Field (PN name, _, Fun _) ->
+      | Field (PN name, _, Some (Fun _)) ->
           tag_name name (Entity (E.Method, (Def2 fake_no_def2)));
       | Field (PN name, _, _) ->
           tag_name name (Entity (E.Field, (Def2 fake_no_def2)));

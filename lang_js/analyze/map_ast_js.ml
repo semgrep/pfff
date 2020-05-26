@@ -166,7 +166,6 @@ and map_expr =
       and v2 = map_of_ref map_resolved_name v2
       in Id ((v1, v2))
   | IdSpecial v1 -> let v1 = map_wrap map_special v1 in IdSpecial ((v1))
-  | Nop -> Nop
   | Assign ((v1, v2, v3)) ->
       let v1 = map_expr v1 and v2 = map_tok v2 and v3 = map_expr v3 in
       Assign ((v1, v2, v3))
@@ -231,7 +230,7 @@ and map_stmt =
       let v1 = map_of_option map_label v1 in Break ((t, v1))
   | Return (t, v1) -> 
       let t = map_tok t in
-      let v1 = map_expr v1 in Return ((t, v1))
+      let v1 = map_of_option map_expr v1 in Return ((t, v1))
   | Label ((v1, v2)) ->
       let v1 = map_label v1 and v2 = map_stmt v2 in Label ((v1, v2))
   | Throw (t, v1) -> 
@@ -258,8 +257,8 @@ and map_for_header =
   function
   | ForClassic ((v1, v2, v3)) ->
       let v1 = OCaml.map_of_either (map_of_list map_var) map_expr v1
-      and v2 = map_expr v2
-      and v3 = map_expr v3
+      and v2 = OCaml.map_of_option map_expr v2
+      and v3 = OCaml.map_of_option map_expr v3
       in ForClassic ((v1, v2, v3))
   | ForIn ((v1, t, v2)) ->
       let t = map_tok t in
@@ -282,7 +281,7 @@ and
             v_resolved = v_v_resolved
           } =
   let v_v_resolved = map_of_ref map_resolved_name v_v_resolved in
-  let v_v_init = map_expr v_v_init in
+  let v_v_init = map_of_option map_expr v_v_init in
   let v_v_kind = map_wrap map_var_kind v_v_kind in
   let v_v_name = map_name v_v_name in 
     { v_name = v_v_name; v_kind = v_v_kind; v_init = v_v_init;
@@ -328,7 +327,7 @@ and map_property =
   | Field ((v1, v2, v3)) ->
       let v1 = map_property_name v1
       and v2 = map_of_list (map_wrap map_property_prop) v2
-      and v3 = map_expr v3
+      and v3 = map_of_option map_expr v3
       in Field ((v1, v2, v3))
   | FieldSpread (t, v1) -> 
       let t = map_tok t in let v1 = map_expr v1 in FieldSpread ((t, v1))
