@@ -4,6 +4,26 @@ open AST_generic
 module V = Visitor_AST
 
 (*s: function [[Test_analyze_generic.test_cfg_generic]] *)
+let test_typing_generic file =
+  let ast = Parse_generic.parse_program file in
+  let lang = List.hd (Lang.langs_of_filename file) in 
+  Naming_AST.resolve lang ast;
+
+  let v = V.mk_visitor { V.default_visitor with
+      V.kfunction_definition = (fun (_k, _) def ->
+          let s = Meta_AST.vof_any (S def.fbody) |> OCaml.string_of_v in
+          pr2 s;
+          pr2 "==>";
+
+          let xs = AST_to_IL.stmt def.fbody in
+          let v = Meta_IL.vof_any (IL.Ss xs) in
+          let s = OCaml.string_of_v v in
+          pr2 s
+      );
+   } in
+  v (Pr ast)
+
+(*s: function [[Test_analyze_generic.test_cfg_generic]] *)
 let test_cfg_generic file =
   let ast = Parse_generic.parse_program file in
   ast |> List.iter (fun item ->
@@ -130,6 +150,8 @@ let test_dfg_tainting file =
 
 (*s: function [[Test_analyze_generic.actions]] *)
 let actions () = [
+  "-typing_generic", " <file>",
+  Common.mk_action_1_arg test_typing_generic;
   "-cfg_generic", " <file>",
   Common.mk_action_1_arg test_cfg_generic;
   "-dfg_generic", " <file>",
