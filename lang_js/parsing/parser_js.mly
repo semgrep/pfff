@@ -1207,7 +1207,7 @@ encaps:
 
 (* TODO conflict with as then in indent_keyword_bis *)
 arrow_function:
- (* es:7 *)
+ (* es7: *)
  | T_ASYNC id T_ARROW arrow_body
      { { a_async = Some($1); a_params = ASingleParam (ParamClassic (mk_param $2));
          a_return_type = None; a_tok = $3; a_body = $4 } }
@@ -1216,7 +1216,7 @@ arrow_function:
          a_return_type = None; a_tok = $2; a_body = $3 } }
 
  (* can not factorize with TOPAR parameter_list TCPAR, see conflicts.txt *)
- (* es:7 *)
+ (* es7: *)
  | T_ASYNC T_LPAREN_ARROW formal_parameter_list_opt ")" annotation? T_ARROW arrow_body
     { { a_async = Some($1); a_params = AParams ($2, $3, $4); a_return_type = $5;
         a_tok = $6; a_body = $7; } }
