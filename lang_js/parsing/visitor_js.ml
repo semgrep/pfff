@@ -519,9 +519,11 @@ and v_default = function
   | DNone v1 -> let _ = v_tok v1 in ()
   | DSome (v1,v2) -> let _ = v_tok v1 and _ = v_expr v2 in ()
 and
-  v_arrow_func { a_params = v_a_params; a_return_type = v_a_return_type;
+  v_arrow_func { a_async = v_a_async;
+                 a_params = v_a_params; a_return_type = v_a_return_type;
                  a_tok = v_a_tok; a_body = v_a_body }
                =
+  let arg = v_option v_tok v_a_async in
   let arg = v_arrow_params v_a_params in
   let arg = v_type_opt v_a_return_type in
   let arg = v_tok v_a_tok in let arg = v_arrow_body v_a_body in ()

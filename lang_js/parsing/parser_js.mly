@@ -1209,19 +1209,19 @@ encaps:
 arrow_function:
  (* es:7 *)
  | T_ASYNC id T_ARROW arrow_body
-     { { a_params = ASingleParam (ParamClassic (mk_param $2));
+     { { a_async = Some($1); a_params = ASingleParam (ParamClassic (mk_param $2));
          a_return_type = None; a_tok = $3; a_body = $4 } }
  | id T_ARROW arrow_body
-     { { a_params = ASingleParam (ParamClassic (mk_param $1)); 
+     { { a_async = None; a_params = ASingleParam (ParamClassic (mk_param $1)); 
          a_return_type = None; a_tok = $2; a_body = $3 } }
 
  (* can not factorize with TOPAR parameter_list TCPAR, see conflicts.txt *)
  (* es:7 *)
  | T_ASYNC T_LPAREN_ARROW formal_parameter_list_opt ")" annotation? T_ARROW arrow_body
-    { { a_params = AParams ($2, $3, $4); a_return_type = $5;
+    { { a_async = Some($1); a_params = AParams ($2, $3, $4); a_return_type = $5;
         a_tok = $6; a_body = $7; } }
  | T_LPAREN_ARROW formal_parameter_list_opt ")" annotation? T_ARROW arrow_body
-    { { a_params = AParams ($1, $2, $3); a_return_type = $4;
+    { { a_async = None; a_params = AParams ($1, $2, $3); a_return_type = $4;
         a_tok = $5; a_body = $6; } }
 
 (* was called consise body in spec *)

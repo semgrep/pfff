@@ -632,10 +632,14 @@ and vof_default = function
   | DSome (v1,v2) -> let v1 = vof_tok v1 and v2 = vof_expr v2 in OCaml.VSum (("DSome", [v1; v2]))
 
 and
-  vof_arrow_func { a_params = v_a_params; a_return_type = v_a_return_type;
+  vof_arrow_func { a_async = v_a_async;
+                   a_params = v_a_params; a_return_type = v_a_return_type;
                    a_tok = v_a_tok; a_body = v_a_body
                  } =
   let bnds = [] in
+  let arg = vof_async v_a_async in
+  let bnd = ("a_async", arg) in
+  let bnds = bnd :: bnds in
   let arg = vof_arrow_body v_a_body in
   let bnd = ("a_body", arg) in
   let bnds = bnd :: bnds in
@@ -647,6 +651,7 @@ and
   let bnds = bnd :: bnds in
   let arg = vof_arrow_params v_a_params in
   let bnd = ("a_params", arg) in let bnds = bnd :: bnds in OCaml.VDict bnds
+  and vof_async tok = OCaml.VSum(("AAsync", [OCaml.vof_option vof_tok tok]))
 and vof_arrow_params =
   function
   | ASingleParam v1 ->

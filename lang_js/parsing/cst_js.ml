@@ -474,6 +474,7 @@ and func_decl = {
  * is a simple expression, etc. so simpler to have a a different type.
  *)
 and arrow_func = {
+  a_async: tok option;
   a_params: arrow_params;
   (* typing-ext: *)
   a_return_type: type_opt;
