@@ -18,3 +18,7 @@ foo(cat=(category := 'vector'))
 
 # Valid
 partial_sums = [total := total + v for v in values]
+
+# Valid
+while x := next(f):
+    print(x)
