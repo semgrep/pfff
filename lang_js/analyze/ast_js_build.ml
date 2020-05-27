@@ -652,9 +652,7 @@ and xhp_body env = function
       )
   | C.XhpNested xml -> A.XmlXml (xhp_html env xml)
 
-and expr_opt env = function
-  | None -> None
-  | Some e -> Some (expr env e)
+and expr_opt env = Common.map_opt (expr env)
 
 and literal _env = function
   | C.Bool x -> A.Bool x
@@ -924,8 +922,9 @@ and array_arr env tok xs =
      let e = expr env e in
      e::array_arr env tok xs
   | (Right _)::xs ->
-    (* TODO let e = A.Nop in e::array_arr ... invent a new Hole category
-     * or maybe an array_argument special type like for (call)argument.
+    (* TODO old: let e = A.Nop in e::array_arr ... 
+     * invent a new Hole category or maybe an array_argument special 
+     * type like for the (call)argument type.
      *)
     array_arr env tok xs
   | (Left _)::(Left _)::_ ->
