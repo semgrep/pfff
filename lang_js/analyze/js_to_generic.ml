@@ -38,7 +38,6 @@ let string = id
 
 let error = AST_generic.error
 
-let fake s = Parse_info.fake_info s
 
 (*****************************************************************************)
 (* Entry point *)
@@ -179,7 +178,6 @@ and expr (x: expr) =
       | SR_Literal l -> G.L l
       | SR_Other (x, tok) -> G.OtherExpr (x, [G.Tk tok])
       )
-  | Nop -> G.L (G.Null (fake "null"))
   | Assign ((v1, tok, v2)) -> let v1 = expr v1 and v2 = expr v2 in 
       let tok = info tok in
       G.Assign (v1, tok, v2)
@@ -248,8 +246,8 @@ and stmt x =
   | Break (t, v1) -> let v1 = option label v1 in
      G.Break (t, G.opt_to_label_ident v1)
   | Return (t, v1) -> 
-      let v1 = expr v1 in 
-      G.Return (t, Some v1)
+      let v1 = option expr v1 in 
+      G.Return (t, v1)
   | Label ((v1, v2)) -> let v1 = label v1 and v2 = stmt v2 in
       G.Label (v1, v2)
   | Throw (t, v1) -> let v1 = expr v1 in G.Throw (t, v1)
@@ -270,8 +268,8 @@ and tok_and_stmt (t, v) =
 and for_header =
   function
   | ForClassic ((v1, v2, v3)) ->
-      let v2 = expr v2 in
-      let v3 = expr v3 in
+      let v2 = option expr v2 in
+      let v3 = option expr v3 in
       (match v1 with
       | Left vars ->
             let vars = vars |> List.map (fun x -> 
@@ -279,10 +277,10 @@ and for_header =
                   G.ForInitVar (a, b)
             )
             in
-            G.ForClassic (vars, Some v2, Some v3)
+            G.ForClassic (vars, v2, v3)
       | Right e ->
          let e = expr e in
-         G.ForClassic ([G.ForInitExpr e], Some v2, Some v3)
+         G.ForClassic ([G.ForInitExpr e], v2, v3)
       )
       
   | ForIn ((v1, t, v2)) ->
@@ -310,17 +308,17 @@ and def_of_var { v_name = x_name; v_kind = x_kind;
   let v2 = var_kind x_kind in 
   let ent = G.basic_entity v1 [v2] in
   (match x_init with
-  | Fun (v3, _nTODO)   -> 
+  | Some (Fun (v3, _nTODO))   -> 
       let def, more_attrs = fun_ v3 in
       { ent with G.attrs = ent.G.attrs @ more_attrs}, G.FuncDef def
-  | Class (v3, _nTODO) -> 
+  | Some (Class (v3, _nTODO)) -> 
       let def, more_attrs = class_ v3 in
       { ent with G.attrs = ent.G.attrs @ more_attrs}, G.ClassDef def
   | _ -> 
-       let v3 = expr x_init in 
+       let v3 = option expr x_init in 
        let v4 = vref resolved_name x_resolved in
        ent.G.info.G.id_resolved := !v4;
-       ent, G.VarDef { G.vinit = Some v3; G.vtype = None }
+       ent, G.VarDef { G.vinit = v3; G.vtype = None }
    )
 
 and var_of_var { v_name = x_name; v_kind = x_kind; 
@@ -328,10 +326,10 @@ and var_of_var { v_name = x_name; v_kind = x_kind;
   let v1 = name x_name in
   let v2 = var_kind x_kind in 
   let ent = G.basic_entity v1 [v2] in
-  let v3 = expr x_init in 
+  let v3 = option expr x_init in 
   let v4 = vref resolved_name x_resolved in
   ent.G.info.G.id_resolved := !v4;
-  ent, { G.vinit = Some v3; G.vtype = None }
+  ent, { G.vinit = v3; G.vtype = None }
 
 
 and var_kind (x, tok) =
@@ -388,16 +386,19 @@ and property x =
   | Field ((v1, v2, v3)) ->
       let v1 = property_name v1
       and v2 = list property_prop v2
-      and v3 = expr v3
+      and v3 = option expr v3
       in 
       (match v1 with
       | Left n ->
         let ent = G.basic_entity n v2 in
        (* todo: could be a Lambda in which case we should return a FuncDef? *)
         G.FieldStmt (G.DefStmt 
-                ((ent, G.VarDef { G.vinit = Some v3; vtype = None })))
-      | Right e ->
-        G.FieldDynamic (e, v2, v3)
+                ((ent, G.VarDef { G.vinit = v3; vtype = None })))
+      | Right e -> 
+        (match v3 with
+         | None -> raise Impossible
+         | Some x -> G.FieldDynamic (e, v2, x)
+        )
       )
   | FieldSpread (t, v1) -> 
       let v1 = expr v1 in 

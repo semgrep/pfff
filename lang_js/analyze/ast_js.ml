@@ -44,7 +44,6 @@
  *  - no func vs method vs arrow, just fun_
  *  - no class elements vs object elements
  *  - No Nop (EmptyStmt); transformed in an empty Block,
- *    (but a new Nop for empty expressions)
  *  - no patterns (they are transpiled, see transpile_js.ml, unless
  *    Ast_js_build.transpile_pattern is false)
  *  - no JSX (see transpile_js.ml, unless Ast_js_build.transpile_xml is false)
@@ -179,7 +178,12 @@ and expr =
    *)
   | Id of name * resolved_name ref 
   | IdSpecial of special wrap
-  | Nop
+  (* old: we used to have a Nop, without any token attached, which allowed
+   * to simplify a bit the AST by replacing some 'expr option' into simply
+   * 'expr' (for v_init, ForClassic, Return) but this bited us in the long term
+   * in semgrep where we don't want metavariables to match code that does 
+   * not exist.
+   *)
 
   (* should be a statement *)
   | Assign of expr * tok * expr
@@ -234,7 +238,7 @@ and stmt =
 
   | Switch of tok * expr * case list
   | Continue of tok * label option | Break of tok * label option
-  | Return of tok * expr
+  | Return of tok * expr option
 
   | Label of label * stmt
  
@@ -248,7 +252,7 @@ and stmt =
 
   (* less: could use some Special instead? *)
   and for_header = 
-   | ForClassic of vars_or_expr * expr * expr
+   | ForClassic of vars_or_expr * expr option * expr option
    | ForIn of var_or_expr * tok * expr
 
     (* the expr is usually just an assign *)
@@ -279,7 +283,7 @@ and var = {
    * Ast_js_build.transpile_pattern is false with a vinit an Assign itself *)
   v_name: name;
   v_kind: var_kind wrap;
-  v_init: expr;
+  v_init: expr option;
   v_resolved: resolved_name ref;
 }
   and var_kind = Var | Let | Const
@@ -311,8 +315,11 @@ and class_ = {
   c_body: property list bracket;
 }
   and property = 
-    (* expr is a Fun for methods *)
-    | Field of property_name * property_prop wrap list * expr
+    (* expr is a Fun for methods 
+     * None is possible only for class fields. For object there is
+     * always a value.
+     *)
+    | Field of property_name * property_prop wrap list * expr option
     (* less: can unsugar? *)
     | FieldSpread of tok * expr
     (* sgrep-ext: used for {fld1: 1, ... } which is distinct from spreading *)
