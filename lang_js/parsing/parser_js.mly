@@ -941,8 +941,6 @@ assignment_expr:
  | T_YIELD                         { Yield ($1, None, None) }
  | T_YIELD     assignment_expr     { Yield ($1, None, Some $2) }
  | T_YIELD "*" assignment_expr     { Yield ($1, Some $2, Some $3) }
- (* es7: *)
- | async_arrow_function { Arrow $1 }
  (* typescript: 1.6, because <> cant be used in TSX files *)
  | left_hand_side_expr_(d1) T_AS type_ { $1 (* TODO $2 $3 *) }
  (* sgrep-ext: can't move in primary_expr, get s/r conflicts *)
@@ -1207,14 +1205,22 @@ encaps:
 (* arrow (short lambda) *)
 (*----------------------------*)
 
-(* TODO conflict with async and as then in indent_keyword_bis *)
+(* TODO conflict with as then in indent_keyword_bis *)
 arrow_function:
- | id "->" arrow_body
+ (* es:7 *)
+ | T_ASYNC id T_ARROW arrow_body
+     { { a_params = ASingleParam (ParamClassic (mk_param $2));
+         a_return_type = None; a_tok = $3; a_body = $4 } }
+ | id T_ARROW arrow_body
      { { a_params = ASingleParam (ParamClassic (mk_param $1)); 
          a_return_type = None; a_tok = $2; a_body = $3 } }
 
  (* can not factorize with TOPAR parameter_list TCPAR, see conflicts.txt *)
- | T_LPAREN_ARROW formal_parameter_list_opt ")" annotation? "->" arrow_body 
+ (* es:7 *)
+ | T_ASYNC T_LPAREN_ARROW formal_parameter_list_opt ")" annotation? T_ARROW arrow_body
+    { { a_params = AParams ($2, $3, $4); a_return_type = $5;
+        a_tok = $6; a_body = $7; } }
+ | T_LPAREN_ARROW formal_parameter_list_opt ")" annotation? T_ARROW arrow_body
     { { a_params = AParams ($1, $2, $3); a_return_type = $4;
         a_tok = $5; a_body = $6; } }
 
@@ -1226,8 +1232,6 @@ arrow_body:
  | assignment_expr_no_stmt %prec LOW_PRIORITY_RULE { AExpr $1 }
  (* ugly *)
  | function_expr { AExpr (Function $1) }
-
-async_arrow_function: T_ASYNC arrow_function { $2 }
 
 (*----------------------------*)
 (* no in *)

@@ -8,3 +8,7 @@ async function doRollup() {
   const min = minify({ comments: false });
 
 }
+
+const foo = (x) => async () => {
+  console.log("yup");
+}
