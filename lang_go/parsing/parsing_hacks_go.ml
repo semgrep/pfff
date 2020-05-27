@@ -129,6 +129,15 @@ let fix_tokens_lbody toks =
           aux Normal xs3;
           aux Normal ys;
 
+      (* must be after previous case *)
+      (* skipping: if ok := interface{} ... *)
+      | F.Tok (("struct" | "interface"), _)::
+        (F.Braces (_lb1, xs1, _rb1))::
+        ys 
+        when env = InIfHeader ->
+          aux Normal xs1;
+          aux env ys
+
       (* for a := range []int{...} { ... } *)
       | (F.Braces (_lb1, xs1, _rb1))::(F.Braces (lb2, xs2, _rb2))::ys 
         when env = InIfHeader ->
@@ -150,7 +159,7 @@ let fix_tokens_lbody toks =
           aux Normal xs;
           aux env zs
 
-          
+
           
       | (F.Braces (lb, xs, _rb))::ys ->
           (* for ... { ... } *)
