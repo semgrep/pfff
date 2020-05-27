@@ -68,5 +68,5 @@ Parser_python.ml Parser_python.mli: Parser_python.mly
 	$(OCAMLYACC) $< 2> $(MENHIRLOG) && $(SCRIPTDIR)/check_menhir_conflicts.sh $(MENHIRLOG) $(NUM_PERMITTED_CONFLICTS) $(LANG) parser_python.ml parser_python.mli
 
 clean::
-	rm -f Parser_python.ml Parser_python.mli Parser_python.output
-beforedepend:: Parser_python.ml Parser_python.mli $(MENHIRLOG)
+	rm -f Parser_python.ml Parser_python.mli $(MENHIRLOG) Parser_python.output
+beforedepend:: Parser_python.ml Parser_python.mli
