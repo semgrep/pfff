@@ -258,6 +258,15 @@ rule initial = parse
   (* should be accepted only at the beginning of the file *)
   | "#!" InputCharacter* { TComment (tokinfo lexbuf) }
   | [' ' '\t']+  { TCommentSpace(tokinfo lexbuf) }
+  (* This is to handle non-breaking unicode space.
+   * Note that recent OCaml supports unicode characters as \u{a0} in strings
+   * but this does not seem to work in ocamllex, hence the hardcoding of 
+   * the actual UTF8 bytes.
+   * The right solution would be to switch to a unicode-aware lexer generator,
+   * like ulex or sedlex.
+   *)
+  | "\xc2\xa0" { TCommentSpace(tokinfo lexbuf) }
+
   | NEWLINE      { TCommentNewline(tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
