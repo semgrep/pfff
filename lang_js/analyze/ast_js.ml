@@ -136,7 +136,7 @@ type special =
   | In | Delete 
   | Spread
   | Yield | YieldStar | Await
-  | Encaps of name option (* less: resolve? *)
+  | Encaps of bool (* if true, first arg of apply is the "tag" *)
   (* CommonJS part2 *)
   | Require
 

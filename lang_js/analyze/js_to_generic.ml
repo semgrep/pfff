@@ -121,16 +121,19 @@ let special (x, tok) =
           | [e] -> G.Await (tok, e)
           | _ -> error tok "Impossible: Too many arguments to Await"
           )
-  | Encaps v1 -> 
-      (match v1 with
-      | None -> SR_NeedArgs (fun args -> 
-          G.Call (G.IdSpecial (G.ConcatString G.InterpolatedConcat, tok), 
-                  args |> List.map (fun e -> G.Arg e)))
-      | Some n -> 
-            let n = name n in
-            SR_NeedArgs (fun args ->
-            G.OtherExpr (G.OE_EncapsName,(G.I n)::(args|>List.map(fun e ->G.E e))))
-      )
+  | Encaps has_tag_function -> 
+      if not has_tag_function 
+      then SR_NeedArgs (fun args -> 
+            G.Call (G.IdSpecial (G.ConcatString G.InterpolatedConcat, tok), 
+                    args |> List.map (fun e -> G.Arg e)))
+      else SR_NeedArgs (fun args ->
+         match args with
+         | [] -> raise Impossible
+         | tag::rest ->
+            G.Call (tag, 
+             [G.Arg (G.Call (
+                      G.IdSpecial (G.ConcatString G.InterpolatedConcat, tok), 
+                        rest |> List.map (fun e -> G.Arg e)))]))
   | ArithOp op -> SR_Special (G.ArithOp op, tok)
   | IncrDecr v -> SR_Special (G.IncrDecr v, tok)
 

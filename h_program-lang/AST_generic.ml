@@ -416,6 +416,13 @@ and expr =
    (* used for interpolated strings constructs *)
    | ConcatString of concat_string_kind
    | EncodedString of string wrap (* only for Python for now (e.g., b"foo") *)
+   (* TaggedString? for Javascript, for styled.div`bla{xx}`?
+    * We could have this TaggedString where the first arg of Call
+    * will be the tagging function, and the rest will be a Call ConcatString. 
+    * However, it is simpler to just transform those special calls as
+    * regular calls even though they do not have parenthesis
+    * (not all calls have parenthesis anyway, as in OCaml or Ruby).
+    *)
    | Spread (* inline list var, in Container or call context *)
 
    (* used for unary and binary operations *)
@@ -546,7 +553,6 @@ and expr =
     | OE_Define | OE_Arguments 
     | OE_NewTarget
     | OE_Delete | OE_YieldStar
-    | OE_EncapsName (* todo: convert to regular funcall? use Concat? *)
     | OE_Require (* todo: lift to DirectiveStmt? transform in Import? *) 
     | OE_UseStrict (* todo: lift up to program attribute/directive? *)
     (* Python *)

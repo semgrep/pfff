@@ -115,7 +115,7 @@ and map_special =
   | Yield -> Yield
   | YieldStar -> YieldStar
   | Await -> Await
-  | Encaps v1 -> let v1 = map_of_option map_name v1 in Encaps ((v1))
+  | Encaps v1 -> let v1 = map_of_bool v1 in Encaps ((v1))
   | UseStrict -> UseStrict
   | ArithOp v -> let v = map_of_arith_op v in ArithOp v
   | IncrDecr v -> let v = map_of_inc_dec v in IncrDecr ((v))
