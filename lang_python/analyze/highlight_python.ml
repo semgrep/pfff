@@ -484,6 +484,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
     | T.EQ ii ->
         tag ii Punctuation
 
+    | T.COLONEQ ii
     | T.ADDEQ ii | T.SUBEQ ii | T.MULTEQ ii | T.DIVEQ ii 
     | T.MODEQ ii  | T.POWEQ ii | T.FDIVEQ ii 
     | T.ANDEQ ii | T.OREQ ii | T.XOREQ ii 

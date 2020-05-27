@@ -271,6 +271,7 @@ and _token python2 state = parse
   (* symbols *)
   (* ----------------------------------------------------------------------- *)
   (* symbols *)
+  | ":="    { COLONEQ (tokinfo lexbuf) }
   | "+="    { ADDEQ (tokinfo lexbuf) }
   | "-="    { SUBEQ (tokinfo lexbuf) }
   | "*="    { MULTEQ (tokinfo lexbuf) }

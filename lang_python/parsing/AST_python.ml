@@ -175,6 +175,8 @@ type expr =
   (* python3: *)
   | Await of tok * expr
 
+  (* python 3.8+; see https://www.python.org/dev/peps/pep-0572/ *)
+  | NamedExpr of expr * tok * expr
   | Repr of expr bracket (* `` *)
   (* =~ ObjAccess *)
   | Attribute of expr (* value *) * tok (* . *) * name (* attr *) * 
