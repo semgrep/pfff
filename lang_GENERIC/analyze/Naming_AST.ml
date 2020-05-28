@@ -136,17 +136,17 @@ module V = Visitor_AST
 type resolved_name = AST_generic.resolved_name
 (*e: type [[Naming_AST.resolved_name]] *)
 
-(*s: type [[Naming_AST.entinfo]] *)
-type entinfo = { 
+(*s: type [[Naming_AST.scope_info]] *)
+type scope_info = { 
   (* variable kind and sid *)
   entname: resolved_name; 
   (* variable type, if known *)
   enttype: type_ option;
  }
-(*e: type [[Naming_AST.entinfo]] *)
+(*e: type [[Naming_AST.scope_info]] *)
 
 (*s: type [[Naming_AST.scope]] *)
-type scope = (string, entinfo) assoc
+type scope = (string, scope_info) assoc
 (*e: type [[Naming_AST.scope]] *)
 
 (*s: type [[Naming_AST.scopes]] *)
@@ -406,7 +406,7 @@ let resolve lang prog =
         (* note that some languages such as Python do not have VarDef 
          * construct
          * todo? should add those somewhere instead of in_lvalue detection? *)
-        VarDef ({ vinit = vinit; vtype = vtype }) when is_local_or_global_ctx env ->
+        VarDef ({ vinit; vtype }) when is_local_or_global_ctx env ->
           (* name resolution *)
           let sid = Ast.gensym () in
           let resolved = { entname = resolved_name_kind env, sid; enttype = vtype } in

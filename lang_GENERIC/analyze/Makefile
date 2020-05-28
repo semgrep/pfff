@@ -14,7 +14,7 @@ SRC= \
   IL.ml CFG.ml Meta_IL.ml AST_to_IL.ml CFG_build.ml \
   Dataflow_tainting.ml \
   Test_analyze_generic.ml \
-  unit_typing_java.ml
+  Unit_typing_generic.ml
 
 -include $(TOP)/Makefile.config
 
