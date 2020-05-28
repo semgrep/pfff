@@ -253,13 +253,18 @@ and stmt x =
   | Throw (t, v1) -> let v1 = expr v1 in G.Throw (t, v1)
   | Try ((t, v1, v2, v3)) ->
       let v1 = stmt v1
-      and v2 =
-        option (fun (t, v1, v2) -> 
-           let v1 = name v1 and v2 = stmt v2 in
-           t, G.PatId (v1, G.empty_id_info()), v2
-       ) v2
+      and v2 = option catch_block v2
       and v3 = option tok_and_stmt v3 in
       G.Try (t, v1, Common.opt_to_list v2, v3)
+
+and catch_block = function
+  | BoundCatch (t, v1, v2) ->
+      let v1 = name v1
+      and v2 = stmt v2
+      in t, G.PatId (v1, G.empty_id_info()), v2
+  | UnboundCatch (t, v1) ->
+      let v1 = stmt v1
+      in t, G.PatUnderscore (Parse_info.fake_info "_"), v1
 
 and tok_and_stmt (t, v) = 
   let v = stmt v in

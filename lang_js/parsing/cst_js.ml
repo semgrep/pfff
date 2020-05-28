@@ -327,7 +327,7 @@ and stmt =
 
   | Throw of tok * expr * sc
   | Try of tok * stmt (* always a block *) *
-      (tok * arg_catch paren * stmt) option * (* catch *)
+      catch_block option * (* catch *)
       (tok * stmt) option (* finally *)
 
   and label = string wrap
@@ -346,6 +346,10 @@ and stmt =
     | Default of tok * tok (*:*) * item list
     | Case of tok * expr * tok (*:*) * item list
 
+  and catch_block =
+    | BoundCatch of tok * (arg_catch paren) * stmt
+    (* es2019 *)
+    | UnboundCatch of tok * stmt
   and arg_catch = string wrap
 
 (*****************************************************************************)

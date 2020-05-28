@@ -416,11 +416,7 @@ and stmt env = function
     [A.Throw (t, e)]
   | C.Try (t, st, catchopt, finally_opt) ->
     let st = stmt1 env st in
-    let catchopt = opt (fun env (t, arg, st) ->
-       let arg = name env (C.unparen arg) in
-       let st = stmt1 env st in
-       (t, arg, st)
-       ) env catchopt in
+    let catchopt = opt catch_block_handler env catchopt in
     let finally_opt = opt (fun env (t, st) -> t, stmt1 env st) env finally_opt in
     [A.Try (t, st, catchopt, finally_opt)]
 
@@ -463,6 +459,14 @@ and stmt_item_list env items =
 
 and stmt1_item_list env items = 
   stmt_item_list env items |> stmt_of_stmts
+
+and catch_block_handler env = function
+  | C.BoundCatch (t, arg, st) ->
+      let arg = name env (C.unparen arg) in
+      let st = stmt1 env st in
+      A.BoundCatch (t, arg, st)
+  | C.UnboundCatch (t, st) ->
+      A.UnboundCatch (t, stmt1 env st)
   
 (* ------------------------------------------------------------------------- *)
 (* Expression *)

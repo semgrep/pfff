@@ -354,14 +354,7 @@ and v_st x =
   | Try ((v1, v2, v3, v4)) ->
       let v1 = v_tok v1
       and v2 = v_st v2
-      and v3 =
-        v_option
-          (fun (v1, v2, v3) ->
-             let v1 = v_tok v1
-             and v2 = v_paren v_arg v2
-             and v3 = v_st v3
-             in ())
-          v3
+      and v3 = v_option v_catch_block v3
       and v4 =
         v_option (fun (v1, v2) -> let v1 = v_tok v1 and v2 = v_st v2 in ())
           v4
@@ -369,6 +362,16 @@ and v_st x =
   in
   vin.kstmt (k, all_functions) x
 
+and v_catch_block = function
+  | BoundCatch (v1, v2, v3) ->
+      let v1 = v_tok v1
+      and v2 = v_paren v_arg v2
+      and v3 = v_st v3
+      in ()
+  | UnboundCatch (v1, v2) ->
+      let v1 = v_tok v1
+      and v2 = v_st v2
+      in ()
 and v_label v = v_wrap v_string v
 and v_lhs_or_vars =
   function

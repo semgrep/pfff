@@ -208,16 +208,19 @@ and vof_stmt =
   | Try ((t, v1, v2, v3)) ->
       let t = vof_tok t in
       let v1 = vof_stmt v1
-      and v2 =
-        OCaml.vof_option
-          (fun (t, v1, v2) ->
-             let t = vof_tok t in
-             let v1 = vof_wrap OCaml.vof_string v1
-             and v2 = vof_stmt v2
-             in OCaml.VTuple [ t; v1; v2 ])
-          v2
+      and v2 = OCaml.vof_option vof_catch_block v2
       and v3 = OCaml.vof_option vof_tok_and_stmt v3
       in OCaml.VSum (("Try", [ t; v1; v2; v3 ]))
+and vof_catch_block = function
+  | BoundCatch ((t, v1, v2)) ->
+      let t = vof_tok t in
+      let v1 = vof_wrap OCaml.vof_string v1
+      and v2 = vof_stmt v2
+      in OCaml.VTuple [ t; v1; v2 ]
+  | UnboundCatch ((t, v2)) ->
+      let t = vof_tok t
+      and v2 = vof_stmt v2
+      in OCaml.VTuple [ t; v2 ]
 and vof_tok_and_stmt (t, v) = 
   let t = vof_tok t in
   let v = vof_stmt v in
