@@ -418,6 +418,8 @@ decorator: "@" decorator_name arglist_paren_opt NEWLINE { Call ($2, $3) }
 decorator_name:
   | NAME                    { Name ($1, Load, ref NotResolved) }
   | decorator_name "." NAME { Attribute ($1, $2, $3, Load) }
+  (* sgrep-ext *)
+  | "..."                   { Ellipsis $1 }
 
 (*************************************************************************)
 (* Statement *)
