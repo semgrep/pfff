@@ -136,8 +136,17 @@ module V = Visitor_AST
 type resolved_name = AST_generic.resolved_name
 (*e: type [[Naming_AST.resolved_name]] *)
 
+(*s: type [[Naming_AST.entinfo]] *)
+type entinfo = { 
+  (* variable kind and sid *)
+  entname: resolved_name; 
+  (* variable type, if known *)
+  enttype: type_ option;
+ }
+(*e: type [[Naming_AST.entinfo]] *)
+
 (*s: type [[Naming_AST.scope]] *)
-type scope = (string, resolved_name) assoc
+type scope = (string, entinfo) assoc
 (*e: type [[Naming_AST.scope]] *)
 
 (*s: type [[Naming_AST.scopes]] *)
@@ -195,6 +204,9 @@ let _add_ident_function_scope id _resolved _scopes =
   let _s = Ast.str_of_ident id in
   raise Todo
 (*e: function [[Naming_AST._add_ident_function_scope]] *)
+
+let untyped_ent name =
+  { entname = name; enttype = None }
 
 (*s: function [[Naming_AST.lookup]] *)
 let rec lookup s xxs =
@@ -269,6 +281,9 @@ type env = {
   (* basic constant propagation of literals for sgrep *)
   constants: (string, sid * literal) assoc ref;
 
+  (* EJ todo remove basic type propagation of locals for sgrep *)
+  (* types: (string, sid * type_) assoc ref; *)
+
   in_lvalue: bool ref;
 }
 (*e: type [[Naming_AST.env]] *)
@@ -278,6 +293,7 @@ let default_env () = {
   ctx = ref [AtToplevel];
   names = (default_scopes());
   constants = ref [];
+  (* types = ref []; *)
   in_lvalue = ref false;
 }
 (*e: function [[Naming_AST.default_env]] *)
@@ -289,6 +305,11 @@ let default_env () = {
 let add_constant_env ident (sid, literal) env =
   env.constants := (Ast.str_of_ident ident, (sid, literal))::!(env.constants)
 (*e: function [[Naming_AST.add_constant_env]] *)
+
+(*s: function [[Naming_AST.add_type_env]] *)
+(* let add_type_env ident (sid, vtype) env =
+  env.types := (Ast.str_of_ident ident, (sid, vtype))::!(env.types) *)
+(*e: function [[Naming_AST.add_type_env]] *)
 
 (*s: function [[Naming_AST.with_new_context]] *)
 let with_new_context ctx env f = 
@@ -307,7 +328,8 @@ let set_resolved id_info x =
   (* TODO? maybe do it only if we have something better than what the
    * lang-specific resolved found?
    *)
-  id_info.id_resolved := Some x
+  id_info.id_resolved := Some x.entname;
+  id_info.id_type := x.enttype
 (*e: function [[Naming_AST.set_resolved]] *)
 
 (*****************************************************************************)
@@ -347,9 +369,9 @@ let resolved_name_kind env =
 (* !also set the id_info of the parameter as a side effect! *)
 let params_of_parameters xs =
  xs |> Common.map_filter (function
-  | ParamClassic { pname = Some id; pinfo = id_info; _ } ->
+  | ParamClassic { pname = Some id; pinfo = id_info; ptype = typ; _ } ->
         let sid = Ast.gensym () in
-        let resolved = Param, sid in
+        let resolved = { entname = Param, sid; enttype = typ } in
         set_resolved id_info resolved;
         Some (Ast.str_of_ident id, resolved)
    | _ -> None
@@ -378,6 +400,7 @@ let resolve lang prog =
       with_new_context InFunction env (fun () ->
       with_new_function_scope new_params env.names (fun () ->
         k x
+        (* EJ TODO passing resolved correctly, how do I use it? *)
       ))
     );
     V.kclass_definition = (fun (k, _v) x ->
@@ -391,10 +414,10 @@ let resolve lang prog =
         (* note that some languages such as Python do not have VarDef 
          * construct
          * todo? should add those somewhere instead of in_lvalue detection? *)
-        VarDef ({ vinit = vinit; _}) when is_local_or_global_ctx env ->
+        VarDef ({ vinit = vinit; vtype = vtype }) when is_local_or_global_ctx env ->
           (* name resolution *)
           let sid = Ast.gensym () in
-          let resolved = resolved_name_kind env, sid in
+          let resolved = { entname = resolved_name_kind env, sid; enttype = vtype } in
           add_ident_current_scope id resolved env.names;
           set_resolved id_info resolved;
 
@@ -406,6 +429,14 @@ let resolve lang prog =
               add_constant_env id (sid, literal) env;
           | _ -> ()
           );
+
+          (* EJ todo remove sgrep: type propagation! *)
+          (* (match vtype with
+          | Some typ ->
+              id_info.id_type := Some typ;
+              add_type_env id (sid, typ) env
+          | _ -> ()
+          ); *)
            
           k x
       | { name = id; info = id_info; _}, UseOuterDecl tok ->
@@ -436,24 +467,24 @@ let resolve lang prog =
        | ImportFrom (_, DottedName xs, id, Some (alias)) ->
           (* for python *)
           let sid = Ast.gensym () in
-          let resolved = ImportedEntity (xs @ [id]), sid in
+          let resolved = untyped_ent (ImportedEntity (xs @ [id]), sid) in
           add_ident_imported_scope alias resolved env.names;
        | ImportFrom (_, DottedName xs, id, None) ->
           (* for python *)
           let sid = Ast.gensym () in
-          let resolved = ImportedEntity (xs @ [id]), sid in
+          let resolved = untyped_ent (ImportedEntity (xs @ [id]), sid) in
           add_ident_imported_scope id resolved env.names;
        | ImportAs (_, DottedName xs, Some alias) ->
           (* for python *)
           let sid = Ast.gensym () in
-          let resolved = ImportedModule (DottedName xs), sid in
+          let resolved = untyped_ent (ImportedModule (DottedName xs), sid) in
           add_ident_imported_scope alias resolved env.names;
 
        | ImportAs (_, FileName (s, tok), Some alias) ->
           (* for Go *)
           let sid = Ast.gensym () in
           let base = Filename.basename s, tok in
-          let resolved = ImportedModule (DottedName [base]), sid in
+          let resolved = untyped_ent (ImportedModule (DottedName [base]), sid) in
           add_ident_imported_scope alias resolved env.names;
 
        | _ -> ()
@@ -470,14 +501,14 @@ let resolve lang prog =
            *)
           (* mostly copy-paste of VarDef code *)
           let sid = Ast.gensym () in
-          let resolved = resolved_name_kind env, sid in
+          let resolved = untyped_ent (resolved_name_kind env, sid) in
           add_ident_current_scope id resolved env.names;
           set_resolved id_info resolved;
           k x          
       | PatVar (_e, Some (id, id_info)) when is_local_or_global_ctx env ->
           (* mostly copy-paste of VarDef code *)
           let sid = Ast.gensym () in
-          let resolved = resolved_name_kind env, sid in
+          let resolved = untyped_ent (resolved_name_kind env, sid) in
           add_ident_current_scope id resolved env.names;
           set_resolved id_info resolved;
           k x
@@ -516,22 +547,30 @@ let resolve lang prog =
              (* name resolution *)
              set_resolved id_info resolved;
 
-             (* sgrep: constant propagation *)
-             let (_kind, sid) = resolved in
+             (* sgrep: constant and type propagation *)
+             let (_kind, sid) = resolved.entname in
              let s = Ast.str_of_ident id in
+             (* constant *)
              (match List.assoc_opt s !(env.constants) with
              | Some (sid2, literal) when sid = sid2 ->
                  id_info.id_const_literal := Some literal
              | _ -> ()
-             )
+             );
+             (* EJ todo remove type 
+             (match List.assoc_opt s !(env.types) with
+             | Some (sid2, typ) when sid = sid2 ->
+                 id_info.id_type := Some typ
+             | _ -> ()
+             ) *)
           | None ->
              (match !(env.in_lvalue), lang with
              (* first use of a variable can be a VarDef in some languages *)
+             (* type propagation not necessary because this does not hold true for Java or Go *)
              | true, Lang.Python (* Ruby? PHP? *) 
                when is_local_or_global_ctx env ->
                (* mostly copy-paste of VarDef code *)
                let sid = Ast.gensym () in
-               let resolved = resolved_name_kind env, sid in
+               let resolved = untyped_ent(resolved_name_kind env, sid) in
                add_ident_current_scope id resolved env.names;
                set_resolved id_info resolved;
 
