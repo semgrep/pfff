@@ -85,6 +85,9 @@ let test regexp =
       Unit_parsing_html.unittest;
       Unit_parsing_cpp.unittest;
       Unit_parsing_go.unittest;
+
+      (* typing tests *)
+      Unit_typing_java.unittest;
     ]
   in
   let suite = 

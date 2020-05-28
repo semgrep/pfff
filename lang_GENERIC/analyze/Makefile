@@ -13,7 +13,8 @@ SRC= \
   Dataflow.ml dataflow_reaching.ml dataflow_liveness.ml \
   IL.ml CFG.ml Meta_IL.ml AST_to_IL.ml CFG_build.ml \
   Dataflow_tainting.ml \
-  Test_analyze_generic.ml
+  Test_analyze_generic.ml \
+  unit_typing_java.ml
 
 -include $(TOP)/Makefile.config
 

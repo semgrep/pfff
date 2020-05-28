@@ -205,8 +205,10 @@ let _add_ident_function_scope id _resolved _scopes =
   raise Todo
 (*e: function [[Naming_AST._add_ident_function_scope]] *)
 
+(*s: function [[Naming_AST.untyped_ent]] *)
 let untyped_ent name =
   { entname = name; enttype = None }
+(*e: function [[Naming_AST.untyped_ent]] *)
 
 (*s: function [[Naming_AST.lookup]] *)
 let rec lookup s xxs =
