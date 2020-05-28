@@ -457,7 +457,7 @@ print_stmt:
 
 print_testlist:
   | (* empty *)  { [], true }
-  | "," test "," { [$2], false }
+  | ","          { [], false }
   | "," test print_testlist { $2::(fst $3), snd $3 }
 
 exec_stmt:
