@@ -281,9 +281,6 @@ type env = {
   (* basic constant propagation of literals for sgrep *)
   constants: (string, sid * literal) assoc ref;
 
-  (* EJ todo remove basic type propagation of locals for sgrep *)
-  (* types: (string, sid * type_) assoc ref; *)
-
   in_lvalue: bool ref;
 }
 (*e: type [[Naming_AST.env]] *)
@@ -293,7 +290,6 @@ let default_env () = {
   ctx = ref [AtToplevel];
   names = (default_scopes());
   constants = ref [];
-  (* types = ref []; *)
   in_lvalue = ref false;
 }
 (*e: function [[Naming_AST.default_env]] *)
@@ -305,11 +301,6 @@ let default_env () = {
 let add_constant_env ident (sid, literal) env =
   env.constants := (Ast.str_of_ident ident, (sid, literal))::!(env.constants)
 (*e: function [[Naming_AST.add_constant_env]] *)
-
-(*s: function [[Naming_AST.add_type_env]] *)
-(* let add_type_env ident (sid, vtype) env =
-  env.types := (Ast.str_of_ident ident, (sid, vtype))::!(env.types) *)
-(*e: function [[Naming_AST.add_type_env]] *)
 
 (*s: function [[Naming_AST.with_new_context]] *)
 let with_new_context ctx env f = 
@@ -400,7 +391,6 @@ let resolve lang prog =
       with_new_context InFunction env (fun () ->
       with_new_function_scope new_params env.names (fun () ->
         k x
-        (* EJ TODO passing resolved correctly, how do I use it? *)
       ))
     );
     V.kclass_definition = (fun (k, _v) x ->
@@ -429,14 +419,6 @@ let resolve lang prog =
               add_constant_env id (sid, literal) env;
           | _ -> ()
           );
-
-          (* EJ todo remove sgrep: type propagation! *)
-          (* (match vtype with
-          | Some typ ->
-              id_info.id_type := Some typ;
-              add_type_env id (sid, typ) env
-          | _ -> ()
-          ); *)
            
           k x
       | { name = id; info = id_info; _}, UseOuterDecl tok ->
@@ -556,12 +538,6 @@ let resolve lang prog =
                  id_info.id_const_literal := Some literal
              | _ -> ()
              );
-             (* EJ todo remove type 
-             (match List.assoc_opt s !(env.types) with
-             | Some (sid2, typ) when sid = sid2 ->
-                 id_info.id_type := Some typ
-             | _ -> ()
-             ) *)
           | None ->
              (match !(env.in_lvalue), lang with
              (* first use of a variable can be a VarDef in some languages *)
