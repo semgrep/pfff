@@ -257,15 +257,24 @@ rule initial = parse
   | "//" InputCharacter* { TComment (tokinfo lexbuf) }
   (* should be accepted only at the beginning of the file *)
   | "#!" InputCharacter* { TComment (tokinfo lexbuf) }
-  | [' ' '\t']+  { TCommentSpace(tokinfo lexbuf) }
-  (* This is to handle non-breaking unicode space.
-   * Note that recent OCaml supports unicode characters as \u{a0} in strings
+
+  (* classic space characters (\u0020 and \u0009) *)
+  | [' ' '\t']+
+  (* non-classic space characters
+   * reference: https://www.ecma-international.org/ecma-262/5.1/#sec-7.2 *)
+  | "\x0b" (* vertical tab *) | "\x0c" (* form feed *)
+  (* unicode space characters.
+   * Note that OCaml supports now unicode characters as \u{00a0} in strings
    * but this does not seem to work in ocamllex, hence the hardcoding of 
-   * the actual UTF8 bytes.
+   * the actual UTF8 bytes below (use scripts/unicode.ml and hexl-mode in
+   * Emacs to get those byte values).
    * The right solution would be to switch to a unicode-aware lexer generator,
    * like ulex or sedlex.
+   * todo: https://en.wikipedia.org/wiki/Whitespace_character#Unicode
    *)
-  | "\xc2\xa0" { TCommentSpace(tokinfo lexbuf) }
+  | "\xc2\xa0" (* non-breaking-space \u{00A0} *) 
+  | "\xef\xbb\xbf" (* byte-order-mark \u{FEFF} *)
+    { TCommentSpace(tokinfo lexbuf) }
 
   | NEWLINE      { TCommentNewline(tokinfo lexbuf) }
 
