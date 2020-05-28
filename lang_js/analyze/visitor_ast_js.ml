@@ -196,15 +196,22 @@ and v_stmt x =
   | Try ((t, v1, v2, v3)) ->
       let t = v_tok t in
       let v1 = v_stmt v1
-      and v2 =
-        v_option
-          (fun (t, v1, v2) -> 
-              let t = v_tok t in
-              let v1 = v_name v1 and v2 = v_stmt v2 in ()) v2
+      and v2 = v_option v_catch_block v2
       and v3 = v_option v_tok_and_stmt v3
       in ()
   in
   vin.kstmt (k, all_functions) x
+
+and v_catch_block = function
+  | BoundCatch (t, v1, v2) ->
+      let t = v_tok t
+      and v1 = v_name v1
+      and v2 = v_stmt v2
+      in ()
+  | UnboundCatch (t, v1) ->
+      let t = v_tok t
+      and v1 = v_stmt v1
+      in ()
 
 and v_tok_and_stmt (t, v) = 
   let t = v_tok t in

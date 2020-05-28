@@ -263,7 +263,10 @@ and stmt =
    | Case of tok * expr * stmt
    | Default of tok * stmt
 
-  and catch = tok * name * stmt
+  and catch =
+   | BoundCatch of tok * name * stmt
+   (* es2019 *)
+   | UnboundCatch of tok * stmt
 
 (*****************************************************************************)
 (* Pattern (destructuring binding) *)

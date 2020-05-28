@@ -426,14 +426,17 @@ and stmt env = function
    expr env e
  | Try (_, st1, catchopt, finalopt) ->
    stmt env st1;
-   catchopt |> Common.opt (fun (_t, n, st) -> 
+   catchopt |> Common.opt (catch_block env);
+   finalopt |> Common.opt (fun (_t, st) -> stmt env st);
+
+and catch_block env = function
+  | BoundCatch (_t, n, st) ->
      let v = { v_name = n; v_kind = Let, fake "let"; 
                v_init = None; 
                v_resolved = ref Local } in
      let env = add_locals env [v] in
      stmt env st
-   );
-   finalopt |> Common.opt (fun (_t, st) -> stmt env st);
+  | UnboundCatch (_t, st) -> stmt env st
 
 and for_header env = function
  | ForClassic (e1, e2, e3) ->
