@@ -280,6 +280,8 @@ let rec expr (x: expr) =
       G.Await (t, v1)
   | Repr v1 -> let (_, v1, _) = bracket expr v1 in
       G.OtherExpr (G.OE_Repr, [G.E v1])
+  | NamedExpr ((v, t, e)) ->
+      G.Assign(expr v, t, expr e)
 (*e: function [[Python_to_generic.expr]] *)
 
 (*s: function [[Python_to_generic.argument]] *)

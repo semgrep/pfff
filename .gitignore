@@ -285,3 +285,5 @@ tmp
 /lang_python/parsing/Lexer_python.ml
 /lang_python/parsing/Parser_python.ml
 /lang_python/parsing/Parser_python.mli
+
+menhir_out.log

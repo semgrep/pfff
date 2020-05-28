@@ -125,6 +125,7 @@ let visitor_info_of_tok f = function
   | LSHIFT (ii) -> LSHIFT (f ii)
   | RSHIFT (ii) -> RSHIFT (f ii)
   | EQ (ii) -> EQ (f ii)
+  | COLONEQ (ii) -> COLONEQ (f ii)
   | ADDEQ (ii) -> ADDEQ (f ii)
   | SUBEQ (ii) -> SUBEQ (f ii)
   | MULTEQ (ii) -> MULTEQ (f ii)

@@ -132,6 +132,9 @@ let rec vof_expr =
       and v2 = vof_name v2
       and v3 = vof_expr_context v3
       in OCaml.VSum (("Attribute", [ v1; t; v2; v3 ]))
+  | NamedExpr (v, t, e) ->
+      let v = vof_expr v and t = vof_tok t and e = vof_expr e
+      in OCaml.VSum (("NamedExpr", [ v; t; e ]))
 and vof_number =
   function
   | Int v1 ->

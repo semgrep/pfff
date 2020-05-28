@@ -156,6 +156,7 @@ let mk_str ii =
 
 %token <AST_python.tok> 
   EQ "="             (* = *)
+  COLONEQ ":="   (* := *)
   ADDEQ          (* += *) SUBEQ          (* -= *)
   MULTEQ         (* *= *) DIVEQ          (* /= *)
   MODEQ          (* %= *)
@@ -281,6 +282,10 @@ import_as_name:
 (* Variable definition *)
 (*************************************************************************)
 
+namedexpr_test:
+  | test { $1 }
+  | test COLONEQ test { NamedExpr ($1, $2, $3) }
+
 expr_stmt: 
   | tuple(test_or_star_expr)                       
       { ExprStmt (tuple_expr $1) }
@@ -296,6 +301,10 @@ expr_stmt:
       { AugAssign (tuple_expr_store $1, $2, tuple_expr $3) }
   | tuple(test_or_star_expr) "=" expr_stmt_rhs_list 
       { Assign ((tuple_expr_store $1)::(fst $3), $2, snd $3) }
+
+namedexpr_or_star_expr:
+  | namedexpr_test { $1 }
+  | star_expr      { $1 }
 
 test_or_star_expr:
   | test      { $1 }
@@ -314,7 +323,6 @@ expr_stmt_rhs_list:
 expr_stmt_rhs:
   | yield_expr               { $1 }
   | tuple(test_or_star_expr) { tuple_expr $1 }
- 
 
 augassign:
   | ADDEQ   { Add, $1 }
@@ -535,17 +543,17 @@ suite:
   | NEWLINE INDENT stmt* DEDENT { List.flatten $3 }
 
 
-if_stmt: IF test ":" suite elif_stmt_list { If ($1, $2, $4, $5) }
+if_stmt: IF namedexpr_test ":" suite elif_stmt_list { If ($1, $2, $4, $5) }
 
 elif_stmt_list:
   | (*empty *)  { [] }
-  | ELIF test ":" suite elif_stmt_list { [If ($1, $2, $4, $5)] }
+  | ELIF namedexpr_test ":" suite elif_stmt_list { [If ($1, $2, $4, $5)] }
   | ELSE ":" suite { $3 }
 
 
 while_stmt:
-  | WHILE test ":" suite                { While ($1, $2, $4, []) }
-  | WHILE test ":" suite ELSE ":" suite { While ($1, $2, $4, $7) }
+  | WHILE namedexpr_test ":" suite                { While ($1, $2, $4, []) }
+  | WHILE namedexpr_test ":" suite ELSE ":" suite { While ($1, $2, $4, $7) }
 
 
 for_stmt:
@@ -856,8 +864,8 @@ lambdadef: LAMBDA varargslist ":" test { Lambda ($2, $4) }
 (*----------------------------*)
 
 testlist_comp:
-  | test_or_star_expr comp_for { CompForIf ($1, $2) }
-  | tuple(test_or_star_expr)         { CompList (AST_generic.fake_bracket (to_list $1)) }
+  | namedexpr_or_star_expr comp_for  { CompForIf ($1, $2) }
+  | tuple(namedexpr_or_star_expr)    { CompList (AST_generic.fake_bracket (to_list $1)) }
 
 comp_for: 
  | sync_comp_for       { $1 }
@@ -894,8 +902,9 @@ argument:
   | test comp_for  { ArgComp ($1, $2) }
 
   (* python3-ext: *)
-  | "*" test      { ArgStar $2 }
-  | "**" test       { ArgPow $2 }
+  | test COLONEQ test  { Arg (NamedExpr ($1, $2, $3)) }
+  | "*" test           { ArgStar $2 }
+  | "**" test          { ArgPow $2 }
 
   (* sgrep-ext: difficult to move in atom without s/r conflict so restricted
      * to argument for now *)

@@ -152,6 +152,8 @@ and v_expr (x: expr) =
   | Attribute ((v1, t, v2, v3)) ->
       let v1 = v_expr v1 and t = v_tok t and v2 = v_name v2 
         and v3 = v_expr_context v3 in ()
+  | NamedExpr ((v, t, e)) ->
+      let v = v_expr v and t = v_tok t and e = v_expr e in ()
   in
   vin.kexpr (k, all_functions) x
 
