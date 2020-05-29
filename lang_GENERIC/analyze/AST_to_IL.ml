@@ -1,4 +1,4 @@
-(*s: /home/pad/pfff/lang_GENERIC/analyze/AST_to_IL.ml *)
+(*s: pfff/lang_GENERIC/analyze/AST_to_IL.ml *)
 (* Yoann Padioleau
  *
  * Copyright (C) 2020 r2c
@@ -625,4 +625,4 @@ let stmt st =
   let env = empty_env () in
   stmt env st
 (*e: function [[AST_to_IL.stmt (/home/pad/pfff/lang_GENERIC/analyze/AST_to_IL.ml)]] *)
-(*e: /home/pad/pfff/lang_GENERIC/analyze/AST_to_IL.ml *)
+(*e: pfff/lang_GENERIC/analyze/AST_to_IL.ml *)

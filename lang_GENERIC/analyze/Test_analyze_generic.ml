@@ -3,7 +3,6 @@ open Common
 open AST_generic
 module V = Visitor_AST
 
-(*s: function [[Test_analyze_generic.test_cfg_generic]] *)
 let test_typing_generic file =
   let ast = Parse_generic.parse_program file in
   let lang = List.hd (Lang.langs_of_filename file) in 
