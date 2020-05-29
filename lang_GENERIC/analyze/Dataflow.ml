@@ -1,4 +1,4 @@
-(*s: /home/pad/pfff/lang_GENERIC/analyze/Dataflow.ml *)
+(*s: pfff/lang_GENERIC/analyze/Dataflow.ml *)
 (* Iain Proctor, Yoann Padioleau, Jiao Li
  *
  * Copyright (C) 2009-2010 Facebook
@@ -327,4 +327,4 @@ module X1 = Make (struct
 end
 )
 *)
-(*e: /home/pad/pfff/lang_GENERIC/analyze/Dataflow.ml *)
+(*e: pfff/lang_GENERIC/analyze/Dataflow.ml *)

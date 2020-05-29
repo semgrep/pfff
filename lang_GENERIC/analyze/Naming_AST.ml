@@ -1,4 +1,4 @@
-(*s: /home/pad/pfff/lang_GENERIC/analyze/Naming_AST.ml *)
+(*s: pfff/lang_GENERIC/analyze/Naming_AST.ml *)
 (* Yoann Padioleau
  *
  * Copyright (C) 2020 r2c
@@ -136,14 +136,12 @@ module V = Visitor_AST
 type resolved_name = AST_generic.resolved_name
 (*e: type [[Naming_AST.resolved_name]] *)
 
-(*s: type [[Naming_AST.scope_info]] *)
 type scope_info = { 
   (* variable kind and sid *)
   entname: resolved_name; 
   (* variable type, if known *)
   enttype: type_ option;
- }
-(*e: type [[Naming_AST.scope_info]] *)
+}
 
 (*s: type [[Naming_AST.scope]] *)
 type scope = (string, scope_info) assoc
@@ -205,10 +203,8 @@ let _add_ident_function_scope id _resolved _scopes =
   raise Todo
 (*e: function [[Naming_AST._add_ident_function_scope]] *)
 
-(*s: function [[Naming_AST.untyped_ent]] *)
 let untyped_ent name =
   { entname = name; enttype = None }
-(*e: function [[Naming_AST.untyped_ent]] *)
 
 (*s: function [[Naming_AST.lookup]] *)
 let rec lookup s xxs =
@@ -584,4 +580,4 @@ let resolve lang prog =
   in
   visitor (Pr prog)
 (*e: function [[Naming_AST.resolve]] *)
-(*e: /home/pad/pfff/lang_GENERIC/analyze/Naming_AST.ml *)
+(*e: pfff/lang_GENERIC/analyze/Naming_AST.ml *)

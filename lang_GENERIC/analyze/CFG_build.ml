@@ -1,4 +1,4 @@
-(*s: /home/pad/pfff/lang_GENERIC/analyze/CFG_build.ml *)
+(*s: pfff/lang_GENERIC/analyze/CFG_build.ml *)
 (* Yoann Padioleau
  *
  * Copyright (C) 2009, 2010, 2011 Facebook
@@ -200,4 +200,4 @@ let (cfg_of_stmts: stmt list -> F.cfg) =
   g |> add_arc_opt (last_node_opt, exiti);
   g
 
-(*e: /home/pad/pfff/lang_GENERIC/analyze/CFG_build.ml *)
+(*e: pfff/lang_GENERIC/analyze/CFG_build.ml *)

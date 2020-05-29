@@ -27,6 +27,7 @@ open AST_generic
  *  - use IL instead and go even further in the normalization process?
  *)
 
+(* DEPRECATED!: use user-defined equivalences instead *)
 
 (*****************************************************************************)
 (* Entry point *)
