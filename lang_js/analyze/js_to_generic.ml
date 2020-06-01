@@ -229,7 +229,7 @@ and stmt x =
   | Block v1 -> let v1 = list stmt v1 in G.Block v1
   | ExprStmt v1 -> let v1 = expr v1 in G.ExprStmt v1
   | If ((t, v1, v2, v3)) ->
-      let v1 = expr v1 and v2 = stmt v2 and v3 = stmt v3 in 
+      let v1 = expr v1 and v2 = stmt v2 and v3 = option stmt v3 in 
       G.If (t, v1, v2, v3)
   | Do ((t, v1, v2)) -> let v1 = stmt v1 and v2 = expr v2 in 
       G.DoWhile (t, v1, v2)

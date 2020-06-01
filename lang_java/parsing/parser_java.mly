@@ -829,10 +829,10 @@ statement_expression:
 
 
 if_then_statement: IF LP expression RP statement
-   { If ($1, $3, $5, Empty) }
+   { If ($1, $3, $5, None) }
 
 if_then_else_statement: IF LP expression RP statement_no_short_if ELSE statement
-   { If ($1, $3, $5, $7) }
+   { If ($1, $3, $5, Some $7) }
 
 
 switch_statement: SWITCH LP expression RP switch_block
@@ -971,7 +971,7 @@ labeled_statement_no_short_if: identifier COLON statement_no_short_if
 
 if_then_else_statement_no_short_if:
  IF LP expression RP statement_no_short_if ELSE statement_no_short_if
-   { If ($1, $3, $5, $7) }
+   { If ($1, $3, $5, Some $7) }
 
 while_statement_no_short_if: WHILE LP expression RP statement_no_short_if
      { While ($1, $3, $5) }

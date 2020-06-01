@@ -546,9 +546,9 @@ suite:
 if_stmt: IF namedexpr_test ":" suite elif_stmt_list { If ($1, $2, $4, $5) }
 
 elif_stmt_list:
-  | (*empty *)  { [] }
-  | ELIF namedexpr_test ":" suite elif_stmt_list { [If ($1, $2, $4, $5)] }
-  | ELSE ":" suite { $3 }
+  | (*empty *)                                   { None }
+  | ELIF namedexpr_test ":" suite elif_stmt_list { Some [If ($1, $2, $4, $5)] }
+  | ELSE ":" suite                               { Some ($3) }
 
 
 while_stmt:

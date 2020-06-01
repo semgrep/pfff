@@ -229,7 +229,7 @@ and stmt =
   | Block of stmts
   | Expr of expr
 
-  | If of tok * expr * stmt * stmt
+  | If of tok * expr * stmt * stmt option
   | Switch of tok * expr * (cases * stmts) list
 
   | While of tok * expr * stmt

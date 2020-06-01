@@ -522,7 +522,7 @@ let rec stmt env st =
   | G.If (tok, e, st1, st2) ->
     let ss, e' = expr_with_pre_stmts env e in
     let st1 = stmt env st1 in
-    let st2 = stmt env st2 in
+    let st2 = List.map (stmt env) (st2 |> Common.opt_to_list) |>List.flatten in
     ss @ [mk_s (If (tok, e', st1, st2))]
 
   | G.Switch (_, _, _) -> todo (G.S st)

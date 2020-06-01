@@ -342,7 +342,7 @@ type stmt =
   | While of tok * expr (* test *) * stmt list (* body *) * 
              stmt list (* orelse *)
   | If of tok * expr (* test *) * stmt list (* body *) * 
-             stmt list (* orelse *)
+             stmt list option (* orelse *)
   (* https://docs.python.org/2.5/whatsnew/pep-343.html *)
   | With of tok * expr (* context_expr *) * expr option (* optional_vars *) * 
       stmt list (* body *)
