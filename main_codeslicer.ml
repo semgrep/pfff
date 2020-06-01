@@ -16,11 +16,11 @@ open Common
  * understand the "core" of a software. For instance on the Linux kernel,
  * the drivers take more than 50% of the codebase, but none of those
  * drivers are actually essential to understand the "core" of Linux.
- * Once you've seen one driver you got the main ideas and seeing
+ * Once you''ve seen one driver you got the main ideas and seeing
  * another driver will not improve significantly your comprehension
  * of the whole codebase. In some cases such as www, the whole codebase is so
  * messy that even codegraph has a hard time to convey the software
- * architecture as it's difficult to find a meaningful layering of the code
+ * architecture as it''s difficult to find a meaningful layering of the code
  * because of the too many backward dependencies.
  * 
  * Fortunately in most codebase a lots of things are actual plugins
@@ -38,7 +38,7 @@ open Common
  * the main()) and the slice can actually contain many extensions.
  * 
  * A nice side effect of the codeslicer is that because the resulting codebase
- * is far smaller it's also faster to run expensive analysis that are 
+ * is far smaller it''s also faster to run expensive analysis that are 
  * currently hard to scale to millions LOC (e.g. datalog, but even codegraph
  * and codemap which have troubles to scale to www).
  * 
@@ -140,7 +140,7 @@ let find_big_branching_factor graph_file =
 
     (* ok the previous phase may have discovered newly dead code, that
      * may have rendered live children of big parents originally,
-     * but that should not anymore, so let's reconsider all children!
+     * but that should not anymore, so let''s reconsider all children!
      *)
     dead_candidates () |> List.iter (fun node ->
       Hashtbl.replace hdead_candidates node true

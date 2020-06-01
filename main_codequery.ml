@@ -80,7 +80,7 @@ let exec cmd =
   Common.command2 cmd
 
 (* from hw6/run_bddbddb.py
-  -mx600m -Dlearnbestorder=n -Dsingleignore=yes -Dbasedir=./results/ -Dbddcache=1500000 -Dbddnodes=40000000 -Dnumberingtype=%s -Dpa.clinit=no -Dpa.filternull=yes -Dpa.unknowntypes=no net.sf.bddbddb.Solver %s' % (java_cmd, cla
+  -mx600m -Dlearnbestorder=n -Dsingleignore=yes -Dbasedir=./results/ -Dbddcache=1500000 -Dbddnodes=40000000 -Dnumberingtype=%s -Dpa.clinit=no -Dpa.filternull=yes -Dpa.unknowntypes=no net.sf.bddbddb.Solver
 *)
 let java_options = [
   "-mx2000m";
@@ -140,7 +140,7 @@ let run_datalog root facts =
     exec (spf "rm %s/*" datadir);
     exec (spf "rmdir %s" datadir);
   );
-  (* don't care about the remaining prolog stuff so exit earlier *)
+  (* don''t care about the remaining prolog stuff so exit earlier *)
   raise (UnixExit 0)
 
 
