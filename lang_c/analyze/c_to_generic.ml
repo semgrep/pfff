@@ -230,7 +230,7 @@ let rec stmt =
   | ExprSt v1 -> let v1 = expr v1 in G.ExprStmt v1
   | Block v1 -> let v1 = list stmt v1 in G.Block v1
   | If ((t, v1, v2, v3)) ->
-      let v1 = expr v1 and v2 = stmt v2 and v3 = stmt v3 in
+      let v1 = expr v1 and v2 = stmt v2 and v3 = option stmt v3 in
       G.If (t, v1, v2, v3)
   | Switch ((v0, v1, v2)) -> 
       let v0 = info v0 in

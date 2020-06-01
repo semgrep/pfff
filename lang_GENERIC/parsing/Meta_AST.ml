@@ -510,7 +510,7 @@ and vof_stmt =
       let t = vof_tok t in
       let v1 = vof_expr v1
       and v2 = vof_stmt v2
-      and v3 = vof_stmt v3
+      and v3 = OCaml.vof_option vof_stmt v3
       in OCaml.VSum (("If", [ t; v1; v2; v3 ]))
   | While ((t, v1, v2)) ->
       let t = vof_tok t in

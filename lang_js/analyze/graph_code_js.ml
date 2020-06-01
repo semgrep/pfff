@@ -400,7 +400,7 @@ and stmt env = function
  | If (_, e, st1, st2) ->
    expr env e;
    stmt env st1;
-   stmt env st2
+   option (stmt env) st2
  | Do (_, st, e) ->
    stmt env st;
    expr env e;

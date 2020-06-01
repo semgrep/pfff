@@ -592,7 +592,7 @@ and stmt =
   (* EmptyStmt = Block [], or separate so can not be matched by $S? $ *)
 
   (* newscope: for vardef in expr in C++/Go/... *)
-  | If of tok (* 'if' or 'elif' *) * expr * stmt * stmt
+  | If of tok (* 'if' or 'elif' *) * expr * stmt * stmt option
   | While   of tok * expr * stmt
 
   | Return   of tok * expr option

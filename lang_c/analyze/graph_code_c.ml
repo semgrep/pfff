@@ -751,7 +751,7 @@ and stmt env = function
   | Asm xs -> List.iter (expr_toplevel env) xs
   | If (_, e, st1, st2) ->
       expr_toplevel env e;
-      stmts env [st1; st2]
+      stmts env (st1::(opt_to_list st2))
   | Switch (_, e, xs) ->
       expr_toplevel env e;
       cases env xs

@@ -327,7 +327,7 @@ and v_stmt x =
         let t = v_info t in
       let v1 = v_expr v1
       and v2 = v_list v_stmt v2
-      and v3 = v_list v_stmt v3
+      and v3 = v_option (v_list v_stmt) v3
       in ()
   | With ((t, v1, v2, v3)) ->
         let t = v_info t in

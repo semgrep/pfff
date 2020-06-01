@@ -591,8 +591,7 @@ and stmt env = function
   | Expr e -> expr env e
   | If (_, e, st1, st2) ->
       expr env e;
-      stmt env st1;
-      stmt env st2;
+      stmts env (st1::(Common.opt_to_list st2))
   | Switch (_, e, xs) ->
       expr env e;
       xs |> List.iter (fun (cs, sts) ->

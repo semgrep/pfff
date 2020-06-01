@@ -388,7 +388,7 @@ and stmt_aux =
       and v4 = option stmt v4
       in 
       wrap_init_in_block_maybe v1 
-       (G.If (t, v2, v3, G.opt_to_empty v4))
+       (G.If (t, v2, v3, v4))
   | Switch ((v0, v1, v2, v3)) ->
       let v0 = tok v0 in
       let v1 = option simple v1
