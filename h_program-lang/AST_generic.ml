@@ -1503,9 +1503,8 @@ let is_boolean_operator = function
 
 (*s: function [[AST_generic.vardef_to_assign]] *)
 (* used in controlflow_build and semgrep *)
-let vardef_to_assign (ent, def) resolved =
-  let idinfo = { (empty_id_info()) with id_resolved = ref resolved } in
-  let name = Id (ent.name, idinfo) in
+let vardef_to_assign (ent, def) =
+  let name = Id (ent.name, ent.info) in
   let v = 
     match def.vinit with
    | Some v -> v
