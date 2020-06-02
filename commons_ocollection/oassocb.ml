@@ -2,7 +2,7 @@ open Common
 
 open Oassoc
 
-class ['a,'b] oassocb xs = 
+class ['a,'b] oassocb _xs = 
   object(o)
     inherit ['a,'b] oassoc
 
@@ -14,8 +14,8 @@ class ['a,'b] oassocb xs =
     method iter f = Map_.iter (Common2.curry f) data
     method view = raise Todo
 
-    method del (k,v) = {< data = Map_.remove k data >}
-    method mem e = raise Todo
+    method del (k,_v) = {< data = Map_.remove k data >}
+    method mem _e = raise Todo
     method null = (Map_.is_empty data)
 
     method assoc k = Map_.find k data

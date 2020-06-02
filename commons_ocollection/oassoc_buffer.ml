@@ -98,7 +98,7 @@ object(o)
     wrapped := !wrapped#del (k,v); 
     dirty := !dirty#del k;
     o
-  method mem e = raise Todo
+  method mem _e = raise Todo
   method null = raise Todo
 
   method assoc k = 

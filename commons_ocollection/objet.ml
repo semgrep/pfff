@@ -7,7 +7,7 @@ open Common
  *)
 
 class virtual objet =
-object(o:'o)
+object(_o:'o)
   method invariant: unit -> unit = fun () -> 
     raise Todo
   (* method check: unit -> unit = fun () -> 

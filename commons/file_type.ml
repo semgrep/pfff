@@ -89,7 +89,7 @@ type file_type =
  * filenames, so it has to be fast!
  *)
 let file_type_of_file2 file = 
-  let (d,b,e) = Common2.dbe_of_filename_noext_ok file in
+  let (_d,b,e) = Common2.dbe_of_filename_noext_ok file in
   match e with
 
   | "ml" | "mli" 
