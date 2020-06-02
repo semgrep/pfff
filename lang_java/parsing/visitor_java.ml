@@ -205,6 +205,11 @@ and v_expr (x : expr) =
       let v1 = v_expr v1 and v2 = v_wrap v_arith_op v2 and v3 = v_expr v3 in ()
     | Assign ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()
+    | TypedMetavar((v1, v2, v3)) ->
+      let v1 = v_ident v1 in
+      let v2 = v_tok v2 in
+      let v3 = v_typ v3 in
+      ()
     | Lambda ((v1, v2)) ->
       let v1 = v_parameters v1 and v2 = v_stmt v2 in ()
   in

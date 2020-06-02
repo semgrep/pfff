@@ -783,6 +783,7 @@ and expr env = function
   | Conditional (e1, e2, e3) -> exprs env [e1;e2;e3]
   | AssignOp (e1, _op, e2) -> exprs env [e1;e2]
   | Assign (e1, _tok, e2) -> exprs env [e1;e2]
+  | TypedMetavar (_ident, _tok, t) -> typ env t
 
   | Cast (t, e) ->
       typ env t;

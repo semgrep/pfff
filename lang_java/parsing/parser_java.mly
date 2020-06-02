@@ -528,6 +528,7 @@ argument:
 
 postfix_expression:
  | primary  { $1 }
+ | LP IDENTIFIER COLON type_ RP { TypedMetavar($2, $3, $4)  }
  | name     {
      (* Ambiguity. It could be a field access (Dot) or a qualified
       * name (Name). See ast_java.ml note on the Dot constructor for
