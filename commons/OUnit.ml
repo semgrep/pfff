@@ -261,10 +261,6 @@ type test_result =
   | RSkip of path * string
   | RTodo of path * string
 
-let is_success = function
-    RSuccess _  -> true 
-  | RFailure _ | RError _  | RSkip _ | RTodo _ -> false 
-
 let is_failure = function
     RFailure _ -> true
   | RSuccess _ | RError _  | RSkip _ | RTodo _ -> false

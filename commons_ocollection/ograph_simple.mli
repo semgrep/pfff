@@ -1,5 +1,4 @@
 (*s: ograph_simple.mli *)
-open Common
 
 (* essentially a convenient way to access a hash and its reverse hash *)
 

@@ -1,10 +1,5 @@
 open Common
 
-open Ocollection
-open Oset
-open Oassoc
-(* open Ograph *)
-
 open Oassocb
 open Osetb
 
@@ -65,7 +60,7 @@ object(o)
       
   method leaf_nodes () = 
     let (set : 'key Oset.oset)  = build_set () in
-    o#nodes#tolist |> List.fold_left (fun acc (k,v) -> 
+    o#nodes#tolist |> List.fold_left (fun acc (k,_v) -> 
       if (o#successors k)#null
       then acc#add k
       else acc
@@ -132,9 +127,9 @@ let print_ograph_generic ~str_of_key ~str_of_node filename g =
     nodes#iter (fun (k,node) -> 
       pr (spf "%s [label=\"%s\"];\n" (str_of_key k) (str_of_node k node))
     );
-    nodes#iter (fun (k,node) -> 
+    nodes#iter (fun (k,_node) -> 
       let succ = g#successors k in
-      succ#iter (fun (j,edge) ->
+      succ#iter (fun (j,_edge) ->
         pr (spf "%s -> %s;\n" (str_of_key k) (str_of_key j));
       );
     );

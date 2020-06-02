@@ -38,7 +38,7 @@ let rec drop n xs =
   match (n,xs) with
   | (0,_) -> xs
   | (_,[]) -> failwith "drop: not enough"
-  | (n,x::xs) -> drop (n-1) xs
+  | (n,_x::xs) -> drop (n-1) xs
 
 let take n xs =
   let rec next n xs acc =
@@ -47,9 +47,6 @@ let take n xs =
     | (_,[]) -> failwith "Common.take: not enough"
     | (n,x::xs) -> next (n-1) xs (x::acc) in
   next n xs []
-
-let rec enum_orig x n =
-  if x = n then [n] else x::enum_orig (x+1)  n
 
 let enum x n =
   if not(x <= n)
@@ -88,10 +85,6 @@ let finalize f cleanup =
   with e ->
     cleanup ();
     raise e
-
-
-let (unlines: string list -> string) = fun s ->
-  (String.concat "\n" s) ^ "\n"
 
 let (lines: string -> string list) = fun s ->
   let rec lines_aux = function
@@ -148,9 +141,6 @@ let pr2 s =
 let pr_xxxxxxxxxxxxxxxxx () =
   pr "-----------------------------------------------------------------------"
 
-let pr2_xxxxxxxxxxxxxxxxx () =
-  pr2 "-----------------------------------------------------------------------"
-
 let _already_printed = Hashtbl.create 101
 let disable_pr2_once = ref false
 
@@ -172,7 +162,6 @@ let pr2_once s = xxx_once pr2 s
  * By Richard W.M. Jones (rich@annexia.org).
  * dumper.ml 1.2 2005/02/06 12:38:21 rich Exp
  *)
-open Printf
 open Obj
 
 let rec dump2 r =
@@ -223,7 +212,7 @@ let rec dump2 r =
     else if t = closure_tag then opaque "closure"
     else if t = object_tag then (	(* Object. *)
       let fields = get_fields [] s in
-      let clasz, id, slots =
+      let _clasz, id, slots =
         match fields with h::h'::t -> h, h', t | _ -> assert false in
       (* No information on decoding the class (first field).  So just print
        * out the ID and the slots.
@@ -290,10 +279,6 @@ let adjust_profile_entry category difftime =
   xcount := !xcount + 1;
   ()
 
-let profile_start category = failwith "todo"
-let profile_end category = failwith "todo"
-
-
 (* subtil: don't forget to give all argumens to f, otherwise partial app
  * and will profile nothing.
  *
@@ -345,7 +330,7 @@ let profile_code_exclusif category f =
 
   end
 
-let profile_code_inside_exclusif_ok category f =
+let profile_code_inside_exclusif_ok _category _f =
   failwith "Todo"
 
 
@@ -362,7 +347,7 @@ let profile_diagnostic () =
   if !profile = ProfNone then "" else
   let xs =
     Hashtbl.fold (fun k v acc -> (k,v)::acc) !_profile_table []
-      |> List.sort (fun (k1, (t1,n1)) (k2, (t2,n2)) -> compare t2 t1)
+      |> List.sort (fun (_k1, (t1,_n1)) (_k2, (t2,_n2)) -> compare t2 t1)
     in
     with_open_stringbuf (fun (pr,_) ->
       pr "---------------------";
@@ -502,7 +487,7 @@ let long_usage  usage_msg  ~short_opt ~long_opt  =
       pr_xxxxxxxxxxxxxxxxx();
       if explanations <> ""
       then begin pr explanations; pr "" end;
-      arg_align2 xs |> List.iter (fun (key,action,s) ->
+      arg_align2 xs |> List.iter (fun (key,_action,s) ->
         pr ("  " ^ key ^ s)
       );
       pr "";
@@ -527,7 +512,7 @@ let arg_parse2 l msg short_usage_fun =
       pr2 (List.hd xs);
       short_usage_fun();
       raise (UnixExit (2))
-  | Arg.Help msg -> (* printf "%s" msg; exit 0; *)
+  | Arg.Help _msg -> (* printf "%s" msg; exit 0; *)
       raise Impossible  (* -help is specified in speclist *)
   )
 
@@ -547,11 +532,11 @@ let options_of_actions action_ref actions =
   )
 
 let (action_list: cmdline_actions -> Arg.key list) = fun xs ->
-  List.map (fun (a,b,c) -> a) xs
+  List.map (fun (a,_b,_c) -> a) xs
 
 let (do_action: Arg.key -> string list (* args *) -> cmdline_actions -> unit) =
   fun key args xs ->
-    let assoc = xs |> List.map (fun (a,b,c) -> (a,c)) in
+    let assoc = xs |> List.map (fun (a,_b,c) -> (a,c)) in
     let action_func = List.assoc key assoc in
     action_func args
 
@@ -702,7 +687,7 @@ let find_some p xs =
   | None -> raise Not_found
   | Some x -> x
 
-let rec find_opt f xs = 
+let find_opt f xs = 
   find_some_opt (fun x -> if f x then Some x else None) xs
   
 
@@ -947,7 +932,7 @@ let (with_open_outfile: filename -> (((string -> unit) * out_channel) -> 'a) -> 
     let res = f (pr, chan) in
     close_out chan;
     res)
-    (fun e -> close_out chan)
+    (fun _e -> close_out chan)
 
 let (with_open_infile: filename -> ((in_channel) -> 'a) -> 'a) = fun file f ->
   let chan = open_in file in
@@ -955,7 +940,7 @@ let (with_open_infile: filename -> ((in_channel) -> 'a) -> 'a) = fun file f ->
     let res = f chan in
     close_in chan;
     res)
-    (fun e -> close_in chan)
+    (fun _e -> close_in chan)
 
 (* now in prelude:
  * exception Timeout
@@ -1122,21 +1107,15 @@ let index_list_1 xs =
 let sort_prof a b =
   profile_code "Common.sort_by_xxx" (fun () -> List.sort a b)
 
-type order = HighFirst | LowFirst
-let compare_order order a b =
-  match order with
-  | HighFirst -> compare b a
-  | LowFirst -> compare a b
-
 let sort_by_val_highfirst xs =
-  sort_prof (fun (k1,v1) (k2,v2) -> compare v2 v1) xs
+  sort_prof (fun (_k1,v1) (_k2,v2) -> compare v2 v1) xs
 let sort_by_val_lowfirst xs =
-  sort_prof (fun (k1,v1) (k2,v2) -> compare v1 v2) xs
+  sort_prof (fun (_k1,v1) (_k2,v2) -> compare v1 v2) xs
 
 let sort_by_key_highfirst xs =
-  sort_prof (fun (k1,v1) (k2,v2) -> compare k2 k1) xs
+  sort_prof (fun (k1,_v1) (k2,_v2) -> compare k2 k1) xs
 let sort_by_key_lowfirst xs =
-  sort_prof (fun (k1,v1) (k2,v2) -> compare k1 k2) xs
+  sort_prof (fun (k1,_v1) (k2,_v2) -> compare k1 k2) xs
 
 (*****************************************************************************)
 (* Assoc *)
@@ -1190,7 +1169,7 @@ let hashset_of_list (xs: 'a list) : ('a, bool) Hashtbl.t =
 
 let hkeys h =
   let hkey = Hashtbl.create 101 in
-  h |> Hashtbl.iter (fun k v -> Hashtbl.replace hkey k true);
+  h |> Hashtbl.iter (fun k _v -> Hashtbl.replace hkey k true);
   hashset_to_list hkey
 
 let group_assoc_bykey_eff2 xs =

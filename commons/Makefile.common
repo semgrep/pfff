@@ -25,8 +25,11 @@ OPTFLAGS=-thread
 # or setenv it to ".opt" in your startup script.
 OPTBIN ?= #.opt
 
+# duplicated from ../Makefile.common
+WARNING_FLAGS?=-w +a-4-6-7-29-41-44-45-48-52-67 -warn-error +a
+
 #coupling: ../Makefile.common, but want independent commons/
-OCAMLCFLAGS ?= -g -thread $(OCAMLCFLAGS_EXTRA) 
+OCAMLCFLAGS ?= -g -thread $(OCAMLCFLAGS_EXTRA) $(WARNING_FLAGS)
 
 # The OCaml tools.
 OCAMLC =ocamlc$(OPTBIN) $(OCAMLCFLAGS) $(INCLUDES)

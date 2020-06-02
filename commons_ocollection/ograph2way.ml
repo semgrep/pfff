@@ -55,7 +55,7 @@ object(o)
     (*  could take pred,  same *)
     (* caml typing sux, arrive pas a faire:  pred#fold (fun a (k,v) -> a#add k) (new osetb Set_.empty)  *)
     let a = ref (new osetb Set_.empty) in
-    succ#iter (fun (k,v) -> a := !a#add k);
+    succ#iter (fun (k,_v) -> a := !a#add k);
     !a
 
         

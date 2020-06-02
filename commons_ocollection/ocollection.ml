@@ -1,5 +1,3 @@
-open Common
-
 (*****************************************************************************)
 (* Collection *)
 (*****************************************************************************)
@@ -49,7 +47,7 @@ object(o: 'o)
     (* oldsimple: o#tolist +> List.length *)
     (* opti: *)
     let count = ref 0 in
-    o#iter (fun e -> incr count);
+    o#iter (fun _e -> incr count);
     !count
 
   method exists: ('a -> bool) -> bool = fun f -> 
@@ -62,9 +60,9 @@ object(o: 'o)
   (* forall, fold, map *)
 
   method getone: 'a = 
-    match o#view with Cons (e,tl) -> e  | Empty -> failwith "no head"
+    match o#view with Cons (e,_tl) -> e  | Empty -> failwith "no head"
   method others: 'o = 
-    match o#view with Cons (e,tl) -> tl | Empty -> failwith "no tail"
+    match o#view with Cons (_e,tl) -> tl | Empty -> failwith "no tail"
 
 end
 

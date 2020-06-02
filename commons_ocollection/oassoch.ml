@@ -20,9 +20,11 @@ class ['a,'b] oassoch xs =
     method iter f = Hashtbl.iter (Common2.curry f) data
     method view = raise Todo
 
-    method del (k,v) = (Hashtbl.remove data k; o)
-    method mem e = raise Todo
-    method null = (try (Hashtbl.iter (fun k v -> raise Common2.ReturnExn) data; false) with Common2.ReturnExn -> true)
+    method del (k,_v) = (Hashtbl.remove data k; o)
+    method mem _e = raise Todo
+    method null =
+      (try (Hashtbl.iter (fun _k _v -> raise Common2.ReturnExn) data; false)
+       with Common2.ReturnExn -> true)
 
     method assoc k = 
       try 
