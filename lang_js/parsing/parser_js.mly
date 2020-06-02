@@ -431,20 +431,32 @@ binding_element:
  | binding_id initializeur? { PatId ($1, $2) }
  | binding_pattern    initializeur? { PatNest ($1, $2) }
 
+(* array destructuring *)
 
-array_binding_pattern: "[" binding_element_list "]" { PatArr ($1, $2, $3) }
+array_binding_pattern:
+ | "[" "]"                      { PatArr ($1, [], $2) }
+ | "[" binding_element_list "]" { PatArr ($1, $2, $3) }
+
+binding_start_element:
+ | ","                  { [Right $1] }
+ | binding_element ","  { [Left $1] @ [Right $2] }
+
+binding_start_list:
+(* always ends in a "," *)
+ | binding_start_element                     { $1 }
+ | binding_start_list binding_start_element  { $1 @ $2 }
 
 (* cant use listc() here, it's $1 not [$1] below *)
 binding_element_list:
- | binding_elision_element { $1 }
- | binding_element_list "," binding_elision_element {  $1 @ [Right $2] @ $3 }
+ | binding_start_list                         { $1 }
+ | binding_elision_element                    { $1 }
+ | binding_start_list binding_elision_element { $1 @ $2 }
 
 binding_elision_element:
- |          binding_element { [Left $1] }
- | elision2 binding_element { $1 @ [Left $2] }
+ | binding_element        { [Left $1] }
  (* can appear only at the end of a binding_property_list in ECMA *)
- | "..." binding_id         { [Left (PatDots ($1, PatId ($2, None)))] }
- | "..." binding_pattern    { [Left (PatDots ($1, PatNest ($2, None)))] }
+ | "..." binding_id       { [Left (PatDots ($1, PatId ($2, None)))] }
+ | "..." binding_pattern  { [Left (PatDots ($1, PatNest ($2, None)))] }
 
 (*************************************************************************)
 (* Function declarations (and exprs) *)
@@ -1375,7 +1387,3 @@ elision:
  | "," { [Right $1] }
  | elision "," { $1 @ [Right $2] }
 
-(* can't inline this one, recursive rule *)
-elision2:
- | "," { [Right $1] }
- | elision2 "," { $1 @ [Right $2] }
