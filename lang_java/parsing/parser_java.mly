@@ -364,7 +364,7 @@ name:
      { $1@[TypeArgs_then_Id($4,$6)] }
 
 identifier_:
- | identifier                       { pr2 "id\n"; Id $1 }
+ | identifier                       { Id $1 }
  | identifier LT_GENERIC type_arguments_args_opt GT { Id_then_TypeArgs($1, $3) }
 
 /*(*************************************************************************)*/
@@ -416,6 +416,12 @@ bound: ref_type_and_list { $1 }
 /*(*1 Expressions *)*/
 /*(*************************************************************************)*/
 
+typed_metavar:
+ | LP type_ IDENTIFIER RP { (match $2 with
+                              | TClass (((typ, _), _)::_) -> if (typ.[0] = '$') then failwith "No support for metavariable types" else () 
+                              | _ -> () );
+                            Flag_parsing.sgrep_guard (TypedMetavar($3, Parse_info.fake_info " ", $2))  }
+
 primary:
  | primary_no_new_array       { $1 }
  | array_creation_expression  { $1 }
@@ -424,6 +430,7 @@ primary_no_new_array:
  | literal             { $1 }
  | THIS                { Name [this_ident $1] }
  | LP expression RP    { $2 }
+ | typed_metavar       { $1 }
  | class_instance_creation_expression { $1 }
  | field_access                       { $1 }
  | method_invocation                  { $1 }
@@ -494,8 +501,7 @@ array_access:
 
 method_invocation:
  | name LP argument_list_opt RP
-        { pr2 "name\n";
-          match List.rev $1 with
+        { match List.rev $1 with
           (* TODO: lose information of TypeArgs_then_Id *)
           | ((Id x) | (TypeArgs_then_Id (_, Id x)))::xs ->
               let (xs: identifier_ list) =
@@ -537,9 +543,9 @@ postfix_expression: (* EJ todo maybe need to add typed metavars here *)
       *)
      match List.rev $1 with
      | (Id id)::x::xs ->
-         pr2 "case 1\n"; Dot (Name (name (List.rev (x::xs))), Parse_info.fake_info ".", id)
+         Dot (Name (name (List.rev (x::xs))), Parse_info.fake_info ".", id)
      | _ ->
-         pr2 "case 2\n"; Name (name $1)
+         Name (name $1)
    }
 
  | post_increment_expression  { $1 }
@@ -822,11 +828,11 @@ statement_expression:
  | pre_decrement_expression  { $1 }
  | post_increment_expression  { $1 }
  | post_decrement_expression  { $1 }
- | method_invocation  { pr2 "method\n"; $1 }
+ | method_invocation  { $1 }
  | class_instance_creation_expression  { $1 }
  /*(* sgrep-ext: to allow '$S;' in sgrep *)*/
- | IDENTIFIER { pr2 "identifier\n"; Flag_parsing.sgrep_guard ((Name (name [Id $1])))  }
- | LP IDENTIFIER COLON type_ RP { Flag_parsing.sgrep_guard (TypedMetavar($2, $3, $4))  }
+ | IDENTIFIER { Flag_parsing.sgrep_guard ((Name (name [Id $1])))  }
+ | typed_metavar { $1 }
 
 
 if_then_statement: IF LP expression RP statement
