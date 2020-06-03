@@ -1,23 +1,13 @@
 version: 2.1
 jobs:
-  build:
+  build-and-test:
     docker:
       - image: returntocorp/sgrep-build:2.1
     steps:
       - checkout
-      - run: eval $(opam env); opam install grain_dypgen menhir; ./configure -novisual && make depend && make
-
-  test:
-    docker:
-      - image: returntocorp/sgrep-build:2.1
-    environment:
-        PFFF_HOME: /home/opam/project
-    steps:
-      - checkout
-      - run: eval $(opam env); opam install grain_dypgen menhir; ./configure -novisual && make depend && make test
-workflows:
-  version: 2.1
-  build_and_test:
-    jobs:
-      - build
-      - test
+      - run: ./scripts/install-opam-deps
+      - run: ./scripts/build
+      - run: ./scripts/test
+      - run: ./scripts/install
+# The previous config was defining a so-called workflow with two independent
+# jobs, 'build' and 'test', achieving some parallelism.
