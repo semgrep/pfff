@@ -439,7 +439,7 @@ array_binding_pattern:
 
 binding_start_element:
  | ","                  { [Right $1] }
- | binding_element ","  { [Left $1] @ [Right $2] }
+ | binding_element ","  { [Left $1; Right $2] }
 
 binding_start_list:
 (* always ends in a "," *)
