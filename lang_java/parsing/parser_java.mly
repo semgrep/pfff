@@ -364,7 +364,7 @@ name:
      { $1@[TypeArgs_then_Id($4,$6)] }
 
 identifier_:
- | identifier                       { Id $1 }
+ | identifier                       { pr2 "id\n"; Id $1 }
  | identifier LT_GENERIC type_arguments_args_opt GT { Id_then_TypeArgs($1, $3) }
 
 /*(*************************************************************************)*/
@@ -494,7 +494,7 @@ array_access:
 
 method_invocation:
  | name LP argument_list_opt RP
-        {
+        { pr2 "name\n";
           match List.rev $1 with
           (* TODO: lose information of TypeArgs_then_Id *)
           | ((Id x) | (TypeArgs_then_Id (_, Id x)))::xs ->
@@ -526,9 +526,8 @@ argument:
 /*(*2 Arithmetic *)*/
 /*(*----------------------------*)*/
 
-postfix_expression:
+postfix_expression: (* EJ todo maybe need to add typed metavars here *)
  | primary  { $1 }
- | LP IDENTIFIER COLON type_ RP { TypedMetavar($2, $3, $4)  }
  | name     {
      (* Ambiguity. It could be a field access (Dot) or a qualified
       * name (Name). See ast_java.ml note on the Dot constructor for
@@ -538,9 +537,9 @@ postfix_expression:
       *)
      match List.rev $1 with
      | (Id id)::x::xs ->
-         Dot (Name (name (List.rev (x::xs))), Parse_info.fake_info ".", id)
+         pr2 "case 1\n"; Dot (Name (name (List.rev (x::xs))), Parse_info.fake_info ".", id)
      | _ ->
-         Name (name $1)
+         pr2 "case 2\n"; Name (name $1)
    }
 
  | post_increment_expression  { $1 }
@@ -823,10 +822,11 @@ statement_expression:
  | pre_decrement_expression  { $1 }
  | post_increment_expression  { $1 }
  | post_decrement_expression  { $1 }
- | method_invocation  { $1 }
+ | method_invocation  { pr2 "method\n"; $1 }
  | class_instance_creation_expression  { $1 }
  /*(* sgrep-ext: to allow '$S;' in sgrep *)*/
- | IDENTIFIER { Flag_parsing.sgrep_guard ((Name (name [Id $1])))  }
+ | IDENTIFIER { pr2 "identifier\n"; Flag_parsing.sgrep_guard ((Name (name [Id $1])))  }
+ | LP IDENTIFIER COLON type_ RP { Flag_parsing.sgrep_guard (TypedMetavar($2, $3, $4))  }
 
 
 if_then_statement: IF LP expression RP statement
