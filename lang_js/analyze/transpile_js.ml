@@ -153,6 +153,12 @@ let compile_pattern (expr, fname, fpname) varname pat =
         *   var {...a} = b --> var a = <spread>(b)
         *
         * cf. xhp_attribute transpilation
+        *
+        * TODO:
+        *   Apply(
+        *     IdSpecial(Spread, fake "omit"),
+        *     [Id (varname, _), ...<all omitted keys>]
+        *   )
         *)
        let init_builder (_name, _tok) =
          A.Apply (
