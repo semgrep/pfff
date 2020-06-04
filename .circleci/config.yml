@@ -5,7 +5,15 @@ jobs:
       - image: returntocorp/sgrep-build:2.1
     steps:
       - checkout
-      - run: ./scripts/install-opam-deps
-      - run: ./scripts/build
-      - run: ./scripts/test
-      - run: ./scripts/install
+      - run:
+          - name: install opam deps
+          - command: ./scripts/install-opam-deps
+      - run:
+          - name: build
+          - command: ./scripts/build
+      - run:
+          - name: test
+          - command: ./scripts/test
+      - run:
+          - name: install
+          - command: ./scripts/install
