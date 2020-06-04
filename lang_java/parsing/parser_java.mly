@@ -434,6 +434,8 @@ primary_no_new_array:
  | class_literal       { $1 }
  /*(* javaext: ? *)*/
  | method_reference { $1 }
+ /*(* javaext: ? *) */
+ | array_creation_expression_with_initializer { $1 }
 
 literal:
  | TRUE   { Literal (Bool (true, $1)) }
@@ -466,7 +468,8 @@ array_creation_expression:
        { NewArray ($1, $2, List.rev $3, $4, None) }
  | NEW name dim_exprs dims_opt
        { NewArray ($1, TClass (class_type ($2)), List.rev $3, $4, None) }
- /*(* javaext: ? *)*/
+
+array_creation_expression_with_initializer:
  | NEW primitive_type dims array_initializer
        { NewArray ($1, $2, [], $3, Some $4) }
  | NEW name dims array_initializer
