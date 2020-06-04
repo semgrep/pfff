@@ -146,7 +146,7 @@ let compile_pattern (expr, fname, fpname) varname pat =
                     pname)
        in
        var_of_simple_pattern (expr, fname) init_builder pat
-     | C.PatDots (_ tok, pat) ->
+     | C.PatDots (_tok, pat) ->
        (* Need to effectively augment JS semantics here, so transformation target needs to
         * be impossible in actual JS:
         *
@@ -162,7 +162,7 @@ let compile_pattern (expr, fname, fpname) varname pat =
         *)
        let init_builder (_name, _tok) =
          A.Apply (
-           A.IdSpecial(A.Spread, fake "spread"),
+           A.IdSpecial(A.Spread, fake "omit"),
            [A.Id (varname, ref A.NotResolved)]
          )
        in
