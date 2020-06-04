@@ -5,11 +5,4 @@
 set -eu
 
 eval $(opam env)
-
-# TODO: this is a weird solution. We shouldn't have to install the test cases.
-prefix="/usr/local"
-share="$prefix/share"
-sudo mkdir -p share
-sudo ln -s "$(pwd)" $share/pfff
-
-make test
+PFFF_HOME=$(pwd) make test

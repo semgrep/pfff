@@ -9,5 +9,3 @@ jobs:
       - run: ./scripts/build
       - run: ./scripts/test
       - run: ./scripts/install
-# The previous config was defining a so-called workflow with two independent
-# jobs, 'build' and 'test', achieving some parallelism.
