@@ -6,14 +6,14 @@ jobs:
     steps:
       - checkout
       - run:
-          - name: Install opam dependencies
-          - command: ./scripts/install-opam-deps
+          name: Install opam dependencies
+          command: ./scripts/install-opam-deps
       - run:
-          - name: Build
-          - command: ./scripts/build
+          name: Build
+          command: ./scripts/build
       - run:
-          - name: Test
-          - command: ./scripts/test
+          name: Test
+          command: ./scripts/test
       - run:
-          - name: Install
-          - command: ./scripts/install
+          name: Install
+          command: ./scripts/install
