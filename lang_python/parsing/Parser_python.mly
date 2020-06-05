@@ -579,6 +579,8 @@ excepthandler:
   | EXCEPT              ":" suite { ExceptHandler ($1, None, None, $3) }
   | EXCEPT test         ":" suite { ExceptHandler ($1, Some $2, None, $4) }
   | EXCEPT test AS NAME ":" suite { ExceptHandler ($1, Some $2, Some $4, $6)}
+  (* python2: *)
+  | EXCEPT test "," NAME ":" suite { ExceptHandler ($1, Some $2, Some $4, $6) }
 
 with_stmt: WITH with_inner { $2 $1 }
 
