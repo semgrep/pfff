@@ -117,6 +117,13 @@ let expr_to_typename expr =
         pr2_gen expr;
         raise Todo
 
+let fail_if_metavar_on_typecheck typ =
+  match typ with
+    | TClass (((t, _), _)::_) -> 
+       if (t.[0] = '$') then failwith "No support for metavariable types" 
+       else () 
+    | _ -> ()
+
 let mk_adecl_or_adecls = function
   | [] -> ADecls []
   | [x] -> ADecl x
@@ -417,9 +424,7 @@ bound: ref_type_and_list { $1 }
 /*(*************************************************************************)*/
 
 typed_metavar:
- | LP type_ IDENTIFIER RP { (match $2 with
-                              | TClass (((typ, _), _)::_) -> if (typ.[0] = '$') then failwith "No support for metavariable types" else () 
-                              | _ -> () );
+ | LP type_ IDENTIFIER RP { fail_if_metavar_on_typecheck $2;
                             Flag_parsing.sgrep_guard (TypedMetavar($3, Parse_info.fake_info " ", $2))  }
 
 primary:
