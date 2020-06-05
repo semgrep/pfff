@@ -72,7 +72,7 @@ beforedepend:: lexer_cpp.ml
 OCAMLYACC=menhir --unused-tokens --explain
 
 parser_cpp.ml parser_cpp.mli: parser_cpp.mly
-	$(OCAMLYACC) $< 2> $(MENHIRLOG) && $(SCRIPTDIR)/check_menhir_conflicts.sh $(MENHIRLOG) $(NUM_PERMITTED_CONFLICTS) $(LANG) parser_cpp.ml parser_cpp.mli
+	$(OCAMLYACC) $< 2>&1 | tee $(MENHIRLOG) && $(SCRIPTDIR)/check_menhir_conflicts.sh $(MENHIRLOG) $(NUM_PERMITTED_CONFLICTS) $(LANG) parser_cpp.ml parser_cpp.mli
 
 clean::
 	rm -f parser_cpp.ml parser_cpp.mli parser_cpp.output parser_cpp.conflicts $(MENHIRLOG)
