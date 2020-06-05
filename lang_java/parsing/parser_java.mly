@@ -686,6 +686,8 @@ left_hand_side:
  | name          { Name (name $1) }
  | field_access  { $1 }
  | array_access  { $1 }
+ /*(* sgrep-ext: *)*/
+ | typed_metavar { $1 }
 
 assignment_operator:
  | EQ  { (fun e1 e2 -> Assign (e1, $1, e2))  }
