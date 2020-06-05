@@ -391,7 +391,7 @@ and decls = decl list
 (*****************************************************************************)
 (* Toplevel *)
 (*****************************************************************************)
-type import = 
+type import =
   | ImportAll of tok * qualified_ident * tok (* * *)
   | ImportFrom of tok * qualified_ident * ident
 
@@ -426,6 +426,8 @@ type any =
   | AClass of class_decl
   | ADecl of decl
   | ADecls of decls
+  | ADirectiveStmt of import
+  | ADirectiveStmts of import list
   | AProgram of program
  (* with tarzan *)
 

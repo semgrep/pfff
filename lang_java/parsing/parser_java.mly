@@ -291,8 +291,10 @@ declaration:
  | method_declaration  { Method $1 }
 
 sgrep_spatch_pattern:
- | expression         EOF { AExpr $1 }
- | item_no_dots       EOF { mk_adecl_or_adecls $1 }
+ | import_declaration EOF           { ADirectiveStmt ((fun (_, imp) -> imp) $1) }
+ | import_declaration import_declarations EOF  { ADirectiveStmts (List.map (fun (_, imp) -> imp) ($1::$2)) }
+ | expression EOF                   { AExpr $1 }
+ | item_no_dots EOF                 { mk_adecl_or_adecls $1 }
  | item_no_dots item_sgrep_list EOF { mk_adecl_or_adecls ($1 @ (List.flatten $2)) }
 
 item_no_dots:

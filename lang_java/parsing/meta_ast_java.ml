@@ -520,6 +520,7 @@ let vof_compilation_unit {
   let arg = OCaml.vof_option vof_package v_package in
   let bnd = ("package", arg) in let bnds = bnd :: bnds in OCaml.VDict bnds
 
+let vof_directive_stmts v = OCaml.vof_list vof_import v
 
 let vof_program v = vof_compilation_unit v
 
@@ -541,5 +542,7 @@ let vof_any =
   | AClass v1 ->
       let v1 = vof_class_decl v1 in OCaml.VSum (("AClass", [ v1 ]))
   | ADecl v1 -> let v1 = vof_decl v1 in OCaml.VSum (("ADecl", [ v1 ]))
+  | ADirectiveStmt v1 -> let v1 = vof_import v1 in OCaml.VSum (("ADirectiveStmt", [ v1 ]))
+  | ADirectiveStmts v1 -> let v1 = vof_directive_stmts v1 in OCaml.VSum (("ADirectiveStmts", [ v1 ]))
   | AProgram v1 ->
       let v1 = vof_program v1 in OCaml.VSum (("AProgram", [ v1 ]))
