@@ -12,6 +12,10 @@
  * Many modifications by Yoann Padioleau. Attempts to conform to:
  * The Java Language Specification, Third Edition, with some fixes from
  * http://www.cmis.brighton.ac.uk/staff/rnb/bosware/javaSyntax/syntaxV2.html
+ * (broken link)
+ *
+ * Official (but incomplete) specification as of Java 14:
+ * https://docs.oracle.com/javase/specs/jls/se14/html/jls-19.html
  *
  * More modifications by Yoann Padioleau to support more recent versions.
  * Copyright (C) 2011 Facebook
@@ -463,12 +467,22 @@ class_instance_creation_expression:
  | name DOT NEW identifier LP argument_list_opt RP class_body_opt
        { NewQualifiedClass ((Name (name $1)), $3, $4, $6, $8) }
 
+/*
+   A new array that cannot be accessed right away by appending [index]:
+
+    new String[2][1]  // a 2-dimensional array
+*/
 array_creation_expression:
  | NEW primitive_type dim_exprs dims_opt
        { NewArray ($1, $2, List.rev $3, $4, None) }
  | NEW name dim_exprs dims_opt
        { NewArray ($1, TClass (class_type ($2)), List.rev $3, $4, None) }
 
+/*
+   A new array that can be accessed right away by appending [index] as follows:
+
+    new String[] { "abc", "def" }[1]  // a string
+*/
 array_creation_expression_with_initializer:
  | NEW primitive_type dims array_initializer
        { NewArray ($1, $2, [], $3, Some $4) }
