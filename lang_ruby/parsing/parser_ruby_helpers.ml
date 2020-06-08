@@ -264,7 +264,7 @@ let hash_literal_as_args args =
           | _ -> raise Dyp.Giveup
         in
         let args,blk = hash_args [] lst in
-        let acc = Hash(false,List.rev args,p)::acc in
+        let acc = Hash(false, (p, List.rev args, p))::acc in
         let acc = match blk with
           | None -> acc
           | Some b -> b::acc
@@ -490,7 +490,7 @@ let rec rhs_do_codeblock = function
   | Binop(_,_,r)
   | Call(r,[],None,_)
   | Ternary(_,_,r,_) -> rhs_do_codeblock r
-  | Hash(false,el,_) -> rhs_do_codeblock (Utils.last el)
+  | Hash(false,(_, el,_)) -> rhs_do_codeblock (Utils.last el)
 
   | e -> 
       Printf.eprintf "got: %s\n" (Ast_printer.string_of_expr e);

@@ -71,7 +71,7 @@ and format_expr ppf expr = match expr with
   | Operator(bop,_) -> format_binop ppf bop
   | UOperator(uop,_) -> pp_print_string ppf (H.str_uop uop)
 
-  | Hash(_,el,_) -> fprintf ppf "{@[%a@]}" format_expr_comma_list el
+  | Hash(_,(_, el,_)) -> fprintf ppf "{@[%a@]}" format_expr_comma_list el
   | Array(_, el,_) -> fprintf ppf "[@[%a@]]" format_expr_comma_list el
 
   | Tuple(el,_) -> fprintf ppf "Tup(@[%a@])" format_expr_comma_list el

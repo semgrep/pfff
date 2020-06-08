@@ -719,7 +719,7 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         let acc,l' = refactor_list refactor_star_expr (acc,DQueue.empty) l in
           acc, ELit (Array (DQueue.to_list l'))
 
-    | Ast.Hash(_b,l,pos) ->
+    | Ast.Hash(_b,(pos, l, _)) ->
         let acc, hl = refactor_hash_list acc l pos in
           acc, ELit (Hash hl)
 

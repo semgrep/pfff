@@ -130,7 +130,7 @@ type expr =
   | Operator of binary_op wrap
   | UOperator of unary_op wrap
 
-  | Hash of bool * expr list * tok
+  | Hash of bool * expr list bracket
   | Array of expr list bracket
   | Tuple of expr list * tok
 

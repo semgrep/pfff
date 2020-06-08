@@ -439,7 +439,7 @@ primary:
       }
 
   | T_LBRACK eols array_body<xs> eols T_RBRACK { Array($1, xs, $5) }
-  | T_LBRACE<pos> eols array_body<xs> eols T_RBRACE { Hash(true, xs, pos) }
+  | T_LBRACE eols array_body<xs> eols T_RBRACE { Hash(true, ($1, xs, $5)) }
 
 
   | K_RETURN<pos> { S (Return(pos, [])) }

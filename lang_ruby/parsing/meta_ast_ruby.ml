@@ -28,11 +28,10 @@ let rec vof_expr =
       let v1 = vof_unary_op v1
       and v2 = vof_tok v2
       in OCaml.VSum (("UOperator", [ v1; v2 ]))
-  | Hash ((v1, v2, v3)) ->
+  | Hash ((v1, v2)) ->
       let v1 = OCaml.vof_bool v1
-      and v2 = OCaml.vof_list vof_expr v2
-      and v3 = vof_tok v3
-      in OCaml.VSum (("Hash", [ v1; v2; v3 ]))
+      and v2 = vof_bracket (OCaml.vof_list vof_expr) v2
+      in OCaml.VSum (("Hash", [ v1; v2 ]))
   | Array ((v1)) ->
       let v1 = vof_bracket (OCaml.vof_list vof_expr) v1
       in OCaml.VSum (("Array", [ v1 ]))

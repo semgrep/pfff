@@ -37,7 +37,7 @@ let rec cmp_expr e1 e2 = match e1,e2 with
   | UOperator(u1,_), UOperator(u2,_) -> pcompare u1 u2
   | Operator(b1,_), Operator(b2,_) -> pcompare b1 b2
 
-  | Hash (b1,el1,_), Hash (b2,el2,_) ->
+  | Hash (b1,(_, el1,_)), Hash (b2,(_, el2,_)) ->
       cmp2 (pcompare b1 b2) cmp_expr_list el1 el2
 
   | S Return(_, el1), S Return(_, el2)
@@ -189,7 +189,7 @@ let tok_of = function
   | Unary ( (_, pos) , _ )
   | Binop ( _ , (_, pos) , _)
   | Ternary ( _ , _ , _ , pos)
-  | Hash ( _,_,pos)
+  | Hash ( _,(pos, _,_))
   | Array (pos, _  , _)
   | Tuple ( _  , pos)
   | Call ( _ , _  , _ , pos)
@@ -275,8 +275,8 @@ let rec mod_expr f expr =
             (mod_expr f expr3),
             pos
           )
-      | Hash(b,el, pos) ->
-          Hash(b,List.map (mod_expr f) el, pos)
+      | Hash(b,(pos1, el, pos2)) ->
+          Hash(b, (pos1, List.map (mod_expr f) el, pos2))
       | Array(pos1, el, pos2) ->
           Array(pos1, List.map (mod_expr f) el, pos2)
       | Tuple(el, pos) ->
@@ -375,7 +375,7 @@ let set_tok pos = function
   | Unary((unary_op,_), e) -> Unary((unary_op,pos), e)
   | Binop(expr1, (binary_op,_), expr2) -> Binop(expr1, (binary_op,pos), expr2)
   | Ternary(expr1, expr2, expr3, _) -> Ternary(expr1, expr2, expr3, pos)
-  | Hash(b,el, _) -> Hash(b,el, pos)
+  | Hash(b,(_, el, pos2)) -> Hash(b,(pos, el, pos2))
   | Array(_, el, pos2) -> Array(pos, el, pos2)
   | Tuple(el, _) -> Tuple(el, pos)
   | Call(expr1, el, eo, _) -> Call(expr1, el, eo, pos)
