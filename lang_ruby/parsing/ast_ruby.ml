@@ -140,7 +140,7 @@ type expr =
 
   | Call of expr * expr list * expr option * tok
 
-  | CodeBlock of bool * formal_param list option * expr list * tok
+  | CodeBlock of bool * formal_param list option * stmts * tok
 
   | S of stmt
   | D of definition
@@ -180,13 +180,13 @@ and lit_kind =
  *)
 and stmt =
   | Empty
-  | Block of expr list * tok
+  | Block of stmts * tok
 
-  | If of tok * expr * expr list * expr list
-  | While of tok * bool * expr * expr list
-  | Until of tok * bool * expr * expr list
-  | Unless of tok * expr * expr list * expr list
-  | For of tok * formal_param list * expr * expr list
+  | If of tok * expr * stmts * stmts option2
+  | While of tok * bool * expr * stmts
+  | Until of tok * bool * expr * stmts
+  | Unless of tok * expr * expr list * stmts
+  | For of tok * formal_param list * expr * stmts
 
   | Return of tok * expr list
   | Yield of tok * expr list
@@ -198,15 +198,20 @@ and stmt =
   and case_block = {
     case_guard : expr;
     case_whens: (expr list * expr list) list;
-    case_else: expr list;
+    case_else: stmts option2;
   }
   
   and body_exn = {
-    body_exprs: expr list;
+    body_exprs: stmts;
     rescue_exprs: (expr * expr) list;
-    ensure_expr: expr list;
-    else_expr: expr list;
+    ensure_expr: stmts option2;
+    else_expr: stmts option2;
   }
+
+and stmts = expr list
+
+(* TODO: (tok * 'a) option *)
+and 'a option2 = 'a
 
 (*****************************************************************************)
 (* Definitions *)
@@ -216,8 +221,8 @@ and definition =
   | ClassDef of tok * expr * inheritance_kind option * body_exn
   | MethodDef of tok * expr * formal_param list * body_exn
 
-  | BeginBlock of tok * expr list
-  | EndBlock of tok * expr list
+  | BeginBlock of tok * stmts
+  | EndBlock of tok * stmts
 
   | Alias of tok * expr * expr
   | Undef of tok * expr list
@@ -250,6 +255,6 @@ and definition =
 (* Toplevel *)
 (*****************************************************************************)
 
-type program = expr list
+type program = stmts
  (* with tarzan *)
 
