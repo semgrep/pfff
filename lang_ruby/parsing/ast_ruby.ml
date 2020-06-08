@@ -74,6 +74,51 @@ type id_kind =
   | ID_Builtin   (* prefixed by $, followed by non-alpha *)
   | ID_Assign of id_kind (* postfixed by = *)
 
+(* ------------------------------------------------------------------------- *)
+(* Operators *)
+(* ------------------------------------------------------------------------- *)
+and unary_op = 
+  | Op_UMinus    (* -x *)  | Op_UPlus     (* +x *)
+  | Op_UBang     (* !x *)
+  | Op_UTilde    (* ~x *)
+  | Op_UNot      (* not x *)
+  | Op_UAmper    (* & *)
+  | Op_UStar     (* * *)
+
+  | Op_UScope    (* ::x *)
+
+
+and binary_op = 
+  | Op_PLUS     (* + *)  | Op_MINUS    (* - *)
+  | Op_TIMES    (* * *)  | Op_REM      (* % *)  | Op_DIV      (* / *)
+  | Op_CMP      (* <=> *)
+  | Op_EQ   (* == *)  | Op_EQQ      (* === *)
+  | Op_NEQ      (* != *)
+  | Op_GEQ      (* >= *)  | Op_LEQ      (* <= *)
+  | Op_LT       (* < *)  | Op_GT       (* > *)
+  | Op_AND      (* && *)  | Op_OR   (* || *)
+  | Op_BAND     (* & *)  | Op_BOR      (* | *)
+  | Op_MATCH    (* =~ *)
+  | Op_NMATCH   (* !~ *)
+  | Op_XOR      (* ^ *)
+  | Op_POW      (* ** *)
+  | Op_kAND     (* and *)  | Op_kOR      (* or *)
+
+  | Op_ASSIGN   (* = *)
+  | Op_OP_ASGN of binary_op  (* +=, -=, ... *)
+
+  | Op_DOT      (* . *)
+  | Op_SCOPE    (* :: *)
+
+  | Op_ASSOC    (* => *)
+
+  | Op_AREF     (* [] *)
+  | Op_ASET     (* []= *)
+  | Op_LSHIFT   (* < < *)  | Op_RSHIFT   (* > > *)
+
+  | Op_DOT2     (* .. *)
+  | Op_DOT3     (* ... *)
+
 (*****************************************************************************)
 (* Expression *)
 (*****************************************************************************)
@@ -125,48 +170,6 @@ and lit_kind =
     and string_contents = 
       | StrChars of string
       | StrExpr of expr
-
-and unary_op = 
-  | Op_UMinus    (* -x *)  | Op_UPlus     (* +x *)
-  | Op_UBang     (* !x *)
-  | Op_UTilde    (* ~x *)
-  | Op_UNot      (* not x *)
-  | Op_UAmper    (* & *)
-  | Op_UStar     (* * *)
-
-  | Op_UScope    (* ::x *)
-
-
-and binary_op = 
-  | Op_PLUS     (* + *)  | Op_MINUS    (* - *)
-  | Op_TIMES    (* * *)  | Op_REM      (* % *)  | Op_DIV      (* / *)
-  | Op_CMP      (* <=> *)
-  | Op_EQ   (* == *)  | Op_EQQ      (* === *)
-  | Op_NEQ      (* != *)
-  | Op_GEQ      (* >= *)  | Op_LEQ      (* <= *)
-  | Op_LT       (* < *)  | Op_GT       (* > *)
-  | Op_AND      (* && *)  | Op_OR   (* || *)
-  | Op_BAND     (* & *)  | Op_BOR      (* | *)
-  | Op_MATCH    (* =~ *)
-  | Op_NMATCH   (* !~ *)
-  | Op_XOR      (* ^ *)
-  | Op_POW      (* ** *)
-  | Op_kAND     (* and *)  | Op_kOR      (* or *)
-
-  | Op_ASSIGN   (* = *)
-  | Op_OP_ASGN of binary_op  (* +=, -=, ... *)
-
-  | Op_DOT      (* . *)
-  | Op_SCOPE    (* :: *)
-
-  | Op_ASSOC    (* => *)
-
-  | Op_AREF     (* [] *)
-  | Op_ASET     (* []= *)
-  | Op_LSHIFT   (* < < *)  | Op_RSHIFT   (* > > *)
-
-  | Op_DOT2     (* .. *)
-  | Op_DOT3     (* ... *)
 
 (*****************************************************************************)
 (* Statement *)
