@@ -32,9 +32,8 @@ JSONCMA=external/deps-netsys/netsys_oothr.cma external/deps-netsys/netsys.cma\
         external/deps-netstring/netstring.cma\
         external/json-wheel/jsonwheel.cma 
 
-#ifeq ($(FEATURE_RUBY), 1)
+# for ruby
 DYPCMA=external/dyp/dyp.cma
-#endif
 
 # could be FEATURE_OCAMLGRAPH, or should give dependencies between features
 GRAPHCMA=external/ocamlgraph/graph.cma commons_wrappers/graph/lib.cma
@@ -46,7 +45,8 @@ GRAPHDIRS=commons_wrappers/graph
 # Main variables
 #------------------------------------------------------------------------------
 
-SYSLIBS=bigarray.cma str.cma unix.cma
+# nums is for Big_int for Ruby
+SYSLIBS=bigarray.cma str.cma unix.cma nums.cma
 SYSLIBS+=$(OCAMLCOMPILERCMA)
 
 #old: I used to have a BASICLIBS for small pfff utilities and LIBS for 
@@ -106,16 +106,12 @@ LIBS= commons/lib.cma \
      lang_html/analyze/lib.cma \
     lang_css/parsing/lib.cma \
     lang_web/parsing/lib.cma \
+    lang_ruby/parsing/lib.cma \
+     lang_ruby/analyze/lib.cma \
     lang_GENERIC/parsing/lib.cma \
      lang_GENERIC/analyze/lib.cma \
     lang_FUZZY/parsing/lib.cma \
 
-ifeq ($(FEATURE_RUBY), 1)
-LIBS+=\
-    lang_ruby/parsing/lib.cma \
-     lang_ruby/analyze/lib.cma \
-
-endif
 
 MAKESUBDIRS=commons commons_ocollection commons_core \
   $(GRAPHDIRS) \
@@ -165,18 +161,13 @@ MAKESUBDIRS=commons commons_ocollection commons_core \
   lang_css/parsing \
   lang_web/parsing \
   lang_text \
+  lang_ruby/parsing \
+   lang_ruby/analyze \
   lang_GENERIC/parsing \
    lang_GENERIC/analyze \
   lang_FUZZY/parsing \
   metagen \
   demos
-
-ifeq ($(FEATURE_RUBY), 1)
-MAKESUBDIRS+=\
-  lang_ruby/parsing \
-   lang_ruby/analyze \
-
-endif
 
 INCLUDEDIRS=$(MAKESUBDIRS) \
  external/deps-netsys \
@@ -357,17 +348,10 @@ INSTALL_SUBDIRS= \
   lang_haskell/parsing lang_haskell/analyze \
   lang_csharp/parsing lang_csharp/analyze \
   lang_html/parsing lang_html/analyze \
+  lang_ruby/parsing  lang_ruby/analyze \
   lang_text/ \
   lang_GENERIC/parsing  lang_GENERIC/analyze \
   lang_FUZZY/parsing \
-
-ifeq ($(FEATURE_RUBY), 1)
-INSTALL_SUBDIRS+=\
-  lang_ruby/parsing  lang_ruby/analyze \
-
-endif
-
-
 
 
 install-libs:: all all.opt
@@ -439,7 +423,7 @@ website:
 
 
 graph:
-	~/github/codegraph/_build/default/bin/main_codegraph_build.exe -lang cmt -symlinks -derived_data -verbose .
+	~/github/codegraph/_build/default/bin/main_codegraph_build.exe -lang cmt -derived_data -verbose .
 prolog:
 	./codequery.opt -lang cmt -build .
 	mv facts.pl facts_pl
