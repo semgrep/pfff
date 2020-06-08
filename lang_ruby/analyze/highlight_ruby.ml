@@ -92,7 +92,7 @@ let visit_program ~tag_hook _prefs (_program, toks) =
     (* values  *)
     | T.K_TRUE ii | T.K_FALSE ii ->
        tag ii Boolean
-    | T.T_FLOAT (_,_, ii) | T.T_BIGNUM (_, ii) | T.T_FIXNUM (_, ii) ->
+    | T.T_FLOAT (_,_, ii) | T.T_NUM (_, ii) ->
        tag ii Number
     | T.K_NIL ii ->
        tag ii Null

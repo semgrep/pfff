@@ -4,8 +4,6 @@ open Ast_ruby
 
 let vof_tok v = Meta_parse_info.vof_info_adjustable_precision v
 
-let vof_big_int _v = OCaml.VUnit
-
 let rec vof_expr =
   function
   | Literal ((v1, v2)) ->
@@ -155,10 +153,8 @@ let rec vof_expr =
 
 and vof_lit_kind =
   function
-  | FixNum v1 ->
-      let v1 = OCaml.vof_int v1 in OCaml.VSum (("FixNum", [ v1 ]))
-  | BigNum v1 ->
-      let v1 = vof_big_int v1 in OCaml.VSum (("BigNum", [ v1 ]))
+  | Num v1 ->
+      let v1 = OCaml.vof_string v1 in OCaml.VSum (("Num", [ v1 ]))
   | Float ((v1, v2)) ->
       let v1 = OCaml.vof_string v1
       and v2 = OCaml.vof_float v2

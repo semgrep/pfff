@@ -102,9 +102,7 @@ module Code_F(PP : CfgPrinter) = struct
         fprintf ppf "%a.%a" PP.format_def_id e1 PP.format_msg_id e2
 
   let format_literal ppf : literal -> unit = function
-    | FixNum i -> fprintf ppf "%d" i
-    | BigNum big -> 
-        fprintf ppf "%s" (Big_int.string_of_big_int big)
+    | Num i -> fprintf ppf "%s" i
     | Float(s,_f) -> fprintf ppf "%s" s
     | String str -> fprintf ppf "%%{%s}" (escape_chars str ['{'; '}'])
     | Atom str -> fprintf ppf ":\"%s\"" (escape_chars str ['"'])

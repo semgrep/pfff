@@ -103,8 +103,7 @@ let rec cmp_expr e1 e2 = match e1,e2 with
   | _ -> Utils.cmp_ctors e1 e2
 
 and cmp_lit c1 c2 = match c1,c2 with
-  | FixNum i1, FixNum i2 -> pcompare i1 i2
-  | BigNum b1, BigNum b2 -> Big_int.compare_big_int b1 b2
+  | Num i1, Num i2 -> pcompare i1 i2
   | Float(s1,f1), Float (s2,f2) -> 
       let c1 = pcompare (float_of_string s1) (float_of_string s2) in
         cmp2 c1 pcompare f1 f2

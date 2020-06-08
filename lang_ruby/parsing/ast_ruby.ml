@@ -96,8 +96,7 @@ type expr =
   | D of definition
 
 and lit_kind = 
-  | FixNum of int
-  | BigNum of Big_int.big_int
+  | Num of string
   | Float of string * float
 
   | String of string_kind

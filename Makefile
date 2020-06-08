@@ -45,8 +45,7 @@ GRAPHDIRS=commons_wrappers/graph
 # Main variables
 #------------------------------------------------------------------------------
 
-# nums is for Big_int for Ruby
-SYSLIBS=bigarray.cma str.cma unix.cma nums.cma
+SYSLIBS=bigarray.cma str.cma unix.cma
 SYSLIBS+=$(OCAMLCOMPILERCMA)
 
 #old: I used to have a BASICLIBS for small pfff utilities and LIBS for 

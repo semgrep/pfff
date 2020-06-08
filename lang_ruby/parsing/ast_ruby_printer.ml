@@ -27,9 +27,7 @@ and format_string_kind ppf = function
   | Tick sc -> fprintf ppf "`%a`" format_interp_string sc
 
 and format_lit_kind ppf kind = match kind with
-  | FixNum i -> fprintf ppf "%d" i
-  | BigNum big -> 
-      fprintf ppf "%s" (Big_int.string_of_big_int big)
+  | Num i -> fprintf ppf "%s" i
   | Float(s,_f) -> fprintf ppf "%s" s
   | String (skind) -> format_string_kind ppf skind
   | Atom sc -> fprintf ppf ":%a" format_interp_string sc

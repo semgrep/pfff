@@ -216,7 +216,7 @@ let special_of_string pos x : expr =
   | "true"  -> EId (True)
   | "false" -> EId (False)
   | "__FILE__" -> ELit (String (Parse_info.file_of_info pos))
-  | "__LINE__" -> ELit (FixNum (Parse_info.line_of_info pos))
+  | "__LINE__" -> ELit (Num (spf "%d" (Parse_info.line_of_info pos)))
   | _ -> raise (Invalid_argument "special_of_string")
 
 let refactor_id_kind pos : Ast.id_kind -> var_kind = function
@@ -571,11 +571,9 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         in
           acc, EId (UScope s)
 
-    | Ast.Unary(Ast.Op_UMinus, Ast.Literal(Ast.FixNum i,_), _pos) -> 
-        acc, ELit (FixNum (-i))
+    | Ast.Unary(Ast.Op_UMinus, Ast.Literal(Ast.Num i,_), _pos) -> 
+        acc, ELit (Num ("-"^i))
 
-    | Ast.Unary(Ast.Op_UMinus, Ast.Literal(Ast.BigNum i,_), _pos) -> 
-        acc, ELit (BigNum (Big_int.minus_big_int i))
 
     | Ast.Unary(Ast.Op_UMinus, Ast.Literal(Ast.Float(s,f),_), _pos) -> 
         assert(s.[0] != '-');
@@ -775,7 +773,7 @@ and construct_explicit_regexp acc pos re_interp mods : stmt acc * expr =
       | Some c -> [SE (ELit (String (String.make 1 c)))]
     in
     let new_opts = match re_opts with
-    | None -> (SE str)::(SE (ELit (FixNum 0)))::new_opts
+    | None -> (SE str)::(SE (ELit (Num "0")))::new_opts
     | Some v -> (SE str)::(SE v)::new_opts
     in
     let call = C.mcall ~lhs ~targ:(EId (UScope "Regexp"))
@@ -823,8 +821,7 @@ and refactor_interp_string acc istr pos =
             helper acc e tl
               
 and refactor_lit acc (l : Ast.lit_kind) pos : stmt acc * expr = match l with
-  | Ast.FixNum i -> acc, ELit (FixNum i)
-  | Ast.BigNum i -> acc, ELit (BigNum i)
+  | Ast.Num i -> acc, ELit (Num i)
   | Ast.Float(s,f) -> acc, ELit (Float(s,f))
 
   | Ast.String(Ast.Single s) -> 
