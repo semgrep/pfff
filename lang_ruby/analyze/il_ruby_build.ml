@@ -1348,8 +1348,8 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
       let acc = acc_seen acc facc in
         acc_enqueue (mkstmt (If(g',ts,fs)) pos) acc
 
-  | Ast.S Ast.If(g,t,f,pos)
-  | Ast.S Ast.Unless(g,f,t, pos) ->
+  | Ast.S Ast.If(pos, g,t,f)
+  | Ast.S Ast.Unless(pos, g,f,t) ->
       let acc,g' = refactor_expr acc g in
       let tacc = refactor_stmt_list (acc_emptyq acc) t in
       let ts = C.seq (DQueue.to_list tacc.q) pos in
@@ -1361,12 +1361,12 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
 
   | Ast.S Ast.Case(case,pos) -> refactor_case acc case pos
 
-  | Ast.S Ast.Return(args,pos) ->
+  | Ast.S Ast.Return(pos, args) ->
       let acc,args' = refactor_list refactor_tuple_expr (acc,DQueue.empty) args in
       let tup = make_tuple_option (DQueue.to_list args') in
         acc_enqueue (C.return ?v:tup pos) acc
 
-  | Ast.S Ast.Yield(args,pos) ->
+  | Ast.S Ast.Yield(pos, args) ->
       let acc,args' = refactor_list refactor_method_arg_no_cb (acc,DQueue.empty) args in
         acc_enqueue (C.yield ~args:(DQueue.to_list args') pos) acc
 
@@ -1375,7 +1375,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
       let acc = {acc with seen = StrSet.union acc.seen blk_acc.seen} in
         acc_enqueue (C.seq (DQueue.to_list blk_acc.q) pos) acc
 
-  | Ast.Binop(e1,Ast.Op_ASSIGN,(Ast.S Ast.Yield(args,_pos1)), pos2) ->
+  | Ast.Binop(e1,Ast.Op_ASSIGN,(Ast.S Ast.Yield(_pos1, args)), pos2) ->
       let acc,e1',after = refactor_lhs acc e1 in
       let acc,args' = refactor_list refactor_method_arg_no_cb (acc,DQueue.empty) args in
       let yield_s = C.yield ~lhs:e1' ~args:(DQueue.to_list args') pos2 in
@@ -1463,7 +1463,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
       let acc,e' = refactor_expr acc e in
         acc_enqueue (C.expr e' (H.tok_of e)) acc
 
-  | Ast.S Ast.While(true,g,body, pos) -> (* do .. while *)
+  | Ast.S Ast.While(pos, true,g,body) -> (* do .. while *)
       let gpos = H.tok_of g in
       let body_acc = refactor_stmt_list (acc_emptyq acc) body in
       let body_acc,g' = refactor_expr body_acc g in
@@ -1473,7 +1473,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
       let acc = acc_seen acc body_acc in
         acc_enqueue (C.while_s (EId True) body' pos) acc
 
-  | Ast.S Ast.While(false,g,body, pos) -> (* while .. do *)
+  | Ast.S Ast.While(pos, false,g,body) -> (* while .. do *)
       let gpos = H.tok_of g in
       let while_acc,g' = refactor_expr (acc_emptyq acc) g in
       let body_acc = refactor_stmt_list (acc_emptyq while_acc) body in
@@ -1489,10 +1489,10 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
           let acc = acc_seen acc body_acc in
             acc_enqueue (C.while_s (EId True) while_body pos) acc
 
-  | Ast.S Ast.Until(b,g,body, pos) -> 
-      refactor_stmt acc (Ast.S (Ast.While(b,Ast.Unary(Ast.Op_UNot,g,pos),body,pos)))
+  | Ast.S Ast.Until(pos, b,g,body) -> 
+      refactor_stmt acc (Ast.S (Ast.While(pos, b,Ast.Unary(Ast.Op_UNot,g,pos),body)))
 
-  | Ast.S Ast.For(formals,guard,body, pos) ->
+  | Ast.S Ast.For(pos, formals,guard,body) ->
       let acc, formals = refactor_block_formal_list acc formals pos in
       let acc, g_expr = refactor_expr acc guard in
       let body_acc = refactor_stmt_list (acc_emptyq acc) body in

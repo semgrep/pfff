@@ -76,8 +76,8 @@ and format_expr ppf expr = match expr with
 
   | Tuple(el,_) -> fprintf ppf "Tup(@[%a@])" format_expr_comma_list el
 
-  | S Return(el,_) -> fprintf ppf "return(@[%a@])" format_expr_comma_list el
-  | S Yield(el,_) -> fprintf ppf "yield(@[%a@])" format_expr_comma_list el
+  | S Return(_, el) -> fprintf ppf "return(@[%a@])" format_expr_comma_list el
+  | S Yield(_, el) -> fprintf ppf "yield(@[%a@])" format_expr_comma_list el
 
   | S Block(el,_) -> fprintf ppf "@[<v 2>block(%a)@]" format_expr_break_list el
 
@@ -105,10 +105,10 @@ and format_expr ppf expr = match expr with
 	format_expr expr2
 	format_expr expr3
 
-  | S While (b, expr, body,_) -> format_loop ppf "while" b expr body
-  | S Until (b, expr, body,_) -> format_loop ppf "until" b expr body
+  | S While (_, b, expr, body) -> format_loop ppf "while" b expr body
+  | S Until (_, b, expr, body) -> format_loop ppf "until" b expr body
 
-  | S For ( formals, expr, body,_) -> 
+  | S For ( _, formals, expr, body) -> 
       fprintf ppf "@[<v 0>@[<v 2>for %a in %a@,%a@]@;end@]"
 	format_formals formals
 	format_expr expr
@@ -167,7 +167,7 @@ and format_expr ppf expr = match expr with
       format_ensure ppf body.ensure_expr;
       fprintf ppf "end@]"      
 	
-  | S Unless(guard,then_e,else_e,_) ->
+  | S Unless(_, guard,then_e,else_e) ->
       fprintf ppf "@[<v 0>@[<v 2>unless (%a) then@,%a@]@,"
 	format_expr guard
 	format_expr_break_list then_e;
@@ -175,7 +175,7 @@ and format_expr ppf expr = match expr with
 	fprintf ppf "@[<v 2>else@,%a@]@," format_expr_break_list else_e;
       fprintf ppf "end@]"
 
-  | S If(guard,then_e,else_e,_) ->
+  | S If(_, guard,then_e,else_e) ->
       fprintf ppf "@[<v 0>@[<v 2>if (%a) then@,%a@]@,"
 	format_expr guard
 	format_expr_break_list then_e;

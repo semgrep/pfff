@@ -280,9 +280,9 @@ let rec methodcall m args cb pos =
     | _,[S Empty],_ -> methodcall m [] cb pos
 
     | S Return(_), [], None -> m
-    | S Return([],p),args,None -> S (Return(args,p))
+    | S Return(p,[]),args,None -> S (Return(p, args))
     | S Yield(_), [], None -> m
-    | S Yield([],p),args,None -> S (Yield(args,p))
+    | S Yield(p,[]),args,None -> S (Yield(p, args))
     | Literal(True,_p), [],None
     | Literal(False,_p),[],None
     | Id((_,_p),_),     [],None -> m
@@ -590,12 +590,12 @@ let merge_stmt xs =
 
   (* we can't use is_cond_modifier to check for a rescue modifier,
      so we do it here *)     
-  | [S If(S ExnBlock _,_,_,_) | S Unless(S ExnBlock _,_,_,_)
-    | S Until(_,S ExnBlock _,_,_) | S While(_,S ExnBlock _,_,_)],
+  | [S If(_, S ExnBlock _,_,_) | S Unless(_, S ExnBlock _,_,_)
+    | S Until(_, _,S ExnBlock _,_) | S While(_, _,S ExnBlock _,_)],
       (S ExnBlock _ as correct)
   | [(S ExnBlock _ as correct)], 
-      (S If(S ExnBlock _,_,_,_) | S Unless(S ExnBlock _,_,_,_)
-      | S Until(_,S ExnBlock _,_,_) | S While(_,S ExnBlock _,_,_)) ->
+      (S If(_, S ExnBlock _,_,_) | S Unless(_, S ExnBlock _,_,_)
+      | S Until(_, _,S ExnBlock _,_) | S While(_, _,S ExnBlock _,_)) ->
       [correct]
 
   | _ ->

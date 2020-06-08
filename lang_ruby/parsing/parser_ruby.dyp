@@ -308,16 +308,16 @@ stmt:
 
   | stmt<s> K_IF<pos>     eols stmt<g> 
       { if M.is_cond_modifier g then raise Dyp.Giveup; 
-        S (If(g, [s], [], pos)) }
+        S (If(pos, g, [s], [])) }
   | stmt<s> K_UNLESS<pos> eols stmt<g>
       { if M.is_cond_modifier g then raise Dyp.Giveup; 
-        S (Unless(g, [s], [], pos)) }
+        S (Unless(pos, g, [s], [])) }
   | stmt<s> K_UNTIL<pos>  eols stmt<g> 
       { if M.is_cond_modifier g then raise Dyp.Giveup; 
-        S (Until(is_exnblock s, g, [s], pos)) }
+        S (Until(pos, is_exnblock s, g, [s])) }
   | stmt<s> K_WHILE<pos>  eols stmt<g>
       { if M.is_cond_modifier g then raise Dyp.Giveup;
-        S (While(is_exnblock s,g, [s],pos)) }
+        S (While(pos, is_exnblock s,g, [s])) }
   | stmt<s> K_RESCUE<pos> eols stmt<g>
       { if M.is_cond_modifier g then raise Dyp.Giveup;
         S (ExnBlock({body_exprs = [s]; rescue_exprs = [(S Empty,g)];
@@ -362,18 +362,18 @@ scope_END:    K_END<pos>    {S.enter_scope dyp; pos}
 expr:
   | K_RETURN<pos> call_args<xs>
       { M.well_formed_return xs; 
-        S (Return(xs,pos)) }
+        S (Return(pos, xs)) }
  /*(* call_args-->arg_comma_star_list-->arg_comma_nonempty_list->arg vs arg*)*/
   | K_RETURN<pos> arg<p>
       { match p with
-        | S Block([x],_) -> S (Return([x],pos))
+        | S Block([x],_) -> S (Return(pos, [x]))
         | arg -> if M.is_cond_modifier arg then raise Dyp.Giveup;
-                 S (Return([arg],pos)) 
+                 S (Return(pos, [arg])) 
       }
   /*(* stmt-->topcall-->command-->K_YIELD vs stmt-->expr-->K_YIELD *)*/
   | K_YIELD<pos> call_args<xs> 
       { M.well_formed_return xs;
-        S (Yield(xs,pos)) }
+        S (Yield(pos, xs)) }
 
   | expr<e1> K_AND eols expr<e2> { M.prune_left_assoc e1 Op_kAND e2 }
   | expr<e1> K_OR eols expr<e2>  { M.prune_left_assoc e1 Op_kOR e2 }
@@ -442,28 +442,28 @@ primary:
   | T_LBRACE<pos> eols array_body<xs> eols T_RBRACE { Hash(true, xs, pos) }
 
 
-  | K_RETURN<pos> { S (Return([],pos)) }
+  | K_RETURN<pos> { S (Return(pos, [])) }
 /*  
- * | K_RETURN<pos>T_LPAREN eols call_args<args> eols T_RPAREN{Return(args,pos)}
- * | K_RETURN<pos> any_LPAREN eols expr<arg> eols T_RPAREN { S (Return([arg],pos))}
+ * | K_RETURN<pos>T_LPAREN eols call_args<args> eols T_RPAREN{Return(pos, args)}
+ * | K_RETURN<pos> any_LPAREN eols expr<arg> eols T_RPAREN { S (Return(pos, [arg]))}
  */
-  | K_YIELD<pos> { S (Yield([],pos)) }
-  | K_YIELD<pos> any_LPAREN eols call_args<xs> eols T_RPAREN { S (Yield(xs, pos))}
-  | K_YIELD<pos> any_LPAREN eols expr<e>       eols T_RPAREN { S (Yield([e], pos))}
+  | K_YIELD<pos> { S (Yield(pos, [])) }
+  | K_YIELD<pos> any_LPAREN eols call_args<xs> eols T_RPAREN { S (Yield(pos, xs))}
+  | K_YIELD<pos> any_LPAREN eols expr<e>       eols T_RPAREN { S (Yield(pos, [e]))}
 
   | K_IF<pos> expr<g> then_sep stmt_list<xs> if_else_clauses<else_e> K_lEND
-    { S (If(g, xs, else_e, pos)) }
+    { S (If(pos, g, xs, else_e)) }
 
   | K_UNLESS<pos> expr<g> then_sep stmt_list<xs> case_else<else_e> K_lEND
-    { S (Unless(g, xs, else_e, pos)) }
+    { S (Unless(pos, g, xs, else_e)) }
 
   | K_WHILE<pos> expr<g> do_sep stmt_list<xs> K_lEND
     { M.well_formed_do g xs; 
-      S (While(false, g, xs, pos)) }
+      S (While(pos, false, g, xs)) }
 
   | K_UNTIL<pos> expr<g> do_sep stmt_list<xs> K_lEND
     { M.well_formed_do g xs;
-      S (Until(false, g , xs, pos)) }
+      S (Until(pos, false, g , xs)) }
 
   | K_CASE<pos> some_eols         when_clauses<xs> case_else<else_e> K_lEND
     { S (Case({case_guard = S Empty; case_whens = xs; case_else = else_e},
@@ -478,7 +478,7 @@ primary:
 
   | K_FOR<pos> formal_arg_list<vars> K_IN arg<a> do_sep stmt_list<xs> K_lEND
     { M.well_formed_do a xs; 
-      S (For(vars, a, xs, pos)) }
+      S (For(pos, vars, a, xs)) }
 
   | K_lBEGIN<pos> eols body_exn<body>  K_lEND { S (ExnBlock(body,pos)) }
 
@@ -613,7 +613,7 @@ if_else_clauses:
   | K_ELSE eols stmt_list<body>
     { body }
   | K_ELSIF<pos> eols expr<g> then_sep stmt_list<xs> if_else_clauses<rest>
-    { [S (If(g, xs, rest, pos)) ] }
+    { [S (If(pos, g, xs, rest)) ] }
 
 case_else:
   | /* empty */ { [] }
@@ -678,7 +678,7 @@ command:
         M.methodcall m xs None (H.tok_of m)}
   | K_YIELD<pos>    call_args<xs> 
       { M.well_formed_return xs;
-        S (Yield(xs,pos)) }
+        S (Yield(pos, xs)) }
 
   /*(* recursive *)*/
   | command_name<cmd> command<cmd2>

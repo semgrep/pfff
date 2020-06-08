@@ -179,14 +179,14 @@ and stmt =
   | Empty
   | Block of expr list * tok
 
-  | If of expr * expr list * expr list * tok
-  | While of bool * expr * expr list * tok
-  | Until of bool * expr * expr list * tok
-  | Unless of expr * expr list * expr list * tok
-  | For of formal_param list * expr * expr list * tok
+  | If of tok * expr * expr list * expr list
+  | While of tok * bool * expr * expr list
+  | Until of tok * bool * expr * expr list
+  | Unless of tok * expr * expr list * expr list
+  | For of tok * formal_param list * expr * expr list
 
-  | Return of expr list * tok
-  | Yield of expr list * tok
+  | Return of tok * expr list
+  | Yield of tok * expr list
 
   | Case of case_block * tok
 

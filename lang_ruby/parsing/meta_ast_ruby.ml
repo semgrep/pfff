@@ -72,44 +72,44 @@ let rec vof_expr =
       let v1 = OCaml.vof_list vof_expr v1
       and v2 = vof_tok v2
       in OCaml.VSum (("Block", [ v1; v2 ]))
-  | S If ((v1, v2, v3, v4)) ->
+  | S If ((v0, v1, v2, v3)) ->
       let v1 = vof_expr v1
       and v2 = OCaml.vof_list vof_expr v2
       and v3 = OCaml.vof_list vof_expr v3
-      and v4 = vof_tok v4
-      in OCaml.VSum (("If", [ v1; v2; v3; v4 ]))
-  | S While ((v1, v2, v3, v4)) ->
+      and v0 = vof_tok v0
+      in OCaml.VSum (("If", [ v0; v1; v2; v3 ]))
+  | S While ((v0, v1, v2, v3)) ->
       let v1 = OCaml.vof_bool v1
       and v2 = vof_expr v2
       and v3 = OCaml.vof_list vof_expr v3
-      and v4 = vof_tok v4
-      in OCaml.VSum (("While", [ v1; v2; v3; v4 ]))
-  | S Until ((v1, v2, v3, v4)) ->
+      and v0 = vof_tok v0
+      in OCaml.VSum (("While", [ v0; v1; v2; v3 ]))
+  | S Until ((v0, v1, v2, v3)) ->
       let v1 = OCaml.vof_bool v1
       and v2 = vof_expr v2
       and v3 = OCaml.vof_list vof_expr v3
-      and v4 = vof_tok v4
-      in OCaml.VSum (("Until", [ v1; v2; v3; v4 ]))
-  | S Unless ((v1, v2, v3, v4)) ->
+      and v0 = vof_tok v0
+      in OCaml.VSum (("Until", [ v0; v1; v2; v3 ]))
+  | S Unless ((v0, v1, v2, v3)) ->
       let v1 = vof_expr v1
       and v2 = OCaml.vof_list vof_expr v2
       and v3 = OCaml.vof_list vof_expr v3
-      and v4 = vof_tok v4
-      in OCaml.VSum (("Unless", [ v1; v2; v3; v4 ]))
-  | S For ((v1, v2, v3, v4)) ->
+      and v0 = vof_tok v0
+      in OCaml.VSum (("Unless", [ v0; v1; v2; v3 ]))
+  | S For ((v0, v1, v2, v3)) ->
       let v1 = OCaml.vof_list vof_formal_param v1
       and v2 = vof_expr v2
       and v3 = OCaml.vof_list vof_expr v3
-      and v4 = vof_tok v4
-      in OCaml.VSum (("For", [ v1; v2; v3; v4 ]))
-  | S Return ((v1, v2)) ->
+      and v0 = vof_tok v0
+      in OCaml.VSum (("For", [ v0; v1; v2; v3 ]))
+  | S Return ((v2, v1)) ->
       let v1 = OCaml.vof_list vof_expr v1
       and v2 = vof_tok v2
-      in OCaml.VSum (("Return", [ v1; v2 ]))
-  | S Yield ((v1, v2)) ->
+      in OCaml.VSum (("Return", [ v2; v1 ]))
+  | S Yield ((v2, v1)) ->
       let v1 = OCaml.vof_list vof_expr v1
       and v2 = vof_tok v2
-      in OCaml.VSum (("Yield", [ v1; v2 ]))
+      in OCaml.VSum (("Yield", [ v2; v1 ]))
   | S Case ((v1, v2)) ->
       let v1 = vof_case_block v1
       and v2 = vof_tok v2
