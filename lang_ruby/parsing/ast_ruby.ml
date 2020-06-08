@@ -82,8 +82,8 @@ type expr =
   | Literal of lit_kind * tok
 
   | Id of string wrap * id_kind
-  | Operator of binary_op * tok
-  | UOperator of unary_op * tok
+  | Operator of binary_op wrap
+  | UOperator of unary_op wrap
 
   | Hash of bool * expr list * tok
   | Array of expr list * tok
