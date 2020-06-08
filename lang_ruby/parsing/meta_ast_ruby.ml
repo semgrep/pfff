@@ -50,12 +50,13 @@ let rec vof_expr =
       and v2 = vof_wrap vof_binary_op v2
       and v3 = vof_expr v3
       in OCaml.VSum (("Binop", [ v1; v2; v3 ]))
-  | Ternary ((v1, v2, v3, v4)) ->
+  | Ternary ((v1, v2, v3, v4, v5)) ->
       let v1 = vof_expr v1
-      and v2 = vof_expr v2
+      and v2 = vof_tok v2
       and v3 = vof_expr v3
       and v4 = vof_tok v4
-      in OCaml.VSum (("Ternary", [ v1; v2; v3; v4 ]))
+      and v5 = vof_expr v5
+      in OCaml.VSum (("Ternary", [ v1; v2; v3; v4; v5 ]))
   | Call ((v1, v2, v3, v4)) ->
       let v1 = vof_expr v1
       and v2 = OCaml.vof_list vof_expr v2

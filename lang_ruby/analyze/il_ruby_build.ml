@@ -1338,7 +1338,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
       let acc,e1' = refactor_list refactor_symbol_or_msg (acc,DQueue.empty) e1 in
         acc_enqueue (C.undef (DQueue.to_list e1') pos) acc
 
-  | Ast.Ternary(g,t,f, pos) ->
+  | Ast.Ternary(g,pos, t, _, f) ->
       let acc,g' = refactor_expr acc g in
       let tacc = refactor_stmt (acc_emptyq acc) t  in
       let ts = C.seq (DQueue.to_list tacc.q) pos in

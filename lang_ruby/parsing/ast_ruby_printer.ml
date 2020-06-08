@@ -99,7 +99,7 @@ and format_expr ppf expr = match expr with
 	| Some _ -> assert false
       end
 	
-  | Ternary (expr1, expr2, expr3,_) -> 
+  | Ternary (expr1, _, expr2, _, expr3) -> 
       fprintf ppf "@[(%a ? %a : %a)@]"
 	format_expr expr1
 	format_expr expr2

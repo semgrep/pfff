@@ -51,7 +51,7 @@ let rec cmp_expr e1 e2 = match e1,e2 with
   | S ExnBlock(body1,_), S ExnBlock(body2,_) ->
       cmp_body_exn body1 body2
 
-  | Ternary(e11,e12,e13,_), Ternary(e21,e22,e23,_) ->
+  | Ternary(e11,_, e12,_, e13), Ternary(e21,_, e22,_, e23) ->
       cmp2 (cmp2 (cmp_expr e11 e21) cmp_expr e12 e22) cmp_expr e13 e23
 
   | S For(_, fl1,e1,el1),S For(_, fl2,e2,el2) ->
@@ -188,7 +188,7 @@ let tok_of = function
   | Id ((_, pos), _)
   | Unary ( (_, pos) , _ )
   | Binop ( _ , (_, pos) , _)
-  | Ternary ( _ , _ , _ , pos)
+  | Ternary ( _ , pos, _ , _ , _)
   | Hash ( _,(pos, _,_))
   | Array (pos, _  , _)
   | Tuple ( _  , pos)
@@ -268,12 +268,11 @@ let rec mod_expr f expr =
             (binary_op, pos),
             (mod_expr f expr2)
           )
-      | Ternary(expr1, expr2, expr3, pos) ->
+      | Ternary(expr1, pos1, expr2, pos2, expr3) ->
           Ternary(
-            (mod_expr f expr1),
-            (mod_expr f expr2),
-            (mod_expr f expr3),
-            pos
+            (mod_expr f expr1), pos1,
+            (mod_expr f expr2), pos2,
+            (mod_expr f expr3)
           )
       | Hash(b,(pos1, el, pos2)) ->
           Hash(b, (pos1, List.map (mod_expr f) el, pos2))
@@ -374,7 +373,8 @@ let set_tok pos = function
   | Id((str, _), id_kind) -> Id((str, pos), id_kind)
   | Unary((unary_op,_), e) -> Unary((unary_op,pos), e)
   | Binop(expr1, (binary_op,_), expr2) -> Binop(expr1, (binary_op,pos), expr2)
-  | Ternary(expr1, expr2, expr3, _) -> Ternary(expr1, expr2, expr3, pos)
+  | Ternary(expr1, _, expr2, pos2, expr3) -> 
+      Ternary(expr1, pos, expr2, pos2, expr3)
   | Hash(b,(_, el, pos2)) -> Hash(b,(pos, el, pos2))
   | Array(_, el, pos2) -> Array(pos, el, pos2)
   | Tuple(el, _) -> Tuple(el, pos)

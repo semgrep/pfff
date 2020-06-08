@@ -138,7 +138,7 @@ type expr =
 
   | Unary of unary_op wrap * expr
   | Binop of expr * binary_op wrap * expr
-  | Ternary of expr * expr * expr * tok
+  | Ternary of expr * tok (* ? *) * expr * tok (* : *) * expr
 
   | Call of expr * expr list * expr option * tok
 

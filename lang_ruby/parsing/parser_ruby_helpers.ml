@@ -210,19 +210,19 @@ let process_user_string m str pos = match m with
 let rec starts_with = function
   | Binop(l,_,_) -> starts_with l
   | Call(l,_,_,_) -> starts_with l
-  | Ternary(l,_,_,_) -> starts_with l
+  | Ternary(l,_,_,_,_) -> starts_with l
   | e -> e
 
 let rec ends_with = function
   | Binop(_,_,r) -> ends_with r
   | Call(m,[],None,_) -> ends_with m
-  | Ternary(_,_,r,_) -> ends_with r
+  | Ternary(_,_,_, _, r) -> ends_with r
   | e -> e
   
 let rec replace_end expr new_e = match expr with
   | Binop(l,(o,p),r) -> Binop(l,(o,p),replace_end r new_e)
   | Call(m,[],None,p) -> Call(replace_end m new_e,[],None,p)
-  | Ternary(g,l,r,p) -> Ternary(g,l,replace_end r new_e,p)
+  | Ternary(g,p1, l,p2, r) -> Ternary(g,p1, l,p2, replace_end r new_e)
   | _e -> new_e
 
 let is_cond_modifier = function
@@ -446,8 +446,8 @@ let prune_left_assoc l op r =
             then raise Dyp.Giveup
             else e
 
-let prune_tern e1 e2 e3 pos = 
-  let e = Ternary(e1,e2,e3,pos) in
+let prune_tern e1 e2 e3 pos1 pos2 = 
+  let e = Ternary(e1,pos1, e2,pos2, e3) in
   let p = expr_priority e in
   let p1 = expr_priority e1 in      
     (*Printf.eprintf "tern: %s\n" (Ast_printer.string_of_expr e);*)
@@ -489,7 +489,7 @@ let rec rhs_do_codeblock = function
   | Call(_,_,Some (CodeBlock(false,_,_,_)),_) -> true
   | Binop(_,_,r)
   | Call(r,[],None,_)
-  | Ternary(_,_,r,_) -> rhs_do_codeblock r
+  | Ternary(_,_,_, _, r) -> rhs_do_codeblock r
   | Hash(false,(_, el,_)) -> rhs_do_codeblock (Utils.last el)
 
   | e -> 
