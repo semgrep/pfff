@@ -7,6 +7,9 @@ let vof_tok v = Meta_parse_info.vof_info_adjustable_precision v
 let vof_wrap _of_a (v1, v2) =
   let v1 = _of_a v1 and v2 = vof_tok v2 in OCaml.VTuple [ v1; v2 ]
 
+let vof_bracket of_a (_t1, x, _t2) =
+  of_a x
+
 let rec vof_expr =
   function
   | Literal ((v1, v2)) ->
@@ -30,10 +33,9 @@ let rec vof_expr =
       and v2 = OCaml.vof_list vof_expr v2
       and v3 = vof_tok v3
       in OCaml.VSum (("Hash", [ v1; v2; v3 ]))
-  | Array ((v1, v2)) ->
-      let v1 = OCaml.vof_list vof_expr v1
-      and v2 = vof_tok v2
-      in OCaml.VSum (("Array", [ v1; v2 ]))
+  | Array ((v1)) ->
+      let v1 = vof_bracket (OCaml.vof_list vof_expr) v1
+      in OCaml.VSum (("Array", [ v1 ]))
   | Tuple ((v1, v2)) ->
       let v1 = OCaml.vof_list vof_expr v1
       and v2 = vof_tok v2

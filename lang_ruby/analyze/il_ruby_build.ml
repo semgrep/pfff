@@ -715,7 +715,7 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
     | Ast.Literal(l,pos) -> refactor_lit acc l pos
 
     | Ast.Tuple(l,_pos) 
-    | Ast.Array(l,_pos) ->
+    | Ast.Array(_, l,_pos) ->
         let acc,l' = refactor_list refactor_star_expr (acc,DQueue.empty) l in
           acc, ELit (Array (DQueue.to_list l'))
 

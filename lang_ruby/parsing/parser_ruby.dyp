@@ -438,7 +438,7 @@ primary:
                    xs None (H.tok_of p)
       }
 
-  | T_LBRACK<pos> eols array_body<xs> eols T_RBRACK { Array(xs, pos) }
+  | T_LBRACK eols array_body<xs> eols T_RBRACK { Array($1, xs, $5) }
   | T_LBRACE<pos> eols array_body<xs> eols T_RBRACE { Hash(true, xs, pos) }
 
 
@@ -723,7 +723,7 @@ any_LPAREN:
 call_args:
   | /*empty*/                 { [] }
   | arg_comma_star_list<xs>   { xs }
-  | T_LBRACK<pos> eols call_args<xs> eols T_RBRACK { [Array(xs, pos)] }
+  | T_LBRACK eols call_args<xs> eols T_RBRACK { [Array($1, xs, $5)] }
 
 arg_comma_star_list:
   /*(* call_args-->empty vs call_args-->arg_comma_star_list-->empty *)*/
@@ -813,11 +813,11 @@ lhs_prune_binop: lhs<l> {match l with Binop _ -> raise Dyp.Giveup | _ -> l}
 mrhs:
   | arg_comma_star_list<xs> { match xs with [] -> raise Dyp.Giveup | _ -> xs }
   | topcall<c> { [c] }
-  | T_LBRACK<pos> eols call_args<xs> eols T_RBRACK { [Array(xs,pos)] }
+  | T_LBRACK eols call_args<xs> eols T_RBRACK { [Array($1, xs, $5)] }
   | T_USTAR<pos> arg<a>                            { [Unary((Op_UStar,pos),a)] }
   | T_USTAR<pos> command_codeblock<c>              { [Unary((Op_UStar,pos),c)] }
-  | T_USTAR<pos1> T_LBRACK<pos2> eols call_args<xs> eols T_RBRACK
-      { [Unary((Op_UStar,pos1),Array(xs,pos2))] }
+  | T_USTAR<pos1> T_LBRACK eols call_args<xs> eols T_RBRACK
+      { [Unary((Op_UStar,pos1),Array($2, xs, $6))] }
 
 command_codeblock:
   | command<c>                     { c }

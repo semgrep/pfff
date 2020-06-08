@@ -97,7 +97,7 @@ let seen_str _dyp id =
 
 let rec seen dyp = function
   | Id((s, _), ID_Lowercase) -> seen_str dyp s
-  | Array(es,_) | Tuple(es,_) -> List.iter (seen dyp) es
+  | Array(_, es,_) | Tuple(es,_) -> List.iter (seen dyp) es
   | _ -> ()
 
 (*****************************************************************************)
@@ -132,7 +132,7 @@ let split_single_string_to_array str pos =
   let strings = List.map
     (fun s -> Literal(String(Single s), pos)) strings
   in
-    Array(strings,pos)
+    Array(pos, strings,pos) (* TODO pos1 *)
 
 (* turn %W{a#{b} c} into ["a#{b}"; "c"] *) 
 let split_double_string_to_array sc pos =
@@ -171,7 +171,7 @@ let split_double_string_to_array sc pos =
   in
   let toks = tokenize [] sc in
   let lst = parse [] [] toks in
-    Array(lst, pos)
+    Array(pos, lst, pos) (* TODO pos1 *)
 
 let str_of_interp sc = match sc with
   | []  -> ""

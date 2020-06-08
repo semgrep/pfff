@@ -59,7 +59,7 @@ type tok = Parse_info.t
 type 'a wrap = 'a * tok
 
 (* round(), square[], curly{}, angle<> brackets *)
-type 'a _bracket = tok * 'a * tok
+type 'a bracket = tok * 'a * tok
 
 (* ------------------------------------------------------------------------- *)
 (* Ident/name *)
@@ -131,7 +131,7 @@ type expr =
   | UOperator of unary_op wrap
 
   | Hash of bool * expr list * tok
-  | Array of expr list * tok
+  | Array of expr list bracket
   | Tuple of expr list * tok
 
   | Unary of unary_op wrap * expr
