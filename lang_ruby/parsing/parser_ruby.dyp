@@ -121,8 +121,8 @@ let is_exnblock = function
 
 let rec add_eq = function
   | Id((s,p),k) -> Id((s,p), ID_Assign(k))
-  | Binop(e1,Op_SCOPE,e2,p) -> Binop(e1,Op_SCOPE, add_eq e2,p)
-  | Binop(e1,Op_DOT,e2,p) -> Binop(e1,Op_DOT, add_eq e2,p)
+  | Binop(e1,(Op_SCOPE,p),e2) -> Binop(e1,(Op_SCOPE,p), add_eq e2)
+  | Binop(e1,(Op_DOT,p),e2) -> Binop(e1,(Op_DOT,p), add_eq e2)
   | Operator(Op_AREF,p) -> Operator(Op_ASET,p)
   | _ -> failwith "add_eq"
 
@@ -331,11 +331,11 @@ stmt:
         let r' = S (ExnBlock({body_exprs=[r];rescue_exprs =[(S Empty,guard)];
                  ensure_expr = []; else_expr = []}, pos))
          in (*prune_binop l op r'*) 
-         Binop(l,op,r',pos)}
+         Binop(l,(op,pos),r') (* TODO: wrong pos *)}
   | mlhs_assign_op<l,op> eols mrhs<r>
       { (*prune_binop (tuple l) op (tuple r)*) 
          let lhs = tuple l in
-         Binop(lhs,op,(tuple r),(H.tok_of lhs))
+         Binop(lhs,(op,(H.tok_of lhs)), (tuple r)) (* TODO: wrong pos?*)
       }
 
   | scope_BEGIN<pos> eols T_LBRACE eols stmt_list<xs> T_RBRACE
@@ -349,7 +349,7 @@ stmt:
       { e }
 
   | T_USTAR<pos> primary<e> 
-      { Unary(Op_UStar,e,pos) }
+      { Unary((Op_UStar,pos),e) }
 
 /* tokens that need to reduce immediately to guide the lexer */
 scope_BEGIN:  K_BEGIN<pos>  {S.enter_scope dyp; pos}
@@ -431,10 +431,10 @@ primary:
       }
 
   | primary<p> T_SCOPE identifier<id>  { M.scope p id }
-  | T_USCOPE<pos> identifier<id>       { Unary(Op_UScope,id,pos) }
+  | T_USCOPE<pos> identifier<id>       { Unary((Op_UScope,pos),id) }
 
   | primary<p> T_LBRACK_ARG<pos1> eols arg_comma_list_trail<xs> eols T_RBRACK
-      { M.methodcall (Binop(p,Op_DOT,Operator(Op_AREF,pos1),H.tok_of p)) 
+      { M.methodcall (Binop(p,(Op_DOT,H.tok_of p), Operator(Op_AREF,pos1))) (* TODO: wrong tok Binop? *)
                    xs None (H.tok_of p)
       }
 
@@ -583,7 +583,7 @@ rescue_clause:
       }
 
   | K_RESCUE<pos> T_ASSOC seen_id<bind> then_sep stmt_list<xs>
-      { (Binop(S Empty,Op_ASSOC,bind,pos), mk_block xs pos) }
+      { (Binop(S Empty,(Op_ASSOC,pos),bind), mk_block xs pos) (* WRONG pos Binop *) }
 
   | K_RESCUE<pos> arg_comma_star_list<exn> then_sep stmt_list<xs>
     { (tuple exn,mk_block xs pos) }
@@ -647,7 +647,7 @@ array_body_rest:
 array_item: 
   | arg<e> { e }
   | constant<c> T_LBRACK<pos1> eols call_args<xs> eols T_RBRACK
-      { M.methodcall (Binop(c, Op_DOT, Operator(Op_AREF,pos1), H.tok_of c)) 
+      { M.methodcall (Binop(c, (Op_DOT,H.tok_of c), Operator(Op_AREF,pos1))) (* TODO: Wrong pos Binop, and probably all the following Binop in this file *)
                      xs None (H.tok_of c) }
 
 /*(*************************************************************************)*/
@@ -741,12 +741,12 @@ arg_comma_nonempty_list:
 
 star_amper:
   | T_USTAR<pos> arg<a> 
-      { [Unary(Op_UStar,a,pos)] }
+      { [Unary((Op_UStar,pos),a)] }
   | T_UAMPER<pos> arg<a> 
-      { [Unary(Op_UAmper,a,pos)] }
+      { [Unary((Op_UAmper,pos),a)] }
 
   | T_USTAR<pos1> arg<a1> T_COMMA eols T_UAMPER<pos2> arg<a2>
-      { [Unary(Op_UStar,a1,pos1); Unary(Op_UAmper,a2,pos2)] }
+      { [Unary((Op_UStar,pos1),a1); Unary((Op_UAmper,pos2),a2)] }
 
 
 /*(*************************************************************************)*/
@@ -767,9 +767,9 @@ lhs:
   | scoped_id<id> 
       { id }
   | primary<p> T_LBRACK_ARG<pos> eols arg_comma_star_list<xs> eols T_RBRACK
-      { M.methodcall (Binop(p,Op_DOT,Operator(Op_AREF,pos),H.tok_of p)) xs None (H.tok_of p)}
+      { M.methodcall (Binop(p,(Op_DOT,H.tok_of p),Operator(Op_AREF,pos))) xs None (H.tok_of p)}
   | primary<p> T_DOT eols message_identifier<m>
-      { M.methodcall (Binop(p,Op_DOT,m,H.tok_of p)) [] None (H.tok_of p)}
+      { M.methodcall (Binop(p,(Op_DOT,H.tok_of p), m)) [] None (H.tok_of p)}
 
 /*(*----------------------------*)*/
 /*(*2 Multiple LHS *)*/
@@ -785,7 +785,7 @@ mlhs_clean:
   | T_LPAREN eols mlhs<l> eols T_RPAREN     { [(tuple l)] }
   | mlhs_item<l>                            { [l] }
   | mlhs_item<l> T_COMMA eols mlhs_rest<ls> { l::ls}
-  | T_USTAR<pos> lhs<l>                     { [Unary(Op_UStar,l,pos)] }
+  | T_USTAR<pos> lhs<l>                     { [Unary((Op_UStar,pos),l)] }
 
 mlhs_item:
   | lhs<l>                               {l}
@@ -796,7 +796,7 @@ mlhs_rest:
   | mlhs_item<l> { [l] }
   /*(* recursive *)*/
   | mlhs_item<l> T_COMMA eols mlhs_rest<ls> @{ l::ls, [Dyp.Dont_shift] }
-  | T_USTAR<pos> lhs<l> { [Unary(Op_UStar,l,pos)] }
+  | T_USTAR<pos> lhs<l> { [Unary((Op_UStar,pos),l)] }
 
 /*(*----------------------------*)*/
 /*(*2 Pruned LHS *)*/
@@ -814,10 +814,10 @@ mrhs:
   | arg_comma_star_list<xs> { match xs with [] -> raise Dyp.Giveup | _ -> xs }
   | topcall<c> { [c] }
   | T_LBRACK<pos> eols call_args<xs> eols T_RBRACK { [Array(xs,pos)] }
-  | T_USTAR<pos> arg<a>                            { [Unary(Op_UStar,a,pos)] }
-  | T_USTAR<pos> command_codeblock<c>              { [Unary(Op_UStar,c,pos)] }
+  | T_USTAR<pos> arg<a>                            { [Unary((Op_UStar,pos),a)] }
+  | T_USTAR<pos> command_codeblock<c>              { [Unary((Op_UStar,pos),c)] }
   | T_USTAR<pos1> T_LBRACK<pos2> eols call_args<xs> eols T_RBRACK
-      { [Unary(Op_UStar,Array(xs,pos2),pos1)] }
+      { [Unary((Op_UStar,pos1),Array(xs,pos2))] }
 
 command_codeblock:
   | command<c>                     { c }
@@ -943,9 +943,9 @@ identifier:
 
 scoped_id:
   | identifier<id>                            { id }
-  | T_USCOPE<pos> identifier<id>              { Unary(Op_UScope,id,pos)}
-  | scoped_id<id1> T_SCOPE identifier<id2>    { Binop(id1,Op_SCOPE,id2,H.tok_of id1) }
-  | scoped_id<id1> T_SCOPE keyword_as_id<id2> { Binop(id1,Op_SCOPE,id2,H.tok_of id1) }
+  | T_USCOPE<pos> identifier<id>              { Unary((Op_UScope,pos),id)}
+  | scoped_id<id1> T_SCOPE identifier<id2>    { Binop(id1,(Op_SCOPE,H.tok_of id1), id2) }
+  | scoped_id<id1> T_SCOPE keyword_as_id<id2> { Binop(id1,(Op_SCOPE,H.tok_of id1), id2) }
 
 
 /*(* for use *)*/
@@ -968,20 +968,20 @@ assignable:
 method_name:
   | message_identifier<e> { e }
 
-  | T_USCOPE<pos> identifier<id>     { Unary(Op_UScope,id,pos)}
-  | T_USCOPE<pos> keyword_as_id<id>  { Unary(Op_UScope,id,pos)}
+  | T_USCOPE<pos> identifier<id>     { Unary((Op_UScope,pos),id)}
+  | T_USCOPE<pos> keyword_as_id<id>  { Unary((Op_UScope,pos),id)}
 
   /*(* recursive *)*/
   | method_name<e> T_ASSIGN { add_eq e }
   | method_name<id1> T_DOT eols message_identifier<id2> 
-      { Binop(id1,Op_DOT,id2,H.tok_of id1) }
+      { Binop(id1,(Op_DOT,H.tok_of id1), id2) }
   | method_name<id1> T_DOT eols assignable<id2> T_ASSIGN
-      { Binop(id1,Op_DOT,add_eq id2,H.tok_of id1) }
+      { Binop(id1,(Op_DOT,H.tok_of id1), add_eq id2) }
   | method_name<id1> T_SCOPE identifier<id2>    { M.scope id1 id2 }
   | method_name<id1> T_SCOPE keyword_as_id<id2> { M.scope id1 id2 }
 
   | T_LPAREN<pos> eols stmt_list<xs> T_RPAREN T_DOT message_identifier<m>
-      { Binop(mk_block xs (H.tok_of (List.hd xs)), Op_DOT,m, pos) }
+      { Binop(mk_block xs (H.tok_of (List.hd xs)), (Op_DOT,pos),m) }
 
 meth_or_atom:
     | method_name<e>  { e }

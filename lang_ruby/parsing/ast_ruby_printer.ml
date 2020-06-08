@@ -51,17 +51,17 @@ and format_expr ppf expr = match expr with
 
   | Id((string,_p), id_kind) -> format_id ppf id_kind string
 
-  | Unary(uop, expr,_) ->
+  | Unary((uop,_), expr) ->
       fprintf ppf "uop(%s,%a)"
 	(H.str_uop uop) format_expr expr
 
-  | Binop(expr1, binary_op, expr2,_) ->
+  | Binop(expr1, (binary_op,_), expr2) ->
       begin match binary_op with
 	| Op_SCOPE
 	| Op_DOT -> fprintf ppf "%a%a%a" 
 	| _o -> match expr1,expr2 with
-	    | Binop(_,_,_,_),_
-	    | _, Binop(_,_,_,_) -> fprintf ppf "(@[%a %a@ %a@])"
+	    | Binop(_,_,_),_
+	    | _, Binop(_,_,_) -> fprintf ppf "(@[%a %a@ %a@])"
 	    | _ ->fprintf ppf "(%a %a %a)"
       end
 	format_expr expr1

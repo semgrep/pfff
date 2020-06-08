@@ -38,17 +38,15 @@ let rec vof_expr =
       let v1 = OCaml.vof_list vof_expr v1
       and v2 = vof_tok v2
       in OCaml.VSum (("Tuple", [ v1; v2 ]))
-  | Unary ((v1, v2, v3)) ->
-      let v1 = vof_unary_op v1
+  | Unary ((v1, v2)) ->
+      let v1 = vof_wrap vof_unary_op v1
       and v2 = vof_expr v2
-      and v3 = vof_tok v3
-      in OCaml.VSum (("Unary", [ v1; v2; v3 ]))
-  | Binop ((v1, v2, v3, v4)) ->
+      in OCaml.VSum (("Unary", [ v1; v2 ]))
+  | Binop ((v1, v2, v3)) ->
       let v1 = vof_expr v1
-      and v2 = vof_binary_op v2
+      and v2 = vof_wrap vof_binary_op v2
       and v3 = vof_expr v3
-      and v4 = vof_tok v4
-      in OCaml.VSum (("Binop", [ v1; v2; v3; v4 ]))
+      in OCaml.VSum (("Binop", [ v1; v2; v3 ]))
   | Ternary ((v1, v2, v3, v4)) ->
       let v1 = vof_expr v1
       and v2 = vof_expr v2

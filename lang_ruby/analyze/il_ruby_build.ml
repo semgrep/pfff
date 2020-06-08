@@ -515,7 +515,7 @@ let refactor_formal_list f acc lst pos =
 
 let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr = 
   match e with
-    | Ast.Binop(_, Ast.Op_OP_ASGN _, _, _) 
+    | Ast.Binop(_, (Ast.Op_OP_ASGN _, _), _) 
     | Ast.S Ast.If _ | Ast.S Ast.Yield _ | Ast.S Ast.Return _  
     | Ast.S Ast.Case _ | Ast.S Ast.ExnBlock _ 
     | Ast.D Ast.EndBlock _ | Ast.D Ast.BeginBlock _  
@@ -562,7 +562,7 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
           acc_enqueue s' acc, EId v'
 
 
-    | Ast.Unary(Ast.Op_UScope,e,pos) ->
+    | Ast.Unary((Ast.Op_UScope,pos),e) ->
         let acc,e' = refactor_id acc e in
         let s = match e' with
           | Var(Constant, s) -> s
@@ -571,15 +571,15 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         in
           acc, EId (UScope s)
 
-    | Ast.Unary(Ast.Op_UMinus, Ast.Literal(Ast.Num i,_), _pos) -> 
+    | Ast.Unary((Ast.Op_UMinus,_pos), Ast.Literal(Ast.Num i,_)) -> 
         acc, ELit (Num ("-"^i))
 
 
-    | Ast.Unary(Ast.Op_UMinus, Ast.Literal(Ast.Float(s),_), _pos) -> 
+    | Ast.Unary((Ast.Op_UMinus, _pos), Ast.Literal(Ast.Float(s),_)) -> 
         assert(s.[0] != '-');
         acc, ELit (Float("-" ^ s))
 
-    | Ast.Unary((Ast.Op_UBang | Ast.Op_UNot),e,pos) ->
+    | Ast.Unary(((Ast.Op_UBang | Ast.Op_UNot),pos),e) ->
         let acc,v = fresh acc in
         let v' = match v with LId (id) -> id | _ -> failwith "Impossible" in
         let t = C.assign v (TE (EId True)) pos in
@@ -588,20 +588,20 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         let acc = acc_enqueue (C.if_s e' ~t:f ~f:t pos) acc in
           acc, EId v'
 
-    | Ast.Unary(uop,e, pos) -> 
+    | Ast.Unary((uop,pos),e) -> 
         let acc,e' = refactor_expr acc e in
         let msg = ID_UOperator (refactor_uop pos uop) in
           make_call_expr acc (Some e') msg [] None pos
 
     (* A::m is really a method call *)
-    | Ast.Binop(_e1BUG,Ast.Op_SCOPE,(Ast.Id(_, Ast.ID_Lowercase)),pos) -> 
+    | Ast.Binop(_e1BUG, (Ast.Op_SCOPE,pos),(Ast.Id(_, Ast.ID_Lowercase))) -> 
         let acc,v = fresh acc in
       let v' = match v with LId (id) -> id | _ -> failwith "Impossible" in
         let acc = seen_lhs acc v in
         let e' = Ast.Call(e,[], None, pos) in
           (refactor_method_call_assign acc (Some v) e'), EId v'
 
-    | Ast.Binop(e1,Ast.Op_SCOPE,e2, pos) -> 
+    | Ast.Binop(e1,(Ast.Op_SCOPE,pos),e2) -> 
         let acc,e1' = refactor_id acc e1 in
         let acc,e2' = refactor_id acc e2 in
         let s = match e2' with
@@ -611,7 +611,7 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         in
           acc, EId (Scope(e1', s))
 
-    | Ast.Binop(e1,Ast.Op_NEQ,e2,pos) ->
+    | Ast.Binop(e1,(Ast.Op_NEQ,pos),e2) ->
         let acc, t1 = fresh acc in
       let t1' = match t1 with LId (id) -> id | _ -> failwith "Impossible" in
 
@@ -624,7 +624,7 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         let acc = acc_enqueue (C.if_s (EId t1') ~t:f ~f:t pos) acc in
           acc, (EId t2')
 
-    | Ast.Binop(e1,Ast.Op_NMATCH,e2,pos) ->
+    | Ast.Binop(e1,(Ast.Op_NMATCH,pos),e2) ->
         let acc, t1 = fresh acc in
       let t1' = match t1 with LId (id) -> id | _ -> failwith "Impossible" in
         let acc, t2 = fresh acc in
@@ -635,30 +635,30 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         let acc = acc_enqueue (C.if_s (EId t1') ~t:f ~f:t pos) acc in
           acc, (EId t2')
 
-    | Ast.Binop(_,Ast.Op_DOT,_, pos) -> 
+    | Ast.Binop(_,(Ast.Op_DOT,pos),_) -> 
         Log.fatal (Log.of_tok pos) "refactor_expr got dot expr??"
 
-    | Ast.Binop(e1, (Ast.Op_AND|Ast.Op_kAND), e2, pos) ->
+    | Ast.Binop(e1, ((Ast.Op_AND|Ast.Op_kAND),pos), e2) ->
         refactor_and_if acc e1 e2 pos
-    | Ast.Binop(e1, (Ast.Op_OR|Ast.Op_kOR), e2, pos) ->
+    | Ast.Binop(e1, ((Ast.Op_OR|Ast.Op_kOR), pos), e2) ->
         refactor_or_if acc e1 e2 pos
 
-    | Ast.Binop(e1,Ast.Op_ASSOC,e2,_pos) ->
+    | Ast.Binop(e1,(Ast.Op_ASSOC,_pos),e2) ->
         let acc,e1' = refactor_expr acc e1 in
         let acc,e2' = refactor_expr acc e2 in
           acc, ELit (Hash [ e1', e2'])
 
-    | Ast.Binop(e1,Ast.Op_DOT2,e2,_pos) ->
+    | Ast.Binop(e1,(Ast.Op_DOT2, _pos),e2) ->
         let acc,e1' = refactor_expr acc e1 in
         let acc,e2' = refactor_expr acc e2 in
           acc, ELit (Range(false, e1', e2'))
 
-    | Ast.Binop(e1,Ast.Op_DOT3,e2,_pos) ->
+    | Ast.Binop(e1,(Ast.Op_DOT3, _pos),e2) ->
         let acc,e1' = refactor_expr acc e1 in
         let acc,e2' = refactor_expr acc e2 in
           acc, ELit (Range(true, e1', e2'))
             
-    | Ast.Binop(e1,Ast.Op_ASSIGN,e2, pos) -> 
+    | Ast.Binop(e1,(Ast.Op_ASSIGN,pos),e2) -> 
         let acc,e1',after = refactor_lhs acc e1 in
         let acc,e2' = refactor_tuple_expr acc e2 in
         let acc = acc_enqueue (C. assign e1' e2' pos) acc in
@@ -669,7 +669,7 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         in
           acc, EId e1_id
             
-    | Ast.Binop(e1,bop,e2, pos) -> 
+    | Ast.Binop(e1,(bop,pos),e2) -> 
         let acc, v = fresh acc in
         let v' = match v with LId (id) -> id | _ -> failwith "Impossible" in
 
@@ -850,7 +850,7 @@ and refactor_lit acc (l : Ast.lit_kind) pos : stmt acc * expr = match l with
         "trying to convert self to literal, but should be handled elsewhere"
 
 and refactor_star_expr (acc:stmt acc) e : stmt acc * star_expr = match e with
-  | Ast.Unary(Ast.Op_UStar, e, _pos) -> 
+  | Ast.Unary((Ast.Op_UStar,_pos), e) -> 
       let acc, e' = refactor_expr acc e in
         acc, SStar (e')
   | e ->
@@ -858,16 +858,16 @@ and refactor_star_expr (acc:stmt acc) e : stmt acc * star_expr = match e with
         acc, (SE e' :> star_expr)
 
 and refactor_method_arg_no_cb acc e : stmt acc * star_expr = match e with 
-  | Ast.Unary(Ast.Op_UAmper, _eBUG, pos) -> 
+  | Ast.Unary((Ast.Op_UAmper,pos), _eBUG) -> 
       Log.fatal (Log.of_tok pos) "unexpected & arg in method arguments"
   | e -> refactor_star_expr acc e
 
 and refactor_method_args_and_cb acc arg_list cb = 
   let acc, lst, cb_arg = match List.rev arg_list, cb with
-    | Ast.Unary(Ast.Op_UAmper, e, _pos)::rest, None -> 
+    | Ast.Unary((Ast.Op_UAmper, _pos), e)::rest, None -> 
         let acc, e' = refactor_expr acc e in
           acc, (List.rev rest), Some (CB_Arg e')
-    | (Ast.Unary(Ast.Op_UAmper, _, pos)::_), Some _ -> 
+    | (Ast.Unary((Ast.Op_UAmper, pos), _)::_), Some _ -> 
         Log.fatal (Log.of_tok pos)
           "method can't have both an &-argument and code block"
     | _lst, Some cb_e -> acc, arg_list, Some (refactor_codeblock acc cb_e)
@@ -891,11 +891,11 @@ and refactor_hash_list acc l pos =
   in
     match l with
       | [] -> acc, []
-      | (Ast.Binop(_,Ast.Op_ASSOC,_,_))::_ ->
+      | (Ast.Binop(_,(Ast.Op_ASSOC,_),_))::_ ->
           let acc,rlst = 
             List.fold_left
               (fun (acc,lst) -> function
-                 | Ast.Binop(e1,Ast.Op_ASSOC,e2,_pos) ->
+                 | Ast.Binop(e1,Ast.(Op_ASSOC,_pos),e2) ->
                      let acc,e1' = refactor_expr acc e1 in
                      let acc,e2' = refactor_expr acc e2 in
                        acc, (e1', e2')::lst
@@ -960,7 +960,7 @@ and refactor_tuple_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.tuple
         let acc,l' = refactor_list refactor_tuple_expr (acc,DQueue.empty) l in
           acc, TTup (((DQueue.to_list l')))
 
-    | Ast.Unary(Ast.Op_UStar, e, _pos) -> 
+    | Ast.Unary((Ast.Op_UStar, _pos), e) -> 
         let acc, e' = refactor_tuple_expr acc e in
           begin match e' with
             | (TE _ | TTup _) as e' -> acc, TStar (e')
@@ -993,7 +993,7 @@ and refactor_lhs acc e : (stmt acc * lhs * stmt acc) =
 
           acc, LStar (v'), acc_emptyq acc
           
-    | Ast.Unary(Ast.Op_UStar, e, pos) -> 
+    | Ast.Unary((Ast.Op_UStar,pos), e) -> 
         let acc, e',after = refactor_lhs acc e in
           begin match e' with
             | LId (id) -> acc, LStar (id), after
@@ -1009,10 +1009,10 @@ and refactor_lhs acc e : (stmt acc * lhs * stmt acc) =
         if is_literal s then Log.fatal Log.empty "lhs literal?"
         else acc, LId (Var(refactor_id_kind pos ik, s)), acc_emptyq acc
           
-    | Ast.Binop(_e1,Ast.Op_DOT,_e2,_pos) ->
+    | Ast.Binop(_e1,(Ast.Op_DOT, _pos),_e2) ->
         Log.fatal Log.empty "dot expression on lhs?"
 
-    | Ast.Call(Ast.Binop(targ,Ast.Op_DOT,msg,_),args,None,pos) ->
+    | Ast.Call(Ast.Binop(targ,(Ast.Op_DOT,_),msg),args,None,pos) ->
         let after = acc_emptyq acc in
         let after,targ' = refactor_expr after targ in
         let after,msg' = refactor_msg after msg in
@@ -1227,8 +1227,8 @@ and refactor_method_call_assign (acc:stmt acc) (lhs : lhs option) = function
       let e' = Ast.D (Ast.MethodDef(name,params,body, pos)) in
         refactor_stmt acc e'
 
-  | Ast.Call(Ast.Binop(targ,Ast.Op_DOT,msg,_pos1), args, cb, pos2)
-  | Ast.Call(Ast.Binop(targ,Ast.Op_SCOPE,msg,_pos1), args, cb, pos2) ->
+  | Ast.Call(Ast.Binop(targ,(Ast.Op_DOT, _pos1),msg), args, cb, pos2)
+  | Ast.Call(Ast.Binop(targ,(Ast.Op_SCOPE, _pos1),msg), args, cb, pos2) ->
       let acc,targ' = refactor_expr acc targ in
       let acc,msg' = refactor_msg acc msg in
       let acc,args',cb' = refactor_method_args_and_cb acc args cb in
@@ -1238,7 +1238,7 @@ and refactor_method_call_assign (acc:stmt acc) (lhs : lhs option) = function
   | Ast.Call(msg, args, cb, pos) ->
       let () = match msg, args with
         | Ast.Id((("proc"|"lambda"),_),Ast.ID_Lowercase),
-          [Ast.Unary(Ast.Op_UAmper,_,_)] ->
+          [Ast.Unary((Ast.Op_UAmper,_),_)] ->
             Log.err ~ctx:(Log.of_tok pos) "unsupported proc/lambda with &block param"
         | _ -> ()
       in
@@ -1259,7 +1259,7 @@ and refactor_assignment (acc: stmt acc) (lhs: Ast.expr) (rhs: Ast.expr)
   match lhs,rhs with
   (* x[y] = z is really x.[]=(y,z) *)
   | Ast.Call(
-      Ast.Binop(targ, Ast.Op_DOT,Ast.Operator(Ast.Op_AREF,_),_), args,None,_),
+      Ast.Binop(targ, (Ast.Op_DOT, _),Ast.Operator(Ast.Op_AREF,_)), args,None,_),
     _ ->
       let acc,targ' = refactor_expr acc targ in
       let acc,rhs_arg = refactor_star_expr acc rhs in
@@ -1291,7 +1291,7 @@ and refactor_assignment (acc: stmt acc) (lhs: Ast.expr) (rhs: Ast.expr)
         acc_enqueue call acc
 
   (* handle x.y = e specially to avoid duping the rhs into a temp *)
-  | Ast.Call(Ast.Binop(targ,Ast.Op_DOT,msg,_),args,None,_), _ ->
+  | Ast.Call(Ast.Binop(targ,(Ast.Op_DOT,_),msg),args,None,_), _ ->
       if args <> [] then Log.fatal (Log.of_tok pos) "args on lhs of assignable?";
       let acc,targ' = refactor_expr acc targ in
       let acc,msg' = refactor_msg acc msg in
@@ -1375,16 +1375,16 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
       let acc = {acc with seen = StrSet.union acc.seen blk_acc.seen} in
         acc_enqueue (C.seq (DQueue.to_list blk_acc.q) pos) acc
 
-  | Ast.Binop(e1,Ast.Op_ASSIGN,(Ast.S Ast.Yield(_pos1, args)), pos2) ->
+  | Ast.Binop(e1,(Ast.Op_ASSIGN, pos2),(Ast.S Ast.Yield(_pos1, args))) ->
       let acc,e1',after = refactor_lhs acc e1 in
       let acc,args' = refactor_list refactor_method_arg_no_cb (acc,DQueue.empty) args in
       let yield_s = C.yield ~lhs:e1' ~args:(DQueue.to_list args') pos2 in
       let acc = acc_enqueue yield_s acc in
         acc_append acc after
 
-  | Ast.Binop(e1,Ast.Op_ASSIGN,
+  | Ast.Binop(e1,(Ast.Op_ASSIGN, pos),
                 Ast.Binop(l,
-                            ( Ast.Op_PLUS | Ast.Op_MINUS | Ast.Op_TIMES
+                            (( Ast.Op_PLUS | Ast.Op_MINUS | Ast.Op_TIMES
                             | Ast.Op_REM  | Ast.Op_DIV   | Ast.Op_CMP
                             | Ast.Op_EQ   | Ast.Op_EQQ   (*| Ast.Op_NEQ*)
                             | Ast.Op_GEQ  | Ast.Op_LEQ   | Ast.Op_LT
@@ -1392,18 +1392,17 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
                             | Ast.Op_MATCH (*| Ast.Op_NMATCH*) | Ast.Op_XOR
                             | Ast.Op_POW  | Ast.Op_AREF  | Ast.Op_ASET
                             | Ast.Op_LSHIFT | Ast.Op_RSHIFT
-                             as op),
-                            r,_pos1),
-                pos) ->
+                             as op), _pos1),
+                            r)) ->
       let acc,e1',after = refactor_lhs acc e1 in
       let acc = refactor_binop_into_mc acc (Some e1') l op r pos in
         acc_append acc after
 
-  | Ast.Binop(lhs,Ast.Op_ASSIGN,rhs, pos) ->
+  | Ast.Binop(lhs,(Ast.Op_ASSIGN,pos),rhs) ->
       refactor_assignment acc lhs rhs pos
           
   (* A::m is really a method call *)
-  | Ast.Binop(_e1,Ast.Op_SCOPE,(Ast.Id((_,_),Ast.ID_Lowercase)),pos) -> 
+  | Ast.Binop(_e1,(Ast.Op_SCOPE,pos),(Ast.Id((_,_),Ast.ID_Lowercase))) -> 
       refactor_method_call_assign acc None (Ast.Call(e,[], None, pos))
 
   | Ast.Call _ as m ->
@@ -1414,7 +1413,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
      dead code.
   *) 
   | Ast.Binop((Ast.Id((s, _pos'),Ast.ID_Lowercase),
-                 Ast.Op_OP_ASGN Ast.Op_AND, rhs, pos))
+                 (Ast.Op_OP_ASGN Ast.Op_AND, pos), rhs))
       when not (StrSet.mem s acc.seen || is_special s) ->
       let id' = Var(Local, s) in
       let acc = add_seen s acc in
@@ -1425,11 +1424,11 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
   (* special case for 'x ||= e' when this is the first assignment to x.
      In this case, x is always set to e (the || can never fail) *) 
   | Ast.Binop((Ast.Id((s, _pos'),Ast.ID_Lowercase) as lhs,
-                 Ast.Op_OP_ASGN Ast.Op_OR, rhs, pos))
+                 (Ast.Op_OP_ASGN Ast.Op_OR, pos), rhs))
       when not (StrSet.mem s acc.seen || is_special s) ->
       refactor_assignment acc lhs rhs pos
 
-  | Ast.Binop(lhs, Ast.Op_OP_ASGN Ast.Op_AND, rhs, pos) ->
+  | Ast.Binop(lhs, (Ast.Op_OP_ASGN Ast.Op_AND, pos), rhs) ->
       let acc, lhs_id = refactor_id acc lhs in
       let asgn_acc = refactor_assignment (acc_emptyq acc) lhs rhs pos in
       let t_branch = C.seq (DQueue.to_list asgn_acc.q) pos in
@@ -1437,7 +1436,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
       let s = C.if_s (EId lhs_id) ~t:t_branch ~f:f_branch pos in
         acc_enqueue s (acc_seen acc asgn_acc)
 
-  | Ast.Binop(lhs, Ast.Op_OP_ASGN Ast.Op_OR, rhs, pos) ->
+  | Ast.Binop(lhs, (Ast.Op_OP_ASGN Ast.Op_OR, pos), rhs) ->
       let acc, lhs_id = refactor_id acc lhs in
       let asgn_acc = refactor_assignment (acc_emptyq acc) lhs rhs pos in
       let t_branch = C.expr (EId lhs_id) pos in
@@ -1445,8 +1444,8 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
       let s = C.if_s (EId lhs_id) ~t:t_branch ~f:f_branch pos in
         acc_enqueue s (acc_seen acc asgn_acc)
 
-  | Ast.Binop(lhs, Ast.Op_OP_ASGN op, rhs, pos) ->
-      refactor_assignment acc lhs (Ast.Binop(lhs,op,rhs,pos)) pos
+  | Ast.Binop(lhs, (Ast.Op_OP_ASGN op, pos), rhs) ->
+      refactor_assignment acc lhs (Ast.Binop(lhs,(op,pos),rhs)) pos
 
   | Ast.Id((s, pos),Ast.ID_Lowercase)
       when not (StrSet.mem s acc.seen || is_special s) -> 
@@ -1490,7 +1489,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
             acc_enqueue (C.while_s (EId True) while_body pos) acc
 
   | Ast.S Ast.Until(pos, b,g,body) -> 
-      refactor_stmt acc (Ast.S (Ast.While(pos, b,Ast.Unary(Ast.Op_UNot,g,pos),body)))
+      refactor_stmt acc (Ast.S (Ast.While(pos, b,Ast.Unary((Ast.Op_UNot,pos),g),body)))
 
   | Ast.S Ast.For(pos, formals,guard,body) ->
       let acc, formals = refactor_block_formal_list acc formals pos in
@@ -1576,8 +1575,8 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
         (Ast_ruby_printer.string_of_expr s)
       
 and refactor_method_name (acc:stmt acc) e : stmt acc * def_name = match e with
-  | Ast.Binop(targ,Ast.Op_SCOPE,msg, _pos)
-  | Ast.Binop(targ,Ast.Op_DOT,msg, _pos) ->
+  | Ast.Binop(targ,(Ast.Op_SCOPE,_pos),msg)
+  | Ast.Binop(targ,(Ast.Op_DOT, _pos),msg) ->
       let acc,targ' = refactor_id acc targ in
       let acc,msg' = refactor_msg acc msg in
         acc, (Singleton_Method (targ',msg'))
@@ -1648,11 +1647,11 @@ and refactor_rescue pos acc (gs,rescue_body) : stmt acc * rescue_block =
 
 and refactor_rescue_guard acc (e:Ast.expr) : StrSet.t * rescue_guard = 
   match e with
-    | Ast.Binop(Ast.S Ast.Empty,Ast.Op_ASSOC,bind_e, pos) -> 
+    | Ast.Binop(Ast.S Ast.Empty,(Ast.Op_ASSOC, pos),bind_e) -> 
         let obj = Ast.Id(("StandardError", pos),Ast.ID_Uppercase) in
-          refactor_rescue_guard acc (Ast.Binop(obj,Ast.Op_ASSOC,bind_e, pos))
+          refactor_rescue_guard acc (Ast.Binop(obj,(Ast.Op_ASSOC,pos),bind_e))
 
-    | Ast.Binop(exn_e,Ast.Op_ASSOC,bind_e, pos) -> 
+    | Ast.Binop(exn_e,(Ast.Op_ASSOC,pos),bind_e) -> 
         let acc, exn = refactor_tuple_expr acc exn_e in
         let acc, bind_lhs,after = refactor_lhs acc bind_e in
         let () = 
@@ -1670,8 +1669,8 @@ and refactor_rescue_guard acc (e:Ast.expr) : StrSet.t * rescue_guard =
           acc.seen, Rescue_Bind(exn,bind)
 
     | Ast.Id(_, Ast.ID_Uppercase)
-    | Ast.Binop(_,Ast.Op_SCOPE,_,_)
-    | Ast.Unary(Ast.Op_UScope,_,_) ->
+    | Ast.Binop(_,(Ast.Op_SCOPE,_),_)
+    | Ast.Unary((Ast.Op_UScope,_),_) ->
         let acc, e' = refactor_tuple_expr acc e in
           if not (DQueue.is_empty acc.q)
           then begin

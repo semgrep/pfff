@@ -28,10 +28,10 @@ let rec cmp_expr e1 e2 = match e1,e2 with
 
   | D Undef(e1,__), D Undef(e2,_) -> cmp_expr_list e1 e2
 
-  | Unary(u1,e1,_), Unary(u2,e2,_) ->
+  | Unary((u1,_),e1), Unary((u2,_),e2) ->
       cmp2 (pcompare u1 u2) cmp_expr e1 e2
 
-  | Binop(e11,o1,e12,_), Binop(e21,o2,e22,_) ->
+  | Binop(e11,(o1,_),e12), Binop(e21,(o2,_),e22) ->
       cmp2 (cmp2 (pcompare o1 o2) cmp_expr e11 e21) cmp_expr e12 e22
 
   | UOperator(u1,_), UOperator(u2,_) -> pcompare u1 u2
@@ -186,8 +186,8 @@ let tok_of = function
   | D Alias (_,_, pos)
   | D Undef (_,pos)
   | Id ((_, pos), _)
-  | Unary ( _ , _ , pos)
-  | Binop ( _ , _ , _ , pos)
+  | Unary ( (_, pos) , _ )
+  | Binop ( _ , (_, pos) , _)
   | Ternary ( _ , _ , _ , pos)
   | Hash ( _,_,pos)
   | Array ( _  , pos)
@@ -264,14 +264,13 @@ let rec mod_expr f expr =
           ))
       | D Undef(expr', pos) -> 
           D (Undef(List.map (mod_expr f) expr', pos))
-      | Unary(uop, expr, pos) -> 
-          Unary(uop, (mod_expr f expr), pos)
-      | Binop(expr1, binary_op, expr2, pos) ->
+      | Unary((uop,pos), expr) -> 
+          Unary((uop,pos), (mod_expr f expr))
+      | Binop(expr1, (binary_op,pos), expr2) ->
           Binop(
             (mod_expr f expr1),
-            binary_op,
-            (mod_expr f expr2),
-            pos
+            (binary_op, pos),
+            (mod_expr f expr2)
           )
       | Ternary(expr1, expr2, expr3, pos) ->
           Ternary(
@@ -391,8 +390,8 @@ let set_tok pos = function
   | D Alias(e1, e2, _) -> D (Alias(e1, e2, pos))
   | D Undef(elist, _) -> D (Undef(elist, pos))
   | Id((str, _), id_kind) -> Id((str, pos), id_kind)
-  | Unary(unary_op, e, _) -> Unary(unary_op, e, pos)
-  | Binop(expr1, binary_op, expr2, _) -> Binop(expr1, binary_op, expr2, pos)
+  | Unary((unary_op,_), e) -> Unary((unary_op,pos), e)
+  | Binop(expr1, (binary_op,_), expr2) -> Binop(expr1, (binary_op,pos), expr2)
   | Ternary(expr1, expr2, expr3, _) -> Ternary(expr1, expr2, expr3, pos)
   | Hash(b,el, _) -> Hash(b,el, pos)
   | Array(el, _) -> Array(el, pos)

@@ -208,19 +208,19 @@ let process_user_string m str pos = match m with
 (*****************************************************************************)
 
 let rec starts_with = function
-  | Binop(l,_,_,_) -> starts_with l
+  | Binop(l,_,_) -> starts_with l
   | Call(l,_,_,_) -> starts_with l
   | Ternary(l,_,_,_) -> starts_with l
   | e -> e
 
 let rec ends_with = function
-  | Binop(_,_,r,_) -> ends_with r
+  | Binop(_,_,r) -> ends_with r
   | Call(m,[],None,_) -> ends_with m
   | Ternary(_,_,r,_) -> ends_with r
   | e -> e
   
 let rec replace_end expr new_e = match expr with
-  | Binop(l,o,r,p) -> Binop(l,o,replace_end r new_e,p)
+  | Binop(l,(o,p),r) -> Binop(l,(o,p),replace_end r new_e)
   | Call(m,[],None,p) -> Call(replace_end m new_e,[],None,p)
   | Ternary(g,l,r,p) -> Ternary(g,l,replace_end r new_e,p)
   | _e -> new_e
@@ -255,11 +255,11 @@ let well_formed_command _m args = match args with
 let hash_literal_as_args args = 
   let rec work acc lst = match lst with
     | [] -> acc
-    | (Binop(_,Op_ASSOC,_,p))::_tl ->
+    | (Binop(_,(Op_ASSOC,p),_))::_tl ->
         let rec hash_args acc = function
           | [] -> acc, None
-          | [Unary(Op_UAmper,_,_) as blk] -> acc, Some blk
-          | (Binop(_,Op_ASSOC,_,_) as hd)::tl -> 
+          | [Unary((Op_UAmper,_),_) as blk] -> acc, Some blk
+          | (Binop(_,(Op_ASSOC,_),_) as hd)::tl -> 
               hash_args (hd::acc) tl
           | _ -> raise Dyp.Giveup
         in
@@ -289,34 +289,34 @@ let rec methodcall m args cb pos =
 
     | Literal _,_,_ -> raise Dyp.Giveup
 
-    | Binop(_x,Op_SCOPE,_y,_),[],None -> m
+    | Binop(_x,(Op_SCOPE,_),_y),[],None -> m
 
-    | Binop(x,Op_DOT,y,p),_,_ -> Call(unfold_dot x y p, args, cb,p)
+    | Binop(x,(Op_DOT,p),y),_,_ -> Call(unfold_dot x y p, args, cb,p)
     | _ -> Call(m,args,cb,pos)
 
 and unfold_dot l r pos = 
   match l with
   (* unfold nested a.b.c to become (a.b()).c() *)
-    | Binop(a,Op_DOT,b,p) ->
+    | Binop(a,(Op_DOT,p),b) ->
     let l' = methodcall (unfold_dot a b p) [] None p in
-      Binop(l',Op_DOT,r,pos)
+      Binop(l',(Op_DOT,pos),r)
         
-    | _ -> Binop(l,Op_DOT,r,pos)
+    | _ -> Binop(l,(Op_DOT,pos),r)
 
 and check_for_dot = function
-  | Binop(l,Op_DOT,r,p) -> methodcall (unfold_dot l r p) [] None p
+  | Binop(l,(Op_DOT,p),r) -> methodcall (unfold_dot l r p) [] None p
   | e -> e
   
 and scope l r = 
   let l = check_for_dot l in
-  Binop(l,Op_SCOPE,r,H.tok_of l)
+  Binop(l,(Op_SCOPE,H.tok_of l), r)
   
 
 let command_codeblock cmd cb = 
   match cmd with 
   | Call(c,args,None,p) -> Call(c,args,Some cb,p)
-  | Binop(_,Op_DOT,_,p)
-  | Binop(_,Op_SCOPE,_,p) -> Call(cmd,[],Some cb,p)
+  | Binop(_,(Op_DOT,p),_)
+  | Binop(_,(Op_SCOPE,p),_) -> Call(cmd,[],Some cb,p)
   | Id((_,p),_) -> Call(cmd,[],Some cb,p)
   | _ -> raise Dyp.Giveup
 
@@ -373,35 +373,35 @@ let fix_broken_assoc l op r =
 (*****************************************************************************)
 
 let expr_priority = function
-  | Unary(Op_UBang,_,_) | Unary(Op_UTilde,_,_)| Unary(Op_UPlus,_,_) -> 2000
-  | Unary(Op_UMinus,_,_) -> 1900
-  | Binop(_,Op_POW,_,_) -> 1800
-  | Binop(_,Op_DIV,_,_) | Binop(_,Op_REM,_,_) | Binop(_,Op_TIMES,_,_) -> 1700
-  | Binop(_,Op_MINUS,_,_) -> 1500
-  | Binop(_,Op_PLUS,_,_) -> 1500
-  | Binop(_,Op_LSHIFT,_,_) | Binop(_,Op_RSHIFT,_,_) -> 1400
-  | Binop(_,Op_BAND,_,_) -> 1300
-  | Binop(_,Op_BOR,_,_) | Binop(_,Op_XOR,_,_) -> 1200
+  | Unary((Op_UBang,_),_) | Unary((Op_UTilde,_),_)| Unary((Op_UPlus,_),_) -> 2000
+  | Unary((Op_UMinus,_),_) -> 1900
+  | Binop(_,(Op_POW,_),_) -> 1800
+  | Binop(_,(Op_DIV,_),_) | Binop(_,(Op_REM,_),_) | Binop(_,(Op_TIMES,_),_) -> 1700
+  | Binop(_,(Op_MINUS,_),_) -> 1500
+  | Binop(_,(Op_PLUS,_),_) -> 1500
+  | Binop(_,(Op_LSHIFT,_),_) | Binop(_,(Op_RSHIFT,_),_) -> 1400
+  | Binop(_,(Op_BAND,_),_) -> 1300
+  | Binop(_,(Op_BOR,_),_) | Binop(_,(Op_XOR,_),_) -> 1200
 
-  | Binop(_,Op_LEQ,_,_) | Binop(_,Op_LT,_,_) 
-  | Binop(_,Op_GEQ,_,_) | Binop(_,Op_GT,_,_) -> 1100
+  | Binop(_,(Op_LEQ,_),_) | Binop(_,(Op_LT,_),_) 
+  | Binop(_,(Op_GEQ,_),_) | Binop(_,(Op_GT,_),_) -> 1100
 
-  | Binop(_,Op_MATCH,_,_) | Binop(_,Op_NMATCH,_,_) | Binop(_,Op_NEQ,_,_) 
-  | Binop(_,Op_CMP,_,_) | Binop(_,Op_EQ,_,_) | Binop(_,Op_EQQ,_,_) -> 1000
+  | Binop(_,(Op_MATCH,_),_) | Binop(_,(Op_NMATCH,_),_) | Binop(_,(Op_NEQ,_),_) 
+  | Binop(_,(Op_CMP,_),_) | Binop(_,(Op_EQ,_),_) | Binop(_,(Op_EQQ,_),_) -> 1000
 
-  | Binop(_,Op_DOT2,_,_) | Binop(_,Op_DOT3,_,_) -> 800
+  | Binop(_,(Op_DOT2,_),_) | Binop(_,(Op_DOT3,_),_) -> 800
 
-  | Binop(_,Op_AND,_,_) -> 750
-  | Binop(_,Op_OR,_,_) -> 700
+  | Binop(_,(Op_AND,_),_) -> 750
+  | Binop(_,(Op_OR,_),_) -> 700
 
   | Ternary _ -> 650
 
-  | Binop(_,Op_ASSIGN,_,_) | Binop(_,Op_OP_ASGN _,_,_) -> 600
+  | Binop(_,(Op_ASSIGN,_),_) | Binop(_,(Op_OP_ASGN _,_),_) -> 600
 
-  | Binop(_,Op_ASSOC,_,_) -> 400
+  | Binop(_,(Op_ASSOC,_),_) -> 400
 
-  | Unary(Op_UNot,_,_) -> 200
-  | Binop(_,Op_kAND,_,_) | Binop(_,Op_kOR,_,_) -> 100
+  | Unary((Op_UNot,_),_) -> 200
+  | Binop(_,(Op_kAND,_),_) | Binop(_,(Op_kOR,_),_) -> 100
 
   | Binop _ | Unary _ | _ -> max_int
   
@@ -411,7 +411,7 @@ let binop_priority = function
 
 
 let prune_uop uop arg pos = 
-  let e = Unary(uop,arg,pos) in
+  let e = Unary((uop,pos),arg) in
   let p = expr_priority e in
   let p' = expr_priority arg in
     if p' < p then raise Dyp.Giveup
@@ -420,7 +420,7 @@ let prune_uop uop arg pos =
 let prune_right_assoc l op r = 
   let l,op,r = fix_broken_neq l op r in
   let l,op,r = fix_broken_assoc l op r in
-  let e = Binop(l,op,r,(H.tok_of l)) in
+  let e = Binop(l,(op,(H.tok_of l)),r) in
   let p = binop_priority e in
   let pl = binop_priority l in
   let pr = binop_priority r in
@@ -434,9 +434,9 @@ let prune_right_assoc l op r =
 let prune_left_assoc l op r = 
   let l,op,r = fix_broken_neq l op r in
   let l,op,r = fix_broken_assoc l op r in
-  let e = Binop(l,op,r,(H.tok_of l)) in
+  let e = Binop(l,(op, H.tok_of l),r) in
     match l,op,r with
-      | _, _, Binop(_,Op_ASSIGN,_,_) ->  e
+      | _, _, Binop(_,(Op_ASSIGN,_),_) ->  e
 
       | _ ->
           let p = binop_priority e in
@@ -487,7 +487,7 @@ let wrap xs f =
 
 let rec rhs_do_codeblock = function
   | Call(_,_,Some (CodeBlock(false,_,_,_)),_) -> true
-  | Binop(_,_,r,_)
+  | Binop(_,_,r)
   | Call(r,[],None,_)
   | Ternary(_,_,r,_) -> rhs_do_codeblock r
   | Hash(false,el,_) -> rhs_do_codeblock (Utils.last el)
@@ -521,17 +521,17 @@ let merge_binop xs =
   l'
   in
   let rec nested_assign = function
-    | Binop(_,(Op_ASSIGN|Op_OP_ASGN _),_,_) -> true
-    | Binop(_,_,(Binop _ as r),_) -> nested_assign r
+    | Binop(_,((Op_ASSIGN|Op_OP_ASGN _),_),_) -> true
+    | Binop(_,_,(Binop _ as r)) -> nested_assign r
     | _ -> false
   in
     match l',newest with
-      | [Binop(_,Op_ASSIGN,_,_)], Binop(_,Op_ASSIGN,_,_) ->
+      | [Binop(_,(Op_ASSIGN,_),_)], Binop(_,(Op_ASSIGN,_),_) ->
           Printf.eprintf "fail1\n";
           fail ()
 
-      | [Binop(l,_,_,_)], correct when nested_assign l -> [correct]
-      | [correct], Binop(l,_,_,_) when nested_assign l -> [correct]
+      | [Binop(l,_,_)], correct when nested_assign l -> [correct]
+      | [correct], Binop(l,_,_) when nested_assign l -> [correct]
 
       | _ -> Printf.eprintf "fail2\n";fail()
   )
@@ -567,26 +567,26 @@ let merge_stmt xs =
       (* resolve "x y{z}" vs "x y do z end" *)
       resolve_block_delim with_cb no_cb;
 
-  | [S ExnBlock({body_exprs = [Binop(_,Op_ASSIGN,_,_)]; _},_)],
-      (Binop(_,Op_ASSIGN,(S ExnBlock _),_) as correct)
-  | ([Binop(_,Op_ASSIGN,(S ExnBlock _),_) as correct]),
-      S ExnBlock({body_exprs = [Binop(_,Op_ASSIGN,_,_)]; _},_) ->
+  | [S ExnBlock({body_exprs = [Binop(_,(Op_ASSIGN,_),_)]; _},_)],
+      (Binop(_,(Op_ASSIGN,_),(S ExnBlock _)) as correct)
+  | ([Binop(_,(Op_ASSIGN,_),(S ExnBlock _)) as correct]),
+      S ExnBlock({body_exprs = [Binop(_,(Op_ASSIGN,_),_)]; _},_) ->
         (* x = y rescue 3 is a special case where the rescue binds
        solely to "y" and not the full assignment *)
       [correct]
 
-  | [S ExnBlock({body_exprs = [Binop(_,Op_OP_ASGN _,_,_)]; _},_) as correct],
-        Binop(_,Op_OP_ASGN _,(S ExnBlock _),_)
-  | [Binop(_,Op_OP_ASGN _,(S ExnBlock _),_)],
-        (S ExnBlock({body_exprs = [Binop(_,Op_OP_ASGN _,_,_)]; _},_) as correct) ->
+  | [S ExnBlock({body_exprs = [Binop(_,(Op_OP_ASGN _,_),_)]; _},_) as correct],
+        Binop(_,(Op_OP_ASGN _,_),(S ExnBlock _))
+  | [Binop(_,(Op_OP_ASGN _,_),(S ExnBlock _))],
+        (S ExnBlock({body_exprs = [Binop(_,(Op_OP_ASGN _,_),_)]; _},_) as correct) ->
         (* However, using any other assign-operator, reverts to the 
                other semantics *)
       [correct]
 
   (* top-level assignment has a higher priority than any other op *)
-  | [Binop(l,(Op_ASSIGN|Op_OP_ASGN _ as op),r,pos)], (Binop _ | Ternary _) ->
+  | [Binop(l,((Op_ASSIGN|Op_OP_ASGN _ as op),pos),r)], (Binop _ | Ternary _) ->
       let l,op,r = fix_broken_neq l op r in
-        [Binop(l,op,r,pos)]
+        [Binop(l,(op,pos),r)]
 
   (* we can't use is_cond_modifier to check for a rescue modifier,
      so we do it here *)     

@@ -89,8 +89,8 @@ type expr =
   | Array of expr list * tok
   | Tuple of expr list * tok
 
-  | Unary of unary_op * expr * tok
-  | Binop of expr * binary_op * expr * tok
+  | Unary of unary_op wrap * expr
+  | Binop of expr * binary_op wrap * expr
   | Ternary of expr * expr * expr * tok
 
   | Call of expr * expr list * expr option * tok
