@@ -91,6 +91,7 @@ let all_actions () =
     Test_analyze_js.actions()@
     Test_parsing_python.actions()@
     Test_parsing_ruby.actions()@
+    Test_analyze_ruby.actions()@
 
     Test_parsing_c.actions()@
     Test_parsing_cpp.actions()@
