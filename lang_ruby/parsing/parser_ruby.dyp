@@ -120,7 +120,7 @@ let is_exnblock = function
   | _ -> false
 
 let rec add_eq = function
-  | Id(k,s,p) -> Id(ID_Assign(k), s,p)
+  | Id((s,p),k) -> Id((s,p), ID_Assign(k))
   | Binop(e1,Op_SCOPE,e2,p) -> Binop(e1,Op_SCOPE, add_eq e2,p)
   | Binop(e1,Op_DOT,e2,p) -> Binop(e1,Op_DOT, add_eq e2,p)
   | Operator(Op_AREF,p) -> Operator(Op_ASET,p)
@@ -928,13 +928,13 @@ class_inheritance:
 /*(*************************************************************************)*/
 
 identifier:
-  | T_LID<id,pos>          { Id (ID_Lowercase, id, pos)}
-  | T_UID<id,pos>          { Id (ID_Uppercase, id, pos)}
+  | T_LID<id,pos>          { Id ((id,pos), ID_Lowercase)}
+  | T_UID<id,pos>          { Id ((id,pos), ID_Uppercase)}
 
-  | T_BUILTIN_VAR<id,pos>  { Id (ID_Builtin, id, pos) }
-  | T_GLOBAL_VAR<id,pos>   { Id (ID_Global, id, pos) }
-  | T_INST_VAR<id,pos>     { Id (ID_Instance, id, pos) }
-  | T_CLASS_VAR<id,pos>    { Id (ID_Class, id, pos) }
+  | T_BUILTIN_VAR<id,pos>  { Id ((id,pos), ID_Builtin) }
+  | T_GLOBAL_VAR<id,pos>   { Id ((id,pos), ID_Global) }
+  | T_INST_VAR<id,pos>     { Id ((id,pos), ID_Instance) }
+  | T_CLASS_VAR<id,pos>    { Id ((id,pos), ID_Class) }
 
   | K_NIL<pos>             { Literal(Nil,pos) }
   | K_SELF<pos>            { Literal(Self,pos) }
@@ -1010,34 +1010,34 @@ unary_op:
   | T_TILDE<pos>   { Op_UTilde,pos } | T_BANG<pos>    { Op_UBang,pos }
 
 keyword_as_id:
-  | K_CLASS<pos>   { Id(ID_Lowercase, "class", pos) }
-  | K_MODULE<pos>  { Id(ID_Lowercase, "module", pos) }
-  | K_DEF<pos>     { Id(ID_Lowercase, "def", pos) }
-  | K_END<pos>     { Id(ID_Uppercase, "END", pos) }
-  | K_ALIAS<pos>   { Id(ID_Lowercase, "alias", pos) }
-  | K_UNDEF<pos>   { Id(ID_Lowercase, "undef", pos) }
-  | K_BEGIN<pos>   { Id(ID_Lowercase, "BEGIN", pos) }
-  | K_RESCUE<pos>  { Id(ID_Lowercase, "rescue", pos) }
-  | K_ENSURE<pos>  { Id(ID_Lowercase, "ensure", pos) }
-  | K_IF<pos>      { Id(ID_Lowercase, "if", pos) }
-  | K_UNLESS<pos>  { Id(ID_Lowercase, "unless", pos) }
-  | K_THEN<pos>    { Id(ID_Lowercase, "then", pos) }
-  | K_ELSIF<pos>   { Id(ID_Lowercase, "elsif", pos) }
-  | K_ELSE<pos>    { Id(ID_Lowercase, "else", pos) }
-  | K_CASE<pos>    { Id(ID_Lowercase, "case", pos) }
-  | K_WHEN<pos>    { Id(ID_Lowercase, "when", pos) }
-  | K_WHILE<pos>   { Id(ID_Lowercase, "while", pos) }
-  | K_UNTIL<pos>   { Id(ID_Lowercase, "until", pos) }
-  | K_FOR<pos>     { Id(ID_Lowercase, "for", pos) }
-  | K_IN<pos>      { Id(ID_Lowercase, "in", pos) }
-  | K_DO<pos>      { Id(ID_Lowercase, "do", pos) }
-  | K_RETURN<pos>  { Id(ID_Lowercase, "return", pos) }
-  | K_AND<pos>     { Id(ID_Lowercase, "and", pos) }
-  | K_OR<pos>      { Id(ID_Lowercase, "or", pos) }
-  | K_NOT<pos>     { Id(ID_Lowercase, "not", pos) }
-  | K_lBEGIN<pos>  { Id(ID_Lowercase, "begin", pos) }
-  | K_lEND<pos>    { Id(ID_Lowercase, "end", pos) }
-  | K_YIELD<pos>   { Id(ID_Lowercase, "yield", pos) }
+  | K_CLASS<pos>   { Id(("class", pos), ID_Lowercase) }
+  | K_MODULE<pos>  { Id(("module", pos), ID_Lowercase) }
+  | K_DEF<pos>     { Id(("def", pos), ID_Lowercase) }
+  | K_END<pos>     { Id(("END", pos), ID_Lowercase) }
+  | K_ALIAS<pos>   { Id(("alias", pos), ID_Lowercase) }
+  | K_UNDEF<pos>   { Id(("undef", pos), ID_Lowercase) }
+  | K_BEGIN<pos>   { Id(("BEGIN", pos), ID_Lowercase) }
+  | K_RESCUE<pos>  { Id(("rescue", pos), ID_Lowercase) }
+  | K_ENSURE<pos>  { Id(("ensure", pos), ID_Lowercase) }
+  | K_IF<pos>      { Id(("if", pos), ID_Lowercase) }
+  | K_UNLESS<pos>  { Id(("unless", pos), ID_Lowercase) }
+  | K_THEN<pos>    { Id(("then", pos), ID_Lowercase) }
+  | K_ELSIF<pos>   { Id(("elsif", pos), ID_Lowercase) }
+  | K_ELSE<pos>    { Id(("else", pos), ID_Lowercase) }
+  | K_CASE<pos>    { Id(("case", pos), ID_Lowercase) }
+  | K_WHEN<pos>    { Id(("when", pos), ID_Lowercase) }
+  | K_WHILE<pos>   { Id(("while", pos), ID_Lowercase) }
+  | K_UNTIL<pos>   { Id(("until", pos), ID_Lowercase) }
+  | K_FOR<pos>     { Id(("for", pos), ID_Lowercase) }
+  | K_IN<pos>      { Id(("in", pos), ID_Lowercase) }
+  | K_DO<pos>      { Id(("do", pos), ID_Lowercase) }
+  | K_RETURN<pos>  { Id(("return", pos), ID_Lowercase) }
+  | K_AND<pos>     { Id(("and", pos), ID_Lowercase) }
+  | K_OR<pos>      { Id(("or", pos), ID_Lowercase) }
+  | K_NOT<pos>     { Id(("not", pos), ID_Lowercase) }
+  | K_lBEGIN<pos>  { Id(("begin", pos), ID_Lowercase) }
+  | K_lEND<pos>    { Id(("end", pos), ID_Lowercase) }
+  | K_YIELD<pos>   { Id(("yield", pos), ID_Lowercase) }
 /*  | K_DEFINED<pos> { Id(ID_Lowercase, "defined?", pos) }*/
 
 

@@ -17,7 +17,7 @@ let rec cmp_expr e1 e2 = match e1,e2 with
   | D ModuleDef(e1,body1, _), D ModuleDef(e2,body2, _) -> 
       cmp2 (cmp_expr e1 e2) cmp_body_exn body1 body2
 
-  | Id(k1,s1,_), Id(k2,s2,_) -> 
+  | Id((s1,_),k1), Id((s2,_),k2) -> 
       cmp2 (pcompare k1 k2) pcompare s1 s2
 
   | S Empty, S Empty -> 0
@@ -185,7 +185,7 @@ let tok_of = function
   | Literal (_, pos)
   | D Alias (_,_, pos)
   | D Undef (_,pos)
-  | Id (_, _, pos)
+  | Id ((_, pos), _)
   | Unary ( _ , _ , pos)
   | Binop ( _ , _ , _ , pos)
   | Ternary ( _ , _ , _ , pos)
@@ -393,7 +393,7 @@ let set_tok pos = function
   | Literal(lit_kind, _) -> Literal(lit_kind, pos) 
   | D Alias(e1, e2, _) -> D (Alias(e1, e2, pos))
   | D Undef(elist, _) -> D (Undef(elist, pos))
-  | Id(id_kind, str, _) -> Id(id_kind, str, pos)
+  | Id((str, _), id_kind) -> Id((str, pos), id_kind)
   | Unary(unary_op, e, _) -> Unary(unary_op, e, pos)
   | Binop(expr1, binary_op, expr2, _) -> Binop(expr1, binary_op, expr2, pos)
   | Ternary(expr1, expr2, expr3, _) -> Ternary(expr1, expr2, expr3, pos)
@@ -460,7 +460,7 @@ let msg_of_str a pos = match a with
   | "-@" -> UOperator(Op_UMinus,pos)
   | "+@" -> UOperator(Op_UPlus,pos)
   | "~@" | "~" -> UOperator(Op_UTilde,pos)
-  | s -> Id(id_kind s pos, s, pos)
+  | s -> Id((s, pos), id_kind s pos)
 
 
 let str_uop = function

@@ -96,7 +96,7 @@ let seen_str _dyp id =
     Stack.push (Env.add id env) env_stack
 
 let rec seen dyp = function
-  | Id(ID_Lowercase,s,_) -> seen_str dyp s
+  | Id((s, _), ID_Lowercase) -> seen_str dyp s
   | Array(es,_) | Tuple(es,_) -> List.iter (seen dyp) es
   | _ -> ()
 
@@ -285,7 +285,7 @@ let rec methodcall m args cb pos =
     | S Yield([],p),args,None -> S (Yield(args,p))
     | Literal(True,_p), [],None
     | Literal(False,_p),[],None
-    | Id(_,_,_p),     [],None -> m
+    | Id((_,_p),_),     [],None -> m
 
     | Literal _,_,_ -> raise Dyp.Giveup
 
@@ -317,7 +317,7 @@ let command_codeblock cmd cb =
   | Call(c,args,None,p) -> Call(c,args,Some cb,p)
   | Binop(_,Op_DOT,_,p)
   | Binop(_,Op_SCOPE,_,p) -> Call(cmd,[],Some cb,p)
-  | Id(_,_,p) -> Call(cmd,[],Some cb,p)
+  | Id((_,p),_) -> Call(cmd,[],Some cb,p)
   | _ -> raise Dyp.Giveup
 
 (* sometimes the lexer gets can't properly handle x!= as x(!=) and
@@ -328,14 +328,14 @@ let fix_broken_neq l op r =
   | Op_ASSIGN -> 
       begin match ends_with l with
        (* bugfix: do not transform $! *)
-       | Id(ID_Builtin, "$!", _) -> default
+       | Id(("$!", _), ID_Builtin) -> default
 
-       | Id(k,s,p) ->
+       | Id((s,p), k) ->
          let len = String.length s in
          if s.[len-1] == '!'
          then 
            let s' = String.sub s 0 (len-1) in
-           let l' = replace_end l (Id(k,s',p)) in
+           let l' = replace_end l (Id((s',p),k)) in
             l', Op_NEQ, r
           else default
        | _ -> default
@@ -348,8 +348,8 @@ let fix_broken_assoc l op r =
   let default = l, op, r in
   match op with
   | Op_GT -> begin match ends_with l with
-  | Id(ID_Assign ik,s,p) ->
-      let l' = replace_end l (Id(ik,s,p)) in
+  | Id((s,p), ID_Assign ik) ->
+      let l' = replace_end l (Id((s,p),ik)) in
         l', Op_ASSOC, r
   | Literal(Atom(sc), pos) ->
       let astr,rest = match List.rev sc with

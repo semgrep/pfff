@@ -52,9 +52,14 @@
 (* ------------------------------------------------------------------------- *)
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
-(* TODO: wrap and bracket *)
 type tok = Parse_info.t
  (* with tarzan *)
+
+(* a shortcut to annotate some information with token/position information *)
+type 'a wrap = 'a * tok
+
+(* round(), square[], curly{}, angle<> brackets *)
+type 'a _bracket = tok * 'a * tok
 
 (* ------------------------------------------------------------------------- *)
 (* Ident/name *)
@@ -76,7 +81,7 @@ type id_kind =
 type expr = 
   | Literal of lit_kind * tok
 
-  | Id of id_kind * string * tok
+  | Id of string wrap * id_kind
   | Operator of binary_op * tok
   | UOperator of unary_op * tok
 
