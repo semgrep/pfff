@@ -10,6 +10,7 @@ module H = Ast_ruby_helpers
 open Il_ruby_helpers
 module C = Il_ruby_helpers.Abbr
 
+module G = AST_generic (* for unbracket *)
 
 type 'a acc = {
   q : 'a DQueue.t;
@@ -1554,12 +1555,12 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
         end
 
   | Ast.D Ast.BeginBlock(pos, lst) ->
-      let body_acc = refactor_stmt_list (acc_empty acc) lst in
+      let body_acc = refactor_stmt_list (acc_empty acc) (G.unbracket lst) in
       let body' = C.seq (DQueue.to_list body_acc.q) pos in
         acc_enqueue (mkstmt (Begin body') pos) acc
 
   | Ast.D Ast.EndBlock(pos, lst) ->
-      let body_acc = refactor_stmt_list (acc_empty acc) lst in
+      let body_acc = refactor_stmt_list (acc_empty acc) (G.unbracket lst) in
       let body' = C.seq (DQueue.to_list body_acc.q) pos in
         acc_enqueue (mkstmt (End body') pos) acc
 
@@ -1765,7 +1766,7 @@ and refactor_block_formal acc t pos : stmt acc * block_formal_param = match t wi
         acc, Formal_star2(s)
 
   | Ast.Formal_tuple(f_lst) ->
-      let acc, lst = refactor_block_formal_list acc f_lst pos in
+      let acc, lst = refactor_block_formal_list acc (G.unbracket f_lst) pos in
         acc, Formal_tuple lst
   | Ast.Formal_amp _ -> Log.fatal (Log.of_tok pos) "refactor_block_formal: & arg?"
   | Ast.Formal_default _ -> Log.fatal (Log.of_tok pos) "refactor_block_formal: default arg?"

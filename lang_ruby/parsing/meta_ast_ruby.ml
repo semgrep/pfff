@@ -138,11 +138,11 @@ let rec vof_expr =
       and v0 = vof_tok v0
       in OCaml.VSum (("ModuleDef", [ v0; v1; v2 ]))
   | D BeginBlock ((v2, v1)) ->
-      let v1 = OCaml.vof_list vof_expr v1
+      let v1 = vof_bracket (OCaml.vof_list vof_expr) v1
       and v2 = vof_tok v2
       in OCaml.VSum (("BeginBlock", [ v2; v1 ]))
   | D EndBlock ((v2, v1)) ->
-      let v1 = OCaml.vof_list vof_expr v1
+      let v1 = vof_bracket (OCaml.vof_list vof_expr) v1
       and v2 = vof_tok v2
       in OCaml.VSum (("EndBlock", [ v2; v1 ]))
   | D Alias ((v0, v1, v2)) ->
@@ -259,7 +259,7 @@ and vof_formal_param =
       OCaml.VSum (("Formal_star", [ v1; v2 ]))
   | Formal_rest v1 -> let v1 = vof_tok v1 in OCaml.VSum (("Formal_rest", [v1]))
   | Formal_tuple v1 ->
-      let v1 = OCaml.vof_list vof_formal_param v1
+      let v1 = vof_bracket (OCaml.vof_list vof_formal_param) v1
       in OCaml.VSum (("Formal_tuple", [ v1 ]))
   | Formal_default ((v1, v2, v3)) ->
       let v1 = vof_ident v1

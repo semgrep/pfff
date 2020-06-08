@@ -45,8 +45,9 @@ let rec cmp_expr e1 e2 = match e1,e2 with
   | S Block(el1,_), S Block (el2,_)
   | Array (_, el1,_), Array (_, el2,_)
   | Tuple (el1,_), Tuple (el2,_)
-  | D BeginBlock (_, el1), D BeginBlock (_, el2)
-  | D EndBlock (_, el1), D EndBlock (_, el2) -> cmp_expr_list el1 el2
+  | D BeginBlock (_, (_, el1, _)), D BeginBlock (_, (_, el2, _))
+  | D EndBlock (_, (_, el1, _)), D EndBlock (_, (_, el2, _)) ->
+      cmp_expr_list el1 el2
 
   | S ExnBlock(body1,_), S ExnBlock(body2,_) ->
       cmp_body_exn body1 body2
@@ -151,7 +152,8 @@ and cmp_formal f1 f2 = match f1,f2 with
   | Formal_amp (_,(s1,_)), Formal_amp (_, (s2, _)) -> String.compare s1 s2
   | Formal_star (_, (s1,_)), Formal_star (_, (s2, _)) -> String.compare s1 s2
   | Formal_rest _, Formal_rest _ -> 0
-  | Formal_tuple l1, Formal_tuple l2 -> cmp_list cmp_formal l1 l2
+  | Formal_tuple (_, l1, _), Formal_tuple (_, l2, _) -> 
+      cmp_list cmp_formal l1 l2
   | Formal_default((s1,_),_, e1),Formal_default((s2,_),_,e2) ->
       cmp2 (String.compare s1 s2) cmp_expr e1 e2
   | _ -> Utils.cmp_ctors f1 f2
@@ -253,6 +255,8 @@ let binary_op_of_string = function
   | Op_OP_ASGN op -> (str_binop op) ^ "="
 *)
 
+let map_bracket f (t1, x, t2) = (t1, f x, t2)
+
 let rec mod_expr f expr = 
   let processed_expr =
     match expr with
@@ -325,8 +329,10 @@ let rec mod_expr f expr =
           CodeBlock(b, formals, (List.map (mod_expr f) el), pos)
       | D ClassDef(pos, expr, i_kind, body) ->
           D (ClassDef(pos, (mod_expr f expr), i_kind, (mod_body_exn f body)))
-      | D BeginBlock(pos, el) -> D (BeginBlock(pos, List.map (mod_expr f) el))
-      | D EndBlock(pos, el) -> D (EndBlock(pos, List.map (mod_expr f) el))
+      | D BeginBlock(pos, el) -> 
+        D (BeginBlock(pos, map_bracket (List.map (mod_expr f)) el))
+      | D EndBlock(pos, el) -> 
+        D (EndBlock(pos, map_bracket (List.map (mod_expr f)) el))
       | S ExnBlock(body, pos) -> S (ExnBlock(mod_body_exn f body, pos))
       | S Case(block, pos) -> S (Case(mod_case_block f block, pos))
       | S Return(pos, el) -> S (Return(pos, (List.map (mod_expr f) el)))

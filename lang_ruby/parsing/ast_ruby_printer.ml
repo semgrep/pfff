@@ -140,10 +140,10 @@ and format_expr ppf expr = match expr with
 	    format_expr_break_list exps
       end 
 
-  | D BeginBlock(_, el) -> 
+  | D BeginBlock(_, (_, el, _)) -> 
       fprintf ppf "@[<v 0>@[<v 2>BEGIN {@,%a@]@,}@]"
 	format_expr_break_list el
-  | D EndBlock(_, el) -> 
+  | D EndBlock(_, (_, el, _)) -> 
       fprintf ppf "@[<v 0>@[<v 2>END {@,%a@],}@]"
 	format_expr_break_list el
 
@@ -242,7 +242,7 @@ and format_formal ppf = function
   | Formal_amp (_, (s,_)) -> fprintf ppf "&%s" s
   | Formal_star (_, (s, _)) -> fprintf ppf "*%s" s
   | Formal_rest _ -> fprintf ppf "*"
-  | Formal_tuple t -> fprintf ppf "(@[%a@])" format_formals t
+  | Formal_tuple (_, t, _) -> fprintf ppf "(@[%a@])" format_formals t
   | Formal_default((f, _),_, e) -> 
       fprintf ppf "@[%s = @[%a@]@]"
 	f format_expr e

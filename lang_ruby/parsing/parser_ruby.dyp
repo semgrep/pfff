@@ -339,9 +339,9 @@ stmt:
       }
 
   | scope_BEGIN<pos> eols T_LBRACE eols stmt_list<xs> T_RBRACE
-      { S.leave_scope dyp; D (BeginBlock(pos, xs))}
+      { S.leave_scope dyp; D (BeginBlock(pos, ($3, xs, $6)))}
   | scope_END<pos>  eols T_LBRACE  eols stmt_list<xs> T_RBRACE
-      { S.leave_scope dyp; D (EndBlock(pos, xs))}
+      { S.leave_scope dyp; D (EndBlock(pos, ($3, xs, $6)))}
 
   | topcall<c> 
       { c }
@@ -874,7 +874,7 @@ formal_arg:
   | T_LID<id,pos> T_ASSIGN eols arg<e> 
       { M.seen_str dyp id; 
         Formal_default ($1, $2, e) }
-  | any_LPAREN formal_arg_nonempty_list<f> T_RPAREN { Formal_tuple f }
+  | any_LPAREN formal_arg_nonempty_list<f> T_RPAREN { Formal_tuple ($1, f, $3)}
 
 formal_arg_nonempty_list:
   | formal_arg<f> { [f] }

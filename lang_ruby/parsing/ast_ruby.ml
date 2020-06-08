@@ -223,8 +223,8 @@ and definition =
   | ClassDef of tok * expr * inheritance_kind option * body_exn
   | MethodDef of tok * expr * formal_param list * body_exn
 
-  | BeginBlock of tok * stmts
-  | EndBlock of tok * stmts
+  | BeginBlock of tok * stmts bracket
+  | EndBlock of tok * stmts bracket
 
   | Alias of tok * expr * expr
   | Undef of tok * expr list
@@ -234,7 +234,7 @@ and definition =
     | Formal_amp of tok * ident
     | Formal_star of tok * ident (* as in *x *)
     | Formal_rest of tok (* just '*' *)
-    | Formal_tuple of formal_param list (* bracket *)
+    | Formal_tuple of formal_param list bracket
     | Formal_default of ident * tok (* = *) * expr
   
   and inheritance_kind = 
