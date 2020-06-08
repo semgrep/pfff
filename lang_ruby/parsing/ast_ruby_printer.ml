@@ -40,12 +40,12 @@ and format_lit_kind ppf kind = match kind with
 and format_expr ppf expr = match expr with
   | S Empty -> fprintf ppf "<empty>"
   | Literal(kind,_) -> format_lit_kind ppf kind
-  | D Alias (e1,e2,_) -> 
+  | D Alias (_, e1,e2) -> 
       fprintf ppf "alias %a %a"
 	format_expr e1
 	format_expr e2
 
-  | D Undef (e1,_) -> 
+  | D Undef (_, e1) -> 
       fprintf ppf "undef %a"
 	(Utils.format_comma_list format_expr) e1
 
@@ -114,7 +114,7 @@ and format_expr ppf expr = match expr with
 	format_expr expr
 	format_expr_break_list body
 
-  | D ModuleDef (name,body, _) -> 
+  | D ModuleDef (_, name,body) -> 
       fprintf ppf "@[<v 0>@[<v 2>module %a@,%a@]@,"
 	format_expr name
 	format_expr_break_list body.body_exprs;
@@ -123,7 +123,7 @@ and format_expr ppf expr = match expr with
       format_else ppf body.else_expr;
       fprintf ppf "end@]"
 
-  | D MethodDef (mname,formals,body, _) ->
+  | D MethodDef (_, mname,formals,body) ->
       fprintf ppf "@[<v 0>@[<v 2>def %a(@[%a@])@,%a@]@,"
 	format_expr mname
 	format_formals formals
@@ -140,16 +140,16 @@ and format_expr ppf expr = match expr with
 	    format_expr_break_list exps
       end 
 
-  | D BeginBlock(el,_) -> 
+  | D BeginBlock(_, el) -> 
       fprintf ppf "@[<v 0>@[<v 2>BEGIN {@,%a@]@,}@]"
 	format_expr_break_list el
-  | D EndBlock(el,_) -> 
+  | D EndBlock(_, el) -> 
       fprintf ppf "@[<v 0>@[<v 2>END {@,%a@],}@]"
 	format_expr_break_list el
 
   | S Case(c,_) -> format_case ppf c
 
-  | D ClassDef(name,inh,body, _) -> 
+  | D ClassDef(_, name,inh,body) -> 
       fprintf ppf "@[<v 0>@[<v 2>class %a %a@,%a@]@,"
 	format_expr name
 	format_inheritance inh

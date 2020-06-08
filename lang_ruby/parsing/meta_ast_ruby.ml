@@ -116,40 +116,40 @@ let rec vof_expr =
       let v1 = vof_body_exn v1
       and v2 = vof_tok v2
       in OCaml.VSum (("ExnBlock", [ v1; v2 ]))
-  | D ClassDef ((v1, v2, v3, v4)) ->
+  | D ClassDef ((v0, v1, v2, v3)) ->
       let v1 = vof_expr v1
       and v2 = OCaml.vof_option vof_inheritance_kind v2
       and v3 = vof_body_exn v3
-      and v4 = vof_tok v4
-      in OCaml.VSum (("ClassDef", [ v1; v2; v3; v4 ]))
-  | D MethodDef ((v1, v2, v3, v4)) ->
+      and v0 = vof_tok v0
+      in OCaml.VSum (("ClassDef", [ v0; v1; v2; v3 ]))
+  | D MethodDef ((v0, v1, v2, v3)) ->
       let v1 = vof_expr v1
       and v2 = OCaml.vof_list vof_formal_param v2
       and v3 = vof_body_exn v3
-      and v4 = vof_tok v4
-      in OCaml.VSum (("MethodDef", [ v1; v2; v3; v4 ]))
-  | D ModuleDef ((v1, v2, v3)) ->
+      and v0 = vof_tok v0
+      in OCaml.VSum (("MethodDef", [ v0; v1; v2; v3 ]))
+  | D ModuleDef ((v0, v1, v2)) ->
       let v1 = vof_expr v1
       and v2 = vof_body_exn v2
-      and v3 = vof_tok v3
-      in OCaml.VSum (("ModuleDef", [ v1; v2; v3 ]))
-  | D BeginBlock ((v1, v2)) ->
+      and v0 = vof_tok v0
+      in OCaml.VSum (("ModuleDef", [ v0; v1; v2 ]))
+  | D BeginBlock ((v2, v1)) ->
       let v1 = OCaml.vof_list vof_expr v1
       and v2 = vof_tok v2
-      in OCaml.VSum (("BeginBlock", [ v1; v2 ]))
-  | D EndBlock ((v1, v2)) ->
+      in OCaml.VSum (("BeginBlock", [ v2; v1 ]))
+  | D EndBlock ((v2, v1)) ->
       let v1 = OCaml.vof_list vof_expr v1
       and v2 = vof_tok v2
-      in OCaml.VSum (("EndBlock", [ v1; v2 ]))
-  | D Alias ((v1, v2, v3)) ->
+      in OCaml.VSum (("EndBlock", [ v2; v1 ]))
+  | D Alias ((v0, v1, v2)) ->
       let v1 = vof_expr v1
       and v2 = vof_expr v2
-      and v3 = vof_tok v3
-      in OCaml.VSum (("Alias", [ v1; v2; v3 ]))
-  | D Undef ((v1, v2)) ->
+      and v0 = vof_tok v0
+      in OCaml.VSum (("Alias", [ v0; v1; v2 ]))
+  | D Undef ((v2, v1)) ->
       let v1 = OCaml.vof_list vof_expr v1
       and v2 = vof_tok v2
-      in OCaml.VSum (("Undef", [ v1; v2 ]))
+      in OCaml.VSum (("Undef", [ v2; v1 ]))
 
 and vof_lit_kind =
   function

@@ -1224,7 +1224,7 @@ and refactor_method_call_assign (acc:stmt acc) (lhs : lhs option) = function
       let params = Utils.default_opt [] params_o in
       let name = H.msg_of_str mname atompos in
       let body = {Ast.body_exprs = cb_body;rescue_exprs=[];ensure_expr=[];else_expr=[]} in
-      let e' = Ast.D (Ast.MethodDef(name,params,body, pos)) in
+      let e' = Ast.D (Ast.MethodDef(pos, name,params,body)) in
         refactor_stmt acc e'
 
   | Ast.Call(Ast.Binop(targ,(Ast.Op_DOT, _pos1),msg), args, cb, pos2)
@@ -1323,18 +1323,18 @@ and refactor_assignment (acc: stmt acc) (lhs: Ast.expr) (rhs: Ast.expr)
 
 and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc = 
   match e with
-  | Ast.D Ast.Alias(Ast.Id((s1, p1),((Ast.ID_Builtin|Ast.ID_Global) as k1)), 
-                    Ast.Id((s2, p2),((Ast.ID_Builtin|Ast.ID_Global) as k2)) ,p3) ->
+  | Ast.D Ast.Alias(p3, Ast.Id((s1, p1),((Ast.ID_Builtin|Ast.ID_Global) as k1)), 
+                    Ast.Id((s2, p2),((Ast.ID_Builtin|Ast.ID_Global) as k2))) ->
       let g1 = (refactor_builtin_or_global p1 k1,s1) in
       let g2 = (refactor_builtin_or_global p2 k2,s2) in
         acc_enqueue (C.alias_g ~link:g1 ~orig:g2 p3) acc
 
-  | Ast.D Ast.Alias(e1,e2, pos) -> 
+  | Ast.D Ast.Alias(pos, e1,e2) -> 
       let acc,e1' = refactor_symbol_or_msg acc e1 in
       let acc,e2' = refactor_symbol_or_msg acc e2 in
         acc_enqueue (C.alias_m ~link:e1' ~orig:e2' pos) acc
 
-  | Ast.D Ast.Undef(e1, pos) -> 
+  | Ast.D Ast.Undef(pos, e1) -> 
       let acc,e1' = refactor_list refactor_symbol_or_msg (acc,DQueue.empty) e1 in
         acc_enqueue (C.undef (DQueue.to_list e1') pos) acc
 
@@ -1499,13 +1499,13 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
       let acc = acc_seen acc body_acc in
         acc_enqueue (C.for_s formals g_expr body' pos) acc
 
-  | Ast.D Ast.ModuleDef(m,body, pos) ->
+  | Ast.D Ast.ModuleDef(pos, m,body) ->
       let acc,m' = refactor_id acc m in
       let body_acc = refactor_body (acc_empty acc) body pos in
       let body' = C.seq (DQueue.to_list body_acc.q) pos in
         acc_enqueue (C.module_s m' body' pos) acc
 
-  | Ast.D Ast.MethodDef(meth,params,body, pos) ->
+  | Ast.D Ast.MethodDef(pos, meth,params,body) ->
       let acc,mn = refactor_method_name acc meth in
       let in_acc, params' = 
         refactor_method_formal_list (acc_empty acc) params pos 
@@ -1531,7 +1531,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
       let body' = C.seq (DQueue.to_list body_acc.q) pos in
         acc_enqueue (C.meth mn params' body' pos) acc
 
-  | Ast.D Ast.ClassDef(clazz,inh,body, pos) ->
+  | Ast.D Ast.ClassDef(pos, clazz,inh,body) ->
       let body_acc = refactor_body (acc_empty acc) body pos in
         begin match inh with
           | None -> 
@@ -1553,12 +1553,12 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
                 acc_enqueue (C.metaclass e' body' pos) acc
         end
 
-  | Ast.D Ast.BeginBlock(lst,pos) ->
+  | Ast.D Ast.BeginBlock(pos, lst) ->
       let body_acc = refactor_stmt_list (acc_empty acc) lst in
       let body' = C.seq (DQueue.to_list body_acc.q) pos in
         acc_enqueue (mkstmt (Begin body') pos) acc
 
-  | Ast.D Ast.EndBlock(lst,pos) ->
+  | Ast.D Ast.EndBlock(pos, lst) ->
       let body_acc = refactor_stmt_list (acc_empty acc) lst in
       let body' = C.seq (DQueue.to_list body_acc.q) pos in
         acc_enqueue (mkstmt (End body') pos) acc

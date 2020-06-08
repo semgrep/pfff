@@ -212,15 +212,15 @@ and stmt =
 (* Definitions *)
 (*****************************************************************************)
 and definition =
-  | ModuleDef of expr * body_exn * tok
-  | ClassDef of expr * inheritance_kind option * body_exn * tok
-  | MethodDef of expr * formal_param list * body_exn * tok
+  | ModuleDef of tok * expr * body_exn
+  | ClassDef of tok * expr * inheritance_kind option * body_exn
+  | MethodDef of tok * expr * formal_param list * body_exn
 
-  | BeginBlock of expr list * tok
-  | EndBlock of expr list * tok
+  | BeginBlock of tok * expr list
+  | EndBlock of tok * expr list
 
-  | Alias of expr * expr * tok
-  | Undef of expr list * tok
+  | Alias of tok * expr * expr
+  | Undef of tok * expr list
 
   and formal_param = 
     | Formal_id of expr

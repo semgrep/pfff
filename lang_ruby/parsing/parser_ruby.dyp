@@ -302,9 +302,9 @@ eol_or_semi:
 
 stmt:
   | K_ALIAS<pos> meth_or_atom<e1> meth_or_atom<e2> 
-      { D (Alias(e1,e2,pos)) }
+      { D (Alias(pos, e1,e2)) }
   | K_UNDEF<pos> meth_or_atom_list<e1> 
-      { D (Undef(e1,pos)) }
+      { D (Undef(pos, e1)) }
 
   | stmt<s> K_IF<pos>     eols stmt<g> 
       { if M.is_cond_modifier g then raise Dyp.Giveup; 
@@ -339,9 +339,9 @@ stmt:
       }
 
   | scope_BEGIN<pos> eols T_LBRACE eols stmt_list<xs> T_RBRACE
-      { S.leave_scope dyp; D (BeginBlock(xs,pos))}
+      { S.leave_scope dyp; D (BeginBlock(pos, xs))}
   | scope_END<pos>  eols T_LBRACE  eols stmt_list<xs> T_RBRACE
-      { S.leave_scope dyp; D (EndBlock(xs,pos))}
+      { S.leave_scope dyp; D (EndBlock(pos, xs))}
 
   | topcall<c> 
       { c }
@@ -833,7 +833,7 @@ command_codeblock:
 method_definition: scope_DEF<pos> method_name<id> method_formals<xs> eols
   body_exn<body> K_lEND
       { S.leave_scope dyp;
-        D (MethodDef (id, xs, body, pos)) }
+        D (MethodDef (pos, id, xs, body)) }
 
 /* tokens that need to reduce immediately to guide the lexer */
 scope_DEF:    K_DEF<pos>    {S.enter_scope dyp; pos}
@@ -905,15 +905,15 @@ class_definition:
   | scope_CLASS<pos> eols scoped_id<id> class_inheritance<inh> do_sep
       body_exn<body> K_lEND
       { S.leave_scope dyp;
-        D (ClassDef(id, inh, body, pos))}
+        D (ClassDef(pos, id, inh, body))}
 
   | scope_CLASS<pos> T_LSHFT arg<id> eols body_exn<body> K_lEND
       { S.leave_scope dyp;
-        D (ClassDef(S Empty, Some (Inst_Inherit id), body, pos)) }
+        D (ClassDef(pos, S Empty, Some (Inst_Inherit id), body)) }
 
 module_definition: scope_MODULE<pos> scoped_id<id> eols body_exn<body> K_lEND 
       { S.leave_scope dyp;
-        D (ModuleDef (id, body, pos)) }
+        D (ModuleDef (pos, id, body)) }
 
 /* tokens that need to reduce immediately to guide the lexer */
 scope_CLASS:  K_CLASS<pos>  {S.enter_scope dyp; pos}
