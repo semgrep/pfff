@@ -239,11 +239,11 @@ and format_inheritance ppf inh = match inh with
 
 and format_formal ppf = function
   | Formal_id e -> format_expr ppf e
-  | Formal_amp s -> fprintf ppf "&%s" s
-  | Formal_star s -> fprintf ppf "*%s" s
-  | Formal_rest -> fprintf ppf "*"
+  | Formal_amp (_, (s,_)) -> fprintf ppf "&%s" s
+  | Formal_star (_, (s, _)) -> fprintf ppf "*%s" s
+  | Formal_rest _ -> fprintf ppf "*"
   | Formal_tuple t -> fprintf ppf "(@[%a@])" format_formals t
-  | Formal_default(f,e) -> 
+  | Formal_default((f, _),_, e) -> 
       fprintf ppf "@[%s = @[%a@]@]"
 	f format_expr e
 

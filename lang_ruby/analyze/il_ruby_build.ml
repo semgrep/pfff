@@ -1076,7 +1076,7 @@ and refactor_symbol_or_msg (acc:stmt acc) sym_msg = match sym_msg with
 and refactor_codeblock acc : Ast.expr -> codeblock = function
   | Ast.CodeBlock(_,formals,body, pos) ->
       let formals = match formals with
-        | None -> [Ast.Formal_rest]
+        | None -> [Ast.Formal_rest pos (* TODO *)]
         | Some lst -> lst
       in
       let acc, formals = refactor_block_formal_list acc formals pos in
@@ -1702,14 +1702,14 @@ and refactor_method_formal (acc:stmt acc) t _pos : stmt acc * method_formal_para
   | Ast.Formal_id _ -> 
       Log.fatal Log.empty "refactor_method_formal: non-local method formal?"
 
-  | Ast.Formal_amp s ->
+  | Ast.Formal_amp (_, (s,_)) ->
       {acc with seen = StrSet.add s acc.seen}, Formal_amp s
 
-  | Ast.Formal_star(str) -> 
+  | Ast.Formal_star(_, (str, _)) -> 
       let acc = {acc with seen = StrSet.add str acc.seen} in
         acc, Formal_star(str)
 
-  | Ast.Formal_rest -> 
+  | Ast.Formal_rest _ -> 
       let acc, id = fresh acc in
       let s = match id with
         | LId (Var(Local,s)) -> s
@@ -1719,7 +1719,7 @@ and refactor_method_formal (acc:stmt acc) t _pos : stmt acc * method_formal_para
 
   | Ast.Formal_tuple(_f_lst) -> Log.fatal Log.empty "refactor_method_formal: formal_tuple?"
 
-  | Ast.Formal_default (f,s) ->
+  | Ast.Formal_default ((f,_),_, s) ->
       let pos = H.tok_of s in
       let default_acc = refactor_stmt (acc_emptyq acc) s in
       let acc = acc_seen acc default_acc in
@@ -1755,8 +1755,8 @@ and refactor_block_formal acc t pos : stmt acc * block_formal_param = match t wi
   | Ast.Formal_id _ ->
       Log.fatal (Log.of_tok pos) "refactor_block_formal: non-identifier in formal id"
 
-  | Ast.Formal_star(s) -> (add_seen s acc), Formal_star2(s)
-  | Ast.Formal_rest -> 
+  | Ast.Formal_star(_,(s, _)) -> (add_seen s acc), Formal_star2(s)
+  | Ast.Formal_rest _ -> 
       let acc, id = fresh acc in
       let s = match id with
         | LId (Var(Local,s)) -> s
@@ -1767,7 +1767,7 @@ and refactor_block_formal acc t pos : stmt acc * block_formal_param = match t wi
   | Ast.Formal_tuple(f_lst) ->
       let acc, lst = refactor_block_formal_list acc f_lst pos in
         acc, Formal_tuple lst
-  | Ast.Formal_amp _s -> Log.fatal (Log.of_tok pos) "refactor_block_formal: & arg?"
+  | Ast.Formal_amp _ -> Log.fatal (Log.of_tok pos) "refactor_block_formal: & arg?"
   | Ast.Formal_default _ -> Log.fatal (Log.of_tok pos) "refactor_block_formal: default arg?"
 
 and refactor_block_formal_list acc lst pos = 

@@ -866,17 +866,19 @@ do_codeblock:
 
 formal_arg:
   | identifier<id>         { M.seen dyp id; Formal_id id }
-  | T_UAMPER T_LID<id,pos> { M.seen_str dyp id; Formal_amp id }
-  | T_AMPER T_LID<id,pos>  { M.seen_str dyp id; Formal_amp id }
-  | T_USTAR T_LID<id,pos>  { M.seen_str dyp id; Formal_star id}
+  | T_UAMPER T_LID<id,pos> { M.seen_str dyp id; Formal_amp ($1, $2) }
+  | T_AMPER T_LID<id,pos>  { M.seen_str dyp id; Formal_amp ($1, $2) }
+  | T_USTAR T_LID<id,pos>  { M.seen_str dyp id; Formal_star ($1, $2) }
 
-  | T_USTAR                { Formal_rest }
-  | T_LID<id,pos> T_ASSIGN eols arg<e> { M.seen_str dyp id; Formal_default (id,e) }
+  | T_USTAR                { Formal_rest $1 }
+  | T_LID<id,pos> T_ASSIGN eols arg<e> 
+      { M.seen_str dyp id; 
+        Formal_default ($1, $2, e) }
   | any_LPAREN formal_arg_nonempty_list<f> T_RPAREN { Formal_tuple f }
 
 formal_arg_nonempty_list:
   | formal_arg<f> { [f] }
-  | formal_arg<f> T_COMMA { [f; Formal_rest] }
+  | formal_arg<f> T_COMMA { [f; Formal_rest $2 (* TODO *)] }
   /*(* recursive *)*/
   | formal_arg<f> T_COMMA eols formal_arg_nonempty_list<fs> 
        @{ f::fs, [Dyp.Dont_shift] }

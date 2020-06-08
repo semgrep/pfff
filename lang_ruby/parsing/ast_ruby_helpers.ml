@@ -148,11 +148,11 @@ and cmp_expr_opt f eo1 eo2 = match eo1,eo2 with
 
 and cmp_formal f1 f2 = match f1,f2 with
   | Formal_id e1, Formal_id e2 -> cmp_expr e1 e2
-  | Formal_amp s1, Formal_amp s2 -> String.compare s1 s2
-  | Formal_star s1, Formal_star s2 -> String.compare s1 s2
-  | Formal_rest, Formal_rest -> 0
+  | Formal_amp (_,(s1,_)), Formal_amp (_, (s2, _)) -> String.compare s1 s2
+  | Formal_star (_, (s1,_)), Formal_star (_, (s2, _)) -> String.compare s1 s2
+  | Formal_rest _, Formal_rest _ -> 0
   | Formal_tuple l1, Formal_tuple l2 -> cmp_list cmp_formal l1 l2
-  | Formal_default(s1,e1),Formal_default(s2,e2) ->
+  | Formal_default((s1,_),_, e1),Formal_default((s2,_),_,e2) ->
       cmp2 (String.compare s1 s2) cmp_expr e1 e2
   | _ -> Utils.cmp_ctors f1 f2
 

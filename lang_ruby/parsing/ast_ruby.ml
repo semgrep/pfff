@@ -74,6 +74,8 @@ type id_kind =
   | ID_Builtin   (* prefixed by $, followed by non-alpha *)
   | ID_Assign of id_kind (* postfixed by = *)
 
+type ident = string wrap
+
 (* ------------------------------------------------------------------------- *)
 (* Operators *)
 (* ------------------------------------------------------------------------- *)
@@ -126,7 +128,7 @@ and binary_op =
 type expr = 
   | Literal of lit_kind * tok
 
-  | Id of string wrap * id_kind
+  | Id of ident * id_kind
   | Operator of binary_op wrap
   | UOperator of unary_op wrap
 
@@ -229,11 +231,11 @@ and definition =
 
   and formal_param = 
     | Formal_id of expr
-    | Formal_amp of string
-    | Formal_star of string (* as in *x *)
-    | Formal_rest (* just '*' *)
-    | Formal_tuple of formal_param list
-    | Formal_default of string * expr
+    | Formal_amp of tok * ident
+    | Formal_star of tok * ident (* as in *x *)
+    | Formal_rest of tok (* just '*' *)
+    | Formal_tuple of formal_param list (* bracket *)
+    | Formal_default of ident * tok (* = *) * expr
   
   and inheritance_kind = 
     | Class_Inherit of expr

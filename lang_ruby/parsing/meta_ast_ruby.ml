@@ -7,6 +7,8 @@ let vof_tok v = Meta_parse_info.vof_info_adjustable_precision v
 let vof_wrap _of_a (v1, v2) =
   let v1 = _of_a v1 and v2 = vof_tok v2 in OCaml.VTuple [ v1; v2 ]
 
+let vof_ident x = vof_wrap OCaml.vof_string x
+
 let vof_bracket of_a (_t1, x, _t2) =
   of_a x
 
@@ -17,7 +19,7 @@ let rec vof_expr =
       and v2 = vof_tok v2
       in OCaml.VSum (("Literal", [ v1; v2 ]))
   | Id (v1, v2) ->
-      let v1 = vof_wrap OCaml.vof_string v1
+      let v1 = vof_ident v1
       and v2 = vof_id_kind v2
       in OCaml.VSum (("Id", [ v1; v2]))
   | Operator ((v1, v2)) ->
@@ -246,18 +248,23 @@ and vof_formal_param =
   function
   | Formal_id v1 ->
       let v1 = vof_expr v1 in OCaml.VSum (("Formal_id", [ v1 ]))
-  | Formal_amp v1 ->
-      let v1 = OCaml.vof_string v1 in OCaml.VSum (("Formal_amp", [ v1 ]))
-  | Formal_star v1 ->
-      let v1 = OCaml.vof_string v1 in OCaml.VSum (("Formal_star", [ v1 ]))
-  | Formal_rest -> OCaml.VSum (("Formal_rest", []))
+  | Formal_amp (v1, v2) ->
+      let v1 = vof_tok v1 in
+      let v2 = vof_ident v2 in 
+      OCaml.VSum (("Formal_amp", [ v1; v2 ]))
+  | Formal_star (v1, v2) ->
+      let v1 = vof_tok v1 in
+      let v2 = vof_ident v2 in 
+      OCaml.VSum (("Formal_star", [ v1; v2 ]))
+  | Formal_rest v1 -> let v1 = vof_tok v1 in OCaml.VSum (("Formal_rest", [v1]))
   | Formal_tuple v1 ->
       let v1 = OCaml.vof_list vof_formal_param v1
       in OCaml.VSum (("Formal_tuple", [ v1 ]))
-  | Formal_default ((v1, v2)) ->
-      let v1 = OCaml.vof_string v1
-      and v2 = vof_expr v2
-      in OCaml.VSum (("Formal_default", [ v1; v2 ]))
+  | Formal_default ((v1, v2, v3)) ->
+      let v1 = vof_ident v1
+      and v2 = vof_tok v2
+      and v3 = vof_expr v3
+      in OCaml.VSum (("Formal_default", [ v1; v2; v3 ]))
 and vof_inheritance_kind =
   function
   | Class_Inherit v1 ->
