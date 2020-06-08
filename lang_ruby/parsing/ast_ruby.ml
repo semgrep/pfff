@@ -188,8 +188,8 @@ and stmt =
   | Unless of tok * expr * expr list * stmts
   | For of tok * formal_param list * expr * stmts
 
-  | Return of tok * expr list
-  | Yield of tok * expr list
+  | Return of tok * expr list (* option *)
+  | Yield of tok * expr list (* option *)
 
   | Case of case_block * tok
 
