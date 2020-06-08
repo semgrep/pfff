@@ -112,10 +112,10 @@ let rec vof_expr =
       let v1 = OCaml.vof_list vof_expr v1
       and v2 = vof_tok v2
       in OCaml.VSum (("Yield", [ v2; v1 ]))
-  | S Case ((v1, v2)) ->
+  | S Case ((v2, v1)) ->
       let v1 = vof_case_block v1
       and v2 = vof_tok v2
-      in OCaml.VSum (("Case", [ v1; v2 ]))
+      in OCaml.VSum (("Case", [ v2; v1 ]))
   | S ExnBlock ((v1, v2)) ->
       let v1 = vof_body_exn v1
       and v2 = vof_tok v2

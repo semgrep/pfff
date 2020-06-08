@@ -147,7 +147,7 @@ and format_expr ppf expr = match expr with
       fprintf ppf "@[<v 0>@[<v 2>END {@,%a@],}@]"
 	format_expr_break_list el
 
-  | S Case(c,_) -> format_case ppf c
+  | S Case(_, c) -> format_case ppf c
 
   | D ClassDef(_, name,inh,body) -> 
       fprintf ppf "@[<v 0>@[<v 2>class %a %a@,%a@]@,"

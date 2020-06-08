@@ -93,7 +93,7 @@ let rec cmp_expr e1 e2 = match e1,e2 with
     | c -> c
       end
 
-  | S Case(c1,_), S Case(c2,_) ->
+  | S Case(_, c1), S Case(_, c2) ->
       let c (l11,l12) (l21,l22) =
     cmp2 (cmp_expr_list l11 l21) cmp_expr_list l12 l22
       in
@@ -207,7 +207,7 @@ let tok_of = function
   | D BeginBlock (pos, _)
   | D EndBlock (pos, _)
   | S ExnBlock ( _ , pos)
-  | S Case ( _ , pos)
+  | S Case (pos, _)
   | Operator ( _ , pos)
   | UOperator ( _ , pos)
   | S Return (pos, _)
@@ -334,7 +334,7 @@ let rec mod_expr f expr =
       | D EndBlock(pos, el) -> 
         D (EndBlock(pos, map_bracket (List.map (mod_expr f)) el))
       | S ExnBlock(body, pos) -> S (ExnBlock(mod_body_exn f body, pos))
-      | S Case(block, pos) -> S (Case(mod_case_block f block, pos))
+      | S Case(pos, block) -> S (Case(pos, mod_case_block f block))
       | S Return(pos, el) -> S (Return(pos, (List.map (mod_expr f) el)))
       | S Yield(pos, el) -> S (Yield(pos, (List.map (mod_expr f) el)))
       | S Block(el, pos) -> S (Block((List.map (mod_expr f) el), pos))
@@ -399,7 +399,7 @@ let set_tok pos = function
   | D BeginBlock(_, el) -> D (BeginBlock(pos, el))
   | D EndBlock(_, el) -> D (EndBlock(pos, el))
   | S ExnBlock(body, _) -> S (ExnBlock(body, pos))
-  | S Case(block, _) -> S (Case(block, pos))
+  | S Case(_, block) -> S (Case(pos, block))
   | S Return(_, el) -> S (Return(pos, el))
   | S Yield(_, el) -> S (Yield(pos, el))
   | S Block(el, _) -> S (Block(el, pos))

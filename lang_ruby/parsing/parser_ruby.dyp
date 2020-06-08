@@ -466,15 +466,14 @@ primary:
       S (Until(pos, false, g , xs)) }
 
   | K_CASE<pos> some_eols         when_clauses<xs> case_else<else_e> K_lEND
-    { S (Case({case_guard = S Empty; case_whens = xs; case_else = else_e},
-        pos)) }
+    { S (Case(pos, {case_guard=S Empty; case_whens=xs; case_else = else_e})) }
 
   | K_CASE<pos> eols expr<e> eols when_clauses<xs> case_else<else_e> K_lEND
-    { S (Case({case_guard = e; case_whens = xs; case_else = else_e},pos)) }
+    { S (Case(pos, {case_guard = e; case_whens = xs; case_else = else_e})) }
 
   | K_CASE<pos> eols expr<e> T_SEMICOLON eols when_clauses<xs> case_else<else_e> K_lEND
 
-    { S (Case({case_guard = e; case_whens = xs; case_else = else_e},pos)) }
+    { S (Case(pos, {case_guard = e; case_whens = xs; case_else = else_e})) }
 
   | K_FOR<pos> formal_arg_list<vars> K_IN arg<a> do_sep stmt_list<xs> K_lEND
     { M.well_formed_do a xs; 

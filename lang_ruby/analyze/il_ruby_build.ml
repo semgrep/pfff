@@ -1360,7 +1360,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
       let acc = {acc with seen = StrSet.union acc.seen facc.seen} in
         acc_enqueue (C.if_s g' ~t:ts ~f:fs pos) acc
 
-  | Ast.S Ast.Case(case,pos) -> refactor_case acc case pos
+  | Ast.S Ast.Case(pos, case) -> refactor_case acc case pos
 
   | Ast.S Ast.Return(pos, args) ->
       let acc,args' = refactor_list refactor_tuple_expr (acc,DQueue.empty) args in

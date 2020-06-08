@@ -193,13 +193,13 @@ and stmt =
   | Return of tok * expr list (* option *)
   | Yield of tok * expr list (* option *)
 
-  | Case of case_block * tok
+  | Case of tok * case_block
 
   | ExnBlock of body_exn * tok
 
   and case_block = {
     case_guard : expr;
-    case_whens: (expr list * expr list) list;
+    case_whens: (expr list * stmts) list;
     case_else: stmts option2;
   }
   
