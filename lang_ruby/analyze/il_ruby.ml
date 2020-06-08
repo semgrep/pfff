@@ -112,7 +112,7 @@ type expr =
 and literal =
   (* atomic *)
   | Num of string
-  | Float of string * float
+  | Float of string
   | String of string
 
   | Atom of string

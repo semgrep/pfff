@@ -103,7 +103,7 @@ module Code_F(PP : CfgPrinter) = struct
 
   let format_literal ppf : literal -> unit = function
     | Num i -> fprintf ppf "%s" i
-    | Float(s,_f) -> fprintf ppf "%s" s
+    | Float(s) -> fprintf ppf "%s" s
     | String str -> fprintf ppf "%%{%s}" (escape_chars str ['{'; '}'])
     | Atom str -> fprintf ppf ":\"%s\"" (escape_chars str ['"'])
     | Regexp (str,m) -> 

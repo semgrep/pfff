@@ -28,7 +28,7 @@ and format_string_kind ppf = function
 
 and format_lit_kind ppf kind = match kind with
   | Num i -> fprintf ppf "%s" i
-  | Float(s,_f) -> fprintf ppf "%s" s
+  | Float(s) -> fprintf ppf "%s" s
   | String (skind) -> format_string_kind ppf skind
   | Atom sc -> fprintf ppf ":%a" format_interp_string sc
   | Regexp (str,m) -> fprintf ppf "Regexp(@[%a@],%s)" format_interp_string str m

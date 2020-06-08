@@ -575,9 +575,9 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         acc, ELit (Num ("-"^i))
 
 
-    | Ast.Unary(Ast.Op_UMinus, Ast.Literal(Ast.Float(s,f),_), _pos) -> 
+    | Ast.Unary(Ast.Op_UMinus, Ast.Literal(Ast.Float(s),_), _pos) -> 
         assert(s.[0] != '-');
-        acc, ELit (Float("-" ^ s, (~-. f)))
+        acc, ELit (Float("-" ^ s))
 
     | Ast.Unary((Ast.Op_UBang | Ast.Op_UNot),e,pos) ->
         let acc,v = fresh acc in
@@ -822,10 +822,8 @@ and refactor_interp_string acc istr pos =
               
 and refactor_lit acc (l : Ast.lit_kind) pos : stmt acc * expr = match l with
   | Ast.Num i -> acc, ELit (Num i)
-  | Ast.Float(s,f) -> acc, ELit (Float(s,f))
-
-  | Ast.String(Ast.Single s) -> 
-        acc, ELit (String (unescape_single_string s))
+  | Ast.Float(s) -> acc, ELit (Float(s))
+  | Ast.String(Ast.Single s) -> acc, ELit (String (unescape_single_string s))
 
   | Ast.String(Ast.Double s) -> 
       refactor_interp_string acc s pos

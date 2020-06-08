@@ -97,7 +97,7 @@ type expr =
 
 and lit_kind = 
   | Num of string
-  | Float of string * float
+  | Float of string
 
   | String of string_kind
   | Regexp of interp_string * string

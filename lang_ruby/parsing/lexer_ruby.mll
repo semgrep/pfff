@@ -223,7 +223,7 @@ let convert_to_base10 ~base str pos =
 
 let negate_numeric = function
   | T_NUM(n,p) -> T_NUM("-" ^ n,p)
-  | T_FLOAT(s,n,p) -> T_FLOAT("-"^s,-.n,p)
+  | T_FLOAT(s,p) -> T_FLOAT("-"^s,p)
   | _ -> assert false
 
 let close_delim = function
@@ -693,7 +693,7 @@ and postfix_numeric f start t state = parse
       { S.end_state state;
         let str = (start ^ (Lexing.lexeme lexbuf)) in
         let str = remove_underscores str in
-        let tok = T_FLOAT(str, float_of_string (str), (add_to_tok lexbuf t)) in
+        let tok = T_FLOAT(str, (add_to_tok lexbuf t)) in
         f tok
       }
 

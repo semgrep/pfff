@@ -155,8 +155,8 @@ let rec add_eq = function
 %token <string * Parse_info.t> T_CLASS_VAR
 %token <string * Parse_info.t> T_BUILTIN_VAR
 
-%token <string * Parse_info.t>          T_NUM
-%token <string * float * Parse_info.t>  T_FLOAT
+%token <string * Parse_info.t>  T_NUM
+%token <string * Parse_info.t>  T_FLOAT
 
 %token <Ast_ruby.interp_string * Parse_info.t> T_ATOM
 %token <Parse_info.t> T_ATOM_BEG
@@ -513,7 +513,7 @@ then_sep:
 
 constant:
   | T_NUM<s,pos>  { Literal(Num s,pos) }
-  | T_FLOAT<s,f,pos> { Literal((Float(s,f)),pos) }
+  | T_FLOAT<s,pos> { Literal((Float(s)),pos) }
 
   | string<s>        { s }
 

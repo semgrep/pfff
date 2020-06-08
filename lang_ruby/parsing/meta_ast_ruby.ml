@@ -155,10 +155,9 @@ and vof_lit_kind =
   function
   | Num v1 ->
       let v1 = OCaml.vof_string v1 in OCaml.VSum (("Num", [ v1 ]))
-  | Float ((v1, v2)) ->
+  | Float ((v1)) ->
       let v1 = OCaml.vof_string v1
-      and v2 = OCaml.vof_float v2
-      in OCaml.VSum (("Float", [ v1; v2 ]))
+      in OCaml.VSum (("Float", [ v1 ]))
   | String v1 ->
       let v1 = vof_string_kind v1 in OCaml.VSum (("String", [ v1 ]))
   | Atom v1 ->

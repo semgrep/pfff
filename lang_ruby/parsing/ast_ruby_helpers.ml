@@ -104,9 +104,7 @@ let rec cmp_expr e1 e2 = match e1,e2 with
 
 and cmp_lit c1 c2 = match c1,c2 with
   | Num i1, Num i2 -> pcompare i1 i2
-  | Float(s1,f1), Float (s2,f2) -> 
-      let c1 = pcompare (float_of_string s1) (float_of_string s2) in
-        cmp2 c1 pcompare f1 f2
+  | Float(s1), Float (s2) -> pcompare s1 s2
   | String(k1), String(k2) -> cmp_string k1 k2
   | Atom s1, Atom s2 -> cmp_list cmp_interp s1 s2
   | Regexp (s1,m1), Regexp (s2,m2) -> 
