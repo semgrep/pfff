@@ -64,7 +64,7 @@ let rec vof_expr =
       and v4 = vof_tok v4
       in OCaml.VSum (("Call", [ v1; v2; v3; v4 ]))
   | CodeBlock ((v1, v2, v3, v4)) ->
-      let v1 = OCaml.vof_bool v1
+      let v1 = vof_bracket OCaml.vof_bool v1
       and v2 = OCaml.vof_option (OCaml.vof_list vof_formal_param) v2
       and v3 = OCaml.vof_list vof_expr v3
       and v4 = vof_tok v4

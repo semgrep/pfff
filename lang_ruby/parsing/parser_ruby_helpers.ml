@@ -230,7 +230,7 @@ let is_cond_modifier = function
   | _ -> false
 
 let well_formed_do guard _body = match ends_with guard with
-  | Call(_,_,Some (CodeBlock(false,_,_,_)),_) ->
+  | Call(_,_,Some (CodeBlock((_,false,_),_,_,_)),_) ->
   raise Dyp.Giveup
   | _ ->()
 
@@ -486,7 +486,7 @@ let wrap xs f =
 (*****************************************************************************)
 
 let rec rhs_do_codeblock = function
-  | Call(_,_,Some (CodeBlock(false,_,_,_)),_) -> true
+  | Call(_,_,Some (CodeBlock((_,false,_),_,_,_)),_) -> true
   | Binop(_,_,r)
   | Call(r,[],None,_)
   | Ternary(_,_,_, _, r) -> rhs_do_codeblock r
@@ -542,10 +542,10 @@ let merge_topcall xs =
 
   let l' = uniq_list H.compare_expr l in
     match l',newest with
-  | [(Call(_,_,Some (CodeBlock(false,_,_,_)),_) as with_cb)],
+  | [(Call(_,_,Some (CodeBlock((_,false,_),_,_,_)),_) as with_cb)],
     (Call(_,_,None,_) as no_cb)
   | [(Call(_,_,None,_) as no_cb)],
-    (Call(_,_,Some (CodeBlock(false,_,_,_)),_) as with_cb) ->
+    (Call(_,_,Some (CodeBlock((_,false,_),_,_,_)),_) as with_cb) ->
       (* resolve "x y{z}" vs "x y do z end" *)
       resolve_block_delim with_cb no_cb;
   | _ ->
@@ -560,10 +560,10 @@ let merge_stmt xs =
 
   let l' = uniq_list H.compare_expr l in
     match l',newest with
-  | [(Call(_,_,Some (CodeBlock(false,_,_,_)),_) as with_cb)],
+  | [(Call(_,_,Some (CodeBlock((_,false,_),_,_,_)),_) as with_cb)],
     (Call(_,_,None,_) as no_cb)
   | [(Call(_,_,None,_) as no_cb)],
-    (Call(_,_,Some (CodeBlock(false,_,_,_)),_) as with_cb) ->
+    (Call(_,_,Some (CodeBlock((_,false,_),_,_,_)),_) as with_cb) ->
       (* resolve "x y{z}" vs "x y do z end" *)
       resolve_block_delim with_cb no_cb;
 

@@ -847,7 +847,7 @@ code_block:
 
 brace_codeblock:
   | T_LBRACE_ARG<pos> eols code_block_body<b> T_RBRACE
-      { let args, body = b in CodeBlock(true,args,body,pos) }
+      { let args, body = b in CodeBlock(($1,true,$4),args,body,pos) }
 
 code_block_body:
   /* for when the lexer sees "||" instead of two "|"'s */
@@ -857,7 +857,7 @@ code_block_body:
 
 do_codeblock:
   | K_DO<pos> eols code_block_body<b> K_lEND
-      { let args, body = b in CodeBlock(false,args,body,pos) }
+      { let args, body = b in CodeBlock(($1,false,$4),args,body,pos) }
 
 /*(*----------------------------*)*/
 /*(*2 parameters *)*/

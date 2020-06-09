@@ -142,7 +142,8 @@ type expr =
 
   | Call of expr * expr list * expr option * tok
 
-  | CodeBlock of bool * formal_param list option * stmts * tok
+  (* true = {}, false = do/end *)
+  | CodeBlock of bool bracket * formal_param list option * stmts * tok
 
   | S of stmt
   | D of definition
