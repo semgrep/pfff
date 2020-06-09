@@ -1,6 +1,6 @@
 open Ast_ruby
 module Utils = Utils_ruby
-module Ast_printer = Ast_ruby_printer
+module Ast_printer = Meta_ast_ruby
 module H = Ast_ruby_helpers
 
 (*****************************************************************************)
@@ -615,15 +615,14 @@ let merge_expr s xs =
 let merge_expr_list s xs =
   wrap xs (fun xs ->
   let l' = uniq_list H.compare_ast (xs) in
-    do_fail s l' Ast_printer.string_of_ast Meta_ast_ruby.vof_program;
+    do_fail s l' Ast_printer.string_of_program Meta_ast_ruby.vof_program;
     l'
   )
 
 let merge_formal_list s xs = 
   wrap xs (fun xs ->
-  let f x = Utils.format_to_string Ast_printer.format_formals x in
   let l' = uniq_list compare (xs) in
-    do_fail s l' f (fun _x -> OCaml.VUnit);
+    do_fail s l' (fun _x -> "??") (fun _x -> OCaml.VUnit);
     l'
   )
 

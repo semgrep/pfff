@@ -322,3 +322,10 @@ let vof_program v = OCaml.vof_list vof_expr v
 let _vof_pos v = vof_tok v
   
 
+let string_of_expr e = 
+  let v = vof_expr e in
+  OCaml.string_of_v v
+
+let string_of_program x =
+  let v = vof_program x in
+  OCaml.string_of_v v

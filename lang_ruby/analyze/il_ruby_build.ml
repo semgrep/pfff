@@ -1046,6 +1046,8 @@ and refactor_id (acc:stmt acc) e : stmt acc * identifier =
         Log.fatal (Log.of_tok (H.tok_of e)) "lhs_of_expr: literal %a" 
           CodePrinter.format_literal l
 
+and string_of_lit_kind _kind = "TODO"
+
 and refactor_msg (acc:stmt acc) msg : stmt acc * msg_id = match msg with
   | Ast.Operator(bop, pos) ->  acc, ID_Operator (refactor_binop pos bop)
   | Ast.UOperator(uop, pos) -> acc, ID_UOperator (refactor_uop pos uop)
@@ -1059,11 +1061,11 @@ and refactor_msg (acc:stmt acc) msg : stmt acc * msg_id = match msg with
 
   | Ast.Literal((Ast.Nil | Ast.Self | Ast.True | Ast.False) as lk
                     ,_pos) ->
-      let lks = format_to_string Ast_ruby_printer.format_lit_kind lk in
+      let lks = string_of_lit_kind lk in
         acc, ID_MethodName lks
   | e ->
       Log.fatal (Log.of_tok (H.tok_of e)) "refactor_msg unknown msg: %s\n"
-        (Ast_ruby_printer.string_of_expr e)
+        (Meta_ast_ruby.string_of_expr e)
 
 and refactor_symbol_or_msg (acc:stmt acc) sym_msg = match sym_msg with
   | Ast.Literal(Ast.Atom(interp),pos) ->
@@ -1418,8 +1420,8 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
       when not (StrSet.mem s acc.seen || is_special s) ->
       let id' = Var(Local, s) in
       let acc = add_seen s acc in
-        Log.err ~ctx:(Log.of_tok pos)
-          "removing dead code: %a" Ast_ruby_printer.format_expr rhs;
+      Log.err ~ctx:(Log.of_tok pos)
+          "removing dead code: %s" (Meta_ast_ruby.string_of_expr rhs);
         acc_enqueue (C.assign (LId id') (TE (EId Nil)) pos) acc
 
   (* special case for 'x ||= e' when this is the first assignment to x.
@@ -1573,7 +1575,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
   | Ast.CodeBlock _ as s -> 
       Log.fatal (Log.of_tok (H.tok_of s))
         "refactor_stmt: unknown stmt to refactor: %s\n"
-        (Ast_ruby_printer.string_of_expr s)
+        (Meta_ast_ruby.string_of_expr s)
       
 and refactor_method_name (acc:stmt acc) e : stmt acc * def_name = match e with
   | Ast.Binop(targ,(Ast.Op_SCOPE,_pos),msg)
@@ -1687,7 +1689,7 @@ and refactor_rescue_guard acc (e:Ast.expr) : StrSet.t * rescue_guard =
 
     | e -> 
         Log.fixme ~ctx:(Log.of_tok (H.tok_of e))
-          "rescue gaurd: %a" Ast_ruby_printer.format_expr e;
+          "rescue guard: %s" (Meta_ast_ruby.string_of_expr e);
         let acc, e' = refactor_tuple_expr acc e in
           if (not (DQueue.is_empty acc.q)) || not (StrSet.is_empty acc.seen)
           then Log.fatal (Log.of_tok (H.tok_of e))
