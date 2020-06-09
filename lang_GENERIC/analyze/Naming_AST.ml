@@ -280,6 +280,7 @@ type env = {
   constants: (string, sid * literal) assoc ref;
 
   in_lvalue: bool ref;
+  in_type: bool ref;
 }
 (*e: type [[Naming_AST.env]] *)
 
@@ -289,6 +290,7 @@ let default_env () = {
   names = (default_scopes());
   constants = ref [];
   in_lvalue = ref false;
+  in_type = ref false;
 }
 (*e: function [[Naming_AST.default_env]] *)
 
@@ -313,12 +315,16 @@ let top_context env =
 (*e: function [[Naming_AST.top_context]] *)
 
 (*s: function [[Naming_AST.set_resolved]] *)
-let set_resolved id_info x =
+let set_resolved env id_info x =
   (* TODO? maybe do it only if we have something better than what the
    * lang-specific resolved found?
    *)
   id_info.id_resolved := Some x.entname;
-  id_info.id_type := x.enttype
+  (* this is defensive programming against the possibility of introducing
+   * cycles in the AST.
+   * See tests/python/naming/shadow_name_type.py for a patological case. *)
+  if not !(env.in_type) 
+  then id_info.id_type := x.enttype
 (*e: function [[Naming_AST.set_resolved]] *)
 
 (*****************************************************************************)
@@ -356,12 +362,12 @@ let resolved_name_kind env =
 
 (*s: function [[Naming_AST.params_of_parameters]] *)
 (* !also set the id_info of the parameter as a side effect! *)
-let params_of_parameters xs =
+let params_of_parameters env xs =
  xs |> Common.map_filter (function
   | ParamClassic { pname = Some id; pinfo = id_info; ptype = typ; _ } ->
         let sid = Ast.gensym () in
         let resolved = { entname = Param, sid; enttype = typ } in
-        set_resolved id_info resolved;
+        set_resolved env id_info resolved;
         Some (Ast.str_of_ident id, resolved)
    | _ -> None
   )
@@ -385,7 +391,7 @@ let resolve lang prog =
        * Go for example allow the use of forward function reference
        * (no need to declarare prototype and forward decls as in C).
        *)
-      let new_params = params_of_parameters x.fparams in
+      let new_params = params_of_parameters env x.fparams in
       with_new_context InFunction env (fun () ->
       with_new_function_scope new_params env.names (fun () ->
         (* todo: actually we should first go inside x.fparams.ptype
@@ -411,7 +417,7 @@ let resolve lang prog =
           let sid = Ast.gensym () in
           let resolved = { entname = resolved_name_kind env, sid; enttype = vtype } in
           add_ident_current_scope id resolved env.names;
-          set_resolved id_info resolved;
+          set_resolved env id_info resolved;
 
           (* sgrep: literal constant propagation! *)
           (match vinit with 
@@ -435,7 +441,7 @@ let resolve lang prog =
           in
           (match flookup id env.names with
           | Some resolved ->
-             set_resolved id_info resolved;
+             set_resolved env id_info resolved;
              add_ident_current_scope id resolved env.names
           | None ->
              error tok (spf "could not find %s for directive %s" 
@@ -487,14 +493,14 @@ let resolve lang prog =
           let sid = Ast.gensym () in
           let resolved = untyped_ent (resolved_name_kind env, sid) in
           add_ident_current_scope id resolved env.names;
-          set_resolved id_info resolved;
+          set_resolved env id_info resolved;
           k x          
       | PatVar (_e, Some (id, id_info)) when is_local_or_global_ctx env ->
           (* mostly copy-paste of VarDef code *)
           let sid = Ast.gensym () in
           let resolved = untyped_ent (resolved_name_kind env, sid) in
           add_ident_current_scope id resolved env.names;
-          set_resolved id_info resolved;
+          set_resolved env id_info resolved;
           k x
       | OtherPat _ -> 
          Common.save_excursion env.in_lvalue true (fun () ->
@@ -529,7 +535,7 @@ let resolve lang prog =
           (match lookup_scope_opt id lang env.names with
           | Some (resolved) -> 
              (* name resolution *)
-             set_resolved id_info resolved;
+             set_resolved env id_info resolved;
 
              (* sgrep: constant and type propagation *)
              let (_kind, sid) = resolved.entname in
@@ -550,7 +556,7 @@ let resolve lang prog =
                let sid = Ast.gensym () in
                let resolved = untyped_ent(resolved_name_kind env, sid) in
                add_ident_current_scope id resolved env.names;
-               set_resolved id_info resolved;
+               set_resolved env id_info resolved;
 
              (* hopefully the lang-specific resolved may have resolved that *)
              | _ -> 
@@ -572,7 +578,7 @@ let resolve lang prog =
           (match lookup_scope_opt id lang env.names with
           | Some resolved -> 
              (* name resolution *)
-             set_resolved id_info resolved;
+             set_resolved env id_info resolved;
           | _ -> ()          
           )
       | _ -> ()
@@ -581,15 +587,14 @@ let resolve lang prog =
      );
 
      V.ktype_ = (fun (k, _v) x ->
-      match x with
-      (* do not recurse inside OtherType, especially OT_Expr, as 
+      (* when we are inside a type, especially in  (OtherType (OT_Expr)),
+       * we don't want set_resolved to set the type on some Id because
        * this could lead to cycle in the AST because of id_type 
-       * that will reference a type, containing an OT_Expr, containing
-       * an Id, that will contain an id_type, etc. 
+       * that will reference a type, that could containi an OT_Expr, containing
+       * an Id, that could contain the same id_type, and so on.
        * See tests/python/naming/shadow_name_type.py for a patological example
        *)
-      | OtherType _ -> ()
-      | _ -> k x
+       Common.save_excursion env.in_type true (fun () -> k x)
      );
 
   }
