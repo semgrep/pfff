@@ -86,8 +86,10 @@ let tokens2 parsing_mode file =
        Lexer.fstring_single state lexbuf
     | Lexer.STATE_IN_FSTRING_DOUBLE ->
        Lexer.fstring_double state lexbuf
-    | Lexer.STATE_IN_FSTRING_TRIPLE ->
-       Lexer.fstring_triple state lexbuf
+    | Lexer.STATE_IN_FSTRING_TRIPLE_SINGLE ->
+       Lexer.fstring_triple_single state lexbuf
+    | Lexer.STATE_IN_FSTRING_TRIPLE_DOUBLE ->
+       Lexer.fstring_triple_double state lexbuf
   in
   Parse_info.tokenize_all_and_adjust_pos 
     file token TH.visitor_info_of_tok TH.is_eof
