@@ -65,6 +65,8 @@ type 'a bracket = tok * 'a * tok
 (* Ident/name *)
 (* ------------------------------------------------------------------------- *)
 
+type ident = string wrap
+
 type id_kind = 
   | ID_Lowercase (* prefixed by [a-z] or _ *)
   | ID_Uppercase (* prefixed by [A-Z] *)
@@ -74,12 +76,10 @@ type id_kind =
   | ID_Builtin   (* prefixed by $, followed by non-alpha *)
   | ID_Assign of id_kind (* postfixed by = *)
 
-type ident = string wrap
-
 (* ------------------------------------------------------------------------- *)
 (* Operators *)
 (* ------------------------------------------------------------------------- *)
-and unary_op = 
+type unary_op = 
   | Op_UMinus    (* -x *)  | Op_UPlus     (* +x *)
   | Op_UBang     (* !x *)
   | Op_UTilde    (* ~x *)
@@ -90,7 +90,7 @@ and unary_op =
   | Op_UScope    (* ::x *)
 
 
-and binary_op = 
+type binary_op = 
   | Op_PLUS     (* + *)  | Op_MINUS    (* - *)
   | Op_TIMES    (* * *)  | Op_REM      (* % *)  | Op_DIV      (* / *)
   | Op_CMP      (* <=> *)
