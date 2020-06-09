@@ -98,6 +98,18 @@ let unittest =
           assert_failure (spf "it should correctly parse %s" file)
     );
 
+    "pattern_files" >:: (fun () ->
+      let dir = Filename.concat Config_pfff.path "/tests/java/semgrep" in
+      let files = Common2.glob (spf "%s/*.sgrep" dir) in
+      files |> List.iter (fun file ->
+        try
+          let _ = Parse_generic.parse_pattern Lang.Java (Common.read_file file) in
+          ()
+        with Parse_info.Parsing_error _ ->
+          assert_failure (spf "it should correctly parse %s" file)
+      )
+    );
+ 
     "test basic variable definitions go" >:: (fun () ->
       let file = Filename.concat Config_pfff.path "/tests/GENERIC/typing/StaticVarDef.go" in
         try
