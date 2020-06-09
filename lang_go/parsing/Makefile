@@ -64,7 +64,7 @@ beforedepend:: lexer_go.ml
 
 
 parser_go.ml parser_go.mli: parser_go.mly
-	$(OCAMLYACC) $< 2> $(OCAMLYLOG) && $(SCRIPTDIR)/check_ocamlyacc_conflicts.sh $(OCAMLYLOG) $(NUM_PERMITTED_CONFLICTS) $(LANG) parser_go.ml parser_go.mli
+	$(OCAMLYACC) $< 2>&1 | tee $(OCAMLYLOG) && $(SCRIPTDIR)/check_ocamlyacc_conflicts.sh $(OCAMLYLOG) $(NUM_PERMITTED_CONFLICTS) $(LANG) parser_go.ml parser_go.mli
 clean::
 	rm -f parser_go.ml parser_go.mli parser_go.output
 beforedepend:: parser_go.ml parser_go.mli

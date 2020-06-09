@@ -63,7 +63,7 @@ beforedepend:: lexer_java.ml
 OCAMLYACC=menhir --unused-tokens --explain --fixed-exception
 
 parser_java.ml parser_java.mli: parser_java.mly
-	$(OCAMLYACC) $< 2> $(MENHIRLOG) && $(SCRIPTDIR)/check_menhir_conflicts.sh $(MENHIRLOG) $(NUM_PERMITTED_CONFLICTS) $(LANG) parser_java.ml parser_java.mli
+	$(OCAMLYACC) $< 2>&1 | tee $(MENHIRLOG) && $(SCRIPTDIR)/check_menhir_conflicts.sh $(MENHIRLOG) $(NUM_PERMITTED_CONFLICTS) $(LANG) parser_java.ml parser_java.mli
 
 clean::
 	rm -f parser_java.ml parser_java.mli parser_java.output $(MENHIRLOG)
