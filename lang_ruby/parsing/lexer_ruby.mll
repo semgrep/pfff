@@ -154,6 +154,9 @@ let push_back str lexbuf =
 (* Misc *)
 (* ---------------------------------------------------------------------- *)
 
+let mk_char (charcode, t) = 
+  T_NUM(spf "%d" charcode, t)
+
 let fail_eof _f _state _lexbuf = 
   failwith "parse error: premature end of file"
     
@@ -190,10 +193,6 @@ let remove_underscores str =
       ) str;
     Buffer.contents buf
 
-let to_bignum str = 
-  Big_int.big_int_of_string (remove_underscores str)
-
-
 (* base 16 -> base 10 helper *)
 let num_of_hex_digit = function
   | '0' -> 0
@@ -217,29 +216,14 @@ let num_of_hex_digit = function
 (* converts the number stored in [str] initially represented in base
    [base] into a base 10 token (fixnum or bignum) *)
 let convert_to_base10 ~base str pos = 
+  ignore(base);
   let str = remove_underscores str in
-  let base10 x exp = (* compute x * (base ** exp) *)
-    Big_int.mult_big_int x 
-      (Big_int.power_int_positive_int base exp)
-  in
-  let rec helper acc idx exp = 
-    if idx < 0 then acc
-    else
-      let digit = num_of_hex_digit str.[idx] in
-      let b10 = base10 (Big_int.big_int_of_int digit) exp in
-      let acc' = Big_int.add_big_int b10 acc in
-        helper acc' (idx - 1) (exp + 1)
-  in
-  let len = String.length str in
-  let num = helper Big_int.zero_big_int (len-1) 0 in
-    if Big_int.is_int_big_int num
-    then T_FIXNUM(Big_int.int_of_big_int num, pos)
-    else T_BIGNUM(num, pos)
+  T_NUM(str, pos)
+
 
 let negate_numeric = function
-  | T_FIXNUM(n,p) -> T_FIXNUM(-n,p)
-  | T_FLOAT(s,n,p) -> T_FLOAT("-"^s,-.n,p)
-  | T_BIGNUM(n,p) -> T_BIGNUM(Big_int.minus_big_int n,p)
+  | T_NUM(n,p) -> T_NUM("-" ^ n,p)
+  | T_FLOAT(s,p) -> T_FLOAT("-"^s,p)
   | _ -> assert false
 
 let close_delim = function
@@ -701,11 +685,7 @@ and postfix_numeric f start t state = parse
         then f (convert_to_base10 ~base:8 num (add_to_tok lexbuf t))
         else 
           let str = (start ^ num) in
-          let num = to_bignum str in
-          let tok = 
-            if Big_int.is_int_big_int num
-            then T_FIXNUM(Big_int.int_of_big_int num, (add_to_tok lexbuf t))
-            else T_BIGNUM(num, (add_to_tok lexbuf t))
+          let tok = T_NUM(str, (add_to_tok lexbuf t))
           in f tok
       }
 
@@ -713,7 +693,7 @@ and postfix_numeric f start t state = parse
       { S.end_state state;
         let str = (start ^ (Lexing.lexeme lexbuf)) in
         let str = remove_underscores str in
-        let tok = T_FLOAT(str, float_of_string (str), (add_to_tok lexbuf t)) in
+        let tok = T_FLOAT(str, (add_to_tok lexbuf t)) in
         f tok
       }
 
@@ -767,22 +747,22 @@ and char_code state = parse
         char_code_work lexbuf}
 
 and char_code_work = parse
-  | [^'\n''\t'] as c {T_FIXNUM(Char.code c, (tk lexbuf))}
+  | [^'\n''\t'] as c {mk_char (Char.code c, (tk lexbuf))}
   | "\\C-" (['a'-'z''A'-'Z'] as c)
-      { T_FIXNUM((Char.code (Char.uppercase_ascii c)) - 64, (tk lexbuf))}
+      { mk_char ((Char.code (Char.uppercase_ascii c)) - 64, (tk lexbuf))}
   | "\\M-" (['a'-'z''A'-'Z'] as c)
-      { T_FIXNUM((Char.code c) + 128, (tk lexbuf))}
+      { mk_char ((Char.code c) + 128, (tk lexbuf))}
   | "\\M-\\C-" (['a'-'z''A'-'Z'] as c)
   | "\\C-\\M-" (['a'-'z''A'-'Z'] as c)
-      { T_FIXNUM((Char.code (Char.uppercase_ascii c)) + 64, (tk lexbuf))}
+      { mk_char ((Char.code (Char.uppercase_ascii c)) + 64, (tk lexbuf))}
 
-  | "\\\\" { T_FIXNUM(Char.code '\\', (tk lexbuf))}
-  | "\\s"  { T_FIXNUM(Char.code ' ', (tk lexbuf))}
-  | "\\n"  { T_FIXNUM(Char.code '\n', (tk lexbuf))}
-  | "\\t"  { T_FIXNUM(Char.code '\t', (tk lexbuf))}
-  | "\\r"  { T_FIXNUM(Char.code '\r', (tk lexbuf))}
-  | "\\("  { T_FIXNUM(Char.code '(', (tk lexbuf))}
-  | "\\)"  { T_FIXNUM(Char.code ')', (tk lexbuf))}
+  | "\\\\" { mk_char (Char.code '\\', (tk lexbuf))}
+  | "\\s"  { mk_char (Char.code ' ', (tk lexbuf))}
+  | "\\n"  { mk_char (Char.code '\n', (tk lexbuf))}
+  | "\\t"  { mk_char (Char.code '\t', (tk lexbuf))}
+  | "\\r"  { mk_char (Char.code '\r', (tk lexbuf))}
+  | "\\("  { mk_char (Char.code '(', (tk lexbuf))}
+  | "\\)"  { mk_char (Char.code ')', (tk lexbuf))}
 
 (*****************************************************************************)
 (* Strings *)

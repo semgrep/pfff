@@ -139,9 +139,8 @@ let visitor_info_of_tok f = function
   | T_UID (s, ii) -> T_UID (s, f ii)
 
   | T_REGEXP (a,b, ii) -> T_REGEXP (a,b, f ii)
-  | T_FLOAT (a,b, ii) -> T_FLOAT (a,b, f ii)
-  | T_BIGNUM (s, ii) -> T_BIGNUM (s, f ii)
-  | T_FIXNUM (s, ii) -> T_FIXNUM (s, f ii)
+  | T_FLOAT (a, ii) -> T_FLOAT (a, f ii)
+  | T_NUM (s, ii) -> T_NUM (s, f ii)
   | T_ATOM (s, ii) -> T_ATOM (s, f ii)
 
 
