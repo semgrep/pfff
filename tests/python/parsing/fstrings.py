@@ -25,6 +25,12 @@ You  error in `{bento.constants.DEFAULT_LOG_PATH}`.
 """,
                 err=True,
             )
+   click.secho(
+                f'''
+You  error in `{bento.constants.DEFAULT_LOG_PATH}`.
+''',
+                err=True,
+            )
 
    p = style(f"{l:^{max_len}s}", bold=True)
 
