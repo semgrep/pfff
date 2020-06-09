@@ -425,7 +425,7 @@ bound: ref_type_and_list { $1 }
 
 typed_metavar:
  | LP type_ IDENTIFIER RP { fail_if_metavar_on_typecheck $2;
-                            Flag_parsing.sgrep_guard (TypedMetavar($3, Parse_info.fake_info " ", $2))  }
+                            Flag_parsing.sgrep_guard (TypedMetavar($3, $2))  }
 
 primary:
  | primary_no_new_array       { $1 }
@@ -435,11 +435,12 @@ primary_no_new_array:
  | literal             { $1 }
  | THIS                { Name [this_ident $1] }
  | LP expression RP    { $2 }
- | typed_metavar       { $1 }
  | class_instance_creation_expression { $1 }
  | field_access                       { $1 }
  | method_invocation                  { $1 }
  | array_access                       { $1 }
+ /*(* sgrep-ext: *)*/
+ | typed_metavar       { $1 }
  /*(* javaext: ? *)*/
  | name DOT THIS       { Name (name $1 @ [this_ident $3]) }
  /*(* javaext: ? *)*/

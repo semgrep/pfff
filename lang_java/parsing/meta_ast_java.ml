@@ -215,11 +215,10 @@ and vof_expr =
       and v2 = vof_wrap Meta_ast_generic_common.vof_arithmetic_operator v2
       and v3 = vof_expr v3
       in OCaml.VSum (("AssignOp", [ v1; v2; v3 ]))
-  | TypedMetavar ((v1, v2, v3)) ->
+  | TypedMetavar ((v1, v2)) ->
       let v1 = vof_ident v1
-      and v2 = vof_tok v2
-      and v3 = vof_typ v3
-      in OCaml.VSum (("TypedMetavar", [v1; v2; v3 ]))
+      and v2 = vof_typ v2
+      in OCaml.VSum (("TypedMetavar", [v1; v2 ]))
   | Lambda ((v1, v2)) ->
       let v1 = vof_parameters v1
       and v2 = vof_stmt v2

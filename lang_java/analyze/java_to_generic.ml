@@ -300,10 +300,10 @@ and expr e =
   | AssignOp ((v1, (v2, tok), v3)) ->
       let v1 = expr v1 and v3 = expr v3 in
       G.AssignOp (v1, (v2, tok), v3)
-  | TypedMetavar (v1, v2, v3) ->
+  | TypedMetavar (v1, v2) ->
       let v1 = ident v1 in
-      let v3 = typ v3 in
-      G.TypedMetavar (v1, v2, v3)
+      let v2 = typ v2 in
+      G.TypedMetavar (v1, Parse_info.fake_info " ", v2)
   | Lambda (v1, v2) ->
       let v1 = params v1 in
       let v2 = stmt v2 in
