@@ -14,10 +14,9 @@ let vof_bracket of_a (_t1, x, _t2) =
 
 let rec vof_expr =
   function
-  | Literal ((v1, v2)) ->
-      let v1 = vof_lit_kind v1
-      and v2 = vof_tok v2
-      in OCaml.VSum (("Literal", [ v1; v2 ]))
+  | Literal ((v1)) ->
+      let v1 = vof_literal v1
+      in OCaml.VSum (("L", [ v1 ]))
   | Id (v1, v2) ->
       let v1 = vof_ident v1
       and v2 = vof_id_kind v2
@@ -155,25 +154,27 @@ let rec vof_expr =
       and v2 = vof_tok v2
       in OCaml.VSum (("Undef", [ v2; v1 ]))
 
-and vof_lit_kind =
+and vof_literal =
   function
-  | Num v1 ->
-      let v1 = OCaml.vof_string v1 in OCaml.VSum (("Num", [ v1 ]))
+  | Num (v1) ->
+      let v1 = vof_wrap OCaml.vof_string v1 in
+      OCaml.VSum (("Num", [ v1 ]))
   | Float ((v1)) ->
-      let v1 = OCaml.vof_string v1
+      let v1 = vof_wrap OCaml.vof_string v1
       in OCaml.VSum (("Float", [ v1 ]))
   | String v1 ->
-      let v1 = vof_string_kind v1 in OCaml.VSum (("String", [ v1 ]))
+      let v1 = vof_wrap vof_string_kind v1 in OCaml.VSum (("String", [ v1 ]))
   | Atom v1 ->
-      let v1 = vof_interp_string v1 in OCaml.VSum (("Atom", [ v1 ]))
-  | Regexp ((v1, v2)) ->
+      let v1 = vof_wrap vof_interp_string v1 in OCaml.VSum (("Atom", [ v1 ]))
+  | Regexp ((v1, v2), t) ->
       let v1 = vof_interp_string v1
       and v2 = OCaml.vof_string v2
-      in OCaml.VSum (("Regexp", [ v1; v2 ]))
-  | Nil -> OCaml.VSum (("Nil", []))
-  | Self -> OCaml.VSum (("Self", []))
-  | True -> OCaml.VSum (("True", []))
-  | False -> OCaml.VSum (("False", []))
+      and t = vof_tok t
+      in OCaml.VSum (("Regexp", [ v1; v2; t ]))
+  | Nil t -> let t = vof_tok t in OCaml.VSum (("Nil", [t]))
+  | Self t -> let t = vof_tok t in OCaml.VSum (("Self", [t]))
+  | Bool b -> let b = vof_wrap OCaml.vof_bool b in OCaml.VSum (("Bool", [b]))
+
 and vof_string_kind =
   function
   | Single v1 ->

@@ -511,19 +511,19 @@ then_sep:
 /*(*----------------------------*)*/
 
 constant:
-  | T_NUM<s,pos>  { Literal(Num s,pos) }
-  | T_FLOAT<s,pos> { Literal((Float(s)),pos) }
+  | T_NUM   { Literal (Num $1) }
+  | T_FLOAT { Literal (Float $1) }
 
   | string<s>        { s }
 
-  | T_ATOM<a,pos>    { Literal (Atom a,pos) }
-  | T_ATOM_BEG<pos> interp_str<istr> { Literal (Atom istr,pos) }
+  | T_ATOM    { Literal (Atom $1) }
+  | T_ATOM_BEG<pos> interp_str<istr> { Literal (Atom (istr,pos)) }
 
-  | T_REGEXP<s,m,pos> { Literal(Regexp (s,m),pos) }
+  | T_REGEXP<s,m,pos> { Literal(Regexp ((s,m),pos)) }
   | T_REGEXP_BEG<pos> interp_str<istr> T_REGEXP_MOD<mods, _posTODO>
-      { Literal(Regexp (istr,mods),pos) }
+      { Literal(Regexp ((istr,mods),pos)) }
 
-  | T_TICK_BEG<pos> interp_str<istr> { Literal (String (Tick istr),pos) }
+  | T_TICK_BEG<pos> interp_str<istr> { Literal (String ((Tick istr),pos)) }
 
 /*(*----------------------------*)*/
 /*(*2 strings *)*/
@@ -535,9 +535,9 @@ string:
 
 one_string:
   | T_SINGLE_STRING<s,pos> 
-      { Literal(String(Single s), pos) }
+      { Literal(String((Single s), pos)) }
   | T_DOUBLE_BEG<pos> interp_str<istr> 
-      { Literal(String (Double istr), pos) }
+      { Literal(String ((Double istr), pos)) }
 
   | T_USER_BEG<m,pos> interp_str<str> { M.process_user_string m str pos }
 
@@ -937,10 +937,10 @@ identifier:
   | T_INST_VAR<id,pos>     { Id ((id,pos), ID_Instance) }
   | T_CLASS_VAR<id,pos>    { Id ((id,pos), ID_Class) }
 
-  | K_NIL<pos>             { Literal(Nil,pos) }
-  | K_SELF<pos>            { Literal(Self,pos) }
-  | K_TRUE<pos>            { Literal(True,pos) }
-  | K_FALSE<pos>           { Literal(False,pos) }
+  | K_NIL             { Literal(Nil $1) }
+  | K_SELF            { Literal(Self $1) }
+  | K_TRUE            { Literal(Bool (true,$1)) }
+  | K_FALSE           { Literal(Bool (false,$1)) }
 
 scoped_id:
   | identifier<id>                            { id }
@@ -986,7 +986,7 @@ method_name:
 
 meth_or_atom:
     | method_name<e>  { e }
-    | T_ATOM<a,pos>   { Literal((Atom a),pos) }
+    | T_ATOM<a,pos>   { Literal((Atom (a,pos))) }
 
 /*(* operator overloading *)*/
 

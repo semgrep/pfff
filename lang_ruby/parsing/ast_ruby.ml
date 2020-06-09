@@ -126,7 +126,7 @@ type binary_op =
 (*****************************************************************************)
 
 type expr = 
-  | Literal of lit_kind * tok
+  | Literal of literal
 
   | Id of ident * id_kind
   | Operator of binary_op wrap
@@ -148,20 +148,18 @@ type expr =
   | S of stmt
   | D of definition
 
-and lit_kind = 
-  | Num of string
-  | Float of string
+and literal = 
+  | Bool of bool wrap
+  | Num of string wrap
+  | Float of string wrap
 
-  | String of string_kind
-  | Regexp of interp_string * string
+  | String of string_kind wrap
+  | Regexp of (interp_string * string) wrap
 
-  | Atom of interp_string
+  | Atom of interp_string wrap
 
-  | Nil
-  | Self
+  | Nil of tok | Self of tok
 
-  | True
-  | False
 
   and string_kind = 
     | Single of string

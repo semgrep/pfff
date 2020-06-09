@@ -130,13 +130,13 @@ let split_single_string_to_array str pos =
     in reduce [] chunks
   in
   let strings = List.map
-    (fun s -> Literal(String(Single s), pos)) strings
+    (fun s -> Literal(String(Single s, pos))) strings
   in
     Array(pos, strings,pos) (* TODO pos1 *)
 
 (* turn %W{a#{b} c} into ["a#{b}"; "c"] *) 
 let split_double_string_to_array sc pos =
-  let ds s = Literal(String(Double s),pos) in
+  let ds s = Literal(String(Double s,pos)) in
     (* first we create a stream of tokens with the grammar of
      (Expr | Code | String | Delmi)*
    by splitting the strings on whitespace.  This stream will be
@@ -179,7 +179,7 @@ let str_of_interp sc = match sc with
   | _ -> failwith "unexpected escapes in string"
 
 let merge_string_lits s1 s2 = match s1,s2 with
-  | Literal(String(s1),p), Literal(String(s2),_) ->
+  | Literal(String(s1,p)), Literal(String(s2,_)) ->
   let s' = match s1, s2 with
     | Tick _, _ | _, Tick _ -> assert false
     | Single s1, Single s2 -> Single (s1 ^ s2)
@@ -189,17 +189,17 @@ let merge_string_lits s1 s2 = match s1,s2 with
     | Double sc,Single s -> 
         Double (sc @ [Ast_ruby.StrChars s])
   in
-    Literal((String s'),p)
+    Literal(String (s',p))
   | _ -> assert false
 
 let process_user_string m str pos = match m with
-  | "r" -> Literal(Regexp (str,""),pos)
+  | "r" -> Literal(Regexp ((str,""),pos))
   | "w" -> split_single_string_to_array (str_of_interp str) pos
   | "W" -> split_double_string_to_array str pos
-  | "q" -> Literal(String(Single (str_of_interp str)),pos)
-  | "Q" -> Literal(String(Double str),pos)
-  | "x" -> Literal(String(Tick str),pos)
-  | "" -> Literal(String(Double str),pos)
+  | "q" -> Literal(String((Single (str_of_interp str)),pos))
+  | "Q" -> Literal(String((Double str),pos))
+  | "x" -> Literal(String((Tick str),pos))
+  | "" -> Literal(String((Double str),pos))
   | _ -> failwith (Printf.sprintf "unhandled string modifier: %s" m)
 
 
@@ -283,8 +283,8 @@ let rec methodcall m args cb pos =
     | S Return(p,[]),args,None -> S (Return(p, args))
     | S Yield(_), [], None -> m
     | S Yield(p,[]),args,None -> S (Yield(p, args))
-    | Literal(True,_p), [],None
-    | Literal(False,_p),[],None
+    | Literal(Bool(true,_p)), [],None
+    | Literal(Bool(false,_p)),[],None
     | Id((_,_p),_),     [],None -> m
 
     | Literal _,_,_ -> raise Dyp.Giveup
@@ -351,7 +351,7 @@ let fix_broken_assoc l op r =
   | Id((s,p), ID_Assign ik) ->
       let l' = replace_end l (Id((s,p),ik)) in
         l', Op_ASSOC, r
-  | Literal(Atom(sc), pos) ->
+  | Literal(Atom(sc, pos)) ->
       let astr,rest = match List.rev sc with
         | (Ast_ruby.StrChars s)::tl -> s,tl
         | _ -> "a",[]
@@ -361,7 +361,7 @@ let fix_broken_assoc l op r =
         then 
       let s' = String.sub astr 0 (len-1) in
       let sc' = List.rev ((Ast_ruby.StrChars s')::rest) in
-      let l' = replace_end l (Literal(Atom(sc'),pos)) in
+      let l' = replace_end l (Literal(Atom(sc',pos))) in
         l', Op_ASSOC, r
         else default
   | _ -> default

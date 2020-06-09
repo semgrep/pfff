@@ -572,11 +572,11 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         in
           acc, EId (UScope s)
 
-    | Ast.Unary((Ast.Op_UMinus,_pos), Ast.Literal(Ast.Num i,_)) -> 
+    | Ast.Unary((Ast.Op_UMinus,_pos), Ast.Literal(Ast.Num (i,_))) -> 
         acc, ELit (Num ("-"^i))
 
 
-    | Ast.Unary((Ast.Op_UMinus, _pos), Ast.Literal(Ast.Float(s),_)) -> 
+    | Ast.Unary((Ast.Op_UMinus, _pos), Ast.Literal(Ast.Float(s,_))) -> 
         assert(s.[0] != '-');
         acc, ELit (Float("-" ^ s))
 
@@ -712,8 +712,8 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         if is_special s then acc, (special_of_string pos s)
         else acc, EId (Var(refactor_id_kind pos ik, s))
 
-    | Ast.Literal(Ast.Self,_pos) -> acc, EId (Self)
-    | Ast.Literal(l,pos) -> refactor_lit acc l pos
+    | Ast.Literal(Ast.Self _pos) -> acc, EId (Self)
+    | Ast.Literal(l) -> refactor_lit acc l
 
     | Ast.Tuple(l,_pos) 
     | Ast.Array(_, l,_pos) ->
@@ -821,32 +821,33 @@ and refactor_interp_string acc istr pos =
           let acc, e = refactor_contents acc hd in
             helper acc e tl
               
-and refactor_lit acc (l : Ast.lit_kind) pos : stmt acc * expr = match l with
-  | Ast.Num i -> acc, ELit (Num i)
-  | Ast.Float(s) -> acc, ELit (Float(s))
-  | Ast.String(Ast.Single s) -> acc, ELit (String (unescape_single_string s))
+and refactor_lit acc (l : Ast.literal) : stmt acc * expr = match l with
+  | Ast.Num (i, _pos) -> acc, ELit (Num i)
+  | Ast.Float(s, _pos) -> acc, ELit (Float(s))
+  | Ast.String(Ast.Single s, _pos) -> 
+     acc, ELit (String (unescape_single_string s))
 
-  | Ast.String(Ast.Double s) -> 
+  | Ast.String(Ast.Double s, pos) -> 
       refactor_interp_string acc s pos
-  | Ast.String(Ast.Tick s) -> 
+  | Ast.String(Ast.Tick s, pos) -> 
       let acc, e = refactor_interp_string acc s pos in
         make_call_expr acc None (ID_MethodName "__backtick") [SE e] None pos
 
-  | Ast.Atom [Ast.StrChars s] -> acc, ELit (Atom s)
-  | Ast.Atom istr -> 
+  | Ast.Atom ([Ast.StrChars s], _pos) -> acc, ELit (Atom s)
+  | Ast.Atom (istr, pos) -> 
       let acc, str = refactor_interp_string acc istr pos in
         make_call_expr acc (Some str) (ID_MethodName "to_sym") [] None pos
 
-  | Ast.Regexp([Ast.StrChars s1],s2) -> 
+  | Ast.Regexp(([Ast.StrChars s1],s2),_pos) -> 
       let s1' = escape_regexp s1 in
         acc, ELit (Regexp(s1',s2))
 
-  | Ast.Regexp(s1,s2) -> construct_explicit_regexp acc pos s1 s2
+  | Ast.Regexp((s1,s2),pos) -> construct_explicit_regexp acc pos s1 s2
               
-  | Ast.Nil -> acc, EId (Nil)
-  | Ast.True -> acc, EId (True)
-  | Ast.False -> acc, EId (False)
-  | Ast.Self -> 
+  | Ast.Nil _ -> acc, EId (Nil)
+  | Ast.Bool (true,_) -> acc, EId (True)
+  | Ast.Bool (false,_) -> acc, EId (False)
+  | Ast.Self _ -> 
       Log.fatal Log.empty
         "trying to convert self to literal, but should be handled elsewhere"
 
@@ -1059,8 +1060,7 @@ and refactor_msg (acc:stmt acc) msg : stmt acc * msg_id = match msg with
   | Ast.Id((s, _pos), Ast.ID_Assign(Ast.ID_Uppercase)) -> 
       acc, ID_Assign s
 
-  | Ast.Literal((Ast.Nil | Ast.Self | Ast.True | Ast.False) as lk
-                    ,_pos) ->
+  | Ast.Literal((Ast.Nil _ | Ast.Self _ | Ast.Bool _) as lk) ->
       let lks = string_of_lit_kind lk in
         acc, ID_MethodName lks
   | e ->
@@ -1068,7 +1068,7 @@ and refactor_msg (acc:stmt acc) msg : stmt acc * msg_id = match msg with
         (Meta_ast_ruby.string_of_expr e)
 
 and refactor_symbol_or_msg (acc:stmt acc) sym_msg = match sym_msg with
-  | Ast.Literal(Ast.Atom(interp),pos) ->
+  | Ast.Literal(Ast.Atom(interp,pos)) ->
       let acc, e = refactor_interp_string acc interp pos in
         begin match e with 
           | ELit (String s) -> acc, msg_id_from_string s
@@ -1222,7 +1222,7 @@ and refactor_method_call_assign (acc:stmt acc) (lhs : lhs option) = function
         acc_enqueue call acc
 
   | Ast.Call(Ast.Id(("define_method",_),Ast.ID_Lowercase),
-                     [Ast.Literal(Ast.Atom [Ast.StrChars mname],atompos)], 
+                     [Ast.Literal(Ast.Atom ([Ast.StrChars mname],atompos))], 
                      Some(Ast.CodeBlock(_,params_o,cb_body,_)), pos) ->
       let params = Utils.default_opt [] params_o in
       let name = H.msg_of_str mname atompos in
@@ -1584,10 +1584,10 @@ and refactor_method_name (acc:stmt acc) e : stmt acc * def_name = match e with
       let acc,msg' = refactor_msg acc msg in
         acc, (Singleton_Method (targ',msg'))
 
-  | Ast.Literal(Ast.Atom [Ast.StrChars s], _pos) -> 
+  | Ast.Literal(Ast.Atom ([Ast.StrChars s], _pos)) -> 
       acc, (Instance_Method (ID_MethodName s))
 
-  | Ast.Literal(Ast.Atom _, pos) -> 
+  | Ast.Literal(Ast.Atom (_, pos)) -> 
       Log.fatal (Log.of_tok pos) "interpreted atom string in method name?"
   | e -> 
       let acc,id = refactor_msg acc e in

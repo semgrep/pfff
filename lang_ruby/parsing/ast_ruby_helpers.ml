@@ -2,6 +2,10 @@ open Common
 open Ast_ruby
 module Utils = Utils_ruby
 
+(*****************************************************************************)
+(* Comparators *)
+(*****************************************************************************)
+
 let pcompare = Pervasives.compare
 
 let cmp2 = Utils.cmp2
@@ -21,7 +25,7 @@ let rec cmp_expr e1 e2 = match e1,e2 with
       cmp2 (pcompare k1 k2) pcompare s1 s2
 
   | S Empty, S Empty -> 0
-  | Literal(k1,_), Literal(k2,_) -> cmp_lit k1 k2
+  | Literal(k1), Literal(k2) -> cmp_lit k1 k2
 
   | D Alias(_, e11,e12), D Alias(_, e21,e22) -> 
       cmp2 (cmp_expr e11 e21) cmp_expr e12 e22
@@ -104,17 +108,17 @@ let rec cmp_expr e1 e2 = match e1,e2 with
   | _ -> Utils.cmp_ctors e1 e2
 
 and cmp_lit c1 c2 = match c1,c2 with
-  | Num i1, Num i2 -> pcompare i1 i2
-  | Float(s1), Float (s2) -> pcompare s1 s2
-  | String(k1), String(k2) -> cmp_string k1 k2
-  | Atom s1, Atom s2 -> cmp_list cmp_interp s1 s2
-  | Regexp (s1,m1), Regexp (s2,m2) -> 
+  | Num (i1,_), Num (i2,_) -> pcompare i1 i2
+  | Float(s1,_), Float (s2,_) -> pcompare s1 s2
+  | String(k1,_), String(k2,_) -> cmp_string k1 k2
+  | Atom (s1,_), Atom (s2,_) -> cmp_list cmp_interp s1 s2
+  | Regexp ((s1,m1),_), Regexp ((s2,m2),_) -> 
       cmp2 (cmp_list cmp_interp s1 s2) pcompare m1 m2
 
-  | Nil, Nil
-  | Self, Self 
-  | True, True
-  | False, False -> 0
+  | Nil _, Nil _
+  | Self _, Self _
+  | Bool (true, _), Bool (true, _)
+  | Bool (false,_), Bool (false,_) -> 0
 
   | _ -> pcompare c1 c2
 
@@ -181,10 +185,23 @@ let compare_ast ast1 ast2 = cmp_list cmp_expr ast1 ast2
 
 let equal_ast a1 a2 = (compare_ast a1 a2) == 0
 
+(*****************************************************************************)
+(* tok_of *)
+(*****************************************************************************)
+
+let tok_of_literal = function
+  | Num (_, pos)
+  | Float (_, pos)
+  | String (_, pos)
+  | Regexp (_, pos)
+  | Atom (_, pos)
+  | Nil pos | Self pos 
+  | Bool (_, pos) 
+   -> pos
+
 let tok_of = function
   | S Empty -> Parse_info.fake_info "Empty"
 
-  | Literal (_, pos)
   | D Alias (pos, _,_)
   | D Undef (pos, _)
   | Id ((_, pos), _)
@@ -214,6 +231,12 @@ let tok_of = function
   | S Yield (pos, _)
   | S Block ( _  , pos)
    -> pos
+
+  | Literal x -> tok_of_literal x
+
+(*****************************************************************************)
+(* xxx_of_string *)
+(*****************************************************************************)
 
 let binary_op_of_string = function
   | "="    -> Op_ASSIGN   
@@ -254,6 +277,10 @@ let binary_op_of_string = function
   | Op_Custom s -> Printf.sprintf "Custom_op(%s)" s
   | Op_OP_ASGN op -> (str_binop op) ^ "="
 *)
+
+(*****************************************************************************)
+(* Mappers *)
+(*****************************************************************************)
 
 let map_bracket f (t1, x, t2) = (t1, f x, t2)
 
@@ -371,9 +398,23 @@ and mod_body_exn f body =
 
 let mod_ast f ast = List.map (mod_expr f) ast
 
+(*****************************************************************************)
+(* Misc *)
+(*****************************************************************************)
+
+let set_tok_literal pos = function
+  | Num (x, _) -> Num (x, pos)
+  | Float (x, _) -> Float (x, pos)
+  | String (x,_) -> String (x, pos)
+  | Regexp (x, _) -> Regexp (x, pos)
+  | Atom (x,_) -> Atom (x, pos)
+  | Nil _ -> Nil pos
+  | Self _ -> Self pos
+  | Bool (x, _) -> Bool (x, pos)
+
 (** sets the position of the expression; use it with mod_ast **)
 let set_tok pos = function
-  | Literal(lit_kind, _) -> Literal(lit_kind, pos) 
+  | Literal(lit_kind) -> Literal(set_tok_literal pos lit_kind) 
   | D Alias(_, e1, e2) -> D (Alias(pos, e1, e2))
   | D Undef(_, elist) -> D (Undef(pos, elist))
   | Id((str, _), id_kind) -> Id((str, pos), id_kind)
@@ -492,5 +533,3 @@ let rec str_binop = function
   | Op_OP_ASGN op -> (str_binop op) ^ "="
   | Op_DOT2     -> ".."
   | Op_DOT3     -> "..."
-
-
