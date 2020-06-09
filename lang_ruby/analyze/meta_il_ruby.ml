@@ -380,3 +380,19 @@ let vof_any_formal =
   | B v1 -> let v1 = vof_block_formal_param v1 in OCaml.VSum (("B", [ v1 ]))
   | M v1 -> let v1 = vof_method_formal_param v1 in OCaml.VSum (("M", [ v1 ]))
   
+
+let string_of_identifier x =
+  let v = vof_identifier x in
+  OCaml.string_of_v v
+
+let string_of_literal x =
+  let v = vof_literal x in
+  OCaml.string_of_v v
+
+let string_of_stmt x =
+  let v = vof_stmt x in
+  OCaml.string_of_v v
+
+let string_of_expr x =
+  let v = vof_expr x in
+  OCaml.string_of_v v

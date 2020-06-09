@@ -1,16 +1,16 @@
 open Common
 open Printf
 open Il_ruby
-open Il_ruby_printer
 open Utils_ruby
 module Utils = Utils_ruby
 module Ast = Ast_ruby
 module H = Ast_ruby_helpers
-
 open Il_ruby_helpers
 module C = Il_ruby_helpers.Abbr
-
 module G = AST_generic (* for unbracket *)
+
+module CodePrinter = Meta_il_ruby
+
 
 type 'a acc = {
   q : 'a DQueue.t;
@@ -556,9 +556,9 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
               mkstmt (D (ModuleDef(Some v,name,body))) s.pos
           | _ -> 
               Log.fatal (Log.of_tok (H.tok_of e))
-                "[BUG] Class/module? xlate error: %a(%a)" 
-                CodePrinter.format_stmt s
-                CodePrinter.format_identifier v'
+                "[BUG] Class/module? xlate error: %s(%s)" 
+                (CodePrinter.string_of_stmt s)
+                (CodePrinter.string_of_identifier v')
         in
           acc_enqueue s' acc, EId v'
 
@@ -567,8 +567,8 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         let acc,e' = refactor_id acc e in
         let s = match e' with
           | Var(Constant, s) -> s
-          | _ -> Log.fatal (Log.of_tok pos) "unknown right hand of uscope: %a"
-              CodePrinter.format_identifier e'
+          | _ -> Log.fatal (Log.of_tok pos) "unknown right hand of uscope: %s"
+              (CodePrinter.string_of_identifier e')
         in
           acc, EId (UScope s)
 
@@ -607,8 +607,8 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         let acc,e2' = refactor_id acc e2 in
         let s = match e2' with
           | Var(Constant, s) -> s
-          | _ -> Log.fatal (Log.of_tok pos) "unknown right hand of scope: %a"
-              CodePrinter.format_identifier e2'
+          | _ -> Log.fatal (Log.of_tok pos) "unknown right hand of scope: %s"
+              (CodePrinter.string_of_identifier e2')
         in
           acc, EId (Scope(e1', s))
 
@@ -888,7 +888,7 @@ and refactor_hash_list acc l pos =
     | [] -> acc
     | x::[] -> 
         Log.fatal (Log.of_tok pos) "odd number of elements in hash: %s" 
-          (format_to_string CodePrinter.format_expr x)
+          (CodePrinter.string_of_expr x)
     | x::y::tl -> pair_list ((x,y)::acc) tl
   in
     match l with
@@ -1044,8 +1044,8 @@ and refactor_id (acc:stmt acc) e : stmt acc * identifier =
   match refactor_expr acc e with 
     | (acc,EId (id)) -> acc, id
     | _,ELit (l) -> 
-        Log.fatal (Log.of_tok (H.tok_of e)) "lhs_of_expr: literal %a" 
-          CodePrinter.format_literal l
+        Log.fatal (Log.of_tok (H.tok_of e)) "lhs_of_expr: literal %s" 
+          (CodePrinter.string_of_literal l)
 
 and string_of_lit_kind _kind = "TODO"
 
@@ -1680,7 +1680,7 @@ and refactor_rescue_guard acc (e:Ast.expr) : StrSet.t * rescue_guard =
             DQueue.iter
               (fun s ->
                  Printf.eprintf "resc: %s\n" 
-                   (CodePrinter.string_of_cfg s)
+                   (CodePrinter.string_of_stmt s)
               ) acc.q;
             Log.fatal (Log.of_tok (H.tok_of e))
               "rescue1 guard created hoisted expression?"
