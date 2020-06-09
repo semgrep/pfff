@@ -320,7 +320,7 @@ and stmt =
   | Block v1 -> let v1 = stmts v1 in G.Block v1
   | Expr v1 -> let v1 = expr v1 in G.ExprStmt v1
   | If ((t, v1, v2, v3)) ->
-      let v1 = expr v1 and v2 = stmt v2 and v3 = stmt v3 in
+      let v1 = expr v1 and v2 = stmt v2 and v3 = option stmt v3 in
       G.If (t, v1, v2, v3)
   | Switch ((v0, v1, v2)) ->
       let v0 = info v0 in
@@ -546,18 +546,20 @@ and import = function
 let package (t, qu) = 
   t, qualified_ident qu
 
+let directive_stmt imp = G.DirectiveStmt (import imp)
+
 let compilation_unit { package = pack;
                        imports = imports;
                        decls = xdecls
                       } =
   let v1 = option package pack in
   let v2 =
-    list (fun (v1, v2) -> let _v1static = bool v1 and v2 = import v2 in v2)
+    list (fun (v1, v2) -> let _v1static = bool v1 in v2)
     imports
   in
   let v3 = decls xdecls in
   let items = v3 in
-  let imports = v2 |> List.map (fun import -> G.DirectiveStmt import) in
+  let imports = v2 |> List.map directive_stmt in
   let package = 
     match v1 with
     | None -> []
@@ -586,4 +588,6 @@ let any =
   | AClass v1 -> let (ent, def) = class_decl v1 in
       G.Def (ent, G.ClassDef def)
   | ADecl v1 -> let v1 = decl v1 in G.S v1
+  | ADirectiveStmt v1 -> let v1 = directive_stmt v1 in G.S v1
+  | ADirectiveStmts v1 -> let v1 = list directive_stmt v1 in G.Ss v1
   | AProgram v1 -> let v1 = program v1 in G.Pr v1

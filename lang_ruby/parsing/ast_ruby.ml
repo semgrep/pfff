@@ -52,13 +52,20 @@
 (* ------------------------------------------------------------------------- *)
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
-(* TODO: wrap and bracket *)
 type tok = Parse_info.t
  (* with tarzan *)
+
+(* a shortcut to annotate some information with token/position information *)
+type 'a wrap = 'a * tok
+
+(* round(), square[], curly{}, angle<> brackets *)
+type 'a bracket = tok * 'a * tok
 
 (* ------------------------------------------------------------------------- *)
 (* Ident/name *)
 (* ------------------------------------------------------------------------- *)
+
+type ident = string wrap
 
 type id_kind = 
   | ID_Lowercase (* prefixed by [a-z] or _ *)
@@ -69,60 +76,10 @@ type id_kind =
   | ID_Builtin   (* prefixed by $, followed by non-alpha *)
   | ID_Assign of id_kind (* postfixed by = *)
 
-(*****************************************************************************)
-(* Expression *)
-(*****************************************************************************)
-
-type expr = 
-  | Literal of lit_kind * tok
-
-  | Id of id_kind * string * tok
-  | Operator of binary_op * tok
-  | UOperator of unary_op * tok
-
-  | Hash of bool * expr list * tok
-  | Array of expr list * tok
-  | Tuple of expr list * tok
-
-  | Unary of unary_op * expr * tok
-  | Binop of expr * binary_op * expr * tok
-  | Ternary of expr * expr * expr * tok
-
-  | Call of expr * expr list * expr option * tok
-
-  | CodeBlock of bool * formal_param list option * expr list * tok
-
-  | S of stmt
-  | D of definition
-
-and lit_kind = 
-  | FixNum of int
-  | BigNum of Big_int.big_int
-  | Float of string * float
-
-  | String of string_kind
-  | Regexp of interp_string * string
-
-  | Atom of interp_string
-
-  | Nil
-  | Self
-
-  | True
-  | False
-
-  and string_kind = 
-    | Single of string
-    | Double of interp_string
-    | Tick of interp_string
-
-  and interp_string = string_contents list
-
-    and string_contents = 
-      | StrChars of string
-      | StrExpr of expr
-
-and unary_op = 
+(* ------------------------------------------------------------------------- *)
+(* Operators *)
+(* ------------------------------------------------------------------------- *)
+type unary_op = 
   | Op_UMinus    (* -x *)  | Op_UPlus     (* +x *)
   | Op_UBang     (* !x *)
   | Op_UTilde    (* ~x *)
@@ -133,7 +90,7 @@ and unary_op =
   | Op_UScope    (* ::x *)
 
 
-and binary_op = 
+type binary_op = 
   | Op_PLUS     (* + *)  | Op_MINUS    (* - *)
   | Op_TIMES    (* * *)  | Op_REM      (* % *)  | Op_DIV      (* / *)
   | Op_CMP      (* <=> *)
@@ -165,6 +122,57 @@ and binary_op =
   | Op_DOT3     (* ... *)
 
 (*****************************************************************************)
+(* Expression *)
+(*****************************************************************************)
+
+type expr = 
+  | Literal of literal
+
+  | Id of ident * id_kind
+  | Operator of binary_op wrap
+  | UOperator of unary_op wrap
+
+  | Hash of bool * expr list bracket
+  | Array of expr list bracket
+  | Tuple of expr list * tok
+
+  | Unary of unary_op wrap * expr
+  | Binop of expr * binary_op wrap * expr
+  | Ternary of expr * tok (* ? *) * expr * tok (* : *) * expr
+
+  | Call of expr * expr list * expr option * tok
+
+  (* true = {}, false = do/end *)
+  | CodeBlock of bool bracket * formal_param list option * stmts * tok
+
+  | S of stmt
+  | D of definition
+
+and literal = 
+  | Bool of bool wrap
+  | Num of string wrap
+  | Float of string wrap
+
+  | String of string_kind wrap
+  | Regexp of (interp_string * string) wrap
+
+  | Atom of interp_string wrap
+
+  | Nil of tok | Self of tok
+
+
+  and string_kind = 
+    | Single of string
+    | Double of interp_string
+    | Tick of interp_string
+
+  and interp_string = string_contents list
+
+    and string_contents = 
+      | StrChars of string
+      | StrExpr of expr
+
+(*****************************************************************************)
 (* Statement *)
 (*****************************************************************************)
 (* Note that in Ruby everything is an expr, but I still like to split expr
@@ -173,55 +181,60 @@ and binary_op =
  *)
 and stmt =
   | Empty
-  | Block of expr list * tok
+  | Block of stmts * tok
 
-  | If of expr * expr list * expr list * tok
-  | While of bool * expr * expr list * tok
-  | Until of bool * expr * expr list * tok
-  | Unless of expr * expr list * expr list * tok
-  | For of formal_param list * expr * expr list * tok
+  | If of tok * expr * stmts * stmts option2
+  | While of tok * bool * expr * stmts
+  | Until of tok * bool * expr * stmts
+  | Unless of tok * expr * expr list * stmts
+  | For of tok * formal_param list * expr * stmts
 
-  | Return of expr list * tok
-  | Yield of expr list * tok
+  | Return of tok * expr list (* option *)
+  | Yield of tok * expr list (* option *)
 
-  | Case of case_block * tok
+  | Case of tok * case_block
 
   | ExnBlock of body_exn * tok
 
   and case_block = {
     case_guard : expr;
-    case_whens: (expr list * expr list) list;
-    case_else: expr list;
+    case_whens: (expr list * stmts) list;
+    case_else: stmts option2;
   }
   
   and body_exn = {
-    body_exprs: expr list;
+    body_exprs: stmts;
     rescue_exprs: (expr * expr) list;
-    ensure_expr: expr list;
-    else_expr: expr list;
+    ensure_expr: stmts option2;
+    else_expr: stmts option2;
   }
+
+and stmts = expr list
+
+(* TODO: (tok * 'a) option *)
+and 'a option2 = 'a
 
 (*****************************************************************************)
 (* Definitions *)
 (*****************************************************************************)
 and definition =
-  | ModuleDef of expr * body_exn * tok
-  | ClassDef of expr * inheritance_kind option * body_exn * tok
-  | MethodDef of expr * formal_param list * body_exn * tok
+  | ModuleDef of tok * expr * body_exn
+  | ClassDef of tok * expr * inheritance_kind option * body_exn
+  | MethodDef of tok * expr * formal_param list * body_exn
 
-  | BeginBlock of expr list * tok
-  | EndBlock of expr list * tok
+  | BeginBlock of tok * stmts bracket
+  | EndBlock of tok * stmts bracket
 
-  | Alias of expr * expr * tok
-  | Undef of expr list * tok
+  | Alias of tok * expr * expr
+  | Undef of tok * expr list
 
   and formal_param = 
     | Formal_id of expr
-    | Formal_amp of string
-    | Formal_star of string (* as in *x *)
-    | Formal_rest (* just '*' *)
-    | Formal_tuple of formal_param list
-    | Formal_default of string * expr
+    | Formal_amp of tok * ident
+    | Formal_star of tok * ident (* as in *x *)
+    | Formal_rest of tok (* just '*' *)
+    | Formal_tuple of formal_param list bracket
+    | Formal_default of ident * tok (* = *) * expr
   
   and inheritance_kind = 
     | Class_Inherit of expr
@@ -238,11 +251,10 @@ and definition =
  * Sorbet and steep?
  *)
 
-
 (*****************************************************************************)
 (* Toplevel *)
 (*****************************************************************************)
 
-type program = expr list
+type program = stmts
  (* with tarzan *)
 

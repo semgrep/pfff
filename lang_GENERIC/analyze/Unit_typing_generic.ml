@@ -8,9 +8,9 @@ module A = AST_generic
 (*****************************************************************************)
 
 let unittest =
-  "typing_java" >::: [
+  "typing_tests" >::: [
 
-    "test basic variable definitions" >:: (fun () ->
+    "test basic variable definitions java" >:: (fun () ->
       let file = Filename.concat Config_pfff.path "/tests/GENERIC/typing/VarDef.java" in
         try
           let ast = Parse_generic.parse_program file in
@@ -32,7 +32,7 @@ let unittest =
           assert_failure (spf "it should correctly parse %s" file)
     );
 
-    "test multiple variable definitions" >:: (fun () ->
+    "test multiple variable definitions java" >:: (fun () ->
       let file = Filename.concat Config_pfff.path "/tests/GENERIC/typing/EqVarCmp.java" in
         try
           let ast = Parse_generic.parse_program file in
@@ -67,7 +67,7 @@ let unittest =
           assert_failure (spf "it should correctly parse %s" file)
     );
 
-    "test basic params" >:: (fun () ->
+    "test basic params java" >:: (fun () ->
       let file = Filename.concat Config_pfff.path "/tests/GENERIC/typing/BasicParam.java" in
         try
           let ast = Parse_generic.parse_program file in
@@ -108,5 +108,58 @@ let unittest =
         with Parse_info.Parsing_error _ ->
           assert_failure (spf "it should correctly parse %s" file)
       )
+    );
+ 
+    "test basic variable definitions go" >:: (fun () ->
+      let file = Filename.concat Config_pfff.path "/tests/GENERIC/typing/StaticVarDef.go" in
+        try
+          let ast = Parse_generic.parse_program file in
+            let lang = List.hd (Lang.langs_of_filename file) in 
+             Naming_AST.resolve lang ast;
+
+            let v = V.mk_visitor { V.default_visitor with
+                V.kexpr = (fun (_k, _) exp ->
+                    match exp with
+                      | A.Id(_, {A.id_type=id_type; _}) -> (
+                            match !id_type with 
+                              | Some(A.TyName((("int", _)), _)) -> ()
+                              | _ -> assert_failure("Variable referenced did not have expected type int"))
+                      | _ -> ()
+                );
+            } in
+            v (A.Pr ast)
+        with Parse_info.Parsing_error _ ->
+          assert_failure (spf "it should correctly parse %s" file)
+    );
+
+    "test basic function call go" >:: (fun () ->
+      let file = Filename.concat Config_pfff.path "/tests/GENERIC/typing/FuncParam.go" in
+        try
+          let ast = Parse_generic.parse_program file in
+            let lang = List.hd (Lang.langs_of_filename file) in 
+             Naming_AST.resolve lang ast;
+
+            let v = V.mk_visitor { V.default_visitor with
+                V.kexpr = (fun (_k, _) exp ->
+                    match exp with
+                      | A.Call(_, x::y::[]) ->
+                        ((match x with
+                          | A.Arg(A.Id(("a", _), {A.id_type=id_type; _})) -> (
+                                match !id_type with 
+                                  | Some(A.TyName((("int", _)), _)) -> ()
+                                  | _ -> assert_failure("Variable referenced did not have expected type int"))
+                          | _ -> assert_failure("Expected function call to be with int a as first argument"));
+                        (match y with
+                          | A.Arg(A.Id(("c", _), {A.id_type=id_type; _})) -> (
+                                match !id_type with 
+                                  | Some(A.TyName((("bool", _)), _)) -> ()
+                                  | _ -> assert_failure("Variable referenced did not have expected type bool"))
+                          | _ -> assert_failure("Epected function call to have bool c as second argument")))
+                      | _ -> ()
+                );
+            } in
+            v (A.Pr ast)
+        with Parse_info.Parsing_error _ ->
+          assert_failure (spf "it should correctly parse %s" file)
     );
   ]

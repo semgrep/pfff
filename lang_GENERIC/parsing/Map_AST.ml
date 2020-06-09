@@ -389,7 +389,7 @@ and map_stmt x =
       let t = map_tok t in
       let v1 = map_expr v1
       and v2 = map_stmt v2
-      and v3 = map_stmt v3
+      and v3 = map_of_option map_stmt v3
       in If ((t, v1, v2, v3))
   | While ((t, v1, v2)) ->
       let t = map_tok t in

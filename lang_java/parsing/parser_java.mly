@@ -12,6 +12,10 @@
  * Many modifications by Yoann Padioleau. Attempts to conform to:
  * The Java Language Specification, Third Edition, with some fixes from
  * http://www.cmis.brighton.ac.uk/staff/rnb/bosware/javaSyntax/syntaxV2.html
+ * (broken link)
+ *
+ * Official (but incomplete) specification as of Java 14:
+ * https://docs.oracle.com/javase/specs/jls/se14/html/jls-19.html
  *
  * More modifications by Yoann Padioleau to support more recent versions.
  * Copyright (C) 2011 Facebook
@@ -294,8 +298,10 @@ declaration:
  | method_declaration  { Method $1 }
 
 sgrep_spatch_pattern:
- | expression         EOF { AExpr $1 }
- | item_no_dots       EOF { mk_adecl_or_adecls $1 }
+ | import_declaration EOF           { ADirectiveStmt ((fun (_, imp) -> imp) $1) }
+ | import_declaration import_declarations EOF  { ADirectiveStmts (List.map (fun (_, imp) -> imp) ($1::$2)) }
+ | expression EOF                   { AExpr $1 }
+ | item_no_dots EOF                 { mk_adecl_or_adecls $1 }
  | item_no_dots item_sgrep_list EOF { mk_adecl_or_adecls ($1 @ (List.flatten $2)) }
 
 item_no_dots:
@@ -447,6 +453,8 @@ primary_no_new_array:
  | class_literal       { $1 }
  /*(* javaext: ? *)*/
  | method_reference { $1 }
+ /*(* javaext: ? *) */
+ | array_creation_expression_with_initializer { $1 }
 
 literal:
  | TRUE   { Literal (Bool (true, $1)) }
@@ -474,12 +482,23 @@ class_instance_creation_expression:
  | name DOT NEW identifier LP argument_list_opt RP class_body_opt
        { NewQualifiedClass ((Name (name $1)), $3, $4, $6, $8) }
 
+/*
+   A new array that cannot be accessed right away by appending [index]:
+
+    new String[2][1]  // a 2-dimensional array
+*/
 array_creation_expression:
  | NEW primitive_type dim_exprs dims_opt
        { NewArray ($1, $2, List.rev $3, $4, None) }
  | NEW name dim_exprs dims_opt
        { NewArray ($1, TClass (class_type ($2)), List.rev $3, $4, None) }
- /*(* javaext: ? *)*/
+
+/*
+   A new array that can be accessed right away by appending [index] as follows:
+
+    new String[] { "abc", "def" }[1]  // a string
+*/
+array_creation_expression_with_initializer:
  | NEW primitive_type dims array_initializer
        { NewArray ($1, $2, [], $3, Some $4) }
  | NEW name dims array_initializer
@@ -844,10 +863,10 @@ statement_expression:
 
 
 if_then_statement: IF LP expression RP statement
-   { If ($1, $3, $5, Empty) }
+   { If ($1, $3, $5, None) }
 
 if_then_else_statement: IF LP expression RP statement_no_short_if ELSE statement
-   { If ($1, $3, $5, $7) }
+   { If ($1, $3, $5, Some $7) }
 
 
 switch_statement: SWITCH LP expression RP switch_block
@@ -986,7 +1005,7 @@ labeled_statement_no_short_if: identifier COLON statement_no_short_if
 
 if_then_else_statement_no_short_if:
  IF LP expression RP statement_no_short_if ELSE statement_no_short_if
-   { If ($1, $3, $5, $7) }
+   { If ($1, $3, $5, Some $7) }
 
 while_statement_no_short_if: WHILE LP expression RP statement_no_short_if
      { While ($1, $3, $5) }

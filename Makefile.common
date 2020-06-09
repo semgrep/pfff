@@ -40,13 +40,14 @@ OPTOBJS?= $(SRC:.ml=.cmx)
 
 #-4  allow | _ patterns in match
 #-6  allow omit labels
-#-29 alow multiline strings
+#-7  allow method overriding
+#-29 allow multiline strings
 #-45 allow shadowing open (TODO: fix them though)
 #-41 allow ambiguous constructor in 2 opened modules (TODO: fix them though)
 #-44 allow shadow module identifier (TODO: fix them)
 #-48 allow eliminating optional args, unclear how to fix without wide changes
 #-52 allow to match on Failure("hd")
-WARNING_FLAGS?=-w +a-4-6-29-41-44-45-48-52-67 -warn-error +a
+WARNING_FLAGS?=-w +a-4-6-7-29-41-44-45-48-52-67 -warn-error +a
 
 OCAMLCFLAGS=-g -thread $(WARNING_FLAGS) $(OCAMLCFLAGS_EXTRA) 
 

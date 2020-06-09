@@ -1,5 +1,3 @@
-open Common
-
 open Ocollection
 
 (* assoc, also called map or dictionnary *)

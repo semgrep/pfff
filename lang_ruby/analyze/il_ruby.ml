@@ -111,9 +111,8 @@ type expr =
 
 and literal =
   (* atomic *)
-  | FixNum of int
-  | BigNum of Big_int.big_int
-  | Float of string * float
+  | Num of string
+  | Float of string
   | String of string
 
   | Atom of string

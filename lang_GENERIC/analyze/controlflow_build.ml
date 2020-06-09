@@ -321,7 +321,11 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
        state.g |> add_arc (newi, newfakeelse);
 
        let finalthen = cfg_stmt state (Some newfakethen) st_then in
-       let finalelse = cfg_stmt state (Some newfakeelse) st_else in
+       let finalelse = 
+          match st_else with
+          | None -> None
+          | Some st -> cfg_stmt state (Some newfakeelse) st
+        in
 
        (match finalthen, finalelse with
        | None, None ->

@@ -389,9 +389,9 @@ and stmt env st =
   | Compound x -> A.Block (compound env x)
 
       | If (t, (_, e, _), st1, Some (_, st2)) ->
-          A.If (t, expr env e, stmt env st1, stmt env st2)
+          A.If (t, expr env e, stmt env st1, Some (stmt env st2))
       | If (t, (_, e, _), st1, None) ->
-          A.If (t, expr env e, stmt env st1, A.Block [])
+          A.If (t, expr env e, stmt env st1, None)
       | Switch (tok, (_, e, _), st) ->
           A.Switch (tok, expr env e, cases env st)
 

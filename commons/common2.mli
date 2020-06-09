@@ -79,7 +79,6 @@ end
  * else I think: the ability to open nested modules. *)
 module Infix : sig
   val ( |> ) : 'a -> ('a -> 'b) -> 'b
-  val ( |> ) : 'a -> ('a -> 'b) -> 'b
   val ( =~ ) : string -> string -> bool
   val ( ==~ ) : string -> Str.regexp -> bool
 end

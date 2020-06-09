@@ -75,7 +75,6 @@ let fst3 (x, _, _) = x
 
 let bracket_keep of_a (t1, x, t2) = (t1, of_a x, t2)
 
-let noop = A.Block []
 let not_resolved () = ref A.NotResolved
 
 exception Found of Parse_info.t
@@ -347,11 +346,7 @@ and stmt env = function
   | C.If (t, e, then_, elseopt) ->
     let e = e |> C.unparen |> expr env in
     let then_ = stmt1 env then_ in
-    let else_ = 
-      match elseopt with
-      | None -> noop
-      | Some (_, st) -> stmt1 env st
-    in
+    let else_ = opt (fun env (_, st) -> stmt1 env st) env elseopt in
     [A.If (t, e, then_, else_)]
   | C.Do (t, st, _, e, _) ->
      let st = stmt1 env st in

@@ -522,7 +522,7 @@ and stmt_aux x =
   | If ((t, v1, v2, v3)) ->
       let v1 = expr v1
       and v2 = list_stmt1 v2
-      and v3 = list_stmt1 v3
+      and v3 = option list_stmt1 v3
       in
       [G.If (t, v1, v2, v3)]
 

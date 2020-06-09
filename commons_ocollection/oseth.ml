@@ -3,7 +3,7 @@ open Common
 open Oset
 
 (* !!take care!!: this class does side effect, not a pure oassoc *)
-class ['a] oseth xs   = 
+class ['a] oseth _xs   = 
 object(o)
   inherit ['a] oset
 
@@ -17,7 +17,7 @@ object(o)
     Hashtbl.add data k true; 
     o
       
-  method iter f = Hashtbl.iter (fun k v -> f k) data
+  method iter f = Hashtbl.iter (fun k _v -> f k) data
   method view = raise Todo
     
   method del k = 
@@ -28,7 +28,7 @@ object(o)
     with Not_found -> false
 
   method null = 
-    try (Hashtbl.iter (fun k v -> raise Common2.ReturnExn) data; false) 
+    try (Hashtbl.iter (fun _k _v -> raise Common2.ReturnExn) data; false) 
     with Common2.ReturnExn -> true
 
 (* TODO    method length *)

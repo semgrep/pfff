@@ -184,7 +184,7 @@ type stmt =
   | ExprSt of expr
   | Block of stmt list
 
-  | If of tok * expr * stmt * stmt
+  | If of tok * expr * stmt * stmt option
   | Switch of tok * expr * case list
 
   | While of tok * expr * stmt

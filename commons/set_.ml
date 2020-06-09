@@ -103,19 +103,19 @@
 
     let rec min_elt = function
         Empty -> raise Not_found
-      | Node(Empty, v, r, _) -> v
-      | Node(l, v, r, _) -> min_elt l
+      | Node(Empty, v, _r, _) -> v
+      | Node(l, _v, _r, _) -> min_elt l
 
     let rec max_elt = function
         Empty -> raise Not_found
-      | Node(l, v, Empty, _) -> v
-      | Node(l, v, r, _) -> max_elt r
+      | Node(_l, v, Empty, _) -> v
+      | Node(_l, _v, r, _) -> max_elt r
 
     (* Remove the smallest element of the given set *)
 
     let rec remove_min_elt = function
         Empty -> invalid_arg "Set.remove_min_elt"
-      | Node(Empty, v, r, _) -> r
+      | Node(Empty, _v, r, _) -> r
       | Node(l, v, r, _) -> bal (remove_min_elt l) v r
 
     (* Merge two trees l and r into one.
@@ -194,8 +194,8 @@
 
     let rec inter s1 s2 =
       match (s1, s2) with
-        (Empty, t2) -> Empty
-      | (t1, Empty) -> Empty
+        (Empty, _t2) -> Empty
+      | (_t1, Empty) -> Empty
       | (Node(l1, v1, r1, _), t2) ->
           match split v1 t2 with
             (l2, false, r2) ->
@@ -205,7 +205,7 @@
 
     let rec diff s1 s2 =
       match (s1, s2) with
-        (Empty, t2) -> Empty
+        (Empty, _t2) -> Empty
       | (t1, Empty) -> t1
       | (Node(l1, v1, r1, _), t2) ->
           match split v1 t2 with
@@ -242,7 +242,7 @@
       | _, Empty ->
           false
       | Node (l1, v1, r1, _), (Node (l2, v2, r2, _) as t2) ->
-          let c = Pervasives.compare v1 v2 in
+          let c = Stdlib.compare v1 v2 in
           if c = 0 then
             subset l1 l2 && subset r1 r2
           else if c < 0 then
@@ -283,7 +283,7 @@
 
     let rec cardinal = function
         Empty -> 0
-      | Node(l, v, r, _) -> cardinal l + 1 + cardinal r
+      | Node(l, _v, r, _) -> cardinal l + 1 + cardinal r
 
     let rec elements_aux accu = function
         Empty -> accu

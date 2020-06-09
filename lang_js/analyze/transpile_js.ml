@@ -146,7 +146,31 @@ let compile_pattern (expr, fname, fpname) varname pat =
                     pname)
        in
        var_of_simple_pattern (expr, fname) init_builder pat
-     | _ -> failwith "TODO: PatObj pattern not handled"
+     | C.PatDots (_tok, pat) ->
+       (* Need to effectively augment JS semantics here, so transformation target needs to
+        * be impossible in actual JS:
+        *
+        *   var {...a} = b --> var a = <spread>(b)
+        *
+        * cf. xhp_attribute transpilation
+        *
+        * TODO:
+        *   Apply(
+        *     IdSpecial(Spread, fake "omit"),
+        *     [Id (varname, _), ...<all omitted keys>]
+        *   )
+        *)
+       let init_builder (_name, _tok) =
+         A.Apply (
+           A.IdSpecial(A.Spread, fake "omit"),
+           [A.Id (varname, ref A.NotResolved)]
+         )
+       in
+       var_of_simple_pattern (expr, fname) init_builder pat
+     | C.PatNest (_, _) ->
+       failwith "TODO: nesting inside object pattern not handled"
+     | C.PatObj _ | C.PatArr _ ->
+       failwith "Unexpected pattern PatObj or PatArr found inside PatObj"
     ))
   (* 'var [x,y] = varname' -~> 'var x = varname[0]; var y = varname[1] *)
   | C.PatArr x ->

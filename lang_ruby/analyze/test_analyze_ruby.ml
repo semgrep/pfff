@@ -73,12 +73,6 @@ let test_dump file =
   let s = OCaml.string_of_v v in
   pr s
 
-let test_pretty file =
-  let ast = Parse_ruby.parse_program file in
-  let cfg = Il_ruby_build.refactor_ast ast in
-  Il_ruby_printer.CodePrinter.print_stmt stderr cfg
-
-
 (*****************************************************************************)
 (* Main entry for Arg *)
 (*****************************************************************************)
@@ -88,6 +82,4 @@ let actions () = [
   Common.mk_action_n_arg test_parse;
   "-dump_il_ruby", "   <file>", 
   Common.mk_action_1_arg test_dump;
-  "-pretty_il_ruby", "   <file>", 
-  Common.mk_action_1_arg test_pretty;
 ]

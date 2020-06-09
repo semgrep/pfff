@@ -1,10 +1,5 @@
 open Common
 
-open Ocollection
-open Oset
-open Oassoc
-(* open Ograph *)
-
 open Oassocb
 open Osetb
 
@@ -38,7 +33,7 @@ class ['a,'b] ograph_extended =
   let build_assoc () = new oassocb [] in (* opti?: = oassoch *)
   let build_set ()   = new osetb Set_.empty in
 
-  object(o)
+  object(_o)
     (* inherit ['a] ograph *)
       
     val free_index = 0
@@ -191,7 +186,7 @@ class ['a,'b] ograph_mutable =
       nods#length
 
     method nb_edges = 
-      nods#fold (fun acc (i, e) -> 
+      nods#fold (fun acc (i, _e) -> 
         let children = o#successors i in
         acc + children#cardinal
       ) 0
@@ -261,9 +256,9 @@ let generate_ograph_generic g label fnode filename =
       pr (spf "%d [label=\"%s   [%d]\"%s];\n" k str k color)
     );
 
-    nodes#iter (fun (k,node) -> 
+    nodes#iter (fun (k,_node) -> 
       let succ = g#successors k in
-      succ#iter (fun (j,edge) ->
+      succ#iter (fun (j,_edge) ->
         pr (spf "%d -> %d;\n" k j);
       );
     );
@@ -278,14 +273,14 @@ let generate_ograph_xxx g filename =
     pr "size = \"10,10\";\n" ;
 
     let nodes = g#nodes in
-    nodes#iter (fun (k,(node, s)) -> 
+    nodes#iter (fun (k,(_node, s)) -> 
      (* so can see if nodes without arcs were created *) 
       pr (spf "%d [label=\"%s   [%d]\"];\n" k s k)
     );
 
-    nodes#iter (fun (k,node) -> 
+    nodes#iter (fun (k,_node) -> 
       let succ = g#successors k in
-      succ#iter (fun (j,edge) ->
+      succ#iter (fun (j,_edge) ->
         pr (spf "%d -> %d;\n" k j);
       );
     );

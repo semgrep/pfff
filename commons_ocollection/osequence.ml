@@ -1,7 +1,7 @@
 open Oassoc
 
 class virtual ['a] osequence =
-object(o: 'o)
+object(_o: 'o)
   (* inherit ['a] ocollection *)
   inherit [int, 'a] oassoc
 

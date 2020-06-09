@@ -546,9 +546,9 @@ suite:
 if_stmt: IF namedexpr_test ":" suite elif_stmt_list { If ($1, $2, $4, $5) }
 
 elif_stmt_list:
-  | (*empty *)  { [] }
-  | ELIF namedexpr_test ":" suite elif_stmt_list { [If ($1, $2, $4, $5)] }
-  | ELSE ":" suite { $3 }
+  | (*empty *)                                   { None }
+  | ELIF namedexpr_test ":" suite elif_stmt_list { Some [If ($1, $2, $4, $5)] }
+  | ELSE ":" suite                               { Some ($3) }
 
 
 while_stmt:
@@ -579,6 +579,8 @@ excepthandler:
   | EXCEPT              ":" suite { ExceptHandler ($1, None, None, $3) }
   | EXCEPT test         ":" suite { ExceptHandler ($1, Some $2, None, $4) }
   | EXCEPT test AS NAME ":" suite { ExceptHandler ($1, Some $2, Some $4, $6)}
+  (* python2: *)
+  | EXCEPT test "," NAME ":" suite { ExceptHandler ($1, Some $2, Some $4, $6) }
 
 with_stmt: WITH with_inner { $2 $1 }
 

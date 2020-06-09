@@ -3,7 +3,6 @@
 open Il_ruby
 
 let vof_pos v = Meta_parse_info.vof_info_adjustable_precision v
-let vof_big_int _x = OCaml.VUnit
 
 let vof_t _f _set = OCaml.VUnit
 let vof_t2 _strset = OCaml.VUnit
@@ -88,13 +87,10 @@ let rec vof_expr =
   | ELit v1 -> let v1 = vof_literal v1 in OCaml.VSum (("ELit", [ v1 ]))
 and vof_literal =
   function
-  | FixNum v1 -> let v1 = OCaml.vof_int v1 in OCaml.VSum (("FixNum", [ v1 ]))
-  | BigNum v1 ->
-      let v1 = vof_big_int v1 in OCaml.VSum (("BigNum", [ v1 ]))
-  | Float ((v1, v2)) ->
+  | Num v1 -> let v1 = OCaml.vof_string v1 in OCaml.VSum (("Num", [ v1 ]))
+  | Float ((v1)) ->
       let v1 = OCaml.vof_string v1
-      and v2 = OCaml.vof_float v2
-      in OCaml.VSum (("Float", [ v1; v2 ]))
+      in OCaml.VSum (("Float", [ v1 ]))
   | String v1 ->
       let v1 = OCaml.vof_string v1 in OCaml.VSum (("String", [ v1 ]))
   | Atom v1 -> let v1 = OCaml.vof_string v1 in OCaml.VSum (("Atom", [ v1 ]))
@@ -384,3 +380,19 @@ let vof_any_formal =
   | B v1 -> let v1 = vof_block_formal_param v1 in OCaml.VSum (("B", [ v1 ]))
   | M v1 -> let v1 = vof_method_formal_param v1 in OCaml.VSum (("M", [ v1 ]))
   
+
+let string_of_identifier x =
+  let v = vof_identifier x in
+  OCaml.string_of_v v
+
+let string_of_literal x =
+  let v = vof_literal x in
+  OCaml.string_of_v v
+
+let string_of_stmt x =
+  let v = vof_stmt x in
+  OCaml.string_of_v v
+
+let string_of_expr x =
+  let v = vof_expr x in
+  OCaml.string_of_v v

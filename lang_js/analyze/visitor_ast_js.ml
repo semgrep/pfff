@@ -167,7 +167,7 @@ and v_stmt x =
   | ExprStmt v1 -> let v1 = v_expr v1 in ()
   | If ((t, v1, v2, v3)) ->
       let t = v_tok t in
-      let v1 = v_expr v1 and v2 = v_stmt v2 and v3 = v_stmt v3 in ()
+      let v1 = v_expr v1 and v2 = v_stmt v2 and v3 = v_option v_stmt v3 in ()
   | Do ((t, v1, v2)) -> 
       let t = v_tok t in
       let v1 = v_stmt v1 and v2 = v_expr v2 in ()

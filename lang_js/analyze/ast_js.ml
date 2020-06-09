@@ -232,7 +232,7 @@ and stmt =
   | Block of stmt list
   | ExprStmt of expr
 
-  | If of tok * expr * stmt * stmt
+  | If of tok * expr * stmt * stmt option
   | Do of tok * stmt * expr | While of tok * expr * stmt
   | For of tok * for_header * stmt
 

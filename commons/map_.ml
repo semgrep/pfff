@@ -91,18 +91,18 @@
     let rec mem x = function
         Empty ->
           false
-      | Node(l, v, d, r, _) ->
+      | Node(l, v, _d, r, _) ->
           let c = compare x v in
           c = 0 || mem x (if c < 0 then l else r)
 
     let rec min_binding = function
         Empty -> raise Not_found
-      | Node(Empty, x, d, r, _) -> (x, d)
-      | Node(l, x, d, r, _) -> min_binding l
+      | Node(Empty, x, d, _r, _) -> (x, d)
+      | Node(l, _x, _d, _r, _) -> min_binding l
 
     let rec remove_min_binding = function
         Empty -> invalid_arg "Map.remove_min_elt"
-      | Node(Empty, x, d, r, _) -> r
+      | Node(Empty, _x, _d, r, _) -> r
       | Node(l, x, d, r, _) -> bal (remove_min_binding l) x d r
 
     let merge t1 t2 =
@@ -116,7 +116,7 @@
     let rec remove x = function
         Empty ->
           Empty
-      | Node(l, v, d, r, h) ->
+      | Node(l, v, d, r, _h) ->
           let c = compare x v in
           if c = 0 then
             merge l r

@@ -136,6 +136,18 @@ let special (x, tok) =
   | ArithOp op -> SR_Special (G.ArithOp op, tok)
   | IncrDecr v -> SR_Special (G.IncrDecr v, tok)
 
+(*
+   This is used to expose an individual statement as a block of one statement,
+   where a sequence of statements is allowed. This simplifies the task
+   of the sgrep pattern matcher.
+   TODO: check all the places where this wrapping is necessary.
+   TODO: see if this is an issue with other languages besides javascript.
+*)
+let as_block stmt =
+  match stmt with
+  | G.Block _ as block -> block
+  | other -> G.Block [other]
+
 let rec property_name =
   function
   | PN v1 -> let v1 = name v1 in Left v1
@@ -229,7 +241,7 @@ and stmt x =
   | Block v1 -> let v1 = list stmt v1 in G.Block v1
   | ExprStmt v1 -> let v1 = expr v1 in G.ExprStmt v1
   | If ((t, v1, v2, v3)) ->
-      let v1 = expr v1 and v2 = stmt v2 and v3 = stmt v3 in 
+      let v1 = expr v1 and v2 = stmt v2 and v3 = option stmt v3 in 
       G.If (t, v1, v2, v3)
   | Do ((t, v1, v2)) -> let v1 = stmt v1 and v2 = expr v2 in 
       G.DoWhile (t, v1, v2)
@@ -346,7 +358,7 @@ and var_kind (x, tok) =
 and fun_ { f_props = f_props; f_params = f_params; f_body = f_body } =
   let v1 = list fun_prop f_props in
   let v2 = list parameter_binding f_params in 
-  let v3 = stmt f_body in
+  let v3 = stmt f_body |> as_block in
   { G.fparams = v2; frettype = None; fbody = v3; }, v1
 
 and parameter_binding = function

@@ -1,5 +1,3 @@
-open Common
-
 (* todo: 
  *  invariant succesors/predecessors
  *)

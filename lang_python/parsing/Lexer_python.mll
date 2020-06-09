@@ -95,7 +95,8 @@ type state_mode =
 
   | STATE_IN_FSTRING_SINGLE
   | STATE_IN_FSTRING_DOUBLE
-  | STATE_IN_FSTRING_TRIPLE
+  | STATE_IN_FSTRING_TRIPLE_SINGLE
+  | STATE_IN_FSTRING_TRIPLE_DOUBLE
 
 type lexer_state = {
   mutable curr_offset : int;
@@ -135,7 +136,8 @@ let pr_mode mode = pr2 (match mode with
   | STATE_UNDERSCORE_TOKEN -> "_token"
   | STATE_IN_FSTRING_SINGLE -> "f'"
   | STATE_IN_FSTRING_DOUBLE -> "f\""
-  | STATE_IN_FSTRING_TRIPLE -> "f\"\"\""
+  | STATE_IN_FSTRING_TRIPLE_SINGLE -> "f'''"
+  | STATE_IN_FSTRING_TRIPLE_DOUBLE -> "f\"\"\""
 )
 
 let pr_state state = List.iter pr_mode !(state.mode)
@@ -343,7 +345,8 @@ and _token python2 state = parse
   | "!" { if !(state.mode) |> List.exists (function
             | STATE_IN_FSTRING_SINGLE 
             | STATE_IN_FSTRING_DOUBLE
-            | STATE_IN_FSTRING_TRIPLE -> true
+            | STATE_IN_FSTRING_TRIPLE_SINGLE
+            | STATE_IN_FSTRING_TRIPLE_DOUBLE -> true
             | _ -> false)
           then BANG (tokinfo lexbuf)
           else begin 
@@ -453,8 +456,12 @@ and _token python2 state = parse
        push_mode state STATE_IN_FSTRING_DOUBLE;
        FSTRING_START (tokinfo lexbuf) 
     }
+  | fstringprefix "'''" {
+       push_mode state STATE_IN_FSTRING_TRIPLE_SINGLE;
+       FSTRING_START (tokinfo lexbuf)
+     }
   | fstringprefix "\"\"\"" {
-       push_mode state STATE_IN_FSTRING_TRIPLE;
+       push_mode state STATE_IN_FSTRING_TRIPLE_DOUBLE;
        FSTRING_START (tokinfo lexbuf)  
      }
 
@@ -540,7 +547,21 @@ and fstring_double state = parse
  | eof { error "EOF in string" lexbuf; EOF (tokinfo lexbuf) }
  | _  { error "unrecognized symbol in string" lexbuf; TUnknown(tokinfo lexbuf)}
 
-and fstring_triple state = parse
+and fstring_triple_single state = parse
+ | "'''" { pop_mode state; FSTRING_END (tokinfo lexbuf) }
+ | "{{" { FSTRING_STRING (tok lexbuf, tokinfo lexbuf)}
+ | '{' {
+    ignore_nl state;
+    push_mode state STATE_UNDERSCORE_TOKEN;
+    FSTRING_LBRACE (tokinfo lexbuf)
+   }
+ | '\'' { FSTRING_STRING (tok lexbuf, tokinfo lexbuf) }
+ | ([^ '\\' '{' '\''] | escapeseq)*
+    { FSTRING_STRING (tok lexbuf, tokinfo lexbuf)}
+ | eof { error "EOF in string" lexbuf; EOF (tokinfo lexbuf) }
+ | _  { error "unrecognized symbol in string" lexbuf; TUnknown(tokinfo lexbuf)}
+
+and fstring_triple_double state = parse
  | "\"\"\"" { pop_mode state; FSTRING_END (tokinfo lexbuf) }
  | "{{" { FSTRING_STRING (tok lexbuf, tokinfo lexbuf)}
  | '{' { 
