@@ -388,6 +388,10 @@ let resolve lang prog =
       let new_params = params_of_parameters x.fparams in
       with_new_context InFunction env (fun () ->
       with_new_function_scope new_params env.names (fun () ->
+        (* todo: actually we should first go inside x.fparams.ptype
+         * without the new_params (this would also prevent cycle if 
+         * a parameter name is the same than type name used in ptype
+         * (see tests/python/naming/shadow_name_type.py) *)
         k x
       ))
     );
@@ -576,8 +580,21 @@ let resolve lang prog =
       k x
      );
 
+     V.ktype_ = (fun (k, _v) x ->
+      match x with
+      (* do not recurse inside OtherType, especially OT_Expr, as 
+       * this could lead to cycle in the AST because of id_type 
+       * that will reference a type, containing an OT_Expr, containing
+       * an Id, that will contain an id_type, etc. 
+       * See tests/python/naming/shadow_name_type.py for a patological example
+       *)
+      | OtherType _ -> ()
+      | _ -> k x
+     );
+
   }
   in
-  visitor (Pr prog)
+  visitor (Pr prog);
+  ()
 (*e: function [[Naming_AST.resolve]] *)
 (*e: pfff/lang_GENERIC/analyze/Naming_AST.ml *)

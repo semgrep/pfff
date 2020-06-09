@@ -84,7 +84,8 @@ let test regexp =
       Unit_parsing_cpp.unittest;
       Unit_parsing_go.unittest;
 
-      (* typing tests *)
+      (* generic AST tests *)
+      Unit_naming_generic.unittest;
       Unit_typing_generic.unittest;
     ]
   in
