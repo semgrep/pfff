@@ -410,7 +410,8 @@ and property x =
         let ent = G.basic_entity n v2 in
        (* todo: could be a Lambda in which case we should return a FuncDef? *)
         G.FieldStmt (G.DefStmt 
-                ((ent, G.VarDef { G.vinit = v3; vtype = None })))
+                ((ent, G.FieldDef { G.vinit = v3; vtype = None })))
+
       | Right e -> 
         (match v3 with
          | None -> raise Impossible
