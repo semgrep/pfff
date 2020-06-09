@@ -264,6 +264,10 @@ and expr =
       G.Ellipsis v1
   | DeepEllipsis v1 -> let v1 = bracket expr v1 in 
       G.DeepEllipsis v1
+  | TypedMetavar (v1, v2, v3) ->
+      let v1 = ident v1 in
+      let v3 = type_ v3 in
+      G.TypedMetavar (v1, v2, v3)
   | FuncLit ((v1, v2)) -> 
       let (params, ret) = func_type v1 
       and v2 = stmt v2 

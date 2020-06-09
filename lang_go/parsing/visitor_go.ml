@@ -187,6 +187,11 @@ and v_expr x =
   | TypeAssert ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_type_ v2 in ()
   | TypeSwitchExpr ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_tok v2 in ()
   | Ellipsis v1 -> let v1 = v_tok v1 in ()
+  | TypedMetavar ((v1, v2, v3)) ->
+    let v1 = v_ident v1 in
+    let v2 = v_tok v2 in
+    let v3 = v_type_ v3 in
+    ()
   | FuncLit (x) -> v_function_ x
   | ParenType v1 -> let v1 = v_type_ v1 in ()
   | Send ((v1, v2, v3)) ->
