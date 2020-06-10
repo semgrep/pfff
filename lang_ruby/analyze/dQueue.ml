@@ -99,7 +99,7 @@ let cmp c ((f1,r1) as l1) ((f2,r2) as l2) = match r1,r2 with
   | [],[] -> compare_list c f1 f2
   | _ -> compare_list c (to_list l1) (to_list l2)
 
-let compare q1 q2 = cmp Pervasives.compare q1 q2
+let compare q1 q2 = cmp Stdlib.compare q1 q2
 
 let list_to_string to_s = function
   | [] -> "[]"

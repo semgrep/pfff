@@ -6,7 +6,7 @@ module Utils = Utils_ruby
 (* Comparators *)
 (*****************************************************************************)
 
-let pcompare = Pervasives.compare
+let pcompare = Stdlib.compare
 
 let cmp2 = Utils.cmp2
 let cmp_list = Utils.cmp_list
