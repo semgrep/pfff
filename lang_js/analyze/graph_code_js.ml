@@ -466,6 +466,7 @@ and for_header env = function
    in
    expr env e2;
    env
+  | ForEllipsis _t -> env
 
 (* less: could check def/use of lbls, but less important *)
 and label _env _lbl =

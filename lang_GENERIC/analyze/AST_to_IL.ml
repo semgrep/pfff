@@ -579,6 +579,8 @@ let rec stmt env st =
       in
       ss1 @ ss2 @ 
       [mk_s (Loop(tok, cond, st @ next @ ss2))]
+  | G.For (_, G.ForEllipsis _, _) -> 
+      sgrep_construct (G.S st)
 
   (* TODO: repeat env work of controlflow_build.ml *)
   | G.Continue (_, _) | G.Break (_, _)

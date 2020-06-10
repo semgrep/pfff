@@ -492,6 +492,7 @@ and map_for_header =
   | ForEach ((v1, t, v2)) ->
       let t = map_tok t in
       let v1 = map_pattern v1 and v2 = map_expr v2 in ForEach ((v1, t, v2))
+  | ForEllipsis t -> let t = map_tok t in ForEllipsis t
 
 and map_for_var_or_expr =
   function

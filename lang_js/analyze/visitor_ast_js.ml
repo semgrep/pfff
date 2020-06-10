@@ -219,6 +219,7 @@ and v_tok_and_stmt (t, v) =
   ()
 and v_for_header =
   function
+  | ForEllipsis v1 -> v_tok v1
   | ForClassic ((v1, v2, v3)) ->
       let v1 = v_either (v_list v_var) v_expr v1
       and v2 = v_option v_expr v2

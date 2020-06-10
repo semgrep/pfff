@@ -356,7 +356,7 @@ and stmt env = function
      let e = e |> C.unparen |> expr env in
      let st = stmt1 env st in
      [A.While (t, e, st)]
-  | C.For (t, _, lhs_vars_opt, _, e2opt, _, e3opt, _, st) ->
+  | C.For (t, _, C.ForHeaderClassic (lhs_vars_opt, _, e2opt, _, e3opt),_,st)->
      let e1 = 
        match lhs_vars_opt with
        | Some (C.LHS1 e) -> Right (expr env e)
@@ -369,7 +369,7 @@ and stmt env = function
      let e3 = expr_opt env e3opt in
      let st = stmt1 env st in
      [A.For (t, A.ForClassic (e1, e2, e3), st)]
-  | C.ForIn (t, _, lhs_var, tin, e2, _, st) ->
+  | C.For (t, _, C.ForHeaderIn (lhs_var, tin, e2), _, st) ->
     let e1 =
       match lhs_var with
       | C.LHS2 e -> Right (expr env e)
@@ -383,13 +383,16 @@ and stmt env = function
     let e2 = expr env e2 in
     let st = stmt1 env st in
     [A.For (t, A.ForIn (e1, tin, e2), st)]
-  | C.ForOf (_tTODO, _, lhs_var, tokof, e2, _, st) ->
+  | C.For (_tTODO, _, C.ForHeaderOf (lhs_var, tokof, e2), _, st) ->
     (try 
       Transpile_js.forof (lhs_var, tokof, e2, st) 
         (expr env, stmt env, var_binding env)
      with Failure s ->
        raise (TodoConstruct(spf "ForOf:%s" s, tokof))
     )
+  | C.For (t, _, C.ForHeaderEllipsis t2, _, st) ->
+    let st = stmt1 env st in
+    [A.For (t, A.ForEllipsis t2, st)]
   | C.Switch (tok, e, xs) ->
     let e = e |> C.unparen |> expr env in
     let xs = xs |> C.unparen |> List.map (case_clause env) in
