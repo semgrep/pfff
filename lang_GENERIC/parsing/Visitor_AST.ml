@@ -459,6 +459,8 @@ and v_for_header =
   | ForEach ((v1, t, v2)) -> 
       let t = v_tok t in
       let v1 = v_pattern v1 and v2 = v_expr v2 in ()
+  | ForEllipsis t -> v_tok t
+
 and v_for_var_or_expr =
   function
   | ForInitVar ((v1, v2)) ->
@@ -535,6 +537,7 @@ and v_def_kind =
   function
   | FuncDef v1 -> let v1 = v_function_definition v1 in ()
   | VarDef v1 -> let v1 = v_variable_definition v1 in ()
+  | FieldDef v1 -> let v1 = v_variable_definition v1 in ()
   | ClassDef v1 -> let v1 = v_class_definition v1 in ()
   | TypeDef v1 -> let v1 = v_type_definition v1 in ()
   | ModuleDef v1 -> let v1 = v_module_definition v1 in ()

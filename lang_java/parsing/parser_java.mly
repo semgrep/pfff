@@ -121,6 +121,13 @@ let expr_to_typename expr =
         pr2_gen expr;
         raise Todo
 
+let fail_if_metavar_on_typecheck typ =
+  match typ with
+    | TClass (((t, _), _)::_) -> 
+       if (t.[0] = '$') then failwith "No support for metavariable types" 
+       else () 
+    | _ -> ()
+
 let mk_adecl_or_adecls = function
   | [] -> ADecls []
   | [x] -> ADecl x
@@ -422,6 +429,10 @@ bound: ref_type_and_list { $1 }
 /*(*1 Expressions *)*/
 /*(*************************************************************************)*/
 
+typed_metavar:
+ | LP type_ IDENTIFIER RP { fail_if_metavar_on_typecheck $2;
+                            Flag_parsing.sgrep_guard (TypedMetavar($3, $2))  }
+
 primary:
  | primary_no_new_array       { $1 }
  | array_creation_expression  { $1 }
@@ -434,6 +445,8 @@ primary_no_new_array:
  | field_access                       { $1 }
  | method_invocation                  { $1 }
  | array_access                       { $1 }
+ /*(* sgrep-ext: *)*/
+ | typed_metavar       { $1 }
  /*(* javaext: ? *)*/
  | name DOT THIS       { Name (name $1 @ [this_ident $3]) }
  /*(* javaext: ? *)*/
@@ -513,8 +526,7 @@ array_access:
 
 method_invocation:
  | name LP argument_list_opt RP
-        {
-          match List.rev $1 with
+        { match List.rev $1 with
           (* TODO: lose information of TypeArgs_then_Id *)
           | ((Id x) | (TypeArgs_then_Id (_, Id x)))::xs ->
               let (xs: identifier_ list) =
@@ -545,7 +557,7 @@ argument:
 /*(*2 Arithmetic *)*/
 /*(*----------------------------*)*/
 
-postfix_expression:
+postfix_expression: (* EJ todo maybe need to add typed metavars here *)
  | primary  { $1 }
  | name     {
      (* Ambiguity. It could be a field access (Dot) or a qualified
@@ -699,6 +711,8 @@ left_hand_side:
  | name          { Name (name $1) }
  | field_access  { $1 }
  | array_access  { $1 }
+ /*(* sgrep-ext: *)*/
+ | typed_metavar { $1 }
 
 assignment_operator:
  | EQ  { (fun e1 e2 -> Assign (e1, $1, e2))  }
@@ -845,6 +859,7 @@ statement_expression:
  | class_instance_creation_expression  { $1 }
  /*(* sgrep-ext: to allow '$S;' in sgrep *)*/
  | IDENTIFIER { Flag_parsing.sgrep_guard ((Name (name [Id $1])))  }
+ | typed_metavar { $1 }
 
 
 if_then_statement: IF LP expression RP statement

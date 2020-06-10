@@ -227,6 +227,9 @@ and vof_tok_and_stmt (t, v) =
   OCaml.VTuple [t; v]
 and vof_for_header =
   function
+  | ForEllipsis (v1) ->
+      let v1 = vof_tok v1 in
+      OCaml.VSum ("ForEllipsis", [v1])
   | ForClassic ((v1, v2, v3)) ->
       let v1 = OCaml.vof_either (OCaml.vof_list vof_var) vof_expr v1
       and v2 = OCaml.vof_option vof_expr v2
@@ -350,16 +353,18 @@ let vof_module_directive =
       let v1 = vof_name v1
       and v2 = vof_filename v2
       in OCaml.VSum (("ModuleAlias", [ t; v1; v2 ]))
-  | ImportCss ((v1)) ->
+  | ImportCss ((t, v1)) ->
+      let t =  vof_tok t in
       let v1 = vof_filename v1
-      in OCaml.VSum (("ImportCss", [ v1 ]))
+      in OCaml.VSum (("ImportCss", [ t; v1 ]))
   | ImportEffect ((v0, v1)) ->
       let v0 = vof_tok v0 in
       let v1 = vof_filename v1
       in OCaml.VSum (("ImportEffect", [ v0; v1 ]))
-  | Export ((v1)) ->
+  | Export ((t, v1)) ->
+      let t =  vof_tok t in
       let v1 = vof_name v1
-      in OCaml.VSum (("Export", [ v1 ]))
+      in OCaml.VSum (("Export", [ t; v1 ]))
   
 let vof_toplevel =
   function

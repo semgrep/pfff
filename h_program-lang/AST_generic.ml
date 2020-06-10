@@ -688,6 +688,8 @@ and stmt =
     | ForEach of pattern * 
                  tok (* 'in' Python, 'range' Go, 'as' PHP, '' Java *) * 
                  expr (* pattern 'in' expr *)
+    (* sgrep: *)
+    | ForEllipsis of tok (* ... *)
 (*e: type [[AST_generic.for_header]] *)
 
 (*s: type [[AST_generic.for_var_or_expr]] *)
@@ -940,11 +942,23 @@ and definition = entity * definition_kind
      * in a header file (called a prototype in C).
      *)
     | FuncDef   of function_definition
-    (* newvar: can be used also for constants, fields.
+    (* newvar: can be used also for constants.
      * can contain special_multivardef_pattern ident in which case vinit
      * is the pattern assignment.
      *)
     | VarDef    of variable_definition
+    (* FieldDef can only be present inside a record/class (in a FieldStmt).
+     * This used to be merged with VarDef, but in semgrep we don't want
+     * a VarDef to match a field definition.
+     * Note that we could have used a FieldVar in the field type instead
+     * of this FieldDef here, which would be more precise, but 
+     * this complicates things in semgrep where it's convenient to have
+     * a uniform FieldStmt(DefStmt) that covers field and methods
+     * (see m_list__m_field in semgrep).
+     * Note that FieldDef where vinit is a Lambda should really be converted
+     * in a FuncDef instead.
+     *)
+    | FieldDef  of variable_definition
     | ClassDef  of class_definition
     (*s: [[AST_generic.definition_kind]] other cases *)
     | TypeDef   of type_definition
@@ -1109,10 +1123,13 @@ and type_definition = {
   * note: I don't call it field_definition because it's used both to
   * define the shape of a field (a definition), and when creating
   * an actual field (a value).
-  * old: there used to be a FieldVar and FieldMethod similar to
-  * VarDef and FuncDef but they are now instead in FieldStmt(DefStmt).
-  * this simplifies sgrep too so that a function pattern can match
+  * old: there used to be a FieldVar and FieldMethod similar to 
+  * VarDef and FuncDef but they are now converted into a FieldStmt(DefStmt).
+  * This simplifies semgrep so that a function pattern can match
   * toplevel functions, nested functions, and methods.
+  * Note that for FieldVar we ultimately converted it to a FieldDef 
+  * (which is very similar to a VarDef) because some people don't want a VarDef
+  * to match a field definition.
   * Note: the FieldStmt(DefStmt(FuncDef(...))) can have empty body
   * for interface methods.
   *)
@@ -1399,7 +1416,7 @@ let basic_entity id attrs = {
 (*s: function [[AST_generic.basic_field]] *)
 let basic_field id vopt typeopt =
   let entity = basic_entity id [] in
-  FieldStmt(DefStmt(entity, VarDef { vinit = vopt; vtype = typeopt}))
+  FieldStmt(DefStmt (entity, FieldDef { vinit = vopt; vtype = typeopt}))
 (*e: function [[AST_generic.basic_field]] *)
 
 (*s: function [[AST_generic.attr]] *)

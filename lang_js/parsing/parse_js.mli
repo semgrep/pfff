@@ -8,6 +8,7 @@ type program_and_tokens =
  *  - Parse_info.Lexical_error if Flag_parsing.exn_when_lexical_error is true.
  *)
 val parse: 
+  ?timeout: int ->
   Common.filename -> (program_and_tokens * Parse_info.parsing_stat)
 
 val parse_program:

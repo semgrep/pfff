@@ -261,6 +261,7 @@ and map_tok_and_stmt (t, v) =
 
 and map_for_header =
   function
+  | ForEllipsis v1 -> let v1 = map_tok v1 in ForEllipsis v1
   | ForClassic ((v1, v2, v3)) ->
       let v1 = OCaml.map_of_either (map_of_list map_var) map_expr v1
       and v2 = OCaml.map_of_option map_expr v2
@@ -361,9 +362,10 @@ and map_module_directive =
       and v2 = map_of_option map_name v2
       and v3 = map_filename v3
       in Import ((t, v1, v2, v3))
-  | ImportCss ((v1)) ->
+  | ImportCss ((t, v1)) ->
+      let t = map_tok t in
       let v1 = map_name v1
-      in ImportCss ((v1))
+      in ImportCss ((t, v1))
   | ImportEffect ((v0, v1)) ->
       let v0 = map_tok v0 in
       let v1 = map_name v1
@@ -373,7 +375,9 @@ and map_module_directive =
       let v1 = map_name v1
       and v2 = map_filename v2
       in ModuleAlias ((t, v1, v2))
-  | Export v1 -> let v1 = map_name v1 in Export ((v1))
+  | Export (t, v1) -> 
+      let t = map_tok t in
+      let v1 = map_name v1 in Export ((t, v1))
   
 and map_program v = map_of_list map_toplevel v
   

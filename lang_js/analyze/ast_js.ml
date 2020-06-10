@@ -254,6 +254,8 @@ and stmt =
   and for_header = 
    | ForClassic of vars_or_expr * expr option * expr option
    | ForIn of var_or_expr * tok * expr
+   (* sgrep-ext: *)
+   | ForEllipsis of tok
 
     (* the expr is usually just an assign *)
     and vars_or_expr = (var list, expr) Common.either
@@ -351,12 +353,12 @@ type module_directive =
    * See Module_path_js to resolve paths.
    *)
   | Import of tok * name * name option (* 'name1 as name2' *) * filename
-  | Export of name
+  | Export of tok * name
 
   (* hard to unsugar in Import because we do not have the list of names *)
   | ModuleAlias of tok * name * filename (* import * as 'name' from 'file' *)
 
-  | ImportCss of filename
+  | ImportCss of tok * filename
   (* those should not exist (except for sgrep where they are useful) *)
   | ImportEffect of tok * filename
 

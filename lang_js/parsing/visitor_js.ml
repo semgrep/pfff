@@ -278,6 +278,26 @@ and v_encaps =
   | EncapsExpr ((v1, v2, v3)) ->
       let v1 = v_tok v1 and v2 = v_expr v2 and v3 = v_tok v3 in ()
 
+and v_for_header = function
+  | ForHeaderEllipsis v1 -> v_tok v1
+  | ForHeaderClassic (v3, v4, v5, v6, v7) ->
+      let v3 = v_option v_lhs_or_vars v3
+      and v4 = v_tok v4
+      and v5 = v_option v_expr v5
+      and v6 = v_tok v6
+      and v7 = v_option v_expr v7
+      in ()
+  | ForHeaderIn (v3, v4, v5) ->
+      let v3 = v_lhs_or_var v3
+      and v4 = v_tok v4
+      and v5 = v_expr v5
+      in ()
+  | ForHeaderOf (v3, v4, v5) ->
+      let v3 = v_lhs_or_var v3
+      and v4 = v_tok v4
+      and v5 = v_expr v5
+      in ()
+
 and v_st x =
   let k x = match x with
   | VarsDecl ((v1, v2, v3)) ->
@@ -305,34 +325,12 @@ and v_st x =
       in ()
   | While ((v1, v2, v3)) ->
       let v1 = v_tok v1 and v2 = v_paren v_expr v2 and v3 = v_st v3 in ()
-  | For ((v1, v2, v3, v4, v5, v6, v7, v8, v9)) ->
+  | For ((v1, v2, vx, v8, v9)) ->
       let v1 = v_tok v1
       and v2 = v_tok v2
-      and v3 = v_option v_lhs_or_vars v3
-      and v4 = v_tok v4
-      and v5 = v_option v_expr v5
-      and v6 = v_tok v6
-      and v7 = v_option v_expr v7
+      and vx = v_for_header vx
       and v8 = v_tok v8
       and v9 = v_st v9
-      in ()
-  | ForIn ((v1, v2, v3, v4, v5, v6, v7)) ->
-      let v1 = v_tok v1
-      and v2 = v_tok v2
-      and v3 = v_lhs_or_var v3
-      and v4 = v_tok v4
-      and v5 = v_expr v5
-      and v6 = v_tok v6
-      and v7 = v_st v7
-      in ()
-  | ForOf ((v1, v2, v3, v4, v5, v6, v7)) ->
-      let v1 = v_tok v1
-      and v2 = v_tok v2
-      and v3 = v_lhs_or_var v3
-      and v4 = v_tok v4
-      and v5 = v_expr v5
-      and v6 = v_tok v6
-      and v7 = v_st v7
       in ()
   | Switch ((v1, v2, v3)) ->
       let v1 = v_tok v1

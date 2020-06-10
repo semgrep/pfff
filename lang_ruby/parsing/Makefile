@@ -7,10 +7,12 @@ OPAMPKG=pfff-lang_ruby
 
 -include $(TOP)/Makefile.config
 
+#coupling: if you modify this you need to run
+# make update_dot_depend
 SRC= utils_ruby.ml \
   ast_ruby.ml \
   ast_ruby_helpers.ml \
-  meta_ast_ruby.ml ast_ruby_printer.ml \
+  meta_ast_ruby.ml \
   parser_ruby_helpers.ml \
   parser_ruby.ml \
   lexer_parser_ruby.ml \
@@ -64,7 +66,16 @@ parser_ruby.ml parser_ruby.mli: parser_ruby.dyp
 	dypgen --pv-obj --ocamlc '$(INCLUDES) -w y' $<
 clean::
 	rm -f parser_ruby.ml parser_ruby.mli 
+
+#this does not work because dypgen above wants to compile
+# but in make depend the .cmo are not there yet
 #beforedepend:: parser_ruby.ml parser_ruby.mli
+# this is ugly
+include dot-depend-manual
+
+update_dot_depend:
+	make depend
+	cp .depend dot-depend-manual
 
 parser_ruby.cmo: parser_ruby.ml
 	ocamlc $(INCLUDES) -w y -c $<

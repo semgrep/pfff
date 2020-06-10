@@ -492,6 +492,7 @@ and map_for_header =
   | ForEach ((v1, t, v2)) ->
       let t = map_tok t in
       let v1 = map_pattern v1 and v2 = map_expr v2 in ForEach ((v1, t, v2))
+  | ForEllipsis t -> let t = map_tok t in ForEllipsis t
 
 and map_for_var_or_expr =
   function
@@ -582,6 +583,7 @@ and map_definition_kind =
   function
   | FuncDef v1 -> let v1 = map_function_definition v1 in FuncDef ((v1))
   | VarDef v1 -> let v1 = map_variable_definition v1 in VarDef ((v1))
+  | FieldDef v1 -> let v1 = map_variable_definition v1 in FieldDef ((v1))
   | ClassDef v1 -> let v1 = map_class_definition v1 in ClassDef ((v1))
   | TypeDef v1 -> let v1 = map_type_definition v1 in TypeDef ((v1))
   | ModuleDef v1 -> let v1 = map_module_definition v1 in ModuleDef ((v1))

@@ -155,17 +155,15 @@ and module_item env = function
          let tok = first_tok_of_item x in
          A.S (tok, res)
     )
-  | C.Import (_, x, _) -> import env x |> List.map (fun x -> A.M x)
+  | C.Import (tok, x, _) -> import env tok x |> List.map (fun x -> A.M x)
   | C.Export (tok, x) ->  export env tok x
 
-and import env = function
-  | C.ImportEffect ((file, tok)) ->
-     (* TODO: reusing the tok of the file for the import kwd, bad *)
-     let t0 = tok in
+and import env tok = function
+  | C.ImportEffect ((file, tok2)) ->
      if file =~ ".*\\.css$"
-     then [A.ImportCss (file, tok)]
-     else [A.ImportEffect (t0, (file, tok))]
-  | C.ImportFrom ((default_opt, names_opt), (tok, path)) ->
+     then [A.ImportCss (tok, (file, tok2))]
+     else [A.ImportEffect (tok, (file, tok2))]
+  | C.ImportFrom ((default_opt, names_opt), (_tok2, path)) ->
     let file = path_to_file path in
     (match default_opt with
     | Some n -> 
@@ -196,59 +194,59 @@ and import env = function
      )
 
 and export env tok = function
- | C.ExportDefaultExpr (tok, e, _)  -> 
+ | C.ExportDefaultExpr (tok2, e, _)  -> 
    let e = expr env e in
-   let n = A.default_entity, tok in
+   let n = A.default_entity, tok2 in
    let v = {A.v_name = n; v_kind = A.Const, tok; v_init = Some e; 
             v_resolved = not_resolved () } in
-   [A.V v; A.M (A.Export (n))]
+   [A.V v; A.M (A.Export (tok, n))]
  | C.ExportDecl x ->
    let xs = item None env x in
    xs |> List.map (function
     | A.VarDecl v -> 
-         [A.V v; A.M (A.Export (v.A.v_name))]
+         [A.V v; A.M (A.Export (tok, v.A.v_name))]
     | _ -> raise (UnhandledConstruct ("exporting a stmt", tok))
    ) |> List.flatten
- | C.ExportDefaultDecl (tok, x) ->
+ | C.ExportDefaultDecl (tok2, x) ->
    (* this is ok to have anonymous entities here *)
-   let xs = item (Some tok) env x in
+   let xs = item (Some tok2) env x in
    xs |> List.map (function
     | A.VarDecl v -> 
-        [A.V v;  A.M (A.Export (v.A.v_name))]
+        [A.V v;  A.M (A.Export (tok,v.A.v_name))]
     | _ -> raise (UnhandledConstruct ("exporting a stmt", tok))
    ) |> List.flatten
  | C.ExportNames (xs, _) ->
    xs |> C.unparen |> C.uncomma |> List.map (fun (n1, n2opt) ->
      let n1 = name env n1 in
      match n2opt with
-     | None -> [A.M (A.Export (n1))]
+     | None -> [A.M (A.Export (tok, n1))]
      | Some (_, n2) -> 
          let n2 = name env n2 in
          let id = A.Id (n1, not_resolved ()) in
          let v = { A.v_name = n2; v_kind = A.Const, fake "const"; 
                    v_init = Some id;
                    v_resolved = not_resolved () } in
-         [A.V v; A.M (A.Export n2)]
+         [A.V v; A.M (A.Export (tok, n2))]
   ) |> List.flatten
- | C.ReExportNames (xs, (tok, path), _) ->
+ | C.ReExportNames (xs, (tok2, path), _) ->
    xs |> C.unbrace |> C.uncomma |> List.map (fun (n1, n2opt) ->
      let n1 = name env n1 in
      let tmpname = ("!tmp_" ^ fst n1, snd n1) in
      let file = path_to_file path in
-     let import = A.Import (tok, n1, Some tmpname, file) in
+     let import = A.Import (tok2, n1, Some tmpname, file) in
      let id = A.Id (tmpname, not_resolved()) in
      match n2opt with
      | None -> 
        let v = { A.v_name = n1; v_kind = A.Const, fake "const"; 
                   v_init = Some id; 
                   v_resolved = not_resolved () } in
-       [A.M import; A.V v; A.M (A.Export n1)]
+       [A.M import; A.V v; A.M (A.Export (tok, n1))]
      | Some (_, n2) ->
        let n2 = name env n2 in
        let v = { A.v_name = n2; v_kind = A.Const, fake "const"; 
                   v_init = Some id; 
                   v_resolved = not_resolved () } in
-       [A.M import; A.V v; A.M (A.Export n2)]
+       [A.M import; A.V v; A.M (A.Export (tok, n2))]
    ) |> List.flatten
 
  | C.ReExportNamespace (_, _, _) ->
@@ -356,7 +354,7 @@ and stmt env = function
      let e = e |> C.unparen |> expr env in
      let st = stmt1 env st in
      [A.While (t, e, st)]
-  | C.For (t, _, lhs_vars_opt, _, e2opt, _, e3opt, _, st) ->
+  | C.For (t, _, C.ForHeaderClassic (lhs_vars_opt, _, e2opt, _, e3opt),_,st)->
      let e1 = 
        match lhs_vars_opt with
        | Some (C.LHS1 e) -> Right (expr env e)
@@ -369,7 +367,7 @@ and stmt env = function
      let e3 = expr_opt env e3opt in
      let st = stmt1 env st in
      [A.For (t, A.ForClassic (e1, e2, e3), st)]
-  | C.ForIn (t, _, lhs_var, tin, e2, _, st) ->
+  | C.For (t, _, C.ForHeaderIn (lhs_var, tin, e2), _, st) ->
     let e1 =
       match lhs_var with
       | C.LHS2 e -> Right (expr env e)
@@ -383,13 +381,16 @@ and stmt env = function
     let e2 = expr env e2 in
     let st = stmt1 env st in
     [A.For (t, A.ForIn (e1, tin, e2), st)]
-  | C.ForOf (_tTODO, _, lhs_var, tokof, e2, _, st) ->
+  | C.For (_tTODO, _, C.ForHeaderOf (lhs_var, tokof, e2), _, st) ->
     (try 
       Transpile_js.forof (lhs_var, tokof, e2, st) 
         (expr env, stmt env, var_binding env)
      with Failure s ->
        raise (TodoConstruct(spf "ForOf:%s" s, tokof))
     )
+  | C.For (t, _, C.ForHeaderEllipsis t2, _, st) ->
+    let st = stmt1 env st in
+    [A.For (t, A.ForEllipsis t2, st)]
   | C.Switch (tok, e, xs) ->
     let e = e |> C.unparen |> expr env in
     let xs = xs |> C.unparen |> List.map (case_clause env) in

@@ -79,14 +79,13 @@ let test regexp =
       Unit_parsing_js.unittest;
       Unit_analyze_js.unittest;
       Unit_parsing_python.unittest;
-#if FEATURE_RUBY
       Unit_parsing_ruby.unittest;
-#endif
       Unit_parsing_html.unittest;
       Unit_parsing_cpp.unittest;
       Unit_parsing_go.unittest;
 
-      (* typing tests *)
+      (* generic AST tests *)
+      Unit_naming_generic.unittest;
       Unit_typing_generic.unittest;
     ]
   in
@@ -270,9 +269,7 @@ let all_actions () =
   pfff_extra_actions() @
  Test_analyze_php.actions()@
  Test_analyze_js.actions()@
-#if FEATURE_RUBY
  Test_analyze_ruby.actions()@
-#endif
  Test_analyze_ml.actions()@
  Test_analyze_cpp.actions()@
  Test_analyze_c.actions()@

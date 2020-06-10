@@ -39,8 +39,9 @@ val prune_uop :
   Ast_ruby.unary_op -> Ast_ruby.expr -> Ast_ruby.tok -> Ast_ruby.expr
 
 val prune_tern :
-  Ast_ruby.expr ->
-  Ast_ruby.expr -> Ast_ruby.expr -> Ast_ruby.tok -> Ast_ruby.expr
+  Ast_ruby.expr -> Ast_ruby.expr -> Ast_ruby.expr -> 
+  Ast_ruby.tok -> Ast_ruby.tok -> 
+  Ast_ruby.expr
 
 val prune_left_assoc :
   Ast_ruby.expr -> Ast_ruby.binary_op -> Ast_ruby.expr -> Ast_ruby.expr
