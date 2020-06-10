@@ -304,7 +304,8 @@ and type_def_kind =
                | Some tok -> [G.attr G.Mutable tok] 
                | None -> []) in
             G.FieldStmt (G.DefStmt
-             (ent, G.VarDef { G.vinit = None; vtype = Some v2 }))))
+             (ent, G.FieldDef { G.vinit = None; vtype = Some v2 }))
+            ))
           v1
       in G.AndType v1
   
