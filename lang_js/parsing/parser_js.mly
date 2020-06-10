@@ -896,6 +896,9 @@ iteration_stmt:
      { For ($1, $2, ForHeaderOf (LHS2 $3, $4, $5), $6, $7) }
  | T_FOR "(" for_single_variable_decl T_OF assignment_expr ")"  stmt
      { For ($1, $2, ForHeaderOf (ForVar $3, $4, $5), $6, $7) }
+ (* sgrep-ext: *)
+ | T_FOR "(" "..." ")"  stmt
+     { For ($1, $2, ForHeaderEllipsis $3, $4, $5) }
 
 
 initializer_no_in: "=" assignment_expr_no_in { $1, $2 }

@@ -309,6 +309,9 @@ and vof_encaps =
       in OCaml.VSum (("EncapsExpr", [ v1; v2; v3 ]))
 
 and vof_for_header = function
+  | ForHeaderEllipsis (v1) ->
+      let v1 = vof_tok v1 in
+      OCaml.VSum ("ForHeaderEllipsis", [v1])
   | ForHeaderClassic (v3, v4, v5, v6, v7) ->
       let v3 = OCaml.vof_option vof_lhs_or_vars v3
       and v4 = vof_tok v4

@@ -623,6 +623,10 @@ and vof_for_header =
       let v1 = vof_pattern v1
       and v2 = vof_expr v2
       in OCaml.VSum (("ForEach", [ v1; t; v2 ]))
+  | ForEllipsis ((t)) ->
+      let t = vof_tok t in
+      OCaml.VSum ("ForEllipsis", [t])
+
 and vof_for_var_or_expr =
   function
   | ForInitVar ((v1, v2)) ->

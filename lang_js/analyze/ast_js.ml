@@ -254,6 +254,8 @@ and stmt =
   and for_header = 
    | ForClassic of vars_or_expr * expr option * expr option
    | ForIn of var_or_expr * tok * expr
+   (* sgrep-ext: *)
+   | ForEllipsis of tok
 
     (* the expr is usually just an assign *)
     and vars_or_expr = (var list, expr) Common.either

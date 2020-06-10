@@ -311,6 +311,8 @@ and for_header =
             G.expr_to_pattern e
       in
       G.ForEach (pattern, t, v2)
+  | ForEllipsis v1 ->
+      G.ForEllipsis v1
 
 and case =
   function

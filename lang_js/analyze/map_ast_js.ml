@@ -261,6 +261,7 @@ and map_tok_and_stmt (t, v) =
 
 and map_for_header =
   function
+  | ForEllipsis v1 -> let v1 = map_tok v1 in ForEllipsis v1
   | ForClassic ((v1, v2, v3)) ->
       let v1 = OCaml.map_of_either (map_of_list map_var) map_expr v1
       and v2 = OCaml.map_of_option map_expr v2

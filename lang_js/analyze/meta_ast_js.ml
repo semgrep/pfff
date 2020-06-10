@@ -227,6 +227,9 @@ and vof_tok_and_stmt (t, v) =
   OCaml.VTuple [t; v]
 and vof_for_header =
   function
+  | ForEllipsis (v1) ->
+      let v1 = vof_tok v1 in
+      OCaml.VSum ("ForEllipsis", [v1])
   | ForClassic ((v1, v2, v3)) ->
       let v1 = OCaml.vof_either (OCaml.vof_list vof_var) vof_expr v1
       and v2 = OCaml.vof_option vof_expr v2

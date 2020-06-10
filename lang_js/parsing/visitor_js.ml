@@ -279,6 +279,7 @@ and v_encaps =
       let v1 = v_tok v1 and v2 = v_expr v2 and v3 = v_tok v3 in ()
 
 and v_for_header = function
+  | ForHeaderEllipsis v1 -> v_tok v1
   | ForHeaderClassic (v3, v4, v5, v6, v7) ->
       let v3 = v_option v_lhs_or_vars v3
       and v4 = v_tok v4

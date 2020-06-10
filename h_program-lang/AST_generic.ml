@@ -688,6 +688,8 @@ and stmt =
     | ForEach of pattern * 
                  tok (* 'in' Python, 'range' Go, 'as' PHP, '' Java *) * 
                  expr (* pattern 'in' expr *)
+    (* sgrep: *)
+    | ForEllipsis of tok (* ... *)
 (*e: type [[AST_generic.for_header]] *)
 
 (*s: type [[AST_generic.for_var_or_expr]] *)

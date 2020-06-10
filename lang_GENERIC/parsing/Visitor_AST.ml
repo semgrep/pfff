@@ -459,6 +459,8 @@ and v_for_header =
   | ForEach ((v1, t, v2)) -> 
       let t = v_tok t in
       let v1 = v_pattern v1 and v2 = v_expr v2 in ()
+  | ForEllipsis t -> v_tok t
+
 and v_for_var_or_expr =
   function
   | ForInitVar ((v1, v2)) ->

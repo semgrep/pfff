@@ -330,6 +330,8 @@ and stmt =
     | ForHeaderIn of lhs_or_var * tok (* in *) * expr
     (* es6: iterators *)
     | ForHeaderOf of lhs_or_var * tok (* of *) * expr
+    (* sgrep-ext:  *)
+    | ForHeaderEllipsis of tok (* ... *)
 
      (* less: could unify with 'st', and explain additional constraints *)
      and lhs_or_vars =
