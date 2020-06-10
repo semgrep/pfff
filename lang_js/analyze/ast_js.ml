@@ -353,12 +353,12 @@ type module_directive =
    * See Module_path_js to resolve paths.
    *)
   | Import of tok * name * name option (* 'name1 as name2' *) * filename
-  | Export of name
+  | Export of tok * name
 
   (* hard to unsugar in Import because we do not have the list of names *)
   | ModuleAlias of tok * name * filename (* import * as 'name' from 'file' *)
 
-  | ImportCss of filename
+  | ImportCss of tok * filename
   (* those should not exist (except for sgrep where they are useful) *)
   | ImportEffect of tok * filename
 
