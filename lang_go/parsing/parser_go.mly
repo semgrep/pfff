@@ -577,7 +577,7 @@ pexpr_no_paren:
 
 |   name { Id ($1, ref None) }
     /*(* sgrep-ext: *)*/
-|   LPAREN name LCOLON ntype RPAREN { TypedMetavar($2, Parse_info.fake_info " ", $4) }
+|   LPAREN name LCOLON ntype RPAREN { TypedMetavar($2, $3, $4) }
     /*(* can be many things *)*/
 |   pexpr LDOT sym { Selector ($1, $2, $3) }
 
