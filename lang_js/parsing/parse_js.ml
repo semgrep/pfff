@@ -194,7 +194,7 @@ let tokens a =
 (* Main entry point *)
 (*****************************************************************************)
 
-let parse2 filename =
+let parse2 ?(timeout=0) filename =
   let stat = PI.default_stat filename in
 
   let toks = tokens filename in
@@ -206,11 +206,13 @@ let parse2 filename =
 
   let last_charpos_error = ref 0 in
 
+  if timeout > 0 then begin
    Sys.set_signal Sys.sigalrm (Sys.Signal_handle (fun _ -> raise Timeout ));
    (* todo: minimized files abusing ASI before '}' requires a very long time
     * to parse 
     *)
-   ignore(Unix.alarm 5);
+   ignore(Unix.alarm timeout);
+  end;
 
   let rec parse_module_item_or_eof tr =
     try 
@@ -290,7 +292,7 @@ let parse2 filename =
   let items = 
    try 
      aux tr 
-   with Timeout ->
+   with Timeout when timeout > 0 ->
       ignore(Unix.alarm 0);
       if !Flag.show_parsing_error
       then pr2 (spf "TIMEOUT on %s" filename);
@@ -299,7 +301,7 @@ let parse2 filename =
       stat.PI.correct <- 0;
       []
   in
-  ignore(Unix.alarm 0);
+  if timeout > 0 then ignore(Unix.alarm 0);
   (* the correct count is accurate because items do not fall always
    * on clean line boundaries so we may count multiple times the same line
    *)
@@ -308,8 +310,8 @@ let parse2 filename =
 
   (Some items, toks), stat
 
-let parse a = 
-  Common.profile_code "Parse_js.parse" (fun () -> parse2 a)
+let parse ?timeout a = 
+  Common.profile_code "Parse_js.parse" (fun () -> parse2 ?timeout a)
 
 let parse_program file = 
   let ((astopt, _toks), _stat) = parse file in
