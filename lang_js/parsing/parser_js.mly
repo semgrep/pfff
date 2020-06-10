@@ -882,18 +882,20 @@ iteration_stmt:
  | T_WHILE "(" expr ")" stmt           { While ($1, ($2, $3, $4), $5) }
 
  | T_FOR "(" expr_no_in? ";" expr? ";" expr? ")" stmt
-     { For ($1, $2, $3|>Common2.fmap (fun x -> LHS1 x), $4, $5, $6, $7,$8,$9)}
+     { For ($1, $2, ForHeaderClassic 
+              ($3|>Common2.fmap (fun x -> LHS1 x), $4, $5, $6, $7), $8, $9)}
  | T_FOR "(" for_variable_decl ";" expr? ";" expr? ")" stmt
-     { For ($1, $2, Some (ForVars $3), $4, $5, $6, $7, $8, $9) }
+     { For ($1, $2, ForHeaderClassic (Some (ForVars $3), $4, $5, $6, $7), 
+            $8, $9) }
 
  | T_FOR "(" left_hand_side_expr T_IN expr ")" stmt
-     { ForIn ($1, $2, LHS2 $3, $4, $5, $6, $7) }
+     { For ($1, $2, ForHeaderIn (LHS2 $3, $4, $5), $6, $7) }
  | T_FOR "(" for_single_variable_decl T_IN expr ")"  stmt
-     { ForIn ($1, $2, ForVar $3, $4, $5, $6, $7) }
+     { For ($1, $2, ForHeaderIn (ForVar $3, $4, $5), $6, $7) }
  | T_FOR "(" left_hand_side_expr T_OF assignment_expr ")" stmt
-     { ForOf ($1, $2, LHS2 $3, $4, $5, $6, $7) }
+     { For ($1, $2, ForHeaderOf (LHS2 $3, $4, $5), $6, $7) }
  | T_FOR "(" for_single_variable_decl T_OF assignment_expr ")"  stmt
-     { ForOf ($1, $2, ForVar $3, $4, $5, $6, $7) }
+     { For ($1, $2, ForHeaderOf (ForVar $3, $4, $5), $6, $7) }
 
 
 initializer_no_in: "=" assignment_expr_no_in { $1, $2 }

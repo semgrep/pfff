@@ -291,6 +291,7 @@ type expr =
 (*****************************************************************************)
 (* Statement *)
 (*****************************************************************************)
+
 and stmt =
   | VarsDecl of var_kind wrap * var_binding comma_list * sc
 
@@ -302,17 +303,7 @@ and stmt =
   | Do of tok * stmt * tok (* while *) * expr paren * sc
   | While of tok * expr paren * stmt
 
-  | For of tok * tok (* ( *) *
-      lhs_or_vars option * tok (* ; *) *
-      expr option * tok (* ; *) *
-      expr option *
-      tok (* ) *) *
-      stmt
-  | ForIn of tok * tok (* ( *) * lhs_or_var * tok (* in *) *
-      expr * tok (* ) *) * stmt
-  (* es6: iterators *)
-  | ForOf of tok * tok (* ( *) * lhs_or_var * tok (* of *) *
-      expr * tok (* ) *) * stmt
+  | For of tok * tok (* ( *) * for_header * tok (* ) *) * stmt
 
   | Switch of tok * expr paren *
       case_clause list brace (* was   (case_clause list * stmt) list *)
@@ -332,15 +323,23 @@ and stmt =
 
   and label = string wrap
 
-  (* less: could unify with 'st', and explain additional constraints *)
-  and lhs_or_vars =
-    | LHS1 of expr
-    | ForVars of (var_kind wrap * var_binding comma_list)
+  and for_header = 
+    | ForHeaderClassic of lhs_or_vars option * tok (* ; *) * 
+                          expr option * tok (* ; *) *
+                          expr option
+    | ForHeaderIn of lhs_or_var * tok (* in *) * expr
+    (* es6: iterators *)
+    | ForHeaderOf of lhs_or_var * tok (* of *) * expr
 
-  and lhs_or_var = 
-    | LHS2 of expr
-    (* the variable_declaration in var_binding  has v_init = None. *)
-    | ForVar of (var_kind wrap * var_binding)
+     (* less: could unify with 'st', and explain additional constraints *)
+     and lhs_or_vars =
+     | LHS1 of expr
+     | ForVars of (var_kind wrap * var_binding comma_list)
+
+     and lhs_or_var = 
+     | LHS2 of expr
+     (* the variable_declaration in var_binding  has v_init = None. *)
+     | ForVar of (var_kind wrap * var_binding)
 
   and case_clause =
     | Default of tok * tok (*:*) * item list
