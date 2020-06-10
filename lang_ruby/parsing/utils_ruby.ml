@@ -10,10 +10,10 @@ let cmp_ctors e1 e2 =
   let o1 = Obj.repr e1 in
   let o2 = Obj.repr e2 in
     match Obj.is_int o1, Obj.is_int o2 with
-      | true,true -> Pervasives.compare e1 e2
+      | true,true -> Stdlib.compare e1 e2
       | true,false -> -1
       | false,true -> 1
-      | false,false -> Pervasives.compare (Obj.tag o1) (Obj.tag o2)
+      | false,false -> Stdlib.compare (Obj.tag o1) (Obj.tag o2)
 
 let cmp2 c1 f a1 a2 = match c1 with
   | 0 -> f a1 a2
@@ -23,7 +23,7 @@ let cmp_list cmp el1 el2 =
   try List.fold_left2 (fun acc e1 e2 -> cmp2 acc cmp e1 e2) 0 el1 el2
   with Invalid_argument _ -> 
     (* different sized lists *)
-    Pervasives.compare (List.length el1) (List.length el2)
+    Stdlib.compare (List.length el1) (List.length el2)
 
 let default_opt def opt = match opt with 
   | None -> def
