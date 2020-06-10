@@ -355,7 +355,7 @@ and module_directive env x =
         Hashtbl.replace env.imports str2 (mk_qualified_name readable str1)
       )
     end
-  | Export (name) -> 
+  | Export (_t, name) -> 
      if env.phase = Defs then begin
        let exports =
          try 
@@ -371,7 +371,7 @@ and module_directive env x =
        *)
       let s = s_of_n name in
       Hashtbl.replace env.vars s true;
-  | ImportCss (_file) -> ()
+  | ImportCss (_t, _file) -> ()
   | ImportEffect (_, _file) -> ()
 
 and toplevels env xs = List.iter (toplevel env) xs

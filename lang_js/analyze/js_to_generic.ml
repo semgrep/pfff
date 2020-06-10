@@ -448,7 +448,7 @@ and module_directive x =
   | ModuleAlias ((t, v1, v2)) ->
       let v1 = name v1 and v2 = filename v2 in
       G.ImportAs (t, G.FileName v2, Some v1)
-  | ImportCss ((v1)) ->
+  | ImportCss ((_t, v1)) ->
       let v1 = name v1 in
       G.OtherDirective (G.OI_ImportCss, [G.I v1])
   (* sgrep: we used to convert this in an OI_ImportEffect, but
@@ -458,7 +458,7 @@ and module_directive x =
       let v1 = name v1 in
       (* old: G.OtherDirective (G.OI_ImportEffect, [G.I v1]) *)
       G.ImportAs (t, G.FileName v1, None)
-  | Export ((v1)) -> let v1 = name v1 in
+  | Export ((_t, v1)) -> let v1 = name v1 in
       G.OtherDirective (G.OI_Export, [G.I v1])
 
 and program v = list toplevel v

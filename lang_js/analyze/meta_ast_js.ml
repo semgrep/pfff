@@ -353,16 +353,18 @@ let vof_module_directive =
       let v1 = vof_name v1
       and v2 = vof_filename v2
       in OCaml.VSum (("ModuleAlias", [ t; v1; v2 ]))
-  | ImportCss ((v1)) ->
+  | ImportCss ((t, v1)) ->
+      let t =  vof_tok t in
       let v1 = vof_filename v1
-      in OCaml.VSum (("ImportCss", [ v1 ]))
+      in OCaml.VSum (("ImportCss", [ t; v1 ]))
   | ImportEffect ((v0, v1)) ->
       let v0 = vof_tok v0 in
       let v1 = vof_filename v1
       in OCaml.VSum (("ImportEffect", [ v0; v1 ]))
-  | Export ((v1)) ->
+  | Export ((t, v1)) ->
+      let t =  vof_tok t in
       let v1 = vof_name v1
-      in OCaml.VSum (("Export", [ v1 ]))
+      in OCaml.VSum (("Export", [ t; v1 ]))
   
 let vof_toplevel =
   function
