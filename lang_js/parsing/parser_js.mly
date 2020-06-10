@@ -528,8 +528,7 @@ formal_parameter:
  | "..." id annotation
     { ParamClassic { (mk_param $2) with p_dots = Some $1; p_type = Some $3;} }
  (* sgrep-ext: *)
- | "..." 
-    { Flag_parsing.sgrep_guard (ParamEllipsis $1) }
+ | "..." { Flag_parsing.sgrep_guard (ParamEllipsis $1) }
 
 (*----------------------------*)
 (* generators *)
@@ -898,7 +897,7 @@ iteration_stmt:
      { For ($1, $2, ForHeaderOf (ForVar $3, $4, $5), $6, $7) }
  (* sgrep-ext: *)
  | T_FOR "(" "..." ")"  stmt
-     { For ($1, $2, ForHeaderEllipsis $3, $4, $5) }
+     { Flag_parsing.sgrep_guard (For ($1, $2, ForHeaderEllipsis $3, $4, $5)) }
 
 
 initializer_no_in: "=" assignment_expr_no_in { $1, $2 }
