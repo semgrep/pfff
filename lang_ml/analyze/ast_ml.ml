@@ -64,6 +64,8 @@ type type_ =
 
   | TyTuple of type_ list (* at least 2 *)
 
+  | TyTodo of tok
+
  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
@@ -103,19 +105,19 @@ type expr =
   
 
   (* > 1 elt for mutually recursive let (let x and y and z) *)
-  | LetIn of let_binding list * expr * rec_opt
-  | Fun of parameter list (* at least one *) * expr
+  | LetIn of tok * let_binding list * expr * rec_opt
+  | Fun of tok (* 'fun' *) * parameter list (* at least one *) * expr
+  | Function of tok (* 'function' *) * match_case list
 
-  (* statement-like expressions *)
-  | Nop (* for empty else *)
-
-  | If of tok * expr * expr * expr
-  | Match of expr * match_case list
+  | If of tok * expr * expr * expr option
+  | Match of tok * expr * match_case list
 
   | Try of tok * expr * match_case list 
 
   | While of tok * expr * expr
   | For of tok * ident * expr * for_direction * expr *   expr
+
+  | ExprTodo of tok
 
  and literal =
    | Int    of string wrap
@@ -131,7 +133,7 @@ type expr =
  and match_case =
   pattern * match_action
 
-  and match_action = expr * expr option (* when *)
+  and match_action = expr option (* when *) * tok (* -> *) * expr
 
  and for_direction =
   | To of tok
@@ -160,6 +162,8 @@ and pattern =
   | PatDisj of pattern * pattern
   | PatTyped of pattern * type_
 
+  | PatTodo of tok
+
 (* ------------------------------------------------------------------------- *)
 (* Let binding (global/local/function definition) *)
 (* ------------------------------------------------------------------------- *)
@@ -175,7 +179,9 @@ and let_binding =
    lbody: expr;
  }
 
- and parameter = pattern
+ and parameter = 
+   | Param of pattern
+   | ParamTodo of tok
 
  (* with tarzan *)
 
@@ -195,7 +201,7 @@ type type_declaration = {
    | AbstractType
    | CoreType of type_
    (* or type *)
-   | AlgebricType of (ident * type_ list) list
+   | AlgebraicType of (ident * type_ list) list
    (* and type *)
    | RecordType   of (ident * type_ * tok option (* mutable *)) list bracket
 
@@ -218,6 +224,8 @@ type module_declaration = {
   | ModuleName of name (* alias *)
   | ModuleStruct of item list
 
+  | ModuleTodo of tok
+
 (* ------------------------------------------------------------------------- *)
 (* Signature/Structure items *)
 (* ------------------------------------------------------------------------- *)
@@ -226,20 +234,22 @@ type module_declaration = {
  * valid in both contexts.
  *)
 and item = 
-  | Type of type_declaration list (* mutually recursive *)
+  | Type of tok * type_declaration list (* mutually recursive *)
 
-  | Exception of ident * type_ list
-  | External  of ident * type_ * string wrap list (* primitive declarations *)
+  | Exception of tok * ident * type_ list
+  | External  of tok * ident * type_ * string wrap list (* primitive decls *)
       
-  | Open of name
+  | Open of tok * name
       
   (* only in sig_item *)
-  | Val of ident * type_
+  | Val of tok * ident * type_
       
   (* only in struct_item *)
-  | Let of rec_opt * let_binding list
+  | Let of tok * rec_opt * let_binding list
 
-  | Module of module_declaration
+  | Module of tok * module_declaration
+
+  | ItemTodo of tok
 
  (* with tarzan *)
       

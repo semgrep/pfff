@@ -51,7 +51,7 @@ and 'a semicolon_list = ('a, tok (* ';' *)) Common.either list
 (* ------------------------------------------------------------------------- *)
 (* Names  *)
 (* ------------------------------------------------------------------------- *)
-(* TODO: rename ident *)
+(* TODO: rename ident (at least things are better in ast_ml.ml *)
 type name = Name of string wrap
 
   (* lower and uppernames aliases, just for clarity *)
@@ -79,7 +79,7 @@ type ty =
   | TyFunction of ty * tok (* -> *) * ty
   | TyApp of ty_args * long_name (* todo? could be merged with TyName *)
 
-  | TyTodo
+  | TyTodo of tok
 
  and ty_args = 
     | TyArg1 of ty
@@ -119,7 +119,7 @@ and expr =
   
 
   | LetIn of tok * rec_opt * let_binding and_list * tok (* in *) * seq_expr
-  | Fun of tok * parameter list (* at least one *) * match_action
+  | Fun of tok * parameter list (* at least one *) * tok (* -> *) * expr
   | Function of tok * match_case pipe_list
 
   (* why they allow seq_expr ?? *)
@@ -133,8 +133,8 @@ and expr =
            tok * seq_expr * tok
 
   | ParenExpr of expr paren
-  (* todo: LetOpenIn *)
-  | ExprTodo
+
+  | ExprTodo of tok
 
 and seq_expr = expr semicolon_list
 
@@ -197,7 +197,7 @@ and pattern =
   | PatTyped of tok (*'('*) * pattern * tok (*':'*) * ty * tok (*')'*)
 
   | ParenPat of pattern paren
-  | PatTodo
+  | PatTodo of tok
     
  (* less? merge with expr, no need for too precise AST, remember ast_php.ml *)
  and pattern_signed_constant = 
@@ -233,9 +233,7 @@ and let_binding =
 
  and parameter = 
    | ParamPat of pattern
-   | ParamTodo
-
- and labeled_simple_pattern = unit
+   | ParamTodo of tok
 
 (* ------------------------------------------------------------------------- *)
 (* Type declaration *)
@@ -280,13 +278,12 @@ type type_declaration =
 (* ------------------------------------------------------------------------- *)
 (* Module *)
 (* ------------------------------------------------------------------------- *)
-type module_type = unit (* todo *)
 
 (* mutually recursive with item *)
 type module_expr =
   | ModuleName of long_name
   | ModuleStruct of tok (* struct *) * item list * tok (* end *)
-  | ModuleTodo
+  | ModuleTodo of tok
 
 
 (* ------------------------------------------------------------------------- *)

@@ -10,5 +10,9 @@ val parse:
 val parse_program:
   Common.filename -> Cst_ml.program
 
+(* for semgrep *)
+val any_of_string:
+  string -> Cst_ml.any
+
 (* internal *)
 val tokens: Common.filename -> Parser_ml.token list

@@ -574,6 +574,7 @@ and expr =
     (* OCaml *)
     | OE_RecordWith | OE_RecordFieldName
     | OE_StmtExpr (* OCaml has just expressions, no statements *)
+    | OE_Todo
     (* Go *)
     | OE_Send | OE_Recv
 (*e: type [[AST_generic.other_expr_operator]] *)
@@ -723,6 +724,8 @@ and stmt =
     | OS_Fallthrough (* only in Switch *)
     (* PHP *)
     | OS_GlobalComplex (* e.g., global $$x, argh *)
+    (* OCaml *)
+    | OS_Todo
 (*e: type [[AST_generic.other_stmt_operator]] *)
 
 (*****************************************************************************)
@@ -780,6 +783,8 @@ and pattern =
   and other_pattern_operator =
   (* Python *)
   | OP_Expr (* todo: should transform via expr_to_pattern() below *)
+  (* OCaml *)
+  | OP_Todo
 (*e: type [[AST_generic.other_pattern_operator]] *)
 
 (*****************************************************************************)
@@ -857,6 +862,8 @@ and type_ =
   (* PHP *)
   | OT_ShapeComplex (* complex TyAnd with complex keys *) 
   | OT_Variadic (* ???? *)
+  (* OCaml *)
+  | OT_Todo
 (*e: type [[AST_generic.other_type_operator]] *)
 
 (*****************************************************************************)
@@ -1054,6 +1061,8 @@ and function_definition = {
      | OPO_Receiver (* of parameter_classic, used to tag the "self" parameter*)
      (* PHP *) 
      | OPO_Ref (* of parameter_classic *)
+     (* OCaml *) 
+     | OPO_Todo
 (*e: type [[AST_generic.other_parameter_operator]] *)
 
 (* ------------------------------------------------------------------------- *)

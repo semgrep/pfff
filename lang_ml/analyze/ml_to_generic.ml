@@ -37,6 +37,8 @@ let bool = id
 let int = id
 
 let error = G.error
+(* TODO: each use of this is usually the sign of a todo to improve
+ * AST_generic.ml or ast_ml.ml *)
 let fake = G.fake
 
 (*****************************************************************************)
@@ -58,6 +60,10 @@ and name (v1, v2) =
   let v1 = qualifier v1 and v2 = ident v2 in 
   v2, { G.empty_name_info with G.name_qualifier = Some v1 }
 
+and module_name (v1, v2) = 
+  let v1 = qualifier v1 and v2 = ident v2 in 
+  v1 @ [v2]
+
 and qualifier v = list ident v
 
 and type_ =
@@ -69,6 +75,10 @@ and type_ =
   | TyApp ((v1, v2)) -> let v1 = list type_ v1 and v2 = name v2 in
                         G.TyNameApply (v2, v1 |> List.map (fun t -> G.TypeArg t))
   | TyTuple v1 -> let v1 = list type_ v1 in G.TyTuple (G.fake_bracket v1)
+  | TyTodo t -> G.OtherType (G.OT_Todo, [G.Tk t])
+
+(* TODO: we should try to transform in stmt while/... instead of those
+ * OE_StmtExpr *)
 
 and expr =
   function
@@ -142,23 +152,45 @@ and expr =
       let v1 = expr v1 and v2 = ident v2 in
       let t = tok t in
       G.DotAccess (v1, t, G.FId v2)
-  | LetIn ((v1, v2, v3)) ->
-      let _v1 = list let_binding v1
-      and _v2 = expr v2
+  | LetIn ((_t, v1, v2, v3)) ->
+      let v1 = list let_binding v1
+      and v2 = expr v2
       and _v3 = rec_opt v3
       in 
-      raise Todo
-  | Fun ((v1, v2)) -> 
+      let defs = 
+        v1 |> List.map (function
+         | Left (ent, params, expr) ->
+            G.DefStmt (ent, mk_var_or_func params expr)
+         | Right (pat, e) ->
+            let exp = G.LetPattern (pat, e) in
+            G.ExprStmt exp
+         )
+      in
+      let st = G.Block (defs @ [G.ExprStmt v2]) in
+      G.OtherExpr (G.OE_StmtExpr, [G.S st])
+  | Fun ((_t, v1, v2)) -> 
     let v1 = list parameter v1 
     and v2 = expr v2 in 
     let def = { G.fparams = v1; frettype = None; fbody = G.ExprStmt v2 } in
     G.Lambda def
+  | Function (t, xs) ->
+      let xs = list match_case xs in
+      let id = "!_implicit_param!", t in
+      let params = [G.ParamClassic (G.param_of_id id)] in
+      let body_exp = G.MatchPattern (G.Id (id, G.empty_id_info()),
+          xs) in
+      let body_stmt = G.ExprStmt body_exp in
+      G.Lambda {G.fparams = params; frettype = None; fbody = body_stmt }
 
-  | Nop -> G.L (G.Null (fake "null"))
   | If ((_t, v1, v2, v3)) ->
-      let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in 
+      let v1 = expr v1 and v2 = expr v2 
+      and v3 = 
+        match v3 with
+        | None -> G.L (G.Unit (fake "null"))
+        | Some x -> expr x
+      in
       G.Conditional (v1, v2, v3)
-  | Match ((v1, v2)) ->
+  | Match (_t, v1, v2) ->
       let v1 = expr v1 and v2 = list match_case v2 in
       G.MatchPattern (v1, v2)
   | Try ((t, v1, v2)) ->
@@ -191,6 +223,8 @@ and expr =
                                  Some cond, Some next) in
       let st = G.For (t, header, G.ExprStmt v5) in
       G.OtherExpr (G.OE_StmtExpr, [G.S st])
+
+  | ExprTodo t -> G.OtherExpr (G.OE_Todo, [G.Tk t])
   
 and literal =
   function
@@ -209,7 +243,7 @@ and argument =
     let v1 = ident v1 and v2 = expr v2 in
     G.ArgOther (G.OA_ArgQuestion, [G.I v1; G.E v2])                          
 
-and match_case (v1, (v2, v3)) =
+and match_case (v1, (v3, _t, v2)) =
   let v1 = pattern v1 and v2 = expr v2 and v3 = option expr v3 in
   (match v3 with
   | None -> v1, v2
@@ -221,7 +255,10 @@ and for_direction =
   | To v1 -> let v1 = tok v1 in v1, G.Plus, G.LtE
   | Downto v1 -> let v1 = tok v1 in v1, G.Minus, G.GtE
 
-and rec_opt v = option tok v
+and rec_opt v = 
+  match v with
+  | None -> []
+  | Some t -> [G.KeywordAttr (G.Recursive, t)]
 
 and pattern =
   function
@@ -254,19 +291,27 @@ and pattern =
     let v1 = pattern v1 and v2 = type_ v2 in 
     G.PatTyped (v1, v2)
 
+  | PatTodo t -> G.OtherPat (G.OP_Todo, [G.Tk t])
+
 and let_binding =
   function
-  | LetClassic v1 -> let _v1 = let_def v1 in raise Todo
-  | LetPattern ((v1, v2)) -> let v1 = pattern v1 and v2 = expr v2 in 
-                             G.LetPattern (v1, v2)
+  | LetClassic v1 -> 
+      let v1 = let_def v1 in 
+      Left v1
+  | LetPattern ((v1, v2)) -> 
+      let v1 = pattern v1 and v2 = expr v2 in 
+      Right (v1, v2)
 
 and let_def { lname = lname; lparams = lparams; lbody = lbody } =
-  let _v1 = ident lname in
-  let _v2 = list parameter lparams in 
-  let _v3 = expr lbody in
-  ()
+  let v1 = ident lname in
+  let v2 = list parameter lparams in 
+  let v3 = expr lbody in
+  let ent = G.basic_entity v1 [] in
+  ent, v2, v3
 
-and parameter v = G.ParamPattern (pattern v)
+and parameter = function
+  | Param v -> G.ParamPattern (pattern v)
+  | ParamTodo t -> G.OtherParam (G.OPO_Todo, [G.Tk t])
   
 and type_declaration { tname = tname; tparams = tparams; tbody = tbody
                      } =
@@ -283,7 +328,7 @@ and type_def_kind =
   function
   | AbstractType -> G.OtherTypeKind (G.OTKO_AbstractType, [])
   | CoreType v1 -> let v1 = type_ v1 in G.AliasType v1
-  | AlgebricType v1 ->
+  | AlgebraicType v1 ->
       let v1 =
         list
           (fun (v1, v2) ->
@@ -310,32 +355,80 @@ and type_def_kind =
       in G.AndType v1
   
 and module_declaration { mname = mname; mbody = mbody } =
-  let _v1 = ident mname in 
-  let _v2 = module_expr mbody in
-  ()
+  let v1 = ident mname in 
+  let v2 = module_expr mbody in
+  G.basic_entity v1 [], { G.mbody = v2 }
 
 and module_expr =
   function
-  | ModuleName v1 -> let _v1 = name v1 in ()
-  | ModuleStruct v1 -> let _v1 = list item v1 in ()
+  | ModuleName v1 -> 
+      let v1 = name v1 in G.ModuleAlias v1
+  | ModuleStruct v1 -> 
+      let v1 = list item v1 |> List.flatten in G.ModuleStruct (None, v1)
+  | ModuleTodo t ->  
+      G.OtherModule (G.OMO_Functor, [G.Tk t])
+
 
 and item =
   function
-  | Type v1 -> let _v1 = list type_declaration v1 in ()
+  | Type (_t, v1) -> let xs = list type_declaration v1 in 
+      xs |> List.map (fun (ent, def) -> G.DefStmt (ent, G.TypeDef def))
 
-  | Exception ((v1, v2)) ->
-      let _v1 = ident v1 and _v2 = list type_ v2 in ()
-  | External ((v1, v2, v3)) ->
-      let _v1 = ident v1
-      and _v2 = type_ v2
-      and _v3 = list (wrap string) v3
-      in ()
-  | Open v1 -> let _v1 = name v1 in ()
+  | Exception (_t, v1, v2) ->
+      let v1 = ident v1 and v2 = list type_ v2 in 
+      let ent = G.basic_entity v1 [] in
+      let def = G.Exception (v1, v2) in
+      [G.DefStmt (ent, G.TypeDef { G.tbody = def })]
+  | External (t, v1, v2, v3) ->
+      let v1 = ident v1
+      and v2 = type_ v2
+      and _v3 = list (wrap string) v3 in
+      let attrs = [G.KeywordAttr (G.Extern, t)] in
+      let ent = G.basic_entity v1 attrs in
+      let def = G.Signature v2 in
+      [G.DefStmt (ent, def)]
+  | Open (t, v1) -> let v1 = module_name v1 in 
+      let dir = G.ImportAll (t, G.DottedName v1, fake "*") in
+      [G.DirectiveStmt dir]
 
-  | Val ((v1, v2)) -> let _v1 = ident v1 and _v2 = type_ v2 in ()
-  | Let ((v1, v2)) ->
-      let _v1 = rec_opt v1 and _v2 = list let_binding v2 in ()
+  | Val (_t, v1, v2) -> 
+      let v1 = ident v1 and v2 = type_ v2 in 
+      let ent = G.basic_entity v1 [] in
+      let def = G.Signature v2 in
+      [G.DefStmt (ent, def)]
+  | Let (_t, v1, v2) ->
+      let _v1 = rec_opt v1 and v2 = list let_binding v2 in 
+      v2 |> List.map (function
+        | Left (ent, params, expr) ->
+            G.DefStmt (ent, mk_var_or_func params expr)
+        | Right (pat, e) ->
+            let exp = G.LetPattern (pat, e) in
+            G.ExprStmt exp
+       )
 
-  | Module v1 -> let _v1 = module_declaration v1 in ()
+  | Module (_t, v1) -> let (ent, def) = module_declaration v1 in 
+      [G.DefStmt (ent, G.ModuleDef def)]
 
-and program xs = List.map item xs
+  | ItemTodo t -> [G.OtherStmt (G.OS_Todo, [G.Tk t])]
+
+and mk_var_or_func params expr =
+  match params, expr with
+  | [], G.Lambda def -> G.FuncDef def
+  | [], _ -> G.VarDef ({G.vinit = Some expr; vtype = None})
+  | _ -> G.FuncDef ({G.fparams = params; frettype = None; fbody = 
+                      G.ExprStmt expr})
+
+and program xs = List.map item xs |> List.flatten
+
+and any = function
+  | E x -> let x = expr x in G.E x
+  | I x -> 
+      (match item x with
+      | [] -> raise Impossible
+      | [x] -> G.S x
+      | xs -> G.Ss xs
+      )
+  | T _x -> raise Todo
+  | P _x -> raise Todo
+  | Pr _x -> raise Todo
+ 

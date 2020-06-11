@@ -84,6 +84,7 @@ let all_actions () =
   Test_parsing_generic.actions() @
   (*x: [[Main.all_actions]] concatenated actions *)
     Test_parsing_ml.actions()@
+    Test_analyze_ml.actions()@
     Test_parsing_skip.actions()@
 
     Test_parsing_php.actions()@

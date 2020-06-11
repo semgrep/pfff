@@ -51,7 +51,7 @@ let test_dump_ast file =
 (*****************************************************************************)
 
 let actions () = [
-  "-parse_js_simple", "   <files or dirs>",
+  "-parse_ast_js", "   <files or dirs>",
   Common.mk_action_n_arg test_parse_simple;
   "-dump_ast_js", "   <file>",
   Common.mk_action_1_arg test_dump_ast;
