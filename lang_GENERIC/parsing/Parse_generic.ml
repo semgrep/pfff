@@ -74,10 +74,15 @@ let parse_with_lang lang file =
     Common.save_excursion Flag_parsing.error_recovery true (fun () ->
     Common.save_excursion Flag_parsing.show_parsing_error false (fun () ->
     Common.save_excursion Flag_parsing.exn_when_lexical_error false (fun ()->
-     let cst = Parse_ml.parse_program file in
-     let ast = Ast_ml_build.program cst in
-     Ml_to_generic.program ast
-    )))
+     (* TODO: use parse_program at some point *)
+      let ((cst_opt, _toks),_stat)  = Parse_ml.parse file in
+      (match cst_opt with
+      | None -> []
+      | Some cst -> 
+         let ast = Ast_ml_build.program cst in
+         Ml_to_generic.program ast
+      ))))
+
 (*e: function [[Parse_generic.parse_with_lang]] *)
 
 (*s: function [[Parse_generic.parse_program]] *)
