@@ -105,7 +105,7 @@ type expr =
   
 
   (* > 1 elt for mutually recursive let (let x and y and z) *)
-  | LetIn of let_binding list * expr * rec_opt
+  | LetIn of tok * let_binding list * expr * rec_opt
   | Fun of tok (* 'fun' *) * parameter list (* at least one *) * expr
   | Function of tok (* 'function' *) * match_case list
 
@@ -201,7 +201,7 @@ type type_declaration = {
    | AbstractType
    | CoreType of type_
    (* or type *)
-   | AlgebricType of (ident * type_ list) list
+   | AlgebraicType of (ident * type_ list) list
    (* and type *)
    | RecordType   of (ident * type_ * tok option (* mutable *)) list bracket
 
@@ -234,20 +234,20 @@ type module_declaration = {
  * valid in both contexts.
  *)
 and item = 
-  | Type of type_declaration list (* mutually recursive *)
+  | Type of tok * type_declaration list (* mutually recursive *)
 
-  | Exception of ident * type_ list
-  | External  of ident * type_ * string wrap list (* primitive declarations *)
+  | Exception of tok * ident * type_ list
+  | External  of tok * ident * type_ * string wrap list (* primitive decls *)
       
-  | Open of name
+  | Open of tok * name
       
   (* only in sig_item *)
-  | Val of ident * type_
+  | Val of tok * ident * type_
       
   (* only in struct_item *)
-  | Let of rec_opt * let_binding list
+  | Let of tok * rec_opt * let_binding list
 
-  | Module of module_declaration
+  | Module of tok * module_declaration
 
   | ItemTodo of tok
 

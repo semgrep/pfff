@@ -143,7 +143,7 @@ and expr =
       let v1 = expr v1 and v2 = ident v2 in
       let t = tok t in
       G.DotAccess (v1, t, G.FId v2)
-  | LetIn ((v1, v2, v3)) ->
+  | LetIn ((_t, v1, v2, v3)) ->
       let _v1 = list let_binding v1
       and _v2 = expr v2
       and _v3 = rec_opt v3
@@ -296,7 +296,7 @@ and type_def_kind =
   function
   | AbstractType -> G.OtherTypeKind (G.OTKO_AbstractType, [])
   | CoreType v1 -> let v1 = type_ v1 in G.AliasType v1
-  | AlgebricType v1 ->
+  | AlgebraicType v1 ->
       let v1 =
         list
           (fun (v1, v2) ->
@@ -339,27 +339,27 @@ and module_expr =
 
 and item =
   function
-  | Type v1 -> let xs = list type_declaration v1 in 
+  | Type (_t, v1) -> let xs = list type_declaration v1 in 
       xs |> List.map (fun (ent, def) -> G.DefStmt (ent, G.TypeDef def))
 
-  | Exception ((v1, v2)) ->
+  | Exception (_t, v1, v2) ->
       let v1 = ident v1 and v2 = list type_ v2 in 
       let ent = G.basic_entity v1 [] in
       let def = G.Exception (v1, v2) in
       [G.DefStmt (ent, G.TypeDef { G.tbody = def })]
-  | External ((v1, v2, v3)) ->
+  | External (_t, v1, v2, v3) ->
       let _v1 = ident v1
       and _v2 = type_ v2
       and _v3 = list (wrap string) v3
       in
       raise Todo
-  | Open v1 -> let _v1 = name v1 in raise Todo
+  | Open (_t, v1) -> let _v1 = name v1 in raise Todo
 
-  | Val ((v1, v2)) -> let _v1 = ident v1 and _v2 = type_ v2 in raise Todo
-  | Let ((v1, v2)) ->
+  | Val (_t, v1, v2) -> let _v1 = ident v1 and _v2 = type_ v2 in raise Todo
+  | Let (_t, v1, v2) ->
       let _v1 = rec_opt v1 and _v2 = list let_binding v2 in raise Todo
 
-  | Module v1 -> let (ent, def) = module_declaration v1 in 
+  | Module (_t, v1) -> let (ent, def) = module_declaration v1 in 
       [G.DefStmt (ent, G.ModuleDef def)]
 
   | ItemTodo t -> [G.OtherStmt (G.OS_Todo, [G.Tk t])]

@@ -92,7 +92,7 @@ and v_type_def_kind =
   function
   | TyCore v1 -> let v1 = v_ty v1 in A.CoreType v1
   | TyAlgebric v1 -> let v1 = v_pipe_list v_constructor_declaration v1 in
-                     A.AlgebricType v1
+                     A.AlgebraicType v1
   | TyRecord v1 ->
       let v1 = v_bracket_keep (v_semicolon_list v_label_declaration) v1 in
       A.RecordType v1
@@ -184,13 +184,13 @@ and v_expr v =
   | New ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_long_name v2 in 
                       A.New (v1, v2)
   | LetIn ((v1, v2, v3, v4, v5)) ->
-      let _v1 = v_tok v1
+      let v1 = v_tok v1
       and v2 = v_rec_opt v2
       and v3 = v_and_list v_let_binding v3
       and _v4 = v_tok v4
       and v5 = v_seq_expr1 v5
       in
-      A.LetIn (v3, v5, v2)
+      A.LetIn (v1, v3, v5, v2)
   | Fun ((v1, v2, _t, v3)) ->
       let v2 = List.map v_parameter v2 in
       let v3 = v_expr v3 in
@@ -415,45 +415,45 @@ and v_module_expr v =
 and v_item x =
     match x with
   | Type ((v1, v2)) ->
-      let _v1 = v_tok v1 and v2 = v_and_list v_type_declaration v2 in
-      A.Type v2
+      let v1 = v_tok v1 and v2 = v_and_list v_type_declaration v2 in
+      A.Type (v1, v2)
   | Exception ((v1, v2, v3)) ->
-      let _v1 = v_tok v1
+      let v1 = v_tok v1
       and v2 = v_name v2
       and v3 = v_constructor_arguments v3
       in 
-      A.Exception (v2, v3)
+      A.Exception (v1, v2, v3)
   | External ((v1, v2, v3, v4, v5, v6)) ->
-      let _v1 = v_tok v1
+      let v1 = v_tok v1
       and v2 = v_name v2
       and _v3 = v_tok v3
       and v4 = v_ty v4
       and _v5 = v_tok v5
       and v6 = List.map (v_wrap v_string) v6
       in 
-      A.External (v2, v4, v6)
-  | Open ((v1, v2)) -> let _v1 = v_tok v1 and v2 = v_long_name v2 in 
-                       A.Open (v2)
+      A.External (v1, v2, v4, v6)
+  | Open ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_long_name v2 in 
+                       A.Open (v1, v2)
   | Val ((v1, v2, v3, v4)) ->
-      let _v1 = v_tok v1
+      let v1 = v_tok v1
       and v2 = v_name v2
       and _v3 = v_tok v3
       and v4 = v_ty v4
       in 
-      A.Val (v2, v4)
+      A.Val (v1, v2, v4)
   | Let ((v1, v2, v3)) ->
-      let _v1 = v_tok v1
+      let v1 = v_tok v1
       and v2 = v_rec_opt v2
       and v3 = v_and_list v_let_binding v3
       in 
-      A.Let (v2, v3)
+      A.Let (v1, v2, v3)
   | Module ((v1, v2, v3, v4)) ->
-      let _v1 = v_tok v1
+      let v1 = v_tok v1
       and v2 = v_name v2
       and _v3 = v_tok v3
       and v4 = v_module_expr v4
       in 
-      A.Module ({A.mname = v2; mbody = v4 })
+      A.Module (v1, {A.mname = v2; mbody = v4 })
 
   | ItemTodo t -> A.ItemTodo t
 
@@ -466,7 +466,8 @@ and v_toplevel x =
   | ScSc v1 -> let _v1 = v_info v1 in []
   | TopSeqExpr v1 -> 
     let v1 = v_seq_expr1 v1 in 
-    [A.Let (None, [A.LetPattern (A.PatUnderscore (fake_info()), v1)])]
+    [A.Let (fake_info(), None, 
+          [A.LetPattern (A.PatUnderscore (fake_info()), v1)])]
   | TopDirective v1 -> let _v1 = v_info v1 in []
 
 and program v = List.map v_toplevel v |> List.flatten
