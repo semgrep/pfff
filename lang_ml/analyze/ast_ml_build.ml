@@ -78,7 +78,7 @@ and v_ty x =
       A.TyFunction (v1, v3)
   | TyApp ((v1, v2)) -> let v1 = v_ty_args v1 and v2 = v_long_name v2 in 
                         A.TyApp (v1, v2)
-  | TyTodo -> failwith "TyTodo"
+  | TyTodo _ -> failwith "TyTodo"
 
 
 and v_type_declaration x =
@@ -249,7 +249,7 @@ and v_expr v =
       and _v9 = v_tok v9
       in 
       A.For (v1, v2, v4, v5, v6, v8)
-  | ExprTodo -> failwith "ExprTodo"
+  | ExprTodo _ -> failwith "ExprTodo"
 
 
 and v_constant =
@@ -359,13 +359,13 @@ and v_pattern x =
       in 
       A.PatTyped (v2, v4)
   | ParenPat v1 -> let v1 = v_paren v_pattern v1 in v1
-  | PatTodo -> failwith "PatTodo"
+  | PatTodo _ -> failwith "PatTodo"
 
 and v_labeled_simple_pattern v = v_parameter v
 and v_parameter x =
     match x with
     | ParamPat v1 -> let v1 = v_pattern v1 in v1
-    | ParamTodo -> failwith "ParamTodo"
+    | ParamTodo _ -> failwith "ParamTodo"
 
 
 and v_field_pattern x =
@@ -416,8 +416,7 @@ and v_module_expr v =
       let v2 = List.map v_item v2 in
       let _v3 = v_tok v3 in
       A.ModuleStruct v2
-  | ModuleTodo ->
-      failwith "ModuleTodo"
+  | ModuleTodo _ -> failwith "ModuleTodo"
 
 and v_item x =
     match x with

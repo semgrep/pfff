@@ -64,7 +64,7 @@ let rec vof_ty =
       let v1 = vof_ty_args v1
       and v2 = vof_long_name v2
       in OCaml.VSum (("TyApp", [ v1; v2 ]))
-  | TyTodo -> OCaml.VSum (("TyTodo", []))
+  | TyTodo t -> let t = vof_tok t in OCaml.VSum (("TyTodo", [t]))
 and vof_type_declaration =
   function
   | TyAbstract ((v1, v2)) ->
@@ -259,7 +259,7 @@ and vof_expr =
       and v8 = vof_seq_expr v8
       and v9 = vof_tok v9
       in OCaml.VSum (("For", [ v1; v2; v3; v4; v5; v6; v7; v8; v9 ]))
-  | ExprTodo -> OCaml.VSum (("ExprTodo", []))
+  | ExprTodo t -> let t = vof_tok t in  OCaml.VSum (("ExprTodo", [t]))
 and vof_seq_expr v = vof_semicolon_list vof_expr v
 and vof_constant =
   function
@@ -374,13 +374,13 @@ and vof_pattern =
       in OCaml.VSum (("PatTyped", [ v1; v2; v3; v4; v5 ]))
   | ParenPat v1 ->
       let v1 = vof_paren vof_pattern v1 in OCaml.VSum (("ParenPat", [ v1 ]))
-  | PatTodo -> OCaml.VSum (("PatTodo", []))
+  | PatTodo t -> let t = vof_tok t in  OCaml.VSum (("PatTodo", [t]))
 and _vof_labeled_simple_pattern v = vof_parameter v
 and vof_parameter =
   function
   | ParamPat v1 ->
       let v1 = vof_pattern v1 in OCaml.VSum (("ParamPat", [ v1 ]))
-  | ParamTodo -> OCaml.VSum (("ParamTodo", []))
+  | ParamTodo t -> let t = vof_tok t in  OCaml.VSum (("ParamTodo", [t]))
 
 and vof_signed_constant =
   function
@@ -441,8 +441,9 @@ and vof_module_expr = function
       let v2 = OCaml.vof_list vof_item v2 in
       let v3 = vof_tok v3 in
       OCaml.VSum("ModuleStruct", [v1; v2; v3])
-  | ModuleTodo ->
-      OCaml.VSum(("ModuleTodo", []))
+  | ModuleTodo t ->
+      let t = vof_tok t in 
+      OCaml.VSum(("ModuleTodo", [t]))
 
 and vof_item =
   function

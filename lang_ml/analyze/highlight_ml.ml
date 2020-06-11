@@ -305,7 +305,7 @@ let visit_program
           let info = Ast.info_of_name name in
           tag info TypeVoid;
           
-      | TyTuple _ | TyTuple2 _ | TyFunction _ | TyTodo -> ()
+      | TyTuple _ | TyTuple2 _ | TyFunction _ | TyTodo _ -> ()
       );
       k t
     );

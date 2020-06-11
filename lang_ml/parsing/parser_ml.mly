@@ -379,8 +379,8 @@ constr_ident:
 (* record field name (not olabl label) *)
 label: TLowerIdent  { $1 }
 
-(* name tag extension *)
-name_tag: "`" ident   { }
+(* name tag extension (polymorphic variant?) *)
+name_tag: "`" ident   { $1 }
 
 (*----------------------------*)
 (* Labels (olabl labels) *)
@@ -499,21 +499,21 @@ expr:
  | simple_expr "." label_longident "<-" expr  { FieldAssign ($1,$2,$3,$4,$5) }
 
  (* array extension *)
- | simple_expr "." "(" seq_expr ")" "<-" expr { ExprTodo }
- | simple_expr "." "[" seq_expr "]" "<-" expr { ExprTodo }
+ | simple_expr "." "(" seq_expr ")" "<-" expr { ExprTodo $2 }
+ | simple_expr "." "[" seq_expr "]" "<-" expr { ExprTodo $2 }
  (* bigarray extension, a.{i} <- v *)
- | simple_expr "." "{" expr "}" "<-" expr     { ExprTodo }
+ | simple_expr "." "{" expr "}" "<-" expr     { ExprTodo $2 }
      
- | Tlet Topen mod_longident Tin seq_expr      { ExprTodo }
+ | Tlet Topen mod_longident Tin seq_expr      { ExprTodo $1 }
 
- | Tassert simple_expr                        { ExprTodo }
+ | Tassert simple_expr                        { ExprTodo $1 }
 
- | name_tag simple_expr                       { ExprTodo }
+ | name_tag simple_expr                       { ExprTodo $1 }
 
- | Tlazy simple_expr                          { ExprTodo }
+ | Tlazy simple_expr                          { ExprTodo $1 }
 
   (* objects *)
- | label "<-" expr                            { ExprTodo }
+ | label "<-" expr                            { ExprTodo $2 }
 
 
 
@@ -544,26 +544,26 @@ simple_expr:
 
  | "{" record_expr "}"           { Record ($1, $2, $3) }
  | "["  list_sep_term(expr, ";") "]"   { List ($1, $2, $3) }
- | "[|" list_sep_term(expr, ";")? "|]" { ExprTodo }
+ | "[|" list_sep_term(expr, ";")? "|]" { ExprTodo $1 }
 
  (* array extension *)
- | simple_expr "." "(" seq_expr ")"  { ExprTodo }
- | simple_expr "." "[" seq_expr "]"  { ExprTodo }
+ | simple_expr "." "(" seq_expr ")"  { ExprTodo $2 }
+ | simple_expr "." "[" seq_expr "]"  { ExprTodo $2 }
  (* bigarray extension *)
- | simple_expr "." "{" expr "}"      { ExprTodo }
+ | simple_expr "." "{" expr "}"      { ExprTodo $2 }
 
  (* object extension *)
  | simple_expr "#" label             { ObjAccess ($1, $2, Name $3) }
  | Tnew class_longident              { New ($1, $2) }
- | "{<" list_sep_term(field_expr, ";") ">}"         { ExprTodo }
+ | "{<" list_sep_term(field_expr, ";") ">}"         { ExprTodo $1 }
 
  (* name tag extension *)
- | name_tag %prec prec_constant_constructor  { ExprTodo }
+ | name_tag %prec prec_constant_constructor  { ExprTodo $1 }
 
- | "(" seq_expr type_constraint ")"          { ExprTodo }
+ | "(" seq_expr type_constraint ")"          { ExprTodo $1 }
 
  (* scoped open, 3.12 *)
- | mod_longident "." "(" seq_expr ")"       { ExprTodo }
+ | mod_longident "." "(" seq_expr ")"       { ExprTodo $2 }
 
 
 labeled_simple_expr:
@@ -652,7 +652,7 @@ pattern:
  | pattern "|" pattern                            { PatDisj ($1, $2, $3) }
 
  (* name tag extension *)
- | name_tag pattern %prec prec_constr_appl        { PatTodo }
+ | name_tag pattern %prec prec_constr_appl        { PatTodo $1 }
 
 
 
@@ -665,15 +665,15 @@ simple_pattern:
 
  | "{" lbl_pattern_list record_pattern_end "}" { PatRecord ($1,$2,(*$3*) $4) }
  | "["  list_sep_term(pattern, ";")  "]"       { PatList (($1, $2, $3)) }
- | "[|" list_sep_term(pattern, ";")? "|]"       { PatTodo }
+ | "[|" list_sep_term(pattern, ";")? "|]"      { PatTodo $1 }
 
  (* note that let (x:...) a =  will trigger this rule *)
  | "(" pattern ":" core_type ")"               { PatTyped ($1, $2, $3, $4, $5)}
 
  (* name tag extension *)
- | name_tag                    { PatTodo }
+ | name_tag                    { PatTodo $1 }
  (* range extension *)
- | TChar ".." TChar            { PatTodo }
+ | TChar ".." TChar            { PatTodo $2 }
 
  | "(" pattern ")"             { ParenPat ($1, $2, $3) }
 
@@ -794,13 +794,13 @@ simple_core_type2:
       { TyApp (TyArgMulti (($1, $2, $3)), $4) }
 
  (* name tag extension *)
- | "[" row_field "|" list_sep(row_field, "|") "]"          { TyTodo }
- | "["           "|" list_sep(row_field, "|") "]"          { TyTodo }
- | "[" tag_field "]"                             { TyTodo }
+ | "[" row_field "|" list_sep(row_field, "|") "]"          { TyTodo $1 }
+ | "["           "|" list_sep(row_field, "|") "]"          { TyTodo $1 }
+ | "[" tag_field "]"                             { TyTodo $1 }
 
  (* objects types *)
-  | TLess meth_list TGreater                    { TyTodo }
-  | TLess TGreater                              { TyTodo }
+  | TLess meth_list TGreater                    { TyTodo $1 }
+  | TLess TGreater                              { TyTodo $1 }
 
 
 meth_list:
@@ -869,12 +869,12 @@ opt_default:
 (*----------------------------*)
 
 label_pattern:
-  | "~" label_var                                 { ParamTodo }
+  | "~" label_var                                 { ParamTodo $1 }
   (* ex: let x ~foo:a *)
-  | TLabelDecl simple_pattern                     { ParamTodo }
-  | "~" "(" label_let_pattern ")"                 { ParamTodo }
-  | "?" "(" label_let_pattern opt_default ")"     { ParamTodo }
-  | "?" label_var                                 { ParamTodo }
+  | TLabelDecl simple_pattern                     { ParamTodo (snd $1) }
+  | "~" "(" label_let_pattern ")"                 { ParamTodo $1 }
+  | "?" "(" label_let_pattern opt_default ")"     { ParamTodo $1 }
+  | "?" label_var                                 { ParamTodo $1 }
  
 label_let_pattern:
  | label_var                { }
@@ -1051,9 +1051,10 @@ module_expr:
   (* nested modules *)
   | Tstruct structure Tend { ModuleStruct ($1, to_item $2, $3) }
   (* functor definition *)
-  | Tfunctor "(" TUpperIdent ":" module_type ")" "->" module_expr { ModuleTodo}
+  | Tfunctor "(" TUpperIdent ":" module_type ")" "->" module_expr 
+     { ModuleTodo $1 }
   (* module/functor application *)
-  | module_expr "(" module_expr ")" { ModuleTodo }
+  | module_expr "(" module_expr ")" { ModuleTodo $2 }
 
 (*************************************************************************)
 (* Attributes *)

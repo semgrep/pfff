@@ -79,7 +79,7 @@ type ty =
   | TyFunction of ty * tok (* -> *) * ty
   | TyApp of ty_args * long_name (* todo? could be merged with TyName *)
 
-  | TyTodo
+  | TyTodo of tok
 
  and ty_args = 
     | TyArg1 of ty
@@ -133,8 +133,8 @@ and expr =
            tok * seq_expr * tok
 
   | ParenExpr of expr paren
-  (* todo: LetOpenIn *)
-  | ExprTodo
+
+  | ExprTodo of tok
 
 and seq_expr = expr semicolon_list
 
@@ -197,7 +197,7 @@ and pattern =
   | PatTyped of tok (*'('*) * pattern * tok (*':'*) * ty * tok (*')'*)
 
   | ParenPat of pattern paren
-  | PatTodo
+  | PatTodo of tok
     
  (* less? merge with expr, no need for too precise AST, remember ast_php.ml *)
  and pattern_signed_constant = 
@@ -233,7 +233,7 @@ and let_binding =
 
  and parameter = 
    | ParamPat of pattern
-   | ParamTodo
+   | ParamTodo of tok
 
  and labeled_simple_pattern = unit
 
@@ -286,7 +286,7 @@ type module_type = unit (* todo *)
 type module_expr =
   | ModuleName of long_name
   | ModuleStruct of tok (* struct *) * item list * tok (* end *)
-  | ModuleTodo
+  | ModuleTodo of tok
 
 
 (* ------------------------------------------------------------------------- *)

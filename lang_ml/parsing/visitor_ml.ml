@@ -195,7 +195,7 @@ and v_ty x =
   | TyFunction ((v1, v2, v3)) ->
       let v1 = v_ty v1 and v2 = v_tok v2 and v3 = v_ty v3 in ()
   | TyApp ((v1, v2)) -> let v1 = v_ty_args v1 and v2 = v_long_name v2 in ()
-  | TyTodo -> ()
+  | TyTodo t -> v_tok t
   in
   vin.kty (k, all_functions) x
 
@@ -344,7 +344,7 @@ and v_expr v =
       and v8 = v_seq_expr v8
       and v9 = v_tok v9
       in ()
-  | ExprTodo -> ()
+  | ExprTodo t -> v_tok t
   in
   vin.kexpr (k, all_functions) v
 
@@ -427,7 +427,7 @@ and v_pattern x =
       and v5 = v_tok v5
       in ()
   | ParenPat v1 -> let v1 = v_paren13 v_pattern v1 in ()
-  | PatTodo -> ()
+  | PatTodo t -> v_tok t
    in
    vin.kpattern (k, all_functions) x
 
@@ -436,7 +436,7 @@ and v_labeled_simple_pattern v = v_parameter v
 and v_parameter x =
   let k x = match x with
     | ParamPat v1 -> let v1 = v_pattern v1 in () 
-    | ParamTodo -> ()
+    | ParamTodo t -> v_tok t
   in
   vin.kparameter (k, all_functions) x
 
@@ -491,8 +491,7 @@ and v_module_expr v =
       let v2 = OCaml.v_list v_item v2 in
       let v3 = v_tok v3 in
       ()
-  | ModuleTodo ->
-      ()
+  | ModuleTodo t -> v_tok t
   in
   vin.kmodule_expr (k, all_functions) v
 
