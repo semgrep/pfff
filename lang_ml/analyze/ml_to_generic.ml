@@ -58,6 +58,10 @@ and name (v1, v2) =
   let v1 = qualifier v1 and v2 = ident v2 in 
   v2, { G.empty_name_info with G.name_qualifier = Some v1 }
 
+and module_name (v1, v2) = 
+  let v1 = qualifier v1 and v2 = ident v2 in 
+  v1 @ [v2]
+
 and qualifier v = list ident v
 
 and type_ =
@@ -267,15 +271,19 @@ and pattern =
 
 and let_binding =
   function
-  | LetClassic v1 -> let _v1 = let_def v1 in raise Todo
-  | LetPattern ((v1, v2)) -> let v1 = pattern v1 and v2 = expr v2 in 
-                             G.LetPattern (v1, v2)
+  | LetClassic v1 -> 
+      let v1 = let_def v1 in 
+      Left v1
+  | LetPattern ((v1, v2)) -> 
+      let v1 = pattern v1 and v2 = expr v2 in 
+      Right (v1, v2)
 
 and let_def { lname = lname; lparams = lparams; lbody = lbody } =
-  let _v1 = ident lname in
-  let _v2 = list parameter lparams in 
-  let _v3 = expr lbody in
-  ()
+  let v1 = ident lname in
+  let v2 = list parameter lparams in 
+  let v3 = expr lbody in
+  let ent = G.basic_entity v1 [] in
+  ent, v2, v3
 
 and parameter = function
   | Param v -> G.ParamPattern (pattern v)
@@ -353,11 +361,16 @@ and item =
       and _v3 = list (wrap string) v3
       in
       raise Todo
-  | Open (_t, v1) -> let _v1 = name v1 in raise Todo
+  | Open (t, v1) -> let v1 = module_name v1 in 
+      let dir = G.ImportAll (t, G.DottedName v1, fake "*") in
+      [G.DirectiveStmt dir]
 
-  | Val (_t, v1, v2) -> let _v1 = ident v1 and _v2 = type_ v2 in raise Todo
+  | Val (_t, v1, v2) -> 
+      let _v1 = ident v1 and _v2 = type_ v2 in 
+      raise Todo
   | Let (_t, v1, v2) ->
-      let _v1 = rec_opt v1 and _v2 = list let_binding v2 in raise Todo
+      let _v1 = rec_opt v1 and _v2 = list let_binding v2 in 
+      raise Todo
 
   | Module (_t, v1) -> let (ent, def) = module_declaration v1 in 
       [G.DefStmt (ent, G.ModuleDef def)]
