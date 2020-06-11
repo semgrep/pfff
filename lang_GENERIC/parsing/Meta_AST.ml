@@ -354,6 +354,7 @@ and vof_action (v1, v2) =
   let v1 = vof_pattern v1 and v2 = vof_expr v2 in OCaml.VTuple [ v1; v2 ]
 and vof_other_expr_operator =
   function
+  | OE_Todo -> OCaml.VSum (("OE_Todo", []))
   | OE_Annot -> OCaml.VSum (("OE_Annot", []))
   | OE_Send -> OCaml.VSum (("OE_Send", []))
   | OE_Recv -> OCaml.VSum (("OE_Recv", []))
@@ -443,6 +444,7 @@ and vof_other_type_argument_operator =
   function | OTA_Question -> OCaml.VSum (("OTA_Question", []))
 and vof_other_type_operator =
   function
+  | OT_Todo -> OCaml.VSum (("OT_Todo", []))
   | OT_Expr -> OCaml.VSum (("OT_Expr", []))
   | OT_Arg -> OCaml.VSum (("OT_Arg", []))
   | OT_StructName -> OCaml.VSum (("OT_StructName", []))
@@ -637,6 +639,7 @@ and vof_for_var_or_expr =
       let v1 = vof_expr v1 in OCaml.VSum (("ForInitExpr", [ v1 ]))
 and vof_other_stmt_operator =
   function
+  | OS_Todo -> OCaml.VSum (("OS_Todo", []))
   | OS_Delete -> OCaml.VSum (("OS_Delete", []))
   | OS_Async -> OCaml.VSum (("OS_Async", []))
   | OS_ForOrElse -> OCaml.VSum (("OS_ForOrElse", []))
@@ -729,6 +732,7 @@ and vof_pattern =
       in OCaml.VSum (("OtherPat", [ v1; v2 ]))
 and vof_other_pattern_operator =
   function
+  | OP_Todo -> OCaml.VSum (("OP_Todo", []))
   | OP_Expr -> OCaml.VSum (("OP_Expr", []))
 and vof_definition (v1, v2) =
   let v1 = vof_entity v1
@@ -870,6 +874,7 @@ and
 
 and vof_other_parameter_operator =
   function
+  | OPO_Todo -> OCaml.VSum (("OPO_Todo", []))
   | OPO_KwdParam -> OCaml.VSum (("OPO_KwdParam", []))
   | OPO_Ref -> OCaml.VSum (("OPO_Ref", []))
   | OPO_Receiver -> OCaml.VSum (("OPO_Receiver", []))
