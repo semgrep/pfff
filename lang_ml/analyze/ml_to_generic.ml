@@ -323,16 +323,16 @@ and type_def_kind =
       in G.AndType v1
   
 and module_declaration { mname = mname; mbody = mbody } =
-  let _v1 = ident mname in 
-  let _v2 = module_expr mbody in
-  ()
+  let v1 = ident mname in 
+  let v2 = module_expr mbody in
+  G.basic_entity v1 [], { G.mbody = v2 }
 
 and module_expr =
   function
   | ModuleName v1 -> 
       let v1 = name v1 in G.ModuleAlias v1
   | ModuleStruct v1 -> 
-      let v1 = list item v1 in G.ModuleStruct (None, v1)
+      let v1 = list item v1 |> List.flatten in G.ModuleStruct (None, v1)
   | ModuleTodo t ->  
       G.OtherModule (G.OMO_Functor, [G.Tk t])
 
@@ -355,8 +355,9 @@ and item =
   | Let ((v1, v2)) ->
       let _v1 = rec_opt v1 and _v2 = list let_binding v2 in raise Todo
 
-  | Module v1 -> let _v1 = module_declaration v1 in raise Todo
+  | Module v1 -> let (ent, def) = module_declaration v1 in 
+      [G.DefStmt (ent, G.ModuleDef def)]
 
-  | ItemTodo t -> G.OtherStmt (G.OS_Todo, [G.Tk t])
+  | ItemTodo t -> [G.OtherStmt (G.OS_Todo, [G.Tk t])]
 
-and program xs = List.map item xs
+and program xs = List.map item xs |> List.flatten
