@@ -338,6 +338,9 @@ structure_item_noattr:
   | Tclass list_and(class_declaration)            { ItemTodo $1 }
   | Tclass Ttype list_and(class_type_declaration) { ItemTodo $1 }
 
+ | Texception TUpperIdent "=" mod_longident { ItemTodo $1 }
+ | floating_attribute { $1 }
+
 (*************************************************************************)
 (* Names *)
 (*************************************************************************)
