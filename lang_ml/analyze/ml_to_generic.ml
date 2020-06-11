@@ -155,9 +155,13 @@ and expr =
     let def = { G.fparams = v1; frettype = None; fbody = G.ExprStmt v2 } in
     G.Lambda def
 
-  | Nop -> G.L (G.Null (fake "null"))
   | If ((_t, v1, v2, v3)) ->
-      let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in 
+      let v1 = expr v1 and v2 = expr v2 
+      and v3 = 
+        match v3 with
+        | None -> G.L (G.Unit (fake "null"))
+        | Some x -> expr x
+      in
       G.Conditional (v1, v2, v3)
   | Match ((v1, v2)) ->
       let v1 = expr v1 and v2 = list match_case v2 in

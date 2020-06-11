@@ -108,10 +108,7 @@ type expr =
   | LetIn of let_binding list * expr * rec_opt
   | Fun of parameter list (* at least one *) * expr
 
-  (* statement-like expressions *)
-  | Nop (* for empty else *)
-
-  | If of tok * expr * expr * expr
+  | If of tok * expr * expr * expr option
   | Match of expr * match_case list
 
   | Try of tok * expr * match_case list 

@@ -45,10 +45,6 @@ let v_and_list = xxx_list
 
 let v_string x = x
 
-let opt_to_nop = function
-  | None -> A.Nop
-  | Some x -> x
-
 let fake_info () = Parse_info.fake_info "FAKE"
 
 let rec v_info x = x
@@ -214,7 +210,7 @@ and v_expr v =
         Common.map_opt (fun (v1, v2) -> let _v1 = v_tok v1 and v2 = v_expr v2 in v2)
           v5
       in
-      A.If (v1, v2, v4, v5 |> opt_to_nop)
+      A.If (v1, v2, v4, v5 )
   | Match ((v1, v2, v3, v4)) ->
       let _v1 = v_tok v1
       and v2 = v_seq_expr1 v2
