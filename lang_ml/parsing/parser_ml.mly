@@ -709,7 +709,7 @@ signed_constant:
 (*************************************************************************)
 
 type_constraint:
- | ":" core_type           { }
+ | ":" poly_type           { }
  (* object cast extension *)
  | ":>" core_type    { }
 
@@ -814,7 +814,9 @@ field: label ":" poly_type             { }
 (* Misc *)
 (*----------------------------*)
 
-poly_type: core_type { $1 }
+poly_type: 
+ | type_parameter "." core_type { $3 (* TODO AST $1 *) } 
+ | core_type { $1 }
 
 row_field:
  | tag_field                                   { }
