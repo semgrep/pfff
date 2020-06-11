@@ -37,6 +37,8 @@ let bool = id
 let int = id
 
 let error = G.error
+(* TODO: each use of this is usually the sign of a todo to improve
+ * AST_generic.ml or ast_ml.ml *)
 let fake = G.fake
 
 (*****************************************************************************)
@@ -74,6 +76,9 @@ and type_ =
                         G.TyNameApply (v2, v1 |> List.map (fun t -> G.TypeArg t))
   | TyTuple v1 -> let v1 = list type_ v1 in G.TyTuple (G.fake_bracket v1)
   | TyTodo t -> G.OtherType (G.OT_Todo, [G.Tk t])
+
+(* TODO: we should try to transform in stmt while/... instead of those
+ * OE_StmtExpr *)
 
 and expr =
   function
@@ -148,18 +153,34 @@ and expr =
       let t = tok t in
       G.DotAccess (v1, t, G.FId v2)
   | LetIn ((_t, v1, v2, v3)) ->
-      let _v1 = list let_binding v1
-      and _v2 = expr v2
+      let v1 = list let_binding v1
+      and v2 = expr v2
       and _v3 = rec_opt v3
       in 
-      raise Todo
+      let defs = 
+        v1 |> List.map (function
+         | Left (ent, params, expr) ->
+            G.DefStmt (ent, mk_var_or_func params expr)
+         | Right (pat, e) ->
+            let exp = G.LetPattern (pat, e) in
+            G.ExprStmt exp
+         )
+      in
+      let st = G.Block (defs @ [G.ExprStmt v2]) in
+      G.OtherExpr (G.OE_StmtExpr, [G.S st])
   | Fun ((_t, v1, v2)) -> 
     let v1 = list parameter v1 
     and v2 = expr v2 in 
     let def = { G.fparams = v1; frettype = None; fbody = G.ExprStmt v2 } in
     G.Lambda def
-  | Function (_t, _cases) ->
-      raise Todo
+  | Function (t, xs) ->
+      let xs = list match_case xs in
+      let id = "!_implicit_param!", t in
+      let params = [G.ParamClassic (G.param_of_id id)] in
+      let body_exp = G.MatchPattern (G.Id (id, G.empty_id_info()),
+          xs) in
+      let body_stmt = G.ExprStmt body_exp in
+      G.Lambda {G.fparams = params; frettype = None; fbody = body_stmt }
 
   | If ((_t, v1, v2, v3)) ->
       let v1 = expr v1 and v2 = expr v2 
@@ -234,7 +255,10 @@ and for_direction =
   | To v1 -> let v1 = tok v1 in v1, G.Plus, G.LtE
   | Downto v1 -> let v1 = tok v1 in v1, G.Minus, G.GtE
 
-and rec_opt v = option tok v
+and rec_opt v = 
+  match v with
+  | None -> []
+  | Some t -> [G.KeywordAttr (G.Recursive, t)]
 
 and pattern =
   function
@@ -355,26 +379,43 @@ and item =
       let ent = G.basic_entity v1 [] in
       let def = G.Exception (v1, v2) in
       [G.DefStmt (ent, G.TypeDef { G.tbody = def })]
-  | External (_t, v1, v2, v3) ->
-      let _v1 = ident v1
-      and _v2 = type_ v2
-      and _v3 = list (wrap string) v3
-      in
-      raise Todo
+  | External (t, v1, v2, v3) ->
+      let v1 = ident v1
+      and v2 = type_ v2
+      and _v3 = list (wrap string) v3 in
+      let attrs = [G.KeywordAttr (G.Extern, t)] in
+      let ent = G.basic_entity v1 attrs in
+      let def = G.Signature v2 in
+      [G.DefStmt (ent, def)]
   | Open (t, v1) -> let v1 = module_name v1 in 
       let dir = G.ImportAll (t, G.DottedName v1, fake "*") in
       [G.DirectiveStmt dir]
 
   | Val (_t, v1, v2) -> 
-      let _v1 = ident v1 and _v2 = type_ v2 in 
-      raise Todo
+      let v1 = ident v1 and v2 = type_ v2 in 
+      let ent = G.basic_entity v1 [] in
+      let def = G.Signature v2 in
+      [G.DefStmt (ent, def)]
   | Let (_t, v1, v2) ->
-      let _v1 = rec_opt v1 and _v2 = list let_binding v2 in 
-      raise Todo
+      let _v1 = rec_opt v1 and v2 = list let_binding v2 in 
+      v2 |> List.map (function
+        | Left (ent, params, expr) ->
+            G.DefStmt (ent, mk_var_or_func params expr)
+        | Right (pat, e) ->
+            let exp = G.LetPattern (pat, e) in
+            G.ExprStmt exp
+       )
 
   | Module (_t, v1) -> let (ent, def) = module_declaration v1 in 
       [G.DefStmt (ent, G.ModuleDef def)]
 
   | ItemTodo t -> [G.OtherStmt (G.OS_Todo, [G.Tk t])]
+
+and mk_var_or_func params expr =
+  match params, expr with
+  | [], G.Lambda def -> G.FuncDef def
+  | [], _ -> G.VarDef ({G.vinit = Some expr; vtype = None})
+  | _ -> G.FuncDef ({G.fparams = params; frettype = None; fbody = 
+                      G.ExprStmt expr})
 
 and program xs = List.map item xs |> List.flatten
