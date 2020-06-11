@@ -1053,7 +1053,8 @@ module_expr:
 (* Attributes *)
 (*************************************************************************)
 
-(*pad: this is a limited implemenentation for now; just enough for efuns*)
+(*pad: this is a limited implementation for now; just enough for efuns/pfff *)
+floating_attribute: TBracketAtAtAt attr_id payload "]" { ItemTodo $1 }
 
 single_attr_id:
   | TLowerIdent { $1 }
