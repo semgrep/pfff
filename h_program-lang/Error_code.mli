@@ -41,6 +41,7 @@ type error = {
 
   (* other *)
   | FatalError of string
+  | Timeout
 (*e: type [[Error_code.error_kind]] *)
 
 (*s: type [[Error_code.entity]] *)
