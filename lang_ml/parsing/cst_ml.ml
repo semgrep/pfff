@@ -51,7 +51,7 @@ and 'a semicolon_list = ('a, tok (* ';' *)) Common.either list
 (* ------------------------------------------------------------------------- *)
 (* Names  *)
 (* ------------------------------------------------------------------------- *)
-(* TODO: rename ident *)
+(* TODO: rename ident (at least things are better in ast_ml.ml *)
 type name = Name of string wrap
 
   (* lower and uppernames aliases, just for clarity *)
