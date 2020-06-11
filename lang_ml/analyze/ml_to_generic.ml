@@ -69,7 +69,7 @@ and type_ =
   | TyApp ((v1, v2)) -> let v1 = list type_ v1 and v2 = name v2 in
                         G.TyNameApply (v2, v1 |> List.map (fun t -> G.TypeArg t))
   | TyTuple v1 -> let v1 = list type_ v1 in G.TyTuple (G.fake_bracket v1)
-  | TyTodo _t -> raise Todo
+  | TyTodo t -> G.OtherType (G.OT_Todo, [G.Tk t])
 
 and expr =
   function
@@ -199,7 +199,7 @@ and expr =
       let st = G.For (t, header, G.ExprStmt v5) in
       G.OtherExpr (G.OE_StmtExpr, [G.S st])
 
-  | ExprTodo _t -> raise Todo
+  | ExprTodo t -> G.OtherExpr (G.OE_Todo, [G.Tk t])
   
 and literal =
   function
@@ -263,7 +263,7 @@ and pattern =
     let v1 = pattern v1 and v2 = type_ v2 in 
     G.PatTyped (v1, v2)
 
-  | PatTodo _t -> raise Todo
+  | PatTodo t -> G.OtherPat (G.OP_Todo, [G.Tk t])
 
 and let_binding =
   function
@@ -279,7 +279,7 @@ and let_def { lname = lname; lparams = lparams; lbody = lbody } =
 
 and parameter = function
   | Param v -> G.ParamPattern (pattern v)
-  | ParamTodo _t -> raise Todo
+  | ParamTodo t -> G.OtherParam (G.OPO_Todo, [G.Tk t])
   
 and type_declaration { tname = tname; tparams = tparams; tbody = tbody
                      } =
@@ -329,30 +329,34 @@ and module_declaration { mname = mname; mbody = mbody } =
 
 and module_expr =
   function
-  | ModuleName v1 -> let _v1 = name v1 in ()
-  | ModuleStruct v1 -> let _v1 = list item v1 in ()
-  | ModuleTodo _t -> raise Todo
+  | ModuleName v1 -> 
+      let v1 = name v1 in G.ModuleAlias v1
+  | ModuleStruct v1 -> 
+      let v1 = list item v1 in G.ModuleStruct (None, v1)
+  | ModuleTodo t ->  
+      G.OtherModule (G.OMO_Functor, [G.Tk t])
 
 
 and item =
   function
-  | Type v1 -> let _v1 = list type_declaration v1 in ()
+  | Type v1 -> let _v1 = list type_declaration v1 in raise Todo
 
   | Exception ((v1, v2)) ->
-      let _v1 = ident v1 and _v2 = list type_ v2 in ()
+      let _v1 = ident v1 and _v2 = list type_ v2 in raise Todo
   | External ((v1, v2, v3)) ->
       let _v1 = ident v1
       and _v2 = type_ v2
       and _v3 = list (wrap string) v3
-      in ()
-  | Open v1 -> let _v1 = name v1 in ()
+      in
+      raise Todo
+  | Open v1 -> let _v1 = name v1 in raise Todo
 
-  | Val ((v1, v2)) -> let _v1 = ident v1 and _v2 = type_ v2 in ()
+  | Val ((v1, v2)) -> let _v1 = ident v1 and _v2 = type_ v2 in raise Todo
   | Let ((v1, v2)) ->
-      let _v1 = rec_opt v1 and _v2 = list let_binding v2 in ()
+      let _v1 = rec_opt v1 and _v2 = list let_binding v2 in raise Todo
 
-  | Module v1 -> let _v1 = module_declaration v1 in ()
+  | Module v1 -> let _v1 = module_declaration v1 in raise Todo
 
-  | ItemTodo _t -> raise Todo
+  | ItemTodo t -> G.OtherStmt (G.OS_Todo, [G.Tk t])
 
 and program xs = List.map item xs
