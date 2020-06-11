@@ -70,10 +70,14 @@ let parse_with_lang lang file =
      *)
     Go_to_generic.program ast
   | Lang.ML ->
-    let cst = Parse_ml.parse_program file in
-    let ast = Ast_ml_build.program cst in
-    let _ = Ml_to_generic.program ast in
-    raise Todo
+    (* TODO: remove at some point those save_excursion *)
+    Common.save_excursion Flag_parsing.error_recovery true (fun () ->
+    Common.save_excursion Flag_parsing.show_parsing_error false (fun () ->
+    Common.save_excursion Flag_parsing.exn_when_lexical_error false (fun ()->
+     let cst = Parse_ml.parse_program file in
+     let ast = Ast_ml_build.program cst in
+     Ml_to_generic.program ast
+    )))
 (*e: function [[Parse_generic.parse_with_lang]] *)
 
 (*s: function [[Parse_generic.parse_program]] *)
