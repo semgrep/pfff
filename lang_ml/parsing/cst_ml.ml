@@ -119,7 +119,7 @@ and expr =
   
 
   | LetIn of tok * rec_opt * let_binding and_list * tok (* in *) * seq_expr
-  | Fun of tok * parameter list (* at least one *) * match_action
+  | Fun of tok * parameter list (* at least one *) * tok (* -> *) * expr
   | Function of tok * match_case pipe_list
 
   (* why they allow seq_expr ?? *)
@@ -235,8 +235,6 @@ and let_binding =
    | ParamPat of pattern
    | ParamTodo of tok
 
- and labeled_simple_pattern = unit
-
 (* ------------------------------------------------------------------------- *)
 (* Type declaration *)
 (* ------------------------------------------------------------------------- *)
@@ -280,7 +278,6 @@ type type_declaration =
 (* ------------------------------------------------------------------------- *)
 (* Module *)
 (* ------------------------------------------------------------------------- *)
-type module_type = unit (* todo *)
 
 (* mutually recursive with item *)
 type module_expr =

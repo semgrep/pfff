@@ -106,10 +106,11 @@ type expr =
 
   (* > 1 elt for mutually recursive let (let x and y and z) *)
   | LetIn of let_binding list * expr * rec_opt
-  | Fun of parameter list (* at least one *) * expr
+  | Fun of tok (* 'fun' *) * parameter list (* at least one *) * expr
+  | Function of tok (* 'function' *) * match_case list
 
   | If of tok * expr * expr * expr option
-  | Match of expr * match_case list
+  | Match of tok * expr * match_case list
 
   | Try of tok * expr * match_case list 
 
@@ -132,7 +133,7 @@ type expr =
  and match_case =
   pattern * match_action
 
-  and match_action = expr * expr option (* when *)
+  and match_action = expr option (* when *) * tok (* -> *) * expr
 
  and for_direction =
   | To of tok

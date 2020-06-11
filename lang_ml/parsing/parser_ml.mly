@@ -444,8 +444,8 @@ expr:
  | Tlet Trec? list_and(let_binding) Tin seq_expr  { LetIn ($1, $2, $3, $4, $5)}
 
  | Tfun labeled_simple_pattern fun_def
-     { let (params, action) = $3 in
-       Fun ($1, $2::params, action) }
+     { let (params, (tok, e)) = $3 in
+       Fun ($1, $2::params, tok, e) }
 
  | Tfunction "|"? match_cases                { Function ($1, $2 ^@ $3) }
 
@@ -852,7 +852,7 @@ strict_binding:
  | labeled_simple_pattern fun_binding { let (args, body) = $2 in $1::args,body}
 
 fun_def:
- | match_action                    { [], $1 }
+ | "->" expr                       { [], ($1, $2) }
  | labeled_simple_pattern fun_def  { let (args, body) = $2 in $1::args, body }
 
 

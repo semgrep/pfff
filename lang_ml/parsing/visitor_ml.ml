@@ -298,11 +298,12 @@ and v_expr v =
       and v4 = v_tok v4
       and v5 = v_seq_expr v5
       in ()
-  | Fun ((v1, v2, v3)) ->
+  | Fun ((v1, v2, t, v3)) ->
       let v1 = v_tok v1
-      and v2 = OCaml.v_list v_parameter v2
-      and v3 = v_match_action v3
-      in ()
+      and v2 = OCaml.v_list v_parameter v2 in
+      let t = v_tok t in
+      let v3 = v_expr v3 in
+      ()
   | Function ((v1, v2)) ->
       let v1 = v_tok v1 and v2 = v_pipe_list13 v_match_case v2 in ()
   | If ((v1, v2, v3, v4, v5)) ->

@@ -149,11 +149,13 @@ and expr =
       and _v3 = rec_opt v3
       in 
       raise Todo
-  | Fun ((v1, v2)) -> 
+  | Fun ((_t, v1, v2)) -> 
     let v1 = list parameter v1 
     and v2 = expr v2 in 
     let def = { G.fparams = v1; frettype = None; fbody = G.ExprStmt v2 } in
     G.Lambda def
+  | Function (_t, _cases) ->
+      raise Todo
 
   | If ((_t, v1, v2, v3)) ->
       let v1 = expr v1 and v2 = expr v2 
@@ -163,7 +165,7 @@ and expr =
         | Some x -> expr x
       in
       G.Conditional (v1, v2, v3)
-  | Match ((v1, v2)) ->
+  | Match (_t, v1, v2) ->
       let v1 = expr v1 and v2 = list match_case v2 in
       G.MatchPattern (v1, v2)
   | Try ((t, v1, v2)) ->
@@ -216,7 +218,7 @@ and argument =
     let v1 = ident v1 and v2 = expr v2 in
     G.ArgOther (G.OA_ArgQuestion, [G.I v1; G.E v2])                          
 
-and match_case (v1, (v2, v3)) =
+and match_case (v1, (v3, _t, v2)) =
   let v1 = pattern v1 and v2 = expr v2 and v3 = option expr v3 in
   (match v3 with
   | None -> v1, v2

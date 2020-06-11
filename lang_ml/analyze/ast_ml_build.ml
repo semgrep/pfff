@@ -12,8 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common
-
 open Cst_ml
 module A = Ast_ml
 
@@ -193,14 +191,13 @@ and v_expr v =
       and v5 = v_seq_expr1 v5
       in
       A.LetIn (v3, v5, v2)
-  | Fun ((v1, v2, v3)) ->
-      let _v1 = v_tok v1
-      and __v2 = List.map v_parameter v2
-      and __v3 = v_match_action v3
-      in raise Todo
+  | Fun ((v1, v2, _t, v3)) ->
+      let v2 = List.map v_parameter v2 in
+      let v3 = v_expr v3 in
+      A.Fun (v1, v2, v3)
   | Function ((v1, v2)) ->
-      let _v1 = v_tok v1 and __v2 = v_pipe_list v_match_case v2 in 
-      raise Common.Todo
+      let v1 = v_tok v1 and v2 = v_pipe_list v_match_case v2 in 
+      A.Function (v1, v2)
   | If ((v1, v2, v3, v4, v5)) ->
       let v1 = v_tok v1
       and v2 = v_seq_expr1 v2
@@ -212,12 +209,12 @@ and v_expr v =
       in
       A.If (v1, v2, v4, v5 )
   | Match ((v1, v2, v3, v4)) ->
-      let _v1 = v_tok v1
+      let v1 = v_tok v1
       and v2 = v_seq_expr1 v2
       and _v3 = v_tok v3
       and v4 = v_pipe_list v_match_case v4
       in 
-      A.Match (v2, v4)
+      A.Match (v1, v2, v4)
   | Try ((v1, v2, v3, v4)) ->
       let v1 = v_tok v1
       and v2 = v_seq_expr1 v2
@@ -288,24 +285,25 @@ and v_argument v =
     let _v1 = v_tok v1 and v2 = v_name v2 in 
     A.ArgKwd (v2, A.Name ([],v2))
   | ArgLabelQuestion ((v1, v2)) -> 
-    let __v1 = v_name v1 and __v2 = v_expr v2 in 
-    raise Todo
+    let v1 = v_name v1 and __v2 = v_expr v2 in 
+    A.Arg (A.ExprTodo (snd v1))
   | ArgImplicitQuestionExpr ((v1, v2)) ->
-    let _v1 = v_tok v1 and __v2 = v_name v2 in 
-    raise Todo
+    let v1 = v_tok v1 and __v2 = v_name v2 in 
+    A.Arg (A.ExprTodo v1)
 
 
 and v_match_action =
   function
-  | Action ((v1, v2)) -> let _v1 = v_tok v1 and v2 = v_seq_expr1 v2 in 
-                         v2, None
+  | Action ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_seq_expr1 v2 in 
+                         None, v1, v2
   | WhenAction ((v1, v2, v3, v4)) ->
       let _v1 = v_tok v1
       and v2 = v_seq_expr1 v2
-      and _v3 = v_tok v3
+      and v3 = v_tok v3
       and v4 = v_seq_expr1 v4
       in 
-      v4, Some v2
+      Some v2, v3, v4
+
 and v_match_case (v1, v2) =
   let v1 = v_pattern v1 and v2 = v_match_action v2 in v1, v2
 

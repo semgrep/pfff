@@ -207,11 +207,12 @@ and vof_expr =
       and v4 = vof_tok v4
       and v5 = vof_seq_expr v5
       in OCaml.VSum (("LetIn", [ v1; v2; v3; v4; v5 ]))
-  | Fun ((v1, v2, v3)) ->
+  | Fun ((v1, v2, t, v3)) ->
       let v1 = vof_tok v1
       and v2 = OCaml.vof_list vof_parameter v2
-      and v3 = vof_match_action v3
-      in OCaml.VSum (("Fun", [ v1; v2; v3 ]))
+      and t = vof_tok t
+      and v3 = vof_expr v3
+      in OCaml.VSum (("Fun", [ v1; v2; t; v3 ]))
   | Function ((v1, v2)) ->
       let v1 = vof_tok v1
       and v2 = vof_pipe_list vof_match_case v2
