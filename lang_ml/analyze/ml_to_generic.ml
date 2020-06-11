@@ -339,10 +339,14 @@ and module_expr =
 
 and item =
   function
-  | Type v1 -> let _v1 = list type_declaration v1 in raise Todo
+  | Type v1 -> let xs = list type_declaration v1 in 
+      xs |> List.map (fun (ent, def) -> G.DefStmt (ent, G.TypeDef def))
 
   | Exception ((v1, v2)) ->
-      let _v1 = ident v1 and _v2 = list type_ v2 in raise Todo
+      let v1 = ident v1 and v2 = list type_ v2 in 
+      let ent = G.basic_entity v1 [] in
+      let def = G.Exception (v1, v2) in
+      [G.DefStmt (ent, G.TypeDef { G.tbody = def })]
   | External ((v1, v2, v3)) ->
       let _v1 = ident v1
       and _v2 = type_ v2
