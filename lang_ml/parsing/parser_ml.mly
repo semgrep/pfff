@@ -899,8 +899,7 @@ class_type:
   | simple_core_type_or_tuple "->" class_type { }
 
 class_signature:
- (*  LBRACKET list_sep(core_type, ",") RBRACKET clty_longident  {  } *)
-  | clty_longident               {  }
+  | actual_class_parameters  clty_longident               {  }
   | Tobject class_sig_body Tend  {  }
 
 class_sig_body: class_self_type class_sig_fields { }
@@ -909,14 +908,13 @@ class_self_type:
   | (*empty*) {  }
   | "(" core_type ")"  { }
 
-class_sig_fields:
-  | class_sig_fields Tinherit class_signature    {  }
-  | class_sig_fields virtual_method_type        {  }
-  | class_sig_fields method_type                {  }
+class_sig_fields: class_sig_field* { }
 
-  | class_sig_fields Tval value_type            {  }
-(* | class_sig_fields Tconstraint constrain       {  } *)
-  | (*empty*)                               { }
+class_sig_field:
+  | Tinherit class_signature    {  }
+  | virtual_method_type        {  }
+  | method_type                {  }
+  | Tval value_type            {  }
 
 method_type: Tmethod Tprivate? label ":" poly_type { }
 
@@ -955,11 +953,14 @@ class_expr:
   | class_simple_expr labeled_simple_expr+    { }
   | Tlet Trec? list_and(let_binding) Tin class_expr    { }
 
+%inline
+actual_class_parameters: 
+ | "[" list_sep(core_type, ",") "]"  { }
+ | (* empty *) { }
+
 class_simple_expr:
-  | "[" list_sep(core_type, ",") "]" class_longident   { }
-  | class_longident                                { }
+  | actual_class_parameters class_longident   { }
   | Tobject class_structure Tend                   { }
-(* TODO | "(" class_expr ":" class_type ")" { } *)
   | "(" class_expr ")"                             { }
 
 class_fun_def:
