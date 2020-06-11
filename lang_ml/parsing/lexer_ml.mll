@@ -278,6 +278,13 @@ rule token = parse
       | Some f -> f info
       | None -> TLowerIdent (s, info)
     }
+  (* sgrep-ext: *)
+  | '$' (upperletter | '_') (upperletter | '_' | digit)* { 
+      let s = tok lexbuf in
+      if not !Flag_parsing.sgrep_mode
+      then error ("identifier with dollar: "  ^ s) lexbuf;
+      TLowerIdent (s, tokinfo lexbuf)
+   }
 
   | upperident {
       let s = tok lexbuf in

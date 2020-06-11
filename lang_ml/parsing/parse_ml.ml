@@ -95,3 +95,18 @@ let parse a =
 let parse_program file = 
   let ((astopt, _toks), _stat) = parse file in
   Common2.some astopt
+
+(*****************************************************************************)
+(* Sub parsers *)
+(*****************************************************************************)
+
+(* for sgrep/spatch *)
+let any_of_string  s = 
+  Common2.with_tmp_file ~str:s ~ext:"ml" (fun file ->
+    let toks = tokens file in
+    let _tr, lexer, lexbuf_fake = PI.mk_lexer_for_yacc toks TH.is_comment in
+    (* -------------------------------------------------- *)
+    (* Call parser *)
+    (* -------------------------------------------------- *)
+    Parser_ml.sgrep_spatch_pattern lexer lexbuf_fake
+  )

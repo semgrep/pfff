@@ -419,3 +419,16 @@ and mk_var_or_func params expr =
                       G.ExprStmt expr})
 
 and program xs = List.map item xs |> List.flatten
+
+and any = function
+  | E x -> let x = expr x in G.E x
+  | I x -> 
+      (match item x with
+      | [] -> raise Impossible
+      | [x] -> G.S x
+      | xs -> G.Ss xs
+      )
+  | T _x -> raise Todo
+  | P _x -> raise Todo
+  | Pr _x -> raise Todo
+ 

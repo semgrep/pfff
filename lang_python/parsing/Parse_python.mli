@@ -31,7 +31,7 @@ val parse_program:
 (* other parsers *)
 
 (*s: signature [[Parse_python.any_of_string]] *)
-(* for sgrep *)
+(* for semgrep *)
 val any_of_string:
   ?parsing_mode:parsing_mode -> string -> AST_python.any
 (*e: signature [[Parse_python.any_of_string]] *)

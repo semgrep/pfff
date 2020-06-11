@@ -69,7 +69,7 @@ let parse_with_lang lang file =
      * switched to call Naming_AST.ml in sgrep to correct def and use tagger
      *)
     Go_to_generic.program ast
-  | Lang.ML ->
+  | Lang.OCaml ->
     (* TODO: remove at some point those save_excursion *)
     Common.save_excursion Flag_parsing.error_recovery true (fun () ->
     Common.save_excursion Flag_parsing.show_parsing_error false (fun () ->
@@ -112,8 +112,10 @@ let parse_pattern lang str =
   | Lang.Go ->
       let any = Parse_go.any_of_string str in
       Go_to_generic.any any
-  | Lang.ML -> 
-      raise Todo
+  | Lang.OCaml -> 
+      let any_cst = Parse_ml.any_of_string str in
+      let any_ast = Ast_ml_build.any any_cst in
+      Ml_to_generic.any any_ast
   )
 (*e: function [[Parse_generic.parse_pattern]] *)
 (*e: pfff/lang_GENERIC/parsing/Parse_generic.ml *)

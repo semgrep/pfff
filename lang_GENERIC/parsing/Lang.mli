@@ -12,7 +12,7 @@ type t =
   | Java
   | Go
   | C
-  | ML
+  | OCaml
 (*e: type [[Lang.t]] *)
 
 (*s: signature [[Lang.lang_of_string_map]] *)

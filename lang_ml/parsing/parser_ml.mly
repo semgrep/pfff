@@ -194,6 +194,7 @@ let (^@) sc xs =
 (*************************************************************************)
 %start <Cst_ml.toplevel list> interface
 %start <Cst_ml.toplevel list> implementation
+%start <Cst_ml.any> sgrep_spatch_pattern
 
 %%
 (*************************************************************************)
@@ -260,6 +261,27 @@ qualified(X, Y):
 
 interface:      signature EOF                        { $1 }
 implementation: structure EOF                        { $1 }
+
+sgrep_spatch_pattern:
+ | expr EOF { Expr $1 }
+ | signature_item EOF { Item $1 }
+ | structure_item_minus_signature_item EOF { Item $1 }
+
+structure_item_minus_signature_item:
+ | Tlet Trec? list_and(let_binding)              { Let ($1, $2, $3) }
+ (* modules *)
+ | Tmodule TUpperIdent module_binding
+      { match $3 with
+        | None -> ItemTodo $1
+        | Some (x, y) -> Module ($1, Name $2, x, y) 
+      }
+ | Tinclude module_expr                          { ItemTodo $1 }
+
+ (* objects *)
+  | Tclass Ttype list_and(class_type_declaration) { ItemTodo $1 }
+
+ | Texception TUpperIdent "=" mod_longident { ItemTodo $1 }
+ | floating_attribute { $1 }
 
 (*************************************************************************)
 (* Signature *)
