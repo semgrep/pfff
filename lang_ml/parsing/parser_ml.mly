@@ -974,15 +974,15 @@ class_self_pattern:
   | (*empty*)                      { }
 
 
-class_fields:
-  | (*empty*)   { }
-  | class_fields Tinherit "!"? class_expr parent_binder   { }
-  | class_fields Tval virtual_value  { }
-  | class_fields Tval value          { }
-  | class_fields virtual_method      { }
-  | class_fields concrete_method     { }
-(* TODO | class_fields Tconstraint constrain { } *)
-  | class_fields Tinitializer seq_expr  { }
+class_fields: class_field* { }
+
+class_field:
+  | Tinherit "!"? class_expr parent_binder   { }
+  | Tval virtual_value  { }
+  | Tval value          { }
+  | virtual_method      { }
+  | concrete_method     { }
+  | Tinitializer seq_expr  { }
 
 parent_binder:
   | Tas TLowerIdent { }
@@ -990,11 +990,11 @@ parent_binder:
 
 virtual_value:
   | "!"? Tmutable Tvirtual label ":" core_type  { }
-  | Tvirtual Tmutable label ":" core_type                { }
+  |      Tvirtual Tmutable label ":" core_type                { }
 
 value:
-  | "!"? Tmutable label "=" seq_expr      { }
-  | "!"? Tmutable label type_constraint "=" seq_expr  { }
+  | "!"? ioption(Tmutable) label "=" seq_expr      { }
+  | "!"? ioption(Tmutable) label type_constraint "=" seq_expr  { }
 
 virtual_method:
   | Tmethod "!"? Tprivate Tvirtual label ":" poly_type  { }
