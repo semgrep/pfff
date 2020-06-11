@@ -69,6 +69,7 @@ and type_ =
   | TyApp ((v1, v2)) -> let v1 = list type_ v1 and v2 = name v2 in
                         G.TyNameApply (v2, v1 |> List.map (fun t -> G.TypeArg t))
   | TyTuple v1 -> let v1 = list type_ v1 in G.TyTuple (G.fake_bracket v1)
+  | TyTodo _t -> raise Todo
 
 and expr =
   function
@@ -191,6 +192,8 @@ and expr =
                                  Some cond, Some next) in
       let st = G.For (t, header, G.ExprStmt v5) in
       G.OtherExpr (G.OE_StmtExpr, [G.S st])
+
+  | ExprTodo _t -> raise Todo
   
 and literal =
   function
@@ -254,6 +257,8 @@ and pattern =
     let v1 = pattern v1 and v2 = type_ v2 in 
     G.PatTyped (v1, v2)
 
+  | PatTodo _t -> raise Todo
+
 and let_binding =
   function
   | LetClassic v1 -> let _v1 = let_def v1 in raise Todo
@@ -266,7 +271,9 @@ and let_def { lname = lname; lparams = lparams; lbody = lbody } =
   let _v3 = expr lbody in
   ()
 
-and parameter v = G.ParamPattern (pattern v)
+and parameter = function
+  | Param v -> G.ParamPattern (pattern v)
+  | ParamTodo _t -> raise Todo
   
 and type_declaration { tname = tname; tparams = tparams; tbody = tbody
                      } =
@@ -318,6 +325,8 @@ and module_expr =
   function
   | ModuleName v1 -> let _v1 = name v1 in ()
   | ModuleStruct v1 -> let _v1 = list item v1 in ()
+  | ModuleTodo _t -> raise Todo
+
 
 and item =
   function
@@ -337,5 +346,7 @@ and item =
       let _v1 = rec_opt v1 and _v2 = list let_binding v2 in ()
 
   | Module v1 -> let _v1 = module_declaration v1 in ()
+
+  | ItemTodo _t -> raise Todo
 
 and program xs = List.map item xs

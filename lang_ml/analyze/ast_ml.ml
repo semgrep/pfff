@@ -64,6 +64,8 @@ type type_ =
 
   | TyTuple of type_ list (* at least 2 *)
 
+  | TyTodo of tok
+
  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
@@ -117,6 +119,8 @@ type expr =
   | While of tok * expr * expr
   | For of tok * ident * expr * for_direction * expr *   expr
 
+  | ExprTodo of tok
+
  and literal =
    | Int    of string wrap
    | Float  of string wrap
@@ -160,6 +164,8 @@ and pattern =
   | PatDisj of pattern * pattern
   | PatTyped of pattern * type_
 
+  | PatTodo of tok
+
 (* ------------------------------------------------------------------------- *)
 (* Let binding (global/local/function definition) *)
 (* ------------------------------------------------------------------------- *)
@@ -175,7 +181,9 @@ and let_binding =
    lbody: expr;
  }
 
- and parameter = pattern
+ and parameter = 
+   | Param of pattern
+   | ParamTodo of tok
 
  (* with tarzan *)
 
@@ -218,6 +226,8 @@ type module_declaration = {
   | ModuleName of name (* alias *)
   | ModuleStruct of item list
 
+  | ModuleTodo of tok
+
 (* ------------------------------------------------------------------------- *)
 (* Signature/Structure items *)
 (* ------------------------------------------------------------------------- *)
@@ -240,6 +250,8 @@ and item =
   | Let of rec_opt * let_binding list
 
   | Module of module_declaration
+
+  | ItemTodo of tok
 
  (* with tarzan *)
       

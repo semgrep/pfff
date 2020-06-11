@@ -20,7 +20,7 @@ module A = Ast_ml
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(*
+(* OCaml CST to OCaml AST
  *)
 
 (*****************************************************************************)
@@ -78,7 +78,7 @@ and v_ty x =
       A.TyFunction (v1, v3)
   | TyApp ((v1, v2)) -> let v1 = v_ty_args v1 and v2 = v_long_name v2 in 
                         A.TyApp (v1, v2)
-  | TyTodo _ -> failwith "TyTodo"
+  | TyTodo t -> A.TyTodo t
 
 
 and v_type_declaration x =
@@ -249,7 +249,7 @@ and v_expr v =
       and _v9 = v_tok v9
       in 
       A.For (v1, v2, v4, v5, v6, v8)
-  | ExprTodo _ -> failwith "ExprTodo"
+  | ExprTodo t -> A.ExprTodo t
 
 
 and v_constant =
@@ -359,13 +359,13 @@ and v_pattern x =
       in 
       A.PatTyped (v2, v4)
   | ParenPat v1 -> let v1 = v_paren v_pattern v1 in v1
-  | PatTodo _ -> failwith "PatTodo"
+  | PatTodo t -> A.PatTodo t
 
 and v_labeled_simple_pattern v = v_parameter v
 and v_parameter x =
     match x with
-    | ParamPat v1 -> let v1 = v_pattern v1 in v1
-    | ParamTodo _ -> failwith "ParamTodo"
+    | ParamPat v1 -> let v1 = v_pattern v1 in A.Param v1
+    | ParamTodo t -> A.ParamTodo t
 
 
 and v_field_pattern x =
@@ -416,7 +416,7 @@ and v_module_expr v =
       let v2 = List.map v_item v2 in
       let _v3 = v_tok v3 in
       A.ModuleStruct v2
-  | ModuleTodo _ -> failwith "ModuleTodo"
+  | ModuleTodo t -> A.ModuleTodo t
 
 and v_item x =
     match x with
@@ -461,8 +461,7 @@ and v_item x =
       in 
       A.Module ({A.mname = v2; mbody = v4 })
 
-  | ItemTodo _v -> 
-    failwith "ItemTodo"
+  | ItemTodo t -> A.ItemTodo t
 
 and v_rec_opt v = Common.map_opt v_tok v
 
