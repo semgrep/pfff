@@ -20,7 +20,7 @@ jobs:
   semgrep:
     docker:
       - image: returntocorp/semgrep:develop
-     working_directory: /home/repo
+    working_directory: /home/repo
     steps:
       - checkout
       - run: semgrep -e 'Pervasives.$X' -l ocaml --error .
