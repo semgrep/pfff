@@ -23,3 +23,9 @@ jobs:
     steps:
       - checkout
       - run: semgrep -e 'Pervasives.$X' -l ocaml
+workflows:
+  version: 2
+  build_and_semgrep:
+    jobs:
+      - build
+      - semgrep
