@@ -410,7 +410,10 @@ website:
 ##############################################################################
 # Developer rules
 ##############################################################################
-.PHONY:: tags graph prolog  db layers visual   tests test .merlin
+.PHONY:: check tags graph prolog  db layers visual   tests test .merlin
+
+check:
+	docker run --rm -v "${PWD}:/home/repo" returntocorp/semgrep:develop --config semgrep.yml
 
 .merlin:
 	@echo '# -*- sh -*-' > .merlin

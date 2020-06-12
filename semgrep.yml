@@ -17,3 +17,9 @@ rules:
     paths:
       exclude:
        - web/
+
+  - id: physical-inequality
+    pattern: $X != $Y
+    message: You probably want structural inequality with <>
+    languages: [ocaml]
+    severity: WARNING
