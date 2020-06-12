@@ -15,7 +15,7 @@ external print : unit -> unit = "print_exception_backtrace_stub" "noalloc"
 exception MyNot_Found
 
 let foo1 () =
-  if 1=1 
+  if 1 = 2
   then raise MyNot_Found
   else 2
 

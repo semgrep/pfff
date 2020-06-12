@@ -23,3 +23,9 @@ rules:
     message: You probably want structural inequality with <>
     languages: [ocaml]
     severity: WARNING
+
+  - id: stupid-equal
+    pattern: $X = $X
+    message: this will always be true
+    languages: [ocaml]
+    severity: ERROR
