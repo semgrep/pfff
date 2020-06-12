@@ -29,3 +29,9 @@ rules:
     message: this will always be true
     languages: [ocaml]
     severity: ERROR
+
+  - id: length-vs-equal
+    pattern: List.length $X = 0
+    message: you probably want $X = [], which is faster
+    languages: [ocaml]
+    severity: WARNING
