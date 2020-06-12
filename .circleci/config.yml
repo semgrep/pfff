@@ -22,6 +22,7 @@ jobs:
       - image: returntocorp/semgrep:develop
     steps:
       - checkout
+      - run: echo $pwd
       - run: semgrep -e 'Pervasives.$X' -l ocaml
 workflows:
   version: 2
