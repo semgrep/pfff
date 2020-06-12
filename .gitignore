@@ -287,3 +287,4 @@ tmp
 /lang_python/parsing/Parser_python.mli
 
 menhir_out.log
+ocamlyacc_out.log

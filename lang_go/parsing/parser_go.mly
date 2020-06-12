@@ -565,7 +565,6 @@ uexpr:
 
 pexpr:
 |   pexpr_no_paren { $1 }
-
 |   LPAREN expr_or_type RPAREN 
     { match $2 with
       | Left e -> e
@@ -577,7 +576,8 @@ pexpr_no_paren:
 |   basic_literal { BasicLit $1 }
 
 |   name { Id ($1, ref None) }
-
+    /*(* sgrep-ext: *)*/
+|   LPAREN name LCOLON ntype RPAREN { TypedMetavar($2, $3, $4) }
     /*(* can be many things *)*/
 |   pexpr LDOT sym { Selector ($1, $2, $3) }
 

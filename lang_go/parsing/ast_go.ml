@@ -164,6 +164,7 @@ and expr =
  (* sgrep-ext: *)
  | Ellipsis of tok
  | DeepEllipsis of expr bracket
+ | TypedMetavar of ident * tok * type_
 
  | FuncLit of function_
 
