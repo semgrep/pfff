@@ -22,8 +22,7 @@ jobs:
       - image: returntocorp/semgrep:develop
     steps:
       - checkout
-      - run: echo $pwd
-      - run: semgrep -v "${PWD}:/home/repo" -e 'Pervasives.$X' -l ocaml
+      - run: unset SEMGREP_IN_DOCKER; semgrep -e 'Pervasives.$X' -l ocaml .
 workflows:
   version: 2
   build_and_semgrep:
