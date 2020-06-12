@@ -17,3 +17,9 @@ jobs:
       - run:
           name: Install
           command: ./scripts/install
+  semgrep:
+    docker:
+      - image: returntocorp/semgrep:develop
+    steps:
+      - checkout
+      - run: semgrep -e 'Pervasives.$X' -l ocaml
