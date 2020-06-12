@@ -17,3 +17,21 @@ rules:
     paths:
       exclude:
        - web/
+
+  - id: physical-inequality
+    pattern: $X != $Y
+    message: You probably want structural inequality with <>
+    languages: [ocaml]
+    severity: WARNING
+
+  - id: stupid-equal
+    pattern: $X = $X
+    message: this will always be true
+    languages: [ocaml]
+    severity: ERROR
+
+  - id: length-vs-equal
+    pattern: List.length $X = 0
+    message: you probably want $X = [], which is faster
+    languages: [ocaml]
+    severity: WARNING

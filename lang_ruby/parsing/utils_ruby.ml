@@ -79,7 +79,7 @@ let map_preserve map f t =
   let t' = 
     map (fun v ->
            let v' = f v in
-             if v != v'
+             if v <> v'
              then changed := true;
              v'
         ) t
@@ -89,7 +89,7 @@ let map_opt_preserve f = function
   | None -> None
   | (Some x) as s -> 
       let x' = f x in 
-        if x != x' then Some x' else s
+        if x <> x' then Some x' else s
 
 (* escapes specified character(s) by going over each character of the string *)
 type esc_mode = 

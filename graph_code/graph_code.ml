@@ -271,7 +271,7 @@ let save g file =
 
 let load file =
   let (g, serialized_cpt_vertex, version2) = Common2.get_value file in
-  if version != version2
+  if version <> version2
   then failwith (spf "your marshalled file has an old version, delete it");
   Graph.Blocks.after_unserialization serialized_cpt_vertex;
   g
