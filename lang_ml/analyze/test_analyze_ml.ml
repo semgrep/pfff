@@ -1,3 +1,5 @@
+open Common
+
 (*****************************************************************************)
 (* Subsystem testing *)
 (*****************************************************************************)
@@ -24,9 +26,20 @@ let test_parse_ast_ml xs =
       )))
     with exn -> raise exn
   ))
+
+let test_dump_ml file =
+  let cst = Parse_ml.parse_program file in
+  let ast = Ast_ml_build.program cst in
+  let s = Ast_ml.show_program ast in
+  pr2 s
   
+(*****************************************************************************)
+(* Main entry for Arg *)
+(*****************************************************************************)
 
 let actions () = [
   "-parse_ast_ml", "   <files or dirs>",
   Common.mk_action_n_arg test_parse_ast_ml;
+  "-dump_ast_ml", "   <file>",
+  Common.mk_action_1_arg test_dump_ml;
 ]

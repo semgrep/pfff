@@ -68,8 +68,7 @@ and 'a star_list = ('a, tok (* '*' *)) either list
 and 'a pipe_list = ('a, tok (* '|' *)) either list
 (* optional final ; *)
 and 'a semicolon_list = ('a, tok (* ';' *)) either list
- [@@deriving show]
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Names  *)
@@ -80,14 +79,12 @@ type name = Name of string wrap
   (* lower and uppernames aliases, just for clarity *)
   and lname = name
   and uname = name
- [@@deriving show { with_path = false} ]
- (* with tarzan *)
+ [@@deriving show { with_path = false} ] (* with tarzan *)
 
 (* TODO: rename name *)
 type long_name = qualifier * name
  and qualifier = (name * tok (*'.'*)) list
- [@@deriving show]
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Types *)
@@ -360,8 +357,7 @@ type toplevel =
  [@@deriving show { with_path = false}]
 
 type program = toplevel list
- [@@deriving show]
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (*****************************************************************************)
 (* Any *)
@@ -390,8 +386,7 @@ type any =
 
   | Info of tok
   | InfoList of tok list
- [@@deriving show { with_path = false}]
-  (* with tarzan *)
+ [@@deriving show { with_path = false}] (* with tarzan *)
 
 (*****************************************************************************)
 (* Wrappers *)
