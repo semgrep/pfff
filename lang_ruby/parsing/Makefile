@@ -12,7 +12,6 @@ OPAMPKG=pfff-lang_ruby
 SRC= utils_ruby.ml \
   ast_ruby.ml \
   ast_ruby_helpers.ml \
-  meta_ast_ruby.ml \
   parser_ruby_helpers.ml \
   parser_ruby.ml \
   lexer_parser_ruby.ml \
@@ -30,6 +29,7 @@ LIBS=$(TOP)/commons/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/external/dyp \
+  $(TOP)/external/ppx_deriving \
   $(TOP)/commons_core \
   $(TOP)/globals \
   $(TOP)/h_program-lang \
@@ -54,6 +54,11 @@ $(TARGET).top: $(OBJS) $(LIBS)
 
 clean::
 	rm -f $(TARGET).top
+
+ast_ruby.cmo: ast_ruby.ml
+	ocamlfind ocamlc -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show ast_ruby.ml
+ast_ruby.cmx: ast_ruby.ml
+	ocamlfind ocamlopt -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show ast_ruby.ml
 
 
 lexer_ruby.ml: lexer_ruby.mll
