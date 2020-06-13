@@ -40,4 +40,5 @@ depends: [
   "conf-perl"
   "menhir"
   "grain_dypgen"
+  "ppx_deriving"
 ]

@@ -22,6 +22,7 @@ LIBS=$(TOP)/commons/lib.cma \
      ../parsing/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons \
+   $(TOP)/external/ppx_deriving \
    $(TOP)/commons_ocollection \
    $(TOP)/commons_core \
    $(TOP)/globals \
@@ -53,5 +54,7 @@ $(TARGET).top: $(OBJS) $(LIBS)
 clean::
 	rm -f $(TARGET).top
 
-#ml_to_generic.cmo: ml_to_generic.ml
-#	ocamlc $(INCLUDES) -c $^
+ast_ml.cmo: ast_ml.ml
+	ocamlfind ocamlc -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show ast_ml.ml
+ast_ml.cmx: ast_ml.ml
+	ocamlfind ocamlopt -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show ast_ml.ml

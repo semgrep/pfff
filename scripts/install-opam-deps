@@ -59,6 +59,7 @@ packages="
   json-wheel
   menhir
   ocamlgraph
+  ppx_deriving
 "
 
 # The docker images from the ocaml community ship with a stale (file://...)

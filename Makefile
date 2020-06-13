@@ -39,7 +39,7 @@ DYPCMA=external/dyp/dyp.cma
 GRAPHCMA=external/ocamlgraph/graph.cma commons_wrappers/graph/lib.cma
 GRAPHDIRS=commons_wrappers/graph 
 
-
+DERIVINGCMA=external/ppx_deriving/ppx_deriving_runtime.cma
 
 #------------------------------------------------------------------------------
 # Main variables
@@ -57,7 +57,7 @@ LIBS= commons/lib.cma \
        $(JSONCMA) \
        $(DYPCMA) \
        $(GRAPHCMA) \
-       $(EXTLIBCMA) $(PTCMA) $(ZIPCMA) $(JAVALIBCMA) \
+       $(EXTLIBCMA) $(PTCMA) $(ZIPCMA) $(JAVALIBCMA) $(DERIVINGCMA) \
     globals/lib.cma \
     h_files-format/lib.cma \
     h_program-lang/lib.cma \
@@ -172,6 +172,7 @@ INCLUDEDIRS=$(MAKESUBDIRS) \
  external/deps-netsys \
  external/json-wheel \
  external/dyp \
+ external/ppx_deriving \
  commons_wrappers/graph \
 
 # cpp causes some 'warning: missing terminating' errors

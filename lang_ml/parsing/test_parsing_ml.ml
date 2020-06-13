@@ -46,6 +46,11 @@ let test_dump_ml file =
   let s = OCaml.string_of_v v in
   pr s
 
+let test_show_ml file =
+  let ast = Parse_ml.parse_program file in
+  let s = Cst_ml.show_any (Cst_ml.Program ast) in
+  pr s
+
 
 (*****************************************************************************)
 (* One shot *)
@@ -101,6 +106,8 @@ let actions () = [
   Common.mk_action_n_arg test_parse_ml_or_mli;
   "-dump_ml", "   <file>", 
   Common.mk_action_1_arg test_dump_ml;
+  "-show_ml", "   <file>", 
+  Common.mk_action_1_arg test_show_ml;
 
   "-refactor_grammar", "   <subst_file> <file>", 
   Common.mk_action_2_arg refactor_grammar;

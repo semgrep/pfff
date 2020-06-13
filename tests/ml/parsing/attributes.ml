@@ -3,3 +3,5 @@ let foo x =
 [@@interactive]
 
 [@@@warning "-3"]
+
+[@@deriving show]

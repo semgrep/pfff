@@ -23,6 +23,29 @@ open Common
  *)
 
 (*****************************************************************************)
+(* PPX *)
+(*****************************************************************************)
+
+let pp_tok fmt _ = Format.fprintf fmt "()"
+type ('a, 'b) either = ('a, 'b) Common.either
+
+(* result of ocamlfind ocamlc -dsource ... on this code
+type ('a, 'b) either2 =
+  | Left of 'a
+  | Right of 'b
+[@@deriving show]
+*)
+let pp_either = fun poly_a -> fun poly_b -> fun fmt -> function
+  | Left a0 ->
+    (Ppx_deriving_runtime.Format.fprintf fmt "(@[<2>Left@ ";
+     (poly_a fmt) a0;
+     Ppx_deriving_runtime.Format.fprintf fmt "@])")
+  | Right a0 ->
+    (Ppx_deriving_runtime.Format.fprintf fmt "(@[<2>Right@ ";
+     (poly_b fmt) a0;
+     Ppx_deriving_runtime.Format.fprintf fmt "@])")
+
+(*****************************************************************************)
 (* The AST related types *)
 (*****************************************************************************)
 
@@ -32,21 +55,20 @@ open Common
 type tok = Parse_info.t
 
 (* a shortcut to annotate some information with token/position information *)
-and 'a wrap = 'a * tok
+type 'a wrap = 'a * tok
 
 and 'a paren   = tok * 'a * tok
 and 'a brace   = tok * 'a * tok
 and 'a bracket = tok * 'a * tok 
 
-and 'a comma_list = ('a, tok (* ',' *)) Common.either list
-and 'a and_list = ('a, tok (* 'and' *)) Common.either list
-and 'a star_list = ('a, tok (* '*' *)) Common.either list
+and 'a comma_list = ('a, tok (* ',' *)) either list
+and 'a and_list = ('a, tok (* 'and' *)) either list
+and 'a star_list = ('a, tok (* '*' *)) either list
 (* optional first | *)
-and 'a pipe_list = ('a, tok (* '|' *)) Common.either list
+and 'a pipe_list = ('a, tok (* '|' *)) either list
 (* optional final ; *)
-and 'a semicolon_list = ('a, tok (* ';' *)) Common.either list
-
- (* with tarzan *)
+and 'a semicolon_list = ('a, tok (* ';' *)) either list
+ [@@deriving show] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Names  *)
@@ -57,14 +79,12 @@ type name = Name of string wrap
   (* lower and uppernames aliases, just for clarity *)
   and lname = name
   and uname = name
-
- (* with tarzan *)
+ [@@deriving show { with_path = false} ] (* with tarzan *)
 
 (* TODO: rename name *)
 type long_name = qualifier * name
  and qualifier = (name * tok (*'.'*)) list
-
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Types *)
@@ -85,11 +105,12 @@ type ty =
     | TyArg1 of ty
     | TyArgMulti of ty comma_list paren
     (* todo? | TyNoArg and merge TyName and TyApp ? *)
+ [@@deriving show { with_path = false}]
 
 (* ------------------------------------------------------------------------- *)
 (* Expressions *)
 (* ------------------------------------------------------------------------- *)
-and expr =
+type expr =
   | C of constant
   | L of long_name (* val_longident *)
 
@@ -136,7 +157,7 @@ and expr =
 
   | ExprTodo of tok
 
-and seq_expr = expr semicolon_list
+ and seq_expr = expr semicolon_list
 
  and constant =
    | Int of string wrap
@@ -235,6 +256,8 @@ and let_binding =
    | ParamPat of pattern
    | ParamTodo of tok
 
+ [@@deriving show { with_path = false}]
+
 (* ------------------------------------------------------------------------- *)
 (* Type declaration *)
 (* ------------------------------------------------------------------------- *)
@@ -269,6 +292,7 @@ type type_declaration =
    fld_tok: tok; (* : *)
    fld_type: ty; (* poly_type ?? *)
  }
+ [@@deriving show { with_path = false}]
 
 
 (* ------------------------------------------------------------------------- *)
@@ -284,7 +308,6 @@ type module_expr =
   | ModuleName of long_name
   | ModuleStruct of tok (* struct *) * item list * tok (* end *)
   | ModuleTodo of tok
-
 
 (* ------------------------------------------------------------------------- *)
 (* Signature/Structure items *)
@@ -311,9 +334,12 @@ and item =
   | Module of tok * uname * tok * module_expr
       
   | ItemTodo of tok
+ [@@deriving show { with_path = false}]
 
 type sig_item = item
+ [@@deriving show]
 type struct_item = item
+ [@@deriving show]
 
 (* ------------------------------------------------------------------------- *)
 (* Toplevel phrases *)
@@ -328,10 +354,10 @@ type toplevel =
 
   (* some ml files contain some #! or even #load directives *)
   | TopDirective of tok
+ [@@deriving show { with_path = false}]
 
 type program = toplevel list
-
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (*****************************************************************************)
 (* Any *)
@@ -360,7 +386,7 @@ type any =
 
   | Info of tok
   | InfoList of tok list
-  (* with tarzan *)
+ [@@deriving show { with_path = false}] (* with tarzan *)
 
 (*****************************************************************************)
 (* Wrappers *)

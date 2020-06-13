@@ -31,25 +31,26 @@
 (* ------------------------------------------------------------------------- *)
 type tok = Parse_info.t
  (* with tarzan *)
+let pp_tok = Cst_ml.pp_tok
 
 (* a shortcut to annotate some information with token/position information *)
 type 'a wrap = 'a * tok
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (* round(), square[], curly{}, angle<> brackets *)
 type 'a bracket = tok * 'a * tok
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Names  *)
 (* ------------------------------------------------------------------------- *)
 
 type ident = string wrap
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 type name = qualifier * ident
  and qualifier = ident list (* TODO: functor? *)
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Types *)
@@ -66,7 +67,7 @@ type type_ =
 
   | TyTodo of tok
 
- (* with tarzan *)
+ [@@deriving show { with_path = false} ] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Expressions *)
@@ -182,8 +183,8 @@ and let_binding =
  and parameter = 
    | Param of pattern
    | ParamTodo of tok
-
- (* with tarzan *)
+ 
+ [@@deriving show { with_path = false} ]  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Type declaration *)
@@ -205,7 +206,7 @@ type type_declaration = {
    (* and type *)
    | RecordType   of (ident * type_ * tok option (* mutable *)) list bracket
 
- (* with tarzan *)
+ [@@deriving show { with_path = false} ] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Class *)
@@ -251,11 +252,10 @@ and item =
 
   | ItemTodo of tok
 
- (* with tarzan *)
+ [@@deriving show { with_path = false} ] (* with tarzan *)
       
 type program = item list
-
- (* with tarzan *)
+ [@@deriving show ] (* with tarzan *)
 
 (*****************************************************************************)
 (* Any *)
@@ -269,7 +269,7 @@ type any =
   | I of item
   | Pr of program
 
-  (* with tarzan *)
+ [@@deriving show { with_path = false} ] (* with tarzan *)
 
 (*****************************************************************************)
 (* Wrappers *)
@@ -281,3 +281,4 @@ let info_of_ident (_,info) = info
 let ident_of_name (_, ident) = ident
 let qualifier_of_name (qu, _) = 
   qu |> List.map str_of_ident |> Common.join "."
+
