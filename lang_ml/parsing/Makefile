@@ -22,6 +22,7 @@ LIBS=$(TOP)/commons/lib.cma \
  $(TOP)/h_program-lang/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons \
+  $(TOP)/external/ppx_deriving \
   $(TOP)/commons_core \
   $(TOP)/globals \
   $(TOP)/h_program-lang \
@@ -51,6 +52,13 @@ $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $(TARGET).cmxa $(OPTOBJS)
 $(TARGET).top: $(OBJS) $(LIBS)
 	$(OCAMLMKTOP) -o $(TARGET).top $(SYSLIBS) $(LIBS) $(OBJS)
+
+# to see the actual expanded source, use -dsource instead of -c below
+cst_ml.cmo: cst_ml.ml
+	ocamlfind ocamlc -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show cst_ml.ml
+
+cst_ml.cmx: cst_ml.ml
+	ocamlfind ocamlopt -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show cst_ml.ml
 
 clean::
 	rm -f $(TARGET).top
