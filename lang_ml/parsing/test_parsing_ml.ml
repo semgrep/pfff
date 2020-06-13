@@ -40,17 +40,10 @@ let test_parse_ml_or_mli xs =
   Parse_info.print_parsing_stat_list !stat_list;
   ()
 
-let test_dump_ml file =
-  let ast = Parse_ml.parse_program file in
-  let v = Meta_cst_ml.vof_any (Cst_ml.Program ast) in
-  let s = OCaml.string_of_v v in
-  pr s
-
 let test_show_ml file =
   let ast = Parse_ml.parse_program file in
   let s = Cst_ml.show_any (Cst_ml.Program ast) in
   pr s
-
 
 (*****************************************************************************)
 (* One shot *)
@@ -105,8 +98,6 @@ let actions () = [
   "-parse_ml", "   <files or dirs>", 
   Common.mk_action_n_arg test_parse_ml_or_mli;
   "-dump_ml", "   <file>", 
-  Common.mk_action_1_arg test_dump_ml;
-  "-show_ml", "   <file>", 
   Common.mk_action_1_arg test_show_ml;
 
   "-refactor_grammar", "   <subst_file> <file>", 
