@@ -1094,5 +1094,4 @@ attr_id: listr_sep(single_attr_id, ".") { $1 }
 
 post_item_attribute: TBracketAtAt attr_id payload "]" { }
 
-(* in theory you can have a full structure here *)
-payload: TString? { }
+payload: structure { }
