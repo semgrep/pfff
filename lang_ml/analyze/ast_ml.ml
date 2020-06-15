@@ -30,8 +30,7 @@
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
 type tok = Parse_info.t
- (* with tarzan *)
-let pp_tok = Cst_ml.pp_tok
+ [@@deriving show] (* with tarzan *)
 
 (* a shortcut to annotate some information with token/position information *)
 type 'a wrap = 'a * tok

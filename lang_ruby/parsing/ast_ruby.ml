@@ -53,8 +53,7 @@
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
 type tok = Parse_info.t
- (* with tarzan *)
-let pp_tok fmt _ = Format.fprintf fmt "()"
+ [@@deriving show] (* with tarzan *)
 
 (* a shortcut to annotate some information with token/position information *)
 type 'a wrap = 'a * tok

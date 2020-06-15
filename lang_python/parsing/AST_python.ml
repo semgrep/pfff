@@ -72,7 +72,7 @@
  *)
 type tok = Parse_info.t
 (*e: type [[AST_python.tok]] *)
-let pp_tok fmt _ = Format.fprintf fmt "()"
+ [@@deriving show]
 (*s: type [[AST_python.wrap]] *)
 (* a shortcut to annotate some information with token/position information *)
 type 'a wrap = 'a * tok

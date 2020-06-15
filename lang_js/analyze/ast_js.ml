@@ -70,7 +70,7 @@
  * transformation field that makes possible spatch on the code.
  *)
 type tok = Parse_info.t
-let pp_tok fmt _ = Format.fprintf fmt "()"
+ [@@deriving show]
 
 (* a shortcut to annotate some information with token/position information *)
 type 'a wrap = 'a * tok

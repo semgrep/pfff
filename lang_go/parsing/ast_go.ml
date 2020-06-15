@@ -25,11 +25,6 @@
  *)
 
 (*****************************************************************************)
-(* PPX *)
-(*****************************************************************************)
-let pp_tok fmt _ = Format.fprintf fmt "()"
-
-(*****************************************************************************)
 (* Names *)
 (*****************************************************************************)
 
@@ -41,7 +36,7 @@ let pp_tok fmt _ = Format.fprintf fmt "()"
  * transformation field that makes possible spatch on the code.
  *)
 type tok = Parse_info.t
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (* a shortcut to annotate some information with token/position information *)
 type 'a wrap = 'a * tok
