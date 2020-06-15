@@ -1,5 +1,29 @@
 # -*- org -*-
 
+* 0.41 (Q2 2020) ()
+
+** GENERIC
+
+*** IL and CFG v1
+
+*** basic dataflow on IL
+
+*** basic intraprocedural dataflow-based tainting analysis on generic AST!
+
+** OCaml
+
+*** define AST in addition to existing CST (easier path towards generic AST)
+
+*** convert to generic AST
+=> semgrep support for ocaml (dogfood)
+
+** internals
+
+*** use semgrep for CI!
+
+*** use ppx_deriving instead of ocamltarzan for the dumpers
+no more meta_ast_xxx.ml
+
 * 0.40 (Q1 2020) (Go/Ruby parsers, better Java/C++ parsers, generic naming)
 
 ** introducing lang_go/
