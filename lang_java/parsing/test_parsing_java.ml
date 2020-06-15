@@ -85,9 +85,8 @@ let test_lexer file =
 
 let test_dump file =
   let ast = Parse_java.parse_program file in
-  let v = Meta_ast_java.vof_any (Ast_java.AProgram ast) in
-  let str = OCaml.string_of_v v in
-  pr str
+  let s = Ast_java.show_program ast in
+  pr s
 
 let test_visitor file = 
   let visitor = V.mk_visitor { V.default_visitor with

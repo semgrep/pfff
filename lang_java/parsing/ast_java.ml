@@ -36,27 +36,28 @@
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
 type tok = Parse_info.t
+ let pp_tok fmt _ = Format.fprintf fmt "()"
   (* with tarzan *)
 type 'a wrap  = 'a * tok
-  (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 type 'a list1 = 'a list (* really should be 'a * 'a list *)
-  (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (* round(), square[], curly{}, angle<> brackets *)
 type 'a bracket = tok * 'a * tok
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Ident, qualifier *)
 (* ------------------------------------------------------------------------- *)
 (* for class/interface/enum names, method/field names, type parameter, ... *)
 type ident = string wrap
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (* for package, import, throw specification *)
 type qualified_ident = ident list
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (*****************************************************************************)
 (* Type *)
@@ -80,11 +81,13 @@ type typ =
     * things.
     *)
     and ref_type = typ
- (* with tarzan *)
+
+ [@@deriving show { with_path = false }] (* with tarzan *)
 
 type type_parameter =
   | TParam of ident * ref_type list (* extends *)
- (* with tarzan *)
+
+ [@@deriving show { with_path = false }] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Modifier *)
@@ -387,7 +390,7 @@ and decl =
 
 and decls = decl list
 
- (* with tarzan *)
+ [@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* Toplevel *)
@@ -395,6 +398,8 @@ and decls = decl list
 type import =
   | ImportAll of tok * qualified_ident * tok (* * *)
   | ImportFrom of tok * qualified_ident * ident
+
+ [@@deriving show { with_path = false }]
 
 type compilation_unit = {
   package: (tok * qualified_ident) option;
@@ -405,10 +410,10 @@ type compilation_unit = {
   (* todo? necessarily a (unique) class/interface first? *)
   decls: decls;
 }
- (* with tarzan *)
+ [@@deriving show { with_path = false }] (* with tarzan *)
 
 type program = compilation_unit
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (*****************************************************************************)
 (* Any *)
@@ -430,7 +435,8 @@ type any =
   | ADirectiveStmt of import
   | ADirectiveStmts of import list
   | AProgram of program
- (* with tarzan *)
+
+ [@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* Helpers *)

@@ -5,7 +5,7 @@ TOP=../..
 TARGET=lib
 OPAMPKG=pfff-lang_java
 
-SRC= ast_java.ml meta_ast_java.ml \
+SRC= ast_java.ml \
      visitor_java.ml \
      lib_parsing_java.ml \
      parser_java.ml lexer_java.ml \
@@ -20,6 +20,7 @@ LIBS= $(TOP)/commons/lib.cma \
  $(TOP)/h_program-lang/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons $(TOP)/commons_core \
+  $(TOP)/external/ppx_deriving \
   $(TOP)/external/json-wheel \
   $(TOP)/h_program-lang \
   $(TOP)/globals
@@ -49,9 +50,13 @@ $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $(TARGET).cmxa $(OPTOBJS)
 $(TARGET).top: $(OBJS) $(LIBS)
 	$(OCAMLMKTOP) -o $(TARGET).top $(SYSLIBS) $(LIBS) $(OBJS)
-
 clean::
 	rm -f $(TARGET).top
+
+ast_java.cmo: ast_java.ml
+	ocamlfind ocamlc -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
+ast_java.cmx: ast_java.ml
+	ocamlfind ocamlopt -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
 
 
 lexer_java.ml: lexer_java.mll
