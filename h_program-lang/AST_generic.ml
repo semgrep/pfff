@@ -116,12 +116,13 @@ open Common
 type tok = Parse_info.t
 (*e: type [[AST_generic.tok]] *)
  (* with tarzan *)
+let pp_tok fmt _ = Format.fprintf fmt "()"
 
 (*s: type [[AST_generic.wrap]] *)
 (* a shortcut to annotate some information with position information *)
 type 'a wrap = 'a * tok
 (*e: type [[AST_generic.wrap]] *)
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (*s: type [[AST_generic.bracket]] *)
 (* Use for round(), square[], curly{}, and angle<> brackets. 
@@ -131,7 +132,7 @@ type 'a wrap = 'a * tok
  *)
 type 'a bracket = tok * 'a * tok
 (*e: type [[AST_generic.bracket]] *)
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (*****************************************************************************)
 (* Names *)
@@ -140,11 +141,12 @@ type 'a bracket = tok * 'a * tok
 (*s: type [[AST_generic.ident]] *)
 type ident = string wrap
 (*e: type [[AST_generic.ident]] *)
+ [@@deriving show]
 
 (*s: type [[AST_generic.dotted_ident]] *)
 type dotted_ident = ident list (* at least 1 element *)
 (*e: type [[AST_generic.dotted_ident]] *)
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (*s: type [[AST_generic.module_name]] *)
 (* module_name can also be used for a package name or a namespace *)
@@ -153,7 +155,7 @@ type module_name =
   (* in FileName the '/' is similar to the '.' in DottedName *)
   | FileName of string wrap   (* ex: Js import, C #include, Go import *)
 (*e: type [[AST_generic.module_name]] *)
- (* with tarzan *)
+ [@@deriving show { with_path = false }] (* with tarzan *)
 
 (* A single unique id: sid (uid would be a better name, but it usually 
  * means "user id" for people).
@@ -208,8 +210,7 @@ and resolved_name = resolved_name_kind * sid
   | Macro
   | EnumConstant
 (*e: type [[AST_generic.resolved_name_kind]] *)
-
- (* with tarzan *)
+ [@@deriving show { with_path = false }]  (* with tarzan *)
 
 (* Start of big mutually recursive types because of the use of 'any' 
  * in OtherXxx *)
@@ -1309,7 +1310,7 @@ and any =
   | Tk of tok
   (*e: [[AST_generic.any]] other cases *)
 (*e: type [[AST_generic.any]] *)
- (* with tarzan *)
+ [@@deriving show { with_path = false }] (* with tarzan *)
 
 (*s: constant [[AST_generic.special_multivardef_pattern]] *)
 (* In JS one can do 'var {x,y} = foo();'. We used to transpile that

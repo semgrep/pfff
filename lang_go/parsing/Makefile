@@ -7,7 +7,7 @@ OPAMPKG=pfff-lang_go
 
 -include $(TOP)/Makefile.config
 
-SRC= ast_go.ml meta_ast_go.ml \
+SRC= ast_go.ml \
      visitor_go.ml \
      lib_parsing_go.ml \
      parser_go.ml lexer_go.ml \
@@ -22,6 +22,7 @@ LIBS=$(TOP)/commons/lib.cma \
  $(TOP)/h_program-lang/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons \
+  $(TOP)/external/ppx_deriving \
   $(TOP)/commons_core \
   $(TOP)/globals \
   $(TOP)/h_program-lang \
@@ -51,10 +52,14 @@ $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $(TARGET).cmxa $(OPTOBJS)
 $(TARGET).top: $(OBJS) $(LIBS)
 	$(OCAMLMKTOP) -o $(TARGET).top $(SYSLIBS) $(LIBS) $(OBJS)
-
 clean::
 	rm -f $(TARGET).top
 
+
+ast_go.cmo: ast_go.ml
+	ocamlfind ocamlc -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
+ast_go.cmx: ast_go.ml
+	ocamlfind ocamlopt -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
 
 lexer_go.ml: lexer_go.mll
 	$(OCAMLLEX) $<
