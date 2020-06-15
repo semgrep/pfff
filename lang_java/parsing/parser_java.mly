@@ -121,13 +121,6 @@ let expr_to_typename expr =
         pr2_gen expr;
         raise Todo
 
-(* let fail_if_metavar_on_typecheck typ =
-  match typ with
-    | TClass (((t, _), _)::_) -> 
-       if (t.[0] = '$') then failwith "No support for metavariable types" 
-       else () 
-    | _ -> () *)
-
 let mk_adecl_or_adecls = function
   | [] -> ADecls []
   | [x] -> ADecl x
