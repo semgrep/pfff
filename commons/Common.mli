@@ -257,6 +257,9 @@ val (|||): 'a option -> 'a -> 'a
 (*s: type [[Common.either]] *)
 type ('a, 'b) either = Left of 'a | Right of 'b
 (*e: type [[Common.either]] *)
+val pp_either: (Format.formatter -> 'a -> 'b) ->
+               (Format.formatter -> 'c -> 'd) ->
+               Format.formatter -> ('a, 'c) either -> unit
 (*s: type [[Common.either3]] *)
 type ('a, 'b, 'c) either3 = Left3 of 'a | Middle3 of 'b | Right3 of 'c
 (*e: type [[Common.either3]] *)

@@ -648,6 +648,22 @@ type ('a,'b) either = Left of 'a | Right of 'b
 type ('a, 'b, 'c) either3 = Left3 of 'a | Middle3 of 'b | Right3 of 'c
   (* with sexp *)
 
+(* for [@@deriving show] *)
+(* result of ocamlfind ocamlc -dsource ... on this code
+type ('a, 'b) either =
+  | Left of 'a
+  | Right of 'b
+[@@deriving show]
+*)
+let pp_either = fun poly_a -> fun poly_b -> fun fmt -> function
+  | Left a0 ->
+    (Format.fprintf fmt "(@[<2>Left@ ";
+     (poly_a fmt) a0;
+     Format.fprintf fmt "@])")
+  | Right a0 ->
+    (Format.fprintf fmt "(@[<2>Right@ ";
+     (poly_b fmt) a0;
+     Format.fprintf fmt "@])")
 
 let partition_either f l =
   let rec part_either left right = function

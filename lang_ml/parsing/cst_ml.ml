@@ -23,29 +23,6 @@ open Common
  *)
 
 (*****************************************************************************)
-(* PPX *)
-(*****************************************************************************)
-
-let pp_tok fmt _ = Format.fprintf fmt "()"
-type ('a, 'b) either = ('a, 'b) Common.either
-
-(* result of ocamlfind ocamlc -dsource ... on this code
-type ('a, 'b) either2 =
-  | Left of 'a
-  | Right of 'b
-[@@deriving show]
-*)
-let pp_either = fun poly_a -> fun poly_b -> fun fmt -> function
-  | Left a0 ->
-    (Ppx_deriving_runtime.Format.fprintf fmt "(@[<2>Left@ ";
-     (poly_a fmt) a0;
-     Ppx_deriving_runtime.Format.fprintf fmt "@])")
-  | Right a0 ->
-    (Ppx_deriving_runtime.Format.fprintf fmt "(@[<2>Right@ ";
-     (poly_b fmt) a0;
-     Ppx_deriving_runtime.Format.fprintf fmt "@])")
-
-(*****************************************************************************)
 (* The AST related types *)
 (*****************************************************************************)
 
@@ -53,6 +30,7 @@ let pp_either = fun poly_a -> fun poly_b -> fun fmt -> function
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
 type tok = Parse_info.t
+let pp_tok fmt _ = Format.fprintf fmt "()"
 
 (* a shortcut to annotate some information with token/position information *)
 type 'a wrap = 'a * tok
@@ -61,13 +39,14 @@ and 'a paren   = tok * 'a * tok
 and 'a brace   = tok * 'a * tok
 and 'a bracket = tok * 'a * tok 
 
-and 'a comma_list = ('a, tok (* ',' *)) either list
-and 'a and_list = ('a, tok (* 'and' *)) either list
-and 'a star_list = ('a, tok (* '*' *)) either list
+and 'a comma_list = ('a, tok (* ',' *)) Common.either list
+and 'a and_list = ('a, tok (* 'and' *)) Common.either list
+and 'a star_list = ('a, tok (* '*' *)) Common.either list
 (* optional first | *)
-and 'a pipe_list = ('a, tok (* '|' *)) either list
+and 'a pipe_list = ('a, tok (* '|' *)) Common.either list
 (* optional final ; *)
-and 'a semicolon_list = ('a, tok (* ';' *)) either list
+and 'a semicolon_list = ('a, tok (* ';' *)) Common.either list
+
  [@@deriving show] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
@@ -75,7 +54,6 @@ and 'a semicolon_list = ('a, tok (* ';' *)) either list
 (* ------------------------------------------------------------------------- *)
 (* TODO: rename ident (at least things are better in ast_ml.ml *)
 type name = Name of string wrap
-
   (* lower and uppernames aliases, just for clarity *)
   and lname = name
   and uname = name
@@ -105,6 +83,7 @@ type ty =
     | TyArg1 of ty
     | TyArgMulti of ty comma_list paren
     (* todo? | TyNoArg and merge TyName and TyApp ? *)
+
  [@@deriving show { with_path = false}]
 
 (* ------------------------------------------------------------------------- *)

@@ -29,17 +29,6 @@
 (*****************************************************************************)
 let pp_tok fmt _ = Format.fprintf fmt "()"
 
-type ('a, 'b) either = ('a, 'b) Common.either
-let pp_either = fun poly_a -> fun poly_b -> fun fmt -> function
-  | Common.Left a0 ->
-    (Ppx_deriving_runtime.Format.fprintf fmt "(@[<2>Left@ ";
-     (poly_a fmt) a0;
-     Ppx_deriving_runtime.Format.fprintf fmt "@])")
-  | Common.Right a0 ->
-    (Ppx_deriving_runtime.Format.fprintf fmt "(@[<2>Right@ ";
-     (poly_b fmt) a0;
-     Ppx_deriving_runtime.Format.fprintf fmt "@])")
-
 (*****************************************************************************)
 (* Names *)
 (*****************************************************************************)
@@ -122,7 +111,7 @@ type type_ =
     | Method of ident * func_type
     | EmbeddedInterface of qualified_ident
 
-and expr_or_type = (expr, type_) either
+and expr_or_type = (expr, type_) Common.either
 
 (*****************************************************************************)
 (* Expression *)
