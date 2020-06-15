@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Ast_c
 
 (*****************************************************************************)
@@ -44,8 +43,10 @@ open Ast_c
 
 (* for functions, constants, fields, builtins, types *)
 type name = string wrap
+ [@@deriving show]
 (* for globals, locals, parameters *)
 type var = name
+ [@@deriving show]
 
 (* ------------------------------------------------------------------------- *)
 (* Lvalue *)
@@ -61,7 +62,7 @@ type lvalue =
   (* hmm mv? *)
   | DeRef of var (* *x *)
 
-(* with tarzan *)
+  [@@deriving show { with_path = false }] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Rvalue *)
@@ -82,7 +83,7 @@ type rvalue =
 
   | Lv of lvalue
 
-(* with tarzan *)
+  [@@deriving show { with_path = false }] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Stmt *)
@@ -93,4 +94,4 @@ type instr =
   | AssignAddress of var * lvalue (* except Deref (no sense to do &*x) *)
   | AssignLvalue of lvalue * var (* Except Id, done by Assign *)
 
-(* with tarzan *)
+  [@@deriving show { with_path = false }] (* with tarzan *)

@@ -420,8 +420,7 @@ let add_node_and_edge_if_defs_mode env (name, kind) typopt =
             (* hmmm can't call final_type here, no typedef PASS yet
                let t = final_type env t in 
             *)
-            let v = Meta_ast_c.vof_any (Type t) in
-            let _s = OCaml.string_of_v v in
+            let _s = Ast_c.show_any (Type t) in
             (* hmmm this is fed to prolog so need to be a simple string
              * without special quote in it, so for now let's skip
              *)
@@ -639,8 +638,11 @@ and toplevel env x =
         if Hashtbl.mem env.structs s
         then
           let old = Hashtbl.find env.structs s in
-          if (Meta_ast_c.vof_any (Toplevel (StructDef old))) =*= 
-             (Meta_ast_c.vof_any (Toplevel (StructDef def)))
+          (* TODO: need call abstract_line_info here *)
+         
+          if (* (Meta_ast_c.vof_any (Toplevel (StructDef old))) =*= 
+             (Meta_ast_c.vof_any (Toplevel (StructDef def))) *)
+            failwith "TODO: abstract_line_info and =*= for C, or deriving eq"
           (* Why they don't factorize? because they don't like recursive
            * #include in plan I think
            *)
@@ -707,7 +709,8 @@ and toplevel env x =
         if Hashtbl.mem env.typedefs s
         then
           let old = Hashtbl.find env.typedefs s in
-          if (Meta_ast_c.vof_any (Type old) =*= (Meta_ast_c.vof_any (Type t)))
+          if (* (Meta_ast_c.vof_any (Type old) =*= (Meta_ast_c.vof_any (Type t))) *)
+            failwith "TODO: =*= and abstract_line info or us deriving eq"
           then ()
           else begin 
             env.pr2_and_log (spf "conflicting typedefs for %s, %s <> %s" 
