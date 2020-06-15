@@ -1,6 +1,6 @@
 
 let string_of_any ast =
-	ast |> Meta_cst_js.vof_any |> OCaml.string_of_v
+	Cst_js.show_any ast
 
 let load db gen =
 	try

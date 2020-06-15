@@ -267,8 +267,7 @@ let parse2 ?(timeout=0) filename =
     | Left (Some x) -> 
         stat.PI.correct <- stat.PI.correct + lines;
         if !Flag_js.debug_asi
-        then pr2 (spf "parsed: %s"
-                (Ast.Program [x] |> Meta_cst_js.vof_any |> OCaml.string_of_v));
+        then pr2 (spf "parsed: %s" (Ast.Program [x] |> Cst_js.show_any));
 
         x::aux tr 
     | Right err_tok ->

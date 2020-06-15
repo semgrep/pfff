@@ -70,15 +70,15 @@
  * transformation field that makes possible spatch on the code.
  *)
 type tok = Parse_info.t
- (* with tarzan *)
+let pp_tok fmt _ = Format.fprintf fmt "()"
 
 (* a shortcut to annotate some information with token/position information *)
 type 'a wrap = 'a * tok
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (* round(), square[], curly{}, angle<> brackets *)
 type 'a bracket = tok * 'a * tok
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Name *)
@@ -86,8 +86,9 @@ type 'a bracket = tok * 'a * tok
 
 (* todo: should rename ident *)
 type name = string wrap
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 type ident = string wrap
+ [@@deriving show]
 
 (* For bar() in a/b/foo.js the qualified_name is 'a/b/foo.bar'. 
  * I remove the filename extension for codegraph (which assumes
@@ -97,7 +98,7 @@ type ident = string wrap
  * This is computed after ast_js_build in graph_code_js.ml
  *)
 type qualified_name = string
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (* todo: use AST_generic.resolved_name at some point, and share the ref! *)
 type resolved_name =
@@ -108,7 +109,7 @@ type resolved_name =
   | Global of qualified_name
   (* default case *)
   | NotResolved
- (* with tarzan *)
+ [@@deriving show { with_path = false} ] (* with tarzan *)
 
 type special = 
   (* Special values *)
@@ -144,16 +145,16 @@ type special =
   | ArithOp of AST_generic.arithmetic_operator
   (* less: should be in statement and unsugared in x+=1 or even x = x + 1 *)
   | IncrDecr of (AST_generic.incr_decr * AST_generic.prefix_postfix)
- (* with tarzan *)
+ [@@deriving show { with_path = false} ] (* with tarzan *)
 
 type label = string wrap
- (* with tarzan *)
+ [@@deriving show ] (* with tarzan *)
 
 (* the filename is not "resolved".
  * alt: use a reference like for resolved_name set in graph_code_js.ml and
  * module_path_js.ml? *)
 type filename = string wrap
- (* with tarzan *)
+ [@@deriving show ] (* with tarzan *)
 
 (* when doing export default Foo and import Bar, ... *)
 let default_entity = "!default!"
@@ -334,7 +335,7 @@ and class_ = {
     | Static
     | Public | Private | Protected
 
- (* with tarzan *)
+ [@@deriving show { with_path = false} ] (* with tarzan *)
 
 (*****************************************************************************)
 (* Directives *)
@@ -362,6 +363,8 @@ type module_directive =
   (* those should not exist (except for sgrep where they are useful) *)
   | ImportEffect of tok * filename
 
+  [@@deriving show { with_path = false} ]
+
 (*****************************************************************************)
 (* Toplevel *)
 (*****************************************************************************)
@@ -370,14 +373,14 @@ type toplevel =
   (* the tok is for graph_code to build a toplevel entity with a location *)
   | S of tok  * stmt
   | M of module_directive
- (* with tarzan *)
+ [@@deriving show { with_path = false} ] (* with tarzan *)
 
 (*****************************************************************************)
 (* Program *)
 (*****************************************************************************)
 
 type program = toplevel list
- (* with tarzan *)
+ [@@deriving show { with_path = false} ] (* with tarzan *)
 
 (*****************************************************************************)
 (* Any *)
@@ -388,7 +391,8 @@ type any =
   | Item of toplevel
   | Items of toplevel list
   | Program of program
- (* with tarzan *)
+
+ [@@deriving show { with_path = false} ] (* with tarzan *)
 
 (*****************************************************************************)
 (* Helpers *)

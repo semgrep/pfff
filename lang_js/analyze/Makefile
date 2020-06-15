@@ -6,7 +6,7 @@ TARGET=lib
 OPAMPKG=pfff-lang_js-analyze
 
 SRC= \
-  ast_js.ml meta_ast_js.ml visitor_ast_js.ml map_ast_js.ml \
+  ast_js.ml visitor_ast_js.ml map_ast_js.ml \
   js_to_generic.ml \
   lib_analyze_js.ml \
   transpile_js.ml ast_js_build.ml \
@@ -33,6 +33,7 @@ LIBS=$(TOP)/commons/lib.cma \
 # qa_test qa_code \
 
 INCLUDEDIRS= $(TOP)/commons \
+   $(TOP)/external/ppx_deriving \
    $(TOP)/external/json-wheel \
    $(TOP)/commons_ocollection $(TOP)/commons_core \
    $(TOP)/h_program-lang \
@@ -66,15 +67,18 @@ depend::
 
 $(TARGET).cma: $(OBJS)
 	$(OCAMLC) -a -o $(TARGET).cma $(OBJS)
-
 $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $(TARGET).cmxa $(OPTOBJS)
-
 $(TARGET).top: $(OBJS) $(LIBS)
 	$(OCAMLMKTOP) -o $(TARGET).top $(SYSLIBS) $(LIBS) $(OBJS)
-
 clean::
 	rm -f $(TARGET).top
+
+ast_js.cmo: ast_js.ml
+	ocamlfind ocamlc -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
+ast_js.cmx: ast_js.ml
+	ocamlfind ocamlopt -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
+
 
 #temporary
 TEMP=abstract_interpreter_js_XX

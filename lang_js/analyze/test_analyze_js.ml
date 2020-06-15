@@ -31,8 +31,7 @@ let test_dump_ast file =
         Ast_js_build.program cst 
       ))
     in
-    let v = Meta_ast_js.vof_program ast in
-    let s = OCaml.string_of_v v in
+    let s = Ast_js.show_program ast in
     pr s
    with exn ->
       (match exn with

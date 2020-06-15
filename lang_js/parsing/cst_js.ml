@@ -91,9 +91,10 @@ module PI = Parse_info
  * transformation field that makes possible spatch on Javascript code.
  *)
 type tok = Parse_info.t
+let pp_tok fmt _ = Format.fprintf fmt "()"
 
 (* a shortcut to annotate some information with token/position information *)
-and 'a wrap = 'a * tok
+type 'a wrap = 'a * tok
 
 and 'a paren   = tok * 'a * tok
 and 'a brace   = tok * 'a * tok
@@ -107,23 +108,23 @@ and 'a comma_list = ('a, tok (* the comma *)) Common.either list
 (* semicolon. Can be None when was implicitely inserted during parsing *)
 and sc = tok option
 
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Name *)
 (* ------------------------------------------------------------------------- *)
 type name = string wrap
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (* facebook-ext: was a string list in PHP (where ':' was the separator) *)
 type xhp_tag = string
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (* es6: note: does not contain the enclosing "'" but the info does 
  * can contain './' as a prefix and can omit '.js' as an extension.
  *)
 type module_path = string wrap
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (*****************************************************************************)
 (* Expression *)
@@ -635,7 +636,8 @@ and export =
   | Export of (tok (* export *) * export)
 
  and program = module_item list
- (* with tarzan *)
+
+ [@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* Any *)
@@ -647,7 +649,8 @@ type any =
   | ModuleItem of module_item
   | ModuleItems of module_item list
   | Program of program
- (* with tarzan *)
+
+ [@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* Wrappers *)
