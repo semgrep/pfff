@@ -7,7 +7,7 @@ OPAMPKG=pfff-lang_python
 
 -include $(TOP)/Makefile.config
 
-SRC= Flag_parsing_python.ml AST_python.ml Meta_AST_python.ml \
+SRC= Flag_parsing_python.ml AST_python.ml \
      Visitor_python.ml \
      Lib_parsing_python.ml \
      Parser_python.ml Lexer_python.ml \
@@ -21,6 +21,7 @@ LIBS=$(TOP)/commons/lib.cma \
  $(TOP)/h_program-lang/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons \
+  $(TOP)/external/ppx_deriving \
   $(TOP)/commons_core \
   $(TOP)/globals \
   $(TOP)/h_program-lang \
@@ -50,10 +51,13 @@ $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $(TARGET).cmxa $(OPTOBJS)
 $(TARGET).top: $(OBJS) $(LIBS)
 	$(OCAMLMKTOP) -o $(TARGET).top $(SYSLIBS) $(LIBS) $(OBJS)
-
 clean::
 	rm -f $(TARGET).top
 
+AST_python.cmo: AST_python.ml
+	ocamlfind ocamlc -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
+AST_python.cmx: AST_python.ml
+	ocamlfind ocamlopt -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
 
 Lexer_python.ml: Lexer_python.mll
 	$(OCAMLLEX) $<

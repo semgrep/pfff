@@ -72,30 +72,30 @@
  *)
 type tok = Parse_info.t
 (*e: type [[AST_python.tok]] *)
- (* with tarzan *)
+let pp_tok fmt _ = Format.fprintf fmt "()"
 (*s: type [[AST_python.wrap]] *)
 (* a shortcut to annotate some information with token/position information *)
 type 'a wrap = 'a * tok
 (*e: type [[AST_python.wrap]] *)
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 (*s: type [[AST_python.bracket]] *)
 (* round(), square[], curly{}, angle<> brackets *)
 type 'a bracket = tok * 'a * tok
 (*e: type [[AST_python.bracket]] *)
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 (* ------------------------------------------------------------------------- *)
 (* Name *)
 (* ------------------------------------------------------------------------- *)
 (*s: type [[AST_python.name]] *)
 type name = string wrap
 (*e: type [[AST_python.name]] *)
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (*s: type [[AST_python.dotted_name]] *)
 (* note that name can be also the special "*" in an import context. *)
 type dotted_name = name list
 (*e: type [[AST_python.dotted_name]] *)
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (*s: type [[AST_python.module_name]] *)
 type module_name = 
@@ -103,6 +103,7 @@ type module_name =
  (* https://realpython.com/absolute-vs-relative-python-imports/ *)
  (tok (* . or ... toks *) list) option (* levels, for relative imports *)
 (*e: type [[AST_python.module_name]] *)
+ [@@deriving show]
 
 (*s: type [[AST_python.resolved_name]] *)
 (* TODO: reuse AST_generic one? *)
@@ -119,7 +120,7 @@ type resolved_name =
   (* default case *)
   | NotResolved
 (*e: type [[AST_python.resolved_name]] *)
- (* with tarzan *)
+ [@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* Expression *)
@@ -309,7 +310,7 @@ and type_ = expr
 (*s: type [[AST_python.type_parent]] *)
 and type_parent = argument
 (*e: type [[AST_python.type_parent]] *)
-  (* with tarzan *)
+ [@@deriving show { with_path = false }]  (* with tarzan *)
 
 (*****************************************************************************)
 (* Pattern *)
@@ -318,7 +319,7 @@ and type_parent = argument
 (* Name, or Tuple? or more? *)
 type pattern = expr
 (*e: type [[AST_python.pattern]] *)
-  (* with tarzan *)
+ [@@deriving show]  (* with tarzan *)
 
 (*****************************************************************************)
 (* Statement *)
@@ -430,7 +431,7 @@ and decorator = expr
 (*s: type [[AST_python.alias]] *)
 and alias = name (* name *) * name option (* asname *)
 (*e: type [[AST_python.alias]] *)
-  (* with tarzan *)
+  [@@deriving show { with_path = false }]  (* with tarzan *)
 
 (*****************************************************************************)
 (* Toplevel *)
@@ -438,7 +439,7 @@ and alias = name (* name *) * name option (* asname *)
 (*s: type [[AST_python.program]] *)
 type program = stmt list
 (*e: type [[AST_python.program]] *)
-  (* with tarzan *)
+  [@@deriving show]   (* with tarzan *)
 
 (*****************************************************************************)
 (* Any *)
@@ -452,7 +453,7 @@ type any =
 
   | DictElem of dictorset_elt
 (*e: type [[AST_python.any]] *)
- (* with tarzan *)
+  [@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* Wrappers *)

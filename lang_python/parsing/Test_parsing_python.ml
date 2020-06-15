@@ -54,8 +54,7 @@ let test_dump_python file =
   Common.save_excursion Flag.error_recovery true (fun () ->
   Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
    let ast = Parse_python.parse_program file in
-   let v = Meta_AST_python.vof_program ast in
-   let s = OCaml.string_of_v v in
+   let s = AST_python.show_program ast in
    pr s
   ))
 (*e: function [[Test_parsing_python.test_dump_python]] *)
