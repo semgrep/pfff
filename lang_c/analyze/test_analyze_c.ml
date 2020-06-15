@@ -31,8 +31,7 @@ let test_dump_cil file =
     V.kexpr = (fun _k e ->
       let instrs = Datalog_c.instrs_of_expr env e in
       instrs |> List.iter (fun instr ->
-        let v = Meta_ast_cil.vof_instr instr in
-        let s = OCaml.string_of_v v in
+        let s = Ast_cil.show_instr instr in
         pr s
       )
     );

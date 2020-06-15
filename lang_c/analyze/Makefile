@@ -5,7 +5,7 @@ TOP=../..
 TARGET=lib
 OPAMPKG=pfff-lang_c-analyze
 
-SRC= ast_cil.ml meta_ast_cil.ml \
+SRC= ast_cil.ml \
      c_to_generic.ml \
      datalog_c.ml \
      graph_code_c.ml \
@@ -19,6 +19,7 @@ LIBS=$(TOP)/commons/lib.cma \
      ../parsing/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons \
+   $(TOP)/external/ppx_deriving \
    $(TOP)/commons_ocollection \
    $(TOP)/commons_core \
    $(TOP)/external/ \
@@ -49,3 +50,8 @@ $(TARGET).top: $(OBJS) $(LIBS)
 
 clean::
 	rm -f $(TARGET).top
+
+ast_cil.cmo: ast_cil.ml
+	ocamlfind ocamlc -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
+ast_cil.cmx: ast_cil.ml
+	ocamlfind ocamlopt -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<

@@ -54,10 +54,13 @@ $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $(TARGET).cmxa $(OPTOBJS)
 $(TARGET).top: $(OBJS) $(LIBS)
 	$(OCAMLMKTOP) -o $(TARGET).top $(SYSLIBS) $(LIBS) $(OBJS)
-
 clean::
 	rm -f $(TARGET).top
 
+AST_generic.cmo: AST_generic.ml
+	ocamlfind ocamlc -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
+AST_generic.cmx: AST_generic.ml
+	ocamlfind ocamlopt -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
 
 archi_code_lexer.ml: archi_code_lexer.mll
 	$(OCAMLLEX) $<

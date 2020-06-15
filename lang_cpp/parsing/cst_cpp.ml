@@ -70,9 +70,10 @@
  * transformation field that makes possible spatch on C/C++/cpp code.
  *)
 type tok = Parse_info.t
+ [@@deriving show]
 
 (* a shortcut to annotate some information with token/position information *)
-and 'a wrap  = 'a * tok
+type 'a wrap  = 'a * tok
 
 (* TODO: delete *)
 and 'a wrapx  = 'a * tok list
@@ -88,7 +89,7 @@ and 'a comma_list2 = ('a, tok (* the comma *)) Common.either list
 (* semicolon *)
 and sc = tok
 
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Ident, name, scope qualifier *)
@@ -313,7 +314,8 @@ and expr =
 
   (* see check_variables_cpp.ml *)
   and ident_info = {
-    mutable i_scope: Scope_code.t;
+    mutable i_scope: Scope_code.t 
+        [@printer fun _fmt _ -> "??"];
   }
 
  (* cppext: normally should just have type argument = expr *)
@@ -772,15 +774,19 @@ and declaration =
     (* could also be in decl *)
     | NotParsedCorrectly of tok list
 
-and toplevel = declaration_sequencable
+  [@@deriving show { with_path = false }]
+
+type toplevel = declaration_sequencable
+  [@@deriving show]
 
 (* finally *)
-and program = toplevel list
+type program = toplevel list
+  [@@deriving show]
 
 (*****************************************************************************)
 (* Any *)
 (*****************************************************************************)
-and any = 
+type any = 
   | Program of program
   | Toplevel of toplevel
   | Cpp of cpp_directive
@@ -808,7 +814,7 @@ and any =
   | Info of tok
   | InfoList of tok list
 
- (* with tarzan *)
+  [@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* Some constructors *)

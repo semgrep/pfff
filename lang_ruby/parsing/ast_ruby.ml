@@ -53,19 +53,22 @@
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
 type tok = Parse_info.t
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (* a shortcut to annotate some information with token/position information *)
 type 'a wrap = 'a * tok
+ [@@deriving show]
 
 (* round(), square[], curly{}, angle<> brackets *)
 type 'a bracket = tok * 'a * tok
+ [@@deriving show]
 
 (* ------------------------------------------------------------------------- *)
 (* Ident/name *)
 (* ------------------------------------------------------------------------- *)
 
 type ident = string wrap
+ [@@deriving show]
 
 type id_kind = 
   | ID_Lowercase (* prefixed by [a-z] or _ *)
@@ -75,6 +78,7 @@ type id_kind =
   | ID_Global    (* prefixed by $ *)
   | ID_Builtin   (* prefixed by $, followed by non-alpha *)
   | ID_Assign of id_kind (* postfixed by = *)
+ [@@deriving show { with_path = false }]
 
 (* ------------------------------------------------------------------------- *)
 (* Operators *)
@@ -88,6 +92,7 @@ type unary_op =
   | Op_UStar     (* * *)
 
   | Op_UScope    (* ::x *)
+ [@@deriving show { with_path = false }]
 
 
 type binary_op = 
@@ -120,6 +125,7 @@ type binary_op =
 
   | Op_DOT2     (* .. *)
   | Op_DOT3     (* ... *)
+ [@@deriving show { with_path = false }]
 
 (*****************************************************************************)
 (* Expression *)
@@ -240,7 +246,7 @@ and definition =
     | Class_Inherit of expr
     | Inst_Inherit of expr
 
- (* with tarzan *)
+ [@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* Type *)
@@ -256,5 +262,5 @@ and definition =
 (*****************************************************************************)
 
 type program = stmts
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 

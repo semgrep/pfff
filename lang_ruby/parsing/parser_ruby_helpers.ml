@@ -1,6 +1,6 @@
 open Ast_ruby
 module Utils = Utils_ruby
-module Ast_printer = Meta_ast_ruby
+module Ast_printer = Ast_ruby
 module H = Ast_ruby_helpers
 
 (*****************************************************************************)
@@ -459,16 +459,11 @@ let prune_tern e1 e2 e3 pos1 pos2 =
 (* Generic merge helpers *)
 (*****************************************************************************)
 
-let do_fail s l to_s to_v =
+let do_fail s l to_s =
   let len = List.length l in
   if len > 1 then begin
   Printf.eprintf "<%s>: %d\n" s len;
   List.iter (fun x -> Printf.eprintf " %s\n" (to_s x)) l;
-       l |> List.iter (fun x -> 
-        let v = to_v x in
-        let s = OCaml.string_of_v v in
-        Common.pr2 s;
-       );
   failwith s
   end
 
@@ -493,7 +488,7 @@ let rec rhs_do_codeblock = function
   | Hash(false,(_, el,_)) -> rhs_do_codeblock (Utils.last el)
 
   | e -> 
-      Printf.eprintf "got: %s\n" (Ast_printer.string_of_expr e);
+      Printf.eprintf "got: %s\n" (Ast_printer.show_expr e);
       false
 
 let resolve_block_delim with_cb no_cb = match with_cb,no_cb with
@@ -517,7 +512,7 @@ let merge_binop xs =
   let l' = uniq_list H.compare_expr l in
   let fail () = 
     let l' = uniq_list H.compare_expr (newest::l') in
-  do_fail "binop" l' Ast_printer.string_of_expr Meta_ast_ruby.vof_expr;
+  do_fail "binop" l' Ast_printer.show_expr;
   l'
   in
   let rec nested_assign = function
@@ -550,7 +545,7 @@ let merge_topcall xs =
       resolve_block_delim with_cb no_cb;
   | _ ->
       let l' = uniq_list H.compare_expr (newest::l') in
-        do_fail "topcall" l' Ast_printer.string_of_expr Meta_ast_ruby.vof_expr;
+        do_fail "topcall" l' Ast_printer.show_expr;
         l'
   )
 
@@ -600,7 +595,7 @@ let merge_stmt xs =
 
   | _ ->
       let l' = uniq_list H.compare_expr (newest::l') in
-        do_fail "stmt" l' Ast_printer.string_of_expr Meta_ast_ruby.vof_expr;
+        do_fail "stmt" l' Ast_printer.show_expr;
         l'
 )
 
@@ -608,28 +603,28 @@ let merge_stmt xs =
 let merge_expr s xs =
   wrap xs (fun xs ->
   let l' = uniq_list H.compare_expr xs in
-    do_fail s l' Ast_printer.string_of_expr Meta_ast_ruby.vof_expr;
+    do_fail s l' Ast_printer.show_expr;
     l'
   )
 
 let merge_expr_list s xs =
   wrap xs (fun xs ->
   let l' = uniq_list H.compare_ast (xs) in
-    do_fail s l' Ast_printer.string_of_program Meta_ast_ruby.vof_program;
+    do_fail s l' Ast_printer.show_program;
     l'
   )
 
 let merge_formal_list s xs = 
   wrap xs (fun xs ->
   let l' = uniq_list compare (xs) in
-    do_fail s l' (fun _x -> "??") (fun _x -> OCaml.VUnit);
+    do_fail s l' (fun _x -> "??");
     l'
   )
 
 let merge_rest s xs = 
   wrap xs (fun xs ->
   let l' = xs in
-    do_fail s l' (fun _x -> "??") (fun _x -> OCaml.VUnit);
+    do_fail s l' (fun _x -> "??");
     l'
   )
 
@@ -642,9 +637,7 @@ let merge_rescue s xs =
   let l' = uniq_list cmp xs in
     do_fail s l' 
   (fun (x,y) -> 
-     Printf.sprintf "%s: %s" 
-       (Ast_printer.string_of_expr x)
-       (Ast_printer.string_of_expr y)
-  ) (fun _x -> OCaml.VUnit);
+     Printf.sprintf "%s: %s"  (Ast_printer.show_expr x)(Ast_printer.show_expr y)
+  );
     l'
  )

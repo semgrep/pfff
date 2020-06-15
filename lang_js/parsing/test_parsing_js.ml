@@ -99,16 +99,14 @@ let test_parse_ts xs =
 
 let test_dump_js file =
   let ast = Parse_js.parse_program file in
-  let v = Meta_cst_js.vof_program ast in
-  let s = OCaml.string_of_v v in
+  let s = Cst_js.show_program ast in
   pr s
 
 let test_dump_ts file =
  (* typescript and JSX have lexing conflicts *)
  Common.save_excursion Flag_parsing_js.jsx false (fun () ->
   let ast = Parse_js.parse_program file in
-  let v = Meta_cst_js.vof_program ast in
-  let s = OCaml.string_of_v v in
+  let s = Cst_js.show_program ast in
   pr s
  )
 

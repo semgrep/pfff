@@ -8,7 +8,6 @@ OPAMPKG=pfff-lang_ml
 -include $(TOP)/Makefile.config
 
 SRC= cst_ml.ml \
-     meta_cst_ml.ml \
      visitor_ml.ml lib_parsing_ml.ml \
      parser_ml.ml lexer_ml.ml \
      token_helpers_ml.ml \

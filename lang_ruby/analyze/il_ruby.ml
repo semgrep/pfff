@@ -45,7 +45,7 @@
 (* ------------------------------------------------------------------------- *)
 
 type tok = Parse_info.t
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Names *)
@@ -67,11 +67,11 @@ and var_kind =
   | Global
   | Constant
   | Builtin
- (* with tarzan *)
+ [@@deriving show { with_path = false }] (* with tarzan *)
 
 (* convenience alias that is a subtype of identifier *)
 type builtin_or_global = var_kind (* [`Var_Builtin|`Var_Global] *) * string
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 type msg_id = 
   | ID_UOperator of unary_op
@@ -99,7 +99,7 @@ type msg_id =
     | Op_XOR
     | Op_ARef
     | Op_ASet
- (* with tarzan *)
+ [@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* Expression *)
@@ -128,7 +128,8 @@ and literal =
 and star_expr = 
   | SE of expr
   | SStar of expr
- (* with tarzan *)
+
+ [@@deriving show { with_path = false }] (* with tarzan *)
 
 
 (*****************************************************************************)
@@ -173,9 +174,12 @@ and stmt = {
   snode : stmt_node;
   pos : tok;
   sid : int;
-  mutable lexical_locals : Utils_ruby.StrSet.t;
-  mutable preds : stmt Set_.t;
-  mutable succs : stmt Set_.t;
+  mutable lexical_locals : Utils_ruby.StrSet.t 
+    [@printer fun fmt _ -> fprintf fmt "lexical_locals:??"];
+  mutable preds : stmt Set_.t
+    [@printer fun fmt _ -> fprintf fmt "preds:??"];
+  mutable succs : stmt Set_.t
+    [@printer fun fmt _ -> fprintf fmt "succs:??"];
 }
 
 and stmt_node = 
@@ -253,14 +257,14 @@ and definition =
     | Alias_Method of msg_id * msg_id
     | Alias_Global of builtin_or_global * builtin_or_global
 
- (* with tarzan *)
+ [@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* Toplevel *)
 (*****************************************************************************)
 
 type t = stmt
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (*****************************************************************************)
 (* Misc *)
@@ -269,7 +273,8 @@ type t = stmt
 type any_formal =
   | B of block_formal_param
   | M of method_formal_param
- (* with tarzan *)
+
+ [@@deriving show { with_path = false }] (* with tarzan *)
 
 let b_to_any x = B x
 let m_to_any x = M x

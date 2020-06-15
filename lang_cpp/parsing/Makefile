@@ -10,7 +10,6 @@ OPAMPKG=pfff-lang_cpp
 SRC= flag_parsing_cpp.ml \
      token_cpp.ml cst_cpp.ml \
      type_cpp.ml \
-     meta_cst_cpp.ml \
      visitor_cpp.ml lib_parsing_cpp.ml \
      parser_cpp_mly_helper.ml parser_cpp.ml parser_cpp2.ml lexer_cpp.ml \
      token_helpers_cpp.ml token_views_cpp.ml token_views_context.ml \
@@ -27,8 +26,8 @@ SYSLIBS= str.cma unix.cma
 LIBS=$(TOP)/commons/lib.cma \
  $(TOP)/h_program-lang/lib.cma
 
-INCLUDEDIRS= \
- $(TOP)/commons \
+INCLUDEDIRS= $(TOP)/commons \
+ $(TOP)/external/ppx_deriving \
  $(TOP)/external/dyp \
  $(TOP)/commons_core \
  $(TOP)/globals \
@@ -61,6 +60,11 @@ $(TARGET).top: $(OBJS) $(LIBS)
 
 clean::
 	rm -f $(TARGET).top
+
+cst_cpp.cmo: cst_cpp.ml
+	ocamlfind ocamlc -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
+cst_cpp.cmx: cst_cpp.ml
+	ocamlfind ocamlopt -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
 
 
 lexer_cpp.ml: lexer_cpp.mll

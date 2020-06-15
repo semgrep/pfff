@@ -152,6 +152,10 @@ type token_kind =
 type t = token_mutable
 type info_ = t
 
+(* for ppx_deriving *)
+(* TODO: use Meta_ast_precision *)
+let pp fmt _ = Format.fprintf fmt "()"
+
 
 type parsing_stat = {
   filename: Common.filename;

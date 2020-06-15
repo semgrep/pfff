@@ -128,8 +128,7 @@ let parse file =
       (* check for ambiguous parse trees *)
       let l = List.map fst lst in
       let l' = HH.uniq_list (fun a b -> if H.equal_ast a b then 0 else -1) l in
-      HH.do_fail "program" l'
-          Meta_ast_ruby.string_of_program Meta_ast_ruby.vof_program;
+      HH.do_fail "program" l' Ast_ruby.show_program;
 
       let ast = List.hd l' in
       (*orig-todo? Ast.mod_ast (replace_heredoc state) ast*) 

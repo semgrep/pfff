@@ -17,23 +17,16 @@ lexer_ruby.cmx : utils_ruby.cmx parser_ruby_helpers.cmx parser_ruby.cmx \
     ast_ruby.cmx
 lib_parsing_ruby.cmo : ../../commons/file_type.cmi ../../commons/Common.cmi
 lib_parsing_ruby.cmx : ../../commons/file_type.cmx ../../commons/Common.cmx
-meta_ast_ruby.cmo : ../../commons/OCaml.cmi \
-    ../../h_program-lang/meta_parse_info.cmi ast_ruby.cmo meta_ast_ruby.cmi
-meta_ast_ruby.cmx : ../../commons/OCaml.cmx \
-    ../../h_program-lang/meta_parse_info.cmx ast_ruby.cmx meta_ast_ruby.cmi
-meta_ast_ruby.cmi : ../../commons/OCaml.cmi ast_ruby.cmo
 parse_ruby.cmo : utils_ruby.cmo token_helpers_ruby.cmi \
     parser_ruby_helpers.cmi parser_ruby.cmi \
-    ../../h_program-lang/Parse_info.cmi meta_ast_ruby.cmi lexer_ruby.cmo \
-    lexer_parser_ruby.cmo ../../h_program-lang/flag_parsing.cmo \
-    ../../commons/common2.cmi ../../commons/Common.cmi ast_ruby_helpers.cmi \
-    ast_ruby.cmo parse_ruby.cmi
+    ../../h_program-lang/Parse_info.cmi lexer_ruby.cmo lexer_parser_ruby.cmo \
+    ../../h_program-lang/flag_parsing.cmo ../../commons/common2.cmi \
+    ../../commons/Common.cmi ast_ruby_helpers.cmi ast_ruby.cmo parse_ruby.cmi
 parse_ruby.cmx : utils_ruby.cmx token_helpers_ruby.cmx \
     parser_ruby_helpers.cmx parser_ruby.cmx \
-    ../../h_program-lang/Parse_info.cmx meta_ast_ruby.cmx lexer_ruby.cmx \
-    lexer_parser_ruby.cmx ../../h_program-lang/flag_parsing.cmx \
-    ../../commons/common2.cmx ../../commons/Common.cmx ast_ruby_helpers.cmx \
-    ast_ruby.cmx parse_ruby.cmi
+    ../../h_program-lang/Parse_info.cmx lexer_ruby.cmx lexer_parser_ruby.cmx \
+    ../../h_program-lang/flag_parsing.cmx ../../commons/common2.cmx \
+    ../../commons/Common.cmx ast_ruby_helpers.cmx ast_ruby.cmx parse_ruby.cmi
 parse_ruby.cmi : parser_ruby.cmi ../../h_program-lang/Parse_info.cmi \
     ../../commons/Common.cmi ast_ruby.cmo
 parser_ruby.cmo : parser_ruby_helpers.cmi \
@@ -43,14 +36,11 @@ parser_ruby.cmx : parser_ruby_helpers.cmx \
     ../../h_program-lang/Parse_info.cmx ast_ruby_helpers.cmx ast_ruby.cmx \
     parser_ruby.cmi
 parser_ruby.cmi : ../../h_program-lang/Parse_info.cmi ast_ruby.cmo
-parser_ruby_helpers.cmo : utils_ruby.cmo ../../commons/OCaml.cmi \
-    meta_ast_ruby.cmi ../../commons/Common.cmi ast_ruby_helpers.cmi \
-    ast_ruby.cmo parser_ruby_helpers.cmi
-parser_ruby_helpers.cmx : utils_ruby.cmx ../../commons/OCaml.cmx \
-    meta_ast_ruby.cmx ../../commons/Common.cmx ast_ruby_helpers.cmx \
-    ast_ruby.cmx parser_ruby_helpers.cmi
-parser_ruby_helpers.cmi : utils_ruby.cmo ../../commons/OCaml.cmi \
-    ast_ruby.cmo
+parser_ruby_helpers.cmo : utils_ruby.cmo ast_ruby_helpers.cmi ast_ruby.cmo \
+    parser_ruby_helpers.cmi
+parser_ruby_helpers.cmx : utils_ruby.cmx ast_ruby_helpers.cmx ast_ruby.cmx \
+    parser_ruby_helpers.cmi
+parser_ruby_helpers.cmi : utils_ruby.cmo ast_ruby.cmo
 parser_ruby_temp.cmo : parser_ruby_helpers.cmi \
     ../../h_program-lang/Parse_info.cmi ast_ruby_helpers.cmi ast_ruby.cmo
 parser_ruby_temp.cmx : parser_ruby_helpers.cmx \
@@ -58,19 +48,17 @@ parser_ruby_temp.cmx : parser_ruby_helpers.cmx \
 test_parsing_ruby.cmo : utils_ruby.cmo token_helpers_ruby.cmi \
     ../../h_program-lang/skip_code.cmi parser_ruby_helpers.cmi \
     parser_ruby.cmi parse_ruby.cmi ../../h_program-lang/Parse_info.cmi \
-    ../../commons/OCaml.cmi ../../h_program-lang/meta_parse_info.cmi \
-    meta_ast_ruby.cmi lib_parsing_ruby.cmo lexer_ruby.cmo \
-    lexer_parser_ruby.cmo ../../h_program-lang/flag_parsing.cmo \
-    ../../commons_core/console.cmi ../../globals/config_pfff.cmi \
-    ../../commons/common2.cmi ../../commons/Common.cmi
+    lib_parsing_ruby.cmo lexer_ruby.cmo lexer_parser_ruby.cmo \
+    ../../h_program-lang/flag_parsing.cmo ../../commons_core/console.cmi \
+    ../../globals/config_pfff.cmi ../../commons/common2.cmi \
+    ../../commons/Common.cmi ast_ruby.cmo
 test_parsing_ruby.cmx : utils_ruby.cmx token_helpers_ruby.cmx \
     ../../h_program-lang/skip_code.cmx parser_ruby_helpers.cmx \
     parser_ruby.cmx parse_ruby.cmx ../../h_program-lang/Parse_info.cmx \
-    ../../commons/OCaml.cmx ../../h_program-lang/meta_parse_info.cmx \
-    meta_ast_ruby.cmx lib_parsing_ruby.cmx lexer_ruby.cmx \
-    lexer_parser_ruby.cmx ../../h_program-lang/flag_parsing.cmx \
-    ../../commons_core/console.cmx ../../globals/config_pfff.cmx \
-    ../../commons/common2.cmx ../../commons/Common.cmx
+    lib_parsing_ruby.cmx lexer_ruby.cmx lexer_parser_ruby.cmx \
+    ../../h_program-lang/flag_parsing.cmx ../../commons_core/console.cmx \
+    ../../globals/config_pfff.cmx ../../commons/common2.cmx \
+    ../../commons/Common.cmx ast_ruby.cmx
 token_helpers_ruby.cmo : parser_ruby.cmi ../../h_program-lang/Parse_info.cmi \
     token_helpers_ruby.cmi
 token_helpers_ruby.cmx : parser_ruby.cmx ../../h_program-lang/Parse_info.cmx \

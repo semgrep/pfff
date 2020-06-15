@@ -77,8 +77,7 @@ let long_format = ref true
 (* Helpers *)
 (*****************************************************************************)
 let debug any =
-  let v = Meta_ast_c.vof_any any in
-  let s = OCaml.string_of_v v in
+  let s = Ast_c.show_any any in
   let ii = Lib_parsing_c.ii_of_any any in
   pr2 (spf "PB: %s" (Parse_info.string_of_info (List.hd ii)));
   pr2 s

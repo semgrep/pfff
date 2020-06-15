@@ -76,21 +76,21 @@ open Common2.Infix
 (*****************************************************************************)
 
 type tok = Parse_info.t
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 type 'a wrap = 'a * tok
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (* round(), square[], curly{}, angle<> brackets *)
 type 'a bracket = tok * 'a * tok
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Name *)
 (* ------------------------------------------------------------------------- *)
 
 type name = string wrap
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Types *)
@@ -175,7 +175,7 @@ and argument = expr
 (* really should just contain constants and Id that are #define *)
 and const_expr = expr
 
- (* with tarzan *)
+ [@@deriving show { with_path = false }] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Statement *)
@@ -219,7 +219,7 @@ and var_decl = {
  and initialiser = expr
  and storage = Extern | Static | DefaultStorage
 
- (* with tarzan *)
+ [@@deriving show { with_path = false }] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Definitions *)
@@ -231,7 +231,7 @@ type func_def = {
   f_body: stmt list;
   f_static: bool;
 }
- (* with tarzan *)
+ [@@deriving show { with_path = false }] (* with tarzan *)
 
 
 type struct_def = {
@@ -247,15 +247,15 @@ type struct_def = {
     fld_name: name option;
     fld_type: type_;
   }
- (* with tarzan *)
+ [@@deriving show { with_path = false }] (* with tarzan *)
 
 (* less: use a record *)
 type enum_def = name * (name * const_expr option) list
- (* with tarzan *)
+ [@@deriving show { with_path = false }] (* with tarzan *)
 
 (* less: use a record *)
 type type_def = name * type_
- (* with tarzan *)
+ [@@deriving show { with_path = false }] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Cpp *)
@@ -268,7 +268,7 @@ type define_body =
    * is not here? So we can probably remove this constructor no?
    *)
   | CppStmt of stmt
- (* with tarzan *)
+ [@@deriving show { with_path = false }] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Program *)
@@ -287,10 +287,10 @@ type toplevel =
   | FuncDef of func_def
   | Global of var_decl (* also contain extern decl *)
   | Prototype of func_def (* empty body *)
- (* with tarzan *)
+ [@@deriving show { with_path = false }] (* with tarzan *)
 
 type program = toplevel list
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Any *)
@@ -302,7 +302,8 @@ type any =
   | Type of type_
   | Toplevel of toplevel
   | Program of program
- (* with tarzan *)
+
+ [@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* Helpers *)

@@ -36,22 +36,22 @@
  * transformation field that makes possible spatch on the code.
  *)
 type tok = Parse_info.t
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (* a shortcut to annotate some information with token/position information *)
 type 'a wrap = 'a * tok
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (* round(), square[], curly{}, angle<> brackets *)
 type 'a bracket = tok * 'a * tok
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Ident, qualifier *)
 (* ------------------------------------------------------------------------- *)
 (* For functions/methods/parameters/fields/labels *)
 type ident = string wrap
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (* For type names  (called names in ast.go). It could also be used for
  * imported entities from other module, but they are currently parsed as
@@ -59,7 +59,7 @@ type ident = string wrap
  * that require a semantic analysis to disambiguate.
  *)
 type qualified_ident = ident list (* 1 or 2 elements *)
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (*****************************************************************************)
 (* Type *)
@@ -286,13 +286,15 @@ and decl =
 
 and function_ = func_type * stmt
 
+ [@@deriving show { with_path = false }]
+
 (* only at the toplevel *)
 type top_decl =
  | DFunc   of ident *                            function_
  | DMethod of ident * parameter (* receiver *) * function_
  | D of decl
 
- (* with tarzan *)
+ [@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* Import *)
@@ -308,7 +310,7 @@ type import = {
   | ImportNamed of ident
   (* inline in current file scope all the entities of the imported module *)
   | ImportDot of tok
- (* with tarzan *)
+ [@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* Toplevel *)
@@ -319,7 +321,7 @@ type program = {
   imports: import list;
   decls: top_decl list;
 }
- (* with tarzan *)
+ [@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* Any *)
@@ -331,6 +333,8 @@ type item =
   | IImport of import
   | IStmt of stmt
 
+ [@@deriving show { with_path = false }]
+ 
 type any = 
  | E of expr
  | S of stmt
@@ -343,7 +347,8 @@ type any =
  | Ss of stmt list
  | Item of item
  | Items of item list
- (* with tarzan *)
+
+ [@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* Helpers *)

@@ -9,7 +9,6 @@ OPAMPKG=pfff-lang_js
 
 SRC= flag_parsing_js.ml \
      cst_js.ml \
-     meta_cst_js.ml \
      visitor_js.ml lib_parsing_js.ml \
      parser_js.ml lexer_js.ml \
      token_helpers_js.ml \
@@ -23,6 +22,7 @@ LIBS=$(TOP)/commons/lib.cma \
  $(TOP)/h_program-lang/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons \
+  $(TOP)/external/ppx_deriving \
   $(TOP)/commons_core \
   $(TOP)/globals \
   $(TOP)/external/json-wheel \
@@ -53,10 +53,13 @@ $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $(TARGET).cmxa $(OPTOBJS)
 $(TARGET).top: $(OBJS) $(LIBS)
 	$(OCAMLMKTOP) -o $(TARGET).top $(SYSLIBS) $(LIBS) $(OBJS)
-
 clean::
 	rm -f $(TARGET).top
 
+cst_js.cmo: cst_js.ml
+	ocamlfind ocamlc -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
+cst_js.cmx: cst_js.ml
+	ocamlfind ocamlopt -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
 
 lexer_js.ml: lexer_js.mll
 	$(OCAMLLEX) $<

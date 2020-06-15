@@ -9,7 +9,7 @@ open Il_ruby_helpers
 module C = Il_ruby_helpers.Abbr
 module G = AST_generic (* for unbracket *)
 
-module CodePrinter = Meta_il_ruby
+module CodePrinter = Il_ruby
 
 
 type 'a acc = {
@@ -557,8 +557,8 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
           | _ -> 
               Log.fatal (Log.of_tok (H.tok_of e))
                 "[BUG] Class/module? xlate error: %s(%s)" 
-                (CodePrinter.string_of_stmt s)
-                (CodePrinter.string_of_identifier v')
+                (CodePrinter.show_stmt s)
+                (CodePrinter.show_identifier v')
         in
           acc_enqueue s' acc, EId v'
 
@@ -568,7 +568,7 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         let s = match e' with
           | Var(Constant, s) -> s
           | _ -> Log.fatal (Log.of_tok pos) "unknown right hand of uscope: %s"
-              (CodePrinter.string_of_identifier e')
+              (CodePrinter.show_identifier e')
         in
           acc, EId (UScope s)
 
@@ -608,7 +608,7 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         let s = match e2' with
           | Var(Constant, s) -> s
           | _ -> Log.fatal (Log.of_tok pos) "unknown right hand of scope: %s"
-              (CodePrinter.string_of_identifier e2')
+              (CodePrinter.show_identifier e2')
         in
           acc, EId (Scope(e1', s))
 
@@ -888,7 +888,7 @@ and refactor_hash_list acc l pos =
     | [] -> acc
     | x::[] -> 
         Log.fatal (Log.of_tok pos) "odd number of elements in hash: %s" 
-          (CodePrinter.string_of_expr x)
+          (CodePrinter.show_expr x)
     | x::y::tl -> pair_list ((x,y)::acc) tl
   in
     match l with
@@ -1045,7 +1045,7 @@ and refactor_id (acc:stmt acc) e : stmt acc * identifier =
     | (acc,EId (id)) -> acc, id
     | _,ELit (l) -> 
         Log.fatal (Log.of_tok (H.tok_of e)) "lhs_of_expr: literal %s" 
-          (CodePrinter.string_of_literal l)
+          (CodePrinter.show_literal l)
 
 and string_of_lit_kind _kind = "TODO"
 
@@ -1065,7 +1065,7 @@ and refactor_msg (acc:stmt acc) msg : stmt acc * msg_id = match msg with
         acc, ID_MethodName lks
   | e ->
       Log.fatal (Log.of_tok (H.tok_of e)) "refactor_msg unknown msg: %s\n"
-        (Meta_ast_ruby.string_of_expr e)
+        (Ast_ruby.show_expr e)
 
 and refactor_symbol_or_msg (acc:stmt acc) sym_msg = match sym_msg with
   | Ast.Literal(Ast.Atom(interp,pos)) ->
@@ -1421,7 +1421,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
       let id' = Var(Local, s) in
       let acc = add_seen s acc in
       Log.err ~ctx:(Log.of_tok pos)
-          "removing dead code: %s" (Meta_ast_ruby.string_of_expr rhs);
+          "removing dead code: %s" (Ast_ruby.show_expr rhs);
         acc_enqueue (C.assign (LId id') (TE (EId Nil)) pos) acc
 
   (* special case for 'x ||= e' when this is the first assignment to x.
@@ -1575,7 +1575,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
   | Ast.CodeBlock _ as s -> 
       Log.fatal (Log.of_tok (H.tok_of s))
         "refactor_stmt: unknown stmt to refactor: %s\n"
-        (Meta_ast_ruby.string_of_expr s)
+        (Ast_ruby.show_expr s)
       
 and refactor_method_name (acc:stmt acc) e : stmt acc * def_name = match e with
   | Ast.Binop(targ,(Ast.Op_SCOPE,_pos),msg)
@@ -1680,7 +1680,7 @@ and refactor_rescue_guard acc (e:Ast.expr) : StrSet.t * rescue_guard =
             DQueue.iter
               (fun s ->
                  Printf.eprintf "resc: %s\n" 
-                   (CodePrinter.string_of_stmt s)
+                   (CodePrinter.show_stmt s)
               ) acc.q;
             Log.fatal (Log.of_tok (H.tok_of e))
               "rescue1 guard created hoisted expression?"
@@ -1689,7 +1689,7 @@ and refactor_rescue_guard acc (e:Ast.expr) : StrSet.t * rescue_guard =
 
     | e -> 
         Log.fixme ~ctx:(Log.of_tok (H.tok_of e))
-          "rescue guard: %s" (Meta_ast_ruby.string_of_expr e);
+          "rescue guard: %s" (Ast_ruby.show_expr e);
         let acc, e' = refactor_tuple_expr acc e in
           if (not (DQueue.is_empty acc.q)) || not (StrSet.is_empty acc.seen)
           then Log.fatal (Log.of_tok (H.tok_of e))
