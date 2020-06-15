@@ -36,8 +36,7 @@
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
 type tok = Parse_info.t
- let pp_tok fmt _ = Format.fprintf fmt "()"
-  (* with tarzan *)
+  let pp_tok fmt _ = Format.fprintf fmt "()" (* with tarzan *)
 type 'a wrap  = 'a * tok
  [@@deriving show] (* with tarzan *)
 
