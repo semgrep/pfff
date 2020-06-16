@@ -62,9 +62,9 @@ clean::
 	rm -f $(TARGET).top
 
 cst_cpp.cmo: cst_cpp.ml
-	ocamlfind ocamlc -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
+	$(OCAMLC) -c $(OCAMLCFLAGS) $(INCLUDES) $<
 cst_cpp.cmx: cst_cpp.ml
-	ocamlfind ocamlopt -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
+	$(OCAMLOPT) -c $(OCAMLCFLAGS) $(INCLUDES) $<
 
 
 lexer_cpp.ml: lexer_cpp.mll

@@ -54,9 +54,9 @@ clean::
 	rm -f $(TARGET).top
 
 ast_java.cmo: ast_java.ml
-	ocamlfind ocamlc -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
+	$(OCAMLC) -c $(OCAMLCFLAGS) $(INCLUDES) $<
 ast_java.cmx: ast_java.ml
-	ocamlfind ocamlopt -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
+	$(OCAMLOPT) -c $(OCAMLCFLAGS) $(INCLUDES) $<
 
 
 lexer_java.ml: lexer_java.mll

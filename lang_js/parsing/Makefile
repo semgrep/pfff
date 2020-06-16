@@ -57,9 +57,9 @@ clean::
 	rm -f $(TARGET).top
 
 cst_js.cmo: cst_js.ml
-	ocamlfind ocamlc -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
+	$(OCAMLC) -c $(OCAMLCFLAGS) $(INCLUDES) $<
 cst_js.cmx: cst_js.ml
-	ocamlfind ocamlopt -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
+	$(OCAMLOPT) -c $(OCAMLCFLAGS) $(INCLUDES) $<
 
 lexer_js.ml: lexer_js.mll
 	$(OCAMLLEX) $<

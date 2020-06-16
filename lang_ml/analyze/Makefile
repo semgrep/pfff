@@ -55,6 +55,6 @@ clean::
 	rm -f $(TARGET).top
 
 ast_ml.cmo: ast_ml.ml
-	ocamlfind ocamlc -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show ast_ml.ml
+	$(OCAMLC) -c $(OCAMLCFLAGS) $(INCLUDES) ast_ml.ml
 ast_ml.cmx: ast_ml.ml
-	ocamlfind ocamlopt -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show ast_ml.ml
+	$(OCAMLOPT) -c $(OCAMLCFLAGS) $(INCLUDES) ast_ml.ml

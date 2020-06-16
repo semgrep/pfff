@@ -75,9 +75,9 @@ clean::
 	rm -f $(TARGET).top
 
 ast_js.cmo: ast_js.ml
-	ocamlfind ocamlc -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
+	$(OCAMLC) -c $(OCAMLCFLAGS) $(INCLUDES) $<
 ast_js.cmx: ast_js.ml
-	ocamlfind ocamlopt -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
+	$(OCAMLOPT) -c $(OCAMLCFLAGS) $(INCLUDES) $<
 
 
 #temporary

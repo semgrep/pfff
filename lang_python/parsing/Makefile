@@ -55,9 +55,9 @@ clean::
 	rm -f $(TARGET).top
 
 AST_python.cmo: AST_python.ml
-	ocamlfind ocamlc -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
+	$(OCAMLC) -c $(OCAMLCFLAGS) $(INCLUDES) $<
 AST_python.cmx: AST_python.ml
-	ocamlfind ocamlopt -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
+	$(OCAMLOPT) -c $(OCAMLCFLAGS) $(INCLUDES) $<
 
 Lexer_python.ml: Lexer_python.mll
 	$(OCAMLLEX) $<

@@ -46,9 +46,9 @@ $(TARGET).top: $(OBJS) $(LIBS)
 	$(OCAMLMKTOP) -o $(TARGET).top $(SYSLIBS) $(LIBS) $(OBJS)
 
 il_ruby.cmo: il_ruby.ml
-	ocamlfind ocamlc -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show il_ruby.ml
+	$(OCAMLC) -c $(OCAMLCFLAGS) $(INCLUDES) il_ruby.ml
 il_ruby.cmx: il_ruby.ml
-	ocamlfind ocamlopt -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show il_ruby.ml
+	$(OCAMLOPT) -c $(OCAMLCFLAGS) $(INCLUDES) il_ruby.ml
 
 clean::
 	rm -f $(TARGET).top

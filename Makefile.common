@@ -31,6 +31,14 @@ INCLUDES?=$(INCLUDEDIRS:%=-I %) $(SYSINCLUDES)
 OBJS?=    $(SRC:.ml=.cmo)
 OPTOBJS?= $(SRC:.ml=.cmx)
 
+# ocamlfind packages we depend on. They should come from opam packages.
+# They may or may not have the same name as the opam package that provides
+# them.
+#
+PKG = \
+  ppx_deriving.show \
+  uutf \
+  uucp
 
 ##############################################################################
 # Generic ocaml variables
@@ -56,12 +64,12 @@ OCAMLCFLAGS=-g -thread $(WARNING_FLAGS) $(OCAMLCFLAGS_EXTRA)
 # variable false positive
 OPTFLAGS?=-thread
 
-OCAMLC=ocamlc$(OPTBIN) $(OCAMLCFLAGS) $(PP) $(INCLUDES)
-OCAMLOPT=ocamlopt$(OPTBIN) $(OPTFLAGS) $(PP) $(INCLUDES)
+OCAMLC=ocamlfind ocamlc -package "$(PKG)" $(OCAMLCFLAGS) $(PP) $(INCLUDES)
+OCAMLOPT=ocamlfind opt -package "$(PKG)" $(OPTFLAGS) $(PP) $(INCLUDES)
 OCAMLLEX=ocamllex #-ml # -ml for debugging lexer, but slightly slower
 OCAMLYACC=ocamlyacc -v
 OCAMLDEP=ocamldep $(PP)
-OCAMLMKTOP=ocamlmktop -g -custom $(INCLUDES) -thread
+OCAMLMKTOP=ocamlfind mktop -g -custom $(INCLUDES) -thread $(PKG)
 
 # can also be set via 'make static'
 STATIC= #-ccopt -static
@@ -164,7 +172,7 @@ INCLUDEOPAM=$(notdir $(INCLUDEDIRS2))
 .ml.cmx:
 	$(OCAMLOPT)  -c $<
 
-.ml.mldepend: 
+.ml.mldepend:
 	$(OCAMLC) -i $<
 
 clean::

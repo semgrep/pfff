@@ -58,9 +58,9 @@ clean::
 	rm -f $(TARGET).top
 
 AST_generic.cmo: AST_generic.ml
-	ocamlfind ocamlc -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
+	$(OCAMLC) -c $(OCAMLCFLAGS) $(INCLUDES) $<
 AST_generic.cmx: AST_generic.ml
-	ocamlfind ocamlopt -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
+	$(OCAMLOPT) -c $(OCAMLCFLAGS) $(INCLUDES) $<
 
 archi_code_lexer.ml: archi_code_lexer.mll
 	$(OCAMLLEX) $<

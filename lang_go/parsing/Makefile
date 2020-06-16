@@ -57,9 +57,9 @@ clean::
 
 
 ast_go.cmo: ast_go.ml
-	ocamlfind ocamlc -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
+	$(OCAMLC) -c $(OCAMLCFLAGS) $(INCLUDES) $<
 ast_go.cmx: ast_go.ml
-	ocamlfind ocamlopt -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
+	$(OCAMLOPT) -c $(OCAMLCFLAGS) $(INCLUDES) $<
 
 lexer_go.ml: lexer_go.mll
 	$(OCAMLLEX) $<

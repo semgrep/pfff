@@ -54,10 +54,10 @@ $(TARGET).top: $(OBJS) $(LIBS)
 
 # to see the actual expanded source, use -dsource instead of -c below
 cst_ml.cmo: cst_ml.ml
-	ocamlfind ocamlc -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show cst_ml.ml
+	$(OCAMLC) -c $(OCAMLCFLAGS) $(INCLUDES) cst_ml.ml
 
 cst_ml.cmx: cst_ml.ml
-	ocamlfind ocamlopt -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show cst_ml.ml
+	$(OCAMLOPT) -c $(OCAMLCFLAGS) $(INCLUDES) cst_ml.ml
 
 clean::
 	rm -f $(TARGET).top

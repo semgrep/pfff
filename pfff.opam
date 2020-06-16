@@ -41,4 +41,6 @@ depends: [
   "menhir"
   "grain_dypgen"
   "ppx_deriving"
+  "uucp"
+  "uutf"
 ]
