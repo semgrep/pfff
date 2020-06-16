@@ -537,8 +537,7 @@ let tokenize_all_and_adjust_pos ?(unicode_hack=false)
  file tokenizer visitor_tok is_eof =
  Common.with_open_infile file (fun chan ->
   let lexbuf = 
-     (* todo: opti: check if char > 128 in file *)
-     if unicode_hack
+     if unicode_hack && Unicode.file_contains_non_ascii file
      then
        let string = 
             Common.profile_code "Unicode.asciify" (fun () ->

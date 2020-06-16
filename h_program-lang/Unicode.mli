@@ -2,6 +2,8 @@
    Utilities for dealing with Unicode issues.
 *)
 
+val file_contains_non_ascii: Common.filename -> bool
+
 module UTF8 : sig
   (*
      Convert non-ascii whitespace to space characters and

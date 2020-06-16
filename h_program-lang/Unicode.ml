@@ -2,6 +2,24 @@
    Utilities for dealing with Unicode issues.
 *)
 
+exception Found
+
+(* could probably be faster, but seems "good enough" *)
+let file_contains_non_ascii file =
+  (* copy-paste of Common.read_file without Bytes.to_string *)
+  let ic = open_in file  in
+  let size = in_channel_length ic in
+  let buf = Bytes.create size in
+  really_input ic buf 0 size;
+  close_in ic;
+  try
+    buf |> Bytes.iter (fun char ->
+        if Char.code char > 128
+        then raise Found
+    );
+    false
+  with Found -> true
+
 module UTF8 = struct
   (* Guess the length of the original UTF-8 sequence by re-encoding the
      character. This is quite inefficient. *)
