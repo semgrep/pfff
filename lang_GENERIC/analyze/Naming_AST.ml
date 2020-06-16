@@ -443,6 +443,9 @@ let resolve lang prog =
 
           (* name resolution *)
           let sid = Ast.gensym () in
+          (* for the type, we use the (optional) type in vtype, or, if we can infer  *)
+          (* the type of the expression vinit (literal or id), we use that as a type *)
+          (* useful for Go, where you can write var x = 2 without declaring the type *)
           let resolved_type = get_resolved_type (vinit, vtype) in
           let resolved = { entname = resolved_name_kind env, sid; enttype = resolved_type } in
           add_ident_current_scope id resolved env.names;
