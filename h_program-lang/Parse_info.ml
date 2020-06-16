@@ -534,8 +534,9 @@ let complete_token_location_large filename table x =
  *    skip them easily with one Common.exclude
  *)
 let tokenize_all_and_adjust_pos file tokenizer visitor_tok is_eof =
- Common.with_open_infile file (fun chan -> 
-  let lexbuf = Lexing.from_channel chan in
+ Common.with_open_infile file (fun chan ->
+  let string = Unicode.UTF8.asciify chan in
+  let lexbuf = Lexing.from_string string in
   let table     = full_charpos_to_pos_large file in
   let adjust_info ii = 
     { ii with token =

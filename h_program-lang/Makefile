@@ -7,6 +7,7 @@ OPAMPKG=pfff-h_program-lang
 
 SRC= entity_code.ml scope_code.ml \
      flag_parsing.ml \
+     Unicode.mli Unicode.ml \
      Parse_info.ml meta_parse_info.ml \
      comment_code.ml \
      ast_fuzzy.ml meta_ast_fuzzy.ml lib_ast_fuzzy.ml \
