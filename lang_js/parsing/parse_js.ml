@@ -184,7 +184,7 @@ let tokens2 file =
      then Lexer_js._last_non_whitespace_like_token := Some tok;
      tok
   in
-  Parse_info.tokenize_all_and_adjust_pos
+  Parse_info.tokenize_all_and_adjust_pos ~unicode_hack:true
     file token TH.visitor_info_of_tok TH.is_eof
 
 let tokens a = 

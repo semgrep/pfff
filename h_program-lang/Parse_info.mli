@@ -218,6 +218,7 @@ val tok_add_s: string -> t -> t
 (*s: signature [[Parse_info.tokenize_all_and_adjust_pos]] *)
 (* to be used by the lexer *)
 val tokenize_all_and_adjust_pos: 
+  ?unicode_hack:bool ->
   Common.filename -> 
   (Lexing.lexbuf -> 'tok) (* tokenizer *) -> 
   ((t -> t) -> 'tok -> 'tok) (* token visitor *) -> 
