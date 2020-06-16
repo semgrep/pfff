@@ -254,27 +254,27 @@ let lookup_nonlocal_scope id scopes =
       None
 (*e: function [[Naming_AST.lookup_nonlocal_scope]] *)
 
-let make_type type_string =
-  Some(TyName(((type_string, Parse_info.fake_info "()"), {name_qualifier=None; name_typeargs=None})))
+let make_type type_string tok =
+  Some(TyName(((type_string, tok), {name_qualifier=None; name_typeargs=None})))
 
 let get_resolved_type (vinit, vtype) =
   match vtype with
     | Some(_) -> vtype
     | None -> (
+      (* Currently these are go-specific *)
+      (* Alternative is to define a TyInt, TyBool, etc in the generic AST *)
+      (* so this is more portable across langauges *)
       match vinit with
-         | Some(L (Bool _)) -> make_type "bool"
-         | Some(L (Int _)) -> make_type "int"
-         | Some(L (Float _)) -> make_type "float"
-         | Some(L (Char _)) -> make_type "char"
-         | Some(L (String _)) -> make_type "str"
-         | Some(L (Regexp _)) -> make_type "regexp"
-         | Some(L (Unit _)) -> make_type "unit"
-         | Some(L (Null _)) -> make_type "null"
-         | Some(L (Imag _)) -> make_type "imag"
-         | Some(Id (_, {id_type; _}) as exp) -> (
-          let s = Meta_AST.vof_expr (exp) |> OCaml.string_of_v in
-          pr2 s;
-         pr2 "case id\n"; !id_type)
+         | Some(L (Bool ((_, tok)))) -> make_type "bool" tok
+         | Some(L (Int ((_, tok)))) -> make_type "int" tok
+         | Some(L (Float ((_, tok)))) -> make_type "float" tok
+         | Some(L (Char ((_, tok)))) -> make_type "char" tok
+         | Some(L (String ((_, tok)))) -> make_type "str" tok
+         | Some(L (Regexp ((_, tok)))) -> make_type "regexp" tok
+         | Some(L (Unit tok)) -> make_type "unit" tok
+         | Some(L (Null tok)) -> make_type "null" tok
+         | Some(L (Imag ((_, tok)))) -> make_type "imag" tok
+         | Some(Id (_, {id_type; _})) -> !id_type
          | _ -> None
     )
 
@@ -437,6 +437,10 @@ let resolve lang prog =
          * construct
          * todo? should add those somewhere instead of in_lvalue detection? *)
         VarDef ({ vinit; vtype }) when is_local_or_global_ctx env ->
+          (* Need to visit expressions first so that type is populated *)
+          (* If we do var a = 3, then var b = a, we want to propagate the type of a *)
+          k x;
+
           (* name resolution *)
           let sid = Ast.gensym () in
           let resolved_type = get_resolved_type (vinit, vtype) in
@@ -451,9 +455,7 @@ let resolve lang prog =
               id_info.id_const_literal := Some literal;
               add_constant_env id (sid, literal) env;
           | _ -> ()
-          );
-           
-          k x
+          )
       | { name = id; info = id_info; _}, UseOuterDecl tok ->
           let s = Parse_info.str_of_info tok in
           let flookup = 
