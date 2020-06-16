@@ -533,10 +533,19 @@ let complete_token_location_large filename table x =
  *  - we can have comments as tokens (useful for codemap/efuns) and
  *    skip them easily with one Common.exclude
  *)
-let tokenize_all_and_adjust_pos file tokenizer visitor_tok is_eof =
+let tokenize_all_and_adjust_pos ?(unicode_hack=false) 
+ file tokenizer visitor_tok is_eof =
  Common.with_open_infile file (fun chan ->
-  let string = Unicode.UTF8.asciify chan in
-  let lexbuf = Lexing.from_string string in
+  let lexbuf = 
+     (* todo: opti: check if char > 128 in file *)
+     if unicode_hack
+     then
+       let string = 
+            Common.profile_code "Unicode.asciify" (fun () ->
+                Unicode.UTF8.asciify chan) in
+       Lexing.from_string string 
+     else Lexing.from_channel chan
+  in
   let table     = full_charpos_to_pos_large file in
   let adjust_info ii = 
     { ii with token =

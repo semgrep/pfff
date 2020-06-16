@@ -216,8 +216,8 @@ let EscapeSequence_semgrep =
   '\\' _
 
 
-(* ugly: hardcoded stuff for fbandroid, error in SoundexTest.java *)
-let UnicodeX = "�"
+(* ugly: see unicode_hack in Parse_info.ml *)
+let UnicodeX = "Z"+
 
 let SingleCharacter = [^ '\'' '\\' '\n' '\r']
 let CharacterLiteral = '\'' (SingleCharacter | EscapeSequence | UnicodeX ) '\''

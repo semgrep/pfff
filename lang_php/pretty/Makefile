@@ -3,7 +3,8 @@ TOP=../..
 # Variables
 ##############################################################################
 TARGET=lib
-BIN=prettyphp
+#BIN=prettyphp
+
 OPAMPKG=pfff-lang_php-pretty
 
 SRC= \
@@ -35,13 +36,15 @@ INCLUDEDIRS= \
 ##############################################################################
 # Top rules
 ##############################################################################
-all:: $(TARGET).cma $(BIN)
-all.opt:: $(TARGET).cmxa $(BIN).opt
+all:: $(TARGET).cma
+# $(BIN)
+all.opt:: $(TARGET).cmxa 
+#$(BIN).opt
 
-$(BIN): $(OBJS) $(LIBS) main.ml
-	$(OCAMLC) -o $@ -custom $(SYSLIBS) $(LIBS) $(OBJS) main.ml
-$(BIN).opt: $(OBJS) $(LIBS) main.ml
-	$(OCAMLOPT) -o $@ $(SYSLIBSOPT) $(LIBS:.cma=.cmxa) $(OPTOBJS) main.ml
+#$(BIN): $(OBJS) $(LIBS) main.ml
+#	$(OCAMLC) -o $@ -custom $(SYSLIBS) $(LIBS) $(OBJS) main.ml
+#$(BIN).opt: $(OBJS) $(LIBS) main.ml
+#	$(OCAMLOPT) -o $@ $(SYSLIBSOPT) $(LIBS:.cma=.cmxa) $(OPTOBJS) main.ml
 $(TARGET).cma: $(OBJS) $(LIBS)
 	$(OCAMLC) -a -o $@ $(OBJS)
 $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)

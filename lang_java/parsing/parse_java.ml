@@ -45,7 +45,7 @@ let error_msg_tok tok =
 
 let tokens2 file =
   let token = Lexer_java.token in
-  Parse_info.tokenize_all_and_adjust_pos 
+  Parse_info.tokenize_all_and_adjust_pos ~unicode_hack:true
     file token TH.visitor_info_of_tok TH.is_eof
 
 let tokens a =

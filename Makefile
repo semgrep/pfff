@@ -32,14 +32,9 @@ JSONCMA=external/deps-netsys/netsys_oothr.cma external/deps-netsys/netsys.cma\
         external/deps-netstring/netstring.cma\
         external/json-wheel/jsonwheel.cma 
 
-# for ruby
-DYPCMA=external/dyp/dyp.cma
-
 # could be FEATURE_OCAMLGRAPH, or should give dependencies between features
 GRAPHCMA=external/ocamlgraph/graph.cma commons_wrappers/graph/lib.cma
 GRAPHDIRS=commons_wrappers/graph 
-
-DERIVINGCMA=external/ppx_deriving/ppx_deriving_runtime.cma
 
 #------------------------------------------------------------------------------
 # Main variables
@@ -55,9 +50,12 @@ LIBS= commons/lib.cma \
     commons_core/lib.cma \
     commons_ocollection/lib.cma \
        $(JSONCMA) \
-       $(DYPCMA) \
        $(GRAPHCMA) \
-       $(EXTLIBCMA) $(PTCMA) $(ZIPCMA) $(JAVALIBCMA) $(DERIVINGCMA) \
+       $(EXTLIBCMA) $(PTCMA) $(ZIPCMA) $(JAVALIBCMA)\
+    external/dyp/dyp.cma \
+    external/ppx_deriving/ppx_deriving_runtime.cma \
+    external/uucp/uucp.cma \
+    external/uutf/uutf.cma \
     globals/lib.cma \
     h_files-format/lib.cma \
     h_program-lang/lib.cma \

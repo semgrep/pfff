@@ -14,6 +14,7 @@ all::
 include ../Makefile.config
 
 LIBS= ../commons/lib.cma ../commons_core/lib.cma \
+      ../external/uucp/uucp.cma ../external/uutf/uutf.cma \
       ../h_program-lang/lib.cma \
       ../lang_php/parsing/lib.cma
 

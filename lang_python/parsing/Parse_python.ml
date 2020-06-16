@@ -91,7 +91,7 @@ let tokens2 parsing_mode file =
     | Lexer.STATE_IN_FSTRING_TRIPLE_DOUBLE ->
        Lexer.fstring_triple_double state lexbuf
   in
-  Parse_info.tokenize_all_and_adjust_pos 
+  Parse_info.tokenize_all_and_adjust_pos ~unicode_hack:true
     file token TH.visitor_info_of_tok TH.is_eof
 (*e: function [[Parse_python.tokens2]] *)
 

@@ -7,7 +7,7 @@ OPAMPKG=pfff-h_program-lang
 
 SRC= entity_code.ml scope_code.ml \
      flag_parsing.ml \
-     Unicode.mli Unicode.ml \
+     Unicode.ml \
      Parse_info.ml meta_parse_info.ml \
      comment_code.ml \
      ast_fuzzy.ml meta_ast_fuzzy.ml lib_ast_fuzzy.ml \
@@ -32,6 +32,8 @@ SRC= entity_code.ml scope_code.ml \
 SYSLIBS= str.cma unix.cma
 LIBS=../commons/lib.cma
 INCLUDEDIRS= $(TOP)/commons \
+ $(TOP)/external/uutf \
+ $(TOP)/external/uucp \
  $(TOP)/external/json-wheel \
  $(TOP)/h_files-format
 

@@ -49,7 +49,7 @@ let tokens2 file =
   let token lexbuf = 
       Lexer.token lexbuf
   in
-  Parse_info.tokenize_all_and_adjust_pos 
+  Parse_info.tokenize_all_and_adjust_pos ~unicode_hack:true
     file token TH.visitor_info_of_tok TH.is_eof
 
 let tokens a = 
