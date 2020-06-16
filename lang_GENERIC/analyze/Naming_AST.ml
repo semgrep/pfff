@@ -254,6 +254,30 @@ let lookup_nonlocal_scope id scopes =
       None
 (*e: function [[Naming_AST.lookup_nonlocal_scope]] *)
 
+let make_type type_string =
+  Some(TyName(((type_string, Parse_info.fake_info "()"), {name_qualifier=None; name_typeargs=None})))
+
+let get_resolved_type (vinit, vtype) =
+  match vtype with
+    | Some(_) -> vtype
+    | None -> (
+      match vinit with
+         | Some(L (Bool _)) -> make_type "bool"
+         | Some(L (Int _)) -> make_type "int"
+         | Some(L (Float _)) -> make_type "float"
+         | Some(L (Char _)) -> make_type "char"
+         | Some(L (String _)) -> make_type "str"
+         | Some(L (Regexp _)) -> make_type "regexp"
+         | Some(L (Unit _)) -> make_type "unit"
+         | Some(L (Null _)) -> make_type "null"
+         | Some(L (Imag _)) -> make_type "imag"
+         | Some(Id (_, {id_type; _}) as exp) -> (
+          let s = Meta_AST.vof_expr (exp) |> OCaml.string_of_v in
+          pr2 s;
+         pr2 "case id\n"; !id_type)
+         | _ -> None
+    )
+
 (*****************************************************************************)
 (* Environment *)
 (*****************************************************************************)
@@ -415,7 +439,8 @@ let resolve lang prog =
         VarDef ({ vinit; vtype }) when is_local_or_global_ctx env ->
           (* name resolution *)
           let sid = Ast.gensym () in
-          let resolved = { entname = resolved_name_kind env, sid; enttype = vtype } in
+          let resolved_type = get_resolved_type (vinit, vtype) in
+          let resolved = { entname = resolved_name_kind env, sid; enttype = resolved_type } in
           add_ident_current_scope id resolved env.names;
           set_resolved env id_info resolved;
 
