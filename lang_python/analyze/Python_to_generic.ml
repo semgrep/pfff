@@ -226,7 +226,13 @@ let rec expr (x: expr) =
   | DictOrSet (CompList (t1, v, t2)) -> 
       let v' = list dictorset_elt v in 
       let kind = 
-        if v |> List.for_all (function KeyVal _ -> true | _ -> false) ||
+        if v |> List.for_all 
+            (function 
+             | KeyVal _ 
+             (* semgrep-ext: ... should not count *)
+             | Key (Ellipsis _) -> 
+                true 
+             | _ -> false) ||
            v = []
         then G.Dict 
         else G.Set
