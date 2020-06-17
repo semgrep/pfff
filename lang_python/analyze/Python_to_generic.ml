@@ -223,10 +223,15 @@ let rec expr (x: expr) =
       and _v3TODO = expr_context v3 in 
       G.DotAccess (v1, t, G.FId v2)
 
-  | DictOrSet (CompList v) -> 
-      let v = bracket (list dictorset_elt) v in 
-      (* less: could be a Set if alls are Key *)
-      G.Container (G.Dict, v)
+  | DictOrSet (CompList (t1, v, t2)) -> 
+      let v' = list dictorset_elt v in 
+      let kind = 
+        if v |> List.for_all (function KeyVal _ -> true | _ -> false) ||
+           v = []
+        then G.Dict 
+        else G.Set
+      in
+      G.Container (kind, (t1, v', t2))
 
   | DictOrSet (CompForIf (v1, v2)) -> 
       let e1 = comprehension2 dictorset_elt v1 v2 in
