@@ -370,18 +370,28 @@ let error tok s =
 (*****************************************************************************)
 
 (*s: function [[Naming_AST.is_local_or_global_ctx]] *)
-let is_local_or_global_ctx env =
+let is_local_or_global_ctx env lang =
   match top_context env with
   | AtToplevel | InFunction -> true
-  | InClass -> false
+  | InClass -> (
+      match lang with
+         (* true for Java so that we can type class fields *) 
+        | Lang.Java -> true 
+        | _ -> false
+  )
 (*e: function [[Naming_AST.is_local_or_global_ctx]] *)
 
 (*s: function [[Naming_AST.resolved_name_kind]] *)
-let resolved_name_kind env =
+let resolved_name_kind env lang =
   match top_context env with
   | AtToplevel -> Global
   | InFunction -> Local
-  | InClass -> raise Impossible
+  | InClass -> (
+      match lang with 
+         (* true for Java so that we can type class fields *) 
+        | Lang.Java -> EnclosedVar 
+        | _ -> raise Impossible
+  )
 (*e: function [[Naming_AST.resolved_name_kind]] *)
 
 (*s: function [[Naming_AST.params_of_parameters]] *)
@@ -436,7 +446,7 @@ let resolve lang prog =
         (* note that some languages such as Python do not have VarDef 
          * construct
          * todo? should add those somewhere instead of in_lvalue detection? *)
-        VarDef ({ vinit; vtype }) when is_local_or_global_ctx env ->
+        VarDef ({ vinit; vtype }) (* when is_local_or_global_ctx env *) ->
           (* Need to visit expressions first so that type is populated *)
           (* If we do var a = 3, then var b = a, we want to propagate the type of a *)
           k x;
@@ -447,14 +457,13 @@ let resolve lang prog =
           (* the type of the expression vinit (literal or id), we use that as a type *)
           (* useful for Go, where you can write var x = 2 without declaring the type *)
           let resolved_type = get_resolved_type (vinit, vtype) in
-          let resolved = { entname = resolved_name_kind env, sid; enttype = resolved_type } in
-          add_ident_current_scope id resolved env.names;
+          let resolved = { entname = resolved_name_kind env lang, sid; enttype = resolved_type } in add_ident_current_scope id resolved env.names;
           set_resolved env id_info resolved;
 
           (* sgrep: literal constant propagation! *)
           (match vinit with 
           | Some (L literal) when Ast.has_keyword_attr Const attrs && 
-                                   is_local_or_global_ctx env ->
+                                   is_local_or_global_ctx env lang ->
               id_info.id_const_literal := Some literal;
               add_constant_env id (sid, literal) env;
           | _ -> ()
@@ -513,7 +522,7 @@ let resolve lang prog =
     );
     V.kpattern = (fun (k, _vout) x ->
       match x with
-      | PatId (id, id_info) when is_local_or_global_ctx env ->
+      | PatId (id, id_info) when is_local_or_global_ctx env lang ->
           (* todo: in Python it does not necessarily introduce
            * a newvar if the ID was already declared before.
            * Also inside a PatAs(PatId x,b), the 'x' is actually
@@ -521,14 +530,14 @@ let resolve lang prog =
            *)
           (* mostly copy-paste of VarDef code *)
           let sid = Ast.gensym () in
-          let resolved = untyped_ent (resolved_name_kind env, sid) in
+          let resolved = untyped_ent (resolved_name_kind env lang, sid) in
           add_ident_current_scope id resolved env.names;
           set_resolved env id_info resolved;
           k x          
-      | PatVar (_e, Some (id, id_info)) when is_local_or_global_ctx env ->
+      | PatVar (_e, Some (id, id_info)) when is_local_or_global_ctx env lang ->
           (* mostly copy-paste of VarDef code *)
           let sid = Ast.gensym () in
-          let resolved = untyped_ent (resolved_name_kind env, sid) in
+          let resolved = untyped_ent (resolved_name_kind env lang, sid) in
           add_ident_current_scope id resolved env.names;
           set_resolved env id_info resolved;
           k x
@@ -581,10 +590,10 @@ let resolve lang prog =
              (* first use of a variable can be a VarDef in some languages *)
              (* type propagation not necessary because this does not hold true for Java or Go *)
              | true, Lang.Python (* Ruby? PHP? *) 
-               when is_local_or_global_ctx env ->
+               when is_local_or_global_ctx env lang ->
                (* mostly copy-paste of VarDef code *)
                let sid = Ast.gensym () in
-               let resolved = untyped_ent(resolved_name_kind env, sid) in
+               let resolved = untyped_ent(resolved_name_kind env lang, sid) in
                add_ident_current_scope id resolved env.names;
                set_resolved env id_info resolved;
 
