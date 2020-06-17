@@ -256,7 +256,8 @@ and expr =
   (* composite values *)
   | Container of container_operator * expr list bracket
   (*s: [[AST_generic.expr]] other composite cases *)
-  (* special case of Container, at least 2 elements *) 
+  (* special case of Container, at least 2 elements (except for Python where
+   * you can actually have 1-uple, e.g., '(1,)' *) 
   | Tuple of expr list 
   (*x: [[AST_generic.expr]] other composite cases *)
   (* And-type (field.vinit should be a Some) *)
