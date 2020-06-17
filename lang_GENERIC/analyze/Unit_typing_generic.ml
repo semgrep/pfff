@@ -174,4 +174,34 @@ let unittest =
         with Parse_info.Parsing_error _ ->
           assert_failure (spf "it should correctly parse %s" file)
     );
+    
+    "test inferred variable definitions go" >:: (fun () ->
+      let file = Filename.concat Config_pfff.path "/tests/GENERIC/typing/PropVarDef.go" in
+        try
+          let ast = Parse_generic.parse_program file in
+            let lang = List.hd (Lang.langs_of_filename file) in 
+             Naming_AST.resolve lang ast;
+
+            let v = V.mk_visitor { V.default_visitor with
+                V.kexpr = (fun (_k, _) exp ->
+                    match exp with
+                      | A.Id(("a", _), {A.id_type=id_type; _}) -> (
+                            match !id_type with 
+                              | Some(A.TyName((("char", _)), _)) -> ()
+                              | _ -> assert_failure("Variable referenced did not have expected type char"))
+                      | A.Id(("b", _), {A.id_type=id_type; _}) -> (
+                            match !id_type with 
+                              | Some(A.TyName((("int", _)), _)) -> ()
+                              | _ -> assert_failure("Variable referenced did not have expected type int"))
+                      | A.Id(("c", _), {A.id_type=id_type; _}) -> (
+                            match !id_type with 
+                              | Some(A.TyName((("char", _)), _)) -> ()
+                              | _ -> assert_failure("Variable referenced did not have expected type char"))
+                      | _ -> ()
+                );
+            } in
+            v (A.Pr ast)
+        with Parse_info.Parsing_error _ ->
+          assert_failure (spf "it should correctly parse %s" file)
+    );
   ]
