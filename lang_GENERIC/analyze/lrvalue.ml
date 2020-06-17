@@ -41,8 +41,7 @@ type lhs_or_rhs =
 (*****************************************************************************)
 
 let error_todo any = 
-  let v = Meta_AST.vof_any any in
-  let s = OCaml.string_of_v v in
+  let s = AST_generic.show_any any in
   pr2 s;
   failwith ("Dataflow_visitor:error_todo ")
 
