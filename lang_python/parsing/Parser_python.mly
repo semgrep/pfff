@@ -771,9 +771,9 @@ format_token:
 (*----------------------------*)
 
 atom_tuple:
-  | "("               ")" { Tuple (CompList ($1, [], $2), Load) }
-  | "(" testlist_comp ")" { Tuple ($2, Load) }
-  | "(" yield_expr    ")" { $2 }
+  | "("               ")"         { Tuple (CompList ($1, [], $2), Load) }
+  | "(" testlist_comp_or_expr ")" { $2 }
+  | "(" yield_expr    ")"         { $2 }
 
 atom_list:
   | "["               "]" { List (CompList ($1, [], $2), Load) }
@@ -868,6 +868,17 @@ lambdadef: LAMBDA varargslist ":" test { Lambda ($2, $4) }
 testlist_comp:
   | namedexpr_or_star_expr comp_for  { CompForIf ($1, $2) }
   | tuple(namedexpr_or_star_expr)    { CompList (AST_generic.fake_bracket (to_list $1)) }
+
+(* mostly equivalent to testlist_comp, but transform a single expression
+ * in parenthesis, e.g., (1) in a regular expr, not a tuple *)
+testlist_comp_or_expr:
+  | namedexpr_or_star_expr comp_for  { Tuple (CompForIf ($1, $2), Load) }
+  | tuple(namedexpr_or_star_expr)    { 
+    match $1 with
+    | Single e -> e
+    | Tup l -> Tuple (CompList (AST_generic.fake_bracket l), Load)
+   }
+
 
 comp_for: 
  | sync_comp_for       { $1 }
