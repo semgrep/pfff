@@ -183,7 +183,7 @@ and v_expr (x : expr) =
     | NewArray ((v0, v1, v2, v3, v4)) ->
       let v0 = v_tok v0 in
       let v1 = v_typ v1
-      and v2 = v_arguments v2
+      and v2 = v_list v_expr v2
       and v3 = v_int v3
       and v4 = v_option v_init v4
       in ()
@@ -203,7 +203,7 @@ and v_expr (x : expr) =
     | Unary ((v1, v2)) -> let v1 = v_wrap v_arith_op v1 and v2 = v_expr v2 in ()
     | Infix ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_wrap v_arith_op v2 and v3 = v_expr v3 in ()
-    | Cast ((v1, v2)) -> let v1 = v_typ v1 and v2 = v_expr v2 in ()
+    | Cast ((v1, v2)) -> let v1 = v_bracket v_typ v1 and v2 = v_expr v2 in ()
     | InstanceOf ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_ref_type v2 in ()
     | Conditional ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_expr v2 and v3 = v_expr v3 in ()
@@ -233,11 +233,11 @@ and v_parameter x = v_var x
 and v_ref_type v = v_typ v
 and v_arith_op _v = ()
 
-and v_arguments v = v_list v_expr v
+and v_arguments v = v_bracket (v_list v_expr) v
 and v_stmt (x : stmt) =
   let k x = match x with
   | Empty -> ()
-  | Block v1 -> let v1 = v_stmts v1 in ()
+  | Block v1 -> let v1 = v_bracket v_stmts v1 in ()
   | Expr v1 -> let v1 = v_expr v1 in ()
   | If ((t, v1, v2, v3)) ->
       let t = v_info t in

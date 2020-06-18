@@ -92,14 +92,16 @@ and expr =
   | Sequence v1 -> let v1 = list expr v1 in G.Seq v1
   | Prefix ((v1, v2)) -> let v1 = wrap string v1 and v2 = expr v2 in
                          let n = v1, G.empty_name_info in
-                         G.Call (G.IdQualified (n, G.empty_id_info()), [G.Arg v2])
+                         G.Call (G.IdQualified (n, G.empty_id_info()), 
+                              G.fake_bracket [G.Arg v2])
   | Infix ((v1, v2, v3)) ->
     let n = v2, G.empty_name_info in
     let v1 = expr v1 and v3 = expr v3 in
-    G.Call (G.IdQualified (n, G.empty_id_info()), [G.Arg v1; G.Arg v3])
+    G.Call (G.IdQualified (n, G.empty_id_info()), 
+         G.fake_bracket [G.Arg v1; G.Arg v3])
 
   | Call ((v1, v2)) -> let v1 = expr v1 and v2 = list argument v2 in
-                       G.Call (v1, v2)
+                       G.Call (v1, G.fake_bracket v2)
   | RefAccess ((v1, v2)) -> 
     let v1 = tok v1 and v2 = expr v2 in
     G.DeRef (v1, v2)
@@ -147,7 +149,7 @@ and expr =
       )
   | New ((v1, v2)) -> let v1 = tok v1 and v2 = name v2 in 
                       G.Call (G.IdSpecial (G.New, v1), 
-                              [G.Arg (G.IdQualified (v2, G.empty_id_info()))])
+                              G.fake_bracket [G.Arg (G.IdQualified (v2, G.empty_id_info()))])
   | ObjAccess ((v1, t, v2)) -> 
       let v1 = expr v1 and v2 = ident v2 in
       let t = tok t in
@@ -166,7 +168,7 @@ and expr =
             G.ExprStmt exp
          )
       in
-      let st = G.Block (defs @ [G.ExprStmt v2]) in
+      let st = G.Block (G.fake_bracket (defs @ [G.ExprStmt v2])) in
       G.OtherExpr (G.OE_StmtExpr, [G.S st])
   | Fun ((_t, v1, v2)) -> 
     let v1 = list parameter v1 
@@ -218,7 +220,7 @@ and expr =
       let n = G.IdQualified ((v1, G.empty_name_info), G.empty_id_info()) in
       let next = (G.AssignOp (n, (nextop, tok), G.L (G.Int ("1", tok)))) in
       let cond = G.Call (G.IdSpecial (G.ArithOp condop, tok),
-                         [G.Arg n; G.Arg v4]) in
+                         G.fake_bracket [G.Arg n; G.Arg v4]) in
       let header = G.ForClassic ([G.ForInitVar (ent, var)],
                                  Some cond, Some next) in
       let st = G.For (t, header, G.ExprStmt v5) in

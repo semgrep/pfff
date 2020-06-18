@@ -41,6 +41,7 @@ let either f g x =
 let string = id
 
 let fake s = Parse_info.fake_info s
+let fb = G.fake_bracket
 
 let opt_to_ident opt =
   match opt with
@@ -67,13 +68,13 @@ let rec unaryOp (a, tok) =
   | GetRef -> (fun e -> G.Ref (tok,e))
   | DeRef -> (fun e -> G.DeRef (tok, e))
   | UnPlus -> (fun e -> 
-          G.Call (G.IdSpecial (G.ArithOp G.Plus, tok), [G.Arg e]))
+          G.Call (G.IdSpecial (G.ArithOp G.Plus, tok), fb[G.Arg e]))
   | UnMinus -> (fun e -> 
-          G.Call (G.IdSpecial (G.ArithOp G.Minus, tok), [G.Arg e]))
+          G.Call (G.IdSpecial (G.ArithOp G.Minus, tok), fb[G.Arg e]))
   | Tilde -> (fun e -> 
-          G.Call (G.IdSpecial (G.ArithOp G.BitNot, tok), [G.Arg e]))
+          G.Call (G.IdSpecial (G.ArithOp G.BitNot, tok), fb[G.Arg e]))
   | Not ->  (fun e -> 
-          G.Call (G.IdSpecial (G.ArithOp G.Not, tok), [G.Arg e]))
+          G.Call (G.IdSpecial (G.ArithOp G.Not, tok), fb[G.Arg e]))
   | GetRefLabel -> (fun e -> G.OtherExpr (G.OE_GetRefLabel, [G.E e]))
 and assignOp =
   function 
@@ -151,7 +152,7 @@ and expr =
   | Id v1 -> let v1 = name v1 in 
              G.Id (v1, G.empty_id_info())
   | Ellipses v1 -> let v1 = info v1 in G.Ellipsis (v1)
-  | Call ((v1, v2)) -> let v1 = expr v1 and v2 = list argument v2 in
+  | Call ((v1, v2)) -> let v1 = expr v1 and v2 = bracket (list argument) v2 in
       G.Call (v1, v2)
   | Assign ((v1, v2, v3)) ->
       let v1 = assignOp v1
@@ -171,10 +172,10 @@ and expr =
       G.Cast (v1, v2)
   | Postfix ((v1, (v2, v3))) ->
       let v1 = expr v1 and v2 = fixOp v2 in 
-      G.Call (G.IdSpecial (G.IncrDecr (v2, G.Postfix), v3), [G.Arg v1]) 
+      G.Call (G.IdSpecial (G.IncrDecr (v2, G.Postfix), v3), fb[G.Arg v1]) 
   | Infix ((v1, (v2, v3))) ->
       let v1 = expr v1 and v2 = fixOp v2 in
-      G.Call (G.IdSpecial (G.IncrDecr (v2, G.Prefix), v3), [G.Arg v1]) 
+      G.Call (G.IdSpecial (G.IncrDecr (v2, G.Prefix), v3), fb[G.Arg v1]) 
   | Unary ((v1, v2)) ->
       let v1 = expr v1 and v2 = unaryOp v2 in 
       v2 v1
@@ -182,7 +183,7 @@ and expr =
       let v1 = expr v1
       and v2 = binaryOp v2
       and v3 = expr v3
-      in G.Call (G.IdSpecial (G.ArithOp v2, tok), [G.Arg v1; G.Arg v3])
+      in G.Call (G.IdSpecial (G.ArithOp v2, tok), fb[G.Arg v1; G.Arg v3])
   | CondExpr ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in
       G.Conditional (v1, v2, v3)
@@ -191,8 +192,8 @@ and expr =
   | SizeOf v1 -> let v1 = either expr type_ v1 in
       G.Call (G.IdSpecial (G.Sizeof, fake "sizeof"), 
        (match v1 with
-       | Left e -> [G.Arg e]
-       | Right t -> [G.ArgType t]
+       | Left e -> fb[G.Arg e]
+       | Right t -> fb[G.ArgType t]
        ))
   | ArrayInit v1 ->
       let v1 =
@@ -216,7 +217,7 @@ and expr =
       in G.Record v1
   | GccConstructor ((v1, v2)) -> let v1 = type_ v1 and v2 = expr v2 in
       G.Call (G.IdSpecial (G.New, fake "new"), 
-        (G.ArgType v1)::([v2] |> List.map G.expr_to_arg))
+        fb((G.ArgType v1)::([v2] |> List.map G.expr_to_arg)))
 
 and argument v = 
   let v = expr v in
@@ -228,7 +229,7 @@ and const_expr v =
 let rec stmt =
   function
   | ExprSt v1 -> let v1 = expr v1 in G.ExprStmt v1
-  | Block v1 -> let v1 = list stmt v1 in G.Block v1
+  | Block v1 -> let v1 = bracket (list stmt) v1 in G.Block v1
   | If ((t, v1, v2, v3)) ->
       let v1 = expr v1 and v2 = stmt v2 and v3 = option stmt v3 in
       G.If (t, v1, v2, v3)
@@ -295,13 +296,13 @@ let func_def {
                } =
   let v1 = name f_name in
   let (ret, params) = function_type f_type in
-  let v3 = list stmt f_body in 
+  let v3 = bracket (list stmt) f_body in 
   let v4 = if f_static then [G.attr G.Static (fake "static")] else [] in
   let entity = G.basic_entity v1 v4 in
   entity, G.FuncDef { G.
     fparams = params |> List.map (fun x -> G.ParamClassic x);
     frettype = Some ret;
-    fbody = G.stmt1 v3;
+    fbody = G.Block v3;
     }
 
 let rec

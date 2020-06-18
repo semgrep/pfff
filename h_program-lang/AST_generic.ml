@@ -21,7 +21,7 @@ open Common
 (* Prelude *)
 (*****************************************************************************)
 (* A generic AST, to factorize similar analysis in different programming
- * languages (e.g., scheck, sgrep). 
+ * languages (e.g., semgrep). 
  *
  * Right now this generic AST is mostly the factorized union of:
  *  - Python
@@ -30,7 +30,7 @@ open Common
  *  - C
  *  - Go
  *  - PHP
- *  - OCaml (unfinished)
+ *  - OCaml
  *
  * rational: In the end, programming languages have a lot in Common.
  * Even though most interesting analysis are probably better done on a
@@ -86,9 +86,13 @@ open Common
  *    of the generic mapper and matcher.
  *    Same for keyword_attribute.
  *  - each expression or statement must have at least one token in it
- *    so that sgrep can report correctly ranges (e.g., 'Return of expr option'
+ *    so that semgrep can track a location (e.g., 'Return of expr option'
  *    is not enough because with no expr, there is no location information
  *    for this return, so it must be 'Return of tok * expr option' instead)
+ *  - each expression or statement should ideally have enough tokens in it
+ *    to get its range, so at least the leftmost and rightmost token in
+ *    all constructs.
+ *    (alt: have the range info in each expr/stmt/pattern)
  *  - to correctly compute a CFG (Control Flow Graph), the stmt type 
  *    should list all constructs that contains other statements and 
  *    try to avoid to use the very generic OtherXxx of any
@@ -115,8 +119,7 @@ open Common
  *)
 type tok = Parse_info.t
 (*e: type [[AST_generic.tok]] *)
- (* with tarzan *)
-let pp_tok fmt _ = Format.fprintf fmt "()"
+ [@@deriving show] (* with tarzan *)
 
 (*s: type [[AST_generic.wrap]] *)
 (* a shortcut to annotate some information with position information *)
@@ -294,7 +297,7 @@ and expr =
   (*e: [[AST_generic.expr]] other identifier cases *)
 
   (* operators and function application *)
-  | Call of expr * arguments
+  | Call of expr * arguments bracket (* can be fake '()' for OCaml/Ruby *)
   (*s: [[AST_generic.expr]] other call cases *)
   (* (XHP, JSX, TSX), could be transpiled also (done in IL.ml?) *)
   | Xml of xml
@@ -349,7 +352,7 @@ and expr =
   | Await of tok * expr
   (* Send/Recv of Go are currently in OtherExpr *)
 
-  | Cast of type_ * expr
+  | Cast of type_ (* TODO: bracket or colon *) * expr
   (* less: should be in statement *)
   | Seq of expr list (* at least 2 elements *)
 
@@ -519,7 +522,7 @@ and expr =
 (*e: type [[AST_generic.xml_body]] *)
 
 (*s: type [[AST_generic.arguments]] *)
-  and arguments = argument list (* bracket? not in OCaml/Ruby *)
+  and arguments = argument list
 (*e: type [[AST_generic.arguments]] *)
 (*s: type [[AST_generic.argument]] *)
     and argument =
@@ -588,16 +591,17 @@ and expr =
 and stmt =
   (* See also IL.ml where Call/Assign/Seq are not in expr and where there are
    * separate expr, instr, and stmt types *)
-  | ExprStmt of expr
+  | ExprStmt of expr (* todo: tok can be fake in Python and JS/Go with ASI *)
 
   (* newscope: in C++/Java/Go *)
-  | Block of stmt list (* todo: bracket *)
+  | Block of stmt list bracket (* can be fake {} in Python where use layout *)
   (* EmptyStmt = Block [], or separate so can not be matched by $S? $ *)
 
   (* newscope: for vardef in expr in C++/Go/... *)
   | If of tok (* 'if' or 'elif' *) * expr * stmt * stmt option
   | While   of tok * expr * stmt
 
+  (* todo: add tok option for ending semicolon there too? *)
   | Return   of tok * expr option
   (*s: [[AST_generic.stmt]] other cases *)
   | DoWhile of tok * stmt * expr
@@ -876,7 +880,7 @@ and type_ =
 and attribute = 
   | KeywordAttr of keyword_attribute wrap
   (* for general @annotations *)
-  | NamedAttr of ident * id_info * argument list
+  | NamedAttr of ident * id_info * arguments bracket
   (*s: [[AST_generic.attribute]] OtherXxx case *)
   | OtherAttribute of other_attribute_operator * any list
   (*e: [[AST_generic.attribute]] OtherXxx case *)
@@ -1010,8 +1014,12 @@ and function_definition = {
  fparams: parameters;
  frettype: type_ option; (* return type *)
  (* newscope:
-  * note: can be empty statement for methods in interfaces *)
- fbody: stmt;
+  * note: can be empty statement for methods in interfaces.
+  * TODO: use stmt list bracket instead? 
+  * can be simple expr too for JS lambdas, so maybe fbody type? 
+  * FExpr | FNothing | FBlock ?
+  *)
+ fbody: stmt; 
 }
 (*e: type [[AST_generic.function_definition]] *)
 (*s: type [[AST_generic.parameters]] *)
@@ -1490,13 +1498,6 @@ let expr_to_type e =
 (* see also Php_generic.list_expr_to_opt *)
 (* see also Php_generic.name_of_qualified_ident (also in Java) *)
 
-(*s: function [[AST_generic.opt_to_empty]] *)
-(* todo? should remove? should have an explicit EmptyStmt? *)
-let opt_to_empty = function
-  | None -> Block []
-  | Some e -> e
-(*e: function [[AST_generic.opt_to_empty]] *)
-
 (*s: function [[AST_generic.opt_to_label_ident]] *)
 let opt_to_label_ident = function
   | None -> LNone
@@ -1504,11 +1505,12 @@ let opt_to_label_ident = function
 (*e: function [[AST_generic.opt_to_label_ident]] *)
 
 (*s: function [[AST_generic.stmt1]] *)
+(* less: should use fake_bracket, but defined below *)
 let stmt1 xs =
   match xs with
-  | [] -> Block []
+  | [] -> Block (Parse_info.fake_info "{", [], Parse_info.fake_info "}")
   | [st] -> st
-  | xs -> Block xs
+  | xs -> Block (Parse_info.fake_info "{", xs, Parse_info.fake_info "}")
 (*e: function [[AST_generic.stmt1]] *)
 
 (*s: function [[AST_generic.is_boolean_operator]] *)

@@ -574,7 +574,7 @@ and enum_decl env def =
     in
     (match enum_constant with
     | EnumSimple _ident -> ()
-    | EnumConstructor (_ident, args) ->
+    | EnumConstructor (_ident, (_, args, _)) ->
         exprs env args
     | EnumWithMethods (_ident, xs) ->
         decls env (xs |> List.map (fun x -> Method x))
@@ -587,7 +587,7 @@ and enum_decl env def =
 (* mostly boilerplate, control constructs don't introduce entities *)
 and stmt env = function
   | Empty -> ()
-  | Block xs -> stmts env xs
+  | Block (_, xs, _) -> stmts env xs
   | Expr e -> expr env e
   | If (_, e, st1, st2) ->
       expr env e;
@@ -729,7 +729,7 @@ and expr env = function
   | Literal _ -> ()
 
   | ClassLiteral t -> typ env t
-  | NewClass (_tok, t, args, decls_opt) ->
+  | NewClass (_tok, t, (_, args, _), decls_opt) ->
       typ env t;
       exprs env args;
       (match decls_opt with
@@ -752,7 +752,7 @@ and expr env = function
           in
           class_decl env cdecl
       )
-  | NewQualifiedClass (_e, tok, id, args, decls_opt) ->
+  | NewQualifiedClass (_e, tok, id, (args), decls_opt) ->
       (*
       pr2 "NewQualifiedClass";
       pr2_gen (NewQualifiedClass (e, id, args, decls_opt));
@@ -765,7 +765,7 @@ and expr env = function
       exprs env args;
       init_opt env ini_opt
 
-  | Call (e, es) ->
+  | Call (e, (_, es, _)) ->
       expr env e;
       exprs env es
   | Dot (e, _t, _idTODO) ->
@@ -784,7 +784,7 @@ and expr env = function
   | Assign (e1, _tok, e2) -> exprs env [e1;e2]
   | TypedMetavar (_ident, _typ) -> ()
 
-  | Cast (t, e) ->
+  | Cast ((_,t,_), e) ->
       typ env t;
       expr env e
   | InstanceOf (e, tref) ->

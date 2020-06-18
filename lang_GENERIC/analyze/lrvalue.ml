@@ -143,7 +143,7 @@ let rec visit_expr hook lhs expr =
    *)
 
   (* todo? some languages allow function return value to be an lvalue? *)
-  | Call (e, args) ->
+  | Call (e, (_, args, _)) ->
     recr e;
     args |> List.iter (function
        (* Todo: false positive because passsing by reference? *)

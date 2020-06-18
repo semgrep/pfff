@@ -43,8 +43,7 @@ let test_dump_simple file =
   Error_code.try_with_print_exn_and_reraise file (fun () ->
     let ast = Parse_php.parse_program file in
     let ast = Ast_php_build.program ast in
-    let v = Meta_ast_php.vof_program ast in
-    let s = OCaml.string_of_v v in
+    let s = Ast_php.show_program ast in
     pr s  
   )
 

@@ -14,7 +14,7 @@ SRC= flag_analyze_php.ml \
      env_php.ml \
      class_php.ml include_require_php.ml  \
 # used to be in ast_simple/
-SRC+= ast_php.ml ast_php_build.ml meta_ast_php.ml
+SRC+= ast_php.ml ast_php_build.ml
 SRC+= php_to_generic.ml
 SRC+= pil.ml
 #note: tools/phpmanual_xml.ml is related to builtins_php.ml
@@ -58,6 +58,7 @@ LIBS=$(TOP)/commons/lib.cma \
      $(TOP)/lang_ml/parsing/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons \
+   $(TOP)/external/ppx_deriving \
    $(TOP)/commons_ocollection \
    $(TOP)/commons_core \
    $(TOP)/external/json-wheel \
@@ -87,3 +88,8 @@ $(TARGET).top: $(OBJS) $(LIBS)
 
 clean::
 	rm -f $(TARGET).top
+
+ast_php.cmo: ast_php.ml
+	ocamlfind ocamlc -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
+ast_php.cmx: ast_php.ml
+	ocamlfind ocamlopt -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<

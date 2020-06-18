@@ -163,7 +163,7 @@ type expr =
 
   (* note that Python does not have a 'new' keyword, a call with the name
    * of a class is a New *)
-  | Call of expr (* func *) * argument list (* args *)
+  | Call of expr (* func *) * argument list bracket (* args *)
 
   | Subscript of expr (* value *) * slice list (* slice *) * expr_context
 

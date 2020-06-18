@@ -111,29 +111,29 @@
 (*****************************************************************************)
 
 type tok = Parse_info.t
-
+ [@@deriving show]
 type 'a wrap = 'a * tok
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (* round(), square[], curly{}, angle<> brackets *)
 type 'a bracket = tok * 'a * tok
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 
 type ident = string wrap
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 (* the string contains the $ prefix *)
 type var = string wrap
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (* The keyword 'namespace' can be in a leading position. The special
  * ident 'ROOT' can also be leading.
  *)
 type qualified_ident = ident list
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 type name = qualified_ident
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Program *)
@@ -147,7 +147,7 @@ type program = stmt list
 and stmt =
   | Expr of expr
 
-  | Block of stmt list
+  | Block of stmt list bracket
 
   | If of tok * expr * stmt * stmt
   | Switch of tok * expr * case list
@@ -262,7 +262,7 @@ and expr =
   (* e.g. f(...$x) *)
   | Unpack of expr
 
-  | Call of expr * expr list
+  | Call of expr * expr list bracket
 
   (* todo? transform into Call (builtin ...) ? *)
   | Infix of AST_generic.incr_decr wrap * expr
@@ -440,7 +440,7 @@ and type_def = {
   (* ??? *)
   | ClassConstType of hint_type option
 
-(* with tarzan *)
+ [@@deriving show { with_path = false }] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Any *)
@@ -450,7 +450,7 @@ type any =
   | Stmt of stmt
   | Expr2 of expr
   | Param of parameter
- (* with tarzan *)
+  [@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* Helpers *)

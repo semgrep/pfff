@@ -134,7 +134,7 @@ and expr =
    *)
   | Id of name
 
-  | Call of expr * argument list
+  | Call of expr * argument list bracket
 
   (* should be a statement ... but see Datalog_c.instr *)
   | Assign of Cst_cpp.assignOp * expr * expr
@@ -182,7 +182,7 @@ and const_expr = expr
 (* ------------------------------------------------------------------------- *)
 type stmt = 
   | ExprSt of expr
-  | Block of stmt list
+  | Block of stmt list bracket
 
   | If of tok * expr * stmt * stmt option
   | Switch of tok * expr * case list
@@ -228,7 +228,7 @@ and var_decl = {
 type func_def = {
   f_name: name;
   f_type: function_type;
-  f_body: stmt list;
+  f_body: stmt list bracket;
   f_static: bool;
 }
  [@@deriving show { with_path = false }] (* with tarzan *)

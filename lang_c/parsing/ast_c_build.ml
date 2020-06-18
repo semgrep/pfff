@@ -16,6 +16,7 @@ open Common
 
 open Cst_cpp
 module A = Ast_c
+module G = AST_generic
 
 (*****************************************************************************)
 (* Prelude *)
@@ -174,7 +175,7 @@ and declaration env x =
                   f_name = x.A.v_name;
                   f_type = ft;
                   f_static = (storage =*= A.Static);
-                  f_body = [];
+                  f_body = G.fake_bracket [];
                 }
             | _ -> A.Global x
           ))
@@ -411,7 +412,7 @@ and stmt env st =
 
   | ExprStatement (eopt, _) ->
       (match eopt with
-      | None -> A.Block []
+      | None -> A.Block (G.fake_bracket [])
       | Some e -> A.ExprSt (expr env e)
       )
   | DeclStmt block_decl ->
@@ -438,8 +439,8 @@ and stmt env st =
   | (NestedFunc _ | StmtTodo _ | MacroStmt _ ) ->
       debug (Stmt st); raise Todo
 
-and compound env (_, xs, _) =
-  statements_sequencable env xs |> List.flatten
+and compound env (t1, xs, t2) =
+  t1, (statements_sequencable env xs |> List.flatten), t2
 
 and statements_sequencable env xs =
   ifdef_skipper xs (function IfdefStmt x -> Some x | _ -> None)
@@ -545,9 +546,9 @@ and expr env e =
                      debug (Expr e); raise Todo
                  ), 
                  expr env e3)
-  | Call (e, args) ->
+  | Call (e, (t1, args, t2)) ->
       A.Call (expr env e,
-             Common.map_filter (argument env) (args |> unparen |> uncomma))
+             (t1, Common.map_filter (argument env) (args |> uncomma), t2))
 
   | SizeOfExpr (_tok, e) ->
       A.SizeOf(Left (expr env e))

@@ -252,7 +252,7 @@ and expr env eorig =
        * we dont. Anyway, for our static analysis purpose it should not matter.
        * We don't do fancy path-sensitive-evaluation-order-sensitive analysis.
        *)
-      (match args with
+      (match G.unbracket args with
       | [G.Arg e] ->
             let lval = lval env e in
             let lvalexp = mk_e (Lvalue lval) e in
@@ -446,7 +446,7 @@ and composite_kind = function
 
 (* TODO: dependency of order between arguments for instr? *)
 and arguments env xs = 
-  xs |> List.map (argument env)
+  xs |> G.unbracket |> List.map (argument env)
 
 and argument env arg =
   match arg with
@@ -517,7 +517,7 @@ let rec stmt env st =
   | G.DefStmt def -> [mk_s (MiscStmt (DefStmt def))]
   | G.DirectiveStmt dir -> [mk_s (MiscStmt (DirectiveStmt dir))]
 
-  | G.Block xs -> List.map (stmt env) xs |> List.flatten
+  | G.Block xs -> xs |> G.unbracket |> List.map (stmt env) |> List.flatten
 
   | G.If (tok, e, st1, st2) ->
     let ss, e' = expr_with_pre_stmts env e in

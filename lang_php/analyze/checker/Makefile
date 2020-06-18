@@ -26,6 +26,7 @@ SYSLIBS= str.cma unix.cma
 LIBS=$(TOP)/commons/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons \
+  $(TOP)/external/ppx_deriving \
   $(TOP)/commons_ocollection \
    $(TOP)/external/ \
    $(TOP)/h_program-lang \

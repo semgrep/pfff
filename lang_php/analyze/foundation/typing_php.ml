@@ -109,7 +109,7 @@ let pi = Some (Cst_php.fakeInfo "todo")
 let pi_loc = Cst_php.fakeInfo "todo"
 
 let fake s = Parse_info.fake_info s
-let fake_bracket x = (fake "{", x, fake "}")
+let fb = AST_generic.fake_bracket
 let unbracket (_, x, _) = x
 
 (*****************************************************************************)
@@ -249,7 +249,7 @@ and stmt env= function
   | TypeDef _ -> failwith "no support for typedefs in type inferencer"
   | NamespaceDef _ | NamespaceUse _ -> failwith "no support for namespace yet"
   | Expr e -> iexpr env e
-  | Block stl -> stmtl env stl
+  | Block (_,stl,_) -> stmtl env stl
   | If (_, e, st1, st2) ->
       (* todo? should we unify e with bool? *)
       iexpr env e;
@@ -485,7 +485,7 @@ and expr_ env _lv = function
       v
 
   (* disguised array access *)
-  | Call (Id [(("idx" | "edx" | "adx" | "sdx"),_)], (e :: k :: r)) ->
+  | Call (Id [(("idx" | "edx" | "adx" | "sdx"),_)], (_,(e :: k :: r),_)) ->
       let e = expr env (Array_get (e, Some k)) in
       (match r with
       | [] -> e
@@ -613,10 +613,10 @@ and expr_ env _lv = function
       let t = List.fold_left (Unify.unify env) t el in
       array (int, t)
 
-  | Call (e, [Id [("JUJUMARKER",_)]]) ->
+  | Call (e, (_,[Id [("JUJUMARKER",_)] ],_)) ->
       env.show := Sargs (expr env e);
       any
-  | Call (e, el) ->
+  | Call (e, (_,el,_)) ->
       let f = expr env e in
       let f = Instantiate.ty env ISet.empty f in
       let v = Tvar (fresh()) in
@@ -636,7 +636,7 @@ and expr_ env _lv = function
       let v = "$;tmp"^(string_of_int (fresh())) in
       let obj = Class_get (x, fake "::", Id [(wrap_fake "__obj")]) in
       iexpr env (Assign (Var (wrap_fake v), fake "=", obj));
-      iexpr env (Call (Obj_get (obj, fake ".", Id [(wrap_fake "__construct")]), el));
+      iexpr env (Call (Obj_get (obj, fake ".", Id [(wrap_fake "__construct")]), fb el));
       let t = expr env (Id [(wrap_fake v)]) in
       let set = match x with
         | Id [(c,_)] when c.[0] <> '$' -> SSet.singleton c
@@ -792,7 +792,7 @@ and parameter env p =
           expr env (New (fake "new", Id [(x, tok)], [])))
     | Some (Hint _) -> failwith "no support for namespace yet"
     | Some (HintArray _) ->
-        expr env (ConsArray (fake_bracket []))
+        expr env (ConsArray (fb []))
 
     (* don't handle type extensions *)
     | Some (HintQuestion _)

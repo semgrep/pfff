@@ -42,6 +42,7 @@ MAKESUBDIRS=foundation tools checker \
 #typing finder
 
 INCLUDEDIRS= $(TOP)/commons \
+   $(TOP)/external/ppx_deriving \
    $(TOP)/commons_ocollection \
    $(TOP)/commons_core \
    $(TOP)/external/json-wheel \

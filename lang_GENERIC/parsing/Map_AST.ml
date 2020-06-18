@@ -284,7 +284,7 @@ and map_of_incdec x = x
 and map_of_prepost x = x
 and map_arithmetic_operator x = x
 
-and map_arguments v = map_of_list map_argument v
+and map_arguments v = map_bracket (map_of_list map_argument) v
 
 and map_argument =
   function
@@ -367,7 +367,7 @@ and map_attribute = function
   | NamedAttr ((v1, v2, v3)) ->
       let v1 = map_ident v1
       and v2 = map_id_info v2
-      and v3 = map_of_list map_argument v3
+      and v3 = map_bracket (map_of_list map_argument) v3
       in NamedAttr ((v1, v2, v3))
   | OtherAttribute ((v1, v2)) ->
       let v1 = map_other_attribute_operator v1
@@ -384,7 +384,7 @@ and map_stmt x =
   | ExprStmt v1 -> let v1 = map_expr v1 in ExprStmt ((v1))
   | DefStmt v1 -> let v1 = map_definition v1 in DefStmt ((v1))
   | DirectiveStmt v1 -> let v1 = map_directive v1 in DirectiveStmt ((v1))
-  | Block v1 -> let v1 = map_of_list map_stmt v1 in Block ((v1))
+  | Block v1 -> let v1 = map_bracket (map_of_list map_stmt) v1 in Block ((v1))
   | If ((t, v1, v2, v3)) ->
       let t = map_tok t in
       let v1 = map_expr v1

@@ -51,7 +51,7 @@ module Deps = struct
 
     (* boilerplate to recurse *)
     | Expr e | Throw (_, e) -> expr acc e
-    | Block stl -> stmtl acc stl
+    | Block (_, stl,_) -> stmtl acc stl
     | If (_, e, st1, st2) -> stmtl (expr acc e) [st1; st2]
     | Do (_, stl, e)| While (_, e, stl) -> stmtl (expr acc e) stl
     | For (_, el1, el2, el3, stl) ->
@@ -111,7 +111,7 @@ module Deps = struct
     | Cast (_, e)
     | Ref (_, e) | Unpack e
     | Unop (_, e) -> expr acc e
-    | Call (e, el) -> exprl (expr acc e) el
+    | Call (e, (_, el, _)) -> exprl (expr acc e) el
     | Xhp x ->
         let acc = xml acc x in
         let name = Ast.unwrap x.xml_tag in

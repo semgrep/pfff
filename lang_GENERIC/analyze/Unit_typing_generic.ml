@@ -42,7 +42,7 @@ let unittest =
             let v = V.mk_visitor { V.default_visitor with
                 V.kexpr = (fun (_k, _) exp ->
                   match exp with
-                    | A.Call(_, x::y::[]) ->
+                    | A.Call(_, (_,[x;y],_)) ->
                       ((match x with
                         | A.Arg(A.Id(_, {A.id_type=id_type; _})) -> (
                               match !id_type with 
@@ -77,7 +77,7 @@ let unittest =
             let v = V.mk_visitor { V.default_visitor with
                 V.kexpr = (fun (_k, _) exp ->
                   match exp with
-                    | A.Call(_, x::y::[]) ->
+                    | A.Call(_, (_,[x;y],_)) ->
                       ((match x with
                         | A.Arg(A.Id(_, {A.id_type=id_type; _})) -> (
                               match !id_type with 
@@ -180,7 +180,7 @@ let unittest =
             let v = V.mk_visitor { V.default_visitor with
                 V.kexpr = (fun (_k, _) exp ->
                     match exp with
-                      | A.Call(_, x::y::[]) ->
+                      | A.Call(_, (_,[x;y],_)) ->
                         ((match x with
                           | A.Arg(A.Id(("a", _), {A.id_type=id_type; _})) -> (
                                 match !id_type with 

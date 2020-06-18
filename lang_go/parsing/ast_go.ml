@@ -144,7 +144,7 @@ and expr =
   * such as (Foo)(nil) are unfortunately parsed as Calls, because again
   * you need typing information to know that.
   *)
- | Cast of type_ * expr
+ | Cast of type_ * expr (* TODO: bracket *)
 
  (* special cases of Unary *)
  | Deref of tok (* * *) * expr
@@ -207,7 +207,7 @@ and constant_expr = expr
 and stmt = 
  | DeclStmts of decl list (* inside a Block *)
 
- | Block of stmt list
+ | Block of stmt list bracket
  (* less: could be rewritten as Block [] *)
  | Empty
 
@@ -250,7 +250,7 @@ and stmt =
  (* TODO: stmt (* Send or Receive *) * stmt (* can be empty *) *)
  and comm_clause = case_clause
     
- and call_expr = expr * arguments
+ and call_expr = expr * arguments bracket
 
  and simple =
  | ExprStmt of expr
@@ -357,7 +357,7 @@ let stmt1 xs =
   match xs with
   | [] -> Empty
   | [st] -> st
-  | xs -> Block xs
+  | xs -> Block (AST_generic.fake_bracket xs)
 
 let item1 xs =
   match xs with

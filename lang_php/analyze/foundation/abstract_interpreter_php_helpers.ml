@@ -480,7 +480,7 @@ module NullNewVars = struct
 
   and stmt env heap x =
     match x with
-    | Block stl -> stmtl env heap stl
+    | Block (_, stl, _) -> stmtl env heap stl
     (* todo? enough? what about deeply nested assignements?
      * what if had some 'global' directives in previous statements?
      *)

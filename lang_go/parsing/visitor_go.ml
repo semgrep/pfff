@@ -228,7 +228,7 @@ and v_stmt x =
   let k = 
   function
   | DeclStmts v1 -> let v1 = v_list v_decl v1 in ()
-  | Block v1 -> let v1 = v_list v_stmt v1 in ()
+  | Block v1 -> let v1 = v_bracket (v_list v_stmt) v1 in ()
   | Empty -> ()
   | SimpleStmt v1 -> v_simple v1
 
@@ -319,7 +319,10 @@ and v_case_kind =
   | CaseDefault v1 -> let v1 = v_tok v1 in ()
 
 and v_comm_clause v = v_case_clause v
-and v_call_expr (v1, v2) = let v1 = v_expr v1 and v2 = v_arguments v2 in ()
+and v_call_expr (v1, v2) = 
+  let v1 = v_expr v1 
+  and v2 = v_bracket v_arguments v2 in 
+  ()
 
 and v_decl x =
   let k = 

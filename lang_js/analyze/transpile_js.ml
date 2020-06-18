@@ -62,7 +62,7 @@ let xhp_attribute expr x =
     let v = xhp_attr_value expr attrval in
     A.Arr (fake_bracket [A.String str; v])
   | C.XhpAttrSpread (_, (tokdot, e), _) ->
-    A.Apply (A.IdSpecial (A.Spread, tokdot), [expr e])
+    A.Apply (A.IdSpecial (A.Spread, tokdot), G.fake_bracket [expr e])
 
 let rec xhp expr x =
   match x with
@@ -71,12 +71,12 @@ let rec xhp expr x =
     let args1 = List.map (xhp_attribute expr) attrs in
     let args2 = [] in
     (* TODO: is it the actual result? good enough for codegraph for now *)
-    A.Apply(id, [A.Arr (fake_bracket args1); A.Arr (fake_bracket args2)])
+    A.Apply(id, fake_bracket [A.Arr (fake_bracket args1); A.Arr (fake_bracket args2)])
   | C.Xhp (tag, attrs, _tok, body, _endtag_opt) ->
     let id = id_of_tag tag in
     let args1 = List.map (xhp_attribute expr) attrs in
     let args2 = List.map (xhp_body expr) body in
-    A.Apply (id, [A.Arr (fake_bracket args1); A.Arr (fake_bracket args2)])
+    A.Apply (id, fake_bracket [A.Arr (fake_bracket args1); A.Arr (fake_bracket args2)])
 and xhp_body expr x = 
   match x with
   (* todo: contain enclosing quote? *)
@@ -117,7 +117,7 @@ let var_of_simple_pattern (expr, fname) init_builder pat =
     let e = expr e in
     let init1 = init_builder name in
     let init = A.Apply (A.Id (("pfff_builtin_default", tok),ref A.NotResolved),
-                       [init1; e]) in
+                       fake_bracket [init1; e]) in
     { A.v_name = name; v_kind = A.Let, fake "let"; v_init = Some init;
       v_resolved = ref A.NotResolved;
     }
@@ -163,7 +163,7 @@ let compile_pattern (expr, fname, fpname) varname pat =
        let init_builder (_name, _tok) =
          A.Apply (
            A.IdSpecial(A.Spread, fake "omit"),
-           [A.Id (varname, ref A.NotResolved)]
+           fake_bracket [A.Id (varname, ref A.NotResolved)]
          )
        in
        var_of_simple_pattern (expr, fname) init_builder pat
@@ -189,7 +189,7 @@ let compile_pattern (expr, fname, fpname) varname pat =
           A.Apply(A.ObjAccess (A.Id (varname, ref A.NotResolved),
                                fake ".",
                               (A.PN (("slice", tok)))),
-                  [A.Num (string_of_int !idx, tok)])
+                  fake_bracket [A.Num (string_of_int !idx, tok)])
         in
         var_of_simple_pattern (expr, fname) init_builder pat
       | _ -> failwith "TODO: PatArr pattern not handled"
@@ -257,21 +257,22 @@ let forof (lhs_var, tok, e2, st) (expr, stmt, var_binding) =
     Left [
       { A.v_name = iterator; v_kind = A.Let, fake "let"; 
         v_resolved = ref A.NotResolved;
-        v_init = Some (A.Apply (A.ArrAccess (e2, symbol_iterator), [])) };
+        v_init = Some (A.Apply (A.ArrAccess (e2, symbol_iterator), 
+            fake_bracket [])) };
       { A.v_name = step; v_kind = A.Let, fake "let"; 
         v_resolved = ref A.NotResolved;
         v_init = None; }
     ]
   in
   let for_cond = 
-    A.Apply (A.IdSpecial (A.ArithOp G.Not, tok), [
+    A.Apply (A.IdSpecial (A.ArithOp G.Not, tok), fake_bracket [
       A.ObjAccess (A.Assign (A.Id (step, ref A.NotResolved),
                          fake "=",
                           A.Apply (A.ObjAccess (A.Id (iterator, 
                                                       ref A.NotResolved),
                                                 fake ".",
                                                 A.PN ("next", tok)),
-                                   [])),
+                                   fake_bracket [])),
         fake ".",
         A.PN ("done", tok))
        ])
@@ -305,4 +306,4 @@ let forof (lhs_var, tok, e2, st) (expr, stmt, var_binding) =
   in 
   let finalst = vars_or_assign_stmts @ st  in
   [A.For (fake "for", A.ForClassic (for_init, Some for_cond, None), 
-      A.Block finalst)]
+      A.Block (fake_bracket finalst))]

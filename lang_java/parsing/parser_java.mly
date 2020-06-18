@@ -466,13 +466,13 @@ class_literal:
 class_instance_creation_expression:
  | NEW name LP argument_list_opt RP 
    class_body_opt
-       { NewClass ($1, TClass (class_type $2), $4, $6) }
+       { NewClass ($1, TClass (class_type $2), ($3,$4,$5), $6) }
  /*(* javaext: ? *)*/
  | primary DOT NEW identifier LP argument_list_opt RP class_body_opt
-       { NewQualifiedClass ($1, $3, $4, $6, $8) }
+       { NewQualifiedClass ($1, $3, $4, ($5,$6,$7), $8) }
  /*(* javaext: not in 2nd edition java language specification. *)*/
  | name DOT NEW identifier LP argument_list_opt RP class_body_opt
-       { NewQualifiedClass ((Name (name $1)), $3, $4, $6, $8) }
+       { NewQualifiedClass ((Name (name $1)), $3, $4, ($5,$6,$7), $8) }
 
 /*
    A new array that cannot be accessed right away by appending [index]:
@@ -528,19 +528,20 @@ method_invocation:
                 | _ -> List.rev xs
                 )
               in
-              Call (Dot (Name (name (xs)), Parse_info.fake_info ".", x), $3)
+              Call (Dot (Name (name (xs)), Parse_info.fake_info ".", x), 
+                     ($2,$3,$4))
           | _ ->
               pr2 "method_invocation pb";
               pr2_gen $1;
               raise Impossible
         }
  | primary DOT identifier LP argument_list_opt RP
-	{ Call ((Dot ($1, $2, $3)), $5) }
+	{ Call ((Dot ($1, $2, $3)), ($4,$5,$6)) }
  | SUPER DOT identifier LP argument_list_opt RP
-	{ Call ((Dot (Name [super_ident $1], $2, $3)), $5) }
+	{ Call ((Dot (Name [super_ident $1], $2, $3)), ($4,$5,$6)) }
  /*(* javaext: ? *)*/
  | name DOT SUPER DOT identifier LP argument_list_opt RP
-	{ Call (Dot (Name (name $1 @ [super_ident $3]), $2, $5), $7)}
+	{ Call (Dot (Name (name $1 @ [super_ident $3]), $2, $5), ($6,$7,$8))}
 
 argument: 
  | expression { $1 }
@@ -606,15 +607,15 @@ unary_expression_not_plus_minus:
  * using LP expression RP)
  *)*/
 cast_expression:
- | LP primitive_type RP unary_expression  { Cast ($2, $4) }
- | LP array_type RP unary_expression_not_plus_minus  { Cast ($2, $4) }
+ | LP primitive_type RP unary_expression  { Cast (($1,$2,$3), $4) }
+ | LP array_type RP unary_expression_not_plus_minus  { Cast (($1,$2,$3), $4) }
  | LP expression RP unary_expression_not_plus_minus
-	{  Cast (expr_to_typename $2, $4) }
+	{  Cast (($1,expr_to_typename $2,$3), $4) }
 
 cast_lambda_expression:
  /*(* this can not be put inside cast_expression. See conflicts.txt*)*/
  | LP expression RP lambda_expression 
-     { Cast (expr_to_typename $2, $4) }
+     { Cast (($1,expr_to_typename $2,$3), $4) }
 
 
 multiplicative_expression:
@@ -814,7 +815,7 @@ statement_without_trailing_substatement:
  | ASSERT expression SM                  { Assert ($1, $2, None) }
  | ASSERT expression COLON expression SM { Assert ($1, $2, Some $4) }
 
-block: LC block_statements_opt RC  { Block $2 }
+block: LC block_statements_opt RC  { Block ($1, $2, $3) }
 
 block_statement:
  | local_variable_declaration_statement  { $1 }
@@ -1194,21 +1195,23 @@ constructor_declaration:
 constructor_declarator:	identifier LP formal_parameter_list_opt RP  { $1, $3 }
 
 constructor_body:
- | LC block_statements_opt RC                                 { Block $2 }
- | LC explicit_constructor_invocation block_statements_opt RC { Block ($2::$3) }
+ | LC block_statements_opt RC                                 
+    { Block ($1, $2, $3) }
+ | LC explicit_constructor_invocation block_statements_opt RC 
+    { Block ($1, $2::$3, $4) }
 
 
 explicit_constructor_invocation:
  | THIS LP argument_list_opt RP SM
-      { constructor_invocation [this_ident $1] $3 }
+      { constructor_invocation [this_ident $1] ($2,$3,$4) }
  | SUPER LP argument_list_opt RP SM
-      { constructor_invocation [super_ident $1] $3 }
+      { constructor_invocation [super_ident $1] ($2,$3,$4) }
  /*(* javaext: ? *)*/
  | primary DOT SUPER LP argument_list_opt RP SM
-      { Expr (Call ((Dot ($1, $2, super_identifier $3)), $5)) }
+      { Expr (Call ((Dot ($1, $2, super_identifier $3)), ($4,$5,$6))) }
  /*(* not in 2nd edition java language specification. *)*/
  | name DOT SUPER LP argument_list_opt RP SM
-      { constructor_invocation (name $1 @ [super_ident $3]) $5 }
+      { constructor_invocation (name $1 @ [super_ident $3]) ($4,$5,$6) }
 
 /*(*----------------------------*)*/
 /*(*2 Method parameter *)*/
@@ -1314,7 +1317,7 @@ enum_constant:
 
 enum_constant_bis:
  | identifier                         { EnumSimple $1 }
- | identifier LP argument_list_opt RP { EnumConstructor ($1, $3) }
+ | identifier LP argument_list_opt RP { EnumConstructor ($1, ($2,$3,$4)) }
  | identifier LC method_declarations_opt RC  { EnumWithMethods ($1, $3) }
 
 enum_body_declarations: SM class_body_declarations_opt { $2 }

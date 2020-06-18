@@ -163,7 +163,7 @@ and expr =
   (* the 'decls option' is for anon classes *)
   | NewClass of tok * typ * arguments * decls bracket option
   (* the int counts the number of [], new Foo[][] => 2 *)
-  | NewArray of tok * typ * arguments * int * init option
+  | NewArray of tok * typ * expr list * int * init option
   (* see tests/java/parsing/NewQualified.java *)
   | NewQualifiedClass of expr * tok (* .new *) * ident * arguments * 
       decls bracket option
@@ -196,7 +196,7 @@ and expr =
   | Prefix of AST_generic.incr_decr wrap * expr
   | Infix of expr * AST_generic.arithmetic_operator wrap * expr
 
-  | Cast of typ * expr
+  | Cast of typ bracket * expr
 
   | InstanceOf of expr * ref_type
 
@@ -221,7 +221,7 @@ and expr =
   | Bool of bool wrap
   | Null of tok
 
-and arguments = expr list
+and arguments = expr list bracket
 
 (*****************************************************************************)
 (* Statement *)
@@ -229,7 +229,7 @@ and arguments = expr list
 
 and stmt =
   | Empty (* could be Block [] *)
-  | Block of stmts
+  | Block of stmts bracket
   | Expr of expr
 
   | If of tok * expr * stmt * stmt option
