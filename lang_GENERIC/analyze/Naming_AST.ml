@@ -446,7 +446,7 @@ let resolve lang prog =
         (* note that some languages such as Python do not have VarDef 
          * construct
          * todo? should add those somewhere instead of in_lvalue detection? *)
-        VarDef ({ vinit; vtype }) (* when is_local_or_global_ctx env *) ->
+        VarDef ({ vinit; vtype }) when is_local_or_global_ctx env lang ->
           (* Need to visit expressions first so that type is populated *)
           (* If we do var a = 3, then var b = a, we want to propagate the type of a *)
           k x;
