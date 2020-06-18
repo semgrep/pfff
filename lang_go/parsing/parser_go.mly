@@ -97,10 +97,10 @@ let expr_or_type_to_type tok x =
  * Calls with a ParenType. We need to convert back those in
  * Cast.
  *)
-let mk_call_or_cast (e, xs) =
-  match e, xs with
-  | ParenType t, [Arg e] -> Cast (t, e)
-  | _ -> Call (e, xs)
+let mk_call_or_cast (e, args) =
+  match e, args with
+  | ParenType t, (_, [Arg e], _) -> Cast (t, e)
+  | _ -> Call (e, args)
 
 let type_to_id x =
   match x with
@@ -390,7 +390,8 @@ stmt:
 | common_dcl      { DeclStmts $1 }
 | non_dcl_stmt    { $1 }
 
-compound_stmt: LBRACE stmt_list RBRACE { Block (rev_and_fix_stmts $2) }
+compound_stmt: LBRACE stmt_list RBRACE 
+  { Block ($1, rev_and_fix_stmts $2, $3) }
 
 non_dcl_stmt:
 |   simple_stmt { SimpleStmt $1 }
@@ -465,7 +466,7 @@ for_stmt:
     { Range ($1, None, $2, $3, $4) }
 
 
-loop_body: LBODY stmt_list RBRACE { Block (rev_and_fix_stmts $2) }
+loop_body: LBODY stmt_list RBRACE { Block ($1, rev_and_fix_stmts $2, $3) }
 
 
 /*(* split in 2, switch expr and switch types *)*/
@@ -485,7 +486,7 @@ case:
 
 caseblock: case stmt_list
     {
-      $1, Block (List.rev $2)
+      $1, Block (AST_generic.fake_bracket (List.rev $2))
       (*
         // If the last token read by the lexer was consumed
         // as part of the case, clear it (parser has cleared yychar).
@@ -626,9 +627,9 @@ basic_literal:
  */
 pseudocall:
 |   pexpr LPAREN RPAREN                               
-      { ($1, []) }
+      { ($1, ($2,[],$3)) }
 |   pexpr LPAREN arguments ocomma RPAREN      
-      { ($1, $3 |> List.rev |> List.map mk_arg) }
+      { ($1, ($2, $3 |> List.rev |> List.map mk_arg, $5)) }
 |   pexpr LPAREN arguments LDDD ocomma RPAREN 
       { let args = 
           match $3 |> List.map mk_arg with
@@ -637,7 +638,7 @@ pseudocall:
           | (ArgDots _)::_ -> raise Impossible
           | (ArgType _t)::_ -> raise Impossible
          in
-         $1, args 
+         $1, ($2, args, $6)
       }
 
 argument: 
@@ -905,7 +906,7 @@ fndcl:
 
 fnbody:
 |  /*(*empty *)*/          { Empty }
-|  LBRACE stmt_list RBRACE { Block (rev_and_fix_stmts $2) }
+|  LBRACE stmt_list RBRACE { Block ($1, rev_and_fix_stmts $2, $3) }
 
 
 fnliteral: fnlitdcl lbrace stmt_list RBRACE 

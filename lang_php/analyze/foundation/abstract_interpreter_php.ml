@@ -232,6 +232,8 @@ let exclude_toplevel_defs xs =
 let methods_and_fields members =
   List.map fst (SMap.bindings members)
 
+let fb = AST_generic.fake_bracket
+
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
@@ -288,8 +290,9 @@ and fake_root env heap =
         let params = make_fake_params m.f_params in
         let e =
           if is_static m.m_modifiers
-          then (Call (Class_get (Id [c.c_name], fake "::", Id [m.f_name]), params))
-          else (Call (Obj_get (New (fake "new", Id [c.c_name], []), fake ".", Id [m.f_name]), params))
+          then (Call (Class_get (Id [c.c_name], fake "::", Id [m.f_name]), 
+                      fb params))
+          else (Call (Obj_get (New (fake "new", Id [c.c_name], []), fake ".", Id [m.f_name]), fb params))
         in
         ignore(expr env heap e)
       ) c.c_methods
@@ -319,7 +322,7 @@ and stmt env heap x =
    * with php or aphp and get both run working (show() is an
    * undefined function in HPHP).
    *)
-  | Expr (Call (Id [(("show" | "var_dump"),_)], [e])) ->
+  | Expr (Call (Id [(("show" | "var_dump"),_)], (_,[e],_))) ->
       let heap, v = expr env heap e in
       if !show_vardump then begin
         Env.print_locals_and_globals print_string env heap;
@@ -327,7 +330,7 @@ and stmt env heap x =
       end;
       heap
   (* used by unit testing *)
-  | Expr (Call (Id [("checkpoint",_)], [])) ->
+  | Expr (Call (Id [("checkpoint",_)], (_,[],_))) ->
       _checkpoint_heap := Some (heap, !(env.vars));
       heap
 
@@ -361,7 +364,7 @@ and stmt env heap x =
       let heap = stmt env heap st1 in
       let heap = stmt env heap st2 in
       heap
-  | Block stl ->
+  | Block (_,stl,_) ->
       stmtl env heap stl
   | Return (_, e) ->
       let e =
@@ -628,9 +631,9 @@ and expr_ env heap x =
   | Arrow _ -> failwith "should be handled in caller, in array_value"
 
   (* hardcoded special case, not sure why we need that *)
-  | Call (Id [("id",_)], [x]) -> expr env heap x
+  | Call (Id [("id",_)], (_,[x],_)) -> expr env heap x
 
-  | Call (Id [("call_user_func", tok)], e :: el) ->
+  | Call (Id [("call_user_func", tok)], (_, e :: el, _)) ->
       let heap, v = expr env heap e in
       Taint.check_danger env heap "call_user_func" tok !(env.path) v;
       (try
@@ -650,7 +653,7 @@ and expr_ env heap x =
      heap, v'
 
   (* simple function call or $x() call *)
-  | Call (Id [(s,_)], el) ->
+  | Call (Id [(s,_)], (_, el,_)) ->
       (try
         let heap, def = get_function env heap s in
         call_fun def env heap el
@@ -664,7 +667,7 @@ and expr_ env heap x =
   (* expression call or method call (Call (Obj_get...)) or
    * static method call (Call (Class_get ...))
    *)
-  | Call (e, el) ->
+  | Call (e, (_, el,_)) ->
       let heap, v = expr env heap e in
       call env heap v el
 
@@ -1042,7 +1045,7 @@ and sum_call env heap v el =
       (* todo: 's' could reference a static method as in
        * $x = 'A::foo'; $x();
        *)
-      let heap, r = expr env heap (Call (Id [(w s)], el)) in
+      let heap, r = expr env heap (Call (Id [(w s)], fb el)) in
       heap, r
   | Vmethod (_, fm) :: _ ->
       let fl = IMap.fold (fun _ y acc -> y :: acc) fm [] in
@@ -1210,8 +1213,8 @@ and new_ env heap e el =
    * *myobj->__construct(el);
    *)
     Expr (Assign (Var (w "*myobj*"), fake "=",
-                 Call (Class_get (Id [(w str)], fake "::", Id [(w "*BUILD*")]), [])));
-    Expr (Call (Obj_get (Var (w "*myobj*"), fake ".", Id [(w "__construct")]), el));
+                 Call (Class_get (Id [(w str)], fake "::", Id [(w "*BUILD*")]), fb [])));
+    Expr (Call (Obj_get (Var (w "*myobj*"), fake ".", Id [(w "__construct")]), fb el));
   ] in
   let heap = stmtl env heap stl in
   let heap, _, v = Var.get env heap "*myobj*" in

@@ -665,6 +665,20 @@ let pp_either = fun poly_a -> fun poly_b -> fun fmt -> function
      (poly_b fmt) a0;
      Format.fprintf fmt "@])")
 
+let pp_either3 = fun poly_a -> fun poly_b -> fun poly_c -> fun fmt -> function
+  | Left3 a0 ->
+    (Format.fprintf fmt "(@[<2>Left3@ ";
+     (poly_a fmt) a0;
+     Format.fprintf fmt "@])")
+  | Middle3 a0 ->
+    (Format.fprintf fmt "(@[<2>Middle3@ ";
+     (poly_b fmt) a0;
+     Format.fprintf fmt "@])")
+  | Right3 a0 ->
+    (Format.fprintf fmt "(@[<2>Right3@ ";
+     (poly_c fmt) a0;
+     Format.fprintf fmt "@])")
+
 let partition_either f l =
   let rec part_either left right = function
   | [] -> (List.rev left, List.rev right)

@@ -57,7 +57,7 @@ let bool = id
 let fake s = Parse_info.fake_info s
 (*e: function [[Python_to_generic.fake]] *)
 (*s: function [[Python_to_generic.fake_bracket]] *)
-let fake_bracket x = fake "(", x, fake ")"
+let fb = AST_generic.fake_bracket
 (*e: function [[Python_to_generic.fake_bracket]] *)
 
 (*****************************************************************************)
@@ -158,15 +158,15 @@ let rec expr (x: expr) =
       (* reuse same tok *)
       let tok = snd v1 in
       G.Call (G.IdSpecial (G.EncodedString (pre, tok), tok),
-        [G.Arg (G.L (G.String (v1)))])
+        fb [G.Arg (G.L (G.String (v1)))])
 
   | InterpolatedString xs ->
     G.Call (G.IdSpecial (G.ConcatString G.FString, fake "concat"), 
-      xs |> List.map (fun x -> let x = expr x in G.Arg (x))
+      fb (xs |> List.map (fun x -> let x = expr x in G.Arg (x)))
     )
   | ConcatenatedString xs ->
     G.Call (G.IdSpecial (G.ConcatString G.SequenceConcat, fake "concat"), 
-      xs |> List.map (fun x -> let x = expr x in G.Arg (x))
+      fb (xs |> List.map (fun x -> let x = expr x in G.Arg (x)))
     )
   | TypedExpr (v1, v2) ->
      let v1 = expr v1 in
@@ -178,7 +178,7 @@ let rec expr (x: expr) =
      G.TypedMetavar (v1, v2, v3)
   | ExprStar v1 ->
     let v1 = expr v1 in
-    G.Call (G.IdSpecial (G.Spread, fake "spread"), [G.expr_to_arg v1])
+    G.Call (G.IdSpecial (G.Spread, fake "spread"), fb [G.expr_to_arg v1])
 
   | Name ((v1, v2, v3)) ->
       let v1 = name v1
@@ -205,7 +205,7 @@ let rec expr (x: expr) =
   | List ((CompForIf (v1, v2), v3)) ->
       let e1 = comprehension expr v1 v2 in
       let _v3TODO = expr_context v3 in 
-      G.Container (G.List, fake_bracket e1)
+      G.Container (G.List, fb e1)
 
   | Subscript ((v1, v2, v3)) ->
       let e = expr v1 
@@ -241,19 +241,20 @@ let rec expr (x: expr) =
 
   | DictOrSet (CompForIf (v1, v2)) -> 
       let e1 = comprehension2 dictorset_elt v1 v2 in
-      G.Container (G.Dict, fake_bracket e1)
+      G.Container (G.Dict, fb e1)
 
   | BoolOp (((v1,tok), v2)) -> 
       let v1 = boolop v1 
       and v2 = list expr v2 in 
-      G.Call (G.IdSpecial (G.ArithOp v1, tok), v2 |> List.map G.expr_to_arg)
+      G.Call (G.IdSpecial (G.ArithOp v1, tok), 
+        fb (v2 |> List.map G.expr_to_arg))
   | BinOp ((v1, (v2, tok), v3)) ->
       let v1 = expr v1 and v2 = operator v2 and v3 = expr v3 in
-      G.Call (G.IdSpecial (G.ArithOp v2, tok), [v1;v3] |> List.map G.expr_to_arg)
+      G.Call (G.IdSpecial (G.ArithOp v2, tok), fb ([v1;v3] |> List.map G.expr_to_arg))
   | UnaryOp (((v1, tok), v2)) -> let v1 = unaryop v1 and v2 = expr v2 in 
       (match v1 with
       | Left op ->
-            G.Call (G.IdSpecial (G.ArithOp op, tok), [v2] |> List.map G.expr_to_arg)
+            G.Call (G.IdSpecial (G.ArithOp op, tok), fb ([v2] |> List.map G.expr_to_arg))
       | Right oe ->
             G.OtherExpr (oe, [G.E v2])
       )
@@ -263,7 +264,7 @@ let rec expr (x: expr) =
       and v3 = list expr v3 in
       (match v2, v3 with
       | [Left op, tok], [e] ->
-        G.Call (G.IdSpecial (G.ArithOp op, tok), [v1;e] |> List.map G.expr_to_arg)
+        G.Call (G.IdSpecial (G.ArithOp op, tok), fb ([v1;e] |> List.map G.expr_to_arg))
       | [Right oe, _tok], [e] ->
         G.OtherExpr (oe, [G.E v1; G.E e])
       | _ ->  
@@ -275,7 +276,7 @@ let rec expr (x: expr) =
         let any = anyops @ (v3 |> List.map (fun e -> G.E e)) in
         G.OtherExpr (G.OE_CmpOps, any)
       )
-  | Call (v1, v2) -> let v1 = expr v1 in let v2 = list argument v2 in 
+  | Call (v1, v2) -> let v1 = expr v1 in let v2 = bracket (list argument) v2 in 
       G.Call (v1, v2)
 
   | Lambda ((v1, v2)) -> let v1 = parameters v1 and v2 = expr v2 in 
@@ -300,7 +301,7 @@ and argument = function
   | Arg e -> let e = expr e in 
       G.Arg e
   | ArgStar e -> let e = expr e in
-      G.Arg (G.Call (G.IdSpecial (G.Spread, fake "spread"), [G.expr_to_arg e]))
+      G.Arg (G.Call (G.IdSpecial (G.Spread, fake "spread"), fb[G.expr_to_arg e]))
   | ArgPow e -> 
       let e = expr e in
       G.ArgOther (G.OA_ArgPow, [G.E e])
@@ -330,7 +331,7 @@ and dictorset_elt = function
       v1
   | PowInline (v1) -> 
       let v1 = expr v1 in
-      G.Call (G.IdSpecial (G.Spread, fake "spread"), [G.expr_to_arg v1])
+      G.Call (G.IdSpecial (G.Spread, fake "spread"), fb[G.expr_to_arg v1])
 (*e: function [[Python_to_generic.dictorset_elt]] *)
 
 (*s: function [[Python_to_generic.number]] *)
@@ -483,7 +484,7 @@ and list_stmt1 xs =
    * hacky ...
    *)
   | [G.ExprStmt (G.Id (_)) as x] -> x
-  | xs -> G.Block xs
+  | xs -> G.Block (fb xs)
 (*e: function [[Python_to_generic.list_stmt1]] *)
 
 
@@ -509,7 +510,7 @@ and stmt_aux x =
       let ent = G.basic_entity v1 v4 in
       let def = { G.ckind = G.Class; cextends = v2; 
                   cimplements = []; cmixins = [];
-                  cbody = fake_bracket (v3 |> List.map(fun x ->G.FieldStmt x);)
+                  cbody = fb (v3 |> List.map(fun x ->G.FieldStmt x);)
                 } in
       [G.DefStmt (ent, G.ClassDef def)]
 
@@ -544,9 +545,10 @@ and stmt_aux x =
       in
       (match v3 with
       | [] -> [G.While (t, v1, v2)]
-      | _ -> [G.Block [
+      | _ -> [G.Block (fb[
               G.While (t, v1,v2); 
-              G.OtherStmt (G.OS_WhileOrElse, v3 |> List.map (fun x -> G.S x))]]
+              G.OtherStmt (G.OS_WhileOrElse, v3 |> List.map (fun x -> G.S x))])
+            ]
       )
             
   | For ((t, v1, t2, v2, v3, v4)) ->
@@ -558,9 +560,10 @@ and stmt_aux x =
       let header = G.ForEach (foreach, t2, ins) in
       (match orelse with
       | [] -> [G.For (t, header, body)]
-      | _ -> [G.Block [
+      | _ -> [G.Block (fb [
               G.For (t, header, body);
-              G.OtherStmt (G.OS_ForOrElse, orelse|> List.map (fun x -> G.S x))]]
+              G.OtherStmt (G.OS_ForOrElse, orelse|> List.map (fun x -> G.S x))])
+            ]
       )
   (* TODO: unsugar in sequence? *)
   | With ((_t, v1, v2, v3)) ->
@@ -596,10 +599,11 @@ and stmt_aux x =
       in
       (match orelse with
       | [] -> [G.Try (t, v1, v2, None)]
-      | _ -> [G.Block [
+      | _ -> [G.Block (fb[
               G.Try (t, v1, v2, None);
               G.OtherStmt (G.OS_TryOrElse, orelse |> List.map (fun x -> G.S x))
-              ]]
+              ])
+            ]
       )
 
   | TryFinally ((t, v1, t2, v2)) ->
@@ -650,11 +654,11 @@ and stmt_aux x =
   (* python2: *)
   | Print (tok, _dest, vals, _nl) -> 
       let id = Name (("print", tok), Load, ref NotResolved) in
-      stmt_aux (ExprStmt (Call (id, vals |> List.map (fun e -> Arg e))))
+      stmt_aux (ExprStmt (Call (id, fb(vals |> List.map (fun e -> Arg e)))))
 
   | Exec (tok, e, _eopt, _eopt2) -> 
       let id = Name (("exec", tok), Load, ref NotResolved) in
-      stmt_aux (ExprStmt (Call (id, [Arg e])))
+      stmt_aux (ExprStmt (Call (id, fb [Arg e])))
 
 (*e: function [[Python_to_generic.stmt_aux]] *)
 

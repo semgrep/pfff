@@ -124,15 +124,15 @@ let special (x, tok) =
       if not has_tag_function 
       then SR_NeedArgs (fun args -> 
             G.Call (G.IdSpecial (G.ConcatString G.InterpolatedConcat, tok), 
-                    args |> List.map (fun e -> G.Arg e)))
+                    args |> List.map (fun e -> G.Arg e) |> G.fake_bracket))
       else SR_NeedArgs (fun args ->
          match args with
          | [] -> raise Impossible
          | tag::rest ->
-            G.Call (tag, 
+            G.Call (tag, G.fake_bracket
              [G.Arg (G.Call (
                       G.IdSpecial (G.ConcatString G.InterpolatedConcat, tok), 
-                        rest |> List.map (fun e -> G.Arg e)))]))
+                        rest |> List.map (fun e -> G.Arg e) |> G.fake_bracket))]))
   | ArithOp op -> SR_Special (G.ArithOp op, tok)
   | IncrDecr v -> SR_Special (G.IncrDecr v, tok)
 
@@ -146,7 +146,7 @@ let special (x, tok) =
 let as_block stmt =
   match stmt with
   | G.Block _ as block -> block
-  | other -> G.Block [other]
+  | other -> G.Block (G.fake_bracket [other])
 
 let rec property_name =
   function
@@ -216,19 +216,20 @@ and expr (x: expr) =
 
   | Apply ((IdSpecial v1, v2)) ->
       let x = special v1 in
-      let v2 = list expr v2 in 
+      let v2 = bracket (list expr) v2 in 
       (match x with
       | SR_Special v -> 
-        G.Call (G.IdSpecial (v), v2 |> List.map (fun e -> G.Arg e))
+        G.Call (G.IdSpecial (v), bracket (List.map (fun e -> G.Arg e)) v2)
       | SR_Literal _ ->
         error (snd v1) "Weird: literal in call position"
       | SR_Other (x, tok) -> (* ex: NewTarget *)
-        G.Call (G.OtherExpr (x, [G.Tk tok]), v2 |> List.map (fun e -> G.Arg e))
+        G.Call (G.OtherExpr (x, [G.Tk tok]), 
+              bracket (List.map (fun e -> G.Arg e)) v2)
       | SR_NeedArgs f ->
-        f v2
+        f (G.unbracket v2)
       )
-  | Apply ((v1, v2)) -> let v1 = expr v1 and v2 = list expr v2 in 
-      G.Call (v1, v2 |> List.map (fun e -> G.Arg e))
+  | Apply ((v1, v2)) -> let v1 = expr v1 and v2 = bracket (list expr) v2 in 
+      G.Call (v1, bracket (List.map (fun e -> G.Arg e)) v2)
   | Arr ((v1)) -> let v1 = bracket (list expr) v1 in G.Container (G.Array, v1)
   | Conditional ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in
@@ -238,7 +239,7 @@ and expr (x: expr) =
 and stmt x =
   match x with
   | VarDecl v1 -> let v1 = def_of_var v1 in G.DefStmt (v1)
-  | Block v1 -> let v1 = list stmt v1 in G.Block v1
+  | Block v1 -> let v1 = bracket (list stmt) v1 in G.Block v1
   | ExprStmt v1 -> let v1 = expr v1 in G.ExprStmt v1
   | If ((t, v1, v2, v3)) ->
       let v1 = expr v1 and v2 = stmt v2 and v3 = option stmt v3 in 

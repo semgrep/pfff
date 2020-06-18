@@ -147,7 +147,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
             ()
         );
         k x
-     | Call (f, args) ->
+     | Call (f, (_, args, _)) ->
        (match f with
        | Name (name, _ctx, _resolved) ->
            let kind = E.Function in

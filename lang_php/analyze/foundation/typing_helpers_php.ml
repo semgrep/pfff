@@ -187,8 +187,7 @@ module AEnv = struct
     | (e, f, c) -> 
         Printf.printf "In %s %s, " c f;
         let stmt = Ast_php.Expr(e) in
-        let v = Meta_ast_php.vof_program [stmt] in
-        let s = OCaml.string_of_v v in
+        let s = Ast_php.show_program [stmt] in
         Common.pr s
 
   let set env x a =

@@ -294,7 +294,7 @@ let instrs_of_expr env e =
   | A.Id name -> Lv (Id name)
   | A.Unary (e, (A2.DeRef, _)) -> Lv (DeRef (var_of_expr e))
   (* todo: xalloc, smalloc, and other wrappers? *)
-  | A.Call (A.Id ("malloc", tok), es) ->
+  | A.Call (A.Id ("malloc", tok), (_, es, _)) ->
       (match es with
       | [SizeOf(Right(t))] -> Alloc (t)
       | [Binary(e, (Cst_cpp.Arith(Cst_cpp.Mul), _), SizeOf(Right(t)))] ->
@@ -310,7 +310,7 @@ let instrs_of_expr env e =
           Alloc (A.TBase ("_unknown_", tok))
       )
 
-  | A.Call (e, es) ->
+  | A.Call (e, (_, es, _)) ->
       let vs = List.map var_of_expr es in
       (match e with
       | A.Id name ->

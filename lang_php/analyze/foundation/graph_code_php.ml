@@ -224,6 +224,8 @@ let normalize str =
   |> String.lowercase_ascii                   (* php is case insensitive *)
   |> Str.global_replace (Str.regexp "-") "_"  (* xhp is "dash" insensitive *)
 
+let fb = AST_generic.fake_bracket
+
 (*****************************************************************************)
 (* Namespace *)
 (*****************************************************************************)
@@ -707,12 +709,12 @@ and stmt_bis env x =
   | NamespaceUse _ -> raise Impossible
 
   (* old style constant definition, before PHP 5.4 *)
-  | Expr(Call(Id[("define", _)], [String((name)); v])) ->
+  | Expr(Call(Id[("define", _)], (_,[String((name)); v],_))) ->
      let env = add_node_and_has_edge env (name, E.Constant) in
      expr env v
 
   | Expr e -> expr env e
-  | Block xs -> stmtl env xs
+  | Block (_,xs,_) -> stmtl env xs
   | If (_, e, st1, st2) ->
       expr env e;
       stmtl env [st1;st2]
@@ -918,7 +920,7 @@ and expr env x =
   | Var _ident -> ()
 
   (* -------------------------------------------------- *)
-  | Call (e, es) ->
+  | Call (e, (_, es, _)) ->
     (match e with
     (* simple function call *)
     | Id name ->
@@ -928,15 +930,15 @@ and expr env x =
 
     (* static method call *)
     | Class_get (Id[ ("__special__self", tokopt)], tok, e2) ->
-        expr env (Call (Class_get (Id[ (env.cur.self, tokopt)], tok, e2), es))
+        expr env (Call (Class_get (Id[ (env.cur.self, tokopt)], tok, e2), fb es))
     | Class_get (Id[ ("__special__parent", tokopt)], tok, e2) ->
         let name = name_of_parent env tokopt in
-        expr env (Call (Class_get (Id name, tok, e2), es))
+        expr env (Call (Class_get (Id name, tok, e2), fb es))
     (* Incorrect actually ... but good enough for codegraph.
      * todo: should put that in the phase_dispatch
      *)
     | Class_get (Id[ ("__special__static", tokopt)], tok, e2) ->
-        expr env (Call (Class_get (Id[ (env.cur.self, tokopt)], tok, e2), es))
+        expr env (Call (Class_get (Id[ (env.cur.self, tokopt)], tok, e2), fb es))
 
     | Class_get (Id name1, _, Id [name2]) ->
        (* can be static or regular method as transform $this->foo()
@@ -951,7 +953,7 @@ and expr env x =
         (* handle easy case *)
         | IdSpecial (This, tok) ->
             expr env
-                (Call (Class_get (Id[ (env.cur.self, tok)], tok, Id name2), es));
+                (Call (Class_get (Id[ (env.cur.self, tok)], tok, Id name2), fb es));
             env.phase_dispatch |> Common.push (env.cur, name2);
         (* need class analysis ... *)
         | _ ->
@@ -960,7 +962,7 @@ and expr env x =
           exprl env es
         )
     | _ ->
-      let tok = Meta_ast_php.toks_of_any (Expr2 e) |> List.hd in
+      let tok = raise Todo (* Meta_ast_php.toks_of_any (Expr2 e) |> List.hd *) in
       env.stats.G.unresolved_calls |> Common.push tok;
       expr env e;
       exprl env es
@@ -999,7 +1001,7 @@ and expr env x =
          env.stats.G.unresolved_class_access |> Common.push tok;
          expr env e1;
      | _ ->
-         let tok = Meta_ast_php.toks_of_any (Expr2 e1) |> List.hd in
+         let tok = raise Todo (* Meta_ast_php.toks_of_any (Expr2 e1) |> List.hd *) in
          env.stats.G.unresolved_class_access |> Common.push tok;
          exprl env [e1; e2]
       )
@@ -1016,13 +1018,13 @@ and expr env x =
           env.stats.G.field_access |> Common.push (tok, false);
           expr env e1;
       | _ ->
-          let tok = Meta_ast_php.toks_of_any (Expr2 e1) |> List.hd in
+          let tok = raise Todo (*Meta_ast_php.toks_of_any (Expr2 e1) |> List.hd *) in
           env.stats.G.unresolved_class_access |> Common.push tok;
           exprl env [e1; e2]
       )
 
   | New (tok, e, es) ->
-      expr env (Call (Class_get(e, tok, Id[ ("__construct", tok)]), es))
+      expr env (Call (Class_get(e, tok, Id[ ("__construct", tok)]), fb es))
 
   (* -------------------------------------------------- *)
   | InstanceOf (_, e1, e2) ->
@@ -1031,7 +1033,7 @@ and expr env x =
       (* less: add deps? *)
       | Id name -> add_use_edge_instanceof env (name, E.Class)
       | _ ->
-          let tok = Meta_ast_php.toks_of_any (Expr2 e1) |> List.hd in
+          let tok = raise Todo (*Meta_ast_php.toks_of_any (Expr2 e1) |> List.hd *) in
           env.stats.G.unresolved_class_access |> Common.push tok;
           expr env e2
       )

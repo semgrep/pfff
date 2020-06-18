@@ -395,7 +395,7 @@ and stmt env = function
  | VarDecl v ->
     let env = add_locals env [v] in
     option (expr env) v.v_init
- | Block xs -> stmts env xs
+ | Block (_, xs, _) -> stmts env xs
  | ExprStmt e -> expr env e
  | If (_, e, st1, st2) ->
    expr env e;
@@ -557,7 +557,7 @@ and expr env e =
         add_locals env [v]
     in
     fun_ env f
-  | Apply (e, es) ->
+  | Apply (e, (_, es, _)) ->
     (match e with
     | Id (n, scope) when not (is_local env n) ->
         add_use_edge_candidates env (n, E.Function) scope

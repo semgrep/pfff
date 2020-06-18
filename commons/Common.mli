@@ -263,6 +263,10 @@ val pp_either: (Format.formatter -> 'a -> 'b) ->
 (*s: type [[Common.either3]] *)
 type ('a, 'b, 'c) either3 = Left3 of 'a | Middle3 of 'b | Right3 of 'c
 (*e: type [[Common.either3]] *)
+val pp_either3: (Format.formatter -> 'a -> 'b) ->
+               (Format.formatter -> 'c -> 'd) ->
+               (Format.formatter -> 'e -> 'f) ->
+               Format.formatter -> ('a, 'c, 'e) either3 -> unit
 (*s: signature [[Common.partition_either]] *)
 val partition_either :
   ('a -> ('b, 'c) either) -> 'a list -> 'b list * 'c list

@@ -295,7 +295,7 @@ let find_existing_node_opt env name candidates last_resort =
 let is_local env s =
   (Common.find_opt (fun (x, _) -> x =$= s) !(env.locals)) <> None
 
-let unbracket (_, x, _) = x
+let unbracket = AST_generic.unbracket
 
 (*****************************************************************************)
 (* For datalog *)
@@ -579,7 +579,7 @@ and toplevel env x =
           in
           let env = { env with locals = ref xs } in
           if env.phase = Uses
-          then stmts env def.f_body
+          then stmts env (unbracket def.f_body)
       | _ -> raise Impossible
       )
 
@@ -750,7 +750,7 @@ and define_body env v =
  *)
 and stmt env = function
   | ExprSt e -> expr_toplevel env e
-  | Block xs -> stmts env xs
+  | Block (_, xs, _) -> stmts env xs
   | Asm xs -> List.iter (expr_toplevel env) xs
   | If (_, e, st1, st2) ->
       expr_toplevel env e;
@@ -838,7 +838,7 @@ and expr env = function
         in
         kind_opt |> Common.do_option (fun kind -> add_use_edge env (name, kind))
 
-  | Call (e, es) -> 
+  | Call (e, (_, es, _)) -> 
       (match e with
       | Id name ->
           let s = Ast.str_of_name name in

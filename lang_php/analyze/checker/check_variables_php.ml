@@ -214,9 +214,9 @@ let s_tok_of_ident name =
   A.str_of_ident name, A.tok_of_ident name
 
 (* to help debug *)
-let str_of_any any =
-  let v = Meta_ast_php.vof_any any in
-  OCaml.string_of_v v
+let str_of_any = Ast_php.show_any
+
+let fb = AST_generic.fake_bracket
 
 (*****************************************************************************)
 (* Vars passed by ref *)
@@ -472,7 +472,7 @@ and stmt env = function
 
   | Expr e -> expr env e
   (* todo: block scope checking when in strict mode? *)
-  | Block xs -> stmtl env xs
+  | Block (_, xs, _) -> stmtl env xs
 
   | If (_, e, st1, st2) ->
       expr env e;
@@ -671,7 +671,7 @@ and expr env e =
       exprl env [e1;e2]
 
   | List _xs ->
-      let tok = Meta_ast_php.toks_of_any (Expr2 e) |> List.hd in
+      let tok = raise Todo in (* Meta_ast_php.toks_of_any (Expr2 e) |> List.hd *)
       failwith (spf "list(...) should be used only in an Assign context at %s"
                   (PI.string_of_info tok))
   (* Arrow used to be allowed only in Array and Foreach context, but now
@@ -684,7 +684,7 @@ and expr env e =
    * considered as a use of variable. There should be another
    * statement in the function that actually uses the variable.
    *)
-  | Call (Id[ ("__builtin__unset", _tok)], args) ->
+  | Call (Id[ ("__builtin__unset", _tok)], (_, args, _)) ->
       args |> List.iter (function
         (* should be an lvalue again *)
         (* less: The use of 'unset' on a variable is still not clear to me. *)
@@ -702,7 +702,7 @@ and expr env e =
             raise Todo
       )
   (* special case, could factorize maybe with pass_var_by_ref *)
-  | Call (Id[ ("sscanf", _tok)], x::y::vars) ->
+  | Call (Id[ ("sscanf", _tok)], (_, x::y::vars, _)) ->
       (* what if no x and y? wrong number of arguments, not our business here*)
       expr env x;
       expr env y;
@@ -718,12 +718,12 @@ and expr env e =
    *  maybe we should have a bailout_vars and skip further errors on $x.
    * todo: could have isset(Array_get(...) there too no?
    *)
-  | Call (Id[ ("__builtin__isset", _tok)], [Var _name]) ->
+  | Call (Id[ ("__builtin__isset", _tok)], (_,[Var _name],_)) ->
       ()
   (* http://php.net/manual/en/function.empty.php
    * "empty() does not generate a warning if the variable does not exist."
    *)
-  | Call (Id[ ("__builtin__empty", _tok)], [Var _name]) ->
+  | Call (Id[ ("__builtin__empty", _tok)], (_, [Var _name], _)) ->
       ()
 
 
@@ -735,7 +735,7 @@ and expr env e =
 
       (* facebook specific? should be a hook instead to visit_prog? *)
   | Call(Id[("param_post"|"param_get"|"param_request"|"param_cookie"as kind,_)],
-        (ConsArray (_, array_args, _))::rest_param_xxx_args) ->
+        (_,((ConsArray (_, array_args, _))::rest_param_xxx_args),_)) ->
 
       (* have passed a 'prefix' arg, or nothing *)
       if List.length rest_param_xxx_args <= 1
@@ -768,7 +768,7 @@ and expr env e =
         )
       end
 
-  | Call (e, es) ->
+  | Call (e, (_, es, _)) ->
       expr env e;
 
       (* getting the def for args passed by ref false positives fix *)
@@ -849,7 +849,7 @@ and expr env e =
       )
 
   | New (tok, e, es) ->
-      expr env (Call (Class_get(e, tok, Id[ (wrap_fake "__construct")]), es))
+      expr env (Call (Class_get(e, tok, Id[ (wrap_fake "__construct")]), fb es))
 
   | InstanceOf (_, e1, e2) -> exprl env [e1;e2]
 

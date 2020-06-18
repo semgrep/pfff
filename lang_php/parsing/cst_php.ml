@@ -74,7 +74,10 @@ and 'a single_angle = tok * 'a * tok
 and 'a comma_list = ('a, tok (* the comma *)) Common.either list
 and 'a comma_list_dots =
   ('a, tok (* ... in parameters *), tok (* the comma *)) Common.either3 list
-  (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
+
+type phpscope = Scope_php.phpscope
+let pp_phpscope _fmt _ =  "??"
 
 (* ------------------------------------------------------------------------- *)
 (* Ident/Name/LongName   *)
@@ -94,6 +97,7 @@ type ident =
     | XhpName of xhp_tag wrap
  (* for :x:foo the list is ["x";"foo"] *)
  and xhp_tag = string list
+ [@@deriving show { with_path = false }]
 
 (* The string does not contain the '$'. The info itself will usually
  * contain it, but not always! Indeed if the variable we build comes
@@ -109,6 +113,7 @@ type ident =
 type dname =
    (* D for dollar. Was called T_VARIABLE in the original PHP parser/lexer *)
    | DName of string wrap
+ [@@deriving show { with_path = false }]
 
 (* The antislash is a separator but it can also be in the leading position.
  * The keyword 'namespace' can also be in a leading position.
@@ -117,7 +122,7 @@ type qualified_ident = qualified_ident_element list
   and qualified_ident_element =
   | QI of ident (* the ident can be 'namespace' *)
   | QITok of tok (* '\' *)
- (* with tarzan *)
+  [@@deriving show { with_path = false }] (* with tarzan *)
 
 type name =
    | XName of qualified_ident
@@ -129,7 +134,7 @@ type name =
    | Parent of tok
    (* php 5.3 late static binding (no idea why it's useful ...) *)
    | LateStatic of tok
- (* with tarzan *)
+  [@@deriving show { with_path = false }] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Types *)
@@ -210,7 +215,7 @@ and expr =
    * note that IdVar is used not only for local variables
    * but also for globals, class variables, parameters, etc.
    *)
-  | IdVar of dname * Scope_php.phpscope ref
+  | IdVar of dname * phpscope ref
   | This of tok
 
   | Call of expr * argument comma_list paren
@@ -806,7 +811,7 @@ and toplevel =
     | FinalDef of tok (* EOF *)
 
  and program = toplevel list
-  (* with tarzan *)
+ [@@deriving show { with_path = false }] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Entity and any *)
@@ -832,6 +837,8 @@ type entity =
   | XhpAttrE of xhp_attribute_decl
 
   | MiscE of tok list
+ [@@deriving show { with_path = false }]
+
 
 type any =
   | Expr of expr
@@ -864,7 +871,7 @@ type any =
 
   | Ident2 of ident
   | Hint2 of hint_type
- (* with tarzan *)
+ [@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* Some constructors *)

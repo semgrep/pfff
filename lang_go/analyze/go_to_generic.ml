@@ -46,6 +46,7 @@ let name_of_qualified_ident = function
 
 let fake s = Parse_info.fake_info s
 let fake_id s = (s, fake s)
+let fb = G.fake_bracket
 let fake_name s = (s, fake s), G.empty_name_info
 let mk_name s tok = (s, tok), G.empty_name_info
 
@@ -60,7 +61,7 @@ let return_type_of_results results =
             | G.ParamClassic { G.ptype = Some t;_ } -> t
             | G.ParamClassic { G.ptype = None; _ } -> raise Impossible
             | _ -> raise Impossible
-            ) |> G.fake_bracket))
+            ) |> fb))
   
 
 let list_to_tuple_or_expr xs =
@@ -79,7 +80,7 @@ let mk_func_def params ret st =
 let wrap_init_in_block_maybe x v =
   match x with
   | None -> [v]
-  | Some e -> [G.Block [G.ExprStmt e;v]]
+  | Some e -> [G.Block (fb [G.ExprStmt e;v])]
 
 (*****************************************************************************)
 (* Entry point *)
@@ -203,7 +204,7 @@ and interface_field =
       let (params, ret) = func_type v2 in
       let ent = G.basic_entity v1 [] in
       G.FieldStmt (G.DefStmt 
-          (ent, G.FuncDef (mk_func_def params ret (G.Block []))))
+          (ent, G.FuncDef (mk_func_def params ret (G.Block (fb [])))))
   | EmbeddedInterface v1 -> let v1 = qualified_ident v1 in 
       let name = name_of_qualified_ident v1 in
       G.FieldSpread (fake "...", G.IdQualified (name, G.empty_id_info()))
@@ -238,17 +239,17 @@ and expr =
       let (v1, tok) = wrap arithmetic_operator v1
       and v2 = expr v2
       in
-      G.Call (G.IdSpecial (G.ArithOp v1, tok), [G.expr_to_arg v2])
+      G.Call (G.IdSpecial (G.ArithOp v1, tok), fb[G.expr_to_arg v2])
   | Binary ((v1, v2, v3)) ->
       let v1 = expr v1
       and (v2, tok) = wrap arithmetic_operator v2
       and v3 = expr v3
       in
-      G.Call (G.IdSpecial (G.ArithOp v2, tok), [v1;v3] |> List.map G.expr_to_arg)
+      G.Call (G.IdSpecial (G.ArithOp v2, tok), fb([v1;v3] |> List.map G.expr_to_arg))
   | CompositeLit ((v1, v2)) ->
       let v1 = type_ v1 and (_t1, v2, _t2) = bracket (list init) v2 in
       G.Call (G.IdSpecial (G.New, fake "new"), 
-        (G.ArgType v1)::(v2 |> List.map G.expr_to_arg))
+        fb((G.ArgType v1)::(v2 |> List.map G.expr_to_arg)))
   | Slice ((v1, v2)) ->
       let e = expr v1 in
       let (v1, v2, v3) = v2 in
@@ -259,7 +260,7 @@ and expr =
       G.SliceAccess (e, v1, v2, v3)
   | TypeAssert ((v1, v2)) -> let v1 = expr v1 and v2 = type_ v2 in
       G.Call (G.IdSpecial (G.Instanceof, fake "instanceof"),
-        [G.Arg v1; G.ArgType v2])
+        fb[G.Arg v1; G.ArgType v2])
   | Ellipsis v1 -> let v1 = tok v1 in 
       G.Ellipsis v1
   | DeepEllipsis v1 -> let v1 = bracket expr v1 in 
@@ -307,7 +308,7 @@ and argument =
   | ArgType v1 -> let v1 = type_ v1 in 
       G.ArgType v1
   | ArgDots (v1, v2) -> let v1 = expr v1 in let v2 = tok v2 in
-      let special = G.Call (G.IdSpecial (G.Spread, v2), [G.expr_to_arg v1]) in
+      let special = G.Call (G.IdSpecial (G.Spread, v2), fb[G.expr_to_arg v1]) in
       G.Arg special
 
 and init =
@@ -352,7 +353,7 @@ and simple = function
       and v3 = prefix_postfix v3
       in
       (G.Call (G.IdSpecial (G.IncrDecr (v2, v3), tok), 
-          [G.Arg v1]))
+          fb[G.Arg v1]))
 
 
 (* invariant: you should not use 'list stmt', but instead always
@@ -378,10 +379,10 @@ and stmt_aux =
     *)
       let v1 = list decl v1 in 
       v1
-  | Block v1 -> let v1 = list stmt_aux v1 |> List.flatten in 
-      [G.Block v1]
+  | Block (t1, v1, t2) -> let v1 = list stmt_aux v1 |> List.flatten in 
+      [G.Block (t1, v1, t2)]
   | Empty -> 
-      [G.Block []]
+      [G.Block (fb[])]
   | SimpleStmt v1 ->
       let v1 = simple v1 in
       [G.ExprStmt v1]
@@ -403,12 +404,12 @@ and stmt_aux =
             Some (match s with
             | ExprStmt (TypeSwitchExpr (e, tok1)) ->
                 let e = expr e in
-                G.Call (G.IdSpecial (G.Typeof, tok1), [G.Arg e])
+                G.Call (G.IdSpecial (G.Typeof, tok1), fb[G.Arg e])
             | DShortVars (xs, tok1, [TypeSwitchExpr (e, tok2)]) ->
                 let xs = list expr xs in
                 let e = expr e in
                 G.Assign (list_to_tuple_or_expr xs, tok1,
-                G.Call (G.IdSpecial (G.Typeof, tok2), [G.Arg e])
+                G.Call (G.IdSpecial (G.Typeof, tok2), fb[G.Arg e])
                   )
             | s -> simple s
             )   
@@ -502,7 +503,7 @@ and case_kind =
 and comm_clause v = case_clause v
 
 and call_expr (v1, v2) = 
-  let v1 = expr v1 and v2 = arguments v2 in 
+  let v1 = expr v1 and v2 = bracket arguments v2 in 
   v1, v2
 
 

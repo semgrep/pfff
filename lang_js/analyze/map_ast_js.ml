@@ -190,7 +190,7 @@ and map_expr =
       in Fun ((v1, v2))
   | Apply ((v1, v2)) ->
       let v1 = map_expr v1
-      and v2 = map_of_list map_expr v2
+      and v2 = map_bracket (map_of_list map_expr) v2
       in Apply ((v1, v2))
   | Conditional ((v1, v2, v3)) ->
       let v1 = map_expr v1
@@ -200,7 +200,7 @@ and map_expr =
 and map_stmt =
   function
   | VarDecl v1 -> let v1 = map_var v1 in VarDecl ((v1))
-  | Block v1 -> let v1 = map_of_list map_stmt v1 in Block ((v1))
+  | Block v1 -> let v1 = map_bracket (map_of_list map_stmt) v1 in Block ((v1))
   | ExprStmt v1 -> let v1 = map_expr v1 in ExprStmt ((v1))
   | If ((t, v1, v2, v3)) ->
       let t = map_tok t in

@@ -38,7 +38,7 @@ let string = id
 
 let error = AST_generic.error
 let fake  = AST_generic.fake
-let _fake_bracket = AST_generic.fake_bracket
+let fb = AST_generic.fake_bracket
 
 (*****************************************************************************)
 (* Entry point *)
@@ -110,7 +110,7 @@ let rec stmt_aux =
   function
   | Expr v1 -> let v1 = expr v1 in 
       [G.ExprStmt v1]
-  | Block v1 -> let v1 = list stmt v1 in
+  | Block v1 -> let v1 = bracket (list stmt) v1 in
       [G.Block v1]
   | If ((t, v1, v2, v3)) ->
       let v1 = expr v1 and v2 = stmt v2 and v3 = stmt v3 in
@@ -256,9 +256,10 @@ and expr =
   | Class_get ((v1, t, v2)) -> let v1 = expr v1 and v2 = expr v2 in
       G.DotAccess (v1, t, G.FDynamic v2)
   | New ((t, v1, v2)) -> let v1 = expr v1 and v2 = list expr v2 in 
-      G.Call (G.IdSpecial(G.New, t), (v1::v2) |> List.map G.expr_to_arg)
+      G.Call (G.IdSpecial(G.New, t), fb ((v1::v2) |> List.map G.expr_to_arg))
   | InstanceOf ((t, v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in
-      G.Call (G.IdSpecial(G.Instanceof, t), ([v1;v2]) |> List.map G.expr_to_arg)
+      G.Call (G.IdSpecial(G.Instanceof, t), 
+         fb([v1;v2] |> List.map G.expr_to_arg))
   | Assign ((v1, t, v3)) ->
       let v1 = expr v1
       and v3 = expr v3
@@ -274,7 +275,7 @@ and expr =
       | Right (special, t) -> 
         (* todo: should introduce intermediate var *)
         G.Assign (v1, t, 
-                  G.Call (G.IdSpecial (special, t), [G.Arg v1; G.Arg v3]))
+                  G.Call (G.IdSpecial (special, t), fb[G.Arg v1; G.Arg v3]))
       )
   | List v1 -> let v1 = bracket (list expr) v1 in
       G.Container(G.List, v1)
@@ -284,14 +285,14 @@ and expr =
       G.Ref (t, v1)
   | Unpack v1 -> let v1 = expr v1 in
       G.OtherExpr(G.OE_Unpack, [G.E v1])
-  | Call ((v1, v2)) -> let v1 = expr v1 and v2 = list expr v2 in 
-      G.Call (v1, v2 |> List.map G.expr_to_arg)
+  | Call ((v1, v2)) -> let v1 = expr v1 and v2 = bracket (list argument) v2 in 
+      G.Call (v1, v2)
   | Infix (((v1, t), v2)) -> 
       let v1 = fixOp v1 and v2 = expr v2 in 
-      G.Call (G.IdSpecial (G.IncrDecr (v1, G.Prefix), t), [G.Arg v2])
+      G.Call (G.IdSpecial (G.IncrDecr (v1, G.Prefix), t), fb[G.Arg v2])
   | Postfix (((v1, t), v2)) ->
       let v1 = fixOp v1 and v2 = expr v2 in 
-      G.Call (G.IdSpecial (G.IncrDecr (v1, G.Postfix), t), [G.Arg v2])
+      G.Call (G.IdSpecial (G.IncrDecr (v1, G.Postfix), t), fb[G.Arg v2])
   | Binop ((v1, v2, v3)) ->
       let v2 = binaryOp v2
       and v1 = expr v1
@@ -299,22 +300,22 @@ and expr =
       in
       (match v2 with
       | Left (op, t) -> 
-         G.Call (G.IdSpecial (G.ArithOp op, t), [G.Arg v1; G.Arg v3])
+         G.Call (G.IdSpecial (G.ArithOp op, t), fb[G.Arg v1; G.Arg v3])
       | Right x -> 
-         G.Call (G.IdSpecial (x), [G.Arg v1; G.Arg v3])
+         G.Call (G.IdSpecial (x), fb[G.Arg v1; G.Arg v3])
       )
   | Unop (((v1, t), v2)) -> let v1 = unaryOp v1 and v2 = expr v2 in 
-      G.Call (G.IdSpecial (G.ArithOp v1, t), [G.Arg v2])
+      G.Call (G.IdSpecial (G.ArithOp v1, t), fb[G.Arg v2])
   | Guil (t, v1, _) -> let v1 = list expr v1 in
       G.Call (G.IdSpecial (G.ConcatString G.InterpolatedConcat, t), 
-        v1 |> List.map G.expr_to_arg)
+        fb (v1 |> List.map G.expr_to_arg))
   | ConsArray v1 -> let v1 = bracket (list array_value) v1 in
       G.Container (G.Array, v1)
   | Collection ((v1, v2)) ->
       let v1 = name_of_qualified_ident v1 
       and v2 = bracket (list array_value) v2 in 
       G.Call (G.IdSpecial (G.New, fake "new"),
-        [G.Arg (G.IdQualified (v1, G.empty_id_info()));
+        fb[G.Arg (G.IdQualified (v1, G.empty_id_info()));
          G.Arg (G.Container (G.Dict, v2))])
   | Xhp v1 -> let v1 = xml v1 in 
       G.Xml v1
@@ -338,6 +339,8 @@ and expr =
             G.Lambda { G.fparams = ps; frettype = rett; fbody = body }
       | _ -> error tok "TODO: Lambda"
       )
+
+and argument e = let e = expr e in G.expr_to_arg e
 
 and special = function
   | This -> G.This
@@ -473,11 +476,11 @@ and attribute v =
   match v with
   | Id [id] -> 
     let id = ident id in
-    G.NamedAttr (id, G.empty_id_info(), [])
+    G.NamedAttr (id, G.empty_id_info(), fb [])
   | Call (Id [id], args) ->
     let id = ident id in
-    let args = list expr args in
-    G.NamedAttr (id, G.empty_id_info(), args |> List.map G.expr_to_arg)
+    let args = bracket (list argument) args in
+    G.NamedAttr (id, G.empty_id_info(), args)
   | _ -> raise Impossible (* see ast_php_build.ml *)
                  
 

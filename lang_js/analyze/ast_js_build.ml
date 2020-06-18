@@ -74,6 +74,7 @@ let opt f env x =
 let fst3 (x, _, _) = x
 
 let bracket_keep of_a (t1, x, t2) = (t1, of_a x, t2)
+let fb = G.fake_bracket
 
 let not_resolved () = ref A.NotResolved
 
@@ -338,7 +339,7 @@ and stmt env = function
     let  e = expr env e in
     (match e with
     | A.String("use strict", tok) -> 
-      [A.ExprStmt (A.Apply(A.IdSpecial (A.UseStrict, tok), []))]
+      [A.ExprStmt (A.Apply(A.IdSpecial (A.UseStrict, tok), fb []))]
     | _ -> [A.ExprStmt e]
     )
   | C.If (t, e, then_, elseopt) ->
@@ -423,9 +424,9 @@ and stmt env = function
  *)
 and stmt_of_stmts xs = 
   match xs with
-  | [] -> A.Block []
+  | [] -> A.Block (fb [])
   | [x] -> x
-  | xs -> A.Block xs
+  | xs -> A.Block (fb xs)
 
 and stmt1 env st =
   stmt env st |> stmt_of_stmts
@@ -504,7 +505,7 @@ and (expr: env -> C.expr -> A.expr) = fun env e ->
   | C.U ((op, tok), e) ->
     let special = unop env op in
     let e = expr env e in
-    A.Apply (A.IdSpecial (special, tok), [e])
+    A.Apply (A.IdSpecial (special, tok), fb [e])
   | C.B (e1, op, e2) ->
     let e1 = expr env e1 in
     let e2 = expr env e2 in
@@ -525,10 +526,10 @@ and (expr: env -> C.expr -> A.expr) = fun env e ->
   | C.Array (xs) ->
     (* A.Obj (array_obj env 0 tok xs) *)
     A.Arr (bracket_keep (array_arr env (fst3 xs)) xs)
-  | C.Apply (e, es) ->
+  | C.Apply (e, (t1, es, t2)) ->
     let e = expr env e in
-    let es = List.map (expr env) (es |> C.unparen |> C.uncomma) in
-    A.Apply (e, es)
+    let es = List.map (expr env) (es |> C.uncomma) in
+    A.Apply (e, (t1, es, t2))
   | C.Conditional (e1, _, e2, _, e3) ->
     let e1 = expr env e1 in
     let e2 = expr env e2 in
@@ -541,22 +542,22 @@ and (expr: env -> C.expr -> A.expr) = fun env e ->
     (match op with
     | C.A_eq -> A.Assign (e1, tok, e2)
     (* less: should use intermediate? can unsugar like this? *)
-    | C.A_add -> A.Assign (e1, tok, A.Apply(special G.Plus, [e1;e2]))
-    | C.A_sub -> A.Assign (e1, tok, A.Apply(special G.Minus, [e1;e2]))
-    | C.A_mul -> A.Assign (e1, tok, A.Apply(special G.Mult, [e1;e2]))
-    | C.A_div -> A.Assign (e1, tok, A.Apply(special G.Div, [e1;e2]))
-    | C.A_mod -> A.Assign (e1, tok, A.Apply(special G.Mod, [e1;e2]))
-    | C.A_lsl -> A.Assign (e1, tok, A.Apply(special G.LSL, [e1;e2]))
-    | C.A_lsr -> A.Assign (e1, tok, A.Apply(special G.LSR, [e1;e2]))
-    | C.A_asr -> A.Assign (e1, tok, A.Apply(special G.ASR, [e1;e2]))
-    | C.A_and -> A.Assign (e1, tok, A.Apply(special G.BitAnd, [e1;e2]))
-    | C.A_or  -> A.Assign (e1, tok, A.Apply(special G.BitOr, [e1;e2]))
-    | C.A_xor -> A.Assign (e1, tok, A.Apply(special G.BitXor, [e1;e2]))
+    | C.A_add -> A.Assign (e1, tok, A.Apply(special G.Plus, fb[e1;e2]))
+    | C.A_sub -> A.Assign (e1, tok, A.Apply(special G.Minus, fb[e1;e2]))
+    | C.A_mul -> A.Assign (e1, tok, A.Apply(special G.Mult, fb[e1;e2]))
+    | C.A_div -> A.Assign (e1, tok, A.Apply(special G.Div, fb[e1;e2]))
+    | C.A_mod -> A.Assign (e1, tok, A.Apply(special G.Mod, fb[e1;e2]))
+    | C.A_lsl -> A.Assign (e1, tok, A.Apply(special G.LSL, fb[e1;e2]))
+    | C.A_lsr -> A.Assign (e1, tok, A.Apply(special G.LSR, fb[e1;e2]))
+    | C.A_asr -> A.Assign (e1, tok, A.Apply(special G.ASR, fb[e1;e2]))
+    | C.A_and -> A.Assign (e1, tok, A.Apply(special G.BitAnd, fb[e1;e2]))
+    | C.A_or  -> A.Assign (e1, tok, A.Apply(special G.BitOr, fb[e1;e2]))
+    | C.A_xor -> A.Assign (e1, tok, A.Apply(special G.BitXor, fb[e1;e2]))
     )
   | C.Seq (e1, tok, e2) ->
     let e1 = expr env e1 in
     let e2 = expr env e2 in
-    A.Apply (A.IdSpecial (A.Seq, tok), [e1;e2])
+    A.Apply (A.IdSpecial (A.Seq, tok), fb [e1;e2])
   | C.Function x ->
     let fun_ = func_decl env x in
     (match x.C.f_kind with
@@ -578,12 +579,12 @@ and (expr: env -> C.expr -> A.expr) = fun env e ->
        else A.YieldStar 
     in
     let e = expr_opt env eopt in
-    A.Apply (A.IdSpecial (special, tok), (e |> Common.opt_to_list))
+    A.Apply (A.IdSpecial (special, tok), fb (e |> Common.opt_to_list))
   | C.Await (tok, e) ->
     let e = expr env e in
-    A.Apply (A.IdSpecial (A.Await, tok), [e])
+    A.Apply (A.IdSpecial (A.Await, tok), fb[e])
   | C.NewTarget (tok, _, _) ->
-    A.Apply (A.IdSpecial (A.NewTarget, tok), [])
+    A.Apply (A.IdSpecial (A.NewTarget, tok), fb[])
 
   | C.TemplateString (exp_opt, (tok, xs, _)) ->
     let special = A.Encaps (exp_opt <> None) in
@@ -595,7 +596,7 @@ and (expr: env -> C.expr -> A.expr) = fun env e ->
             let e = expr env e in
             e::xs
     in
-    A.Apply (A.IdSpecial (special, tok), xs)
+    A.Apply (A.IdSpecial (special, tok), fb xs)
 
   | C.XhpHtml x -> 
       if !transpile_xml
@@ -636,7 +637,7 @@ and xhp_attribute env = function
       let e = expr env e in
       (* TODO *)
       let id = "...", tok in
-      id, A.Apply (A.IdSpecial (A.Spread, fake "spread"), [e])
+      id, A.Apply (A.IdSpecial (A.Spread, fake "spread"), fb [e])
 
 and xhp_attr_value env = function
   | C.XhpAttrString s -> A.String s
@@ -712,7 +713,7 @@ and binop _env (op,tok) e1 e2 =
     | C.B_physnotequal -> Left (A.ArithOp G.NotPhysEq)
   in
   match res with
-  | Left special ->A.Apply (A.IdSpecial (special, tok), [e1; e2])
+  | Left special ->A.Apply (A.IdSpecial (special, tok), fb [e1; e2])
   | Right x -> x
 
 and encaps env = function
@@ -782,7 +783,7 @@ and pattern env = function
   (* only in PatArr *)
   | C.PatDots (t, pat) -> 
       let e = pattern env pat in
-      A.Apply (A.IdSpecial (A.Spread, t), [e])
+      A.Apply (A.IdSpecial (A.Spread, t), fb [e])
   | C.PatNest (pat, _init_optTODO) -> pattern env pat
   
 

@@ -133,7 +133,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
    match stmt with
    | Label _ | Goto _ -> raise Todo
 
-   | Block stmts ->
+   | Block (_, stmts, _) ->
        cfg_stmt_list state previ stmts
 
    | For _ 

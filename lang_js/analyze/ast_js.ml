@@ -200,7 +200,7 @@ and expr =
   | ArrAccess of expr * expr
 
   | Fun of fun_ * name option (* when recursive or assigned in module.exports*)
-  | Apply of expr * expr list
+  | Apply of expr * expr list bracket
 
   (* copy-paste of AST_generic.xml (but with different 'expr') *)
   | Xml of xml
@@ -230,7 +230,7 @@ and expr =
 and stmt = 
   | VarDecl of var
 
-  | Block of stmt list
+  | Block of stmt list bracket
   | ExprStmt of expr
 
   | If of tok * expr * stmt * stmt option

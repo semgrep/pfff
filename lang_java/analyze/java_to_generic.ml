@@ -40,7 +40,7 @@ let error = AST_generic.error
 
 let fake s = Parse_info.fake_info s
 (* todo: to remove at some point when Ast_java includes them directly *)
-let fake_bracket x = fake "(", x, fake ")"
+let fb = G.fake_bracket
 
 let entity_to_param { G.name; attrs; tparams = _unused; info } t = 
   { G. pname = Some name; ptype = t; pattrs = attrs; pinfo = info;
@@ -132,9 +132,13 @@ let rec modifier (x, tok) =
 and modifiers v = list modifier v
 
 and annotation (v1, v2) =
-  let xs = match v2 with None -> [] | Some x -> annotation_element x in
+  let xs = 
+    match v2 with 
+    | None -> [] 
+    | Some x -> annotation_element x 
+  in
   (match name_or_class_type v1 with
-  | [Left id] -> G.NamedAttr (id, G.empty_id_info (), xs)
+  | [Left id] -> G.NamedAttr (id, G.empty_id_info (), fb xs)
   | _ -> 
     (* TODO *)
     G.OtherAttribute (G.OA_AnnotJavaOther, [])
@@ -172,7 +176,7 @@ and element_value =
       G.OtherExpr (G.OE_Annot, [G.At v1])
   | AnnotArrayInit v1 -> 
       let v1 = list element_value v1 in
-      G.Container (G.List, fake_bracket v1)
+      G.Container (G.List, fb v1)
 
 and annotation_pair (v1, v2) =
   let v1 = ident v1 and v2 = element_value v2 in
@@ -222,12 +226,12 @@ and expr e =
       G.L v1
   | ClassLiteral v1 -> let v1 = typ v1 in
       G.OtherExpr (G.OE_ClassLiteral, [G.T v1])
-  | NewClass ((v0, v1, v2, v3)) ->
+  | NewClass ((v0, v1, (lp, v2, rp), v3)) ->
       let v1 = typ v1
-      and v2 = arguments v2
+      and v2 = list argument v2
       and v3 = option (bracket decls) v3 in
       (match v3 with
-      | None -> G.Call (G.IdSpecial (G.New, v0), (G.ArgType v1)::v2)
+      | None -> G.Call (G.IdSpecial (G.New, v0), (lp,(G.ArgType v1)::v2,rp))
       | Some decls -> 
          let anonclass = G.AnonClass { G.
                 ckind = G.Class;
@@ -236,11 +240,11 @@ and expr e =
                 cbody = decls |> bracket (List.map (fun x -> G.FieldStmt x))
                 }
             in
-         G.Call (G.IdSpecial (G.New, v0), (G.Arg anonclass)::v2)
+         G.Call (G.IdSpecial (G.New, v0), (lp,(G.Arg anonclass)::v2,rp))
       )
   | NewArray ((v0, v1, v2, v3, v4)) ->
       let v1 = typ v1
-      and v2 = arguments v2
+      and v2 = list argument v2
       and v3 = int v3
       and v4 = option init v4
       in 
@@ -253,9 +257,9 @@ and expr e =
       in
       let t = mk_array (v3 + List.length v2) in
       (match v4 with
-      | None -> G.Call (G.IdSpecial (G.New, v0), (G.ArgType t)::v2)
+      | None -> G.Call (G.IdSpecial (G.New, v0), fb ((G.ArgType t)::v2))
       | Some e -> 
-         G.Call (G.IdSpecial (G.New, v0), (G.ArgType t)::(G.Arg e)::v2)
+         G.Call (G.IdSpecial (G.New, v0), fb ((G.ArgType t)::(G.Arg e)::v2))
       )
 
   (* x.new Y(...) {...} *)
@@ -266,7 +270,7 @@ and expr e =
       and v4 = option (bracket decls) v4
       in 
       let any = 
-        [G.E v0; G.I v2] @ (v3 |> List.map (fun arg -> G.Ar arg)) @
+        [G.E v0; G.I v2] @ (v3 |> G.unbracket |> List.map (fun arg -> G.Ar arg)) @
         (Common.opt_to_list v4 |> List.map G.unbracket |> List.flatten |> List.map
             (fun st -> G.S st)) in
        G.OtherExpr (G.OE_NewQualifiedClass, any)
@@ -278,19 +282,19 @@ and expr e =
   | ArrayAccess ((v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in
       G.ArrayAccess (v1, v2)
   | Postfix ((v1, (v2, tok))) -> let v1 = expr v1 and v2 = fix_op v2 in
-      G.Call (G.IdSpecial (G.IncrDecr (v2, G.Postfix), tok), [G.Arg v1]) 
+      G.Call (G.IdSpecial (G.IncrDecr (v2, G.Postfix), tok), fb[G.Arg v1]) 
   | Prefix (((v1, tok), v2)) -> let v1 = fix_op v1 and v2 = expr v2 in
-      G.Call (G.IdSpecial (G.IncrDecr (v1, G.Prefix), tok), [G.Arg v2]) 
+      G.Call (G.IdSpecial (G.IncrDecr (v1, G.Prefix), tok), fb[G.Arg v2]) 
   | Unary ((v1, v2)) -> let (v1, tok) = v1 and v2 = expr v2 in
-      G.Call (G.IdSpecial (G.ArithOp v1, tok), [G.Arg v2]) 
+      G.Call (G.IdSpecial (G.ArithOp v1, tok), fb[G.Arg v2]) 
   | Infix ((v1, (v2, tok), v3)) ->
       let v1 = expr v1 and v2 = v2 and v3 = expr v3 in
-      G.Call (G.IdSpecial (G.ArithOp (v2), tok), [G.Arg v1; G.Arg v3])
-  | Cast ((v1, v2)) -> let v1 = typ v1 and v2 = expr v2 in
+      G.Call (G.IdSpecial (G.ArithOp (v2), tok), fb[G.Arg v1; G.Arg v3])
+  | Cast (((_, v1, _), v2)) -> let v1 = typ v1 and v2 = expr v2 in
     G.Cast (v1, v2)
   | InstanceOf ((v1, v2)) -> let v1 = expr v1 and v2 = ref_type v2 in
     G.Call (G.IdSpecial (G.Instanceof, fake "instanceof"), 
-        [G.Arg v1; G.ArgType v2])
+        fb[G.Arg v1; G.ArgType v2])
   | Conditional ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in
       G.Conditional (v1, v2, v3)
@@ -310,14 +314,16 @@ and expr e =
       G.Lambda { G.fparams = v1; frettype = None; fbody = v2 }
 
 
-and arguments v = list expr v |> List.map (fun e -> G.Arg e)
+and argument v = let v = expr v in G.Arg v
+
+and arguments v : G.argument list G.bracket = bracket (list argument) v
 
 and fix_op v = v
 
 and stmt =
   function
-  | Empty -> G.Block []
-  | Block v1 -> let v1 = stmts v1 in G.Block v1
+  | Empty -> G.Block (fb [])
+  | Block v1 -> let v1 = bracket stmts v1 in G.Block v1
   | Expr v1 -> let v1 = expr v1 in G.ExprStmt v1
   | If ((t, v1, v2, v3)) ->
       let v1 = expr v1 and v2 = stmt v2 and v3 = option stmt v3 in

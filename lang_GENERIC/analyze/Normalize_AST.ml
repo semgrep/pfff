@@ -29,6 +29,8 @@ open AST_generic
 
 (* DEPRECATED!: use user-defined equivalences instead *)
 
+let fb = AST_generic.fake_bracket
+
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
@@ -39,7 +41,8 @@ let normalize2 any lang =
       (* apply on children *)
       let e = k e in
       match e with
-      | Call (IdSpecial (ArithOp op, tok), [a; b]) when lang <> Lang.Python ->
+      | Call (IdSpecial (ArithOp op, tok), (lp,[a; b],rp))
+        when lang <> Lang.Python ->
         (* != can be a method call in Python *)
         let rewrite_opt =
           match op with
@@ -50,7 +53,9 @@ let normalize2 any lang =
         | None -> e
         | Some (not_op, other_op) ->
           Call (IdSpecial (ArithOp not_op, tok),
-                [Arg (Call (IdSpecial (ArithOp other_op, tok), [a;b]))])
+                (lp, 
+                 [Arg (Call (IdSpecial (ArithOp other_op, tok), fb [a;b]))],
+                 rp))
         )
       | _ -> e
     )

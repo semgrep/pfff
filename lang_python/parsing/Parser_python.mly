@@ -413,7 +413,8 @@ arglist_paren_opt:
 (* Annotations *)
 (*************************************************************************)
 
-decorator: "@" decorator_name arglist_paren_opt NEWLINE { Call ($2, $3) }
+decorator: "@" decorator_name arglist_paren_opt NEWLINE 
+    { Call ($2, AST_generic.fake_bracket $3) }
 
 decorator_name:
   | NAME                    { Name ($1, Load, ref NotResolved) }
@@ -657,8 +658,8 @@ atom_expr:
 atom_and_trailers:
   | atom { $1 }
 
-  | atom_and_trailers "("          ")" { Call ($1, []) }
-  | atom_and_trailers "(" list_comma(argument) ")" { Call ($1, $3) }
+  | atom_and_trailers "("          ")" { Call ($1, ($2,[],$3)) }
+  | atom_and_trailers "(" list_comma(argument) ")" { Call ($1, ($2,$3,$4)) }
 
   | atom_and_trailers "[" list_comma(subscript)   "]"
       { match $3 with

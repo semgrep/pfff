@@ -88,7 +88,8 @@ and v_expr x =
   | Char v1 -> let v1 = v_wrap v_string v1 in ()
   | Id v1 -> let v1 = v_name v1 in ()
   | Ellipses v1 -> let v1 = v_info v1 in ()
-  | Call ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_list v_argument v2 in ()
+  | Call ((v1, v2)) -> let v1 = v_expr v1 and 
+          v2 = v_bracket (v_list v_argument) v2 in ()
   | Assign ((v1, v2, v3)) ->
       let v1 = Ast_cpp.v_assignOp v1
       and v2 = v_expr v2
@@ -133,7 +134,7 @@ and v_argument v = v_expr v
 and v_stmt =
   function
   | ExprSt v1 -> let v1 = v_expr v1 in ()
-  | Block v1 -> let v1 = v_list v_stmt v1 in ()
+  | Block v1 -> let v1 = v_bracket (v_list v_stmt) v1 in ()
   | If ((t, v1, v2, v3)) ->
       let t = v_info t in
       let v1 = v_expr v1 and v2 = v_stmt v2 and v3 = v_option v_stmt v3 in ()
@@ -207,7 +208,9 @@ and v_func_def {
                } =
   let arg = v_name v_f_name in
   let arg = v_function_type v_f_type in
-  let arg = v_list v_stmt v_f_body in let arg = v_bool v_f_static in ()
+  let arg = v_bracket (v_list v_stmt) v_f_body in 
+  let arg = v_bool v_f_static in 
+  ()
 
 and v_define_body =
   function
