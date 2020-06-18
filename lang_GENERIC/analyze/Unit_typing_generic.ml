@@ -98,6 +98,32 @@ let unittest =
           assert_failure (spf "it should correctly parse %s" file)
     );
 
+    "test class field types" >:: (fun () ->
+      let file = Filename.concat Config_pfff.path "/tests/GENERIC/typing/ClassFields.java" in
+        try
+          let ast = Parse_generic.parse_program file in
+            let lang = List.hd (Lang.langs_of_filename file) in 
+             Naming_AST.resolve lang ast;
+
+            let v = V.mk_visitor { V.default_visitor with
+                V.kexpr = (fun (_k, _) exp ->
+                    match exp with
+                      | A.Id(("age", _), {A.id_type=id_type; _}) -> (
+                            match !id_type with 
+                              | Some(A.TyBuiltin((("int", _)))) -> ()
+                              | _ -> assert_failure("Variable referenced did not have expected type int"))
+                      | A.Id(("default_age", _), {A.id_type=id_type; _}) -> (
+                            match !id_type with 
+                              | Some(A.TyBuiltin((("int", _)))) -> ()
+                              | _ -> assert_failure("Variable referenced did not have expected type int"))
+                      | _ -> ()
+                );
+            } in
+            v (A.Pr ast)
+        with Parse_info.Parsing_error _ ->
+          assert_failure (spf "it should correctly parse %s" file)
+    );
+
     "java_pattern_files" >:: (fun () ->
       let dir = Filename.concat Config_pfff.path "/tests/java/semgrep" in
       let files = Common2.glob (spf "%s/*.sgrep" dir) in
