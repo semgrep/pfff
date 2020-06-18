@@ -23,8 +23,7 @@ let test_parse_generic xs =
 (*s: function [[Test_parsing_generic.test_dump_generic]] *)
 let test_dump_generic file =
   let ast = Parse_generic.parse_program file in
-  let v = Meta_AST.vof_any (AST_generic.Pr ast) in
-  let s = OCaml.string_of_v v in
+  let s = AST_generic.show_program ast in
   pr2 s
 (*e: function [[Test_parsing_generic.test_dump_generic]] *)
 
@@ -36,8 +35,7 @@ let test_dump_pattern_generic file =
      let s = Common.read_file file in
      Error_code.try_with_print_exn_and_reraise file (fun () ->
        let any = Parse_generic.parse_pattern lang s in
-       let v = Meta_AST.vof_any any in
-       let s = OCaml.string_of_v v in
+       let s = AST_generic.show_any any in
         pr2 s
      )
   | None -> failwith (spf "unsupported language: %s" !lang)

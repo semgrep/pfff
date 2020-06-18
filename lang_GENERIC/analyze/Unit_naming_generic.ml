@@ -28,7 +28,7 @@ let unittest =
          Naming_AST.resolve lang ast;
          (* this used to loop forever if you were not handling correctly
           * possible cycles with id_type *)
-         let _v = Meta_AST.vof_any (AST_generic.Pr ast) in
+         let _v = AST_generic.show_any (AST_generic.Pr ast) in
          ()
         with Parse_info.Parsing_error _ ->
           assert_failure (spf "it should correctly parse %s" file)

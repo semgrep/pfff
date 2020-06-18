@@ -62,7 +62,7 @@ let warning tok s =
 (*s: function [[AST_to_IL.error_any]] *)
 let error_any any_generic msg =
   let toks = Lib_AST.ii_of_any any_generic in
-  let s = Meta_AST.vof_any any_generic |> OCaml.string_of_v in
+  let s = AST_generic.show_any any_generic in
   error (List.hd toks) (spf "%s: %s" msg s)
 (*e: function [[AST_to_IL.error_any]] *)
 

@@ -11,7 +11,7 @@ SRC= \
   controlflow_visitor.ml \
   lrvalue.ml \
   Dataflow.ml dataflow_reaching.ml dataflow_liveness.ml \
-  IL.ml CFG.ml Meta_IL.ml AST_to_IL.ml CFG_build.ml \
+  IL.ml Display_IL.ml CFG.ml AST_to_IL.ml CFG_build.ml \
   Dataflow_tainting.ml \
   Test_analyze_generic.ml \
   Unit_naming_generic.ml Unit_typing_generic.ml
@@ -24,6 +24,7 @@ LIBS=$(TOP)/commons/lib.cma \
      ../parsing/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons \
+   $(TOP)/external/ppx_deriving \
    $(TOP)/commons_core $(TOP)/commons_ocollection \
    $(TOP)/h_program-lang \
    $(TOP)/globals \
@@ -47,6 +48,11 @@ $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $(TARGET).cmxa $(OPTOBJS)
 $(TARGET).top: $(OBJS) $(LIBS)
 	$(OCAMLMKTOP) -o $(TARGET).top $(SYSLIBS) $(LIBS) $(OBJS)
+
+IL.cmo: IL.ml
+	ocamlfind ocamlc -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
+IL.cmx: IL.ml
+	ocamlfind ocamlopt -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
 
 clean::
 	rm -f $(TARGET).top

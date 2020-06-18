@@ -9,7 +9,7 @@ OPAMPKG=pfff-lang_GENERIC
 
 SRC= find_source.ml \
      Lang.ml \
-     AST.ml Meta_AST.ml \
+     AST.ml \
      Visitor_AST.ml Map_AST.ml \
      Lib_AST.ml \
      Parse_generic.ml \
@@ -21,6 +21,7 @@ LIBS=$(TOP)/commons/lib.cma \
  $(TOP)/h_program-lang/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons \
+  $(TOP)/external/ppx_deriving \
   $(TOP)/commons_core \
   $(TOP)/globals \
   $(TOP)/h_program-lang \

@@ -10,13 +10,12 @@ let test_typing_generic file =
 
   let v = V.mk_visitor { V.default_visitor with
       V.kfunction_definition = (fun (_k, _) def ->
-          let s = Meta_AST.vof_any (S def.fbody) |> OCaml.string_of_v in
+          let s = AST_generic.show_any (S def.fbody) in
           pr2 s;
           pr2 "==>";
 
           let xs = AST_to_IL.stmt def.fbody in
-          let v = Meta_IL.vof_any (IL.Ss xs) in
-          let s = OCaml.string_of_v v in
+          let s = IL.show_any (IL.Ss xs) in
           pr2 s
       );
    } in
@@ -71,8 +70,7 @@ let test_naming_generic file =
   let ast = Parse_generic.parse_program file in
   let lang = List.hd (Lang.langs_of_filename file) in
   Naming_AST.resolve lang ast;
-  let v = Meta_AST.vof_any (AST_generic.Pr ast) in
-  let s = OCaml.string_of_v v in
+  let s = AST_generic.show_any (AST_generic.Pr ast) in
   pr2 s
 (*e: function [[Test_analyze_generic.test_naming_generic]] *)
 
@@ -84,13 +82,12 @@ let test_il_generic file =
 
   let v = V.mk_visitor { V.default_visitor with
       V.kfunction_definition = (fun (_k, _) def ->
-          let s = Meta_AST.vof_any (S def.fbody) |> OCaml.string_of_v in
+          let s = AST_generic.show_any (S def.fbody) in
           pr2 s;
           pr2 "==>";
 
           let xs = AST_to_IL.stmt def.fbody in
-          let v = Meta_IL.vof_any (IL.Ss xs) in
-          let s = OCaml.string_of_v v in
+          let s = IL.show_any (IL.Ss xs) in
           pr2 s
       );
    } in
@@ -108,7 +105,7 @@ let test_cfg_il file =
    | DefStmt (_ent, FuncDef def) ->
      let xs = AST_to_IL.stmt def.fbody in
      let cfg = CFG_build.cfg_of_stmts xs in
-     Meta_IL.display_cfg cfg;
+     Display_IL.display_cfg cfg;
     | _ -> ()
    )
  )
@@ -119,7 +116,7 @@ module DataflowY = Dataflow.Make (struct
   type node = F2.node
   type edge = F2.edge
   type flow = (node, edge) Ograph_extended.ograph_mutable
-  let short_string_of_node n = Meta_IL.short_string_of_node_kind n.F2.n
+  let short_string_of_node n = Display_IL.short_string_of_node_kind n.F2.n
 end)
 
 (*s: function [[Test_analyze_generic.test_dfg_tainting]] *)

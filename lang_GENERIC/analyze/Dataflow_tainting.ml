@@ -58,7 +58,7 @@ module DataflowX = Dataflow.Make (struct
   type edge = F.edge
   type flow = (node, edge) Ograph_extended.ograph_mutable
   let short_string_of_node n = 
-        Meta_IL.short_string_of_node_kind n.F.n
+        Display_IL.short_string_of_node_kind n.F.n
 end)
 (*e: module [[Dataflow.Make(Il)]] *)
 

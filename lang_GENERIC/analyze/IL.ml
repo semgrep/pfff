@@ -83,16 +83,16 @@ module G = AST_generic
 (* the classic *)
 type tok = G.tok
 (*e: type [[IL.tok]] *)
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 (*s: type [[IL.wrap]] *)
 type 'a wrap = 'a G.wrap
 (*e: type [[IL.wrap]] *)
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 (*s: type [[IL.bracket]] *)
 (* useful mainly for empty containers *)
 type 'a bracket = tok * 'a * tok
 (*e: type [[IL.bracket]] *)
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (*****************************************************************************)
 (* Names *)
@@ -101,7 +101,7 @@ type 'a bracket = tok * 'a * tok
 (*s: type [[IL.ident]] *)
 type ident = string wrap
 (*e: type [[IL.ident]] *)
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (*s: type [[IL.name]] *)
 (* 'sid' below is the result of name resolution and variable disambiguation
@@ -114,7 +114,7 @@ type ident = string wrap
  *)
 type name = ident * G.sid
 (*e: type [[IL.name]] *)
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (*****************************************************************************)
 (* Lvalue *)
@@ -201,12 +201,12 @@ and exp = {
   | CDict (* could be merged with Record *)
   | Constructor of name (* OCaml *)
 (*e: type [[IL.composite_kind]] *)
- (* with tarzan *)
+  [@@deriving show { with_path = false }] (* with tarzan *)
 
 (*s: type [[IL.argument]] *)
 type argument = exp
 (*e: type [[IL.argument]] *)
- (* with tarzan *)
+ [@@deriving show] (* with tarzan *)
 
 (*****************************************************************************)
 (* Instruction *)
@@ -261,7 +261,7 @@ type instr = {
     | Lambda of G.function_definition
     | AnonClass of G.class_definition
 (*e: type [[IL.anonymous_entity]] *)
- (* with tarzan *)
+  [@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* Statement *)
@@ -307,7 +307,7 @@ type stmt = {
 (*s: type [[IL.label]] *)
 and label = ident * G.sid
 (*e: type [[IL.label]] *)
- (* with tarzan *)
+   [@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* Defs *)
@@ -341,7 +341,7 @@ type node = {
 
     | NOther of other_stmt
 (*e: type [[IL.node_kind]] *)
-(* with tarzan *)
+   [@@deriving show { with_path = false }] (* with tarzan *)
 
 (*s: type [[IL.edge]] *)
 (* For now there is just one kind of edge. Later we may have more, 
@@ -371,7 +371,7 @@ type any =
   | Ss of stmt list
 (*  | N of node *)
 (*e: type [[IL.any]] *)
- (* with tarzan *)
+   [@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* L/Rvalue helpers *)
