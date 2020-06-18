@@ -9,7 +9,7 @@ OPAMPKG=pfff-lang_GENERIC
 
 SRC= find_source.ml \
      Lang.ml \
-     AST.ml \
+     AST.ml Meta_AST.ml \
      Visitor_AST.ml Map_AST.ml \
      Lib_AST.ml \
      Parse_generic.ml \
