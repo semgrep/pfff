@@ -224,6 +224,8 @@ let (^@) sc xs =
 %start <Cst_js.module_item list> main
 %start <Cst_js.module_item option> module_item_or_eof 
 %start <Cst_js.any> sgrep_spatch_pattern
+(* for lang_json/ *)
+%start <Cst_js.expr> json
 
 %%
 (*************************************************************************)
@@ -279,6 +281,9 @@ decl:
  | interface_decl { InterfaceDecl $1 }
  | type_alias_decl { ItemTodo $1 }
  | enum_decl       { ItemTodo $1 }
+
+(* less: could restrict to literals and collections *)
+json: expr EOF { $1 }
 
 (*************************************************************************)
 (* sgrep *)

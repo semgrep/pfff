@@ -25,6 +25,10 @@ module FT = File_type
 (* Types *)
 (*****************************************************************************)
 
+(* coupling: if you add a language here, after fixing the compilation errors,
+ * you probably still need to add also special code in list_of_lang and
+ * langs_of_filename below.
+ *)
 (*s: type [[Lang.t]] *)
 type t = 
   | Python 
@@ -34,7 +38,7 @@ type t =
    * (no fallback) *)
   | Python2 | Python3
   (*e: [[Lang.t]] extra Python cases *)
-  | Javascript
+  | Javascript | JSON
   | Java
   | Go
   | C
@@ -54,6 +58,7 @@ let list_of_lang = [
 
     "js", Javascript;
     "javascript", Javascript;
+    "json", JSON;
 
     "go", Go;
     "golang", Go;
@@ -85,6 +90,7 @@ let langs_of_filename filename =
  | FT.PL (FT.ML _) -> [OCaml]
  | FT.PL (FT.Java) -> [Java]
  | FT.PL (FT.Go) -> [Go]
+ | FT.PL (FT.Web FT.Json) -> [JSON]
  | _ -> []
 (*e: function [[Lang.langs_of_filename]] *)
 
@@ -94,6 +100,7 @@ let string_of_lang = function
   | Python2 -> "Python2"
   | Python3 -> "Python3"
   | Javascript -> "Javascript"
+  | JSON -> "JSON"
   | Java -> "Java"
   | C -> "C"
   | OCaml -> "OCaml"
@@ -105,6 +112,7 @@ let string_of_lang = function
 let ext_of_lang = function
   | Python | Python2 | Python3 -> ["py"; "pyi"]
   | Javascript -> ["js"]
+  | JSON -> ["json"]
   | Java -> ["java"]
   | C -> ["c"]
   | OCaml -> ["mli"; "ml"; "mly"; "mll"]

@@ -82,6 +82,7 @@ LIBS= commons/lib.cma \
     lang_sql/parsing/lib.cma \
     lang_js/parsing/lib.cma \
      lang_js/analyze/lib.cma \
+    lang_json/parsing/lib.cma \
     lang_cpp/parsing/lib.cma \
      lang_cpp/analyze/lib.cma \
     lang_c/parsing/lib.cma \
@@ -132,6 +133,7 @@ MAKESUBDIRS=commons commons_ocollection commons_core \
   lang_sql/parsing \
   lang_js/parsing \
    lang_js/analyze \
+  lang_json/parsing \
   lang_cpp/parsing \
    lang_cpp/analyze \
   lang_c/parsing \
@@ -334,6 +336,7 @@ INSTALL_SUBDIRS= \
   lang_c/parsing lang_c/analyze \
   lang_java/parsing  lang_java/analyze \
   lang_js/parsing  lang_js/analyze \
+  lang_json/parsing \
   lang_python/parsing  lang_python/analyze \
   lang_go/parsing  lang_go/analyze\
   lang_nw/parsing  lang_nw/analyze \

@@ -999,3 +999,7 @@ let any x =
   (* todo? module_item_list env [x] *)
   | C.ModuleItems x -> A.Items (module_items env x)
   | C.Program _x -> raise Todo
+
+let expr x = 
+  let env = empty_env () in
+  expr env x

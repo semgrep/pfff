@@ -9,3 +9,6 @@ val transpile_pattern: bool ref
 val program: Cst_js.program -> Ast_js.program
 
 val any: Cst_js.any -> Ast_js.any
+
+(* for lang_json/ *)
+val expr: Cst_js.expr -> Ast_js.expr
