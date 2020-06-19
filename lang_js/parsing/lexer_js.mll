@@ -367,6 +367,11 @@ rule initial = parse
       | None -> T_ID (s, info)
     }
 
+  (* very incomplete hack to support https://tc39.es/proposal-decorators/ *)
+  | "@" ['a'-'z''A'-'Z' '$' '_']['a'-'z''A'-'Z''$''_''0'-'9']* as s {
+      T_ID (s, tokinfo lexbuf)
+   }
+
   (* ----------------------------------------------------------------------- *)
   (* Constant *)
   (* ----------------------------------------------------------------------- *)
