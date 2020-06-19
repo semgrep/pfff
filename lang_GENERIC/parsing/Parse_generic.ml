@@ -56,6 +56,9 @@ let parse_with_lang lang file =
      *)
     let ast = Ast_js_build.program cst in
     Js_to_generic.program ast
+  | Lang.JSON ->
+    let ast = Parse_json.parse_program file in
+    Json_to_generic.program ast
   | Lang.C ->
     (* this internally uses the CST for c++ *)
     let ast = Parse_c.parse_program file in
@@ -98,6 +101,9 @@ let parse_pattern lang str =
       let any_cst = Parse_js.any_of_string str in
       let any = Ast_js_build.any any_cst in
       Js_to_generic.any any
+  | Lang.JSON ->
+      let any = Parse_json.any_of_string str in
+      Json_to_generic.any any
   | Lang.C ->
       let any = Parse_c.any_of_string str in
       C_to_generic.any any

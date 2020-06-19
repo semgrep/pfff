@@ -89,6 +89,7 @@ let all_actions () =
 
     Test_parsing_php.actions()@
     Test_parsing_js.actions()@
+    Test_parsing_json.actions()@
     Test_analyze_js.actions()@
     Test_parsing_python.actions()@
     Test_parsing_ruby.actions()@
