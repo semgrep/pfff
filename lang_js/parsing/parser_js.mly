@@ -175,6 +175,8 @@ let (^@) sc xs =
 %token <Parse_info.t> T_XHP_GT T_XHP_SLASH_GT
 
 %token <string * Parse_info.t> T_XHP_ATTR T_XHP_TEXT
+(* '<>', see https://reactjs.org/docs/fragments.html#short-syntax *)
+%token <Parse_info.t> T_XHP_SHORT_FRAGMENT
 
 (*-----------------------------------------*)
 (* Extra tokens: *)
@@ -184,6 +186,8 @@ let (^@) sc xs =
 %token <Cst_js.tok> T_VIRTUAL_SEMICOLON
 (* fresh_token: the opening '(' of the parameters preceding an '->' *)
 %token <Cst_js.tok> T_LPAREN_ARROW
+(* fresh_token: the first '{' in a semgrep pattern for objects *)
+%token <Cst_js.tok> T_LCURLY_SEMGREP
 
 (*************************************************************************)
 (* Priorities *)
@@ -290,7 +294,12 @@ json: expr EOF { $1 }
 (*************************************************************************)
 
 sgrep_spatch_pattern:
- | assignment_expr_no_stmt EOF           { Expr $1 }
+ (* copy-paste of object_literal rule but with T_LCURLY_SEMGREP *)
+ | T_LCURLY_SEMGREP "}"    { Expr (Object ($1, [], $2)) }
+ | T_LCURLY_SEMGREP listc2(property_name_and_value) ","? "}" 
+     { Expr (Object ($1, $2 @@ $3, $4)) }
+
+ | assignment_expr_no_stmt EOF   { Expr $1 }
  | module_item EOF               { fix_sgrep_module_item $1}
  | module_item module_item+ EOF  { ModuleItems ($1::$2) }
 
@@ -1198,6 +1207,9 @@ xhp_html:
      { Xhp ($1, $2, $3, $4, $5)  }
  | T_XHP_OPEN_TAG xhp_attribute* T_XHP_SLASH_GT
      { XhpSingleton ($1, $2, $3) }
+ (* reactext: https://reactjs.org/docs/fragments.html#short-syntax *)
+ | T_XHP_SHORT_FRAGMENT xhp_child* T_XHP_CLOSE_TAG 
+     { Xhp (("", $1), [], $1, $2, $3) }
 
 xhp_child:
  | T_XHP_TEXT        { XhpText $1 }

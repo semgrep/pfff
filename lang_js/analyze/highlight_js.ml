@@ -234,11 +234,12 @@ let visit_program ~tag_hook _prefs (cst, toks) =
     | T.T_XHP_CLOSE_TAG (_, ii) -> tag ii EmbededHtml
     | T.T_XHP_SLASH_GT ii -> tag ii EmbededHtml
     | T.T_XHP_GT ii -> tag ii EmbededHtml
-    | T.T_XHP_OPEN_TAG (_, ii) -> tag ii EmbededHtml
+    | T.T_XHP_OPEN_TAG (_, ii) | T.T_XHP_SHORT_FRAGMENT ii
+      -> tag ii EmbededHtml
 
     (* Punctuation *)
 
-    | T.T_LCURLY (ii) | T.T_RCURLY (ii)
+    | T.T_LCURLY (ii) | T.T_RCURLY (ii) | T.T_LCURLY_SEMGREP ii
     | T.T_LPAREN (ii) | T.T_LPAREN_ARROW (ii) | T.T_RPAREN (ii)
     | T.T_LBRACKET (ii) | T.T_RBRACKET (ii)
     | T.T_SEMICOLON (ii)

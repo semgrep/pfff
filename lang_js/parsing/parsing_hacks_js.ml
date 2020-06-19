@@ -93,6 +93,7 @@ let rparens_of_if toks =
 
 (* retagging:
  *  - '(' when part of an arrow expression
+ *  - '{' when first token in sgrep mode
  *  - less: '<' when part of a polymorphic type (aka generic)
  *  - less: { when part of a pattern before an assignment
  *)
@@ -105,6 +106,16 @@ let fix_tokens toks =
   in
   let retag_lparen = Hashtbl.create 101 in
   let retag_keywords = Hashtbl.create 101 in
+  let retag_lbrace = Hashtbl.create 101 in
+
+  (match trees with
+  (* probably an object pattern
+   * TODO: check that no stmt-like keywords inside body?
+   *)
+  | F.Braces (t1, _body, _)::_ when !Flag_parsing.sgrep_mode ->
+          Hashtbl.add retag_lbrace t1 true
+  | _ -> ()
+  );
 
   (* visit and tag *)
   let visitor = Lib_ast_fuzzy.mk_visitor { Lib_ast_fuzzy.default_visitor with
@@ -127,6 +138,8 @@ let fix_tokens toks =
   toks |> List.map (function
     | T.T_LPAREN info when Hashtbl.mem retag_lparen info ->
       T.T_LPAREN_ARROW (info)
+    | T.T_LCURLY info when Hashtbl.mem retag_lbrace info ->
+      T.T_LCURLY_SEMGREP (info)
     | T.T_IMPORT info when Hashtbl.mem retag_keywords info ->
       T.T_ID (PI.str_of_info info, info)
     | x -> x
