@@ -234,7 +234,8 @@ let visit_program ~tag_hook _prefs (cst, toks) =
     | T.T_XHP_CLOSE_TAG (_, ii) -> tag ii EmbededHtml
     | T.T_XHP_SLASH_GT ii -> tag ii EmbededHtml
     | T.T_XHP_GT ii -> tag ii EmbededHtml
-    | T.T_XHP_OPEN_TAG (_, ii) -> tag ii EmbededHtml
+    | T.T_XHP_OPEN_TAG (_, ii) | T.T_XHP_SHORT_FRAGMENT ii
+      -> tag ii EmbededHtml
 
     (* Punctuation *)
 

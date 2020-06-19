@@ -265,7 +265,8 @@ type expr =
 
  (* facebook-ext: JSX extension, similar to XHP for PHP (hence the name) *)
  and xhp_html =
-   | Xhp of xhp_tag wrap * xhp_attribute list * tok (* > *) *
+   | Xhp of xhp_tag wrap (* this can be "" for React '<>' short fragment *) * 
+       xhp_attribute list * tok (* > *) *
        xhp_body list * xhp_tag option wrap
    | XhpSingleton of xhp_tag wrap * xhp_attribute list * tok (* /> *)
 

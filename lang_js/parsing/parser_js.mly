@@ -175,6 +175,8 @@ let (^@) sc xs =
 %token <Parse_info.t> T_XHP_GT T_XHP_SLASH_GT
 
 %token <string * Parse_info.t> T_XHP_ATTR T_XHP_TEXT
+(* '<>', see https://reactjs.org/docs/fragments.html#short-syntax *)
+%token <Parse_info.t> T_XHP_SHORT_FRAGMENT
 
 (*-----------------------------------------*)
 (* Extra tokens: *)
@@ -1205,6 +1207,9 @@ xhp_html:
      { Xhp ($1, $2, $3, $4, $5)  }
  | T_XHP_OPEN_TAG xhp_attribute* T_XHP_SLASH_GT
      { XhpSingleton ($1, $2, $3) }
+ (* reactext: https://reactjs.org/docs/fragments.html#short-syntax *)
+ | T_XHP_SHORT_FRAGMENT xhp_child* T_XHP_CLOSE_TAG 
+     { Xhp (("", $1), [], $1, $2, $3) }
 
 xhp_child:
  | T_XHP_TEXT        { XhpText $1 }

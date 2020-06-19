@@ -479,7 +479,7 @@ rule initial = parse
     }
 
   (* ----------------------------------------------------------------------- *)
-  (* XHP *)
+  (* XHP/JSX *)
   (* ----------------------------------------------------------------------- *)
 
   (* xhp: we need to disambiguate the different use of '<' to know whether
@@ -495,7 +495,35 @@ rule initial = parse
    * in which the quote does not need to be ended.
    *)
   | "<" (XHPTAG as tag) {
+    match !_last_non_whitespace_like_token with
+    | Some (
+        T_LPAREN _
+      | T_SEMICOLON _ (* TODO: somes ambiguities with generics then! *)
+      | T_COMMA _
+      | T_LCURLY _ | T_RCURLY _
+      | T_RETURN _
+      | T_ASSIGN _
+      | T_ARROW _
+      | T_PLING _ | T_COLON _
+      | T_LBRACKET _
+      | T_AND _ | T_OR _ | T_PLUS _
+    ) when !Flag_parsing_js.jsx ->
+      push_mode (ST_IN_XHP_TAG tag);
+      T_XHP_OPEN_TAG(tag, tokinfo lexbuf)
+    (* sgrep-ext: *)
+    | None when !Flag.sgrep_mode ->
+      push_mode (ST_IN_XHP_TAG tag);
+      T_XHP_OPEN_TAG(tag, tokinfo lexbuf)
+    | _ ->
+      Parse_info.yyback (String.length tag) lexbuf;
+      T_LESS_THAN(tokinfo lexbuf)
+  }
 
+   (* support short fragment syntax of react.
+    * see https://reactjs.org/docs/fragments.html#short-syntax
+    * mostly copy paste from above 
+    *)
+   | "<>" {
     match !_last_non_whitespace_like_token with
     | Some (
         T_LPAREN _
@@ -510,17 +538,23 @@ rule initial = parse
       | T_AND _ | T_OR _ | T_PLUS _
     ) when !Flag_parsing_js.jsx
       ->
-      push_mode (ST_IN_XHP_TAG tag);
-      T_XHP_OPEN_TAG(tag, tokinfo lexbuf)
+      let tag = "" in
+      (* we go directly in ST_IN_XHP_TEXT *)
+      push_mode (ST_IN_XHP_TEXT tag);
+      T_XHP_SHORT_FRAGMENT(tokinfo lexbuf)
 
     (* sgrep-ext: *)
     | None when !Flag.sgrep_mode ->
-      push_mode (ST_IN_XHP_TAG tag);
-      T_XHP_OPEN_TAG(tag, tokinfo lexbuf)
+      let tag = "" in
+      (* we go directly in ST_IN_XHP_TEXT *)
+      push_mode (ST_IN_XHP_TEXT tag);
+      T_XHP_SHORT_FRAGMENT(tokinfo lexbuf)
+
     | _ ->
-      Parse_info.yyback (String.length tag) lexbuf;
+      Parse_info.yyback 1 lexbuf;
       T_LESS_THAN(tokinfo lexbuf)
-  }
+    }
+
 
   (* ----------------------------------------------------------------------- *)
   (* eof *)
