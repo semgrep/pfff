@@ -480,7 +480,8 @@ let v_bool _x = ()
 let v_int _x = ()
 let v_float _x = ()
 let v_string (_s:string) = ()
-let v_ref _aref _x = () (* dont go into ref *)
+let v_ref_do_visit op aref  = op !aref
+let v_ref_do_not_visit _aref _x = () (* dont go into ref *)
 let v_option v_of_a v = 
   match v with
   | None -> ()

@@ -245,7 +245,7 @@ and v_var { v_name = v_v_name; v_kind = v_v_kind; v_init = v_v_init;
   let arg = v_name v_v_name in
   let arg = v_wrap v_var_kind v_v_kind in 
   let arg = v_option v_expr v_v_init in 
-  let arg = v_ref v_resolved_name v_v_resolved in
+  let arg = v_ref_do_not_visit v_resolved_name v_v_resolved in
   ()
 and v_var_kind = function | Var -> () | Let -> () | Const -> ()
 
