@@ -26,6 +26,7 @@ type visitor_in = {
   kinfo: (tok -> unit)  * visitor_out -> tok  -> unit;
 }
 (*e: type [[Visitor_AST.visitor_in]] *)
+(* note that internally the visitor uses OCaml.v_ref_do_not_visit *)
 (*s: type [[Visitor_AST.visitor_out]] *)
 and visitor_out = any -> unit
 (*e: type [[Visitor_AST.visitor_out]] *)

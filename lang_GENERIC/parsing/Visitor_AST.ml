@@ -144,8 +144,8 @@ and v_id_info
   { id_resolved = v_id_resolved; id_type = v_id_type;
     id_const_literal = _IGNORED;
   } =
-  let arg = v_ref (v_option v_resolved_name) v_id_resolved in
-  let arg = v_ref (v_option v_type_) v_id_type in ()
+  let arg = v_ref_do_not_visit (v_option v_resolved_name) v_id_resolved in
+  let arg = v_ref_do_not_visit (v_option v_type_) v_id_type in ()
 
 and
   v_xml { xml_tag = v_xml_tag; xml_attrs = v_xml_attrs; xml_body = vv_xml_body

@@ -106,7 +106,7 @@ and v_expr (x: expr) =
   | Name ((v1, v2, v3)) ->
       let v1 = v_name v1
       and v2 = v_expr_context v2
-      and v3 = v_ref v_resolved_name v3
+      and v3 = v_ref_do_not_visit v_resolved_name v3
       in ()
   | TypedExpr ((v1, v2)) ->
      let v1 = v_expr v1 in

@@ -142,7 +142,8 @@ val v_float: float -> unit
 val v_string: string -> unit
 val v_option: ('a -> unit) -> 'a option -> unit
 val v_list: ('a -> unit) -> 'a list -> unit
-val v_ref: ('a -> unit) -> 'a ref -> unit
+val v_ref_do_visit: ('a -> unit) -> 'a ref -> unit
+val v_ref_do_not_visit: ('a -> unit) -> 'a ref -> unit
 val v_either: 
   ('a -> unit) -> ('b -> unit) -> 
   ('a, 'b) Common.either -> unit
