@@ -364,11 +364,12 @@ and map_other_type_operator x = x
 and map_attribute = function
   | KeywordAttr v1 -> let v1 = map_wrap map_keyword_attribute v1 in 
       KeywordAttr v1
-  | NamedAttr ((v1, v2, v3)) ->
+  | NamedAttr ((t, v1, v2, v3)) ->
+      let t = map_tok t in
       let v1 = map_ident v1
       and v2 = map_id_info v2
       and v3 = map_bracket (map_of_list map_argument) v3
-      in NamedAttr ((v1, v2, v3))
+      in NamedAttr ((t, v1, v2, v3))
   | OtherAttribute ((v1, v2)) ->
       let v1 = map_other_attribute_operator v1
       and v2 = map_of_list map_any v2
@@ -381,7 +382,10 @@ and map_stmt x =
   let k x = match x with
   | DisjStmt (v1, v2) -> let v1 = map_stmt v1 in let v2 = map_stmt v2 in
         DisjStmt (v1, v2)
-  | ExprStmt v1 -> let v1 = map_expr v1 in ExprStmt ((v1))
+  | ExprStmt (v1, t) -> 
+        let v1 = map_expr v1 in 
+        let t = map_tok t in
+        ExprStmt ((v1, t))
   | DefStmt v1 -> let v1 = map_definition v1 in DefStmt ((v1))
   | DirectiveStmt v1 -> let v1 = map_directive v1 in DirectiveStmt ((v1))
   | Block v1 -> let v1 = map_bracket (map_of_list map_stmt) v1 in Block ((v1))

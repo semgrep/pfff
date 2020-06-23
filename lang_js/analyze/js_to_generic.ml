@@ -240,7 +240,7 @@ and stmt x =
   match x with
   | VarDecl v1 -> let v1 = def_of_var v1 in G.DefStmt (v1)
   | Block v1 -> let v1 = bracket (list stmt) v1 in G.Block v1
-  | ExprStmt v1 -> let v1 = expr v1 in G.ExprStmt v1
+  | ExprStmt (v1, t) -> let v1 = expr v1 in G.ExprStmt (v1, t)
   | If ((t, v1, v2, v3)) ->
       let v1 = expr v1 and v2 = stmt v2 and v3 = option stmt v3 in 
       G.If (t, v1, v2, v3)
@@ -425,7 +425,7 @@ and property x =
       let v1 = expr v1 in 
       G.FieldSpread (t, v1)
   | FieldEllipsis v1 -> 
-      G.FieldStmt (G.ExprStmt (G.Ellipsis v1))
+      G.FieldStmt (G.exprstmt (G.Ellipsis v1))
 and property_prop (x, tok) =
   match x with
   | Static -> G.attr G.Static tok

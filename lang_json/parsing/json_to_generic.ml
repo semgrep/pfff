@@ -17,7 +17,7 @@ module G = AST_generic
 
 let program ast =
   let e = Js_to_generic.expr ast in
-  [G.ExprStmt e]
+  [G.exprstmt e]
 
 
 let any (Ast_json.E e) =

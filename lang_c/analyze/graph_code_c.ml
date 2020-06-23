@@ -749,7 +749,7 @@ and define_body env v =
  * any entities (expressions do).
  *)
 and stmt env = function
-  | ExprSt e -> expr_toplevel env e
+  | ExprSt (e, _) -> expr_toplevel env e
   | Block (_, xs, _) -> stmts env xs
   | Asm xs -> List.iter (expr_toplevel env) xs
   | If (_, e, st1, st2) ->

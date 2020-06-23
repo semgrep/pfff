@@ -201,7 +201,8 @@ and map_stmt =
   function
   | VarDecl v1 -> let v1 = map_var v1 in VarDecl ((v1))
   | Block v1 -> let v1 = map_bracket (map_of_list map_stmt) v1 in Block ((v1))
-  | ExprStmt v1 -> let v1 = map_expr v1 in ExprStmt ((v1))
+  | ExprStmt (v1, t) -> let v1 = map_expr v1 in let t = map_tok t in 
+      ExprStmt (v1, t)
   | If ((t, v1, v2, v3)) ->
       let t = map_tok t in
       let v1 = map_expr v1

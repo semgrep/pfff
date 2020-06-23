@@ -16,7 +16,6 @@ open Common
 
 open Ast_php
 module A = Ast_php
-module G = AST_generic
 
 open Env_typing_php
 open Typing_helpers_php
@@ -248,7 +247,7 @@ and stmtl env l =
 and stmt env= function
   | TypeDef _ -> failwith "no support for typedefs in type inferencer"
   | NamespaceDef _ | NamespaceUse _ -> failwith "no support for namespace yet"
-  | Expr e -> iexpr env e
+  | Expr (e, _) -> iexpr env e
   | Block (_,stl,_) -> stmtl env stl
   | If (_, e, st1, st2) ->
       (* todo? should we unify e with bool? *)

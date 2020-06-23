@@ -108,8 +108,8 @@ let for_var xs =
 
 let rec stmt_aux =
   function
-  | Expr v1 -> let v1 = expr v1 in 
-      [G.ExprStmt v1]
+  | Expr (v1, t) -> let v1 = expr v1 in 
+      [G.ExprStmt (v1, t)]
   | Block v1 -> let v1 = bracket (list stmt) v1 in
       [G.Block v1]
   | If ((t, v1, v2, v3)) ->
@@ -476,11 +476,11 @@ and attribute v =
   match v with
   | Id [id] -> 
     let id = ident id in
-    G.NamedAttr (id, G.empty_id_info(), fb [])
+    G.NamedAttr (fake "@", id, G.empty_id_info(), fb [])
   | Call (Id [id], args) ->
     let id = ident id in
     let args = bracket (list argument) args in
-    G.NamedAttr (id, G.empty_id_info(), args)
+    G.NamedAttr (fake "@", id, G.empty_id_info(), args)
   | _ -> raise Impossible (* see ast_php_build.ml *)
                  
 

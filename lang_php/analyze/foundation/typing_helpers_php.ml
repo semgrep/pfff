@@ -14,6 +14,7 @@
  *)
 open Ast_php
 open Env_typing_php
+module G = AST_generic
 
 module Pp = Pretty_print_code
 
@@ -186,7 +187,7 @@ module AEnv = struct
     match id with 
     | (e, f, c) -> 
         Printf.printf "In %s %s, " c f;
-        let stmt = Ast_php.Expr(e) in
+        let stmt = Ast_php.Expr(e, G.sc) in
         let s = Ast_php.show_program [stmt] in
         Common.pr s
 

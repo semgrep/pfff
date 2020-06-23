@@ -175,9 +175,9 @@ and dname = function
 (* ------------------------------------------------------------------------- *)
 and stmt env st acc =
   match st with
-  | ExprStmt (e, _) ->
+  | ExprStmt (e, t) ->
       let e = expr env e in
-      A.Expr e :: acc
+      A.Expr (e, t) :: acc
   (* Why not just acc? because we abuse noop in the abstract interpreter? *)
   | EmptyStmt _ -> noop :: acc
   | Block (_, stdl, _) -> List.fold_right (stmt_and_def env) stdl acc
@@ -220,22 +220,23 @@ and stmt env st acc =
       let cl = List.map (catch env) cl in
       let fl = List.map (finally env) fl in
       A.Try (tok, stl, cl, fl) :: acc
-  | Echo (tok, el, _) ->
+  | Echo (tok, el, t) ->
       A.Expr (A.Call (A.Id [A.builtin "echo", wrap tok],
-                     fb (List.map (expr env) (comma_list el)))) :: acc
+                     fb (List.map (expr env) (comma_list el))), t) :: acc
   | Globals (tok, gvl, _) ->
       A.Global (tok, List.map (global_var env) (comma_list gvl)) :: acc
   | StaticVars (tok, svl, _) ->
       A.StaticVars (tok, List.map (static_var env) (comma_list svl)) :: acc
   | InlineHtml (s, tok) ->
       A.Expr (A.Call (A.Id [A.builtin "echo", wrap tok],
-                     fb [A.String (s, wrap tok)])) :: acc
+                     fb [A.String (s, wrap tok)]), tok) :: acc
   | Use (tok, _fn, _) ->
       error tok "TODO:Use"
-  | Unset (tok, (t1, lp, t2), _e) ->
+  | Unset (tok, (t1, lp, t2), sc) ->
       let lp = comma_list lp in
       let lp = List.map (lvalue env) lp in
-      A.Expr (A.Call (A.Id [A.builtin "unset", wrap tok], (t1, lp, t2))) :: acc
+      A.Expr (A.Call (A.Id [A.builtin "unset", wrap tok], (t1, lp, t2)),sc) 
+        :: acc
   (* http://php.net/manual/en/control-structures.declare.php *)
   | Declare (tok, args, colon_st) ->
       (match args, colon_st with
@@ -615,7 +616,7 @@ and short_lambda_def env def =
     f_return_type = None;
     f_body =
       (match def.sl_body with
-      | SLExpr e -> [A.Expr (expr env e)]
+      | SLExpr e -> [A.Expr (expr env e, G.sc)]
       | SLBody (_, body, _) -> List.fold_right (stmt_and_def env) body []
       );
     f_kind = A.ShortLambda;
@@ -819,7 +820,7 @@ and method_def env m =
         A.Assign (A.Obj_get(A.IdSpecial(A.This,tok), fake ".",
                                   A.Id [str_without_dollar, tok]),
                   fake "=",
-                  A.Var (str_with_dollar, tok)))
+                  A.Var (str_with_dollar, tok)), G.sc)
     )
   in
 

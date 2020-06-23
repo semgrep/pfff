@@ -238,7 +238,7 @@ and v_stmt (x : stmt) =
   let k x = match x with
   | Empty -> ()
   | Block v1 -> let v1 = v_bracket v_stmts v1 in ()
-  | Expr v1 -> let v1 = v_expr v1 in ()
+  | Expr (v1, t) -> let v1 = v_expr v1 in let t = v_info t in ()
   | If ((t, v1, v2, v3)) ->
       let t = v_info t in
       let v1 = v_expr v1 and v2 = v_stmt v2 and v3 = v_option v_stmt v3 in ()

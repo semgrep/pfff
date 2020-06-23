@@ -75,6 +75,9 @@ let fst3 (x, _, _) = x
 
 let bracket_keep of_a (t1, x, t2) = (t1, of_a x, t2)
 let fb = G.fake_bracket
+let sc = function
+  | None -> G.sc
+  | Some t -> t
 
 let not_resolved () = ref A.NotResolved
 
@@ -335,12 +338,13 @@ and stmt env = function
     [stmt1_item_list env (C.unparen x)]
   | C.Nop _ -> 
     []
-  | C.ExprStmt (e, _) ->
-    let  e = expr env e in
+  | C.ExprStmt (e, t) ->
+    let e = expr env e in
+    let t = sc t in
     (match e with
     | A.String("use strict", tok) -> 
-      [A.ExprStmt (A.Apply(A.IdSpecial (A.UseStrict, tok), fb []))]
-    | _ -> [A.ExprStmt e]
+      [A.ExprStmt (A.Apply(A.IdSpecial (A.UseStrict, tok), fb []), t)]
+    | _ -> [A.ExprStmt (e, t)]
     )
   | C.If (t, e, then_, elseopt) ->
     let e = e |> C.unparen |> expr env in

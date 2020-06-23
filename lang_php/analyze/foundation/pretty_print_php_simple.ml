@@ -51,7 +51,7 @@ and stmt buf st =
     List.iter (stmt buf) def.f_body;
     pp buf "}\n"
               
-  | Expr e ->
+  | Expr (e, _) ->
     expr buf e
 
   | _ -> raise Todo

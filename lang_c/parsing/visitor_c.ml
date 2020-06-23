@@ -133,7 +133,7 @@ and v_argument v = v_expr v
   
 and v_stmt =
   function
-  | ExprSt v1 -> let v1 = v_expr v1 in ()
+  | ExprSt (v1, t) -> let v1 = v_expr v1 in let t = v_info t in ()
   | Block v1 -> let v1 = v_bracket (v_list v_stmt) v1 in ()
   | If ((t, v1, v2, v3)) ->
       let t = v_info t in

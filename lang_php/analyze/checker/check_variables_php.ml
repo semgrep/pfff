@@ -470,7 +470,7 @@ and stmt env = function
   | NamespaceDef (_, qu, _) | NamespaceUse (_, qu, _) ->
     raise (Cst_php.TodoNamespace (A.tok_of_name qu))
 
-  | Expr e -> expr env e
+  | Expr (e, _) -> expr env e
   (* todo: block scope checking when in strict mode? *)
   | Block (_, xs, _) -> stmtl env xs
 

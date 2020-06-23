@@ -410,10 +410,10 @@ and stmt env st =
       | MacroIteration _ ->
           debug (Stmt st); raise Todo
 
-  | ExprStatement (eopt, _) ->
+  | ExprStatement (eopt, t) ->
       (match eopt with
       | None -> A.Block (G.fake_bracket [])
-      | Some e -> A.ExprSt (expr env e)
+      | Some e -> A.ExprSt (expr env e, t)
       )
   | DeclStmt block_decl ->
       block_declaration env block_decl

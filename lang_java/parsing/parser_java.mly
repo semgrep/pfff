@@ -32,6 +32,7 @@
 open Common
 open AST_generic (* for the arithmetic operator *)
 open Ast_java
+module G = AST_generic
 
 (*****************************************************************************)
 (* Helpers *)
@@ -106,8 +107,8 @@ let decls f = fun mods vtype vars ->
   in
   List.map dcl vars
 
-let constructor_invocation name args =
-  Expr (Call ((Name name), args))
+let constructor_invocation name args sc =
+  Expr (Call ((Name name), args), sc)
 
 let expr_to_typename expr =
     match expr with
@@ -755,7 +756,7 @@ variable_arity_parameter:
 
 /*(* no need %prec LOW_PRIORITY_RULE as in parser_js.mly ?*)*/
 lambda_body:
- | expression { Expr $1 }
+ | expression { Expr ($1, G.sc) }
  | block      { $1 }
 
 /*(*----------------------------*)*/
@@ -797,7 +798,7 @@ statement:
  | while_statement  { $1 }
  | for_statement  { $1 }
  /*(* sgrep-ext: *)*/
- | DOTS { Flag_parsing.sgrep_guard (Expr (Ellipsis $1)) }
+ | DOTS { Flag_parsing.sgrep_guard (Expr (Ellipsis $1, G.sc)) }
 
 statement_without_trailing_substatement:
  | block  { $1 }
@@ -839,7 +840,7 @@ empty_statement: SM { Empty }
 labeled_statement: identifier COLON statement
    { Label ($1, $3) }
 
-expression_statement: statement_expression SM  { Expr $1 }
+expression_statement: statement_expression SM  { Expr ($1, $2) }
 
 /*(* pad: good *)*/
 statement_expression:
@@ -1032,17 +1033,17 @@ modifier:
  | SYNCHRONIZED { Synchronized, $1 }
  | NATIVE       { Native, $1 }
 
- | DEFAULT      { Native, $1 (* TODO *) }
+ | DEFAULT      { DefaultModifier, $1 }
 
- | annotation { Annotation $1, (info_of_identifier_ (List.hd (List.rev (fst $1)))) }
+ | annotation { Annotation $1, (Common2.fst3 $1) }
 
 /*(*************************************************************************)*/
 /*(*1 Annotation *)*/
 /*(*************************************************************************)*/
 
 annotation:
- | AT name { ($2, None) }
- | AT name LP annotation_element RP { ($2, Some $4) }
+ | AT name { ($1, $2, None) }
+ | AT name LP annotation_element RP { ($1, $2, Some ($3, $4, $5)) }
 
 annotation_element:
  | /* nothing */ { EmptyAnnotArg }
@@ -1203,15 +1204,15 @@ constructor_body:
 
 explicit_constructor_invocation:
  | THIS LP argument_list_opt RP SM
-      { constructor_invocation [this_ident $1] ($2,$3,$4) }
+      { constructor_invocation [this_ident $1] ($2,$3,$4) $5 }
  | SUPER LP argument_list_opt RP SM
-      { constructor_invocation [super_ident $1] ($2,$3,$4) }
+      { constructor_invocation [super_ident $1] ($2,$3,$4) $5 }
  /*(* javaext: ? *)*/
  | primary DOT SUPER LP argument_list_opt RP SM
-      { Expr (Call ((Dot ($1, $2, super_identifier $3)), ($4,$5,$6))) }
+      { Expr (Call ((Dot ($1, $2, super_identifier $3)), ($4,$5,$6)), $7) }
  /*(* not in 2nd edition java language specification. *)*/
  | name DOT SUPER LP argument_list_opt RP SM
-      { constructor_invocation (name $1 @ [super_ident $3]) ($4,$5,$6) }
+      { constructor_invocation (name $1 @ [super_ident $3]) ($4,$5,$6) $7 }
 
 /*(*----------------------------*)*/
 /*(*2 Method parameter *)*/
@@ -1233,7 +1234,7 @@ variable_declarator_id_bis:
  /* (* javaext: 1.? *)*/
 variable_modifier:
  | FINAL      { Final, $1 }
- | annotation { (Annotation $1), info_of_identifier_ (List.hd (List.rev (fst $1))) }
+ | annotation { (Annotation $1), Common2.fst3 $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Interface *)*/

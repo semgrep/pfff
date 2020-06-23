@@ -231,7 +231,7 @@ and stmt =
   | VarDecl of var
 
   | Block of stmt list bracket
-  | ExprStmt of expr
+  | ExprStmt of expr * tok (* can be fake when ASI *)
 
   | If of tok * expr * stmt * stmt option
   | Do of tok * stmt * expr | While of tok * expr * stmt

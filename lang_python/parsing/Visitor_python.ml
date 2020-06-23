@@ -397,7 +397,8 @@ and v_excepthandler =
       and v3 = v_list v_stmt v3
       in ()
 and v_decorator v = 
-  let k x =
+  let k (t, x) =
+    v_tok t;
     v_expr x
   in
   vin.kdecorator (k, all_functions) v

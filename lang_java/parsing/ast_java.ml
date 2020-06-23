@@ -100,15 +100,19 @@ type modifier =
 
   (* only for parameters, '...' *)
   | Variadic
+  (* java-ext: ?? *)
+  | DefaultModifier
 
   | Annotation of annotation
 
+ (* the wrap for Annotation is a copy of the @ tok already in annotation *)
  and modifiers = modifier wrap list
 
 (* ------------------------------------------------------------------------- *)
 (* Annotation *)
 (* ------------------------------------------------------------------------- *)
- and annotation = name_or_class_type * (annotation_element option)
+ and annotation = 
+     tok (* @ *) * name_or_class_type * (annotation_element bracket option)
 
  and annotation_element =
    | AnnotArgValue of element_value
@@ -230,7 +234,7 @@ and arguments = expr list bracket
 and stmt =
   | Empty (* could be Block [] *)
   | Block of stmts bracket
-  | Expr of expr
+  | Expr of expr * tok
 
   | If of tok * expr * stmt * stmt option
   | Switch of tok * expr * (cases * stmts) list

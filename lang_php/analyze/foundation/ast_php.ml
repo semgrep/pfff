@@ -145,7 +145,7 @@ type program = stmt list
 (* Statement *)
 (* ------------------------------------------------------------------------- *)
 and stmt =
-  | Expr of expr
+  | Expr of expr * tok
 
   | Block of stmt list bracket
 

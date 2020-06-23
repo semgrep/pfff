@@ -588,7 +588,7 @@ and enum_decl env def =
 and stmt env = function
   | Empty -> ()
   | Block (_, xs, _) -> stmts env xs
-  | Expr e -> expr env e
+  | Expr (e, _) -> expr env e
   | If (_, e, st1, st2) ->
       expr env e;
       stmts env (st1::(Common.opt_to_list st2))

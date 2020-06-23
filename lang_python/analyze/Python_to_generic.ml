@@ -280,7 +280,7 @@ let rec expr (x: expr) =
       G.Call (v1, v2)
 
   | Lambda ((v1, v2)) -> let v1 = parameters v1 and v2 = expr v2 in 
-      G.Lambda ({G.fparams = v1; fbody = G.ExprStmt v2; frettype = None})
+      G.Lambda ({G.fparams = v1; fbody = G.exprstmt v2; frettype = None})
   | IfExp ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in
       G.Conditional (v1, v2, v3)
@@ -483,7 +483,7 @@ and list_stmt1 xs =
    * in which case we remove the G.Block around it.
    * hacky ...
    *)
-  | [G.ExprStmt (G.Id (_)) as x] -> x
+  | [G.ExprStmt (G.Id (_), _) as x] -> x
   | xs -> G.Block (fb xs)
 (*e: function [[Python_to_generic.list_stmt1]] *)
 
@@ -520,12 +520,12 @@ and stmt_aux x =
       let v1 = list expr v1 and v2 = info v2 and v3 = expr v3 in
       (match v1 with
       | [] -> raise Impossible
-      | [a] -> [G.ExprStmt (G.Assign (a, v2, v3))]
-      | xs -> [G.ExprStmt (G.Assign (G.Tuple xs, v2, v3))]
+      | [a] -> [G.exprstmt (G.Assign (a, v2, v3))]
+      | xs -> [G.exprstmt (G.Assign (G.Tuple xs, v2, v3))]
       )
   | AugAssign ((v1, (v2, tok), v3)) ->
       let v1 = expr v1 and v2 = operator v2 and v3 = expr v3 in
-      [G.ExprStmt (G.AssignOp (v1, (v2, tok), v3))]
+      [G.exprstmt (G.AssignOp (v1, (v2, tok), v3))]
   | Return (t, v1) -> let v1 = option expr v1 in 
       [G.Return (t, v1)]
 
@@ -636,7 +636,7 @@ and stmt_aux x =
           G.DefStmt (ent, G.UseOuterDecl t))
 
   | ExprStmt v1 -> let v1 = expr v1 in 
-      [G.ExprStmt v1]
+      [G.exprstmt v1]
 
   | Async (t, x) ->
       let x = stmt x in
@@ -694,17 +694,17 @@ and excepthandler =
 (*e: function [[Python_to_generic.excepthandler]] *)
 
 (*s: function [[Python_to_generic.expr_to_attribute]] *)
-and expr_to_attribute v  = 
+and expr_to_attribute t v = 
   match v with
   | G.Call (G.Id (id, _), args) -> 
-      G.NamedAttr (id, G.empty_id_info (), args)
-  | _ -> G.OtherAttribute (G.OA_Expr, [G.E v])
+      G.NamedAttr (t, id, G.empty_id_info (), args)
+  | _ -> G.OtherAttribute (G.OA_Expr, [G.Tk t; G.E v])
 (*e: function [[Python_to_generic.expr_to_attribute]] *)
 
 (*s: function [[Python_to_generic.decorator]] *)
-and decorator v = 
+and decorator (t, v) = 
   let v = expr v in
-  expr_to_attribute v
+  expr_to_attribute t v
 (*e: function [[Python_to_generic.decorator]] *)
 
 (*s: function [[Python_to_generic.alias]] *)
