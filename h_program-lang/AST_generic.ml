@@ -591,7 +591,7 @@ and expr =
 and stmt =
   (* See also IL.ml where Call/Assign/Seq are not in expr and where there are
    * separate expr, instr, and stmt types *)
-  | ExprStmt of expr (* todo: tok can be fake in Python and JS/Go with ASI *)
+  | ExprStmt of expr * tok (* fake tok in Python, but alsoin JS/Go with ASI *)
 
   (* newscope: in C++/Java/Go *)
   | Block of stmt list bracket (* can be fake {} in Python where use layout *)
@@ -880,7 +880,7 @@ and type_ =
 and attribute = 
   | KeywordAttr of keyword_attribute wrap
   (* for general @annotations *)
-  | NamedAttr of ident * id_info * arguments bracket
+  | NamedAttr of tok (* @ *) * ident * id_info * arguments bracket
   (*s: [[AST_generic.attribute]] OtherXxx case *)
   | OtherAttribute of other_attribute_operator * any list
   (*e: [[AST_generic.attribute]] OtherXxx case *)
@@ -909,7 +909,7 @@ and attribute =
 (*s: type [[AST_generic.other_attribute_operator]] *)
   and other_attribute_operator = 
     (* Java *)
-    | OA_StrictFP | OA_Transient | OA_Synchronized | OA_Native
+    | OA_StrictFP | OA_Transient | OA_Synchronized | OA_Native | OA_Default
     | OA_AnnotJavaOther
     | OA_AnnotThrow
     (* Python *)
@@ -1572,4 +1572,6 @@ let fake_bracket x = fake "(", x, fake ")"
 (*s: function [[AST_generic.unbracket]] *)
 let unbracket (_, x, _) = x
 (*e: function [[AST_generic.unbracket]] *)
+let sc = Parse_info.fake_info ";"
+let exprstmt e = ExprStmt (e, sc)
 (*e: pfff/h_program-lang/AST_generic.ml *)

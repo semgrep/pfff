@@ -396,7 +396,7 @@ and stmt env = function
     let env = add_locals env [v] in
     option (expr env) v.v_init
  | Block (_, xs, _) -> stmts env xs
- | ExprStmt e -> expr env e
+ | ExprStmt (e, _) -> expr env e
  | If (_, e, st1, st2) ->
    expr env e;
    stmt env st1;

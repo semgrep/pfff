@@ -228,7 +228,7 @@ and const_expr v =
   
 let rec stmt =
   function
-  | ExprSt v1 -> let v1 = expr v1 in G.ExprStmt v1
+  | ExprSt (v1, t) -> let v1 = expr v1 in G.ExprStmt (v1, t)
   | Block v1 -> let v1 = bracket (list stmt) v1 in G.Block v1
   | If ((t, v1, v2, v3)) ->
       let v1 = expr v1 and v2 = stmt v2 and v3 = option stmt v3 in

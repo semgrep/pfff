@@ -483,11 +483,12 @@ and vof_keyword_attribute =
 and vof_attribute = function
   | KeywordAttr x -> let v1 = vof_wrap vof_keyword_attribute x in
     OCaml.VSum (("KeywordAttr", [v1]))
-  | NamedAttr ((v1, v2, v3)) ->
+  | NamedAttr ((t, v1, v2, v3)) ->
+      let t = vof_tok t in
       let v1 = vof_ident v1
       and v2 = vof_id_info v2
       and v3 = vof_bracket (OCaml.vof_list vof_argument) v3
-      in OCaml.VSum (("NamedAttr", [ v1; v2; v3 ]))
+      in OCaml.VSum (("NamedAttr", [ t; v1; v2; v3 ]))
   | OtherAttribute ((v1, v2)) ->
       let v1 = vof_other_attribute_operator v1
       and v2 = OCaml.vof_list vof_any v2
@@ -501,11 +502,15 @@ and vof_other_attribute_operator =
   | OA_AnnotJavaOther -> OCaml.VSum (("OA_AnnotJavaOther", [ ]))
   | OA_AnnotThrow -> OCaml.VSum (("OA_AnnotThrow", []))
   | OA_Expr -> OCaml.VSum (("OA_Expr", []))
+  | OA_Default -> OCaml.VSum (("OA_Default", []))
 and vof_stmt =
   function
   | DisjStmt (v1, v2) -> let v1 = vof_stmt v1 in let v2 = vof_stmt v2 in
       OCaml.VSum (("DisjStmt", [v1; v2]))
-  | ExprStmt v1 -> let v1 = vof_expr v1 in OCaml.VSum (("ExprStmt", [ v1 ]))
+  | ExprStmt (v1, t) -> 
+      let v1 = vof_expr v1 in 
+      let t = vof_tok t in
+      OCaml.VSum (("ExprStmt", [ v1; t ]))
   | DefStmt v1 ->
       let v1 = vof_definition v1 in OCaml.VSum (("DefStmt", [ v1 ]))
   | DirectiveStmt v1 ->

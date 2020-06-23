@@ -322,7 +322,7 @@ and stmt env heap x =
    * with php or aphp and get both run working (show() is an
    * undefined function in HPHP).
    *)
-  | Expr (Call (Id [(("show" | "var_dump"),_)], (_,[e],_))) ->
+  | Expr (Call (Id [(("show" | "var_dump"),_)], (_,[e],_)), _) ->
       let heap, v = expr env heap e in
       if !show_vardump then begin
         Env.print_locals_and_globals print_string env heap;
@@ -330,11 +330,11 @@ and stmt env heap x =
       end;
       heap
   (* used by unit testing *)
-  | Expr (Call (Id [("checkpoint",_)], (_,[],_))) ->
+  | Expr (Call (Id [("checkpoint",_)], (_,[],_)), _) ->
       _checkpoint_heap := Some (heap, !(env.vars));
       heap
 
-  | Expr e ->
+  | Expr (e, _) ->
       let heap, _ = expr env heap e in
       heap
 
@@ -1213,8 +1213,8 @@ and new_ env heap e el =
    * *myobj->__construct(el);
    *)
     Expr (Assign (Var (w "*myobj*"), fake "=",
-                 Call (Class_get (Id [(w str)], fake "::", Id [(w "*BUILD*")]), fb [])));
-    Expr (Call (Obj_get (Var (w "*myobj*"), fake ".", Id [(w "__construct")]), fb el));
+                 Call (Class_get (Id [(w str)], fake "::", Id [(w "*BUILD*")]), fb [])), G.sc);
+    Expr (Call (Obj_get (Var (w "*myobj*"), fake ".", Id [(w "__construct")]), fb el), G.sc);
   ] in
   let heap = stmtl env heap stl in
   let heap, _, v = Var.get env heap "*myobj*" in

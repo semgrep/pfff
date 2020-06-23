@@ -289,7 +289,7 @@ let forof (lhs_var, tok, e2, st) (expr, stmt, var_binding) =
    match lhs_var with
    | C.LHS2 e -> 
      let e = expr e in
-     [A.ExprStmt (A.Assign (e, fake "=", step_value))]
+     [A.ExprStmt (A.Assign (e, fake "=", step_value), G.sc)]
    | C.ForVar (vkind, binding) -> 
       let binding = 
         match binding with

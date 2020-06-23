@@ -340,8 +340,10 @@ and v_attribute x =
   let k x = 
   match x with
   | KeywordAttr v1 -> let v1 = v_wrap v_keyword_attribute v1 in ()
-  | NamedAttr ((v1, v2, v3)) -> let v1 = v_ident v1 and v2 = v_id_info v2 and
-    v3 = v_bracket (v_list v_argument) v3 in ()
+  | NamedAttr ((t, v1, v2, v3)) -> 
+      let t = v_tok t in
+      let v1 = v_ident v1 and v2 = v_id_info v2 and
+      v3 = v_bracket (v_list v_argument) v3 in ()
   | OtherAttribute ((v1, v2)) ->
       let v1 = v_other_attribute_operator v1 and v2 = v_list v_any v2 in ()
   in
@@ -364,7 +366,10 @@ and v_stmt x =
   let k x =
   match x with
   | DisjStmt (v1, v2) -> let v1 = v_stmt v1 in let v2 = v_stmt v2 in ()
-  | ExprStmt v1 -> let v1 = v_expr v1 in ()
+  | ExprStmt (v1, t) -> 
+        let v1 = v_expr v1 in 
+        let t = v_tok t in
+        ()
   | DefStmt v1 -> let v1 = v_def v1 in ()
   | DirectiveStmt v1 -> let v1 = v_directive v1 in ()
   | Block v1 -> let v1 = v_bracket v_stmts v1 in ()

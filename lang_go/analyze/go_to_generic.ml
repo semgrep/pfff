@@ -80,7 +80,7 @@ let mk_func_def params ret st =
 let wrap_init_in_block_maybe x v =
   match x with
   | None -> [v]
-  | Some e -> [G.Block (fb [G.ExprStmt e;v])]
+  | Some e -> [G.Block (fb [G.exprstmt e;v])]
 
 (*****************************************************************************)
 (* Entry point *)
@@ -385,7 +385,7 @@ and stmt_aux =
       [G.Block (fb[])]
   | SimpleStmt v1 ->
       let v1 = simple v1 in
-      [G.ExprStmt v1]
+      [G.exprstmt v1]
   | If ((t, v1, v2, v3, v4)) ->
       let v1 = option simple v1
       and v2 = expr v2

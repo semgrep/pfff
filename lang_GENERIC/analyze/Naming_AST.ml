@@ -613,7 +613,7 @@ let resolve lang prog =
     );
     V.kattr = (fun (k, _v) x ->
       (match x with
-      | NamedAttr (id, id_info, _args) ->
+      | NamedAttr (_, id, id_info, _args) ->
           (match lookup_scope_opt id lang env.names with
           | Some resolved -> 
              (* name resolution *)

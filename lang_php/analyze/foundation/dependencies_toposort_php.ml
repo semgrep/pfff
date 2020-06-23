@@ -50,7 +50,7 @@ module Deps = struct
     | TypeDef t -> SSet.add (unwrap t.t_name) acc
 
     (* boilerplate to recurse *)
-    | Expr e | Throw (_, e) -> expr acc e
+    | Expr (e, _) | Throw (_, e) -> expr acc e
     | Block (_, stl,_) -> stmtl acc stl
     | If (_, e, st1, st2) -> stmtl (expr acc e) [st1; st2]
     | Do (_, stl, e)| While (_, e, stl) -> stmtl (expr acc e) stl

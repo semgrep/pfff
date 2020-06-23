@@ -136,7 +136,7 @@ and expr =
           | _ -> let v1 = name v1 in
                  let e = 
                    G.OtherExpr (G.OE_RecordFieldName, [G.N v1; G.E v2]) in
-                 let st = G.ExprStmt e in
+                 let st = G.exprstmt e in
                  G.FieldStmt (st)
           )
         ))
@@ -165,15 +165,16 @@ and expr =
             G.DefStmt (ent, mk_var_or_func params expr)
          | Right (pat, e) ->
             let exp = G.LetPattern (pat, e) in
-            G.ExprStmt exp
+            G.ExprStmt (exp, G.sc)
          )
       in
-      let st = G.Block (G.fake_bracket (defs @ [G.ExprStmt v2])) in
+      let st = G.Block (G.fake_bracket (defs @ [G.ExprStmt (v2, G.sc)])) in
       G.OtherExpr (G.OE_StmtExpr, [G.S st])
   | Fun ((_t, v1, v2)) -> 
     let v1 = list parameter v1 
     and v2 = expr v2 in 
-    let def = { G.fparams = v1; frettype = None; fbody = G.ExprStmt v2 } in
+    let def = { G.fparams = v1; frettype = None; 
+                fbody = G.ExprStmt (v2, G.sc) } in
     G.Lambda def
   | Function (t, xs) ->
       let xs = list match_case xs in
@@ -181,7 +182,7 @@ and expr =
       let params = [G.ParamClassic (G.param_of_id id)] in
       let body_exp = G.MatchPattern (G.Id (id, G.empty_id_info()),
           xs) in
-      let body_stmt = G.ExprStmt body_exp in
+      let body_stmt = G.exprstmt body_exp in
       G.Lambda {G.fparams = params; frettype = None; fbody = body_stmt }
 
   | If ((_t, v1, v2, v3)) ->
@@ -198,14 +199,14 @@ and expr =
   | Try ((t, v1, v2)) ->
       let v1 = expr v1 and v2 = list match_case v2 in 
       let catches = v2 |> List.map (fun (pat, e) -> 
-            fake "catch", pat, G.ExprStmt e
+            fake "catch", pat, G.exprstmt e
         ) in
-      let st = G.Try (t, G.ExprStmt v1, catches, None) in
+      let st = G.Try (t, G.exprstmt v1, catches, None) in
       G.OtherExpr (G.OE_StmtExpr, [G.S st])
 
   | While ((t, v1, v2)) -> 
     let v1 = expr v1 and v2 = expr v2 in 
-    let st = G.While (t, v1, G.ExprStmt v2) in
+    let st = G.While (t, v1, G.exprstmt v2) in
     G.OtherExpr (G.OE_StmtExpr, [G.S st])
     
   | For ((t, v1, v2, v3, v4, v5)) ->
@@ -223,7 +224,7 @@ and expr =
                          G.fake_bracket [G.Arg n; G.Arg v4]) in
       let header = G.ForClassic ([G.ForInitVar (ent, var)],
                                  Some cond, Some next) in
-      let st = G.For (t, header, G.ExprStmt v5) in
+      let st = G.For (t, header, G.exprstmt v5) in
       G.OtherExpr (G.OE_StmtExpr, [G.S st])
 
   | ExprTodo t -> G.OtherExpr (G.OE_Todo, [G.Tk t])
@@ -405,7 +406,7 @@ and item =
             G.DefStmt (ent, mk_var_or_func params expr)
         | Right (pat, e) ->
             let exp = G.LetPattern (pat, e) in
-            G.ExprStmt exp
+            G.exprstmt exp
        )
 
   | Module (_t, v1) -> let (ent, def) = module_declaration v1 in 
@@ -418,7 +419,7 @@ and mk_var_or_func params expr =
   | [], G.Lambda def -> G.FuncDef def
   | [], _ -> G.VarDef ({G.vinit = Some expr; vtype = None})
   | _ -> G.FuncDef ({G.fparams = params; frettype = None; fbody = 
-                      G.ExprStmt expr})
+                      G.exprstmt expr})
 
 and program xs = List.map item xs |> List.flatten
 

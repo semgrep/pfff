@@ -407,7 +407,7 @@ and excepthandler =
 (* Decorators (a.k.a annotations) *)
 (* ------------------------------------------------------------------------- *)
 (*s: type [[AST_python.decorator]] *)
-and decorator = expr
+and decorator = tok (* @ *) * expr (* usually an Id or Call *)
 (*e: type [[AST_python.decorator]] *)
 
 (* ------------------------------------------------------------------------- *)

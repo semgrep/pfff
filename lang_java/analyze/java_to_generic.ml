@@ -127,21 +127,22 @@ let rec modifier (x, tok) =
   | Volatile -> G.attr G.Volatile tok
   | Synchronized -> G.OtherAttribute (G.OA_Synchronized, [])
   | Native -> G.OtherAttribute (G.OA_Native, [])
+  | DefaultModifier -> G.OtherAttribute (G.OA_Default, [])
   | Annotation v1 -> annotation v1
 
 and modifiers v = list modifier v
 
-and annotation (v1, v2) =
+and annotation (t, v1, v2) =
   let xs = 
     match v2 with 
-    | None -> [] 
-    | Some x -> annotation_element x 
+    | None -> fb [] 
+    | Some x -> bracket annotation_element x 
   in
   (match name_or_class_type v1 with
-  | [Left id] -> G.NamedAttr (id, G.empty_id_info (), fb xs)
+  | [Left id] -> G.NamedAttr (t, id, G.empty_id_info (), xs)
   | _ -> 
     (* TODO *)
-    G.OtherAttribute (G.OA_AnnotJavaOther, [])
+    G.OtherAttribute (G.OA_AnnotJavaOther, [G.Tk t])
   )
   
 
@@ -324,7 +325,7 @@ and stmt =
   function
   | Empty -> G.Block (fb [])
   | Block v1 -> let v1 = bracket stmts v1 in G.Block v1
-  | Expr v1 -> let v1 = expr v1 in G.ExprStmt v1
+  | Expr (v1, t) -> let v1 = expr v1 in G.ExprStmt (v1, t)
   | If ((t, v1, v2, v3)) ->
       let v1 = expr v1 and v2 = stmt v2 and v3 = option stmt v3 in
       G.If (t, v1, v2, v3)
@@ -539,7 +540,7 @@ and decl decl =
       G.DefStmt (ent, G.TypeDef def)
   | Init ((v1, v2)) -> let _v1TODO = bool v1 and v2 = stmt v2 in
       v2
-  | DeclEllipsis v1 ->  G.ExprStmt (G.Ellipsis v1)
+  | DeclEllipsis v1 ->  G.ExprStmt (G.Ellipsis v1, G.sc)
 and decls v = list decl v
 
 and import = function

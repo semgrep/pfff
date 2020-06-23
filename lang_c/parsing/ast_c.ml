@@ -181,7 +181,7 @@ and const_expr = expr
 (* Statement *)
 (* ------------------------------------------------------------------------- *)
 type stmt = 
-  | ExprSt of expr
+  | ExprSt of expr * tok
   | Block of stmt list bracket
 
   | If of tok * expr * stmt * stmt option

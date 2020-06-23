@@ -505,7 +505,7 @@ let for_var_or_expr_list env xs =
 (*s: function [[AST_to_IL.stmt]] *)
 let rec stmt env st =
   match st with
-  | G.ExprStmt e ->
+  | G.ExprStmt (e, _) ->
       (* optimize? pass context to expr when no need for return value? *)
       let ss, _eIGNORE = expr_with_pre_stmts env e in
       ss
