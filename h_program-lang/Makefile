@@ -65,6 +65,11 @@ AST_generic.cmo: AST_generic.ml
 AST_generic.cmx: AST_generic.ml
 	ocamlfind ocamlopt -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
 
+Parse_info.cmo: Parse_info.ml
+	ocamlfind ocamlc -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
+Parse_info.cmx: Parse_info.ml
+	ocamlfind ocamlopt -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show $<
+
 archi_code_lexer.ml: archi_code_lexer.mll
 	$(OCAMLLEX) $<
 clean::

@@ -62,7 +62,8 @@ type info_ = t
 (*e: type [[Parse_info.info_]] *)
 
 (* for ppx_deriving *)
-val pp : Format.formatter -> 't -> unit
+val pp_full_token_info: bool ref
+val pp : Format.formatter -> t -> unit
 
 (* mostly for the fuzzy AST builder *)
 (*s: type [[Parse_info.token_kind]] *)

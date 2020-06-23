@@ -32,9 +32,9 @@ type token_location = {
     str: string;
     charpos: int;
     line: int; column: int;
-    file: filename;
+    file: string;
   }
-  (* with tarzan *)
+ [@@deriving show { with_path = false} ] (* with tarzan *)
 
 let fake_token_location = {
   charpos = -1; str = ""; line = -1; column = -1; file = "FAKE TOKEN LOCATION";
@@ -89,8 +89,7 @@ type token_origin =
      * polluate in debug mode.
      *)
     | Ab
-
-   (* with tarzan *)
+ [@@deriving show { with_path = false} ] (* with tarzan *)
 
 type token_mutable = {
   (* contains among other things the position of the token through
@@ -114,7 +113,7 @@ and transformation =
     | AddStr of string
     | AddNewlineAndIdent
 
- (* with tarzan *)
+ [@@deriving show { with_path = false} ] (* with tarzan *)
 
 (* Synthesize a token. *)
 let fake_info str : token_mutable = {
@@ -152,9 +151,14 @@ type token_kind =
 type t = token_mutable
 type info_ = t
 
+
+(* see -full_token_info in meta_parse_info.ml *)
+let pp_full_token_info = ref false
 (* for ppx_deriving *)
-(* TODO: use Meta_ast_precision *)
-let pp fmt _ = Format.fprintf fmt "()"
+let pp fmt t = 
+  if !pp_full_token_info
+  then pp_token_mutable fmt t
+  else Format.fprintf fmt "()"
 
 
 type parsing_stat = {

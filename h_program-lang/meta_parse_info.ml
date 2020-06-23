@@ -104,6 +104,7 @@ let _current_precision = ref default_dumper_precision
 let cmdline_flags_precision () = [
   "-full_token_info", Arg.Unit (fun () ->
     _current_precision := { default_dumper_precision with full_info = true; };
+    Parse_info.pp_full_token_info := true;
   ), " print also token information in dumper";
  ]
 
