@@ -218,22 +218,6 @@ let rec lookup s xxs =
 (*e: function [[Naming_AST.lookup]] *)
 
 (*s: function [[Naming_AST.lookup_scope_opt]] *)
-(* accessors *)
-let lookup_scope_opt id lang scopes =
-  let s = Ast.str_of_ident id in
-
-  let actual_scopes =
-    match !(scopes.blocks) with
-    | [] -> [!(scopes.global);!(scopes.imported)]
-    | xs::xxs -> 
-       match lang with
-       (* just look current scope! no access to nested scopes or global *)
-       | Lang.Python -> 
-            [xs;                            !(scopes.imported)]
-       | _ ->  
-            [xs] @ xxs @ [!(scopes.global); !(scopes.imported)]
-  in
-  lookup s actual_scopes
 (*e: function [[Naming_AST.lookup_scope_opt]] *)
 
 (*s: function [[Naming_AST.lookup_global_scope]] *)
@@ -305,16 +289,19 @@ type env = {
 
   in_lvalue: bool ref;
   in_type: bool ref;
+
+  lang: Lang.t;
 }
 (*e: type [[Naming_AST.env]] *)
 
 (*s: function [[Naming_AST.default_env]] *)
-let default_env () = {
+let default_env lang = {
   ctx = ref [AtToplevel];
   names = (default_scopes());
   constants = ref [];
   in_lvalue = ref false;
   in_type = ref false;
+  lang;
 }
 (*e: function [[Naming_AST.default_env]] *)
 
@@ -350,6 +337,30 @@ let set_resolved env id_info x =
   if not !(env.in_type) 
   then id_info.id_type := x.enttype
 (*e: function [[Naming_AST.set_resolved]] *)
+
+(* accessors *)
+let lookup_scope_opt id env =
+  let scopes = env.names in
+  let s = Ast.str_of_ident id in
+
+  let actual_scopes =
+    match !(scopes.blocks) with
+    | [] -> [!(scopes.global);!(scopes.imported)]
+    | xs::xxs -> 
+       match env.lang with
+       | Lang.Python -> 
+            if !(env.in_lvalue)
+            (* just look current scope! no access to nested scopes or global *)
+            then [xs;                            !(scopes.imported)]
+            else [xs] @ xxs @ [!(scopes.global); !(scopes.imported)]
+       (* | Lang.PHP ->
+            (* just look current scope! no access to nested scopes or global *)
+            [xs;                            !(scopes.imported)]
+        *)
+       | _ ->  
+            [xs] @ xxs @ [!(scopes.global); !(scopes.imported)]
+  in
+  lookup s actual_scopes
 
 (*****************************************************************************)
 (* Error manangement *)
@@ -413,7 +424,7 @@ let params_of_parameters env xs =
 
 (*s: function [[Naming_AST.resolve]] *)
 let resolve lang prog =
-  let env = default_env () in
+  let env = default_env lang in
 
   (* would be better to use a classic recursive with environment visit *)
   let visitor = V.mk_visitor { V.default_visitor with
@@ -571,7 +582,7 @@ let resolve lang prog =
            recurse := false;
 
        | Id (id, id_info) ->
-          (match lookup_scope_opt id lang env.names with
+          (match lookup_scope_opt id env with
           | Some (resolved) -> 
              (* name resolution *)
              set_resolved env id_info resolved;
@@ -614,7 +625,7 @@ let resolve lang prog =
     V.kattr = (fun (k, _v) x ->
       (match x with
       | NamedAttr (_, id, id_info, _args) ->
-          (match lookup_scope_opt id lang env.names with
+          (match lookup_scope_opt id env with
           | Some resolved -> 
              (* name resolution *)
              set_resolved env id_info resolved;
