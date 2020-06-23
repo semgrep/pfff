@@ -49,10 +49,6 @@ module V = Visitor_AST
  * codemap/efuns to colorize identifiers (locals, params, globals, unknowns)
  * differently.
  * 
- * Note that we also abuse this module to provide advanced features to
- * sgrep such as the constant propagation of literals (which is arguably naming
- * related).
- * 
  * alternatives:
  *  - CURRENT: generic naming and use of a 'ref resolved_name' to annotate
  *    the generic AST. Note that the use of a ref that can be shared with
@@ -100,8 +96,6 @@ module V = Visitor_AST
  *      as Block
  *    * should do first pass to get all toplevel decl as you can use
  *      forward ref in Go
- *  - python:
- *     * Global/NonLocal directives
  *  - get rid of the original "resolvers":
  *    * resolve_xxx.ml
  *    * ast_js_build.ml
@@ -277,15 +271,10 @@ type context =
 type env = {
   ctx: context list ref;
 
-  (* handle locals/params/globals
-   * todo: block vars
-   * todo: enclosed vars (closures)
-   * todo: use for types for Go
+  (* handle locals/params/globals, block vas, enclosed vars (closures).
+   * handle also basic typing information now for Java/Go.
    *)
   names: scopes;
-
-  (* basic constant propagation of literals for sgrep *)
-  constants: (string, sid * literal) assoc ref;
 
   in_lvalue: bool ref;
   in_type: bool ref;
@@ -298,7 +287,6 @@ type env = {
 let default_env lang = {
   ctx = ref [AtToplevel];
   names = (default_scopes());
-  constants = ref [];
   in_lvalue = ref false;
   in_type = ref false;
   lang;
@@ -309,8 +297,6 @@ let default_env lang = {
 (* Environment Helpers *)
 (*****************************************************************************)
 (*s: function [[Naming_AST.add_constant_env]] *)
-let add_constant_env ident (sid, literal) env =
-  env.constants := (Ast.str_of_ident ident, (sid, literal))::!(env.constants)
 (*e: function [[Naming_AST.add_constant_env]] *)
 
 (*s: function [[Naming_AST.with_new_context]] *)
@@ -363,7 +349,7 @@ let lookup_scope_opt id env =
   lookup s actual_scopes
 
 (*****************************************************************************)
-(* Error manangement *)
+(* Error management *)
 (*****************************************************************************)
 (*s: constant [[Naming_AST.error_report]] *)
 let error_report = ref false
@@ -453,7 +439,7 @@ let resolve lang prog =
     );
     V.kdef = (fun (k, _v) x ->
       match x with
-      | { name = id; info = id_info; attrs = attrs; _}, 
+      | { name = id; info = id_info; _}, 
         (* note that some languages such as Python do not have VarDef 
          * construct
          * todo? should add those somewhere instead of in_lvalue detection? *)
@@ -471,14 +457,6 @@ let resolve lang prog =
           let resolved = { entname = resolved_name_kind env lang, sid; enttype = resolved_type } in add_ident_current_scope id resolved env.names;
           set_resolved env id_info resolved;
 
-          (* sgrep: literal constant propagation! *)
-          (match vinit with 
-          | Some (L literal) when Ast.has_keyword_attr Const attrs && 
-                                   is_local_or_global_ctx env lang ->
-              id_info.id_const_literal := Some literal;
-              add_constant_env id (sid, literal) env;
-          | _ -> ()
-          )
       | { name = id; info = id_info; _}, UseOuterDecl tok ->
           let s = Parse_info.str_of_info tok in
           let flookup = 
@@ -587,15 +565,6 @@ let resolve lang prog =
              (* name resolution *)
              set_resolved env id_info resolved;
 
-             (* sgrep: constant and type propagation *)
-             let (_kind, sid) = resolved.entname in
-             let s = Ast.str_of_ident id in
-             (* constant *)
-             (match List.assoc_opt s !(env.constants) with
-             | Some (sid2, literal) when sid = sid2 ->
-                 id_info.id_const_literal := Some literal
-             | _ -> ()
-             );
           | None ->
              (match !(env.in_lvalue), lang with
              (* first use of a variable can be a VarDef in some languages *)
