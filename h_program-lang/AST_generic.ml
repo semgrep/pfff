@@ -962,7 +962,9 @@ and definition = entity * definition_kind
     | VarDef    of variable_definition
     (* FieldDef can only be present inside a record/class (in a FieldStmt).
      * This used to be merged with VarDef, but in semgrep we don't want
-     * a VarDef to match a field definition.
+     * a VarDef to match a field definition for certain languages (e.g., JS).
+     * TODO? maybe merge back with VarDef but add a field in 
+     *  variable_definition saying whether it's using a field syntax?
      * Note that we could have used a FieldVar in the field type instead
      * of this FieldDef here, which would be more precise, but 
      * this complicates things in semgrep where it's convenient to have
@@ -1138,7 +1140,7 @@ and type_definition = {
        | OOTEO_EnumWithMethods | OOTEO_EnumWithArguments
 (*e: type [[AST_generic.other_or_type_element_operator]] *)
 
- (* Field definition and use, for classes and records.
+ (* Field definition and use, for classes, objects, and records.
   * note: I don't call it field_definition because it's used both to
   * define the shape of a field (a definition), and when creating
   * an actual field (a value).
@@ -1146,9 +1148,10 @@ and type_definition = {
   * VarDef and FuncDef but they are now converted into a FieldStmt(DefStmt).
   * This simplifies semgrep so that a function pattern can match
   * toplevel functions, nested functions, and methods.
-  * Note that for FieldVar we ultimately converted it to a FieldDef 
+  * Note that for FieldVar we sometimes converts it to a FieldDef 
   * (which is very similar to a VarDef) because some people don't want a VarDef
-  * to match a field definition.
+  * to match a field definition in certain languages (e.g., Javascript) where
+  * de variable declaration and field definition have a different syntax.
   * Note: the FieldStmt(DefStmt(FuncDef(...))) can have empty body
   * for interface methods.
   *)

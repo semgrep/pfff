@@ -28,7 +28,7 @@ module V = Visitor_AST
  * Right now we just propagate constants when we're sure it's a constant
  * because:
  *  - the variable declaration use the 'const' keyword in Javascript/Go/...
- *  - TODO the field declaration use the 'final' keyword in Java
+ *  - the field declaration use the 'final' keyword in Java
  *  - TODO we do a very basic const analysis where we check the variable
  *    is used only in an rvalue context (never assigned).
  *
@@ -77,7 +77,8 @@ let propagate _lang prog =
         (* note that some languages such as Python do not have VarDef.
          * todo? should add those somewhere instead of in_lvalue detection? *)
         VarDef ({ vinit = Some (L literal); _ }) ->
-          if Ast.has_keyword_attr Const attrs
+          if Ast.has_keyword_attr Const attrs ||
+             Ast.has_keyword_attr Final attrs
           then begin
               id_info.id_const_literal := Some literal;
               add_constant_env id (sid, literal) env;
