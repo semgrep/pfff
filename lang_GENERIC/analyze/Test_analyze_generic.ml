@@ -74,6 +74,14 @@ let test_naming_generic file =
   pr2 s
 (*e: function [[Test_analyze_generic.test_naming_generic]] *)
 
+let test_constant_propagation file =
+  let ast = Parse_generic.parse_program file in
+  let lang = List.hd (Lang.langs_of_filename file) in
+  Naming_AST.resolve lang ast;
+  Constant_propagation.propagate lang ast;
+  let s = AST_generic.show_any (AST_generic.Pr ast) in
+  pr2 s
+
 (*s: function [[Test_analyze_generic.test_il_generic]] *)
 let test_il_generic file =
   let ast = Parse_generic.parse_program file in
@@ -154,6 +162,8 @@ let actions () = [
   Common.mk_action_1_arg test_dfg_generic;
   "-naming_generic", " <file>",
   Common.mk_action_1_arg test_naming_generic;
+  "-constant_propagation", " <file>",
+  Common.mk_action_1_arg test_constant_propagation;
   "-il_generic", " <file>",
   Common.mk_action_1_arg test_il_generic;
   "-cfg_il", " <file>",
