@@ -41,6 +41,8 @@ INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/lang_cpp/parsing \
   $(TOP)/lang_php/parsing \
   $(TOP)/lang_lisp/parsing \
+  $(TOP)/lang_ruby/parsing \
+   $(TOP)/lang_ruby/analyze \
 
 ##############################################################################
 # Generic variables
