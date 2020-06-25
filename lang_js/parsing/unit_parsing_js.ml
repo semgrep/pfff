@@ -13,7 +13,22 @@ let unittest =
       let files = 
         Common2.glob (spf "%s/*.js" dir) @
         Common2.glob (spf "%s/jsx/*.js" dir) @
-        Common2.glob (spf "%s/typescript/*.js" dir) @
+        []
+      in
+      files |> List.iter (fun file ->
+        try
+          let _ = Parse_js.parse_program file in
+          ()
+        with Parse_info.Parsing_error _ ->
+          assert_failure (spf "it should correctly parse %s" file)
+      )
+    );
+
+    "regression files typescript" >:: (fun () ->
+      let dir = Filename.concat Config_pfff.path "/tests/typescript/parsing" in
+      let files = 
+        Common2.glob (spf "%s/*.js" dir) @
+        Common2.glob (spf "%s/*.ts" dir) @
         []
       in
       files |> List.iter (fun file ->
