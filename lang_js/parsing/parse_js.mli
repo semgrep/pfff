@@ -18,7 +18,7 @@ val parse_string :
 
 (* other parsers *)
 
-(* for sgrep_js *)
+(* for semgrep *)
 val any_of_string:
   string -> Cst_js.any
 
