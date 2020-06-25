@@ -264,3 +264,12 @@ and definition =
 type program = stmts
  [@@deriving show] (* with tarzan *)
 
+(*****************************************************************************)
+(* Any *)
+(*****************************************************************************)
+
+type any = 
+  | E of expr
+  | Pr of program
+
+ [@@deriving show { with_path = false}] (* with tarzan *)

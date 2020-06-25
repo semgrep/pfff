@@ -185,6 +185,15 @@ let compare_ast ast1 ast2 = cmp_list cmp_expr ast1 ast2
 
 let equal_ast a1 a2 = (compare_ast a1 a2) == 0
 
+let compare_any a1 a2 = 
+  match a1, a2 with
+  | E e1, E e2 -> compare_expr e1 e2
+  | Pr x1, Pr x2 -> compare_ast x1 x2
+  | Pr _, _
+  | E _, _ -> pcompare a1 a2
+
+let equal_any a1 a2 = (compare_any a1 a2) == 0
+
 (*****************************************************************************)
 (* tok_of *)
 (*****************************************************************************)
