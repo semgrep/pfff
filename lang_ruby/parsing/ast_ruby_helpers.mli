@@ -6,6 +6,8 @@ val equal_expr : expr -> expr -> bool
 val compare_ast : expr list -> expr list -> int
 val equal_ast : expr list -> expr list -> bool
 
+val equal_any : any -> any -> bool
+
 val tok_of : expr -> tok
 val set_tok : tok -> expr -> expr
 
