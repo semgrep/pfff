@@ -38,11 +38,12 @@ type t =
    * (no fallback) *)
   | Python2 | Python3
   (*e: [[Lang.t]] extra Python cases *)
-  | Javascript | JSON
+  | Javascript | Typescript | JSON
   | Java
   | Go
   | C
   | OCaml
+  | Ruby
 (*e: type [[Lang.t]] *)
 
 (*****************************************************************************)
@@ -58,7 +59,9 @@ let list_of_lang = [
 
     "js", Javascript;
     "javascript", Javascript;
-    "json", JSON;
+    "json", JSON; 
+    "ts", Typescript;
+    "typescript", Typescript;
 
     "go", Go;
     "golang", Go;
@@ -67,6 +70,8 @@ let list_of_lang = [
     "ml", OCaml;
     "ocaml", OCaml;
     "java", Java;
+    "ruby", Ruby;
+    "rb", Ruby;
   ]
 (*e: constant [[Lang.list_of_lang]] *)
 
@@ -83,7 +88,8 @@ let lang_of_string_opt x = Hashtbl.find_opt lang_of_string_map (String.lowercase
 let langs_of_filename filename =
  let typ = File_type.file_type_of_file filename in
  match typ with
- | FT.PL (FT.Web (FT.Js)) -> [Javascript]
+ | FT.PL (FT.Web (FT.Js)) -> [Javascript] (* Add TypeScript too? *)
+ | FT.PL (FT.Web (FT.TypeScript)) -> [Typescript]
  | FT.PL (FT.Python) -> [Python;Python2;Python2]
  (* .h could also be Cpp at some point *)
  | FT.PL (FT.C ("c" | "h" )) -> [C]
@@ -91,6 +97,7 @@ let langs_of_filename filename =
  | FT.PL (FT.Java) -> [Java]
  | FT.PL (FT.Go) -> [Go]
  | FT.PL (FT.Web FT.Json) -> [JSON]
+ | FT.PL (FT.Ruby) -> [Ruby]
  | _ -> []
 (*e: function [[Lang.langs_of_filename]] *)
 
@@ -100,11 +107,13 @@ let string_of_lang = function
   | Python2 -> "Python2"
   | Python3 -> "Python3"
   | Javascript -> "Javascript"
+  | Typescript -> "Typescript"
   | JSON -> "JSON"
   | Java -> "Java"
   | C -> "C"
   | OCaml -> "OCaml"
   | Go -> "Golang"
+  | Ruby -> "Ruby"
 (*e: function [[Lang.string_of_lang]] *)
 
 (*s: function [[Lang.ext_of_lang]] *)
@@ -112,11 +121,13 @@ let string_of_lang = function
 let ext_of_lang = function
   | Python | Python2 | Python3 -> ["py"; "pyi"]
   | Javascript -> ["js"]
+  | Typescript -> ["ts";"tsx"]
   | JSON -> ["json"]
   | Java -> ["java"]
   | C -> ["c"]
   | OCaml -> ["mli"; "ml"; "mly"; "mll"]
   | Go -> ["go"]
+  | Ruby -> ["rb"]
 (*e: function [[Lang.ext_of_lang]] *)
 
 (*s: function [[Lang.find_source]] *)
