@@ -343,7 +343,7 @@ structure_item_noattr:
  | Texception TUpperIdent constructor_arguments  { Exception ($1, Name $2, $3)}
  | Texternal val_ident ":" core_type "=" primitive_declaration
      { External ($1, Name $2, $3, $4, $5, $6)  }
- | Topen mod_longident                           { Open ($1, $2) }
+ | Topen "!"? mod_longident                           { Open ($1, $3) }
 
  (* start of deviation *)
  | Tlet Trec? list_and(let_binding)              { Let ($1, $2, $3) }
