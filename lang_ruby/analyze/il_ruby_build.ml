@@ -518,6 +518,8 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
   match e with
     | Ast.Binop(_, (Ast.Op_OP_ASGN _, _), _) 
     | Ast.S Ast.If _ | Ast.S Ast.Yield _ | Ast.S Ast.Return _  
+    | Ast.S Ast.Break _ | Ast.S Ast.Next _ | Ast.S Ast.Redo _ | Ast.S Ast.Retry _
+
     | Ast.S Ast.Case _ | Ast.S Ast.ExnBlock _ 
     | Ast.D Ast.EndBlock _ | Ast.D Ast.BeginBlock _  
     | Ast.CodeBlock _ | Ast.D Ast.MethodDef _ 
@@ -713,6 +715,7 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         else acc, EId (Var(refactor_id_kind pos ik, s))
 
     | Ast.Literal(Ast.Self _pos) -> acc, EId (Self)
+    | Ast.Literal(Ast.Super _pos) -> failwith "TODO"
     | Ast.Literal(l) -> refactor_lit acc l
 
     | Ast.Tuple(l,_pos) 
@@ -850,6 +853,9 @@ and refactor_lit acc (l : Ast.literal) : stmt acc * expr = match l with
   | Ast.Self _ -> 
       Log.fatal Log.empty
         "trying to convert self to literal, but should be handled elsewhere"
+  | Ast.Super _ -> 
+      Log.fatal Log.empty
+        "trying to convert super to literal, but should be handled elsewhere"
 
 and refactor_star_expr (acc:stmt acc) e : stmt acc * star_expr = match e with
   | Ast.Unary((Ast.Op_UStar,_pos), e) -> 
@@ -1372,6 +1378,11 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
   | Ast.S Ast.Yield(pos, args) ->
       let acc,args' = refactor_list refactor_method_arg_no_cb (acc,DQueue.empty) args in
         acc_enqueue (C.yield ~args:(DQueue.to_list args') pos) acc
+  | Ast.S Ast.Break _ 
+  | Ast.S Ast.Next _ 
+  | Ast.S Ast.Redo _ 
+  | Ast.S Ast.Retry _ 
+    -> failwith "TODO"
 
   | Ast.S Ast.Block(el,pos) -> 
       let blk_acc = refactor_stmt_list (acc_emptyq acc) el in

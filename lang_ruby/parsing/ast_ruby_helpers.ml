@@ -204,7 +204,7 @@ let tok_of_literal = function
   | String (_, pos)
   | Regexp (_, pos)
   | Atom (_, pos)
-  | Nil pos | Self pos 
+  | Nil pos | Self pos | Super pos
   | Bool (_, pos) 
    -> pos
 
@@ -239,6 +239,9 @@ let tok_of = function
   | S Return (pos, _)
   | S Yield (pos, _)
   | S Block ( _  , pos)
+  | S Break (pos, _) | S Next (pos, _)
+  | S Redo (pos, _) | S Retry (pos, _)
+
    -> pos
 
   | Literal x -> tok_of_literal x
@@ -373,6 +376,12 @@ let rec mod_expr f expr =
       | S Case(pos, block) -> S (Case(pos, mod_case_block f block))
       | S Return(pos, el) -> S (Return(pos, (List.map (mod_expr f) el)))
       | S Yield(pos, el) -> S (Yield(pos, (List.map (mod_expr f) el)))
+
+      | S Break(pos, el) -> S (Break(pos, (List.map (mod_expr f) el)))
+      | S Next(pos, el) -> S (Next(pos, (List.map (mod_expr f) el)))
+      | S Redo(pos, el) -> S (Redo(pos, (List.map (mod_expr f) el)))
+      | S Retry(pos, el) -> S (Retry(pos, (List.map (mod_expr f) el)))
+
       | S Block(el, pos) -> S (Block((List.map (mod_expr f) el), pos))
 
       | UOperator _ | Operator _ | Id _ | Literal _ | S Empty -> 
@@ -419,6 +428,7 @@ let set_tok_literal pos = function
   | Atom (x,_) -> Atom (x, pos)
   | Nil _ -> Nil pos
   | Self _ -> Self pos
+  | Super _ -> Super pos
   | Bool (x, _) -> Bool (x, pos)
 
 (** sets the position of the expression; use it with mod_ast **)

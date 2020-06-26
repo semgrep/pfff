@@ -59,7 +59,7 @@ type tok = Parse_info.t
 type 'a wrap = 'a * tok
  [@@deriving show]
 
-(* round(), square[], curly{}, angle<> brackets *)
+(* round(), square[], curly{}, angle<>, and also pipes|| brackets  *)
 type 'a bracket = tok * 'a * tok
  [@@deriving show]
 
@@ -164,7 +164,9 @@ and literal =
 
   | Atom of interp_string wrap
 
-  | Nil of tok | Self of tok
+  | Nil of tok 
+  | Self of tok
+  | Super of tok (* TSNOTDYP (In Tree-sitter but not dypgen) *)
 
 
   and string_kind = 
@@ -195,8 +197,14 @@ and stmt =
   | Unless of tok * expr * expr list * stmts
   | For of tok * formal_param list * expr * stmts
 
+  
   | Return of tok * expr list (* option *)
   | Yield of tok * expr list (* option *)
+  (* TSNOTDYP *)
+  | Break of tok * expr list 
+  | Next of tok * expr list
+  | Redo of tok * expr list
+  | Retry of tok * expr list
 
   | Case of tok * case_block
 
@@ -231,8 +239,8 @@ and definition =
   | BeginBlock of tok * stmts bracket
   | EndBlock of tok * stmts bracket
 
-  | Alias of tok * expr * expr
-  | Undef of tok * expr list
+  | Alias of tok * method_name * method_name
+  | Undef of tok * method_name list
 
   and formal_param = 
     | Formal_id of expr
@@ -246,6 +254,7 @@ and definition =
     | Class_Inherit of expr
     | Inst_Inherit of expr
 
+  and method_name = expr (* TODO *)
  [@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
