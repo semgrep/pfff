@@ -96,20 +96,39 @@ type unary_op =
 
 
 type binary_op = 
+  (* binary and msg_id and assign op *)
   | Op_PLUS     (* + *)  | Op_MINUS    (* - *)
   | Op_TIMES    (* * *)  | Op_REM      (* % *)  | Op_DIV      (* / *)
+
+  | Op_LSHIFT   (* < < *)  | Op_RSHIFT   (* > > *)
+
+  | Op_BAND     (* & *)  | Op_BOR      (* | *)
+  | Op_XOR      (* ^ *)
+  | Op_POW      (* ** *)
+
+  (* binary and msg_id (but not in assign op) *)
   | Op_CMP      (* <=> *)
-  | Op_EQ   (* == *)  | Op_EQQ      (* === *)
+  | Op_EQ       (* == *)  | Op_EQQ      (* === *)
   | Op_NEQ      (* != *)
   | Op_GEQ      (* >= *)  | Op_LEQ      (* <= *)
   | Op_LT       (* < *)  | Op_GT       (* > *)
-  | Op_AND      (* && *)  | Op_OR   (* || *)
-  | Op_BAND     (* & *)  | Op_BOR      (* | *)
+
   | Op_MATCH    (* =~ *)
   | Op_NMATCH   (* !~ *)
-  | Op_XOR      (* ^ *)
-  | Op_POW      (* ** *)
+
+  | Op_AREF     (* [] *)
+  | Op_ASET     (* []= *)
+
+  | Op_DOT2     (* .. *)
+
+  (* tree-sitter: *)
+  (* ` +@ -@ 
+   *)
+
+  (* not in msg_id *)
   | Op_kAND     (* and *)  | Op_kOR      (* or *)
+  (* not in msg_id but in Op_OP_ASGN *)
+  | Op_AND      (* && *)  | Op_OR   (* || *)
 
   | Op_ASSIGN   (* = *)
   | Op_OP_ASGN of binary_op  (* +=, -=, ... *)
@@ -119,12 +138,8 @@ type binary_op =
 
   | Op_ASSOC    (* => *)
 
-  | Op_AREF     (* [] *)
-  | Op_ASET     (* []= *)
-  | Op_LSHIFT   (* < < *)  | Op_RSHIFT   (* > > *)
-
-  | Op_DOT2     (* .. *)
   | Op_DOT3     (* ... *)
+
  [@@deriving show { with_path = false }]
 
 (*****************************************************************************)
@@ -158,6 +173,12 @@ and literal =
   | Bool of bool wrap
   | Num of string wrap
   | Float of string wrap
+  (* treesitter: *)
+  (* 
+   | Complex of string wrap (* pattern: ... *)
+   | Rational of string wrap * tok (* r *) 
+   | Char of string wrap (* pattern: ... *)
+   *)
 
   | String of string_kind wrap
   | Regexp of (interp_string * string) wrap
@@ -166,6 +187,7 @@ and literal =
 
   | Nil of tok 
   | Self of tok
+  (* treesitter: *)
   | Super of tok (* TSNOTDYP (In Tree-sitter but not dypgen) *)
 
 
@@ -174,6 +196,7 @@ and literal =
     | Double of interp_string
     | Tick of interp_string
 
+  (* TODO: get rid of this intermediate *)
   and interp_string = string_contents list
 
     and string_contents = 
@@ -189,7 +212,7 @@ and literal =
  *)
 and stmt =
   | Empty
-  | Block of stmts * tok
+  | Block of stmts * tok (* TODO: bracket with begin/end or ( ) *)
 
   | If of tok * expr * stmts * stmts option2
   | While of tok * bool * expr * stmts
@@ -197,14 +220,13 @@ and stmt =
   | Unless of tok * expr * expr list * stmts
   | For of tok * formal_param list * expr * stmts
 
-  
+  (* stmt and also as "command" *)
   | Return of tok * expr list (* option *)
   | Yield of tok * expr list (* option *)
-  (* TSNOTDYP *)
-  | Break of tok * expr list 
-  | Next of tok * expr list
-  | Redo of tok * expr list
-  | Retry of tok * expr list
+  (* treesitter: TSNOTDYP *)
+  | Break of tok * expr list | Next of tok * expr list
+  (* not as "command" *)
+  | Redo of tok * expr list | Retry of tok * expr list
 
   | Case of tok * case_block
 
@@ -234,7 +256,7 @@ and 'a option2 = 'a
 and definition =
   | ModuleDef of tok * expr * body_exn
   | ClassDef of tok * expr * inheritance_kind option * body_exn
-  | MethodDef of tok * expr * formal_param list * body_exn
+  | MethodDef of tok * method_name * formal_param list * body_exn
 
   | BeginBlock of tok * stmts bracket
   | EndBlock of tok * stmts bracket
@@ -242,13 +264,21 @@ and definition =
   | Alias of tok * method_name * method_name
   | Undef of tok * method_name list
 
+  (* treesitter: TODO stuff with ; and identifier list? in block params? *)
   and formal_param = 
-    | Formal_id of expr
+    | Formal_id of expr (* TODO: of ident *)
     | Formal_amp of tok * ident
+
+    (* TODO: Formal_splat of tok * ident option *)
     | Formal_star of tok * ident (* as in *x *)
     | Formal_rest of tok (* just '*' *)
+
     | Formal_tuple of formal_param list bracket
     | Formal_default of ident * tok (* = *) * expr
+
+    (* treesitter: TSNOTDYP *)
+    | Formal_hash_splat of tok * ident option
+    | Formal_kwd of ident * tok * expr option
   
   and inheritance_kind = 
     | Class_Inherit of expr

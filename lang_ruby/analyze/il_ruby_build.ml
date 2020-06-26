@@ -1709,6 +1709,10 @@ and refactor_rescue_guard acc (e:Ast.expr) : StrSet.t * rescue_guard =
             
 and refactor_method_formal (acc:stmt acc) t _pos : stmt acc * method_formal_param = 
   match t with
+  | Ast.Formal_hash_splat _ 
+  | Ast.Formal_kwd _
+    -> failwith "TODO"
+
   | Ast.Formal_id Ast.Id((str,_pos),Ast.ID_Lowercase) -> 
       let acc = {acc with seen = StrSet.add str acc.seen} in
         acc, Formal_meth_id(str)
@@ -1722,6 +1726,7 @@ and refactor_method_formal (acc:stmt acc) t _pos : stmt acc * method_formal_para
   | Ast.Formal_star(_, (str, _)) -> 
       let acc = {acc with seen = StrSet.add str acc.seen} in
         acc, Formal_star(str)
+
 
   | Ast.Formal_rest _ -> 
       let acc, id = fresh acc in
@@ -1764,6 +1769,10 @@ and refactor_method_formal (acc:stmt acc) t _pos : stmt acc * method_formal_para
                 acc, Formal_default (f, def')
 
 and refactor_block_formal acc t pos : stmt acc * block_formal_param = match t with
+  | Ast.Formal_hash_splat _ 
+  | Ast.Formal_kwd _
+    -> failwith "TODO"
+
   | Ast.Formal_id Ast.Id((str,pos),ik) -> 
       (add_seen str acc), Formal_block_id(refactor_id_kind pos ik,str)
   | Ast.Formal_id _ ->
