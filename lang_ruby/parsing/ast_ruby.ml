@@ -261,7 +261,7 @@ and stmt =
   | ExnBlock of body_exn * tok
 
   and case_block = {
-    case_guard : expr;
+    case_guard : expr option;
     case_whens: (pattern list * stmts) list;
     case_else: stmts option2;
   }

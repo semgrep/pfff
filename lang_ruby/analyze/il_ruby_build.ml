@@ -243,6 +243,7 @@ let refactor_uop pos = function
   | Ast.Op_UPlus -> Op_UPlus
   | Ast.Op_UTilde -> Op_UTilde
   | Ast.Op_UStar
+  | Ast.Op_UStarStar | Ast.Op_DefinedQuestion
   | Ast.Op_UBang
   | Ast.Op_UNot
   | Ast.Op_UAmper
@@ -282,13 +283,13 @@ let refactor_binop pos : Ast.binary_op -> binary_op = function
   | Ast.Op_kAND
   | Ast.Op_kOR
   | Ast.Op_ASSOC
-  | Ast.Op_DOT
+  | Ast.Op_DOT | Ast.Op_AMPDOT
   | Ast.Op_SCOPE
   | Ast.Op_DOT2
   | Ast.Op_DOT3 as bop -> 
       Log.fatal (Log.of_tok pos)
         "trying to refactor construct posing as binary op: %s"
-        (H.str_binop bop)
+        (Common.dump bop)
 
 let msg_id_from_string = function
   | "+" -> ID_Operator Op_Plus
@@ -1801,8 +1802,8 @@ and refactor_method_formal_list acc lst pos =
 
 and refactor_case acc case pos = 
   let acc,g' = match case.Ast.case_guard with
-    | Ast.S Ast.Empty -> acc, EId True
-    | e -> refactor_expr acc e
+    | None -> acc, EId True
+    | Some e -> refactor_expr acc e
   in
   let acc, whens' = 
     List.fold_left
