@@ -75,6 +75,7 @@ type id_kind =
   | ID_Uppercase (* prefixed by [A-Z] *)
   | ID_Instance  (* prefixed by @ *)
   | ID_Class     (* prefixed by @@ *)
+  (* pattern: \\$-?(([!@&`'+~=/\\\\,;.<>*$?:\"])|([0-9]* )|([a-zA-Z_][a-zA-Z0-9_]* ))" *)
   | ID_Global    (* prefixed by $ *)
   | ID_Builtin   (* prefixed by $, followed by non-alpha *)
   | ID_Assign of id_kind (* postfixed by = *)
@@ -171,13 +172,17 @@ type expr =
 
 and literal = 
   | Bool of bool wrap
+  (* pattern: 0[bB][01](_?[01])*|0[oO]?[0-7](_?[0-7])*|(0[dD])?\d(_?\d)*|0x[0-9a-fA-F](_?[0-9a-fA-F])* *)
   | Num of string wrap
+  (* pattern: \d(_?\d)*(\.\d)?(_?\d)*([eE][\+-]?\d(_?\d)* )? *)
   | Float of string wrap
   (* treesitter: *)
   (* 
-   | Complex of string wrap (* pattern: ... *)
+   (* pattern: (\d+)?(\+|-)?(\d+)i *)
+   | Complex of string wrap 
    | Rational of string wrap * tok (* r *) 
-   | Char of string wrap (* pattern: ... *)
+   (* pattern: \?(\\\S({[0-9]*}|[0-9]*|-\S([MC]-\S)?)?|\S) *)
+   | Char of string wrap 
    *)
 
   | String of string_kind wrap
