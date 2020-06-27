@@ -98,12 +98,15 @@ type id_kind =
 (* ------------------------------------------------------------------------- *)
 type unary_op = 
   | Op_UMinus    (* -x *)  | Op_UPlus     (* +x *)
-  | Op_UBang     (* !x *)
-  | Op_UTilde    (* ~x *)
+  | Op_UBang     (* !x *) | Op_UTilde    (* ~x *)
   | Op_UNot      (* not x *)
   | Op_UAmper    (* & *)
   | Op_UStar     (* * *)
+  (* tree-sitter: *)
+  | Op_UStarStar (* ** *)
+  | Op_DefinedQuestion (* defined? *)
 
+  (* todo: move out *)
   | Op_UScope    (* ::x *)
  [@@deriving show { with_path = false }]
 
@@ -148,10 +151,14 @@ type binary_op =
 
   (* TODO: move out in scope_op *)
   | Op_DOT      (* . *)
+  (* tree-sitter: *)
+  | Op_AMPDOT (* &. *)  
+
   | Op_SCOPE    (* :: *)
 
   | Op_ASSOC    (* => *)
 
+  (* sugar for .. and = probably *)
   | Op_DOT3     (* ... *)
 
  [@@deriving show { with_path = false }]
@@ -219,6 +226,12 @@ and literal =
       | StrExpr of expr
 
 (*****************************************************************************)
+(* pattern *)
+(*****************************************************************************)
+(* arg or splat_argument *)
+and pattern = expr
+
+(*****************************************************************************)
 (* Statement *)
 (*****************************************************************************)
 (* Note that in Ruby everything is an expr, but I still like to split expr
@@ -249,7 +262,7 @@ and stmt =
 
   and case_block = {
     case_guard : expr;
-    case_whens: (expr list * stmts) list;
+    case_whens: (pattern list * stmts) list;
     case_else: stmts option2;
   }
   
