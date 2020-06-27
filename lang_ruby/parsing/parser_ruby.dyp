@@ -158,7 +158,7 @@ let rec add_eq = function
 %token <string * Parse_info.t>  T_NUM
 %token <string * Parse_info.t>  T_FLOAT
 
-%token <Ast_ruby.interp_string * Parse_info.t> T_ATOM
+%token <Ast_ruby.string_contents list * Parse_info.t> T_ATOM
 %token <Parse_info.t> T_ATOM_BEG
 
 %token <string * Parse_info.t> T_SINGLE_STRING
@@ -169,7 +169,7 @@ let rec add_eq = function
 %token <Parse_info.t> T_TICK_BEG
 %token <string * Parse_info.t> T_USER_BEG
 
-%token <Ast_ruby.interp_string * string * Parse_info.t> T_REGEXP
+%token <Ast_ruby.string_contents list * string * Parse_info.t> T_REGEXP
 %token <Parse_info.t> T_REGEXP_BEG
 %token <string * Parse_info.t>  T_REGEXP_MOD
 
