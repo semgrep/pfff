@@ -186,9 +186,9 @@ and literal =
    *)
 
   | String of string_kind wrap
-  | Regexp of (interp_string * string) wrap
+  | Regexp of (string_contents list * string) wrap
 
-  | Atom of interp_string wrap
+  | Atom of string_contents list wrap
 
   | Nil of tok 
   | Self of tok
@@ -198,11 +198,8 @@ and literal =
 
   and string_kind = 
     | Single of string
-    | Double of interp_string
-    | Tick of interp_string
-
-  (* TODO: get rid of this intermediate *)
-  and interp_string = string_contents list
+    | Double of string_contents list
+    | Tick of string_contents list
 
     and string_contents = 
       | StrChars of string
