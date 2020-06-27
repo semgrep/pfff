@@ -70,14 +70,26 @@ type 'a bracket = tok * 'a * tok
 type ident = string wrap
  [@@deriving show]
 
+type _uident = string wrap (* Uppercase, a.k.a "constant" in Ruby *)
+ [@@deriving show]
+
+(* 
+type name = NameConstant of uident | NameScope of ...
+*)
+
+(* TODO: type variable = ident * id_kind 
+ *  or even better = Self of tok | Id of ident | Cst of ident | ... 
+*)
 type id_kind = 
   | ID_Lowercase (* prefixed by [a-z] or _ *)
+  (* TODO: rename constant *)
   | ID_Uppercase (* prefixed by [A-Z] *)
   | ID_Instance  (* prefixed by @ *)
   | ID_Class     (* prefixed by @@ *)
   (* pattern: \\$-?(([!@&`'+~=/\\\\,;.<>*$?:\"])|([0-9]* )|([a-zA-Z_][a-zA-Z0-9_]* ))" *)
   | ID_Global    (* prefixed by $ *)
   | ID_Builtin   (* prefixed by $, followed by non-alpha *)
+  (* TODO: move out in method_name instead *)
   | ID_Assign of id_kind (* postfixed by = *)
  [@@deriving show { with_path = false }]
 
@@ -134,6 +146,7 @@ type binary_op =
   | Op_ASSIGN   (* = *)
   | Op_OP_ASGN of binary_op  (* +=, -=, ... *)
 
+  (* TODO: move out in scope_op *)
   | Op_DOT      (* . *)
   | Op_SCOPE    (* :: *)
 
@@ -223,7 +236,7 @@ and stmt =
   | For of tok * formal_param list * expr * stmts
 
   (* stmt and also as "command" *)
-  | Return of tok * expr list (* option *)
+  | Return of tok * expr list (* bracket option *)
   | Yield of tok * expr list (* option *)
   (* treesitter: TSNOTDYP *)
   | Break of tok * expr list | Next of tok * expr list
@@ -257,8 +270,8 @@ and 'a option2 = 'a
 (*****************************************************************************)
 and definition =
   | ModuleDef of tok * expr * body_exn
-  | ClassDef of tok * expr * inheritance_kind option * body_exn
-  | MethodDef of tok * method_name * formal_param list * body_exn
+  | ClassDef of tok * class_kind * inheritance_kind option * body_exn
+  | MethodDef of tok * method_kind * formal_param list * body_exn
 
   | BeginBlock of tok * stmts bracket
   | EndBlock of tok * stmts bracket
@@ -282,11 +295,26 @@ and definition =
     | Formal_hash_splat of tok * ident option
     | Formal_kwd of ident * tok * expr option
   
+  (* TODO: of tok (* < *) * ?? *)
   and inheritance_kind = 
     | Class_Inherit of expr
     | Inst_Inherit of expr
 
-  and method_name = expr (* TODO *)
+  (* TODO: see comment next to id_kind *)
+  and variable = expr 
+  (* TODO: Il_ruby.msg_id like *)
+  and method_name = expr 
+  (* TODO: *)
+  and name = expr
+
+  (* TODO: SingletonM of (variable | expr) * scope_op * method_name 
+   * | M of method_name
+   *)
+  and method_kind = expr
+
+  (* TODO: C of name * inheritance option | SingletonC of inheritance? *)
+  and class_kind = expr
+
  [@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
@@ -314,3 +342,13 @@ type any =
   | Pr of program
 
  [@@deriving show { with_path = false}] (* with tarzan *)
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+let empty_body_exn = {
+    body_exprs = [];
+    rescue_exprs = [];
+    ensure_expr = [];
+    else_expr = [];
+}
