@@ -101,7 +101,7 @@ let rec cmp_expr e1 e2 = match e1,e2 with
       let c (l11,l12) (l21,l22) =
     cmp2 (cmp_expr_list l11 l21) cmp_expr_list l12 l22
       in
-    cmp2 (cmp2 (cmp_expr c1.case_guard c2.case_guard)
+    cmp2 (cmp2 (cmp_opt cmp_expr c1.case_guard c2.case_guard)
          (cmp_list c) c1.case_whens c2.case_whens)
       cmp_expr_list c1.case_else c2.case_else
 
@@ -391,7 +391,7 @@ let rec mod_expr f expr =
 
 and mod_case_block f block =
   {
-    case_guard = mod_expr f block.case_guard;
+    case_guard = Common.map_opt (mod_expr f) block.case_guard;
     case_whens = (
       List.map (
         fun((el1, el2)) ->
@@ -505,50 +505,3 @@ let msg_of_str a pos = match a with
   | "+@" -> UOperator(Op_UPlus,pos)
   | "~@" | "~" -> UOperator(Op_UTilde,pos)
   | s -> Id((s, pos), id_kind s pos)
-
-
-let str_uop = function
-  | Op_UMinus   -> "-"
-  | Op_UPlus    -> "+"
-  | Op_UBang    -> "!"
-  | Op_UTilde   -> "~"
-  | Op_UNot     -> "not "
-  | Op_UStar    -> "*"
-  | Op_UAmper   -> "&"
-  | Op_UScope   -> "::"
-
-let rec str_binop = function
-  | Op_ASSIGN   -> "="
-  | Op_PLUS     -> "+"
-  | Op_MINUS    -> "-"
-  | Op_TIMES    -> "*"
-  | Op_DIV      -> "/"
-  | Op_REM      -> "%"
-  | Op_CMP      -> "<=>"
-  | Op_EQ   -> "=="
-  | Op_EQQ      -> "==="
-  | Op_NEQ      -> "!="
-  | Op_GEQ      -> ">="
-  | Op_LEQ      -> "<="
-  | Op_LT   -> "<"
-  | Op_GT   -> ">"
-  | Op_AND      -> "&&"
-  | Op_OR   -> "||"
-  | Op_BAND     -> "&"
-  | Op_BOR      -> "|"
-  | Op_MATCH    -> "=~"
-  | Op_NMATCH   -> "!~"
-  | Op_XOR      -> "^"
-  | Op_POW      -> "**"
-  | Op_kAND     -> "and"
-  | Op_kOR      -> "or"
-  | Op_ASSOC    -> "=>"
-  | Op_DOT      -> "."
-  | Op_SCOPE    -> "::"
-  | Op_AREF     -> "[]"
-  | Op_ASET     -> "[]="
-  | Op_LSHIFT   -> "<<"
-  | Op_RSHIFT   -> ">>"
-  | Op_OP_ASGN op -> (str_binop op) ^ "="
-  | Op_DOT2     -> ".."
-  | Op_DOT3     -> "..."
