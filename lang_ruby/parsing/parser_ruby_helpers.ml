@@ -509,9 +509,9 @@ let resolve_block_delim with_cb no_cb = match with_cb,no_cb with
 let merge_binop xs =
   wrap xs (fun xs ->
     let newest, l = List.hd xs, List.tl xs in
-  let l' = uniq_list H.compare_expr l in
+  let l' = uniq_list compare_expr l in
   let fail () = 
-    let l' = uniq_list H.compare_expr (newest::l') in
+    let l' = uniq_list compare_expr (newest::l') in
   do_fail "binop" l' Ast_printer.show_expr;
   l'
   in
@@ -535,7 +535,7 @@ let merge_topcall xs =
   wrap xs (fun xs ->
     let newest, l = List.hd xs, List.tl xs in
 
-  let l' = uniq_list H.compare_expr l in
+  let l' = uniq_list compare_expr l in
     match l',newest with
   | [(Call(_,_,Some (CodeBlock((_,false,_),_,_,_)),_) as with_cb)],
     (Call(_,_,None,_) as no_cb)
@@ -544,7 +544,7 @@ let merge_topcall xs =
       (* resolve "x y{z}" vs "x y do z end" *)
       resolve_block_delim with_cb no_cb;
   | _ ->
-      let l' = uniq_list H.compare_expr (newest::l') in
+      let l' = uniq_list compare_expr (newest::l') in
         do_fail "topcall" l' Ast_printer.show_expr;
         l'
   )
@@ -553,7 +553,7 @@ let merge_stmt xs =
  wrap xs (fun xs ->
     let newest, l = List.hd xs, List.tl xs in
 
-  let l' = uniq_list H.compare_expr l in
+  let l' = uniq_list compare_expr l in
     match l',newest with
   | [(Call(_,_,Some (CodeBlock((_,false,_),_,_,_)),_) as with_cb)],
     (Call(_,_,None,_) as no_cb)
@@ -594,7 +594,7 @@ let merge_stmt xs =
       [correct]
 
   | _ ->
-      let l' = uniq_list H.compare_expr (newest::l') in
+      let l' = uniq_list compare_expr (newest::l') in
         do_fail "stmt" l' Ast_printer.show_expr;
         l'
 )
@@ -602,14 +602,14 @@ let merge_stmt xs =
 
 let merge_expr s xs =
   wrap xs (fun xs ->
-  let l' = uniq_list H.compare_expr xs in
+  let l' = uniq_list compare_expr xs in
     do_fail s l' Ast_printer.show_expr;
     l'
   )
 
 let merge_expr_list s xs =
   wrap xs (fun xs ->
-  let l' = uniq_list H.compare_ast (xs) in
+  let l' = uniq_list compare_stmts (xs) in
     do_fail s l' Ast_printer.show_program;
     l'
   )
