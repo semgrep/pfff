@@ -1,8 +1,5 @@
 open Ast_ruby
 
-val tok_of : expr -> tok
-val set_tok : tok -> expr -> expr
-
 val binary_op_of_string : string -> binary_op
 
 val mod_ast : (expr -> expr) -> expr list -> expr list

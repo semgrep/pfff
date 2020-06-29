@@ -189,13 +189,13 @@ type expr =
 
   | Hash of bool * expr list bracket
   | Array of expr list bracket
-  | Tuple of expr list * tok
+  | Tuple of expr list
 
   | Unary of unary_op wrap * expr
   | Binop of expr * binary_op wrap * expr
   | Ternary of expr * tok (* ? *) * expr * tok (* : *) * expr
 
-  | Call of expr * expr list * expr option * tok
+  | Call of expr * expr list * expr option
   (* TODO: ArrayAccess of expr * expr list bracket *)
 
   (* true = {}, false = do/end *)
@@ -256,7 +256,7 @@ and pattern = expr
  *)
 and stmt =
   | Empty
-  | Block of stmts * tok (* TODO: bracket with begin/end or ( ) *)
+  | Block of stmts (* TODO: bracket with begin/end or ( ) *)
 
   | If of tok * expr * stmts * stmts option2
   | While of tok * bool * expr * stmts

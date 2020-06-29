@@ -239,12 +239,13 @@ module Abbr = struct
     let g = (guard :> expr) in
       mkstmt (For(f,g,body)) pos
 
-  let mcall ?lhs ?targ msg args ?cb pos = 
+  let mcall ?lhs ?targ msg args ?cb () = 
     let mc = {mc_target=(targ :> expr option); 
               mc_msg = (msg :> msg_id);
               mc_args=(args :> star_expr list);
-              mc_cb = cb}
-    in mkstmt (I (Call((lhs:>lhs option),mc))) pos
+              mc_cb = cb} in
+    let pos = raise Common.Todo in
+    mkstmt (I (Call((lhs:>lhs option),mc))) pos
 
   let assign lhs tup pos = 
     mkstmt (I (Assign((lhs:>lhs),(tup:>tuple_expr)))) pos
