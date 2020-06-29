@@ -56,9 +56,9 @@ clean::
 	rm -f $(TARGET).top
 
 ast_ruby.cmo: ast_ruby.ml
-	ocamlfind ocamlc -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show ast_ruby.ml
+	ocamlfind ocamlc -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show,ppx_deriving.eq,ppx_deriving.ord  ast_ruby.ml
 ast_ruby.cmx: ast_ruby.ml
-	ocamlfind ocamlopt -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show ast_ruby.ml
+	ocamlfind ocamlopt -c $(OCAMLCFLAGS) $(INCLUDES) -package ppx_deriving.show,ppx_deriving.eq,ppx_deriving.ord ast_ruby.ml
 
 
 lexer_ruby.ml: lexer_ruby.mll

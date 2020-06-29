@@ -48,30 +48,37 @@
 (*****************************************************************************)
 (* Names *)
 (*****************************************************************************)
+(* below we derive also eq, and ord, which is unusual compared to our other
+ * parsers because we use the GLR parser generator dypgen to parse Ruby
+ * and in case of ambiguities dypgen needs to compare resulting ASTs
+ * and filter out equivalence trees.
+ *)
 
 (* ------------------------------------------------------------------------- *)
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
 type tok = Parse_info.t
  [@@deriving show] (* with tarzan *)
+let compare_tok _a _b = 0
+let equal_tok _a _b = true
 
 (* a shortcut to annotate some information with token/position information *)
 type 'a wrap = 'a * tok
- [@@deriving show]
+ [@@deriving show, eq, ord]
 
 (* round(), square[], curly{}, angle<>, and also pipes|| brackets  *)
 type 'a bracket = tok * 'a * tok
- [@@deriving show]
+ [@@deriving show, eq, ord]
 
 (* ------------------------------------------------------------------------- *)
 (* Ident/name *)
 (* ------------------------------------------------------------------------- *)
 
 type ident = string wrap
- [@@deriving show]
+ [@@deriving show, eq, ord]
 
 type _uident = string wrap (* Uppercase, a.k.a "constant" in Ruby *)
- [@@deriving show]
+ [@@deriving show, eq, ord]
 
 (* 
 type name = NameConstant of uident | NameScope of ...
@@ -91,7 +98,7 @@ type id_kind =
   | ID_Builtin   (* prefixed by $, followed by non-alpha *)
   (* TODO: move out in method_name instead *)
   | ID_Assign of id_kind (* postfixed by = *)
- [@@deriving show { with_path = false }]
+ [@@deriving show { with_path = false }, eq, ord]
 
 (* ------------------------------------------------------------------------- *)
 (* Operators *)
@@ -113,7 +120,7 @@ type unary_op =
 
   (* TODO: move out *)
   | Op_UScope    (* ::x *)
- [@@deriving show { with_path = false }]
+ [@@deriving show { with_path = false }, eq, ord]
 
 
 type binary_op = 
@@ -167,7 +174,7 @@ type binary_op =
   (* sugar for .. and = probably *)
   | Op_DOT3     (* ... *)
 
- [@@deriving show { with_path = false }]
+ [@@deriving show { with_path = false }, eq, ord]
 
 (*****************************************************************************)
 (* Expression *)
@@ -281,10 +288,11 @@ and stmt =
     (* TODO: (tok * (exception_name list * ident option) * stmts) list 
      * and even intermediate rescue_clause type
      *)
-    rescue_exprs: (expr * expr) list;
+    rescue_exprs: rescue_clause list;
     ensure_expr: stmts option2;
     else_expr: stmts option2;
   }
+    and rescue_clause = (expr * expr)
 
 and stmts = expr list
 
@@ -341,7 +349,7 @@ and definition =
   (* TODO: C of name * inheritance option | SingletonC of inheritance? *)
   and class_kind = expr
 
- [@@deriving show { with_path = false }] (* with tarzan *)
+ [@@deriving show { with_path = false }, eq, ord] (* with tarzan *)
 
 (*****************************************************************************)
 (* Type *)
@@ -357,7 +365,7 @@ and definition =
 (*****************************************************************************)
 
 type program = stmts
- [@@deriving show] (* with tarzan *)
+ [@@deriving show, eq, ord] (* with tarzan *)
 
 (*****************************************************************************)
 (* Any *)
@@ -367,7 +375,7 @@ type any =
   | E of expr
   | Pr of program
 
- [@@deriving show { with_path = false}] (* with tarzan *)
+ [@@deriving show { with_path = false}, eq] (* with tarzan *)
 
 (*****************************************************************************)
 (* Helpers *)
