@@ -97,16 +97,21 @@ type id_kind =
 (* Operators *)
 (* ------------------------------------------------------------------------- *)
 type unary_op = 
-  | Op_UMinus    (* -x *)  | Op_UPlus     (* +x *)
+  (* unary and msg_id *)
+  | Op_UMinus    (* -x, -@ when in msg_id *)  | Op_UPlus (* +x, +@ in msg_id *)
   | Op_UBang     (* !x *) | Op_UTilde    (* ~x *)
+  (* not in msg_id *)
   | Op_UNot      (* not x *)
-  | Op_UAmper    (* & *)
+  (* only in argument: TODO move out? *)
+  | Op_UAmper    (* & *) 
+  (* in argument, pattern, exn, assignment lhs or rhs *)
   | Op_UStar     (* * *)
-  (* tree-sitter: *)
+  (* tree-sitter: in argument and hash *)
   | Op_UStarStar (* ** *)
+
   | Op_DefinedQuestion (* defined? *)
 
-  (* todo: move out *)
+  (* TODO: move out *)
   | Op_UScope    (* ::x *)
  [@@deriving show { with_path = false }]
 
@@ -138,7 +143,7 @@ type binary_op =
   | Op_DOT2     (* .. *)
 
   (* tree-sitter: *)
-  (* ` +@ -@ 
+  (* ` +@ -@ = unary + and - name
    *)
 
   (* not in msg_id *)
@@ -156,6 +161,7 @@ type binary_op =
 
   | Op_SCOPE    (* :: *)
 
+  (* in hash or arguments *)
   | Op_ASSOC    (* => *)
 
   (* sugar for .. and = probably *)
@@ -183,6 +189,7 @@ type expr =
   | Ternary of expr * tok (* ? *) * expr * tok (* : *) * expr
 
   | Call of expr * expr list * expr option * tok
+  (* TODO: ArrayAccess of expr * expr list bracket *)
 
   (* true = {}, false = do/end *)
   | CodeBlock of bool bracket * formal_param list option * stmts * tok
@@ -228,7 +235,9 @@ and literal =
 (*****************************************************************************)
 (* pattern *)
 (*****************************************************************************)
-(* arg or splat_argument *)
+(* arg or splat_argument in case/when, but
+ * also tuple in lhs of Assign.
+ *)
 and pattern = expr
 
 (*****************************************************************************)
@@ -247,6 +256,7 @@ and stmt =
   | Until of tok * bool * expr * stmts
   | Unless of tok * expr * expr list * stmts
   | For of tok * formal_param list * expr * stmts
+  | For2 of tok * pattern * tok * expr * stmts
 
   (* stmt and also as "command" *)
   | Return of tok * expr list (* bracket option *)
@@ -268,6 +278,9 @@ and stmt =
   
   and body_exn = {
     body_exprs: stmts;
+    (* TODO: (tok * (exception_name list * ident option) * stmts) list 
+     * and even intermediate rescue_clause type
+     *)
     rescue_exprs: (expr * expr) list;
     ensure_expr: stmts option2;
     else_expr: stmts option2;

@@ -225,6 +225,7 @@ let tok_of = function
   | S Until (pos, _, _ , _  )
   | S Unless (pos, _ , _  , _)
   | S For (pos, _  , _ , _ )
+  | S For2 (pos, _  , _ , _, _ )
   | S If (pos, _ , _  , _ )
   | D ModuleDef (pos, _ , _ )
   | D MethodDef (pos, _ , _  , _)
@@ -351,6 +352,13 @@ let rec mod_expr f expr =
       | S For(pos, formals, expr, el) ->
           S (For(pos,
             formals, 
+            (mod_expr f expr),
+            (List.map (mod_expr f) el)
+          ))
+      | S For2(pos,es, in_, expr, el) ->
+          S (For2(pos,
+            ((mod_expr f) es), 
+            in_,
             (mod_expr f expr),
             (List.map (mod_expr f) el)
           ))
