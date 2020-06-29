@@ -106,14 +106,15 @@ let dyp_merge xs =
   )
   (*Dyp.keep_all*)
 
-let mk_block lst pos = match lst with
+let mk_block lst = 
+  match lst with
   | [x] -> x
-  | _ -> S (Block(lst,pos))
+  | _ -> S (Block(lst))
 
 let tuple = function
   | [] -> S Empty
   | [x] -> x
-  | lst -> Tuple(lst,H.tok_of (List.hd lst))
+  | lst -> Tuple lst
 
 let is_exnblock = function 
   | S ExnBlock _ -> true 
@@ -331,16 +332,16 @@ stmt:
   /* handle special case for x = y rescue z where rescue binds to 
    * just the rhs, not the full assignment (unlike the other modifiers)
    */
-  | lhs_assign_op<l,op> eols arg<r> K_RESCUE<pos> eols stmt<guard>
+  | lhs_assign_op<l,op,_tk> eols arg<r> K_RESCUE<pos> eols stmt<guard>
       { if M.is_cond_modifier guard then raise Dyp.Giveup;
         let r' = S (ExnBlock({body_exprs=[r];rescue_exprs =[(S Empty,guard)];
                  ensure_expr = []; else_expr = []}, pos))
          in (*prune_binop l op r'*) 
          Binop(l,(op,pos),r') (* TODO: wrong pos *)}
-  | mlhs_assign_op<l,op> eols mrhs<r>
+  | mlhs_assign_op<l,op,tk> eols mrhs<r>
       { (*prune_binop (tuple l) op (tuple r)*) 
          let lhs = tuple l in
-         Binop(lhs,(op,(H.tok_of lhs)), (tuple r)) (* TODO: wrong pos?*)
+         Binop(lhs,(op,tk), (tuple r)) (* TODO: wrong pos?*)
       }
 
   | scope_BEGIN<pos> eols T_LBRACE eols stmt_list<xs> T_RBRACE
@@ -371,7 +372,7 @@ expr:
  /*(* call_args-->arg_comma_star_list-->arg_comma_nonempty_list->arg vs arg*)*/
   | K_RETURN<pos> arg<p>
       { match p with
-        | S Block([x],_) -> S (Return(pos, [x]))
+        | S Block([x]) -> S (Return(pos, [x]))
         | arg -> if M.is_cond_modifier arg then raise Dyp.Giveup;
                  S (Return(pos, [arg])) 
       }
@@ -380,8 +381,8 @@ expr:
       { M.well_formed_return xs;
         S (Yield(pos, xs)) }
 
-  | expr<e1> K_AND eols expr<e2> { M.prune_left_assoc e1 Op_kAND e2 }
-  | expr<e1> K_OR eols expr<e2>  { M.prune_left_assoc e1 Op_kOR e2 }
+  | expr<e1> K_AND eols expr<e2> { M.prune_left_assoc $2 e1 Op_kAND e2 }
+  | expr<e1> K_OR eols expr<e2>  { M.prune_left_assoc $2 e1 Op_kOR e2 }
   | K_NOT<pos>  eols expr<e>     { M.prune_uop Op_UNot e pos}
   | T_BANG<pos> eols expr<e>     { M.prune_uop Op_UBang e pos}
 
@@ -395,14 +396,14 @@ expr:
 /*(*************************************************************************)*/
 
 arg:
-  | lhs_pruned_assign_op<l,op> eols arg<r> 
-      { M.prune_right_assoc l op r }
+  | lhs_pruned_assign_op<l,op,tk> eols arg<r> 
+      { M.prune_right_assoc tk l op r }
 
   | unary_op<o,pos>    eols arg<a> { M.prune_uop o a pos }
 
-  | arg<l> bin_op<bop> eols arg<r> { M.prune_left_assoc l bop r }
-  | arg<l> T_ANDOP     eols arg<r> { M.prune_left_assoc l Op_AND r }
-  | arg<l> T_OROP      eols arg<r> { M.prune_left_assoc l Op_OR r }
+  | arg<l> bin_op<bop,tk> eols arg<r> { M.prune_left_assoc tk l bop r }
+  | arg<l> T_ANDOP     eols arg<r> { M.prune_left_assoc $2 l Op_AND r }
+  | arg<l> T_OROP      eols arg<r> { M.prune_left_assoc $2 l Op_OR r }
 
   | arg<e1> T_QUESTION<pos> eols expr<e2> T_COLON eols expr<e3>   
     { M.prune_tern e1 e2 e3 $2 $5 }
@@ -417,30 +418,30 @@ primary:
   | T_LPAREN<pos> eols stmt_list<ss> T_RPAREN
       { (* don't collapse the block here to prevent the disambiguation
            rules from erroneously firing *) 
-         S (Block(ss,pos)) }
+         S (Block(ss)) }
 
   | constant<c> { c }
   | identifier<id> { id }
 
   /*(* stmt-->topcall-->command-->command_name (with empty call_args) vs
      * stmt-->expr-->arg-->primary-->command_name *)*/
-  | command_name<c>                { M.methodcall c [] None (H.tok_of c)}
+  | command_name<c>                { M.methodcall c [] None}
   | command_name<c> code_block<cb> { M.command_codeblock c cb }
 
   /*(* stmt-->topcall vs stmt-->expr-->arg-->primary *)*/
   | func<f>                { f }
   | func<f> code_block<cb> 
       { match f with
-        | Call(m,args,None,pos) -> M.methodcall m args (Some cb) pos
-        | _ -> M.methodcall f [] (Some cb) (H.tok_of f)
+        | Call(m,args,None) -> M.methodcall m args (Some cb)
+        | _ -> M.methodcall f [] (Some cb)
       }
 
-  | primary<p> T_SCOPE identifier<id>  { M.scope p id }
+  | primary<p> T_SCOPE identifier<id>  { M.scope $2 p id }
   | T_USCOPE<pos> identifier<id>       { Unary((Op_UScope,pos),id) }
 
   | primary<p> T_LBRACK_ARG<pos1> eols arg_comma_list_trail<xs> eols T_RBRACK
-      { M.methodcall (Binop(p,(Op_DOT,H.tok_of p), Operator(Op_AREF,pos1))) (* TODO: wrong tok Binop? *)
-                   xs None (H.tok_of p)
+      { M.methodcall (Binop(p,(Op_DOT,pos1), Operator(Op_AREF,pos1))) (* TODO: wrong tok Binop? *)
+                   xs None
       }
 
   | T_LBRACK eols array_body<xs> eols T_RBRACK { Array($1, xs, $5) }
@@ -563,7 +564,7 @@ interp_code:
   | eols stmt_list<ss> interp_str_work<tl>
       { match ss with
           | [] -> tl
-          | x::_ -> StrExpr (mk_block ss (H.tok_of x))::tl }
+          | x::_ -> StrExpr (mk_block ss)::tl }
 
   | T_INTERP_END<s,pos> 
       { if s = "" then [] else [StrChars s] }
@@ -579,18 +580,13 @@ body_exn:
      }
 
 rescue_clause:
-  | K_RESCUE<resc_pos> then_sep stmt_list<xs>
-      { let pos = match xs with
-        | [] -> resc_pos 
-        | hd::_ -> H.tok_of hd
-        in (S Empty, mk_block xs pos) 
-      }
+  | K_RESCUE<resc_pos> then_sep stmt_list<xs> { (S Empty, mk_block xs) }
 
   | K_RESCUE<pos> T_ASSOC seen_id<bind> then_sep stmt_list<xs>
-      { (Binop(S Empty,(Op_ASSOC,pos),bind), mk_block xs pos) (* WRONG pos Binop *) }
+      { (Binop(S Empty,(Op_ASSOC,$2),bind), mk_block xs) }
 
   | K_RESCUE<pos> arg_comma_star_list<exn> then_sep stmt_list<xs>
-    { (tuple exn,mk_block xs pos) }
+    { (tuple exn, mk_block xs) }
 
   | K_RESCUE<pos> arg_comma_star_list<exn> 
     { (tuple exn,S Empty) }
@@ -651,8 +647,8 @@ array_body_rest:
 array_item: 
   | arg<e> { e }
   | constant<c> T_LBRACK<pos1> eols call_args<xs> eols T_RBRACK
-      { M.methodcall (Binop(c, (Op_DOT,H.tok_of c), Operator(Op_AREF,pos1))) (* TODO: Wrong pos Binop, and probably all the following Binop in this file *)
-                     xs None (H.tok_of c) }
+      { M.methodcall (Binop(c, (Op_DOT,pos1), Operator(Op_AREF,pos1))) (* TODO: Wrong pos Binop, and probably all the following Binop in this file *)
+                     xs None }
 
 /*(*************************************************************************)*/
 /*(*1 Call *)*/
@@ -663,14 +659,14 @@ topcall:
       { f }
   | func<f> code_block<cb>
       { match f with
-        | Call(m,args,None,pos) -> M.methodcall m args (Some cb) pos
-        | _ -> M.methodcall f [] (Some cb) (H.tok_of f) }
+        | Call(m,args,None) -> M.methodcall m args (Some cb)
+        | _ -> M.methodcall f [] (Some cb) }
 
   | command<c> 
       { c }
   | command_name<m> call_args<xs> do_codeblock<cb>
       { M.well_formed_command m xs;
-        M.methodcall m xs (Some cb) (H.tok_of m)}
+        M.methodcall m xs (Some cb)}
 
 /*(*----------------------------*)*/
 /*(*2 Command *)*/
@@ -679,7 +675,7 @@ topcall:
 command:
   | command_name<m> call_args<xs>
       { M.well_formed_command m xs;
-        M.methodcall m xs None (H.tok_of m)}
+        M.methodcall m xs None}
   | K_YIELD<pos>    call_args<xs> 
       { M.well_formed_return xs;
         S (Yield(pos, xs)) }
@@ -687,22 +683,22 @@ command:
   /*(* recursive *)*/
   | command_name<cmd> command<cmd2>
       { M.well_formed_command cmd [cmd2];
-        M.methodcall cmd [cmd2] None (H.tok_of cmd)}
+        M.methodcall cmd [cmd2] None}
 
 command_name:
   | identifier<id> 
       { id }
 
   | primary<p> T_DOT eols message_identifier<m>
-      { M.unfold_dot p m (H.tok_of p)}
+      { M.unfold_dot p m $2}
   | primary<p> T_SCOPE    message_identifier<m> 
-      { M.scope p m }
+      { M.scope $2 p m }
 
   /*(* recursive *)*/
   | command_name<p> T_DOT eols message_identifier<m>
-      { M.unfold_dot p m (H.tok_of p)}
+      { M.unfold_dot p m $2}
   | command_name<p> T_SCOPE    message_identifier<m>
-      { M.scope p m }
+      { M.scope $2 p m }
 
 /*(*----------------------------*)*/
 /*(*2 Func *)*/
@@ -710,11 +706,11 @@ command_name:
 func:
   | command_name<c> any_LPAREN eols call_args<xs> eols T_RPAREN
       { match xs with
-        | [] -> Call(c, xs, None, H.tok_of c) 
-        | _ -> M.methodcall c xs None (H.tok_of c)
+        | [] -> Call(c, xs, None) 
+        | _ -> M.methodcall c xs None
       }
   | command_name<c> any_LPAREN eols command<a> eols T_RPAREN
-      { Call(c,[a],None,H.tok_of c)}
+      { Call(c,[a],None)}
 
 any_LPAREN:
   | T_LPAREN<pos> {pos}
@@ -758,28 +754,28 @@ star_amper:
 /*(*************************************************************************)*/
 
 assign_op: 
-  | T_ASSIGN          { Op_ASSIGN }
-  | T_OP_ASGN<op,pos> { Op_OP_ASGN (H.binary_op_of_string op) }
+  | T_ASSIGN          { Op_ASSIGN, $1 }
+  | T_OP_ASGN<op,pos> { Op_OP_ASGN (H.binary_op_of_string op), pos }
 
 /*(*----------------------------*)*/
 /*(*2 LHS *)*/
 /*(*----------------------------*)*/
 
-lhs_assign_op: lhs<l> assign_op<op>   { M.seen dyp l; l,op}
+lhs_assign_op: lhs<l> assign_op<op,tk>   { M.seen dyp l; l,op,tk}
 
 lhs:
   | scoped_id<id> 
       { id }
   | primary<p> T_LBRACK_ARG<pos> eols arg_comma_star_list<xs> eols T_RBRACK
-      { M.methodcall (Binop(p,(Op_DOT,H.tok_of p),Operator(Op_AREF,pos))) xs None (H.tok_of p)}
+      { M.methodcall (Binop(p,(Op_DOT,pos),Operator(Op_AREF,pos))) xs None}
   | primary<p> T_DOT eols message_identifier<m>
-      { M.methodcall (Binop(p,(Op_DOT,H.tok_of p), m)) [] None (H.tok_of p)}
+      { M.methodcall (Binop(p,(Op_DOT,$2), m)) [] None}
 
 /*(*----------------------------*)*/
 /*(*2 Multiple LHS *)*/
 /*(*----------------------------*)*/
 
-mlhs_assign_op: mlhs<l> assign_op<op> {List.iter (M.seen dyp) l; l,op}
+mlhs_assign_op: mlhs<l> assign_op<op,tk> {List.iter (M.seen dyp) l; l,op,tk}
 
 mlhs:
   | mlhs_clean<ls> {ls}
@@ -806,7 +802,8 @@ mlhs_rest:
 /*(*2 Pruned LHS *)*/
 /*(*----------------------------*)*/
 
-lhs_pruned_assign_op: lhs_prune_binop<l> assign_op<op> { M.seen dyp l; l,op}
+lhs_pruned_assign_op: lhs_prune_binop<l> assign_op<op,tk> 
+  { M.seen dyp l; l,op,tk}
 
 lhs_prune_binop: lhs<l> {match l with Binop _ -> raise Dyp.Giveup | _ -> l}
 
@@ -950,14 +947,14 @@ identifier:
 scoped_id:
   | identifier<id>                            { id }
   | T_USCOPE<pos> identifier<id>              { Unary((Op_UScope,pos),id)}
-  | scoped_id<id1> T_SCOPE identifier<id2>    { Binop(id1,(Op_SCOPE,H.tok_of id1), id2) }
-  | scoped_id<id1> T_SCOPE keyword_as_id<id2> { Binop(id1,(Op_SCOPE,H.tok_of id1), id2) }
+  | scoped_id<id1> T_SCOPE identifier<id2>    { Binop(id1,(Op_SCOPE,$2), id2) }
+  | scoped_id<id1> T_SCOPE keyword_as_id<id2> { Binop(id1,(Op_SCOPE,$2), id2) }
 
 
 /*(* for use *)*/
 message_identifier:
   | assignable<e>                       { e }
-  | bin_op<op>                          { Operator(op,Parse_info.fake_info "OP") }
+  | bin_op<op,tk>                       { Operator(op,tk) }
   | T_LBRACK_ARG<pos> T_RBRACK T_ASSIGN { Operator(Op_ASET,pos) }
   | T_UPLUS<pos>                        { UOperator(Op_UPlus,pos) }
   | T_UMINUS<pos>                       { UOperator(Op_UMinus,pos) }
@@ -980,14 +977,14 @@ method_name:
   /*(* recursive *)*/
   | method_name<e> T_ASSIGN { add_eq e }
   | method_name<id1> T_DOT eols message_identifier<id2> 
-      { Binop(id1,(Op_DOT,H.tok_of id1), id2) }
+      { Binop(id1,(Op_DOT,$2), id2) }
   | method_name<id1> T_DOT eols assignable<id2> T_ASSIGN
-      { Binop(id1,(Op_DOT,H.tok_of id1), add_eq id2) }
-  | method_name<id1> T_SCOPE identifier<id2>    { M.scope id1 id2 }
-  | method_name<id1> T_SCOPE keyword_as_id<id2> { M.scope id1 id2 }
+      { Binop(id1,(Op_DOT,$2), add_eq id2) }
+  | method_name<id1> T_SCOPE identifier<id2>    { M.scope $2 id1 id2 }
+  | method_name<id1> T_SCOPE keyword_as_id<id2> { M.scope $2 id1 id2 }
 
   | T_LPAREN<pos> eols stmt_list<xs> T_RPAREN T_DOT message_identifier<m>
-      { Binop(mk_block xs (H.tok_of (List.hd xs)), (Op_DOT,pos),m) }
+      { Binop(mk_block xs, (Op_DOT,$5),m) }
 
 meth_or_atom:
     | method_name<e>  { e }
@@ -996,20 +993,20 @@ meth_or_atom:
 /*(* operator overloading *)*/
 
 bin_op:
-  | T_PLUS   { Op_PLUS }   | T_MINUS  { Op_MINUS }
-  | T_STAR   { Op_TIMES }  | T_SLASH  { Op_DIV } | T_PERCENT{ Op_REM }
-  | T_POW    { Op_POW }
-  | T_LSHFT  { Op_LSHIFT } | T_RSHFT  { Op_RSHIFT }
-  | T_LT     { Op_LT }     | T_GT     { Op_GT }
-  | T_GEQ    { Op_GEQ }    | T_LEQ    { Op_LEQ }
-  | T_EQ     { Op_EQ }     | T_EQQ    { Op_EQQ } | T_NEQ    { Op_NEQ }
-  | T_CMP    { Op_CMP } 
-  | T_MATCH  { Op_MATCH } | T_NMATCH { Op_NMATCH }
-  | T_AMPER  { Op_BAND } | T_VBAR   { Op_BOR }  | T_CARROT { Op_XOR } 
+  | T_PLUS   { Op_PLUS,$1 }   | T_MINUS  { Op_MINUS, $1 }
+  | T_STAR   { Op_TIMES,$1 }  | T_SLASH  { Op_DIV,$1 } | T_PERCENT{ Op_REM,$1 }
+  | T_POW    { Op_POW,$1 }
+  | T_LSHFT  { Op_LSHIFT,$1 } | T_RSHFT  { Op_RSHIFT,$1 }
+  | T_LT     { Op_LT,$1 }     | T_GT     { Op_GT,$1 }
+  | T_GEQ    { Op_GEQ,$1 }    | T_LEQ    { Op_LEQ,$1 }
+  | T_EQ     { Op_EQ,$1 }     | T_EQQ    { Op_EQQ,$1 } | T_NEQ    { Op_NEQ,$1 }
+  | T_CMP    { Op_CMP,$1 } 
+  | T_MATCH  { Op_MATCH,$1 } | T_NMATCH { Op_NMATCH,$1 }
+  | T_AMPER  { Op_BAND,$1 } | T_VBAR   { Op_BOR,$1 }  | T_CARROT { Op_XOR,$1 } 
 
-  | T_ASSOC  { Op_ASSOC }
-  | T_DOT2   { Op_DOT2 }
-  | T_DOT3   { Op_DOT3 }
+  | T_ASSOC  { Op_ASSOC,$1 }
+  | T_DOT2   { Op_DOT2,$1 }
+  | T_DOT3   { Op_DOT3,$1 }
 
 unary_op:
   | T_UPLUS<pos>   { Op_UPlus,pos }  | T_UMINUS<pos>  { Op_UMinus,pos }

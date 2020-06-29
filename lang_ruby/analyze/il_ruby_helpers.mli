@@ -81,7 +81,7 @@ val compute_cfg_locals : ?env:StrSet.t -> stmt -> unit
 module Abbr : sig
 
   val mcall : ?lhs:lhs -> ?targ:expr ->
-    msg_id -> star_expr list -> ?cb:codeblock -> pos2 -> stmt
+    msg_id -> star_expr list -> ?cb:codeblock -> unit -> stmt
 
   val seq : stmt list -> pos2 -> stmt
 

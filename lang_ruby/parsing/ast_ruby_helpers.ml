@@ -2,59 +2,6 @@ open Common
 open Ast_ruby
 
 (*****************************************************************************)
-(* tok_of *)
-(*****************************************************************************)
-
-let tok_of_literal = function
-  | Num (_, pos)
-  | Float (_, pos)
-  | String (_, pos)
-  | Regexp (_, pos)
-  | Atom (_, pos)
-  | Nil pos | Self pos | Super pos
-  | Bool (_, pos) 
-   -> pos
-
-let tok_of = function
-  | S Empty -> Parse_info.fake_info "Empty"
-
-  | D Alias (pos, _,_)
-  | D Undef (pos, _)
-  | Id ((_, pos), _)
-  | Unary ( (_, pos) , _ )
-  | Binop ( _ , (_, pos) , _)
-  | Ternary ( _ , pos, _ , _ , _)
-  | Hash ( _,(pos, _,_))
-  | Array (pos, _  , _)
-  | Tuple ( _  , pos)
-  | Call ( _ , _  , _ , pos)
-  | S While (pos, _, _ , _)
-  | S Until (pos, _, _ , _  )
-  | S Unless (pos, _ , _  , _)
-  | S For (pos, _  , _ , _ )
-  | S For2 (pos, _  , _ , _, _ )
-  | S If (pos, _ , _  , _ )
-  | D ModuleDef (pos, _ , _ )
-  | D MethodDef (pos, _ , _  , _)
-  | CodeBlock (_,  _  , _  , pos)
-  | D ClassDef (pos, _ , _ , _)
-  | D BeginBlock (pos, _)
-  | D EndBlock (pos, _)
-  | S ExnBlock ( _ , pos)
-  | S Case (pos, _)
-  | Operator ( _ , pos)
-  | UOperator ( _ , pos)
-  | S Return (pos, _)
-  | S Yield (pos, _)
-  | S Block ( _  , pos)
-  | S Break (pos, _) | S Next (pos, _)
-  | S Redo (pos, _) | S Retry (pos, _)
-
-   -> pos
-
-  | Literal x -> tok_of_literal x
-
-(*****************************************************************************)
 (* xxx_of_string *)
 (*****************************************************************************)
 
@@ -129,9 +76,9 @@ let rec mod_expr f expr =
           Hash(b, (pos1, List.map (mod_expr f) el, pos2))
       | Array(pos1, el, pos2) ->
           Array(pos1, List.map (mod_expr f) el, pos2)
-      | Tuple(el, pos) ->
-          Tuple((List.map (mod_expr f) el), pos)
-      | Call(expr1, el, eo, pos) ->
+      | Tuple(el) ->
+          Tuple((List.map (mod_expr f) el))
+      | Call(expr1, el, eo) ->
           Call(
             mod_expr f expr1, 
             List.map (mod_expr f) el,
@@ -139,8 +86,7 @@ let rec mod_expr f expr =
               match eo with
                 | None -> None
                 | Some(e) -> Some(mod_expr f e)
-            ),
-            pos
+            )
           )
       | S While(pos, b, expr, el) ->
           S (While(pos,
@@ -197,7 +143,7 @@ let rec mod_expr f expr =
       | S Redo(pos, el) -> S (Redo(pos, (List.map (mod_expr f) el)))
       | S Retry(pos, el) -> S (Retry(pos, (List.map (mod_expr f) el)))
 
-      | S Block(el, pos) -> S (Block((List.map (mod_expr f) el), pos))
+      | S Block(el) -> S (Block((List.map (mod_expr f) el)))
 
       | UOperator _ | Operator _ | Id _ | Literal _ | S Empty -> 
           expr
@@ -234,51 +180,6 @@ let mod_ast f ast = List.map (mod_expr f) ast
 (*****************************************************************************)
 (* Misc *)
 (*****************************************************************************)
-
-let set_tok_literal pos = function
-  | Num (x, _) -> Num (x, pos)
-  | Float (x, _) -> Float (x, pos)
-  | String (x,_) -> String (x, pos)
-  | Regexp (x, _) -> Regexp (x, pos)
-  | Atom (x,_) -> Atom (x, pos)
-  | Nil _ -> Nil pos
-  | Self _ -> Self pos
-  | Super _ -> Super pos
-  | Bool (x, _) -> Bool (x, pos)
-
-(** sets the position of the expression; use it with mod_ast **)
-let set_tok pos = function
-  | Literal(lit_kind) -> Literal(set_tok_literal pos lit_kind) 
-  | D Alias(_, e1, e2) -> D (Alias(pos, e1, e2))
-  | D Undef(_, elist) -> D (Undef(pos, elist))
-  | Id((str, _), id_kind) -> Id((str, pos), id_kind)
-  | Unary((unary_op,_), e) -> Unary((unary_op,pos), e)
-  | Binop(expr1, (binary_op,_), expr2) -> Binop(expr1, (binary_op,pos), expr2)
-  | Ternary(expr1, _, expr2, pos2, expr3) -> 
-      Ternary(expr1, pos, expr2, pos2, expr3)
-  | Hash(b,(_, el, pos2)) -> Hash(b,(pos, el, pos2))
-  | Array(_, el, pos2) -> Array(pos, el, pos2)
-  | Tuple(el, _) -> Tuple(el, pos)
-  | Call(expr1, el, eo, _) -> Call(expr1, el, eo, pos)
-  | S While(_, b, expr, el) -> S (While(pos, b, expr, el))
-  | S Until(_, b, expr, el) -> S (Until(pos, b, expr, el))
-  | S Unless(_, expr, el1, el2) -> S (Unless(pos, expr, el1, el2))
-  | S For(_, formals, expr, el) -> S (For(pos, formals, expr, el))
-  | S If(_, expr, el1, el2) -> S (If(pos, expr, el1, el2))
-  | D ModuleDef(_, expr, body) -> D (ModuleDef(pos, expr, body))
-  | D MethodDef(_, expr, formals, body) -> 
-      D (MethodDef(pos, expr, formals, body))
-  | CodeBlock(b, formals, el, _) -> CodeBlock(b, formals, el, pos)
-  | D ClassDef(_, expr, i_kind, body) ->
-      D (ClassDef(pos, expr, i_kind, body))
-  | D BeginBlock(_, el) -> D (BeginBlock(pos, el))
-  | D EndBlock(_, el) -> D (EndBlock(pos, el))
-  | S ExnBlock(body, _) -> S (ExnBlock(body, pos))
-  | S Case(_, block) -> S (Case(pos, block))
-  | S Return(_, el) -> S (Return(pos, el))
-  | S Yield(_, el) -> S (Yield(pos, el))
-  | S Block(el, _) -> S (Block(el, pos))
-  | _ as expr -> expr
 
 let id_kind s _pos = match s.[0] with
   | 'a'..'z' | '_' -> ID_Lowercase

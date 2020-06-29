@@ -1,45 +1,10 @@
 open Ast_ruby
 module Utils = Utils_ruby
 module Ast_printer = Ast_ruby
-module H = Ast_ruby_helpers
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
-(*
-val env_stack : Env.t Stack.t
-val env : unit -> Env.t
-val bslash_spc_re : Str.regexp
-
-val ws_re : Str.regexp
-val split_single_string_to_array : string -> Ast_ruby.tok -> Ast_ruby.expr
-val split_double_string_to_array :
-  Ast_ruby.string_contents list -> Ast_ruby.tok -> Ast_ruby.expr
-val str_of_interp : Ast_ruby.string_contents list -> string
-val starts_with : Ast_ruby.expr -> Ast_ruby.expr
-val ends_with : Ast_ruby.expr -> Ast_ruby.expr
-val replace_end : Ast_ruby.expr -> Ast_ruby.expr -> Ast_ruby.expr
-val hash_literal_as_args : Ast_ruby.expr list -> Ast_ruby.expr list
-val check_for_dot : Ast_ruby.expr -> Ast_ruby.expr
-val fix_broken_neq :
-  Ast_ruby.expr ->
-  Ast_ruby.binary_op -> 'a -> Ast_ruby.expr * Ast_ruby.binary_op * 'a
-val fix_broken_assoc :
-  Ast_ruby.expr ->
-  Ast_ruby.binary_op -> 'a -> Ast_ruby.expr * Ast_ruby.binary_op * 'a
-
-val expr_priority : Ast_ruby.expr -> int
-
-val binop_priority : Ast_ruby.expr -> int
-
-val do_fail : string -> 'a list -> ('a -> string) -> ('a -> OCaml.v) -> unit
-
-val rhs_do_codeblock : Ast_ruby.expr -> bool
-
-val resolve_block_delim :
-  Ast_ruby.expr -> Ast_ruby.expr -> Ast_ruby.expr list
-*)
 
 (*****************************************************************************)
 (* Generic helpers (could be in common.ml or utils_ruby.ml) *)
@@ -97,7 +62,7 @@ let seen_str _dyp id =
 
 let rec seen dyp = function
   | Id((s, _), ID_Lowercase) -> seen_str dyp s
-  | Array(_, es,_) | Tuple(es,_) -> List.iter (seen dyp) es
+  | Array(_, es,_) | Tuple(es) -> List.iter (seen dyp) es
   | _ -> ()
 
 (*****************************************************************************)
@@ -209,19 +174,19 @@ let process_user_string m str pos = match m with
 
 let rec starts_with = function
   | Binop(l,_,_) -> starts_with l
-  | Call(l,_,_,_) -> starts_with l
+  | Call(l,_,_) -> starts_with l
   | Ternary(l,_,_,_,_) -> starts_with l
   | e -> e
 
 let rec ends_with = function
   | Binop(_,_,r) -> ends_with r
-  | Call(m,[],None,_) -> ends_with m
+  | Call(m,[],None) -> ends_with m
   | Ternary(_,_,_, _, r) -> ends_with r
   | e -> e
   
 let rec replace_end expr new_e = match expr with
   | Binop(l,(o,p),r) -> Binop(l,(o,p),replace_end r new_e)
-  | Call(m,[],None,p) -> Call(replace_end m new_e,[],None,p)
+  | Call(m,[],None) -> Call(replace_end m new_e,[],None)
   | Ternary(g,p1, l,p2, r) -> Ternary(g,p1, l,p2, replace_end r new_e)
   | _e -> new_e
 
@@ -230,7 +195,7 @@ let is_cond_modifier = function
   | _ -> false
 
 let well_formed_do guard _body = match ends_with guard with
-  | Call(_,_,Some (CodeBlock((_,false,_),_,_,_)),_) ->
+  | Call(_,_,Some (CodeBlock((_,false,_),_,_,_))) ->
   raise Dyp.Giveup
   | _ ->()
 
@@ -274,10 +239,10 @@ let hash_literal_as_args args =
   in
     List.rev (work [] args)
 
-let rec methodcall m args cb pos = 
+let rec methodcall m args cb = 
   let args = hash_literal_as_args args in
   match m,args,cb with
-    | _,[S Empty],_ -> methodcall m [] cb pos
+    | _,[S Empty],_ -> methodcall m [] cb
 
     | S Return(_), [], None -> m
     | S Return(p,[]),args,None -> S (Return(p, args))
@@ -291,33 +256,33 @@ let rec methodcall m args cb pos =
 
     | Binop(_x,(Op_SCOPE,_),_y),[],None -> m
 
-    | Binop(x,(Op_DOT,p),y),_,_ -> Call(unfold_dot x y p, args, cb,p)
-    | _ -> Call(m,args,cb,pos)
+    | Binop(x,(Op_DOT,p),y),_,_ -> Call(unfold_dot x y p, args, cb)
+    | _ -> Call(m,args,cb)
 
 and unfold_dot l r pos = 
   match l with
   (* unfold nested a.b.c to become (a.b()).c() *)
     | Binop(a,(Op_DOT,p),b) ->
-    let l' = methodcall (unfold_dot a b p) [] None p in
-      Binop(l',(Op_DOT,pos),r)
+    let l' = methodcall (unfold_dot a b p) [] None in
+    Binop(l',(Op_DOT,pos),r)
         
     | _ -> Binop(l,(Op_DOT,pos),r)
 
 and check_for_dot = function
-  | Binop(l,(Op_DOT,p),r) -> methodcall (unfold_dot l r p) [] None p
+  | Binop(l,(Op_DOT,p),r) -> methodcall (unfold_dot l r p) [] None
   | e -> e
   
-and scope l r = 
+and scope tk l r = 
   let l = check_for_dot l in
-  Binop(l,(Op_SCOPE,H.tok_of l), r)
+  Binop(l, (Op_SCOPE,tk), r)
   
 
 let command_codeblock cmd cb = 
   match cmd with 
-  | Call(c,args,None,p) -> Call(c,args,Some cb,p)
-  | Binop(_,(Op_DOT,p),_)
-  | Binop(_,(Op_SCOPE,p),_) -> Call(cmd,[],Some cb,p)
-  | Id((_,p),_) -> Call(cmd,[],Some cb,p)
+  | Call(c,args,None) -> Call(c,args,Some cb)
+  | Binop(_,(Op_DOT,_p),_)
+  | Binop(_,(Op_SCOPE,_p),_) -> Call(cmd,[],Some cb)
+  | Id((_,_p),_) -> Call(cmd,[],Some cb)
   | _ -> raise Dyp.Giveup
 
 (* sometimes the lexer gets can't properly handle x!= as x(!=) and
@@ -417,10 +382,10 @@ let prune_uop uop arg pos =
     if p' < p then raise Dyp.Giveup
     else e
 
-let prune_right_assoc l op r = 
+let prune_right_assoc tk l op r = 
   let l,op,r = fix_broken_neq l op r in
   let l,op,r = fix_broken_assoc l op r in
-  let e = Binop(l,(op,(H.tok_of l)),r) in
+  let e = Binop(l,(op,tk),r) in
   let p = binop_priority e in
   let pl = binop_priority l in
   let pr = binop_priority r in
@@ -431,10 +396,10 @@ let prune_right_assoc l op r =
 (* right: (x - y) - z 
    prune: x - (y - z)
 *)
-let prune_left_assoc l op r = 
+let prune_left_assoc tk l op r = 
   let l,op,r = fix_broken_neq l op r in
   let l,op,r = fix_broken_assoc l op r in
-  let e = Binop(l,(op, H.tok_of l),r) in
+  let e = Binop(l,(op, tk),r) in
     match l,op,r with
       | _, _, Binop(_,(Op_ASSIGN,_),_) ->  e
 
@@ -481,9 +446,9 @@ let wrap xs f =
 (*****************************************************************************)
 
 let rec rhs_do_codeblock = function
-  | Call(_,_,Some (CodeBlock((_,false,_),_,_,_)),_) -> true
+  | Call(_,_,Some (CodeBlock((_,false,_),_,_,_))) -> true
   | Binop(_,_,r)
-  | Call(r,[],None,_)
+  | Call(r,[],None)
   | Ternary(_,_,_, _, r) -> rhs_do_codeblock r
   | Hash(false,(_, el,_)) -> rhs_do_codeblock (Utils.last el)
 
@@ -492,10 +457,10 @@ let rec rhs_do_codeblock = function
       false
 
 let resolve_block_delim with_cb no_cb = match with_cb,no_cb with
-  | _, Call(_,[],None,_) -> 
+  | _, Call(_,[],None) -> 
       Printf.eprintf "here2??\n";[with_cb;no_cb]
-  | Call(_m1',_args1,Some _do_block,_),
-      Call(_m2',args_ne,None,_) -> 
+  | Call(_m1',_args1,Some _do_block),
+    Call(_m2',args_ne,None) -> 
   (* look for cmd arg1,...,(argn do block end) *)
       if rhs_do_codeblock (Utils.last args_ne)
       then [with_cb]
@@ -537,10 +502,10 @@ let merge_topcall xs =
 
   let l' = uniq_list compare_expr l in
     match l',newest with
-  | [(Call(_,_,Some (CodeBlock((_,false,_),_,_,_)),_) as with_cb)],
-    (Call(_,_,None,_) as no_cb)
-  | [(Call(_,_,None,_) as no_cb)],
-    (Call(_,_,Some (CodeBlock((_,false,_),_,_,_)),_) as with_cb) ->
+  | [(Call(_,_,Some (CodeBlock((_,false,_),_,_,_))) as with_cb)],
+    (Call(_,_,None) as no_cb)
+  | [(Call(_,_,None) as no_cb)],
+    (Call(_,_,Some (CodeBlock((_,false,_),_,_,_))) as with_cb) ->
       (* resolve "x y{z}" vs "x y do z end" *)
       resolve_block_delim with_cb no_cb;
   | _ ->
@@ -555,10 +520,10 @@ let merge_stmt xs =
 
   let l' = uniq_list compare_expr l in
     match l',newest with
-  | [(Call(_,_,Some (CodeBlock((_,false,_),_,_,_)),_) as with_cb)],
-    (Call(_,_,None,_) as no_cb)
-  | [(Call(_,_,None,_) as no_cb)],
-    (Call(_,_,Some (CodeBlock((_,false,_),_,_,_)),_) as with_cb) ->
+  | [(Call(_,_,Some (CodeBlock((_,false,_),_,_,_))) as with_cb)],
+    (Call(_,_,None) as no_cb)
+  | [(Call(_,_,None) as no_cb)],
+    (Call(_,_,Some (CodeBlock((_,false,_),_,_,_))) as with_cb) ->
       (* resolve "x y{z}" vs "x y do z end" *)
       resolve_block_delim with_cb no_cb;
 
