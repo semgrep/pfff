@@ -2,17 +2,6 @@ open Common
 open Ast_ruby
 
 (*****************************************************************************)
-(* Comparators *)
-(*****************************************************************************)
-
-let compare_expr = Ast_ruby.compare_expr
-let compare_ast = Ast_ruby.compare_stmts
-
-let equal_expr = Ast_ruby.equal_expr
-let equal_ast = Ast_ruby.equal_stmts
-let equal_any = Ast_ruby.equal_any
-
-(*****************************************************************************)
 (* tok_of *)
 (*****************************************************************************)
 
