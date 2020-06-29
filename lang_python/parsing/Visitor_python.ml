@@ -335,13 +335,15 @@ and v_stmt x =
       and v2 = v_option v_expr v2
       and v3 = v_list v_stmt v3
       in ()
-  | Raise (t, v1) ->
+  | Raise (t, v1, v2, v3) ->
         let t = v_info t in
       let v1 =
         v_option
           (fun (v1, v2) ->
              let v1 = v_expr v1 and v2 = v_option v_expr v2 in ())
           v1
+      and v2 = v_option v_expr v2
+      and v3 = v_option v_expr v3
       in ()
   | TryExcept ((t, v1, v2, v3)) ->
         let t = v_info t in

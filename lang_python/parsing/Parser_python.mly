@@ -496,10 +496,13 @@ return_stmt:
 yield_stmt: yield_expr { ExprStmt ($1) }
 
 raise_stmt:
-  | RAISE                           { Raise ($1, None) }
-  | RAISE test                      { Raise ($1, Some ($2, None)) }
+  | RAISE                           { Raise ($1, None, None, None) }
+  | RAISE test                      { Raise ($1, Some ($2, None), None, None) }
   (* python3-ext: *)
-  | RAISE test FROM test            { Raise ($1, Some ($2, Some $4)) }
+  | RAISE test FROM test            { Raise ($1, Some ($2, Some $4), None, None) }
+  (* python2-ext: *)
+  | RAISE test "," test             { Raise ($1, Some ($2, None), Some $4, None) }
+  | RAISE test "," test "," test    { Raise ($1, Some ($2, None), Some $4, Some $6) }
 
 
 global_stmt: GLOBAL list_sep(NAME, ",") { Global ($1, $2) }
