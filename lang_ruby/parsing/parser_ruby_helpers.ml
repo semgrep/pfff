@@ -631,9 +631,7 @@ let merge_rest s xs =
 let merge_rescue s xs =
   wrap xs (fun xs ->
 
-  let cmp (x1,y1) (x2,y2) = 
-    Utils.cmp2 (H.compare_expr x1 x2) H.compare_expr y1 y2
-  in
+  let cmp = Ast_ruby.compare_rescue_clause in
   let l' = uniq_list cmp xs in
     do_fail s l' 
   (fun (x,y) -> 
