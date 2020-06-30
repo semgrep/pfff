@@ -93,6 +93,7 @@ type variable = ident * id_kind
   | ID_Class     (* prefixed by @@ *)
   (* pattern: \\$-?(([!@&`'+~=/\\\\,;.<>*$?:\"])|([0-9]* )|([a-zA-Z_][a-zA-Z0-9_]* ))" *)
   | ID_Global    (* prefixed by $ *)
+  (* TODO: can merge with Global *)
   | ID_Builtin   (* prefixed by $, followed by non-alpha *)
   (* TODO: move out in method_name instead *)
   | ID_Assign of id_kind (* postfixed by = *)

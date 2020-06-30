@@ -423,6 +423,9 @@ primary:
 
   | constant<c> { c }
   | identifier<id> { id }
+  | K_NIL             { Literal(Nil $1) }
+  | K_TRUE            { Literal(Bool (true,$1)) }
+  | K_FALSE           { Literal(Bool (false,$1)) }
 
   /*(* stmt-->topcall-->command-->command_name (with empty call_args) vs
      * stmt-->expr-->arg-->primary-->command_name *)*/
@@ -767,6 +770,9 @@ lhs_assign_op: lhs<l> assign_op<op,tk>   { M.seen dyp l; l,op,tk}
 lhs:
   | scoped_id<id> 
       { id }
+  | K_NIL             { Literal(Nil $1) }
+  | K_TRUE            { Literal(Bool (true,$1)) }
+  | K_FALSE           { Literal(Bool (false,$1)) }
   | primary<p> T_LBRACK_ARG<pos> eols arg_comma_star_list<xs> eols T_RBRACK
       { M.methodcall (Binop(p,(Op_DOT,pos),Operator(Op_AREF,pos))) xs None}
   | primary<p> T_DOT eols message_identifier<m>
@@ -931,6 +937,7 @@ class_inheritance:
 /*(*1 Name *)*/
 /*(*************************************************************************)*/
 
+/*(* called 'variable' in tree-sitter-ruby *)*/
 identifier:
   | T_LID<id,pos>          { Id ((id,pos), ID_Lowercase)}
   | T_UID<id,pos>          { Id ((id,pos), ID_Uppercase)}
@@ -940,11 +947,8 @@ identifier:
   | T_INST_VAR<id,pos>     { Id ((id,pos), ID_Instance) }
   | T_CLASS_VAR<id,pos>    { Id ((id,pos), ID_Class) }
 
-  | K_NIL             { Literal(Nil $1) }
   | K_SELF            { Id (("self", $1), ID_Self) }
   | K_SUPER           { Id (("super", $1), ID_Super) }
-  | K_TRUE            { Literal(Bool (true,$1)) }
-  | K_FALSE           { Literal(Bool (false,$1)) }
 
 scoped_id:
   | identifier<id>                            { id }
@@ -972,6 +976,10 @@ assignable:
 /*(* for definition *)*/
 method_name:
   | message_identifier<e> { e }
+  | K_NIL             { Literal(Nil $1) }
+  | K_TRUE            { Literal(Bool (true,$1)) }
+  | K_FALSE           { Literal(Bool (false,$1)) }
+
 
   | T_USCOPE<pos> identifier<id>     { Unary((Op_UScope,pos),id)}
   | T_USCOPE<pos> keyword_as_id<id>  { Unary((Op_UScope,pos),id)}
