@@ -422,7 +422,7 @@ primary:
          S (Block(ss)) }
 
   | constant<c> { c }
-  | identifier<id> { id }
+  | identifier<id> { Id id }
   | K_NIL             { Literal(Nil $1) }
   | K_TRUE            { Literal(Bool (true,$1)) }
   | K_FALSE           { Literal(Bool (false,$1)) }
@@ -440,8 +440,8 @@ primary:
         | _ -> M.methodcall f [] (Some cb)
       }
 
-  | primary<p> T_SCOPE identifier<id>  { M.scope $2 p id }
-  | T_USCOPE<pos> identifier<id>       { Unary((Op_UScope,pos),id) }
+  | primary<p> T_SCOPE identifier<id>  { M.scope $2 p (Id id) }
+  | T_USCOPE<pos> identifier<id>       { Unary((Op_UScope,pos), Id id) }
 
   | primary<p> T_LBRACK_ARG<pos1> eols arg_comma_list_trail<xs> eols T_RBRACK
       { M.methodcall (Binop(p,(Op_DOT,pos1), Operator(Op_AREF,pos1))) (* TODO: wrong tok Binop? *)
@@ -595,7 +595,7 @@ rescue_clause:
   | K_RESCUE<pos> arg_comma_star_list<exn> 
     { (tuple exn,S Empty) }
 
-seen_id: identifier<i> { M.seen dyp i; i}
+seen_id: identifier<i> { M.seen dyp (Id i); Id i}
 
 
 rescue_list:
@@ -691,7 +691,7 @@ command:
 
 command_name:
   | identifier<id> 
-      { id }
+      { Id id }
 
   | primary<p> T_DOT eols message_identifier<m>
       { M.unfold_dot p m $2}
@@ -873,7 +873,7 @@ do_codeblock:
 /*(*----------------------------*)*/
 
 formal_arg:
-  | identifier<id>         { M.seen dyp id; Formal_id id }
+  | identifier<id>         { M.seen dyp (Id id); Formal_id (Id id) }
   | T_UAMPER T_LID<id,pos> { M.seen_str dyp id; Formal_amp ($1, $2) }
   | T_AMPER T_LID<id,pos>  { M.seen_str dyp id; Formal_amp ($1, $2) }
   | T_USTAR T_LID<id,pos>  { M.seen_str dyp id; Formal_star ($1, $2) }
@@ -939,21 +939,21 @@ class_inheritance:
 
 /*(* called 'variable' in tree-sitter-ruby *)*/
 identifier:
-  | T_LID<id,pos>          { Id ((id,pos), ID_Lowercase)}
-  | T_UID<id,pos>          { Id ((id,pos), ID_Uppercase)}
+  | T_LID<id,pos>          { ((id,pos), ID_Lowercase)}
+  | T_UID<id,pos>          { ((id,pos), ID_Uppercase)}
 
-  | T_BUILTIN_VAR<id,pos>  { Id ((id,pos), ID_Builtin) }
-  | T_GLOBAL_VAR<id,pos>   { Id ((id,pos), ID_Global) }
-  | T_INST_VAR<id,pos>     { Id ((id,pos), ID_Instance) }
-  | T_CLASS_VAR<id,pos>    { Id ((id,pos), ID_Class) }
+  | T_BUILTIN_VAR<id,pos>  { ((id,pos), ID_Builtin) }
+  | T_GLOBAL_VAR<id,pos>   { ((id,pos), ID_Global) }
+  | T_INST_VAR<id,pos>     { ((id,pos), ID_Instance) }
+  | T_CLASS_VAR<id,pos>    { ((id,pos), ID_Class) }
 
-  | K_SELF            { Id (("self", $1), ID_Self) }
-  | K_SUPER           { Id (("super", $1), ID_Super) }
+  | K_SELF            { (("self", $1), ID_Self) }
+  | K_SUPER           { (("super", $1), ID_Super) }
 
 scoped_id:
-  | identifier<id>                            { id }
-  | T_USCOPE<pos> identifier<id>              { Unary((Op_UScope,pos),id)}
-  | scoped_id<id1> T_SCOPE identifier<id2>    { Binop(id1,(Op_SCOPE,$2), id2) }
+  | identifier<id>                            { Id id }
+  | T_USCOPE<pos> identifier<id>              { Unary((Op_UScope,pos),Id id)}
+  | scoped_id<id1> T_SCOPE identifier<id2>    { Binop(id1,(Op_SCOPE,$2), Id id2) }
   | scoped_id<id1> T_SCOPE keyword_as_id<id2> { Binop(id1,(Op_SCOPE,$2), id2) }
 
 
@@ -967,7 +967,7 @@ message_identifier:
   | T_TILDE<pos>                        { UOperator(Op_UTilde,pos) }
 
 assignable:
-  | identifier<e>              { e }
+  | identifier<e>              { Id e }
   | keyword_as_id<k>           { k }
   | T_LBRACK_ARG<pos> T_RBRACK { Operator(Op_AREF,pos) }
   | T_LBRACK<pos>     T_RBRACK { Operator(Op_AREF,pos) }
@@ -981,7 +981,7 @@ method_name:
   | K_FALSE           { Literal(Bool (false,$1)) }
 
 
-  | T_USCOPE<pos> identifier<id>     { Unary((Op_UScope,pos),id)}
+  | T_USCOPE<pos> identifier<id>     { Unary((Op_UScope,pos),Id id)}
   | T_USCOPE<pos> keyword_as_id<id>  { Unary((Op_UScope,pos),id)}
 
   /*(* recursive *)*/
@@ -990,7 +990,7 @@ method_name:
       { Binop(id1,(Op_DOT,$2), id2) }
   | method_name<id1> T_DOT eols assignable<id2> T_ASSIGN
       { Binop(id1,(Op_DOT,$2), add_eq id2) }
-  | method_name<id1> T_SCOPE identifier<id2>    { M.scope $2 id1 id2 }
+  | method_name<id1> T_SCOPE identifier<id2>    { M.scope $2 id1 (Id id2) }
   | method_name<id1> T_SCOPE keyword_as_id<id2> { M.scope $2 id1 id2 }
 
   | T_LPAREN<pos> eols stmt_list<xs> T_RPAREN T_DOT message_identifier<m>
