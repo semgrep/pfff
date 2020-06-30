@@ -1087,7 +1087,7 @@ and refactor_symbol_or_msg (acc:stmt acc) sym_msg = match sym_msg with
   | msg -> refactor_msg acc msg
 
 and refactor_codeblock acc : Ast.expr -> codeblock = function
-  | Ast.CodeBlock(_,formals,body, pos) ->
+  | Ast.CodeBlock((pos,_,_),formals,body) ->
       let formals = match formals with
         | None -> [Ast.Formal_rest pos (* TODO *)]
         | Some lst -> lst
@@ -1232,7 +1232,7 @@ and refactor_method_call_assign (acc:stmt acc) (lhs : lhs option) = function
 
   | Ast.Call(Ast.Id(("define_method",pos),Ast.ID_Lowercase),
                      [Ast.Literal(Ast.Atom ([Ast.StrChars mname],atompos))], 
-                     Some(Ast.CodeBlock(_,params_o,cb_body,_))) ->
+                     Some(Ast.CodeBlock(_,params_o,cb_body))) ->
       let params = Utils.default_opt [] params_o in
       let name = H.msg_of_str mname atompos in
       let body = {Ast.body_exprs = cb_body;rescue_exprs=[];ensure_expr=[];else_expr=[]} in
@@ -1583,7 +1583,9 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
       let body' = C.seq (DQueue.to_list body_acc.q) pos in
         acc_enqueue (mkstmt (End body') pos) acc
 
-  | Ast.S Ast.ExnBlock(body,pos) -> refactor_body acc body pos
+  | Ast.S Ast.ExnBlock(body) -> 
+      let pos = raise Todo in
+      refactor_body acc body pos
 
   | Ast.S Ast.Empty -> acc
 
