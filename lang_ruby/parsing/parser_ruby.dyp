@@ -91,6 +91,7 @@ let dyp_merge_Obj_if_else_clauses        = M.merge_rest "if_else_clauses"
 let dyp_merge_Obj_meth_or_atom           = M.merge_rest "meth_or_atom"
 let dyp_merge_Obj_assignable             = M.merge_rest "assignable"
 let dyp_merge_Obj_message_identifier     = M.merge_rest "message_identifier"
+let dyp_merge_Obj_message_identifier2     = M.merge_rest "message_identifier2"
 let dyp_merge_Obj_bin_op                 = M.merge_rest "bin_op"
 let dyp_merge_Obj_unary_op               = M.merge_rest "unary_op"
 let dyp_merge_Obj_keyword_as_id          = M.merge_rest "keyword_as_id"
@@ -967,31 +968,28 @@ message_identifier:
   | T_UMINUS<pos>                       { UOperator(Op_UMinus,pos) }
   | T_TILDE<pos>                        { UOperator(Op_UTilde,pos) }
 
+message_identifier2:
+  | message_identifier { $1 }
+  | T_LID<id,pos> T_ASSIGN { add_eq (Id ((id,pos), ID_Lowercase)) }
+  | T_UID<id,pos> T_ASSIGN { add_eq (Id ((id,pos), ID_Uppercase)) }
+  | keyword_as_id T_ASSIGN { add_eq $1 }
+
 /*(* for simple method definitions, aliases and undefs *)*/
 method_name:
-  | message_identifier<e> { e }
-  | T_LID<id,pos> T_ASSIGN { add_eq (Id ((id,pos), ID_Lowercase)) }
+  | message_identifier2<e> { e }
 
 
 /*(* for complex method definitions *)*/
 method_name2:
-  | message_identifier<e> { e }
-  /*(* recursive *)*/
-  | method_name2<e> T_ASSIGN { add_eq e }
+  | method_name { $1 }
 
   | T_USCOPE<pos> identifier<id>     { Unary((Op_UScope,pos),Id id)}
   | T_USCOPE<pos> keyword_as_id<id>  { Unary((Op_UScope,pos),id)}
 
-
-  | method_name2<id1> T_DOT eols message_identifier<id2> 
+  | method_name2<id1> T_DOT eols message_identifier2<id2> 
       { Binop(id1,(Op_DOT,$2), id2) }
-  | method_name2<id1> T_DOT eols assignable<id2> T_ASSIGN
-      { Binop(id1,(Op_DOT,$2), add_eq id2) }
-
-  | method_name2<id1> T_SCOPE identifier<id2>    { M.scope $2 id1 (Id id2) }
-  | method_name2<id1> T_SCOPE keyword_as_id<id2> { M.scope $2 id1 id2 }
-
-  | T_LPAREN<pos> eols stmt_list<xs> T_RPAREN T_DOT message_identifier<m>
+  | method_name2<id1> T_SCOPE message_identifier2<id2> { M.scope $2 id1 id2 }
+  | T_LPAREN<pos> eols stmt_list<xs> T_RPAREN T_DOT message_identifier2<m>
       { Binop(mk_block xs, (Op_DOT,$5),m) }
 
 meth_or_atom:
