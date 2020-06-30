@@ -500,6 +500,9 @@ raise_stmt:
   | RAISE test                      { Raise ($1, Some ($2, None)) }
   (* python3-ext: *)
   | RAISE test FROM test            { Raise ($1, Some ($2, Some $4)) }
+  (* python2-ext: *)
+  | RAISE test "," test             { RaisePython2 ($1, $2, Some $4, None) }
+  | RAISE test "," test "," test    { RaisePython2 ($1, $2, Some $4, Some $6) }
 
 
 global_stmt: GLOBAL list_sep(NAME, ",") { Global ($1, $2) }

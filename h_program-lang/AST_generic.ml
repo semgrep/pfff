@@ -718,7 +718,8 @@ and stmt =
     | OS_Delete 
     (* todo: reduce? transpile? *)
     | OS_ForOrElse | OS_WhileOrElse | OS_TryOrElse
-    | OS_ThrowFrom | OS_ThrowNothing 
+    | OS_ThrowFrom | OS_ThrowNothing
+    | OS_ThrowArgsLocation (* Python2: `raise expr, expr` and `raise expr, expr, exr` *)
     | OS_Pass
     | OS_Async
     (* Java *)

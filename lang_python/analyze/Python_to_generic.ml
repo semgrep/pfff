@@ -580,10 +580,10 @@ and stmt_aux x =
 
   | Raise (t, v1) ->
       (match v1 with
-      | Some (e, None) -> 
-        let e = expr e in 
+      | Some (e, None) ->
+        let e = expr e in
         [G.Throw (t, e)]
-      | Some (e, Some from) -> 
+      | Some (e, Some from) ->
         let e = expr e in
         let from = expr from in
         let st = G.Throw (t, e) in
@@ -591,6 +591,21 @@ and stmt_aux x =
       | None ->
         [G.OtherStmt (G.OS_ThrowNothing, [G.Tk t])]
       )
+  | RaisePython2 (t, e, v2, v3) ->
+    let e = expr e in
+    let st = G.Throw (t, e) in
+    (match (v2, v3) with
+    | (Some args, Some loc) ->
+      let args = expr args
+      and loc = expr loc
+      in
+      [G.OtherStmt (G.OS_ThrowArgsLocation, [G.E loc; G.E args; G.S st])]
+    | (Some args, None) ->
+      let args = expr args in
+      [G.OtherStmt (G.OS_ThrowArgsLocation, [G.E args; G.S st])]
+    | (None, _) ->
+      [st]
+    )
                   
   | TryExcept ((t, v1, v2, v3)) ->
       let v1 = list_stmt1 v1

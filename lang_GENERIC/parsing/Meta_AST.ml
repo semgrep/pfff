@@ -657,6 +657,7 @@ and vof_other_stmt_operator =
   | OS_TryOrElse -> OCaml.VSum (("OS_TryOrElse", []))
   | OS_ThrowFrom -> OCaml.VSum (("OS_ThrowFrom", []))
   | OS_ThrowNothing -> OCaml.VSum (("OS_ThrowNothing", []))
+  | OS_ThrowArgsLocation -> OCaml.VSum (("OS_ThrowArgsLocation", []))
   | OS_GlobalComplex -> OCaml.VSum (("OS_GlobalComplex", []))
   | OS_Pass -> OCaml.VSum (("OS_Pass", []))
   | OS_Sync -> OCaml.VSum (("OS_Sync", []))
