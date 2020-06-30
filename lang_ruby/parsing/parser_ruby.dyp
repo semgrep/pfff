@@ -45,6 +45,7 @@ let dyp_merge_Obj_expr                   = M.merge_expr "expr"
 let dyp_merge_Obj_primary                = M.merge_expr "primary"
 let dyp_merge_Obj_func                   = M.merge_expr "func"
 let dyp_merge_Obj_method_name            = M.merge_expr "method_name"
+let dyp_merge_Obj_method_name2            = M.merge_expr "method_name2"
 
 let dyp_merge_Obj_stmt_list              = M.merge_expr_list "stmt_list"
 let dyp_merge_Obj_call_args              = M.merge_expr_list "call_args"
@@ -837,7 +838,7 @@ command_codeblock:
 /*(*1 Function definition *)*/
 /*(*************************************************************************)*/
 
-method_definition: scope_DEF<pos> method_name<id> method_formals<xs> eols
+method_definition: scope_DEF<pos> method_name2<id> method_formals<xs> eols
   body_exn<body> K_lEND
       { S.leave_scope dyp;
         D (MethodDef (pos, id, xs, body)) }
@@ -961,25 +962,34 @@ message_identifier:
   | assignable<e>                       { e }
   | bin_op<op,tk>                       { Operator(op,tk) }
   | T_LBRACK_ARG<pos> T_RBRACK T_ASSIGN { Operator(Op_ASET,pos) }
+  | T_LBRACK<pos>     T_RBRACK T_ASSIGN { Operator(Op_ASET,pos) }
   | T_UPLUS<pos>                        { UOperator(Op_UPlus,pos) }
   | T_UMINUS<pos>                       { UOperator(Op_UMinus,pos) }
   | T_TILDE<pos>                        { UOperator(Op_UTilde,pos) }
 
-/*(* for definition *)*/
+/*(* for simple method definitions, aliases and undefs *)*/
 method_name:
   | message_identifier<e> { e }
+  | T_LID<id,pos> T_ASSIGN { add_eq (Id ((id,pos), ID_Lowercase)) }
+
+
+/*(* for complex method definitions *)*/
+method_name2:
+  | message_identifier<e> { e }
+  /*(* recursive *)*/
+  | method_name2<e> T_ASSIGN { add_eq e }
 
   | T_USCOPE<pos> identifier<id>     { Unary((Op_UScope,pos),Id id)}
   | T_USCOPE<pos> keyword_as_id<id>  { Unary((Op_UScope,pos),id)}
 
-  /*(* recursive *)*/
-  | method_name<e> T_ASSIGN { add_eq e }
-  | method_name<id1> T_DOT eols message_identifier<id2> 
+
+  | method_name2<id1> T_DOT eols message_identifier<id2> 
       { Binop(id1,(Op_DOT,$2), id2) }
-  | method_name<id1> T_DOT eols assignable<id2> T_ASSIGN
+  | method_name2<id1> T_DOT eols assignable<id2> T_ASSIGN
       { Binop(id1,(Op_DOT,$2), add_eq id2) }
-  | method_name<id1> T_SCOPE identifier<id2>    { M.scope $2 id1 (Id id2) }
-  | method_name<id1> T_SCOPE keyword_as_id<id2> { M.scope $2 id1 id2 }
+
+  | method_name2<id1> T_SCOPE identifier<id2>    { M.scope $2 id1 (Id id2) }
+  | method_name2<id1> T_SCOPE keyword_as_id<id2> { M.scope $2 id1 id2 }
 
   | T_LPAREN<pos> eols stmt_list<xs> T_RPAREN T_DOT message_identifier<m>
       { Binop(mk_block xs, (Op_DOT,$5),m) }
