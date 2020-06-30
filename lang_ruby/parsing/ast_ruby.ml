@@ -95,8 +95,6 @@ type variable = ident * id_kind
   | ID_Global    (* prefixed by $ *)
   (* TODO: can merge with Global *)
   | ID_Builtin   (* prefixed by $, followed by non-alpha *)
-  (* TODO: move out in method_name instead *)
-  | ID_Assign of id_kind (* postfixed by = *)
  [@@deriving show { with_path = false }, eq, ord]
 
 (* 
@@ -215,6 +213,7 @@ type expr =
   | D of definition
 
 and literal = 
+  (* [tT]rue, [fF]alse *)
   | Bool of bool wrap
   (* pattern: 0[bB][01](_?[01])*|0[oO]?[0-7](_?[0-7])*|(0[dD])?\d(_?\d)*|0x[0-9a-fA-F](_?[0-9a-fA-F])* *)
   | Num of string wrap

@@ -124,7 +124,14 @@ let is_exnblock = function
 (* method_name to expr *)
 let methodexpr = function
   | MethodId v -> Id v
-  | MethodIdAssign (id, _, idk) -> Id (id, ID_Assign idk)
+  | MethodIdAssign (id, _, idk) -> raise Common.Impossible
+  | MethodAtom x -> Literal (Atom x)
+  | MethodUOperator x -> UOperator x
+  | MethodOperator x -> Operator x
+
+let methodexpr2 = function
+  | MethodId v -> Id v
+  | MethodIdAssign (id, _, idk) -> (* TODO *) Id (id, idk)
   | MethodAtom x -> Literal (Atom x)
   | MethodUOperator x -> UOperator x
   | MethodOperator x -> Operator x
@@ -981,11 +988,11 @@ method_kind:
   | method_name { M $1 }
   /*(* for complex method definitions *)*/
   | identifier2<id1> T_DOT eols method_name<id2> 
-      { SingletonM (Binop(Id id1,(Op_DOT,$2), methodexpr id2))}
+      { SingletonM (Binop(Id id1,(Op_DOT,$2), methodexpr2 id2))}
   | identifier2<id1> T_SCOPE    method_name<id2> 
-      { SingletonM (M.scope $2 (Id id1) (methodexpr id2)) }
+      { SingletonM (M.scope $2 (Id id1) (methodexpr2 id2)) }
   | T_LPAREN arg T_RPAREN T_DOT method_name
-      { SingletonM (Binop($2, (Op_DOT,$4), (methodexpr $5))) }
+      { SingletonM (Binop($2, (Op_DOT,$4), (methodexpr2 $5))) }
 
 meth_or_atom:
     | method_name  { $1 }
