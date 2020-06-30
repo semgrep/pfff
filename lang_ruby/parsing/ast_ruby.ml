@@ -77,14 +77,10 @@ type 'a bracket = tok * 'a * tok
 type ident = string wrap
  [@@deriving show, eq, ord]
 
-type _uident = string wrap (* Uppercase, a.k.a "constant" in Ruby *)
+(* less: Self of tok | Id of ident | Cst of uident | ...  
+type uident = string wrap (* Uppercase, a.k.a "constant" in Ruby *)
  [@@deriving show, eq, ord]
-
-(* 
-type name = NameConstant of uident | NameScope of ...
 *)
-
-(* TODO: Self of tok | Id of ident | Cst of uident | ...  *)
 type variable = ident * id_kind 
  and id_kind = 
   | ID_Self 
@@ -101,6 +97,10 @@ type variable = ident * id_kind
   (* TODO: move out in method_name instead *)
   | ID_Assign of id_kind (* postfixed by = *)
  [@@deriving show { with_path = false }, eq, ord]
+
+(* 
+type name = NameConstant of uident | NameScope of ...
+*)
 
 (* ------------------------------------------------------------------------- *)
 (* Operators *)
@@ -178,6 +178,11 @@ type binary_op =
 
  [@@deriving show { with_path = false }, eq, ord]
 
+(* ------------------------------------------------------------------------- *)
+(* Method name *)
+(* ------------------------------------------------------------------------- *)
+(* later, mutually dependent on expr because of MethodSymbol *)
+
 (*****************************************************************************)
 (* Expression *)
 (*****************************************************************************)
@@ -223,7 +228,7 @@ and literal =
   (* pattern: \?(\\\S({[0-9]*}|[0-9]*|-\S([MC]-\S)?)?|\S) *)
   | Char of string wrap 
 
-  | Atom of string_contents list wrap
+  | Atom of atom
 
   | Nil of tok 
 
@@ -235,6 +240,20 @@ and literal =
     and string_contents = 
       | StrChars of string
       | StrExpr of expr
+
+  and atom = string_contents list wrap
+
+(* ------------------------------------------------------------------------- *)
+(* Method name *)
+(* ------------------------------------------------------------------------- *)
+
+and method_name = expr
+and _method_name2 = 
+  | MethodId of variable (* all except Self and Super *)
+  | MethodIdAssign of ident * tok (* = *)
+  | MethodSymbol of atom
+  | MethodUOperator of unary_op wrap
+  | MethodOperator of binary_op wrap
 
 (*****************************************************************************)
 (* pattern *)
@@ -329,8 +348,6 @@ and definition =
     | Class_Inherit of expr
     | Inst_Inherit of expr
 
-  (* TODO: Il_ruby.msg_id like *)
-  and method_name = expr 
   (* TODO: *)
   and name = expr
 

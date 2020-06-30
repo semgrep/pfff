@@ -942,6 +942,7 @@ identifier:
 
   | K_NIL             { Literal(Nil $1) }
   | K_SELF            { Id (("self", $1), ID_Self) }
+  | K_SUPER           { Id (("super", $1), ID_Super) }
   | K_TRUE            { Literal(Bool (true,$1)) }
   | K_FALSE           { Literal(Bool (false,$1)) }
 
