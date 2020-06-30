@@ -950,11 +950,14 @@ identifier:
   | K_SELF            { (("self", $1), ID_Self) }
   | K_SUPER           { (("super", $1), ID_Super) }
 
+identifier2:
+  | identifier { $1 }
+  | keyword_as_id { $1 }
+
 /*(* for use *)*/
 message_identifier:
   /*(* this part was in an intermediate 'assignable' rule before *)*/
-  | identifier<e>              { Id e }
-  | keyword_as_id<k>           { k }
+  | identifier2<e>              { Id e }
   | T_LBRACK_ARG<pos> T_RBRACK { Operator(Op_AREF,pos) }
   | T_LBRACK<pos>     T_RBRACK { Operator(Op_AREF,pos) }
 
@@ -971,34 +974,32 @@ method_name:
   | message_identifier { $1 }
   | T_LID<id,pos> T_ASSIGN { add_eq (Id ((id,pos), ID_Lowercase)) }
   | T_UID<id,pos> T_ASSIGN { add_eq (Id ((id,pos), ID_Uppercase)) }
-  | keyword_as_id T_ASSIGN { add_eq $1 }
+  | keyword_as_id T_ASSIGN { add_eq (Id $1) }
 
 
 /*(* for complex method definitions *)*/
 method_name2:
   | method_name { $1 }
 
-  | method_name2<id1> T_DOT eols method_name<id2> 
-      { Binop(id1,(Op_DOT,$2),id2)}
-  | method_name2<id1> T_SCOPE method_name<id2> 
-      { M.scope $2 id1 id2 }
+  | identifier2<id1>                         T_DOT eols method_name<id2> 
+      { Binop(Id id1,(Op_DOT,$2),id2)}
   | T_LPAREN<pos> eols stmt_list<xs> T_RPAREN T_DOT method_name<m>
       { Binop(mk_block xs, (Op_DOT,$5),m) }
+  | method_name2<id1> T_SCOPE method_name<id2> 
+      { M.scope $2 id1 id2 }
 
 meth_or_atom:
     | method_name<e>  { e }
     | T_ATOM<a,pos>   { Literal((Atom (a,pos))) }
 
 scoped_id:
-  | identifier<id>                            { Id id }
-  | T_USCOPE<pos> identifier<id>              { Unary((Op_UScope,pos),Id id)}
-  | scoped_id<id1> T_SCOPE identifier<id2>    { Binop(id1,(Op_SCOPE,$2), Id id2) }
-  | scoped_id<id1> T_SCOPE keyword_as_id<id2> { Binop(id1,(Op_SCOPE,$2), id2) }
+  | identifier<id>                           { Id id }
+  | T_USCOPE<pos> identifier<id>             { Unary((Op_UScope,pos),Id id)}
+  | scoped_id<id1> T_SCOPE identifier2<id2>  { Binop(id1,(Op_SCOPE,$2),Id id2)}
 
 
 
 /*(* operator overloading *)*/
-
 bin_op:
   | T_PLUS   { Op_PLUS,$1 }   | T_MINUS  { Op_MINUS, $1 }
   | T_STAR   { Op_TIMES,$1 }  | T_SLASH  { Op_DIV,$1 } | T_PERCENT{ Op_REM,$1 }
@@ -1020,38 +1021,38 @@ unary_op:
   | T_TILDE<pos>   { Op_UTilde,pos } | T_BANG<pos>    { Op_UBang,pos }
 
 keyword_as_id:
-  | K_CLASS<pos>   { Id(("class", pos), ID_Lowercase) }
-  | K_MODULE<pos>  { Id(("module", pos), ID_Lowercase) }
-  | K_DEF<pos>     { Id(("def", pos), ID_Lowercase) }
-  | K_END<pos>     { Id(("END", pos), ID_Lowercase) }
-  | K_ALIAS<pos>   { Id(("alias", pos), ID_Lowercase) }
-  | K_UNDEF<pos>   { Id(("undef", pos), ID_Lowercase) }
-  | K_BEGIN<pos>   { Id(("BEGIN", pos), ID_Lowercase) }
-  | K_RESCUE<pos>  { Id(("rescue", pos), ID_Lowercase) }
-  | K_ENSURE<pos>  { Id(("ensure", pos), ID_Lowercase) }
-  | K_IF<pos>      { Id(("if", pos), ID_Lowercase) }
-  | K_UNLESS<pos>  { Id(("unless", pos), ID_Lowercase) }
-  | K_THEN<pos>    { Id(("then", pos), ID_Lowercase) }
-  | K_ELSIF<pos>   { Id(("elsif", pos), ID_Lowercase) }
-  | K_ELSE<pos>    { Id(("else", pos), ID_Lowercase) }
-  | K_CASE<pos>    { Id(("case", pos), ID_Lowercase) }
-  | K_WHEN<pos>    { Id(("when", pos), ID_Lowercase) }
-  | K_WHILE<pos>   { Id(("while", pos), ID_Lowercase) }
-  | K_UNTIL<pos>   { Id(("until", pos), ID_Lowercase) }
-  | K_FOR<pos>     { Id(("for", pos), ID_Lowercase) }
-  | K_IN<pos>      { Id(("in", pos), ID_Lowercase) }
-  | K_DO<pos>      { Id(("do", pos), ID_Lowercase) }
-  | K_RETURN<pos>  { Id(("return", pos), ID_Lowercase) }
-  | K_AND<pos>     { Id(("and", pos), ID_Lowercase) }
-  | K_OR<pos>      { Id(("or", pos), ID_Lowercase) }
-  | K_NOT<pos>     { Id(("not", pos), ID_Lowercase) }
-  | K_lBEGIN<pos>  { Id(("begin", pos), ID_Lowercase) }
-  | K_lEND<pos>    { Id(("end", pos), ID_Lowercase) }
-  | K_YIELD<pos>   { Id(("yield", pos), ID_Lowercase) }
-  | K_NIL<pos>     { Id(("nil", pos), ID_Lowercase) }
-  | K_TRUE<pos>    { Id(("true", pos), ID_Lowercase) }
-  | K_FALSE<pos>   { Id(("false", pos), ID_Lowercase) }
-/*  | K_DEFINED<pos> { Id(ID_Lowercase, "defined?", pos) }*/
+  | K_CLASS<pos>   { (("class", pos), ID_Lowercase) }
+  | K_MODULE<pos>  { (("module", pos), ID_Lowercase) }
+  | K_DEF<pos>     { (("def", pos), ID_Lowercase) }
+  | K_END<pos>     { (("END", pos), ID_Lowercase) }
+  | K_ALIAS<pos>   { (("alias", pos), ID_Lowercase) }
+  | K_UNDEF<pos>   { (("undef", pos), ID_Lowercase) }
+  | K_BEGIN<pos>   { (("BEGIN", pos), ID_Lowercase) }
+  | K_RESCUE<pos>  { (("rescue", pos), ID_Lowercase) }
+  | K_ENSURE<pos>  { (("ensure", pos), ID_Lowercase) }
+  | K_IF<pos>      { (("if", pos), ID_Lowercase) }
+  | K_UNLESS<pos>  { (("unless", pos), ID_Lowercase) }
+  | K_THEN<pos>    { (("then", pos), ID_Lowercase) }
+  | K_ELSIF<pos>   { (("elsif", pos), ID_Lowercase) }
+  | K_ELSE<pos>    { (("else", pos), ID_Lowercase) }
+  | K_CASE<pos>    { (("case", pos), ID_Lowercase) }
+  | K_WHEN<pos>    { (("when", pos), ID_Lowercase) }
+  | K_WHILE<pos>   { (("while", pos), ID_Lowercase) }
+  | K_UNTIL<pos>   { (("until", pos), ID_Lowercase) }
+  | K_FOR<pos>     { (("for", pos), ID_Lowercase) }
+  | K_IN<pos>      { (("in", pos), ID_Lowercase) }
+  | K_DO<pos>      { (("do", pos), ID_Lowercase) }
+  | K_RETURN<pos>  { (("return", pos), ID_Lowercase) }
+  | K_AND<pos>     { (("and", pos), ID_Lowercase) }
+  | K_OR<pos>      { (("or", pos), ID_Lowercase) }
+  | K_NOT<pos>     { (("not", pos), ID_Lowercase) }
+  | K_lBEGIN<pos>  { (("begin", pos), ID_Lowercase) }
+  | K_lEND<pos>    { (("end", pos), ID_Lowercase) }
+  | K_YIELD<pos>   { (("yield", pos), ID_Lowercase) }
+  | K_NIL<pos>     { (("nil", pos), ID_Lowercase) }
+  | K_TRUE<pos>    { (("true", pos), ID_Lowercase) }
+  | K_FALSE<pos>   { (("false", pos), ID_Lowercase) }
+/*  | K_DEFINED<pos> { (ID_Lowercase, "defined?", pos) }*/
 
 
 
