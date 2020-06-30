@@ -985,8 +985,8 @@ method_name2:
       { Binop(Id id1,(Op_DOT,$2),id2)}
   | identifier2<id1> T_SCOPE    method_name<id2> 
       { M.scope $2 (Id id1) id2 }
-  | T_LPAREN<pos> eols stmt_list<xs> T_RPAREN T_DOT method_name<m>
-      { Binop(mk_block xs, (Op_DOT,$5),m) }
+  | T_LPAREN arg T_RPAREN T_DOT method_name
+      { Binop($2, (Op_DOT,$4), $5) }
 
 meth_or_atom:
     | method_name<e>  { e }
