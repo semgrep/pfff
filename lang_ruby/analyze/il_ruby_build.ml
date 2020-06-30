@@ -4,7 +4,6 @@ open Il_ruby
 open Utils_ruby
 module Utils = Utils_ruby
 module Ast = Ast_ruby
-module H = Ast_ruby_helpers
 open Il_ruby_helpers
 module C = Il_ruby_helpers.Abbr
 module G = AST_generic (* for unbracket *)
@@ -1252,9 +1251,9 @@ and refactor_method_call_assign (acc:stmt acc) (lhs : lhs option) = function
                      [Ast.Literal(Ast.Atom ([Ast.StrChars mname],atompos))], 
                      Some(Ast.CodeBlock(_,params_o,cb_body))) ->
       let params = Utils.default_opt [] params_o in
-      let name = H.msg_of_str mname atompos in
+      let name = (* H.msg_of_str *) Ast.MethodId ((mname,atompos), Ast.ID_Lowercase) in
       let body = {Ast.body_exprs = cb_body;rescue_exprs=[];ensure_expr=[];else_expr=[]} in
-      let e' = Ast.D (Ast.MethodDef(pos, name,params,body)) in
+      let e' = Ast.D (Ast.MethodDef(pos, Ast.M name,params,body)) in
         refactor_stmt acc e'
 
   | Ast.Call(Ast.Binop(targ,(Ast.Op_DOT, _pos2),msg), args, cb)
@@ -1615,19 +1614,23 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
         (Ast_ruby.show_expr s)
       
 and refactor_method_name (acc:stmt acc) e : stmt acc * def_name = match e with
-  | Ast.Binop(targ,(Ast.Op_SCOPE,_pos),msg)
-  | Ast.Binop(targ,(Ast.Op_DOT, _pos),msg) ->
+  | Ast.SingletonM (Ast.Binop(targ,(Ast.Op_SCOPE,_pos),msg))
+  | Ast.SingletonM (Ast.Binop(targ,(Ast.Op_DOT, _pos),msg)) ->
       let acc,targ' = refactor_id acc targ in
       let acc,msg' = refactor_msg acc msg in
         acc, (Singleton_Method (targ',msg'))
 
-  | Ast.Literal(Ast.Atom ([Ast.StrChars s], _pos)) -> 
+  | Ast.SingletonM e ->
+      Log.fatal (Log.of_tok (tok_of e)) "refactor_method_name unknown msg: %s\n"
+        (Ast_ruby.show_expr e)
+
+  | Ast.M (Ast.MethodAtom ([Ast.StrChars s], _pos)) -> 
       acc, (Instance_Method (ID_MethodName s))
 
-  | Ast.Literal(Ast.Atom (_, pos)) -> 
+  | Ast.M (Ast.MethodAtom (_, pos)) -> 
       Log.fatal (Log.of_tok pos) "interpreted atom string in method name?"
-  | e -> 
-      let acc,id = refactor_msg acc e in
+  | Ast.M e -> 
+      let acc,id = refactor_msg2 acc e in
         acc, (Instance_Method id)
 
 and refactor_body (acc:stmt acc) b pos : stmt acc = 

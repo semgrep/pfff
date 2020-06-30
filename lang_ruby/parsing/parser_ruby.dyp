@@ -45,7 +45,7 @@ let dyp_merge_Obj_expr                   = M.merge_expr "expr"
 let dyp_merge_Obj_primary                = M.merge_expr "primary"
 let dyp_merge_Obj_func                   = M.merge_expr "func"
 let dyp_merge_Obj_method_name            = M.merge_method_name "method_name"
-let dyp_merge_Obj_method_name2            = M.merge_expr "method_name2"
+let dyp_merge_Obj_method_kind            = M.merge_method_kind "method_kind"
 
 let dyp_merge_Obj_stmt_list              = M.merge_expr_list "stmt_list"
 let dyp_merge_Obj_call_args              = M.merge_expr_list "call_args"
@@ -838,7 +838,7 @@ command_codeblock:
 /*(*1 Function definition *)*/
 /*(*************************************************************************)*/
 
-method_definition: scope_DEF<pos> method_name2<id> method_formals<xs> eols
+method_definition: scope_DEF<pos> method_kind<id> method_formals<xs> eols
   body_exn<body> K_lEND
       { S.leave_scope dyp;
         D (MethodDef (pos, id, xs, body)) }
@@ -976,17 +976,16 @@ method_name:
   | T_UID T_ASSIGN         { MethodIdAssign ($1, $2, ID_Uppercase) }
   | keyword_as_id T_ASSIGN { MethodIdAssign (fst $1, $2, ID_Lowercase) }
 
-
-/*(* for complex method definitions *)*/
-method_name2:
-  | method_name { methodexpr $1 }
-
+/*(* was called method_name *)*/
+method_kind:
+  | method_name { M $1 }
+  /*(* for complex method definitions *)*/
   | identifier2<id1> T_DOT eols method_name<id2> 
-      { Binop(Id id1,(Op_DOT,$2), methodexpr id2)}
+      { SingletonM (Binop(Id id1,(Op_DOT,$2), methodexpr id2))}
   | identifier2<id1> T_SCOPE    method_name<id2> 
-      { M.scope $2 (Id id1) (methodexpr id2) }
+      { SingletonM (M.scope $2 (Id id1) (methodexpr id2)) }
   | T_LPAREN arg T_RPAREN T_DOT method_name
-      { Binop($2, (Op_DOT,$4), (methodexpr $5)) }
+      { SingletonM (Binop($2, (Op_DOT,$4), (methodexpr $5))) }
 
 meth_or_atom:
     | method_name  { $1 }
