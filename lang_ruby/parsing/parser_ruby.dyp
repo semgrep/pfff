@@ -950,6 +950,12 @@ identifier:
   | K_SUPER           { (("super", $1), ID_Super) }
 
 
+assignable:
+  | identifier<e>              { Id e }
+  | keyword_as_id<k>           { k }
+  | T_LBRACK_ARG<pos> T_RBRACK { Operator(Op_AREF,pos) }
+  | T_LBRACK<pos>     T_RBRACK { Operator(Op_AREF,pos) }
+
 /*(* for use *)*/
 message_identifier:
   | assignable<e>                       { e }
@@ -958,13 +964,6 @@ message_identifier:
   | T_UPLUS<pos>                        { UOperator(Op_UPlus,pos) }
   | T_UMINUS<pos>                       { UOperator(Op_UMinus,pos) }
   | T_TILDE<pos>                        { UOperator(Op_UTilde,pos) }
-
-assignable:
-  | identifier<e>              { Id e }
-  | keyword_as_id<k>           { k }
-  | T_LBRACK_ARG<pos> T_RBRACK { Operator(Op_AREF,pos) }
-  | T_LBRACK<pos>     T_RBRACK { Operator(Op_AREF,pos) }
-
 
 /*(* for definition *)*/
 method_name:
