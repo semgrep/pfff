@@ -63,7 +63,7 @@ val merge_expr :
   string -> (Ast_ruby.expr * 'a * 'b) list -> Ast_ruby.expr list * 'a * 'b
 
 val merge_method_name :
-  string -> (Ast_ruby.method_name2 * 'a * 'b) list -> Ast_ruby.method_name2 list * 'a * 'b
+  string -> (Ast_ruby.method_name * 'a * 'b) list -> Ast_ruby.method_name list * 'a * 'b
 
 val merge_stmt :
   (Ast_ruby.expr * 'a * 'b) list -> Ast_ruby.expr list * 'a * 'b

@@ -574,8 +574,8 @@ let merge_expr s xs =
 
 let merge_method_name s xs =
   wrap xs (fun xs ->
-  let l' = uniq_list compare_method_name2 xs in
-    do_fail s l' Ast_printer.show_method_name2;
+  let l' = uniq_list compare_method_name xs in
+    do_fail s l' Ast_printer.show_method_name;
     l'
   )
 

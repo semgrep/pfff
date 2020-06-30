@@ -1075,14 +1075,34 @@ and refactor_msg (acc:stmt acc) msg : stmt acc * msg_id = match msg with
       Log.fatal (Log.of_tok (tok_of e)) "refactor_msg unknown msg: %s\n"
         (Ast_ruby.show_expr e)
 
+and refactor_msg2 (acc:stmt acc) msg : stmt acc * msg_id = match msg with
+  | Ast.MethodOperator(bop, pos) ->  acc, ID_Operator (refactor_binop pos bop)
+  | Ast.MethodUOperator(uop, pos) -> acc, ID_UOperator (refactor_uop pos uop)
+
+  | Ast.MethodId((s, _pos), (Ast.ID_Lowercase | Ast.ID_Uppercase )) -> 
+      acc, ID_MethodName s
+
+  | Ast.MethodIdAssign((s, _pos), _, (Ast.ID_Lowercase))
+  | Ast.MethodIdAssign((s, _pos), _, (Ast.ID_Uppercase)) -> 
+      acc, ID_Assign s
+
+(*
+  | Ast.Literal((Ast.Nil _ | Ast.Bool _) as lk) ->
+      let lks = string_of_lit_kind lk in
+        acc, ID_MethodName lks
+*)
+  | e ->
+      Log.fatal (Log.of_tok (tok_of e)) "refactor_msg unknown msg: %s\n"
+        (Ast_ruby.show_method_name e)
+
 and refactor_symbol_or_msg (acc:stmt acc) sym_msg = match sym_msg with
-  | Ast.Literal(Ast.Atom(interp,pos)) ->
+  | Ast.MethodAtom(interp,pos) ->
       let acc, e = refactor_interp_string acc interp pos in
         begin match e with 
           | ELit (String s) -> acc, msg_id_from_string s
           | _ -> Log.fatal Log.empty "alias with symbol interp string?"
         end
-  | msg -> refactor_msg acc msg
+  | msg -> refactor_msg2 acc msg
 
 and refactor_codeblock acc : Ast.expr -> codeblock = function
   | Ast.CodeBlock((pos,_,_),formals,body) ->
@@ -1333,8 +1353,8 @@ and refactor_assignment (acc: stmt acc) (lhs: Ast.expr) (rhs: Ast.expr)
 
 and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc = 
   match e with
-  | Ast.D Ast.Alias(p3, Ast.Id((s1, p1),((Ast.ID_Builtin|Ast.ID_Global) as k1)), 
-                    Ast.Id((s2, p2),((Ast.ID_Builtin|Ast.ID_Global) as k2))) ->
+  | Ast.D Ast.Alias(p3, Ast.MethodId((s1, p1),((Ast.ID_Builtin|Ast.ID_Global) as k1)), 
+                    Ast.MethodId((s2, p2),((Ast.ID_Builtin|Ast.ID_Global) as k2))) ->
       let g1 = (refactor_builtin_or_global p1 k1,s1) in
       let g2 = (refactor_builtin_or_global p2 k2,s2) in
         acc_enqueue (C.alias_g ~link:g1 ~orig:g2 p3) acc
