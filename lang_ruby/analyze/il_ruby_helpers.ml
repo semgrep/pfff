@@ -1,6 +1,4 @@
 open Utils_ruby
-module Utils = Utils_ruby
-
 open Il_ruby  
 
 type pos2 = Parse_info.t
@@ -9,8 +7,6 @@ type pos2 = Parse_info.t
 let uniq_counter = ref 0
 let uniq () = incr uniq_counter; !uniq_counter
 
-
-  let compare t1 t2 = compare t1.sid t2.sid
 
   let mkstmt snode pos = 
     {snode = snode;
@@ -329,83 +325,6 @@ let msg_id_of_string str = match str with
         if all_but_one = "="
         then ID_Assign all_but_one
         else ID_MethodName s
-
-let rec stmt_eq (s1:stmt) (s2:stmt) = 
-    snode_eq s1.snode s2.snode
-
-and snode_eq s1 s2 = match s1, s2 with
-  | Seq l1, Seq l2 -> 
-      begin try
-      List.fold_left2 (fun acc s1 s2 -> acc && stmt_eq s1 s2) true l1 l2
-    with Invalid_argument _ -> false
-      end
-  | D Alias(ak1), D Alias(ak2) -> ak1 = ak2 (* BUG! was ak1 = ak1 *)
-  | If(g1,t1,f1),If(g2,t2,f2) -> g1 = g2 && stmt_eq t1 t2 && stmt_eq f1 f2
-  | Case c1, Case c2 -> case_eq c1 c2
-
-  | While(g1,b1), While(g2,b2) -> g1 = g2 && stmt_eq b1 b2
-  | For(p1,g1,b1), For(p2,g2,b2) -> p1 = p2 && g1 = g2 && stmt_eq b1 b2
-
-  | I Call(l1,mc1), I Call(l2,mc2) -> l1 = l2 && methodcall_eq mc1 mc2
-  | I Assign(l1,r1), I Assign(l2,r2) -> l1 = l2 && r1 = r2
-  | I Expression e1, I Expression e2 -> e1 = e2
-  | Return e1, Return e2 -> e1 = e2
-  | Yield(l1,p1), Yield(l2,p2) -> l1 = l2 && p1 = p2
-  | D ModuleDef(lo1,i1,s1), D ModuleDef(lo2,i2,s2) -> 
-      lo1 = lo2 && i1 = i2 && stmt_eq s1 s2
-  | D MethodDef(n1,p1,s1), D MethodDef(n2,p2,s2) -> n1 = n2 && p1 = p2 && stmt_eq s1 s2
-  | D ClassDef(lo1,k1,b1), D ClassDef(lo2,k2, b2) -> 
-      lo1 = lo2 && k1 = k2 && stmt_eq b1 b2
-  | ExnBlock e1, ExnBlock e2 -> exn_eq e1 e2
-  | Begin s1, Begin s2 -> stmt_eq s1 s2
-  | End s1, End s2 -> stmt_eq s1 s2
-  | D Defined(id1,s1), D Defined(id2,s2) -> id1 = id2 && stmt_eq s1 s2
-  | D Undef el1, D Undef el2 -> el1 = el2
-  | Break(lst1), Break(lst2)
-  | Next(lst1), Next(lst2) -> lst1 = lst2
-  | Redo, Redo
-  | Retry, Retry -> true
-  | _,_ -> false
-
-and methodcall_eq mc1 mc2 = 
-  (mc1.mc_target = mc2.mc_target)
-  &&
-    (mc1.mc_msg = mc2.mc_msg)
-  &&
-    (mc1.mc_args = mc2.mc_args)
-  && Utils.eq_opt codeblock_eq mc1.mc_cb mc2.mc_cb 
-
-and codeblock_eq c1 c2 = match c1,c2 with
-  | CB_Arg e1, CB_Arg e2 -> e1 = e2
-  | CB_Arg _, CB_Block _ | CB_Block _, CB_Arg _ -> false
-  | CB_Block(e1,b1), CB_Block(e2,b2) ->
-      e1 = e2 && stmt_eq b1 b2
-
-and rescue_block_eq rb1 rb2 = 
-  try
-    List.fold_left2
-      (fun acc b1 b2 -> 
-    acc && b1.rescue_guards = b2.rescue_guards &&
-      stmt_eq b1.rescue_body b2.rescue_body
-      ) true rb1 rb2
-  with Invalid_argument _ -> false
-
-and exn_eq e1 e2 = 
-  (stmt_eq e1.exn_body e2.exn_body)
-  && rescue_block_eq e1.exn_rescue e2.exn_rescue
-  && eq_opt stmt_eq e1.exn_ensure e2.exn_ensure
-  && eq_opt stmt_eq e1.exn_else e2.exn_else
-
-and case_eq c1 c2 = 
-  (c1.case_guard = c2.case_guard) 
-  &&
-    begin try List.fold_left2
-    (fun acc (e1,s1) (e2,s2) -> 
-      acc && e1 = e2 && stmt_eq s1 s2
-    ) true c1.case_whens c2.case_whens
-      with Invalid_argument _ -> false
-    end
-  && eq_opt stmt_eq c1.case_else c2.case_else
 
 open Visitor
 
