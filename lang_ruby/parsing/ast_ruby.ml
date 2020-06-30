@@ -351,12 +351,11 @@ and definition =
     | Inst_Inherit of expr
 
   (* TODO: *)
-  and name = expr
+  and _name = expr
 
-  (* TODO: SingletonM of (variable | expr) * scope_op * method_name 
-   * | M of method_name
-   *)
-  and method_kind = expr
+  and method_kind =
+   | M of method_name
+   | SingletonM of expr (* TODO (variable | expr) * scope_op * method_name *)
 
   (* TODO: C of name * inheritance option | SingletonC of inheritance? *)
   and class_kind = expr
