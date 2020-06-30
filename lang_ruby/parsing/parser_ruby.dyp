@@ -983,13 +983,13 @@ method_name:
 method_name2:
   | method_name { $1 }
 
-  | T_USCOPE<pos> identifier<id>     { Unary((Op_UScope,pos),Id id)}
-  | T_USCOPE<pos> keyword_as_id<id>  { Unary((Op_UScope,pos),id)}
-
-  | method_name2<id1> T_DOT eols message_identifier2<id2> 
-      { Binop(id1,(Op_DOT,$2), id2) }
-  | method_name2<id1> T_SCOPE message_identifier2<id2> { M.scope $2 id1 id2 }
-  | T_LPAREN<pos> eols stmt_list<xs> T_RPAREN T_DOT message_identifier2<m>
+  | T_USCOPE<pos> method_name<id>     
+      { Unary((Op_UScope,pos),id)}
+  | method_name2<id1> T_DOT eols method_name<id2> 
+      { Binop(id1,(Op_DOT,$2),id2)}
+  | method_name2<id1> T_SCOPE message_identifier2<id2> 
+      { M.scope $2 id1 id2 }
+  | T_LPAREN<pos> eols stmt_list<xs> T_RPAREN T_DOT method_name<m>
       { Binop(mk_block xs, (Op_DOT,$5),m) }
 
 meth_or_atom:
