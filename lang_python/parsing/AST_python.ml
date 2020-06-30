@@ -352,7 +352,8 @@ type stmt =
   | Break of tok | Continue of tok
   | Pass of tok
 
-  | Raise of tok * (expr * expr option (* from *)) option * expr option (* arguments *) * expr option (* location *)
+  | Raise of tok * (expr * expr option (* from *)) option
+  | RaisePython2 of tok * expr * expr option (* arguments *) * expr option (* location *)
   | TryExcept of tok * stmt list (* body *) * excepthandler list (* handlers *)
            * stmt list (* orelse *)
   | TryFinally of tok * stmt list (* body *) * tok * stmt list (* finalbody *)
