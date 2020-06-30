@@ -125,7 +125,7 @@ let is_exnblock = function
 let methodexpr = function
   | MethodId v -> Id v
   | MethodIdAssign (id, _, idk) -> Id (id, ID_Assign idk)
-  | MethodSymbol x -> Literal (Atom x)
+  | MethodAtom x -> Literal (Atom x)
   | MethodUOperator x -> UOperator x
   | MethodOperator x -> Operator x
 }
@@ -971,9 +971,9 @@ message_identifier:
 
 /*(* for simple method definitions, aliases and undefs *)*/
 method_name:
-  | message_identifier { $1 }
-  | T_LID T_ASSIGN { MethodIdAssign ($1, $2, ID_Lowercase) }
-  | T_UID T_ASSIGN { MethodIdAssign ($1, $2, ID_Uppercase) }
+  | message_identifier     { $1 }
+  | T_LID T_ASSIGN         { MethodIdAssign ($1, $2, ID_Lowercase) }
+  | T_UID T_ASSIGN         { MethodIdAssign ($1, $2, ID_Uppercase) }
   | keyword_as_id T_ASSIGN { MethodIdAssign (fst $1, $2, ID_Lowercase) }
 
 
@@ -989,8 +989,8 @@ method_name2:
       { Binop($2, (Op_DOT,$4), (methodexpr $5)) }
 
 meth_or_atom:
-    | method_name<e>  { methodexpr e }
-    | T_ATOM<a,pos>   { Literal((Atom (a,pos))) }
+    | method_name  { $1 }
+    | T_ATOM       { MethodAtom $1 }
 
 scoped_id:
   | identifier<id>                           { Id id }

@@ -250,11 +250,10 @@ and literal =
 (* Method name *)
 (* ------------------------------------------------------------------------- *)
 
-and method_name = expr
-and method_name2 = 
+and method_name = 
   | MethodId of variable (* all except Self and Super *)
   | MethodIdAssign of ident * tok * id_kind (* = *)
-  | MethodSymbol of atom
+  | MethodAtom of atom
   | MethodUOperator of unary_op wrap
   | MethodOperator of binary_op wrap
 
