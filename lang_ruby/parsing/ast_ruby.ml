@@ -48,9 +48,9 @@
 (*****************************************************************************)
 (* Names *)
 (*****************************************************************************)
-(* below we derive also eq, and ord, which is unusual compared to our other
+(* Below we derive also eq, and ord, which is unusual compared to our other
  * parsers because we use the GLR parser generator dypgen to parse Ruby
- * and in case of ambiguities dypgen needs to compare resulting ASTs
+ * and in case of ambiguities dypgen needs to _compare_ resulting ASTs
  * and filter out equivalence trees.
  *)
 
@@ -59,6 +59,7 @@
 (* ------------------------------------------------------------------------- *)
 type tok = Parse_info.t
  [@@deriving show] (* with tarzan *)
+(* we don't care about difference in token positions *)
 let compare_tok _a _b = 0
 let equal_tok _a _b = true
 
@@ -199,7 +200,7 @@ type expr =
   (* TODO: ArrayAccess of expr * expr list bracket *)
 
   (* true = {}, false = do/end *)
-  | CodeBlock of bool bracket * formal_param list option * stmts * tok
+  | CodeBlock of bool bracket * formal_param list option * stmts
 
   | S of stmt
   | D of definition
@@ -251,11 +252,11 @@ and pattern = expr
 (* Statement *)
 (*****************************************************************************)
 (* Note that in Ruby everything is an expr, but I still like to split expr
- * with the different "subtypes" stmt and definition.
+ * with the different "subtypes" 'stmt' and 'definition'.
  * Note that ../analyze/il_ruby.ml has proper separate expr and stmt types.
  *)
 and stmt =
-  | Empty
+  | Empty (* TODO: should remove! *)
   | Block of stmts (* TODO: bracket with begin/end or ( ) *)
 
   | If of tok * expr * stmts * stmts option2
@@ -275,7 +276,7 @@ and stmt =
 
   | Case of tok * case_block
 
-  | ExnBlock of body_exn * tok
+  | ExnBlock of body_exn
 
   and case_block = {
     case_guard : expr option;
@@ -285,13 +286,11 @@ and stmt =
   
   and body_exn = {
     body_exprs: stmts;
-    (* TODO: (tok * (exception_name list * ident option) * stmts) list 
-     * and even intermediate rescue_clause type
-     *)
     rescue_exprs: rescue_clause list;
     ensure_expr: stmts option2;
     else_expr: stmts option2;
   }
+    (* TODO: (tok * (exception_name list * ident option) * stmts)*)
     and rescue_clause = (expr * expr)
 
 and stmts = expr list

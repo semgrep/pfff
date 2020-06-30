@@ -195,7 +195,7 @@ let is_cond_modifier = function
   | _ -> false
 
 let well_formed_do guard _body = match ends_with guard with
-  | Call(_,_,Some (CodeBlock((_,false,_),_,_,_))) ->
+  | Call(_,_,Some (CodeBlock((_,false,_),_,_))) ->
   raise Dyp.Giveup
   | _ ->()
 
@@ -446,7 +446,7 @@ let wrap xs f =
 (*****************************************************************************)
 
 let rec rhs_do_codeblock = function
-  | Call(_,_,Some (CodeBlock((_,false,_),_,_,_))) -> true
+  | Call(_,_,Some (CodeBlock((_,false,_),_,_))) -> true
   | Binop(_,_,r)
   | Call(r,[],None)
   | Ternary(_,_,_, _, r) -> rhs_do_codeblock r
@@ -502,10 +502,10 @@ let merge_topcall xs =
 
   let l' = uniq_list compare_expr l in
     match l',newest with
-  | [(Call(_,_,Some (CodeBlock((_,false,_),_,_,_))) as with_cb)],
+  | [(Call(_,_,Some (CodeBlock((_,false,_),_,_))) as with_cb)],
     (Call(_,_,None) as no_cb)
   | [(Call(_,_,None) as no_cb)],
-    (Call(_,_,Some (CodeBlock((_,false,_),_,_,_))) as with_cb) ->
+    (Call(_,_,Some (CodeBlock((_,false,_),_,_))) as with_cb) ->
       (* resolve "x y{z}" vs "x y do z end" *)
       resolve_block_delim with_cb no_cb;
   | _ ->
@@ -520,25 +520,25 @@ let merge_stmt xs =
 
   let l' = uniq_list compare_expr l in
     match l',newest with
-  | [(Call(_,_,Some (CodeBlock((_,false,_),_,_,_))) as with_cb)],
+  | [(Call(_,_,Some (CodeBlock((_,false,_),_,_))) as with_cb)],
     (Call(_,_,None) as no_cb)
   | [(Call(_,_,None) as no_cb)],
-    (Call(_,_,Some (CodeBlock((_,false,_),_,_,_))) as with_cb) ->
+    (Call(_,_,Some (CodeBlock((_,false,_),_,_))) as with_cb) ->
       (* resolve "x y{z}" vs "x y do z end" *)
       resolve_block_delim with_cb no_cb;
 
-  | [S ExnBlock({body_exprs = [Binop(_,(Op_ASSIGN,_),_)]; _},_)],
+  | [S ExnBlock({body_exprs = [Binop(_,(Op_ASSIGN,_),_)]; _})],
       (Binop(_,(Op_ASSIGN,_),(S ExnBlock _)) as correct)
   | ([Binop(_,(Op_ASSIGN,_),(S ExnBlock _)) as correct]),
-      S ExnBlock({body_exprs = [Binop(_,(Op_ASSIGN,_),_)]; _},_) ->
+      S ExnBlock({body_exprs = [Binop(_,(Op_ASSIGN,_),_)]; _}) ->
         (* x = y rescue 3 is a special case where the rescue binds
        solely to "y" and not the full assignment *)
       [correct]
 
-  | [S ExnBlock({body_exprs = [Binop(_,(Op_OP_ASGN _,_),_)]; _},_) as correct],
+  | [S ExnBlock({body_exprs = [Binop(_,(Op_OP_ASGN _,_),_)]; _}) as correct],
         Binop(_,(Op_OP_ASGN _,_),(S ExnBlock _))
   | [Binop(_,(Op_OP_ASGN _,_),(S ExnBlock _))],
-        (S ExnBlock({body_exprs = [Binop(_,(Op_OP_ASGN _,_),_)]; _},_) as correct) ->
+        (S ExnBlock({body_exprs = [Binop(_,(Op_OP_ASGN _,_),_)]; _}) as correct) ->
         (* However, using any other assign-operator, reverts to the 
                other semantics *)
       [correct]

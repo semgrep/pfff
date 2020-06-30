@@ -10,8 +10,6 @@ let rec last = function
   | [] -> raise (Invalid_argument "last")
   | [x] -> x
   | _x::tl -> last tl
-
-
       
 let string_fold_left f acc s = 
   let len = String.length s in

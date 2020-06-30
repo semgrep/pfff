@@ -327,7 +327,7 @@ stmt:
   | stmt<s> K_RESCUE<pos> eols stmt<g>
       { if M.is_cond_modifier g then raise Dyp.Giveup;
         S (ExnBlock({body_exprs = [s]; rescue_exprs = [(S Empty,g)];
-            ensure_expr = []; else_expr = []}, pos)) }
+            ensure_expr = []; else_expr = []})) }
 
   /* handle special case for x = y rescue z where rescue binds to 
    * just the rhs, not the full assignment (unlike the other modifiers)
@@ -335,7 +335,7 @@ stmt:
   | lhs_assign_op<l,op,_tk> eols arg<r> K_RESCUE<pos> eols stmt<guard>
       { if M.is_cond_modifier guard then raise Dyp.Giveup;
         let r' = S (ExnBlock({body_exprs=[r];rescue_exprs =[(S Empty,guard)];
-                 ensure_expr = []; else_expr = []}, pos))
+                 ensure_expr = []; else_expr = []}))
          in (*prune_binop l op r'*) 
          Binop(l,(op,pos),r') (* TODO: wrong pos *)}
   | mlhs_assign_op<l,op,tk> eols mrhs<r>
@@ -485,7 +485,7 @@ primary:
     { M.well_formed_do a xs; 
       S (For(pos, vars, a, xs)) }
 
-  | K_lBEGIN<pos> eols body_exn<body>  K_lEND { S (ExnBlock(body,pos)) }
+  | K_lBEGIN<pos> eols body_exn<body>  K_lEND { S (ExnBlock(body)) }
 
   /*(* defintions! *)*/
   | class_definition { $1 }
@@ -849,7 +849,7 @@ code_block:
 
 brace_codeblock:
   | T_LBRACE_ARG<pos> eols code_block_body<b> T_RBRACE
-      { let args, body = b in CodeBlock(($1,true,$4),args,body,pos) }
+      { let args, body = b in CodeBlock(($1,true,$4),args,body) }
 
 code_block_body:
   /* for when the lexer sees "||" instead of two "|"'s */
@@ -858,8 +858,8 @@ code_block_body:
   | stmt_list<xs>                                           { (None, xs) }
 
 do_codeblock:
-  | K_DO<pos> eols code_block_body<b> K_lEND
-      { let args, body = b in CodeBlock(($1,false,$4),args,body,pos) }
+  | K_DO eols code_block_body<b> K_lEND
+      { let args, body = b in CodeBlock(($1,false,$4),args,body) }
 
 /*(*----------------------------*)*/
 /*(*2 parameters *)*/
