@@ -11,26 +11,6 @@ let rec last = function
   | [x] -> x
   | _x::tl -> last tl
 
-let format_delim_list delim format_f ppf = function
-  | [] -> ()
-  | hd::[] -> format_f ppf hd
-  | hd::tl -> format_f ppf hd;
-      List.iter (Format.fprintf ppf (delim ^^ "%a") format_f) tl
-
-let format_comma_list f ppf lst = format_delim_list ",@ " f ppf lst
-let format_break_list f ppf lst = format_delim_list "@," f ppf lst
-
-let format_to_string f e = 
-  let buf = Buffer.create 128 in
-  let ppf = Format.formatter_of_buffer buf in
-    f ppf e;
-    Format.pp_print_flush ppf ();
-    Buffer.contents buf
-
-
-let format_option format_e ppf = function
-  | None -> ()
-  | Some e -> format_e ppf e
 
       
 let string_fold_left f acc s = 
@@ -45,11 +25,6 @@ let string_fold_left f acc s =
 let do_opt ~none:none ~some:some opt = match opt with
   | None -> none
   | Some s -> some s
-
-let eq_opt f o1 o2 = match o1, o2 with
-  | None, None -> true
-  | Some x1, Some x2 -> f x1 x2
-  | _ -> false
 
 let map_preserve map f t = 
   let changed = ref false in
@@ -101,8 +76,3 @@ let escape_chars haystack esc_chars =
             "[WARN] string has inappropriate format (Esc) orig:%s res:%s\n" 
             haystack s;
           haystack (* but supposed to be an error *)
-
-let is_tmp_var s = 
-  let re = Str.regexp "__tmp_" in
-    if Str.string_match re s 0 then true
-    else s = "_"
