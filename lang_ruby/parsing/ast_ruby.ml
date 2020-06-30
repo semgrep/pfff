@@ -192,6 +192,8 @@ type expr =
   | Literal of literal
 
   | Id of variable
+
+  (* todo: delete *)
   | Operator of binary_op wrap
   | UOperator of unary_op wrap
 
@@ -249,9 +251,9 @@ and literal =
 (* ------------------------------------------------------------------------- *)
 
 and method_name = expr
-and _method_name2 = 
+and method_name2 = 
   | MethodId of variable (* all except Self and Super *)
-  | MethodIdAssign of ident * tok (* = *)
+  | MethodIdAssign of ident * tok * id_kind (* = *)
   | MethodSymbol of atom
   | MethodUOperator of unary_op wrap
   | MethodOperator of binary_op wrap

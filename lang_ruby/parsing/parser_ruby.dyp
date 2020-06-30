@@ -44,7 +44,7 @@ let dyp_merge_Obj_command_name           = M.merge_expr "command_name"
 let dyp_merge_Obj_expr                   = M.merge_expr "expr"
 let dyp_merge_Obj_primary                = M.merge_expr "primary"
 let dyp_merge_Obj_func                   = M.merge_expr "func"
-let dyp_merge_Obj_method_name            = M.merge_expr "method_name"
+let dyp_merge_Obj_method_name            = M.merge_method_name "method_name"
 let dyp_merge_Obj_method_name2            = M.merge_expr "method_name2"
 
 let dyp_merge_Obj_stmt_list              = M.merge_expr_list "stmt_list"
@@ -121,13 +121,13 @@ let is_exnblock = function
   | S ExnBlock _ -> true 
   | _ -> false
 
-let rec add_eq = function
-  | Id((s,p),k) -> Id((s,p), ID_Assign(k))
-  | Binop(e1,(Op_SCOPE,p),e2) -> Binop(e1,(Op_SCOPE,p), add_eq e2)
-  | Binop(e1,(Op_DOT,p),e2) -> Binop(e1,(Op_DOT,p), add_eq e2)
-  | Operator(Op_AREF,p) -> Operator(Op_ASET,p)
-  | _ -> failwith "add_eq"
-
+(* method_name to expr *)
+let methodexpr = function
+  | MethodId v -> Id v
+  | MethodIdAssign (id, _, idk) -> Id (id, ID_Assign idk)
+  | MethodSymbol x -> Literal (Atom x)
+  | MethodUOperator x -> UOperator x
+  | MethodOperator x -> Operator x
 }
 
 /*(*************************************************************************)*/
@@ -694,15 +694,15 @@ command_name:
       { Id id }
 
   | primary<p> T_DOT eols message_identifier<m>
-      { M.unfold_dot p m $2}
+      { M.unfold_dot p (methodexpr m) $2}
   | primary<p> T_SCOPE    message_identifier<m> 
-      { M.scope $2 p m }
+      { M.scope $2 p (methodexpr m) }
 
   /*(* recursive *)*/
   | command_name<p> T_DOT eols message_identifier<m>
-      { M.unfold_dot p m $2}
+      { M.unfold_dot p (methodexpr m) $2}
   | command_name<p> T_SCOPE    message_identifier<m>
-      { M.scope $2 p m }
+      { M.scope $2 p (methodexpr m) }
 
 /*(*----------------------------*)*/
 /*(*2 Func *)*/
@@ -776,7 +776,7 @@ lhs:
   | primary<p> T_LBRACK_ARG<pos> eols arg_comma_star_list<xs> eols T_RBRACK
       { M.methodcall (Binop(p,(Op_DOT,pos),Operator(Op_AREF,pos))) xs None}
   | primary<p> T_DOT eols message_identifier<m>
-      { M.methodcall (Binop(p,(Op_DOT,$2), m)) [] None}
+      { M.methodcall (Binop(p,(Op_DOT,$2), (methodexpr m))) [] None}
 
 /*(*----------------------------*)*/
 /*(*2 Multiple LHS *)*/
@@ -957,39 +957,39 @@ identifier2:
 /*(* for use *)*/
 message_identifier:
   /*(* this part was in an intermediate 'assignable' rule before *)*/
-  | identifier2<e>              { Id e }
-  | T_LBRACK_ARG<pos> T_RBRACK { Operator(Op_AREF,pos) }
-  | T_LBRACK<pos>     T_RBRACK { Operator(Op_AREF,pos) }
+  | identifier2<e>             { MethodId e }
+  | T_LBRACK_ARG<pos> T_RBRACK { MethodOperator(Op_AREF,pos) }
+  | T_LBRACK<pos>     T_RBRACK { MethodOperator(Op_AREF,pos) }
 
   /*(* not 'assignable' part I guess *)*/
-  | bin_op<op,tk>                       { Operator(op,tk) }
-  | T_LBRACK_ARG<pos> T_RBRACK T_ASSIGN { Operator(Op_ASET,pos) }
-  | T_LBRACK<pos>     T_RBRACK T_ASSIGN { Operator(Op_ASET,pos) }
-  | T_UPLUS<pos>                        { UOperator(Op_UPlus,pos) }
-  | T_UMINUS<pos>                       { UOperator(Op_UMinus,pos) }
-  | T_TILDE<pos>                        { UOperator(Op_UTilde,pos) }
+  | bin_op<op,tk>                       { MethodOperator(op,tk) }
+  | T_LBRACK_ARG<pos> T_RBRACK T_ASSIGN { MethodOperator(Op_ASET,pos) }
+  | T_LBRACK<pos>     T_RBRACK T_ASSIGN { MethodOperator(Op_ASET,pos) }
+  | T_UPLUS<pos>                        { MethodUOperator(Op_UPlus,pos) }
+  | T_UMINUS<pos>                       { MethodUOperator(Op_UMinus,pos) }
+  | T_TILDE<pos>                        { MethodUOperator(Op_UTilde,pos) }
 
 /*(* for simple method definitions, aliases and undefs *)*/
 method_name:
   | message_identifier { $1 }
-  | T_LID<id,pos> T_ASSIGN { add_eq (Id ((id,pos), ID_Lowercase)) }
-  | T_UID<id,pos> T_ASSIGN { add_eq (Id ((id,pos), ID_Uppercase)) }
-  | keyword_as_id T_ASSIGN { add_eq (Id $1) }
+  | T_LID T_ASSIGN { MethodIdAssign ($1, $2, ID_Lowercase) }
+  | T_UID T_ASSIGN { MethodIdAssign ($1, $2, ID_Uppercase) }
+  | keyword_as_id T_ASSIGN { MethodIdAssign (fst $1, $2, ID_Lowercase) }
 
 
 /*(* for complex method definitions *)*/
 method_name2:
-  | method_name { $1 }
+  | method_name { methodexpr $1 }
 
   | identifier2<id1> T_DOT eols method_name<id2> 
-      { Binop(Id id1,(Op_DOT,$2),id2)}
+      { Binop(Id id1,(Op_DOT,$2), methodexpr id2)}
   | identifier2<id1> T_SCOPE    method_name<id2> 
-      { M.scope $2 (Id id1) id2 }
+      { M.scope $2 (Id id1) (methodexpr id2) }
   | T_LPAREN arg T_RPAREN T_DOT method_name
-      { Binop($2, (Op_DOT,$4), $5) }
+      { Binop($2, (Op_DOT,$4), (methodexpr $5)) }
 
 meth_or_atom:
-    | method_name<e>  { e }
+    | method_name<e>  { methodexpr e }
     | T_ATOM<a,pos>   { Literal((Atom (a,pos))) }
 
 scoped_id:
