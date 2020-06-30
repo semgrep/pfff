@@ -89,7 +89,6 @@ let dyp_merge_Obj_case_else              = M.merge_rest "case_else"
 let dyp_merge_Obj_ensure_clause          = M.merge_rest "ensure_clause"
 let dyp_merge_Obj_if_else_clauses        = M.merge_rest "if_else_clauses"
 let dyp_merge_Obj_meth_or_atom           = M.merge_rest "meth_or_atom"
-let dyp_merge_Obj_assignable             = M.merge_rest "assignable"
 let dyp_merge_Obj_message_identifier     = M.merge_rest "message_identifier"
 let dyp_merge_Obj_message_identifier2     = M.merge_rest "message_identifier2"
 let dyp_merge_Obj_bin_op                 = M.merge_rest "bin_op"
@@ -951,16 +950,15 @@ identifier:
   | K_SELF            { (("self", $1), ID_Self) }
   | K_SUPER           { (("super", $1), ID_Super) }
 
-
-assignable:
+/*(* for use *)*/
+message_identifier:
+  /*(* this part was in an intermediate 'assignable' rule before *)*/
   | identifier<e>              { Id e }
   | keyword_as_id<k>           { k }
   | T_LBRACK_ARG<pos> T_RBRACK { Operator(Op_AREF,pos) }
   | T_LBRACK<pos>     T_RBRACK { Operator(Op_AREF,pos) }
 
-/*(* for use *)*/
-message_identifier:
-  | assignable<e>                       { e }
+  /*(* not 'assignable' part I guess *)*/
   | bin_op<op,tk>                       { Operator(op,tk) }
   | T_LBRACK_ARG<pos> T_RBRACK T_ASSIGN { Operator(Op_ASET,pos) }
   | T_LBRACK<pos>     T_RBRACK T_ASSIGN { Operator(Op_ASET,pos) }
@@ -968,15 +966,12 @@ message_identifier:
   | T_UMINUS<pos>                       { UOperator(Op_UMinus,pos) }
   | T_TILDE<pos>                        { UOperator(Op_UTilde,pos) }
 
-message_identifier2:
+/*(* for simple method definitions, aliases and undefs *)*/
+method_name:
   | message_identifier { $1 }
   | T_LID<id,pos> T_ASSIGN { add_eq (Id ((id,pos), ID_Lowercase)) }
   | T_UID<id,pos> T_ASSIGN { add_eq (Id ((id,pos), ID_Uppercase)) }
   | keyword_as_id T_ASSIGN { add_eq $1 }
-
-/*(* for simple method definitions, aliases and undefs *)*/
-method_name:
-  | message_identifier2<e> { e }
 
 
 /*(* for complex method definitions *)*/
@@ -985,7 +980,7 @@ method_name2:
 
   | method_name2<id1> T_DOT eols method_name<id2> 
       { Binop(id1,(Op_DOT,$2),id2)}
-  | method_name2<id1> T_SCOPE message_identifier2<id2> 
+  | method_name2<id1> T_SCOPE method_name<id2> 
       { M.scope $2 id1 id2 }
   | T_LPAREN<pos> eols stmt_list<xs> T_RPAREN T_DOT method_name<m>
       { Binop(mk_block xs, (Op_DOT,$5),m) }
