@@ -195,6 +195,7 @@ let rec add_eq = function
  <Parse_info.t> K_NIL
  <Parse_info.t> K_YIELD
  <Parse_info.t> K_SELF
+ <Parse_info.t> K_SUPER
  <Parse_info.t> K_TRUE <Parse_info.t> K_FALSE
 /* K_DEFINED K_SUPER K_BREAK K_REDO K_RETRY K_NEXT K___LIN_ K___FIL_ */
 
@@ -626,7 +627,7 @@ case_else:
 when_clauses:
   | /* empty */ { [] }
   | K_WHEN arg_comma_star_list<e> then_sep stmt_list<es> when_clauses<rest>
-    { (e,es) :: rest }
+    { ($1, e, es) :: rest }
 
 /*(*----------------------------*)*/
 /*(*2 containers *)*/
@@ -940,7 +941,7 @@ identifier:
   | T_CLASS_VAR<id,pos>    { Id ((id,pos), ID_Class) }
 
   | K_NIL             { Literal(Nil $1) }
-  | K_SELF            { Literal(Self $1) }
+  | K_SELF            { Id (("self", $1), ID_Self) }
   | K_TRUE            { Literal(Bool (true,$1)) }
   | K_FALSE           { Literal(Bool (false,$1)) }
 

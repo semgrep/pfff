@@ -90,6 +90,7 @@ let visitor_info_of_tok f = function
   | K_FALSE ii -> K_FALSE (f ii)
   | K_TRUE ii -> K_TRUE (f ii)
   | K_SELF ii -> K_SELF (f ii)
+  | K_SUPER ii -> K_SUPER (f ii)
   | K_YIELD ii -> K_YIELD (f ii)
   | K_NIL ii -> K_NIL (f ii)
   | K_lEND ii -> K_lEND (f ii)

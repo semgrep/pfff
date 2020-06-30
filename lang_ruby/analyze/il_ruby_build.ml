@@ -223,6 +223,7 @@ let special_of_string pos x : expr =
   | _ -> raise (Invalid_argument "special_of_string")
 
 let refactor_id_kind pos : Ast.id_kind -> var_kind = function
+  | Ast.ID_Self | Ast.ID_Super -> raise Todo
   | Ast.ID_Lowercase -> Local
   | Ast.ID_Instance -> Instance
   | Ast.ID_Class -> Class
@@ -714,12 +715,13 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
     | Ast.Id(("0", _pos), Ast.ID_Global) ->
         acc, ELit (String (*Config.conf.Config.ruby_file*)"TODO:ruby_file")
 
+    | Ast.Id(_, Ast.ID_Self) -> acc, EId (Self)
+    | Ast.Id(_, Ast.ID_Super) -> failwith "TODO"
+
     | Ast.Id((s, pos),ik) -> 
         if is_special s then acc, (special_of_string pos s)
         else acc, EId (Var(refactor_id_kind pos ik, s))
 
-    | Ast.Literal(Ast.Self _pos) -> acc, EId (Self)
-    | Ast.Literal(Ast.Super _pos) -> failwith "TODO"
     | Ast.Literal(l) -> refactor_lit acc l
 
     | Ast.Tuple(l) 
@@ -829,6 +831,8 @@ and refactor_interp_string acc istr pos =
             helper acc e tl
               
 and refactor_lit acc (l : Ast.literal) : stmt acc * expr = match l with
+  | Ast.Char _ | Ast.Complex _ | Ast.Rational _ -> raise Todo
+
   | Ast.Num (i, _pos) -> acc, ELit (Num i)
   | Ast.Float(s, _pos) -> acc, ELit (Float(s))
   | Ast.String(Ast.Single s, _pos) -> 
@@ -854,12 +858,6 @@ and refactor_lit acc (l : Ast.literal) : stmt acc * expr = match l with
   | Ast.Nil _ -> acc, EId (Nil)
   | Ast.Bool (true,_) -> acc, EId (True)
   | Ast.Bool (false,_) -> acc, EId (False)
-  | Ast.Self _ -> 
-      Log.fatal Log.empty
-        "trying to convert self to literal, but should be handled elsewhere"
-  | Ast.Super _ -> 
-      Log.fatal Log.empty
-        "trying to convert super to literal, but should be handled elsewhere"
 
 and refactor_star_expr (acc:stmt acc) e : stmt acc * star_expr = match e with
   | Ast.Unary((Ast.Op_UStar,_pos), e) -> 
@@ -1070,7 +1068,7 @@ and refactor_msg (acc:stmt acc) msg : stmt acc * msg_id = match msg with
   | Ast.Id((s, _pos), Ast.ID_Assign(Ast.ID_Uppercase)) -> 
       acc, ID_Assign s
 
-  | Ast.Literal((Ast.Nil _ | Ast.Self _ | Ast.Bool _) as lk) ->
+  | Ast.Literal((Ast.Nil _ | Ast.Bool _) as lk) ->
       let lks = string_of_lit_kind lk in
         acc, ID_MethodName lks
   | e ->
@@ -1814,7 +1812,7 @@ and refactor_case acc case pos =
   in
   let acc, whens' = 
     List.fold_left
-      (fun (acc,whens) (g,body) -> 
+      (fun (acc,whens) (_, g,body) -> 
          let acc, glist = 
            refactor_list refactor_tuple_expr (acc,DQueue.empty) g 
          in

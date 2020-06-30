@@ -491,6 +491,7 @@ and top_lexer state = parse
 
   | "nil"      {S.end_state state;K_NIL (tk lexbuf)}
   | "self"     {S.end_state state;K_SELF (tk lexbuf)}
+  | "super"     {S.end_state state;K_SUPER (tk lexbuf)}
   | "true"     {S.end_state state;K_TRUE (tk lexbuf)}
   | "false"    {S.end_state state;K_FALSE (tk lexbuf)}
 

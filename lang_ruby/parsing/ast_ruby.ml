@@ -34,7 +34,7 @@
  * Most of the code in this file derives from code from 
  * Mike Furr in diamondback-ruby.
  *
- * todo: 
+ * less: 
  *  - [AST Format of the Whitequark parser](https://github.com/whitequark/parser/blob/master/doc/AST_FORMAT.md)
  *  - https://rubygems.org/gems/ast
  *  - new AST format in RubyVM in ruby 2.6 (see wikipedia page on Ruby)
@@ -74,7 +74,6 @@ type 'a bracket = tok * 'a * tok
 (* ------------------------------------------------------------------------- *)
 (* Ident/name *)
 (* ------------------------------------------------------------------------- *)
-
 type ident = string wrap
  [@@deriving show, eq, ord]
 
@@ -85,10 +84,12 @@ type _uident = string wrap (* Uppercase, a.k.a "constant" in Ruby *)
 type name = NameConstant of uident | NameScope of ...
 *)
 
-(* TODO: type variable = ident * id_kind 
- *  or even better = Self of tok | Id of ident | Cst of ident | ... 
-*)
-type id_kind = 
+(* TODO: Self of tok | Id of ident | Cst of uident | ...  *)
+type variable = ident * id_kind 
+ and id_kind = 
+  | ID_Self 
+  (* treesitter: *)
+  | ID_Super
   | ID_Lowercase (* prefixed by [a-z] or _ *)
   (* TODO: rename constant *)
   | ID_Uppercase (* prefixed by [A-Z] *)
@@ -184,7 +185,7 @@ type binary_op =
 type expr = 
   | Literal of literal
 
-  | Id of ident * id_kind
+  | Id of variable
   | Operator of binary_op wrap
   | UOperator of unary_op wrap
 
@@ -211,25 +212,20 @@ and literal =
   | Num of string wrap
   (* pattern: \d(_?\d)*(\.\d)?(_?\d)*([eE][\+-]?\d(_?\d)* )? *)
   | Float of string wrap
-  (* treesitter: *)
-  (* 
-   (* pattern: (\d+)?(\+|-)?(\d+)i *)
-   | Complex of string wrap 
-   | Rational of string wrap * tok (* r *) 
-   (* pattern: \?(\\\S({[0-9]*}|[0-9]*|-\S([MC]-\S)?)?|\S) *)
-   | Char of string wrap 
-   *)
-
+  (* treesitter: TODO add in dyp *)
+  (* pattern: (\d+)?(\+|-)?(\d+)i *)
+  | Complex of string wrap 
+  | Rational of string wrap * tok (* r *) 
+ 
   | String of string_kind wrap
   | Regexp of (string_contents list * string) wrap
+  (* treesitter: TODO add in dyp *)
+  (* pattern: \?(\\\S({[0-9]*}|[0-9]*|-\S([MC]-\S)?)?|\S) *)
+  | Char of string wrap 
 
   | Atom of string_contents list wrap
 
   | Nil of tok 
-  | Self of tok
-  (* treesitter: *)
-  | Super of tok (* TSNOTDYP (In Tree-sitter but not dypgen) *)
-
 
   and string_kind = 
     | Single of string
@@ -280,12 +276,12 @@ and stmt =
 
   and case_block = {
     case_guard : expr option;
-    case_whens: (pattern list * stmts) list;
+    case_whens: (tok (* when *) * pattern list * stmts) list;
     case_else: stmts option2;
   }
   
   and body_exn = {
-    body_exprs: stmts;
+    body_exprs: stmts (* TODO bracket *);
     rescue_exprs: rescue_clause list;
     ensure_expr: stmts option2;
     else_expr: stmts option2;
@@ -333,8 +329,6 @@ and definition =
     | Class_Inherit of expr
     | Inst_Inherit of expr
 
-  (* TODO: see comment next to id_kind *)
-  and variable = expr 
   (* TODO: Il_ruby.msg_id like *)
   and method_name = expr 
   (* TODO: *)
