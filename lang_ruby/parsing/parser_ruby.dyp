@@ -983,8 +983,6 @@ method_name:
 method_name2:
   | method_name { $1 }
 
-  | T_USCOPE<pos> method_name<id>     
-      { Unary((Op_UScope,pos),id)}
   | method_name2<id1> T_DOT eols method_name<id2> 
       { Binop(id1,(Op_DOT,$2),id2)}
   | method_name2<id1> T_SCOPE message_identifier2<id2> 
