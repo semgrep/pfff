@@ -194,8 +194,7 @@ let rec add_eq = function
  <Parse_info.t> K_lBEGIN <Parse_info.t> K_lEND
  <Parse_info.t> K_NIL
  <Parse_info.t> K_YIELD
- <Parse_info.t> K_SELF
- <Parse_info.t> K_SUPER
+ <Parse_info.t> K_SELF <Parse_info.t> K_SUPER
  <Parse_info.t> K_TRUE <Parse_info.t> K_FALSE
 /* K_DEFINED K_SUPER K_BREAK K_REDO K_RETRY K_NEXT K___LIN_ K___FIL_ */
 
@@ -970,11 +969,6 @@ assignable:
 /*(* for definition *)*/
 method_name:
   | message_identifier<e> { e }
-  /*(* TODO: move in keyword_as_id instead? *)*/
-  | K_NIL             { Literal(Nil $1) }
-  | K_TRUE            { Literal(Bool (true,$1)) }
-  | K_FALSE           { Literal(Bool (false,$1)) }
-
 
   | T_USCOPE<pos> identifier<id>     { Unary((Op_UScope,pos),Id id)}
   | T_USCOPE<pos> keyword_as_id<id>  { Unary((Op_UScope,pos),id)}
@@ -1054,6 +1048,9 @@ keyword_as_id:
   | K_lBEGIN<pos>  { Id(("begin", pos), ID_Lowercase) }
   | K_lEND<pos>    { Id(("end", pos), ID_Lowercase) }
   | K_YIELD<pos>   { Id(("yield", pos), ID_Lowercase) }
+  | K_NIL<pos>     { Id(("nil", pos), ID_Lowercase) }
+  | K_TRUE<pos>    { Id(("true", pos), ID_Lowercase) }
+  | K_FALSE<pos>   { Id(("false", pos), ID_Lowercase) }
 /*  | K_DEFINED<pos> { Id(ID_Lowercase, "defined?", pos) }*/
 
 
