@@ -330,7 +330,7 @@ and definition =
 
   (* treesitter: TODO stuff with ; and identifier list? in block params? *)
   and formal_param = 
-    | Formal_id of expr (* TODO: of ident *)
+    | Formal_id of variable (* TODO: even just ident? *)
     | Formal_amp of tok * ident
 
     (* TODO: Formal_splat of tok * ident option *)

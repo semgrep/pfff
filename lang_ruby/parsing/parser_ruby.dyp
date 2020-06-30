@@ -869,11 +869,11 @@ do_codeblock:
       { let args, body = b in CodeBlock(($1,false,$4),args,body) }
 
 /*(*----------------------------*)*/
-/*(*2 parameters *)*/
+/*(*2 parameters (not arguments, as the name (wrongly) says) *)*/
 /*(*----------------------------*)*/
 
 formal_arg:
-  | identifier<id>         { M.seen dyp (Id id); Formal_id (Id id) }
+  | identifier<id>         { M.seen dyp (Id id); Formal_id (id) }
   | T_UAMPER T_LID<id,pos> { M.seen_str dyp id; Formal_amp ($1, $2) }
   | T_AMPER T_LID<id,pos>  { M.seen_str dyp id; Formal_amp ($1, $2) }
   | T_USTAR T_LID<id,pos>  { M.seen_str dyp id; Formal_star ($1, $2) }
