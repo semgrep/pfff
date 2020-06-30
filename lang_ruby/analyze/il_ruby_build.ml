@@ -221,7 +221,7 @@ let special_of_string pos x : expr =
   | "__LINE__" -> ELit (Num (spf "%d" (Parse_info.line_of_info pos)))
   | _ -> raise (Invalid_argument "special_of_string")
 
-let refactor_id_kind pos : Ast.id_kind -> var_kind = function
+let refactor_id_kind _pos : Ast.id_kind -> var_kind = function
   | Ast.ID_Self | Ast.ID_Super -> raise Todo
   | Ast.ID_Lowercase -> Local
   | Ast.ID_Instance -> Instance
@@ -229,9 +229,6 @@ let refactor_id_kind pos : Ast.id_kind -> var_kind = function
   | Ast.ID_Global -> Global
   | Ast.ID_Uppercase -> Constant
   | Ast.ID_Builtin -> Builtin
-  | Ast.ID_Assign _ik -> 
-      Log.fatal (Log.of_tok pos)
-        "trying to refactor id_assign, but should be handled elsewhere"
 
 let refactor_builtin_or_global pos = function
   | Ast.ID_Builtin -> Builtin
@@ -1063,9 +1060,6 @@ and refactor_msg (acc:stmt acc) msg : stmt acc * msg_id = match msg with
   | Ast.Id((s, _pos), (Ast.ID_Lowercase | Ast.ID_Uppercase )) -> 
       acc, ID_MethodName s
 
-  | Ast.Id((s, _pos), Ast.ID_Assign(Ast.ID_Lowercase))
-  | Ast.Id((s, _pos), Ast.ID_Assign(Ast.ID_Uppercase)) -> 
-      acc, ID_Assign s
 
   | Ast.Literal((Ast.Nil _ | Ast.Bool _) as lk) ->
       let lks = string_of_lit_kind lk in

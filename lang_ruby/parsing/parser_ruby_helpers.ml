@@ -313,9 +313,11 @@ let fix_broken_assoc l op r =
   let default = l, op, r in
   match op with
   | Op_GT -> begin match ends_with l with
+(*
   | Id((s,p), ID_Assign ik) ->
       let l' = replace_end l (Id((s,p),ik)) in
         l', Op_ASSOC, r
+*)
   | Literal(Atom(sc, pos)) ->
       let astr,rest = match List.rev sc with
         | (Ast_ruby.StrChars s)::tl -> s,tl
