@@ -254,7 +254,7 @@ let rec methodcall m args cb =
 
     | Literal _,_,_ -> raise Dyp.Giveup
 
-    | Binop(_x,(Op_SCOPE,_),_y),[],None -> m
+    | ScopedId(Scope(_x,(_),_y)),[],None -> m
 
     | DotAccess(x,(p),y),_,_ -> Call(unfold_dot x y p, args, cb)
     | _ -> Call(m,args,cb)
@@ -274,14 +274,14 @@ and check_for_dot = function
   
 and scope tk l r = 
   let l = check_for_dot l in
-  Binop(l, (Op_SCOPE,tk), r)
+  ScopedId(Scope(l, (tk), r))
   
 
 let command_codeblock cmd cb = 
   match cmd with 
   | Call(c,args,None) -> Call(c,args,Some cb)
   | DotAccess(_,(_p),_)
-  | Binop(_,(Op_SCOPE,_p),_) -> Call(cmd,[],Some cb)
+  | ScopedId(Scope(_,(_p),_)) -> Call(cmd,[],Some cb)
   | Id((_,_p),_) -> Call(cmd,[],Some cb)
   | _ -> raise Dyp.Giveup
 

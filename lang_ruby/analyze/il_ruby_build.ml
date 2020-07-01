@@ -246,7 +246,7 @@ let refactor_uop pos = function
   | Ast.Op_UBang
   | Ast.Op_UNot
   | Ast.Op_UAmper
-  | Ast.Op_UScope -> 
+  -> 
       Log.fatal (Log.of_tok pos)
      "trying to refactor construct posing as unary op"
 
@@ -282,7 +282,6 @@ let refactor_binop pos : Ast.binary_op -> binary_op = function
   | Ast.Op_kAND
   | Ast.Op_kOR
   | Ast.Op_ASSOC
-  | Ast.Op_SCOPE
   | Ast.Op_DOT2
   | Ast.Op_DOT3 as bop -> 
       Log.fatal (Log.of_tok pos)
@@ -566,8 +565,8 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
           acc_enqueue s' acc, EId v'
 
 
-    | Ast.Unary((Ast.Op_UScope,pos),e) ->
-        let acc,e' = refactor_id acc e in
+    | Ast.ScopedId(Ast.TopScope(pos,e)) ->
+        let acc,e' = refactor_id acc (Ast.Id e) in
         let s = match e' with
           | Var(Constant, s) -> s
           | _ -> Log.fatal (Log.of_tok pos) "unknown right hand of uscope: %s"
@@ -598,16 +597,16 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
           make_call_expr acc (Some e') msg [] None pos
 
     (* A::m is really a method call *)
-    | Ast.Binop(_e1BUG, (Ast.Op_SCOPE,_pos),(Ast.Id(_, Ast.ID_Lowercase))) -> 
+    | Ast.ScopedId(Ast.Scope(_e1BUG, _pos, Ast.SV ((_, Ast.ID_Lowercase)))) -> 
         let acc,v = fresh acc in
         let v' = match v with LId (id) -> id | _ -> failwith "Impossible" in
         let acc = seen_lhs acc v in
         let e' = Ast.Call(e,[], None) in
         (refactor_method_call_assign acc (Some v) e'), EId v'
 
-    | Ast.Binop(e1,(Ast.Op_SCOPE,pos),e2) -> 
-        let acc,e1' = refactor_id acc e1 in
-        let acc,e2' = refactor_id acc e2 in
+    | Ast.ScopedId(Ast.Scope(e1,pos,_e2_var_or_method_name_now)) -> 
+        let _acc,e1' = refactor_id acc e1 in
+        let acc,e2' = (* refactor_id acc e2 *) raise Todo in
         let s = match e2' with
           | Var(Constant, s) -> s
           | _ -> Log.fatal (Log.of_tok pos) "unknown right hand of scope: %s"
@@ -1256,9 +1255,9 @@ and refactor_method_call_assign (acc:stmt acc) (lhs : lhs option) = function
       let call = C.mcall ?lhs ~targ:targ' msg' args' ?cb:cb' () in
         acc_enqueue call acc
   (* todo: can factorize with prev case when msg is method_name in both case*)
-  | Ast.Call(Ast.Binop(targ,(Ast.Op_SCOPE, _pos2),msg), args, cb) ->
-      let acc,targ' = refactor_expr acc targ in
-      let acc,msg' = refactor_msg acc msg in
+  | Ast.Call(Ast.ScopedId(Ast.Scope(targ,_pos2,_msg_var_or_methodname_now)), args, cb) ->
+      let _acc,targ' = refactor_expr acc targ in
+      let acc,msg' = (* refactor_msg acc msg *) raise Todo in
       let acc,args',cb' = refactor_method_args_and_cb acc args cb in
       let call = C.mcall ?lhs ~targ:targ' msg' args' ?cb:cb' () in
         acc_enqueue call acc
@@ -1436,7 +1435,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
       refactor_assignment acc lhs rhs pos
           
   (* A::m is really a method call *)
-  | Ast.Binop(_e1,(Ast.Op_SCOPE,_pos),(Ast.Id((_,_),Ast.ID_Lowercase))) -> 
+  | Ast.ScopedId(Ast.Scope(_e1,_pos,(Ast.SV((_,_),Ast.ID_Lowercase)))) -> 
       refactor_method_call_assign acc None (Ast.Call(e,[], None))
 
   | Ast.Call _ as m ->
@@ -1492,7 +1491,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
   | Ast.Hash _
   | Ast.Array _
   | Ast.Unary _
-  | Ast.DotAccess _
+  | Ast.DotAccess _ | Ast.ScopedId _ (* TODO *)
   | Ast.Binop _ as e ->
       let acc,e' = refactor_expr acc e in
         acc_enqueue (C.expr e' (tok_of e)) acc
@@ -1615,9 +1614,9 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
       
 and refactor_method_name (acc:stmt acc) e : stmt acc * def_name = match e with
   (* todo: can factorize with next case when same msg type *)
-  | Ast.SingletonM (Ast.Binop(targ,(Ast.Op_SCOPE,_pos),msg)) ->
-      let acc,targ' = refactor_id acc targ in
-      let acc,msg' = refactor_msg acc msg in
+  | Ast.SingletonM (Ast.ScopedId(Ast.Scope(targ,_pos,_msg_var_or_methodnamenow))) ->
+      let _acc,targ' = refactor_id acc targ in
+      let acc,msg' = (* refactor_msg acc msg *) raise Todo in
         acc, (Singleton_Method (targ',msg'))
 
   | Ast.SingletonM (Ast.DotAccess(targ,(_pos),msg)) ->
@@ -1717,8 +1716,8 @@ and refactor_rescue_guard acc (e:Ast.expr) : StrSet.t * rescue_guard =
           acc.seen, Rescue_Bind(exn,bind)
 
     | Ast.Id(_, Ast.ID_Uppercase)
-    | Ast.Binop(_,(Ast.Op_SCOPE,_),_)
-    | Ast.Unary((Ast.Op_UScope,_),_) ->
+    | Ast.ScopedId(Ast.Scope(_,(_),_))
+    | Ast.ScopedId(Ast.TopScope(((_),_))) ->
         let acc, e' = refactor_tuple_expr acc e in
           if not (DQueue.is_empty acc.q)
           then begin

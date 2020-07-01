@@ -21,7 +21,7 @@ val methodcall :
   Ast_ruby.expr -> Ast_ruby.expr list -> Ast_ruby.expr option -> Ast_ruby.expr
 val command_codeblock : Ast_ruby.expr -> Ast_ruby.expr -> Ast_ruby.expr
 
-val scope : Ast_ruby.tok -> Ast_ruby.expr -> Ast_ruby.expr -> Ast_ruby.expr
+val scope : Ast_ruby.tok -> Ast_ruby.expr -> Ast_ruby.variable_or_method_name -> Ast_ruby.expr
 
 val well_formed_command : 'a -> Ast_ruby.expr list -> unit
 val well_formed_return : Ast_ruby.expr list -> unit

@@ -31,7 +31,6 @@ let binary_op_of_string = function
   | "and"  -> Op_kAND     
   | "or"   -> Op_kOR      
   | "=>"   -> Op_ASSOC    
-  | "::"   -> Op_SCOPE    
   | "[]"   -> Op_AREF     
   | "[]="  -> Op_ASET     
   | "<<"   -> Op_LSHIFT   
