@@ -216,7 +216,14 @@ tuple(X):
 (* Toplevel *)
 (*************************************************************************)
 
-main: file_input EOF { $1 }
+main:
+ | file_input EOF { $1 }
+ (* Handles trailing indentation.
+  * Note that I couldn't figure out why the lexer spits this out,
+  * but I didn't want to mess with its state machine too much,
+  * so I just match against the relavent output here.
+  *)
+ | file_input INDENT NEWLINE DEDENT NEWLINE EOF { $1 }
 
 file_input: nl_or_stmt* { List.flatten $1 }
 
