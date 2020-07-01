@@ -1736,12 +1736,9 @@ and refactor_method_formal (acc:stmt acc) t _pos : stmt acc * method_formal_para
   | Ast.Formal_kwd _
     -> failwith "TODO"
 
-  | Ast.Formal_id ((str,_pos),Ast.ID_Lowercase) -> 
+  | Ast.Formal_id ((str,_pos)) -> 
       let acc = {acc with seen = StrSet.add str acc.seen} in
         acc, Formal_meth_id(str)
-
-  | Ast.Formal_id _ -> 
-      Log.fatal Log.empty "refactor_method_formal: non-local method formal?"
 
   | Ast.Formal_amp (_, (s,_)) ->
       {acc with seen = StrSet.add s acc.seen}, Formal_amp s
@@ -1796,8 +1793,8 @@ and refactor_block_formal acc t pos : stmt acc * block_formal_param = match t wi
   | Ast.Formal_kwd _
     -> failwith "TODO"
 
-  | Ast.Formal_id ((str,pos),ik) -> 
-      (add_seen str acc), Formal_block_id(refactor_id_kind pos ik,str)
+  | Ast.Formal_id ((str,pos)) -> 
+      (add_seen str acc), Formal_block_id(refactor_id_kind pos Ast.ID_Lowercase,str)
 
   | Ast.Formal_star(_,(s, _)) -> (add_seen s acc), Formal_star2(s)
   | Ast.Formal_rest _ -> 

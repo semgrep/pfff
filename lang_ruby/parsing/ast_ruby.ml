@@ -205,6 +205,7 @@ type expr =
 
   | Call of expr * expr list * expr option
   (* TODO: ArrayAccess of expr * expr list bracket *)
+(*  | DotAccess of expr * tok (* . or &. *) * method_name *)
 
   (* true = {}, false = do/end *)
   | CodeBlock of bool bracket * formal_param list option * stmts
@@ -330,7 +331,7 @@ and definition =
 
   (* treesitter: TODO stuff with ; and identifier list? in block params? *)
   and formal_param = 
-    | Formal_id of variable (* TODO: even just ident? *)
+    | Formal_id of ident (* usually just xxx but sometimes also @xxx or $xxx *)
     | Formal_amp of tok * ident
 
     (* TODO: Formal_splat of tok * ident option *)
