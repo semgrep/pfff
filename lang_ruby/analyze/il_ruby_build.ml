@@ -239,7 +239,6 @@ let refactor_uop pos = function
   | Ast.Op_UMinus -> Op_UMinus
   | Ast.Op_UPlus -> Op_UPlus
   | Ast.Op_UTilde -> Op_UTilde
-  | Ast.Op_UStar
   | Ast.Op_UStarStar | Ast.Op_DefinedQuestion
   | Ast.Op_UBang
   | Ast.Op_UNot
@@ -512,6 +511,7 @@ let refactor_formal_list f acc lst pos =
 
 let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr = 
   match e with
+    | Ast.Splat _ -> raise Todo
     | Ast.Binop(_, (Ast.Op_OP_ASGN _, _), _) 
     | Ast.S Ast.If _ | Ast.S Ast.Yield _ | Ast.S Ast.Return _  
     | Ast.S Ast.Break _ | Ast.S Ast.Next _ | Ast.S Ast.Redo _ | Ast.S Ast.Retry _
@@ -725,12 +725,6 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         let acc, hl = refactor_hash_list acc l pos in
           acc, ELit (Hash hl)
 
-    | Ast.Operator(_,pos)
-    | Ast.UOperator(_,pos) -> 
-        (* these should be handled by the def/methodcall rules *)
-        Log.fatal (Log.of_tok pos) "operator / uoperator in refactor_expr"
-          
-
     | Ast.S Ast.Block(l) -> begin match List.rev l with
         | [] -> Log.fatal Log.empty "refactor_expr: empty block???"
         | last::rest ->
@@ -852,7 +846,7 @@ and refactor_lit acc (l : Ast.literal) : stmt acc * expr = match l with
   | Ast.Bool (false,_) -> acc, EId (False)
 
 and refactor_star_expr (acc:stmt acc) e : stmt acc * star_expr = match e with
-  | Ast.Unary((Ast.Op_UStar,_pos), e) -> 
+  | Ast.Splat(_pos, Some e) -> 
       let acc, e' = refactor_expr acc e in
         acc, SStar (e')
   | e ->
@@ -962,7 +956,7 @@ and refactor_tuple_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.tuple
         let acc,l' = refactor_list refactor_tuple_expr (acc,DQueue.empty) l in
         acc, TTup (((DQueue.to_list l')))
 
-    | Ast.Unary((Ast.Op_UStar, _pos), e) -> 
+    | Ast.Splat(_pos, Some e) -> 
         let acc, e' = refactor_tuple_expr acc e in
           begin match e' with
             | (TE _ | TTup _) as e' -> acc, TStar (e')
@@ -989,13 +983,13 @@ and refactor_lhs acc e : (stmt acc * lhs * stmt acc) =
         let acc,l',after = work (acc,DQueue.empty,acc_emptyq acc) l in
           acc, LTup (((DQueue.to_list l'))), after
             
-    | Ast.UOperator(Ast.Op_UStar,_pos) ->
+    | Ast.Splat(_pos, None) ->
         let acc, v = fresh acc in
       let v' = match v with LId (id) -> id | _ -> failwith "Impossible" in
 
           acc, LStar (v'), acc_emptyq acc
           
-    | Ast.Unary((Ast.Op_UStar,pos), e) -> 
+    | Ast.Splat(pos, Some e) -> 
         let acc, e',after = refactor_lhs acc e in
           begin match e' with
             | LId (id) -> acc, LStar (id), after
@@ -1050,8 +1044,10 @@ and refactor_id (acc:stmt acc) e : stmt acc * identifier =
 and string_of_lit_kind _kind = "TODO"
 
 and refactor_msg (acc:stmt acc) msg : stmt acc * msg_id = match msg with
+(*
   | Ast.Operator(bop, pos) ->  acc, ID_Operator (refactor_binop pos bop)
   | Ast.UOperator(uop, pos) -> acc, ID_UOperator (refactor_uop pos uop)
+*)
 
   | Ast.Id((s, _pos), (Ast.ID_Lowercase | Ast.ID_Uppercase )) -> 
       acc, ID_MethodName s
@@ -1348,6 +1344,7 @@ and refactor_assignment (acc: stmt acc) (lhs: Ast.expr) (rhs: Ast.expr)
 
 and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc = 
   match e with
+  | Ast.Splat _ -> raise Todo
   | Ast.D Ast.Alias(p3, Ast.MethodId((s1, p1),((Ast.ID_Global) as k1)), 
                     Ast.MethodId((s2, p2),((Ast.ID_Global) as k2))) ->
       let g1 = (refactor_builtin_or_global p1 k1,s1) in
@@ -1603,8 +1600,6 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
 
   | Ast.S Ast.Empty -> acc
 
-  | Ast.Operator _
-  | Ast.UOperator _
   | Ast.CodeBlock _ as s -> 
       Log.fatal (Log.of_tok (tok_of s))
         "refactor_stmt: unknown stmt to refactor: %s\n"

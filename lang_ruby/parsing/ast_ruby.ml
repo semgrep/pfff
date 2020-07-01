@@ -75,7 +75,7 @@ type 'a bracket = tok * 'a * tok
 (* Ident/name *)
 (* ------------------------------------------------------------------------- *)
 type ident = string wrap
-  and _uident = ident 
+  and uident = ident 
   and _lident = ident
  [@@deriving show, eq, ord]
 
@@ -96,10 +96,6 @@ type variable = ident * id_kind
   | ID_Global    (* prefixed by $ *)
  [@@deriving show { with_path = false }, eq, ord]
 
-(* 
-type name = NameConstant of uident | NameScope of ...
-*)
-
 (* ------------------------------------------------------------------------- *)
 (* Operators *)
 (* ------------------------------------------------------------------------- *)
@@ -111,10 +107,8 @@ type unary_op =
   | Op_UNot      (* not x *)
   | Op_DefinedQuestion (* defined? *)
 
-  (* only in argument: TODO move out? *)
+  (* only in argument *)
   | Op_UAmper    (* & *) 
-  (* in argument, pattern, exn, assignment lhs or rhs *)
-  | Op_UStar     (* * *)
   (* tree-sitter: in argument and hash *)
   | Op_UStarStar (* ** *)
  [@@deriving show { with_path = false }, eq, ord]
@@ -184,9 +178,10 @@ type expr =
   (* old: was Binop(e1, Op_SCOPE, e2) or Unary(Op_UScope. e) *)
   | ScopedId of scope_resolution
 
-  (* TODO: delete *)
-  | Operator of binary_op wrap
-  | UOperator of unary_op wrap
+  (* in argument, pattern, exn, assignment lhs or rhs.
+   * old: was Unary(Op_UStar), or UOperator(Op_UStar) 
+   *)
+  | Splat of tok (* '*', but also ',' in mlhs *) * expr option
 
   | Hash of bool * expr list bracket
   | Array of expr list bracket
@@ -253,6 +248,13 @@ and method_name =
   | MethodOperator of binary_op wrap
   (* tree-sitter: and only in Call, not in definitions *)
   | MethodDynamic of expr (* actually an expr list inside () encoded as Tuple*)
+
+(* ------------------------------------------------------------------------- *)
+(* Class or module name *)
+(* ------------------------------------------------------------------------- *)
+and class_or_module_name = 
+   | NameConstant of uident 
+   | NameScope of scope_resolution
 
 (* ------------------------------------------------------------------------- *)
 (* Scope resolution *)
@@ -347,7 +349,7 @@ and definition =
   (* treesitter: TODO stuff with ; and identifier list? in block params? *)
   and formal_param = 
     (* old: was of expr before *)
-    | Formal_id of ident (* usually just xxx but sometimes also @xxx or $xxx *)
+    | Formal_id of ident (* usually just xx but sometimes also @xx or $xx *)
     | Formal_amp of tok * ident
 
     (* less: Formal_splat of tok * ident option *)
@@ -411,23 +413,6 @@ let empty_body_exn = {
     ensure_expr = [];
     else_expr = [];
 }
-
-(* method_name to expr *)
-let methodexpr = function
-  | MethodId v -> Id v
-  | MethodIdAssign (_id, _, _idk) -> raise Common.Impossible
-  | MethodAtom x -> Literal (Atom x)
-  | MethodUOperator x -> UOperator x
-  | MethodOperator x -> Operator x
-  | MethodDynamic x -> x
-
-let methodexpr2 = function
-  | MethodId v -> Id v
-  | MethodIdAssign (id, _, idk) -> (* TODO *) Id (id, idk)
-  | MethodAtom x -> Literal (Atom x)
-  | MethodUOperator x -> UOperator x
-  | MethodOperator x -> Operator x
-  | MethodDynamic x -> x
 
 let sm = function
   | MethodId id -> SV id
