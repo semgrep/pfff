@@ -902,7 +902,7 @@ lambdadef: LAMBDA varargslist ":" test { Lambda ($2, $4) }
 (*----------------------------*)
 
 testlist_comp:
-  | namedexpr_or_star_expr comp_for  { CompForIf ($1, $2) }
+  | namedexpr_or_star_expr listcomp_for  { CompForIf ($1, $2) }
   | tuple(namedexpr_or_star_expr)    { CompList (AST_generic.fake_bracket (to_list $1)) }
 
 (* mostly equivalent to testlist_comp, but transform a single expression
@@ -915,7 +915,13 @@ testlist_comp_or_expr:
     | Tup l -> Tuple (CompList (AST_generic.fake_bracket l), Load)
    }
 
-
+(* supports comp_for when used generically -- not inside atom_list
+ * Note that the division here is necessary to solve a shift-reduce conflict between:
+ *   foo(x for x in bar, baz)
+ * in Python 3, and
+ *   foo = [x for x in 1, 2]
+ * in Python 2
+ *)
 comp_for: 
  | sync_comp_for       { $1 }
  | ASYNC sync_comp_for { (* TODO *) $2 }
@@ -925,6 +931,28 @@ sync_comp_for:
     { [CompFor (tuple_expr_store $2, $4)] }
   | FOR exprlist IN or_test comp_iter 
     { [CompFor (tuple_expr_store $2, $4)] @ $5 }
+
+
+(* support mixed python2 / python3 comp_for only when used inside atom_list *)
+listcomp_for:
+ | listsync_comp_for       { $1 }
+ | ASYNC listsync_comp_for { (* TODO *) $2 }
+
+list_for:
+  or_test "," list_for_rest {
+    List (CompList (AST_generic.fake_bracket ($1::$3)), Load)
+  }
+
+list_for_rest:
+  | or_test                   { [$1] }
+  | or_test "," list_for_rest { $1::$3 }
+
+listsync_comp_for:
+  | sync_comp_for { $1 }
+  (* python2-ext: [x for x in 1, 2] *)
+  | FOR exprlist IN list_for { [CompFor (tuple_expr_store $2, $4) ] }
+
+(* /comp_for *)
 
 comp_iter:
   | comp_for { $1 } 
