@@ -48,17 +48,18 @@
 (*****************************************************************************)
 (* Names *)
 (*****************************************************************************)
-(* Below we derive also eq, and ord, which is unusual compared to our other
- * parsers because we use the GLR parser generator dypgen to parse Ruby
- * and in case of ambiguities dypgen needs to _compare_ resulting ASTs
- * and filter out equivalence trees.
- *)
-
 (* ------------------------------------------------------------------------- *)
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
 type tok = Parse_info.t
  [@@deriving show] (* with tarzan *)
+
+(* Below we derive also eq, and ord, which is unusual compared to our other
+ * parsers. Indeed, we use the GLR parser generator dypgen to parse Ruby
+ * and in case of ambiguities dypgen needs to _compare_ resulting ASTs
+ * and filter out equivalence trees.
+ *)
+
 (* we don't care about difference in token positions *)
 let compare_tok _a _b = 0
 let equal_tok _a _b = true
@@ -119,11 +120,6 @@ type unary_op =
 
 type binary_op = 
   | B of binary_msg
-
-  (* tree-sitter: *)
-  (* ` +@ -@ = unary + and - name
-   *)
-
   (* not in msg_id *)
   | Op_kAND     (* and *)  | Op_kOR      (* or *)
   (* not in msg_id but in Op_OP_ASGN *)
