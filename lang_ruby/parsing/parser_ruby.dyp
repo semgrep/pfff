@@ -148,7 +148,6 @@ let is_exnblock = function
 %token <string * Parse_info.t> T_GLOBAL_VAR
 %token <string * Parse_info.t> T_INST_VAR
 %token <string * Parse_info.t> T_CLASS_VAR
-%token <string * Parse_info.t> T_BUILTIN_VAR
 
 %token <string * Parse_info.t>  T_NUM
 %token <string * Parse_info.t>  T_FLOAT
@@ -939,7 +938,6 @@ variable:
   | T_LID<id,pos>          { ((id,pos), ID_Lowercase)}
   | T_UID<id,pos>          { ((id,pos), ID_Uppercase)}
 
-  | T_BUILTIN_VAR<id,pos>  { ((id,pos), ID_Builtin) }
   | T_GLOBAL_VAR<id,pos>   { ((id,pos), ID_Global) }
   | T_INST_VAR<id,pos>     { ((id,pos), ID_Instance) }
   | T_CLASS_VAR<id,pos>    { ((id,pos), ID_Class) }

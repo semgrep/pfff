@@ -114,8 +114,6 @@ let visit_program ~tag_hook _prefs (_program, toks) =
     | T.T_LID (s, ii) | T.T_UID (s, ii) ->
        tag_name (s, ii) Normal
 
-    | T.T_BUILTIN_VAR (_, ii) ->
-       tag ii Builtin
     | T.T_CLASS_VAR (_, ii) ->
        tag ii (Entity (E.Global, use2))
     | T.T_INST_VAR (_, ii) ->

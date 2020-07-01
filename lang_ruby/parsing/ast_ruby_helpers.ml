@@ -54,8 +54,8 @@ let id_kind s _pos = match s.[0] with
       if s.[1] == '@' then ID_Class
       else ID_Instance
   | '$' -> begin match s.[1] with
-      | 'a'..'z' | 'A'..'Z' | '_' -> ID_Global
-      | _ -> ID_Builtin
+      | 'a'..'z' | 'A'..'Z' | '_'  -> ID_Global
+      | _ -> ID_Global (* ID_Builtin *)
     end
   | _ -> failwith (*(Log.of_loc pos)*) 
     (spf "unknown id_kind in cfg_refactor: %s" s)
