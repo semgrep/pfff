@@ -423,12 +423,16 @@ and param_pattern = function
 (*s: function [[Python_to_generic.parameters]] *)
 and parameters xs =
   xs |> List.map (function
-  | ParamClassic ((PatternName n, topt), eopt) ->
+  | ParamDefault ((n, topt), e) ->
      let n = name n in
      let topt = option type_ topt in
-     let eopt = option expr eopt in
-     G.ParamClassic { (G.param_of_id n) with G.ptype = topt; pdefault = eopt; }
-  | ParamClassic ((PatternTuple pat, _), _) ->
+     let e = expr e in
+     G.ParamClassic { (G.param_of_id n) with G.ptype = topt; pdefault = Some e; }
+  | ParamPattern ((PatternName n, topt)) ->
+     let n = name n
+     and topt = option type_ topt in
+     G.ParamClassic { (G.param_of_id n) with G.ptype = topt }
+  | ParamPattern ((PatternTuple pat, _)) ->
      G.ParamPattern (G.PatTuple (list param_pattern pat))
   | ParamStar (n, topt) ->
      let n = name n in

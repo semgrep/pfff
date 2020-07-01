@@ -79,10 +79,6 @@ let tuple_expr_store l =
 let mk_name_param (name, t) =
   name, t
 
-let param_name_only = function
-  | PatternName name -> name
-  | PatternTuple _ -> failwith "Tuple pattern parameters can not be used with * or **"
-
 let mk_str ii =
   let s = Parse_info.str_of_info ii in
   Str (s, ii)
@@ -372,19 +368,22 @@ typedargslist:
 (* the original grammar enforces more restrictions on the order between
    * Param, ParamStar, and ParamPow, but each language version relaxed it *)
 typed_parameter:
-  | tfpdef          { ParamClassic (mk_name_param $1, None) }
+  | tfpdef_or_fpdef { ParamPattern (fst $1, snd $1) }
   (* TODO check default args come after variable args later *)
-  | tfpdef "=" test { ParamClassic (mk_name_param $1, Some $3) }
-  | "*" tfpdef      { ParamStar (param_name_only (fst $2), snd $2) }
+  | tfpdef "=" test { ParamDefault (mk_name_param $1, $3) }
+  | "*" tfpdef      { ParamStar (fst $2, snd $2) }
   | "*"             { ParamSingleStar $1 }
-  | "**" tfpdef     { ParamPow (param_name_only (fst $2), snd $2) }
+  | "**" tfpdef     { ParamPow (fst $2, snd $2) }
   (* sgrep-ext: *)
   | "..."           { Flag_parsing.sgrep_guard (ParamEllipsis $1) }
 
 tfpdef:
-  | NAME            { PatternName $1, None }
+  | NAME            { $1, None }
   (* typing-ext: *)
-  | NAME ":" test   { PatternName $1, Some $3 }
+  | NAME ":" test   { $1, Some $3 }
+
+tfpdef_or_fpdef:
+  | tfpdef          { PatternName (fst $1), snd $1 }
   (* python2-ext:
    * Note that this allows mixed typed and pattern parameters,
    * which are actually exclusive between Python 2 and 3
@@ -400,8 +399,8 @@ varargslist:
 
 (* python3-ext: can be in any order, ParamStar before or after Classic *)
 parameter:
-  | fpdef           { ParamClassic (($1, None), None) }
-  | fpdef "=" test  { ParamClassic (($1, None), Some $3) }
+  | fpdef           { ParamPattern ($1, None) }
+  | NAME "=" test   { ParamDefault (($1, None), $3) }
   | "*" NAME        { ParamStar ($2, None) }
   | "**" NAME       { ParamPow ($2, None) }
 

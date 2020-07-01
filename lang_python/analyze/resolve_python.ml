@@ -74,9 +74,9 @@ let params_of_parameters params =
       (spf "!arg%d!" ix, Parse_info.fake_info "tuple")
   in
   let collect_param_names (ix, out) = function
-    | ParamClassic ((pat, _), _) ->
+    | ParamPattern ((pat, _)) ->
       (ix + 1, (param_pattern_name ix pat)::out)
-    | ParamStar (name, _) | ParamPow (name, _) ->
+    | ParamDefault ((name, _), _) | ParamStar (name, _) | ParamPow (name, _) ->
       (ix + 1, name::out)
     | ParamSingleStar _ | ParamEllipsis _ ->
       (ix + 1, out)

@@ -273,7 +273,9 @@ type expr =
       (* the first expr can be only a Name or a Tuple (pattern?),
        * and the Name can have a type associated with it
        *)
-     | ParamClassic of (param_pattern * type_ option) * expr option (* default value *)
+     | ParamDefault of (name * type_ option) * expr (* default value *)
+     (* pattern can be either a name or a tuple pattern *)
+     | ParamPattern of param_pattern * type_ option
      | ParamStar of (name * type_ option)
      (* python3: single star delimiter to force keyword-only arguments after.
       * reference: https://www.python.org/dev/peps/pep-3102/ *)

@@ -245,8 +245,12 @@ and v_parameter x =
   match x with
   | ParamSingleStar v1 -> v_tok v1; ()
   | ParamEllipsis v1 -> v_tok v1; ()
-  | ParamClassic ((v1, v2)) ->
-      let v1 = v_param_pattern_and_type v1 and v2 = v_option v_expr v2 in ()
+  | ParamDefault ((v1, v2)) ->
+      let v1 = v_name_and_type v1 and v2 = v_expr v2 in ()
+  | ParamPattern ((v1, v2)) ->
+      let v1 = v_param_pattern v1
+      and v2 = v_option v_type_ v2
+      in ()
   | ParamStar ((v1, v2)) ->
       let v1 = v_name v1 and v2 = v_option v_type_ v2 in ()
   | ParamPow ((v1, v2)) ->
@@ -254,8 +258,8 @@ and v_parameter x =
   in
   vin.kparameter (k, all_functions) x
 
-and v_param_pattern_and_type (v1, v2) =
-  let v1 = v_param_pattern v1
+and v_name_and_type (v1, v2) =
+  let v1 = v_name v1
   and v2 = v_option v_type_ v2
   in ()
 
