@@ -377,7 +377,7 @@ expr:
   | expr<e1> K_AND eols expr<e2> { M.prune_left_assoc $2 e1 Op_kAND e2 }
   | expr<e1> K_OR eols expr<e2>  { M.prune_left_assoc $2 e1 Op_kOR e2 }
   | K_NOT<pos>  eols expr<e>     { M.prune_uop Op_UNot e pos}
-  | T_BANG<pos> eols expr<e>     { M.prune_uop Op_UBang e pos}
+  | T_BANG<pos> eols expr<e>     { M.prune_uop (U Op_UBang) e pos}
 
   /*(* stmt-->topcall-->command vs stmt-->expr-->command *)*/
   | command<c>              { c }
@@ -392,7 +392,7 @@ arg:
   | lhs_pruned_assign_op<l,op,tk> eols arg<r> 
       { M.prune_right_assoc tk l op r }
 
-  | unary_op<o,pos>    eols arg<a> { M.prune_uop o a pos }
+  | unary_op<o,pos>    eols arg<a> { M.prune_uop (U o) a pos }
 
   | arg<l> bin_op<bop,tk> eols arg<r> { M.prune_left_assoc tk l bop r }
   | arg<l> T_ANDOP     eols arg<r> { M.prune_left_assoc $2 l Op_AND r }
@@ -436,7 +436,7 @@ primary:
   | T_USCOPE<pos> variable<id>       { ScopedId(TopScope(pos, id)) }
 
   | primary<p> T_LBRACK_ARG<t1> eols arg_comma_list_trail<xs> eols T_RBRACK<t2>
-     { M.methodcall (DotAccess(p,(t1), MethodOperator(Op_AREF,t2))) xs None }
+     { M.methodcall (DotAccess(p,(t1), MethodOperator(B Op_AREF,t2))) xs None }
 
   | T_LBRACK eols array_body<xs> eols T_RBRACK { Array($1, xs, $5) }
   | T_LBRACE eols array_body<xs> eols T_RBRACE { Hash(true, ($1, xs, $5)) }
@@ -641,7 +641,7 @@ array_body_rest:
 array_item: 
   | arg<e> { e }
   | constant<c> T_LBRACK<t1> eols call_args<xs> eols T_RBRACK<t2>
-      { M.methodcall (DotAccess(c, (t1), MethodOperator(Op_AREF,t2))) (* TODO: Wrong pos Binop, and probably all the following Binop in this file *)
+      { M.methodcall (DotAccess(c, (t1), MethodOperator(B Op_AREF,t2))) (* TODO: Wrong pos Binop, and probably all the following Binop in this file *)
                      xs None }
 
 /*(*************************************************************************)*/
@@ -764,7 +764,7 @@ lhs:
   | K_TRUE            { Literal(Bool (true,$1)) }
   | K_FALSE           { Literal(Bool (false,$1)) }
   | primary<p> T_LBRACK_ARG<t1> eols arg_comma_star_list<xs> eols T_RBRACK<t2>
-      { M.methodcall (DotAccess(p,(t1),MethodOperator(Op_AREF,t2))) xs None}
+      { M.methodcall (DotAccess(p,(t1),MethodOperator(B Op_AREF,t2))) xs None}
   | primary<p> T_DOT<t> eols message_identifier<m>
       { M.methodcall (DotAccess(p,(t), (m))) [] None}
 
@@ -953,16 +953,16 @@ variable2:
 message_identifier:
   /*(* this part was in an intermediate 'assignable' rule before *)*/
   | variable2<e>             { MethodId e }
-  | T_LBRACK_ARG<pos> T_RBRACK { MethodOperator(Op_AREF,pos) }
-  | T_LBRACK<pos>     T_RBRACK { MethodOperator(Op_AREF,pos) }
+  | T_LBRACK_ARG<pos> T_RBRACK { MethodOperator(B Op_AREF,pos) }
+  | T_LBRACK<pos>     T_RBRACK { MethodOperator(B Op_AREF,pos) }
 
   /*(* not 'assignable' part I guess *)*/
   | bin_op<op,tk>                       { MethodOperator(op,tk) }
-  | T_LBRACK_ARG<pos> T_RBRACK T_ASSIGN { MethodOperator(Op_ASET,pos) }
-  | T_LBRACK<pos>     T_RBRACK T_ASSIGN { MethodOperator(Op_ASET,pos) }
-  | T_UPLUS<pos>                        { MethodUOperator(Op_UPlus,pos) }
-  | T_UMINUS<pos>                       { MethodUOperator(Op_UMinus,pos) }
-  | T_TILDE<pos>                        { MethodUOperator(Op_UTilde,pos) }
+  | T_LBRACK_ARG<pos> T_RBRACK T_ASSIGN { MethodOperator(B Op_ASET,pos) }
+  | T_LBRACK<pos>     T_RBRACK T_ASSIGN { MethodOperator(B Op_ASET,pos) }
+  | T_UPLUS<pos>                        { MethodUOperator(U Op_UPlus,pos) }
+  | T_UMINUS<pos>                       { MethodUOperator(U Op_UMinus,pos) }
+  | T_TILDE<pos>                        { MethodUOperator(U Op_UTilde,pos) }
 
 /*(* for simple method definitions, aliases and undefs *)*/
 method_name:
@@ -1004,19 +1004,19 @@ cst_or_scoped_id:
 
 /*(* operator overloading *)*/
 bin_op:
-  | T_PLUS   { Op_PLUS,$1 }   | T_MINUS  { Op_MINUS, $1 }
-  | T_STAR   { Op_TIMES,$1 }  | T_SLASH  { Op_DIV,$1 } | T_PERCENT{ Op_REM,$1 }
-  | T_POW    { Op_POW,$1 }
-  | T_LSHFT  { Op_LSHIFT,$1 } | T_RSHFT  { Op_RSHIFT,$1 }
-  | T_LT     { Op_LT,$1 }     | T_GT     { Op_GT,$1 }
-  | T_GEQ    { Op_GEQ,$1 }    | T_LEQ    { Op_LEQ,$1 }
-  | T_EQ     { Op_EQ,$1 }     | T_EQQ    { Op_EQQ,$1 } | T_NEQ    { Op_NEQ,$1 }
-  | T_CMP    { Op_CMP,$1 } 
-  | T_MATCH  { Op_MATCH,$1 } | T_NMATCH { Op_NMATCH,$1 }
-  | T_AMPER  { Op_BAND,$1 } | T_VBAR   { Op_BOR,$1 }  | T_CARROT { Op_XOR,$1 } 
+  | T_PLUS   { B Op_PLUS,$1 }   | T_MINUS  { B Op_MINUS, $1 }
+  | T_STAR   { B Op_TIMES,$1 }  | T_SLASH  { B Op_DIV,$1 } | T_PERCENT{ B Op_REM,$1 }
+  | T_POW    { B Op_POW,$1 }
+  | T_LSHFT  { B Op_LSHIFT,$1 } | T_RSHFT  { B Op_RSHIFT,$1 }
+  | T_LT     { B Op_LT,$1 }     | T_GT     { B Op_GT,$1 }
+  | T_GEQ    { B Op_GEQ,$1 }    | T_LEQ    { B Op_LEQ,$1 }
+  | T_EQ     { B Op_EQ,$1 }     | T_EQQ    { B Op_EQQ,$1 } | T_NEQ    { B Op_NEQ,$1 }
+  | T_CMP    { B Op_CMP,$1 } 
+  | T_MATCH  { B Op_MATCH,$1 } | T_NMATCH { B Op_NMATCH,$1 }
+  | T_AMPER  { B Op_BAND,$1 } | T_VBAR   { B Op_BOR,$1 }  | T_CARROT { B Op_XOR,$1 } 
 
   | T_ASSOC  { Op_ASSOC,$1 }
-  | T_DOT2   { Op_DOT2,$1 }
+  | T_DOT2   { B Op_DOT2,$1 }
   | T_DOT3   { Op_DOT3,$1 }
 
 unary_op:

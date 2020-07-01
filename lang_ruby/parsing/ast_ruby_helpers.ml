@@ -1,46 +1,46 @@
 open Ast_ruby
-
 (*****************************************************************************)
 (* xxx_of_string *)
 (*****************************************************************************)
 
 let binary_op_of_string = function
   | "="    -> Op_ASSIGN   
-  | "+"    -> Op_PLUS     
-  | "-"    -> Op_MINUS    
-  | "*"    -> Op_TIMES    
-  | "/"    -> Op_DIV      
-  | "%"    -> Op_REM      
-  | "<=>"  -> Op_CMP    
-  | "=="   -> Op_EQ     
-  | "==="  -> Op_EQQ    
-  | "!="   -> Op_NEQ    
-  | ">="   -> Op_GEQ    
-  | "<="   -> Op_LEQ    
-  | "<"    -> Op_LT     
-  | ">"    -> Op_GT     
+  | "+"    -> B Op_PLUS     
+  | "-"    -> B Op_MINUS    
+  | "*"    -> B Op_TIMES    
+  | "/"    -> B Op_DIV      
+  | "%"    -> B Op_REM      
+  | "<=>"  -> B Op_CMP    
+  | "=="   -> B Op_EQ     
+  | "==="  -> B Op_EQQ    
+  | "!="   -> B Op_NEQ    
+  | ">="   -> B Op_GEQ    
+  | "<="   -> B Op_LEQ    
+  | "<"    -> B Op_LT     
+  | ">"    -> B Op_GT     
   | "&&"   -> Op_AND      
   | "||"   -> Op_OR 
-  | "&"    -> Op_BAND     
-  | "|"    -> Op_BOR      
-  | "=~"   -> Op_MATCH    
-  | "!~"   -> Op_NMATCH   
-  | "^"    -> Op_XOR      
-  | "**"   -> Op_POW      
+  | "&"    -> B Op_BAND     
+  | "|"    -> B Op_BOR      
+  | "=~"   -> B Op_MATCH    
+  | "!~"   -> B Op_NMATCH   
+  | "^"    -> B Op_XOR      
+  | "**"   -> B Op_POW      
   | "and"  -> Op_kAND     
   | "or"   -> Op_kOR      
   | "=>"   -> Op_ASSOC    
-  | "[]"   -> Op_AREF     
-  | "[]="  -> Op_ASET     
-  | "<<"   -> Op_LSHIFT   
-  | ">>"   -> Op_RSHIFT   
-  | ".."   -> Op_DOT2     
+  | "[]"   -> B Op_AREF     
+  | "[]="  -> B Op_ASET     
+  | "<<"   -> B Op_LSHIFT   
+  | ">>"   -> B Op_RSHIFT   
+  | ".."   -> B Op_DOT2     
   | "..."  -> Op_DOT3     
   | s -> failwith ("binary_op_of_string: " ^ s)
 (*
   | Op_Custom s -> Printf.sprintf "Custom_op(%s)" s
   | Op_OP_ASGN op -> (str_binop op) ^ "="
 *)
+
 
 (*****************************************************************************)
 (* Misc *)
