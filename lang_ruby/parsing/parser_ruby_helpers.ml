@@ -301,7 +301,7 @@ let fix_broken_neq l op r =
          then 
            let s' = String.sub s 0 (len-1) in
            let l' = replace_end l (Id((s',p),k)) in
-            l', Op_NEQ, r
+            l', B Op_NEQ, r
           else default
        | _ -> default
        end
@@ -312,7 +312,7 @@ let fix_broken_neq l op r =
 let fix_broken_assoc l op r = 
   let default = l, op, r in
   match op with
-  | Op_GT -> begin match ends_with l with
+  | B Op_GT -> begin match ends_with l with
 (*
   | Id((s,p), ID_Assign ik) ->
       let l' = replace_end l (Id((s,p),ik)) in
@@ -340,23 +340,23 @@ let fix_broken_assoc l op r =
 (*****************************************************************************)
 
 let expr_priority = function
-  | Unary((Op_UBang,_),_) | Unary((Op_UTilde,_),_)| Unary((Op_UPlus,_),_) -> 2000
-  | Unary((Op_UMinus,_),_) -> 1900
-  | Binop(_,(Op_POW,_),_) -> 1800
-  | Binop(_,(Op_DIV,_),_) | Binop(_,(Op_REM,_),_) | Binop(_,(Op_TIMES,_),_) -> 1700
-  | Binop(_,(Op_MINUS,_),_) -> 1500
-  | Binop(_,(Op_PLUS,_),_) -> 1500
-  | Binop(_,(Op_LSHIFT,_),_) | Binop(_,(Op_RSHIFT,_),_) -> 1400
-  | Binop(_,(Op_BAND,_),_) -> 1300
-  | Binop(_,(Op_BOR,_),_) | Binop(_,(Op_XOR,_),_) -> 1200
+  | Unary((U Op_UBang,_),_) | Unary((U Op_UTilde,_),_)| Unary((U Op_UPlus,_),_) -> 2000
+  | Unary((U Op_UMinus,_),_) -> 1900
+  | Binop(_,(B Op_POW,_),_) -> 1800
+  | Binop(_,(B Op_DIV,_),_) | Binop(_,(B Op_REM,_),_) | Binop(_,(B Op_TIMES,_),_) -> 1700
+  | Binop(_,(B Op_MINUS,_),_) -> 1500
+  | Binop(_,(B Op_PLUS,_),_) -> 1500
+  | Binop(_,(B Op_LSHIFT,_),_) | Binop(_,(B Op_RSHIFT,_),_) -> 1400
+  | Binop(_,(B Op_BAND,_),_) -> 1300
+  | Binop(_,(B Op_BOR,_),_) | Binop(_,(B Op_XOR,_),_) -> 1200
 
-  | Binop(_,(Op_LEQ,_),_) | Binop(_,(Op_LT,_),_) 
-  | Binop(_,(Op_GEQ,_),_) | Binop(_,(Op_GT,_),_) -> 1100
+  | Binop(_,(B Op_LEQ,_),_) | Binop(_,(B Op_LT,_),_) 
+  | Binop(_,(B Op_GEQ,_),_) | Binop(_,(B Op_GT,_),_) -> 1100
 
-  | Binop(_,(Op_MATCH,_),_) | Binop(_,(Op_NMATCH,_),_) | Binop(_,(Op_NEQ,_),_) 
-  | Binop(_,(Op_CMP,_),_) | Binop(_,(Op_EQ,_),_) | Binop(_,(Op_EQQ,_),_) -> 1000
+  | Binop(_,(B Op_MATCH,_),_) | Binop(_,(B Op_NMATCH,_),_) | Binop(_,(B Op_NEQ,_),_) 
+  | Binop(_,(B Op_CMP,_),_) | Binop(_,(B Op_EQ,_),_) | Binop(_,(B Op_EQQ,_),_) -> 1000
 
-  | Binop(_,(Op_DOT2,_),_) | Binop(_,(Op_DOT3,_),_) -> 800
+  | Binop(_,(B Op_DOT2,_),_) | Binop(_,(Op_DOT3,_),_) -> 800
 
   | Binop(_,(Op_AND,_),_) -> 750
   | Binop(_,(Op_OR,_),_) -> 700

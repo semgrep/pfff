@@ -236,11 +236,12 @@ let refactor_builtin_or_global pos = function
         "trying to refactor other kind into builtin or global"
 
 let refactor_uop pos = function
-  | Ast.Op_UMinus -> Op_UMinus
-  | Ast.Op_UPlus -> Op_UPlus
-  | Ast.Op_UTilde -> Op_UTilde
+  | Ast.U Ast.Op_UMinus -> Op_UMinus
+  | Ast.U Ast.Op_UPlus -> Op_UPlus
+  | Ast.U Ast.Op_UTilde -> Op_UTilde
+
   | Ast.Op_UStarStar | Ast.Op_DefinedQuestion
-  | Ast.Op_UBang
+  | Ast.U Ast.Op_UBang
   | Ast.Op_UNot
   | Ast.Op_UAmper
   -> 
@@ -248,30 +249,30 @@ let refactor_uop pos = function
      "trying to refactor construct posing as unary op"
 
 let refactor_binop pos : Ast.binary_op -> binary_op = function
-  | Ast.Op_PLUS -> Op_Plus
-  | Ast.Op_MINUS -> Op_Minus
-  | Ast.Op_TIMES -> Op_Times
-  | Ast.Op_REM -> Op_Rem
-  | Ast.Op_DIV -> Op_Div
-  | Ast.Op_CMP -> Op_CMP
-  | Ast.Op_EQ -> Op_EQ
-  | Ast.Op_EQQ -> Op_EQQ
-  | Ast.Op_GEQ -> Op_GEQ
-  | Ast.Op_LEQ -> Op_LEQ
-  | Ast.Op_LT -> Op_LT
-  | Ast.Op_GT -> Op_GT
-  | Ast.Op_BAND -> Op_BAnd
-  | Ast.Op_BOR -> Op_BOr
-  | Ast.Op_MATCH -> Op_Match
-  | Ast.Op_XOR -> Op_XOR
-  | Ast.Op_POW -> Op_Pow
-  | Ast.Op_AREF -> Op_ARef
-  | Ast.Op_ASET -> Op_ASet
-  | Ast.Op_LSHIFT -> Op_LShift
-  | Ast.Op_RSHIFT -> Op_RShift
+  | Ast.B Ast.Op_PLUS -> Op_Plus
+  | Ast.B Ast.Op_MINUS -> Op_Minus
+  | Ast.B Ast.Op_TIMES -> Op_Times
+  | Ast.B Ast.Op_REM -> Op_Rem
+  | Ast.B Ast.Op_DIV -> Op_Div
+  | Ast.B Ast.Op_CMP -> Op_CMP
+  | Ast.B Ast.Op_EQ -> Op_EQ
+  | Ast.B Ast.Op_EQQ -> Op_EQQ
+  | Ast.B Ast.Op_GEQ -> Op_GEQ
+  | Ast.B Ast.Op_LEQ -> Op_LEQ
+  | Ast.B Ast.Op_LT -> Op_LT
+  | Ast.B Ast.Op_GT -> Op_GT
+  | Ast.B Ast.Op_BAND -> Op_BAnd
+  | Ast.B Ast.Op_BOR -> Op_BOr
+  | Ast.B Ast.Op_MATCH -> Op_Match
+  | Ast.B Ast.Op_XOR -> Op_XOR
+  | Ast.B Ast.Op_POW -> Op_Pow
+  | Ast.B Ast.Op_AREF -> Op_ARef
+  | Ast.B Ast.Op_ASET -> Op_ASet
+  | Ast.B Ast.Op_LSHIFT -> Op_LShift
+  | Ast.B Ast.Op_RSHIFT -> Op_RShift
 
-  | Ast.Op_NEQ
-  | Ast.Op_NMATCH
+  | Ast.B Ast.Op_NEQ
+  | Ast.B Ast.Op_NMATCH
   | Ast.Op_OP_ASGN _
   | Ast.Op_ASSIGN
   | Ast.Op_AND
@@ -279,7 +280,7 @@ let refactor_binop pos : Ast.binary_op -> binary_op = function
   | Ast.Op_kAND
   | Ast.Op_kOR
   | Ast.Op_ASSOC
-  | Ast.Op_DOT2
+  | Ast.B Ast.Op_DOT2
   | Ast.Op_DOT3 as bop -> 
       Log.fatal (Log.of_tok pos)
         "trying to refactor construct posing as binary op: %s"
@@ -572,15 +573,15 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         in
           acc, EId (UScope s)
 
-    | Ast.Unary((Ast.Op_UMinus,_pos), Ast.Literal(Ast.Num (i,_))) -> 
+    | Ast.Unary((Ast.U Ast.Op_UMinus,_pos), Ast.Literal(Ast.Num (i,_))) -> 
         acc, ELit (Num ("-"^i))
 
 
-    | Ast.Unary((Ast.Op_UMinus, _pos), Ast.Literal(Ast.Float(s,_))) -> 
+    | Ast.Unary((Ast.U Ast.Op_UMinus, _pos), Ast.Literal(Ast.Float(s,_))) -> 
         assert(s.[0] != '-');
         acc, ELit (Float("-" ^ s))
 
-    | Ast.Unary(((Ast.Op_UBang | Ast.Op_UNot),pos),e) ->
+    | Ast.Unary(((Ast.U Ast.Op_UBang | Ast.Op_UNot),pos),e) ->
         let acc,v = fresh acc in
         let v' = match v with LId (id) -> id | _ -> failwith "Impossible" in
         let t = C.assign v (TE (EId True)) pos in
@@ -612,25 +613,25 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         in
           acc, EId (Scope(e1', s))
 
-    | Ast.Binop(e1,(Ast.Op_NEQ,pos),e2) ->
+    | Ast.Binop(e1,(Ast.B Ast.Op_NEQ,pos),e2) ->
         let acc, t1 = fresh acc in
       let t1' = match t1 with LId (id) -> id | _ -> failwith "Impossible" in
 
         let acc, t2 = fresh acc in
       let t2' = match t2 with LId (id) -> id | _ -> failwith "Impossible" in
 
-        let acc = refactor_binop_into_mc acc (Some t1) e1 Ast.Op_EQ e2 pos in
+        let acc = refactor_binop_into_mc acc (Some t1) e1 (Ast.B Ast.Op_EQ) e2 pos in
         let t = C.assign t2 (TE (EId True)) pos in
         let f = C.assign t2 (TE (EId False)) pos in
         let acc = acc_enqueue (C.if_s (EId t1') ~t:f ~f:t pos) acc in
           acc, (EId t2')
 
-    | Ast.Binop(e1,(Ast.Op_NMATCH,pos),e2) ->
+    | Ast.Binop(e1,(Ast.B Ast.Op_NMATCH,pos),e2) ->
         let acc, t1 = fresh acc in
       let t1' = match t1 with LId (id) -> id | _ -> failwith "Impossible" in
         let acc, t2 = fresh acc in
       let t2' = match t2 with LId (id) -> id | _ -> failwith "Impossible" in
-        let acc = refactor_binop_into_mc acc (Some t1) e1 Ast.Op_MATCH e2 pos in
+        let acc = refactor_binop_into_mc acc (Some t1) e1 (Ast.B Ast.Op_MATCH) e2 pos in
         let t = C.assign t2 (TE (EId True)) pos in
         let f = C.assign t2 (TE (EId False)) pos in
         let acc = acc_enqueue (C.if_s (EId t1') ~t:f ~f:t pos) acc in
@@ -649,7 +650,7 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         let acc,e2' = refactor_expr acc e2 in
           acc, ELit (Hash [ e1', e2'])
 
-    | Ast.Binop(e1,(Ast.Op_DOT2, _pos),e2) ->
+    | Ast.Binop(e1,(Ast.B Ast.Op_DOT2, _pos),e2) ->
         let acc,e1' = refactor_expr acc e1 in
         let acc,e2' = refactor_expr acc e2 in
           acc, ELit (Range(false, e1', e2'))
@@ -1280,7 +1281,7 @@ and refactor_assignment (acc: stmt acc) (lhs: Ast.expr) (rhs: Ast.expr)
   match lhs,rhs with
   (* x[y] = z is really x.[]=(y,z) *)
   | Ast.Call(
-      Ast.DotAccess(targ, (_),Ast.MethodOperator(Ast.Op_AREF,_)), args,None),
+      Ast.DotAccess(targ, (_),Ast.MethodOperator(Ast.B Ast.Op_AREF,_)), args,None),
     _ ->
       let acc,targ' = refactor_expr acc targ in
       let acc,rhs_arg = refactor_star_expr acc rhs in
@@ -1412,7 +1413,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
 
   | Ast.Binop(e1,(Ast.Op_ASSIGN, pos),
                 Ast.Binop(l,
-                            (( Ast.Op_PLUS | Ast.Op_MINUS | Ast.Op_TIMES
+                            (Ast.B ( Ast.Op_PLUS | Ast.Op_MINUS | Ast.Op_TIMES
                             | Ast.Op_REM  | Ast.Op_DIV   | Ast.Op_CMP
                             | Ast.Op_EQ   | Ast.Op_EQQ   (*| Ast.Op_NEQ*)
                             | Ast.Op_GEQ  | Ast.Op_LEQ   | Ast.Op_LT
@@ -1423,7 +1424,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
                              as op), _pos1),
                             r)) ->
       let acc,e1',after = refactor_lhs acc e1 in
-      let acc = refactor_binop_into_mc acc (Some e1') l op r pos in
+      let acc = refactor_binop_into_mc acc (Some e1') l (Ast.B op) r pos in
         acc_append acc after
 
   | Ast.Binop(lhs,(Ast.Op_ASSIGN,pos),rhs) ->

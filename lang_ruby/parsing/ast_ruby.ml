@@ -101,8 +101,7 @@ type variable = ident * id_kind
 (* ------------------------------------------------------------------------- *)
 type unary_op = 
   (* unary and msg_id *)
-  | Op_UMinus    (* -x, -@ when in msg_id *)  | Op_UPlus (* +x, +@ in msg_id *)
-  | Op_UBang     (* !x *) | Op_UTilde    (* ~x *)
+  | U of unary_msg
   (* not in msg_id *)
   | Op_UNot      (* not x *)
   | Op_DefinedQuestion (* defined? *)
@@ -111,10 +110,36 @@ type unary_op =
   | Op_UAmper    (* & *) 
   (* tree-sitter: in argument and hash *)
   | Op_UStarStar (* ** *)
+
+  and unary_msg = 
+  | Op_UMinus    (* -x, -@ when in msg_id *)  | Op_UPlus (* +x, +@ in msg_id *)
+  | Op_UBang     (* !x *) | Op_UTilde    (* ~x *)
  [@@deriving show { with_path = false }, eq, ord]
 
 
 type binary_op = 
+  | B of binary_msg
+
+  (* tree-sitter: *)
+  (* ` +@ -@ = unary + and - name
+   *)
+
+  (* not in msg_id *)
+  | Op_kAND     (* and *)  | Op_kOR      (* or *)
+  (* not in msg_id but in Op_OP_ASGN *)
+  | Op_AND      (* && *)  | Op_OR   (* || *)
+
+  (* TODO: move out! Assign and AssignOp *)
+  | Op_ASSIGN   (* = *)
+  | Op_OP_ASGN of binary_op  (* +=, -=, ... *)
+
+  (* TODO: move out, in hash or arguments *)
+  | Op_ASSOC    (* => *)
+
+  (* sugar for .. and = probably *)
+  | Op_DOT3     (* ... *)
+
+  and binary_msg = 
   (* binary and msg_id and assign op *)
   | Op_PLUS     (* + *)  | Op_MINUS    (* - *)
   | Op_TIMES    (* * *)  | Op_REM      (* % *)  | Op_DIV      (* / *)
@@ -139,25 +164,6 @@ type binary_op =
   | Op_ASET     (* []= *)
 
   | Op_DOT2     (* .. *)
-
-  (* tree-sitter: *)
-  (* ` +@ -@ = unary + and - name
-   *)
-
-  (* not in msg_id *)
-  | Op_kAND     (* and *)  | Op_kOR      (* or *)
-  (* not in msg_id but in Op_OP_ASGN *)
-  | Op_AND      (* && *)  | Op_OR   (* || *)
-
-  (* TODO: move out! Assign and AssignOp *)
-  | Op_ASSIGN   (* = *)
-  | Op_OP_ASGN of binary_op  (* +=, -=, ... *)
-
-  (* TODO: move out, in hash or arguments *)
-  | Op_ASSOC    (* => *)
-
-  (* sugar for .. and = probably *)
-  | Op_DOT3     (* ... *)
 
  [@@deriving show { with_path = false }, eq, ord]
 
