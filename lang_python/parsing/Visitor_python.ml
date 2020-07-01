@@ -243,7 +243,7 @@ and v_parameters v = v_list v_parameter v
 and v_parameter x =
   let k x = 
   match x with
-  | ParamSingleStar v1 -> v_tok v1; ()
+  | ParamSingleStar v1 | ParamSlash v1 -> v_tok v1; ()
   | ParamEllipsis v1 -> v_tok v1; ()
   | ParamDefault ((v1, v2)) ->
       let v1 = v_name_and_type v1 and v2 = v_expr v2 in ()

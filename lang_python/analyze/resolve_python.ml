@@ -78,7 +78,7 @@ let params_of_parameters params =
       (ix + 1, (param_pattern_name ix pat)::out)
     | ParamDefault ((name, _), _) | ParamStar (name, _) | ParamPow (name, _) ->
       (ix + 1, name::out)
-    | ParamSingleStar _ | ParamEllipsis _ ->
+    | ParamSingleStar _ | ParamSlash _ | ParamEllipsis _ ->
       (ix + 1, out)
   in
   let zipped = List.fold_left collect_param_names (0, []) params

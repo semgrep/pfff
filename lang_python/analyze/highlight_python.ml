@@ -262,7 +262,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
       | ParamDefault ((name, _), _)
       | ParamStar (name, _) | ParamPow (name, _) ->
         tag_name name (Parameter Def);
-      | ParamSingleStar _ | ParamEllipsis _
+      | ParamSingleStar _ | ParamSlash _ | ParamEllipsis _
       | ParamPattern ((PatternTuple _, _)) ->
         ()
       );

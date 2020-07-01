@@ -890,6 +890,7 @@ and vof_other_parameter_operator =
   | OPO_Ref -> OCaml.VSum (("OPO_Ref", []))
   | OPO_Receiver -> OCaml.VSum (("OPO_Receiver", []))
   | OPO_SingleStarParam -> OCaml.VSum ("OPO_SingleStarParam", [])
+  | OPO_SlashParam -> OCaml.VSum ("OPO_SlashParam", [])
 and vof_variable_definition { vinit = v_vinit; vtype = v_vtype } =
   let bnds = [] in
   let arg = OCaml.vof_option vof_type_ v_vtype in

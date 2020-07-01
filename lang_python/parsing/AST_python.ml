@@ -280,6 +280,8 @@ type expr =
      (* python3: single star delimiter to force keyword-only arguments after.
       * reference: https://www.python.org/dev/peps/pep-3102/ *)
      | ParamSingleStar of tok
+     (* python3: single slash delimiter to force positional-only arguments prior. *)
+     | ParamSlash of tok
      | ParamPow  of (name * type_ option)
      (* sgrep-ext: *)
      | ParamEllipsis of tok
