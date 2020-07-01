@@ -159,6 +159,7 @@ type binary_op =
   (* not in msg_id but in Op_OP_ASGN *)
   | Op_AND      (* && *)  | Op_OR   (* || *)
 
+  (* TODO: move out! Assign and AssignOp *)
   | Op_ASSIGN   (* = *)
   | Op_OP_ASGN of binary_op  (* +=, -=, ... *)
 
