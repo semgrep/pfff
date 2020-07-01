@@ -327,8 +327,8 @@ and stmt =
     ensure_expr: stmts option2;
     else_expr: stmts option2;
   }
-    (* TODO: (tok * (exception_name list * ident option) * stmts)*)
-    and rescue_clause = (tok * expr * expr)
+    (* TODO: (exception_name list * ident option)*)
+    and rescue_clause = (tok * expr * stmts)
 
 and stmts = expr list
 

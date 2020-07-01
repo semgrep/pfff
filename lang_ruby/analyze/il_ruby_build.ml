@@ -1683,7 +1683,7 @@ and refactor_rescue pos acc (_, gs,rescue_body) : stmt acc * rescue_block =
   let guards = List.rev rev_guards in
   let body_acc = acc_seen {q=DQueue.empty; seen = set;
                            super_args=acc.super_args} acc in
-  let body_acc = refactor_stmt body_acc rescue_body in
+  let body_acc = refactor_stmt_list body_acc rescue_body in
   let body = C.seq (DQueue.to_list body_acc.q) pos in
   let resc_blk = {rescue_guards = guards;rescue_body = body} in
     (acc_seen acc body_acc), resc_blk
