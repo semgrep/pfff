@@ -177,7 +177,12 @@ type binary_op =
 (* ------------------------------------------------------------------------- *)
 (* Method name *)
 (* ------------------------------------------------------------------------- *)
-(* later, mutually dependent on expr because of MethodSymbol *)
+(* later, mutually dependent on expr with MethodSymbol and MethodDynamic *)
+
+(* ------------------------------------------------------------------------- *)
+(* Scope resolution *)
+(* ------------------------------------------------------------------------- *)
+(* later, mutually dependent on expr *)
 
 (*****************************************************************************)
 (* Expression *)
@@ -202,6 +207,7 @@ type expr =
 
   | Call of expr * expr list * expr option
   (* TODO: ArrayAccess of expr * expr list bracket *)
+  (* old: was Binop(e1, Op_DOT, e2) before *)
   | DotAccess of expr * tok (* . or &. *) * method_name
 
   (* true = {}, false = do/end *)
@@ -247,6 +253,7 @@ and literal =
 (* Method name *)
 (* ------------------------------------------------------------------------- *)
 
+(* old: was just expr before *)
 and method_name = 
   | MethodId of variable (* all except Self and Super *)
   | MethodIdAssign of ident * tok * id_kind (* = *)
@@ -255,6 +262,16 @@ and method_name =
   | MethodOperator of binary_op wrap
   (* tree-sitter: and only in Call, not in definitions *)
   | MethodDynamic of expr (* actually an expr list inside () encoded as Tuple*)
+
+(* ------------------------------------------------------------------------- *)
+(* Scope resolution *)
+(* ------------------------------------------------------------------------- *)
+(* The variable below is actually either an ID_Lowercase ora ID_Uppercase *)
+and scope_resolution =
+  (* old: was called Op_UScope before *)
+  | TopScope of tok (* :: *) * variable
+  (* old: was called Op_SCOPE before *)
+  | Scope of expr * tok (* :: *) * variable 
 
 (*****************************************************************************)
 (* pattern *)
@@ -330,10 +347,11 @@ and definition =
 
   (* treesitter: TODO stuff with ; and identifier list? in block params? *)
   and formal_param = 
+    (* old: was of expr before *)
     | Formal_id of ident (* usually just xxx but sometimes also @xxx or $xxx *)
     | Formal_amp of tok * ident
 
-    (* TODO: Formal_splat of tok * ident option *)
+    (* less: Formal_splat of tok * ident option *)
     | Formal_star of tok * ident (* as in *x *)
     | Formal_rest of tok (* just '*' *)
 
@@ -349,9 +367,7 @@ and definition =
     | Class_Inherit of expr
     | Inst_Inherit of expr
 
-  (* TODO: *)
-  and _name = expr
-
+  (* old: was just expr before *)
   and method_kind =
    | M of method_name
    | SingletonM of expr (* TODO (variable | expr) * scope_op * method_name *)
@@ -413,4 +429,3 @@ let methodexpr2 = function
   | MethodUOperator x -> UOperator x
   | MethodOperator x -> Operator x
   | MethodDynamic x -> x
-
