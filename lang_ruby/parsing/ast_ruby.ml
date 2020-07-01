@@ -252,6 +252,8 @@ and method_name =
   | MethodAtom of atom
   | MethodUOperator of unary_op wrap
   | MethodOperator of binary_op wrap
+  (* tree-sitter: and only in Call, not in definitions *)
+  | MethodDynamic of expr (* actually an expr list inside () encoded as Tuple*)
 
 (*****************************************************************************)
 (* pattern *)
@@ -401,6 +403,7 @@ let methodexpr = function
   | MethodAtom x -> Literal (Atom x)
   | MethodUOperator x -> UOperator x
   | MethodOperator x -> Operator x
+  | MethodDynamic x -> x
 
 let methodexpr2 = function
   | MethodId v -> Id v
@@ -408,3 +411,5 @@ let methodexpr2 = function
   | MethodAtom x -> Literal (Atom x)
   | MethodUOperator x -> UOperator x
   | MethodOperator x -> Operator x
+  | MethodDynamic x -> x
+
