@@ -905,11 +905,11 @@ class_definition:
   | scope_CLASS<pos> eols cst_or_scoped_id<id> class_inheritance<inh> do_sep
       body_exn<body> K_lEND
       { S.leave_scope dyp;
-        D (ClassDef(pos, id, inh, body))}
+        D (ClassDef(pos, C (id, inh), body))}
 
   | scope_CLASS<pos> T_LSHFT arg<id> eols body_exn<body> K_lEND
       { S.leave_scope dyp;
-        D (ClassDef(pos, S Empty, Some (Inst_Inherit id), body)) }
+        D (ClassDef(pos, SingletonC ($2, id), body)) }
 
 module_definition: scope_MODULE<pos> cst_or_scoped_id<id> eols body_exn<body> K_lEND 
       { S.leave_scope dyp;
@@ -921,7 +921,7 @@ scope_MODULE: K_MODULE<pos> {S.enter_scope dyp; pos}
 
 class_inheritance:
  | /*(* empty *)*/ { None }
- | T_LT primary<p> { Some (Class_Inherit p) }
+ | T_LT primary<p> { Some (p) }
 
 /*(*************************************************************************)*/
 /*(*1 Name *)*/
@@ -986,17 +986,19 @@ meth_or_atom:
     | method_name  { $1 }
     | T_ATOM       { MethodAtom $1 }
 
+/*(* TODO: split in scoped_id *)*/
 var_or_scoped_id:
   | variable<id>                           { Id id }
   | T_USCOPE<pos> variable<id>             { ScopedId (TopScope((pos),id))}
   | var_or_scoped_id<id1> T_SCOPE variable2<id2>  
       { ScopedId (Scope(id1,$2,SV id2)) }
 
+/*(*TODO: should be just constant below, not any variable *)*/
 cst_or_scoped_id:
-  | variable<id>                           { Id id }
-  | T_USCOPE<pos> variable<id>             { ScopedId (TopScope((pos),id))}
+  | variable<id>                           { NameConstant (fst id) }
+  | T_USCOPE<pos> variable<id>             { NameScope (TopScope((pos),id))}
   | var_or_scoped_id<id1> T_SCOPE variable2<id2>  
-      { ScopedId (Scope(id1,$2,SV id2)) }
+      { NameScope (Scope(id1,$2,SV id2)) }
 
 
 
