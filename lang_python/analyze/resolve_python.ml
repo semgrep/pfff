@@ -13,6 +13,7 @@
  * license.txt for more details.
  *)
 open AST_python
+open Common
 module Ast = AST_python
 module V = Visitor_python
 
@@ -62,14 +63,28 @@ let add_name_env name kind env =
 let with_new_context ctx env f = 
   Common.save_excursion env.ctx ctx f
 
-
 let params_of_parameters params =
-  params |> Common.map_filter (function
-    | ParamClassic ((name, _), _)
-    | ParamStar (name, _) | ParamPow (name, _) 
-    -> Some name
-    | ParamSingleStar _ | ParamEllipsis _ -> None
-   )
+  let param_pattern_name ix = function
+    | PatternName name -> name
+    | PatternTuple _names ->
+      (* We factor all tuple patterns into a common generic name, so these are useless for further analysis.
+       * They will, however, parse.
+       * TODO: Add factoring similar to lang_js/analyze/transpile_js patterns
+       *)
+      (spf "!arg%d!" ix, Parse_info.fake_info "tuple")
+  in
+  let collect_param_names (ix, out) = function
+    | ParamPattern ((pat, _)) ->
+      (ix + 1, (param_pattern_name ix pat)::out)
+    | ParamDefault ((name, _), _) | ParamStar (name, _) | ParamPow (name, _) ->
+      (ix + 1, name::out)
+    | ParamSingleStar _ | ParamEllipsis _ ->
+      (ix + 1, out)
+  in
+  let zipped = List.fold_left collect_param_names (0, []) params
+  in
+  (match zipped with | (_, names) -> names)
+
 
 (*****************************************************************************)
 (* Entry point *)

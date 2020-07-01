@@ -416,14 +416,24 @@ and slice e =
       G.SliceAccess (e, v1, v2, v3)
 (*e: function [[Python_to_generic.slice]] *)
 
+and param_pattern = function
+  | PatternName n -> G.PatId (name n, G.empty_id_info())
+  | PatternTuple t -> G.PatTuple (list param_pattern t)
+
 (*s: function [[Python_to_generic.parameters]] *)
 and parameters xs =
   xs |> List.map (function
-  | ParamClassic ((n, topt), eopt) ->
+  | ParamDefault ((n, topt), e) ->
      let n = name n in
      let topt = option type_ topt in
-     let eopt = option expr eopt in
-     G.ParamClassic { (G.param_of_id n) with G.ptype = topt; pdefault = eopt; }
+     let e = expr e in
+     G.ParamClassic { (G.param_of_id n) with G.ptype = topt; pdefault = Some e; }
+  | ParamPattern ((PatternName n, topt)) ->
+     let n = name n
+     and topt = option type_ topt in
+     G.ParamClassic { (G.param_of_id n) with G.ptype = topt }
+  | ParamPattern ((PatternTuple pat, _)) ->
+     G.ParamPattern (G.PatTuple (list param_pattern pat))
   | ParamStar (n, topt) ->
      let n = name n in
      let topt = option type_ topt in

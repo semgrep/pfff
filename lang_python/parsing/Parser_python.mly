@@ -375,19 +375,27 @@ typedargslist:
 (* the original grammar enforces more restrictions on the order between
    * Param, ParamStar, and ParamPow, but each language version relaxed it *)
 typed_parameter:
-  | tfpdef           { ParamClassic (mk_name_param $1, None) }
+  | tfpdef_or_fpdef { ParamPattern (fst $1, snd $1) }
   (* TODO check default args come after variable args later *)
-  | tfpdef "=" test   { ParamClassic (mk_name_param $1, Some $3) }
+  | tfpdef "=" test { ParamDefault (mk_name_param $1, $3) }
   | "*" tfpdef      { ParamStar (fst $2, snd $2) }
   | "*"             { ParamSingleStar $1 }
-  | "**" tfpdef       { ParamPow (fst $2, snd $2) }
+  | "**" tfpdef     { ParamPow (fst $2, snd $2) }
   (* sgrep-ext: *)
-  | "..."         { Flag_parsing.sgrep_guard (ParamEllipsis $1) }
+  | "..."           { Flag_parsing.sgrep_guard (ParamEllipsis $1) }
 
 tfpdef:
   | NAME            { $1, None }
   (* typing-ext: *)
-  | NAME ":" test { $1, Some $3 }
+  | NAME ":" test   { $1, Some $3 }
+
+tfpdef_or_fpdef:
+  | tfpdef          { PatternName (fst $1), snd $1 }
+  (* python2-ext:
+   * Note that this allows mixed typed and pattern parameters,
+   * which are actually exclusive between Python 2 and 3
+   *)
+  | "(" fplist ")"  { PatternTuple $2, None }
 
 
 (* without types, as in lambda *)
@@ -398,12 +406,18 @@ varargslist:
 
 (* python3-ext: can be in any order, ParamStar before or after Classic *)
 parameter:
-  | vfpdef         { ParamClassic (($1, None), None) }
-  | vfpdef "=" test { ParamClassic (($1, None), Some $3) }
-  | "*" NAME      { ParamStar ($2, None) }
+  | fpdef           { ParamPattern ($1, None) }
+  | NAME "=" test   { ParamDefault (($1, None), $3) }
+  | "*" NAME        { ParamStar ($2, None) }
   | "**" NAME       { ParamPow ($2, None) }
 
-vfpdef: NAME { $1 }
+fpdef:
+  | NAME           { PatternName $1 }
+  | "(" fplist ")" { PatternTuple $2 }
+
+fplist:
+  | fpdef            { [$1] }
+  | fpdef "," fplist { $1::$3 }
 
 (*************************************************************************)
 (* Class definition *)
