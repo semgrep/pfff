@@ -617,7 +617,7 @@ let merge_rescue s xs =
   let l' = uniq_list cmp xs in
     do_fail s l' 
   (fun (_, x,y) -> 
-     Printf.sprintf "%s: %s"  (Ast_printer.show_expr x)(Ast_printer.show_expr y)
+     Printf.sprintf "%s: %s"  (Ast_printer.show_expr x)(Ast_printer.show_stmts y)
   );
     l'
  )
