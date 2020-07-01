@@ -149,7 +149,7 @@ let mk_str ii =
 (* operators *)
 %token <AST_python.tok> 
   ADD            (* + *)  SUB            (* - *)
-  MULT "*"       (* * *)  DIV            (* / *)
+  MULT "*"       (* * *)  DIV "/"        (* / *)
   MOD            (* % *)
   POW  "**"      (* ** *)  FDIV           (* // *)
   BITOR          (* | *)  BITAND         (* & *)  BITXOR         (* ^ *)
@@ -380,6 +380,8 @@ typed_parameter:
   | tfpdef "=" test { ParamDefault (mk_name_param $1, $3) }
   | "*" tfpdef      { ParamStar (fst $2, snd $2) }
   | "*"             { ParamSingleStar $1 }
+  (* python3-ext: https://www.python.org/dev/peps/pep-0570/ *)
+  | "/"             { ParamSlash $1 }
   | "**" tfpdef     { ParamPow (fst $2, snd $2) }
   (* sgrep-ext: *)
   | "..."           { Flag_parsing.sgrep_guard (ParamEllipsis $1) }
@@ -409,6 +411,8 @@ parameter:
   | fpdef           { ParamPattern ($1, None) }
   | NAME "=" test   { ParamDefault (($1, None), $3) }
   | "*" NAME        { ParamStar ($2, None) }
+  (* python3-ext: https://www.python.org/dev/peps/pep-0570/ *)
+  | "/"             { ParamSlash $1 }
   | "**" NAME       { ParamPow ($2, None) }
 
 fpdef:

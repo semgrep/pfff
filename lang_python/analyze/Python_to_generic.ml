@@ -447,6 +447,8 @@ and parameters xs =
    | ParamEllipsis tok -> G.ParamEllipsis tok
    | ParamSingleStar tok ->
      G.OtherParam (G.OPO_SingleStarParam, [G.Tk tok])
+   | ParamSlash tok ->
+     G.OtherParam (G.OPO_SlashParam, [G.Tk tok])
   )
 (*e: function [[Python_to_generic.parameters]] *)
 

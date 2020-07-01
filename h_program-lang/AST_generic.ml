@@ -1069,7 +1069,7 @@ and function_definition = {
 (*s: type [[AST_generic.other_parameter_operator]] *)
   and other_parameter_operator =
      (* Python *)
-     | OPO_KwdParam | OPO_SingleStarParam
+     | OPO_KwdParam | OPO_SingleStarParam | OPO_SlashParam
      (* Go *)
      | OPO_Receiver (* of parameter_classic, used to tag the "self" parameter*)
      (* PHP *) 
