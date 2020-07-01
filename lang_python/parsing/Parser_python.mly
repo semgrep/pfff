@@ -232,8 +232,6 @@ nl_or_stmt:
  | stmt    { $1 }
 
 sgrep_spatch_pattern:
- | test       EOF            { Expr $1 }
-
  | small_stmt EOF            { match $1 with [x] -> Stmt x | xs -> Stmts xs }
  | small_stmt NEWLINE EOF    { match $1 with [x] -> Stmt x | xs -> Stmts xs }
  | compound_stmt EOF         { Stmt $1 }
