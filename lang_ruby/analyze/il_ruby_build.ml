@@ -1666,7 +1666,7 @@ and refactor_body (acc:stmt acc) b pos : stmt acc =
       acc_enqueue (C.exnblock body rescue_list ?eelse ?ensure pos) acc
   end
 
-and refactor_rescue pos acc (gs,rescue_body) : stmt acc * rescue_block =
+and refactor_rescue pos acc (_, gs,rescue_body) : stmt acc * rescue_block =
   let guard_exprs = match gs with
     | Ast.Tuple(l) -> l
     | Ast.S Ast.Empty -> []

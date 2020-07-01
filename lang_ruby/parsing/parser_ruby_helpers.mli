@@ -81,8 +81,8 @@ val merge_formal_list :
 
 val merge_rescue :
   string ->
-  ((Ast_ruby.expr * Ast_ruby.expr) * 'a * 'b) list ->
-  (Ast_ruby.expr * Ast_ruby.expr) list * 'a * 'b
+  ((Ast_ruby.rescue_clause) * 'a * 'b) list ->
+  (Ast_ruby.rescue_clause) list * 'a * 'b
 
 val merge_string_lits : Ast_ruby.expr -> Ast_ruby.expr -> Ast_ruby.expr
 
