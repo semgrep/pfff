@@ -1,4 +1,3 @@
-open Common
 open Ast_ruby
 
 (*****************************************************************************)
@@ -46,6 +45,7 @@ let binary_op_of_string = function
 (*****************************************************************************)
 (* Misc *)
 (*****************************************************************************)
+(*
 
 let id_kind s _pos = match s.[0] with
   | 'a'..'z' | '_' -> ID_Lowercase
@@ -87,3 +87,4 @@ let msg_of_str a pos = match a with
   | "+@" -> UOperator(Op_UPlus,pos)
   | "~@" | "~" -> UOperator(Op_UTilde,pos)
   | s -> Id((s, pos), id_kind s pos)
+*)

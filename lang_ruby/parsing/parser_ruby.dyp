@@ -71,6 +71,7 @@ let dyp_merge_Obj_star_amper             = M.merge_rest "star_amper"
 let dyp_merge_Obj_array_item             = M.merge_rest "array_item"
 let dyp_merge_Obj_array_body_rest        = M.merge_rest "array_body_rest"
 let dyp_merge_Obj_var_or_scoped_id       = M.merge_rest "var_or_scoped_id"
+let dyp_merge_Obj_cst_or_scoped_id       = M.merge_rest "cst_or_scoped_id"
 let dyp_merge_Obj_class_inheritance      = M.merge_rest "class_inheritance"
 let dyp_merge_Obj_do_sep                 = M.merge_rest "do_sep"
 let dyp_merge_Obj_code_block             = M.merge_rest "code_block"
@@ -347,8 +348,7 @@ stmt:
   | expr<e> 
       { e }
 
-  | T_USTAR<pos> primary<e> 
-      { Unary((Op_UStar,pos),e) }
+  | T_USTAR primary { Splat($1, Some $2) }
 
 /* tokens that need to reduce immediately to guide the lexer */
 scope_BEGIN:  K_BEGIN<pos>  {S.enter_scope dyp; pos}
@@ -734,13 +734,13 @@ arg_comma_nonempty_list:
   | arg<a> T_COMMA eols arg_comma_nonempty_list<al> @{ a::al, [Dyp.Dont_shift]}
 
 star_amper:
-  | T_USTAR<pos> arg<a> 
-      { [Unary((Op_UStar,pos),a)] }
+  | T_USTAR arg
+      { [Splat($1, Some $2)] }
   | T_UAMPER<pos> arg<a> 
       { [Unary((Op_UAmper,pos),a)] }
 
   | T_USTAR<pos1> arg<a1> T_COMMA eols T_UAMPER<pos2> arg<a2>
-      { [Unary((Op_UStar,pos1),a1); Unary((Op_UAmper,pos2),a2)] }
+      { [Splat(pos1, Some a1); Unary((Op_UAmper,pos2),a2)] }
 
 
 /*(*************************************************************************)*/
@@ -776,24 +776,24 @@ mlhs_assign_op: mlhs<l> assign_op<op,tk> {List.iter (M.seen dyp) l; l,op,tk}
 
 mlhs:
   | mlhs_clean<ls> {ls}
-  | mlhs_clean<ls> T_COMMA<pos> { ls @ [UOperator(Op_UStar,pos)] }
+  | mlhs_clean<ls> T_COMMA<pos> { ls @ [Splat(pos, None)] }
 
 mlhs_clean:
   | T_LPAREN eols mlhs<l> eols T_RPAREN     { [(tuple l)] }
   | mlhs_item<l>                            { [l] }
   | mlhs_item<l> T_COMMA eols mlhs_rest<ls> { l::ls}
-  | T_USTAR<pos> lhs<l>                     { [Unary((Op_UStar,pos),l)] }
+  | T_USTAR<pos> lhs<l>                     { [Splat(pos, Some l)] }
 
 mlhs_item:
   | lhs<l>                               {l}
-  | T_USTAR<pos>                         { UOperator(Op_UStar,pos) } 
+  | T_USTAR                              { Splat($1, None) } 
   | T_LPAREN eols mlhs<ls> eols T_RPAREN { tuple ls }
 
 mlhs_rest:
   | mlhs_item<l> { [l] }
   /*(* recursive *)*/
   | mlhs_item<l> T_COMMA eols mlhs_rest<ls> @{ l::ls, [Dyp.Dont_shift] }
-  | T_USTAR<pos> lhs<l> { [Unary((Op_UStar,pos),l)] }
+  | T_USTAR lhs { [Splat($1, Some $2)] }
 
 /*(*----------------------------*)*/
 /*(*2 Pruned LHS *)*/
@@ -812,10 +812,10 @@ mrhs:
   | arg_comma_star_list<xs> { match xs with [] -> raise Dyp.Giveup | _ -> xs }
   | topcall<c> { [c] }
   | T_LBRACK eols call_args<xs> eols T_RBRACK { [Array($1, xs, $5)] }
-  | T_USTAR<pos> arg<a>                            { [Unary((Op_UStar,pos),a)] }
-  | T_USTAR<pos> command_codeblock<c>              { [Unary((Op_UStar,pos),c)] }
+  | T_USTAR<pos> arg<a>                       { [Splat(pos, Some a)] }
+  | T_USTAR<pos> command_codeblock<c>         { [Splat(pos, Some c)] }
   | T_USTAR<pos1> T_LBRACK eols call_args<xs> eols T_RBRACK
-      { [Unary((Op_UStar,pos1),Array($2, xs, $6))] }
+      { [Splat(pos1,Some (Array($2, xs, $6)))] }
 
 command_codeblock:
   | command<c>                     { c }
@@ -902,7 +902,7 @@ method_formals:
 /*(*************************************************************************)*/
 
 class_definition:
-  | scope_CLASS<pos> eols var_or_scoped_id<id> class_inheritance<inh> do_sep
+  | scope_CLASS<pos> eols cst_or_scoped_id<id> class_inheritance<inh> do_sep
       body_exn<body> K_lEND
       { S.leave_scope dyp;
         D (ClassDef(pos, id, inh, body))}
@@ -911,7 +911,7 @@ class_definition:
       { S.leave_scope dyp;
         D (ClassDef(pos, S Empty, Some (Inst_Inherit id), body)) }
 
-module_definition: scope_MODULE<pos> var_or_scoped_id<id> eols body_exn<body> K_lEND 
+module_definition: scope_MODULE<pos> cst_or_scoped_id<id> eols body_exn<body> K_lEND 
       { S.leave_scope dyp;
         D (ModuleDef (pos, id, body)) }
 
@@ -987,6 +987,12 @@ meth_or_atom:
     | T_ATOM       { MethodAtom $1 }
 
 var_or_scoped_id:
+  | variable<id>                           { Id id }
+  | T_USCOPE<pos> variable<id>             { ScopedId (TopScope((pos),id))}
+  | var_or_scoped_id<id1> T_SCOPE variable2<id2>  
+      { ScopedId (Scope(id1,$2,SV id2)) }
+
+cst_or_scoped_id:
   | variable<id>                           { Id id }
   | T_USCOPE<pos> variable<id>             { ScopedId (TopScope((pos),id))}
   | var_or_scoped_id<id1> T_SCOPE variable2<id2>  
