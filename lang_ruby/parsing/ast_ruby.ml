@@ -179,7 +179,8 @@ type expr =
   | ScopedId of scope_resolution
 
   (* in argument, pattern, exn, assignment lhs or rhs.
-   * old: was Unary(Op_UStar), or UOperator(Op_UStar) 
+   * old: was Unary(Op_UStar), or UOperator(Op_UStar).
+   * expr is None only when Splat is used as last element in assign.
    *)
   | Splat of tok (* '*', but also ',' in mlhs *) * expr option
 
@@ -336,8 +337,8 @@ and 'a option2 = 'a
 (* Definitions *)
 (*****************************************************************************)
 and definition =
-  | ModuleDef of tok * expr * body_exn
-  | ClassDef of tok * class_kind * inheritance_kind option * body_exn
+  | ModuleDef of tok * class_or_module_name * body_exn
+  | ClassDef of tok * class_kind * body_exn
   | MethodDef of tok * method_kind * formal_param list * body_exn
 
   | BeginBlock of tok * stmts bracket
@@ -363,18 +364,14 @@ and definition =
     | Formal_hash_splat of tok * ident option
     | Formal_kwd of ident * tok * expr option
   
-  (* TODO: of tok (* < *) * ?? *)
-  and inheritance_kind = 
-    | Class_Inherit of expr
-    | Inst_Inherit of expr
+  and class_kind = 
+   | C of class_or_module_name * (* TODO: of tok *) expr option
+   | SingletonC of tok (* << *) * expr
 
   (* old: was just expr before *)
   and method_kind =
    | M of method_name
    | SingletonM of expr (* TODO (variable | expr) * scope_op * method_name *)
-
-  (* TODO: C of name * inheritance option | SingletonC of inheritance? *)
-  and class_kind = expr
 
  [@@deriving show { with_path = false }, eq, ord] (* with tarzan *)
 
@@ -417,3 +414,7 @@ let empty_body_exn = {
 let sm = function
   | MethodId id -> SV id
   | x -> SM x
+
+let cmn = function
+  | NameConstant id -> Id (id, ID_Uppercase)
+  | NameScope x -> ScopedId x

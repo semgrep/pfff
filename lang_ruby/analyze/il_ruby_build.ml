@@ -1530,8 +1530,8 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
       let acc = acc_seen acc body_acc in
         acc_enqueue (C.for_s formals g_expr body' pos) acc
 
-  | Ast.D Ast.ModuleDef(pos, m,body) ->
-      let acc,m' = refactor_id acc m in
+  | Ast.D Ast.ModuleDef(pos, m, body) ->
+      let acc,m' = refactor_id acc (Ast.cmn m) in
       let body_acc = refactor_body (acc_empty acc) body pos in
       let body' = C.seq (DQueue.to_list body_acc.q) pos in
         acc_enqueue (C.module_s m' body' pos) acc
@@ -1562,27 +1562,29 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
       let body' = C.seq (DQueue.to_list body_acc.q) pos in
         acc_enqueue (C.meth mn params' body' pos) acc
 
-  | Ast.D Ast.ClassDef(pos, clazz,inh,body) ->
+  | Ast.D Ast.ClassDef(pos, Ast.C (clazz, inh), body) ->
       let body_acc = refactor_body (acc_empty acc) body pos in
         begin match inh with
           | None -> 
               let body' = C.seq (DQueue.to_list body_acc.q) pos in
-              let acc,clazz' = refactor_id acc clazz in 
+              let acc,clazz' = refactor_id acc (Ast.cmn clazz) in 
                 acc_enqueue (C.nameclass clazz' body' pos) acc
 
-          | Some (Ast.Class_Inherit e) -> 
+          | Some (e) -> 
               let body' = C.seq (DQueue.to_list body_acc.q) pos in
-              let acc,clazz' = refactor_id acc clazz in
+              let acc,clazz' = refactor_id acc (Ast.cmn clazz) in
               let acc,e' = refactor_id acc e in
                 acc_enqueue (C.nameclass clazz' ~inh:e' body' pos) acc
+        end
 
-          | Some (Ast.Inst_Inherit e) -> 
-              assert(clazz = Ast.S Ast.Empty);
+  | Ast.D Ast.ClassDef(pos, Ast.SingletonC (_, e), body) ->
+      let body_acc = refactor_body (acc_empty acc) body pos in
+
               let acc,e' = refactor_id acc e in
               let body_lst = DQueue.to_list body_acc.q in
               let body' = C.seq body_lst pos in
                 acc_enqueue (C.metaclass e' body' pos) acc
-        end
+
 
   | Ast.D Ast.BeginBlock(pos, lst) ->
       let body_acc = refactor_stmt_list (acc_empty acc) (G.unbracket lst) in
