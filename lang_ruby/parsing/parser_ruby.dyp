@@ -94,7 +94,7 @@ let dyp_merge_Obj_message_identifier2     = M.merge_rest "message_identifier2"
 let dyp_merge_Obj_bin_op                 = M.merge_rest "bin_op"
 let dyp_merge_Obj_unary_op               = M.merge_rest "unary_op"
 let dyp_merge_Obj_keyword_as_id          = M.merge_rest "keyword_as_id"
-let dyp_merge_Obj_identifier             = M.merge_rest "identifier"
+let dyp_merge_Obj_variable               = M.merge_rest "variable"
 let dyp_merge_Obj_constant               = M.merge_rest "constant"
 let dyp_merge_Obj_eols                   = M.merge_rest "eols"
 let dyp_merge_Obj_some_eols              = M.merge_rest "some_eols "
@@ -415,7 +415,7 @@ primary:
          S (Block(ss)) }
 
   | constant<c> { c }
-  | identifier<id> { Id id }
+  | variable<id> { Id id }
   | K_NIL             { Literal(Nil $1) }
   | K_TRUE            { Literal(Bool (true,$1)) }
   | K_FALSE           { Literal(Bool (false,$1)) }
@@ -433,8 +433,8 @@ primary:
         | _ -> M.methodcall f [] (Some cb)
       }
 
-  | primary<p> T_SCOPE identifier<id>  { M.scope $2 p (Id id) }
-  | T_USCOPE<pos> identifier<id>       { Unary((Op_UScope,pos), Id id) }
+  | primary<p> T_SCOPE variable<id>  { M.scope $2 p (Id id) }
+  | T_USCOPE<pos> variable<id>       { Unary((Op_UScope,pos), Id id) }
 
   | primary<p> T_LBRACK_ARG<pos1> eols arg_comma_list_trail<xs> eols T_RBRACK
       { M.methodcall (Binop(p,(Op_DOT,pos1), Operator(Op_AREF,pos1))) (* TODO: wrong tok Binop? *)
@@ -588,7 +588,7 @@ rescue_clause:
   | K_RESCUE<pos> arg_comma_star_list<exn> 
     { (tuple exn,S Empty) }
 
-seen_id: identifier<i> { M.seen dyp (Id i); Id i}
+seen_id: variable<i> { M.seen dyp (Id i); Id i}
 
 
 rescue_list:
@@ -683,7 +683,7 @@ command:
         M.methodcall cmd [cmd2] None}
 
 command_name:
-  | identifier<id> 
+  | variable<id> 
       { Id id }
 
   | primary<p> T_DOT eols message_identifier<m>
@@ -866,7 +866,7 @@ do_codeblock:
 /*(*----------------------------*)*/
 
 formal_arg:
-  | identifier<id>         { M.seen dyp (Id id); Formal_id (id) }
+  | variable<id>         { M.seen dyp (Id id); Formal_id (id) }
   | T_UAMPER T_LID<id,pos> { M.seen_str dyp id; Formal_amp ($1, $2) }
   | T_AMPER T_LID<id,pos>  { M.seen_str dyp id; Formal_amp ($1, $2) }
   | T_USTAR T_LID<id,pos>  { M.seen_str dyp id; Formal_star ($1, $2) }
@@ -930,8 +930,8 @@ class_inheritance:
 /*(*1 Name *)*/
 /*(*************************************************************************)*/
 
-/*(* called 'variable' in tree-sitter-ruby *)*/
-identifier:
+/*(* was called identifier (but I now follow tree-sitter-ruby conventions) *)*/
+variable:
   | T_LID<id,pos>          { ((id,pos), ID_Lowercase)}
   | T_UID<id,pos>          { ((id,pos), ID_Uppercase)}
 
@@ -943,14 +943,14 @@ identifier:
   | K_SELF            { (("self", $1), ID_Self) }
   | K_SUPER           { (("super", $1), ID_Super) }
 
-identifier2:
-  | identifier { $1 }
+variable2:
+  | variable { $1 }
   | keyword_as_id { $1 }
 
 /*(* for use *)*/
 message_identifier:
   /*(* this part was in an intermediate 'assignable' rule before *)*/
-  | identifier2<e>             { MethodId e }
+  | variable2<e>             { MethodId e }
   | T_LBRACK_ARG<pos> T_RBRACK { MethodOperator(Op_AREF,pos) }
   | T_LBRACK<pos>     T_RBRACK { MethodOperator(Op_AREF,pos) }
 
@@ -973,9 +973,9 @@ method_name:
 method_kind:
   | method_name { M $1 }
   /*(* for complex method definitions *)*/
-  | identifier2<id1> T_DOT eols method_name<id2> 
+  | variable2<id1> T_DOT eols method_name<id2> 
       { SingletonM (Binop(Id id1,(Op_DOT,$2), methodexpr2 id2))}
-  | identifier2<id1> T_SCOPE    method_name<id2> 
+  | variable2<id1> T_SCOPE    method_name<id2> 
       { SingletonM (M.scope $2 (Id id1) (methodexpr2 id2)) }
   | T_LPAREN arg T_RPAREN T_DOT method_name
       { SingletonM (Binop($2, (Op_DOT,$4), (methodexpr2 $5))) }
@@ -985,9 +985,9 @@ meth_or_atom:
     | T_ATOM       { MethodAtom $1 }
 
 scoped_id:
-  | identifier<id>                           { Id id }
-  | T_USCOPE<pos> identifier<id>             { Unary((Op_UScope,pos),Id id)}
-  | scoped_id<id1> T_SCOPE identifier2<id2>  { Binop(id1,(Op_SCOPE,$2),Id id2)}
+  | variable<id>                           { Id id }
+  | T_USCOPE<pos> variable<id>             { Unary((Op_UScope,pos),Id id)}
+  | scoped_id<id1> T_SCOPE variable2<id2>  { Binop(id1,(Op_SCOPE,$2),Id id2)}
 
 
 
