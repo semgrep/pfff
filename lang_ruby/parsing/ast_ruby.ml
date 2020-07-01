@@ -87,7 +87,7 @@ type variable = ident * id_kind
   (* treesitter: *)
   | ID_Super
   | ID_Lowercase (* prefixed by [a-z] or _ *)
-  (* TODO: rename constant *)
+  (* less: rename constant *)
   | ID_Uppercase (* prefixed by [A-Z] *)
   | ID_Instance  (* prefixed by @ *)
   | ID_Class     (* prefixed by @@ *)
@@ -110,14 +110,14 @@ type unary_op =
   | Op_UBang     (* !x *) | Op_UTilde    (* ~x *)
   (* not in msg_id *)
   | Op_UNot      (* not x *)
+  | Op_DefinedQuestion (* defined? *)
+
   (* only in argument: TODO move out? *)
   | Op_UAmper    (* & *) 
   (* in argument, pattern, exn, assignment lhs or rhs *)
   | Op_UStar     (* * *)
   (* tree-sitter: in argument and hash *)
   | Op_UStarStar (* ** *)
-
-  | Op_DefinedQuestion (* defined? *)
 
   (* TODO: move out *)
   | Op_UScope    (* ::x *)
@@ -166,10 +166,10 @@ type binary_op =
   | Op_DOT      (* . *)
   (* tree-sitter: *)
   | Op_AMPDOT (* &. *)  
-
+  (* TODO: move out *)
   | Op_SCOPE    (* :: *)
 
-  (* in hash or arguments *)
+  (* TODO: move out, in hash or arguments *)
   | Op_ASSOC    (* => *)
 
   (* sugar for .. and = probably *)
@@ -191,7 +191,7 @@ type expr =
 
   | Id of variable
 
-  (* todo: delete *)
+  (* TODO: delete *)
   | Operator of binary_op wrap
   | UOperator of unary_op wrap
 
