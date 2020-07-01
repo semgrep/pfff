@@ -121,20 +121,6 @@ let is_exnblock = function
   | S ExnBlock _ -> true 
   | _ -> false
 
-(* method_name to expr *)
-let methodexpr = function
-  | MethodId v -> Id v
-  | MethodIdAssign (id, _, idk) -> raise Common.Impossible
-  | MethodAtom x -> Literal (Atom x)
-  | MethodUOperator x -> UOperator x
-  | MethodOperator x -> Operator x
-
-let methodexpr2 = function
-  | MethodId v -> Id v
-  | MethodIdAssign (id, _, idk) -> (* TODO *) Id (id, idk)
-  | MethodAtom x -> Literal (Atom x)
-  | MethodUOperator x -> UOperator x
-  | MethodOperator x -> Operator x
 }
 
 /*(*************************************************************************)*/
