@@ -436,7 +436,7 @@ primary:
   | T_USCOPE<pos> variable<id>       { ScopedId(TopScope(pos, id)) }
 
   | primary<p> T_LBRACK_ARG<t1> eols arg_comma_list_trail<xs> eols T_RBRACK<t2>
-     { M.methodcall (DotAccess(p,(t1), MethodOperator(B Op_AREF,t2))) xs None }
+     { M.methodcall (DotAccess(p,(t1), MethodOperator(Op_AREF,t2))) xs None }
 
   | T_LBRACK eols array_body<xs> eols T_RBRACK { Array($1, xs, $5) }
   | T_LBRACE eols array_body<xs> eols T_RBRACE { Hash(true, ($1, xs, $5)) }
@@ -641,7 +641,7 @@ array_body_rest:
 array_item: 
   | arg<e> { e }
   | constant<c> T_LBRACK<t1> eols call_args<xs> eols T_RBRACK<t2>
-      { M.methodcall (DotAccess(c, (t1), MethodOperator(B Op_AREF,t2))) (* TODO: Wrong pos Binop, and probably all the following Binop in this file *)
+      { M.methodcall (DotAccess(c, (t1), MethodOperator(Op_AREF,t2))) (* TODO: Wrong pos Binop, and probably all the following Binop in this file *)
                      xs None }
 
 /*(*************************************************************************)*/
@@ -764,7 +764,7 @@ lhs:
   | K_TRUE            { Literal(Bool (true,$1)) }
   | K_FALSE           { Literal(Bool (false,$1)) }
   | primary<p> T_LBRACK_ARG<t1> eols arg_comma_star_list<xs> eols T_RBRACK<t2>
-      { M.methodcall (DotAccess(p,(t1),MethodOperator(B Op_AREF,t2))) xs None}
+      { M.methodcall (DotAccess(p,(t1),MethodOperator(Op_AREF,t2))) xs None}
   | primary<p> T_DOT<t> eols message_identifier<m>
       { M.methodcall (DotAccess(p,(t), (m))) [] None}
 
@@ -953,16 +953,22 @@ variable2:
 message_identifier:
   /*(* this part was in an intermediate 'assignable' rule before *)*/
   | variable2<e>             { MethodId e }
-  | T_LBRACK_ARG<pos> T_RBRACK { MethodOperator(B Op_AREF,pos) }
-  | T_LBRACK<pos>     T_RBRACK { MethodOperator(B Op_AREF,pos) }
+  | T_LBRACK_ARG<pos> T_RBRACK { MethodOperator(Op_AREF,pos) }
+  | T_LBRACK<pos>     T_RBRACK { MethodOperator(Op_AREF,pos) }
 
   /*(* not 'assignable' part I guess *)*/
-  | bin_op<op,tk>                       { MethodOperator(op,tk) }
-  | T_LBRACK_ARG<pos> T_RBRACK T_ASSIGN { MethodOperator(B Op_ASET,pos) }
-  | T_LBRACK<pos>     T_RBRACK T_ASSIGN { MethodOperator(B Op_ASET,pos) }
-  | T_UPLUS<pos>                        { MethodUOperator(U Op_UPlus,pos) }
-  | T_UMINUS<pos>                       { MethodUOperator(U Op_UMinus,pos) }
-  | T_TILDE<pos>                        { MethodUOperator(U Op_UTilde,pos) }
+  | bin_op<op,tk> { 
+        (* TODO: use bin_msg instead *)
+        match op with 
+        | B op -> MethodOperator(op,tk) 
+        | x -> failwith (Common.spf "not a binary msg: %s" 
+                          (Ast_ruby.show_binary_op x))
+     }
+  | T_LBRACK_ARG<pos> T_RBRACK T_ASSIGN { MethodOperator(Op_ASET,pos) }
+  | T_LBRACK<pos>     T_RBRACK T_ASSIGN { MethodOperator(Op_ASET,pos) }
+  | T_UPLUS<pos>                        { MethodUOperator(Op_UPlus,pos) }
+  | T_UMINUS<pos>                       { MethodUOperator(Op_UMinus,pos) }
+  | T_TILDE<pos>                        { MethodUOperator(Op_UTilde,pos) }
 
 /*(* for simple method definitions, aliases and undefs *)*/
 method_name:

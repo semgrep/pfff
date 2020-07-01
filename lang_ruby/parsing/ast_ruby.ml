@@ -251,8 +251,8 @@ and method_name =
   | MethodId of variable (* all except Self and Super *)
   | MethodIdAssign of ident * tok * id_kind (* = *)
   | MethodAtom of atom
-  | MethodUOperator of unary_op wrap
-  | MethodOperator of binary_op wrap
+  | MethodUOperator of unary_msg wrap
+  | MethodOperator of binary_msg wrap
   (* tree-sitter: and only in Call, not in definitions *)
   | MethodDynamic of expr (* actually an expr list inside () encoded as Tuple*)
 

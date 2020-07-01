@@ -1062,8 +1062,8 @@ and refactor_msg (acc:stmt acc) msg : stmt acc * msg_id = match msg with
         (Ast_ruby.show_expr e)
 
 and refactor_msg2 (acc:stmt acc) msg : stmt acc * msg_id = match msg with
-  | Ast.MethodOperator(bop, pos) ->  acc, ID_Operator (refactor_binop pos bop)
-  | Ast.MethodUOperator(uop, pos) -> acc, ID_UOperator (refactor_uop pos uop)
+  | Ast.MethodOperator(bop, pos) ->  acc, ID_Operator (refactor_binop pos (Ast.B bop))
+  | Ast.MethodUOperator(uop, pos) -> acc, ID_UOperator (refactor_uop pos (Ast.U uop))
 
   | Ast.MethodId((s, _pos), (Ast.ID_Lowercase | Ast.ID_Uppercase )) -> 
       acc, ID_MethodName s
@@ -1281,7 +1281,7 @@ and refactor_assignment (acc: stmt acc) (lhs: Ast.expr) (rhs: Ast.expr)
   match lhs,rhs with
   (* x[y] = z is really x.[]=(y,z) *)
   | Ast.Call(
-      Ast.DotAccess(targ, (_),Ast.MethodOperator(Ast.B Ast.Op_AREF,_)), args,None),
+      Ast.DotAccess(targ, (_),Ast.MethodOperator(Ast.Op_AREF,_)), args,None),
     _ ->
       let acc,targ' = refactor_expr acc targ in
       let acc,rhs_arg = refactor_star_expr acc rhs in
