@@ -396,3 +396,18 @@ let empty_body_exn = {
     ensure_expr = [];
     else_expr = [];
 }
+
+(* method_name to expr *)
+let methodexpr = function
+  | MethodId v -> Id v
+  | MethodIdAssign (_id, _, _idk) -> raise Common.Impossible
+  | MethodAtom x -> Literal (Atom x)
+  | MethodUOperator x -> UOperator x
+  | MethodOperator x -> Operator x
+
+let methodexpr2 = function
+  | MethodId v -> Id v
+  | MethodIdAssign (id, _, idk) -> (* TODO *) Id (id, idk)
+  | MethodAtom x -> Literal (Atom x)
+  | MethodUOperator x -> UOperator x
+  | MethodOperator x -> Operator x
