@@ -26,7 +26,7 @@ INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/globals \
   $(TOP)/h_program-lang \
 
-NUM_PERMITTED_CONFLICTS= 1
+NUM_PERMITTED_CONFLICTS= 0
 
 SCRIPTDIR= $(TOP)/scripts
 

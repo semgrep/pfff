@@ -270,8 +270,11 @@ import_from:
       { [ImportFrom ($1, $2, $4)] }
 
 name_and_level:
-  |           dotted_name { $1, None }
-  | dot_level dotted_name { $2, Some $1 }
+  | dot_level dotted_name {
+    match $1 with
+    | [] -> $2, None
+    | dl -> $2, Some dl
+  }
   | "." dot_level         { [("",$1(*TODO*))], Some ($1 :: $2) }
   | "..." dot_level         { [("",$1(*TODO*))], Some ($1:: $2) }
 
