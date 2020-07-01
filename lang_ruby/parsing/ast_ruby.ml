@@ -118,9 +118,6 @@ type unary_op =
   | Op_UStar     (* * *)
   (* tree-sitter: in argument and hash *)
   | Op_UStarStar (* ** *)
-
-  (* TODO: move out *)
-  | Op_UScope    (* ::x *)
  [@@deriving show { with_path = false }, eq, ord]
 
 
@@ -163,9 +160,6 @@ type binary_op =
   | Op_ASSIGN   (* = *)
   | Op_OP_ASGN of binary_op  (* +=, -=, ... *)
 
-  (* TODO: move out *)
-  | Op_SCOPE    (* :: *)
-
   (* TODO: move out, in hash or arguments *)
   | Op_ASSOC    (* => *)
 
@@ -192,6 +186,8 @@ type expr =
   | Literal of literal
 
   | Id of variable
+  (* old: was Binop(e1, Op_SCOPE, e2) or Unary(Op_UScope. e) *)
+  | ScopedId of scope_resolution
 
   (* TODO: delete *)
   | Operator of binary_op wrap
@@ -266,12 +262,18 @@ and method_name =
 (* ------------------------------------------------------------------------- *)
 (* Scope resolution *)
 (* ------------------------------------------------------------------------- *)
-(* The variable below is actually either an ID_Lowercase ora ID_Uppercase *)
+(* The variable below is actually either an ID_Lowercase or ID_Uppercase *)
 and scope_resolution =
   (* old: was called Op_UScope before *)
   | TopScope of tok (* :: *) * variable
   (* old: was called Op_SCOPE before *)
-  | Scope of expr * tok (* :: *) * variable 
+  | Scope of expr * tok (* :: *) * variable_or_method_name
+
+  (* TODO: this is not in tree-sitter *)
+  and variable_or_method_name = 
+   | SV of variable
+   | SM of method_name
+
 
 (*****************************************************************************)
 (* pattern *)
@@ -429,3 +431,7 @@ let methodexpr2 = function
   | MethodUOperator x -> UOperator x
   | MethodOperator x -> Operator x
   | MethodDynamic x -> x
+
+let sm = function
+  | MethodId id -> SV id
+  | x -> SM x
