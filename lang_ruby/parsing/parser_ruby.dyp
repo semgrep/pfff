@@ -866,7 +866,7 @@ do_codeblock:
 /*(*----------------------------*)*/
 
 formal_arg:
-  | variable<id>         { M.seen dyp (Id id); Formal_id (id) }
+  | identifier<id>         { M.seen dyp (Id (id, ID_Lowercase)); Formal_id(id)}
   | T_UAMPER T_LID<id,pos> { M.seen_str dyp id; Formal_amp ($1, $2) }
   | T_AMPER T_LID<id,pos>  { M.seen_str dyp id; Formal_amp ($1, $2) }
   | T_USTAR T_LID<id,pos>  { M.seen_str dyp id; Formal_star ($1, $2) }
@@ -930,6 +930,12 @@ class_inheritance:
 /*(*1 Name *)*/
 /*(*************************************************************************)*/
 
+identifier: 
+  | T_LID { $1 }
+  /*(* weird, but found code like that *)*/
+  | T_INST_VAR { $1 }
+  | T_GLOBAL_VAR { $1 }
+
 /*(* was called identifier (but I now follow tree-sitter-ruby conventions) *)*/
 variable:
   | T_LID<id,pos>          { ((id,pos), ID_Lowercase)}
@@ -945,7 +951,7 @@ variable:
 
 variable2:
   | variable { $1 }
-  | keyword_as_id { $1 }
+  | keyword_as_id { $1, ID_Lowercase }
 
 /*(* for use *)*/
 message_identifier:
@@ -967,7 +973,7 @@ method_name:
   | message_identifier     { $1 }
   | T_LID T_ASSIGN         { MethodIdAssign ($1, $2, ID_Lowercase) }
   | T_UID T_ASSIGN         { MethodIdAssign ($1, $2, ID_Uppercase) }
-  | keyword_as_id T_ASSIGN { MethodIdAssign (fst $1, $2, ID_Lowercase) }
+  | keyword_as_id T_ASSIGN { MethodIdAssign ($1, $2, ID_Lowercase) }
 
 /*(* was called method_name *)*/
 method_kind:
@@ -1013,37 +1019,37 @@ unary_op:
   | T_TILDE<pos>   { Op_UTilde,pos } | T_BANG<pos>    { Op_UBang,pos }
 
 keyword_as_id:
-  | K_CLASS<pos>   { (("class", pos), ID_Lowercase) }
-  | K_MODULE<pos>  { (("module", pos), ID_Lowercase) }
-  | K_DEF<pos>     { (("def", pos), ID_Lowercase) }
-  | K_END<pos>     { (("END", pos), ID_Lowercase) }
-  | K_ALIAS<pos>   { (("alias", pos), ID_Lowercase) }
-  | K_UNDEF<pos>   { (("undef", pos), ID_Lowercase) }
-  | K_BEGIN<pos>   { (("BEGIN", pos), ID_Lowercase) }
-  | K_RESCUE<pos>  { (("rescue", pos), ID_Lowercase) }
-  | K_ENSURE<pos>  { (("ensure", pos), ID_Lowercase) }
-  | K_IF<pos>      { (("if", pos), ID_Lowercase) }
-  | K_UNLESS<pos>  { (("unless", pos), ID_Lowercase) }
-  | K_THEN<pos>    { (("then", pos), ID_Lowercase) }
-  | K_ELSIF<pos>   { (("elsif", pos), ID_Lowercase) }
-  | K_ELSE<pos>    { (("else", pos), ID_Lowercase) }
-  | K_CASE<pos>    { (("case", pos), ID_Lowercase) }
-  | K_WHEN<pos>    { (("when", pos), ID_Lowercase) }
-  | K_WHILE<pos>   { (("while", pos), ID_Lowercase) }
-  | K_UNTIL<pos>   { (("until", pos), ID_Lowercase) }
-  | K_FOR<pos>     { (("for", pos), ID_Lowercase) }
-  | K_IN<pos>      { (("in", pos), ID_Lowercase) }
-  | K_DO<pos>      { (("do", pos), ID_Lowercase) }
-  | K_RETURN<pos>  { (("return", pos), ID_Lowercase) }
-  | K_AND<pos>     { (("and", pos), ID_Lowercase) }
-  | K_OR<pos>      { (("or", pos), ID_Lowercase) }
-  | K_NOT<pos>     { (("not", pos), ID_Lowercase) }
-  | K_lBEGIN<pos>  { (("begin", pos), ID_Lowercase) }
-  | K_lEND<pos>    { (("end", pos), ID_Lowercase) }
-  | K_YIELD<pos>   { (("yield", pos), ID_Lowercase) }
-  | K_NIL<pos>     { (("nil", pos), ID_Lowercase) }
-  | K_TRUE<pos>    { (("true", pos), ID_Lowercase) }
-  | K_FALSE<pos>   { (("false", pos), ID_Lowercase) }
+  | K_CLASS<pos>   { (("class", pos)) }
+  | K_MODULE<pos>  { (("module", pos)) }
+  | K_DEF<pos>     { (("def", pos)) }
+  | K_END<pos>     { (("END", pos)) }
+  | K_ALIAS<pos>   { (("alias", pos)) }
+  | K_UNDEF<pos>   { (("undef", pos)) }
+  | K_BEGIN<pos>   { (("BEGIN", pos)) }
+  | K_RESCUE<pos>  { (("rescue", pos)) }
+  | K_ENSURE<pos>  { (("ensure", pos)) }
+  | K_IF<pos>      { (("if", pos)) }
+  | K_UNLESS<pos>  { (("unless", pos)) }
+  | K_THEN<pos>    { (("then", pos)) }
+  | K_ELSIF<pos>   { (("elsif", pos)) }
+  | K_ELSE<pos>    { (("else", pos)) }
+  | K_CASE<pos>    { (("case", pos)) }
+  | K_WHEN<pos>    { (("when", pos)) }
+  | K_WHILE<pos>   { (("while", pos)) }
+  | K_UNTIL<pos>   { (("until", pos)) }
+  | K_FOR<pos>     { (("for", pos)) }
+  | K_IN<pos>      { (("in", pos)) }
+  | K_DO<pos>      { (("do", pos)) }
+  | K_RETURN<pos>  { (("return", pos)) }
+  | K_AND<pos>     { (("and", pos)) }
+  | K_OR<pos>      { (("or", pos)) }
+  | K_NOT<pos>     { (("not", pos)) }
+  | K_lBEGIN<pos>  { (("begin", pos)) }
+  | K_lEND<pos>    { (("end", pos)) }
+  | K_YIELD<pos>   { (("yield", pos)) }
+  | K_NIL<pos>     { (("nil", pos)) }
+  | K_TRUE<pos>    { (("true", pos)) }
+  | K_FALSE<pos>   { (("false", pos)) }
 /*  | K_DEFINED<pos> { (ID_Lowercase, "defined?", pos) }*/
 
 
