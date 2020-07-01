@@ -293,7 +293,7 @@ let fix_broken_neq l op r =
   | Op_ASSIGN -> 
       begin match ends_with l with
        (* bugfix: do not transform $! *)
-       | Id(("$!", _), ID_Builtin) -> default
+       | Id(("$!", _), ID_Global (*ID_Builtin*)) -> default
 
        | Id((s,p), k) ->
          let len = String.length s in

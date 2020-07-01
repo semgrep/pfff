@@ -77,9 +77,9 @@ type 'a bracket = tok * 'a * tok
 type ident = string wrap
  [@@deriving show, eq, ord]
 
-(* less: Self of tok | Id of ident | Cst of uident | ...  
-type uident = string wrap (* Uppercase, a.k.a "constant" in Ruby *)
- [@@deriving show, eq, ord]
+(* less: Self of tok | Id of lident | Cst of uident | ...  
+and uident = ident (* Uppercase, a.k.a "constant" in Ruby *)
+and lident = ident
 *)
 type variable = ident * id_kind 
  and id_kind = 
@@ -91,10 +91,10 @@ type variable = ident * id_kind
   | ID_Uppercase (* prefixed by [A-Z] *)
   | ID_Instance  (* prefixed by @ *)
   | ID_Class     (* prefixed by @@ *)
-  (* pattern: \\$-?(([!@&`'+~=/\\\\,;.<>*$?:\"])|([0-9]* )|([a-zA-Z_][a-zA-Z0-9_]* ))" *)
+  (* pattern: \\$-?(([!@&`'+~=/\\\\,;.<>*$?:\"])|([0-9]* )|([a-zA-Z_][a-zA-Z0-9_]* ))" 
+   * old: was split in 2 before with a ID_Builtin but was not in tree-sitter
+   *)
   | ID_Global    (* prefixed by $ *)
-  (* TODO: can merge with Global *)
-  | ID_Builtin   (* prefixed by $, followed by non-alpha *)
  [@@deriving show { with_path = false }, eq, ord]
 
 (* 

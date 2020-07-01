@@ -66,7 +66,7 @@ and var_kind =
   | Class
   | Global
   | Constant
-  | Builtin
+  (* old: | Builtin, now merged in Global *)
  [@@deriving show { with_path = false }] (* with tarzan *)
 
 (* convenience alias that is a subtype of identifier *)

@@ -132,7 +132,6 @@ let visitor_info_of_tok f = function
   | T_REGEXP_MOD (s, ii) -> T_REGEXP_MOD (s, f ii)
   | T_USER_BEG (s, ii) -> T_USER_BEG (s, f ii)
   | T_SINGLE_STRING (s, ii) -> T_SINGLE_STRING (s, f ii)
-  | T_BUILTIN_VAR (s, ii) -> T_BUILTIN_VAR (s, f ii)
   | T_CLASS_VAR (s, ii) -> T_CLASS_VAR (s, f ii)
   | T_INST_VAR (s, ii) -> T_INST_VAR (s, f ii)
   | T_GLOBAL_VAR (s, ii) -> T_GLOBAL_VAR (s, f ii)

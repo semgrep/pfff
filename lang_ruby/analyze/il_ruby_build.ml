@@ -228,10 +228,8 @@ let refactor_id_kind _pos : Ast.id_kind -> var_kind = function
   | Ast.ID_Class -> Class
   | Ast.ID_Global -> Global
   | Ast.ID_Uppercase -> Constant
-  | Ast.ID_Builtin -> Builtin
 
 let refactor_builtin_or_global pos = function
-  | Ast.ID_Builtin -> Builtin
   | Ast.ID_Global -> Global
   | _ ->
       Log.fatal (Log.of_tok pos)
@@ -1350,8 +1348,8 @@ and refactor_assignment (acc: stmt acc) (lhs: Ast.expr) (rhs: Ast.expr)
 
 and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc = 
   match e with
-  | Ast.D Ast.Alias(p3, Ast.MethodId((s1, p1),((Ast.ID_Builtin|Ast.ID_Global) as k1)), 
-                    Ast.MethodId((s2, p2),((Ast.ID_Builtin|Ast.ID_Global) as k2))) ->
+  | Ast.D Ast.Alias(p3, Ast.MethodId((s1, p1),((Ast.ID_Global) as k1)), 
+                    Ast.MethodId((s2, p2),((Ast.ID_Global) as k2))) ->
       let g1 = (refactor_builtin_or_global p1 k1,s1) in
       let g2 = (refactor_builtin_or_global p2 k2,s2) in
         acc_enqueue (C.alias_g ~link:g1 ~orig:g2 p3) acc

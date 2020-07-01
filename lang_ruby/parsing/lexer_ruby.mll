@@ -656,12 +656,13 @@ and percent state = parse
 and dollar state = parse
   | id as id 
       {S.end_state state; T_GLOBAL_VAR("$"^id, (tk lexbuf)) }
+  (* old: was T_BUILTIN_VAR after before *)
   | ("-" alphanum) as v 
-      {S.end_state state; T_BUILTIN_VAR("$"^v, (tk lexbuf)) }
+      {S.end_state state; T_GLOBAL_VAR("$"^v, (tk lexbuf)) }
   | ( ['0'-'9']+) as v 
-      {S.end_state state; T_BUILTIN_VAR("$"^v, (tk lexbuf))}
+      {S.end_state state; T_GLOBAL_VAR("$"^v, (tk lexbuf)) }
   | ( [^'a'-'z''A'-'Z''#'])
-      {S.end_state state; T_BUILTIN_VAR("$"^(Lexing.lexeme lexbuf), (tk lexbuf))}
+      {S.end_state state; T_GLOBAL_VAR("$"^(Lexing.lexeme lexbuf),(tk lexbuf))}
 
 (*****************************************************************************)
 (* postfix_numeric *)
@@ -713,7 +714,7 @@ and atom t state = parse
      { let str = 
          match dollar state lexbuf with
           | T_GLOBAL_VAR(s,_p) -> s
-          | T_BUILTIN_VAR(s,_p) -> s
+          (*| T_BUILTIN_VAR(s,_p) -> s *)
           | _ -> assert false
         in 
         end_state_unless_afterdef state; 
