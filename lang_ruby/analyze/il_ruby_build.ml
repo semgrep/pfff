@@ -282,7 +282,6 @@ let refactor_binop pos : Ast.binary_op -> binary_op = function
   | Ast.Op_kAND
   | Ast.Op_kOR
   | Ast.Op_ASSOC
-  | Ast.Op_DOT | Ast.Op_AMPDOT
   | Ast.Op_SCOPE
   | Ast.Op_DOT2
   | Ast.Op_DOT3 as bop -> 
@@ -640,7 +639,7 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         let acc = acc_enqueue (C.if_s (EId t1') ~t:f ~f:t pos) acc in
           acc, (EId t2')
 
-    | Ast.Binop(_,(Ast.Op_DOT,pos),_) -> 
+    | Ast.DotAccess(_,(pos),_) -> 
         Log.fatal (Log.of_tok pos) "refactor_expr got dot expr??"
 
     | Ast.Binop(e1, ((Ast.Op_AND|Ast.Op_kAND),pos), e2) ->
@@ -1015,13 +1014,13 @@ and refactor_lhs acc e : (stmt acc * lhs * stmt acc) =
         if is_literal s then Log.fatal Log.empty "lhs literal?"
         else acc, LId (Var(refactor_id_kind pos ik, s)), acc_emptyq acc
           
-    | Ast.Binop(_e1,(Ast.Op_DOT, _pos),_e2) ->
+    | Ast.DotAccess(_e1,( _pos),_e2) ->
         Log.fatal Log.empty "dot expression on lhs?"
 
-    | Ast.Call(Ast.Binop(targ,(Ast.Op_DOT,_pos),msg),args,None) ->
+    | Ast.Call(Ast.DotAccess(targ,(_pos),msg),args,None) ->
         let after = acc_emptyq acc in
         let after,targ' = refactor_expr after targ in
-        let after,msg' = refactor_msg after msg in
+        let after,msg' = refactor_msg2 after msg in
         let msg' = make_assignable_msg msg' in
         let after, args', cb = refactor_method_args_and_cb after args None in
         let after, last_arg = fresh after in
@@ -1250,7 +1249,13 @@ and refactor_method_call_assign (acc:stmt acc) (lhs : lhs option) = function
       let e' = Ast.D (Ast.MethodDef(pos, Ast.M name,params,body)) in
         refactor_stmt acc e'
 
-  | Ast.Call(Ast.Binop(targ,(Ast.Op_DOT, _pos2),msg), args, cb)
+  | Ast.Call(Ast.DotAccess(targ,(_pos2),msg), args, cb) ->
+      let acc,targ' = refactor_expr acc targ in
+      let acc,msg' = refactor_msg2 acc msg in
+      let acc,args',cb' = refactor_method_args_and_cb acc args cb in
+      let call = C.mcall ?lhs ~targ:targ' msg' args' ?cb:cb' () in
+        acc_enqueue call acc
+  (* todo: can factorize with prev case when msg is method_name in both case*)
   | Ast.Call(Ast.Binop(targ,(Ast.Op_SCOPE, _pos2),msg), args, cb) ->
       let acc,targ' = refactor_expr acc targ in
       let acc,msg' = refactor_msg acc msg in
@@ -1282,7 +1287,7 @@ and refactor_assignment (acc: stmt acc) (lhs: Ast.expr) (rhs: Ast.expr)
   match lhs,rhs with
   (* x[y] = z is really x.[]=(y,z) *)
   | Ast.Call(
-      Ast.Binop(targ, (Ast.Op_DOT, _),Ast.Operator(Ast.Op_AREF,_)), args,None),
+      Ast.DotAccess(targ, (_),Ast.MethodOperator(Ast.Op_AREF,_)), args,None),
     _ ->
       let acc,targ' = refactor_expr acc targ in
       let acc,rhs_arg = refactor_star_expr acc rhs in
@@ -1314,10 +1319,10 @@ and refactor_assignment (acc: stmt acc) (lhs: Ast.expr) (rhs: Ast.expr)
         acc_enqueue call acc
 
   (* handle x.y = e specially to avoid duping the rhs into a temp *)
-  | Ast.Call(Ast.Binop(targ,(Ast.Op_DOT,_),msg),args,None), _ ->
+  | Ast.Call(Ast.DotAccess(targ,(_),msg),args,None), _ ->
       if args <> [] then Log.fatal (Log.of_tok pos) "args on lhs of assignable?";
       let acc,targ' = refactor_expr acc targ in
-      let acc,msg' = refactor_msg acc msg in
+      let acc,msg' = refactor_msg2 acc msg in
       let msg' = make_assignable_msg msg' in
       let acc,arg = refactor_method_arg_no_cb acc rhs in
         acc_enqueue (C.mcall ~targ:targ' msg' [arg] ()) acc
@@ -1487,6 +1492,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
   | Ast.Hash _
   | Ast.Array _
   | Ast.Unary _
+  | Ast.DotAccess _
   | Ast.Binop _ as e ->
       let acc,e' = refactor_expr acc e in
         acc_enqueue (C.expr e' (tok_of e)) acc
@@ -1608,10 +1614,15 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
         (Ast_ruby.show_expr s)
       
 and refactor_method_name (acc:stmt acc) e : stmt acc * def_name = match e with
-  | Ast.SingletonM (Ast.Binop(targ,(Ast.Op_SCOPE,_pos),msg))
-  | Ast.SingletonM (Ast.Binop(targ,(Ast.Op_DOT, _pos),msg)) ->
+  (* todo: can factorize with next case when same msg type *)
+  | Ast.SingletonM (Ast.Binop(targ,(Ast.Op_SCOPE,_pos),msg)) ->
       let acc,targ' = refactor_id acc targ in
       let acc,msg' = refactor_msg acc msg in
+        acc, (Singleton_Method (targ',msg'))
+
+  | Ast.SingletonM (Ast.DotAccess(targ,(_pos),msg)) ->
+      let acc,targ' = refactor_id acc targ in
+      let acc,msg' = refactor_msg2 acc msg in
         acc, (Singleton_Method (targ',msg'))
 
   | Ast.SingletonM e ->

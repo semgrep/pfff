@@ -256,20 +256,20 @@ let rec methodcall m args cb =
 
     | Binop(_x,(Op_SCOPE,_),_y),[],None -> m
 
-    | Binop(x,(Op_DOT,p),y),_,_ -> Call(unfold_dot x y p, args, cb)
+    | DotAccess(x,(p),y),_,_ -> Call(unfold_dot x y p, args, cb)
     | _ -> Call(m,args,cb)
 
 and unfold_dot l r pos = 
   match l with
   (* unfold nested a.b.c to become (a.b()).c() *)
-    | Binop(a,(Op_DOT,p),b) ->
+    | DotAccess(a,(p),b) ->
     let l' = methodcall (unfold_dot a b p) [] None in
-    Binop(l',(Op_DOT,pos),r)
+    DotAccess(l',(pos),r)
         
-    | _ -> Binop(l,(Op_DOT,pos),r)
+    | _ -> DotAccess(l,(pos),r)
 
 and check_for_dot = function
-  | Binop(l,(Op_DOT,p),r) -> methodcall (unfold_dot l r p) [] None
+  | DotAccess(l,(p),r) -> methodcall (unfold_dot l r p) [] None
   | e -> e
   
 and scope tk l r = 
@@ -280,7 +280,7 @@ and scope tk l r =
 let command_codeblock cmd cb = 
   match cmd with 
   | Call(c,args,None) -> Call(c,args,Some cb)
-  | Binop(_,(Op_DOT,_p),_)
+  | DotAccess(_,(_p),_)
   | Binop(_,(Op_SCOPE,_p),_) -> Call(cmd,[],Some cb)
   | Id((_,_p),_) -> Call(cmd,[],Some cb)
   | _ -> raise Dyp.Giveup

@@ -162,10 +162,6 @@ type binary_op =
   | Op_ASSIGN   (* = *)
   | Op_OP_ASGN of binary_op  (* +=, -=, ... *)
 
-  (* TODO: move out in scope_op *)
-  | Op_DOT      (* . *)
-  (* tree-sitter: *)
-  | Op_AMPDOT (* &. *)  
   (* TODO: move out *)
   | Op_SCOPE    (* :: *)
 
@@ -205,7 +201,7 @@ type expr =
 
   | Call of expr * expr list * expr option
   (* TODO: ArrayAccess of expr * expr list bracket *)
-(*  | DotAccess of expr * tok (* . or &. *) * method_name *)
+  | DotAccess of expr * tok (* . or &. *) * method_name
 
   (* true = {}, false = do/end *)
   | CodeBlock of bool bracket * formal_param list option * stmts

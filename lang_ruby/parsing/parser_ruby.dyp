@@ -436,10 +436,8 @@ primary:
   | primary<p> T_SCOPE variable<id>  { M.scope $2 p (Id id) }
   | T_USCOPE<pos> variable<id>       { Unary((Op_UScope,pos), Id id) }
 
-  | primary<p> T_LBRACK_ARG<pos1> eols arg_comma_list_trail<xs> eols T_RBRACK
-      { M.methodcall (Binop(p,(Op_DOT,pos1), Operator(Op_AREF,pos1))) (* TODO: wrong tok Binop? *)
-                   xs None
-      }
+  | primary<p> T_LBRACK_ARG<t1> eols arg_comma_list_trail<xs> eols T_RBRACK<t2>
+     { M.methodcall (DotAccess(p,(t1), MethodOperator(Op_AREF,t2))) xs None }
 
   | T_LBRACK eols array_body<xs> eols T_RBRACK { Array($1, xs, $5) }
   | T_LBRACE eols array_body<xs> eols T_RBRACE { Hash(true, ($1, xs, $5)) }
@@ -643,8 +641,8 @@ array_body_rest:
 
 array_item: 
   | arg<e> { e }
-  | constant<c> T_LBRACK<pos1> eols call_args<xs> eols T_RBRACK
-      { M.methodcall (Binop(c, (Op_DOT,pos1), Operator(Op_AREF,pos1))) (* TODO: Wrong pos Binop, and probably all the following Binop in this file *)
+  | constant<c> T_LBRACK<t1> eols call_args<xs> eols T_RBRACK<t2>
+      { M.methodcall (DotAccess(c, (t1), MethodOperator(Op_AREF,t2))) (* TODO: Wrong pos Binop, and probably all the following Binop in this file *)
                      xs None }
 
 /*(*************************************************************************)*/
@@ -687,13 +685,13 @@ command_name:
       { Id id }
 
   | primary<p> T_DOT eols message_identifier<m>
-      { M.unfold_dot p (methodexpr m) $2}
+      { M.unfold_dot p (m) $2}
   | primary<p> T_SCOPE    message_identifier<m> 
       { M.scope $2 p (methodexpr m) }
 
   /*(* recursive *)*/
   | command_name<p> T_DOT eols message_identifier<m>
-      { M.unfold_dot p (methodexpr m) $2}
+      { M.unfold_dot p (m) $2}
   | command_name<p> T_SCOPE    message_identifier<m>
       { M.scope $2 p (methodexpr m) }
 
@@ -766,10 +764,10 @@ lhs:
   | K_NIL             { Literal(Nil $1) }
   | K_TRUE            { Literal(Bool (true,$1)) }
   | K_FALSE           { Literal(Bool (false,$1)) }
-  | primary<p> T_LBRACK_ARG<pos> eols arg_comma_star_list<xs> eols T_RBRACK
-      { M.methodcall (Binop(p,(Op_DOT,pos),Operator(Op_AREF,pos))) xs None}
-  | primary<p> T_DOT eols message_identifier<m>
-      { M.methodcall (Binop(p,(Op_DOT,$2), (methodexpr m))) [] None}
+  | primary<p> T_LBRACK_ARG<t1> eols arg_comma_star_list<xs> eols T_RBRACK<t2>
+      { M.methodcall (DotAccess(p,(t1),MethodOperator(Op_AREF,t2))) xs None}
+  | primary<p> T_DOT<t> eols message_identifier<m>
+      { M.methodcall (DotAccess(p,(t), (m))) [] None}
 
 /*(*----------------------------*)*/
 /*(*2 Multiple LHS *)*/
@@ -980,11 +978,11 @@ method_kind:
   | method_name { M $1 }
   /*(* for complex method definitions *)*/
   | variable2<id1> T_DOT eols method_name<id2> 
-      { SingletonM (Binop(Id id1,(Op_DOT,$2), methodexpr2 id2))}
+      { SingletonM (DotAccess(Id id1,($2), id2))}
   | variable2<id1> T_SCOPE    method_name<id2> 
       { SingletonM (M.scope $2 (Id id1) (methodexpr2 id2)) }
   | T_LPAREN arg T_RPAREN T_DOT method_name
-      { SingletonM (Binop($2, (Op_DOT,$4), (methodexpr2 $5))) }
+      { SingletonM (DotAccess($2, ($4), ($5))) }
 
 meth_or_atom:
     | method_name  { $1 }
