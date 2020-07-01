@@ -75,12 +75,11 @@ type 'a bracket = tok * 'a * tok
 (* Ident/name *)
 (* ------------------------------------------------------------------------- *)
 type ident = string wrap
+  and _uident = ident 
+  and _lident = ident
  [@@deriving show, eq, ord]
 
-(* less: Self of tok | Id of lident | Cst of uident | ...  
-and uident = ident (* Uppercase, a.k.a "constant" in Ruby *)
-and lident = ident
-*)
+(* less: Self of tok | Id of lident | Cst of uident | ...  *)
 type variable = ident * id_kind 
  and id_kind = 
   | ID_Self 
@@ -88,7 +87,7 @@ type variable = ident * id_kind
   | ID_Super
   | ID_Lowercase (* prefixed by [a-z] or _ *)
   (* less: rename constant *)
-  | ID_Uppercase (* prefixed by [A-Z] *)
+  | ID_Uppercase (* prefixed by [A-Z] *) (* a.k.a "constant" in Ruby *)
   | ID_Instance  (* prefixed by @ *)
   | ID_Class     (* prefixed by @@ *)
   (* pattern: \\$-?(([!@&`'+~=/\\\\,;.<>*$?:\"])|([0-9]* )|([a-zA-Z_][a-zA-Z0-9_]* ))" 
@@ -169,14 +168,9 @@ type binary_op =
  [@@deriving show { with_path = false }, eq, ord]
 
 (* ------------------------------------------------------------------------- *)
-(* Method name *)
+(* Method name, scope resolution, class/module name are later *)
 (* ------------------------------------------------------------------------- *)
-(* later, mutually dependent on expr with MethodSymbol and MethodDynamic *)
-
-(* ------------------------------------------------------------------------- *)
-(* Scope resolution *)
-(* ------------------------------------------------------------------------- *)
-(* later, mutually dependent on expr *)
+(* mutually dependent on expr with MethodSymbol and MethodDynamic *)
 
 (*****************************************************************************)
 (* Expression *)
@@ -185,6 +179,7 @@ type binary_op =
 type expr = 
   | Literal of literal
 
+  (* Both constructors below are similar to class_or_module_name *)
   | Id of variable
   (* old: was Binop(e1, Op_SCOPE, e2) or Unary(Op_UScope. e) *)
   | ScopedId of scope_resolution
@@ -262,16 +257,18 @@ and method_name =
 (* ------------------------------------------------------------------------- *)
 (* Scope resolution *)
 (* ------------------------------------------------------------------------- *)
-(* The variable below is actually either an ID_Lowercase or ID_Uppercase *)
+(* The variable below is actually either an ID_Lowercase or ID_Uppercase
+ * less: replace variable with ident? 
+ *)
 and scope_resolution =
   (* old: was called Op_UScope before *)
   | TopScope of tok (* :: *) * variable
   (* old: was called Op_SCOPE before *)
   | Scope of expr * tok (* :: *) * variable_or_method_name
 
-  (* TODO: this is not in tree-sitter *)
   and variable_or_method_name = 
    | SV of variable
+   (* TODO: this is not in tree-sitter *)
    | SM of method_name
 
 
