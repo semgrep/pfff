@@ -70,7 +70,7 @@ let dyp_merge_Obj_arg_comma_star_list    = M.merge_rest "arg_comma_star_list"
 let dyp_merge_Obj_star_amper             = M.merge_rest "star_amper"
 let dyp_merge_Obj_array_item             = M.merge_rest "array_item"
 let dyp_merge_Obj_array_body_rest        = M.merge_rest "array_body_rest"
-let dyp_merge_Obj_scoped_id              = M.merge_rest "scoped_id"
+let dyp_merge_Obj_var_or_scoped_id       = M.merge_rest "var_or_scoped_id"
 let dyp_merge_Obj_class_inheritance      = M.merge_rest "class_inheritance"
 let dyp_merge_Obj_do_sep                 = M.merge_rest "do_sep"
 let dyp_merge_Obj_code_block             = M.merge_rest "code_block"
@@ -759,7 +759,7 @@ assign_op:
 lhs_assign_op: lhs<l> assign_op<op,tk>   { M.seen dyp l; l,op,tk}
 
 lhs:
-  | scoped_id<id> 
+  | var_or_scoped_id<id> 
       { id }
   | K_NIL             { Literal(Nil $1) }
   | K_TRUE            { Literal(Bool (true,$1)) }
@@ -903,7 +903,7 @@ method_formals:
 /*(*************************************************************************)*/
 
 class_definition:
-  | scope_CLASS<pos> eols scoped_id<id> class_inheritance<inh> do_sep
+  | scope_CLASS<pos> eols var_or_scoped_id<id> class_inheritance<inh> do_sep
       body_exn<body> K_lEND
       { S.leave_scope dyp;
         D (ClassDef(pos, id, inh, body))}
@@ -912,7 +912,7 @@ class_definition:
       { S.leave_scope dyp;
         D (ClassDef(pos, S Empty, Some (Inst_Inherit id), body)) }
 
-module_definition: scope_MODULE<pos> scoped_id<id> eols body_exn<body> K_lEND 
+module_definition: scope_MODULE<pos> var_or_scoped_id<id> eols body_exn<body> K_lEND 
       { S.leave_scope dyp;
         D (ModuleDef (pos, id, body)) }
 
@@ -988,10 +988,10 @@ meth_or_atom:
     | method_name  { $1 }
     | T_ATOM       { MethodAtom $1 }
 
-scoped_id:
+var_or_scoped_id:
   | variable<id>                           { Id id }
   | T_USCOPE<pos> variable<id>             { Unary((Op_UScope,pos),Id id)}
-  | scoped_id<id1> T_SCOPE variable2<id2>  { Binop(id1,(Op_SCOPE,$2),Id id2)}
+  | var_or_scoped_id<id1> T_SCOPE variable2<id2>  { Binop(id1,(Op_SCOPE,$2),Id id2)}
 
 
 
