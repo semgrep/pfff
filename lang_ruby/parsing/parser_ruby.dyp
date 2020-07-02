@@ -919,7 +919,7 @@ scope_MODULE: K_MODULE<pos> {S.enter_scope dyp; pos}
 
 class_inheritance:
  | /*(* empty *)*/ { None }
- | T_LT primary<p> { Some (p) }
+ | T_LT primary    { Some ($1, $2) }
 
 /*(*************************************************************************)*/
 /*(*1 Name *)*/
