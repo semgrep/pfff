@@ -43,6 +43,11 @@
  *  - 2010 diamondback-ruby latest version
  *  - 2020 integrate in pfff diamondback-ruby parser, AST and IL (called cfg)
  *  - lots of small refactorings, see modif-orig.txt
+ *  - lots of big refactorings when using this file to generate the AST
+ *    from the tree-sitter CST for Ruby, use more precise types
+ *    like method_name, method_kind, rescue_clause, scope_resolution instead
+ *    of the very broad 'expr'. This will help also when converting to 
+ *    the generic AST.
  *)
 
 (*****************************************************************************)
@@ -125,11 +130,11 @@ type binary_op =
   (* not in msg_id but in Op_OP_ASGN *)
   | Op_AND      (* && *)  | Op_OR   (* || *)
 
-  (* TODO: move out! Assign and AssignOp *)
+  (* less: could move out! Assign and AssignOp of lhs * tok * expr *)
   | Op_ASSIGN   (* = *)
   | Op_OP_ASGN of binary_op  (* +=, -=, ... *)
 
-  (* TODO: move out, in hash or arguments *)
+  (* less: move out, in hash or arguments *)
   | Op_ASSOC    (* => *)
 
   (* sugar for .. and = probably *)
