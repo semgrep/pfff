@@ -615,9 +615,6 @@ let merge_rescue s xs =
 
   let cmp = Ast_ruby.compare_rescue_clause in
   let l' = uniq_list cmp xs in
-    do_fail s l' 
-  (fun (_, x,y) -> 
-     Printf.sprintf "%s: %s"  (Ast_printer.show_expr x)(Ast_printer.show_stmts y)
-  );
-    l'
+  do_fail s l' Ast_ruby.show_rescue_clause;
+  l'
  )

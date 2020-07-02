@@ -205,6 +205,9 @@ type expr =
   | S of stmt
   | D of definition
 
+  (* less: use for Assign, can be Id, Tuple, Array, more? *)
+  and lhs = expr 
+
 and literal = 
   (* [tT]rue, [fF]alse *)
   | Bool of bool wrap
@@ -327,8 +330,14 @@ and stmt =
     ensure_expr: stmts option2;
     else_expr: stmts option2;
   }
-    (* TODO: (exception_name list * ident option)*)
-    and rescue_clause = (tok * expr * stmts)
+    (* less: the list can be empty, in which case it maybe mean
+     * implicitely StandardError exn? *)
+    and rescue_clause = 
+      tok * exception_ list * exception_variable option * stmts
+        (* usually an Id, or a Splat *)
+        and exception_ = expr
+        (* lhs is usually an Id *)
+        and exception_variable = tok (* => *) * lhs
 
 and stmts = expr list
 
