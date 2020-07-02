@@ -726,7 +726,7 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         let acc, hl = refactor_hash_list acc l pos in
           acc, ELit (Hash hl)
 
-    | Ast.S Ast.Block(l) -> begin match List.rev l with
+    | Ast.S Ast.Block(_, l, _) -> begin match List.rev l with
         | [] -> Log.fatal Log.empty "refactor_expr: empty block???"
         | last::rest ->
             let acc = refactor_stmt_list acc (List.rev rest) in
@@ -1396,7 +1396,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
   | Ast.S Ast.Retry _ 
     -> failwith "TODO"
 
-  | Ast.S Ast.Block(el) -> 
+  | Ast.S Ast.Block(_, el, _) -> 
       let blk_acc = refactor_stmt_list (acc_emptyq acc) el in
       let acc = {acc with seen = StrSet.union acc.seen blk_acc.seen} in
       let pos = raise Todo in

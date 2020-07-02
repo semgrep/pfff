@@ -301,7 +301,7 @@ and pattern = expr
  * Note that ../analyze/il_ruby.ml has proper separate expr and stmt types.
  *)
 and stmt =
-  | Block of stmts (* TODO: bracket with begin/end or ( ) *)
+  | Block of stmts bracket (* ( ) *)
 
   | If of tok * expr * stmts * stmts option2
   | While of tok * bool * expr * stmts
@@ -320,7 +320,7 @@ and stmt =
 
   | Case of tok * case_block
 
-  | ExnBlock of body_exn
+  | ExnBlock of body_exn (* less: bracket *)
 
   and case_block = {
     case_guard : expr option;
@@ -328,8 +328,10 @@ and stmt =
     case_else: stmts option2;
   }
   
+  (* tokens around body_exn are usually begin/end or do/end or
+   * <nothing>/end for class and module defs *)
   and body_exn = {
-    body_exprs: stmts (* TODO bracket *);
+    body_exprs: stmts;
     rescue_exprs: rescue_clause list;
     ensure_expr: stmts option2;
     else_expr: stmts option2;
@@ -352,9 +354,9 @@ and 'a option2 = 'a
 (* Definitions *)
 (*****************************************************************************)
 and definition =
-  | ModuleDef of tok * class_or_module_name * body_exn
-  | ClassDef of tok * class_kind * body_exn
-  | MethodDef of tok * method_kind * formal_param list * body_exn
+  | ModuleDef of tok * class_or_module_name * body_exn (* less: * tok *)
+  | ClassDef of tok * class_kind * body_exn  (* less: * tok *)
+  | MethodDef of tok * method_kind * formal_param list * body_exn  (* less: * tok *)
 
   | BeginBlock of tok * stmts bracket
   | EndBlock of tok * stmts bracket

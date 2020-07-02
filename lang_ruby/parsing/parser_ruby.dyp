@@ -33,6 +33,8 @@ module H = Ast_ruby_helpers
 module S = Parser_ruby_helpers
 (* for merging *)
 module M = Parser_ruby_helpers
+(* for fake_xxx *)
+module G = AST_generic
 
 (*let () = Dyp.dypgen_verbose := max_int*)
 
@@ -107,11 +109,6 @@ let dyp_merge xs =
   xs
   )
   (*Dyp.keep_all*)
-
-let mk_block lst = 
-  match lst with
-  | [x] -> x
-  | _ -> S (Block(lst))
 
 let tuple = function
   | [] -> raise Common.Impossible
@@ -365,7 +362,7 @@ expr:
  /*(* call_args-->arg_comma_star_list-->arg_comma_nonempty_list->arg vs arg*)*/
   | K_RETURN<pos> arg<p>
       { match p with
-        | S Block([x]) -> S (Return(pos, [x]))
+        | S Block(_, [x], _) -> S (Return(pos, [x]))
         | arg -> if M.is_cond_modifier arg then raise Dyp.Giveup;
                  S (Return(pos, [arg])) 
       }
@@ -408,10 +405,10 @@ arg:
 /*(*************************************************************************)*/
 
 primary:
-  | T_LPAREN<pos> eols stmt_list<ss> T_RPAREN
+  | T_LPAREN eols stmt_list T_RPAREN
       { (* don't collapse the block here to prevent the disambiguation
            rules from erroneously firing *) 
-         S (Block(ss)) }
+         S (Block($1, $3, $4)) }
 
   | constant<c> { c }
   | variable<id> { Id id }
@@ -556,9 +553,16 @@ interp_str_work:
 
 interp_code:
   | eols stmt_list<ss> interp_str_work<tl>
-      { match ss with
+      {   
+        let mk_block lst = 
+          match lst with
+          | [x] -> x
+          | _ -> S (Block(G.fake_bracket lst))
+        in
+          match ss with
           | [] -> tl
-          | x::_ -> StrExpr (mk_block ss)::tl }
+          | x::_ -> StrExpr (mk_block ss)::tl 
+      }
 
   | T_INTERP_END<s,pos> 
       { if s = "" then [] else [StrChars s] }
