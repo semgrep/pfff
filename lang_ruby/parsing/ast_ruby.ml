@@ -307,8 +307,8 @@ and stmt =
   | While of tok * bool * expr * stmts
   | Until of tok * bool * expr * stmts
   | Unless of tok * expr * stmts * (tok (* else *) * stmts) option
-  | For of tok * formal_param list * expr * stmts
-  | For2 of tok * pattern * tok * expr * stmts
+  (* old: was formal_param list instead of pattern before *)
+  | For of tok * pattern * tok * expr * stmts
 
   (* stmt and also as "command" *)
   | Return of tok * expr list (* bracket option *)
