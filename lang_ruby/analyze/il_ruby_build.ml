@@ -733,8 +733,6 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
               refactor_expr acc last
       end
         
-    | Ast.S Ast.Empty -> Log.fatal Log.empty "refactor_expr: empty expr??"
-
 and refactor_defined acc lhs args pos = 
   let lhs' = match lhs with LId (id) -> id | _ -> failwith "Impossible" in
 
@@ -1600,8 +1598,6 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
   | Ast.S Ast.ExnBlock(body) -> 
       let pos = raise Todo in
       refactor_body acc body pos
-
-  | Ast.S Ast.Empty -> acc
 
   | Ast.CodeBlock _ as s -> 
       Log.fatal (Log.of_tok (tok_of s))

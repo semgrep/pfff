@@ -296,7 +296,6 @@ and pattern = expr
  * Note that ../analyze/il_ruby.ml has proper separate expr and stmt types.
  *)
 and stmt =
-  | Empty (* TODO: should remove! *)
   | Block of stmts (* TODO: bracket with begin/end or ( ) *)
 
   | If of tok * expr * stmts * stmts option2

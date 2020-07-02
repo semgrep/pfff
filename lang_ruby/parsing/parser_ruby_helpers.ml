@@ -242,8 +242,6 @@ let hash_literal_as_args args =
 let rec methodcall m args cb = 
   let args = hash_literal_as_args args in
   match m,args,cb with
-    | _,[S Empty],_ -> methodcall m [] cb
-
     | S Return(_), [], None -> m
     | S Return(p,[]),args,None -> S (Return(p, args))
     | S Yield(_), [], None -> m

@@ -114,7 +114,7 @@ let mk_block lst =
   | _ -> S (Block(lst))
 
 let tuple = function
-  | [] -> S Empty
+  | [] -> raise Common.Impossible
   | [x] -> x
   | lst -> Tuple lst
 
