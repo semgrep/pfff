@@ -1569,7 +1569,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
               let acc,clazz' = refactor_id acc (Ast.cmn clazz) in 
                 acc_enqueue (C.nameclass clazz' body' pos) acc
 
-          | Some (e) -> 
+          | Some (_, e) -> 
               let body' = C.seq (DQueue.to_list body_acc.q) pos in
               let acc,clazz' = refactor_id acc (Ast.cmn clazz) in
               let acc,e' = refactor_id acc e in

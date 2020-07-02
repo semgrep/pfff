@@ -380,7 +380,7 @@ and definition =
     | Formal_kwd of ident * tok * expr option
   
   and class_kind = 
-   | C of class_or_module_name * (* TODO: of tok *) expr option
+   | C of class_or_module_name * (tok (* < *) * expr) option
    | SingletonC of tok (* << *) * expr
 
   (* old: was just expr before *)
