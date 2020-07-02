@@ -303,10 +303,10 @@ and pattern = expr
 and stmt =
   | Block of stmts bracket (* ( ) *)
 
-  | If of tok * expr * stmts * stmts option2
+  | If of tok * expr * stmts * (tok (* else/elif *) * stmts) option
   | While of tok * bool * expr * stmts
   | Until of tok * bool * expr * stmts
-  | Unless of tok * expr * expr list * stmts
+  | Unless of tok * expr * stmts * (tok (* else *) * stmts) option
   | For of tok * formal_param list * expr * stmts
   | For2 of tok * pattern * tok * expr * stmts
 
@@ -325,7 +325,7 @@ and stmt =
   and case_block = {
     case_guard : expr option;
     case_whens: (tok (* when *) * pattern list * stmts) list;
-    case_else: stmts option2;
+    case_else: (tok (* else *) * stmts) option;
   }
   
   (* tokens around body_exn are usually begin/end or do/end or
@@ -333,8 +333,8 @@ and stmt =
   and body_exn = {
     body_exprs: stmts;
     rescue_exprs: rescue_clause list;
-    ensure_expr: stmts option2;
-    else_expr: stmts option2;
+    ensure_expr: (tok (* ensure *) * stmts) option;
+    else_expr: (tok (* else *) * stmts) option;
   }
     (* less: the list can be empty, in which case it maybe mean
      * implicitely StandardError exn? *)
@@ -346,9 +346,6 @@ and stmt =
         and exception_variable = tok (* => *) * lhs
 
 and stmts = expr list
-
-(* TODO: (tok * 'a) option *)
-and 'a option2 = 'a
 
 (*****************************************************************************)
 (* Definitions *)
@@ -424,8 +421,8 @@ type any =
 let empty_body_exn = {
     body_exprs = [];
     rescue_exprs = [];
-    ensure_expr = [];
-    else_expr = [];
+    ensure_expr = None;
+    else_expr = None;
 }
 
 let sm = function
@@ -435,3 +432,7 @@ let sm = function
 let cmn = function
   | NameConstant id -> Id (id, ID_Uppercase)
   | NameScope x -> ScopedId x
+
+let opt_stmts_to_stmts = function
+  | None -> []
+  | Some (_, xs) -> xs
