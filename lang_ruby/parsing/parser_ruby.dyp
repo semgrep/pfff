@@ -119,6 +119,24 @@ let is_exnblock = function
   | S ExnBlock _ -> true 
   | _ -> false
 
+let rec param_to_pattern = function
+  | Formal_id id -> Id (id, ID_Lowercase) (* TODO: actually not always that *)
+  | Formal_amp (t, id) -> Unary((Op_UAmper, t), Id (id, ID_Lowercase))
+  | Formal_star (t, id) -> Splat (t, (Some (Id (id, ID_Lowercase))))
+  | Formal_rest t -> Splat (t, None)
+  | Formal_tuple (_, xs, _) -> params_to_pattern xs
+  | Formal_default (id, t, e) -> 
+      Binop(Id(id, ID_Lowercase), (Op_ASSIGN, t), e)
+  | Formal_hash_splat (t, Some id) ->
+      Unary((Op_UStarStar, t), Id (id, ID_Lowercase))
+  | Formal_hash_splat (t, None) ->
+      (* TODO, use a HashSplat expr instead of that *)
+      Unary((Op_UStarStar, t), Id (("_", t), ID_Lowercase))
+  | Formal_kwd (id, t, _) -> raise Common.Impossible
+
+and params_to_pattern xs = 
+  let xs = List.map param_to_pattern xs in
+  Tuple xs
 }
 
 /*(*************************************************************************)*/
@@ -472,9 +490,10 @@ primary:
 
     { S (Case(pos, {case_guard = Some e; case_whens = xs; case_else = else_e})) }
 
+  /*(* TODO: mlhs in tree-sitter-ruby, not formal_arg_list *)*/
   | K_FOR<pos> formal_arg_list<vars> K_IN arg<a> do_sep stmt_list<xs> K_lEND
     { M.well_formed_do a xs; 
-      S (For(pos, vars, a, xs)) }
+      S (For(pos, params_to_pattern vars, $3, a, xs)) }
 
   | K_lBEGIN<pos> eols body_exn<body>  K_lEND { S (ExnBlock(body)) }
 
@@ -933,7 +952,7 @@ class_inheritance:
 identifier: 
   | T_LID { $1 }
   /*(* weird, but found code like that *)*/
-  | T_INST_VAR { $1 }
+  | T_INST_VAR   { $1 }
   | T_GLOBAL_VAR { $1 }
 
 /*(* was called identifier (but I now follow tree-sitter-ruby conventions) *)*/

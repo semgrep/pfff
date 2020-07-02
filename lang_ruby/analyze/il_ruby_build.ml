@@ -520,7 +520,7 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
     | Ast.S Ast.Case _ | Ast.S Ast.ExnBlock _ 
     | Ast.D Ast.EndBlock _ | Ast.D Ast.BeginBlock _  
     | Ast.CodeBlock _ | Ast.D Ast.MethodDef _ 
-    | Ast.S Ast.For _ | Ast.S Ast.For2 _
+    | Ast.S Ast.For _
     | Ast.S Ast.Unless _ | Ast.S Ast.Until _
     | Ast.S Ast.While _ 
     | Ast.Ternary _ | Ast.D Ast.Alias _ | Ast.D Ast.Undef _ as s ->
@@ -1524,9 +1524,8 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
   | Ast.S Ast.Until(pos, b,g,body) -> 
       refactor_stmt acc (Ast.S (Ast.While(pos, b,Ast.Unary((Ast.Op_UNot,pos),g),body)))
 
-  | Ast.S Ast.For2 _ -> failwith "TODO"
-
-  | Ast.S Ast.For(pos, formals,guard,body) ->
+  | Ast.S Ast.For(pos, _pattern,_in, guard, body) ->
+      let formals = (* pattern_to_params formals *) raise Todo in
       let acc, formals = refactor_block_formal_list acc formals pos in
       let acc, g_expr = refactor_expr acc guard in
       let body_acc = refactor_stmt_list (acc_emptyq acc) body in
