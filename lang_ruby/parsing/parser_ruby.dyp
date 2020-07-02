@@ -320,7 +320,7 @@ stmt:
         S (While(pos, is_exnblock s,g, [s])) }
   | stmt<s> K_RESCUE<pos> eols stmt<g>
       { if M.is_cond_modifier g then raise Dyp.Giveup;
-        S (ExnBlock({body_exprs = [s]; rescue_exprs = [($2, S Empty,[g])];
+        S (ExnBlock({body_exprs = [s]; rescue_exprs = [($2, [],None,[g])];
             ensure_expr = []; else_expr = []})) }
 
   /* handle special case for x = y rescue z where rescue binds to 
@@ -328,7 +328,7 @@ stmt:
    */
   | lhs_assign_op<l,op,_tk> eols arg<r> K_RESCUE<pos> eols stmt<guard>
       { if M.is_cond_modifier guard then raise Dyp.Giveup;
-        let r' = S (ExnBlock({body_exprs=[r];rescue_exprs =[($4, S Empty,[guard])];
+        let r' = S (ExnBlock({body_exprs=[r];rescue_exprs =[($4,[],None,[guard])];
                  ensure_expr = []; else_expr = []}))
          in (*prune_binop l op r'*) 
          Binop(l,(op,pos),r') (* TODO: wrong pos *)}
@@ -574,16 +574,14 @@ body_exn:
      }
 
 rescue_clause:
-  | K_RESCUE<resc_pos> then_sep stmt_list<xs> { ($1, S Empty, xs) }
-
-  | K_RESCUE<pos> T_ASSOC seen_id<bind> then_sep stmt_list<xs>
-      { ($1, Binop(S Empty,(Op_ASSOC,$2),bind), xs) }
-
+  | K_RESCUE<resc_pos>                     then_sep stmt_list<xs> 
+      { ($1, [], None, xs) }
+  | K_RESCUE<pos> T_ASSOC seen_id<bind>    then_sep stmt_list<xs>
+      { ($1, [], Some ($2, bind), xs) }
   | K_RESCUE<pos> arg_comma_star_list<exn> then_sep stmt_list<xs>
-    { ($1, tuple exn, xs) }
-
+    { ($1, exn, None, xs) }
   | K_RESCUE<pos> arg_comma_star_list<exn> 
-    { ($1, tuple exn, []) }
+    { ($1, exn, None, []) }
 
 seen_id: variable<i> { M.seen dyp (Id i); Id i}
 

@@ -1666,16 +1666,12 @@ and refactor_body (acc:stmt acc) b pos : stmt acc =
       acc_enqueue (C.exnblock body rescue_list ?eelse ?ensure pos) acc
   end
 
-and refactor_rescue pos acc (_, gs,rescue_body) : stmt acc * rescue_block =
-  let guard_exprs = match gs with
-    | Ast.Tuple(l) -> l
-    | Ast.S Ast.Empty -> []
-    | x -> [x]
-  in
+and refactor_rescue pos acc (_, gs, exnvar_opt, rescue_body) : stmt acc * rescue_block =
+  let guard_exprs = gs in
   let acc_just_set, rev_guards = 
     List.fold_left
       (fun (acc,gl) e ->
-        let set, g = refactor_rescue_guard acc e in
+        let set, g = refactor_rescue_guard acc e exnvar_opt in
           {acc with seen=set}, g::gl
       ) (acc_emptyq acc,[]) guard_exprs
   in
@@ -1688,11 +1684,14 @@ and refactor_rescue pos acc (_, gs,rescue_body) : stmt acc * rescue_block =
   let resc_blk = {rescue_guards = guards;rescue_body = body} in
     (acc_seen acc body_acc), resc_blk
 
-and refactor_rescue_guard acc (e:Ast.expr) : StrSet.t * rescue_guard = 
-  match e with
-    | Ast.Binop(Ast.S Ast.Empty,(Ast.Op_ASSOC, pos),bind_e) -> 
+and refactor_rescue_guard acc (e:Ast.expr) (exnvar_opt: Ast.exception_variable option) : StrSet.t * rescue_guard = 
+  match exnvar_opt with
+    | Some (pos, bind_e) ->
         let obj = Ast.Id(("StandardError", pos),Ast.ID_Uppercase) in
-          refactor_rescue_guard acc (Ast.Binop(obj,(Ast.Op_ASSOC,pos),bind_e))
+        refactor_rescue_guard acc (Ast.Binop(obj,(Ast.Op_ASSOC,pos),bind_e))
+            exnvar_opt
+    | None ->
+  (match e with
 
     | Ast.Binop(exn_e,(Ast.Op_ASSOC,pos),bind_e) -> 
         let acc, exn = refactor_tuple_expr acc exn_e in
@@ -1735,6 +1734,7 @@ and refactor_rescue_guard acc (e:Ast.expr) : StrSet.t * rescue_guard =
           then Log.fatal (Log.of_tok (tok_of e))
             "rescue guard created hoisted expression?";
           acc.seen, Rescue_Expr e'
+  )
             
 and refactor_method_formal (acc:stmt acc) t _pos : stmt acc * method_formal_param = 
   match t with
