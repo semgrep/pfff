@@ -1237,7 +1237,7 @@ and refactor_method_call_assign (acc:stmt acc) (lhs : lhs option) = function
                      Some(Ast.CodeBlock(_,params_o,cb_body))) ->
       let params = Utils.default_opt [] params_o in
       let name = (* H.msg_of_str *) Ast.MethodId ((mname,atompos), Ast.ID_Lowercase) in
-      let body = {Ast.body_exprs = cb_body;rescue_exprs=[];ensure_expr=[];else_expr=[]} in
+      let body = {Ast.body_exprs = cb_body;rescue_exprs=[];ensure_expr=None;else_expr=None} in
       let e' = Ast.D (Ast.MethodDef(pos, Ast.M name,params,body)) in
         refactor_stmt acc e'
 
@@ -1369,8 +1369,8 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
       let acc = acc_seen acc facc in
         acc_enqueue (mkstmt (If(g',ts,fs)) pos) acc
 
-  | Ast.S Ast.If(pos, g,t,f)
-  | Ast.S Ast.Unless(pos, g,f,t) ->
+  | Ast.S Ast.If(pos, g,t,f) ->
+      let f = Ast.opt_stmts_to_stmts f in
       let acc,g' = refactor_expr acc g in
       let tacc = refactor_stmt_list (acc_emptyq acc) t in
       let ts = C.seq (DQueue.to_list tacc.q) pos in
@@ -1379,6 +1379,11 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
       let fs = C.seq (DQueue.to_list facc.q) pos in
       let acc = {acc with seen = StrSet.union acc.seen facc.seen} in
         acc_enqueue (C.if_s g' ~t:ts ~f:fs pos) acc
+
+  | Ast.S Ast.Unless(pos, g,f,t) ->
+      let t = t |> Ast.opt_stmts_to_stmts in
+      let f = Some (pos, f) in
+      refactor_stmt acc (Ast.S (Ast.If (pos, g, t, f)))
 
   | Ast.S Ast.Case(pos, case) -> refactor_case acc case pos
 
@@ -1630,7 +1635,8 @@ and refactor_method_name (acc:stmt acc) e : stmt acc * def_name = match e with
         acc, (Instance_Method id)
 
 and refactor_body (acc:stmt acc) b pos : stmt acc = 
-  if b.Ast.rescue_exprs = [] && b.Ast.ensure_expr = [] && b.Ast.else_expr = []
+  if b.Ast.rescue_exprs = [] && b.Ast.ensure_expr = None && 
+    b.Ast.else_expr = None
   then refactor_stmt_list acc b.Ast.body_exprs
   else begin
     (* thread the seen set through all parts of the body *)
@@ -1644,10 +1650,12 @@ and refactor_body (acc:stmt acc) b pos : stmt acc =
     in
     let rescue_list = List.rev resc_rlist in
     let ensure_acc = 
-      refactor_stmt_list (acc_emptyq rescue_acc) b.Ast.ensure_expr 
+      refactor_stmt_list (acc_emptyq rescue_acc) 
+        (b.Ast.ensure_expr |> Ast.opt_stmts_to_stmts)
     in
     let else_acc = 
-      refactor_stmt_list (acc_emptyq ensure_acc) b.Ast.else_expr 
+      refactor_stmt_list (acc_emptyq ensure_acc) 
+        (b.Ast.else_expr  |> Ast.opt_stmts_to_stmts)
     in
     let acc = acc_seen acc else_acc in
     let body = C.seq (DQueue.to_list body_acc.q) pos in
@@ -1841,7 +1849,8 @@ and refactor_case acc case pos =
            acc, acc_enqueue (g',body') whens
       ) (acc,acc_emptyq acc) case.Ast.case_whens
   in
-  let else' = refactor_stmt_list (acc_emptyq whens') case.Ast.case_else in
+  let else' = refactor_stmt_list (acc_emptyq whens') 
+    (case.Ast.case_else |> Ast.opt_stmts_to_stmts) in
   let default = if DQueue.is_empty else'.q
   then None else Some (C.seq (DQueue.to_list else'.q) pos)
   in

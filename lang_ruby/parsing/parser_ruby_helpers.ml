@@ -608,6 +608,8 @@ let merge_rest s xs =
     l'
   )
 
+let merge_tok_stmts_opt s xs = merge_rest s xs
+
 let merge_rescue s xs =
   wrap xs (fun xs ->
 
