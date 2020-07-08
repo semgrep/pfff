@@ -24,7 +24,7 @@ module G = AST_generic
 (*****************************************************************************)
 (* Ast_ruby to AST_generic.
  *
- * See ast_generic.ml for more information.
+ * See AST_generic.ml for more information.
  *)
 
 (*****************************************************************************)
