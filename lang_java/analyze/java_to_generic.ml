@@ -287,10 +287,10 @@ and expr e =
   | Prefix (((v1, tok), v2)) -> let v1 = fix_op v1 and v2 = expr v2 in
       G.Call (G.IdSpecial (G.IncrDecr (v1, G.Prefix), tok), fb[G.Arg v2]) 
   | Unary ((v1, v2)) -> let (v1, tok) = v1 and v2 = expr v2 in
-      G.Call (G.IdSpecial (G.ArithOp v1, tok), fb[G.Arg v2]) 
+      G.Call (G.IdSpecial (G.Op v1, tok), fb[G.Arg v2]) 
   | Infix ((v1, (v2, tok), v3)) ->
       let v1 = expr v1 and v2 = v2 and v3 = expr v3 in
-      G.Call (G.IdSpecial (G.ArithOp (v2), tok), fb[G.Arg v1; G.Arg v3])
+      G.Call (G.IdSpecial (G.Op (v2), tok), fb[G.Arg v1; G.Arg v3])
   | Cast (((_, v1, _), v2)) -> let v1 = typ v1 and v2 = expr v2 in
     G.Cast (v1, v2)
   | InstanceOf ((v1, v2)) -> let v1 = expr v1 and v2 = ref_type v2 in

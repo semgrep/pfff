@@ -240,7 +240,7 @@ and assign env lhs _tok rhs_exp eorig =
  *)
 and expr env eorig =
   match eorig with
-  | G.Call (G.IdSpecial (G.ArithOp op, tok), args) ->
+  | G.Call (G.IdSpecial (G.Op op, tok), args) ->
       let args = arguments env args in
       mk_e (Operator ((op, tok), args)) eorig
   | G.Call (G.IdSpecial (G.IncrDecr (incdec, _prepostIGNORE), tok), args) ->
@@ -430,16 +430,18 @@ and expr_opt env = function
 
 and call_special _env (x, tok) = 
   (match x with
-  | G.ArithOp _ | G.IncrDecr _ -> 
+  | G.Op _ | G.IncrDecr _ -> 
         raise Impossible (* should be intercepted before *)
   | G.This | G.Super | G.Self | G.Parent ->
         raise Impossible (* should be intercepted before *)
   | G.Eval -> Eval
   | G.Typeof -> Typeof | G.Instanceof -> Instanceof | G.Sizeof -> Sizeof
   | G.New -> New 
-  | G.ConcatString _kindopt -> Concat | G.Spread -> Spread
+  | G.ConcatString _kindopt -> Concat 
+  | G.Spread -> Spread
   | G.EncodedString _ 
   | G.Defined
+  | G.HashSplat
     -> todo (G.E (G.IdSpecial (x, tok)))
   ), tok
 

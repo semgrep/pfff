@@ -133,7 +133,7 @@ let special (x, tok) =
              [G.Arg (G.Call (
                       G.IdSpecial (G.ConcatString G.InterpolatedConcat, tok), 
                         rest |> List.map (fun e -> G.Arg e) |> G.fake_bracket))]))
-  | ArithOp op -> SR_Special (G.ArithOp op, tok)
+  | ArithOp op -> SR_Special (G.Op op, tok)
   | IncrDecr v -> SR_Special (G.IncrDecr v, tok)
 
 (*

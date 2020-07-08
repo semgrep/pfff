@@ -246,15 +246,15 @@ let rec expr (x: expr) =
   | BoolOp (((v1,tok), v2)) -> 
       let v1 = boolop v1 
       and v2 = list expr v2 in 
-      G.Call (G.IdSpecial (G.ArithOp v1, tok), 
+      G.Call (G.IdSpecial (G.Op v1, tok), 
         fb (v2 |> List.map G.expr_to_arg))
   | BinOp ((v1, (v2, tok), v3)) ->
       let v1 = expr v1 and v2 = operator v2 and v3 = expr v3 in
-      G.Call (G.IdSpecial (G.ArithOp v2, tok), fb ([v1;v3] |> List.map G.expr_to_arg))
+      G.Call (G.IdSpecial (G.Op v2, tok), fb ([v1;v3] |> List.map G.expr_to_arg))
   | UnaryOp (((v1, tok), v2)) -> let v1 = unaryop v1 and v2 = expr v2 in 
       (match v1 with
       | Left op ->
-            G.Call (G.IdSpecial (G.ArithOp op, tok), fb ([v2] |> List.map G.expr_to_arg))
+            G.Call (G.IdSpecial (G.Op op, tok), fb ([v2] |> List.map G.expr_to_arg))
       | Right oe ->
             G.OtherExpr (oe, [G.E v2])
       )
@@ -264,13 +264,13 @@ let rec expr (x: expr) =
       and v3 = list expr v3 in
       (match v2, v3 with
       | [Left op, tok], [e] ->
-        G.Call (G.IdSpecial (G.ArithOp op, tok), fb ([v1;e] |> List.map G.expr_to_arg))
+        G.Call (G.IdSpecial (G.Op op, tok), fb ([v1;e] |> List.map G.expr_to_arg))
       | [Right oe, _tok], [e] ->
         G.OtherExpr (oe, [G.E v1; G.E e])
       | _ ->  
         let anyops = 
            v2 |> List.map (function
-            | Left arith, tok -> G.E (G.IdSpecial (G.ArithOp arith, tok))
+            | Left arith, tok -> G.E (G.IdSpecial (G.Op arith, tok))
             | Right other, _tok -> G.E (G.OtherExpr (other, []))
             ) in
         let any = anyops @ (v3 |> List.map (fun e -> G.E e)) in

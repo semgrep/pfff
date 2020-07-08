@@ -243,6 +243,10 @@ and vof_literal =
       let v1 = vof_wrap OCaml.vof_string v1 in OCaml.VSum (("Float", [ v1 ]))
   | Imag v1 ->
       let v1 = vof_wrap OCaml.vof_string v1 in OCaml.VSum (("Imag", [ v1 ]))
+  | Ratio v1 ->
+      let v1 = vof_wrap OCaml.vof_string v1 in OCaml.VSum (("Ratio", [ v1 ]))
+  | Atom v1 ->
+      let v1 = vof_wrap OCaml.vof_string v1 in OCaml.VSum (("Atom", [ v1 ]))
   | Char v1 ->
       let v1 = vof_wrap OCaml.vof_string v1 in OCaml.VSum (("Char", [ v1 ]))
   | String v1 ->
@@ -275,11 +279,12 @@ and vof_special =
       let v1 = vof_interpolated_kind v1 in
       OCaml.VSum (("InterpolatedConcat", [v1]))
   | Spread -> OCaml.VSum (("Spread", []))
+  | HashSplat -> OCaml.VSum (("HashSplat", []))
   | EncodedString v1 ->
       let v1 = vof_wrap OCaml.vof_string v1 in
       OCaml.VSum (("EncodedString", [v1]))
-  | ArithOp v1 ->
-      let v1 = vof_arithmetic_operator v1 in OCaml.VSum (("ArithOp", [ v1 ]))
+  | Op v1 ->
+      let v1 = vof_arithmetic_operator v1 in OCaml.VSum (("Op", [ v1 ]))
   | IncrDecr (v) ->
       let v = vof_inc_dec v in
       OCaml.VSum (("IncrDecr", [ v]))

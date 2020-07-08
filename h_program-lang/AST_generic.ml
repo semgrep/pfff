@@ -317,7 +317,7 @@ and expr =
   | Assign of expr * tok (* =, or sometimes := in Go, <- in OCaml *) * expr
   (*s: [[AST_generic.expr]] other assign cases *)
   (* less: could desugar in Assign, should be only binary_operator *)
-  | AssignOp of expr * arithmetic_operator wrap * expr
+  | AssignOp of expr * operator wrap * expr
   (* newvar:! newscope:? in OCaml yes but we miss the 'in' part here  *)
   | LetPattern of pattern * expr
   (*e: [[AST_generic.expr]] other assign cases *)
@@ -385,7 +385,8 @@ and expr =
     | Int of string wrap | Float of string wrap
     | Char of string wrap | String of string wrap | Regexp of string wrap
     | Unit of tok (* a.k.a Void *) | Null of tok | Undefined of tok (* JS *)
-    | Imag of string wrap (* Go, Python *)
+    | Imag of string wrap (* Go, Python *) | Ratio of string wrap (* Ruby *)
+    | Atom of string wrap (* Ruby *)
 (*e: type [[AST_generic.literal]] *)
 
 (*s: type [[AST_generic.container_operator]] *)
@@ -430,13 +431,12 @@ and expr =
     * (not all calls have parenthesis anyway, as in OCaml or Ruby).
     *)
    (* inline list var, in Container or call context, a.k.a Splat in Ruby *)
-   | Spread (* ...x in JS, *x in Ruby *)
-   (* note: could add HashSplat ** in Python/Ruby instead of abusing pow, but
-    * this requires types in Python to know whether op is Pow or Spread.
-    *)
+   | Spread (* ...x in JS, *x in Python/Ruby *)
+   (* in hash or arguments *)
+   | HashSplat (* **x in Python/Ruby, not that Pow below is a Binary op *)
 
    (* used for unary and binary operations *)
-   | ArithOp of arithmetic_operator
+   | Op of operator
    (* less: should be lift up and transformed in Assign at stmt level *)
    | IncrDecr of (incr_decr * prefix_postfix)
 (*e: type [[AST_generic.special]] *)
@@ -449,10 +449,10 @@ and expr =
      * todo? use a Special operator intead for that? but need type info?
      *)
 (*s: type [[AST_generic.arithmetic_operator]] *)
-    and arithmetic_operator = 
+    and operator = 
       | Plus (* unary too *) | Minus (* unary too *) 
       | Mult | Div | Mod
-      | Pow (* **, for  power but also for HashSplat in Python/Ruby *)
+      | Pow (* ** binary op; for unary see HashSplat above *)
       | FloorDiv | MatMult (* Python *)
       | LSL | LSR | ASR (* L = logic, A = Arithmetic, SL = shift left *) 
       | BitOr | BitXor | BitAnd | BitNot (* unary *) | BitClear (* Go *)

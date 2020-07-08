@@ -12,7 +12,7 @@ val vof_literal: AST_generic.literal -> OCaml.v
 val vof_type_: AST_generic.type_ -> OCaml.v
 (*e: signature [[Meta_AST.vof_type_]] *)
 (*s: signature [[Meta_AST.vof_arithmetic_operator]] *)
-val vof_arithmetic_operator: AST_generic.arithmetic_operator -> OCaml.v
+val vof_arithmetic_operator: AST_generic.operator -> OCaml.v
 (*e: signature [[Meta_AST.vof_arithmetic_operator]] *)
 (*s: signature [[Meta_AST.vof_function_definition]] *)
 val vof_function_definition: AST_generic.function_definition -> OCaml.v

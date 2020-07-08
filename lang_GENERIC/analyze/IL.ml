@@ -191,7 +191,7 @@ and exp = {
   | Cast of G.type_ * exp
   (* This could be put in call_special, but dumped IL are then less readable
    * (they are too many intermediate _tmp variables then) *)
-  | Operator of G.arithmetic_operator wrap * exp list
+  | Operator of G.operator wrap * exp list
 (*e: type [[IL.exp_kind]] *)
 
 (*s: type [[IL.composite_kind]] *)

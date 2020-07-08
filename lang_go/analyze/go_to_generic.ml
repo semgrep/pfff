@@ -239,13 +239,13 @@ and expr =
       let (v1, tok) = wrap arithmetic_operator v1
       and v2 = expr v2
       in
-      G.Call (G.IdSpecial (G.ArithOp v1, tok), fb[G.expr_to_arg v2])
+      G.Call (G.IdSpecial (G.Op v1, tok), fb[G.expr_to_arg v2])
   | Binary ((v1, v2, v3)) ->
       let v1 = expr v1
       and (v2, tok) = wrap arithmetic_operator v2
       and v3 = expr v3
       in
-      G.Call (G.IdSpecial (G.ArithOp v2, tok), fb([v1;v3] |> List.map G.expr_to_arg))
+      G.Call (G.IdSpecial (G.Op v2, tok), fb([v1;v3] |> List.map G.expr_to_arg))
   | CompositeLit ((v1, v2)) ->
       let v1 = type_ v1 and (_t1, v2, _t2) = bracket (list init) v2 in
       G.Call (G.IdSpecial (G.New, fake "new"), 

@@ -152,8 +152,8 @@ and expr =
  | Ref   of tok (* & *) * expr
  | Receive of tok * expr (* denote a channel *)
 
- | Unary of         AST_generic.arithmetic_operator (* +/-/~/! *) wrap * expr
- | Binary of expr * AST_generic.arithmetic_operator wrap * expr
+ | Unary of         AST_generic.operator (* +/-/~/! *) wrap * expr
+ | Binary of expr * AST_generic.operator wrap * expr
 
  (* x.(<type>), panic if false unless used as x, ok = x.(<type>) *)
  | TypeAssert of expr * type_
@@ -259,7 +259,7 @@ and stmt =
   *  a,b = foo()
   *)
  | Assign of expr list (* lhs, pattern *) * tok * expr list (* rhs *)
- | AssignOp of expr * AST_generic.arithmetic_operator wrap * expr
+ | AssignOp of expr * AST_generic.operator wrap * expr
  | IncDec of expr * AST_generic.incr_decr wrap * AST_generic.prefix_postfix
  (* declare or reassign, and special semantic when Receive operation *)
  | DShortVars of expr list * tok (* := *) * expr list

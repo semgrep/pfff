@@ -220,7 +220,7 @@ and expr =
       let var = { G.vinit = Some v2; vtype = None } in
       let n = G.IdQualified ((v1, G.empty_name_info), G.empty_id_info()) in
       let next = (G.AssignOp (n, (nextop, tok), G.L (G.Int ("1", tok)))) in
-      let cond = G.Call (G.IdSpecial (G.ArithOp condop, tok),
+      let cond = G.Call (G.IdSpecial (G.Op condop, tok),
                          G.fake_bracket [G.Arg n; G.Arg v4]) in
       let header = G.ForClassic ([G.ForInitVar (ent, var)],
                                  Some cond, Some next) in

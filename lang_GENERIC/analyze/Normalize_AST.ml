@@ -41,7 +41,7 @@ let normalize2 any lang =
       (* apply on children *)
       let e = k e in
       match e with
-      | Call (IdSpecial (ArithOp op, tok), (lp,[a; b],rp))
+      | Call (IdSpecial (Op op, tok), (lp,[a; b],rp))
         when lang <> Lang.Python ->
         (* != can be a method call in Python *)
         let rewrite_opt =
@@ -52,9 +52,9 @@ let normalize2 any lang =
         (match rewrite_opt with
         | None -> e
         | Some (not_op, other_op) ->
-          Call (IdSpecial (ArithOp not_op, tok),
+          Call (IdSpecial (Op not_op, tok),
                 (lp, 
-                 [Arg (Call (IdSpecial (ArithOp other_op, tok), fb [a;b]))],
+                 [Arg (Call (IdSpecial (Op other_op, tok), fb [a;b]))],
                  rp))
         )
       | _ -> e

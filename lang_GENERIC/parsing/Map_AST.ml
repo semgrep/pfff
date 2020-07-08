@@ -249,6 +249,8 @@ and map_literal =
   | Int v1 -> let v1 = map_wrap map_of_string v1 in Int ((v1))
   | Float v1 -> let v1 = map_wrap map_of_string v1 in Float ((v1))
   | Imag v1 -> let v1 = map_wrap map_of_string v1 in Imag ((v1))
+  | Ratio v1 -> let v1 = map_wrap map_of_string v1 in Ratio ((v1))
+  | Atom v1 -> let v1 = map_wrap map_of_string v1 in Atom ((v1))
   | Char v1 -> let v1 = map_wrap map_of_string v1 in Char ((v1))
   | String v1 -> let v1 = map_wrap map_of_string v1 in String ((v1))
   | Regexp v1 -> let v1 = map_wrap map_of_string v1 in Regexp ((v1))
@@ -273,7 +275,8 @@ and map_special =
   | Sizeof -> Sizeof
   | New -> New
   | Spread -> Spread
-  | ArithOp v1 -> let v1 = map_arithmetic_operator v1 in ArithOp ((v1))
+  | HashSplat -> HashSplat
+  | Op v1 -> let v1 = map_arithmetic_operator v1 in Op ((v1))
   | EncodedString v1 -> let v1 = map_wrap map_of_string v1 in EncodedString ((v1))
   | IncrDecr ((v1, v2)) ->
       let v1 = map_of_incdec v1 and v2 = map_of_prepost v2 in IncrDecr ((v1, v2))

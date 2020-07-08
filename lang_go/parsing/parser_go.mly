@@ -185,7 +185,7 @@ let rev_and_fix_items xs =
 
 /*(* tokens with "values" (was LLITERAL before) *)*/
 %token  <string * Ast_go.tok> LINT LFLOAT  LIMAG  LRUNE LSTR
-%token  <AST_generic.arithmetic_operator * Ast_go.tok> LASOP 
+%token  <AST_generic.operator * Ast_go.tok> LASOP 
 %token  <string * Ast_go.tok> LNAME 
 
 /*(*-----------------------------------------*)*/
