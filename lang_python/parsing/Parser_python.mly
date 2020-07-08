@@ -149,7 +149,7 @@ let mk_str ii =
 (* operators *)
 %token <AST_python.tok> 
   ADD            (* + *)  SUB            (* - *)
-  MULT "*"       (* * *)  DIV            (* / *)
+  MULT "*"       (* * *)  DIV "/"        (* / *)
   MOD            (* % *)
   POW  "**"      (* ** *)  FDIV           (* // *)
   BITOR          (* | *)  BITAND         (* & *)  BITXOR         (* ^ *)
@@ -216,7 +216,14 @@ tuple(X):
 (* Toplevel *)
 (*************************************************************************)
 
-main: file_input EOF { $1 }
+main:
+ | file_input EOF { $1 }
+ (* Handles trailing indentation.
+  * Note that I couldn't figure out why the lexer spits this out,
+  * but I didn't want to mess with its state machine too much,
+  * so I just match against the relavent output here.
+  *)
+ | file_input INDENT NEWLINE DEDENT NEWLINE EOF { $1 }
 
 file_input: nl_or_stmt* { List.flatten $1 }
 
@@ -225,10 +232,12 @@ nl_or_stmt:
  | stmt    { $1 }
 
 sgrep_spatch_pattern:
- | test       EOF            { Expr $1 }
-
- | small_stmt EOF            { match $1 with [x] -> Stmt x | xs -> Stmts xs }
- | small_stmt NEWLINE EOF    { match $1 with [x] -> Stmt x | xs -> Stmts xs }
+ | small_stmt NEWLINE? EOF   {
+   match $1 with
+   | [ExprStmt x] -> Expr x
+   | [x] -> Stmt x
+   | xs -> Stmts xs
+ }
  | compound_stmt EOF         { Stmt $1 }
  | compound_stmt NEWLINE EOF { Stmt $1 }
 
@@ -265,8 +274,11 @@ import_from:
       { [ImportFrom ($1, $2, $4)] }
 
 name_and_level:
-  |           dotted_name { $1, None }
-  | dot_level dotted_name { $2, Some $1 }
+  | dot_level dotted_name {
+    match $1 with
+    | [] -> $2, None
+    | dl -> $2, Some dl
+  }
   | "." dot_level         { [("",$1(*TODO*))], Some ($1 :: $2) }
   | "..." dot_level         { [("",$1(*TODO*))], Some ($1:: $2) }
 
@@ -368,19 +380,29 @@ typedargslist:
 (* the original grammar enforces more restrictions on the order between
    * Param, ParamStar, and ParamPow, but each language version relaxed it *)
 typed_parameter:
-  | tfpdef           { ParamClassic (mk_name_param $1, None) }
+  | tfpdef_or_fpdef { ParamPattern (fst $1, snd $1) }
   (* TODO check default args come after variable args later *)
-  | tfpdef "=" test   { ParamClassic (mk_name_param $1, Some $3) }
+  | tfpdef "=" test { ParamDefault (mk_name_param $1, $3) }
   | "*" tfpdef      { ParamStar (fst $2, snd $2) }
   | "*"             { ParamSingleStar $1 }
-  | "**" tfpdef       { ParamPow (fst $2, snd $2) }
+  (* python3-ext: https://www.python.org/dev/peps/pep-0570/ *)
+  | "/"             { ParamSlash $1 }
+  | "**" tfpdef     { ParamPow (fst $2, snd $2) }
   (* sgrep-ext: *)
-  | "..."         { Flag_parsing.sgrep_guard (ParamEllipsis $1) }
+  | "..."           { Flag_parsing.sgrep_guard (ParamEllipsis $1) }
 
 tfpdef:
   | NAME            { $1, None }
   (* typing-ext: *)
-  | NAME ":" test { $1, Some $3 }
+  | NAME ":" test   { $1, Some $3 }
+
+tfpdef_or_fpdef:
+  | tfpdef          { PatternName (fst $1), snd $1 }
+  (* python2-ext:
+   * Note that this allows mixed typed and pattern parameters,
+   * which are actually exclusive between Python 2 and 3
+   *)
+  | "(" fplist ")"  { PatternTuple $2, None }
 
 
 (* without types, as in lambda *)
@@ -391,12 +413,20 @@ varargslist:
 
 (* python3-ext: can be in any order, ParamStar before or after Classic *)
 parameter:
-  | vfpdef         { ParamClassic (($1, None), None) }
-  | vfpdef "=" test { ParamClassic (($1, None), Some $3) }
-  | "*" NAME      { ParamStar ($2, None) }
+  | fpdef           { ParamPattern ($1, None) }
+  | NAME "=" test   { ParamDefault (($1, None), $3) }
+  | "*" NAME        { ParamStar ($2, None) }
+  (* python3-ext: https://www.python.org/dev/peps/pep-0570/ *)
+  | "/"             { ParamSlash $1 }
   | "**" NAME       { ParamPow ($2, None) }
 
-vfpdef: NAME { $1 }
+fpdef:
+  | NAME           { PatternName $1 }
+  | "(" fplist ")" { PatternTuple $2 }
+
+fplist:
+  | fpdef            { [$1] }
+  | fpdef "," fplist { $1::$3 }
 
 (*************************************************************************)
 (* Class definition *)
@@ -500,6 +530,9 @@ raise_stmt:
   | RAISE test                      { Raise ($1, Some ($2, None)) }
   (* python3-ext: *)
   | RAISE test FROM test            { Raise ($1, Some ($2, Some $4)) }
+  (* python2-ext: *)
+  | RAISE test "," test             { RaisePython2 ($1, $2, Some $4, None) }
+  | RAISE test "," test "," test    { RaisePython2 ($1, $2, Some $4, Some $6) }
 
 
 global_stmt: GLOBAL list_sep(NAME, ",") { Global ($1, $2) }
@@ -874,7 +907,7 @@ lambdadef: LAMBDA varargslist ":" test { Lambda ($2, $4) }
 (*----------------------------*)
 
 testlist_comp:
-  | namedexpr_or_star_expr comp_for  { CompForIf ($1, $2) }
+  | namedexpr_or_star_expr listcomp_for  { CompForIf ($1, $2) }
   | tuple(namedexpr_or_star_expr)    { CompList (AST_generic.fake_bracket (to_list $1)) }
 
 (* mostly equivalent to testlist_comp, but transform a single expression
@@ -887,7 +920,13 @@ testlist_comp_or_expr:
     | Tup l -> Tuple (CompList (AST_generic.fake_bracket l), Load)
    }
 
-
+(* supports comp_for when used generically -- not inside atom_list
+ * Note that the division here is necessary to solve a shift-reduce conflict between:
+ *   foo(x for x in bar, baz)
+ * in Python 3, and
+ *   foo = [x for x in 1, 2]
+ * in Python 2
+ *)
 comp_for: 
  | sync_comp_for       { $1 }
  | ASYNC sync_comp_for { (* TODO *) $2 }
@@ -897,6 +936,28 @@ sync_comp_for:
     { [CompFor (tuple_expr_store $2, $4)] }
   | FOR exprlist IN or_test comp_iter 
     { [CompFor (tuple_expr_store $2, $4)] @ $5 }
+
+
+(* support mixed python2 / python3 comp_for only when used inside atom_list *)
+listcomp_for:
+ | listsync_comp_for       { $1 }
+ | ASYNC listsync_comp_for { (* TODO *) $2 }
+
+list_for:
+  or_test "," list_for_rest {
+    List (CompList (AST_generic.fake_bracket ($1::$3)), Load)
+  }
+
+list_for_rest:
+  | or_test                   { [$1] }
+  | or_test "," list_for_rest { $1::$3 }
+
+listsync_comp_for:
+  | sync_comp_for { $1 }
+  (* python2-ext: [x for x in 1, 2] *)
+  | FOR exprlist IN list_for { [CompFor (tuple_expr_store $2, $4) ] }
+
+(* /comp_for *)
 
 comp_iter:
   | comp_for { $1 } 

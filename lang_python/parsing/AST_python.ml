@@ -273,11 +273,15 @@ type expr =
       (* the first expr can be only a Name or a Tuple (pattern?),
        * and the Name can have a type associated with it
        *)
-     | ParamClassic of (name * type_ option) * expr option (* default value *)
+     | ParamDefault of (name * type_ option) * expr (* default value *)
+     (* pattern can be either a name or a tuple pattern *)
+     | ParamPattern of param_pattern * type_ option
      | ParamStar of (name * type_ option)
      (* python3: single star delimiter to force keyword-only arguments after.
       * reference: https://www.python.org/dev/peps/pep-3102/ *)
      | ParamSingleStar of tok
+     (* python3: single slash delimiter to force positional-only arguments prior. *)
+     | ParamSlash of tok
      | ParamPow  of (name * type_ option)
      (* sgrep-ext: *)
      | ParamEllipsis of tok
@@ -317,9 +321,13 @@ and type_parent = argument
 (*****************************************************************************)
 (*s: type [[AST_python.pattern]] *)
 (* Name, or Tuple? or more? *)
-type pattern = expr
+and pattern = expr
 (*e: type [[AST_python.pattern]] *)
  [@@deriving show]  (* with tarzan *)
+
+and param_pattern =
+  | PatternName of name
+  | PatternTuple of param_pattern list
 
 (*****************************************************************************)
 (* Statement *)
@@ -353,6 +361,7 @@ type stmt =
   | Pass of tok
 
   | Raise of tok * (expr * expr option (* from *)) option
+  | RaisePython2 of tok * expr * expr option (* arguments *) * expr option (* location *)
   | TryExcept of tok * stmt list (* body *) * excepthandler list (* handlers *)
            * stmt list (* orelse *)
   | TryFinally of tok * stmt list (* body *) * tok * stmt list (* finalbody *)

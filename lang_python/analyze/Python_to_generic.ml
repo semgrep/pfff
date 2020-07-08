@@ -416,14 +416,24 @@ and slice e =
       G.SliceAccess (e, v1, v2, v3)
 (*e: function [[Python_to_generic.slice]] *)
 
+and param_pattern = function
+  | PatternName n -> G.PatId (name n, G.empty_id_info())
+  | PatternTuple t -> G.PatTuple (list param_pattern t)
+
 (*s: function [[Python_to_generic.parameters]] *)
 and parameters xs =
   xs |> List.map (function
-  | ParamClassic ((n, topt), eopt) ->
+  | ParamDefault ((n, topt), e) ->
      let n = name n in
      let topt = option type_ topt in
-     let eopt = option expr eopt in
-     G.ParamClassic { (G.param_of_id n) with G.ptype = topt; pdefault = eopt; }
+     let e = expr e in
+     G.ParamClassic { (G.param_of_id n) with G.ptype = topt; pdefault = Some e; }
+  | ParamPattern ((PatternName n, topt)) ->
+     let n = name n
+     and topt = option type_ topt in
+     G.ParamClassic { (G.param_of_id n) with G.ptype = topt }
+  | ParamPattern ((PatternTuple pat, _)) ->
+     G.ParamPattern (G.PatTuple (list param_pattern pat))
   | ParamStar (n, topt) ->
      let n = name n in
      let topt = option type_ topt in
@@ -437,6 +447,8 @@ and parameters xs =
    | ParamEllipsis tok -> G.ParamEllipsis tok
    | ParamSingleStar tok ->
      G.OtherParam (G.OPO_SingleStarParam, [G.Tk tok])
+   | ParamSlash tok ->
+     G.OtherParam (G.OPO_SlashParam, [G.Tk tok])
   )
 (*e: function [[Python_to_generic.parameters]] *)
 
@@ -580,10 +592,10 @@ and stmt_aux x =
 
   | Raise (t, v1) ->
       (match v1 with
-      | Some (e, None) -> 
-        let e = expr e in 
+      | Some (e, None) ->
+        let e = expr e in
         [G.Throw (t, e)]
-      | Some (e, Some from) -> 
+      | Some (e, Some from) ->
         let e = expr e in
         let from = expr from in
         let st = G.Throw (t, e) in
@@ -591,6 +603,21 @@ and stmt_aux x =
       | None ->
         [G.OtherStmt (G.OS_ThrowNothing, [G.Tk t])]
       )
+  | RaisePython2 (t, e, v2, v3) ->
+    let e = expr e in
+    let st = G.Throw (t, e) in
+    (match (v2, v3) with
+    | (Some args, Some loc) ->
+      let args = expr args
+      and loc = expr loc
+      in
+      [G.OtherStmt (G.OS_ThrowArgsLocation, [G.E loc; G.E args; G.S st])]
+    | (Some args, None) ->
+      let args = expr args in
+      [G.OtherStmt (G.OS_ThrowArgsLocation, [G.E args; G.S st])]
+    | (None, _) ->
+      [st]
+    )
                   
   | TryExcept ((t, v1, v2, v3)) ->
       let v1 = list_stmt1 v1

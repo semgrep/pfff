@@ -243,10 +243,14 @@ and v_parameters v = v_list v_parameter v
 and v_parameter x =
   let k x = 
   match x with
-  | ParamSingleStar v1 -> v_tok v1; ()
+  | ParamSingleStar v1 | ParamSlash v1 -> v_tok v1; ()
   | ParamEllipsis v1 -> v_tok v1; ()
-  | ParamClassic ((v1, v2)) ->
-      let v1 = v_name_and_type v1 and v2 = v_option v_expr v2 in ()
+  | ParamDefault ((v1, v2)) ->
+      let v1 = v_name_and_type v1 and v2 = v_expr v2 in ()
+  | ParamPattern ((v1, v2)) ->
+      let v1 = v_param_pattern v1
+      and v2 = v_option v_type_ v2
+      in ()
   | ParamStar ((v1, v2)) ->
       let v1 = v_name v1 and v2 = v_option v_type_ v2 in ()
   | ParamPow ((v1, v2)) ->
@@ -255,7 +259,13 @@ and v_parameter x =
   vin.kparameter (k, all_functions) x
 
 and v_name_and_type (v1, v2) =
-  let v1 = v_name v1 and v2 = v_option v_type_ v2 in ()
+  let v1 = v_name v1
+  and v2 = v_option v_type_ v2
+  in ()
+
+and v_param_pattern = function
+  | PatternName v1 -> v_name v1; ()
+  | PatternTuple v1 -> v_list v_param_pattern v1; ()
 
 and v_expr_and_opt_expr (v1, opt) = 
   let v1 = v_expr v1 in
@@ -342,6 +352,12 @@ and v_stmt x =
           (fun (v1, v2) ->
              let v1 = v_expr v1 and v2 = v_option v_expr v2 in ())
           v1
+      in ()
+  | RaisePython2 (t, v1, v2, v3) ->
+      let t = v_info t
+      and v1 = v_expr v1
+      and v2 = v_option v_expr v2
+      and v3 = v_option v_expr v3
       in ()
   | TryExcept ((t, v1, v2, v3)) ->
         let t = v_info t in

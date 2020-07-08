@@ -718,7 +718,8 @@ and stmt =
     | OS_Delete 
     (* todo: reduce? transpile? *)
     | OS_ForOrElse | OS_WhileOrElse | OS_TryOrElse
-    | OS_ThrowFrom | OS_ThrowNothing 
+    | OS_ThrowFrom | OS_ThrowNothing
+    | OS_ThrowArgsLocation (* Python2: `raise expr, expr` and `raise expr, expr, exr` *)
     | OS_Pass
     | OS_Async
     (* Java *)
@@ -1068,7 +1069,7 @@ and function_definition = {
 (*s: type [[AST_generic.other_parameter_operator]] *)
   and other_parameter_operator =
      (* Python *)
-     | OPO_KwdParam | OPO_SingleStarParam
+     | OPO_KwdParam | OPO_SingleStarParam | OPO_SlashParam
      (* Go *)
      | OPO_Receiver (* of parameter_classic, used to tag the "self" parameter*)
      (* PHP *) 
