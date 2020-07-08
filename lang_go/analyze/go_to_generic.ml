@@ -42,7 +42,8 @@ let error = AST_generic.error
 
 let name_of_qualified_ident = function
   | Left id -> id, G.empty_name_info
-  | Right (xs, id) -> id, { G.name_qualifier = Some xs; name_typeargs = None }
+  | Right (xs, id) -> id, 
+      { G.name_qualifier = Some (G.QDots xs); name_typeargs = None }
 
 let fake s = Parse_info.fake_info s
 let fake_id s = (s, fake s)

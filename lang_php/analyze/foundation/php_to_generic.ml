@@ -62,7 +62,7 @@ let name_of_qualified_ident xs =
   match List.rev (qualified_ident xs) with
   | [] -> raise Impossible
   | [x] -> x, { G.name_qualifier = None; name_typeargs = None }
-  | x::y::xs -> x, { G.name_qualifier = Some (List.rev (y::xs)); 
+  | x::y::xs -> x, { G.name_qualifier = Some (G.QDots (List.rev (y::xs))); 
                        name_typeargs = None }
 
 let name v = qualified_ident v

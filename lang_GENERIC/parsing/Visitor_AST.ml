@@ -105,7 +105,10 @@ and v_ident v =
 
 and v_dotted_ident v = v_list v_ident v
 
-and v_qualifier v = v_dotted_ident v
+and v_qualifier = function
+ | QDots v -> v_dotted_ident v
+ | QTop t -> v_tok t
+ | QExpr (e, t) -> v_expr e; v_tok t
 
 and v_module_name =
   function

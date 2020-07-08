@@ -229,7 +229,10 @@ type name = ident * name_info
   (* todo: not enough in OCaml with functor and type args or C++ templates*)
 (*e: type [[AST_generic.name_info]] *)
 (*s: type [[AST_generic.qualifier]] *)
-  and qualifier = dotted_ident
+  and qualifier = 
+   | QTop of tok (* ::, Ruby, C++ *)
+   | QDots of dotted_ident (* Java *)
+   | QExpr of expr * tok (* Ruby *)
 (*e: type [[AST_generic.qualifier]] *)
 
 (*****************************************************************************)

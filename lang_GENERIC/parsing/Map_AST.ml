@@ -77,7 +77,10 @@ and map_ident v = map_wrap map_of_string v
   
 and map_dotted_ident v = map_of_list map_ident v
 
-and map_qualifier v = map_dotted_ident v
+and map_qualifier = function
+ | QDots v -> QDots (map_dotted_ident v)
+ | QTop t -> QTop (map_tok t)
+ | QExpr (e, t) -> let e = map_expr e in let t = map_tok t in QExpr(e, t)
   
 and map_module_name =
   function

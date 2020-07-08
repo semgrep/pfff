@@ -81,39 +81,60 @@ let rec expr = function
       binary op e1 e2
   | _ ->  raise Todo
 
+and binary_msg = function
+  | Op_PLUS ->   G.Plus
+  | Op_MINUS ->  G.Minus
+  | Op_TIMES ->  G.Mult
+  | Op_REM ->    G.Mod
+  | Op_DIV ->    G.Div
+  | Op_LSHIFT -> G.LSL
+  | Op_RSHIFT -> G.LSR
+  | Op_BAND ->   G.BitAnd
+  | Op_BOR ->    G.BitOr
+  | Op_XOR ->    G.BitXor
+  | Op_POW ->    G.Pow
+  | Op_CMP ->    G.Cmp
+  | Op_EQ ->     G.Eq
+  | Op_EQQ ->    G.PhysEq (* abuse PhysEq here, maybe not semantic*)
+  | Op_NEQ ->    G.NotEq
+  | Op_GEQ ->    G.GtE
+  | Op_LEQ ->    G.LtE
+  | Op_LT ->     G.Lt
+  | Op_GT ->     G.Gt
+  | Op_MATCH ->  G.RegexpMatch
+  | Op_NMATCH -> G.NotMatch
+  | Op_DOT2 -> G.Range
+  (* never in Binop, only in DotAccess or MethodDef *)
+  | Op_AREF | Op_ASET -> raise Impossible
+
 and binary (op, t) e1 e2 =
   match op with
   | B msg ->
+      let op = binary_msg msg in 
+     G.Call (G.IdSpecial (G.Op op, t), fb [G.Arg e1; G.Arg e2])
+  | Op_kAND | Op_AND -> 
+     G.Call (G.IdSpecial (G.Op G.And, t), fb [G.Arg e1; G.Arg e2])
+  | Op_kOR | Op_OR -> 
+     G.Call (G.IdSpecial (G.Op G.Or, t), fb [G.Arg e1; G.Arg e2])
+  | Op_ASSIGN ->
+     G.Assign (e1, t, e2)
+  | Op_OP_ASGN op ->
       let op = 
-        match msg with
-        | Op_PLUS ->   Left G.Plus
-        | Op_MINUS ->  Left G.Minus
-        | Op_TIMES ->  Left G.Mult
-        | Op_REM ->    Left G.Mod
-        | Op_DIV ->    Left G.Div
-        | Op_LSHIFT -> Left G.LSL
-        | Op_RSHIFT -> Left G.LSR
-        | Op_BAND ->   Left G.BitAnd
-        | Op_BOR ->    Left G.BitOr
-        | Op_XOR ->    Left G.BitXor
-        | Op_POW ->    Left G.Pow
-        | Op_CMP ->    Left G.Cmp
-        | Op_EQ ->     Left G.Eq
-        | Op_EQQ ->    Left G.PhysEq (* abuse PhysEq here, maybe not semantic*)
-        | Op_NEQ ->    Left G.NotEq
-        | Op_GEQ ->    Left G.GtE
-        | Op_LEQ ->    Left G.LtE
-        | Op_LT ->     Left G.Lt
-        | Op_GT ->     Left G.Gt
-        | Op_MATCH ->  raise Todo
-        | _ -> raise Todo
-      in 
-      (match op with
-      | Left op ->
-         G.Call (G.IdSpecial (G.Op op, t), fb [G.Arg e1; G.Arg e2])
-      | Right x -> x
-      )
-  | _ -> raise Todo
+        match op with
+        | B msg -> binary_msg msg
+        | Op_AND -> G.And
+        | Op_OR -> G.Or
+        (* see lexer_ruby.mll code for T_OP_ASGN *)
+        | _ -> raise Impossible
+      in
+     G.AssignOp (e1, (op, t), e2)
+   | Op_ASSOC -> 
+      G.Tuple ([e1;e2])
+   | Op_DOT3 ->
+     (* coupling: make sure to check for the string in generic_vs_generic *)
+     G.Call (G.IdSpecial (G.Op G.Range, t), fb [G.Arg e1; G.Arg e2])
+      
+
 
 and unary (op,t) e = 
   match op with

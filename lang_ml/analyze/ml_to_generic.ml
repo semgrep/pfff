@@ -58,11 +58,11 @@ let rec ident v = wrap string v
 
 and name (v1, v2) = 
   let v1 = qualifier v1 and v2 = ident v2 in 
-  v2, { G.empty_name_info with G.name_qualifier = Some v1 }
+  v2, { G.empty_name_info with G.name_qualifier = Some (G.QDots v1) }
 
 and module_name (v1, v2) = 
   let v1 = qualifier v1 and v2 = ident v2 in 
-  v1 @ [v2]
+  (v1 @ [v2])
 
 and qualifier v = list ident v
 

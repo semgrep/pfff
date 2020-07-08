@@ -125,7 +125,7 @@ type unary_op =
 
 type binary_op = 
   | B of binary_msg
-  (* not in msg_id *)
+  (* not in msg_id, like op_AND/Op_OR but lower precedence *)
   | Op_kAND     (* and *)  | Op_kOR      (* or *)
   (* not in msg_id but in Op_OP_ASGN *)
   | Op_AND      (* && *)  | Op_OR   (* || *)
@@ -161,10 +161,11 @@ type binary_op =
   | Op_MATCH    (* =~ *)
   | Op_NMATCH   (* !~ *)
 
+  | Op_DOT2     (* .. *)
+
+  (* only in DotAccess method_name or MethodDef; Never in Binop *)
   | Op_AREF     (* [] *)
   | Op_ASET     (* []= *)
-
-  | Op_DOT2     (* .. *)
 
  [@@deriving show { with_path = false }, eq, ord]
 

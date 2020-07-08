@@ -84,7 +84,7 @@ and class_type v =
   | name::xs ->
         let info = { G.
             name_typeargs = None; (* could be v1TODO above *)
-            name_qualifier = Some (List.rev xs);
+            name_qualifier = Some (G.QDots (List.rev xs));
           } in
         G.TyName ((name, info))
   )
@@ -200,7 +200,7 @@ and name v =
   | name::y::xs ->
         let name_info = { G.
             name_typeargs = None; (* could be v1TODO above *)
-            name_qualifier = Some (List.rev (y::xs));
+            name_qualifier = Some (G.QDots (List.rev (y::xs)));
           } in
         G.IdQualified ((name, name_info), G.empty_id_info())
   )
