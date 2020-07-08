@@ -438,7 +438,9 @@ and call_special _env (x, tok) =
   | G.Typeof -> Typeof | G.Instanceof -> Instanceof | G.Sizeof -> Sizeof
   | G.New -> New 
   | G.ConcatString _kindopt -> Concat | G.Spread -> Spread
-  | G.EncodedString _ -> todo (G.E (G.IdSpecial (x, tok)))
+  | G.EncodedString _ 
+  | G.Defined
+    -> todo (G.E (G.IdSpecial (x, tok)))
   ), tok
 
 and composite_kind = function

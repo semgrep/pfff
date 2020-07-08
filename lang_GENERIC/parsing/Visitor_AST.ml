@@ -255,6 +255,7 @@ and v_container_operator =
 
 and v_special =
   function
+  | Defined -> ()
   | This -> ()
   | Super -> ()
   | Self -> ()

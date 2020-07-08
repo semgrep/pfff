@@ -262,6 +262,7 @@ and map_container_operator =
 
 and map_special =
   function
+  | Defined -> Defined
   | This -> This
   | Super -> Super
   | Self -> Self

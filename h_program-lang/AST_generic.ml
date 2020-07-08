@@ -414,6 +414,7 @@ and expr =
    | Eval
    | Typeof (* for C? and Go in switch x.(type) *)
    | Instanceof | Sizeof (* takes a ArgType *)
+   | Defined (* defined? in Ruby, other? *)
    (* note that certain languages do not have a 'new' keyword 
     * (e.g., Python, Scala 3), instead certain 'Call' are really 'New' *)
    | New  (* usually associated with Call(New, [ArgType _;...]) *)
@@ -428,7 +429,11 @@ and expr =
     * regular calls even though they do not have parenthesis
     * (not all calls have parenthesis anyway, as in OCaml or Ruby).
     *)
-   | Spread (* inline list var, in Container or call context *)
+   (* inline list var, in Container or call context, a.k.a Splat in Ruby *)
+   | Spread (* ...x in JS, *x in Ruby *)
+   (* note: could add HashSplat ** in Python/Ruby instead of abusing pow, but
+    * this requires types in Python to know whether op is Pow or Spread.
+    *)
 
    (* used for unary and binary operations *)
    | ArithOp of arithmetic_operator
@@ -447,7 +452,8 @@ and expr =
     and arithmetic_operator = 
       | Plus (* unary too *) | Minus (* unary too *) 
       | Mult | Div | Mod
-      | Pow | FloorDiv | MatMult (* Python *)
+      | Pow (* **, for  power but also for HashSplat in Python/Ruby *)
+      | FloorDiv | MatMult (* Python *)
       | LSL | LSR | ASR (* L = logic, A = Arithmetic, SL = shift left *) 
       | BitOr | BitXor | BitAnd | BitNot (* unary *) | BitClear (* Go *)
       (* todo? rewrite in CondExpr? have special behavior *)

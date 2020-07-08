@@ -261,6 +261,7 @@ and vof_container_operator =
   | Dict -> OCaml.VSum (("Dict", []))
 and vof_special =
   function
+  | Defined -> OCaml.VSum (("Defined", []))
   | This -> OCaml.VSum (("This", []))
   | Super -> OCaml.VSum (("Super", []))
   | Self -> OCaml.VSum (("Self", []))

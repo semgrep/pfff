@@ -109,7 +109,7 @@ type unary_op =
   (* unary and msg_id *)
   | U of unary_msg
   (* not in msg_id *)
-  | Op_UNot      (* not x *)
+  | Op_UNot      (* not x, like Op_UBang but lower precedence *)
   | Op_DefinedQuestion (* defined? *)
 
   (* only in argument *)
@@ -185,12 +185,6 @@ type expr =
   (* old: was Binop(e1, Op_SCOPE, e2) or Unary(Op_UScope. e) *)
   | ScopedId of scope_resolution
 
-  (* in argument, pattern, exn, assignment lhs or rhs.
-   * old: was Unary(Op_UStar), or UOperator(Op_UStar).
-   * expr is None only when Splat is used as last element in assign.
-   *)
-  | Splat of tok (* '*', but also ',' in mlhs *) * expr option
-
   | Hash of bool * expr list bracket
   | Array of expr list bracket
   | Tuple of expr list
@@ -203,6 +197,12 @@ type expr =
   (* TODO: ArrayAccess of expr * expr list bracket *)
   (* old: was Binop(e1, Op_DOT, e2) before *)
   | DotAccess of expr * tok (* . or &. *) * method_name
+
+  (* in argument, pattern, exn, assignment lhs or rhs.
+   * old: was Unary(Op_UStar), or UOperator(Op_UStar).
+   * expr is None only when Splat is used as last element in assign.
+   *)
+  | Splat of tok (* '*', but also ',' in mlhs *) * expr option
 
   (* true = {}, false = do/end *)
   | CodeBlock of bool bracket * formal_param list option * stmts
