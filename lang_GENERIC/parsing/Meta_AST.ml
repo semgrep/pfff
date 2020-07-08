@@ -311,6 +311,9 @@ and vof_prepost =
 
 and vof_arithmetic_operator =
   function
+  | Range -> OCaml.VSum (("Range", []))
+  | RegexpMatch -> OCaml.VSum (("RegexpMatch", []))
+  | NotMatch -> OCaml.VSum (("NotMatch", []))
   | Concat -> OCaml.VSum (("Concat", []))
   | Plus -> OCaml.VSum (("Plus", []))
   | Minus -> OCaml.VSum (("Minus", []))

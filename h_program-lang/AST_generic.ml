@@ -466,6 +466,9 @@ and expr =
       | Cmp (* <=>, PHP *)
       (* todo: not really an arithmetic operator, maybe rename the type *)
       | Concat (* '.' PHP *)
+      | RegexpMatch (* =~, Ruby (and Perl) *) 
+      | NotMatch (* !~ Ruby less: could be desugared to Not RegexpMatch *)
+      | Range (* .. or ..., Ruby *)
 (*e: type [[AST_generic.arithmetic_operator]] *)
 (*s: type [[AST_generic.incr_decr]] *)
     and incr_decr = Incr | Decr (* '++', '--' *)
@@ -491,7 +494,7 @@ and expr =
 
 (*s: type [[AST_generic.field_ident]] *)
   and field_ident =
-    | FId of ident (* hard to put '* id_info' here, hard to resolve *)
+    | FId of ident (* hard to add '* id_info' here, hard to resolve *)
     (*s: [[AST_generic.field_ident]] other cases *)
     | FName of name (* OCaml *)
     | FDynamic of expr (* PHP, JS (even though use ArrayAccess for that) *)
@@ -584,10 +587,13 @@ and expr =
     | OE_Unpack
     (* OCaml *)
     | OE_RecordWith | OE_RecordFieldName
-    | OE_StmtExpr (* OCaml has just expressions, no statements *)
-    | OE_Todo
     (* Go *)
     | OE_Send | OE_Recv
+    (* Ruby *)
+    (* Other *)
+    | OE_StmtExpr (* OCaml/Ruby have just expressions, no statements *)
+    | OE_Todo
+
 (*e: type [[AST_generic.other_expr_operator]] *)
 
 (*****************************************************************************)
@@ -737,7 +743,7 @@ and stmt =
     | OS_Fallthrough (* only in Switch *)
     (* PHP *)
     | OS_GlobalComplex (* e.g., global $$x, argh *)
-    (* OCaml *)
+    (* Other *)
     | OS_Todo
 (*e: type [[AST_generic.other_stmt_operator]] *)
 
@@ -794,10 +800,10 @@ and pattern =
 
 (*s: type [[AST_generic.other_pattern_operator]] *)
   and other_pattern_operator =
-  (* Python *)
-  | OP_Expr (* todo: should transform via expr_to_pattern() below *)
-  (* OCaml *)
+  (* Other *)
+  | OP_Expr (* todo: Python should transform via expr_to_pattern() below *)
   | OP_Todo
+
 (*e: type [[AST_generic.other_pattern_operator]] *)
 
 (*****************************************************************************)
@@ -867,15 +873,13 @@ and type_ =
 
 (*s: type [[AST_generic.other_type_operator]] *)
   and other_type_operator = 
-  (* Python *)
-  | OT_Expr | OT_Arg (* todo: should use expr_to_type() below when can *)
-  (* C *)
-  (* todo? convert in unique names with TyName? *)
+  (* C *) (* todo? convert in unique names with TyName? *)
   | OT_StructName | OT_UnionName | OT_EnumName 
   (* PHP *)
   | OT_ShapeComplex (* complex TyAnd with complex keys *) 
   | OT_Variadic (* ???? *)
-  (* OCaml *)
+  (* Other *)
+  | OT_Expr | OT_Arg (* Python: todo: should use expr_to_type() when can *)
   | OT_Todo
 (*e: type [[AST_generic.other_type_operator]] *)
 
@@ -919,8 +923,8 @@ and attribute =
     | OA_StrictFP | OA_Transient | OA_Synchronized | OA_Native | OA_Default
     | OA_AnnotJavaOther
     | OA_AnnotThrow
-    (* Python *)
-    | OA_Expr (* todo: should transform in NamedAttr when can *)
+    (* Other *)
+    | OA_Expr (* todo: Python, should transform in NamedAttr when can *)
 (*e: type [[AST_generic.other_attribute_operator]] *)
 
 (*****************************************************************************)
@@ -1080,7 +1084,7 @@ and function_definition = {
      | OPO_Receiver (* of parameter_classic, used to tag the "self" parameter*)
      (* PHP *) 
      | OPO_Ref (* of parameter_classic *)
-     (* OCaml *) 
+     (* Other *) 
      | OPO_Todo
 (*e: type [[AST_generic.other_parameter_operator]] *)
 
@@ -1532,12 +1536,14 @@ let is_boolean_operator = function
  | Pow | FloorDiv | MatMult (* Python *)
  | LSL | LSR | ASR (* L = logic, A = Arithmetic, SL = shift left *) 
  | BitOr | BitXor | BitAnd | BitNot | BitClear (* unary *)
+ | Range
   -> false
  | And | Or | Xor | Not
  | Eq     | NotEq     
  | PhysEq | NotPhysEq 
  | Lt | LtE | Gt | GtE 
  | Cmp | Concat
+ | RegexpMatch | NotMatch
    -> true
 (*e: function [[AST_generic.is_boolean_operator]] *)
 

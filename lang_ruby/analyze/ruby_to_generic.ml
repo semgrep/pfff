@@ -62,7 +62,12 @@ let ident x = wrap string x
 
 let rec expr = function
   | Literal x -> literal x
-  | Id (id, _kind) -> G.Id (ident id, G.empty_id_info())
+  | Id (id, kind) -> 
+      (match kind with
+      | ID_Self -> G.IdSpecial (G.Self, (snd id))
+      | ID_Super -> G.IdSpecial (G.Super, (snd id))
+      | _ -> G.Id (ident id, G.empty_id_info())
+      )
   | ScopedId _x -> raise Todo
   | Hash (_bool, xs) -> G.Container (G.Dict, bracket (list expr) xs)
   | Array (xs) -> G.Container (G.Array, bracket (list expr) xs)      
