@@ -175,6 +175,7 @@ and formal_param_pattern = function
   | Formal_tuple (_t1, xs, _t2) ->
       let xs = list formal_param_pattern xs in
       G.PatTuple (xs)
+
   | Formal_amp _ | Formal_star _ | Formal_rest _ 
   | Formal_default _ | Formal_hash_splat _ | Formal_kwd _ as x ->
       todo (Pa x)
@@ -218,6 +219,11 @@ and method_name mn =
       | [StrChars s] -> Left (s, t)
       | _ -> todo (Mn mn)
       )
+
+and method_name_to_any mn = 
+  match method_name mn with
+  | Left id -> G.I id
+  | Right e -> G.E e
 
 and binary_msg = function
   | Op_PLUS ->   G.Plus
@@ -414,7 +420,78 @@ and option_tok_stmts x =
 
 and definition def = 
   match def with
-  | _ -> todo (Def def)
+  | MethodDef (_t, kind, params, body) -> 
+      (match kind with
+      | M mn -> 
+        (match method_name mn with
+        | Left id -> 
+           let ent = G.basic_entity id [] in
+           let params = list formal_param params in
+           let body = body_exn body in
+           let def = { G.fparams = params; frettype = None; fbody = body } in
+           G.DefStmt (ent, G.FuncDef def)
+        | Right _e -> todo (Def def)
+        )
+      | SingletonM _ -> todo (Def def)
+      )
+  | ClassDef (_t, kind, body) ->
+      (match kind with
+      | C (name, inheritance_opt) ->
+         let extends = 
+            match inheritance_opt with
+            | None -> []
+            | Some (_t2, e) ->
+               let e = expr e in
+               [G.expr_to_type e]
+         in
+         (match name with 
+         | NameConstant id -> 
+             let ent = G.basic_entity id [] in
+             let body = body_exn body in
+             let def = { G.ckind = G.Class; cextends = extends;
+                         (* TODO: this is done by special include/require
+                           builtins *)
+                         cimplements = []; cmixins = []; 
+                         cbody = fb ([G.FieldStmt body]);
+                       } in
+             G.DefStmt (ent, G.ClassDef def)
+         | NameScope _ -> todo (Def def)
+         )
+      | SingletonC _ -> todo (Def def)
+      )
+  | ModuleDef (_t, name, body) ->
+      let body = body_exn body in
+      (match name with
+      | NameConstant id ->
+            let ent = G.basic_entity id [] in
+            let mkind = G.ModuleStruct (None, [body]) in
+            let def = { G.mbody = mkind } in
+            G.DefStmt (ent, G.ModuleDef def)
+      | NameScope _ -> todo (Def def)
+      )
+  | BeginBlock (_t, (t1, st, t2)) ->
+      let st = stmts st in
+      let st = G.Block (t1, st, t2) in
+      G.OtherStmtWithStmt (G.OSWS_BEGIN, None, st)
+  | EndBlock (_t, (t1, st, t2)) ->
+      let st = stmts st in
+      let st = G.Block (t1, st, t2) in
+      G.OtherStmtWithStmt (G.OSWS_END, None, st)
+
+  | Alias (t, mn1, mn2) ->
+      let mn1 = method_name_to_any mn1 in
+      let mn2 = method_name_to_any mn2 in
+      G.DirectiveStmt (G.OtherDirective (G.OI_Alias, [G.Tk t; mn1; mn2]))
+  | Undef (t, mns) ->
+      let mns = list method_name_to_any mns in
+      G.DirectiveStmt (G.OtherDirective (G.OI_Undef, (G.Tk t)::mns))
+
+and body_exn x = 
+  match x with
+  | { body_exprs = xs; rescue_exprs = []; ensure_expr = None; else_expr = None}
+    -> stmts xs |> stmt1
+  | _ -> todo (S2 (ExnBlock x))
+
 
 and stmts xs = 
   list expr_as_stmt xs

@@ -600,7 +600,7 @@ and vof_stmt =
       in OCaml.VSum (("Assert", [ t; v1; v2 ]))
   | OtherStmtWithStmt ((v1, v2, v3)) ->
       let v1 = vof_other_stmt_with_stmt_operator v1
-      and v2 = vof_expr v2
+      and v2 = OCaml.vof_option vof_expr v2
       and v3 = vof_stmt v3
       in OCaml.VSum (("OtherStmtWithStmt", [ v1; v2; v3 ]))
   | OtherStmt ((v1, v2)) ->
@@ -609,6 +609,9 @@ and vof_stmt =
       in OCaml.VSum (("OtherStmt", [ v1; v2 ]))
 and vof_other_stmt_with_stmt_operator = function
   | OSWS_With -> OCaml.VSum (("OSWS_With", []))
+  | OSWS_BEGIN -> OCaml.VSum (("OSWS_BEGIN", []))
+  | OSWS_END -> OCaml.VSum (("OSWS_END", []))
+
 
 and vof_label_ident =
   function
@@ -1048,6 +1051,9 @@ and vof_other_directive_operator =
   | OI_Export -> OCaml.VSum (("OI_Export", []))
   | OI_ImportCss -> OCaml.VSum (("OI_ImportCss", []))
   | OI_ImportEffect -> OCaml.VSum (("OI_ImportEffect", []))
+  | OI_Alias -> OCaml.VSum (("OI_Alias", []))
+  | OI_Undef -> OCaml.VSum (("OI_Undef", []))
+
 and vof_item x = vof_stmt x
 and vof_program v = OCaml.vof_list vof_item v
 and vof_any =

@@ -649,7 +649,7 @@ and stmt =
   (*e: [[AST_generic.stmt]] semgrep extensions cases *)
   (*s: [[AST_generic.stmt]] OtherXxx case *)
   (* this is important to correctly compute a CFG *)
-  | OtherStmtWithStmt of other_stmt_with_stmt_operator * expr * stmt
+  | OtherStmtWithStmt of other_stmt_with_stmt_operator * expr option * stmt
   (* any here should not contain any statement! otherwise the CFG will be
    * incorrect and some analysis (e.g., liveness) will be incorrect.
    * TODO: other_stmt_operator wrap, so enforce at least one token instead
@@ -725,6 +725,8 @@ and stmt =
   and other_stmt_with_stmt_operator = 
     (* Python *)
     | OSWS_With (* newscope: newvar: in OtherStmtWithStmt with LetPattern *)
+    (* Ruby *)
+    | OSWS_BEGIN | OSWS_END (* also in Awk, Perl? *)
 (*e: type [[AST_generic.other_stmt_with_stmt_operator]] *)
 
 (*s: type [[AST_generic.other_stmt_operator]] *)
@@ -1289,6 +1291,8 @@ and directive =
 (*e: type [[AST_generic.other_directive_operator]] *)
   (* C/PHP *)
   (* TODO: Pragma/Declare, move OE_UseStrict here for JS? *)
+  (* Ruby *)
+  | OI_Alias | OI_Undef
 
 
 (*****************************************************************************)

@@ -446,7 +446,7 @@ and map_stmt x =
       in Assert ((t, v1, v2))
   | OtherStmtWithStmt ((v1, v2, v3)) ->
       let v1 = map_other_stmt_with_stmt_operator v1
-      and v2 = map_expr v2
+      and v2 = map_of_option map_expr v2
       and v3 = map_stmt v3
       in OtherStmtWithStmt ((v1, v2, v3))
   | OtherStmt ((v1, v2)) ->

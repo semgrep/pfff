@@ -583,8 +583,8 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
        );
        None
    (* TODO? should create a OtherStmtWithStmtFooter and arc to it? *)
-   | OtherStmtWithStmt (op, e, st) ->
-     let header = F.OtherStmtWithStmtHeader (op, e) in
+   | OtherStmtWithStmt (op, eopt, st) ->
+     let header = F.OtherStmtWithStmtHeader (op, eopt) in
      let newi = state.g#add_node { F.n = header; i = i () }in
      state.g |> add_arc_opt (previ, newi);
      cfg_stmt state (Some newi) st

@@ -427,7 +427,7 @@ and v_stmt x =
         let v1 = v_expr v1 and v2 = v_option v_expr v2 in ()
   | OtherStmtWithStmt ((v1, v2, v3)) ->
       let v1 = v_other_stmt_with_stmt_operator v1 
-      and v2 = v_expr v2 
+      and v2 = v_option v_expr v2 
       and v3 = v_stmt v3
       in ()
   | OtherStmt ((v1, v2)) ->
@@ -700,11 +700,8 @@ and v_directive x =
   in
   vin.kdir (k, all_functions) x
 and v_alias (v1, v2) = let v1 = v_ident v1 and v2 = v_option v_ident v2 in ()
-and v_other_directive_operator =
-  function
-  | OI_Export -> ()
-  | OI_ImportCss -> ()
-  | OI_ImportEffect -> ()
+and v_other_directive_operator _ = ()
+
 and v_program v = v_stmts v
 and v_any =
   function
