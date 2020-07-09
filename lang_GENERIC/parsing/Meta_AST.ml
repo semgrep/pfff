@@ -670,6 +670,8 @@ and vof_for_var_or_expr =
       let v1 = vof_expr v1 in OCaml.VSum (("ForInitExpr", [ v1 ]))
 and vof_other_stmt_operator =
   function
+  | OS_Redo -> OCaml.VSum (("OS_Redo", []))
+  | OS_Retry -> OCaml.VSum (("OS_Retry", []))
   | OS_Todo -> OCaml.VSum (("OS_Todo", []))
   | OS_Delete -> OCaml.VSum (("OS_Delete", []))
   | OS_Async -> OCaml.VSum (("OS_Async", []))
@@ -1068,4 +1070,6 @@ and vof_any =
   | At v1 -> let v1 = vof_attribute v1 in OCaml.VSum (("At", [ v1 ]))
   | Dk v1 -> let v1 = vof_definition_kind v1 in OCaml.VSum (("Dk", [ v1 ]))
   | Pr v1 -> let v1 = vof_program v1 in OCaml.VSum (("Pr", [ v1 ]))
+  | Lbli v1 -> let v1 = vof_label_ident v1 in OCaml.VSum ("Lbli", [v1])
+  | Fldi v1 -> let v1 = vof_field_ident v1 in OCaml.VSum ("Fldi", [v1])
   

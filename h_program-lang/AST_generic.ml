@@ -746,6 +746,8 @@ and stmt =
     | OS_Fallthrough (* only in Switch *)
     (* PHP *)
     | OS_GlobalComplex (* e.g., global $$x, argh *)
+    (* Ruby *)
+    | OS_Redo | OS_Retry
     (* Other *)
     | OS_Todo
 (*e: type [[AST_generic.other_stmt_operator]] *)
@@ -1333,6 +1335,8 @@ and any =
   | Dk of definition_kind
   | Di of dotted_ident
   | Fld of field
+  | Lbli of label_ident
+  | Fldi of field_ident
   | Tk of tok
   (*e: [[AST_generic.any]] other cases *)
 (*e: type [[AST_generic.any]] *)

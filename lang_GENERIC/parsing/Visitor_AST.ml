@@ -726,6 +726,8 @@ and v_any =
   | Pr v1 -> let v1 = v_program v1 in ()
   | I v1 -> let v1 = v_ident v1 in ()
   | Tk v1 -> let v1 = v_tok v1 in ()
+  | Lbli v1 -> v_label_ident v1
+  | Fldi v1 -> v_field_ident v1
   
 
 and all_functions x = v_any x

@@ -822,6 +822,8 @@ and map_any =
   | At v1 -> let v1 = map_attribute v1 in At ((v1))
   | Dk v1 -> let v1 = map_definition_kind v1 in Dk ((v1))
   | Pr v1 -> let v1 = map_program v1 in Pr ((v1))
+  | Lbli v1 -> let v1 = map_label_ident v1 in Lbli ((v1))
+  | Fldi v1 -> let v1 = map_field_ident v1 in Fldi ((v1))
 
  and all_functions =
     {

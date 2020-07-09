@@ -379,7 +379,15 @@ and stmt st =
   | Next (t, es) ->
       let lbl = exprs_to_label_ident es in
       G.Continue (t, lbl)
-  | _ -> todo (S2 st)
+  | Redo (t, es) ->
+      let lbl = exprs_to_label_ident es in
+      G.OtherStmt (G.OS_Redo, [G.Tk t; G.Lbli lbl])
+  | Retry (t, es) ->
+      let lbl = exprs_to_label_ident es in
+      G.OtherStmt (G.OS_Retry, [G.Tk t; G.Lbli lbl])
+
+  | Case (_t, _blk) -> todo (S2 st)
+  | ExnBlock _b -> todo (S2 st)
 
 and exprs_to_label_ident = function
   | [] -> G.LNone
