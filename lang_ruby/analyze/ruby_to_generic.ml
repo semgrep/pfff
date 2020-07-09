@@ -49,6 +49,11 @@ let fb = G.fake_bracket
 let combine_tok t _tafter =
   t
 
+let todo any = 
+  let s = Ast_ruby.show_any any in
+  pr2 (spf "TODO: %s" s);
+  raise Todo
+
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
@@ -168,8 +173,8 @@ and formal_param_pattern = function
       let xs = list formal_param_pattern xs in
       G.PatTuple (xs)
   | Formal_amp _ | Formal_star _ | Formal_rest _ 
-  | Formal_default _ | Formal_hash_splat _ | Formal_kwd _ ->
-      raise Todo
+  | Formal_default _ | Formal_hash_splat _ | Formal_kwd _ as x ->
+      todo (Pa x)
 
 and scope_resolution = function
   | TopScope (t, v) -> 
@@ -196,7 +201,8 @@ and variable_or_method_name = function
       | Right _ -> failwith "TODO: variable_or_method_name"
       )
 
-and method_name = function
+and method_name mn = 
+  match mn with
   | MethodId v -> Left (variable v)
   | MethodIdAssign (id, teq, id_kind) ->
       let (s, t) = variable (id, id_kind) in
@@ -207,7 +213,7 @@ and method_name = function
   | MethodAtom (xs, t) -> 
       (match xs with
       | [StrChars s] -> Left (s, t)
-      | _ -> raise Todo
+      | _ -> todo (Mn mn)
       )
 
 and binary_msg = function
@@ -331,11 +337,16 @@ let  program xs =
   stmts xs
 
 
-let any = function
+let any x = 
+  match x with
   | E x -> 
       (match x with
       | S x -> G.S (stmt x)
       | D x -> G.S (definition x)
       | _ -> G.E (expr x)
       )
+  | S2 x -> G.S (stmt x)
+  | Ss xs -> G.Ss (stmts xs)
   | Pr xs -> G.Ss (stmts xs)
+  | _ -> 
+      todo x

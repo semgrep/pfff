@@ -412,8 +412,16 @@ type program = stmts
 (*****************************************************************************)
 
 type any = 
+  (* main any for semgrep *)
   | E of expr
+  | S2 of stmt
+  | Ss of stmts
+  (* other *)
+  | Mn of method_name
+  | Def of definition
+  | Pa of formal_param
   | Pr of program
+
 
  [@@deriving show { with_path = false}, eq] (* with tarzan *)
 
