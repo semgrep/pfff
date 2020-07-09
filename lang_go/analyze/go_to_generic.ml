@@ -42,7 +42,8 @@ let error = AST_generic.error
 
 let name_of_qualified_ident = function
   | Left id -> id, G.empty_name_info
-  | Right (xs, id) -> id, { G.name_qualifier = Some xs; name_typeargs = None }
+  | Right (xs, id) -> id, 
+      { G.name_qualifier = Some (G.QDots xs); name_typeargs = None }
 
 let fake s = Parse_info.fake_info s
 let fake_id s = (s, fake s)
@@ -239,13 +240,13 @@ and expr =
       let (v1, tok) = wrap arithmetic_operator v1
       and v2 = expr v2
       in
-      G.Call (G.IdSpecial (G.ArithOp v1, tok), fb[G.expr_to_arg v2])
+      G.Call (G.IdSpecial (G.Op v1, tok), fb[G.expr_to_arg v2])
   | Binary ((v1, v2, v3)) ->
       let v1 = expr v1
       and (v2, tok) = wrap arithmetic_operator v2
       and v3 = expr v3
       in
-      G.Call (G.IdSpecial (G.ArithOp v2, tok), fb([v1;v3] |> List.map G.expr_to_arg))
+      G.Call (G.IdSpecial (G.Op v2, tok), fb([v1;v3] |> List.map G.expr_to_arg))
   | CompositeLit ((v1, v2)) ->
       let v1 = type_ v1 and (_t1, v2, _t2) = bracket (list init) v2 in
       G.Call (G.IdSpecial (G.New, fake "new"), 

@@ -142,7 +142,7 @@ type special =
 
   | UseStrict
 
-  | ArithOp of AST_generic.arithmetic_operator
+  | ArithOp of AST_generic.operator
   (* less: should be in statement and unsugared in x+=1 or even x = x + 1 *)
   | IncrDecr of (AST_generic.incr_decr * AST_generic.prefix_postfix)
  [@@deriving show { with_path = false} ] (* with tarzan *)

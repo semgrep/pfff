@@ -68,13 +68,13 @@ let rec unaryOp (a, tok) =
   | GetRef -> (fun e -> G.Ref (tok,e))
   | DeRef -> (fun e -> G.DeRef (tok, e))
   | UnPlus -> (fun e -> 
-          G.Call (G.IdSpecial (G.ArithOp G.Plus, tok), fb[G.Arg e]))
+          G.Call (G.IdSpecial (G.Op G.Plus, tok), fb[G.Arg e]))
   | UnMinus -> (fun e -> 
-          G.Call (G.IdSpecial (G.ArithOp G.Minus, tok), fb[G.Arg e]))
+          G.Call (G.IdSpecial (G.Op G.Minus, tok), fb[G.Arg e]))
   | Tilde -> (fun e -> 
-          G.Call (G.IdSpecial (G.ArithOp G.BitNot, tok), fb[G.Arg e]))
+          G.Call (G.IdSpecial (G.Op G.BitNot, tok), fb[G.Arg e]))
   | Not ->  (fun e -> 
-          G.Call (G.IdSpecial (G.ArithOp G.Not, tok), fb[G.Arg e]))
+          G.Call (G.IdSpecial (G.Op G.Not, tok), fb[G.Arg e]))
   | GetRefLabel -> (fun e -> G.OtherExpr (G.OE_GetRefLabel, [G.E e]))
 and assignOp =
   function 
@@ -183,7 +183,7 @@ and expr =
       let v1 = expr v1
       and v2 = binaryOp v2
       and v3 = expr v3
-      in G.Call (G.IdSpecial (G.ArithOp v2, tok), fb[G.Arg v1; G.Arg v3])
+      in G.Call (G.IdSpecial (G.Op v2, tok), fb[G.Arg v1; G.Arg v3])
   | CondExpr ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in
       G.Conditional (v1, v2, v3)

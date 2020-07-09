@@ -77,7 +77,10 @@ and map_ident v = map_wrap map_of_string v
   
 and map_dotted_ident v = map_of_list map_ident v
 
-and map_qualifier v = map_dotted_ident v
+and map_qualifier = function
+ | QDots v -> QDots (map_dotted_ident v)
+ | QTop t -> QTop (map_tok t)
+ | QExpr (e, t) -> let e = map_expr e in let t = map_tok t in QExpr(e, t)
   
 and map_module_name =
   function
@@ -249,6 +252,8 @@ and map_literal =
   | Int v1 -> let v1 = map_wrap map_of_string v1 in Int ((v1))
   | Float v1 -> let v1 = map_wrap map_of_string v1 in Float ((v1))
   | Imag v1 -> let v1 = map_wrap map_of_string v1 in Imag ((v1))
+  | Ratio v1 -> let v1 = map_wrap map_of_string v1 in Ratio ((v1))
+  | Atom v1 -> let v1 = map_wrap map_of_string v1 in Atom ((v1))
   | Char v1 -> let v1 = map_wrap map_of_string v1 in Char ((v1))
   | String v1 -> let v1 = map_wrap map_of_string v1 in String ((v1))
   | Regexp v1 -> let v1 = map_wrap map_of_string v1 in Regexp ((v1))
@@ -262,6 +267,7 @@ and map_container_operator =
 
 and map_special =
   function
+  | Defined -> Defined
   | This -> This
   | Super -> Super
   | Self -> Self
@@ -272,7 +278,8 @@ and map_special =
   | Sizeof -> Sizeof
   | New -> New
   | Spread -> Spread
-  | ArithOp v1 -> let v1 = map_arithmetic_operator v1 in ArithOp ((v1))
+  | HashSplat -> HashSplat
+  | Op v1 -> let v1 = map_arithmetic_operator v1 in Op ((v1))
   | EncodedString v1 -> let v1 = map_wrap map_of_string v1 in EncodedString ((v1))
   | IncrDecr ((v1, v2)) ->
       let v1 = map_of_incdec v1 and v2 = map_of_prepost v2 in IncrDecr ((v1, v2))

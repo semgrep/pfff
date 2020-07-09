@@ -12,14 +12,18 @@ let vof_tok v = Meta_parse_info.vof_info_adjustable_precision v
 let vof_wrap _of_a (v1, v2) =
   let v1 = _of_a v1 and v2 = vof_tok v2 in OCaml.VTuple [ v1; v2 ]
 
-let vof_bracket of_a (_t1, x, _t2) =
-  of_a x
+let vof_bracket of_a (t1, x, t2) =
+  let v1 = vof_tok t1 in
+  let v2 = vof_tok t2 in
+  let v = of_a x in
+  match v1 with
+  | OCaml.VUnit -> v
+  | _ -> OCaml.VTuple [v1; v; v2]
   
 let vof_ident v = vof_wrap OCaml.vof_string v
   
 let vof_dotted_name v = OCaml.vof_list vof_ident v
   
-let vof_qualifier = vof_dotted_name
   
 let vof_module_name =
   function
@@ -50,7 +54,14 @@ and vof_resolved_name_kind =
   | TypeName -> OCaml.VSum (("TypeName", []))
 
 
-let rec vof_name (v1, v2) =
+let rec vof_qualifier = function
+  | QTop v1 -> let v1 = vof_tok v1 in OCaml.VSum ("QTop", [v1])
+  | QDots v1 -> let v1 = vof_dotted_name v1 in OCaml.VSum ("QDots", [v1])
+  | QExpr (v1, v2) -> let v1 = vof_expr v1 in 
+      let v2 = vof_tok v2 in
+      OCaml.VSum ("QExpr", [v1; v2])
+
+and vof_name (v1, v2) =
   let v1 = vof_ident v1 and v2 = vof_name_info v2 in OCaml.VTuple [ v1; v2 ]
 
 and
@@ -243,6 +254,10 @@ and vof_literal =
       let v1 = vof_wrap OCaml.vof_string v1 in OCaml.VSum (("Float", [ v1 ]))
   | Imag v1 ->
       let v1 = vof_wrap OCaml.vof_string v1 in OCaml.VSum (("Imag", [ v1 ]))
+  | Ratio v1 ->
+      let v1 = vof_wrap OCaml.vof_string v1 in OCaml.VSum (("Ratio", [ v1 ]))
+  | Atom v1 ->
+      let v1 = vof_wrap OCaml.vof_string v1 in OCaml.VSum (("Atom", [ v1 ]))
   | Char v1 ->
       let v1 = vof_wrap OCaml.vof_string v1 in OCaml.VSum (("Char", [ v1 ]))
   | String v1 ->
@@ -261,6 +276,7 @@ and vof_container_operator =
   | Dict -> OCaml.VSum (("Dict", []))
 and vof_special =
   function
+  | Defined -> OCaml.VSum (("Defined", []))
   | This -> OCaml.VSum (("This", []))
   | Super -> OCaml.VSum (("Super", []))
   | Self -> OCaml.VSum (("Self", []))
@@ -274,11 +290,12 @@ and vof_special =
       let v1 = vof_interpolated_kind v1 in
       OCaml.VSum (("InterpolatedConcat", [v1]))
   | Spread -> OCaml.VSum (("Spread", []))
+  | HashSplat -> OCaml.VSum (("HashSplat", []))
   | EncodedString v1 ->
       let v1 = vof_wrap OCaml.vof_string v1 in
       OCaml.VSum (("EncodedString", [v1]))
-  | ArithOp v1 ->
-      let v1 = vof_arithmetic_operator v1 in OCaml.VSum (("ArithOp", [ v1 ]))
+  | Op v1 ->
+      let v1 = vof_arithmetic_operator v1 in OCaml.VSum (("Op", [ v1 ]))
   | IncrDecr (v) ->
       let v = vof_inc_dec v in
       OCaml.VSum (("IncrDecr", [ v]))
@@ -305,6 +322,9 @@ and vof_prepost =
 
 and vof_arithmetic_operator =
   function
+  | Range -> OCaml.VSum (("Range", []))
+  | RegexpMatch -> OCaml.VSum (("RegexpMatch", []))
+  | NotMatch -> OCaml.VSum (("NotMatch", []))
   | Concat -> OCaml.VSum (("Concat", []))
   | Plus -> OCaml.VSum (("Plus", []))
   | Minus -> OCaml.VSum (("Minus", []))

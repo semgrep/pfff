@@ -5,3 +5,7 @@ type program_and_tokens =
 val parse: Common.filename -> (program_and_tokens * Parse_info.parsing_stat)
 
 val parse_program : Common.filename -> Ast_ruby.program
+
+(* for semgrep *)
+val any_of_string:
+  string -> Ast_ruby.any

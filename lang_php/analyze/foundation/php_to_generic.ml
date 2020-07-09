@@ -62,7 +62,7 @@ let name_of_qualified_ident xs =
   match List.rev (qualified_ident xs) with
   | [] -> raise Impossible
   | [x] -> x, { G.name_qualifier = None; name_typeargs = None }
-  | x::y::xs -> x, { G.name_qualifier = Some (List.rev (y::xs)); 
+  | x::y::xs -> x, { G.name_qualifier = Some (G.QDots (List.rev (y::xs))); 
                        name_typeargs = None }
 
 let name v = qualified_ident v
@@ -300,12 +300,12 @@ and expr =
       in
       (match v2 with
       | Left (op, t) -> 
-         G.Call (G.IdSpecial (G.ArithOp op, t), fb[G.Arg v1; G.Arg v3])
+         G.Call (G.IdSpecial (G.Op op, t), fb[G.Arg v1; G.Arg v3])
       | Right x -> 
          G.Call (G.IdSpecial (x), fb[G.Arg v1; G.Arg v3])
       )
   | Unop (((v1, t), v2)) -> let v1 = unaryOp v1 and v2 = expr v2 in 
-      G.Call (G.IdSpecial (G.ArithOp v1, t), fb[G.Arg v2])
+      G.Call (G.IdSpecial (G.Op v1, t), fb[G.Arg v2])
   | Guil (t, v1, _) -> let v1 = list expr v1 in
       G.Call (G.IdSpecial (G.ConcatString G.InterpolatedConcat, t), 
         fb (v1 |> List.map G.expr_to_arg))

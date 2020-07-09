@@ -290,8 +290,8 @@ and expr =
   and binaryOp = 
    | BinaryConcat 
    | CombinedComparison
-   | ArithOp of AST_generic.arithmetic_operator
-  and unaryOp = AST_generic.arithmetic_operator
+   | ArithOp of AST_generic.operator
+  and unaryOp = AST_generic.operator
 
   (* pad: do we need that? could convert into something more basic *)
   and xhp =

@@ -4,8 +4,6 @@ open Il_ruby
 
 type pos2 = Parse_info.t
 
-val compare : t -> t -> int
-  
 val mkstmt : stmt_node -> pos2 -> stmt
 
 val update_stmt : stmt -> stmt_node -> stmt
@@ -20,8 +18,6 @@ val empty_stmt : unit -> stmt
 val fresh_local : stmt -> identifier
 
 val pos_of : stmt -> pos2
-
-val stmt_eq : stmt -> stmt -> bool
 
 val msg_id_of_string : string -> msg_id
 
@@ -81,7 +77,7 @@ val compute_cfg_locals : ?env:StrSet.t -> stmt -> unit
 module Abbr : sig
 
   val mcall : ?lhs:lhs -> ?targ:expr ->
-    msg_id -> star_expr list -> ?cb:codeblock -> pos2 -> stmt
+    msg_id -> star_expr list -> ?cb:codeblock -> unit -> stmt
 
   val seq : stmt list -> pos2 -> stmt
 

@@ -114,8 +114,6 @@ let visit_program ~tag_hook _prefs (_program, toks) =
     | T.T_LID (s, ii) | T.T_UID (s, ii) ->
        tag_name (s, ii) Normal
 
-    | T.T_BUILTIN_VAR (_, ii) ->
-       tag ii Builtin
     | T.T_CLASS_VAR (_, ii) ->
        tag ii (Entity (E.Global, use2))
     | T.T_INST_VAR (_, ii) ->
@@ -135,7 +133,7 @@ let visit_program ~tag_hook _prefs (_program, toks) =
        tag ii KeywordLoop
     | T.K_ENSURE ii | T.K_RESCUE ii ->
        tag ii KeywordExn
-    | T.K_SELF ii | T.K_CLASS ii ->
+    | T.K_SELF ii | T.K_SUPER ii | T.K_CLASS ii ->
        tag ii KeywordObject
     | T.K_MODULE ii ->
        tag ii KeywordModule

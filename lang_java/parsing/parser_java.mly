@@ -200,7 +200,7 @@ let mk_adecl_or_adecls = function
 %token <Parse_info.t> COLONCOLON		/* :: */
 
 
-%token <(AST_generic.arithmetic_operator * Parse_info.t)> OPERATOR_EQ
+%token <(AST_generic.operator * Parse_info.t)> OPERATOR_EQ
 	/* += -= *= /= &= |= ^= %= <<= >>= >>>= */
 
 /*(* keywords tokens *)*/

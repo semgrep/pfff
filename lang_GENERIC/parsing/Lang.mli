@@ -8,11 +8,12 @@ type t =
    * (no fallback) *)
   | Python2 | Python3
   (*e: [[Lang.t]] extra Python cases *)
-  | Javascript | JSON
+  | Javascript | Typescript | JSON
   | Java
   | Go
   | C
   | OCaml
+  | Ruby
 (*e: type [[Lang.t]] *)
 
 (*s: signature [[Lang.lang_of_string_map]] *)
