@@ -916,8 +916,8 @@ and attribute =
   (* for methods *)
   | Ctor | Dtor
   | Getter | Setter
-  (* for parameters *)
-  | Variadic
+  (* for parameters (TODO: move to ParamSpread? ParamHashSplat? *)
+  | Variadic | VariadicHashSplat
 (*e: type [[AST_generic.keyword_attribute]] *)
 
 (*s: type [[AST_generic.other_attribute_operator]] *)
@@ -1085,7 +1085,7 @@ and function_definition = {
      | OPO_KwdParam | OPO_SingleStarParam | OPO_SlashParam
      (* Go *)
      | OPO_Receiver (* of parameter_classic, used to tag the "self" parameter*)
-     (* PHP *) 
+     (* PHP/Ruby *) 
      | OPO_Ref (* of parameter_classic *)
      (* Other *) 
      | OPO_Todo

@@ -16,7 +16,7 @@ open Common
 
 open Ast_ruby
 module G = AST_generic
-
+module PI = Parse_info
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -35,15 +35,19 @@ module G = AST_generic
 (* Helpers *)
 (*****************************************************************************)
 let id = fun x -> x
-let _option = Common.map_opt
+let option = Common.map_opt
 let list = List.map
 
 let bool = id
 let string = id
 
 let _error = AST_generic.error
-let _fake s = Parse_info.fake_info s
+let fake s = Parse_info.fake_info s
 let fb = G.fake_bracket
+
+(* TODO *)
+let combine_tok t _tafter =
+  t
 
 (*****************************************************************************)
 (* Entry point *)
@@ -68,7 +72,7 @@ let rec expr = function
       | ID_Super -> G.IdSpecial (G.Super, (snd id))
       | _ -> G.Id (ident id, G.empty_id_info())
       )
-  | ScopedId _x -> raise Todo
+  | ScopedId x -> scope_resolution x
   | Hash (_bool, xs) -> G.Container (G.Dict, bracket (list expr) xs)
   | Array (xs) -> G.Container (G.Array, bracket (list expr) xs)      
   | Tuple xs -> G.Tuple (list expr xs)
@@ -79,7 +83,117 @@ let rec expr = function
       let e1 = expr e1 in
       let e2 = expr e2 in
       binary op e1 e2
-  | _ ->  raise Todo
+  | Ternary (e1, _t1, e2, _t2, e3) ->
+      let e1 = expr e1 in
+      let e2 = expr e2 in
+      let e3 = expr e3 in
+      G.Conditional (e1, e2, e3)
+  | Call (e, xs, bopt) ->
+      let e = expr e in
+      let xs = list expr xs in
+      let last = option expr bopt |> Common.opt_to_list in
+      G.Call (e, fb ((xs @ last) |> List.map G.expr_to_arg))
+  | DotAccess (e, t, m) ->
+      let e = expr e in
+      let fld = 
+        match method_name m with
+        | Left id -> G.FId id
+        | Right e -> G.FDynamic e
+      in
+      G.DotAccess (e, t, fld)
+  | Splat (t, eopt) ->
+      let xs = 
+        option expr eopt |> Common.opt_to_list |> List.map G.expr_to_arg in
+      let special = G.IdSpecial (G.Spread, t) in
+      G.Call (special, fb xs)
+  | CodeBlock ((t1,_,t2), params_opt, xs) ->
+      let params = match params_opt with None -> [] | Some xs -> xs in
+      let params = list formal_param params in
+      let st = G.Block (t1, stmts xs, t2) in
+      let def = { G.fparams = params; frettype = None; fbody = st } in
+      G.Lambda def
+  | S x -> 
+      let st = stmt x in
+      G.OtherExpr (G.OE_StmtExpr, [G.S st])
+  | D x -> 
+      let st = definition x in
+      G.OtherExpr (G.OE_StmtExpr, [G.S st])
+
+and formal_param = function
+  | Formal_id id -> 
+      G.ParamClassic (G.param_of_id id)
+  | Formal_amp (t, id) ->
+      let param = G.ParamClassic (G.param_of_id id) in
+      G.OtherParam (G.OPO_Ref, [G.Tk t; G.Pa param])
+  | Formal_star (t, id) ->
+      let attr = G.KeywordAttr (G.Variadic, t) in
+      let p = { (G.param_of_id id) with G.pattrs = [attr] } in
+      G.ParamClassic p
+  | Formal_rest (t) ->
+      let attr = G.KeywordAttr (G.Variadic, t) in
+      let p = { G.pattrs = [attr]; pinfo = G.empty_id_info ();
+                ptype = None; pname = None; pdefault = None } in
+      G.ParamClassic p
+  | Formal_hash_splat (t, idopt) ->
+      let attr = G.KeywordAttr (G.Variadic, t) in
+      let p = 
+        match idopt with
+        | None ->
+            { G.pattrs = [attr]; pinfo = G.empty_id_info ();
+              ptype = None; pname = None; pdefault = None }
+        | Some id -> { (G.param_of_id id) with G.pattrs = [attr] }
+       in
+       G.ParamClassic p
+  | Formal_default (id, _t, e) ->
+      let e = expr e in
+      let p = { (G.param_of_id id) with G.pdefault = Some e } in
+      G.ParamClassic p
+  (* TODO? diff with Formal_default? *)
+  | Formal_kwd (id, _t, eopt) ->
+      let eopt = option expr eopt in
+      let p = 
+        match eopt with
+        | None -> (G.param_of_id id)
+        | Some e -> { (G.param_of_id id) with G.pdefault = Some e }
+      in
+      G.ParamClassic p
+  | Formal_tuple (_t1, _xs, _t2) ->
+      raise Todo
+
+and scope_resolution = function
+  | TopScope (t, v) -> 
+      let id = variable v in
+      let qualif = G.QTop t in
+      let name = id, { G.name_qualifier = Some qualif; name_typeargs = None }in
+      G.IdQualified (name, G.empty_id_info())
+  | Scope (e, t, v_or_m) -> 
+      let id = variable_or_method_name v_or_m in
+      let e = expr e in
+      let qualif = G.QExpr (e, t) in
+      let name = id, { G.name_qualifier = Some qualif; name_typeargs = None }in
+      G.IdQualified (name, G.empty_id_info())
+
+
+and variable (id, _kind) = 
+  ident id
+
+and variable_or_method_name = function
+  | SV v -> variable v
+  | SM m -> 
+      (match method_name m with
+      | Left id -> id
+      | Right _ -> failwith "TODO: variable_or_method_name"
+      )
+
+and method_name = function
+  | MethodId v -> Left (variable v)
+  | MethodIdAssign (id, teq, id_kind) ->
+      let (s, t) = variable (id, id_kind) in
+      Left (s^"=", combine_tok t teq)
+  | MethodUOperator (_, t) | MethodOperator (_, t) -> 
+      Left (PI.str_of_info t, t)
+  | MethodDynamic e -> Right (expr e)
+  | MethodAtom _x -> raise Todo
 
 and binary_msg = function
   | Op_PLUS ->   G.Plus
@@ -170,7 +284,9 @@ and literal = function
 and expr_as_stmt = function
   | S x -> stmt x
   | D x -> definition x
-  | _ -> raise Todo
+  | e -> 
+      let e = expr e in
+      G.ExprStmt (e, fake ";")
 
 and stmt = function
   | _ -> raise Todo
@@ -178,12 +294,12 @@ and stmt = function
 and definition = function
   | _ -> raise Todo
 
-let stmts xs = 
+and stmts xs = 
   list expr_as_stmt xs
+
 
 let  program xs = 
   stmts xs
-
 
 
 let any = function
