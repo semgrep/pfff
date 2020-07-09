@@ -54,6 +54,9 @@ let todo any =
   pr2 (spf "TODO: %s" s);
   raise Todo
 
+let stmt1 xs =
+  G.Block (fb xs)
+
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
@@ -289,7 +292,8 @@ and unary (op,t) e =
    | Op_UAmper -> G.Ref (t, e)
 
 
-and literal = function
+and literal x = 
+  match x with
   | Bool x -> G.L (G.Bool (wrap bool x))
   | Num x -> G.L (G.Int (wrap string x))
   | Float x -> G.L (G.Float (wrap string x))
@@ -299,21 +303,21 @@ and literal = function
       G.L (G.Ratio (s, t))
   | Char x -> G.L (G.Char (wrap string x))
   | Nil t -> G.L (G.Null (tok t))
-  | String (x, t) ->
-      (match x with
+  | String (skind, t) ->
+      (match skind with
       | Single s -> G.L (G.String (s, t))
       | Double [StrChars s] -> G.L (G.String (s, t))
-      | _ -> raise Todo
+      | _ -> todo (E (Literal x))
       )
   | Regexp ((xs, s2), t) ->
       (match xs with
       | [StrChars s] -> G.L (G.Regexp (s ^ s2, t))
-      | _ -> raise Todo
+      | _ -> todo (E (Literal x))
       )
   | Atom (xs, t) ->
       (match xs with
       | [StrChars s] -> G.L (G.Atom (s, t))
-      | _ -> raise Todo
+      | _ -> todo (E (Literal x))
       )
 
 and expr_as_stmt = function
@@ -323,11 +327,86 @@ and expr_as_stmt = function
       let e = expr e in
       G.ExprStmt (e, fake ";")
 
-and stmt = function
-  | _ -> raise Todo
+and stmt st = 
+  match st with
+  | Block (t1, xs, t2) -> 
+      let xs = stmts xs in
+      G.Block (t1, xs, t2)
+  | If (t, e, st, elseopt) ->
+      let e = expr e in
+      let st = stmts st |> stmt1 in
+      let elseopt = option_tok_stmts elseopt in
+      G.If (t, e, st, elseopt)
+  | While (t, _bool, e, st) ->
+      let e = expr e in
+      let st = stmts st |> stmt1 in
+      G.While (t, e, st)
+  | Until (t, _bool, e, st) ->
+      let e = expr e in
+      let special = G.IdSpecial (G.Op (G.Not), t) in
+      let e = G.Call (special, fb [G.Arg e]) in
+      let st = stmts st |> stmt1 in
+      G.While (t, e, st)
+  | Unless (t, e, st, elseopt) ->
+      let e = expr e in
+      let st = stmts st |> stmt1 in
+      let elseopt = option_tok_stmts elseopt in
+      let special = G.IdSpecial (G.Op (G.Not), t) in
+      let e = G.Call (special, fb [G.Arg e]) in
+      let st1 = 
+        match elseopt with
+        | None -> G.Block (fb []) 
+        | Some st -> st
+      in
+      G.If (t, e, st1, Some st)
+  | For (t1, pat, t2, e, st) ->
+      let pat = pattern pat in
+      let e = expr e in
+      let st = stmts st |> stmt1 in
+      let header = G.ForEach (pat, t2, e) in
+      G.For (t1, header, st)
 
-and definition = function
-  | _ -> raise Todo
+  | Return (t, es) ->
+      let eopt = exprs_to_eopt es in
+      G.Return (t, eopt)
+  | Yield (t, es) ->
+      let eopt = exprs_to_eopt es in
+      G.ExprStmt (G.Yield (t, eopt, false), fake ";")
+
+  | Break (t, es) ->
+      let lbl = exprs_to_label_ident es in
+      G.Break (t, lbl)
+  | Next (t, es) ->
+      let lbl = exprs_to_label_ident es in
+      G.Continue (t, lbl)
+  | _ -> todo (S2 st)
+
+and exprs_to_label_ident = function
+  | [] -> G.LNone
+  (* TODO: check if x is an Int or label? *)
+  | [x] -> let x = expr x in G.LDynamic x
+  | xs -> 
+      let xs = list expr xs in
+      G.LDynamic (G.Tuple xs)
+
+and exprs_to_eopt = function
+  | [] -> None
+  | [x] -> Some (expr x)
+  | xs -> let xs = list expr xs in
+      Some (G.Tuple xs)
+
+and pattern pat = 
+  let e = expr pat in
+  G.expr_to_pattern e
+
+and option_tok_stmts x =
+  match x with 
+  | None -> None
+  | Some (_t, xs) -> Some (stmts xs |> stmt1)
+
+and definition def = 
+  match def with
+  | _ -> todo (Def def)
 
 and stmts xs = 
   list expr_as_stmt xs
