@@ -12,8 +12,13 @@ let vof_tok v = Meta_parse_info.vof_info_adjustable_precision v
 let vof_wrap _of_a (v1, v2) =
   let v1 = _of_a v1 and v2 = vof_tok v2 in OCaml.VTuple [ v1; v2 ]
 
-let vof_bracket of_a (_t1, x, _t2) =
-  of_a x
+let vof_bracket of_a (t1, x, t2) =
+  let v1 = vof_tok t1 in
+  let v2 = vof_tok t2 in
+  let v = of_a x in
+  match v1 with
+  | OCaml.VUnit -> v
+  | _ -> OCaml.VTuple [v1; v; v2]
   
 let vof_ident v = vof_wrap OCaml.vof_string v
   

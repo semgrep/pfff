@@ -818,7 +818,7 @@ atom_tuple:
 
 atom_list:
   | "["               "]" { List (CompList ($1, [], $2), Load) }
-  | "[" testlist_comp "]" { List ($2, Load) }
+  | "[" testlist_comp "]" { List ($2 ($1, $3), Load) }
 
 atom_dict:
   | "{"                "}" { DictOrSet (CompList ($1, [], $2)) }
@@ -907,8 +907,9 @@ lambdadef: LAMBDA varargslist ":" test { Lambda ($2, $4) }
 (*----------------------------*)
 
 testlist_comp:
-  | namedexpr_or_star_expr listcomp_for  { CompForIf ($1, $2) }
-  | tuple(namedexpr_or_star_expr)    { CompList (AST_generic.fake_bracket (to_list $1)) }
+  | namedexpr_or_star_expr listcomp_for  { fun _ -> CompForIf ($1, $2) }
+  | tuple(namedexpr_or_star_expr)    
+      { fun (t1, t2) -> CompList (t1, to_list $1, t2) }
 
 (* mostly equivalent to testlist_comp, but transform a single expression
  * in parenthesis, e.g., (1) in a regular expr, not a tuple *)
