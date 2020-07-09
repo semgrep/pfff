@@ -157,7 +157,18 @@ and formal_param = function
         | Some e -> { (G.param_of_id id) with G.pdefault = Some e }
       in
       G.ParamClassic p
-  | Formal_tuple (_t1, _xs, _t2) ->
+  | Formal_tuple (_t1, xs, _t2) ->
+      let xs = list formal_param_pattern xs in
+      let pat = G.PatTuple (xs) in
+      G.ParamPattern pat
+
+and formal_param_pattern = function
+  | Formal_id id -> G.PatId (id, G.empty_id_info())
+  | Formal_tuple (_t1, xs, _t2) ->
+      let xs = list formal_param_pattern xs in
+      G.PatTuple (xs)
+  | Formal_amp _ | Formal_star _ | Formal_rest _ 
+  | Formal_default _ | Formal_hash_splat _ | Formal_kwd _ ->
       raise Todo
 
 and scope_resolution = function
@@ -193,7 +204,11 @@ and method_name = function
   | MethodUOperator (_, t) | MethodOperator (_, t) -> 
       Left (PI.str_of_info t, t)
   | MethodDynamic e -> Right (expr e)
-  | MethodAtom _x -> raise Todo
+  | MethodAtom (xs, t) -> 
+      (match xs with
+      | [StrChars s] -> Left (s, t)
+      | _ -> raise Todo
+      )
 
 and binary_msg = function
   | Op_PLUS ->   G.Plus
@@ -273,13 +288,27 @@ and literal = function
   | Num x -> G.L (G.Int (wrap string x))
   | Float x -> G.L (G.Float (wrap string x))
   | Complex x -> G.L (G.Imag (wrap string x))
-  | Rational (x, _tTODOadd_info_in_x) -> G.L (G.Ratio (wrap string x))
+  | Rational ((s, t1), t2) -> 
+      let t = combine_tok t1 t2 in
+      G.L (G.Ratio (s, t))
   | Char x -> G.L (G.Char (wrap string x))
   | Nil t -> G.L (G.Null (tok t))
-  | String _
-  | Regexp _
-  | Atom _
-     -> raise Todo
+  | String (x, t) ->
+      (match x with
+      | Single s -> G.L (G.String (s, t))
+      | Double [StrChars s] -> G.L (G.String (s, t))
+      | _ -> raise Todo
+      )
+  | Regexp ((xs, s2), t) ->
+      (match xs with
+      | [StrChars s] -> G.L (G.Regexp (s ^ s2, t))
+      | _ -> raise Todo
+      )
+  | Atom (xs, t) ->
+      (match xs with
+      | [StrChars s] -> G.L (G.Atom (s, t))
+      | _ -> raise Todo
+      )
 
 and expr_as_stmt = function
   | S x -> stmt x
