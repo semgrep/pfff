@@ -406,8 +406,8 @@ and _token python2 state = parse
          * in case of a parse error.
          *)
         | "None"    -> NONE (tokinfo lexbuf)
-        | "True"    -> TRUE (tokinfo lexbuf)
-        | "False"    -> FALSE (tokinfo lexbuf)
+        | "True"   when not python2 -> TRUE (tokinfo lexbuf)
+        | "False"  when not python2 -> FALSE (tokinfo lexbuf)
 
         | "async"    when not python2 -> ASYNC (tokinfo lexbuf)
         | "await"    when not python2 -> AWAIT (tokinfo lexbuf)

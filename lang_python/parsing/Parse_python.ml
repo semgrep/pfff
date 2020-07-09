@@ -144,7 +144,7 @@ let rec parse_basic ?(parsing_mode=Python) filename =
     if parsing_mode = Python &&
        (tr.PI.passed |> Common.take_safe 10 |> List.exists (function
          | T.NAME (("print" | "exec"), _) 
-         | T.ASYNC _ | T.AWAIT _ | T.NONLOCAL _
+         | T.ASYNC _ | T.AWAIT _ | T.NONLOCAL _ | T.TRUE _ | T.FALSE _
               -> true
          | _ -> false))
     then 
