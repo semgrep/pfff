@@ -16,7 +16,7 @@ open Common
 
 open Ast_ruby
 module G = AST_generic
-
+module PI = Parse_info
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -35,15 +35,27 @@ module G = AST_generic
 (* Helpers *)
 (*****************************************************************************)
 let id = fun x -> x
-let _option = Common.map_opt
+let option = Common.map_opt
 let list = List.map
 
 let bool = id
 let string = id
 
 let _error = AST_generic.error
-let _fake s = Parse_info.fake_info s
+let fake s = Parse_info.fake_info s
 let fb = G.fake_bracket
+
+(* TODO *)
+let combine_tok t _tafter =
+  t
+
+let todo any = 
+  let s = Ast_ruby.show_any any in
+  pr2 (spf "TODO: %s" s);
+  raise Todo
+
+let stmt1 xs =
+  G.Block (fb xs)
 
 (*****************************************************************************)
 (* Entry point *)
@@ -68,7 +80,7 @@ let rec expr = function
       | ID_Super -> G.IdSpecial (G.Super, (snd id))
       | _ -> G.Id (ident id, G.empty_id_info())
       )
-  | ScopedId _x -> raise Todo
+  | ScopedId x -> scope_resolution x
   | Hash (_bool, xs) -> G.Container (G.Dict, bracket (list expr) xs)
   | Array (xs) -> G.Container (G.Array, bracket (list expr) xs)      
   | Tuple xs -> G.Tuple (list expr xs)
@@ -79,7 +91,139 @@ let rec expr = function
       let e1 = expr e1 in
       let e2 = expr e2 in
       binary op e1 e2
-  | _ ->  raise Todo
+  | Ternary (e1, _t1, e2, _t2, e3) ->
+      let e1 = expr e1 in
+      let e2 = expr e2 in
+      let e3 = expr e3 in
+      G.Conditional (e1, e2, e3)
+  | Call (e, xs, bopt) ->
+      let e = expr e in
+      let xs = list expr xs in
+      let last = option expr bopt |> Common.opt_to_list in
+      G.Call (e, fb ((xs @ last) |> List.map G.expr_to_arg))
+  | DotAccess (e, t, m) ->
+      let e = expr e in
+      let fld = 
+        match method_name m with
+        | Left id -> G.FId id
+        | Right e -> G.FDynamic e
+      in
+      G.DotAccess (e, t, fld)
+  | Splat (t, eopt) ->
+      let xs = 
+        option expr eopt |> Common.opt_to_list |> List.map G.expr_to_arg in
+      let special = G.IdSpecial (G.Spread, t) in
+      G.Call (special, fb xs)
+  | CodeBlock ((t1,_,t2), params_opt, xs) ->
+      let params = match params_opt with None -> [] | Some xs -> xs in
+      let params = list formal_param params in
+      let st = G.Block (t1, stmts xs, t2) in
+      let def = { G.fparams = params; frettype = None; fbody = st } in
+      G.Lambda def
+  | S x -> 
+      let st = stmt x in
+      G.OtherExpr (G.OE_StmtExpr, [G.S st])
+  | D x -> 
+      let st = definition x in
+      G.OtherExpr (G.OE_StmtExpr, [G.S st])
+
+and formal_param = function
+  | Formal_id id -> 
+      G.ParamClassic (G.param_of_id id)
+  | Formal_amp (t, id) ->
+      let param = G.ParamClassic (G.param_of_id id) in
+      G.OtherParam (G.OPO_Ref, [G.Tk t; G.Pa param])
+  | Formal_star (t, id) ->
+      let attr = G.KeywordAttr (G.Variadic, t) in
+      let p = { (G.param_of_id id) with G.pattrs = [attr] } in
+      G.ParamClassic p
+  | Formal_rest (t) ->
+      let attr = G.KeywordAttr (G.Variadic, t) in
+      let p = { G.pattrs = [attr]; pinfo = G.empty_id_info ();
+                ptype = None; pname = None; pdefault = None } in
+      G.ParamClassic p
+  | Formal_hash_splat (t, idopt) ->
+      let attr = G.KeywordAttr (G.Variadic, t) in
+      let p = 
+        match idopt with
+        | None ->
+            { G.pattrs = [attr]; pinfo = G.empty_id_info ();
+              ptype = None; pname = None; pdefault = None }
+        | Some id -> { (G.param_of_id id) with G.pattrs = [attr] }
+       in
+       G.ParamClassic p
+  | Formal_default (id, _t, e) ->
+      let e = expr e in
+      let p = { (G.param_of_id id) with G.pdefault = Some e } in
+      G.ParamClassic p
+  (* TODO? diff with Formal_default? *)
+  | Formal_kwd (id, _t, eopt) ->
+      let eopt = option expr eopt in
+      let p = 
+        match eopt with
+        | None -> (G.param_of_id id)
+        | Some e -> { (G.param_of_id id) with G.pdefault = Some e }
+      in
+      G.ParamClassic p
+  | Formal_tuple (_t1, xs, _t2) ->
+      let xs = list formal_param_pattern xs in
+      let pat = G.PatTuple (xs) in
+      G.ParamPattern pat
+
+and formal_param_pattern = function
+  | Formal_id id -> G.PatId (id, G.empty_id_info())
+  | Formal_tuple (_t1, xs, _t2) ->
+      let xs = list formal_param_pattern xs in
+      G.PatTuple (xs)
+
+  | Formal_amp _ | Formal_star _ | Formal_rest _ 
+  | Formal_default _ | Formal_hash_splat _ | Formal_kwd _ as x ->
+      todo (Pa x)
+
+and scope_resolution = function
+  | TopScope (t, v) -> 
+      let id = variable v in
+      let qualif = G.QTop t in
+      let name = id, { G.name_qualifier = Some qualif; name_typeargs = None }in
+      G.IdQualified (name, G.empty_id_info())
+  | Scope (e, t, v_or_m) -> 
+      let id = variable_or_method_name v_or_m in
+      let e = expr e in
+      let qualif = G.QExpr (e, t) in
+      let name = id, { G.name_qualifier = Some qualif; name_typeargs = None }in
+      G.IdQualified (name, G.empty_id_info())
+
+
+and variable (id, _kind) = 
+  ident id
+
+and variable_or_method_name = function
+  | SV v -> variable v
+  | SM m -> 
+      (match method_name m with
+      | Left id -> id
+      | Right _ -> failwith "TODO: variable_or_method_name"
+      )
+
+and method_name mn = 
+  match mn with
+  | MethodId v -> Left (variable v)
+  | MethodIdAssign (id, teq, id_kind) ->
+      let (s, t) = variable (id, id_kind) in
+      Left (s^"=", combine_tok t teq)
+  | MethodUOperator (_, t) | MethodOperator (_, t) -> 
+      Left (PI.str_of_info t, t)
+  | MethodDynamic e -> Right (expr e)
+  | MethodAtom (xs, t) -> 
+      (match xs with
+      | [StrChars s] -> Left (s, t)
+      | _ -> todo (Mn mn)
+      )
+
+and method_name_to_any mn = 
+  match method_name mn with
+  | Left id -> G.I id
+  | Right e -> G.E e
 
 and binary_msg = function
   | Op_PLUS ->   G.Plus
@@ -154,43 +298,219 @@ and unary (op,t) e =
    | Op_UAmper -> G.Ref (t, e)
 
 
-and literal = function
+and literal x = 
+  match x with
   | Bool x -> G.L (G.Bool (wrap bool x))
   | Num x -> G.L (G.Int (wrap string x))
   | Float x -> G.L (G.Float (wrap string x))
   | Complex x -> G.L (G.Imag (wrap string x))
-  | Rational (x, _tTODOadd_info_in_x) -> G.L (G.Ratio (wrap string x))
+  | Rational ((s, t1), t2) -> 
+      let t = combine_tok t1 t2 in
+      G.L (G.Ratio (s, t))
   | Char x -> G.L (G.Char (wrap string x))
   | Nil t -> G.L (G.Null (tok t))
-  | String _
-  | Regexp _
-  | Atom _
-     -> raise Todo
+  | String (skind, t) ->
+      (match skind with
+      | Single s -> G.L (G.String (s, t))
+      | Double [StrChars s] -> G.L (G.String (s, t))
+      | _ -> todo (E (Literal x))
+      )
+  | Regexp ((xs, s2), t) ->
+      (match xs with
+      | [StrChars s] -> G.L (G.Regexp (s ^ s2, t))
+      | _ -> todo (E (Literal x))
+      )
+  | Atom (xs, t) ->
+      (match xs with
+      | [StrChars s] -> G.L (G.Atom (s, t))
+      | _ -> todo (E (Literal x))
+      )
 
 and expr_as_stmt = function
   | S x -> stmt x
   | D x -> definition x
-  | _ -> raise Todo
+  | e -> 
+      let e = expr e in
+      G.ExprStmt (e, fake ";")
 
-and stmt = function
-  | _ -> raise Todo
+and stmt st = 
+  match st with
+  | Block (t1, xs, t2) -> 
+      let xs = stmts xs in
+      G.Block (t1, xs, t2)
+  | If (t, e, st, elseopt) ->
+      let e = expr e in
+      let st = stmts st |> stmt1 in
+      let elseopt = option_tok_stmts elseopt in
+      G.If (t, e, st, elseopt)
+  | While (t, _bool, e, st) ->
+      let e = expr e in
+      let st = stmts st |> stmt1 in
+      G.While (t, e, st)
+  | Until (t, _bool, e, st) ->
+      let e = expr e in
+      let special = G.IdSpecial (G.Op (G.Not), t) in
+      let e = G.Call (special, fb [G.Arg e]) in
+      let st = stmts st |> stmt1 in
+      G.While (t, e, st)
+  | Unless (t, e, st, elseopt) ->
+      let e = expr e in
+      let st = stmts st |> stmt1 in
+      let elseopt = option_tok_stmts elseopt in
+      let special = G.IdSpecial (G.Op (G.Not), t) in
+      let e = G.Call (special, fb [G.Arg e]) in
+      let st1 = 
+        match elseopt with
+        | None -> G.Block (fb []) 
+        | Some st -> st
+      in
+      G.If (t, e, st1, Some st)
+  | For (t1, pat, t2, e, st) ->
+      let pat = pattern pat in
+      let e = expr e in
+      let st = stmts st |> stmt1 in
+      let header = G.ForEach (pat, t2, e) in
+      G.For (t1, header, st)
 
-and definition = function
-  | _ -> raise Todo
+  | Return (t, es) ->
+      let eopt = exprs_to_eopt es in
+      G.Return (t, eopt)
+  | Yield (t, es) ->
+      let eopt = exprs_to_eopt es in
+      G.ExprStmt (G.Yield (t, eopt, false), fake ";")
 
-let stmts xs = 
+  | Break (t, es) ->
+      let lbl = exprs_to_label_ident es in
+      G.Break (t, lbl)
+  | Next (t, es) ->
+      let lbl = exprs_to_label_ident es in
+      G.Continue (t, lbl)
+  | Redo (t, es) ->
+      let lbl = exprs_to_label_ident es in
+      G.OtherStmt (G.OS_Redo, [G.Tk t; G.Lbli lbl])
+  | Retry (t, es) ->
+      let lbl = exprs_to_label_ident es in
+      G.OtherStmt (G.OS_Retry, [G.Tk t; G.Lbli lbl])
+
+  | Case (_t, _blk) -> todo (S2 st)
+  | ExnBlock _b -> todo (S2 st)
+
+and exprs_to_label_ident = function
+  | [] -> G.LNone
+  (* TODO: check if x is an Int or label? *)
+  | [x] -> let x = expr x in G.LDynamic x
+  | xs -> 
+      let xs = list expr xs in
+      G.LDynamic (G.Tuple xs)
+
+and exprs_to_eopt = function
+  | [] -> None
+  | [x] -> Some (expr x)
+  | xs -> let xs = list expr xs in
+      Some (G.Tuple xs)
+
+and pattern pat = 
+  let e = expr pat in
+  G.expr_to_pattern e
+
+and option_tok_stmts x =
+  match x with 
+  | None -> None
+  | Some (_t, xs) -> Some (stmts xs |> stmt1)
+
+and definition def = 
+  match def with
+  | MethodDef (_t, kind, params, body) -> 
+      (match kind with
+      | M mn -> 
+        (match method_name mn with
+        | Left id -> 
+           let ent = G.basic_entity id [] in
+           let params = list formal_param params in
+           let body = body_exn body in
+           let def = { G.fparams = params; frettype = None; fbody = body } in
+           G.DefStmt (ent, G.FuncDef def)
+        | Right _e -> todo (Def def)
+        )
+      | SingletonM _ -> todo (Def def)
+      )
+  | ClassDef (_t, kind, body) ->
+      (match kind with
+      | C (name, inheritance_opt) ->
+         let extends = 
+            match inheritance_opt with
+            | None -> []
+            | Some (_t2, e) ->
+               let e = expr e in
+               [G.expr_to_type e]
+         in
+         (match name with 
+         | NameConstant id -> 
+             let ent = G.basic_entity id [] in
+             let body = body_exn body in
+             let def = { G.ckind = G.Class; cextends = extends;
+                         (* TODO: this is done by special include/require
+                           builtins *)
+                         cimplements = []; cmixins = []; 
+                         cbody = fb ([G.FieldStmt body]);
+                       } in
+             G.DefStmt (ent, G.ClassDef def)
+         | NameScope _ -> todo (Def def)
+         )
+      | SingletonC _ -> todo (Def def)
+      )
+  | ModuleDef (_t, name, body) ->
+      let body = body_exn body in
+      (match name with
+      | NameConstant id ->
+            let ent = G.basic_entity id [] in
+            let mkind = G.ModuleStruct (None, [body]) in
+            let def = { G.mbody = mkind } in
+            G.DefStmt (ent, G.ModuleDef def)
+      | NameScope _ -> todo (Def def)
+      )
+  | BeginBlock (_t, (t1, st, t2)) ->
+      let st = stmts st in
+      let st = G.Block (t1, st, t2) in
+      G.OtherStmtWithStmt (G.OSWS_BEGIN, None, st)
+  | EndBlock (_t, (t1, st, t2)) ->
+      let st = stmts st in
+      let st = G.Block (t1, st, t2) in
+      G.OtherStmtWithStmt (G.OSWS_END, None, st)
+
+  | Alias (t, mn1, mn2) ->
+      let mn1 = method_name_to_any mn1 in
+      let mn2 = method_name_to_any mn2 in
+      G.DirectiveStmt (G.OtherDirective (G.OI_Alias, [G.Tk t; mn1; mn2]))
+  | Undef (t, mns) ->
+      let mns = list method_name_to_any mns in
+      G.DirectiveStmt (G.OtherDirective (G.OI_Undef, (G.Tk t)::mns))
+
+and body_exn x = 
+  match x with
+  | { body_exprs = xs; rescue_exprs = []; ensure_expr = None; else_expr = None}
+    -> stmts xs |> stmt1
+  | _ -> todo (S2 (ExnBlock x))
+
+
+and stmts xs = 
   list expr_as_stmt xs
+
 
 let  program xs = 
   stmts xs
 
 
-
-let any = function
+let any x = 
+  match x with
   | E x -> 
       (match x with
       | S x -> G.S (stmt x)
       | D x -> G.S (definition x)
       | _ -> G.E (expr x)
       )
+  | S2 x -> G.S (stmt x)
+  | Ss xs -> G.Ss (stmts xs)
   | Pr xs -> G.Ss (stmts xs)
+  | _ -> 
+      todo x

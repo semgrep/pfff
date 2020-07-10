@@ -70,7 +70,7 @@ type node = {
       | ForHeader
       | ForeachHeader of pattern * expr
 
-      | OtherStmtWithStmtHeader of other_stmt_with_stmt_operator *  expr
+      | OtherStmtWithStmtHeader of other_stmt_with_stmt_operator *  expr option
 
       | SwitchHeader of expr option
       | SwitchEnd

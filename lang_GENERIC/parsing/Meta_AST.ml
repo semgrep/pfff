@@ -499,6 +499,7 @@ and vof_keyword_attribute =
   | Getter -> OCaml.VSum (("Getter", []))
   | Setter -> OCaml.VSum (("Setter", []))
   | Variadic -> OCaml.VSum (("Variadic", []))
+  | VariadicHashSplat -> OCaml.VSum (("VariadicHashSplat", []))
 
 and vof_attribute = function
   | KeywordAttr x -> let v1 = vof_wrap vof_keyword_attribute x in
@@ -599,7 +600,7 @@ and vof_stmt =
       in OCaml.VSum (("Assert", [ t; v1; v2 ]))
   | OtherStmtWithStmt ((v1, v2, v3)) ->
       let v1 = vof_other_stmt_with_stmt_operator v1
-      and v2 = vof_expr v2
+      and v2 = OCaml.vof_option vof_expr v2
       and v3 = vof_stmt v3
       in OCaml.VSum (("OtherStmtWithStmt", [ v1; v2; v3 ]))
   | OtherStmt ((v1, v2)) ->
@@ -608,6 +609,9 @@ and vof_stmt =
       in OCaml.VSum (("OtherStmt", [ v1; v2 ]))
 and vof_other_stmt_with_stmt_operator = function
   | OSWS_With -> OCaml.VSum (("OSWS_With", []))
+  | OSWS_BEGIN -> OCaml.VSum (("OSWS_BEGIN", []))
+  | OSWS_END -> OCaml.VSum (("OSWS_END", []))
+
 
 and vof_label_ident =
   function
@@ -669,6 +673,8 @@ and vof_for_var_or_expr =
       let v1 = vof_expr v1 in OCaml.VSum (("ForInitExpr", [ v1 ]))
 and vof_other_stmt_operator =
   function
+  | OS_Redo -> OCaml.VSum (("OS_Redo", []))
+  | OS_Retry -> OCaml.VSum (("OS_Retry", []))
   | OS_Todo -> OCaml.VSum (("OS_Todo", []))
   | OS_Delete -> OCaml.VSum (("OS_Delete", []))
   | OS_Async -> OCaml.VSum (("OS_Async", []))
@@ -1045,6 +1051,9 @@ and vof_other_directive_operator =
   | OI_Export -> OCaml.VSum (("OI_Export", []))
   | OI_ImportCss -> OCaml.VSum (("OI_ImportCss", []))
   | OI_ImportEffect -> OCaml.VSum (("OI_ImportEffect", []))
+  | OI_Alias -> OCaml.VSum (("OI_Alias", []))
+  | OI_Undef -> OCaml.VSum (("OI_Undef", []))
+
 and vof_item x = vof_stmt x
 and vof_program v = OCaml.vof_list vof_item v
 and vof_any =
@@ -1067,4 +1076,6 @@ and vof_any =
   | At v1 -> let v1 = vof_attribute v1 in OCaml.VSum (("At", [ v1 ]))
   | Dk v1 -> let v1 = vof_definition_kind v1 in OCaml.VSum (("Dk", [ v1 ]))
   | Pr v1 -> let v1 = vof_program v1 in OCaml.VSum (("Pr", [ v1 ]))
+  | Lbli v1 -> let v1 = vof_label_ident v1 in OCaml.VSum ("Lbli", [v1])
+  | Fldi v1 -> let v1 = vof_field_ident v1 in OCaml.VSum ("Fldi", [v1])
   

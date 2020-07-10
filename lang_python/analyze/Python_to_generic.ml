@@ -588,7 +588,7 @@ and stmt_aux x =
         | None -> v1
         | Some e2 -> G.LetPattern (G.expr_to_pattern e2, v1)
       in
-      [G.OtherStmtWithStmt (G.OSWS_With, e, v3)]
+      [G.OtherStmtWithStmt (G.OSWS_With, Some e, v3)]
 
   | Raise (t, v1) ->
       (match v1 with

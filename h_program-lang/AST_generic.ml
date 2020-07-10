@@ -649,7 +649,7 @@ and stmt =
   (*e: [[AST_generic.stmt]] semgrep extensions cases *)
   (*s: [[AST_generic.stmt]] OtherXxx case *)
   (* this is important to correctly compute a CFG *)
-  | OtherStmtWithStmt of other_stmt_with_stmt_operator * expr * stmt
+  | OtherStmtWithStmt of other_stmt_with_stmt_operator * expr option * stmt
   (* any here should not contain any statement! otherwise the CFG will be
    * incorrect and some analysis (e.g., liveness) will be incorrect.
    * TODO: other_stmt_operator wrap, so enforce at least one token instead
@@ -725,6 +725,8 @@ and stmt =
   and other_stmt_with_stmt_operator = 
     (* Python *)
     | OSWS_With (* newscope: newvar: in OtherStmtWithStmt with LetPattern *)
+    (* Ruby *)
+    | OSWS_BEGIN | OSWS_END (* also in Awk, Perl? *)
 (*e: type [[AST_generic.other_stmt_with_stmt_operator]] *)
 
 (*s: type [[AST_generic.other_stmt_operator]] *)
@@ -746,6 +748,8 @@ and stmt =
     | OS_Fallthrough (* only in Switch *)
     (* PHP *)
     | OS_GlobalComplex (* e.g., global $$x, argh *)
+    (* Ruby *)
+    | OS_Redo | OS_Retry
     (* Other *)
     | OS_Todo
 (*e: type [[AST_generic.other_stmt_operator]] *)
@@ -916,8 +920,8 @@ and attribute =
   (* for methods *)
   | Ctor | Dtor
   | Getter | Setter
-  (* for parameters *)
-  | Variadic
+  (* for parameters (TODO: move to ParamSpread? ParamHashSplat? *)
+  | Variadic | VariadicHashSplat
 (*e: type [[AST_generic.keyword_attribute]] *)
 
 (*s: type [[AST_generic.other_attribute_operator]] *)
@@ -1085,7 +1089,7 @@ and function_definition = {
      | OPO_KwdParam | OPO_SingleStarParam | OPO_SlashParam
      (* Go *)
      | OPO_Receiver (* of parameter_classic, used to tag the "self" parameter*)
-     (* PHP *) 
+     (* PHP/Ruby *) 
      | OPO_Ref (* of parameter_classic *)
      (* Other *) 
      | OPO_Todo
@@ -1287,6 +1291,8 @@ and directive =
 (*e: type [[AST_generic.other_directive_operator]] *)
   (* C/PHP *)
   (* TODO: Pragma/Declare, move OE_UseStrict here for JS? *)
+  (* Ruby *)
+  | OI_Alias | OI_Undef
 
 
 (*****************************************************************************)
@@ -1333,6 +1339,8 @@ and any =
   | Dk of definition_kind
   | Di of dotted_ident
   | Fld of field
+  | Lbli of label_ident
+  | Fldi of field_ident
   | Tk of tok
   (*e: [[AST_generic.any]] other cases *)
 (*e: type [[AST_generic.any]] *)
