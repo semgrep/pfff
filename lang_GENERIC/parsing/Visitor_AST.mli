@@ -4,6 +4,7 @@ open AST_generic
 (* the hooks *)
 (*s: type [[Visitor_AST.visitor_in]] *)
 type visitor_in = {
+  kany: (any -> unit) * visitor_out -> any -> unit;
   kexpr: (expr  -> unit) * visitor_out -> expr  -> unit;
   kstmt: (stmt  -> unit) * visitor_out -> stmt  -> unit;
   ktype_: (type_  -> unit) * visitor_out -> type_  -> unit;

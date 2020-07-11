@@ -24,6 +24,7 @@ open AST_generic
 
 (* hooks *)
 type visitor_in = {
+  kany: (any -> unit) * visitor_out -> any -> unit;
   kexpr: (expr  -> unit) * visitor_out -> expr  -> unit;
   kstmt: (stmt  -> unit) * visitor_out -> stmt  -> unit;
   ktype_: (type_  -> unit) * visitor_out -> type_  -> unit;
@@ -48,7 +49,8 @@ type visitor_in = {
 and visitor_out = any -> unit
 
 let default_visitor =
-  { kexpr   = (fun (k,_) x -> k x);
+  { kany = (fun (k, _) x -> k x);
+    kexpr   = (fun (k,_) x -> k x);
     kstmt   = (fun (k,_) x -> k x);
     ktype_   = (fun (k,_) x -> k x);
     kpattern   = (fun (k,_) x -> k x);
