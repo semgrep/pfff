@@ -202,6 +202,7 @@ let visit_program ~tag_hook _prefs (_program, toks) =
     | T.T_DOT3 ii
     | T.T_DOT2 ii
     | T.T_OP_ASGN (_, ii)
+    | T.LDots ii | T.RDots ii
       -> tag ii Punctuation
   );
   ()

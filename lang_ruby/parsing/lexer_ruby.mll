@@ -448,8 +448,14 @@ and top_lexer state = parse
   | '^'   {S.beg_state state;T_CARROT (tk lexbuf)}
   | '|'   {S.beg_state state;T_VBAR (tk lexbuf)}
 
-  | "..." {S.beg_state state;T_DOT3 (tk lexbuf)}
   | ".."  {S.beg_state state;T_DOT2 (tk lexbuf)}
+
+  (* part of Ruby and also sgrep-ext:! *)
+  | "..." {S.beg_state state;T_DOT3 (tk lexbuf)}
+  (* sgrep-ext: *)
+  | "<..."  { Flag_parsing.sgrep_guard (LDots (tk lexbuf)) }
+  | "...>"  { Flag_parsing.sgrep_guard (RDots (tk lexbuf)) }
+
 
   | ":"   { let t = tk lexbuf in
             on_end (t_colon t) (atom t) state lexbuf }

@@ -211,6 +211,12 @@ type expr =
   | S of stmt
   | D of definition
 
+  (* sgrep-ext: *)
+  | Ellipsis of tok (* should be only in .pyi, types Dict[str,...], or sgrep *)
+  | DeepEllipsis of expr bracket
+  (* TODO: unused for now, need find a syntax *)
+  | TypedMetavar of ident * tok * type_
+
   (* less: use for Assign, can be Id, Tuple, Array, more? *)
   and lhs = expr 
 
@@ -296,6 +302,11 @@ and scope_resolution =
 and pattern = expr
 
 (*****************************************************************************)
+(* Type *)
+(*****************************************************************************)
+and type_ = expr
+
+(*****************************************************************************)
 (* Statement *)
 (*****************************************************************************)
 (* Note that in Ruby everything is an expr, but I still like to split expr
@@ -326,6 +337,9 @@ and stmt =
 
   and case_block = {
     case_guard : expr option;
+    (* the pattern list is a comma separated list of expressions and
+     * is converted in a || list by Ruby. The use of such comma is 
+     * actually deprecated *)
     case_whens: (tok (* when *) * pattern list * stmts) list;
     case_else: (tok (* else *) * stmts) option;
   }
@@ -379,6 +393,9 @@ and definition =
     (* treesitter: TSNOTDYP *)
     | Formal_hash_splat of tok * ident option
     | Formal_kwd of ident * tok * expr option
+
+     (* sgrep-ext: *)
+     | ParamEllipsis of tok
   
   and class_kind = 
    | C of class_or_module_name * (tok (* < *) * expr) option

@@ -121,6 +121,16 @@ let rec expr = function
   | D x -> 
       let st = definition x in
       G.OtherExpr (G.OE_StmtExpr, [G.S st])
+  | Ellipsis x ->
+     let x = info x in
+     G.Ellipsis x
+  | DeepEllipsis x ->
+     let x = bracket expr x in
+     G.DeepEllipsis x
+  | TypedMetavar (v1, v2, v3) ->
+     let v1 = ident v1 in
+     let v3 = type_ v3 in
+     G.TypedMetavar (v1, v2, v3)
 
 and formal_param = function
   | Formal_id id -> 
@@ -164,6 +174,7 @@ and formal_param = function
       let xs = list formal_param_pattern xs in
       let pat = G.PatTuple (xs) in
       G.ParamPattern pat
+  | ParamEllipsis tok -> G.ParamEllipsis tok
 
 and formal_param_pattern = function
   | Formal_id id -> G.PatId (id, G.empty_id_info())
@@ -172,8 +183,12 @@ and formal_param_pattern = function
       G.PatTuple (xs)
 
   | Formal_amp _ | Formal_star _ | Formal_rest _ 
-  | Formal_default _ | Formal_hash_splat _ | Formal_kwd _ as x ->
-      todo (Pa x)
+  | Formal_default _ | Formal_hash_splat _ | Formal_kwd _ 
+  | ParamEllipsis _
+      as x ->
+      let x = formal_param x in
+      G.OtherPat (G.OP_Todo, [G.Pa x])
+      
 
 and scope_resolution = function
   | TopScope (t, v) -> 
