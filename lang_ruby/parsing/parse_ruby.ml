@@ -144,7 +144,7 @@ let parse file =
       in
       (* todo: need to fix those! *)
       let s = Common.exn_to_s exn in
-      pr2 (spf "Exn on %s = %s" file s);
+      (* pr2 (spf "Exn on %s = %s" file s); *)
 
       if not !Flag.error_recovery && exn = Dyp.Syntax_error
       then raise (PI.Parsing_error (TH.info_of_tok cur));
