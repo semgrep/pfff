@@ -17,6 +17,7 @@ open Common
 open Ast_ruby
 module G = AST_generic
 module PI = Parse_info
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -41,18 +42,12 @@ let list = List.map
 let bool = id
 let string = id
 
-let _error = AST_generic.error
 let fake s = Parse_info.fake_info s
 let fb = G.fake_bracket
 
 (* TODO *)
 let combine_tok t _tafter =
   t
-
-let todo any = 
-  let s = Ast_ruby.show_any any in
-  pr2 (spf "TODO: %s" s);
-  raise Todo
 
 let stmt1 xs =
   G.Block (fb xs)
@@ -126,6 +121,16 @@ let rec expr = function
   | D x -> 
       let st = definition x in
       G.OtherExpr (G.OE_StmtExpr, [G.S st])
+  | Ellipsis x ->
+     let x = info x in
+     G.Ellipsis x
+  | DeepEllipsis x ->
+     let x = bracket expr x in
+     G.DeepEllipsis x
+  | TypedMetavar (v1, v2, v3) ->
+     let v1 = ident v1 in
+     let v3 = type_ v3 in
+     G.TypedMetavar (v1, v2, v3)
 
 and formal_param = function
   | Formal_id id -> 
@@ -169,6 +174,7 @@ and formal_param = function
       let xs = list formal_param_pattern xs in
       let pat = G.PatTuple (xs) in
       G.ParamPattern pat
+  | ParamEllipsis tok -> G.ParamEllipsis tok
 
 and formal_param_pattern = function
   | Formal_id id -> G.PatId (id, G.empty_id_info())
@@ -177,8 +183,12 @@ and formal_param_pattern = function
       G.PatTuple (xs)
 
   | Formal_amp _ | Formal_star _ | Formal_rest _ 
-  | Formal_default _ | Formal_hash_splat _ | Formal_kwd _ as x ->
-      todo (Pa x)
+  | Formal_default _ | Formal_hash_splat _ | Formal_kwd _ 
+  | ParamEllipsis _
+      as x ->
+      let x = formal_param x in
+      G.OtherPat (G.OP_Todo, [G.Pa x])
+      
 
 and scope_resolution = function
   | TopScope (t, v) -> 
@@ -217,8 +227,16 @@ and method_name mn =
   | MethodAtom (xs, t) -> 
       (match xs with
       | [StrChars s] -> Left (s, t)
-      | _ -> todo (Mn mn)
+      | _ -> Right (string_contents_list xs)
       )
+
+and string_contents_list xs =
+  let xs = list string_contents xs in
+  G.OtherExpr (G.OE_Todo, xs |> List.map (fun e -> G.E e))
+
+and string_contents = function
+  | StrChars s -> G.L (G.String (s, fake s))
+  | StrExpr e -> expr e
 
 and method_name_to_any mn = 
   match method_name mn with
@@ -313,17 +331,18 @@ and literal x =
       (match skind with
       | Single s -> G.L (G.String (s, t))
       | Double [StrChars s] -> G.L (G.String (s, t))
-      | _ -> todo (E (Literal x))
+      | Double xs -> string_contents_list xs
+      | Tick xs -> string_contents_list xs
       )
   | Regexp ((xs, s2), t) ->
       (match xs with
       | [StrChars s] -> G.L (G.Regexp (s ^ s2, t))
-      | _ -> todo (E (Literal x))
+      | _ -> string_contents_list xs
       )
   | Atom (xs, t) ->
       (match xs with
       | [StrChars s] -> G.L (G.Atom (s, t))
-      | _ -> todo (E (Literal x))
+      | _ -> string_contents_list xs
       )
 
 and expr_as_stmt = function
@@ -392,8 +411,26 @@ and stmt st =
       let lbl = exprs_to_label_ident es in
       G.OtherStmt (G.OS_Retry, [G.Tk t; G.Lbli lbl])
 
-  | Case (_t, _blk) -> todo (S2 st)
-  | ExnBlock _b -> todo (S2 st)
+  | Case (t, { case_guard = eopt; case_whens = whens; case_else = stopt}) -> 
+      let eopt = option expr eopt in
+      let whens = list when_clause whens in
+      let default = 
+        match stopt with
+        | None -> []
+        | Some (t, sts) ->
+            let st = stmts sts |> stmt1 in
+            [[G.Default t], st]
+      in
+      G.Switch (t, eopt, whens @ default)
+            
+  | ExnBlock b -> body_exn b
+
+and when_clause (t, pats, sts) = 
+  let pats = list pattern pats in
+  let st = stmts sts |> stmt1 in
+  pats |> List.map (fun pat ->
+      G.Case (t, pat)),
+  st
 
 and exprs_to_label_ident = function
   | [] -> G.LNone
@@ -413,6 +450,10 @@ and pattern pat =
   let e = expr pat in
   G.expr_to_pattern e
 
+and type_ e = 
+  let e = expr e in
+  G.expr_to_type e
+
 and option_tok_stmts x =
   match x with 
   | None -> None
@@ -421,20 +462,26 @@ and option_tok_stmts x =
 and definition def = 
   match def with
   | MethodDef (_t, kind, params, body) -> 
+      let params = list formal_param params in
+      let body = body_exn body in
+      let funcdef = { G.fparams = params; frettype = None; fbody = body } in
       (match kind with
       | M mn -> 
         (match method_name mn with
         | Left id -> 
            let ent = G.basic_entity id [] in
-           let params = list formal_param params in
-           let body = body_exn body in
-           let def = { G.fparams = params; frettype = None; fbody = body } in
-           G.DefStmt (ent, G.FuncDef def)
-        | Right _e -> todo (Def def)
+           G.DefStmt (ent, G.FuncDef funcdef)
+        | Right e -> 
+           let ent = G.basic_entity ("",fake"") [] in
+           G.OtherStmt (G.OS_Todo, [G.E e; G.Def (ent, G.FuncDef funcdef)])
         )
-      | SingletonM _ -> todo (Def def)
+      | SingletonM e -> 
+            let e = expr e in
+            let ent = G.basic_entity ("",fake"") [] in
+            G.OtherStmt (G.OS_Todo, [G.E e; G.Def (ent, G.FuncDef funcdef)])
       )
   | ClassDef (_t, kind, body) ->
+      let body = body_exn body in
       (match kind with
       | C (name, inheritance_opt) ->
          let extends = 
@@ -447,7 +494,6 @@ and definition def =
          (match name with 
          | NameConstant id -> 
              let ent = G.basic_entity id [] in
-             let body = body_exn body in
              let def = { G.ckind = G.Class; cextends = extends;
                          (* TODO: this is done by special include/require
                            builtins *)
@@ -455,9 +501,13 @@ and definition def =
                          cbody = fb ([G.FieldStmt body]);
                        } in
              G.DefStmt (ent, G.ClassDef def)
-         | NameScope _ -> todo (Def def)
+         | NameScope x -> 
+             let e = scope_resolution x in    
+             G.OtherStmt (G.OS_Todo, [G.E e; G.S body])
          )
-      | SingletonC _ -> todo (Def def)
+      | SingletonC (t, e) -> 
+          let e = expr e in
+          G.OtherStmt (G.OS_Todo, [G.Tk t; G.E e; G.S body])
       )
   | ModuleDef (_t, name, body) ->
       let body = body_exn body in
@@ -467,7 +517,9 @@ and definition def =
             let mkind = G.ModuleStruct (None, [body]) in
             let def = { G.mbody = mkind } in
             G.DefStmt (ent, G.ModuleDef def)
-      | NameScope _ -> todo (Def def)
+      | NameScope x -> 
+            let e = scope_resolution x in    
+            G.OtherStmt (G.OS_Todo, [G.E e; G.S body])
       )
   | BeginBlock (_t, (t1, st, t2)) ->
       let st = stmts st in
@@ -490,16 +542,56 @@ and body_exn x =
   match x with
   | { body_exprs = xs; rescue_exprs = []; ensure_expr = None; else_expr = None}
     -> stmts xs |> stmt1
-  | _ -> todo (S2 (ExnBlock x))
+  | { body_exprs = xs; 
+      rescue_exprs = catches; ensure_expr = finally_opt; 
+      else_expr = elseopt} -> 
+      let body = stmts xs |> stmt1 in
+      let catches = list rescue_clause catches in
+      let finally_opt =
+        match finally_opt with
+        | None -> None
+        | Some (t, sts) -> 
+            let st = stmts sts |> stmt1 in
+            Some (t, st)
+      in
+      (match elseopt with
+      | None -> G.Try (fake "try", body, catches, finally_opt)
+      | Some (_t, sts) -> 
+         let st = stmts sts |> stmt1 in
+         let try_ = G.Try (fake "try", body, catches, finally_opt) in
+         let st = G.Block (fb [try_; st]) in
+         G.OtherStmtWithStmt (G.OSWS_Else_in_try, None, st)
+            
+      )
 
+and rescue_clause (t, exns, exnvaropt, sts) = 
+  let st = stmts sts |> stmt1 in
+  let exns = list exception_ exns in
+  match exns, exnvaropt with
+  | [], None -> 
+      t, G.PatUnderscore t, st
+  | [], Some (t, lhs) ->
+     let e = expr lhs in
+     t, G.OtherPat (G.OP_Todo, [G.Tk t; G.E e]), st
+  | x::xs, None -> 
+    let disjs = List.fold_left (fun e acc -> G.PatDisj (e, acc)) x xs in
+    t, disjs, st
+
+  | x::xs, Some (t, lhs) ->
+    let disjs = List.fold_left (fun e acc -> G.PatDisj (e, acc)) x xs in
+    let e = expr lhs in
+    t, G.OtherPat (G.OP_Todo, [G.Tk t; G.E e; G.P disjs]), st
+
+and exception_ e = 
+  let t = type_ e in
+  (* TODO: should pass the possible id in exnvaropt above here? *)
+  G.PatVar (t, None)
 
 and stmts xs = 
   list expr_as_stmt xs
 
-
 let  program xs = 
   stmts xs
-
 
 let any x = 
   match x with
@@ -512,5 +604,6 @@ let any x =
   | S2 x -> G.S (stmt x)
   | Ss xs -> G.Ss (stmts xs)
   | Pr xs -> G.Ss (stmts xs)
-  | _ -> 
-      todo x
+  (* sgrep_spatch_pattern just generate E/S2/Ss *)
+  | _ -> raise Impossible
+

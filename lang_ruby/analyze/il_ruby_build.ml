@@ -512,7 +512,10 @@ let refactor_formal_list f acc lst pos =
 
 let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr = 
   match e with
-    | Ast.Splat _ -> raise Todo
+    | Ast.Splat _ 
+    | Ast.Ellipsis _ | Ast.DeepEllipsis _ | Ast.TypedMetavar _
+      -> 
+      raise Todo
     | Ast.Binop(_, (Ast.Op_OP_ASGN _, _), _) 
     | Ast.S Ast.If _ | Ast.S Ast.Yield _ | Ast.S Ast.Return _  
     | Ast.S Ast.Break _ | Ast.S Ast.Next _ | Ast.S Ast.Redo _ | Ast.S Ast.Retry _
@@ -1343,7 +1346,9 @@ and refactor_assignment (acc: stmt acc) (lhs: Ast.expr) (rhs: Ast.expr)
 
 and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc = 
   match e with
-  | Ast.Splat _ -> raise Todo
+  | Ast.Splat _ 
+  | Ast.Ellipsis _ | Ast.DeepEllipsis _ | Ast.TypedMetavar _
+    -> raise Todo
   | Ast.D Ast.Alias(p3, Ast.MethodId((s1, p1),((Ast.ID_Global) as k1)), 
                     Ast.MethodId((s2, p2),((Ast.ID_Global) as k2))) ->
       let g1 = (refactor_builtin_or_global p1 k1,s1) in
@@ -1743,6 +1748,7 @@ and refactor_method_formal (acc:stmt acc) t _pos : stmt acc * method_formal_para
   match t with
   | Ast.Formal_hash_splat _ 
   | Ast.Formal_kwd _
+  | Ast.ParamEllipsis _
     -> failwith "TODO"
 
   | Ast.Formal_id ((str,_pos)) -> 
@@ -1800,6 +1806,7 @@ and refactor_method_formal (acc:stmt acc) t _pos : stmt acc * method_formal_para
 and refactor_block_formal acc t pos : stmt acc * block_formal_param = match t with
   | Ast.Formal_hash_splat _ 
   | Ast.Formal_kwd _
+  | Ast.ParamEllipsis _
     -> failwith "TODO"
 
   | Ast.Formal_id ((str,pos)) -> 

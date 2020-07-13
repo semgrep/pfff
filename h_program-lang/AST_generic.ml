@@ -623,7 +623,7 @@ and stmt =
   (* newscope: *)
   | For of tok (* 'for', 'foreach'*) * for_header * stmt
 
-  (* The expr can be None for Go.
+  (* The expr can be None for Go and Ruby.
    * less: could be merged with ExprStmt (MatchPattern ...) *)
   | Switch of tok (* 'switch' or also 'select' in Go *) * expr option * 
      case_and_body list
@@ -727,6 +727,7 @@ and stmt =
     | OSWS_With (* newscope: newvar: in OtherStmtWithStmt with LetPattern *)
     (* Ruby *)
     | OSWS_BEGIN | OSWS_END (* also in Awk, Perl? *)
+    | OSWS_Else_in_try
 (*e: type [[AST_generic.other_stmt_with_stmt_operator]] *)
 
 (*s: type [[AST_generic.other_stmt_operator]] *)

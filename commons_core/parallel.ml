@@ -64,7 +64,13 @@ let invoke2 f x =
       Unix.close output;
       let input = Unix.in_channel_of_descr input in
       fun () ->
-        let v = Marshal.from_channel input in
+        let v = 
+          try 
+            Marshal.from_channel input 
+          with End_of_file -> 
+          `Exn 
+           (Failure "End_of_file in Parallel.invoke parent, probably segfault in child")
+        in
         ignore (Unix.waitpid [] pid);
         close_in input;
         match v with

@@ -133,6 +133,7 @@ let rec param_to_pattern = function
       (* TODO, use a HashSplat expr instead of that *)
       Unary((Op_UStarStar, t), Id (("_", t), ID_Lowercase))
   | Formal_kwd (id, t, _) -> raise Common.Impossible
+  | ParamEllipsis _ -> raise Common.Impossible
 
 and params_to_pattern xs = 
   let xs = List.map param_to_pattern xs in
@@ -253,6 +254,7 @@ and params_to_pattern xs =
 %token <Parse_info.t> T_MATCH  <Parse_info.t> T_NMATCH  /* =~ and !~ */
 
 %token <Parse_info.t> T_DOT2 <Parse_info.t> T_DOT3 /* .. and ... */
+%token <Parse_info.t> LDots <Parse_info.t> RDots
 
 %token <Parse_info.t> T_LSHFT <Parse_info.t> T_RSHFT    /* << and >> */
 
@@ -309,7 +311,13 @@ eol_or_semi:
 /*(*************************************************************************)*/
 /*(*1 Sgrep *)*/
 /*(*************************************************************************)*/
-sgrep_spatch_pattern: eols stmt_list T_EOF { Pr $2 }
+sgrep_spatch_pattern: eols stmt_list T_EOF 
+   { match $2 with
+     | [] -> Ss []
+     | [S s] -> S2 s
+     | [e] -> E e
+     | xs -> Ss xs
+   }
 
 /*(*************************************************************************)*/
 /*(*1 Statement (part 1) *)*/
@@ -433,6 +441,10 @@ primary:
   | K_NIL             { Literal(Nil $1) }
   | K_TRUE            { Literal(Bool (true,$1)) }
   | K_FALSE           { Literal(Bool (false,$1)) }
+
+  /*(* typing-ext: sgrep-ext: *)*/
+  | T_DOT3              { Ellipsis $1 }
+  | LDots primary RDots { Flag_parsing.sgrep_guard (DeepEllipsis ($1, $2, $3)) }
 
   /*(* stmt-->topcall-->command-->command_name (with empty call_args) vs
      * stmt-->expr-->arg-->primary-->command_name *)*/
@@ -895,6 +907,7 @@ formal_arg:
       { M.seen_str dyp id; 
         Formal_default ($1, $2, e) }
   | any_LPAREN formal_arg_nonempty_list<f> T_RPAREN { Formal_tuple ($1, f, $3)}
+  | T_DOT3 { ParamEllipsis $1 }
 
 formal_arg_nonempty_list:
   | formal_arg<f> { [f] }
