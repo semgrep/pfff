@@ -750,7 +750,13 @@ let program v =
 let any =
   function
   | Expr v1 -> let v1 = expr v1 in G.E v1
-  | Stmt v1 -> let v1 = stmt v1 in G.S v1
+  | Stmt v1 -> 
+      let v1 = stmt v1 in 
+      (* in Python Assign is a stmt but in the generic AST it's an expression*)
+      (match v1 with
+      | G.ExprStmt (x,_t) -> G.E x
+      | _ -> G.S v1
+      )
   (* TODO? should use list stmt_aux here? Some intermediate Block
    * could be inserted preventing some sgrep matching?
    *)
