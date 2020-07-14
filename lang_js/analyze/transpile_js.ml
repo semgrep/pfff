@@ -103,6 +103,8 @@ let gensym_name s tok =
 
 
 let var_of_simple_pattern (expr, fname) init_builder pat =
+  (* Creates a basic variable "let" assignment from a single leaf pattern element;
+   * The variable initializer is determined from init_builder *)
   match pat with
   (* { x } = varname; -~> x = varname.x *)
   | C.PatId (name, None) ->
@@ -123,28 +125,42 @@ let var_of_simple_pattern (expr, fname) init_builder pat =
     }
   | _ -> failwith "TODO: simple pattern not handled"
 
+let rec compile_pattern_over_array idx element_expansions remainder =
+  (* Converts each element in a pattern array into a variable assignment;
+   * in the case of nested arrays these are flattened into one list of
+   * assignment statements *)
+  match remainder with
+  | [] -> []
+  | [Right _] -> failwith "useless comma"
+  | [Left pat] -> element_expansions idx pat
+  | (Left pat)::(Right _)::remainder ->
+       let var = element_expansions idx pat in
+       var @ (compile_pattern_over_array (idx + 1) element_expansions remainder)
+  (* elision *)
+  | (Right _)::remainder ->
+       compile_pattern_over_array (idx + 1) element_expansions remainder
+  | Left _::Left _::_ -> failwith "Impossible Left Left"
 
-let compile_pattern (expr, fname, fpname) varname pat =
+let rec compile_pattern_inner (expr, fname, fpname) varexpr pat =
+  (* Compiles an arbitrary complex pattern destructuring into a list of variable assignments
+   * when the right-hand-side of the destructuring assignment is an arbitrary expression *)
   match pat with
-  (* 'var { x, y } = varname'  -~> 'var x = varname.x; var y = varname.y;' *)
+  (* 'var { x, y } = varexpr'  -~> 'var x = varexpr.x; var y = varexpr.y;' *)
   | C.PatObj x ->
     x |> C.unbrace |> C.uncomma |> List.map (fun pat ->
      (match pat with
      | C.PatId _ ->
        let init_builder name = 
-         A.ObjAccess (A.Id (varname, ref A.NotResolved), 
-                    fake ".",
-                    A.PN name)
+         A.ObjAccess (varexpr, fake ".", A.PN name)
        in
        var_of_simple_pattern (expr, fname) init_builder pat 
-     (* { x: y, z } = varname; *)
+     (* { x: y, z } = varexpr; *)
      | C.PatProp (pname, _tok, pat) ->
        let pname = fpname pname in
        let init_builder _name = 
-         A.ObjAccess (A.Id (varname, ref A.NotResolved), 
-                    fake ".",
-                    pname)
+         A.ObjAccess (varexpr, fake ".", pname)
        in
+       (* TODO: Handle prop nesting here? *)
        var_of_simple_pattern (expr, fname) init_builder pat
      | C.PatDots (_tok, pat) ->
        (* Need to effectively augment JS semantics here, so transformation target needs to
@@ -163,55 +179,46 @@ let compile_pattern (expr, fname, fpname) varname pat =
        let init_builder (_name, _tok) =
          A.Apply (
            A.IdSpecial(A.Spread, fake "omit"),
-           fake_bracket [A.Id (varname, ref A.NotResolved)]
+           fake_bracket [varexpr]
          )
        in
        var_of_simple_pattern (expr, fname) init_builder pat
-     | C.PatNest (_, _) ->
-       failwith "TODO: nesting inside object pattern not handled"
-     | C.PatObj _ | C.PatArr _ ->
-       failwith "Unexpected pattern PatObj or PatArr found inside PatObj"
+     | C.PatObj _ | C.PatArr _ | C.PatNest _ ->
+       failwith "Unexpected pattern PatObj, PatArr, or PatNest found inside PatObj"
     ))
-  (* 'var [x,y] = varname' -~> 'var x = varname[0]; var y = varname[1] *)
+  (* 'var [x,y] = varexpr' -~> 'var x = varexpr[0]; var y = varexpr[1] *)
   | C.PatArr x ->
     let xs = x |> C.unbrace in
-    let idx = ref 0 in
-    let aux_pat pat =
+    let aux_pats idx pat =
       match pat with
       | C.PatId _ ->
         let init_builder (_name, tok) = 
-          A.ArrAccess (A.Id (varname, ref A.NotResolved), 
-                       A.Num (string_of_int !idx, tok))
+          A.ArrAccess (varexpr, A.Num (string_of_int idx, tok))
         in
-        var_of_simple_pattern (expr, fname) init_builder pat
+        [var_of_simple_pattern (expr, fname) init_builder pat]
       | C.PatDots (tok, pat) -> 
          let init_builder (_name, _tok) = 
-          A.Apply(A.ObjAccess (A.Id (varname, ref A.NotResolved),
-                               fake ".",
-                              (A.PN (("slice", tok)))),
-                  fake_bracket [A.Num (string_of_int !idx, tok)])
+           A.Apply(
+             A.ObjAccess (varexpr, fake ".", (A.PN (("slice", tok)))),
+             fake_bracket [A.Num (string_of_int idx, tok)]
+           )
         in
-        var_of_simple_pattern (expr, fname) init_builder pat
-      | _ -> failwith "TODO: PatArr pattern not handled"
+        [var_of_simple_pattern (expr, fname) init_builder pat]
+      | C.PatNest (pat_inner, _) ->
+        (* var [[x, y]] = varexpr -~> var x = varexpr[0][0]; var y = varexpr[0][1] *)
+        let varexpr = A.ArrAccess (varexpr, A.Num (string_of_int idx, fake "")) in
+        compile_pattern_inner (expr, fname, fpname) varexpr pat_inner
+      | C.PatObj _ | C.PatArr _ | C.PatProp _ ->
+        failwith "Unexpected pattern PatObj, PatArr or PatProp found inside PatArr"
     in
-    let rec aux xs = 
-      match xs with
-      | [] -> []
-      | [Right _] -> failwith "useless comma"
-      | [Left pat] -> [aux_pat pat]
-      | (Left pat)::(Right _)::xs -> 
-           let var = aux_pat pat in
-           incr idx;
-           var :: aux xs
-      (* elision *)
-      | (Right _)::xs -> 
-           incr idx;
-           aux xs
-      | Left _::Left _::_ -> failwith "Impossible Left Left"
-    in
-    aux xs
+    compile_pattern_over_array 0 aux_pats xs
   | _ -> failwith "TODO: pattern not handled"
-        
+
+let compile_pattern desc varname pat =
+  (* Compiles an arbitrary complex pattern destructuring into a list of variable assignments
+   * when the right-hand-side of the destructuring assignment is a simple variable name *)
+  let varexpr = A.Id (varname, ref A.NotResolved) in
+  compile_pattern_inner desc varexpr pat
    
 
 let var_pattern (expr, fname, fpname) x =
