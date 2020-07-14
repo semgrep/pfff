@@ -350,10 +350,9 @@ and stmt =
     | Case of tok * expr * tok (*:*) * item list
 
   and catch_block =
-    | BoundCatch of tok * (arg_catch paren) * stmt
+    | BoundCatch of tok * pattern paren * stmt
     (* es2019 *)
     | UnboundCatch of tok * stmt
-  and arg_catch = string wrap
 
 (*****************************************************************************)
 (* Type *)

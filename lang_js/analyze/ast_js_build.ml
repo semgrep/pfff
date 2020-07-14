@@ -462,10 +462,10 @@ and stmt1_item_list env items =
   stmt_item_list env items |> stmt_of_stmts
 
 and catch_block_handler env = function
-  | C.BoundCatch (t, arg, st) ->
-      let arg = name env (C.unparen arg) in
+  | C.BoundCatch (t, pat, st) ->
+      let pat = pattern env (C.unparen pat) in
       let st = stmt1 env st in
-      A.BoundCatch (t, arg, st)
+      A.BoundCatch (t, pat, st)
   | C.UnboundCatch (t, st) ->
       A.UnboundCatch (t, stmt1 env st)
   

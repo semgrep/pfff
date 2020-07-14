@@ -247,7 +247,7 @@ and map_stmt =
 and map_catch_block = function
   | BoundCatch (t, v1, v2) ->
       let t = map_tok t
-      and v1 = map_name v1
+      and v1 = map_expr v1
       and v2 = map_stmt v2
       in BoundCatch (t, v1, v2)
   | UnboundCatch (t, v1) ->

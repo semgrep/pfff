@@ -936,9 +936,10 @@ try_stmt:
  | T_TRY block catch finally { Try ($1, $2, Some $3, Some $4) }
 
 catch:
- | T_CATCH "(" id ")" block { BoundCatch ($1, ($2, $3, $4), $5) }
+ | T_CATCH "(" id ")" block { BoundCatch ($1, ($2, PatId ($3, None), $4), $5) }
  (* es2019 *)
  | T_CATCH block { UnboundCatch ($1, $2) }
+ | T_CATCH "(" binding_pattern ")" block { BoundCatch ($1, ($2, $3, $4), $5) }
 
 finally: T_FINALLY block { $1, $2 }
 

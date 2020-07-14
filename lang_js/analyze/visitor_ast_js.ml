@@ -205,7 +205,7 @@ and v_stmt x =
 and v_catch_block = function
   | BoundCatch (t, v1, v2) ->
       let t = v_tok t
-      and v1 = v_name v1
+      and v1 = v_expr v1
       and v2 = v_stmt v2
       in ()
   | UnboundCatch (t, v1) ->

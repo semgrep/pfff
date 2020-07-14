@@ -272,9 +272,9 @@ and stmt x =
 
 and catch_block = function
   | BoundCatch (t, v1, v2) ->
-      let v1 = name v1
+      let v1 = G.expr_to_pattern (expr v1)
       and v2 = stmt v2
-      in t, G.PatId (v1, G.empty_id_info()), v2
+      in t, v1, v2
   | UnboundCatch (t, v1) ->
       let v1 = stmt v1
       in t, G.PatUnderscore (Parse_info.fake_info "_"), v1
