@@ -17,3 +17,7 @@ const x: Y = ({
    findings,
    filePath
 }) => repoSlug;
+
+foo.every(([a, {b, c}]) => a + b + c);
+
+foo.every(([m, [n, {o, p}]]) => null);

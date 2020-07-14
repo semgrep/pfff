@@ -6,6 +6,10 @@
 // PatNested
 const { RSVP: { resolve } } = Ember;
 
+const [ x, { a, b } ] = y;
+
+const [ m, [ n, o ] ] = p;
+
 //export default function(name, options = {}) {
 //    module(name, {
 //        beforeEach() {
