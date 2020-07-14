@@ -705,8 +705,9 @@ and v_alias (v1, v2) = let v1 = v_ident v1 and v2 = v_option v_ident v2 in ()
 and v_other_directive_operator _ = ()
 
 and v_program v = v_stmts v
-and v_any =
-  function
+and v_any x =
+  let k x =
+  match x with
   | N v1 -> let v1 = v_name v1 in ()
   | En v1 -> let v1 = v_entity v1 in ()
   | E v1 -> let v1 = v_expr v1 in ()
@@ -727,7 +728,8 @@ and v_any =
   | Tk v1 -> let v1 = v_tok v1 in ()
   | Lbli v1 -> v_label_ident v1
   | Fldi v1 -> v_field_ident v1
-  
+  in 
+  vin.kany (k, all_functions) x
 
 and all_functions x = v_any x
 in
