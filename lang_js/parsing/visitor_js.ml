@@ -363,7 +363,7 @@ and v_st x =
 and v_catch_block = function
   | BoundCatch (v1, v2, v3) ->
       let v1 = v_tok v1
-      and v2 = v_paren v_arg v2
+      and v2 = v_paren v_pattern v2
       and v3 = v_st v3
       in ()
   | UnboundCatch (v1, v2) ->

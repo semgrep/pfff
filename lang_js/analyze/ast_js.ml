@@ -267,7 +267,7 @@ and stmt =
    | Default of tok * stmt
 
   and catch =
-   | BoundCatch of tok * name * stmt
+   | BoundCatch of tok * pattern * stmt
    (* es2019 *)
    | UnboundCatch of tok * stmt
 

@@ -430,11 +430,8 @@ and stmt env = function
    finalopt |> Common.opt (fun (_t, st) -> stmt env st);
 
 and catch_block env = function
-  | BoundCatch (_t, n, st) ->
-     let v = { v_name = n; v_kind = Let, fake "let"; 
-               v_init = None; 
-               v_resolved = ref Local } in
-     let env = add_locals env [v] in
+  | BoundCatch (_t, pat, st) ->
+     expr env pat;
      stmt env st
   | UnboundCatch (_t, st) -> stmt env st
 
