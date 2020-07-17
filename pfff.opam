@@ -30,7 +30,7 @@ build: [
   [make "opt"]
 ]
 install: [
-  [make "install-libs"]
+  [make "reinstall-libs"]
 ]
 depends: [
   "ocaml" {>= "4.07.0"}
