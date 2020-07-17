@@ -807,6 +807,7 @@ and map_any =
   | Tk v1 -> let v1 = map_tok v1 in Tk v1
   | I v1 -> let v1 = map_ident v1 in I ((v1))
   | N v1 -> let v1 = map_name v1 in N ((v1))
+  | Modn v1 -> let v1 = map_module_name v1 in Modn ((v1))
   | En v1 -> let v1 = map_entity v1 in En ((v1))
   | E v1 -> let v1 = map_expr v1 in E ((v1))
   | S v1 -> let v1 = map_stmt v1 in S ((v1))

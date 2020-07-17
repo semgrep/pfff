@@ -706,6 +706,7 @@ and v_program v = v_stmts v
 and v_any =
   function
   | N v1 -> let v1 = v_name v1 in ()
+  | Modn v1 -> let v1 = v_module_name v1 in ()
   | En v1 -> let v1 = v_entity v1 in ()
   | E v1 -> let v1 = v_expr v1 in ()
   | S v1 -> let v1 = v_stmt v1 in ()

@@ -1334,6 +1334,7 @@ and any =
   | Pr of program
   (*s: [[AST_generic.any]] other cases *)
   | N of name
+  | Modn of module_name
   | En of entity
   | Pa of parameter
   | Ar of argument

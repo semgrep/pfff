@@ -1061,6 +1061,7 @@ and vof_any =
   function
   | Tk v1 -> let v1 = vof_tok v1 in OCaml.VSum (("Tk", [ v1 ]))
   | N v1 -> let v1 = vof_name v1 in OCaml.VSum (("N", [ v1 ]))
+  | Modn v1 -> let v1 = vof_module_name v1 in OCaml.VSum (("Modn", [ v1 ]))
   | En v1 -> let v1 = vof_entity v1 in OCaml.VSum (("En", [ v1 ]))
   | E v1 -> let v1 = vof_expr v1 in OCaml.VSum (("E", [ v1 ]))
   | S v1 -> let v1 = vof_stmt v1 in OCaml.VSum (("S", [ v1 ]))
