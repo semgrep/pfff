@@ -85,9 +85,11 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
       | Ast.Enum x ->
           let ident = x.en_name in
           tag_ident ident (Entity (Class, (Def2 fake_no_def2)))
-      | Ast.Init (_bool, _stmt) ->
-          ()
+      | Ast.Init (_bool, _stmt) -> ()
       | Ast.DeclEllipsis _ -> ()
+      | Ast.EmptyDecl _ -> ()
+      | Ast.AnnotationType _ 
+      | Ast.AnnotationTypeElementTodo _ -> raise Todo
       );
       k d
     );

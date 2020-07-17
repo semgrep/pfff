@@ -114,7 +114,7 @@ let parse ~show_parse_error file =
       if show_parse_error
       then pr2_once (spf "PARSE ERROR with %s, exn = %s" file
                         (Common.exn_to_s exn));
-      { package = None; imports = []; decls = [] }
+      []
 
 
 let str_of_qualified_ident xs =
@@ -304,35 +304,40 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
     g; phase;
 
     current =
-     (match ast.package with
-     | Some (_, long_ident) -> (str_of_qualified_ident long_ident, E.Package)
-     | None ->            (readable, E.File)
+     (match ast with
+     | (DirectiveStmt (Package (_, long_ident, _)))::_ -> 
+            (str_of_qualified_ident long_ident, E.Package)
+     | _ ->            (readable, E.File)
      );
     current_qualifier =
-      (match ast.package with
-      | None -> []
-      | Some (_, long_ident) -> long_ident
+      (match ast with
+      | (DirectiveStmt (Package (_, long_ident, _)))::_ -> long_ident
+      | _ -> []
       );
     params_or_locals = [];
     type_parameters = [];
     imported_namespace =
-      (match ast.package with
+      (match ast with
       (* we automatically import the current.package.* *)
-      | Some (_, long_ident) -> [List.map Ast.unwrap long_ident @ ["*"]]
-      | None -> []
+      | (DirectiveStmt (Package (_, long_ident,_ )))::_ -> 
+            [List.map Ast.unwrap long_ident @ ["*"]]
+      | _ -> []
       ) @
-     ((ast.imports |> List.map (fun (_is_static, _import) ->
+     ((ast |> Common.map_filter (function
+        | DirectiveStmt (Import (_is_static, _import)) ->
        (* List.map Ast.unwrap qualified_ident *) raise Todo
-     )) @ [
+        | _ -> None
+       )) @ [
        (* we automatically import java.lang.* *)
        ["java";"lang";"*"];
        (* we automatically import top packages *)
        ["*"]
      ]
      );
-    imported_qualified = ast.imports |> Common.map_filter (fun 
-          (_is_static, _import)->
+    imported_qualified = ast |> Common.map_filter (function
+      | DirectiveStmt (Import (_is_static, _import)) ->
           raise Todo
+      | _ -> None
 (*
       match List.rev xs with
       | [] -> raise Impossible
@@ -344,22 +349,23 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
   in
 
   if phase = Defs then begin
-    match ast.package with
+    match ast with
+    | (DirectiveStmt (Package (_, long_ident, _)))::_ ->
+        create_intermediate_packages_if_not_present g G.root long_ident;
     (* have None usually for scripts, tests, or entry points *)
-    | None ->
+    | _ ->
         let dir = Common2.dirname readable in
         G.create_intermediate_directories_if_not_present g dir;
         g |> G.add_node (readable, E.File);
         g |> G.add_edge ((dir, E.Dir), (readable, E.File))  G.Has;
-    | Some (_, long_ident) ->
-        create_intermediate_packages_if_not_present g G.root long_ident;
   end;
   (* double check if we can find some of the imports
    * (especially useful when have a better java_stdlib/ to report
    * third-party packages not-yet handled).
    *)
   if phase = Inheritance then begin
-    ast.imports |> List.iter (fun (_is_static, _import) ->
+    ast |> List.iter (function
+      | DirectiveStmt (Import (_is_static, _import)) ->
       let qualified_ident_bis =
             raise Todo
       (*
@@ -382,6 +388,7 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
         pr2_once (spf "PB: wrong import: %s"
                     (str_of_qualified_ident qualified_ident_bis))
       )
+    | _ -> ()
     );
   end;
 
@@ -390,7 +397,7 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
    * to visit the AST and lookup classnames (possibly using information
    * from the import to know where to look for first).
    *)
-  decls env ast.decls
+  stmts env ast
 
 (* ---------------------------------------------------------------------- *)
 (* Declarations (classes, fields, etc) *)
@@ -416,6 +423,9 @@ and decl env = function
       }
       in
       stmt env st
+  | EmptyDecl _, _ -> ()
+  | AnnotationType _, _
+  | AnnotationTypeElementTodo _, _ -> raise Todo
 
 and decls env xs = List.iter (decl env) (Common.index_list_1 xs)
 
@@ -586,7 +596,7 @@ and enum_decl env def =
 (* ---------------------------------------------------------------------- *)
 (* mostly boilerplate, control constructs don't introduce entities *)
 and stmt env = function
-  | Empty -> ()
+  | EmptyStmt _ -> ()
   | Block (_, xs, _) -> stmts env xs
   | Expr (e, _) -> expr env e
   | If (_, e, st1, st2) ->
@@ -651,7 +661,8 @@ and stmt env = function
       exprs env (e::Common2.option_to_list eopt)
   (* The modification of env.params_locals is done in decls() *)
   | LocalVar f -> field env f
-  | LocalClass def -> class_decl env def
+  | DeclStmt x -> decl env (x, 0)
+  | DirectiveStmt _ -> raise Todo
 
 and stmts env xs =
   let rec aux env = function

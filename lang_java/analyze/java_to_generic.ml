@@ -323,7 +323,7 @@ and fix_op v = v
 
 and stmt =
   function
-  | Empty -> G.Block (fb [])
+  | EmptyStmt t -> G.Block (t, [], t)
   | Block v1 -> let v1 = bracket stmts v1 in G.Block v1
   | Expr (v1, t) -> let v1 = expr v1 in G.ExprStmt (v1, t)
   | If ((t, v1, v2, v3)) ->
@@ -366,10 +366,11 @@ and stmt =
       G.Throw (t, v1)
   | LocalVar v1 -> let (ent, v) = var_with_init v1 in
       G.DefStmt (ent, G.VarDef v)
-  | LocalClass v1 -> let (ent, cdef) = class_decl v1 in
-      G.DefStmt (ent, G.ClassDef cdef)
+  | DeclStmt v1 -> decl v1
+  | DirectiveStmt v1 -> directive v1
   | Assert ((t, v1, v2)) -> let v1 = expr v1 and v2 = option expr v2 in
       G.Assert (t, v1, v2)
+
 
 and tok_and_stmt (t, v) = 
   let v = stmt v in
@@ -523,6 +524,28 @@ and class_decl {
     } in
   ent, cdef
 
+and annotation_type_decl { 
+    an_tok = _v1;
+    an_name = v2;
+    an_mods = v3;
+    an_body = v4;
+  } =
+  let v2 = ident v2 in
+  let v3 = modifiers v3 in
+  let v4 = bracket decls v4 in
+
+  let fields = v4 |> bracket (List.map (fun x -> G.FieldStmt x)) in
+  let ent = (G.basic_entity v2 v3) in
+  let cdef = { G.
+      ckind = G.Class; (* TODO *)
+      cextends = [];
+      cimplements = [];
+      cmixins = [];
+      cbody = fields;
+    } in
+  ent, cdef
+  
+ 
 
 and class_kind = function 
   | ClassRegular ->  G.Class
@@ -541,6 +564,12 @@ and decl decl =
   | Init ((v1, v2)) -> let _v1TODO = bool v1 and v2 = stmt v2 in
       v2
   | DeclEllipsis v1 ->  G.ExprStmt (G.Ellipsis v1, G.sc)
+  | EmptyDecl t -> G.Block (t, [], t)
+  | AnnotationTypeElementTodo t -> 
+      G.OtherStmt (G.OS_Todo, [G.Tk t])
+  | AnnotationType v1  -> let (ent, def) = annotation_type_decl v1 in
+    G.DefStmt (ent, G.ClassDef def)
+
 and decls v = list decl v
 
 and import = function
@@ -549,33 +578,16 @@ and import = function
       let id = ident id in
       G.ImportFrom (t, G.DottedName xs, id, None)
 
+and directive = function
+  | Import (_vstatic, v2) -> 
+      G.DirectiveStmt (import v2)
+  | Package (t, qu, _t2) ->
+      let qu = qualified_ident qu in
+      G.DirectiveStmt (G.Package (t, qu))
+  | ModuleTodo t ->
+      G.OtherStmt (G.OS_Todo, [G.Tk t])
 
-let package (t, qu) = 
-  t, qualified_ident qu
-
-let directive_stmt imp = G.DirectiveStmt (import imp)
-
-let compilation_unit { package = pack;
-                       imports = imports;
-                       decls = xdecls
-                      } =
-  let v1 = option package pack in
-  let v2 =
-    list (fun (v1, v2) -> let _v1static = bool v1 in v2)
-    imports
-  in
-  let v3 = decls xdecls in
-  let items = v3 in
-  let imports = v2 |> List.map directive_stmt in
-  let package = 
-    match v1 with
-    | None -> []
-    | Some (t, x) -> [G.DirectiveStmt (G.Package (t, x))]
-  in
-  package @ imports @ items
-
-let program v = 
-  compilation_unit v
+let program v = stmts v
 
 let any =
   function
@@ -583,7 +595,6 @@ let any =
   | AExpr v1 -> let v1 = expr v1 in G.E v1
   | AStmt v1 -> let v1 = stmt v1 in G.S v1
   | AStmts v1 -> let v1 = List.map stmt v1 in G.Ss v1
-  | ADecls v1 -> let v1 = List.map decl v1 in G.Ss v1
   | ATyp v1 -> let v1 = typ v1 in G.T v1
   | AVar v1 -> let ent, t = var v1 in 
       G.Def (ent, G.VarDef {G.vtype = t; vinit = None})
@@ -594,7 +605,4 @@ let any =
       G.Def (ent, G.VarDef def)
   | AClass v1 -> let (ent, def) = class_decl v1 in
       G.Def (ent, G.ClassDef def)
-  | ADecl v1 -> let v1 = decl v1 in G.S v1
-  | ADirectiveStmt v1 -> let v1 = directive_stmt v1 in G.S v1
-  | ADirectiveStmts v1 -> let v1 = list directive_stmt v1 in G.Ss v1
   | AProgram v1 -> let v1 = program v1 in G.Pr v1
