@@ -412,14 +412,14 @@ and decl =
   (* top decls *)
   | Class of class_decl
   | Enum of enum_decl
-  (* java-ext: *)
+  (* java-ext: tree-sitter-only: *)
   | AnnotationType of annotation_type_decl
 
   (* inside class/interface/enum *)
   | Method of method_decl
   | Field of field
   | Init of bool (* static *) * stmt
-  (* java-ext: *)
+  (* java-ext: tree-sitter-only: *)
   | AnnotationTypeElementTodo of tok
 
   | EmptyDecl of tok (* ; *)
