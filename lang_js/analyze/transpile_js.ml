@@ -141,63 +141,26 @@ let rec compile_pattern_over_array idx element_expansions remainder =
        compile_pattern_over_array (idx + 1) element_expansions remainder
   | Left _::Left _::_ -> failwith "Impossible Left Left"
 
-let rec compile_pattern_inner (expr, fname, fpname) varexpr pat =
+
+let rec compile_pattern_inner ((expr, fname, fpname) as context) varexpr pat =
   (* Compiles an arbitrary complex pattern destructuring into a list of variable assignments
    * when the right-hand-side of the destructuring assignment is an arbitrary expression *)
   match pat with
   (* 'var { x, y } = varexpr'  -~> 'var x = varexpr.x; var y = varexpr.y;' *)
   | C.PatObj x ->
-    x |> C.unbrace |> C.uncomma |> List.map (fun pat ->
-     (match pat with
-     | C.PatId _ ->
-       let init_builder name = 
-         A.ObjAccess (varexpr, fake ".", A.PN name)
-       in
-       var_of_simple_pattern (expr, fname) init_builder pat 
-     (* { x: y, z } = varexpr; *)
-     | C.PatProp (pname, _tok, pat) ->
-       let pname = fpname pname in
-       let init_builder _name = 
-         A.ObjAccess (varexpr, fake ".", pname)
-       in
-       (* TODO: Handle prop nesting here? *)
-       var_of_simple_pattern (expr, fname) init_builder pat
-     | C.PatDots (_tok, pat) ->
-       (* Need to effectively augment JS semantics here, so transformation target needs to
-        * be impossible in actual JS:
-        *
-        *   var {...a} = b --> var a = <spread>(b)
-        *
-        * cf. xhp_attribute transpilation
-        *
-        * TODO:
-        *   Apply(
-        *     IdSpecial(Spread, fake "omit"),
-        *     [Id (varname, _), ...<all omitted keys>]
-        *   )
-        *)
-       let init_builder (_name, _tok) =
-         A.Apply (
-           A.IdSpecial(A.Spread, fake "omit"),
-           fake_bracket [varexpr]
-         )
-       in
-       var_of_simple_pattern (expr, fname) init_builder pat
-     | C.PatObj _ | C.PatArr _ | C.PatNest _ ->
-       failwith "Unexpected pattern PatObj, PatArr, or PatNest found inside PatObj"
-    ))
+    x |> C.unbrace |> C.uncomma |> List.map (compile_object_element_pattern context varexpr) |> List.flatten
   (* 'var [x,y] = varexpr' -~> 'var x = varexpr[0]; var y = varexpr[1] *)
   | C.PatArr x ->
     let xs = x |> C.unbrace in
     let aux_pats idx pat =
       match pat with
       | C.PatId _ ->
-        let init_builder (_name, tok) = 
+        let init_builder (_name, tok) =
           A.ArrAccess (varexpr, A.Num (string_of_int idx, tok))
         in
         [var_of_simple_pattern (expr, fname) init_builder pat]
-      | C.PatDots (tok, pat) -> 
-         let init_builder (_name, _tok) = 
+      | C.PatDots (tok, pat) ->
+         let init_builder (_name, _tok) =
            A.Apply(
              A.ObjAccess (varexpr, fake ".", (A.PN (("slice", tok)))),
              fake_bracket [A.Num (string_of_int idx, tok)]
@@ -213,6 +176,51 @@ let rec compile_pattern_inner (expr, fname, fpname) varexpr pat =
     in
     compile_pattern_over_array 0 aux_pats xs
   | _ -> failwith "TODO: pattern not handled"
+
+and compile_object_element_pattern (expr, fname, fpname) varexpr pat = match pat with
+  | C.PatId _ ->
+   let init_builder name =
+     A.ObjAccess (varexpr, fake ".", A.PN name)
+   in
+   [var_of_simple_pattern (expr, fname) init_builder pat]
+  (* { x: y, z } = varexpr; *)
+  | C.PatProp (pname, _tok, pat_inner) ->
+   let pname = fpname pname in
+   let init_builder _name =
+     A.ObjAccess (varexpr, fake ".", pname)
+   in
+   (
+     match pat_inner with
+       | C.PatId _ ->
+         [var_of_simple_pattern (expr, fname) init_builder pat_inner]
+       | C.PatNest (pat_nested, _) ->
+         compile_pattern_inner (expr, fname, fpname) (init_builder pname) pat_nested
+       | _ ->
+         failwith "Unexpected pattern not PatId or PatNest inside PatProp"
+   )
+  | C.PatDots (_tok, pat) ->
+   (* Need to effectively augment JS semantics here, so transformation target needs to
+    * be impossible in actual JS:
+    *
+    *   var {...a} = b --> var a = <spread>(b)
+    *
+    * cf. xhp_attribute transpilation
+    *
+    * TODO:
+    *   Apply(
+    *     IdSpecial(Spread, fake "omit"),
+    *     [Id (varname, _), ...<all omitted keys>]
+    *   )
+    *)
+   let init_builder (_name, _tok) =
+     A.Apply (
+       A.IdSpecial(A.Spread, fake "omit"),
+       fake_bracket [varexpr]
+     )
+   in
+   [var_of_simple_pattern (expr, fname) init_builder pat]
+  | C.PatObj _ | C.PatArr _ | C.PatNest _ ->
+   failwith "Unexpected pattern PatObj, PatArr, or PatNest found inside PatObj"
 
 let compile_pattern desc varname pat =
   (* Compiles an arbitrary complex pattern destructuring into a list of variable assignments
