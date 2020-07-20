@@ -475,10 +475,10 @@ and
                 } =
   let ent, rett = var m_var in
   let v2 = params m_formals in
-  let v3 = list qualified_ident m_throws in
+  let v3 = list typ m_throws in
   let v4 = stmt m_body in
-  let throws = v3 |> List.map (fun qu_id ->
-        G.OtherAttribute (G.OA_AnnotThrow, [G.Di qu_id]))
+  let throws = v3 |> List.map (fun t ->
+        G.OtherAttribute (G.OA_AnnotThrow, [G.T t]))
   in
   { ent with G.attrs = ent.G.attrs @ throws },
   { G.fparams = v2; frettype  = rett; fbody = v4 }

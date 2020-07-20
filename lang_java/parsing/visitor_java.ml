@@ -367,7 +367,7 @@ and v_method_decl (x : method_decl) =
          m_body = v_m_body
       } ->  let arg = v_var v_m_var in
             let arg = v_parameters v_m_formals in
-            let arg = v_list v_qualified_ident v_m_throws in
+            let arg = v_list v_typ v_m_throws in
             let arg = v_stmt v_m_body in ()
   in
   vin.kmethod (k, all_functions) x

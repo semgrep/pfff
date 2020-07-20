@@ -1135,7 +1135,8 @@ method_body:
  | SM     { EmptyStmt $1 }
 
 
-throws: THROWS qualified_ident_list /*(* was class_type_list *)*/  { $2 }
+throws: THROWS qualified_ident_list /*(* was class_type_list *)*/  
+  { List.map typ_of_qualified_id $2 }
 
 
 generic_method_or_constructor_decl:

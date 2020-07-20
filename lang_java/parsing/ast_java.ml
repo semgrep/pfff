@@ -328,7 +328,7 @@ and method_decl = {
   m_var: var_definition;
   (* the var.mod in params can only be Final or Annotation *)
   m_formals: parameters;
-  m_throws: qualified_ident list;
+  m_throws: typ list;
 
   (* todo: m_tparams *)
 
@@ -554,3 +554,6 @@ let decls f = fun mods vtype vars ->
 
 let constructor_invocation name args sc =
   Expr (Call ((Name name), args), sc)
+
+let typ_of_qualified_id xs =
+  TClass (xs |> List.map (fun id -> id, []))
