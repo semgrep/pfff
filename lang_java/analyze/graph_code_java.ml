@@ -498,7 +498,8 @@ and method_decl env def =
     current_qualifier = full_ident;
     params_or_locals = 
       (def.m_formals |> Common.map_filter (function 
-             | ParamClassic p -> Some p | ParamEllipsis _ -> None) 
+             | ParamClassic p | ParamReceiver p | ParamSpread (_, p) -> Some p 
+             | ParamEllipsis _ -> None) 
                      |> List.map p_or_l)
       @
      (* with methods of anon classes we need to lookup enclosing
@@ -513,7 +514,7 @@ and method_decl env def =
   var env def.m_var;
   def.m_formals |> List.iter (function
       | ParamEllipsis _ -> ()
-      | ParamClassic v -> var env v
+      | ParamClassic v | ParamReceiver v | ParamSpread (_, v) -> var env v
   );
   (* todo: m_throws *)
   stmt env def.m_body
@@ -803,7 +804,7 @@ and expr env = function
       typ env (tref);
   | Ellipsis _ | DeepEllipsis _ -> ()
   | Lambda (_params, _st) -> raise Todo (* imitate method_decl code *)
-      
+  | MethodRef _ -> raise Todo    
 
 
 and exprs env xs = List.iter (expr env) xs

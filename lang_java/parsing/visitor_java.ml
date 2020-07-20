@@ -150,6 +150,7 @@ and v_type_argument =
           (fun (v1, v2) -> let v1 = v_bool v1 and v2 = v_ref_type v2 in ())
           v1
       in ()
+and v_type_arguments x = v_list v_type_argument x
 
 and v_literal =
   function
@@ -162,6 +163,11 @@ and v_literal =
 
 and v_expr (x : expr) =
   let k x = match x with
+    | MethodRef (v1, v2, v3, v4) ->
+        OCaml.v_either v_expr v_typ v1;
+        v_tok v2;
+        v_type_arguments v3;
+        v_ident v4
     | Ellipsis v1 -> let v1 = v_tok v1 in ()
     | DeepEllipsis v1 -> let v1 = v_bracket v_expr v1 in ()
     | Name v1 -> let v1 = v_name v1 in ()
@@ -220,6 +226,8 @@ and v_parameters v = v_list v_parameter_binding v
 and v_parameter_binding =
   function
   | ParamClassic v1 -> let v1 = v_parameter v1 in ()
+  | ParamReceiver v1 -> let v1 = v_parameter v1 in ()
+  | ParamSpread (v0, v1) -> v_tok v0; let v1 = v_parameter v1 in ()
   | ParamEllipsis v1 -> let v1 = v_tok v1 in ()
 
 and v_parameter x = v_var x

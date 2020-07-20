@@ -165,15 +165,16 @@ and expr =
 
   (* Xxx.class *)
   | ClassLiteral of typ
-  (* TODO: MethodRef :: *)
+  (* tree-sitter-only: not that ident can be the special "new" *)
+  | MethodRef of expr_or_type * tok (* :: *) * type_arguments * ident
 
   (* the 'decls option' is for anon classes *)
   | NewClass of tok * typ * arguments * decls bracket option
-  (* the int counts the number of [], new Foo[][] => 2 *)
-  | NewArray of tok * typ * expr list * int * init option
   (* see tests/java/parsing/NewQualified.java *)
   | NewQualifiedClass of expr * tok (* .new *) * ident * arguments * 
       decls bracket option
+  (* the int counts the number of [], new Foo[][] => 2 *)
+  | NewArray of tok * typ * expr list * int * init option
   (* TODO: QualifiedNew *)
 
   | Call of expr * arguments
@@ -230,6 +231,8 @@ and expr =
   | Null of tok
 
 and arguments = expr list bracket
+
+and expr_or_type = (expr, typ) Common.either
 
 (*****************************************************************************)
 (* Statement *)
@@ -338,9 +341,13 @@ and method_decl = {
 
   and constructor_decl = method_decl
 
-  and parameters = parameter_binding list
+  and parameters = parameter_binding list (* TODO bracket *)
     and parameter_binding = 
      | ParamClassic of parameter
+     (* java-ext: ?? *)
+     | ParamSpread of tok (* ... *) * parameter
+     (* java-ext: 8, name is always 'this' in parameter *)
+     | ParamReceiver of parameter
      (* sgrep-ext: *)
      | ParamEllipsis of tok
     and parameter = var_definition

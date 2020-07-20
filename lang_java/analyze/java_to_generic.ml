@@ -159,6 +159,7 @@ and identifier_ =
       let v1 = list type_argument v1 and v2 = identifier_ v2 in
       Right v1::v2
 
+and type_arguments x = list type_argument x
 
 and annotation_element =
   function
@@ -275,6 +276,14 @@ and expr e =
         (Common.opt_to_list v4 |> List.map G.unbracket |> List.flatten |> List.map
             (fun st -> G.S st)) in
        G.OtherExpr (G.OE_NewQualifiedClass, any)
+  | MethodRef (v1, v2, v3, v4) ->
+      let v1 = expr_or_type v1 in
+      let v2 = tok v2 in
+      let _v3 = type_arguments v3 in
+      let v4 = ident v4 in
+      G.OtherExpr (G.OE_Todo, 
+        [v1; G.Tk v2; G.I v4])
+          
 
   | Call ((v1, v2)) -> let v1 = expr v1 and v2 = arguments v2 in
       G.Call (v1, v2)
@@ -314,6 +323,9 @@ and expr e =
       let v2 = stmt v2 in
       G.Lambda { G.fparams = v1; frettype = None; fbody = v2 }
 
+and expr_or_type = function
+  | Left e -> G.E (expr e)
+  | Right t -> G.T (typ t)
 
 and argument v = let v = expr v in G.Arg v
 
@@ -444,9 +456,14 @@ and init =
 
 and params v = List.map parameter_binding v 
 and parameter_binding = function
-  | ParamClassic v ->
+  | ParamClassic v | ParamReceiver v ->
       let (ent, t) = var v in
       G.ParamClassic (entity_to_param ent t)
+  | ParamSpread (tk, v) ->
+      let (ent, t) = var v in
+      let p = entity_to_param ent t in
+      G.ParamClassic 
+        { p with G.pattrs = G.KeywordAttr (G.Variadic, tk)::p.G.pattrs }
   | ParamEllipsis t -> G.ParamEllipsis t
 
 and
