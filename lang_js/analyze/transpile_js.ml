@@ -147,21 +147,28 @@ let rec compile_pattern_inner (expr, fname, fpname) varexpr pat =
   match pat with
   (* 'var { x, y } = varexpr'  -~> 'var x = varexpr.x; var y = varexpr.y;' *)
   | C.PatObj x ->
-    x |> C.unbrace |> C.uncomma |> List.map (fun pat ->
+    x |> C.unbrace |> C.uncomma |> List.concat_map (fun pat ->
      (match pat with
      | C.PatId _ ->
        let init_builder name = 
          A.ObjAccess (varexpr, fake ".", A.PN name)
        in
-       var_of_simple_pattern (expr, fname) init_builder pat 
+       [var_of_simple_pattern (expr, fname) init_builder pat]
      (* { x: y, z } = varexpr; *)
-     | C.PatProp (pname, _tok, pat) ->
+     | C.PatProp (pname, _tok, pat_inner) ->
        let pname = fpname pname in
        let init_builder _name = 
          A.ObjAccess (varexpr, fake ".", pname)
        in
-       (* TODO: Handle prop nesting here? *)
-       var_of_simple_pattern (expr, fname) init_builder pat
+       (
+         match pat_inner with
+           | C.PatId _ ->
+             [var_of_simple_pattern (expr, fname) init_builder pat_inner]
+           | C.PatNest (pat_nested, _) ->
+             compile_pattern_inner (expr, fname, fpname) (init_builder pname) pat_nested
+           | _ ->
+             failwith "Unexpected pattern not PatId or PatNest inside PatProp"
+       )
      | C.PatDots (_tok, pat) ->
        (* Need to effectively augment JS semantics here, so transformation target needs to
         * be impossible in actual JS:
@@ -182,7 +189,7 @@ let rec compile_pattern_inner (expr, fname, fpname) varexpr pat =
            fake_bracket [varexpr]
          )
        in
-       var_of_simple_pattern (expr, fname) init_builder pat
+       [var_of_simple_pattern (expr, fname) init_builder pat]
      | C.PatObj _ | C.PatArr _ | C.PatNest _ ->
        failwith "Unexpected pattern PatObj, PatArr, or PatNest found inside PatObj"
     ))
