@@ -69,12 +69,14 @@ type typ =
 
   (* class or interface or enum type actually *)
  and class_type =
-   (ident * type_argument list) list1
+   (ident * type_arguments) list1
 
   and type_argument =
     | TArgument of ref_type
+    (* TODO: of tok (* ? *) * bool wrap * ref_type) option *)
     | TQuestion of (bool (* extends|super, true = super *) * ref_type) option
 
+  and type_arguments = type_argument list (* TODO bracket *)
    (* A ref type should be a class type or an array of whatever, but not a
     * primitive type. We don't enforce this invariant in the AST to simplify
     * things.
@@ -121,15 +123,15 @@ type modifier =
  and element_value =
    | AnnotExprInit of expr
    | AnnotNestedAnnot of annotation
-   | AnnotArrayInit of element_value list
+   | AnnotArrayInit of element_value list (* TODO bracket *)
 
  and annotation_pair = (ident * element_value)
 
  and name_or_class_type = identifier_ list
  and identifier_ =
    | Id of ident
-   | Id_then_TypeArgs of ident * type_argument list
-   | TypeArgs_then_Id of type_argument list * identifier_
+   | Id_then_TypeArgs of ident * type_arguments
+   | TypeArgs_then_Id of type_arguments * identifier_
 
 (*****************************************************************************)
 (* Expression *)
@@ -140,7 +142,7 @@ type modifier =
  * less: do a NameGeneric instead? the type_argument could then be
  *  only at the end?
  *)
-and name = (type_argument list * ident) list1
+and name = (type_arguments * ident) list1
 
 (* Can have nested anon class (=~ closures) in expressions hence
  * the use of type ... and ... below
@@ -163,14 +165,17 @@ and expr =
 
   (* Xxx.class *)
   | ClassLiteral of typ
+  (* tree-sitter-only: not that ident can be the special "new" *)
+  | MethodRef of expr_or_type * tok (* :: *) * type_arguments * ident
 
   (* the 'decls option' is for anon classes *)
-  | NewClass of tok * typ * arguments * decls bracket option
+  | NewClass of tok (* new *) * typ * arguments * decls bracket option
+  (* see tests/java/parsing/NewQualified.java *)
+  | NewQualifiedClass of expr * tok (* . *) * 
+                tok (* new *) * typ * arguments * decls bracket option
   (* the int counts the number of [], new Foo[][] => 2 *)
   | NewArray of tok * typ * expr list * int * init option
-  (* see tests/java/parsing/NewQualified.java *)
-  | NewQualifiedClass of expr * tok (* .new *) * ident * arguments * 
-      decls bracket option
+  (* TODO: QualifiedNew *)
 
   | Call of expr * arguments
 
@@ -193,14 +198,15 @@ and expr =
    *)
   | Dot of expr * tok * ident
 
-  | ArrayAccess of expr * expr
+  | ArrayAccess of expr * expr (* TODO bracket *)
 
   | Unary of AST_generic.operator (* +/-/~/! *) wrap * expr
   | Postfix of expr * AST_generic.incr_decr wrap
   | Prefix of AST_generic.incr_decr wrap * expr
   | Infix of expr * AST_generic.operator wrap * expr
 
-  | Cast of typ bracket * expr
+  (* usually just a single typ, but can also have intersection type t1 & t2 *)
+  | Cast of typ list1 bracket * expr
 
   | InstanceOf of expr * ref_type
 
@@ -227,20 +233,22 @@ and expr =
 
 and arguments = expr list bracket
 
+and expr_or_type = (expr, typ) Common.either
+
 (*****************************************************************************)
 (* Statement *)
 (*****************************************************************************)
 
 and stmt =
-  | Empty (* could be Block [] *)
+  | EmptyStmt of tok (* could be Block [] *)
   | Block of stmts bracket
   | Expr of expr * tok
 
   | If of tok * expr * stmt * stmt option
-  | Switch of tok * expr * (cases * stmts) list
+  | Switch of tok * expr * (cases * stmts) list (* TODO bracket *)
 
   | While of tok * expr * stmt
-  | Do of tok * stmt * expr
+  | Do of tok * stmt * expr (* TODO * tok (* ; *) *)
   | For of tok * for_control * stmt
 
   | Break of tok * ident option
@@ -248,15 +256,16 @@ and stmt =
   | Return of tok * expr option
   | Label of ident * stmt
 
-  | Sync of expr * stmt
+  | Sync of (* TODO: tok * *) expr * stmt
 
-  | Try of tok * stmt * catches * (tok * stmt) option
+  | Try of tok * resources option * stmt * catches * (tok * stmt) option
   | Throw of tok * expr
 
   (* decl as statement *)
   | LocalVar of var_with_init
-
-  | LocalClass of class_decl
+  (* in recent Java, used to be only LocalClass *)
+  | DeclStmt of decl
+  | DirectiveStmt of directive
 
   (* javaext: http://java.sun.com/j2se/1.4.2/docs/guide/lang/assert.html *)
   | Assert of tok * expr * expr option (* assert e or assert e : e2 *)
@@ -269,7 +278,7 @@ and case =
 and cases = case list
 
 and for_control =
-  | ForClassic of for_init * expr list * expr list
+  | ForClassic of for_init * expr list (* TODO: expr option? *) * expr list 
   | Foreach of var_definition * expr
   and for_init =
     | ForInitVars of var_with_init list
@@ -278,6 +287,10 @@ and for_control =
 and catch = tok * var_with_union_type * stmt
 and catches = catch list
 
+and resources = resource list bracket
+  (* the expr is a an id or a field access *)
+  and resource = (var_with_init, expr) Common.either
+
 (*****************************************************************************)
 (* Definitions *)
 (*****************************************************************************)
@@ -285,6 +298,7 @@ and catches = catch list
 and entity = {
     name: ident;
     mods: modifiers;
+    (* None for inferred lambda parameters *)
     type_: typ option;
     (* todo? tparams: type_parameter list; *)
 }
@@ -319,7 +333,7 @@ and method_decl = {
   m_var: var_definition;
   (* the var.mod in params can only be Final or Annotation *)
   m_formals: parameters;
-  m_throws: qualified_ident list;
+  m_throws: typ list;
 
   (* todo: m_tparams *)
 
@@ -330,9 +344,15 @@ and method_decl = {
   m_body: stmt
 }
 
-  and parameters = parameter_binding list
+  and constructor_decl = method_decl
+
+  and parameters = parameter_binding list (* TODO bracket *)
     and parameter_binding = 
      | ParamClassic of parameter
+     (* java-ext: ?? *)
+     | ParamSpread of tok (* ... *) * parameter
+     (* java-ext: 8, name is always 'this' in parameter *)
+     | ParamReceiver of parameter
      (* sgrep-ext: *)
      | ParamEllipsis of tok
     and parameter = var_definition
@@ -347,13 +367,15 @@ and enum_decl = {
   en_name: ident;
   en_mods: modifiers;
   en_impls: ref_type list;
-  en_body: enum_constant list * decls;
+  en_body: enum_body;
 }
- and enum_constant =
-   | EnumSimple of ident
+ and enum_body = (enum_constant list * enum_body_decls) (* TODO bracket *)
+
    (* http://docs.oracle.com/javase/1.5.0/docs/guide/language/enums.html *)
-   | EnumConstructor of ident * arguments
-   | EnumWithMethods of ident * method_decl list
+   and enum_constant = ident * arguments option * class_body option
+
+   (* Not all kind of decls. Restrictions are ?? *)
+   and enum_body_decls = decls
 
 (* ------------------------------------------------------------------------- *)
 (* Class/Interface *)
@@ -373,49 +395,81 @@ and class_decl = {
   cl_impls: ref_type list;
 
   (* javaext: the methods body used to be always empty for interface *)
-  cl_body: decls bracket;
+  cl_body: class_body;
 }
   and class_kind = ClassRegular | Interface
+
+  (* Not all kind of decls. Restrictions are ?? *)
+  and class_body = decls bracket
+
+(* ------------------------------------------------------------------------- *)
+(* Annotation type (@interface) *)
+(* ------------------------------------------------------------------------- *)
+and annotation_type_decl = {
+    an_tok: tok; (* @interface *)
+    an_name: ident;
+    an_mods: modifiers;
+    an_body: annotation_type_body;
+}
+
+(* restrictions? *)
+and annotation_type_body = decls bracket
+
 (*****************************************************************************)
 (* Declaration *)
 (*****************************************************************************)
 
 and decl =
-  (* top decl *)
+  (* top decls *)
   | Class of class_decl
   | Enum of enum_decl
+  (* java-ext: tree-sitter-only: *)
+  | AnnotationType of annotation_type_decl
 
+  (* inside class/interface/enum *)
   | Method of method_decl
   | Field of field
   | Init of bool (* static *) * stmt
-  (* sgrep-ext: allows ... inside interface, class declerations *)
+  (* java-ext: tree-sitter-only: *)
+  | AnnotationTypeElementTodo of tok
+
+  | EmptyDecl of tok (* ; *)
+
+  (* sgrep-ext: allows ... inside interface, class declarations *)
   | DeclEllipsis of tok
 
 and decls = decl list
 
- [@@deriving show { with_path = false }] (* with tarzan *)
-
 (*****************************************************************************)
-(* Toplevel *)
+(* Directives *)
 (*****************************************************************************)
-type import =
+(* old: this used to not be mutually recursive, but now that we have 
+ * DirectiveStmt we need the 'and' below.
+*)
+and import =
   | ImportAll of tok * qualified_ident * tok (* * *)
   | ImportFrom of tok * qualified_ident * ident
 
- [@@deriving show { with_path = false }]
+(* old: the Package and Import used to be allowed only at the toplevel and 
+ * followed by a unique class/interface first in a 'compilation_unit' record
+ * type.
+ *)
+and directive = 
+  (* The qualified ident can also contain "*" at the very end. *)
+  | Package of tok * qualified_ident * tok (* ; *)
+  (* The bool is for static import (javaext:) *)
+  | Import of bool * import
+  | ModuleTodo of tok
 
-type compilation_unit = {
-  package: (tok * qualified_ident) option;
-  (* The qualified ident can also contain "*" at the very end.
-   * The bool is for static import (javaext:)
-   *)
-  imports: (bool * import) list;
-  (* todo? necessarily a (unique) class/interface first? *)
-  decls: decls;
-}
  [@@deriving show { with_path = false }] (* with tarzan *)
 
-type program = compilation_unit
+(*****************************************************************************)
+(* Program *)
+(*****************************************************************************)
+
+(* old: was compilation_unit with record of package/imports/decls but
+ * tree-sitter-java (and probably recent Java) is more flexible *)
+type program = stmts
  [@@deriving show] (* with tarzan *)
 
 (*****************************************************************************)
@@ -423,20 +477,18 @@ type program = compilation_unit
 (*****************************************************************************)
 
 type any =
-  | AIdent of ident
+  (* useful one for semgrep *)
   | AExpr of expr
   | AStmt of stmt
   | AStmts of stmt list
+  (* rest *)
+  | AIdent of ident
   | ATyp of typ
   | AVar of var_definition
   | AInit of init
   | AMethod of method_decl
   | AField of field
   | AClass of class_decl
-  | ADecl of decl
-  | ADecls of decls
-  | ADirectiveStmt of import
-  | ADirectiveStmts of import list
   | AProgram of program
 
  [@@deriving show { with_path = false }] (* with tarzan *)
@@ -468,3 +520,44 @@ let rec info_of_identifier_ (id : identifier_) : tok = match id with
   | Id id
   | Id_then_TypeArgs (id, _) -> snd id
   | TypeArgs_then_Id (_, id_) -> info_of_identifier_ id_
+
+let entity_of_id id = 
+  { name = id; mods = []; type_ = None }
+
+(*****************************************************************************)
+(* Parsing helpers *)
+(*****************************************************************************)
+
+type var_decl_id =
+  | IdentDecl of ident
+  | ArrayDecl of var_decl_id
+
+let mk_param_id id = 
+  ParamClassic (entity_of_id id)
+
+(* Move array dimensions from variable name to type. *)
+let rec canon_var mods t_opt v =
+  match v with
+  | IdentDecl str -> { mods = mods; type_ = t_opt; name = str }
+  | ArrayDecl v' -> 
+      (match t_opt with
+      | None -> raise Common.Impossible
+      | Some t -> canon_var mods (Some (TArray t)) v'
+      )
+
+let method_header mods mtype (v, formals) throws =
+  { m_var = canon_var mods (Some mtype) v; m_formals = formals;
+    m_throws = throws; m_body = EmptyStmt (AST_generic.fake ";") }
+
+(* Return a list of field declarations in canonical form. *)
+let decls f = fun mods vtype vars ->
+  let dcl (v, init) =
+    f { f_var = canon_var mods (Some vtype) v; f_init = init }
+  in
+  List.map dcl vars
+
+let constructor_invocation name args sc =
+  Expr (Call ((Name name), args), sc)
+
+let typ_of_qualified_id xs =
+  TClass (xs |> List.map (fun id -> id, []))

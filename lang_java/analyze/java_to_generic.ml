@@ -159,6 +159,7 @@ and identifier_ =
       let v1 = list type_argument v1 and v2 = identifier_ v2 in
       Right v1::v2
 
+and type_arguments x = list type_argument x
 
 and annotation_element =
   function
@@ -264,17 +265,25 @@ and expr e =
       )
 
   (* x.new Y(...) {...} *)
-  | NewQualifiedClass ((v0, _tok, v2, v3, v4)) ->
+  | NewQualifiedClass ((v0, _tok1, _tok2, v2, v3, v4)) ->
       let v0 = expr v0
-      and v2 = ident v2
+      and v2 = typ v2
       and v3 = arguments v3
       and v4 = option (bracket decls) v4
       in 
       let any = 
-        [G.E v0; G.I v2] @ (v3 |> G.unbracket |> List.map (fun arg -> G.Ar arg)) @
+        [G.E v0; G.T v2] @ (v3 |> G.unbracket |> List.map (fun arg -> G.Ar arg)) @
         (Common.opt_to_list v4 |> List.map G.unbracket |> List.flatten |> List.map
             (fun st -> G.S st)) in
        G.OtherExpr (G.OE_NewQualifiedClass, any)
+  | MethodRef (v1, v2, v3, v4) ->
+      let v1 = expr_or_type v1 in
+      let v2 = tok v2 in
+      let _v3 = type_arguments v3 in
+      let v4 = ident v4 in
+      G.OtherExpr (G.OE_Todo, 
+        [v1; G.Tk v2; G.I v4])
+          
 
   | Call ((v1, v2)) -> let v1 = expr v1 and v2 = arguments v2 in
       G.Call (v1, v2)
@@ -291,8 +300,10 @@ and expr e =
   | Infix ((v1, (v2, tok), v3)) ->
       let v1 = expr v1 and v2 = v2 and v3 = expr v3 in
       G.Call (G.IdSpecial (G.Op (v2), tok), fb[G.Arg v1; G.Arg v3])
-  | Cast (((_, v1, _), v2)) -> let v1 = typ v1 and v2 = expr v2 in
-    G.Cast (v1, v2)
+  | Cast (((_, v1, _), v2)) -> 
+    let v1 = list typ v1 and v2 = expr v2 in
+    let t = Common2.foldl1 (fun acc e -> G.TyAnd (acc, fake "&", e)) v1 in
+    G.Cast (t, v2)
   | InstanceOf ((v1, v2)) -> let v1 = expr v1 and v2 = ref_type v2 in
     G.Call (G.IdSpecial (G.Instanceof, fake "instanceof"), 
         fb[G.Arg v1; G.ArgType v2])
@@ -314,6 +325,9 @@ and expr e =
       let v2 = stmt v2 in
       G.Lambda { G.fparams = v1; frettype = None; fbody = v2 }
 
+and expr_or_type = function
+  | Left e -> G.E (expr e)
+  | Right t -> G.T (typ t)
 
 and argument v = let v = expr v in G.Arg v
 
@@ -323,7 +337,7 @@ and fix_op v = v
 
 and stmt =
   function
-  | Empty -> G.Block (fb [])
+  | EmptyStmt t -> G.Block (t, [], t)
   | Block v1 -> let v1 = bracket stmts v1 in G.Block v1
   | Expr (v1, t) -> let v1 = expr v1 in G.ExprStmt (v1, t)
   | If ((t, v1, v2, v3)) ->
@@ -356,7 +370,7 @@ and stmt =
   | Sync ((v1, v2)) -> 
       let v1 = expr v1 and v2 = stmt v2 in
       G.OtherStmt (G.OS_Sync, [G.E v1; G.S v2])
-  | Try ((t, v1, v2, v3)) ->
+  | Try ((t, _v0TODO, v1, v2, v3)) ->
       let v1 = stmt v1
       and v2 = catches v2
       and v3 = option tok_and_stmt v3
@@ -366,10 +380,11 @@ and stmt =
       G.Throw (t, v1)
   | LocalVar v1 -> let (ent, v) = var_with_init v1 in
       G.DefStmt (ent, G.VarDef v)
-  | LocalClass v1 -> let (ent, cdef) = class_decl v1 in
-      G.DefStmt (ent, G.ClassDef cdef)
+  | DeclStmt v1 -> decl v1
+  | DirectiveStmt v1 -> directive v1
   | Assert ((t, v1, v2)) -> let v1 = expr v1 and v2 = option expr v2 in
       G.Assert (t, v1, v2)
+
 
 and tok_and_stmt (t, v) = 
   let v = stmt v in
@@ -443,9 +458,14 @@ and init =
 
 and params v = List.map parameter_binding v 
 and parameter_binding = function
-  | ParamClassic v ->
+  | ParamClassic v | ParamReceiver v ->
       let (ent, t) = var v in
       G.ParamClassic (entity_to_param ent t)
+  | ParamSpread (tk, v) ->
+      let (ent, t) = var v in
+      let p = entity_to_param ent t in
+      G.ParamClassic 
+        { p with G.pattrs = G.KeywordAttr (G.Variadic, tk)::p.G.pattrs }
   | ParamEllipsis t -> G.ParamEllipsis t
 
 and
@@ -457,10 +477,10 @@ and
                 } =
   let ent, rett = var m_var in
   let v2 = params m_formals in
-  let v3 = list qualified_ident m_throws in
+  let v3 = list typ m_throws in
   let v4 = stmt m_body in
-  let throws = v3 |> List.map (fun qu_id ->
-        G.OtherAttribute (G.OA_AnnotThrow, [G.Di qu_id]))
+  let throws = v3 |> List.map (fun t ->
+        G.OtherAttribute (G.OA_AnnotThrow, [G.T t]))
   in
   { ent with G.attrs = ent.G.attrs @ throws },
   { G.fparams = v2; frettype  = rett; fbody = v4 }
@@ -483,17 +503,13 @@ and enum_decl {
   let tdef = {G.tbody = G.OrType v4 } in
   ent, tdef
 
-and enum_constant =
-  function
-  | EnumSimple v1 -> let v1 = ident v1 in 
-      G.OrConstructor (v1, [])
-  | EnumConstructor ((v1, v2)) ->
-      let v1 = ident v1 and _v2TODO = arguments v2 in
-      G.OrConstructor (v1, [])
-      
-  | EnumWithMethods ((v1, v2)) ->
-      let v1 = ident v1 and _v2TODO = list method_decl v2 in
-      G.OrConstructor (v1, [])
+and enum_constant (v1, v2, v3) =
+  let v1 = ident v1 in
+  let _v2TODO = option arguments v2 in
+  let _v3TODO = option class_body v3 in
+  G.OrConstructor (v1, [])
+
+and class_body x = bracket decls x
 
 and class_decl {
                  cl_name = cl_name;
@@ -510,7 +526,7 @@ and class_decl {
   let v4 = modifiers cl_mods in
   let v5 = option typ cl_extends in
   let v6 = list ref_type cl_impls in 
-  let v7 = bracket decls cl_body in 
+  let v7 = class_body cl_body in 
   let fields = v7 |> bracket (List.map (fun x -> G.FieldStmt x)) in
   let ent = { (G.basic_entity v1 v4) with
       G.tparams = v3 } in
@@ -523,6 +539,28 @@ and class_decl {
     } in
   ent, cdef
 
+and annotation_type_decl { 
+    an_tok = _v1;
+    an_name = v2;
+    an_mods = v3;
+    an_body = v4;
+  } =
+  let v2 = ident v2 in
+  let v3 = modifiers v3 in
+  let v4 = bracket decls v4 in
+
+  let fields = v4 |> bracket (List.map (fun x -> G.FieldStmt x)) in
+  let ent = (G.basic_entity v2 v3) in
+  let cdef = { G.
+      ckind = G.Class; (* TODO *)
+      cextends = [];
+      cimplements = [];
+      cmixins = [];
+      cbody = fields;
+    } in
+  ent, cdef
+  
+ 
 
 and class_kind = function 
   | ClassRegular ->  G.Class
@@ -541,6 +579,12 @@ and decl decl =
   | Init ((v1, v2)) -> let _v1TODO = bool v1 and v2 = stmt v2 in
       v2
   | DeclEllipsis v1 ->  G.ExprStmt (G.Ellipsis v1, G.sc)
+  | EmptyDecl t -> G.Block (t, [], t)
+  | AnnotationTypeElementTodo t -> 
+      G.OtherStmt (G.OS_Todo, [G.Tk t])
+  | AnnotationType v1  -> let (ent, def) = annotation_type_decl v1 in
+    G.DefStmt (ent, G.ClassDef def)
+
 and decls v = list decl v
 
 and import = function
@@ -549,33 +593,16 @@ and import = function
       let id = ident id in
       G.ImportFrom (t, G.DottedName xs, id, None)
 
+and directive = function
+  | Import (_vstatic, v2) -> 
+      G.DirectiveStmt (import v2)
+  | Package (t, qu, _t2) ->
+      let qu = qualified_ident qu in
+      G.DirectiveStmt (G.Package (t, qu))
+  | ModuleTodo t ->
+      G.OtherStmt (G.OS_Todo, [G.Tk t])
 
-let package (t, qu) = 
-  t, qualified_ident qu
-
-let directive_stmt imp = G.DirectiveStmt (import imp)
-
-let compilation_unit { package = pack;
-                       imports = imports;
-                       decls = xdecls
-                      } =
-  let v1 = option package pack in
-  let v2 =
-    list (fun (v1, v2) -> let _v1static = bool v1 in v2)
-    imports
-  in
-  let v3 = decls xdecls in
-  let items = v3 in
-  let imports = v2 |> List.map directive_stmt in
-  let package = 
-    match v1 with
-    | None -> []
-    | Some (t, x) -> [G.DirectiveStmt (G.Package (t, x))]
-  in
-  package @ imports @ items
-
-let program v = 
-  compilation_unit v
+let program v = stmts v
 
 let any =
   function
@@ -583,7 +610,6 @@ let any =
   | AExpr v1 -> let v1 = expr v1 in G.E v1
   | AStmt v1 -> let v1 = stmt v1 in G.S v1
   | AStmts v1 -> let v1 = List.map stmt v1 in G.Ss v1
-  | ADecls v1 -> let v1 = List.map decl v1 in G.Ss v1
   | ATyp v1 -> let v1 = typ v1 in G.T v1
   | AVar v1 -> let ent, t = var v1 in 
       G.Def (ent, G.VarDef {G.vtype = t; vinit = None})
@@ -594,7 +620,4 @@ let any =
       G.Def (ent, G.VarDef def)
   | AClass v1 -> let (ent, def) = class_decl v1 in
       G.Def (ent, G.ClassDef def)
-  | ADecl v1 -> let v1 = decl v1 in G.S v1
-  | ADirectiveStmt v1 -> let v1 = directive_stmt v1 in G.S v1
-  | ADirectiveStmts v1 -> let v1 = list directive_stmt v1 in G.Ss v1
   | AProgram v1 -> let v1 = program v1 in G.Pr v1

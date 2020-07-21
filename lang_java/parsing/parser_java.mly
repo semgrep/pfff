@@ -78,37 +78,6 @@ let (qualified_ident: name_or_class_type -> qualified_ident) = fun xs ->
   | TypeArgs_then_Id _ -> raise Parsing.Parse_error
   )
 
-type var_decl_id =
-  | IdentDecl of ident
-  | ArrayDecl of var_decl_id
-
-let mk_param_id id = 
-  ParamClassic { mods = []; type_ = None; name = id; }
-
-(* Move array dimensions from variable name to type. *)
-let rec canon_var mods t_opt v =
-  match v with
-  | IdentDecl str -> { mods = mods; type_ = t_opt; name = str }
-  | ArrayDecl v' -> 
-      (match t_opt with
-      | None -> raise Impossible
-      | Some t -> canon_var mods (Some (TArray t)) v'
-      )
-
-let method_header mods mtype (v, formals) throws =
-  { m_var = canon_var mods (Some mtype) v; m_formals = formals;
-    m_throws = throws; m_body = Empty }
-
-(* Return a list of field declarations in canonical form. *)
-
-let decls f = fun mods vtype vars ->
-  let dcl (v, init) =
-    f { f_var = canon_var mods (Some vtype) v; f_init = init }
-  in
-  List.map dcl vars
-
-let constructor_invocation name args sc =
-  Expr (Call ((Name name), args), sc)
 
 let expr_to_typename expr =
     match expr with
@@ -122,10 +91,10 @@ let expr_to_typename expr =
         pr2_gen expr;
         raise Todo
 
-let mk_adecl_or_adecls = function
-  | [] -> ADecls []
-  | [x] -> ADecl x
-  | xs -> ADecls xs
+let mk_stmt_or_stmts = function
+  | [] -> AStmts []
+  | [x] -> AStmt x
+  | xs -> AStmts xs
 %}
 
 /*(*************************************************************************)*/
@@ -277,32 +246,32 @@ goal: compilation_unit EOF  { $1 }
    *)*/
 compilation_unit:
   | package_declaration import_declarations type_declarations_opt
-    { { package = Some $1; imports = $2; decls = $3; } }
+    { [DirectiveStmt $1] @ ($2 |> List.map (fun x -> DirectiveStmt x)) @ $3 }
   | package_declaration                     type_declarations_opt
-    { { package = Some $1; imports = []; decls = $2; } }
+    { [DirectiveStmt $1] @ $2 }
   |                     import_declarations type_declarations_opt
-    { { package = None; imports = $1; decls = $2; } }
+    { ($1 |> List.map (fun x -> DirectiveStmt x)) @ $2 }
   |                                         type_declarations_opt
-    { { package = None; imports = []; decls = $1; } }
+    { $1 }
 
 declaration:
- | class_declaration     { Class $1 }
+ | class_declaration      { Class $1 }
  | interface_declaration  { Class $1 }
  | enum_declaration       { Enum $1 }
- | method_declaration  { Method $1 }
+ | method_declaration     { Method $1 }
 
 sgrep_spatch_pattern:
- | import_declaration EOF           { ADirectiveStmt ((fun (_, imp) -> imp) $1) }
- | import_declaration import_declarations EOF  { ADirectiveStmts (List.map (fun (_, imp) -> imp) ($1::$2)) }
+ | import_declaration EOF           { AStmt (DirectiveStmt $1) }
+ | import_declaration import_declarations EOF  
+    { AStmts (($1::$2) |> List.map (fun x -> DirectiveStmt x)) }
  | expression EOF                   { AExpr $1 }
- | item_no_dots EOF                 { mk_adecl_or_adecls $1 }
- | item_no_dots item_sgrep_list EOF { mk_adecl_or_adecls ($1 @ (List.flatten $2)) }
+ | item_no_dots EOF                 { mk_stmt_or_stmts $1 }
+ | item_no_dots item_sgrep_list EOF { mk_stmt_or_stmts ($1 @ (List.flatten $2)) }
 
 item_no_dots:
- | statement_no_dots { [Init (false, $1)] }
- | declaration { [$1] }
- | local_variable_declaration_statement 
-    { $1 |> List.map (fun x -> Init (false,x)) }
+ | statement_no_dots { [$1] }
+ | declaration       { [DeclStmt $1] }
+ | local_variable_declaration_statement { $1 }
 
 /*(* coupling: copy paste of statement, without dots *)*/
 statement_no_dots:
@@ -314,10 +283,9 @@ statement_no_dots:
  | for_statement  { $1 }
 
 item_sgrep:
- | statement { [Init (false, $1)] }
- | declaration { [$1] }
- | local_variable_declaration_statement 
-    { $1 |> List.map (fun x -> Init (false,x)) }
+ | statement { [$1] }
+ | declaration { [DeclStmt $1] }
+ | local_variable_declaration_statement { $1 }
 
 item_sgrep_list:
  | item_sgrep { [$1] }
@@ -330,28 +298,28 @@ item_sgrep_list:
 
 /*(* ident_list *)*/
 package_declaration: 
- |             PACKAGE qualified_ident SM  { $1, $2 }
+ |             PACKAGE qualified_ident SM  { Package ($1, $2, $3) }
  /*(* always annotations *)*/
- | modifiers   PACKAGE qualified_ident SM  { $2, $3 (* TODO $1 *) }
+ | modifiers   PACKAGE qualified_ident SM  { Package ($2, $3, $4) (* TODO $1*)}
 
 /*(* javaext: static_opt 1.? *)*/
 import_declaration:
  | IMPORT static_opt name SM            
-    { $2, 
+    { (Import ($2, 
       (match List.rev (qualified_ident $3) with
       | x::xs -> ImportFrom ($1, List.rev xs, x)
       | [] -> raise Impossible
-      ) }
+      ))) }
  | IMPORT static_opt name DOT TIMES SM  
-    { $2, ImportAll ($1, qualified_ident $3, $5)}
+    { (Import ($2, ImportAll ($1, qualified_ident $3, $5)))}
 
 type_declaration:
- | class_declaration      { [Class $1] }
- | interface_declaration  { [Class $1] }
+ | class_declaration      { [DeclStmt (Class $1)] }
+ | interface_declaration  { [DeclStmt (Class $1)] }
  | SM  { [] }
 
  /*(* javaext: 1.? *)*/
- | enum_declaration            { [Enum $1] }
+ | enum_declaration            { [DeclStmt (Enum $1)] }
  | annotation_type_declaration { ast_todo }
 
 
@@ -467,13 +435,13 @@ class_literal:
 class_instance_creation_expression:
  | NEW name LP argument_list_opt RP 
    class_body_opt
-       { NewClass ($1, TClass (class_type $2), ($3,$4,$5), $6) }
+   { NewClass ($1, TClass (class_type $2), ($3,$4,$5), $6) }
  /*(* javaext: ? *)*/
  | primary DOT NEW identifier LP argument_list_opt RP class_body_opt
-       { NewQualifiedClass ($1, $3, $4, ($5,$6,$7), $8) }
+   { NewQualifiedClass ($1, $2, $3, TClass ([$4,[]]), ($5,$6,$7), $8) }
  /*(* javaext: not in 2nd edition java language specification. *)*/
  | name DOT NEW identifier LP argument_list_opt RP class_body_opt
-       { NewQualifiedClass ((Name (name $1)), $3, $4, ($5,$6,$7), $8) }
+   { NewQualifiedClass ((Name (name $1)), $2, $3, TClass [$4,[]],($5,$6,$7),$8)}
 
 /*
    A new array that cannot be accessed right away by appending [index]:
@@ -608,15 +576,15 @@ unary_expression_not_plus_minus:
  * using LP expression RP)
  *)*/
 cast_expression:
- | LP primitive_type RP unary_expression  { Cast (($1,$2,$3), $4) }
- | LP array_type RP unary_expression_not_plus_minus  { Cast (($1,$2,$3), $4) }
+ | LP primitive_type RP unary_expression  { Cast (($1,[$2],$3), $4) }
+ | LP array_type RP unary_expression_not_plus_minus  { Cast (($1,[$2],$3), $4) }
  | LP expression RP unary_expression_not_plus_minus
-	{  Cast (($1,expr_to_typename $2,$3), $4) }
+	{  Cast (($1,[expr_to_typename $2],$3), $4) }
 
 cast_lambda_expression:
  /*(* this can not be put inside cast_expression. See conflicts.txt*)*/
  | LP expression RP lambda_expression 
-     { Cast (($1,expr_to_typename $2,$3), $4) }
+     { Cast (($1,[expr_to_typename $2],$3), $4) }
 
 
 multiplicative_expression:
@@ -822,7 +790,7 @@ block_statement:
  | local_variable_declaration_statement  { $1 }
  | statement          { [$1] }
  /*(* javaext: ? *)*/
- | class_declaration  { [LocalClass $1] }
+ | class_declaration  { [DeclStmt (Class $1)] }
 
 local_variable_declaration_statement: local_variable_declaration SM
  { List.map (fun x -> LocalVar x) $1 }
@@ -835,7 +803,7 @@ local_variable_declaration:
  | modifiers type_ variable_declarators
      { decls (fun x -> x) $1 $2 (List.rev $3) }
 
-empty_statement: SM { Empty }
+empty_statement: SM { EmptyStmt $1 }
 
 labeled_statement: identifier COLON statement
    { Label ($1, $3) }
@@ -939,12 +907,11 @@ synchronized_statement: SYNCHRONIZED LP expression RP block { Sync ($3, $5) }
 throw_statement: THROW expression SM  { Throw ($1, $2) }
 
 try_statement:
- | TRY block catches              { Try ($1, $2, List.rev $3, None) }
- | TRY block catches_opt finally  { Try ($1, $2, $3, Some $4) }
+ | TRY block catches              { Try ($1, None, $2, List.rev $3, None) }
+ | TRY block catches_opt finally  { Try ($1, None, $2, $3, Some $4) }
  /*(* javaext: ? *)*/
  | TRY resource_specification block catches_opt finally_opt { 
-    (* TODO $2 *)
-    Try ($1, $3, $4, $5)
+    Try ($1, Some $2, $3, $4, $5)
   }
 
 finally: FINALLY block  { $1, $2 }
@@ -969,7 +936,7 @@ catch_type_list:
   | catch_type_list OR type_ { $1 @ [$3] }
 
 /*(* javaext: ? *)*/
-resource_specification: LP resource_list semi_opt RP { }
+resource_specification: LP resource_list semi_opt RP { $1, [](* TODO $2*), $4 }
 
 resource: 
  | variable_modifiers local_variable_type identifier EQ expression { }
@@ -1164,10 +1131,11 @@ method_declarator:
 
 method_body:
  | block  { $1 }
- | SM     { Empty }
+ | SM     { EmptyStmt $1 }
 
 
-throws: THROWS qualified_ident_list /*(* was class_type_list *)*/  { $2 }
+throws: THROWS qualified_ident_list /*(* was class_type_list *)*/  
+  { List.map typ_of_qualified_id $2 }
 
 
 generic_method_or_constructor_decl:
@@ -1317,9 +1285,10 @@ enum_constant:
  | modifiers enum_constant_bis { $2 }
 
 enum_constant_bis:
- | identifier                         { EnumSimple $1 }
- | identifier LP argument_list_opt RP { EnumConstructor ($1, ($2,$3,$4)) }
- | identifier LC method_declarations_opt RC  { EnumWithMethods ($1, $3) }
+ | identifier                         { $1, None, None }
+ | identifier LP argument_list_opt RP { $1, Some ($2,$3,$4), None }
+ | identifier LC method_declarations_opt RC  
+    { $1, None, Some ($2, $3 |> List.map (fun x -> Method x) , $4) }
 
 enum_body_declarations: SM class_body_declarations_opt { $2 }
 

@@ -850,13 +850,16 @@ and type_ =
 
   | TyQuestion of type_ * tok (* a.k.a option type *)
 
+  (* intersection types, used for Java Cast *)
+  | TyAnd of type_ * tok (* & *) * type_
+  (* unused for now, but could use for OCaml variants, or for union types! *)
+  | TyOr of type_ * tok (* | *) * type_
+
   (* Anonymous record type, a.k.a shape in PHP/Hack. See also AndType.
    * Most record types are defined via a TypeDef and are then referenced
    * via a TyName. Here we have flexible record types (a.k.a. rows in OCaml).
    *)
-  | TyAnd of (ident * type_) list bracket
-  (* unused for now, but could use for OCaml variants, or for union types! *)
-  | TyOr of type_ list
+  | TyRecordAnon of (ident * type_) list bracket
   (*e: [[AST_generic.type_]] other cases *)
   (*s: [[AST_generic.type_]] OtherXxx case *)
   | OtherType of other_type_operator * any list
