@@ -564,12 +564,7 @@ and enum_decl env def =
   let (csts, xs) = def.en_body in
   decls env xs;
 
-  csts |> List.iter (fun enum_constant ->
-
-    let ident =
-      match enum_constant with
-      | EnumSimple id | EnumConstructor (id, _) | EnumWithMethods (id, _) -> id
-    in
+  csts |> List.iter (fun (ident, args_opt, body_opt) ->
     let full_ident = env.current_qualifier @ [ident] in
     let full_str = str_of_qualified_ident full_ident in
     let node = (full_str, E.Constant) in
@@ -583,13 +578,8 @@ and enum_decl env def =
       current_qualifier = full_ident;
     }
     in
-    (match enum_constant with
-    | EnumSimple _ident -> ()
-    | EnumConstructor (_ident, (_, args, _)) ->
-        exprs env args
-    | EnumWithMethods (_ident, xs) ->
-        decls env (xs |> List.map (fun x -> Method x))
-    )
+    args_opt |> Common.do_option (fun (_, xs, _) -> exprs env xs);
+    body_opt |> Common.do_option (fun (_, xs, _) -> decls env xs);
   )
 
 (* ---------------------------------------------------------------------- *)

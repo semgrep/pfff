@@ -404,13 +404,13 @@ and
     | (v1, v2) ->
         let v1 = v_list v_enum_constant v1 and v2 = v_decls v2 in ()
   in ()
-and v_enum_constant =
-  function
-  | EnumSimple v1 -> let v1 = v_ident v1 in ()
-  | EnumConstructor ((v1, v2)) ->
-      let v1 = v_ident v1 and v2 = v_arguments v2 in ()
-  | EnumWithMethods ((v1, v2)) ->
-      let v1 = v_ident v1 and v2 = v_list v_method_decl v2 in ()
+and v_enum_constant (v1, v2, v3) =
+  v_ident v1;
+  v_option v_arguments v2;
+  v_option v_class_body v3
+
+and v_class_body v = v_bracket v_decls v
+
 and v_class_decl (x : class_decl) =
   let k x = match x with
       { cl_name = v_cl_name;
@@ -426,7 +426,7 @@ and v_class_decl (x : class_decl) =
            let arg = v_modifiers v_cl_mods in
            let arg = v_option v_typ v_cl_extends in
            let arg = v_list v_ref_type v_cl_impls in 
-        let arg = v_bracket v_decls v_cl_body in ()
+        let arg = v_class_body v_cl_body in ()
   in
   vin.kclass (k, all_functions) x
 

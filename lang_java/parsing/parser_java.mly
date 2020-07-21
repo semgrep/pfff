@@ -1286,9 +1286,10 @@ enum_constant:
  | modifiers enum_constant_bis { $2 }
 
 enum_constant_bis:
- | identifier                         { EnumSimple $1 }
- | identifier LP argument_list_opt RP { EnumConstructor ($1, ($2,$3,$4)) }
- | identifier LC method_declarations_opt RC  { EnumWithMethods ($1, $3) }
+ | identifier                         { $1, None, None }
+ | identifier LP argument_list_opt RP { $1, Some ($2,$3,$4), None }
+ | identifier LC method_declarations_opt RC  
+    { $1, None, Some ($2, $3 |> List.map (fun x -> Method x) , $4) }
 
 enum_body_declarations: SM class_body_declarations_opt { $2 }
 

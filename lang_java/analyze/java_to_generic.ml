@@ -503,17 +503,13 @@ and enum_decl {
   let tdef = {G.tbody = G.OrType v4 } in
   ent, tdef
 
-and enum_constant =
-  function
-  | EnumSimple v1 -> let v1 = ident v1 in 
-      G.OrConstructor (v1, [])
-  | EnumConstructor ((v1, v2)) ->
-      let v1 = ident v1 and _v2TODO = arguments v2 in
-      G.OrConstructor (v1, [])
-      
-  | EnumWithMethods ((v1, v2)) ->
-      let v1 = ident v1 and _v2TODO = list method_decl v2 in
-      G.OrConstructor (v1, [])
+and enum_constant (v1, v2, v3) =
+  let v1 = ident v1 in
+  let _v2TODO = option arguments v2 in
+  let _v3TODO = option class_body v3 in
+  G.OrConstructor (v1, [])
+
+and class_body x = bracket decls x
 
 and class_decl {
                  cl_name = cl_name;
@@ -530,7 +526,7 @@ and class_decl {
   let v4 = modifiers cl_mods in
   let v5 = option typ cl_extends in
   let v6 = list ref_type cl_impls in 
-  let v7 = bracket decls cl_body in 
+  let v7 = class_body cl_body in 
   let fields = v7 |> bracket (List.map (fun x -> G.FieldStmt x)) in
   let ent = { (G.basic_entity v1 v4) with
       G.tparams = v3 } in
