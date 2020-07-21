@@ -363,16 +363,18 @@ and enum_decl = {
   en_name: ident;
   en_mods: modifiers;
   en_impls: ref_type list;
-  en_body: enum_constant list * enum_body;
+  en_body: enum_body;
 }
- and enum_constant =
+ and enum_body = (enum_constant list * enum_body_decls) (* TODO bracket *)
+
+   and enum_constant =
    | EnumSimple of ident
    (* http://docs.oracle.com/javase/1.5.0/docs/guide/language/enums.html *)
    | EnumConstructor of ident * arguments
    | EnumWithMethods of ident * method_decl list
 
- (* Not all kind of decls. Restrictions are ?? *)
- and enum_body = decls (* TODO bracket *)
+   (* Not all kind of decls. Restrictions are ?? *)
+   and enum_body_decls = decls
 
 (* ------------------------------------------------------------------------- *)
 (* Class/Interface *)
