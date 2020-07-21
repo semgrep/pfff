@@ -258,7 +258,7 @@ and stmt =
 
   | Sync of (* TODO: tok * *) expr * stmt
 
-  | Try of tok * stmt * catches * (tok * stmt) option
+  | Try of tok * resources option * stmt * catches * (tok * stmt) option
   | Throw of tok * expr
 
   (* decl as statement *)
@@ -286,6 +286,10 @@ and for_control =
 
 and catch = tok * var_with_union_type * stmt
 and catches = catch list
+
+and resources = resource list bracket
+  (* the expr is a an id or a field access *)
+  and resource = (var_with_init, expr) Common.either
 
 (*****************************************************************************)
 (* Definitions *)

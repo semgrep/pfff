@@ -907,12 +907,11 @@ synchronized_statement: SYNCHRONIZED LP expression RP block { Sync ($3, $5) }
 throw_statement: THROW expression SM  { Throw ($1, $2) }
 
 try_statement:
- | TRY block catches              { Try ($1, $2, List.rev $3, None) }
- | TRY block catches_opt finally  { Try ($1, $2, $3, Some $4) }
+ | TRY block catches              { Try ($1, None, $2, List.rev $3, None) }
+ | TRY block catches_opt finally  { Try ($1, None, $2, $3, Some $4) }
  /*(* javaext: ? *)*/
  | TRY resource_specification block catches_opt finally_opt { 
-    (* TODO $2 *)
-    Try ($1, $3, $4, $5)
+    Try ($1, Some $2, $3, $4, $5)
   }
 
 finally: FINALLY block  { $1, $2 }
@@ -937,7 +936,7 @@ catch_type_list:
   | catch_type_list OR type_ { $1 @ [$3] }
 
 /*(* javaext: ? *)*/
-resource_specification: LP resource_list semi_opt RP { }
+resource_specification: LP resource_list semi_opt RP { $1, [](* TODO $2*), $4 }
 
 resource: 
  | variable_modifiers local_variable_type identifier EQ expression { }

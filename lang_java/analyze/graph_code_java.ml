@@ -643,7 +643,7 @@ and stmt env = function
   | Sync (e, st) ->
       expr env e;
       stmt env st;
-  | Try (_, st, xs, stopt) ->
+  | Try (_, _resourcesTODO, st, xs, stopt) ->
       stmt env st;
       catches env xs;
       stopt |> Common.do_option (fun (_, st) -> stmt env st);

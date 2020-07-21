@@ -272,8 +272,9 @@ and v_stmt (x : stmt) =
         let v1 = v_option v_expr v1 in ()
   | Label ((v1, v2)) -> let v1 = v_ident v1 and v2 = v_stmt v2 in ()
   | Sync ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_stmt v2 in ()
-  | Try ((t, v1, v2, v3)) ->
+  | Try ((t, v0, v1, v2, v3)) ->
       let t = v_info t in
+      let v0 = v_option v_resources v0 in
       let v1 = v_stmt v1
       and v2 = v_catches v2
       and v3 = v_option v_tok_and_stmt v3
@@ -289,6 +290,12 @@ and v_stmt (x : stmt) =
         let v1 = v_expr v1 and v2 = v_option v_expr v2 in ()
   in
   vin.kstmt (k, all_functions) x
+
+and v_resources x = v_bracket (v_list v_resource) x
+
+and v_resource = function
+  | Common.Left x -> v_var_with_init x
+  | Common.Right y -> v_expr y
 
 and v_directive v = 
   match v with
