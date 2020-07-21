@@ -412,7 +412,7 @@ and vof_other_expr_operator =
   
 and vof_type_ =
   function
-  | TyAnd v1 ->
+  | TyRecordAnon v1 ->
       let v1 =
         vof_bracket
           (OCaml.vof_list
@@ -422,8 +422,16 @@ and vof_type_ =
                 in OCaml.VTuple [ v1; v2 ]))
           v1
       in OCaml.VSum (("TyAnd", [ v1 ]))
-  | TyOr v1 ->
-      let v1 = OCaml.vof_list vof_type_ v1 in OCaml.VSum (("TyOr", [ v1 ]))
+  | TyOr (v1, v2, v3) ->
+      let v1 = vof_type_ v1 in 
+      let v2 = vof_tok v2 in
+      let v3 = vof_type_ v3 in
+      OCaml.VSum (("TyOr", [ v1; v2; v3 ]))
+  | TyAnd (v1, v2, v3) ->
+      let v1 = vof_type_ v1 in 
+      let v2 = vof_tok v2 in
+      let v3 = vof_type_ v3 in
+      OCaml.VSum (("TyAnd", [ v1; v2; v3 ]))
   | TyBuiltin v1 ->
       let v1 = vof_wrap OCaml.vof_string v1
       in OCaml.VSum (("TyBuiltin", [ v1 ]))

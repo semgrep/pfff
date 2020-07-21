@@ -205,7 +205,8 @@ and expr =
   | Prefix of AST_generic.incr_decr wrap * expr
   | Infix of expr * AST_generic.operator wrap * expr
 
-  | Cast of typ bracket * expr
+  (* usually just a single typ, but can also have intersection type t1 & t2 *)
+  | Cast of typ list1 bracket * expr
 
   | InstanceOf of expr * ref_type
 

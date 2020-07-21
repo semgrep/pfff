@@ -204,7 +204,7 @@ and v_expr (x : expr) =
     | Unary ((v1, v2)) -> let v1 = v_wrap v_arith_op v1 and v2 = v_expr v2 in ()
     | Infix ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_wrap v_arith_op v2 and v3 = v_expr v3 in ()
-    | Cast ((v1, v2)) -> let v1 = v_bracket v_typ v1 and v2 = v_expr v2 in ()
+    | Cast ((v1, v2)) -> let v1 = v_bracket (v_list v_typ) v1 and v2 = v_expr v2 in ()
     | InstanceOf ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_ref_type v2 in ()
     | Conditional ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_expr v2 and v3 = v_expr v3 in ()

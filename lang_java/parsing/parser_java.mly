@@ -576,15 +576,15 @@ unary_expression_not_plus_minus:
  * using LP expression RP)
  *)*/
 cast_expression:
- | LP primitive_type RP unary_expression  { Cast (($1,$2,$3), $4) }
- | LP array_type RP unary_expression_not_plus_minus  { Cast (($1,$2,$3), $4) }
+ | LP primitive_type RP unary_expression  { Cast (($1,[$2],$3), $4) }
+ | LP array_type RP unary_expression_not_plus_minus  { Cast (($1,[$2],$3), $4) }
  | LP expression RP unary_expression_not_plus_minus
-	{  Cast (($1,expr_to_typename $2,$3), $4) }
+	{  Cast (($1,[expr_to_typename $2],$3), $4) }
 
 cast_lambda_expression:
  /*(* this can not be put inside cast_expression. See conflicts.txt*)*/
  | LP expression RP lambda_expression 
-     { Cast (($1,expr_to_typename $2,$3), $4) }
+     { Cast (($1,[expr_to_typename $2],$3), $4) }
 
 
 multiplicative_expression:

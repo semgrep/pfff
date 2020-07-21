@@ -797,7 +797,7 @@ and expr env = function
   | TypedMetavar (_ident, _typ) -> ()
 
   | Cast ((_,t,_), e) ->
-      typ env t;
+      List.iter (typ env) t;
       expr env e
   | InstanceOf (e, tref) ->
       expr env e;

@@ -399,7 +399,7 @@ and hint_type =
           )
           v1
       in 
-      G.TyAnd (t1, v1, t2)
+      G.TyRecordAnon (t1, v1, t2)
 
   | HintTypeConst (_, tok,_) -> 
     error tok "HintTypeConst not supported, facebook-ext"
