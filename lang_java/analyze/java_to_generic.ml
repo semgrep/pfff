@@ -265,14 +265,14 @@ and expr e =
       )
 
   (* x.new Y(...) {...} *)
-  | NewQualifiedClass ((v0, _tok, v2, v3, v4)) ->
+  | NewQualifiedClass ((v0, _tok1, _tok2, v2, v3, v4)) ->
       let v0 = expr v0
-      and v2 = ident v2
+      and v2 = typ v2
       and v3 = arguments v3
       and v4 = option (bracket decls) v4
       in 
       let any = 
-        [G.E v0; G.I v2] @ (v3 |> G.unbracket |> List.map (fun arg -> G.Ar arg)) @
+        [G.E v0; G.T v2] @ (v3 |> G.unbracket |> List.map (fun arg -> G.Ar arg)) @
         (Common.opt_to_list v4 |> List.map G.unbracket |> List.flatten |> List.map
             (fun st -> G.S st)) in
        G.OtherExpr (G.OE_NewQualifiedClass, any)

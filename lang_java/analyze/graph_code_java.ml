@@ -764,13 +764,13 @@ and expr env = function
           in
           class_decl env cdecl
       )
-  | NewQualifiedClass (_e, tok, id, (args), decls_opt) ->
+  | NewQualifiedClass (_e, _t1, tok, ty, (args), decls_opt) ->
       (*
       pr2 "NewQualifiedClass";
       pr2_gen (NewQualifiedClass (e, id, args, decls_opt));
       *)
       (* todo: need to resolve the type of 'e' *)
-      expr env (NewClass (tok, TClass ([id, []]), args, decls_opt))
+      expr env (NewClass (tok, ty, args, decls_opt))
 
   | NewArray (_tok, t, args, _i, ini_opt) ->
       typ env t;

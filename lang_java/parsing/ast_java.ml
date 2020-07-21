@@ -169,10 +169,10 @@ and expr =
   | MethodRef of expr_or_type * tok (* :: *) * type_arguments * ident
 
   (* the 'decls option' is for anon classes *)
-  | NewClass of tok * typ * arguments * decls bracket option
+  | NewClass of tok (* new *) * typ * arguments * decls bracket option
   (* see tests/java/parsing/NewQualified.java *)
-  | NewQualifiedClass of expr * tok (* .new *) * ident * arguments * 
-      decls bracket option
+  | NewQualifiedClass of expr * tok (* . *) * 
+                tok (* new *) * typ * arguments * decls bracket option
   (* the int counts the number of [], new Foo[][] => 2 *)
   | NewArray of tok * typ * expr list * int * init option
   (* TODO: QualifiedNew *)

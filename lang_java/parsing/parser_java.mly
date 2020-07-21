@@ -435,13 +435,13 @@ class_literal:
 class_instance_creation_expression:
  | NEW name LP argument_list_opt RP 
    class_body_opt
-       { NewClass ($1, TClass (class_type $2), ($3,$4,$5), $6) }
+   { NewClass ($1, TClass (class_type $2), ($3,$4,$5), $6) }
  /*(* javaext: ? *)*/
  | primary DOT NEW identifier LP argument_list_opt RP class_body_opt
-       { NewQualifiedClass ($1, $3, $4, ($5,$6,$7), $8) }
+   { NewQualifiedClass ($1, $2, $3, TClass ([$4,[]]), ($5,$6,$7), $8) }
  /*(* javaext: not in 2nd edition java language specification. *)*/
  | name DOT NEW identifier LP argument_list_opt RP class_body_opt
-       { NewQualifiedClass ((Name (name $1)), $3, $4, ($5,$6,$7), $8) }
+   { NewQualifiedClass ((Name (name $1)), $2, $3, TClass [$4,[]],($5,$6,$7),$8)}
 
 /*
    A new array that cannot be accessed right away by appending [index]:
