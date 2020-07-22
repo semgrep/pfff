@@ -238,7 +238,7 @@ and literal =
   (* treesitter: TODO add in dyp *)
   (* pattern: \?(\\\S({[0-9]*}|[0-9]*|-\S([MC]-\S)?)?|\S) *)
   | Char of string wrap 
-
+  (* the atom string includes the ':' prefix *)
   | Atom of atom
 
   | Nil of tok 

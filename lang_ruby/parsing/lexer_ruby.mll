@@ -712,7 +712,7 @@ and atom t state = parse
   | '[' ']' ('='?) (* these can only appear together like this (I think) *)
   | '`' 
     { end_state_unless_afterdef state; 
-      T_ATOM((contents_of_str (str lexbuf)), (add_to_tok lexbuf t)) }
+      T_ATOM((contents_of_str (":" ^ str lexbuf)), (add_to_tok lexbuf t)) }
 
   | '$'
      { let str = 
@@ -722,11 +722,11 @@ and atom t state = parse
           | _ -> assert false
         in 
         end_state_unless_afterdef state; 
-        T_ATOM(contents_of_str str, (add_to_tok lexbuf t)) }
+        T_ATOM(contents_of_str (":" ^ str), (add_to_tok lexbuf t)) }
 
   | ('@'* id) '='?
       { end_state_unless_afterdef state; 
-        T_ATOM((contents_of_str (str lexbuf)), (add_to_tok lexbuf t)) }
+        T_ATOM((contents_of_str (":" ^ str lexbuf)), (add_to_tok lexbuf t)) }
   | '"'  
       { end_state_unless_afterdef state;
         let _newt = tk lexbuf in
