@@ -50,14 +50,13 @@ module Utils = Utils_ruby
 (*****************************************************************************)
 
 (* shortcuts *)
-(* TODO: rename str *)
-let tok = Lexing.lexeme
+let str = Lexing.lexeme
 (* TODO: rename tok *)
 let tk = PI.tokinfo
 (* later: use T_UNKNOWN and this function *)
 let _error = PI.lexical_error
 let add_to_tok lexbuf t = 
-  PI.tok_add_s (tok lexbuf) t
+  PI.tok_add_s (str lexbuf) t
 
 (* ---------------------------------------------------------------------- *)
 (* Lexer/Parser state *)
@@ -471,7 +470,7 @@ and top_lexer state = parse
   (* ----------------------------------------------------------------------- *)
   (* Constant *)
   (* ----------------------------------------------------------------------- *)
-  | num { postfix_numeric Utils.id (tok lexbuf) (tk lexbuf) state lexbuf }
+  | num { postfix_numeric Utils.id (str lexbuf) (tk lexbuf) state lexbuf }
 
   (* ----------------------------------------------------------------------- *)
   (* Strings *)
@@ -600,11 +599,11 @@ and space_uop uop spc_uop binop state = parse
          }
 
 and uop_minus_lit state = parse
-  | num { postfix_numeric negate_numeric (tok lexbuf) (tk lexbuf) state lexbuf}
+  | num { postfix_numeric negate_numeric (str lexbuf) (tk lexbuf) state lexbuf}
   | e   { t_uminus state lexbuf}
 
 and uop_plus_lit state = parse
-  | num { postfix_numeric Utils.id (tok lexbuf) (tk lexbuf) state lexbuf}
+  | num { postfix_numeric Utils.id (str lexbuf) (tk lexbuf) state lexbuf}
   | e   { t_uplus state lexbuf}
 
 
@@ -689,12 +688,11 @@ and postfix_numeric f start t state = parse
 
   | (num|'_')* as num
       { S.end_state state;
+        let num = start ^ num in
+        let t = add_to_tok lexbuf t in
         if start = "0" 
-        then f (convert_to_base10 ~base:8 num (add_to_tok lexbuf t))
-        else 
-          let str = (start ^ num) in
-          let tok = T_NUM(str, (add_to_tok lexbuf t))
-          in f tok
+        then f (convert_to_base10 ~base:8 num t)
+        else f (T_NUM(num, t))
       }
 
   | post_rubyfloat
@@ -714,7 +712,7 @@ and atom t state = parse
   | '[' ']' ('='?) (* these can only appear together like this (I think) *)
   | '`' 
     { end_state_unless_afterdef state; 
-      T_ATOM((contents_of_str (tok lexbuf)), (add_to_tok lexbuf t)) }
+      T_ATOM((contents_of_str (":" ^ str lexbuf)), (add_to_tok lexbuf t)) }
 
   | '$'
      { let str = 
@@ -724,11 +722,11 @@ and atom t state = parse
           | _ -> assert false
         in 
         end_state_unless_afterdef state; 
-        T_ATOM(contents_of_str str, (add_to_tok lexbuf t)) }
+        T_ATOM(contents_of_str (":" ^ str), (add_to_tok lexbuf t)) }
 
   | ('@'* id) '='?
       { end_state_unless_afterdef state; 
-        T_ATOM((contents_of_str (tok lexbuf)), (add_to_tok lexbuf t)) }
+        T_ATOM((contents_of_str (":" ^ str lexbuf)), (add_to_tok lexbuf t)) }
   | '"'  
       { end_state_unless_afterdef state;
         let _newt = tk lexbuf in
@@ -780,10 +778,10 @@ and non_interp_string delim buf t state = parse
   | eof   { failwith "eof in string" }
 
   | '\\'? '\n' 
-      { Buffer.add_string buf (tok lexbuf);
+      { Buffer.add_string buf (str lexbuf);
         non_interp_string delim buf (add_to_tok lexbuf t) state lexbuf}
   | "\\" _ 
-      { Buffer.add_string buf (tok lexbuf);
+      { Buffer.add_string buf (str lexbuf);
         non_interp_string delim buf (add_to_tok lexbuf t) state lexbuf }
   | _ as c
       { if c == delim 
@@ -832,13 +830,13 @@ and interp_lexer do_eof delim_f escape_f buf t state = parse
   | "\\" (_ as c)
       { if escape_f c
         then Buffer.add_char buf c
-        else Buffer.add_string buf (tok lexbuf);
+        else Buffer.add_string buf (str lexbuf);
         interp_lexer do_eof delim_f escape_f buf t state lexbuf 
       }
 
   | "#{" 
       { S.beg_state state;
-        let t = PI.tok_add_s (Buffer.contents buf ^ tok lexbuf) t in
+        let t = PI.tok_add_s (Buffer.contents buf ^ str lexbuf) t in
         let tok = T_INTERP_STR(Buffer.contents buf, t) in
         let k state lexbuf =
            interp_lexer2 do_eof delim_f escape_f (Buffer.create 31) 
@@ -850,7 +848,7 @@ and interp_lexer do_eof delim_f escape_f buf t state = parse
   | _ as c
       { if delim_f c 
         then 
-          let t = PI.tok_add_s (Buffer.contents buf ^ tok lexbuf) t in
+          let t = PI.tok_add_s (Buffer.contents buf ^ str lexbuf) t in
           T_INTERP_END(Buffer.contents buf, t)
         else begin
           Buffer.add_char buf c; 

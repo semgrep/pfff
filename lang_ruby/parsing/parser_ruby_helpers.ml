@@ -217,7 +217,7 @@ let well_formed_command _m args = match args with
   | [S Block _] -> raise Dyp.Giveup
   | _ -> if List.exists is_cond_modifier args then raise Dyp.Giveup
 
-let hash_literal_as_args args = 
+let _hash_literal_as_args args = 
   let rec work acc lst = match lst with
     | [] -> acc
     | (Binop(_,(Op_ASSOC,p),_))::_tl ->
@@ -240,7 +240,7 @@ let hash_literal_as_args args =
     List.rev (work [] args)
 
 let rec methodcall m args cb = 
-  let args = hash_literal_as_args args in
+  (* let args = hash_literal_as_args args in *)
   match m,args,cb with
     | S Return(_), [], None -> m
     | S Return(p,[]),args,None -> S (Return(p, args))
