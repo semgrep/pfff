@@ -688,12 +688,11 @@ and postfix_numeric f start t state = parse
 
   | (num|'_')* as num
       { S.end_state state;
+        let num = start ^ num in
+        let t = add_to_tok lexbuf t in
         if start = "0" 
-        then f (convert_to_base10 ~base:8 num (add_to_tok lexbuf t))
-        else 
-          let str = (start ^ num) in
-          let tok = T_NUM(str, (add_to_tok lexbuf t))
-          in f tok
+        then f (convert_to_base10 ~base:8 num t)
+        else f (T_NUM(num, t))
       }
 
   | post_rubyfloat
