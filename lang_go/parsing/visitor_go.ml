@@ -358,7 +358,10 @@ and v_top_decl x =
       and v2 = v_parameter v2
       and v3 = v_function_ v3
       in ()
-  | D v1 -> let v1 = v_decl v1 in ()
+  | DTop v1 -> let v1 = v_decl v1 in ()
+  | STop v1 -> let v1 = v_stmt v1 in ()
+  | Package (v1, v2) -> v_package (v1, v2)
+  | Import x -> v_import x
   in
   vin.ktop_decl (k, all_functions) x
 
@@ -378,11 +381,7 @@ and v_package (v1, v2) =
   let v2 = v_ident v2 in
   ()
 and v_program x = 
-  let k { package = pack; imports = v_imports; decls = v_decls } =
-  let arg = v_package pack in
-  let arg = v_list v_import v_imports in
-  let arg = v_list v_top_decl v_decls in ()
-  in
+  let k x = v_list v_top_decl x in
   vin.kprogram (k, all_functions) x
 
 and v_item = function

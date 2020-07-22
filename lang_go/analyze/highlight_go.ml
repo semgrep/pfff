@@ -126,8 +126,10 @@ let visit_program ~tag_hook _prefs (program, toks) =
 
     (* defs *)
     V.kprogram = (fun (k, _) x ->
-      tag_ident (snd x.package) (Entity (E.Module, def2));
-      x.imports |> List.iter (fun import ->
+      let (package, imports) = package_and_imports_of_program x in
+
+      tag_ident (snd package) (Entity (E.Module, def2));
+      imports |> List.iter (fun import ->
         tag_ident import.i_path (Entity (E.Module, use2));
         match import.i_kind with
         | ImportNamed id -> tag_ident id (Entity (E.Module, def2))
@@ -139,7 +141,8 @@ let visit_program ~tag_hook _prefs (program, toks) =
       (match x with
       | DFunc   (id,     (_t, _st)) -> tag_ident id (Entity (E.Function, def2))
       | DMethod (id, _o, (_t, _st)) -> tag_ident id (Entity (E.Method, def2))
-      | D _ -> ()
+      | DTop _ | STop _ -> ()
+      | Package _ | Import _ -> ()
       );
      Common.save_excursion in_toplevel false (fun () -> 
        k x
