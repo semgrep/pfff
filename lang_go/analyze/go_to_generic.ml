@@ -547,8 +547,14 @@ and top_decl =
       let receiver = G.OtherParam (G.OPO_Receiver, [G.Pa (G.ParamClassic v2)])
       in
       G.DefStmt (ent, G.FuncDef { def with G.fparams=receiver::def.G.fparams})
-  | D v1 -> let v1 = decl v1 in
-      v1
+  | DTop v1 -> let v1 = decl v1 in v1
+  | STop v1 -> stmt v1
+  | Package (t1, id) -> 
+      let id = ident id in
+      G.DirectiveStmt (G.Package (t1, [id]))
+  | Import x ->
+      let x = import x in
+      G.DirectiveStmt x
 
 and import { i_path = i_path; i_kind = i_kind; i_tok } =
   let module_name = G.FileName (wrap string i_path) in
@@ -568,14 +574,12 @@ and import_kind itok kind module_name _id_no_more_used =
   | ImportDot v1 -> let v1 = tok v1 in 
       G.ImportAll (itok, module_name, v1)
 
-and program { package = pack; imports = imports; decls = decls } =
+and program xs =
   anon_types := [];
-  let (t1, id) = pack in
-  let arg1 = ident id |> (fun x -> G.DirectiveStmt (G.Package (t1, [x]))) in
-  let arg2 = list import imports |> List.map (fun x -> G.DirectiveStmt x) in
-  let arg3 = list top_decl decls in
+  let xs = list top_decl xs in
   let arg_types = !anon_types |> List.map (fun x -> G.DefStmt x) in
-  arg1 :: arg2 @ arg_types @ arg3
+  (* TODO? put after program and imports? *)
+  arg_types @ xs
 
 and item_aux = function
  | ITop x -> [top_decl x]

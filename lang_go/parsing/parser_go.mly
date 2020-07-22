@@ -278,9 +278,11 @@ let rev_and_fix_items xs =
 /*(*************************************************************************)*/
 
 file: package imports xdcl_list EOF 
-  { { package = $1; imports = List.rev $2; decls = List.rev $3 } }
+  { ($1)::
+    (List.rev $2 |> List.map (fun x -> Import x)) @
+    (List.rev $3) }
 
-package: LPACKAGE sym LSEMICOLON { $1, $2 }
+package: LPACKAGE sym LSEMICOLON { Package ($1, $2) }
 
 /*(* Go does some ASI so we do not need like in Java to use stmt_no_dots
    * to allow '...' without trailing semicolon and avoid ambiguities.
@@ -304,8 +306,6 @@ item:
 item_list:
 |   item { $1 }
 |   item_list LSEMICOLON item { $3 @ $1 }
-
- 
 
 /*(*************************************************************************)*/
 /*(*1 Import *)*/
@@ -334,7 +334,7 @@ import_stmt:
 /*(*************************************************************************)*/
 
 xdcl:
-|   common_dcl { $1 |> List.map (fun decl -> D decl) }
+|   common_dcl { $1 |> List.map (fun decl -> DTop decl) }
 |   xfndcl     { [$1] }
 
 common_dcl:

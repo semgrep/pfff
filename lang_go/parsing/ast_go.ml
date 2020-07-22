@@ -288,17 +288,14 @@ and function_ = func_type * stmt
 
  [@@deriving show { with_path = false }]
 
-(* only at the toplevel *)
-type top_decl =
- | DFunc   of ident *                            function_
- | DMethod of ident * parameter (* receiver *) * function_
- | D of decl
-
- [@@deriving show { with_path = false }] (* with tarzan *)
+(*****************************************************************************)
+(* Directives *)
+(*****************************************************************************)
 
 (*****************************************************************************)
 (* Import *)
 (*****************************************************************************)
+
 type import = {
  i_tok: tok;
  i_path: string wrap;
@@ -316,11 +313,26 @@ type import = {
 (* Toplevel *)
 (*****************************************************************************)
 
-type program = {
-  package: tok * ident;
-  imports: import list;
-  decls: top_decl list;
-}
+(* only at the toplevel *)
+type top_decl =
+ (* old: used to be in a record in program *)
+ | Package of tok * ident
+ | Import of import
+
+ | DFunc   of ident *                            function_
+ | DMethod of ident * parameter (* receiver *) * function_
+ | DTop of decl
+ (* tree-sitter-go: not used in pfff Go grammar *)
+ | STop of stmt
+
+ [@@deriving show { with_path = false }] (* with tarzan *)
+
+(* old: used to be a record with package, imports, and then decls but
+ * tree-sitter-go is more flexible and so I put package and imports in 
+ * top_decl above. Note that this also makes things easier for semgrep 
+ * by allowing to have a pattern with just a package declaration for example.
+ *)
+type program = top_decl list
  [@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
@@ -366,3 +378,15 @@ let item1 xs =
   | xs -> Items xs
 
 let str_of_id (s,_) = s
+
+let package_and_imports_of_program xs = 
+  let package = 
+     match xs with
+     | (Package (v1, v2))::_ -> (v1, v2)
+     | _ -> failwith "first top decl is not a package"
+  in
+  let imports = xs |> Common.map_filter (function
+    | Import x -> Some x
+    | _ -> None
+  ) in   
+  package, imports

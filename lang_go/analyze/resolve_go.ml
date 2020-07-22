@@ -96,16 +96,17 @@ let resolve prog =
 
     (* defs *)
     V.kprogram = (fun (k, _) x ->
+      let (package, imports) = package_and_imports_of_program x in
 
       (* this is mainly for codemap to not report as error the use of
        * the current package name in the current file (which may access
        * entities defined in the same package but defined in another file)
        *)
-      let file = Parse_info.file_of_info (fst x.package), fst x.package in
-      let packid = snd x.package in
+      let file = Parse_info.file_of_info (fst package), fst package in
+      let packid = snd package in
       add_name_env packid (G.ImportedModule (G.FileName file), G.sid_TODO) env;
 
-      x.imports |> List.iter (fun { i_path = (path, ii); i_kind = kind; _ } ->
+      imports |> List.iter (fun { i_path = (path, ii); i_kind = kind; _ } ->
           match kind with
           | ImportOrig -> 
             add_name_env (Filename.basename path, ii) 
@@ -142,7 +143,9 @@ let resolve prog =
           with_new_context InFunction env (fun () ->
            k x
           ))
-      | D _ -> k x
+      | DTop _ | STop _ -> k x
+      | Package _ | Import _ -> k x
+        
       )
     );
     V.kdecl = (fun (k, _) x -> 
