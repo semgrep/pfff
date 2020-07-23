@@ -36,8 +36,11 @@ module M = Parser_ruby_helpers
 (* for fake_xxx *)
 module G = AST_generic
 
-(*let () = Dyp.dypgen_verbose := max_int*)
+(*************************************************************************)
+(*1 Dypgen merge directives *)
+(*************************************************************************)
 
+(*let () = Dyp.dypgen_verbose := max_int*)
 
 let dyp_merge_Obj_stmt                   = M.merge_stmt (*merge_expr "stmt"*)
 
@@ -45,6 +48,8 @@ let dyp_merge_Obj_command                = M.merge_expr "command"
 let dyp_merge_Obj_command_name           = M.merge_expr "command_name"
 let dyp_merge_Obj_expr                   = M.merge_expr "expr"
 let dyp_merge_Obj_primary                = M.merge_expr "primary"
+let dyp_merge_Obj_array                  = M.merge_expr "array"
+let dyp_merge_Obj_hash                   = M.merge_expr "hash"
 let dyp_merge_Obj_func                   = M.merge_expr "func"
 let dyp_merge_Obj_method_name            = M.merge_method_name "method_name"
 let dyp_merge_Obj_method_kind            = M.merge_method_kind "method_kind"
@@ -109,6 +114,10 @@ let dyp_merge xs =
   xs
   )
   (*Dyp.keep_all*)
+
+(*************************************************************************)
+(*1 AST helpers *)
+(*************************************************************************)
 
 let tuple = function
   | [] -> raise Common.Impossible
@@ -320,7 +329,7 @@ sgrep_spatch_pattern: eols stmt_list T_EOF
    }
 
 /*(*************************************************************************)*/
-/*(*1 Statement (part 1) *)*/
+/*(*1 Statement (part 1) (and expression part 2) *)*/
 /*(*************************************************************************)*/
 
 stmt:
@@ -378,7 +387,7 @@ scope_BEGIN:  K_BEGIN<pos>  {S.enter_scope dyp; pos}
 scope_END:    K_END<pos>    {S.enter_scope dyp; pos}
 
 /*(*************************************************************************)*/
-/*(*1 Expressions (or statement part 2) *)*/
+/*(*1 Expressions (part 1) (and statement part 2) *)*/
 /*(*************************************************************************)*/
 
 expr:
@@ -408,7 +417,7 @@ expr:
   | arg<a>                  { a }
 
 /*(*************************************************************************)*/
-/*(*1 Arg *)*/
+/*(*1 Arg (or expression part 3) *)*/
 /*(*************************************************************************)*/
 
 arg:
@@ -427,7 +436,7 @@ arg:
   | primary<p> {p}
 
 /*(*************************************************************************)*/
-/*(*1 Primary (or statement part 3) *)*/
+/*(*1 Primary (or expression part 4) (and statement part 3) *)*/
 /*(*************************************************************************)*/
 
 primary:
@@ -465,9 +474,8 @@ primary:
   | primary<p> T_LBRACK_ARG<t1> eols arg_comma_list_trail<xs> eols T_RBRACK<t2>
      { M.methodcall (DotAccess(p,(t1), MethodOperator(Op_AREF,t2))) xs None }
 
-  | T_LBRACK eols array_body<xs> eols T_RBRACK { Array($1, xs, $5) }
-  | T_LBRACE eols array_body<xs> eols T_RBRACE { Hash(true, ($1, xs, $5)) }
-
+  | array { $1 }
+  | hash { $1 }
 
   | K_RETURN<pos> { S (Return(pos, [])) }
 /*  
@@ -660,6 +668,8 @@ when_clauses:
 /*(*2 containers *)*/
 /*(*----------------------------*)*/
 
+array: T_LBRACK eols array_body<xs> eols T_RBRACK { Array($1, xs, $5) }
+
 array_body:
   | command<c> { [c] }
   | array_body_rest<es> { es }
@@ -677,6 +687,17 @@ array_item:
   | constant<c> T_LBRACK<t1> eols call_args<xs> eols T_RBRACK<t2>
       { M.methodcall (DotAccess(c, (t1), MethodOperator(Op_AREF,t2))) (* TODO: Wrong pos Binop, and probably all the following Binop in this file *)
                      xs None }
+
+
+hash: T_LBRACE eols hash_elem_list eols T_RBRACE { Hash(true, ($1, $3, $5)) }
+
+hash_elem_list:
+  | /*(*empty*)*/ { [] }
+  | hash_elem { [$1] }
+  | hash_elem T_COMMA eols hash_elem_list @{ $1::$4, [Dyp.Dont_shift] }
+
+hash_elem:
+  | arg { $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Call *)*/
@@ -763,9 +784,9 @@ arg_comma_star_list:
       @{ xs @ a, [Dyp.Dont_shift] }
 
 arg_comma_nonempty_list:
-  | arg<a> { [a] }
+  | argument { [$1] }
   /*(* recursive *)*/
-  | arg<a> T_COMMA eols arg_comma_nonempty_list<al> @{ a::al, [Dyp.Dont_shift]}
+  | argument T_COMMA eols arg_comma_nonempty_list @{ $1::$4, [Dyp.Dont_shift] }
 
 star_amper:
   | T_USTAR arg
@@ -776,6 +797,8 @@ star_amper:
   | T_USTAR<pos1> arg<a1> T_COMMA eols T_UAMPER<pos2> arg<a2>
       { [Splat(pos1, Some a1); Unary((Op_UAmper,pos2),a2)] }
 
+argument: 
+ | arg { $1 }
 
 /*(*************************************************************************)*/
 /*(*1 LHS/RHS *)*/
