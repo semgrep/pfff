@@ -115,6 +115,13 @@ let dyp_merge xs =
   )
   (*Dyp.keep_all*)
 
+(* TODO: do like in tree-sitter token.immediate, check that t2
+ * follow just after t1, charpos t2 = charpos t1 + String.length t1
+ * otherwise raise Dyp.Give_up
+ *)
+let token_immediate_check t1 t2 =
+  ()
+
 (*************************************************************************)
 (*1 AST helpers *)
 (*************************************************************************)
@@ -698,6 +705,17 @@ hash_elem_list:
 
 hash_elem:
   | arg { $1 }
+  | pair { $1 }
+
+/*(* TODO: move arg bin_op OP_ASSOC here like in tree-sitter-ruby *)*/
+pair:
+  | identifier T_COLON arg 
+    { let (s,t) = $1 in
+      token_immediate_check t $2;
+      Binop ((Literal (Atom ([StrChars (":"^s)],t))),
+             (Op_ASSOC, $2),
+             $3)
+     } 
 
 /*(*************************************************************************)*/
 /*(*1 Call *)*/
@@ -1078,7 +1096,7 @@ bin_op:
   | T_CMP    { B Op_CMP,$1 } 
   | T_MATCH  { B Op_MATCH,$1 } | T_NMATCH { B Op_NMATCH,$1 }
   | T_AMPER  { B Op_BAND,$1 } | T_VBAR   { B Op_BOR,$1 }  | T_CARROT { B Op_XOR,$1 } 
-
+  /*(* TODO: should move T_ASSOC in pair *)*/
   | T_ASSOC  { Op_ASSOC,$1 }
   | T_DOT2   { B Op_DOT2,$1 }
   | T_DOT3   { Op_DOT3,$1 }
