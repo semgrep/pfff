@@ -439,7 +439,6 @@ type any =
   | Pa of formal_param
   | Pr of program
 
-
  [@@deriving show { with_path = false}, eq] (* with tarzan *)
 
 (*****************************************************************************)
@@ -463,3 +462,8 @@ let cmn = function
 let opt_stmts_to_stmts = function
   | None -> []
   | Some (_, xs) -> xs
+
+(* x: v  <=>  :x => v  in Ruby in hash and calls *)
+let keyword_arg_to_expr id tk arg =
+  let (s,t) = id in
+  Binop ((Literal (Atom ([StrChars (":"^s)],t))), (Op_ASSOC, tk), arg)

@@ -240,6 +240,15 @@ let _hash_literal_as_args args =
     List.rev (work [] args)
 
 let rec methodcall m args cb = 
+  (* old: x.y used to be parsed as a Call (DotAccess ...) because
+   * that is the semantic of Ruby, but we do not do the same 
+   * in Parse_ruby_tree_sitter.ml and in the semgrep context it's better
+   * to not be too clever and rewrite things too much.
+   *)
+  if args = [] && cb = None
+  then m
+  (* failwith "do not use methodcall if it's not a call" *)
+  else
   (* let args = hash_literal_as_args args in *)
   match m,args,cb with
     | S Return(_), [], None -> m
