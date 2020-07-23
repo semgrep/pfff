@@ -48,8 +48,10 @@ let dyp_merge_Obj_command                = M.merge_expr "command"
 let dyp_merge_Obj_command_name           = M.merge_expr "command_name"
 let dyp_merge_Obj_expr                   = M.merge_expr "expr"
 let dyp_merge_Obj_primary                = M.merge_expr "primary"
+let dyp_merge_Obj_argument               = M.merge_expr "argument"
 let dyp_merge_Obj_array                  = M.merge_expr "array"
 let dyp_merge_Obj_hash                   = M.merge_expr "hash"
+let dyp_merge_Obj_hash_elem              = M.merge_expr "hash_elem"
 let dyp_merge_Obj_func                   = M.merge_expr "func"
 let dyp_merge_Obj_method_name            = M.merge_method_name "method_name"
 let dyp_merge_Obj_method_kind            = M.merge_method_kind "method_kind"
@@ -710,11 +712,8 @@ hash_elem:
 /*(* TODO: move arg bin_op OP_ASSOC here like in tree-sitter-ruby *)*/
 pair:
   | identifier T_COLON arg 
-    { let (s,t) = $1 in
-      token_immediate_check t $2;
-      Binop ((Literal (Atom ([StrChars (":"^s)],t))),
-             (Op_ASSOC, $2),
-             $3)
+    { token_immediate_check (snd $1) $2;
+      keyword_arg_to_expr $1 $2 $3
      } 
 
 /*(*************************************************************************)*/
@@ -817,6 +816,7 @@ star_amper:
 
 argument: 
  | arg { $1 }
+ | pair { $1 }
 
 /*(*************************************************************************)*/
 /*(*1 LHS/RHS *)*/
