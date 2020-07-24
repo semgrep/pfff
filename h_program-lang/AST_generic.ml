@@ -317,7 +317,8 @@ and expr =
    * todo: see IL.ml where we normalize this AST with expr/instr/stmt
    * update: should even be in a separate simple_stmt, as in Go
    *)
-  | Assign of expr * tok (* =, or sometimes := in Go, <- in OCaml *) * expr
+  | Assign of expr * tok (* '=', '<-' in OCaml. ':=' Go is AssignOp (Eq) *) * 
+              expr
   (*s: [[AST_generic.expr]] other assign cases *)
   (* less: could desugar in Assign, should be only binary_operator *)
   | AssignOp of expr * operator wrap * expr

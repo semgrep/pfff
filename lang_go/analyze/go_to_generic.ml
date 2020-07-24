@@ -338,10 +338,12 @@ and simple = function
       and v2 = tok v2
       and v3 = list expr v3
       in
-      (* use OtherExpr? at least v2 contains a different token :=, not = so
-       * the information is there
+      (* people don't want '=' assign pattern to match ':=' short var decls,
+       * so better to not generate an Assign there too.
+       * less: could define a ColonEq operator in AST_generic.ml
        *)
-      (G.Assign (list_to_tuple_or_expr v1, v2, list_to_tuple_or_expr v3))
+      (G.AssignOp (list_to_tuple_or_expr v1, (G.Eq, v2), 
+                   list_to_tuple_or_expr v3))
   | AssignOp ((v1, v2, v3)) ->
       let v1 = expr v1
       and v2 = wrap arithmetic_operator v2
