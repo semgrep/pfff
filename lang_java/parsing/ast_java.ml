@@ -397,23 +397,15 @@ and class_decl = {
   (* javaext: the methods body used to be always empty for interface *)
   cl_body: class_body;
 }
-  and class_kind = ClassRegular | Interface
+  and class_kind = 
+  | ClassRegular 
+  | Interface
+  (* @interface, a.k.a annotation type declaration *)
+  (* java-ext: tree-sitter-only: *)
+  | AtInterface
 
   (* Not all kind of decls. Restrictions are ?? *)
   and class_body = decls bracket
-
-(* ------------------------------------------------------------------------- *)
-(* Annotation type (@interface) *)
-(* ------------------------------------------------------------------------- *)
-and annotation_type_decl = {
-    an_tok: tok; (* @interface *)
-    an_name: ident;
-    an_mods: modifiers;
-    an_body: annotation_type_body;
-}
-
-(* restrictions? *)
-and annotation_type_body = decls bracket
 
 (*****************************************************************************)
 (* Declaration *)
@@ -423,14 +415,12 @@ and decl =
   (* top decls *)
   | Class of class_decl
   | Enum of enum_decl
-  (* java-ext: tree-sitter-only: *)
-  | AnnotationType of annotation_type_decl
 
   (* inside class/interface/enum *)
   | Method of method_decl
   | Field of field
   | Init of bool (* static *) * stmt
-  (* java-ext: tree-sitter-only: *)
+  (* java-ext: tree-sitter-only: only in AtInterface class_decl  *)
   | AnnotationTypeElementTodo of tok
 
   | EmptyDecl of tok (* ; *)

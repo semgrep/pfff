@@ -384,17 +384,6 @@ and v_field v =
   let k x = v_var_with_init x in
   vin.kfield (k, all_functions) v
 
-and v_annotation_type_decl { 
-    an_tok = v1;
-    an_name = v2;
-    an_mods = v3;
-    an_body = v4;
-  } =
-  let v1 = v_tok v1 in
-  let v2 = v_ident v2 in
-  let v3 = v_modifiers v3 in
-  let v4 = v_bracket v_decls v4 in
-  ()
 
 and
   v_enum_decl {
@@ -437,7 +426,8 @@ and v_class_decl (x : class_decl) =
   in
   vin.kclass (k, all_functions) x
 
-and v_class_kind = function | ClassRegular -> () | Interface -> ()
+and v_class_kind = function 
+ | ClassRegular | Interface | AtInterface -> ()
 
 and v_decl x =
   let k x = match x with
@@ -449,7 +439,6 @@ and v_decl x =
   | DeclEllipsis v1 -> let v1 = v_tok v1 in ()
   | EmptyDecl t -> v_tok t
   | AnnotationTypeElementTodo t -> v_tok t
-  | AnnotationType v1 -> v_annotation_type_decl v1
   in
   vin.kdecl (k, all_functions) x
 

@@ -1298,8 +1298,10 @@ enum_body_declarations: SM class_body_declarations_opt { $2 }
 
 /*(* cant factorize modifiers_opt *)*/
 annotation_type_declaration:
- | modifiers AT INTERFACE identifier annotation_type_body { ast_todo }
- |           AT INTERFACE identifier annotation_type_body { ast_todo }
+ | modifiers AT INTERFACE identifier annotation_type_body 
+     { ast_todo }
+ |           AT INTERFACE identifier annotation_type_body 
+     { ast_todo }
 
 annotation_type_body: LC annotation_type_element_declarations_opt RC { }
 

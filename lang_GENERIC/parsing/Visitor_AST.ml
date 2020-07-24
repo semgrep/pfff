@@ -660,7 +660,8 @@ and v_class_definition x =
   ()
   in
   vin.kclass_definition (k, all_functions) x
-and v_class_kind = function | Class -> () | Interface -> () | Trait -> ()
+and v_class_kind = function 
+ | Class | Interface | Trait | AtInterface -> ()
 
 and v_module_definition { mbody = v_mbody } =
   let arg = v_module_definition_kind v_mbody in ()

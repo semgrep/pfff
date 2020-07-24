@@ -772,6 +772,7 @@ and
 
 and map_class_kind =
   function | Class -> Class | Interface -> Interface | Trait -> Trait
+   | AtInterface  -> AtInterface
 
 and map_directive =
   function

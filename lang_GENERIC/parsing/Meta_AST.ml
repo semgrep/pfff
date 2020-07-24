@@ -1023,6 +1023,7 @@ and vof_class_kind =
   | Class -> OCaml.VSum (("Class", []))
   | Interface -> OCaml.VSum (("Interface", []))
   | Trait -> OCaml.VSum (("Trait", []))
+  | AtInterface -> OCaml.VSum ("AtInterface", [])
 and vof_directive =
   function
   | ImportFrom ((t, v1, v2, v3)) ->
