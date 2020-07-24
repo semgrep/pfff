@@ -363,6 +363,7 @@ and field = var_with_init
 (* Enum *)
 (* ------------------------------------------------------------------------- *)
 
+(* less: could merge with class_decl and add EnumConstant in decl *)
 and enum_decl = {
   en_name: ident;
   en_mods: modifiers;
