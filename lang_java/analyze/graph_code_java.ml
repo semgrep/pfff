@@ -424,7 +424,6 @@ and decl env = function
       in
       stmt env st
   | EmptyDecl _, _ -> ()
-  | AnnotationType _, _
   | AnnotationTypeElementTodo _, _ -> raise Todo
 
 and decls env xs = List.iter (decl env) (Common.index_list_1 xs)

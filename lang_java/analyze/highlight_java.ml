@@ -89,7 +89,6 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
       | Ast.Init (_bool, _stmt) -> ()
       | Ast.DeclEllipsis _ -> ()
       | Ast.EmptyDecl _ -> ()
-      | Ast.AnnotationType _ 
       | Ast.AnnotationTypeElementTodo _ -> raise Todo
       );
       k d

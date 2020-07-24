@@ -1217,6 +1217,8 @@ and class_definition = {
     | Class
     | Interface
     | Trait
+    (* java: *)
+    | AtInterface (* @interface, a.k.a annotation type declaration *)
 (*e: type [[AST_generic.class_kind]] *)
 
 (* ------------------------------------------------------------------------- *)

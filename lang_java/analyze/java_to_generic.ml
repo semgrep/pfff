@@ -539,32 +539,12 @@ and class_decl {
     } in
   ent, cdef
 
-and annotation_type_decl { 
-    an_tok = _v1;
-    an_name = v2;
-    an_mods = v3;
-    an_body = v4;
-  } =
-  let v2 = ident v2 in
-  let v3 = modifiers v3 in
-  let v4 = bracket decls v4 in
-
-  let fields = v4 |> bracket (List.map (fun x -> G.FieldStmt x)) in
-  let ent = (G.basic_entity v2 v3) in
-  let cdef = { G.
-      ckind = G.Class; (* TODO *)
-      cextends = [];
-      cimplements = [];
-      cmixins = [];
-      cbody = fields;
-    } in
-  ent, cdef
-  
  
 
 and class_kind = function 
   | ClassRegular ->  G.Class
   | Interface -> G.Interface
+  | AtInterface -> G.AtInterface
 
 and decl decl =
   match decl with
@@ -582,8 +562,6 @@ and decl decl =
   | EmptyDecl t -> G.Block (t, [], t)
   | AnnotationTypeElementTodo t -> 
       G.OtherStmt (G.OS_Todo, [G.Tk t])
-  | AnnotationType v1  -> let (ent, def) = annotation_type_decl v1 in
-    G.DefStmt (ent, G.ClassDef def)
 
 and decls v = list decl v
 
