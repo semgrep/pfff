@@ -320,7 +320,7 @@ type_declaration:
 
  /*(* javaext: 1.? *)*/
  | enum_declaration            { [DeclStmt (Enum $1)] }
- | annotation_type_declaration { ast_todo }
+ | annotation_type_declaration { [DeclStmt (Class $1)] }
 
 
 /*(*************************************************************************)*/
@@ -1072,14 +1072,14 @@ class_member_declaration:
  | method_declaration  { [Method $1] }
 
  /* (* javaext: 1.? *)*/
- | generic_method_or_constructor_decl { ast_todo }
+ | generic_method_or_constructor_decl { $1 }
  /* (* javaext: 1.? *)*/
  | class_declaration  { [Class $1] }
  | interface_declaration  { [Class $1] }
  /* (* javaext: 1.? *)*/
  | enum_declaration { [Enum $1] }
  /* (* javaext: 1.? *)*/
- | annotation_type_declaration { ast_todo }
+ | annotation_type_declaration { [Class $1] }
 
  | SM  { [] }
  /* (* sgrep-ext: allows ... inside class body *) */
@@ -1139,7 +1139,7 @@ throws: THROWS qualified_ident_list /*(* was class_type_list *)*/
 
 
 generic_method_or_constructor_decl:
-  modifiers_opt type_parameters generic_method_or_constructor_rest  { }
+  modifiers_opt type_parameters generic_method_or_constructor_rest  { ast_todo }
 
 generic_method_or_constructor_rest:
  | type_ identifier method_declarator_rest { }
@@ -1234,7 +1234,7 @@ interface_member_declaration:
  | interface_method_declaration  { [Method $1] }
 
  /* (* javaext: 1.? *)*/
- | interface_generic_method_decl { ast_todo }
+ | interface_generic_method_decl { $1 }
 
  /* (* javaext: 1.? *)*/
  | class_declaration      { [Class $1] }
@@ -1244,7 +1244,7 @@ interface_member_declaration:
  | enum_declaration       { [Enum $1] }
 
  /* (* javaext: 1.? *)*/
- | annotation_type_declaration { ast_todo }
+ | annotation_type_declaration { [Class $1] }
 
  | SM  { [] }
 
@@ -1299,22 +1299,28 @@ enum_body_declarations: SM class_body_declarations_opt { $2 }
 /*(* cant factorize modifiers_opt *)*/
 annotation_type_declaration:
  | modifiers AT INTERFACE identifier annotation_type_body 
-     { ast_todo }
+     { { cl_name = $4; cl_kind = AtInterface; cl_mods = $1; cl_tparams = [];
+         cl_extends = None; cl_impls = []; cl_body = $5 }
+     }
  |           AT INTERFACE identifier annotation_type_body 
-     { ast_todo }
+     { { cl_name = $3; cl_kind = AtInterface; cl_mods = []; cl_tparams = [];
+         cl_extends = None; cl_impls = []; cl_body = $4 } 
+     }
 
-annotation_type_body: LC annotation_type_element_declarations_opt RC { }
+annotation_type_body: LC annotation_type_element_declarations_opt RC 
+  { $1, $2, $3 }
 
 annotation_type_element_declaration:
- annotation_type_element_rest { }
+ annotation_type_element_rest { $1 }
 
 annotation_type_element_rest:
- | modifiers_opt type_ identifier annotation_method_or_constant_rest SM { }
+ | modifiers_opt type_ identifier annotation_method_or_constant_rest SM 
+   { AnnotationTypeElementTodo (snd $3) }
 
- | class_declaration { }
- | enum_declaration { }
- | interface_declaration { }
- | annotation_type_declaration {  }
+ | class_declaration           { Class $1 }
+ | enum_declaration            { Enum $1 }
+ | interface_declaration       { Class $1 }
+ | annotation_type_declaration { Class $1 }
 
 
 annotation_method_or_constant_rest:
@@ -1322,12 +1328,13 @@ annotation_method_or_constant_rest:
  | LP RP DEFAULT element_value { }
 
 annotation_type_element_declarations_opt:
- | { }
- | annotation_type_element_declarations { }
+ | /*(*empty*)*/ { [] }
+ | annotation_type_element_declarations { $1 }
 
 annotation_type_element_declarations:
- | annotation_type_element_declaration { }
- | annotation_type_element_declarations annotation_type_element_declaration { }
+ | annotation_type_element_declaration { [$1] }
+ | annotation_type_element_declarations annotation_type_element_declaration 
+    { $1 @ [$2] }
 
 /*(*************************************************************************)*/
 /*(*1 xxx_list, xxx_opt *)*/
