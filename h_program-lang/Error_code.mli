@@ -41,13 +41,16 @@ type error = {
 
   (* other *)
   | FatalError of string
-  | Timeout
+  | Timeout of string option
+  | OutOfMemory of string option
 (*e: type [[Error_code.error_kind]] *)
 
 (*s: type [[Error_code.entity]] *)
  and entity = (string * Entity_code.entity_kind)
 (*e: type [[Error_code.entity]] *)
 
+(* internal: you should prefer to use the error function below *)
+val mk_error_loc: Parse_info.token_location -> error_kind -> error
 
 (*s: type [[Error_code.annotation]] *)
 (* @xxx to acknowledge or explain false positives *)
