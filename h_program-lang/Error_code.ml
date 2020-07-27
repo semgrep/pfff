@@ -130,7 +130,8 @@ type error = {
 
   (* other *)
   | FatalError of string (* missing file, OCaml errors, etc. *)
-  | Timeout
+  | Timeout of string option
+  | OutOfMemory of string option
 
  (* todo: should be merged with Graph_code.entity or put in Database_code?*)
  and entity = (string * Entity_code.entity_kind)
@@ -186,7 +187,10 @@ let string_of_error_kind error_kind =
   | OtherParsingError s -> spf "Other parsing error: %s" s
   | CFGError s -> spf "Control flow error: %s" s
   | FatalError s -> spf "Fatal Error: %s" s
-  | Timeout -> "Timeout"
+  | Timeout None -> "Timeout"
+  | Timeout (Some s) -> "Timeout:" ^ s
+  | OutOfMemory None -> "Out of memory"
+  | OutOfMemory (Some s) -> "Out of memory:" ^ s
 
 (* for r2c/bento error format *)
 let check_id_of_error_kind = function
@@ -215,7 +219,8 @@ let check_id_of_error_kind = function
 
   (* other *)
   | FatalError _ -> "FatalError"
-  | Timeout -> "Timeout"
+  | Timeout _  -> "Timeout"
+  | OutOfMemory _ -> "OutOfMemory"
 
 
 (*
@@ -302,7 +307,7 @@ let rank_of_error err =
   | AstGenericError _
    -> OnlyStrict
   (* usually a bug somewhere in my code *)
-  | FatalError _ | Timeout
+  | FatalError _ | Timeout _ | OutOfMemory _
    -> OnlyStrict
   
 
@@ -362,7 +367,10 @@ let exn_to_error file exn =
   (* in theory we should also avoid to capture those *)
   | Common.Timeout ->
     let loc = Parse_info.first_loc_of_file file in
-    mk_error_loc loc Timeout  
+    mk_error_loc loc (Timeout None)
+  | Out_of_memory ->
+    let loc = Parse_info.first_loc_of_file file in
+    mk_error_loc loc (OutOfMemory None)
   | (UnixExit _) as exn -> raise exn
   (* general case, can't extract line information from it, default to line 1 *)
   | exn ->
