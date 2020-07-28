@@ -301,6 +301,7 @@ sgrep_spatch_pattern:
 item: 
  | stmt   { [IStmt $1] }
  | import { $1 |> List.map (fun x -> IImport x) }
+ | package { [ITop $1] }
  | xfndcl { [ITop $1] }
 
 item_list:
