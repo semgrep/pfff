@@ -418,7 +418,7 @@ simple_stmt:
 |   expr                       { ExprStmt $1 }
 |   expr LASOP expr            { AssignOp ($1, $2, $3) }
 |   expr_list LEQ expr_list    { Assign (List.rev $1, $2, List.rev $3)  }
-|   expr_list LCOLAS expr_list { DShortVars ($1, $2, $3) }
+|   expr_list LCOLAS expr_list { DShortVars (List.rev $1, $2, List.rev $3) }
 |   expr LINC                  { IncDec ($1, (Incr, $2), Postfix) }
 |   expr LDEC                  { IncDec ($1, (Decr, $2), Postfix) }
 
