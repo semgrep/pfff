@@ -760,11 +760,19 @@ string:
 
 interpolated:
   | FSTRING_STRING { Str $1 }
-  | FSTRING_LBRACE interpolant "}" { $2 }
-  | FSTRING_LBRACE interpolant ":" format_specifier "}"
-     { InterpolatedString ($2::mk_str $3::$4) }
-  | FSTRING_LBRACE interpolant BANG format_specifier "}"
-     { InterpolatedString ($2::mk_str $3::$4) }
+  | FSTRING_LBRACE interpolant fstring_print_spec "}" { InterpolatedString ($2::$3) }
+
+fstring_print_spec:
+  | fstring_format_clause { $1 }
+  | "=" fstring_format_clause { mk_str $1::$2 }
+
+fstring_format_clause:
+  | { [] }
+  | fstring_format_delimeter format_specifier { mk_str $1::$2 }
+
+fstring_format_delimeter:
+  | ":" { $1 }
+  | BANG { $1 }
 
 interpolant:
   (* Note that the f-string mini-language at
