@@ -248,9 +248,9 @@ and expr =
       in
       G.Call (G.IdSpecial (G.Op v2, tok), fb([v1;v3] |> List.map G.expr_to_arg))
   | CompositeLit ((v1, v2)) ->
-      let v1 = type_ v1 and (_t1, v2, _t2) = bracket (list init) v2 in
+      let v1 = type_ v1 and (_t1, v2, _t2) = bracket (list init_for_composite_lit) v2 in
       G.Call (G.IdSpecial (G.New, fake "new"), 
-        fb((G.ArgType v1)::(v2 |> List.map G.expr_to_arg)))
+        fb((G.ArgType v1)::(v2)))
   | Slice ((v1, v2)) ->
       let e = expr v1 in
       let (v1, v2, v3) = v2 in
@@ -320,6 +320,17 @@ and init =
       G.Tuple [v1; v3]
   | InitBraces v1 -> let v1 = bracket (list init) v1 in
       G.Container (G.List, v1)
+
+and init_for_composite_lit =
+   function
+   | InitExpr v1 -> let v1 = expr v1 in G.Arg v1
+   | InitKeyValue ((v1, v2, v3)) ->
+       let _v2 = tok v2 and v3 = init v3 in
+       (match v1 with 
+        | InitExpr (Id (id, _id_info)) -> G.ArgKwd (id, v3)
+        | _ -> G.Arg (G.Tuple [init v1; v3]))
+   | InitBraces v1 -> let v1 = bracket (list init) v1 in
+       G.Arg (G.Container (G.List, v1))
 
 and constant_expr v = expr v
 
