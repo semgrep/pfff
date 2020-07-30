@@ -264,6 +264,7 @@ sgrep_spatch_pattern:
  | import_declaration EOF           { AStmt (DirectiveStmt $1) }
  | import_declaration import_declarations EOF  
     { AStmts (($1::$2) |> List.map (fun x -> DirectiveStmt x)) }
+ | package_declaration EOF          { AStmt (DirectiveStmt $1) }
  | expression EOF                   { AExpr $1 }
  | item_no_dots EOF                 { mk_stmt_or_stmts $1 }
  | item_no_dots item_sgrep_list EOF { mk_stmt_or_stmts ($1 @ (List.flatten $2)) }
