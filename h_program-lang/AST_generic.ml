@@ -900,7 +900,7 @@ and type_ =
 (*****************************************************************************)
 (* a.k.a decorators, annotations *)
 (* order-dependent, order-independent *)
-and attribute_spec = attribute list * attribute list
+and attribute_spec = { ordered: attribute list; unordered: attribute list }
 (*s: type [[AST_generic.attribute]] *)
 and attribute = 
   | KeywordAttr of keyword_attribute wrap
@@ -1445,7 +1445,7 @@ let name_of_id id =
   (id, empty_name_info), empty_id_info ()
 *)
 
-let empty_attribute_spec = ([], [])
+let empty_attribute_spec: attribute_spec = { ordered=[]; unordered=[] }
 
 (*s: function [[AST_generic.param_of_id]] *)
 let param_of_id id = { 

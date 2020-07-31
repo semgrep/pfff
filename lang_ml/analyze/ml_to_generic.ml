@@ -348,9 +348,11 @@ and type_def_kind =
              and v3 = option tok v3
              in 
              let ent = G.basic_entity
-               ~attrs:(match v3 with
-               | Some tok -> ([], [G.attr G.Mutable tok])
-               | None -> G.empty_attribute_spec) v1 in
+               ~attrs:(
+                 match v3 with
+                 | Some tok -> {G.empty_attribute_spec with G.unordered=[G.attr G.Mutable tok]}
+                 | None -> G.empty_attribute_spec
+               ) v1 in
             G.FieldStmt (G.DefStmt
              (ent, G.FieldDef { G.vinit = None; vtype = Some v2 }))
             ))
@@ -386,7 +388,7 @@ and item =
       let v1 = ident v1
       and v2 = type_ v2
       and _v3 = list (wrap string) v3 in
-      let attrs = ([], [G.KeywordAttr (G.Extern, t)]) in
+      let attrs = {G.empty_attribute_spec with G.unordered=[G.KeywordAttr (G.Extern, t)]} in
       let ent = G.basic_entity ~attrs:attrs v1 in
       let def = G.Signature v2 in
       [G.DefStmt (ent, def)]
