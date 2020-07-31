@@ -899,6 +899,8 @@ and type_ =
 (* Attribute *)
 (*****************************************************************************)
 (* a.k.a decorators, annotations *)
+(* order-dependent, order-independent *)
+and attribute_spec = attribute list * attribute list
 (*s: type [[AST_generic.attribute]] *)
 and attribute = 
   | KeywordAttr of keyword_attribute wrap
@@ -959,7 +961,7 @@ and definition = entity * definition_kind
   and entity = {
     name: ident;
     (*s: [[AST_generic.entity]] attribute field *)
-    attrs: attribute list;
+    attrs: attribute_spec;
     (*e: [[AST_generic.entity]] attribute field *)
     (*s: [[AST_generic.entity]] id info field *)
     (* naming/typing *)
@@ -1080,7 +1082,7 @@ and function_definition = {
      pdefault: expr  option;
      (*s: [[AST_generic.parameter_classic]] attribute field *)
      (* this covers '...' variadic parameters, see the Variadic attribute *)
-     pattrs: attribute list;
+     pattrs: attribute_spec;
      (*e: [[AST_generic.parameter_classic]] attribute field *)
      (*s: [[AST_generic.parameter_classic]] id info field *)
      (* naming *)
@@ -1182,7 +1184,7 @@ and type_definition = {
   and field = 
     | FieldStmt of stmt
     (*s: [[AST_generic.field]] other cases *)
-    | FieldDynamic of expr (* dynamic name *) * attribute list * expr (*value*)
+    | FieldDynamic of expr (* dynamic name *) * attribute_spec * expr (*value*)
     (* less: could abuse FieldStmt(ExprStmt(IdSpecial(Spread))) for that *)
     | FieldSpread of tok (* ... *) * expr (* usually a Name *)
     (*e: [[AST_generic.field]] other cases *)
@@ -1443,22 +1445,24 @@ let name_of_id id =
   (id, empty_name_info), empty_id_info ()
 *)
 
+let empty_attribute_spec = ([], [])
+
 (*s: function [[AST_generic.param_of_id]] *)
 let param_of_id id = { 
     pname = Some id;
-    pdefault = None; ptype = None; pattrs = []; pinfo = 
+    pdefault = None; ptype = None; pattrs = empty_attribute_spec; pinfo =
       (basic_id_info (Param, sid_TODO));
 }
 (*e: function [[AST_generic.param_of_id]] *)
 (*s: function [[AST_generic.param_of_type]] *)
 let param_of_type typ = {
     ptype = Some typ;
-    pname = None; pdefault = None; pattrs = []; pinfo = empty_id_info ();
+    pname = None; pdefault = None; pattrs = empty_attribute_spec; pinfo = empty_id_info ();
 }
 (*e: function [[AST_generic.param_of_type]] *)
 
 (*s: function [[AST_generic.basic_entity]] *)
-let basic_entity id attrs = {
+let basic_entity ?(attrs=empty_attribute_spec) id = {
   name = id;
   attrs = attrs;
   tparams = []; info = empty_id_info ();
@@ -1467,7 +1471,7 @@ let basic_entity id attrs = {
 
 (*s: function [[AST_generic.basic_field]] *)
 let basic_field id vopt typeopt =
-  let entity = basic_entity id [] in
+  let entity = basic_entity id in
   FieldStmt(DefStmt (entity, FieldDef { vinit = vopt; vtype = typeopt}))
 (*e: function [[AST_generic.basic_field]] *)
 

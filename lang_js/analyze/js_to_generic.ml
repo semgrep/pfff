@@ -325,15 +325,16 @@ and case =
 and def_of_var { v_name = x_name; v_kind = x_kind; 
                  v_init = x_init; v_resolved = x_resolved } =
   let v1 = name x_name in
-  let v2 = var_kind x_kind in 
-  let ent = G.basic_entity v1 [v2] in
+  let v2 = var_kind x_kind in
+  let init_attrs = [v2] in
+  let ent = G.basic_entity v1 ~attrs:([], init_attrs) in
   (match x_init with
   | Some (Fun (v3, _nTODO))   -> 
       let def, more_attrs = fun_ v3 in
-      { ent with G.attrs = ent.G.attrs @ more_attrs}, G.FuncDef def
+      { ent with G.attrs = ([], init_attrs @ more_attrs)}, G.FuncDef def
   | Some (Class (v3, _nTODO)) -> 
       let def, more_attrs = class_ v3 in
-      { ent with G.attrs = ent.G.attrs @ more_attrs}, G.ClassDef def
+      { ent with G.attrs = ([], init_attrs @ more_attrs)}, G.ClassDef def
   | _ -> 
        let v3 = option expr x_init in 
        let v4 = vref resolved_name x_resolved in
@@ -345,7 +346,7 @@ and var_of_var { v_name = x_name; v_kind = x_kind;
                  v_init = x_init; v_resolved = x_resolved } =
   let v1 = name x_name in
   let v2 = var_kind x_kind in 
-  let ent = G.basic_entity v1 [v2] in
+  let ent = G.basic_entity v1 ~attrs:([], [v2]) in
   let v3 = option expr x_init in 
   let v4 = vref resolved_name x_resolved in
   ent.G.info.G.id_resolved := !v4;
@@ -376,7 +377,7 @@ and parameter x =
   let v3 = bool p_dots in
    { 
     G.pname = Some v1; pdefault = v2; ptype = None;
-    pattrs = (match v3 with None -> [] | Some tok -> [G.attr G.Variadic tok]);
+    pattrs = (match v3 with None -> G.empty_attribute_spec | Some tok -> ([G.attr G.Variadic tok], []));
     pinfo = G.empty_id_info ();
   }
   
@@ -410,7 +411,8 @@ and property x =
       in 
       (match v1 with
       | Left n ->
-        let ent = G.basic_entity n v2 in
+        (* Properties in any order *)
+        let ent = G.basic_entity n ~attrs:([], v2) in
        (* todo: could be a Lambda in which case we should return a FuncDef? *)
         G.FieldStmt (G.DefStmt 
                 ((ent, G.FieldDef { G.vinit = v3; vtype = None })))
@@ -418,7 +420,7 @@ and property x =
       | Right e -> 
         (match v3 with
          | None -> raise Impossible
-         | Some x -> G.FieldDynamic (e, v2, x)
+         | Some x -> G.FieldDynamic (e, ([], v2), x)
         )
       )
   | FieldSpread (t, v1) -> 

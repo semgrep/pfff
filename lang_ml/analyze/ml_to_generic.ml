@@ -216,7 +216,7 @@ and expr =
       and v4 = expr v4
       and v5 = expr v5
       in 
-      let ent = G.basic_entity v1 [] in
+      let ent = G.basic_entity v1 in
       let var = { G.vinit = Some v2; vtype = None } in
       let n = G.IdQualified ((v1, G.empty_name_info), G.empty_id_info()) in
       let next = (G.AssignOp (n, (nextop, tok), G.L (G.Int ("1", tok)))) in
@@ -309,7 +309,7 @@ and let_def { lname = lname; lparams = lparams; lbody = lbody } =
   let v1 = ident lname in
   let v2 = list parameter lparams in 
   let v3 = expr lbody in
-  let ent = G.basic_entity v1 [] in
+  let ent = G.basic_entity v1 in
   ent, v2, v3
 
 and parameter = function
@@ -321,7 +321,7 @@ and type_declaration { tname = tname; tparams = tparams; tbody = tbody
   let v1 = ident tname in
   let v2 = list type_parameter tparams in
   let v3 = type_def_kind tbody in
-  let entity = { (G.basic_entity v1 []) with G.tparams = v2 } in
+  let entity = { (G.basic_entity v1) with G.tparams = v2 } in
   let def = { G.tbody = v3 } in
   entity, def
 
@@ -347,10 +347,10 @@ and type_def_kind =
              and v2 = type_ v2
              and v3 = option tok v3
              in 
-             let ent = G.basic_entity v1
-               (match v3 with 
-               | Some tok -> [G.attr G.Mutable tok] 
-               | None -> []) in
+             let ent = G.basic_entity
+               ~attrs:(match v3 with
+               | Some tok -> ([], [G.attr G.Mutable tok])
+               | None -> G.empty_attribute_spec) v1 in
             G.FieldStmt (G.DefStmt
              (ent, G.FieldDef { G.vinit = None; vtype = Some v2 }))
             ))
@@ -360,7 +360,7 @@ and type_def_kind =
 and module_declaration { mname = mname; mbody = mbody } =
   let v1 = ident mname in 
   let v2 = module_expr mbody in
-  G.basic_entity v1 [], { G.mbody = v2 }
+  G.basic_entity v1, { G.mbody = v2 }
 
 and module_expr =
   function
@@ -379,15 +379,15 @@ and item =
 
   | Exception (_t, v1, v2) ->
       let v1 = ident v1 and v2 = list type_ v2 in 
-      let ent = G.basic_entity v1 [] in
+      let ent = G.basic_entity v1 in
       let def = G.Exception (v1, v2) in
       [G.DefStmt (ent, G.TypeDef { G.tbody = def })]
   | External (t, v1, v2, v3) ->
       let v1 = ident v1
       and v2 = type_ v2
       and _v3 = list (wrap string) v3 in
-      let attrs = [G.KeywordAttr (G.Extern, t)] in
-      let ent = G.basic_entity v1 attrs in
+      let attrs = ([], [G.KeywordAttr (G.Extern, t)]) in
+      let ent = G.basic_entity ~attrs:attrs v1 in
       let def = G.Signature v2 in
       [G.DefStmt (ent, def)]
   | Open (t, v1) -> let v1 = module_name v1 in 
@@ -396,7 +396,7 @@ and item =
 
   | Val (_t, v1, v2) -> 
       let v1 = ident v1 and v2 = type_ v2 in 
-      let ent = G.basic_entity v1 [] in
+      let ent = G.basic_entity v1 in
       let def = G.Signature v2 in
       [G.DefStmt (ent, def)]
   | Let (_t, v1, v2) ->
