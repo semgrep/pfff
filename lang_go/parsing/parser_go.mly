@@ -32,32 +32,7 @@ open Ast_go
 let error tok s =
   raise (Parse_info.Other_error (s, tok))
 
-let mk_vars_or_consts xs type_opt exprs_opt mk_var_or_const = 
-  let xs = List.rev xs in
-  let ys = 
-    match exprs_opt with
-    | None -> []
-    | Some ys -> List.rev ys
-  in
-  (* less: for consts we should copy the last value *)
-  let rec aux xs ys =
-    match xs, ys with
-    | [], [] -> []
-    | x::xs, [] -> mk_var_or_const x type_opt None :: aux xs ys 
-    | x::xs, y::ys -> mk_var_or_const x type_opt (Some y) :: aux xs ys
-    | [], _y::_ys -> 
-        failwith "more values than entities"
-  in
-  aux xs ys
-
-let mk_vars xs type_opt exprs_opt =
-  mk_vars_or_consts xs type_opt exprs_opt 
-    (fun a b c -> DVar (a,b,c))
-
-let mk_consts xs type_opt exprs_opt =
-  mk_vars_or_consts xs type_opt exprs_opt 
-    (fun a b c -> DConst (a,b,c))
- 
+let rev = true 
 
 let mk_bin e1 op tok e2 =
   Binary (e1, (op, tok), e2)
@@ -356,19 +331,19 @@ common_dcl:
 
 
 vardcl:
-|   dcl_name_list ntype               { mk_vars $1 (Some $2) None }
-|   dcl_name_list ntype LEQ expr_list { mk_vars $1 (Some $2) (Some $4) }
-|   dcl_name_list       LEQ expr_list { mk_vars $1 None      (Some $3) }
+|   dcl_name_list ntype               { mk_vars ~rev $1 (Some $2) None }
+|   dcl_name_list ntype LEQ expr_list { mk_vars ~rev $1 (Some $2) (Some $4) }
+|   dcl_name_list       LEQ expr_list { mk_vars ~rev $1 None      (Some $3) }
 
 /*(* this enforces the const has a value *)*/
 constdcl:
-|   dcl_name_list ntype LEQ expr_list { mk_consts $1 (Some $2) (Some $4)  }
-|   dcl_name_list       LEQ expr_list { mk_consts $1 None (Some $3) }
+|   dcl_name_list ntype LEQ expr_list { mk_consts ~rev $1 (Some $2) (Some $4)  }
+|   dcl_name_list       LEQ expr_list { mk_consts ~rev $1 None (Some $3) }
 
 constdcl1:
 |   constdcl            { $1 }
-|   dcl_name_list ntype { mk_consts $1 (Some $2) None }
-|   dcl_name_list       { mk_consts $1 None None }
+|   dcl_name_list ntype { mk_consts ~rev $1 (Some $2) None }
+|   dcl_name_list       { mk_consts ~rev $1 None None }
 
 
 typedcl: 

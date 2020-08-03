@@ -189,7 +189,7 @@ and expr =
   and argument = 
     (* less: could also use Arg of expr_or_type *)
     | Arg of expr
-    (* for new, make, ?? *)
+    (* only for special "new" and "make" calls *)
     | ArgType of type_
     | ArgDots of expr * tok (* should be the last argument *)
 
@@ -304,6 +304,7 @@ type import = {
   and import_kind =
   (* basename of i_path is usually the package name *)
   | ImportOrig
+  (* '_' as a special meaning *)
   | ImportNamed of ident
   (* inline in current file scope all the entities of the imported module *)
   | ImportDot of tok
@@ -365,6 +366,8 @@ type any =
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+let mk_Id id = Id (id, ref None)
+
 let stmt1 xs =
   match xs with
   | [] -> Empty
@@ -390,3 +393,30 @@ let package_and_imports_of_program xs =
     | _ -> None
   ) in   
   package, imports
+
+(* used in parser_go.mly and Parse_go_tree_sitter.ml *)
+let mk_vars_or_consts ~rev xs type_opt exprs_opt mk_var_or_const = 
+  let xs = if rev then List.rev xs else xs in
+  let ys = 
+    match exprs_opt with
+    | None -> []
+    | Some ys -> if rev then List.rev ys else ys
+  in
+  (* less: for consts we should copy the last value *)
+  let rec aux xs ys =
+    match xs, ys with
+    | [], [] -> []
+    | x::xs, [] -> mk_var_or_const x type_opt None :: aux xs ys 
+    | x::xs, y::ys -> mk_var_or_const x type_opt (Some y) :: aux xs ys
+    | [], _y::_ys -> 
+        failwith "more values than entities"
+  in
+  aux xs ys
+
+let mk_vars ~rev xs type_opt exprs_opt =
+  mk_vars_or_consts ~rev xs type_opt exprs_opt 
+    (fun a b c -> DVar (a,b,c))
+
+let mk_consts ~rev xs type_opt exprs_opt =
+  mk_vars_or_consts ~rev xs type_opt exprs_opt 
+    (fun a b c -> DConst (a,b,c))
