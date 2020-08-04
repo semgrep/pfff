@@ -21,8 +21,7 @@ resultrr=`grep -i 'reduce/reduce conflict' $FILE | cut -d ' ' -f 1`
 
 result=$((resultsr+resultrr))
 MSG="Error: ocamlyacc found $result conflicts when $num are permitted. See pfff/lang_$lang/parsing/ocamlyacc_out.log for details. ($INSTR)"
-
-if (( $result > $num )); then
+if (( $result != $num )); then
    echo $MSG 1>&2
    rm -f $generated_ml_file $generated_mli_file
    exit 126

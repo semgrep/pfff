@@ -28,7 +28,7 @@ fi
 result=$((resultsr+resultrr))
 MSG="Error: menhir found $result arbitrarily resolved conflicts when $num are permitted. See pfff/lang_$lang/parsing/menhir_out.log for details. ($INSTR)"
 
-if (( $result > $num )); then
+if (( $result != $num )); then
    echo $MSG 1>&2
    rm -f $generated_ml_file $generated_mli_file
    exit 126
