@@ -297,11 +297,7 @@ and v_type_ x =
   let k x = 
   match x with
   | TyRecordAnon v1 ->
-      let v1 =
-        v_bracket
-          (v_list
-             (fun (v1, v2) -> let v1 = v_ident v1 and v2 = v_type_ v2 in ()))
-          v1
+      let v1 = v_bracket (v_list v_field) v1
       in ()
   | TyOr (v1, v2, v3) -> v_type_ v1; v_tok v2; v_type_ v3
   | TyAnd (v1, v2, v3) -> v_type_ v1; v_tok v2; v_type_ v3

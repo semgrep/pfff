@@ -394,7 +394,8 @@ and hint_type =
           (fun (v1, v2) ->
              let v1 = string_const_expr v1 and v2 = hint_type v2 in
              match v1 with
-             | G.L (G.String (s, t)) -> (s,t), v2
+             | G.L (G.String (s, t)) -> 
+                G.basic_field (s,t) None (Some v2)
              | _ -> error tok "HintShape with non-string keys not supported"
           )
           v1

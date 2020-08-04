@@ -860,7 +860,7 @@ and type_ =
    * Most record types are defined via a TypeDef and are then referenced
    * via a TyName. Here we have flexible record types (a.k.a. rows in OCaml).
    *)
-  | TyRecordAnon of (ident * type_) list bracket
+  | TyRecordAnon of field list bracket
   (*e: [[AST_generic.type_]] other cases *)
   (*s: [[AST_generic.type_]] OtherXxx case *)
   | OtherType of other_type_operator * any list

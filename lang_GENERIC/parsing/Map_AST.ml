@@ -314,12 +314,7 @@ and map_other_expr_operator x = x
 and map_type_ =
   function
   | TyRecordAnon v1 ->
-      let v1 =
-        map_bracket
-          (map_of_list
-             (fun (v1, v2) ->
-                let v1 = map_ident v1 and v2 = map_type_ v2 in (v1, v2)))
-          v1
+      let v1 = map_bracket (map_of_list map_field) v1
       in TyRecordAnon ((v1))
   | TyOr (v1, v2, v3) -> 
     let v1 = map_type_ v1 in
