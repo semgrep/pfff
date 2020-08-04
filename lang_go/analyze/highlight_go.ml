@@ -198,12 +198,14 @@ let visit_program ~tag_hook _prefs (program, toks) =
           (match fld with
           | Field (id, _) -> tag_ident id (Entity (E.Field, def2));
           | EmbeddedField (_, qid) -> tag_qid qid (Entity (E.Type, use2))
+          | FieldEllipsis _ -> ()
           );
         );
       | TInterface (_, flds) ->
         flds |> unbracket |> List.iter (function
           | Method (id, _)        -> tag_ident id (Entity (E.Method, def2))
           | EmbeddedInterface qid -> tag_qid qid (Entity (E.Type, use2))
+          | FieldEllipsis2 _ -> ()
         );
       (* general case *)
       | _ -> () 

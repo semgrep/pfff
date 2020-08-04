@@ -841,10 +841,12 @@ structdcl:
     { $1 |> List.map (fun id -> Field (id, $2), $3) }
 |         packname      oliteral { [EmbeddedField (None, $1), $2] }
 |   "*" packname      oliteral { [EmbeddedField (Some $1, $2), $3] }
+(* sgrep-ext: *)
+| "..." { [FieldEllipsis $1, None] }
 
 
 interfacetype:
-    LINTERFACE lbrace interfacedcl_list osemi "}" 
+|   LINTERFACE lbrace interfacedcl_list osemi "}" 
     { TInterface ($1, ($2, List.rev $3, $5)) }
 |   LINTERFACE lbrace "}"                         
     { TInterface ($1, ($2, [], $3)) }
@@ -852,6 +854,8 @@ interfacetype:
 interfacedcl:
 |   new_name indcl { Method ($1, $2) }
 |   packname       { EmbeddedInterface $1 }
+(* sgrep-ext: *)
+| "..."            { FieldEllipsis2 $1 }
 
 (* fntype // without func keyword *)
 indcl: "(" oarg_type_list_ocomma ")" fnres

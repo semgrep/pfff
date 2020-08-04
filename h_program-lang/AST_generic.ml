@@ -1609,4 +1609,5 @@ let unbracket (_, x, _) = x
 (*e: function [[AST_generic.unbracket]] *)
 let sc = Parse_info.fake_info ";"
 let exprstmt e = ExprStmt (e, sc)
+let fieldEllipsis t = FieldStmt (exprstmt (Ellipsis t))
 (*e: pfff/h_program-lang/AST_generic.ml *)

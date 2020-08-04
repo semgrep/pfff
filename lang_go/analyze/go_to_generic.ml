@@ -195,6 +195,8 @@ and struct_field_kind =
       let _v1TODO = option tok v1 and v2 = qualified_ident v2 in
       let name = name_of_qualified_ident v2 in
       G.FieldSpread (fake "...", G.IdQualified (name, G.empty_id_info()))
+  | FieldEllipsis t ->
+      G.fieldEllipsis t
 
 and tag v = wrap string v
 
@@ -209,6 +211,8 @@ and interface_field =
   | EmbeddedInterface v1 -> let v1 = qualified_ident v1 in 
       let name = name_of_qualified_ident v1 in
       G.FieldSpread (fake "...", G.IdQualified (name, G.empty_id_info()))
+  | FieldEllipsis2 t ->
+      G.fieldEllipsis t
 
 and expr_or_type v = either expr type_ v
 
