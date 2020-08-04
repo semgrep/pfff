@@ -20,8 +20,8 @@ while(<>) {
   s#\bLPAREN\b#"("#g;
   s#\bRPAREN\b#")"#g;
 
-  s#\bLBRACK\b#"["#g;
-  s#\bRBRACK\b#"]"#g;
+  s#\bLBRACKET\b#"["#g;
+  s#\bRBRACKET\b#"]"#g;
 
   #s#\bTOBracketLess\b#"[<"#g;
   #s#\bTGreaterCBracket\b#">]"#g;
@@ -34,11 +34,11 @@ while(<>) {
   s#\bRBRACE\b#"}"#g;
 
   # use chars instead of long tokens for common punctuators
-  s#\bSEMICOL\b#";"#g;
-  s#\bCOMMA\b#","#g;
-  s#\bDOT\b#"."#g;
-  s#\bCOLON\b#":"#g;
-  s#\bAT\b#"@"#g;
+  s#\bSEMICOLON\b#";"#g;
+  s#\bLCOMMA\b#","#g;
+  s#\bLDOT\b#"."#g;
+  s#\bLCOLON\b#":"#g;
+  #s#\bAT\b#"@"#g;
 
   #s#\bTSemiColonSemiColon\b#";;"#g;
   #s#\bTDotDot\b#".."#g;
@@ -59,17 +59,20 @@ while(<>) {
   #s#\bTUnderscore\b#"_"#g;
 
   # semgrep!
-  s#\bELLIPSES\b#"..."#g;
+  s#\bLDDD\b#"..."#g;
   s#\bLDots\b#"<..."#g;
   s#\bRDots\b#"...>"#g;
 
   # use chars instead of long tokens for important operators
-  s#\bMULT\b#"*"#g;
-  s#\bPOW\b#"**"#g;
-  s#\bEQ\b#"="#g;
+  s#\bLMULT\b#"*"#g;
+  #s#\bPOW\b#"**"#g;
+  s#\bLEQ\b#"="#g;
+
+  s#\bLCOLAS\b#":="#g;
+  s#\bLCOMM\b#"<-"#g;
 
   #s#\bTQuote\b#"'"#g;
-  s#\bBACKQUOTE\b#"`"#g;
+  #s#\bBACKQUOTE\b#"`"#g;
 
   }  
 

@@ -142,30 +142,30 @@ let rev_and_fix_items xs =
 
 %}
 
-/*(*************************************************************************)*/
-/*(*1 Tokens *)*/
-/*(*************************************************************************)*/
-%token <Ast_go.tok> TUnknown  /*(* unrecognized token *)*/
+(*************************************************************************)
+(* Tokens *)
+(*************************************************************************)
+%token <Ast_go.tok> TUnknown  (* unrecognized token *)
 %token <Ast_go.tok> EOF
 
-/*(*-----------------------------------------*)*/
-/*(*2 The space/comment tokens *)*/
-/*(*-----------------------------------------*)*/
-/*(* coupling: Token_helpers.is_comment *)*/
+(*-----------------------------------------*)
+(* The space/comment tokens *)
+(*-----------------------------------------*)
+(* coupling: Token_helpers.is_comment *)
 %token <Ast_go.tok> TCommentSpace TComment TCommentNewline
 
-/*(*-----------------------------------------*)*/
-/*(*2 The normal tokens *)*/
-/*(*-----------------------------------------*)*/
+(*-----------------------------------------*)
+(* The normal tokens *)
+(*-----------------------------------------*)
 
-/*(* tokens with "values" (was LLITERAL before) *)*/
+(* tokens with "values" (was LLITERAL before) *)
 %token  <string * Ast_go.tok> LINT LFLOAT  LIMAG  LRUNE LSTR
 %token  <AST_generic.operator * Ast_go.tok> LASOP 
 %token  <string * Ast_go.tok> LNAME 
 
-/*(*-----------------------------------------*)*/
-/*(*2 Keyword tokens *)*/
-/*(*-----------------------------------------*)*/
+(*-----------------------------------------*)
+(* Keyword tokens *)
+(*-----------------------------------------*)
 
 %token  <Ast_go.tok> 
   LIF LELSE 
@@ -180,22 +180,22 @@ let rev_and_fix_items xs =
   LMAP 
   LRANGE   
 
-/*(*-----------------------------------------*)*/
-/*(*2 Punctuation tokens *)*/
-/*(*-----------------------------------------*)*/
-/*(* syntax *)*/
+(*-----------------------------------------*)
+(* Punctuation tokens *)
+(*-----------------------------------------*)
+(* syntax *)
 %token <Ast_go.tok>
-  LPAREN RPAREN 
-  LBRACE RBRACE
-  LBRACKET RBRACKET
-  LCOLON LEQ LDOT LCOMMA
-  LCOLAS /* := */
-  LDDD
-  LDots RDots
+  LPAREN "(" RPAREN  ")"
+  LBRACE "{" RBRACE "}"
+  LBRACKET "[" RBRACKET "]"
+  LCOLON ":" LEQ "=" LDOT "." LCOMMA ","
+  LCOLAS ":="
+  LDDD "..."
+  LDots "<..." RDots "...>"
   
-/*(* operators *)*/
+(* operators *)
 %token <Ast_go.tok> 
-  LPLUS LMINUS LMULT LDIV LPERCENT
+  LPLUS LMINUS LMULT "*" LDIV LPERCENT
   LPIPE LAND LHAT 
   LANDAND LOROR
   LANDNOT 
@@ -204,20 +204,20 @@ let rev_and_fix_items xs =
   LGE LGT LLE LLT 
   LLSH LRSH
   LBANG LTILDE
-  LCOMM 
+  LCOMM "<-"
 
-/*(*-----------------------------------------*)*/
-/*(*2 Extra tokens: *)*/
-/*(*-----------------------------------------*)*/
+(*-----------------------------------------*)
+(* Extra tokens: *)
+(*-----------------------------------------*)
 %token <Ast_go.tok>
-  LBODY /* LBRACE parsing hack */
-  LSEMICOLON /* sometimes implicitely inserted, see Parsing_hacks_go.ml */ 
+  LBODY (* LBRACE parsing hack *)
+  LSEMICOLON (* sometimes implicitely inserted, see Parsing_hacks_go.ml *) 
 
-/*(*************************************************************************)*/
-/*(*1 Priorities *)*/
-/*(*************************************************************************)*/
+(*************************************************************************)
+(* Priorities *)
+(*************************************************************************)
 
-%left       LCOMM /*(*outside the usual hierarchy; here for good error msg*)*/
+%left       LCOMM (*outside the usual hierarchy; here for good error msg*)
 
 %left       LOROR
 %left       LANDAND
@@ -225,22 +225,22 @@ let rev_and_fix_items xs =
 %left       LPLUS LMINUS LPIPE LHAT
 %left       LMULT LDIV LPERCENT LAND LLSH LRSH LANDNOT
 
-/*(*
+(*
  // manual override of shift/reduce conflicts.
  // the general form is that we assign a precedence
  // to the token being shifted and then introduce
  // NotToken with lower precedence or PreferToToken with higher
  // and annotate the reducing rule accordingly.
- *)*/
+ *)
 %left       NotParen
 %left       LPAREN
 
 %left       RPAREN
 %left       PreferToRightParen
 
-/*(*************************************************************************)*/
-/*(*1 Rules type declaration *)*/
-/*(*************************************************************************)*/
+(*************************************************************************)
+(* Rules type declaration *)
+(*************************************************************************)
 
 %start file sgrep_spatch_pattern
 %type <Ast_go.program> file
@@ -248,9 +248,9 @@ let rev_and_fix_items xs =
 
 %%
 
-/*(*************************************************************************)*/
-/*(*1 Toplevel *)*/
-/*(*************************************************************************)*/
+(*************************************************************************)
+(* Toplevel *)
+(*************************************************************************)
 
 file: package imports xdcl_list EOF 
   { ($1)::
@@ -259,13 +259,13 @@ file: package imports xdcl_list EOF
 
 package: LPACKAGE sym LSEMICOLON { Package ($1, $2) }
 
-/*(* Go does some ASI so we do not need like in Java to use stmt_no_dots
+(* Go does some ASI so we do not need like in Java to use stmt_no_dots
    * to allow '...' without trailing semicolon and avoid ambiguities.
-   *)*/
+   *)
 sgrep_spatch_pattern: 
- /*(* make version with and without LSEMICOLON which is inserted
+ (* make version with and without LSEMICOLON which is inserted
     * if the item as a newline before the EOF (which leads to ASI)
-    *)*/
+    *)
  | item LSEMICOLON? EOF  { 
     match $1 with
     | [IStmt (SimpleStmt (ExprStmt x))] -> E x
@@ -284,16 +284,16 @@ item_list:
 |   item { $1 }
 |   item_list LSEMICOLON item { $3 @ $1 }
 
-/*(*************************************************************************)*/
-/*(*1 Import *)*/
-/*(*************************************************************************)*/
+(*************************************************************************)
+(* Import *)
+(*************************************************************************)
 
 import:
 |   LIMPORT import_stmt 
       { [$2 $1] }
-|   LIMPORT LPAREN import_stmt_list osemi RPAREN 
+|   LIMPORT "(" import_stmt_list osemi ")" 
       { List.rev $3 |> List.map (fun f -> f $1) }
-|   LIMPORT LPAREN RPAREN { [] }
+|   LIMPORT "(" ")" { [] }
 
 import_stmt:
 |        LSTR  
@@ -302,13 +302,13 @@ import_stmt:
 |   sym  LSTR  
     { fun i_tok -> { i_tok; i_path = $2; i_kind = ImportNamed $1 }
       (*// import with given name*)  }
-|   LDOT LSTR  
+|   "." LSTR  
     { fun i_tok -> { i_tok; i_path = $2; i_kind = ImportDot $1 }
       (*// import into my name space *) }
 
-/*(*************************************************************************)*/
-/*(*1 Declarations *)*/
-/*(*************************************************************************)*/
+(*************************************************************************)
+(* Declarations *)
+(*************************************************************************)
 
 xdcl:
 |   common_dcl { $1 |> List.map (fun decl -> DTop decl) }
@@ -316,30 +316,30 @@ xdcl:
 
 common_dcl:
 |   LVAR vardcl  { $2 }
-|   LVAR LPAREN vardcl_list osemi RPAREN { List.rev $3 }
-|   LVAR LPAREN RPAREN { [] }
+|   LVAR "(" vardcl_list osemi ")" { List.rev $3 }
+|   LVAR "(" ")" { [] }
 
-    /*(* at least the first const has a value *)*/
+    (* at least the first const has a value *)
 |   LCONST constdcl { $2 }
-|   LCONST LPAREN constdcl osemi RPAREN { $3 }
-|   LCONST LPAREN constdcl LSEMICOLON constdcl1_list osemi RPAREN 
+|   LCONST "(" constdcl osemi ")" { $3 }
+|   LCONST "(" constdcl LSEMICOLON constdcl1_list osemi ")" 
       { $3 @ (List.rev $5) }
-|   LCONST LPAREN RPAREN { [] }
+|   LCONST "(" ")" { [] }
 
 |   LTYPE typedcl { [$2] }
-|   LTYPE LPAREN typedcl_list osemi RPAREN { List.rev $3 }
-|   LTYPE LPAREN RPAREN { [] }
+|   LTYPE "(" typedcl_list osemi ")" { List.rev $3 }
+|   LTYPE "(" ")" { [] }
 
 
 vardcl:
 |   dcl_name_list ntype               { mk_vars ~rev $1 (Some $2) None }
-|   dcl_name_list ntype LEQ expr_list { mk_vars ~rev $1 (Some $2) (Some $4) }
-|   dcl_name_list       LEQ expr_list { mk_vars ~rev $1 None      (Some $3) }
+|   dcl_name_list ntype "=" expr_list { mk_vars ~rev $1 (Some $2) (Some $4) }
+|   dcl_name_list       "=" expr_list { mk_vars ~rev $1 None      (Some $3) }
 
-/*(* this enforces the const has a value *)*/
+(* this enforces the const has a value *)
 constdcl:
-|   dcl_name_list ntype LEQ expr_list { mk_consts ~rev $1 (Some $2) (Some $4)  }
-|   dcl_name_list       LEQ expr_list { mk_consts ~rev $1 None (Some $3) }
+|   dcl_name_list ntype "=" expr_list { mk_consts ~rev $1 (Some $2) (Some $4)  }
+|   dcl_name_list       "=" expr_list { mk_consts ~rev $1 None (Some $3) }
 
 constdcl1:
 |   constdcl            { $1 }
@@ -349,25 +349,25 @@ constdcl1:
 
 typedcl: 
 | typedclname ntype     { DTypeDef ($1, $2) }
-/*(* alias decl, go 1.?? *)*/
-| typedclname LEQ ntype { DTypeAlias ($1, $2, $3) }
+(* alias decl, go 1.?? *)
+| typedclname "=" ntype { DTypeAlias ($1, $2, $3) }
 
-/*(*************************************************************************)*/
-/*(*1 Statements *)*/
-/*(*************************************************************************)*/
+(*************************************************************************)
+(* Statements *)
+(*************************************************************************)
 
 stmt:
-/*(* stmt_list requires ; as a separator, so Go allows empty stmt
+(* stmt_list requires ; as a separator, so Go allows empty stmt
    * so that it can also be used as a terminator (hacky).
    * See rev_and_fix_stmts for more information.
-   *)*/
-| /*(*empty*)*/   { Empty }
+   *)
+| (*empty*)   { Empty }
 
 | compound_stmt   { $1 }
 | common_dcl      { DeclStmts $1 }
 | non_dcl_stmt    { $1 }
 
-compound_stmt: LBRACE stmt_list RBRACE 
+compound_stmt: "{" stmt_list "}" 
   { Block ($1, rev_and_fix_stmts $2, $3) }
 
 non_dcl_stmt:
@@ -378,7 +378,7 @@ non_dcl_stmt:
 |   switch_stmt { $1 }
 |   select_stmt { $1 }
 
-|   labelname LCOLON stmt { Label ($1, $3) }
+|   labelname ":" stmt { Label ($1, $3) }
 |   LGOTO new_name        { Goto ($1, $2) }
 
 |   LBREAK onew_name    { Break ($1, $2) }
@@ -393,14 +393,14 @@ non_dcl_stmt:
 simple_stmt:
 |   expr                       { ExprStmt $1 }
 |   expr LASOP expr            { AssignOp ($1, $2, $3) }
-|   expr_list LEQ expr_list    { Assign (List.rev $1, $2, List.rev $3)  }
-|   expr_list LCOLAS expr_list { DShortVars (List.rev $1, $2, List.rev $3) }
+|   expr_list "=" expr_list    { Assign (List.rev $1, $2, List.rev $3)  }
+|   expr_list ":=" expr_list { DShortVars (List.rev $1, $2, List.rev $3) }
 |   expr LINC                  { IncDec ($1, (Incr, $2), Postfix) }
 |   expr LDEC                  { IncDec ($1, (Decr, $2), Postfix) }
 
 
 
-/*(* IF cond body (ELSE IF cond body)* (ELSE block)? *) */
+(* IF cond body (ELSE IF cond body)* (ELSE block)? *) 
 if_stmt: LIF  if_header loop_body elseif_list else_
     { match $2 with
       | stopt, Some st -> 
@@ -423,7 +423,7 @@ elseif: LELSE LIF  if_header loop_body
     }
 
 else_:
-| /*(*empty*)*/         { None }
+| (*empty*)         { None }
 |   LELSE compound_stmt { Some $2 }
 
 
@@ -435,31 +435,31 @@ for_stmt:
       | None ->    For ($1, (None, None, None), $3)
       | Some st -> For ($1, (None, Some (condition_of_stmt $1 st), None), $3)
     }
- | LFOR expr_list LEQ    LRANGE expr loop_body
+ | LFOR expr_list "="    LRANGE expr loop_body
     { Range ($1, Some (List.rev $2, $3), $4, $5, $6)  }
- | LFOR expr_list LCOLAS LRANGE expr loop_body
+ | LFOR expr_list ":=" LRANGE expr loop_body
     { Range ($1, Some (List.rev $2, $3), $4, $5, $6) }
  | LFOR                  LRANGE expr loop_body
     { Range ($1, None, $2, $3, $4) }
 
 
-loop_body: LBODY stmt_list RBRACE { Block ($1, rev_and_fix_stmts $2, $3) }
+loop_body: LBODY stmt_list "}" { Block ($1, rev_and_fix_stmts $2, $3) }
 
 
-/*(* split in 2, switch expr and switch types *)*/
-switch_stmt: LSWITCH if_header LBODY caseblock_list RBRACE 
+(* split in 2, switch expr and switch types *)
+switch_stmt: LSWITCH if_header LBODY caseblock_list "}" 
     { let stopt1, stopt2 = $2 in
       Switch ($1, stopt1, stopt2 ,List.rev $4)
     }
 
-select_stmt:  LSELECT LBODY caseblock_list RBRACE 
+select_stmt:  LSELECT LBODY caseblock_list "}" 
     { Select ($1, List.rev $3) }
 
 case:
-|   LCASE expr_or_type_list LCOLON             { CaseExprs ($1, $2) }
-|   LCASE expr_or_type_list LEQ expr LCOLON    { CaseAssign ($1, $2, $3, $4) }
-|   LCASE expr_or_type_list LCOLAS expr LCOLON { CaseAssign ($1, $2, $3, $4) }
-|   LDEFAULT LCOLON                            { CaseDefault $1 }
+|   LCASE expr_or_type_list ":"             { CaseExprs ($1, $2) }
+|   LCASE expr_or_type_list "=" expr ":"    { CaseAssign ($1, $2, $3, $4) }
+|   LCASE expr_or_type_list ":=" expr ":" { CaseAssign ($1, $2, $3, $4) }
+|   LDEFAULT ":"                            { CaseDefault $1 }
 
 caseblock: case stmt_list
     {
@@ -492,9 +492,9 @@ caseblock: case stmt_list
       *)
     }
 
-/*(*************************************************************************)*/
-/*(*1 Expressions *)*/
-/*(*************************************************************************)*/
+(*************************************************************************)
+(* Expressions *)
+(*************************************************************************)
 
 expr:
 |   uexpr              { $1 }
@@ -511,7 +511,7 @@ expr:
 |   expr LMINUS expr   { mk_bin $1 Minus $2 $3 }
 |   expr LPIPE expr    { mk_bin $1 BitOr $2 $3 }
 |   expr LHAT expr     { mk_bin $1 BitXor $2 $3 }
-|   expr LMULT expr    { mk_bin $1 Mult $2 $3 }
+|   expr "*" expr    { mk_bin $1 Mult $2 $3 }
 |   expr LDIV expr     { mk_bin $1 Div $2 $3 }
 |   expr LPERCENT expr { mk_bin $1 Mod $2 $3 }
 |   expr LAND expr     { mk_bin $1 BitAnd $2 $3 }
@@ -519,17 +519,17 @@ expr:
 |   expr LLSH expr     { mk_bin $1 LSL $2 $3 }
 |   expr LRSH expr     { mk_bin $1 LSR $2 $3 }
 
-/*(* old: was in expression, to give better error message, but better here *)*/
-|   expr LCOMM expr    { Send ($1, $2, $3) }
+(* old: was in expression, to give better error message, but better here *)
+|   expr "<-" expr    { Send ($1, $2, $3) }
 
- /*(* sgrep-ext: *)*/
- | LDDD { Flag_parsing.sgrep_guard (Ellipsis $1) }
- | LDots expr RDots { Flag_parsing.sgrep_guard (DeepEllipsis ($1, $2, $3)) }
+ (* sgrep-ext: *)
+ | "..." { Flag_parsing.sgrep_guard (Ellipsis $1) }
+ | "<..." expr "...>" { Flag_parsing.sgrep_guard (DeepEllipsis ($1, $2, $3)) }
 
 uexpr:
 |   pexpr { $1 }
 
-|   LMULT uexpr { Deref ($1, $2)}
+|   "*" uexpr { Deref ($1, $2)}
 |   LAND uexpr
     {
            (* // Special case for &T{...}: turn into ( *T){...}. *)
@@ -539,11 +539,11 @@ uexpr:
 |   LMINUS uexpr { mk_unary Minus $1 $2 }
 |   LBANG  uexpr { mk_unary Not $1 $2 }
 |   LHAT uexpr { mk_unary BitXor $1 $2  }
-|   LCOMM uexpr { Receive ($1, $2) }
+|   "<-" uexpr { Receive ($1, $2) }
 
 pexpr:
 |   pexpr_no_paren { $1 }
-|   LPAREN expr_or_type RPAREN 
+|   "(" expr_or_type ")" 
     { match $2 with
       | Left e -> e
       | Right t -> ParenType t
@@ -554,20 +554,20 @@ pexpr_no_paren:
 |   basic_literal { BasicLit $1 }
 
 |   name { Id ($1, ref None) }
-    /*(* sgrep-ext: *)*/
-|   LPAREN name LCOLON ntype RPAREN { TypedMetavar($2, $3, $4) }
-    /*(* can be many things *)*/
-|   pexpr LDOT sym { Selector ($1, $2, $3) }
+    (* sgrep-ext: *)
+|   "(" name ":" ntype ")" { TypedMetavar($2, $3, $4) }
+    (* can be many things *)
+|   pexpr "." sym { Selector ($1, $2, $3) }
 
-|   pexpr LDOT LPAREN expr_or_type RPAREN 
+|   pexpr "." "(" expr_or_type ")" 
     { TypeAssert ($1, expr_or_type_to_type $2 $4) }
-    /*(* less: only inside a TypeSwitch, rewrite grammar? *)*/
-|   pexpr LDOT LPAREN LTYPE RPAREN 
+    (* less: only inside a TypeSwitch, rewrite grammar? *)
+|   pexpr "." "(" LTYPE ")" 
     { TypeSwitchExpr ($1, $3) }
 
-|   pexpr LBRACKET expr RBRACKET { Index ($1, $3) }
-|   pexpr LBRACKET oexpr LCOLON oexpr RBRACKET { Slice ($1, ($3, $5, None)) }
-|   pexpr LBRACKET oexpr LCOLON oexpr LCOLON oexpr RBRACKET 
+|   pexpr "[" expr "]" { Index ($1, $3) }
+|   pexpr "[" oexpr ":" oexpr "]" { Slice ($1, ($3, $5, None)) }
+|   pexpr "[" oexpr ":" oexpr ":" oexpr "]" 
     { Slice ($1, ($3, $5, $7))
         (*if $5 == nil {
             Yyerror("middle index required in 3-index slice");
@@ -580,11 +580,11 @@ pexpr_no_paren:
 
 |   pseudocall { mk_call_or_cast $1 }
 
-|   convtype LPAREN expr ocomma RPAREN { Cast ($1, $3) }
+|   convtype "(" expr ocomma ")" { Cast ($1, $3) }
 
-|   comptype       lbrace braced_keyval_list RBRACE 
+|   comptype       lbrace braced_keyval_list "}" 
     { CompositeLit ($1, ($2, $3, $4)) }
-|   pexpr_no_paren LBRACE braced_keyval_list RBRACE 
+|   pexpr_no_paren "{" braced_keyval_list "}" 
     { CompositeLit (expr_to_type $2 $1, ($2, $3, $4)) }
 
 |   fnliteral { $1 }
@@ -598,16 +598,16 @@ basic_literal:
 | LSTR   { String $1 }
 
 
-/*
+(*
  * call-like statements that
  * can be preceded by 'defer' and 'go'
- */
+ *)
 pseudocall:
-|   pexpr LPAREN RPAREN                               
+|   pexpr "(" ")"                               
       { ($1, ($2,[],$3)) }
-|   pexpr LPAREN arguments ocomma RPAREN      
+|   pexpr "(" arguments ocomma ")"      
       { ($1, ($2, $3 |> List.rev |> List.map mk_arg, $5)) }
-|   pexpr LPAREN arguments LDDD ocomma RPAREN 
+|   pexpr "(" arguments "..." ocomma ")" 
       { let args = 
           match $3 |> List.map mk_arg with
           | [] -> raise Impossible
@@ -624,41 +624,41 @@ argument:
 
 
 braced_keyval_list:
-|/*(*empty*)*/         { [] }
+|(*empty*)         { [] }
 |   keyval_list ocomma { List.rev $1 }
 
-/*
+(*
  * list of combo of keyval and val
- */
+ *)
 keyval_list:
 |   keyval                              { [$1] }
 |   bare_complitexpr                    { [$1] }
 
-|   keyval_list LCOMMA keyval           { $3 :: $1 }
-|   keyval_list LCOMMA bare_complitexpr { $3 :: $1 }
+|   keyval_list "," keyval           { $3 :: $1 }
+|   keyval_list "," bare_complitexpr { $3 :: $1 }
 
-keyval: complitexpr LCOLON complitexpr { InitKeyValue ($1, $2, $3) }
+keyval: complitexpr ":" complitexpr { InitKeyValue ($1, $2, $3) }
 
 complitexpr:
 |   expr { InitExpr $1 }
-|   LBRACE braced_keyval_list RBRACE { InitBraces ($1, $2, $3) }
+|   "{" braced_keyval_list "}" { InitBraces ($1, $2, $3) }
 
 bare_complitexpr:
 |   expr { InitExpr $1 }
-|   LBRACE braced_keyval_list RBRACE { InitBraces ($1, $2, $3) }
+|   "{" braced_keyval_list "}" { InitBraces ($1, $2, $3) }
 
 
 
 
 
-/*(* less: I don't think we need that with a good fix_tokens_lbody *)*/
+(* less: I don't think we need that with a good fix_tokens_lbody *)
 lbrace:
 |   LBODY { $1 }
-|   LBRACE { $1 }
+|   "{" { $1 }
 
-/*(*************************************************************************)*/
-/*(*1 Names *)*/
-/*(*************************************************************************)*/
+(*************************************************************************)
+(* Names *)
+(*************************************************************************)
 
 sym:
 |   LNAME
@@ -671,10 +671,10 @@ sym:
       $1
     }
 
-/*
+(*
  *  newname is used before declared
  *  oldname is used after declared
- */
+ *)
 new_name: sym { $1 }
 
 dcl_name: sym { $1 }
@@ -695,17 +695,17 @@ typedclname:  sym
 
 dotname:
 |   name { [$1] }
-|   name LDOT sym { [$1; $3] }
+|   name "." sym { [$1; $3] }
 
 packname:
 |   LNAME { [$1] }
-|   LNAME LDOT sym { [$1; $3] }
+|   LNAME "." sym { [$1; $3] }
 
-/*(*************************************************************************)*/
-/*(*1 Types *)*/
-/*(*************************************************************************)*/
+(*************************************************************************)
+(* Types *)
+(*************************************************************************)
 
-/*(*
+(*
  // to avoid parsing conflicts, type is split into
  //  channel types
  //  function types
@@ -713,7 +713,7 @@ packname:
  //  any other type
  // the type system makes additional restrictions,
  // but those are not implemented in the grammar.
- *)*/
+ *)
 
 ntype:
 |   dotname      { TName $1 }
@@ -723,7 +723,7 @@ ntype:
 |   fntype       { TFunc $1 }
 
 |   othertype           { $1 }
-|   LPAREN ntype RPAREN { $2 }
+|   "(" ntype ")" { $2 }
 
 non_recvchantype:
 |   dotname { TName $1 }
@@ -732,21 +732,21 @@ non_recvchantype:
 |   fntype  { TFunc $1 }
 
 |   othertype { $1 }
-|   LPAREN ntype RPAREN { $2 }
+|   "(" ntype ")" { $2 }
 
 
-ptrtype: LMULT ntype { TPtr ($1, $2) }
+ptrtype: "*" ntype { TPtr ($1, $2) }
 
-recvchantype: LCOMM LCHAN ntype { TChan ($2, TRecv, $3) }
+recvchantype: "<-" LCHAN ntype { TChan ($2, TRecv, $3) }
 
-fntype: LFUNC LPAREN oarg_type_list_ocomma RPAREN fnres 
+fntype: LFUNC "(" oarg_type_list_ocomma ")" fnres 
   { { fparams = $3; fresults = $5 } }
 
 fnres:
-| /*(*empty *)*/    %prec NotParen      { [] }
+| (*empty *)    %prec NotParen      { [] }
 |   fnret_type                          
     { [ParamClassic { pname = None; ptype = $1; pdots = None }] }
-|   LPAREN oarg_type_list_ocomma RPAREN { $2 }
+|   "(" oarg_type_list_ocomma ")" { $2 }
 
 fnret_type:
 |   dotname      { TName $1 }
@@ -760,24 +760,24 @@ fnret_type:
 
 
 othertype:
-|   LBRACKET oexpr_no_dots RBRACKET ntype 
+|   "[" oexpr_no_dots "]" ntype 
       { match $2 with 
         | None -> TSlice $4 
         | Some e -> TArray (e, $4) 
       }
-|   LBRACKET LDDD RBRACKET ntype  
+|   "[" "..." "]" ntype  
       { TArrayEllipsis ($2, $4) }
 
 |   LCHAN non_recvchantype { TChan ($1, TBidirectional, $2) }
-|   LCHAN LCOMM ntype      { TChan ($1, TSend, $3) }
+|   LCHAN "<-" ntype      { TChan ($1, TSend, $3) }
 
-|   LMAP LBRACKET ntype RBRACKET ntype { TMap ($1, $3, $5) }
+|   LMAP "[" ntype "]" ntype { TMap ($1, $3, $5) }
 
 |   structtype    { $1 }
 |   interfacetype { $1 }
 
 oexpr_no_dots:
-|/*(*empty*)*/ { None }
+|(*empty*) { None }
 |   expr_no_dots       { Some $1 }
 expr_no_dots:
 |   uexpr              { $1 }
@@ -793,19 +793,19 @@ expr_no_dots:
 |   expr LMINUS expr   { mk_bin $1 Minus $2 $3 }
 |   expr LPIPE expr    { mk_bin $1 BitOr $2 $3 }
 |   expr LHAT expr     { mk_bin $1 BitXor $2 $3 }
-|   expr LMULT expr    { mk_bin $1 Mult $2 $3 }
+|   expr "*" expr    { mk_bin $1 Mult $2 $3 }
 |   expr LDIV expr     { mk_bin $1 Div $2 $3 }
 |   expr LPERCENT expr { mk_bin $1 Mod $2 $3 }
 |   expr LAND expr     { mk_bin $1 BitAnd $2 $3 }
 |   expr LANDNOT expr  { mk_bin $1 BitNot (* BitAndNot aka BitClear *) $2 $3 }
 |   expr LLSH expr     { mk_bin $1 LSL $2 $3 }
 |   expr LRSH expr     { mk_bin $1 LSR $2 $3 }
-|   expr LCOMM expr    { Send ($1, $2, $3) }
+|   expr "<-" expr    { Send ($1, $2, $3) }
 
 
 
 dotdotdot:
-|   LDDD ntype { $1, $2 }
+|   "..." ntype { $1, $2 }
 
 
 convtype:
@@ -824,54 +824,52 @@ non_expr_type:
 |   fntype              { TFunc $1 } 
 |   recvchantype        { $1 }
 |   othertype           { $1 }
-|   LMULT non_expr_type { TPtr ($1, $2) }
+|   "*" non_expr_type { TPtr ($1, $2) }
 
-/*(*************************************************************************)*/
-/*(*1 Struct/Interface *)*/
-/*(*************************************************************************)*/
+(*************************************************************************)
+(* Struct/Interface *)
+(*************************************************************************)
 
 structtype:
-|   LSTRUCT lbrace structdcl_list osemi RBRACE 
+|   LSTRUCT lbrace structdcl_list osemi "}" 
     { TStruct ($1, ($2, List.rev $3, $5)) }
-|   LSTRUCT lbrace RBRACE                      
+|   LSTRUCT lbrace "}"                      
     { TStruct ($1, ($2, [], $3)) }
 
 structdcl:
 |   new_name_list ntype oliteral 
     { $1 |> List.map (fun id -> Field (id, $2), $3) }
 |         packname      oliteral { [EmbeddedField (None, $1), $2] }
-|   LMULT packname      oliteral { [EmbeddedField (Some $1, $2), $3] }
+|   "*" packname      oliteral { [EmbeddedField (Some $1, $2), $3] }
 
 
 interfacetype:
-    LINTERFACE lbrace interfacedcl_list osemi RBRACE 
+    LINTERFACE lbrace interfacedcl_list osemi "}" 
     { TInterface ($1, ($2, List.rev $3, $5)) }
-|   LINTERFACE lbrace RBRACE                         
+|   LINTERFACE lbrace "}"                         
     { TInterface ($1, ($2, [], $3)) }
 
 interfacedcl:
 |   new_name indcl { Method ($1, $2) }
 |   packname       { EmbeddedInterface $1 }
 
-/*(* fntype // without func keyword *)*/
-indcl: LPAREN oarg_type_list_ocomma RPAREN fnres
+(* fntype // without func keyword *)
+indcl: "(" oarg_type_list_ocomma ")" fnres
    { { fparams = $2; fresults = $4 } }
 
-/*(*************************************************************************)*/
-/*(*1 Function *)*/
-/*(*************************************************************************)*/
+(*************************************************************************)
+(* Function *)
+(*************************************************************************)
 
-/*(*
- // all in one place to show how crappy it all is
-  *) */
+(* // all in one place to show how crappy it all is *)
 xfndcl: LFUNC fndcl fnbody
     { $2 $3 }
 
 fndcl:
-|   sym LPAREN oarg_type_list_ocomma RPAREN fnres 
+|   sym "(" oarg_type_list_ocomma ")" fnres 
      { fun body -> DFunc ($1, ({ fparams = $3; fresults = $5 }, body)) }
-|   LPAREN oarg_type_list_ocomma RPAREN sym 
-    LPAREN oarg_type_list_ocomma RPAREN fnres
+|   "(" oarg_type_list_ocomma ")" sym 
+    "(" oarg_type_list_ocomma ")" fnres
      {
       fun body ->
         match $2 with
@@ -882,11 +880,11 @@ fndcl:
     }
 
 fnbody:
-|  /*(*empty *)*/          { Empty }
-|  LBRACE stmt_list RBRACE { Block ($1, rev_and_fix_stmts $2, $3) }
+|  (*empty *)          { Empty }
+|  "{" stmt_list "}" { Block ($1, rev_and_fix_stmts $2, $3) }
 
 
-fnliteral: fnlitdcl lbrace stmt_list RBRACE 
+fnliteral: fnlitdcl lbrace stmt_list "}" 
     { FuncLit ($1, stmt1 (rev_and_fix_stmts $3)) }
 
 fnlitdcl: fntype { $1 }
@@ -896,50 +894,50 @@ arg_type:
 |   sym name_or_type { ParamClassic { pname= Some $1; ptype = $2; pdots = None } }
 |   sym dotdotdot    { ParamClassic { pname= Some $1; ptype = snd $2; pdots = Some (fst $2)}}
 |       dotdotdot    { ParamClassic { pname= None; ptype = snd $1; pdots = Some (fst $1)} }
- /*(* sgrep-ext: *)*/
- | LDDD { Flag_parsing.sgrep_guard (ParamEllipsis $1) }
+ (* sgrep-ext: *)
+ | "..." { Flag_parsing.sgrep_guard (ParamEllipsis $1) }
 
 
 name_or_type:  ntype { $1 }
 
 arg_type_list:
 |   arg_type                      { [$1] }
-|   arg_type_list LCOMMA arg_type { $3::$1 }
+|   arg_type_list "," arg_type { $3::$1 }
 
 oarg_type_list_ocomma:
-|/*(*empty*)*/  { [] }
+|(*empty*)  { [] }
 |   arg_type_list ocomma { adjust_signatures $1  }
 
-/*(*************************************************************************)*/
-/*(*1 xxx_opt, xxx_list *)*/
-/*(*************************************************************************)*/
+(*************************************************************************)
+(* xxx_opt, xxx_list *)
+(*************************************************************************)
 
-/*
+(*
  * lists of things
  * note that they are left recursive
  * to conserve yacc stack. they need to
  * be reversed to interpret correctly
- */
+ *)
 
-/*(* basic lists, 0 element allowed *)*/
+(* basic lists, 0 element allowed *)
 elseif_list:
-| /*(*empty*)*/      { [] }
+| (*empty*)      { [] }
 | elseif_list elseif { $2::$1 }
 
 caseblock_list:
-| /*(*empty*)*/  { [] }
+| (*empty*)  { [] }
 | caseblock_list caseblock { $2::$1 }
 
-/*(* lists with ending LSEMICOLON, 0 element allowed *)*/
+(* lists with ending LSEMICOLON, 0 element allowed *)
 xdcl_list:
-| /*(*empty*)*/    { [] }
+| (*empty*)    { [] }
 |   xdcl_list xdcl LSEMICOLON { $2 @ $1 }
 
 imports:
-| /*(* empty *)*/ { [] }
+| (* empty *) { [] }
 | imports import LSEMICOLON { $2 @ $1 }
 
-/*(* lists with LSEMICOLON separator, at least 1 element *)*/
+(* lists with LSEMICOLON separator, at least 1 element *)
 import_stmt_list:
 |   import_stmt                             { [$1] }
 |   import_stmt_list LSEMICOLON import_stmt { $3::$1 }
@@ -970,55 +968,55 @@ stmt_list:
 
 new_name_list:
 |   new_name { [$1] }
-|   new_name_list LCOMMA new_name { $3::$1 }
+|   new_name_list "," new_name { $3::$1 }
 
 dcl_name_list:
 |   dcl_name { [$1] }
-|   dcl_name_list LCOMMA dcl_name { $3::$1 }
+|   dcl_name_list "," dcl_name { $3::$1 }
 
 expr_list:
 |   expr { [$1] }
-|   expr_list LCOMMA expr { $3::$1 }
+|   expr_list "," expr { $3::$1 }
 
 expr_or_type_list:
 |   expr_or_type { [$1] }
-|   expr_or_type_list LCOMMA expr_or_type { $3::$1 }
+|   expr_or_type_list "," expr_or_type { $3::$1 }
 
-/*(* was expr_or_type_list before *)*/
+(* was expr_or_type_list before *)
 arguments:
 |   argument { [$1] }
-|   arguments LCOMMA argument { $3::$1 }
+|   arguments "," argument { $3::$1 }
 
 
-/*
+(*
  * optional things
- */
+ *)
 osemi:
-|/*(*empty*)*/ { }
+|(*empty*) { }
 |   LSEMICOLON { }
 
 ocomma:
-|/*(*empty*)*/ { }
-|   LCOMMA { }
+|(*empty*) { }
+|   "," { }
 
 oliteral:
-|/*(*empty*)*/ { None }
+|(*empty*) { None }
 |   LSTR       { Some $1 }
 
 
 oexpr:
-|/*(*empty*)*/ { None }
+|(*empty*) { None }
 |   expr       { Some $1 }
 
 oexpr_list:
-|/*(*empty*)*/ { None }
+|(*empty*) { None }
 |   expr_list  { Some (List.rev $1) }
 
 osimple_stmt:
-|/*(*empty*)*/  { None }
+|(*empty*)  { None }
 |   simple_stmt { Some $1 }
 
 onew_name:
-|/*(*empty*)*/   { None  }
+|(*empty*)   { None  }
 |   new_name     { Some $1 }
 
