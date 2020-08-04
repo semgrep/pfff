@@ -334,9 +334,14 @@ let any_of_string s =
   Common2.with_tmp_file ~str:s ~ext:"js" (fun file ->
     let toks = tokens file in
     let toks = Parsing_hacks_js.fix_tokens toks in
-    (* TODO? run the parsing hack ASI fix?  
-     * introduce lots of regressions in sgrep make test?
+    (* note that this does not trigger the ASI done during
+     * error recovery, so there is still a different behavior regarding
+     * ASI between parsing code and semgrep patterns. This is why
+     * we still need to assignment_expr_no_stmt sgrep_spatch_pattern rule
+     * and at few places allow the 'sc' to be optional because in semgrep
+     * patterns they are not always inserted.
      *)
+    let toks = Parsing_hacks_js.fix_tokens_ASI toks in
     let _tr, lexer, lexbuf_fake = PI.mk_lexer_for_yacc toks TH.is_comment in
     Parser_js.sgrep_spatch_pattern lexer lexbuf_fake
   )
