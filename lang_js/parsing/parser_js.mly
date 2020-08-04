@@ -74,6 +74,8 @@ let fix_sgrep_module_item x =
   match x with
   | It (FunDecl ({ f_kind = F_func (_, None); _ } as decl)) ->
       Expr (Function decl)
+  (* less: could check that sc is an ASI *)
+  | It (St (ExprStmt (e, _sc))) -> Expr e
   | _ -> ModuleItem x
 
 let (@@) xs sc =
@@ -1215,7 +1217,7 @@ xhp_html:
 xhp_child:
  | T_XHP_TEXT        { XhpText $1 }
  | xhp_html          { XhpNested $1 }
- | "{" expr sc "}"   { XhpExpr ($1, Some $2, $4) (*TODO$3*) }
+ | "{" expr sc? "}"   { XhpExpr ($1, Some $2, $4) (*TODO$3*) }
  | "{" "}"           { XhpExpr ($1, None , $2) (*TODO$3*) }
 
 xhp_attribute:
@@ -1226,7 +1228,7 @@ xhp_attribute:
 
 xhp_attribute_value:
  | T_STRING           { XhpAttrString ($1) }
- | "{" expr sc "}"    { XhpAttrExpr ($1, $2, $4)(*TODO$3*)}
+ | "{" expr sc? "}"    { XhpAttrExpr ($1, $2, $4)(*TODO$3*)}
 
 (*----------------------------*)
 (* interpolated strings *)
