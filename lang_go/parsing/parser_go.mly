@@ -263,13 +263,14 @@ package: LPACKAGE sym LSEMICOLON { Package ($1, $2) }
    * to allow '...' without trailing semicolon and avoid ambiguities.
    *)*/
 sgrep_spatch_pattern: 
- | expr         EOF       { E $1 }
- /*(* should be item_no_simple_stmt to remove 1 s/r conflict *)*/
- | item LSEMICOLON EOF       { item1 $1 }
  /*(* make version with and without LSEMICOLON which is inserted
     * if the item as a newline before the EOF (which leads to ASI)
     *)*/
- | item            EOF       { item1 $1 }
+ | item LSEMICOLON? EOF  { 
+    match $1 with
+    | [IStmt (SimpleStmt (ExprStmt x))] -> E x
+    | _ -> item1 $1 
+    }
  | item LSEMICOLON item LSEMICOLON item_list EOF 
     { Items ($1 @ $3 @ rev_and_fix_items $5) }
 
