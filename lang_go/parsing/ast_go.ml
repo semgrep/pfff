@@ -100,11 +100,15 @@ type type_ =
     and struct_field_kind = 
     | Field of ident * type_ (* could factorize with entity *)
     | EmbeddedField of tok option (* * *) * qualified_ident
+    (* sgrep-ext: *)
+    | FieldEllipsis of tok
    and tag = string wrap
     
   and interface_field = 
     | Method of ident * func_type
     | EmbeddedInterface of qualified_ident
+    (* sgrep-ext: *)
+    | FieldEllipsis2 of tok
 
 and expr_or_type = (expr, type_) Common.either
 

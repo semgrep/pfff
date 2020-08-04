@@ -139,13 +139,8 @@ let rec type_ =
   | TChan ((t, v1, v2)) -> let v1 = chan_dir v1 and v2 = type_ v2 in 
       G.TyNameApply (mk_name "chan" t, [G.TypeArg v1; G.TypeArg v2])
 
-  | TStruct (t, v1) -> let v1 = bracket (list struct_field) v1 in 
-      (* could also use StructName *)
-      let s = gensym () in
-      let ent = G.basic_entity (s, t) [] in
-      let def = G.TypeDef { G.tbody = G.AndType v1 } in
-      Common.push (ent, def) anon_types;
-      G.TyName (mk_name s t)
+  | TStruct (_t, v1) -> let v1 = bracket (list struct_field) v1 in 
+      G.TyRecordAnon v1
   | TInterface (t, v1) -> let v1 = bracket (list interface_field) v1 in 
       let s = gensym () in
       let ent = G.basic_entity (s, t) [] in
@@ -195,6 +190,8 @@ and struct_field_kind =
       let _v1TODO = option tok v1 and v2 = qualified_ident v2 in
       let name = name_of_qualified_ident v2 in
       G.FieldSpread (fake "...", G.IdQualified (name, G.empty_id_info()))
+  | FieldEllipsis t ->
+      G.fieldEllipsis t
 
 and tag v = wrap string v
 
@@ -209,6 +206,8 @@ and interface_field =
   | EmbeddedInterface v1 -> let v1 = qualified_ident v1 in 
       let name = name_of_qualified_ident v1 in
       G.FieldSpread (fake "...", G.IdQualified (name, G.empty_id_info()))
+  | FieldEllipsis2 t ->
+      G.fieldEllipsis t
 
 and expr_or_type v = either expr type_ v
 

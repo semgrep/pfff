@@ -142,11 +142,13 @@ and v_struct_field_kind =
   | Field ((v1, v2)) -> let v1 = v_ident v1 and v2 = v_type_ v2 in ()
   | EmbeddedField ((v1, v2)) ->
       let v1 = v_option v_tok v1 and v2 = v_qualified_ident v2 in ()
+  | FieldEllipsis t -> v_tok t
 and v_tag v = v_wrap v_string v
 and v_interface_field =
   function
   | Method ((v1, v2)) -> let v1 = v_ident v1 and v2 = v_func_type v2 in ()
   | EmbeddedInterface v1 -> let v1 = v_qualified_ident v1 in ()
+  | FieldEllipsis2 t -> v_tok t
 and v_expr_or_type v = v_either v_expr v_type_ v
 
 and v_expr x =
