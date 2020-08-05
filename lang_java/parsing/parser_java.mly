@@ -299,10 +299,8 @@ item_sgrep_list:
 (*************************************************************************)
 
 (* ident_list *)
-package_declaration: 
- |             PACKAGE qualified_ident ";"  { Package ($1, $2, $3) }
- (* always annotations *)
- | modifiers   PACKAGE qualified_ident ";"  { Package ($2, $3, $4) (* TODO $1*)}
+package_declaration: modifiers_opt PACKAGE qualified_ident ";"  
+  { Package ($2, $3, $4) (* TODO $1*)}
 
 (* javaext: static_opt 1.? *)
 import_declaration:
@@ -449,10 +447,10 @@ class_instance_creation_expression:
     new String[2][1]  // a 2-dimensional array
 *)
 array_creation_expression:
- | NEW primitive_type dim_exprs dims_opt
-       { NewArray ($1, $2, List.rev $3, $4, None) }
- | NEW name dim_exprs dims_opt
-       { NewArray ($1, TClass (class_type ($2)), List.rev $3, $4, None) }
+ | NEW primitive_type dim_expr+ dims_opt
+       { NewArray ($1, $2, $3, $4, None) }
+ | NEW name dim_expr+ dims_opt
+       { NewArray ($1, TClass (class_type ($2)), List.$3, $4, None) }
 
 (*
    A new array that can be accessed right away by appending [index] as follows:
@@ -793,11 +791,8 @@ local_variable_declaration_statement: local_variable_declaration ";"
  { List.map (fun x -> LocalVar x) $1 }
 
 (* cant factorize with variable_modifier_opt, conflicts otherwise *)
-local_variable_declaration:
- |           type_ variable_declarators
-     { decls (fun x -> x) [] $1 (List.rev $2) }
+local_variable_declaration: modifiers_opt type_ variable_declarators
  (* javaext: 1.? actually should be variable_modifiers but conflict *)
- | modifiers type_ variable_declarators
      { decls (fun x -> x) $1 $2 (List.rev $3) }
 
 empty_statement: ";" { EmptyStmt $1 }
@@ -833,13 +828,13 @@ switch_statement: SWITCH "(" expression ")" switch_block
 
 switch_block:
  | "{"                                             "}"  { [] }
- | "{"                               switch_labels "}"  { [$2, []] }
+ | "{"                               switch_label+ "}"  { [$2, []] }
  | "{" switch_block_statement_groups               "}"  { $2 }
- | "{" switch_block_statement_groups switch_labels "}"
-     { List.rev ((List.rev $3, []) :: $2) }
+ | "{" switch_block_statement_groups switch_label+ "}"
+     { List.rev (($3, []) :: $2) }
 
-switch_block_statement_group: switch_labels block_statement+
-   {List.rev $1, List.flatten $2}
+switch_block_statement_group: switch_label+ block_statement+
+   {$1, List.flatten $2}
 
 switch_label:
  | CASE constant_expression ":"  { Case ($1, $2) }
@@ -877,13 +872,11 @@ for_init:
 
 for_update: statement_expression_list  { $1 }
 
-for_var_control:
- |           type_ variable_declarator_id for_var_control_rest
-     {  canon_var [] (Some $1) $2, $3 }
-(* actually only FINAL is valid here, but cant because get shift/reduce
+for_var_control: 
+ modifiers_opt type_ variable_declarator_id for_var_control_rest
+  (* actually only FINAL is valid here, but cant because get shift/reduce
    * conflict otherwise because for_init can be a local_variable_decl
    *)
- | modifiers type_ variable_declarator_id for_var_control_rest
      { canon_var $1 (Some $2) $3, $4 }
 
 for_var_control_rest: ":" expression { $2 }
@@ -1277,15 +1270,12 @@ enum_body:
  | "{" enum_constants    optl(enum_body_declarations) "}" { $2, $3 }
  | "{" enum_constants "," optl(enum_body_declarations) "}" { $2, $4 }
 
-enum_constant: 
- |           enum_constant_bis { $1 }
- (* always annotations *)
- | modifiers enum_constant_bis { $2 }
+enum_constant: modifiers_opt enum_constant_bis { $2 }
 
 enum_constant_bis:
  | identifier                         { $1, None, None }
  | identifier "(" argument_list_opt ")" { $1, Some ($2,$3,$4), None }
- | identifier "{" method_declarations_opt "}"  
+ | identifier "{" method_declaration* "}"  
     { $1, None, Some ($2, $3 |> List.map (fun x -> Method x) , $4) }
 
 enum_body_declarations: ";" class_body_declaration* { List.flatten $2 }
@@ -1294,15 +1284,10 @@ enum_body_declarations: ";" class_body_declaration* { List.flatten $2 }
 (* Annotation type decl *)
 (*************************************************************************)
 
-(* cant factorize modifiers_opt *)
 annotation_type_declaration:
- | modifiers "@" INTERFACE identifier annotation_type_body 
+  modifiers_opt "@" INTERFACE identifier annotation_type_body 
      { { cl_name = $4; cl_kind = AtInterface; cl_mods = $1; cl_tparams = [];
          cl_extends = None; cl_impls = []; cl_body = $5 }
-     }
- |           "@" INTERFACE identifier annotation_type_body 
-     { { cl_name = $3; cl_kind = AtInterface; cl_mods = []; cl_tparams = [];
-         cl_extends = None; cl_impls = []; cl_body = $4 } 
      }
 
 annotation_type_body: "{" annotation_type_element_declarations_opt "}" 
@@ -1338,30 +1323,26 @@ annotation_type_element_declarations:
 (* xxx_list, xxx_opt *)
 (*************************************************************************)
 
-(* basic lists, at least one element *)
-modifiers:
+(* can't use modifier*, need %inline and separate modifiers rule *)
+%inline
+modifiers_opt:
+ | (*empty*)  { [] }
+ | modifiers  { List.rev $1 }
+
+modifiers: 
  | modifier  { [$1] }
  | modifiers modifier  { $2 :: $1 }
+
+
+(* basic lists, at least one element *)
 
 switch_block_statement_groups:
  | switch_block_statement_group  { [$1] }
  | switch_block_statement_groups switch_block_statement_group  { $2 :: $1 }
 
-switch_labels:
- | switch_label  { [$1] }
- | switch_labels switch_label  { $2 :: $1 }
-
 catches:
  | catch_clause  { [$1] }
  | catches catch_clause  { $2 :: $1 }
-
-method_declarations:
- | method_declaration { [$1] }
- | method_declarations method_declaration { $2 :: $1 }
-
-dim_exprs:
- | dim_expr  { [$1] }
- | dim_exprs dim_expr  { $2 :: $1 }
 
 (* basic lists, at least one element with separator *)
 ref_type_list:
@@ -1423,10 +1404,6 @@ element_values:
 
 (* basic lists, 0 element allowed *)
 
-%inline
-modifiers_opt:
- | (*empty*)  { [] }
- | modifiers  { List.rev $1 }
 
 formal_parameter_list_opt:
  | (*empty*)  { [] }
@@ -1443,10 +1420,6 @@ catches_opt:
 argument_list_opt:
  | (*empty*)  { [] }
  | argument_list  { List.rev $1 }
-
-method_declarations_opt:
- | (*empty*)  { [] }
- | method_declarations  { List.rev $1 }
 
 dims_opt:
  | (*empty*)  { 0 }
