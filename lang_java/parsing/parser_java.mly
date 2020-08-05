@@ -1,4 +1,3 @@
-(*
 (* Joust: a Java lexer, parser, and pretty-printer written in OCaml
  * Copyright (C) 2001  Eric C. Cooper <ecc@cmu.edu>
  * Released under the GNU General Public License
@@ -26,7 +25,6 @@
  *  - enums, foreach, ...
  *  - annotations (partial)
  *  - lambdas
- *)
  *)
 %{
 open Common
@@ -109,11 +107,11 @@ let mk_stmt_or_stmts = function
 (* The comment tokens *)
 (*-----------------------------------------*)
 (* Those tokens are not even used in this file because they are
-   * filtered in some intermediate phases (in Parse_java.lexer_function
-   * by using TH.is_comment(). But they still must be declared
-   * because ocamllex may generate them, or some intermediate phases may also
-   * generate them (like some functions in parsing_hacks.ml).
-   *)
+ * filtered in some intermediate phases (in Parse_java.lexer_function
+ * by using TH.is_comment(). But they still must be declared
+ * because ocamllex may generate them, or some intermediate phases may also
+ * generate them (like some functions in parsing_hacks.ml).
+ *)
 %token <Parse_info.t> TComment TCommentNewline TCommentSpace
 
 (*-----------------------------------------*)
@@ -206,21 +204,24 @@ let mk_stmt_or_stmts = function
 (* Rules type declaration *)
 (*************************************************************************)
 (*
-(*
  * The start production must begin with a lowercase letter,
  * because ocamlyacc defines the parsing function with that name.
  *)
-*)
 %start goal sgrep_spatch_pattern
 %type <Ast_java.program> goal
 %type <Ast_java.any>     sgrep_spatch_pattern
 
 %%
+(*************************************************************************)
+(* Macros *)
+(*************************************************************************)
+optl(X):
+ | (* empty *) { [] }
+ | X           { $1 }
 
 (*************************************************************************)
 (* TOC *)
 (*************************************************************************)
-(*
 (* TOC:
  *  goal
  *  name
@@ -231,7 +232,7 @@ let mk_stmt_or_stmts = function
  *  anotation
  *  class/interfaces
  *)
-*)
+
 (*************************************************************************)
 (* Toplevel *)
 (*************************************************************************)
@@ -239,11 +240,11 @@ let mk_stmt_or_stmts = function
 goal: compilation_unit EOF  { $1 }
 
 (* conflicts: was simply 
-   *  package_declaration_opt import_declarations_opt type_declarations_opt
-   * but with an annotation now possible on package_declaration, seeing an
-   * '@' the LALR(1) parser does not know if it's the start of an annotation
-   * for a package or class_declaration. So we need to unfold those _opt.
-   *)
+ *  package_declaration_opt import_declarations_opt type_declarations_opt
+ * but with an annotation now possible on package_declaration, seeing an
+ * '@' the LALR(1) parser does not know if it's the start of an annotation
+ * for a package or class_declaration. So we need to unfold those _opt.
+ *)
 compilation_unit:
   | package_declaration import_declarations type_declarations_opt
     { [DirectiveStmt $1] @ ($2 |> List.map (fun x -> DirectiveStmt x)) @ $3 }
@@ -305,13 +306,13 @@ package_declaration:
 
 (* javaext: static_opt 1.? *)
 import_declaration:
- | IMPORT static_opt name ";"            
+ | IMPORT STATIC? name ";"            
     { (Import ($2, 
       (match List.rev (qualified_ident $3) with
       | x::xs -> ImportFrom ($1, List.rev xs, x)
       | [] -> raise Impossible
       ))) }
- | IMPORT static_opt name "." TIMES ";"  
+ | IMPORT STATIC? name "." TIMES ";"  
     { (Import ($2, ImportAll ($1, qualified_ident $3, $5)))}
 
 type_declaration:
@@ -322,7 +323,6 @@ type_declaration:
  (* javaext: 1.? *)
  | enum_declaration            { [DeclStmt (Enum $1)] }
  | annotation_type_declaration { [DeclStmt (Class $1)] }
-
 
 (*************************************************************************)
 (* Ident, namespace  *)
@@ -435,18 +435,17 @@ class_literal:
 
 class_instance_creation_expression:
  | NEW name "(" argument_list_opt ")" 
-   class_body_opt
+   class_body?
    { NewClass ($1, TClass (class_type $2), ($3,$4,$5), $6) }
  (* javaext: ? *)
- | primary "." NEW identifier "(" argument_list_opt ")" class_body_opt
+ | primary "." NEW identifier "(" argument_list_opt ")" class_body?
    { NewQualifiedClass ($1, $2, $3, TClass ([$4,[]]), ($5,$6,$7), $8) }
  (* javaext: not in 2nd edition java language specification. *)
- | name "." NEW identifier "(" argument_list_opt ")" class_body_opt
+ | name "." NEW identifier "(" argument_list_opt ")" class_body?
    { NewQualifiedClass ((Name (name $1)), $2, $3, TClass [$4,[]],($5,$6,$7),$8)}
 
 (*
    A new array that cannot be accessed right away by appending [index]:
-
     new String[2][1]  // a 2-dimensional array
 *)
 array_creation_expression:
@@ -457,7 +456,6 @@ array_creation_expression:
 
 (*
    A new array that can be accessed right away by appending [index] as follows:
-
     new String[] { "abc", "def" }[1]  // a string
 *)
 array_creation_expression_with_initializer:
@@ -862,7 +860,7 @@ for_statement:
 	{ For ($1, $3, $5) }
 
 for_control:
- | for_init_opt ";" expression_opt ";" for_update_opt
+ | for_init_opt ";" expression? ";" optl(for_update)
      { ForClassic ($1, Common2.option_to_list $3, $5) }
  (* javeext: ? *)
  | for_var_control
@@ -893,9 +891,9 @@ for_var_control_rest: ":" expression { $2 }
 (* Other *)
 (*----------------------------*)
 
-break_statement: BREAK identifier_opt ";"  { Break ($1, $2) }
-continue_statement: CONTINUE identifier_opt ";"  { Continue ($1, $2) }
-return_statement: RETURN expression_opt ";"  { Return ($1, $2) }
+break_statement: BREAK identifier? ";"  { Break ($1, $2) }
+continue_statement: CONTINUE identifier? ";"  { Continue ($1, $2) }
+return_statement: RETURN expression? ";"  { Return ($1, $2) }
 
 synchronized_statement: SYNCHRONIZED "(" expression ")" block { Sync ($3, $5) }
 
@@ -909,7 +907,7 @@ try_statement:
  | TRY block catches              { Try ($1, None, $2, List.rev $3, None) }
  | TRY block catches_opt finally  { Try ($1, None, $2, $3, Some $4) }
  (* javaext: ? *)
- | TRY resource_specification block catches_opt finally_opt { 
+ | TRY resource_specification block catches_opt finally? { 
     Try ($1, Some $2, $3, $4, $5)
   }
 
@@ -935,7 +933,7 @@ catch_type_list:
   | catch_type_list OR type_ { $1 @ [$3] }
 
 (* javaext: ? *)
-resource_specification: "(" resource_list semi_opt ")" { $1, [](* TODO $2*), $4 }
+resource_specification: "(" resource_list ";"? ")" { $1, [](* TODO $2*), $4 }
 
 resource: 
  | variable_modifiers local_variable_type identifier "=" expression { }
@@ -983,7 +981,6 @@ for_statement_no_short_if:
  * in front of all declarations.  the ones not applicable to
  * a particular kind of declaration must be detected in semantic actions.
  *)
-
 modifier:
  | PUBLIC       { Public, $1 }
  | PROTECTED    { Protected, $1 }
@@ -1041,7 +1038,7 @@ expr1:
 (*************************************************************************)
 
 class_declaration:
- modifiers_opt CLASS identifier type_parameters_opt super_opt interfaces_opt
+ modifiers_opt CLASS identifier type_parameters_opt super? optl(interfaces)
  class_body
   { { cl_name = $3; cl_kind = ClassRegular;
       cl_mods = $1; cl_tparams = $4;
@@ -1085,9 +1082,9 @@ class_member_declaration:
  | "..." { [DeclEllipsis $1] }
 
 
-static_initializer: STATIC block  { Init (true, $2) }
+static_initializer: STATIC block  { Init (Some $1, $2) }
 
-instance_initializer: block       { Init (false, $1) }
+instance_initializer: block       { Init (None, $1) }
 
 (*----------------------------*)
 (* Field *)
@@ -1109,8 +1106,8 @@ variable_initializer:
  | array_initializer  { $1 }
 
 array_initializer:
- | "{" comma_opt "}"                        { ArrayInit ($1, [], $3) }
- | "{" variable_initializers comma_opt "}"  { ArrayInit ($1, List.rev $2, $4) }
+ | "{" ","? "}"                        { ArrayInit ($1, [], $3) }
+ | "{" variable_initializers ","? "}"  { ArrayInit ($1, List.rev $2, $4) }
 
 (*----------------------------*)
 (* Method *)
@@ -1119,9 +1116,9 @@ array_initializer:
 method_declaration: method_header method_body  { { $1 with m_body = $2 } }
 
 method_header:
- | modifiers_opt type_ method_declarator throws_opt
+ | modifiers_opt type_ method_declarator optl(throws)
      { method_header $1 $2 $3 $4 }
- | modifiers_opt VOID method_declarator throws_opt
+ | modifiers_opt VOID method_declarator optl(throws)
      { method_header $1 (void_type $2) $3 $4 }
 
 method_declarator:
@@ -1145,14 +1142,14 @@ generic_method_or_constructor_rest:
  | VOID identifier method_declarator_rest { }
 
 method_declarator_rest:
- | formal_parameters throws_opt method_body { }
+ | formal_parameters optl(throws) method_body { }
 
 (*----------------------------*)
 (* Constructors *)
 (*----------------------------*)
 
 constructor_declaration:
- modifiers_opt constructor_declarator throws_opt constructor_body
+ modifiers_opt constructor_declarator optl(throws) constructor_body
   {
     let (id, formals) = $2 in
     let var = { mods = $1; type_ = None; name = id } in
@@ -1263,13 +1260,13 @@ interface_generic_method_decl:
     { ast_todo }
 
 interface_method_declator_rest:
- | formal_parameters throws_opt ";" { }
+ | formal_parameters optl(throws) ";" { }
 
 (*************************************************************************)
 (* Enum *)
 (*************************************************************************)
 
-enum_declaration: modifiers_opt ENUM identifier interfaces_opt enum_body
+enum_declaration: modifiers_opt ENUM identifier optl(interfaces) enum_body
    { { en_name = $3; en_mods = $1; en_impls = $4; en_body = $5; } }
 
 (* cant factorize in enum_constants_opt comma_opt .... *)
@@ -1510,49 +1507,3 @@ type_arguments_args_opt:
  | (*empty*)   { [] }
  | type_arguments_args { $1 }
 
-
-(* optional element *)
-
-static_opt:
- | (*empty*)  { false }
- | STATIC  { true }
-
-comma_opt:
- | (*empty*)  { () }
- | ","  { () }
-
-semi_opt:
- | (*empty*)  { () }
- | ";"  { () }
-
-finally_opt:
- | (*empty*)  { None  }
- | finally  { Some $1 }
-
-super_opt:
- | (*empty*)  { None }
- | super  { Some $1 }
-
-interfaces_opt:
- | (*empty*)  { [] }
- | interfaces  { $1 }
-
-throws_opt:
- | (*empty*)  { [] }
- | throws  { $1 }
-
-expression_opt:
- | (*empty*)  { None }
- | expression     { Some $1 }
-
-identifier_opt:
- | (*empty*)  { None }
- | identifier  { Some $1 }
-
-for_update_opt:
- | (*empty*)  { [] }
- | for_update     { $1 }
-
-class_body_opt:
- | (*empty*)  { None }
- | class_body     { Some $1 }

@@ -435,7 +435,7 @@ and v_decl x =
   | Method v1 -> let v1 = v_method_decl v1 in ()
   | Field v1 -> let v1 = v_field v1 in ()
   | Enum v1 -> let v1 = v_enum_decl v1 in ()
-  | Init ((v1, v2)) -> let v1 = v_bool v1 and v2 = v_stmt v2 in ()
+  | Init ((v1, v2)) -> let v1 = v_option v_tok v1 and v2 = v_stmt v2 in ()
   | DeclEllipsis v1 -> let v1 = v_tok v1 in ()
   | EmptyDecl t -> v_tok t
   | AnnotationTypeElementTodo t -> v_tok t

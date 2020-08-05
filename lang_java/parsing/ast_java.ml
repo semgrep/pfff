@@ -420,7 +420,7 @@ and decl =
   (* inside class/interface/enum *)
   | Method of method_decl
   | Field of field
-  | Init of bool (* static *) * stmt
+  | Init of tok option (* static *) * stmt
   (* java-ext: tree-sitter-only: only in AtInterface class_decl  *)
   | AnnotationTypeElementTodo of tok
 
@@ -448,8 +448,8 @@ and import =
 and directive = 
   (* The qualified ident can also contain "*" at the very end. *)
   | Package of tok * qualified_ident * tok (* ; *)
-  (* The bool is for static import (javaext:) *)
-  | Import of bool * import
+  (* The tok is for static import (javaext:) *)
+  | Import of tok option (* static *) * import
   | ModuleTodo of tok
 
  [@@deriving show { with_path = false }] (* with tarzan *)
