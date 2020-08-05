@@ -1009,7 +1009,7 @@ annotation:
 annotation_element:
  | (* nothing *) { EmptyAnnotArg }
  | element_value { AnnotArgValue $1 }
- | element_value_pairs { AnnotArgPairInit $1 }
+ | listc(element_value_pair) { AnnotArgPairInit $1 }
 
 element_value:
  | expr1 { AnnotExprInit $1 }
@@ -1022,8 +1022,8 @@ element_value_pair:
 
 element_value_array_initializer:
  | "{" "}" { [] }
- | "{" element_values "}" { $2 }
- | "{" element_values "," "}" { $2 }
+ | "{" listc(element_value) "}" { $2 }
+ | "{" listc(element_value) "," "}" { $2 }
 
 (* should be statically a constant expression; can contain '+', '*', etc.*)
 expr1: 
@@ -1036,7 +1036,7 @@ expr1:
 (*************************************************************************)
 
 class_declaration:
- modifiers_opt CLASS identifier type_parameters_opt super? optl(interfaces)
+ modifiers_opt CLASS identifier optl(type_parameters) super? optl(interfaces)
  class_body
   { { cl_name = $3; cl_kind = ClassRegular;
       cl_mods = $1; cl_tparams = $4;
@@ -1204,7 +1204,7 @@ variable_modifier:
 (*************************************************************************)
 
 interface_declaration:
- modifiers_opt INTERFACE identifier type_parameters_opt  extends_interfaces_opt
+ modifiers_opt INTERFACE identifier optl(type_parameters)  optl(extends_interfaces)
  interface_body
   { { cl_name = $3; cl_kind = Interface;
       cl_mods = $1; cl_tparams = $4;
@@ -1354,29 +1354,7 @@ qualified_ident_list:
  | name                          { [qualified_ident $1] }
  | qualified_ident_list "," name  { $1 @ [qualified_ident $3] }
 
-element_value_pairs:
- | element_value_pair { [$1] }
- | element_value_pairs "," element_value_pair { $1 @ [$3] }
-
-element_values:
- | element_value { [$1] }
- | element_values "," element_value { $1 @ [$3] }
-
-
-(* basic lists, 0 element allowed *)
-
-
-extends_interfaces_opt:
- | (*empty*)  { [] }
- | extends_interfaces  { $1 }
-
-
-
 dims_opt:
  | (*empty*)  { 0 }
  | dims  { $1 }
-
-type_parameters_opt:
- | (*empty*)   { [] }
- | type_parameters { $1 }
 
