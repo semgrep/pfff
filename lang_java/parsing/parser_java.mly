@@ -340,12 +340,12 @@ qualified_ident:
 name:
  | identifier_           { [$1] }
  | name "." identifier_  { $1 @ [$3] }
- | name "." LT_GENERIC type_arguments_args_opt GT identifier_ 
+ | name "." LT_GENERIC listc(type_argument) GT identifier_ 
      { $1@[TypeArgs_then_Id($4,$6)] }
 
 identifier_:
  | identifier                       { Id $1 }
- | identifier LT_GENERIC type_arguments_args_opt GT { Id_then_TypeArgs($1, $3) }
+ | identifier LT_GENERIC listc0(type_argument) GT { Id_then_TypeArgs($1, $3) }
 
 (*************************************************************************)
 (* Types *)
@@ -383,8 +383,7 @@ type_argument:
 (* Generics parameters *)
 (*----------------------------*)
 (* javaext: 1? *)
-type_parameters:
- | LT type_parameters_bis GT { $2 }
+type_parameters: LT listc(type_parameter) GT { $2 }
 
 type_parameter:
  | identifier               { TParam ($1, []) }
@@ -438,14 +437,13 @@ class_literal:
  | VOID           "." CLASS  { ClassLiteral (void_type $1) }
 
 class_instance_creation_expression:
- | NEW name "(" argument_list_opt ")" 
-   class_body?
+ | NEW name "(" listc0(argument) ")" class_body?
    { NewClass ($1, TClass (class_type $2), ($3,$4,$5), $6) }
  (* javaext: ? *)
- | primary "." NEW identifier "(" argument_list_opt ")" class_body?
+ | primary "." NEW identifier "(" listc0(argument) ")" class_body?
    { NewQualifiedClass ($1, $2, $3, TClass ([$4,[]]), ($5,$6,$7), $8) }
  (* javaext: not in 2nd edition java language specification. *)
- | name "." NEW identifier "(" argument_list_opt ")" class_body?
+ | name "." NEW identifier "(" listc0(argument) ")" class_body?
    { NewQualifiedClass ((Name (name $1)), $2, $3, TClass [$4,[]],($5,$6,$7),$8)}
 
 (*
@@ -489,7 +487,7 @@ array_access:
 (*----------------------------*)
 
 method_invocation:
- | name "(" argument_list_opt ")"
+ | name "(" listc0(argument) ")"
         { match List.rev $1 with
           (* TODO: lose information of TypeArgs_then_Id *)
           | ((Id x) | (TypeArgs_then_Id (_, Id x)))::xs ->
@@ -507,12 +505,12 @@ method_invocation:
               pr2_gen $1;
               raise Impossible
         }
- | primary "." identifier "(" argument_list_opt ")"
+ | primary "." identifier "(" listc0(argument) ")"
 	{ Call ((Dot ($1, $2, $3)), ($4,$5,$6)) }
- | SUPER "." identifier "(" argument_list_opt ")"
+ | SUPER "." identifier "(" listc0(argument) ")"
 	{ Call ((Dot (Name [super_ident $1], $2, $3)), ($4,$5,$6)) }
  (* javaext: ? *)
- | name "." SUPER "." identifier "(" argument_list_opt ")"
+ | name "." SUPER "." identifier "(" listc0(argument) ")"
 	{ Call (Dot (Name (name $1 @ [super_ident $3]), $2, $5), ($6,$7,$8))}
 
 argument: 
@@ -1168,15 +1166,15 @@ constructor_body:
 
 
 explicit_constructor_invocation:
- | THIS "(" argument_list_opt ")" ";"
+ | THIS "(" listc0(argument) ")" ";"
       { constructor_invocation [this_ident $1] ($2,$3,$4) $5 }
- | SUPER "(" argument_list_opt ")" ";"
+ | SUPER "(" listc0(argument) ")" ";"
       { constructor_invocation [super_ident $1] ($2,$3,$4) $5 }
  (* javaext: ? *)
- | primary "." SUPER "(" argument_list_opt ")" ";"
+ | primary "." SUPER "(" listc0(argument) ")" ";"
       { Expr (Call ((Dot ($1, $2, super_identifier $3)), ($4,$5,$6)), $7) }
  (* not in 2nd edition java language specification. *)
- | name "." SUPER "(" argument_list_opt ")" ";"
+ | name "." SUPER "(" listc0(argument) ")" ";"
       { constructor_invocation (name $1 @ [super_ident $3]) ($4,$5,$6) $7 }
 
 (*----------------------------*)
@@ -1274,14 +1272,14 @@ enum_declaration: modifiers_opt ENUM identifier optl(interfaces) enum_body
 (* cant factorize in enum_constants_opt comma_opt .... *)
 enum_body:
  | "{"                   optl(enum_body_declarations) "}" { [], $2 }
- | "{" enum_constants    optl(enum_body_declarations) "}" { $2, $3 }
- | "{" enum_constants "," optl(enum_body_declarations) "}" { $2, $4 }
+ | "{" listc(enum_constant)    optl(enum_body_declarations) "}" { $2, $3 }
+ | "{" listc(enum_constant) "," optl(enum_body_declarations) "}" { $2, $4 }
 
 enum_constant: modifiers_opt enum_constant_bis { $2 }
 
 enum_constant_bis:
  | identifier                         { $1, None, None }
- | identifier "(" argument_list_opt ")" { $1, Some ($2,$3,$4), None }
+ | identifier "(" listc0(argument) ")" { $1, Some ($2,$3,$4), None }
  | identifier "{" method_declaration* "}"  
     { $1, None, Some ($2, $3 |> List.map (fun x -> Method x) , $4) }
 
@@ -1356,27 +1354,6 @@ qualified_ident_list:
  | name                          { [qualified_ident $1] }
  | qualified_ident_list "," name  { $1 @ [qualified_ident $3] }
 
-argument_list:
- | argument  { [$1] }
- | argument_list "," argument  { $3 :: $1 }
-
-argument_list_opt:
- | (*empty*)  { [] }
- | argument_list  { List.rev $1 }
-
-
-enum_constants:
- | enum_constant { [$1] }
- | enum_constants "," enum_constant { $1 @ [$3] }
-
-type_parameters_bis:
- | type_parameter                         { [$1] }
- | type_parameters_bis "," type_parameter  { $1 @ [$3] }
-
-type_arguments_args:
- | type_argument                    { [$1] }
- | type_arguments_args "," type_argument  { $1 @ [$3] }
-
 element_value_pairs:
  | element_value_pair { [$1] }
  | element_value_pairs "," element_value_pair { $1 @ [$3] }
@@ -1402,8 +1379,4 @@ dims_opt:
 type_parameters_opt:
  | (*empty*)   { [] }
  | type_parameters { $1 }
-
-type_arguments_args_opt:
- | (*empty*)   { [] }
- | type_arguments_args { $1 }
 
