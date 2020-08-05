@@ -873,10 +873,10 @@ for_init_opt:
  | for_init       { $1 }
 
 for_init:
-| statement_expression_list   { ForInitExprs $1 }
+| listc(statement_expression)   { ForInitExprs $1 }
 | local_variable_declaration  { ForInitVars $1 }
 
-for_update: statement_expression_list  { $1 }
+for_update: listc(statement_expression)  { $1 }
 
 for_var_control: 
  modifiers_opt type_ variable_declarator_id for_var_control_rest
@@ -1108,7 +1108,7 @@ variable_initializer:
 
 array_initializer:
  | "{" ","? "}"                        { ArrayInit ($1, [], $3) }
- | "{" variable_initializers ","? "}"  { ArrayInit ($1, List.rev $2, $4) }
+ | "{" listc(variable_initializer) ","? "}"  { ArrayInit ($1, $2, $4) }
 
 (*----------------------------*)
 (* Method *)
@@ -1352,21 +1352,18 @@ ref_type_and_list:
  | reference_type  { [$1] }
  | ref_type_and_list AND reference_type  { $1 @ [$3] }
 
-variable_initializers:
- | variable_initializer  { [$1] }
- | variable_initializers "," variable_initializer  { $3 :: $1 }
-
 qualified_ident_list:
  | name                          { [qualified_ident $1] }
  | qualified_ident_list "," name  { $1 @ [qualified_ident $3] }
 
-statement_expression_list:
- | statement_expression                               { [$1] }
- | statement_expression_list "," statement_expression  { $1 @ [$3] }
-
 argument_list:
  | argument  { [$1] }
  | argument_list "," argument  { $3 :: $1 }
+
+argument_list_opt:
+ | (*empty*)  { [] }
+ | argument_list  { List.rev $1 }
+
 
 enum_constants:
  | enum_constant { [$1] }
@@ -1397,9 +1394,6 @@ extends_interfaces_opt:
  | extends_interfaces  { $1 }
 
 
-argument_list_opt:
- | (*empty*)  { [] }
- | argument_list  { List.rev $1 }
 
 dims_opt:
  | (*empty*)  { 0 }
