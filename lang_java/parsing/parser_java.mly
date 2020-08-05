@@ -246,14 +246,14 @@ goal: compilation_unit EOF  { $1 }
  * for a package or class_declaration. So we need to unfold those _opt.
  *)
 compilation_unit:
-  | package_declaration import_declarations type_declarations_opt
-    { [DirectiveStmt $1] @ ($2 |> List.map (fun x -> DirectiveStmt x)) @ $3 }
-  | package_declaration                     type_declarations_opt
-    { [DirectiveStmt $1] @ $2 }
-  |                     import_declarations type_declarations_opt
-    { ($1 |> List.map (fun x -> DirectiveStmt x)) @ $2 }
-  |                                         type_declarations_opt
-    { $1 }
+  | package_declaration import_declaration+ type_declaration*
+    { [DirectiveStmt $1] @ ($2 |> List.map (fun x -> DirectiveStmt x)) @ List.flatten $3 }
+  | package_declaration                     type_declaration*
+    { [DirectiveStmt $1] @ List.flatten $2 }
+  |                     import_declaration+ type_declaration*
+    { ($1 |> List.map (fun x -> DirectiveStmt x)) @ List.flatten $2 }
+  |                                         type_declaration*
+    { List.flatten $1 }
 
 declaration:
  | class_declaration      { Class $1 }
@@ -263,7 +263,7 @@ declaration:
 
 sgrep_spatch_pattern:
  | import_declaration EOF           { AStmt (DirectiveStmt $1) }
- | import_declaration import_declarations EOF  
+ | import_declaration import_declaration+ EOF  
     { AStmts (($1::$2) |> List.map (fun x -> DirectiveStmt x)) }
  | package_declaration EOF          { AStmt (DirectiveStmt $1) }
  | expression EOF                   { AExpr $1 }
@@ -701,7 +701,7 @@ lambda_param_list:
  | lambda_param_list "," lambda_param  { $3 :: $1 }
 
 lambda_param:
- | variable_modifiers lambda_parameter_type variable_declarator_id 
+ | variable_modifier+ lambda_parameter_type variable_declarator_id 
     { ParamClassic (canon_var $1 $2 $3)  }
  |                    lambda_parameter_type variable_declarator_id 
     { ParamClassic (canon_var [] $1 $2) }
@@ -714,7 +714,7 @@ lambda_parameter_type:
 unann_type: type_ { $1 }
 
 variable_arity_parameter: 
- | variable_modifiers unann_type "..." identifier 
+ | variable_modifier+ unann_type "..." identifier 
     { ParamClassic (canon_var $1 (Some $2) (IdentDecl $4)) }
  |                    unann_type "..." identifier 
     { ParamClassic (canon_var [] (Some $1) (IdentDecl $3)) }
@@ -781,7 +781,7 @@ statement_without_trailing_substatement:
  | ASSERT expression ";"                  { Assert ($1, $2, None) }
  | ASSERT expression ":" expression ";" { Assert ($1, $2, Some $4) }
 
-block: "{" block_statements_opt "}"  { Block ($1, $2, $3) }
+block: "{" block_statement* "}"  { Block ($1, List.flatten $2, $3) }
 
 block_statement:
  | local_variable_declaration_statement  { $1 }
@@ -834,11 +834,12 @@ switch_statement: SWITCH "(" expression ")" switch_block
 switch_block:
  | "{"                                             "}"  { [] }
  | "{"                               switch_labels "}"  { [$2, []] }
- | "{" switch_block_statement_groups               "}"  { List.rev $2 }
+ | "{" switch_block_statement_groups               "}"  { $2 }
  | "{" switch_block_statement_groups switch_labels "}"
      { List.rev ((List.rev $3, []) :: $2) }
 
-switch_block_statement_group: switch_labels block_statements  {List.rev $1, $2}
+switch_block_statement_group: switch_labels block_statement+
+   {List.rev $1, List.flatten $2}
 
 switch_label:
  | CASE constant_expression ":"  { Case ($1, $2) }
@@ -920,7 +921,7 @@ catch_clause:
 
 (* javaext: ? was just formal_parameter before *)
 catch_formal_parameter: 
-  | variable_modifiers catch_type variable_declarator_id 
+  | variable_modifier+ catch_type variable_declarator_id 
       { canon_var $1 (Some (fst $2)) $3, snd $2 }
   |                    catch_type variable_declarator_id 
       { canon_var [] (Some (fst $1)) $2, snd $1 }
@@ -936,7 +937,7 @@ catch_type_list:
 resource_specification: "(" resource_list ";"? ")" { $1, [](* TODO $2*), $4 }
 
 resource: 
- | variable_modifiers local_variable_type identifier "=" expression { }
+ | variable_modifier+ local_variable_type identifier "=" expression { }
  |                    local_variable_type identifier "=" expression { }
  | variable_access { }
  
@@ -1054,7 +1055,7 @@ interfaces: IMPLEMENTS ref_type_list (* was interface_type_list *)  { $2 }
 (*----------------------------*)
 (* Class body *)
 (*----------------------------*)
-class_body: "{" class_body_declarations_opt "}"  { $1, $2, $3 }
+class_body: "{" class_body_declaration* "}"  { $1, List.flatten $2, $3 }
 
 class_body_declaration:
  | class_member_declaration  { $1 }
@@ -1160,10 +1161,10 @@ constructor_declaration:
 constructor_declarator:	identifier "(" formal_parameter_list_opt ")"  { $1, $3 }
 
 constructor_body:
- | "{" block_statements_opt "}"                                 
-    { Block ($1, $2, $3) }
- | "{" explicit_constructor_invocation block_statements_opt "}" 
-    { Block ($1, $2::$3, $4) }
+ | "{" block_statement* "}"                                 
+    { Block ($1, List.flatten $2, $3) }
+ | "{" explicit_constructor_invocation block_statement* "}" 
+    { Block ($1, $2::(List.flatten $3), $4) }
 
 
 explicit_constructor_invocation:
@@ -1185,7 +1186,7 @@ explicit_constructor_invocation:
 formal_parameters: "(" formal_parameter_list_opt ")" { $2 }
 
 formal_parameter: 
- | variable_modifiers_opt type_ variable_declarator_id_bis
+ | variable_modifier* type_ variable_declarator_id_bis
   { ParamClassic (canon_var $1 (Some $2) $3) }
  (* sgrep-ext: *)
  | "..." { ParamEllipsis $1 }
@@ -1222,7 +1223,8 @@ extends_interfaces:
 (* Interface body *)
 (*----------------------------*)
 
-interface_body:	"{" interface_member_declarations_opt "}"  { $1, $2, $3 }
+interface_body: "{" interface_member_declaration* "}" 
+  { $1, List.flatten $2, $3 }
 
 interface_member_declaration:
  | constant_declaration  { $1 }
@@ -1271,9 +1273,9 @@ enum_declaration: modifiers_opt ENUM identifier optl(interfaces) enum_body
 
 (* cant factorize in enum_constants_opt comma_opt .... *)
 enum_body:
- | "{"                   enum_body_declarations_opt "}" { [], $2 }
- | "{" enum_constants    enum_body_declarations_opt "}" { $2, $3 }
- | "{" enum_constants "," enum_body_declarations_opt "}" { $2, $4 }
+ | "{"                   optl(enum_body_declarations) "}" { [], $2 }
+ | "{" enum_constants    optl(enum_body_declarations) "}" { $2, $3 }
+ | "{" enum_constants "," optl(enum_body_declarations) "}" { $2, $4 }
 
 enum_constant: 
  |           enum_constant_bis { $1 }
@@ -1286,7 +1288,7 @@ enum_constant_bis:
  | identifier "{" method_declarations_opt "}"  
     { $1, None, Some ($2, $3 |> List.map (fun x -> Method x) , $4) }
 
-enum_body_declarations: ";" class_body_declarations_opt { $2 }
+enum_body_declarations: ";" class_body_declaration* { List.flatten $2 }
 
 (*************************************************************************)
 (* Annotation type decl *)
@@ -1337,33 +1339,9 @@ annotation_type_element_declarations:
 (*************************************************************************)
 
 (* basic lists, at least one element *)
-import_declarations:
- | import_declaration  { [$1] }
- | import_declarations import_declaration  { $1 @ [$2] }
-
-type_declarations:
- | type_declaration  { $1 }
- | type_declarations type_declaration  { $1 @ $2 }
-
-class_body_declarations:
- | class_body_declaration  { $1 }
- | class_body_declarations class_body_declaration  { $1 @ $2 }
-
-interface_member_declarations:
- | interface_member_declaration  { $1 }
- | interface_member_declarations interface_member_declaration  { $1 @ $2 }
-
 modifiers:
  | modifier  { [$1] }
  | modifiers modifier  { $2 :: $1 }
-
-variable_modifiers:
- | variable_modifier { [$1] }
- | variable_modifiers variable_modifier { $1 @ [$2] }
-
-block_statements:
- | block_statement  { $1 }
- | block_statements block_statement  { $1 @ $2 }
 
 switch_block_statement_groups:
  | switch_block_statement_group  { [$1] }
@@ -1384,7 +1362,6 @@ method_declarations:
 dim_exprs:
  | dim_expr  { [$1] }
  | dim_exprs dim_expr  { $2 :: $1 }
-
 
 (* basic lists, at least one element with separator *)
 ref_type_list:
@@ -1445,39 +1422,19 @@ element_values:
 
 
 (* basic lists, 0 element allowed *)
-type_declarations_opt:
- | (*empty*)  { [] }
- | type_declarations  { $1 }
-
 
 %inline
 modifiers_opt:
  | (*empty*)  { [] }
  | modifiers  { List.rev $1 }
 
-class_body_declarations_opt:
- | (*empty*)  { [] }
- | class_body_declarations  { $1 }
-
 formal_parameter_list_opt:
  | (*empty*)  { [] }
  | formal_parameter_list  { List.rev $1 }
 
-variable_modifiers_opt:
- | (*empty*)  { [] }
- | variable_modifiers  { $1 }
-
 extends_interfaces_opt:
  | (*empty*)  { [] }
  | extends_interfaces  { $1 }
-
-interface_member_declarations_opt:
- | (*empty*)  { [] }
- | interface_member_declarations  { $1 }
-
-block_statements_opt:
- | (*empty*)      { [] }
- | block_statements  { $1 }
 
 catches_opt:
  | (*empty*)  { [] }
@@ -1494,10 +1451,6 @@ method_declarations_opt:
 dims_opt:
  | (*empty*)  { 0 }
  | dims  { $1 }
-
-enum_body_declarations_opt:
- | (*empty*)           { [] }
- | enum_body_declarations  { $1 }
 
 type_parameters_opt:
  | (*empty*)   { [] }
