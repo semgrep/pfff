@@ -450,7 +450,7 @@ array_creation_expression:
  | NEW primitive_type dim_expr+ dims_opt
        { NewArray ($1, $2, $3, $4, None) }
  | NEW name dim_expr+ dims_opt
-       { NewArray ($1, TClass (class_type ($2)), List.$3, $4, None) }
+       { NewArray ($1, TClass (class_type ($2)), $3, $4, None) }
 
 (*
    A new array that can be accessed right away by appending [index] as follows:
@@ -465,7 +465,7 @@ array_creation_expression_with_initializer:
 dim_expr: "[" expression "]"  { $2 }
 
 dims:
- | LB_RB       { 1 }
+ |      LB_RB  { 1 }
  | dims LB_RB  { $1 + 1 }
 
 field_access:
@@ -898,10 +898,10 @@ synchronized_statement: SYNCHRONIZED "(" expression ")" block { Sync ($3, $5) }
 throw_statement: THROW expression ";"  { Throw ($1, $2) }
 
 try_statement:
- | TRY block catches              { Try ($1, None, $2, List.rev $3, None) }
- | TRY block catches_opt finally  { Try ($1, None, $2, $3, Some $4) }
+ | TRY block catch_clause+        { Try ($1, None, $2, $3, None) }
+ | TRY block catch_clause* finally  { Try ($1, None, $2, $3, Some $4) }
  (* javaext: ? *)
- | TRY resource_specification block catches_opt finally? { 
+ | TRY resource_specification block catch_clause* finally? { 
     Try ($1, Some $2, $3, $4, $5)
   }
 
@@ -1333,16 +1333,11 @@ modifiers:
  | modifier  { [$1] }
  | modifiers modifier  { $2 :: $1 }
 
-
 (* basic lists, at least one element *)
 
 switch_block_statement_groups:
  | switch_block_statement_group  { [$1] }
  | switch_block_statement_groups switch_block_statement_group  { $2 :: $1 }
-
-catches:
- | catch_clause  { [$1] }
- | catches catch_clause  { $2 :: $1 }
 
 (* basic lists, at least one element with separator *)
 ref_type_list:
@@ -1413,9 +1408,6 @@ extends_interfaces_opt:
  | (*empty*)  { [] }
  | extends_interfaces  { $1 }
 
-catches_opt:
- | (*empty*)  { [] }
- | catches  { List.rev $1 }
 
 argument_list_opt:
  | (*empty*)  { [] }
