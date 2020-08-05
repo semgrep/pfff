@@ -219,6 +219,12 @@ optl(X):
  | (* empty *) { [] }
  | X           { $1 }
 
+listc(X):
+ | X { [$1] }
+ | listc(X) "," X { $1 @ [$3] }
+
+listc0(X): optl(listc(X)) { $1 }
+
 (*************************************************************************)
 (* TOC *)
 (*************************************************************************)
@@ -791,9 +797,9 @@ local_variable_declaration_statement: local_variable_declaration ";"
  { List.map (fun x -> LocalVar x) $1 }
 
 (* cant factorize with variable_modifier_opt, conflicts otherwise *)
-local_variable_declaration: modifiers_opt type_ variable_declarators
+local_variable_declaration: modifiers_opt type_ listc(variable_declarator)
  (* javaext: 1.? actually should be variable_modifiers but conflict *)
-     { decls (fun x -> x) $1 $2 (List.rev $3) }
+     { decls (fun x -> x) $1 $2 $3 }
 
 empty_statement: ";" { EmptyStmt $1 }
 
@@ -927,7 +933,7 @@ catch_type_list:
   | catch_type_list OR type_ { $1 @ [$3] }
 
 (* javaext: ? *)
-resource_specification: "(" resource_list ";"? ")" { $1, [](* TODO $2*), $4 }
+resource_specification: "(" listc(resource) ";"? ")" { $1, [](* TODO $2*), $4 }
 
 resource: 
  | variable_modifier+ local_variable_type identifier "=" expression { }
@@ -1043,7 +1049,8 @@ class_declaration:
 
 super: EXTENDS type_ (* was class_type *)  { $2 }
 
-interfaces: IMPLEMENTS ref_type_list (* was interface_type_list *)  { $2 }
+(* was interface_type_list *)
+interfaces: IMPLEMENTS listc(reference_type)   { $2 }
 
 (*----------------------------*)
 (* Class body *)
@@ -1084,8 +1091,8 @@ instance_initializer: block       { Init (None, $1) }
 (* Field *)
 (*----------------------------*)
 
-field_declaration: modifiers_opt type_ variable_declarators ";"
-   { decls (fun x -> Field x) $1 $2 (List.rev $3) }
+field_declaration: modifiers_opt type_ listc(variable_declarator) ";"
+   { decls (fun x -> Field x) $1 $2 $3 }
 
 variable_declarator:
  | variable_declarator_id  { $1, None }
@@ -1116,7 +1123,7 @@ method_header:
      { method_header $1 (void_type $2) $3 $4 }
 
 method_declarator:
- | identifier "(" formal_parameter_list_opt ")"  { (IdentDecl $1), $3 }
+ | identifier "(" listc0(formal_parameter) ")"  { (IdentDecl $1), $3 }
  | method_declarator LB_RB                     { (ArrayDecl (fst $1)), snd $1 }
 
 method_body:
@@ -1151,7 +1158,7 @@ constructor_declaration:
 	     m_body = $4 }
   }
 
-constructor_declarator:	identifier "(" formal_parameter_list_opt ")"  { $1, $3 }
+constructor_declarator: identifier "(" listc0(formal_parameter) ")" { $1,$3}
 
 constructor_body:
  | "{" block_statement* "}"                                 
@@ -1176,7 +1183,7 @@ explicit_constructor_invocation:
 (* Method parameter *)
 (*----------------------------*)
 
-formal_parameters: "(" formal_parameter_list_opt ")" { $2 }
+formal_parameters: "(" listc0(formal_parameter) ")" { $2 }
 
 formal_parameter: 
  | variable_modifier* type_ variable_declarator_id_bis
@@ -1242,8 +1249,8 @@ interface_member_declaration:
 
 (* note: semicolon is missing in 2nd edition java language specification.*)
 (* less: could replace with field_declaration? was field_declaration *)
-constant_declaration: modifiers_opt type_ variable_declarators ";"
-     { decls (fun x -> Field x) $1 $2 (List.rev $3) }
+constant_declaration: modifiers_opt type_ listc(variable_declarator) ";"
+     { decls (fun x -> Field x) $1 $2 $3 }
 
 (* javaext:: was abstract_method_declaration only before *)
 interface_method_declaration: method_declaration { $1 }
@@ -1340,25 +1347,10 @@ switch_block_statement_groups:
  | switch_block_statement_groups switch_block_statement_group  { $2 :: $1 }
 
 (* basic lists, at least one element with separator *)
-ref_type_list:
- | reference_type  { [$1] }
- | ref_type_list "," reference_type  { $1 @ [$3] }
-
-resource_list:
- | resource  { [$1] }
- | resource_list ";" resource  { $1 @ [$3] }
 
 ref_type_and_list:
  | reference_type  { [$1] }
  | ref_type_and_list AND reference_type  { $1 @ [$3] }
-
-variable_declarators:
- | variable_declarator  { [$1] }
- | variable_declarators "," variable_declarator  { $3 :: $1 }
-
-formal_parameter_list:
- | formal_parameter  { [$1] }
- | formal_parameter_list "," formal_parameter  { $3 :: $1 }
 
 variable_initializers:
  | variable_initializer  { [$1] }
@@ -1399,10 +1391,6 @@ element_values:
 
 (* basic lists, 0 element allowed *)
 
-
-formal_parameter_list_opt:
- | (*empty*)  { [] }
- | formal_parameter_list  { List.rev $1 }
 
 extends_interfaces_opt:
  | (*empty*)  { [] }
