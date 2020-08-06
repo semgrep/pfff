@@ -904,15 +904,18 @@ resource_specification: "(" list_sep(resource, ";") ";"? ")"
   { $1, [](* TODO $2*), $4 }
 
 resource: 
- | variable_modifier+ local_variable_type identifier "=" expression { }
- |                    local_variable_type identifier "=" expression { }
- | variable_access { }
+ | variable_modifier+ local_variable_type identifier "=" expression 
+    { raise Todo }
+ |                    local_variable_type identifier "=" expression 
+    { raise Todo }
+ | variable_access 
+    { raise Todo }
  
-local_variable_type: unann_type { }
+local_variable_type: unann_type { $1 }
 
 variable_access:
- | field_access { }
- | name { }
+ | field_access { raise Todo }
+ | name         { raise Todo }
 
 (*----------------------------*)
 (* No short if *)
@@ -1098,20 +1101,18 @@ throws: THROWS listc(name) (* was class_type_list *)
   { List.map (fun x -> typ_of_qualified_id (qualified_ident x)) $2 }
 
 generic_method_or_constructor_decl:
-  modifiers_opt type_parameters generic_method_or_constructor_rest  
-    { let (t, mdecl, throws, body) = $3 in
-      let header = method_header $1 (* $2*) t mdecl throws in
+|  modifiers_opt type_parameters type_ 
+   identifier formal_parameters optl(throws) method_body 
+    { let (t, mdecl, throws, body) = $3, (IdentDecl $4, $5), $6, $7 in
+      let header = method_header $1 (* TODO $2 *) t mdecl throws in
       { header with m_body = body }
     }
-
-generic_method_or_constructor_rest:
- | type_ identifier method_declarator_rest 
-     { raise Todo }
- | VOID identifier method_declarator_rest  
-     { raise Todo }
-
-method_declarator_rest: formal_parameters optl(throws) method_body 
-  { raise Todo }
+|  modifiers_opt type_parameters VOID 
+   identifier formal_parameters optl(throws) method_body 
+   { let (t, mdecl, throws, body) = void_type $3, (IdentDecl $4, $5), $6, $7 in
+      let header = method_header $1 (* TODO $2 *) t mdecl throws in
+      { header with m_body = body }
+    } 
 
 (*----------------------------*)
 (* Constructors *)
@@ -1222,17 +1223,16 @@ constant_declaration: modifiers_opt type_ listc(variable_declarator) ";"
 interface_method_declaration: method_declaration { $1 }
 
 interface_generic_method_decl:
-| modifiers_opt type_parameters type_ identifier interface_method_declator_rest
-    { let mdecl = raise Todo in
-      method_header $1 (* $2 *) $3 mdecl []
+| modifiers_opt type_parameters type_ 
+  identifier formal_parameters optl(throws) ";" 
+    { let (t, mdecl, throws) = $3, (IdentDecl $4, $5), $6 in
+      method_header $1 (* TODO $2 *) t mdecl throws
     }
-| modifiers_opt type_parameters VOID  identifier interface_method_declator_rest
-    { let mdecl = raise Todo in
-      method_header $1 (* $2 *) (void_type $3) mdecl []
+| modifiers_opt type_parameters VOID  
+  identifier formal_parameters optl(throws) ";" 
+    { let (t, mdecl, throws) = void_type $3, (IdentDecl $4, $5), $6 in
+      method_header $1 (* TODO $2 *) t mdecl throws
     }
-
-interface_method_declator_rest: formal_parameters optl(throws) ";" 
-  { }
 
 (*************************************************************************)
 (* Enum *)
@@ -1283,8 +1283,8 @@ annotation_type_element_rest:
 
 
 annotation_method_or_constant_rest:
- | "(" ")" { }
- | "(" ")" DEFAULT element_value { }
+ | "(" ")"                       { None }
+ | "(" ")" DEFAULT element_value { Some ($3) }
 
 (*************************************************************************)
 (* xxx_list, xxx_opt *)
