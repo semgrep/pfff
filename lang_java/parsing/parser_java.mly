@@ -37,9 +37,9 @@ module G = AST_generic
 (*****************************************************************************)
 
 (* todo? use a Ast.special? *)
-let this_ident ii = [], ("this", ii)
-let super_ident ii = [], ("super", ii)
-let super_identifier ii = ("super", ii)
+let super_ident ii = ("super", ii)
+let this_name1 ii = [], ("this", ii)
+let super_name1 ii = [], ("super", ii)
 
 let named_type (str, ii) = TBasic (str,ii)
 let void_type ii = named_type ("void", ii)
@@ -68,6 +68,20 @@ let (name: name_or_class_type -> name) = fun xs ->
   | TypeArgs_then_Id (_xs, _) ->
       raise Parsing.Parse_error
   )
+
+let fix_name arg = 
+   (* Ambiguity. It could be a field access (Dot) or a qualified
+    * name (Name). See ast_java.ml note on the Dot constructor for
+    * more information.
+    * The last dot has to be a Dot and not a Name at least,
+    * but more elements of Name could be a Dot too.
+    *)
+   match List.rev arg with
+   | (Id id)::x::xs ->
+       Dot (Name (name (List.rev (x::xs))), Parse_info.fake_info ".", id)
+   | _ ->
+       Name (name arg)
+  
 
 let (qualified_ident: name_or_class_type -> qualified_ident) = fun xs ->
   xs |> List.map (function
@@ -399,7 +413,7 @@ primary:
 
 primary_no_new_array:
  | literal                            { $1 }
- | THIS                               { Name [this_ident $1] }
+ | THIS                               { this $1 }
  | "(" expression ")"                 { $2 }
  | class_instance_creation_expression { $1 }
  | field_access                       { $1 }
@@ -408,7 +422,7 @@ primary_no_new_array:
  (* sgrep-ext: *)
  | typed_metavar       { $1 }
  (* javaext: ? *)
- | name "." THIS       { Name (name $1 @ [this_ident $3]) }
+ | name "." THIS       { Name (name $1 @ [this_name1 $3]) }
  (* javaext: ? *)
  | class_literal       { $1 }
  (* javaext: ? *)
@@ -467,9 +481,9 @@ dims:
 
 field_access:
  | primary "." identifier        { Dot ($1, $2, $3) }
- | SUPER   "." identifier        { Dot (Name [super_ident $1], $2, $3) }
+ | SUPER   "." identifier        { Dot (Name [super_name1 $1], $2, $3) }
  (* javaext: ? *)
- | name "." SUPER "." identifier { Dot (Name (name $1@[super_ident $3]),$2,$5)}
+ | name "." SUPER "." identifier { Dot (Name (name $1@[super_name1 $3]),$2,$5)}
 
 array_access:
  | name                 "[" expression "]" { ArrayAccess ((Name (name $1)),$3)}
@@ -501,10 +515,10 @@ method_invocation:
  | primary "." identifier "(" listc0(argument) ")"
 	{ Call ((Dot ($1, $2, $3)), ($4,$5,$6)) }
  | SUPER "." identifier "(" listc0(argument) ")"
-	{ Call ((Dot (Name [super_ident $1], $2, $3)), ($4,$5,$6)) }
+	{ Call ((Dot (Name [super_name1 $1], $2, $3)), ($4,$5,$6)) }
  (* javaext: ? *)
  | name "." SUPER "." identifier "(" listc0(argument) ")"
-	{ Call (Dot (Name (name $1 @ [super_ident $3]), $2, $5), ($6,$7,$8))}
+	{ Call (Dot (Name (name $1 @ [super_name1 $3]), $2, $5), ($6,$7,$8))}
 
 argument: expression { $1 }
 
@@ -514,19 +528,7 @@ argument: expression { $1 }
 
 postfix_expression:
  | primary  { $1 }
- | name     {
-     (* Ambiguity. It could be a field access (Dot) or a qualified
-      * name (Name). See ast_java.ml note on the Dot constructor for
-      * more information.
-      * The last dot has to be a Dot and not a Name at least,
-      * but more elements of Name could be a Dot too.
-      *)
-     match List.rev $1 with
-     | (Id id)::x::xs ->
-         Dot (Name (name (List.rev (x::xs))), Parse_info.fake_info ".", id)
-     | _ ->
-         Name (name $1)
-   }
+ | name     { fix_name $1 }
 
  | post_increment_expression  { $1 }
  | post_decrement_expression  { $1 }
@@ -709,16 +711,22 @@ lambda_body:
 (*----------------------------*)
 (* Method reference *)
 (*----------------------------*)
-(* javaext: ? TODO AST *)
+(* javaext: ? *)
 (* reference_type is inlined because of classic ambiguity with name *)
 method_reference: 
- | name       "::" identifier { Literal (Null $2) }
- | primary    "::" identifier { Literal (Null $2) }
- | array_type "::" identifier { Literal (Null $2) }
- | name       "::" NEW { Literal (Null $2) }
- | array_type "::" NEW { Literal (Null $2) }
- | SUPER      "::" identifier { Literal (Null $2) }
- | name "." SUPER   "::" identifier { Literal (Null $2) }
+ | name       "::" identifier       
+    { (* TODO? probably a type? *) 
+       MethodRef (Right (TClass (class_type $1)), $2, [], $3)
+    }
+ | primary    "::" identifier       { MethodRef (Left $1, $2, [], $3) }
+ | array_type "::" identifier       { MethodRef (Right $1, $2, [], $3) }
+ | name       "::" NEW              
+    { MethodRef (Right (TClass (class_type $1)), $2, [], new_id $3) }
+ | array_type "::" NEW              { MethodRef (Right $1, $2, [], new_id $3) }
+ | SUPER      "::" identifier       { MethodRef (Left (super $1), $2, [], $3) }
+ | name "." SUPER   "::" identifier 
+   { let e = Dot (fix_name $1, $2, super_ident $3) in
+     MethodRef (Left e, $4, [], $5) }
 
 (*----------------------------*)
 (* Shortcuts *)
@@ -901,18 +909,25 @@ catch_type: list_sep(type_, OR) { List.hd $1, List.tl $1 }
 
 (* javaext: ? *)
 resource_specification: "(" list_sep(resource, ";") ";"? ")" 
-  { $1, [](* TODO $2*), $4 }
+  { $1, $2, $4 }
 
 resource: 
- | variable_modifier+ local_variable_type identifier "=" expression { }
- |                    local_variable_type identifier "=" expression { }
- | variable_access { }
+ | variable_modifier+ local_variable_type identifier "=" expression 
+    { let var = canon_var $1 (Some $2) (IdentDecl $3) in
+      Left { f_var = var; f_init = Some (ExprInit $5) }
+    }
+ |                    local_variable_type identifier "=" expression 
+    { let var = canon_var [] (Some $1) (IdentDecl $2) in
+      Left { f_var = var; f_init = Some (ExprInit $4) } 
+    }
+ | variable_access 
+    { Right $1 }
  
-local_variable_type: unann_type { }
+local_variable_type: unann_type { $1 }
 
 variable_access:
- | field_access { }
- | name { }
+ | field_access { $1 }
+ | name         { fix_name $1 }
 
 (*----------------------------*)
 (* No short if *)
@@ -1033,7 +1048,7 @@ class_member_declaration:
  | method_declaration  { [Method $1] }
 
  (* javaext: 1.? *)
- | generic_method_or_constructor_decl { $1 }
+ | generic_method_or_constructor_decl { [Method $1] }
  (* javaext: 1.? *)
  | class_declaration  { [Class $1] }
  | interface_declaration  { [Class $1] }
@@ -1088,25 +1103,28 @@ method_header:
 
 method_declarator:
  | identifier "(" listc0(formal_parameter) ")"  { (IdentDecl $1), $3 }
- | method_declarator LB_RB                     { (ArrayDecl (fst $1)), snd $1 }
+ | method_declarator LB_RB                      { (ArrayDecl (fst $1)), snd $1}
 
 method_body:
- | block  { $1 }
+ | block   { $1 }
  | ";"     { EmptyStmt $1 }
 
 throws: THROWS listc(name) (* was class_type_list *)  
   { List.map (fun x -> typ_of_qualified_id (qualified_ident x)) $2 }
 
 generic_method_or_constructor_decl:
-  modifiers_opt type_parameters generic_method_or_constructor_rest  
-    { ast_todo }
-
-generic_method_or_constructor_rest:
- | type_ identifier method_declarator_rest { }
- | VOID identifier method_declarator_rest  { }
-
-method_declarator_rest: formal_parameters optl(throws) method_body 
-  { }
+|  modifiers_opt type_parameters type_ 
+   identifier formal_parameters optl(throws) method_body 
+    { let (t, mdecl, throws, body) = $3, (IdentDecl $4, $5), $6, $7 in
+      let header = method_header $1 (* TODO $2 *) t mdecl throws in
+      { header with m_body = body }
+    }
+|  modifiers_opt type_parameters VOID 
+   identifier formal_parameters optl(throws) method_body 
+   { let (t, mdecl, throws, body) = void_type $3, (IdentDecl $4, $5), $6, $7 in
+      let header = method_header $1 (* TODO $2 *) t mdecl throws in
+      { header with m_body = body }
+    } 
 
 (*----------------------------*)
 (* Constructors *)
@@ -1131,15 +1149,15 @@ constructor_body:
 
 explicit_constructor_invocation:
  | THIS "(" listc0(argument) ")" ";"
-      { constructor_invocation [this_ident $1] ($2,$3,$4) $5 }
+      { constructor_invocation [this_name1 $1] ($2,$3,$4) $5 }
  | SUPER "(" listc0(argument) ")" ";"
-      { constructor_invocation [super_ident $1] ($2,$3,$4) $5 }
+      { constructor_invocation [super_name1 $1] ($2,$3,$4) $5 }
  (* javaext: ? *)
  | primary "." SUPER "(" listc0(argument) ")" ";"
-      { Expr (Call ((Dot ($1, $2, super_identifier $3)), ($4,$5,$6)), $7) }
+      { Expr (Call ((Dot ($1, $2, super_ident $3)), ($4,$5,$6)), $7) }
  (* not in 2nd edition java language specification. *)
  | name "." SUPER "(" listc0(argument) ")" ";"
-      { constructor_invocation (name $1 @ [super_ident $3]) ($4,$5,$6) $7 }
+      { constructor_invocation (name $1 @ [super_name1 $3]) ($4,$5,$6) $7 }
 
 (*----------------------------*)
 (* Method parameter *)
@@ -1193,7 +1211,7 @@ interface_member_declaration:
  | interface_method_declaration  { [Method $1] }
 
  (* javaext: 1.? *)
- | interface_generic_method_decl { $1 }
+ | interface_generic_method_decl { [Method $1] }
 
  (* javaext: 1.? *)
  | class_declaration      { [Class $1] }
@@ -1217,13 +1235,16 @@ constant_declaration: modifiers_opt type_ listc(variable_declarator) ";"
 interface_method_declaration: method_declaration { $1 }
 
 interface_generic_method_decl:
-| modifiers_opt type_parameters type_ identifier interface_method_declator_rest
-    { ast_todo }
-| modifiers_opt type_parameters VOID  identifier interface_method_declator_rest
-    { ast_todo }
-
-interface_method_declator_rest: formal_parameters optl(throws) ";" 
-  { }
+| modifiers_opt type_parameters type_ 
+  identifier formal_parameters optl(throws) ";" 
+    { let (t, mdecl, throws) = $3, (IdentDecl $4, $5), $6 in
+      method_header $1 (* TODO $2 *) t mdecl throws
+    }
+| modifiers_opt type_parameters VOID  
+  identifier formal_parameters optl(throws) ";" 
+    { let (t, mdecl, throws) = void_type $3, (IdentDecl $4, $5), $6 in
+      method_header $1 (* TODO $2 *) t mdecl throws
+    }
 
 (*************************************************************************)
 (* Enum *)
@@ -1274,8 +1295,8 @@ annotation_type_element_rest:
 
 
 annotation_method_or_constant_rest:
- | "(" ")" { }
- | "(" ")" DEFAULT element_value { }
+ | "(" ")"                       { None }
+ | "(" ")" DEFAULT element_value { Some ($3) }
 
 (*************************************************************************)
 (* xxx_list, xxx_opt *)

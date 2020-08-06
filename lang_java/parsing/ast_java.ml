@@ -287,6 +287,7 @@ and for_control =
 and catch = tok * var_with_union_type * stmt
 and catches = catch list
 
+(* javaext: java 8 *)
 and resources = resource list bracket
   (* the expr is a an id or a field access *)
   and resource = (var_with_init, expr) Common.either
@@ -494,9 +495,6 @@ let fakeInfo ?(next_to=None) str = { Parse_info.
   transfo = Parse_info.NoTransfo;
 }
 
-let ast_todo = []
-let ast_todo2 = ()
-
 let info_of_ident ident =
   snd ident
 
@@ -512,12 +510,18 @@ let rec info_of_identifier_ (id : identifier_) : tok = match id with
   | Id_then_TypeArgs (id, _) -> snd id
   | TypeArgs_then_Id (_, id_) -> info_of_identifier_ id_
 
+let basic_entity id mods = 
+  { name = id; mods; type_ = None }
+
 let entity_of_id id = 
-  { name = id; mods = []; type_ = None }
+  basic_entity id []
 
 (*****************************************************************************)
 (* Parsing helpers *)
 (*****************************************************************************)
+(* those types and functions are used in parser_java.mly but also now in
+ * semgrep/.../Parse_java_tree_sitter.ml
+ *)
 
 type var_decl_id =
   | IdentDecl of ident
@@ -552,3 +556,14 @@ let constructor_invocation name args sc =
 
 let typ_of_qualified_id xs =
   TClass (xs |> List.map (fun id -> id, []))
+
+let name_of_id id =
+  Name ([[], id])
+
+(* TODO: use a special at some point *)
+let this tok  =
+  name_of_id ("this", tok)
+let super tok =
+  name_of_id ("super", tok)
+let new_id tok = 
+  "new", tok
