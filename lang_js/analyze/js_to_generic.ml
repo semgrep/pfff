@@ -277,7 +277,9 @@ and catch_block = function
       in t, v1, v2
   | UnboundCatch (t, v1) ->
       let v1 = stmt v1
-      in t, G.PatUnderscore (Parse_info.fake_info "_"), v1
+      (* bugfix: reusing 't' to avoid NoTokenLocation error when
+       * a semgrep patter like catch($ERR) matches an UnboundCatch. *)
+      in t, G.PatUnderscore (t), v1
 
 and tok_and_stmt (t, v) = 
   let v = stmt v in
