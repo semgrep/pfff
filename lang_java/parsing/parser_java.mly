@@ -900,7 +900,8 @@ catch_formal_parameter:
 catch_type: list_sep(type_, OR) { List.hd $1, List.tl $1 }
 
 (* javaext: ? *)
-resource_specification: "(" listc(resource) ";"? ")" { $1, [](* TODO $2*), $4 }
+resource_specification: "(" list_sep(resource, ";") ";"? ")" 
+  { $1, [](* TODO $2*), $4 }
 
 resource: 
  | variable_modifier+ local_variable_type identifier "=" expression { }
