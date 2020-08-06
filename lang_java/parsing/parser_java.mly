@@ -37,9 +37,9 @@ module G = AST_generic
 (*****************************************************************************)
 
 (* todo? use a Ast.special? *)
-let super_identifier ii = ("super", ii)
-let this_ident ii = [], ("this", ii)
-let super_ident ii = [], ("super", ii)
+let super_ident ii = ("super", ii)
+let this_name1 ii = [], ("this", ii)
+let super_name1 ii = [], ("super", ii)
 
 let named_type (str, ii) = TBasic (str,ii)
 let void_type ii = named_type ("void", ii)
@@ -422,7 +422,7 @@ primary_no_new_array:
  (* sgrep-ext: *)
  | typed_metavar       { $1 }
  (* javaext: ? *)
- | name "." THIS       { Name (name $1 @ [this_ident $3]) }
+ | name "." THIS       { Name (name $1 @ [this_name1 $3]) }
  (* javaext: ? *)
  | class_literal       { $1 }
  (* javaext: ? *)
@@ -481,9 +481,9 @@ dims:
 
 field_access:
  | primary "." identifier        { Dot ($1, $2, $3) }
- | SUPER   "." identifier        { Dot (Name [super_ident $1], $2, $3) }
+ | SUPER   "." identifier        { Dot (Name [super_name1 $1], $2, $3) }
  (* javaext: ? *)
- | name "." SUPER "." identifier { Dot (Name (name $1@[super_ident $3]),$2,$5)}
+ | name "." SUPER "." identifier { Dot (Name (name $1@[super_name1 $3]),$2,$5)}
 
 array_access:
  | name                 "[" expression "]" { ArrayAccess ((Name (name $1)),$3)}
@@ -515,10 +515,10 @@ method_invocation:
  | primary "." identifier "(" listc0(argument) ")"
 	{ Call ((Dot ($1, $2, $3)), ($4,$5,$6)) }
  | SUPER "." identifier "(" listc0(argument) ")"
-	{ Call ((Dot (Name [super_ident $1], $2, $3)), ($4,$5,$6)) }
+	{ Call ((Dot (Name [super_name1 $1], $2, $3)), ($4,$5,$6)) }
  (* javaext: ? *)
  | name "." SUPER "." identifier "(" listc0(argument) ")"
-	{ Call (Dot (Name (name $1 @ [super_ident $3]), $2, $5), ($6,$7,$8))}
+	{ Call (Dot (Name (name $1 @ [super_name1 $3]), $2, $5), ($6,$7,$8))}
 
 argument: expression { $1 }
 
@@ -714,13 +714,19 @@ lambda_body:
 (* javaext: ? *)
 (* reference_type is inlined because of classic ambiguity with name *)
 method_reference: 
- | name       "::" identifier       { raise Todo }
- | primary    "::" identifier       { raise Todo }
- | array_type "::" identifier       { raise Todo }
- | name       "::" NEW              { raise Todo }
- | array_type "::" NEW              { raise Todo }
- | SUPER      "::" identifier       { raise Todo }
- | name "." SUPER   "::" identifier { raise Todo }
+ | name       "::" identifier       
+    { (* TODO? probably a type? *) 
+       MethodRef (Right (TClass (class_type $1)), $2, [], $3)
+    }
+ | primary    "::" identifier       { MethodRef (Left $1, $2, [], $3) }
+ | array_type "::" identifier       { MethodRef (Right $1, $2, [], $3) }
+ | name       "::" NEW              
+    { MethodRef (Right (TClass (class_type $1)), $2, [], new_id $3) }
+ | array_type "::" NEW              { MethodRef (Right $1, $2, [], new_id $3) }
+ | SUPER      "::" identifier       { MethodRef (Left (super $1), $2, [], $3) }
+ | name "." SUPER   "::" identifier 
+   { let e = Dot (fix_name $1, $2, super_ident $3) in
+     MethodRef (Left e, $4, [], $5) }
 
 (*----------------------------*)
 (* Shortcuts *)
@@ -1143,15 +1149,15 @@ constructor_body:
 
 explicit_constructor_invocation:
  | THIS "(" listc0(argument) ")" ";"
-      { constructor_invocation [this_ident $1] ($2,$3,$4) $5 }
+      { constructor_invocation [this_name1 $1] ($2,$3,$4) $5 }
  | SUPER "(" listc0(argument) ")" ";"
-      { constructor_invocation [super_ident $1] ($2,$3,$4) $5 }
+      { constructor_invocation [super_name1 $1] ($2,$3,$4) $5 }
  (* javaext: ? *)
  | primary "." SUPER "(" listc0(argument) ")" ";"
-      { Expr (Call ((Dot ($1, $2, super_identifier $3)), ($4,$5,$6)), $7) }
+      { Expr (Call ((Dot ($1, $2, super_ident $3)), ($4,$5,$6)), $7) }
  (* not in 2nd edition java language specification. *)
  | name "." SUPER "(" listc0(argument) ")" ";"
-      { constructor_invocation (name $1 @ [super_ident $3]) ($4,$5,$6) $7 }
+      { constructor_invocation (name $1 @ [super_name1 $3]) ($4,$5,$6) $7 }
 
 (*----------------------------*)
 (* Method parameter *)

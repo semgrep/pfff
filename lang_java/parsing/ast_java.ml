@@ -565,3 +565,5 @@ let this tok  =
   name_of_id ("this", tok)
 let super tok =
   name_of_id ("super", tok)
+let new_id tok = 
+  "new", tok
