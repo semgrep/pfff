@@ -18,6 +18,6 @@ let actions () = [
   "-parse_json", "   <file or dir>",
   Common.mk_action_n_arg test_parse;
   (* -dump_json uses the json-wheel pretty printer *)
-  "-dump_ast_js", "   <file>",
+  "-dump_ast_json", "   <file>",
   Common.mk_action_1_arg test_dump;
 ]
