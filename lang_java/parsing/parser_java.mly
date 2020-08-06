@@ -203,10 +203,6 @@ let mk_stmt_or_stmts = function
 (*************************************************************************)
 (* Rules type declaration *)
 (*************************************************************************)
-(*
- * The start production must begin with a lowercase letter,
- * because ocamlyacc defines the parsing function with that name.
- *)
 %start goal sgrep_spatch_pattern
 %type <Ast_java.program> goal
 %type <Ast_java.any>     sgrep_spatch_pattern
@@ -218,6 +214,16 @@ let mk_stmt_or_stmts = function
 optl(X):
  | (* empty *) { [] }
  | X           { $1 }
+
+listc(X):
+ | X { [$1] }
+ | listc(X) "," X { $1 @ [$3] }
+
+listc0(X): optl(listc(X)) { $1 }
+
+list_sep(X,Sep):
+ | X                      { [$1] }
+ | list_sep(X,Sep) Sep X  { $1 @ [$3] }
 
 (*************************************************************************)
 (* TOC *)
@@ -240,7 +246,7 @@ optl(X):
 goal: compilation_unit EOF  { $1 }
 
 (* conflicts: was simply 
- *  package_declaration_opt import_declarations_opt type_declarations_opt
+ *   package_declaration_opt import_declarations_opt type_declarations_opt
  * but with an annotation now possible on package_declaration, seeing an
  * '@' the LALR(1) parser does not know if it's the start of an annotation
  * for a package or class_declaration. So we need to unfold those _opt.
@@ -261,6 +267,7 @@ declaration:
  | enum_declaration       { Enum $1 }
  | method_declaration     { Method $1 }
 
+
 sgrep_spatch_pattern:
  | import_declaration EOF           { AStmt (DirectiveStmt $1) }
  | import_declaration import_declaration+ EOF  
@@ -268,7 +275,7 @@ sgrep_spatch_pattern:
  | package_declaration EOF          { AStmt (DirectiveStmt $1) }
  | expression EOF                   { AExpr $1 }
  | item_no_dots EOF                 { mk_stmt_or_stmts $1 }
- | item_no_dots item_sgrep_list EOF { mk_stmt_or_stmts ($1 @ (List.flatten $2)) }
+ | item_no_dots item_sgrep+ EOF { mk_stmt_or_stmts ($1 @ (List.flatten $2)) }
 
 item_no_dots:
  | statement_no_dots { [$1] }
@@ -289,20 +296,13 @@ item_sgrep:
  | declaration { [DeclStmt $1] }
  | local_variable_declaration_statement { $1 }
 
-item_sgrep_list:
- | item_sgrep { [$1] }
- | item_sgrep_list item_sgrep { $1 @ [$2] }
-
-
 (*************************************************************************)
 (* Package, Import, Type *)
 (*************************************************************************)
 
 (* ident_list *)
-package_declaration: 
- |             PACKAGE qualified_ident ";"  { Package ($1, $2, $3) }
- (* always annotations *)
- | modifiers   PACKAGE qualified_ident ";"  { Package ($2, $3, $4) (* TODO $1*)}
+package_declaration: modifiers_opt PACKAGE qualified_ident ";"  
+  { Package ($2, $3, $4) (* TODO $1*)}
 
 (* javaext: static_opt 1.? *)
 import_declaration:
@@ -319,7 +319,6 @@ type_declaration:
  | class_declaration      { [DeclStmt (Class $1)] }
  | interface_declaration  { [DeclStmt (Class $1)] }
  | ";"  { [] }
-
  (* javaext: 1.? *)
  | enum_declaration            { [DeclStmt (Enum $1)] }
  | annotation_type_declaration { [DeclStmt (Class $1)] }
@@ -336,12 +335,12 @@ qualified_ident:
 name:
  | identifier_           { [$1] }
  | name "." identifier_  { $1 @ [$3] }
- | name "." LT_GENERIC type_arguments_args_opt GT identifier_ 
+ | name "." LT_GENERIC listc(type_argument) GT identifier_ 
      { $1@[TypeArgs_then_Id($4,$6)] }
 
 identifier_:
- | identifier                       { Id $1 }
- | identifier LT_GENERIC type_arguments_args_opt GT { Id_then_TypeArgs($1, $3) }
+ | identifier                                     { Id $1 }
+ | identifier LT_GENERIC listc0(type_argument) GT { Id_then_TypeArgs($1, $3) }
 
 (*************************************************************************)
 (* Types *)
@@ -360,9 +359,9 @@ reference_type:
  | array_type { $1 }
 
 array_type:
- | primitive_type          LB_RB { TArray $1 }
+ | primitive_type          LB_RB                { TArray $1 }
  | class_or_interface_type (* was name *) LB_RB { TArray $1 }
- | array_type              LB_RB { TArray $1 }
+ | array_type              LB_RB                { TArray $1 }
 
 (*----------------------------*)
 (* Generics arguments *)
@@ -379,30 +378,29 @@ type_argument:
 (* Generics parameters *)
 (*----------------------------*)
 (* javaext: 1? *)
-type_parameters:
- | LT type_parameters_bis GT { $2 }
+type_parameters: LT listc(type_parameter) GT { $2 }
 
 type_parameter:
  | identifier               { TParam ($1, []) }
  | identifier EXTENDS bound { TParam ($1, $3) }
 
-bound: ref_type_and_list { $1 }
+bound: list_sep(reference_type, AND) { $1 }
 
 (*************************************************************************)
 (* Expressions *)
 (*************************************************************************)
 
-typed_metavar:
- | "(" type_ IDENTIFIER ")" { Flag_parsing.sgrep_guard (TypedMetavar($3, $2))  }
+typed_metavar: "(" type_ IDENTIFIER ")" 
+   { Flag_parsing.sgrep_guard (TypedMetavar($3, $2))  }
 
 primary:
  | primary_no_new_array       { $1 }
  | array_creation_expression  { $1 }
 
 primary_no_new_array:
- | literal             { $1 }
- | THIS                { Name [this_ident $1] }
- | "(" expression ")"    { $2 }
+ | literal                            { $1 }
+ | THIS                               { Name [this_ident $1] }
+ | "(" expression ")"                 { $2 }
  | class_instance_creation_expression { $1 }
  | field_access                       { $1 }
  | method_invocation                  { $1 }
@@ -419,13 +417,13 @@ primary_no_new_array:
  | array_creation_expression_with_initializer { $1 }
 
 literal:
- | TRUE   { Literal (Bool (true, $1)) }
+ | TRUE    { Literal (Bool (true, $1)) }
  | FALSE   { Literal (Bool (false, $1)) }
  | TInt    { Literal (Int ($1)) }
  | TFloat  { Literal (Float ($1)) }
  | TChar   { Literal (Char ($1)) }
  | TString { Literal (String ($1)) }
- | NULL   { Literal (Null $1) }
+ | NULL    { Literal (Null $1) }
 
 class_literal:
  | primitive_type "." CLASS  { ClassLiteral $1 }
@@ -434,40 +432,37 @@ class_literal:
  | VOID           "." CLASS  { ClassLiteral (void_type $1) }
 
 class_instance_creation_expression:
- | NEW name "(" argument_list_opt ")" 
-   class_body?
+ | NEW name "(" listc0(argument) ")" class_body?
    { NewClass ($1, TClass (class_type $2), ($3,$4,$5), $6) }
  (* javaext: ? *)
- | primary "." NEW identifier "(" argument_list_opt ")" class_body?
+ | primary "." NEW identifier "(" listc0(argument) ")" class_body?
    { NewQualifiedClass ($1, $2, $3, TClass ([$4,[]]), ($5,$6,$7), $8) }
  (* javaext: not in 2nd edition java language specification. *)
- | name "." NEW identifier "(" argument_list_opt ")" class_body?
-   { NewQualifiedClass ((Name (name $1)), $2, $3, TClass [$4,[]],($5,$6,$7),$8)}
+ | name "." NEW identifier "(" listc0(argument) ")" class_body?
+   { NewQualifiedClass ((Name (name $1)), $2, $3,TClass [$4,[]],($5,$6,$7),$8)}
 
-(*
-   A new array that cannot be accessed right away by appending [index]:
-    new String[2][1]  // a 2-dimensional array
-*)
+(* A new array that cannot be accessed right away by appending [index]:
+ * new String[2][1]  // a 2-dimensional array
+ *)
 array_creation_expression:
- | NEW primitive_type dim_exprs dims_opt
-       { NewArray ($1, $2, List.rev $3, $4, None) }
- | NEW name dim_exprs dims_opt
-       { NewArray ($1, TClass (class_type ($2)), List.rev $3, $4, None) }
+ | NEW primitive_type dim_expr+ dims_opt
+       { NewArray ($1, $2, $3, $4, None) }
+ | NEW name           dim_expr+ dims_opt
+       { NewArray ($1, TClass (class_type ($2)), $3, $4, None) }
 
-(*
-   A new array that can be accessed right away by appending [index] as follows:
-    new String[] { "abc", "def" }[1]  // a string
-*)
+(* A new array that can be accessed right away by appending [index] as follows:
+ * new String[] { "abc", "def" }[1]  // a string
+ *)
 array_creation_expression_with_initializer:
  | NEW primitive_type dims array_initializer
        { NewArray ($1, $2, [], $3, Some $4) }
- | NEW name dims array_initializer
+ | NEW name           dims array_initializer
        { NewArray ($1, TClass (class_type ($2)), [], $3, Some $4) }
 
 dim_expr: "[" expression "]"  { $2 }
 
 dims:
- | LB_RB       { 1 }
+ |      LB_RB  { 1 }
  | dims LB_RB  { $1 + 1 }
 
 field_access:
@@ -477,15 +472,15 @@ field_access:
  | name "." SUPER "." identifier { Dot (Name (name $1@[super_ident $3]),$2,$5)}
 
 array_access:
- | name "[" expression "]"                  { ArrayAccess ((Name (name $1)), $3)}
- | primary_no_new_array "[" expression "]"  { ArrayAccess ($1, $3) }
+ | name                 "[" expression "]" { ArrayAccess ((Name (name $1)),$3)}
+ | primary_no_new_array "[" expression "]" { ArrayAccess ($1, $3) }
 
 (*----------------------------*)
 (* Method call *)
 (*----------------------------*)
 
 method_invocation:
- | name "(" argument_list_opt ")"
+ | name "(" listc0(argument) ")"
         { match List.rev $1 with
           (* TODO: lose information of TypeArgs_then_Id *)
           | ((Id x) | (TypeArgs_then_Id (_, Id x)))::xs ->
@@ -503,22 +498,21 @@ method_invocation:
               pr2_gen $1;
               raise Impossible
         }
- | primary "." identifier "(" argument_list_opt ")"
+ | primary "." identifier "(" listc0(argument) ")"
 	{ Call ((Dot ($1, $2, $3)), ($4,$5,$6)) }
- | SUPER "." identifier "(" argument_list_opt ")"
+ | SUPER "." identifier "(" listc0(argument) ")"
 	{ Call ((Dot (Name [super_ident $1], $2, $3)), ($4,$5,$6)) }
  (* javaext: ? *)
- | name "." SUPER "." identifier "(" argument_list_opt ")"
+ | name "." SUPER "." identifier "(" listc0(argument) ")"
 	{ Call (Dot (Name (name $1 @ [super_ident $3]), $2, $5), ($6,$7,$8))}
 
-argument: 
- | expression { $1 }
+argument: expression { $1 }
 
 (*----------------------------*)
 (* Arithmetic *)
 (*----------------------------*)
 
-postfix_expression: (* EJ todo maybe need to add typed metavars here *)
+postfix_expression:
  | primary  { $1 }
  | name     {
      (* Ambiguity. It could be a field access (Dot) or a qualified
@@ -546,8 +540,8 @@ post_decrement_expression: postfix_expression DECR
 unary_expression:
  | pre_increment_expression  { $1 }
  | pre_decrement_expression  { $1 }
- | PLUS unary_expression  { Unary ((AST_generic.Plus,$1), $2) }
- | MINUS unary_expression  { Unary ((AST_generic.Minus,$1), $2) }
+ | PLUS unary_expression     { Unary ((AST_generic.Plus,$1), $2) }
+ | MINUS unary_expression    { Unary ((AST_generic.Minus,$1), $2) }
  | unary_expression_not_plus_minus  { $1 }
 
 pre_increment_expression: INCR unary_expression  
@@ -574,26 +568,25 @@ unary_expression_not_plus_minus:
  *)
 cast_expression:
  | "(" primitive_type ")" unary_expression  { Cast (($1,[$2],$3), $4) }
- | "(" array_type ")" unary_expression_not_plus_minus  { Cast (($1,[$2],$3), $4) }
+ | "(" array_type ")" unary_expression_not_plus_minus { Cast(($1,[$2],$3),$4)}
  | "(" expression ")" unary_expression_not_plus_minus
 	{  Cast (($1,[expr_to_typename $2],$3), $4) }
 
-cast_lambda_expression:
- (* this can not be put inside cast_expression. See conflicts.txt*)
- | "(" expression ")" lambda_expression 
+(* this can not be put inside cast_expression. See conflicts.txt*)
+cast_lambda_expression: "(" expression ")" lambda_expression 
      { Cast (($1,[expr_to_typename $2],$3), $4) }
 
 
 multiplicative_expression:
  | unary_expression  { $1 }
- | multiplicative_expression TIMES unary_expression { Infix ($1, (Mult,$2) , $3) }
- | multiplicative_expression DIV unary_expression   { Infix ($1, (Div,$2), $3) }
- | multiplicative_expression MOD unary_expression   { Infix ($1, (Mod,$2), $3) }
+ | multiplicative_expression TIMES unary_expression { Infix ($1, (Mult,$2),$3)}
+ | multiplicative_expression DIV unary_expression   { Infix ($1, (Div,$2),$3)}
+ | multiplicative_expression MOD unary_expression   { Infix ($1, (Mod,$2),$3)}
 
 additive_expression:
  | multiplicative_expression  { $1 }
- | additive_expression PLUS multiplicative_expression { Infix ($1, (Plus,$2), $3) }
- | additive_expression MINUS multiplicative_expression { Infix ($1, (Minus,$2), $3) }
+ | additive_expression PLUS multiplicative_expression { Infix($1,(Plus,$2),$3)}
+ | additive_expression MINUS multiplicative_expression { Infix($1,(Minus,$2),$3)}
 
 shift_expression:
  | additive_expression  { $1 }
@@ -613,7 +606,7 @@ relational_expression:
 equality_expression:
  | relational_expression  { $1 }
  | equality_expression EQ_EQ relational_expression  { Infix ($1, (Eq,$2), $3) }
- | equality_expression NOT_EQ relational_expression { Infix ($1, (NotEq,$2), $3) }
+ | equality_expression NOT_EQ relational_expression { Infix ($1,(NotEq,$2),$3)}
 
 and_expression:
  | equality_expression  { $1 }
@@ -657,14 +650,12 @@ assignment_expression:
  | conditional_expression  { $1 }
  | assignment              { $1 }
  (* sgrep-ext: *)
- | "..." { Flag_parsing.sgrep_guard (Ellipsis $1) }
+ | "..."                    { Flag_parsing.sgrep_guard (Ellipsis $1) }
  | "<..." expression "...>" { Flag_parsing.sgrep_guard (DeepEllipsis ($1,$2,$3))}
 
 
 (* javaext: was assignment_expression for rhs, but we want lambdas there*)
-assignment: left_hand_side assignment_operator expression
-    { $2 $1 $3 }
-
+assignment: left_hand_side assignment_operator expression  { $2 $1 $3 }
 
 left_hand_side:
  | name          { Name (name $1) }
@@ -674,31 +665,22 @@ left_hand_side:
  | typed_metavar { $1 }
 
 assignment_operator:
- | "="  { (fun e1 e2 -> Assign (e1, $1, e2))  }
+ | "="          { (fun e1 e2 -> Assign (e1, $1, e2))  }
  | OPERATOR_EQ  { (fun e1 e2 -> AssignOp (e1, $1, e2)) }
 
 (*----------------------------*)
 (* Lambdas *)
 (*----------------------------*)
-lambda_expression: lambda_parameters "->" lambda_body 
-  { Lambda ($1, $3) }
+lambda_expression: lambda_parameters "->" lambda_body  { Lambda ($1, $3) }
 
 lambda_parameters: 
- | IDENTIFIER { [mk_param_id $1] }
+ | IDENTIFIER                          { [mk_param_id $1] }
  | LP_LAMBDA lambda_parameter_list ")" { $2 }
- | LP_LAMBDA ")" { [] }
+ | LP_LAMBDA ")"                       { [] }
 
 lambda_parameter_list: 
- | identifier_list { $1 |> List.map mk_param_id }
- | lambda_param_list { $1 }
-
-identifier_list:
- | identifier  { [$1] }
- | identifier_list "," identifier  { $3 :: $1 }
-
-lambda_param_list:
- | lambda_param  { [$1] }
- | lambda_param_list "," lambda_param  { $3 :: $1 }
+ | listc(identifier)   { $1 |> List.map mk_param_id }
+ | listc(lambda_param) { $1 }
 
 lambda_param:
  | variable_modifier+ lambda_parameter_type variable_declarator_id 
@@ -778,7 +760,7 @@ statement_without_trailing_substatement:
  | throw_statement  { $1 }
  | try_statement  { $1 }
  (* javaext:  *)
- | ASSERT expression ";"                  { Assert ($1, $2, None) }
+ | ASSERT expression ";"                { Assert ($1, $2, None) }
  | ASSERT expression ":" expression ";" { Assert ($1, $2, Some $4) }
 
 block: "{" block_statement* "}"  { Block ($1, List.flatten $2, $3) }
@@ -790,24 +772,20 @@ block_statement:
  | class_declaration  { [DeclStmt (Class $1)] }
 
 local_variable_declaration_statement: local_variable_declaration ";"
- { List.map (fun x -> LocalVar x) $1 }
+  { List.map (fun x -> LocalVar x) $1 }
 
 (* cant factorize with variable_modifier_opt, conflicts otherwise *)
-local_variable_declaration:
- |           type_ variable_declarators
-     { decls (fun x -> x) [] $1 (List.rev $2) }
+local_variable_declaration: modifiers_opt type_ listc(variable_declarator)
  (* javaext: 1.? actually should be variable_modifiers but conflict *)
- | modifiers type_ variable_declarators
-     { decls (fun x -> x) $1 $2 (List.rev $3) }
+     { decls (fun x -> x) $1 $2 $3 }
 
-empty_statement: ";" { EmptyStmt $1 }
+empty_statement: ";"                            { EmptyStmt $1 }
 
-labeled_statement: identifier ":" statement
-   { Label ($1, $3) }
+labeled_statement: identifier ":" statement     { Label ($1, $3) }
 
 expression_statement: statement_expression ";"  { Expr ($1, $2) }
 
-(* pad: good *)
+(* pad: good boy java! nice language! *)
 statement_expression:
  | assignment  { $1 }
  | pre_increment_expression  { $1 }
@@ -817,48 +795,43 @@ statement_expression:
  | method_invocation  { $1 }
  | class_instance_creation_expression  { $1 }
  (* sgrep-ext: to allow '$S;' in sgrep *)
- | IDENTIFIER { Flag_parsing.sgrep_guard ((Name (name [Id $1])))  }
+ | IDENTIFIER    { Flag_parsing.sgrep_guard ((Name (name [Id $1])))  }
  | typed_metavar { $1 }
 
 
-if_then_statement: IF "(" expression ")" statement
-   { If ($1, $3, $5, None) }
+if_then_statement: IF "(" expression ")" statement   { If ($1, $3, $5, None) }
 
-if_then_else_statement: IF "(" expression ")" statement_no_short_if ELSE statement
+if_then_else_statement: 
+ IF "(" expression ")" statement_no_short_if ELSE statement
    { If ($1, $3, $5, Some $7) }
 
 
-switch_statement: SWITCH "(" expression ")" switch_block
-    { Switch ($1, $3, $5) }
+switch_statement: SWITCH "(" expression ")" switch_block { Switch($1, $3, $5)}
 
 switch_block:
  | "{"                                             "}"  { [] }
- | "{"                               switch_labels "}"  { [$2, []] }
+ | "{"                               switch_label+ "}"  { [$2, []] }
  | "{" switch_block_statement_groups               "}"  { $2 }
- | "{" switch_block_statement_groups switch_labels "}"
-     { List.rev ((List.rev $3, []) :: $2) }
+ | "{" switch_block_statement_groups switch_label+ "}"
+     { List.rev (($3, []) :: $2) }
 
-switch_block_statement_group: switch_labels block_statement+
-   {List.rev $1, List.flatten $2}
+switch_block_statement_group: switch_label+ block_statement+ 
+  {$1, List.flatten $2}
 
 switch_label:
- | CASE constant_expression ":"  { Case ($1, $2) }
+ | CASE constant_expression ":"        { Case ($1, $2) }
  | DEFAULT_COLON ":"                   { Default $1 }
 
 
-while_statement: WHILE "(" expression ")" statement
-     { While ($1, $3, $5) }
+while_statement: WHILE "(" expression ")" statement     { While ($1, $3, $5) }
 
-do_statement: DO statement WHILE "(" expression ")" ";"
-     { Do ($1, $2, $5) }
+do_statement: DO statement WHILE "(" expression ")" ";" { Do ($1, $2, $5) }
 
 (*----------------------------*)
 (* For *)
 (*----------------------------*)
 
-for_statement:
-  FOR "(" for_control ")" statement
-	{ For ($1, $3, $5) }
+for_statement: FOR "(" for_control ")" statement { For ($1, $3, $5) }
 
 for_control:
  | for_init_opt ";" expression? ";" optl(for_update)
@@ -869,21 +842,19 @@ for_control:
 
 for_init_opt:
  | (*empty*)  { ForInitExprs [] }
- | for_init       { $1 }
+ | for_init   { $1 }
 
 for_init:
-| statement_expression_list   { ForInitExprs $1 }
-| local_variable_declaration  { ForInitVars $1 }
+| listc(statement_expression)   { ForInitExprs $1 }
+| local_variable_declaration    { ForInitVars $1 }
 
-for_update: statement_expression_list  { $1 }
+for_update: listc(statement_expression)  { $1 }
 
-for_var_control:
- |           type_ variable_declarator_id for_var_control_rest
-     {  canon_var [] (Some $1) $2, $3 }
-(* actually only FINAL is valid here, but cant because get shift/reduce
+for_var_control: 
+ modifiers_opt type_ variable_declarator_id for_var_control_rest
+  (* actually only FINAL is valid here, but cant because get shift/reduce
    * conflict otherwise because for_init can be a local_variable_decl
    *)
- | modifiers type_ variable_declarator_id for_var_control_rest
      { canon_var $1 (Some $2) $3, $4 }
 
 for_var_control_rest: ":" expression { $2 }
@@ -892,9 +863,9 @@ for_var_control_rest: ":" expression { $2 }
 (* Other *)
 (*----------------------------*)
 
-break_statement: BREAK identifier? ";"  { Break ($1, $2) }
+break_statement:    BREAK    identifier? ";"  { Break ($1, $2) }
 continue_statement: CONTINUE identifier? ";"  { Continue ($1, $2) }
-return_statement: RETURN expression? ";"  { Return ($1, $2) }
+return_statement:   RETURN expression? ";"  { Return ($1, $2) }
 
 synchronized_statement: SYNCHRONIZED "(" expression ")" block { Sync ($3, $5) }
 
@@ -905,17 +876,16 @@ synchronized_statement: SYNCHRONIZED "(" expression ")" block { Sync ($3, $5) }
 throw_statement: THROW expression ";"  { Throw ($1, $2) }
 
 try_statement:
- | TRY block catches              { Try ($1, None, $2, List.rev $3, None) }
- | TRY block catches_opt finally  { Try ($1, None, $2, $3, Some $4) }
+ | TRY block catch_clause+          { Try ($1, None, $2, $3, None) }
+ | TRY block catch_clause* finally  { Try ($1, None, $2, $3, Some $4) }
  (* javaext: ? *)
- | TRY resource_specification block catches_opt finally? { 
-    Try ($1, Some $2, $3, $4, $5)
-  }
+ | TRY resource_specification block catch_clause* finally? 
+    { Try ($1, Some $2, $3, $4, $5) }
 
 finally: FINALLY block  { $1, $2 }
 
 catch_clause:
- | CATCH "(" catch_formal_parameter ")" block  { $1, $3, $5 }
+ | CATCH "(" catch_formal_parameter ")" block            { $1, $3, $5 }
  (* javaext: not in 2nd edition java language specification.*)
  | CATCH "(" catch_formal_parameter ")" empty_statement  { $1, $3, $5 }
 
@@ -927,22 +897,18 @@ catch_formal_parameter:
       { canon_var [] (Some (fst $1)) $2, snd $1 }
 
 (* javaext: ? *)
-catch_type: catch_type_list { List.hd $1, List.tl $1 }
-
-catch_type_list:
-  | type_ { [$1] }
-  | catch_type_list OR type_ { $1 @ [$3] }
+catch_type: list_sep(type_, OR) { List.hd $1, List.tl $1 }
 
 (* javaext: ? *)
-resource_specification: "(" resource_list ";"? ")" { $1, [](* TODO $2*), $4 }
+resource_specification: "(" list_sep(resource, ";") ";"? ")" 
+  { $1, [](* TODO $2*), $4 }
 
 resource: 
  | variable_modifier+ local_variable_type identifier "=" expression { }
  |                    local_variable_type identifier "=" expression { }
  | variable_access { }
  
-local_variable_type: 
- | unann_type { }
+local_variable_type: unann_type { }
 
 variable_access:
  | field_access { }
@@ -954,10 +920,10 @@ variable_access:
 
 statement_no_short_if:
  | statement_without_trailing_substatement  { $1 }
- | labeled_statement_no_short_if  { $1 }
- | if_then_else_statement_no_short_if  { $1 }
- | while_statement_no_short_if  { $1 }
- | for_statement_no_short_if  { $1 }
+ | labeled_statement_no_short_if            { $1 }
+ | if_then_else_statement_no_short_if       { $1 }
+ | while_statement_no_short_if              { $1 }
+ | for_statement_no_short_if                { $1 }
 
 labeled_statement_no_short_if: identifier ":" statement_no_short_if
    { Label ($1, $3) }
@@ -977,9 +943,8 @@ for_statement_no_short_if:
 (* Modifiers *)
 (*************************************************************************)
 
-(*
- * to avoid shift/reduce conflicts, we accept all modifiers
- * in front of all declarations.  the ones not applicable to
+(* To avoid shift/reduce conflicts, we accept all modifiers
+ * in front of all declarations. The ones not applicable to
  * a particular kind of declaration must be detected in semantic actions.
  *)
 modifier:
@@ -1010,23 +975,22 @@ annotation:
  | "@" name "(" annotation_element ")" { ($1, $2, Some ($3, $4, $5)) }
 
 annotation_element:
- | (* nothing *) { EmptyAnnotArg }
+ | (* empty *) { EmptyAnnotArg }
  | element_value { AnnotArgValue $1 }
- | element_value_pairs { AnnotArgPairInit $1 }
+ | listc(element_value_pair) { AnnotArgPairInit $1 }
 
 element_value:
- | expr1 { AnnotExprInit $1 }
+ | expr1      { AnnotExprInit $1 }
  | annotation { AnnotNestedAnnot $1 }
  | element_value_array_initializer { AnnotArrayInit $1 }
 
-element_value_pair:
- | identifier "=" element_value { ($1, $3) }
+element_value_pair: identifier "=" element_value { ($1, $3) }
 
 
 element_value_array_initializer:
  | "{" "}" { [] }
- | "{" element_values "}" { $2 }
- | "{" element_values "," "}" { $2 }
+ | "{" listc(element_value) "}" { $2 }
+ | "{" listc(element_value) "," "}" { $2 }
 
 (* should be statically a constant expression; can contain '+', '*', etc.*)
 expr1: 
@@ -1039,18 +1003,18 @@ expr1:
 (*************************************************************************)
 
 class_declaration:
- modifiers_opt CLASS identifier type_parameters_opt super? optl(interfaces)
+ modifiers_opt CLASS identifier optl(type_parameters) super? optl(interfaces)
  class_body
   { { cl_name = $3; cl_kind = ClassRegular;
       cl_mods = $1; cl_tparams = $4;
       cl_extends = $5;  cl_impls = $6;
       cl_body = $7;
-     }
-  }
+     } }
 
 super: EXTENDS type_ (* was class_type *)  { $2 }
 
-interfaces: IMPLEMENTS ref_type_list (* was interface_type_list *)  { $2 }
+(* was interface_type_list *)
+interfaces: IMPLEMENTS listc(reference_type)   { $2 }
 
 (*----------------------------*)
 (* Class body *)
@@ -1091,8 +1055,8 @@ instance_initializer: block       { Init (None, $1) }
 (* Field *)
 (*----------------------------*)
 
-field_declaration: modifiers_opt type_ variable_declarators ";"
-   { decls (fun x -> Field x) $1 $2 (List.rev $3) }
+field_declaration: modifiers_opt type_ listc(variable_declarator) ";"
+   { decls (fun x -> Field x) $1 $2 $3 }
 
 variable_declarator:
  | variable_declarator_id  { $1, None }
@@ -1108,7 +1072,7 @@ variable_initializer:
 
 array_initializer:
  | "{" ","? "}"                        { ArrayInit ($1, [], $3) }
- | "{" variable_initializers ","? "}"  { ArrayInit ($1, List.rev $2, $4) }
+ | "{" listc(variable_initializer) ","? "}"  { ArrayInit ($1, $2, $4) }
 
 (*----------------------------*)
 (* Method *)
@@ -1123,27 +1087,26 @@ method_header:
      { method_header $1 (void_type $2) $3 $4 }
 
 method_declarator:
- | identifier "(" formal_parameter_list_opt ")"  { (IdentDecl $1), $3 }
+ | identifier "(" listc0(formal_parameter) ")"  { (IdentDecl $1), $3 }
  | method_declarator LB_RB                     { (ArrayDecl (fst $1)), snd $1 }
 
 method_body:
  | block  { $1 }
  | ";"     { EmptyStmt $1 }
 
-
-throws: THROWS qualified_ident_list (* was class_type_list *)  
-  { List.map typ_of_qualified_id $2 }
-
+throws: THROWS listc(name) (* was class_type_list *)  
+  { List.map (fun x -> typ_of_qualified_id (qualified_ident x)) $2 }
 
 generic_method_or_constructor_decl:
-  modifiers_opt type_parameters generic_method_or_constructor_rest  { ast_todo }
+  modifiers_opt type_parameters generic_method_or_constructor_rest  
+    { ast_todo }
 
 generic_method_or_constructor_rest:
  | type_ identifier method_declarator_rest { }
- | VOID identifier method_declarator_rest { }
+ | VOID identifier method_declarator_rest  { }
 
-method_declarator_rest:
- | formal_parameters optl(throws) method_body { }
+method_declarator_rest: formal_parameters optl(throws) method_body 
+  { }
 
 (*----------------------------*)
 (* Constructors *)
@@ -1151,14 +1114,13 @@ method_declarator_rest:
 
 constructor_declaration:
  modifiers_opt constructor_declarator optl(throws) constructor_body
-  {
-    let (id, formals) = $2 in
+  { let (id, formals) = $2 in
     let var = { mods = $1; type_ = None; name = id } in
     Method { m_var = var; m_formals = formals; m_throws = $3;
 	     m_body = $4 }
   }
 
-constructor_declarator:	identifier "(" formal_parameter_list_opt ")"  { $1, $3 }
+constructor_declarator: identifier "(" listc0(formal_parameter) ")" { $1, $3}
 
 constructor_body:
  | "{" block_statement* "}"                                 
@@ -1168,22 +1130,22 @@ constructor_body:
 
 
 explicit_constructor_invocation:
- | THIS "(" argument_list_opt ")" ";"
+ | THIS "(" listc0(argument) ")" ";"
       { constructor_invocation [this_ident $1] ($2,$3,$4) $5 }
- | SUPER "(" argument_list_opt ")" ";"
+ | SUPER "(" listc0(argument) ")" ";"
       { constructor_invocation [super_ident $1] ($2,$3,$4) $5 }
  (* javaext: ? *)
- | primary "." SUPER "(" argument_list_opt ")" ";"
+ | primary "." SUPER "(" listc0(argument) ")" ";"
       { Expr (Call ((Dot ($1, $2, super_identifier $3)), ($4,$5,$6)), $7) }
  (* not in 2nd edition java language specification. *)
- | name "." SUPER "(" argument_list_opt ")" ";"
+ | name "." SUPER "(" listc0(argument) ")" ";"
       { constructor_invocation (name $1 @ [super_ident $3]) ($4,$5,$6) $7 }
 
 (*----------------------------*)
 (* Method parameter *)
 (*----------------------------*)
 
-formal_parameters: "(" formal_parameter_list_opt ")" { $2 }
+formal_parameters: "(" listc0(formal_parameter) ")" { $2 }
 
 formal_parameter: 
  | variable_modifier* type_ variable_declarator_id_bis
@@ -1206,25 +1168,24 @@ variable_modifier:
 (*************************************************************************)
 
 interface_declaration:
- modifiers_opt INTERFACE identifier type_parameters_opt  extends_interfaces_opt
+ modifiers_opt INTERFACE identifier 
+ optl(type_parameters) optl(extends_interfaces)
  interface_body
   { { cl_name = $3; cl_kind = Interface;
       cl_mods = $1; cl_tparams = $4;
       cl_extends = None; cl_impls = $5;
       cl_body = $6;
-    }
-  }
+    } }
 
 extends_interfaces:
  | EXTENDS reference_type (* was interface_type *) { [$2] }
- | extends_interfaces "," reference_type  { $1 @ [$3] }
+ | extends_interfaces "," reference_type           { $1 @ [$3] }
 
 (*----------------------------*)
 (* Interface body *)
 (*----------------------------*)
 
-interface_body: "{" interface_member_declaration* "}" 
-  { $1, List.flatten $2, $3 }
+interface_body: "{" interface_member_declaration* "}" { $1, List.flatten $2,$3}
 
 interface_member_declaration:
  | constant_declaration  { $1 }
@@ -1249,20 +1210,20 @@ interface_member_declaration:
 
 (* note: semicolon is missing in 2nd edition java language specification.*)
 (* less: could replace with field_declaration? was field_declaration *)
-constant_declaration: modifiers_opt type_ variable_declarators ";"
-     { decls (fun x -> Field x) $1 $2 (List.rev $3) }
+constant_declaration: modifiers_opt type_ listc(variable_declarator) ";"
+    { decls (fun x -> Field x) $1 $2 $3 }
 
 (* javaext:: was abstract_method_declaration only before *)
 interface_method_declaration: method_declaration { $1 }
 
 interface_generic_method_decl:
- | modifiers_opt type_parameters type_ identifier interface_method_declator_rest
+| modifiers_opt type_parameters type_ identifier interface_method_declator_rest
     { ast_todo }
- | modifiers_opt type_parameters VOID identifier interface_method_declator_rest
+| modifiers_opt type_parameters VOID  identifier interface_method_declator_rest
     { ast_todo }
 
-interface_method_declator_rest:
- | formal_parameters optl(throws) ";" { }
+interface_method_declator_rest: formal_parameters optl(throws) ";" 
+  { }
 
 (*************************************************************************)
 (* Enum *)
@@ -1274,18 +1235,15 @@ enum_declaration: modifiers_opt ENUM identifier optl(interfaces) enum_body
 (* cant factorize in enum_constants_opt comma_opt .... *)
 enum_body:
  | "{"                   optl(enum_body_declarations) "}" { [], $2 }
- | "{" enum_constants    optl(enum_body_declarations) "}" { $2, $3 }
- | "{" enum_constants "," optl(enum_body_declarations) "}" { $2, $4 }
+ | "{" listc(enum_constant)    optl(enum_body_declarations) "}" { $2, $3 }
+ | "{" listc(enum_constant) "," optl(enum_body_declarations) "}" { $2, $4 }
 
-enum_constant: 
- |           enum_constant_bis { $1 }
- (* always annotations *)
- | modifiers enum_constant_bis { $2 }
+enum_constant: modifiers_opt enum_constant_bis { $2 }
 
 enum_constant_bis:
  | identifier                         { $1, None, None }
- | identifier "(" argument_list_opt ")" { $1, Some ($2,$3,$4), None }
- | identifier "{" method_declarations_opt "}"  
+ | identifier "(" listc0(argument) ")" { $1, Some ($2,$3,$4), None }
+ | identifier "{" method_declaration* "}"  
     { $1, None, Some ($2, $3 |> List.map (fun x -> Method x) , $4) }
 
 enum_body_declarations: ";" class_body_declaration* { List.flatten $2 }
@@ -1294,22 +1252,16 @@ enum_body_declarations: ";" class_body_declaration* { List.flatten $2 }
 (* Annotation type decl *)
 (*************************************************************************)
 
-(* cant factorize modifiers_opt *)
 annotation_type_declaration:
- | modifiers "@" INTERFACE identifier annotation_type_body 
+  modifiers_opt "@" INTERFACE identifier annotation_type_body 
      { { cl_name = $4; cl_kind = AtInterface; cl_mods = $1; cl_tparams = [];
-         cl_extends = None; cl_impls = []; cl_body = $5 }
-     }
- |           "@" INTERFACE identifier annotation_type_body 
-     { { cl_name = $3; cl_kind = AtInterface; cl_mods = []; cl_tparams = [];
-         cl_extends = None; cl_impls = []; cl_body = $4 } 
-     }
+         cl_extends = None; cl_impls = []; cl_body = $5 
+       } }
 
-annotation_type_body: "{" annotation_type_element_declarations_opt "}" 
+annotation_type_body: "{" annotation_type_element_declaration* "}" 
   { $1, $2, $3 }
 
-annotation_type_element_declaration:
- annotation_type_element_rest { $1 }
+annotation_type_element_declaration: annotation_type_element_rest { $1 }
 
 annotation_type_element_rest:
  | modifiers_opt type_ identifier annotation_method_or_constant_rest ";" 
@@ -1325,138 +1277,26 @@ annotation_method_or_constant_rest:
  | "(" ")" { }
  | "(" ")" DEFAULT element_value { }
 
-annotation_type_element_declarations_opt:
- | (*empty*) { [] }
- | annotation_type_element_declarations { $1 }
-
-annotation_type_element_declarations:
- | annotation_type_element_declaration { [$1] }
- | annotation_type_element_declarations annotation_type_element_declaration 
-    { $1 @ [$2] }
-
 (*************************************************************************)
 (* xxx_list, xxx_opt *)
 (*************************************************************************)
 
-(* basic lists, at least one element *)
-modifiers:
- | modifier  { [$1] }
- | modifiers modifier  { $2 :: $1 }
-
-switch_block_statement_groups:
- | switch_block_statement_group  { [$1] }
- | switch_block_statement_groups switch_block_statement_group  { $2 :: $1 }
-
-switch_labels:
- | switch_label  { [$1] }
- | switch_labels switch_label  { $2 :: $1 }
-
-catches:
- | catch_clause  { [$1] }
- | catches catch_clause  { $2 :: $1 }
-
-method_declarations:
- | method_declaration { [$1] }
- | method_declarations method_declaration { $2 :: $1 }
-
-dim_exprs:
- | dim_expr  { [$1] }
- | dim_exprs dim_expr  { $2 :: $1 }
-
-(* basic lists, at least one element with separator *)
-ref_type_list:
- | reference_type  { [$1] }
- | ref_type_list "," reference_type  { $1 @ [$3] }
-
-resource_list:
- | resource  { [$1] }
- | resource_list ";" resource  { $1 @ [$3] }
-
-ref_type_and_list:
- | reference_type  { [$1] }
- | ref_type_and_list AND reference_type  { $1 @ [$3] }
-
-variable_declarators:
- | variable_declarator  { [$1] }
- | variable_declarators "," variable_declarator  { $3 :: $1 }
-
-formal_parameter_list:
- | formal_parameter  { [$1] }
- | formal_parameter_list "," formal_parameter  { $3 :: $1 }
-
-variable_initializers:
- | variable_initializer  { [$1] }
- | variable_initializers "," variable_initializer  { $3 :: $1 }
-
-qualified_ident_list:
- | name                          { [qualified_ident $1] }
- | qualified_ident_list "," name  { $1 @ [qualified_ident $3] }
-
-statement_expression_list:
- | statement_expression                               { [$1] }
- | statement_expression_list "," statement_expression  { $1 @ [$3] }
-
-argument_list:
- | argument  { [$1] }
- | argument_list "," argument  { $3 :: $1 }
-
-enum_constants:
- | enum_constant { [$1] }
- | enum_constants "," enum_constant { $1 @ [$3] }
-
-type_parameters_bis:
- | type_parameter                         { [$1] }
- | type_parameters_bis "," type_parameter  { $1 @ [$3] }
-
-type_arguments_args:
- | type_argument                    { [$1] }
- | type_arguments_args "," type_argument  { $1 @ [$3] }
-
-element_value_pairs:
- | element_value_pair { [$1] }
- | element_value_pairs "," element_value_pair { $1 @ [$3] }
-
-element_values:
- | element_value { [$1] }
- | element_values "," element_value { $1 @ [$3] }
-
-
-(* basic lists, 0 element allowed *)
-
+(* can't use modifier*, need %inline and separate modifiers rule *)
 %inline
 modifiers_opt:
  | (*empty*)  { [] }
  | modifiers  { List.rev $1 }
 
-formal_parameter_list_opt:
- | (*empty*)  { [] }
- | formal_parameter_list  { List.rev $1 }
+modifiers: 
+ | modifier  { [$1] }
+ | modifiers modifier  { $2 :: $1 }
 
-extends_interfaces_opt:
- | (*empty*)  { [] }
- | extends_interfaces  { $1 }
+(* basic lists, at least one element *)
 
-catches_opt:
- | (*empty*)  { [] }
- | catches  { List.rev $1 }
-
-argument_list_opt:
- | (*empty*)  { [] }
- | argument_list  { List.rev $1 }
-
-method_declarations_opt:
- | (*empty*)  { [] }
- | method_declarations  { List.rev $1 }
+switch_block_statement_groups:
+ | switch_block_statement_group  { [$1] }
+ | switch_block_statement_groups switch_block_statement_group  { $2 :: $1 }
 
 dims_opt:
  | (*empty*)  { 0 }
  | dims  { $1 }
-
-type_parameters_opt:
- | (*empty*)   { [] }
- | type_parameters { $1 }
-
-type_arguments_args_opt:
- | (*empty*)   { [] }
- | type_arguments_args { $1 }
-

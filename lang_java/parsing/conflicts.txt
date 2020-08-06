@@ -45,6 +45,8 @@ or a simple identifier.
 
 ex: lambda_param.
 
+update: %inline in menhir can help!
+
 * Cast vs unary_expr_not_plus_or_minus
 
 When have read '(foo)' and see a '+', 
