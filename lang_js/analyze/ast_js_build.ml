@@ -334,8 +334,8 @@ and stmt env = function
     bindings |> C.uncomma |> List.map (fun x -> 
      let vars = var_binding env vkind x in
      vars |> List.map (fun var -> A.VarDecl var)) |> List.flatten
-  | C.Block x -> 
-    [stmt1_item_list env (C.unparen x)]
+  | C.Block (t1, x, t2) -> 
+    [A.Block (t1, stmt_item_list env x, t2)]
   | C.Nop _ -> 
     []
   | C.ExprStmt (e, t) ->
