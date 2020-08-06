@@ -69,6 +69,20 @@ let (name: name_or_class_type -> name) = fun xs ->
       raise Parsing.Parse_error
   )
 
+let fix_name arg = 
+   (* Ambiguity. It could be a field access (Dot) or a qualified
+    * name (Name). See ast_java.ml note on the Dot constructor for
+    * more information.
+    * The last dot has to be a Dot and not a Name at least,
+    * but more elements of Name could be a Dot too.
+    *)
+   match List.rev arg with
+   | (Id id)::x::xs ->
+       Dot (Name (name (List.rev (x::xs))), Parse_info.fake_info ".", id)
+   | _ ->
+       Name (name arg)
+  
+
 let (qualified_ident: name_or_class_type -> qualified_ident) = fun xs ->
   xs |> List.map (function
   | Id x -> x
@@ -514,19 +528,7 @@ argument: expression { $1 }
 
 postfix_expression:
  | primary  { $1 }
- | name     {
-     (* Ambiguity. It could be a field access (Dot) or a qualified
-      * name (Name). See ast_java.ml note on the Dot constructor for
-      * more information.
-      * The last dot has to be a Dot and not a Name at least,
-      * but more elements of Name could be a Dot too.
-      *)
-     match List.rev $1 with
-     | (Id id)::x::xs ->
-         Dot (Name (name (List.rev (x::xs))), Parse_info.fake_info ".", id)
-     | _ ->
-         Name (name $1)
-   }
+ | name     { fix_name $1 }
 
  | post_increment_expression  { $1 }
  | post_decrement_expression  { $1 }
@@ -709,16 +711,16 @@ lambda_body:
 (*----------------------------*)
 (* Method reference *)
 (*----------------------------*)
-(* javaext: ? TODO AST *)
+(* javaext: ? *)
 (* reference_type is inlined because of classic ambiguity with name *)
 method_reference: 
- | name       "::" identifier { Literal (Null $2) }
- | primary    "::" identifier { Literal (Null $2) }
- | array_type "::" identifier { Literal (Null $2) }
- | name       "::" NEW { Literal (Null $2) }
- | array_type "::" NEW { Literal (Null $2) }
- | SUPER      "::" identifier { Literal (Null $2) }
- | name "." SUPER   "::" identifier { Literal (Null $2) }
+ | name       "::" identifier       { raise Todo }
+ | primary    "::" identifier       { raise Todo }
+ | array_type "::" identifier       { raise Todo }
+ | name       "::" NEW              { raise Todo }
+ | array_type "::" NEW              { raise Todo }
+ | SUPER      "::" identifier       { raise Todo }
+ | name "." SUPER   "::" identifier { raise Todo }
 
 (*----------------------------*)
 (* Shortcuts *)
@@ -901,21 +903,25 @@ catch_type: list_sep(type_, OR) { List.hd $1, List.tl $1 }
 
 (* javaext: ? *)
 resource_specification: "(" list_sep(resource, ";") ";"? ")" 
-  { $1, [](* TODO $2*), $4 }
+  { $1, $2, $4 }
 
 resource: 
  | variable_modifier+ local_variable_type identifier "=" expression 
-    { raise Todo }
+    { let var = canon_var $1 (Some $2) (IdentDecl $3) in
+      Left { f_var = var; f_init = Some (ExprInit $5) }
+    }
  |                    local_variable_type identifier "=" expression 
-    { raise Todo }
+    { let var = canon_var [] (Some $1) (IdentDecl $2) in
+      Left { f_var = var; f_init = Some (ExprInit $4) } 
+    }
  | variable_access 
-    { raise Todo }
+    { Right $1 }
  
 local_variable_type: unann_type { $1 }
 
 variable_access:
- | field_access { raise Todo }
- | name         { raise Todo }
+ | field_access { $1 }
+ | name         { fix_name $1 }
 
 (*----------------------------*)
 (* No short if *)

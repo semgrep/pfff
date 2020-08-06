@@ -287,6 +287,7 @@ and for_control =
 and catch = tok * var_with_union_type * stmt
 and catches = catch list
 
+(* javaext: java 8 *)
 and resources = resource list bracket
   (* the expr is a an id or a field access *)
   and resource = (var_with_init, expr) Common.either
