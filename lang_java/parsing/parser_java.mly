@@ -37,9 +37,9 @@ module G = AST_generic
 (*****************************************************************************)
 
 (* todo? use a Ast.special? *)
+let super_identifier ii = ("super", ii)
 let this_ident ii = [], ("this", ii)
 let super_ident ii = [], ("super", ii)
-let super_identifier ii = ("super", ii)
 
 let named_type (str, ii) = TBasic (str,ii)
 let void_type ii = named_type ("void", ii)
@@ -399,7 +399,7 @@ primary:
 
 primary_no_new_array:
  | literal                            { $1 }
- | THIS                               { Name [this_ident $1] }
+ | THIS                               { this $1 }
  | "(" expression ")"                 { $2 }
  | class_instance_creation_expression { $1 }
  | field_access                       { $1 }
@@ -1033,7 +1033,7 @@ class_member_declaration:
  | method_declaration  { [Method $1] }
 
  (* javaext: 1.? *)
- | generic_method_or_constructor_decl { $1 }
+ | generic_method_or_constructor_decl { [Method $1] }
  (* javaext: 1.? *)
  | class_declaration  { [Class $1] }
  | interface_declaration  { [Class $1] }
@@ -1088,10 +1088,10 @@ method_header:
 
 method_declarator:
  | identifier "(" listc0(formal_parameter) ")"  { (IdentDecl $1), $3 }
- | method_declarator LB_RB                     { (ArrayDecl (fst $1)), snd $1 }
+ | method_declarator LB_RB                      { (ArrayDecl (fst $1)), snd $1}
 
 method_body:
- | block  { $1 }
+ | block   { $1 }
  | ";"     { EmptyStmt $1 }
 
 throws: THROWS listc(name) (* was class_type_list *)  
@@ -1099,14 +1099,19 @@ throws: THROWS listc(name) (* was class_type_list *)
 
 generic_method_or_constructor_decl:
   modifiers_opt type_parameters generic_method_or_constructor_rest  
-    { ast_todo }
+    { let (t, mdecl, throws, body) = $3 in
+      let header = method_header $1 (* $2*) t mdecl throws in
+      { header with m_body = body }
+    }
 
 generic_method_or_constructor_rest:
- | type_ identifier method_declarator_rest { }
- | VOID identifier method_declarator_rest  { }
+ | type_ identifier method_declarator_rest 
+     { raise Todo }
+ | VOID identifier method_declarator_rest  
+     { raise Todo }
 
 method_declarator_rest: formal_parameters optl(throws) method_body 
-  { }
+  { raise Todo }
 
 (*----------------------------*)
 (* Constructors *)
@@ -1193,7 +1198,7 @@ interface_member_declaration:
  | interface_method_declaration  { [Method $1] }
 
  (* javaext: 1.? *)
- | interface_generic_method_decl { $1 }
+ | interface_generic_method_decl { [Method $1] }
 
  (* javaext: 1.? *)
  | class_declaration      { [Class $1] }
@@ -1218,9 +1223,13 @@ interface_method_declaration: method_declaration { $1 }
 
 interface_generic_method_decl:
 | modifiers_opt type_parameters type_ identifier interface_method_declator_rest
-    { ast_todo }
+    { let mdecl = raise Todo in
+      method_header $1 (* $2 *) $3 mdecl []
+    }
 | modifiers_opt type_parameters VOID  identifier interface_method_declator_rest
-    { ast_todo }
+    { let mdecl = raise Todo in
+      method_header $1 (* $2 *) (void_type $3) mdecl []
+    }
 
 interface_method_declator_rest: formal_parameters optl(throws) ";" 
   { }
