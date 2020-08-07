@@ -80,6 +80,8 @@ let parse_with_lang lang file =
   | Lang.Ruby ->
       let ast = Parse_ruby.parse_program file in
       Ruby_to_generic.program ast
+  | Lang.Csharp ->
+      failwith "No C# parser in pfff; use the one in tree-sitter"
 (*e: function [[Parse_generic.parse_with_lang]] *)
 
 (*s: function [[Parse_generic.parse_program]] *)
@@ -126,6 +128,8 @@ let parse_pattern lang str =
   | Lang.Ruby ->
       let any = Parse_ruby.any_of_string str in
       Ruby_to_generic.any any
+  | Lang.Csharp ->
+      failwith "No C# parser in pfff; use the one in tree-sitter"
   )
 (*e: function [[Parse_generic.parse_pattern]] *)
 (*e: pfff/lang_GENERIC/parsing/Parse_generic.ml *)

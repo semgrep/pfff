@@ -16,6 +16,9 @@
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
+(* No C# AST yet. We currently use tree-sitter-csharp in semgrep to
+ * handle C# and convert its CST directly to the generic AST.
+ *)
 
 (*****************************************************************************)
 (* The AST related types *)

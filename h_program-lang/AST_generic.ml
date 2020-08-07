@@ -31,6 +31,8 @@ open Common
  *  - Go
  *  - PHP
  *  - OCaml
+ *  - Ruby
+ *  - TODO next: Csharp, Typescript
  *
  * rational: In the end, programming languages have a lot in Common.
  * Even though most interesting analysis are probably better done on a
@@ -44,7 +46,6 @@ open Common
  * tree of nodes, but all the structure of the original AST is lost.
  * 
  * todo:
- *  - add Ruby
  *  - add C++ (argh)
  *  - add Rust, Scala (difficult)
  *  - see ast_fuzzy.ml todos for ideas to use AST_generic for sgrep.
