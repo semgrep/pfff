@@ -14,6 +14,7 @@ type t =
   | C
   | OCaml
   | Ruby
+  | Csharp
 (*e: type [[Lang.t]] *)
 
 (*s: signature [[Lang.lang_of_string_map]] *)
