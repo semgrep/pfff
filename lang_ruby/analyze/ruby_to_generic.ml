@@ -279,7 +279,18 @@ and binary (op, t) e1 e2 =
   | Op_kOR | Op_OR -> 
      G.Call (G.IdSpecial (G.Op G.Or, t), fb [G.Arg e1; G.Arg e2])
   | Op_ASSIGN ->
-     G.Assign (e1, t, e2)
+    (* Split into 2 cases: multiple assignments vs. single assignments. 
+       Change for issue filed for multiple assignments not matching. 
+       Creating a tuple of variable, value pairs instead of seperate
+       tuples of variables and values. *)
+     let are_e1_e2_tuples = match (e1, e2) with
+       | G.Tuple vars, G.Tuple vals -> 
+         let create_assigns = fun expr1 expr2 -> G.Assign (expr1, t, expr2) in
+            let mult_assigns = List.map2 create_assigns vars vals in
+              G.Tuple mult_assigns (* Make it into a tuple of variable, value pairs *)
+       | _, _ -> G.Assign (e1, t, e2)
+     in 
+        are_e1_e2_tuples
   | Op_OP_ASGN op ->
       let op = 
         match op with
