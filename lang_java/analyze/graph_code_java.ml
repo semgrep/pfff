@@ -730,7 +730,7 @@ and expr env = function
   | Literal _ -> ()
 
   | ClassLiteral t -> typ env t
-  | NewClass (_tok, t, (_, args, _), decls_opt) ->
+  | NewClass (tok, t, (_, args, _), decls_opt) ->
       typ env t;
       exprs env args;
       (match decls_opt with
@@ -744,7 +744,7 @@ and expr env = function
             cl_name = (anon_class, info);
             cl_extends = Some t;
             cl_impls = [];
-            cl_kind = ClassRegular;
+            cl_kind = (ClassRegular, tok) ;
             cl_body = xs;
             (* ?? *)
             cl_tparams = [];

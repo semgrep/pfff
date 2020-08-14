@@ -392,6 +392,7 @@ type stmt =
        decorator list (* decorator_list *)
 
   | ClassDef of 
+        tok *
         name (* name *) * 
         type_parent list (* bases *) * 
         stmt list (* body *) * 

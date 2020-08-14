@@ -513,14 +513,14 @@ and stmt_aux x =
       let ent = G.basic_entity v1 v5 in
       let def = { G.fparams = v2; frettype = v3; fbody = v4; } in
       [G.DefStmt (ent, G.FuncDef def)]
-  | ClassDef ((v1, v2, v3, v4)) ->
+  | ClassDef ((v0, v1, v2, v3, v4)) ->
       let v1 = name v1
       and v2 = list type_parent v2
       and v3 = list stmt v3
       and v4 = list decorator v4
       in 
       let ent = G.basic_entity v1 v4 in
-      let def = { G.ckind = G.Class; cextends = v2; 
+      let def = { G.ckind = (G.Class, v0); cextends = v2; 
                   cimplements = []; cmixins = [];
                   cbody = fb (v3 |> List.map(fun x ->G.FieldStmt x);)
                 } in

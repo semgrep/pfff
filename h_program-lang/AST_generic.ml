@@ -1201,7 +1201,7 @@ and type_definition = {
 (* less: could be a special kind of type_definition *)
 (*s: type [[AST_generic.class_definition]] *)
 and class_definition = {
-  ckind: class_kind (* wrap TODO *);
+  ckind: class_kind wrap;
 
   (* usually just one parent, and type_ should be a TyApply *)
   cextends:     type_ list;

@@ -515,7 +515,7 @@ and class_def {
   let tok = snd c_name in
 
   let id = ident c_name in
-  let kind, _tok = class_kind c_kind in
+  let kind = class_kind c_kind in
   let extends    = option class_name c_extends in
   let implements = list class_name c_implements in
   let uses       = list class_name c_uses in

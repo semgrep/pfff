@@ -480,7 +480,7 @@ and definition def =
             let ent = G.basic_entity ("",fake"") [] in
             G.OtherStmt (G.OS_Todo, [G.E e; G.Def (ent, G.FuncDef funcdef)])
       )
-  | ClassDef (_t, kind, body) ->
+  | ClassDef (t, kind, body) ->
       let body = body_exn body in
       (match kind with
       | C (name, inheritance_opt) ->
@@ -494,7 +494,7 @@ and definition def =
          (match name with 
          | NameConstant id -> 
              let ent = G.basic_entity id [] in
-             let def = { G.ckind = G.Class; cextends = extends;
+             let def = { G.ckind = (G.Class, t); cextends = extends;
                          (* TODO: this is done by special include/require
                            builtins *)
                          cimplements = []; cmixins = []; 
