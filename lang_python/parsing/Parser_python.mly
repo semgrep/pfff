@@ -432,7 +432,8 @@ fplist:
 (* Class definition *)
 (*************************************************************************)
 
-classdef: CLASS NAME arglist_paren_opt ":" suite { ClassDef ($2, $3, $5, []) }
+classdef: CLASS NAME arglist_paren_opt ":" suite 
+  { ClassDef ($1, $2, $3, $5, []) }
 
 arglist_paren_opt: 
  | (* empty *) { [] }
@@ -564,7 +565,7 @@ compound_stmt:
 decorated:
   | decorator+ classdef { 
      match $2 with 
-     | ClassDef (a, b, c, d) -> ClassDef (a, b, c, $1 @ d)
+     | ClassDef (t, a, b, c, d) -> ClassDef (t, a, b, c, $1 @ d)
      | _ -> raise Impossible
    }
   | decorator+ funcdef { 

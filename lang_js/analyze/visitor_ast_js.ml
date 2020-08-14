@@ -272,7 +272,8 @@ and v_fun_prop =
   function | Get -> () | Set -> () | Generator -> () | Async -> ()
 
 and v_obj_ v = v_bracket (v_list v_property) v
-and v_class_ { c_extends = v_c_extends; c_body = v_c_body } =
+and v_class_ { c_extends = v_c_extends; c_body = v_c_body; c_tok } =
+  let arg = v_tok c_tok in
   let arg = v_option v_expr v_c_extends in
   let arg = v_bracket (v_list v_property) v_c_body in ()
 and v_property x =

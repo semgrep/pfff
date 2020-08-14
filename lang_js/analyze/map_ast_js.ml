@@ -326,10 +326,11 @@ and map_fun_prop =
   | Generator -> Generator
   | Async -> Async
 and map_obj_ v = map_bracket (map_of_list map_property) v
-and map_class_ { c_extends = v_c_extends; c_body = v_c_body } =
+and map_class_ { c_extends = v_c_extends; c_body = v_c_body; c_tok } =
   let v_c_body = map_bracket (map_of_list map_property) v_c_body in
   let v_c_extends = map_of_option map_expr v_c_extends in 
-  { c_extends = v_c_extends; c_body = v_c_body }
+  let c_tok = map_tok c_tok in
+  { c_extends = v_c_extends; c_body = v_c_body; c_tok }
 and map_property =
   function
   | Field ((v1, v2, v3)) ->

@@ -236,7 +236,7 @@ and expr e =
       | None -> G.Call (G.IdSpecial (G.New, v0), (lp,(G.ArgType v1)::v2,rp))
       | Some decls -> 
          let anonclass = G.AnonClass { G.
-                ckind = G.Class;
+                ckind = (G.Class, v0);
                 cextends = [v1];
                 cimplements = []; cmixins = [];
                 cbody = decls |> bracket (List.map (fun x -> G.FieldStmt x))
@@ -541,10 +541,12 @@ and class_decl {
 
  
 
-and class_kind = function 
+and class_kind (x, t) = 
+  (match x with
   | ClassRegular ->  G.Class
   | Interface -> G.Interface
   | AtInterface -> G.AtInterface
+  ), t
 
 and decl decl =
   match decl with

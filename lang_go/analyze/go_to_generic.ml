@@ -144,7 +144,7 @@ let rec type_ =
   | TInterface (t, v1) -> let v1 = bracket (list interface_field) v1 in 
       let s = gensym () in
       let ent = G.basic_entity (s, t) [] in
-      let def = G.ClassDef { G.ckind = G.Interface; 
+      let def = G.ClassDef { G.ckind = (G.Interface, t); 
           cextends = []; cimplements = []; cmixins = [];
           cbody = v1; } in
       Common.push (ent, def) anon_types;

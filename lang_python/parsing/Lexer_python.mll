@@ -151,7 +151,7 @@ let pr_state state = List.iter pr_mode !(state.mode)
 (* epsilon *)
 let e = ""
 
-let newline = ('\n' | "\r\n")
+let newline = ('\n' | "\r\n" | '\x0C')
 let whitespace = [' ' '\t']
 let comment = '#' [^ '\n' '\r']*
 

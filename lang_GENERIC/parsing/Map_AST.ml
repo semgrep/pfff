@@ -765,9 +765,10 @@ and
                          cmixins = v_cmixins;
                        }
 
-and map_class_kind =
-  function | Class -> Class | Interface -> Interface | Trait -> Trait
-   | AtInterface  -> AtInterface
+and map_class_kind (x,t) =
+  (match x with Class -> Class | Interface -> Interface | Trait -> Trait
+   | AtInterface  -> AtInterface),
+  map_tok t
 
 and map_directive =
   function

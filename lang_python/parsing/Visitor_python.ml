@@ -300,7 +300,8 @@ and v_stmt x =
       and v4 = v_list v_stmt v4
       and v5 = v_list v_decorator v5
       in ()
-  | ClassDef ((v1, v2, v3, v4)) ->
+  | ClassDef ((v0, v1, v2, v3, v4)) ->
+      let v0 = v_tok v0 in
       let v1 = v_name v1
       and v2 = v_list v_type_parent v2
       and v3 = v_list v_stmt v3
