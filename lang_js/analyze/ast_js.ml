@@ -316,6 +316,7 @@ and fun_ = {
 and obj_ = property list bracket
 
 and class_ = { 
+  c_tok: tok;
   (* usually simply an Id *)
   c_extends: expr option;
   c_body: property list bracket;

@@ -947,7 +947,7 @@ and class_decl env x =
     x.C.c_extends in
   let xs = x.C.c_body |> bracket_keep 
       (fun xs -> xs |> List.map (class_element env) |> List.flatten) in
-  { A.c_extends = extends; c_body = xs }
+  { A.c_extends = extends; c_body = xs; c_tok = x.C.c_tok }
 
 and nominal_type env (e, _) = expr env e
 

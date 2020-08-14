@@ -656,7 +656,9 @@ and v_class_definition x =
   ()
   in
   vin.kclass_definition (k, all_functions) x
-and v_class_kind = function 
+and v_class_kind (x, t) = 
+  let _ = v_tok t in
+  match x with
  | Class | Interface | Trait | AtInterface -> ()
 
 and v_module_definition { mbody = v_mbody } =

@@ -188,7 +188,7 @@ let resolve prog =
          (* nested function *)
          if !(env.ctx) = InFunction
          then env |> add_name_env name (LocalVar);
-     | ClassDef (name, _bases, _body, _decorators) ->
+     | ClassDef (_t, name, _bases, _body, _decorators) ->
            env |> add_name_env name (GlobalVar);
            with_new_context InClass env (fun () ->
                k x              

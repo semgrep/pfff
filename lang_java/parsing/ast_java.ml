@@ -385,7 +385,7 @@ and enum_decl = {
 
 and class_decl = {
   cl_name: ident;
-  cl_kind: class_kind;
+  cl_kind: class_kind wrap;
 
   cl_tparams: type_parameter list;
 

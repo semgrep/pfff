@@ -392,7 +392,7 @@ and fun_prop (x, tok) =
 
 and obj_ v = bracket (list property) v
 
-and class_ { c_extends = c_extends; c_body = c_body } =
+and class_ { c_extends = c_extends; c_body = c_body; c_tok } =
   let v1 = option expr c_extends in
   let v2 = bracket (list property) c_body in
   (* todo: could analyze arg to look for Id *)
@@ -401,7 +401,7 @@ and class_ { c_extends = c_extends; c_body = c_body } =
     | None -> [] 
     | Some e -> [G.OtherType (G.OT_Expr, [G.E e])]
   in
-  { G.ckind = G.Class; cextends = extends; 
+  { G.ckind = (G.Class, c_tok); cextends = extends; 
     cimplements = []; cmixins = []; cbody = v2;}, []
 and property x =
    match x with

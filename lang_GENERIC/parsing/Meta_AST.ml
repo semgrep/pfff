@@ -1011,7 +1011,8 @@ and
   let bnds = bnd :: bnds in
   let arg = vof_class_kind v_ckind in
   let bnd = ("ckind", arg) in let bnds = bnd :: bnds in OCaml.VDict bnds
-and vof_class_kind =
+and vof_class_kind x = vof_wrap vof_class_kind_bis x
+and vof_class_kind_bis =
   function
   | Class -> OCaml.VSum (("Class", []))
   | Interface -> OCaml.VSum (("Interface", []))

@@ -426,7 +426,9 @@ and v_class_decl (x : class_decl) =
   in
   vin.kclass (k, all_functions) x
 
-and v_class_kind = function 
+and v_class_kind (x, t) = 
+  let v1 = v_tok t in
+  match x with
  | ClassRegular | Interface | AtInterface -> ()
 
 and v_decl x =

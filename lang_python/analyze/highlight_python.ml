@@ -198,7 +198,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
        let kind = if !in_class then E.Method else E.Function in
        tag_name name (Entity (kind, def2));
        k x
-     | ClassDef (name, _bases, _body, _decorators) ->
+     | ClassDef (_t, name, _bases, _body, _decorators) ->
        let kind = E.Class in
        tag_name name (Entity (kind, def2));
        Common.save_excursion in_class true (fun () -> 
