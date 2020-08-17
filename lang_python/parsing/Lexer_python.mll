@@ -142,6 +142,11 @@ let pr_mode mode = pr2 (match mode with
 
 let pr_state state = List.iter pr_mode !(state.mode)
 
+(* This used to be 8, but tests/python/parsing/eof_comment.py was not parsing.
+ * This maybe should be a command-line parameter? Or we should fix 
+ * eof_comment.py in another way?
+ *)
+let space_per_tab = 8
 }
 
 (*****************************************************************************)
@@ -229,7 +234,7 @@ and offset state = parse
      }
   | '\t' 
      { 
-       state.curr_offset <- state.curr_offset + 8; 
+       state.curr_offset <- state.curr_offset + space_per_tab;
        "\t" ^ offset state lexbuf 
      }
 
