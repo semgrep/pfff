@@ -377,7 +377,7 @@ and map_attribute = function
       KeywordAttr v1
   | NamedAttr ((t, v1, v2, v3)) ->
       let t = map_tok t in
-      let v1 = map_ident v1
+      let v1 = map_dotted_ident v1
       and v2 = map_id_info v2
       and v3 = map_bracket (map_of_list map_argument) v3
       in NamedAttr ((t, v1, v2, v3))

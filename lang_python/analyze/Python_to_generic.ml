@@ -724,7 +724,7 @@ and excepthandler =
 and expr_to_attribute t v = 
   match v with
   | G.Call (G.Id (id, _), args) -> 
-      G.NamedAttr (t, id, G.empty_id_info (), args)
+      G.NamedAttr (t, [id], G.empty_id_info (), args)
   | _ -> G.OtherAttribute (G.OA_Expr, [G.Tk t; G.E v])
 (*e: function [[Python_to_generic.expr_to_attribute]] *)
 

@@ -986,8 +986,8 @@ modifier:
 (*************************************************************************)
 
 annotation:
- | "@" name { ($1, $2, None) }
- | "@" name "(" annotation_element ")" { ($1, $2, Some ($3, $4, $5)) }
+ | "@" qualified_ident { ($1, $2, None) }
+ | "@" qualified_ident "(" annotation_element ")" { ($1, $2, Some ($3, $4, $5)) }
 
 annotation_element:
  | (* empty *) { EmptyAnnotArg }

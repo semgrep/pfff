@@ -903,8 +903,8 @@ and type_ =
 (*s: type [[AST_generic.attribute]] *)
 and attribute = 
   | KeywordAttr of keyword_attribute wrap
-  (* for general @annotations *)
-  | NamedAttr of tok (* @ *) * ident * id_info * arguments bracket
+  (* for general @annotations. less: use name instead of dotted_ident? *)
+  | NamedAttr of tok (* @ *) * dotted_ident * id_info * arguments bracket
   (*s: [[AST_generic.attribute]] OtherXxx case *)
   | OtherAttribute of other_attribute_operator * any list
   (*e: [[AST_generic.attribute]] OtherXxx case *)
@@ -934,7 +934,6 @@ and attribute =
   and other_attribute_operator = 
     (* Java *)
     | OA_StrictFP | OA_Transient | OA_Synchronized | OA_Native | OA_Default
-    | OA_AnnotJavaOther
     | OA_AnnotThrow
     (* Other *)
     | OA_Expr (* todo: Python, should transform in NamedAttr when can *)
@@ -1439,10 +1438,18 @@ let basic_id_info resolved =
   }
 (*e: function [[AST_generic.basic_id_info]] *)
 
-(*
-let name_of_id id = 
-  (id, empty_name_info), empty_id_info ()
-*)
+let _name_of_id id = 
+  (id, empty_name_info)
+let _name_of_ids xs =
+  match List.rev xs with
+  | [] -> failwith "name_of_ids: empty ids"
+  | x::xs ->
+      let qualif = 
+        if xs = [] 
+        then None
+        else Some (QDots (List.rev xs))
+      in
+      (x, { name_qualifier = qualif; name_typeargs = None })
 
 (*s: function [[AST_generic.param_of_id]] *)
 let param_of_id id = { 

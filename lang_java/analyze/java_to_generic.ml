@@ -133,31 +133,13 @@ let rec modifier (x, tok) =
 and modifiers v = list modifier v
 
 and annotation (t, v1, v2) =
+  let v1 = qualified_ident v1 in
   let xs = 
     match v2 with 
     | None -> fb [] 
     | Some x -> bracket annotation_element x 
   in
-  (match name_or_class_type v1 with
-  | [Left id] -> G.NamedAttr (t, id, G.empty_id_info (), xs)
-  | _ -> 
-    (* TODO *)
-    G.OtherAttribute (G.OA_AnnotJavaOther, [G.Tk t])
-  )
-  
-
-and name_or_class_type v = 
-  list identifier_ v |> List.flatten
-
-and identifier_ =
-  function
-  | Id v1 -> let v1 = ident v1 in [Left v1]
-  | Id_then_TypeArgs ((v1, v2)) ->
-      let v1 = ident v1 and v2 = list type_argument v2 in
-      [Left v1; Right v2]
-  | TypeArgs_then_Id ((v1, v2)) ->
-      let v1 = list type_argument v1 and v2 = identifier_ v2 in
-      Right v1::v2
+  G.NamedAttr (t, v1, G.empty_id_info(), xs)
 
 and type_arguments x = list type_argument x
 
