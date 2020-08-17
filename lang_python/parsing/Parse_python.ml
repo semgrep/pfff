@@ -199,9 +199,7 @@ let (program_of_string: string -> AST_python.program) = fun s ->
 let any_of_string ?(parsing_mode=Python) s = 
   Common2.with_tmp_file ~str:s ~ext:"py" (fun file ->
     let toks = tokens parsing_mode file in
-    (* TODO? let toks = Parsing_hacks_python.fix_tokens toks_orig in  
-     * but introduce lots of regressions in sgrep make test
-     *)
+    let toks = Parsing_hacks_python.fix_tokens toks in  
     let _tr, lexer, lexbuf_fake = PI.mk_lexer_for_yacc toks TH.is_comment in
     (* -------------------------------------------------- *)
     (* Call parser *)

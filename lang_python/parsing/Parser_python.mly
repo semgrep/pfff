@@ -232,16 +232,13 @@ nl_or_stmt:
  | stmt    { $1 }
 
 sgrep_spatch_pattern:
- | small_stmt NEWLINE? EOF   {
+ | stmt NEWLINE? EOF   {
    match $1 with
    | [ExprStmt x] -> Expr x
    | [x] -> Stmt x
    | xs -> Stmts xs
  }
- | compound_stmt EOF         { Stmt $1 }
- | compound_stmt NEWLINE EOF { Stmt $1 }
-
- | stmt stmt stmt* EOF { Stmts ($1 @ $2 @ (List.flatten $3)) }
+ | stmt stmt+ NEWLINE? EOF { Stmts ($1 @ (List.flatten $2)) }
 
 (*************************************************************************)
 (* Import *)
