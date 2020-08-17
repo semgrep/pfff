@@ -274,11 +274,13 @@ type expr =
       | XhpAttrValue of xhp_attr_name * tok (* = *) * xhp_attr_value
       (* not in XHP *)
       | XhpAttrNoValue of xhp_attr_name
-      | XhpAttrSpread of (tok * expr) brace
+      | XhpAttrSpread of (tok (* ... *) * expr) brace
     and xhp_attr_name = string wrap (* e.g. task-bar *)
     and xhp_attr_value =
       | XhpAttrString of string wrap
       | XhpAttrExpr of expr brace
+      (* sgrep-ext: *)
+      | XhpAttrEllipsis of tok
    and xhp_body =
      | XhpText of string wrap
      | XhpExpr of expr option brace

@@ -231,8 +231,11 @@ let HEXA = ['0'-'9''a'-'f''A'-'F']
 
 (* JSX allows also '.' *)
 let XHPLABEL =	['a'-'z''A'-'Z''_']['a'-'z''A'-'Z''0'-'9''_''-'  '.']*
-let XHPTAG = XHPLABEL (":" XHPLABEL)*
-let XHPATTR = XHPLABEL (":" XHPLABEL)*
+let XHPTAG_ORIG = XHPLABEL (":" XHPLABEL)*
+let XHPATTR_ORIG = XHPLABEL (":" XHPLABEL)*
+(* sgrep-ext: less: should use Flag.sgrep_guard to forbid $ in normal mode *)
+let XHPTAG = '$'? XHPTAG_ORIG
+let XHPATTR = '$'? XHPATTR_ORIG
 
 let InputCharacter = [^ '\r' '\n']
 

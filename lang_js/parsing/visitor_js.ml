@@ -266,6 +266,7 @@ and v_xhp_attr_value =
   function
   | XhpAttrString v1 -> let v1 = v_wrap v_string v1 in ()
   | XhpAttrExpr v1 -> let v1 = v_brace v_expr v1 in ()
+  | XhpAttrEllipsis t -> v_tok t
 and v_xhp_body =
   function
   | XhpText v1 -> let v1 = v_wrap v_string v1 in ()

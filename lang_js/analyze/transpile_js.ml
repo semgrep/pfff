@@ -53,6 +53,7 @@ let xhp_attr_value expr x =
   match x with
   | C.XhpAttrString str -> A.String str
   | C.XhpAttrExpr (_, e, _) -> expr e
+  | C.XhpAttrEllipsis t -> A.Ellipsis t
 
 (* todo: should probably use Obj instead of tuples with string keys *)
 let xhp_attribute expr x = 
