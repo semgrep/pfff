@@ -646,11 +646,7 @@ and xhp_attribute env = function
 and xhp_attr_value env = function
   | C.XhpAttrString s -> A.String s
   | C.XhpAttrExpr (_, e, _) -> expr env e
-(* TODO
-  | C.SgrepXhpAttrValueMvar _ ->
-      (* should never use the abstract interpreter on a sgrep pattern *)
-      raise Common.Impossible
-*)
+  | C.XhpAttrEllipsis t -> A.Ellipsis t
 
 and xhp_body env = function
   | C.XhpText x -> A.XmlText x
