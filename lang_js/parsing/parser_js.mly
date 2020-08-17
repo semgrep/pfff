@@ -1229,7 +1229,7 @@ xhp_attribute:
 xhp_attribute_value:
  | T_STRING           { XhpAttrString ($1) }
  | "{" expr sc? "}"    { XhpAttrExpr ($1, $2, $4)(*TODO$3*)}
- | "..." { raise Todo }
+ | "..." { XhpAttrEllipsis $1 }
 
 (*----------------------------*)
 (* interpolated strings *)
