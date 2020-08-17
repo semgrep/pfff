@@ -519,12 +519,16 @@ and v_pattern x =
   vin.kpattern (k, all_functions) x
 and v_other_pattern_operator _ = ()
 
-and v_def x =
+and v_def x = (
   let k x =
     let (v1, v2) = x in
-    let v1 = v_entity v1 and v2 = v_def_kind v2 in ()
+    let _ = v_vardef_as_assign_expr v1 v2 in
+    let v1 = v_entity v1 and v2 = v_def_kind v2 in
+    ()
   in
   vin.kdef (k, all_functions) x
+)
+
 and v_entity x =
 
   let k x =
@@ -591,14 +595,26 @@ and
   let arg = v_option v_type_ v_ptype in
   let arg = v_list v_attribute v_pattrs in ()
 and v_other_parameter_operator _ = ()
-and
-  v_variable_definition {
+and v_variable_definition {
                           vinit = v_vinit;
                           vtype = v_vtype;
                         } =
-  let arg = v_option v_expr v_vinit in
-  let arg = v_option v_type_ v_vtype in
+  let v_vinit = v_option v_expr v_vinit in
+  let v_vtype = v_option v_type_ v_vtype in
   ()
+
+and v_vardef_as_assign_expr ventity = function
+  | VarDef ({vinit = Some _; _} as vdef) ->
+    (* A VarDef is implicitly a declaration followed by an assignment expression,
+     * so we should visit the assignment expression as well.
+     *
+     * Note that we cannot treat this as a simple equivalence later, as
+     * expressions are visited separately from statements.
+     *
+     * This feels a bit hacky here, so let's take a TODO to improve this
+     *)
+    v_expr (vardef_to_assign (ventity, vdef))
+  | _ -> ()
 
 and v_field =
   function
