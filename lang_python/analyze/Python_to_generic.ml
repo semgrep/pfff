@@ -720,18 +720,16 @@ and excepthandler =
       ), v3
 (*e: function [[Python_to_generic.excepthandler]] *)
 
-(*s: function [[Python_to_generic.expr_to_attribute]] *)
-and expr_to_attribute t v = 
-  match v with
-  | G.Call (G.Id (id, _), args) -> 
-      G.NamedAttr (t, [id], G.empty_id_info (), args)
-  | _ -> G.OtherAttribute (G.OA_Expr, [G.Tk t; G.E v])
-(*e: function [[Python_to_generic.expr_to_attribute]] *)
-
 (*s: function [[Python_to_generic.decorator]] *)
-and decorator (t, v) = 
-  let v = expr v in
-  expr_to_attribute t v
+and decorator (t, v1, v2) = 
+  let v1 = dotted_name v1 in
+  let v2 = option (bracket (list argument)) v2 in
+  let args = 
+    match v2 with
+    | Some (t1, x, t2) -> (t1, x, t2)
+    | None -> G.fake_bracket []
+  in
+  G.NamedAttr (t, v1, G.empty_id_info(), args)
 (*e: function [[Python_to_generic.decorator]] *)
 
 (*s: function [[Python_to_generic.alias]] *)

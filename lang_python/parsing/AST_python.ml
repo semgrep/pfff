@@ -314,7 +314,6 @@ and type_ = expr
 (*s: type [[AST_python.type_parent]] *)
 and type_parent = argument
 (*e: type [[AST_python.type_parent]] *)
- [@@deriving show { with_path = false }]  (* with tarzan *)
 
 (*****************************************************************************)
 (* Pattern *)
@@ -323,11 +322,11 @@ and type_parent = argument
 (* Name, or Tuple? or more? *)
 and pattern = expr
 (*e: type [[AST_python.pattern]] *)
- [@@deriving show]  (* with tarzan *)
 
 and param_pattern =
   | PatternName of name
   | PatternTuple of param_pattern list
+ [@@deriving show { with_path = false }]  (* with tarzan *)
 
 (*****************************************************************************)
 (* Statement *)
@@ -417,7 +416,7 @@ and excepthandler =
 (* Decorators (a.k.a annotations) *)
 (* ------------------------------------------------------------------------- *)
 (*s: type [[AST_python.decorator]] *)
-and decorator = tok (* @ *) * expr (* usually an Id or Call *)
+and decorator = tok (* @ *) * dotted_name * argument list bracket option
 (*e: type [[AST_python.decorator]] *)
 
 (* ------------------------------------------------------------------------- *)

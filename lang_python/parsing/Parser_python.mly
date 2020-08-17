@@ -30,7 +30,6 @@
  *)
 open Common
 open AST_python
-module G = AST_generic
 
 (* intermediate helper type *)
 type single_or_tuple =
@@ -438,22 +437,22 @@ arglist_paren_opt:
  (* python3-ext: was expr_list before *)
  | "(" list_comma(argument) ")" { $2 }
 
-arglist_paren2_opt: 
- | (* empty *) { G.fake_bracket [] }
- | "(" ")"     { $1, [], $2 }
- (* python3-ext: was expr_list before *)
- | "(" list_comma(argument) ")" { $1, $2, $3 }
-
 (*************************************************************************)
 (* Annotations *)
 (*************************************************************************)
 
 decorator: "@" decorator_name arglist_paren2_opt NEWLINE 
-    { $1, Call ($2, $3) }
+    { $1, $2, $3 }
 
 decorator_name:
-  | NAME                    { Name ($1, Load, ref NotResolved) }
-  | decorator_name "." NAME { Attribute ($1, $2, $3, Load) }
+  | NAME                    { [$1] }
+  | decorator_name "." NAME { $1 @ [$3] }
+
+arglist_paren2_opt: 
+ | (* empty *) { None }
+ | "(" ")"     { Some ($1, [], $2) }
+ (* python3-ext: was expr_list before *)
+ | "(" list_comma(argument) ")" { Some ($1, $2, $3) }
 
 (*************************************************************************)
 (* Statement *)
