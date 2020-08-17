@@ -54,7 +54,7 @@ type 'a bracket = tok * 'a * tok
 type ident = string wrap
  [@@deriving show] (* with tarzan *)
 
-(* for package, import, throw specification *)
+(* for package/import/attributes *)
 type qualified_ident = ident list
  [@@deriving show] (* with tarzan *)
 
@@ -114,7 +114,7 @@ type modifier =
 (* Annotation *)
 (* ------------------------------------------------------------------------- *)
  and annotation = 
-     tok (* @ *) * name_or_class_type * (annotation_element bracket option)
+     tok (* @ *) * qualified_ident * (annotation_element bracket option)
 
  and annotation_element =
    | AnnotArgValue of element_value

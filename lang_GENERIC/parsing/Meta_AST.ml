@@ -507,7 +507,7 @@ and vof_attribute = function
     OCaml.VSum (("KeywordAttr", [v1]))
   | NamedAttr ((t, v1, v2, v3)) ->
       let t = vof_tok t in
-      let v1 = vof_ident v1
+      let v1 = vof_dotted_ident v1
       and v2 = vof_id_info v2
       and v3 = vof_bracket (OCaml.vof_list vof_argument) v3
       in OCaml.VSum (("NamedAttr", [ t; v1; v2; v3 ]))
@@ -521,7 +521,6 @@ and vof_other_attribute_operator =
   | OA_Transient -> OCaml.VSum (("OA_Transient", []))
   | OA_Synchronized -> OCaml.VSum (("OA_Synchronized", []))
   | OA_Native -> OCaml.VSum (("OA_Native", []))
-  | OA_AnnotJavaOther -> OCaml.VSum (("OA_AnnotJavaOther", [ ]))
   | OA_AnnotThrow -> OCaml.VSum (("OA_AnnotThrow", []))
   | OA_Expr -> OCaml.VSum (("OA_Expr", []))
   | OA_Default -> OCaml.VSum (("OA_Default", []))
