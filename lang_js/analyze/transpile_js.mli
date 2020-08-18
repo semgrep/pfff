@@ -5,13 +5,13 @@ val xhp:
 
 val compile_pattern:
   ((Cst_js.expr -> Ast_js.expr) * 
-   (Cst_js.name -> Ast_js.name) *
+   (Cst_js.name -> Ast_js.ident) *
    (Cst_js.property_name -> Ast_js.property_name)
   ) -> Cst_js.name -> Cst_js.pattern -> Ast_js.var list
 
 val var_pattern:
   ((Cst_js.expr -> Ast_js.expr) * 
-   (Cst_js.name -> Ast_js.name) *
+   (Cst_js.name -> Ast_js.ident) *
    (Cst_js.property_name -> Ast_js.property_name)
   ) ->
   Cst_js.variable_declaration_pattern -> Ast_js.var list
