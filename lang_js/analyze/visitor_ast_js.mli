@@ -6,7 +6,7 @@ type visitor_in = {
   kstmt: (stmt  -> unit) * visitor_out -> stmt  -> unit;
   ktop: (toplevel  -> unit) * visitor_out -> toplevel  -> unit;
   kprop: (property  -> unit) * visitor_out -> property  -> unit;
-  kparam: (parameter  -> unit) * visitor_out -> parameter  -> unit;
+  kparam: (parameter_classic  -> unit) * visitor_out -> parameter_classic  -> unit;
 
   kinfo: (tok -> unit)  * visitor_out -> tok  -> unit;
 }

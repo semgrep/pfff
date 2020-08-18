@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2019 r2c
+ * Copyright (C) 2019, 2020 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -53,7 +53,9 @@
  *    (using 'default_entity' special name)
  * 
  * todo:
- *  - add back type information? useful for many analysis!
+ *  - add back type information? useful for many analysis! 
+ *    useful for semgrep for typescript!
+ *  - add decorators (also useful for semgrep) 
  *  - ast_js_es5.ml? unsugar even more? remove classes, get/set, etc.?
  *  - unsugar ES6 features? lift Var up, rename lexical vars, etc.
  *)
@@ -84,9 +86,6 @@ type 'a bracket = tok * 'a * tok
 (* Name *)
 (* ------------------------------------------------------------------------- *)
 
-(* todo: should rename ident *)
-type name = string wrap
- [@@deriving show] (* with tarzan *)
 type ident = string wrap
  [@@deriving show]
 
@@ -160,7 +159,8 @@ type filename = string wrap
 let default_entity = "!default!"
 
 type property_name = 
-  | PN of name
+  (* this can even be a string or number *)
+  | PN of ident
   (* especially useful for array objects, but also used for dynamic fields *)
   | PN_Computed of expr
   (* less: Prototype *)
@@ -177,7 +177,7 @@ and expr =
   (* For Global the ref is set after ast_js_build in a naming phase in 
    * graph_code_js, hence the use of a ref.
    *)
-  | Id of name * resolved_name ref 
+  | Id of ident * resolved_name ref 
   | IdSpecial of special wrap
   (* old: we used to have a Nop, without any token attached, which allowed
    * to simplify a bit the AST by replacing some 'expr option' into simply
@@ -186,21 +186,22 @@ and expr =
    * not exist.
    *)
 
-  (* should be a statement *)
+  (* should be a statement, lhs can be a pattern *)
   | Assign of expr * tok * expr
 
   (* less: could be transformed in a series of Assign(ObjAccess, ...) *)
   | Obj of obj_ 
-  | Class of class_ * name option (* when assigned in module.exports  *)
-  | ObjAccess of expr * tok * property_name
   (* we could transform it in an Obj but can be useful to remember 
    * the difference in further analysis (e.g., in the abstract interpreter) *)
   | Arr of expr list bracket
+  | Class of class_ * ident option (* when assigned in module.exports  *)
+
+  | ObjAccess of expr * tok * property_name
   (* this can also be used to access object fields dynamically *)
   | ArrAccess of expr * expr
 
-  | Fun of fun_ * name option (* when recursive or assigned in module.exports*)
-  | Apply of expr * expr list bracket
+  | Fun of fun_ * ident option (*when recursive or assigned in module.exports*)
+  | Apply of expr * arguments
 
   (* copy-paste of AST_generic.xml (but with different 'expr') *)
   | Xml of xml
@@ -212,13 +213,17 @@ and expr =
   | Ellipsis of tok
   | DeepEllipsis of expr bracket
 
+  and arguments = argument list bracket
+   and argument = expr
+
     (* transpiled to regular Calls when Ast_js_build.transpile_xml *)
     and xml = {
-      xml_tag: ident;
-      xml_attrs: (ident * xml_attr_value) list;
+      xml_tag: ident; (* this can be "" for React "fragment", <>xxx</> *)
+      xml_attrs: xml_attribute list;
       xml_body: xml_body list;
     }
-     and xml_attr_value = expr
+     and xml_attribute = ident * xml_attr_value
+       and xml_attr_value = expr
      and xml_body =
       | XmlText of string wrap
       | XmlExpr of expr
@@ -228,10 +233,12 @@ and expr =
 (* Statement *)
 (*****************************************************************************)
 and stmt = 
+  (* covers also method definitions, class defs, etc. Really a DefStmt *)
   | VarDecl of var
 
   | Block of stmt list bracket
   | ExprStmt of expr * tok (* can be fake when ASI *)
+  (* todo? EmptyStmt of tok *)
 
   | If of tok * expr * stmt * stmt option
   | Do of tok * stmt * expr | While of tok * expr * stmt
@@ -245,6 +252,7 @@ and stmt =
  
   | Throw of tok * expr
   | Try of tok * stmt * catch option * (tok * stmt) option
+  (* todo: With *)
 
   (* less: ModuleDirective of module_directive 
    * ES6 modules can appear only at the toplevel
@@ -255,6 +263,7 @@ and stmt =
   and for_header = 
    | ForClassic of vars_or_expr * expr option * expr option
    | ForIn of var_or_expr * tok * expr
+   (* todo: put back ForOf? *)
    (* sgrep-ext: *)
    | ForEllipsis of tok
 
@@ -268,7 +277,7 @@ and stmt =
 
   and catch =
    | BoundCatch of tok * pattern * stmt
-   (* es2019 *)
+   (* js-ext: es2019 *)
    | UnboundCatch of tok * stmt
 
 (*****************************************************************************)
@@ -287,7 +296,7 @@ and pattern = expr
 and var = { 
   (* can be AST_generic.special_multivardef_pattern when
    * Ast_js_build.transpile_pattern is false with a vinit an Assign itself *)
-  v_name: name;
+  v_name: ident;
   v_kind: var_kind wrap;
   v_init: expr option;
   v_resolved: resolved_name ref;
@@ -296,14 +305,15 @@ and var = {
 
 and fun_ = {
   f_props: fun_prop wrap list;
-  f_params: parameter_binding list;
+  f_params: parameter list;
   f_body: stmt;
 }
-  and parameter_binding =
-   | ParamClassic of parameter
+  and parameter =
+   | ParamClassic of parameter_classic
+   (* TODO: ParamPattern when not transpile_pattern *)
    | ParamEllipsis of tok
-  and parameter = {
-    p_name: name;
+  and parameter_classic = {
+    p_name: ident;
     p_default: expr option;
     p_dots: tok option;
   }
@@ -334,6 +344,7 @@ and class_ = {
 
   and property_prop =
     | Static
+    (* todo? not in tree-sitter-js *)
     | Public | Private | Protected
 
  [@@deriving show { with_path = false} ] (* with tarzan *)
@@ -348,17 +359,17 @@ and class_ = {
  * can be inside ifs.
  *)
 type module_directive = 
-  (* 'name' can be the special Ast_js.default_entity.
+  (* 'ident' can be the special Ast_js.default_entity.
    * 'filename' is not "resolved"
    * (you may need for example to add node_modules/xxx/index.js
    * when you do 'import "react"' to get a resolved path).
    * See Module_path_js to resolve paths.
    *)
-  | Import of tok * name * name option (* 'name1 as name2' *) * filename
-  | Export of tok * name
+  | Import of tok * ident * ident option (* 'name1 as name2' *) * filename
+  | Export of tok * ident
 
   (* hard to unsugar in Import because we do not have the list of names *)
-  | ModuleAlias of tok * name * filename (* import * as 'name' from 'file' *)
+  | ModuleAlias of tok * ident * filename (* import * as 'name' from 'file' *)
 
   | ImportCss of tok * filename
   (* those should not exist (except for sgrep where they are useful) *)
