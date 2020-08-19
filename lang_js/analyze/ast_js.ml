@@ -264,6 +264,7 @@ and stmt =
   (* less: could use some Special instead? *)
   and for_header = 
    | ForClassic of vars_or_expr * expr option * expr option
+   (* TODO: tok option (* await *) *)
    | ForIn of var_or_expr * tok (* in *) * expr
    (* transpiled: when Ast_js_build.transpile_forof *)
    | ForOf of var_or_expr * tok (* of *) * expr
@@ -297,10 +298,14 @@ and pattern = expr
 (* Definitions *)
 (*****************************************************************************)
 and var = { 
-  (* can be AST_generic.special_multivardef_pattern when
-   * Ast_js_build.transpile_pattern is false with a vinit an Assign itself *)
+  (* ugly: can be AST_generic.special_multivardef_pattern when
+   * Ast_js_build.transpile_pattern is false with a vinit an Assign itself.
+   * actually in a ForIn/ForOf the init will be just the pattern, not even
+   * an Assign.
+   *)
   v_name: ident;
   v_kind: var_kind wrap;
+  (* actually a pattern when inside a ForIn/ForOf *)
   v_init: expr option;
   v_resolved: resolved_name ref;
 }
@@ -426,13 +431,17 @@ and string_of_xhp_tag s = s
 
 
 (* helpers used in ast_js_build.ml and Parse_javascript_tree_sitter.ml *)
-let var_pattern_to_var vkind pat tok init = 
+let var_pattern_to_var vkind pat tok init_opt = 
   let s = AST_generic.special_multivardef_pattern in
   let id = s, tok in
-  let assign = Assign (pat, tok, init) in
+  let init = 
+    match init_opt with
+    | Some init -> Assign (pat, tok, init) 
+    | None -> pat
+  in
   (* less: use x.vpat_type *)
-  [{v_name = id; v_kind = vkind; v_init = Some assign;
-    v_resolved = ref NotResolved}]
+  {v_name = id; v_kind = vkind; v_init = Some init;
+    v_resolved = ref NotResolved}
 
 let special_of_id_opt s =
   match s with

@@ -752,12 +752,16 @@ and var_binding env vkind = function
      )
     else 
       let pat = pattern env x.C.vpat in
-      let (tok, init) = 
-        match x.C.vpat_init with Some x -> x | None -> raise Impossible in
-      let init = expr env init in
+      let (tok, initopt) = 
+        match x.C.vpat_init with 
+        | Some (t, init) -> 
+            let init = expr env init in
+            t, Some init
+        (* this can happen when inside a ForIn/ForOf *)
+        | None -> snd vkind, None
+      in
       let vkind = var_kind env vkind in
-
-      Ast_js.var_pattern_to_var vkind pat tok init
+      [Ast_js.var_pattern_to_var vkind pat tok initopt]
 
 (* only when not !transpile_pattern *)
 and pattern env = function
