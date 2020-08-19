@@ -243,6 +243,9 @@ and map_stmt =
       and v2 = map_of_option map_catch_block v2
       and v3 = map_of_option map_tok_and_stmt v3
       in Try ((t, v1, v2, v3))
+  | With (v1, v2, v3) ->
+      let v1 = map_tok v1 in let v2 = map_expr v2 in let v3 = map_stmt v3 in
+      With (v1, v2, v3)
 
 and map_catch_block = function
   | BoundCatch (t, v1, v2) ->
@@ -273,6 +276,12 @@ and map_for_header =
       let v1 = OCaml.map_of_either map_var map_expr v1
       and v2 = map_expr v2
       in ForIn ((v1, t, v2))
+  | ForOf ((v1, t, v2)) ->
+      let t = map_tok t in
+      let v1 = OCaml.map_of_either map_var map_expr v1
+      and v2 = map_expr v2
+      in ForOf ((v1, t, v2))
+
 and map_case =
   function
   | Case ((t, v1, v2)) ->
@@ -307,7 +316,10 @@ and
 and map_parameter_binding =
   function
   | ParamClassic v1 -> let v1 = map_parameter v1 in ParamClassic v1
+  | ParamPattern v1 -> let v1 = map_pattern v1 in ParamPattern v1
   | ParamEllipsis v1 -> let v1 = map_tok v1 in ParamEllipsis v1
+
+and map_pattern x = map_expr x
 
 and
   map_parameter {

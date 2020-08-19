@@ -269,6 +269,10 @@ and stmt x =
       and v2 = option catch_block v2
       and v3 = option tok_and_stmt v3 in
       G.Try (t, v1, Common.opt_to_list v2, v3)
+  | With (_v1, v2, v3) ->
+      let e = expr v2 in
+      let v3 = stmt v3 in
+      G.OtherStmtWithStmt (G.OSWS_With, Some e, v3)
 
 and catch_block = function
   | BoundCatch (t, v1, v2) ->
@@ -314,6 +318,18 @@ and for_header =
             G.expr_to_pattern e
       in
       G.ForEach (pattern, t, v2)
+  | ForOf ((v1, t, v2)) ->
+      let v2 = expr v2 in
+      let pattern = 
+        match v1 with
+        | Left {v_name = id; v_init = _NONE; v_resolved = _; v_kind = _ } -> 
+            G.PatId (id, G.empty_id_info())
+        | Right e ->
+            let e = expr e in
+            G.expr_to_pattern e
+      in
+      let e = G.Call (G.IdSpecial (G.ForOf, t), G.fake_bracket [G.Arg v2]) in
+      G.ForEach (pattern, t, e)
   | ForEllipsis v1 ->
       G.ForEllipsis v1
 
@@ -368,7 +384,12 @@ and fun_ { f_props = f_props; f_params = f_params; f_body = f_body } =
 
 and parameter_binding = function
  | ParamClassic x -> G.ParamClassic (parameter x)
+ | ParamPattern x -> G.ParamPattern (pattern x)
  | ParamEllipsis x -> G.ParamEllipsis x
+
+and pattern x = 
+  let x = expr x in
+  G.expr_to_pattern x
 
 and parameter x =
  match x with

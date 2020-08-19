@@ -88,7 +88,9 @@ function foo() {}
         | Parse_info.Parsing_error _
         | Parse_info.Lexical_error (_, _)
         | Ast_js_build.TodoConstruct (_, _)
-        | Ast_js_build.UnhandledConstruct (_, _) ->
+        | Ast_js_build.UnhandledConstruct (_, _) 
+        | Common.Impossible
+              ->
           assert_failure (spf "it should correctly parse %s" file)
       )
     );

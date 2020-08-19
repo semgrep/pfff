@@ -265,20 +265,11 @@ and map_container_operator =
 
 
 
-and map_special =
-  function
-  | Defined -> Defined
-  | This -> This
-  | Super -> Super
-  | Self -> Self
-  | Parent -> Parent
-  | Eval -> Eval
-  | Typeof -> Typeof
-  | Instanceof -> Instanceof
-  | Sizeof -> Sizeof
-  | New -> New
-  | Spread -> Spread
-  | HashSplat -> HashSplat
+and map_special x =
+  match x with
+  | ForOf | Defined | This | Super | Self | Parent | Eval | Typeof | Instanceof
+  | Sizeof | New | Spread | HashSplat 
+    -> x
   | Op v1 -> let v1 = map_arithmetic_operator v1 in Op ((v1))
   | EncodedString v1 -> let v1 = map_wrap map_of_string v1 in EncodedString ((v1))
   | IncrDecr ((v1, v2)) ->

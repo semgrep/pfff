@@ -218,7 +218,7 @@ and expr =
   and arguments = argument list bracket
    and argument = expr
 
-    (* transpiled to regular Calls when Ast_js_build.transpile_xml *)
+    (* transpiled: to regular Calls when Ast_js_build.transpile_xml *)
     and xml = {
       xml_tag: ident; (* this can be "" for React "fragment", <>xxx</> *)
       xml_attrs: xml_attribute list;
@@ -254,7 +254,7 @@ and stmt =
  
   | Throw of tok * expr
   | Try of tok * stmt * catch option * (tok * stmt) option
-  (* todo: With *)
+  | With of tok * expr * stmt
 
   (* less: ModuleDirective of module_directive 
    * ES6 modules can appear only at the toplevel
@@ -264,8 +264,9 @@ and stmt =
   (* less: could use some Special instead? *)
   and for_header = 
    | ForClassic of vars_or_expr * expr option * expr option
-   | ForIn of var_or_expr * tok * expr
-   (* todo: put back ForOf? *)
+   | ForIn of var_or_expr * tok (* in *) * expr
+   (* transpiled: when Ast_js_build.transpile_forof *)
+   | ForOf of var_or_expr * tok (* of *) * expr
    (* sgrep-ext: *)
    | ForEllipsis of tok
 
@@ -286,7 +287,7 @@ and stmt =
 (* Pattern (destructuring binding) *)
 (*****************************************************************************)
 (* reuse Obj, Arr, etc.
- * transpiled to regular assignments when Ast_js_build.transpile_pattern.
+ * transpiled: to regular assignments when Ast_js_build.transpile_pattern.
  * sgrep: this is useful for sgrep to keep the ability to match over
  * JS destructuring patterns.
  *)
@@ -312,7 +313,9 @@ and fun_ = {
 }
   and parameter =
    | ParamClassic of parameter_classic
-   (* TODO: ParamPattern when not transpile_pattern *)
+   (* transpiled: when Ast_js_build.transpile_pattern *)
+   | ParamPattern of pattern
+   (* sgrep-ext: *)
    | ParamEllipsis of tok
   and parameter_classic = {
     p_name: ident;

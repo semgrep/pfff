@@ -260,6 +260,7 @@ and v_container_operator =
 
 and v_special =
   function
+  | ForOf -> ()
   | Defined -> ()
   | This -> ()
   | Super -> ()

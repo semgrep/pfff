@@ -56,11 +56,13 @@ exception TodoConstruct of string * Parse_info.t
 (* The string is usually "advanced es6" or "Typescript" *)
 exception UnhandledConstruct of string * Parse_info.t
 
-(* for sgrep we want to keep the xml, but for the abtract interpreter
- * we prefer to transpile it
+(* for sgrep we want to keep the xml/pattern/..., 
+ * but for the abtract interpreter we prefer to transpile those features.
  *)
 let transpile_xml = ref false
 let transpile_pattern = ref false
+(* TODO *)
+let transpile_forof = ref true
 
 (*****************************************************************************)
 (* Helpers *)
@@ -128,6 +130,8 @@ let add_params env ps =
    | A.ParamClassic p ->
     let s = s_of_n p.A.p_name in
     Some (s, A.Param)
+   (* todo? *)
+   | A.ParamPattern _ -> None
   ) in
   { env with locals = params @ env.locals } 
 
@@ -372,6 +376,7 @@ and stmt env = function
      let e3 = expr_opt env e3opt in
      let st = stmt1 env st in
      [A.For (t, A.ForClassic (e1, e2, e3), st)]
+
   | C.For (t, _, C.ForHeaderIn (lhs_var, tin, e2), _, st) ->
     let e1 =
       match lhs_var with
@@ -386,13 +391,31 @@ and stmt env = function
     let e2 = expr env e2 in
     let st = stmt1 env st in
     [A.For (t, A.ForIn (e1, tin, e2), st)]
-  | C.For (_tTODO, _, C.ForHeaderOf (lhs_var, tokof, e2), _, st) ->
+
+  | C.For (t, _, C.ForHeaderOf (lhs_var, tokof, e2), _, st) ->
+    if !transpile_forof
+    then
     (try 
       Transpile_js.forof (lhs_var, tokof, e2, st) 
         (expr env, stmt env, var_binding env)
      with Failure s ->
        raise (TodoConstruct(spf "ForOf:%s" s, tokof))
     )
+    else begin
+    let e1 =
+      match lhs_var with
+      | C.LHS2 e -> Right (expr env e)
+      | C.ForVar (vkind, binding) -> 
+        let vars = var_binding env vkind binding in
+        (match vars with
+        | [var] -> Left var
+        | _ -> raise (TodoConstruct ("For of with (pattern) vars?", snd vkind))
+        )
+    in 
+    let e2 = expr env e2 in
+    let st = stmt1 env st in
+    [A.For (t, A.ForOf (e1, tokof, e2), st)]
+    end
   | C.For (t, _, C.ForHeaderEllipsis t2, _, st) ->
     let st = stmt1 env st in
     [A.For (t, A.ForEllipsis t2, st)]
@@ -406,8 +429,10 @@ and stmt env = function
     [A.Break (t, opt label env lopt)]
   | C.Return (t, eopt, _) -> 
     [A.Return (t, expr_opt env eopt)]
-  | C.With (tok, _e, _st) ->
-    raise (TodoConstruct ("with", tok))
+  | C.With (tok, (_, e, _), st) ->
+    let e = expr env e in
+    let st = stmt1 env st in
+    [A.With (tok, e, st)]
   | C.Labeled (lbl, _, st) ->
     let lbl = label env lbl in
     let st = stmt1 env st in
@@ -837,6 +862,8 @@ and parameter_binding env idx = function
  | C.ParamClassic p -> A.ParamClassic (parameter env p), []
  | C.ParamEllipsis t -> A.ParamEllipsis t, []
  | C.ParamPattern x -> 
+    if !transpile_pattern || true (* TODO *)
+    then begin
      let tok = (C.Pattern x.C.ppat) |> Lib_parsing_js.ii_of_any |> List.hd in
      let intermediate = spf "!arg%d!" idx, tok in
      let pat = x.C.ppat in
@@ -858,6 +885,7 @@ and parameter_binding env idx = function
      with Failure s ->
        raise (TodoConstruct(spf "ParamPattern:%s" s, tok))
      )
+    end else raise Todo
 
 and parameter env p =
   let name = name env p.C.p_name in

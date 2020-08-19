@@ -440,6 +440,8 @@ and expr =
    (* in hash or arguments *)
    | HashSplat (* **x in Python/Ruby, not that Pow below is a Binary op *)
 
+   | ForOf (* Javascript, for generators, used in ForEach *)
+
    (* used for unary and binary operations *)
    | Op of operator
    (* less: should be lift up and transformed in Assign at stmt level *)
@@ -726,7 +728,7 @@ and stmt =
 
 (*s: type [[AST_generic.other_stmt_with_stmt_operator]] *)
   and other_stmt_with_stmt_operator = 
-    (* Python *)
+    (* Python/Javascript *)
     | OSWS_With (* newscope: newvar: in OtherStmtWithStmt with LetPattern *)
     (* Ruby *)
     | OSWS_BEGIN | OSWS_END (* also in Awk, Perl? *)
