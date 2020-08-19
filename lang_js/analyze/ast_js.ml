@@ -187,7 +187,7 @@ and expr =
    *)
 
   (* should be a statement, lhs can be a pattern *)
-  | Assign of expr * tok * expr
+  | Assign of pattern * tok * expr
 
   (* less: could be transformed in a series of Assign(ObjAccess, ...) *)
   | Obj of obj_ 
@@ -344,6 +344,9 @@ and class_ = {
     | Field of property_name * property_prop wrap list * expr option
     (* less: can unsugar? *)
     | FieldSpread of tok * expr
+    (* TODO: FieldAssignPat only when in pattern context, we should
+     * have a clean separate pattern type instead of abusing expr.
+     *)
     (* sgrep-ext: used for {fld1: 1, ... } which is distinct from spreading *)
     | FieldEllipsis of tok
 
@@ -420,3 +423,27 @@ let tok_of_name (_, tok) = tok
 let unwrap x = fst x
 
 and string_of_xhp_tag s = s
+
+
+(* helpers used in ast_js_build.ml and Parse_javascript_tree_sitter.ml *)
+let var_pattern_to_var vkind pat tok init = 
+  let s = AST_generic.special_multivardef_pattern in
+  let id = s, tok in
+  let assign = Assign (pat, tok, init) in
+  (* less: use x.vpat_type *)
+  [{v_name = id; v_kind = vkind; v_init = Some assign;
+    v_resolved = ref NotResolved}]
+
+let special_of_id_opt s =
+  match s with
+  | "eval" -> Some Eval
+  | "undefined" -> Some Undefined
+  (* commonJS *)
+  | "require"   -> Some Require
+  | "exports"   -> Some Exports
+  | "module"   -> Some Module
+  (* AMD *)
+  | "define"   -> Some Define
+  (* reflection *)
+  | "arguments"   -> Some Arguments
+  | _ -> None

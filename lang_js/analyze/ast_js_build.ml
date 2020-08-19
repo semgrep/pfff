@@ -513,18 +513,10 @@ and (expr: env -> C.expr -> A.expr) = fun env e ->
       | A.Local | A.Param -> 
          A.Id ((s, tok), ref resolved)
       | A.NotResolved | A.Global _ ->
-        (match s with
-        | "eval" -> A.IdSpecial (A.Eval, tok)
-        | "undefined" -> A.IdSpecial (A.Undefined, tok)
-        (* commonJS *)
-        | "require"   -> A.IdSpecial (A.Require, tok)
-        | "exports"   -> A.IdSpecial (A.Exports, tok)
-        | "module"   -> A.IdSpecial (A.Module, tok)
-        (* AMD *)
-        | "define"   -> A.IdSpecial (A.Define, tok)
-        (* reflection *)
-        | "arguments"   -> A.IdSpecial (A.Arguments, tok)
-        | _ -> A.Id ((s, tok), ref resolved)
+        
+        (match Ast_js.special_of_id_opt s with
+        | Some x -> A.IdSpecial (x, tok)
+        | None -> A.Id ((s, tok), ref resolved)
         )
       )
       
@@ -759,17 +751,13 @@ and var_binding env vkind = function
                (C.Pattern x.C.vpat) |> Lib_parsing_js.ii_of_any |> List.hd))
      )
     else 
-      let s = AST_generic.special_multivardef_pattern in
-      let id = s, fake s in
       let pat = pattern env x.C.vpat in
       let (tok, init) = 
         match x.C.vpat_init with Some x -> x | None -> raise Impossible in
       let init = expr env init in
-      let assign = A.Assign (pat, tok, init) in
       let vkind = var_kind env vkind in
-      (* less: use x.vpat_type *)
-      [{A.v_name = id; v_kind = vkind; v_init = Some assign;
-        v_resolved = not_resolved ()}]
+
+      Ast_js.var_pattern_to_var vkind pat tok init
 
 (* only when not !transpile_pattern *)
 and pattern env = function
