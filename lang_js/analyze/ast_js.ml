@@ -192,7 +192,9 @@ and expr =
   (* less: could be transformed in a series of Assign(ObjAccess, ...) *)
   | Obj of obj_ 
   (* we could transform it in an Obj but can be useful to remember 
-   * the difference in further analysis (e.g., in the abstract interpreter) *)
+   * the difference in further analysis (e.g., in the abstract interpreter).
+   * This can also contain "holes" when the array is used in lhs of an assign
+   *)
   | Arr of expr list bracket
   | Class of class_ * ident option (* when assigned in module.exports  *)
 

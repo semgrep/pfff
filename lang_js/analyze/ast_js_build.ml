@@ -634,9 +634,9 @@ and xhp_html env = function
 and xhp_attribute env = function
   | C.XhpAttrValue (id, _, v) ->
       id, xhp_attr_value env v
-  (* TODO: need to extend ast_generic *)
   | C.XhpAttrNoValue id ->
-      id, A.IdSpecial (A.Null, fake "null")
+      (* see https://www.reactenlightenment.com/react-jsx/5.7.html *)
+      id, (A.Bool (true, fake "true"))
   | C.XhpAttrSpread (_, (tok, e), _) -> 
       let e = expr env e in
       (* TODO *)
