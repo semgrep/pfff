@@ -442,6 +442,7 @@ and call_special _env (x, tok) =
   | G.EncodedString _ 
   | G.Defined
   | G.HashSplat
+  | G.ForOf
     -> todo (G.E (G.IdSpecial (x, tok)))
   ), tok
 

@@ -428,6 +428,9 @@ and stmt env = function
    stmt env st1;
    catchopt |> Common.opt (catch_block env);
    finalopt |> Common.opt (fun (_t, st) -> stmt env st);
+ | With (_, e, st) ->
+    expr env e;
+    stmt env st
 
 and catch_block env = function
   | BoundCatch (_t, pat, st) ->
@@ -450,7 +453,7 @@ and for_header env = function
    option (expr env) e2;
    option (expr env) e3;
    env
- | ForIn (e1, _, e2) ->
+ | ForIn (e1, _, e2) | ForOf (e1, _, e2) ->
    let env =
      match e1 with
      | Left var ->
@@ -617,6 +620,7 @@ and fun_ env f =
   let params = f.f_params |> Common.map_filter (function
         | ParamClassic p -> Some (s_of_n p.p_name)
         | ParamEllipsis _ -> None
+        | ParamPattern _ -> None (* TODO *)
   ) in
   let env = { env with 
         locals = params @ env.locals; 
@@ -630,6 +634,7 @@ and parameter env = function
   | ParamEllipsis _ -> ()
   | ParamClassic p -> 
       Common.opt (expr env) p.p_default  
+  | ParamPattern _ -> () (* TODO *)
 
 (*****************************************************************************)
 (* Main entry point *)

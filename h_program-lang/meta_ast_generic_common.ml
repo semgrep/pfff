@@ -5,6 +5,7 @@ open AST_generic
 
 let vof_arithmetic_operator =
   function
+  | Nullish -> OCaml.VSum (("Nullish", []))
   | Range -> OCaml.VSum (("Range", []))
   | RegexpMatch -> OCaml.VSum (("RegexpMatch", []))
   | NotMatch -> OCaml.VSum (("NotMatch", []))

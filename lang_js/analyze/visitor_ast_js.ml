@@ -199,6 +199,10 @@ and v_stmt x =
       and v2 = v_option v_catch_block v2
       and v3 = v_option v_tok_and_stmt v3
       in ()
+  | With (v1, v2, v3) ->
+        v_tok v1;
+        v_expr v2;
+        v_stmt v3
   in
   vin.kstmt (k, all_functions) x
 
@@ -225,7 +229,7 @@ and v_for_header =
       and v2 = v_option v_expr v2
       and v3 = v_option v_expr v3
       in ()
-  | ForIn ((v1, t, v2)) ->
+  | ForIn ((v1, t, v2)) | ForOf ((v1, t, v2)) ->
       let t = v_tok t in
       let v1 = v_either v_var v_expr v1 and v2 = v_expr v2 in ()
 
@@ -256,7 +260,10 @@ and v_fun_ { f_props = v_f_props; f_params = v_f_params; f_body = v_f_body } =
 and v_parameter_binding =
   function
   | ParamClassic v1 -> let v1 = v_parameter v1 in ()
+  | ParamPattern v1 -> v_pattern v1
   | ParamEllipsis v1 -> let v1 = v_tok v1 in ()
+
+and v_pattern x = v_expr x
 
 and v_parameter x =
  let k x = 
