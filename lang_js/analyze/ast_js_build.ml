@@ -446,19 +446,9 @@ and stmt env = function
     let finally_opt = opt (fun env (t, st) -> t, stmt1 env st) env finally_opt in
     [A.Try (t, st, catchopt, finally_opt)]
 
-(* note that this should be avoided as much as possible for sgrep, because
- * what was before a simple sequence of stmts in the same block can suddently
- * be in different blocks.
- * Use stmt_item_list when you can!
- *)
-and stmt_of_stmts xs = 
-  match xs with
-  | [] -> A.Block (fb [])
-  | [x] -> x
-  | xs -> A.Block (fb xs)
 
 and stmt1 env st =
-  stmt env st |> stmt_of_stmts
+  stmt env st |> Ast_js.stmt_of_stmts
 
 and case_clause env = function
   | C.Default (t, _, xs) -> A.Default (t, stmt1_item_list env xs)
@@ -484,7 +474,7 @@ and stmt_item_list env items =
  aux [] env items
 
 and stmt1_item_list env items = 
-  stmt_item_list env items |> stmt_of_stmts
+  stmt_item_list env items |> Ast_js.stmt_of_stmts
 
 and catch_block_handler env = function
   | C.BoundCatch (t, pat, st) ->
@@ -835,7 +825,7 @@ and func_decl env x =
   let vars = params_and_vars |> List.map snd |> List.flatten in
   let env = add_params env params in
   let xs = stmt_item_list env (x.C.f_body |> C.unparen) in
-  let body = stmt_of_stmts (vars @ xs) in
+  let body = Ast_js.stmt_of_stmts (vars @ xs) in
   { A.f_props = props; f_params = params; f_body = body }
 
 and func_props _env kind props = 
@@ -850,6 +840,7 @@ and func_props _env kind props =
    | C.Async tok -> A.Async, tok
    ))
 
+(* return a parameter and a list of vars when transpiling patterns *)
 and parameter_binding env idx = function
  | C.ParamClassic p -> A.ParamClassic (parameter env p), []
  | C.ParamEllipsis t -> A.ParamEllipsis t, []
@@ -877,7 +868,8 @@ and parameter_binding env idx = function
      with Failure s ->
        raise (TodoConstruct(spf "ParamPattern:%s" s, tok))
      )
-    end else raise Todo
+    end else 
+      raise Todo
 
 and parameter env p =
   let name = name env p.C.p_name in
@@ -909,7 +901,7 @@ and arrow_func env x =
     | C.AExpr e -> [A.Return (fake "return", Some (expr env e))]
     | C.ABody xs -> stmt_item_list env (xs |> C.unparen)
   in
-  let body = stmt_of_stmts (vars @ xs) in
+  let body = Ast_js.stmt_of_stmts (vars @ xs) in
   { A.f_props = props; f_params = params; f_body = body }
 
 

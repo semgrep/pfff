@@ -456,3 +456,14 @@ let special_of_id_opt s =
   (* reflection *)
   | "arguments"   -> Some Arguments
   | _ -> None
+
+(* note that this should be avoided as much as possible for sgrep, because
+ * what was before a simple sequence of stmts in the same block can suddently
+ * be in different blocks.
+ * Use stmt_item_list when you can in ast_js_build.ml
+ *)
+and stmt_of_stmts xs = 
+  match xs with
+  | [] -> Block (AST_generic.fake_bracket [])
+  | [x] -> x
+  | xs -> Block (AST_generic.fake_bracket xs)
