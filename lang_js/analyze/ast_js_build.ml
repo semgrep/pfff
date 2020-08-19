@@ -446,19 +446,9 @@ and stmt env = function
     let finally_opt = opt (fun env (t, st) -> t, stmt1 env st) env finally_opt in
     [A.Try (t, st, catchopt, finally_opt)]
 
-(* note that this should be avoided as much as possible for sgrep, because
- * what was before a simple sequence of stmts in the same block can suddently
- * be in different blocks.
- * Use stmt_item_list when you can!
- *)
-and stmt_of_stmts xs = 
-  match xs with
-  | [] -> A.Block (fb [])
-  | [x] -> x
-  | xs -> A.Block (fb xs)
 
 and stmt1 env st =
-  stmt env st |> stmt_of_stmts
+  stmt env st |> Ast_js.stmt_of_stmts
 
 and case_clause env = function
   | C.Default (t, _, xs) -> A.Default (t, stmt1_item_list env xs)
@@ -484,7 +474,7 @@ and stmt_item_list env items =
  aux [] env items
 
 and stmt1_item_list env items = 
-  stmt_item_list env items |> stmt_of_stmts
+  stmt_item_list env items |> Ast_js.stmt_of_stmts
 
 and catch_block_handler env = function
   | C.BoundCatch (t, pat, st) ->
@@ -513,18 +503,10 @@ and (expr: env -> C.expr -> A.expr) = fun env e ->
       | A.Local | A.Param -> 
          A.Id ((s, tok), ref resolved)
       | A.NotResolved | A.Global _ ->
-        (match s with
-        | "eval" -> A.IdSpecial (A.Eval, tok)
-        | "undefined" -> A.IdSpecial (A.Undefined, tok)
-        (* commonJS *)
-        | "require"   -> A.IdSpecial (A.Require, tok)
-        | "exports"   -> A.IdSpecial (A.Exports, tok)
-        | "module"   -> A.IdSpecial (A.Module, tok)
-        (* AMD *)
-        | "define"   -> A.IdSpecial (A.Define, tok)
-        (* reflection *)
-        | "arguments"   -> A.IdSpecial (A.Arguments, tok)
-        | _ -> A.Id ((s, tok), ref resolved)
+        
+        (match Ast_js.special_of_id_opt s with
+        | Some x -> A.IdSpecial (x, tok)
+        | None -> A.Id ((s, tok), ref resolved)
         )
       )
       
@@ -759,17 +741,17 @@ and var_binding env vkind = function
                (C.Pattern x.C.vpat) |> Lib_parsing_js.ii_of_any |> List.hd))
      )
     else 
-      let s = AST_generic.special_multivardef_pattern in
-      let id = s, fake s in
       let pat = pattern env x.C.vpat in
-      let (tok, init) = 
-        match x.C.vpat_init with Some x -> x | None -> raise Impossible in
-      let init = expr env init in
-      let assign = A.Assign (pat, tok, init) in
+      let (tok, initopt) = 
+        match x.C.vpat_init with 
+        | Some (t, init) -> 
+            let init = expr env init in
+            t, Some init
+        (* this can happen when inside a ForIn/ForOf *)
+        | None -> snd vkind, None
+      in
       let vkind = var_kind env vkind in
-      (* less: use x.vpat_type *)
-      [{A.v_name = id; v_kind = vkind; v_init = Some assign;
-        v_resolved = not_resolved ()}]
+      [Ast_js.var_pattern_to_var vkind pat tok initopt]
 
 (* only when not !transpile_pattern *)
 and pattern env = function
@@ -843,7 +825,7 @@ and func_decl env x =
   let vars = params_and_vars |> List.map snd |> List.flatten in
   let env = add_params env params in
   let xs = stmt_item_list env (x.C.f_body |> C.unparen) in
-  let body = stmt_of_stmts (vars @ xs) in
+  let body = Ast_js.stmt_of_stmts (vars @ xs) in
   { A.f_props = props; f_params = params; f_body = body }
 
 and func_props _env kind props = 
@@ -858,6 +840,7 @@ and func_props _env kind props =
    | C.Async tok -> A.Async, tok
    ))
 
+(* return a parameter and a list of vars when transpiling patterns *)
 and parameter_binding env idx = function
  | C.ParamClassic p -> A.ParamClassic (parameter env p), []
  | C.ParamEllipsis t -> A.ParamEllipsis t, []
@@ -885,7 +868,8 @@ and parameter_binding env idx = function
      with Failure s ->
        raise (TodoConstruct(spf "ParamPattern:%s" s, tok))
      )
-    end else raise Todo
+    end else 
+      raise Todo
 
 and parameter env p =
   let name = name env p.C.p_name in
@@ -917,7 +901,7 @@ and arrow_func env x =
     | C.AExpr e -> [A.Return (fake "return", Some (expr env e))]
     | C.ABody xs -> stmt_item_list env (xs |> C.unparen)
   in
-  let body = stmt_of_stmts (vars @ xs) in
+  let body = Ast_js.stmt_of_stmts (vars @ xs) in
   { A.f_props = props; f_params = params; f_body = body }
 
 
