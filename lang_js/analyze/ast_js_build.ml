@@ -204,9 +204,7 @@ and import env tok = function
 and export env tok = function
  | C.ExportDefaultExpr (tok2, e, _)  -> 
    let e = expr env e in
-   let n = A.default_entity, tok2 in
-   let v = {A.v_name = n; v_kind = A.Const, tok; v_init = Some e; 
-            v_resolved = not_resolved () } in
+   let v, n = A.mk_default_entity_var tok2 e in
    [A.V v; A.M (A.Export (tok, n))]
  | C.ExportDecl x ->
    let xs = item None env x in
@@ -273,16 +271,14 @@ and item default_opt env = function
                   v_resolved = not_resolved()}]
 
     | C.F_func (_, None), Some tok ->
-      let n = A.default_entity, tok in 
-      [A.VarDecl {A.v_name = n; v_kind = A.Const, fake "const"; 
-                  v_init = Some (A.Fun (fun_, None)); 
-                  v_resolved = not_resolved()}]
+      let e = A.Fun (fun_, None) in
+      let v, _n = A.mk_default_entity_var tok e in
+      [A.VarDecl v]
     | C.F_func (_, Some x), Some tok ->
-      let n1 = A.default_entity, tok in 
       let n2 = name env x in
-      [A.VarDecl {A.v_name = n1; v_kind = A.Const, fake "const"; 
-                  v_init = Some (A.Fun (fun_, Some n2)); 
-                  v_resolved = not_resolved()}]
+      let e = A.Fun (fun_, Some n2) in
+      let v, _n = A.mk_default_entity_var tok e in
+      [A.VarDecl v]
 
     | C.F_func (_, None), None ->
        raise (UnhandledConstruct ("weird: anonymous func decl", 
@@ -299,16 +295,14 @@ and item default_opt env = function
                   v_init= Some (A.Class (class_, None)); 
                   v_resolved = not_resolved ()}]
     | None, Some tok ->
-      let n = A.default_entity, tok in 
-      [A.VarDecl {A.v_name = n; v_kind=A.Const, fake "const";
-                  v_init= Some (A.Class (class_, None)); 
-                  v_resolved = not_resolved ()}]
+      let e = A.Class (class_, None) in
+      let v, _n = A.mk_default_entity_var tok e in 
+      [A.VarDecl v]
     | Some x, Some tok ->
-      let n1 = A.default_entity, tok in 
       let n2 = name env x in
-      [A.VarDecl {A.v_name = n1; v_kind=A.Const, fake "const";
-                  v_init= Some (A.Class (class_, Some n2)); 
-                  v_resolved = not_resolved ()}]
+      let e = A.Class (class_, Some n2) in
+      let v, _n = A.mk_default_entity_var tok e in 
+      [A.VarDecl v]
     | None, None ->
        raise (UnhandledConstruct ("weird: anonymous class decl", x.C.c_tok))
     )

@@ -467,3 +467,9 @@ and stmt_of_stmts xs =
   | [] -> Block (AST_generic.fake_bracket [])
   | [x] -> x
   | xs -> Block (AST_generic.fake_bracket xs)
+
+let mk_default_entity_var tok exp = 
+  let n = default_entity, tok in
+  let v = { v_name = n; v_kind = Const, tok; v_init = Some exp; 
+            v_resolved = ref NotResolved } in
+  v, n
