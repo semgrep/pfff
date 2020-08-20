@@ -12,7 +12,7 @@ function createCompiler({
 }) {
 }
 
-const x = ({
+const x: Y = ({
    repoSlug,
    findings,
    filePath

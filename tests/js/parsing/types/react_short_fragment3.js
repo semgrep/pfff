@@ -1,4 +1,4 @@
-const Val = ({ x }) => {
+const Val = ({ x = []}) => {
   return (
     <>
       <div>
