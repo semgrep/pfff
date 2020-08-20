@@ -449,6 +449,10 @@ and property x =
       G.FieldSpread (t, v1)
   | FieldEllipsis v1 -> 
       G.FieldStmt (G.exprstmt (G.Ellipsis v1))
+  | FieldPatDefault (v1, _v2, v3) ->
+      let v1 = pattern v1 in
+      let v3 = expr v3 in
+      G.FieldStmt (G.exprstmt (G.LetPattern (v1, v3)))
 and property_prop (x, tok) =
   match x with
   | Static -> G.attr G.Static tok
@@ -461,6 +465,9 @@ and toplevel x = stmt x
 
 and module_directive x = 
   match x with
+  | ReExportNamespace (v1, _v2, _v3, v4) ->
+      let v4 = filename v4 in
+      G.OtherDirective (G.OI_ReExportNamespace, [G.Tk v1; G.I v4])
   | Import ((t, v1, v2, v3)) ->
       let v1 = name v1 and v2 = option name v2 and v3 = filename v3 in 
       G.ImportFrom (t, G.FileName v3, v1, v2)
@@ -477,8 +484,8 @@ and module_directive x =
       let v1 = name v1 in
       (* old: G.OtherDirective (G.OI_ImportEffect, [G.I v1]) *)
       G.ImportAs (t, G.FileName v1, None)
-  | Export ((_t, v1)) -> let v1 = name v1 in
-      G.OtherDirective (G.OI_Export, [G.I v1])
+  | Export ((t, v1)) -> let v1 = name v1 in
+      G.OtherDirective (G.OI_Export, [G.Tk t; G.I v1])
 
 and program v = list toplevel v
 

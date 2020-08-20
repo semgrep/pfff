@@ -355,6 +355,11 @@ and map_property =
       let t = map_tok t in let v1 = map_expr v1 in FieldSpread ((t, v1))
   | FieldEllipsis v1 ->
       let v1 = map_tok v1 in FieldEllipsis v1
+  | FieldPatDefault (v1, v2, v3) ->
+      let v1 = map_pattern v1 in
+      let v2 = map_tok v2 in
+      let v3 = map_expr v3 in
+      FieldPatDefault (v1, v2, v3)
       
 and map_property_prop =
   function
@@ -367,6 +372,10 @@ and map_toplevel x = map_stmt x
 
 and map_module_directive =
   function 
+  | ReExportNamespace (v1, v2, v3, v4) ->
+      let v1 = map_tok v1 in let v2 = map_tok v2 in let v3 = map_tok v3 in
+      let v4 = map_filename v4 in
+      ReExportNamespace (v1, v2, v3, v4)
   | Import ((t, v1, v2, v3)) ->
       let t = map_tok t in
       let v1 = map_name v1

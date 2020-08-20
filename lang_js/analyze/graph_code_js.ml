@@ -376,6 +376,7 @@ and module_directive env x =
        *)
       let s = s_of_n name in
       Hashtbl.replace env.vars s true;
+  | ReExportNamespace (_t, _, _, _file) -> ()
   | ImportCss (_t, _file) -> ()
   | ImportEffect (_, _file) -> ()
 
@@ -613,7 +614,12 @@ and property env = function
      option (expr env) e
   | FieldSpread (_, e) ->
      expr env e
+  | FieldPatDefault (pat, _, e) ->
+      pattern env pat;
+      expr env e
   | FieldEllipsis _ -> ()
+
+and pattern env x = expr env x
 
 and property_name env = function
   | PN _n2 -> ()

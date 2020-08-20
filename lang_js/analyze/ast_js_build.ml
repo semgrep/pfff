@@ -253,8 +253,8 @@ and export env tok = function
        [A.M import; A.VarDecl v; A.M (A.Export (tok, n2))]
    ) |> List.flatten
 
- | C.ReExportNamespace (_, _, _) ->
-   raise (UnhandledConstruct ("reexporting namespace", tok))
+ | C.ReExportNamespace (t1, (t2, filename), _sc) ->
+   [A.M (A.ReExportNamespace (tok, t1, t2, filename))]
 
 
 and item default_opt env = function
