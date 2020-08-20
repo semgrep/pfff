@@ -1,6 +1,9 @@
 dir: big
-dir: flow
 
+dir: types
+dir: flow
 dir: typescript
+
 dir: jsx
 dir: todo
+dir: extensions

@@ -1053,6 +1053,7 @@ and vof_alias (v1, v2) =
   in v1, v2
 and vof_other_directive_operator =
   function
+  | OI_ReExportNamespace -> OCaml.VSum (("OI_ReExportNamespace", []))
   | OI_Export -> OCaml.VSum (("OI_Export", []))
   | OI_ImportCss -> OCaml.VSum (("OI_ImportCss", []))
   | OI_ImportEffect -> OCaml.VSum (("OI_ImportEffect", []))

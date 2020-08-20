@@ -2,5 +2,5 @@
 var o = {
   f() { },
   x:0,
-  g(x) { return x; }
+  g<T>(x:T):T { return x; }
 }

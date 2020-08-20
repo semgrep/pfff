@@ -350,9 +350,11 @@ and class_ = {
     | Field of property_name * property_prop wrap list * expr option
     (* less: can unsugar? *)
     | FieldSpread of tok * expr
-    (* TODO: FieldAssignPat only when in pattern context, we should
-     * have a clean separate pattern type instead of abusing expr.
+    (* This is present only when in pattern context.
+     * ugly: we should have a clean separate pattern type instead of abusing
+     *  expr, which forces us to add this construct.
      *)
+    | FieldPatDefault of pattern * tok * expr
     (* sgrep-ext: used for {fld1: 1, ... } which is distinct from spreading *)
     | FieldEllipsis of tok
 
@@ -381,6 +383,8 @@ and module_directive =
    *)
   | Import of tok * ident * ident option (* 'name1 as name2' *) * filename
   | Export of tok * ident
+  (* export * from 'foo' *)
+  | ReExportNamespace of tok * tok * tok * filename
 
   (* hard to unsugar in Import because we do not have the list of names *)
   | ModuleAlias of tok * ident * filename (* import * as 'name' from 'file' *)

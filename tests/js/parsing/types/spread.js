@@ -1,5 +1,5 @@
 
-function qux(x="hello",...y) { foo(x); return y[0]; }
+function qux(x="hello",...y):string { foo(x); return y[0]; }
 qux(0,...["",42]);
 
 const JSONtoCSV = (arr, columns, delimiter = ',') =>
