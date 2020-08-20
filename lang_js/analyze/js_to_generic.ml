@@ -44,7 +44,6 @@ let error = AST_generic.error
 (*****************************************************************************)
 
 let info x = x
-let tok v = info v
 
 let wrap = fun _of_a (v1, v2) ->
   let v1 = _of_a v1 and v2 = info v2 in 
@@ -238,6 +237,7 @@ and expr (x: expr) =
 
 and stmt x =
   match x with
+  | M v1 -> let v1 = module_directive v1 in G.DirectiveStmt v1
   | VarDecl v1 -> let v1 = def_of_var v1 in G.DefStmt (v1)
   | Block v1 -> let v1 = bracket (list stmt) v1 in G.Block v1
   | ExprStmt (v1, t) -> let v1 = expr v1 in G.ExprStmt (v1, t)
@@ -457,12 +457,7 @@ and property_prop (x, tok) =
   | Protected -> G.attr G.Protected tok
   
 
-let rec toplevel x =
-  match x with
-  | V v1 -> let v1 = def_of_var v1 in G.DefStmt v1
-  | S ((v1, v2)) -> let _v1TODO = tok v1 and v2 = stmt v2 in v2
-  | M v1 -> let v1 = module_directive v1 in G.DirectiveStmt v1
-
+and toplevel x = stmt x
 
 and module_directive x = 
   match x with

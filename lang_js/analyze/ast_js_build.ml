@@ -83,8 +83,9 @@ let sc = function
 
 let not_resolved () = ref A.NotResolved
 
-exception Found of Parse_info.t
 
+(*
+exception Found of Parse_info.t
 let first_tok_of_item x =
   let hooks = { Visitor_js.default_visitor with
     Visitor_js.kinfo = (fun (_k, _) i -> raise (Found i));
@@ -96,6 +97,7 @@ let first_tok_of_item x =
       failwith "first_to_of_item: could not find a token";
     with Found tok -> tok
   end
+*)
 
 let s_of_n n = 
   Ast_js.str_of_name n
@@ -156,13 +158,15 @@ and module_items env xs =
   xs |> List.map (module_item env) |> List.flatten
 
 and module_item env = function
-  | C.It x -> item None env x |> List.map (fun res -> 
+  | C.It x -> item None env x 
+     (*|> List.map (fun res -> 
       match res with
       | A.VarDecl var -> A.V var
       | _ -> 
          let tok = first_tok_of_item x in
          A.S (tok, res)
-    )
+       )
+      *)
   | C.Import (tok, x, _) -> import env tok x |> List.map (fun x -> A.M x)
   | C.Export (tok, x) ->  export env tok x
 
@@ -205,12 +209,12 @@ and export env tok = function
  | C.ExportDefaultExpr (tok2, e, _)  -> 
    let e = expr env e in
    let v, n = A.mk_default_entity_var tok2 e in
-   [A.V v; A.M (A.Export (tok, n))]
+   [A.VarDecl v; A.M (A.Export (tok, n))]
  | C.ExportDecl x ->
    let xs = item None env x in
    xs |> List.map (function
     | A.VarDecl v -> 
-         [A.V v; A.M (A.Export (tok, v.A.v_name))]
+         [A.VarDecl v; A.M (A.Export (tok, v.A.v_name))]
     | _ -> raise (UnhandledConstruct ("exporting a stmt", tok))
    ) |> List.flatten
  | C.ExportDefaultDecl (tok2, x) ->
@@ -218,7 +222,7 @@ and export env tok = function
    let xs = item (Some tok2) env x in
    xs |> List.map (function
     | A.VarDecl v -> 
-        [A.V v;  A.M (A.Export (tok,v.A.v_name))]
+        [A.VarDecl v;  A.M (A.Export (tok,v.A.v_name))]
     | _ -> raise (UnhandledConstruct ("exporting a stmt", tok))
    ) |> List.flatten
  | C.ExportNames (xs, _) ->
@@ -230,7 +234,7 @@ and export env tok = function
          let n2 = name env n2 in
          let id = A.Id (n1, not_resolved ()) in
          let v = A.mk_const_var n2 id in
-         [A.V v; A.M (A.Export (tok, n2))]
+         [A.VarDecl v; A.M (A.Export (tok, n2))]
   ) |> List.flatten
  | C.ReExportNames (xs, (tok2, path), _) ->
    xs |> C.unbrace |> C.uncomma |> List.map (fun (n1, n2opt) ->
@@ -242,11 +246,11 @@ and export env tok = function
      match n2opt with
      | None -> 
        let v = A.mk_const_var n1 id in
-       [A.M import; A.V v; A.M (A.Export (tok, n1))]
+       [A.M import; A.VarDecl v; A.M (A.Export (tok, n1))]
      | Some (_, n2) ->
        let n2 = name env n2 in
        let v = A.mk_const_var n2 id in
-       [A.M import; A.V v; A.M (A.Export (tok, n2))]
+       [A.M import; A.VarDecl v; A.M (A.Export (tok, n2))]
    ) |> List.flatten
 
  | C.ReExportNamespace (_, _, _) ->

@@ -299,7 +299,7 @@ let rec extract_defs_uses env ast =
   toplevels_entities_adjust_imports env ast;
   toplevels env ast
 
-(* The order of toplevel declarations do not matter in Javascript.
+(* The order of toplevel declarations does not matter in Javascript.
  * It is a dynamic language without static checking; if in the body of
  * a function you use an entity declared further, nothing will complain
  * about it. 
@@ -309,11 +309,12 @@ let rec extract_defs_uses env ast =
  *)
 and toplevels_entities_adjust_imports env xs =
   xs |> List.iter (function
-    | M _ | S _ -> ()
-    | V v ->
+    | VarDecl v ->
       let str = s_of_n v.v_name in
       Hashtbl.replace env.imports str 
         (mk_qualified_name env.file_readable str);
+ (*    | M _ | S _ -> () *)
+    | _ -> ()
   )
         
 (* ---------------------------------------------------------------------- *)
@@ -321,8 +322,10 @@ and toplevels_entities_adjust_imports env xs =
 (* ---------------------------------------------------------------------- *)
 and toplevel env x =
   match x with
-  | V {v_name; v_kind; v_init; v_resolved} ->
+  | VarDecl {v_name; v_kind; v_init; v_resolved} ->
        name_expr env v_name v_kind v_init v_resolved
+  | M x -> module_directive env x
+(*
   | S (tok, st) ->
       let kind = E.TopStmts in
       let s = spf "__top__%d:%d" 
@@ -331,7 +334,9 @@ and toplevel env x =
       let env = add_node_and_edge_if_defs_mode env (name, kind) in
       if env.phase = Uses
       then stmt env st
-  | M x -> module_directive env x
+*)
+  | _ -> 
+     stmt env x
 
 and module_directive env x =
   match x with
@@ -395,6 +400,7 @@ and stmt env = function
  | VarDecl v ->
     let env = add_locals env [v] in
     option (expr env) v.v_init
+ | M m -> module_directive env m
  | Block (_, xs, _) -> stmts env xs
  | ExprStmt (e, _) -> expr env e
  | If (_, e, st1, st2) ->
