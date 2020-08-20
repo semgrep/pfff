@@ -429,6 +429,9 @@ let unwrap x = fst x
 
 and string_of_xhp_tag s = s
 
+let mk_const_var id e = 
+  { v_name = id; v_kind = Const, (snd id); v_init = Some e; 
+    v_resolved = ref NotResolved }
 
 (* helpers used in ast_js_build.ml and Parse_javascript_tree_sitter.ml *)
 let var_pattern_to_var vkind pat tok init_opt = 

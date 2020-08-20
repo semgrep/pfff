@@ -17,10 +17,10 @@
 (* Prelude *)
 (*****************************************************************************)
 (* A (real) Abstract Syntax Tree for PHP, not a Concrete Syntax Tree
- * as in ast_php.ml.
+ * as in cst_php.ml.
  *
  * This file contains a simplified PHP abstract syntax tree. The original
- * PHP syntax tree (ast_php.ml) is good for code refactoring or
+ * PHP syntax tree (cst_php.ml) is good for code refactoring or
  * code visualization; the types used matches exactly the source. However,
  * for other algorithms, the nature of the AST makes the code a bit
  * redundant. Hence the idea of a SimpleAST which is the
@@ -58,7 +58,7 @@
  *  - a simpler stmt type; no extra toplevel and stmt_and_def types,
  *    no FuncDefNested, no ClassDefNested. No StmtList.
  *  - a simpler expr type; no lvalue vs expr vs static_scalar vs attribute
- *    (update: now static_scalar = expr = lvalue also in ast_php.ml).
+ *    (update: now static_scalar = expr = lvalue also in cst_php.ml).
  *    Also no scalar. No Sc, no C. No Lv. Pattern matching constants
  *    is simpler:  | Sc (C (String ...)) -> ... becomes just | String -> ....
  *    Also no arg type. No Arg, ArgRef, ArgUnpack. Also no xhp_attr_value type.
@@ -79,17 +79,17 @@
 
  *  - a unified Call. No FunCallSimple, FunCallVar, MethodCallSimple,
  *    StaticMethodCallSimple, StaticMethodCallVar
- *    (update: same in ast_php.ml now)
+ *    (update: same in cst_php.ml now)
  *  - a unified Array_get. No VArrayAccess, VArrayAccessXhp,
  *    VBraceAccess, OArrayAccess, OBraceAccess
- *    (update: same in ast_php.ml now)
+ *    (update: same in cst_php.ml now)
  *  - unified Class_get and Obj_get instead of lots of duplication in
  *    many constructors, e.g. no ClassConstant in a separate scalar type,
  *    no retarded obj_prop_access/obj_dim types,
  *    no OName, CName, ObjProp, ObjPropVar, ObjAccessSimple vs ObjAccess,
  *    no ClassNameRefDynamic, no VQualifier, ClassVar, DynamicClassVar,
  *    etc.
- *    (update: same in ast_php.ml now)
+ *    (update: same in cst_php.ml now)
  *  - unified eval_var, some constructs were transformed into calls to
  *    "eval_var" builtin, e.g. no GlobalDollar, no VBrace, no Indirect/Deref.
  *
@@ -136,68 +136,13 @@ type name = qualified_ident
  [@@deriving show] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
-(* Program *)
-(* ------------------------------------------------------------------------- *)
-
-type program = stmt list
-
-(* ------------------------------------------------------------------------- *)
-(* Statement *)
-(* ------------------------------------------------------------------------- *)
-and stmt =
-  | Expr of expr * tok
-
-  | Block of stmt list bracket
-
-  | If of tok * expr * stmt * stmt
-  | Switch of tok * expr * case list
-
-  (* pad: not sure why we use stmt list instead of just stmt like for If *)
-  | While of tok * expr * stmt list
-  | Do of tok * stmt list * expr
-  | For of tok * expr list * expr list * expr list * stmt list
-  (* 'foreach ($xs as $k)','... ($xs as $k => $v)', '... ($xs as list($...))'*)
-  | Foreach of tok * expr * tok * foreach_pattern * stmt list
-
-  | Return of tok * expr option
-  | Break of tok * expr option | Continue of tok * expr option
-
-  | Throw of tok * expr
-  | Try of tok * stmt list * catch list * finally list
-
-  (* only at toplevel in most of our code *)
-  | ClassDef of class_def
-  | FuncDef of func_def
-  (* only at toplevel *)
-  | ConstantDef of constant_def
-  | TypeDef of type_def
-  (* the qualified_ident below can not have a leading '\', it can also
-   * be the root namespace *)
-  | NamespaceDef of tok * qualified_ident * stmt list bracket
-  | NamespaceUse of tok * qualified_ident * ident option (* when alias *)
-
-  (* Note that there is no LocalVars constructor. Variables in PHP are
-   * declared when they are first assigned. *)
-  | StaticVars of tok * (var * expr option) list
-  (* expr is most of the time a simple variable name *)
-  | Global of tok * expr list
-
-  and case =
-    | Case of tok * expr * stmt list
-    | Default of tok * stmt list
-
-  (* catch(Exception $exn) { ... } => ("Exception", "$exn", [...]) *)
-  and catch = tok * hint_type * var * stmt list
-  and finally = tok * stmt list
-
-(* ------------------------------------------------------------------------- *)
 (* Expression *)
 (* ------------------------------------------------------------------------- *)
 
 (* lvalue and expr have been mixed in this AST, but an lvalue should be
  * an expr restricted to: Var $var, Array_get, Obj_get, Class_get, or List.
  *)
-and expr =
+type expr =
   (* booleans are really just Int in PHP :( *)
   | Int of string wrap
   | Double of string wrap
@@ -333,6 +278,55 @@ and hint_type =
 and class_name = hint_type
 
 (* ------------------------------------------------------------------------- *)
+(* Statement *)
+(* ------------------------------------------------------------------------- *)
+and stmt =
+  | Expr of expr * tok
+
+  | Block of stmt list bracket
+
+  | If of tok * expr * stmt * stmt
+  | Switch of tok * expr * case list
+
+  (* pad: not sure why we use stmt list instead of just stmt like for If *)
+  | While of tok * expr * stmt list
+  | Do of tok * stmt list * expr
+  | For of tok * expr list * expr list * expr list * stmt list
+  (* 'foreach ($xs as $k)','... ($xs as $k => $v)', '... ($xs as list($...))'*)
+  | Foreach of tok * expr * tok * foreach_pattern * stmt list
+
+  | Return of tok * expr option
+  | Break of tok * expr option | Continue of tok * expr option
+
+  | Throw of tok * expr
+  | Try of tok * stmt list * catch list * finally list
+
+  (* only at toplevel in most of our code *)
+  | ClassDef of class_def
+  | FuncDef of func_def
+  (* only at toplevel *)
+  | ConstantDef of constant_def
+  | TypeDef of type_def
+  (* the qualified_ident below can not have a leading '\', it can also
+   * be the root namespace *)
+  | NamespaceDef of tok * qualified_ident * stmt list bracket
+  | NamespaceUse of tok * qualified_ident * ident option (* when alias *)
+
+  (* Note that there is no LocalVars constructor. Variables in PHP are
+   * declared when they are first assigned. *)
+  | StaticVars of tok * (var * expr option) list
+  (* expr is most of the time a simple variable name *)
+  | Global of tok * expr list
+
+  and case =
+    | Case of tok * expr * stmt list
+    | Default of tok * stmt list
+
+  (* catch(Exception $exn) { ... } => ("Exception", "$exn", [...]) *)
+  and catch = tok * hint_type * var * stmt list
+  and finally = tok * stmt list
+
+(* ------------------------------------------------------------------------- *)
 (* Definitions *)
 (* ------------------------------------------------------------------------- *)
 
@@ -441,6 +435,13 @@ and type_def = {
   | ClassConstType of hint_type option
 
  [@@deriving show { with_path = false }] (* with tarzan *)
+
+(* ------------------------------------------------------------------------- *)
+(* Program *)
+(* ------------------------------------------------------------------------- *)
+
+type program = stmt list
+  [@@deriving show { with_path = false }] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Any *)

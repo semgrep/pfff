@@ -229,9 +229,7 @@ and export env tok = function
      | Some (_, n2) -> 
          let n2 = name env n2 in
          let id = A.Id (n1, not_resolved ()) in
-         let v = { A.v_name = n2; v_kind = A.Const, fake "const"; 
-                   v_init = Some id;
-                   v_resolved = not_resolved () } in
+         let v = A.mk_const_var n2 id in
          [A.V v; A.M (A.Export (tok, n2))]
   ) |> List.flatten
  | C.ReExportNames (xs, (tok2, path), _) ->
@@ -243,15 +241,11 @@ and export env tok = function
      let id = A.Id (tmpname, not_resolved()) in
      match n2opt with
      | None -> 
-       let v = { A.v_name = n1; v_kind = A.Const, fake "const"; 
-                  v_init = Some id; 
-                  v_resolved = not_resolved () } in
+       let v = A.mk_const_var n1 id in
        [A.M import; A.V v; A.M (A.Export (tok, n1))]
      | Some (_, n2) ->
        let n2 = name env n2 in
-       let v = { A.v_name = n2; v_kind = A.Const, fake "const"; 
-                  v_init = Some id; 
-                  v_resolved = not_resolved () } in
+       let v = A.mk_const_var n2 id in
        [A.M import; A.V v; A.M (A.Export (tok, n2))]
    ) |> List.flatten
 
