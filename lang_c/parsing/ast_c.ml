@@ -19,10 +19,10 @@ open Common2.Infix
 (*****************************************************************************)
 (* 
  * A (real) Abstract Syntax Tree for C, not a Concrete Syntax Tree
- * as in ast_cpp.ml.
+ * as in cst_cpp.ml.
  * 
  * This file contains a simplified C abstract syntax tree. The original
- * C/C++ syntax tree (ast_cpp.ml) is good for code refactoring or
+ * C/C++ syntax tree (cst_cpp.ml) is good for code refactoring or
  * code visualization; the types used match exactly the source. However,
  * for other algorithms, the nature of the AST makes the code a bit
  * redundant. Moreover many analysis are far simpler to write on
@@ -67,7 +67,7 @@ open Common2.Infix
  *    library form yet.
  *  - we could also use the AST used by cc in plan9 :)
  * 
- * See lang_cpp/parsing/ast_cpp.ml.
+ * See lang_cpp/parsing/cst_cpp.ml.
  *
  *)
 

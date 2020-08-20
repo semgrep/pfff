@@ -162,6 +162,7 @@ and v_expr (x: expr) =
 
 and v_stmt x =
   let k x = match x with
+  | M v1 -> let v1 = v_module_directive v1 in ()
   | VarDecl v1 -> let v1 = v_var v1 in ()
   | Block v1 -> let v1 = v_bracket (v_list v_stmt) v1 in ()
   | ExprStmt (v1, t) -> let v1 = v_expr v1 in let t= v_tok t in ()
@@ -301,10 +302,7 @@ and v_property_prop =
   
 and v_toplevel x =
   let k x =
-  match x with
-  | V v1 -> let v1 = v_var v1 in ()
-  | S ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_stmt v2 in ()
-  | M v1 -> let v1 = v_module_directive v1 in ()
+    v_stmt x
   in
   vin.ktop (k, all_functions) x
 

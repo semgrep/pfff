@@ -199,6 +199,7 @@ and map_expr =
       in Conditional ((v1, v2, v3))
 and map_stmt =
   function
+  | M v1 -> let v1 = map_module_directive v1 in M ((v1))
   | VarDecl v1 -> let v1 = map_var v1 in VarDecl ((v1))
   | Block v1 -> let v1 = map_bracket (map_of_list map_stmt) v1 in Block ((v1))
   | ExprStmt (v1, t) -> let v1 = map_expr v1 in let t = map_tok t in 
@@ -362,11 +363,7 @@ and map_property_prop =
   | Private -> Private
   | Protected -> Protected
   
-and map_toplevel =
-  function
-  | V v1 -> let v1 = map_var v1 in V ((v1))
-  | S ((v1, v2)) -> let v1 = map_tok v1 and v2 = map_stmt v2 in S ((v1, v2))
-  | M v1 -> let v1 = map_module_directive v1 in M ((v1))
+and map_toplevel x = map_stmt x
 
 and map_module_directive =
   function 

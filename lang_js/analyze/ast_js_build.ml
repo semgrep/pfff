@@ -83,8 +83,9 @@ let sc = function
 
 let not_resolved () = ref A.NotResolved
 
-exception Found of Parse_info.t
 
+(*
+exception Found of Parse_info.t
 let first_tok_of_item x =
   let hooks = { Visitor_js.default_visitor with
     Visitor_js.kinfo = (fun (_k, _) i -> raise (Found i));
@@ -96,6 +97,7 @@ let first_tok_of_item x =
       failwith "first_to_of_item: could not find a token";
     with Found tok -> tok
   end
+*)
 
 let s_of_n n = 
   Ast_js.str_of_name n
@@ -156,13 +158,15 @@ and module_items env xs =
   xs |> List.map (module_item env) |> List.flatten
 
 and module_item env = function
-  | C.It x -> item None env x |> List.map (fun res -> 
+  | C.It x -> item None env x 
+     (*|> List.map (fun res -> 
       match res with
       | A.VarDecl var -> A.V var
       | _ -> 
          let tok = first_tok_of_item x in
          A.S (tok, res)
-    )
+       )
+      *)
   | C.Import (tok, x, _) -> import env tok x |> List.map (fun x -> A.M x)
   | C.Export (tok, x) ->  export env tok x
 
@@ -204,15 +208,13 @@ and import env tok = function
 and export env tok = function
  | C.ExportDefaultExpr (tok2, e, _)  -> 
    let e = expr env e in
-   let n = A.default_entity, tok2 in
-   let v = {A.v_name = n; v_kind = A.Const, tok; v_init = Some e; 
-            v_resolved = not_resolved () } in
-   [A.V v; A.M (A.Export (tok, n))]
+   let v, n = A.mk_default_entity_var tok2 e in
+   [A.VarDecl v; A.M (A.Export (tok, n))]
  | C.ExportDecl x ->
    let xs = item None env x in
    xs |> List.map (function
     | A.VarDecl v -> 
-         [A.V v; A.M (A.Export (tok, v.A.v_name))]
+         [A.VarDecl v; A.M (A.Export (tok, v.A.v_name))]
     | _ -> raise (UnhandledConstruct ("exporting a stmt", tok))
    ) |> List.flatten
  | C.ExportDefaultDecl (tok2, x) ->
@@ -220,7 +222,7 @@ and export env tok = function
    let xs = item (Some tok2) env x in
    xs |> List.map (function
     | A.VarDecl v -> 
-        [A.V v;  A.M (A.Export (tok,v.A.v_name))]
+        [A.VarDecl v;  A.M (A.Export (tok,v.A.v_name))]
     | _ -> raise (UnhandledConstruct ("exporting a stmt", tok))
    ) |> List.flatten
  | C.ExportNames (xs, _) ->
@@ -231,10 +233,8 @@ and export env tok = function
      | Some (_, n2) -> 
          let n2 = name env n2 in
          let id = A.Id (n1, not_resolved ()) in
-         let v = { A.v_name = n2; v_kind = A.Const, fake "const"; 
-                   v_init = Some id;
-                   v_resolved = not_resolved () } in
-         [A.V v; A.M (A.Export (tok, n2))]
+         let v = A.mk_const_var n2 id in
+         [A.VarDecl v; A.M (A.Export (tok, n2))]
   ) |> List.flatten
  | C.ReExportNames (xs, (tok2, path), _) ->
    xs |> C.unbrace |> C.uncomma |> List.map (fun (n1, n2opt) ->
@@ -245,16 +245,12 @@ and export env tok = function
      let id = A.Id (tmpname, not_resolved()) in
      match n2opt with
      | None -> 
-       let v = { A.v_name = n1; v_kind = A.Const, fake "const"; 
-                  v_init = Some id; 
-                  v_resolved = not_resolved () } in
-       [A.M import; A.V v; A.M (A.Export (tok, n1))]
+       let v = A.mk_const_var n1 id in
+       [A.M import; A.VarDecl v; A.M (A.Export (tok, n1))]
      | Some (_, n2) ->
        let n2 = name env n2 in
-       let v = { A.v_name = n2; v_kind = A.Const, fake "const"; 
-                  v_init = Some id; 
-                  v_resolved = not_resolved () } in
-       [A.M import; A.V v; A.M (A.Export (tok, n2))]
+       let v = A.mk_const_var n2 id in
+       [A.M import; A.VarDecl v; A.M (A.Export (tok, n2))]
    ) |> List.flatten
 
  | C.ReExportNamespace (_, _, _) ->
@@ -273,16 +269,14 @@ and item default_opt env = function
                   v_resolved = not_resolved()}]
 
     | C.F_func (_, None), Some tok ->
-      let n = A.default_entity, tok in 
-      [A.VarDecl {A.v_name = n; v_kind = A.Const, fake "const"; 
-                  v_init = Some (A.Fun (fun_, None)); 
-                  v_resolved = not_resolved()}]
+      let e = A.Fun (fun_, None) in
+      let v, _n = A.mk_default_entity_var tok e in
+      [A.VarDecl v]
     | C.F_func (_, Some x), Some tok ->
-      let n1 = A.default_entity, tok in 
       let n2 = name env x in
-      [A.VarDecl {A.v_name = n1; v_kind = A.Const, fake "const"; 
-                  v_init = Some (A.Fun (fun_, Some n2)); 
-                  v_resolved = not_resolved()}]
+      let e = A.Fun (fun_, Some n2) in
+      let v, _n = A.mk_default_entity_var tok e in
+      [A.VarDecl v]
 
     | C.F_func (_, None), None ->
        raise (UnhandledConstruct ("weird: anonymous func decl", 
@@ -299,16 +293,14 @@ and item default_opt env = function
                   v_init= Some (A.Class (class_, None)); 
                   v_resolved = not_resolved ()}]
     | None, Some tok ->
-      let n = A.default_entity, tok in 
-      [A.VarDecl {A.v_name = n; v_kind=A.Const, fake "const";
-                  v_init= Some (A.Class (class_, None)); 
-                  v_resolved = not_resolved ()}]
+      let e = A.Class (class_, None) in
+      let v, _n = A.mk_default_entity_var tok e in 
+      [A.VarDecl v]
     | Some x, Some tok ->
-      let n1 = A.default_entity, tok in 
       let n2 = name env x in
-      [A.VarDecl {A.v_name = n1; v_kind=A.Const, fake "const";
-                  v_init= Some (A.Class (class_, Some n2)); 
-                  v_resolved = not_resolved ()}]
+      let e = A.Class (class_, Some n2) in
+      let v, _n = A.mk_default_entity_var tok e in 
+      [A.VarDecl v]
     | None, None ->
        raise (UnhandledConstruct ("weird: anonymous class decl", x.C.c_tok))
     )

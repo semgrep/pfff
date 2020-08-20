@@ -260,6 +260,7 @@ and stmt =
    * ES6 modules can appear only at the toplevel
   *  but CommonJS require() can be inside ifs
   *)
+  | M of module_directive
 
   (* less: could use some Special instead? *)
   and for_header = 
@@ -360,8 +361,6 @@ and class_ = {
     (* todo? not in tree-sitter-js *)
     | Public | Private | Protected
 
- [@@deriving show { with_path = false} ] (* with tarzan *)
-
 (*****************************************************************************)
 (* Directives *)
 (*****************************************************************************)
@@ -370,8 +369,10 @@ and class_ = {
  * (to select dynamically which code to load depending on whether you run
  * in production or development environment) which means those directives
  * can be inside ifs.
+ * update: for tree-sitter we allow them at the stmt level, hence the
+ * recursive 'and' below.
  *)
-type module_directive = 
+and module_directive = 
   (* 'ident' can be the special Ast_js.default_entity.
    * 'filename' is not "resolved"
    * (you may need for example to add node_modules/xxx/index.js
@@ -393,11 +394,12 @@ type module_directive =
 (*****************************************************************************)
 (* Toplevel *)
 (*****************************************************************************)
-type toplevel = 
-  | V of var
-  (* the tok is for graph_code to build a toplevel entity with a location *)
-  | S of tok  * stmt
-  | M of module_directive
+(* this used to be a special type with only var, stmt, or module_directive
+ * but tree-sitter allows module directives at stmt level, and anyway
+ * we don't enforce those constraints on the generic AST so simpler to
+ * move those at the stmt level.
+ *)
+type toplevel = stmt
  [@@deriving show { with_path = false} ] (* with tarzan *)
 
 (*****************************************************************************)
@@ -429,6 +431,9 @@ let unwrap x = fst x
 
 and string_of_xhp_tag s = s
 
+let mk_const_var id e = 
+  { v_name = id; v_kind = Const, (snd id); v_init = Some e; 
+    v_resolved = ref NotResolved }
 
 (* helpers used in ast_js_build.ml and Parse_javascript_tree_sitter.ml *)
 let var_pattern_to_var vkind pat tok init_opt = 
@@ -467,3 +472,9 @@ and stmt_of_stmts xs =
   | [] -> Block (AST_generic.fake_bracket [])
   | [x] -> x
   | xs -> Block (AST_generic.fake_bracket xs)
+
+let mk_default_entity_var tok exp = 
+  let n = default_entity, tok in
+  let v = { v_name = n; v_kind = Const, tok; v_init = Some exp; 
+            v_resolved = ref NotResolved } in
+  v, n

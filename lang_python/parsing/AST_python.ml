@@ -323,6 +323,7 @@ and type_parent = argument
 and pattern = expr
 (*e: type [[AST_python.pattern]] *)
 
+(* python2? *)
 and param_pattern =
   | PatternName of name
   | PatternTuple of param_pattern list
