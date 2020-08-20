@@ -45,6 +45,38 @@ open Common
  * to be too generic as in ast_fuzzy.ml, where we have a very general 
  * tree of nodes, but all the structure of the original AST is lost.
  * 
+ * The generic AST tries to be as close as possible to the original code but
+ * not too close. When a programming language feature is really sugar or
+ * an alternative way to do a thing, we usually unsugar. Here are the
+ * simplifications done:
+ *  - we do not keep the comma tokens in arguments. More generally we 
+ *    just keep the tokens to get the range right (see the discussions on
+ *    invariants below) and get rid of the other (e.g., we remove
+ *    parens around conditions in if). We keep the parens for 'Call'
+ *    because we want to get the right range for those so we need the
+ *    rightmost tokens in the AST.
+ *  - multiple var declarations in one declaration (e.g., int a,b; in C)
+ *    are expanded in multiple 'variable_definition'. Note that
+ *    tuple assignments (e.g., a,b=1,2) are not expanded in multiple assigns
+ *    because this is not always possible (e.g., a,b=foo()) and people may
+ *    want to explicitely match tuples assignments (we do some magic in 
+ *    Generic_vs_generic though to let 'a=1' matches also 'a,b=1,2').
+ *  - multiple ways to define a function are converted all to a
+ *    'function_definition' (e.g., Javascript arrows are converted in that)
+ *  - we are more general and impose less restrictions on where certain
+ *    constructs can appear to simplify things. 
+ *     * there is no special lhs/lvalue type (see IL.ml for that) and so
+ *      'Assign' takes a general 'expr' on its lhs. 
+ *     * there is no special toplevel/item vs stmt. Certain programming 
+ *       languages impose restrictions on where a function or directive can
+ *       appear (e.g., just at the toplevel), but we allow those constructs
+ *       at the stmt level. 
+ *     * the Splat and HashSplat operator can usually appear just in arguments
+ *       or inside arrays or in struct definitions (a field) but we are more
+ *       general and put it at the 'expr' level.
+ *      * certain attributes are valid only for certain constructs but instead
+ *        we use one attribute type (no class_attribute vs func_attribute etc.)
+ *
  * todo:
  *  - add C++ (argh)
  *  - add Rust, Scala (difficult)
@@ -71,7 +103,7 @@ open Common
  *  - add some 'a, 'b, 'c around expr/stmt/...
  *  - data-type a la carte like in github-semantic but IMHO too high-level
  *    with astronaut-style architecture (too abstract, too advanced features).
- *  - the OtherXxx strategy used in this file (simple)
+ *  - CURRENT SOLUTION: the OtherXxx strategy used in this file (simple)
  *  - functorize and add some type hole (type tstmt; type texpr; ...),
  *    todo? not a bad idea if later we want to add type information on each
  *    expression nodes
@@ -85,7 +117,7 @@ open Common
  *  - all the other_xxx types should contain only simple constructors (enums)
  *    without any parameter. I rely on that to simplify the code 
  *    of the generic mapper and matcher.
- *    Same for keyword_attribute.
+ *    Same for keyword_attributes.
  *  - each expression or statement must have at least one token in it
  *    so that semgrep can track a location (e.g., 'Return of expr option'
  *    is not enough because with no expr, there is no location information
@@ -93,7 +125,7 @@ open Common
  *  - each expression or statement should ideally have enough tokens in it
  *    to get its range, so at least the leftmost and rightmost token in
  *    all constructs.
- *    (alt: have the range info in each expr/stmt/pattern)
+ *    (alt: have the range info in each expr/stmt/pattern but big refactoring)
  *  - to correctly compute a CFG (Control Flow Graph), the stmt type 
  *    should list all constructs that contains other statements and 
  *    try to avoid to use the very generic OtherXxx of any
@@ -105,6 +137,7 @@ open Common
  *  - todo? each language should add the VarDefs that defines the locals
  *    used in a function (instead of having the first Assign play the role
  *    of a VarDef, as done in Python for example).
+ *
  *
  * See also pfff/lang_GENERIC/
  *)
@@ -1165,6 +1198,10 @@ and type_definition = {
        (* Java *)
        | OOTEO_EnumWithMethods | OOTEO_EnumWithArguments
 (*e: type [[AST_generic.other_or_type_element_operator]] *)
+
+(* ------------------------------------------------------------------------- *)
+(* Object/struct/record field definition *)
+(* ------------------------------------------------------------------------- *)
 
  (* Field definition and use, for classes, objects, and records.
   * note: I don't call it field_definition because it's used both to
