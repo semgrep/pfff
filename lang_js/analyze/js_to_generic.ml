@@ -494,7 +494,6 @@ and module_directive x =
 
 and program v = list toplevel v
 
-
 let any =
   function
   | Expr v1 -> let v1 = expr v1 in G.E v1
@@ -502,4 +501,4 @@ let any =
   | Item v1 -> let v1 = toplevel v1 in G.S v1
   | Items v1 -> let v1 = List.map toplevel v1 in G.Ss v1
   | Program v1 -> let v1 = program v1 in G.Pr v1
-
+  | Pattern v1 -> let v1 = pattern v1 in G.P v1

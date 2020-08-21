@@ -422,6 +422,7 @@ type program = toplevel list
 type any = 
   | Expr of expr
   | Stmt of stmt
+  | Pattern of pattern
   | Item of toplevel
   | Items of toplevel list
   | Program of program
