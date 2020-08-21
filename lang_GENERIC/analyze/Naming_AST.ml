@@ -409,7 +409,7 @@ let params_of_parameters env xs =
 (*****************************************************************************)
 
 (*s: function [[Naming_AST.resolve]] *)
-let resolve lang prog =
+let resolve2 lang prog =
   let env = default_env lang in
 
   (* would be better to use a classic recursive with environment visit *)
@@ -622,4 +622,6 @@ let resolve lang prog =
   visitor (Pr prog);
   ()
 (*e: function [[Naming_AST.resolve]] *)
+let resolve a b = Common.profile_code "Naming_ast.resolve" (fun () ->
+      resolve2 a b)
 (*e: pfff/lang_GENERIC/analyze/Naming_AST.ml *)

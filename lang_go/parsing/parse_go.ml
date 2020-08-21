@@ -59,8 +59,6 @@ let tokens a =
 (* Main entry point *)
 (*****************************************************************************)
 let parse2 filename = 
-  let stat = Parse_info.default_stat filename in
-
   (* this can throw Parse_info.Lexical_error *)
   let toks_orig = tokens filename in
   let toks = Common.exclude TH.is_comment_or_space toks_orig in
@@ -78,8 +76,7 @@ let parse2 filename =
         Parser_go.file  lexer lexbuf_fake
       )
     in
-    stat.PI.correct <- (Common.cat filename |> List.length);
-    (Some xs, toks_orig), stat
+    (Some xs, toks_orig), PI.correct_stat filename
 
   with Parsing.Parse_error ->
 
@@ -97,8 +94,7 @@ let parse2 filename =
       Parse_info.print_bad line_error (0, checkpoint2) filelines;
     end;
 
-    stat.PI.bad     <- Common.cat filename |> List.length;
-    (None, toks_orig), stat
+    (None, toks_orig), PI.bad_stat filename
 
 let parse a = 
   Common.profile_code "Parse_go.parse" (fun () -> parse2 a)
