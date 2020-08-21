@@ -585,9 +585,11 @@ and expr env e =
 
 and xml env x =
   (* TODO add_use_edge env ([x.xml_tag], E.Class); *)
-  x.xml_attrs |> List.iter (fun (_identTODO, xhp_attr) ->
+  x.xml_attrs |> List.iter (function
+   | XmlAttr (_identTODO, xhp_attr) ->
     (* TODO add_use_edge_lookup ~xhp:true env ([x.xml_tag], ident) E.Field; *)
     expr env xhp_attr
+  | XmlAttrExpr (_, e, _) -> expr env e
   );
   x.xml_body |> List.iter (xhp env)
 

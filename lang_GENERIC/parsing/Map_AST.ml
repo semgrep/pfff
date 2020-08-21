@@ -133,13 +133,17 @@ and map_xml {
             xml_body = v_xml_body
           } =
   let v_xml_body = map_of_list map_xml_body v_xml_body in
-  let v_xml_attrs =
-    map_of_list
-      (fun (v1, v2) ->
-         let v1 = map_ident v1 and v2 = map_xml_attr v2 in (v1, v2))
-      v_xml_attrs in
+  let v_xml_attrs = map_of_list map_xml_attribute v_xml_attrs in
   let v_xml_tag = map_ident v_xml_tag in 
   { xml_tag = v_xml_tag; xml_attrs = v_xml_attrs; xml_body = v_xml_body }
+
+and map_xml_attribute = function
+  | XmlAttr (v1, v2) -> 
+      let v1 = map_ident v1 and v2 = map_xml_attr v2 in
+      XmlAttr (v1, v2)
+  | XmlAttrExpr v ->
+      let v = map_bracket map_expr v in
+      XmlAttrExpr v
 
 and map_xml_attr v = map_expr v
 and map_xml_body =

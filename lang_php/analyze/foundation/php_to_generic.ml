@@ -355,7 +355,8 @@ and xhp =
 and xml { xml_tag = xml_tag; xml_attrs = xml_attrs; xml_body = xml_body } =
   let tag = ident xml_tag in
   let attrs =
-    list (fun (v1, v2) -> let v1 = ident v1 and v2 = xhp_attr v2 in v1, v2)
+    list (fun (v1, v2) -> let v1 = ident v1 and v2 = xhp_attr v2 in 
+        G.XmlAttr (v1, v2))
     xml_attrs in
   let body = list xhp xml_body in 
   { G.xml_tag = tag; xml_attrs = attrs; xml_body = body }

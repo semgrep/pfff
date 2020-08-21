@@ -114,13 +114,16 @@ and v_property_name =
 
 and v_label v = v_wrap v_string v
 
+and v_xml_attribute v = 
+  match v with
+  | XmlAttr (v1, v2) -> let v1 = v_ident v1 and v2 = v_xml_attr v2 in ()
+  | XmlAttrExpr v -> v_bracket v_expr v
+
 and
   v_xml { xml_tag = v_xml_tag; xml_attrs = v_xml_attrs; xml_body = vv_xml_body
         } =
   let v_xml_tag = v_ident v_xml_tag in
-  let v_xml_attrs =
-    v_list (fun (v1, v2) -> let v1 = v_ident v1 and v2 = v_xml_attr v2 in ())
-      v_xml_attrs in
+  let v_xml_attrs = v_list v_xml_attribute  v_xml_attrs in
   let vv_xml_body = v_list v_xml_body vv_xml_body in 
   ()
 and v_xml_attr v = v_expr v

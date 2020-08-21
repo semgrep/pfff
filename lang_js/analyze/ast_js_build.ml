@@ -632,15 +632,14 @@ and xhp_html env = function
 
 and xhp_attribute env = function
   | C.XhpAttrValue (id, _, v) ->
-      id, xhp_attr_value env v
+      A.XmlAttr (id, xhp_attr_value env v)
   | C.XhpAttrNoValue id ->
       (* see https://www.reactenlightenment.com/react-jsx/5.7.html *)
-      id, (A.Bool (true, fake "true"))
-  | C.XhpAttrSpread (_, (tok, e), _) -> 
+      A.XmlAttr (id, (A.Bool (true, fake "true")))
+  | C.XhpAttrSpread (t1, (tok, e), t2) -> 
       let e = expr env e in
-      (* TODO *)
-      let id = "...", tok in
-      id, A.Apply (A.IdSpecial (A.Spread, fake "spread"), fb [e])
+      let e = A.Apply (A.IdSpecial (A.Spread, tok), fb [e]) in
+      A.XmlAttrExpr (t1, e, t2)
 
 and xhp_attr_value env = function
   | C.XhpAttrString s -> A.String s
@@ -649,13 +648,13 @@ and xhp_attr_value env = function
 
 and xhp_body env = function
   | C.XhpText x -> A.XmlText x
-  | C.XhpExpr (_, e, _) -> 
+  | C.XhpExpr (t, e, _) -> 
       let e = Common.map_opt (expr env) e in
       (match e with
       | Some e -> A.XmlExpr e
       | None -> 
-            (* TODO: what is that? *) 
-            A.XmlExpr (A.IdSpecial (A.Null, fake "null"))
+            (* sometime people use empty { } to put comment in it *) 
+            A.XmlExpr (A.IdSpecial (A.Null, t))
       )
   | C.XhpNested xml -> A.XmlXml (xhp_html env xml)
 

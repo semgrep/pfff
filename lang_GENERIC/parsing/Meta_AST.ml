@@ -105,17 +105,21 @@ and
   let bnd = ("xml_body", arg) in
   let bnds = bnd :: bnds in
   let arg =
-    OCaml.vof_list
-      (fun (v1, v2) ->
-         let v1 = vof_ident v1
-         and v2 = vof_xml_attr v2
-         in OCaml.VTuple [ v1; v2 ])
-      v_xml_attrs in
+    OCaml.vof_list vof_xml_attribute v_xml_attrs in
   let bnd = ("xml_attrs", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_ident v_xml_tag in
   let bnd = ("xml_tag", arg) in let bnds = bnd :: bnds in 
   OCaml.VDict bnds
+
+and vof_xml_attribute = function
+  | XmlAttr (v1, v2) ->
+         let v1 = vof_ident v1
+         and v2 = vof_xml_attr v2
+         in OCaml.VSum ("XmlAttr", [ v1; v2 ])
+  | XmlAttrExpr v1 ->
+      let v1 = vof_bracket vof_expr v1 in
+      OCaml.VSum ("XmlAttrExpr", [ v1 ])
 
 and vof_xml_attr v = vof_expr v
 

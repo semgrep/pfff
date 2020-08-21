@@ -158,11 +158,16 @@ and xhp =
   | XmlExpr v1 -> let v1 = expr v1 in G.XmlExpr v1
   | XmlXml v1 -> let v1 = xml v1 in G.XmlXml v1
 
+and xml_attribute = function
+  | XmlAttr (v1, v2) -> 
+      let v1 = ident v1 and v2 = xhp_attr v2 in G.XmlAttr (v1, v2)
+  | XmlAttrExpr v ->
+      let v = bracket expr v in
+      G.XmlAttrExpr v
+
 and xml { xml_tag = xml_tag; xml_attrs = xml_attrs; xml_body = xml_body } =
   let tag = ident xml_tag in
-  let attrs =
-    list (fun (v1, v2) -> let v1 = ident v1 and v2 = xhp_attr v2 in v1, v2)
-    xml_attrs in
+  let attrs =list xml_attribute xml_attrs in
   let body = list xhp xml_body in 
   { G.xml_tag = tag; xml_attrs = attrs; xml_body = body }
 
