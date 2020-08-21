@@ -587,8 +587,13 @@ multiplicative_expression:
 
 additive_expression:
  | multiplicative_expression  { $1 }
- | additive_expression PLUS multiplicative_expression { Infix($1,(Plus,$2),$3)}
+ | additive_expression PLUS multiplicative_expression  { Infix($1,(Plus,$2),$3)}
  | additive_expression MINUS multiplicative_expression { Infix($1,(Minus,$2),$3)}
+ (* Must expand out ellipsis options in order to avoid resolution conflicts *)
+ | "..."               PLUS multiplicative_expression  { Flag_parsing.sgrep_guard (Infix (Ellipsis $1, (Plus, $2), $3)) }
+ | "..."               MINUS multiplicative_expression { Flag_parsing.sgrep_guard (Infix (Ellipsis $1, (Minus, $2), $3)) }
+ | additive_expression PLUS "..."                      { Flag_parsing.sgrep_guard (Infix ($1, (Plus, $2), Ellipsis $3)) }
+ | additive_expression MINUS "..."                     { Flag_parsing.sgrep_guard (Infix ($1, (Minus, $2), Ellipsis $3)) }
 
 shift_expression:
  | additive_expression  { $1 }
