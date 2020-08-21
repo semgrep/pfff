@@ -561,18 +561,15 @@ and expr =
 (*e: type [[AST_generic.xml]] *)
 (*s: type [[AST_generic.xml_attribute]] *)
      and xml_attribute = 
-      | XmlAttr of ident * xml_attr_value
+      | XmlAttr of ident * expr (* bracket *)
       (* less: XmlAttrNoValue of ident. <foo a /> <=> <foo a=true /> *)
       (* jsx: usually a Spread operation, e.g., <foo {...bar} /> *)
       | XmlAttrExpr of expr bracket
 (*e: type [[AST_generic.xml_attribute]] *)
-(*s: type [[AST_generic.xml_attr_value]] *)
-       and xml_attr_value = expr
-(*e: type [[AST_generic.xml_attr_value]] *)
 (*s: type [[AST_generic.xml_body]] *)
      and xml_body =
       | XmlText of string wrap
-      | XmlExpr of expr
+      | XmlExpr of expr (* bracket *)
       | XmlXml of xml
 (*e: type [[AST_generic.xml_body]] *)
 
