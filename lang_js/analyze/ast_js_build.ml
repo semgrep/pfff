@@ -61,8 +61,7 @@ exception UnhandledConstruct of string * Parse_info.t
  *)
 let transpile_xml = ref false
 let transpile_pattern = ref false
-(* TODO *)
-let transpile_forof = ref true
+let transpile_forof = ref false
 
 (*****************************************************************************)
 (* Helpers *)
@@ -860,7 +859,18 @@ and parameter_binding env idx = function
        raise (TodoConstruct(spf "ParamPattern:%s" s, tok))
      )
     end else 
-      raise Todo
+      let pat = parameter_pattern env x in
+      A.ParamPattern pat, []
+
+(* only when not !transpile_pattern *)
+and parameter_pattern env 
+  { C.ppat = pat; ppat_type = _t; ppat_default = defopt } =
+  let pat = pattern env pat in
+  match defopt with
+  | None -> pat
+  | Some (t, e) ->
+      let e = expr env e in
+      A.Assign (pat, t, e)
 
 and parameter env p =
   let name = name env p.C.p_name in
@@ -992,7 +1002,7 @@ let any x =
   match x with
   | C.Expr x -> A.Expr (expr env x)
   | C.Stmt x -> A.Stmt (stmt1 env x)
-  | C.Pattern _x -> raise Todo
+  | C.Pattern x -> A.Pattern (pattern env x)
   (* todo? module_item1_list env [x] *)
   | C.ModuleItem x -> 
       (match module_item env x with
@@ -1001,7 +1011,7 @@ let any x =
       )
   (* todo? module_item_list env [x] *)
   | C.ModuleItems x -> A.Items (module_items env x)
-  | C.Program _x -> raise Todo
+  | C.Program x -> A.Program (program x)
 
 let expr x = 
   let env = empty_env () in

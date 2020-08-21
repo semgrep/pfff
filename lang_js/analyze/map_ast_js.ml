@@ -408,6 +408,7 @@ and map_any =
   function
   | Expr v1 -> let v1 = map_expr v1 in Expr ((v1))
   | Stmt v1 -> let v1 = map_stmt v1 in Stmt ((v1))
+  | Pattern v1 -> let v1 = map_pattern v1 in Pattern v1
   | Items v1 -> let v1 = map_of_list map_toplevel v1 in Items ((v1))
   | Item v1 -> let v1 = map_toplevel v1 in Item ((v1))
   | Program v1 -> let v1 = map_program v1 in Program ((v1))
