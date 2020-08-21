@@ -148,8 +148,12 @@ and annotation_element =
   | AnnotArgValue v1 -> 
       let v1 = element_value v1 in 
       [G.Arg v1]
-  | AnnotArgPairInit v1 -> 
+  | AnnotArgPairInit (v1, None) ->
       list annotation_pair v1
+  | AnnotArgPairInit (v1, Some v2) ->
+      let v1 = list annotation_pair v1
+      and v2 = tok v2 in
+      (G.Arg (G.Ellipsis v2))::v1
   | EmptyAnnotArg -> []
 
 and element_value =

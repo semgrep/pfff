@@ -997,14 +997,16 @@ annotation:
 annotation_element:
  | (* empty *) { EmptyAnnotArg }
  | element_value { AnnotArgValue $1 }
- | listc(element_value_pair) { AnnotArgPairInit $1 }
+ | listc(element_value_pair) { AnnotArgPairInit ($1, None) }
+ | "..." "," listc(element_value_pair) { AnnotArgPairInit ($3, Some $1) }
 
 element_value:
  | expr1      { AnnotExprInit $1 }
  | annotation { AnnotNestedAnnot $1 }
  | element_value_array_initializer { AnnotArrayInit $1 }
 
-element_value_pair: identifier "=" element_value { ($1, $3) }
+element_value_pair:
+ | identifier "=" element_value { ($1, $3) }
 
 
 element_value_array_initializer:
