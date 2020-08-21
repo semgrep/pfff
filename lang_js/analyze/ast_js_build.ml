@@ -648,13 +648,13 @@ and xhp_attr_value env = function
 
 and xhp_body env = function
   | C.XhpText x -> A.XmlText x
-  | C.XhpExpr (_, e, _) -> 
+  | C.XhpExpr (t, e, _) -> 
       let e = Common.map_opt (expr env) e in
       (match e with
       | Some e -> A.XmlExpr e
       | None -> 
-            (* TODO: what is that? *) 
-            A.XmlExpr (A.IdSpecial (A.Null, fake "null"))
+            (* sometime people use empty { } to put comment in it *) 
+            A.XmlExpr (A.IdSpecial (A.Null, t))
       )
   | C.XhpNested xml -> A.XmlXml (xhp_html env xml)
 
