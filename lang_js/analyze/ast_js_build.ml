@@ -632,15 +632,14 @@ and xhp_html env = function
 
 and xhp_attribute env = function
   | C.XhpAttrValue (id, _, v) ->
-      id, xhp_attr_value env v
+      A.XmlAttr (id, xhp_attr_value env v)
   | C.XhpAttrNoValue id ->
       (* see https://www.reactenlightenment.com/react-jsx/5.7.html *)
-      id, (A.Bool (true, fake "true"))
-  | C.XhpAttrSpread (_, (tok, e), _) -> 
+      A.XmlAttr (id, (A.Bool (true, fake "true")))
+  | C.XhpAttrSpread (t1, (tok, e), t2) -> 
       let e = expr env e in
-      (* TODO *)
-      let id = "...", tok in
-      id, A.Apply (A.IdSpecial (A.Spread, fake "spread"), fb [e])
+      let e = A.Apply (A.IdSpecial (A.Spread, tok), fb [e]) in
+      A.XmlAttrExpr (t1, e, t2)
 
 and xhp_attr_value env = function
   | C.XhpAttrString s -> A.String s

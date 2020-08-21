@@ -224,7 +224,10 @@ and expr =
       xml_attrs: xml_attribute list;
       xml_body: xml_body list;
     }
-     and xml_attribute = ident * xml_attr_value
+     and xml_attribute = 
+       | XmlAttr of ident * xml_attr_value
+       (* jsx: usually a Spread operation, e.g., <foo {...bar} /> *)
+       | XmlAttrExpr of expr bracket
        and xml_attr_value = expr
      and xml_body =
       | XmlText of string wrap

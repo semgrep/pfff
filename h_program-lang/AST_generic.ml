@@ -552,6 +552,7 @@ and expr =
      * reused in ast_js.ml, ast_php.ml
      *)
 (*s: type [[AST_generic.xml]] *)
+    (* this is for JSX/TSX in javascript land, and XHP in PHP land *)
     and xml = {
       xml_tag: ident;
       xml_attrs: xml_attribute list;
@@ -559,7 +560,11 @@ and expr =
     }
 (*e: type [[AST_generic.xml]] *)
 (*s: type [[AST_generic.xml_attribute]] *)
-     and xml_attribute = ident * xml_attr_value
+     and xml_attribute = 
+      | XmlAttr of ident * xml_attr_value
+      (* less: XmlAttrNoValue of ident. <foo a /> <=> <foo a=true /> *)
+      (* jsx: usually a Spread operation, e.g., <foo {...bar} /> *)
+      | XmlAttrExpr of expr bracket
 (*e: type [[AST_generic.xml_attribute]] *)
 (*s: type [[AST_generic.xml_attr_value]] *)
        and xml_attr_value = expr
