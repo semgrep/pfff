@@ -124,7 +124,7 @@ let var_stats prog : var_stats =
 (* Entry point *)
 (*****************************************************************************)
 (* !Note that this assumes Naming_AST.resolve has been called before! *)
-let propagate lang prog =
+let propagate2 lang prog =
   let env = default_env () in
 
   (* step1: first pass const analysis for languages without 'const/final' *)
@@ -200,3 +200,6 @@ let propagate lang prog =
   in
   visitor (Pr prog);
   ()
+
+let propagate a b = Common.profile_code "Constant_propagation.xxx" (fun () ->
+      propagate2 a b)

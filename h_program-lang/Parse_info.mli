@@ -175,6 +175,8 @@ type parsing_stat = {
 (*s: signature [[Parse_info.default_stat]] *)
 val default_stat: Common.filename -> parsing_stat
 (*e: signature [[Parse_info.default_stat]] *)
+val bad_stat: Common.filename -> parsing_stat
+val correct_stat: Common.filename -> parsing_stat
 (*s: signature [[Parse_info.print_parsing_stat_list]] *)
 val print_parsing_stat_list: ?verbose:bool -> parsing_stat list -> unit
 (*e: signature [[Parse_info.print_parsing_stat_list]] *)

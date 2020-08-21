@@ -52,7 +52,7 @@ let test_parse_common xs fullxs ext  =
       )) 
      ) with Stack_overflow as exn ->
        pr2 (spf "PB on %s, exn = %s" file (Common.exn_to_s exn));
-       (None, []), { (PI.default_stat file) with PI.bad = Common2.nblines file }
+       (None, []), PI.bad_stat file
     in
     Common.push stat stat_list;
     let s = spf "bad = %d" stat.Parse_info.bad in

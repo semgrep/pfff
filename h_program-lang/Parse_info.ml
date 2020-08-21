@@ -190,6 +190,14 @@ let default_stat file =  {
   problematic_lines = [];
 }
 
+let bad_stat file = 
+  (* or Common2.nblines? *)
+  let n = Common.cat file |> List.length in
+  { (default_stat file) with bad = n }
+
+let correct_stat file =
+  let n = Common.cat file |> List.length in
+  { (default_stat file) with correct = n }
 
 (* Many parsers need to interact with the lexer, or use tricks around
  * the stream of tokens, or do some error recovery, or just need to

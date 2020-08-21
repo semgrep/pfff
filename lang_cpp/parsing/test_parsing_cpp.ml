@@ -39,7 +39,7 @@ let test_parse_cpp ?lang xs  =
      ))
     ) with exn -> (* TODO: be more strict, List.hd failure, Stack overflow *)
        pr2 (spf "PB on %s, exn = %s" file (Common.exn_to_s exn));
-       [], { (PI.default_stat file) with PI.bad = Common2.nblines file }
+       [], PI.bad_stat file
     in
     Common.push stat stat_list;
 
