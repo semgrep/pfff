@@ -1068,6 +1068,7 @@ and vof_item x = vof_stmt x
 and vof_program v = OCaml.vof_list vof_item v
 and vof_any =
   function
+  | TodoK v1 -> let v1 = vof_ident v1 in OCaml.VSum (("TodoK", [ v1 ]))
   | Tk v1 -> let v1 = vof_tok v1 in OCaml.VSum (("Tk", [ v1 ]))
   | N v1 -> let v1 = vof_name v1 in OCaml.VSum (("N", [ v1 ]))
   | Modn v1 -> let v1 = vof_module_name v1 in OCaml.VSum (("Modn", [ v1 ]))

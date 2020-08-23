@@ -77,7 +77,7 @@ type ty =
   | TyFunction of ty * tok (* -> *) * ty
   | TyApp of ty_args * long_name (* todo? could be merged with TyName *)
 
-  | TyTodo of tok
+  | TyTodo of string wrap * ty list
 
  and ty_args = 
     | TyArg1 of ty

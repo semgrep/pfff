@@ -195,7 +195,7 @@ and v_ty x =
   | TyFunction ((v1, v2, v3)) ->
       let v1 = v_ty v1 and v2 = v_tok v2 and v3 = v_ty v3 in ()
   | TyApp ((v1, v2)) -> let v1 = v_ty_args v1 and v2 = v_long_name v2 in ()
-  | TyTodo t -> v_tok t
+  | TyTodo (v1, v2) -> v_wrap OCaml.v_string v1; OCaml.v_list v_ty v2
   in
   vin.kty (k, all_functions) x
 

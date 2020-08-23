@@ -725,6 +725,7 @@ and v_other_directive_operator _ = ()
 and v_program v = v_stmts v
 and v_any =
   function
+  | TodoK v1 -> v_ident v1
   | N v1 -> let v1 = v_name v1 in ()
   | Modn v1 -> let v1 = v_module_name v1 in ()
   | En v1 -> let v1 = v_entity v1 in ()

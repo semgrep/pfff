@@ -43,6 +43,8 @@ let v_semicolon_list = xxx_list
 let v_comma_list = xxx_list
 let v_and_list = xxx_list
 
+let v_list = List.map
+
 let v_string x = x
 
 let fake_info () = Parse_info.fake_info "FAKE"
@@ -74,7 +76,7 @@ and v_ty x =
       A.TyFunction (v1, v3)
   | TyApp ((v1, v2)) -> let v1 = v_ty_args v1 and v2 = v_long_name v2 in 
                         A.TyApp (v1, v2)
-  | TyTodo t -> A.TyTodo t
+  | TyTodo (t, xs) -> A.TyTodo (t, v_list v_ty xs)
 
 
 and v_type_declaration x =

@@ -66,6 +66,8 @@ and module_name (v1, v2) =
 
 and qualifier v = list ident v
 
+and todo_kind v = ident v
+
 and type_ =
   function
   | TyName v1 -> let v1 = name v1 in G.TyName v1
@@ -75,7 +77,10 @@ and type_ =
   | TyApp ((v1, v2)) -> let v1 = list type_ v1 and v2 = name v2 in
                         G.TyNameApply (v2, v1 |> List.map (fun t -> G.TypeArg t))
   | TyTuple v1 -> let v1 = list type_ v1 in G.TyTuple (G.fake_bracket v1)
-  | TyTodo t -> G.OtherType (G.OT_Todo, [G.Tk t])
+  | TyTodo (t, v1) -> 
+    let t = todo_kind t in
+    let v1 = list type_ v1 in
+    G.OtherType (G.OT_Todo, (G.TodoK t)::(List.map (fun x -> G.T x) v1))
 
 (* TODO: we should try to transform in stmt while/... instead of those
  * OE_StmtExpr *)

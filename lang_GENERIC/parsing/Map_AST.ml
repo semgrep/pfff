@@ -805,6 +805,7 @@ and map_program v = map_of_list map_item v
 
 and map_any =
   function
+  | TodoK v1 -> let v1 = map_ident v1 in TodoK v1
   | Tk v1 -> let v1 = map_tok v1 in Tk v1
   | I v1 -> let v1 = map_ident v1 in I ((v1))
   | N v1 -> let v1 = map_name v1 in N ((v1))
