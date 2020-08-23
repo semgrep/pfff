@@ -1087,11 +1087,9 @@ module_expr:
 (*************************************************************************)
 
 (*pad: this is a limited implementation for now; just enough for efuns/pfff *)
-floating_attribute: "[@@@" attr_id payload "]" { ItemTodo $1 }
-
-post_item_attribute: "[@@" attr_id payload "]" { }
-
-attribute: "[@" attr_id payload "]" { }
+floating_attribute:  "[@@@" attr_id payload "]" { ItemTodo $1 }
+post_item_attribute: "[@@"  attr_id payload "]" { }
+attribute:           "[@"   attr_id payload "]" { }
 
 
 attr_id: listr_sep(single_attr_id, ".") { $1 }
@@ -1101,7 +1099,4 @@ payload: structure { }
 single_attr_id:
   | TLowerIdent { $1 }
   | TUpperIdent { $1 }
-(* should also put all keywords here, but bad practice no? *)
-
-
-
+  (* should also put all keywords here, but bad practice no? *)
