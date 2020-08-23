@@ -772,7 +772,7 @@ type_parameters:
 
 type_parameter: (*TODO type_variance*) "'" ident   { ($1, Name $2) }
 
-label_declaration: Tmutable? label ":" poly_type          
+label_declaration: Tmutable? label ":" poly_type attribute*
    { { fld_mutable = $1; fld_name = Name $2; fld_tok = $3; fld_type = $4; } }
 
 (*----------------------------*)
@@ -830,7 +830,7 @@ meth_list:
   | field ";"?                              {  }
   | ".."                                    {  }
 
-field: label ":" poly_type             { }
+field: label ":" poly_type attribute*       { }
 
 (*----------------------------*)
 (* Misc *)
@@ -1085,13 +1085,19 @@ module_expr:
 (*pad: this is a limited implementation for now; just enough for efuns/pfff *)
 floating_attribute: TBracketAtAtAt attr_id payload "]" { ItemTodo $1 }
 
+post_item_attribute: TBracketAtAt attr_id payload "]" { }
+
+attribute: TBracketAt attr_id payload "]" { }
+
+
+attr_id: listr_sep(single_attr_id, ".") { $1 }
+
+payload: structure { }
+
 single_attr_id:
   | TLowerIdent { $1 }
   | TUpperIdent { $1 }
 (* should also put all keywords here, but bad practice no? *)
 
-attr_id: listr_sep(single_attr_id, ".") { $1 }
 
-post_item_attribute: TBracketAtAt attr_id payload "]" { }
 
-payload: structure { }
