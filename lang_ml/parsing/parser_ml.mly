@@ -783,10 +783,10 @@ type_kind:
       { None }
  | "=" core_type
       { Some ($1, TyCore $2) }
- | "=" (*TODO private?*) ioption("|") list_sep(constructor_declaration, "|")
-      { Some ($1, TyAlgebric $3) }
- | "=" (*TODO private?*) "{" list_sep_term(label_declaration, ";") "}"
-      { Some ($1, TyRecord ($2, ($3), $4)) }
+ | "=" ioption(Tprivate) ioption("|") list_sep(constructor_declaration, "|")
+      { Some ($1, TyAlgebric $4) }
+ | "=" ioption(Tprivate) "{" list_sep_term(label_declaration, ";") "}"
+      { Some ($1, TyRecord ($3, ($4), $5)) }
 
 
 constructor_declaration: constr_ident constructor_arguments  { Name $1, $2 }
