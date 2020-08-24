@@ -922,6 +922,7 @@ label_pattern:
   | "~" label_var                                 { ParamTodo $1 }
   (* ex: let x ~foo:a *)
   | TLabelDecl simple_pattern                     { ParamTodo (snd $1) }
+  | TOptLabelDecl simple_expr                     { ParamTodo (snd $1) }
   | "~" "(" label_let_pattern ")"                 { ParamTodo $1 }
   | "?" "(" label_let_pattern opt_default ")"     { ParamTodo $1 }
   | "?" label_var                                 { ParamTodo $1 }
