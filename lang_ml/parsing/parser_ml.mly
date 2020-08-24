@@ -117,7 +117,7 @@ let optlist_to_list = function
  TMinusDot TPlusDot
 
 (* operators *)
-%token <Parse_info.t> TPlus TMinus TLess "<" TGreater ">"
+%token <Parse_info.t> TPlus "+" TMinus "-" TLess "<" TGreater ">"
 %token <string * Parse_info.t> TPrefixOperator TInfixOperator
 
 (* attributes *)
@@ -395,7 +395,7 @@ operator:
  | Tor       { } | TAnd      { }
  | Tmod      { } | Tland     { } | Tlor      { } | Tlxor     { }
  | Tlsl      { } | Tlsr      { } | Tasr      { }
- | TPlus     { } | TPlusDot  { } | TMinus    { } | TMinusDot { }
+ | "+"     { } | TPlusDot  { } | "-"    { } | TMinusDot { }
  | "<"     { } | ">"  { }
  | TAndAnd { } | TBangEq { }
 
@@ -519,8 +519,8 @@ expr:
 
  | expr "=" expr   { Infix ($1, ("=", $2), $3) }
 
- | expr TPlus expr     { Infix ($1, ("+", $2), $3)  }
- | expr TMinus expr    { Infix ($1, ("-", $2), $3) }
+ | expr "+" expr     { Infix ($1, ("+", $2), $3)  }
+ | expr "-" expr    { Infix ($1, ("-", $2), $3) }
  | expr TPlusDot expr  { Infix ($1, ("+.", $2), $3) }
  | expr TMinusDot expr { Infix ($1, ("-.", $2), $3) }
  | expr "*" expr        { Infix ($1, ("*", $2), $3) }
@@ -638,11 +638,11 @@ lbl_expr:
  | label_longident          { FieldImplicitExpr ($1) }
 
 additive:
-  | TPlus                                        { "+", $1 }
+  | "+"                                        { "+", $1 }
   | TPlusDot                                     { "+.", $1 }
 
 subtractive:
-  | TMinus                                       { "-", $1 }
+  | "-"                                       { "-", $1 }
   | TMinusDot                                    { "-.", $1 }
 
 direction_flag:
@@ -753,10 +753,10 @@ pattern_comma_list:
 
 signed_constant:
  | constant       { C2 $1 }
- | TMinus TInt    { CMinus ($1, Int $2) }
- | TMinus TFloat  { CMinus ($1, Float $2) }
- | TPlus TInt     { CPlus ($1, Int $2) }
- | TPlus TFloat   { CPlus ($1, Float $2) }
+ | "-" TInt    { CMinus ($1, Int $2) }
+ | "-" TFloat  { CMinus ($1, Float $2) }
+ | "+" TInt     { CPlus ($1, Int $2) }
+ | "+" TFloat   { CPlus ($1, Float $2) }
 
 (*************************************************************************)
 (* Types *)
@@ -800,7 +800,7 @@ type_parameters:
  | type_parameter                      { TyParam1 $1 }
  | "(" list_sep(type_parameter, ",") ")" { TyParamMulti (($1, $2, $3)) }
 
-type_parameter: (*TODO type_variance*) "'" ident   { ($1, Name $2) }
+type_parameter: ioption(type_variance) "'" ident   { ($2, Name $3) }
 
 label_declaration: Tmutable? label ":" poly_type attribute*
    { { fld_mutable = $1; fld_name = Name $2; fld_tok = $3; fld_type = $4; } }
@@ -887,6 +887,10 @@ meth_list:
   | ".."                                    { [TyTodo(("..",$1), [])] }
 
 field: label ":" poly_type attribute*       { TyTodo(("Field",$2), [$3]) }
+
+type_variance:
+  | "+" { }
+  | "-" { }
 
 (*************************************************************************)
 (* Let/Fun definitions *)
