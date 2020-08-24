@@ -11,7 +11,6 @@
 (*                                                                     *)
 (***********************************************************************)
 open Common
-
 open Cst_ml
 
 (*************************************************************************)
@@ -265,16 +264,18 @@ list_and2(X): list_sep2(X, Tand) { $1 }
 (* Toplevel, compilation units *)
 (*************************************************************************)
 
-interface:      signature EOF                        { $1 }
-implementation: structure EOF                        { $1 }
+interface:      signature EOF              { $1 }
+implementation: structure EOF              { $1 }
 
 sgrep_spatch_pattern:
- | expr EOF { Expr $1 }
- | signature_item EOF { Item $1 }
+ | expr                                EOF { Expr $1 }
+ | signature_item                      EOF { Item $1 }
  | structure_item_minus_signature_item EOF { Item $1 }
 
+(* coupling: structure_item *)
 structure_item_minus_signature_item:
  | Tlet Trec? list_and(let_binding)              { Let ($1, $2, $3) }
+
  (* modules *)
  | Tmodule TUpperIdent module_binding
       { match $3 with
@@ -284,7 +285,7 @@ structure_item_minus_signature_item:
  | Tinclude module_expr                          { ItemTodo $1 }
 
  (* objects *)
-  | Tclass Ttype list_and(class_type_declaration) { ItemTodo $1 }
+ | Tclass Ttype list_and(class_type_declaration) { ItemTodo $1 }
 
  | Texception TUpperIdent "=" mod_longident { ItemTodo $1 }
  | floating_attribute { $1 }
@@ -756,11 +757,9 @@ type_kind:
       { None }
  | "=" core_type
       { Some ($1, TyCore $2) }
- | "=" list_sep(constructor_declaration, "|")
-      { Some ($1, TyAlgebric $2) }
- | "=" (*TODO private_flag*) "|" list_sep(constructor_declaration, "|")
-      { Some ($1, TyAlgebric (Right $2::$3)) }
- | "=" (*TODO private_flag*) "{" list_sep_term(label_declaration, ";") "}"
+ | "=" (*TODO private?*) ioption("|") list_sep(constructor_declaration, "|")
+      { Some ($1, TyAlgebric $3) }
+ | "=" (*TODO private?*) "{" list_sep_term(label_declaration, ";") "}"
       { Some ($1, TyRecord ($2, ($3), $4)) }
 
 
