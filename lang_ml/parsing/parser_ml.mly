@@ -317,6 +317,8 @@ signature_item_noattr:
  (* objects *)
  | Tclass list_and2(class_description)           
    { ItemTodo (("Class",$1), $2)  }
+ | Tclass Ttype list_and2(class_type_declaration) 
+    { ItemTodo (("ClassType", $1), $3) }
 
 (*----------------------------*)
 (* Misc *)
