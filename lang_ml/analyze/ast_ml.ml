@@ -51,7 +51,7 @@ type name = qualifier * ident
  and qualifier = ident list (* TODO: functor? *)
  [@@deriving show] (* with tarzan *)
 
-type todo_kind = string wrap
+type todo_category = string wrap
  [@@deriving show] (* with tarzan *)
 (* ------------------------------------------------------------------------- *)
 (* Types *)
@@ -66,7 +66,7 @@ type type_ =
 
   | TyTuple of type_ list (* at least 2 *)
 
-  | TyTodo of todo_kind * type_ list
+  | TyTodo of todo_category * type_ list
 
  [@@deriving show { with_path = false} ] (* with tarzan *)
 

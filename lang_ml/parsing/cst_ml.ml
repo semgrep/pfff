@@ -64,6 +64,9 @@ type long_name = qualifier * name
  and qualifier = (name * tok (*'.'*)) list
  [@@deriving show] (* with tarzan *)
 
+type todo_category = string wrap
+ [@@deriving show] (* with tarzan *)
+
 (* ------------------------------------------------------------------------- *)
 (* Types *)
 (* ------------------------------------------------------------------------- *)
@@ -77,7 +80,7 @@ type ty =
   | TyFunction of ty * tok (* -> *) * ty
   | TyApp of ty_args * long_name (* todo? could be merged with TyName *)
 
-  | TyTodo of string wrap * ty list
+  | TyTodo of todo_category * ty list
 
  and ty_args = 
     | TyArg1 of ty
