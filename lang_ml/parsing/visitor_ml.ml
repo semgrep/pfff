@@ -184,7 +184,8 @@ and v_qualifier v =
     OCaml.v_list (fun (v1, v2) -> let v1 = v_name v1 and v2 = v_tok v2 in ()) v
   in
   vin.kqualifier (k, all_functions) v
-  
+
+and v_todo_category x = v_wrap OCaml.v_string x
 and v_ty x =
   let k x = 
     match x with
@@ -195,7 +196,7 @@ and v_ty x =
   | TyFunction ((v1, v2, v3)) ->
       let v1 = v_ty v1 and v2 = v_tok v2 and v3 = v_ty v3 in ()
   | TyApp ((v1, v2)) -> let v1 = v_ty_args v1 and v2 = v_long_name v2 in ()
-  | TyTodo (v1, v2) -> v_wrap OCaml.v_string v1; OCaml.v_list v_ty v2
+  | TyTodo (v1, v2) -> v_todo_category v1; OCaml.v_list v_ty v2
   in
   vin.kty (k, all_functions) x
 
@@ -345,7 +346,7 @@ and v_expr v =
       and v8 = v_seq_expr v8
       and v9 = v_tok v9
       in ()
-  | ExprTodo t -> v_tok t
+  | ExprTodo (t, xs) -> v_todo_category t; OCaml.v_list v_expr xs
   in
   vin.kexpr (k, all_functions) v
 

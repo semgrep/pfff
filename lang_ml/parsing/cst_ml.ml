@@ -137,7 +137,8 @@ type expr =
 
   | ParenExpr of expr paren
 
-  | ExprTodo of tok
+  | ExprTodo of todo_category * expr list
+
 
  and seq_expr = expr semicolon_list
 

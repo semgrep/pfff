@@ -66,7 +66,7 @@ and module_name (v1, v2) =
 
 and qualifier v = list ident v
 
-and todo_kind v = ident v
+and todo_category v = ident v
 
 and type_ =
   function
@@ -78,7 +78,7 @@ and type_ =
                         G.TyNameApply (v2, v1 |> List.map (fun t -> G.TypeArg t))
   | TyTuple v1 -> let v1 = list type_ v1 in G.TyTuple (G.fake_bracket v1)
   | TyTodo (t, v1) -> 
-    let t = todo_kind t in
+    let t = todo_category t in
     let v1 = list type_ v1 in
     G.OtherType (G.OT_Todo, (G.TodoK t)::(List.map (fun x -> G.T x) v1))
 
@@ -233,7 +233,10 @@ and expr =
       let st = G.For (t, header, G.exprstmt v5) in
       G.OtherExpr (G.OE_StmtExpr, [G.S st])
 
-  | ExprTodo t -> G.OtherExpr (G.OE_Todo, [G.Tk t])
+  | ExprTodo (t, xs) -> 
+      let t = todo_category t in
+      let xs = list expr xs in
+      G.OtherExpr (G.OE_Todo, (G.TodoK t)::(List.map (fun x -> G.E x) xs))
   
 and literal =
   function

@@ -119,7 +119,7 @@ type expr =
   | While of tok * expr * expr
   | For of tok * ident * expr * for_direction * expr *   expr
 
-  | ExprTodo of tok
+  | ExprTodo of todo_category * expr list
 
  and literal =
    | Int    of string wrap

@@ -16,8 +16,8 @@ open Cst_ml
 (*************************************************************************)
 (* Prelude *)
 (*************************************************************************)
-(* This file contains a grammar for OCaml (=~ 3.07 with some extensions for 
- * OCaml 4.xxx)
+(* This file contains a grammar for OCaml
+ * (mostly OCaml 3.07 with some extensions for OCaml 4.xxx)
  * 
  * src: adapted from the official source of OCaml in its
  * parsing/ subdirectory. All semantic actions are new. Only the
@@ -52,6 +52,11 @@ let to_item xs =
 
 let (^@) sc xs =
   match sc with None -> xs | Some x -> [Right x] @ xs
+
+let optlist_to_list = function
+  | None -> []
+  | Some xs -> xs
+
 %}
 (*************************************************************************)
 (* Tokens *)
@@ -233,6 +238,10 @@ list_sep2(X,Sep):
  | X                      { [$1] }
  | list_sep2(X,Sep) Sep X  { $1 @ [$3] }
 list_and2(X): list_sep2(X, Tand) { $1 }
+list_sep_term2(X,Sep):
+ | X                       { [$1] }
+ | X Sep                   { [$1] }
+ | X Sep list_sep_term2(X,Sep)  { [$1] @ $3 }
 
 (*************************************************************************)
 (* TOC *)
@@ -353,7 +362,9 @@ structure_item_noattr:
  | Topen "!"? mod_longident                           { Open ($1, $3) }
 
  (* start of deviation *)
+
  | Tlet Trec? list_and(let_binding)              { Let ($1, $2, $3) }
+
  (* modules *)
  | Tmodule TUpperIdent module_binding
       { match $3 with
@@ -456,7 +467,7 @@ clty_longident: qualified(mod_ext_longident, TLowerIdent) { $1 }
 seq_expr:
  | expr      %prec below_SEMI   { [Left $1] }
  | expr ";" seq_expr            { Left $1::Right $2::$3 }
- (* bad ? should be removed ? but it's convenient in certain contexts like
+ (* bad? should be removed ? but it's convenient in certain contexts like
   * begin end to allow ; as a terminator *)
  | expr ";"                     { [Left $1; Right $2] }
 
@@ -477,7 +488,7 @@ expr:
 
  | Tfunction "|"? match_cases                { Function ($1, $2 ^@ $3) }
 
- | expr_comma_list %prec below_COMMA         { Tuple $1 }
+ | expr_comma_list        %prec below_COMMA  { Tuple $1 }
  | constr_longident simple_expr              { Constr ($1, Some $2) }
 
  | expr "::" expr            { Infix ($1, ("::", $2), $3) (* TODO? ConsList?*)}
@@ -521,27 +532,33 @@ expr:
  | expr TAnd expr      { Infix ($1, ("&", $2), $3) }
  | expr TAndAnd expr   { Infix ($1, ("&&", $2), $3) }
 
- | subtractive expr %prec prec_unary_minus    { Prefix ($1, $2) }
- | additive expr %prec prec_unary_plus        { Prefix ($1, $2) }
+ | subtractive expr   %prec prec_unary_minus    { Prefix ($1, $2) }
+ | additive expr      %prec prec_unary_plus     { Prefix ($1, $2) }
 
  | simple_expr "." label_longident "<-" expr  { FieldAssign ($1,$2,$3,$4,$5) }
 
+ (* extensions *)
+
  (* array extension *)
- | simple_expr "." "(" seq_expr ")" "<-" expr { ExprTodo $2 }
- | simple_expr "." "[" seq_expr "]" "<-" expr { ExprTodo $2 }
+ | simple_expr "." "(" seq_expr ")" "<-" expr 
+     { ExprTodo (("ArrayUpdate",$2), [$1] @ uncomma $4 @ [$7]) }
+ | simple_expr "." "[" seq_expr "]" "<-" expr 
+     { ExprTodo (("ArrayUpdate",$2), [$1] @ uncomma $4 @ [$7]) }
  (* bigarray extension, a.{i} <- v *)
- | simple_expr "." "{" expr "}" "<-" expr     { ExprTodo $2 }
-     
- | Tlet Topen mod_longident Tin seq_expr      { ExprTodo $1 }
-
- | Tassert simple_expr                        { ExprTodo $1 }
-
- | name_tag simple_expr                       { ExprTodo (fst $1) }
-
- | Tlazy simple_expr                          { ExprTodo $1 }
-
+ | simple_expr "." "{" expr "}" "<-" expr     
+     { ExprTodo (("BigArrayUpdate",$2), [$1;$4;$7]) }
+ (* local open *)
+ | Tlet Topen mod_longident Tin seq_expr
+     { ExprTodo (("LetOpen",$1), uncomma $5) }
+ | Tassert simple_expr
+     { ExprTodo (("Assert",$1), [$2]) }
+ | name_tag simple_expr
+     { ExprTodo (("PolyVariant Call",fst $1), [$2]) }
+ | Tlazy simple_expr
+     { ExprTodo (("Lazy",$1), [$2]) }
   (* objects *)
- | label "<-" expr                            { ExprTodo $2 }
+ | label "<-" expr
+     { ExprTodo (("ObjUpdate",$2), [$3]) }
 
 
 
@@ -549,8 +566,7 @@ simple_expr:
  | constant          { C $1 }
  | val_longident     { L $1 }
  (* this includes 'false' *)
- | constr_longident      %prec prec_constant_constructor  
-   { Constr ($1, None) }
+ | constr_longident      %prec prec_constant_constructor  { Constr ($1, None)}
 
  | simple_expr "." label_longident  { FieldAccess ($1, $2, $3) }
 
@@ -571,28 +587,36 @@ simple_expr:
  | TPrefixOperator simple_expr   { Prefix ($1, $2) }
  | "!" simple_expr               { RefAccess ($1, $2) }
 
- | "{" record_expr "}"           { Record ($1, $2, $3) }
- | "["  list_sep_term(expr, ";") "]"   { List ($1, $2, $3) }
- | "[|" list_sep_term(expr, ";")? "|]" { ExprTodo $1 }
+ | "{" record_expr               "}"  { Record ($1, $2, $3) }
+ | "[" list_sep_term(expr, ";") "]"   { List ($1, $2, $3) }
+
+ (* extensions *)
 
  (* array extension *)
- | simple_expr "." "(" seq_expr ")"  { ExprTodo $2 }
- | simple_expr "." "[" seq_expr "]"  { ExprTodo $2 }
+ | "[|" list_sep_term2(expr, ";")? "|]" 
+    { ExprTodo (("ArrayLiteral",$1), optlist_to_list $2)  }
+ | simple_expr "." "(" seq_expr ")"  
+    { ExprTodo (("ArrayAccess", $2), [$1] @ uncomma $4) }
+ | simple_expr "." "[" seq_expr "]"  
+    { ExprTodo (("ArrayAccess", $2), [$1] @ uncomma $4) }
  (* bigarray extension *)
- | simple_expr "." "{" expr "}"      { ExprTodo $2 }
+ | simple_expr "." "{" expr "}"      
+    { ExprTodo (("BigArrayAccess", $2), [$1;$4]) }
 
  (* object extension *)
  | simple_expr "#" label             { ObjAccess ($1, $2, Name $3) }
  | Tnew class_longident              { New ($1, $2) }
- | "{<" list_sep_term(field_expr, ";") ">}"         { ExprTodo $1 }
-
+ | "{<" list_sep_term2(field_expr, ";") ">}" 
+      { ExprTodo (("LiteralObj", $1), $2 |> List.map snd) }
  (* name tag extension *)
- | name_tag %prec prec_constant_constructor  { ExprTodo (fst $1) }
-
- | "(" seq_expr type_constraint ")"          { ExprTodo $1 }
-
+ | name_tag        %prec prec_constant_constructor  
+     { ExprTodo (("PolyVariant", fst $1), []) }
+ (* misc *)
+ | "(" seq_expr type_constraint ")"  
+     { ExprTodo (("TypedExpr", $1), uncomma $2) }
  (* scoped open, 3.12 *)
- | mod_longident "." "(" seq_expr ")"       { ExprTodo $2 }
+ | mod_longident "." "(" seq_expr ")"
+     { ExprTodo (("ScopedOpen", $2), uncomma $4) }
 
 
 labeled_simple_expr:
@@ -650,7 +674,7 @@ label_expr:
 (* objects *)
 (*----------------------------*)
 
-field_expr: label "=" expr { }
+field_expr: label "=" expr { $1, $3 }
 
 (*************************************************************************)
 (* Patterns *)

@@ -64,7 +64,9 @@ and v_long_name (v1, v2) =
 and v_qualifier v =
     v |> List.map (fun (v1, v2) -> let v1 = v_name v1 and _v2 = v_tok v2 in v1)
 
-  
+
+and v_todo_category x = v_wrap v_string x
+
 and v_ty x =
     match x with
   | TyName v1 -> let v1 = v_long_name v1 in A.TyName v1
@@ -76,7 +78,10 @@ and v_ty x =
       A.TyFunction (v1, v3)
   | TyApp ((v1, v2)) -> let v1 = v_ty_args v1 and v2 = v_long_name v2 in 
                         A.TyApp (v1, v2)
-  | TyTodo (t, xs) -> A.TyTodo (t, v_list v_ty xs)
+  | TyTodo (t, xs) -> 
+      let t = v_todo_category t in
+      let xs = v_list v_ty xs in
+      A.TyTodo (t, xs)
 
 
 and v_type_declaration x =
@@ -246,7 +251,10 @@ and v_expr v =
       and _v9 = v_tok v9
       in 
       A.For (v1, v2, v4, v5, v6, v8)
-  | ExprTodo t -> A.ExprTodo t
+  | ExprTodo (t, xs) -> 
+      let t = v_todo_category t in
+      let xs = v_list v_expr xs in
+      A.ExprTodo (t, xs)
 
 
 and v_constant =
@@ -288,12 +296,14 @@ and v_argument v =
   | ArgImplicitTildeExpr ((v1, v2)) ->
     let _v1 = v_tok v1 and v2 = v_name v2 in 
     A.ArgKwd (v2, A.Name ([],v2))
+
   | ArgLabelQuestion ((v1, v2)) -> 
-    let v1 = v_name v1 and __v2 = v_expr v2 in 
-    A.Arg (A.ExprTodo (snd v1))
+    let v1 = v_name v1 and v2 = v_expr v2 in 
+    A.Arg (A.ExprTodo (("ArgLabelQuestion", snd v1), [v2]))
   | ArgImplicitQuestionExpr ((v1, v2)) ->
-    let v1 = v_tok v1 and __v2 = v_name v2 in 
-    A.Arg (A.ExprTodo v1)
+    let v1 = v_tok v1 and v2 = v_name v2 in 
+    let e = A.Name (([], v2)) in
+    A.Arg (A.ExprTodo (("ArgImplicitQuestionExpr", v1), [e]))
 
 
 and v_match_action =
