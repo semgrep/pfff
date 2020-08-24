@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2019 r2c
+ * Copyright (C) 2019, 2020 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -22,7 +22,7 @@ module G = AST_generic
 (*****************************************************************************)
 (* Ast_ml to AST_generic.
  *
- * See ast_generic.ml for more information.
+ * See AST_generic.ml for more information.
  *)
 
 (*****************************************************************************)
@@ -181,6 +181,7 @@ and expr =
     let def = { G.fparams = v1; frettype = None; 
                 fbody = G.ExprStmt (v2, G.sc) } in
     G.Lambda def
+(* TODO? use ParamPattern here? *)
   | Function (t, xs) ->
       let xs = list match_case xs in
       let id = "!_implicit_param!", t in
