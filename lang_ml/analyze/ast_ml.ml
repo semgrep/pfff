@@ -251,7 +251,7 @@ and item =
 
   | Module of tok * module_declaration
 
-  | ItemTodo of tok
+  | ItemTodo of todo_category * item list
 
  [@@deriving show { with_path = false} ] (* with tarzan *)
       

@@ -536,7 +536,8 @@ and v_item x =
       and v4 = v_module_expr v4
       in ()
 
-  | ItemTodo v -> v_info v
+  | ItemTodo (t, xs) -> v_todo_category t; OCaml.v_list v_item xs
+
   in
   vin.kitem (k, all_functions) x
 

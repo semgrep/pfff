@@ -1,6 +1,7 @@
 (* Yoann Padioleau
  *
  * Copyright (C) 2010, 2012 Facebook
+ * Copyright (C) 2020 R2C
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -317,7 +318,7 @@ and item =
 
   | Module of tok * uname * tok * module_expr
       
-  | ItemTodo of tok
+  | ItemTodo of todo_category * item list
  [@@deriving show { with_path = false}]
 
 type sig_item = item

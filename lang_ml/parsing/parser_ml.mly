@@ -47,7 +47,7 @@ let (qufix: long_name -> tok -> (string wrap) -> long_name) =
   match longname with
   | xs, Name ident2 ->xs @ [Name ident2, dottok], Name ident
 
-let to_item xs =
+let to_items xs =
   xs |> Common.map_filter (function TopItem x -> Some x | _ -> None)
 
 let (^@) sc xs =
@@ -284,20 +284,9 @@ sgrep_spatch_pattern:
 (* coupling: structure_item *)
 structure_item_minus_signature_item:
  | Tlet Trec? list_and(let_binding)              { Let ($1, $2, $3) }
-
- (* modules *)
- | Tmodule TUpperIdent module_binding
-      { match $3 with
-        | None -> ItemTodo $1
-        | Some (x, y) -> Module ($1, Name $2, x, y) 
-      }
- | Tinclude module_expr                          { ItemTodo $1 }
-
- (* objects *)
- | Tclass Ttype list_and(class_type_declaration) { ItemTodo $1 }
-
- | Texception TUpperIdent "=" mod_longident { ItemTodo $1 }
- | floating_attribute { $1 }
+ (* todo: put more stuff from structure_item that you want to be able
+  * to match in a semgrep pattern.
+  *)
 
 (*************************************************************************)
 (* Signature *)
@@ -320,11 +309,14 @@ signature_item_noattr:
  (* modules *)
  | Topen mod_longident                          { Open ($1, $2) }
 
- | Tmodule Ttype ident "=" module_type          { ItemTodo $1 }
- | Tmodule TUpperIdent module_declaration       { ItemTodo $1 }
+ | Tmodule Ttype ident "=" module_type          
+    { ItemTodo (("ModuleType", $1), [$5]) }
+ | Tmodule TUpperIdent module_declaration       
+    { ItemTodo (("ModuleDecl", $1), [$3]) }
 
  (* objects *)
- | Tclass list_and(class_description)           { ItemTodo $1 }
+ | Tclass list_and2(class_description)           
+   { ItemTodo (("Class",$1), $2)  }
 
 (*----------------------------*)
 (* Misc *)
@@ -368,17 +360,23 @@ structure_item_noattr:
  (* modules *)
  | Tmodule TUpperIdent module_binding
       { match $3 with
-        | None -> ItemTodo $1
+        | None -> ItemTodo (("AbstractModule?", $1), [])
         | Some (x, y) -> Module ($1, Name $2, x, y) 
       }
- | Tmodule Ttype ident "=" module_type           { ItemTodo $1 }
- | Tinclude module_expr                          { ItemTodo $1 }
+ | Tmodule Ttype ident "=" module_type           
+   { ItemTodo (("ModuleType", $1), [$5]) }
+ | Tinclude module_expr                          
+   { ItemTodo (("Include",$1), [] (* TODO *)) }
 
  (* objects *)
- | Tclass list_and(class_declaration)            { ItemTodo $1 }
- | Tclass Ttype list_and(class_type_declaration) { ItemTodo $1 }
+ | Tclass list_and2(class_declaration)            
+    { ItemTodo (("Class",$1), $2)  }
+ | Tclass Ttype list_and2(class_type_declaration) 
+    { ItemTodo (("ClassType", $1), $3) }
 
- | Texception TUpperIdent "=" mod_longident { ItemTodo $1 }
+ | Texception TUpperIdent "=" mod_longident 
+    { ItemTodo (("ExnAlias",$1), []) }
+
  | floating_attribute { $1 }
 
 (*************************************************************************)
@@ -940,11 +938,11 @@ label_let_pattern:
 (* Class types *)
 (*----------------------------*)
 class_description: Tvirtual? class_type_parameters TLowerIdent ":" class_type
-  { }
+  { ItemTodo (("ClassDescr", $4), []) (* TODO *)}
 
 class_type_declaration: 
   Tvirtual? class_type_parameters TLowerIdent "=" class_signature
-  { }
+  { ItemTodo (("ClassTypeDecl", $4), []) (* TODO *) }
 
 class_type:
   | class_signature { }
@@ -989,15 +987,16 @@ value_type:
 
 class_declaration: 
  Tvirtual? class_type_parameters TLowerIdent class_fun_binding
-      { }
+   { ItemTodo (("ClassDecl", (snd $3)), [$4]) }
 
 class_type_parameters:
   | (*empty*)                              { }
   | "[" list_sep(type_parameter, ",") "]"  { }
 
 class_fun_binding:
-  | "=" class_expr  { }
-  | labeled_simple_pattern class_fun_binding  { }
+  | "=" class_expr  { ItemTodo (("ClassExpr", $1), [] (* TODO *)) }
+  | labeled_simple_pattern  class_fun_binding  
+    { (* TODO $1 *) $2 }
 
 class_expr:
   | class_simple_expr                         { }
@@ -1067,21 +1066,27 @@ module_binding:
  | ":" module_type "=" module_expr                     { (*$1 *) Some($3, $4) }
 
 module_declaration:
- | ":" module_type  { }
- | "(" TUpperIdent ":" module_type ")" module_declaration { }
+ | ":" module_type  
+    { $2 }
+ | "(" TUpperIdent ":" module_type ")" module_declaration 
+     { ItemTodo (("ModuleTypedDecl", $1), [$4; $6]) }
 
 (*----------------------------*)
 (* Module types *)
 (*----------------------------*)
 
 module_type:
- | mty_longident         { }
- | Tsig signature Tend   { }
+ | mty_longident         
+    { let (_, Name (_, t)) = $1 in ItemTodo (("ModuleTypeAlias", t), []) }
+ | Tsig signature Tend   
+    { ItemTodo (("Sig", $1), to_items $2) }
  | Tfunctor "(" TUpperIdent ":" module_type ")" "->" module_type
     %prec below_WITH
-      { }
- | module_type Twith list_and(with_constraint) { }
- | "(" module_type ")"     { }
+      { ItemTodo (("FunctorType", $1), [$5; $8]) }
+ | module_type Twith list_and(with_constraint)  
+      { ItemTodo (("ModuleTypeWith", $2), [$1]) }
+ | "(" module_type ")"     
+      { $2 }
 
 
 with_constraint:
@@ -1101,7 +1106,7 @@ module_expr:
   (* when just do a module aliasing *)
   | mod_longident       { ModuleName $1 }
   (* nested modules *)
-  | Tstruct structure Tend { ModuleStruct ($1, to_item $2, $3) }
+  | Tstruct structure Tend { ModuleStruct ($1, to_items $2, $3) }
   (* functor definition *)
   | Tfunctor "(" TUpperIdent ":" module_type ")" "->" module_expr 
      { ModuleTodo $1 }
@@ -1113,14 +1118,17 @@ module_expr:
 (*************************************************************************)
 
 (*pad: this is a limited implementation for now; just enough for efuns/pfff *)
-floating_attribute:  "[@@@" attr_id payload "]" { ItemTodo $1 }
-post_item_attribute: "[@@"  attr_id payload "]" { }
-attribute:           "[@"   attr_id payload "]" { }
+floating_attribute:  "[@@@" attr_id payload "]" 
+  { ItemTodo (("Attribute", $1), $3) }
+post_item_attribute: "[@@"  attr_id payload "]" 
+  { }
+attribute:           "[@"   attr_id payload "]" 
+  { }
 
 
 attr_id: listr_sep(single_attr_id, ".") { $1 }
 
-payload: structure { }
+payload: structure { to_items $1  }
 
 single_attr_id:
   | TLowerIdent { $1 }
