@@ -838,7 +838,7 @@ simple_core_type:
  | "(" list_sep(core_type, ",") ")" { TyTuple2 (($1, $2, $3)) }
 
 simple_core_type2:
- | "'" ident                                     { TyVar ($1, Name $2) }
+ | type_variable                                 { $1 }
  | type_longident                                { TyName ($1) }
  | simple_core_type2 type_longident              { TyApp (TyArg1 $1, $2) }
  | "(" list_sep(core_type, ",") ")" type_longident 
@@ -852,6 +852,10 @@ simple_core_type2:
  (* objects types *)
  | "<" meth_list ">"                    { TyTodo(("Methods",$1), $2) }
  | "<"           ">"                    { TyTodo(("Methods",$1), []) }
+ | simple_core_type2 Tas type_variable
+    { TyTodo (("As", $2), [$1;$3]) }
+
+type_variable: "'" ident          { TyVar ($1, Name $2) }
 
 (*----------------------------*)
 (* Advanced types *)
