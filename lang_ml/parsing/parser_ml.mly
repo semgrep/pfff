@@ -728,6 +728,10 @@ simple_pattern:
  | name_tag                    { PatTodo (("PolyVariant",fst $1), []) }
  (* range extension *)
  | TChar ".." TChar            { PatTodo (("Range", $2), []) }
+ (* scoped open for pattern *)
+ | mod_longident "." "(" pattern ")"
+     { PatTodo (("ScopedPat", $2), [$4]) }
+
 
  | "(" pattern ")"             { ParenPat ($1, $2, $3) }
 
