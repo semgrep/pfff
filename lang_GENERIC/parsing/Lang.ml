@@ -129,7 +129,7 @@ let ext_of_lang = function
   | JSON -> ["json"]
   | Java -> ["java"]
   | C -> ["c"]
-  | OCaml -> ["mli"; "ml"; "mly"; "mll"]
+  | OCaml -> ["mli"; "ml"] (* this is not parsed yet: "mly"; "mll" *)
   | Go -> ["go"]
   | Ruby -> ["rb"]
   | Csharp -> ["cs"]
