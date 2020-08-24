@@ -495,7 +495,8 @@ and v_module_expr v =
       let v2 = OCaml.v_list v_item v2 in
       let v3 = v_tok v3 in
       ()
-  | ModuleTodo t -> v_tok t
+  | ModuleTodo (t, xs) -> v_todo_category t; OCaml.v_list v_module_expr xs
+
   in
   vin.kmodule_expr (k, all_functions) v
 

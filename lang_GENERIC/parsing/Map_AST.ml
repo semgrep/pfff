@@ -615,7 +615,7 @@ and map_module_definition_kind =
       let v1 = map_other_module_operator v1
       and v2 = map_of_list map_any v2
       in OtherModule ((v1, v2))
-and map_other_module_operator = function | OMO_Functor -> OMO_Functor
+and map_other_module_operator x = x
 and
   map_macro_definition { macroparams = v_macroparams; macrobody = v_macrobody
                        } =
@@ -810,6 +810,7 @@ and map_any =
   | I v1 -> let v1 = map_ident v1 in I ((v1))
   | N v1 -> let v1 = map_name v1 in N ((v1))
   | Modn v1 -> let v1 = map_module_name v1 in Modn ((v1))
+  | ModDk v1 -> let v1 = map_module_definition_kind v1 in ModDk ((v1))
   | En v1 -> let v1 = map_entity v1 in En ((v1))
   | E v1 -> let v1 = map_expr v1 in E ((v1))
   | S v1 -> let v1 = map_stmt v1 in S ((v1))

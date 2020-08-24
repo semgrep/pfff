@@ -428,7 +428,10 @@ and v_module_expr v =
       let v2 = List.map v_item v2 in
       let _v3 = v_tok v3 in
       A.ModuleStruct v2
-  | ModuleTodo t -> A.ModuleTodo t
+  | ModuleTodo (t, xs) -> 
+      let t = v_todo_category t in
+      let xs = v_list v_module_expr xs in
+      A.ModuleTodo (t, xs)
 
 and v_item x =
     match x with
@@ -473,7 +476,10 @@ and v_item x =
       in 
       A.Module (v1, {A.mname = v2; mbody = v4 })
 
-  | ItemTodo t -> A.ItemTodo t
+  | ItemTodo (t, xs) -> 
+      let t = v_todo_category t in
+      let xs = v_list v_item xs in
+      A.ItemTodo (t, xs)
 
 and v_rec_opt v = Common.map_opt v_tok v
 

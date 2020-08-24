@@ -1107,11 +1107,13 @@ module_expr:
   | mod_longident       { ModuleName $1 }
   (* nested modules *)
   | Tstruct structure Tend { ModuleStruct ($1, to_items $2, $3) }
+
   (* functor definition *)
   | Tfunctor "(" TUpperIdent ":" module_type ")" "->" module_expr 
-     { ModuleTodo $1 }
+     { ModuleTodo (("Functor", $1), [$8]) }
   (* module/functor application *)
-  | module_expr "(" module_expr ")" { ModuleTodo $2 }
+  | module_expr "(" module_expr ")" 
+    { ModuleTodo (("FunctorApply", $2), [$1; $3]) }
 
 (*************************************************************************)
 (* Attributes *)

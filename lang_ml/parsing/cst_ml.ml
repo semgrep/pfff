@@ -292,7 +292,7 @@ type type_declaration =
 type module_expr =
   | ModuleName of long_name
   | ModuleStruct of tok (* struct *) * item list * tok (* end *)
-  | ModuleTodo of tok
+  | ModuleTodo of todo_category * module_expr list
 
 (* ------------------------------------------------------------------------- *)
 (* Signature/Structure items *)

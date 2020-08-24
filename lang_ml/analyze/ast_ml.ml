@@ -226,7 +226,7 @@ type module_declaration = {
   | ModuleName of name (* alias *)
   | ModuleStruct of item list
 
-  | ModuleTodo of tok
+  | ModuleTodo of todo_category * module_expr list
 
 (* ------------------------------------------------------------------------- *)
 (* Signature/Structure items *)

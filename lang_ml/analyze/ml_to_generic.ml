@@ -380,8 +380,11 @@ and module_expr =
       let v1 = name v1 in G.ModuleAlias v1
   | ModuleStruct v1 -> 
       let v1 = list item v1 |> List.flatten in G.ModuleStruct (None, v1)
-  | ModuleTodo t ->  
-      G.OtherModule (G.OMO_Functor, [G.Tk t])
+
+  | ModuleTodo (t, xs) -> 
+      let t = todo_category t in
+      let xs = list module_expr xs in
+      G.OtherModule (G.OMO_Todo, (G.TodoK t)::(List.map (fun x -> G.ModDk x) xs))
 
 
 and item =
@@ -424,7 +427,10 @@ and item =
   | Module (_t, v1) -> let (ent, def) = module_declaration v1 in 
       [G.DefStmt (ent, G.ModuleDef def)]
 
-  | ItemTodo t -> [G.OtherStmt (G.OS_Todo, [G.Tk t])]
+  | ItemTodo (t, xs) -> 
+      let t = todo_category t in
+      let xs = list item xs |> List.flatten in
+      [G.OtherStmt (G.OS_Todo, (G.TodoK t)::(List.map (fun x -> G.S x) xs))]
 
 and mk_var_or_func params expr =
   match params, expr with

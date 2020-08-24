@@ -1289,8 +1289,8 @@ and module_definition = {
 
 (*s: type [[AST_generic.other_module_operator]] *)
   and other_module_operator =
-   (* OCaml *)
-   | OMO_Functor
+   (* OCaml (functors and their applications) *)
+   | OMO_Todo
 (*e: type [[AST_generic.other_module_operator]] *)
 
 (* ------------------------------------------------------------------------- *)
@@ -1388,6 +1388,7 @@ and any =
   (*s: [[AST_generic.any]] other cases *)
   | N of name
   | Modn of module_name
+  | ModDk of module_definition_kind
   | En of entity
   | Pa of parameter
   | Ar of argument
