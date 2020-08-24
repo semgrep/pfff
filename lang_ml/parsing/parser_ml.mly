@@ -557,6 +557,7 @@ expr:
   (* objects *)
  | label "<-" expr
      { ExprTodo (("ObjUpdate",$2), [$3]) }
+ | object_expression { $1 }
 
 
 
@@ -1023,8 +1024,12 @@ actual_class_parameters:
 
 class_simple_expr:
   | actual_class_parameters class_longident   { }
-  | Tobject class_structure Tend                   { }
+  | object_expression { let _ = $1 in () }
   | "(" class_expr ")"                             { }
+
+object_expression: Tobject class_structure Tend
+  { ExprTodo (("ObjExpr", $1), [](* TODO *)) }
+
 
 class_fun_def:
   | labeled_simple_pattern "->" class_expr   { }
