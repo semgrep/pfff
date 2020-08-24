@@ -845,9 +845,7 @@ simple_core_type2:
       { TyApp (TyArgMulti (($1, $2, $3)), $4) }
 
  (* name tag extension *)
- | "[" row_field "|" list_sep2(row_field,"|") "]" { TyTodo(("Rows",$1),$2::$4)}
- | "["           "|" list_sep2(row_field,"|") "]" { TyTodo(("Rows",$1),$3) }
- | "[" tag_field "]"                              { TyTodo(("Tag",$1), [$2])}
+ | polymorphic_variant_type                       { $1 }
 
  (* objects types *)
  | "<" meth_list ">"                    { TyTodo(("Methods",$1), $2) }
@@ -856,6 +854,15 @@ simple_core_type2:
     { TyTodo (("As", $2), [$1;$3]) }
 
 type_variable: "'" ident          { TyVar ($1, Name $2) }
+
+polymorphic_variant_type:
+ | "[" tag_field "]"
+     { TyTodo(("Tag",$1), [$2])}
+ | "[" row_field? "|"  list_sep2(row_field,"|") "]" 
+     { TyTodo(("Rows|",$1),(opt_to_list $2)@ $4)}
+ | "[>" "|"?  list_sep2(row_field,"|") "]" 
+     { TyTodo(("Rows>",$1), $3)}
+
 
 (*----------------------------*)
 (* Advanced types *)
