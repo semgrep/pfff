@@ -604,8 +604,8 @@ simple_expr:
  (* object extension *)
  | simple_expr "#" label             { ObjAccess ($1, $2, Name $3) }
  | Tnew class_longident              { New ($1, $2) }
- | "{<" list_sep_term2(field_expr, ";") ">}" 
-      { ExprTodo (("LiteralObj", $1), $2 |> List.map snd) }
+ | "{<" list_sep_term2(field_expr, ";")? ">}" 
+      { ExprTodo (("LiteralObj", $1), $2 |> optlist_to_list |> List.map snd) }
  (* name tag extension *)
  | name_tag        %prec prec_constant_constructor  
      { ExprTodo (("PolyVariant", fst $1), []) }
