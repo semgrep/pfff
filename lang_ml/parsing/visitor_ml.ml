@@ -429,7 +429,9 @@ and v_pattern x =
       and v5 = v_tok v5
       in ()
   | ParenPat v1 -> let v1 = v_paren13 v_pattern v1 in ()
-  | PatTodo t -> v_tok t
+
+  | PatTodo (t, xs) -> v_todo_category t; OCaml.v_list v_pattern xs
+
    in
    vin.kpattern (k, all_functions) x
 

@@ -164,7 +164,7 @@ and pattern =
   | PatDisj of pattern * pattern
   | PatTyped of pattern * type_
 
-  | PatTodo of tok
+  | PatTodo of todo_category * pattern list
 
 (* ------------------------------------------------------------------------- *)
 (* Let binding (global/local/function definition) *)

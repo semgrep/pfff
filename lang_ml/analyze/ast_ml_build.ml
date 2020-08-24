@@ -367,7 +367,11 @@ and v_pattern x =
       in 
       A.PatTyped (v2, v4)
   | ParenPat v1 -> let v1 = v_paren v_pattern v1 in v1
-  | PatTodo t -> A.PatTodo t
+  | PatTodo (t, xs) -> 
+      let t = v_todo_category t in
+      let xs = v_list v_pattern xs in
+      A.PatTodo (t, xs)
+
 
 and v_labeled_simple_pattern v = v_parameter v
 and v_parameter x =

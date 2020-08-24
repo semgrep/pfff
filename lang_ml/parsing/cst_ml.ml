@@ -201,7 +201,8 @@ and pattern =
   | PatTyped of tok (*'('*) * pattern * tok (*':'*) * ty * tok (*')'*)
 
   | ParenPat of pattern paren
-  | PatTodo of tok
+
+  | PatTodo of todo_category * pattern list
     
  (* less? merge with expr, no need for too precise AST, remember ast_php.ml *)
  and pattern_signed_constant = 

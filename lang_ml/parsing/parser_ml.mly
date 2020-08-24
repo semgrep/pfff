@@ -705,7 +705,8 @@ pattern:
  | pattern "|" pattern                            { PatDisj ($1, $2, $3) }
 
  (* name tag extension *)
- | name_tag pattern %prec prec_constr_appl        { PatTodo (fst $1) }
+ | name_tag pattern %prec prec_constr_appl        
+    { PatTodo (("PolyVariant", fst $1), [$2]) }
 
 
 
@@ -717,15 +718,17 @@ simple_pattern:
 
  | "{" lbl_pattern_list record_pattern_end "}" { PatRecord ($1,$2,(*$3*) $4) }
  | "["  list_sep_term(pattern, ";")  "]"       { PatList (($1, $2, $3)) }
- | "[|" list_sep_term(pattern, ";")? "|]"      { PatTodo $1 }
+ | "[|" list_sep_term2(pattern, ";")? "|]"      
+    { PatTodo (("Array",$1), optlist_to_list $2) }
 
  (* note that let (x:...) a =  will trigger this rule *)
  | "(" pattern ":" core_type ")"               { PatTyped ($1, $2, $3, $4, $5)}
 
+ (* extensions *)
  (* name tag extension *)
- | name_tag                    { PatTodo (fst $1) }
+ | name_tag                    { PatTodo (("PolyVariant",fst $1), []) }
  (* range extension *)
- | TChar ".." TChar            { PatTodo $2 }
+ | TChar ".." TChar            { PatTodo (("Range", $2), []) }
 
  | "(" pattern ")"             { ParenPat ($1, $2, $3) }
 

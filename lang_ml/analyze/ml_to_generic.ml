@@ -303,7 +303,10 @@ and pattern =
     let v1 = pattern v1 and v2 = type_ v2 in 
     G.PatTyped (v1, v2)
 
-  | PatTodo t -> G.OtherPat (G.OP_Todo, [G.Tk t])
+  | PatTodo (t, xs) -> 
+      let t = todo_category t in
+      let xs = list pattern xs in
+      G.OtherPat (G.OP_Todo, (G.TodoK t)::(List.map (fun x -> G.P x) xs))
 
 and let_binding =
   function
