@@ -1015,9 +1015,11 @@ class_type_parameters:
   | "[" list_sep(type_parameter, ",") "]"  { }
 
 class_fun_binding:
-  | "=" class_expr  { ItemTodo (("ClassExpr", $1), [] (* TODO *)) }
+  | class_typed? "=" class_expr  { ItemTodo (("ClassExpr", $2), [] (* TODO *)) }
   | labeled_simple_pattern  class_fun_binding  
     { (* TODO $1 *) $2 }
+
+class_typed: ":" class_type { }
 
 class_expr:
   | class_simple_expr                         { }
