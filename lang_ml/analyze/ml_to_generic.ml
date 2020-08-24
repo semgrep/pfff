@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2019 r2c
+ * Copyright (C) 2019, 2020 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -22,7 +22,7 @@ module G = AST_generic
 (*****************************************************************************)
 (* Ast_ml to AST_generic.
  *
- * See ast_generic.ml for more information.
+ * See AST_generic.ml for more information.
  *)
 
 (*****************************************************************************)
@@ -66,6 +66,8 @@ and module_name (v1, v2) =
 
 and qualifier v = list ident v
 
+and todo_category v = ident v
+
 and type_ =
   function
   | TyName v1 -> let v1 = name v1 in G.TyName v1
@@ -75,7 +77,10 @@ and type_ =
   | TyApp ((v1, v2)) -> let v1 = list type_ v1 and v2 = name v2 in
                         G.TyNameApply (v2, v1 |> List.map (fun t -> G.TypeArg t))
   | TyTuple v1 -> let v1 = list type_ v1 in G.TyTuple (G.fake_bracket v1)
-  | TyTodo t -> G.OtherType (G.OT_Todo, [G.Tk t])
+  | TyTodo (t, v1) -> 
+    let t = todo_category t in
+    let v1 = list type_ v1 in
+    G.OtherType (G.OT_Todo, (G.TodoK t)::(List.map (fun x -> G.T x) v1))
 
 (* TODO: we should try to transform in stmt while/... instead of those
  * OE_StmtExpr *)
@@ -176,6 +181,7 @@ and expr =
     let def = { G.fparams = v1; frettype = None; 
                 fbody = G.ExprStmt (v2, G.sc) } in
     G.Lambda def
+(* TODO? use ParamPattern here? *)
   | Function (t, xs) ->
       let xs = list match_case xs in
       let id = "!_implicit_param!", t in
@@ -227,7 +233,10 @@ and expr =
       let st = G.For (t, header, G.exprstmt v5) in
       G.OtherExpr (G.OE_StmtExpr, [G.S st])
 
-  | ExprTodo t -> G.OtherExpr (G.OE_Todo, [G.Tk t])
+  | ExprTodo (t, xs) -> 
+      let t = todo_category t in
+      let xs = list expr xs in
+      G.OtherExpr (G.OE_Todo, (G.TodoK t)::(List.map (fun x -> G.E x) xs))
   
 and literal =
   function
@@ -294,7 +303,10 @@ and pattern =
     let v1 = pattern v1 and v2 = type_ v2 in 
     G.PatTyped (v1, v2)
 
-  | PatTodo t -> G.OtherPat (G.OP_Todo, [G.Tk t])
+  | PatTodo (t, xs) -> 
+      let t = todo_category t in
+      let xs = list pattern xs in
+      G.OtherPat (G.OP_Todo, (G.TodoK t)::(List.map (fun x -> G.P x) xs))
 
 and let_binding =
   function
@@ -368,8 +380,11 @@ and module_expr =
       let v1 = name v1 in G.ModuleAlias v1
   | ModuleStruct v1 -> 
       let v1 = list item v1 |> List.flatten in G.ModuleStruct (None, v1)
-  | ModuleTodo t ->  
-      G.OtherModule (G.OMO_Functor, [G.Tk t])
+
+  | ModuleTodo (t, xs) -> 
+      let t = todo_category t in
+      let xs = list module_expr xs in
+      G.OtherModule (G.OMO_Todo, (G.TodoK t)::(List.map (fun x -> G.ModDk x) xs))
 
 
 and item =
@@ -412,7 +427,10 @@ and item =
   | Module (_t, v1) -> let (ent, def) = module_declaration v1 in 
       [G.DefStmt (ent, G.ModuleDef def)]
 
-  | ItemTodo t -> [G.OtherStmt (G.OS_Todo, [G.Tk t])]
+  | ItemTodo (t, xs) -> 
+      let t = todo_category t in
+      let xs = list item xs |> List.flatten in
+      [G.OtherStmt (G.OS_Todo, (G.TodoK t)::(List.map (fun x -> G.S x) xs))]
 
 and mk_var_or_func params expr =
   match params, expr with

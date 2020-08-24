@@ -1,6 +1,7 @@
 (* Yoann Padioleau
  *
  * Copyright (C) 2010, 2012 Facebook
+ * Copyright (C) 2020 R2C
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -64,6 +65,9 @@ type long_name = qualifier * name
  and qualifier = (name * tok (*'.'*)) list
  [@@deriving show] (* with tarzan *)
 
+type todo_category = string wrap
+ [@@deriving show] (* with tarzan *)
+
 (* ------------------------------------------------------------------------- *)
 (* Types *)
 (* ------------------------------------------------------------------------- *)
@@ -77,7 +81,7 @@ type ty =
   | TyFunction of ty * tok (* -> *) * ty
   | TyApp of ty_args * long_name (* todo? could be merged with TyName *)
 
-  | TyTodo of tok
+  | TyTodo of todo_category * ty list
 
  and ty_args = 
     | TyArg1 of ty
@@ -134,7 +138,8 @@ type expr =
 
   | ParenExpr of expr paren
 
-  | ExprTodo of tok
+  | ExprTodo of todo_category * expr list
+
 
  and seq_expr = expr semicolon_list
 
@@ -197,7 +202,8 @@ and pattern =
   | PatTyped of tok (*'('*) * pattern * tok (*':'*) * ty * tok (*')'*)
 
   | ParenPat of pattern paren
-  | PatTodo of tok
+
+  | PatTodo of todo_category * pattern list
     
  (* less? merge with expr, no need for too precise AST, remember ast_php.ml *)
  and pattern_signed_constant = 
@@ -286,7 +292,7 @@ type type_declaration =
 type module_expr =
   | ModuleName of long_name
   | ModuleStruct of tok (* struct *) * item list * tok (* end *)
-  | ModuleTodo of tok
+  | ModuleTodo of todo_category * module_expr list
 
 (* ------------------------------------------------------------------------- *)
 (* Signature/Structure items *)
@@ -312,7 +318,7 @@ and item =
 
   | Module of tok * uname * tok * module_expr
       
-  | ItemTodo of tok
+  | ItemTodo of todo_category * item list
  [@@deriving show { with_path = false}]
 
 type sig_item = item

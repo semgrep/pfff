@@ -841,7 +841,7 @@ and vof_module_definition_kind =
       and v2 = OCaml.vof_list vof_any v2
       in OCaml.VSum (("OtherModule", [ v1; v2 ]))
 and vof_other_module_operator =
-  function | OMO_Functor -> OCaml.VSum (("OMO_Functor", []))
+  function | OMO_Todo -> OCaml.VSum (("OMO_Todo", []))
 and
   vof_macro_definition { macroparams = v_macroparams; macrobody = v_macrobody
                        } =
@@ -1068,9 +1068,11 @@ and vof_item x = vof_stmt x
 and vof_program v = OCaml.vof_list vof_item v
 and vof_any =
   function
+  | TodoK v1 -> let v1 = vof_ident v1 in OCaml.VSum (("TodoK", [ v1 ]))
   | Tk v1 -> let v1 = vof_tok v1 in OCaml.VSum (("Tk", [ v1 ]))
   | N v1 -> let v1 = vof_name v1 in OCaml.VSum (("N", [ v1 ]))
   | Modn v1 -> let v1 = vof_module_name v1 in OCaml.VSum (("Modn", [ v1 ]))
+  | ModDk v1 -> let v1 = vof_module_definition_kind v1 in OCaml.VSum (("ModDk", [ v1 ]))
   | En v1 -> let v1 = vof_entity v1 in OCaml.VSum (("En", [ v1 ]))
   | E v1 -> let v1 = vof_expr v1 in OCaml.VSum (("E", [ v1 ]))
   | S v1 -> let v1 = vof_stmt v1 in OCaml.VSum (("S", [ v1 ]))
