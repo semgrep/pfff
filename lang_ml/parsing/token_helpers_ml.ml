@@ -52,137 +52,12 @@ let token_kind_of_tok t =
 (*****************************************************************************)
 (* Visitors *)
 (*****************************************************************************)
-let info_of_tok = function
-
-  | TCommentSpace ii -> ii
-  | TCommentNewline ii -> ii
-  | TComment ii -> ii
-  | TCommentMisc ii -> ii
-  | TUnknown ii -> ii
-  | EOF ii -> ii
-
-  | TSharpDirective ii -> ii
-
-  | TInt  (_s, ii) -> ii
-  | TFloat  (_s, ii) -> ii
-  | TChar  (_s, ii) -> ii
-  | TString  (_s, ii) -> ii
-  | TLowerIdent  (_s, ii) -> ii
-  | TUpperIdent  (_s, ii) -> ii
-  | TLabelUse  (_s, ii) -> ii
-  | TLabelDecl  (_s, ii) -> ii
-  | TOptLabelUse  (_s, ii) -> ii
-  | TOptLabelDecl  (_s, ii) -> ii
-
-  | TPrefixOperator (_s, ii) -> ii
-  | TInfixOperator (_s, ii) -> ii
-
-  | Tfun ii -> ii
-  | Tfunction ii -> ii
-  | Trec ii -> ii
-  | Ttype ii -> ii
-  | Tof ii -> ii
-  | Tif ii -> ii
-  | Tthen ii -> ii
-  | Telse ii -> ii
-  | Tmatch ii -> ii
-  | Twith ii -> ii
-  | Twhen ii -> ii
-  | Tlet ii -> ii
-  | Tin ii -> ii
-  | Tas ii -> ii
-  | Ttry ii -> ii
-  | Texception ii -> ii
-  | Tbegin ii -> ii
-  | Tend ii -> ii
-  | Tfor ii -> ii
-  | Tdo ii -> ii
-  | Tdone ii -> ii
-  | Tdownto ii -> ii
-  | Twhile ii -> ii
-  | Tto ii -> ii
-  | Tval ii -> ii
-  | Texternal ii -> ii
-  | Ttrue ii -> ii
-  | Tfalse ii -> ii
-  | Tmodule ii -> ii
-  | Topen ii -> ii
-  | Tfunctor ii -> ii
-  | Tinclude ii -> ii
-  | Tsig ii -> ii
-  | Tstruct ii -> ii
-  | Tclass ii -> ii
-  | Tnew ii -> ii
-  | Tinherit ii -> ii
-  | Tconstraint ii -> ii
-  | Tinitializer ii -> ii
-  | Tmethod ii -> ii
-  | Tobject ii -> ii
-  | Tprivate ii -> ii
-  | Tvirtual ii -> ii
-  | Tlazy ii -> ii
-  | Tmutable ii -> ii
-  | Tassert ii -> ii
-  | Tand ii -> ii
-  | Tor ii -> ii
-  | Tmod ii -> ii
-  | Tlor ii -> ii
-  | Tlsl ii -> ii
-  | Tlsr ii -> ii
-  | Tlxor ii -> ii
-  | Tasr ii -> ii
-  | Tland ii -> ii
-  | TOParen ii -> ii
-  | TCParen ii -> ii
-  | TOBrace ii -> ii
-  | TCBrace ii -> ii
-  | TOBracket ii -> ii
-  | TCBracket ii -> ii
-  | TOBracketPipe ii -> ii
-  | TPipeCBracket ii -> ii
-  | TOBracketLess ii -> ii
-  | TGreaterCBracket ii -> ii
-  | TOBraceLess ii -> ii
-  | TGreaterCBrace ii -> ii
-  | TOBracketGreater ii -> ii
-  | TColonGreater ii -> ii
-  | TLess ii -> ii
-  | TGreater ii -> ii
-  | TDot ii -> ii
-  | TDotDot ii -> ii
-  | TComma ii -> ii
-  | TEq ii -> ii
-  | TAssign ii -> ii
-  | TAssignMutable ii -> ii
-  | TColon ii -> ii
-  | TColonColon ii -> ii
-  | TBang ii -> ii
-  | TBangEq ii -> ii
-  | TTilde ii -> ii
-  | TPipe ii -> ii
-  | TSemiColon ii -> ii
-  | TSemiColonSemiColon ii -> ii
-  | TQuestion ii -> ii
-  | TQuestionQuestion ii -> ii
-  | TUnderscore ii -> ii
-  | TStar ii -> ii
-  | TArrow ii -> ii
-  | TQuote ii -> ii
-  | TBackQuote ii -> ii
-  | TAnd ii -> ii
-  | TAndAnd ii -> ii
-  | TSharp ii -> ii
-  | TMinusDot ii -> ii
-  | TPlusDot ii -> ii
-  | TPlus ii -> ii
-  | TMinus ii -> ii
-  | TBracketAt ii -> ii
-  | TBracketAtAt ii -> ii
-  | TBracketAtAtAt ii -> ii
-  | TBracketPercent ii -> ii
-  | TBracketPercentPercent ii -> ii
-
 let visitor_info_of_tok f = function
+
+  | TDots ii -> TDots (f ii)
+  | LDots (ii) -> LDots (f ii)
+  | RDots (ii) -> RDots (f ii)
+
   | TCommentSpace ii -> TCommentSpace (f ii)
   | TCommentNewline ii -> TCommentNewline (f ii)
   | TComment ii -> TComment (f ii)
@@ -309,6 +184,11 @@ let visitor_info_of_tok f = function
   | TBracketAtAtAt ii -> TBracketAtAtAt (f ii)
   | TBracketPercent ii -> TBracketPercent (f ii)
   | TBracketPercentPercent ii -> TBracketPercentPercent (f ii)
+
+let info_of_tok tok = 
+  let res = ref None in
+  visitor_info_of_tok (fun ii -> res := Some ii; ii) tok |> ignore;
+  Common2.some !res
 
 (*****************************************************************************)
 (* Accessors *)

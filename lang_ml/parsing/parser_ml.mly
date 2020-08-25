@@ -129,6 +129,9 @@ let optlist_to_list = function
 (*-----------------------------------------*)
 %token <Parse_info.t> TSharpDirective
 
+(* sgrep-ext: *)
+%token <Parse_info.t> TDots "..." LDots "<..." RDots "...>"
+
 (*************************************************************************)
 (* Priorities *)
 (*************************************************************************)
@@ -192,6 +195,7 @@ let optlist_to_list = function
 %nonassoc TBackQuote TBang Tbegin TChar Tfalse TFloat TInt
           TOBrace TOBraceLess TOBracket TOBracketPipe TLowerIdent TOParen
           Tnew TPrefixOperator TString Ttrue TUpperIdent
+          TDots LDots
 
 (*************************************************************************)
 (* Rules type declaration *)
@@ -280,6 +284,8 @@ sgrep_spatch_pattern:
  | expr                                EOF { Expr $1 }
  | signature_item                      EOF { Item $1 }
  | structure_item_minus_signature_item EOF { Item $1 }
+ | ":" core_type                       EOF { Ty $2 }
+ | "|" pattern                         EOF { Pattern $2 }
 
 (* coupling: structure_item *)
 structure_item_minus_signature_item:
@@ -618,6 +624,9 @@ simple_expr:
  (* scoped open, 3.12 *)
  | mod_longident "." "(" seq_expr ")"
      { ExprTodo (("ScopedOpen", $2), uncomma $4) }
+ (* sgrep-ext: *)
+ | "..."              { Ellipsis $1 }
+ | "<..." expr "...>" { DeepEllipsis ($1, $2, $3) }
 
 
 labeled_simple_expr:
@@ -733,7 +742,8 @@ simple_pattern:
  (* scoped open for pattern *)
  | mod_longident "." "(" pattern ")"
      { PatTodo (("ScopedPat", $2), [$4]) }
-
+ (* sgrep-ext: *)
+ | "..."              { PatEllipsis $1 }
 
  | "(" pattern ")"             { ParenPat ($1, $2, $3) }
 
@@ -859,6 +869,9 @@ simple_core_type2:
  | "<"           ">"                    { TyTodo(("Methods",$1), []) }
  | simple_core_type2 Tas type_variable
     { TyTodo (("As", $2), [$1;$3]) }
+
+ (* sgrep-ext: *)
+ | "..."              { TyEllipsis $1 }
 
 type_variable: "'" ident          { TyVar ($1, Name $2) }
 

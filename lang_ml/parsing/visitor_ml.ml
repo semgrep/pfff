@@ -189,6 +189,7 @@ and v_todo_category x = v_wrap OCaml.v_string x
 and v_ty x =
   let k x = 
     match x with
+  | TyEllipsis v1 -> v_tok v1
   | TyName v1 -> let v1 = v_long_name v1 in ()
   | TyVar ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_name v2 in ()
   | TyTuple v1 -> let v1 = v_star_list2 v_ty v1 in ()
@@ -256,7 +257,8 @@ and v_ty_parameter (v1, v2) = let v1 = v_tok v1 and v2 = v_name v2 in ()
 and v_expr v =
   let k x = 
     match x with
-
+  | Ellipsis v1 -> v_tok v1
+  | DeepEllipsis (v1, v2, v3) -> v_tok v1; v_expr v2; v_tok v3
   | C v1 -> let v1 = v_constant v1 in ()
   | L v1 -> let v1 = v_long_name v1 in ()
   | Constr ((v1, v2)) ->
@@ -406,6 +408,7 @@ and v_seq_expr v = v_semicolon_list1 v_expr v
 
 and v_pattern x =
    let k x = match x with
+  | PatEllipsis v1 -> v_tok v1
   | PatVar v1 -> let v1 = v_name v1 in ()
   | PatConstant v1 -> let v1 = v_signed_constant v1 in ()
   | PatConstr ((v1, v2)) ->

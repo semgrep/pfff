@@ -418,6 +418,9 @@ and vof_other_expr_operator =
   
 and vof_type_ =
   function
+  | TyEllipsis v1 -> 
+      let v1 = vof_tok v1 in
+      OCaml.VSum (("TyEllipsis", [ v1 ]))
   | TyRecordAnon v1 ->
       let v1 = vof_bracket (OCaml.vof_list vof_field) v1
       in OCaml.VSum (("TyAnd", [ v1 ]))
@@ -700,6 +703,9 @@ and vof_other_stmt_operator =
   | OS_Fallthrough -> OCaml.VSum (("OS_Fallthrough", []))
 and vof_pattern =
   function
+  | PatEllipsis v1 ->
+      let v1 = vof_tok v1 in
+      OCaml.VSum (("PatEllipsis", [ v1 ]))
   | PatId ((v1, v2)) ->
       let v1 = vof_ident v1
       and v2 = vof_id_info v2

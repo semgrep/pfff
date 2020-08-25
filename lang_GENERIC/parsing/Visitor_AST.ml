@@ -300,6 +300,7 @@ and v_other_expr_operator _x = ()
 and v_type_ x =
   let k x = 
   match x with
+  | TyEllipsis v1 -> v_tok v1
   | TyRecordAnon v1 ->
       let v1 = v_bracket (v_list v_field) v1
       in ()
@@ -484,6 +485,7 @@ and v_other_stmt_operator _x = ()
 and v_pattern x =
   let k x = 
   match x with
+  | PatEllipsis v1 -> v_tok v1
   | PatRecord v1 ->
       let v1 =
         v_bracket (v_list
