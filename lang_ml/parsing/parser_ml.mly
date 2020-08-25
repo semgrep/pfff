@@ -284,6 +284,8 @@ sgrep_spatch_pattern:
  | expr                                EOF { Expr $1 }
  | signature_item                      EOF { Item $1 }
  | structure_item_minus_signature_item EOF { Item $1 }
+ | ":" core_type                       EOF { Ty $2 }
+ | "|" pattern                         EOF { Pattern $2 }
 
 (* coupling: structure_item *)
 structure_item_minus_signature_item:

@@ -455,7 +455,7 @@ and any = function
       | [x] -> G.S x
       | xs -> G.Ss xs
       )
-  | T _x -> raise Todo
-  | P _x -> raise Todo
+  | T x -> let x = type_ x in G.T x
+  | P x -> let x = pattern x in G.P x
   | Pr _x -> raise Todo
  
