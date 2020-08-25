@@ -415,7 +415,7 @@ website:
 .PHONY:: check tags graph prolog  db layers visual   tests test .merlin
 
 check:
-	docker run --rm -v "${PWD}:/home/repo" returntocorp/semgrep:develop --config semgrep.yml
+	docker run --rm -v "${PWD}:/src" returntocorp/semgrep:develop --config semgrep.yml --exclude parsing_errors --exclude todo --strict
 
 .merlin:
 	@echo '# -*- sh -*-' > .merlin

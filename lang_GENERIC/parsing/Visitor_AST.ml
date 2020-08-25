@@ -300,6 +300,7 @@ and v_other_expr_operator _x = ()
 and v_type_ x =
   let k x = 
   match x with
+  | TyEllipsis v1 -> v_tok v1
   | TyRecordAnon v1 ->
       let v1 = v_bracket (v_list v_field) v1
       in ()
@@ -484,6 +485,7 @@ and v_other_stmt_operator _x = ()
 and v_pattern x =
   let k x = 
   match x with
+  | PatEllipsis v1 -> v_tok v1
   | PatRecord v1 ->
       let v1 =
         v_bracket (v_list
@@ -690,7 +692,7 @@ and v_module_definition_kind =
       let v1 = v_option v_dotted_ident v1 and v2 = v_stmts v2 in ()
   | OtherModule ((v1, v2)) ->
       let v1 = v_other_module_operator v1 and v2 = v_list v_any v2 in ()
-and v_other_module_operator = function | OMO_Functor -> ()
+and v_other_module_operator _x = ()
 and
   v_macro_definition { macroparams = v_macroparams; macrobody = v_macrobody }
                      =
@@ -725,8 +727,10 @@ and v_other_directive_operator _ = ()
 and v_program v = v_stmts v
 and v_any =
   function
+  | TodoK v1 -> v_ident v1
   | N v1 -> let v1 = v_name v1 in ()
   | Modn v1 -> let v1 = v_module_name v1 in ()
+  | ModDk v1 -> let v1 = v_module_definition_kind v1 in ()
   | En v1 -> let v1 = v_entity v1 in ()
   | E v1 -> let v1 = v_expr v1 in ()
   | S v1 -> let v1 = v_stmt v1 in ()

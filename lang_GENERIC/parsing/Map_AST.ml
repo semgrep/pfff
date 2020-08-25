@@ -308,6 +308,7 @@ and map_other_expr_operator x = x
 
 and map_type_ =
   function
+  | TyEllipsis v1 -> let v1 = map_tok v1 in TyEllipsis v1
   | TyRecordAnon v1 ->
       let v1 = map_bracket (map_of_list map_field) v1
       in TyRecordAnon ((v1))
@@ -516,6 +517,7 @@ and map_other_stmt_operator x = x
 
 and map_pattern =
   function
+  | PatEllipsis v1 -> let v1 = map_tok v1 in PatEllipsis v1
   | PatRecord v1 ->
       let v1 =
         map_bracket (map_of_list
@@ -615,7 +617,7 @@ and map_module_definition_kind =
       let v1 = map_other_module_operator v1
       and v2 = map_of_list map_any v2
       in OtherModule ((v1, v2))
-and map_other_module_operator = function | OMO_Functor -> OMO_Functor
+and map_other_module_operator x = x
 and
   map_macro_definition { macroparams = v_macroparams; macrobody = v_macrobody
                        } =
@@ -805,10 +807,12 @@ and map_program v = map_of_list map_item v
 
 and map_any =
   function
+  | TodoK v1 -> let v1 = map_ident v1 in TodoK v1
   | Tk v1 -> let v1 = map_tok v1 in Tk v1
   | I v1 -> let v1 = map_ident v1 in I ((v1))
   | N v1 -> let v1 = map_name v1 in N ((v1))
   | Modn v1 -> let v1 = map_module_name v1 in Modn ((v1))
+  | ModDk v1 -> let v1 = map_module_definition_kind v1 in ModDk ((v1))
   | En v1 -> let v1 = map_entity v1 in En ((v1))
   | E v1 -> let v1 = map_expr v1 in E ((v1))
   | S v1 -> let v1 = map_stmt v1 in S ((v1))

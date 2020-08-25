@@ -2,6 +2,7 @@
 (* Yoann Padioleau
  *
  * Copyright (C) 2010, 2012 Facebook
+ * Copyright (C) 2020 R2C
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -122,7 +123,7 @@ let keyword_table = Common.hash_of_list [
 (*****************************************************************************)
 let letter = ['A'-'Z' 'a'-'z']
 let digit  = ['0'-'9']
-let hexa = digit | ['A' 'F' 'a' 'f']
+let hexa = digit | ['A'-'F'] | ['a'-'f']
 (* could add ['\n' '\r'], or just use dos2unix on your files *)
 let newline = '\n'
 let space = [' ' '\t']
@@ -266,6 +267,12 @@ rule token = parse
   (* camlp4 reserved: 
    * parser    <<    <:    >>    $     $$    $:
    *)
+
+  (* sgrep-ext: *)
+  | "..." { Flag_parsing.sgrep_guard (TDots (tokinfo lexbuf)) }
+  (* sgrep-ext: *)
+  | "<..."  { Flag_parsing.sgrep_guard (LDots (tokinfo lexbuf)) }
+  | "...>"  { Flag_parsing.sgrep_guard (RDots (tokinfo lexbuf)) }
 
 
   (* ----------------------------------------------------------------------- *)

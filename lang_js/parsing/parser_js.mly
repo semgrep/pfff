@@ -80,8 +80,8 @@ let fix_sgrep_module_item x =
 
 let (@@) xs sc =
   match sc with None -> xs | Some x -> xs @ [Right x]
-let (^@) sc xs =
-  match sc with None -> xs | Some x -> [Right x] @ xs
+let (^@) xs sc =
+  match sc with None -> xs | Some x -> xs @ [Right x]
 %}
 (*************************************************************************)
 (* Tokens *)
@@ -501,7 +501,7 @@ function_body: optl(stmt_list) { $1 }
 
 formal_parameter_list_opt:
  | (*empty*)   { [] }
- | formal_parameter_list ","?  { List.rev ($2 ^@ $1) }
+ | formal_parameter_list ","?  { List.rev ($1) ^@ $2 }
 
 (* must be written in a left-recursive way (see conflicts.txt) *)
 formal_parameter_list:
@@ -1194,7 +1194,7 @@ arguments: "(" argument_list_opt ")" { ($1, $2 , $3) }
 argument_list_opt:
  | (*empty*)   { [] }
  (* argument_list must be written in a left-recursive way(see conflicts.txt) *)
- | listc(argument) ","?  { List.rev ($2 ^@ $1)  }
+ | listc(argument) ","?  { ($1 ^@ $2)  }
 
 (* assignment_expr because expr supports sequence of exprs with ',' *)
 argument:

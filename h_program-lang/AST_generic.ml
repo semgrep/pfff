@@ -249,6 +249,10 @@ and resolved_name = resolved_name_kind * sid
 (*e: type [[AST_generic.resolved_name_kind]] *)
  [@@deriving show { with_path = false }]  (* with tarzan *)
 
+(* an AST element not yet handled; works with the Xx_Todo and Todo in any *)
+type todo_kind = string wrap
+ [@@deriving show]  (* with tarzan *)
+
 (* Start of big mutually recursive types because of the use of 'any' 
  * in OtherXxx *)
 
@@ -841,6 +845,7 @@ and pattern =
 
   (*s: [[AST_generic.pattern]] semgrep extensions cases *)
   (* sgrep: *)
+  | PatEllipsis of tok
   | DisjPat of pattern * pattern
   (*e: [[AST_generic.pattern]] semgrep extensions cases *)
 
@@ -901,6 +906,9 @@ and type_ =
    * via a TyName. Here we have flexible record types (a.k.a. rows in OCaml).
    *)
   | TyRecordAnon of field list bracket
+
+  (* sgrep-ext: *)
+  | TyEllipsis of tok
   (*e: [[AST_generic.type_]] other cases *)
   (*s: [[AST_generic.type_]] OtherXxx case *)
   | OtherType of other_type_operator * any list
@@ -1285,8 +1293,8 @@ and module_definition = {
 
 (*s: type [[AST_generic.other_module_operator]] *)
   and other_module_operator =
-   (* OCaml *)
-   | OMO_Functor
+   (* OCaml (functors and their applications) *)
+   | OMO_Todo
 (*e: type [[AST_generic.other_module_operator]] *)
 
 (* ------------------------------------------------------------------------- *)
@@ -1384,6 +1392,7 @@ and any =
   (*s: [[AST_generic.any]] other cases *)
   | N of name
   | Modn of module_name
+  | ModDk of module_definition_kind
   | En of entity
   | Pa of parameter
   | Ar of argument
@@ -1393,6 +1402,7 @@ and any =
   | Lbli of label_ident
   | Fldi of field_ident
   | Tk of tok
+  | TodoK of todo_kind
   (*e: [[AST_generic.any]] other cases *)
 (*e: type [[AST_generic.any]] *)
  [@@deriving show { with_path = false }] (* with tarzan *)

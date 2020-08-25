@@ -20,10 +20,17 @@ let test_parse_generic xs =
   )
 (*e: function [[Test_parsing_generic.test_parse_generic]] *)
 
-(*s: function [[Test_parsing_generic.test_dump_generic]] *)
-let test_dump_generic file =
+let test_show_generic file =
   let ast = Parse_generic.parse_program file in
   let s = AST_generic.show_program ast in
+  pr2 s
+
+(*s: function [[Test_parsing_generic.test_dump_generic]] *)
+let test_dump_generic file =
+  let x = Parse_generic.parse_program file in
+
+  let v = Meta_AST.vof_any (AST_generic.Pr x) in
+  let s = OCaml.string_of_v v in
   pr2 s
 (*e: function [[Test_parsing_generic.test_dump_generic]] *)
 
@@ -47,6 +54,8 @@ let actions () = [
   "-parse_generic", " <dirs_or_files>",
   Common.mk_action_n_arg test_parse_generic;
   (*s: [[Test_parsing_generic.actions]] other cases *)
+  "-show_ast", " <file>",
+  Common.mk_action_1_arg test_show_generic;
   (* now also in sgrep *)
   "-dump_ast", " <file>",
   Common.mk_action_1_arg test_dump_generic;

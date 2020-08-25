@@ -43,6 +43,8 @@ let v_semicolon_list = xxx_list
 let v_comma_list = xxx_list
 let v_and_list = xxx_list
 
+let v_list = List.map
+
 let v_string x = x
 
 let fake_info () = Parse_info.fake_info "FAKE"
@@ -62,9 +64,12 @@ and v_long_name (v1, v2) =
 and v_qualifier v =
     v |> List.map (fun (v1, v2) -> let v1 = v_name v1 and _v2 = v_tok v2 in v1)
 
-  
+
+and v_todo_category x = v_wrap v_string x
+
 and v_ty x =
     match x with
+  | TyEllipsis v1 -> let v1 = v_tok v1 in A.TyEllipsis v1
   | TyName v1 -> let v1 = v_long_name v1 in A.TyName v1
   | TyVar ((v1, v2)) -> let _v1 = v_tok v1 and v2 = v_name v2 in A.TyVar v2
   | TyTuple v1 -> let v1 = v_star_list v_ty v1 in A.TyTuple v1
@@ -74,7 +79,10 @@ and v_ty x =
       A.TyFunction (v1, v3)
   | TyApp ((v1, v2)) -> let v1 = v_ty_args v1 and v2 = v_long_name v2 in 
                         A.TyApp (v1, v2)
-  | TyTodo t -> A.TyTodo t
+  | TyTodo (t, xs) -> 
+      let t = v_todo_category t in
+      let xs = v_list v_ty xs in
+      A.TyTodo (t, xs)
 
 
 and v_type_declaration x =
@@ -138,7 +146,10 @@ and v_ty_parameter (v1, v2) = let _v1 = v_tok v1 and v2 = v_name v2 in
 
 and v_expr v =
     match v with
-
+  | Ellipsis v1 -> let v1 = v_tok v1 in A.Ellipsis v1
+  | DeepEllipsis (v1, v2, v3) ->
+      let v1 = v_tok v1 in let v2 = v_expr v2 in let v3 = v_tok v3 in
+      A.DeepEllipsis (v1, v2, v3)
   | C v1 -> let v1 = v_constant v1 in A.L v1
   | L v1 -> let v1 = v_long_name v1 in A.Name v1
   | Constr ((v1, v2)) ->
@@ -244,7 +255,10 @@ and v_expr v =
       and _v9 = v_tok v9
       in 
       A.For (v1, v2, v4, v5, v6, v8)
-  | ExprTodo t -> A.ExprTodo t
+  | ExprTodo (t, xs) -> 
+      let t = v_todo_category t in
+      let xs = v_list v_expr xs in
+      A.ExprTodo (t, xs)
 
 
 and v_constant =
@@ -286,12 +300,14 @@ and v_argument v =
   | ArgImplicitTildeExpr ((v1, v2)) ->
     let _v1 = v_tok v1 and v2 = v_name v2 in 
     A.ArgKwd (v2, A.Name ([],v2))
+
   | ArgLabelQuestion ((v1, v2)) -> 
-    let v1 = v_name v1 and __v2 = v_expr v2 in 
-    A.Arg (A.ExprTodo (snd v1))
+    let v1 = v_name v1 and v2 = v_expr v2 in 
+    A.Arg (A.ExprTodo (("ArgLabelQuestion", snd v1), [v2]))
   | ArgImplicitQuestionExpr ((v1, v2)) ->
-    let v1 = v_tok v1 and __v2 = v_name v2 in 
-    A.Arg (A.ExprTodo v1)
+    let v1 = v_tok v1 and v2 = v_name v2 in 
+    let e = A.Name (([], v2)) in
+    A.Arg (A.ExprTodo (("ArgImplicitQuestionExpr", v1), [e]))
 
 
 and v_match_action =
@@ -324,6 +340,7 @@ and v_seq_expr1 xs =
 
 and v_pattern x =
   match x with
+  | PatEllipsis v1 -> let v1 = v_tok v1 in A.PatEllipsis v1
   | PatVar v1 -> let v1 = v_name v1 in A.PatVar v1
   | PatConstant v1 -> let v1 = v_signed_constant v1 in A.PatLiteral v1
   | PatConstr ((v1, v2)) ->
@@ -355,7 +372,11 @@ and v_pattern x =
       in 
       A.PatTyped (v2, v4)
   | ParenPat v1 -> let v1 = v_paren v_pattern v1 in v1
-  | PatTodo t -> A.PatTodo t
+  | PatTodo (t, xs) -> 
+      let t = v_todo_category t in
+      let xs = v_list v_pattern xs in
+      A.PatTodo (t, xs)
+
 
 and v_labeled_simple_pattern v = v_parameter v
 and v_parameter x =
@@ -412,7 +433,10 @@ and v_module_expr v =
       let v2 = List.map v_item v2 in
       let _v3 = v_tok v3 in
       A.ModuleStruct v2
-  | ModuleTodo t -> A.ModuleTodo t
+  | ModuleTodo (t, xs) -> 
+      let t = v_todo_category t in
+      let xs = v_list v_module_expr xs in
+      A.ModuleTodo (t, xs)
 
 and v_item x =
     match x with
@@ -457,7 +481,10 @@ and v_item x =
       in 
       A.Module (v1, {A.mname = v2; mbody = v4 })
 
-  | ItemTodo t -> A.ItemTodo t
+  | ItemTodo (t, xs) -> 
+      let t = v_todo_category t in
+      let xs = v_list v_item xs in
+      A.ItemTodo (t, xs)
 
 and v_rec_opt v = Common.map_opt v_tok v
 
@@ -477,8 +504,8 @@ and program v = List.map v_toplevel v |> List.flatten
 and any = function
   | Expr v1 -> let v1 = v_expr v1 in A.E v1
   | Item v1 -> let v1 = v_item v1 in A.I v1
-  | Ty v1 -> let _v1 = v_ty v1 in raise Todo
-  | Pattern v1 -> let _v1 = v_pattern v1 in raise Todo
+  | Ty v1 -> let v1 = v_ty v1 in A.T v1
+  | Pattern v1 -> let v1 = v_pattern v1 in A.P v1
   | Toplevel v1 -> let _v1 = v_toplevel v1 in raise Todo
   | Program v1 -> let _v1 = program v1 in raise Todo
   | TypeDeclaration v1 -> let _v1 = v_type_declaration v1 in raise Todo

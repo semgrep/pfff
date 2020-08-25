@@ -288,3 +288,4 @@ tmp
 
 menhir_out.log
 ocamlyacc_out.log
+/.cache/semgrep_version

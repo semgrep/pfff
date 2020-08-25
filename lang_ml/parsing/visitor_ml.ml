@@ -184,10 +184,12 @@ and v_qualifier v =
     OCaml.v_list (fun (v1, v2) -> let v1 = v_name v1 and v2 = v_tok v2 in ()) v
   in
   vin.kqualifier (k, all_functions) v
-  
+
+and v_todo_category x = v_wrap OCaml.v_string x
 and v_ty x =
   let k x = 
     match x with
+  | TyEllipsis v1 -> v_tok v1
   | TyName v1 -> let v1 = v_long_name v1 in ()
   | TyVar ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_name v2 in ()
   | TyTuple v1 -> let v1 = v_star_list2 v_ty v1 in ()
@@ -195,7 +197,7 @@ and v_ty x =
   | TyFunction ((v1, v2, v3)) ->
       let v1 = v_ty v1 and v2 = v_tok v2 and v3 = v_ty v3 in ()
   | TyApp ((v1, v2)) -> let v1 = v_ty_args v1 and v2 = v_long_name v2 in ()
-  | TyTodo t -> v_tok t
+  | TyTodo (v1, v2) -> v_todo_category v1; OCaml.v_list v_ty v2
   in
   vin.kty (k, all_functions) x
 
@@ -255,7 +257,8 @@ and v_ty_parameter (v1, v2) = let v1 = v_tok v1 and v2 = v_name v2 in ()
 and v_expr v =
   let k x = 
     match x with
-
+  | Ellipsis v1 -> v_tok v1
+  | DeepEllipsis (v1, v2, v3) -> v_tok v1; v_expr v2; v_tok v3
   | C v1 -> let v1 = v_constant v1 in ()
   | L v1 -> let v1 = v_long_name v1 in ()
   | Constr ((v1, v2)) ->
@@ -345,7 +348,7 @@ and v_expr v =
       and v8 = v_seq_expr v8
       and v9 = v_tok v9
       in ()
-  | ExprTodo t -> v_tok t
+  | ExprTodo (t, xs) -> v_todo_category t; OCaml.v_list v_expr xs
   in
   vin.kexpr (k, all_functions) v
 
@@ -405,6 +408,7 @@ and v_seq_expr v = v_semicolon_list1 v_expr v
 
 and v_pattern x =
    let k x = match x with
+  | PatEllipsis v1 -> v_tok v1
   | PatVar v1 -> let v1 = v_name v1 in ()
   | PatConstant v1 -> let v1 = v_signed_constant v1 in ()
   | PatConstr ((v1, v2)) ->
@@ -428,7 +432,9 @@ and v_pattern x =
       and v5 = v_tok v5
       in ()
   | ParenPat v1 -> let v1 = v_paren13 v_pattern v1 in ()
-  | PatTodo t -> v_tok t
+
+  | PatTodo (t, xs) -> v_todo_category t; OCaml.v_list v_pattern xs
+
    in
    vin.kpattern (k, all_functions) x
 
@@ -492,7 +498,8 @@ and v_module_expr v =
       let v2 = OCaml.v_list v_item v2 in
       let v3 = v_tok v3 in
       ()
-  | ModuleTodo t -> v_tok t
+  | ModuleTodo (t, xs) -> v_todo_category t; OCaml.v_list v_module_expr xs
+
   in
   vin.kmodule_expr (k, all_functions) v
 
@@ -533,7 +540,8 @@ and v_item x =
       and v4 = v_module_expr v4
       in ()
 
-  | ItemTodo v -> v_info v
+  | ItemTodo (t, xs) -> v_todo_category t; OCaml.v_list v_item xs
+
   in
   vin.kitem (k, all_functions) x
 

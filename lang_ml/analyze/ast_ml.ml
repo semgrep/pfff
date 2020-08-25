@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2019 r2c
+ * Copyright (C) 2019, 2020 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -51,20 +51,25 @@ type name = qualifier * ident
  and qualifier = ident list (* TODO: functor? *)
  [@@deriving show] (* with tarzan *)
 
+type todo_category = string wrap
+ [@@deriving show] (* with tarzan *)
 (* ------------------------------------------------------------------------- *)
 (* Types *)
 (* ------------------------------------------------------------------------- *)
 
 type type_ = 
   | TyName of name (* include builtins *)
-  | TyVar of ident
+  | TyVar of ident (* 'a *)
 
   | TyFunction of type_ * type_
   | TyApp of type_ list * name (* less: could be merged with TyName *)
 
   | TyTuple of type_ list (* at least 2 *)
 
-  | TyTodo of tok
+  (* sgrep-ext: *)
+  | TyEllipsis of tok
+
+  | TyTodo of todo_category * type_ list
 
  [@@deriving show { with_path = false} ] (* with tarzan *)
 
@@ -117,7 +122,11 @@ type expr =
   | While of tok * expr * expr
   | For of tok * ident * expr * for_direction * expr *   expr
 
-  | ExprTodo of tok
+  (* sgrep-ext: *)
+  | Ellipsis of tok
+  | DeepEllipsis of expr bracket
+
+  | ExprTodo of todo_category * expr list
 
  and literal =
    | Int    of string wrap
@@ -162,7 +171,10 @@ and pattern =
   | PatDisj of pattern * pattern
   | PatTyped of pattern * type_
 
-  | PatTodo of tok
+  (* sgrep-ext: *)
+  | PatEllipsis of tok
+
+  | PatTodo of todo_category * pattern list
 
 (* ------------------------------------------------------------------------- *)
 (* Let binding (global/local/function definition) *)
@@ -181,6 +193,7 @@ and let_binding =
 
  and parameter = 
    | Param of pattern
+   (* ParamEllipsis can be done via ParamPat (PatEllipsis) *)
    | ParamTodo of tok
  
  [@@deriving show { with_path = false} ]  (* with tarzan *)
@@ -224,7 +237,7 @@ type module_declaration = {
   | ModuleName of name (* alias *)
   | ModuleStruct of item list
 
-  | ModuleTodo of tok
+  | ModuleTodo of todo_category * module_expr list
 
 (* ------------------------------------------------------------------------- *)
 (* Signature/Structure items *)
@@ -249,7 +262,7 @@ and item =
 
   | Module of tok * module_declaration
 
-  | ItemTodo of tok
+  | ItemTodo of todo_category * item list
 
  [@@deriving show { with_path = false} ] (* with tarzan *)
       
@@ -280,4 +293,3 @@ let info_of_ident (_,info) = info
 let ident_of_name (_, ident) = ident
 let qualifier_of_name (qu, _) = 
   qu |> List.map str_of_ident |> Common.join "."
-

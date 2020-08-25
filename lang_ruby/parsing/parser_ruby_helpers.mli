@@ -5,9 +5,8 @@ val begin_override : unit -> bool
 val enter_scope : 'a -> unit
 val leave_scope : 'a -> unit
 
-module Env = Utils_ruby.StrSet
 val clear_env : unit -> unit
-val set_env : Env.t -> unit
+val set_env : Utils_ruby.StrSet.t -> unit
 
 val seen : 'a -> Ast_ruby.expr -> unit
 val seen_str : 'a -> string -> unit
