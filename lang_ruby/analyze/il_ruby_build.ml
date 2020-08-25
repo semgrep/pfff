@@ -581,7 +581,7 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
 
 
     | Ast.Unary((Ast.U Ast.Op_UMinus, _pos), Ast.Literal(Ast.Float(s,_))) -> 
-        assert(s.[0] != '-');
+        assert(s.[0] <> '-');
         acc, ELit (Float("-" ^ s))
 
     | Ast.Unary(((Ast.U Ast.Op_UBang | Ast.Op_UNot),pos),e) ->
