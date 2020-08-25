@@ -14,9 +14,6 @@ rules:
     message: Pervasives is deprecated and not available after 4.10. Use Stdlib.
     languages: [ocaml]
     severity: ERROR
-    paths:
-      exclude:
-       - web/
 
   - id: physical-inequality
     pattern: $X != $Y
@@ -45,6 +42,7 @@ rules:
     #TODO: fix at some point
     paths:
       exclude:
+       - commons/common2.ml
        - commons_core/regexp.ml
        - commons_wrappers/graph/graphe.ml
        - h_visualization/plot_jgraph.ml
