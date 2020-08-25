@@ -845,6 +845,7 @@ and pattern =
 
   (*s: [[AST_generic.pattern]] semgrep extensions cases *)
   (* sgrep: *)
+  | PatEllipsis of tok
   | DisjPat of pattern * pattern
   (*e: [[AST_generic.pattern]] semgrep extensions cases *)
 
@@ -905,6 +906,9 @@ and type_ =
    * via a TyName. Here we have flexible record types (a.k.a. rows in OCaml).
    *)
   | TyRecordAnon of field list bracket
+
+  (* sgrep-ext: *)
+  | TyEllipsis of tok
   (*e: [[AST_generic.type_]] other cases *)
   (*s: [[AST_generic.type_]] OtherXxx case *)
   | OtherType of other_type_operator * any list

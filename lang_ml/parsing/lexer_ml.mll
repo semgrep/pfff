@@ -2,6 +2,7 @@
 (* Yoann Padioleau
  *
  * Copyright (C) 2010, 2012 Facebook
+ * Copyright (C) 2020 R2C
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -266,6 +267,12 @@ rule token = parse
   (* camlp4 reserved: 
    * parser    <<    <:    >>    $     $$    $:
    *)
+
+  (* sgrep-ext: *)
+  | "..." { Flag_parsing.sgrep_guard (TDots (tokinfo lexbuf)) }
+  (* sgrep-ext: *)
+  | "<..."  { Flag_parsing.sgrep_guard (LDots (tokinfo lexbuf)) }
+  | "...>"  { Flag_parsing.sgrep_guard (RDots (tokinfo lexbuf)) }
 
 
   (* ----------------------------------------------------------------------- *)

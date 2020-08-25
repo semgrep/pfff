@@ -81,6 +81,9 @@ type ty =
   | TyFunction of ty * tok (* -> *) * ty
   | TyApp of ty_args * long_name (* todo? could be merged with TyName *)
 
+  (* sgrep-ext: *)
+  | TyEllipsis of tok
+
   | TyTodo of todo_category * ty list
 
  and ty_args = 
@@ -136,7 +139,12 @@ type expr =
   | For of tok * name * tok * seq_expr * for_direction * seq_expr * 
            tok * seq_expr * tok
 
+  (* unparser *)
   | ParenExpr of expr paren
+
+  (* sgrep-ext: *)
+  | Ellipsis of tok
+  | DeepEllipsis of expr bracket
 
   | ExprTodo of todo_category * expr list
 
@@ -201,7 +209,11 @@ and pattern =
 
   | PatTyped of tok (*'('*) * pattern * tok (*':'*) * ty * tok (*')'*)
 
+  (* unparser *)
   | ParenPat of pattern paren
+
+  (* sgrep-ext: *)
+  | PatEllipsis of tok
 
   | PatTodo of todo_category * pattern list
     
@@ -239,6 +251,7 @@ and let_binding =
 
  and parameter = 
    | ParamPat of pattern
+   (* ParamEllipsis can be done via ParamPat (PatEllipsis) *)
    | ParamTodo of tok
 
  [@@deriving show { with_path = false}]

@@ -69,6 +69,7 @@ and v_todo_category x = v_wrap v_string x
 
 and v_ty x =
     match x with
+  | TyEllipsis v1 -> let v1 = v_tok v1 in A.TyEllipsis v1
   | TyName v1 -> let v1 = v_long_name v1 in A.TyName v1
   | TyVar ((v1, v2)) -> let _v1 = v_tok v1 and v2 = v_name v2 in A.TyVar v2
   | TyTuple v1 -> let v1 = v_star_list v_ty v1 in A.TyTuple v1
@@ -145,7 +146,10 @@ and v_ty_parameter (v1, v2) = let _v1 = v_tok v1 and v2 = v_name v2 in
 
 and v_expr v =
     match v with
-
+  | Ellipsis v1 -> let v1 = v_tok v1 in A.Ellipsis v1
+  | DeepEllipsis (v1, v2, v3) ->
+      let v1 = v_tok v1 in let v2 = v_expr v2 in let v3 = v_tok v3 in
+      A.DeepEllipsis (v1, v2, v3)
   | C v1 -> let v1 = v_constant v1 in A.L v1
   | L v1 -> let v1 = v_long_name v1 in A.Name v1
   | Constr ((v1, v2)) ->
@@ -336,6 +340,7 @@ and v_seq_expr1 xs =
 
 and v_pattern x =
   match x with
+  | PatEllipsis v1 -> let v1 = v_tok v1 in A.PatEllipsis v1
   | PatVar v1 -> let v1 = v_name v1 in A.PatVar v1
   | PatConstant v1 -> let v1 = v_signed_constant v1 in A.PatLiteral v1
   | PatConstr ((v1, v2)) ->

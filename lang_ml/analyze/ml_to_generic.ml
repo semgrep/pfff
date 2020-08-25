@@ -70,6 +70,7 @@ and todo_category v = ident v
 
 and type_ =
   function
+  | TyEllipsis v1 -> let v1 = tok v1 in G.TyEllipsis v1
   | TyName v1 -> let v1 = name v1 in G.TyName v1
   | TyVar v1 -> let v1 = ident v1 in G.TyVar v1
   | TyFunction ((v1, v2)) -> let v1 = type_ v1 and v2 = type_ v2 in 
@@ -87,6 +88,10 @@ and type_ =
 
 and expr =
   function
+  | Ellipsis v1 -> let v1 = tok v1 in G.Ellipsis v1
+  | DeepEllipsis (v1, v2, v3) -> let v1 = tok v1 in let v2 = expr v2 in 
+      let v3 = tok v3 in
+      G.DeepEllipsis (v1, v2, v3)
   | L v1 -> let v1 = literal v1 in G.L v1
   | Name v1 -> let v1 = name v1 in G.IdQualified (v1, G.empty_id_info ())
   | Constructor ((v1, v2)) ->
@@ -274,6 +279,7 @@ and rec_opt v =
 
 and pattern =
   function
+  | PatEllipsis v1 -> let v1 = tok v1 in G.PatEllipsis v1
   | PatVar v1 -> let v1 = ident v1 in G.PatId (v1, G.empty_id_info())
   | PatLiteral v1 -> let v1 = literal v1 in G.PatLiteral v1
   | PatConstructor ((v1, v2)) ->

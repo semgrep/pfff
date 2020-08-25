@@ -308,6 +308,7 @@ and map_other_expr_operator x = x
 
 and map_type_ =
   function
+  | TyEllipsis v1 -> let v1 = map_tok v1 in TyEllipsis v1
   | TyRecordAnon v1 ->
       let v1 = map_bracket (map_of_list map_field) v1
       in TyRecordAnon ((v1))
@@ -516,6 +517,7 @@ and map_other_stmt_operator x = x
 
 and map_pattern =
   function
+  | PatEllipsis v1 -> let v1 = map_tok v1 in PatEllipsis v1
   | PatRecord v1 ->
       let v1 =
         map_bracket (map_of_list

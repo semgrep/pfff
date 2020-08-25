@@ -66,6 +66,9 @@ type type_ =
 
   | TyTuple of type_ list (* at least 2 *)
 
+  (* sgrep-ext: *)
+  | TyEllipsis of tok
+
   | TyTodo of todo_category * type_ list
 
  [@@deriving show { with_path = false} ] (* with tarzan *)
@@ -119,6 +122,10 @@ type expr =
   | While of tok * expr * expr
   | For of tok * ident * expr * for_direction * expr *   expr
 
+  (* sgrep-ext: *)
+  | Ellipsis of tok
+  | DeepEllipsis of expr bracket
+
   | ExprTodo of todo_category * expr list
 
  and literal =
@@ -164,6 +171,9 @@ and pattern =
   | PatDisj of pattern * pattern
   | PatTyped of pattern * type_
 
+  (* sgrep-ext: *)
+  | PatEllipsis of tok
+
   | PatTodo of todo_category * pattern list
 
 (* ------------------------------------------------------------------------- *)
@@ -183,6 +193,7 @@ and let_binding =
 
  and parameter = 
    | Param of pattern
+   (* ParamEllipsis can be done via ParamPat (PatEllipsis) *)
    | ParamTodo of tok
  
  [@@deriving show { with_path = false} ]  (* with tarzan *)
