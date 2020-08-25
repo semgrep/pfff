@@ -118,8 +118,9 @@ type modifier =
 
  and annotation_element =
    | AnnotArgValue of element_value
-   (* Optional tok for ellipsis in sgrep mode *)
-   | AnnotArgPairInit of annotation_pair list * tok option
+   | AnnotArgPairInit of annotation_pair list
+   (* tok for ellipsis in sgrep mode *)
+   | AnnotArgEllipsis of annotation_pair list * tok
    | EmptyAnnotArg
  and element_value =
    | AnnotExprInit of expr

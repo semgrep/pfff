@@ -997,8 +997,8 @@ annotation:
 annotation_element:
  | (* empty *) { EmptyAnnotArg }
  | element_value { AnnotArgValue $1 }
- | listc(element_value_pair) { AnnotArgPairInit ($1, None) }
- | "..." "," listc(element_value_pair) { AnnotArgPairInit ($3, Some $1) }
+ | listc(element_value_pair) { AnnotArgPairInit $1 }
+ | "..." "," listc(element_value_pair) { AnnotArgEllipsis ($3, $1) }
 
 element_value:
  | expr1      { AnnotExprInit $1 }
