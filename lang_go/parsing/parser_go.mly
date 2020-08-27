@@ -235,8 +235,8 @@ let rev_and_fix_items xs =
 %left       NotParen
 %left       LPAREN
 
-%left       RPAREN
-%left       PreferToRightParen
+(* %left       RPAREN *)
+(* %left       PreferToRightParen *)
 
 (*************************************************************************)
 (* Rules type declaration *)
@@ -818,7 +818,7 @@ comptype:
 
 expr_or_type:
 |   expr                                     { Left $1 }
-|   non_expr_type   %prec PreferToRightParen { Right $1 }
+|   non_expr_type (*   %prec PreferToRightParen *) { Right $1 }
 
 non_expr_type:
 |   fntype              { TFunc $1 } 

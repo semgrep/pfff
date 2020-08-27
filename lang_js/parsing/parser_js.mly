@@ -196,18 +196,20 @@ let (^@) xs sc =
 (*************************************************************************)
 
 (* must be at the top so that it has the lowest priority *)
-%nonassoc LOW_PRIORITY_RULE
+(* %nonassoc LOW_PRIORITY_RULE *)
 
 (* Special if / else associativity*)
 %nonassoc p_IF
 %nonassoc T_ELSE
 
-%nonassoc p_POSTFIX
+(* %nonassoc p_POSTFIX *)
 
+(*
 %right
  T_RSHIFT3_ASSIGN T_RSHIFT_ASSIGN T_LSHIFT_ASSIGN
  T_BIT_XOR_ASSIGN T_BIT_OR_ASSIGN T_BIT_AND_ASSIGN T_MOD_ASSIGN T_DIV_ASSIGN
  T_MULT_ASSIGN T_MINUS_ASSIGN T_PLUS_ASSIGN "="
+*)
 
 %left T_OR
 %left T_AND
@@ -1025,8 +1027,8 @@ post_in_expr(x):
 pre_in_expr(x):
  | left_hand_side_expr_(x)                     { $1 }
 
- | pre_in_expr(x) T_INCR %prec p_POSTFIX      { uop U_post_increment $2 $1 }
- | pre_in_expr(x) T_DECR %prec p_POSTFIX      { uop U_post_decrement $2 $1 }
+ | pre_in_expr(x) T_INCR (* %prec p_POSTFIX*)    { uop U_post_increment $2 $1 }
+ | pre_in_expr(x) T_DECR (* %prec p_POSTFIX*)    { uop U_post_decrement $2 $1 }
  | T_INCR pre_in_expr(d1)                      { uop U_pre_increment $1 $2 }
  | T_DECR pre_in_expr(d1)                      { uop U_pre_decrement $1 $2 }
 
@@ -1269,7 +1271,7 @@ arrow_body:
  | block
      { match $1 with Block (a,b,c) -> ABody (a,b,c) | _ -> raise Impossible }
  (* see conflicts.txt for why the %prec *)
- | assignment_expr_no_stmt %prec LOW_PRIORITY_RULE { AExpr $1 }
+ | assignment_expr_no_stmt (* %prec LOW_PRIORITY_RULE *) { AExpr $1 }
  (* ugly *)
  | function_expr { AExpr (Function $1) }
 
