@@ -82,6 +82,7 @@ clean::
 	rm -f parser_cpp.ml parser_cpp.mli parser_cpp.output parser_cpp.conflicts $(MENHIRLOG)
 beforedepend:: parser_cpp.ml parser_cpp.mli
 
+#TODO: should use --noemit-token-type
 parser_cpp2.ml parser_cpp2.mli: parser_cpp2.dyp
 	dypgen --pv-obj --ocamlc '$(INCLUDES) -w y' $<
 	perl -p -i -e 's/type token =/type token = Parser_cpp.token open Parser_cpp(*/' \

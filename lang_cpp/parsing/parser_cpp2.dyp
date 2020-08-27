@@ -1,3 +1,4 @@
+%mltop { [@@@ warning "-27-32"] open Parser_cpp }
 {
 (* Yoann Padioleau
  * 

@@ -72,8 +72,12 @@ beforedepend:: lexer_ruby.ml
 parser_ruby.ml parser_ruby.mli: parser_ruby.dyp
 	dypgen --pv-obj --ocamlc '$(INCLUDES) -w y' $<
 
+#TODO: we need to keep the .mli for now because
+# we get a compilation error when using dune
+# because we use --no-mli, but then the inferred type
+# can not be generalized because of some weak references
 clean::
-	rm -f parser_ruby.ml parser_ruby.mli 
+	rm -f parser_ruby.ml parser_ruby_temp.ml #parser_ruby.mli 
 
 #this does not work because dypgen above wants to compile
 # but in make depend the .cmo are not there yet
