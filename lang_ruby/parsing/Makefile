@@ -67,8 +67,11 @@ clean::
 	rm -f lexer_ruby.ml
 beforedepend:: lexer_ruby.ml
 
+#TODO: switch to use --no-mli which avoid the need to 
+# pass the -I and other problems
 parser_ruby.ml parser_ruby.mli: parser_ruby.dyp
 	dypgen --pv-obj --ocamlc '$(INCLUDES) -w y' $<
+
 clean::
 	rm -f parser_ruby.ml parser_ruby.mli 
 

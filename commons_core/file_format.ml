@@ -1,5 +1,3 @@
-open Common 
-
 (* Yoann Padioleau
  *
  * Copyright (C) 2011 Facebook

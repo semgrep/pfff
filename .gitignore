@@ -30,6 +30,10 @@ pfff.log
 # Object files
 # -----------------------------------------------------------------------------
 
+# dune
+_build
+.merlin
+
 # ocaml object files
 *.cm*
 *.annot
