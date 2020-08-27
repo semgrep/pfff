@@ -207,12 +207,14 @@ rec.opt:
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all.opt || exit 1; done
 
 
-$(TARGET): $(LIBS) $(OBJS) Main.cmo
+$(TARGET): $(LIBS) $(OBJS) cli/Main.cmo
 	$(OCAMLC) $(BYTECODE_STATIC) -o $@ $(SYSLIBS) $^
-$(TARGET).opt: $(LIBS:.cma=.cmxa) $(OPTOBJS) Main.cmx
+$(TARGET).opt: $(LIBS:.cma=.cmxa) $(OPTOBJS) cli/Main.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa)  $^
 $(TARGET).top: $(LIBS) $(OBJS)
 	$(OCAMLMKTOP) -o $@ $(SYSLIBS) threads.cma $^
+clean::
+	rm -f cli/*.cm*
 
 
 clean::
@@ -289,11 +291,12 @@ pfff_db.opt: $(LIBS:.cma=.cmxa) $(LIBS2:.cma=.cmxa) $(OBJS2:.cmo=.cmx) $(OPTOBJS
 #------------------------------------------------------------------------------
 # pfff_test targets
 #------------------------------------------------------------------------------
-pfff_test: $(LIBS) $(OBJS) main_test.cmo
+pfff_test: $(LIBS) $(OBJS) tests/Test.cmo
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
-pfff_test.opt: $(LIBS:.cma=.cmxa) $(OPTOBJS) main_test.cmx
+pfff_test.opt: $(LIBS:.cma=.cmxa) $(OPTOBJS) tests/Test.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) $^
-
+clean::
+	rm -f tests/*.cm*
 
 ##############################################################################
 # Build documentation

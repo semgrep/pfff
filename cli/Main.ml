@@ -100,12 +100,9 @@ let all_actions () =
     Test_parsing_java.actions()@
     Test_parsing_go.actions()@
 
+(* TODO need dune .opam files
     Test_parsing_nw.actions()@
-
-    Test_parsing_lisp.actions()@
     Test_parsing_hs.actions()@
-
-    (* beta *)
     Test_parsing_csharp.actions()@
     Test_parsing_rust.actions()@
     Test_parsing_erlang.actions()@
@@ -116,6 +113,12 @@ let all_actions () =
     Test_parsing_web.actions()@
 
     Test_parsing_sql.actions()@
+*)
+
+    Test_parsing_lisp.actions()@
+
+    (* beta *)
+
 
     Test_analyze_generic.actions() @
   (*
