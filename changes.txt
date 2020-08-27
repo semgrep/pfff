@@ -1,6 +1,19 @@
 # -*- org -*-
 
-* 0.41 (Q2 2020) ()
+* 0.42 (Q3 2020) ()
+
+** internals
+
+*** switch to dune build system
+
+** OCaml
+
+*** handle more recent features, at least parse all pfff OCaml code
+
+*** added ... and other semgrep constructs to OCaml grammar!
+can now write more complex semgrep rules, see semgrep.yml
+
+* 0.41 (Q2 2020) (IL)
 
 ** GENERIC
 
