@@ -1,0 +1,13 @@
+(library
+ (public_name pfff-h_program-lang)
+ (name pfff_h_program_lang)
+ (wrapped false)
+ (libraries
+   json-wheel uucp uutf
+
+   commons
+   pfff-h_files-format
+ )
+ (preprocess (pps ppx_deriving.show))
+)
+(ocamllex archi_code_lexer)
