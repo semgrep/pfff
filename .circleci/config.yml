@@ -25,7 +25,7 @@ jobs:
     working_directory: /src
     steps:
       - checkout
-      - run: semgrep --config semgrep.yml --error --strict --exclude parsing_errors --exclude todo .
+      - run: semgrep --config semgrep.yml --error --strict --exclude parsing_errors --exclude todo --exclude TODO_more .
 
 workflows:
   version: 2

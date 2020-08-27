@@ -30,6 +30,10 @@ pfff.log
 # Object files
 # -----------------------------------------------------------------------------
 
+# dune
+_build
+.merlin
+
 # ocaml object files
 *.cm*
 *.annot
@@ -128,7 +132,7 @@ config.status
 # -----------------------------------------------------------------------------
 /Makefile.config
 /commons/features.ml
-/globals/config_pfff.ml
+#/globals/config_pfff.ml
 
 # -----------------------------------------------------------------------------
 # Auto generated

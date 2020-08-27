@@ -56,7 +56,9 @@ let test regexp =
 
       (* PHP related tests *)
       Unit_parsing_php.unittest;
+(* TODO dune .opam file
       Unit_pretty_print_php.unittest;
+*)
       Unit_foundation_php.unittest;
       Unit_static_analysis_php.unittest;
       Unit_typeinfer_php.unittest;
@@ -65,7 +67,9 @@ let test regexp =
       Unit_prolog_php.unittest;
 (*      Unit_checker_php.unittest; should be in check_generic/ now *)
       (* this one needs xdebug to work *)
+(* TODO dune .opam file
       Unit_coverage_php.unittest;
+*)
 
       (* non PHP related tests *)
 
@@ -73,15 +77,19 @@ let test regexp =
       Unit_analyze_ml.unittest;
       Unit_parsing_java.unittest;
       Unit_analyze_java.unittest;
+(* TODO dune
 #if FEATURE_BYTECODE
       Unit_analyze_bytecode.unittest;
 #endif
+*)
       Unit_parsing_js.unittest;
       Unit_analyze_js.unittest;
       Unit_parsing_json.unittest;
       Unit_parsing_python.unittest;
       Unit_parsing_ruby.unittest;
+(* TODO dune .opan files
       Unit_parsing_html.unittest;
+*)
       Unit_parsing_cpp.unittest;
       Unit_parsing_go.unittest;
 
@@ -268,7 +276,9 @@ let pfff_extra_actions () = [
 
 let all_actions () = 
   pfff_extra_actions() @
+(* TODO .opam dune file
  Test_analyze_php.actions()@
+*)
  Test_analyze_js.actions()@
  Test_analyze_ruby.actions()@
  Test_analyze_ml.actions()@
@@ -339,6 +349,7 @@ let main () =
     (* --------------------------------------------------------- *)
     (* empty entry *)
     (* --------------------------------------------------------- *)
+    | [] -> main_action "all"
     | _ -> 
         Common.usage usage_msg (options()); 
         failwith "too few or too many arguments"
