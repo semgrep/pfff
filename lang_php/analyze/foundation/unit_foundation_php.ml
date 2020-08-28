@@ -20,8 +20,8 @@ module G = Graph_code
 
 let ast_unittest =
   "ast_simple regression files" >:: (fun () ->
-    let dir1 = Filename.concat Config_pfff.path "/tests/php/parsing" in
-    let dir2 = Filename.concat Config_pfff.path "/tests/php/semantic" in
+    let dir1 = Config_pfff.tests_path "php/parsing" in
+    let dir2 = Config_pfff.tests_path "php/semantic" in
     let files =
       (Common2.glob (spf "%s/*.php" dir1) @ Common2.glob (spf "%s/*.php" dir2))
     in
@@ -296,7 +296,7 @@ function test_useA() {
     );
 
     "regression files" >:: (fun () ->
-      let root = Filename.concat Config_pfff.path "/tests/php/codegraph" in
+      let root = Config_pfff.tests_path "php/codegraph" in
       let skip_list = Skip_code.load (Filename.concat root "skip_list.txt") in
       let files = 
         Lib_parsing_php.find_source_files_of_dir_or_files [root] 

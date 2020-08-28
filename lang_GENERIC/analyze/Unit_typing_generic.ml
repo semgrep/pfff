@@ -11,7 +11,7 @@ let unittest =
   "typing_tests" >::: [
 
     "test basic variable definitions java" >:: (fun () ->
-      let file = Filename.concat Config_pfff.path "/tests/GENERIC/typing/VarDef.java" in
+      let file = Config_pfff.tests_path "GENERIC/typing/VarDef.java" in
         try
           let ast = Parse_generic.parse_program file in
             let lang = List.hd (Lang.langs_of_filename file) in 
@@ -33,7 +33,7 @@ let unittest =
     );
 
     "test multiple variable definitions java" >:: (fun () ->
-      let file = Filename.concat Config_pfff.path "/tests/GENERIC/typing/EqVarCmp.java" in
+      let file = Config_pfff.tests_path "GENERIC/typing/EqVarCmp.java" in
         try
           let ast = Parse_generic.parse_program file in
             let lang = List.hd (Lang.langs_of_filename file) in 
@@ -68,7 +68,7 @@ let unittest =
     );
 
     "test basic params java" >:: (fun () ->
-      let file = Filename.concat Config_pfff.path "/tests/GENERIC/typing/BasicParam.java" in
+      let file = Config_pfff.tests_path "GENERIC/typing/BasicParam.java" in
         try
           let ast = Parse_generic.parse_program file in
             let lang = List.hd (Lang.langs_of_filename file) in 
@@ -99,7 +99,7 @@ let unittest =
     );
 
     "test class field types" >:: (fun () ->
-      let file = Filename.concat Config_pfff.path "/tests/GENERIC/typing/ClassFields.java" in
+      let file = Config_pfff.tests_path "GENERIC/typing/ClassFields.java" in
         try
           let ast = Parse_generic.parse_program file in
             let lang = List.hd (Lang.langs_of_filename file) in 
@@ -125,7 +125,7 @@ let unittest =
     );
 
     "java_pattern_files" >:: (fun () ->
-      let dir = Filename.concat Config_pfff.path "/tests/java/semgrep" in
+      let dir = Config_pfff.tests_path "java/semgrep" in
       let files = Common2.glob (spf "%s/*.sgrep" dir) in
       files |> List.iter (fun file ->
         try
@@ -137,7 +137,7 @@ let unittest =
     );
 
     "go_pattern_files" >:: (fun () ->
-      let dir = Filename.concat Config_pfff.path "/tests/go/semgrep" in
+      let dir = Config_pfff.tests_path "go/semgrep" in
       let files = Common2.glob (spf "%s/*.sgrep" dir) in
       files |> List.iter (fun file ->
         try
@@ -149,7 +149,7 @@ let unittest =
     );
  
     "test basic variable definitions go" >:: (fun () ->
-      let file = Filename.concat Config_pfff.path "/tests/GENERIC/typing/StaticVarDef.go" in
+      let file = Config_pfff.tests_path "GENERIC/typing/StaticVarDef.go" in
         try
           let ast = Parse_generic.parse_program file in
             let lang = List.hd (Lang.langs_of_filename file) in 
@@ -171,7 +171,7 @@ let unittest =
     );
 
     "test basic function call go" >:: (fun () ->
-      let file = Filename.concat Config_pfff.path "/tests/GENERIC/typing/FuncParam.go" in
+      let file = Config_pfff.tests_path "GENERIC/typing/FuncParam.go" in
         try
           let ast = Parse_generic.parse_program file in
             let lang = List.hd (Lang.langs_of_filename file) in 
@@ -202,7 +202,7 @@ let unittest =
     );
     
     "test inferred variable definitions go" >:: (fun () ->
-      let file = Filename.concat Config_pfff.path "/tests/GENERIC/typing/PropVarDef.go" in
+      let file = Config_pfff.tests_path "GENERIC/typing/PropVarDef.go" in
         try
           let ast = Parse_generic.parse_program file in
             let lang = List.hd (Lang.langs_of_filename file) in 

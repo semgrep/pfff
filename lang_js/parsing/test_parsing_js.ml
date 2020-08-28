@@ -62,7 +62,7 @@ let test_parse_common xs fullxs ext  =
   ));
   Parse_info.print_parsing_stat_list !stat_list;
 
-    let score_path = Filename.concat Config_pfff.path "tmp" in
+    let score_path = Config_pfff.regression_data_dir in
     dirname_opt |> Common.do_option (fun dirname -> 
       let dirname = Common.fullpath dirname in
       pr2 "--------------------------------";

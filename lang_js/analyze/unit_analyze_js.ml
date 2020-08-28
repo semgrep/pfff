@@ -68,7 +68,7 @@ function foo() {}
      ));
 
  "AST js building regression files" >:: (fun () ->
-      let dir = Filename.concat Config_pfff.path "/tests/js/parsing" in
+      let dir = Config_pfff.tests_path "js/parsing" in
       let files = 
         Common2.glob (spf "%s/*.js" dir) @
 (*

@@ -56,7 +56,7 @@ let test_parse_cpp ?lang xs  =
       pr2 "--------------------------------";
       pr2 "regression testing  information";
       pr2 "--------------------------------";
-      let score_path = Filename.concat Config_pfff.path "tmp" in
+      let score_path = Config_pfff.regression_data_dir in
       let str = Str.global_replace (Str.regexp "/") "__" dirname in
       Common2.regression_testing newscore 
         (Filename.concat score_path

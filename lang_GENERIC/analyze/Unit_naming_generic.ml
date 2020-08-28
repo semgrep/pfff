@@ -10,13 +10,13 @@ let unittest =
 
     "regression files" >:: (fun () ->
 
-      let dir = Filename.concat Config_pfff.path "/tests/python/naming" in
+      let dir = Config_pfff.tests_path "python/naming" in
       let files1 = Common2.glob (spf "%s/*.py" dir) in
-      let dir = Filename.concat Config_pfff.path "/tests/go/naming" in
+      let dir = Config_pfff.tests_path "go/naming" in
       let files2 = Common2.glob (spf "%s/*.go" dir) in
-      let dir = Filename.concat Config_pfff.path "/tests/js/naming" in
+      let dir = Config_pfff.tests_path "js/naming" in
       let files3 = Common2.glob (spf "%s/*.js" dir) in
-      let dir = Filename.concat Config_pfff.path "/tests/java/naming" in
+      let dir = Config_pfff.tests_path "java/naming" in
       let files4 = Common2.glob (spf "%s/*.java" dir) in
 
       (files1 @ files2 @ files3 @ files4) |> List.iter (fun file ->

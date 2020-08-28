@@ -16,7 +16,7 @@ let unittest =
 (* Database building *)
 (*****************************************************************************)
   "building light database" >:: (fun () ->
-    let data_dir = Config_pfff.path ^ "/tests/ml/db" in
+    let data_dir = Config_pfff.tests_path "ml/db" in
     let _db = Database_light_ml.compute_database ~verbose [data_dir] in
     ()
   );
@@ -36,7 +36,7 @@ let unittest =
          ("coverage_ml.ml", dummy_coverage);
        ]
        in
-       let root = Filename.concat Config_pfff.path "lang_ml" in
+       let root = Filename.concat Config_pfff.path_pfff_home "lang_ml" in
        let cover' = 
          Coverage_ml.basename_coverage_to_readable_coverage cover root
          |> List.map fst

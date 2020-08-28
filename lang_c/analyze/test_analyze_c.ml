@@ -60,7 +60,7 @@ let test_dataflow_c file =
   );
   
   let logic_file = 
-    Filename.concat Config_pfff.path "h_program-lang/datalog_code.dl" in
+    Filename.concat Config_pfff.path_pfff_home "h_program-lang/datalog_code.dl" in
   
   let final_file = "/tmp/datalog.dl" in
   let cmd = spf "cat %s %s > %s" facts_file logic_file final_file in

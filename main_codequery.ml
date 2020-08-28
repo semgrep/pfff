@@ -56,11 +56,11 @@ let swipl =
   else "swipl"
 
 let predicates_file = 
-  Filename.concat Config_pfff.path "h_program-lang/prolog_code.pl"
+  Filename.concat Config_pfff.path_pfff_home "h_program-lang/prolog_code.pl"
 let logicrules_file = 
-  Filename.concat Config_pfff.path "h_program-lang/datalog_code.dtl"
+  Filename.concat Config_pfff.path_pfff_home "h_program-lang/datalog_code.dtl"
 let bddbddb_jar_file = 
-  Filename.concat Config_pfff.path "external/bddbddb/bddbddb-full.jar"
+  Filename.concat Config_pfff.path_pfff_home "external/bddbddb/bddbddb-full.jar"
 
 (* action mode *)
 let action = ref ""
