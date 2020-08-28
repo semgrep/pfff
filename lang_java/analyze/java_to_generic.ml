@@ -150,10 +150,6 @@ and annotation_element =
       [G.Arg v1]
   | AnnotArgPairInit v1 ->
       list annotation_pair v1
-  | AnnotArgEllipsis (v1, v2) ->
-      let v1 = list annotation_pair v1
-      and v2 = tok v2 in
-      (G.Arg (G.Ellipsis v2))::v1
   | EmptyAnnotArg -> []
 
 and element_value =
@@ -166,12 +162,13 @@ and element_value =
       let v1 = list element_value v1 in
       G.Container (G.List, fb v1)
 
-and annotation_pair (v1, v2) =
-  let v1 = ident v1 and v2 = element_value v2 in
-  G.ArgKwd (v1, v2)
-
-
-
+and annotation_pair =
+  function
+  | AnnotPair (v1, v2) -> 
+      let v1 = ident v1 and v2 = element_value v2 in
+      G.ArgKwd (v1, v2)
+  | AnnotPairEllipsis v1 ->
+      G.Arg (G.Ellipsis v1)
 
 (* id_or_name_of_qualified_ident *)
 and name v =
