@@ -120,12 +120,15 @@ type modifier =
    | AnnotArgValue of element_value
    | AnnotArgPairInit of annotation_pair list
    | EmptyAnnotArg
- and element_value =
+
+and element_value =
    | AnnotExprInit of expr
    | AnnotNestedAnnot of annotation
    | AnnotArrayInit of element_value list (* TODO bracket *)
 
- and annotation_pair = (ident * element_value)
+ and annotation_pair =
+   | AnnotPair of (ident * element_value)
+   | AnnotPairEllipsis of tok
 
  and name_or_class_type = identifier_ list
  and identifier_ =

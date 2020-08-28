@@ -1004,8 +1004,9 @@ element_value:
  | annotation { AnnotNestedAnnot $1 }
  | element_value_array_initializer { AnnotArrayInit $1 }
 
-element_value_pair: identifier "=" element_value { ($1, $3) }
-
+element_value_pair:
+ | identifier "=" element_value { AnnotPair ($1, $3) }
+ | "..." { Flag_parsing.sgrep_guard (AnnotPairEllipsis $1) }
 
 element_value_array_initializer:
  | "{" "}" { [] }
@@ -1015,8 +1016,6 @@ element_value_array_initializer:
 (* should be statically a constant expression; can contain '+', '*', etc.*)
 expr1: 
  | conditional_expression { $1 }
- (* sgrep-et: *)
- | "..." { Flag_parsing.sgrep_guard (Ellipsis $1) }
 
 (*************************************************************************)
 (* Class *)
