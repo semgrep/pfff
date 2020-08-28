@@ -16,10 +16,7 @@ open OUnit
 let unittest =
  "checkers_php" >::: [
   "basic checkers" >:: (fun () ->
-  let p path = 
-     Filename.concat Config_pfff.path 
-            (Filename.concat "tests/php/scheck" path)
-  in
+  let p path = Filename.concat (Config_pfff.tests_path "php/scheck") path in
 
   let test_files = [
     p "builtins.php";

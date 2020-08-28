@@ -453,7 +453,7 @@ loc:
 
 tests:
 	$(MAKE) rec && $(MAKE) pfff_test
-	./pfff_test -verbose all
+	cd tests; ../pfff_test -verbose all
 test:
 	make tests
 
