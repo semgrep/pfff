@@ -835,7 +835,7 @@ and parameter_binding env idx = function
  | C.ParamClassic p -> A.ParamClassic (parameter env p), []
  | C.ParamEllipsis t -> A.ParamEllipsis t, []
  | C.ParamPattern x -> 
-    if !transpile_pattern || true (* TODO *)
+    if !transpile_pattern
     then begin
      let tok = (C.Pattern x.C.ppat) |> Lib_parsing_js.ii_of_any |> List.hd in
      let intermediate = spf "!arg%d!" idx, tok in
