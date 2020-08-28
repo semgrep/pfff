@@ -78,7 +78,7 @@ let test_parse xs =
     | [x] when Common2.is_directory x -> Some (Common.fullpath x)
     | _ -> None
   in
-  let score_path = Filename.concat Config_pfff.path "tmp" in
+  let score_path = Config_pfff.regression_data_dir in
   dirname_opt |> Common.do_option (fun dirname -> 
     pr2 "--------------------------------";
     pr2 "regression testing  information";

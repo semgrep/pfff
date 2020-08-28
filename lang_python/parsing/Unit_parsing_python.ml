@@ -11,7 +11,7 @@ let unittest =
   "parsing_python" >::: [
 
     "regression files" >:: (fun () ->
-      let dir = Filename.concat Config_pfff.path "/tests/python/parsing" in
+      let dir = Config_pfff.tests_path "python/parsing" in
       let files = Common2.glob (spf "%s/*.py" dir)in
       files |> List.iter (fun file ->
         try

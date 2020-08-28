@@ -9,7 +9,7 @@ let unittest =
   "parsing_ruby" >::: [
 
     "regression files" >:: (fun () ->
-      let dir = Filename.concat Config_pfff.path "/tests/ruby/parsing" in
+      let dir = Config_pfff.tests_path "ruby/parsing" in
       let files = Common2.glob (spf "%s/*.rb" dir)in
       files |> List.iter (fun file ->
         try

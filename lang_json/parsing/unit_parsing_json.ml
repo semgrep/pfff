@@ -9,7 +9,7 @@ let unittest =
   "parsing_json" >::: [
 
     "regression files" >:: (fun () ->
-      let dir = Filename.concat Config_pfff.path "/tests/json/parsing" in
+      let dir = Config_pfff.tests_path "json/parsing" in
       let files = 
         Common2.glob (spf "%s/*.json" dir)
       in

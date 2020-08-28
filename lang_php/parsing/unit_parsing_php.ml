@@ -124,7 +124,7 @@ let unittest =
     );
 
     "regression files" >:: (fun () ->
-      let dir = Filename.concat Config_pfff.path "/tests/php/parsing" in
+      let dir = Config_pfff.tests_path "php/parsing" in
       let files = Common2.glob (spf "%s/*.php" dir) in
       files |> List.iter (fun file ->
         try

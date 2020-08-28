@@ -52,7 +52,7 @@ module F = Ast_fuzzy
 (* Constants *)
 (*****************************************************************************)
 let path_stdlib = 
-  Filename.concat Config_pfff.path "data/js_stdlib/stdlib.js"
+  Filename.concat Config_pfff.path_pfff_home "data/js_stdlib/stdlib.js"
 
 (*****************************************************************************)
 (* Helpers *)

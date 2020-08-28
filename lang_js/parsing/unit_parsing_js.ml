@@ -9,7 +9,7 @@ let unittest =
   "parsing_js" >::: [
 
     "regression files" >:: (fun () ->
-      let dir = Filename.concat Config_pfff.path "/tests/js/parsing" in
+      let dir = Config_pfff.tests_path "js/parsing" in
       let files = 
         Common2.glob (spf "%s/*.js" dir) @
         Common2.glob (spf "%s/jsx/*.js" dir) @
@@ -25,7 +25,7 @@ let unittest =
     );
 
     "regression files typescript" >:: (fun () ->
-      let dir = Filename.concat Config_pfff.path "/tests/typescript/parsing" in
+      let dir = Config_pfff.tests_path "typescript/parsing" in
       let files = 
         Common2.glob (spf "%s/*.js" dir) @
         Common2.glob (spf "%s/*.ts" dir) @

@@ -678,8 +678,8 @@ let cmd_to_list_exit_1_ok command =
 (* used for testing *)
 let prolog_query ?(verbose=false) ~source_file ~query =
   let facts_pl_file = Common.new_temp_file "prolog_php_db" ".pl" in
-  let helpers_pl_file =
-    Config_pfff.path ^ "/h_program-lang/prolog_code.pl" in
+  let helpers_pl_file = Filename.concat
+    Config_pfff.path_pfff_home "h_program-lang/prolog_code.pl" in
 
   let show_progress = false in
 

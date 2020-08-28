@@ -12,7 +12,7 @@ type language =
 (*****************************************************************************)
 
 let macros_h = 
-  ref (Filename.concat Config_pfff.path "/data/cpp_stdlib/macros.h")
+  ref (Filename.concat Config_pfff.path_pfff_home "/data/cpp_stdlib/macros.h")
 
 let cmdline_flags_macrofile () = [
   "-macros", Arg.Set_string macros_h,
