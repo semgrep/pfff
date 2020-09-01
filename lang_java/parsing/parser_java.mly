@@ -1228,6 +1228,8 @@ interface_member_declaration:
  | annotation_type_declaration { [Class $1] }
 
  | ";"  { [] }
+ (* sgrep-ext: allows ... inside interface body *)
+ | "..." { [DeclEllipsis $1] }
 
 
 (* note: semicolon is missing in 2nd edition java language specification.*)
