@@ -252,12 +252,12 @@ let rev_and_fix_items xs =
 (* Toplevel *)
 (*************************************************************************)
 
-file: package imports xdcl_list EOF 
+file: package LSEMICOLON imports xdcl_list EOF 
   { ($1)::
-    (List.rev $2 |> List.map (fun x -> Import x)) @
-    (List.rev $3) }
+    (List.rev $3 |> List.map (fun x -> Import x)) @
+    (List.rev $4) }
 
-package: LPACKAGE sym LSEMICOLON { Package ($1, $2) }
+package: LPACKAGE sym { Package ($1, $2) }
 
 (* Go does some ASI so we do not need like in Java to use stmt_no_dots
    * to allow '...' without trailing semicolon and avoid ambiguities.
