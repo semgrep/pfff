@@ -163,7 +163,7 @@ and expr =
       | Left tok -> G.Assign (v2, tok, v3)
       | Right (op, tok) -> G.AssignOp (v2, (op, tok), v3)
       )
-  | ArrayAccess ((v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in
+  | ArrayAccess ((v1, v2)) -> let v1 = expr v1 and v2 = bracket expr v2 in
       G.ArrayAccess (v1, v2) 
   | RecordPtAccess ((v1, t, v2)) -> 
       let v1 = expr v1 and t = info t and v2 = name v2 in

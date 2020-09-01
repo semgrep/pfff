@@ -187,7 +187,7 @@ let rec lval env eorig =
       in
       { base; offset }
 
-  | G.ArrayAccess (e1orig, e2orig) ->
+  | G.ArrayAccess (e1orig, (_, e2orig, _)) ->
       let tok = G.fake "[]" in
       let lval = lval env e1orig in
       let e2 = expr env e2orig in

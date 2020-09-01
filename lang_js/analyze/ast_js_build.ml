@@ -520,7 +520,7 @@ and (expr: env -> C.expr -> A.expr) = fun env e ->
     A.ObjAccess (e, A.PN_Computed (expr env (paren e2)))
     *)
     let e = expr env e in
-    let e2 = expr env (C.unparen e2) in
+    let e2 = bracket_keep (expr env) e2 in
     A.ArrAccess (e, e2)
   | C.Object xs ->
     A.Obj (bracket_keep 

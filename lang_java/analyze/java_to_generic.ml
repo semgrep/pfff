@@ -272,7 +272,7 @@ and expr e =
       G.Call (v1, v2)
   | Dot ((v1, t, v2)) -> let v1 = expr v1 and t = info t and v2 = ident v2 in 
       G.DotAccess (v1, t, G.FId v2)
-  | ArrayAccess ((v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in
+  | ArrayAccess ((v1, v2)) -> let v1 = expr v1 and v2 = bracket expr v2 in
       G.ArrayAccess (v1, v2)
   | Postfix ((v1, (v2, tok))) -> let v1 = expr v1 and v2 = fix_op v2 in
       G.Call (G.IdSpecial (G.IncrDecr (v2, G.Postfix), tok), fb[G.Arg v1]) 

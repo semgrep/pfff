@@ -701,8 +701,8 @@ atom_and_trailers:
   | atom_and_trailers "[" list_comma(subscript)   "]"
       { match $3 with
           (* TODO test* => Index (Tuple (elts)) *)
-        | [s] -> Subscript ($1, [s], Load)
-        | l -> Subscript ($1, (l), Load) }
+        | [s] -> Subscript ($1, ($2, [s], $4), Load)
+        | l -> Subscript ($1, ($2, l, $4), Load) }
 
   | atom_and_trailers "." NAME { Attribute ($1, $2, $3, Load) }
 

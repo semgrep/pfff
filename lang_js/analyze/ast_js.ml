@@ -200,7 +200,7 @@ and expr =
 
   | ObjAccess of expr * tok * property_name
   (* this can also be used to access object fields dynamically *)
-  | ArrAccess of expr * expr
+  | ArrAccess of expr * expr bracket
 
   | Fun of fun_ * ident option (*when recursive or assigned in module.exports*)
   | Apply of expr * arguments

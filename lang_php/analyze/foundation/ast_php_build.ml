@@ -71,6 +71,8 @@ let rec comma_list_dots = function
 
 let brace (_, x, _) = x
 
+let bracket f (a, b, c) = (a, f b, c)
+
 let noop = A.Block (fb[])
 
 (*****************************************************************************)
@@ -322,14 +324,14 @@ and expr env = function
       let e1 = class_name_reference env e1 in
       let e2 = expr env e2 in
       A.Class_get (e1, tok, e2)
-  | HashGet (e1, (_l, e2, _r)) ->
+  | HashGet (e1, (e2)) ->
       let e1 = expr env e1 in
-      let e2 = expr env e2 in
-      A.Array_get (e1, Some e2)
-  | ArrayGet (e1, (_l, e2opt, _r)) ->
+      let (l1, e2, l2) = bracket (expr env) e2 in
+      A.Array_get (e1, (l1, Some e2, l2))
+  | ArrayGet (e1, (l, e2opt, r)) ->
       let e1 = expr env e1 in
       let e2opt = opt expr env e2opt in
-      A.Array_get (e1, e2opt)
+      A.Array_get (e1, (l, e2opt, r))
   | BraceIdent (_l, e, _r) ->
       expr env e
   | Deref (tok, e) ->

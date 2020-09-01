@@ -196,7 +196,8 @@ and map_expr x =
       let v1 = map_expr v1 and t = map_tok t and v2 = map_field_ident v2 in
       DotAccess ((v1, t, v2))
   | ArrayAccess ((v1, v2)) ->
-      let v1 = map_expr v1 and v2 = map_expr v2 in ArrayAccess ((v1, v2))
+      let v1 = map_expr v1 and v2 = map_bracket map_expr v2 in 
+      ArrayAccess ((v1, v2))
   | SliceAccess ((v1, v2, v3, v4)) ->
       let v1 = map_expr v1 
       and v2 = map_of_option map_expr v2 

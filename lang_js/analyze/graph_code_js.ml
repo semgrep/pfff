@@ -544,7 +544,7 @@ and expr env e =
       expr env e
     );
     property_name env prop
-  | ArrAccess (e1, e2) ->
+  | ArrAccess (e1, (_, e2, _)) ->
     (match e1 with
     | Id (n, scope) when not (is_local env n) -> 
        add_use_edge_candidates env (n, E.Class) scope

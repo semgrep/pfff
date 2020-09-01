@@ -372,7 +372,7 @@ and expr =
 
   (*s: [[AST_generic.expr]] array access cases *)
   (* in Js ArrayAccess is also abused to perform DotAccess (..., FDynamic) *)
-  | ArrayAccess of expr * expr
+  | ArrayAccess of expr * expr bracket
   (*x: [[AST_generic.expr]] array access cases *)
   (* could also use ArrayAccess with a Tuple rhs, or use a special *)
   | SliceAccess of expr * 

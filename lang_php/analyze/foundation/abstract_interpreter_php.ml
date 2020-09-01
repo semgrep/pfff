@@ -587,7 +587,7 @@ and expr_ env heap x =
       let n = ref 0 in
       let heap =
         List.fold_left (fun heap x ->
-          let v = Array_get (e, Some (Int (w (string_of_int !n)))) in
+          let v = Array_get (e, fb (Some (Int (w (string_of_int !n))))) in
           let heap, _ = expr env heap (Assign (x, fake "=", v)) in
           incr n;
           heap
@@ -781,7 +781,7 @@ and lvalue env heap x =
       let name = "$this", tok in
       lvalue env heap (Var (name))
 
-  | Array_get (e, k) ->
+  | Array_get (e, (_, k, _)) ->
       array_get env heap e k
 
   | ConsArray _ as e ->
@@ -1093,7 +1093,7 @@ and array_value env id heap x =
          heap
       | _ ->
          let heap, _ =
-           expr env heap (Assign (Array_get (id, Some e1), fake "=", e2)) in
+           expr env heap (Assign (Array_get (id, fb (Some e1)), fake "=", e2)) in
          heap
      )
   | _ ->
@@ -1116,7 +1116,7 @@ and array_value env id heap x =
          heap
 
       | _ ->
-         let heap, _ = expr env heap (Assign (Array_get (id, None), fake "=", x))
+         let heap, _ = expr env heap (Assign (Array_get (id, fb None), fake "=", x))
          in
          heap
      )

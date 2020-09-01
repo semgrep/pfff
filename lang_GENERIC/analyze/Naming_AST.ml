@@ -552,7 +552,7 @@ let resolve2 lang prog =
            );
            vout (E e2);
            recurse := false;
-       | ArrayAccess (e1, e2) -> 
+       | ArrayAccess (e1, (_, e2, _)) -> 
            vout (E e1);
            Common.save_excursion env.in_lvalue false (fun () ->
              vout (E e2);

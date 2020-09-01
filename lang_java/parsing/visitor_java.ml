@@ -198,7 +198,7 @@ and v_expr (x : expr) =
     | Call ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_arguments v2 in ()
     | Dot ((v1, t, v2)) -> 
         let v1 = v_expr v1 and t = v_tok t and v2 = v_ident v2 in ()
-    | ArrayAccess ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_expr v2 in ()
+    | ArrayAccess ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_bracket v_expr v2 in ()
     | Postfix ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_incr_decr v2 in ()
     | Prefix ((v1, v2)) -> let v1 = v_incr_decr v1 and v2 = v_expr v2 in ()
     | Unary ((v1, v2)) -> let v1 = v_wrap v_arith_op v1 and v2 = v_expr v2 in ()

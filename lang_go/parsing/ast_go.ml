@@ -138,7 +138,7 @@ and expr =
  | Selector of expr * tok * ident
 
  (* valid for TArray, TMap, Tptr, TName ("string") *)
- | Index of expr * index
+ | Index of expr * index bracket
   (* low, high, max *)
  | Slice of expr * (expr option * expr option * expr option) 
 

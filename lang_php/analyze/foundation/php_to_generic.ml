@@ -239,10 +239,10 @@ and expr =
   (* unify Id and Var, finally *)      
   | Var v1 -> let v1 = var v1 in 
       G.Id (v1, G.empty_id_info())
-  | Array_get ((v1, Some v2)) ->
+  | Array_get ((v1, (t1, Some v2, t2))) ->
       let v1 = expr v1 and v2 = expr v2 in 
-      G.ArrayAccess (v1, v2)
-  | Array_get ((v1, None)) ->
+      G.ArrayAccess (v1, (t1, v2, t2))
+  | Array_get ((v1, (_, None, _))) ->
       let _v1 = expr v1 in
       raise Todo
   | Obj_get ((v1, t, Id [v2])) -> 

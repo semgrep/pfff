@@ -309,7 +309,8 @@ and stmt env= function
       List.iter (function
         | Id [(x, tok)] ->
             let gid = A.remove_first_char x in
-            let gl = Array_get (Id [(wrap_fake "$GLOBALS")],Some(String (gid,tok)))in
+            let gl = Array_get (Id [(wrap_fake "$GLOBALS")],
+                                fb (Some(String (gid,tok)))) in
             let assign = Assign (Id [(x, tok)], fake "=", gl) in
             iexpr env assign
         | e -> iexpr env e
@@ -439,7 +440,7 @@ and expr_ env _lv = function
 
   (*Array_get returns the type of the values of the array*)
   (* Array access without a key *)
-  | Array_get (e, None) ->
+  | Array_get (e, (_, None, _)) ->
       let id = AEnv.create_ai env e in
       let t1 = expr env e in
       let v = Tvar (fresh()) in
@@ -449,14 +450,14 @@ and expr_ env _lv = function
       let _ = AEnv.set env id ti in
       v
   (* Array access with const as key *)
-  | Array_get (e, Some (Id [(s,tok)])) when s.[0] <> '$' ->
+  | Array_get (e, (t1, Some (Id [(s,tok)]), t2)) when s.[0] <> '$' ->
       let id = AEnv.create_ai env e in
-      let v = expr env (Array_get (e, Some (String (s,tok)))) in
+      let v = expr env (Array_get (e, (t1, Some (String (s,tok)), t2))) in
       let ti = (pi, Env_typing_php.Const v) in
       let _ = AEnv.set env id ti in
       v
 
-  | Array_get (Id [(s,y)], Some (String (x, _)))
+  | Array_get (Id [(s,y)], (_, Some (String (x, _)), _))
       when Hashtbl.mem Builtins_typed_php.super_globals s ->
 
       let id = AEnv.create_ai env (Id [(s, y)]) in
@@ -471,7 +472,7 @@ and expr_ env _lv = function
       let v = Instantiate.approx env ISet.empty v in
       v
 
-  | Array_get (e, Some (String (s, _)))->
+  | Array_get (e, (_, Some (String (s, _)), _))->
       let id = AEnv.create_ai env e in
       let marked = env.auto_complete && has_marker env s in
       let t1 = expr env e in
@@ -485,13 +486,13 @@ and expr_ env _lv = function
 
   (* disguised array access *)
   | Call (Id [(("idx" | "edx" | "adx" | "sdx"),_)], (_,(e :: k :: r),_)) ->
-      let e = expr env (Array_get (e, Some k)) in
+      let e = expr env (Array_get (e, fb (Some k))) in
       (match r with
       | [] -> e
       | x :: _ -> Unify.unify env (expr env x) e
       )
   (* Array access with variable or constant integer *)
-  | Array_get (e, Some k) ->
+  | Array_get (e, (_, Some k, _)) ->
       let id = AEnv.create_ai env e in
       let t1 = expr env e in
       let k = expr env k in

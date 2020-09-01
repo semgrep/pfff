@@ -197,7 +197,7 @@ and expr (x: expr) =
   | Assign ((v1, tok, v2)) -> let v1 = expr v1 and v2 = expr v2 in 
       let tok = info tok in
       G.Assign (v1, tok, v2)
-  | ArrAccess ((v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in 
+  | ArrAccess ((v1, v2)) -> let v1 = expr v1 and v2 = bracket expr v2 in 
       G.ArrayAccess (v1, v2)
   | Obj v1 -> let flds = obj_ v1 in G.Record flds
   | Ellipsis v1 -> let v1 = info v1 in G.Ellipsis v1

@@ -165,7 +165,8 @@ type expr =
    * of a class is a New *)
   | Call of expr (* func *) * argument list bracket (* args *)
 
-  | Subscript of expr (* value *) * slice list (* slice *) * expr_context
+  | Subscript of expr (* value *) * slice list bracket (* slice *) * 
+                 expr_context
 
   (* the parameters do not have types here *)
   | Lambda of parameters (* args *) * expr (* body *)

@@ -582,7 +582,7 @@ and foreach_pattern env pattern =
     (* other kinds of lvalue are permitted too, but it's a little bit wierd
      * and very rarely used in www
      *)
-    | Array_get (e, eopt) ->
+    | Array_get (e, (_, eopt, _)) ->
       aux e;
       eopt |> Common.do_option (expr env)
     (* todo: E.warning tok E.WeirdForeachNoIteratorVar *)
@@ -644,7 +644,7 @@ and expr env e =
           in
           List.iter aux xs
 
-      | Array_get (e_arr, e_opt) ->
+      | Array_get (e_arr, (_, e_opt, _)) ->
           (* make sure the array is declared *)
           expr env e_arr;
           Common.opt (expr env) e_opt
@@ -824,7 +824,7 @@ and expr env e =
       check_defined ~incr_count:true env name
 
   (* array used as an rvalue; the lvalue case should be handled in Assign. *)
-  | Array_get (e, eopt) ->
+  | Array_get (e, (_, eopt, _)) ->
       expr env e;
       Common.opt (expr env) eopt
 
