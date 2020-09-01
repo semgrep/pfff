@@ -172,7 +172,7 @@ type expr =
   | Var of var
 
   (* when None it means add to the end when used in lvalue position *)
-  | Array_get of expr * expr option
+  | Array_get of expr * expr option bracket
 
   (* Unified method/field access.
    * ex: $o->foo() ==> Call(Obj_get(Var "$o", Id "foo"), [])

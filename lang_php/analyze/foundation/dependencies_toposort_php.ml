@@ -98,7 +98,7 @@ module Deps = struct
     | Int _ | Double _ | String _ -> acc
     | Guil (_, el, _) -> encapsl acc el
     | IdSpecial _ -> acc
-    | Array_get (e1, e2) -> expr (expr_opt acc e2) e1
+    | Array_get (e1, (_, e2, _)) -> expr (expr_opt acc e2) e1
     | Obj_get (e1, _, e2)
     | Binop (e1, _, e2)
     | Class_get (e1, _, e2)

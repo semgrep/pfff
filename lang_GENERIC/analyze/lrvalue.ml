@@ -123,7 +123,7 @@ let rec visit_expr hook lhs expr =
     (* bugfix: this is not recl here! in 'x.fld = 2', x itself is not
      * an lvalue; 'x.fld' is *)
     recr e 
-  | ArrayAccess(e, e1) ->
+  | ArrayAccess(e, (_, e1, _)) ->
     recr e1;
     recr e;
   | SliceAccess (e, e1, e2, e3) ->

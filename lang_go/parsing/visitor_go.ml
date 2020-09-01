@@ -161,7 +161,7 @@ and v_expr x =
   | Id (v1, _IGNORED) -> let v1 = v_ident v1 in ()
   | Selector ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_tok v2 and v3 = v_ident v3 in ()
-  | Index ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_index v2 in ()
+  | Index ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_bracket v_index v2 in ()
   | Slice ((v1, v2)) ->
       let v1 = v_expr v1
       and v2 =

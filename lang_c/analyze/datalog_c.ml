@@ -177,8 +177,8 @@ let instrs_of_expr env e =
       in
       let access =
         match idxopt with
-        | Some e -> A.ArrayAccess(e1, e)
-        | None -> A.ArrayAccess(e1, A.Int ("0", tok))
+        | Some e -> A.ArrayAccess(e1, AST_generic.fake_bracket e)
+        | None -> A.ArrayAccess(e1, AST_generic.fake_bracket (A.Int ("0", tok)))
       in
       A.Assign(op, access, value)
     )
@@ -348,7 +348,7 @@ let instrs_of_expr env e =
       let vs = [var_of_expr e] in
       BuiltinCall (("_builtin_" ^ (string_of_op tok), tok), vs)
 
-  | A.ArrayAccess (e1, e2) ->
+  | A.ArrayAccess (e1, (_, e2, _)) ->
       let v1 = var_of_expr e1 in
       let v2 = var_of_expr e2 in
       Lv (ArrayAccess (v1, v2))

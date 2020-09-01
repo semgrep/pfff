@@ -211,9 +211,9 @@ let rec expr (x: expr) =
       let e = expr v1 
       and _v3TODO = expr_context v3 in 
       (match v2 with
-      | [x] -> slice e x
-      | _ -> 
-        let xs = list (slice e) v2 in
+      | (l1, [x], l2) -> slice1 e (l1, x, l2)
+      | (_, xs, _) -> 
+        let xs = list (slice e) xs in
         G.OtherExpr (G.OE_Slices, xs |> List.map (fun x -> G.E x))
       )
   | Attribute ((v1, t, v2, v3)) ->
@@ -405,9 +405,19 @@ and comprehension2 f v1 v2 =
 (*e: function [[Python_to_generic.comprehension2]] *)
 
 (*s: function [[Python_to_generic.slice]] *)
+and slice1 e1 (t1, e2, t2) =
+  match e2 with
+  | Index v1 -> let v1 = expr v1 in G.ArrayAccess (e1, (t1, v1, t2))
+  | Slice ((v1, v2, v3)) ->
+      let v1 = option expr v1
+      and v2 = option expr v2
+      and v3 = option expr v3
+      in
+      G.SliceAccess (e1, v1, v2, v3)
+
 and slice e =
   function
-  | Index v1 -> let v1 = expr v1 in G.ArrayAccess (e, v1)
+  | Index v1 -> let v1 = expr v1 in G.ArrayAccess (e, fb v1)
   | Slice ((v1, v2, v3)) ->
       let v1 = option expr v1
       and v2 = option expr v2

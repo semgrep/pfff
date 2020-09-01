@@ -186,7 +186,7 @@ and map_expr =
       in ObjAccess ((v1, t, v2))
   | Arr v1 -> let v1 = map_bracket (map_of_list map_expr) v1 in Arr ((v1))
   | ArrAccess ((v1, v2)) ->
-      let v1 = map_expr v1 and v2 = map_expr v2 in ArrAccess ((v1, v2))
+      let v1 = map_expr v1 and v2 = map_bracket map_expr v2 in ArrAccess ((v1, v2))
   | Fun ((v1, v2)) ->
       let v1 = map_fun_ v1
       and v2 = map_of_option map_name v2

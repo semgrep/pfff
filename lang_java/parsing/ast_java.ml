@@ -201,7 +201,7 @@ and expr =
    *)
   | Dot of expr * tok * ident
 
-  | ArrayAccess of expr * expr (* TODO bracket *)
+  | ArrayAccess of expr * expr bracket
 
   | Unary of AST_generic.operator (* +/-/~/! *) wrap * expr
   | Postfix of expr * AST_generic.incr_decr wrap

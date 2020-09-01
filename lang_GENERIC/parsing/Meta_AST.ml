@@ -192,7 +192,7 @@ and vof_expr =
       in OCaml.VSum (("DotAccess", [ v1; t; v2 ]))
   | ArrayAccess ((v1, v2)) ->
       let v1 = vof_expr v1
-      and v2 = vof_expr v2
+      and v2 = vof_bracket vof_expr v2
       in OCaml.VSum (("ArrayAccess", [ v1; v2 ]))
   | SliceAccess ((v1, v2, v3, v4)) ->
       let v1 = vof_expr v1

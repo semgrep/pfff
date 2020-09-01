@@ -157,7 +157,7 @@ let rec compile_pattern_inner ((expr, fname, fpname) as context) varexpr pat =
       match pat with
       | C.PatId _ ->
         let init_builder (_name, tok) =
-          A.ArrAccess (varexpr, A.Num (string_of_int idx, tok))
+          A.ArrAccess (varexpr, fake_bracket (A.Num (string_of_int idx, tok)))
         in
         [var_of_simple_pattern (expr, fname) init_builder pat]
       | C.PatDots (tok, pat) ->
@@ -170,7 +170,7 @@ let rec compile_pattern_inner ((expr, fname, fpname) as context) varexpr pat =
         [var_of_simple_pattern (expr, fname) init_builder pat]
       | C.PatNest (pat_inner, _) ->
         (* var [[x, y]] = varexpr -~> var x = varexpr[0][0]; var y = varexpr[0][1] *)
-        let varexpr = A.ArrAccess (varexpr, A.Num (string_of_int idx, fake "")) in
+        let varexpr = A.ArrAccess (varexpr, fake_bracket (A.Num (string_of_int idx, fake ""))) in
         compile_pattern_inner (expr, fname, fpname) varexpr pat_inner
       | C.PatObj _ | C.PatArr _ | C.PatProp _ ->
         failwith "Unexpected pattern PatObj, PatArr or PatProp found inside PatArr"
@@ -273,7 +273,7 @@ let forof (lhs_var, tok, e2, st) (expr, stmt, var_binding) =
     Left [
       { A.v_name = iterator; v_kind = A.Let, fake "let"; 
         v_resolved = ref A.NotResolved;
-        v_init = Some (A.Apply (A.ArrAccess (e2, symbol_iterator), 
+        v_init = Some (A.Apply (A.ArrAccess (e2, fake_bracket symbol_iterator), 
             fake_bracket [])) };
       { A.v_name = step; v_kind = A.Let, fake "let"; 
         v_resolved = ref A.NotResolved;

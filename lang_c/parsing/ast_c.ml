@@ -139,7 +139,7 @@ and expr =
   (* should be a statement ... but see Datalog_c.instr *)
   | Assign of Cst_cpp.assignOp * expr * expr
 
-  | ArrayAccess of expr * expr (* x[y] *)
+  | ArrayAccess of expr * expr bracket (* x[y] *)
   (* Why x->y instead of x.y choice? it's easier then with datalog
    * and it's more consistent with ArrayAccess where expr has to be
    * a kind of pointer too. That means x.y is actually unsugared in (&x)->y

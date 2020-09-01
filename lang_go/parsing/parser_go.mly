@@ -565,7 +565,7 @@ pexpr_no_paren:
 |   pexpr "." "(" LTYPE ")" 
     { TypeSwitchExpr ($1, $3) }
 
-|   pexpr "[" expr "]" { Index ($1, $3) }
+|   pexpr "[" expr "]" { Index ($1, ($2, $3, $4)) }
 |   pexpr "[" oexpr ":" oexpr "]" { Slice ($1, ($3, $5, None)) }
 |   pexpr "[" oexpr ":" oexpr ":" oexpr "]" 
     { Slice ($1, ($3, $5, $7))

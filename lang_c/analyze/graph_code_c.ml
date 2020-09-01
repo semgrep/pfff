@@ -873,7 +873,7 @@ and expr env = function
       (* mostly for generating use/read or use/write in prolog *)
       expr { env with in_assign = true } e1;
       expr env e2;
-  | ArrayAccess (e1, e2) -> exprs env [e1; e2]
+  | ArrayAccess (e1, (_, e2, _)) -> exprs env [e1; e2]
   (* todo: determine type of e and make appropriate use link *)
   | RecordPtAccess (e, _, _name) -> expr env e
 

@@ -95,7 +95,7 @@ and v_expr x =
       and v2 = v_expr v2
       and v3 = v_expr v3
       in ()
-  | ArrayAccess ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_expr v2 in ()
+  | ArrayAccess ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_bracket v_expr v2 in ()
   | RecordPtAccess ((v1, t, v2)) -> 
         let v1 = v_expr v1 and t = v_info t and v2 = v_name v2 in ()
   | Cast ((v1, v2)) -> let v1 = v_type_ v1 and v2 = v_expr v2 in ()

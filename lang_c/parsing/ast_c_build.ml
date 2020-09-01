@@ -527,8 +527,8 @@ and expr env e =
   | Cast ((_, ft, _), e) -> 
       A.Cast (full_type env ft, expr env e)
 
-  | ArrayAccess (e1, (_, e2, _)) ->
-      A.ArrayAccess (expr env e1, expr env e2)
+  | ArrayAccess (e1, e2) ->
+      A.ArrayAccess (expr env e1, bracket_keep (expr env) e2)
   | Binary (e1, op, e2) -> A.Binary (expr env e1, (op), expr env e2)
   | Unary (e, op) -> A.Unary (expr env e, (op))
   | Infix  (e, op) -> A.Infix (expr env e, (op))

@@ -137,7 +137,7 @@ and v_expr (x: expr) =
       in ()
   | Call (v1, v2) -> v_expr v1; v_bracket (v_list v_argument) v2
   | Subscript ((v1, v2, v3)) ->
-      let v1 = v_expr v1 and v2 = v_list v_slice v2 and v3 = v_expr_context v3 in ()
+      let v1 = v_expr v1 and v2 = v_bracket (v_list v_slice) v2 and v3 = v_expr_context v3 in ()
   | Lambda ((v1, v2)) -> let v1 = v_parameters v1 and v2 = v_expr v2 in ()
   | IfExp ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_expr v2 and v3 = v_expr v3 in ()

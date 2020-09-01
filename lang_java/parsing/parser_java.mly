@@ -486,8 +486,10 @@ field_access:
  | name "." SUPER "." identifier { Dot (Name (name $1@[super_name1 $3]),$2,$5)}
 
 array_access:
- | name                 "[" expression "]" { ArrayAccess ((Name (name $1)),$3)}
- | primary_no_new_array "[" expression "]" { ArrayAccess ($1, $3) }
+ | name                 "[" expression "]" 
+    { ArrayAccess ((Name (name $1)),($2, $3, $4)) }
+ | primary_no_new_array "[" expression "]" 
+    { ArrayAccess ($1, ($2, $3, $4)) }
 
 (*----------------------------*)
 (* Method call *)

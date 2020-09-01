@@ -1045,7 +1045,7 @@ and expr env x =
   | AssignOp (e1, _, e2) -> exprl env [e1;e2]
 
   | IdSpecial (_, _) -> ()
-  | Array_get (e, eopt) ->
+  | Array_get (e, (_, eopt, _)) ->
       expr env e;
       Common2.opt (expr env) eopt
   | Infix (_, e) | Postfix (_, e) | Unop (_, e) -> expr env e
