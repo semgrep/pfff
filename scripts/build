@@ -10,7 +10,10 @@ eval $(opam env)
 # Remove everything that's git-ignored so as to avoid surprises.
 git clean -dfX
 
-./configure --novisual --nocmt --nobytecode
-make depend
-make
-make opt
+#old:
+#./configure --novisual --nocmt --nobytecode
+#make depend
+#make
+#make opt
+
+dune build

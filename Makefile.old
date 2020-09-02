@@ -1,3 +1,5 @@
+#You should use dune build instead of this old Makefile to build pfff
+
 #############################################################################
 # Configuration section
 #############################################################################
