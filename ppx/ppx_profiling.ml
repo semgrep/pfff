@@ -12,6 +12,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
+[@@warning "-42"]
+
 open Migrate_parsetree
 open Ast_402
 let ocaml_version = Versions.ocaml_402
