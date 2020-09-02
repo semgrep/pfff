@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-[@@warning "-42"]
+[@@@warning "-42"]
 
 open Migrate_parsetree
 open Ast_402
