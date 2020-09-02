@@ -56,6 +56,10 @@ open Location
  *         pvb_attributes = [({txt = "profiling"}, PStr [])]}])}]
  *   =========
  * (I wish I could use ~/pfff/pfff -dump_ml, but my AST is different).
+ *
+ * update: if you use the dune build system, you can also use 
+ *   $ ocamlc -dsource _build/default/src/foo.pp.ml
+ * to display the preprocessed code of src/foo.ml
  * 
  * doc:
  *  - original tutorial blog post for ppx_getenv:
