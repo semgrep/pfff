@@ -166,7 +166,7 @@ let asi_insert charpos last_charpos_error tr
 (* Lexing only *)
 (*****************************************************************************)
 
-let tokens2 file = 
+let tokens file = 
    Lexer_js.reset();
    let token lexbuf = 
      let tok =
@@ -186,9 +186,7 @@ let tokens2 file =
   in
   Parse_info.tokenize_all_and_adjust_pos ~unicode_hack:true
     file token TH.visitor_info_of_tok TH.is_eof
-
-let tokens a = 
-  Common.profile_code "Parse_js.tokens" (fun () -> tokens2 a)
+[@@profiling]
 
 (*****************************************************************************)
 (* Main entry point *)
