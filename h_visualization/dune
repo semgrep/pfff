@@ -1,0 +1,13 @@
+(library
+ (public_name pfff-h_visualization)
+ (name pfff_h_visualization)
+ (wrapped false)
+ (libraries
+   json-wheel ocamlgraph
+
+   commons
+   pfff-h_files-format pfff-commons-graph
+ )
+ (preprocess (pps ppx_deriving.show))
+)
+

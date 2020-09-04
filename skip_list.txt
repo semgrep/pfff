@@ -1,5 +1,7 @@
 # -*- sh -*-
 
+dir: _build
+
 file: lang_ruby/parsing/parser_ruby.ml
 file: lang_ruby/parsing/parser_ruby_temp.ml
 file: lang_cpp/parsing/parser_cpp2.ml
