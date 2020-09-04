@@ -62,7 +62,7 @@ type tok = Parse_info.t
 (* Below we derive also eq, and ord, which is unusual compared to our other
  * parsers. Indeed, we use the GLR parser generator dypgen to parse Ruby
  * and in case of ambiguities dypgen needs to _compare_ resulting ASTs
- * and filter out equivalence trees.
+ * and filter out equivalent trees.
  *)
 
 (* we don't care about difference in token positions *)
@@ -180,6 +180,9 @@ type binary_op =
 
 type expr = 
   | Literal of literal
+  (* used to be in literal, but some atoms/strings are interpolated and contain
+   * expressions, so better to separate from really simple literals *)
+  | Atom of atom
 
   (* Both constructors below are similar to class_or_module_name *)
   | Id of variable
@@ -212,7 +215,7 @@ type expr =
   | D of definition
 
   (* sgrep-ext: *)
-  | Ellipsis of tok (* should be only in .pyi, types Dict[str,...], or sgrep *)
+  | Ellipsis of tok
   | DeepEllipsis of expr bracket
   (* TODO: unused for now, need find a syntax *)
   | TypedMetavar of ident * tok * type_
@@ -220,6 +223,8 @@ type expr =
   (* less: use for Assign, can be Id, Tuple, Array, more? *)
   and lhs = expr 
 
+(* the pattern: below are copy pasted from tree-sitter-ruby, they may not be
+ * the one actually used in lexer_ruby.mll *)
 and literal = 
   (* [tT]rue, [fF]alse *)
   | Bool of bool wrap
@@ -230,29 +235,32 @@ and literal =
 
   (* treesitter: TODO add in dyp *)
   (* pattern: (\d+)?(\+|-)?(\d+)i *)
-  | Complex of string wrap 
+  | Complex of string wrap
   | Rational of string wrap * tok (* r *) 
  
   | String of string_kind wrap
-  | Regexp of (string_contents list * string) wrap
+  | Regexp of (interp list * string) wrap
   (* treesitter: TODO add in dyp *)
   (* pattern: \?(\\\S({[0-9]*}|[0-9]*|-\S([MC]-\S)?)?|\S) *)
   | Char of string wrap 
-  (* the atom string includes the ':' prefix *)
-  | Atom of atom
 
   | Nil of tok 
 
+  and atom = 
+  (* the atom string includes the ':' prefix *)
+  | AtomSimple of string wrap
+  | AtomFromString of interp list wrap
+(* TODO tok (* : *) * interp list bracket (* '' or "" *) *)
+
   and string_kind = 
     | Single of string
-    | Double of string_contents list
-    | Tick of string_contents list
+    | Double of interp list
+    | Tick of interp list
 
-    and string_contents = 
+    (* interpolated strings (a.k.a encapsulated/template strings) *)
+    and interp = 
       | StrChars of string
       | StrExpr of expr
-
-  and atom = string_contents list wrap
 
 (* ------------------------------------------------------------------------- *)
 (* Method name *)
@@ -465,5 +473,5 @@ let opt_stmts_to_stmts = function
 
 (* x: v  <=>  :x => v  in Ruby in hash and calls *)
 let keyword_arg_to_expr id tk arg =
-  let (s,t) = id in
-  Binop ((Literal (Atom ([StrChars (":"^s)],t))), (Op_ASSOC, tk), arg)
+  let (s, t) = id in
+  Binop (((Atom (AtomSimple ((":"^s), t)))), (Op_ASSOC, tk), arg)

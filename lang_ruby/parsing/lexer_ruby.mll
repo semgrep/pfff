@@ -159,7 +159,8 @@ let mk_char (charcode, t) =
 let fail_eof _f _state _lexbuf = 
   failwith "parse error: premature end of file"
     
-let contents_of_str s = [Ast_ruby.StrChars s]
+let contents_of_str s = s
+  (* old: [Ast_ruby.StrChars s] *)
 
 (* returns true if string following the modifier m (e.g., %m{...})
    should be parsed as a single quoted or double quoted (interpreted)
@@ -724,6 +725,7 @@ and atom t state = parse
         end_state_unless_afterdef state; 
         T_ATOM(contents_of_str (":" ^ str), (add_to_tok lexbuf t)) }
 
+  (* regular atom (e.g., :foo), possibly prefixed with @ and suffixed with = *)
   | ('@'* id) '='?
       { end_state_unless_afterdef state; 
         T_ATOM((contents_of_str (":" ^ str lexbuf)), (add_to_tok lexbuf t)) }

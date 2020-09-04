@@ -27,7 +27,7 @@ val well_formed_return : Ast_ruby.expr list -> unit
 val well_formed_do : Ast_ruby.expr -> 'a -> unit
 
 val process_user_string :
-  string -> Ast_ruby.string_contents list -> Ast_ruby.tok -> Ast_ruby.expr
+  string -> Ast_ruby.interp list -> Ast_ruby.tok -> Ast_ruby.expr
 
 val assigned_id : string -> bool
 
