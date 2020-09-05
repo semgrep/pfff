@@ -228,7 +228,7 @@ and method_name mn =
   | MethodAtom x ->
      (match x with
      | AtomSimple x -> Left x
-     | AtomFromString (xs, t) -> 
+     | AtomFromString (xs, _t) -> 
       (match xs with
       | [StrChars (s,t2)] -> 
         let t = t2 in (* TODO add t *)
