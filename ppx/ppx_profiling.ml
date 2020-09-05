@@ -15,8 +15,8 @@
 [@@@warning "-42"]
 
 open Migrate_parsetree
-open Ast_402
-let ocaml_version = Versions.ocaml_402
+open Ast_408
+let ocaml_version = Versions.ocaml_408
 
 open Ast_mapper
 open Ast_helper
@@ -86,7 +86,7 @@ let rec mk_params loc n e =
   then e
   else 
     let param = "a" ^ (string_of_int n) in
-    Exp.fun_ "" None (Pat.var {txt = param; loc})
+    Exp.fun_ Nolabel None (Pat.var {txt = param; loc})
       (mk_params loc (n-1) e)
 
 let rec mk_args loc n =
@@ -94,7 +94,7 @@ let rec mk_args loc n =
   then []
   else
     let arg = "a" ^ string_of_int n in
-  ("", (Exp.ident {txt = Lident arg; loc}))::mk_args loc (n-1)
+  (Nolabel, (Exp.ident {txt = Lident arg; loc}))::mk_args loc (n-1)
 
 (* copy paste of pfff/lang_ml/module_ml.ml *)
 let module_name_of_filename s = 
@@ -115,7 +115,11 @@ let mapper _config _cookies =
               Pstr_value (_,
                 [{pvb_pat = {ppat_desc = Ppat_var {txt = fname; _}; _}; 
                   pvb_expr = body;
-                  pvb_attributes = [({txt = "profiling"; loc}, PStr args)];
+                  pvb_attributes = [ 
+                     { attr_name = {txt = "profiling"; loc};
+                       attr_payload = PStr args;
+                     }
+                   ];
                   pvb_loc = _;
                  }
                 ])
@@ -133,7 +137,7 @@ let mapper _config _cookies =
               m ^ "." ^ fname
             | [{pstr_desc =
                 Pstr_eval
-                  ({pexp_desc = Pexp_constant (Const_string (name, None));_},
+                  ({pexp_desc = Pexp_constant (Pconst_string (name, None));_},
                    _); _}] -> name
             | _ -> 
               raise (Location.Error (
@@ -150,8 +154,8 @@ let mapper _config _cookies =
               (Exp.apply 
                  (Exp.ident 
                     {txt = Ldot (Lident "Common", "profile_code" ); loc})
-                 ["", Exp.constant (Const_string (action_name, None));
-                 "", Exp.fun_ "" None (Pat.any ()) 
+                 [Nolabel, Exp.constant (Pconst_string (action_name, None));
+                  Nolabel, Exp.fun_ Nolabel None (Pat.any ()) 
                        (Exp.apply (Exp.ident {txt = Lident fname; loc})
                           (mk_args loc nbparams))
                  ]))
