@@ -249,13 +249,13 @@ and literal =
   and atom = 
   (* the atom string includes the ':' prefix *)
   | AtomSimple of string wrap
-  | AtomFromString of interp list wrap
-(* TODO tok (* : *) * interp list bracket (* '' or "" *) *)
+  (* less: tok for ':' ? *)
+  | AtomFromString of interp list bracket (* '' or "" *)
 
   and string_kind = 
     | Single of string wrap
-    | Double of interp list
-    | Tick of interp list
+    | Double of interp list bracket
+    | Tick of interp list bracket
 
     (* interpolated strings (a.k.a encapsulated/template strings) *)
     and interp = 

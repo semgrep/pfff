@@ -461,6 +461,10 @@ let rewrap_str s ii =
 let tok_add_s s ii  =
   rewrap_str ((str_of_info ii) ^ s) ii
 
+let combine_infos x xs =
+  let str = xs |> List.map str_of_info |> String.concat "" in
+  tok_add_s str x
+
 (*****************************************************************************)
 (* Adjust file pos *)
 (*****************************************************************************)

@@ -45,10 +45,6 @@ let string = id
 let fake s = Parse_info.fake_info s
 let fb = G.fake_bracket
 
-(* TODO *)
-let combine_tok t _tafter =
-  t
-
 let stmt1 xs =
   G.Block (fb xs)
 
@@ -221,23 +217,23 @@ and method_name mn =
   | MethodId v -> Left (variable v)
   | MethodIdAssign (id, teq, id_kind) ->
       let (s, t) = variable (id, id_kind) in
-      Left (s^"=", combine_tok t teq)
+      Left (s^"=", PI.combine_infos t [teq])
   | MethodUOperator (_, t) | MethodOperator (_, t) -> 
       Left (PI.str_of_info t, t)
   | MethodDynamic e -> Right (expr e)
   | MethodAtom x ->
      (match x with
      | AtomSimple x -> Left x
-     | AtomFromString (xs, _t) -> 
+     | AtomFromString ((l, xs, r)) -> 
       (match xs with
       | [StrChars (s,t2)] -> 
-        let t = t2 in (* TODO add t *)
+        let t = PI.combine_infos l [t2;r] in
         Left (s, t)
-      | _ -> Right (string_contents_list xs)
+      | _ -> Right (string_contents_list (l, xs, r))
       ) 
     )
 
-and string_contents_list xs =
+and string_contents_list (_l, xs, _r) =
   let xs = list string_contents xs in
   G.OtherExpr (G.OE_Todo, xs |> List.map (fun e -> G.E e))
 
@@ -325,12 +321,12 @@ and unary (op,t) e =
 and atom x = 
   match x with
   | AtomSimple x -> G.L (G.Atom x)
-  | AtomFromString (xs, _t) ->
+  | AtomFromString (l, xs, r) ->
       (match xs with
       | [StrChars (s, t2)] -> 
-            (* TODO: combine tokens? add : prefix *)
-            G.L (G.Atom (s, t2))
-      | _ -> string_contents_list xs
+            let t = PI.combine_infos l [t2; r] in
+            G.L (G.Atom (s, t))
+      | _ -> string_contents_list (l, xs, r)
       )
 
 and literal x = 
@@ -340,15 +336,15 @@ and literal x =
   | Float x -> G.L (G.Float (wrap string x))
   | Complex x -> G.L (G.Imag (wrap string x))
   | Rational ((s, t1), t2) -> 
-      let t = combine_tok t1 t2 in
+      let t = PI.combine_infos t1 [t2] in
       G.L (G.Ratio (s, t))
   | Char x -> G.L (G.Char (wrap string x))
   | Nil t -> G.L (G.Null (tok t))
   | String (skind) ->
       (match skind with
       | Single x -> G.L (G.String x)
-      | Double [StrChars (s, t2)] -> 
-            let t = t2 (* TODO add t *) in
+      | Double (l, [StrChars (s, t2)], r) -> 
+            let t = PI.combine_infos l [t2;r] in
             G.L (G.String (s, t))
       | Double xs -> string_contents_list xs
       | Tick xs -> string_contents_list xs
@@ -356,7 +352,9 @@ and literal x =
   | Regexp ((xs, s2), t) ->
       (match xs with
       | [StrChars (s, _t2)] -> G.L (G.Regexp (s ^ s2, t))
-      | _ -> string_contents_list xs
+      | _ -> 
+            let l, r = t, t in (* TODO *)
+            string_contents_list (l, xs, r)
       )
 
 and expr_as_stmt = function

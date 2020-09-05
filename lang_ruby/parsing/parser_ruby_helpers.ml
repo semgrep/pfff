@@ -101,7 +101,7 @@ let split_single_string_to_array str pos =
 
 (* turn %W{a#{b} c} into ["a#{b}"; "c"] *) 
 let split_double_string_to_array sc pos =
-  let ds xs = Literal(String(Double (xs))) in
+  let ds xs = Literal(String(Double (pos, xs, pos))) in
     (* first we create a stream of tokens with the grammar of
      (Expr | Code | String | Delmi)*
    by splitting the strings on whitespace.  This stream will be
@@ -150,13 +150,13 @@ let merge_string_lits s1 s2 = match s1,s2 with
     | Single (s1, t1), Single (s2, _t2) -> 
             let t = t1 in (* TODO *)
             Single (s1 ^ s2, t)
-    | Double sc1, Double sc2 -> Double (sc1 @ sc2)
-    | Single (s, t), Double sc -> 
+    | Double (l, sc1, r), Double (_, sc2, _) -> Double (l, sc1 @ sc2, r)
+    | Single (s, t), Double (l, sc, r) -> 
         let t = t in (* TODO *)
-        Double ((Ast_ruby.StrChars (s, t))::sc)
-    | Double sc, Single (s, t) -> 
+        Double (l, (Ast_ruby.StrChars (s, t))::sc, r)
+    | Double (l, sc, r), Single (s, t) -> 
         let t = t in (* TODO *)
-        Double (sc @ [Ast_ruby.StrChars (s, t)])
+        Double (l, sc @ [Ast_ruby.StrChars (s, t)], r)
     in
     Literal(String (s'))
   | _ -> assert false
@@ -166,9 +166,9 @@ let process_user_string m str pos = match m with
   | "w" -> split_single_string_to_array (str_of_interp str) pos
   | "W" -> split_double_string_to_array str pos
   | "q" -> Literal(String((Single (str_of_interp str, pos))))
-  | "Q" -> Literal(String((Double str)))
-  | "x" -> Literal(String((Tick str)))
-  | "" -> Literal(String((Double str)))
+  | "Q" -> Literal(String((Double (pos, str, pos))))
+  | "x" -> Literal(String((Tick (pos, str, pos))))
+  | "" -> Literal(String((Double (pos, str, pos))))
   | _ -> failwith (Printf.sprintf "unhandled string modifier: %s" m)
 
 
@@ -329,7 +329,7 @@ let fix_broken_assoc l op r =
       let l' = replace_end l (Id((s,p),ik)) in
         l', Op_ASSOC, r
 *)
-  | Atom(AtomFromString(sc, pos)) ->
+  | Atom(AtomFromString(lt, sc, rt)) ->
       let (astr, t), rest = match List.rev sc with
         | (Ast_ruby.StrChars (s, t))::tl -> (s,t),tl
         | _ -> ("a", Parse_info.fake_info "a"),[]
@@ -339,7 +339,7 @@ let fix_broken_assoc l op r =
         then 
           let s' = String.sub astr 0 (len-1) in
           let sc' = List.rev ((Ast_ruby.StrChars (s',t))::rest) in
-          let l' = replace_end l ((Atom(AtomFromString(sc',pos)))) in
+          let l' = replace_end l ((Atom(AtomFromString(lt, sc', rt)))) in
           l', Op_ASSOC, r
         else default
   | _ -> default
