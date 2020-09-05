@@ -344,9 +344,9 @@ and literal x =
       G.L (G.Ratio (s, t))
   | Char x -> G.L (G.Char (wrap string x))
   | Nil t -> G.L (G.Null (tok t))
-  | String (skind, t) ->
+  | String (skind) ->
       (match skind with
-      | Single s -> G.L (G.String (s, t))
+      | Single x -> G.L (G.String x)
       | Double [StrChars (s, t2)] -> 
             let t = t2 (* TODO add t *) in
             G.L (G.String (s, t))

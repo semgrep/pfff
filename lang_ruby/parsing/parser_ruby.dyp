@@ -571,7 +571,7 @@ constant:
   | T_REGEXP_BEG<pos> interp_str<istr> T_REGEXP_MOD<mods, _posTODO>
       { Literal(Regexp ((istr,mods),pos)) }
 
-  | T_TICK_BEG<pos> interp_str<istr> { Literal (String ((Tick istr),pos)) }
+  | T_TICK_BEG<pos> interp_str<xs> { Literal (String ((Tick xs))) }
 
 /*(*----------------------------*)*/
 /*(*2 strings *)*/
@@ -582,10 +582,10 @@ string:
   | string<s1> one_string<s2> { M.merge_string_lits s1 s2 }
 
 one_string:
-  | T_SINGLE_STRING<s,pos> 
-      { Literal(String((Single s), pos)) }
-  | T_DOUBLE_BEG<pos> interp_str<istr> 
-      { Literal(String ((Double istr), pos)) }
+  | T_SINGLE_STRING 
+      { Literal(String ((Single $1))) }
+  | T_DOUBLE_BEG<pos> interp_str<xs> 
+      { Literal(String ((Double xs))) }
 
   | T_USER_BEG<m,pos> interp_str<str> { M.process_user_string m str pos }
 

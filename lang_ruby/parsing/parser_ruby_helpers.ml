@@ -95,13 +95,13 @@ let split_single_string_to_array str pos =
     in reduce [] chunks
   in
   let strings = List.map
-    (fun s -> Literal(String(Single s, pos))) strings
+    (fun s -> Literal(String(Single (s, pos)))) strings
   in
     Array(pos, strings,pos) (* TODO pos1 *)
 
 (* turn %W{a#{b} c} into ["a#{b}"; "c"] *) 
 let split_double_string_to_array sc pos =
-  let ds s = Literal(String(Double s,pos)) in
+  let ds xs = Literal(String(Double (xs))) in
     (* first we create a stream of tokens with the grammar of
      (Expr | Code | String | Delmi)*
    by splitting the strings on whitespace.  This stream will be
@@ -144,29 +144,31 @@ let str_of_interp sc = match sc with
   | _ -> failwith "unexpected escapes in string"
 
 let merge_string_lits s1 s2 = match s1,s2 with
-  | Literal(String(s1,p)), Literal(String(s2,_)) ->
-  let s' = match s1, s2 with
+  | Literal(String(s1)), Literal(String(s2)) ->
+    let s' = match s1, s2 with
     | Tick _, _ | _, Tick _ -> assert false
-    | Single s1, Single s2 -> Single (s1 ^ s2)
+    | Single (s1, t1), Single (s2, _t2) -> 
+            let t = t1 in (* TODO *)
+            Single (s1 ^ s2, t)
     | Double sc1, Double sc2 -> Double (sc1 @ sc2)
-    | Single s, Double sc -> 
-        let t = p in (* TODO *)
+    | Single (s, t), Double sc -> 
+        let t = t in (* TODO *)
         Double ((Ast_ruby.StrChars (s, t))::sc)
-    | Double sc,Single s -> 
-        let t = p in (* TODO *)
+    | Double sc, Single (s, t) -> 
+        let t = t in (* TODO *)
         Double (sc @ [Ast_ruby.StrChars (s, t)])
-  in
-    Literal(String (s',p))
+    in
+    Literal(String (s'))
   | _ -> assert false
 
 let process_user_string m str pos = match m with
   | "r" -> Literal(Regexp ((str,""),pos))
   | "w" -> split_single_string_to_array (str_of_interp str) pos
   | "W" -> split_double_string_to_array str pos
-  | "q" -> Literal(String((Single (str_of_interp str)),pos))
-  | "Q" -> Literal(String((Double str),pos))
-  | "x" -> Literal(String((Tick str),pos))
-  | "" -> Literal(String((Double str),pos))
+  | "q" -> Literal(String((Single (str_of_interp str, pos))))
+  | "Q" -> Literal(String((Double str)))
+  | "x" -> Literal(String((Tick str)))
+  | "" -> Literal(String((Double str)))
   | _ -> failwith (Printf.sprintf "unhandled string modifier: %s" m)
 
 

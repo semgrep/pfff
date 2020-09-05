@@ -238,7 +238,7 @@ and literal =
   | Complex of string wrap
   | Rational of string wrap * tok (* r *) 
  
-  | String of string_kind wrap
+  | String of string_kind
   | Regexp of (interp list * string) wrap
   (* treesitter: TODO add in dyp *)
   (* pattern: \?(\\\S({[0-9]*}|[0-9]*|-\S([MC]-\S)?)?|\S) *)
@@ -253,7 +253,7 @@ and literal =
 (* TODO tok (* : *) * interp list bracket (* '' or "" *) *)
 
   and string_kind = 
-    | Single of string
+    | Single of string wrap
     | Double of interp list
     | Tick of interp list
 

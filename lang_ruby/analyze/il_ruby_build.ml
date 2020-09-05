@@ -832,13 +832,15 @@ and refactor_lit acc (l : Ast.literal) : stmt acc * expr = match l with
 
   | Ast.Num (i, _pos) -> acc, ELit (Num i)
   | Ast.Float(s, _pos) -> acc, ELit (Float(s))
-  | Ast.String(Ast.Single s, _pos) -> 
+  | Ast.String(Ast.Single (s, _pos)) -> 
      acc, ELit (String (unescape_single_string s))
 
-  | Ast.String(Ast.Double s, pos) -> 
-      refactor_interp_string acc s pos
-  | Ast.String(Ast.Tick s, pos) -> 
-      let acc, e = refactor_interp_string acc s pos in
+  | Ast.String(Ast.Double xs) -> 
+      let pos = raise Todo in
+      refactor_interp_string acc xs pos
+  | Ast.String(Ast.Tick xs) -> 
+      let pos = raise Todo in
+      let acc, e = refactor_interp_string acc xs pos in
         make_call_expr acc None (ID_MethodName "__backtick") [SE e] None pos
 
 
