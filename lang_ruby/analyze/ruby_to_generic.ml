@@ -69,6 +69,7 @@ let ident x = wrap string x
 
 let rec expr = function
   | Literal x -> literal x
+  | Atom x -> atom x
   | Id (id, kind) -> 
       (match kind with
       | ID_Self -> G.IdSpecial (G.Self, (snd id))
@@ -224,11 +225,15 @@ and method_name mn =
   | MethodUOperator (_, t) | MethodOperator (_, t) -> 
       Left (PI.str_of_info t, t)
   | MethodDynamic e -> Right (expr e)
-  | MethodAtom (xs, t) -> 
+  | MethodAtom x ->
+     (match x with
+     | AtomSimple x -> Left x
+     | AtomFromString (xs, t) -> 
       (match xs with
       | [StrChars s] -> Left (s, t)
       | _ -> Right (string_contents_list xs)
-      )
+      ) 
+    )
 
 and string_contents_list xs =
   let xs = list string_contents xs in
@@ -315,6 +320,14 @@ and unary (op,t) e =
    (* should be only in arguments, to pass procs. I abuse Ref for now *)
    | Op_UAmper -> G.Ref (t, e)
 
+and atom x = 
+  match x with
+  | AtomSimple x -> G.L (G.Atom x)
+  | AtomFromString (xs, t) ->
+      (match xs with
+      | [StrChars s] -> G.L (G.Atom (s, t))
+      | _ -> string_contents_list xs
+      )
 
 and literal x = 
   match x with
@@ -337,11 +350,6 @@ and literal x =
   | Regexp ((xs, s2), t) ->
       (match xs with
       | [StrChars s] -> G.L (G.Regexp (s ^ s2, t))
-      | _ -> string_contents_list xs
-      )
-  | Atom (xs, t) ->
-      (match xs with
-      | [StrChars s] -> G.L (G.Atom (s, t))
       | _ -> string_contents_list xs
       )
 

@@ -87,7 +87,7 @@ type token =
   | K_CLASS of Parse_info.t
   | T_REGEXP_MOD of (string * Parse_info.t)
   | T_REGEXP_BEG of Parse_info.t
-  | T_REGEXP of (Ast_ruby.string_contents list * string * Parse_info.t)
+  | T_REGEXP of (Ast_ruby.interp list * string * Parse_info.t)
   | T_USER_BEG of (string * Parse_info.t)
   | T_TICK_BEG of Parse_info.t
   | T_INTERP_END of (string * Parse_info.t)
@@ -95,7 +95,7 @@ type token =
   | T_DOUBLE_BEG of Parse_info.t
   | T_SINGLE_STRING of (string * Parse_info.t)
   | T_ATOM_BEG of Parse_info.t
-  | T_ATOM of (Ast_ruby.string_contents list * Parse_info.t)
+  | T_ATOM of (string * Parse_info.t)
   | T_FLOAT of (string * Parse_info.t)
   | T_NUM of (string * Parse_info.t)
   | T_CLASS_VAR of (string * Parse_info.t)
@@ -152,7 +152,7 @@ val pp :
     | `Obj_T_ANDOP of Parse_info.t
     | `Obj_T_ASSIGN of Parse_info.t
     | `Obj_T_ASSOC of Parse_info.t
-    | `Obj_T_ATOM of Ast_ruby.atom
+    | `Obj_T_ATOM of string * Parse_info.t
     | `Obj_T_ATOM_BEG of Parse_info.t
     | `Obj_T_BANG of Parse_info.t
     | `Obj_T_CARROT of Parse_info.t
@@ -199,7 +199,7 @@ val pp :
     | `Obj_T_QUESTION of Parse_info.t
     | `Obj_T_RBRACE of Parse_info.t
     | `Obj_T_RBRACK of Parse_info.t
-    | `Obj_T_REGEXP of Ast_ruby.string_contents list * string * Parse_info.t
+    | `Obj_T_REGEXP of Ast_ruby.interp list * string * Parse_info.t
     | `Obj_T_REGEXP_BEG of Parse_info.t
     | `Obj_T_REGEXP_MOD of string * Parse_info.t
     | `Obj_T_RPAREN of Parse_info.t
@@ -262,9 +262,9 @@ val pp :
     | `Obj_hash_elem_list of Ast_ruby.pattern list
     | `Obj_identifier of Ast_ruby.ident
     | `Obj_if_else_clauses of (Ast_ruby.tok * Ast_ruby.stmts) option
-    | `Obj_interp_code of Ast_ruby.string_contents list
-    | `Obj_interp_str of Ast_ruby.string_contents list
-    | `Obj_interp_str_work of Ast_ruby.string_contents list
+    | `Obj_interp_code of Ast_ruby.interp list
+    | `Obj_interp_str of Ast_ruby.interp list
+    | `Obj_interp_str_work of Ast_ruby.interp list
     | `Obj_keyword_as_id of Ast_ruby.ident
     | `Obj_lhs of Ast_ruby.pattern
     | `Obj_lhs_assign_op of
