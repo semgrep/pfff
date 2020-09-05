@@ -763,7 +763,8 @@ and construct_explicit_regexp acc pos re_interp mods : stmt acc * expr =
     let re_interp = List.map
       (function
          | Ast.StrExpr _ as c -> c
-         | Ast.StrChars s -> Ast.StrChars (escape_chars s ['\\'])
+         | Ast.StrChars (s, t) -> 
+            Ast.StrChars (escape_chars s ['\\'], t)
       ) re_interp 
     in
     let acc,str = refactor_interp_string acc re_interp pos in
@@ -798,7 +799,7 @@ and construct_explicit_regexp acc pos re_interp mods : stmt acc * expr =
 
 and refactor_interp_string acc istr pos = 
   let refactor_contents acc : Ast.interp -> stmt acc * expr = function
-    | Ast.StrChars s -> acc, ELit (String s)
+    | Ast.StrChars (s, _t) -> acc, ELit (String s)
     | Ast.StrExpr ast_e -> 
         let acc, e = refactor_expr acc ast_e in
         make_call_expr acc (Some e) (ID_MethodName "to_s") [] None pos
@@ -821,7 +822,7 @@ and refactor_interp_string acc istr pos =
     
 and refactor_atom acc (l : Ast.atom) : stmt acc * expr = match l with
   | Ast.AtomSimple (s, _pos) -> acc, ELit (Atom s)
-  | Ast.AtomFromString ([Ast.StrChars s], _pos) -> acc, ELit (Atom s)
+  | Ast.AtomFromString ([Ast.StrChars (s, _t)], _pos) -> acc, ELit (Atom s)
   | Ast.AtomFromString (istr, pos) -> 
       let acc, str = refactor_interp_string acc istr pos in
         make_call_expr acc (Some str) (ID_MethodName "to_sym") [] None pos
@@ -841,7 +842,7 @@ and refactor_lit acc (l : Ast.literal) : stmt acc * expr = match l with
         make_call_expr acc None (ID_MethodName "__backtick") [SE e] None pos
 
 
-  | Ast.Regexp(([Ast.StrChars s1],s2),_pos) -> 
+  | Ast.Regexp(([Ast.StrChars (s1, _t1)],s2),_pos) -> 
       let s1' = escape_regexp s1 in
         acc, ELit (Regexp(s1',s2))
 
@@ -1637,7 +1638,7 @@ and refactor_method_name (acc:stmt acc) e : stmt acc * def_name = match e with
 
   | Ast.M (Ast.MethodAtom (Ast.AtomSimple (s, _pos))) -> 
       acc, (Instance_Method (ID_MethodName s))
-  | Ast.M (Ast.MethodAtom (Ast.AtomFromString ([Ast.StrChars s], _pos))) -> 
+  | Ast.M (Ast.MethodAtom (Ast.AtomFromString ([Ast.StrChars (s,_t)],_pos)))-> 
       acc, (Instance_Method (ID_MethodName s))
 
   | Ast.M (Ast.MethodAtom (Ast.AtomFromString (_, pos))) -> 

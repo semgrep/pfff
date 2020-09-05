@@ -110,12 +110,12 @@ let split_double_string_to_array sc pos =
   let rec tokenize acc = function
     | [] -> acc
     | (Ast_ruby.StrExpr e)::tl -> tokenize ((`Expr e)::acc) tl
-    | (Ast_ruby.StrChars s)::tl -> 
+    | (Ast_ruby.StrChars (s, t))::tl -> 
     let splits = Str.full_split ws_re s in
     let acc = 
       List.fold_left
         (fun acc -> function
-       | Str.Text s -> (`String s)::acc
+       | Str.Text s -> (`String (s,t))::acc
        | Str.Delim _ -> `Delim::acc
         ) acc splits
     in tokenize acc tl
@@ -131,8 +131,8 @@ let split_double_string_to_array sc pos =
     | `Delim::tl -> 
     if curr = [] then parse acc curr tl (* delim at start *)
     else parse ((ds curr)::acc) [] tl
-    | (`Expr s)::tl -> parse acc ((Ast_ruby.StrExpr s)::curr) tl
-    | (`String s)::tl -> parse acc ((Ast_ruby.StrChars s)::curr) tl
+    | (`Expr x)::tl -> parse acc ((Ast_ruby.StrExpr x)::curr) tl
+    | (`String x)::tl -> parse acc ((Ast_ruby.StrChars x)::curr) tl
   in
   let toks = tokenize [] sc in
   let lst = parse [] [] toks in
@@ -140,7 +140,7 @@ let split_double_string_to_array sc pos =
 
 let str_of_interp sc = match sc with
   | []  -> ""
-  | [Ast_ruby.StrChars s] -> s
+  | [Ast_ruby.StrChars (s,_)] -> s
   | _ -> failwith "unexpected escapes in string"
 
 let merge_string_lits s1 s2 = match s1,s2 with
@@ -150,9 +150,11 @@ let merge_string_lits s1 s2 = match s1,s2 with
     | Single s1, Single s2 -> Single (s1 ^ s2)
     | Double sc1, Double sc2 -> Double (sc1 @ sc2)
     | Single s, Double sc -> 
-        Double ((Ast_ruby.StrChars s)::sc)
+        let t = p in (* TODO *)
+        Double ((Ast_ruby.StrChars (s, t))::sc)
     | Double sc,Single s -> 
-        Double (sc @ [Ast_ruby.StrChars s])
+        let t = p in (* TODO *)
+        Double (sc @ [Ast_ruby.StrChars (s, t)])
   in
     Literal(String (s',p))
   | _ -> assert false
@@ -326,17 +328,17 @@ let fix_broken_assoc l op r =
         l', Op_ASSOC, r
 *)
   | Atom(AtomFromString(sc, pos)) ->
-      let astr,rest = match List.rev sc with
-        | (Ast_ruby.StrChars s)::tl -> s,tl
-        | _ -> "a",[]
+      let (astr, t), rest = match List.rev sc with
+        | (Ast_ruby.StrChars (s, t))::tl -> (s,t),tl
+        | _ -> ("a", Parse_info.fake_info "a"),[]
       in
       let len = String.length astr in
         if astr.[len-1] == '='
         then 
-      let s' = String.sub astr 0 (len-1) in
-      let sc' = List.rev ((Ast_ruby.StrChars s')::rest) in
-      let l' = replace_end l ((Atom(AtomFromString(sc',pos)))) in
-        l', Op_ASSOC, r
+          let s' = String.sub astr 0 (len-1) in
+          let sc' = List.rev ((Ast_ruby.StrChars (s',t))::rest) in
+          let l' = replace_end l ((Atom(AtomFromString(sc',pos)))) in
+          l', Op_ASSOC, r
         else default
   | _ -> default
     end

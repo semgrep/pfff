@@ -591,16 +591,16 @@ one_string:
 
 
 interp_str:
-  | T_SINGLE_STRING<str,p> {[StrChars str]}
+  | T_SINGLE_STRING {[StrChars $1]}
   | interp_str_work<i> 
-      {match i with [] -> [StrChars ""] | lst -> lst}
+      {match i with [] -> [StrChars ("", Parse_info.fake_info "")] | lst -> lst}
 
 interp_str_work:
   | T_INTERP_STR<s,pos> interp_code<tl>
-      { if s = "" then tl else (StrChars s)::tl }
+      { if s = "" then tl else (StrChars (s,pos))::tl }
 
   | T_INTERP_END<s,pos2> 
-      { if s = "" then [] else [StrChars s] }
+      { if s = "" then [] else [StrChars (s, pos2)] }
 
 interp_code:
   | eols stmt_list<ss> interp_str_work<tl>
@@ -616,7 +616,7 @@ interp_code:
       }
 
   | T_INTERP_END<s,pos> 
-      { if s = "" then [] else [StrChars s] }
+      { if s = "" then [] else [StrChars (s, pos)] }
 
 /*(*----------------------------*)*/
 /*(*2 Exceptions *)*/
