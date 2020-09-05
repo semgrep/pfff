@@ -567,13 +567,13 @@ constant:
   | string<s>        { s }
 
   | T_ATOM    { Atom (AtomSimple $1) }
-  | T_ATOM_BEG<pos> interp_str<istr> { Atom (AtomFromString (pos, istr, fake"")) }
+  | T_ATOM_BEG<pos> interp_str<istr> { Atom (AtomFromString (pos, istr, fake"\"")) }
 
   | T_REGEXP<s,m,pos> { Literal(Regexp ((s,m),pos)) }
   | T_REGEXP_BEG<pos> interp_str<istr> T_REGEXP_MOD<mods, _posTODO>
       { Literal(Regexp ((istr,mods),pos)) }
 
-  | T_TICK_BEG<pos> interp_str<xs> { Literal (String ((Tick (pos, xs, fake"")))) }
+  | T_TICK_BEG<pos> interp_str<xs> { Literal (String ((Tick (pos, xs, fake"`")))) }
 
 /*(*----------------------------*)*/
 /*(*2 strings *)*/
@@ -587,7 +587,7 @@ one_string:
   | T_SINGLE_STRING 
       { Literal(String ((Single $1))) }
   | T_DOUBLE_BEG<pos> interp_str<xs> 
-      { Literal(String ((Double (pos, xs, fake "")))) }
+      { Literal(String ((Double (pos, xs, fake "\"")))) }
 
   | T_USER_BEG<m,pos> interp_str<str> { M.process_user_string m str pos }
 

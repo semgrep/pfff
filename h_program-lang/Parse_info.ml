@@ -461,8 +461,16 @@ let rewrap_str s ii =
 let tok_add_s s ii  =
   rewrap_str ((str_of_info ii) ^ s) ii
 
+let str_of_info_fake_ok ii = 
+  match ii.token with
+  | OriginTok pinfo -> pinfo.str
+  | ExpandedTok (pinfo_pp, _pinfo_orig, _offset) -> pinfo_pp.str
+  | FakeTokStr (_, (Some (pi, _))) -> pi.str
+  | FakeTokStr (s, None) -> s
+  | Ab -> raise (NoTokenLocation "Ab")
+
 let combine_infos x xs =
-  let str = xs |> List.map str_of_info |> String.concat "" in
+  let str = xs |> List.map str_of_info_fake_ok |> String.concat "" in
   tok_add_s str x
 
 (*****************************************************************************)
