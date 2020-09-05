@@ -95,13 +95,13 @@ let split_single_string_to_array str pos =
     in reduce [] chunks
   in
   let strings = List.map
-    (fun s -> Literal(String(Single s, pos))) strings
+    (fun s -> Literal(String(Single (s, pos)))) strings
   in
     Array(pos, strings,pos) (* TODO pos1 *)
 
 (* turn %W{a#{b} c} into ["a#{b}"; "c"] *) 
 let split_double_string_to_array sc pos =
-  let ds s = Literal(String(Double s,pos)) in
+  let ds xs = Literal(String(Double (pos, xs, pos))) in
     (* first we create a stream of tokens with the grammar of
      (Expr | Code | String | Delmi)*
    by splitting the strings on whitespace.  This stream will be
@@ -144,29 +144,31 @@ let str_of_interp sc = match sc with
   | _ -> failwith "unexpected escapes in string"
 
 let merge_string_lits s1 s2 = match s1,s2 with
-  | Literal(String(s1,p)), Literal(String(s2,_)) ->
-  let s' = match s1, s2 with
+  | Literal(String(s1)), Literal(String(s2)) ->
+    let s' = match s1, s2 with
     | Tick _, _ | _, Tick _ -> assert false
-    | Single s1, Single s2 -> Single (s1 ^ s2)
-    | Double sc1, Double sc2 -> Double (sc1 @ sc2)
-    | Single s, Double sc -> 
-        let t = p in (* TODO *)
-        Double ((Ast_ruby.StrChars (s, t))::sc)
-    | Double sc,Single s -> 
-        let t = p in (* TODO *)
-        Double (sc @ [Ast_ruby.StrChars (s, t)])
-  in
-    Literal(String (s',p))
+    | Single (s1, t1), Single (s2, _t2) -> 
+            let t = t1 in (* TODO *)
+            Single (s1 ^ s2, t)
+    | Double (l, sc1, r), Double (_, sc2, _) -> Double (l, sc1 @ sc2, r)
+    | Single (s, t), Double (l, sc, r) -> 
+        let t = t in (* TODO *)
+        Double (l, (Ast_ruby.StrChars (s, t))::sc, r)
+    | Double (l, sc, r), Single (s, t) -> 
+        let t = t in (* TODO *)
+        Double (l, sc @ [Ast_ruby.StrChars (s, t)], r)
+    in
+    Literal(String (s'))
   | _ -> assert false
 
 let process_user_string m str pos = match m with
   | "r" -> Literal(Regexp ((str,""),pos))
   | "w" -> split_single_string_to_array (str_of_interp str) pos
   | "W" -> split_double_string_to_array str pos
-  | "q" -> Literal(String((Single (str_of_interp str)),pos))
-  | "Q" -> Literal(String((Double str),pos))
-  | "x" -> Literal(String((Tick str),pos))
-  | "" -> Literal(String((Double str),pos))
+  | "q" -> Literal(String((Single (str_of_interp str, pos))))
+  | "Q" -> Literal(String((Double (pos, str, pos))))
+  | "x" -> Literal(String((Tick (pos, str, pos))))
+  | "" -> Literal(String((Double (pos, str, pos))))
   | _ -> failwith (Printf.sprintf "unhandled string modifier: %s" m)
 
 
@@ -327,7 +329,7 @@ let fix_broken_assoc l op r =
       let l' = replace_end l (Id((s,p),ik)) in
         l', Op_ASSOC, r
 *)
-  | Atom(AtomFromString(sc, pos)) ->
+  | Atom(AtomFromString(lt, sc, rt)) ->
       let (astr, t), rest = match List.rev sc with
         | (Ast_ruby.StrChars (s, t))::tl -> (s,t),tl
         | _ -> ("a", Parse_info.fake_info "a"),[]
@@ -337,7 +339,7 @@ let fix_broken_assoc l op r =
         then 
           let s' = String.sub astr 0 (len-1) in
           let sc' = List.rev ((Ast_ruby.StrChars (s',t))::rest) in
-          let l' = replace_end l ((Atom(AtomFromString(sc',pos)))) in
+          let l' = replace_end l ((Atom(AtomFromString(lt, sc', rt)))) in
           l', Op_ASSOC, r
         else default
   | _ -> default

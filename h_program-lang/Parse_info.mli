@@ -217,6 +217,8 @@ val rewrap_str: string -> t -> t
 (*s: signature [[Parse_info.tok_add_s]] *)
 val tok_add_s: string -> t -> t
 (*e: signature [[Parse_info.tok_add_s]] *)
+(* used mainly by tree-sitter based parsers in semgrep *)
+val combine_infos: t -> t list -> t
 
 (*s: signature [[Parse_info.tokenize_all_and_adjust_pos]] *)
 (* to be used by the lexer *)

@@ -822,24 +822,24 @@ and refactor_interp_string acc istr pos =
     
 and refactor_atom acc (l : Ast.atom) : stmt acc * expr = match l with
   | Ast.AtomSimple (s, _pos) -> acc, ELit (Atom s)
-  | Ast.AtomFromString ([Ast.StrChars (s, _t)], _pos) -> acc, ELit (Atom s)
-  | Ast.AtomFromString (istr, pos) -> 
-      let acc, str = refactor_interp_string acc istr pos in
-        make_call_expr acc (Some str) (ID_MethodName "to_sym") [] None pos
+  | Ast.AtomFromString (_, [Ast.StrChars (s, _t)], _) -> acc, ELit (Atom s)
+  | Ast.AtomFromString (lpos, istr, _rpos) -> 
+      let acc, str = refactor_interp_string acc istr lpos in
+        make_call_expr acc (Some str) (ID_MethodName "to_sym") [] None lpos
           
 and refactor_lit acc (l : Ast.literal) : stmt acc * expr = match l with
   | Ast.Char _ | Ast.Complex _ | Ast.Rational _ -> raise Todo
 
   | Ast.Num (i, _pos) -> acc, ELit (Num i)
   | Ast.Float(s, _pos) -> acc, ELit (Float(s))
-  | Ast.String(Ast.Single s, _pos) -> 
+  | Ast.String(Ast.Single (s, _pos)) -> 
      acc, ELit (String (unescape_single_string s))
 
-  | Ast.String(Ast.Double s, pos) -> 
-      refactor_interp_string acc s pos
-  | Ast.String(Ast.Tick s, pos) -> 
-      let acc, e = refactor_interp_string acc s pos in
-        make_call_expr acc None (ID_MethodName "__backtick") [SE e] None pos
+  | Ast.String(Ast.Double (lpos, xs, _rpos)) -> 
+      refactor_interp_string acc xs lpos
+  | Ast.String(Ast.Tick (lpos, xs, _rpos)) -> 
+      let acc, e = refactor_interp_string acc xs lpos in
+        make_call_expr acc None (ID_MethodName "__backtick") [SE e] None lpos
 
 
   | Ast.Regexp(([Ast.StrChars (s1, _t1)],s2),_pos) -> 
@@ -1090,8 +1090,8 @@ and refactor_msg2 (acc:stmt acc) msg : stmt acc * msg_id = match msg with
 and refactor_symbol_or_msg (acc:stmt acc) sym_msg = match sym_msg with
   | Ast.MethodAtom(Ast.AtomSimple(s,_pos)) ->
       acc, msg_id_from_string s
-  | Ast.MethodAtom(Ast.AtomFromString(interp,pos)) ->
-      let acc, e = refactor_interp_string acc interp pos in
+  | Ast.MethodAtom(Ast.AtomFromString(lt, interp, _rt)) ->
+      let acc, e = refactor_interp_string acc interp lt in
         begin match e with 
           | ELit (String s) -> acc, msg_id_from_string s
           | _ -> Log.fatal Log.empty "alias with symbol interp string?"
@@ -1638,10 +1638,10 @@ and refactor_method_name (acc:stmt acc) e : stmt acc * def_name = match e with
 
   | Ast.M (Ast.MethodAtom (Ast.AtomSimple (s, _pos))) -> 
       acc, (Instance_Method (ID_MethodName s))
-  | Ast.M (Ast.MethodAtom (Ast.AtomFromString ([Ast.StrChars (s,_t)],_pos)))-> 
+  | Ast.M (Ast.MethodAtom (Ast.AtomFromString (_, [Ast.StrChars (s,_t)],_)))-> 
       acc, (Instance_Method (ID_MethodName s))
 
-  | Ast.M (Ast.MethodAtom (Ast.AtomFromString (_, pos))) -> 
+  | Ast.M (Ast.MethodAtom (Ast.AtomFromString (pos, _, _))) -> 
       Log.fatal (Log.of_tok pos) "interpreted atom string in method name?"
   | Ast.M e -> 
       let acc,id = refactor_msg2 acc e in

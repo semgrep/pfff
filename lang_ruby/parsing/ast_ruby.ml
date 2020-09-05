@@ -238,7 +238,7 @@ and literal =
   | Complex of string wrap
   | Rational of string wrap * tok (* r *) 
  
-  | String of string_kind wrap
+  | String of string_kind
   | Regexp of (interp list * string) wrap
   (* treesitter: TODO add in dyp *)
   (* pattern: \?(\\\S({[0-9]*}|[0-9]*|-\S([MC]-\S)?)?|\S) *)
@@ -249,13 +249,13 @@ and literal =
   and atom = 
   (* the atom string includes the ':' prefix *)
   | AtomSimple of string wrap
-  | AtomFromString of interp list wrap
-(* TODO tok (* : *) * interp list bracket (* '' or "" *) *)
+  (* less: tok for ':' ? *)
+  | AtomFromString of interp list bracket (* '' or "" *)
 
   and string_kind = 
-    | Single of string
-    | Double of interp list
-    | Tick of interp list
+    | Single of string wrap
+    | Double of interp list bracket
+    | Tick of interp list bracket
 
     (* interpolated strings (a.k.a encapsulated/template strings) *)
     and interp = 
