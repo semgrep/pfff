@@ -730,6 +730,9 @@ and excepthandler =
       ), v3
 (*e: function [[Python_to_generic.excepthandler]] *)
 
+(*s: function [[Python_to_generic.expr_to_attribute]] *)
+(*e: function [[Python_to_generic.expr_to_attribute]] *)
+
 (*s: function [[Python_to_generic.decorator]] *)
 and decorator (t, v1, v2) = 
   let v1 = dotted_name v1 in

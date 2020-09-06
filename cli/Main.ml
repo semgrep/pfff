@@ -1,4 +1,4 @@
-(*s: pfff/Main.ml *)
+(*s: pfff/cli/Main.ml *)
 (*
  * Please imagine a long and boring GNU-style copyright notice 
  * appearing just here.
@@ -100,7 +100,7 @@ let all_actions () =
     Test_parsing_java.actions()@
     Test_parsing_go.actions()@
 
-(* TODO need dune .opam files
+    (* TODO need dune .opam files
     Test_parsing_nw.actions()@
     Test_parsing_hs.actions()@
     Test_parsing_csharp.actions()@
@@ -113,7 +113,7 @@ let all_actions () =
     Test_parsing_web.actions()@
 
     Test_parsing_sql.actions()@
-*)
+    *)
 
     Test_parsing_lisp.actions()@
 
@@ -227,4 +227,4 @@ let _ =
     main ();
   )
 (*e: toplevel [[Main._1]] *)
-(*e: pfff/Main.ml *)
+(*e: pfff/cli/Main.ml *)

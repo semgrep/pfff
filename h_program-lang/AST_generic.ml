@@ -1592,6 +1592,9 @@ let expr_to_type e =
 (* see also Php_generic.list_expr_to_opt *)
 (* see also Php_generic.name_of_qualified_ident (also in Java) *)
 
+(*s: function [[AST_generic.opt_to_empty]] *)
+(*e: function [[AST_generic.opt_to_empty]] *)
+
 (*s: function [[AST_generic.opt_to_label_ident]] *)
 let opt_to_label_ident = function
   | None -> LNone
