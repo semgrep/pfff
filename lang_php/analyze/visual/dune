@@ -1,6 +1,6 @@
 (library
- (public_name pfff-lang_php-checker)
- (name pfff_lang_php_checker)
+ (public_name pfff-lang_php-visual)
+ (name pfff_lang_php_visual)
  (wrapped false)
  (libraries
 
@@ -12,3 +12,4 @@
  )
  (preprocess (pps ppx_deriving.show))
 )
+

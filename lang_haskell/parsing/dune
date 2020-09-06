@@ -1,6 +1,6 @@
 (library
- (public_name pfff-lang_skip)
- (name pfff_lang_skip)
+ (public_name pfff-lang_haskell)
+ (name pfff_lang_haskell)
  (wrapped false)
  (libraries
    commons commons_core
@@ -8,6 +8,6 @@
  )
  (preprocess (pps ppx_deriving.show))
 )
-(ocamllex lexer_skip)
-(ocamlyacc parser_skip) 
+(ocamllex lexer_hs)
+;(ocamlyacc parser_lisp) 
 
