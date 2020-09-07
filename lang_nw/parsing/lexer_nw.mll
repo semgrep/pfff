@@ -102,8 +102,10 @@ let error = Parse_info.lexical_error
 type state_mode = 
   (* aka TeX mode *)
   | INITIAL
-  (* started with begin{verbatim} (or variant), finished by end{verbatim} *)
-  | IN_VERBATIM of string
+  (* started with begin{verbatim} finished by end{verbatim} *)
+  | IN_VERBATIM
+  (* started with \verb+, finished by +, or another special char *)
+  | IN_VERB of char
   (* started with <<xxx>>=, finished by @ *)
   | IN_NOWEB_CHUNK
 
@@ -216,7 +218,12 @@ rule tex = parse
   (* ----------------------------------------------------------------------- *)
   | "\\begin{verbatim}"
       {
-        push_mode (IN_VERBATIM ("verbatim"));
+        push_mode (IN_VERBATIM);
+        TBeginVerbatim (tokinfo lexbuf)
+      }
+  | "\\verb" (_ as c)
+      {
+        push_mode (IN_VERB c);
         TBeginVerbatim (tokinfo lexbuf)
       }
 
@@ -255,14 +262,14 @@ and noweb = parse
 (*****************************************************************************)
 (* Rule in verbatim *)
 (*****************************************************************************)
-and verbatim endname = parse
+and verbatim = parse
   | "\\end{verbatim}" { 
       pop_mode ();
       TEndVerbatim (tokinfo lexbuf)
     }
   (* note: if end{verbatim} is not alone on its line then
    * this regexp will take precedence because of the longest-match
-   * behavior of lex. So keep \end{verabatim} alone on its line!
+   * behavior of lex. So keep \end{verbatim} alone on its line!
    *)
   | ([^'\n']+ as line) { TVerbatimLine (line, tokinfo lexbuf) }
   | '\n' { TCommentNewline (tokinfo lexbuf) }
@@ -273,3 +280,12 @@ and verbatim endname = parse
       error ("unrecognised symbol, in verbatim rule:"^tok lexbuf) lexbuf;
       TUnknown (tokinfo lexbuf)
     }
+
+and verb c = parse
+  | _ as c2 { 
+      if c = c2 then begin
+        pop_mode ();
+        TEndVerbatim (tokinfo lexbuf)
+      end else (TVerbatimLine (spf "%c" c, tokinfo lexbuf))
+    }
+  | eof { EOF (tokinfo lexbuf |> Parse_info.rewrap_str "") }

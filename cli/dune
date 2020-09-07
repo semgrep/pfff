@@ -14,11 +14,15 @@
     pfff-lang_cpp pfff-lang_cpp-analyze
     pfff-lang_c pfff-lang_c-analyze
     pfff-lang_ml pfff-lang_ml-analyze
+    pfff-lang_nw
     pfff-lang_java pfff-lang_java-analyze
     pfff-lang_go pfff-lang_go-analyze
     pfff-lang_ruby pfff-lang_ruby-analyze
     pfff-lang_php
     pfff-lang_lisp
+    pfff-lang_haskell  pfff-lang_csharp  pfff-lang_erlang  pfff-lang_rust
+    pfff-lang_text
+    pfff-lang_html
     pfff-lang_skip
     pfff-lang_FUZZY
     pfff-lang_GENERIC pfff-lang_GENERIC-analyze
