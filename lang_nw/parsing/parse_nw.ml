@@ -35,8 +35,10 @@ let tokens2 file =
     (match Lexer_nw.current_mode () with
     | Lexer_nw.INITIAL -> 
         Lexer_nw.tex lexbuf
-    | Lexer_nw.IN_VERBATIM s ->
-        Lexer_nw.verbatim s lexbuf
+    | Lexer_nw.IN_VERBATIM ->
+        Lexer_nw.verbatim lexbuf
+    | Lexer_nw.IN_VERB c ->
+        Lexer_nw.verb c lexbuf
     | Lexer_nw.IN_NOWEB_CHUNK ->
         Lexer_nw.noweb lexbuf
     )

@@ -18,7 +18,9 @@ let test_tokens_nw file =
   ()
 
 let test_parse_nw file =
-  Parse_nw.parse file |> ignore
+  Error_code.try_with_print_exn_and_reraise file (fun () ->
+    Parse_nw.parse file |> ignore 
+  )
 
 let test_dump_nw file =
   let ((trees, _toks), _stat) = Parse_nw.parse file in
