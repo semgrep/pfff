@@ -160,6 +160,7 @@ and v_property x =
         let v1 = v_tok v1 in
         let v2 = v_expr v2 in
         ()
+    | P_ellipsis v1 -> let v1 = v_tok v1 in ()
 
   in
   vin.kprop (k, all_functions) x
