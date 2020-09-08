@@ -1491,8 +1491,9 @@ let basic_id_info resolved =
   }
 (*e: function [[AST_generic.basic_id_info]] *)
 
-let _name_of_id id = 
+let name_of_id id = 
   (id, empty_name_info)
+
 let _name_of_ids xs =
   match List.rev xs with
   | [] -> failwith "name_of_ids: empty ids"

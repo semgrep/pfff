@@ -16,7 +16,7 @@ open Common
 
 module A = Ast_js
 module C = Cst_js
-module G = AST_generic (* for the operators *)
+module G = AST_generic (* for the operators and now also type_ *)
 
 (*****************************************************************************)
 (* Prelude *)
@@ -793,8 +793,25 @@ and variable_declaration env vkind x =
   let n = name env x.C.v_name in
   let init = init_opt env x.C.v_init in 
   let vkind = var_kind env vkind in
+  let ty = type_opt env x.C.v_type in 
   { A.v_name = n; v_init = init; v_kind = vkind; 
-    v_resolved = not_resolved (); v_type = None }
+    v_resolved = not_resolved (); v_type = ty }
+
+and type_opt env x = 
+  match x with
+  | None -> None
+  | Some (t) -> annotation env t
+
+and annotation env = function
+  | C.TAnnot (_, t) -> type_ env t
+  (* TODO *)
+  | C.TFunAnnot _ -> None
+
+and type_ _env = function
+  | C.TName (C.V id, None) ->
+      Some (G.TyName (G.name_of_id id))
+  (* TODO *)
+  | _ -> None
 
 and init_opt env ini = 
   match ini with

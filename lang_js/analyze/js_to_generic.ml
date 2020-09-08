@@ -345,11 +345,15 @@ and case =
   | Default (t, v1) -> let v1 = stmt v1 in
       [G.Default t], v1
 
+(* already an AST_generic.type_, no conversion needed *)
+and type_ x = x 
+
 and def_of_var { v_name = x_name; v_kind = x_kind; 
-                 v_init = x_init; v_resolved = x_resolved } =
+                 v_init = x_init; v_resolved = x_resolved; v_type = ty } =
   let v1 = name x_name in
   let v2 = var_kind x_kind in 
   let ent = G.basic_entity v1 [v2] in
+  let ty = option type_ ty in
   (match x_init with
   | Some (Fun (v3, _nTODO))   -> 
       let def, more_attrs = fun_ v3 in
@@ -361,7 +365,7 @@ and def_of_var { v_name = x_name; v_kind = x_kind;
        let v3 = option expr x_init in 
        let v4 = vref resolved_name x_resolved in
        ent.G.info.G.id_resolved := !v4;
-       ent, G.VarDef { G.vinit = v3; G.vtype = None }
+       ent, G.VarDef { G.vinit = v3; G.vtype = ty }
    )
 
 and var_of_var { v_name = x_name; v_kind = x_kind; 
@@ -494,8 +498,6 @@ and module_directive x =
       G.OtherDirective (G.OI_Export, [G.Tk t; G.I v1])
 
 and program v = list toplevel v
-
-and type_ v = v
 
 let any =
   function
