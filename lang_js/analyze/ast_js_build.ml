@@ -265,6 +265,7 @@ and item default_opt env = function
       let n = name env x in
       [A.VarDecl {A.v_name = n; v_kind = A.Const, fake "const"; 
                   v_init = Some (A.Fun (fun_, None)); 
+                  v_type = None;
                   v_resolved = not_resolved()}]
 
     | C.F_func (_, None), Some tok ->
@@ -290,6 +291,7 @@ and item default_opt env = function
       let n = name env x in
       [A.VarDecl {A.v_name = n; v_kind=A.Const, fake "const";
                   v_init= Some (A.Class (class_, None)); 
+                  v_type = None;
                   v_resolved = not_resolved ()}]
     | None, Some tok ->
       let e = A.Class (class_, None) in
@@ -749,15 +751,18 @@ and pattern env = function
      A.Obj (t1, xs |> C.uncomma |> List.map (function
       | C.PatId (n, None) -> 
          let n = name env n in
-         A.Field (A.PN n, [], Some (A.Id (n, not_resolved())))
+         let ty = None in
+         A.Field (A.PN n, [], ty, Some (A.Id (n, not_resolved())))
       | C.PatId (n, Some (_tok, init)) -> 
          let n = name env n in
          let init = expr env init in
-         A.Field (A.PN n, [], Some init)
+         let ty = None in
+         A.Field (A.PN n, [], ty, Some init)
       | C.PatProp (pname, _tok, pat) ->
          let pname = property_name env pname in
          let pat = pattern env pat in
-         A.Field (pname, [], Some pat)
+         let ty = None in
+         A.Field (pname, [], ty, Some pat)
       | C.PatDots (t, pat) -> 
         let e = pattern env pat in
         A.FieldSpread (t, e)
@@ -788,7 +793,8 @@ and variable_declaration env vkind x =
   let n = name env x.C.v_name in
   let init = init_opt env x.C.v_init in 
   let vkind = var_kind env vkind in
-  { A.v_name = n; v_init = init; v_kind = vkind; v_resolved = not_resolved ()}
+  { A.v_name = n; v_init = init; v_kind = vkind; 
+    v_resolved = not_resolved (); v_type = None }
 
 and init_opt env ini = 
   match ini with
@@ -875,7 +881,7 @@ and parameter_pattern env
 and parameter env p =
   let name = name env p.C.p_name in
   let d = default env p.C.p_default in
-  { A.p_name = name; p_default = d; p_dots = p.C.p_dots }
+  { A.p_name = name; p_default = d; p_dots = p.C.p_dots; p_type = None }
 
 and default env = function
   | None -> None
@@ -911,12 +917,14 @@ and property env = function
    let pname = property_name env pname in
    let e = expr env e in
    let props = [] in
-   A.Field (pname, props, Some e)
+   let ty = None in
+   A.Field (pname, props, ty, Some e)
  | C.P_method x ->
     method_ env [] x
   | C.P_shorthand n ->
     let n = name env n in
-    A.Field (A.PN n, [], Some (A.Id (n, not_resolved ())))
+    let ty = None in
+    A.Field (A.PN n, [], ty, Some (A.Id (n, not_resolved ())))
   | C.P_spread (t, e) ->
     let e = expr env e in
     A.FieldSpread (t, e)
@@ -930,7 +938,8 @@ and _array_obj env idx tok xs =
     | Left e ->
       let n = A.PN (string_of_int idx, tok) in
       let e = expr env e in
-      let elt = A.Field (n, [], Some e) in
+      let ty = None in
+      let elt = A.Field (n, [], ty, Some e) in
       elt::_array_obj env idx tok xs
     )
 
@@ -965,7 +974,8 @@ and class_element env = function
     let pn = property_name env fld.C.fld_name in
     let props = [] in (* TODO fld.fld_static *)
     let e = init_opt env fld.C.fld_init in
-    [A.Field (pn, props, e)]
+    let ty = None (* TODO: fld_type *) in
+    [A.Field (pn, props, ty, e)]
   | C.C_method (static_opt, x) ->
     let props = 
       match static_opt with
@@ -991,7 +1001,8 @@ and method_ env props x =
                                   fst3 x.C.f_params))
   in
   let fun_ = { fun_ with A.f_props = fprops @ fun_.A.f_props } in
-  A.Field (pname, props, Some (A.Fun (fun_, None)))
+  let ty = None in
+  A.Field (pname, props, ty, Some (A.Fun (fun_, None)))
 
 (* ------------------------------------------------------------------------- *)
 (* Misc *)

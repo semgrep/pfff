@@ -391,7 +391,7 @@ and name_expr env name v_kind eopt v_resolved =
     let (qualified, _kind) = env.current in
     v_resolved := Global qualified;
     Hashtbl.add env.db qualified
-     { v_name = name; v_kind; v_init = eopt; v_resolved }
+     { v_name = name; v_kind; v_init = eopt; v_resolved; v_type = None; }
   end
 
 (* ---------------------------------------------------------------------- *)
@@ -530,7 +530,7 @@ and expr env e =
       | None -> env
       | Some n -> 
         let v = { v_name = n; v_kind = Let, fake "let"; 
-                  v_init = None;
+                  v_init = None; v_type = None;
                   v_resolved = ref Local}
         in
         add_locals env [v]
@@ -559,7 +559,7 @@ and expr env e =
       | None -> env
       | Some n -> 
         let v = { v_name = n; v_kind = Let, fake "let"; 
-                  v_init = None; v_resolved = ref Local}
+                  v_init = None; v_type = None; v_resolved = ref Local}
         in
         add_locals env [v]
     in
@@ -611,7 +611,7 @@ and class_ env c =
   List.iter (property env) (unbracket c.c_body)
 
 and property env = function
-  | Field (pname, _props, e) ->
+  | Field (pname, _props, _ty, e) ->
      property_name env pname;
      option (expr env) e
   | FieldSpread (_, e) ->

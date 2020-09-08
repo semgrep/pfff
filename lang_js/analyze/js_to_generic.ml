@@ -431,9 +431,10 @@ and class_ { c_extends = c_extends; c_body = c_body; c_tok } =
     cimplements = []; cmixins = []; cbody = v2;}, []
 and property x =
    match x with
-  | Field ((v1, v2, v3)) ->
+  | Field ((v1, v2, vt, v3)) ->
       let v1 = property_name v1
       and v2 = list property_prop v2
+      and vt = vt
       and v3 = option expr v3
       in 
       (match v1 with
@@ -441,7 +442,7 @@ and property x =
         let ent = G.basic_entity n v2 in
        (* todo: could be a Lambda in which case we should return a FuncDef? *)
         G.FieldStmt (G.DefStmt 
-                ((ent, G.FieldDef { G.vinit = v3; vtype = None })))
+                ((ent, G.FieldDef { G.vinit = v3; vtype = vt })))
 
       | Right e -> 
         (match v3 with
@@ -494,6 +495,8 @@ and module_directive x =
 
 and program v = list toplevel v
 
+and type_ v = v
+
 let any =
   function
   | Expr v1 -> let v1 = expr v1 in G.E v1
@@ -502,3 +505,4 @@ let any =
   | Items v1 -> let v1 = List.map toplevel v1 in G.Ss v1
   | Program v1 -> let v1 = program v1 in G.Pr v1
   | Pattern v1 -> let v1 = pattern v1 in G.P v1
+  | Type v1 -> let v1 = type_ v1 in G.T v1
