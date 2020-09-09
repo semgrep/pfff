@@ -17,7 +17,7 @@ open Cst_ml
 (* Prelude *)
 (*************************************************************************)
 (* This file contains a grammar for OCaml
- * (mostly OCaml 3.07 with some extensions for OCaml 4.xxx)
+ * (mostly OCaml 3.07 with some extensions until OCaml 4.08)
  * 
  * src: adapted from the official source of OCaml in its
  * parsing/ subdirectory. All semantic actions are new. Only the
@@ -37,6 +37,7 @@ open Cst_ml
  * - http://www.mpi-sws.org/~rossberg/hamlet/
  *   solves ambiguities
  * - linear-ML parser
+ * - tree-sitter-ocaml parser
  *)
 
 (*************************************************************************)
@@ -119,6 +120,7 @@ let optlist_to_list = function
 (* operators *)
 %token <Parse_info.t> TPlus "+" TMinus "-" TLess "<" TGreater ">"
 %token <string * Parse_info.t> TPrefixOperator TInfixOperator
+%token <string * Parse_info.t> LETOP ANDOP (* monadic let, since 4.08 *)
 
 (* attributes *)
 %token <Parse_info.t> TBracketAt "[@" TBracketAtAt "[@@" TBracketAtAtAt "[@@@"
@@ -171,7 +173,7 @@ let optlist_to_list = function
 %left     TPipe                          (* pattern (p|p|p) *)
 %nonassoc below_COMMA
 %left     TComma                         (* expr/expr_comma_list (e,e,e) *)
-%right    TArrow                         (* core_type2 (t -> t -> t) *)
+%right    TArrow                         (* core_type (t -> t -> t) *)
 
 %right    Tor                            (* expr (e || e || e) *)
 %right    TAnd TAndAnd                   (* expr (e && e && e) *)
@@ -290,7 +292,7 @@ sgrep_spatch_pattern:
 (* coupling: structure_item *)
 structure_item_minus_signature_item:
  | Tlet Trec? list_and(let_binding)              { Let ($1, $2, $3) }
- (* todo: put more stuff from structure_item that you want to be able
+ (* TODO: put more stuff from structure_item that you want to be able
   * to match in a semgrep pattern.
   *)
 
@@ -374,7 +376,7 @@ structure_item_noattr:
  | Tmodule Ttype ident "=" module_type           
    { ItemTodo (("ModuleType", $1), [$5]) }
  | Tinclude module_expr                          
-   { ItemTodo (("Include",$1), [] (* TODO *)) }
+   { ItemTodo (("Include",$1), [] (* TODO $2 *)) }
 
  (* objects *)
  | Tclass list_and2(class_declaration)            
@@ -406,6 +408,7 @@ operator:
  | "+"     { } | TPlusDot  { } | "-"    { } | TMinusDot { }
  | "<"     { } | ">"  { }
  | TAndAnd { } | TBangEq { }
+ | LETOP { } | ANDOP { }
 
 (* for polymorphic types both 'a and 'A is valid. Same for module types. *)
 ident:
@@ -414,7 +417,7 @@ ident:
 
 constr_ident:
  | TUpperIdent     { $1 }
- | "(" ")"         { "()TODO", $1 }
+ | "(" ")"         { "()", $1 }
  | "::"            { "::", $1 }
  | Tfalse          { "false", $1 }
  | Ttrue           { "true", $1 }
@@ -424,7 +427,7 @@ constr_ident:
 (* record field name (not olabl label) *)
 label: TLowerIdent  { $1 }
 
-(* name tag extension (polymorphic variant?) *)
+(* name tag extension (polymorphic variant) *)
 name_tag: "`" ident   { $1, $2 }
 
 (*----------------------------*)
@@ -452,8 +455,8 @@ mod_ext_longident:
 
 constr_longident:
  | mod_longident   %prec below_DOT     { $1 }
- | "[" "]"                             { [], Name ("[]TODO", $1) }
- | "(" ")"                             { [], Name ("()TODO", $1) }
+ | "[" "]"                             { [], Name ("[]", $1) }
+ | "(" ")"                             { [], Name ("()", $1) }
  | Tfalse                              { [], Name ("false", $1) }
  | Ttrue                               { [], Name ("true", $1) }
 
@@ -487,6 +490,8 @@ expr:
        | _      -> FunCall ($1, $2) }
 
  | Tlet Trec? list_and(let_binding) Tin seq_expr  { LetIn ($1, $2, $3, $4, $5)}
+ (* TODO: very partial support for monadic let *)
+ | LETOP list_and(let_binding) Tin seq_expr { LetIn (snd $1, None, $2, $3, $4)}
 
  | Tfun labeled_simple_pattern fun_def
      { let (params, (tok, e)) = $3 in
@@ -497,7 +502,7 @@ expr:
  | expr_comma_list        %prec below_COMMA  { Tuple $1 }
  | constr_longident simple_expr              { Constr ($1, Some $2) }
 
- | expr "::" expr            { Infix ($1, ("::", $2), $3) (* TODO? ConsList?*)}
+ | expr "::" expr            { Infix ($1, ("::", $2), $3)}
 
  | expr TInfixOperator expr  { Infix ($1, $2, $3) }
 
@@ -825,21 +830,19 @@ label_declaration: Tmutable? label ":" poly_type attribute*
 (* Types expressions *)
 (*----------------------------*)
 
-core_type: core_type2 { $1 }
-
-core_type2:
+core_type:
  | simple_core_type_or_tuple
      { $1 }
- | core_type2 "->" core_type2
+ | core_type "->" core_type
      { TyFunction ($1, $2, $3) }
 
  (* ext: olabl *)
- | TLowerIdent     ":" core_type2 "->" core_type2
+ | TLowerIdent     ":" core_type "->" core_type
      { TyFunction ($3, $4, $5) (* TODO $1 $2 *)  }
- | "?" TLowerIdent ":" core_type2 "->" core_type2
+ | "?" TLowerIdent ":" core_type "->" core_type
      { TyFunction ($4, $5, $6) (* TODO $1 $2 *)  }
  (* pad: only because of lexer hack around labels *)
- | TOptLabelDecl    core_type2 "->" core_type2
+ | TOptLabelDecl    core_type "->" core_type
      { TyFunction ($2, $3, $4) (* TODO $1 $2 *)  }
 
 
@@ -889,7 +892,7 @@ polymorphic_variant_type:
 (*----------------------------*)
 
 poly_type: 
- | type_parameter "." core_type { TyTodo(("Poly",$2), [$3]) } 
+ | type_parameter+ "." core_type { TyTodo(("Poly",$2), [$3]) } 
  | core_type { $1 }
 
 row_field:
@@ -974,11 +977,11 @@ label_let_pattern:
 (* Class types *)
 (*----------------------------*)
 class_description: Tvirtual? class_type_parameters TLowerIdent ":" class_type
-  { ItemTodo (("ClassDescr", $4), []) (* TODO *)}
+  { ItemTodo (("ClassDescr", $4), []) (* TODO $5 *)}
 
 class_type_declaration: 
   Tvirtual? class_type_parameters TLowerIdent "=" class_signature
-  { ItemTodo (("ClassTypeDecl", $4), []) (* TODO *) }
+  { ItemTodo (("ClassTypeDecl", $4), []) (* TODO $5 *) }
 
 class_type:
   | class_signature { }

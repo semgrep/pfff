@@ -53,7 +53,8 @@ let token_kind_of_tok t =
 (* Visitors *)
 (*****************************************************************************)
 let visitor_info_of_tok f = function
-
+  | LETOP (s, ii) -> LETOP (s, f ii)
+  | ANDOP (s, ii) -> ANDOP (s, f ii)
   | TDots ii -> TDots (f ii)
   | LDots (ii) -> LDots (f ii)
   | RDots (ii) -> RDots (f ii)

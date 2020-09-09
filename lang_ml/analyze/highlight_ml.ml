@@ -649,6 +649,7 @@ let visit_program
     | T.TLabelDecl (_s, ii) ->tag ii (Parameter Def)
 
     | T.Topen ii  -> tag ii BadSmell
+    | T.LETOP (_, ii) | T.ANDOP (_, ii) -> tag ii Expanded
 
     | T.Tmodule ii | T.Tstruct ii | T.Tsig ii | T.Tinclude ii | T.Tfunctor ii
         -> tag ii KeywordModule
