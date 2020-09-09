@@ -345,11 +345,15 @@ and case =
   | Default (t, v1) -> let v1 = stmt v1 in
       [G.Default t], v1
 
+(* already an AST_generic.type_, no conversion needed *)
+and type_ x = x 
+
 and def_of_var { v_name = x_name; v_kind = x_kind; 
-                 v_init = x_init; v_resolved = x_resolved } =
+                 v_init = x_init; v_resolved = x_resolved; v_type = ty } =
   let v1 = name x_name in
   let v2 = var_kind x_kind in 
   let ent = G.basic_entity v1 [v2] in
+  let ty = option type_ ty in
   (match x_init with
   | Some (Fun (v3, _nTODO))   -> 
       let def, more_attrs = fun_ v3 in
@@ -361,7 +365,7 @@ and def_of_var { v_name = x_name; v_kind = x_kind;
        let v3 = option expr x_init in 
        let v4 = vref resolved_name x_resolved in
        ent.G.info.G.id_resolved := !v4;
-       ent, G.VarDef { G.vinit = v3; G.vtype = None }
+       ent, G.VarDef { G.vinit = v3; G.vtype = ty }
    )
 
 and var_of_var { v_name = x_name; v_kind = x_kind; 
@@ -431,9 +435,10 @@ and class_ { c_extends = c_extends; c_body = c_body; c_tok } =
     cimplements = []; cmixins = []; cbody = v2;}, []
 and property x =
    match x with
-  | Field ((v1, v2, v3)) ->
+  | Field ((v1, v2, vt, v3)) ->
       let v1 = property_name v1
       and v2 = list property_prop v2
+      and vt = vt
       and v3 = option expr v3
       in 
       (match v1 with
@@ -441,7 +446,7 @@ and property x =
         let ent = G.basic_entity n v2 in
        (* todo: could be a Lambda in which case we should return a FuncDef? *)
         G.FieldStmt (G.DefStmt 
-                ((ent, G.FieldDef { G.vinit = v3; vtype = None })))
+                ((ent, G.FieldDef { G.vinit = v3; vtype = vt })))
 
       | Right e -> 
         (match v3 with
@@ -502,3 +507,4 @@ let any =
   | Items v1 -> let v1 = List.map toplevel v1 in G.Ss v1
   | Program v1 -> let v1 = program v1 in G.Pr v1
   | Pattern v1 -> let v1 = pattern v1 in G.P v1
+  | Type v1 -> let v1 = type_ v1 in G.T v1

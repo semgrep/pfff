@@ -299,14 +299,19 @@ and
             v_name = v_v_name;
             v_kind = v_v_kind;
             v_init = v_v_init;
+            v_type = vt;
             v_resolved = v_v_resolved
           } =
   let v_v_resolved = map_of_ref map_resolved_name v_v_resolved in
   let v_v_init = map_of_option map_expr v_v_init in
   let v_v_kind = map_wrap map_var_kind v_v_kind in
+  let vt = map_of_option map_type_ vt in
   let v_v_name = map_name v_v_name in 
-    { v_name = v_v_name; v_kind = v_v_kind; v_init = v_v_init;
+    { v_name = v_v_name; v_kind = v_v_kind; v_init = v_v_init; v_type = vt;
       v_resolved = v_v_resolved }
+
+(* TODO? call Map_AST with local kinfo? meh *)
+and map_type_ x = x
 
 and map_var_kind = function | Var -> Var | Let -> Let | Const -> Const
 and
@@ -329,12 +334,16 @@ and
   map_parameter {
                   p_name = v_p_name;
                   p_default = v_p_default;
+                  p_type = vt;
                   p_dots = v_p_dots
                 } =
   let v_p_dots = map_of_option map_tok v_p_dots in
   let v_p_default = map_of_option map_expr v_p_default in
+  let vt = map_of_option map_type_ vt in
   let v_p_name = map_name v_p_name in 
-  { p_name = v_p_name; p_default = v_p_default; p_dots = v_p_dots }
+  { p_name = v_p_name; p_default = v_p_default; p_dots = v_p_dots; 
+    p_type = vt;
+  }
 and map_fun_prop =
   function
   | Get -> Get
@@ -349,11 +358,12 @@ and map_class_ { c_extends = v_c_extends; c_body = v_c_body; c_tok } =
   { c_extends = v_c_extends; c_body = v_c_body; c_tok }
 and map_property =
   function
-  | Field ((v1, v2, v3)) ->
+  | Field ((v1, v2, vt, v3)) ->
       let v1 = map_property_name v1
       and v2 = map_of_list (map_wrap map_property_prop) v2
+      and vt = map_of_option map_type_ vt
       and v3 = map_of_option map_expr v3
-      in Field ((v1, v2, v3))
+      in Field ((v1, v2, vt, v3))
   | FieldSpread (t, v1) -> 
       let t = map_tok t in let v1 = map_expr v1 in FieldSpread ((t, v1))
   | FieldEllipsis v1 ->
@@ -409,6 +419,7 @@ and map_any =
   | Expr v1 -> let v1 = map_expr v1 in Expr ((v1))
   | Stmt v1 -> let v1 = map_stmt v1 in Stmt ((v1))
   | Pattern v1 -> let v1 = map_pattern v1 in Pattern v1
+  | Type v1 -> let v1 = map_type_ v1 in Type v1
   | Items v1 -> let v1 = map_of_list map_toplevel v1 in Items ((v1))
   | Item v1 -> let v1 = map_toplevel v1 in Item ((v1))
   | Program v1 -> let v1 = map_program v1 in Program ((v1))

@@ -16,8 +16,8 @@
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* A (real) Abstract Syntax Tree for Javascript, not a Concrete Syntax Tree
- * as in cst_js.ml.
+(* A (real) Abstract Syntax Tree for Javascript and (partially) Typescript,
+ * not a Concrete Syntax Tree as in cst_js.ml.
  * 
  * This file contains a simplified Javascript AST. The original
  * Javascript syntax tree (cst_js.ml) is good for code refactoring or
@@ -33,14 +33,13 @@
  *    See 'wrap' below.
  *    update: we actually keep the different kinds of brackets for sgrep, but
  *    they are all agglomerated in a general 'bracket' type. 
- *  - no types (but could revisit this decision)
- *  - no Typescript (no interface)
  *  - no U, B, Yield, Await, Seq, ... just Apply (and Special Id)
  *  - no field vs method. A method is just sugar to define
  *    a field with a lambda (some people even uses directly that forms
  *    thx to arrows).
  *  - old: no Period vs Bracket (actually good to differentiate)
  *  - old: no Object vs Array (actually good to differentiate)
+ *  - old: no type (actually need that back for semgrep-typescript)
  *  - no func vs method vs arrow, just fun_
  *  - no class elements vs object elements
  *  - No Nop (EmptyStmt); transformed in an empty Block,
@@ -53,9 +52,9 @@
  *    (using 'default_entity' special name)
  * 
  * todo:
- *  - add back type information? useful for many analysis! 
- *    useful for semgrep for typescript!
+ *  - typescript interface
  *  - add decorators (also useful for semgrep) 
+ * less:
  *  - ast_js_es5.ml? unsugar even more? remove classes, get/set, etc.?
  *  - unsugar ES6 features? lift Var up, rename lexical vars, etc.
  *)
@@ -299,6 +298,12 @@ and stmt =
 and pattern = expr
 
 (*****************************************************************************)
+(* Types (typescript-ext:) *)
+(*****************************************************************************)
+(* simpler to reuse AST_generic *)
+and type_ = AST_generic.type_
+
+(*****************************************************************************)
 (* Definitions *)
 (*****************************************************************************)
 and var = { 
@@ -311,6 +316,7 @@ and var = {
   v_kind: var_kind wrap;
   (* actually a pattern when inside a ForIn/ForOf *)
   v_init: expr option;
+  v_type: type_ option;
   v_resolved: resolved_name ref;
 }
   and var_kind = Var | Let | Const
@@ -329,6 +335,7 @@ and fun_ = {
   and parameter_classic = {
     p_name: ident;
     p_default: expr option;
+    p_type: type_ option;
     p_dots: tok option;
   }
   (* less: could transpile *)
@@ -350,7 +357,8 @@ and class_ = {
      * None is possible only for class fields. For object there is
      * always a value.
      *)
-    | Field of property_name * property_prop wrap list * expr option
+    | Field of property_name * property_prop wrap list * type_ option * 
+               expr option
     (* less: can unsugar? *)
     | FieldSpread of tok * expr
     (* This is present only when in pattern context.
@@ -423,6 +431,7 @@ type any =
   | Expr of expr
   | Stmt of stmt
   | Pattern of pattern
+  | Type of type_
   | Item of toplevel
   | Items of toplevel list
   | Program of program
@@ -440,7 +449,7 @@ let unwrap x = fst x
 and string_of_xhp_tag s = s
 
 let mk_const_var id e = 
-  { v_name = id; v_kind = Const, (snd id); v_init = Some e; 
+  { v_name = id; v_kind = Const, (snd id); v_init = Some e; v_type = None;
     v_resolved = ref NotResolved }
 
 (* helpers used in ast_js_build.ml and Parse_javascript_tree_sitter.ml *)
@@ -453,7 +462,7 @@ let var_pattern_to_var vkind pat tok init_opt =
     | None -> pat
   in
   (* less: use x.vpat_type *)
-  {v_name = id; v_kind = vkind; v_init = Some init;
+  {v_name = id; v_kind = vkind; v_init = Some init; v_type = None;
     v_resolved = ref NotResolved}
 
 let special_of_id_opt s =
@@ -484,5 +493,6 @@ and stmt_of_stmts xs =
 let mk_default_entity_var tok exp = 
   let n = default_entity, tok in
   let v = { v_name = n; v_kind = Const, tok; v_init = Some exp; 
-            v_resolved = ref NotResolved } in
+            v_resolved = ref NotResolved; v_type = None } 
+  in
   v, n

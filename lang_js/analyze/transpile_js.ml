@@ -112,6 +112,7 @@ let var_of_simple_pattern (expr, fname) init_builder pat =
     let name = fname name in
     let init = init_builder name in
     { A.v_name = name; v_kind = A.Let, (fake "let"); v_init = Some init;
+      v_type = None;
       v_resolved = ref A.NotResolved;
     }
   (* { x = y } = varname; -~> x = pfff_builtin_default(varname.x, y) *)
@@ -122,6 +123,7 @@ let var_of_simple_pattern (expr, fname) init_builder pat =
     let init = A.Apply (A.Id (("pfff_builtin_default", tok),ref A.NotResolved),
                        fake_bracket [init1; e]) in
     { A.v_name = name; v_kind = A.Let, fake "let"; v_init = Some init;
+      v_type = None;
       v_resolved = ref A.NotResolved;
     }
   | _ -> failwith "TODO: simple pattern not handled"
@@ -241,7 +243,7 @@ let var_pattern (expr, fname, fpname) x =
       | _ ->
         let intermediate = gensym_name "tmp" tok in
         let var = { A.v_name = intermediate; v_kind = A.Let, fake "let"; 
-                    v_init = Some e;
+                    v_init = Some e; v_type = None;
                     v_resolved = ref A.NotResolved } in
         intermediate, [var]
     in
@@ -272,11 +274,11 @@ let forof (lhs_var, tok, e2, st) (expr, stmt, var_binding) =
   let for_init = 
     Left [
       { A.v_name = iterator; v_kind = A.Let, fake "let"; 
-        v_resolved = ref A.NotResolved;
+        v_resolved = ref A.NotResolved; v_type = None;
         v_init = Some (A.Apply (A.ArrAccess (e2, fake_bracket symbol_iterator), 
             fake_bracket [])) };
       { A.v_name = step; v_kind = A.Let, fake "let"; 
-        v_resolved = ref A.NotResolved;
+        v_resolved = ref A.NotResolved; v_type = None;
         v_init = None; }
     ]
   in

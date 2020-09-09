@@ -87,9 +87,9 @@ let visit_program ~tag_hook _prefs (cst, toks) =
      );
      Visitor_ast_js.kprop = (fun (k,_) x ->
       (match x with
-      | Field (PN name, _, Some (Fun _)) ->
+      | Field (PN name, _, _ty, Some (Fun _)) ->
           tag_name name (Entity (E.Method, (Def2 fake_no_def2)));
-      | Field (PN name, _, _) ->
+      | Field (PN name, _, _ty, _) ->
           tag_name name (Entity (E.Field, (Def2 fake_no_def2)));
       | _ -> ()
       ); 

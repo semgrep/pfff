@@ -287,12 +287,17 @@ and v_class_ { c_extends = v_c_extends; c_body = v_c_body; c_tok } =
   let arg = v_tok c_tok in
   let arg = v_option v_expr v_c_extends in
   let arg = v_bracket (v_list v_property) v_c_body in ()
+
+(* TODO? call Visitor_AST with local kinfo? meh *)
+and v_type_ _x = ()
+  
 and v_property x =
   (* tweak *)
   let k x =  match x with
-  | Field ((v1, v2, v3)) ->
+  | Field ((v1, v2, ty, v3)) ->
       let v1 = v_property_name v1
       and v2 = v_list (v_wrap v_property_prop) v2
+      and ty = v_option v_type_ ty
       and v3 = v_option v_expr v3
       in ()
   | FieldSpread (t, v1) -> let t = v_tok t in let v1 = v_expr v1 in ()
@@ -338,6 +343,7 @@ and v_any =
   | Expr v1 -> let v1 = v_expr v1 in ()
   | Stmt v1 -> let v1 = v_stmt v1 in ()
   | Pattern v1 -> v_pattern v1
+  | Type v1 -> v_type_ v1
   | Item v1 -> let v1 = v_toplevel v1 in ()
   | Items v1 -> let v1 = v_list v_toplevel v1 in ()
   | Program v1 -> let v1 = v_program v1 in ()
