@@ -1186,6 +1186,7 @@ property_name_and_value:
  | id                                 { Left (P_shorthand ($1)) }
  (* es6: spread operator: *)
  | "..." assignment_expr              { Left (P_spread ($1, $2)) }
+ | "..."                              { Left (P_ellipsis $1 ) }
 
 (*----------------------------*)
 (* function call *)

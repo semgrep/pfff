@@ -945,6 +945,9 @@ and property env = function
   | C.P_spread (t, e) ->
     let e = expr env e in
     A.FieldSpread (t, e)
+  | C.P_ellipsis t ->
+    A.FieldEllipsis t
+
 
 and _array_obj env idx tok xs =
   match xs with

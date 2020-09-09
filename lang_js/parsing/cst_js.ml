@@ -251,6 +251,7 @@ type expr =
        | P_shorthand of name
        (* es6: inlining of properties/array-elts/string/args *)
        | P_spread of tok (* ... *) * expr
+       | P_ellipsis of tok 
 
    and property_name =
    | PN_Id of name
