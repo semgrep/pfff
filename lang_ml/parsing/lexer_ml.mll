@@ -144,6 +144,12 @@ let infix_symbol =
   ('=' | '<' | '>' | '@' | '^' | '|'| '&' | '+' | '-' | '*'| '/' | '$'|'%' )
    operator_char*
 
+(* for let/and operators *)
+let dotsymbolchar =
+  ['!' '$' '%' '&' '*' '+' '-' '/' ':' '=' '>' '?' '@' '^' '|']
+let kwdopchar =
+  ['$' '&' '*' '+' '-' '/' '<' '=' '>' '@' '^' '|']
+
 (*****************************************************************************)
 (* Rule token *)
 (*****************************************************************************)
@@ -263,6 +269,12 @@ rule token = parse
   | infix_symbol { TInfixOperator (tok lexbuf, tokinfo lexbuf) }
   (* pad: used in js_of_ocaml, not sure why not part of infix_symbol *)
   | "##" { TInfixOperator (tok lexbuf, tokinfo lexbuf) }
+
+  (* since 4.08 *)
+  | "let" kwdopchar dotsymbolchar * as op
+            { LETOP (op, tokinfo lexbuf) }
+  | "and" kwdopchar dotsymbolchar * as op
+            { ANDOP (op, tokinfo lexbuf) }
 
   (* camlp4 reserved: 
    * parser    <<    <:    >>    $     $$    $:
