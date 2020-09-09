@@ -1020,6 +1020,31 @@ let timeout_function ?(verbose=false) timeoutval = fun f ->
         raise e
       end
 
+(* coupling: very similar to timeout_function above *)
+let timeout_function_float ?(verbose=false) timeoutval = fun f ->
+  try
+    Sys.set_signal Sys.sigalrm (Sys.Signal_handle (fun _ -> raise Timeout ));
+    Unix.setitimer Unix.ITIMER_REAL 
+        { Unix.it_value = timeoutval; it_interval = 0. } |> ignore;
+    let x = f () in
+    Unix.setitimer Unix.ITIMER_REAL { Unix.it_value = 0.; it_interval = 0. }
+        |> ignore;
+    x
+  with Timeout ->
+      if verbose then pr2 "timeout (we abort)";
+      raise Timeout;
+  | e ->
+     (* subtil: important to disable the alarm before relaunching the exn,
+      * otherwise the alarm is still running.
+      *
+      * robust?: and if alarm launched after the log (...) ?
+      * Maybe signals are disabled when process an exception handler ?
+      *)
+      Unix.setitimer Unix.ITIMER_REAL { Unix.it_value = 0.; it_interval = 0. }
+          |> ignore;
+      if verbose then pr2 "exn while in timeout_function";
+      raise e
+
 (* creation of tmp files, a la gcc *)
 
 let _temp_files_created = ref ([] : filename list)

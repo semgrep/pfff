@@ -405,7 +405,7 @@ val save_excursion : 'a ref -> 'a -> (unit -> 'b) -> 'b
 
 (*s: signature [[Common.memoized]] *)
 val memoized : 
-  ?use_cache:bool -> ('a, 'b) Hashtbl.t -> 'a -> (unit -> 'b) -> 'b
+   ?use_cache:bool -> ('a, 'b) Hashtbl.t -> 'a -> (unit -> 'b) -> 'b
 (*e: signature [[Common.memoized]] *)
 
 (*s: exception [[Common.UnixExit]] *)
@@ -416,10 +416,9 @@ exception UnixExit of int
 exception Timeout
 (*e: exception [[Common.Timeout]] *)
 (*s: signature [[Common.timeout_function]] *)
-val timeout_function :
-  ?verbose:bool ->
-  int -> (unit -> 'a) -> 'a
+val timeout_function: ?verbose:bool -> int -> (unit -> 'a) -> 'a
 (*e: signature [[Common.timeout_function]] *)
+val timeout_function_float :?verbose:bool -> float -> (unit -> 'a) -> 'a
 
 (*s: type [[Common.prof]] *)
 type prof = ProfAll | ProfNone | ProfSome of string list
