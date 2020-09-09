@@ -44,8 +44,19 @@ let invoke2 f x =
     (fun () -> v)
   (* child *)
   | 0 ->
+     (* bugfix: subtle: the parent may die (for example because of a Timeout), 
+      * which would generate a Sys_error "broken pipe" exn. This exn may
+      * not be captured by the inner try (maybe because
+      * the child didn't get a chance to run yet, or because it finished
+      * correctly but the exn got generated while inside the call to 
+      * Marshal.to_channel). In that case, without the outer try, the exn
+      * would bubble up and the exit() below would never be executed which 
+      * would cause the child to execute code after the caller of invoke.
+      *)
+     (try 
       Unix.close input;
       let output = Unix.out_channel_of_descr output in
+
       Marshal.to_channel output 
           (try `Res(f x) 
            with e -> 
@@ -57,7 +68,18 @@ let invoke2 f x =
               end;
              `Exn e
           ) [];
-      close_out output;
+       close_out output;
+
+      (* if it happens, it's probably a Sys_error "Broken pipe" *)
+      with 
+      | Sys_error _ ->
+        (* we always want to execute exit below, hence this catch all try
+         * which is the equivalence of Common.finalize ... (fun () exit 0)
+         *)
+        ()
+       | exn -> pr2 (spf "really unexpected exn in invoke child: %s"
+                     (Common.exn_to_s exn))
+       );
       exit 0
   (* parent *)
   | pid ->
