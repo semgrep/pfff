@@ -299,9 +299,10 @@ and stmt =
 and pattern = expr
 
 (*****************************************************************************)
-(* Types (typescript-ext:) *)
+(* Types *)
 (*****************************************************************************)
-(* simpler to reuse AST_generic *)
+(* typescript-ext:
+ * simpler to reuse AST_generic *)
 and type_ = AST_generic.type_
 
 (*****************************************************************************)
@@ -386,6 +387,7 @@ and class_ = {
     | Static
     (* todo? not in tree-sitter-js *)
     | Public | Private | Protected
+    (* typescript-ext: TODO Readonly *)
 
 (*****************************************************************************)
 (* Directives *)
