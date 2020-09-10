@@ -659,7 +659,7 @@ and xhp_body env = function
       )
   | C.XhpNested xml -> A.XmlXml (xhp_html env xml)
 
-and expr_opt env = Common.map_opt (expr env)
+and expr_opt env x = opt expr env x
 
 and literal _env = function
   | C.Bool x -> A.Bool x
@@ -939,15 +939,13 @@ and property env = function
    let pname = property_name env pname in
    let e = expr env e in
    let props = [] in
-   let ty = None in
-   A.Field {A.fld_name = pname; fld_props = props; fld_type = ty; 
+   A.Field {A.fld_name = pname; fld_props = props; fld_type = None; 
             fld_body =  Some e }
  | C.P_method x ->
     method_ env [] x
   | C.P_shorthand n ->
     let n = name env n in
-    let ty = None in
-    A.Field {A.fld_name = A.PN n; fld_props = []; fld_type = ty; 
+    A.Field {A.fld_name = A.PN n; fld_props = []; fld_type = None; 
              fld_body = Some (A.Id (n, not_resolved ())) }
   | C.P_spread (t, e) ->
     let e = expr env e in
@@ -995,13 +993,15 @@ and class_decl env x =
 
 and nominal_type env (e, _) = expr env e
 
+and static _env t = A.Static, t
+
 and class_element env = function
-  | C.C_field (fld, _) -> 
-    let pn = property_name env fld.C.fld_name in
-    let props = [] in (* TODO fld.fld_static *)
-    let e = init_opt env fld.C.fld_init in
-    let ty = None (* TODO: fld_type *) in
-    [A.Field {A.fld_name = pn; fld_props = props; fld_type = ty; fld_body = e}]
+  | C.C_field ({C.fld_name; fld_init; fld_type; fld_static}, _sc) -> 
+    let fld_name = property_name env fld_name in
+    let fld_props = opt static env fld_static |> opt_to_list in
+    let fld_body = init_opt env fld_init in
+    let fld_type = type_opt env fld_type in
+    [A.Field {A.fld_name; fld_props; fld_type; fld_body}]
   | C.C_method (static_opt, x) ->
     let props = 
       match static_opt with
