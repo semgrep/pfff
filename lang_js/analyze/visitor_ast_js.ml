@@ -248,12 +248,15 @@ and v_case =
 
 and v_resolved_name _ = ()
 
+
+
 and v_var { v_name = v_v_name; v_kind = v_v_kind; v_init = v_v_init; 
-            v_resolved = v_v_resolved } =
+            v_resolved = v_v_resolved; v_type = vt } =
   let arg = v_name v_v_name in
   let arg = v_wrap v_var_kind v_v_kind in 
   let arg = v_option v_expr v_v_init in 
   let arg = v_ref_do_not_visit v_resolved_name v_v_resolved in
+  v_option v_type_ vt;
   ()
 and v_var_kind = function | Var -> () | Let -> () | Const -> ()
 
@@ -272,10 +275,12 @@ and v_pattern x = v_expr x
 and v_parameter x =
  let k x = 
  match x with
- { p_name = v_p_name; p_default = v_p_default; p_dots = v_p_dots
-              } ->
-  let arg = v_name v_p_name in
-  let arg = v_option v_expr v_p_default in let arg = v_option v_tok v_p_dots in ()
+   { p_name = v_p_name; p_default = v_p_default; p_dots = v_p_dots; p_type } ->
+    let arg = v_name v_p_name in
+    let arg = v_option v_expr v_p_default in 
+    let arg = v_option v_tok v_p_dots in
+    v_option v_type_ p_type;
+    ()
   in
   vin.kparam (k, all_functions) x
 

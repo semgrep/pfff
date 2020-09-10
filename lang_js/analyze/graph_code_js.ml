@@ -322,7 +322,7 @@ and toplevels_entities_adjust_imports env xs =
 (* ---------------------------------------------------------------------- *)
 and toplevel env x =
   match x with
-  | VarDecl {v_name; v_kind; v_init; v_resolved} ->
+  | VarDecl {v_name; v_kind; v_init; v_resolved; v_type = _} ->
        name_expr env v_name v_kind v_init v_resolved
   | M x -> module_directive env x
 (*

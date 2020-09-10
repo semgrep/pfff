@@ -659,7 +659,7 @@ and xhp_body env = function
       )
   | C.XhpNested xml -> A.XmlXml (xhp_html env xml)
 
-and expr_opt env = Common.map_opt (expr env)
+and expr_opt env x = opt expr env x
 
 and literal _env = function
   | C.Bool x -> A.Bool x
@@ -751,20 +751,17 @@ and pattern env = function
      A.Obj (t1, xs |> C.uncomma |> List.map (function
       | C.PatId (n, None) -> 
          let n = name env n in
-         let ty = None in
-         A.Field {A.fld_name = A.PN n; fld_props = []; fld_type = ty;
+         A.Field {A.fld_name = A.PN n; fld_props = []; fld_type = None;
                   fld_body = Some (A.Id (n, not_resolved())) }
       | C.PatId (n, Some (_tok, init)) -> 
          let n = name env n in
          let init = expr env init in
-         let ty = None in
-         A.Field {A.fld_name = A.PN n; fld_props = []; fld_type = ty; 
+         A.Field {A.fld_name = A.PN n; fld_props = []; fld_type = None; 
                   fld_body = Some init }
       | C.PatProp (pname, _tok, pat) ->
          let pname = property_name env pname in
          let pat = pattern env pat in
-         let ty = None in
-         A.Field {A.fld_name = pname; fld_props = []; fld_type = ty; 
+         A.Field {A.fld_name = pname; fld_props = []; fld_type = None; 
                   fld_body = Some pat }
       | C.PatDots (t, pat) -> 
         let e = pattern env pat in
@@ -898,10 +895,15 @@ and parameter_pattern env
       let e = expr env e in
       A.Assign (pat, t, e)
 
-and parameter env p =
-  let name = name env p.C.p_name in
-  let d = default env p.C.p_default in
-  { A.p_name = name; p_default = d; p_dots = p.C.p_dots; p_type = None }
+
+
+
+
+and parameter env { C.p_name; p_default; p_dots; p_type } =
+  let p_name = name env p_name in
+  let p_default = default env p_default in
+  let p_type = type_opt env p_type in
+  { A.p_name; p_default; p_dots; p_type }
 
 and default env = function
   | None -> None
@@ -937,15 +939,13 @@ and property env = function
    let pname = property_name env pname in
    let e = expr env e in
    let props = [] in
-   let ty = None in
-   A.Field {A.fld_name = pname; fld_props = props; fld_type = ty; 
+   A.Field {A.fld_name = pname; fld_props = props; fld_type = None; 
             fld_body =  Some e }
  | C.P_method x ->
     method_ env [] x
   | C.P_shorthand n ->
     let n = name env n in
-    let ty = None in
-    A.Field {A.fld_name = A.PN n; fld_props = []; fld_type = ty; 
+    A.Field {A.fld_name = A.PN n; fld_props = []; fld_type = None; 
              fld_body = Some (A.Id (n, not_resolved ())) }
   | C.P_spread (t, e) ->
     let e = expr env e in
@@ -993,13 +993,15 @@ and class_decl env x =
 
 and nominal_type env (e, _) = expr env e
 
+and static _env t = A.Static, t
+
 and class_element env = function
-  | C.C_field (fld, _) -> 
-    let pn = property_name env fld.C.fld_name in
-    let props = [] in (* TODO fld.fld_static *)
-    let e = init_opt env fld.C.fld_init in
-    let ty = None (* TODO: fld_type *) in
-    [A.Field {A.fld_name = pn; fld_props = props; fld_type = ty; fld_body = e}]
+  | C.C_field ({C.fld_name; fld_init; fld_type; fld_static}, _sc) -> 
+    let fld_name = property_name env fld_name in
+    let fld_props = opt static env fld_static |> opt_to_list in
+    let fld_body = init_opt env fld_init in
+    let fld_type = type_opt env fld_type in
+    [A.Field {A.fld_name; fld_props; fld_type; fld_body}]
   | C.C_method (static_opt, x) ->
     let props = 
       match static_opt with

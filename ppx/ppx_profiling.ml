@@ -117,7 +117,7 @@ let mapper _config _cookies =
                   pvb_expr = body;
                   pvb_attributes = [ 
                      { attr_name = {txt = "profiling"; loc};
-                       attr_payload = PStr args;
+                       attr_payload = PStr args; attr_loc = _;
                      }
                    ];
                   pvb_loc = _;

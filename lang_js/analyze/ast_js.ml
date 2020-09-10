@@ -299,14 +299,19 @@ and stmt =
 and pattern = expr
 
 (*****************************************************************************)
-(* Types (typescript-ext:) *)
+(* Types *)
 (*****************************************************************************)
-(* simpler to reuse AST_generic *)
+(* typescript-ext:
+ * simpler to reuse AST_generic *)
 and type_ = AST_generic.type_
 
 (*****************************************************************************)
 (* Definitions *)
 (*****************************************************************************)
+(* TODO: rename 'var' to 'entity' to be close to AST_generic.
+ * TODO: put type parameters, attributes (keyword attr and decorator) in entity
+ *)
+
 and var = { 
   (* ugly: can be AST_generic.special_multivardef_pattern when
    * Ast_js_build.transpile_pattern is false with a vinit an Assign itself.
@@ -325,11 +330,15 @@ and var = {
 and fun_ = {
   f_props: fun_prop wrap list;
   f_params: parameter list;
+  (* TODO: f_rettype *)
   f_body: stmt;
 }
   and parameter =
    | ParamClassic of parameter_classic
-   (* transpiled: when Ast_js_build.transpile_pattern *)
+   (* transpiled: when Ast_js_build.transpile_pattern 
+    * TODO: can also have types and default, so factorize with 
+    * parameter_classic?
+    *)
    | ParamPattern of pattern
    (* sgrep-ext: *)
    | ParamEllipsis of tok
@@ -338,8 +347,9 @@ and fun_ = {
     p_default: expr option;
     p_type: type_ option;
     p_dots: tok option;
+    (* TODO: p_attrs: *)
   }
-  (* less: could transpile *)
+  (* todo: put in general keyword_attribute; less: could transpile *)
   and fun_prop = 
     | Generator | Async
     (* only inside classes *)
@@ -375,10 +385,12 @@ and class_ = {
     fld_type: type_ option;
     fld_body: expr option;
   }
+  (* todo: put in general keyword_attr *)
   and property_prop =
     | Static
     (* todo? not in tree-sitter-js *)
     | Public | Private | Protected
+    (* typescript-ext: TODO Readonly *)
 
 (*****************************************************************************)
 (* Directives *)

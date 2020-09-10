@@ -316,7 +316,7 @@ and for_header =
       let v2 = expr v2 in
       let pattern = 
         match v1 with
-        | Left {v_name = id; v_init = _NONE; v_resolved = _; v_kind = _ } -> 
+        | Left {v_name = id; v_init = _NONE; _ } -> 
             G.PatId (id, G.empty_id_info())
         | Right e ->
             let e = expr e in
@@ -327,7 +327,7 @@ and for_header =
       let v2 = expr v2 in
       let pattern = 
         match v1 with
-        | Left {v_name = id; v_init = _NONE; v_resolved = _; v_kind = _ } -> 
+        | Left {v_name = id; v_init = _NONE; _ } -> 
             G.PatId (id, G.empty_id_info())
         | Right e ->
             let e = expr e in
@@ -369,14 +369,15 @@ and def_of_var { v_name = x_name; v_kind = x_kind;
    )
 
 and var_of_var { v_name = x_name; v_kind = x_kind; 
-                 v_init = x_init; v_resolved = x_resolved } =
+                 v_init = x_init; v_resolved = x_resolved; v_type } =
   let v1 = name x_name in
   let v2 = var_kind x_kind in 
   let ent = G.basic_entity v1 [v2] in
   let v3 = option expr x_init in 
   let v4 = vref resolved_name x_resolved in
+  let v_type = option type_ v_type in
   ent.G.info.G.id_resolved := !v4;
-  ent, { G.vinit = v3; G.vtype = None }
+  ent, { G.vinit = v3; vtype = v_type }
 
 
 and var_kind (x, tok) =
@@ -402,12 +403,13 @@ and pattern x =
 
 and parameter x =
  match x with
- { p_name = p_name; p_default = p_default; p_dots = p_dots } ->
+ { p_name; p_default; p_dots; p_type } ->
   let v1 = name p_name in
-  let v2 = option expr p_default in 
+  let pdefault = option expr p_default in 
   let v3 = bool p_dots in
+  let ptype = option type_ p_type in
    { 
-    G.pname = Some v1; pdefault = v2; ptype = None;
+    G.pname = Some v1; pdefault; ptype;
     pattrs = (match v3 with None -> [] | Some tok -> [G.attr G.Variadic tok]);
     pinfo = G.empty_id_info ();
   }
