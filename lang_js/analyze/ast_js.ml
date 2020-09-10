@@ -335,7 +335,10 @@ and fun_ = {
 }
   and parameter =
    | ParamClassic of parameter_classic
-   (* transpiled: when Ast_js_build.transpile_pattern *)
+   (* transpiled: when Ast_js_build.transpile_pattern 
+    * TODO: can also have types and default, so factorize with 
+    * parameter_classic?
+    *)
    | ParamPattern of pattern
    (* sgrep-ext: *)
    | ParamEllipsis of tok
