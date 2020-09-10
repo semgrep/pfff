@@ -294,11 +294,11 @@ and v_type_ _x = ()
 and v_property x =
   (* tweak *)
   let k x =  match x with
-  | Field ((v1, v2, ty, v3)) ->
-      let v1 = v_property_name v1
-      and v2 = v_list (v_wrap v_property_prop) v2
-      and ty = v_option v_type_ ty
-      and v3 = v_option v_expr v3
+  | Field { fld_name; fld_props; fld_type; fld_body} ->
+      let v1 = v_property_name fld_name
+      and v2 = v_list (v_wrap v_property_prop) fld_props
+      and ty = v_option v_type_ fld_type
+      and v3 = v_option v_expr fld_body
       in ()
   | FieldSpread (t, v1) -> let t = v_tok t in let v1 = v_expr v1 in ()
   | FieldEllipsis v1 -> let v1 = v_tok v1 in ()

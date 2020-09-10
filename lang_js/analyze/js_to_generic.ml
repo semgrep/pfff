@@ -435,7 +435,7 @@ and class_ { c_extends = c_extends; c_body = c_body; c_tok } =
     cimplements = []; cmixins = []; cbody = v2;}, []
 and property x =
    match x with
-  | Field ((v1, v2, vt, v3)) ->
+  | Field {fld_name = v1; fld_props = v2; fld_type = vt; fld_body = v3} ->
       let v1 = property_name v1
       and v2 = list property_prop v2
       and vt = vt

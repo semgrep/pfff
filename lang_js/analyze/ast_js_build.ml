@@ -752,17 +752,20 @@ and pattern env = function
       | C.PatId (n, None) -> 
          let n = name env n in
          let ty = None in
-         A.Field (A.PN n, [], ty, Some (A.Id (n, not_resolved())))
+         A.Field {A.fld_name = A.PN n; fld_props = []; fld_type = ty;
+                  fld_body = Some (A.Id (n, not_resolved())) }
       | C.PatId (n, Some (_tok, init)) -> 
          let n = name env n in
          let init = expr env init in
          let ty = None in
-         A.Field (A.PN n, [], ty, Some init)
+         A.Field {A.fld_name = A.PN n; fld_props = []; fld_type = ty; 
+                  fld_body = Some init }
       | C.PatProp (pname, _tok, pat) ->
          let pname = property_name env pname in
          let pat = pattern env pat in
          let ty = None in
-         A.Field (pname, [], ty, Some pat)
+         A.Field {A.fld_name = pname; fld_props = []; fld_type = ty; 
+                  fld_body = Some pat }
       | C.PatDots (t, pat) -> 
         let e = pattern env pat in
         A.FieldSpread (t, e)
@@ -935,13 +938,15 @@ and property env = function
    let e = expr env e in
    let props = [] in
    let ty = None in
-   A.Field (pname, props, ty, Some e)
+   A.Field {A.fld_name = pname; fld_props = props; fld_type = ty; 
+            fld_body =  Some e }
  | C.P_method x ->
     method_ env [] x
   | C.P_shorthand n ->
     let n = name env n in
     let ty = None in
-    A.Field (A.PN n, [], ty, Some (A.Id (n, not_resolved ())))
+    A.Field {A.fld_name = A.PN n; fld_props = []; fld_type = ty; 
+             fld_body = Some (A.Id (n, not_resolved ())) }
   | C.P_spread (t, e) ->
     let e = expr env e in
     A.FieldSpread (t, e)
@@ -958,8 +963,7 @@ and _array_obj env idx tok xs =
     | Left e ->
       let n = A.PN (string_of_int idx, tok) in
       let e = expr env e in
-      let ty = None in
-      let elt = A.Field (n, [], ty, Some e) in
+      let elt = A.Field (A.mk_field n (Some e)) in
       elt::_array_obj env idx tok xs
     )
 
@@ -995,7 +999,7 @@ and class_element env = function
     let props = [] in (* TODO fld.fld_static *)
     let e = init_opt env fld.C.fld_init in
     let ty = None (* TODO: fld_type *) in
-    [A.Field (pn, props, ty, e)]
+    [A.Field {A.fld_name = pn; fld_props = props; fld_type = ty; fld_body = e}]
   | C.C_method (static_opt, x) ->
     let props = 
       match static_opt with
@@ -1022,7 +1026,8 @@ and method_ env props x =
   in
   let fun_ = { fun_ with A.f_props = fprops @ fun_.A.f_props } in
   let ty = None in
-  A.Field (pname, props, ty, Some (A.Fun (fun_, None)))
+  A.Field {A.fld_name = pname; fld_props = props; fld_type = ty;
+           fld_body = Some (A.Fun (fun_, None)) }
 
 (* ------------------------------------------------------------------------- *)
 (* Misc *)

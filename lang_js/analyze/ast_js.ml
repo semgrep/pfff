@@ -16,7 +16,7 @@
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* A (real) Abstract Syntax Tree for Javascript and (partially) Typescript,
+(* An Abstract Syntax Tree for Javascript and (partially) Typescript,
  * not a Concrete Syntax Tree as in cst_js.ml.
  * 
  * This file contains a simplified Javascript AST. The original
@@ -43,9 +43,10 @@
  *  - no func vs method vs arrow, just fun_
  *  - no class elements vs object elements
  *  - No Nop (EmptyStmt); transformed in an empty Block,
- *  - no patterns (they are transpiled, see transpile_js.ml, unless
- *    Ast_js_build.transpile_pattern is false)
- *  - no JSX (see transpile_js.ml, unless Ast_js_build.transpile_xml is false)
+ *  - optional pattern transpilation in transpile_js.ml
+ *    (see Ast_js_build.transpile_pattern)
+ *  - optional JSX transpilation
+ *    (se Ast_js_build.transpile_xml)
  *  - no ForOf (see transpile_js.ml)
  *  - no ExportDefaultDecl, ExportDefaultExpr, just unsugared in
  *    separate variable declarations and an Export name
@@ -258,10 +259,10 @@ and stmt =
   | Try of tok * stmt * catch option * (tok * stmt) option
   | With of tok * expr * stmt
 
-  (* less: ModuleDirective of module_directive 
-   * ES6 modules can appear only at the toplevel
-  *  but CommonJS require() can be inside ifs
-  *)
+  (* ES6 modules can appear only at the toplevel,
+   * but CommonJS require() can be inside ifs 
+   * and tree-sitter-js accept directives there too.
+   *)
   | M of module_directive
 
   (* less: could use some Special instead? *)
@@ -357,8 +358,7 @@ and class_ = {
      * None is possible only for class fields. For object there is
      * always a value.
      *)
-    | Field of property_name * property_prop wrap list * type_ option * 
-               expr option
+    | Field of field_classic
     (* less: can unsugar? *)
     | FieldSpread of tok * expr
     (* This is present only when in pattern context.
@@ -369,6 +369,12 @@ and class_ = {
     (* sgrep-ext: used for {fld1: 1, ... } which is distinct from spreading *)
     | FieldEllipsis of tok
 
+  and field_classic = {
+    fld_name: property_name;
+    fld_props: property_prop wrap list;
+    fld_type: type_ option;
+    fld_body: expr option;
+  }
   and property_prop =
     | Static
     (* todo? not in tree-sitter-js *)
@@ -451,6 +457,9 @@ and string_of_xhp_tag s = s
 let mk_const_var id e = 
   { v_name = id; v_kind = Const, (snd id); v_init = Some e; v_type = None;
     v_resolved = ref NotResolved }
+
+let mk_field name body = 
+  { fld_name = name; fld_body = body; fld_props = []; fld_type = None }
 
 (* helpers used in ast_js_build.ml and Parse_javascript_tree_sitter.ml *)
 let var_pattern_to_var vkind pat tok init_opt = 
