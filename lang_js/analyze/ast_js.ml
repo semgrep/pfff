@@ -308,7 +308,7 @@ and type_ = AST_generic.type_
 (* Definitions *)
 (*****************************************************************************)
 (* TODO: rename 'var' to 'entity' to be close to AST_generic.
- * TODO: put type parameters, decorators in entity
+ * TODO: put type parameters, attributes (keyword attr and decorator) in entity
  *)
 
 and var = { 
@@ -343,8 +343,9 @@ and fun_ = {
     p_default: expr option;
     p_type: type_ option;
     p_dots: tok option;
+    (* TODO: p_attrs: *)
   }
-  (* less: could transpile *)
+  (* todo: put in general keyword_attribute; less: could transpile *)
   and fun_prop = 
     | Generator | Async
     (* only inside classes *)
@@ -380,6 +381,7 @@ and class_ = {
     fld_type: type_ option;
     fld_body: expr option;
   }
+  (* todo: put in general keyword_attr *)
   and property_prop =
     | Static
     (* todo? not in tree-sitter-js *)
