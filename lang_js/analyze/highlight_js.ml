@@ -78,7 +78,7 @@ let visit_program ~tag_hook _prefs (cst, toks) =
   let visitor = Visitor_ast_js.mk_visitor { Visitor_ast_js.default_visitor with
      Visitor_ast_js.ktop = (fun (k, _) t ->
        (match t with
-       | VarDecl {v_name = name; v_kind; v_init; v_resolved = _resolved } ->
+       | VarDecl {v_name = name; v_kind; v_init; v_resolved = _resolved; _ } ->
            let kind = Graph_code_js.kind_of_expr_opt v_kind v_init in
            tag_name name (Entity (kind, (Def2 fake_no_def2)));
        | _ -> ()
