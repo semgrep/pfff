@@ -751,20 +751,17 @@ and pattern env = function
      A.Obj (t1, xs |> C.uncomma |> List.map (function
       | C.PatId (n, None) -> 
          let n = name env n in
-         let ty = None in
-         A.Field {A.fld_name = A.PN n; fld_props = []; fld_type = ty;
+         A.Field {A.fld_name = A.PN n; fld_props = []; fld_type = None;
                   fld_body = Some (A.Id (n, not_resolved())) }
       | C.PatId (n, Some (_tok, init)) -> 
          let n = name env n in
          let init = expr env init in
-         let ty = None in
-         A.Field {A.fld_name = A.PN n; fld_props = []; fld_type = ty; 
+         A.Field {A.fld_name = A.PN n; fld_props = []; fld_type = None; 
                   fld_body = Some init }
       | C.PatProp (pname, _tok, pat) ->
          let pname = property_name env pname in
          let pat = pattern env pat in
-         let ty = None in
-         A.Field {A.fld_name = pname; fld_props = []; fld_type = ty; 
+         A.Field {A.fld_name = pname; fld_props = []; fld_type = None; 
                   fld_body = Some pat }
       | C.PatDots (t, pat) -> 
         let e = pattern env pat in
@@ -898,10 +895,15 @@ and parameter_pattern env
       let e = expr env e in
       A.Assign (pat, t, e)
 
-and parameter env p =
-  let name = name env p.C.p_name in
-  let d = default env p.C.p_default in
-  { A.p_name = name; p_default = d; p_dots = p.C.p_dots; p_type = None }
+
+
+
+
+and parameter env { C.p_name; p_default; p_dots; p_type } =
+  let p_name = name env p_name in
+  let p_default = default env p_default in
+  let p_type = type_opt env p_type in
+  { A.p_name; p_default; p_dots; p_type }
 
 and default env = function
   | None -> None
