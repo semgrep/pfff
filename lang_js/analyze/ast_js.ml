@@ -307,6 +307,10 @@ and type_ = AST_generic.type_
 (*****************************************************************************)
 (* Definitions *)
 (*****************************************************************************)
+(* TODO: rename 'var' to 'entity' to be close to AST_generic.
+ * TODO: put type parameters, decorators in entity
+ *)
+
 and var = { 
   (* ugly: can be AST_generic.special_multivardef_pattern when
    * Ast_js_build.transpile_pattern is false with a vinit an Assign itself.
@@ -325,6 +329,7 @@ and var = {
 and fun_ = {
   f_props: fun_prop wrap list;
   f_params: parameter list;
+  (* TODO: f_rettype *)
   f_body: stmt;
 }
   and parameter =
