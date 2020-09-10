@@ -611,7 +611,7 @@ and class_ env c =
   List.iter (property env) (unbracket c.c_body)
 
 and property env = function
-  | Field (pname, _props, _ty, e) ->
+  | Field {fld_name = pname; fld_body = e; _} ->
      property_name env pname;
      option (expr env) e
   | FieldSpread (_, e) ->

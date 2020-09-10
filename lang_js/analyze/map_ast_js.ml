@@ -356,14 +356,18 @@ and map_class_ { c_extends = v_c_extends; c_body = v_c_body; c_tok } =
   let v_c_extends = map_of_option map_expr v_c_extends in 
   let c_tok = map_tok c_tok in
   { c_extends = v_c_extends; c_body = v_c_body; c_tok }
+
+and map_field_classic { fld_name; fld_props; fld_type; fld_body} =
+      let fld_name = map_property_name fld_name
+      and fld_props = map_of_list (map_wrap map_property_prop) fld_props
+      and fld_type = map_of_option map_type_ fld_type
+      and fld_body = map_of_option map_expr fld_body
+      in 
+      { fld_name; fld_props; fld_type; fld_body}
+
 and map_property =
   function
-  | Field ((v1, v2, vt, v3)) ->
-      let v1 = map_property_name v1
-      and v2 = map_of_list (map_wrap map_property_prop) v2
-      and vt = map_of_option map_type_ vt
-      and v3 = map_of_option map_expr v3
-      in Field ((v1, v2, vt, v3))
+  | Field v -> let v = map_field_classic v in Field v
   | FieldSpread (t, v1) -> 
       let t = map_tok t in let v1 = map_expr v1 in FieldSpread ((t, v1))
   | FieldEllipsis v1 ->
