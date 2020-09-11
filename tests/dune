@@ -1,9 +1,8 @@
 (test
  (name Test)
  (libraries 
-    bigarray
-    threads          ;; needed for json-wheel (Condition?)
-    json-wheel       ;; Json_io, Json_type
+    bigarray str
+    yojson
     dyp
     ppx_deriving.runtime
     uutf uucp

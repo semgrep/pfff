@@ -14,7 +14,7 @@
  *)
 
 module G = Graph_code
-module J = Json_type
+module J = JSON
 
 (*****************************************************************************)
 (* Prelude *)

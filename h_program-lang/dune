@@ -3,7 +3,7 @@
  (name pfff_h_program_lang)
  (wrapped false)
  (libraries
-   json-wheel uucp uutf ounit2
+   yojson uucp uutf ounit2
 
    commons
    pfff-h_files-format

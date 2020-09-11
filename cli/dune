@@ -1,9 +1,8 @@
 (executables
  (names Main)
  (libraries
-    bigarray
-    threads          ;; needed for json-wheel (Condition?)
-    json-wheel       ;; Json_io, Json_type
+    str unix bigarray
+    yojson
 
     commons commons_core commons_ocollection
     pfff-config
