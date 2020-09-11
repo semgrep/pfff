@@ -54,13 +54,13 @@ fi
 eval $(opam env)
 
 packages="
-  conf-perl
   grain_dypgen
   json-wheel
   menhir
   ocamlgraph
   ppx_deriving
   uucp uutf
+  ounit2
 "
 
 # The docker images from the ocaml community ship with a stale (file://...)
