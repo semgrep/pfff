@@ -11,6 +11,9 @@ install:
 check:
 	docker run --rm -v "${PWD}:/src" returntocorp/semgrep:develop --config semgrep.yml --exclude parsing_errors --exclude todo --exclude TODO_more --exclude _build --strict
 
+check2:
+	codecheck -with_graph_code graph_code.marshall -lang ml -filter 3 .
+
 
 visual:
 	codemap -screen_size 3 -filter pfff -efuns_client efunsclient -emacs_client /dev/null .
@@ -18,6 +21,8 @@ loc:
 	codemap -no_legend -profile -screen_size 3 -filter pfff -test_loc .
 index:
 	codegraph_build -lang cmt -derived_data .
+
+graph: index
 
 .PHONY: all clean install test dump
 
