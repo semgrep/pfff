@@ -31,6 +31,7 @@ install: [
 ]
 depends: [
   "ocaml" {>= "4.07.0"}
+  "dune"
   "ocamlgraph"
   "yojson"
   "menhir"
