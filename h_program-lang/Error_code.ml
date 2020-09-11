@@ -532,6 +532,6 @@ let compare_actual_to_expected actual_errors expected_error_lines =
             ) |> string_of_error));
   );
   OUnit.assert_bool
-    ~msg:(spf "it should find all reported errors and no more (%d errors)"
+    (spf "it should find all reported errors and no more (%d errors)"
              (List.length (only_in_actual @ only_in_expected)))
     (null only_in_expected && null only_in_actual)
