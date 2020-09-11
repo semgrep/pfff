@@ -1,7 +1,7 @@
 (test
  (name Test)
  (libraries 
-    str
+    bigarray str
     yojson
     dyp
     ppx_deriving.runtime

@@ -1,7 +1,8 @@
 (executables
  (names Main)
  (libraries
-    str unix yojson
+    str unix bigarray
+    yojson
 
     commons commons_core commons_ocollection
     pfff-config
