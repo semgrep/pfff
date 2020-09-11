@@ -2,7 +2,7 @@ open Common
 
 module Flag = Flag_parsing
 
-module J = Json_type
+module J = JSON
 module PI = Parse_info
 
 (*****************************************************************************)
@@ -170,7 +170,7 @@ let parse_js_r2c xs =
     ))
   in
   let json = J.Object ["results", json] in
-  let s = Json_io.string_of_json json in
+  let s = J.string_of_json json in
   pr s
 
 (*****************************************************************************)

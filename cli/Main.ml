@@ -4,6 +4,7 @@
  * appearing just here.
  *)
 open Common
+module J = JSON
 
 (*****************************************************************************)
 (* Purpose *)
@@ -53,8 +54,8 @@ let main_action _xs =
 
 (*s: function [[Main.test_json_pretty_printer]] *)
 let test_json_pretty_printer file =
-  let json = Json_io.load_json file in
-  let s = Json_io.string_of_json json in
+  let json = J.load_json file in
+  let s = J.string_of_json json in
   pr s
 (*e: function [[Main.test_json_pretty_printer]] *)
 

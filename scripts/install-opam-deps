@@ -55,7 +55,7 @@ eval $(opam env)
 
 packages="
   grain_dypgen
-  json-wheel
+  yojson
   menhir
   ocamlgraph
   ppx_deriving

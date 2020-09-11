@@ -11,7 +11,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
  *)
-module J = Json_type
+module J = JSON
 module PI = Parse_info
 module E = Error_code
 
@@ -69,5 +69,5 @@ let error_to_json err =
 let string_of_errors errs =
   let arr = J.Array (errs |> List.map (error_to_json)) in
   let json = J.Object ["results", arr] in
-  Json_io.string_of_json json
+  J.string_of_json json
 

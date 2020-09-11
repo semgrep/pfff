@@ -13,9 +13,7 @@
  * license.txt for more details.
  *)
 open Common
-
-module Json_out = Json_io
-module Json_in = Json_io
+module J = JSON
 
 (*****************************************************************************)
 (* Prelude *)
@@ -369,7 +367,7 @@ let record_check_extra_fields = ref true
 
 module OCamlx = struct
 open OCaml
-module J = Json_type
+module J = JSON
 
 (*
 let stag_incorrect_n_args _loc tag _v = 
@@ -434,7 +432,7 @@ let rec json_of_v v =
  * Assumes the json was generated via 'ocamltarzan -choice json_of', which
  * have certain conventions on how to encode variants for instance.
  *)
-let rec (v_of_json: Json_type.json_type -> v) = fun j ->
+let rec (v_of_json: J.t -> v) = fun j ->
   match j with
   | J.String s -> VString s
   | J.Int i -> VInt i
@@ -469,7 +467,7 @@ let rec (v_of_json: Json_type.json_type -> v) = fun j ->
       ))
 
 let save_json file json = 
-  let s = Json_out.string_of_json json in
+  let s = J.string_of_json json in
   Common.write_file ~file s
 
 end
@@ -656,7 +654,7 @@ let layer_of_json json =
 let load_layer file =
   (* pr2 (spf "loading layer: %s" file); *)
   if File_type.is_json_filename file
-  then Json_in.load_json file |> layer_of_json
+  then J.load_json file |> layer_of_json
   else Common2.get_value file
 
 let save_layer layer file =

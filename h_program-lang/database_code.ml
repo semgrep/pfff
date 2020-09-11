@@ -15,7 +15,7 @@
 open Common
 
 open Entity_code
-module J = Json_type
+module J = JSON
 module HC = Highlight_code
 
 (*****************************************************************************)
@@ -342,7 +342,7 @@ let load_database2 file =
      *)
     let json = 
       Common.profile_code "Json_in.load_json" (fun () ->
-        Json_io.load_json file
+        J.load_json file
       ) in
     database_of_json json
   else Common2.get_value file
@@ -360,7 +360,7 @@ let save_database database file =
   if File_type.is_json_filename file
   then
     database |> json_of_database 
-    |> Json_io.string_of_json ~compact:false ~recursive:false ~allow_nan:true
+    |> J.string_of_json ~compact:false ~recursive:false ~allow_nan:true
     |> Common.write_file ~file
   else Common2.write_value database file
 

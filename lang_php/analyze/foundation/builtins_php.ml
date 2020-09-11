@@ -17,8 +17,7 @@
 (*e: Facebook copyright *)
 open Common 
 
-module J = Json_type
-module Json_in = Json_io
+module J = JSON
 
 (*****************************************************************************)
 (* Prelude *)
@@ -370,7 +369,7 @@ let generate_builtins idlfile pr_hook =
   pr_hook "<?hh     /* -*- php -*- */";
   pr_hook special_comment;
 
-  let json = Json_in.load_json idlfile in
+  let json = J.load_json idlfile in
   match json with
   | J.Object [
     "preamble", _;

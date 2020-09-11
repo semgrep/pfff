@@ -13,7 +13,7 @@
  * license.txt for more details.
  *)
 open Common
-module J = Json_type
+module J = JSON
 
 (*****************************************************************************)
 (* Prelude *)
@@ -88,7 +88,7 @@ let resolve_path ~root ~pwd str =
     (try
       let package_json = 
         package_json_candidates |> List.find Sys.file_exists in
-      let json = Json_io.load_json package_json in
+      let json = J.load_json package_json in
       let main_path = main_entry_of_package_json package_json json in
       let dir = Filename.dirname package_json in
       let file = Filename.concat dir main_path in

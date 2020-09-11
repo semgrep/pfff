@@ -5,6 +5,7 @@
 open Common
 
 open OUnit 
+module J = JSON
 
 (*****************************************************************************)
 (* Purpose *)
@@ -148,14 +149,14 @@ let action1 () =
 
 
 let test_json_pretty_printer file =
-  let json = Json_io.load_json file in
-  let s = Json_io.string_of_json json in
+  let json = J.load_json file in
+  let s = J.string_of_json json in
   pr s
 
 let test_json_bench file =
   Common.profile_code "json_bench" (fun () ->
     pr2 (Common2.memory_stat ());
-    let _json = Json_io.load_json file in
+    let _json = J.load_json file in
     pr2 (Common2.memory_stat ());
   )
 

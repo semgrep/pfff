@@ -3,7 +3,7 @@
  (name pfff_h_visualization)
  (wrapped false)
  (libraries
-   json-wheel ocamlgraph
+   yojson ocamlgraph
 
    commons
    pfff-h_files-format pfff-commons-graph

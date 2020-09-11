@@ -1,8 +1,7 @@
 open Common
 
+module J = JSON
 module Db = Database_code
-
-module Json_out = Json_io
 
 (*****************************************************************************)
 (* Helpers *)
@@ -52,7 +51,7 @@ let test_big_grep file =
 let test_layer file =
   let layer = Layer_code.load_layer file in
   let json = Layer_code.json_of_layer layer in
-  let s = Json_out.string_of_json json in
+  let s = J.string_of_json json in
   pr2 s
 
 let layer_stat file =

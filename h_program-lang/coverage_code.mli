@@ -11,11 +11,11 @@ type lines_coverage = (Common.filename, file_lines_coverage) Common.assoc
  }
 
 (* input/output *)
-val json_of_tests_coverage: tests_coverage -> Json_type.json_type
-val json_of_lines_coverage: lines_coverage -> Json_type.json_type
+val json_of_tests_coverage: tests_coverage -> JSON.t
+val json_of_lines_coverage: lines_coverage -> JSON.t
 
-val tests_coverage_of_json: Json_type.json_type -> tests_coverage
-val lines_coverage_of_json: Json_type.json_type -> lines_coverage
+val tests_coverage_of_json: JSON.t -> tests_coverage
+val lines_coverage_of_json: JSON.t -> lines_coverage
 
 (* shortcuts *)
 val save_tests_coverage: tests_coverage -> Common.filename -> unit
