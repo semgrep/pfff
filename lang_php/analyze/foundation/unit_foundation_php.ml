@@ -227,11 +227,11 @@ let tags_unittest =
           Tags_php.php_defs_of_files_or_dirs ~verbose:false [tmpfile] in
         let all_tags = tags |> List.map snd |> List.flatten in
         assert_bool
-          ~msg:"it should contain an entry for the :x:... classname form"
+          "it should contain an entry for the :x:... classname form"
           (all_tags |> List.exists (fun t ->
             t.Tags_file.tagname =$= ":x:foo"));
         assert_bool
-          ~msg:"it should contain an entry for the x:... classname form"
+          "it should contain an entry for the x:... classname form"
           (all_tags |> List.exists (fun t ->
             t.Tags_file.tagname =$= "x:foo"));
       );
@@ -312,7 +312,7 @@ function test_useA() {
 
       let xs = Common2.unix_diff logfile expected_logfile in
       assert_bool
-        ~msg:("it should generate the right errors in pfff_test.log, diff = "^
+        ("it should generate the right errors in pfff_test.log, diff = "^
                  (Common.join "\n" xs))
         (null xs);
 

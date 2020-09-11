@@ -439,7 +439,7 @@ function foo(): int {
 }
 "in
       let xs = prolog_query ~header:"<?hh\n" ~file "hh(X,_), writeln(X)" in
-      assert_bool ~msg:"it should recognize hh files"
+      assert_bool "it should recognize hh files"
         (match xs with
         | [f] -> f =~ "/tmp/.*"
         | _ -> false

@@ -123,7 +123,7 @@ let unittest =
             ) |> Error_php.string_of_error));
   );
   assert_bool
-    ~msg:(spf "it should find all reported errors and no more (%d errors)"
+    (spf "it should find all reported errors and no more (%d errors)"
              (List.length (only_in_actual @ only_in_expected)))
     (null only_in_expected && null only_in_actual);
   )
