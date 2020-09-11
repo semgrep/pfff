@@ -34,6 +34,10 @@ let load_json file =
   let y = Y.from_file file in
   from_yojson y
 
+let json_of_string str = 
+  let y = Y.from_string str in
+  from_yojson y
+  
 
 let string_of_json ?compact ?recursive ?allow_nan json =
   ignore(compact, recursive, allow_nan);
