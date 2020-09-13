@@ -18,9 +18,6 @@ module Flag = Flag_parsing
 module E = Entity_code
 module G = Graph_code
 
-open Cst_ml
-module V = Visitor_ml
-
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -161,7 +158,8 @@ let extract_uses ~g ~ast ~readable ~dupes =
                    (fst target) readable)
     end
   in
-    
+
+(* TODO: use Visitor_AST.ml from ml_to_generic?   
   let visitor = V.mk_visitor { V.default_visitor with
     (* todo? does it cover all use cases of modules ? maybe need
      * to introduce a kmodule_name_ref helper in the visitor
@@ -192,6 +190,10 @@ let extract_uses ~g ~ast ~readable ~dupes =
     );
   } in
   visitor (Program ast);
+*)
+  ignore ast;
+  ignore(add_edge_if_existing_module);
+  let _ = raise Todo in
   ()
 
 (*****************************************************************************)

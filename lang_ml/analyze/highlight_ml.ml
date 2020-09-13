@@ -14,14 +14,14 @@
  *)
 open Common
 
-open Cst_ml
-module Ast = Cst_ml
+open Ast_ml
 open Highlight_code
-module V = Visitor_ml
 module PI = Parse_info
 module T = Parser_ml
 open Entity_code 
-module E = Entity_code
+(*module E = Entity_code*)
+
+module Ast = Ast_ml
 
 (*****************************************************************************)
 (* Prelude *)
@@ -70,25 +70,29 @@ let disable_token_phase2 = false
 (* AST helpers *)
 (*****************************************************************************)
 
-let kind_of_body x =
+let _kind_of_body x =
   let def2 = Def2 fake_no_def2 in
-  match Ast.uncomma x with
-  | (Ast.Fun _ | Ast.Function _)::_xs -> Entity (Function, def2)
-  | Ast.FunCallSimple (([], Name("ref", _)), _)::_xs -> Entity (Global, def2)
-  | Ast.FunCallSimple (([Name("Hashtbl",_),_], Name("create", _)), _)::_xs -> 
+  match x with
+  | (Fun _ | Ast.Function _)::_xs -> Entity (Function, def2)
+(* TODO
+  | Call (([], Name("ref", _)), _)::_xs -> Entity (Global, def2)
+  | Call (([Name("Hashtbl",_),_], Name("create", _)), _)::_xs -> 
       Entity (Global, def2)
+*)
   | _ -> Entity (Constant, def2)
 
 (* todo: actually it can be a typedef alias to a function too
  * but this would require some analysis
  *)
-let kind_of_ty ty =
+let _kind_of_ty ty =
   let def2 = Def2 fake_no_def2 in
   match ty with
   | TyFunction _ -> (FunctionDecl NoUse)
+(* TODO
   | TyApp (_, ([], Name("ref", _))) -> Entity (Global, def2)
   (* todo: should handle module aliases there too *)
   | TyApp (_, ([Name("Hashtbl",_), _], Name("t", _))) -> Entity (Global, def2)
+*)
   | _ -> Entity (Constant, def2)
 
 (*****************************************************************************)
@@ -102,7 +106,7 @@ let kind_of_ty ty =
  *)
 let visit_program
  ?(lexer_based_tagger=false)
- ~tag_hook _prefs  (*db_opt *) (ast, toks) =
+ ~tag_hook _prefs  (*db_opt *) (_ast, toks) =
 
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->
@@ -118,9 +122,10 @@ let visit_program
   (* try to better colorize identifiers which can be many different things
    * e.g. a field, a type, a function, a parameter, etc
    *)
-  let in_let = ref false in
-  let in_try_with = ref false in
+  let _in_let = ref false in
+  let _in_try_with = ref false in
 
+(* TODO use Visitor_AST. from ml_to_generic
   let v = V.mk_visitor { V.default_visitor with
 
     V.kitem = (fun (k, _) x ->
@@ -355,6 +360,7 @@ let visit_program
   }
   in
   v (Program ast);
+  *)
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 1 (sequence of tokens) *)

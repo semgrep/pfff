@@ -74,8 +74,7 @@ let parse_with_lang lang file =
      *)
     Go_to_generic.program ast
   | Lang.OCaml ->
-     let cst = Parse_ml.parse_program file in
-     let ast = Ast_ml_build.program cst in
+     let ast = Parse_ml.parse_program file in
      Ml_to_generic.program ast
   | Lang.Ruby ->
       let ast = Parse_ruby.parse_program file in
@@ -122,9 +121,8 @@ let parse_pattern lang str =
       let any = Parse_go.any_of_string str in
       Go_to_generic.any any
   | Lang.OCaml -> 
-      let any_cst = Parse_ml.any_of_string str in
-      let any_ast = Ast_ml_build.any any_cst in
-      Ml_to_generic.any any_ast
+      let any = Parse_ml.any_of_string str in
+      Ml_to_generic.any any
   | Lang.Ruby ->
       let any = Parse_ruby.any_of_string str in
       Ruby_to_generic.any any

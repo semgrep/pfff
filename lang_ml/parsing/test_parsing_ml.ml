@@ -42,7 +42,7 @@ let test_parse_ml_or_mli xs =
 
 let test_show_ml file =
   let ast = Parse_ml.parse_program file in
-  let s = Cst_ml.show_any (Cst_ml.Program ast) in
+  let s = Ast_ml.show_any (Ast_ml.Pr ast) in
   pr s
 
 (*****************************************************************************)
