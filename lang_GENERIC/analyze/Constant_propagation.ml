@@ -182,7 +182,7 @@ let propagate2 lang prog =
              try Hashtbl.find stats (Ast.str_of_ident id, sid)
              with Not_found -> raise Impossible
           in
-          if (!(stats.rvalue) = 1) &&
+          if (!(stats.lvalue) = 1) &&
              (* restrict to Python Globals for now, but could be extended *)
              lang = Lang.Python &&
              kind = Global
