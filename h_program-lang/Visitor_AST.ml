@@ -35,6 +35,7 @@ type visitor_in = {
   kattr: (attribute  -> unit) * visitor_out -> attribute  -> unit;
   kparam: (parameter  -> unit) * visitor_out -> parameter  -> unit;
   kident: (ident -> unit)  * visitor_out -> ident  -> unit;
+  kname: (name -> unit)  * visitor_out -> name  -> unit;
   kentity: (entity -> unit)  * visitor_out -> entity  -> unit;
   kstmts: (stmt list  -> unit) * visitor_out -> stmt list -> unit;
 
@@ -59,6 +60,7 @@ let default_visitor =
     kattr   = (fun (k,_) x -> k x);
     kparam   = (fun (k,_) x -> k x);
     kident   = (fun (k,_) x -> k x);
+    kname   = (fun (k,_) x -> k x);
     kentity   = (fun (k,_) x -> k x);
     kstmts   = (fun (k,_) x -> k x);
 
@@ -133,7 +135,14 @@ and v_resolved_name_kind =
   | TypeName -> ()
 
 
-and v_name (v1, v2) = let v1 = v_ident v1 and v2 = v_name_info v2 in ()
+and v_name x = 
+  let k x = 
+    let (v1, v2) = x in
+    let v1 = v_ident v1 
+    and v2 = v_name_info v2 in 
+    ()
+  in
+  vin.kname (k, all_functions) x
 
 and
   v_name_info {

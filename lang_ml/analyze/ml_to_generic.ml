@@ -175,16 +175,16 @@ and expr =
             G.DefStmt (ent, mk_var_or_func params expr)
          | Right (pat, e) ->
             let exp = G.LetPattern (pat, e) in
-            G.ExprStmt (exp, G.sc)
+            G.exprstmt exp
          )
       in
-      let st = G.Block (G.fake_bracket (defs @ [G.ExprStmt (v2, G.sc)])) in
+      let st = G.Block (G.fake_bracket (defs @ [G.exprstmt v2])) in
       G.OtherExpr (G.OE_StmtExpr, [G.S st])
   | Fun ((_t, v1, v2)) -> 
     let v1 = list parameter v1 
     and v2 = expr v2 in 
     let def = { G.fparams = v1; frettype = None; 
-                fbody = G.ExprStmt (v2, G.sc) } in
+                fbody = G.exprstmt v2 } in
     G.Lambda def
 (* TODO? use ParamPattern here? *)
   | Function (t, xs) ->
