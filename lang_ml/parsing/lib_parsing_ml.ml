@@ -14,7 +14,7 @@
  *)
 open Common
 
-module V = Visitor_ml
+(*module V = Visitor_ml*)
 
 (*****************************************************************************)
 (* Filemames *)
@@ -72,6 +72,8 @@ let find_cmt_files_of_dir_or_files xs =
 (* Extract infos *)
 (*****************************************************************************)
 
+(* convert to generic AST if you need to get tokens!
+
 let extract_info_visitor recursor = 
   let globals = ref [] in
   let hooks = { V.default_visitor with
@@ -85,3 +87,4 @@ let extract_info_visitor recursor =
 
 let ii_of_any any = 
   extract_info_visitor (fun visitor -> visitor any)
+*)

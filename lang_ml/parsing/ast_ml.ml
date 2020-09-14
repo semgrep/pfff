@@ -293,3 +293,5 @@ let info_of_ident (_,info) = info
 let ident_of_name (_, ident) = ident
 let qualifier_of_name (qu, _) = 
   qu |> List.map str_of_ident |> Common.join "."
+
+let name_of_id id = Name ([], id)

@@ -1,6 +1,7 @@
 (* Yoann Padioleau
  *
  * Copyright (C) 2010, 2013 Facebook
+ * Copyright (C) 2020 R2C
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -14,14 +15,13 @@
  *)
 open Common
 
-open Cst_ml
-module Ast = Cst_ml
 open Highlight_code
-module V = Visitor_ml
 module PI = Parse_info
 module T = Parser_ml
 open Entity_code 
 module E = Entity_code
+module G = AST_generic
+module V = Visitor_AST
 
 (*****************************************************************************)
 (* Prelude *)
@@ -63,7 +63,7 @@ let h_builtin_bool = Common.hashset_of_list [
 let fake_no_def2 = NoUse
 let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 
-(* set to true when want to debug the AST based tagger *)
+(* set to true when want to debug the AST-based tagger *)
 let disable_token_phase2 = false
 
 (*****************************************************************************)
@@ -72,10 +72,13 @@ let disable_token_phase2 = false
 
 let kind_of_body x =
   let def2 = Def2 fake_no_def2 in
-  match Ast.uncomma x with
-  | (Ast.Fun _ | Ast.Function _)::_xs -> Entity (Function, def2)
-  | Ast.FunCallSimple (([], Name("ref", _)), _)::_xs -> Entity (Global, def2)
-  | Ast.FunCallSimple (([Name("Hashtbl",_),_], Name("create", _)), _)::_xs -> 
+  match x with
+  | G.Lambda _ -> Entity (Function, def2)
+  | G.Call (G.IdQualified ((("ref", _), _nameinfo), _idinfo), _args) -> 
+     Entity (Global, def2)
+  | G.Call (G.IdQualified ((("create", _), 
+          { G.name_qualifier = Some (G.QDots ["Hashtbl", _]); _ }), _idinfo), 
+          _args) ->
       Entity (Global, def2)
   | _ -> Entity (Constant, def2)
 
@@ -85,11 +88,21 @@ let kind_of_body x =
 let kind_of_ty ty =
   let def2 = Def2 fake_no_def2 in
   match ty with
-  | TyFunction _ -> (FunctionDecl NoUse)
-  | TyApp (_, ([], Name("ref", _))) -> Entity (Global, def2)
+  | G.TyFun _ -> (FunctionDecl NoUse)
+  | G.TyNameApply ((("ref", _), _), _) -> Entity (Global, def2)
   (* todo: should handle module aliases there too *)
-  | TyApp (_, ([Name("Hashtbl",_), _], Name("t", _))) -> Entity (Global, def2)
+  | G.TyNameApply ((("t", _), 
+         { G.name_qualifier = Some (G.QDots ["Hashtbl", _]); _ }), _)->
+      Entity (Global, def2)
   | _ -> Entity (Constant, def2)
+
+let last_id xs = 
+  match List.rev xs with
+  | x::_xs -> x
+  | [] -> failwith "last_id: empty list of idents"
+
+let info_of_name ((_s, info), _nameinfo) = info
+let info_of_id (_s, info) = info
 
 (*****************************************************************************)
 (* Code highlighter *)
@@ -114,6 +127,8 @@ let visit_program
   (* -------------------------------------------------------------------- *)
   (* AST phase 1 *) 
   (* -------------------------------------------------------------------- *)
+  let gen = Ml_to_generic.program ast in
+  (* TODO: move this in h_program-lang/? to factorize code! *)
 
   (* try to better colorize identifiers which can be many different things
    * e.g. a field, a type, a function, a parameter, etc
@@ -123,47 +138,103 @@ let visit_program
 
   let v = V.mk_visitor { V.default_visitor with
 
-    V.kitem = (fun (k, _) x ->
-      (match x with
-      | Val (_tok, name, _tok2, ty) | External (_tok, name, _tok2, ty, _, _)  ->
-          let info = Ast.info_of_name name in
-          tag info (kind_of_ty ty)
-      | Ast.Exception (_tok, name, _args) ->
-          let info = Ast.info_of_name name in
+    V.kdef = (fun (k, _) x ->
+      let ({ G.name = (_s, info); _}, def) = x in
+      match def with
+      | G.Signature ty -> 
+          tag info (kind_of_ty ty);
+          k x
+
+      | G.ModuleDef { G.mbody = body } ->
+          tag info (Entity (E.Module, Def2 fake_no_def2));
+          (match body with
+          | G.ModuleAlias name ->
+            let info = info_of_name name in
+            tag info (Entity (Module, Use2 fake_no_use2));
+          | _ -> ()
+          );
+          k x
+
+      | G.TypeDef { G.tbody = G.Exception _ } ->
           tag info (Entity (E.Exception, Def2 fake_no_def2));
-      | Open (_tok, lname) ->
-          let info = Ast.info_of_name (Ast.name_of_long_name lname) in
-          tag info (Entity (Module, Use2 fake_no_use2));
-      | Ast.Module (_tok, uname, _tok2, _mod_expr) ->
-          let ii = Ast.info_of_name uname in
-          tag ii (Entity (Module, Def2 fake_no_def2));
-      | Let _ | Ast.Type _ | ItemTodo _ -> ()
+          k x
+      | G.TypeDef { G.tbody = kind } ->
+          tag info (Entity (E.Type, Def2 fake_no_def2));
+          (* todo: ty_params *)
+          (match kind with
+          | G.OrType xs ->
+            xs |> List.iter (function
+              | G.OrConstructor (id, _) ->
+                 let info = info_of_id id in
+                 tag info (Entity (Constructor, Def2 fake_no_def2)) 
+              | _ -> ()
+            )
+          | G.AndType (_, xs, _) ->
+            xs |> List.iter (function
+              | G.FieldStmt (G.DefStmt (ent, _)) ->
+                let id = ent.G.name in
+                let info = info_of_id id in
+                tag info (Entity (Field, (Def2 fake_no_def2)));
+              | _ ->  ()
+            );
+          | _ -> ()
+          );
+          k x
+
+       | G.VarDef { G.vinit = Some body; vtype = _ }  ->
+          (if not !in_let 
+           then tag info (kind_of_body body)
+           else tag info (Local Def)
+          );
+          Common.save_excursion in_let true (fun () ->
+            k x
+          )
+
+       | G.FuncDef _ -> 
+          (if not !in_let 
+          then tag info (Entity (Function, (Def2 NoUse)))
+          else tag info (Local Def)
+          );
+          Common.save_excursion in_let true (fun () ->
+            k x
+          )
+
+      | _ -> k x
+    );
+
+    V.kdir = (fun (k, _) x ->
+     (match x with 
+     | G.ImportAll (_, G.DottedName xs, _) ->
+        let info = snd (last_id xs) in
+        tag info (Entity (Module, Use2 fake_no_use2))
+     | _-> ()
+     );
+     k x
+    );
+
+    V.kname = (fun (k, _) x ->
+      let (_id, infos) = x in
+      (match infos.G.name_qualifier with
+      | Some (G.QDots xs) ->
+          xs |> List.iter (fun (_, ii) -> 
+           tag ii (Entity (Module, Use2 fake_no_use2))
+          )
+      | _ -> ()
       );
       k x
     );
 
-    V.kqualifier = (fun (_k, _bigf) qu ->
-      let module_infos = Ast.module_infos_of_long_name (qu, ()) in
-      module_infos |> List.iter (fun ii -> tag ii (Entity (Module, Use2 fake_no_use2)))
-    );
-    V.kmodule_expr = (fun (k, _bigf) mod_expr ->
-      (match mod_expr with
-      | ModuleName lname -> 
-          let info = Ast.info_of_name (Ast.name_of_long_name lname) in
-          tag info (Entity (Module, Use2 fake_no_use2));
-      | _ -> ()
-      );
-      k mod_expr
-    );
-    V.kparameter = (fun (k, _bigf) x ->
+    V.kparam = (fun (k, _) x ->
       (match x with
-      | ParamPat (PatVar name) ->
-        let info = Ast.info_of_name name in
+      | G.ParamPattern (G.PatId (id, _idinfo)) ->
+        let info = info_of_id id in
         tag info (Parameter Def);
-      | _ ->()
+      | _ -> ()
       );
       k x
     );
+
+(*
     V.kargument = (fun (k, _) x ->
       (match x with
       | ArgImplicitTildeExpr (_, name) -> 
@@ -175,22 +246,6 @@ let visit_program
       k x
     );
 
-    V.klet_binding = (fun (k, _bigf) x ->
-      match x with
-      | LetClassic let_def -> 
-          let name = let_def.l_name in
-          let info = Ast.info_of_name name in
-
-          (if not !in_let 
-           then
-              if List.length let_def.l_params > 0
-              then tag info (Entity (Function, (Def2 NoUse)))
-              else tag info (kind_of_body let_def.l_body)
-           else tag info (Local (Def))
-          );
-          Common.save_excursion in_let true (fun () ->
-            k x
-          )
       | LetPattern (pat, _tok, body) ->
           (match pat with
           | PatTyped (_, PatVar name, _, _ty, _) ->
@@ -204,11 +259,23 @@ let visit_program
             k x
           )
     );
+*)
 
-    V.kexpr = (fun (k, bigf) x ->
+    V.kstmt = (fun (k, _) x ->
       match x with
-      | L long_name ->
-          let info = Ast.info_of_name (Ast.name_of_long_name long_name) in
+      | G.Try (_try_tok, _e (*, tok_with*), _match_cases, _finally) ->
+          (*tag tok_with (KeywordExn); *)
+          (*k (Try (try_tok, e, tok_with, []));*)
+          Common.save_excursion in_try_with true (fun () ->
+            k x
+          )
+       | _ -> k x
+    );
+
+    V.kexpr = (fun (k, _) x ->
+      match x with
+      | G.IdQualified (name, _idinfo) ->
+          let info = info_of_name name in
           (* could have been tagged as a function name in the rule below *)
           if not (Hashtbl.mem already_tagged info)
           then begin 
@@ -219,19 +286,19 @@ let visit_program
             tag info (Local Use) 
           end;
           k x
+ 
+      | G.Call (G.IdQualified ((("=~", _), _nameinfo), _idinfo), 
+                (_, [_arg1; G.Arg (G.L (G.String (_, info)))], _)) ->
+          tag info Regexp;
+          k x
 
-      | FunCallSimple (long_name, _args) ->
-          let name = Ast.name_of_long_name long_name in
-          let info = Ast.info_of_name name in
-
-          let module_name = Ast.module_of_long_name long_name in
-          let module_infos = Ast.module_infos_of_long_name long_name in
-
-          let s = Ast.str_of_name name in
-          (match () with
+      | G.Call (G.IdQualified ((id, {G.name_qualifier = qu; _}), _idinfo), 
+                _args) ->
+          let (s, info) = id in
+          (match qu with
           | _ when s = "ref" -> tag info UseOfRef
-          | _ when Hashtbl.mem h_builtin_modules module_name ->
-              module_infos |> List.iter (fun ii -> tag ii BuiltinCommentColor);
+          | Some (G.QDots [s2, info2]) when Hashtbl.mem h_builtin_modules s2 ->
+              tag info2 BuiltinCommentColor;
               tag info Builtin;
           | _ ->
               tag info (Entity (Function, (Use2 fake_no_use2)));
@@ -239,37 +306,35 @@ let visit_program
           k x
 
       (* disambiguate "with" which can be used for match, try, or record *)
-      | Match (_match, _e1, tok_with, _match_cases) ->
-          tag tok_with (KeywordConditional);
+      | G.MatchPattern (_e1, (*tok_with,*) _match_cases) ->
+          (*tag tok_with (KeywordConditional); *)
           k x
 
-      | Try (try_tok, e, tok_with, match_cases) ->
-          tag tok_with (KeywordExn);
-          k (Try (try_tok, e, tok_with, []));
-          Common.save_excursion in_try_with true (fun () ->
-            match_cases |> Ast.unpipe |> List.iter (fun match_case ->
-              bigf (MatchCase match_case)
-            )
-          )
-
-      | FieldAccess (_e, _tok,long_name) | FieldAssign (_e,_tok,long_name,_,_)->
-          let info = Ast.info_of_name (Ast.name_of_long_name long_name) in
-          tag info (Entity (Field, (Use2 fake_no_use2)));
+      | G.DotAccess (_e, tok, (G.FId (id) | G.FName (id, _))) ->
+          let info = snd id in
+          (match PI.str_of_info tok with
+          | "#" -> tag info (Entity (Method, (Use2 fake_no_use2)))
+          | _ -> tag info (Entity (Field, (Use2 fake_no_use2)))
+          );
           k x
-
-      | ObjAccess (_e, _tok, name) ->
-          let info = Ast.info_of_name name in
-          tag info (Entity (Method, (Use2 fake_no_use2)));
-          k x
-
-      | Constr (long_name, _eopt) ->
-          let info = Ast.info_of_name (Ast.name_of_long_name long_name) in
+      | G.Constructor (name, _eopt) ->
+          let info = info_of_name name in
           tag info (Entity (Constructor,(Use2 fake_no_use2)));
           k x
 
-      (* very pad specific ... *)
-      | Infix (_l1, ("=~", _), C(Ast.String(_s, tok))) ->
-          tag tok Regexp;
+      | G.Record (_, xs, _) ->
+          xs |> List.iter (fun x ->
+            match x with
+            | G.FieldStmt (G.DefStmt (ent, _)) ->
+               let info = snd ent.G.name in
+               tag info (Entity (Field, (Use2 fake_no_use2)));
+            | _ -> ()
+          );
+          k x
+      (* coupling: with how record with qualified name in ml_to_generic.ml *)
+      | G.OtherExpr (G.OE_RecordFieldName, (G.N name)::_) ->
+          let info = info_of_name name in
+          tag info (Entity (Field, (Use2 fake_no_use2)));
           k x
 
       | _ -> k x
@@ -277,84 +342,46 @@ let visit_program
 
     V.kpattern = (fun (k, _) x ->
       (match x with
-      | PatConstr (long_name, _popt) ->
-          let info = Ast.info_of_name (Ast.name_of_long_name long_name) in
+      | G.PatConstructor ((id, _name_info), _popt) ->
+          let info = snd id in
           if !in_try_with 
           then tag info (KeywordExn)
           else tag info (ConstructorMatch fake_no_use2)
-      | PatVar name ->
-          let info = Ast.info_of_name name in
+      | G.PatId (id, _idinfo) ->
+          let info = info_of_id id in
           tag info (Parameter Def)
+      | G.PatRecord (_, xs, _) ->
+           xs |> List.iter (fun (name, _pat) ->
+             let info = info_of_name name in
+             tag info (Entity (Field, (Use2 fake_no_use2)));
+           )
+
       | _ -> ()
       );
       k x
     );
 
-    V.kty = (fun (k, _) t ->
+    V.ktype_ = (fun (k, _) t ->
       (match t with
-      | TyName long_name ->
-          let info = Ast.info_of_name (Ast.name_of_long_name long_name) in
-          tag info (Entity (Type, (Use2 fake_no_use2)));
-      | TyApp (_ty_args, long_name) ->
-          let name = Ast.name_of_long_name long_name in
-          let info = Ast.info_of_name name in
+      | G.TyName (name) ->
+          let info = info_of_name name in
+          tag info (Entity (Type, (Use2 fake_no_use2)))
+      | G.TyNameApply (name, _ty_args) ->
+          let info = info_of_name name in
           (* different color for higher-order types *)
           tag info TypeVoid;
           (* todo: ty_args *)
-      | TyVar (_tok, name) ->
-          let info = Ast.info_of_name name in
+      | G.TyVar id ->
+          let info = info_of_id id in
           tag info TypeVoid;
-          
-      | TyTuple _ | TyTuple2 _ | TyFunction _ | TyTodo _ | TyEllipsis _ -> ()
+      | _ -> ()
       );
       k t
     );
 
-    V.ktype_declaration = (fun (k, _) x ->
-      match x with
-      | TyDef (_ty_params, name, _tok, type_kind) ->
-          let info = Ast.info_of_name name in
-          tag info (Entity (E.Type, Def2 fake_no_def2));
-          (* todo: ty_params *)
-          (match type_kind with
-          | TyAlgebric xs ->
-              xs |> Ast.unpipe |> List.iter (fun (name, _args) ->
-                let info = Ast.info_of_name name in
-                tag info (Entity (Constructor, Def2 fake_no_def2))
-              );
-          | TyCore _ | TyRecord _ -> ()
-          );
-          k x
-          
-      | TyAbstract _ ->
-          k x
-    );
-
-    V.kfield_decl = (fun (k, _) fld ->
-      let info = Ast.info_of_name fld.fld_name in
-      tag info (Entity (Field, (Def2 fake_no_def2)));
-      k fld
-    );
-
-    V.kfield_expr = (fun (k, _) x ->
-      match x with
-      | FieldExpr (long_name, _, _) | FieldImplicitExpr long_name ->
-          let name = Ast.name_of_long_name long_name in
-          let info = Ast.info_of_name name in
-          tag info (Entity (Field, (Use2 fake_no_use2)));
-          k x
-    );
-    V.kfield_pat = (fun (k, _) x ->
-      match x with
-      | PatField (long_name, _, _) | PatImplicitField long_name ->
-          let name = Ast.name_of_long_name long_name in
-          let info = Ast.info_of_name name in
-          tag info (Entity (Field, (Use2 fake_no_use2)));
-          k x
-    );
   }
   in
-  v (Program ast);
+  v (G.Pr gen);
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 1 (sequence of tokens) *)
