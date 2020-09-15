@@ -35,7 +35,8 @@
  *
  *  - support for old syntax is removed. No IfColon, ColonStmt,
  *    CaseColonList.
- *  - support for extra tools is removed. No XdebugXxx, SgrepXxx.
+ *  - support for extra tools is removed. No XdebugXxx
+ *    update: but support for semgrep is restored (Ellipsis)
  *  - support for features we don't really use in our code is removed
  *    e.g. unset cast. No Use, UseDirect, UseParen. No CastUnset.
  *    Also no StaticObjCallVar.
@@ -225,6 +226,9 @@ type expr =
 
   (* yeah! PHP 5.3 is becoming a real language *)
   | Lambda of func_def
+
+  (* sgrep-ext: *)
+  | Ellipsis of tok
 
   and special =
   (* often transformed in Var "$this" in the analysis *)

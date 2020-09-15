@@ -694,6 +694,7 @@ and expr_ env heap x =
       (* could probably do another call to Ptr.get here *)
       let heap, x = Ptr.get heap x in
       heap, x
+   | Ellipsis _ -> raise Impossible
 
 (* related to Unify *)
 and binaryOp env heap bop v1 v2 =

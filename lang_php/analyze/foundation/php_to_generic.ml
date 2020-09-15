@@ -225,6 +225,7 @@ and finally (v: finally list) =
 
 and expr =
   function
+  | Ellipsis t -> G.Ellipsis t
   | Int v1 -> let v1 = wrap id v1 in 
       G.L (G.Int v1)
   | Double v1 -> let v1 = wrap id v1 in 

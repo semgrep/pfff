@@ -554,6 +554,8 @@ module IsLvalue = struct
       | IdSpecial (Eval, _)
       ) ->
         false
+    | Ellipsis _ -> raise Common.Impossible
+
 end
 
 (*****************************************************************************)

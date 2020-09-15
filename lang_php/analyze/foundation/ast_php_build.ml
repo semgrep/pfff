@@ -457,9 +457,7 @@ and expr env = function
              fb[A.Id [A.builtin "yield_break", wrap tok2]])
   | Await (tok, e) ->
       A.Call (A.Id [A.builtin "await", wrap tok], fb[expr env e])
-  | SgrepExprDots _ ->
-      (* should never use the abstract interpreter on a sgrep pattern *)
-      raise Common.Impossible
+  | SgrepExprDots t -> A.Ellipsis t
   | ParenExpr (_, e, _) -> expr env e
 
 and arith_op = function
