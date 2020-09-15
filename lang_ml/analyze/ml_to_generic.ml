@@ -41,6 +41,9 @@ let error = G.error
  * AST_generic.ml or ast_ml.ml *)
 let fake = G.fake
 
+let add_attrs ent attrs = 
+  { ent with G.attrs = attrs }
+
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
@@ -392,51 +395,73 @@ and module_expr =
       let xs = list module_expr xs in
       G.OtherModule (G.OMO_Todo, (G.TodoK t)::(List.map (fun x -> G.ModDk x) xs))
 
+and attributes xs = list attribute xs
 
-and item =
-  function
+and attribute (t1, (dotted, xs), t2) = 
+  let args = 
+    xs |> Common.map_filter (function
+    | _ -> None
+    )
+  in
+  G.NamedAttr (t1, dotted, G.empty_id_info(), (t2, args, t2))
+
+and item { i; iattrs } =
+  let attrs = attributes iattrs in
+  match i with
   | Type (_t, v1) -> let xs = list type_declaration v1 in 
-      xs |> List.map (fun (ent, def) -> G.DefStmt (ent, G.TypeDef def))
+      xs |> List.map (fun (ent, def) -> 
+          (* add attrs to all mutual type decls *)
+          let ent = add_attrs ent attrs in
+          G.DefStmt (ent, G.TypeDef def)
+      )
 
   | Exception (_t, v1, v2) ->
       let v1 = ident v1 and v2 = list type_ v2 in 
-      let ent = G.basic_entity v1 [] in
+      let ent = G.basic_entity v1 attrs in
       let def = G.Exception (v1, v2) in
       [G.DefStmt (ent, G.TypeDef { G.tbody = def })]
   | External (t, v1, v2, v3) ->
       let v1 = ident v1
       and v2 = type_ v2
       and _v3 = list (wrap string) v3 in
-      let attrs = [G.KeywordAttr (G.Extern, t)] in
+      let attrs = [G.KeywordAttr (G.Extern, t)] @ attrs in
       let ent = G.basic_entity v1 attrs in
       let def = G.Signature v2 in
       [G.DefStmt (ent, def)]
   | Open (t, v1) -> let v1 = module_name v1 in 
+      (* no attrs here *)
       let dir = G.ImportAll (t, G.DottedName v1, fake "*") in
       [G.DirectiveStmt dir]
 
   | Val (_t, v1, v2) -> 
       let v1 = ident v1 and v2 = type_ v2 in 
-      let ent = G.basic_entity v1 [] in
+      let ent = G.basic_entity v1 attrs in
       let def = G.Signature v2 in
       [G.DefStmt (ent, def)]
   | Let (_t, v1, v2) ->
       let _v1 = rec_opt v1 and v2 = list let_binding v2 in 
       v2 |> List.map (function
         | Left (ent, params, expr) ->
+            let ent = add_attrs ent attrs in
             G.DefStmt (ent, mk_var_or_func params expr)
         | Right (pat, e) ->
+            (* TODO no attrs *)
             let exp = G.LetPattern (pat, e) in
             G.exprstmt exp
        )
 
   | Module (_t, v1) -> let (ent, def) = module_declaration v1 in 
+      let ent = add_attrs ent attrs in
       [G.DefStmt (ent, G.ModuleDef def)]
 
   | ItemTodo (t, xs) -> 
       let t = todo_category t in
       let xs = list item xs |> List.flatten in
-      [G.OtherStmt (G.OS_Todo, (G.TodoK t)::(List.map (fun x -> G.S x) xs))]
+      [G.OtherStmt (G.OS_Todo, 
+          [G.TodoK t] @ 
+          List.map (fun x -> G.S x) xs @
+          List.map (fun x -> G.At x) attrs
+        )]
 
 and mk_var_or_func params expr =
   match params, expr with

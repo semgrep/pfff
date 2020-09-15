@@ -60,8 +60,10 @@ let seq1 = seqexpr1
 
 let fake_info () = Parse_info.fake_info "FAKE"
 let topseqexpr v1 =
-    Let (fake_info(), None, 
-          [LetPattern (PatUnderscore (fake_info()), seqexpr1 v1)])
+    { i = Let (fake_info(), None, 
+          [LetPattern (PatUnderscore (fake_info()), seqexpr1 v1)]);
+      iattrs = []
+    }
 
 %}
 (*************************************************************************)
@@ -286,7 +288,8 @@ sgrep_spatch_pattern:
 
 (* coupling: structure_item *)
 structure_item_minus_signature_item:
- | Tlet Trec? list_and(let_binding)              { Let ($1, $2, $3) }
+ | Tlet Trec? list_and(let_binding) post_item_attribute*
+     { { i = Let ($1, $2, $3); iattrs = $4 } }
  (* TODO: put more stuff from structure_item that you want to be able
   * to match in a semgrep pattern.
   *)
@@ -300,7 +303,8 @@ signature:
  | signature signature_item      { $1 @ [$2] }
  | signature signature_item ";;" { $1 @ [$2] }
 
-signature_item: signature_item_noattr post_item_attribute* { $1 }
+signature_item: signature_item_noattr post_item_attribute* 
+  { { i = $1; iattrs = $2 } }
 
 signature_item_noattr:
  | Ttype list_and(type_declaration)            { Type ($1, $2) }
@@ -348,7 +352,8 @@ structure_tail:
  | structure_item  structure_tail          { $1::$2 }
  | TSharpDirective structure_tail          { $2 }
 
-structure_item: structure_item_noattr post_item_attribute* { $1 }
+structure_item: structure_item_noattr post_item_attribute* 
+  { { i = $1; iattrs = $2 } }
 
 structure_item_noattr:
  (* as in signature_item *)
@@ -975,11 +980,11 @@ label_let_pattern:
 (* Class types *)
 (*----------------------------*)
 class_description: Tvirtual? class_type_parameters TLowerIdent ":" class_type
-  { ItemTodo (("ClassDescr", $4), []) (* TODO $5 *)}
+  { mki (ItemTodo (("ClassDescr", $4), [])) (* TODO $5 *)}
 
 class_type_declaration: 
   Tvirtual? class_type_parameters TLowerIdent "=" class_signature
-  { ItemTodo (("ClassTypeDecl", $4), []) (* TODO $5 *) }
+  { mki (ItemTodo (("ClassTypeDecl", $4), [])) (* TODO $5 *) }
 
 class_type:
   | class_signature { }
@@ -1024,14 +1029,15 @@ value_type:
 
 class_declaration: 
  Tvirtual? class_type_parameters TLowerIdent class_fun_binding
-   { ItemTodo (("ClassDecl", (snd $3)), [$4]) }
+   { mki (ItemTodo (("ClassDecl", (snd $3)), [$4])) }
 
 class_type_parameters:
   | (*empty*)                              { }
   | "[" list_sep(type_parameter, ",") "]"  { }
 
 class_fun_binding:
-  | class_typed? "=" class_expr  { ItemTodo (("ClassExpr", $2), [] (* TODO *)) }
+  | class_typed? "=" class_expr  
+    { mki (ItemTodo (("ClassExpr", $2), [] (* TODO *))) }
   | labeled_simple_pattern  class_fun_binding  
     { (* TODO $1 *) $2 }
 
@@ -1112,13 +1118,15 @@ module_declaration:
  | ":" module_type  
     { $2 }
  | "(" TUpperIdent ":" module_type ")" module_declaration 
-     { ItemTodo (("ModuleTypedDecl", $1), [$4; $6]) }
+     { { i = ItemTodo (("ModuleTypedDecl", $1), [$4; $6]); iattrs = [] } }
 
 (*----------------------------*)
 (* Module types *)
 (*----------------------------*)
 
-module_type:
+module_type: module_type_noattr { { i = $1; iattrs = [] } }
+
+module_type_noattr:
  | mty_longident         
     { let (_, (_, t)) = $1 in ItemTodo (("ModuleTypeAlias", t), []) }
  | Tsig signature Tend   
@@ -1128,7 +1136,7 @@ module_type:
       { ItemTodo (("FunctorType", $1), [$5; $8]) }
  | module_type Twith list_and(with_constraint)  
       { ItemTodo (("ModuleTypeWith", $2), [$1]) }
- | "(" module_type ")"     
+ | "(" module_type_noattr ")"     
       { $2 }
 
 
@@ -1165,10 +1173,11 @@ module_expr:
 (*pad: this is a limited implementation for now; just enough for efuns/pfff *)
 floating_attribute:  "[@@@" attr_id payload "]" 
   { ItemTodo (("Attribute", $1), $3) }
+
 post_item_attribute: "[@@"  attr_id payload "]" 
-  { }
+  { ($1, ($2, $3), $4) }
 attribute:           "[@"   attr_id payload "]" 
-  { }
+  { ($1, ($2, $3), $4) }
 
 
 attr_id: listr_sep(single_attr_id, ".") { $1 }

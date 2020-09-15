@@ -245,15 +245,26 @@ type module_declaration = {
   | ModuleTodo of todo_category * module_expr list
 
 (*****************************************************************************)
+(* Attributes *)
+(*****************************************************************************)
+and attribute = (dotted_ident * item list) bracket
+  and attributes = attribute list
+  and dotted_ident = ident list
+
+(*****************************************************************************)
 (* Toplevel *)
 (*****************************************************************************)
 
 (* Signature/Structure items *)
+and item = { 
+  i: item_kind;
+  iattrs: attributes;
+ }
 
 (* could split in sig_item and struct_item but many constructions are
  * valid in both contexts.
  *)
-and item = 
+and item_kind = 
   | Type of tok * type_declaration list (* mutually recursive *)
 
   | Exception of tok * ident * type_ list
@@ -302,3 +313,6 @@ let qualifier_of_name (qu, _) =
   qu |> List.map str_of_ident |> Common.join "."
 
 let name_of_id id = Name ([], id)
+
+let mki x = 
+  { i = x; iattrs = [] }
