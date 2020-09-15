@@ -16,7 +16,7 @@ check2:
 
 
 visual:
-	codemap -screen_size 3 -filter pfff -efuns_client efunsclient -emacs_client /dev/null .
+	codemap -screen_size 3 -filter pfff -efuns_client efuns_client -emacs_client /dev/null .
 loc:
 	codemap -no_legend -profile -screen_size 3 -filter pfff -test_loc .
 index:

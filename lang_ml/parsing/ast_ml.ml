@@ -18,12 +18,12 @@
 (*****************************************************************************)
 (* An Abstract Syntax Tree for OCaml.
  *
- * See cst_ml.ml for a Concrete Syntax Tree for OCaml (better for program
+ * See old/cst_ml_ml for a Concrete Syntax Tree for OCaml (better for program
  * transformation purpose).
  *)
 
 (*****************************************************************************)
-(* The AST related types *)
+(* Names *)
 (*****************************************************************************)
 
 (* ------------------------------------------------------------------------- *)
@@ -53,9 +53,10 @@ type name = qualifier * ident
 
 type todo_category = string wrap
  [@@deriving show] (* with tarzan *)
-(* ------------------------------------------------------------------------- *)
+
+(*****************************************************************************)
 (* Types *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 
 type type_ = 
   | TyName of name (* include builtins *)
@@ -73,9 +74,9 @@ type type_ =
 
  [@@deriving show { with_path = false} ] (* with tarzan *)
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* Expressions *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 
 (* start of big recursive type *)
 type expr =
@@ -150,9 +151,9 @@ type expr =
 
  and rec_opt = tok option
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* Patterns *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 and pattern = 
   | PatVar of ident
   | PatLiteral of literal (* can be signed *)
@@ -175,6 +176,10 @@ and pattern =
   | PatEllipsis of tok
 
   | PatTodo of todo_category * pattern list
+
+(*****************************************************************************)
+(* Definitions *)
+(*****************************************************************************)
 
 (* ------------------------------------------------------------------------- *)
 (* Let binding (global/local/function definition) *)
@@ -239,14 +244,27 @@ type module_declaration = {
 
   | ModuleTodo of todo_category * module_expr list
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
+(* Attributes *)
+(*****************************************************************************)
+and attribute = (dotted_ident * item list) bracket
+  and attributes = attribute list
+  and dotted_ident = ident list
+
+(*****************************************************************************)
+(* Toplevel *)
+(*****************************************************************************)
+
 (* Signature/Structure items *)
-(* ------------------------------------------------------------------------- *)
+and item = { 
+  i: item_kind;
+  iattrs: attributes;
+ }
 
 (* could split in sig_item and struct_item but many constructions are
  * valid in both contexts.
  *)
-and item = 
+and item_kind = 
   | Type of tok * type_declaration list (* mutually recursive *)
 
   | Exception of tok * ident * type_ list
@@ -259,6 +277,7 @@ and item =
       
   (* only in struct_item *)
   | Let of tok * rec_opt * let_binding list
+  | TopExpr of expr
 
   | Module of tok * module_declaration
 
@@ -295,3 +314,6 @@ let qualifier_of_name (qu, _) =
   qu |> List.map str_of_ident |> Common.join "."
 
 let name_of_id id = Name ([], id)
+
+let mki x = 
+  { i = x; iattrs = [] }
