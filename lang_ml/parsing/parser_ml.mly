@@ -53,17 +53,10 @@ let optlist_to_list = function
   | Some xs -> xs
 
 (* TODO: use shortcut *)
-let seqexpr1 = function
+let seq1 = function
   | [x] -> x
   | xs -> Sequence xs
-let seq1 = seqexpr1
-
-let fake_info () = Parse_info.fake_info "FAKE"
-let topseqexpr v1 =
-    { i = Let (fake_info(), None, 
-          [LetPattern (PatUnderscore (fake_info()), seqexpr1 v1)]);
-      iattrs = []
-    }
+let topseqexpr v1 = mki (TopExpr (seq1 v1))
 
 %}
 (*************************************************************************)
@@ -523,7 +516,7 @@ expr:
 
  | Twhile seq_expr Tdo seq_expr Tdone       { While ($1, seq1 $2, seq1 $4) }
  | Tfor val_ident "=" seq_expr direction_flag seq_expr Tdo seq_expr Tdone
-     { For ($1, $2, seqexpr1 $4, $5, seqexpr1 $6, seqexpr1 $8)  }
+     { For ($1, $2, seq1 $4, $5, seq1 $6, seq1 $8)  }
 
  | expr ":=" expr { RefAssign ($1, $2, $3) }
 
@@ -926,7 +919,7 @@ type_variance:
 let_binding:
  | val_ident fun_binding
       { let (params, (_teq, body)) = $2 in
-        LetClassic { lname = $1; lparams = params; lbody = seqexpr1 body; } }
+        LetClassic { lname = $1; lparams = params; lbody = seq1 body; } }
  | pattern "=" seq_expr
       { LetPattern ($1, Sequence $3) }
 

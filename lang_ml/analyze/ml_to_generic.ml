@@ -400,6 +400,7 @@ and attributes xs = list attribute xs
 and attribute (t1, (dotted, xs), t2) = 
   let args = 
     xs |> Common.map_filter (function
+    | { i = TopExpr e; iattrs = [] } -> let e = expr e in Some (G.Arg e)
     | _ -> None
     )
   in
@@ -408,6 +409,7 @@ and attribute (t1, (dotted, xs), t2) =
 and item { i; iattrs } =
   let attrs = attributes iattrs in
   match i with
+  | TopExpr e -> let e = expr e in [G.exprstmt e]
   | Type (_t, v1) -> let xs = list type_declaration v1 in 
       xs |> List.map (fun (ent, def) -> 
           (* add attrs to all mutual type decls *)

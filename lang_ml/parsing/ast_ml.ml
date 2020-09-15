@@ -277,6 +277,7 @@ and item_kind =
       
   (* only in struct_item *)
   | Let of tok * rec_opt * let_binding list
+  | TopExpr of expr
 
   | Module of tok * module_declaration
 
