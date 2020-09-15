@@ -45,6 +45,7 @@ type t =
   | OCaml
   | Ruby
   | Csharp
+  | PHP
 (*e: type [[Lang.t]] *)
 
 (*****************************************************************************)
@@ -73,7 +74,8 @@ let list_of_lang = [
     "java", Java;
     "ruby", Ruby;
     "rb", Ruby;
-    "cs", Csharp
+    "cs", Csharp;
+    "php", PHP;
   ]
 (*e: constant [[Lang.list_of_lang]] *)
 
@@ -101,6 +103,7 @@ let langs_of_filename filename =
  | FT.PL (FT.Web FT.Json) -> [JSON]
  | FT.PL (FT.Ruby) -> [Ruby]
  | FT.PL (FT.Csharp) -> [Csharp]
+ | FT.PL (FT.Web (FT.Php _)) -> [PHP]
  | _ -> []
 (*e: function [[Lang.langs_of_filename]] *)
 
@@ -118,6 +121,7 @@ let string_of_lang = function
   | Go -> "Golang"
   | Ruby -> "Ruby"
   | Csharp -> "C#"
+  | PHP -> "PHP"
 (*e: function [[Lang.string_of_lang]] *)
 
 (*s: function [[Lang.ext_of_lang]] *)
@@ -133,6 +137,7 @@ let ext_of_lang = function
   | Go -> ["go"]
   | Ruby -> ["rb"]
   | Csharp -> ["cs"]
+  | PHP -> ["php"]
 (*e: function [[Lang.ext_of_lang]] *)
 
 (*s: function [[Lang.find_source]] *)

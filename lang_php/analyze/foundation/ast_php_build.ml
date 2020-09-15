@@ -83,6 +83,18 @@ let rec program top_l =
   let env = empty_env () in
   toplevels env top_l
 
+and any x =
+  let env = empty_env () in
+  any_aux env x
+
+and any_aux env = function
+  | Expr e -> let e = expr env e in A.Expr2 e
+  | Stmt2 st -> 
+      let st = stmt1 (stmt env st []) in
+      A.Stmt st
+  | Program x -> let x = toplevels env x in A.Program x
+  | _ -> failwith "TODO: PHP"
+
 and toplevels env xs =
   match xs with
   | [] -> []

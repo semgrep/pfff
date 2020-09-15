@@ -81,6 +81,11 @@ let parse_with_lang lang file =
       Ruby_to_generic.program ast
   | Lang.Csharp ->
       failwith "No C# parser in pfff; use the one in tree-sitter"
+  | Lang.PHP ->
+    let cst = Parse_php.parse_program file in
+    let ast = Ast_php_build.program cst in
+    Php_to_generic.program ast
+
 (*e: function [[Parse_generic.parse_with_lang]] *)
 
 (*s: function [[Parse_generic.parse_program]] *)
@@ -126,6 +131,10 @@ let parse_pattern lang str =
   | Lang.Ruby ->
       let any = Parse_ruby.any_of_string str in
       Ruby_to_generic.any any
+  | Lang.PHP ->
+      let any_cst = Parse_php.any_of_string str in
+      let any = Ast_php_build.any any_cst in
+      Php_to_generic.any any
   | Lang.Csharp ->
       failwith "No C# parser in pfff; use the one in tree-sitter"
   )
