@@ -83,6 +83,18 @@ let rec program top_l =
   let env = empty_env () in
   toplevels env top_l
 
+and any x =
+  let env = empty_env () in
+  any_aux env x
+
+and any_aux env = function
+  | Expr e -> let e = expr env e in A.Expr2 e
+  | Stmt2 st -> 
+      let st = stmt1 (stmt env st []) in
+      A.Stmt st
+  | Program x -> let x = toplevels env x in A.Program x
+  | _ -> failwith "TODO: PHP"
+
 and toplevels env xs =
   match xs with
   | [] -> []
@@ -445,9 +457,7 @@ and expr env = function
              fb[A.Id [A.builtin "yield_break", wrap tok2]])
   | Await (tok, e) ->
       A.Call (A.Id [A.builtin "await", wrap tok], fb[expr env e])
-  | SgrepExprDots _ ->
-      (* should never use the abstract interpreter on a sgrep pattern *)
-      raise Common.Impossible
+  | SgrepExprDots t -> A.Ellipsis t
   | ParenExpr (_, e, _) -> expr env e
 
 and arith_op = function

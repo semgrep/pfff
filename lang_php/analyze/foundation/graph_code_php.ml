@@ -887,7 +887,8 @@ and hint_type env t =
 (* ---------------------------------------------------------------------- *)
 and expr env x =
   match x with
-  | Int _ | Double _  -> ()
+  | Int _ | Double _ 
+    -> ()
 
   (* A String in PHP can actually hide a class (or a function).
    * todo: do a post phase where try to detect all those higher
@@ -1061,6 +1062,7 @@ and expr env x =
   (* less: again, add deps for type? *)
   | Cast (_, e) -> expr env e
   | Lambda def -> func_def env def
+  | Ellipsis _ -> raise Impossible
 
 
 and array_value env x = expr env x

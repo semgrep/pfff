@@ -872,6 +872,7 @@ and expr env e =
         match def.f_kind with ShortLambda -> false | _ -> true
       in
       func_def { env with in_long_lambda } def
+  | Ellipsis _ -> raise Impossible
 
 and array_value env x =
   match x with

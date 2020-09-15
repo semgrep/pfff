@@ -15,6 +15,7 @@ type t =
   | OCaml
   | Ruby
   | Csharp
+  | PHP
 (*e: type [[Lang.t]] *)
 
 (*s: signature [[Lang.lang_of_string_map]] *)

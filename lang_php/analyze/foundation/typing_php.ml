@@ -653,6 +653,7 @@ and expr_ env _lv = function
       any
 
   | Id _ -> failwith "no support for namespace yet"
+  | Ellipsis _ -> raise Impossible
 
 and encaps env e =
   let t = expr env e in

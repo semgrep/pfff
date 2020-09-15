@@ -127,6 +127,7 @@ module Deps = struct
     | CondExpr (e1, e2, e3) ->
         expr (expr (expr acc e1) e2) e3
     | Lambda fd -> func_def acc fd
+    | Ellipsis _ -> acc
 
   and array_valuel acc l = List.fold_left array_value acc l
   and vector_eltl acc l = List.fold_left vector_elt acc l
