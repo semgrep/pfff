@@ -334,7 +334,12 @@ and let_def { lname = lname; lparams = lparams; lbody = lbody } =
   ent, v2, v3
 
 and parameter = function
-  | Param v -> G.ParamPattern (pattern v)
+  | Param v -> 
+      let v = pattern v in
+      (match v with
+      | G.PatEllipsis t -> G.ParamEllipsis t
+      | _ -> G.ParamPattern v
+      )
   | ParamTodo t -> G.OtherParam (G.OPO_Todo, [G.Tk t])
   
 and type_declaration { tname = tname; tparams = tparams; tbody = tbody
