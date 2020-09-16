@@ -71,7 +71,7 @@ type file_type =
 
    and webpl_type = 
      | Php of string (* php or phpt or script *)
-     | Js | Coffee | TypeScript
+     | Js | Coffee | TypeScript | TSX
      | Css
      | Html | Xml | Json
      | Sql

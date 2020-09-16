@@ -138,16 +138,6 @@ config.status
 # Auto generated
 # -----------------------------------------------------------------------------
 
-# parsers
-lexer_*.ml
-parser_*.ml
-parser_*.mli
-parser_*.output
-# menhir
-parser_*.conflicts
-# dypgen
-parser_*.extract_type
-
 /h_program-lang/archi_code_lexer.ml
 
 # -----------------------------------------------------------------------------

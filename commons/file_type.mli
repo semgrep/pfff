@@ -31,7 +31,7 @@ type file_type =
 
    and webpl_type = 
      | Php of string
-     | Js | Coffee | TypeScript
+     | Js | Coffee | TypeScript | TSX
      | Css
      | Html | Xml | Json
      | Sql
