@@ -38,7 +38,7 @@ type t =
    * (no fallback) *)
   | Python2 | Python3
   (*e: [[Lang.t]] extra Python cases *)
-  | Javascript | Typescript | JSON
+  | Javascript | Typescript | TSX | JSON
   | Java
   | Go
   | C
@@ -61,9 +61,10 @@ let list_of_lang = [
 
     "js", Javascript;
     "javascript", Javascript;
-    "json", JSON; 
+    "json", JSON;
     "ts", Typescript;
     "typescript", Typescript;
+    "tsx", TSX;
 
     "go", Go;
     "golang", Go;
@@ -94,6 +95,7 @@ let langs_of_filename filename =
  match typ with
  | FT.PL (FT.Web (FT.Js)) -> [Javascript] (* Add TypeScript too? *)
  | FT.PL (FT.Web (FT.TypeScript)) -> [Typescript]
+ | FT.PL (FT.Web (FT.TSX)) -> [TSX]
  | FT.PL (FT.Python) -> [Python;Python2;Python2]
  (* .h could also be Cpp at some point *)
  | FT.PL (FT.C ("c" | "h" )) -> [C]
@@ -114,6 +116,7 @@ let string_of_lang = function
   | Python3 -> "Python3"
   | Javascript -> "Javascript"
   | Typescript -> "Typescript"
+  | TSX -> "TSX"
   | JSON -> "JSON"
   | Java -> "Java"
   | C -> "C"
@@ -129,7 +132,8 @@ let string_of_lang = function
 let ext_of_lang = function
   | Python | Python2 | Python3 -> ["py"; "pyi"]
   | Javascript -> ["js"]
-  | Typescript -> ["ts";"tsx"]
+  | Typescript -> ["ts"]
+  | TSX -> ["tsx"]
   | JSON -> ["json"]
   | Java -> ["java"]
   | C -> ["c"]

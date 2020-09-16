@@ -49,7 +49,7 @@ let parse_with_lang lang file =
      * switched to call Naming_AST.ml in sgrep to correct def and use tagger
      *)
     Python_to_generic.program ast
-  | Lang.Typescript (* abusing Js parser for now here *)
+  | Lang.Typescript | Lang.TSX (* abusing Js parser for now here *)
   | Lang.Javascript ->
     let cst = Parse_js.parse_program file in
     (* does also the job of a Resolve_js.resolve ast
@@ -108,7 +108,7 @@ let parse_pattern lang str =
       let any = Parse_python.any_of_string ~parsing_mode str in
       Python_to_generic.any any
   (* abusing JS parser so no need extend tree-sitter grammar*)
-  | Lang.Typescript 
+  | Lang.Typescript | Lang.TSX
   | Lang.Javascript ->
       let any_cst = Parse_js.any_of_string str in
       let any = Ast_js_build.any any_cst in
