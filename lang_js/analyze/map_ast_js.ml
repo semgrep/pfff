@@ -378,12 +378,7 @@ and map_property =
       let v3 = map_expr v3 in
       FieldPatDefault (v1, v2, v3)
       
-and map_property_prop =
-  function
-  | Static -> Static
-  | Public -> Public
-  | Private -> Private
-  | Protected -> Protected
+and map_property_prop x = x
   
 and map_toplevel x = map_stmt x
 

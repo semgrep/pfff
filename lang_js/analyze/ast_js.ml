@@ -301,8 +301,7 @@ and pattern = expr
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
-(* typescript-ext:
- * simpler to reuse AST_generic *)
+(* typescript-ext: (simpler to reuse AST_generic) *)
 and type_ = AST_generic.type_
 
 (*****************************************************************************)
@@ -351,7 +350,7 @@ and fun_ = {
   }
   (* todo: put in general keyword_attribute; less: could transpile *)
   and fun_prop = 
-    | Generator | Async
+    | Generator (* '*' *) | Async
     (* only inside classes *)
     | Get | Set 
 
@@ -390,7 +389,8 @@ and class_ = {
     | Static
     (* todo? not in tree-sitter-js *)
     | Public | Private | Protected
-    (* typescript-ext: TODO Readonly *)
+    (* typescript-ext: *)
+    | Readonly | Optional (* '?' *) | NotNull (* '!' *) | Abstract
 
 (*****************************************************************************)
 (* Directives *)

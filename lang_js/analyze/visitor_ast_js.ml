@@ -314,8 +314,8 @@ and v_property x =
   in
   vin.kprop (k, all_functions) x
 
-and v_property_prop =
-  function | Static -> () | Public -> () | Private -> () | Protected -> ()
+and v_property_prop _ = ()
+
   
 and v_toplevel x =
   let k x =

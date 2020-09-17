@@ -471,6 +471,10 @@ and property_prop (x, tok) =
   | Public -> G.attr G.Public tok
   | Private -> G.attr G.Private tok
   | Protected -> G.attr G.Protected tok
+  | Readonly -> G.attr G.Const tok
+  | Optional -> G.attr G.Optional tok
+  | Abstract -> G.attr G.Abstract tok
+  | NotNull -> G.attr G.NotNull tok
   
 
 and toplevel x = stmt x
