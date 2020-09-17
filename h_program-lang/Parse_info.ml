@@ -498,14 +498,28 @@ let full_charpos_to_pos_large2 = fun file ->
         while true do begin
           let s = (input_line chan) in
           incr line;
+          let len = String.length s in
 
-          (* '... +1 do'  cos input_line dont return the trailing \n *)
-          for i = 0 to (String.length s - 1) + 1 do
+          (* '... +1 do'  cos input_line does not return the trailing \n *)
+          let col = ref 0 in
+          for i = 0 to (len - 1) + 1 do
+            
             (* old: arr.(!charpos + i) <- (!line, i); *)
             arr1.{!charpos + i} <- (!line);
-            arr2.{!charpos + i} <- i;
+            arr2.{!charpos + i} <- !col;
+            (* ugly: hack for weird windows files containing a single
+             * carriage return (\r) instead of a carriage return + newline
+             * (\r\n) to delimit newlines. Not recognizing those single
+             * \r as a newline marker prevents Javascript ASI to correctly
+             * insert semicolons.
+             * note: we could fix info_from_charpos() too, but it's not
+             * used for ASI so simpler to leave it as is.
+             *)
+             if i < len - 1 && String.get s i = '\r'
+             then begin incr line; col := -1 end;
+             incr col
           done;
-          charpos := !charpos + String.length s + 1;
+          charpos := !charpos + len + 1;
         end done
      with End_of_file ->
        for i = !charpos to (* old: Array.length arr *)
