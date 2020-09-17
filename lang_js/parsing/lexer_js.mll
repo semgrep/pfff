@@ -701,7 +701,7 @@ and st_in_xhp_tag current_tag = parse
    * todo? factorize with st_in_scripting rule?
    *)
   | [' ' '\t']+ { TCommentSpace(tokinfo lexbuf) }
-  | ['\n' '\r'] { TCommentNewline(tokinfo lexbuf) }
+  | NEWLINE { TCommentNewline(tokinfo lexbuf) }
   | "/*" {
         let info = tokinfo lexbuf in
         let buf = Buffer.create 127 in
