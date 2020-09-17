@@ -130,7 +130,7 @@ let string_of_lang = function
 let ext_of_lang = function
   | Python | Python2 | Python3 -> ["py"; "pyi"]
   | Javascript -> ["js"]
-  | Typescript -> ["ts"]
+  | Typescript -> ["ts"; "tsx"]
   | JSON -> ["json"]
   | Java -> ["java"]
   | C -> ["c"]
