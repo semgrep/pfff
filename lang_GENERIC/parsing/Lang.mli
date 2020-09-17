@@ -8,7 +8,7 @@ type t =
    * (no fallback) *)
   | Python2 | Python3
   (*e: [[Lang.t]] extra Python cases *)
-  | Javascript | Typescript | TSX | JSON
+  | Javascript | Typescript | JSON
   | Java
   | Go
   | C
