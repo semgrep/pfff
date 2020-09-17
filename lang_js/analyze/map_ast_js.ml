@@ -344,12 +344,12 @@ and
   { p_name = v_p_name; p_default = v_p_default; p_dots = v_p_dots; 
     p_type = vt;
   }
-and map_fun_prop =
-  function
-  | Get -> Get
-  | Set -> Set
-  | Generator -> Generator
-  | Async -> Async
+
+
+and map_fun_prop x = map_keyword_attribute x
+and map_keyword_attribute x = x
+
+
 and map_obj_ v = map_bracket (map_of_list map_property) v
 and map_class_ { c_extends = v_c_extends; c_body = v_c_body; c_tok } =
   let v_c_body = map_bracket (map_of_list map_property) v_c_body in

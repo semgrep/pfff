@@ -415,12 +415,26 @@ and parameter x =
   }
   
 
-and fun_prop (x, tok) =
+and fun_prop x = keyword_attribute x
+and keyword_attribute (x, tok) = 
   match x with
+  (* methods *)
   | Get -> G.attr G.Getter tok
   | Set -> G.attr G.Setter tok
   | Generator -> G.attr G.Generator tok 
   | Async -> G.attr G.Async tok
+
+  (* fields *)
+  | Static -> G.attr G.Static tok
+  | Public -> G.attr G.Public tok
+  | Private -> G.attr G.Private tok
+  | Protected -> G.attr G.Protected tok
+  | Readonly -> G.attr G.Const tok
+  | Optional -> G.attr G.Optional tok
+  | Abstract -> G.attr G.Abstract tok
+  | NotNull -> G.attr G.NotNull tok
+
+and property_prop x = keyword_attribute x
 
 and obj_ v = bracket (list property) v
 
@@ -465,16 +479,6 @@ and property x =
       let v1 = pattern v1 in
       let v3 = expr v3 in
       G.FieldStmt (G.exprstmt (G.LetPattern (v1, v3)))
-and property_prop (x, tok) =
-  match x with
-  | Static -> G.attr G.Static tok
-  | Public -> G.attr G.Public tok
-  | Private -> G.attr G.Private tok
-  | Protected -> G.attr G.Protected tok
-  | Readonly -> G.attr G.Const tok
-  | Optional -> G.attr G.Optional tok
-  | Abstract -> G.attr G.Abstract tok
-  | NotNull -> G.attr G.NotNull tok
   
 
 and toplevel x = stmt x

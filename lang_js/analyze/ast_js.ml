@@ -305,6 +305,24 @@ and pattern = expr
 and type_ = AST_generic.type_
 
 (*****************************************************************************)
+(* Attributes *)
+(*****************************************************************************)
+(* TODO: decorator *)
+and attribute = keyword_attribute wrap
+  and keyword_attribute = 
+   (* field props *)
+    | Static
+    (* todo? not in tree-sitter-js *)
+    | Public | Private | Protected
+    (* typescript-ext: *)
+    | Readonly | Optional (* '?' *) | NotNull (* '!' *) | Abstract
+
+   (* method properties *)
+    | Generator (* '*' *) | Async
+    (* only inside classes *)
+    | Get | Set 
+
+(*****************************************************************************)
 (* Definitions *)
 (*****************************************************************************)
 (* TODO: rename 'var' to 'entity' to be close to AST_generic.
@@ -327,7 +345,7 @@ and var = {
   and var_kind = Var | Let | Const
 
 and fun_ = {
-  f_props: fun_prop wrap list;
+  f_props: attribute list;
   f_params: parameter list;
   (* TODO: f_rettype *)
   f_body: stmt;
@@ -348,11 +366,6 @@ and fun_ = {
     p_dots: tok option;
     (* TODO: p_attrs: *)
   }
-  (* todo: put in general keyword_attribute; less: could transpile *)
-  and fun_prop = 
-    | Generator (* '*' *) | Async
-    (* only inside classes *)
-    | Get | Set 
 
 and obj_ = property list bracket
 
@@ -380,17 +393,10 @@ and class_ = {
 
   and field_classic = {
     fld_name: property_name;
-    fld_props: property_prop wrap list;
+    fld_props: attribute list;
     fld_type: type_ option;
     fld_body: expr option;
   }
-  (* todo: put in general keyword_attr *)
-  and property_prop =
-    | Static
-    (* todo? not in tree-sitter-js *)
-    | Public | Private | Protected
-    (* typescript-ext: *)
-    | Readonly | Optional (* '?' *) | NotNull (* '!' *) | Abstract
 
 (*****************************************************************************)
 (* Directives *)

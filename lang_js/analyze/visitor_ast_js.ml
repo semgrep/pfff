@@ -284,8 +284,8 @@ and v_parameter x =
   in
   vin.kparam (k, all_functions) x
 
-and v_fun_prop =
-  function | Get -> () | Set -> () | Generator -> () | Async -> ()
+and v_fun_prop x = v_keyword_attribute x
+and v_keyword_attribute _ = ()
 
 and v_obj_ v = v_bracket (v_list v_property) v
 and v_class_ { c_extends = v_c_extends; c_body = v_c_body; c_tok } =
