@@ -454,9 +454,10 @@ and keyword_attribute (x, tok) =
 
 and obj_ v = bracket (list property) v
 
-and class_ { c_extends = c_extends; c_body = c_body; c_tok } =
+and class_ { c_extends = c_extends; c_body = c_body; c_tok; c_props } =
   let v1 = option expr c_extends in
   let v2 = bracket (list property) c_body in
+  let attrs = list attribute c_props in
   (* todo: could analyze arg to look for Id *)
   let extends = 
     match v1 with
@@ -464,7 +465,7 @@ and class_ { c_extends = c_extends; c_body = c_body; c_tok } =
     | Some e -> [G.OtherType (G.OT_Expr, [G.E e])]
   in
   { G.ckind = (G.Class, c_tok); cextends = extends; 
-    cimplements = []; cmixins = []; cbody = v2;}, []
+    cimplements = []; cmixins = []; cbody = v2;}, attrs
 and property x =
    match x with
   | Field {fld_name = v1; fld_props = v2; fld_type = vt; fld_body = v3} ->

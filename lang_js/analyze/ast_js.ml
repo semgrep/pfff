@@ -336,8 +336,9 @@ and attribute =
     | Static
     (* todo? not in tree-sitter-js *)
     | Public | Private | Protected
-    (* typescript-ext: *)
-    | Readonly | Optional (* '?' *) | NotNull (* '!' *) | Abstract
+    (* typescript-ext: for fields *)
+    | Readonly | Optional (* '?' *) | NotNull (* '!' *) 
+    | Abstract (* also valid for class *)
 
    (* method properties *)
     | Generator (* '*' *) | Async
@@ -375,7 +376,7 @@ and entity = {
 and var = entity
 
 and function_definition = {
-  (* TODO: move that in entity *)
+  (* less: move that in entity? but some anon func have attributes too *)
   f_props: attribute list;
   f_params: parameter list;
   (* TODO: f_rettype *)
@@ -404,6 +405,7 @@ and class_definition = {
   (* usually simply an Id *)
   c_extends: expr option;
   c_body: property list bracket;
+  c_props: attribute list;
 }
 
   and obj_ = property list bracket
