@@ -170,7 +170,7 @@ and v_stmt x =
   let k x = match x with
   | StmtTodo (v1, v2) -> v_todo_category v1; v_list v_any v2
   | M v1 -> let v1 = v_module_directive v1 in ()
-  | VarDecl v1 -> let v1 = v_var v1 in ()
+  | DefStmt v1 -> let v1 = v_var v1 in ()
   | Block v1 -> let v1 = v_bracket (v_list v_stmt) v1 in ()
   | ExprStmt (v1, t) -> let v1 = v_expr v1 in let t= v_tok t in ()
   | If ((t, v1, v2, v3)) ->

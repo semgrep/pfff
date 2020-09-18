@@ -320,7 +320,7 @@ let forof (lhs_var, tok, e2, st) (expr, stmt, var_binding) =
             then failwith "for-of loop variable can not have an initializer";
             C.VarPattern { x with C.vpat_init = Some (tok, step_value_cst) }
       in
-      var_binding vkind binding |> List.map (fun var -> A.VarDecl var)
+      var_binding vkind binding |> List.map (fun var -> A.DefStmt var)
   in 
   let finalst = vars_or_assign_stmts @ st  in
   [A.For (fake "for", A.ForClassic (for_init, Some for_cond, None), 

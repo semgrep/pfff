@@ -245,8 +245,8 @@ and expr =
 (* Statement *)
 (*****************************************************************************)
 and stmt = 
-  (* covers also method definitions, class defs, etc. Really a DefStmt *)
-  | VarDecl of var
+  (* covers VarDecl, method definitions, class defs, etc *)
+  | DefStmt of entity
 
   | Block of stmt list bracket
   | ExprStmt of expr * tok (* can be fake when ASI *)
@@ -334,26 +334,32 @@ and attribute = keyword_attribute wrap
 (*****************************************************************************)
 (* Definitions *)
 (*****************************************************************************)
-(* TODO: rename 'var' to 'entity' to be close to AST_generic.
- * TODO: put type parameters, attributes (keyword attr and decorator) in entity
+
+(* TODO: type definition = entity * definition_kind *)
+(* TODO: put type parameters, attributes (keyword attr and decorator) in entity
  *)
 
-and var = { 
+and entity = { 
   (* ugly: can be AST_generic.special_multivardef_pattern when
    * Ast_js_build.transpile_pattern is false with a vinit an Assign itself.
    * actually in a ForIn/ForOf the init will be just the pattern, not even
    * an Assign.
    *)
   v_name: ident;
+
+  (* move in VarDef? *)
   v_kind: var_kind wrap;
   (* actually a pattern when inside a ForIn/ForOf *)
   v_init: expr option;
+
   (* typescript-ext: *)
   v_type: type_ option;
   v_resolved: resolved_name ref;
   (* TODO: put v_tparams here *)
 }
   and var_kind = Var | Let | Const
+
+and var = entity
 
 and function_definition = {
   (* TODO: move that in entity *)

@@ -249,7 +249,7 @@ and stmt x =
       let v2 = list any v2 in
       G.OtherStmt (G.OS_Todo, (G.TodoK v1)::(v2))
   | M v1 -> let v1 = module_directive v1 in G.DirectiveStmt v1
-  | VarDecl v1 -> let v1 = def_of_var v1 in G.DefStmt (v1)
+  | DefStmt v1 -> let v1 = def_of_var v1 in G.DefStmt (v1)
   | Block v1 -> let v1 = bracket (list stmt) v1 in G.Block v1
   | ExprStmt (v1, t) -> let v1 = expr v1 in G.ExprStmt (v1, t)
   | If ((t, v1, v2, v3)) ->
