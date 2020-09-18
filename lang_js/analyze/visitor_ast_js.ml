@@ -303,6 +303,7 @@ and v_type_ _x = ()
 and v_property x =
   (* tweak *)
   let k x =  match x with
+  | FieldTodo (v1, v2) -> v_todo_category v1; v_stmt v2
   | Field { fld_name; fld_props; fld_type; fld_body} ->
       let v1 = v_property_name fld_name
       and v2 = v_list (v_wrap v_property_prop) fld_props

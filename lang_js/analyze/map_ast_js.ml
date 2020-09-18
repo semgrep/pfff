@@ -374,6 +374,9 @@ and map_field_classic { fld_name; fld_props; fld_type; fld_body} =
 
 and map_property =
   function
+  | FieldTodo (v1, v2) -> let v1 = map_todo_category v1 in 
+      let v2 = map_stmt v2 in
+      FieldTodo (v1, v2)
   | Field v -> let v = map_field_classic v in Field v
   | FieldSpread (t, v1) -> 
       let t = map_tok t in let v1 = map_expr v1 in FieldSpread ((t, v1))

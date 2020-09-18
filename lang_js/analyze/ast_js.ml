@@ -383,7 +383,7 @@ and class_ = {
   c_body: property list bracket;
 }
   and property = 
-    (* expr is a Fun for methods 
+    (* field_classic.fld_body is a (Some Fun) for methods.
      * None is possible only for class fields. For object there is
      * always a value.
      *)
@@ -392,9 +392,12 @@ and class_ = {
     | FieldSpread of tok * expr
     (* This is present only when in pattern context.
      * ugly: we should have a clean separate pattern type instead of abusing
-     *  expr, which forces us to add this construct.
+     * expr, which forces us to add this construct.
      *)
     | FieldPatDefault of pattern * tok * expr
+
+    | FieldTodo of todo_category * stmt
+
     (* sgrep-ext: used for {fld1: 1, ... } which is distinct from spreading *)
     | FieldEllipsis of tok
 
@@ -435,7 +438,7 @@ and module_directive =
   (* those should not exist (except for sgrep where they are useful) *)
   | ImportEffect of tok * filename
 
-  [@@deriving show { with_path = false} ]
+(*  [@@deriving show { with_path = false} ] *)
 
 (*****************************************************************************)
 (* Toplevel *)
@@ -447,14 +450,14 @@ and module_directive =
  *)
 (* less: can remove and below when StmtTodo disappear *)
 and toplevel = stmt
- [@@deriving show { with_path = false} ] (* with tarzan *)
+ (* [@@deriving show { with_path = false} ] (* with tarzan *) *)
 
 (*****************************************************************************)
 (* Program *)
 (*****************************************************************************)
 
 and program = toplevel list
- [@@deriving show { with_path = false} ] (* with tarzan *)
+ (* [@@deriving show { with_path = false} ] (* with tarzan *) *)
 
 (*****************************************************************************)
 (* Any *)

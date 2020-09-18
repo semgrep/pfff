@@ -622,6 +622,7 @@ and property env = function
       pattern env pat;
       expr env e
   | FieldEllipsis _ -> ()
+  | FieldTodo _ -> failwith "FieldTodo"
 
 and pattern env x = expr env x
 

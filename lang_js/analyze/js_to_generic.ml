@@ -485,6 +485,10 @@ and property x =
       let v1 = pattern v1 in
       let v3 = expr v3 in
       G.FieldStmt (G.exprstmt (G.LetPattern (v1, v3)))
+  | FieldTodo (v1, v2) ->
+      let v2 = stmt v2 in
+      (* hmm, should use OtherStmtWithStmt ? *)
+      G.FieldStmt (G.OtherStmt (G.OS_Todo, [G.TodoK v1; G.S v2]))
   
 
 and toplevel x = stmt x
