@@ -320,13 +320,23 @@ and
 (* TODO? call Map_AST with local kinfo? meh *)
 and map_type_ x = x
 
+and map_argument x = map_expr x
+and map_dotted_ident xs = map_of_list map_ident xs
+and map_attribute = function
+  | KeywordAttr x -> KeywordAttr (map_keyword_attribute x)
+  | NamedAttr (v1, v2, v3) -> 
+      let v1 = map_tok v1 in
+      let v2 = map_dotted_ident v2
+      and v3 = map_bracket (map_of_list map_argument) v3
+      in NamedAttr ((v1, v2, v3))
+
 and map_var_kind = function | Var -> Var | Let -> Let | Const -> Const
 and
   map_fun_ { f_props = v_f_props; f_params = v_f_params; f_body = v_f_body }
            =
   let v_f_body = map_stmt v_f_body in
   let v_f_params = map_of_list map_parameter_binding v_f_params in
-  let v_f_props = map_of_list (map_wrap map_fun_prop) v_f_props in 
+  let v_f_props = map_of_list map_attribute v_f_props in 
   { f_props = v_f_props; f_params = v_f_params; f_body = v_f_body }
 
 and map_parameter_binding =
@@ -353,7 +363,6 @@ and
   }
 
 
-and map_fun_prop x = map_keyword_attribute x
 and map_keyword_attribute x = x
 
 
@@ -366,7 +375,7 @@ and map_class_ { c_extends = v_c_extends; c_body = v_c_body; c_tok } =
 
 and map_field_classic { fld_name; fld_props; fld_type; fld_body} =
       let fld_name = map_property_name fld_name
-      and fld_props = map_of_list (map_wrap map_property_prop) fld_props
+      and fld_props = map_of_list map_attribute fld_props
       and fld_type = map_of_option map_type_ fld_type
       and fld_body = map_of_option map_expr fld_body
       in 
@@ -388,8 +397,7 @@ and map_property =
       let v3 = map_expr v3 in
       FieldPatDefault (v1, v2, v3)
       
-and map_property_prop x = x
-  
+
 and map_toplevel x = map_stmt x
 
 and map_module_directive =

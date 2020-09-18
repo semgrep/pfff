@@ -158,6 +158,12 @@ type label = string wrap
 type filename = string wrap
  [@@deriving show ] (* with tarzan *)
 
+(* Used for decorators and for TyName in AST_generic.type_.
+ * Otherwise for regular JS dotted names are encoded with ObjAccess instead.
+ *)
+type dotted_ident = ident list
+ [@@deriving show ] (* with tarzan *)
+
 (* when doing export default Foo and import Bar, ... *)
 let default_entity = "!default!"
 
@@ -316,9 +322,13 @@ and type_ = AST_generic.type_
 (*****************************************************************************)
 (* Attributes *)
 (*****************************************************************************)
-(* TODO: decorator *)
-and attribute = keyword_attribute wrap
-  and keyword_attribute = 
+
+(* quite similar to AST_generic.attribute but the 'argument' is different *)
+and attribute = 
+  | KeywordAttr of keyword_attribute wrap
+  | NamedAttr of tok (* @ *) * dotted_ident * arguments
+
+ and keyword_attribute =
    (* field props *)
     | Static
     (* todo? not in tree-sitter-js *)
@@ -548,3 +558,5 @@ let mk_default_entity_var tok exp =
             v_resolved = ref NotResolved; v_type = None } 
   in
   v, n
+
+let attr x = KeywordAttr x

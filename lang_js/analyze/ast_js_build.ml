@@ -842,7 +842,7 @@ and func_decl env x =
   { A.f_props = props; f_params = params; f_body = body }
 
 and func_props _env kind props = 
-  (match kind with
+  ((match kind with
   | C.F_func _ -> []
   | C.F_method _ -> []
   | C.F_get (tok, _) -> [A.Get, tok]
@@ -851,7 +851,7 @@ and func_props _env kind props =
   (props |> List.map (function
    | C.Generator tok -> A.Generator, tok
    | C.Async tok -> A.Async, tok
-   ))
+   ))) |> List.map A.attr
 
 (* return a parameter and a list of vars when transpiling patterns *)
 and parameter_binding env idx = function
@@ -998,7 +998,7 @@ and static _env t = A.Static, t
 and class_element env = function
   | C.C_field ({C.fld_name; fld_init; fld_type; fld_static}, _sc) -> 
     let fld_name = property_name env fld_name in
-    let fld_props = opt static env fld_static |> opt_to_list in
+    let fld_props = opt static env fld_static |> opt_to_list |> List.map A.attr in
     let fld_body = init_opt env fld_init in
     let fld_type = type_opt env fld_type in
     [A.Field {A.fld_name; fld_props; fld_type; fld_body}]
@@ -1026,6 +1026,8 @@ and method_ env props x =
       raise (UnhandledConstruct ("weird method decl: unexpected F_func", 
                                   fst3 x.C.f_params))
   in
+  let fprops = fprops |> List.map A.attr in
+  let props = props |> List.map A.attr in
   let fun_ = { fun_ with A.f_props = fprops @ fun_.A.f_props } in
   let ty = None in
   A.Field {A.fld_name = pname; fld_props = props; fld_type = ty;

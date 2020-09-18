@@ -265,7 +265,7 @@ and v_var { v_name = v_v_name; v_kind = v_v_kind; v_init = v_v_init;
 and v_var_kind = function | Var -> () | Let -> () | Const -> ()
 
 and v_fun_ { f_props = v_f_props; f_params = v_f_params; f_body = v_f_body } =
-  let arg = v_list (v_wrap v_fun_prop) v_f_props in
+  let arg = v_list v_attribute v_f_props in
   let arg = v_list v_parameter_binding v_f_params in let arg = v_stmt v_f_body in ()
 
 and v_parameter_binding =
@@ -288,6 +288,17 @@ and v_parameter x =
   in
   vin.kparam (k, all_functions) x
 
+and v_dotted_ident xs = v_list v_ident xs
+
+and v_argument x = v_expr x
+
+and v_attribute = function
+  | KeywordAttr x -> v_keyword_attribute x
+  | NamedAttr (v1, v2, v3) ->
+      v_tok v1 ;
+      v_dotted_ident v2;
+      v_bracket (v_list v_argument) v3
+      
 and v_fun_prop x = v_keyword_attribute x
 and v_keyword_attribute _ = ()
 
@@ -306,7 +317,7 @@ and v_property x =
   | FieldTodo (v1, v2) -> v_todo_category v1; v_stmt v2
   | Field { fld_name; fld_props; fld_type; fld_body} ->
       let v1 = v_property_name fld_name
-      and v2 = v_list (v_wrap v_property_prop) fld_props
+      and v2 = v_list v_attribute fld_props
       and ty = v_option v_type_ fld_type
       and v3 = v_option v_expr fld_body
       in ()

@@ -393,7 +393,7 @@ and var_kind (x, tok) =
   | Const -> G.attr G.Const tok
 
 and fun_ { f_props = f_props; f_params = f_params; f_body = f_body } =
-  let v1 = list fun_prop f_props in
+  let v1 = list attribute f_props in
   let v2 = list parameter_binding f_params in 
   let v3 = stmt f_body |> as_block in
   { G.fparams = v2; frettype = None; fbody = v3; }, v1
@@ -420,27 +420,32 @@ and parameter x =
     pinfo = G.empty_id_info ();
   }
   
+and argument x = expr x
 
-and fun_prop x = keyword_attribute x
+and attribute = function
+ | KeywordAttr x -> G.KeywordAttr (keyword_attribute x)
+ | NamedAttr (t, ids, (t1, args, t2)) ->
+      let args = list argument args |> List.map G.expr_to_arg in
+      G.NamedAttr (t, ids, G.empty_id_info (), (t1, args, t2))
+
 and keyword_attribute (x, tok) = 
-  match x with
+  (match x with
   (* methods *)
-  | Get -> G.attr G.Getter tok
-  | Set -> G.attr G.Setter tok
-  | Generator -> G.attr G.Generator tok 
-  | Async -> G.attr G.Async tok
+  | Get -> G.Getter
+  | Set -> G.Setter
+  | Generator -> G.Generator
+  | Async -> G.Async
 
   (* fields *)
-  | Static -> G.attr G.Static tok
-  | Public -> G.attr G.Public tok
-  | Private -> G.attr G.Private tok
-  | Protected -> G.attr G.Protected tok
-  | Readonly -> G.attr G.Const tok
-  | Optional -> G.attr G.Optional tok
-  | Abstract -> G.attr G.Abstract tok
-  | NotNull -> G.attr G.NotNull tok
-
-and property_prop x = keyword_attribute x
+  | Static -> G.Static
+  | Public -> G.Public
+  | Private -> G.Private
+  | Protected -> G.Protected
+  | Readonly -> G.Const
+  | Optional -> G.Optional
+  | Abstract -> G.Abstract
+  | NotNull -> G.NotNull
+  ), tok
 
 and obj_ v = bracket (list property) v
 
@@ -459,7 +464,7 @@ and property x =
    match x with
   | Field {fld_name = v1; fld_props = v2; fld_type = vt; fld_body = v3} ->
       let v1 = property_name v1
-      and v2 = list property_prop v2
+      and v2 = list attribute v2
       and vt = vt
       and v3 = option expr v3
       in 
