@@ -160,6 +160,11 @@ and map_xml_body =
 and map_todo_category v = map_wrap map_of_string v
 and map_expr =
   function
+  | Cast (v1, v2, v3) ->
+      let v1 = map_expr v1 in
+      let v2 = map_tok v2 in
+      let v3 = map_type_ v3 in
+      Cast (v1, v2, v3)
   | ExprTodo (v1, v2) -> let v1 = map_todo_category v1 in 
       let v2 = map_of_list map_expr v2 in
       ExprTodo (v1, v2)

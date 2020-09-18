@@ -222,6 +222,9 @@ and expr =
   (* could unify with Apply, but need Lazy special then *)
   | Conditional of expr * expr * expr
 
+  (* typescript: *) 
+  | Cast of expr * tok (* 'as' or ':' *) * type_
+
   | ExprTodo of todo_category * expr list
 
   (* sgrep-ext: *)

@@ -582,7 +582,7 @@ and expr env e =
   | Conditional (e1, e2, e3) ->
     List.iter (expr env) [e1;e2;e3]
   | Xml x -> xml env x
-  | ExprTodo _ -> failwith "ExprTodo"
+  | ExprTodo _ | Cast _ -> failwith "ExprTodo|Cast"
   | Ellipsis _ | DeepEllipsis _ -> ()
 
 and xml env x =

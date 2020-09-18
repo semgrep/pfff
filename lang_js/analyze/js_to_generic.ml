@@ -175,6 +175,11 @@ and xhp_attr v          = expr v
 
 and expr (x: expr) =
   match x with
+  | Cast (v1, _v2, v3) ->
+      let v1 = expr v1 in
+      let v3 = type_ v3 in
+      G.Cast (v3, v1)
+
   | ExprTodo (v1, v2) -> 
       let v2 = list expr v2 in
       G.OtherExpr (G.OE_Todo, (G.TodoK v1)::(v2 |> List.map (fun e -> G.E e)))
