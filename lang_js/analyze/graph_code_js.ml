@@ -438,6 +438,7 @@ and stmt env = function
  | With (_, e, st) ->
     expr env e;
     stmt env st
+  | StmtTodo _ -> failwith "StmtTodo"
 
 and catch_block env = function
   | BoundCatch (_t, pat, st) ->
@@ -581,6 +582,7 @@ and expr env e =
   | Conditional (e1, e2, e3) ->
     List.iter (expr env) [e1;e2;e3]
   | Xml x -> xml env x
+  | ExprTodo _ -> failwith "ExprTodo"
   | Ellipsis _ | DeepEllipsis _ -> ()
 
 and xml env x =

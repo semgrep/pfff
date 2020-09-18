@@ -157,8 +157,12 @@ and map_xml_body =
   | XmlExpr v1 -> let v1 = map_expr v1 in XmlExpr ((v1))
   | XmlXml v1 -> let v1 = map_xml v1 in XmlXml ((v1))
 
+and map_todo_category v = map_wrap map_of_string v
 and map_expr =
   function
+  | ExprTodo (v1, v2) -> let v1 = map_todo_category v1 in 
+      let v2 = map_of_list map_expr v2 in
+      ExprTodo (v1, v2)
   | Xml v1 -> let v1 = map_xml v1 in Xml v1
   | Bool v1 -> let v1 = map_wrap map_of_bool v1 in Bool ((v1))
   | Num v1 -> let v1 = map_wrap map_of_string v1 in Num ((v1))
@@ -202,6 +206,9 @@ and map_expr =
       in Conditional ((v1, v2, v3))
 and map_stmt =
   function
+  | StmtTodo (v1, v2) -> let v1 = map_todo_category v1 in 
+      let v2 = map_of_list map_any v2 in
+      StmtTodo (v1, v2)
   | M v1 -> let v1 = map_module_directive v1 in M ((v1))
   | VarDecl v1 -> let v1 = map_var v1 in VarDecl ((v1))
   | Block v1 -> let v1 = map_bracket (map_of_list map_stmt) v1 in Block ((v1))

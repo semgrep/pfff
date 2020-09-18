@@ -175,6 +175,9 @@ and xhp_attr v          = expr v
 
 and expr (x: expr) =
   match x with
+  | ExprTodo (v1, v2) -> 
+      let v2 = list expr v2 in
+      G.OtherExpr (G.OE_Todo, (G.TodoK v1)::(v2 |> List.map (fun e -> G.E e)))
   | Bool v1 -> let v1 = wrap bool v1 in G.L (G.Bool v1)
   | Num v1 -> let v1 = wrap string v1 in G.L (G.Float v1)
   | String v1 -> let v1 = wrap string v1 in G.L (G.String v1)
@@ -242,6 +245,9 @@ and expr (x: expr) =
 
 and stmt x =
   match x with
+ | StmtTodo (v1, v2) ->
+      let v2 = list any v2 in
+      G.OtherStmt (G.OS_Todo, (G.TodoK v1)::(v2))
   | M v1 -> let v1 = module_directive v1 in G.DirectiveStmt v1
   | VarDecl v1 -> let v1 = def_of_var v1 in G.DefStmt (v1)
   | Block v1 -> let v1 = bracket (list stmt) v1 in G.Block v1
@@ -509,7 +515,7 @@ and module_directive x =
 
 and program v = list toplevel v
 
-let any =
+and any =
   function
   | Expr v1 -> let v1 = expr v1 in G.E v1
   | Stmt v1 -> let v1 = stmt v1 in G.S v1

@@ -82,6 +82,9 @@ type 'a wrap = 'a * tok
 type 'a bracket = tok * 'a * tok
  [@@deriving show] (* with tarzan *)
 
+type todo_category = string wrap
+ [@@deriving show] (* with tarzan *)
+
 (* ------------------------------------------------------------------------- *)
 (* Name *)
 (* ------------------------------------------------------------------------- *)
@@ -211,6 +214,8 @@ and expr =
   (* could unify with Apply, but need Lazy special then *)
   | Conditional of expr * expr * expr
 
+  | ExprTodo of todo_category * expr list
+
   (* sgrep-ext: *)
   | Ellipsis of tok
   | DeepEllipsis of expr bracket
@@ -264,6 +269,8 @@ and stmt =
    * and tree-sitter-js accept directives there too.
    *)
   | M of module_directive
+
+  | StmtTodo of todo_category * any list
 
   (* less: could use some Special instead? *)
   and for_header = 
@@ -438,20 +445,21 @@ and module_directive =
  * we don't enforce those constraints on the generic AST so simpler to
  * move those at the stmt level.
  *)
-type toplevel = stmt
+(* less: can remove and below when StmtTodo disappear *)
+and toplevel = stmt
  [@@deriving show { with_path = false} ] (* with tarzan *)
 
 (*****************************************************************************)
 (* Program *)
 (*****************************************************************************)
 
-type program = toplevel list
+and program = toplevel list
  [@@deriving show { with_path = false} ] (* with tarzan *)
 
 (*****************************************************************************)
 (* Any *)
 (*****************************************************************************)
-type any = 
+and any = 
   | Expr of expr
   | Stmt of stmt
   | Pattern of pattern
