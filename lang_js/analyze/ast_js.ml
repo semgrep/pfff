@@ -172,6 +172,7 @@ type property_name =
 (* Expressions *)
 (*****************************************************************************)
 and expr =
+  (* literals *)
   | Bool of bool wrap
   | Num of string wrap
   | String of string wrap
@@ -189,23 +190,24 @@ and expr =
    * not exist.
    *)
 
-  (* should be a statement, lhs can be a pattern *)
+  (* should be a statement ... lhs can be a pattern *)
   | Assign of pattern * tok * expr
 
   (* less: could be transformed in a series of Assign(ObjAccess, ...) *)
   | Obj of obj_ 
-  (* we could transform it in an Obj but can be useful to remember 
+  (* we could transform it in an Obj but it can be useful to remember 
    * the difference in further analysis (e.g., in the abstract interpreter).
    * This can also contain "holes" when the array is used in lhs of an assign
    *)
   | Arr of expr list bracket
-  | Class of class_ * ident option (* when assigned in module.exports  *)
+  | Class of class_definition * ident option (* when assigned in module.exports  *)
 
   | ObjAccess of expr * tok * property_name
   (* this can also be used to access object fields dynamically *)
   | ArrAccess of expr * expr bracket
 
-  | Fun of fun_ * ident option (*when recursive or assigned in module.exports*)
+  (* ident is a Some when recursive or assigned in module.exports *)
+  | Fun of function_definition * ident option 
   | Apply of expr * arguments
 
   (* copy-paste of AST_generic.xml (but with different 'expr') *)
@@ -266,7 +268,7 @@ and stmt =
 
   (* ES6 modules can appear only at the toplevel,
    * but CommonJS require() can be inside ifs 
-   * and tree-sitter-js accept directives there too.
+   * and tree-sitter-javascript accepts directives there too.
    *)
   | M of module_directive
 
@@ -346,12 +348,15 @@ and var = {
   v_kind: var_kind wrap;
   (* actually a pattern when inside a ForIn/ForOf *)
   v_init: expr option;
+  (* typescript-ext: *)
   v_type: type_ option;
   v_resolved: resolved_name ref;
+  (* TODO: put v_tparams here *)
 }
   and var_kind = Var | Let | Const
 
-and fun_ = {
+and function_definition = {
+  (* TODO: move that in entity *)
   f_props: attribute list;
   f_params: parameter list;
   (* TODO: f_rettype *)
@@ -369,19 +374,21 @@ and fun_ = {
   and parameter_classic = {
     p_name: ident;
     p_default: expr option;
+    (* typescript-ext: *)
     p_type: type_ option;
     p_dots: tok option;
     (* TODO: p_attrs: *)
   }
 
-and obj_ = property list bracket
-
-and class_ = { 
+and class_definition = { 
   c_tok: tok;
   (* usually simply an Id *)
   c_extends: expr option;
   c_body: property list bracket;
 }
+
+  and obj_ = property list bracket
+
   and property = 
     (* field_classic.fld_body is a (Some Fun) for methods.
      * None is possible only for class fields. For object there is
@@ -462,6 +469,7 @@ and program = toplevel list
 (*****************************************************************************)
 (* Any *)
 (*****************************************************************************)
+(* this is now mutually recursive with the previous types because of StmtTodo*)
 and any = 
   | Expr of expr
   | Stmt of stmt
