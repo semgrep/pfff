@@ -510,6 +510,8 @@ and vof_keyword_attribute =
   | Setter -> OCaml.VSum (("Setter", []))
   | Variadic -> OCaml.VSum (("Variadic", []))
   | VariadicHashSplat -> OCaml.VSum (("VariadicHashSplat", []))
+  | Optional -> OCaml.VSum (("Optional", []))
+  | NotNull -> OCaml.VSum (("NotNull", []))
 
 and vof_attribute = function
   | KeywordAttr x -> let v1 = vof_wrap vof_keyword_attribute x in

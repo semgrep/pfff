@@ -887,7 +887,9 @@ and type_ =
     * todo? maybe go even further and differentiate TyId vs TyIdQualified?
     *)
   | TyName of name
-  (* covers tuples, list, etc.*)
+  (* covers tuples, list, etc.
+   * TODO: merge with TyName? name_info has name_typeargs
+   *)
   | TyNameApply of name * type_arguments
 
   | TyVar of ident (* type variable in polymorphic types (not a typedef) *)
@@ -896,9 +898,9 @@ and type_ =
 
   | TyQuestion of type_ * tok (* a.k.a option type *)
 
-  (* intersection types, used for Java Cast *)
+  (* intersection types, used for Java Cast, and in Typescript *)
   | TyAnd of type_ * tok (* & *) * type_
-  (* unused for now, but could use for OCaml variants, or for union types! *)
+  (* union types in Typescript *)
   | TyOr of type_ * tok (* | *) * type_
 
   (* Anonymous record type, a.k.a shape in PHP/Hack. See also AndType.
@@ -965,14 +967,16 @@ and attribute =
   | Abstract | Final
   (* for vars (JS) *)
   | Var | Let
-  (* for fields *)
-  | Mutable | Const
+  (* for fields (kinda types) *)
+  | Mutable | Const (* a.k.a 'readonly' in Typescript *)
+  (* less: should be part of the type *)
+  | Optional (* Typescript '?' *) | NotNull (* Typescript '!' *)
   (* for functions *)
-  | Generator | Async 
+  | Generator (* '*' in JS *) | Async 
   | Recursive | MutuallyRecursive
   (* for methods *)
   | Ctor | Dtor
-  | Getter | Setter
+  | Getter | Setter 
   (* for parameters (TODO: move to ParamSpread? ParamHashSplat? *)
   | Variadic | VariadicHashSplat
 (*e: type [[AST_generic.keyword_attribute]] *)
@@ -1494,7 +1498,7 @@ let basic_id_info resolved =
 let name_of_id id = 
   (id, empty_name_info)
 
-let _name_of_ids xs =
+let name_of_ids ?(name_typeargs=None) xs =
   match List.rev xs with
   | [] -> failwith "name_of_ids: empty ids"
   | x::xs ->
@@ -1503,7 +1507,7 @@ let _name_of_ids xs =
         then None
         else Some (QDots (List.rev xs))
       in
-      (x, { name_qualifier = qualif; name_typeargs = None })
+      (x, { name_qualifier = qualif; name_typeargs })
 
 (*s: function [[AST_generic.param_of_id]] *)
 let param_of_id id = { 

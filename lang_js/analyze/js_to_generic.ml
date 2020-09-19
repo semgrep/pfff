@@ -175,6 +175,14 @@ and xhp_attr v          = expr v
 
 and expr (x: expr) =
   match x with
+  | Cast (v1, _v2, v3) ->
+      let v1 = expr v1 in
+      let v3 = type_ v3 in
+      G.Cast (v3, v1)
+
+  | ExprTodo (v1, v2) -> 
+      let v2 = list expr v2 in
+      G.OtherExpr (G.OE_Todo, (G.TodoK v1)::(v2 |> List.map (fun e -> G.E e)))
   | Bool v1 -> let v1 = wrap bool v1 in G.L (G.Bool v1)
   | Num v1 -> let v1 = wrap string v1 in G.L (G.Float v1)
   | String v1 -> let v1 = wrap string v1 in G.L (G.String v1)
@@ -242,8 +250,11 @@ and expr (x: expr) =
 
 and stmt x =
   match x with
+ | StmtTodo (v1, v2) ->
+      let v2 = list any v2 in
+      G.OtherStmt (G.OS_Todo, (G.TodoK v1)::(v2))
   | M v1 -> let v1 = module_directive v1 in G.DirectiveStmt v1
-  | VarDecl v1 -> let v1 = def_of_var v1 in G.DefStmt (v1)
+  | DefStmt v1 -> let v1 = def_of_var v1 in G.DefStmt (v1)
   | Block v1 -> let v1 = bracket (list stmt) v1 in G.Block v1
   | ExprStmt (v1, t) -> let v1 = expr v1 in G.ExprStmt (v1, t)
   | If ((t, v1, v2, v3)) ->
@@ -387,7 +398,7 @@ and var_kind (x, tok) =
   | Const -> G.attr G.Const tok
 
 and fun_ { f_props = f_props; f_params = f_params; f_body = f_body } =
-  let v1 = list fun_prop f_props in
+  let v1 = list attribute f_props in
   let v2 = list parameter_binding f_params in 
   let v3 = stmt f_body |> as_block in
   { G.fparams = v2; frettype = None; fbody = v3; }, v1
@@ -414,19 +425,39 @@ and parameter x =
     pinfo = G.empty_id_info ();
   }
   
+and argument x = expr x
 
-and fun_prop (x, tok) =
-  match x with
-  | Get -> G.attr G.Getter tok
-  | Set -> G.attr G.Setter tok
-  | Generator -> G.attr G.Generator tok 
-  | Async -> G.attr G.Async tok
+and attribute = function
+ | KeywordAttr x -> G.KeywordAttr (keyword_attribute x)
+ | NamedAttr (t, ids, (t1, args, t2)) ->
+      let args = list argument args |> List.map G.expr_to_arg in
+      G.NamedAttr (t, ids, G.empty_id_info (), (t1, args, t2))
+
+and keyword_attribute (x, tok) = 
+  (match x with
+  (* methods *)
+  | Get -> G.Getter
+  | Set -> G.Setter
+  | Generator -> G.Generator
+  | Async -> G.Async
+
+  (* fields *)
+  | Static -> G.Static
+  | Public -> G.Public
+  | Private -> G.Private
+  | Protected -> G.Protected
+  | Readonly -> G.Const
+  | Optional -> G.Optional
+  | Abstract -> G.Abstract
+  | NotNull -> G.NotNull
+  ), tok
 
 and obj_ v = bracket (list property) v
 
-and class_ { c_extends = c_extends; c_body = c_body; c_tok } =
+and class_ { c_extends = c_extends; c_body = c_body; c_tok; c_props } =
   let v1 = option expr c_extends in
   let v2 = bracket (list property) c_body in
+  let attrs = list attribute c_props in
   (* todo: could analyze arg to look for Id *)
   let extends = 
     match v1 with
@@ -434,12 +465,12 @@ and class_ { c_extends = c_extends; c_body = c_body; c_tok } =
     | Some e -> [G.OtherType (G.OT_Expr, [G.E e])]
   in
   { G.ckind = (G.Class, c_tok); cextends = extends; 
-    cimplements = []; cmixins = []; cbody = v2;}, []
+    cimplements = []; cmixins = []; cbody = v2;}, attrs
 and property x =
    match x with
   | Field {fld_name = v1; fld_props = v2; fld_type = vt; fld_body = v3} ->
       let v1 = property_name v1
-      and v2 = list property_prop v2
+      and v2 = list attribute v2
       and vt = vt
       and v3 = option expr v3
       in 
@@ -465,12 +496,10 @@ and property x =
       let v1 = pattern v1 in
       let v3 = expr v3 in
       G.FieldStmt (G.exprstmt (G.LetPattern (v1, v3)))
-and property_prop (x, tok) =
-  match x with
-  | Static -> G.attr G.Static tok
-  | Public -> G.attr G.Public tok
-  | Private -> G.attr G.Private tok
-  | Protected -> G.attr G.Protected tok
+  | FieldTodo (v1, v2) ->
+      let v2 = stmt v2 in
+      (* hmm, should use OtherStmtWithStmt ? *)
+      G.FieldStmt (G.OtherStmt (G.OS_Todo, [G.TodoK v1; G.S v2]))
   
 
 and toplevel x = stmt x
@@ -501,7 +530,7 @@ and module_directive x =
 
 and program v = list toplevel v
 
-let any =
+and any =
   function
   | Expr v1 -> let v1 = expr v1 in G.E v1
   | Stmt v1 -> let v1 = stmt v1 in G.S v1

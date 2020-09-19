@@ -157,8 +157,17 @@ and map_xml_body =
   | XmlExpr v1 -> let v1 = map_expr v1 in XmlExpr ((v1))
   | XmlXml v1 -> let v1 = map_xml v1 in XmlXml ((v1))
 
+and map_todo_category v = map_wrap map_of_string v
 and map_expr =
   function
+  | Cast (v1, v2, v3) ->
+      let v1 = map_expr v1 in
+      let v2 = map_tok v2 in
+      let v3 = map_type_ v3 in
+      Cast (v1, v2, v3)
+  | ExprTodo (v1, v2) -> let v1 = map_todo_category v1 in 
+      let v2 = map_of_list map_expr v2 in
+      ExprTodo (v1, v2)
   | Xml v1 -> let v1 = map_xml v1 in Xml v1
   | Bool v1 -> let v1 = map_wrap map_of_bool v1 in Bool ((v1))
   | Num v1 -> let v1 = map_wrap map_of_string v1 in Num ((v1))
@@ -202,8 +211,11 @@ and map_expr =
       in Conditional ((v1, v2, v3))
 and map_stmt =
   function
+  | StmtTodo (v1, v2) -> let v1 = map_todo_category v1 in 
+      let v2 = map_of_list map_any v2 in
+      StmtTodo (v1, v2)
   | M v1 -> let v1 = map_module_directive v1 in M ((v1))
-  | VarDecl v1 -> let v1 = map_var v1 in VarDecl ((v1))
+  | DefStmt v1 -> let v1 = map_var v1 in DefStmt ((v1))
   | Block v1 -> let v1 = map_bracket (map_of_list map_stmt) v1 in Block ((v1))
   | ExprStmt (v1, t) -> let v1 = map_expr v1 in let t = map_tok t in 
       ExprStmt (v1, t)
@@ -313,13 +325,23 @@ and
 (* TODO? call Map_AST with local kinfo? meh *)
 and map_type_ x = x
 
+and map_argument x = map_expr x
+and map_dotted_ident xs = map_of_list map_ident xs
+and map_attribute = function
+  | KeywordAttr x -> KeywordAttr (map_keyword_attribute x)
+  | NamedAttr (v1, v2, v3) -> 
+      let v1 = map_tok v1 in
+      let v2 = map_dotted_ident v2
+      and v3 = map_bracket (map_of_list map_argument) v3
+      in NamedAttr ((v1, v2, v3))
+
 and map_var_kind = function | Var -> Var | Let -> Let | Const -> Const
 and
   map_fun_ { f_props = v_f_props; f_params = v_f_params; f_body = v_f_body }
            =
   let v_f_body = map_stmt v_f_body in
   let v_f_params = map_of_list map_parameter_binding v_f_params in
-  let v_f_props = map_of_list (map_wrap map_fun_prop) v_f_props in 
+  let v_f_props = map_of_list map_attribute v_f_props in 
   { f_props = v_f_props; f_params = v_f_params; f_body = v_f_body }
 
 and map_parameter_binding =
@@ -344,22 +366,23 @@ and
   { p_name = v_p_name; p_default = v_p_default; p_dots = v_p_dots; 
     p_type = vt;
   }
-and map_fun_prop =
-  function
-  | Get -> Get
-  | Set -> Set
-  | Generator -> Generator
-  | Async -> Async
+
+
+and map_keyword_attribute x = x
+
+
 and map_obj_ v = map_bracket (map_of_list map_property) v
-and map_class_ { c_extends = v_c_extends; c_body = v_c_body; c_tok } =
+and map_class_ 
+  { c_extends = v_c_extends; c_body = v_c_body; c_tok; c_props } =
   let v_c_body = map_bracket (map_of_list map_property) v_c_body in
   let v_c_extends = map_of_option map_expr v_c_extends in 
   let c_tok = map_tok c_tok in
-  { c_extends = v_c_extends; c_body = v_c_body; c_tok }
+  let c_props = map_of_list map_attribute c_props in
+  { c_extends = v_c_extends; c_body = v_c_body; c_tok; c_props }
 
 and map_field_classic { fld_name; fld_props; fld_type; fld_body} =
       let fld_name = map_property_name fld_name
-      and fld_props = map_of_list (map_wrap map_property_prop) fld_props
+      and fld_props = map_of_list map_attribute fld_props
       and fld_type = map_of_option map_type_ fld_type
       and fld_body = map_of_option map_expr fld_body
       in 
@@ -367,6 +390,9 @@ and map_field_classic { fld_name; fld_props; fld_type; fld_body} =
 
 and map_property =
   function
+  | FieldTodo (v1, v2) -> let v1 = map_todo_category v1 in 
+      let v2 = map_stmt v2 in
+      FieldTodo (v1, v2)
   | Field v -> let v = map_field_classic v in Field v
   | FieldSpread (t, v1) -> 
       let t = map_tok t in let v1 = map_expr v1 in FieldSpread ((t, v1))
@@ -378,13 +404,7 @@ and map_property =
       let v3 = map_expr v3 in
       FieldPatDefault (v1, v2, v3)
       
-and map_property_prop =
-  function
-  | Static -> Static
-  | Public -> Public
-  | Private -> Private
-  | Protected -> Protected
-  
+
 and map_toplevel x = map_stmt x
 
 and map_module_directive =

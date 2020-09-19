@@ -208,20 +208,20 @@ and export env tok = function
  | C.ExportDefaultExpr (tok2, e, _)  -> 
    let e = expr env e in
    let v, n = A.mk_default_entity_var tok2 e in
-   [A.VarDecl v; A.M (A.Export (tok, n))]
+   [A.DefStmt v; A.M (A.Export (tok, n))]
  | C.ExportDecl x ->
    let xs = item None env x in
    xs |> List.map (function
-    | A.VarDecl v -> 
-         [A.VarDecl v; A.M (A.Export (tok, v.A.v_name))]
+    | A.DefStmt v -> 
+         [A.DefStmt v; A.M (A.Export (tok, v.A.v_name))]
     | _ -> raise (UnhandledConstruct ("exporting a stmt", tok))
    ) |> List.flatten
  | C.ExportDefaultDecl (tok2, x) ->
    (* this is ok to have anonymous entities here *)
    let xs = item (Some tok2) env x in
    xs |> List.map (function
-    | A.VarDecl v -> 
-        [A.VarDecl v;  A.M (A.Export (tok,v.A.v_name))]
+    | A.DefStmt v -> 
+        [A.DefStmt v;  A.M (A.Export (tok,v.A.v_name))]
     | _ -> raise (UnhandledConstruct ("exporting a stmt", tok))
    ) |> List.flatten
  | C.ExportNames (xs, _) ->
@@ -233,7 +233,7 @@ and export env tok = function
          let n2 = name env n2 in
          let id = A.Id (n1, not_resolved ()) in
          let v = A.mk_const_var n2 id in
-         [A.VarDecl v; A.M (A.Export (tok, n2))]
+         [A.DefStmt v; A.M (A.Export (tok, n2))]
   ) |> List.flatten
  | C.ReExportNames (xs, (tok2, path), _) ->
    xs |> C.unbrace |> C.uncomma |> List.map (fun (n1, n2opt) ->
@@ -245,11 +245,11 @@ and export env tok = function
      match n2opt with
      | None -> 
        let v = A.mk_const_var n1 id in
-       [A.M import; A.VarDecl v; A.M (A.Export (tok, n1))]
+       [A.M import; A.DefStmt v; A.M (A.Export (tok, n1))]
      | Some (_, n2) ->
        let n2 = name env n2 in
        let v = A.mk_const_var n2 id in
-       [A.M import; A.VarDecl v; A.M (A.Export (tok, n2))]
+       [A.M import; A.DefStmt v; A.M (A.Export (tok, n2))]
    ) |> List.flatten
 
  | C.ReExportNamespace (t1, (t2, filename), _sc) ->
@@ -263,7 +263,7 @@ and item default_opt env = function
     (match x.C.f_kind, default_opt with
     | C.F_func (_, Some x), None ->
       let n = name env x in
-      [A.VarDecl {A.v_name = n; v_kind = A.Const, fake "const"; 
+      [A.DefStmt {A.v_name = n; v_kind = A.Const, fake "const"; 
                   v_init = Some (A.Fun (fun_, None)); 
                   v_type = None;
                   v_resolved = not_resolved()}]
@@ -271,12 +271,12 @@ and item default_opt env = function
     | C.F_func (_, None), Some tok ->
       let e = A.Fun (fun_, None) in
       let v, _n = A.mk_default_entity_var tok e in
-      [A.VarDecl v]
+      [A.DefStmt v]
     | C.F_func (_, Some x), Some tok ->
       let n2 = name env x in
       let e = A.Fun (fun_, Some n2) in
       let v, _n = A.mk_default_entity_var tok e in
-      [A.VarDecl v]
+      [A.DefStmt v]
 
     | C.F_func (_, None), None ->
        raise (UnhandledConstruct ("weird: anonymous func decl", 
@@ -289,19 +289,19 @@ and item default_opt env = function
     (match x.C.c_name, default_opt with
     | Some x, None ->
       let n = name env x in
-      [A.VarDecl {A.v_name = n; v_kind=A.Const, fake "const";
+      [A.DefStmt {A.v_name = n; v_kind=A.Const, fake "const";
                   v_init= Some (A.Class (class_, None)); 
                   v_type = None;
                   v_resolved = not_resolved ()}]
     | None, Some tok ->
       let e = A.Class (class_, None) in
       let v, _n = A.mk_default_entity_var tok e in 
-      [A.VarDecl v]
+      [A.DefStmt v]
     | Some x, Some tok ->
       let n2 = name env x in
       let e = A.Class (class_, Some n2) in
       let v, _n = A.mk_default_entity_var tok e in 
-      [A.VarDecl v]
+      [A.DefStmt v]
     | None, None ->
        raise (UnhandledConstruct ("weird: anonymous class decl", x.C.c_tok))
     )
@@ -330,7 +330,7 @@ and stmt env = function
   | C.VarsDecl (vkind, bindings, _) ->
     bindings |> C.uncomma |> List.map (fun x -> 
      let vars = var_binding env vkind x in
-     vars |> List.map (fun var -> A.VarDecl var)) |> List.flatten
+     vars |> List.map (fun var -> A.DefStmt var)) |> List.flatten
   | C.Block (t1, x, t2) -> 
     [A.Block (t1, stmt_item_list env x, t2)]
   | C.Nop _ -> 
@@ -457,7 +457,7 @@ and stmt_item_list env items =
       let env = 
          let locals = ys |> Common.map_filter (fun x ->
            match x with
-           | A.VarDecl v -> Some v
+           | A.DefStmt v -> Some v
            | _ -> None
          ) in
          add_locals env locals
@@ -842,7 +842,7 @@ and func_decl env x =
   { A.f_props = props; f_params = params; f_body = body }
 
 and func_props _env kind props = 
-  (match kind with
+  ((match kind with
   | C.F_func _ -> []
   | C.F_method _ -> []
   | C.F_get (tok, _) -> [A.Get, tok]
@@ -851,7 +851,7 @@ and func_props _env kind props =
   (props |> List.map (function
    | C.Generator tok -> A.Generator, tok
    | C.Async tok -> A.Async, tok
-   ))
+   ))) |> List.map A.attr
 
 (* return a parameter and a list of vars when transpiling patterns *)
 and parameter_binding env idx = function
@@ -877,7 +877,7 @@ and parameter_binding env idx = function
                  } 
          in
          let p = parameter env p in
-         A.ParamClassic p, vars |> List.map (fun x -> A.VarDecl x)
+         A.ParamClassic p, vars |> List.map (fun x -> A.DefStmt x)
      with Failure s ->
        raise (TodoConstruct(spf "ParamPattern:%s" s, tok))
      )
@@ -989,7 +989,7 @@ and class_decl env x =
     x.C.c_extends in
   let xs = x.C.c_body |> bracket_keep 
       (fun xs -> xs |> List.map (class_element env) |> List.flatten) in
-  { A.c_extends = extends; c_body = xs; c_tok = x.C.c_tok }
+  { A.c_extends = extends; c_body = xs; c_tok = x.C.c_tok; c_props = [] }
 
 and nominal_type env (e, _) = expr env e
 
@@ -998,7 +998,7 @@ and static _env t = A.Static, t
 and class_element env = function
   | C.C_field ({C.fld_name; fld_init; fld_type; fld_static}, _sc) -> 
     let fld_name = property_name env fld_name in
-    let fld_props = opt static env fld_static |> opt_to_list in
+    let fld_props = opt static env fld_static |> opt_to_list |> List.map A.attr in
     let fld_body = init_opt env fld_init in
     let fld_type = type_opt env fld_type in
     [A.Field {A.fld_name; fld_props; fld_type; fld_body}]
@@ -1026,6 +1026,8 @@ and method_ env props x =
       raise (UnhandledConstruct ("weird method decl: unexpected F_func", 
                                   fst3 x.C.f_params))
   in
+  let fprops = fprops |> List.map A.attr in
+  let props = props |> List.map A.attr in
   let fun_ = { fun_ with A.f_props = fprops @ fun_.A.f_props } in
   let ty = None in
   A.Field {A.fld_name = pname; fld_props = props; fld_type = ty;

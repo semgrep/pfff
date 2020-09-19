@@ -309,7 +309,7 @@ let rec extract_defs_uses env ast =
  *)
 and toplevels_entities_adjust_imports env xs =
   xs |> List.iter (function
-    | VarDecl v ->
+    | DefStmt v ->
       let str = s_of_n v.v_name in
       Hashtbl.replace env.imports str 
         (mk_qualified_name env.file_readable str);
@@ -322,7 +322,7 @@ and toplevels_entities_adjust_imports env xs =
 (* ---------------------------------------------------------------------- *)
 and toplevel env x =
   match x with
-  | VarDecl {v_name; v_kind; v_init; v_resolved; v_type = _} ->
+  | DefStmt {v_name; v_kind; v_init; v_resolved; v_type = _} ->
        name_expr env v_name v_kind v_init v_resolved
   | M x -> module_directive env x
 (*
@@ -398,7 +398,7 @@ and name_expr env name v_kind eopt v_resolved =
 (* Statements *)
 (* ---------------------------------------------------------------------- *)
 and stmt env = function
- | VarDecl v ->
+ | DefStmt v ->
     let env = add_locals env [v] in
     option (expr env) v.v_init
  | M m -> module_directive env m
@@ -438,6 +438,7 @@ and stmt env = function
  | With (_, e, st) ->
     expr env e;
     stmt env st
+  | StmtTodo _ -> failwith "StmtTodo"
 
 and catch_block env = function
   | BoundCatch (_t, pat, st) ->
@@ -451,7 +452,7 @@ and for_header env = function
      match e1 with
      | Left vars ->
        (* less: need fold_with_env? *)
-       vars |> List.iter (fun v -> stmt env (VarDecl v));
+       vars |> List.iter (fun v -> stmt env (DefStmt v));
        add_locals env vars
      | Right e ->
        expr env e;
@@ -465,7 +466,7 @@ and for_header env = function
      match e1 with
      | Left var ->
        (* less: need fold_with_env? *)
-       [var] |> List.iter (fun v -> stmt env (VarDecl v));
+       [var] |> List.iter (fun v -> stmt env (DefStmt v));
        add_locals env [var]
      | Right e ->
        expr env e;
@@ -495,7 +496,7 @@ and stmts env xs =
         stmt env x;
         let env =
           match x with
-          | VarDecl v -> add_locals env [v]
+          | DefStmt v -> add_locals env [v]
           | _ -> env
         in
         aux env xs
@@ -581,6 +582,7 @@ and expr env e =
   | Conditional (e1, e2, e3) ->
     List.iter (expr env) [e1;e2;e3]
   | Xml x -> xml env x
+  | ExprTodo _ | Cast _ -> failwith "ExprTodo|Cast"
   | Ellipsis _ | DeepEllipsis _ -> ()
 
 and xml env x =
@@ -620,6 +622,7 @@ and property env = function
       pattern env pat;
       expr env e
   | FieldEllipsis _ -> ()
+  | FieldTodo _ -> failwith "FieldTodo"
 
 and pattern env x = expr env x
 

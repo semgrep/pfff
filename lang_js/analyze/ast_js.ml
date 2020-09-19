@@ -82,6 +82,9 @@ type 'a wrap = 'a * tok
 type 'a bracket = tok * 'a * tok
  [@@deriving show] (* with tarzan *)
 
+type todo_category = string wrap
+ [@@deriving show] (* with tarzan *)
+
 (* ------------------------------------------------------------------------- *)
 (* Name *)
 (* ------------------------------------------------------------------------- *)
@@ -155,6 +158,12 @@ type label = string wrap
 type filename = string wrap
  [@@deriving show ] (* with tarzan *)
 
+(* Used for decorators and for TyName in AST_generic.type_.
+ * Otherwise for regular JS dotted names are encoded with ObjAccess instead.
+ *)
+type dotted_ident = ident list
+ [@@deriving show ] (* with tarzan *)
+
 (* when doing export default Foo and import Bar, ... *)
 let default_entity = "!default!"
 
@@ -169,6 +178,7 @@ type property_name =
 (* Expressions *)
 (*****************************************************************************)
 and expr =
+  (* literals *)
   | Bool of bool wrap
   | Num of string wrap
   | String of string wrap
@@ -186,23 +196,24 @@ and expr =
    * not exist.
    *)
 
-  (* should be a statement, lhs can be a pattern *)
+  (* should be a statement ... lhs can be a pattern *)
   | Assign of pattern * tok * expr
 
   (* less: could be transformed in a series of Assign(ObjAccess, ...) *)
   | Obj of obj_ 
-  (* we could transform it in an Obj but can be useful to remember 
+  (* we could transform it in an Obj but it can be useful to remember 
    * the difference in further analysis (e.g., in the abstract interpreter).
    * This can also contain "holes" when the array is used in lhs of an assign
    *)
   | Arr of expr list bracket
-  | Class of class_ * ident option (* when assigned in module.exports  *)
+  | Class of class_definition * ident option (* when assigned in module.exports  *)
 
   | ObjAccess of expr * tok * property_name
   (* this can also be used to access object fields dynamically *)
   | ArrAccess of expr * expr bracket
 
-  | Fun of fun_ * ident option (*when recursive or assigned in module.exports*)
+  (* ident is a Some when recursive or assigned in module.exports *)
+  | Fun of function_definition * ident option 
   | Apply of expr * arguments
 
   (* copy-paste of AST_generic.xml (but with different 'expr') *)
@@ -210,6 +221,11 @@ and expr =
 
   (* could unify with Apply, but need Lazy special then *)
   | Conditional of expr * expr * expr
+
+  (* typescript: *) 
+  | Cast of expr * tok (* 'as' or ':' *) * type_
+
+  | ExprTodo of todo_category * expr list
 
   (* sgrep-ext: *)
   | Ellipsis of tok
@@ -238,8 +254,8 @@ and expr =
 (* Statement *)
 (*****************************************************************************)
 and stmt = 
-  (* covers also method definitions, class defs, etc. Really a DefStmt *)
-  | VarDecl of var
+  (* covers VarDecl, method definitions, class defs, etc *)
+  | DefStmt of entity
 
   | Block of stmt list bracket
   | ExprStmt of expr * tok (* can be fake when ASI *)
@@ -261,9 +277,11 @@ and stmt =
 
   (* ES6 modules can appear only at the toplevel,
    * but CommonJS require() can be inside ifs 
-   * and tree-sitter-js accept directives there too.
+   * and tree-sitter-javascript accepts directives there too.
    *)
   | M of module_directive
+
+  | StmtTodo of todo_category * any list
 
   (* less: could use some Special instead? *)
   and for_header = 
@@ -301,34 +319,65 @@ and pattern = expr
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
-(* typescript-ext:
- * simpler to reuse AST_generic *)
+(* typescript-ext: (simpler to reuse AST_generic) *)
 and type_ = AST_generic.type_
+
+(*****************************************************************************)
+(* Attributes *)
+(*****************************************************************************)
+
+(* quite similar to AST_generic.attribute but the 'argument' is different *)
+and attribute = 
+  | KeywordAttr of keyword_attribute wrap
+  | NamedAttr of tok (* @ *) * dotted_ident * arguments
+
+ and keyword_attribute =
+   (* field props *)
+    | Static
+    (* todo? not in tree-sitter-js *)
+    | Public | Private | Protected
+    (* typescript-ext: for fields *)
+    | Readonly | Optional (* '?' *) | NotNull (* '!' *) 
+    | Abstract (* also valid for class *)
+
+   (* method properties *)
+    | Generator (* '*' *) | Async
+    (* only inside classes *)
+    | Get | Set 
 
 (*****************************************************************************)
 (* Definitions *)
 (*****************************************************************************)
-(* TODO: rename 'var' to 'entity' to be close to AST_generic.
- * TODO: put type parameters, attributes (keyword attr and decorator) in entity
+
+(* TODO: type definition = entity * definition_kind *)
+(* TODO: put type parameters, attributes (keyword attr and decorator) in entity
  *)
 
-and var = { 
+and entity = { 
   (* ugly: can be AST_generic.special_multivardef_pattern when
    * Ast_js_build.transpile_pattern is false with a vinit an Assign itself.
    * actually in a ForIn/ForOf the init will be just the pattern, not even
    * an Assign.
    *)
   v_name: ident;
+
+  (* move in VarDef? *)
   v_kind: var_kind wrap;
   (* actually a pattern when inside a ForIn/ForOf *)
   v_init: expr option;
+
+  (* typescript-ext: *)
   v_type: type_ option;
   v_resolved: resolved_name ref;
+  (* TODO: put v_tparams here *)
 }
   and var_kind = Var | Let | Const
 
-and fun_ = {
-  f_props: fun_prop wrap list;
+and var = entity
+
+and function_definition = {
+  (* less: move that in entity? but some anon func have attributes too *)
+  f_props: attribute list;
   f_params: parameter list;
   (* TODO: f_rettype *)
   f_body: stmt;
@@ -345,26 +394,24 @@ and fun_ = {
   and parameter_classic = {
     p_name: ident;
     p_default: expr option;
+    (* typescript-ext: *)
     p_type: type_ option;
     p_dots: tok option;
     (* TODO: p_attrs: *)
   }
-  (* todo: put in general keyword_attribute; less: could transpile *)
-  and fun_prop = 
-    | Generator | Async
-    (* only inside classes *)
-    | Get | Set 
 
-and obj_ = property list bracket
-
-and class_ = { 
+and class_definition = { 
   c_tok: tok;
   (* usually simply an Id *)
   c_extends: expr option;
   c_body: property list bracket;
+  c_props: attribute list;
 }
+
+  and obj_ = property list bracket
+
   and property = 
-    (* expr is a Fun for methods 
+    (* field_classic.fld_body is a (Some Fun) for methods.
      * None is possible only for class fields. For object there is
      * always a value.
      *)
@@ -373,24 +420,21 @@ and class_ = {
     | FieldSpread of tok * expr
     (* This is present only when in pattern context.
      * ugly: we should have a clean separate pattern type instead of abusing
-     *  expr, which forces us to add this construct.
+     * expr, which forces us to add this construct.
      *)
     | FieldPatDefault of pattern * tok * expr
+
+    | FieldTodo of todo_category * stmt
+
     (* sgrep-ext: used for {fld1: 1, ... } which is distinct from spreading *)
     | FieldEllipsis of tok
 
   and field_classic = {
     fld_name: property_name;
-    fld_props: property_prop wrap list;
+    fld_props: attribute list;
     fld_type: type_ option;
     fld_body: expr option;
   }
-  (* todo: put in general keyword_attr *)
-  and property_prop =
-    | Static
-    (* todo? not in tree-sitter-js *)
-    | Public | Private | Protected
-    (* typescript-ext: TODO Readonly *)
 
 (*****************************************************************************)
 (* Directives *)
@@ -422,7 +466,7 @@ and module_directive =
   (* those should not exist (except for sgrep where they are useful) *)
   | ImportEffect of tok * filename
 
-  [@@deriving show { with_path = false} ]
+(*  [@@deriving show { with_path = false} ] *)
 
 (*****************************************************************************)
 (* Toplevel *)
@@ -432,20 +476,22 @@ and module_directive =
  * we don't enforce those constraints on the generic AST so simpler to
  * move those at the stmt level.
  *)
-type toplevel = stmt
- [@@deriving show { with_path = false} ] (* with tarzan *)
+(* less: can remove and below when StmtTodo disappear *)
+and toplevel = stmt
+ (* [@@deriving show { with_path = false} ] (* with tarzan *) *)
 
 (*****************************************************************************)
 (* Program *)
 (*****************************************************************************)
 
-type program = toplevel list
- [@@deriving show { with_path = false} ] (* with tarzan *)
+and program = toplevel list
+ (* [@@deriving show { with_path = false} ] (* with tarzan *) *)
 
 (*****************************************************************************)
 (* Any *)
 (*****************************************************************************)
-type any = 
+(* this is now mutually recursive with the previous types because of StmtTodo*)
+and any = 
   | Expr of expr
   | Stmt of stmt
   | Pattern of pattern
@@ -517,3 +563,5 @@ let mk_default_entity_var tok exp =
             v_resolved = ref NotResolved; v_type = None } 
   in
   v, n
+
+let attr x = KeywordAttr x

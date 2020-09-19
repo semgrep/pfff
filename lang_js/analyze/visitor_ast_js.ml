@@ -133,9 +133,14 @@ and v_xml_body =
   | XmlExpr v1 -> let v1 = v_expr v1 in ()
   | XmlXml v1 -> let v1 = v_xml v1 in ()
 
+and v_todo_category v1 = v_wrap v_string v1
+
 and v_expr (x: expr) =
   (* tweak *)
   let k x =  match x with
+  | Cast (v1, v2, v3) -> 
+        v_expr v1; v_tok v2; v_type_ v3
+  | ExprTodo (v1, v2) -> v_todo_category v1; v_list v_expr v2
   | Xml v1 -> let v1 = v_xml v1 in ()
   | Bool v1 -> let v1 = v_wrap v_bool v1 in ()
   | Num v1 -> let v1 = v_wrap v_string v1 in ()
@@ -165,8 +170,9 @@ and v_expr (x: expr) =
 
 and v_stmt x =
   let k x = match x with
+  | StmtTodo (v1, v2) -> v_todo_category v1; v_list v_any v2
   | M v1 -> let v1 = v_module_directive v1 in ()
-  | VarDecl v1 -> let v1 = v_var v1 in ()
+  | DefStmt v1 -> let v1 = v_var v1 in ()
   | Block v1 -> let v1 = v_bracket (v_list v_stmt) v1 in ()
   | ExprStmt (v1, t) -> let v1 = v_expr v1 in let t= v_tok t in ()
   | If ((t, v1, v2, v3)) ->
@@ -261,7 +267,7 @@ and v_var { v_name = v_v_name; v_kind = v_v_kind; v_init = v_v_init;
 and v_var_kind = function | Var -> () | Let -> () | Const -> ()
 
 and v_fun_ { f_props = v_f_props; f_params = v_f_params; f_body = v_f_body } =
-  let arg = v_list (v_wrap v_fun_prop) v_f_props in
+  let arg = v_list v_attribute v_f_props in
   let arg = v_list v_parameter_binding v_f_params in let arg = v_stmt v_f_body in ()
 
 and v_parameter_binding =
@@ -284,14 +290,27 @@ and v_parameter x =
   in
   vin.kparam (k, all_functions) x
 
-and v_fun_prop =
-  function | Get -> () | Set -> () | Generator -> () | Async -> ()
+and v_dotted_ident xs = v_list v_ident xs
+
+and v_argument x = v_expr x
+
+and v_attribute = function
+  | KeywordAttr x -> v_keyword_attribute x
+  | NamedAttr (v1, v2, v3) ->
+      v_tok v1 ;
+      v_dotted_ident v2;
+      v_bracket (v_list v_argument) v3
+      
+and v_fun_prop x = v_keyword_attribute x
+and v_keyword_attribute _ = ()
 
 and v_obj_ v = v_bracket (v_list v_property) v
-and v_class_ { c_extends = v_c_extends; c_body = v_c_body; c_tok } =
+and v_class_ { c_extends = v_c_extends; c_body = v_c_body; c_tok; c_props } =
   let arg = v_tok c_tok in
   let arg = v_option v_expr v_c_extends in
-  let arg = v_bracket (v_list v_property) v_c_body in ()
+  let arg = v_bracket (v_list v_property) v_c_body in 
+  let arg = v_list v_attribute c_props in
+  ()
 
 (* TODO? call Visitor_AST with local kinfo? meh *)
 and v_type_ _x = ()
@@ -299,9 +318,10 @@ and v_type_ _x = ()
 and v_property x =
   (* tweak *)
   let k x =  match x with
+  | FieldTodo (v1, v2) -> v_todo_category v1; v_stmt v2
   | Field { fld_name; fld_props; fld_type; fld_body} ->
       let v1 = v_property_name fld_name
-      and v2 = v_list (v_wrap v_property_prop) fld_props
+      and v2 = v_list v_attribute fld_props
       and ty = v_option v_type_ fld_type
       and v3 = v_option v_expr fld_body
       in ()
@@ -314,8 +334,8 @@ and v_property x =
   in
   vin.kprop (k, all_functions) x
 
-and v_property_prop =
-  function | Static -> () | Public -> () | Private -> () | Protected -> ()
+and v_property_prop _ = ()
+
   
 and v_toplevel x =
   let k x =
