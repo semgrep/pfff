@@ -110,6 +110,7 @@ let special (x, tok) =
   | Spread -> SR_Special (G.Spread, tok)
   | Yield -> SR_NeedArgs (fun args -> 
           match args with
+          | [] -> G.Yield (tok, None, false)
           | [e] -> G.Yield (tok, Some e, false)
           | _ -> error tok "Impossible: Too many arguments to Yield"
           )
