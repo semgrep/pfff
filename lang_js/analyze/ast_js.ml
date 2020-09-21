@@ -349,7 +349,10 @@ and attribute =
 (* Definitions *)
 (*****************************************************************************)
 
-(* TODO: type definition = entity * definition_kind *)
+(* TODO: type definition = entity * definition_kind
+ * TODO: separate VarDef and FuncDef. Do not abuse VarDef for regular
+ * function definitions.
+ *)
 (* TODO: put type parameters, attributes (keyword attr and decorator) in entity
  *)
 
