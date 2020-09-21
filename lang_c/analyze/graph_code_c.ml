@@ -928,7 +928,7 @@ and expr env = function
   | GccConstructor (t, e) ->
       type_ env t;
       expr env e
-  | Ellipses _ -> ()
+  | Ellipses _ | DeepEllipsis _ -> ()
 
 
 and exprs env xs = List.iter (expr env) xs

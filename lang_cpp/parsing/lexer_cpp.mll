@@ -429,7 +429,6 @@ rule token = parse
   | ">>" { TShr(tokinfo lexbuf) }    | "<<" { TShl(tokinfo lexbuf) }
   | "&"  { TAnd(tokinfo lexbuf) }    | "|" { TOr(tokinfo lexbuf) } 
   | "^"  { TXor(tokinfo lexbuf) }
-  | "..." { TEllipsis(tokinfo lexbuf) }
   | "->"   { TPtrOp(tokinfo lexbuf) }  | '.'  { TDot(tokinfo lexbuf) }  
   | ','    { TComma(tokinfo lexbuf) }  
   | ";"    { TPtVirg(tokinfo lexbuf) }
@@ -443,6 +442,12 @@ rule token = parse
   (* c++ext: *)
   | "::" { TColCol(tokinfo lexbuf) }
   | "->*" { TPtrOpStar(tokinfo lexbuf) }   | ".*" { TDotStar(tokinfo lexbuf) }
+
+  (* a valid C construct, also used by semgrep! *)
+  | "..." { TEllipsis(tokinfo lexbuf) }
+  (* semgrep-ext: *)
+  | "<..."  { Flag_parsing.sgrep_guard (LDots (tokinfo lexbuf)) }
+  | "...>"  { Flag_parsing.sgrep_guard (RDots (tokinfo lexbuf)) }
 
   (* ----------------------------------------------------------------------- *)
   (* C keywords and ident *)
