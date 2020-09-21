@@ -88,6 +88,7 @@ and v_expr x =
   | Char v1 -> let v1 = v_wrap v_string v1 in ()
   | Id v1 -> let v1 = v_name v1 in ()
   | Ellipses v1 -> let v1 = v_info v1 in ()
+  | DeepEllipsis v1 -> let v1 = v_bracket v_expr v1 in ()
   | Call ((v1, v2)) -> let v1 = v_expr v1 and 
           v2 = v_bracket (v_list v_argument) v2 in ()
   | Assign ((v1, v2, v3)) ->

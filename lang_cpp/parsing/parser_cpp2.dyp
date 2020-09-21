@@ -139,6 +139,8 @@ let dyp_merge xs =
 %token <Parse_info.t> TTilde
 %token <Parse_info.t> TBang
 %token <Parse_info.t> TEllipsis
+%token <Parse_info.t> LDots
+%token <Parse_info.t> RDots
 %token <Parse_info.t> TCol
 %token <Parse_info.t> TPtVirg
 

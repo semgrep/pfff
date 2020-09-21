@@ -483,7 +483,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     | T.TAssign (OpAssign (_, ii))
     | T.TEq ii 
     | T.TWhy ii | T.TTilde ii | T.TBang ii 
-    | T.TEllipsis ii 
+    | T.TEllipsis ii | T.LDots ii | T.RDots ii
     | T.TCol ii ->
         tag ii Punctuation
 

@@ -517,6 +517,7 @@ and expr env e =
 
   | Id (n, _) -> A.Id (name env n)
   | Ellipses tok -> A.Ellipses tok
+  | DeepEllipsis v1 -> let v1 = bracket_keep (expr env) v1 in A.DeepEllipsis v1
 
   | RecordAccess (e, t, n) ->
       A.RecordPtAccess (A.Unary (expr env e, (GetRef,t)), 

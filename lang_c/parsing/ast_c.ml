@@ -169,6 +169,7 @@ and expr =
 
   (* sgrep-ext: *)
   | Ellipses of tok
+  | DeepEllipsis of expr bracket
 
 and argument = expr
 

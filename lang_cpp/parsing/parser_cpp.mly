@@ -95,6 +95,9 @@ module PI = Parse_info
   TShl TShr 
   TPlus TMinus TMul "*" TDiv TMod 
 
+(* semgrep-ext: *)
+%token <Parse_info.t> LDots "<..." RDots "...>"
+
 (*c++ext: see also TInf2 and TSup2 *)
 %token <Parse_info.t> TInf TSup 
 
@@ -587,6 +590,7 @@ primary_expr:
  | primary_cplusplus_id { $1 }
  (* c++0x: *)
  | lambda_introducer compound { ExprTodo $1 }
+ | LDots expr RDots { DeepEllipsis ($1, $2, $3) }
 
 literal:
  (* constants a.k.a literal *)
