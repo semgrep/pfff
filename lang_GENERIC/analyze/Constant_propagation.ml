@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -22,7 +22,7 @@ module V = Visitor_AST
 (*****************************************************************************)
 (* Very basic constant propagation (no dataflow analysis involved).
  *
- * This is mainly to provide advanced features to semgrep such as the 
+ * This is mainly to provide advanced features to semgrep such as the
  * constant propagation of literals.
  *
  * Right now we just propagate constants when we're sure it's a constant
@@ -63,8 +63,16 @@ type var_stats = (var, lr_stats) Hashtbl.t
 (*****************************************************************************)
 
 let add_constant_env ident (sid, literal) env =
-  env.constants := 
+  env.constants :=
   ((Ast.str_of_ident ident, sid), literal)::!(env.constants)
+
+let find_id env id id_info =
+  match id_info with
+  | { id_resolved = {contents = Some (_kind, sid)}; _ } ->
+      let s = Ast.str_of_ident id in
+      List.assoc_opt (s, sid) !(env.constants)
+  | __else__ ->
+      None
 
 (*****************************************************************************)
 (* Poor's man const analysis *)
@@ -89,7 +97,7 @@ let var_stats prog : var_stats =
   let visitor = V.mk_visitor { V.default_visitor with
     V.kdef = (fun (k, _v) x ->
       match x with
-      | { name=id; info={ id_resolved = {contents = Some(_kind, sid)}; _}; _}, 
+      | { name=id; info={ id_resolved = {contents = Some(_kind, sid)}; _}; _},
         VarDef ({ vinit = Some _; _ }) ->
           let var = (Ast.str_of_ident id, sid) in
           let stat = get_stat_or_create var h in
@@ -121,6 +129,101 @@ let var_stats prog : var_stats =
   h
 
 (*****************************************************************************)
+(* Partial evaluation *)
+(*****************************************************************************)
+
+let literal_of_bool b =
+  let b_str = string_of_bool b in
+  let tok   = Parse_info.fake_info b_str in
+  Bool(b, tok)
+
+let bool_of_literal = function
+  | Bool (b, _) -> Some b
+  | __else__    -> None
+
+let eval_bop_bool op b1 b2 =
+  match op with
+  | Or       -> Some (b1 || b2)
+  | And      -> Some (b1 && b2)
+  | __else__ -> None
+
+let literal_of_int i =
+  let i_str = string_of_int i in
+  let tok   = Parse_info.fake_info i_str in
+  Int(i_str, tok)
+
+let int_of_literal = function
+  | Int (str, _) ->
+      (try Some (int_of_string str)
+      with
+      | Failure "int_of_string" -> None
+      )
+  | __else__ -> None
+
+let eval_bop_int op i1 i2 =
+  match op with
+  | Plus     -> Some (i1 + i2)
+  | Mult     -> Some (i1 * i2)
+  | __else__ -> None
+
+let literal_of_string s =
+  let tok = Parse_info.fake_info s in
+  String(s, tok)
+
+let string_of_literal = function
+  | String(s,_) -> Some s
+  | __else__    -> None
+
+let eval_bop_string op s1 s2 =
+  match op with
+  | Plus     -> Some (s1 ^ s2)
+  | __else__ -> None
+
+let rec eval_expr env = function
+  | L literal -> Some literal
+  | Id (id, id_info)->
+      find_id env id id_info
+  | Call(IdSpecial(Op op, _), (_,args,_)) ->
+      eval_op env op args
+  | __else__ -> None
+
+and eval_op env op args =
+  match args with
+  | [Arg e] ->
+    (match op, eval_expr env e with
+    | Not, Some (Bool _ as l) ->
+        bool_of_literal l >>= fun b ->
+        Some (literal_of_bool (not b))
+    | Plus, Some (Int _ as l) ->
+        int_of_literal l >>= fun i ->
+        Some (literal_of_int i)
+    | Minus, Some (Int _ as l) ->
+        int_of_literal l >>= fun i ->
+        Some (literal_of_int (-i))
+    | __else__ -> None
+    )
+  | [Arg e1; Arg e2] ->
+    (match eval_expr env e1, eval_expr env e2 with
+    | Some (Bool _ as l1), Some (Bool _ as l2) ->
+        bool_of_literal l1 >>= fun b1 ->
+        bool_of_literal l2 >>= fun b2 ->
+        eval_bop_bool op b1 b2 >>= fun r ->
+        Some (literal_of_bool r)
+    | Some (Int _ as l1), Some (Int _ as l2) ->
+        int_of_literal l1 >>= fun i1 ->
+        int_of_literal l2 >>= fun i2 ->
+        eval_bop_int op i1 i2 >>= fun r ->
+        Some (literal_of_int r)
+    | Some (String _ as l1), Some (String _ as l2) ->
+        string_of_literal l1 >>= fun s1 ->
+        string_of_literal l2 >>= fun s2 ->
+        eval_bop_string op s1 s2 >>= fun r ->
+        Some (literal_of_string r)
+    | __else__ -> None
+    )
+  | __else__ -> None
+
+(*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
 (* !Note that this assumes Naming_AST.resolve has been called before! *)
@@ -136,13 +239,13 @@ let propagate2 lang prog =
 
     V.kdef = (fun (k, _v) x ->
       match x with
-      | { name = id; 
+      | { name = id;
           info = { id_resolved = {contents = Some (_kind, sid)}; _} as id_info;
-          attrs = attrs; _}, 
+          attrs = attrs; _},
         (* note that some languages such as Python do not have VarDef.
          * todo? should add those somewhere instead of in_lvalue detection? *)
         VarDef ({ vinit = Some (L literal); _ }) ->
-          let _stats = 
+          let _stats =
              try Hashtbl.find stats (Ast.str_of_ident id, sid)
              with Not_found -> raise Impossible
            in
@@ -163,10 +266,8 @@ let propagate2 lang prog =
     V.kexpr = (fun (k, _) x ->
 
        (match x with
-       | Id (id, ({ id_resolved = {contents = Some (_kind, sid)}; _ }
-                    as id_info))->
-             let s = Ast.str_of_ident id in
-             (match List.assoc_opt (s, sid) !(env.constants) with
+       | Id (id, id_info)->
+             (match find_id env id id_info with
              | Some (literal) ->
                  id_info.id_const_literal := Some literal
              | _ -> ()
@@ -177,20 +278,24 @@ let propagate2 lang prog =
           Id (id, ({ id_resolved = {contents = Some (kind, sid)}; _ }
                     as id_info)),
           _,
-          (L literal)) ->
-          let stats = 
-             try Hashtbl.find stats (Ast.str_of_ident id, sid)
-             with Not_found -> raise Impossible
-          in
-          if (!(stats.lvalue) = 1) &&
-             (* restrict to Python Globals for now, but could be extended *)
-             lang = Lang.Python &&
-             kind = Global
-          then begin
-              id_info.id_const_literal := Some literal;
-              add_constant_env id (sid, literal) env;
-          end;
-          k x
+          rexp) ->
+            (match eval_expr env rexp with
+            | Some literal ->
+              let stats =
+                try Hashtbl.find stats (Ast.str_of_ident id, sid)
+                with Not_found -> raise Impossible
+              in
+              if (!(stats.lvalue) = 1) &&
+                (* restrict to Python Globals for now, but could be extended *)
+                lang = Lang.Python &&
+                kind = Global
+              then begin
+                  id_info.id_const_literal := Some literal;
+                  add_constant_env id (sid, literal) env;
+              end;
+              k x
+            | None -> ()
+            )
 
        | _ -> ()
        );
