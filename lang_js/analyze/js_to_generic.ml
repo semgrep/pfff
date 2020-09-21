@@ -365,11 +365,14 @@ and def_of_var { v_name = x_name; v_kind = x_kind;
   let v2 = var_kind x_kind in 
   let ent = G.basic_entity v1 [v2] in
   let ty = option type_ ty in
-  (match x_init with
-  | Some (Fun (v3, _nTODO))   -> 
+  (match x_init, fst x_kind with
+  (* ugly: ast_js.ml does not currently have a separate FuncDef and
+   * VarDef so we abuse the x_kind to differentiate them.
+   *)
+  | Some (Fun (v3, _nTODO)), Const   -> 
       let def, more_attrs = fun_ v3 in
       { ent with G.attrs = ent.G.attrs @ more_attrs}, G.FuncDef def
-  | Some (Class (v3, _nTODO)) -> 
+  | Some (Class (v3, _nTODO)), Const -> 
       let def, more_attrs = class_ v3 in
       { ent with G.attrs = ent.G.attrs @ more_attrs}, G.ClassDef def
   | _ -> 
