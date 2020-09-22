@@ -54,7 +54,6 @@
  * 
  * todo:
  *  - typescript interface
- *  - add decorators (also useful for semgrep) 
  * less:
  *  - ast_js_es5.ml? unsugar even more? remove classes, get/set, etc.?
  *  - unsugar ES6 features? lift Var up, rename lexical vars, etc.
@@ -330,10 +329,11 @@ and type_ = AST_generic.type_
 (* quite similar to AST_generic.attribute but the 'argument' is different *)
 and attribute = 
   | KeywordAttr of keyword_attribute wrap
+  (* a.k.a decorators *)
   | NamedAttr of tok (* @ *) * dotted_ident * arguments
 
  and keyword_attribute =
-   (* field props *)
+   (* field properties *)
     | Static
     (* todo? not in tree-sitter-js *)
     | Public | Private | Protected
