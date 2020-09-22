@@ -17,14 +17,14 @@ while(<>) {
     if($after_percentpercent) {
   
   # use chars instead of long tokens for parens-like tokens
-  s#\bLP\b#"("#g;
-  s#\bRP\b#")"#g;
-  s#\bLB\b#"["#g;
-  s#\bRB\b#"]"#g;
-  s#\bLC\b#"{"#g;
-  s#\bRC\b#"}"#g;
+  s#\bTOPAR\b#"("#g;
+  s#\bTCPAR\b#")"#g;
+  s#\bTOBRA\b#"["#g;
+  s#\bTCBRA\b#"]"#g;
+  s#\bTOBRACE\b#"{"#g;
+  s#\bTCBRACE\b#"}"#g;
 
-  # ocaml extra "parenthesis" operators
+  # OCaml extra "parenthesis" operators
   #s#\bTOBracketLess\b#"[<"#g;
   #s#\bTGreaterCBracket\b#">]"#g;
   #s#\bTOBracketPipe\b#"[|"#g;
@@ -33,15 +33,17 @@ while(<>) {
   #s#\bTGreaterCBrace\b#">}"#g;
 
   # use chars instead of long tokens for common punctuators
-  s#\bSM\b#";"#g;
-  s#\bCM\b#","#g;
-  s#\bDOT\b#"."#g;
-  s#\bCOLON\b#":"#g;
-  s#\bAT\b#"@"#g;
+  s#\bTSEMICOLON\b#";"#g;
+  s#\bTCOMMA\b#","#g;
+  s#\bTDOT\b#"."#g;
+  s#\bTCOLON\b#":"#g;
+  s#\bT__AT\b#"@"#g;
+  s#\bTDOLLAR\b#"\$"#g;
+  s#\bTDOLLARDOLLAR\b#"\$\$"#g;
 
   #s#\bTSemiColonSemiColon\b#";;"#g;
   #s#\bTDotDot\b#".."#g;
-  s#\bCOLONCOLON\b#"::"#g;
+  s#\bTCOLCOL\b#"::"#g;
   #s#\bTQuestionQuestion\b#"??"#g;
 
   #s#\bTQuestion\b#"?"#g;
@@ -53,7 +55,9 @@ while(<>) {
   #s#\bTAssignMutable\b#"<-"#g;
   #s#\bTAssign\b#":="#g;
   #s#\bTBang\b#"!"#g;
-  s#\bARROW\b#"->"#g;
+  s#\bT_ARROW\b#"=>"#g;
+  s#\bT_DOUBLE_ARROW\b#"==>"#g;
+  s#\bT_OBJECT_OPERATOR\b#"->"#g;
   #s#\bTUnderscore\b#"_"#g;
 
   # semgrep!
@@ -64,7 +68,7 @@ while(<>) {
   # use chars instead of long tokens for important operators
   #s#\bLMULT\b#"*"#g;
   #s#\bPOW\b#"**"#g;
-  s#\bEQ\b#"="#g;
+  #s#\bEQ\b#"="#g;
 
   #s#\bLCOLAS\b#":="#g;
   #s#\bLCOMM\b#"<-"#g;

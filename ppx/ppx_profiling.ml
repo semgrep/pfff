@@ -27,8 +27,11 @@ open Location
 
 (* update: 
  * https://tarides.com/blog/2019-05-09-an-introduction-to-ocaml-ppx-ecosystem
-*)
-
+ *
+ * alt: 
+ *  - my request for [@@deriving like for function definitions
+ *    https://github.com/ocaml-ppx/ppxlib/issues/168#issuecomment-688748491
+ *)
 
 (*****************************************************************************)
 (* Prelude *)
