@@ -54,7 +54,6 @@
  * 
  * todo:
  *  - typescript interface
- *  - add decorators (also useful for semgrep) 
  * less:
  *  - ast_js_es5.ml? unsugar even more? remove classes, get/set, etc.?
  *  - unsugar ES6 features? lift Var up, rename lexical vars, etc.
@@ -223,7 +222,8 @@ and expr =
   | Conditional of expr * expr * expr
 
   (* typescript: *) 
-  | Cast of expr * tok (* 'as' or ':' *) * type_
+  | Cast of expr * tok (* ':' *) * type_
+  | TypeAssert of expr * tok (* 'as' or '<' *) * type_ (* X as T or <T> X *)
 
   | ExprTodo of todo_category * expr list
 
@@ -329,10 +329,11 @@ and type_ = AST_generic.type_
 (* quite similar to AST_generic.attribute but the 'argument' is different *)
 and attribute = 
   | KeywordAttr of keyword_attribute wrap
+  (* a.k.a decorators *)
   | NamedAttr of tok (* @ *) * dotted_ident * arguments
 
  and keyword_attribute =
-   (* field props *)
+   (* field properties *)
     | Static
     (* todo? not in tree-sitter-js *)
     | Public | Private | Protected
@@ -353,7 +354,7 @@ and attribute =
  * TODO: separate VarDef and FuncDef. Do not abuse VarDef for regular
  * function definitions.
  *)
-(* TODO: put type parameters, attributes (keyword attr and decorator) in entity
+(* TODO: put type parameters, attributes in entity
  *)
 
 and entity = { 
@@ -380,9 +381,10 @@ and var = entity
 
 and function_definition = {
   (* less: move that in entity? but some anon func have attributes too *)
-  f_props: attribute list;
+  f_attrs: attribute list;
   f_params: parameter list;
-  (* TODO: f_rettype *)
+  (* typescript-ext: *)
+  f_rettype: type_ option;
   f_body: stmt;
 }
   and parameter =
@@ -400,7 +402,7 @@ and function_definition = {
     (* typescript-ext: *)
     p_type: type_ option;
     p_dots: tok option;
-    (* TODO: p_attrs: *)
+    p_attrs: attribute list;
   }
 
 and class_definition = { 
@@ -408,7 +410,7 @@ and class_definition = {
   (* usually simply an Id *)
   c_extends: expr option;
   c_body: property list bracket;
-  c_props: attribute list;
+  c_attrs: attribute list;
 }
 
   and obj_ = property list bracket
@@ -434,7 +436,7 @@ and class_definition = {
 
   and field_classic = {
     fld_name: property_name;
-    fld_props: attribute list;
+    fld_attrs: attribute list;
     fld_type: type_ option;
     fld_body: expr option;
   }
@@ -520,7 +522,10 @@ let mk_const_var id e =
     v_resolved = ref NotResolved }
 
 let mk_field name body = 
-  { fld_name = name; fld_body = body; fld_props = []; fld_type = None }
+  { fld_name = name; fld_body = body; fld_attrs = []; fld_type = None }
+let mk_param id = 
+  { p_name = id; p_default = None; p_type = None; p_dots = None; 
+    p_attrs = [] }
 
 (* helpers used in ast_js_build.ml and Parse_javascript_tree_sitter.ml *)
 let var_pattern_to_var vkind pat tok init_opt = 

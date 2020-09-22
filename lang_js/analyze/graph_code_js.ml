@@ -508,6 +508,9 @@ and stmts env xs =
 (* ---------------------------------------------------------------------- *)
 and expr env e =
   match e with
+  | ExprTodo _ | Cast _ | TypeAssert _ -> failwith "ExprTodo|Cast|..."
+  | Ellipsis _ | DeepEllipsis _ -> ()
+
   | Bool _ | Num _ | String _ | Regexp _ -> ()
   | Id (n, scope) -> 
     if not (is_local env n)
@@ -582,8 +585,6 @@ and expr env e =
   | Conditional (e1, e2, e3) ->
     List.iter (expr env) [e1;e2;e3]
   | Xml x -> xml env x
-  | ExprTodo _ | Cast _ -> failwith "ExprTodo|Cast"
-  | Ellipsis _ | DeepEllipsis _ -> ()
 
 and xml env x =
   (* TODO add_use_edge env ([x.xml_tag], E.Class); *)

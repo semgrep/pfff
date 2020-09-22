@@ -165,6 +165,11 @@ and map_expr =
       let v2 = map_tok v2 in
       let v3 = map_type_ v3 in
       Cast (v1, v2, v3)
+  | TypeAssert (v1, v2, v3) ->
+      let v1 = map_expr v1 in
+      let v2 = map_tok v2 in
+      let v3 = map_type_ v3 in
+      TypeAssert (v1, v2, v3)
   | ExprTodo (v1, v2) -> let v1 = map_todo_category v1 in 
       let v2 = map_of_list map_expr v2 in
       ExprTodo (v1, v2)
@@ -337,12 +342,15 @@ and map_attribute = function
 
 and map_var_kind = function | Var -> Var | Let -> Let | Const -> Const
 and
-  map_fun_ { f_props = v_f_props; f_params = v_f_params; f_body = v_f_body }
+  map_fun_ { f_attrs = v_f_props; f_params = v_f_params; 
+             f_body = v_f_body; f_rettype }
            =
   let v_f_body = map_stmt v_f_body in
   let v_f_params = map_of_list map_parameter_binding v_f_params in
   let v_f_props = map_of_list map_attribute v_f_props in 
-  { f_props = v_f_props; f_params = v_f_params; f_body = v_f_body }
+  let f_rettype = map_option map_type_ f_rettype in
+  { f_attrs = v_f_props; f_params = v_f_params; 
+    f_body = v_f_body; f_rettype }
 
 and map_parameter_binding =
   function
@@ -357,14 +365,16 @@ and
                   p_name = v_p_name;
                   p_default = v_p_default;
                   p_type = vt;
-                  p_dots = v_p_dots
+                  p_dots = v_p_dots;
+                  p_attrs;
                 } =
   let v_p_dots = map_of_option map_tok v_p_dots in
   let v_p_default = map_of_option map_expr v_p_default in
   let vt = map_of_option map_type_ vt in
   let v_p_name = map_name v_p_name in 
+  let p_attrs = map_of_list map_attribute p_attrs in
   { p_name = v_p_name; p_default = v_p_default; p_dots = v_p_dots; 
-    p_type = vt;
+    p_type = vt; p_attrs;
   }
 
 
@@ -373,20 +383,20 @@ and map_keyword_attribute x = x
 
 and map_obj_ v = map_bracket (map_of_list map_property) v
 and map_class_ 
-  { c_extends = v_c_extends; c_body = v_c_body; c_tok; c_props } =
+  { c_extends = v_c_extends; c_body = v_c_body; c_tok; c_attrs } =
   let v_c_body = map_bracket (map_of_list map_property) v_c_body in
   let v_c_extends = map_of_option map_expr v_c_extends in 
   let c_tok = map_tok c_tok in
-  let c_props = map_of_list map_attribute c_props in
-  { c_extends = v_c_extends; c_body = v_c_body; c_tok; c_props }
+  let c_attrs = map_of_list map_attribute c_attrs in
+  { c_extends = v_c_extends; c_body = v_c_body; c_tok; c_attrs }
 
-and map_field_classic { fld_name; fld_props; fld_type; fld_body} =
+and map_field_classic { fld_name; fld_attrs; fld_type; fld_body} =
       let fld_name = map_property_name fld_name
-      and fld_props = map_of_list map_attribute fld_props
+      and fld_attrs = map_of_list map_attribute fld_attrs
       and fld_type = map_of_option map_type_ fld_type
       and fld_body = map_of_option map_expr fld_body
       in 
-      { fld_name; fld_props; fld_type; fld_body}
+      { fld_name; fld_attrs; fld_type; fld_body}
 
 and map_property =
   function

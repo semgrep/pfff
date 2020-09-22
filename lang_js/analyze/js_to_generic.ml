@@ -180,7 +180,11 @@ and expr (x: expr) =
       let v1 = expr v1 in
       let v3 = type_ v3 in
       G.Cast (v3, v1)
-
+  | TypeAssert (v1, v2, v3) ->
+      let v1 = expr v1 in
+      let v3 = type_ v3 in
+      G.OtherExpr (G.OE_Todo, 
+        [G.TodoK ("TypeAssert", v2); G.E v1; G.T v3])
   | ExprTodo (v1, v2) -> 
       let v2 = list expr v2 in
       G.OtherExpr (G.OE_Todo, (G.TodoK v1)::(v2 |> List.map (fun e -> G.E e)))
@@ -401,11 +405,13 @@ and var_kind (x, tok) =
   | Let -> G.attr G.Let tok
   | Const -> G.attr G.Const tok
 
-and fun_ { f_props = f_props; f_params = f_params; f_body = f_body } =
+and fun_ { f_attrs = f_props; f_params = f_params; 
+           f_body = f_body; f_rettype } =
   let v1 = list attribute f_props in
   let v2 = list parameter_binding f_params in 
   let v3 = stmt f_body |> as_block in
-  { G.fparams = v2; frettype = None; fbody = v3; }, v1
+  let frettype = option type_ f_rettype in
+  { G.fparams = v2; frettype; fbody = v3; }, v1
 
 and parameter_binding = function
  | ParamClassic x -> G.ParamClassic (parameter x)
@@ -418,14 +424,17 @@ and pattern x =
 
 and parameter x =
  match x with
- { p_name; p_default; p_dots; p_type } ->
+ { p_name; p_default; p_dots; p_type; p_attrs } ->
   let v1 = name p_name in
   let pdefault = option expr p_default in 
   let v3 = bool p_dots in
   let ptype = option type_ p_type in
+  let pattrs = list attribute p_attrs in
    { 
     G.pname = Some v1; pdefault; ptype;
-    pattrs = (match v3 with None -> [] | Some tok -> [G.attr G.Variadic tok]);
+    pattrs = 
+        (match v3 with None -> [] | Some tok -> [G.attr G.Variadic tok]) @ 
+        pattrs;
     pinfo = G.empty_id_info ();
   }
   
@@ -458,10 +467,10 @@ and keyword_attribute (x, tok) =
 
 and obj_ v = bracket (list property) v
 
-and class_ { c_extends = c_extends; c_body = c_body; c_tok; c_props } =
+and class_ { c_extends = c_extends; c_body = c_body; c_tok; c_attrs } =
   let v1 = option expr c_extends in
   let v2 = bracket (list property) c_body in
-  let attrs = list attribute c_props in
+  let attrs = list attribute c_attrs in
   (* todo: could analyze arg to look for Id *)
   let extends = 
     match v1 with
@@ -472,7 +481,7 @@ and class_ { c_extends = c_extends; c_body = c_body; c_tok; c_props } =
     cimplements = []; cmixins = []; cbody = v2;}, attrs
 and property x =
    match x with
-  | Field {fld_name = v1; fld_props = v2; fld_type = vt; fld_body = v3} ->
+  | Field {fld_name = v1; fld_attrs = v2; fld_type = vt; fld_body = v3} ->
       let v1 = property_name v1
       and v2 = list attribute v2
       and vt = vt

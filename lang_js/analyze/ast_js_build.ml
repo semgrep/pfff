@@ -751,17 +751,17 @@ and pattern env = function
      A.Obj (t1, xs |> C.uncomma |> List.map (function
       | C.PatId (n, None) -> 
          let n = name env n in
-         A.Field {A.fld_name = A.PN n; fld_props = []; fld_type = None;
+         A.Field {A.fld_name = A.PN n; fld_attrs = []; fld_type = None;
                   fld_body = Some (A.Id (n, not_resolved())) }
       | C.PatId (n, Some (_tok, init)) -> 
          let n = name env n in
          let init = expr env init in
-         A.Field {A.fld_name = A.PN n; fld_props = []; fld_type = None; 
+         A.Field {A.fld_name = A.PN n; fld_attrs = []; fld_type = None; 
                   fld_body = Some init }
       | C.PatProp (pname, _tok, pat) ->
          let pname = property_name env pname in
          let pat = pattern env pat in
-         A.Field {A.fld_name = pname; fld_props = []; fld_type = None; 
+         A.Field {A.fld_name = pname; fld_attrs = []; fld_type = None; 
                   fld_body = Some pat }
       | C.PatDots (t, pat) -> 
         let e = pattern env pat in
@@ -826,20 +826,24 @@ and var_kind _env (x, tok) =
 
 
 
-and func_decl env x =
+and func_decl env 
+    { C.f_kind; f_properties; f_params; f_body; 
+      f_type_params = _; f_return_type; }
+  =
   (* bugfix: each function has its own vars *)
   let env = { env with vars = Hashtbl.copy env.vars } in
-  let props = func_props env x.C.f_kind x.C.f_properties in
+  let props = func_props env f_kind f_properties in
   let params_and_vars = 
-   x.C.f_params |> C.unparen |> C.uncomma |> Common.index_list_0 |>
+   f_params |> C.unparen |> C.uncomma |> Common.index_list_0 |>
     List.map (fun (p, idx) -> parameter_binding env idx p)
   in
   let params = params_and_vars |> List.map fst in
   let vars = params_and_vars |> List.map snd |> List.flatten in
   let env = add_params env params in
-  let xs = stmt_item_list env (x.C.f_body |> C.unparen) in
+  let xs = stmt_item_list env (f_body |> C.unparen) in
   let body = Ast_js.stmt_of_stmts (vars @ xs) in
-  { A.f_props = props; f_params = params; f_body = body }
+  let f_rettype = type_opt env f_return_type in
+  { A.f_attrs = props; f_params = params; f_body = body; f_rettype }
 
 and func_props _env kind props = 
   ((match kind with
@@ -903,7 +907,7 @@ and parameter env { C.p_name; p_default; p_dots; p_type } =
   let p_name = name env p_name in
   let p_default = default env p_default in
   let p_type = type_opt env p_type in
-  { A.p_name; p_default; p_dots; p_type }
+  { A.p_name; p_default; p_dots; p_type; p_attrs = [] }
 
 and default env = function
   | None -> None
@@ -931,7 +935,7 @@ and arrow_func env x =
     | C.ABody xs -> stmt_item_list env (xs |> C.unparen)
   in
   let body = Ast_js.stmt_of_stmts (vars @ xs) in
-  { A.f_props = props; f_params = params; f_body = body }
+  { A.f_attrs = props; f_params = params; f_body = body; f_rettype = None }
 
 
 and property env = function
@@ -939,13 +943,13 @@ and property env = function
    let pname = property_name env pname in
    let e = expr env e in
    let props = [] in
-   A.Field {A.fld_name = pname; fld_props = props; fld_type = None; 
+   A.Field {A.fld_name = pname; fld_attrs = props; fld_type = None; 
             fld_body =  Some e }
  | C.P_method x ->
     method_ env [] x
   | C.P_shorthand n ->
     let n = name env n in
-    A.Field {A.fld_name = A.PN n; fld_props = []; fld_type = None; 
+    A.Field {A.fld_name = A.PN n; fld_attrs = []; fld_type = None; 
              fld_body = Some (A.Id (n, not_resolved ())) }
   | C.P_spread (t, e) ->
     let e = expr env e in
@@ -989,7 +993,7 @@ and class_decl env x =
     x.C.c_extends in
   let xs = x.C.c_body |> bracket_keep 
       (fun xs -> xs |> List.map (class_element env) |> List.flatten) in
-  { A.c_extends = extends; c_body = xs; c_tok = x.C.c_tok; c_props = [] }
+  { A.c_extends = extends; c_body = xs; c_tok = x.C.c_tok; c_attrs = [] }
 
 and nominal_type env (e, _) = expr env e
 
@@ -998,10 +1002,10 @@ and static _env t = A.Static, t
 and class_element env = function
   | C.C_field ({C.fld_name; fld_init; fld_type; fld_static}, _sc) -> 
     let fld_name = property_name env fld_name in
-    let fld_props = opt static env fld_static |> opt_to_list |> List.map A.attr in
+    let fld_attrs = opt static env fld_static |> opt_to_list |> List.map A.attr in
     let fld_body = init_opt env fld_init in
     let fld_type = type_opt env fld_type in
-    [A.Field {A.fld_name; fld_props; fld_type; fld_body}]
+    [A.Field {A.fld_name; fld_attrs; fld_type; fld_body}]
   | C.C_method (static_opt, x) ->
     let props = 
       match static_opt with
@@ -1028,9 +1032,9 @@ and method_ env props x =
   in
   let fprops = fprops |> List.map A.attr in
   let props = props |> List.map A.attr in
-  let fun_ = { fun_ with A.f_props = fprops @ fun_.A.f_props } in
+  let fun_ = { fun_ with A.f_attrs = fprops @ fun_.A.f_attrs } in
   let ty = None in
-  A.Field {A.fld_name = pname; fld_props = props; fld_type = ty;
+  A.Field {A.fld_name = pname; fld_attrs = props; fld_type = ty;
            fld_body = Some (A.Fun (fun_, None)) }
 
 (* ------------------------------------------------------------------------- *)

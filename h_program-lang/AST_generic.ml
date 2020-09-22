@@ -514,6 +514,7 @@ and expr =
       | NotMatch (* !~ Ruby less: could be desugared to Not RegexpMatch *)
       | Range (* .. or ..., Ruby *)
       | Nullish (* ?? in Javascript *)
+      | NotNullPostfix (* ! in Typescript, postfix operator *)
 (*e: type [[AST_generic.arithmetic_operator]] *)
 (*s: type [[AST_generic.incr_decr]] *)
     and incr_decr = Incr | Decr (* '++', '--' *)
@@ -1624,7 +1625,7 @@ let is_boolean_operator = function
  | Pow | FloorDiv | MatMult (* Python *)
  | LSL | LSR | ASR (* L = logic, A = Arithmetic, SL = shift left *) 
  | BitOr | BitXor | BitAnd | BitNot | BitClear (* unary *)
- | Range | Nullish
+ | Range | Nullish | NotNullPostfix
   -> false
  | And | Or | Xor | Not
  | Eq     | NotEq     

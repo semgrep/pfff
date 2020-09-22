@@ -140,6 +140,8 @@ and v_expr (x: expr) =
   let k x =  match x with
   | Cast (v1, v2, v3) -> 
         v_expr v1; v_tok v2; v_type_ v3
+  | TypeAssert (v1, v2, v3) -> 
+        v_expr v1; v_tok v2; v_type_ v3
   | ExprTodo (v1, v2) -> v_todo_category v1; v_list v_expr v2
   | Xml v1 -> let v1 = v_xml v1 in ()
   | Bool v1 -> let v1 = v_wrap v_bool v1 in ()
@@ -266,9 +268,13 @@ and v_var { v_name = v_v_name; v_kind = v_v_kind; v_init = v_v_init;
   ()
 and v_var_kind = function | Var -> () | Let -> () | Const -> ()
 
-and v_fun_ { f_props = v_f_props; f_params = v_f_params; f_body = v_f_body } =
+and v_fun_ { f_attrs = v_f_props; f_params = v_f_params; 
+             f_body = v_f_body; f_rettype } =
   let arg = v_list v_attribute v_f_props in
-  let arg = v_list v_parameter_binding v_f_params in let arg = v_stmt v_f_body in ()
+  let arg = v_list v_parameter_binding v_f_params in 
+  let arg = v_stmt v_f_body in
+  v_option v_type_ f_rettype;
+  ()
 
 and v_parameter_binding =
   function
@@ -281,11 +287,13 @@ and v_pattern x = v_expr x
 and v_parameter x =
  let k x = 
  match x with
-   { p_name = v_p_name; p_default = v_p_default; p_dots = v_p_dots; p_type } ->
+   { p_name = v_p_name; p_default = v_p_default; p_dots = v_p_dots; 
+     p_type; p_attrs } ->
     let arg = v_name v_p_name in
     let arg = v_option v_expr v_p_default in 
     let arg = v_option v_tok v_p_dots in
     v_option v_type_ p_type;
+    v_list v_attribute p_attrs;
     ()
   in
   vin.kparam (k, all_functions) x
@@ -305,11 +313,11 @@ and v_fun_prop x = v_keyword_attribute x
 and v_keyword_attribute _ = ()
 
 and v_obj_ v = v_bracket (v_list v_property) v
-and v_class_ { c_extends = v_c_extends; c_body = v_c_body; c_tok; c_props } =
+and v_class_ { c_extends = v_c_extends; c_body = v_c_body; c_tok; c_attrs } =
   let arg = v_tok c_tok in
   let arg = v_option v_expr v_c_extends in
   let arg = v_bracket (v_list v_property) v_c_body in 
-  let arg = v_list v_attribute c_props in
+  let arg = v_list v_attribute c_attrs in
   ()
 
 (* TODO? call Visitor_AST with local kinfo? meh *)
@@ -319,9 +327,9 @@ and v_property x =
   (* tweak *)
   let k x =  match x with
   | FieldTodo (v1, v2) -> v_todo_category v1; v_stmt v2
-  | Field { fld_name; fld_props; fld_type; fld_body} ->
+  | Field { fld_name; fld_attrs; fld_type; fld_body} ->
       let v1 = v_property_name fld_name
-      and v2 = v_list v_attribute fld_props
+      and v2 = v_list v_attribute fld_attrs
       and ty = v_option v_type_ fld_type
       and v3 = v_option v_expr fld_body
       in ()
