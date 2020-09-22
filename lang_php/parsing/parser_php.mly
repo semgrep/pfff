@@ -288,7 +288,7 @@ module PI = Parse_info
 (*************************************************************************)
 (* Toplevel *)
 (*************************************************************************)
-main: top_statement_list EOF { H.squash_stmt_list $1 @ [FinalDef $2] }
+main: top_statement* EOF { H.squash_stmt_list $1 @ [FinalDef $2] }
 
 top_statement:
  | statement                            { StmtList [$1] }
@@ -313,12 +313,12 @@ statement:
  | expr           ";"		  { ExprStmt($1,$2) }
  | (* empty*) ";"              { EmptyStmt($1) }
 
- | "{" inner_statement_list "}"   { Block($1,$2,$3) }
+ | "{" inner_statement* "}"   { Block($1,$2,$3) }
 
  | T_IF "(" expr ")" statement elseif_list else_single
      { If($1,($2,$3,$4),$5,$6,$7) }
  | T_IF "(" expr ")" ":"
-     inner_statement_list new_elseif_list new_else_single
+     inner_statement* new_elseif_list new_else_single
      T_ENDIF ";"
      { IfColon($1,($2,$3,$4),$5,$6,$7,$8,$9,$10)  }
 
@@ -346,16 +346,16 @@ statement:
  | T_RETURN ";"	     { Return ($1,None, $2) }
  | T_RETURN expr ";"  { Return ($1,Some ($2), $3)}
 
- | T_TRY   "{" inner_statement_list "}"
+ | T_TRY   "{" inner_statement* "}"
    T_CATCH "(" class_name  T_VARIABLE ")"
-     "{" inner_statement_list "}"
-     additional_catches optional_finally_clause
+     "{" inner_statement* "}"
+     additional_catch* optional_finally_clause
      { let try_block = ($2,$3,$4) in
        let catch_block = ($10, $11, $12) in
        let catch = ($5, ($6, ($7, DName $8), $9), catch_block) in
        Try($1, try_block, [catch] @ $13, $14)
      }
- | T_TRY "{" inner_statement_list "}" finally_clause
+ | T_TRY "{" inner_statement* "}" finally_clause
      { let try_block = ($2,$3,$4) in
        Try($1, try_block, [], [$5])
      }
@@ -422,9 +422,9 @@ switch_case_list:
 case_list: case_list_rev { List.rev $1 }
 case_list_rev:
  | (*empty*)	{ [] }
- | case_list_rev    T_CASE expr case_separator inner_statement_list
+ | case_list_rev    T_CASE expr case_separator inner_statement*
      { Case($2,$3,$4,$5)::$1   }
- | case_list_rev    T_DEFAULT   case_separator inner_statement_list
+ | case_list_rev    T_DEFAULT   case_separator inner_statement*
      { Default($2,$3,$4)::$1 }
 
 case_separator:
@@ -437,19 +437,19 @@ case_separator:
 
 while_statement:
  | statement                                         { SingleStmt $1 }
- | ":" inner_statement_list T_ENDWHILE ";" { ColonStmt($1,$2,$3,$4) }
+ | ":" inner_statement* T_ENDWHILE ";" { ColonStmt($1,$2,$3,$4) }
 
 for_statement:
  | statement                                       { SingleStmt $1 }
- | ":" inner_statement_list T_ENDFOR ";" { ColonStmt($1,$2,$3,$4) }
+ | ":" inner_statement* T_ENDFOR ";" { ColonStmt($1,$2,$3,$4) }
 
 foreach_statement:
  | statement                                           { SingleStmt $1 }
- | ":" inner_statement_list T_ENDFOREACH ";" { ColonStmt($1,$2,$3,$4)}
+ | ":" inner_statement* T_ENDFOREACH ";" { ColonStmt($1,$2,$3,$4)}
 
 declare_statement:
  | statement                                           { SingleStmt $1 }
- | ":" inner_statement_list T_ENDDECLARE ";" { ColonStmt($1,$2,$3,$4)}
+ | ":" inner_statement* T_ENDDECLARE ";" { ColonStmt($1,$2,$3,$4)}
 
 elseif_list:
  | (*empty*) { [] }
@@ -457,7 +457,7 @@ elseif_list:
 
 new_elseif_list:
  | (*empty*) { [] }
- | new_elseif_list    T_ELSEIF "(" expr ")" ":" inner_statement_list
+ | new_elseif_list    T_ELSEIF "(" expr ")" ":" inner_statement*
      { $1 @ [$2,($3,$4,$5),$6,$7] }
 
 (* classic dangling else ambiguity resolved by a %prec. See conflicts.txt*)
@@ -467,19 +467,19 @@ else_single:
 
 new_else_single:
  | (*empty*)                      { None }
- | T_ELSE ":" inner_statement_list { Some($1,$2,$3) }
+ | T_ELSE ":" inner_statement* { Some($1,$2,$3) }
 
 
 additional_catch:
  | T_CATCH "(" class_name T_VARIABLE ")"
-           "{" inner_statement_list "}"
+           "{" inner_statement* "}"
      { let catch_block = ($6, $7, $8) in
        let catch = ($1, ($2, ($3, DName $4), $5), catch_block) in
        catch
      }
 
 finally_clause:
- | T_FINALLY "{" inner_statement_list "}"
+ | T_FINALLY "{" inner_statement* "}"
      { ($1, ($2, $3, $4)) }
 
 (*----------------------------*)
@@ -539,7 +539,7 @@ unticked_function_declaration_statement:
     } }
 
 function_body:
- | "{" inner_statement_list "}"     { ($1, $2, $3)  }
+ | "{" inner_statement* "}"     { ($1, $2, $3)  }
  | ";" { (* ugly: *) (fakeInfo"", [], $1) }
 
 async_opt:
@@ -629,7 +629,7 @@ class_declaration_statement:
 unticked_class_declaration_statement:
  | class_entry_type  ident_class_name  type_params_opt
      extends_from   implements_list
-     "{" class_statement_list "}"
+     "{" class_statement* "}"
      { { c_type = $1; c_name = $2; c_extends = $4; c_tparams = $3;
          c_implements = $5; c_body = $6, $7, $8;
          c_attrs = None;
@@ -638,7 +638,7 @@ unticked_class_declaration_statement:
      }
  | T_INTERFACE ident_class_name type_params_opt
      interface_extends_list
-     "{" class_statement_list "}"
+     "{" class_statement* "}"
      { { c_type = Interface $1; c_name = $2; c_extends = None; c_tparams = $3;
          (* we use c_implements for interface extension because
           * it can be a list. ugly?
@@ -649,7 +649,7 @@ unticked_class_declaration_statement:
      } }
  | T_TRAIT ident_class_name type_params_opt
    implements_list
-    "{" class_statement_list "}"
+    "{" class_statement* "}"
      { { c_type = Trait $1; c_name = $2; c_extends = None; c_tparams = $3;
          c_implements = $4; c_body = ($5, $6, $7);
          c_attrs = None;
@@ -657,7 +657,7 @@ unticked_class_declaration_statement:
        }
      }
  | T_ENUM ident_class_name ":" type_php type_constr_opt
-    "{" enum_statement_list "}"
+    "{" enum_statement* "}"
      { { c_type = Enum $1; c_name = $2; c_extends = None; c_tparams = None;
          c_implements = None; c_body = ($6, $7, $8);
          c_attrs = None;
@@ -759,7 +759,7 @@ class_statement:
 (* php 5.4 traits *)
  | T_USE class_name_list ";"
      { UseTrait ($1, $2, Left $3) }
- | T_USE class_name_list "{" trait_rules "}"
+ | T_USE class_name_list "{" trait_rule* "}"
      { UseTrait ($1, $2, Right ($3, $4, $5)) }
 (* facebook-ext: *)
  | T_REQUIRE trait_constraint_kind type_php ";"
@@ -802,7 +802,7 @@ member_modifier:
  | T_ASYNC { Async,($1) }
 
 method_body:
- | "{" inner_statement_list "}"	{ ($1, $2, $3), MethodRegular }
+ | "{" inner_statement* "}"	{ ($1, $2, $3), MethodRegular }
  | ";" { (* ugly: *) (fakeInfo"", [], $1), MethodAbstract }
 
 (*----------------------------*)
@@ -1149,7 +1149,7 @@ expr:
  (* PHP 5.3 Closures *)
  | async_opt T_FUNCTION is_reference "(" parameter_list ")" return_type?
    lexical_vars
-   "{" inner_statement_list "}"
+   "{" inner_statement* "}"
    { H.validate_parameter_list $5;
      let params = ($4, $5, $6) in
        let body = ($9, $10, $11) in
@@ -1248,11 +1248,11 @@ primary_expr:
      { ArrayShort($1, $2, $3) }
 
 
- | TGUIL encaps_list TGUIL
+ | TGUIL encaps* TGUIL
      { Sc (Guil ($1, $2, $3)) }
- | TBACKQUOTE encaps_list TBACKQUOTE
+ | TBACKQUOTE encaps* TBACKQUOTE
      { BackQuote($1,$2,$3) }
- | T_START_HEREDOC encaps_list T_END_HEREDOC
+ | T_START_HEREDOC encaps* T_END_HEREDOC
      { Sc (HereDoc ($1, $2, $3)) }
  (* generated by lexer for special case of ${beer}s. So it's really
     * more a variable than a constant. So I've decided to inline this
@@ -1374,9 +1374,9 @@ encaps_var_offset:
 (* XHP embedded html *)
 (*----------------------------*)
 xhp_html:
- | T_XHP_OPEN_TAG xhp_attributes T_XHP_GT xhp_children T_XHP_CLOSE_TAG
+ | T_XHP_OPEN_TAG xhp_attribute* T_XHP_GT xhp_child* T_XHP_CLOSE_TAG
      { Xhp ($1, $2, $3, $4, $5)  }
- | T_XHP_OPEN_TAG xhp_attributes T_XHP_SLASH_GT
+ | T_XHP_OPEN_TAG xhp_attribute* T_XHP_SLASH_GT
      { XhpSingleton ($1, $2, $3) }
 
 xhp_child:
@@ -1388,7 +1388,7 @@ xhp_attribute:
  | T_XHP_ATTR TEQ xhp_attribute_value { $1, $2, $3 }
 
 xhp_attribute_value:
- | TGUIL encaps_list TGUIL { XhpAttrString ($1, $2, $3) }
+ | TGUIL encaps* TGUIL { XhpAttrString ($1, $2, $3) }
  | "{" expr "}"    { XhpAttrExpr ($1, $2, $3) }
 
  (* ugly: one cannot use T_IDENT here, because the lexer is still in
@@ -1429,7 +1429,7 @@ lambda_expr:
        let sl_params = SLParams ($2, $3, $4) in
        ShortLambda { sl_params; sl_tok; sl_body; sl_modifiers = [Async,($1)]; }
      }
- | T_ASYNC "{" inner_statement_list "}"
+ | T_ASYNC "{" inner_statement* "}"
      {
        let sl_body = SLBody ($2, $3, $4) in
        ShortLambda { sl_params = SLParamsOmitted;
@@ -1440,7 +1440,7 @@ lambda_expr:
      }
 
 lambda_body:
- | "==>" "{" inner_statement_list "}" { (Some $1, SLBody ($2, $3, $4)) }
+ | "==>" "{" inner_statement* "}" { (Some $1, SLBody ($2, $3, $4)) }
  (* An explicit case required for when/if awaits become statements, not expr *)
    (* | "==>" T_AWAIT expr { ($1, SLExpr (Await ($2, $3))) } *)
  (* see conflicts.txt for why the %prec *)
@@ -1544,9 +1544,9 @@ ident_xhp_attr_name_atom:
 namespace_declaration:
  | T_NAMESPACE namespace_name ";"
      { NamespaceDef ($1, $2, $3) }
- | T_NAMESPACE namespace_name "{" top_statement_list "}"
+ | T_NAMESPACE namespace_name "{" top_statement* "}"
      { NamespaceBracketDef ($1, Some $2, ($3, H.squash_stmt_list $4, $5)) }
- | T_NAMESPACE                "{" top_statement_list "}"
+ | T_NAMESPACE                "{" top_statement* "}"
      { NamespaceBracketDef ($1, None, ($2, H.squash_stmt_list $3, $4)) }
 
 use_declaration:
@@ -1601,36 +1601,6 @@ class_name_no_array: qualified_class_name type_arguments
 (*************************************************************************)
 (* xxx_list, xxx_opt *)
 (*************************************************************************)
-top_statement_list:
- | top_statement_list  top_statement { $1 @ [$2] }
- | (*empty*) { [] }
-
-inner_statement_list:
- | inner_statement_list  inner_statement { $1 @ [$2] }
- | (*empty*) { [] }
-
-class_statement_list:
- | class_statement_list class_statement { $1 @ [$2] }
- | (*empty*) { [] }
-
-enum_statement_list:
- | enum_statement_list enum_statement { $1 @ [$2] }
- | (*empty*) { [] }
-
-
-
-
-trait_rules:
- | trait_rules trait_rule { $1 @ [$2] }
- | (*empty*) { [] }
-
-additional_catches:
- | non_empty_additional_catches { $1 }
- | (*empty*) { [] }
-
-non_empty_additional_catches:
- | additional_catch                              { [$1] }
- | non_empty_additional_catches additional_catch { $1 @ [$2] }
 
 optional_finally_clause:
  | finally_clause { [$1] }
@@ -1772,14 +1742,3 @@ array_pair_list_rev:
  | (*empty*) { [] }
  | non_empty_array_pair_list_rev possible_comma	{ $2@$1 }
 
-encaps_list:
- | encaps_list encaps                  { $1 @ [$2] }
- | (*empty*) { [] }
-
-xhp_attributes:
- | xhp_attributes xhp_attribute { $1 @ [$2] }
- | (*empty*) { [] }
-
-xhp_children:
- | xhp_children xhp_child { $1 @ [$2] }
- | (*empty*) { [] }
