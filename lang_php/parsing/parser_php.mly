@@ -230,7 +230,7 @@ module PI = Parse_info
 %left T_ARROW
 
 (* http://www.php.net/manual/en/language.operators.precedence.php *)
-%left      T_INCLUDE T_INCLUDE_ONCE T_EVAL T_REQUIRE T_REQUIRE_ONCE
+%left      T_INCLUDE T_INCLUDE_ONCE T_REQUIRE T_REQUIRE_ONCE
 (* php-facebook-ext: lambda (short closure) syntax *)
 %right     T_DOUBLE_ARROW
 %left      TCOMMA
@@ -264,16 +264,12 @@ module PI = Parse_info
 %nonassoc  T_INSTANCEOF
 %right     TTILDE T_INC T_DEC T_INT_CAST T_DOUBLE_CAST T_STRING_CAST T_ARRAY_CAST T_OBJECT_CAST T_BOOL_CAST T_UNSET_CAST
 %right     T__AT
-%right     TOBRA
-%nonassoc  T_NEW T_CLONE
+%nonassoc  T_CLONE
 %left      T_ELSEIF
 %left      T_ELSE
-%left      T_ENDIF
 
 (* not in original grammar *)
 %left TCOLCOL
-%left TDOLLAR
-%left T_OBJECT_OPERATOR
 
 (* xhp: this is used only to remove some shift/reduce ambiguities on the
  * error-rule trick.
@@ -307,8 +303,8 @@ sgrep_spatch_pattern:
  | expr EOF      { Expr $1 }
  (* less: a bit obsolete, use generalized sgrep instead for that *)
  | statement EOF { Stmt2 $1 }
- | function_declaration_statement { Toplevel (FuncDef $1) }
- | ":" type_php { Hint2 $2 }
+ | function_declaration_statement EOF { Toplevel (FuncDef $1) }
+ | ":" type_php EOF { Hint2 $2 }
 
 (*************************************************************************)
 (* Statements *)
@@ -1275,6 +1271,7 @@ constant:
  | T_LNUMBER 			{ Int($1) }
  | T_DNUMBER 			{ Double($1) }
  | T_CONSTANT_ENCAPSED_STRING	{ String($1) }
+
 
  | T_LINE { PreProcess(Line, $1) }
  | T_FILE { PreProcess(File, $1) } | T_DIR { PreProcess(Dir, $1) }
