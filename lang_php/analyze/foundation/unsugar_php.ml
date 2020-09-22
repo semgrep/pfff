@@ -129,8 +129,7 @@ let unsugar_self_parent_any2 any =
             Some qualified_classname
         | Some x -> 
             failwith ("Warning: unknown extends clause\n" ^
-                       (OCaml.string_of_v 
-                          (Meta_cst_php.vof_any (Hint2 (snd x)))))
+                       (Cst_php.show_any (Hint2 (snd x))))
       in
 
       match def.c_type with
