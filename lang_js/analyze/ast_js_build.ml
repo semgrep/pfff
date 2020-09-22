@@ -907,7 +907,7 @@ and parameter env { C.p_name; p_default; p_dots; p_type } =
   let p_name = name env p_name in
   let p_default = default env p_default in
   let p_type = type_opt env p_type in
-  { A.p_name; p_default; p_dots; p_type }
+  { A.p_name; p_default; p_dots; p_type; p_attrs = [] }
 
 and default env = function
   | None -> None

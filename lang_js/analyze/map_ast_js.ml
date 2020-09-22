@@ -365,14 +365,16 @@ and
                   p_name = v_p_name;
                   p_default = v_p_default;
                   p_type = vt;
-                  p_dots = v_p_dots
+                  p_dots = v_p_dots;
+                  p_attrs;
                 } =
   let v_p_dots = map_of_option map_tok v_p_dots in
   let v_p_default = map_of_option map_expr v_p_default in
   let vt = map_of_option map_type_ vt in
   let v_p_name = map_name v_p_name in 
+  let p_attrs = map_of_list map_attribute p_attrs in
   { p_name = v_p_name; p_default = v_p_default; p_dots = v_p_dots; 
-    p_type = vt;
+    p_type = vt; p_attrs;
   }
 
 

@@ -287,11 +287,13 @@ and v_pattern x = v_expr x
 and v_parameter x =
  let k x = 
  match x with
-   { p_name = v_p_name; p_default = v_p_default; p_dots = v_p_dots; p_type } ->
+   { p_name = v_p_name; p_default = v_p_default; p_dots = v_p_dots; 
+     p_type; p_attrs } ->
     let arg = v_name v_p_name in
     let arg = v_option v_expr v_p_default in 
     let arg = v_option v_tok v_p_dots in
     v_option v_type_ p_type;
+    v_list v_attribute p_attrs;
     ()
   in
   vin.kparam (k, all_functions) x

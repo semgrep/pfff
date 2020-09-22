@@ -401,6 +401,11 @@ and annotation =
   | TFunAnnot of type_parameters option * param_types * tok (* : *) * type_
 
 (*****************************************************************************)
+(* Attributes *)
+(*****************************************************************************)
+(* TODO: decorators! *)
+
+(*****************************************************************************)
 (* Pattern (destructuring binding) *)
 (*****************************************************************************)
 (* es7?: *)
@@ -463,6 +468,7 @@ and func_decl = {
    p_default: default option;
    (* es6: if <> None, then should be last param in a parameter comma_list *)
    p_dots: tok (* ... *) option;
+   (* TODO: p_attrs *)
   }
   (* es6: *)
   and default =

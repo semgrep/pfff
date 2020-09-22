@@ -354,7 +354,7 @@ and attribute =
  * TODO: separate VarDef and FuncDef. Do not abuse VarDef for regular
  * function definitions.
  *)
-(* TODO: put type parameters, attributes (keyword attr and decorator) in entity
+(* TODO: put type parameters, attributes in entity
  *)
 
 and entity = { 
@@ -402,7 +402,7 @@ and function_definition = {
     (* typescript-ext: *)
     p_type: type_ option;
     p_dots: tok option;
-    (* TODO: p_attrs: *)
+    p_attrs: attribute list;
   }
 
 and class_definition = { 
@@ -523,6 +523,9 @@ let mk_const_var id e =
 
 let mk_field name body = 
   { fld_name = name; fld_body = body; fld_attrs = []; fld_type = None }
+let mk_param id = 
+  { p_name = id; p_default = None; p_type = None; p_dots = None; 
+    p_attrs = [] }
 
 (* helpers used in ast_js_build.ml and Parse_javascript_tree_sitter.ml *)
 let var_pattern_to_var vkind pat tok init_opt = 

@@ -424,14 +424,17 @@ and pattern x =
 
 and parameter x =
  match x with
- { p_name; p_default; p_dots; p_type } ->
+ { p_name; p_default; p_dots; p_type; p_attrs } ->
   let v1 = name p_name in
   let pdefault = option expr p_default in 
   let v3 = bool p_dots in
   let ptype = option type_ p_type in
+  let pattrs = list attribute p_attrs in
    { 
     G.pname = Some v1; pdefault; ptype;
-    pattrs = (match v3 with None -> [] | Some tok -> [G.attr G.Variadic tok]);
+    pattrs = 
+        (match v3 with None -> [] | Some tok -> [G.attr G.Variadic tok]) @ 
+        pattrs;
     pinfo = G.empty_id_info ();
   }
   
