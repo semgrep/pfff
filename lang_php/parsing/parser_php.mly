@@ -529,7 +529,7 @@ function_declaration_statement:
 unticked_function_declaration_statement:
  async_opt T_FUNCTION is_reference ident type_params_opt
    "(" parameter_list ")"
-   return_type_opt function_body
+   return_type? function_body
    {  H.validate_parameter_list $7;
       { f_tok = $2; f_ref = $3; f_name = Name $4; f_params = ($6, $7, $8);
        f_tparams = $5;
@@ -552,7 +552,7 @@ parameter_list:
  (* php-facebook-ext: trailing comma *)
  | parameter "," parameter_list   { $1 :: (Right3 $2) :: $3 }
 
-parameter: attributes_opt ctor_modifier_opt at_opt type_php_opt parameter_bis
+parameter: attributes? ctor_modifier? "@"? type_php? parameter_bis
       {
         match $5 with
           Left3 param ->
@@ -772,7 +772,7 @@ enum_statement:
 method_declaration:
      method_modifiers T_FUNCTION is_reference ident_method_name type_params_opt
      "(" parameter_list ")"
-     return_type_opt
+     return_type?
      method_body
      { H.validate_parameter_list $7;
        let body, function_type = $10 in
@@ -1020,7 +1020,7 @@ type_arg_list:
   | type_php "," type_arg_list
       { (Left $1)::(Right $2):: $3 }
 
-return_type: ":" at_opt type_php                 { $1, $2, $3 }
+return_type: ":" "@"? type_php                 { $1, $2, $3 }
 
 (*************************************************************************)
 (* Attributes *)
@@ -1147,7 +1147,7 @@ expr:
  | T_CLONE expr { Clone($1,$2) }
 
  (* PHP 5.3 Closures *)
- | async_opt T_FUNCTION is_reference "(" parameter_list ")" return_type_opt
+ | async_opt T_FUNCTION is_reference "(" parameter_list ")" return_type?
    lexical_vars
    "{" inner_statement_list "}"
    { H.validate_parameter_list $5;
@@ -1415,14 +1415,14 @@ lambda_expr:
        let sl_params = SLSingleParam (H.mk_param $2) in
        ShortLambda { sl_params; sl_tok; sl_body; sl_modifiers = [Async,($1)] }
      }
- | T_LAMBDA_OPAR parameter_list T_LAMBDA_CPAR return_type_opt lambda_body
+ | T_LAMBDA_OPAR parameter_list T_LAMBDA_CPAR return_type? lambda_body
      {
        H.validate_parameter_list $2;
        let sl_tok, sl_body = $5 in
        let sl_params = SLParams ($1, $2, $3) in
        ShortLambda { sl_params; sl_tok; sl_body; sl_modifiers = []; }
      }
- | T_ASYNC T_LAMBDA_OPAR parameter_list T_LAMBDA_CPAR return_type_opt lambda_body
+ | T_ASYNC T_LAMBDA_OPAR parameter_list T_LAMBDA_CPAR return_type? lambda_body
      {
        H.validate_parameter_list $3;
        let sl_tok, sl_body = $6 in
@@ -1733,25 +1733,6 @@ possible_comma:
  | (*empty*) { [] }
  | ","        { [Right $1] }
 
-return_type_opt:
- | return_type       { Some $1 }
- | (*empty*)     { None }
-
-attributes_opt:
-  | attributes    { Some $1 }
-  | (*empty*) { None }
-
-type_php_opt:
-  | type_php      { Some $1 }
-  | (*empty*) { None }
-
-at_opt:
-  | "@"         { Some $1 }
-  | (*empty*) { None }
-
-ctor_modifier_opt:
-  | ctor_modifier      { Some $1 }
-  | (*empty*) { None }
 
 function_call_argument_list:
  | (*empty*)                              { [] }
