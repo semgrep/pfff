@@ -140,6 +140,8 @@ and v_expr (x: expr) =
   let k x =  match x with
   | Cast (v1, v2, v3) -> 
         v_expr v1; v_tok v2; v_type_ v3
+  | TypeAssert (v1, v2, v3) -> 
+        v_expr v1; v_tok v2; v_type_ v3
   | ExprTodo (v1, v2) -> v_todo_category v1; v_list v_expr v2
   | Xml v1 -> let v1 = v_xml v1 in ()
   | Bool v1 -> let v1 = v_wrap v_bool v1 in ()

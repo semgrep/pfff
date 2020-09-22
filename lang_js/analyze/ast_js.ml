@@ -223,7 +223,8 @@ and expr =
   | Conditional of expr * expr * expr
 
   (* typescript: *) 
-  | Cast of expr * tok (* 'as' or ':' *) * type_
+  | Cast of expr * tok (* ':' *) * type_
+  | TypeAssert of expr * tok (* 'as' or '<' *) * type_ (* X as T or <T> X *)
 
   | ExprTodo of todo_category * expr list
 

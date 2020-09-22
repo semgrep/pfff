@@ -180,7 +180,11 @@ and expr (x: expr) =
       let v1 = expr v1 in
       let v3 = type_ v3 in
       G.Cast (v3, v1)
-
+  | TypeAssert (v1, v2, v3) ->
+      let v1 = expr v1 in
+      let v3 = type_ v3 in
+      G.OtherExpr (G.OE_Todo, 
+        [G.TodoK ("TypeAssert", v2); G.E v1; G.T v3])
   | ExprTodo (v1, v2) -> 
       let v2 = list expr v2 in
       G.OtherExpr (G.OE_Todo, (G.TodoK v1)::(v2 |> List.map (fun e -> G.E e)))
