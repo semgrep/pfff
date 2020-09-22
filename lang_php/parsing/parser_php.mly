@@ -312,14 +312,13 @@ sgrep_spatch_pattern:
 (*************************************************************************)
 statement:
  | expr       ";"         { ExprStmt($1,$2) }
- | (* empty*) ";"              { EmptyStmt($1) }
+ | (* empty*) ";"         { EmptyStmt($1) }
 
  | "{" inner_statement* "}"   { Block($1,$2,$3) }
 
  | T_IF "(" expr ")" statement elseif_list else_single
      { If($1,($2,$3,$4),$5,$6,$7) }
- | T_IF "(" expr ")" ":"
-     inner_statement* new_elseif_list new_else_single
+ | T_IF "(" expr ")" ":"  inner_statement* new_elseif_list new_else_single
      T_ENDIF ";"
      { IfColon($1,($2,$3,$4),$5,$6,$7,$8,$9,$10)  }
 
@@ -327,8 +326,7 @@ statement:
      { While($1,($2,$3,$4),$5) }
  | T_DO statement T_WHILE "(" expr ")" ";"
      { Do($1,$2,$3,($4,$5,$6),$7) }
- | T_FOR "(" for_expr ";"  for_expr ";" for_expr ")"
-     for_statement
+ | T_FOR "(" for_expr ";"  for_expr ";" for_expr ")" for_statement
      { For($1,$2,$3,$4,$5,$6,$7,$8,$9) }
 
  | T_SWITCH "(" expr ")"    switch_case_list
@@ -339,13 +337,10 @@ statement:
  | T_FOREACH "(" expr T_AWAIT T_AS foreach_pattern ")" foreach_statement
      { Foreach($1,$2,$3, Some $4, $5,$6,$7, $8) }
 
- | T_BREAK      ";"         { Break($1,None,$2) }
- | T_BREAK expr ";" { Break($1,Some $2, $3) }
- | T_CONTINUE      ";"  { Continue($1,None,$2) }
- | T_CONTINUE expr ";"  { Continue($1,Some $2, $3) }
+ | T_BREAK    expr? ";" { Break($1,$2, $3) }
+ | T_CONTINUE expr? ";" { Continue($1, $2, $3) }
 
- | T_RETURN ";"      { Return ($1,None, $2) }
- | T_RETURN expr ";"  { Return ($1,Some ($2), $3)}
+ | T_RETURN expr? ";"  { Return ($1, $2, $3)}
 
  | T_TRY   "{" inner_statement* "}"
    T_CATCH "(" class_name  T_VARIABLE ")"
@@ -384,7 +379,7 @@ statement:
      { Declare($1,($2,$3,$4),$5) }
 
 inner_statement:
- | statement                            { $1 }
+ | statement                        { $1 }
  | function_declaration_statement   { FuncDefNested $1 }
  | class_declaration_statement      { ClassDefNested $1 }
 
@@ -396,17 +391,12 @@ for_expr:
  | non_empty_for_expr   { $1 }
 
 (* can not factorize with a is_reference otherwise s/r conflict on LIST *)
-foreach_variable:
- |  expr      { None, $1 }
- | TAND expr  { Some $1, $2 }
+foreach_variable: ioption(TAND) expr  { $1, $2 }
 
 foreach_pattern:
-  | foreach_variable
-      { ForeachVar $1 }
-  | foreach_variable "=>" foreach_pattern
-      { ForeachArrow(ForeachVar $1,$2,$3) }
-  | T_LIST "(" assignment_list ")"
-     { ForeachList($1,($2,$3,$4)) }
+  | foreach_variable                      { ForeachVar $1 }
+  | foreach_variable "=>" foreach_pattern { ForeachArrow(ForeachVar $1,$2,$3) }
+  | T_LIST "(" assignment_list ")"        { ForeachList($1,($2,$3,$4)) }
 
 switch_case_list:
  | "{"            case_list "}"
@@ -472,16 +462,13 @@ new_else_single:
 
 
 additional_catch:
- | T_CATCH "(" class_name T_VARIABLE ")"
-           "{" inner_statement* "}"
+ | T_CATCH "(" class_name T_VARIABLE ")" "{" inner_statement* "}"
      { let catch_block = ($6, $7, $8) in
        let catch = ($1, ($2, ($3, DName $4), $5), catch_block) in
        catch
      }
 
-finally_clause:
- | T_FINALLY "{" inner_statement* "}"
-     { ($1, ($2, $3, $4)) }
+finally_clause: T_FINALLY "{" inner_statement* "}"  { ($1, ($2, $3, $4)) }
 
 (*----------------------------*)
 (* auxillary bis *)
@@ -490,7 +477,7 @@ finally_clause:
 declare: ident   TEQ static_scalar { Name $1, ($2, $3) }
 
 global_var:
- | T_VARIABLE           { GlobalVar (DName $1) }
+ | T_VARIABLE       { GlobalVar (DName $1) }
  | "$" expr         { GlobalDollar ($1, $2) }
  | "$" "{" expr "}" { GlobalDollarExpr ($1, ($2, $3, $4)) }
 
@@ -590,9 +577,7 @@ ctor_modifier:
  | T_PRIVATE   { Private,($1) }
 
 
-is_reference:
- | (*empty*)  { None }
- | TAND       { Some $1 }
+is_reference: TAND?  { $1 }
 
 (* PHP 5.3 *)
 lexical_vars:
@@ -614,9 +599,7 @@ non_empty_lexical_var_list_bis:
  | non_empty_lexical_var_list_bis "," lexical_var
      { $1 @ [Right $2; Left $3] }
 
-lexical_var:
- |      T_VARIABLE  { (None, DName $1) }
- | TAND T_VARIABLE  { (Some $1, DName $2) }
+lexical_var: TAND? T_VARIABLE  { ($1, DName $2) }
 
 (*************************************************************************)
 (* Class declaration *)
@@ -668,11 +651,11 @@ unticked_class_declaration_statement:
 
 
 class_entry_type:
- | T_CLASS            { ClassRegular $1 }
+ | T_CLASS                    { ClassRegular $1 }
  | T_ABSTRACT T_FINAL T_CLASS { ClassAbstractFinal ($1, $2, $3) }
  | T_FINAL T_ABSTRACT T_CLASS { ClassAbstractFinal ($1, $2, $3) }
- | T_ABSTRACT T_CLASS { ClassAbstract ($1, $2) }
- | T_FINAL    T_CLASS { ClassFinal ($1, $2) }
+ | T_ABSTRACT T_CLASS         { ClassAbstract ($1, $2) }
+ | T_FINAL    T_CLASS         { ClassFinal ($1, $2) }
 
 extends_from:
  | (*empty*)             { None }
@@ -828,12 +811,9 @@ xhp_attribute_default:
  | (*empty*)     { None }
  | TEQ static_scalar { Some ($1, $2) }
 
-xhp_attribute_is_required:
- | (*empty*)  { None }
- | T_XHP_REQUIRED { Some $1 }
+xhp_attribute_is_required: T_XHP_REQUIRED? { $1 }
 
-xhp_enum:
- | constant { $1 }
+xhp_enum: constant { $1 }
 
 (* was called xhp_label_pass in original grammar *)
 xhp_attr_name:
@@ -900,8 +880,7 @@ xhp_children_decl_tag:
 (* XHP category *)
 (*----------------------------*)
 
-xhp_category:
- | T_XHP_PERCENTID_DEF { $1 }
+xhp_category: T_XHP_PERCENTID_DEF { $1 }
 
 (*----------------------------*)
 (* Traits *)
@@ -1016,10 +995,8 @@ type_arguments:
   | "<" type_arg_list ">" { Some ($1, $2, $3) }
 
 type_arg_list:
-  | type_php
-      { [Left $1]}
-  | type_php "," type_arg_list
-      { (Left $1)::(Right $2):: $3 }
+  | type_php                       { [Left $1]}
+  | type_php "," type_arg_list     { (Left $1)::(Right $2):: $3 }
 
 return_type: ":" "@"? type_php                 { $1, $2, $3 }
 
@@ -1030,10 +1007,8 @@ return_type: ":" "@"? type_php                 { $1, $2, $3 }
 attributes: T_SL attribute_list T_SR { ($1, $2, $3) }
 
 attribute:
- | ident
-     { Attribute $1 }
- | ident "(" attribute_argument_list ")"
-     { AttributeWithArgs ($1, ($2, $3, $4)) }
+ | ident                                  { Attribute $1 }
+ | ident "(" attribute_argument_list ")"  { AttributeWithArgs ($1,($2,$3,$4)) }
 
 attribute_argument: static_scalar { $1 }
 
@@ -1045,10 +1020,10 @@ expr:
  | simple_expr { $1 }
 
  (* the left part of TEQ used to be 'lvalue'. After the lvalue/expr
-    * unification, I put 'expr' but that was wrong because
-    * code like '1 && $x = 2'  was wrongly parsed. So we need to
-    * force to have a 'simple_expr' on the left side.
-    *)
+  * unification, I put 'expr' but that was wrong because
+  * code like '1 && $x = 2'  was wrongly parsed. So we need to
+  * force to have a 'simple_expr' on the left side.
+  *)
  | simple_expr TEQ expr { Assign($1,$2, $3) }
  | simple_expr TEQ TAND expr   { AssignRef($1,$2,$3, $4) }
 
@@ -1112,15 +1087,15 @@ expr:
  | expr "?"  ":"  expr   { CondExpr($1,$2,None,$3,$4) }
  | expr "?" "?" expr { CondExpr($1,$2,None,$3,$4) }
 
-(* I don't parse XHP elements defs in the same way than the original
-   * XHP parser, which simplifies the grammar, but introduce possible
-   * ambiguities. See tests/xhp_pb_but_ok/colon_ambiguity*.php
-   * I don't want to solve those ambiguities but I can at least print a
-   * useful parsing error message with those fake rules.
-   *
-   * Everywhere in this grammar where we use ":" we should add
-   * an error rule similar to the one below.
-   *)
+ (* I don't parse XHP elements defs in the same way than the original
+  * XHP parser, which simplifies the grammar, but introduce possible
+  * ambiguities. See tests/xhp_pb_but_ok/colon_ambiguity*.php
+  * I don't want to solve those ambiguities but I can at least print a
+  * useful parsing error message with those fake rules.
+  *
+  * Everywhere in this grammar where we use ":" we should add
+  * an error rule similar to the one below.
+  *)
  | expr "?"  expr T_XHP_COLONID_DEF
      { H.failwith_xhp_ambiguity_colon (snd $4) }
 
@@ -1128,9 +1103,9 @@ expr:
 
 
  (* less: it would be nicer to have "(" TTypename ")"
-    * but this would require some parsing tricks to sometimes return
-    * a TIdent and TTypename like in pfff/lang_cpp/parsing/.
-    *)
+  * but this would require some parsing tricks to sometimes return
+  * a TIdent and TTypename like in pfff/lang_cpp/parsing/.
+  *)
  | T_BOOL_CAST   expr   { Cast((BoolTy,$1),$2) }
  | T_INT_CAST    expr   { Cast((IntTy,$1),$2) }
  | T_DOUBLE_CAST expr   { Cast((DoubleTy,$1),$2) }
@@ -1173,9 +1148,6 @@ expr:
  (* php-facebook-ext: Just like yield, await is at the statement level *)
  | T_AWAIT expr { Await ($1, $2) }
 
- (* sgrep_ext: *)
- | "..." { Flag_parsing.sgrep_guard (Ellipsis $1) }
-
  | T_INCLUDE      expr             { Include($1,$2) }
  | T_INCLUDE_ONCE expr                 { IncludeOnce($1,$2) }
  | T_REQUIRE      expr             { Require($1,$2) }
@@ -1190,6 +1162,9 @@ expr:
  | T_LIST "(" assignment_list ")" TEQ expr
      { AssignList($1,($2,$3,$4),$5,$6) }
 
+ (* sgrep_ext: *)
+ | "..." { Flag_parsing.sgrep_guard (Ellipsis $1) }
+
 (* inspired by parser_js.mly *)
 simple_expr:
  | new_expr { $1 }
@@ -1199,6 +1174,7 @@ simple_expr:
   *)
  | qualified_class_name "{" array_pair_list "}"
      { Collection ($1, ($2, $3, $4)) }
+
 new_expr:
  | member_expr { $1 }
  | T_NEW member_expr { New ($1, $2, None) }
@@ -1268,11 +1244,11 @@ primary_expr:
 
  | "(" expr ")"     { ParenExpr($1,$2,$3) }
 
+
 constant:
  | T_LNUMBER            { Int($1) }
  | T_DNUMBER            { Double($1) }
  | T_CONSTANT_ENCAPSED_STRING   { String($1) }
-
 
  | T_LINE { PreProcess(Line, $1) }
  | T_FILE { PreProcess(File, $1) } | T_DIR { PreProcess(Dir, $1) }
@@ -1305,9 +1281,9 @@ array_pair:
 arguments: "(" function_call_argument_list ")" { ($1, $2, $3) }
 
 function_call_argument:
- | expr { (Arg ($1)) }
+ | expr             { (Arg ($1)) }
  | TAND expr        { (ArgRef($1, $2)) }
- | "..." expr      { (ArgUnpack($1, $2)) }
+ | "..." expr       { (ArgUnpack($1, $2)) }
 
 (*----------------------------*)
 (* encaps *)
@@ -1381,12 +1357,11 @@ xhp_html:
      { XhpSingleton ($1, $2, $3) }
 
 xhp_child:
- | T_XHP_TEXT           { XhpText $1 }
- | xhp_html             { XhpNested $1 }
- | "{" expr "}" { XhpExpr ($1, $2, $3) }
+ | T_XHP_TEXT       { XhpText $1 }
+ | xhp_html         { XhpNested $1 }
+ | "{" expr "}"     { XhpExpr ($1, $2, $3) }
 
-xhp_attribute:
- | T_XHP_ATTR TEQ xhp_attribute_value { $1, $2, $3 }
+xhp_attribute: T_XHP_ATTR TEQ xhp_attribute_value { $1, $2, $3 }
 
 xhp_attribute_value:
  | TGUIL encaps* TGUIL { XhpAttrString ($1, $2, $3) }
