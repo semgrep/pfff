@@ -349,11 +349,11 @@ statement:
  | T_TRY   "{" inner_statement* "}"
    T_CATCH "(" class_name  T_VARIABLE ")"
      "{" inner_statement* "}"
-     additional_catch* optional_finally_clause
+     additional_catch* finally_clause?
      { let try_block = ($2,$3,$4) in
        let catch_block = ($10, $11, $12) in
        let catch = ($5, ($6, ($7, DName $8), $9), catch_block) in
-       Try($1, try_block, [catch] @ $13, $14)
+       Try($1, try_block, [catch] @ $13, Common.opt_to_list $14)
      }
  | T_TRY "{" inner_statement* "}" finally_clause
      { let try_block = ($2,$3,$4) in
@@ -1602,10 +1602,6 @@ class_name_no_array: qualified_class_name type_arguments
 (* xxx_list, xxx_opt *)
 (*************************************************************************)
 
-optional_finally_clause:
- | finally_clause { [$1] }
- | (*empty*)  { [] }
-
 method_modifiers:
  | (*empty*)				{ [] }
  | non_empty_member_modifiers			{ $1 }
@@ -1633,10 +1629,8 @@ expr_list:
  | expr_list "," expr      { $1 @ [Right $2; Left $3] }
 
 use_declaration_name_list:
- | use_declaration_name
-     { [Left $1] }
- | use_declaration_name_list "," use_declaration_name
-     { $1@[Right $2;Left $3] }
+ | use_declaration_name     { [Left $1] }
+ | use_declaration_name_list "," use_declaration_name { $1@[Right $2;Left $3] }
 
 declare_list:
  | declare                    	{ [Left $1] }
@@ -1741,4 +1735,3 @@ non_empty_array_pair_list_rev:
 array_pair_list_rev:
  | (*empty*) { [] }
  | non_empty_array_pair_list_rev possible_comma	{ $2@$1 }
-
