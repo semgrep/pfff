@@ -126,10 +126,6 @@ module PI = Parse_info
  (* facebook extension *)
  T_TYPE T_NEWTYPE T_SHAPE
 
-%left T_TYPE
-%left T_IDENT
-%right T_ELLIPSIS
-
 (*-----------------------------------------*)
 (* Punctuation tokens *)
 (*-----------------------------------------*)
@@ -220,6 +216,11 @@ module PI = Parse_info
 (*************************************************************************)
 (* Priorities *)
 (*************************************************************************)
+
+%left T_TYPE
+%left T_IDENT
+%right T_ELLIPSIS
+
 (* must be at the top so that it has the lowest priority *)
 %nonassoc LOW_PRIORITY_RULE
 
@@ -293,8 +294,8 @@ main: top_statement* EOF { H.squash_stmt_list $1 @ [FinalDef $2] }
 top_statement:
  | statement                            { StmtList [$1] }
  | constant_declaration_statement       { ConstantDef $1 }
- | function_declaration_statement	{ FuncDef $1 }
- | class_declaration_statement		{ ClassDef $1 }
+ | function_declaration_statement       { FuncDef $1 }
+ | class_declaration_statement          { ClassDef $1 }
  | type_declaration                     { TypeDef $1 }
  | namespace_declaration                { $1 }
  | use_declaration                      { $1 }
@@ -310,7 +311,7 @@ sgrep_spatch_pattern:
 (* Statements *)
 (*************************************************************************)
 statement:
- | expr           ";"		  { ExprStmt($1,$2) }
+ | expr       ";"		  { ExprStmt($1,$2) }
  | (* empty*) ";"              { EmptyStmt($1) }
 
  | "{" inner_statement* "}"   { Block($1,$2,$3) }
