@@ -1268,6 +1268,7 @@ and map_entity =
 
 and map_any =
   function
+  | Toplevels v1 -> let v1 = map_of_list map_toplevel v1 in Toplevels v1
   | Expr v1 -> let v1 = map_expr v1 in Expr ((v1))
   | Stmt2 v1 -> let v1 = map_stmt v1 in Stmt2 ((v1))
   | Toplevel v1 -> let v1 = map_toplevel v1 in Toplevel ((v1))

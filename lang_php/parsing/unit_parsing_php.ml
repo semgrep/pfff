@@ -275,7 +275,10 @@ let unittest =
 
     "parsing sgrep patterns" >:: (fun () ->
       let any = Parse_php.any_of_string "foo();" in
-      let ok = match any with Stmt2(ExprStmt( _)) -> true | _ -> false in
+      let ok = match any with 
+       | Toplevel(StmtList[ExprStmt( _)]) -> true 
+       | _ -> false 
+      in
       assert_bool "it should be the AST of a statement" ok;
       let any = Parse_php.any_of_string "foo()" in
       let ok = match any with Expr(_) -> true | _ -> false in
