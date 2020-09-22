@@ -311,7 +311,7 @@ sgrep_spatch_pattern:
 (* Statements *)
 (*************************************************************************)
 statement:
- | expr       ";"		  { ExprStmt($1,$2) }
+ | expr       ";"         { ExprStmt($1,$2) }
  | (* empty*) ";"              { EmptyStmt($1) }
 
  | "{" inner_statement* "}"   { Block($1,$2,$3) }
@@ -331,7 +331,7 @@ statement:
      for_statement
      { For($1,$2,$3,$4,$5,$6,$7,$8,$9) }
 
- | T_SWITCH "(" expr ")"	switch_case_list
+ | T_SWITCH "(" expr ")"    switch_case_list
      { Switch($1,($2,$3,$4),$5) }
 
  | T_FOREACH "(" expr T_AS foreach_pattern ")" foreach_statement
@@ -339,12 +339,12 @@ statement:
  | T_FOREACH "(" expr T_AWAIT T_AS foreach_pattern ")" foreach_statement
      { Foreach($1,$2,$3, Some $4, $5,$6,$7, $8) }
 
- | T_BREAK      ";"     	{ Break($1,None,$2) }
- | T_BREAK expr ";"	{ Break($1,Some $2, $3) }
- | T_CONTINUE      ";"	{ Continue($1,None,$2) }
- | T_CONTINUE expr ";"	{ Continue($1,Some $2, $3) }
+ | T_BREAK      ";"         { Break($1,None,$2) }
+ | T_BREAK expr ";" { Break($1,Some $2, $3) }
+ | T_CONTINUE      ";"  { Continue($1,None,$2) }
+ | T_CONTINUE expr ";"  { Continue($1,Some $2, $3) }
 
- | T_RETURN ";"	     { Return ($1,None, $2) }
+ | T_RETURN ";"      { Return ($1,None, $2) }
  | T_RETURN expr ";"  { Return ($1,Some ($2), $3)}
 
  | T_TRY   "{" inner_statement* "}"
@@ -363,7 +363,7 @@ statement:
  | T_THROW expr ";" { Throw($1,$2,$3) }
 
  | T_ECHO echo_expr_list ";"     { Echo($1,$2,$3) }
- | T_INLINE_HTML			{ InlineHtml($1) }
+ | T_INLINE_HTML            { InlineHtml($1) }
 
  | T_OPEN_TAG_WITH_ECHO expr T_CLOSE_TAG_OF_ECHO {
      (* ugly: the 2 tokens will have a wrong string *)
@@ -379,21 +379,21 @@ statement:
 
  | T_UNSET "(" unset_variables ")" ";" { Unset($1,($2,$3,$4),$5) }
 
- | T_USE use_filename ";"		  { Use($1,$2,$3) }
+ | T_USE use_filename ";"         { Use($1,$2,$3) }
  | T_DECLARE  "(" declare_list ")" declare_statement
      { Declare($1,($2,$3,$4),$5) }
 
 inner_statement:
  | statement                            { $1 }
- | function_declaration_statement	{ FuncDefNested $1 }
- | class_declaration_statement		{ ClassDefNested $1 }
+ | function_declaration_statement   { FuncDefNested $1 }
+ | class_declaration_statement      { ClassDefNested $1 }
 
 (*----------------------------*)
 (* auxillary statements *)
 (*----------------------------*)
 for_expr:
- | (*empty*)    	{ [] }
- | non_empty_for_expr	{ $1 }
+ | (*empty*)        { [] }
+ | non_empty_for_expr   { $1 }
 
 (* can not factorize with a is_reference otherwise s/r conflict on LIST *)
 foreach_variable:
@@ -422,7 +422,7 @@ switch_case_list:
 
 case_list: case_list_rev { List.rev $1 }
 case_list_rev:
- | (*empty*)	{ [] }
+ | (*empty*)    { [] }
  | case_list_rev    T_CASE expr case_separator inner_statement*
      { Case($2,$3,$4,$5)::$1   }
  | case_list_rev    T_DEFAULT   case_separator inner_statement*
@@ -490,19 +490,19 @@ finally_clause:
 declare: ident   TEQ static_scalar { Name $1, ($2, $3) }
 
 global_var:
- | T_VARIABLE			{ GlobalVar (DName $1) }
- | "$" expr  		{ GlobalDollar ($1, $2) }
- | "$" "{" expr "}"	{ GlobalDollarExpr ($1, ($2, $3, $4)) }
+ | T_VARIABLE           { GlobalVar (DName $1) }
+ | "$" expr         { GlobalDollar ($1, $2) }
+ | "$" "{" expr "}" { GlobalDollarExpr ($1, ($2, $3, $4)) }
 
 static_var:
  | T_VARIABLE                   { (DName $1, None) }
  | T_VARIABLE TEQ static_scalar { (DName $1, Some ($2, $3)) }
 
-unset_variable: expr	{ $1 }
+unset_variable: expr    { $1 }
 
 use_filename:
- |       T_CONSTANT_ENCAPSED_STRING		{ UseDirect $1 }
- | "(" T_CONSTANT_ENCAPSED_STRING ")"	{ UseParen ($1, $2, $3) }
+ |       T_CONSTANT_ENCAPSED_STRING     { UseDirect $1 }
+ | "(" T_CONSTANT_ENCAPSED_STRING ")"   { UseParen ($1, $2, $3) }
 
 (*************************************************************************)
 (* Constant declaration *)
@@ -592,7 +592,7 @@ ctor_modifier:
 
 is_reference:
  | (*empty*)  { None }
- | TAND		  { Some $1 }
+ | TAND       { Some $1 }
 
 (* PHP 5.3 *)
 lexical_vars:
@@ -668,14 +668,14 @@ unticked_class_declaration_statement:
 
 
 class_entry_type:
- | T_CLASS  	      { ClassRegular $1 }
+ | T_CLASS            { ClassRegular $1 }
  | T_ABSTRACT T_FINAL T_CLASS { ClassAbstractFinal ($1, $2, $3) }
  | T_FINAL T_ABSTRACT T_CLASS { ClassAbstractFinal ($1, $2, $3) }
  | T_ABSTRACT T_CLASS { ClassAbstract ($1, $2) }
  | T_FINAL    T_CLASS { ClassFinal ($1, $2) }
 
 extends_from:
- | (*empty*)	         { None }
+ | (*empty*)             { None }
  | T_EXTENDS class_name_no_array { Some ($1, $2)  }
 
 interface_extends_list:
@@ -787,13 +787,13 @@ method_declaration:
 class_constant_declaration: ident TEQ static_scalar { ((Name $1), Some ($2, $3)) }
 
 variable_modifiers:
- | T_VAR				{ NoModifiers $1 }
- | non_empty_member_modifiers		{ VModifiers $1 }
+ | T_VAR                { NoModifiers $1 }
+ | non_empty_member_modifiers       { VModifiers $1 }
 
 
 class_variable:
- | T_VARIABLE			{ (DName $1, None) }
- | T_VARIABLE TEQ static_scalar	{ (DName $1, Some ($2, $3)) }
+ | T_VARIABLE           { (DName $1, None) }
+ | T_VARIABLE TEQ static_scalar { (DName $1, Some ($2, $3)) }
 
 member_modifier:
  | T_PUBLIC    { Public,($1) } | T_PROTECTED { Protected,($1) }
@@ -803,7 +803,7 @@ member_modifier:
  | T_ASYNC { Async,($1) }
 
 method_body:
- | "{" inner_statement* "}"	{ ($1, $2, $3), MethodRegular }
+ | "{" inner_statement* "}" { ($1, $2, $3), MethodRegular }
  | ";" { (* ugly: *) (fakeInfo"", [], $1), MethodAbstract }
 
 (*----------------------------*)
@@ -1049,7 +1049,7 @@ expr:
     * code like '1 && $x = 2'  was wrongly parsed. So we need to
     * force to have a 'simple_expr' on the left side.
     *)
- | simple_expr TEQ expr	{ Assign($1,$2, $3) }
+ | simple_expr TEQ expr { Assign($1,$2, $3) }
  | simple_expr TEQ TAND expr   { AssignRef($1,$2,$3, $4) }
 
  | simple_expr T_PLUS_EQUAL   expr { AssignOp($1,(AssignOpArith Plus,$2),$3) }
@@ -1076,21 +1076,21 @@ expr:
  | expr T_LOGICAL_AND  expr { Binary($1,(Logical AndLog, $2),$3) }
  | expr T_LOGICAL_XOR  expr { Binary($1,(Logical XorLog, $2),$3) }
 
- | expr TPLUS expr 	{ Binary($1,(Arith Plus ,$2),$3) }
- | expr TMINUS expr 	{ Binary($1,(Arith Minus,$2),$3) }
- | expr TMUL expr	{ Binary($1,(Arith Mul,$2),$3) }
- | expr TDIV expr	{ Binary($1,(Arith Div,$2),$3) }
- | expr TMOD expr 	{ Binary($1,(Arith Mod,$2),$3) }
+ | expr TPLUS expr  { Binary($1,(Arith Plus ,$2),$3) }
+ | expr TMINUS expr     { Binary($1,(Arith Minus,$2),$3) }
+ | expr TMUL expr   { Binary($1,(Arith Mul,$2),$3) }
+ | expr TDIV expr   { Binary($1,(Arith Div,$2),$3) }
+ | expr TMOD expr   { Binary($1,(Arith Mod,$2),$3) }
 
- | expr T_XHP_PERCENTID_DEF 	{ H.failwith_xhp_ambiguity_percent (snd $2) }
+ | expr T_XHP_PERCENTID_DEF     { H.failwith_xhp_ambiguity_percent (snd $2) }
 
- | expr TAND expr	{ Binary($1,(Arith And,$2),$3) }
- | expr TOR expr	{ Binary($1,(Arith Or,$2),$3) }
- | expr TXOR expr	{ Binary($1,(Arith Xor,$2),$3) }
- | expr T_SL expr	{ Binary($1,(Arith DecLeft,$2),$3) }
- | expr T_SR expr	{ Binary($1,(Arith DecRight,$2),$3) }
+ | expr TAND expr   { Binary($1,(Arith And,$2),$3) }
+ | expr TOR expr    { Binary($1,(Arith Or,$2),$3) }
+ | expr TXOR expr   { Binary($1,(Arith Xor,$2),$3) }
+ | expr T_SL expr   { Binary($1,(Arith DecLeft,$2),$3) }
+ | expr T_SR expr   { Binary($1,(Arith DecRight,$2),$3) }
 
- | expr "." expr 	{ Binary($1,(BinaryConcat,$2),$3) }
+ | expr "." expr    { Binary($1,(BinaryConcat,$2),$3) }
 
  | expr T_IS_IDENTICAL        expr { Binary($1,(Logical Identical,$2),$3) }
  | expr T_IS_NOT_IDENTICAL    expr { Binary($1,(Logical NotIdentical,$2),$3) }
@@ -1107,9 +1107,9 @@ expr:
  | TBANG  expr                          { Unary((UnBang,$1),$2) }
  | TTILDE expr                          { Unary((UnTilde,$1),$2) }
 
- | expr "?"  expr ":"  expr	 { CondExpr($1,$2,Some $3,$4,$5) }
+ | expr "?"  expr ":"  expr  { CondExpr($1,$2,Some $3,$4,$5) }
  (* PHP 5.3 *)
- | expr "?"  ":"  expr	 { CondExpr($1,$2,None,$3,$4) }
+ | expr "?"  ":"  expr   { CondExpr($1,$2,None,$3,$4) }
  | expr "?" "?" expr { CondExpr($1,$2,None,$3,$4) }
 
 (* I don't parse XHP elements defs in the same way than the original
@@ -1131,16 +1131,16 @@ expr:
     * but this would require some parsing tricks to sometimes return
     * a TIdent and TTypename like in pfff/lang_cpp/parsing/.
     *)
- | T_BOOL_CAST   expr	{ Cast((BoolTy,$1),$2) }
- | T_INT_CAST    expr 	{ Cast((IntTy,$1),$2) }
- | T_DOUBLE_CAST expr 	{ Cast((DoubleTy,$1),$2) }
- | T_STRING_CAST expr	{ Cast((StringTy,$1),$2) }
- | T_ARRAY_CAST  expr 	{ Cast((ArrayTy,$1),$2) }
- | T_OBJECT_CAST expr 	{ Cast((ObjectTy,$1),$2) }
+ | T_BOOL_CAST   expr   { Cast((BoolTy,$1),$2) }
+ | T_INT_CAST    expr   { Cast((IntTy,$1),$2) }
+ | T_DOUBLE_CAST expr   { Cast((DoubleTy,$1),$2) }
+ | T_STRING_CAST expr   { Cast((StringTy,$1),$2) }
+ | T_ARRAY_CAST  expr   { Cast((ArrayTy,$1),$2) }
+ | T_OBJECT_CAST expr   { Cast((ObjectTy,$1),$2) }
 
- | T_UNSET_CAST  expr	{ CastUnset($1,$2) }
+ | T_UNSET_CAST  expr   { CastUnset($1,$2) }
 
- | T_EXIT exit_expr	{ Exit($1,$2) }
+ | T_EXIT exit_expr { Exit($1,$2) }
  | "@" expr           { At($1,$2) }
  | T_PRINT expr  { Print($1,$2) }
 
@@ -1176,14 +1176,14 @@ expr:
  (* sgrep_ext: *)
  | "..." { Flag_parsing.sgrep_guard (Ellipsis $1) }
 
- | T_INCLUDE      expr 		       { Include($1,$2) }
- | T_INCLUDE_ONCE expr 	               { IncludeOnce($1,$2) }
- | T_REQUIRE      expr		       { Require($1,$2) }
- | T_REQUIRE_ONCE expr		       { RequireOnce($1,$2) }
+ | T_INCLUDE      expr             { Include($1,$2) }
+ | T_INCLUDE_ONCE expr                 { IncludeOnce($1,$2) }
+ | T_REQUIRE      expr             { Require($1,$2) }
+ | T_REQUIRE_ONCE expr             { RequireOnce($1,$2) }
 
- | T_EMPTY "(" expr ")"	       { Empty($1,($2,$3,$4)) }
+ | T_EMPTY "(" expr ")"        { Empty($1,($2,$3,$4)) }
 
- | T_EVAL "(" expr ")" 	       { Eval($1,($2,$3,$4)) }
+ | T_EVAL "(" expr ")"         { Eval($1,($2,$3,$4)) }
 
  | T_ISSET "(" expr_list ")" { Isset($1, ($2, $3, $4)) }
 
@@ -1269,9 +1269,9 @@ primary_expr:
  | "(" expr ")"     { ParenExpr($1,$2,$3) }
 
 constant:
- | T_LNUMBER 			{ Int($1) }
- | T_DNUMBER 			{ Double($1) }
- | T_CONSTANT_ENCAPSED_STRING	{ String($1) }
+ | T_LNUMBER            { Int($1) }
+ | T_DNUMBER            { Double($1) }
+ | T_CONSTANT_ENCAPSED_STRING   { String($1) }
 
 
  | T_LINE { PreProcess(Line, $1) }
@@ -1287,15 +1287,15 @@ static_scalar: expr { $1 }
 (*----------------------------*)
 
 assignment_list_element:
- | expr				{ ListVar $1 }
- | T_LIST "(" assignment_list ")"	{ ListList ($1, ($2, $3, $4)) }
- | (*empty*)			{ ListEmpty }
+ | expr             { ListVar $1 }
+ | T_LIST "(" assignment_list ")"   { ListList ($1, ($2, $3, $4)) }
+ | (*empty*)            { ListEmpty }
 
 array_pair_list: array_pair_list_rev { List.rev $1 }
 array_pair:
- | expr 			       { (ArrayExpr $1) }
- | TAND expr 		       { (ArrayRef ($1,$2)) }
- | expr "=>" expr	       { (ArrayArrowExpr($1,$2,$3)) }
+ | expr                    { (ArrayExpr $1) }
+ | TAND expr               { (ArrayRef ($1,$2)) }
+ | expr "=>" expr          { (ArrayArrowExpr($1,$2,$3)) }
  | expr "=>" TAND expr { (ArrayArrowRef($1,$2,$3,$4)) }
 
 (*----------------------------*)
@@ -1305,8 +1305,8 @@ array_pair:
 arguments: "(" function_call_argument_list ")" { ($1, $2, $3) }
 
 function_call_argument:
- | expr	{ (Arg ($1)) }
- | TAND expr 		{ (ArgRef($1, $2)) }
+ | expr { (Arg ($1)) }
+ | TAND expr        { (ArgRef($1, $2)) }
  | "..." expr      { (ArgUnpack($1, $2)) }
 
 (*----------------------------*)
@@ -1352,7 +1352,7 @@ encaps:
  | T_DOLLAR_OPEN_CURLY_BRACES expr "}" { EncapsExpr ($1, $2, $3) }
 
 encaps_var_offset:
- | T_IDENT	{
+ | T_IDENT  {
      (* It looks like an ident but as we are in encaps_var_offset,
       * PHP allows array access inside strings to omit the quote
       * around fieldname, so it's actually really a Constant (String)
@@ -1362,8 +1362,8 @@ encaps_var_offset:
      let cst = String $1 in (* will not have enclosing "'"  as usual *)
      Sc (C cst)
    }
- | T_VARIABLE	{ H.mk_var $1 }
- | T_NUM_STRING	{
+ | T_VARIABLE   { H.mk_var $1 }
+ | T_NUM_STRING {
      (* the original php lexer does not return some numbers for
       * offset of array access inside strings. Not sure why ...
       *)
@@ -1453,12 +1453,12 @@ lambda_body:
 
 dim_offset:
  | (*empty*)   { None }
- | expr		   { Some $1 }
+ | expr        { Some $1 }
 
 exit_expr:
- | (*empty*)	{ None }
- | "(" ")"		{ Some($1, None, $2) }
- | "(" expr ")"	{ Some($1, Some $2, $3) }
+ | (*empty*)    { None }
+ | "(" ")"      { Some($1, None, $2) }
+ | "(" expr ")" { Some($1, Some $2, $3) }
 
 
 (*************************************************************************)
@@ -1604,12 +1604,12 @@ class_name_no_array: qualified_class_name type_arguments
 (*************************************************************************)
 
 method_modifiers:
- | (*empty*)				{ [] }
- | non_empty_member_modifiers			{ $1 }
+ | (*empty*)                { [] }
+ | non_empty_member_modifiers           { $1 }
 
 non_empty_member_modifiers:
- | member_modifier				{ [$1] }
- | non_empty_member_modifiers member_modifier	{ $1 @ [$2] }
+ | member_modifier              { [$1] }
+ | non_empty_member_modifiers member_modifier   { $1 @ [$2] }
 
 
 
@@ -1618,15 +1618,15 @@ unset_variables:
  | unset_variables "," unset_variable { $1 @ [Right $2; Left $3] }
 
 global_var_list:
- | global_var				{ [Left $1] }
- | global_var_list "," global_var	{ $1 @ [Right $2; Left $3] }
+ | global_var               { [Left $1] }
+ | global_var_list "," global_var   { $1 @ [Right $2; Left $3] }
 
 echo_expr_list:
- | expr				   { [Left $1] }
+ | expr                { [Left $1] }
  | echo_expr_list "," expr      { $1 @ [Right $2; Left $3] }
 
 expr_list:
- | expr				   { [Left $1] }
+ | expr                { [Left $1] }
  | expr_list "," expr      { $1 @ [Right $2; Left $3] }
 
 use_declaration_name_list:
@@ -1634,12 +1634,12 @@ use_declaration_name_list:
  | use_declaration_name_list "," use_declaration_name { $1@[Right $2;Left $3] }
 
 declare_list:
- | declare                    	{ [Left $1] }
- | declare_list "," declare	{ $1 @ [Right $2; Left $3] }
+ | declare                      { [Left $1] }
+ | declare_list "," declare { $1 @ [Right $2; Left $3] }
 
 non_empty_for_expr:
-  | expr      			     { [Left $1] }
-  | non_empty_for_expr ","	expr { $1 @ [Right $2; Left $3] }
+  | expr                     { [Left $1] }
+  | non_empty_for_expr ","  expr { $1 @ [Right $2; Left $3] }
 
 xhp_attribute_decls:
  | xhp_attribute_decl { [Left $1] }
@@ -1654,7 +1654,7 @@ xhp_category_list:
  | xhp_category_list "," xhp_category { $1 @ [Right $2; Left $3] }
 
 attribute_list:
- | attribute				   { [Left $1] }
+ | attribute                   { [Left $1] }
  | attribute_list "," attribute         { $1 @ [Right $2; Left $3] }
 
 attribute_argument_list:
@@ -1735,4 +1735,4 @@ non_empty_array_pair_list_rev:
 
 array_pair_list_rev:
  | (*empty*) { [] }
- | non_empty_array_pair_list_rev possible_comma	{ $2@$1 }
+ | non_empty_array_pair_list_rev possible_comma { $2@$1 }
