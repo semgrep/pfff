@@ -342,12 +342,15 @@ and map_attribute = function
 
 and map_var_kind = function | Var -> Var | Let -> Let | Const -> Const
 and
-  map_fun_ { f_props = v_f_props; f_params = v_f_params; f_body = v_f_body }
+  map_fun_ { f_props = v_f_props; f_params = v_f_params; 
+             f_body = v_f_body; f_rettype }
            =
   let v_f_body = map_stmt v_f_body in
   let v_f_params = map_of_list map_parameter_binding v_f_params in
   let v_f_props = map_of_list map_attribute v_f_props in 
-  { f_props = v_f_props; f_params = v_f_params; f_body = v_f_body }
+  let f_rettype = map_option map_type_ f_rettype in
+  { f_props = v_f_props; f_params = v_f_params; 
+    f_body = v_f_body; f_rettype }
 
 and map_parameter_binding =
   function

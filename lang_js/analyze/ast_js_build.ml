@@ -826,20 +826,24 @@ and var_kind _env (x, tok) =
 
 
 
-and func_decl env x =
+and func_decl env 
+    { C.f_kind; f_properties; f_params; f_body; 
+      f_type_params = _; f_return_type; }
+  =
   (* bugfix: each function has its own vars *)
   let env = { env with vars = Hashtbl.copy env.vars } in
-  let props = func_props env x.C.f_kind x.C.f_properties in
+  let props = func_props env f_kind f_properties in
   let params_and_vars = 
-   x.C.f_params |> C.unparen |> C.uncomma |> Common.index_list_0 |>
+   f_params |> C.unparen |> C.uncomma |> Common.index_list_0 |>
     List.map (fun (p, idx) -> parameter_binding env idx p)
   in
   let params = params_and_vars |> List.map fst in
   let vars = params_and_vars |> List.map snd |> List.flatten in
   let env = add_params env params in
-  let xs = stmt_item_list env (x.C.f_body |> C.unparen) in
+  let xs = stmt_item_list env (f_body |> C.unparen) in
   let body = Ast_js.stmt_of_stmts (vars @ xs) in
-  { A.f_props = props; f_params = params; f_body = body }
+  let f_rettype = type_opt env f_return_type in
+  { A.f_props = props; f_params = params; f_body = body; f_rettype }
 
 and func_props _env kind props = 
   ((match kind with
@@ -931,7 +935,7 @@ and arrow_func env x =
     | C.ABody xs -> stmt_item_list env (xs |> C.unparen)
   in
   let body = Ast_js.stmt_of_stmts (vars @ xs) in
-  { A.f_props = props; f_params = params; f_body = body }
+  { A.f_props = props; f_params = params; f_body = body; f_rettype = None }
 
 
 and property env = function

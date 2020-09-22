@@ -383,7 +383,8 @@ and function_definition = {
   (* less: move that in entity? but some anon func have attributes too *)
   f_props: attribute list;
   f_params: parameter list;
-  (* TODO: f_rettype *)
+  (* typescript-ext: *)
+  f_rettype: type_ option;
   f_body: stmt;
 }
   and parameter =

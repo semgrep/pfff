@@ -268,9 +268,13 @@ and v_var { v_name = v_v_name; v_kind = v_v_kind; v_init = v_v_init;
   ()
 and v_var_kind = function | Var -> () | Let -> () | Const -> ()
 
-and v_fun_ { f_props = v_f_props; f_params = v_f_params; f_body = v_f_body } =
+and v_fun_ { f_props = v_f_props; f_params = v_f_params; 
+             f_body = v_f_body; f_rettype } =
   let arg = v_list v_attribute v_f_props in
-  let arg = v_list v_parameter_binding v_f_params in let arg = v_stmt v_f_body in ()
+  let arg = v_list v_parameter_binding v_f_params in 
+  let arg = v_stmt v_f_body in
+  v_option v_type_ f_rettype;
+  ()
 
 and v_parameter_binding =
   function

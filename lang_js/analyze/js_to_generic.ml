@@ -405,11 +405,13 @@ and var_kind (x, tok) =
   | Let -> G.attr G.Let tok
   | Const -> G.attr G.Const tok
 
-and fun_ { f_props = f_props; f_params = f_params; f_body = f_body } =
+and fun_ { f_props = f_props; f_params = f_params; 
+           f_body = f_body; f_rettype } =
   let v1 = list attribute f_props in
   let v2 = list parameter_binding f_params in 
   let v3 = stmt f_body |> as_block in
-  { G.fparams = v2; frettype = None; fbody = v3; }, v1
+  let frettype = option type_ f_rettype in
+  { G.fparams = v2; frettype; fbody = v3; }, v1
 
 and parameter_binding = function
  | ParamClassic x -> G.ParamClassic (parameter x)
