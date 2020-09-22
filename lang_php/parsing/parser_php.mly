@@ -1426,9 +1426,7 @@ lambda_body:
 (* auxillary bis *)
 (*----------------------------*)
 
-dim_offset:
- | (*empty*)   { None }
- | expr        { Some $1 }
+dim_offset: expr? { $1 }
 
 exit_expr:
  | (*empty*)    { None }
@@ -1568,11 +1566,9 @@ qualified_name_for_traits: qualified_class_name { $1 }
 (* Name *)
 (*************************************************************************)
 
-class_name: qualified_class_name_or_array type_arguments
-  { Hint ($1, $2) }
+class_name: qualified_class_name_or_array type_arguments { Hint ($1, $2) }
 
-class_name_no_array: qualified_class_name type_arguments
-  { Hint ($1, $2) }
+class_name_no_array: qualified_class_name type_arguments { Hint ($1, $2) }
 
 (*************************************************************************)
 (* xxx_list, xxx_opt *)
