@@ -1,4 +1,4 @@
-/* Yoann Padioleau
+(* Yoann Padioleau
  *
  * Copyright (C) 2009-2013 Facebook
  *
@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- */
+ *)
 
 %{
 (* src: originally ocamlyaccified from zend_language_parser.y in Zend PHP.
@@ -55,7 +55,6 @@
 open Common
 
 open Cst_php
-module Ast = Cst_php
 module H = Parser_php_mly_helper
 module PI = Parse_info
 
@@ -544,7 +543,7 @@ unticked_function_declaration_statement:
 
 function_body:
  | TOBRACE inner_statement_list TCBRACE     { ($1, $2, $3)  }
- | TSEMICOLON { (* ugly: *) (Ast.fakeInfo"", [], $1) }
+ | TSEMICOLON { (* ugly: *) (fakeInfo"", [], $1) }
 
 async_opt:
  | /*(*empty*)*/ { [] }
@@ -807,7 +806,7 @@ member_modifier:
 
 method_body:
  | TOBRACE inner_statement_list TCBRACE	{ ($1, $2, $3), MethodRegular }
- | TSEMICOLON { (* ugly: *) (Ast.fakeInfo"", [], $1), MethodAbstract }
+ | TSEMICOLON { (* ugly: *) (fakeInfo"", [], $1), MethodAbstract }
 
 /*(*----------------------------*)*/
 /*(*2 XHP attributes *)*/
