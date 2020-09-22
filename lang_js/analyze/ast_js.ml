@@ -381,7 +381,7 @@ and var = entity
 
 and function_definition = {
   (* less: move that in entity? but some anon func have attributes too *)
-  f_props: attribute list;
+  f_attrs: attribute list;
   f_params: parameter list;
   (* typescript-ext: *)
   f_rettype: type_ option;
@@ -410,7 +410,7 @@ and class_definition = {
   (* usually simply an Id *)
   c_extends: expr option;
   c_body: property list bracket;
-  c_props: attribute list;
+  c_attrs: attribute list;
 }
 
   and obj_ = property list bracket
@@ -436,7 +436,7 @@ and class_definition = {
 
   and field_classic = {
     fld_name: property_name;
-    fld_props: attribute list;
+    fld_attrs: attribute list;
     fld_type: type_ option;
     fld_body: expr option;
   }
@@ -522,7 +522,7 @@ let mk_const_var id e =
     v_resolved = ref NotResolved }
 
 let mk_field name body = 
-  { fld_name = name; fld_body = body; fld_props = []; fld_type = None }
+  { fld_name = name; fld_body = body; fld_attrs = []; fld_type = None }
 
 (* helpers used in ast_js_build.ml and Parse_javascript_tree_sitter.ml *)
 let var_pattern_to_var vkind pat tok init_opt = 

@@ -405,7 +405,7 @@ and var_kind (x, tok) =
   | Let -> G.attr G.Let tok
   | Const -> G.attr G.Const tok
 
-and fun_ { f_props = f_props; f_params = f_params; 
+and fun_ { f_attrs = f_props; f_params = f_params; 
            f_body = f_body; f_rettype } =
   let v1 = list attribute f_props in
   let v2 = list parameter_binding f_params in 
@@ -464,10 +464,10 @@ and keyword_attribute (x, tok) =
 
 and obj_ v = bracket (list property) v
 
-and class_ { c_extends = c_extends; c_body = c_body; c_tok; c_props } =
+and class_ { c_extends = c_extends; c_body = c_body; c_tok; c_attrs } =
   let v1 = option expr c_extends in
   let v2 = bracket (list property) c_body in
-  let attrs = list attribute c_props in
+  let attrs = list attribute c_attrs in
   (* todo: could analyze arg to look for Id *)
   let extends = 
     match v1 with
@@ -478,7 +478,7 @@ and class_ { c_extends = c_extends; c_body = c_body; c_tok; c_props } =
     cimplements = []; cmixins = []; cbody = v2;}, attrs
 and property x =
    match x with
-  | Field {fld_name = v1; fld_props = v2; fld_type = vt; fld_body = v3} ->
+  | Field {fld_name = v1; fld_attrs = v2; fld_type = vt; fld_body = v3} ->
       let v1 = property_name v1
       and v2 = list attribute v2
       and vt = vt
