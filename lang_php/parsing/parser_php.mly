@@ -219,7 +219,6 @@ module PI = Parse_info
 
 %left T_TYPE
 %left T_IDENT
-%right T_ELLIPSIS
 
 (* must be at the top so that it has the lowest priority *)
 %nonassoc LOW_PRIORITY_RULE
@@ -302,9 +301,8 @@ top_statement:
 
 sgrep_spatch_pattern:
  | expr EOF      { Expr $1 }
- (* less: a bit obsolete, use generalized sgrep instead for that *)
- | statement EOF { Stmt2 $1 }
- | function_declaration_statement EOF { Toplevel (FuncDef $1) }
+ | top_statement EOF { Toplevel $1 }
+ | top_statement top_statement+ EOF { Toplevels ($1::$2) }
  | ":" type_php EOF { Hint2 $2 }
 
 (*************************************************************************)
@@ -377,6 +375,9 @@ statement:
  | T_USE use_filename ";"         { Use($1,$2,$3) }
  | T_DECLARE  "(" declare_list ")" declare_statement
      { Declare($1,($2,$3,$4),$5) }
+
+ (* sgrep_ext: *)
+ | "..." { Flag_parsing.sgrep_guard (ExprStmt (Ellipsis $1, fakeInfo ";")) }
 
 inner_statement:
  | statement                        { $1 }
@@ -1162,9 +1163,6 @@ expr:
  | T_LIST "(" assignment_list ")" TEQ expr
      { AssignList($1,($2,$3,$4),$5,$6) }
 
- (* sgrep_ext: *)
- | "..." { Flag_parsing.sgrep_guard (Ellipsis $1) }
-
 (* inspired by parser_js.mly *)
 simple_expr:
  | new_expr { $1 }
@@ -1245,6 +1243,7 @@ primary_expr:
  | "(" expr ")"     { ParenExpr($1,$2,$3) }
 
 
+
 constant:
  | T_LNUMBER            { Int($1) }
  | T_DNUMBER            { Double($1) }
@@ -1257,6 +1256,7 @@ constant:
  | T_NAMESPACE_C { PreProcess(NamespaceC, $1) }
 
 static_scalar: expr { $1 }
+
 
 (*----------------------------*)
 (* list/array *)
@@ -1284,6 +1284,9 @@ function_call_argument:
  | expr             { (Arg ($1)) }
  | TAND expr        { (ArgRef($1, $2)) }
  | "..." expr       { (ArgUnpack($1, $2)) }
+
+ (* sgrep_ext: *)
+ | "..." { Flag_parsing.sgrep_guard (Arg (Ellipsis $1)) }
 
 (*----------------------------*)
 (* encaps *)

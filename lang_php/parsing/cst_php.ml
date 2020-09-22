@@ -845,6 +845,7 @@ type any =
   | Stmt2 of stmt
   | StmtAndDefs of stmt_and_def list
   | Toplevel of toplevel
+  | Toplevels of toplevel list
   | Program of program
   | Entity of entity
 
