@@ -352,7 +352,7 @@ let rec expr_fold fold_env lhs expr acc =
   | YieldBreak _
   | Await _
       -> raise Todo
-  | SgrepExprDots _ -> raise Todo
+  | Ellipsis _ -> raise Todo
   | ParenExpr(e) ->
     recl (Ast.unparen e) acc
 

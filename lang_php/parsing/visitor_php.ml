@@ -356,7 +356,7 @@ and v_expr (x: expr) =
   | Eval ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_paren v_expr v2 in ()
   | ParenExpr v1 -> let v1 = v_paren v_expr v1 in ()
 
-  | SgrepExprDots v1 -> let v1 = v_tok v1 in ()
+  | Ellipsis v1 -> let v1 = v_tok v1 in ()
 
   | XhpHtml v1 -> let v1 = v_xhp_html v1 in ()
 

@@ -295,8 +295,8 @@ and expr =
   (* php-facebook-ext: Just like yield, this should be at the statement level *)
   | Await of tok * expr
 
-  (* only appear when process sgrep patterns *)
-  | SgrepExprDots of tok
+  (* semgrep-ext:  *)
+  | Ellipsis of tok
   (* unparser: *)
   | ParenExpr of expr paren
 
@@ -380,7 +380,7 @@ and expr =
     and xhp_attr_value =
       | XhpAttrString of tok (* '"' *) * encaps list * tok (* '"' *)
       | XhpAttrExpr of expr brace
-      (* sgrep: *)
+      (* semgrep-ext: *)
       | SgrepXhpAttrValueMvar of string wrap
    and xhp_body =
      | XhpText of string wrap
@@ -529,7 +529,7 @@ and func_def = {
   (* can be a Name("__lambda", f_tok) when used for lambdas *)
   f_name: ident;
   f_tparams: type_params option;
-  (* the dots should be only at the end (unless in sgrep mode) *)
+  (* the dots should be only at the end (unless in semgrep mode) *)
   f_params: parameter comma_list_dots paren;
   (* static-php-ext: *)
   f_return_type: (tok (* : *) * tok option (* @ *) * hint_type) option;

@@ -183,7 +183,7 @@ module PI = Parse_info
 %token <Cst_php.info> T_SUPER
 
 (* phpext: for hack and also for sgrep *)
-%token <Cst_php.info> T_ELLIPSIS
+%token <Cst_php.info> T_ELLIPSIS "..."
 
 (* lexing hack to parse lambda params properly *)
 %token <Cst_php.info> T_LAMBDA_OPAR T_LAMBDA_CPAR
@@ -579,12 +579,12 @@ parameter_bis:
      { let p = H.mk_param $1 in Left3 {p with p_default=Some($2,$3)} }
  | TAND T_VARIABLE TEQ static_scalar
      { let p = H.mk_param $2 in Left3 {p with p_ref=Some $1; p_default=Some($3,$4)} }
- | T_ELLIPSIS T_VARIABLE
+ | "..." T_VARIABLE
      { let p = H.mk_param $2 in Left3 {p with p_variadic=Some $1; p_type=Some(HintVariadic ($1, None))} }
- | TAND T_ELLIPSIS T_VARIABLE
+ | TAND "..." T_VARIABLE
      { let p = H.mk_param $3 in Left3 {p with p_ref=Some $1; p_variadic=Some $2; p_type=Some(HintVariadic ($2, None))} }
  (* varargs extension *)
- | T_ELLIPSIS
+ | "..."
      { Middle3 $1 }
 
 (* php-facebook-ext: implicit field via constructor parameter *)
@@ -1006,7 +1006,7 @@ type_php_or_dots_list:
 
 type_php_or_dots:
  | type_php { Left3 $1 }
- | T_ELLIPSIS    { Middle3 $1 }
+ | "..."    { Middle3 $1 }
 
 (* Do not confuse type_parameters and type_arguments. Type parameters
    * can only be simple identifiers, as in class Foo<T1, T2> { ... },
@@ -1177,7 +1177,7 @@ expr:
  | T_AWAIT expr { Await ($1, $2) }
 
  (* sgrep_ext: *)
- | T_ELLIPSIS { Flag_parsing.sgrep_guard (SgrepExprDots $1) }
+ | "..." { Flag_parsing.sgrep_guard (Ellipsis $1) }
 
  | T_INCLUDE      expr 		       { Include($1,$2) }
  | T_INCLUDE_ONCE expr 	               { IncludeOnce($1,$2) }
@@ -1309,7 +1309,7 @@ arguments: "(" function_call_argument_list ")" { ($1, $2, $3) }
 function_call_argument:
  | expr	{ (Arg ($1)) }
  | TAND expr 		{ (ArgRef($1, $2)) }
- | T_ELLIPSIS expr      { (ArgUnpack($1, $2)) }
+ | "..." expr      { (ArgUnpack($1, $2)) }
 
 (*----------------------------*)
 (* encaps *)

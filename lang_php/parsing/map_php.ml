@@ -309,7 +309,7 @@ and map_expr (x) =
       let v1 = map_tok v1
       and v2 = map_paren (map_comma_list map_lvalue) v2
       in Isset ((v1, v2))
-  | SgrepExprDots v1 -> let v1 = map_info v1 in SgrepExprDots ((v1))
+  | Ellipsis v1 -> let v1 = map_info v1 in Ellipsis ((v1))
   | ParenExpr v1 -> let v1 = map_paren map_expr v1 in ParenExpr ((v1))
   | XhpHtml v1 -> let v1 = map_xhp_html v1 in XhpHtml ((v1))
  in
