@@ -284,6 +284,16 @@ module PI = Parse_info
 %type <Cst_php.any>           sgrep_spatch_pattern
 
 %%
+(*************************************************************************)
+(* Macros *)
+(*************************************************************************)
+
+list_sep(X,Sep):
+ | X                      { [Left $1] }
+ | list_sep(X,Sep) Sep X  { $1 @ [Right $2; Left $3] }
+
+%inline
+listc(X): list_sep(X, ",") { $1 }
 
 (*************************************************************************)
 (* Toplevel *)
@@ -355,7 +365,7 @@ statement:
      }
  | T_THROW expr ";" { Throw($1,$2,$3) }
 
- | T_ECHO echo_expr_list ";"     { Echo($1,$2,$3) }
+ | T_ECHO listc(expr) ";"     { Echo($1,$2,$3) }
  | T_INLINE_HTML            { InlineHtml($1) }
 
  | T_OPEN_TAG_WITH_ECHO expr T_CLOSE_TAG_OF_ECHO {
@@ -367,13 +377,13 @@ statement:
      Echo ($1, [Left $2], $4)
    }
 
- | T_GLOBAL global_var_list ";" { Globals($1,$2,$3) }
- | T_STATIC static_var_list ";" { StaticVars($1,$2,$3) }
+ | T_GLOBAL listc(global_var) ";" { Globals($1,$2,$3) }
+ | T_STATIC listc(static_var) ";" { StaticVars($1,$2,$3) }
 
- | T_UNSET "(" unset_variables ")" ";" { Unset($1,($2,$3,$4),$5) }
+ | T_UNSET "(" listc(unset_variable) ")" ";" { Unset($1,($2,$3,$4),$5) }
 
  | T_USE use_filename ";"         { Use($1,$2,$3) }
- | T_DECLARE  "(" declare_list ")" declare_statement
+ | T_DECLARE  "(" listc(declare) ")" declare_statement
      { Declare($1,($2,$3,$4),$5) }
 
  (* sgrep_ext: *)
@@ -388,8 +398,8 @@ inner_statement:
 (* auxillary statements *)
 (*----------------------------*)
 for_expr:
- | (*empty*)        { [] }
- | non_empty_for_expr   { $1 }
+ | (*empty*)     { [] }
+ | listc(expr)   { $1 }
 
 (* can not factorize with a is_reference otherwise s/r conflict on LIST *)
 foreach_variable: ioption(TAND) expr  { $1, $2 }
@@ -718,15 +728,15 @@ class_statement:
      }
 
 (* class constants *)
- | T_CONST          class_constants_declaration  ";"
+ | T_CONST          listc(class_constant_declaration)  ";"
      { ClassConstants(None, $1, None, $2, $3) }
- | T_CONST type_php class_constants_declaration  ";"
+ | T_CONST type_php listc(class_constant_declaration)  ";"
      { ClassConstants(None, $1, Some $2, $3, $4) }
 
 (* class variables (aka properties) *)
- | variable_modifiers          class_variable_declaration ";"
+ | variable_modifiers          listc(class_variable) ";"
      { ClassVariables($1, None, $2, $3) }
- | variable_modifiers type_php class_variable_declaration ";"
+ | variable_modifiers type_php listc(class_variable) ";"
      { ClassVariables($1, Some $2, $3, $4)  }
 
 (* class methods *)
@@ -734,11 +744,11 @@ class_statement:
  | attributes method_declaration { Method { $2 with f_attrs = Some $1 } }
 
 (* XHP *)
- | T_XHP_ATTRIBUTE xhp_attribute_decls ";"
+ | T_XHP_ATTRIBUTE listc(xhp_attribute_decl) ";"
      { XhpDecl (XhpAttributesDecl ($1, $2, $3)) }
  | T_XHP_CHILDREN  xhp_children_decl  ";"
      { XhpDecl (XhpChildrenDecl ($1, $2, $3)) }
- | T_XHP_CATEGORY xhp_category_list ";"
+ | T_XHP_CATEGORY listc(xhp_category) ";"
      { XhpDecl (XhpCategoriesDecl ($1, $2, $3)) }
 
 (* php 5.4 traits *)
@@ -803,10 +813,9 @@ xhp_attribute_decl:
      { XhpAttrDecl ($1, ((PI.str_of_info $2, $2)), $3, $4) }
 
 xhp_attribute_decl_type:
- | T_ENUM "{" xhp_enum_list "}"
-     { XhpAttrEnum ($1, ($2, $3, $4)) }
- | T_VAR        { XhpAttrVar $1 }
- | type_php { XhpAttrType $1 }
+ | T_ENUM "{" listc(xhp_enum) "}"  { XhpAttrEnum ($1, ($2, $3, $4)) }
+ | T_VAR                           { XhpAttrVar $1 }
+ | type_php                        { XhpAttrType $1 }
 
 xhp_attribute_default:
  | (*empty*)     { None }
@@ -1005,7 +1014,7 @@ return_type: ":" "@"? type_php                 { $1, $2, $3 }
 (* Attributes *)
 (*************************************************************************)
  (* HPHP extension. *)
-attributes: T_SL attribute_list T_SR { ($1, $2, $3) }
+attributes: T_SL listc(attribute) T_SR { ($1, $2, $3) }
 
 attribute:
  | ident                                  { Attribute $1 }
@@ -1158,7 +1167,7 @@ expr:
 
  | T_EVAL "(" expr ")"         { Eval($1,($2,$3,$4)) }
 
- | T_ISSET "(" expr_list ")" { Isset($1, ($2, $3, $4)) }
+ | T_ISSET "(" listc(expr) ")" { Isset($1, ($2, $3, $4)) }
 
  | T_LIST "(" assignment_list ")" TEQ expr
      { AssignList($1,($2,$3,$4),$5,$6) }
@@ -1527,7 +1536,7 @@ namespace_declaration:
      { NamespaceBracketDef ($1, None, ($2, H.squash_stmt_list $3, $4)) }
 
 use_declaration:
- | T_USE use_declaration_name_list ";" { NamespaceUse ($1, $2, $3) }
+ | T_USE listc(use_declaration_name) ";" { NamespaceUse ($1, $2, $3) }
 
 namespace_name:
  | ident                           { [QI (Name $1)] }
@@ -1585,66 +1594,10 @@ non_empty_member_modifiers:
  | member_modifier              { [$1] }
  | non_empty_member_modifiers member_modifier   { $1 @ [$2] }
 
-
-
-unset_variables:
- | unset_variable { [Left $1] }
- | unset_variables "," unset_variable { $1 @ [Right $2; Left $3] }
-
-global_var_list:
- | global_var               { [Left $1] }
- | global_var_list "," global_var   { $1 @ [Right $2; Left $3] }
-
-echo_expr_list:
- | expr                { [Left $1] }
- | echo_expr_list "," expr      { $1 @ [Right $2; Left $3] }
-
-expr_list:
- | expr                { [Left $1] }
- | expr_list "," expr      { $1 @ [Right $2; Left $3] }
-
-use_declaration_name_list:
- | use_declaration_name     { [Left $1] }
- | use_declaration_name_list "," use_declaration_name { $1@[Right $2;Left $3] }
-
-declare_list:
- | declare                      { [Left $1] }
- | declare_list "," declare { $1 @ [Right $2; Left $3] }
-
-non_empty_for_expr:
-  | expr                     { [Left $1] }
-  | non_empty_for_expr ","  expr { $1 @ [Right $2; Left $3] }
-
-xhp_attribute_decls:
- | xhp_attribute_decl { [Left $1] }
- | xhp_attribute_decls "," xhp_attribute_decl { $1 @ [Right $2; Left $3] }
-
-xhp_enum_list:
- | xhp_enum { [Left $1] }
- | xhp_enum_list "," xhp_enum { $1 @ [Right $2; Left $3] }
-
-xhp_category_list:
- | xhp_category { [Left $1] }
- | xhp_category_list "," xhp_category { $1 @ [Right $2; Left $3] }
-
-attribute_list:
- | attribute                   { [Left $1] }
- | attribute_list "," attribute         { $1 @ [Right $2; Left $3] }
-
 attribute_argument_list:
  | (*empty*) { [] }
  | attribute_argument { [Left $1] }
  | attribute_argument_list "," attribute_argument { $1@[Right $2; Left $3]}
-
-static_var_list:
- | static_var                        { [Left $1] }
- | static_var_list "," static_var { $1 @ [Right $2; Left $3] }
-
-class_variable_declaration:
- | class_variable    { [Left $1] }
- (*s: repetitive class_variable_declaration with comma *)
- | class_variable_declaration "," class_variable { $1@[Right $2;Left $3] }
- (*e: repetitive class_variable_declaration with comma *)
 
 (* less: should we allow the "..." only for the end? *)
 non_empty_type_php_or_dots_list:
@@ -1652,21 +1605,11 @@ non_empty_type_php_or_dots_list:
  | non_empty_type_php_or_dots_list "," type_php_or_dots { $1 @ [Right3 $2; $3]}
 
 non_empty_type_php_list:
- | non_empty_type_php_list_bis { $1 }
- | non_empty_type_php_list_bis "," { $1 @ [Right $2] }
+ | listc(type_php) { $1 }
+ | listc(type_php) "," { $1 @ [Right $2] }
 
-non_empty_type_php_list_bis:
- | type_php                                { [Left $1] }
- | non_empty_type_php_list_bis "," type_php  { $1 @ [Right $2; Left $3] }
 
-class_name_list:
- | class_name_no_array { [Left $1] }
- | class_name_list "," class_name_no_array { $1 @ [Right $2; Left $3]}
-
-class_constants_declaration:
- | class_constant_declaration { [Left $1] }
- | class_constants_declaration "," class_constant_declaration
-     { $1 @ [Right $2; Left $3] }
+class_name_list: listc(class_name_no_array) { $1 }
 
 possible_comma:
  | (*empty*) { [] }
@@ -1686,9 +1629,7 @@ non_empty_function_call_argument_list:
       { $1 @ [Right $2; Left $3] }
  (*e: repetitive non_empty_function_call_parameter_list *)
 
-assignment_list:
- | assignment_list_element                        { [Left $1] }
- | assignment_list "," assignment_list_element { $1 @ [Right $2; Left $3] }
+assignment_list: listc(assignment_list_element) { $1 }
 
 shape_field_list:
  | (*empty*) { [] }
