@@ -99,6 +99,16 @@ let parse_program file =
 (*****************************************************************************)
 (* Sub parsers *)
 (*****************************************************************************)
+let type_of_string s = 
+  let lexbuf = Lexing.from_string s in
+  let rec lexer lexbuf = 
+    let res = Lexer_ml.token lexbuf in
+    if TH.is_comment res
+    then lexer lexbuf
+    else res
+    in
+  let ty = Parser_ml.type_for_lsp lexer lexbuf in
+  ty
 
 (* for sgrep/spatch *)
 let any_of_string  s = 

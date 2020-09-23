@@ -205,6 +205,7 @@ let topseqexpr v1 = mki (TopExpr (seq1 v1))
 %start <Ast_ml.item list> interface
 %start <Ast_ml.item list> implementation
 %start <Ast_ml.any> sgrep_spatch_pattern
+%start <Ast_ml.type_> type_for_lsp
 
 %%
 (*************************************************************************)
@@ -286,6 +287,8 @@ structure_item_minus_signature_item:
  (* TODO: put more stuff from structure_item that you want to be able
   * to match in a semgrep pattern.
   *)
+
+type_for_lsp: core_type EOF { $1 }
 
 (*************************************************************************)
 (* Signature *)

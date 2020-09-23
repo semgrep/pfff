@@ -13,6 +13,10 @@ val parse_program:
 (* for semgrep *)
 val any_of_string:
   string -> Ast_ml.any
+(* for semgrep and LSP *)
+val type_of_string:
+  string -> Ast_ml.type_
+  
 
 (* internal *)
 val tokens: Common.filename -> Parser_ml.token list
