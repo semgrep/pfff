@@ -111,7 +111,7 @@ type expr =
   
 
   (* > 1 elt for mutually recursive let (let x and y and z) *)
-  | LetIn of tok * let_binding list * expr * rec_opt
+  | LetIn of tok * rec_opt * let_binding list * expr
   | Fun of tok (* 'fun' *) * parameter list (* at least one *) * expr
   | Function of tok (* 'function' *) * match_case list
 

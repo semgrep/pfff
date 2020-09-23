@@ -168,12 +168,11 @@ and expr =
       let t = tok t in
       G.DotAccess (v1, t, G.FId v2)
   | LetIn ((_t, v1, v2, v3)) ->
-      let v1 = list let_binding v1
-      and v2 = expr v2
-      and _v3 = rec_opt v3
-      in 
+      let _v1 = rec_opt v1 in 
+      let v2 = list let_binding v2 in
+      let v3 = expr v3 in
       let defs = 
-        v1 |> List.map (function
+        v2 |> List.map (function
          | Left (ent, params, expr) ->
             G.DefStmt (ent, mk_var_or_func params expr)
          | Right (pat, e) ->
@@ -181,7 +180,7 @@ and expr =
             G.exprstmt exp
          )
       in
-      let st = G.Block (G.fake_bracket (defs @ [G.exprstmt v2])) in
+      let st = G.Block (G.fake_bracket (defs @ [G.exprstmt v3])) in
       G.OtherExpr (G.OE_StmtExpr, [G.S st])
   | Fun ((_t, v1, v2)) -> 
     let v1 = list parameter v1 

@@ -482,9 +482,9 @@ expr:
  (* function application *)
  | simple_expr labeled_simple_expr+          { Call ($1, $2) }
 
- | Tlet Trec? list_and(let_binding) Tin seq_expr  { LetIn ($1, $3, seq1 $5, $2)}
+ | Tlet Trec? list_and(let_binding) Tin seq_expr  { LetIn ($1,$2,$3,seq1 $5)}
  (* TODO: very partial support for monadic let *)
- | LETOP list_and(let_binding) Tin seq_expr { LetIn (snd $1, $2, seq1 $4, None)}
+ | LETOP list_and(let_binding) Tin seq_expr { LetIn (snd $1, None, $2,seq1 $4)}
 
  | Tfun labeled_simple_pattern fun_def
      { let (params, (_tok, e)) = $3 in
