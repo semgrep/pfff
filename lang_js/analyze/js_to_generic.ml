@@ -442,7 +442,12 @@ and argument x = expr x
 
 and attribute = function
  | KeywordAttr x -> G.KeywordAttr (keyword_attribute x)
- | NamedAttr (t, ids, (t1, args, t2)) ->
+ | NamedAttr (t, ids, opt) ->
+      let (t1, args, t2) =
+        match opt with
+        | Some x -> x
+        | None -> G.fake_bracket []
+      in
       let args = list argument args |> List.map G.expr_to_arg in
       G.NamedAttr (t, ids, G.empty_id_info (), (t1, args, t2))
 

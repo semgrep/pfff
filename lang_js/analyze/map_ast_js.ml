@@ -337,7 +337,7 @@ and map_attribute = function
   | NamedAttr (v1, v2, v3) -> 
       let v1 = map_tok v1 in
       let v2 = map_dotted_ident v2
-      and v3 = map_bracket (map_of_list map_argument) v3
+      and v3 = map_option (map_bracket (map_of_list map_argument)) v3
       in NamedAttr ((v1, v2, v3))
 
 and map_var_kind = function | Var -> Var | Let -> Let | Const -> Const

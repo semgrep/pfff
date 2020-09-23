@@ -307,7 +307,7 @@ and v_attribute = function
   | NamedAttr (v1, v2, v3) ->
       v_tok v1 ;
       v_dotted_ident v2;
-      v_bracket (v_list v_argument) v3
+      v_option (v_bracket (v_list v_argument)) v3
       
 and v_fun_prop x = v_keyword_attribute x
 and v_keyword_attribute _ = ()

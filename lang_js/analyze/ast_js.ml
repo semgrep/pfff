@@ -330,7 +330,7 @@ and type_ = AST_generic.type_
 and attribute = 
   | KeywordAttr of keyword_attribute wrap
   (* a.k.a decorators *)
-  | NamedAttr of tok (* @ *) * dotted_ident * arguments
+  | NamedAttr of tok (* @ *) * dotted_ident * arguments option
 
  and keyword_attribute =
    (* field properties *)
