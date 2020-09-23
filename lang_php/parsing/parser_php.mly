@@ -765,7 +765,7 @@ enum_statement:
      { ClassConstants(None, $2, None, [Left $1], $2) }
 
 method_declaration:
-     method_modifiers T_FUNCTION is_reference ident_method_name type_params_opt
+     member_modifier* T_FUNCTION is_reference ident_method_name type_params_opt
      "(" parameter_list ")"
      return_type?
      method_body
@@ -782,7 +782,7 @@ class_constant_declaration: ident TEQ static_scalar { ((Name $1), Some ($2, $3))
 
 variable_modifiers:
  | T_VAR                { NoModifiers $1 }
- | non_empty_member_modifiers       { VModifiers $1 }
+ | member_modifier+       { VModifiers $1 }
 
 
 class_variable:
@@ -905,10 +905,10 @@ trait_precedence_rule:
    { InsteadOf ($1, $2, Name $3, $4, $5, $6) }
 
 trait_alias_rule:
- | trait_alias_rule_method T_AS method_modifiers T_IDENT ";"
+ | trait_alias_rule_method T_AS member_modifier* T_IDENT ";"
    { As ($1, $2, $3, Some (Name $4), $5) }
 
- | trait_alias_rule_method T_AS non_empty_member_modifiers ";"
+ | trait_alias_rule_method T_AS member_modifier+ ";"
    { As ($1, $2, $3, None, $4) }
 
 trait_alias_rule_method:
@@ -1586,14 +1586,6 @@ class_name_no_array: qualified_class_name type_arguments { Hint ($1, $2) }
 (* xxx_list, xxx_opt *)
 (*************************************************************************)
 
-method_modifiers:
- | (*empty*)                { [] }
- | non_empty_member_modifiers           { $1 }
-
-non_empty_member_modifiers:
- | member_modifier              { [$1] }
- | non_empty_member_modifiers member_modifier   { $1 @ [$2] }
-
 attribute_argument_list:
  | (*empty*) { [] }
  | attribute_argument { [Left $1] }
@@ -1622,12 +1614,8 @@ function_call_argument_list:
  (* php-facebook-ext: trailing comma *)
  | non_empty_function_call_argument_list ","  { $1 @ [Right $2] }
 
-non_empty_function_call_argument_list:
- | function_call_argument { [Left $1] }
- (*s: repetitive non_empty_function_call_parameter_list *)
- | non_empty_function_call_argument_list "," function_call_argument
-      { $1 @ [Right $2; Left $3] }
- (*e: repetitive non_empty_function_call_parameter_list *)
+%inline
+non_empty_function_call_argument_list: listc(function_call_argument) { $1 }
 
 assignment_list: listc(assignment_list_element) { $1 }
 
@@ -1636,9 +1624,8 @@ shape_field_list:
  | non_empty_shape_field_list { $1 }
  | non_empty_shape_field_list "," { $1 @ [Right $2] }
 
-non_empty_shape_field_list:
- | shape_field   { [Left $1] }
- | non_empty_shape_field_list "," shape_field  { $1 @ [Right $2; Left $3] }
+%inline
+non_empty_shape_field_list: listc(shape_field) { $1 }
 
 shape_field: expr "=>" type_php { $1, $2, $3 }
 
