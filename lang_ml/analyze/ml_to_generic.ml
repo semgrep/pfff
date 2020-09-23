@@ -44,6 +44,11 @@ let fake = G.fake
 let add_attrs ent attrs = 
   { ent with G.attrs = attrs }
 
+let id_of_name (id, nameinfo) = 
+  match nameinfo.G.name_qualifier with
+  | None | Some (G.QDots []) -> G.Id (id, G.empty_id_info ())
+  | _ -> G.IdQualified ((id, nameinfo), G.empty_id_info())
+  
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
@@ -104,13 +109,11 @@ and expr =
   | List v1 -> let v1 = bracket (list expr) v1 in G.Container (G.List, v1)
   | Sequence v1 -> let v1 = list expr v1 in G.Seq v1
   | Prefix ((v1, v2)) -> let v1 = wrap string v1 and v2 = expr v2 in
-                         let n = v1, G.empty_name_info in
-                         G.Call (G.IdQualified (n, G.empty_id_info()), 
+                         G.Call (G.Id (v1, G.empty_id_info()), 
                               G.fake_bracket [G.Arg v2])
   | Infix ((v1, v2, v3)) ->
-    let n = v2, G.empty_name_info in
     let v1 = expr v1 and v3 = expr v3 in
-    G.Call (G.IdQualified (n, G.empty_id_info()), 
+    G.Call (G.Id (v2, G.empty_id_info()), 
          G.fake_bracket [G.Arg v1; G.Arg v3])
 
   | Call ((v1, v2)) -> let v1 = expr v1 and v2 = list argument v2 in
@@ -162,7 +165,7 @@ and expr =
       )
   | New ((v1, v2)) -> let v1 = tok v1 and v2 = name v2 in 
                       G.Call (G.IdSpecial (G.New, v1), 
-                              G.fake_bracket [G.Arg (G.IdQualified (v2, G.empty_id_info()))])
+                              G.fake_bracket [G.Arg (id_of_name v2)])
   | ObjAccess ((v1, t, v2)) -> 
       let v1 = expr v1 and v2 = ident v2 in
       let t = tok t in
@@ -231,7 +234,7 @@ and expr =
       in 
       let ent = G.basic_entity v1 [] in
       let var = { G.vinit = Some v2; vtype = None } in
-      let n = G.IdQualified ((v1, G.empty_name_info), G.empty_id_info()) in
+      let n = G.Id (v1, G.empty_id_info()) in
       let next = (G.AssignOp (n, (nextop, tok), G.L (G.Int ("1", tok)))) in
       let cond = G.Call (G.IdSpecial (G.Op condop, tok),
                          G.fake_bracket [G.Arg n; G.Arg v4]) in
