@@ -541,11 +541,13 @@ and var_binding =
 (* ------------------------------------------------------------------------- *)
 (* es6: finally classes built in the language *)
 and class_decl = {
+  (* TODO: class_kind wrap; *)
   c_tok: tok; (* 'class' *)
   (* None for anon classes in class expressions or 'export default' decls *)
   c_name: name option; 
   (* typing-ext: *)
   c_type_params: type_parameter comma_list angle option;
+  (* TODO: c_implements *)
   c_extends: (tok (* extends *) * nominal_type) option;
   c_body: class_element list brace;
 }

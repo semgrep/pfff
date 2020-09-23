@@ -312,13 +312,18 @@ and v_attribute = function
 and v_fun_prop x = v_keyword_attribute x
 and v_keyword_attribute _ = ()
 and v_class_kind _ = ()
+and v_parent = function
+ | Common.Left e -> v_expr e
+ | Common.Right t -> v_type_ t
 
 and v_obj_ v = v_bracket (v_list v_property) v
-and v_class_ { c_extends = v_c_extends; c_body = v_c_body; c_kind; c_attrs } =
+and v_class_ { c_extends = v_c_extends; c_body = v_c_body; 
+               c_kind; c_attrs; c_implements } =
   let arg = v_wrap v_class_kind c_kind in
-  let arg = v_option v_expr v_c_extends in
+  let arg = v_list v_parent v_c_extends in
   let arg = v_bracket (v_list v_property) v_c_body in 
   let arg = v_list v_attribute c_attrs in
+  v_list v_type_ c_implements;
   ()
 
 (* TODO? call Visitor_AST with local kinfo? meh *)

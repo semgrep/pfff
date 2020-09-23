@@ -408,11 +408,19 @@ and function_definition = {
     p_attrs: attribute list;
   }
 
+(* expr is usually simply an Id
+ * typescript-ext: can have complex type
+ *)
+and parent = (expr, type_) Common.either
+
 and class_definition = { 
   (* typescript-ext: Interface is now possible *)
   c_kind: AST_generic.class_kind wrap;
-  (* usually simply an Id *)
-  c_extends: expr option;
+  (* typescript-ext: can have multiple parents *)
+  c_extends: parent list;
+  (* typescript-ext: interfaces *)
+  c_implements: type_ list;
+
   c_attrs: attribute list;
   c_body: property list bracket;
 }
