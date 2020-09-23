@@ -609,8 +609,15 @@ and xhp env = function
 and obj_ env xs =
   xs |> unbracket |> List.iter (property env)
 
+and type_ _env _t = ()
+
+and parent env = function
+  | Left e -> expr env e
+  | Right t -> type_ env t
+
 and class_ env c = 
-  Common.opt (expr env) c.c_extends;
+  List.iter (parent env) c.c_extends;
+  List.iter (type_ env) c.c_implements;
   List.iter (property env) (unbracket c.c_body)
 
 and property env = function

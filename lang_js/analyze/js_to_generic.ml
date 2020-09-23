@@ -442,7 +442,12 @@ and argument x = expr x
 
 and attribute = function
  | KeywordAttr x -> G.KeywordAttr (keyword_attribute x)
- | NamedAttr (t, ids, (t1, args, t2)) ->
+ | NamedAttr (t, ids, opt) ->
+      let (t1, args, t2) =
+        match opt with
+        | Some x -> x
+        | None -> G.fake_bracket []
+      in
       let args = list argument args |> List.map G.expr_to_arg in
       G.NamedAttr (t, ids, G.empty_id_info (), (t1, args, t2))
 
@@ -467,18 +472,19 @@ and keyword_attribute (x, tok) =
 
 and obj_ v = bracket (list property) v
 
-and class_ { c_extends = c_extends; c_body = c_body; c_tok; c_attrs } =
-  let v1 = option expr c_extends in
+and parent = function
+ | Left e -> 
+      let e = expr e in
+      G.expr_to_type e
+ | Right t -> t
+
+and class_ { c_extends; c_implements; c_body; c_kind; c_attrs;  } =
+  let cextends = list parent c_extends in
   let v2 = bracket (list property) c_body in
   let attrs = list attribute c_attrs in
-  (* todo: could analyze arg to look for Id *)
-  let extends = 
-    match v1 with
-    | None -> [] 
-    | Some e -> [G.OtherType (G.OT_Expr, [G.E e])]
-  in
-  { G.ckind = (G.Class, c_tok); cextends = extends; 
-    cimplements = []; cmixins = []; cbody = v2;}, attrs
+  let cimplements = list type_ c_implements in
+  { G.ckind = c_kind; cextends; cimplements; 
+    cmixins = []; cbody = v2;}, attrs
 and property x =
    match x with
   | Field {fld_name = v1; fld_attrs = v2; fld_type = vt; fld_body = v3} ->
