@@ -989,13 +989,17 @@ and array_arr env tok xs =
     raise (TodoConstruct ("array_arr, 2 left? impossible?", tok))
 
 and class_decl env x =
-  let extends = opt (fun env (_, typ) -> nominal_type env typ) env 
-    x.C.c_extends in
+  let extends = 
+    match x.C.c_extends with
+    | None -> []
+    | Some (_tok, typ) -> [Left (nominal_type env typ)]
+  in
   let xs = x.C.c_body |> bracket_keep 
       (fun xs -> xs |> List.map (class_element env) |> List.flatten) in
-  { A.c_extends = extends; c_body = xs; c_tok = x.C.c_tok; c_attrs = [] }
+  { A.c_extends = extends; c_body = xs; c_kind = G.Class, x.C.c_tok; 
+    c_attrs = []; c_implements = [] }
 
-and nominal_type env (e, _) = expr env e
+and nominal_type env (e, _targs) = expr env e
 
 and static _env t = A.Static, t
 

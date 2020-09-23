@@ -337,7 +337,7 @@ and map_attribute = function
   | NamedAttr (v1, v2, v3) -> 
       let v1 = map_tok v1 in
       let v2 = map_dotted_ident v2
-      and v3 = map_bracket (map_of_list map_argument) v3
+      and v3 = map_option (map_bracket (map_of_list map_argument)) v3
       in NamedAttr ((v1, v2, v3))
 
 and map_var_kind = function | Var -> Var | Let -> Let | Const -> Const
@@ -380,15 +380,22 @@ and
 
 and map_keyword_attribute x = x
 
+and map_class_kind x = x
+
+and map_parent x = 
+  map_of_either map_expr map_type_ x
 
 and map_obj_ v = map_bracket (map_of_list map_property) v
 and map_class_ 
-  { c_extends = v_c_extends; c_body = v_c_body; c_tok; c_attrs } =
+  { c_extends = v_c_extends; c_body = v_c_body; 
+    c_kind; c_attrs; c_implements } =
   let v_c_body = map_bracket (map_of_list map_property) v_c_body in
-  let v_c_extends = map_of_option map_expr v_c_extends in 
-  let c_tok = map_tok c_tok in
+  let v_c_extends = map_of_list map_parent v_c_extends in 
   let c_attrs = map_of_list map_attribute c_attrs in
-  { c_extends = v_c_extends; c_body = v_c_body; c_tok; c_attrs }
+  let c_kind = map_wrap map_class_kind c_kind in
+  let c_implements = map_of_list map_type_ c_implements in
+  { c_extends = v_c_extends; c_body = v_c_body; 
+    c_kind; c_attrs; c_implements }
 
 and map_field_classic { fld_name; fld_attrs; fld_type; fld_body} =
       let fld_name = map_property_name fld_name
