@@ -6,6 +6,8 @@ external/battery_included/ocamlgtk
 #facebook/
 *.orig
 
+*.lsif.in
+
 #TODO
 todo
 /code_map/thread_bug_ml
