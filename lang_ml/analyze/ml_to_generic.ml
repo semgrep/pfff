@@ -201,7 +201,6 @@ and expr =
     let def = { G.fparams = v1; frettype = None; 
                 fbody = G.exprstmt v2 } in
     G.Lambda def
-(* TODO? use ParamPattern here? *)
   | Function (t, xs) ->
       let xs = list match_case xs in
       let id = "!_implicit_param!", t in
@@ -350,6 +349,9 @@ and parameter = function
       let v = pattern v in
       (match v with
       | G.PatEllipsis t -> G.ParamEllipsis t
+      | G.PatId (id, _idinfo) -> G.ParamClassic (G.param_of_id id)
+      | G.PatTyped (G.PatId (id, _idinfo), ty) ->
+            G.ParamClassic { (G.param_of_id id) with G.ptype = Some ty }
       | _ -> G.ParamPattern v
       )
   | ParamTodo t -> G.OtherParam (G.OPO_Todo, [G.Tk t])
