@@ -123,6 +123,9 @@ type expr =
   | While of tok * expr * expr
   | For of tok * ident * expr * for_direction * expr *   expr
 
+  (* regular construct but also semgrep-ext: for Typed metavariables *)
+  | TypedExpr of expr * tok (* : *) * type_ 
+
   (* sgrep-ext: *)
   | Ellipsis of tok
   | DeepEllipsis of expr bracket

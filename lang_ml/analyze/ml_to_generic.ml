@@ -96,12 +96,22 @@ and type_ =
 
 and expr =
   function
+  | TypedExpr (v1, v2, v3) ->
+      let v1 = expr v1 in
+      let v3 = type_ v3 in
+      (match v1 with
+      (* less: when is_metavar id *)
+      | G.Id (id, _idinfo) -> 
+          G.TypedMetavar (id, v2, v3)
+      | _ -> G.Cast (v3, v1)
+      )
+      
   | Ellipsis v1 -> let v1 = tok v1 in G.Ellipsis v1
   | DeepEllipsis (v1, v2, v3) -> let v1 = tok v1 in let v2 = expr v2 in 
       let v3 = tok v3 in
       G.DeepEllipsis (v1, v2, v3)
   | L v1 -> let v1 = literal v1 in G.L v1
-  | Name v1 -> let v1 = name v1 in G.IdQualified (v1, G.empty_id_info ())
+  | Name v1 -> let v1 = name v1 in id_of_name v1
   | Constructor ((v1, v2)) ->
       let v1 = name v1 and v2 = option expr v2 in
       G.Constructor (v1, Common.opt_to_list v2)

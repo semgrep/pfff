@@ -618,7 +618,7 @@ simple_expr:
      { ExprTodo (("PolyVariant", fst $1), []) }
  (* misc *)
  | "(" seq_expr type_constraint ")"  
-     { ExprTodo (("TypedExpr", $1), $2) }
+     { TypedExpr (seq1 $2, fst $3, snd $3)  }
  (* scoped open, 3.12 *)
  | mod_longident "." "(" seq_expr ")"
      { ExprTodo (("ScopedOpen", $2), $4) }
@@ -783,9 +783,9 @@ signed_constant:
 (*************************************************************************)
 
 type_constraint:
- | ":" poly_type     { }
+ | ":" poly_type     { $1, $2 }
  (* object cast extension *)
- | ":>" core_type    { }
+ | ":>" core_type    { $1, $2 }
 
 (*----------------------------*)
 (* Types definitions *)
