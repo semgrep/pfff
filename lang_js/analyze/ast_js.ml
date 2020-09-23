@@ -53,7 +53,10 @@
  *    (using 'default_entity' special name)
  * 
  * todo:
- *  - typescript interface
+ *  - typescript module
+ *  - typescript enum
+ *  - typescript declare
+ *  - ...
  * less:
  *  - ast_js_es5.ml? unsugar even more? remove classes, get/set, etc.?
  *  - unsugar ES6 features? lift Var up, rename lexical vars, etc.
@@ -406,11 +409,12 @@ and function_definition = {
   }
 
 and class_definition = { 
-  c_tok: tok;
+  (* typescript-ext: Interface is now possible *)
+  c_kind: AST_generic.class_kind wrap;
   (* usually simply an Id *)
   c_extends: expr option;
-  c_body: property list bracket;
   c_attrs: attribute list;
+  c_body: property list bracket;
 }
 
   and obj_ = property list bracket

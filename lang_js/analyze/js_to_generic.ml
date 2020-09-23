@@ -472,7 +472,7 @@ and keyword_attribute (x, tok) =
 
 and obj_ v = bracket (list property) v
 
-and class_ { c_extends = c_extends; c_body = c_body; c_tok; c_attrs } =
+and class_ { c_extends = c_extends; c_body = c_body; c_kind; c_attrs } =
   let v1 = option expr c_extends in
   let v2 = bracket (list property) c_body in
   let attrs = list attribute c_attrs in
@@ -482,7 +482,7 @@ and class_ { c_extends = c_extends; c_body = c_body; c_tok; c_attrs } =
     | None -> [] 
     | Some e -> [G.OtherType (G.OT_Expr, [G.E e])]
   in
-  { G.ckind = (G.Class, c_tok); cextends = extends; 
+  { G.ckind = c_kind; cextends = extends; 
     cimplements = []; cmixins = []; cbody = v2;}, attrs
 and property x =
    match x with

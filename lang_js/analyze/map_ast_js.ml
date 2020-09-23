@@ -380,15 +380,16 @@ and
 
 and map_keyword_attribute x = x
 
+and map_class_kind x = x
 
 and map_obj_ v = map_bracket (map_of_list map_property) v
 and map_class_ 
-  { c_extends = v_c_extends; c_body = v_c_body; c_tok; c_attrs } =
+  { c_extends = v_c_extends; c_body = v_c_body; c_kind; c_attrs } =
   let v_c_body = map_bracket (map_of_list map_property) v_c_body in
   let v_c_extends = map_of_option map_expr v_c_extends in 
-  let c_tok = map_tok c_tok in
   let c_attrs = map_of_list map_attribute c_attrs in
-  { c_extends = v_c_extends; c_body = v_c_body; c_tok; c_attrs }
+  let c_kind = map_wrap map_class_kind c_kind in
+  { c_extends = v_c_extends; c_body = v_c_body; c_kind; c_attrs }
 
 and map_field_classic { fld_name; fld_attrs; fld_type; fld_body} =
       let fld_name = map_property_name fld_name
