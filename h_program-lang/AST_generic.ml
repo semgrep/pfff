@@ -280,6 +280,10 @@ type name = ident * name_info
 (*s: type [[AST_generic.id_info]] *)
 and id_info = {
     id_resolved: resolved_name option ref; (* variable tagger (naming) *)
+    (* sgrep: in OCaml we also use that to store the type of
+     * a typed entity, which can be interpreted as a TypedMetavar in semgrep.
+     * alt: have an explicity type_ field in entity.
+     *)
     id_type:     type_         option ref; (* type checker (typing) *)
     (* sgrep: this is for sgrep constant propagation hack.
      * todo? associate only with Id?
@@ -1003,6 +1007,9 @@ and definition = entity * definition_kind
  * the different definition_kind, as well as in id_info, and does not
  * have any meanings for certain defs (e.g., ClassDef) so not worth
  * factoring.
+ * update: this could be useful in OCaml when you explicitely type an
+ * entity (as in 'let (f: int -> int) = fun i -> i + 1), but we
+ * currently abuse id_info.id_type for that.
  *
  * see special_multivardef_pattern below for many vardefs in one entity in
  * ident.

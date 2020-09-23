@@ -926,7 +926,7 @@ let_binding:
       { let (lparams, (lrettype, _teq, body)) = $2 in
         LetClassic { lname = $1; lparams; lrettype; lbody = seq1 body; } }
  | pattern "=" seq_expr
-      { LetPattern ($1, Sequence $3) }
+      { LetPattern ($1, seq1 $3) }
 
 
 fun_binding:

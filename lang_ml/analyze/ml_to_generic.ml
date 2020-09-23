@@ -335,7 +335,19 @@ and let_binding =
       Left v1
   | LetPattern ((v1, v2)) -> 
       let v1 = pattern v1 and v2 = expr v2 in 
-      Right (v1, v2)
+      (match v1 with
+      | G.PatTyped (G.PatId (id, _idinfo), ty) ->
+          let ent = G.basic_entity id [] in
+          let idinfo = ent.G.info in
+          (* less: abusing id_type? Do we asume id_info is populated
+           * by further static analysis (naming/typing)? But the info
+           * is here, and this can be used in semgrep too to express
+           * a form of TypedMetavar, so let's abuse it for now.
+           *)
+          idinfo.G.id_type := Some ty;
+          Left (ent, [], None, v2)
+      | _ -> Right (v1, v2)
+      )
 
 and let_def { lname; lparams; lrettype; lbody } =
   let v1 = ident lname in
