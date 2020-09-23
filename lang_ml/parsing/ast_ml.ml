@@ -196,6 +196,7 @@ and let_binding =
  and let_def = {
    lname: ident;
    lparams: parameter list; (* can be empty *)
+   lrettype: type_ option;
    lbody: expr;
  }
 

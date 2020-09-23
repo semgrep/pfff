@@ -923,8 +923,8 @@ type_variance:
 
 let_binding:
  | val_ident fun_binding
-      { let (params, (_teq, body)) = $2 in
-        LetClassic { lname = $1; lparams = params; lbody = seq1 body; } }
+      { let (lparams, (lrettype, _teq, body)) = $2 in
+        LetClassic { lname = $1; lparams; lrettype; lbody = seq1 body; } }
  | pattern "=" seq_expr
       { LetPattern ($1, Sequence $3) }
 
@@ -932,11 +932,11 @@ let_binding:
 fun_binding:
  | strict_binding               { $1 }
  (* let x arg1 arg2 : t = e *)
- | type_constraint "=" seq_expr { [], ($2, $3) (* TODO return triple with $1*)}
+ | type_constraint "=" seq_expr { [], (Some (snd $1), $2, $3) }
 
 strict_binding:
  (* simple values, e.g. 'let x = 1' *)
- | "=" seq_expr  { [], ($1, $2) }
+ | "=" seq_expr  { [], (None, $1, $2) }
  (* function values, e.g. 'let x a b c = 1' *)
  | labeled_simple_pattern fun_binding { let (args, body) = $2 in $1::args,body}
 
