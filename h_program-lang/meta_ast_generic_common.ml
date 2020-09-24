@@ -40,6 +40,9 @@ let vof_arithmetic_operator =
   | Gt -> OCaml.VSum (("Gt", []))
   | GtE -> OCaml.VSum (("GtE", []))
   | Cmp -> OCaml.VSum (("Cmp", []))
+  | LogAndAss -> OCaml.VSum (("LogAndAss", []))
+  | LogOrAss -> OCaml.VSum (("LogOrAss", []))
+  | LogNullAss -> OCaml.VSum (("LogNullAss", []))
 
 let vof_incr_decr =
   function

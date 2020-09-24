@@ -362,6 +362,9 @@ and vof_arithmetic_operator =
   | Gt -> OCaml.VSum (("Gt", []))
   | GtE -> OCaml.VSum (("GtE", []))
   | Cmp -> OCaml.VSum (("Cmp", []))
+  | LogAndAss -> OCaml.VSum (("LogAndAss", []))
+  | LogOrAss -> OCaml.VSum (("LogOrAss", []))
+  | LogNullAss -> OCaml.VSum (("LogNullAss", []))
 
 and vof_arguments v = vof_bracket (OCaml.vof_list vof_argument) v
 and vof_argument =

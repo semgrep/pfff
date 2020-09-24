@@ -733,6 +733,7 @@ and unaryOp uop v =
      |G.And|G.Or|G.Xor|G.Eq|G.NotEq|G.PhysEq|G.NotPhysEq
      |G.Range|G.RegexpMatch|G.NotMatch
      |G.Lt|G.LtE|G.Gt|G.GtE|G.Cmp|G.Concat|G.Nullish|G.NotNullPostfix
+     |G.LogAndAss|G.LogOrAss|G.LogNullAss
      ),_) -> raise Impossible
 
 and cast _env _heap (ty, _) v =
