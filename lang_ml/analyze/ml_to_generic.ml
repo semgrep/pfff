@@ -44,6 +44,11 @@ let fake = G.fake
 let add_attrs ent attrs = 
   { ent with G.attrs = attrs }
 
+let id_of_name (id, nameinfo) = 
+  match nameinfo.G.name_qualifier with
+  | None | Some (G.QDots []) -> G.Id (id, G.empty_id_info ())
+  | _ -> G.IdQualified ((id, nameinfo), G.empty_id_info())
+  
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
@@ -91,12 +96,22 @@ and type_ =
 
 and expr =
   function
+  | TypedExpr (v1, v2, v3) ->
+      let v1 = expr v1 in
+      let v3 = type_ v3 in
+      (match v1 with
+      (* less: when is_metavar id *)
+      | G.Id (id, _idinfo) -> 
+          G.TypedMetavar (id, v2, v3)
+      | _ -> G.Cast (v3, v1)
+      )
+      
   | Ellipsis v1 -> let v1 = tok v1 in G.Ellipsis v1
   | DeepEllipsis (v1, v2, v3) -> let v1 = tok v1 in let v2 = expr v2 in 
       let v3 = tok v3 in
       G.DeepEllipsis (v1, v2, v3)
   | L v1 -> let v1 = literal v1 in G.L v1
-  | Name v1 -> let v1 = name v1 in G.IdQualified (v1, G.empty_id_info ())
+  | Name v1 -> let v1 = name v1 in id_of_name v1
   | Constructor ((v1, v2)) ->
       let v1 = name v1 and v2 = option expr v2 in
       G.Constructor (v1, Common.opt_to_list v2)
@@ -104,13 +119,11 @@ and expr =
   | List v1 -> let v1 = bracket (list expr) v1 in G.Container (G.List, v1)
   | Sequence v1 -> let v1 = list expr v1 in G.Seq v1
   | Prefix ((v1, v2)) -> let v1 = wrap string v1 and v2 = expr v2 in
-                         let n = v1, G.empty_name_info in
-                         G.Call (G.IdQualified (n, G.empty_id_info()), 
+                         G.Call (G.Id (v1, G.empty_id_info()), 
                               G.fake_bracket [G.Arg v2])
   | Infix ((v1, v2, v3)) ->
-    let n = v2, G.empty_name_info in
     let v1 = expr v1 and v3 = expr v3 in
-    G.Call (G.IdQualified (n, G.empty_id_info()), 
+    G.Call (G.Id (v2, G.empty_id_info()), 
          G.fake_bracket [G.Arg v1; G.Arg v3])
 
   | Call ((v1, v2)) -> let v1 = expr v1 and v2 = list argument v2 in
@@ -162,26 +175,25 @@ and expr =
       )
   | New ((v1, v2)) -> let v1 = tok v1 and v2 = name v2 in 
                       G.Call (G.IdSpecial (G.New, v1), 
-                              G.fake_bracket [G.Arg (G.IdQualified (v2, G.empty_id_info()))])
+                              G.fake_bracket [G.Arg (id_of_name v2)])
   | ObjAccess ((v1, t, v2)) -> 
       let v1 = expr v1 and v2 = ident v2 in
       let t = tok t in
       G.DotAccess (v1, t, G.FId v2)
   | LetIn ((_t, v1, v2, v3)) ->
-      let v1 = list let_binding v1
-      and v2 = expr v2
-      and _v3 = rec_opt v3
-      in 
+      let _v1 = rec_opt v1 in 
+      let v2 = list let_binding v2 in
+      let v3 = expr v3 in
       let defs = 
-        v1 |> List.map (function
-         | Left (ent, params, expr) ->
-            G.DefStmt (ent, mk_var_or_func params expr)
+        v2 |> List.map (function
+         | Left (ent, params, tret, expr) ->
+            G.DefStmt (ent, mk_var_or_func params tret expr)
          | Right (pat, e) ->
             let exp = G.LetPattern (pat, e) in
             G.exprstmt exp
          )
       in
-      let st = G.Block (G.fake_bracket (defs @ [G.exprstmt v2])) in
+      let st = G.Block (G.fake_bracket (defs @ [G.exprstmt v3])) in
       G.OtherExpr (G.OE_StmtExpr, [G.S st])
   | Fun ((_t, v1, v2)) -> 
     let v1 = list parameter v1 
@@ -189,7 +201,6 @@ and expr =
     let def = { G.fparams = v1; frettype = None; 
                 fbody = G.exprstmt v2 } in
     G.Lambda def
-(* TODO? use ParamPattern here? *)
   | Function (t, xs) ->
       let xs = list match_case xs in
       let id = "!_implicit_param!", t in
@@ -232,7 +243,7 @@ and expr =
       in 
       let ent = G.basic_entity v1 [] in
       let var = { G.vinit = Some v2; vtype = None } in
-      let n = G.IdQualified ((v1, G.empty_name_info), G.empty_id_info()) in
+      let n = G.Id (v1, G.empty_id_info()) in
       let next = (G.AssignOp (n, (nextop, tok), G.L (G.Int ("1", tok)))) in
       let cond = G.Call (G.IdSpecial (G.Op condop, tok),
                          G.fake_bracket [G.Arg n; G.Arg v4]) in
@@ -324,20 +335,36 @@ and let_binding =
       Left v1
   | LetPattern ((v1, v2)) -> 
       let v1 = pattern v1 and v2 = expr v2 in 
-      Right (v1, v2)
+      (match v1 with
+      | G.PatTyped (G.PatId (id, _idinfo), ty) ->
+          let ent = G.basic_entity id [] in
+          let idinfo = ent.G.info in
+          (* less: abusing id_type? Do we asume id_info is populated
+           * by further static analysis (naming/typing)? But the info
+           * is here, and this can be used in semgrep too to express
+           * a form of TypedMetavar, so let's abuse it for now.
+           *)
+          idinfo.G.id_type := Some ty;
+          Left (ent, [], None, v2)
+      | _ -> Right (v1, v2)
+      )
 
-and let_def { lname = lname; lparams = lparams; lbody = lbody } =
+and let_def { lname; lparams; lrettype; lbody } =
   let v1 = ident lname in
   let v2 = list parameter lparams in 
-  let v3 = expr lbody in
+  let v3 = option type_ lrettype in
+  let v4 = expr lbody in
   let ent = G.basic_entity v1 [] in
-  ent, v2, v3
+  ent, v2, v3, v4
 
 and parameter = function
   | Param v -> 
       let v = pattern v in
       (match v with
       | G.PatEllipsis t -> G.ParamEllipsis t
+      | G.PatId (id, _idinfo) -> G.ParamClassic (G.param_of_id id)
+      | G.PatTyped (G.PatId (id, _idinfo), ty) ->
+            G.ParamClassic { (G.param_of_id id) with G.ptype = Some ty }
       | _ -> G.ParamPattern v
       )
   | ParamTodo t -> G.OtherParam (G.OPO_Todo, [G.Tk t])
@@ -448,9 +475,9 @@ and item { i; iattrs } =
   | Let (_t, v1, v2) ->
       let _v1 = rec_opt v1 and v2 = list let_binding v2 in 
       v2 |> List.map (function
-        | Left (ent, params, expr) ->
+        | Left (ent, params, tret, expr) ->
             let ent = add_attrs ent attrs in
-            G.DefStmt (ent, mk_var_or_func params expr)
+            G.DefStmt (ent, mk_var_or_func params tret expr)
         | Right (pat, e) ->
             (* TODO no attrs *)
             let exp = G.LetPattern (pat, e) in
@@ -470,11 +497,11 @@ and item { i; iattrs } =
           List.map (fun x -> G.At x) attrs
         )]
 
-and mk_var_or_func params expr =
+and mk_var_or_func params tret expr =
   match params, expr with
   | [], G.Lambda def -> G.FuncDef def
   | [], _ -> G.VarDef ({G.vinit = Some expr; vtype = None})
-  | _ -> G.FuncDef ({G.fparams = params; frettype = None; fbody = 
+  | _ -> G.FuncDef ({G.fparams = params; frettype = tret; fbody = 
                       G.exprstmt expr})
 
 and program xs = List.map item xs |> List.flatten

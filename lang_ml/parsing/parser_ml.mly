@@ -482,9 +482,9 @@ expr:
  (* function application *)
  | simple_expr labeled_simple_expr+          { Call ($1, $2) }
 
- | Tlet Trec? list_and(let_binding) Tin seq_expr  { LetIn ($1, $3, seq1 $5, $2)}
+ | Tlet Trec? list_and(let_binding) Tin seq_expr  { LetIn ($1,$2,$3,seq1 $5)}
  (* TODO: very partial support for monadic let *)
- | LETOP list_and(let_binding) Tin seq_expr { LetIn (snd $1, $2, seq1 $4, None)}
+ | LETOP list_and(let_binding) Tin seq_expr { LetIn (snd $1, None, $2,seq1 $4)}
 
  | Tfun labeled_simple_pattern fun_def
      { let (params, (_tok, e)) = $3 in
@@ -618,7 +618,7 @@ simple_expr:
      { ExprTodo (("PolyVariant", fst $1), []) }
  (* misc *)
  | "(" seq_expr type_constraint ")"  
-     { ExprTodo (("TypedExpr", $1), $2) }
+     { TypedExpr (seq1 $2, fst $3, snd $3)  }
  (* scoped open, 3.12 *)
  | mod_longident "." "(" seq_expr ")"
      { ExprTodo (("ScopedOpen", $2), $4) }
@@ -783,9 +783,9 @@ signed_constant:
 (*************************************************************************)
 
 type_constraint:
- | ":" poly_type     { }
+ | ":" poly_type     { $1, $2 }
  (* object cast extension *)
- | ":>" core_type    { }
+ | ":>" core_type    { $1, $2 }
 
 (*----------------------------*)
 (* Types definitions *)
@@ -923,20 +923,20 @@ type_variance:
 
 let_binding:
  | val_ident fun_binding
-      { let (params, (_teq, body)) = $2 in
-        LetClassic { lname = $1; lparams = params; lbody = seq1 body; } }
+      { let (lparams, (lrettype, _teq, body)) = $2 in
+        LetClassic { lname = $1; lparams; lrettype; lbody = seq1 body; } }
  | pattern "=" seq_expr
-      { LetPattern ($1, Sequence $3) }
+      { LetPattern ($1, seq1 $3) }
 
 
 fun_binding:
  | strict_binding               { $1 }
  (* let x arg1 arg2 : t = e *)
- | type_constraint "=" seq_expr { [], ($2, $3) (* TODO return triple with $1*)}
+ | type_constraint "=" seq_expr { [], (Some (snd $1), $2, $3) }
 
 strict_binding:
  (* simple values, e.g. 'let x = 1' *)
- | "=" seq_expr  { [], ($1, $2) }
+ | "=" seq_expr  { [], (None, $1, $2) }
  (* function values, e.g. 'let x a b c = 1' *)
  | labeled_simple_pattern fun_binding { let (args, body) = $2 in $1::args,body}
 
