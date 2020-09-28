@@ -143,7 +143,7 @@ and vof_expr =
       and v2 = vof_bracket (OCaml.vof_list vof_expr) v2
       in OCaml.VSum (("Container", [ v1; v2 ]))
   | Tuple v1 ->
-      let v1 = OCaml.vof_list vof_expr v1 in OCaml.VSum (("Tuple", [ v1 ]))
+      let v1 = vof_bracket (OCaml.vof_list vof_expr) v1 in OCaml.VSum (("Tuple", [ v1 ]))
   | Record v1 ->
       let v1 = vof_bracket (OCaml.vof_list vof_field) v1 in 
       OCaml.VSum (("Record", [ v1 ]))
@@ -756,7 +756,7 @@ and vof_pattern =
              in OCaml.VTuple [ v1; v2 ])
       in OCaml.VSum (("PatAs", [ v1; v2 ]))
   | PatTuple v1 ->
-      let v1 = OCaml.vof_list vof_pattern v1
+      let v1 = vof_bracket (OCaml.vof_list vof_pattern) v1
       in OCaml.VSum (("PatTuple", [ v1 ]))
   | PatList v1 ->
       let v1 = vof_bracket (OCaml.vof_list vof_pattern) v1

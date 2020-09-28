@@ -332,8 +332,8 @@ and expr env eorig =
       let kind = composite_kind kind in
       mk_e (Composite (kind, xs)) eorig
   | G.Tuple xs -> 
-      let xs = List.map (expr env) xs in
-      mk_e (Composite (CTuple, G.fake_bracket xs)) eorig
+      let xs = bracket_keep (List.map (expr env)) xs in
+      mk_e (Composite (CTuple, xs)) eorig
 
   | G.Record _ 
   -> todo (G.E eorig)

@@ -306,7 +306,7 @@ and expr =
   (*s: [[AST_generic.expr]] other composite cases *)
   (* special case of Container, at least 2 elements (except for Python where
    * you can actually have 1-uple, e.g., '(1,)' *) 
-  | Tuple of expr list 
+  | Tuple of expr list bracket
   (*x: [[AST_generic.expr]] other composite cases *)
   (* And-type (field.vinit should be a Some) *)
   | Record of field list bracket
@@ -826,7 +826,7 @@ and pattern =
   | PatId of ident * id_info (* Usually Local/Param, Global in toplevel let *)
 
   (* special cases of PatConstructor *)
-  | PatTuple of pattern list (* at least 2 elements *)
+  | PatTuple of pattern list bracket (* at least 2 elements *)
   (* less: generalize to other container_operator? *)
   | PatList of pattern list bracket
   | PatKeyVal of pattern * pattern (* a kind of PatTuple *)
@@ -1566,7 +1566,7 @@ let rec expr_to_pattern e =
   (* TODO: diconstruct e and generate the right pattern (PatLiteral, ...) *)
   match e with
   | Id (id, info) -> PatId (id, info)
-  | Tuple xs -> PatTuple (xs |> List.map expr_to_pattern)
+  | Tuple (t1, xs, t2) -> PatTuple (t1, xs  |> List.map expr_to_pattern, t2)
   | L l -> PatLiteral l
   | Container(List, (t1, xs, t2)) -> 
       PatList(t1, xs |> List.map expr_to_pattern, t2)
@@ -1582,7 +1582,7 @@ exception NotAnExpr
 let rec pattern_to_expr p =
   match p with
   | PatId (id, info) -> Id (id, info)
-  | PatTuple xs -> Tuple (xs |> List.map pattern_to_expr)
+  | PatTuple (t1, xs, t2) -> Tuple (t1, xs |> List.map pattern_to_expr, t2)
   | PatLiteral l -> L l
   | PatList (t1, xs, t2) -> 
       Container(List, (t1, xs |> List.map pattern_to_expr, t2))

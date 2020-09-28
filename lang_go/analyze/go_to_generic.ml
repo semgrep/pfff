@@ -69,7 +69,7 @@ let list_to_tuple_or_expr xs =
   match xs with
   | [] -> raise Impossible
   | [x] -> x
-  | xs -> G.Tuple xs
+  | xs -> G.Tuple (G.fake_bracket xs)
 
 let mk_func_def params ret st =
  { G.
@@ -316,7 +316,7 @@ and init =
   | InitExpr v1 -> let v1 = expr v1 in v1
   | InitKeyValue ((v1, v2, v3)) ->
       let v1 = init v1 and _v2 = tok v2 and v3 = init v3 in
-      G.Tuple [v1; v3]
+      G.Tuple (G.fake_bracket [v1; v3])
   | InitBraces v1 -> let v1 = bracket (list init) v1 in
       G.Container (G.List, v1)
 
@@ -327,7 +327,8 @@ and init_for_composite_lit =
        let _v2 = tok v2 and v3 = init v3 in
        (match v1 with 
         | InitExpr (Id (id, _id_info)) -> G.ArgKwd (id, v3)
-        | _ -> G.Arg (G.Tuple [init v1; v3]))
+        | _ ->
+          G.Arg (G.Tuple (G.fake_bracket [init v1; v3])))
    | InitBraces v1 -> let v1 = bracket (list init) v1 in
        G.Arg (G.Container (G.List, v1))
 
@@ -456,7 +457,7 @@ and stmt_aux =
          let pattern = G.PatUnderscore (fake "_") in
          [G.For (t, G.ForEach (pattern, v2, v3), v4)]
       | Some (xs, _tokEqOrColonEqTODO) -> 
-          let pattern = G.PatTuple (xs |> List.map G.expr_to_pattern) in
+          let pattern = G.PatTuple (xs |> List.map G.expr_to_pattern |> G.fake_bracket) in
           [G.For (t, G.ForEach (pattern, v2, v3), v4)]
       )
   | Return ((v1, v2)) ->

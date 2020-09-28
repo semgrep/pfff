@@ -107,7 +107,7 @@ let rec visit_expr hook lhs expr =
 
   (* possible lvalues (also rvalues, hence the call to recl, not reclvl) *)
 
-  | Tuple xs -> xs |> List.iter recl
+  | Tuple xs -> xs |> unbracket |> List.iter recl
 
   | Container (typ, xs) ->
     (match typ with

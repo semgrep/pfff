@@ -162,7 +162,7 @@ and map_expr x =
       and v2 = map_bracket (map_of_list map_expr) v2
       in Container ((v1, v2))
   | Tuple v1 -> 
-        let v1 = map_of_list map_expr v1 in Tuple ((v1))
+        let v1 = map_bracket (map_of_list map_expr) v1 in Tuple ((v1))
   | Record v1 -> 
         let v1 = map_bracket (map_of_list map_field) v1 in
         Record ((v1))
@@ -542,7 +542,7 @@ and map_pattern =
       let v1 = map_name v1
       and v2 = map_of_list map_pattern v2
       in PatConstructor ((v1, v2))
-  | PatTuple v1 -> let v1 = map_of_list map_pattern v1 in PatTuple ((v1))
+  | PatTuple v1 -> let v1 = map_bracket (map_of_list map_pattern) v1 in PatTuple ((v1))
   | PatList v1 -> let v1 = map_bracket (map_of_list map_pattern) v1 in 
       PatList ((v1))
   | PatKeyVal ((v1, v2)) ->

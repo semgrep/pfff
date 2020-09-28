@@ -188,14 +188,14 @@ let rec expr (x: expr) =
       G.Id (v1 ,{ (G.empty_id_info ()) with G.id_resolved = v3 })
           
   | Tuple ((CompList v1, v2)) ->
-      let (_, v1, _) = bracket (list expr) v1 
+      let v1 = bracket (list expr) v1
       and _v2TODO = expr_context v2 in 
       G.Tuple v1
 
   | Tuple ((CompForIf (v1, v2), v3)) ->
       let e1 = comprehension expr v1 v2 in
       let _v4TODO = expr_context v3 in 
-      G.Tuple e1
+      G.Tuple (G.fake_bracket e1)
 
   | List ((CompList v1, v2)) ->
       let v1 = bracket (list expr) v1 
@@ -325,7 +325,7 @@ and for_if = function
 (*s: function [[Python_to_generic.dictorset_elt]] *)
 and dictorset_elt = function
   | KeyVal (v1, v2) -> let v1 = expr v1 in let v2 =  expr v2 in 
-      G.Tuple [v1; v2]
+      G.Tuple (G.fake_bracket [v1; v2])
   | Key (v1) -> 
       let v1 = expr v1 in
       v1
@@ -428,7 +428,9 @@ and slice e =
 
 and param_pattern = function
   | PatternName n -> G.PatId (name n, G.empty_id_info())
-  | PatternTuple t -> G.PatTuple (list param_pattern t)
+  | PatternTuple t ->
+    let t = list param_pattern t in
+    G.PatTuple (G.fake_bracket t)
 
 (*s: function [[Python_to_generic.parameters]] *)
 and parameters xs =
@@ -443,7 +445,8 @@ and parameters xs =
      and topt = option type_ topt in
      G.ParamClassic { (G.param_of_id n) with G.ptype = topt }
   | ParamPattern ((PatternTuple pat, _)) ->
-     G.ParamPattern (G.PatTuple (list param_pattern pat))
+     let pat = list param_pattern pat in
+     G.ParamPattern (G.PatTuple (G.fake_bracket pat))
   | ParamStar (n, topt) ->
      let n = name n in
      let topt = option type_ topt in
@@ -543,7 +546,7 @@ and stmt_aux x =
       (match v1 with
       | [] -> raise Impossible
       | [a] -> [G.exprstmt (G.Assign (a, v2, v3))]
-      | xs -> [G.exprstmt (G.Assign (G.Tuple xs, v2, v3))]
+      | xs -> [G.exprstmt (G.Assign (G.Tuple (G.fake_bracket xs), v2, v3))]
       )
   | AugAssign ((v1, (v2, tok), v3)) ->
       let v1 = expr v1 and v2 = operator v2 and v3 = expr v3 in
