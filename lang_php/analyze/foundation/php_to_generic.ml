@@ -281,7 +281,7 @@ and expr =
   | List v1 -> let v1 = bracket (list expr) v1 in
       G.Container(G.List, v1)
   | Arrow ((v1, _t, v2)) -> let v1 = expr v1 and v2 = expr v2 in
-      G.Tuple [v1; v2]
+      G.Tuple (G.fake_bracket [v1; v2])
   | Ref (t, v1) -> let v1 = expr v1 in
       G.Ref (t, v1)
   | Unpack v1 -> let v1 = expr v1 in

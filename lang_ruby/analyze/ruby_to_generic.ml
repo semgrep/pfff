@@ -75,7 +75,7 @@ let rec expr = function
   | ScopedId x -> scope_resolution x
   | Hash (_bool, xs) -> G.Container (G.Dict, bracket (list expr) xs)
   | Array (xs) -> G.Container (G.Array, bracket (list expr) xs)      
-  | Tuple xs -> G.Tuple (list expr xs)
+  | Tuple xs -> G.Tuple (G.fake_bracket (list expr xs))
   | Unary (op, e) -> 
     let e = expr e in
     unary op e
@@ -169,7 +169,7 @@ and formal_param = function
       G.ParamClassic p
   | Formal_tuple (_t1, xs, _t2) ->
       let xs = list formal_param_pattern xs in
-      let pat = G.PatTuple (xs) in
+      let pat = G.PatTuple (G.fake_bracket xs) in
       G.ParamPattern pat
   | ParamEllipsis tok -> G.ParamEllipsis tok
 
@@ -177,7 +177,7 @@ and formal_param_pattern = function
   | Formal_id id -> G.PatId (id, G.empty_id_info())
   | Formal_tuple (_t1, xs, _t2) ->
       let xs = list formal_param_pattern xs in
-      G.PatTuple (xs)
+      G.PatTuple (G.fake_bracket xs)
 
   | Formal_amp _ | Formal_star _ | Formal_rest _ 
   | Formal_default _ | Formal_hash_splat _ | Formal_kwd _ 
@@ -294,7 +294,7 @@ and binary (op, t) e1 e2 =
       in
      G.AssignOp (e1, (op, t), e2)
    | Op_ASSOC -> 
-      G.Tuple ([e1;e2])
+      G.Tuple (G.fake_bracket [e1;e2])
    | Op_DOT3 ->
      (* coupling: make sure to check for the string in generic_vs_generic *)
      G.Call (G.IdSpecial (G.Op G.Range, t), fb [G.Arg e1; G.Arg e2])
@@ -450,13 +450,13 @@ and exprs_to_label_ident = function
   | [x] -> let x = expr x in G.LDynamic x
   | xs -> 
       let xs = list expr xs in
-      G.LDynamic (G.Tuple xs)
+      G.LDynamic (G.Tuple (G.fake_bracket xs))
 
 and exprs_to_eopt = function
   | [] -> None
   | [x] -> Some (expr x)
   | xs -> let xs = list expr xs in
-      Some (G.Tuple xs)
+      Some (G.Tuple (G.fake_bracket xs))
 
 and pattern pat = 
   let e = expr pat in

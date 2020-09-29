@@ -115,7 +115,7 @@ and expr =
   | Constructor ((v1, v2)) ->
       let v1 = name v1 and v2 = option expr v2 in
       G.Constructor (v1, Common.opt_to_list v2)
-  | Tuple v1 -> let v1 = list expr v1 in G.Tuple v1
+  | Tuple v1 -> let v1 = list expr v1 in G.Tuple (G.fake_bracket v1)
   | List v1 -> let v1 = bracket (list expr) v1 in G.Container (G.List, v1)
   | Sequence v1 -> let v1 = list expr v1 in G.Seq v1
   | Prefix ((v1, v2)) -> let v1 = wrap string v1 and v2 = expr v2 in
@@ -304,7 +304,7 @@ and pattern =
       let n = ("::", v2), G.empty_name_info in
       G.PatConstructor (n, [v1;v3])
   | PatTuple v1 -> let v1 = list pattern v1 in 
-                   G.PatTuple v1
+                   G.PatTuple (G.fake_bracket v1)
   | PatList v1 -> let v1 = bracket (list pattern) v1 in G.PatList v1
   | PatUnderscore v1 -> let v1 = tok v1 in G.PatUnderscore v1
   | PatRecord v1 ->

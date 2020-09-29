@@ -372,7 +372,7 @@ let compare_pos ii1 ii2 =
 
 let min_max_ii_by_pos xs =
   match xs with
-  | [] -> raise (NoTokenLocation "min_max, empty list")
+  | [] -> raise (NoTokenLocation "Match returned an empty list with no token location information; this may be fixed by adding enclosing token information (e.g. bracket or parend tokens) to the list's enclosing node type.")
   | [x] -> (x, x)
   | x::xs ->
       let pos_leq p1 p2 = (compare_pos p1 p2) =|= (-1) in

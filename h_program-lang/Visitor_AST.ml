@@ -189,7 +189,7 @@ and v_expr x =
   | Container ((v1, v2)) ->
       let v1 = v_container_operator v1 and v2 = v_bracket (v_list v_expr) v2
       in ()
-  | Tuple v1 -> let v1 = v_list v_expr v1 in ()
+  | Tuple v1 -> let v1 = v_bracket (v_list v_expr) v1 in ()
   | Record v1 -> let v1 = v_bracket (v_list v_field) v1 in ()
   | Constructor ((v1, v2)) ->
       let v1 = v_name v1 and v2 = v_list v_expr v2 in ()
@@ -513,7 +513,7 @@ and v_pattern x =
   | PatType v1 -> let v1 = v_type_ v1 in ()
   | PatConstructor ((v1, v2)) ->
       let v1 = v_name v1 and v2 = v_list v_pattern v2 in ()
-  | PatTuple v1 -> let v1 = v_list v_pattern v1 in ()
+  | PatTuple (_, v1, _) -> let v1 = v_list v_pattern v1 in ()
   | PatList v1 -> let v1 = v_bracket (v_list v_pattern) v1 in ()
   | PatKeyVal ((v1, v2)) -> let v1 = v_pattern v1 and v2 = v_pattern v2 in ()
   | PatUnderscore v1 -> let v1 = v_tok v1 in ()
