@@ -12,8 +12,6 @@ rules:
   - id: bad-pervasives
     pattern: Pervasives.$X
     message: Pervasives is deprecated and not available after 4.10. Use Stdlib.
-    metadata:
-      category: 'deprecated'
     languages: [ocaml]
     severity: ERROR
 
