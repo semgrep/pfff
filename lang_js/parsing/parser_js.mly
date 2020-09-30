@@ -578,23 +578,25 @@ async_function_expr: T_ASYNC T_FUNCTION id? call_signature "{"function_body"}"
  * TODO: use other tech to enforce this? extra rule after
  * T_EXPORT T_DEFAULT? but then many ambiguities.
  *)
-class_decl: T_CLASS binding_id? generics? class_tail
-   { let (extends, body) = $4 in
-     { c_tok = $1; c_name = $2; c_type_params = $3;
-       c_extends =extends; c_body = body } }
+class_decl: T_CLASS binding_id? generics? class_heritage class_body
+   { { c_tok = $1; c_name = $2; c_type_params = $3;
+       c_extends = fst $4; c_implements = snd $4;
+       c_body = $5 } }
 
-class_tail: class_heritage? "{" optl(class_body) "}" {$1,($2,$3,$4)}
+class_body: "{" optl(class_element+) "}" { ($1, $2, $3) }
 
-class_heritage: T_EXTENDS type_or_expr { ($1, $2) }
+class_heritage: extends_clause? implements_clause?  { $1, $2 }
 
-class_body: class_element+ { $1 }
+extends_clause: T_EXTENDS type_or_expr { ($1, $2) }
+(* typescript-ext: *)
+implements_clause: T_IMPLEMENTS listc(type_) { ($1, $2) }
 
 binding_id: id { $1 }
 
-class_expr: T_CLASS binding_id? generics? class_tail
-   { let (extends, body) = $4 in
-     Class { c_tok = $1;  c_name = $2; c_type_params = $3;
-               c_extends =extends;c_body = body } }
+class_expr: T_CLASS binding_id? generics? class_heritage class_body
+   { Class { c_tok = $1;  c_name = $2; c_type_params = $3;
+             c_extends = fst $4; c_implements = snd $4;
+             c_body = $5 } }
 
 (*----------------------------*)
 (* Class elements *)
@@ -1346,7 +1348,6 @@ id:
 ident_semi_keyword:
  | T_FROM { $1 } | T_OF { $1 }
  | T_GET { $1 } | T_SET { $1 }
- | T_IMPLEMENTS { $1 }
  | T_CONSTRUCTOR { $1 }
  | T_TYPE { $1 }
  | T_ANY_TYPE { $1 } | T_NUMBER_TYPE { $1 } | T_BOOLEAN_TYPE { $1 }

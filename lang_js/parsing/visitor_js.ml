@@ -587,6 +587,7 @@ and
                  c_name = v_c_name;
                  c_type_params = v_c_type_params;
                  c_extends = v_c_extends;
+                 c_implements;
                  c_body = v_c_body
                } =
   let arg = v_tok v_c_tok in
@@ -596,6 +597,10 @@ and
     v_option
       (fun (v1, v2) -> let v1 = v_tok v1 and v2 = v_nominal_type v2 in ())
       v_c_extends in
+  let arg =
+    v_option
+      (fun (v1, v2) -> let v1 = v_tok v1 and v2 = v_comma_list v_type_ v2 in ())
+      c_implements in
   let arg = v_brace (v_list v_class_stmt) v_c_body in
   ()
 and
