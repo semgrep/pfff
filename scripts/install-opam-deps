@@ -54,13 +54,15 @@ fi
 eval $(opam env)
 
 packages="
+  ANSITerminal
   grain_dypgen
-  yojson
   menhir
   ocamlgraph
-  ppx_deriving
-  uucp uutf
   ounit2
+  ppx_deriving
+  uucp
+  uutf
+  yojson
 "
 
 # The docker images from the ocaml community ship with a stale (file://...)

@@ -40,4 +40,5 @@ depends: [
   "uutf"
   "uucp"
   "ounit2"
+  "ANSITerminal"
 ]
