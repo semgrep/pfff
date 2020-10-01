@@ -97,7 +97,23 @@ let invoke2 f x =
         close_in input;
         match v with
         | `Res x -> x
-        | `Exn e -> raise e
+        | `Exn e -> 
+            (* TODO: this actually does not work! The documentation in 
+             * marshal.mli is pretty clear:
+
+   Values of extensible variant types, for example exceptions (of
+   extensible type [exn]), returned by the unmarshaller should not be
+   pattern-matched over through [match ... with] or [try ... with],
+   because unmarshalling does not preserve the information required for
+   matching their constructors. Structural equalities with other
+   extensible variant values does not work either.  Most other uses such
+   as Printexc.to_string, will still work as expected.
+    
+              * which means you can't match or intercept the raised
+              * exception. You can just print it or do ugly Obj.magic
+              * level stuff with it.
+              *)
+            raise e
 
 let invoke a b = 
   Common.profile_code "Parallel.invoke" (fun () -> invoke2 a b)
