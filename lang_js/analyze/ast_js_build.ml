@@ -800,18 +800,18 @@ and variable_declaration env vkind x =
 and type_opt env x = 
   match x with
   | None -> None
-  | Some (t) -> annotation env t
+  | Some (t) -> Some (annotation env t)
 
 and annotation env = function
   | C.TAnnot (_, t) -> type_ env t
   (* TODO *)
-  | C.TFunAnnot _ -> None
+  | C.TFunAnnot _ -> raise Todo
 
 and type_ _env = function
   | C.TName (C.V id, None) ->
-      Some (G.TyName (G.name_of_id id))
+      G.TyName (G.name_of_id id)
   (* TODO *)
-  | _ -> None
+  | _ -> raise Todo
 
 and init_opt env ini = 
   match ini with
@@ -988,16 +988,26 @@ and array_arr env tok xs =
   | (Left _)::(Left _)::_ ->
     raise (TodoConstruct ("array_arr, 2 left? impossible?", tok))
 
-and class_decl env x =
+and class_decl env { C.c_tok; c_extends; c_body; c_implements;
+                     c_name = _ (* the c_name field is used in caller *);
+                     c_type_params = _TODO;
+                   } =
   let extends = 
-    match x.C.c_extends with
+    match c_extends with
     | None -> []
     | Some (_tok, typ) -> [Left (nominal_type env typ)]
   in
-  let xs = x.C.c_body |> bracket_keep 
+  let implements = 
+    match c_implements with
+    | None -> []
+    | Some (_tok, xs) -> xs |> C.uncomma |> List.map (type_ env)
+  in
+  let xs = c_body |> bracket_keep 
       (fun xs -> xs |> List.map (class_element env) |> List.flatten) in
-  { A.c_extends = extends; c_body = xs; c_kind = G.Class, x.C.c_tok; 
-    c_attrs = []; c_implements = [] }
+  { c_kind = G.Class, c_tok; c_attrs = [];
+    A.c_extends = extends; c_implements = implements;
+    c_body = xs; 
+  } 
 
 and nominal_type env (e, _targs) = expr env e
 

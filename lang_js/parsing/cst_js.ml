@@ -360,7 +360,7 @@ and stmt =
 (*****************************************************************************)
 (* Type *)
 (*****************************************************************************)
-(* typing-ext: facebook-ext: complex type annotations for Flow/Typescript
+(* typescript-ext: facebook-ext: complex type annotations for Flow/Typescript
  * See also https://www.typescriptlang.org/docs/handbook/advanced-types.html
  *)
 and type_ =
@@ -435,7 +435,7 @@ and func_decl = {
   f_params: parameter_binding comma_list paren;
   f_body: item list brace;
 
-  (* typing-ext: *)
+  (* typescript-ext: *)
   f_type_params: type_parameters option;
   f_return_type: type_opt;
 }
@@ -461,7 +461,7 @@ and func_decl = {
 
   and parameter = {
    p_name: name;
-  (* typing-ext: *)
+  (* typescript-ext: *)
    p_type: type_opt;
    (* es6: if not None, then can be followed only by other default parameters 
       or a dots parameter in a parameter comma_list *)
@@ -491,7 +491,7 @@ and func_decl = {
 and arrow_func = {
   a_async: tok option;
   a_params: arrow_params;
-  (* typing-ext: *)
+  (* typescript-ext: *)
   a_return_type: type_opt;
   a_tok: tok (* => *);
   a_body: arrow_body;
@@ -515,7 +515,7 @@ and var_binding =
   and variable_declaration = {
     v_name: name;
     v_init: init option;
-    (* typing-ext: *)
+    (* typescript-ext: *)
     v_type: type_opt;
   }
     and init = (tok (*=*) * expr)
@@ -532,7 +532,7 @@ and var_binding =
   and variable_declaration_pattern = {
     vpat: pattern;
     vpat_init: init option; (* None only when inside ForOf *)
-    (* typing-ext: *)
+    (* typescript-ext: *)
     vpat_type: type_opt;
   }
 
@@ -545,10 +545,11 @@ and class_decl = {
   c_tok: tok; (* 'class' *)
   (* None for anon classes in class expressions or 'export default' decls *)
   c_name: name option; 
-  (* typing-ext: *)
+  (* typescript-ext: *)
   c_type_params: type_parameter comma_list angle option;
-  (* TODO: c_implements *)
   c_extends: (tok (* extends *) * nominal_type) option;
+  (* typescript-ext: *)
+  c_implements: (tok (* implements *) * type_ comma_list) option;
   c_body: class_element list brace;
 }
 
@@ -573,7 +574,7 @@ and class_decl = {
 (* ------------------------------------------------------------------------- *)
 (* Interface definition *)
 (* ------------------------------------------------------------------------- *)
-(* typing-ext: not in regular JS *)
+(* typescript-ext: not in regular JS *)
 and interface_decl = {
   i_tok: tok; (* 'interface' *)
   i_name: name;
@@ -594,7 +595,7 @@ and item =
   | FunDecl of func_decl
   (* es6-ext: *)
   | ClassDecl of class_decl
-  (* typing-ext: *)
+  (* typescript-ext: *)
   | InterfaceDecl of interface_decl
   | ItemTodo of tok (* last tok, needed for ASI to work *)
 
@@ -618,7 +619,7 @@ and import =
    and name_import =
      | ImportNamespace of tok (* * *) * tok (* as *) * name
      | ImportNames of import_name comma_list brace
-     (* typing-ext: *)
+     (* typescript-ext: *)
      | ImportTypes of tok (* 'type' *) * import_name comma_list brace
    and import_default = name
    and import_name = name * (tok (* as *) * name) option
