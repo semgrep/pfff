@@ -211,7 +211,7 @@ let rev_and_fix_items xs =
 (*-----------------------------------------*)
 %token <Ast_go.tok>
   LBODY (* LBRACE parsing hack *)
-  LSEMICOLON (* sometimes implicitely inserted, see Parsing_hacks_go.ml *) 
+  LSEMICOLON ";" (* sometimes implicitely inserted, see Parsing_hacks_go.ml *) 
 
 (*************************************************************************)
 (* Priorities *)
@@ -252,7 +252,7 @@ let rev_and_fix_items xs =
 (* Toplevel *)
 (*************************************************************************)
 
-file: package LSEMICOLON imports xdcl_list EOF 
+file: package ";" imports xdcl_list EOF 
   { ($1)::
     (List.rev $3 |> List.map (fun x -> Import x)) @
     (List.rev $4) }
@@ -260,18 +260,18 @@ file: package LSEMICOLON imports xdcl_list EOF
 package: LPACKAGE sym { Package ($1, $2) }
 
 (* Go does some ASI so we do not need like in Java to use stmt_no_dots
-   * to allow '...' without trailing semicolon and avoid ambiguities.
-   *)
+ * to allow '...' without trailing semicolon and avoid ambiguities.
+ *)
 sgrep_spatch_pattern: 
- (* make version with and without LSEMICOLON which is inserted
+   (* make version with and without ";" which is inserted
     * if the item as a newline before the EOF (which leads to ASI)
     *)
- | item LSEMICOLON? EOF  { 
+ | item ";"? EOF  { 
     match $1 with
     | [IStmt (SimpleStmt (ExprStmt x))] -> E x
     | _ -> item1 $1 
     }
- | item LSEMICOLON item LSEMICOLON item_list EOF 
+ | item ";" item ";" item_list EOF 
     { Items ($1 @ $3 @ rev_and_fix_items $5) }
 
 item: 
@@ -282,7 +282,7 @@ item:
 
 item_list:
 |   item { $1 }
-|   item_list LSEMICOLON item { $3 @ $1 }
+|   item_list ";" item { $3 @ $1 }
 
 (*************************************************************************)
 (* Import *)
@@ -322,7 +322,7 @@ common_dcl:
     (* at least the first const has a value *)
 |   LCONST constdcl { $2 }
 |   LCONST "(" constdcl osemi ")" { $3 }
-|   LCONST "(" constdcl LSEMICOLON constdcl1_list osemi ")" 
+|   LCONST "(" constdcl ";" constdcl1_list osemi ")" 
       { $3 @ (List.rev $5) }
 |   LCONST "(" ")" { [] }
 
@@ -411,7 +411,7 @@ if_stmt: LIF  if_header loop_body elseif_list else_
 
 if_header:
 |   osimple_stmt { (None, $1) }
-|   osimple_stmt LSEMICOLON osimple_stmt { ($1, $3) }
+|   osimple_stmt ";" osimple_stmt { ($1, $3) }
 
 
 elseif: LELSE LIF  if_header loop_body
@@ -428,7 +428,7 @@ else_:
 
 
 for_stmt: 
- | LFOR osimple_stmt LSEMICOLON osimple_stmt LSEMICOLON osimple_stmt loop_body
+ | LFOR osimple_stmt ";" osimple_stmt ";" osimple_stmt loop_body
     { For ($1, ($2, Common.map_opt (condition_of_stmt $1) $4, $6), $7) }
  | LFOR osimple_stmt loop_body 
     { match $2 with
@@ -932,43 +932,43 @@ caseblock_list:
 | (*empty*)  { [] }
 | caseblock_list caseblock { $2::$1 }
 
-(* lists with ending LSEMICOLON, 0 element allowed *)
+(* lists with ending ";", 0 element allowed *)
 xdcl_list:
 | (*empty*)    { [] }
-|   xdcl_list xdcl LSEMICOLON { $2 @ $1 }
+|   xdcl_list xdcl ";" { $2 @ $1 }
 
 imports:
 | (* empty *) { [] }
-| imports import LSEMICOLON { $2 @ $1 }
+| imports import ";" { $2 @ $1 }
 
-(* lists with LSEMICOLON separator, at least 1 element *)
+(* lists with ";" separator, at least 1 element *)
 import_stmt_list:
 |   import_stmt                             { [$1] }
-|   import_stmt_list LSEMICOLON import_stmt { $3::$1 }
+|   import_stmt_list ";" import_stmt { $3::$1 }
 
 vardcl_list:
 |   vardcl { $1 }
-|   vardcl_list LSEMICOLON vardcl { $3 @ $1 }
+|   vardcl_list ";" vardcl { $3 @ $1 }
 
 constdcl1_list:
 |   constdcl1 { $1 }
-|   constdcl1_list LSEMICOLON constdcl1 { $3 @ $1 }
+|   constdcl1_list ";" constdcl1 { $3 @ $1 }
 
 typedcl_list:
 |   typedcl { [$1] }
-|   typedcl_list LSEMICOLON typedcl { $3::$1 }
+|   typedcl_list ";" typedcl { $3::$1 }
 
 structdcl_list:
 |   structdcl { $1 }
-|   structdcl_list LSEMICOLON structdcl { $3 @ $1 }
+|   structdcl_list ";" structdcl { $3 @ $1 }
 
 interfacedcl_list:
 |   interfacedcl { [$1] }
-|   interfacedcl_list LSEMICOLON interfacedcl { $3::$1 }
+|   interfacedcl_list ";" interfacedcl { $3::$1 }
 
 stmt_list:
 |   stmt { [$1] }
-|   stmt_list LSEMICOLON stmt { $3::$1 }
+|   stmt_list ";" stmt { $3::$1 }
 
 new_name_list:
 |   new_name { [$1] }
@@ -996,8 +996,8 @@ arguments:
  * optional things
  *)
 osemi:
-|(*empty*) { }
-|   LSEMICOLON { }
+| (*empty*) { }
+|  ";" { }
 
 ocomma:
 |(*empty*) { }
