@@ -55,9 +55,7 @@ let default_visitor =
     kstmt   = (fun (k,_) x -> k x);
     ktype_   = (fun (k,_) x -> k x);
     kpattern   = (fun (k,_) x -> k x);
-    kpartial = (fun (_k,_) _x -> 
-        () 
-    );
+    kpartial = (fun (k,_) x -> k x);
 
     kdef   = (fun (k,_) x -> k x);
     kdir   = (fun (k,_) x -> k x);
@@ -555,30 +553,43 @@ and v_def x =
   vin.kdef (k, all_functions) x
 (* WEIRD: not sure why, but using this code below instead of
  * the v_def_as_partial above cause some regressions.
-
-  (* calling kpartial with a modified def *)
-  (match x with
-  | ent, FuncDef def ->
-     let partial_def = { def with fbody = empty_fbody } in
-     v_partial (PartialDef (ent, FuncDef partial_def))
-  | _ -> ()
-  )
-*)
+ *
+ *  (* calling kpartial with a modified def *)
+ *  (match x with
+ *  | ent, FuncDef def ->
+ *     let partial_def = { def with fbody = empty_fbody } in
+ *     v_partial (PartialDef (ent, FuncDef partial_def))
+ *  | _ -> ()
+ *  )
+ *)
 
 and v_def_as_partial ent defkind =
   (* calling kpartial with a modified def *)
   match defkind with
   | FuncDef def ->
      let partial_def = { def with fbody = empty_fbody } in
-     v_partial (PartialDef (ent, FuncDef partial_def))
+     v_partial ~recurse:false (PartialDef (ent, FuncDef partial_def))
   | _ -> ()
 
-and v_partial x =
+(* The recurse argument is subtle. It is needed because we
+ * want different behaviors depending on the context:
+ * - in some context we want to recurse, for example when
+ *   we call ii_of_any (Partial ...), we want to get all the tokens in it
+ * - in other context we do not want to recurse, because that would mean
+ *   we would visit two times the same function (one with a body, and one
+ *   without a body), which can lead some code, e.g., Naming_AST, to generate
+ *   intermediate sids which in turn lead to regressions in end-2-end tests
+ *   (because the value of sid differ).
+ * This is why when we are called from v_any, we recurse (case 1), but
+ * when we are called from a v_def, we don't.
+ *)
+and v_partial ~recurse x =
   let k x = 
     match x with
     | PartialDef (v1, v2) -> 
         (* Do not call v_def here, otherwise you'll get infinite loop *)
-        v_entity v1; v_def_kind v2;
+        if recurse
+        then begin v_entity v1; v_def_kind v2; end;
         ()
   in
   vin.kpartial (k, all_functions) x
@@ -775,7 +786,7 @@ and v_other_directive_operator _ = ()
 and v_program v = v_stmts v
 and v_any =
   function
-  | Partial v1 -> v_partial v1 
+  | Partial v1 -> v_partial ~recurse:true v1 
   | TodoK v1 -> v_ident v1
   | N v1 -> let v1 = v_name v1 in ()
   | Modn v1 -> let v1 = v_module_name v1 in ()
