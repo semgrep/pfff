@@ -4,10 +4,13 @@ open AST_generic
 (* the hooks *)
 (*s: type [[Visitor_AST.visitor_in]] *)
 type visitor_in = {
+  (* those are the one used by semgrep *)
   kexpr: (expr  -> unit) * visitor_out -> expr  -> unit;
   kstmt: (stmt  -> unit) * visitor_out -> stmt  -> unit;
+  kstmts: (stmt list  -> unit) * visitor_out -> stmt list -> unit;
   ktype_: (type_  -> unit) * visitor_out -> type_  -> unit;
   kpattern: (pattern  -> unit) * visitor_out -> pattern  -> unit;
+  kpartial: (partial  -> unit) * visitor_out -> partial  -> unit;
 
   kdef: (definition  -> unit) * visitor_out -> definition  -> unit;
   kdir: (directive  -> unit) * visitor_out -> directive  -> unit;
@@ -17,7 +20,6 @@ type visitor_in = {
   kident: (ident -> unit)  * visitor_out -> ident  -> unit;
   kname: (name -> unit)  * visitor_out -> name  -> unit;
   kentity: (entity -> unit)  * visitor_out -> entity  -> unit;
-  kstmts: (stmt list  -> unit) * visitor_out -> stmt list -> unit;
 
   kfunction_definition: (function_definition -> unit) * visitor_out -> 
     function_definition -> unit;

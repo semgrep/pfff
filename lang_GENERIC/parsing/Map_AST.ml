@@ -806,8 +806,12 @@ and map_item x = map_stmt x
 
 and map_program v = map_of_list map_item v
 
+and map_partial = function
+  | PartialDef v1 -> let v1 = map_definition v1 in PartialDef v1
+
 and map_any =
   function
+  | Partial v1 -> let v1 = map_partial v1 in Partial v1
   | TodoK v1 -> let v1 = map_ident v1 in TodoK v1
   | Tk v1 -> let v1 = map_tok v1 in Tk v1
   | I v1 -> let v1 = map_ident v1 in I ((v1))

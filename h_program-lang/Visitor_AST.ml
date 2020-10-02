@@ -24,10 +24,13 @@ open AST_generic
 
 (* hooks *)
 type visitor_in = {
+  (* those are the one used by semgrep *)
   kexpr: (expr  -> unit) * visitor_out -> expr  -> unit;
   kstmt: (stmt  -> unit) * visitor_out -> stmt  -> unit;
+  kstmts: (stmt list  -> unit) * visitor_out -> stmt list -> unit;
   ktype_: (type_  -> unit) * visitor_out -> type_  -> unit;
   kpattern: (pattern  -> unit) * visitor_out -> pattern  -> unit;
+  kpartial: (partial  -> unit) * visitor_out -> partial  -> unit;
 
   kdef: (definition  -> unit) * visitor_out -> definition  -> unit;
   kdir: (directive  -> unit) * visitor_out -> directive  -> unit;
@@ -37,7 +40,6 @@ type visitor_in = {
   kident: (ident -> unit)  * visitor_out -> ident  -> unit;
   kname: (name -> unit)  * visitor_out -> name  -> unit;
   kentity: (entity -> unit)  * visitor_out -> entity  -> unit;
-  kstmts: (stmt list  -> unit) * visitor_out -> stmt list -> unit;
 
   kfunction_definition: (function_definition -> unit) * visitor_out -> 
     function_definition -> unit;
@@ -53,6 +55,7 @@ let default_visitor =
     kstmt   = (fun (k,_) x -> k x);
     ktype_   = (fun (k,_) x -> k x);
     kpattern   = (fun (k,_) x -> k x);
+    kpartial = (fun (k,_) x -> k x);
 
     kdef   = (fun (k,_) x -> k x);
     kdir   = (fun (k,_) x -> k x);
@@ -733,9 +736,17 @@ and v_directive x =
 and v_alias (v1, v2) = let v1 = v_ident v1 and v2 = v_option v_ident v2 in ()
 and v_other_directive_operator _ = ()
 
+and v_partial x =
+  let k x = 
+    match x with
+    | PartialDef v -> v_def v
+  in
+  vin.kpartial (k, all_functions) x
+
 and v_program v = v_stmts v
 and v_any =
   function
+  | Partial v1 -> v_partial v1 
   | TodoK v1 -> v_ident v1
   | N v1 -> let v1 = v_name v1 in ()
   | Modn v1 -> let v1 = v_module_name v1 in ()

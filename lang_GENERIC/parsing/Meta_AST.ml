@@ -1075,8 +1075,14 @@ and vof_other_directive_operator =
 
 and vof_item x = vof_stmt x
 and vof_program v = OCaml.vof_list vof_item v
+and vof_partial =
+  function
+  | PartialDef v1 -> 
+      let v1 = vof_definition v1 in OCaml.VSum (("PartialDef", [ v1 ]))
+
 and vof_any =
   function
+  | Partial v1 -> let v1 = vof_partial v1 in OCaml.VSum (("Partial", [ v1 ]))
   | TodoK v1 -> let v1 = vof_ident v1 in OCaml.VSum (("TodoK", [ v1 ]))
   | Tk v1 -> let v1 = vof_tok v1 in OCaml.VSum (("Tk", [ v1 ]))
   | N v1 -> let v1 = vof_name v1 in OCaml.VSum (("N", [ v1 ]))
