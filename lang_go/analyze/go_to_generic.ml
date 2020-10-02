@@ -601,11 +601,20 @@ and item_aux = function
 
 and item x  = 
   G.stmt1 (item_aux x)
+
+and partial = function
+  | PartialDecl x -> 
+      let x = top_decl x in
+      (match x with
+      | G.DefStmt def -> G.PartialDef def
+      | _ -> failwith "partial supported only for definitions"
+      )
   
 and any x =
   anon_types := [];
   let res = 
   match x with
+  | Partial v1 -> let v1 = partial v1 in G.Partial v1
   | E v1 -> let v1 = expr v1 in G.E v1
   | S v1 -> let v1 = stmt v1 in G.S v1
   | T v1 -> let v1 = type_ v1 in G.T v1

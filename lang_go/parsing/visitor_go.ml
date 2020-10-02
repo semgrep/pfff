@@ -391,8 +391,12 @@ and v_item = function
  | IImport v1 -> v_import v1
  | IStmt v1 -> v_stmt v1
   
+and v_partial = function
+ | PartialDecl v1 -> v_top_decl v1
+
 and v_any =
   function
+  | Partial v1 -> v_partial v1
   | E v1 -> let v1 = v_expr v1 in ()
   | S v1 -> let v1 = v_stmt v1 in ()
   | T v1 -> let v1 = v_type_ v1 in ()
