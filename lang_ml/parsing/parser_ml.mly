@@ -211,6 +211,7 @@ let topseqexpr v1 = mki (TopExpr (seq1 v1))
 (*************************************************************************)
 (* Macros *)
 (*************************************************************************)
+(* todo? optimize to avoid being quadratic with @? do List.rev internally? *)
 list_sep(X,Sep):
  | X                      { [$1] }
  | list_sep(X,Sep) Sep X  { $1 @ [$3] }
