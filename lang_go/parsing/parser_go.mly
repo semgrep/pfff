@@ -269,6 +269,16 @@ sgrep_spatch_pattern:
  | item ";"? EOF  { 
     match $1 with
     | [IStmt (SimpleStmt (ExprStmt x))] -> E x
+    | [ITop top_decl] ->
+        (match top_decl with
+        (* the user probably wanted a Partial here. xfndcl allows
+         * empty functions/methods, but I doubt people want explicitely
+         * to match that => better to return a Partial
+         *)
+        | DFunc (_, (_, Empty)) | DMethod (_, _, (_, Empty))
+           -> Partial (PartialDecl top_decl)
+        | _ -> item1 $1
+        )
     | _ -> item1 $1 
     }
  | item ";" item ";" item_list EOF 
