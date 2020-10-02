@@ -1099,9 +1099,10 @@ and function_definition = {
  frettype: type_ option; (* return type *)
  (* newscope:
   * note: can be empty statement for methods in interfaces.
-  * TODO: use stmt list bracket instead? 
+  * update: can also be empty when used in a Partial.
   * can be simple expr too for JS lambdas, so maybe fbody type? 
   * FExpr | FNothing | FBlock ?
+  * use stmt list bracket instead? 
   *)
  fbody: stmt; 
 }
@@ -1272,7 +1273,10 @@ and class_definition = {
   (* class_kind in type_ is usually a Trait *)
   cmixins:      type_ list; (* PHP 'uses' *)
 
-  (* newscope: *)
+  (* newscope: 
+   * note: this can be an empty fake bracket when used in Partial.
+   * TODO? use an option here?
+   *)
   cbody: field list bracket;
 }
 (*e: type [[AST_generic.class_definition]] *)
@@ -1383,6 +1387,15 @@ and program = item list
 (*e: type [[AST_generic.program]] *)
 
 (*****************************************************************************)
+(* Partial *)
+(*****************************************************************************)
+(* sgrep: this is only used by semgrep *)
+and partial = 
+  (* the fbody or cbody in definition will be empty *)
+  | PartialDef of definition
+  (* todo: PartialIf, PartialWhile, etc. *)
+
+(*****************************************************************************)
 (* Any *)
 (*****************************************************************************)
 
@@ -1394,9 +1407,14 @@ and any =
   | S of stmt
   | Ss of stmt list
   (*e: [[AST_generic.any]] semgrep cases *)
-  | I of ident
+  (* also used for semgrep *)
   | T of type_
   | P of pattern
+
+  | Partial of partial
+
+  (* misc *)
+  | I of ident
   | At of attribute
   | Def of definition
   | Dir of directive
@@ -1687,4 +1705,5 @@ let unbracket (_, x, _) = x
 let sc = Parse_info.fake_info ";"
 let exprstmt e = ExprStmt (e, sc)
 let fieldEllipsis t = FieldStmt (exprstmt (Ellipsis t))
+let empty_fbody = Block (fake_bracket [])
 (*e: pfff/h_program-lang/AST_generic.ml *)

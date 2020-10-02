@@ -27,7 +27,7 @@ module M = Map_AST
 let extract_info_visitor recursor = 
   let globals = ref [] in
   let hooks = { V.default_visitor with
-    V.kinfo = (fun (_k, _) i -> Common.push i globals)
+    V.kinfo = (fun (_k, _) i -> Common.push i globals);
   } in
   begin
     let vout = V.mk_visitor hooks in

@@ -351,6 +351,12 @@ type item =
   | IStmt of stmt
 
  [@@deriving show { with_path = false }]
+
+type partial = 
+ (* the stmt will be empty in function_ for DFunc and DMethod *)
+ | PartialDecl of top_decl
+
+ [@@deriving show { with_path = false }]
  
 type any = 
  | E of expr
@@ -364,6 +370,7 @@ type any =
  | Ss of stmt list
  | Item of item
  | Items of item list
+ | Partial of partial
 
  [@@deriving show { with_path = false }] (* with tarzan *)
 
