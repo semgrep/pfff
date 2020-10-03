@@ -383,6 +383,7 @@ and entity = {
 and var = entity
 
 and function_definition = {
+  (* TODO: f_kind: Ast_generic.function_kind wrap *)
   (* less: move that in entity? but some anon func have attributes too *)
   f_attrs: attribute list;
   f_params: parameter list;
