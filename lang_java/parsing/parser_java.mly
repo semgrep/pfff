@@ -680,7 +680,7 @@ assignment_operator:
 (*----------------------------*)
 (* Lambdas *)
 (*----------------------------*)
-lambda_expression: lambda_parameters "->" lambda_body  { Lambda ($1, $3) }
+lambda_expression: lambda_parameters "->" lambda_body  { Lambda ($1, $2, $3) }
 
 lambda_parameters: 
  | IDENTIFIER                          { [mk_param_id $1] }

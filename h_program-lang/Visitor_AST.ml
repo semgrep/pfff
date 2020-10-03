@@ -623,12 +623,17 @@ and v_def_kind =
   | Signature v1 -> let v1 = v_type_ v1 in ()
   | UseOuterDecl v1 -> let v1 = v_tok v1 in ()
 
+and v_function_kind = function
+ | Function | Method | Arrow | LambdaKind -> ()
+
 and v_function_definition x =
   let k {
+                          fkind;
                           fparams = v_fparams;
                           frettype = v_frettype;
                           fbody = v_fbody;
                         } =
+  v_wrap v_function_kind fkind;
   let arg = v_parameters v_fparams in
   let arg = v_option v_type_ v_frettype in
   let arg = v_stmt v_fbody in 

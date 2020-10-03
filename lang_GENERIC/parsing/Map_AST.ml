@@ -635,16 +635,21 @@ and map_type_parameter_constraints v =
 and map_type_parameter_constraint =
   function | Extends v1 -> let v1 = map_type_ v1 in Extends ((v1))
 
+and map_function_kind x = x
+
 and
   map_function_definition {
+                            fkind;
                             fparams = v_fparams;
                             frettype = v_frettype;
                             fbody = v_fbody
                           } =
+  let fkind = map_wrap map_function_kind fkind in
   let v_fbody = map_stmt v_fbody in
   let v_frettype = map_of_option map_type_ v_frettype in
   let v_fparams = map_parameters v_fparams in 
   { 
+                            fkind;
                             fparams = v_fparams;
                             frettype = v_frettype;
                             fbody = v_fbody

@@ -1095,6 +1095,7 @@ and type_parameter = ident * type_parameter_constraints
 (* less: could be merged with variable_definition *)
 (*s: type [[AST_generic.function_definition]] *)
 and function_definition = {
+ fkind: function_kind wrap;
  fparams: parameters;
  frettype: type_ option; (* return type *)
  (* newscope:
@@ -1107,6 +1108,17 @@ and function_definition = {
  fbody: stmt; 
 }
 (*e: type [[AST_generic.function_definition]] *)
+  (* We don't really care about the function_kind in semgrep, but who
+   * knows maybe one day we will. We care about the token in the
+   * function_kind wrap in fkind though for semgrep for accurate range.
+   *)
+  and function_kind =
+   | Function
+   (* This is a bit redundant with having the func in a field *)
+   | Method
+   (* Also redundant; can just check if the fdef is in a Lambda *)
+   | LambdaKind
+   | Arrow (* a.k.a short lambdas *) 
 (*s: type [[AST_generic.parameters]] *)
   and parameters = parameter list
 (*e: type [[AST_generic.parameters]] *)

@@ -582,7 +582,7 @@ and func_def env f =
     A.f_return_type =
       Common2.fmap (fun (_, _, t) -> hint_type env t) f.f_return_type;
     A.f_body = List.fold_right (stmt_and_def env) body [];
-    A.f_kind = A.Function;
+    A.f_kind = (A.Function, f.f_tok) ;
     A.m_modifiers = [];
     A.l_uses = [];
   }
@@ -596,7 +596,7 @@ and lambda_def env (l_use, ld) =
     A.f_params = List.map (parameter env) params;
     A.f_return_type = None;
     A.f_body = List.fold_right (stmt_and_def env) body [];
-    A.f_kind = A.AnonLambda;
+    A.f_kind = A.AnonLambda, ld.f_tok;
     A.m_modifiers = [];
     A.f_attrs = attributes env ld.f_attrs;
     A.l_uses =
@@ -610,14 +610,14 @@ and lambda_def env (l_use, ld) =
   }
 
 and short_lambda_def env def =
-  { A.
-    f_ref = false;
-    f_name = (
-      A.special "_lambda",
+  let sl_tok = 
       match def.sl_tok with
       | Some tok -> wrap tok
       | None -> wrap (fake "_lambda")
-    );
+  in
+  { A.
+    f_ref = false;
+    f_name = A.special "_lambda", sl_tok;
     f_params =
       (match def.sl_params with
       | SLSingleParam p -> [parameter env p]
@@ -632,7 +632,7 @@ and short_lambda_def env def =
       | SLExpr e -> [A.Expr (expr env e, G.sc)]
       | SLBody (_, body, _) -> List.fold_right (stmt_and_def env) body []
       );
-    f_kind = A.ShortLambda;
+    f_kind = (A.ShortLambda, sl_tok);
     m_modifiers = [];
     f_attrs = [];
     l_uses = [];
@@ -845,7 +845,7 @@ and method_def env m =
     A.f_return_type =
       Common2.fmap (fun (_, _, t) -> hint_type env t) m.f_return_type;
     A.f_body = implicit_assigns @ method_body env m.f_body;
-    A.f_kind = A.Method;
+    A.f_kind = (A.Method, m.f_tok);
     A.l_uses = [];
   },
   implicit_flds

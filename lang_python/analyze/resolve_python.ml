@@ -176,7 +176,7 @@ let resolve prog =
     );
     V.kstmt = (fun (k, v) x ->
       match x with
-      | FunctionDef (name, params, _typopt, _body, _decorators) ->
+      | FunctionDef (_t, name, params, _typopt, _body, _decorators) ->
           let new_params = params_of_parameters (params: parameters) in
           let new_names = new_params |> List.map (fun name ->
                Ast.str_of_name name, Ast.Parameter

@@ -180,14 +180,14 @@ and expr =
       let v1 = expr v1 and v2 = ident v2 in
       let t = tok t in
       G.DotAccess (v1, t, G.FId v2)
-  | LetIn ((_t, v1, v2, v3)) ->
+  | LetIn ((tlet, v1, v2, v3)) ->
       let _v1 = rec_opt v1 in 
       let v2 = list let_binding v2 in
       let v3 = expr v3 in
       let defs = 
         v2 |> List.map (function
          | Left (ent, params, tret, expr) ->
-            G.DefStmt (ent, mk_var_or_func params tret expr)
+            G.DefStmt (ent, mk_var_or_func tlet params tret expr)
          | Right (pat, e) ->
             let exp = G.LetPattern (pat, e) in
             G.exprstmt exp
@@ -195,10 +195,10 @@ and expr =
       in
       let st = G.Block (G.fake_bracket (defs @ [G.exprstmt v3])) in
       G.OtherExpr (G.OE_StmtExpr, [G.S st])
-  | Fun ((_t, v1, v2)) -> 
+  | Fun ((t, v1, v2)) -> 
     let v1 = list parameter v1 
     and v2 = expr v2 in 
-    let def = { G.fparams = v1; frettype = None; 
+    let def = { G.fparams = v1; frettype = None; fkind = (G.Function, t);
                 fbody = G.exprstmt v2 } in
     G.Lambda def
   | Function (t, xs) ->
@@ -208,7 +208,8 @@ and expr =
       let body_exp = G.MatchPattern (G.Id (id, G.empty_id_info()),
           xs) in
       let body_stmt = G.exprstmt body_exp in
-      G.Lambda {G.fparams = params; frettype = None; fbody = body_stmt }
+      G.Lambda {G.fparams = params; frettype = None; fkind = G.Function, t;
+                fbody = body_stmt }
 
   | If ((_t, v1, v2, v3)) ->
       let v1 = expr v1 and v2 = expr v2 
@@ -472,12 +473,12 @@ and item { i; iattrs } =
       let ent = G.basic_entity v1 attrs in
       let def = G.Signature v2 in
       [G.DefStmt (ent, def)]
-  | Let (_t, v1, v2) ->
+  | Let (tlet, v1, v2) ->
       let _v1 = rec_opt v1 and v2 = list let_binding v2 in 
       v2 |> List.map (function
         | Left (ent, params, tret, expr) ->
             let ent = add_attrs ent attrs in
-            G.DefStmt (ent, mk_var_or_func params tret expr)
+            G.DefStmt (ent, mk_var_or_func tlet params tret expr)
         | Right (pat, e) ->
             (* TODO no attrs *)
             let exp = G.LetPattern (pat, e) in
@@ -497,12 +498,13 @@ and item { i; iattrs } =
           List.map (fun x -> G.At x) attrs
         )]
 
-and mk_var_or_func params tret expr =
+and mk_var_or_func tlet params tret expr =
   match params, expr with
   | [], G.Lambda def -> G.FuncDef def
   | [], _ -> G.VarDef ({G.vinit = Some expr; vtype = None})
-  | _ -> G.FuncDef ({G.fparams = params; frettype = tret; fbody = 
-                      G.exprstmt expr})
+  | _ -> G.FuncDef ({G.fparams = params; frettype = tret; 
+                     fkind = G.Function, tlet;
+                     fbody = G.exprstmt expr})
 
 and program xs = List.map item xs |> List.flatten
 

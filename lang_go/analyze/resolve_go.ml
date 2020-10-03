@@ -128,7 +128,7 @@ let resolve prog =
     );
     V.ktop_decl = (fun (k, _) x ->
       (match x with 
-      | DFunc (id, _) ->
+      | DFunc (_t, id, _) ->
          env |> add_name_env id (G.Global, G.sid_TODO);
          (* note that kfunction later will do the with_added_env for params
           * to factorize code between DFunc and DMethod.
@@ -136,7 +136,7 @@ let resolve prog =
          with_new_context InFunction env (fun () ->
            k x
          )
-      | DMethod (id, receiver, _) ->
+      | DMethod (_t, id, receiver, _) ->
          env |> add_name_env id (G.Global, G.sid_TODO);
          let new_names = params_of_parameters [ParamClassic receiver] in
          with_added_env new_names env (fun () ->

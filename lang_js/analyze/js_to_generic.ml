@@ -411,7 +411,8 @@ and fun_ { f_attrs = f_props; f_params = f_params;
   let v2 = list parameter_binding f_params in 
   let v3 = stmt f_body |> as_block in
   let frettype = option type_ f_rettype in
-  { G.fparams = v2; frettype; fbody = v3; }, v1
+  { G.fparams = v2; frettype; fbody = v3; fkind = G.Function, G.fake "";
+  }, v1
 
 and parameter_binding = function
  | ParamClassic x -> G.ParamClassic (parameter x)

@@ -324,8 +324,8 @@ type top_decl =
  | Package of tok * ident
  | Import of import
 
- | DFunc   of ident *                            function_
- | DMethod of ident * parameter (* receiver *) * function_
+ | DFunc   of tok * ident *                            function_
+ | DMethod of tok * ident * parameter (* receiver *) * function_
  | DTop of decl
  (* tree-sitter-go: not used in pfff Go grammar *)
  | STop of stmt

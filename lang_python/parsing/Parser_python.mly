@@ -352,10 +352,10 @@ augassign:
 (*************************************************************************)
 (* this rule is referenced in compound_stmt shown later *)
 funcdef: DEF NAME parameters return_type? ":" suite
-    { FunctionDef ($2, $3, $4, $6, []) }
+    { FunctionDef ($1, $2, $3, $4, $6, []) }
 
 async_funcdef: ASYNC DEF NAME parameters return_type? ":" suite
-    { FunctionDef ($3, $4, $5, $7, [] (* TODO $1 *)) }
+    { FunctionDef ($2, $3, $4, $5, $7, [] (* TODO $1 *)) }
 
 (* typing-ext: *)
 return_type: 
@@ -566,12 +566,12 @@ decorated:
    }
   | decorator+ funcdef { 
      match $2 with 
-     | FunctionDef (a, b, c, d, e) -> FunctionDef (a, b, c, d, $1 @ e)
+     | FunctionDef (t, a, b, c, d, e) -> FunctionDef (t, a, b, c, d, $1 @ e)
      | _ -> raise Impossible
    }
   | decorator+ async_funcdef {
      match $2 with 
-     | FunctionDef (a, b, c, d, e) -> FunctionDef (a, b, c, d, $1 @ e)
+     | FunctionDef (t, a, b, c, d, e) -> FunctionDef (t, a, b, c, d, $1 @ e)
      | _ -> raise Impossible
   }
 
@@ -905,7 +905,7 @@ yield_expr:
   | YIELD FROM test { Yield ($1, Some $3, true) }
   | YIELD tuple(test)  { Yield ($1, Some (tuple_expr $2), false) }
 
-lambdadef: LAMBDA varargslist ":" test { Lambda ($2, $4) }
+lambdadef: LAMBDA varargslist ":" test { Lambda ($1, $2, $3, $4) }
 
 (*----------------------------*)
 (* Comprehensions *)
@@ -977,7 +977,8 @@ test_nocond:
   | or_test          { $1 }
   | lambdadef_nocond { $1 }
 
-lambdadef_nocond: LAMBDA varargslist ":" test_nocond { Lambda ($2, $4) }
+lambdadef_nocond: LAMBDA varargslist ":" test_nocond 
+    { Lambda ($1, $2, $3, $4) }
 
 
 (*----------------------------*)

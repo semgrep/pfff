@@ -71,11 +71,12 @@ let list_to_tuple_or_expr xs =
   | [x] -> x
   | xs -> G.Tuple (G.fake_bracket xs)
 
-let mk_func_def params ret st =
+let mk_func_def fkind params ret st =
  { G.
     fparams = params;
     frettype = ret;
     fbody = st;
+    fkind;
   }
 
 let wrap_init_in_block_maybe x v =
@@ -202,7 +203,8 @@ and interface_field =
       let (params, ret) = func_type v2 in
       let ent = G.basic_entity v1 [] in
       G.FieldStmt (G.DefStmt 
-          (ent, G.FuncDef (mk_func_def params ret (G.Block (fb [])))))
+          (ent, G.FuncDef (mk_func_def (G.Method, G.fake "") params ret 
+                              G.empty_fbody)))
   | EmbeddedInterface v1 -> let v1 = qualified_ident v1 in 
       let name = name_of_qualified_ident v1 in
       G.FieldSpread (fake "...", G.IdQualified (name, G.empty_id_info()))
@@ -273,7 +275,7 @@ and expr =
       let (params, ret) = func_type v1 
       and v2 = stmt v2 
       in
-      G.Lambda (mk_func_def params ret v2)
+      G.Lambda (mk_func_def (G.LambdaKind, G.fake "") params ret v2)
   | Receive ((v1, v2)) -> let _v1 = tok v1 and v2 = expr v2 in 
       G.OtherExpr (G.OE_Recv, [G.E v2])
   | Send ((v1, v2, v3)) ->
@@ -547,16 +549,16 @@ and decl =
 
 and top_decl =
   function
-  | DFunc ((v1, (v2, v3))) ->
+  | DFunc ((t, v1, (v2, v3))) ->
       let v1 = ident v1 and (params, ret) = func_type v2 and v3 = stmt v3 in 
       let ent = G.basic_entity v1 [] in
-      G.DefStmt (ent, G.FuncDef (mk_func_def params ret v3))
-  | DMethod ((v1, v2, (v3, v4))) ->
+      G.DefStmt (ent, G.FuncDef (mk_func_def (G.Function, t) params ret v3))
+  | DMethod ((t, v1, v2, (v3, v4))) ->
       let v1 = ident v1 
       and v2 = parameter v2
       and (params, ret) = func_type v3 and v4 = stmt v4 in
       let ent = G.basic_entity v1 [] in
-      let def = mk_func_def params ret v4 in
+      let def = mk_func_def (G.Method, t) params ret v4 in
       let receiver = G.OtherParam (G.OPO_Receiver, [G.Pa (G.ParamClassic v2)])
       in
       G.DefStmt (ent, G.FuncDef { def with G.fparams=receiver::def.G.fparams})

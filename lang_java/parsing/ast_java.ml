@@ -219,7 +219,7 @@ and expr =
   | AssignOp of expr * AST_generic.operator wrap * expr
 
   (* javaext: 1.? *)
-  | Lambda of parameters * stmt
+  | Lambda of parameters * tok (* -> *) * stmt
 
   (* sgrep-ext: *)
   | Ellipsis of tok

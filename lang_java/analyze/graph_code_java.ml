@@ -792,7 +792,7 @@ and expr env = function
       expr env e;
       typ env (tref);
   | Ellipsis _ | DeepEllipsis _ -> ()
-  | Lambda (_params, _st) -> raise Todo (* imitate method_decl code *)
+  | Lambda (_params, _t, _st) -> raise Todo (* imitate method_decl code *)
   | MethodRef _ -> raise Todo    
 
 

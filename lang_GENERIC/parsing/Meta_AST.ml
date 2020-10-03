@@ -871,8 +871,15 @@ and vof_type_parameter_constraints v =
 and vof_type_parameter_constraint =
   function
   | Extends v1 -> let v1 = vof_type_ v1 in OCaml.VSum (("Extends", [ v1 ]))
+
+and vof_function_kind = function
+  | Function -> OCaml.VSum ("Function", [])
+  | LambdaKind -> OCaml.VSum ("LambdaKind", [])
+  | Method -> OCaml.VSum ("Method", [])
+  | Arrow -> OCaml.VSum ("Arrow", [])
 and
   vof_function_definition {
+                            fkind;
                             fparams = v_fparams;
                             frettype = v_frettype;
                             fbody = v_fbody
@@ -885,7 +892,12 @@ and
   let bnd = ("frettype", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_parameters v_fparams in
-  let bnd = ("fparams", arg) in let bnds = bnd :: bnds in OCaml.VDict bnds
+  let bnd = ("fparams", arg) in 
+  let bnds = bnd :: bnds in 
+  let arg = vof_wrap vof_function_kind fkind in
+  let bnd = ("fkind", arg) in 
+  let bnds = bnd :: bnds in 
+  OCaml.VDict bnds
 and vof_parameters v = OCaml.vof_list vof_parameter v
 and vof_parameter =
   function

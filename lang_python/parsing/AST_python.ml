@@ -169,7 +169,8 @@ type expr =
                  expr_context
 
   (* the parameters do not have types here *)
-  | Lambda of parameters (* args *) * expr (* body *)
+  | Lambda of tok (* lambda *) * parameters (* args *) * tok (* : *) * 
+              expr (* body *)
 
   | IfExp of expr (* test *) * expr (* body *) * expr (* orelse *)
 
@@ -386,6 +387,7 @@ type stmt =
 
   (* should be allowed just at the toplevel *)
   | FunctionDef of 
+       tok (* 'def' *) * 
        name (* name *) * 
        parameters (* args *) * 
        type_ option * (* return type *)
@@ -393,7 +395,7 @@ type stmt =
        decorator list (* decorator_list *)
 
   | ClassDef of 
-        tok *
+        tok (* 'class' *) *
         name (* name *) * 
         type_parent list (* bases *) * 
         stmt list (* body *) * 
